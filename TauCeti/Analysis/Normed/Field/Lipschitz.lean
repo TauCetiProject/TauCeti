@@ -9,9 +9,10 @@ public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
+import TauCeti.Algebra.Field.LinearFractional
 
 /-!
-# The reciprocal of a Lipschitz function
+# The reciprocal of a Lipschitz function and local Möbius bounds
 
 If `f` takes values in a normed division ring, is `K`-Lipschitz on a set `s` and stays at norm at
 least `m > 0` there, then `x ↦ (f x)⁻¹` is `K / m²`-Lipschitz on `s`, because
@@ -20,13 +21,21 @@ such as the normal component of a uniformly elliptic coefficient field, is divid
 keeping Lipschitz control.
 
 The map `y ↦ c ^ 2 / y` is `1`-Lipschitz on `{y | ‖c‖ ≤ ‖y‖}` in any normed division ring
-(`TauCeti.norm_sq_div_sub_sq_div_le`).
+(`TauCeti.norm_sq_div_sub_sq_div_le`). Similarly, a linear fractional transformation
+`t ↦ (a * t + b) / (c * t + d)` over a normed field keeps denominator norm at least
+`‖c * w + d‖ / 2` and distorts distances from `w` by at most `2 * ‖a * d - b * c‖ / ‖c * w + d‖ ^ 2`
+on `{t | ‖c‖ * ‖t - w‖ ≤ ‖c * w + d‖ / 2}` (`TauCeti.div_two_le_norm_mul_add`,
+`TauCeti.norm_moebius_sub_moebius_le`).
 
 ## Main results
 
 * `LipschitzOnWith.inv_of_le_norm`: the reciprocal of a function Lipschitz on `s` and bounded away
   from zero there is Lipschitz on `s`.
 * `TauCeti.norm_sq_div_sub_sq_div_le`: `y ↦ c ^ 2 / y` is `1`-Lipschitz on `{y | ‖c‖ ≤ ‖y‖}`.
+* `TauCeti.div_two_le_norm_mul_add`: if `‖c * (t - w)‖ ≤ ‖c * w + d‖ / 2`, then
+  `‖c * w + d‖ / 2 ≤ ‖c * t + d‖`.
+* `TauCeti.norm_moebius_sub_moebius_le`: local distance bound for `(a * t + b) / (c * t + d)` near
+  a base point `w` when `‖c‖ * ‖t - w‖ ≤ ‖c * w + d‖ / 2`.
 -/
 
 public section
@@ -76,5 +85,40 @@ theorem norm_sq_div_sub_sq_div_le {𝕜 : Type*} [NormedDivisionRing 𝕜] {c x 
   calc ‖c‖ ^ 2 * (‖x - y‖ / (‖x‖ * ‖y‖)) ≤ (‖x‖ * ‖y‖) * (‖x - y‖ / (‖x‖ * ‖y‖)) :=
         mul_le_mul_of_nonneg_right hb (by positivity)
     _ = ‖x - y‖ := mul_div_cancel₀ _ (mul_pos hx0 hy0).ne'
+
+/-- In a seminormed ring, if `c * (t - w)` has norm at most half that of `c * w + d`, then
+`c * t + d` has norm at least `‖c * w + d‖ / 2`. -/
+theorem div_two_le_norm_mul_add {R : Type*} [SeminormedRing R] {c d w t : R}
+    (h : ‖c * (t - w)‖ ≤ ‖c * w + d‖ / 2) :
+    ‖c * w + d‖ / 2 ≤ ‖c * t + d‖ := by
+  have hsub : (c * w + d) - c * (w - t) = c * t + d := by
+    rw [mul_sub, sub_sub_eq_add_sub, add_right_comm (c * w) d (c * t), add_assoc,
+      add_sub_cancel_left]
+  have htri := norm_sub_norm_le (c * w + d) (c * (w - t))
+  rw [hsub, ← neg_sub t w, mul_neg, norm_neg] at htri
+  linarith
+
+/-- **Local distance bound for a linear fractional transformation.** Over a normed field, whenever
+`‖c‖ * ‖t - w‖ ≤ ‖c * w + d‖ / 2`,
+`‖(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d)‖ ≤
+2 * ‖a * d - b * c‖ / ‖c * w + d‖ ^ 2 * ‖t - w‖`. -/
+theorem norm_moebius_sub_moebius_le {𝕜 : Type*} [NormedField 𝕜] {a b c d w t : 𝕜}
+    (h : ‖c‖ * ‖t - w‖ ≤ ‖c * w + d‖ / 2) :
+    ‖(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d)‖ ≤
+      2 * ‖a * d - b * c‖ / ‖c * w + d‖ ^ 2 * ‖t - w‖ := by
+  by_cases hw : c * w + d = 0
+  · rw [hw, norm_zero, zero_div] at h
+    rcases mul_eq_zero.mp (le_antisymm h (by positivity)) with hc | htw
+    · have hc0 : c = 0 := norm_eq_zero.mp hc
+      have hd0 : d = 0 := by simpa [hc0] using hw
+      simp [hc0, hd0]
+    · simp [sub_eq_zero.mp (norm_eq_zero.mp htw)]
+  · have hden : ‖c * w + d‖ / 2 ≤ ‖c * t + d‖ := div_two_le_norm_mul_add (by rwa [norm_mul])
+    have hw_pos : 0 < ‖c * w + d‖ := norm_pos_iff.mpr hw
+    have ht : c * t + d ≠ 0 := norm_pos_iff.mp (lt_of_lt_of_le (half_pos hw_pos) hden)
+    rw [moebius_sub_moebius hw ht, norm_div, norm_mul, norm_mul]
+    calc ‖a * d - b * c‖ * ‖t - w‖ / (‖c * t + d‖ * ‖c * w + d‖)
+        ≤ ‖a * d - b * c‖ * ‖t - w‖ / (‖c * w + d‖ / 2 * ‖c * w + d‖) := by gcongr
+      _ = 2 * ‖a * d - b * c‖ / ‖c * w + d‖ ^ 2 * ‖t - w‖ := by ring
 
 end TauCeti

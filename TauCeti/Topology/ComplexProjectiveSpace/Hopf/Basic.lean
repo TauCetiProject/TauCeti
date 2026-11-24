@@ -61,21 +61,23 @@ variable (k : Fin (n + 1))
 numbers on the unit vectors with `v_k ≠ 0`. -/
 private theorem sphereDirection_smul_apply (c : sphere (0 : ℂ) 1)
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) (hv : mk n v ∈ affineOpen k) :
-    sphereDirection 1 ((c • v).1 k) = c * sphereDirection 1 (v.1 k) := by
-  have hv' : v.1 k ≠ 0 := (mk_mem_affineOpen_iff k v).1 hv
-  have h : (c • v).1 k = ‖v.1 k‖ • ((c * sphereDirection 1 (v.1 k) : sphere (0 : ℂ) 1) : ℂ) := by
+    sphereDirection 1 ((c • v).val k) = c * sphereDirection 1 (v.val k) := by
+  have hv' : v.val k ≠ 0 := (mk_mem_affineOpen_iff k v).1 hv
+  have h : (c • v).val k = ‖v.val k‖ • ((c * sphereDirection 1 (v.val k) : sphere (0 : ℂ) 1) : ℂ)
+      := by
     simp [← mul_smul_comm]
   rw [h, sphereDirection_smul_of_pos _ (norm_pos_iff.2 hv')]
 
 /-- The direction `v_k / |v_k|` of the `k`th coordinate is continuous on the unit vectors with
 `v_k ≠ 0`. -/
 private theorem continuousOn_sphereDirection_apply :
-    ContinuousOn (fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ sphereDirection 1 (v.1 k))
+    ContinuousOn (fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ sphereDirection 1
+        (v.val k))
       (mk n ⁻¹' affineOpen k) := fun v hv ↦
   ((continuousAt_sphereDirection _ ((mk_mem_affineOpen_iff k v).1 hv)).comp
-    (f := fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ v.1 k)
+    (f := fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ v.val k)
     ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
-      continuous_subtype_val).continuousAt).continuousWithinAt
+      continuous_subtypeVal).continuousAt).continuousWithinAt
 
 /-- The **chart of the Hopf fibration** over the affine open `{X_k ≠ 0}` of `CPⁿ`, with fibre the
 unit circle. It is the orbit trivialization (`TauCeti.orbitTrivialization`) determined by the
@@ -83,7 +85,7 @@ equivariant map `v ↦ v_k / |v_k|`, so it sends a unit vector `v` with `v_k ≠
 `([v], v_k / |v_k|)`. -/
 def hopfTrivialization : Bundle.Trivialization (sphere (0 : ℂ) 1) (mk n) :=
   orbitTrivialization (affineOpen k) (isOpen_affineOpen k)
-    (fun v ↦ sphereDirection 1 (v.1 k)) (continuousOn_sphereDirection_apply k)
+    (fun v ↦ sphereDirection 1 (v.val k)) (continuousOn_sphereDirection_apply k)
     (sphereDirection_smul_apply k)
 
 variable {k}
@@ -96,7 +98,7 @@ theorem hopfTrivialization_baseSet : (hopfTrivialization (n := n) k).baseSet = a
 `k`th coordinate. -/
 @[simp]
 theorem hopfTrivialization_apply (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    hopfTrivialization k v = (mk n v, sphereDirection 1 (v.1 k)) :=
+    hopfTrivialization k v = (mk n v, sphereDirection 1 (v.val k)) :=
   orbitTrivialization_apply v
 
 /-- The inverse of the chart over `{X_k ≠ 0}` sends `([v], u)` to `(u * (v_k / |v_k|)⁻¹) • v`. -/
@@ -104,7 +106,7 @@ theorem hopfTrivialization_apply (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1
 theorem hopfTrivialization_symm_apply_mk {v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1}
     (hv : mk n v ∈ affineOpen k) (u : sphere (0 : ℂ) 1) :
     (hopfTrivialization k).toOpenPartialHomeomorph.symm (mk n v, u) =
-      (u * (sphereDirection 1 (v.1 k))⁻¹) • v :=
+      (u * (sphereDirection 1 (v.val k))⁻¹) • v :=
   orbitTrivialization_symm_apply_mk hv u
 
 variable (n) in
@@ -144,10 +146,10 @@ def hopfFiberHomeomorph : sphere (0 : ℂ) 1 ≃ₜ mk n ⁻¹' {mk n v} :=
     (continuous_id.smul continuous_const).subtype_mk _
   have hb : Function.Bijective (orbitFiber v) := by
     refine ⟨fun u u' h ↦ ?_, fun w ↦ ?_⟩
-    · have h' := congrArg (fun w : mk n ⁻¹' {mk n v} ↦ (w.1 : EuclideanSpace ℂ (Fin (n + 1)))) h
+    · have h' := congrArg (fun w : mk n ⁻¹' {mk n v} ↦ (w.val : EuclideanSpace ℂ (Fin (n + 1)))) h
       simp only [orbitFiber, Sphere.coe_sphere_smul] at h'
       exact Subtype.ext (smul_left_injective ℂ (ne_zero_of_mem_unit_sphere v) h')
-    · obtain ⟨c, hc⟩ := (mk_eq_mk_iff n w v).1 w.2
+    · obtain ⟨c, hc⟩ := (mk_eq_mk_iff n w v).1 w.property
       exact ⟨c, Subtype.ext hc⟩
   hc.homeoOfEquivCompactToT2 (f := Equiv.ofBijective _ hb)
 

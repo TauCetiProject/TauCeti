@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Manifold
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!
@@ -15,7 +15,8 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 Equip the actual quotient `(Spin(n) × U(1)) / {1, (-1, -1)}` with the smooth quotient charts.
 The diagonal kernel is discrete, so the quotient inherits the Lie-group structure and the
-quotient map is a local diffeomorphism. The determinant character `[s,z] ↦ z²` is smooth.
+quotient map is a local diffeomorphism. The determinant character `[s,z] ↦ z²` and charge
+conjugation `[s, z] ↦ [s, z⁻¹]` are smooth.
 These are the native quotient group and topology, not a replacement matrix carrier.
 
 The construction uses the native Spin charts pulled back from the embedded Clifford units
@@ -64,5 +65,14 @@ theorem contMDiff_realDet :
       (det (realCliffordForm n 0) hQ) := by
   apply (contMDiff_iff_contMDiff_comp_mk n hQ _).mpr
   simpa only [Function.comp_def, det_mk] using contMDiff_snd.pow 2
+
+/-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is a smooth automorphism of the actual Spinᶜ
+quotient. -/
+theorem contMDiff_realChargeConj :
+    ContMDiff (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) ∞
+      (chargeConj (realCliffordForm n 0) hQ) := by
+  apply (contMDiff_iff_contMDiff_comp_mk n hQ _).mpr
+  simpa only [Function.comp_def, MulEquiv.coe_toEquiv, chargeConj_mk] using
+    (isLocalDiffeomorph_realMk n hQ).contMDiff.comp (contMDiff_fst.prodMk contMDiff_snd.inv)
 
 end CliffordAlgebra.spinCGroup

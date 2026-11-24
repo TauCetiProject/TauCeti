@@ -205,7 +205,7 @@ theorem condExp_stoppedValue_shift_iterate_markovChainLaw
   have hgS : Integrable g ((P.restrict S).map Y) := by
     rw [markovChainLaw_eq_comp] at hf
     simpa only [g, ← Kernel.markovChainKernel_apply] using
-      integrable_integral_bind κ.markovChainKernel.measurable hf
+      integrable_integral_bind κ.markovChainKernel.measurable.aemeasurable hf
   have hfθ : Integrable (S.indicator fun x => f (θ x)) P := by
     rw [integrable_indicator_iff hS]
     rw [← hfS] at hf
@@ -219,7 +219,7 @@ theorem condExp_stoppedValue_shift_iterate_markovChainLaw
     rw [markovChainLaw_eq_comp] at hb
     have hg : Integrable g ((P.restrict (s ∩ S)).map Y) := by
       simpa only [g, ← Kernel.markovChainKernel_apply] using
-        integrable_integral_bind κ.markovChainKernel.measurable hb
+        integrable_integral_bind κ.markovChainKernel.measurable.aemeasurable hb
     have hI : ∫ y, f y ∂markovChainLaw ((P.restrict (s ∩ S)).map Y) κ =
         ∫ z, g z ∂(P.restrict (s ∩ S)).map Y := by
       rw [markovChainLaw_eq_comp]

@@ -46,8 +46,8 @@ relative dimension `n`. -/
 @[mk_iff]
 class SyntomicOfRelativeDimension (n : ℕ) {X Y : Scheme.{u}} (f : X ⟶ Y) : Prop where
   exists_isStandardSyntomicOfRelativeDimension (x : X) :
-    ∃ (U : Y.affineOpens) (V : X.affineOpens) (_ : x ∈ V.1)
-      (e : V.1 ≤ f ⁻¹ᵁ U.1), IsStandardSyntomicOfRelativeDimension n (f.appLE U V e).hom
+    ∃ (U : Y.affineOpens) (V : X.affineOpens) (_ : x ∈ V.val)
+      (e : V.val ≤ f ⁻¹ᵁ U.val), IsStandardSyntomicOfRelativeDimension n (f.appLE U V e).hom
 
 variable (n : ℕ) {X Y : Scheme.{u}} (f : X ⟶ Y)
 
@@ -63,7 +63,7 @@ instance : HasRingHomProperty (@SyntomicOfRelativeDimension n)
 the global sections of the target. -/
 theorem SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top
     [IsAffine Y] [SyntomicOfRelativeDimension n f] (x : X) :
-    ∃ (V : X.affineOpens) (_ : x ∈ V.1) (e : V.1 ≤ f ⁻¹ᵁ ⊤),
+    ∃ (V : X.affineOpens) (_ : x ∈ V.val) (e : V.val ≤ f ⁻¹ᵁ ⊤),
       IsStandardSyntomicOfRelativeDimension n (f.appLE ⊤ V e).hom := by
   obtain ⟨V, hV, hx, -⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
     (TopologicalSpace.Opens.mem_top x)
@@ -135,9 +135,9 @@ instance syntomicOfRelativeDimension_comp {m : ℕ} {Z : Scheme.{u}} (g : Y ⟶ 
           f.appLE (Y.basicOpen r) (X.basicOpen s) ers := by
       rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, g.appLE_map_assoc,
         Scheme.Hom.appLE_comp_appLE]
-    refine ⟨U₂, ⟨X.basicOpen s, V₁.2.basicOpen s⟩, hxs, e, heq ▸ ?_⟩
+    refine ⟨U₂, ⟨X.basicOpen s, V₁.property.basicOpen s⟩, hxs, e, heq ▸ ?_⟩
     refine IsStandardSyntomicOfRelativeDimension.comp ?_ hf₂
-    have : IsLocalization.Away r Γ(Y, Y.basicOpen r) := V₂.2.isLocalization_basicOpen r
+    have : IsLocalization.Away r Γ(Y, Y.basicOpen r) := V₂.property.isLocalization_basicOpen r
     exact (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).left
       _ r _ hfrs
 
@@ -210,7 +210,7 @@ instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE
   refine (IsZariskiLocalAtSource.iff_exists_resLE (P := @RelativeDimensionLE n)).mpr fun x ↦ ?_
   obtain ⟨U, V, hx, e, h⟩ :=
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension (n := n) (f := f) x
-  refine ⟨U.1, V.1, hx, e, ?_⟩
+  refine ⟨U.val, V.val, hx, e, ?_⟩
   -- Pass from affine chart sections to the global sections of the restricted schemes.
   have htop := (isStandardSyntomicOfRelativeDimension_respectsIso n).arrow_mk_iso_iff
     (arrowResLEAppIso f U V e)
@@ -218,12 +218,12 @@ instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE
   let φ := (f.resLE U V e).appTop.hom
   let := φ.toAlgebra
   have : Algebra.IsStandardSyntomicOfRelativeDimension n
-      Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤) :=
+      Γ(U.val.toScheme, ⊤) Γ(V.val.toScheme, ⊤) :=
     (isStandardSyntomicOfRelativeDimension_iff n φ).mp h'
   have hdim := Algebra.IsStandardSyntomicOfRelativeDimension.relativeDimensionLE_SpecMap
-    n Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤)
-  have : IsAffine U.1.toScheme := U.2
-  have : IsAffine V.1.toScheme := V.2
+    n Γ(U.val.toScheme, ⊤) Γ(V.val.toScheme, ⊤)
+  have : IsAffine U.val.toScheme := U.property
+  have : IsAffine V.val.toScheme := V.property
   -- The restricted affine morphism is canonically isomorphic to the map on spectra.
   rw [MorphismProperty.arrow_mk_iso_iff (@RelativeDimensionLE n)
     (arrowIsoSpecΓOfIsAffine (f.resLE U V e))]

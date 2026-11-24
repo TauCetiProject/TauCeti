@@ -219,7 +219,7 @@ def ofContDiff {f₀ f₁ : C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, E'), E'⟯} (G : �
     hG.contMDiff.comp ((contMDiff_subtypeVal_Icc.comp contMDiff_fst).prodMk_space contMDiff_snd)⟩
   map_zero_left x := h₀ x
   map_one_left x := h₁ x
-  isSmoothEmbedding t := hemb t t.2
+  isSmoothEmbedding t := hemb t t.property
 
 /-- The isotopy given by a `C^n` map on `ℝ × E` evaluates to that map. -/
 @[simp]

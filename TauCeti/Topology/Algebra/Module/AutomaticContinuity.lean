@@ -12,10 +12,11 @@ import Mathlib.Topology.Separation.Hausdorff
 # Automatic continuity over compact coefficient rings
 
 A finitely generated Hausdorff topological module over a compact ring has the module topology.
-Consequently every linear map from it to a topological module is continuous. In particular this
-applies to finitely generated compact Hausdorff topological `ℤ_p`-modules with continuous
-addition and scalar action, allowing algebraic maps between abelian pro-`p` groups to be used
-as maps of topological groups.
+Consequently every linear map from it to a topological module is continuous
+(`LinearMap.continuous_of_finite_of_compactSpace`) and upgrades to a bundled continuous linear map
+(`LinearMap.toContinuousLinearMapOfFiniteOfCompactSpace`). In particular this applies to finitely
+generated compact Hausdorff topological `ℤ_p`-modules with continuous addition and scalar action,
+allowing algebraic maps between abelian pro-`p` groups to be used as maps of topological groups.
 
 ## Implementation notes
 
@@ -46,10 +47,58 @@ theorem TauCeti.isModuleTopology_of_finite_of_compactSpace : IsModuleTopology R 
   have := ModuleTopology.continuousSMul R M
   exact f.continuous_on_pi
 
+namespace LinearMap
+
+variable {N : Type*} [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+  [ContinuousAdd N] [ContinuousSMul R N]
+
 /-- Every linear map from a finitely generated Hausdorff topological module over a compact
 semiring to a topological module is continuous. -/
-theorem LinearMap.continuous_of_finite_of_compactSpace
-    {N : Type*} [AddCommMonoid N] [Module R N] [TopologicalSpace N]
-    [ContinuousAdd N] [ContinuousSMul R N] (f : M →ₗ[R] N) : Continuous f := by
+theorem continuous_of_finite_of_compactSpace (f : M →ₗ[R] N) : Continuous f := by
   have := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := R) (M := M)
   exact IsModuleTopology.continuous_of_linearMap f
+
+/-- Upgrade a linear map out of a finitely generated Hausdorff topological module over a compact
+semiring to a bundled continuous linear map. -/
+def toContinuousLinearMapOfFiniteOfCompactSpace (f : M →ₗ[R] N) : M →L[R] N :=
+  ⟨f, f.continuous_of_finite_of_compactSpace⟩
+
+/-- `LinearMap.toContinuousLinearMapOfFiniteOfCompactSpace` has the same underlying function. -/
+@[simp]
+theorem coe_toContinuousLinearMapOfFiniteOfCompactSpace (f : M →ₗ[R] N) :
+    ⇑f.toContinuousLinearMapOfFiniteOfCompactSpace = f :=
+  (rfl)
+
+/-- Forgetting continuity of `LinearMap.toContinuousLinearMapOfFiniteOfCompactSpace` recovers the
+original linear map. -/
+@[simp]
+theorem toLinearMap_toContinuousLinearMapOfFiniteOfCompactSpace (f : M →ₗ[R] N) :
+    (f.toContinuousLinearMapOfFiniteOfCompactSpace : M →ₗ[R] N) = f :=
+  (rfl)
+
+/-- Upgrading the zero linear map produces the zero continuous linear map. -/
+@[simp]
+theorem toContinuousLinearMapOfFiniteOfCompactSpace_zero :
+    (0 : M →ₗ[R] N).toContinuousLinearMapOfFiniteOfCompactSpace = 0 := by
+  ext
+  simp
+
+/-- Upgrading a sum of linear maps distributes over addition. -/
+@[simp]
+theorem toContinuousLinearMapOfFiniteOfCompactSpace_add (f g : M →ₗ[R] N) :
+    (f + g).toContinuousLinearMapOfFiniteOfCompactSpace =
+      f.toContinuousLinearMapOfFiniteOfCompactSpace +
+        g.toContinuousLinearMapOfFiniteOfCompactSpace := by
+  ext
+  simp
+
+/-- Upgrading a scalar multiple of a linear map commutes with scalar multiplication. -/
+@[simp]
+theorem toContinuousLinearMapOfFiniteOfCompactSpace_smul {S : Type*} [DistribSMul S N]
+    [SMulCommClass R S N] [ContinuousConstSMul S N] (c : S) (f : M →ₗ[R] N) :
+    (c • f).toContinuousLinearMapOfFiniteOfCompactSpace =
+      c • f.toContinuousLinearMapOfFiniteOfCompactSpace := by
+  ext
+  simp
+
+end LinearMap

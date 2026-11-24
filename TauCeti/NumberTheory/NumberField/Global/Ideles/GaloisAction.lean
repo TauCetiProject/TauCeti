@@ -438,9 +438,9 @@ theorem exists_mem_sIdeles_mk_eq
 private theorem valued_ideleFiniteCoord_smul [NumberField K] (σ : L ≃ₐ[K] L)
     (x : IdeleGroup (𝓞 L) L) {v : HeightOneSpectrum (𝓞 K)}
     (w w' : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal})
-    (h : w.1.asIdeal = σ • w'.1.asIdeal) :
-    Valued.v (w.1.ideleFiniteCoord (σ • x) : w.1.adicCompletion L) =
-      Valued.v (w'.1.ideleFiniteCoord x : w'.1.adicCompletion L) := by
+    (h : w.val.asIdeal = σ • w'.val.asIdeal) :
+    Valued.v (w.val.ideleFiniteCoord (σ • x) : w.val.adicCompletion L) =
+      Valued.v (w'.val.ideleFiniteCoord x : w'.val.adicCompletion L) := by
   have hmap (z : v.adicCompletion K ⊗[K] L) :
       Algebra.TensorProduct.map (AlgHom.id (v.adicCompletion K) (v.adicCompletion K))
         (σ : L →ₐ[K] L) z = Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ z := by
@@ -469,18 +469,18 @@ theorem smul_mem_sIdeles (σ : L ≃ₐ[K] L) {x : IdeleGroup (𝓞 L) L}
   set v := w.under (𝓞 K)
   let w₀ : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} := ⟨w, inferInstance⟩
   let w' := (liesOverEquivPrimesOver (𝓞 L) v).symm (σ⁻¹ • liesOverEquivPrimesOver (𝓞 L) v w₀)
-  have h : w₀.1.asIdeal = σ • w'.1.asIdeal := by
+  have h : w₀.val.asIdeal = σ • w'.val.asIdeal := by
     simp [w', liesOverEquivPrimesOver_symm_apply, coe_smul_primesOver_ringOfIntegers,
       liesOverEquivPrimesOver_apply, smul_inv_smul]
   rw [valued_ideleFiniteCoord_smul σ x w₀ w' h]
-  have hv : w'.1.under (𝓞 K) = v := HeightOneSpectrum.ext (w'.2.over).symm
+  have hv : w'.val.under (𝓞 K) = v := HeightOneSpectrum.ext (w'.property.over).symm
   rw [mem_primesAbove_iff] at hw
-  exact hx w'.1 (by rwa [mem_primesAbove_iff, hv])
+  exact hx w'.val (by rwa [mem_primesAbove_iff, hv])
 
 variable (L S) in
 /-- The Galois action of `Aut(L/K)` on the `S`-ideles, restricted from the action on ideles. -/
 instance sIdelesMulDistribMulAction : MulDistribMulAction (L ≃ₐ[K] L) (sIdeles L S) :=
-  letI : SMul (L ≃ₐ[K] L) (sIdeles L S) := ⟨fun σ x ↦ ⟨σ • x.1, smul_mem_sIdeles σ x.2⟩⟩
+  letI : SMul (L ≃ₐ[K] L) (sIdeles L S) := ⟨fun σ x ↦ ⟨σ • x.val, smul_mem_sIdeles σ x.property⟩⟩
   Subtype.coe_injective.mulDistribMulAction (sIdeles L S).subtype fun _ _ ↦ rfl
 
 /-- The Galois action on an `S`-idele is the Galois action on the underlying idele. -/
@@ -503,7 +503,7 @@ variable (L S) in
 instance unitPrimesAboveMulDistribMulAction :
     MulDistribMulAction (L ≃ₐ[K] L) ((primesAbove (𝓞 K) (𝓞 L) S).unit L) :=
   letI : SMul (L ≃ₐ[K] L) ((primesAbove (𝓞 K) (𝓞 L) S).unit L) :=
-    ⟨fun σ a ↦ ⟨σ • a.1, smul_mem_unit_primesAbove σ a.2⟩⟩
+    ⟨fun σ a ↦ ⟨σ • a.val, smul_mem_unit_primesAbove σ a.property⟩⟩
   Subtype.coe_injective.mulDistribMulAction (Subgroup.subtype _) fun _ _ ↦ rfl
 
 /-- The Galois action on an `S`-unit is the Galois action on the underlying unit. -/

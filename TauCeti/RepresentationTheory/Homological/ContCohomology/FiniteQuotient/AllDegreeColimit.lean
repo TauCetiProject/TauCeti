@@ -162,7 +162,7 @@ private theorem exists_openNormalSubgroup_resolutionMap_quotientMk_eq :
     -- an element of `M` is fixed by an open normal subgroup
     obtain ⟨U, hU⟩ := exists_openNormalSubgroup_smul_eq_self (G := G) (M := M) m
     exact ⟨U, fun V hVU ↦ ⟨⟨m, (FixedPoints.mem_addSubgroup V.toSubgroup M _).2
-      fun v ↦ hU v (hVU v.2)⟩, legPair_hom_apply V _⟩⟩
+      fun v ↦ hU v (hVU v.property)⟩, legPair_hom_apply V _⟩⟩
   | i + 1, F => by
     let F' : C(G, (TopRep.resolutionX (ofDiscreteModule ℤ G M) i).V) := F
     -- the continuous map `F'` from the compact group `G` to a discrete space has finite image,
@@ -170,7 +170,7 @@ private theorem exists_openNormalSubgroup_resolutionMap_quotientMk_eq :
     have : Finite (Set.range F') :=
       (isCompact_range F'.continuous).finite_of_discrete.to_subtype
     choose U hU using fun y : Set.range F' ↦
-      exists_openNormalSubgroup_resolutionMap_quotientMk_eq i y.1
+      exists_openNormalSubgroup_resolutionMap_quotientMk_eq i y.val
     -- and `F'` is invariant under right translation by an open subgroup
     have hstab : IsOpen (rightTranslationStabilizer F' : Set G) :=
       isOpen_rightTranslationStabilizer ((IsLocallyConstant.iff_continuous _).2 F'.continuous)
@@ -190,7 +190,7 @@ private theorem exists_openNormalSubgroup_resolutionMap_quotientMk_eq :
     refine ((hlift (g : G ⧸ V.toSubgroup)).choose_spec).trans ?_
     -- the representative of the coset of `g` is `g * v` with `v ∈ V`, and `F' (g * v) = F' g`
     obtain ⟨v, hv⟩ := QuotientGroup.mk_out_eq_mul V.toSubgroup g
-    exact (congrArg F' hv).trans (mem_rightTranslationStabilizer.1 (hV v v.2).1 g)
+    exact (congrArg F' hv).trans (mem_rightTranslationStabilizer.1 (hV v v.property).1 g)
 
 /-- **Descent of homogeneous cochains to finite quotients.** Every homogeneous `n`-cochain of `G`
 with values in `M` is the image of a homogeneous `n`-cochain of `G ⧸ V` with values in `M^V` for
@@ -200,7 +200,7 @@ private theorem exists_openNormalSubgroup_cochainsMap_eq (n : ℕ)
     ∃ U : OpenNormalSubgroup G, ∀ V : OpenNormalSubgroup G, V ≤ U →
       ∃ F', (cochainsMap (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup)
         (legPair G M V)).f n F' = F := by
-  obtain ⟨U, hU⟩ := exists_openNormalSubgroup_resolutionMap_quotientMk_eq (n + 1) F.1
+  obtain ⟨U, hU⟩ := exists_openNormalSubgroup_resolutionMap_quotientMk_eq (n + 1) F.val
   refine ⟨U, fun V hVU ↦ ?_⟩
   obtain ⟨F', hF'⟩ := hU V hVU
   -- the descended element is invariant, because the map it is sent along is injective and
@@ -220,7 +220,7 @@ private theorem exists_openNormalSubgroup_cochainsMap_eq (n : ℕ)
         TopRep.hom_comm_apply (resolutionMap
           (Subgroup.quotientMkContinuousMonoidHom V.toSubgroup) (legPair G M V) (n + 1)) g F'
     _ = _ := congrArg _ hF'
-    _ = _ := F.2 g
+    _ = _ := F.property g
     _ = _ := hF'.symm
 
 end Cochains
@@ -238,7 +238,7 @@ private theorem legPair_cochainsMap_f_transition {U V : OpenNormalSubgroup G} (h
         ((cochainsMap (continuousFiniteQuotientMap G hVU)
           (continuousFiniteQuotientPair G M hVU)).f n c) =
       (cochainsMap (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup) (legPair G M U)).f n c :=
-  Subtype.ext (legPair_resolutionMap_transition hVU (n + 1) c.1)
+  Subtype.ext (legPair_resolutionMap_transition hVU (n + 1) c.val)
 
 end CochainMaps
 

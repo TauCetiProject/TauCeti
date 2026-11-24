@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Topology.MetricSpace.ProperSpace.Real
 public import TauCeti.Topology.Compactness.Normed
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Uniform derivative bounds on a strip of the plane
@@ -21,6 +22,10 @@ strip both derivatives are within `ε` of `A` (`TauCeti.exists_pos_forall_norm_f
 Over the compact segment this is continuity of the derivatives together with the tube lemma
 (`IsCompact.eventually_forall_of_forall_eventually`). Off the slab the derivative of `k` is that of
 `l`, which is read back at one of the ends of the segment by the translation invariance.
+
+A map on `(a, b) × ℝ` whose derivative has norm at most `C` has slices that vary
+`C`-Lipschitz continuously in the first coordinate
+(`TauCeti.dist_le_mul_abs_sub_of_norm_fderiv_le`), by the mean value inequality.
 
 This is the uniform estimate behind straightening a concordance near an arc: there `k` and `l` are
 the concordance and the standard strip read in coordinates, which agree near the two ends of the
@@ -82,5 +87,19 @@ theorem exists_pos_forall_norm_fderiv_sub_lt {Y : Type*} [NormedAddCommGroup Y]
       (fun v hv => Or.inr hv), hlu]
     have := (hρ₁O hu₁ b ⟨hab, le_rfl⟩).2.2
     exact ⟨this, this⟩
+
+/-- On a strip `(a, b) × ℝ` where the derivative of `u` is bounded by `C ≥ 0`, the loops depend
+`C`-Lipschitz continuously on `s` in the uniform distance. -/
+theorem dist_le_mul_abs_sub_of_norm_fderiv_le {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {u : ℝ × ℝ → V} {a b C : ℝ}
+    (hu : DifferentiableOn ℝ u (Ioo a b ×ˢ univ)) (hC : ∀ z ∈ Ioo a b ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
+    {s σ : ℝ} (hs : s ∈ Ioo a b) (hσ : σ ∈ Ioo a b) (t : ℝ) :
+    dist (u (s, t)) (u (σ, t)) ≤ C * |s - σ| := by
+  have h := ((convex_Ioo a b).prod convex_univ).norm_image_sub_le_of_norm_fderiv_le (f := u)
+    (fun z hz ↦ hu.differentiableAt
+      ((isOpen_Ioo.prod isOpen_univ).mem_nhds hz)) hC (x := (σ, t)) (y := (s, t))
+    ⟨hσ, mem_univ t⟩ ⟨hs, mem_univ t⟩
+  rwa [Prod.mk_sub_mk, sub_self, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg _),
+    Real.norm_eq_abs, ← dist_eq_norm] at h
 
 end TauCeti

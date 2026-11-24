@@ -89,7 +89,7 @@ noncomputable instance unitFiltrationMulDistribMulAction (i : ℕ) :
   letI : SMul (L ≃ₐ[K] L) (unitFiltration L i) :=
     ⟨fun σ x ↦ ⟨σ • (x : Lˣ), by
       simpa only [AlgEquiv.smul_units_def] using
-        (AlgEquiv.unitsMap_mem_unitFiltration_iff σ).2 x.2⟩⟩
+        (AlgEquiv.unitsMap_mem_unitFiltration_iff σ).2 x.property⟩⟩
   exact Subtype.coe_injective.mulDistribMulAction (unitFiltration L i).subtype fun _ _ ↦ rfl
 
 end TauCeti

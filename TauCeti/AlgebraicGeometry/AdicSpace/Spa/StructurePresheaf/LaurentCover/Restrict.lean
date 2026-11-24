@@ -123,9 +123,9 @@ theorem injective_presentationLimitMap_of_locOpensComap {ι : Type*}
       (∀ i, locOpensComap P Aplus T s S hden (U i) = U' i) → ∀ hU'W' : ∀ i, U' i ≤ W',
       (Function.Injective fun (y : presentationLimit (P := completionLocalization P T s S hden)
           (completedPlusSubring P Aplus T s S hden) W') i ↦
-        (presentationLimitMap (P := completionLocalization P T s S hden) (hU'W' i)).hom.1 y) →
+        (presentationLimitMap (P := completionLocalization P T s S hden) (hU'W' i)).hom.val y) →
       Function.Injective fun (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) i ↦
-        (presentationLimitMap (P := P) (hUW i)).hom.1 x := by
+        (presentationLimitMap (P := P) (hUW i)).hom.val x := by
   intro W' U' hW' hU' _ h x y hxy
   subst hW'
   obtain rfl : U' = fun i ↦ locOpensComap P Aplus T s S hden (U i) := funext fun i ↦ (hU' i).symm
@@ -153,17 +153,17 @@ theorem exists_presentationLimitMap_eq_of_locOpensComap {U : Bool → Opens ↥(
       ∀ (hU'W' : ∀ b, U' b ≤ W') (h₁ : O' ≤ U' true) (h₂ : O' ≤ U' false),
       (∀ y : ∀ b, presentationLimit (P := completionLocalization P T s S hden)
           (completedPlusSubring P Aplus T s S hden) (U' b),
-        (presentationLimitMap (P := completionLocalization P T s S hden) h₁).hom.1 (y true) =
-          (presentationLimitMap (P := completionLocalization P T s S hden) h₂).hom.1 (y false) →
+        (presentationLimitMap (P := completionLocalization P T s S hden) h₁).hom.val (y true) =
+          (presentationLimitMap (P := completionLocalization P T s S hden) h₂).hom.val (y false) →
         ∃ c : presentationLimit (P := completionLocalization P T s S hden)
             (completedPlusSubring P Aplus T s S hden) W', ∀ b,
-          (presentationLimitMap (P := completionLocalization P T s S hden) (hU'W' b)).hom.1 c =
+          (presentationLimitMap (P := completionLocalization P T s S hden) (hU'W' b)).hom.val c =
             y b) →
       ∀ x : ∀ b, presentationLimit (P := P) Aplus (U b),
-        (presentationLimitMap (P := P) (inf_le_left : U true ⊓ U false ≤ _)).hom.1 (x true) =
-          (presentationLimitMap (P := P) (inf_le_right : U true ⊓ U false ≤ _)).hom.1 (x false) →
+        (presentationLimitMap (P := P) (inf_le_left : U true ⊓ U false ≤ _)).hom.val (x true) =
+          (presentationLimitMap (P := P) (inf_le_right : U true ⊓ U false ≤ _)).hom.val (x false) →
         ∃ a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s), ∀ b,
-          (presentationLimitMap (P := P) (hUW b)).hom.1 a = x b := by
+          (presentationLimitMap (P := P) (hUW b)).hom.val a = x b := by
   intro W' O' U' hW' hU' hO' _ _ _ h x hx
   subst hW' hO'
   obtain rfl : U' = fun b ↦ locOpensComap P Aplus T s S hden (U b) := funext fun b ↦ (hU' b).symm
@@ -174,7 +174,7 @@ theorem exists_presentationLimitMap_eq_of_locOpensComap {U : Bool → Opens ↥(
     hAplus hT (hU b) hO (hUW b)
   -- apply Remark 8.4 to `x`, glue over the pullbacks, and pull the gluing back to `R(T/s)`
   obtain ⟨c, hc⟩ := h (fun b ↦ (presentationLimitLocIso P Aplus T s S hden hAplus hT _ (hU b)
-    (hUW b)).hom.hom.1 (x b)) <| by rw [← nat true inf_le_left, ← nat false inf_le_right, hx]
+    (hUW b)).hom.hom.val (x b)) <| by rw [← nat true inf_le_left, ← nat false inf_le_right, hx]
   obtain ⟨a, rfl⟩ := (bijective_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT hW
     le_rfl).2 c
   refine ⟨a, fun b ↦ (bijective_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT (hU b)
@@ -200,12 +200,12 @@ private theorem surjective_presentationLimitMap_sub_of_locOpensComap
             (completedPlusSubring P Aplus T s S hden) (U' true) ×
           presentationLimit (P := completionLocalization P T s S hden)
             (completedPlusSubring P Aplus T s S hden) (U' false)) ↦
-        (presentationLimitMap (P := completionLocalization P T s S hden) h₁).hom.1 y.1 -
-          (presentationLimitMap (P := completionLocalization P T s S hden) h₂).hom.1 y.2) →
+        (presentationLimitMap (P := completionLocalization P T s S hden) h₁).hom.val y.1 -
+          (presentationLimitMap (P := completionLocalization P T s S hden) h₂).hom.val y.2) →
       Function.Surjective fun (x : presentationLimit (P := P) Aplus (U true) ×
           presentationLimit (P := P) Aplus (U false)) ↦
-        (presentationLimitMap (P := P) (inf_le_left : U true ⊓ U false ≤ _)).hom.1 x.1 -
-          (presentationLimitMap (P := P) (inf_le_right : U true ⊓ U false ≤ _)).hom.1 x.2 := by
+        (presentationLimitMap (P := P) (inf_le_left : U true ⊓ U false ≤ _)).hom.val x.1 -
+          (presentationLimitMap (P := P) (inf_le_right : U true ⊓ U false ≤ _)).hom.val x.2 := by
   intro O' U' hU' hO' _ _ h z
   subst hO'
   obtain rfl : U' = fun b ↦ locOpensComap P Aplus T s S hden (U b) := funext fun b ↦ (hU' b).symm
@@ -216,7 +216,7 @@ private theorem surjective_presentationLimitMap_sub_of_locOpensComap
   -- apply Remark 8.4 to `z`, write its image as a difference over the pullbacks, and pull the two
   -- sections back to the `U b`
   obtain ⟨⟨y₁, y₂⟩, hy⟩ := h ((presentationLimitLocIso P Aplus T s S hden hAplus hT _ hO
-    (inf_le_left.trans (hUW true))).hom.hom.1 z)
+    (inf_le_left.trans (hUW true))).hom.hom.val z)
   obtain ⟨x₁, rfl⟩ := (σ true).2 y₁
   obtain ⟨x₂, rfl⟩ := (σ false).2 y₂
   refine ⟨(x₁, x₂), (bijective_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT hO
@@ -252,11 +252,11 @@ theorem injective_presentationLimitMap_inf_laurentCoverOpen_of_locOpensComap (f 
         (completedPlusSubring P Aplus T s S hden) ⊤) (b : Bool) ↦
       (presentationLimitMap (P := completionLocalization P T s S hden)
         (le_top : laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
-          (toCompletionLoc P T s S hden f) b ≤ ⊤)).hom.1 y) →
+          (toCompletionLoc P T s S hden f) b ≤ ⊤)).hom.val y) →
     Function.Injective fun (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))
         (b : Bool) ↦
       (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 x :=
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.val x :=
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   injective_presentationLimitMap_of_locOpensComap P Aplus T s S hden hAplus hT
     (fun b ↦ inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens hT)
@@ -280,28 +280,28 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_locOpensComap 
           laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
               (toCompletionLoc P T s S hden f) true ⊓
             laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
-              (toCompletionLoc P T s S hden f) false ≤ _)).hom.1 (y true) =
+              (toCompletionLoc P T s S hden f) false ≤ _)).hom.val (y true) =
         (presentationLimitMap (P := completionLocalization P T s S hden) (inf_le_right :
           laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
               (toCompletionLoc P T s S hden f) true ⊓
             laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
-              (toCompletionLoc P T s S hden f) false ≤ _)).hom.1 (y false) →
+              (toCompletionLoc P T s S hden f) false ≤ _)).hom.val (y false) →
       ∃ c : presentationLimit (P := completionLocalization P T s S hden)
           (completedPlusSubring P Aplus T s S hden) ⊤, ∀ b,
         (presentationLimitMap (P := completionLocalization P T s S hden)
           (le_top : laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
-            (toCompletionLoc P T s S hden f) b ≤ ⊤)).hom.1 c = y b) →
+            (toCompletionLoc P T s S hden f) b ≤ ⊤)).hom.val c = y b) →
     ∀ x : ∀ b, presentationLimit (P := P) Aplus
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b),
       (presentationLimitMap (P := P) (inf_le_left :
           (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-            (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x true) =
+            (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val (x true) =
         (presentationLimitMap (P := P) (inf_le_right :
           (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-            (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x false) →
+            (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val (x false) →
       ∃ a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s), ∀ b,
         (presentationLimitMap (P := P)
-          (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 a =
+          (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.val a =
             x b := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   have hU := locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f
@@ -332,7 +332,7 @@ theorem injective_presentationLimitMap_inf_laurentCoverOpen
     Function.Injective fun (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))
         (b : Bool) ↦
       (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 x := by
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.val x := by
   -- `A⟨T/s⟩` is again a strongly noetherian Tate ring, with plus ring of power-bounded elements
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden
@@ -360,13 +360,14 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen
       (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b))
     (hx : (presentationLimitMap (P := P) (inf_le_left :
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x true) =
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val (x true) =
       (presentationLimitMap (P := P) (inf_le_right :
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x false)) :
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val (x false)) :
     ∃ a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s), ∀ b,
       (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 a = x b := by
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.val a = x b
+            := by
   -- `A⟨T/s⟩` is again a strongly noetherian Tate ring, with plus ring of power-bounded elements
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden
@@ -397,10 +398,10 @@ theorem surjective_presentationLimitMap_sub_inf_laurentCoverOpen
           (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false)) ↦
       (presentationLimitMap (P := P) (inf_le_left :
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 x.1 -
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val x.1 -
       (presentationLimitMap (P := P) (inf_le_right :
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 x.2 := by
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val x.2 := by
   -- `A⟨T/s⟩` is again a strongly noetherian Tate ring, with plus ring of power-bounded elements
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden

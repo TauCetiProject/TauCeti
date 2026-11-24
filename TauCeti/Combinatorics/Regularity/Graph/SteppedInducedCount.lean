@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Regularity.Graph.InducedCount
 public import TauCeti.Combinatorics.Regularity.Partition.Energy
-import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Analysis.Normed.Ring.ProdSubProd
 import TauCeti.Data.Fintype.BigOperators
 
 /-!
@@ -74,23 +74,24 @@ times, for each pair `i < j`, the edge density `d(φ i, φ j)` if `J.Adj i j` an
 density `1 - d(φ i, φ j)` otherwise. -/
 noncomputable def steppedInducedGraphCount3 (R : Finpartition (univ : Finset V)) : ℝ :=
   ∑ φ : Fin 3 → R.parts, (∏ i, (#(φ i : Finset V) : ℝ)) *
-    ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2)
+    ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1)
+        (φ p.val.2)
 
 theorem steppedInducedGraphCount3_def (R : Finpartition (univ : Finset V)) :
     J.steppedInducedGraphCount3 G R =
       ∑ φ : Fin 3 → R.parts, (∏ i, (#(φ i : Finset V) : ℝ)) *
         ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-          G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := (rfl)
+          G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2) := (rfl)
 
 /-- The stepped prediction sums, over all maps `g : Fin 3 → V`, the product of the edge or
 nonedge densities between the parts of `R` containing the images. -/
 theorem steppedInducedGraphCount3_eq_sum_part (R : Finpartition (univ : Finset V)) :
     J.steppedInducedGraphCount3 G R = ∑ g : Fin 3 → V,
       ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-        G.patternDensity (J.Adj p.1.1 p.1.2) (R.part (g p.1.1)) (R.part (g p.1.2)) := by
+        G.patternDensity (J.Adj p.val.1 p.val.2) (R.part (g p.val.1)) (R.part (g p.val.2)) := by
   have := R.sum_piFinset_apply_part (ι := Fin 3) fun A ↦
     ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      (G.patternDensity (J.Adj p.1.1 p.1.2) (A p.1.1) (A p.1.2) : ℝ)
+      (G.patternDensity (J.Adj p.val.1 p.val.2) (A p.val.1) (A p.val.2) : ℝ)
   rw [steppedInducedGraphCount3_def]
   simpa only [Fintype.piFinset_univ, nsmul_eq_mul, Nat.cast_prod] using this.symm
 
@@ -106,7 +107,7 @@ private lemma steppedInducedGraphCount3_eq_add (R : Finpartition (univ : Finset 
     J.steppedInducedGraphCount3 G R = J.coarseInducedGraphEstimate G R +
       ∑ φ : Fin 3 → R.parts with ¬Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
         ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-          G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := by
+          G.patternDensity (J.Adj p.val.1 p.val.2) (φ p.val.1) (φ p.val.2) := by
   rw [steppedInducedGraphCount3_def, coarseInducedGraphEstimate_def,
     sum_filter_add_sum_filter_not]
 
@@ -150,7 +151,7 @@ theorem abs_steppedInducedGraphCount3_sub_le {P Q : Finpartition (univ : Finset 
   rw [steppedInducedGraphCount3_eq_sum_part, steppedInducedGraphCount3_eq_sum_part,
     ← sum_sub_distrib]
   -- Telescope the three factors at each map, then sum each pair over the third vertex.
-  calc _ ≤ ∑ g : Fin 3 → V, ∑ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, D (g p.1.1) (g p.1.2) := by
+  calc _ ≤ ∑ g : Fin 3 → V, ∑ p : {p : Fin 3 × Fin 3 // p.1 < p.2}, D (g p.val.1) (g p.val.2) := by
         refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun g _ ↦ ?_)
         exact (TauCeti.abs_prod_sub_prod_le_sum_abs_sub _ (fun p _ ↦ habs _ _ _)
           (fun p _ ↦ habs _ _ _)).trans_eq
@@ -158,8 +159,8 @@ theorem abs_steppedInducedGraphCount3_sub_le {P Q : Finpartition (univ : Finset 
     _ = ∑ _p : {p : Fin 3 × Fin 3 // p.1 < p.2}, Fintype.card V • ∑ x, ∑ y, D x y := by
         rw [sum_comm]
         exact sum_congr rfl fun p _ ↦ by
-          simpa [card_sdiff, ne_of_lt p.2, Nat.sub_sub] using
-            Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) (fun _ ↦ univ) D
+          simpa [card_sdiff, ne_of_lt p.property, Nat.sub_sub] using
+            Fintype.sum_piFinset_apply_apply (ne_of_lt p.property) (fun _ ↦ univ) D
     _ = 3 * Fintype.card V * ∑ x, ∑ y, D x y := by
         have hpairs : Fintype.card {p : Fin 3 × Fin 3 // p.1 < p.2} = 3 := by decide
         rw [sum_const, card_univ, hpairs, nsmul_eq_mul, nsmul_eq_mul, ← mul_assoc]
