@@ -38,6 +38,8 @@ inverse; and a scalar matrix `c • 1` can only preserve an invertible `J` when 
   is a unit over any ring.
 * `Matrix.isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg`: for invertible `J`, a matrix `A` is
   skew-adjoint for `J` exactly when `J⁻¹ * Aᵀ * J = -A`.
+* `Matrix.transposeConj_mul`: for invertible `J`, the operator `Matrix.transposeConj J` reverses
+  products.
 * `Matrix.transposeConj_transposeConj`: for invertible `J` with `Jᵀ = ε • J`, the operator
   `Matrix.transposeConj J` is an involution.
 * `Matrix.trace_transposeConj_comp_mulLeft_comp_mulRight`: the trace of `Z ↦ J⁻¹ (A Z B)ᵀ J` is
@@ -100,6 +102,14 @@ theorem transposeConj_apply (J Z : Matrix n n R) : J.transposeConj Z = J⁻¹ * 
 theorem isSkewAdjoint_iff_transposeConj_eq_neg {J A : Matrix n n R} (hJ : IsUnit J) :
     J.IsSkewAdjoint A ↔ J.transposeConj A = -A := by
   rw [transposeConj_apply, isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJ]
+
+/-- For an invertible `J`, the operator `Z ↦ J⁻¹ Zᵀ J` reverses products. -/
+theorem transposeConj_mul {J : Matrix n n R} (hJu : IsUnit J) (A B : Matrix n n R) :
+    J.transposeConj (A * B) = J.transposeConj B * J.transposeConj A := by
+  rw [transposeConj_apply, transposeConj_apply, transposeConj_apply, transpose_mul]
+  simp only [Matrix.mul_assoc]
+  rw [← Matrix.mul_assoc J J⁻¹, mul_nonsing_inv _ ((isUnit_iff_isUnit_det J).mp hJu),
+    Matrix.one_mul]
 
 /-- **The operator `Z ↦ J⁻¹ Zᵀ J` is an involution** for an invertible `J` with `Jᵀ = ε • J`. -/
 theorem transposeConj_transposeConj {J : Matrix n n R} {ε : R} (hJ : Jᵀ = ε • J)

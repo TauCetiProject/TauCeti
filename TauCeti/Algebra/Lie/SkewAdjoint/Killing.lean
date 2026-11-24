@@ -23,14 +23,14 @@ the case `ε = -1`. On the Lie algebra `skewAdjointMatricesLieSubalgebra J` of t
 
 `κ(X, Y) = (n - 2 ε) trace (X * Y)`.
 
-A matrix `A` lies in this Lie algebra exactly when `J⁻¹ Aᵀ J = -A`
-(`TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg`), and
-`Matrix.transposeConj J : Z ↦ J⁻¹ Zᵀ J` is an involution of the matrices
-(`Matrix.transposeConj_transposeConj`). So `Z ↦ Z - J⁻¹ Zᵀ J` maps `gl n K` onto the Lie algebra,
-acting on it as multiplication by two. The operator `ad X ∘ ad Y` of `gl n K` preserves the Lie
-algebra, so twice its trace there is its trace on `gl n K`, which is `2 n trace (X * Y)`
-(`Matrix.killingForm_apply`), minus the trace of its composite with `Z ↦ J⁻¹ Zᵀ J`, which is
-`4 ε trace (X * Y)`.
+A matrix `A` lies in this Lie algebra exactly when `Matrix.transposeConj J : Z ↦ J⁻¹ Zᵀ J`
+sends it to `-A`
+(`TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg`), and this operator is
+an involution of the matrices (`Matrix.transposeConj_transposeConj`). So `Z ↦ Z - J⁻¹ Zᵀ J` maps
+`gl n K` onto the Lie algebra, acting on it as multiplication by two. The operator
+`ad X ∘ ad Y` of `gl n K` preserves the Lie algebra, so twice its trace there is its trace on
+`gl n K`, which is `2 n trace (X * Y)` (`Matrix.killingForm_apply`), minus the trace of its
+composite with `Z ↦ J⁻¹ Zᵀ J`, which is `4 ε trace (X * Y)`.
 
 ## Main results
 
@@ -61,17 +61,12 @@ private theorem trace_transposeConj_comp_ad_comp_ad (hJ : Jᵀ = ε • J) (hJu 
     {A B : Matrix n n K} (hA : A ∈ skewAdjointMatricesLieSubalgebra J)
     (hB : B ∈ skewAdjointMatricesLieSubalgebra J) :
     LinearMap.trace K _ (transposeConj J ∘ₗ ad K _ A ∘ₗ ad K _ B) = 4 * ε * (A * B).trace := by
-  have hA' :=
-    (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mp hA
-  have hB' :=
-    (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mp hB
+  have hA' := (mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg hJu).mp hA
+  have hB' := (mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg hJu).mp hB
+  have hBA : transposeConj J (B * A) = A * B := by
+    rw [transposeConj_mul hJu, hA', hB', neg_mul_neg]
+  rw [transposeConj_apply] at hA' hB' hBA
   have hJJ : J⁻¹ * J = 1 := nonsing_inv_mul _ ((isUnit_iff_isUnit_det J).mp hJu)
-  have hJJ' : J * J⁻¹ = 1 := mul_nonsing_inv _ ((isUnit_iff_isUnit_det J).mp hJu)
-  have hBA : J⁻¹ * (B * A)ᵀ * J = A * B := by
-    calc J⁻¹ * (B * A)ᵀ * J = (J⁻¹ * Aᵀ * J) * (J⁻¹ * Bᵀ * J) := by
-          simp only [transpose_mul, Matrix.mul_assoc]
-          rw [← Matrix.mul_assoc J J⁻¹, hJJ', Matrix.one_mul]
-      _ = A * B := by rw [hA', hB', neg_mul_neg]
   have hl : transposeConj J ∘ₗ LinearMap.mulLeft K (A * B) =
       transposeConj J ∘ₗ LinearMap.mulLeft K (A * B) ∘ₗ LinearMap.mulRight K 1 := by
     ext1 Z; simp
@@ -99,8 +94,8 @@ private theorem two_mul_killingForm_skewAdjointMatricesLieSubalgebra_apply (hJ :
   let P : Matrix n n K →ₗ[K] skewAdjointMatricesLieSubalgebra J :=
     LinearMap.codRestrict (skewAdjointMatricesLieSubalgebra J).toSubmodule
       (LinearMap.id - transposeConj J) fun Z ↦
-        (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mpr (by
-          rw [← transposeConj_apply, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
+        (mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg hJu).mpr (by
+          rw [LinearMap.sub_apply, LinearMap.id_apply, map_sub,
             transposeConj_transposeConj hJ hJu, neg_sub])
   -- `P` lands in the subtype of the submodule underlying the Lie subalgebra, which is the
   -- subtype of the Lie subalgebra itself, so `LinearMap.codRestrict_apply` computes it.
@@ -110,8 +105,7 @@ private theorem two_mul_killingForm_skewAdjointMatricesLieSubalgebra_apply (hJ :
       (2 : K) • (ad K _ X ∘ₗ ad K _ Y) := by
     ext1 W
     have hW : transposeConj J (L W) = -L W := by
-      rw [transposeConj_apply]
-      refine (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mp ?_
+      refine (mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg hJu).mp ?_
       exact (skewAdjointMatricesLieSubalgebra J).lie_mem X.property
         ((skewAdjointMatricesLieSubalgebra J).lie_mem Y.property W.property)
     apply Subtype.ext

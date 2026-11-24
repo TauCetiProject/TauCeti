@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Lie.Killing.DualBasis
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Basic
-import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # Skew-adjoint Lie algebras
@@ -66,8 +66,9 @@ composite is not built here.
 
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
   matrix is equivalent to basis-free skew-adjointness.
-* `TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg`: for invertible
-  `J`, membership in `skewAdjointMatricesLieSubalgebra J` is `J⁻¹ * Aᵀ * J = -A`.
+* `TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg`: for invertible `J`,
+  membership in `skewAdjointMatricesLieSubalgebra J` is `J.transposeConj A = -A`, that is,
+  `J⁻¹ * Aᵀ * J = -A`.
 * `skewAdjointLieSubalgebra.apply_left`: a skew-adjoint endomorphism moves across its
   form with a sign change, `B (A u) w = -B u (A w)`.
 * `skewAdjointLieSubalgebra.eq_zero_of_isSelfAdjoint`: an endomorphism skew-adjoint and
@@ -175,12 +176,12 @@ end Basis
 
 open Matrix in
 /-- For an invertible `J`, a matrix lies in the Lie algebra of matrices skew-adjoint for `J`
-exactly when `J⁻¹ * Aᵀ * J = -A`. -/
-theorem mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg {R : Type u}
+exactly when `J.transposeConj A = -A`, that is, `J⁻¹ * Aᵀ * J = -A`. -/
+theorem mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg {R : Type u}
     [CommRing R] {n : Type w} [Fintype n] [DecidableEq n] {J A : Matrix n n R} (hJ : IsUnit J) :
-    A ∈ skewAdjointMatricesLieSubalgebra J ↔ J⁻¹ * Aᵀ * J = -A := by
+    A ∈ skewAdjointMatricesLieSubalgebra J ↔ J.transposeConj A = -A := by
   rw [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-    Matrix.isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJ]
+    Matrix.isSkewAdjoint_iff_transposeConj_eq_neg hJ]
 
 end TauCeti
 
