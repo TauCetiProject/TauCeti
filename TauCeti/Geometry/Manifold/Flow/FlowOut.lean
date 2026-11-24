@@ -112,10 +112,8 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
   set L := mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) p
   -- The differential `dψₜ` is injective, since `ψₜ` is a diffeomorphism.
   have hψinj : Injective (mfderiv I I (ψ p.1) (ι p.2)) := by
-    obtain ⟨e, he⟩ := (globalFlowDiffeomorph hc hn hv p.1).isInvertible_mfderiv
-      (x := ι p.2) hn0
-    rw [coe_globalFlowDiffeomorph] at he
-    exact he ▸ e.injective
+    have h := injective_mfderiv_flowOf (hv.of_le hn') hc p.1 (ι p.2)
+    rwa [flowOf_eq_globalFlow (hv.of_le hn') hc] at h
   -- Transversality makes the differential of the flow-out injective.
   have hinj : Injective L := by
     refine (injective_iff_map_eq_zero L).2 fun x hx ↦ ?_
@@ -125,10 +123,8 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
     have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
       hψinj (hL.symm.trans (hx.trans (map_zero _).symm))
-    refine htr.injective_smul_add (himm p.2) (h0.trans ?_)
-    -- The zero tangent vector at `p` is the zero of `ℝ × E'`.
-    change 0 = (0 : ℝ) • v (ι p.2) + mfderiv J I ι p.2 0
-    rw [zero_smul, map_zero, add_zero]
+    obtain ⟨ha, hw⟩ := htr.eq_zero_of_smul_add_eq_zero (himm p.2) h0
+    exact Prod.ext ha hw
   -- Source and target have the same dimension, so the differential is invertible.
   have hfin : finrank ℝ (TangentSpace (𝓘(ℝ).prod J) p) =
       finrank ℝ (TangentSpace I (ψ p.1 (ι p.2))) := by
