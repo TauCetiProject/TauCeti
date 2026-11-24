@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Data.ENNReal.Holder
-import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Prod
 
