@@ -94,6 +94,11 @@ instance : NormedSpace ℂ (DetFiber n hQ) := inferInstanceAs (NormedSpace ℂ �
 /-- The model determinant fiber is the line `ℂ`. -/
 def linearEquiv : DetFiber n hQ ≃ₗ[ℂ] ℂ := LinearEquiv.refl ℂ ℂ
 
+/-- The identification of the model determinant fiber with `ℂ` preserves norms. -/
+@[simp]
+theorem norm_linearEquiv (w : DetFiber n hQ) : ‖linearEquiv n hQ w‖ = ‖w‖ :=
+  (rfl)
+
 /-- The model determinant fiber is a line. -/
 @[simp]
 theorem finrank_eq : Module.finrank ℂ (DetFiber n hQ) = 1 :=
