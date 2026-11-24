@@ -286,6 +286,12 @@ theorem coe_pullbackFstEquiv (hg : Function.Bijective g) :
     ⇑(f.pullbackFstEquiv g hg) = f.pullbackFst g :=
   (rfl)
 
+/-- The first projection of the preimage of `r` under `pullbackFstEquiv` is `r`. -/
+@[simp]
+theorem pullbackFst_pullbackFstEquiv_symm_apply (hg : Function.Bijective g) (r : R) :
+    f.pullbackFst g ((f.pullbackFstEquiv g hg).symm r) = r :=
+  (f.pullbackFstEquiv g hg).apply_symm_apply r
+
 /-- If `f` is bijective, the second projection identifies `R ×_T S` with `S`. -/
 noncomputable def pullbackSndEquiv (hf : Function.Bijective f) : f.pullback g ≃+* S :=
   RingEquiv.ofBijective (f.pullbackSnd g)
@@ -295,6 +301,12 @@ noncomputable def pullbackSndEquiv (hf : Function.Bijective f) : f.pullback g �
 theorem coe_pullbackSndEquiv (hf : Function.Bijective f) :
     ⇑(f.pullbackSndEquiv g hf) = f.pullbackSnd g :=
   (rfl)
+
+/-- The second projection of the preimage of `s` under `pullbackSndEquiv` is `s`. -/
+@[simp]
+theorem pullbackSnd_pullbackSndEquiv_symm_apply (hf : Function.Bijective f) (s : S) :
+    f.pullbackSnd g ((f.pullbackSndEquiv g hf).symm s) = s :=
+  (f.pullbackSndEquiv g hf).apply_symm_apply s
 
 /-! ## Kernels of the projections -/
 
