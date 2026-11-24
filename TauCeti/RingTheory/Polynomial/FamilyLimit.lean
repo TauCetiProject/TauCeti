@@ -53,7 +53,6 @@ No hypothesis on `R` is needed; in particular `R` may have torsion or be the zer
 
 ## Main results
 
-* `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
 * `TauCeti.PolyFamilyLimit.ext`: an element is determined by its projections.
 * `TauCeti.PolyFamilyLimit.proj_liftCompatAlgHom`,
   `TauCeti.PolyFamilyLimit.liftCompatAlgHom_unique`: the universal property of the inverse limit.
@@ -82,12 +81,6 @@ open Polynomial
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] {ι κ ν : Type*}
-
-/-- The powers of an element of a monoid form a directed family for divisibility. This is the
-directedness hypothesis of `TauCeti.PolyFamilyLimit.cofinalEquiv` for the presentations along the
-powers of one polynomial. -/
-theorem directed_dvd_pow {M : Type*} [Monoid M] (a : M) : Directed (· ∣ ·) (fun k : ℕ ↦ a ^ k) :=
-  fun k l ↦ ⟨max k l, pow_dvd_pow a (le_max_left k l), pow_dvd_pow a (le_max_right k l)⟩
 
 /-- The compatible families in `∏ i, R[X]/(g i)`: those `x` for which, whenever `g i ∣ g j`, the
 reduction from the quotient by `g j` to the quotient by `g i` sends `x j` to `x i`. -/

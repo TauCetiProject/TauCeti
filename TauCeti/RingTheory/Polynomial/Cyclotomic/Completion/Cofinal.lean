@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Completion.Basic
 public import TauCeti.RingTheory.Polynomial.FamilyLimit
+import TauCeti.Algebra.Group.Pow
 import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
