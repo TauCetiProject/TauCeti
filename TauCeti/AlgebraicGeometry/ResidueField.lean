@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
@@ -39,8 +38,6 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   separably closed field is separably closed.
 * `AlgebraicGeometry.Spec.isIso_fromSpecResidueField`: for a field `k`, the morphism
   `Spec κ(s) ⟶ Spec k` from the residue field at the unique point is an isomorphism.
-* `AlgebraicGeometry.Scheme.Hom.isIso_fiberι`: the embedding `f⁻¹(y) ⟶ X` of a fibre is an
-  isomorphism when `Spec κ(y) ⟶ Y` is one, for instance over the spectrum of a field.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -122,13 +119,6 @@ instance Spec.isIso_fromSpecResidueField {k : Type u} [Field k] (s : Spec (.of k
     ext a; simp [Ideal.algEquivResidueFieldOfField_apply]
   rw [← Scheme.Spec.map_residueFieldIso_inv_eq_fromSpecResidueField, ← h]
   infer_instance
-
-/-- The embedding `f⁻¹(y) ⟶ X` of the fibre of `f : X ⟶ Y` over `y` is an isomorphism when
-`Spec κ(y) ⟶ Y` is one: it is the base change of `Spec κ(y) ⟶ Y` along `f`. -/
-instance Scheme.Hom.isIso_fiberι {X Y : Scheme.{u}} (f : X ⟶ Y) (y : Y)
-    [IsIso (Y.fromSpecResidueField y)] : IsIso (f.fiberι y) := by
-  unfold Scheme.Hom.fiberι
-  exact Limits.pullback_fst_iso_of_right_iso _ _
 
 section residueFieldCongr
 
