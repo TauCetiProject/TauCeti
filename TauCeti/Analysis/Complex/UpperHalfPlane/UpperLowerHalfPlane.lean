@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
-import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import Mathlib.Analysis.Complex.UpperHalfPlane.ProperAction
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
@@ -44,11 +44,11 @@ so `GL(2, ℝ)^+` acts transitively on `ℍ` with stabilizer `ℝ^× SO(2) ∩ G
 * `TauCeti.UpperLowerHalfPlane.quotientStabilizerHomeomorph`: the equivariant homeomorphism
   `GL(2, ℝ) ⧸ stabilizer i ≃ₜ ℍ^±`.
 * `TauCeti.UpperLowerHalfPlane.exists_det_pos_smul_I_eq` and
-  `TauCeti.UpperLowerHalfPlane.gl_smul_I_eq_I_iff_of_det_pos`: transitivity of `GL(2, ℝ)^+` on
-  `ℍ` and its stabilizer of `i`.
+  `TauCeti.UpperLowerHalfPlane.gl_smul_I_eq_I_iff_smul_I_eq_I_of_det_pos`: transitivity of
+  `GL(2, ℝ)^+` on `ℍ` and its stabilizer of `i`.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -57,18 +57,18 @@ open UpperHalfPlane Matrix ComplexConjugate
 namespace TauCeti
 
 /-- The union `ℍ^± = ℂ ∖ ℝ` of the upper and lower half-planes, with the subspace topology. -/
-def UpperLowerHalfPlane : Type := {z : ℂ // z.im ≠ 0}
+@[expose] def UpperLowerHalfPlane : Type := {z : ℂ // z.im ≠ 0}
 deriving TopologicalSpace
 
 namespace UpperLowerHalfPlane
 
 /-- The complex number underlying a point of `ℍ^±`. -/
-@[coe] def coe (z : UpperLowerHalfPlane) : ℂ := z.val
+@[coe, expose] def coe (z : UpperLowerHalfPlane) : ℂ := z.val
 
 instance instCoeOut : CoeOut UpperLowerHalfPlane ℂ := ⟨coe⟩
 
 /-- The point of `ℍ^±` given by a complex number with nonzero imaginary part. -/
-def mk (z : ℂ) (hz : z.im ≠ 0) : UpperLowerHalfPlane := ⟨z, hz⟩
+@[expose] def mk (z : ℂ) (hz : z.im ≠ 0) : UpperLowerHalfPlane := ⟨z, hz⟩
 
 @[simp]
 theorem coe_mk (z : ℂ) (hz : z.im ≠ 0) : ((mk z hz : UpperLowerHalfPlane) : ℂ) = z := rfl
@@ -83,27 +83,6 @@ theorem isEmbedding_coe : Topology.IsEmbedding ((↑) : UpperLowerHalfPlane → 
 
 @[fun_prop]
 theorem continuous_coe : Continuous ((↑) : UpperLowerHalfPlane → ℂ) := continuous_subtypeVal
-
-theorem moebius_im_ne_zero (g : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
-    (num g z / denom g z).im ≠ 0 := by
-  rw [moebius_im]
-  exact div_ne_zero (mul_ne_zero g.det.ne_zero hz) (normSq_denom_ne_zero g hz)
-
-/-- The numerator of a raw Möbius transformation transforms like the denominator: this is
-the companion of `UpperHalfPlane.denom_cocycle`. -/
-theorem num_mul (g h : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
-    num (g * h) z = num g (num h z / denom h z) * denom h z := by
-  rw [show num g (num h z / denom h z) = (g 0 0 : ℂ) * (num h z / denom h z) + g 0 1 from rfl,
-    add_mul, mul_assoc, div_mul_cancel₀ _ (denom_ne_zero_of_im h hz)]
-  simp only [num, denom, Units.val_mul, Matrix.mul_apply, Fin.sum_univ_two, Complex.ofReal_add,
-    Complex.ofReal_mul]
-  ring
-
-theorem moebius_mul (g h : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
-    num (g * h) z / denom (g * h) z =
-      num g (num h z / denom h z) / denom g (num h z / denom h z) := by
-  rw [num_mul g h hz, denom_cocycle g h hz,
-    mul_div_mul_right _ _ (denom_ne_zero_of_im h hz)]
 
 /-- The raw Möbius action `z ↦ (a z + b) / (c z + d)` of `GL(2, ℝ)` on `ℍ^±`. Unlike
 `UpperHalfPlane.glAction`, a matrix of negative determinant exchanges the two half-planes. -/
@@ -125,21 +104,31 @@ theorem im_smul_pos_iff (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) :
     0 < ((g • z : UpperLowerHalfPlane) : ℂ).im ↔ 0 < g.det.val * (z : ℂ).im := by
   rw [im_smul, div_pos_iff_of_pos_right (normSq_denom_pos g z.im_ne_zero)]
 
+/-- A raw Möbius image lies in the lower half-plane exactly when `det g * Im z < 0`. -/
+theorem im_smul_neg_iff (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) :
+    ((g • z : UpperLowerHalfPlane) : ℂ).im < 0 ↔ g.det.val * (z : ℂ).im < 0 := by
+  rw [im_smul, div_lt_iff₀ (normSq_denom_pos g z.im_ne_zero), zero_mul]
+
+/-- The raw action of `GL(2, ℝ)` on `ℍ^±` is jointly continuous. -/
+instance instContinuousSMul : ContinuousSMul (GL (Fin 2) ℝ) UpperLowerHalfPlane where
+  continuous_smul := by
+    refine isEmbedding_coe.continuous_iff.2 ?_
+    simp only [Function.comp_def, coe_smul]
+    exact ((num_continuous.comp (continuous_fst.prodMk (continuous_coe.comp continuous_snd))).div
+      (denom_continuous.comp (continuous_fst.prodMk (continuous_coe.comp continuous_snd)))
+      fun p ↦ denom_ne_zero_of_im p.1 p.2.im_ne_zero)
+
 /-- The orbit map `g ↦ g • z` of the raw action is continuous. -/
 theorem continuous_smul_left (z : UpperLowerHalfPlane) :
-    Continuous fun g : GL (Fin 2) ℝ ↦ g • z := by
-  refine isEmbedding_coe.continuous_iff.2 ?_
-  change Continuous fun g : GL (Fin 2) ℝ ↦ num g z / denom g z
-  exact ((num_continuous.comp (continuous_id.prodMk continuous_const)).div
-    (denom_continuous.comp (continuous_id.prodMk continuous_const))
-    fun g ↦ denom_ne_zero_of_im g z.im_ne_zero)
+    Continuous fun g : GL (Fin 2) ℝ ↦ g • z :=
+  continuous_id.smul continuous_const
 
 /-- The point of `ℍ^±` given by a point of the upper half-plane. -/
 def ofUpperHalfPlane (τ : ℍ) : UpperLowerHalfPlane := mk τ τ.im_ne_zero
 
 @[simp]
 theorem coe_ofUpperHalfPlane (τ : ℍ) : ((ofUpperHalfPlane τ : UpperLowerHalfPlane) : ℂ) = τ :=
-  rfl
+  (rfl)
 
 theorem ofUpperHalfPlane_injective : Function.Injective ofUpperHalfPlane :=
   fun _ _ h ↦ UpperHalfPlane.ext (congrArg coe h)
@@ -181,16 +170,12 @@ theorem fold_smul (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) : fold (g • z
   · rw [coe_fold_of_im_pos ((im_smul_pos_iff g z).2 (mul_pos_of_neg_of_neg hdet hz)),
       coe_fold_of_im_neg hz, σ, hconj]
     simp [coe_smul, h'.not_gt]
-  · rw [coe_fold_of_im_neg ?_, coe_fold_of_im_pos hz, σ]
-    · simp [coe_smul, h'.not_gt]
-    · rw [im_smul]
-      exact div_neg_of_neg_of_pos (mul_neg_of_neg_of_pos hdet hz)
-        (normSq_denom_pos g z.im_ne_zero)
-  · rw [coe_fold_of_im_neg ?_, coe_fold_of_im_neg hz, σ, hconj]
-    · simp [coe_smul, h']
-    · rw [im_smul]
-      exact div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg hdet hz)
-        (normSq_denom_pos g z.im_ne_zero)
+  · rw [coe_fold_of_im_neg ((im_smul_neg_iff g z).2 (mul_neg_of_neg_of_pos hdet hz)),
+      coe_fold_of_im_pos hz, σ]
+    simp [coe_smul, h'.not_gt]
+  · rw [coe_fold_of_im_neg ((im_smul_neg_iff g z).2 (mul_neg_of_pos_of_neg hdet hz)),
+      coe_fold_of_im_neg hz, σ, hconj]
+    simp [coe_smul, h']
   · rw [coe_fold_of_im_pos ((im_smul_pos_iff g z).2 (mul_pos hdet hz)), coe_fold_of_im_pos hz, σ]
     simp [coe_smul, h']
 
@@ -198,17 +183,17 @@ theorem fold_smul (g : GL (Fin 2) ℝ) (z : UpperLowerHalfPlane) : fold (g • z
 def I : UpperLowerHalfPlane := ofUpperHalfPlane UpperHalfPlane.I
 
 @[simp]
-theorem coe_I : ((I : UpperLowerHalfPlane) : ℂ) = Complex.I := rfl
+theorem coe_I : ((I : UpperLowerHalfPlane) : ℂ) = Complex.I := (rfl)
+
+@[simp]
+theorem fold_I : fold I = UpperHalfPlane.I := fold_ofUpperHalfPlane _
 
 /-- An element of `GL(2, ℝ)` fixes `i` in the raw action exactly when it has the form
 `!![a, b; -b, a]`. -/
 theorem smul_I_eq_I_iff (g : GL (Fin 2) ℝ) : g • I = I ↔ g 0 0 = g 1 1 ∧ g 0 1 = -g 1 0 := by
   have hd := denom_ne_zero_of_im g (z := Complex.I) (by simp)
   rw [UpperLowerHalfPlane.ext_iff, coe_smul, coe_I, div_eq_iff hd]
-  simp only [num, denom, Complex.ext_iff, Fin.isValue, Complex.add_re, Complex.mul_re,
-    Complex.ofReal_re, Complex.I_re, mul_zero, Complex.ofReal_im, Complex.I_im, mul_one, sub_self,
-    zero_add, zero_mul, Complex.add_im, Complex.mul_im, add_zero, one_mul, zero_sub]
-  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  simp [num, denom, Complex.ext_iff, and_comm]
 
 /-- The stabilizer of `i` in the raw action is `ℝ^× SO(2)`: its elements are the nonzero real
 multiples of the rotations `!![cos θ, sin θ; -sin θ, cos θ]`. -/
@@ -254,7 +239,12 @@ def sectionGL (z : UpperLowerHalfPlane) : GL (Fin 2) ℝ where
 
 @[simp]
 theorem coe_sectionGL (z : UpperLowerHalfPlane) :
-    (sectionGL z : Matrix (Fin 2) (Fin 2) ℝ) = !![(z : ℂ).im, (z : ℂ).re; 0, 1] := rfl
+    (sectionGL z : Matrix (Fin 2) (Fin 2) ℝ) = !![(z : ℂ).im, (z : ℂ).re; 0, 1] := (rfl)
+
+theorem coe_sectionGL_inv (z : UpperLowerHalfPlane) :
+    (((sectionGL z)⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![((z : ℂ).im)⁻¹, -(z : ℂ).re * ((z : ℂ).im)⁻¹; 0, 1] :=
+  (rfl)
 
 theorem det_sectionGL (z : UpperLowerHalfPlane) : (sectionGL z).det.val = (z : ℂ).im := by
   simp [GeneralLinearGroup.val_det_apply, det_fin_two]
@@ -270,12 +260,11 @@ theorem continuous_sectionGL : Continuous sectionGL := by
   have hinv : Continuous fun z : UpperLowerHalfPlane ↦ ((z : ℂ).im)⁻¹ :=
     him.inv₀ fun z ↦ z.im_ne_zero
   refine Units.continuous_iff.2 ⟨?_, ?_⟩
-  · change Continuous fun z : UpperLowerHalfPlane ↦ !![(z : ℂ).im, (z : ℂ).re; 0, 1]
+  · simp only [Function.comp_def, coe_sectionGL]
     refine continuous_matrix fun i j ↦ ?_
     fin_cases i <;> fin_cases j
     exacts [him, hre, continuous_const, continuous_const]
-  · change Continuous fun z : UpperLowerHalfPlane ↦
-      !![((z : ℂ).im)⁻¹, -(z : ℂ).re * ((z : ℂ).im)⁻¹; 0, 1]
+  · simp only [coe_sectionGL_inv]
     refine continuous_matrix fun i j ↦ ?_
     fin_cases i <;> fin_cases j
     exacts [hinv, hre.neg.mul hinv, continuous_const, continuous_const]
@@ -303,13 +292,19 @@ def quotientStabilizerHomeomorph :
 theorem quotientStabilizerHomeomorph_mk (g : GL (Fin 2) ℝ) :
     quotientStabilizerHomeomorph (g : GL (Fin 2) ℝ ⧸ MulAction.stabilizer (GL (Fin 2) ℝ) I) =
       g • I :=
-  rfl
+  (rfl)
 
 /-- The homeomorphism `GL(2, ℝ) ⧸ ℝ^× SO(2) ≃ₜ ℍ^±` is `GL(2, ℝ)`-equivariant. -/
 theorem quotientStabilizerHomeomorph_smul (g : GL (Fin 2) ℝ)
     (q : GL (Fin 2) ℝ ⧸ MulAction.stabilizer (GL (Fin 2) ℝ) I) :
     quotientStabilizerHomeomorph (g • q) = g • quotientStabilizerHomeomorph q :=
   MulAction.ofQuotientStabilizer_smul _ _ g q
+
+@[simp]
+theorem quotientStabilizerHomeomorph_symm_apply (z : UpperLowerHalfPlane) :
+    quotientStabilizerHomeomorph.symm z =
+      (sectionGL z : GL (Fin 2) ℝ ⧸ MulAction.stabilizer (GL (Fin 2) ℝ) I) :=
+  (rfl)
 
 /-- `GL(2, ℝ)^+` acts transitively on the upper half-plane: the section `x + i y ↦
 !![y, x; 0, 1]` has positive determinant on `ℍ`. -/
@@ -323,7 +318,7 @@ theorem exists_det_pos_smul_I_eq (τ : ℍ) :
 
 /-- The stabilizer of `i` in `GL(2, ℝ)^+` for `UpperHalfPlane.glAction` is the positive
 determinant part of the raw stabilizer `ℝ^× SO(2)`. -/
-theorem gl_smul_I_eq_I_iff_of_det_pos {g : GL (Fin 2) ℝ} (hg : 0 < g.det.val) :
+theorem gl_smul_I_eq_I_iff_smul_I_eq_I_of_det_pos {g : GL (Fin 2) ℝ} (hg : 0 < g.det.val) :
     g • UpperHalfPlane.I = UpperHalfPlane.I ↔ g • I = I := by
   rw [I, ← ofUpperHalfPlane_smul_of_det_pos hg]
   exact ofUpperHalfPlane_injective.eq_iff.symm
