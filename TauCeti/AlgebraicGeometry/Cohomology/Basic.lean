@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.Topology.Sheaves.Abelian
+public import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # Cohomology of sheaves of modules on a scheme
@@ -118,7 +119,6 @@ abbrev cohomologyOnRes (n : ℕ) {U V : Opens X} (h : U ≤ V) :
   (CategoryTheory.Sheaf.cohomologyPresheaf.{u}
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) n).map (homOfLE h).op
 
-@[simp]
 lemma cohomologyOnRes_refl (n : ℕ) (U : Opens X) :
     cohomologyOnRes M n (le_refl U) = 𝟙 _ := by
   dsimp only [cohomologyOnRes]
