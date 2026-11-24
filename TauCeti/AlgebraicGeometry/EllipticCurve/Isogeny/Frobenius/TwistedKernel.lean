@@ -64,28 +64,22 @@ theorem _root_.WeierstrassCurve.card_twistedFrobeniusKernel (L : Type*) [Field L
       (Nat.card F ^ i) • Point.map (FiniteField.frobeniusAlgHom F L) P = P ↔
         (r • ofIsogeny (baseChangeFrobenius L W)).pointMap P = P := by
     rw [zsmul_pointMap, pointMap_ofIsogeny_baseChangeFrobenius, hr, natCast_zsmul]
-  -- The degree `D = q r² - a_q r + 1` of `r π - 1` is `1` in `F`, hence prime to `p`.
-  set D := (r • ofIsogeny (baseChangeFrobenius L W) - (1 : ℤ) • id (W⁄L).toAffine).degree
-    with hD
-  have hDint : (D : ℤ) = Nat.card F * r ^ 2 - W.frobeniusTrace * r + 1 := by
-    rw [hD, degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace, mul_one,
-      one_pow]
-  have hcop : D.Coprime (ringChar F) := by
+  -- The degree `q r² - a_q r + 1` of `r π - 1` is `1` in `F`, hence prime to `p`.
+  set f := r • ofIsogeny (baseChangeFrobenius L W) - 1 with hf
+  have hcop : f.degree.Coprime (ringChar F) := by
     refine coprime_ringChar_of_natCast_ne_zero (CharP.prime_ringChar F) ?_
-    rw [← Int.cast_natCast, hDint]
+    rw [← Int.cast_natCast, hf, degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_one]
     simp [hr, Nat.card_eq_fintype_card, Nat.one_le_iff_ne_zero.mp hi]
-  have hpos : 0 < D := by
-    rw [hD, Nat.pos_iff_ne_zero, Ne, degree_eq_zero_iff]
-    exact zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_ne_zero (K := L) W r 1 (by simp)
+  have hpos : 0 < f.degree := by
+    rw [Nat.pos_iff_ne_zero, Ne, degree_eq_zero_iff]
+    exact zsmul_ofIsogeny_baseChangeFrobenius_sub_one_ne_zero W r
   -- So the twisted kernel is exactly the set of points fixed by `r π`.
   have hset : (W.twistedFrobeniusKernel L i : Set (W⁄L).toAffine.Point) =
       {P | (r • ofIsogeny (baseChangeFrobenius L W)).pointMap P = P} := by
     ext P
     simp only [SetLike.mem_coe, mem_twistedFrobeniusKernel_iff, Set.mem_ofPred_eq, hfix,
       and_iff_right_iff_imp]
-    refine fun hP ↦ ⟨D, hpos, hcop, ?_⟩
-    rw [hD, one_zsmul, ← one_def]
-    exact degree_sub_one_nsmul_eq_zero_of_pointMap_eq_self hP
+    exact fun hP ↦ ⟨f.degree, hpos, hcop, degree_sub_one_nsmul_eq_zero_of_pointMap_eq_self hP⟩
   rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq, hset,
     ncard_fixedPoints_zsmul_ofIsogeny_baseChangeFrobenius, hr]
   push_cast
