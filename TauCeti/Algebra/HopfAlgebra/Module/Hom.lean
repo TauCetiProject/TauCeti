@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Bialgebra.Module.TensorProduct
 public import Mathlib.Algebra.Module.BigOperators
 public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
+public import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.Algebra.Coalgebra.Basic
 
 /-!
 # The internal Hom of modules over a Hopf algebra
@@ -41,11 +43,12 @@ coproduct and the two commuting actions by pre- and postcomposition. For modules
 * `TauCeti.BialgebraModule.linHomEval`: evaluation `M ⊗ Hom_R(M, N) → N`, which is `H`-linear.
 * `TauCeti.BialgebraModule.linHomCoeval`: the map `X → Hom_R(M, M ⊗ X)`, `x ↦ (m ↦ m ⊗ x)`, which is
   `H`-linear.
-* `TauCeti.BialgebraModule.linHomPostcomp`: postcomposition with an `H`-linear map.
+* `TauCeti.BialgebraModule.linHomPostcomp`, `TauCeti.BialgebraModule.linHomPrecomp`: post- and
+  precomposition with an `H`-linear map.
 * `TauCeti.BialgebraModule.tensorLinHomEquiv`: the tensor-Hom adjunction
   `Hom_H(M ⊗ X, N) ≃ Hom_H(X, Hom_R(M, N))`.
-* `TauCeti.BialgebraModule.forall_smul_eq_counit_smul_iff`: the fixed points of the action are the
-  `H`-linear maps.
+* `TauCeti.BialgebraModule.LinHom.forall_smul_eq_counit_smul_iff`: the fixed points of the action
+  are the `H`-linear maps.
 
 ## References
 
@@ -101,21 +104,26 @@ theorem hopfLinHom_apply_eq_sum (ρ : H →ₐ[R] Module.End R V) (σ : H →ₐ
   ext v
   simp [hopfLinHomPre, hopfLinHomPost]
 
-/-- A group-like element acts on linear maps by conjugation. -/
+/-- An element whose coproduct is a pure tensor `b ⊗ c` acts on linear maps by
+`f ↦ σ(c) ∘ f ∘ ρ(S⁻¹(b))`. For instance, an element `g` with coproduct `g ⊗ g` acts by
+`f ↦ σ(g) ∘ f ∘ ρ(S⁻¹(g))`. -/
 theorem hopfLinHom_apply_of_comul_eq_tmul (ρ : H →ₐ[R] Module.End R V)
     (σ : H →ₐ[R] Module.End R W) (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H))
-    {a : H} (ha : comul (R := R) a = a ⊗ₜ[R] a) (f : V →ₗ[R] W) :
-    ρ.hopfLinHom σ hS a f = σ a ∘ₗ f ∘ₗ ρ (inverseAntipode hS a) := by
-  simpa using ρ.hopfLinHom_apply_eq_sum σ hS ⟨{()}, fun _ => a, fun _ => a, by simp [ha]⟩ f
+    {a b c : H} (ha : comul (R := R) a = b ⊗ₜ[R] c) (f : V →ₗ[R] W) :
+    ρ.hopfLinHom σ hS a f = σ c ∘ₗ f ∘ₗ ρ (inverseAntipode hS b) := by
+  simpa using ρ.hopfLinHom_apply_eq_sum σ hS ⟨{()}, fun _ => b, fun _ => c, by simp [ha]⟩ f
 
-/-- A primitive element acts on linear maps by the sum of post- and precomposition. -/
-theorem hopfLinHom_apply_of_comul_eq_add (ρ : H →ₐ[R] Module.End R V)
+/-- An element whose coproduct is a sum of two pure tensors `b₁ ⊗ c₁ + b₂ ⊗ c₂` acts on linear
+maps by `f ↦ σ(c₁) ∘ f ∘ ρ(S⁻¹(b₁)) + σ(c₂) ∘ f ∘ ρ(S⁻¹(b₂))`. For instance, an element `d` with
+coproduct `d ⊗ 1 + 1 ⊗ d` acts by `f ↦ f ∘ ρ(S⁻¹(d)) + σ(d) ∘ f`, precomposition with
+`ρ(S⁻¹(d))` plus postcomposition with `σ(d)`. -/
+theorem hopfLinHom_apply_of_comul_eq_tmul_add_tmul (ρ : H →ₐ[R] Module.End R V)
     (σ : H →ₐ[R] Module.End R W) (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H))
-    {a : H} (ha : comul (R := R) a = a ⊗ₜ[R] 1 + 1 ⊗ₜ[R] a) (f : V →ₗ[R] W) :
-    ρ.hopfLinHom σ hS a f = f ∘ₗ ρ (inverseAntipode hS a) + σ a ∘ₗ f := by
-  have := ρ.hopfLinHom_apply_eq_sum σ hS (a := a)
-    ⟨Finset.univ, ![a, 1], ![1, a], by simp [ha, Fin.sum_univ_two]⟩ f
-  simpa [Fin.sum_univ_two, inverseAntipode_one, Module.End.one_eq_id] using this
+    {a b₁ c₁ b₂ c₂ : H} (ha : comul (R := R) a = b₁ ⊗ₜ[R] c₁ + b₂ ⊗ₜ[R] c₂) (f : V →ₗ[R] W) :
+    ρ.hopfLinHom σ hS a f =
+      σ c₁ ∘ₗ f ∘ₗ ρ (inverseAntipode hS b₁) + σ c₂ ∘ₗ f ∘ₗ ρ (inverseAntipode hS b₂) := by
+  simpa [Fin.sum_univ_two] using ρ.hopfLinHom_apply_eq_sum σ hS (a := a)
+    ⟨Finset.univ, ![b₁, b₂], ![c₁, c₂], by simp [ha, Fin.sum_univ_two]⟩ f
 
 end AlgHom
 
@@ -169,10 +177,15 @@ noncomputable def linHomEquiv : LinHom R H M N hS ≃ₗ[R] (M →ₗ[R] N) :=
     LinearMap.congr_fun
       (((Algebra.lsmul R R M).hopfLinHom (Algebra.lsmul R R N) hS).commutes r) f
 
+/-- Qi's module of linear maps is finite over the base when the linear maps are. -/
+instance [Module.Finite R (M →ₗ[R] N)] : Module.Finite R (LinHom R H M N hS) :=
+  Module.Finite.equiv (linHomEquiv R H M N hS).symm
+
 end Defs
 
-variable {R H M X N N' : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+variable {R H M M' X N N' : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
   [AddCommMonoid M] [Module R M] [Module H M] [IsScalarTower R H M]
+  [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
   [AddCommMonoid N] [Module R N] [Module H N] [IsScalarTower R H N]
   [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
   [AddCommMonoid X] [Module R X] [Module H X] [IsScalarTower R H X]
@@ -198,22 +211,23 @@ theorem linHomEquiv_smul_apply_eq_sum {h : H} {ι : Type*} (𝓡 : Repr R h ι)
       ∑ i ∈ 𝓡.index, 𝓡.right i • linHomEquiv R H M N hS f (inverseAntipode hS (𝓡.left i) • m) := by
   simp [linHomEquiv_smul, AlgHom.hopfLinHom_apply_eq_sum _ _ hS 𝓡]
 
-/-- A group-like element acts by conjugation, `(g • f)(m) = g • f(S⁻¹(g) • m)`. -/
-theorem linHomEquiv_smul_apply_of_comul_eq_tmul {g : H} (hg : comul (R := R) g = g ⊗ₜ[R] g)
+/-- An element whose coproduct is a pure tensor `b ⊗ c` acts by
+`(a • f)(m) = c • f(S⁻¹(b) • m)`. For instance, an element `g` with coproduct `g ⊗ g` acts by
+`(g • f)(m) = g • f(S⁻¹(g) • m)`. -/
+theorem linHomEquiv_smul_apply_of_comul_eq_tmul {a b c : H} (ha : comul (R := R) a = b ⊗ₜ[R] c)
     (f : LinHom R H M N hS) (m : M) :
-    linHomEquiv R H M N hS (g • f) m =
-      g • linHomEquiv R H M N hS f (inverseAntipode hS g • m) := by
-  simpa using linHomEquiv_smul_apply_eq_sum ⟨{()}, fun _ => g, fun _ => g, by simp [hg]⟩ f m
+    linHomEquiv R H M N hS (a • f) m = c • linHomEquiv R H M N hS f (inverseAntipode hS b • m) := by
+  simp [linHomEquiv_smul, AlgHom.hopfLinHom_apply_of_comul_eq_tmul _ _ hS ha]
 
-/-- A primitive element acts by `(d • f)(m) = f(S⁻¹(d) • m) + d • f(m)`; when `S⁻¹(d) = -d`
-this is the commutator of `f` with the action of `d`. -/
-theorem linHomEquiv_smul_apply_of_comul_eq_add {d : H}
-    (hd : comul (R := R) d = d ⊗ₜ[R] 1 + 1 ⊗ₜ[R] d) (f : LinHom R H M N hS) (m : M) :
-    linHomEquiv R H M N hS (d • f) m =
-      linHomEquiv R H M N hS f (inverseAntipode hS d • m) + d • linHomEquiv R H M N hS f m := by
-  have := linHomEquiv_smul_apply_eq_sum (hS := hS) (h := d)
-    ⟨Finset.univ, ![d, 1], ![1, d], by simp [hd, Fin.sum_univ_two]⟩ f m
-  simpa [Fin.sum_univ_two, inverseAntipode_one] using this
+/-- An element whose coproduct is a sum of two pure tensors `b₁ ⊗ c₁ + b₂ ⊗ c₂` acts by
+`(a • f)(m) = c₁ • f(S⁻¹(b₁) • m) + c₂ • f(S⁻¹(b₂) • m)`. For instance, an element `d` with
+coproduct `d ⊗ 1 + 1 ⊗ d` acts by `(d • f)(m) = f(S⁻¹(d) • m) + d • f(m)`. -/
+theorem linHomEquiv_smul_apply_of_comul_eq_tmul_add_tmul {a b₁ c₁ b₂ c₂ : H}
+    (ha : comul (R := R) a = b₁ ⊗ₜ[R] c₁ + b₂ ⊗ₜ[R] c₂) (f : LinHom R H M N hS) (m : M) :
+    linHomEquiv R H M N hS (a • f) m =
+      c₁ • linHomEquiv R H M N hS f (inverseAntipode hS b₁ • m) +
+        c₂ • linHomEquiv R H M N hS f (inverseAntipode hS b₂ • m) := by
+  simp [linHomEquiv_smul, AlgHom.hopfLinHom_apply_of_comul_eq_tmul_add_tmul _ _ hS ha]
 
 /-! ### Evaluation -/
 
@@ -357,9 +371,75 @@ theorem linHomPostcomp_id : linHomPostcomp M hS (LinearMap.id : N →ₗ[H] N) =
   ext; simp
 
 /-- Postcomposition is functorial. -/
+@[simp]
 theorem linHomPostcomp_comp {N'' : Type*} [AddCommMonoid N''] [Module R N''] [Module H N'']
     [IsScalarTower R H N''] (g : N →ₗ[H] N') (g' : N' →ₗ[H] N'') :
     linHomPostcomp M hS (g' ∘ₗ g) = linHomPostcomp M hS g' ∘ₗ linHomPostcomp M hS g := by
+  ext; simp
+
+/-- Postcomposition with zero is zero. -/
+@[simp]
+theorem linHomPostcomp_zero : linHomPostcomp M hS (0 : N →ₗ[H] N') = 0 := by
+  ext; simp
+
+/-- Postcomposition is additive in the `H`-linear map. -/
+@[simp]
+theorem linHomPostcomp_add (g g' : N →ₗ[H] N') :
+    linHomPostcomp M hS (g + g') = linHomPostcomp M hS g + linHomPostcomp M hS g' := by
+  ext; simp
+
+/-- Postcomposition is `R`-linear in the `H`-linear map. -/
+@[simp]
+theorem linHomPostcomp_smul (r : R) (g : N →ₗ[H] N') :
+    linHomPostcomp M hS (r • g) = r • linHomPostcomp M hS g := by
+  ext; simp
+
+/-! ### Precomposition -/
+
+variable (N hS) in
+/-- Precomposition with an `H`-linear map `g : M' → M`, as an `H`-linear map
+`Hom_R(M, N) → Hom_R(M', N)`. -/
+noncomputable def linHomPrecomp (g : M' →ₗ[H] M) : LinHom R H M N hS →ₗ[H] LinHom R H M' N hS where
+  toFun f := (linHomEquiv R H M' N hS).symm
+    ((linHomEquiv R H M N hS f).comp (g.restrictScalars R))
+  map_add' f f' := by ext; simp
+  map_smul' h f := by
+    ext m
+    simp [linHomEquiv_smul_apply_eq_sum (Repr.arbitrary R h)]
+
+/-- Precomposition applies the linear map after the `H`-linear map. -/
+@[simp]
+theorem linHomEquiv_linHomPrecomp_apply (g : M' →ₗ[H] M) (f : LinHom R H M N hS) (m : M') :
+    linHomEquiv R H M' N hS (linHomPrecomp N hS g f) m = linHomEquiv R H M N hS f (g m) := by
+  simp [linHomPrecomp]
+
+/-- Precomposition with the identity is the identity. -/
+@[simp]
+theorem linHomPrecomp_id : linHomPrecomp N hS (LinearMap.id : M →ₗ[H] M) = LinearMap.id := by
+  ext; simp
+
+/-- Precomposition is contravariantly functorial. -/
+@[simp]
+theorem linHomPrecomp_comp {M'' : Type*} [AddCommMonoid M''] [Module R M''] [Module H M'']
+    [IsScalarTower R H M''] (g : M' →ₗ[H] M) (g' : M'' →ₗ[H] M') :
+    linHomPrecomp N hS (g ∘ₗ g') = linHomPrecomp N hS g' ∘ₗ linHomPrecomp N hS g := by
+  ext; simp
+
+/-- Precomposition with zero is zero. -/
+@[simp]
+theorem linHomPrecomp_zero : linHomPrecomp N hS (0 : M' →ₗ[H] M) = 0 := by
+  ext; simp
+
+/-- Precomposition is additive in the `H`-linear map. -/
+@[simp]
+theorem linHomPrecomp_add (g g' : M' →ₗ[H] M) :
+    linHomPrecomp N hS (g + g') = linHomPrecomp N hS g + linHomPrecomp N hS g' := by
+  ext; simp
+
+/-- Precomposition is `R`-linear in the `H`-linear map. -/
+@[simp]
+theorem linHomPrecomp_smul (r : R) (g : M' →ₗ[H] M) :
+    linHomPrecomp N hS (r • g) = r • linHomPrecomp N hS g := by
   ext; simp
 
 /-! ### The tensor-Hom adjunction -/
@@ -393,15 +473,12 @@ theorem tensorLinHomEquiv_symm_apply_tmul (φ : X →ₗ[H] LinHom R H M N hS) (
 
 /-- The fixed points of Qi's action are the `H`-linear maps: `h • f = ε(h) f` for every `h`
 exactly when `f (h • m) = h • f m` for every `h` and `m`. -/
-theorem forall_smul_eq_counit_smul_iff (f : LinHom R H M N hS) :
+theorem LinHom.forall_smul_eq_counit_smul_iff (f : LinHom R H M N hS) :
     (∀ h : H, h • f = counit (R := R) h • f) ↔
       ∀ (h : H) (m : M), linHomEquiv R H M N hS f (h • m) = h • linHomEquiv R H M N hS f m := by
   constructor
   · intro hf h m
     let 𝓡 := Repr.arbitrary R h
-    have hsum : ∑ i ∈ 𝓡.index, counit (R := R) (𝓡.right i) • 𝓡.left i = h := by
-      have := congrArg (TensorProduct.rid R H) (sum_tmul_counit_eq 𝓡)
-      simpa only [map_sum, TensorProduct.rid_tmul, one_smul] using this
     -- Evaluation is `H`-linear, so `h • f m` is `∑ (h₂ • f)(h₁ • m) = ∑ ε(h₂) f(h₁ • m)`.
     symm
     calc h • linHomEquiv R H M N hS f m = linHomEval R H M N hS (h • tmul R H m f) := by
@@ -410,7 +487,7 @@ theorem forall_smul_eq_counit_smul_iff (f : LinHom R H M N hS) :
             counit (R := R) (𝓡.right i) • linHomEquiv R H M N hS f (𝓡.left i • m) := by
           simp [smul_tmul_eq_sum 𝓡, hf]
       _ = linHomEquiv R H M N hS f (h • m) := by
-          conv_rhs => rw [← hsum, Finset.sum_smul, map_sum]
+          conv_rhs => rw [← sum_smul_counit 𝓡, Finset.sum_smul, map_sum]
           simp [smul_assoc]
   · intro hf h
     ext m
