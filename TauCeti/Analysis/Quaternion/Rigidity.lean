@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Algebra.Quaternion.Basic
+import TauCeti.Topology.Algebra.Star.Pointwise
 
 /-!
 # Rigidity of one-sided quaternionic quotient differentiation
@@ -59,11 +60,6 @@ private theorem hasRightQuotientFDerivAt_of_eqOn_add_mul {a b q : ℍ} (hs : IsO
     (hab : ∀ x ∈ s, f x = a + b * x) : HasRightQuotientFDerivAt f q b :=
   ((hasRightQuotientFDerivAt_const_mul b q).const_add a).congr_of_eventuallyEq
     (eventually_of_mem (hs.mem_nhds hq) hab)
-
-/-- Quaternionic conjugation maps open sets to open sets. -/
-private theorem isOpen_star (hs : IsOpen s) : IsOpen (star s) := by
-  rw [← Set.star_preimage]
-  exact hs.preimage continuous_star
 
 /-- Pointwise left quotient differentiability on an open set implies real smoothness.
 The regularity is a consequence, not a hypothesis, of the one-sided derivative condition. -/
@@ -178,7 +174,7 @@ theorem leftQuotientDifferentiableOn_iff_affine_on_connectedComponentIn (hs : Is
 theorem RightQuotientDifferentiableOn.contDiffOn (hf : RightQuotientDifferentiableOn f s)
     (hs : IsOpen s) {n : ℕ∞ω} : ContDiffOn ℝ n f s := by
   have hT : ContDiffOn ℝ n (fun x ↦ star (f (star x))) (star s) :=
-    (leftQuotientDifferentiableOn_star_star_iff.mpr hf).contDiffOn (isOpen_star hs)
+    (leftQuotientDifferentiableOn_star_star_iff.mpr hf).contDiffOn hs.star
   have hc := (starL' ℝ : ℍ ≃L[ℝ] ℍ).contDiff.comp_contDiffOn
     (hT.comp (starL' ℝ : ℍ ≃L[ℝ] ℍ).contDiff.contDiffOn fun x hx ↦ Set.star_mem_star.mpr hx)
   simpa [Function.comp_def] using hc
@@ -190,7 +186,7 @@ theorem rightQuotient_rigidity (hs : IsOpen s) (hc : IsPreconnected s) :
     RightQuotientDifferentiableOn f s ↔ ∃ a b : ℍ, ∀ q ∈ s, f q = a + b * q := by
   have hc' : IsPreconnected (star s) := by
     simpa only [Set.image_star] using hc.image star continuous_star.continuousOn
-  rw [← leftQuotientDifferentiableOn_star_star_iff, leftQuotient_rigidity (isOpen_star hs) hc']
+  rw [← leftQuotientDifferentiableOn_star_star_iff, leftQuotient_rigidity hs.star hc']
   constructor
   · rintro ⟨a, b, hab⟩
     refine ⟨star a, star b, fun q hq ↦ ?_⟩
