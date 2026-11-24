@@ -59,7 +59,8 @@ topological groups, `G₁` and `G₁^ι` are the groups whose completed group al
 ## References
 
 * K. Ardakov and S. Wadsley, *On irreducible representations of compact `p`-adic analytic
-  groups*, Ann. of Math. (2) 178 (2013), 453–557, §10.
+  groups*, Ann. of Math. (2) 178 (2013), 453–557, §10 (microlocalisation) and §11.1,
+  Theorem (a) (semisimplicity).
 * W. Fu, *Sharp bounds for multiplicities of Bianchi modular forms*, Ann. of Math. (2) 200
   (2024), 123–152, §1 (before Theorem 1.4) and §5 (before Lemma 5.6).
 -/
@@ -131,9 +132,8 @@ theorem index_firstCongruenceSubgroup :
 theorem index_firstCongruenceSubgroup_fin_two :
     (firstCongruenceSubgroup (Fin 2) p).index = p * (p ^ 2 - 1) := by
   have hp : 0 < p - 1 := Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt
-  rw [index_firstCongruenceSubgroup, card_SL_field, ZMod.card, Fin.prod_univ_two, Fin.val_zero,
-    Fin.val_one, pow_zero, pow_one, sq p, ← Nat.mul_sub_one]
-  exact Nat.div_eq_of_eq_mul_left hp (by ring)
+  simp only [index_firstCongruenceSubgroup, card_SL_field, ZMod.card, Fin.prod_univ_two]
+  exact Nat.div_eq_of_eq_mul_left hp (by simp [sq p, ← Nat.mul_sub_one]; ring)
 
 /-! ### Products of first congruence subgroups -/
 
