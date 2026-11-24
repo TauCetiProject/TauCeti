@@ -15,8 +15,7 @@ Cells of ambient codimension at least `k` form a subcomplex. Near a relative int
 an exact-codimension cell, the support of this skeleton agrees with that cell. One ball avoids
 its relative boundary and every other cell in the skeleton, and meets only cells containing it.
 This isolates one wall or joint for studying local crossings or small loops around a joint.
-The relative frontiers of cells in each skeleton and the nonempty intersections of distinct
-cells in it lie in the next skeleton. No boundedness or salience is required.
+No boundedness or salience is required.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Strata.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit

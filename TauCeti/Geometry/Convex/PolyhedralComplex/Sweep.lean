@@ -106,9 +106,10 @@ theorem codimensionGESweepExceptions_image [DecidableEq W] (C : FinitePolyhedral
     Finset.image_image]
   apply Finset.image_congr
   rintro ⟨P, v⟩ _
-  change affineSpan ℝ (Set.sweep ℝ (e '' P) (e.toAffineEquiv.linear v)) =
-    (affineSpan ℝ (Set.sweep ℝ P v)).map e.toAffineEquiv.toAffineMap
-  rw [AffineSubspace.map_span, Set.image_sweep]
-  rfl
+  simp only [Function.comp_apply, Prod.map_apply, AffineSubspace.map_span,
+    AffineEquiv.coe_toAffineMap]
+  have hsweep := congrArg (affineSpan ℝ) (Set.image_sweep e.toAffineEquiv.toAffineMap P v).symm
+  rw [AffineEquiv.coe_toAffineMap, AffineEquiv.linear_toAffineMap] at hsweep
+  exact hsweep
 
 end TauCeti.FinitePolyhedralComplex
