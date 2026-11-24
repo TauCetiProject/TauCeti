@@ -58,11 +58,12 @@ computations at `e₀` hold at every unit vector.
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
-* `coe_kahlerForm`: `ω = (1/2) ∑ᵢ bᵢ ∧ J bᵢ` for every orthonormal basis `b`.
+* `sum_ιMulti_apply_eq_two_smul_kahlerForm`: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` in every orthonormal basis.
+* `coe_kahlerForm`: `ω = (1/2) ∑ᵢ bᵢ ∧ J bᵢ` in the exterior algebra, for every orthonormal
+  basis `b`.
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `twoVectorContraction_kahlerForm`: the contraction by `ω` is `J`, `v ⌟ ω = J v`.
-* `sum_ιMulti_apply_eq_two_smul_kahlerForm`: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` in every orthonormal basis.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
   (`norm_kahlerForm_sq_eq_two`).
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
@@ -129,12 +130,11 @@ theorem kahlerForm_def (J : AlmostComplexStructure V) :
     J.kahlerForm = (2⁻¹ : ℝ) • ∑ i,
       ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)] := (rfl)
 
-/-- The Kähler two-vector in the exterior algebra is `ω = (1/2) ∑ᵢ bᵢ ∧ J bᵢ` for every
-orthonormal basis `b`. -/
-theorem coe_kahlerForm (J : AlmostComplexStructure V) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ V) :
-    (J.kahlerForm : ExteriorAlgebra ℝ V) =
-      (2⁻¹ : ℝ) • ∑ i, ExteriorAlgebra.ι ℝ (b i) * ExteriorAlgebra.ι ℝ (J (b i)) := by
+/-- **The Kähler two-vector in any orthonormal basis**: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω`, as in the
+definition of `ω` through the standard orthonormal basis. -/
+theorem sum_ιMulti_apply_eq_two_smul_kahlerForm (J : AlmostComplexStructure V) {ι : Type*}
+    [Fintype ι] (b : OrthonormalBasis ι ℝ V) :
+    ∑ i, ιMulti ℝ 2 ![b i, J (b i)] = (2 : ℝ) • J.kahlerForm := by
   set c := stdOrthonormalBasis ℝ V
   -- Expand each `c j` inside `J` in the basis `b`, and then each `b i` outside `J` in `c`.
   have h : ∑ j, ExteriorAlgebra.ι ℝ (c j) * ExteriorAlgebra.ι ℝ (J (c j)) =
@@ -149,8 +149,18 @@ theorem coe_kahlerForm (J : AlmostComplexStructure V) {ι : Type*} [Fintype ι]
           refine Finset.sum_congr rfl fun i _ ↦ ?_
           simpa [Finset.sum_mul, smul_mul_assoc, real_inner_comm] using congrArg
             (fun v ↦ ExteriorAlgebra.ι ℝ v * ExteriorAlgebra.ι ℝ (J (b i))) (c.sum_repr' (b i))
-  rw [← h]
-  simp [kahlerForm_def, ExteriorAlgebra.ιMulti_apply, c]
+  ext
+  simp [kahlerForm_def, ExteriorAlgebra.ιMulti_apply, c, h]
+
+/-- The Kähler two-vector in the exterior algebra is `ω = (1/2) ∑ᵢ bᵢ ∧ J bᵢ` for every
+orthonormal basis `b`. -/
+theorem coe_kahlerForm (J : AlmostComplexStructure V) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) :
+    (J.kahlerForm : ExteriorAlgebra ℝ V) =
+      (2⁻¹ : ℝ) • ∑ i, ExteriorAlgebra.ι ℝ (b i) * ExteriorAlgebra.ι ℝ (J (b i)) := by
+  have h := congrArg (fun x : ⋀[ℝ]^2 V ↦ (2⁻¹ : ℝ) • (x : ExteriorAlgebra ℝ V))
+    (J.sum_ιMulti_apply_eq_two_smul_kahlerForm b)
+  simpa [ExteriorAlgebra.ιMulti_apply, smul_smul] using h.symm
 
 /-! ### The derivation action of `J` on two-vectors -/
 
@@ -220,14 +230,6 @@ theorem inner_kahlerForm_ιMulti (u w : V) :
 @[simp]
 theorem twoVectorContraction_kahlerForm (v : V) : twoVectorContraction J.kahlerForm v = J v :=
   ext_inner_right ℝ fun w ↦ by rw [inner_twoVectorContraction_apply, inner_kahlerForm_ιMulti hJ]
-
-/-- **The Kähler two-vector in any orthonormal basis**: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` for an orthogonal
-`J`, as in the definition of `ω` through the standard orthonormal basis. -/
-theorem sum_ιMulti_apply_eq_two_smul_kahlerForm {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ V) :
-    ∑ i, ιMulti ℝ 2 ![b i, J (b i)] = (2 : ℝ) • J.kahlerForm :=
-  ext_inner_ιMulti_two fun u w ↦ by
-    rw [inner_sum_ιMulti_apply hJ, real_inner_smul_left, inner_kahlerForm_ιMulti hJ]
 
 /-- `⟪ω, ω⟫ = dim V / 2`: in a unitary frame `ω = e₁ ∧ e₂ + e₃ ∧ e₄ + ⋯` is a sum of
 `dim V / 2` orthonormal two-vectors. -/
@@ -388,11 +390,9 @@ theorem contractLeft_kahlerForm {J : AlmostComplexStructure V}
     CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm ℝ V)) (innerₗ V u)
         (J.kahlerForm : ExteriorAlgebra ℝ V) =
       ExteriorAlgebra.ι ℝ (J u) := by
-  have h : J u = twoVectorContraction J.kahlerForm u :=
-    LinearMap.congr_fun (toLinearMap_eq_twoVectorContraction fun v w ↦ by
-      rw [inner_kahlerForm_ιMulti hJ, hJ]) u
-  rw [h, twoVectorContraction_apply, ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-    (ExteriorAlgebra.contractLeft_mem_exteriorPower _ (n := 1) J.kahlerForm.property)]
+  rw [← twoVectorContraction_kahlerForm hJ u, twoVectorContraction_apply,
+    ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+      (ExteriorAlgebra.contractLeft_mem_exteriorPower _ (n := 1) J.kahlerForm.property)]
 
 /-! ### Dimension four -/
 

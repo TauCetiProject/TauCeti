@@ -158,7 +158,7 @@ theorem zeroEquiv_dualLefschetz_zero (y : ⋀[ℝ]^2 V) :
     zeroEquiv ℝ V (J.dualLefschetz 0 y) = ⟪J.kahlerForm, y⟫ := by
   have h : J.dualLefschetz 0 y =
       zeroEquiv ℝ V (J.dualLefschetz 0 y) • ιMulti ℝ 0 (Fin.elim0 : Fin 0 → V) :=
-    ((zeroEquiv ℝ V).symm_apply_apply _).symm
+    (zeroEquiv ℝ V).injective (by simp)
   have hinner := inner_dualLefschetz_left J 0 y (ιMulti ℝ 0 Fin.elim0)
   rw [lefschetz_zero_ιMulti, h, real_inner_smul_left, inner_ιMulti_ιMulti] at hinner
   simpa [real_inner_comm] using hinner
