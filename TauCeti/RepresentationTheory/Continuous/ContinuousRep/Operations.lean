@@ -43,6 +43,7 @@ twists and character lines.
 
 * `TauCeti.ContinuousRep.res`: restriction along a continuous monoid homomorphism `Γ' →ₜ* Γ`.
 * `TauCeti.ContinuousRep.tprod`: the tensor product `ρ ⊗ σ` on `M ⊗[A] N`.
+* `TauCeti.ContinuousRep.tprodCommIso`: the braiding `M ⊗ N ≅ N ⊗ M`.
 * `TauCeti.ContinuousRep.linHom`: the Hom representation on `M →ₗ[A] N`, using
   `Representation.linHom`.
 * `TauCeti.ContinuousRep.twist`: the twist `M(χ)` by a continuous character, using
@@ -145,7 +146,7 @@ theorem Iso.res_apply (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) (x : M) : e.res φ x
   e.toRepresentationEquiv.res_apply φ.toMonoidHom x
 
 @[simp]
-theorem Iso.res_symm (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) : (e.res φ).symm = e.symm.res φ :=
+theorem Iso.symm_res (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) : (e.res φ).symm = e.symm.res φ :=
   Iso.ext fun x => (e.res φ).injective (by simp)
 
 /-- Restriction commutes with products. -/
@@ -211,6 +212,30 @@ theorem res_tprod {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ'] (ρ : Contin
     (σ : ContinuousRep Γ A N) (φ : Γ' →ₜ* Γ) :
     (ρ.tprod σ).res φ = (ρ.res φ).tprod (σ.res φ) :=
   (rfl)
+
+variable [TopologicalSpace (N ⊗[A] M)] [IsModuleTopology A (N ⊗[A] M)]
+
+/-- **The braiding** `M ⊗ N ≅ N ⊗ M`, `x ⊗ y ↦ y ⊗ x`: Mathlib's
+`Representation.TensorProduct.comm` as an isomorphism of continuous representations. -/
+noncomputable def tprodCommIso (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    Iso (ρ.tprod σ) (σ.tprod ρ) :=
+  Iso.ofEquiv (Representation.TensorProduct.comm ρ.toRepresentation σ.toRepresentation)
+
+@[simp]
+theorem tprodCommIso_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (x : M) (y : N) :
+    tprodCommIso ρ σ (x ⊗ₜ y) = y ⊗ₜ x :=
+  Iso.ofEquiv_apply _ _
+
+@[simp]
+theorem tprodCommIso_symm (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (tprodCommIso ρ σ).symm = tprodCommIso σ ρ :=
+  have h (x : N ⊗[A] M) : tprodCommIso ρ σ (tprodCommIso σ ρ x) = x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul y x => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+  Iso.ext fun x => by
+    conv_lhs => rw [← h x]
+    exact Iso.symm_apply_apply _ _
 
 end Tensor
 
@@ -479,8 +504,9 @@ variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
   [TopologicalSpace (M →ₗ[A] M)] [IsModuleTopology A (M →ₗ[A] M)]
 
 /-- **The scalar morphism** `A → Hom_A(M, M)`, `a ↦ a • id`, from the trivial
-representation. Composed with the inverse of `TauCeti.ContinuousRep.dualTensorIsoHom` it gives
-the coevaluation `TauCeti.ContinuousRep.coevaluation`. -/
+representation. Composed with the inverse of `TauCeti.ContinuousRep.dualTensorIsoHom` and the
+braiding `TauCeti.ContinuousRep.tprodCommIso` from `M^∨ ⊗ M` to `M ⊗ M^∨`, it gives the
+coevaluation `TauCeti.ContinuousRep.coevaluation`. -/
 noncomputable def scalarToLinHom (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A) (ρ.linHom ρ) :=
   haveI := IsModuleTopology.toContinuousAdd A (M →ₗ[A] M)
   haveI := IsModuleTopology.toContinuousSMul A (M →ₗ[A] M)
@@ -512,18 +538,14 @@ projective `M`: the element of `M ⊗ M^∨` corresponding to `a • id` under
 `Hom_A(M, M) ≅ M^∨ ⊗ M ≅ M ⊗ M^∨`. As for Mathlib's `coevaluation`, the target is `M ⊗ M^∨`, so
 that it pairs with the evaluation `TauCeti.ContinuousRep.evaluation` on `M^∨ ⊗ M`. -/
 noncomputable def coevaluation (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A) (ρ.tprod ρ.dual) :=
-  let e := Representation.TensorProduct.comm ρ.dual.toRepresentation ρ.toRepresentation
-  (Iso.ofEquiv <| .mk e.toLinearEquiv fun g => by
-    rw [toRepresentation_tprod, toRepresentation_tprod]
-    exact e.toIntertwiningMap.isIntertwining' g).toHom.comp
-    ((dualTensorIsoHom ρ ρ).symm.toHom.comp (scalarToLinHom ρ))
+  (tprodCommIso ρ.dual ρ).toHom.comp ((dualTensorIsoHom ρ ρ).symm.toHom.comp (scalarToLinHom ρ))
 
 /-- Under `M ⊗ M^∨ ≅ M^∨ ⊗ M ≅ Hom_A(M, M)`, the coevaluation of `a` is `a • id`. -/
 @[simp]
-theorem dualTensorIsoHom_comm_coevaluation (ρ : ContinuousRep Γ A M) (a : A) :
-    dualTensorIsoHom ρ ρ (TensorProduct.comm A M (Module.Dual A M) (coevaluation ρ a)) =
-      a • LinearMap.id := by
-  simp [coevaluation]
+theorem dualTensorIsoHom_tprodCommIso_coevaluation (ρ : ContinuousRep Γ A M) (a : A) :
+    dualTensorIsoHom ρ ρ (tprodCommIso ρ ρ.dual (coevaluation ρ a)) = a • LinearMap.id := by
+  rw [← tprodCommIso_symm]
+  simp [coevaluation, -tprodCommIso_symm]
 
 end Coevaluation
 
