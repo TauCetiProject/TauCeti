@@ -34,8 +34,8 @@ Fréchet differentiability of their product, including scalars in a normed algeb
   rule at a zero of the scalar factor, with only continuity of the vector factor.
 * `TauCeti.fderiv_smul_apply`: the Leibniz rule for the derivative of a scalar multiple, applied to
   a direction.
-* `TauCeti.norm_fderiv_smul_le`: the Leibniz estimate for the norm of the derivative of a scalar
-  multiple.
+* `TauCeti.norm_fderiv_fun_smul_le`: the Leibniz estimate for the norm of the derivative of a
+  scalar multiple.
 * `TauCeti.cutoff_sq_mul_norm_fderiv_sq_le`: the two-direction cutoff derivative estimate.
 * `TauCeti.hasStrictFDerivAt_smul_of_isBigO_sub`: a product of two Lipschitz factors vanishing
   at a point is strictly differentiable there, with derivative zero.
@@ -84,8 +84,8 @@ theorem fderiv_smul_apply {c : E → 𝕜'} {f : E → F} {x : E} (hc : Differen
 
 /-- **The Leibniz estimate.** The derivative of a scalar multiple `c • f` at `x` is bounded by
 `‖c x‖ ‖Df(x)‖ + ‖Dc(x)‖ ‖f x‖`. -/
-theorem norm_fderiv_smul_le {c : E → 𝕜} {f : E → F} {x : E} (hc : DifferentiableAt 𝕜 c x)
-    (hf : DifferentiableAt 𝕜 f x) :
+theorem norm_fderiv_fun_smul_le {c : E → 𝕜} {f : E → F} {x : E}
+    (hc : DifferentiableAt 𝕜 c x) (hf : DifferentiableAt 𝕜 f x) :
     ‖fderiv 𝕜 (fun y => c y • f y) x‖ ≤ ‖c x‖ * ‖fderiv 𝕜 f x‖ + ‖fderiv 𝕜 c x‖ * ‖f x‖ := by
   rw [fderiv_fun_smul hc hf]
   refine (norm_add_le _ _).trans_eq ?_

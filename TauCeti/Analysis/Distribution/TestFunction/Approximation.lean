@@ -188,14 +188,7 @@ theorem ContDiff.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le {f :
       ∀ x, dist (φ x) (f x) ≤ ε ∧ dist (fderiv ℝ φ x) (fderiv ℝ f x) ≤ ε := by
   have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
   -- A positive lower bound `m` for `ρ` on the thickening, and a bound `R` for `f` and `Df`.
-  obtain ⟨C, hC⟩ := hK.cthickening.exists_bound_of_continuousOn
-    (hρ.inv₀ fun x hx => (hρ0 x hx).ne')
-  set m := (max C 1)⁻¹
-  have hm : 0 < m := inv_pos.2 (lt_max_of_lt_right one_pos)
-  have hmρ (x : E) (hx : x ∈ cthickening δ K) : m ≤ ρ x := by
-    have h := hC x hx
-    rw [Pi.inv_apply, norm_inv, Real.norm_of_nonneg (hρ0 x hx).le] at h
-    exact inv_le_of_inv_le₀ (hρ0 x hx) (h.trans (le_max_left _ _))
+  obtain ⟨m, hm, hmρ⟩ := hK.cthickening.exists_forall_le' hρ hρ0
   obtain ⟨R₀, hR₀⟩ := hf.continuous.bounded_above_of_compact_support hfc
   obtain ⟨R₁, hR₁⟩ :=
     (hf.continuous_fderiv one_ne_zero).bounded_above_of_compact_support (hfc.fderiv ℝ)

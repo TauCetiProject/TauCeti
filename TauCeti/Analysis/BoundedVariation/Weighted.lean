@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
 /-!
@@ -244,87 +242,6 @@ omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
 private theorem contDiff_exp_neg (hW : ContDiff ℝ 1 W) : ContDiff ℝ 1 fun x => Real.exp (-W x) :=
   by fun_prop
 
-/-- A `C¹` vector field `X` with compact support in `Ω`, bounded by a positive continuous `ρ`, is
-approximated by test vector fields `φ` bounded by `ρ`, in the sense that for a `C¹` function `g`
-the pairing `∫ tr D(g X) u` exceeds `∫ tr D(g φ) u` by at most a prescribed `ε > 0`. -/
-private theorem exists_testFunction_norm_le_and_integral_trace_fderiv_smul_mul_le
-    (hu : LocallyIntegrableOn u Ω) {g : E → ℝ} (hg : ContDiff ℝ 1 g) {ρ : E → ℝ}
-    (hρ : Continuous ρ) (hρ0 : ∀ x, 0 < ρ x) {X : E → E} (hX : ContDiff ℝ 1 X)
-    (hXc : HasCompactSupport X) (hXΩ : tsupport X ⊆ Ω) (hXρ : ∀ x, ‖X x‖ ≤ ρ x) {ε : ℝ}
-    (hε : 0 < ε) : ∃ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ ρ x) ∧
-      ∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • X y) x : E →ₗ[ℝ] E) * u x ≤
-        (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x) + ε := by
-  obtain ⟨δ, hδ, hδΩ⟩ := hXc.isCompact.exists_cthickening_subset_open Ω.isOpen hXΩ
-  set L := Metric.cthickening δ (tsupport X)
-  have hL : IsCompact L := hXc.isCompact.cthickening
-  -- A bound `B` for `g` and its derivative on `L`.
-  obtain ⟨B₀, hB₀⟩ := hL.exists_bound_of_continuousOn hg.continuous.continuousOn
-  obtain ⟨B₁, hB₁⟩ :=
-    hL.exists_bound_of_continuousOn (hg.continuous_fderiv one_ne_zero).continuousOn
-  set B := max (max B₀ B₁) 0
-  set I := ∫ x in L, ‖u x‖
-  set A := ‖traceCLM ℝ E‖ * (2 * B) * I + 1
-  have hA : 0 < A := by positivity
-  -- A test vector field `φ` bounded by `ρ` and `C¹`-close to `X`, to within `η = ε / A`.
-  obtain ⟨φ, hφL, hφρ, hφ⟩ := hX.exists_testFunction_norm_le_and_dist_le_and_dist_fderiv_le
-    hXc.isCompact subset_rfl hδ hδΩ hρ.continuousOn (fun x _ => hρ0 x) hXρ (div_pos hε hA)
-  have hφ1 : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
-  -- By the Leibniz estimate, the derivatives of `g X` and `g φ` are within `2 B η`.
-  have hD (x : E) : dist (fderiv ℝ (fun y => g y • X y) x) (fderiv ℝ (fun y => g y • φ y) x) ≤
-      2 * B * (ε / A) := by
-    by_cases hx : x ∈ L
-    · have hgx := hg.differentiable one_ne_zero x
-      have hφx := hφ1.differentiable one_ne_zero x
-      have hXx := hX.differentiable one_ne_zero x
-      rw [dist_comm, dist_eq_norm, ← fderiv_fun_sub (hgx.fun_smul hφx) (hgx.fun_smul hXx)]
-      simp_rw [← smul_sub]
-      refine (norm_fderiv_smul_le hgx (hφx.fun_sub hXx)).trans ?_
-      rw [fderiv_fun_sub hφx hXx, ← dist_eq_norm, ← dist_eq_norm, two_mul, add_mul]
-      gcongr
-      exacts [(hB₀ x hx).trans ((le_max_left _ _).trans (le_max_left _ _)), (hφ x).2,
-        (hB₁ x hx).trans ((le_max_right _ _).trans (le_max_left _ _)), (hφ x).1]
-    · have hXx : x ∉ tsupport fun y => g y • X y := fun h => hx
-        (Metric.self_subset_cthickening _ (tsupport_smul_subset_right _ _ h))
-      have hφx : x ∉ tsupport fun y => g y • φ y := fun h => hx (hφL
-        (tsupport_smul_subset_right _ _ h))
-      rw [fderiv_of_notMem_tsupport ℝ hXx, fderiv_of_notMem_tsupport ℝ hφx, dist_self]
-      positivity
-  have hdist := dist_integral_trace_fderiv_mul_le (f := fun y => g y • X y)
-    (g := fun y => g y • φ y) (hu.integrableOn_compact_subset hδΩ hL) (hg.fun_smul hX)
-    (hg.fun_smul hφ1) ((tsupport_smul_subset_right _ _).trans (Metric.self_subset_cthickening _))
-    ((tsupport_smul_subset_right _ _).trans hφL) hD
-  refine ⟨φ, hφρ, ?_⟩
-  have hε' : ‖traceCLM ℝ E‖ * (2 * B * (ε / A)) * I ≤ ε := by
-    calc ‖traceCLM ℝ E‖ * (2 * B * (ε / A)) * I = (‖traceCLM ℝ E‖ * (2 * B) * I) * (ε / A) := by
-          ring
-      _ ≤ A * (ε / A) := by gcongr; linarith
-      _ = ε := mul_div_cancel₀ _ hA.ne'
-  rw [Real.dist_eq] at hdist
-  linarith [(abs_sub_le_iff.1 hdist).1]
-
-/-- Pairings `∫ tr D(g X) u` of `u` with the fields `g X`, for a `C¹` function `g` and `C¹` vector
-fields `X` with compact support in `Ω` bounded by a positive continuous `ρ`, are bounded by the
-supremum of the same pairings over test vector fields bounded by `ρ`. -/
-private theorem ofReal_integral_trace_fderiv_smul_mul_le_iSup (hu : LocallyIntegrableOn u Ω)
-    {g : E → ℝ} (hg : ContDiff ℝ 1 g) {ρ : E → ℝ} (hρ : Continuous ρ) (hρ0 : ∀ x, 0 < ρ x)
-    {X : E → E} (hX : ContDiff ℝ 1 X) (hXc : HasCompactSupport X) (hXΩ : tsupport X ⊆ Ω)
-    (hXρ : ∀ x, ‖X x‖ ≤ ρ x) :
-    ENNReal.ofReal
-        (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • X y) x : E →ₗ[ℝ] E) * u x) ≤
-      ⨆ (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ ρ x), ENNReal.ofReal
-        (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x) := by
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
-  obtain ⟨φ, hφρ, hle⟩ := exists_testFunction_norm_le_and_integral_trace_fderiv_smul_mul_le hu hg
-    hρ hρ0 hX hXc hXΩ hXρ (NNReal.coe_pos.2 hε)
-  calc _ ≤ ENNReal.ofReal
-          (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x) + ε :=
-        (ENNReal.ofReal_le_ofReal hle).trans
-          (ENNReal.ofReal_add_le.trans_eq (by rw [ENNReal.ofReal_coe_nnreal]))
-    _ ≤ _ := by
-        gcongr
-        exact le_iSup₂ (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ ρ x) => ENNReal.ofReal
-          (∫ x, LinearMap.trace ℝ E (fderiv ℝ (fun y => g y • φ y) x : E →ₗ[ℝ] E) * u x)) φ hφρ
-
 /-- For a `C¹` weight, a `C¹` vector field `X` with compact support in `Ω` and `‖X x‖ ≤ 1`
 everywhere bounds the weighted variation from below, as the test vector fields of its definition
 do (`TauCeti.ofReal_integral_le_weightedVariation`). -/
@@ -339,8 +256,8 @@ theorem ofReal_integral_le_weightedVariation_of_contDiff (hW : ContDiff ℝ 1 W)
         (LinearMap.trace ℝ E (fderiv ℝ Y x : E →ₗ[ℝ] E) - fderiv ℝ W x (Y x)) *
           Real.exp (-W x) :=
     trace_fderiv_exp_neg_smul (hWd x) (hY.differentiable one_ne_zero x)
-  have key := ofReal_integral_trace_fderiv_smul_mul_le_iSup hu (contDiff_exp_neg hW)
-    continuous_const (fun _ => one_pos) hX hXc hXΩ hX1
+  have key := ofReal_integral_trace_fderiv_fun_smul_mul_le_iSup hu (contDiff_exp_neg hW)
+    continuousOn_const (fun _ _ => one_pos) hX hXc hXΩ hX1
   simp_rw [hdiv hX] at key
   refine key.trans (iSup₂_le fun φ hφ => ?_)
   simp_rw [hdiv (φ.contDiff.of_le (by simp)), ← divergenceCLM_apply]
@@ -379,8 +296,8 @@ theorem weightedVariation_eq_iSup_norm_le_exp_neg (hW : ContDiff ℝ 1 W)
   · rw [weightedVariation_eq_iSup_trace_fderiv (hW.differentiable one_ne_zero)]
     refine iSup₂_le fun X hX => ?_
     -- The field `e^{−W} X` is only `C¹`; approximate it by test fields bounded by `e^{−W}`.
-    have key := ofReal_integral_trace_fderiv_smul_mul_le_iSup (g := fun _ => 1) hu contDiff_const
-      (contDiff_exp_neg hW).continuous (fun _ => Real.exp_pos _)
+    have key := ofReal_integral_trace_fderiv_fun_smul_mul_le_iSup (g := fun _ => 1) hu
+      contDiff_const (contDiff_exp_neg hW).continuous.continuousOn (fun _ _ => Real.exp_pos _)
       ((contDiff_exp_neg hW).fun_smul (X.contDiff.of_le (by simp))) X.hasCompactSupport.smul_left
       ((tsupport_smul_subset_right _ _).trans X.tsupport_subset) fun x => by
         rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
@@ -582,6 +499,14 @@ theorem weightedPerimeter_zero_weight :
 
 /-! ### Comparison with the Euclidean variation -/
 
+/-- A nonnegative scalar factor of a test vector field comes out of its divergence pairing. -/
+private theorem ofReal_integral_divergenceCLM_smul_mul (c : ℝ≥0) (Y : 𝓓(Ω, E)) :
+    ENNReal.ofReal (∫ x, divergenceCLM ((c : ℝ) • Y) x * u x) =
+      c * ENNReal.ofReal (∫ x, divergenceCLM Y x * u x) := by
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg, ← integral_const_mul]
+  congr 2 with x
+  rw [map_smul, smul_apply, smul_eq_mul, mul_assoc]
+
 /-- **Comparison with the Euclidean variation, upper bound.** For a `C¹` weight with
 `e^{−W} ≤ M` on `Ω` and `u` locally integrable on `Ω`, `V_μ(u; Ω) ≤ M |Du|(Ω)`, where
 `|Du|(Ω) = TauCeti.totalVariationOn volume Ω u`. -/
@@ -608,11 +533,8 @@ theorem weightedVariation_le_mul_totalVariationOn (hW : ContDiff ℝ 1 W)
       exact hYM x
     calc ENNReal.ofReal (∫ x, divergenceCLM Y x * u x)
         = M * ENNReal.ofReal (∫ x, divergenceCLM ((M : ℝ)⁻¹ • Y) x * u x) := by
-          rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul M.coe_nonneg,
-            ← integral_const_mul]
-          congr 2 with x
-          rw [map_smul, smul_apply, smul_eq_mul, ← mul_assoc, ← mul_assoc,
-            mul_inv_cancel₀ hMpos.ne', one_mul]
+          rw [← ofReal_integral_divergenceCLM_smul_mul, smul_smul, mul_inv_cancel₀ hMpos.ne',
+            one_smul]
       _ ≤ M * totalVariationOn volume Ω u := by
           gcongr
           exact ofReal_integral_le_totalVariationOn _ hY1
@@ -634,10 +556,7 @@ theorem mul_totalVariationOn_le_weightedVariation (hW : ContDiff ℝ 1 W)
     · exact (mul_le_of_le_one_right m.coe_nonneg (hX x)).trans (hm x (X.tsupport_subset hx))
     · rw [image_eq_zero_of_notMem_tsupport hx, norm_zero, mul_zero]
       exact (Real.exp_pos _).le
-  refine le_iSup₂_of_le ((m : ℝ) • X) hmX (le_of_eq ?_)
-  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul m.coe_nonneg, ← integral_const_mul]
-  congr 2 with x
-  rw [map_smul, smul_apply, smul_eq_mul, mul_assoc]
+  exact le_iSup₂_of_le ((m : ℝ) • X) hmX (ofReal_integral_divergenceCLM_smul_mul m X).ge
 
 /-- **Finite weighted variation gives locally bounded variation.** For a `C¹` weight and `u`
 locally integrable on `Ω`, if `V_μ(u; Ω) < ∞`, then every compact subset of `Ω` has an open
@@ -651,17 +570,12 @@ theorem exists_totalVariationOn_ne_top_of_weightedVariation_ne_top (hW : ContDif
   let U : Opens E := ⟨Metric.thickening δ K, Metric.isOpen_thickening⟩
   have hUΩ : U ≤ Ω := (Metric.thickening_subset_cthickening δ K).trans hδΩ
   -- `e^{−W}` has a positive lower bound `m` on the compact set `cthickening δ K ⊇ U`.
-  obtain ⟨C, hC⟩ := hK.cthickening.exists_bound_of_continuousOn
-    (f := fun x => Real.exp (W x)) hW.continuous.rexp.continuousOn
-  let m : ℝ≥0 := ⟨(max C 1)⁻¹, (inv_pos.2 (lt_max_of_lt_right one_pos)).le⟩
-  have hm0 : m ≠ 0 := by
-    rw [← NNReal.coe_ne_zero]
-    exact (inv_pos.2 (lt_max_of_lt_right one_pos)).ne'
-  have hm (x : E) (hx : x ∈ U) : (m : ℝ) ≤ Real.exp (-W x) := by
-    have hCx := hC x (Metric.thickening_subset_cthickening δ K hx)
-    rw [Real.norm_of_nonneg (Real.exp_pos _).le] at hCx
-    rw [Real.exp_neg]
-    exact inv_anti₀ (Real.exp_pos _) (hCx.trans (le_max_left _ _))
+  obtain ⟨m', hm', hm'W⟩ := hK.cthickening.exists_forall_le'
+    (contDiff_exp_neg hW).continuous.continuousOn fun x _ => Real.exp_pos (-W x)
+  let m : ℝ≥0 := ⟨m', hm'.le⟩
+  have hm0 : m ≠ 0 := NNReal.coe_ne_zero.1 hm'.ne'
+  have hm (x : E) (hx : x ∈ U) : (m : ℝ) ≤ Real.exp (-W x) :=
+    hm'W x (Metric.thickening_subset_cthickening δ K hx)
   have hle := (mul_totalVariationOn_le_weightedVariation hW (hu.mono_set hUΩ) hm).trans
     (weightedVariation_mono hUΩ)
   refine ⟨U, Metric.self_subset_thickening hδ K, fun htop => h ?_⟩
