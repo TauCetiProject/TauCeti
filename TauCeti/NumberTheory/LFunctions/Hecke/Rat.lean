@@ -82,7 +82,8 @@ theorem differentiable_heckeLFunctionC_rat {𝔪 : Modulus ℚ} {χ : RayClassCh
     (hχ : χ ≠ 1) : Differentiable ℂ (heckeLFunctionC χ) := by
   have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
     ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
-  have hψ : χ.toDirichletCharacter ≠ 1 := RayClassCharacter.toDirichletCharacter_ne_one_iff.mpr hχ
+  have hψ : χ.toDirichletCharacter ≠ 1 :=
+    RayClassCharacter.toDirichletCharacter_eq_one_iff.not.mpr hχ
   have hLdiff : Differentiable ℂ (DirichletCharacter.LFunction χ.toDirichletCharacter) :=
     DirichletCharacter.differentiable_LFunction hψ
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
@@ -112,7 +113,7 @@ theorem heckeLFunctionC_ne_zero_of_one_le_re_rat {𝔪 : Modulus ℚ} {χ : RayC
   have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
     ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
   have hψs : χ.toDirichletCharacter ≠ 1 ∨ s ≠ 1 :=
-    h.imp_left RayClassCharacter.toDirichletCharacter_ne_one_iff.mpr
+    h.imp_left RayClassCharacter.toDirichletCharacter_eq_one_iff.not.mpr
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
       (χ.toDirichletCharacter.analyticAt_LFunction hψs.symm)]

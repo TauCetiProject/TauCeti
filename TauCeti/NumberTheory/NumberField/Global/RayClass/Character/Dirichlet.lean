@@ -63,8 +63,8 @@ Dirichlet character `χ.toDirichletCharacter` modulo `n = Ideal.absNorm 𝔪.fin
   the real place included exactly for an odd character.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_apply`,
   `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_apply_natCast`, and
-  `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_ne_one_iff`: evaluation
-  and nontriviality for `toDirichletCharacter`.
+  `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter_eq_one_iff`: evaluation
+  and triviality for `toDirichletCharacter`.
 * `TauCeti.GlobalNumberFields.normCoeff_rayClassCharacter_rat_eq` and
   `TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`: coefficientwise and `L`-series
   identification between a ray class character over `ℚ` and its associated Dirichlet character.
@@ -309,12 +309,6 @@ theorem toDirichletCharacter_eq_one_iff {𝔪 : Modulus ℚ} {χ : RayClassChara
     χ.toDirichletCharacter = 1 ↔ χ = 1 :=
   toDirichletCharacter_injective.eq_iff' (map_one _)
 
-/-- A ray class character over `ℚ` is nontrivial iff its associated Dirichlet character is
-nontrivial. -/
-theorem toDirichletCharacter_ne_one_iff {𝔪 : Modulus ℚ} {χ : RayClassCharacter 𝔪} :
-    χ.toDirichletCharacter ≠ 1 ↔ χ ≠ 1 :=
-  toDirichletCharacter_eq_one_iff.not
-
 /-- For `k ≠ 0`, `χ.toDirichletCharacter k` equals `χ.toMultiplicativeIdealWeight` at the
 principal ideal `Ideal.span {(k : 𝓞 ℚ)}`. -/
 theorem toDirichletCharacter_apply_natCast {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪)
@@ -333,7 +327,8 @@ theorem toDirichletCharacter_apply_natCast {𝔪 : Modulus ℚ} (χ : RayClassCh
   · have hI' : I ∈ integralIdealsPrimeTo (ratModulus n hn) :=
       Modulus.mem_integralIdealsPrimeTo.mpr
         ((Modulus.isCoprimeTo_iff_of_finitePart_eq
-          (finitePart_eq_ratModulus_absNorm_finitePart 𝔪)).mp
+          ((Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm.trans
+            (ratModulus_finitePart n hn).symm)).mp
           (Modulus.isCoprimeTo_iff.mpr (Ideal.isPrimeTo_iff.mp hI)))
     have hval := ratDirichletEquiv_absNorm (χ.induced h𝔪) ⟨I, hI'⟩
     simp only [hnorm] at hval

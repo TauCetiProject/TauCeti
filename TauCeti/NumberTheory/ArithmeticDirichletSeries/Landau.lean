@@ -203,12 +203,9 @@ theorem tendsto_re_atTop_of_differentiableOn_eqOn_dedekindZeta_mul
     abscissaOfAbsConv_normCoeff_convolution_one_le_of_differentiableOn hχ hF hFeq
   have hFeqhalf := eqOn_LSeries_convolution_one_of_eqOn_dedekindZeta_mul hχ hF hFeq habs_le
   have h2 : Tendsto (fun σ : ℝ ↦ 2 * σ) (𝓝[>] (1 / 2 : ℝ)) (𝓝[>] 1) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_
-      (eventually_nhdsWithin_of_forall fun σ (hσ : (1 / 2 : ℝ) < σ) ↦ by
-        simp only [mem_Ioi]; linarith)
-    have h0 : Tendsto (fun σ : ℝ ↦ 2 * σ) (𝓝 (1 / 2 : ℝ)) (𝓝 1) := by
-      simpa using (continuous_const_mul (2 : ℝ)).tendsto (1 / 2 : ℝ)
-    exact h0.mono_left nhdsWithin_le_nhds
+    simpa [mul_one_div_cancel (two_ne_zero : (2 : ℝ) ≠ 0)] using
+      Filter.TendstoNhdsWithinIoi.const_mul (by norm_num : (0 : ℝ) < 2)
+        (tendsto_id : Tendsto id (𝓝[>] (1 / 2 : ℝ)) (𝓝[>] (1 / 2 : ℝ)))
   refine Filter.tendsto_atTop_mono' _ ?_ ((tendsto_re_dedekindZeta_nhdsGT_one K).comp h2)
   filter_upwards [self_mem_nhdsWithin] with σ (hσ : (1 / 2 : ℝ) < σ)
   have hsum : LSeriesSummable a σ :=

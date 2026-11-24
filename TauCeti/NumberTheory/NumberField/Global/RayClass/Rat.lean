@@ -275,18 +275,15 @@ theorem dvd_ratModulus_absNorm (𝔪 : Modulus ℚ) :
       (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot) :=
   dvd_ratModulus_iff.mpr dvd_rfl
 
-/-- Every modulus of `ℚ` has the same finite part as `ratModulus (Ideal.absNorm 𝔪.finitePart) _`. -/
-theorem finitePart_eq_ratModulus_absNorm_finitePart (𝔪 : Modulus ℚ) :
-    𝔪.finitePart = (ratModulus (Ideal.absNorm 𝔪.finitePart)
-      (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)).finitePart :=
-  (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm
-
 /-- For `k ≠ 0`, `Ideal.span {(k : 𝓞 ℚ)}` is prime to `𝔪.support` if and only if `k` is a unit
 modulo `Ideal.absNorm 𝔪.finitePart`. -/
 theorem isPrimeTo_span_natCast_iff_isUnit {𝔪 : Modulus ℚ} {k : ℕ} (hk : k ≠ 0) :
     (Ideal.span {(k : 𝓞 ℚ)}).IsPrimeTo 𝔪.support ↔
       IsUnit (k : ZMod (Ideal.absNorm 𝔪.finitePart)) := by
-  simp only [Modulus.support_eq_of_finitePart_eq (finitePart_eq_ratModulus_absNorm_finitePart 𝔪)]
+  rw [Modulus.support_eq_of_finitePart_eq
+    (𝔫 := ratModulus (Ideal.absNorm 𝔪.finitePart)
+      (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot))
+    (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm]
   exact isPrimeTo_span_natCast_ratModulus_iff_isUnit hk
 
 /-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/
