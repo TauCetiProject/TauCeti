@@ -329,22 +329,17 @@ theorem _root_.QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one
     (Q : QuadraticForm K V) (hV : Module.finrank K V = 2) {w f : V} (hw : Q w = 0)
     (hf : Q f = 0) (hwf : polar Q w f = 1) :
     Q.Equivalent (binaryQuadraticForm K 0 0) := by
-  have hli : LinearIndependent K ![w, f] := LinearIndependent.pair_iff.mpr fun s t hst ↦ by
-    have h1 := congrArg (polar Q w) hst
-    have h2 := congrArg (polar Q f) hst
-    simp only [polar_add_right, polar_smul_right, polar_self, hw, hf, hwf, polar_comm Q f w,
-      smul_zero, smul_eq_mul, mul_one, mul_zero, zero_add, add_zero, polar_zero_right] at h1 h2
-    exact ⟨h2, h1⟩
-  let b := basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])
-  refine ⟨IsometryEquiv.symm
-    { toLinearEquiv := b.equivFun.symm
-      map_app' := fun c ↦ ?_ }⟩
-  simp only [b, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-    Module.Basis.equivFun_symm_apply, coe_basisOfLinearIndependentOfCardEqFinrank,
-    Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, QuadraticMap.map_add,
-    QuadraticMap.map_smul, polar_smul_left, polar_smul_right, hw, hf, hwf,
-    binaryQuadraticForm_apply, smul_eq_mul, mul_zero, zero_mul, add_zero, zero_add, mul_one]
-  ring
+  have hli : LinearIndependent K ![w, f] := LinearIndependent.pair_iff.mpr fun s t hst ↦
+    ⟨by simpa [polar_comm Q f w, hf, hwf] using congrArg (polar Q f) hst,
+      by simpa [hw, hwf] using congrArg (polar Q w) hst⟩
+  have hb : Q.basisRepr (basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])) =
+      binaryQuadraticForm K 0 0 := QuadraticMap.ext fun c ↦ by
+    rw [basisRepr_apply, Fin.sum_univ_two, coe_basisOfLinearIndependentOfCardEqFinrank,
+      Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val_zero, QuadraticMap.map_add Q,
+      Q.map_smul, Q.map_smul, polar_smul_left, polar_smul_right, hw, hf, hwf,
+      binaryQuadraticForm_apply]
+    ring
+  exact ⟨hb ▸ Q.isometryEquivBasisRepr _⟩
 
 /-- Two isotropic vectors `x, y` with `polar Q x y = 1` split `Q` as the orthogonal sum of the
 hyperbolic plane they span and its orthogonal complement. -/
