@@ -78,6 +78,7 @@ noncomputable def rationalCoordinateKernel
   RingHom.ker (rationalCoordinateMap h)
 
 /-- A rational coordinate function lies in `K_h` exactly when `h*(1 ⊗ x) = 0`. -/
+@[simp]
 theorem mem_rationalCoordinateKernel
     {h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S} {x : H} :
     x ∈ rationalCoordinateKernel h ↔ h.hom ((1 : ℝ) ⊗ₜ[ℚ] x) = 0 :=
@@ -89,8 +90,8 @@ theorem le_rationalCoordinateKernel_iff
     J ≤ rationalCoordinateKernel h ↔
       J.map (Algebra.TensorProduct.includeRight : H →ₐ[ℚ] ℝ ⊗[ℚ] H) ≤
         RingHom.ker h.hom.toAlgHom.toRingHom := by
-  rw [Ideal.map_le_iff_le_comap]
-  rfl
+  simp only [rationalCoordinateKernel, rationalCoordinateMap, AlgHom.toRingHom_eq_coe]
+  rw [Ideal.map_le_iff_le_comap, ← Ideal.comap_coe, RingHom.comap_ker]
 
 /-- **The Mumford–Tate ideal is the largest Hopf ideal inside `K_h`.** A Hopf ideal of `H` lies
 below the Mumford–Tate ideal of `h` exactly when it consists of rational functions vanishing on

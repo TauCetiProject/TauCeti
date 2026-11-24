@@ -62,7 +62,8 @@ theorem mumfordTateClosedSubgroup_def
 
 /-- The Hopf ideal recovered from `MT(h)` by the classification of closed subgroup schemes is the
 Mumford–Tate ideal. -/
-theorem hopfIdealOrderIsoClosedSubgroup_symm_mumfordTateClosedSubgroup
+@[simp↓]
+theorem hopfIdealOrderIsoClosedSubgroup_symm_apply_mumfordTateClosedSubgroup
     (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S) :
     (hopfIdealOrderIsoClosedSubgroup H).symm (mumfordTateClosedSubgroup h) =
       OrderDual.toDual (mumfordTateHopfIdeal h) := by
