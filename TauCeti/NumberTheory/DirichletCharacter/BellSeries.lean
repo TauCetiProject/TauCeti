@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.Convolution
 public import TauCeti.NumberTheory.ArithmeticFunction.BellSeries
+import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.Polynomial
 
 /-!
@@ -17,7 +18,8 @@ Since a Dirichlet character `χ` is completely multiplicative on positive intege
 at a prime `p` is the geometric series `∑ χ(p) ^ k X ^ k`, which is the formal reciprocal of
 `1 - χ(p) X` in `PowerSeries R`.
 
-Combining this with `DirichletCharacter.prod_one_sub_C_primitiveCharacter_prime_mul_X` identifies
+Combining this with `DirichletCharacter.prod_one_sub_C_primitiveCharacter_prime_mul_X` identifies,
+for `N ≠ 0` and any integral domain `R` with enough roots of unity for `Monoid.exponent (ZMod m)ˣ`,
 the Bell series at `p` of the Dirichlet convolution
 `∏ χ : DirichletCharacter R N, toArithmeticFunction (χ.primitiveCharacter ·)` as the formal
 reciprocal of `(1 - X ^ f) ^ (φ(m) / f)`, where `m = ordCompl[p] N` and
@@ -28,6 +30,7 @@ reciprocal of `(1 - X ^ f) ^ (φ(m) / f)`, where `m = ordCompl[p] N` and
 * `DirichletCharacter.bellSeries_toArithmeticFunction_mul_one_sub_C_mul_X`:
   `bellSeries p hp (toArithmeticFunction (χ ·)) * (1 - PowerSeries.C (χ p) * PowerSeries.X) = 1`.
 * `DirichletCharacter.bellSeries_prod_toArithmeticFunction_primitiveCharacter_mul_pow_one_sub`:
+  for `N ≠ 0` and an integral domain `R` with enough roots of unity for `Monoid.exponent (ZMod m)ˣ`,
   the Bell series at `p` of the convolution of the primitive characters inducing the characters
   modulo `N` is the formal reciprocal of `(1 - X ^ f) ^ (φ(m) / f)`.
 
@@ -47,8 +50,8 @@ theorem bellSeries_toArithmeticFunction_mul_one_sub_C_mul_X {R : Type*} [CommRin
     (hp : p.Prime) (χ : DirichletCharacter R N) :
     ArithmeticFunction.bellSeries p hp (toArithmeticFunction (χ ·)) *
       (1 - PowerSeries.C (χ p) * PowerSeries.X) = 1 :=
-  ArithmeticFunction.bellSeries_mul_one_sub_C_mul_X hp fun j ↦ by
-    simp [toArithmeticFunction, hp.ne_zero]
+  ArithmeticFunction.bellSeries_mul_one_sub_C_mul_X hp
+    (toArithmeticFunction_apply_pow χ hp.ne_zero)
 
 /-- **Local Bell-series reciprocal of the primitive-character convolution.** For a prime `p` and a
 nonzero level `N`, let `m = ordCompl[p] N` and `f = orderOf (p : ZMod m)`. Over any integral domain

@@ -124,14 +124,18 @@ theorem heightOneSpectrumOfLiesOver_asIdeal (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrim
   rw [heightOneSpectrumOfLiesOver]
 
 omit [NumberField K] in
+private theorem liesOver_span_natCast_iff {𝔭 : Ideal (𝓞 K)} (h𝔭 : 𝔭 ≠ ⊤) :
+    𝔭.LiesOver (span {(p : ℤ)}) ↔ (p : 𝓞 K) ∈ 𝔭 := by
+  simpa using liesOver_span_iff h𝔭 (Nat.prime_iff_prime_int.mp hp.out)
+
+omit [NumberField K] in
 /-- A finite set of height-one primes containing the primes above `p` contains every height-one
 prime to which `p` belongs. -/
 theorem mem_of_natCast_mem_asIdeal {T : Finset (HeightOneSpectrum (𝓞 K))}
     (hT : ∀ P : HeightOneSpectrum (𝓞 K),
       P.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → P ∈ T)
     (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) : P ∈ T :=
-  hT P ⟨P.isPrime, (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
-    (by simpa using hP)⟩
+  hT P ⟨P.isPrime, (liesOver_span_natCast_iff P.isPrime.ne_top).mpr hP⟩
 
 /-- If `𝔭` is the only prime above `p`, it is the only height-one prime to which `p` belongs. -/
 theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal (𝓞 K))
@@ -143,59 +147,25 @@ theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal 
     rw [hT, Set.mem_singleton_iff] at hQ
     exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
 
-omit [NumberField K] in
-private theorem liesOver_span_natCast_iff {𝔭 : Ideal (𝓞 K)} (h𝔭 : 𝔭 ≠ ⊤) :
-    𝔭.LiesOver (span {(p : ℤ)}) ↔ (p : 𝓞 K) ∈ 𝔭 := by
-  simpa using liesOver_span_iff h𝔭 (Nat.prime_iff_prime_int.mp hp.out)
-
-private noncomputable def heightOneSpectrumOfMemPrimesOver
-    (q : {𝔭 : Ideal (𝓞 K) // 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K)}) :
-    HeightOneSpectrum (𝓞 K) :=
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
-  have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
-  have := hmem.2
-  ⟨q.val, hmem.1, ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) hp0 q.val⟩
-
-@[simp]
-private theorem heightOneSpectrumOfMemPrimesOver_asIdeal
-    (q : {𝔭 : Ideal (𝓞 K) // 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K)}) :
-    (heightOneSpectrumOfMemPrimesOver (K := K) (p := p) q).asIdeal = q.val := rfl
-
-private theorem heightOneSpectrumOfMemPrimesOver_injective :
-    Function.Injective (heightOneSpectrumOfMemPrimesOver (K := K) (p := p)) :=
-  fun _ _ h ↦ Subtype.ext (congrArg HeightOneSpectrum.asIdeal h)
+private theorem mem_primesOverFinset_span_natCast_iff {𝔭 : Ideal (𝓞 K)} :
+    𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K) ↔ 𝔭.IsPrime ∧ (p : 𝓞 K) ∈ 𝔭 := by
+  rw [mem_primesOverFinset_iff (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)]
+  exact and_congr_right fun h𝔭 ↦ liesOver_span_natCast_iff h𝔭.ne_top
 
 variable (K p) in
 /-- The finite set of height-one primes of `𝓞 K` lying above the rational prime `p`. -/
 noncomputable def heightOneSpectrumPrimesOverFinset : Finset (HeightOneSpectrum (𝓞 K)) :=
   (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach.map
-    ⟨heightOneSpectrumOfMemPrimesOver, heightOneSpectrumOfMemPrimesOver_injective⟩
-
-/-- A height-one prime `P` belongs to `heightOneSpectrumPrimesOverFinset K p` iff
-`(p : 𝓞 K) ∈ P.asIdeal`. -/
-@[simp]
-theorem mem_heightOneSpectrumPrimesOverFinset_iff {P : HeightOneSpectrum (𝓞 K)} :
-    P ∈ heightOneSpectrumPrimesOverFinset K p ↔ (p : 𝓞 K) ∈ P.asIdeal := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
-  constructor
-  · intro hP
-    obtain ⟨q, -, rfl⟩ := Finset.mem_map.mp hP
-    have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp q.property
-    simp only [Function.Embedding.coeFn_mk, heightOneSpectrumOfMemPrimesOver_asIdeal]
-    exact (liesOver_span_natCast_iff hmem.1.ne_top).mp hmem.2
-  · intro hP
-    refine mem_of_natCast_mem_asIdeal (fun Q hQ ↦ ?_) P hP
-    have hQT : Q.asIdeal ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K) :=
-      (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ
-    refine Finset.mem_map.mpr ⟨⟨Q.asIdeal, hQT⟩, Finset.mem_attach _ _,
-      HeightOneSpectrum.ext ?_⟩
-    simp only [Function.Embedding.coeFn_mk, heightOneSpectrumOfMemPrimesOver_asIdeal]
-
-/-- Every member of `heightOneSpectrumPrimesOverFinset K p` lies over `span {(p : ℤ)}`. -/
-theorem liesOver_of_mem_heightOneSpectrumPrimesOverFinset {P : HeightOneSpectrum (𝓞 K)}
-    (hP : P ∈ heightOneSpectrumPrimesOverFinset K p) :
-    P.asIdeal.LiesOver (span {(p : ℤ)}) :=
-  (liesOver_span_natCast_iff P.isPrime.ne_top).mpr (mem_heightOneSpectrumPrimesOverFinset_iff.mp hP)
+    ⟨fun q ↦
+      have hq := (mem_primesOverFinset_iff
+        (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)).mp q.property
+      have := hq.1
+      have := hq.2
+      heightOneSpectrumOfLiesOver p q.val,
+    by
+      intro q₁ q₂ h
+      exact Subtype.ext
+        (by simpa [heightOneSpectrumOfLiesOver] using congrArg HeightOneSpectrum.asIdeal h)⟩
 
 /-- Mapping `heightOneSpectrumPrimesOverFinset K p` by `HeightOneSpectrum.asIdeal` recovers
 `primesOverFinset (span {(p : ℤ)}) (𝓞 K)`. -/
@@ -204,20 +174,26 @@ theorem map_asIdeal_heightOneSpectrumPrimesOverFinset :
     (heightOneSpectrumPrimesOverFinset K p).map
         ⟨HeightOneSpectrum.asIdeal, HeightOneSpectrum.asIdeal_injective⟩ =
       primesOverFinset (span {(p : ℤ)}) (𝓞 K) := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
-  ext 𝔭
-  simp only [Finset.mem_map, mem_heightOneSpectrumPrimesOverFinset_iff]
-  constructor
-  · rintro ⟨P, hP, rfl⟩
-    exact (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr
-      ⟨P.isPrime, (liesOver_span_natCast_iff P.isPrime.ne_top).mpr hP⟩
-  · intro h𝔭
-    have hmem := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp h𝔭
-    have := hmem.1
-    have := hmem.2
-    refine ⟨heightOneSpectrumOfLiesOver p 𝔭, ?_, heightOneSpectrumOfLiesOver_asIdeal p 𝔭⟩
-    rw [heightOneSpectrumOfLiesOver_asIdeal]
-    exact (liesOver_span_natCast_iff hmem.1.ne_top).mp hmem.2
+  rw [heightOneSpectrumPrimesOverFinset, Finset.map_map]
+  convert (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach_map_val
+  ext q
+  rfl
+
+/-- A height-one prime `P` belongs to `heightOneSpectrumPrimesOverFinset K p` iff
+`(p : 𝓞 K) ∈ P.asIdeal`. -/
+@[simp]
+theorem mem_heightOneSpectrumPrimesOverFinset_iff {P : HeightOneSpectrum (𝓞 K)} :
+    P ∈ heightOneSpectrumPrimesOverFinset K p ↔ (p : 𝓞 K) ∈ P.asIdeal := by
+  rw [← Finset.mem_map' ⟨HeightOneSpectrum.asIdeal, HeightOneSpectrum.asIdeal_injective⟩,
+    Function.Embedding.coeFn_mk, map_asIdeal_heightOneSpectrumPrimesOverFinset,
+    mem_primesOverFinset_span_natCast_iff]
+  exact and_iff_right P.isPrime
+
+/-- Every member of `heightOneSpectrumPrimesOverFinset K p` lies over `span {(p : ℤ)}`. -/
+theorem liesOver_of_mem_heightOneSpectrumPrimesOverFinset {P : HeightOneSpectrum (𝓞 K)}
+    (hP : P ∈ heightOneSpectrumPrimesOverFinset K p) :
+    P.asIdeal.LiesOver (span {(p : ℤ)}) :=
+  (liesOver_span_natCast_iff P.isPrime.ne_top).mpr (mem_heightOneSpectrumPrimesOverFinset_iff.mp hP)
 
 /-- Reindexing a product over `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` to a product over
 `heightOneSpectrumPrimesOverFinset K p`. -/

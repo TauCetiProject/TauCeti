@@ -152,11 +152,9 @@ theorem normCoeff_one_eq_prod_primitiveCharacter :
     have hbell :=
       TauCeti.IdealArithmeticFunction.bellSeries_normCoeff_one_mul_prod_one_sub_X_pow K hp
     have hinert : ∀ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K),
-        𝔭.inertiaDeg ℤ = orderOf (p : ZMod m) := by
-      intro 𝔭 h𝔭
+        𝔭.inertiaDeg ℤ = orderOf (p : ZMod m) := fun 𝔭 h𝔭 ↦ by
       obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp h𝔭
-      exact Nat.pow_right_injective hp.one_lt
-        ((Ideal.pow_inertiaDeg p 𝔭).trans (absNorm_eq_pow_orderOf hn hm 𝔭))
+      exact inertiaDeg_eq_orderOf hn hm 𝔭
     rwa [Finset.prod_congr rfl fun 𝔭 h𝔭 ↦ by rw [hinert 𝔭 h𝔭], Finset.prod_const,
       card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm] at hbell
   have h2 :=
