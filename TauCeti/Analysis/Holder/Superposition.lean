@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import TauCeti.Analysis.Normed.Operator.Holder
 public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Normed.Operator.Prod
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Superposition operators on Hölder functions
@@ -38,6 +40,11 @@ bounded range `[-M, M]`. The chain rule for `x ↦ A x (u x)` itself, and the bo
   `max 1 M_u · C_A (max 1 L)^α D^(α - γ) + M_A C_u D^(β - γ)`.
 
   So `A ∈ C^{1,α}` and `u ∈ C^{1,β}` give `A (·, u) ∈ C^{1, min α β}` on bounded sets.
+* **Order one, locally** (`TauCeti.exists_mem_nhds_holderOnWith_fderiv_superposition`). On
+  finite-dimensional real spaces, if `A` is `C¹` on `U × F` with locally `α`-Hölder derivative and
+  `u` is `C¹` on an open `U` with locally `β`-Hölder derivative, then the derivative of
+  `x ↦ A x (u x)` is `γ`-Hölder near every point of `U` for every `γ ≤ min α β`. The bounds of the
+  order-one rule come from compactness, so no global bound on `A` or `u` is assumed.
 
 ## References
 
@@ -126,3 +133,66 @@ theorem HolderOnWith.fderiv_superposition {A : E → F → G} {A' : E × F → E
     exact ContinuousLinearMap.norm_compL_le ..
 
 end Normed
+
+namespace TauCeti
+
+open Metric Topology
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [ProperSpace F] [NormedAddCommGroup G]
+  [NormedSpace ℝ G]
+
+/-- **Local Hölder continuity of the derivative of a superposition.** Let `U ⊆ E` be open. Suppose
+that `A`, as a function on `E × F`, is `C¹` on `U × F` with derivative `α`-Hölder near every point
+of `U × F`, and that `u` is `C¹` on `U` with derivative `β`-Hölder near every point of `U`. Then for
+every `γ ≤ α` with `γ ≤ β`, the derivative of `x ↦ A x (u x)` is `γ`-Hölder near every point of
+`U`. -/
+theorem exists_mem_nhds_holderOnWith_fderiv_superposition {A : E → F → G} {u : E → F} {U : Set E}
+    {α β γ : ℝ≥0} (hU : IsOpen U) (hA : ContDiffOn ℝ 1 (Function.uncurry A) (U ×ˢ univ))
+    (hA' : ∀ p ∈ U ×ˢ univ, ∃ T ∈ 𝓝 p, ∃ C : ℝ≥0,
+      HolderOnWith C α (fderiv ℝ (Function.uncurry A)) T)
+    (hu : ContDiffOn ℝ 1 u U) (hu' : ∀ x ∈ U, ∃ T ∈ 𝓝 x, ∃ C : ℝ≥0, HolderOnWith C β (fderiv ℝ u) T)
+    (hγα : γ ≤ α) (hγβ : γ ≤ β) {x : E} (hx : x ∈ U) :
+    ∃ T ∈ 𝓝 x, ∃ C : ℝ≥0, HolderOnWith C γ (fderiv ℝ fun y ↦ A y (u y)) T := by
+  -- Work on a ball `s` whose closure lies in `U` and on which `u'` is `β`-Hölder.
+  obtain ⟨Tu, hTu, Cu, hCu⟩ := hu' x hx
+  obtain ⟨ρ, hρ, hρU⟩ := nhds_basis_closedBall.mem_iff.1 (Filter.inter_mem (hU.mem_nhds hx) hTu)
+  set s := ball x ρ
+  have hsU : closedBall x ρ ⊆ U := hρU.trans inter_subset_left
+  have hus : ∀ y ∈ s, HasFDerivAt u (fderiv ℝ u y) y := fun y hy ↦
+    ((hu.differentiableOn one_ne_zero).differentiableAt
+      (hU.mem_nhds (hsU (ball_subset_closedBall hy)))).hasFDerivAt
+  have hCus : HolderOnWith Cu β (fderiv ℝ u) s :=
+    hCu.mono (ball_subset_closedBall.trans (hρU.trans inter_subset_right))
+  obtain ⟨Mu, hMu⟩ := (hCus.isBounded_image isBounded_ball).exists_norm_le
+  have hL : LipschitzOnWith Mu.toNNReal u s :=
+    (convex_ball x ρ).lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
+      (fun y hy ↦ (hus y hy).hasFDerivWithinAt) fun y hy ↦ by
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
+        exact (hMu _ (mem_image_of_mem _ hy)).trans (Real.le_coe_toNNReal Mu)
+  -- The values of `u` on `s` lie in a closed ball `t`, and `A'` is Hölder and bounded on
+  -- `closedBall x ρ ×ˢ t`, by compactness.
+  obtain ⟨M, hM⟩ :=
+    (isCompact_closedBall x ρ).exists_bound_of_continuousOn (hu.continuousOn.mono hsU)
+  set t := closedBall (0 : F) M
+  have hK : IsCompact (closedBall x ρ ×ˢ t) :=
+    (isCompact_closedBall x ρ).prod (isCompact_closedBall 0 M)
+  obtain ⟨δ, hδ, CA, MA, hCA, hMA⟩ := hK.exists_holderOnWith_thickening_and_norm_le fun p hp ↦ by
+    obtain ⟨T, hT, C, hC⟩ := hA' p ⟨hsU hp.1, mem_univ _⟩
+    obtain ⟨r, hr, hrT⟩ := nhds_basis_ball.mem_iff.1 hT
+    exact ⟨r, hr, C, hC.mono hrT⟩
+  have hst : s ×ˢ t ⊆ thickening δ (closedBall x ρ ×ˢ t) :=
+    (prod_mono ball_subset_closedBall le_rfl).trans (self_subset_thickening hδ _)
+  -- A bound for the distances in `s`.
+  obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ y ∈ s, ∀ z ∈ s, edist y z ≤ D :=
+    ⟨(Metric.ediam s).toNNReal, fun y hy z hz ↦ by
+      rw [ENNReal.coe_toNNReal (Metric.isBounded_iff_ediam_ne_top.1 isBounded_ball)]
+      exact Metric.edist_le_ediam_of_mem hy hz⟩
+  refine ⟨s, ball_mem_nhds x hρ, _, HolderOnWith.fderiv_superposition (hCA.mono hst)
+    (fun p hp ↦ ((hA.differentiableOn one_ne_zero).differentiableAt ((hU.prod isOpen_univ).mem_nhds
+      ⟨hsU (ball_subset_closedBall hp.1), mem_univ _⟩)).hasFDerivAt)
+    (fun p hp ↦ hMA p (hst hp)) hCus hus (fun y hy ↦ (hMu _ (mem_image_of_mem _ hy)).trans
+      (Real.le_coe_toNNReal Mu)) hL (fun y hy ↦ mem_closedBall_zero_iff.2
+      (hM y (ball_subset_closedBall hy))) hD hγα hγβ⟩
+
+end TauCeti
