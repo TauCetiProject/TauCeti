@@ -243,7 +243,9 @@ theorem map_qExpansion_weightedG2MF_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)
     rw [map_sum, ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp,
       ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp,
       ← (Equiv.prodCongr (Equiv.refl _) d.mulLeft).sum_comp]
-    exact Finset.sum_congr rfl fun p _ ↦ hW p.1 p.2
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    simpa only [Equiv.prodCongr_apply, Prod.map_fst, Prod.map_snd, Equiv.refl_apply,
+      Units.mulLeft_apply, finTwoArrowEquiv_symm_apply] using hW p.1 p.2
   let V := fun a ↦ W a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b
   let V' := fun a ↦ W' a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W' b
   have hV (x y) : V' ![x, (d : ZMod N) * y] = σ (V ![x, y]) := by
@@ -262,8 +264,10 @@ theorem map_qExpansion_weightedG2MF_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)
     simp only [map_div₀, map_neg, map_sum, map_mul, map_pow, map_natCast, map_ofNat,
       map_ratCast, hzero, hrow, V, V']
 
-/-- On a single-residue division value, cyclotomic coefficient conjugation sends the weight
-`Pi.single (a, b) 1` to `Pi.single (a, d b) 1`. -/
+/-- Cyclotomic conjugation of the normalized coefficients of a single-residue division value.
+Applying `σ` to each Fourier coefficient of `weightedG2MF (Pi.single (a, b) 1)` after division by
+`(2πi)²` gives the corresponding normalized coefficient of `weightedG2MF (Pi.single (a, d b) 1)`.
+The quantity conjugated is the normalized coefficient, not the division value itself. -/
 theorem map_qExpansion_weightedG2MF_single_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
     (hσ : ∀ j : ZMod N, σ (stdAddChar j) = stdAddChar ((d : ZMod N) * j))
     (a : Fin 2 → ZMod N) (n : ℕ) :

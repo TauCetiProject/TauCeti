@@ -166,18 +166,9 @@ theorem map_laurentQExpansion_frickeMeromorphicFunction {σ : ℂ →+* ℂ} {d 
       (laurentQExpansion (cuspDatumInftyGamma N) (frickeMeromorphicFunction a)) =
       laurentQExpansion (cuspDatumInftyGamma N)
         (frickeMeromorphicFunction ![a 0, (d : ZMod N) * a 1]) := by
-  -- coefficientwise identities of power series lift to their Laurent series
-  have hlift {c : ℂ} {f g : PowerSeries ℂ} (h : ∀ n, σ (c * f.coeff n) = c * g.coeff n) :
-      HahnSeries.mapRingHom σ (c • (f : LaurentSeries ℂ)) = c • (g : LaurentSeries ℂ) := by
-    ext j
-    simp only [HahnSeries.coeff_mapRingHom, HahnSeries.coeff_smul, PowerSeries.coeff_coe,
-      smul_eq_mul]
-    split_ifs
-    · simp
-    · exact h _
   have hfix {f : PowerSeries ℂ} (h : ∀ n, σ (f.coeff n) = f.coeff n) :
-      HahnSeries.mapRingHom σ (f : LaurentSeries ℂ) = f := by
-    simpa only [one_smul] using hlift (c := 1) (f := f) (g := f) (by simpa only [one_mul] using h)
+      HahnSeries.mapRingHom σ (f : LaurentSeries ℂ) = f :=
+    HahnSeries.mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff.mpr h
   have hE {k : ℕ} (hk : 3 ≤ k) :
       HahnSeries.mapRingHom σ (qExpansion N (ModularForm.E hk) : LaurentSeries ℂ) =
         (qExpansion N (ModularForm.E hk) : LaurentSeries ℂ) :=
@@ -188,13 +179,17 @@ theorem map_laurentQExpansion_frickeMeromorphicFunction {σ : ℂ →+* ℂ} {d 
         (qExpansion N _root_.ModularForm.discriminant : LaurentSeries ℂ) :=
     hfix fun n ↦ (RingHom.mem_eqLocus.mp (ModularForm.qExpansion_natCast_discriminant_coeff_mem
       (N := N) (R := σ.eqLocus (RingHom.id ℂ)) n)).trans (RingHom.id_apply _)
-  have hG := hlift (c := ((2 * π * I : ℂ) ^ 2)⁻¹)
-    (f := qExpansion N (EisensteinSeries.weightedG2MF (Pi.single a (1 : ℂ))))
-    (g := qExpansion N (EisensteinSeries.weightedG2MF
-      (Pi.single ![a 0, (d : ZMod N) * a 1] (1 : ℂ)))) fun n ↦ by
-    simpa only [div_eq_mul_inv, mul_comm] using
-      EisensteinSeries.map_qExpansion_weightedG2MF_single_coeff_div
-        (ZMod.map_stdAddChar_of_map_stdAddChar_one hσ) a n
+  have hG : HahnSeries.mapRingHom σ (((2 * π * I : ℂ) ^ 2)⁻¹ •
+      (qExpansion N (EisensteinSeries.weightedG2MF (Pi.single a (1 : ℂ))) : LaurentSeries ℂ)) =
+      ((2 * π * I : ℂ) ^ 2)⁻¹ • (qExpansion N (EisensteinSeries.weightedG2MF
+        (Pi.single ![a 0, (d : ZMod N) * a 1] (1 : ℂ))) : LaurentSeries ℂ) := by
+    rw [← PowerSeries.coe_smul, ← PowerSeries.coe_smul,
+      HahnSeries.mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff]
+    intro n
+    rw [PowerSeries.coeff_smul, PowerSeries.coeff_smul, smul_eq_mul, smul_eq_mul,
+      ← div_eq_inv_mul, ← div_eq_inv_mul]
+    exact EisensteinSeries.map_qExpansion_weightedG2MF_single_coeff_div
+      (ZMod.map_stdAddChar_of_map_stdAddChar_one hσ) a n
   rw [laurentQExpansion_frickeMeromorphicFunction,
     laurentQExpansion_frickeMeromorphicFunction, map_mul, map_div₀, map_mul,
     hE, hE, hΔ, hG]
