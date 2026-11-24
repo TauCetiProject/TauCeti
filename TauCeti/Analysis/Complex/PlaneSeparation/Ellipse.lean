@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.PlaneSeparation.Isoperimetric
 public import TauCeti.Analysis.Green.Examples.CurveArea.Ellipse
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
-import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The isoperimetric inequality for ellipses
@@ -20,7 +19,7 @@ open unit disc (`TauCeti.filledHull_image_ellipse_uIcc_sdiff`), of area `π |ab|
 (`TauCeti.volume_filledHull_image_ellipse_uIcc_sdiff`).
 
 The ellipse is a circle exactly when its axes have equal length, `|a| = |b|`
-(`TauCeti.exists_image_ellipse_uIcc_eq_sphere_iff`). So the isoperimetric inequality
+(`TauCeti.Green.Examples.exists_image_ellipse_uIcc_eq_sphere_iff`). So the isoperimetric inequality
 `4π A ≤ L²` for the inside of `C`, of area `A`, and the length `L = H¹(C)` of `C` is an equality
 exactly when `|a| = |b|`, and is strict for every ellipse with unequal axes
 (`TauCeti.ofReal_four_pi_mul_volume_filledHull_image_ellipse_uIcc_sdiff_lt_iff`).
@@ -71,61 +70,6 @@ theorem volume_filledHull_image_ellipse_uIcc_sdiff (ha : a ≠ 0) (hb : b ≠ 0)
       ENNReal.ofReal (π * |a * b|) := by
   rw [filledHull_image_ellipse_uIcc_sdiff ha hb, ← volume_ellipse_image_ball a b ha hb]
   simp
-
-/-- The axis coordinates scale every norm by `|a|` when the axes have equal length. -/
-private theorem norm_ellipseCoordinates_of_abs_eq (ha : a ≠ 0) (hb : b ≠ 0) (hab : |a| = |b|)
-    (z : ℂ) : ‖ellipseCoordinates a b ha hb z‖ = |a| * ‖z‖ := by
-  set A := ellipseCoordinates a b ha hb
-  have he : A z = (a * z.re : ℝ) + (b * z.im : ℝ) * Complex.I := by
-    have h : A z = z.re • A 1 + z.im • A Complex.I :=
-      LinearMap.apply_eq_re_smul_one_add_im_smul_I A.toLinearEquiv.toLinearMap z
-    rw [h, ellipseCoordinates_one, ellipseCoordinates_I]
-    simp only [Complex.real_smul]
-    push_cast
-    ring
-  have hsq : b ^ 2 = a ^ 2 := (sq_eq_sq_iff_abs_eq_abs b a).2 hab.symm
-  rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), mul_pow, sq_abs, he, Complex.sq_norm,
-    Complex.sq_norm, Complex.normSq_add_mul_I, Complex.normSq_apply]
-  linear_combination z.im ^ 2 * hsq
-
-/-- **The circular ellipses.** The trace of an ellipse with nonzero axes `a` and `b` is a circle
-of positive radius exactly when `|a| = |b|`. -/
-theorem exists_image_ellipse_uIcc_eq_sphere_iff (ha : a ≠ 0) (hb : b ≠ 0) :
-    (∃ c : ℂ, ∃ r : ℝ, 0 < r ∧ ellipse a b '' uIcc 0 (2 * π) = sphere c r) ↔ |a| = |b| := by
-  set A := ellipseCoordinates a b ha hb
-  rw [image_ellipse_uIcc a b ha hb]
-  constructor
-  · rintro ⟨c, r, -, h⟩
-    -- The four vertices `±a` and `±b i` lie on the circle, which forces `c = 0` and `a² = r² = b²`.
-    have hmem (z : ℂ) (hz : ‖z‖ = 1) : ‖A z - c‖ ^ 2 = r ^ 2 := by
-      have : A z ∈ sphere c r := h ▸ mem_image_of_mem A (mem_sphere_zero_iff_norm.2 hz)
-      rw [mem_sphere_iff_norm.1 this]
-    have h₁ := hmem 1 (by simp)
-    have h₂ := hmem (-1) (by simp)
-    have h₃ := hmem Complex.I (by simp)
-    have h₄ := hmem (-Complex.I) (by simp)
-    simp only [map_neg, A, ellipseCoordinates_one, ellipseCoordinates_I, Complex.sq_norm,
-      Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.neg_re, Complex.neg_im,
-      Complex.ofReal_re, Complex.ofReal_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
-      Complex.I_im] at h₁ h₂ h₃ h₄
-    have hre : c.re = 0 := by
-      have : a * c.re = 0 := by linarith
-      simpa [ha] using this
-    have him : c.im = 0 := by
-      have : b * c.im = 0 := by linarith
-      simpa [hb] using this
-    rw [hre, him] at h₁ h₃
-    exact (sq_eq_sq_iff_abs_eq_abs a b).1 (by linarith)
-  · intro hab
-    refine ⟨0, |a|, abs_pos.2 ha, Set.ext fun y ↦ ⟨?_, fun hy ↦ ?_⟩⟩
-    · rintro ⟨z, hz, rfl⟩
-      rw [mem_sphere_zero_iff_norm] at hz ⊢
-      rw [norm_ellipseCoordinates_of_abs_eq ha hb hab, hz, mul_one]
-    · refine ⟨A.symm y, ?_, A.apply_symm_apply y⟩
-      rw [mem_sphere_zero_iff_norm] at hy ⊢
-      have := norm_ellipseCoordinates_of_abs_eq ha hb hab (A.symm y)
-      rw [A.apply_symm_apply, hy] at this
-      exact (mul_eq_left₀ (abs_ne_zero.2 ha)).1 this.symm
 
 /-- **Equality in the isoperimetric inequality for an ellipse.** The inside of the trace `C` of
 an ellipse with nonzero axes `a` and `b` satisfies `4π |inside C| = H¹(C)²` exactly when

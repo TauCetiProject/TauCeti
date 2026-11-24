@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.PlaneSeparation.Isoperimetric
 public import TauCeti.Analysis.Complex.Rectangle
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import Mathlib.Analysis.Convex.Measure
-import Mathlib.Analysis.InnerProductSpace.Convex
 
 /-!
 # The isoperimetric inequality for planar convex sets
@@ -126,40 +125,6 @@ end Convex
 namespace Complex
 
 variable {z w : ℂ}
-
-/-- A closed rectangle with distinct opposite corners is not a closed disc: the midpoint of an
-edge of positive length is not an interior point of the rectangle, while every midpoint of two
-distinct points of a closed disc is. -/
-theorem rectangle_ne_closedBall (hzw : z ≠ w) (c : ℂ) (r : ℝ) :
-    Rectangle z w ≠ closedBall c r := by
-  intro h
-  have hsc : StrictConvex ℝ (Rectangle z w) := h ▸ strictConvex_closedBall ℝ c r
-  -- An endpoint of an interval of `ℝ` is not an interior point of it.
-  have hend (x y : ℝ) : x ∉ interior (uIcc x y) := by
-    simp only [uIcc, interior_Icc, mem_Ioo, inf_lt_left, left_lt_sup, not_and]
-    exact fun h h' ↦ h' (not_le.1 h).le
-  have hz : z ∈ Rectangle z w := by simp [Rectangle, mem_reProdIm]
-  rcases eq_or_ne z.re w.re with hre | hre
-  · -- The corners `z` and `z.re + w.im * I` are distinct and share the real part `z.re`.
-    set p : ℂ := z.re + w.im * I
-    have hp : p ∈ Rectangle z w := by simp [p, Rectangle, mem_reProdIm]
-    have hzp : z ≠ p := fun h ↦ hzw (Complex.ext hre (by simpa [p] using congrArg im h))
-    have hmid := hsc hz hp hzp one_half_pos one_half_pos (add_halves 1)
-    rw [Rectangle, interior_reProdIm, mem_reProdIm] at hmid
-    refine hend z.re w.re ?_
-    convert hmid.1 using 1
-    simp only [p, add_re, smul_re, ofReal_re, mul_re, ofReal_im, I_re, I_im]
-    ring
-  · -- The corners `z` and `w.re + z.im * I` are distinct and share the imaginary part `z.im`.
-    set p : ℂ := w.re + z.im * I
-    have hp : p ∈ Rectangle z w := by simp [p, Rectangle, mem_reProdIm]
-    have hzp : z ≠ p := fun h ↦ hre (by simpa [p] using congrArg re h)
-    have hmid := hsc hz hp hzp one_half_pos one_half_pos (add_halves 1)
-    rw [Rectangle, interior_reProdIm, mem_reProdIm] at hmid
-    refine hend z.im w.im ?_
-    convert hmid.2 using 1
-    simp only [p, add_im, smul_im, ofReal_re, mul_im, ofReal_im, I_re, I_im]
-    ring
 
 /-- **The isoperimetric inequality is strict for rectangles.** A closed rectangle `R ⊆ ℂ` with
 sides of positive length satisfies `4π |R| < H¹(frontier R)²`. -/

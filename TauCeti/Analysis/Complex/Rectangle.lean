@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.InnerProductSpace.Convex
 
 /-!
 # Axis-parallel segments and rectangles in the complex plane
@@ -26,6 +27,8 @@ rectangles.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
   the open rectangle.
 * `Complex.isClosed_rectangle`, `Complex.isCompact_rectangle`, `Complex.convex_rectangle`.
+* `Complex.rectangle_ne_closedBall`: a rectangle with distinct opposite corners is not a closed
+  disc.
 * `Complex.dist_le_of_mem_rectangle`: two points of `Rectangle z w` are at distance at most
   `dist z w`.
 * `Complex.smul_integral_lineMap_of_im_eq`, `Complex.smul_integral_lineMap_of_re_eq`: the contour
@@ -35,7 +38,7 @@ rectangles.
 
 public section
 
-open Set MeasureTheory
+open Set MeasureTheory Metric
 open scoped Interval
 
 namespace Complex
@@ -112,6 +115,35 @@ theorem isCompact_rectangle (z w : ℂ) : IsCompact (Rectangle z w) :=
 theorem convex_rectangle (z w : ℂ) : Convex ℝ (Rectangle z w) := by
   rw [rectangle_eq_convexHull]
   exact convex_convexHull ℝ _
+
+/-- A closed rectangle with distinct opposite corners is not a closed disc: the midpoint of an
+edge of positive length is not an interior point of the rectangle, while every midpoint of two
+distinct points of a closed disc is. -/
+theorem rectangle_ne_closedBall (hzw : z ≠ w) (c : ℂ) (r : ℝ) :
+    Rectangle z w ≠ closedBall c r := by
+  intro h
+  have hsc : StrictConvex ℝ (Rectangle z w) := h ▸ strictConvex_closedBall ℝ c r
+  -- An endpoint of an interval of `ℝ` is not an interior point of it.
+  have hend (x y : ℝ) : x ∉ interior [[x, y]] := by
+    simp only [uIcc, interior_Icc, mem_Ioo, inf_lt_left, left_lt_sup, not_and]
+    exact fun h h' ↦ h' (not_le.1 h).le
+  -- The midpoint of `z` and another point of the rectangle is an interior point.
+  have hmid {p : ℂ} (hp : p ∈ Rectangle z w) (hzp : z ≠ p) :
+      (z.re + p.re) / 2 ∈ interior [[z.re, w.re]] ∧
+        (z.im + p.im) / 2 ∈ interior [[z.im, w.im]] := by
+    have hm := hsc (by simp [Rectangle, mem_reProdIm]) hp hzp one_half_pos one_half_pos
+      (add_halves 1)
+    rw [Rectangle, interior_reProdIm, mem_reProdIm] at hm
+    convert hm using 2 <;> simp <;> ring
+  rcases eq_or_ne z.re w.re with hre | hre
+  · -- The corners `z` and `z.re + w.im * I` are distinct and share the real part `z.re`.
+    refine hend z.re w.re ?_
+    simpa using (hmid (p := z.re + w.im * I) (by simp [Rectangle, mem_reProdIm])
+      fun h ↦ hzw (Complex.ext hre (by simpa using congrArg im h))).1
+  · -- The corners `z` and `w.re + z.im * I` are distinct and share the imaginary part `z.im`.
+    refine hend z.im w.im ?_
+    simpa using (hmid (p := w.re + z.im * I) (by simp [Rectangle, mem_reProdIm])
+      fun h ↦ hre (by simpa using congrArg re h)).2
 
 /-- The distance between any two points of a closed rectangle is at most the distance between its
 opposite corners. -/
