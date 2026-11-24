@@ -1,13 +1,9 @@
 -- This is the AI-owned root of the TauCeti mathematics library.
 --
--- It is intentionally empty. The lakefile's `globs = ["TauCeti.*"]` is authoritative
--- for what gets built and axiom-audited: `lake build` builds every `TauCeti/` module
--- directly, and the audit (`scripts/Axioms.lean`) enumerates the source tree, so nothing
--- depends on this root re-exporting the library. No code does `import TauCeti`.
---
--- Mathematics PRs normally leave this file unchanged. It is kept (rather than deleted) only
--- because it is the library's root module; the import-boundary guard still applies, so it
--- must not import `TauCetiRoadmap` or `TauCetiReview`.
-
+-- The lakefile's `globs = ["TauCeti.*"]` determines the library's build scope, and
+-- the axiom audit enumerates the source tree. The import below includes the matrix
+-- application of the Jordan star map API.
 
 module
+
+import TauCeti.Algebra.Star.Jordan.Matrix

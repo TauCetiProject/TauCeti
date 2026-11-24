@@ -11,6 +11,11 @@ public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.Order.CompleteLattice.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
+import Mathlib.Algebra.Module.Torsion.Basic
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import TauCeti.RingTheory.Flat.TensorProduct
+import TauCeti.LinearAlgebra.TensorProduct.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
 # Generic freeness
@@ -36,6 +41,8 @@ is free.
 
 * `Module.freeLocus_mem_nhds_of_mem_minimalPrimes`: a finite module over a finitely generated
   algebra over a reduced Noetherian ring is free over that ring near every minimal prime.
+* `Module.exists_notMem_pow_smul_eq_zero_of_tensor_kernel`: one scalar outside a base prime
+  kills tensor kernels on its fibre by powers.
 * `Module.dense_interior_freeLocus_of_finiteType`: such a module is free over the base on a
   dense open subset of its spectrum.
 
@@ -189,5 +196,93 @@ theorem dense_interior_freeLocus_of_finiteType [IsNoetherianRing A] [IsReduced A
     [Module.Finite B M] : Dense (interior (freeLocus A M)) :=
   PrimeSpectrum.dense_of_forall_mem_minimalPrimes fun _ hp ↦
     mem_interior_iff_mem_nhds.mpr (freeLocus_mem_nhds_of_mem_minimalPrimes (B := B) M hp)
+
+section TensorKernel
+
+open TensorProduct
+
+variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+
+/-- The annihilated-module stage of the generic tensor-kernel theorem. -/
+private theorem exists_notMem_pow_smul_eq_zero_of_tensor_kernel_of_annihilated [IsNoetherianRing R]
+    [Algebra.FiniteType R S] [Module.Finite S M] (p : Ideal R) [p.IsPrime]
+    (hpM : ∀ r ∈ p, ∀ m : M, r • m = 0) :
+    ∃ a ∉ p, ∀ (N N' : Type*) [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N'],
+      (∀ r ∈ p, ∀ n : N', r • n = 0) →
+      ∀ f : N →ₗ[R] N', Function.Injective f → ∀ t : M ⊗[R] N,
+        f.lTensor M t = 0 → ∃ n : ℕ, a ^ n • t = 0 := by
+  have hMt : Module.IsTorsionBySet R M p := fun m r ↦ hpM r r.property m
+  have hMS : Module.IsTorsionBySet S M (p.map (algebraMap R S)) := by
+    rw [Module.isTorsionBySet_iff_subset_annihilator, SetLike.coe_subset_coe,
+      Ideal.map_le_iff_le_comap, Module.comap_annihilator]
+    exact (Module.isTorsionBySet_iff_subset_annihilator R M).mp hMt
+  let _ := hMt.module
+  let _ := hMS.module
+  let _ : Algebra (R ⧸ p) (S ⧸ p.map (algebraMap R S)) :=
+    Ideal.Quotient.algebraQuotientOfLEComap Ideal.le_comap_map
+  have : IsScalarTower R (R ⧸ p) (S ⧸ p.map (algebraMap R S)) :=
+    IsScalarTower.of_algebraMap_eq fun r ↦
+      (Ideal.Quotient.mk_algebraMap R _ r).symm.trans
+        (Ideal.quotientMap_mk (H := Ideal.le_comap_map)).symm
+  have : IsScalarTower (R ⧸ p) (S ⧸ p.map (algebraMap R S)) M := by
+    refine ⟨fun r s m ↦ ?_⟩
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
+    have hmul : Ideal.Quotient.mk p r • Ideal.Quotient.mk (p.map (algebraMap R S)) s =
+        Ideal.Quotient.mk (p.map (algebraMap R S)) (algebraMap R S r * s) := by
+      rw [Algebra.smul_def, ← Ideal.Quotient.algebraMap_eq,
+        ← IsScalarTower.algebraMap_apply R (R ⧸ p), ← Ideal.Quotient.mk_algebraMap, map_mul]
+    rw [hmul, hMS.mk_smul, hMt.mk_smul, hMS.mk_smul, mul_smul, algebraMap_smul]
+  have : Algebra.FiniteType R (S ⧸ p.map (algebraMap R S)) :=
+    Algebra.FiniteType.trans (S := S) inferInstance inferInstance
+  have : Algebra.FiniteType (R ⧸ p) (S ⧸ p.map (algebraMap R S)) :=
+    Algebra.FiniteType.of_restrictScalars_finiteType R _ _
+  have : Module.Finite (S ⧸ p.map (algebraMap R S)) M :=
+    Module.Finite.of_restrictScalars_finite S _ _
+  have hfree := Module.freeLocus_mem_nhds_of_mem_minimalPrimes
+    (B := S ⧸ p.map (algebraMap R S)) M (p := (⊥ : Ideal (R ⧸ p)))
+    (by simp only [IsDomain.minimalPrimes_eq_singleton_bot, Set.mem_singleton_iff])
+  obtain ⟨_, ⟨a, rfl⟩, ha, hsub⟩ :=
+    PrimeSpectrum.isTopologicalBasis_basic_opens.mem_nhds_iff.mp hfree
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+  refine ⟨a, fun hap ↦ ha (Ideal.Quotient.eq_zero_iff_mem.mpr hap), ?_⟩
+  apply pow_smul_eq_zero_of_flat_localizedModule_quotient p a
+  intro q hq
+  have : Module.Free (Localization.AtPrime q.asIdeal)
+      (LocalizedModule q.asIdeal.primeCompl M) := hsub hq
+  infer_instance
+
+/-- Over a Noetherian base, one scalar outside `p` has powers killing every tensor kernel of an
+injective map into a module annihilated by `p`. Here `M` is finite over the finite-type
+algebra `S`; no annihilation hypothesis on `M` is needed. -/
+theorem exists_notMem_pow_smul_eq_zero_of_tensor_kernel [IsNoetherianRing R]
+    [Algebra.FiniteType R S] [Module.Finite S M] (p : Ideal R) [p.IsPrime] :
+    ∃ a ∉ p, ∀ (N N' : Type*) [AddCommGroup N] [Module R N] [AddCommGroup N'] [Module R N'],
+      (∀ r ∈ p, ∀ n : N', r • n = 0) →
+      ∀ f : N →ₗ[R] N', Function.Injective f → ∀ t : M ⊗[R] N,
+        f.lTensor M t = 0 → ∃ n : ℕ, a ^ n • t = 0 := by
+  let P := p.map (algebraMap R S) • (⊤ : Submodule S M)
+  have hpQ : ∀ r ∈ p, ∀ m : M ⧸ P, r • m = 0 := by
+    intro r hr m
+    induction m using Submodule.Quotient.induction_on with
+    | H m =>
+      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
+        ← algebraMap_smul S r m]
+      exact Submodule.smul_mem_smul (Ideal.mem_map_of_mem _ hr) trivial
+  obtain ⟨a, ha, hker⟩ :=
+    exists_notMem_pow_smul_eq_zero_of_tensor_kernel_of_annihilated (S := S) p hpQ
+  refine ⟨a, ha, ?_⟩
+  intro N N' _ _ _ _ hN' f hf t ht
+  have hN : ∀ r ∈ p, ∀ n : N, r • n = 0 := fun r hr n ↦
+    hf (by rw [map_smul, hN' r hr (f n), map_zero])
+  let π := P.mkQ.restrictScalars R
+  have hπt : f.lTensor (M ⧸ P) (π.rTensor N t) = 0 := by
+    rw [LinearMap.lTensor_rTensor_comm, ht, map_zero]
+  obtain ⟨n, hn⟩ := hker N N' hN' f hf _ hπt
+  refine ⟨n, (quotient_map_tensor_bijective (S := S) p hN).1 ?_⟩
+  rw [map_smul, hn, map_zero]
+
+end TensorKernel
 
 end Module

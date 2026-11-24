@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Augmentation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
-import TauCeti.Geometry.Manifold.Orientation.Family
+import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -66,7 +66,6 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `isOrientationPreservingAt_flow`: the flow preserves every orientation of `M`.
 * `map_unstableFrame_eq_orientationAt_iff`: the unstable frame of a critical point of top index
   compares orientations in the same way at every point of its unstable manifold.
 * `IsMorseSmale.finsum_fundamentalSign_mul_signedMorseBoundaryCoeff`: the boundary coefficients of
@@ -99,23 +98,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace IsAdaptedPseudoGradient
 
-variable (hX : IsAdaptedPseudoGradient f X)
-
-/-- **The flow of an adapted pseudo-gradient preserves every orientation** of `M`, at every time
-and every point. -/
-theorem isOrientationPreservingAt_flow {ι : Type*} [Fintype ι]
-    (o : Manifold.Orientation 𝓘(ℝ, E) M ι) (t : ℝ) (y : M) :
-    o.IsOrientationPreservingAt o (hX.flow t) y := by
-  have h := Manifold.Orientation.isOrientationPreservingAt_family_iff o o
-    (hX.contMDiff_flow_uncurry.of_le (by simp)) y
-    (fun s ↦ by
-      have hs : (fun z ↦ hX.flow s z) = hX.flowDiffeomorph s :=
-        funext fun z ↦ (hX.flowDiffeomorph_apply s z).symm
-      exact hs ▸ (hX.flowDiffeomorph s).isInvertible_mfderiv (x := y) (by simp)) t 0
-  simp only [Flow.map_zero] at h
-  exact h.2 (Manifold.Orientation.isOrientationPreservingAt_id o y)
-
-variable {hX}
+variable {hX : IsAdaptedPseudoGradient f X}
 
 /-- The unstable frame at a critical point of top index is bijective. -/
 theorem bijective_unstableFrame_self (𝔬 : MorseOrientation f X) {p : criticalPoints 𝓘(ℝ, E) f}
@@ -247,38 +230,28 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
         oM.orientationAt y ↔
       Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op =
         oM.orientationAt p := by
-  -- An orientation of the model space for which the chart preserves orientations near `p`.
-  obtain ⟨oE, hU⟩ := Manifold.Orientation.exists_eventually_isOrientationPreservingAt
-    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
-    (isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source) oM
-  -- Flow `y` back close to `p`, to a time of linear backward flow.
-  have hlim : Tendsto (fun T ↦ hX.flow (-T) y) atTop (𝓝 p) :=
-    (Flow.mem_unstableSet.1 hy).comp tendsto_neg_atTop_atBot
-  obtain ⟨T, hT, hTU⟩ :=
-    ((hX.eventually_mem_linearBackwardTimes hφ hf hy).and (hlim.eventually hU)).exists
-  have hTp : T ∈ hX.linearBackwardTimes φ p := mem_linearBackwardTimes_self hp T
-  -- The map `φ ∘ Φ_{-T}` preserves orientations at `y` and at `p`.
-  have hg {z : M} (hz : oM.IsOrientationPreservingAt oE φ.toChart (hX.flow (-T) z)) :
-      oM.IsOrientationPreservingAt oE (φ.toChart ∘ hX.flow (-T)) z :=
-    hz.comp (hX.isOrientationPreservingAt_flow oM (-T) z)
-  have hpU : oM.IsOrientationPreservingAt oE φ.toChart (hX.flow (-T) p) := by
-    rw [hX.flow_apply_of_mfderiv_eq_zero hp]
-    exact hU.self_of_nhds
-  -- Through it, both frames become `e^{-T}` times the extension by zero.
-  obtain ⟨ey, hey, hy'⟩ := (hg hTU).exists_map_eq_orientationAt_iff
-    (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby) op
-  obtain ⟨ep, hep, hp'⟩ := (hg hpU).exists_map_eq_orientationAt_iff
-    (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op
-  have hL : ((LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans
-        ey.toLinearEquiv : _ ≃ₗ[ℝ] E) =
-      (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp).trans ep.toLinearEquiv :=
-    LinearEquiv.ext fun c ↦ (congrArg (· (hX.unstableFrame φ y c)) hey).trans
-      ((mfderiv_unstableFrame hφ hT c).trans ((mfderiv_unstableFrame hφ hTp c).symm.trans
-        (congrArg (· (hX.unstableFrame φ p c)) hep).symm))
-  have key := congrArg (fun L : _ ≃ₗ[ℝ] E ↦ Orientation.map (Fin (finrank ℝ E)) L op) hL
-  rw [hy', hp', Manifold.Orientation.orientationAt_eq_orientationAt oE
-    ((φ.toChart ∘ hX.flow (-T)) y) ((φ.toChart ∘ hX.flow (-T)) p)]
-  exact ⟨fun h ↦ key.symm.trans h, fun h ↦ key.trans h⟩
+  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
+  obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
+    ((hX.mem_linearBackwardTimes φ).1 hT).1
+  obtain ⟨eDp, heDp⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
+  let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
+  let Lp : TangentSpace 𝓘(ℝ, E) p ≃ₗ[ℝ] E := eDp.toLinearEquiv
+  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`: there `oM`
+  -- gives the same orientation at `y` and at `p`.
+  refine Orientation.eq_iff_eq_of_map_eq Ly Lp ?_
+    (map_orientationAt_eq_of_mem_linearBackwardTimes hφ oM hy hT eDy heDy eDp heDp)
+  -- So do the frames, since there the frame at `y` is `e^{-T}` times the frame at `p`.
+  have hL : (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans Ly =
+      ((LinearEquiv.smulOfNeZero ℝ _ (Real.exp (-T)) (Real.exp_pos _).ne').trans
+        (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp)).trans Lp := by
+    ext c
+    have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hp hT c
+    rw [← heDy, ← heDp, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
+    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+      LinearEquiv.smulOfNeZero_apply, map_smul, map_smul]
+    exact h
+  rw [← Orientation.map_trans, hL, Orientation.map_trans, Orientation.map_trans,
+    Orientation.map_smulOfNeZero_of_pos _ (Real.exp_pos _)]
 
 /-! ### The two trajectories into a critical point of index `n - 1` -/
 
@@ -295,11 +268,8 @@ private theorem exists_flow_eq_smul_single {q : M}
     ∃ T b : ℝ, 0 ∈ hX.linearForwardTimes φ (hX.flow T y) ∧ P (hX.flow T y) ∧ b ≠ 0 ∧
       φ.coord (φ.toChart (hX.flow T y)) = b • Pi.single j 1 := by
   obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
-  have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) q :=
-    φ.continuous_coord.norm.continuousAt.comp (φ.toChart.continuousAt φ.mem_source)
   have hnear : ∀ᶠ z in 𝓝 q, P z ∧ z ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart z)‖ < ε :=
-    hP.and ((φ.toChart.open_source.eventually_mem φ.mem_source).and
-      (hc.eventually (gt_mem_nhds (by simp [hε]))))
+    hP.and (φ.eventually_mem_source_norm_coord_lt hε)
   obtain ⟨T, hT, hPT, hsrc, hsmall⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
     ((Flow.mem_stableSet.1 hy).eventually hnear)).exists
   have hzs : hX.flow T y ∈ hX.flow.stableSet q := (Flow.apply_mem_stableSet_iff _ T).2 hy

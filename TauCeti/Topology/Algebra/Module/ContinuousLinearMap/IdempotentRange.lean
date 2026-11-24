@@ -35,8 +35,13 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 
 ## Main results
 
+* `ContinuousLinearMap.IsIdempotentElem.comp_self`,
+  `ContinuousLinearMap.IsIdempotentElem.comp_comp_self`: idempotence stated with `∘L` in place
+  of `*`.
 * `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
   fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
+  continuous linear map on a complete space is complete.
 * `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
@@ -55,6 +60,22 @@ public section
 open scoped Ring
 
 namespace ContinuousLinearMap.IsIdempotentElem
+
+section Semiring
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  {p : M →L[R] M}
+
+/-- An idempotent continuous linear map composed with itself is itself. -/
+theorem comp_self (hp : IsIdempotentElem p) : p ∘L p = p :=
+  (mul_def p p).symm.trans hp.eq
+
+/-- Idempotence in the left-associated form `(X ∘L p) ∘L p = X ∘L p`, for any `X` out of `M`. -/
+theorem comp_comp_self {N : Type*} [TopologicalSpace N] [AddCommMonoid N] [Module R N]
+    (hp : IsIdempotentElem p) (X : M →L[R] N) : (X ∘L p) ∘L p = X ∘L p := by
+  rw [comp_assoc, comp_self hp]
+
+end Semiring
 
 variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
   {p q : M →L[R] M}
@@ -146,6 +167,12 @@ theorem coe_rangeEquiv_apply (w : p.range) :
 theorem coe_rangeEquiv_symm_apply (w : q.range) :
     ((rangeEquiv hp hq hU).symm w : M) = (q * p + (1 - q) * (1 - p))⁻¹ʳ w :=
   (rfl)
+
+/-- The range of an idempotent continuous linear map on a complete space is complete. -/
+theorem completeSpace_range {R M : Type*} [Ring R] [UniformSpace M] [T1Space M] [CompleteSpace M]
+    [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M] {p : M →L[R] M}
+    (hp : IsIdempotentElem p) : CompleteSpace p.range :=
+  (isClosed_range hp).completeSpace_coe
 
 end ContinuousLinearMap.IsIdempotentElem
 
