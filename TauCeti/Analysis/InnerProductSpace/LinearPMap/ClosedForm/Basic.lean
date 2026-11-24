@@ -86,7 +86,7 @@ of all pairs `(x, h) ∈ H × H` for which some `u : V` satisfies `j u = x` and
 
 ## References
 
-* G. Teschl, *Mathematical Methods in Quantum Mechanics*, 2nd ed., AMS (2014), §2.2, Theorem 2.13.
+* G. Teschl, *Mathematical Methods in Quantum Mechanics*, 2nd ed., AMS (2014), §2.3, Theorem 2.13.
 * T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), Chapter VI, §2.1,
   Theorem 2.1.
 * J. K. Hunter, *Notes on Partial Differential Equations*, Chapter 4, §4.8 and §4.10
