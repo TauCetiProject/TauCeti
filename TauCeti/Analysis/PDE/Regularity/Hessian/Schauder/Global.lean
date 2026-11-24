@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 import Mathlib.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.RegionAboveGraph
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.Frontier
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -19,21 +20,23 @@ Let `0 < α < 1`, and let `Ω ⊆ ℝ^{n+1}` be a bounded open set whose boundar
 point `z ∈ ∂Ω`, in a ball `B(z, r)`, the set `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the graph
 of a `C^{2,α}` function over the hyperplane `ν^⊥`, for a unit vector `ν` and a `C²` function `γ`
 invariant along `ν` whose first and second derivatives are bounded and whose second derivative is
-`α`-Hölder. Let `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` have coefficients that are `α`-Hölder with constant `L` and
-bounded by `M` on `closure Ω`, and uniformly elliptic there with constants `0 < λ ≤ Λ`. This file
-proves the global form of the Schauder estimate
+`α`-Hölder. Let the operator `P u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, with no lower-order terms, have coefficients
+that are `α`-Hölder with constant `L` and bounded by `M` on `closure Ω`, and uniformly elliptic
+there with constants `0 < λ ≤ Λ`. This file proves the global form of the Schauder estimate
 (`exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`): there is `C`,
 depending on `Ω`, `α`, `λ`, `Λ`, `L` and `M` but not on the coefficients beyond these bounds or on
 the solution, such that every `u` that is `C²` near `closure Ω`, vanishes on `∂Ω` and has an
 `α`-Hölder Hessian on `closure Ω` satisfies
 
-`[D²u]_{α; closure Ω} ≤ C ([L u]_{α; Ω} + N)`,
+`[D²u]_{α; closure Ω} ≤ C ([P u]_{α; Ω} + N)`,
 
 where `N` bounds `|u|`, `‖Du‖` and `‖D²u‖` on `closure Ω`. The Hölder constant of the Hessian enters
-only qualitatively. This is the covering step of Gilbarg–Trudinger, Theorem 6.6. Their statement has
-only the supremum of `u` on the right, the derivatives of order one and two being absorbed by the
-global interpolation inequalities of `C^{2,α}(closure Ω)` (their Lemma 6.35); that absorption is not
-part of this file.
+only qualitatively. This is the covering step of Gilbarg–Trudinger, Theorem 6.6, in a special case:
+the operator has only its second-order part (no terms `bᵢ ∂ᵢu` or `c u`), the boundary data is zero
+(their `φ = 0`), and only the Hölder seminorm of the Hessian is bounded rather than the full norm
+`|u|_{2,α}`. Their statement also has only the supremum of `u` on the right, the derivatives of
+order one and two being absorbed by the global interpolation inequalities of `C^{2,α}(closure Ω)`
+(their Lemma 6.35); that absorption is not part of this file either.
 
 ## The argument
 
@@ -82,61 +85,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-! ### The boundary chart -/
-
-section Chart
-
-/-- Every point of the closed region `{x | γ x ≤ ⟪x, ν⟫}` in an open ball is a limit of points of
-the open region `{x | γ x < ⟪x, ν⟫}` in that ball, approached along `ν`. -/
-private theorem setOf_le_inter_ball_subset_closure {z ν : E} {γ : E → ℝ} {r : ℝ} (hν : ‖ν‖ = 1)
-    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) :
-    {x | γ x ≤ ⟪x, ν⟫_ℝ} ∩ ball z r ⊆ closure ({x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r) := by
-  intro y ⟨hy, hyz⟩
-  have ht : Tendsto (fun t : ℝ => y + t • ν) (𝓝[>] 0) (𝓝 y) :=
-    tendsto_nhdsWithin_of_tendsto_nhds
-      ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 y (by simp))
-  refine mem_closure_of_tendsto ht ?_
-  filter_upwards [ht.eventually (isOpen_ball.mem_nhds hyz), self_mem_nhdsWithin] with t hball ht0
-  refine ⟨?_, hball⟩
-  have hlt : γ y < ⟪y, ν⟫_ℝ + t := hy.trans_lt (lt_add_of_pos_right _ ht0)
-  simpa only [mem_ofPred_eq, hγν, TauCeti.real_inner_add_smul_self_of_norm_eq_one hν] using hlt
-
-/-- In a chart ball, the closed region `{x | γ x ≤ ⟪x, ν⟫}` lies in the closure of `Ω`. -/
-private theorem setOf_le_inter_ball_subset_closure_of_chart {Ω : Set E} {z ν : E} {γ : E → ℝ}
-    {r : ℝ} (hΩz : Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r) (hν : ‖ν‖ = 1)
-    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) :
-    {x | γ x ≤ ⟪x, ν⟫_ℝ} ∩ ball z r ⊆ closure Ω := by
-  refine (setOf_le_inter_ball_subset_closure hν hγν).trans (closure_mono ?_)
-  rw [← hΩz]
-  exact inter_subset_left
-
-/-- In a chart ball, the closure of `Ω` lies in the closed region `{x | γ x ≤ ⟪x, ν⟫}`. -/
-private theorem closure_inter_ball_subset_setOf_le {Ω : Set E} {z ν : E} {γ : E → ℝ} {r : ℝ}
-    (hΩz : Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r) (hγ : Continuous γ) :
-    closure Ω ∩ ball z r ⊆ {x | γ x ≤ ⟪x, ν⟫_ℝ} := by
-  intro x ⟨hx, hxz⟩
-  have hx' : x ∈ closure (Ω ∩ ball z r) := by
-    rw [inter_comm]
-    exact isOpen_ball.inter_closure ⟨hxz, hx⟩
-  rw [hΩz] at hx'
-  exact closure_lt_subset_le hγ (continuous_id.inner continuous_const)
-    (closure_mono inter_subset_left hx')
-
-/-- In a chart ball, the points of the graph `{x | γ x = ⟪x, ν⟫}` lie on the boundary of `Ω`. -/
-private theorem mem_frontier_of_chart {Ω : Set E} {z ν : E} {γ : E → ℝ} {r : ℝ}
-    (hΩz : Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r) (hΩ : IsOpen Ω) (hν : ‖ν‖ = 1)
-    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) {y : E} (hy : y ∈ ball z r)
-    (hyγ : ⟪y, ν⟫_ℝ = γ y) : y ∈ frontier Ω := by
-  refine ⟨setOf_le_inter_ball_subset_closure_of_chart hΩz hν hγν ⟨hyγ.ge, hy⟩, ?_⟩
-  rw [hΩ.interior_eq]
-  intro hyΩ
-  have h : y ∈ {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r := by
-    rw [← hΩz]
-    exact ⟨hyΩ, hy⟩
-  exact lt_irrefl _ (h.1.trans_eq hyγ)
-
-end Chart
-
 /-! ### The two local estimates -/
 
 /-- **The boundary estimate in a chart, at every nearby centre.** Let `Ω` coincide on `B(z, r)` with
@@ -145,7 +93,7 @@ such that, under the hypotheses of the global estimate on `closure Ω`, the Hess
 `α`-Hölder with constant `C (K + N)` on `closedBall x ρ ∩ closure Ω` for every
 `x ∈ closure Ω ∩ B(z, r / 2)`. -/
 private theorem exists_holderOnWith_closedBall_inter_closure_of_chart {α : ℝ≥0} (hα : 0 < α)
-    (hα1 : α < 1) {Ω : Set E} (hΩ : IsOpen Ω) {z ν : E} {γ : E → ℝ} {G : ℝ≥0} {r : ℝ}
+    (hα1 : α < 1) {Ω : Set E} {z ν : E} {γ : E → ℝ} {G : ℝ≥0} {r : ℝ}
     (hν : ‖ν‖ = 1) (hγ : ContDiff ℝ 2 γ) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
     (hG1 : ∀ x, ‖fderiv ℝ γ x‖ ≤ G) (hG2 : ∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G)
     (hG3 : HolderWith G α (fderiv ℝ (fderiv ℝ γ))) (hr : 0 < r)
@@ -183,8 +131,9 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_chart {α : ℝ�
   -- The closed ball of radius `R` about `x` stays in the chart ball.
   have hRz : closedBall x R ⊆ ball z r :=
     closedBall_subset_ball' (by linarith [min_le_right R₀ (r / 2), mem_ball.1 hx.2])
-  have hle := setOf_le_inter_ball_subset_closure_of_chart hΩz hν hγν
-  have hge := closure_inter_ball_subset_setOf_le hΩz hγ.continuous
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)
+  have hle := TauCeti.setOf_le_inner_inter_subset_closure_of_inter_eq isOpen_ball hΩz hν0 hγν
+  have hge := TauCeti.closure_inter_subset_setOf_le_inner_of_inter_eq isOpen_ball hΩz hγ.continuous
   have hcl : closedBall x R ∩ {y | γ y ≤ ⟪y, ν⟫_ℝ} ⊆ closure Ω :=
     fun y hy => hle ⟨hy.2, hRz hy.1⟩
   have hcl' : ball x R ∩ {y | γ y ≤ ⟪y, ν⟫_ℝ} ⊆ closure Ω :=
@@ -192,9 +141,10 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_chart {α : ℝ�
   have hx₀ : γ x ≤ ⟪x, ν⟫_ℝ := hge ⟨hx.1, hRz (mem_closedBall_self hR.le)⟩
   refine (hC hx₀ (hEll x hx.1) (hEll' x hx.1) (fun i j => (hL i j).mono hcl)
     (fun y hy i j => hM y (hcl' hy) i j) hU (hcl'.trans hΩU) hu
-    (fun y hy hyγ => hu0 y (mem_frontier_of_chart hΩz hΩ hν hγν (hRz (ball_subset_closedBall hy))
-      hyγ)) (fun y hy => hN0 y (hcl' hy)) (fun y hy => hN1 y (hcl' hy))
-    (fun y hy => hN2 y (hcl' hy)) (hV.mono hcl') (hK.mono fun y hy => ?_)).mono fun y hy => ?_
+    (fun y hy hyγ => hu0 y (TauCeti.mem_frontier_of_inter_eq isOpen_ball hΩz hν0 hγν
+      (hRz (ball_subset_closedBall hy)) hyγ)) (fun y hy => hN0 y (hcl' hy))
+    (fun y hy => hN1 y (hcl' hy)) (fun y hy => hN2 y (hcl' hy)) (hV.mono hcl')
+    (hK.mono fun y hy => ?_)).mono fun y hy => ?_
   · have h : y ∈ Ω ∩ ball z r := by
       rw [hΩz]
       exact ⟨hy.2, hRz (ball_subset_closedBall hy.1)⟩
@@ -226,23 +176,24 @@ private theorem exists_holderOnWith_closedBall_of_ball_subset {α : ℝ≥0} (h�
   -- A radius `R < ε` small enough for the scale condition of the interior estimate.
   set c : ℝ := 2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
     ((1 + 2 ^ (α : ℝ)) * L)
-  have hlim : Tendsto (fun R : ℝ => c * R ^ (α : ℝ)) (𝓝[>] 0) (𝓝 0) := by
-    have h := ((Real.continuousAt_rpow_const 0 α (Or.inr α.coe_nonneg)).tendsto).const_mul c
-    rw [Real.zero_rpow (by exact_mod_cast hα.ne'), mul_zero] at h
-    exact tendsto_nhdsWithin_of_tendsto_nhds h
-  obtain ⟨R, hsmall, hR⟩ :=
-    ((hlim.eventually (gt_mem_nhds hlam)).and (Ioo_mem_nhdsGT hε)).exists
+  obtain ⟨r, hr, -, hsmall⟩ := Real.exists_pos_le_one_mul_rpow_le (max c 0)
+    (by exact_mod_cast hα : (0 : ℝ) < α) hlam
+  set R : ℝ := min r (ε / 2)
+  have hR : 0 < R := lt_min hr (half_pos hε)
+  have hRε : R < ε := (min_le_right _ _).trans_lt (half_lt_self hε)
   have hsmall' : 2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
       ((1 + 2 ^ (α : ℝ)) * L * R ^ (α : ℝ)) ≤ lam := by
-    convert hsmall.le using 1
-    simp only [c]
-    ring
-  obtain ⟨C, hC⟩ := hint hlam hsmall' (half_lt_self hR.1)
-  refine ⟨R / 2, half_pos hR.1, (half_lt_self hR.1).trans hR.2, C,
+    calc _ = c * R ^ (α : ℝ) := by simp only [c]; ring
+      _ ≤ max c 0 * r ^ (α : ℝ) := mul_le_mul (le_max_left _ _)
+          (Real.rpow_le_rpow hR.le (min_le_left _ _) α.coe_nonneg) (by positivity)
+          (le_max_right _ _)
+      _ ≤ lam := hsmall
+  obtain ⟨C, hC⟩ := hint hlam hsmall' (half_lt_self hR)
+  refine ⟨R / 2, half_pos hR, (half_lt_self hR).trans hRε, C,
     fun {a} hEll hEll' hL hM {u N K V} hu hN0 hN1 hN2 hV hK x hx => ?_⟩
-  have hRΩ : closedBall x R ⊆ Ω := (closedBall_subset_ball hR.2).trans hx
+  have hRΩ : closedBall x R ⊆ Ω := (closedBall_subset_ball hRε).trans hx
   have hRΩ' : ball x R ⊆ Ω := ball_subset_closedBall.trans hRΩ
-  have hx₀ : x ∈ Ω := hRΩ (mem_closedBall_self hR.1.le)
+  have hx₀ : x ∈ Ω := hRΩ (mem_closedBall_self hR.le)
   exact hC (hEll x hx₀) (hEll' x hx₀) (fun i j => (hL i j).mono hRΩ)
     (fun y hy i j => hM y (hRΩ hy) i j) (hu.mono hRΩ') (fun y hy => hN0 y (hRΩ' hy))
     (fun y hy => hN1 y (hRΩ' hy)) (fun y hy => hN2 y (hRΩ' hy)) (hV.mono hRΩ') (hK.mono hRΩ')
@@ -253,7 +204,7 @@ is `α`-Hölder with constant `C (K + N)` on `closedBall x ε ∩ closure Ω` fo
 within `ε` of `∂Ω`. The boundary is compact, so finitely many chart balls `B(z, r_z / 4)` cover it,
 and `ε` is taken below every `r_z / 4` and every radius `ρ_z` of the chart estimates. -/
 private theorem exists_holderOnWith_closedBall_inter_closure_of_dist_lt {α : ℝ≥0}
-    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : IsOpen Ω) (hΩb : Bornology.IsBounded Ω)
+    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩb : Bornology.IsBounded Ω)
     (hchart : ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
       ContDiff ℝ 2 γ ∧ (∀ x (t : ℝ), γ (x + t • ν) = γ x) ∧ (∀ x, ‖fderiv ℝ γ x‖ ≤ G) ∧
       (∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
@@ -276,7 +227,7 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_dist_lt {α : �
   -- The boundary estimate in the chart of each boundary point.
   choose! ν γ G r hν hγ hγν hG1 hG2 hG3 hr hΩz using hchart
   choose! ρ hρ C hC using fun z (hz : z ∈ frontier Ω) =>
-    exists_holderOnWith_closedBall_inter_closure_of_chart hα hα1 hΩ (hν z hz) (hγ z hz)
+    exists_holderOnWith_closedBall_inter_closure_of_chart hα hα1 (hν z hz) (hγ z hz)
       (hγν z hz) (hG1 z hz) (hG2 z hz) (hG3 z hz) (hr z hz) (hΩz z hz) Lam L M hlam
   -- Finitely many chart balls `B(z, r z / 4)` cover the compact boundary.
   have hcpt : IsCompact (frontier Ω) :=
@@ -311,14 +262,16 @@ and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary: every
 for a unit vector `ν` and a `C²` function `γ` invariant along `ν` with `‖Dγ‖ ≤ G`, `‖D²γ‖ ≤ G` and
 `D²γ` `α`-Hölder with constant `G`. Let `0 < λ`, `Λ`, `L` and `M` be given. Then there is `C` with
 the following property. Let `a` be `α`-Hölder entrywise with constant `L`, bounded entrywise by `M`
-and elliptic with constants `λ, Λ` on `closure Ω`, and put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on
+and elliptic with constants `λ, Λ` on `closure Ω`, and put `P u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on
 an open set containing `closure Ω`, vanishing on `∂Ω`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N`
-on `closure Ω` and with `D²u` `α`-Hölder there (with any constant). If `L u` is `α`-Hölder on `Ω`
+on `closure Ω` and with `D²u` `α`-Hölder there (with any constant). If `P u` is `α`-Hölder on `Ω`
 with constant `K`, then `D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`.
 
 The constant depends only on `Ω`, `α`, `λ`, `Λ`, `L` and `M`: not on the coefficients beyond the
-stated bounds, or on `u`. This is Gilbarg–Trudinger, Theorem 6.6, with the lower-order norms of `u`
-kept on the right instead of being absorbed by interpolation. -/
+stated bounds, or on `u`. This is the covering step of Gilbarg–Trudinger, Theorem 6.6, in the
+special case of an operator without lower-order terms and zero boundary data, bounding only the
+Hölder seminorm of the Hessian, with the lower-order norms of `u` kept on the right instead of
+being absorbed by interpolation. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv {α : ℝ≥0}
     (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : IsOpen Ω) (hΩb : Bornology.IsBounded Ω)
     (hchart : ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
@@ -340,7 +293,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
   obtain ⟨ε, hε, C₁, hC₁⟩ :=
-    exists_holderOnWith_closedBall_inter_closure_of_dist_lt hα hα1 hΩ hΩb hchart Lam L M hlam
+    exists_holderOnWith_closedBall_inter_closure_of_dist_lt hα hα1 hΩb hchart Lam L M hlam
   -- The interior estimate at distance `ε` from the boundary.
   obtain ⟨ρ₀, hρ₀, hρ₀ε, C₀, hC₀⟩ :=
     exists_holderOnWith_closedBall_of_ball_subset (Ω := Ω) hα hα1 hε Lam L M hlam
