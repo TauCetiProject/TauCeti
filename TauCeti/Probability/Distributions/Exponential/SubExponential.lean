@@ -24,12 +24,12 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
-/-- A quadratic MGF bound on the symmetric interval `[-r/2, r/2]`. -/
-theorem mgf_centered_expMeasure_le {r t : ℝ} (hr : 0 < r) (ht : |t| ≤ r / 2) :
+/-- A quadratic MGF bound for `t ≤ r/2`. -/
+theorem mgf_centered_expMeasure_le {r t : ℝ} (hr : 0 < r) (ht : t ≤ r / 2) :
     mgf (fun x : ℝ => x - r⁻¹) (expMeasure r) t ≤ exp (2 * (t / r) ^ 2) := by
-  have ht1 : t < r := by linarith [(abs_le.mp ht).2]
-  have htr : |t / r| ≤ 1 / 2 := by
-    rw [abs_div, abs_of_pos hr, div_le_iff₀ hr]
+  have ht1 : t < r := by linarith
+  have htr : t / r ≤ 1 / 2 := by
+    rw [div_le_iff₀ hr]
     linarith
   rw [mgf_centered_expMeasure hr ht1]
   have heq : r / (r - t) = 1 / (1 - t / r) := by
@@ -48,28 +48,26 @@ theorem hasSubexponentialMGF_expMeasure {r : ℝ} (hr : 0 < r) :
     rw [inv_div]
   · intro t ht
     rw [hmean]
-    apply (integrable_exp_mul_centered_expMeasure_iff hr t).2
+    apply (integrable_exp_mul_sub_expMeasure_iff hr t r⁻¹).2
     linarith [(abs_le.mp ht).2]
   · intro t ht
     rw [hmean]
-    refine (mgf_centered_expMeasure_le hr ht).trans (exp_le_exp.mpr ?_)
+    refine (mgf_centered_expMeasure_le hr (abs_le.mp ht).2).trans (exp_le_exp.mpr ?_)
     have : 0 ≤ (t / r) ^ 2 := sq_nonneg _
     have heq : (2 / r) ^ 2 * t ^ 2 = 4 * (t / r) ^ 2 := by ring
     rw [heq]
     linarith
 
+/-- No constant shift of a positive-rate exponential law is sub-Gaussian. -/
+theorem not_hasSubgaussianMGF_sub_expMeasure {r : ℝ} (hr : 0 < r) (a : ℝ) (c : ℝ≥0) :
+    ¬ HasSubgaussianMGF (fun x : ℝ => x - a) c (expMeasure r) := by
+  intro h
+  have hi := h.integrable_exp_mul r
+  exact lt_irrefl r ((integrable_exp_mul_sub_expMeasure_iff hr r a).mp (by simpa using hi))
+
 /-- No positive-rate exponential law is sub-Gaussian. -/
 theorem not_hasSubgaussianMGF_expMeasure {r : ℝ} (hr : 0 < r) (c : ℝ≥0) :
     ¬ HasSubgaussianMGF (fun x : ℝ => x) c (expMeasure r) := by
-  intro h
-  have hi := h.integrable_exp_mul r
-  exact lt_irrefl r ((integrable_exp_mul_expMeasure_iff hr).mp (by simpa using hi))
-
-/-- Centering a positive-rate exponential law does not make it sub-Gaussian. -/
-theorem not_hasSubgaussianMGF_centered_expMeasure {r : ℝ} (hr : 0 < r) (c : ℝ≥0) :
-    ¬ HasSubgaussianMGF (fun x : ℝ => x - r⁻¹) c (expMeasure r) := by
-  intro h
-  have hi := h.integrable_exp_mul r
-  exact lt_irrefl r ((integrable_exp_mul_centered_expMeasure_iff hr r).mp (by simpa using hi))
+  simpa using not_hasSubgaussianMGF_sub_expMeasure hr 0 c
 
 end TauCeti.Probability

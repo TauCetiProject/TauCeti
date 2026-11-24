@@ -54,8 +54,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
-* `integrable_exp_mul_centered_expMeasure_iff`, `mgf_centered_expMeasure` — the centered
-  exponential integrability threshold and moment-generating function;
+* `integrable_exp_mul_sub_expMeasure_iff`, `mgf_centered_expMeasure` — the exponential
+  integrability threshold for a shifted law and the centered moment-generating function;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
@@ -323,12 +323,12 @@ theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
   rw [expMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
     one_sub_div hr.ne', inv_div]
 
-/-- A centered exponential law has an exponential moment exactly below its rate. -/
+/-- A shifted exponential law has an exponential moment exactly below its rate. -/
 @[simp]
-theorem integrable_exp_mul_centered_expMeasure_iff (hr : 0 < r) (t : ℝ) :
-    Integrable (fun x : ℝ => exp (t * (x - r⁻¹))) (expMeasure r) ↔ t < r := by
-  have hfun : (fun x : ℝ => exp (t * (x - r⁻¹))) =
-      fun x => exp (-(t * r⁻¹)) * exp (t * x) := by
+theorem integrable_exp_mul_sub_expMeasure_iff (hr : 0 < r) (t c : ℝ) :
+    Integrable (fun x : ℝ => exp (t * (x - c))) (expMeasure r) ↔ t < r := by
+  have hfun : (fun x : ℝ => exp (t * (x - c))) =
+      fun x => exp (-(t * c)) * exp (t * x) := by
     funext x
     rw [← exp_add]
     congr 1

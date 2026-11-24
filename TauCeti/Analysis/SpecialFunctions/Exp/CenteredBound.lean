@@ -17,11 +17,10 @@ public section
 
 namespace Real
 
-/-- A centered exponential quotient is bounded quadratically near zero. -/
-theorem exp_neg_div_one_sub_le {t : ℝ} (ht : |t| ≤ 1 / 2) :
+/-- A centered exponential quotient is bounded quadratically for `t ≤ 1/2`. -/
+theorem exp_neg_div_one_sub_le {t : ℝ} (ht : t ≤ 1 / 2) :
     exp (-t) / (1 - t) ≤ exp (2 * t ^ 2) := by
   have hpos : 0 < 1 - t := by
-    have := (abs_le.mp ht).2
     linarith
   have hlog := log_le_sub_one_of_pos (inv_pos.mpr hpos)
   rw [log_inv] at hlog
@@ -32,7 +31,7 @@ theorem exp_neg_div_one_sub_le {t : ℝ} (ht : |t| ≤ 1 / 2) :
   have hbound : -t - log (1 - t) ≤ 2 * t ^ 2 := by
     have hsq : t ^ 2 / (1 - t) ≤ 2 * t ^ 2 := by
       rw [div_le_iff₀ hpos]
-      have hhalf : 0 ≤ 1 - 2 * t := by linarith [(abs_le.mp ht).2]
+      have hhalf : 0 ≤ 1 - 2 * t := by linarith
       nlinarith [mul_nonneg (sq_nonneg t) hhalf]
     linarith
   calc
