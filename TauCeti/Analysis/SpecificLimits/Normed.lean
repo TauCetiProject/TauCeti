@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Tactic.Ring
-import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
 /-!
@@ -18,9 +17,8 @@ the seminorm is not normalized. The same holds after multiplication by bounded c
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
 test. In any normed ring with summable geometric series, shifted polynomial-geometric
-series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. For a real sequence whose
-weighted series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or `(s + 1)` with
-a shifted exponent preserves summability inside `R`.
+series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. Summability of
+`∑ n * f n * r ^ n` and `∑ f n * r ^ n` yields summability of `∑ (n + 1) * f n * r ^ (n + 1)`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 
@@ -113,23 +111,6 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
-
-/-- Multiplying a real sequence by the index `s` preserves weighted summability strictly inside
-the radius `R`. -/
-theorem summable_nat_mul_of_forall_lt {f : ℕ → ℝ} {R : ℝ}
-    (hf : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun s : ℕ => f s * r ^ s)
-    {r : ℝ} (hr0 : 0 ≤ r) (hr : r < R) :
-    Summable fun s : ℕ => (s : ℝ) * f s * r ^ s := by
-  have hR_pos : 0 < R := hr0.trans_lt hr
-  have hrad : ENNReal.ofReal R ≤ (FormalMultilinearSeries.ofScalars ℝ f).radius := by
-    refine FormalMultilinearSeries.le_radius_ofScalars_of_summable f fun z _ hz => ?_
-    rw [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff hR_pos] at hz
-    exact ((hf ‖z‖ (norm_nonneg z) hz).abs.congr fun s => by
-      simp only [abs_mul, abs_pow, Real.norm_eq_abs, abs_abs]).of_abs
-  have hnorm : ‖r‖ₑ < (FormalMultilinearSeries.ofScalars ℝ f).radius := by
-    refine lt_of_lt_of_le ?_ hrad
-    rwa [← ofReal_norm, Real.norm_of_nonneg hr0, ENNReal.ofReal_lt_ofReal_iff hR_pos]
-  exact (FormalMultilinearSeries.summable_norm_natCast_mul_ofScalars f hnorm).of_norm
 
 /-- Summability of `n * f n * r ^ n` and `f n * r ^ n` yields summability of
 `(n + 1) * f n * r ^ (n + 1)`. -/

@@ -65,7 +65,6 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`, `TauCeti.one_sub_div_re_pos`,
   `TauCeti.norm_sub_ofReal_le_max_of_mem_Icc`,
-  `TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc`,
   `TauCeti.one_sub_inv_mem_slitPlane_iff`, `TauCeti.one_sub_inv_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
@@ -217,16 +216,6 @@ theorem norm_sub_ofReal_le_max_of_mem_Icc (z₀ : ℂ) {t : ℝ} (ht : t ∈ Set
     simp [AffineMap.lineMap_apply_module]; ring
   exact convexOn_univ_norm.le_max_of_mem_segment trivial trivial
     (hline ▸ lineMap_mem_segment ℝ z₀ (z₀ - 1) ht)
-
-/-- For `z₀ ≠ 0` and `t ∈ [0, 1]`, the linear fractional coordinate
-`(1 - z₀⁻¹ * t) * (1 - z / z₀)⁻¹` has norm at most `max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖`. -/
-theorem norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
-    {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    ‖(1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ := by
-  have h : (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹ = (z₀ - (t : ℂ)) / (z₀ - z) := by
-    rw [inv_mul_eq_div, one_sub_div hz₀, one_sub_div hz₀, inv_div, div_mul_div_cancel₀ hz₀]
-  rw [h, norm_div, norm_sub_rev z₀ z]
-  exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max_of_mem_Icc z₀ ht) (norm_nonneg _)
 
 /-- Under the exterior condition `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖`, the inverse argument `z⁻¹`
 stays off the branch cut `[1, ∞)`, i.e., `1 - z⁻¹ ∈ Complex.slitPlane`. -/

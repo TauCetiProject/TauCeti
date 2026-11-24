@@ -17,6 +17,7 @@ import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.RingTheory.Binomial
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
@@ -222,10 +223,9 @@ theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re
   have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
   have hmc (k : ℕ) : Ring.multichoose (-(n : ℂ)) k = (-1) ^ k * (n.choose k : ℂ) := by
     rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
-      ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
-      Nat.descFactorial_eq_factorial_mul_choose]
-    push_cast
-    rw [mul_left_comm, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr k.factorial_ne_zero)]
+      TauCeti.ascPochhammer_eval_neg_natCast, mul_assoc ((-1 : ℂ) ^ k),
+      mul_left_comm (k.factorial : ℂ)⁻¹ ((-1 : ℂ) ^ k),
+      inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr k.factorial_ne_zero)]
   have hpoly (t : ℝ) : (1 - z * (t : ℂ)) ^ (-(-(n : ℂ))) =
       ∑ k ∈ Finset.range (n + 1), Ring.multichoose (-(n : ℂ)) k * (z * (t : ℂ)) ^ k := by
     rw [neg_neg, cpow_natCast, show (1 : ℂ) - z * (t : ℂ) = -(z * (t : ℂ)) + 1 by ring,

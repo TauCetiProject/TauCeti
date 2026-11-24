@@ -9,11 +9,13 @@ public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Bas
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.Binomial
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Inverse-argument expansions in Gauss hypergeometric polynomials
@@ -93,6 +95,17 @@ private theorem ne_of_norm_lt_norm_sub {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z
 private theorem max_norm_pos_of_ne_zero {z₀ : ℂ} (hz₀ : z₀ ≠ 0) : 0 < max ‖z₀‖ ‖z₀ - 1‖ :=
   (norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)
 
+/-- For `z₀ ≠ 0` and `t ∈ [0, 1]`, the linear fractional coordinate
+`(1 - z₀⁻¹ * t) * (1 - z / z₀)⁻¹` has norm at most `max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖`. -/
+private theorem norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc {z z₀ : ℂ}
+    (hz₀ : z₀ ≠ 0) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    ‖(1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ := by
+  have h : (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹ = (z₀ - (t : ℂ)) / (z₀ - z) := by
+    rw [inv_mul_eq_div, one_sub_div hz₀, one_sub_div hz₀, inv_div, div_mul_div_cancel₀ hz₀]
+  rw [h, norm_div, norm_sub_rev z₀ z]
+  exact div_le_div_of_nonneg_right (TauCeti.norm_sub_ofReal_le_max_of_mem_Icc z₀ ht)
+    (norm_nonneg _)
+
 /-- Pointwise binomial series expansion of the factored Euler kernel on `[0, 1]`. -/
 private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
     (hz : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
@@ -105,7 +118,7 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
   have hzz₀ : z ≠ z₀ := ne_of_norm_lt_norm_sub h_ext
   let vt : ℂ := (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹
   have hvt_lt : ‖vt‖ < 1 :=
-    (TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀ ht).trans_lt
+    (norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀ ht).trans_lt
       ((div_lt_one hzz₀_pos).mpr hz)
   let w₁ : ℂ := 1 - z₀ / z
   have hw₁_re : 0 < w₁.re := TauCeti.one_sub_div_re_pos h_ext
@@ -142,7 +155,7 @@ private theorem norm_eulerKernel_inv_term_le (a b c : ℂ) {z z₀ : ℂ} (hz₀
   rw [h_rearrange, norm_mul W, norm_mul (_ / _), norm_pow]
   gcongr
   exacts [(norm_nonneg _).trans hpoch_norm,
-    TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀
+    norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀
       (Ioc_subset_Icc_self ht)]
 
 /-- **Inverse-argument expansion of Euler's hypergeometric integral** (DLMF 15.15.1).
@@ -221,7 +234,7 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_euler {b c z�
       intro t ht
       rw [norm_pow]
       gcongr
-      have hrat := TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc
+      have hrat := norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc
         (z := 0) hz₀ (Ioc_subset_Icc_self ht)
       rw [zero_div, sub_zero, inv_one, mul_one, zero_sub, norm_neg] at hrat
       exact hrat
@@ -445,12 +458,10 @@ private theorem sum_regularizedGaussHGFunCoeff_mul_eq (a b c w : ℂ) (s : ℕ) 
     have h := congr_arg (Polynomial.eval a) (ascPochhammer_mul (S := ℂ) k (s - k))
     simpa [eval_mul, eval_comp, eval_add, eval_X, eval_natCast, Nat.add_sub_of_le hks] using h
   have hpoch_s : (ascPochhammer ℂ k).eval (-(s : ℂ)) * (s - k)! = (-1) ^ k * s ! := by
-    rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial]
-    have hdesc : s.descFactorial k * (s - k)! = s ! := by
-      rw [mul_comm, Nat.factorial_mul_descFactorial hks]
-    calc (-1 : ℂ) ^ k * (s.descFactorial k : ℂ) * ((s - k)! : ℂ)
-        = (-1 : ℂ) ^ k * ((s.descFactorial k * (s - k)! : ℕ) : ℂ) := by push_cast; ring
-      _ = (-1 : ℂ) ^ k * s ! := by rw [hdesc]
+    rw [TauCeti.ascPochhammer_eval_neg_natCast, mul_assoc ((-1 : ℂ) ^ k), mul_assoc ((-1 : ℂ) ^ k)]
+    congr 1
+    exact_mod_cast (by rw [mul_comm k !, Nat.choose_mul_factorial_mul_factorial hks] :
+      k ! * s.choose k * (s - k)! = s !)
   have hk_fac : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
   have hsk_fac : ((s - k)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (s - k).factorial_ne_zero
   have hs_fac : (s ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr s.factorial_ne_zero

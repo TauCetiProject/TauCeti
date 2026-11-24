@@ -17,6 +17,7 @@ import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Regularized hypergeometric functions `₀F₁` and `₂F₁`
@@ -62,8 +63,9 @@ with no condition on the lower parameters.
 * `Complex.hasSum_regularizedHGFun_of_card_eq_add_one`,
   `Complex.summable_norm_regularizedHGFun_of_card_eq_add_one` — unit-disk `HasSum` and absolute
   convergence when `a.card = b.card + 1`.
-* `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
-  converges to it on the open unit disk `‖z‖ < 1`.
+* `Complex.hasSum_regularizedGaussHGFun`, `Complex.summable_norm_regularizedGaussHGFun` —
+  the power series of `regularizedGaussHGFun a b c` converges to it (and absolutely) on the open
+  unit disk `‖z‖ < 1`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
@@ -191,6 +193,15 @@ theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) 
   rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
   simpa only [regularizedHGFunSeries_coeff] using
     hasSum_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
+      (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
+
+/-- On the open unit disk `‖z‖ < 1`, the regularized Gauss hypergeometric power series converges
+absolutely. -/
+theorem summable_norm_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => ‖(regularizedGaussHGFunSeries a b c).coeff n * z ^ n‖ := by
+  rw [regularizedGaussHGFunSeries]
+  simpa only [regularizedHGFunSeries_coeff] using
+    summable_norm_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
       (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
 
 /-- When there are at most as many upper as lower parameters, the regularized hypergeometric
@@ -509,13 +520,8 @@ theorem regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
         (-1) ^ k * n.choose k * (ascPochhammer ℂ k).eval b / Gamma (c + k) * z ^ k := by
   rw [regularizedGaussHGFun_neg_natCast_eq_sum]
   refine Finset.sum_congr rfl fun k _ => ?_
-  have hpoch : (ascPochhammer ℂ k).eval (-(n : ℂ)) = (-1) ^ k * n.choose k * k ! := by
-    rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
-      Nat.descFactorial_eq_factorial_mul_choose]
-    push_cast
-    ring
   have hfac : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
-  rw [hpoch]
+  rw [TauCeti.ascPochhammer_eval_neg_natCast]
   field_simp
 
 /-- With first upper parameter `0`, `regularizedGaussHGFun 0 b c z` reduces to `(Gamma c)⁻¹` at
