@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Bicategory.Functor.Pi
+public import TauCeti.CategoryTheory.Pi.Basic
 
 /-!
 # Products of stacks
@@ -57,6 +58,15 @@ lemma pullHom_apply ⦃X₁ X₂ : C⦄ ⦃M₁ : (pi F).obj (.mk (op X₁))⦄ 
   -- The two sides differ only in the implicit objects of the compositions.
   rfl
 
+/-- An identity component on either side of a morphism between images of two functors can be
+dropped. This discharges the compatibility conditions of `DescentData.isoMk` for identity
+components: there the identities live in the fibers of `pi F`, which are product categories only
+definitionally, so `Functor.map_id` does not rewrite them directly. -/
+private lemma map_id_comp_eq_comp_map_id {D₁ D₂ E : Type*} [Category D₁] [Category D₂]
+    [Category E] (G : D₁ ⥤ E) (G' : D₂ ⥤ E) {x : D₁} {y : D₂} {φ ψ : G.obj x ⟶ G'.obj y}
+    (h : φ = ψ) : G.map (𝟙 x) ≫ φ = ψ ≫ G'.map (𝟙 y) := by
+  simp [h]
+
 variable {ι : Type t} {S : C} {X : ι → C} (f : ∀ j, X j ⟶ S)
 
 /-- The `i`-th projection of descent data for the product. -/
@@ -73,8 +83,8 @@ def descentDataπ (i : I) : (pi F).DescentData f ⥤ (F i).DescentData f where
     { hom j := φ.hom j i
       comm _ q _ _ f₁ f₂ hf₁ hf₂ := congrFun (φ.comm q f₁ f₂ hf₁ hf₂) i }
 
-/-- The descent datum for the product with components a family of descent data for the
-factors. -/
+/-- The functor sending a family of descent data for the factors to the descent datum for the
+product with those components. -/
 @[simps!]
 def descentDataMk : (∀ i, (F i).DescentData f) ⥤ (pi F).DescentData f where
   obj D :=
@@ -100,9 +110,7 @@ def descentDataEquiv : (pi F).DescentData f ≌ ∀ i, (F i).DescentData f where
   unitIso := NatIso.ofComponents
     (fun D ↦ DescentData.isoMk (fun j ↦ Iso.refl (D.obj j)) (fun _ _ _ _ _ _ _ _ ↦ by
       dsimp only [Iso.refl_hom]
-      -- The identities live in the fibers of `pi F`, only definitionally product categories.
-      erw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
-      exact (Category.id_comp _).trans (Category.comp_id _).symm))
+      exact map_id_comp_eq_comp_map_id _ _ rfl))
     (fun _ ↦ by
       ext j
       exact (Category.comp_id _).trans (Category.id_comp _).symm)
@@ -110,9 +118,7 @@ def descentDataEquiv : (pi F).DescentData f ≌ ∀ i, (F i).DescentData f where
     (fun D ↦ Pi.isoMk fun i ↦ DescentData.isoMk (fun j ↦ Iso.refl ((D i).obj j))
       (fun _ _ _ _ _ _ _ _ ↦ by
         dsimp only [Iso.refl_hom]
-        -- The identities live over objects that are only definitionally those of `D i`.
-        erw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
-        exact (Category.id_comp _).trans (Category.comp_id _).symm))
+        exact map_id_comp_eq_comp_map_id _ _ rfl))
     (fun _ ↦ by
       funext i
       ext j
@@ -144,28 +150,12 @@ def toDescentDataCompDescentDataEquivIso :
     (fun j ↦ Iso.refl (((F i).map (f j).op.toLoc).toFunctor.obj (M i)))
     (fun Y q j₁ j₂ f₁ f₂ hf₁ hf₂ ↦ by
       dsimp only [Iso.refl_hom]
-      -- The identities live over objects that are only definitionally pullbacks along `F i`.
-      erw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]
-      exact (Category.id_comp _).trans
-        ((toDescentData_obj_hom_apply f M q f₁ f₂ hf₁ hf₂ i).symm.trans
-          (Category.comp_id _).symm)))
+      exact map_id_comp_eq_comp_map_id _ _
+        (toDescentData_obj_hom_apply f M q f₁ f₂ hf₁ hf₂ i).symm))
     (fun _ ↦ by
       funext i
       ext j
       exact (Category.comp_id _).trans (Category.id_comp _).symm)
-
-/-- The product of fully faithful functors is fully faithful. -/
-def fullyFaithfulFunctorPi {A B : I → Type*} [∀ i, Category (A i)] [∀ i, Category (B i)]
-    {G : ∀ i, A i ⥤ B i} (hG : ∀ i, (G i).FullyFaithful) : (Functor.pi G).FullyFaithful where
-  preimage φ i := (hG i).preimage (φ i)
-  map_preimage φ := funext fun i ↦ (hG i).map_preimage (φ i)
-  preimage_map φ := funext fun i ↦ (hG i).preimage_map (φ i)
-
-/-- The product of essentially surjective functors is essentially surjective. -/
-lemma essSurj_functorPi {A B : I → Type*} [∀ i, Category (A i)] [∀ i, Category (B i)]
-    (G : ∀ i, A i ⥤ B i) [∀ i, (G i).EssSurj] : (Functor.pi G).EssSurj where
-  mem_essImage Y :=
-    ⟨fun i ↦ (G i).objPreimage (Y i), ⟨Pi.isoMk fun i ↦ (G i).objObjPreimageIso (Y i)⟩⟩
 
 variable {f}
 
@@ -173,7 +163,7 @@ variable {f}
 is the descent functor of the product. -/
 noncomputable def fullyFaithfulToDescentData (hF : ∀ i, ((F i).toDescentData f).FullyFaithful) :
     ((pi F).toDescentData f).FullyFaithful :=
-  ((fullyFaithfulFunctorPi hF).comp (descentDataEquiv f).fullyFaithfulInverse).ofIso
+  ((Functor.FullyFaithful.pi hF).comp (descentDataEquiv f).fullyFaithfulInverse).ofIso
     (Iso.isoCompInverse (toDescentDataCompDescentDataEquivIso f)).symm
 
 /-- If the descent functors of all the `F i` along a family of morphisms are essentially
@@ -184,7 +174,7 @@ lemma essSurj_toDescentData [∀ i, ((F i).toDescentData f).EssSurj] :
   -- so the instances are passed explicitly.
   @Functor.essSurj_of_iso _ _ _ _ _ _
     (@Functor.essSurj_comp _ _ _ _ _ _ _ _
-      (essSurj_functorPi fun i ↦ (F i).toDescentData f) inferInstance)
+      (Functor.essSurj_pi fun i ↦ (F i).toDescentData f) inferInstance)
     (Iso.isoCompInverse (toDescentDataCompDescentDataEquivIso f)).symm
 
 variable {J : GrothendieckTopology C}

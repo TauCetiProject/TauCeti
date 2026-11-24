@@ -169,11 +169,8 @@ lemma mapComp'_inv_app_apply {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g 
 def π (i : I) : pi F ⟶ F i where
   app X := (Pi.eval (fun i ↦ (F i).obj X) i).toCatHom
   naturality f := Iso.refl _
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    obtain rfl := Subsingleton.elim η (𝟙 _)
-    rw [PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
+  naturality_naturality η := Pseudofunctor.naturality_naturality_of_locallyDiscrete (pi F) (F i)
+    (fun X ↦ (Pi.eval (fun i ↦ (F i).obj X) i).toCatHom) (fun _ ↦ Iso.refl _) η
   naturality_id X := by
     ext x
     -- The naturality isomorphisms are identities between `1`-morphisms that agree only
@@ -231,11 +228,8 @@ def liftNaturality {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) :
 def lift : K ⟶ pi F where
   app X := (liftApp a X).toCatHom
   naturality f := Cat.Hom.isoMk (liftNaturality a f)
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    obtain rfl := Subsingleton.elim η (𝟙 _)
-    rw [PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
+  naturality_naturality η := Pseudofunctor.naturality_naturality_of_locallyDiscrete K (pi F)
+    (fun X ↦ (liftApp a X).toCatHom) (fun f ↦ Cat.Hom.isoMk (liftNaturality a f)) η
   -- The comparisons of the product are by construction those of the `F i`, the unitors and
   -- associators of `Cat` have identity components, and all of these agree with the components
   -- of the corresponding cells of the `a i` only definitionally.
@@ -274,6 +268,16 @@ def liftCompπ (i : I) : lift a ≫ π F i ≅ a i :=
       (𝟙 _ ≫ ((a i).naturality f).hom.toNatTrans.app k ≫ 𝟙 _ ≫ 𝟙 _ ≫ 𝟙 _) ≫
         ((F i).map f).toFunctor.map (𝟙 _)
     simp)
+
+@[simp]
+lemma liftCompπ_hom_as_app (i : I) (X : LocallyDiscrete Cᵒᵖ) :
+    (liftCompπ a i).hom.as.app X = 𝟙 _ :=
+  rfl
+
+@[simp]
+lemma liftCompπ_inv_as_app (i : I) (X : LocallyDiscrete Cᵒᵖ) :
+    (liftCompπ a i).inv.as.app X = 𝟙 _ :=
+  rfl
 
 end lift
 
