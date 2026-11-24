@@ -51,6 +51,28 @@ open Complex DirichletCharacter Metric Set
 
 namespace TauCeti
 
+/-- The zeros of `ζ` in the closed disc of radius `R` about `c`, as a finite set. -/
+private noncomputable def riemannZetaZerosClosedBall (c : ℂ) (R : ℝ) : Finset ℂ :=
+  ((isCompact_closedBall c R).inter_riemannZetaZeros_finite).toFinset
+
+private theorem mem_riemannZetaZerosClosedBall {c z : ℂ} {R : ℝ} :
+    z ∈ riemannZetaZerosClosedBall c R ↔ ‖z - c‖ ≤ R ∧ riemannZeta z = 0 := by
+  simp [riemannZetaZerosClosedBall, dist_eq_norm, mem_riemannZetaZeros]
+
+/-- A sum over the zeros of `ζ` in a closed disc, as a `finsum` over a subtype, is the `Finset`
+sum over `riemannZetaZerosClosedBall`. -/
+private theorem finsum_subtype_riemannZeta_eq_sum {M : Type*} [AddCommMonoid M] (c : ℂ) (R : ℝ)
+    (f : ℂ → M) :
+    ∑ᶠ ρ : {z : ℂ // ‖z - c‖ ≤ R ∧ riemannZeta z = 0}, f ρ =
+      ∑ z ∈ riemannZetaZerosClosedBall c R, f z := by
+  rw [finsum_subtype_eq_finsum_cond (f := f)]
+  exact finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ mem_riemannZetaZerosClosedBall.symm
+
+/-- The distance from `s` to the point `2 + i Im s` of the line `Re = 2` is `|Re s - 2|`. -/
+private theorem norm_sub_two_add_im_mul_I (s : ℂ) : ‖s - (2 + s.im * I)‖ = |s.re - 2| := by
+  have : s - (2 + s.im * I) = ((s.re - 2 : ℝ) : ℂ) := by apply Complex.ext <;> simp
+  rw [this, Complex.norm_real, Real.norm_eq_abs]
+
 /-- **Counting zeros of `ζ` in discs.** For real `σ₀` and `r` there is a constant `C` such that
 for every centre `s₀` with `Re s₀ = σ₀`, the zeros of `ζ` in the closed disc of radius `r` about
 `s₀`, counted with analytic order, number at most `C log(|Im s₀| + 2)`. -/
@@ -69,36 +91,30 @@ theorem exists_finsum_analyticOrderAt_riemannZeta_le (σ₀ r : ℝ) :
   have hcim : c.im = s₀.im := by simp [c]
   have ht : 0 < |s₀.im| + 2 := by positivity
   have hF := (differentiable_LFunctionTrivChar₁ 1).differentiableOn.analyticOnNhd isOpen_univ
-  have hFc : LFunctionTrivChar₁ 1 c ≠ 0 := by
-    have hc1 : c ≠ 1 := fun h ↦ by simp [h] at hc
-    rw [LFunctionTrivChar₁_one_apply_of_ne_one hc1]
-    exact mul_ne_zero (sub_ne_zero.mpr hc1) (riemannZeta_ne_zero_of_one_lt_re (by simp [hc]))
+  have hFc : LFunctionTrivChar₁ 1 c ≠ 0 :=
+    LFunctionTrivChar₁_one_ne_zero (fun h ↦ by simp [h] at hc)
+      (riemannZeta_ne_zero_of_one_lt_re (by simp [hc]))
   have hJ := (hF.mono (subset_univ _)).sum_divisor_le_log_div_log hR (lt_add_one R) hFc
     fun w hw ↦ hD c w hc (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)
   rw [Real.log_rpow (by rwa [hcim]), hcim] at hJ
-  -- the zeros of `ζ` in the disc of radius `R` about `c`
-  set Z := ((isCompact_closedBall c R).inter_riemannZetaZeros_finite).toFinset
-  have hZ (z : ℂ) : z ∈ Z ↔ ‖z - c‖ ≤ R ∧ riemannZeta z = 0 := by
-    simp [Z, dist_eq_norm, mem_riemannZetaZeros]
   have hsub (z : ℂ) (hz : ‖z - s₀‖ ≤ r) : ‖z - c‖ ≤ R := by
-    have hsc : ‖s₀ - c‖ = |σ₀ - 2| := by
-      have : s₀ - c = ((σ₀ - 2 : ℝ) : ℂ) := by apply Complex.ext <;> simp [c, hs₀]
-      rw [this, Complex.norm_real, Real.norm_eq_abs]
+    have hsc : ‖s₀ - c‖ = |σ₀ - 2| := (norm_sub_two_add_im_mul_I s₀).trans (by rw [hs₀])
     calc ‖z - c‖ = ‖(z - s₀) + (s₀ - c)‖ := by rw [sub_add_sub_cancel]
       _ ≤ ‖z - s₀‖ + ‖s₀ - c‖ := norm_add_le _ _
       _ ≤ R := by rw [hsc]; linarith [le_abs_self r]
   have hdiv : ∑ᶠ ρ, MeromorphicOn.divisor (LFunctionTrivChar₁ 1) (closedBall c R) ρ =
-      ∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℤ) := by
+      ∑ z ∈ riemannZetaZerosClosedBall c R, ((analyticOrderAt riemannZeta z).toNat : ℤ) := by
     refine (finsum_eq_sum_of_support_subset _ fun z hz ↦ ?_).trans
       (Finset.sum_congr rfl fun z hz ↦ ?_)
     · rw [Function.mem_support, divisor_LFunctionTrivChar₁_one_closedBall_apply] at hz
-      exact (hZ z).mpr (by_contra fun h ↦ hz (ite_eq_right h))
-    · rw [divisor_LFunctionTrivChar₁_one_closedBall_apply, ite_eq_left ((hZ z).mp hz)]
-  rw [finsum_subtype_eq_finsum_cond (f := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ)),
-    finsum_cond_eq_sum_of_cond_iff (t := Z.filter fun z ↦ ‖z - s₀‖ ≤ r ∧ riemannZeta z = 0) _
-      fun {z} _ ↦ by simpa [Finset.mem_filter, hZ] using fun h h' ↦ ⟨hsub z h, h'⟩]
-  calc _ ≤ ∑ z ∈ Z, ((analyticOrderAt riemannZeta z).toNat : ℝ) :=
-        Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _) fun _ _ _ ↦ by positivity
+      exact mem_riemannZetaZerosClosedBall.mpr (by_contra fun h ↦ hz (ite_eq_right h))
+    · rw [divisor_LFunctionTrivChar₁_one_closedBall_apply,
+        ite_eq_left (mem_riemannZetaZerosClosedBall.mp hz)]
+  rw [finsum_subtype_riemannZeta_eq_sum s₀ r fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ)]
+  calc _ ≤ ∑ z ∈ riemannZetaZerosClosedBall c R, ((analyticOrderAt riemannZeta z).toNat : ℝ) :=
+        Finset.sum_le_sum_of_subset_of_nonneg (fun z hz ↦ by
+          rw [mem_riemannZetaZerosClosedBall] at hz ⊢
+          exact ⟨hsub z hz.1, hz.2⟩) fun _ _ _ ↦ by positivity
     _ ≤ D * Real.log (|s₀.im| + 2) / Real.log ((R + 1) / R) := by exact_mod_cast hdiv ▸ hJ
     _ = _ := by ring
 
@@ -169,39 +185,33 @@ theorem riemannZeta_logDeriv_window :
   have hs₀ : s₀.re = 2 := by simp [s₀]
   have hs₀im : s₀.im = s.im := by simp [s₀]
   have hss₀ : ‖s - s₀‖ ≤ 3 := by
-    have : s - s₀ = ((s.re - 2 : ℝ) : ℂ) := by apply Complex.ext <;> simp [s₀]
-    rw [this, Complex.norm_real, Real.norm_eq_abs, abs_le]
+    rw [show ‖s - s₀‖ = |s.re - 2| from norm_sub_two_add_im_mul_I s, abs_le]
     constructor <;> linarith
   -- the zeros of `ζ` in the disc of radius `4` about `s₀`
-  set Z := ((isCompact_closedBall s₀ 4).inter_riemannZetaZeros_finite).toFinset
-  have hZ (z : ℂ) : z ∈ Z ↔ ‖z - s₀‖ ≤ 4 ∧ riemannZeta z = 0 := by
-    simp [Z, dist_eq_norm, mem_riemannZetaZeros]
+  set Z := riemannZetaZerosClosedBall s₀ 4
   set W : ℂ → Prop := fun z ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1
   have hWZ (z : ℂ) (hz : W z) (hζz : riemannZeta z = 0) : z ∈ Z :=
-    (hZ z).mpr ⟨norm_sub_le_four_of_mem_window hs₀ hz.1 hz.2.1 (hs₀im ▸ hz.2.2), hζz⟩
+    mem_riemannZetaZerosClosedBall.mpr
+      ⟨norm_sub_le_four_of_mem_window hs₀ hz.1 hz.2.1 (hs₀im ▸ hz.2.2), hζz⟩
   set f : ℂ → ℂ := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z)
-  have hdisc : ∑ᶠ ρ : {z : ℂ // ‖z - s₀‖ ≤ 4 ∧ riemannZeta z = 0}, f ρ = ∑ z ∈ Z, f z := by
-    rw [finsum_subtype_eq_finsum_cond (f := f)]
-    exact finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ (hZ z).symm
   have hwin : ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
       f ρ = ∑ z ∈ Z with W z, f z := by
     rw [finsum_subtype_eq_finsum_cond (f := f)]
     refine finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ ?_
     simp only [Finset.mem_filter, W]
     exact ⟨fun h ↦ ⟨hWZ z ⟨h.1, h.2.1, h.2.2.1⟩ h.2.2.2, h.1, h.2.1, h.2.2.1⟩,
-      fun h ↦ ⟨h.2.1, h.2.2.1, h.2.2.2, ((hZ z).mp h.1).2⟩⟩
+      fun h ↦ ⟨h.2.1, h.2.2.1, h.2.2.2, (mem_riemannZetaZerosClosedBall.mp h.1).2⟩⟩
   -- the zeros of the disc outside the window contribute at most their count
   have hrest : ‖∑ z ∈ Z with ¬W z, f z‖ ≤ C₂ * Real.log (|s.im| + 2) := by
     have hcount := hC₂ s₀ hs₀
-    rw [hs₀im, finsum_subtype_eq_finsum_cond
-      (f := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ)),
-      finsum_cond_eq_sum_of_cond_iff _ fun {z} _ ↦ (hZ z).symm] at hcount
+    rw [hs₀im, finsum_subtype_riemannZeta_eq_sum s₀ 4
+      fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℝ)] at hcount
     exact (norm_sum_filter_not_window_le hs₁ Z).trans hcount
   have hsplit := Finset.sum_filter_add_sum_filter_not Z W f
   have hloc := hC₁ s₀ s hs₀ hss₀ hs1 hζ
   rw [hs₀im] at hloc
   rw [hwin]
-  rw [hdisc, ← hsplit] at hloc
+  rw [finsum_subtype_riemannZeta_eq_sum s₀ 4 f, ← hsplit] at hloc
   calc _ = ‖(deriv riemannZeta s / riemannZeta s + 1 / (s - 1) -
           ((∑ z ∈ Z with W z, f z) + ∑ z ∈ Z with ¬W z, f z)) + ∑ z ∈ Z with ¬W z, f z‖ := by
         rw [sub_add_eq_sub_sub, sub_add_cancel]

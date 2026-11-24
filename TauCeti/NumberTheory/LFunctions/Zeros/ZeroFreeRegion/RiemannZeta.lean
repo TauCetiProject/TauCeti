@@ -108,8 +108,7 @@ private theorem exists_riemannZeta_ne_zero_of_abs_im_le_one :
   have hline (z : ℂ) (hz : 1 ≤ z.re) : LFunctionTrivChar₁ 1 z ≠ 0 := by
     rcases eq_or_ne z 1 with rfl | hz1
     · exact LFunctionTrivChar₁_apply_one_ne_zero 1
-    · rw [LFunctionTrivChar₁_one_apply_of_ne_one hz1]
-      exact mul_ne_zero (sub_ne_zero.2 hz1) (riemannZeta_ne_zero_of_one_le_re hz)
+    · exact LFunctionTrivChar₁_one_ne_zero hz1 (riemannZeta_ne_zero_of_one_le_re hz)
   have hne_of_not_mem (δ : ℝ) (hδ_half : δ ≤ 1 / 2) (hdisj : ∀ z ∈ Z, z.re < 1 - δ)
       (s : ℂ) (hs1 : s ≠ 1) (hsim : |s.im| ≤ 1) (hsre : 1 - δ ≤ s.re) : riemannZeta s ≠ 0 := by
     rcases le_or_gt 1 s.re with h1 | h1
