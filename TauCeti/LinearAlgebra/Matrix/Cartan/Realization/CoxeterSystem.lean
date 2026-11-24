@@ -63,8 +63,8 @@ nondecreasing (`cₙ ≤ cₙ₊₂`), hence nonnegative.
   simple reflections (`TauCeti.CartanRealization.coe_weylCoxeterSystem_simple`), whose length
   function is that of the Coxeter group
   (`TauCeti.CartanRealization.length_weylCoxeterSystem_mulEquiv_symm_apply`), with the descent
-  criterion `TauCeti.CartanRealization.weylCoxeterSystem_isRightDescent_iff` and
-  `TauCeti.CartanRealization.weylCoxeterSystem_not_isRightDescent_iff`.
+  criterion `TauCeti.CartanRealization.isRightDescent_weylCoxeterSystem_iff` and
+  `TauCeti.CartanRealization.not_isRightDescent_weylCoxeterSystem_iff`.
 
 ## References
 
@@ -366,7 +366,7 @@ theorem length_weylCoxeterSystem_mulEquiv_symm_apply
   exact (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.length_map _ w
 
 /-- **The descent criterion**: `ℓ(w sᵢ) < ℓ(w)` in the Weyl group exactly when `w αᵢ ∈ -Q₊`. -/
-theorem weylCoxeterSystem_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
+theorem isRightDescent_weylCoxeterSystem_iff (w : R.weylGroup hA) (i : I) :
     (R.weylCoxeterSystem hA hzero hneg).IsRightDescent w i ↔
       -(w : Dual K H ≃ₗ[K] Dual K H) (R.root i) ∈ R.posRootCone := by
   obtain ⟨g, rfl⟩ := (R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm.surjective w
@@ -377,11 +377,11 @@ theorem weylCoxeterSystem_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
     length_weylCoxeterSystem_mulEquiv_symm_apply, CoxeterMatrix.toCoxeterSystem_simple]
 
 /-- **The descent criterion**: `ℓ(w sᵢ) > ℓ(w)` in the Weyl group exactly when `w αᵢ ∈ Q₊`. -/
-theorem weylCoxeterSystem_not_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
+theorem not_isRightDescent_weylCoxeterSystem_iff (w : R.weylGroup hA) (i : I) :
     ¬(R.weylCoxeterSystem hA hzero hneg).IsRightDescent w i ↔
       (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) ∈ R.posRootCone := by
   obtain ⟨g, rfl⟩ := (R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm.surjective w
-  rw [weylCoxeterSystem_isRightDescent_iff, coe_weylCoxeterSystem_mulEquiv_symm_apply,
+  rw [isRightDescent_weylCoxeterSystem_iff, coe_weylCoxeterSystem_mulEquiv_symm_apply,
     R.neg_coxeterHom_apply_root_mem_posRootCone_iff hA hzero hneg,
     R.coxeterHom_apply_root_mem_posRootCone_iff hA hzero hneg]
 
