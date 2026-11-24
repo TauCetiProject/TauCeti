@@ -59,10 +59,11 @@ quasi-isomorphism in every degree is not addressed here.
   every `2`-cocycle is cohomologous to a normalized one.
 * `TauCeti.mem_hochschildBimoduleNormalizedCochains_one_of_hochschildBimoduleCoboundary_mem`: a
   `1`-cochain with normalized coboundary is normalized.
-* `TauCeti.hochschildBimoduleCohomology.exists_mem_normalized_mk_eq_two` and
-  `TauCeti.hochschildBimoduleCohomology.mk_eq_mk_iff_of_mem_normalized_two`: every class in
-  `HH²(A, M)` is the class of a normalized cocycle, and two normalized cocycles have the same class
-  exactly when they differ by the coboundary of a normalized cochain.
+* `hochschildBimoduleCohomology.exists_mem_hochschildBimoduleNormalizedCochains_mk_two_eq`: every
+  class in `HH²(A, M)` is the class of a normalized cocycle.
+* `hochschildBimoduleCohomology.mk_two_eq_mk_iff_of_mem_hochschildBimoduleNormalizedCochains`: two
+  normalized cocycles have the same class in `HH²(A, M)` exactly when they differ by the coboundary
+  of a normalized cochain.
 
 ## References
 
@@ -155,40 +156,6 @@ private theorem hochschildBimoduleCoface_apply_eq_zero {n : ℕ} {ψ : (Fin n �
         simp only [Fin.val_succ]
         omega
 
-/-- On a tuple with `aⱼ = 1`, the cofaces `∂ⱼ` and `∂ⱼ₊₁` agree: both evaluate the cochain on the
-tuple with `aⱼ` removed. -/
-private theorem hochschildBimoduleCoface_castSucc_apply_eq {n : ℕ} (ψ : (Fin n → A) →ₘₗ[R] M)
-    {a : Fin (n + 1) → A} {j : Fin (n + 1)} (hj : a j = 1) :
-    hochschildBimoduleCoface R A M j.castSucc ψ a = hochschildBimoduleCoface R A M j.succ ψ a := by
-  cases n with
-  | zero =>
-    obtain rfl := Fin.fin_one_eq_zero j
-    conv_rhs => rw [← Fin.last_zero, Fin.succ_last, hochschildBimoduleCoface_last_apply,
-      Fin.last_zero, hj, op_one, one_smul]
-    rw [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply, hj, one_smul]
-    exact congrArg ψ (Subsingleton.elim _ _)
-  | succ n =>
-    induction j using Fin.cases with
-    | zero =>
-      rw [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply, hj, one_smul,
-        ← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCoface_castSucc_succ_apply,
-        Fin.contractNth_castSucc_eq_update_removeNth_succ, Fin.castSucc_zero, hj, one_mul,
-        Fin.update_removeNth_succ_eq_removeNth_castSucc, Fin.castSucc_zero, Fin.removeNth_zero]
-    | succ k =>
-      have hk : Fin.contractNth k.castSucc (· * ·) a = Fin.removeNth k.succ a := by
-        simp [Fin.contractNth_castSucc_eq_update_removeNth_succ, hj, Fin.removeNth_apply]
-      rw [← Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply, hk]
-      induction k using Fin.lastCases with
-      | last =>
-        rw [Fin.succ_last] at hj ⊢
-        rw [Fin.succ_last, hochschildBimoduleCoface_last_apply, hj, op_one, one_smul,
-          Fin.removeNth_last]
-      | cast l =>
-        rw [Fin.succ_castSucc] at hj ⊢
-        rw [hochschildBimoduleCoface_castSucc_succ_apply,
-          Fin.contractNth_castSucc_eq_update_removeNth_succ, hj, one_mul,
-          Fin.update_removeNth_succ_eq_removeNth_castSucc]
-
 /-- **The coboundary of a normalized cochain is normalized.** -/
 theorem hochschildBimoduleCoboundary_mem_hochschildBimoduleNormalizedCochains {n : ℕ}
     {ψ : (Fin n → A) →ₘₗ[R] M} (hψ : ψ ∈ hochschildBimoduleNormalizedCochains R A M n) :
@@ -198,8 +165,8 @@ theorem hochschildBimoduleCoboundary_mem_hochschildBimoduleNormalizedCochains {n
   rw [hochschildBimoduleCoboundary_apply,
     Fintype.sum_eq_add j.castSucc j.succ (Fin.castSucc_lt_succ (i := j)).ne fun i hi ↦ by
       rw [hochschildBimoduleCoface_apply_eq_zero hψ hj i hi.1 hi.2, smul_zero],
-    hochschildBimoduleCoface_castSucc_apply_eq ψ hj, Fin.val_castSucc, Fin.val_succ, pow_succ,
-    mul_neg_one, neg_smul, add_neg_cancel]
+    hochschildBimoduleCoface_castSucc_apply_eq_succ_apply_of_apply_eq_one ψ hj, Fin.val_castSucc,
+    Fin.val_succ, pow_succ, mul_neg_one, neg_smul, add_neg_cancel]
 
 end Coboundary
 
@@ -376,7 +343,8 @@ variable {R A M : Type*} [CommRing R] [Semiring A] [Algebra R A] [AddCommGroup M
   [SMulCommClass A Aᵐᵒᵖ M]
 
 /-- **Every class in `HH²(A, M)` is the class of a normalized cocycle.** -/
-theorem exists_mem_normalized_mk_eq_two (x : hochschildBimoduleCohomology R A M 2) :
+theorem exists_mem_hochschildBimoduleNormalizedCochains_mk_two_eq
+    (x : hochschildBimoduleCohomology R A M 2) :
     ∃ ψ : hochschildBimoduleCocycles R A M 2,
       (ψ : (Fin 2 → A) →ₘₗ[R] M) ∈ hochschildBimoduleNormalizedCochains R A M 2 ∧
         mk R A M 2 ψ = x := by
@@ -394,7 +362,8 @@ theorem exists_mem_normalized_mk_eq_two (x : hochschildBimoduleCohomology R A M 
 
 /-- **Two normalized `2`-cocycles have the same class in `HH²(A, M)` exactly when they differ by
 the coboundary of a normalized `1`-cochain.** -/
-theorem mk_eq_mk_iff_of_mem_normalized_two (ψ φ : hochschildBimoduleCocycles R A M 2)
+theorem mk_two_eq_mk_iff_of_mem_hochschildBimoduleNormalizedCochains
+    (ψ φ : hochschildBimoduleCocycles R A M 2)
     (hψ : (ψ : (Fin 2 → A) →ₘₗ[R] M) ∈ hochschildBimoduleNormalizedCochains R A M 2)
     (hφ : (φ : (Fin 2 → A) →ₘₗ[R] M) ∈ hochschildBimoduleNormalizedCochains R A M 2) :
     mk R A M 2 ψ = mk R A M 2 φ ↔

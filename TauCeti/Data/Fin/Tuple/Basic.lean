@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
@@ -62,6 +63,9 @@ once.
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one`,
+  `Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one`: multiplying two
+  adjacent entries one of which is `1` deletes that entry.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
 * `Fin.contractNth_castSucc_insertNth_castSucc`: inserting an entry before entry `j` and
   contracting the two overwrites entry `j` by the contraction.
@@ -371,6 +375,20 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
   · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- If entry `j + 1` is `1`, multiplying the entries `j` and `j + 1` is deleting entry `j + 1`. -/
+theorem contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one {M : Type*} [MulOneClass M]
+    {n : ℕ} {j : Fin (n + 1)} {a : Fin (n + 2) → M} (ha : a j.succ = 1) :
+    contractNth j.castSucc (· * ·) a = removeNth j.succ a := by
+  rw [contractNth_castSucc_eq_update_removeNth_succ, ha, mul_one, Function.update_eq_self_iff,
+    removeNth_apply, succAbove_succ_self]
+
+/-- If entry `j` is `1`, multiplying the entries `j` and `j + 1` is deleting entry `j`. -/
+theorem contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one {M : Type*}
+    [MulOneClass M] {n : ℕ} {j : Fin (n + 1)} {a : Fin (n + 2) → M} (ha : a j.castSucc = 1) :
+    contractNth j.castSucc (· * ·) a = removeNth j.castSucc a := by
+  rw [contractNth_castSucc_eq_update_removeNth_succ, ha, one_mul,
+    update_removeNth_succ_eq_removeNth_castSucc]
 
 /-- Inserting at a position other than the first keeps the first entry. -/
 @[simp]
