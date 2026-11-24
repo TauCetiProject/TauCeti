@@ -23,11 +23,12 @@ space and the reduct map is continuous, so this class of codes is analytic
 characterization of invariant analytic classes as projective classes. No countability is needed
 for `L` itself.
 
-Countability of the added symbols cannot be dropped. A single sentence mentions only countably many
+The forward direction of the characterization (an invariant analytic class is a projective class)
+needs `L` to have countably many relation symbols. A single sentence mentions only countably many
 relation symbols, so if `L` has uncountably many relation symbols then on a nonempty carrier no
-projective class along `LHom.sumInl : L →ᴸ L.sum W` is a single code
-(`FirstOrder.Language.LHom.setOf_pcMem_sumInl_ne_singleton`): reversing the value of a relation
-symbol of `L` that the sentence does not mention gives a second member. Singletons are analytic,
+projective class along an injective `g` is a single code
+(`FirstOrder.Language.LHom.setOf_pcMem_ne_singleton`): reversing the value of a relation symbol in
+the image of `g` that the sentence does not mention gives a second member. Singletons are analytic,
 and the singleton of a code fixed by every permutation of the carrier is isomorphism invariant.
 
 ## Main results
@@ -35,8 +36,8 @@ and the singleton of a code fixed by every permutation of the carrier is isomorp
 * `FirstOrder.Language.LHom.setOf_pcMem_eq_image_modelsOf`: projective classes of codes are the
   images of model classes under the reduct map.
 * `FirstOrder.Language.LHom.analyticSet_setOf_pcMem`: they are analytic.
-* `FirstOrder.Language.LHom.setOf_pcMem_sumInl_ne_singleton`: with uncountably many relation
-  symbols, no projective class is a singleton.
+* `FirstOrder.Language.LHom.setOf_pcMem_ne_singleton`: with uncountably many relation symbols, no
+  projective class along an injective language map is a singleton.
 -/
 
 public section
@@ -108,32 +109,25 @@ private theorem relMap_reverseRelation_self {M : Type w} (S : L.Structure M) {k 
   Iff.of_eq (ite_eq_left_of_eq_true _ _ (eq_true rfl))
 
 /-- **No projective class is a single code when there are uncountably many symbols.** If the
-relational language `L` has uncountably many relation symbols, then on a nonempty carrier the
-projective class of a sentence `ψ` along `LHom.sumInl : L →ᴸ L.sum W` is never a single code:
+relational language `L` has uncountably many relation symbols and `g : L →ᴸ L'` is injective, then
+on a nonempty carrier the projective class of a sentence `ψ` along `g` is never a single code:
 `ψ` mentions only countably many relation symbols, and reversing the value of an unmentioned
-symbol of `L` in an expansion satisfying `ψ` gives a second member. -/
-theorem setOf_pcMem_sumInl_ne_singleton {W : Language.{u', v'}} [W.IsRelational] [Nonempty V]
-    (hL : ¬ Countable (Σ n, L.Relations n)) (ψ : (L.sum W).Sentenceω)
-    (c : RelationalConfiguration L V) :
-    {d : RelationalConfiguration L V |
-        @PCMem L (L.sum W) LHom.sumInl ψ V d.toStructure} ≠ {c} := by
+symbol in the image of `g` in an expansion satisfying `ψ` gives a second member. -/
+theorem setOf_pcMem_ne_singleton [Nonempty V] (g : L →ᴸ L') (hg : g.Injective)
+    (hL : ¬ Countable (Σ n, L.Relations n)) (ψ : L'.Sentenceω) (c : RelationalConfiguration L V) :
+    {d : RelationalConfiguration L V | @PCMem L L' g ψ V d.toStructure} ≠ {c} := by
   intro h
   rw [setOf_pcMem_eq_image_modelsOf] at h
   obtain ⟨e, he, hec⟩ := (Set.ext_iff.1 h c).2 rfl
-  -- Some relation symbol of `L` is not mentioned by `ψ`.
-  let i : (Σ n, L.Relations n) → Σ n, (L.sum W).Relations n := fun R => ⟨R.1, Sum.inl R.2⟩
-  have hi : Function.Injective i := by
-    rintro ⟨n, R⟩ ⟨m, Q⟩ hRQ
-    obtain ⟨rfl, hRQ⟩ := Sigma.mk.inj_iff.1 hRQ
-    dsimp only at hRQ ⊢
-    rw [Sum.inl_injective (eq_of_heq hRQ)]
+  -- Some relation symbol of `L` is not mentioned, through `g`, by `ψ`.
+  let i : (Σ n, L.Relations n) → Σ n, L'.Relations n := Sigma.map id fun _ R => g.onRelation R
+  have hi : Function.Injective i := Function.injective_id.sigma_map fun _ => hg.onRelation
   obtain ⟨⟨k, R⟩, hR⟩ : ∃ R, i R ∉ BoundedFormulaInf.relationsIn ψ := by
     by_contra! hall
     exact hL (Set.countable_univ_iff.1
       ((ψ.relationsIn_countable.preimage hi).mono fun R _ => hall R))
-  -- Reverse the value of `R` in the structure decoded from `e`.
-  let S' : (L.sum W).Structure V :=
-    reverseRelation e.toStructure (Sum.inl R : (L.sum W).Relations k)
+  -- Reverse the value of `g R` in the structure decoded from `e`.
+  let S' : L'.Structure V := reverseRelation e.toStructure (g.onRelation R)
   have hψ : @SentenceInf.Realize _ ℕ ψ V S' := by
     have he₀ := mem_modelsOf.1 he
     rw [@SentenceInf.realize_def _ ℕ ψ V e.toStructure,
@@ -144,19 +138,16 @@ theorem setOf_pcMem_sumInl_ne_singleton {W : Language.{u', v'}} [W.IsRelational]
     refine relMap_reverseRelation_of_ne _ (fun hQR => hR ?_) xs
     rw [hQR] at hQ
     exact hQ
-  have he' : @ofStructure (L.sum W) V S' ∈ modelsOf ψ :=
-    mem_modelsOf.2 ((congrArg (fun T => @SentenceInf.Realize _ ℕ ψ V T)
-      (toStructure_ofStructure S')).mpr hψ)
+  have he' : @ofStructure L' V S' ∈ modelsOf ψ := by
+    rw [mem_modelsOf, toStructure_ofStructure]
+    exact hψ
   obtain ⟨x⟩ : Nonempty (Fin k → V) := inferInstance
   refine absurd ((Set.ext_iff.1 h _).1 ⟨_, he', rfl⟩) fun hc => ?_
-  have h₁ := toStructure_reductConfiguration (LHom.sumInl : L →ᴸ L.sum W)
-    (@ofStructure (L.sum W) V S')
-  rw [toStructure_ofStructure] at h₁
-  have hrel := congrArg (fun T : L.Structure V => @Structure.RelMap L V T k R x)
-    (h₁.symm.trans ((congrArg toStructure (hc.trans hec.symm)).trans
-      (toStructure_reductConfiguration _ e)))
-  have h₂ : @Structure.RelMap _ V e.toStructure k (Sum.inl R) x ↔
-      @Structure.RelMap _ V S' k (Sum.inl R) x := (Iff.of_eq hrel).symm
-  exact (iff_not_self (h₂.trans (relMap_reverseRelation_self _ _ x))).elim
+  -- The two reducts agree at the atom `R(x)`, but `S'` reverses `(g R)(x)`.
+  have hx := congrArg (fun d => d.eval (atom R x)) (hc.trans hec.symm)
+  have hS' := relMap_reverseRelation_self e.toStructure (g.onRelation R) x
+  simp only [eval_reductConfiguration, onAtom_atom, eval_ofStructure] at hx
+  rw [toStructure_relMap, ← hx] at hS'
+  simp only [decide_eq_true_eq, iff_not_self] at hS'
 
 end FirstOrder.Language.LHom

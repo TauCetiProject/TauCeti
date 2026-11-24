@@ -15,8 +15,8 @@ Take unary predicates `P_r`, one for each real number `r`. The code on `ℕ` in 
 empty is fixed by every permutation of `ℕ`, so its singleton is an isomorphism-invariant class of
 codes, and the singleton is analytic. But a single `L_{ω₁ω}` sentence mentions only countably many
 of the `P_r`, so the singleton is not the projective class of any sentence along
-`LHom.sumInl : L →ᴸ L.sum W`. The converse direction of the analytic characterization therefore
-needs countably many relation symbols.
+`LHom.sumInl : L →ᴸ L.sum W`. The forward direction of the analytic characterization (an invariant
+analytic class is a projective class) therefore needs countably many relation symbols.
 -/
 
 public section
@@ -32,9 +32,7 @@ def realPredicates : Language where
     | 1 => ℝ
     | _ => Empty
 
-instance : realPredicates.IsRelational := fun n => by
-  change IsEmpty Empty
-  infer_instance
+instance : realPredicates.IsRelational := fun _ => inferInstanceAs (IsEmpty Empty)
 
 /-- The predicates `P_r` are uncountably many. -/
 theorem not_countable_relations : ¬ Countable (Σ n, realPredicates.Relations n) := fun _ =>
@@ -59,6 +57,7 @@ example : AnalyticSet ({emptyCode} : Set (RelationalConfiguration realPredicates
 example (W : Language) [W.IsRelational] (ψ : (realPredicates.sum W).Sentenceω) :
     {c : RelationalConfiguration realPredicates ℕ |
         @LHom.PCMem _ _ LHom.sumInl ψ ℕ c.toStructure} ≠ {emptyCode} :=
-  LHom.setOf_pcMem_sumInl_ne_singleton not_countable_relations ψ emptyCode
+  LHom.setOf_pcMem_ne_singleton LHom.sumInl LHom.sumInl_injective not_countable_relations ψ
+    emptyCode
 
 end TauCeti.AnalyticPCExample
