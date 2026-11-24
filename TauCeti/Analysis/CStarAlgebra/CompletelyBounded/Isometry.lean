@@ -31,6 +31,9 @@ scalar matrix `x` and the diagonal matrix `diag(b, …, b)`, so its norm is at m
 * `LinearMap.IsCompleteContraction`, `LinearMap.isCompleteContraction_iff`: complete contractions
   are the completely bounded maps of cb norm at most `1`.
 * `LinearMap.IsCompleteIsometry`, `LinearMap.IsCompleteIsometry.isCompleteContraction`.
+* `LinearMap.IsCompleteContraction.norm_map_le`, `LinearMap.IsCompleteIsometry.norm_map`: the
+  defining bounds for matrices over any finite index type; `norm_apply_le`, `norm_apply` and
+  `LinearMap.IsCompleteIsometry.isometry` give the level-one consequences.
 * `LinearMap.IsCompleteContraction.comp`, `LinearMap.IsCompleteIsometry.comp`: both classes are
   closed under composition and contain the identity.
 * `NonUnitalStarAlgHom.isCompleteIsometry`: an injective star homomorphism is a complete isometry.
@@ -88,6 +91,50 @@ theorem IsCompleteIsometry.isCompleteContraction {φ : A →ₗ[ℂ] B} (hφ : I
 theorem IsCompleteIsometry.isCompletelyBounded {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) :
     IsCompletelyBounded φ :=
   (isCompleteContraction_iff.1 hφ.isCompleteContraction).1
+
+/-- A complete contraction is contractive on matrices over any finite index type. -/
+theorem IsCompleteContraction.norm_map_le {φ : A →ₗ[ℂ] B} (hφ : IsCompleteContraction φ)
+    {κ : Type*} [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ ‖x‖ := by
+  obtain ⟨hcb, h⟩ := isCompleteContraction_iff.1 hφ
+  exact (norm_map_le_cbNorm_mul hcb x).trans (mul_le_of_le_one_left (norm_nonneg x) h)
+
+/-- A complete contraction is contractive. -/
+theorem IsCompleteContraction.norm_apply_le {φ : A →ₗ[ℂ] B} (hφ : IsCompleteContraction φ)
+    (a : A) : ‖φ a‖ ≤ ‖a‖ := by
+  obtain ⟨hcb, h⟩ := isCompleteContraction_iff.1 hφ
+  exact (norm_apply_le_cbNorm_mul hcb a).trans (mul_le_of_le_one_left (norm_nonneg a) h)
+
+/-- A complete isometry is isometric on matrices over any finite index type. -/
+theorem IsCompleteIsometry.norm_map {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ)
+    {κ : Type*} [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ = ‖x‖ := by
+  classical
+  let e := Fintype.equivFin κ
+  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
+    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
+  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), hmap,
+    ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
+  exact hφ _ _
+
+/-- A complete isometry is isometric. -/
+theorem IsCompleteIsometry.norm_apply {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) (a : A) :
+    ‖φ a‖ = ‖a‖ := by
+  let eA := (CStarMatrix.toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
+  let eB := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
+  have hmap : eB (φ a) = (eA a).map φ := by
+    ext i j
+    -- As in `norm_apply_le_cbNorm_mul`: the instances `toOneByOne` is stated with differ
+    -- syntactically from those `toNonUnitalStarAlgHom` expects, so unfold the coercion.
+    change CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) i j =
+      φ (CStarMatrix.toOneByOne (Fin 1) ℂ A a i j)
+    simp
+  rw [← NonUnitalStarAlgHom.norm_map eB (CStarMatrix.toOneByOne (Fin 1) ℂ B).injective, hmap,
+    ← NonUnitalStarAlgHom.norm_map eA (CStarMatrix.toOneByOne (Fin 1) ℂ A).injective a]
+  exact hφ 1 _
+
+/-- A complete isometry is an isometry. -/
+theorem IsCompleteIsometry.isometry {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) :
+    Isometry φ :=
+  AddMonoidHomClass.isometry_of_norm φ hφ.norm_apply
 
 section Comp
 
