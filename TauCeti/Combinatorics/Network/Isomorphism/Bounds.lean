@@ -37,18 +37,6 @@ variable {K : Type w} [LE K]
 variable {V : Type u} {W : Type u'}
 variable {N : Network K V} {N' : Network K W}
 
-private theorem assignmentEquiv_unique (e : N ≃ₙ N') (R : Type w')
-    (F : N.Assignment R ≃ N'.Assignment R)
-    (hF : ∀ (f : N.Assignment R) {x y} (a : N.Hom x y),
-      F f (e.homEquiv x y a) = f a) : F = e.assignmentEquiv R := by
-  apply Equiv.ext
-  intro f
-  funext x y a
-  obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
-  obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
-  obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
-  exact (hF f a).trans (e.assignmentEquiv_apply R f a).symm
-
 /-- Transport a simultaneous replacement of both network bounds along an isomorphism.
 
 The replacement on the target uses the transported bound assignments and retains the original
@@ -83,8 +71,6 @@ theorem replaceBounds_homEquiv_apply (e : N ≃ₙ N') (lower upper : N.Assignme
       (congrArg (fun f : V ≃ W => f x) (e.replaceBounds_vertexEquiv lower upper h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceBounds_vertexEquiv lower upper h)) =
         e.homEquiv x y a := by
-  change @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) rfl rfl =
-    e.homEquiv x y a
   exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
 
 /-- Replacing both bounds retains total arrow transport. -/
@@ -115,13 +101,13 @@ theorem replaceBounds_assignmentEquiv (e : N ≃ₙ N') (lower upper : N.Assignm
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ upper a) (R : Type w') :
     (e.replaceBounds lower upper h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    apply assignmentEquiv_unique e R
+    apply e.eq_assignmentEquiv_of_apply R
     exact (e.replaceBounds lower upper h).assignmentEquiv_apply R
 
 /-- Transport a replacement of only the lower bounds along a network isomorphism.
 
-The induced isomorphism is the simultaneous bound-replacement isomorphism with the original upper
-bound retained, and it has the original vertex and arrow equivalences. -/
+The induced isomorphism reuses the vertex and arrow equivalences of
+`e.replaceBounds lower N.upper h`, which are those of `e`. -/
 @[expose]
 def replaceLower (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
@@ -153,8 +139,6 @@ theorem replaceLower_homEquiv_apply (e : N ≃ₙ N') (lower : N.Assignment K)
       (congrArg (fun f : V ≃ W => f x) (e.replaceLower_vertexEquiv lower h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceLower_vertexEquiv lower h)) =
         e.homEquiv x y a := by
-  change @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) rfl rfl =
-    e.homEquiv x y a
   exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
 
 /-- Replacing lower bounds retains total arrow transport. -/
@@ -185,13 +169,13 @@ theorem replaceLower_assignmentEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) (R : Type w') :
     (e.replaceLower lower h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    apply assignmentEquiv_unique e R
+    apply e.eq_assignmentEquiv_of_apply R
     exact (e.replaceLower lower h).assignmentEquiv_apply R
 
 /-- Transport a replacement of only the upper bounds along a network isomorphism.
 
-The induced isomorphism is the simultaneous bound-replacement isomorphism with the original lower
-bound retained, and it has the original vertex and arrow equivalences. -/
+The induced isomorphism reuses the vertex and arrow equivalences of
+`e.replaceBounds N.lower upper h`, which are those of `e`. -/
 @[expose]
 def replaceUpper (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
@@ -223,8 +207,6 @@ theorem replaceUpper_homEquiv_apply (e : N ≃ₙ N') (upper : N.Assignment K)
       (congrArg (fun f : V ≃ W => f x) (e.replaceUpper_vertexEquiv upper h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceUpper_vertexEquiv upper h)) =
         e.homEquiv x y a := by
-  change @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) rfl rfl =
-    e.homEquiv x y a
   exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
 
 /-- Replacing upper bounds retains total arrow transport. -/
@@ -255,7 +237,7 @@ theorem replaceUpper_assignmentEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) (R : Type w') :
     (e.replaceUpper upper h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    apply assignmentEquiv_unique e R
+    apply e.eq_assignmentEquiv_of_apply R
     exact (e.replaceUpper upper h).assignmentEquiv_apply R
 
 end TauCeti.Network.Iso

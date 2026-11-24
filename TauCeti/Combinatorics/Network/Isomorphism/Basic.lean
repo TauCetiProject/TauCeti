@@ -263,6 +263,20 @@ theorem assignmentEquiv_apply (e : N ≃ₙ N') (R : Type w') (f : N.Assignment 
     e.assignmentEquiv R f (e.homEquiv x y a) = f a := by
   simp [assignmentEquiv]
 
+/-- An assignment equivalence agreeing with arrow transport is the canonical assignment
+equivalence of the network isomorphism. -/
+theorem eq_assignmentEquiv_of_apply (e : N ≃ₙ N') (R : Type w')
+    (F : N.Assignment R ≃ N'.Assignment R)
+    (hF : ∀ (f : N.Assignment R) {x y} (a : N.Hom x y),
+      F f (e.homEquiv x y a) = f a) : F = e.assignmentEquiv R := by
+  apply Equiv.ext
+  intro f
+  funext x y a
+  obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective x
+  obtain ⟨y, rfl⟩ := e.vertexEquiv.surjective y
+  obtain ⟨a, rfl⟩ := (e.homEquiv x y).surjective a
+  exact (hF f a).trans (e.assignmentEquiv_apply R f a).symm
+
 /-- Assignment transport preserves evaluation on a total arrow, including its endpoints. -/
 @[simp]
 theorem assignmentEquiv_apply_totalHomEquiv (e : N ≃ₙ N') (R : Type w')
