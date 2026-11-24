@@ -46,8 +46,8 @@ relative to a fixed family of objects; here no covering is chosen.
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
   global section.
-* `CategoryTheory.Sheaf.NonabelianH1.subsingleton_of_isTerminal`: if every covering sieve of a
-  terminal object contains its identity, every torsor is trivial.
+* `CategoryTheory.Sheaf.NonabelianH1.subsingleton_of_isTerminal_of_id_mem`: if every covering
+  sieve of a terminal object contains its identity, every torsor is trivial.
 
 ## References
 
@@ -252,7 +252,7 @@ lemma nonempty_sections_of_subsingleton (P : Torsor G) [∀ U, Subsingleton (G.o
 /-- If `T` is a terminal object over which every covering sieve contains the identity, as for
 the whole space of a local scheme in its small Zariski site, every `G`-torsor has a global
 section: some object over which it has a section receives a map from `T`. -/
-lemma nonempty_sections_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
+lemma nonempty_sections_of_isTerminal_of_id_mem (P : Torsor G) {T : C} (hT : IsTerminal T)
     (hJ : ∀ S ∈ J T, S (𝟙 T)) : P.sheaf.obj.sections.Nonempty := by
   obtain ⟨⟨i, ⟨p⟩⟩, ⟨f⟩⟩ := hJ _ (P.coversTop T)
   refine ⟨fun U ↦ P.sheaf.obj.map (hT.from U.unop ≫ f).op p, fun {U V} g ↦ ?_⟩
@@ -361,9 +361,10 @@ instance [∀ U, Subsingleton (G.obj.obj U)] : Subsingleton (NonabelianH1 G) :=
 
 /-- If `T` is a terminal object over which every covering sieve contains the identity, every
 `G`-torsor is trivial. -/
-lemma subsingleton_of_isTerminal {T : C} (hT : IsTerminal T) (hJ : ∀ S ∈ J T, S (𝟙 T)) :
-    Subsingleton (NonabelianH1 G) :=
-  subsingleton_of_forall_nonempty_sections fun P ↦ P.nonempty_sections_of_isTerminal hT hJ
+lemma subsingleton_of_isTerminal_of_id_mem {T : C} (hT : IsTerminal T)
+    (hJ : ∀ S ∈ J T, S (𝟙 T)) : Subsingleton (NonabelianH1 G) :=
+  subsingleton_of_forall_nonempty_sections fun P ↦
+    P.nonempty_sections_of_isTerminal_of_id_mem hT hJ
 
 end NonabelianH1
 

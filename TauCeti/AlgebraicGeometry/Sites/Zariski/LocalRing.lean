@@ -39,7 +39,7 @@ that member is the whole space. -/
 instance subsingleton_of_isLocalRing (A : Type u) [CommRing A] [IsLocalRing A]
     (G : Sheaf (Opens.grothendieckTopology (PrimeSpectrum A)) GrpCat.{w}) :
     Subsingleton (NonabelianH1 G) :=
-  subsingleton_of_isTerminal Limits.isTerminalTop fun S hS ↦ by
+  subsingleton_of_isTerminal_of_id_mem Limits.isTerminalTop fun S hS ↦ by
     obtain ⟨V, f, hf, hV⟩ :=
       (Opens.mem_grothendieckTopology _).1 hS (IsLocalRing.closedPoint A) trivial
     obtain rfl := (IsLocalRing.closedPoint_mem_iff V).1 hV
