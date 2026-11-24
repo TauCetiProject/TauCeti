@@ -96,11 +96,6 @@ finitely many vectors.
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
 * `TauCeti.ContinuousRep.charpoly_prod_apply`: on finite free carriers the characteristic
   polynomial is multiplicative on products.
-* `TauCeti.ContinuousRep.ker_prod`, `TauCeti.ContinuousRep.Iso.ker_eq`,
-  `TauCeti.ContinuousRep.ker_ofCharacter` and `TauCeti.ContinuousRep.ker_le_ker_baseChange`: the
-  kernel of a product is the intersection of the kernels, kernels are isomorphism invariants, the
-  kernel of a character line is that of the character, and base change can only enlarge the
-  kernel.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
   `TauCeti.ContinuousRep.det_baseChange_apply`: on finite free carriers the characteristic
   polynomial and the determinant of `g` on a base change are the images of those of `ρ g`.
@@ -286,6 +281,11 @@ noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
   -- `LinearMap.prodMap`, which `fun_prop` does not unfold.
   continuous_action := show Continuous fun p : Γ × (M × N) => (ρ p.1 p.2.1, σ p.1 p.2.2) by
     fun_prop
+
+@[simp]
+theorem toRepresentation_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.prod σ).toRepresentation = ρ.toRepresentation.prod σ.toRepresentation :=
+  (rfl)
 
 @[simp]
 theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M × N) :
@@ -1062,65 +1062,6 @@ theorem det_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
 end BaseChange
 
 end Charpoly
-
-section Ker
-
-/-! ### Kernels
-
-The kernel `ρ.toRepresentation.ker` of a continuous representation of a group is the subgroup
-acting trivially; a subgroup `H` acts trivially exactly when `H ≤ ρ.toRepresentation.ker`. -/
-
-variable {Γ A M N : Type*} [Group Γ] [TopologicalSpace Γ]
-
-section Semiring
-
-variable [Semiring A] [AddCommMonoid M] [Module A M] [TopologicalSpace M]
-  [AddCommMonoid N] [Module A N] [TopologicalSpace N]
-
-/-- The trivial representation has kernel the whole group. -/
-theorem ker_trivial : (trivial Γ A M).toRepresentation.ker = ⊤ :=
-  eq_top_iff.2 fun g _ ↦ MonoidHom.mem_ker.2 <| LinearMap.ext fun x ↦ trivial_apply g x
-
-/-- The kernel of a product is the intersection of the kernels. -/
-theorem ker_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
-    (ρ.prod σ).toRepresentation.ker = ρ.toRepresentation.ker ⊓ σ.toRepresentation.ker := by
-  ext g
-  simp only [Subgroup.mem_inf, MonoidHom.mem_ker, coe_toRepresentation]
-  refine ⟨fun h ↦ ⟨LinearMap.ext fun x ↦ congr_arg Prod.fst (LinearMap.congr_fun h (x, 0)),
-    LinearMap.ext fun y ↦ congr_arg Prod.snd (LinearMap.congr_fun h (0, y))⟩,
-    fun h ↦ LinearMap.ext fun x ↦ by simp [h.1, h.2]⟩
-
-/-- Isomorphic representations have the same kernel. -/
-theorem Iso.ker_eq {ρ : ContinuousRep Γ A M} {σ : ContinuousRep Γ A N} (e : Iso ρ σ) :
-    ρ.toRepresentation.ker = σ.toRepresentation.ker := by
-  ext g
-  simp only [MonoidHom.mem_ker, coe_toRepresentation, LinearMap.ext_iff, one_apply_eq_self]
-  refine ⟨fun h y ↦ ?_, fun h x ↦ EquivLike.injective e ?_⟩
-  · obtain ⟨x, rfl⟩ := EquivLike.surjective e y
-    rw [← e.isIntertwining, h]
-  · rw [e.isIntertwining, h]
-
-end Semiring
-
-/-- The kernel of the line of a continuous character is the kernel of the character. -/
-theorem ker_ofCharacter [CommSemiring A] [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ) :
-    (ofCharacter χ).toRepresentation.ker = (χ : Γ →* Aˣ).ker := by
-  ext g
-  simp only [MonoidHom.mem_ker, coe_toRepresentation]
-  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
-  · simpa using LinearMap.congr_fun h 1
-  · simp [show χ g = 1 from h]
-
-/-- Extension of scalars can only enlarge the kernel. -/
-theorem ker_le_ker_baseChange [CommSemiring A] [TopologicalSpace A] [AddCommMonoid M] [Module A M]
-    [TopologicalSpace M] [IsModuleTopology A M] [Module.Finite A M] (B : Type*) [Ring B]
-    [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B]
-    [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)] (ρ : ContinuousRep Γ A M) :
-    ρ.toRepresentation.ker ≤ (ρ.baseChange B).toRepresentation.ker := fun g hg ↦ by
-  rw [MonoidHom.mem_ker, coe_toRepresentation] at hg ⊢
-  rw [baseChange_apply, hg, Module.End.one_eq_id, LinearMap.baseChange_id, Module.End.one_eq_id]
-
-end Ker
 
 end ContinuousRep
 

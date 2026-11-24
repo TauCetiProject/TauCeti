@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.WildInertia
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 import TauCeti.RepresentationTheory.Dual
+import TauCeti.RepresentationTheory.Quotient
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
@@ -37,7 +38,8 @@ lift (`frobCharpoly_eq_charpoly`). Frobenius is arithmetic: the geometric varian
   the trivial representation, characters, products, base change, contragredients and isomorphism
   invariance, all from the corresponding facts about the kernel of `ρ`.
 * `TauCeti.ContinuousRep.IsUnramified.apply_eq_of_isArithFrobeniusLift`: an unramified
-  representation takes the same value at all arithmetic Frobenius lifts.
+  representation takes the same value at all arithmetic Frobenius lifts, and likewise at their
+  inverses (`IsUnramified.apply_inv_eq_of_isArithFrobeniusLift`).
 * `TauCeti.ContinuousRep.frobCharpoly`: the Frobenius polynomial, monic of degree the rank
   (`frobCharpoly_monic`, `natDegree_frobCharpoly`), with `nextCoeff` minus the trace of Frobenius
   (`nextCoeff_frobCharpoly`) and constant term `(-1)^n det ρ(Φ)` (`coeff_zero_frobCharpoly`);
@@ -94,34 +96,39 @@ theorem IsUnramified.isTamelyRamified (h : ρ.IsUnramified) : ρ.IsTamelyRamifie
   (wildInertiaSubgroup_le_inertiaSubgroup K).trans h
 
 variable (K A M) in
-theorem isUnramified_trivial : (trivial (Field.absoluteGaloisGroup K) A M).IsUnramified :=
-  le_top.trans ker_trivial.ge
+@[simp]
+theorem isUnramified_trivial : (trivial (Field.absoluteGaloisGroup K) A M).IsUnramified := by
+  rw [IsUnramified, toRepresentation_trivial, Representation.ker_trivial]
+  exact le_top
 
 variable (K A M) in
+@[simp]
 theorem isTamelyRamified_trivial :
     (trivial (Field.absoluteGaloisGroup K) A M).IsTamelyRamified :=
   (isUnramified_trivial K A M).isTamelyRamified
 
 /-- A product of unramified representations is unramified. -/
 theorem IsUnramified.prod (h : ρ.IsUnramified) (h' : ρ'.IsUnramified) :
-    (ρ.prod ρ').IsUnramified :=
-  (le_inf h h').trans (ker_prod ρ ρ').ge
+    (ρ.prod ρ').IsUnramified := by
+  rw [IsUnramified, toRepresentation_prod, Representation.ker_prod]
+  exact le_inf h h'
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- A product of tamely ramified representations is tamely ramified. -/
 theorem IsTamelyRamified.prod (h : ρ.IsTamelyRamified) (h' : ρ'.IsTamelyRamified) :
-    (ρ.prod ρ').IsTamelyRamified :=
-  (le_inf h h').trans (ker_prod ρ ρ').ge
+    (ρ.prod ρ').IsTamelyRamified := by
+  rw [IsTamelyRamified, toRepresentation_prod, Representation.ker_prod]
+  exact le_inf h h'
 
 /-- An isomorphism preserves unramifiedness. -/
 theorem Iso.isUnramified_iff (e : Iso ρ ρ') : ρ.IsUnramified ↔ ρ'.IsUnramified := by
-  rw [IsUnramified, IsUnramified, e.ker_eq]
+  rw [IsUnramified, IsUnramified, e.toRepresentationEquiv.ker_eq]
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- An isomorphism preserves tame ramification. -/
 theorem Iso.isTamelyRamified_iff (e : Iso ρ ρ') :
     ρ.IsTamelyRamified ↔ ρ'.IsTamelyRamified := by
-  rw [IsTamelyRamified, IsTamelyRamified, e.ker_eq]
+  rw [IsTamelyRamified, IsTamelyRamified, e.toRepresentationEquiv.ker_eq]
 
 /-- **Independence of the Frobenius lift.** An unramified representation takes the same value
 at any two arithmetic Frobenius lifts, since they differ by an element of inertia. -/
@@ -138,6 +145,21 @@ theorem IsUnramified.apply_arithFrobLift (h : ρ.IsUnramified)
     ρ (arithFrobLift K) = ρ Φ :=
   h.apply_eq_of_isArithFrobeniusLift (isArithFrobeniusLift_arithFrobLift K) hΦ
 
+/-- An unramified representation takes the same value at the inverses of any two arithmetic
+Frobenius lifts, since `ρ(Φ⁻¹)` is the inverse of `ρ(Φ) = ρ(Φ')`. -/
+theorem IsUnramified.apply_inv_eq_of_isArithFrobeniusLift (h : ρ.IsUnramified)
+    {Φ Φ' : Field.absoluteGaloisGroup K} (hΦ : IsArithFrobeniusLift K Φ)
+    (hΦ' : IsArithFrobeniusLift K Φ') : ρ Φ⁻¹ = ρ Φ'⁻¹ :=
+  left_inv_eq_right_inv (by rw [← map_mul, inv_mul_cancel, map_one])
+    (by rw [h.apply_eq_of_isArithFrobeniusLift hΦ hΦ', ← map_mul, mul_inv_cancel, map_one])
+
+/-- An unramified representation takes the value `ρ(Φ⁻¹)` at the inverse of every arithmetic
+Frobenius lift `Φ` also at the inverse of the chosen lift `TauCeti.arithFrobLift K`. -/
+theorem IsUnramified.apply_inv_arithFrobLift (h : ρ.IsUnramified)
+    {Φ : Field.absoluteGaloisGroup K} (hΦ : IsArithFrobeniusLift K Φ) :
+    ρ (arithFrobLift K)⁻¹ = ρ Φ⁻¹ :=
+  h.apply_inv_eq_of_isArithFrobeniusLift (isArithFrobeniusLift_arithFrobLift K) hΦ
+
 end Predicates
 
 section Character
@@ -148,7 +170,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [ContinuousMul A]
 inertia. -/
 theorem isUnramified_ofCharacter_iff (χ : Field.absoluteGaloisGroup K →ₜ* Aˣ) :
     (ofCharacter χ).IsUnramified ↔ ∀ σ ∈ inertiaSubgroup K, χ σ = 1 := by
-  rw [IsUnramified, ker_ofCharacter]
+  rw [IsUnramified, toRepresentation_ofCharacter, Representation.ker_ofLinearCharacter]
   exact IsConcreteLE.le_iff.trans <| forall₂_congr fun _ _ ↦ MonoidHom.mem_ker
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
@@ -156,7 +178,7 @@ omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 on wild inertia. -/
 theorem isTamelyRamified_ofCharacter_iff (χ : Field.absoluteGaloisGroup K →ₜ* Aˣ) :
     (ofCharacter χ).IsTamelyRamified ↔ ∀ σ ∈ wildInertiaSubgroup K, χ σ = 1 := by
-  rw [IsTamelyRamified, ker_ofCharacter]
+  rw [IsTamelyRamified, toRepresentation_ofCharacter, Representation.ker_ofLinearCharacter]
   exact IsConcreteLE.le_iff.trans <| forall₂_congr fun _ _ ↦ MonoidHom.mem_ker
 
 end Character
@@ -170,14 +192,16 @@ variable {A M : Type*} [CommRing A] [TopologicalSpace A] [AddCommGroup M] [Modul
 
 /-- Extension of scalars preserves unramifiedness. -/
 theorem IsUnramified.baseChange [Module.Finite A M] (h : ρ.IsUnramified) :
-    (ρ.baseChange B).IsUnramified :=
-  h.trans (ker_le_ker_baseChange B ρ)
+    (ρ.baseChange B).IsUnramified := by
+  rw [IsUnramified, toRepresentation_baseChange]
+  exact h.trans (ρ.toRepresentation.ker_le_ker_baseChange B)
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- Extension of scalars preserves tame ramification. -/
 theorem IsTamelyRamified.baseChange [Module.Finite A M] (h : ρ.IsTamelyRamified) :
-    (ρ.baseChange B).IsTamelyRamified :=
-  h.trans (ker_le_ker_baseChange B ρ)
+    (ρ.baseChange B).IsTamelyRamified := by
+  rw [IsTamelyRamified, toRepresentation_baseChange]
+  exact h.trans (ρ.toRepresentation.ker_le_ker_baseChange B)
 
 end BaseChange
 
@@ -242,12 +266,7 @@ theorem frobCharpoly_eq_charpoly (h : ρ.IsUnramified) {Φ : Field.absoluteGaloi
 polynomial of `ρ(Φ⁻¹)` at any arithmetic Frobenius lift `Φ`. -/
 theorem frobCharpolyGeom_eq_charpoly (h : ρ.IsUnramified) {Φ : Field.absoluteGaloisGroup K}
     (hΦ : IsArithFrobeniusLift K Φ) : ρ.frobCharpolyGeom = (ρ Φ⁻¹).charpoly := by
-  have h' : ρ (arithFrobLift K)⁻¹ = ρ Φ⁻¹ :=
-    calc ρ (arithFrobLift K)⁻¹ = ρ (arithFrobLift K)⁻¹ * ρ Φ * ρ Φ⁻¹ := by
-          rw [mul_assoc, ← map_mul, mul_inv_cancel, map_one, mul_one]
-      _ = ρ Φ⁻¹ := by
-          rw [← h.apply_arithFrobLift hΦ, ← map_mul, inv_mul_cancel, map_one, one_mul]
-  rw [frobCharpolyGeom_def, h']
+  rw [frobCharpolyGeom_def, h.apply_inv_arithFrobLift hΦ]
 
 theorem frobCharpoly_monic : ρ.frobCharpoly.Monic :=
   LinearMap.charpoly_monic _
@@ -302,11 +321,13 @@ theorem frobCharpolyGeom_trivial :
   charpoly_trivial_apply _ A M _
 
 /-- The Frobenius polynomial of a direct sum is the product of the Frobenius polynomials. -/
+@[simp]
 theorem frobCharpoly_prod : (ρ.prod ρ').frobCharpoly = ρ.frobCharpoly * ρ'.frobCharpoly :=
   charpoly_prod_apply ρ ρ' _
 
 /-- The geometric Frobenius polynomial of a direct sum is the product of the geometric Frobenius
 polynomials. -/
+@[simp]
 theorem frobCharpolyGeom_prod :
     (ρ.prod ρ').frobCharpolyGeom = ρ.frobCharpolyGeom * ρ'.frobCharpolyGeom :=
   charpoly_prod_apply ρ ρ' _
@@ -355,6 +376,7 @@ theorem frobCharpolyGeom_baseChange :
 end BaseChange
 
 /-- The Frobenius polynomial of the contragredient is the geometric Frobenius polynomial. -/
+@[simp]
 theorem frobCharpoly_dual [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A M]
     [TopologicalSpace (Module.Dual A M)] [IsModuleTopology A (Module.Dual A M)] :
     ρ.dual.frobCharpoly = ρ.frobCharpolyGeom := by
