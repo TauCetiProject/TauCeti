@@ -86,7 +86,7 @@ theorem exists_measureReal_singularValues_card_sub_one_lt_le (K : ℝ≥0) :
   have : Nonempty n := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hn₀)
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let k := ⌊δ * Fintype.card n⌋₊
-  have hcomp' := hcomp hind hA hmom hdim
+  have hcomp' := hcomp hind hA hmom (by omega)
   have hinc := TauCeti.measureReal_exists_isIncompressibleVector_norm_toEuclideanLin_lt_le
     (P := P) (k := k) (ε := ε) ρ.coe_nonneg A
   have hsum : 0 ≤ ∑ i, P.real {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i)
