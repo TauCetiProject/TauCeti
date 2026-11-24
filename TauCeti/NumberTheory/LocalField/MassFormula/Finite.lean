@@ -107,6 +107,18 @@ theorem _root_.IntermediateField.wildExponent_le_mul_natCastValuation {n : ℕ}
   rw [IntermediateField.wildExponent_def, (mem_totallyRamifiedOfDegree_iff.1 hL).1]
   omega
 
+/-- **Bounded wild-exponent finiteness from finite weighted mass**: if
+`∑_{L ∈ σ_K(n)} q ^ (-c(L)) < ∞`, then `{E ∈ σ_K(n) | E.wildExponent ≤ D}` is finite for every
+`D`. -/
+theorem finite_mem_totallyRamifiedOfDegree_wildExponent_le_of_tsum_ne_top {n : ℕ}
+    (h : ∑' L : totallyRamifiedOfDegree K n,
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent ≠ ∞) (D : ℕ) :
+    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent ≤ D}.Finite := by
+  have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ^ D ≠ ∞ := ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)
+  have hfin := ENNReal.finite_const_le_of_tsum_ne_top h (ENNReal.div_pos one_ne_zero hq).ne'
+  refine (hfin.image Subtype.val).subset fun E ⟨hE, hle⟩ ↦ ⟨⟨E, hE⟩, ?_, rfl⟩
+  exact ENNReal.div_le_div_left (pow_le_pow_right₀ (Nat.one_le_cast.2 Nat.card_pos) hle) 1
+
 /-- **Finiteness of `σ_K(n)` away from equal characteristic `p ∣ n`**: if `n` is nonzero in `K`,
 the weighted count `∑_{L ∈ σ_K(n)} q ^ (-c(L))` of Serre's mass formula is finite exactly when
 `σ_K(n)` is finite. With the mass formula, this makes `σ_K(n)` finite. -/
@@ -116,12 +128,9 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite {n 
       (totallyRamifiedOfDegree K n).Finite := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- Every weight is at least `q ^ (-n · v_K(n))`, which is nonzero.
-    have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n * natCastValuation K n hnK) ≠ ∞ :=
-      ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)
-    have hfin := ENNReal.finite_const_le_of_tsum_ne_top h (ENNReal.div_pos one_ne_zero hq).ne'
-    refine Set.finite_coe_iff.1 (Set.finite_univ_iff.1 (hfin.subset fun L _ ↦ ?_))
-    exact ENNReal.div_le_div_left (pow_le_pow_right₀ (Nat.one_le_cast.2 Nat.card_pos)
-      (IntermediateField.wildExponent_le_mul_natCastValuation L.property hnK)) 1
+    refine (finite_mem_totallyRamifiedOfDegree_wildExponent_le_of_tsum_ne_top h
+      (n * natCastValuation K n hnK)).subset fun L hL ↦
+        ⟨hL, IntermediateField.wildExponent_le_mul_natCastValuation hL hnK⟩
   · -- Every weight is at most `1`.
     refine ne_top_of_le_ne_top (b := ∑' _ : totallyRamifiedOfDegree K n, (1 : ℝ≥0∞)) ?_
       (tsum_le_tsum fun L ↦ ?_)

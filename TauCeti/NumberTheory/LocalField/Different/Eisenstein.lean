@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Different.Monogenic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
+import TauCeti.RingTheory.Polynomial.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
@@ -22,8 +23,6 @@ valuation residues, so these terms cannot cancel.
 
 * `Polynomial.natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoin_eq_top`
   identifies the different exponent with the valuation of `f'(ξ)`.
-* `TauCeti.addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt` computes the valuation of
-  the `(f.natDegree - 1)`-th coefficient of `f.derivative` for an Eisenstein polynomial `f`.
 * `TauCeti.natCast_differentExponent_eq_iInf_of_eisenstein_adjoin_eq_top` gives the exact
   derivative-term formula for the different exponent.
 * The upper-bound theorem
@@ -79,19 +78,6 @@ theorem natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoi
 end Polynomial
 
 namespace TauCeti
-
-/-- For an Eisenstein polynomial `f` of positive degree over a discrete valuation ring `A`, the
-valuation of the `(f.natDegree - 1)`-th coefficient of `f.derivative` equals
-`addVal A (f.natDegree : A)`. -/
-theorem addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt {A : Type*} [CommRing A]
-    [IsDomain A] [_root_.IsDiscreteValuationRing A] {f : A[X]}
-    (hf : f.IsEisensteinAt (IsLocalRing.maximalIdeal A)) (hdeg : 0 < f.natDegree) :
-    addVal A ((derivative f).coeff (f.natDegree - 1)) = addVal A (f.natDegree : A) := by
-  have hsub : f.natDegree - 1 + 1 = f.natDegree := by omega
-  have hcast : (((f.natDegree - 1 : ℕ) : A) + 1) = (f.natDegree : A) := by
-    rw [← Nat.cast_add_one, hsub]
-  rw [Polynomial.coeff_derivative, hsub, hcast, Polynomial.coeff_natDegree, addVal_mul,
-    (addVal_eq_zero_iff).mpr hf.isUnit_leadingCoeff, zero_add]
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -154,8 +140,8 @@ theorem
       _ = (ramificationIndex K L : ℕ) - 1 +
           ramificationIndex K L • addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) := by
         have hj : (j : ℕ) = ramificationIndex K L - 1 := by simp [j, he]
-        rw [hc, addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt hf hdeg, hj, ← he,
-          add_comm]
+        rw [hc, f.addVal_coeff_derivative_natDegree_sub_one_of_isUnit_leadingCoeff
+          hf.isUnit_leadingCoeff, hj, ← he, add_comm]
         norm_cast
   have hv : ramificationIndex K L •
       addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) =

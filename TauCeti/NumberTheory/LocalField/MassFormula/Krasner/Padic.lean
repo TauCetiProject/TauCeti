@@ -13,13 +13,13 @@ import TauCeti.Data.Nat.Factorization.Basic
 # Closed-form Krasner counts over `ℚ_[p]`
 
 Over `ℚ_[p]`, every positive integer has finite `p`-adic valuation `padicValNat p h`. Ore's
-admissibility condition reduces to `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`
-(`TauCeti.isOreAdmissible_padic_iff`), and the sum of Ore coefficient depths
-`∑_{1 ≤ h < n} oreCoefficientDepth ℚ_[p] n j h` can be evaluated in closed form by double counting
-prime powers `p ^ i` dividing `1, …, n - 1` via `Nat.Ico_filter_not_dvd_card_add_div_of_dvd` and
-`Nat.Ico_filter_not_dvd_card_add_div_of_not_dvd`. Substituting this
-closed form into `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow` yields Pauli
-and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}` and for
+admissibility condition reduces to `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n` with
+`v_p(0)` read as `∞`, so `n ∣ j` forces `j = v_p(n) * n` (`TauCeti.isOreAdmissible_padic_iff`), and
+the sum of Ore coefficient depths `∑_{1 ≤ h < n} oreCoefficientDepth ℚ_[p] n j h` can be evaluated
+in closed form by double counting prime powers `p ^ i` dividing `1, …, n - 1` via
+`Nat.Ico_filter_not_dvd_card_add_div`. Substituting this closed form into
+`TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow` yields Pauli and Roblot's
+closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}` and for
 `#σ_{ℚ_[p]}(n)` — matching `#σ_{ℚ_[2]}(2) = 2 + 4 = 6`
 (`TauCeti.encard_totallyRamifiedOfDegree_two_padicTwo`) and giving `#σ_{ℚ_[3]}(3) = 21` and
 `#σ_{ℚ_[2]}(4) = 92`.
@@ -127,7 +127,7 @@ theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
       · exact absurd (le_antisymm h2 hmin) hj_ne
 
 /-- Double-counting evaluation of the base Ore depth sum `∑_{1 ≤ h < n} (j / n - v_p(h))` for an
-Ore-admissible pair `(n, j)` over `ℚ_[p]`, using `Nat.Ico_filter_not_dvd_card_add_div_of_dvd`. -/
+Ore-admissible pair `(n, j)` over `ℚ_[p]`, using `Nat.Ico_filter_not_dvd_card_add_div`. -/
 private theorem sum_Ico_div_sub_padicValNat_of_isOreAdmissible (p : ℕ) [Fact p.Prime] {n j : ℕ}
     (hadm : IsOreAdmissible ℚ_[p] n j) :
     (∑ h ∈ Finset.Ico 1 n, (j / n - padicValNat p h)) +
@@ -158,8 +158,11 @@ private theorem sum_Ico_div_sub_padicValNat_of_isOreAdmissible (p : ℕ) [Fact p
     rw [Finset.mem_Icc] at hi
     rw [Nat.padicValNat_def] at ha_le
     have hdvd : p ^ i ∣ n := (multiplicity_dvd_iff_le hn.ne').mpr (hi.2.trans ha_le)
-    rw [Finset.sum_boole, Nat.cast_id]
-    exact Nat.Ico_filter_not_dvd_card_add_div_of_dvd hdvd
+    have hdiv : n / p ^ i = (n - 1) / p ^ i + 1 := by
+      conv_lhs => rw [← Nat.sub_add_cancel hn]
+      exact Nat.succ_div_of_dvd (by rw [Nat.sub_add_cancel hn]; exact hdvd)
+    rw [Finset.sum_boole, Nat.cast_id, hdiv, ← add_assoc, Nat.Ico_filter_not_dvd_card_add_div,
+      Nat.sub_add_cancel hn]
   rw [Finset.sum_congr rfl hinner, Finset.sum_const, Nat.card_Icc, smul_eq_mul,
     Nat.add_sub_cancel]
 
@@ -222,9 +225,12 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
       (∑ h ∈ Finset.Ico 1 n,
         if h < j % n then (if ¬ p ^ (j / n + 1) ∣ h then 1 else 0) else 0) +
         (j % n) / p ^ (j / n + 1) = j % n - 1 := by
+    have hdiv : (j % n) / p ^ (j / n + 1) = (j % n - 1) / p ^ (j / n + 1) := by
+      conv_lhs => rw [← Nat.sub_add_cancel hmod]
+      exact Nat.succ_div_of_not_dvd (by rw [Nat.sub_add_cancel hmod]; exact hndvd)
     rw [← Finset.sum_filter, Finset.Ico_filter_lt_of_le_right hlt_b.le, Finset.sum_boole,
-      Nat.cast_id]
-    exact Nat.Ico_filter_not_dvd_card_add_div_of_not_dvd hndvd
+      Nat.cast_id, hdiv]
+    exact Nat.Ico_filter_not_dvd_card_add_div (j % n) (p ^ (j / n + 1))
   have := Nat.div_add_mod j n
   have hbase := sum_Ico_div_sub_padicValNat_of_isOreAdmissible p hadm
   rw [Nat.mul_comm (j / n) n] at hbase

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Integral
 public import TauCeti.NumberTheory.LocalField.MassFormula.Ore
+import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 
@@ -184,8 +185,8 @@ theorem separable_monicOfCoeff_of_mem_eisensteinBox {n j : ℕ} {a : Fin n → K
     (ha : a ∈ eisensteinBox K n j) : (monicOfCoeff a).Separable := by
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
     (eisensteinBox_subset_eisensteinSet K n j ha)
-  obtain ⟨hadm, -, -, hcrit⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha
-  exact hf ▸ hadm.separable_map_of_isEisensteinAt he hf hcrit
+  obtain ⟨hadm, -, hcoeff, hcrit⟩ := (mem_eisensteinBox_iff_of_map_eq hf).mp ha
+  exact hf ▸ hadm.separable_map_of_isEisensteinAt he hf hcoeff hcrit
 
 variable (K) in
 /-- Discriminant boxes for distinct wild exponents are pairwise disjoint. -/
@@ -217,28 +218,17 @@ theorem setOf_mem_eisensteinSet_separable_eq_iUnion_eisensteinBox {n : ℕ} (hn 
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
   have hdeg : f.natDegree = n :=
     natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf
-  -- Step 1: separability of `monicOfCoeff a` ensures `f'` has a nonzero coefficient, so the
-  -- derivative valuation infimum `⨅ i, T i` is finite.
+  -- Step 1: separability of `monicOfCoeff a` ensures `f'` is nonzero, so the derivative valuation
+  -- infimum `⨅ i, T i` is finite.
   have hf' : f.derivative ≠ 0 := by
     have hsep' := (separable_iff_derivative_ne_zero
       (irreducible_monicOfCoeff_of_mem_eisensteinSet hn ha)).mp hsep
     rwa [← hf, derivative_map,
       Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective 𝒪[K] K)] at hsep'
-  have hex : ∃ i : Fin n, f.coeff (i + 1) * (i + 1) ≠ 0 := by
-    refine ⟨⟨f.derivative.natDegree, hdeg ▸ natDegree_derivative_lt (hdeg ▸ hn.ne')⟩, ?_⟩
-    change f.coeff (f.derivative.natDegree + 1) * ((f.derivative.natDegree : 𝒪[K]) + 1) ≠ 0
-    rw [← coeff_derivative, coeff_natDegree]
-    exact leadingCoeff_ne_zero.mpr hf'
   let T : Fin n → ℕ∞ := fun i ↦
     n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)
-  have hne_top : (⨅ i : Fin n, T i) ≠ ⊤ := by
-    obtain ⟨i, hi⟩ := hex
-    refine ne_top_of_le_ne_top ?_ (ciInf_le (OrderBot.bddBelow _) i)
-    lift addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) to ℕ using
-      (fun h ↦ hi (addVal_eq_top_iff.mp h)) with v hv'
-    dsimp only [T]
-    rw [← hv', nsmul_eq_mul]
-    exact_mod_cast ENat.natCast_ne_top (n * v + (i + 1))
+  have hne_top : (⨅ i : Fin n, T i) ≠ ⊤ :=
+    ((iInf_addVal_derivative_add_one_lt_top_iff hn hdeg).mpr hf').ne
   -- Step 2: every Eisenstein lower coefficient lies in `𝓂[K]`, so `n ≤ ⨅ i, T i`; writing
   -- `⨅ i, T i = (m - n) + n` places `a` in `eisensteinBox K n (m - n)` via Ore's criterion.
   have hle_iInf : (n : ℕ∞) ≤ ⨅ i : Fin n, T i := by
@@ -408,7 +398,7 @@ theorem measure_eisensteinBox {n j : ℕ} (hadm : IsOreAdmissible K n j)
     set e₂ := Function.update e ib (e ib + 1)
     have hib0 : ib ≠ i₀ := fun h ↦ hmod.ne' (congrArg Fin.val h)
     have hsum₂ : ∑ i, e₂ i = N + 1 := by
-      rw [sum_update_add_of_mem (Finset.mem_univ ib) e 1, hsum]
+      rw [Finset.sum_update_add_of_mem (Finset.mem_univ ib) e 1, hsum]
     let S (d : Fin n → ℕ) : Set (Fin n → K) :=
       (Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ d i)) \
         Set.univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ Function.update d i₀ (d i₀ + 1) i)
@@ -465,15 +455,6 @@ theorem _root_.IntermediateField.rootCount_eq_zero_of_notMem_eisensteinBox {n : 
     Multiset.card_eq_zero, Multiset.filter_eq_nil]
   exact fun x hx heq ↦ hnot
     ((mem_eisensteinBox_iff_wildExponent_adjoin_eq ha (mem_aroots.mp hx).2).mpr (heq ▸ rfl))
-
-/-- For `L ∈ σ_K(n)` and any measure `μ` on `Fin n → K`, `L.rootCount` is almost everywhere
-measurable on `eisensteinBox K n j`. -/
-theorem aemeasurable_rootCount_restrict_eisensteinBox {n j : ℕ} [MeasurableSpace (Fin n → K)]
-    [OpensMeasurableSpace (Fin n → K)] (μ : Measure (Fin n → K))
-    {L : IntermediateField K (SeparableClosure K)} (hL : L ∈ totallyRamifiedOfDegree K n) :
-    AEMeasurable (fun a ↦ (L.rootCount a : ℝ≥0∞)) (μ.restrict (eisensteinBox K n j)) :=
-  (aemeasurable_rootCount_restrict_eisensteinSet μ hL).mono_measure
-    (Measure.restrict_mono (eisensteinBox_subset_eisensteinSet K n j) le_rfl)
 
 /-- **Localized root-count integral**: for `L ∈ σ_K(n)` and a left-invariant measure `μ` normalized
 on the integer box, integrating `L.rootCount` over `eisensteinBox K n j` gives

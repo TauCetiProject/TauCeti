@@ -9,9 +9,9 @@ public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
-import TauCeti.NumberTheory.LocalField.Different.Eisenstein
 import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+import TauCeti.RingTheory.Polynomial.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
@@ -285,20 +285,23 @@ private theorem nsmul_add_eq_iff {n j h : ℕ} (hn : 0 < n) (hhn : h < n)
 /-- Top-index simplification for the Eisenstein derivative valuation term at `i = n - 1`. -/
 private theorem addVal_Eisenstein_top {n : ℕ} (hn : 0 < n) {f : 𝒪[K][X]}
     (hf : f.IsEisensteinAt 𝓂[K]) (hdeg : f.natDegree = n) :
-    n • addVal 𝒪[K] (f.coeff ((n - 1) + 1) * (((n - 1 : ℕ) : 𝒪[K]) + 1)) +
-      (((n - 1) + 1 : ℕ) : ℕ∞) = n • (addVal 𝒪[K] (n : 𝒪[K]) + 1) := by
+    n • (addVal 𝒪[K] (f.coeff ((n - 1) + 1)) +
+        addVal 𝒪[K] (((n - 1 : ℕ) + 1 : ℕ) : 𝒪[K])) + (((n - 1) + 1 : ℕ) : ℕ∞) =
+      n • (addVal 𝒪[K] (n : 𝒪[K]) + 1) := by
   have hsub : n - 1 + 1 = n := by omega
   have hderiv : f.coeff ((n - 1) + 1) * (((n - 1 : ℕ) : 𝒪[K]) + 1) =
       (derivative f).coeff (f.natDegree - 1) := by
     simp [hdeg, coeff_derivative]
-  rw [hderiv, addVal_coeff_derivative_natDegree_sub_one_of_isEisensteinAt hf (hdeg ▸ hn), hdeg,
-    hsub, nsmul_eq_mul, nsmul_eq_mul, mul_add, mul_one]
+  rw [Nat.cast_add_one, ← addVal_mul, hderiv,
+    f.addVal_coeff_derivative_natDegree_sub_one_of_isUnit_leadingCoeff hf.isUnit_leadingCoeff,
+    hdeg, hsub, nsmul_eq_mul, nsmul_eq_mul, mul_add, mul_one]
 
 /-- Top-index equality condition for the Eisenstein derivative valuation term at `i = n - 1`. -/
 private theorem addVal_Eisenstein_top_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪[K][X]}
     (hf : f.IsEisensteinAt 𝓂[K]) (hdeg : f.natDegree = n) :
-    n • addVal 𝒪[K] (f.coeff ((n - 1) + 1) * (((n - 1 : ℕ) : 𝒪[K]) + 1)) +
-        (((n - 1) + 1 : ℕ) : ℕ∞) = (((j / n + 1) * n + j % n : ℕ) : ℕ∞) ↔
+    n • (addVal 𝒪[K] (f.coeff ((n - 1) + 1)) +
+        addVal 𝒪[K] (((n - 1 : ℕ) + 1 : ℕ) : 𝒪[K])) + (((n - 1) + 1 : ℕ) : ℕ∞) =
+        (((j / n + 1) * n + j % n : ℕ) : ℕ∞) ↔
       j % n = 0 ∧ ((j / n : ℕ) : ℕ∞) = addVal 𝒪[K] (n : 𝒪[K]) := by
   have hb_lt : j % n < n := Nat.mod_lt j hn
   rw [addVal_Eisenstein_top hn hf hdeg]
@@ -323,8 +326,8 @@ private theorem addVal_Eisenstein_top_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪[
 private theorem le_addVal_Eisenstein_top_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪[K][X]}
     (hf : f.IsEisensteinAt 𝓂[K]) (hdeg : f.natDegree = n) :
     (((j / n + 1) * n + j % n : ℕ) : ℕ∞) ≤
-        n • addVal 𝒪[K] (f.coeff ((n - 1) + 1) * (((n - 1 : ℕ) : 𝒪[K]) + 1)) +
-          (((n - 1) + 1 : ℕ) : ℕ∞) ↔
+        n • (addVal 𝒪[K] (f.coeff ((n - 1) + 1)) +
+            addVal 𝒪[K] (((n - 1 : ℕ) + 1 : ℕ) : 𝒪[K])) + (((n - 1) + 1 : ℕ) : ℕ∞) ↔
       (j % n = 0 ∧ ((j / n : ℕ) : ℕ∞) ≤ addVal 𝒪[K] (n : 𝒪[K])) ∨
         (0 < j % n ∧ ((j / n : ℕ) : ℕ∞) + 1 ≤ addVal 𝒪[K] (n : 𝒪[K])) := by
   have hb_lt : j % n < n := Nat.mod_lt j hn
@@ -349,16 +352,6 @@ private theorem le_addVal_Eisenstein_top_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪[
         have : n * (j / n + 2) = n * (j / n + 1) + n := by ring
         omega
 
-private theorem addVal_Eisenstein_lower {n : ℕ} {f : 𝒪[K][X]}
-    (hf : f.IsEisensteinAt 𝓂[K]) {i : Fin n} (hi : (i : ℕ) + 1 < f.natDegree) :
-    1 ≤ addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) ∧
-      n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞) =
-        n • (addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) +
-          addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K])) + (((i : ℕ) + 1 : ℕ) : ℕ∞) := by
-  refine ⟨hf.one_le_addVal_coeff hi, ?_⟩
-  rw [addVal_mul]
-  norm_cast
-
 /-- Core algebraic equivalence: for an Eisenstein polynomial `f : 𝒪[K][X]` of positive degree `n`,
 the shifted derivative infimum `⨅ i : Fin n, (n • v_K(f_{i+1} * (i+1)) + (i+1))` equals `j + n`
 if and only if `IsOreAdmissible K n j` holds and the coefficients of `f` satisfy the Ore depth
@@ -374,11 +367,20 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪
   have hlt_b := Nat.mod_lt j hn
   have hj_decomp : j + n = (j / n + 1) * n + j % n := by
     have := Nat.div_add_mod j n; rw [Nat.mul_comm (j / n + 1) n, Nat.mul_add_one]; omega
-  let T (i : Fin n) : ℕ∞ := n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)
+  let T (i : Fin n) : ℕ∞ :=
+    n • (addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) + addVal 𝒪[K] (((i : ℕ) + 1 : ℕ) : 𝒪[K])) +
+      ((i : ℕ) + 1 : ℕ∞)
   let iTop : Fin n := ⟨n - 1, by omega⟩
+  have hinf :
+      (⨅ i : Fin n, n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)) =
+        ⨅ i : Fin n, T i := by
+    refine iInf_congr fun i ↦ ?_
+    dsimp only [T]
+    rw [addVal_mul]
+    norm_cast
   have hTop_eq := addVal_Eisenstein_top_eq_iff (j := j) hn hf hdeg
   have hTop_le := le_addVal_Eisenstein_top_iff (j := j) hn hf hdeg
-  rw [hj_decomp]
+  rw [hinf, hj_decomp]
   refine (ciInf_eq_iff T _).trans
     ⟨fun ⟨⟨i, hi⟩, hle⟩ ↦ ?_, fun ⟨hadm, hcoeff, hcrit⟩ ↦ ?_⟩
   · -- Forward direction: every lower index gives the Ore depth bound; split on whether the
@@ -387,10 +389,9 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪
         (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h) := fun h hh1 hhn ↦ by
       let k : Fin n := ⟨h - 1, by omega⟩
       have hk : (k : ℕ) + 1 = h := by dsimp [k]; omega
-      obtain ⟨hm1, hTk⟩ := addVal_Eisenstein_lower (n := n) (i := k) hf (by omega)
-      have hkle := hle k
-      dsimp only [T] at hkle; rw [hTk, hk] at hkle
-      exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hhn (hk ▸ hm1)).mp hkle
+      have hm1 : 1 ≤ addVal 𝒪[K] (f.coeff h) := hf.one_le_addVal_coeff (by omega)
+      exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hhn hm1).mp
+        (by simpa only [T, ← Nat.cast_add_one (k : ℕ), hk] using hle k)
     rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with hiTop | hiLow
     · -- Top index `i = n - 1` achieves the minimum: `j % n = 0` and `j / n = v_K(n)`.
       rw [(Fin.ext (by dsimp [iTop]; omega) : i = iTop)] at hi
@@ -398,9 +399,9 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪
       exact ⟨⟨hn, .inl hi'⟩, hcoeff, fun hb ↦ absurd hi'.1 hb.ne'⟩
     · -- Lower index `i < n - 1` achieves the minimum: `i + 1 = j % n > 0`, while `T (n - 1)` bounds
       -- `j / n + 1 ≤ v_K(n)`.
-      obtain ⟨hm1, hTi⟩ := addVal_Eisenstein_lower (n := n) (i := i) hf (hdeg ▸ hiLow)
-      dsimp only [T] at hi
-      obtain ⟨hmod, hvb, heq_m⟩ := (nsmul_add_eq_iff (j := j) hn hiLow hm1).mp (hTi ▸ hi)
+      have hm1 : 1 ≤ addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) :=
+        hf.one_le_addVal_coeff (hdeg ▸ hiLow)
+      obtain ⟨hmod, hvb, heq_m⟩ := (nsmul_add_eq_iff (j := j) hn hiLow hm1).mp hi
       have hb_pos : 0 < j % n := by omega
       rcases hTop_le.mp (by simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hle iTop) with
         ⟨h0, -⟩ | ⟨-, hvn⟩
@@ -414,45 +415,61 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪
           by simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hTop_eq.mpr ⟨h0, heq⟩⟩
       · let ib : Fin n := ⟨j % n - 1, by omega⟩
         have hib : (ib : ℕ) + 1 = j % n := by dsimp [ib]; omega
-        obtain ⟨hm1, hTib⟩ := addVal_Eisenstein_lower (n := n) (i := ib) hf (by omega)
+        have hm1 : 1 ≤ addVal 𝒪[K] (f.coeff (j % n)) := hf.one_le_addVal_coeff (by omega)
         refine ⟨ib, ?_⟩
         dsimp only [T]
-        rw [hTib, hib]
-        exact (nsmul_add_eq_iff (j := j) hn hlt_b (hib ▸ hm1)).mpr ⟨rfl, hvb, hcrit hb_pos⟩
+        rw [← Nat.cast_add_one (ib : ℕ), hib]
+        exact (nsmul_add_eq_iff (j := j) hn hlt_b hm1).mpr ⟨rfl, hvb, hcrit hb_pos⟩
     · rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with hiTop | hiLow
       · rw [(Fin.ext (by dsimp [iTop]; omega) : i = iTop)]
         simpa only [T, iTop, Nat.cast_add, Nat.cast_one] using hTop_le.mpr
           (hadm.2.imp (fun ⟨h0, heq⟩ ↦ ⟨h0, heq.le⟩) fun ⟨hp, _, hvn⟩ ↦ ⟨hp, hvn⟩)
-      · obtain ⟨hm1, hTi⟩ := addVal_Eisenstein_lower (n := n) (i := i) hf (hdeg ▸ hiLow)
-        dsimp only [T]
-        exact hTi.symm ▸ (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow hm1).mpr
+      · have hm1 : 1 ≤ addVal 𝒪[K] (f.coeff ((i : ℕ) + 1)) :=
+          hf.one_le_addVal_coeff (hdeg ▸ hiLow)
+        exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow hm1).mpr
           (hcoeff ((i : ℕ) + 1) (Nat.succ_pos _) hiLow)
+
+/-- For a polynomial `f : 𝒪[K][X]` of positive degree `n`, the derivative valuation infimum
+`⨅ i : Fin n, (n • v_K(f_{i+1} * (i+1)) + (i+1))` is finite if and only if
+`f.derivative ≠ 0`. -/
+theorem iInf_addVal_derivative_add_one_lt_top_iff {n : ℕ} (hn : 0 < n) {f : 𝒪[K][X]}
+    (hdeg : f.natDegree = n) :
+    (⨅ i : Fin n, n • addVal 𝒪[K] (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)) < ⊤ ↔
+      f.derivative ≠ 0 := by
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  rw [iInf_lt_top]
+  constructor
+  · rintro ⟨i, hi⟩ hzero
+    have hcoeff : f.coeff ((i : ℕ) + 1) * (((i : ℕ) : 𝒪[K]) + 1) = 0 := by
+      simpa [coeff_derivative] using congrArg (fun p : 𝒪[K][X] ↦ p.coeff i) hzero
+    rw [hcoeff, addVal_zero] at hi
+    cases n with
+    | zero => omega
+    | succ _ => simp at hi
+  · intro hf'
+    refine ⟨⟨f.derivative.natDegree, hdeg ▸ natDegree_derivative_lt (hdeg ▸ hn.ne')⟩, ?_⟩
+    have hne :
+        f.coeff (f.derivative.natDegree + 1) * ((f.derivative.natDegree : 𝒪[K]) + 1) ≠ 0 := by
+      rw [← coeff_derivative, coeff_natDegree]
+      exact leadingCoeff_ne_zero.mpr hf'
+    lift addVal 𝒪[K] (f.coeff (f.derivative.natDegree + 1) *
+        ((f.derivative.natDegree : 𝒪[K]) + 1)) to ℕ using
+          (fun h ↦ hne (addVal_eq_top_iff.mp h)) with v hv
+    rw [nsmul_eq_mul]
+    exact_mod_cast ENat.natCast_lt_top (n * v + (f.derivative.natDegree + 1))
 
 /-- Any Eisenstein polynomial `f : 𝒪[K][X]` of degree `n` witnessing an Ore-admissible wild
 exponent `j` has nonzero derivative over `K`. -/
 theorem IsOreAdmissible.derivative_map_ne_zero_of_isEisensteinAt {n j : ℕ}
     (hadm : IsOreAdmissible K n j) {f : 𝒪[K][X]} (hf : f.IsEisensteinAt 𝓂[K])
     (hdeg : f.natDegree = n)
+    (hcoeff : ∀ h, 1 ≤ h → h < n → (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h))
     (hcrit : 0 < j % n → addVal 𝒪[K] (f.coeff (j % n)) = oreCoefficientDepth K n j (j % n)) :
     (f.map (algebraMap 𝒪[K] K)).derivative ≠ 0 := by
-  have hn : 0 < n := hadm.pos
-  have hexists : ∃ k : ℕ, 0 < k ∧ f.coeff k ≠ 0 ∧ (k : 𝒪[K]) ≠ 0 := by
-    rcases hadm.2 with ⟨_, heq⟩ | ⟨hb_pos, hvb, -⟩
-    · refine ⟨n, hn, hdeg ▸ hf.isUnit_leadingCoeff.ne_zero, fun h0 ↦ ?_⟩
-      exact ENat.natCast_ne_top _ (by rwa [h0, addVal_zero] at heq)
-    · refine ⟨j % n, hb_pos, fun h0 ↦ ?_, fun h0 ↦ ?_⟩
-      · have hc := hcrit hb_pos
-        rw [h0, addVal_zero] at hc
-        exact ENat.natCast_ne_top _ hc.symm
-      · exact ENat.natCast_ne_top _ (top_le_iff.mp (by rwa [h0, addVal_zero] at hvb))
-  obtain ⟨k, hk, hfk, hk0⟩ := hexists
-  rw [derivative_map, Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective 𝒪[K] K)]
-  intro hzero
-  have hm0 := congrArg (fun p : 𝒪[K][X] ↦ p.coeff (k - 1)) hzero
-  have hsub : k - 1 + 1 = k := by omega
-  have hcast : (((k - 1 : ℕ) : 𝒪[K]) + 1) = (k : 𝒪[K]) := by rw [← Nat.cast_add_one, hsub]
-  rw [coeff_derivative, coeff_zero, hsub, hcast] at hm0
-  exact mul_ne_zero hfk hk0 hm0
+  rw [derivative_map, Polynomial.map_ne_zero_iff (FaithfulSMul.algebraMap_injective 𝒪[K] K),
+    ← iInf_addVal_derivative_add_one_lt_top_iff hadm.pos hdeg,
+    (iInf_addVal_derivative_add_one_eq_iff hadm.pos hf hdeg).mpr ⟨hadm, hcoeff, hcrit⟩]
+  exact ENat.natCast_lt_top _
 
 /-- Any Eisenstein polynomial `f : 𝒪[K][X]` mapping to `monicOfCoeff a` whose coefficients
 satisfy the Ore-admissibility criterion at `j` has separable image over `K`, including in
@@ -460,6 +477,7 @@ positive characteristic. -/
 theorem IsOreAdmissible.separable_map_of_isEisensteinAt {n j : ℕ}
     (hadm : IsOreAdmissible K n j) {f : 𝒪[K][X]} (hf : f.IsEisensteinAt 𝓂[K])
     {a : Fin n → K} (hmap : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a)
+    (hcoeff : ∀ h, 1 ≤ h → h < n → (oreCoefficientDepth K n j h : ℕ∞) ≤ addVal 𝒪[K] (f.coeff h))
     (hcrit : 0 < j % n → addVal 𝒪[K] (f.coeff (j % n)) = oreCoefficientDepth K n j (j % n)) :
     (f.map (algebraMap 𝒪[K] K)).Separable := by
   have hdeg : f.natDegree = n :=
@@ -469,14 +487,13 @@ theorem IsOreAdmissible.separable_map_of_isEisensteinAt {n j : ℕ}
   have hirr : Irreducible (f.map (algebraMap 𝒪[K] K)) :=
     hmap ▸ irreducible_monicOfCoeff_of_mem_eisensteinSet hadm.pos ha
   exact (separable_iff_derivative_ne_zero hirr).mpr
-    (hadm.derivative_map_ne_zero_of_isEisensteinAt hf hdeg hcrit)
+    (hadm.derivative_map_ne_zero_of_isEisensteinAt hf hdeg hcoeff hcrit)
 
 /-- Over any field `K` whose valuation ring `𝒪[K]` is a discrete valuation ring, every
 Ore-admissible pair `(n, j)` is realized on the coefficient level by an explicit monic Eisenstein
 polynomial `monicOfCoeff c` (`X ^ n + ϖ` when `j % n = 0`, and `X ^ n + ϖ ^ ν_b * X ^ b + ϖ` when
 `0 < j % n`). In equal characteristic with `(n : K) = 0` and `j % n = 1`, this specializes to
-Serre's explicit family `X ^ n + ϖ ^ m * X + ϖ` (Serre 1978, Remarque 1°), generalizing the
-witness construction for `TauCeti.exists_mem_totallyRamifiedOfDegree_discriminantExponent_eq`. -/
+Serre's explicit family `X ^ n + ϖ ^ m * X + ϖ` (Serre 1978, Remarque 1°). -/
 theorem IsOreAdmissible.exists_monic_isEisensteinAt {n j : ℕ} (hadm : IsOreAdmissible K n j) :
     ∃ c : Fin n → 𝒪[K],
       (monicOfCoeff c).IsEisensteinAt 𝓂[K] ∧
@@ -600,7 +617,7 @@ theorem exists_mem_totallyRamifiedOfDegree_wildExponent_eq_iff {n j : ℕ} :
     have hmap : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a := by
       simp [f, a, map_monicOfCoeff, Algebra.coe_algebraMap_ofSubsemiring]
     have hsep : (f.map (algebraMap 𝒪[K] K)).Separable :=
-      hadm.separable_map_of_isEisensteinAt hf hmap hcrit
+      hadm.separable_map_of_isEisensteinAt hf hmap hcoeff hcrit
     have hdeg_pos : (f.map (algebraMap 𝒪[K] K)).degree ≠ 0 :=
       (natDegree_pos_iff_degree_pos.mp (by simpa [hmap] using hn)).ne'
     obtain ⟨x, hxf⟩ := IsSepClosed.exists_aeval_eq_zero (SeparableClosure K) _ hdeg_pos hsep

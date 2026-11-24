@@ -174,20 +174,29 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
           exact tsum_rootCount_eq_of_separable he hf
             (separable_monicOfCoeff_of_mem_eisensteinBox ha)
 
+/-- **Bounded wild-exponent finiteness**: in any characteristic, only finitely many members of
+`σ_K(n)` have wild exponent at most `D`. -/
+theorem finite_mem_totallyRamifiedOfDegree_wildExponent_le (n D : ℕ) :
+    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent ≤ D}.Finite :=
+  finite_mem_totallyRamifiedOfDegree_wildExponent_le_of_tsum_ne_top
+    (tsum_one_div_natCard_residueField_pow_wildExponent (K := K) (n := n) ▸
+      ENNReal.natCast_ne_top n) D
+
+/-- **Bounded discriminant finiteness**: in any characteristic, only finitely many members of
+`σ_K(n)` have discriminant exponent at most `D`. -/
+theorem finite_mem_totallyRamifiedOfDegree_discriminantExponent_le (n D : ℕ) :
+    {E ∈ totallyRamifiedOfDegree K n | E.discriminantExponent ≤ D}.Finite :=
+  (finite_mem_totallyRamifiedOfDegree_wildExponent_le (K := K) n (D + 1)).subset fun _ ⟨hE, _⟩ ↦ by
+    have := IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hE
+    exact ⟨hE, by omega⟩
+
 /-- **Finiteness of each wild-exponent stratum**: for every `n` and `j`, the set of
 `E ∈ σ_K(n)` with `E.wildExponent = j` is finite, including in equal characteristic `p` with
 `p ∣ n`. -/
 theorem finite_mem_totallyRamifiedOfDegree_wildExponent_eq (n j : ℕ) :
-    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.Finite := by
-  have htsum : ∑' L : totallyRamifiedOfDegree K n,
-      (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent) ≠ ∞ := by
-    rw [tsum_one_div_natCard_residueField_pow_wildExponent]
-    exact ENNReal.natCast_ne_top n
-  have hpos : (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ j) ≠ 0 :=
-    (ENNReal.div_pos one_ne_zero (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))).ne'
-  refine ((ENNReal.finite_const_le_of_tsum_ne_top htsum hpos).image Subtype.val).subset ?_
-  rintro E ⟨hE, rfl⟩
-  exact ⟨⟨E, hE⟩, by simp, rfl⟩
+    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.Finite :=
+  (finite_mem_totallyRamifiedOfDegree_wildExponent_le (K := K) n j).subset
+    fun _ ⟨hE, hEq⟩ ↦ ⟨hE, hEq.le⟩
 
 /-- **Krasner's count in measure form**: for a left-invariant measure `μ` normalized on the integer
 box,
@@ -321,22 +330,6 @@ theorem natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCoun
   · rw [krasnerCount_of_not_isOreAdmissible hadm,
       setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
       Set.ncard_empty, Nat.cast_zero]
-
-/-- **Bounded wild-exponent finiteness**: in any characteristic, only finitely many members of
-`σ_K(n)` have wild exponent at most `D`. -/
-theorem finite_mem_totallyRamifiedOfDegree_wildExponent_le (n D : ℕ) :
-    {E ∈ totallyRamifiedOfDegree K n | E.wildExponent ≤ D}.Finite :=
-  ((Finset.range (D + 1)).finite_toSet.biUnion fun j _ ↦
-    finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).subset
-    fun _ ⟨hE, hle⟩ ↦ Set.mem_biUnion (Finset.mem_range.mpr (Nat.lt_succ_of_le hle)) ⟨hE, rfl⟩
-
-/-- **Bounded discriminant finiteness**: in any characteristic, only finitely many members of
-`σ_K(n)` have discriminant exponent at most `D`. -/
-theorem finite_mem_totallyRamifiedOfDegree_discriminantExponent_le (n D : ℕ) :
-    {E ∈ totallyRamifiedOfDegree K n | E.discriminantExponent ≤ D}.Finite :=
-  (finite_mem_totallyRamifiedOfDegree_wildExponent_le (K := K) n (D + 1)).subset fun _ ⟨hE, _⟩ ↦ by
-    have := IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hE
-    exact ⟨hE, by omega⟩
 
 /-- Fiberwise summation of `w (L.wildExponent)` over `L ∈ σ_K(n)` weighted by stratum counts. -/
 private theorem tsum_ncard_wildExponent_mul (n : ℕ) (w : ℕ → ℝ≥0∞) :
