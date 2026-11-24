@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 
-import TauCeti.Algebra.Star.Projection.Idempotent
+import TauCeti.Algebra.Star.Projection.Basic
 
 /-!
 # Concrete checks for matrix Murray–von Neumann equivalence
@@ -29,12 +29,9 @@ example :
     MurrayVonNeumannEquiv
       (CStarMatrix.fromBlocks (1 : CStarMatrix (Fin 1) (Fin 1) ℂ) 0 0
         (0 : CStarMatrix (Fin 1) (Fin 1) ℂ))
-      (1 : CStarMatrix (Fin 1) (Fin 1) ℂ) := by
-  have h := (MurrayVonNeumannEquiv.pad_zero (k := Fin 1)
+      (1 : CStarMatrix (Fin 1) (Fin 1) ℂ) :=
+  (MurrayVonNeumannEquiv.pad_zero (k := Fin 1)
     (IsStarProjection.one (R := CStarMatrix (Fin 1) (Fin 1) ℂ))).symm
-  rwa [show ofMatrix (Matrix.fromBlocks (ofMatrix.symm (1 : CStarMatrix (Fin 1) (Fin 1) ℂ)) 0 0
-      (0 : Matrix (Fin 1) (Fin 1) ℂ)) = fromBlocks 1 0 0 0 from
-    ofMatrix.symm.injective (by simp)] at h
 
 /-- Midpoint of the stabilized exponential path for `p = q = 1` in `M₁(ℂ)` and `v = 1`:
 `exp(i π r / 2) * diag(1, 0) * exp(-i π r / 2) = [[1 / 2, i / 2], [-i / 2, 1 / 2]]`. -/

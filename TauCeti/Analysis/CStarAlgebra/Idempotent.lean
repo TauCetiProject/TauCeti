@@ -24,7 +24,9 @@ projections before using constructions, such as unitary splittings, that make se
 self-adjoint idempotents.
 
 Applied to matrix algebras this converts idempotent representatives of projective modules
-into projection representatives, without changing their range modules.
+into projection representatives, without changing their range modules. Over a non-unital
+C⋆-algebra `B`, every idempotent is likewise similar in the unitization `B⁺¹` to a star projection
+in `B` with the same range (`IsIdempotentElem.exists_isStarProjection_similar_unitization`).
 
 ## References
 
@@ -126,13 +128,13 @@ theorem isConj_idempotentRangeProjection (he : IsIdempotentElem e) :
   isConj_of_mul_eq he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul
 
 /-- Every idempotent `e` in a (possibly non-unital) C⋆-algebra `A` is similar in the unitization
-`A⁺¹` to a star projection `p` in `A` with the same range (`e * p = p` and `p * e = e`),
-descending `TauCeti.idempotentRangeProjection` and `TauCeti.idempotentConjUnit` from `A⁺¹`. -/
+`A⁺¹` to a star projection `p` in `A` with the same range (`e * p = p` and `p * e = e`). -/
 theorem exists_isStarProjection_similar_unitization {B : Type*}
     [NonUnitalCStarAlgebra B] {e : B} (he : IsIdempotentElem e) :
     ∃ p : B, IsStarProjection p ∧ e * p = p ∧ p * e = e ∧
       ∃ s : (Unitization ℂ B)ˣ, (s : Unitization ℂ B) * (e : Unitization ℂ B) * ↑s⁻¹ =
         (p : Unitization ℂ B) := by
+  -- Descend `TauCeti.idempotentRangeProjection` and `TauCeti.idempotentConjUnit` from `B⁺¹`.
   let _ := CStarAlgebra.spectralOrder (Unitization ℂ B)
   let _ := CStarAlgebra.spectralOrderedRing (Unitization ℂ B)
   have he' : IsIdempotentElem (e : Unitization ℂ B) := by

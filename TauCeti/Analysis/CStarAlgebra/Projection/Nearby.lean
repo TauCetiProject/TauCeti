@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.UniformSpace.Compact
 import TauCeti.Algebra.Ring.Invertible
-import TauCeti.Analysis.CStarAlgebra.Projection.Unitization
+import TauCeti.Algebra.Star.Projection.Unitization
 
 /-!
 # Perturbation and paths of projections in C⋆-algebras
@@ -24,8 +24,8 @@ Perturbation and homotopy theory for star projections in complex C⋆-algebras:
 
 * `IsStarProjection.nearbyUnitary`, `.coe_nearbyUnitary`, `.nearbyUnitary_mul_mul_star`,
   `.norm_nearbyUnitary_sub_one_le`, `.joined_one_nearbyUnitary`: Kato's overlap-polar unitary for
-  nearby projections (`‖p - q‖ < 1`), built via `Units.polarUnitary` and connected to `1` via
-  `Unitary.joined`.
+  nearby projections (`‖p - q‖ < 1`), lying in the identity path component and conjugating `p` to
+  `q`.
 * `IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one`,
   `.exists_unitization_unitary_conj_of_norm_sub_lt_one`,
   `.exists_path_isStarProjection_of_norm_sub_lt_one`: nearby projections (`‖p - q‖ < 1`) are
@@ -95,14 +95,12 @@ private theorem isUnit_overlap {A : Type*} [CStarAlgebra A] {p q : A}
     rw [hd_norm]; nlinarith [norm_nonneg (p - q)])
   exact (hnormal.isUnit_mul_iff.mp (hzzs ▸ h1d)).1
 
-private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
+private theorem nearbyUnitary_add_star {A : Type*} [CStarAlgebra A]
     [PartialOrder A] [StarOrderedRing A] {p q : A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1)
     {u : unitary A}
     (hu_eq : (u : A) = (CFC.sqrt (1 - (p - q) * (p - q)))⁻¹ʳ * (q * p + (1 - q) * (1 - p))) :
-    ‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ := by
-  obtain _ | _ := subsingleton_or_nontrivial A
-  · simp [Subsingleton.elim ((u : A) - 1) 0]
+    (u : A) + star (u : A) = (2 : ℝ) • CFC.sqrt (1 - (p - q) * (p - q)) := by
   let z : A := q * p + (1 - q) * (1 - p)
   let d : A := (p - q) * (p - q)
   let s : A := CFC.sqrt (1 - d)
@@ -117,18 +115,35 @@ private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
     rwa [(isUnit_overlap hp hq hpq).unit_spec, hzzs] at h
   have h1d_nonneg : 0 ≤ 1 - d := hzzs ▸ mul_star_self_nonneg z
   have hss : s * s = 1 - d := CFC.sqrt_mul_sqrt_self (1 - d) h1d_nonneg
+  -- For projections `p, q`, `z + z⋆ = 2 (1 - (p - q)²) = 2 s²`.
   have hz_add_sz : z + star z = (2 : ℝ) • (s * s) := by
     rw [hss]
     simp only [z, d, star_add, star_mul, star_sub, star_one, hp.isSelfAdjoint.star_eq,
       hq.isSelfAdjoint.star_eq, two_smul]
     noncomm_ring [hp.isIdempotentElem.eq, hq.isIdempotentElem.eq]
-  have hu_add_star : (u : A) + star (u : A) = (2 : ℝ) • s := by
-    have hcomm_s_sz : Commute s (star z) := hcomm_1d_sz.cfcₙ_nnreal NNReal.sqrt
-    have hsu : star (u : A) = s⁻¹ʳ * star z := by
-      rw [hu_eq, star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
-        hcomm_s_sz.ringInverse_left.eq]
-    rw [hsu, hu_eq, ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
-      Ring.inverse_mul_cancel _ hs_unit, one_mul]
+  -- Since `s` commutes with `z⋆`, `u⋆ = s⁻¹ z⋆`, giving `u + u⋆ = s⁻¹ (z + z⋆) = 2 s`.
+  have hcomm_s_sz : Commute s (star z) := hcomm_1d_sz.cfcₙ_nnreal NNReal.sqrt
+  have hsu : star (u : A) = s⁻¹ʳ * star z := by
+    rw [hu_eq, star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
+      hcomm_s_sz.ringInverse_left.eq]
+  rw [hsu, hu_eq, ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
+    Ring.inverse_mul_cancel _ hs_unit, one_mul]
+
+private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] {p q : A}
+    (hp : IsStarProjection p) (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1)
+    {u : unitary A}
+    (hu_eq : (u : A) = (CFC.sqrt (1 - (p - q) * (p - q)))⁻¹ʳ * (q * p + (1 - q) * (1 - p))) :
+    ‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ := by
+  obtain _ | _ := subsingleton_or_nontrivial A
+  · simp [Subsingleton.elim ((u : A) - 1) 0]
+  let z : A := q * p + (1 - q) * (1 - p)
+  let d : A := (p - q) * (p - q)
+  let s : A := CFC.sqrt (1 - d)
+  have h1d_nonneg : 0 ≤ 1 - d := overlap_mul_star_self hp hq ▸ mul_star_self_nonneg z
+  -- Step 1: Express `(u - 1)⋆ (u - 1) = 2 (1 - s)` using `u + u⋆ = 2 s`.
+  have hu_add_star : (u : A) + star (u : A) = (2 : ℝ) • s :=
+    nearbyUnitary_add_star hp hq hpq hu_eq
   have hdiff_sq : star ((u : A) - 1) * ((u : A) - 1) = (2 : ℝ) • (1 - s) := by
     calc star ((u : A) - 1) * ((u : A) - 1)
         = star (u : A) * (u : A) - ((u : A) + star (u : A)) + 1 := by
@@ -136,6 +151,7 @@ private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
       _ = (2 : ℝ) • (1 - s) := by
           rw [Unitary.star_mul_self_of_mem u.property, hu_add_star, smul_sub, two_smul, two_smul]
           abel
+  -- Step 2: Bound `0 ≤ 1 - s ≤ d` (since `1 - d ≤ s = √(1 - d) ≤ 1`), hence `‖1 - s‖ ≤ ‖p - q‖²`.
   have hd_sa : d = star (p - q) * (p - q) := by
     rw [star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
   have hd_norm : ‖d‖ = ‖p - q‖ * ‖p - q‖ := by rw [hd_sa, CStarRing.norm_star_mul_self]
@@ -146,6 +162,7 @@ private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
     CStarAlgebra.norm_le_norm_of_le_of_nonneg
       (sub_le_comm.mp (CStarAlgebra.self_le_sqrt_of_nonneg_of_norm_le_one h1d_nonneg h1d_norm_le))
       (sub_nonneg.mpr (CFC.sqrt_one (A := A) ▸ CFC.sqrt_le_sqrt (1 - d) 1 h1d_le))
+  -- Step 3: Conclude `‖u - 1‖² = 2 ‖1 - s‖ ≤ 2 ‖p - q‖²`.
   refine le_of_sq_le_sq ?_ (by positivity)
   have hlhs : ‖(u : A) - 1‖ ^ 2 = 2 * ‖1 - s‖ := by
     rw [sq, ← CStarRing.norm_star_mul_self, hdiff_sq, norm_smul, Real.norm_ofNat]
@@ -153,8 +170,7 @@ private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
   nlinarith
 
 /-- Kato's overlap-polar unitary `u = (√(1 - (p - q)²))⁻¹ (q p + (1 - q)(1 - p))` for nearby
-star projections `p` and `q` (`‖p - q‖ < 1`), formed by applying `Units.polarUnitary` to the
-intertwining unit `z = q * p + (1 - q) * (1 - p)`. -/
+star projections `p` and `q` (`‖p - q‖ < 1`). -/
 noncomputable def IsStarProjection.nearbyUnitary {A : Type*} [CStarAlgebra A] {p q : A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) : unitary A :=
   let : PartialOrder A := CStarAlgebra.spectralOrder A
@@ -216,20 +232,20 @@ theorem IsStarProjection.norm_nearbyUnitary_sub_one_le {A : Type*} [CStarAlgebra
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   exact norm_nearbyUnitary_sub_one_le_aux hp hq hpq (hp.coe_nearbyUnitary hq hpq)
 
-/-- Kato's overlap-polar unitary lies in the identity path component of `unitary A`, by
-Mathlib's `Unitary.joined` criterion (`‖u - 1‖ < 2`). -/
+/-- Kato's overlap-polar unitary lies in the identity path component of `unitary A`. -/
 theorem IsStarProjection.joined_one_nearbyUnitary {A : Type*} [CStarAlgebra A] {p q : A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
     Joined (1 : unitary A) (hp.nearbyUnitary hq hpq) := by
+  -- Follows from Mathlib's `Unitary.joined` criterion (`‖u - 1‖ < 2`).
   refine Unitary.joined 1 (hp.nearbyUnitary hq hpq) ?_
   have hsqrt2 : √2 < 2 := by rw [Real.sqrt_lt' (by norm_num)]; norm_num
   exact ((hp.norm_nearbyUnitary_sub_one_le hq hpq).trans
     ((mul_le_mul_of_nonneg_left hpq.le (by positivity)).trans_eq (mul_one _))).trans_lt hsqrt2
 
 /-- **Nearby projections in a unital C⋆-algebra are unitarily conjugate.** If `p` and `q` are star
-projections with `‖p - q‖ < 1`, Kato's overlap-polar unitary `IsStarProjection.nearbyUnitary`
-(built via `Units.polarUnitary` and connected to `1` via `Unitary.joined`) conjugates `p` to `q`
-with `‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
+projections with `‖p - q‖ < 1`, Kato's overlap-polar unitary `IsStarProjection.nearbyUnitary` lies
+in the identity path component of `unitary A`, conjugates `p` to `q`, and satisfies
+`‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
 theorem IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one {A : Type*} [CStarAlgebra A]
     {p q : A} (hp : IsStarProjection p) (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
     ∃ u : unitary A, (u : A) * p * star (u : A) = q ∧
@@ -260,7 +276,8 @@ theorem IsStarProjection.exists_path_isStarProjection_of_norm_sub_lt_one {A : Ty
     ∃ γ : Path p q, ∀ t : I, IsStarProjection (γ t) := by
   obtain ⟨u, hconj, -, ⟨δ⟩⟩ := hp.exists_unitization_unitary_conj_of_norm_sub_lt_one hq hpq
   refine ⟨⟨⟨fun t => ((δ t : A⁺¹) * (p : A⁺¹) * star (δ t : A⁺¹)).snd, ?_⟩,
-    by simp [δ.source], by simp [δ.target, hconj]⟩, fun t => (hp.unitization_conj_snd (δ t)).1⟩
+    by simp [δ.source], by simp [δ.target, hconj]⟩,
+    fun t => hp.isStarProjection_unitization_conj_snd (δ t)⟩
   have hδ : Continuous (fun t : I => ((δ t : unitary A⁺¹) : A⁺¹)) :=
     continuous_subtypeVal.comp δ.continuous
   exact (Unitization.continuous_snd (𝕜 := ℂ) (A := A)).comp

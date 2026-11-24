@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
@@ -211,12 +210,6 @@ end Apply
     (P : CStarMatrix m₂ n₁ A) (Q : CStarMatrix m₂ n₂ A) :
     (fromBlocks M N P Q).map f = fromBlocks (M.map f) (N.map f) (P.map f) (Q.map f) := by
   ext (i | i) (j | j) <;> rfl
-
-private theorem mem_unitary_iff_ofMatrix_symm {k : Type*} [Fintype k] [DecidableEq k]
-    [Semiring A] [StarRing A] (X : CStarMatrix k k A) :
-    X ∈ unitary (CStarMatrix k k A) ↔ ofMatrix.symm X ∈ unitary (Matrix k k A) := by
-  simp only [Unitary.mem_iff, ← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul,
-    ofMatrix_symm_star, ofMatrix_symm_one, Matrix.star_eq_conjTranspose]
 
 /-- A block-diagonal C⋆-matrix is unitary iff both diagonal blocks are unitary. -/
 @[simp] theorem fromBlocks_zero₁₂_zero₂₁_mem_unitary_iff [Fintype m₁] [Fintype m₂]
@@ -451,17 +444,15 @@ noncomputable def blockRotation (θ : ℝ) : unitary (CStarMatrix (n ⊕ n) (n �
     (Real.sin θ • 1) (Real.cos θ • 1), by
     have htrig : Real.cos θ * Real.cos θ + Real.sin θ * Real.sin θ = 1 := by
       simpa [sq] using Real.cos_sq_add_sin_sq θ
+    have htrig' : Real.sin θ * Real.sin θ + Real.cos θ * Real.cos θ = 1 :=
+      (add_comm _ _).trans htrig
     constructor <;>
     · simp only [fromBlocks_star, star_smul, star_trivial, star_one, conjTranspose_neg,
         conjTranspose_smul, conjTranspose_one, fromBlocks_mul, CStarMatrix.neg_mul,
         CStarMatrix.mul_neg, smul_neg, neg_neg, CStarMatrix.smul_mul, CStarMatrix.mul_smul,
         smul_smul, CStarMatrix.one_mul, ← fromBlocks_one, fromBlocks_inj]
-      refine ⟨?_, ?_, ?_, ?_⟩ <;>
-        first
-        | rw [← add_smul, htrig, one_smul]
-        | rw [← add_smul, add_comm, htrig, one_smul]
-        | rw [mul_comm (Real.cos θ) (Real.sin θ), neg_add_cancel]
-        | rw [mul_comm (Real.cos θ) (Real.sin θ), add_neg_cancel]⟩
+      simp only [← add_smul, ← neg_smul, mul_comm (Real.cos θ) (Real.sin θ), neg_add_cancel,
+        add_neg_cancel, zero_smul, htrig, htrig', one_smul, and_self]⟩
 
 @[simp] theorem coe_blockRotation (θ : ℝ) :
     (blockRotation (n := n) (A := A) θ : CStarMatrix (n ⊕ n) (n ⊕ n) A) =

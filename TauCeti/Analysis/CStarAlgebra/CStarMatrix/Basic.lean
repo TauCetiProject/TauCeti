@@ -49,8 +49,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_one`, `ofMatrix_mul`,
-  `ofMatrix_conjTranspose`, `conjTranspose_mul_self_eq_zero`, and `self_mul_conjTranspose_eq_zero`
-  handle the remaining operations and proper-star cancellation.
+  `ofMatrix_conjTranspose`, `conjTranspose_mul_self_eq_zero`, `self_mul_conjTranspose_eq_zero`,
+  `mem_unitary_iff_ofMatrix_symm`, `isStarProjection_ofMatrix_symm_iff`, and `continuous_map`
+  handle the remaining operations, transport, continuity, and proper-star cancellation.
 * `CStarMatrix.mapₙₐ`, `CStarMatrix.mapₙₐ_id`, `CStarMatrix.mapₙₐ_comp`, `CStarMatrix.mapₐ`,
   `CStarMatrix.mapₐ_id`, `CStarMatrix.mapₐ_comp`: functorial non-unital and unital entrywise
   matrix amplifications.
@@ -274,6 +275,41 @@ lemma ofMatrix_symm_sub {m : Type*} [Sub A] (M N : CStarMatrix m n A) :
 @[simp]
 lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
+
+/-- Reading a reindexed C⋆-matrix as an ordinary matrix is `Matrix.reindex`. -/
+@[simp]
+lemma ofMatrix_symm_reindexₐ {m : Type*} [Fintype n] [Fintype m] [Semiring R] [AddCommMonoid A]
+    [Mul A] [Module R A] [Star A] (e : n ≃ m) (M : CStarMatrix n n A) :
+    ofMatrix.symm (reindexₐ R A e M) = Matrix.reindex e e (ofMatrix.symm M) := (rfl)
+
+/-- A C⋆-matrix is idempotent iff its underlying ordinary matrix is idempotent. -/
+@[simp]
+theorem isIdempotentElem_ofMatrix_symm_iff [Fintype n] [Mul A] [AddCommMonoid A]
+    (M : CStarMatrix n n A) :
+    IsIdempotentElem (ofMatrix.symm M) ↔ IsIdempotentElem M := by
+  simp only [IsIdempotentElem, ← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul]
+
+/-- A C⋆-matrix is self-adjoint iff its underlying ordinary matrix is self-adjoint. -/
+@[simp]
+theorem isSelfAdjoint_ofMatrix_symm_iff [Star A] (M : CStarMatrix n n A) :
+    IsSelfAdjoint (ofMatrix.symm M) ↔ IsSelfAdjoint M := by
+  simp only [IsSelfAdjoint, ← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_star,
+    ← Matrix.star_eq_conjTranspose]
+
+/-- A C⋆-matrix is a star projection iff its underlying ordinary matrix is a star projection. -/
+@[simp]
+theorem isStarProjection_ofMatrix_symm_iff [Fintype n] [Mul A] [AddCommMonoid A] [Star A]
+    (M : CStarMatrix n n A) :
+    IsStarProjection (ofMatrix.symm M) ↔ IsStarProjection M := by
+  simp only [isStarProjection_iff, isIdempotentElem_ofMatrix_symm_iff,
+    isSelfAdjoint_ofMatrix_symm_iff]
+
+/-- A C⋆-matrix is unitary iff its underlying ordinary matrix is unitary. -/
+theorem mem_unitary_iff_ofMatrix_symm {k : Type*} [Fintype k] [DecidableEq k]
+    [Semiring A] [StarRing A] (X : CStarMatrix k k A) :
+    X ∈ unitary (CStarMatrix k k A) ↔ ofMatrix.symm X ∈ unitary (Matrix k k A) := by
+  simp only [Unitary.mem_iff, ← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul,
+    ofMatrix_symm_star, ofMatrix_symm_one, Matrix.star_eq_conjTranspose]
 
 section RectangularAlgebra
 
@@ -646,6 +682,18 @@ theorem norm_mapₙₐ {n A B : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [Pa
     ‖reindexₐ ℂ A e M‖ = ‖M‖ := StarAlgEquiv.norm_map (reindexₐ ℂ A e) M
 
 end RectangularNorms
+
+/-- Entrywise application of a continuous map between C⋆-algebras is continuous on
+`CStarMatrix`. -/
+@[continuity, fun_prop]
+theorem continuous_map {m n A B : Type*}
+    [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+    {f : A → B} (hf : Continuous f) :
+    Continuous (fun M : CStarMatrix m n A => M.map f) := by
+  have h : (fun M : CStarMatrix m n A => M.map f) =
+      fun M => ofMatrixL (Matrix.map (ofMatrixL.symm M) f) := rfl
+  rw [h]
+  exact ofMatrixL.continuous.comp ((continuous_id.matrix_map hf).comp ofMatrixL.symm.continuous)
 
 section Compression
 
