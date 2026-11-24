@@ -202,13 +202,9 @@ example :
     have hsub := ((isRestricted_iff' R₀ _).mp hf).comp
       (tendsto_pow_atTop_atTop_of_one_lt hp.out.one_lt)
     have hterm (k : ℕ) : ‖coeff (p ^ k) (PowerSeries.exp ℚ_[p])‖ * R₀ ^ (p ^ k) = R₀ := by
-      have hleg : ((p - 1 : ℕ) : ℝ) * (padicValNat p (p ^ k).factorial : ℝ) =
-          ((p ^ k - 1 : ℕ) : ℝ) := by
-        exact_mod_cast TauCeti.sub_one_mul_padicValNat_factorial_pow p k
-      have hpk1 : 1 ≤ p ^ k := Nat.one_le_pow k p hp.out.pos
-      rw [Nat.cast_sub hp.out.one_le, Nat.cast_sub hpk1, Nat.cast_pow, Nat.cast_one] at hleg
-      have hval : (padicValNat p (p ^ k).factorial : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) :=
-        (eq_div_iff hp_sub.ne').mpr (by linarith)
+      have hval : (padicValNat p (p ^ k).factorial : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
+        rw [Nat.padicValNat_def]
+        exact TauCeti.cast_multiplicity_factorial_pow p k
       have hnorm : ‖coeff (p ^ k) (PowerSeries.exp ℚ_[p])‖ =
           (p : ℝ) ^ (((p : ℝ) ^ k - 1) / ((p : ℝ) - 1)) := by
         rw [PowerSeries.coeff_exp, one_div, map_inv₀, map_natCast, norm_inv,

@@ -92,19 +92,16 @@ theorem norm_coeff_exp_mul_pow_prime_pow (k : ℕ) :
       (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
   have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.out.pos
   have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  have hv := congrArg (Nat.cast : ℕ → ℝ)
-    (TauCeti.sub_one_mul_padicValNat_factorial_pow p k)
-  rw [Nat.cast_mul, Nat.cast_sub hp.out.one_le,
-    Nat.cast_sub (Nat.one_le_pow _ _ hp.out.pos), Nat.cast_pow, Nat.cast_one] at hv
   rw [coeff_exp, one_div, map_inv₀, map_natCast, norm_inv,
     TauCeti.norm_natCast_eq_norm_padic (p := p),
     Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _), ← Real.rpow_intCast,
     ← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_neg hp0.le,
     ← Real.rpow_add hp0]
   congr 1
-  push_cast
+  push_cast [padicValRat.of_nat]
+  rw [Nat.padicValNat_def, TauCeti.cast_multiplicity_factorial_pow]
   field_simp
-  nlinarith
+  ring
 
 /-- The exact criterion for a rescaled p-adic exponential to be restricted at a real radius.
 The boundary is excluded for every prime, including `2`. The case `x = 0` is included. -/

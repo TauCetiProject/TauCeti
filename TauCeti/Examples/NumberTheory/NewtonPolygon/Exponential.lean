@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.Factorial
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
 import TauCeti.RingTheory.PowerSeries.Exp.Padic
+import TauCeti.RingTheory.PowerSeries.Log
 
 /-!
 # The Newton polygon and radius of the `p`-adic exponential
@@ -78,10 +79,6 @@ private theorem p_sub_one_pos : (0 : ℝ) < (p : ℝ) - 1 :=
   sub_pos.mpr one_lt_p
 
 /-! ### Coefficient heights -/
-
-/-- The `n`-th coefficient of the exponential series over `ℚ_[p]` is `(n!)⁻¹`. -/
-private theorem coeff_exp_eq_inv_factorial (n : ℕ) : coeff n (exp ℚ_[p]) = (n ! : ℚ_[p])⁻¹ := by
-  simp [coeff_exp]
 
 /-- The `n`-th coefficient `1 / n!` of the exponential series over `ℚ_[p]` has valuation
 `-v_p(n!)`. -/

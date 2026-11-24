@@ -135,18 +135,10 @@ variable {p : ℕ} [Fact p.Prime]
 formula. This gives the factorial denominator bound for the p-adic exponential. -/
 theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
     (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : ℚ_[p])‖ := by
-  have hp := (Fact.out : p.Prime)
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
   rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
-  simp only [Int.cast_neg, Int.cast_natCast]
-  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
-  rw [le_div_iff₀ (sub_pos.mpr hp1)]
-  have hleg : (p - 1) * padicValNat p n.factorial ≤ n := by
-    rw [Nat.padicValNat_def, Nat.Prime.sub_one_mul_multiplicity_factorial hp]
-    exact Nat.sub_le _ _
-  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
-    rw [Nat.cast_sub hp.one_le, Nat.cast_one]
-  simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
+  simp only [Int.cast_neg, Int.cast_natCast, Nat.padicValNat_def]
+  exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (Fact.out : p.Prime).one_le)
+    (neg_le_neg (TauCeti.multiplicity_factorial_le_div p n))
 
 /-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
 `k!` to `(p k)!` raises the valuation by `k`. -/
