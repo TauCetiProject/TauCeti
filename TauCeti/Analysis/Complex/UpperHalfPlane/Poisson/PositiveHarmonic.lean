@@ -171,12 +171,13 @@ theorem tendsto_ofReal_pi_mul_mul_upperHalfPlanePoissonIntegral_mul_I {ν : Meas
     (hν.integrable_sq_div_sq_add_sq y) (.of_forall fun x ↦ by positivity)]
   simp [f, max_eq_left hy.le]
 
-/-- On the imaginary axis, `P[ν](iy) / y → 0` as `y → ∞`. This is the linear-coefficient limit
-`TauCeti.tendsto_im_div_of_eq_subtractedResolventKernel_add` for the Herglotz function
-`z ↦ ∫ t, subtractedResolventKernel z t ∂ν`, whose imaginary part is `π P[ν]`
-(`TauCeti.im_integral_subtractedResolventKernel`), divided by `π`. -/
+/-- On the imaginary axis, `P[ν](iy) / y → 0` as `y → ∞`. This holds for every measure `ν`:
+when `ν` is not Poisson-finite, `P[ν]` is the junk value `0`. -/
 theorem tendsto_upperHalfPlanePoissonIntegral_mul_I_div (ν : Measure ℝ) :
     Tendsto (fun y : ℝ ↦ upperHalfPlanePoissonIntegral ν (y * I) / y) atTop (𝓝 0) := by
+  -- The Herglotz function `z ↦ ∫ t, K(z, t) dν(t)` has imaginary part `π P[ν]`
+  -- (`im_integral_subtractedResolventKernel`), so its linear-coefficient limit divided by `π`
+  -- gives the claim.
   have h := (tendsto_im_div_of_eq_subtractedResolventKernel_add (a := 0) (b := 0) (nu := ν)
     (F := fun z ↦ ∫ t, subtractedResolventKernel z t ∂ν) fun _ _ ↦ by simp).div_const π
   rw [zero_div] at h
