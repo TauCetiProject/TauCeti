@@ -24,7 +24,8 @@ predicate is meant for differentiable maps.
 
 On normed spaces the differentials are Fréchet derivatives
 (`TauCeti.isTransverseAt_modelWithCornersSelf_iff`), and for a parametrized family
-`F : E × P → V` the slice `F(·, p)` is transverse to `j` at every point exactly when `p` is a
+`F : E' × P → V'` and a map `j : W → V'` that are differentiable at the incidence points of the
+slice at `p`, the slice `F(·, p)` is transverse to `j` at every point exactly when `p` is a
 regular incidence parameter (`TauCeti.isRegularIncidenceParameter_iff_forall_isTransverseAt`).
 Transversality at `x` depends only on the germ of `g` at `x`
 (`Filter.EventuallyEq.isTransverseAt_iff`); it is unchanged when `g` and `j` are both followed by
@@ -170,7 +171,7 @@ variable {E' W P V' : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup W] [NormedSpace ℝ W]
   [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup V'] [NormedSpace ℝ V']
 
-/-- **Agreement with regular incidence parameters.** If the family `F : E × P → V` and the map
+/-- **Agreement with regular incidence parameters.** If the family `F : E' × P → V'` and the map
 `j` are differentiable at the incidence points of the slice at `p`, then `p` is a regular
 incidence parameter exactly when the slice `F(·, p)` is transverse to `j` at every point. -/
 theorem isRegularIncidenceParameter_iff_forall_isTransverseAt {F : E' × P → V'} {j : W → V'}
