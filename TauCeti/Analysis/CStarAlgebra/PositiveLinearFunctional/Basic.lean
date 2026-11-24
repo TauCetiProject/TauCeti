@@ -35,9 +35,9 @@ consequences:
 
 ## Cauchy–Schwarz vanishing criteria
 
-* `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_self_eq_zero` and
-  `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_self_eq_zero`: if a positive linear functional
-  vanishes on `x * star x` (resp. `star y * y`), it vanishes on `x * y`.
+* `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero` and
+  `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`: if a positive linear functional
+  vanishes on `star b * b` (resp. `b * star b`), it vanishes on `a * b` (resp. `b * a`).
 * `PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`,
   `PositiveLinearMap.map_eq_zero_of_map_mul_star_self_eq_zero`, and
   `PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`: on a C⋆-algebra, a

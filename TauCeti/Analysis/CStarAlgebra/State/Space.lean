@@ -187,6 +187,12 @@ theorem mem_stateSpace_iff_map_one :
 theorem map_one_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : φ 1 = 1 :=
   (mem_stateSpace_iff_map_one.1 hφ).2
 
+/-- A state of a unital C⋆-algebra takes the value `c` at `c • 1`, so it extends the unique state
+`c • 1 ↦ c` of the subalgebra `ℂ·1`. -/
+theorem map_algebraMap_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (c : ℂ) :
+    φ (algebraMap ℂ A c) = c := by
+  simp [Algebra.algebraMap_eq_smul_one, map_one_of_mem_stateSpace hφ]
+
 /-- On a unital C⋆-algebra, a functional is a state exactly when `‖φ‖ = φ 1 = 1`. Positivity is
 then automatic: it follows from `φ 1 = ‖φ‖ = 1`. -/
 theorem mem_stateSpace_iff_norm_eq_one_and_map_one :

@@ -10,6 +10,8 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+
 /-!
 # Square integrability of linear solutions near an end
 
@@ -184,7 +186,7 @@ theorem memLp_restrict_Iic_of_eventually_inner_nonpos (hA : Tendsto A atBot (�
     MemLp w 2 (volume.restrict (Iic a)) := by
   have hmem := memLp_restrict_Ici_of_eventually_inner_nonneg (A := fun s ↦ -A (-s)) (B := -B)
     ((hA.comp tendsto_neg_atTop_atBot).neg)
-    (by simpa using LinearMap.IsSymmetric.zero.sub hBsym) hα (by simpa using hBα)
+    (by rw [ContinuousLinearMap.toLinearMap_neg]; exact hBsym.neg) hα (by simpa using hBα)
     (hasDerivAt_comp_neg hw) (by
       filter_upwards [tendsto_neg_atTop_atBot.eventually hV] with s hs
       simpa using hs) (-a)
@@ -203,7 +205,7 @@ theorem eventually_not_memLp_restrict_Iic_of_inner_pos (hA : Tendsto A atBot (�
       0 < ⟪w T, B (w T)⟫ → ¬ MemLp w 2 (volume.restrict (Iic a)) := by
   have h := eventually_not_memLp_restrict_Ici_of_inner_neg (A := fun s ↦ -A (-s)) (B := -B)
     ((hA.comp tendsto_neg_atTop_atBot).neg)
-    (by simpa using LinearMap.IsSymmetric.zero.sub hBsym) hα (by simpa using hBα) (-a)
+    (by rw [ContinuousLinearMap.toLinearMap_neg]; exact hBsym.neg) hα (by simpa using hBα) (-a)
   filter_upwards [tendsto_neg_atBot_atTop.eventually h] with T hT w hw hpos hmem
   have hneg := (Measure.measurePreserving_neg (volume : Measure ℝ)).restrict_preimage
     (measurableSet_Iic (a := a))

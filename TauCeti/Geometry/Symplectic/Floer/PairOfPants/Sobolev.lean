@@ -197,28 +197,6 @@ theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ
   rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
   simpa using inv_anti₀ (inv_pos.2 hd) h
 
-/-- The partial derivatives of `ξ ∘ φ_q` are those of `ξ` composed with the conformal derivative
-`(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)` of the end chart, whose Jacobian is `a² + b²`. -/
-private theorem exists_fderiv_comp_endChart (q : Puncture) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hξ : DifferentiableAt ℝ ξ (endChart q z)) :
-    ∃ a b : ℝ, (fderiv ℝ (endChart q) z).det = a ^ 2 + b ^ 2 ∧
-      fderiv ℝ (ξ ∘ endChart q) z (1, 0) =
-        a • fderiv ℝ ξ (endChart q z) (1, 0) + b • fderiv ℝ ξ (endChart q z) (0, 1) ∧
-      fderiv ℝ (ξ ∘ endChart q) z (0, 1) =
-        (-b) • fderiv ℝ ξ (endChart q z) (1, 0) + a • fderiv ℝ ξ (endChart q z) (0, 1) := by
-  set c := deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)
-  have hφ : DifferentiableAt ℝ (endChart q) z :=
-    (contDiff_endChart q 1).differentiable one_ne_zero z
-  refine ⟨c.re, c.im, ?_, ?_, ?_⟩
-  · rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
-      (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, Complex.normSq_apply]
-    ring
-  all_goals
-    rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply,
-      ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
-    congr 1
-    simp [Complex.equivRealProdCLM_symm_apply, c]
-
 /-- **The `W^{1,2}` density on the ends, from the weighted density.** On the part `±s ≥ 0` of the
 end `q`, the `W^{1,2}` density `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates
 is at most twice the Jacobian of `φ_q` times the weighted density
@@ -230,12 +208,16 @@ theorem norm_fderiv_comp_endChart_sq_add_le (q : Puncture) {ξ : ℝ × ℝ → 
       2 * ((fderiv ℝ (endChart q) z).det *
         (cylindricalWeight (endChart q z) * ‖ξ (endChart q z)‖ ^ 2 +
           ‖fderiv ℝ ξ (endChart q z) (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ (endChart q z) (0, 1)‖ ^ 2)) := by
-  obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_endChart q hξ
+  obtain ⟨c, hc⟩ : ∃ c, HasDerivAt q.cylindricalEndLift c (Complex.equivRealProdCLM.symm z) :=
+    ⟨_, q.hasDerivAt_cylindricalEndLift _⟩
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).1
-  have hconf := norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq_le a b
-    (fderiv ℝ ξ (endChart q z) (1, 0)) (fderiv ℝ ξ (endChart q z) (0, 1))
-  rw [h₁, h₂]
-  rw [hdet] at hρ ⊢
+  rw [endChart_eq_realChart] at hξ hρ ⊢
+  have hconf := norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq_le c.re c.im
+    (fderiv ℝ ξ (Complex.realChart q.cylindricalEndLift z) (1, 0))
+    (fderiv ℝ ξ (Complex.realChart q.cylindricalEndLift z) (0, 1))
+  rw [Complex.fderiv_comp_realChart_apply_one_zero hc hξ,
+    Complex.fderiv_comp_realChart_apply_zero_one hc hξ]
+  rw [Complex.det_fderiv_realChart hc, Complex.normSq_apply] at hρ ⊢
   have hπ : 1 ≤ 4 * π ^ 2 := by nlinarith [two_le_pi]
   nlinarith [sq_nonneg ‖ξ (endChart q z)‖]
 
@@ -249,16 +231,11 @@ theorem det_fderiv_endChart_mul_le (q : Puncture) {ξ : ℝ × ℝ → V} {z : �
           ‖fderiv ℝ ξ (endChart q z) (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ (endChart q z) (0, 1)‖ ^ 2) ≤
       20 * π ^ 2 * (‖fderiv ℝ (ξ ∘ endChart q) z (1, 0)‖ ^ 2 +
         ‖fderiv ℝ (ξ ∘ endChart q) z (0, 1)‖ ^ 2 + ‖ξ (endChart q z)‖ ^ 2) := by
-  obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_endChart q hξ
+  obtain ⟨c, hc⟩ : ∃ c, HasDerivAt q.cylindricalEndLift c (Complex.equivRealProdCLM.symm z) :=
+    ⟨_, q.hasDerivAt_cylindricalEndLift _⟩
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).2
-  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq a b
-    (fderiv ℝ ξ (endChart q z) (1, 0)) (fderiv ℝ ξ (endChart q z) (0, 1))
-  rw [h₁, h₂]
-  rw [hdet] at hρ ⊢
-  have hπ : 2 ≤ 20 * π ^ 2 := by nlinarith [two_le_pi]
-  nlinarith [sq_nonneg ‖ξ (endChart q z)‖,
-    sq_nonneg ‖a • fderiv ℝ ξ (endChart q z) (1, 0) + b • fderiv ℝ ξ (endChart q z) (0, 1)‖,
-    sq_nonneg ‖(-b) • fderiv ℝ ξ (endChart q z) (1, 0) + a • fderiv ℝ ξ (endChart q z) (0, 1)‖]
+  rw [endChart_eq_realChart] at hξ hρ ⊢
+  exact Complex.det_fderiv_realChart_mul_le hc hξ hρ (by nlinarith [two_le_pi])
 
 /-- The change of variables along the end chart, on a band `P × [0, 1)` of the end. -/
 private theorem lintegral_image_endChart (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)
@@ -269,6 +246,19 @@ private theorem lintegral_image_endChart (q : Puncture) {P : Set ℝ} (hP : Meas
   refine lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hP.prod measurableSet_Ico)
     (fun z _ ↦ ((contDiff_endChart q 1).differentiable one_ne_zero z).hasFDerivAt.hasFDerivWithinAt)
     ((injOn_endChart_univ_prod_Ico q 0).mono (prod_mono (subset_univ _) (by norm_num))) g
+
+/-- The change of variables along the positive end chart `φ'_q`, on a band `P × [0, 1)` of the
+strip. -/
+theorem lintegral_image_positiveEndChart (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)
+    (g : ℝ × ℝ → ℝ≥0∞) :
+    ∫⁻ w in positiveEndChart q '' (P ×ˢ Ico 0 1), g w =
+      ∫⁻ ζ in P ×ˢ Ico 0 1,
+        ENNReal.ofReal |(fderiv ℝ (positiveEndChart q) ζ).det| * g (positiveEndChart q ζ) := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  refine lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hP.prod measurableSet_Ico)
+    (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
+      ζ).hasFDerivAt.hasFDerivWithinAt)
+    ((injOn_positiveEndChart q 0).mono (prod_mono (subset_univ _) (by norm_num))) g
 
 /-- **The `W^{1,2}` energy on a band of an end, from the weighted energy.** For a band
 `P × [0, 1)` of the part `±s ≥ 0` of the end `q` and a `ξ` differentiable on the image of the
@@ -345,12 +335,7 @@ theorem lintegral_image_positiveEndChart_le (q : Puncture) {P : Set ℝ} (hP : M
       ENNReal.ofReal (20 * π ^ 2) * ∫⁻ ζ in P ×ˢ Ico 0 1,
         ENNReal.ofReal (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (1, 0)‖ ^ 2 +
           ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ (0, 1)‖ ^ 2 + ‖ξ (positiveEndChart q ζ)‖ ^ 2) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume (hP.prod measurableSet_Ico)
-    (fun ζ _ ↦ ((contDiff_positiveEndChart q 1).differentiable one_ne_zero
-      ζ).hasFDerivAt.hasFDerivWithinAt)
-    ((injOn_positiveEndChart q 0).mono (prod_mono (subset_univ _) (by norm_num))),
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  rw [lintegral_image_positiveEndChart q hP, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun ζ hζ ↦ ?_
   rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (by positivity),
     abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]

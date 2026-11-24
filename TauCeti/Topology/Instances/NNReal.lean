@@ -8,13 +8,16 @@ module
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 
 /-!
-# Topology and strict bounds in `ℝ≥0`
+# Topology, strict bounds near one, and continuous homomorphisms in `ℝ≥0`
 
 A strict bound `c < a` persists for `c * C ^ n` when `C` is slightly greater than one. This
 absorbs a small multiplicative loss in estimates with a fixed natural power.
 
 For `0 < c`, the maps `t ↦ (c + t)⁻¹` and `t ↦ t * (c + t)⁻¹` are continuous on `ℝ≥0`
 (`NNReal.continuous_inv_add`, `NNReal.continuous_mul_inv_add`).
+
+A continuous homomorphism from a topological group to `ℝ≥0` is trivial on every compact subgroup
+(`MonoidHom.eq_one_of_mem_of_isCompact`).
 
 ## References
 
@@ -55,3 +58,18 @@ theorem continuous_mul_inv_add {c : ℝ≥0} (hc : 0 < c) :
   continuous_id.mul (continuous_inv_add hc)
 
 end NNReal
+
+/-- A continuous homomorphism `f : H →* ℝ≥0` is trivial on every compact subgroup: its image is
+compact, hence bounded, and a value `≠ 1` would have unbounded powers or unbounded inverse
+powers. -/
+theorem MonoidHom.eq_one_of_mem_of_isCompact {H : Type*} [Group H] [TopologicalSpace H]
+    (f : H →* ℝ≥0) (hf : Continuous f) {K : Subgroup H} (hK : IsCompact (K : Set H)) {k : H}
+    (hk : k ∈ K) : f k = 1 := by
+  obtain ⟨M, hM⟩ := (hK.image hf).isBounded.bddAbove
+  have hbdd (x : H) (hx : x ∈ K) : ¬ 1 < f x := fun h1 => by
+    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M h1
+    exact hn.not_ge <| hM ⟨x ^ n, K.pow_mem hx n, map_pow _ _ _⟩
+  have hpos : 0 < f k := pos_iff_ne_zero.mpr ((Group.isUnit k).map f).ne_zero
+  refine le_antisymm (not_lt.mp (hbdd k hk)) (not_lt.mp fun h => hbdd k⁻¹ (K.inv_mem hk) ?_)
+  rw [map_inv]
+  exact one_lt_inv_iff₀.mpr ⟨hpos, h⟩

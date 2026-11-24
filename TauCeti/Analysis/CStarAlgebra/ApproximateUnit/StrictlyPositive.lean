@@ -716,7 +716,7 @@ theorem exists_isStrictlyPositive_iff_exists_seq_tendsto_mul_right :
       (fun n => mul_star_self_nonneg (u n)) fun φ hu0 => ?_
     ext a
     have hvanish : ∀ n, φ (u n * a) = 0 := fun n =>
-      PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_self_eq_zero φ (hu0 n) a
+      PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero φ (hu0 n) a
     exact tendsto_nhds_unique (((map_continuous φ).tendsto a).comp (hu a))
       (by simp [Function.comp_def, hvanish])
 

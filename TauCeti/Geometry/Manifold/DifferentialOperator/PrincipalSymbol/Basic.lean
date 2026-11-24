@@ -339,6 +339,21 @@ theorem smoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℝ
   simp only [smoothPrincipalSymbol_def, map_smul, smul_apply, smul_eq_mul]
   ring
 
+@[simp]
+theorem smoothPrincipalSymbol_neg (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx (-D) ξ = -smoothPrincipalSymbol I hx D ξ := by
+  rw [← neg_one_smul ℝ D, smoothPrincipalSymbol_smul, neg_one_mul]
+
+@[simp]
+theorem smoothPrincipalSymbol_sub (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D₁ D₂ : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx (D₁ - D₂) ξ =
+      smoothPrincipalSymbol I hx D₁ ξ - smoothPrincipalSymbol I hx D₂ ξ := by
+  rw [sub_eq_add_neg D₁ D₂, smoothPrincipalSymbol_add, smoothPrincipalSymbol_neg, ← sub_eq_add_neg]
+
 /-- The principal symbol is additive over finite sums of operators. -/
 @[simp]
 theorem smoothPrincipalSymbol_sum (hx : I.IsInteriorPoint x) {m : ℕ} {κ : Type*}
