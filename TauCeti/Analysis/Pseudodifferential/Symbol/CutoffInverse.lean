@@ -620,6 +620,15 @@ theorem IsEllipticOn.mono {a : Symbol n V W m} (ha : a.IsEllipticOn S)
     {S' : Set (CoordinateSpace n × CoordinateSpace n)} (h : S' ⊆ S) : a.IsEllipticOn S' :=
   fun K hK => (ha K hK).imp fun _ hC p hp hpK => hC p (h hp) hpK
 
+omit [CompleteSpace V] in
+/-- A symbol of the same order which agrees on `S` with a symbol elliptic on `S` is elliptic on
+`S`. -/
+theorem IsEllipticOn.congr {a : Symbol n V W m} (ha : a.IsEllipticOn S) {m' : ℝ}
+    {b : Symbol n V W m'} (hm : m' = m) (h : ∀ p ∈ S, b.coefficient p = a.coefficient p) :
+    b.IsEllipticOn S := by
+  subst hm
+  exact fun K hK => (ha K hK).imp fun _ hC p hp hpK => h p hp ▸ hC p hp hpK
+
 /-- **Ellipticity passes to the closure.** A symbol elliptic on a set `S` is elliptic on its
 closure: near a limit point `p` of `S`, the values of `a` are invertible with inverses bounded by a
 multiple of `⟨ξ⟩^(-m)`, so `a(p)` is a small perturbation of such a value. -/

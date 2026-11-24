@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
@@ -30,8 +30,8 @@ The classical model is `ℤ ^ n` with the dot product: the `2 * n * (n - 1)` roo
 Bourbaki simple roots are `αᵢ = eᵢ - eᵢ₊₁` for `i + 1 < n` together with the fork root
 `α_{n-1} = e_{n-2} + e_{n-1}`. That model, its enumeration by `Fin (2 * n * (n - 1))` with the
 simple roots first, the expansion of every root in the simple roots, their linear independence and
-reflection in a root are all supplied by `TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD` and are
-consumed here rather than rebuilt.
+reflection in a root are all supplied by `TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic`
+and are consumed here rather than rebuilt.
 
 Type `Dₙ` is simply laced, so `α^∨ = α` under the dot product and both pinned lattices are images
 of the one classical model:

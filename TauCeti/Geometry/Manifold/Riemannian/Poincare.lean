@@ -186,7 +186,7 @@ theorem exists_eLpNorm_sub_average_le_mul_eLpNorm_mgradient [CompactSpace M]
   obtain ⟨b, hb⟩ := hK u a _ fun c _ ↦ ha c
   -- Replacing the constant by the mean costs a factor `2`.
   have hmean := eLpNorm_sub_setAverage_le (μ := riemannianVolume I M) (s := univ) (f := u)
-    (measure_ne_top _ _) hp hp' b
+    (measure_ne_top _ _) hp b
   rw [Measure.restrict_univ] at hmean
   calc _ ≤ 2 * eLpNorm (fun x ↦ u x - b) p (riemannianVolume I M) := hmean
     _ ≤ 2 * (K * eLpNorm (fun x ↦ ‖mgradient I u x‖) p (riemannianVolume I M)) := by gcongr

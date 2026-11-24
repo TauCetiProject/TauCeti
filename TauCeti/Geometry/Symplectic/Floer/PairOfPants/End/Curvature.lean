@@ -108,17 +108,15 @@ nearby, and so does its curvature. -/
 theorem hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (ω : SmoothTwoForm I M)
     (hK : ∀ w, (∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ 1) → ∀ x, K w x = 0)
     {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (h : ∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < 1)
-    (x : M) :
+    (h : ∀ q : Puncture, (positiveEndCoord q z).1 < 1) (x : M) :
     ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z x = 0 := by
-  have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re < 1 := by
-    refine Filter.eventually_all.2 fun q ↦ ?_
-    exact (continuousAt_endSign_mul_re_endCoord q
-      (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)).eventually (gt_mem_nhds (h q))
+  have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture, (positiveEndCoord q z').1 < 1 :=
+    Filter.eventually_all.2 fun q ↦
+      (contDiffAt_fst_positiveEndCoord_of_mem q hz (n := 0)).continuousAt.eventually
+        (gt_mem_nhds (h q))
   have hK' : ∀ᶠ z' in 𝓝 z, ∀ y, K (Complex.equivRealProdCLM.symm z') y = 0 :=
-    hev.mono fun z' hz' ↦ hK _ fun q ↦ (hz' q).le
+    hev.mono fun z' hz' ↦ hK _ fun q ↦ ((fst_positiveEndCoord q z').symm.trans_lt (hz' q)).le
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
     (hK'.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y])
     (hK'.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
@@ -152,8 +150,7 @@ theorem lintegral_enorm_hamiltonianCurvature_le_sum_endStrip (ω : SmoothTwoForm
     by_cases h₁ : Complex.equivRealProdCLM.symm z = 1
     · exact Or.inr (Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
         (congrArg _ h₁)))
-    by_cases hq : ∃ q : Puncture,
-        1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+    by_cases hq : ∃ q : Puncture, 1 / 2 < (positiveEndCoord q z).1
     · obtain ⟨q, hq⟩ := hq
       exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart ⟨h₀, h₁⟩ hq⟩)
     · simp only [not_exists, not_lt] at hq
