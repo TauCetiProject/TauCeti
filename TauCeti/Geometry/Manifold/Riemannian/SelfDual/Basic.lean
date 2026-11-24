@@ -869,12 +869,13 @@ theorem alternatingFormInner_self_eq_add (α : RoughForm I M ℝ k) (x : M) :
   exact alternatingFormInner_eq_add_selfDualProjCLM_antiSelfDualProjCLM o x (α x) (α x)
 
 /-- The wedge square of a middle-degree form of even degree is `α ∧ α = ⟨α, ⋆α⟩ vol`, where `vol`
-is the Riemannian volume form: write the second factor as `⋆(⋆α)`. -/
+is the Riemannian volume form. -/
 theorem wedge_self_apply_eq_alternatingFormInner_hodgeStar (hk : Even k) (α : RoughForm I M ℝ k)
     (x : M) (v : Fin (k + k) → TangentSpace I x) :
     α.wedge α x v =
       alternatingFormInner (TangentSpace I x) k (α x) (hodgeStar o rfl α x) *
         riemannianVolumeForm o x v := by
+  -- Write the second factor as `⋆(⋆α)` and apply `α ∧ ⋆β = ⟨α, β⟩ vol`.
   have h := wedge_hodgeStar_apply o rfl α (hodgeStar o rfl α) x v
   rw [hodgeStar_hodgeStar_of_even o hk] at h
   rw [wedge_def, wedgeWith_apply', ← ContinuousAlternatingMap.wedge_def, h]
