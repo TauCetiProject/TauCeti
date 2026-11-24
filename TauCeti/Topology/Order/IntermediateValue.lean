@@ -18,6 +18,9 @@ uniform order statements:
   strictly ordered on all of `s`, one way or the other.
 * `IsPreconnected.forall_le_or_forall_lt`, `IsPreconnected.forall_lt_of_lt`: the same for two
   continuous functions which either agree on all of `s` or never agree there.
+* `IsPreconnected.forall_mem_Ioo_of_mem_Icc`: a continuous function on `s` which takes neither
+  the value `a` nor the value `b`, and lies in `Icc a b` at one point, lies in `Ioo a b` on all
+  of `s`.
 * `IsPreconnected.forall_le_or_forall_ge`: a continuous function on `s` which never takes a value
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
@@ -75,6 +78,17 @@ theorem IsPreconnected.forall_lt_of_lt (hs : IsPreconnected s) {f g : X → α}
     {x : X} (hx : x ∈ s) (hlt : f x < g x) : ∀ y ∈ s, f y < g y :=
   (hs.forall_le_or_forall_lt hg hf (hfg.imp EqOn.symm fun h y hy ↦ (h y hy).symm)).resolve_left
     fun h ↦ (h x hx).not_gt hlt
+
+/-- A continuous function on a preconnected set which takes neither the value `a` nor the value
+`b` there, and lies in `Icc a b` at one point of the set, lies in `Ioo a b` on the whole set. -/
+theorem IsPreconnected.forall_mem_Ioo_of_mem_Icc (hs : IsPreconnected s) {f : X → α}
+    (hf : ContinuousOn f s) {a b : α} (hne : ∀ x ∈ s, f x ≠ a ∧ f x ≠ b) {x : X} (hx : x ∈ s)
+    (hfx : f x ∈ Icc a b) : ∀ y ∈ s, f y ∈ Ioo a b := by
+  have ha := hs.forall_lt_of_lt continuousOn_const hf (.inr fun y hy ↦ (hne y hy).1.symm) hx
+    (hfx.1.lt_of_ne (hne x hx).1.symm)
+  have hb := hs.forall_lt_of_lt hf continuousOn_const (.inr fun y hy ↦ (hne y hy).2) hx
+    (hfx.2.lt_of_ne (hne x hx).2)
+  exact fun y hy ↦ ⟨ha y hy, hb y hy⟩
 
 /-- A continuous function on a preconnected set which never takes a value in `Ioo a b`, where
 `a < b`, lies below `a` on the whole set or above `b` on the whole set. -/

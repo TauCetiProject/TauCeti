@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Scheme
 public import Mathlib.RingTheory.LocalRing.Pullback
 
 import Mathlib.CategoryTheory.Functor.ReflectsIso.Limits
+import TauCeti.Algebra.Category.Ring.Pullback
 import TauCeti.AlgebraicGeometry.Gluing.AffinePushout.Basic
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Localization.Pullback
@@ -68,11 +69,8 @@ theorem isPullback_SpecMap_pullback_sections_basicOpen (r : p.pullback q) :
         (PrimeSpectrum.basicOpen (p (p.pullbackFst q r))) (by
           rw [SpecMap_preimage_basicOpen]
           exact le_of_eq (congrArg PrimeSpectrum.basicOpen r.property))) := by
-  have h : IsPullback (CommRingCat.ofHom (p.pullbackFst q))
-      (CommRingCat.ofHom (p.pullbackSnd q)) (CommRingCat.ofHom p) (CommRingCat.ofHom q) :=
-    .of_isLimit (CommRingCat.pullbackConeIsLimit (CommRingCat.ofHom p) (CommRingCat.ofHom q))
   -- Present the section rings as structure-sheaf objects so their canonical instances match.
-  refine h.localizationAway
+  refine (isPullback_pullback p q).localizationAway
     (A' := (Spec.structureSheaf (p.pullback q)).obj.obj (Opposite.op (PrimeSpectrum.basicOpen r)))
     (B' := (Spec.structureSheaf B).obj.obj
       (Opposite.op (PrimeSpectrum.basicOpen (p.pullbackFst q r))))
