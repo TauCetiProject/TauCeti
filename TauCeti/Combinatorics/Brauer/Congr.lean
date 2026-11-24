@@ -141,14 +141,6 @@ theorem IsFraming.relabel {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin 
   rw [relabel_def]
   exact hπ.congr (Equiv.Perm.sumCongr σ τ)
 
-/-- Exchanging the two endpoints of a single strand of `permToBrauer 1` fixes the diagram. -/
-private theorem congr_swap_inr_inl_permToBrauer_one (i : Fin k) :
-    PerfectMatching.congr (Equiv.swap (Sum.inr i) (Sum.inl i)) (permToBrauer 1) =
-      permToBrauer 1 := by
-  have hval : (permToBrauer (1 : Equiv.Perm (Fin k))).val (Sum.inr i) = Sum.inl i :=
-    permToBrauer_one_val_apply (Sum.inr i)
-  rw [Equiv.swap_comm, ← hval, ← PerfectMatching.reconnect_def, PerfectMatching.reconnect_self]
-
 /-- Reconnecting two arcs multiplies framings on the left by the reconnecting transposition. -/
 theorem IsFraming.reconnect {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
     (hπ : D.IsFraming π) (x y : Fin k ⊕ Fin k) :
@@ -160,8 +152,7 @@ theorem IsFraming.reconnect {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fi
 theorem IsFraming.mul_swap_inl_inr {D : BrauerDiagram k} {π : Equiv.Perm (Fin k ⊕ Fin k)}
     (hπ : D.IsFraming π) (r : Fin k) :
     D.IsFraming (π * Equiv.swap (Sum.inl r) (Sum.inr r)) := by
-  rw [isFraming_def, Equiv.swap_comm, PerfectMatching.congr_mul,
-    congr_swap_inr_inl_permToBrauer_one, hπ]
+  rw [isFraming_def, Equiv.swap_comm, PerfectMatching.congr_mul, ← capCup_def, capCup_self, hπ]
 
 /-! ### Existence, stabilizer, and prescribed-arc framings -/
 

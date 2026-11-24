@@ -67,14 +67,6 @@ namespace BrauerDiagram
 
 variable {k : ℕ} (D : BrauerDiagram k)
 
-/-- A bottom point lies on a cap exactly when it does not lie on a through strand. -/
-theorem isCap_inl_iff (i : Fin k) : D.IsCap (Sum.inl i) ↔ ¬D.IsThrough (Sum.inl i) := by
-  rcases h : D.val (Sum.inl i) with j | j <;> simp [isCap_def, isThrough_def, h]
-
-/-- A top point lies on a cup exactly when it does not lie on a through strand. -/
-theorem isCup_inr_iff (j : Fin k) : D.IsCup (Sum.inr j) ↔ ¬D.IsThrough (Sum.inr j) := by
-  rcases h : D.val (Sum.inr j) with i | i <;> simp [isCup_def, isThrough_def, h]
-
 /-- The bottom endpoints of the through strands of `D`. -/
 def bottomThrough : Finset (Fin k) := Finset.univ.filter fun i => D.IsThrough (Sum.inl i)
 

@@ -150,6 +150,14 @@ theorem isCup_val : D.IsCup (D.val x) ↔ D.IsCup x := by
   simp only [IsCup, D.apply_apply]
   exact and_comm
 
+/-- A bottom point lies on a cap exactly when it does not lie on a through strand. -/
+theorem isCap_inl_iff (i : Fin k) : D.IsCap (Sum.inl i) ↔ ¬D.IsThrough (Sum.inl i) := by
+  rcases h : D.val (Sum.inl i) with j | j <;> simp [isCap_def, isThrough_def, h]
+
+/-- A top point lies on a cup exactly when it does not lie on a through strand. -/
+theorem isCup_inr_iff (j : Fin k) : D.IsCup (Sum.inr j) ↔ ¬D.IsThrough (Sum.inr j) := by
+  rcases h : D.val (Sum.inr j) with i | i <;> simp [isCup_def, isThrough_def, h]
+
 end BrauerDiagram
 
 /-! ### Lower ends index the arcs -/
@@ -458,22 +466,16 @@ boundary: a bottom point goes through exactly when it does not lie on the cap. -
 @[simp]
 theorem isThrough_capCup_inl_iff (hab : a ≠ b) :
     (capCup a b).IsThrough (Sum.inl i) ↔ i ≠ a ∧ i ≠ b := by
-  rcases eq_or_ne i a with rfl | hia
-  · simp [isThrough_def, hab]
-  · rcases eq_or_ne i b with rfl | hib
-    · simp [isThrough_def, hab]
-    · simp [isThrough_def, capCup_val_inl_of_ne hia hib, hia, hib]
+  rw [← not_not (a := (capCup a b).IsThrough (Sum.inl i)), ← isCap_inl_iff,
+    isCap_capCup_inl_iff hab, not_or]
 
 /-- **The through strands of a cap-cup diagram** are the ones off its pair, read at the top
 boundary: a top point goes through exactly when it does not lie on the cup. -/
 @[simp]
 theorem isThrough_capCup_inr_iff (hab : a ≠ b) :
     (capCup a b).IsThrough (Sum.inr j) ↔ j ≠ a ∧ j ≠ b := by
-  rcases eq_or_ne j a with rfl | hja
-  · simp [isThrough_def, hab]
-  · rcases eq_or_ne j b with rfl | hjb
-    · simp [isThrough_def, hab]
-    · simp [isThrough_def, capCup_val_inr_of_ne hja hjb, hja, hjb]
+  rw [← not_not (a := (capCup a b).IsThrough (Sum.inr j)), ← isCup_inr_iff,
+    isCup_capCup_inr_iff hab, not_or]
 
 end BrauerDiagram
 

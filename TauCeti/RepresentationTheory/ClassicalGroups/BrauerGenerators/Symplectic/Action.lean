@@ -165,9 +165,7 @@ an output strand labelling `v` in `ι ⊕ ι`:
 * on two top points `(Sum.inr i, Sum.inr j)`, `Matrix.J ι R (v i) (v j)`. -/
 def symplecticArcWeight {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι) :
     Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R :=
-  Matrix.fromBlocks
-    ((Matrix.J ι R).submatrix u u) ((1 : Matrix (ι ⊕ ι) (ι ⊕ ι) R).submatrix u v)
-    ((-1 : Matrix (ι ⊕ ι) (ι ⊕ ι) R).submatrix v u) ((Matrix.J ι R).submatrix v v)
+  Matrix.of fun x y => symplecticArcMatrix R ι x y (Sum.elim u v x) (Sum.elim u v y)
 
 @[simp]
 theorem symplecticArcWeight_inl_inl {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
@@ -191,30 +189,29 @@ theorem symplecticArcWeight_inr_inr {ι : Type*} [DecidableEq ι] (u v : Fin k �
     (i j : Fin k) :
     symplecticArcWeight R u v (Sum.inr i) (Sum.inr j) = Matrix.J ι R (v i) (v j) := (rfl)
 
-/-- Entrywise formula for `symplecticArcWeight` in terms of `symplecticArcMatrix`. -/
-private theorem symplecticArcWeight_apply {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
-    (x y : Fin k ⊕ Fin k) :
-    symplecticArcWeight R u v x y =
-      symplecticArcMatrix R ι x y (Sum.elim u v x) (Sum.elim u v y) := by
-  cases x <;> cases y <;> simp [Matrix.one_apply, eq_comm]
+/-- Block-matrix form of `symplecticArcWeight`, used for entrywise maps and relabelling. -/
+private theorem symplecticArcWeight_eq_fromBlocks {ι : Type*} [DecidableEq ι]
+    (u v : Fin k → ι ⊕ ι) :
+    symplecticArcWeight R u v =
+      Matrix.fromBlocks
+        ((Matrix.J ι R).submatrix u u) ((1 : Matrix (ι ⊕ ι) (ι ⊕ ι) R).submatrix u v)
+        ((-1 : Matrix (ι ⊕ ι) (ι ⊕ ι) R).submatrix v u) ((Matrix.J ι R).submatrix v v) := by
+  ext x y
+  cases x <;> cases y <;> rfl
 
 /-- `symplecticArcWeight` is skew-symmetric, so `BrauerDiagram.skewArcProd` is independent of the
 chosen framing. -/
 theorem symplecticArcWeight_swap {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι)
     (x y : Fin k ⊕ Fin k) :
-    symplecticArcWeight R u v y x = -symplecticArcWeight R u v x y := by
-  rcases x with i | i <;> rcases y with j | j
-  · exact Matrix.J_apply_swap ι R (u i) (u j)
-  · simp
-  · simp
-  · exact Matrix.J_apply_swap ι R (v i) (v j)
+    symplecticArcWeight R u v y x = -symplecticArcWeight R u v x y :=
+  symplecticArcMatrix_swap x y (Sum.elim u v x) (Sum.elim u v y)
 
 /-- Applying a ring homomorphism entrywise commutes with `symplecticArcWeight`. -/
 theorem map_symplecticArcWeight {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
     {ι : Type*} [DecidableEq ι] (u v : Fin k → ι ⊕ ι) :
     (symplecticArcWeight R u v).map f = symplecticArcWeight S u v := by
-  simp only [symplecticArcWeight, Matrix.fromBlocks_map, ← Matrix.submatrix_map, Matrix.map_J,
-    Matrix.map_neg _ (map_neg f), Matrix.map_one f (map_zero f) (map_one f)]
+  simp only [symplecticArcWeight_eq_fromBlocks, Matrix.fromBlocks_map, ← Matrix.submatrix_map,
+    Matrix.map_J, Matrix.map_neg _ (map_neg f), Matrix.map_one f (map_zero f) (map_one f)]
 
 /-- **The matrix of a Brauer diagram** acting on the `k`-th tensor power of `(ι ⊕ ι) → R` equipped
 with the standard alternating form `Matrix.J ι R`, in the monomial basis indexed by the strand
@@ -251,9 +248,9 @@ theorem symplecticActionMatrix_apply_of_congr {R : Type u} [CommRing R] {ι : Ty
       ((Equiv.Perm.sign φ : ℤ) : R) *
         ∏ i : Fin k, symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
           (Sum.elim u v (φ (Sum.inl i))) (Sum.elim u v (φ (Sum.inr i))) := by
-  simp only [symplecticActionMatrix_eq_skewArcProd,
-    skewArcProd_eq_of_isFraming D (symplecticArcWeight_swap R u v) ((D.isFraming_def φ).mpr hφ),
-    symplecticArcWeight_apply]
+  rw [symplecticActionMatrix_eq_skewArcProd,
+    skewArcProd_eq_of_isFraming D (symplecticArcWeight_swap R u v) ((D.isFraming_def φ).mpr hφ)]
+  rfl
 
 /-- **Entries of the matrix of a permutation diagram**: `(permToBrauer σ).symplecticActionMatrix`
 has entry `sign σ` where `v j = u (σ.symm j)` for all `j`, and `0` elsewhere. -/
@@ -304,7 +301,8 @@ theorem symplecticActionMatrix_relabel_apply (D : BrauerDiagram k) (σ τ : Equi
         D.symplecticActionMatrix R ι (v ∘ τ) (u ∘ σ) := by
   have hsub : (symplecticArcWeight R u v).submatrix (Sum.map σ τ) (Sum.map σ τ) =
       symplecticArcWeight R (u ∘ σ) (v ∘ τ) := by
-    simp only [symplecticArcWeight, Matrix.fromBlocks_submatrix_sumMap, Matrix.submatrix_submatrix]
+    simp only [symplecticArcWeight_eq_fromBlocks, Matrix.fromBlocks_submatrix_sumMap,
+      Matrix.submatrix_submatrix]
   rw [symplecticActionMatrix_eq_skewArcProd,
     skewArcProd_relabel D σ τ (symplecticArcWeight_swap R u v), hsub,
     ← symplecticActionMatrix_eq_skewArcProd]
