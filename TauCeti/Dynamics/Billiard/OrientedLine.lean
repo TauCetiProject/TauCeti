@@ -101,6 +101,7 @@ theorem continuous_orientedLine : Continuous fun x : ℝ × ℝ ↦ χ.orientedL
     simpa [Orientation.areaForm'_apply] using
       o.areaForm'.continuous₂.comp₂ χ.continuous_outgoingDir (χ.continuous.comp continuous_fst)
 
+@[simp]
 theorem orientedLine_add_period (s v : ℝ) :
     χ.orientedLine (s + χ.period) v = χ.orientedLine s v := by
   rw [orientedLine_def, orientedLine_def, χ.outgoingDir_add_period, χ.periodic]
