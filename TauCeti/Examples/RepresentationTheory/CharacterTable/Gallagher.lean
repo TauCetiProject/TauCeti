@@ -56,7 +56,7 @@ example {χ : G → k} (hχ : χ ∈ irreducibleCharacters k G) (h1 : χ 1 = 1) 
       (irreducibleCharacters k (G ⧸ (⊥ : Subgroup G))) (irreducibleCharacters k G) := by
   have hθ : (fun _ => 1 : (⊥ : Subgroup G) → k) ∈ irreducibleCharacters k (⊥ : Subgroup G) := by
     rw [irreducibleCharacters_of_subsingleton]
-    rfl
+    exact Set.mem_singleton _
   have h := gallagher_bijOn hχ hθ fun n => by
     rw [Subgroup.mem_bot.mp n.property, h1]
   rwa [irreducibleCharactersOver_bot one_ne_zero] at h

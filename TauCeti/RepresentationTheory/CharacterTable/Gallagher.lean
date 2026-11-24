@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
-import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.LinHom.SubgroupSum
 
 /-!
 # Gallagher's correspondence
@@ -98,41 +98,6 @@ section Coset
 
 variable {V : Type*} [AddCommGroup V] [Module k V]
 
-/-- When the `N`-equivariant endomorphisms of `V` form a line, every value of
-`S = ∑ n ∈ N, σ n`, for the conjugation action `σ` of `G` on `End V`, is `N`-equivariant, hence a
-scalar, hence fixed by every `σ g`. -/
-private theorem linHom_mul_sum_linHom_eq (ρ : Representation k G V) (N : Subgroup G) [Fintype N]
-    (hfin : finrank k (Representation.IntertwiningMap (ρ.comp N.subtype) (ρ.comp N.subtype)) = 1)
-    (g : G) : Representation.linHom ρ ρ g * ∑ n : N, Representation.linHom ρ ρ n =
-      ∑ n : N, Representation.linHom ρ ρ n := by
-  let ρN : Representation k N V := ρ.comp N.subtype
-  have hid : Representation.IntertwiningMap.id ρN ≠ 0 := fun h0 => by
-    have : Subsingleton (Representation.IntertwiningMap ρN ρN) := ⟨fun φ ψ => by
-      ext v
-      have hv : v = 0 := by simpa using DFunLike.congr_fun h0 v
-      simp [hv]⟩
-    simp [finrank_zero_of_subsingleton] at hfin
-  set σ := Representation.linHom ρ ρ
-  set S : Module.End k (V →ₗ[k] V) := ∑ n : N, σ n
-  refine LinearMap.ext fun f => ?_
-  have hinv (m : N) : σ m (S f) = S f := by
-    simp only [S, LinearMap.sum_apply, map_sum]
-    exact Fintype.sum_equiv (Equiv.mulLeft m) _ _ fun n => by
-      rw [Equiv.coe_mulLeft, Subgroup.coe_mul, map_mul]
-      rfl
-  let φ : Representation.IntertwiningMap ρN ρN :=
-    { toLinearMap := S f
-      isIntertwining' := fun m => by
-        have h := congr($(hinv m) ∘ₗ ρ m)
-        simp only [σ, Representation.linHom_apply, LinearMap.comp_assoc] at h
-        rw [← Module.End.mul_eq_comp (ρ _⁻¹), ← map_mul, inv_mul_cancel, map_one,
-          Module.End.one_eq_id, LinearMap.comp_id] at h
-        exact h.symm }
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hid).mp hfin φ
-  have hSf : S f = c • LinearMap.id := congr(($hc).toLinearMap).symm
-  rw [mul_apply_eq_comp, hSf, map_smul, Representation.linHom_apply, LinearMap.id_comp,
-    ← Module.End.mul_eq_comp, ← map_mul, mul_inv_cancel, map_one, Module.End.one_eq_id]
-
 variable [IsAlgClosed k] [CharZero k]
 
 /-- **A character restricting irreducibly to `N` has norm `|N|` on every coset of `N`**: if the
@@ -147,7 +112,7 @@ theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G
   have : FiniteDimensional k V := by
     by_contra hV
     refine apply_one_ne_zero_of_mem_irreducibleCharacters hθ ?_
-    exact ρ.character_eq_zero_of_not_finite hV ▸ rfl
+    simp [ρ.character_eq_zero_of_not_finite hV]
   have hN : (Nat.card N : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   let : Invertible (Nat.card N : k) := invertibleOfNonzero hN
   let ρN : Representation k N V := ρ.comp N.subtype
@@ -169,7 +134,7 @@ theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G
         refine Finset.sum_congr rfl fun n _ => ?_
         rw [hterm, Representation.character, map_mul]
     _ = LinearMap.trace k _ (∑ n : N, σ n) := by
-        rw [← map_sum, ← Finset.mul_sum, linHom_mul_sum_linHom_eq ρ N hfin g]
+        rw [← map_sum, ← Finset.mul_sum, ρ.linHom_mul_sum_linHom_eq N hfin g]
     _ = Nat.card N := by
         rw [← hnorm, map_sum]
         refine Finset.sum_congr rfl fun n _ => ?_
