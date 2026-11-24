@@ -25,8 +25,9 @@ nonzero (in particular on any elliptic curve), the invariant differential
 
 ## Main results
 
-* `WeierstrassCurve.isSeparating_neg_genericX_div_genericY`: `z = -x / y` is a separating element
-  of `K(W) / K` over any field `K` and for any Weierstrass curve `W`.
+* `WeierstrassCurve.transcendental_and_isSeparable_neg_genericX_div_genericY`: `z = -x / y` is a
+  separating element of `K(W) / K` over any field `K` and for any Weierstrass curve `W` (`z` is
+  transcendental over `K` and `K(W)` is separable over `K⟮z⟯`).
 * `WeierstrassCurve.differentialLaurentExpansion_injective`,
   `WeierstrassCurve.differentialLaurentExpansion_eq_zero_iff`, and
   `WeierstrassCurve.differentialLaurentExpansion_inj`: injectivity of Laurent expansion on Kähler
@@ -166,7 +167,7 @@ private theorem aeval_derivative_wEquationPoly_ne_zero :
 field `K` and for any Weierstrass curve `W` (even singular in characteristic `2`): `z` is
 transcendental over `K` and `K(W)` is separable over `K⟮z⟯`, because `w = -1 / y` is a simple
 root of `W.wEquationPoly` over `K⟮z⟯`. -/
-theorem isSeparating_neg_genericX_div_genericY :
+theorem transcendental_and_isSeparable_neg_genericX_div_genericY :
     let z : W.toAffine.FunctionField := -W.toAffine.genericX / W.toAffine.genericY
     Transcendental K z ∧ Algebra.IsSeparable K⟮z⟯ W.toAffine.FunctionField :=
   ⟨W.transcendental_neg_genericX_div_genericY,
@@ -181,7 +182,7 @@ theorem differentialLaurentExpansion_injective :
     Function.Injective W.functionFieldLaurentExpansion.differentialLaurentExpansion := by
   rw [injective_iff_map_eq_zero]
   intro η hη
-  have ⟨htr, hsep⟩ := W.isSeparating_neg_genericX_div_genericY
+  have ⟨htr, hsep⟩ := W.transcendental_and_isSeparable_neg_genericX_div_genericY
   let z := -W.toAffine.genericX / W.toAffine.genericY
   have hmem : η ∈ Submodule.span W.toAffine.FunctionField
       {KaehlerDifferential.D K W.toAffine.FunctionField z} :=
