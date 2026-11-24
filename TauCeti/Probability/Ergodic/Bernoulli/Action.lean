@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Process.Tail.InfinitePi
 public import TauCeti.Probability.Process.Tail.ProperAction
 public import Mathlib.Dynamics.Ergodic.Action.Basic
-import Mathlib.Probability.Independence.InfinitePi
+import TauCeti.Probability.ProductMeasure
 
 /-!
 # Ergodicity of Bernoulli product measures under group actions
@@ -56,7 +56,7 @@ permutes the coordinates, so `ω ↦ (i ↦ ω (g⁻¹ • i))` preserves `ν^{�
 theorem measurePreserving_infinitePi_comp_inv_smul (g : Γ) :
     MeasurePreserving (fun (ω : ι → S) i => ω (g⁻¹ • i)) (Measure.infinitePi fun _ => ν)
       (Measure.infinitePi fun _ => ν) :=
-  ⟨by fun_prop, Measure.map_infinitePi_infinitePi_of_inj (MulAction.injective g⁻¹)⟩
+  measurePreserving_infinitePi_comp_of_injective ν (MulAction.injective g⁻¹)
 
 omit [MeasurableSpace S] in
 /-- Mathlib's `arrowAction` acts on configurations by `(g • ω) i = ω (g⁻¹ • i)`. -/
@@ -109,9 +109,7 @@ theorem ergodicSMul_arrowAction_infinitePi_const_of_proper [Countable ι] [Infin
     (hproper : ∀ F F' : Finset ι, {g : Γ | ∃ i ∈ F, g • i ∈ F'}.Finite) :
     letI := arrowAction (G := Γ) (A := ι) (B := S)
     ErgodicSMul Γ (ι → S) (Measure.infinitePi fun _ => ν) :=
-  ergodicSMul_arrowAction_infinitePi_const fun F Λ =>
-    let ⟨g, hg⟩ := (hproper F Λ).infinite_compl.nonempty
-    ⟨g, fun i hi hgi => hg ⟨i, hi, hgi⟩⟩
+  ergodicSMul_arrowAction_infinitePi_const (exists_forall_smul_notMem_of_proper hproper)
 
 end Probability
 

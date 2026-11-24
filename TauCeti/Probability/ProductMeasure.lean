@@ -41,6 +41,8 @@ The finite-cylinder formula gives positivity on nonempty open sets and the Haar 
 * `TauCeti.MeasureTheory.Measure.infinitePi_map_none_some`: splitting off `none` in `Option ι`.
 * `TauCeti.measurePreserving_piEquivPiSubtypeProd_infinitePi`: splitting along a predicate `p`.
 * `TauCeti.infinitePi_pi'`: unconditional finite-cylinder formula for `Measure.infinitePi`.
+* `TauCeti.measurePreserving_infinitePi_comp_of_injective`: reindexing along an injective map
+  preserves `Measure.infinitePi fun _ => ν`.
 -/
 
 public section
@@ -143,5 +145,14 @@ theorem infinitePi_pi' (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure 
     Finset.prod_attach s fun i ↦ μ i (t i)]
 
 end SplitAndCylinder
+
+/-- **Reindexing along an injective map preserves a constant-marginal product measure.** For a
+probability measure `ν` on `S` and an injective `σ : ι → ι`, the map `ω ↦ (i ↦ ω (σ i))` preserves
+`ν^{⊗ι}`. -/
+theorem measurePreserving_infinitePi_comp_of_injective {ι S : Type*} [MeasurableSpace S]
+    (ν : Measure S) [IsProbabilityMeasure ν] {σ : ι → ι} (hσ : Function.Injective σ) :
+    MeasurePreserving (fun (ω : ι → S) i => ω (σ i)) (Measure.infinitePi fun _ => ν)
+      (Measure.infinitePi fun _ => ν) :=
+  ⟨by fun_prop, Measure.map_infinitePi_infinitePi_of_inj hσ⟩
 
 end TauCeti
