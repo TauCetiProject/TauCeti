@@ -41,7 +41,8 @@ eigenspaces:
 The main application is to a **skew-adjoint** endomorphism `f`, `B (f x) y = -B x (f y)`
 (`LinearMap.IsSkewAdjoint`), such as an element of the symplectic Lie algebra `sp(V, ω)` or of an
 orthogonal Lie algebra. Its adjoint is `-f`, whose generalized `ν`-eigenspace is the generalized
-`-ν`-eigenspace of `f`, and `p(f)` has adjoint `p(-X)(f)`. Hence:
+`-ν`-eigenspace of `f`, and `p(f)` has adjoint `p(-X)(f)`, so `p(f)` is skew-adjoint again for an
+odd polynomial, `p(-X) = -p` (`LinearMap.IsSkewAdjoint.aeval_of_comp_neg_X_eq_neg`). Hence:
 
 * the generalized `μ`- and `ν`-eigenspaces of `f` are `B`-orthogonal unless `μ + ν = 0`
   (when `μ + ν` is a unit; `LinearMap.IsSkewAdjoint.apply_eq_zero_of_mem_genEigenspace`), so for
@@ -273,6 +274,13 @@ namespace IsSkewAdjoint
 theorem isAdjointPair_aeval (h : B.IsSkewAdjoint f) (p : R[X]) :
     IsAdjointPair B B ⇑(Polynomial.aeval f p) ⇑(Polynomial.aeval f (p.comp (-X))) := by
   simpa [aeval_comp] using IsAdjointPair.aeval (f := f) (g := -f) h p
+
+/-- For a skew-adjoint `f` and an odd polynomial `p`, `p(-X) = -p`, the endomorphism `p(f)` is
+skew-adjoint. -/
+theorem aeval_of_comp_neg_X_eq_neg (h : B.IsSkewAdjoint f) {p : R[X]} (hp : p.comp (-X) = -p) :
+    B.IsSkewAdjoint (Polynomial.aeval f p) := by
+  have h' := h.isAdjointPair_aeval p
+  rwa [hp, map_neg] at h'
 
 /-- For a skew-adjoint `f`, `B` pairs the generalized `μ`- and `ν`-eigenspaces of `f` to zero
 when `μ + ν` is a unit. -/
