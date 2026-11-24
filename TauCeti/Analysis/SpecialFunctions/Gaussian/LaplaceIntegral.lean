@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -114,7 +115,8 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha 
   calc u ^ s * rexp (-b * u ^ 2 - c * u)
       ≤ (a ^ (s - m) * u ^ m) * rexp (-b * u ^ 2 - c * u) :=
         mul_le_mul_of_nonneg_right
-          (Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le ha hu.le (le_max_left s 0))
+          (Real.rpow_le_rpow_sub_mul_rpow hu0
+            (Real.rpow_le_rpow_of_nonpos ha hu.le (sub_nonpos.2 (le_max_left s 0))))
           (Real.exp_pos _).le
     _ = a ^ (s - m) * (u ^ m * rexp (-b * u ^ 2 - c * u)) := by ring
 

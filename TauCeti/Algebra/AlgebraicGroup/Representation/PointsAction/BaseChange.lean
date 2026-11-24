@@ -20,7 +20,8 @@ the base-valued action on `K ⊗[k] M` agrees directly with `endOfPoint M`.
 ## Main declarations
 
 * `TauCeti.Comodule.cancelBaseChange_conjRingEquiv_endOfPoint_liftEquiv`: conjugating the
-  scalar-extended action of a lifted point across `cancelBaseChange` recovers `endOfPoint M`.
+  scalar-extended action of a lifted point across `cancelBaseChange` recovers `endOfPoint M`;
+  `TauCeti.Comodule.cancelBaseChange_endOfPoint_liftEquiv` is its pointwise form.
 * `TauCeti.Comodule.isNilpotent_endOfPoint_liftEquiv_sub_one_iff` and
   `TauCeti.Comodule.isNilpotent_endOfPoint_baseChangePointsMulEquiv_sub_one_iff`: nilpotence of a
   point action minus the identity is invariant under base change of points.
@@ -63,6 +64,22 @@ theorem cancelBaseChange_conjRingEquiv_endOfPoint_liftEquiv
   induction coact (R := k) (C := H) m with
   | add a b ha hb => simp_all only [TensorProduct.tmul_add, map_add, smul_add]
   | tmul n h => simp [TensorProduct.smul_tmul', smul_eq_mul]
+
+/-- Pointwise form of `cancelBaseChange_conjRingEquiv_endOfPoint_liftEquiv`: cancelling the base
+change after the scalar-extended action of the lifted point on `K ⊗[k] M` is the original point's
+action on `M` after cancelling the base change. -/
+@[simp]
+theorem cancelBaseChange_endOfPoint_liftEquiv
+    {R : Type y} [CommSemiring R] [Algebra k R] [Algebra K R] [IsScalarTower k K R]
+    (f : H →ₐ[k] R) (y : R ⊗[K] (K ⊗[k] M)) :
+    letI := Comodule.baseChange (R := k) (H := H) (M := M) K
+    TensorProduct.AlgebraTensorModule.cancelBaseChange k K R R M
+        (endOfPoint (K ⊗[k] M) (AlgHom.liftEquiv k K H R f) y) =
+      endOfPoint M f (TensorProduct.AlgebraTensorModule.cancelBaseChange k K R R M y) := by
+  let _ := Comodule.baseChange (R := k) (H := H) (M := M) K
+  have h := LinearMap.congr_fun (cancelBaseChange_conjRingEquiv_endOfPoint_liftEquiv (K := K) f)
+    (TensorProduct.AlgebraTensorModule.cancelBaseChange k K R R M y)
+  rwa [LinearEquiv.conjRingEquiv_apply_apply, LinearEquiv.symm_apply_apply] at h
 
 /-- Under `AlgHom.liftEquiv` along `k → K → R`, subtracting the identity from the scalar-extended
 action on `K ⊗[k] M` is nilpotent if and only if subtracting the identity from the original action
