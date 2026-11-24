@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
@@ -196,6 +197,21 @@ theorem of_extend (f : boundedHolomorphicFunctions E U) :
       (fun z _ => (norm_extend_apply_le f z).trans_eq (Submodule.norm_coe f).symm) = f :=
   Subtype.ext (BoundedContinuousFunction.ext fun z => by simp)
 
+/-- The zero extension of `of U g …` agrees with `g` on `U`. -/
+@[simp]
+theorem extend_of (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ) (hC : ∀ z ∈ U, ‖g z‖ ≤ C)
+    {z : V} (hz : z ∈ U) : extend (of U g hg C hC) z = g z := by
+  rw [extend_apply _ ⟨z, hz⟩, of_apply]
+
+/-- A map holomorphic on `U` and continuous on its compact closure restricts to an element of
+`H^∞(U, E)`. -/
+theorem exists_eqOn_extend_of_isCompact_closure {g : V → E} (hU : IsCompact (closure (U : Set V)))
+    (hg : DiffContOnCl ℂ g U) :
+    ∃ f : boundedHolomorphicFunctions E U, EqOn (extend f) g U := by
+  obtain ⟨C, hC⟩ := hU.exists_bound_of_continuousOn hg.continuousOn
+  exact ⟨of U g hg.differentiableOn C fun z hz => hC z (subset_closure hz),
+    fun z hz => extend_of _ _ _ _ hz⟩
+
 /-- **Cauchy estimate.** On a ball of radius `R` inside `U`, a bounded holomorphic map `f` is
 Lipschitz at the centre with constant `2 * ‖f‖ / R`. -/
 theorem dist_apply_le_of_ball_subset (f : boundedHolomorphicFunctions E U) {x z : U} {R : ℝ}
@@ -384,16 +400,22 @@ theorem iteratedLineDeriv_zero (x : U) (v : V) (f : boundedHolomorphicFunctions 
     iteratedLineDeriv x v 0 f = (f : U →ᵇ E) x := by
   simp [iteratedLineDeriv_apply]
 
+/-- Point jets of a map agreeing with `f` on `U` are its derivatives along the line. -/
+theorem iteratedLineDeriv_eq_of_eqOn (x : U) (v : V) (k : ℕ)
+    {f : boundedHolomorphicFunctions E U} {g : V → E} (h : EqOn (extend f) g U) :
+    iteratedLineDeriv x v k f = iteratedDeriv k (fun t : ℂ => g ((x : V) + t • v)) 0 := by
+  rw [iteratedLineDeriv_apply]
+  refine Filter.EventuallyEq.iteratedDeriv_eq k ?_
+  filter_upwards [(isOpen_preimage_line (U := U) (x : V) v).mem_nhds (by simp)] with t ht
+  exact h ht
+
 /-- Point jets of an ambient representative are its derivatives along the line. -/
 @[simp]
 theorem iteratedLineDeriv_of (x : U) (v : V) (k : ℕ) (g : V → E)
     (hg : DifferentiableOn ℂ g U) (C : ℝ) (hC : ∀ z ∈ U, ‖g z‖ ≤ C) :
     iteratedLineDeriv x v k (of U g hg C hC) =
-      iteratedDeriv k (fun t : ℂ => g ((x : V) + t • v)) 0 := by
-  rw [iteratedLineDeriv_apply]
-  refine Filter.EventuallyEq.iteratedDeriv_eq k ?_
-  filter_upwards [(isOpen_preimage_line (U := U) (x : V) v).mem_nhds (by simp)] with t ht
-  rw [extend_apply _ ⟨_, ht⟩, of_apply]
+      iteratedDeriv k (fun t : ℂ => g ((x : V) + t • v)) 0 :=
+  iteratedLineDeriv_eq_of_eqOn x v k fun _ hz => extend_of _ _ _ _ hz
 
 /-- **Cauchy's estimate for point jets.** If `x + t • v ∈ U` whenever `‖t‖ < R`, then the
 derivative of order `k` at `x` in the direction `v` has norm at most `k! * ‖f‖ / R ^ k`. -/

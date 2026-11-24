@@ -54,8 +54,8 @@ variable (P : PreAbstractSimplicialComplex α) (f : α ↪ β)
 private def relabelingForward (x : {x : Realization K // x.val.support ∈ P}) :
     {y : Realization L // y.val.support ∈ P.map f} :=
   let σ : Face (P.map f) := ⟨x.val.val.support.image f, mem_map_iff.mpr ⟨_, x.property, rfl⟩⟩
-  let z : StandardSimplex x.val.val.support := ⟨x.val.val, by
-    simpa only [carrier_val] using mem_convexHull_carrier K x.val⟩
+  let z : StandardSimplex x.val.val.support :=
+    ⟨x.val.val, Realization.mem_convexHull_of_support_subset K x.val subset_rfl⟩
   ⟨faceInclusion L ⟨σ.val, hL σ.property⟩ (StandardSimplex.map z f),
     support_faceInclusion_mem hL σ.property _⟩
 

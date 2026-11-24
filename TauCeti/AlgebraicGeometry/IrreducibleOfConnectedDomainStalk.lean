@@ -103,14 +103,6 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
       ⟨x, c'.property⟩ c'.val.property.1.2
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
 
-/-- Equivalence of irreducible components under homeomorphism. -/
-private def _root_.Homeomorph.irreducibleComponentsEquiv {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (h : X ≃ₜ Y) : irreducibleComponents X ≃ irreducibleComponents Y :=
-  (irreducibleComponentsEquivOfIsPreirreducibleFiber h.symm h.symm.continuous h.symm.isOpenMap
-    (fun _ ↦ (subsingleton_singleton.preimage h.symm.injective).isPreirreducible)
-    h.symm.surjective).toEquiv
-
-
 /-- A ring isomorphism induces an equivalence of minimal primes. -/
 private noncomputable def minimalPrimes_equiv_of_ringEquiv
     {A B : Type*} [CommRing A] [CommRing B] (e : A ≃+* B) :

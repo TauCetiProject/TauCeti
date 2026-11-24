@@ -103,9 +103,11 @@ theorem exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime {τ : Ω 
       ((hτ.dyadicCeilTime d).measurableSet_gt (q p.1))) stronglyMeasurable_const
       stronglyMeasurable_const).mul
       ((ha p.2 (mem_range.1 (mem_product.1 hp).2)).mono (ℱ.mono (le_max_left _ _)))
-  obtain ⟨N, r, b, hr0, hr, hb, -, hhold, hgains⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
-    s_idx l (fun p ↦ min (g (p.2 + 1)) (q (p.1 + 1))) (fun p ω ↦ u p.1 ω * a p.2 ω) hc
-  refine ⟨N, r, b, hr0, hr, hb, fun i hi_lt ω ↦ ?_, fun s hs ω ↦ ?_, fun W s hs ω ↦ ?_⟩
+  obtain ⟨N, r, b, hr0, hr, -, -, hb, -, -, hhold, hgains⟩ :=
+    exists_simpleHolding_simpleGains_eq_sum ℱ s_idx l
+      (fun p ↦ min (g (p.2 + 1)) (q (p.1 + 1))) (fun p ω ↦ u p.1 ω * a p.2 ω) hc
+  refine ⟨N, r, b, hr0, hr, fun i _ ↦ hb i, fun i hi_lt ω ↦ ?_, fun s hs ω ↦ ?_,
+    fun W s hs ω ↦ ?_⟩
   · have hbi : b i ω = simpleHolding q (dyadicCount d T) u (r (i + 1)) ω *
         simpleHolding g n a (r (i + 1)) ω := by
       rw [← simpleHolding_of_mem_Ioc (a := b) hr.monotoneOn hi_lt

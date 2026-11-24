@@ -376,31 +376,14 @@ theorem isComplexLinearMap_perturbedFDeriv_exchange_one (h₀ : ω.Compatible J�
     apply Complex.ext <;> simp [e]
   -- The structure at `z` is the exchanged pair-of-pants structure at `σ(z)`.
   rw [exchangeAlmostComplex_one h₀ hJp hJ', ← hσ]
-  -- The perturbation is the pullback along `σ` of the exchanged pair-of-pants perturbation.
-  have hpull (v : ℝ × ℝ) : (fun z x ↦ exchangePerturbation H 1 (e z) x (e v)) =
-      perturbationPullback (fun z ↦ (1, 0) - z)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H) (e z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H) (e z) x Complex.I) v := by
-    funext z' x
-    rw [perturbationPullback_pairOfPantsPerturbation_exchangeEndData (hH inf)]
-  rw [← equivRealProdCLM_symm_stdComplexLineReal, ← equivRealProdCLM_symm_stdComplexLineImag,
-    hpull, hpull]
   -- The exchanged pair-of-pants perturbation is differentiable in the target point at `σ(z)`.
   have hS : e ((1, 0) - z) ≠ 0 ∧ e ((1, 0) - z) ≠ 1 := by
     rw [hσ]
     exact ⟨fun h0 => hz.2 (by linear_combination -h0), fun h1 => hz.1 (by linear_combination -h1)⟩
   have hK := differentiableAt_pairOfPantsPerturbation_target (periodic_exchangeEndData hH)
     (contDiff_uncurry_exchangeEndData hHs) hS (u ((1, 0) - z))
-  -- The exchange is holomorphic: its derivative is `-1`.
-  have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
-    (differentiableAt_const _).sub differentiableAt_id
-  have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-    rw [fderiv_const_sub, fderiv_fun_id]
-    simp
-  exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I)
-    hφJ h
+  exact ω.isComplexLinearMap_perturbedFDeriv_comp_one_sub (exchangePerturbation_one (hH inf)) hu
+    hK h
 
 end Solutions
 

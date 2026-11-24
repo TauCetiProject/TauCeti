@@ -17,8 +17,17 @@ abstract exponential into the Banach-algebra exponential `TauCeti.expUnit`. This
 `TauCeti.Lie.lieSubalgebraOfSubgroup` through that identification, so that a subgroup of `Rˣ` given
 by a condition on algebra elements can have its Lie algebra computed entirely inside `R`.
 
+The exponential-line set `Subgroup.linearLieAlgebra` is defined for any complete real normed
+algebra. Its elementary closure properties need no finite-dimensionality or closedness. In finite
+dimension, `Subgroup.linearLieSubalgebra` transports the intrinsic Lie subalgebra as a bundled
+Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
+
 ## Main results
 
+* `Subgroup.linearLieAlgebra`: the exponential-line set for a complete real normed algebra.
+* `Subgroup.linearLieSubalgebra`: the bundled transported Lie subalgebra.
+* `Subgroup.mem_linearLieSubalgebra_iff` and `Subgroup.coe_linearLieSubalgebra`: membership and
+  the carrier equation for closed subgroups.
 * `TauCeti.Lie.forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff`: the abstract exponential
   line of `x : R` is the Banach-algebra exponential line.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`: for a closed
@@ -32,11 +41,11 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
-namespace TauCeti.Lie
-
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+namespace TauCeti.Lie
 
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
@@ -65,3 +74,115 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff {K : Subgro
   simp only [map_smul]
 
 end TauCeti.Lie
+
+namespace Subgroup
+
+section Complete
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
+
+/-- The elements whose entire exponential line is contained in a subgroup of algebra units. -/
+def linearLieAlgebra (G : Subgroup Rˣ) : Set R :=
+  {x | ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ G}
+
+variable {G : Subgroup Rˣ} {x y : R}
+
+/-- Membership in the linear Lie algebra means containment of the whole exponential line. -/
+theorem mem_linearLieAlgebra_iff :
+    x ∈ G.linearLieAlgebra ↔ ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ G :=
+  Iff.rfl
+
+/-- In algebra coordinates, the exponential line consists of elements underlying units of the
+subgroup. -/
+theorem mem_linearLieAlgebra_iff_forall_exp :
+    x ∈ G.linearLieAlgebra ↔
+      ∀ t : ℝ, ∃ g ∈ G, (g : R) = NormedSpace.exp (t • x) := by
+  rw [mem_linearLieAlgebra_iff]
+  refine forall_congr' fun t => ?_
+  rw [← TauCeti.expUnit_coe (t • x)]
+  exact (Units.val_injective.mem_set_image
+    (s := (G : Set Rˣ)) (a := TauCeti.expUnit (t • x))).symm
+
+/-- Zero lies in every linear Lie algebra. -/
+@[simp]
+theorem zero_mem_linearLieAlgebra : (0 : R) ∈ G.linearLieAlgebra := by
+  intro t
+  simpa only [smul_zero, TauCeti.expUnit_zero] using G.one_mem
+
+/-- Scalar multiplication preserves the exponential-line condition for any subgroup. -/
+theorem smul_mem_linearLieAlgebra (c : ℝ) (hx : x ∈ G.linearLieAlgebra) :
+    c • x ∈ G.linearLieAlgebra := by
+  intro t
+  simpa only [smul_smul] using hx (t * c)
+
+/-- Negation preserves the linear Lie algebra of any subgroup. -/
+theorem neg_mem_linearLieAlgebra (hx : x ∈ G.linearLieAlgebra) :
+    -x ∈ G.linearLieAlgebra := by
+  simpa only [neg_one_smul] using smul_mem_linearLieAlgebra (-1) hx
+
+/-- The linear Lie algebra of a closed subgroup is a closed subset of the ambient algebra. -/
+theorem isClosed_linearLieAlgebra (hG : IsClosed (G : Set Rˣ)) :
+    IsClosed G.linearLieAlgebra := by
+  have hset : G.linearLieAlgebra =
+      ⋂ t : ℝ, (fun x : R => TauCeti.expUnit (t • x)) ⁻¹' (G : Set Rˣ) := by
+    ext x
+    simp only [mem_linearLieAlgebra_iff, Set.mem_iInter, Set.mem_preimage, SetLike.mem_coe]
+  rw [hset]
+  exact isClosed_iInter fun t => hG.preimage
+    (TauCeti.continuous_expUnit.comp (continuous_const_smul t))
+
+end Complete
+
+section FiniteDimensional
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
+
+local instance finiteDimensionalCompleteSpaceLinearLieAlgebra : CompleteSpace R :=
+  FiniteDimensional.completeSpace ℝ R
+
+/-- The intrinsic Lie subalgebra of a subgroup of units, transported to algebra coordinates.
+For a closed subgroup, its carrier is `Subgroup.linearLieAlgebra`. -/
+def linearLieSubalgebra (G : Subgroup Rˣ) : LieSubalgebra ℝ R :=
+  (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G).map
+    (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).toLieHom
+
+/-- The transported Lie subalgebra is the image under the canonical units Lie equivalence. -/
+theorem linearLieSubalgebra_eq_map (G : Subgroup Rˣ) :
+    G.linearLieSubalgebra =
+      (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G).map
+        (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).toLieHom := by
+  rfl
+
+variable {G : Subgroup Rˣ} {x y : R}
+
+/-- For a closed subgroup, membership in the transported Lie subalgebra is equivalent to the
+exponential-line condition. -/
+theorem mem_linearLieSubalgebra_iff (hG : IsClosed (G : Set Rˣ)) :
+    x ∈ G.linearLieSubalgebra ↔ x ∈ G.linearLieAlgebra := by
+  rw [linearLieSubalgebra_eq_map, LieSubalgebra.mem_map_submodule,
+    Submodule.mem_map_equiv, LieSubalgebra.mem_toSubmodule]
+  exact TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hG x
+
+/-- For a closed subgroup, the transported Lie subalgebra has the exponential-line set as its
+carrier. -/
+theorem coe_linearLieSubalgebra (hG : IsClosed (G : Set Rˣ)) :
+    (G.linearLieSubalgebra : Set R) = G.linearLieAlgebra :=
+  Set.ext fun _ => mem_linearLieSubalgebra_iff hG
+
+/-- Addition preserves the linear Lie algebra of a closed subgroup. -/
+theorem add_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
+    (hx : x ∈ G.linearLieAlgebra) (hy : y ∈ G.linearLieAlgebra) :
+    x + y ∈ G.linearLieAlgebra := by
+  rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
+  exact G.linearLieSubalgebra.add_mem hx hy
+
+/-- The associative commutator preserves the linear Lie algebra of a closed subgroup. -/
+theorem commutator_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
+    (hx : x ∈ G.linearLieAlgebra) (hy : y ∈ G.linearLieAlgebra) :
+    x * y - y * x ∈ G.linearLieAlgebra := by
+  rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
+  exact G.linearLieSubalgebra.lie_mem hx hy
+
+end FiniteDimensional
+
+end Subgroup

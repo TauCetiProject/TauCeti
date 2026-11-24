@@ -30,18 +30,26 @@ elementary integrals at `t` converge in probability to `I t`. Square energy is a
 integral, so an infinite energy is never read as the default value zero of a divergent Bochner
 integral. The heights need not be bounded; bounded approximants are a special case.
 
-Against a pre-Brownian motion relative to the filtration, any limit in probability of the
-elementary integrals of simple holdings approximating the integrand on `(0,t]` in square energy
-in probability agrees almost surely with the Itô integral at `t`
-(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). More generally, any simple holdings
-converging in pathwise square energy on `(0, T]` along a filter have gains converging in
-probability at `v ≤ T` to `I v` (`IsItoIntegral.tendstoInMeasure_simpleGains`, `..._of_le`).
-Hence the predicate determines the integral up to indistinguishability
+Against a pre-Brownian motion relative to the filtration, the elementary integrals of any simple
+holdings converging in pathwise square energy on `(0, T]` along a filter converge in probability at
+`v ≤ T` to `I v` (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains`,
+`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains_of_le`), so any limit in
+probability of them agrees almost surely with the Itô integral at `t`
+(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). Such approximants and the ones
+witnessing the Itô integral are compared on one common grid. Their difference has square energy
+converging to zero in probability, so its elementary integral at `t` converges to zero in
+probability by the energy estimate
+`TauCeti.Probability.IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_of_energy`. Hence
+the predicate determines the integral up to indistinguishability
 (`TauCeti.Probability.isItoIntegral_unique`): two integrals agree almost surely at each time,
 and continuity of their paths makes them indistinguishable. Neither path continuity of `W` nor
 usual conditions on the filtration are needed. Conversely, the predicate is invariant under
 indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it determines its
 integrals exactly up to indistinguishability (`TauCeti.Probability.isItoIntegral_iff_indist`).
+
+Against an integrator with almost-everywhere strongly measurable marginals the Itô integral is
+almost everywhere strongly measurable at each time
+(`TauCeti.Probability.IsItoIntegral.aestronglyMeasurable`).
 
 The elementary integral of a simple holding is its Itô integral against every process with
 almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`). Every integrand

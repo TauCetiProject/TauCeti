@@ -302,6 +302,16 @@ theorem simpleHolding_neg (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (
     simpleHolding τ n (-a) t ω = -simpleHolding τ n a t ω := by
   simpa only [neg_one_smul, neg_one_mul] using simpleHolding_smul τ n (-1) a t ω
 
+/-- Applying a function fixing zero to each height applies that function to the holding
+process, because the trading intervals are disjoint. No continuity of the function is needed. -/
+theorem simpleHolding_comp {f : ℝ → ℝ} (hf : f 0 = 0)
+    (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ f (a j ω)) t ω = f (simpleHolding τ n a t ω) := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, ht⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj ht, simpleHolding_of_mem_Ioc hτ hj ht]
+  · rw [simpleHolding_of_notMem_Ioc hτ ht, simpleHolding_of_notMem_Ioc hτ ht, hf]
+
 /-! ### Measurability -/
 
 section Measurability
