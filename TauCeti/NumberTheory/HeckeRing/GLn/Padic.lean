@@ -46,7 +46,8 @@ By `Subgroup.Commensurable.commensurator_eq_top_iff` this one inclusion for ever
 
 ## Main definitions
 
-* `HeckeRing.GLn.padicIntEntries n p`: the submonoid `M_n(ℤ_p) ∩ GL_n(ℚ_p)` of `GL_n(ℚ_p)`.
+* `HeckeRing.GLn.padicIntEntries ι p`: the submonoid `M_n(ℤ_p) ∩ GL_n(ℚ_p)` of `GL_n(ℚ_p)`,
+  for any finite index type `ι`.
 * `HeckeRing.GLn.PadicIntegralHeckeRing n p`, `HeckeRing.GLn.PadicRationalHeckeRing n p`: the
   Hecke rings of `(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))` and `(GL_n(ℤ_p), GL_n(ℚ_p))` over `ℤ`.
 * `HeckeRing.GLn.padicIntegralToRationalRingHom`: the injective ring homomorphism between them,
@@ -83,41 +84,41 @@ open scoped Pointwise HeckeCosetModule
 
 namespace HeckeRing.GLn
 
-variable (n p : ℕ) [Fact p.Prime]
+variable (ι : Type*) [Fintype ι] [DecidableEq ι] (n p : ℕ) [Fact p.Prime]
 
 section Subgroups
 
 /-- The submonoid `M_n(ℤ_p) ∩ GL_n(ℚ_p)` of `GL_n(ℚ_p)`: invertible matrices over `ℚ_p` whose
 entries are `p`-adic integers. Membership is characterized by `mem_padicIntEntries_iff` and
 `mem_padicIntEntries_iff_norm_le_one`. -/
-noncomputable def padicIntEntries : Submonoid (GL (Fin n) ℚ_[p]) :=
-  ((PadicInt.Coe.ringHom (p := p)).mapMatrix (m := Fin n)).range.toSubmonoid.comap
+noncomputable def padicIntEntries : Submonoid (GL ι ℚ_[p]) :=
+  ((PadicInt.Coe.ringHom (p := p)).mapMatrix (m := ι)).range.toSubmonoid.comap
     (Units.coeHom _)
 
-variable {n p}
+variable {ι p}
 
 /-- The image of a matrix in `GL_n(ℤ_p)` is the entrywise image of the underlying matrix. -/
-private lemma coe_map_coe (u : GL (Fin n) ℤ_[p]) :
-    (GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) u : Matrix (Fin n) (Fin n) ℚ_[p]) =
-      (u : Matrix (Fin n) (Fin n) ℤ_[p]).map ((↑) : ℤ_[p] → ℚ_[p]) :=
+private lemma coe_map_coe (u : GL ι ℤ_[p]) :
+    (GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) u : Matrix ι ι ℚ_[p]) =
+      (u : Matrix ι ι ℤ_[p]).map ((↑) : ℤ_[p] → ℚ_[p]) :=
   (rfl)
 
 /-- The entrywise image of a matrix over `ℤ_p` is its image under the ring homomorphism
 `M_n(ℤ_p) → M_n(ℚ_p)`, through which it is multiplicative. -/
-private lemma map_coe_eq_mapMatrix (A : Matrix (Fin n) (Fin n) ℤ_[p]) :
+private lemma map_coe_eq_mapMatrix (A : Matrix ι ι ℤ_[p]) :
     A.map ((↑) : ℤ_[p] → ℚ_[p]) = (PadicInt.Coe.ringHom (p := p)).mapMatrix A :=
   (rfl)
 
 /-- Membership in `M_n(ℤ_p) ∩ GL_n(ℚ_p)`: `g` is the entrywise image of a matrix over `ℤ_p`. -/
-theorem mem_padicIntEntries_iff {g : GL (Fin n) ℚ_[p]} :
-    g ∈ padicIntEntries n p ↔
-      ∃ A : Matrix (Fin n) (Fin n) ℤ_[p], A.map ((↑) : ℤ_[p] → ℚ_[p]) = g := by
+theorem mem_padicIntEntries_iff {g : GL ι ℚ_[p]} :
+    g ∈ padicIntEntries ι p ↔
+      ∃ A : Matrix ι ι ℤ_[p], A.map ((↑) : ℤ_[p] → ℚ_[p]) = g := by
   simp_rw [padicIntEntries, Submonoid.mem_comap, Subring.mem_toSubmonoid, RingHom.mem_range,
     map_coe_eq_mapMatrix, Units.coeHom_apply]
 
 /-- Membership in `M_n(ℤ_p) ∩ GL_n(ℚ_p)`: every entry has `p`-adic norm at most `1`. -/
-theorem mem_padicIntEntries_iff_norm_le_one {g : GL (Fin n) ℚ_[p]} :
-    g ∈ padicIntEntries n p ↔ ∀ i j, ‖(g : Matrix (Fin n) (Fin n) ℚ_[p]) i j‖ ≤ 1 := by
+theorem mem_padicIntEntries_iff_norm_le_one {g : GL ι ℚ_[p]} :
+    g ∈ padicIntEntries ι p ↔ ∀ i j, ‖(g : Matrix ι ι ℚ_[p]) i j‖ ≤ 1 := by
   rw [mem_padicIntEntries_iff]
   refine ⟨?_, fun h ↦ ⟨Matrix.of fun i j ↦ ⟨_, h i j⟩, by ext; rfl⟩⟩
   rintro ⟨A, hA⟩ i j
@@ -126,34 +127,34 @@ theorem mem_padicIntEntries_iff_norm_le_one {g : GL (Fin n) ℚ_[p]} :
 
 /-- **`GL_n(ℤ_p)` inside `GL_n(ℚ_p)`**: an invertible `p`-adic matrix lies in `GL_n(ℤ_p)`
 exactly when both it and its inverse have entries in `ℤ_p`. -/
-theorem mem_glPadicInt_iff_mem_padicIntEntries {g : GL (Fin n) ℚ_[p]} :
-    g ∈ GLPadicInt (Fin n) p ↔ g ∈ padicIntEntries n p ∧ g⁻¹ ∈ padicIntEntries n p := by
+theorem mem_glPadicInt_iff_mem_padicIntEntries {g : GL ι ℚ_[p]} :
+    g ∈ GLPadicInt ι p ↔ g ∈ padicIntEntries ι p ∧ g⁻¹ ∈ padicIntEntries ι p := by
   simp_rw [mem_padicIntEntries_iff_norm_le_one]
   exact GLPadicInt.mem_iff_inv
 
 /-- `GL_n(ℤ_p) ≤ M_n(ℤ_p) ∩ GL_n(ℚ_p)`. -/
 theorem glPadicInt_le_padicIntEntries :
-    (GLPadicInt (Fin n) p).toSubmonoid ≤ padicIntEntries n p :=
+    (GLPadicInt ι p).toSubmonoid ≤ padicIntEntries ι p :=
   fun _ hg ↦ (mem_glPadicInt_iff_mem_padicIntEntries.mp hg).1
 
 end Subgroups
 
 section Commensurator
 
-variable {n p}
+variable {ι p}
 
 /-- **The conjugation step.** If `p ^ k g` and `p ^ l g⁻¹` are integral and `γ ∈ GL_n(ℤ_p)` is
 congruent to `1` modulo `p ^ (k + l)`, then `g⁻¹ γ g` is integral. -/
-private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL (Fin n) ℚ_[p]} {k l : ℕ}
-    {A B : Matrix (Fin n) (Fin n) ℤ_[p]}
-    (hA : A.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ k • (g : Matrix (Fin n) (Fin n) ℚ_[p]))
-    (hB : B.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ l • (↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ_[p]))
-    {γ : GL (Fin n) ℤ_[p]}
+private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL ι ℚ_[p]} {k l : ℕ}
+    {A B : Matrix ι ι ℤ_[p]}
+    (hA : A.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ k • (g : Matrix ι ι ℚ_[p]))
+    (hB : B.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ l • (↑g⁻¹ : Matrix ι ι ℚ_[p]))
+    {γ : GL ι ℤ_[p]}
     (hγ : γ ∈ (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l))).ker) :
     g⁻¹ * GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) γ * g ∈
-      padicIntEntries n p := by
+      padicIntEntries ι p := by
   obtain ⟨C, hC⟩ := PadicInt.exists_eq_one_add_pow_smul_of_mem_ker hγ
-  set f := (PadicInt.Coe.ringHom (p := p)).mapMatrix (m := Fin n)
+  set f := (PadicInt.Coe.ringHom (p := p)).mapMatrix (m := ι)
   rw [map_coe_eq_mapMatrix] at hA hB
   have hfγ : f γ = 1 + ((p : ℚ_[p]) ^ (k + l)) • f C := by
     rw [hC, map_add, map_one]
@@ -161,7 +162,7 @@ private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL (Fin n) ℚ_[p]} {k l 
     simp [f]
   -- the key identity `(p ^ l g⁻¹) C (p ^ k g) = p ^ (k + l) g⁻¹ C g`
   have hBCA : f (B * C * A) = (p : ℚ_[p]) ^ (k + l) •
-      ((↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ_[p]) * f C * (g : Matrix (Fin n) (Fin n) ℚ_[p])) := by
+      ((↑g⁻¹ : Matrix ι ι ℚ_[p]) * f C * (g : Matrix ι ι ℚ_[p])) := by
     rw [map_mul, map_mul, hA, hB, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
       ← pow_add, add_comm l k]
   -- so `g⁻¹ (1 + p ^ (k + l) C) g = 1 + B C A` is integral
@@ -172,42 +173,40 @@ private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL (Fin n) ℚ_[p]} {k l 
 
 /-- **Every element of `GL_n(ℚ_p)` commensurates `GL_n(ℤ_p)`.** For `g ∈ GL_n(ℚ_p)`, a principal
 congruence subgroup of `GL_n(ℤ_p)`, of finite index, lies in `g GL_n(ℤ_p) g⁻¹`. -/
-theorem commensurator_glPadicInt_eq_top : commensurator (GLPadicInt (Fin n) p) = ⊤ := by
+theorem commensurator_glPadicInt_eq_top : commensurator (GLPadicInt ι p) = ⊤ := by
   refine commensurator_eq_top_iff.mpr fun g ↦ ?_
-  obtain ⟨k, A, hA⟩ := exists_map_padicInt_eq_pow_smul (p := p) (g : Matrix (Fin n) (Fin n) ℚ_[p])
-  obtain ⟨l, B, hB⟩ :=
-    exists_map_padicInt_eq_pow_smul (p := p) (↑g⁻¹ : Matrix (Fin n) (Fin n) ℚ_[p])
-  set ι := GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) (n := Fin n)
-  set K := (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l)) (n := Fin n)).ker
-  have hι : Function.Injective ι := GeneralLinearGroup.map_injective fun _ _ ↦ PadicInt.ext
-  have hrange : GLPadicInt (Fin n) p = ι.range := by
+  obtain ⟨k, A, hA⟩ := exists_map_padicInt_eq_pow_smul (p := p) (g : Matrix ι ι ℚ_[p])
+  obtain ⟨l, B, hB⟩ := exists_map_padicInt_eq_pow_smul (p := p) (↑g⁻¹ : Matrix ι ι ℚ_[p])
+  set φ := GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) (n := ι)
+  set K := (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l)) (n := ι)).ker
+  have hφ : Function.Injective φ := GeneralLinearGroup.map_injective fun _ _ ↦ PadicInt.ext
+  have hrange : GLPadicInt ι p = φ.range := by
     ext
     exact GLPadicInt.mem_iff_exists_map.trans MonoidHom.mem_range.symm
   -- the principal congruence subgroup has finite index in `GL_n(ℤ_p)`
-  have hK : (K.map ι).IsFiniteRelIndex (GLPadicInt (Fin n) p) := by
+  have hK : (K.map φ).IsFiniteRelIndex (GLPadicInt ι p) := by
     rw [isFiniteRelIndex_iff_relIndex_ne_zero, hrange, MonoidHom.range_eq_map,
-      relIndex_map_map_of_injective _ _ hι, relIndex_top_right]
+      relIndex_map_map_of_injective _ _ hφ, relIndex_top_right]
     exact (finiteIndex_ker _).index_ne_zero
-  refine isFiniteRelIndex_of_le_left (GLPadicInt (Fin n) p) (H := K.map ι) ?_
+  refine isFiniteRelIndex_of_le_left (GLPadicInt ι p) (H := K.map φ) ?_
   -- and it lies in `g GL_n(ℤ_p) g⁻¹`
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def, MulAut.conj_inv_apply,
     mem_glPadicInt_iff_mem_padicIntEntries]
   refine ⟨inv_mul_map_mul_mem_padicIntEntries hA hB hγ, ?_⟩
-  have hinv : (g⁻¹ * ι γ * g)⁻¹ = g⁻¹ * ι γ⁻¹ * g := by rw [map_inv]; group
+  have hinv : (g⁻¹ * φ γ * g)⁻¹ = g⁻¹ * φ γ⁻¹ * g := by rw [map_inv]; group
   rw [hinv]
   exact inv_mul_map_mul_mem_padicIntEntries hA hB (K.inv_mem hγ)
 
 /-- The integral local Hecke pair `(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))`. -/
 instance instIsHeckeTriplePadicIntEntriesGLPadicInt :
-    IsHeckeTriple (padicIntEntries n p) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p) :=
+    IsHeckeTriple (padicIntEntries ι p) (GLPadicInt ι p) (GLPadicInt ι p) :=
   IsHeckeTriple.of_diagonal glPadicInt_le_padicIntEntries
     (by rw [commensurator_glPadicInt_eq_top]; exact le_top)
 
 /-- The rational local Hecke pair `(GL_n(ℤ_p), GL_n(ℚ_p))`. -/
 instance instIsHeckeTripleTopGLPadicInt :
-    IsHeckeTriple (⊤ : Submonoid (GL (Fin n) ℚ_[p])) (GLPadicInt (Fin n) p)
-      (GLPadicInt (Fin n) p) :=
+    IsHeckeTriple (⊤ : Submonoid (GL ι ℚ_[p])) (GLPadicInt ι p) (GLPadicInt ι p) :=
   IsHeckeTriple.of_diagonal le_top (by rw [commensurator_glPadicInt_eq_top]; exact le_top)
 
 end Commensurator
@@ -215,7 +214,7 @@ end Commensurator
 section Rings
 
 /-- The integral local Hecke ring `H(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))` over `ℤ`. -/
-abbrev PadicIntegralHeckeRing := 𝕋 (padicIntEntries n p) (GLPadicInt (Fin n) p) ℤ
+abbrev PadicIntegralHeckeRing := 𝕋 (padicIntEntries (Fin n) p) (GLPadicInt (Fin n) p) ℤ
 
 /-- The rational local Hecke ring `H(GL_n(ℤ_p), GL_n(ℚ_p))` over `ℤ`. -/
 abbrev PadicRationalHeckeRing := 𝕋 (⊤ : Submonoid (GL (Fin n) ℚ_[p])) (GLPadicInt (Fin n) p) ℤ
@@ -224,7 +223,7 @@ abbrev PadicRationalHeckeRing := 𝕋 (⊤ : Submonoid (GL (Fin n) ℚ_[p])) (GL
 `M_n(ℤ_p) ∩ GL_n(ℚ_p)` to `GL_n(ℚ_p)` embeds `H(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))` into
 `H(GL_n(ℤ_p), GL_n(ℚ_p))`, over any coefficient semiring `R`. -/
 noncomputable def padicIntegralToRationalRingHom (R : Type*) [Semiring R] :
-    𝕋 (padicIntEntries n p) (GLPadicInt (Fin n) p) R →+*
+    𝕋 (padicIntEntries (Fin n) p) (GLPadicInt (Fin n) p) R →+*
       𝕋 (⊤ : Submonoid (GL (Fin n) ℚ_[p])) (GLPadicInt (Fin n) p) R :=
   HeckeCosetModule.mapSubmonoidRingHom R le_top
 
@@ -232,7 +231,8 @@ noncomputable def padicIntegralToRationalRingHom (R : Type*) [Semiring R] :
 double coset. -/
 @[simp]
 theorem padicIntegralToRationalRingHom_single (R : Type*) [Semiring R]
-    (D : HeckeCoset (padicIntEntries n p) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p)) (b : R) :
+    (D : HeckeCoset (padicIntEntries (Fin n) p) (GLPadicInt (Fin n) p) (GLPadicInt (Fin n) p))
+    (b : R) :
     padicIntegralToRationalRingHom n p R (HeckeCosetModule.single R D b) =
       HeckeCosetModule.single R (D.map le_top le_rfl le_rfl) b :=
   HeckeCosetModule.mapSubmonoidRingHom_single R le_top D b
@@ -272,7 +272,7 @@ theorem padicScalar_mem_center : padicScalar n p ∈ center (GL (Fin n) ℚ_[p])
   exact ⟨_, rfl⟩
 
 /-- `p I` has entries in `ℤ_p`. -/
-theorem padicScalar_mem_padicIntEntries : padicScalar n p ∈ padicIntEntries n p := by
+theorem padicScalar_mem_padicIntEntries : padicScalar n p ∈ padicIntEntries (Fin n) p := by
   refine mem_padicIntEntries_iff_norm_le_one.mpr fun i j ↦ ?_
   rw [coe_padicScalar, Matrix.scalar_apply, Matrix.diagonal_apply]
   split_ifs
@@ -284,7 +284,7 @@ theorem padicScalar_mem_padicIntEntries : padicScalar n p ∈ padicIntEntries n 
 inverse of `[K (p I) K]` in the rational local Hecke ring, is not a double coset of the integral
 local Hecke pair. -/
 theorem padicScalar_inv_notMem_padicIntEntries [NeZero n] :
-    (padicScalar n p)⁻¹ ∉ padicIntEntries n p := by
+    (padicScalar n p)⁻¹ ∉ padicIntEntries (Fin n) p := by
   rw [mem_padicIntEntries_iff_norm_le_one]
   intro h
   have h00 := h 0 0

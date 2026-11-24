@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PGroup
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.Topology.Algebra.Group.Units
@@ -100,8 +99,6 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`; in particular some `p ^ k M` of a matrix `M` over `ℚ_p` has
   entries in `ℤ_p` (`Matrix.exists_map_padicInt_eq_pow_smul`).
-* `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`: an invertible matrix over `ℤ_p` that reduces
-  to `1` modulo `p ^ m` is `1 + p ^ m C` for a matrix `C` over `ℤ_p`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -528,28 +525,3 @@ theorem exists_map_padicInt_eq_pow_smul {m n : Type*} [Finite m] [Finite n]
   exact ⟨k, of fun i j ↦ ⟨_, hk (i, j)⟩, by ext; rfl⟩
 
 end Matrix
-
-namespace PadicInt
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- An invertible matrix over `ℤ_[p]` that reduces to `1` modulo `p ^ m`, that is, an element of
-the principal congruence subgroup of level `p ^ m`, is `1 + p ^ m C` for a matrix `C` over
-`ℤ_[p]`. -/
-theorem exists_eq_one_add_pow_smul_of_mem_ker {n : Type*} [Fintype n] [DecidableEq n] {m : ℕ}
-    {γ : GL n ℤ_[p]} (hγ : γ ∈ (Matrix.GeneralLinearGroup.map (toZModPow (p := p) m)).ker) :
-    ∃ C : Matrix n n ℤ_[p], (γ : Matrix n n ℤ_[p]) = 1 + (p : ℤ_[p]) ^ m • C := by
-  have hentry (i j : n) :
-      (p : ℤ_[p]) ^ m ∣ (γ : Matrix n n ℤ_[p]) i j - (1 : Matrix n n ℤ_[p]) i j := by
-    rw [← Ideal.mem_span_singleton, ← ker_toZModPow, RingHom.mem_ker, map_sub]
-    have h := congrArg (fun x : GL n (ZMod (p ^ m)) ↦ (x : Matrix n n (ZMod (p ^ m))) i j)
-      (MonoidHom.mem_ker.mp hγ)
-    simp only [Matrix.GeneralLinearGroup.map_apply, Units.val_one] at h
-    rw [h, sub_eq_zero, Matrix.one_apply, Matrix.one_apply]
-    split_ifs <;> simp
-  choose C hC using hentry
-  refine ⟨Matrix.of C, ?_⟩
-  ext i j
-  rw [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← hC, add_sub_cancel]
-
-end PadicInt
