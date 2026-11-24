@@ -122,6 +122,12 @@ noncomputable def galoisSetModuleSheaf : Sheaf (galoisTopology K Ω) (ModuleCat.
   ⟨ContAction.modulePresheaf ρ, fun E ↦ Presieve.isSheaf_of_le _
     (galoisTopology_le_jointlySurjectiveTopology K Ω) (ContAction.isSheaf_modulePresheaf ρ E)⟩
 
+/-- The underlying presheaf of `galoisSetModuleSheaf K Ω ρ` is `ContAction.modulePresheaf ρ`. -/
+@[simp]
+theorem galoisSetModuleSheaf_obj :
+    (galoisSetModuleSheaf K Ω ρ).obj = ContAction.modulePresheaf ρ :=
+  (rfl)
+
 /-- **The étale sheaf of a Galois representation.** For a representation `ρ` of `Gal(Ω/K)` on a
 `Λ`-module, the étale sheaf of `Λ`-modules on `Spec K` corresponding under `galoisSheafEquiv` to
 the sheaf of `Gal(Ω/K)`-maps into `ρ`. -/
@@ -222,6 +228,17 @@ noncomputable def galoisModuleSheafObjOfHomIdEquivInvariants :
   (galoisModuleSheafObjIso K Ω ρ _).toLinearEquiv ≪≫ₗ
     ContAction.modulePresheafObjEquivInvariants ρ
       ((isTerminalOfHomId (Spec (.of K))).isTerminalObj (galoisEquivalence K Ω).functor)
+
+variable {K Ω} in
+/-- Under `galoisModuleSheafObjOfHomIdEquivInvariants`, a section over `Spec K` is sent to the
+value, at any point, of the `Gal(Ω/K)`-map that `galoisModuleSheafObjIso` assigns to it. -/
+theorem coe_galoisModuleSheafObjOfHomIdEquivInvariants_apply
+    (φ : (galoisModuleSheaf K Ω ρ).obj.obj (op ((toEtale _).obj (ofHom (𝟙 (Spec (.of K)))))))
+    (s : (ContAction.fiberFunctor Gal(Ω/K)).obj
+      ((galoisEquivalence K Ω).functor.obj (ofHom (𝟙 (Spec (.of K)))))) :
+    (galoisModuleSheafObjOfHomIdEquivInvariants ρ φ : M) =
+      (ContAction.modulePresheafObjEquiv ρ _ ((galoisModuleSheafObjIso K Ω ρ _).hom φ)).val s :=
+  ContAction.coe_modulePresheafObjEquivInvariants_apply ρ _ _ s
 
 variable {K Ω} in
 /-- If `ρ` has no nonzero invariants, the sheaf `galoisModuleSheaf K Ω ρ` has no nonzero sections
