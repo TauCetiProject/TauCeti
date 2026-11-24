@@ -230,29 +230,10 @@ theorem eLorentzNorm_self {ε' : Type*} [TopologicalSpace ε'] [ContinuousENorm 
   · rw [eLorentzNorm_of_not_aestronglyMeasurable hf, eLpNorm_of_not_aestronglyMeasurable hf]
   rcases eq_or_ne p 0 with rfl | hp0
   · rw [eLorentzNorm_exponent_zero_left hf, eLpNorm_exponent_zero hf]
-  have hmeas := (μ.measurable_rpow_mul_decreasingRearrangement (‖f ·‖ₑ) (p⁻¹).toReal)
-    |>.aestronglyMeasurable (μ := multHaar)
-  rcases eq_or_ne p ∞ with rfl | hptop
-  · rw [eLorentzNorm_eq_eLpNorm hf hp0, eLpNorm_exponent_top hmeas, eLpNorm_exponent_top hf,
-      eLpNormEssSup_eq_essSup_eNorm, eLpNormEssSup_eq_essSup_eNorm]
-    simp only [ENNReal.inv_top, ENNReal.toReal_zero, Real.rpow_zero, ENNReal.ofReal_one, one_mul,
-      eNorm_eq_self, essSup_multHaar_eq_iSup_Ioi fun t _ ↦
-        μ.continuousWithinAt_decreasingRearrangement (‖f ·‖ₑ) t]
-    exact le_antisymm (iSup₂_le fun t _ ↦ μ.decreasingRearrangement_le_essSup (‖f ·‖ₑ) t) <|
-      le_of_tendsto (μ.tendsto_decreasingRearrangement_nhdsGT_zero (‖f ·‖ₑ))
-        (eventually_nhdsWithin_of_forall fun t ht ↦ le_iSup₂_of_le t ht le_rfl)
-  · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
-    rw [eLorentzNorm_eq_eLpNorm hf hp0, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hmeas,
-      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf]
-    congr 1
-    rw [lintegral_multHaar_eq_setLIntegral, ← μ.lintegral_rpow_decreasingRearrangement hf.eNorm hr]
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-    simp only [eNorm_eq_self, ENNReal.toReal_inv]
-    rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le,
-      ENNReal.ofReal_rpow_of_pos (Real.rpow_pos_of_pos ht _), ← Real.rpow_mul ht.le,
-      inv_mul_cancel₀ hr.ne', Real.rpow_one, ← mul_assoc,
-      ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one,
-      one_mul]
+  rw [eLorentzNorm_eq_eLpNorm hf hp0]
+  simp_rw [ENNReal.toReal_inv]
+  rw [← eLpNorm_volume_Ioi_eq_eLpNorm_multHaar (μ.decreasingRearrangement (‖f ·‖ₑ)),
+    Measure.eLpNorm_decreasingRearrangement μ hf.eNorm, eLpNorm_eNorm _ hf]
 
 /-- On the diagonal `q = p`, membership in `L^{p, p}(μ)` coincides with `MemLp f p μ`. -/
 @[simp]

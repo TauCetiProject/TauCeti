@@ -54,7 +54,7 @@ def normedConvolutionBUC (ρ : ContDiffBump (0 : G)) (μ : Measure G) [μ.IsAddH
   ⟨.ofNormedAddCommGroup (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (f.val : G → F))
     (ρ.hasCompactSupport_normed.continuous_convolution_left (lsmul ℝ ℝ) ρ.continuous_normed
       f.val.continuous.locallyIntegrable) ‖f.val‖
-    (ρ.norm_normed_convolution_le f.val.norm_coe_le_norm),
+    (ρ.norm_normed_convolution_le (Eventually.of_forall f.val.norm_coe_le_norm)),
     (mem_uniformContinuousSubmodule _).2
       (ρ.hasCompactSupport_normed.lipschitzWith_convolution_left (μ := μ)
         (ρ.contDiff_normed (n := 1))
