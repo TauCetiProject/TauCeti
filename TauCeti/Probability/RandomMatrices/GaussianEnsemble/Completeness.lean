@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.LinearAlgebra.Matrix.Trace.Contraction
 
 /-!
 # Completeness relations for the coordinate matrices of the Gaussian ensembles
@@ -86,24 +88,19 @@ variable {β n : ℕ}
 
 /-! ### The completeness relations -/
 
-/-- The square of the diagonal scale `n^{-1/2}` of the ensembles. -/
-private theorem inv_sqrt_sq (m : ℕ) : (Real.sqrt m : ℂ)⁻¹ ^ 2 = (m : ℂ)⁻¹ := by
-  rw [inv_pow, ← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
-  simp
-
 /-- **Entry covariance for `β ≠ 1`.** For the coordinate matrices `E p` of the Hermitian
 ensemble, `∑ p, E p a b * E p c d` is `n⁻¹` when `(c, d) = (b, a)` and `0` otherwise: the
 `(a, b)` entry of `E p` only sees the coordinates `(a, b)` and `(b, a)`. -/
 theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1) (a b c d : Fin n) :
     ∑ p, gaussianEnsemble β n (Pi.single p 1) a b * gaussianEnsemble β n (Pi.single p 1) c d =
       if b = c ∧ a = d then (n : ℂ)⁻¹ else 0 := by
-  have h2 := inv_sqrt_sq 2
+  have h2 := Complex.inv_ofReal_sqrt_natCast_sq 2
   push_cast at h2
   rcases lt_trichotomy a b with hab | rfl | hab <;>
     simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, add_mul, add_div, sub_div, mul_sub,
       sub_mul, ite_div, ite_mul, mul_ite, Finset.sum_add_distrib, Finset.sum_sub_distrib, *,
       Matrix.single_apply] <;>
-    split_ifs <;> grind [inv_sqrt_sq, Complex.I_sq]
+    split_ifs <;> grind [Complex.inv_ofReal_sqrt_natCast_sq, Complex.I_sq]
 
 /-- **Entry covariance for `β = 1`.** For the coordinate matrices `E p` of the real symmetric
 ensemble, `∑ p, E p a b * E p c d` is `n⁻¹` times the number of the conditions
@@ -118,7 +115,7 @@ theorem sum_gaussianEnsemble_one_single_apply_mul_apply (a b c d : Fin n) :
   rcases lt_trichotomy a b with hab | rfl | hab <;>
     simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, ite_mul, mul_ite, *,
       Matrix.single_apply] <;>
-    split_ifs <;> grind [inv_sqrt_sq]
+    split_ifs <;> grind [Complex.inv_ofReal_sqrt_natCast_sq]
 
 /-- **Completeness relation for `β ≠ 1`.** Weighting each coordinate matrix of the Hermitian
 ensemble by its `(a, b)` entry and summing gives `n⁻¹` times the matrix unit at `(b, a)`. -/
@@ -137,34 +134,6 @@ theorem sum_gaussianEnsemble_one_single_apply_smul (a b : Fin n) :
       (n : ℂ)⁻¹ • (single a b 1 + single b a 1) := by
   ext c d
   simp [Matrix.sum_apply, sum_gaussianEnsemble_one_single_apply_mul_apply, Matrix.single_apply]
-
-/-- The entries of `∑ p, tr (A E p) • E p` through the entry covariance of the family `E`. -/
-private theorem sum_trace_mul_smul_apply {ι : Type*} [Fintype ι]
-    (E : ι → Matrix (Fin n) (Fin n) ℂ) (A : Matrix (Fin n) (Fin n) ℂ) (c d : Fin n) :
-    (∑ p, trace (A * E p) • E p) c d = ∑ a, ∑ b, A b a * ∑ p, E p a b * E p c d := by
-  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, trace, diag_apply, Matrix.mul_apply,
-    Finset.sum_mul, Finset.mul_sum, mul_assoc]
-  rw [Finset.sum_comm]
-  simp_rw [Finset.sum_comm (γ := ι)]
-  exact Finset.sum_comm
-
-/-- The entries of `∑ p, E p * M * E p` through the entry covariance of the family `E`. -/
-private theorem sum_mul_mul_apply {ι : Type*} [Fintype ι]
-    (E : ι → Matrix (Fin n) (Fin n) ℂ) (M : Matrix (Fin n) (Fin n) ℂ) (a d : Fin n) :
-    (∑ p, E p * M * E p) a d = ∑ b, ∑ c, M b c * ∑ p, E p a b * E p c d := by
-  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  simp_rw [Finset.sum_comm (γ := ι)]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
-    Finset.sum_congr rfl fun _ _ ↦ by ring
-
-/-- A bilinear form `u ⬝ᵥ M *ᵥ v` as the trace of `M` against the rank-one matrix
-`vecMulVec v u`. -/
-private theorem dotProduct_mulVec_eq_trace_vecMulVec_mul {m R : Type*} [Fintype m]
-    [CommSemiring R] (u v : m → R) (M : Matrix m m R) :
-    u ⬝ᵥ M *ᵥ v = trace (vecMulVec v u * M) := by
-  rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
 
 /-! ### Contracted forms -/
 

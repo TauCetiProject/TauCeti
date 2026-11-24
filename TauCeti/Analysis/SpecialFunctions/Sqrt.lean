@@ -26,7 +26,8 @@ modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschi
 to `0` as `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
-the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
+the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays, and squares
+the complex cast of `(√m)⁻¹` for a natural number `m`.
 
 ## Main results
 
@@ -64,6 +65,8 @@ the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of t
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 * `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
 * `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
+* `Complex.inv_ofReal_sqrt_natCast_sq`: for a natural number `m`, the complex cast of `(√m)⁻¹`
+  squares to `m⁻¹`.
 
 ## References
 
@@ -425,5 +428,14 @@ theorem setOf_le_sq_eq_union (a : ℝ) :
   rw [← sqrt_le_sqrt_iff (sq_nonneg x), sqrt_sq_eq_abs, le_abs']
 
 end Real
+
+namespace Complex
+
+/-- The square of the complex cast of `(√m)⁻¹`, for a natural number `m`, is `m⁻¹`. -/
+theorem inv_ofReal_sqrt_natCast_sq (m : ℕ) : ((√m : ℝ) : ℂ)⁻¹ ^ 2 = (m : ℂ)⁻¹ := by
+  rw [inv_pow, ← ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
+  simp
+
+end Complex
 
 end
