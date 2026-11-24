@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.ContMDiff.Sigma
+public import TauCeti.Logic.Equiv.Sum
 
 /-!
 # Diffeomorphisms of disjoint unions acting componentwise
@@ -165,6 +166,18 @@ theorem sumSigmaDistrib_apply_inl (i : ι₁) (x : N (.inl i)) :
 theorem sumSigmaDistrib_apply_inr (i : ι₂) (x : N (.inr i)) :
     sumSigmaDistrib I n N ⟨.inr i, x⟩ = .inr ⟨i, x⟩ := by
   rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply]
+
+/-- Splitting sends the part indexed by `ι₁`, included along `Sum.inl`, to the first summand. -/
+@[simp]
+theorem sumSigmaDistrib_apply_sigmaMap_inl (x : Σ i, N (.inl i)) :
+    sumSigmaDistrib I n N (Sigma.map Sum.inl (fun _ ↦ id) x) = .inl x := by
+  rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply_sigmaMap_inl]
+
+/-- Splitting sends the part indexed by `ι₂`, included along `Sum.inr`, to the second summand. -/
+@[simp]
+theorem sumSigmaDistrib_apply_sigmaMap_inr (x : Σ i, N (.inr i)) :
+    sumSigmaDistrib I n N (Sigma.map Sum.inr (fun _ ↦ id) x) = .inr x := by
+  rw [← coe_toEquiv, sumSigmaDistrib_toEquiv, Equiv.sumSigmaDistrib_apply_sigmaMap_inr]
 
 /-- The inverse of splitting includes the first summand along `Sum.inl`. -/
 @[simp]

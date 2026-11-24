@@ -580,14 +580,6 @@ private theorem sigmaMap_inl_ne_sigmaMap_inr (x : Σ i, X (.inl i)) (y : Σ i, X
     Sigma.map Sum.inl (fun _ ↦ id) x ≠ Sigma.map Sum.inr (fun _ ↦ id) y :=
   fun h ↦ Sum.inl_ne_inr (congrArg Sigma.fst h)
 
-private theorem sumSigmaDistrib_sigmaMap_inl (x : Σ i, X (.inl i)) :
-    Equiv.sumSigmaDistrib X (Sigma.map Sum.inl (fun _ ↦ id) x) = .inl x :=
-  (rfl)
-
-private theorem sumSigmaDistrib_sigmaMap_inr (x : Σ i, X (.inr i)) :
-    Equiv.sumSigmaDistrib X (Sigma.map Sum.inr (fun _ ↦ id) x) = .inr x :=
-  (rfl)
-
 /-- The flag pairs of a disjoint union start on the components of the two curves. -/
 @[simp]
 theorem FlagPairData.fst_sum : (d₁.sum d₂).fst = Sum.map d₁.fst d₂.fst :=
@@ -700,25 +692,25 @@ def Marking.sumClutch : Marking (d₁.sum d₂) ((L₁ ⊕ L₂) ⊕ Fin 2) wher
 
 /-- The marks `.inl (.inl l)` of `Marking.sumClutch` are the marks `some l` of the first curve. -/
 @[simp]
-theorem Marking.sumClutch_point_inl_inl (l : L₁) :
+theorem Marking.point_sumClutch_inl_inl (l : L₁) :
     (m₁.sumClutch m₂).point (.inl (.inl l)) = Sigma.map Sum.inl (fun _ ↦ id) (m₁.point (some l)) :=
   (rfl)
 
 /-- The marks `.inl (.inr l)` of `Marking.sumClutch` are the marks `some l` of the second curve. -/
 @[simp]
-theorem Marking.sumClutch_point_inl_inr (l : L₂) :
+theorem Marking.point_sumClutch_inl_inr (l : L₂) :
     (m₁.sumClutch m₂).point (.inl (.inr l)) = Sigma.map Sum.inr (fun _ ↦ id) (m₂.point (some l)) :=
   (rfl)
 
 /-- The first mark to be glued is the mark `none` of the first curve. -/
 @[simp]
-theorem Marking.sumClutch_point_inr_zero :
+theorem Marking.point_sumClutch_inr_zero :
     (m₁.sumClutch m₂).point (.inr 0) = Sigma.map Sum.inl (fun _ ↦ id) (m₁.point none) :=
   (rfl)
 
 /-- The second mark to be glued is the mark `none` of the second curve. -/
 @[simp]
-theorem Marking.sumClutch_point_inr_one :
+theorem Marking.point_sumClutch_inr_one :
     (m₁.sumClutch m₂).point (.inr 1) = Sigma.map Sum.inr (fun _ ↦ id) (m₂.point none) :=
   (rfl)
 
@@ -924,11 +916,12 @@ private def inlClutchRetraction : GluedCurve (d₁.clutch d₂ m₁ m₂) → Gl
       (Equiv.sumSigmaDistrib X x)) fun f ↦ by
     rcases f with _ | f | f
     · simp only [fstPoint_selfClutch_none, sndPoint_selfClutch_none,
-        Marking.sumClutch_point_inr_zero, Marking.sumClutch_point_inr_one,
-        sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr, Sum.elim_inl, Sum.elim_inr]
+        Marking.point_sumClutch_inr_zero, Marking.point_sumClutch_inr_one,
+        Equiv.sumSigmaDistrib_apply_sigmaMap_inl, Equiv.sumSigmaDistrib_apply_sigmaMap_inr,
+        Sum.elim_inl, Sum.elim_inr]
     all_goals simp only [← flagPoint_false, ← flagPoint_true, flagPoint_clutch_some_inl,
-      flagPoint_clutch_some_inr, sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr,
-      Sum.elim_inl, Sum.elim_inr, mk_flagPoint]
+      flagPoint_clutch_some_inr, Equiv.sumSigmaDistrib_apply_sigmaMap_inl,
+      Equiv.sumSigmaDistrib_apply_sigmaMap_inr, Sum.elim_inl, Sum.elim_inr, mk_flagPoint]
 
 /-- The retraction of an external clutching onto the second curve, collapsing the first curve to
 the glued mark of the second. -/
@@ -937,17 +930,18 @@ private def inrClutchRetraction : GluedCurve (d₁.clutch d₂ m₁ m₂) → Gl
       (Equiv.sumSigmaDistrib X x)) fun f ↦ by
     rcases f with _ | f | f
     · simp only [fstPoint_selfClutch_none, sndPoint_selfClutch_none,
-        Marking.sumClutch_point_inr_zero, Marking.sumClutch_point_inr_one,
-        sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr, Sum.elim_inl, Sum.elim_inr]
+        Marking.point_sumClutch_inr_zero, Marking.point_sumClutch_inr_one,
+        Equiv.sumSigmaDistrib_apply_sigmaMap_inl, Equiv.sumSigmaDistrib_apply_sigmaMap_inr,
+        Sum.elim_inl, Sum.elim_inr]
     all_goals simp only [← flagPoint_false, ← flagPoint_true, flagPoint_clutch_some_inl,
-      flagPoint_clutch_some_inr, sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr,
-      Sum.elim_inl, Sum.elim_inr, mk_flagPoint]
+      flagPoint_clutch_some_inr, Equiv.sumSigmaDistrib_apply_sigmaMap_inl,
+      Equiv.sumSigmaDistrib_apply_sigmaMap_inr, Sum.elim_inl, Sum.elim_inr, mk_flagPoint]
 
 /-- **The first curve embeds in an external clutching.** -/
 theorem isEmbedding_inlClutchMap : IsEmbedding (inlClutchMap d₂ m₁ m₂) :=
   .of_leftInverse (f := inlClutchRetraction) (fun a ↦ Quotient.inductionOn a fun _ ↦ by
       simp only [inlClutchRetraction, inlClutchMap_mk, GluedCurve.lift_mk,
-        sumSigmaDistrib_sigmaMap_inl, Sum.elim_inl])
+        Equiv.sumSigmaDistrib_apply_sigmaMap_inl, Sum.elim_inl])
     (GluedCurve.continuous_lift _ _ _ <| continuous_sigma fun
       | .inl _ => continuous_quotient_mk'.comp continuous_sigmaMk
       | .inr _ => continuous_const)
@@ -957,7 +951,7 @@ theorem isEmbedding_inlClutchMap : IsEmbedding (inlClutchMap d₂ m₁ m₂) :=
 theorem isEmbedding_inrClutchMap : IsEmbedding (inrClutchMap d₁ m₁ m₂) :=
   .of_leftInverse (f := inrClutchRetraction) (fun a ↦ Quotient.inductionOn a fun _ ↦ by
       simp only [inrClutchRetraction, inrClutchMap_mk, GluedCurve.lift_mk,
-        sumSigmaDistrib_sigmaMap_inr, Sum.elim_inr])
+        Equiv.sumSigmaDistrib_apply_sigmaMap_inr, Sum.elim_inr])
     (GluedCurve.continuous_lift _ _ _ <| continuous_sigma fun
       | .inl _ => continuous_const
       | .inr _ => continuous_quotient_mk'.comp continuous_sigmaMk)
@@ -1120,7 +1114,7 @@ mark `none` to the glued mark `none`, give an isomorphism of the external clutch
 def clutch (h₁ : e₁ (m₁.point none) = m₁'.point none) (h₂ : e₂ (m₂.point none) = m₂'.point none) :
     Iso I n (d₁.clutch d₂ m₁ m₂) (d₁'.clutch d₂' m₁' m₂') :=
   (e₁.sum e₂).selfClutch <| by
-    simp only [Marking.sumClutch_point_inr_zero, Marking.sumClutch_point_inr_one, sum_apply_inl,
+    simp only [Marking.point_sumClutch_inr_zero, Marking.point_sumClutch_inr_one, sum_apply_inl,
       sum_apply_inr, h₁, h₂]
 
 variable (h₁ : e₁ (m₁.point none) = m₁'.point none) (h₂ : e₂ (m₂.point none) = m₂'.point none)
