@@ -133,14 +133,17 @@ open scoped RealInnerProductSpace InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
-  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
   {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
+
+section HermitianModule
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
 /-! ### `J` acts by `±i` on the two eigenspaces -/
 
@@ -496,9 +499,17 @@ theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinor
   simp only [Submodule.coe_sub, map_sub] at h₃
   linear_combination (norm := module) -h₃
 
-/-! ### Two Clifford multiplications on the canonical eigenspace -/
+end HermitianModule
 
-omit [FiniteDimensional ℂ W] in
+/-! ### Two Clifford multiplications on the canonical eigenspace
+
+These formulas are purely algebraic: they hold on any complex Clifford module, with no Hermitian
+structure or finite dimensionality on `W`. -/
+
+section ComplexModule
+
+variable {W : Type*} [AddCommGroup W] [Module ℂ W] {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+
 include hQ h₀ h₂ in
 /-- On a `-2i`-eigenvector `ψ ∈ W` of `c₂(ω) = c(e₀) c(e₁) + c(e₂) c(e₃)`, the commuting square
 roots of `-1` `c(e₀) c(e₁)` and `c(e₂) c(e₃)` both act by `-i`, so `c(e₁) ψ = i c(e₀) ψ` and
@@ -538,7 +549,6 @@ private theorem ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply {ψ : 
   rw [e.map_ι_apply_map_ι_apply hQ ρ, map_smul] at h01 h23
   exact ⟨by linear_combination (norm := module) -h01, by linear_combination (norm := module) -h23⟩
 
-omit [FiniteDimensional ℂ W] in
 include hQ h₀ h₂ in
 /-- **Clifford multiplication on the canonical eigenspace in complex coordinates**: if
 `c₂(ω) ψ = -2i ψ`, then `c(v) ψ = z₀(v) c(e₀) ψ + z₂(v) c(e₂) ψ`, where
@@ -560,7 +570,6 @@ theorem ι_apply_of_bivectorExterior_apply {ψ : W}
   simp only [← Complex.coe_smul]
   module
 
-omit [FiniteDimensional ℂ W] in
 include hQ h₀ h₂ in
 /-- The products `c(e_k) c(e_j) ψ` for a `-2i`-eigenvector `ψ` of `c₂(ω)` that are not squares or
 the product `c(e₀) c(e₂) ψ` itself, written through `ψ` and `c(e₀) c(e₂) ψ`. -/
@@ -581,7 +590,6 @@ private theorem ι_apply_ι_apply_frame {ψ : W}
   · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), h₃, map_smul,
       e.map_ι_apply_map_ι_apply hQ ρ, smul_neg, neg_neg]
 
-omit [FiniteDimensional ℂ W] in
 include hQ h₀ h₂ in
 /-- **Two Clifford multiplications on the canonical eigenspace**: if `c₂(ω) ψ = -2i ψ`, then
 `c(v) c(w) ψ = (z₀(v) z₂(w) - z₂(v) z₀(w)) c(e₀) c(e₂) ψ - (⟪v, w⟫ - i ⟪v, J w⟫) ψ`,
@@ -624,7 +632,6 @@ theorem ι_apply_ι_apply_of_bivectorExterior_apply {ψ : W}
   · linear_combination (⟪e 1, v⟫ * ⟪e 1, w⟫ + ⟪e 3, v⟫ * ⟪e 3, w⟫ : ℂ) * Complex.I_sq
   · ring
 
-omit [FiniteDimensional ℂ W] in
 include hQ h₀ h₂ in
 /-- **`c(e₀) c(e₂)` carries the canonical eigenspace into the complementary one**: if
 `c₂(ω) ψ = -2i ψ`, then `c₂(ω) (c(e₀) c(e₂) ψ) = 2i c(e₀) c(e₂) ψ`. -/
@@ -644,5 +651,7 @@ theorem bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_
     LinearMap.add_apply, mul_apply_eq_comp, mul_apply_eq_comp, h1, h3, map_smul, map_neg,
     map_smul, p20]
   module
+
+end ComplexModule
 
 end TauCeti.SeibergWitten
