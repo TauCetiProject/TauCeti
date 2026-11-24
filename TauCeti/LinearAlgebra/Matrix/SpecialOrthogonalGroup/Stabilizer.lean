@@ -71,8 +71,8 @@ theorem range_fromBlocksOne_eq_stabilizer (m : ℕ) :
       stabilizer (specialOrthogonalGroup (Fin (1 + m)) R) (Pi.single 0 1 : Fin (1 + m) → R) := by
   ext A
   rw [Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, Fin.forall_fin_one,
-    Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self]
-  rfl
+    Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self,
+    show (Fin.castAdd m 0 : Fin (1 + m)) = 0 from Fin.ext (by simp)]
 
 variable (R) in
 /-- **`SO(m, R)` is the stabilizer of the first standard basis vector `e₀` in `SO(1 + m, R)`**, over
