@@ -136,6 +136,12 @@ def ofFinsupp : (S →₀ R) →ₗ[R] NovikovModule R F where
 theorem ofFinsupp_apply_val (a : S →₀ R) (s : S) : (ofFinsupp F a).val s = a s :=
   (rfl)
 
+/-- A finite combination with a single nonzero coefficient is the point mass at its generator. -/
+@[simp]
+theorem ofFinsupp_single [DecidableEq S] (s : S) (r : R) :
+    ofFinsupp F (Finsupp.single s r) = single s r :=
+  Subtype.ext (Finsupp.single_eq_pi_single s r)
+
 theorem ofFinsupp_injective : Function.Injective (ofFinsupp (R := R) F) :=
   fun _ _ h => DFunLike.coe_injective (congrArg Subtype.val h)
 
@@ -285,6 +291,18 @@ theorem coordinates_symm_apply (r : ∀ i, P i) (b : ι → NovikovSeries R H N)
     (i : ι) (p : P i) :
     ((coordinates hF r).symm b).val ⟨i, p⟩ = (b i).coeff (p -ᵥ r i) := (rfl)
 
+/-- In lift coordinates, the point mass `x` at a generator `p` of the orbit `i` is the monomial
+`x e^(p -ᵥ r i)` in the orbit `i`, and zero in every other orbit. -/
+@[simp]
+theorem coordinates_single [DecidableEq (Σ i, P i)] [DecidableEq ι] (r : ∀ i, P i) (i : ι)
+    (p : P i) (x : R) :
+    coordinates hF r (single ⟨i, p⟩ x) = Pi.single i (NovikovSeries.single (p -ᵥ r i) x) := by
+  classical
+  ext j h
+  obtain rfl | hji := eq_or_ne j i
+  · simp [Pi.single_apply, NovikovSeries.coeff_single, eq_vadd_iff_vsub_eq, eq_comm]
+  · simp [hji]
+
 /-- The potential cutoff in an orbit is the period cutoff measured from its chosen lift. -/
 theorem coordinates_coeff_eq_zero_iff (r : ∀ i, P i) (a : NovikovModule R F) (C : ℝ) :
     (∀ i h, N h < F ⟨i, r i⟩ - C → (coordinates hF r a i).coeff h = 0) ↔
@@ -303,6 +321,16 @@ theorem coordinates_apply_eq_mul_single (r r' : ∀ i, P i) (a : NovikovModule R
   ext h
   simp only [NovikovSeries.coeff_mul_single, mul_one, coordinates_coeff, sub_eq_add_neg,
     neg_vsub_eq_vsub_rev, add_vadd, vsub_vadd]
+
+/-- **Change of reference lifts.** Moving the reference lifts to `g i +ᵥ r i` and multiplying each
+coordinate on the right by the monomial `e^(-g i)` gives the same completed combination. -/
+theorem coordinates_symm_vadd_mul_single (r : ∀ i, P i) (b : ι → NovikovSeries R H N)
+    (g : ι → H) :
+    (coordinates hF fun i => g i +ᵥ r i).symm (fun i => b i * NovikovSeries.single (-g i) 1) =
+      (coordinates hF r).symm b := by
+  refine Subtype.ext (funext fun ⟨i, p⟩ => ?_)
+  rw [coordinates_symm_apply, coordinates_symm_apply, NovikovSeries.coeff_mul_single, mul_one,
+    sub_neg_eq_add, ← vsub_add_vsub_cancel p (g i +ᵥ r i) (r i), vadd_vsub]
 
 /-- The Novikov module structure, transported using arbitrary orbit lifts. Install it with
 `letI := NovikovModule.module (R := R) hF`. Every choice of lifts is linear for this one

@@ -22,6 +22,9 @@ Outside the topological support of a function on a topological vector space, its
 derivatives vanish. This is the directional counterpart of Mathlib's `fderiv_of_notMem_tsupport`.
 Both results require no differentiability hypothesis, which matters for Lipschitz functions.
 
+A differentiable map that is affine near `0` along a line `s ↦ w + s • d` has the slope of that
+line as its derivative at `w` in the direction `d` (`DifferentiableAt.fderiv_apply_eq_of_add_smul`).
+
 For a continuous function `g` with values in a real Banach space, the integral
 `y ↦ ∫ₐᵇ g (y - t h) dt` of its translates has directional derivative `g (y - a h) - g (y - b h)` in
 the direction `h`, by the fundamental theorem of calculus. On `[0, 1]` this is the segment average
@@ -53,6 +56,17 @@ theorem lineDeriv_of_notMem_tsupport {E : Type*} [AddCommGroup E] [Module 𝕜 E
     (notMem_tsupport_iff_eventuallyEq.1 h).comp_tendsto
       (Continuous.tendsto' (by fun_prop) 0 x (by simp))
   rw [lineDeriv, hzero.deriv_eq, deriv_const]
+
+/-- **A map that is affine along a line has the slope of that line as its derivative there.** If
+`g` is differentiable at `w` and `g (w + s • d) = g w + s • y` for every scalar `s` near `0`, then
+the derivative of `g` at `w` sends `d` to `y`. -/
+theorem _root_.DifferentiableAt.fderiv_apply_eq_of_add_smul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {g : F → G} {w d : F} {y : G} (hg : DifferentiableAt 𝕜 g w)
+    (h : ∀ᶠ s in 𝓝 (0 : 𝕜), g (w + s • d) = g w + s • y) : fderiv 𝕜 g w d = y := by
+  refine (hg.hasFDerivAt.hasLineDerivAt d).unique ?_
+  rw [HasLineDerivAt]
+  refine HasDerivAt.congr_of_eventuallyEq ?_ h
+  simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)
 
 /-- The function `y ↦ ∫ₐᵇ g (y - t h) dt` of a continuous `g` has directional derivative
 `g (y - a h) - g (y - b h)` in the direction `h`. -/

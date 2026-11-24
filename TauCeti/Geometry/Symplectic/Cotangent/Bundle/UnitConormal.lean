@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Conormal
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
+import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
@@ -41,6 +42,15 @@ structure `ker(λ|S*M)` (`TauCeti.CotangentBundle.isLegendrianEmbedding_unitCono
 This is also the kernel of the contact form `α_b = -λ|S*M` of the opposite coorientation, the
 boundary form of the primitive `-λ` of `ω = -dλ`.
 
+For a `C¹` closed embedding, the image `N*Q ∩ S*M` of the unit conormal bundle is closed in `S*M`
+(`TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion`), since `N*Q` is closed in `T*M`.
+Closedness of the submanifold cannot be dropped: in positive codimension every point of the image
+of `i` carries a unit conormal covector, and the unit covectors over a compact set form a compact
+set, so a closed image of the unit conormal bundle forces a closed image of `i`
+(`TauCeti.CotangentBundle.isClosed_range_of_isClosed_range_unitConormalInclusion`). Thus for a
+`C¹` embedding of smaller dimension, the unit conormal bundle is closed in `S*M` exactly when the
+submanifold is closed in `M` (`TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion_iff`).
+
 The atlas and the manifold structure only use that `i` is smooth with injective differentials;
 the embedding into `S*M` uses that `i` is a smooth embedding. The vector bundle structure of `N*Q`
 depends on `i`, so it is installed locally by `letI`, as is the atlas of the unit conormal bundle,
@@ -60,6 +70,8 @@ in the statements about it.
   `S*M`.
 * `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion`: it is a Legendrian
   embedding for the contact structure `ker(λ|S*M)`.
+* `TauCeti.CotangentBundle.isClosed_range_unitConormalInclusion_iff`: in positive codimension, it
+  is closed in `S*M` exactly when the submanifold is closed in `M`.
 
 ## References
 
@@ -129,6 +141,72 @@ theorem unitConormalInclusion_injective (hi : Injective i) :
 
 end Definitions
 
+section Closed
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- **The unit conormal bundle of a closed submanifold is closed.** For a `C¹` closed embedding
+`i : Q → M`, the image `N*Q ∩ S*M` of the unit conormal bundle of `i` is closed in `S*M`. -/
+theorem isClosed_range_unitConormalInclusion [IsManifold I 1 M] [IsManifold J 1 Q]
+    (hi : Topology.IsClosedEmbedding i) (hic : ContMDiff J I 1 i) :
+    IsClosed (range (unitConormalInclusion J I k i)) := by
+  rw [range_unitConormalInclusion]
+  exact (isClosed_conormal hi hic).preimage continuous_subtypeVal
+
+/-- **A closed unit conormal bundle lies over a closed image.** If `Q` has smaller dimension than
+`M` and the image `N*Q ∩ S*M` of the unit conormal bundle of `i` is closed in `S*M`, then the image
+of `i` is closed in `M`. Indeed, every point of the image of `i` carries a unit conormal covector,
+and the unit conormal covectors over a compact subset of `M` form a compact set. -/
+theorem isClosed_range_of_isClosed_range_unitConormalInclusion [T2Space M] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] [IsManifold I 1 M]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
+    (hdim : finrank ℝ F < finrank ℝ E) (h : IsClosed (range (unitConormalInclusion J I k i))) :
+    IsClosed (range i) := by
+  have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
+  rw [range_unitConormalInclusion] at h
+  -- The set `{z | ↑z ∈ N*Q}` of `S*M` is the preimage of `N*Q` by definition.
+  have hC : IsClosed (cosphereBundle I M ∩ conormal J I i) := by
+    have h' : IsClosed ((↑) ⁻¹' conormal J I i : Set (cosphereBundle I M)) := h
+    simpa only [Subtype.image_preimage_coe] using h'.trans isClosed_cosphereBundle
+  refine isClosed_of_closure_subset fun x hx ↦ ?_
+  obtain ⟨K, hK, hxK⟩ := exists_compact_mem_nhds x
+  -- The unit conormal covectors over `K` form a compact set `A`, whose projection is closed and
+  -- contains `range i ∩ K`.
+  set A := (cosphereBundle I M ∩
+    π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ⁻¹' K) ∩ (cosphereBundle I M ∩
+      conormal J I i)
+  have hA : IsCompact A := (isCompact_cosphereBundle_inter_preimage_proj (I := I) hK).inter_right hC
+  have hsub : range i ∩ K ⊆ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) '' A := by
+    rintro y hy
+    obtain ⟨⟨q, rfl⟩, hqK⟩ := mem_inter_iff _ _ _ |>.1 hy
+    obtain ⟨p, hp, hp0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+      (conormalSpace_ne_bot (J := J) (I := I) hdim i q)
+    have hn : TotalSpace.mk' (E →L[ℝ] ℝ) (i q) (NormedSpace.normalize p) ∈ cosphereBundle I M :=
+      mem_cosphereBundle.2 (NormedSpace.norm_normalize (V := TangentSpace I (i q) →L[ℝ] ℝ) hp0)
+    have hpn : NormedSpace.normalize p ∈ conormalSpace J I i q := by
+      rw [NormedSpace.normalize]
+      exact Submodule.smul_mem _ _ hp
+    exact mem_image_of_mem _ (mem_inter (mem_inter hn hqK) (mem_inter hn (mk_mem_conormal hpn)))
+  have hx' : x ∈ closure (range i ∩ K) :=
+    mem_closure_iff_frequently.2 ((mem_closure_iff_frequently.1 hx).and_eventually hxK)
+  obtain ⟨z, hz, rfl⟩ :=
+    closure_minimal hsub (hA.image (FiberBundle.continuous_proj _ _)).isClosed hx'
+  obtain ⟨q, hq, -⟩ := mem_conormal_iff.1 hz.2.2
+  exact mem_range.2 ⟨q, hq⟩
+
+/-- **The unit conormal bundle is closed exactly over a closed submanifold.** For a `C¹`
+embedding `i : Q → M` into a Riemannian manifold of larger dimension, the image `N*Q ∩ S*M` of the
+unit conormal bundle of `i` is closed in `S*M` exactly when the image of `i` is closed in `M`. -/
+theorem isClosed_range_unitConormalInclusion_iff [T2Space M] [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] [IsManifold I 1 M] [IsManifold J 1 Q]
+    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] (hi : Topology.IsEmbedding i)
+    (hic : ContMDiff J I 1 i) (hdim : finrank ℝ F < finrank ℝ E) :
+    IsClosed (range (unitConormalInclusion J I k i)) ↔ IsClosed (range i) :=
+  ⟨isClosed_range_of_isClosed_range_unitConormalInclusion hdim,
+    fun h ↦ isClosed_range_unitConormalInclusion ⟨hi, h⟩ hic⟩
+
+end Closed
+
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [IsManifold J ∞ Q]
 
 section Level
@@ -142,7 +220,7 @@ theorem contMDiffAt_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
     {z : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace J I i q} (hz : z ∈ unitConormal J I k i) :
     letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
     ContMDiffAt (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ) ∞
-      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) z := by
+      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) z := by
   let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
   exact (contMDiffAt_norm_snd_of_mem_cosphereBundle _ hz).comp z
     (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk z)
@@ -154,7 +232,7 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
     (hinj : ∀ q, Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E) :
     letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
     IsRegularValue (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ)
-      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) 1 := by
+      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) 1 := by
   let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
   let := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
   rw [isRegularValue_iff]
@@ -163,15 +241,15 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
   have hz' : z ∈ unitConormal J I k i := mem_unitConormal.2 (mem_cosphereBundle.2 hz)
   have hne := snd_ne_zero_of_mem_cosphereBundle hz'
   have hd : mfderiv (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ)
-      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) z (vectorBundleEulerField J z) =
-        ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖ := by
+      (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) z (vectorBundleEulerField J z) =
+        ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖ := by
     have hnorm : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ)
-        (fun w : CotangentBundle I M ↦ ‖w.2‖) (conormalInclusion (Fin k → ℝ) J I i z) :=
+        (fun w : CotangentBundle I M ↦ ‖w.snd‖) (conormalInclusion (Fin k → ℝ) J I i z) :=
       (contMDiffAt_norm_snd_of_mem_cosphereBundle _ hz').mdifferentiableAt (by simp)
     have hι : MDifferentiableAt (J.prod 𝓘(ℝ, Fin k → ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
         (conormalInclusion (Fin k → ℝ) J I i) z :=
       (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk z).mdifferentiableAt (by simp)
-    have h := mfderiv_comp_apply (g := fun w : CotangentBundle I M ↦ ‖w.2‖) z hnorm hι
+    have h := mfderiv_comp_apply (g := fun w : CotangentBundle I M ↦ ‖w.snd‖) z hnorm hι
       (vectorBundleEulerField J z)
     -- The conormal inclusion is linear on fibres, so it preserves Euler fields.
     rw [mfderiv_vectorBundleEulerField_of_linear (fun q ↦ (conormalSpace J I i q).subtype)
@@ -180,10 +258,10 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
     exact h
   -- The differential is onto `ℝ`, whose tangent spaces are `ℝ` itself.
   intro y
-  refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖ y /
-    ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) • vectorBundleEulerField J z, ?_⟩
+  refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖ y /
+    ‖(conormalInclusion (Fin k → ℝ) J I i z).snd‖) • vectorBundleEulerField J z, ?_⟩
   rw [map_smul, hd]
-  exact div_mul_cancel₀ _ ((norm_ne_zero_iff (a := (conormalInclusion (Fin k → ℝ) J I i z).2)).2
+  exact div_mul_cancel₀ _ ((norm_ne_zero_iff (a := (conormalInclusion (Fin k → ℝ) J I i z).snd)).2
     hne)
 
 variable [FiniteDimensional ℝ F] [J.Boundaryless]
@@ -282,7 +360,7 @@ theorem isSmoothEmbedding_unitConormalInclusion (hi : IsSmoothEmbedding J I ∞ 
       unitConormalInclusion J I k i = conormalInclusion (Fin k → ℝ) J I i ∘ Subtype.val :=
     (rfl)
   refine ⟨hf.isImmersion_of_injective_mfderiv (by simp) fun z ↦ ?_,
-    Topology.IsEmbedding.of_comp hf.continuous continuous_subtype_val
+    Topology.IsEmbedding.of_comp hf.continuous continuous_subtypeVal
       (hcomp ▸ hι.isEmbedding.comp hv.isEmbedding)⟩
   have h : Injective (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
       (conormalInclusion (Fin k → ℝ) J I i ∘ Subtype.val) z) := by
@@ -332,12 +410,12 @@ theorem isLegendrianEmbedding_unitConormalInclusion [Nontrivial E]
       ← TauCeti.mpullback_comp (hf.mdifferentiable (by simp))
         (hS.contMDiff.mdifferentiable (by simp))]
     exact mpullback_liouvilleForm_eq_zero_of_conormal
-      (g := fun z : unitConormal J I k i ↦ z.1.proj)
-      (fun z ↦ conormalInclusion_proj (Fin k → ℝ) J I i z.1)
+      (g := fun z : unitConormal J I k i ↦ z.val.proj)
+      (fun z ↦ conormalInclusion_proj (Fin k → ℝ) J I i z.val)
       ((hS.contMDiff.comp hf).mdifferentiable (by simp))
       (((Bundle.contMDiff_proj _).comp hv.contMDiff).mdifferentiable (by simp))
       (fun z ↦ (hi.contMDiff _).mdifferentiableAt (by simp))
-      (fun z ↦ conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i z.1)
+      (fun z ↦ conormalInclusion_snd_comp_mfderiv (Fin k → ℝ) J I i z.val)
   · rw [finrank_fin_fun, finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
     have := Module.finrank_pos (R := ℝ) (M := E)
     omega

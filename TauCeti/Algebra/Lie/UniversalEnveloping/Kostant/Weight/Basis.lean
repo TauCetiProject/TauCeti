@@ -253,14 +253,14 @@ theorem iSup_weightSublattice_eq_top
   obtain ⟨f, hf⟩ := hxV
   rw [DFinsupp.sum] at hf
   have hwt : ∀ ν : κ → ℤ, IsCartanWeightVector h ρ ν ((f ν : V)) :=
-    fun ν => (mem_jointWeightSpace_iff h ρ).1 (f ν).2
+    fun ν => (mem_jointWeightSpace_iff h ρ).1 (f ν).property
   have hmem : ∀ ν : κ → ℤ, ((f ν : V)) ∈ M := by
     intro ν
     by_cases hν : ν ∈ f.support
     · exact jointWeightComponent_mem_of_kostantStable e h ρ hM
         (fun l _ j => Module.End.mem_eigenspace_iff.1
           ((isCartanWeightVector_iff_mem_eigenspace h ρ).1 (hwt l) j))
-        (by rw [hf]; exact x.2) hν
+        (by rw [hf]; exact x.property) hν
     · rw [DFinsupp.notMem_support_iff] at hν
       rw [hν, ZeroMemClass.coe_zero]
       exact AddSubgroup.zero_mem M

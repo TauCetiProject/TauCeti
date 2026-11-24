@@ -71,6 +71,16 @@ theorem wedge_smul_right (c : ℝ) (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge φ (c • ψ) = c • wedge φ ψ :=
   pairedWedge_smul_right _ _ _ _ _
 
+/-- The real wedge vanishes when its first form is zero. -/
+@[simp]
+theorem wedge_zero_left (ψ : E [⋀^Fin l]→L[ℝ] ℝ) : wedge (0 : E [⋀^Fin k]→L[ℝ] ℝ) ψ = 0 :=
+  pairedWedge_zero_left _ _ _
+
+/-- The real wedge vanishes when its second form is zero. -/
+@[simp]
+theorem wedge_zero_right (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge φ (0 : E [⋀^Fin l]→L[ℝ] ℝ) = 0 :=
+  pairedWedge_zero_right _ _ _
+
 /-- The real wedge obeys the binomial operator-norm bound. -/
 theorem norm_wedge_le (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ) :
     ‖wedge φ ψ‖ ≤ (k + l).choose k * ‖φ‖ * ‖ψ‖ := by
@@ -93,6 +103,14 @@ theorem wedge_comm (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ
       wedge ψ φ (v ∘ Fin.cast (Nat.add_comm l k)) := by
   exact pairedWedge_comm (ContinuousLinearMap.mul ℝ ℝ).continuous₂
     (fun a b : ℝ => mul_comm a b) φ ψ v
+
+/-- The wedge of a real form of odd degree with itself vanishes. -/
+theorem wedge_self_of_odd (hk : Odd k) (φ : E [⋀^Fin k]→L[ℝ] ℝ) : wedge φ φ = 0 := by
+  ext v
+  have h := wedge_comm φ φ v
+  rw [(hk.mul hk).neg_one_pow, neg_one_smul, Fin.cast_refl, Function.comp_id] at h
+  rw [coe_zero, Pi.zero_apply]
+  linarith
 
 /-- The real wedge is associative, up to the canonical reassociation of its degree. -/
 theorem wedge_assoc (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)

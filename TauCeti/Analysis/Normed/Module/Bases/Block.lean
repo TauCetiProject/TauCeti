@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Bases
-import TauCeti.Analysis.Normed.Module.Bases.Basic
 
 /-!
 # Block bases of Schauder bases
@@ -22,9 +21,9 @@ Neither the construction nor its projection identities requires completeness.
 ## References
 
 * F. Albiac and N. J. Kalton, *Topics in Banach Space Theory*, Chapter 1, basic sequences.
-* The closed-span projection argument and basis-constant estimate follow `SchauderBasis.subsequence`
-  in `TauCeti/Analysis/Normed/Module/Bases/Subsequence.lean`. The basis is constructed using
-  Mathlib's `SchauderBasis.RankOneDecomposition.basis`.
+* The closed-span projection argument and basis-constant estimate generalize the original proof
+  for `SchauderBasis.subsequence` in `TauCeti/Analysis/Normed/Module/Bases/Subsequence.lean`.
+  The basis is constructed using Mathlib's `SchauderBasis.RankOneDecomposition.basis`.
 -/
 
 public section
@@ -203,7 +202,8 @@ def blockBasis : SchauderBasis 𝕜 (Submodule.span 𝕜 (range v)).topologicalC
 
 /-- The vectors of the block basis are the prescribed blocks. -/
 @[simp]
-theorem coe_blockBasis_apply (j : ℕ) : (b.blockBasis v u hv hs j : E) = v j := (rfl)
+theorem coe_blockBasis_apply (j : ℕ) : (b.blockBasis v u hv hs j : E) = v j := by
+  simp only [blockBasis, RankOneDecomposition.basis_coe, blockDecomposition, blockVector]
 
 /-- Initial projections of a block basis agree with the original projections at its
 block boundaries, on the closed block span. -/
@@ -219,7 +219,11 @@ theorem blockBasis_coord_smul (n : ℕ)
     (x : (Submodule.span 𝕜 (range v)).topologicalClosure) :
     (b.blockBasis v u hv hs).coord n x • v n =
       b.proj (u (n + 1)) (x : E) - b.proj (u n) (x : E) := by
-  exact congrArg Subtype.val ((b.blockDecomposition v u hv hs).basisCoeff_spec n x)
+  let c := b.blockBasis v u hv hs
+  have h : c.proj (n + 1) x - c.proj n x = c.coord n x • c n := by
+    rw [proj_apply, Finset.sum_range_succ, proj_apply, add_sub_cancel_left]
+  simpa only [c, Submodule.coe_sub, Submodule.coe_smul_of_tower,
+    coe_blockBasis_proj, coe_blockBasis_apply] using (congrArg Subtype.val h).symm
 
 /-- Within a block interval, an ambient coordinate is the block coordinate times the
 corresponding coordinate of the block vector. -/
@@ -253,12 +257,18 @@ theorem blockBasis_coord_eq_inv_mul (n : ℕ)
 
 /-- Restricting an initial projection to the closed block span cannot increase its norm. -/
 theorem norm_blockBasis_proj_le (n : ℕ) :
-    ‖(b.blockBasis v u hv hs).proj n‖ ≤ ‖b.proj (u n)‖ :=
-  b.norm_proj_le_of_restrict (b.blockBasis v u hv hs) (b.coe_blockBasis_proj v u hv hs n)
+    ‖(b.blockBasis v u hv hs).proj n‖ ≤ ‖b.proj (u n)‖ := by
+  apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+  intro x
+  simpa only [← Submodule.norm_coe, coe_blockBasis_proj] using (b.proj (u n)).le_opNorm (x : E)
 
-/-- The basis constant of a block basis is at most the original basis constant. -/
+/-- The basis constant of a block basis in a Banach space is at most the original basis
+constant. -/
 theorem blockBasis_nnNormProjBound_le [CompleteSpace E] :
-    (b.blockBasis v u hv hs).nnNormProjBound ≤ b.nnNormProjBound :=
-  b.nnNormProjBound_le_of_restrict (b.blockBasis v u hv hs) (b.coe_blockBasis_proj v u hv hs)
+    (b.blockBasis v u hv hs).nnNormProjBound ≤ b.nnNormProjBound := by
+  apply ciSup_le
+  intro n
+  exact_mod_cast (b.norm_blockBasis_proj_le v u hv hs n).trans
+    (b.norm_proj_le_nnNormProjBound (u n))
 
 end SchauderBasis

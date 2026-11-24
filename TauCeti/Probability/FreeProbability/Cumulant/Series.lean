@@ -203,7 +203,7 @@ products `∏_{B ∈ π} κ_{|B|}(a, …, a)` of the coefficients of the free cu
 theorem apply_pow_eq_sum_prod_coeff_freeCumulantSeries (hφ : φ 1 = 1) {α : Type*}
     [LinearOrder α] (s : Finset α) :
     φ (a ^ #s) =
-      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B (freeCumulantSeries φ a) := by
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, coeff #B (freeCumulantSeries φ a) := by
   obtain rfl | hs := s.eq_empty_or_nonempty
   · rw [card_empty, pow_zero, hφ, Fintype.sum_unique,
       Finpartition.parts_eq_empty_iff.2 rfl, prod_empty]
@@ -267,6 +267,15 @@ theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [
   have hb := apply_pow_eq_sum_prod_coeff_freeCumulantSeries b hψ (univ : Finset (Fin n))
   rw [card_univ, Fintype.card_fin] at ha hb
   rw [coeff_momentSeries, coeff_momentSeries, ha, hb, h]
+
+/-- For a normalised `φ`, the free cumulant series of `1` is `1 + X`. -/
+@[simp]
+theorem freeCumulantSeries_one (hφ : φ 1 = 1) :
+    freeCumulantSeries φ (1 : A) = 1 + X := by
+  refine (eq_freeCumulantSeries_of_subst_eq (1 : A) hφ ?_).symm
+  have hX : HasSubst (X * momentSeries φ (1 : A)) := .of_constantCoeff_zero' (by simp)
+  rw [subst_add hX, subst_one, subst_X hX]
+  ext (_ | n) <;> simp [hφ, coeff_succ_X_mul]
 
 end Monoid
 
