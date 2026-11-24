@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
+public import Mathlib.CategoryTheory.Monoidal.Linear
 
 /-!
 # Tensoring in functor categories
@@ -20,8 +20,8 @@ monoidal category to its simplicial objects with the degreewise tensor product. 
 that of the corresponding instance for cartesian monoidal `C` in
 `Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory` to arbitrary monoidal `C`.
 
-Tensoring on the left is linear whenever tensoring with each value of the fixed functor is
-linear.
+The pointwise tensor product is additive or linear in both variables whenever the tensor
+product in the coefficient category is.
 -/
 
 public section
@@ -53,17 +53,36 @@ instance preservesColimitsOfShape_functor_tensorRight (F : J ⥤ C)
       (NatIso.ofComponents (fun _ ↦ Iso.refl _) : (evaluation J C).obj j ⋙ tensorRight (F.obj j) ≅
         tensorRight F ⋙ (evaluation J C).obj j)
 
-variable {R : Type*} [Semiring R] [Preadditive C] [Linear R C]
+variable [Preadditive C] [MonoidalPreadditive C]
 
-/-- Pointwise tensoring on the left is linear if it is linear at each value of the fixed
-functor. -/
-instance functorCategoryTensorLeftLinear (F : J ⥤ C) [∀ j, (tensorLeft (F.obj j)).Linear R] :
-    (tensorLeft F).Linear R where
-  map_smul f r := by
+/-- The pointwise tensor product in a functor category is additive in both variables. -/
+instance functorCategoryMonoidalPreadditive : MonoidalPreadditive (J ⥤ C) where
+  whiskerLeft_zero := by
+    intros
     ext j
-    -- Reduce the pointwise operations on both sides together, keeping their source and
-    -- target in the same tensor-product carriers in the coefficient category.
-    change F.obj j ◁ (r • f.app j) = r • (F.obj j ◁ f.app j)
-    exact (tensorLeft (F.obj j)).map_smul r (f.app j)
+    exact MonoidalPreadditive.whiskerLeft_zero
+  zero_whiskerRight := by
+    intros
+    ext j
+    exact MonoidalPreadditive.zero_whiskerRight
+  whiskerLeft_add f g := by
+    ext j
+    exact MonoidalPreadditive.whiskerLeft_add (f.app j) (g.app j)
+  add_whiskerRight f g := by
+    ext j
+    exact MonoidalPreadditive.add_whiskerRight (f.app j) (g.app j)
+
+variable {R : Type*} [Semiring R] [Linear R C] [MonoidalLinear R C]
+
+/-- The pointwise tensor product in a functor category is linear in both variables. -/
+instance functorCategoryMonoidalLinear : MonoidalLinear R (J ⥤ C) where
+  whiskerLeft_smul F {_ _} r f := by
+    ext j
+    dsimp only [Monoidal.whiskerLeft_app, NatTrans.app_smul, Monoidal.tensorObj_obj]
+    exact MonoidalLinear.whiskerLeft_smul (F.obj j) r (f.app j)
+  smul_whiskerRight r {_ _} f F := by
+    ext j
+    dsimp only [Monoidal.whiskerRight_app, NatTrans.app_smul, Monoidal.tensorObj_obj]
+    exact MonoidalLinear.smul_whiskerRight r (f.app j) (F.obj j)
 
 end TauCeti

@@ -91,11 +91,9 @@ noncomputable def tensorSwapCurryEquiv : (X ⊗ Y ⟶ Z) ≃+ (X ⟶ (Y ⟶[C] Z
 /-- The swapped currying comparison is currying after the inverse braiding. -/
 lemma tensorSwapCurryEquiv_apply (g : X ⊗ Y ⟶ Z) :
     tensorSwapCurryEquiv X Y Z g = curry ((β_ X Y).inv ≫ g) := by
-  rw [tensorSwapCurryEquiv, AddEquiv.trans_apply]
-  refine ((ihom.adjunction Y).homAddEquiv_apply X Z _).trans ?_
-  -- Passing to the additive equivalence preserves the forward map of the linear Hom equivalence.
-  change curry (Linear.homCongr ℤ (β_ X Y) (Iso.refl Z) g) = _
-  rw [Linear.homCongr_apply, Iso.refl_hom, Category.comp_id]
+  rw [tensorSwapCurryEquiv, AddEquiv.trans_apply, (ihom.adjunction Y).homAddEquiv_apply,
+    homEquiv_apply_eq, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    Linear.homCongr_apply, Iso.refl_hom, Category.comp_id]
 
 /-- Precomposition in the first tensor factor becomes precomposition after swapped currying. -/
 lemma tensorSwapCurryEquiv_precomp {X' : C} (f : X' ⟶ X) (g : X ⊗ Y ⟶ Z) :

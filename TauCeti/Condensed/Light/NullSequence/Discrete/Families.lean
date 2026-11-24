@@ -44,9 +44,8 @@ private lemma nullSeqDiscreteHomEquiv_apply (M : ModuleCat.{u} R)
     (g : nullSeq R ⟶ ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M)) :
     nullSeqDiscreteHomEquiv M S g = g ≫ (lightCondFreeInternalHomDiscreteIso M S).hom := by
-  calc
-    _ = Linear.homCongr ℤ (Iso.refl _) (lightCondFreeInternalHomDiscreteIso M S) g := by rfl
-    _ = _ := by rw [Linear.homCongr_apply, Iso.refl_inv, Category.id_comp]
+  rw [nullSeqDiscreteHomEquiv, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    Linear.homCongr_apply, Iso.refl_inv, Category.id_comp]
 
 private lemma nullSeqDiscreteHomEquiv_shift (M : ModuleCat.{u} R)
     (S : LightProfinite.{u})
