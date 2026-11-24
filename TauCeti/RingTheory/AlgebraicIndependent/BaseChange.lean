@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Basic
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
@@ -17,9 +18,16 @@ When `S` is a flat `R`-algebra, algebraic independence of a family `y : ι → A
 algebraic independence of `i ↦ (1 : S) ⊗ₜ[R] y i` in `S ⊗[R] A` over `S`
 (`AlgebraicIndependent.one_tmul`).
 
+If a set `s ⊆ A` is algebraically independent over `R`, then the subalgebra `Algebra.adjoin R s`
+is the polynomial ring over `R` in the variables `s`, so extending its scalars to an `R`-algebra `B`
+gives the polynomial ring over `B` in the same variables
+(`AlgebraicIndependent.adjoinTensorAlgEquiv`).
+
 ## Main results
 
 * `AlgebraicIndependent.one_tmul`: flat scalar extension preserves algebraic independence.
+* `AlgebraicIndependent.adjoinTensorAlgEquiv`: for an algebraically independent set `s`,
+  `Algebra.adjoin R s ⊗[R] B ≃ₐ[R] MvPolynomial s B`.
 -/
 
 public section
@@ -44,5 +52,16 @@ theorem one_tmul {ι R A : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra
   rw [MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm,
     MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm] at hpq
   exact (MvPolynomial.algebraTensorAlgEquiv R S).symm.injective (hinj hpq)
+
+/-- If the set `s` is algebraically independent over `R`, then tensoring the subalgebra
+`Algebra.adjoin R s` with an `R`-algebra `B` gives the polynomial ring `MvPolynomial s B`. -/
+noncomputable def adjoinTensorAlgEquiv {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    {s : Set A} (hs : AlgebraicIndependent R ((↑) : s → A)) (B : Type*) [CommRing B]
+    [Algebra R B] : Algebra.adjoin R s ⊗[R] B ≃ₐ[R] MvPolynomial s B :=
+  (Algebra.TensorProduct.congr
+      (hs.aevalEquiv.trans (Subalgebra.equivOfEq _ _ (by rw [Subtype.range_coe]))).symm
+      (AlgEquiv.refl : B ≃ₐ[R] B)).trans
+    ((Algebra.TensorProduct.comm R (MvPolynomial s R) B).trans
+      ((MvPolynomial.algebraTensorAlgEquiv R B).restrictScalars R))
 
 end AlgebraicIndependent

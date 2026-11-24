@@ -9,8 +9,7 @@ public import Mathlib.FieldTheory.TranscendentalSeparable
 public import Mathlib.RingTheory.EssentialFiniteness
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
-import Mathlib.RingTheory.Localization.BaseChange
-import Mathlib.RingTheory.TensorProduct.MvPolynomial
+import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
 import TauCeti.RingTheory.Etale.Normal
 import TauCeti.RingTheory.Localization.Normal
 import TauCeti.RingTheory.MvPolynomial.IntegrallyClosed
@@ -30,8 +29,6 @@ over `E`, so `K ⊗[k] B ≅ K ⊗[E] (E ⊗[k] B)` is étale over `E ⊗[k] B` 
 
 ## Main results
 
-* `TauCeti.forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isLocalization`: if `C` is a
-  localization of the `k`-algebra `A` and `A ⊗[k] B` is a normal ring, then so is `C ⊗[k] B`.
 * `TauCeti.forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparablyGenerated`: for a
   finitely generated separably generated field extension `K / k` and a `k`-algebra `B` that is a
   normal ring, `K ⊗[k] B` is a normal ring. This is Stacks, Lemma 10.165.5 (06DF), for `A = K`
@@ -48,28 +45,6 @@ public section
 open scoped TensorProduct IntermediateField.algebraAdjoinAdjoin
 
 namespace TauCeti
-
-/-- **Localization of the first factor preserves normality of a tensor product.** Let `C` be a
-localization of the `k`-algebra `A` at `M`. If the localizations at primes of `A ⊗[k] B` are
-integrally closed domains, then so are those of `C ⊗[k] B`, which is the localization of
-`A ⊗[k] B` at the image of `M`. -/
-theorem forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isLocalization {k A B : Type*}
-    [CommRing k] [CommRing A] [CommRing B] [Algebra k A] [Algebra k B] (M : Submonoid A)
-    (C : Type*) [CommRing C] [Algebra k C] [Algebra A C] [IsScalarTower k A C]
-    [IsLocalization M C]
-    (h : ∀ (p : Ideal (A ⊗[k] B)) [p.IsPrime],
-      IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p))
-    (q : Ideal (C ⊗[k] B)) [q.IsPrime] :
-    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) := by
-  let φ : A ⊗[k] B →ₐ[k] C ⊗[k] B :=
-    Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A C) (AlgHom.id k B)
-  algebraize [φ.toRingHom]
-  have : IsScalarTower A (A ⊗[k] B) (C ⊗[k] B) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, φ]
-  have := IsLocalization.tensorProduct_tensorProduct k B M C
-    (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
-  exact IsLocalization.forall_isDomain_and_isIntegrallyClosed
-    (Algebra.algebraMapSubmonoid (A ⊗[k] B) M) (C ⊗[k] B) h q
 
 /-- **Separably generated base change of the ground field preserves normality.** Let `K / k` be
 a finitely generated field extension that is separably generated, and `B` a `k`-algebra whose
@@ -88,13 +63,7 @@ theorem forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparablyGener
   set R := Algebra.adjoin k s
   set E := IntermediateField.adjoin k s
   -- `R ⊗[k] B` is the polynomial ring `B[s]`, a normal ring.
-  let eR : MvPolynomial s k ≃ₐ[k] R :=
-    hs.1.aevalEquiv.trans (Subalgebra.equivOfEq _ _ (congrArg (Algebra.adjoin k) Subtype.range_coe))
-  let eRB : MvPolynomial s B ≃+* R ⊗[k] B :=
-    ((MvPolynomial.algebraTensorAlgEquiv k B).toRingEquiv.symm.trans
-      (Algebra.TensorProduct.comm k B (MvPolynomial s k)).toRingEquiv).trans
-      (Algebra.TensorProduct.congr eR (AlgEquiv.refl : B ≃ₐ[k] B)).toRingEquiv
-  have hRB := eRB.forall_isDomain_and_isIntegrallyClosed
+  have hRB := (hs.1.adjoinTensorAlgEquiv B).symm.toRingEquiv.forall_isDomain_and_isIntegrallyClosed
     (TauCeti.MvPolynomial.forall_isDomain_and_isIntegrallyClosed hB)
   -- `E ⊗[k] B` is a localization of `R ⊗[k] B`, so it is normal.
   have hEB := forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isLocalization
