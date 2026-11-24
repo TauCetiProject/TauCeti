@@ -60,7 +60,8 @@ for the statements here.
   for every exponent (`TauCeti.IsSobolevCRCoefficients.of_contDiffOn`).
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
-  changes the zeroth-order coefficient by a locally `Lᵖ` field.
+  changes the zeroth-order coefficient by a locally `Lᵖ` field, which adds its adjoint to the
+  formal adjoint (`TauCeti.crFormalAdjoint_add_zeroth`).
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
   restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
   (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
@@ -116,6 +117,18 @@ theorem inner_crFormalAdjoint (φ : ℂ → V) (z : ℂ) (w : V) :
         ⟪φ z, S z w⟫_ℝ := by
   simp only [crFormalAdjoint, inner_add_left, inner_sub_left, inner_neg_left,
     ContinuousLinearMap.adjoint_inner_left]
+
+/-- Adding a field `A` to the zeroth-order coefficient adds `Aᵀ φ` to the formal adjoint. -/
+theorem crFormalAdjoint_add_zeroth (A : ℂ → V →L[ℝ] V) (φ : ℂ → V) (z : ℂ) :
+    crFormalAdjoint J DJ (fun z => S z + A z) φ z =
+      crFormalAdjoint J DJ S φ z + ContinuousLinearMap.adjoint (A z) (φ z) := by
+  rw [crFormalAdjoint_def, crFormalAdjoint_def, map_add, add_apply, add_assoc]
+
+/-- The pairing form of `TauCeti.crFormalAdjoint_add_zeroth`. -/
+theorem inner_crFormalAdjoint_add_zeroth (A : ℂ → V →L[ℝ] V) (φ : ℂ → V) (z : ℂ) (w : V) :
+    ⟪crFormalAdjoint J DJ (fun z => S z + A z) φ z, w⟫_ℝ =
+      ⟪crFormalAdjoint J DJ S φ z, w⟫_ℝ + ⟪φ z, A z w⟫_ℝ := by
+  rw [crFormalAdjoint_add_zeroth, inner_add_left, ContinuousLinearMap.adjoint_inner_left]
 
 /-- The formal adjoint of a function vanishes off its topological support. -/
 theorem crFormalAdjoint_of_notMem_tsupport {φ : ℂ → V} {z : ℂ} (hz : z ∉ tsupport φ) :
