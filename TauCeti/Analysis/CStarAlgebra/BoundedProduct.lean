@@ -33,6 +33,8 @@ the norm, the star and the `ℂ`-algebra structure, are its projections.
 * `lp.inftyCStarAlgebra`: the unital C⋆-algebra `lp A ∞`.
 * `lp.QuotientC0`: the quotient `lp A ∞ ⧸ lp.c0Ideal A`, a unital C⋆-algebra.
 * `lp.QuotientC0.mk`: the quotient map, a unital `⋆`-algebra homomorphism.
+* `lp.QuotientC0.lift`: the unital `⋆`-homomorphism out of `lp.QuotientC0 A` induced by one
+  vanishing on the `c₀` ideal.
 * `lp.QuotientC0.norm_mk`: the quotient norm is the limit superior of the coordinate norms.
 
 ## References
@@ -77,6 +79,8 @@ noncomputable instance instCStarAlgebra : CStarAlgebra (QuotientC0 A) :=
 noncomputable def mk : lp A ∞ →⋆ₐ[ℂ] QuotientC0 A :=
   TwoSidedIdeal.Quotient.mkUnitalStarAlgHom (c0Ideal A)
 
+/-- The quotient map sends `a` to its class in `lp A ∞ ⧸ c0Ideal A`. The lemmas below transfer
+the quotient API to `lp.QuotientC0 A` through this equation. -/
 theorem mk_apply (a : lp A ∞) :
     mk A a = (TwoSidedIdeal.Quotient.mk (c0Ideal A) a : lp A ∞ ⧸ c0Ideal A) :=
   TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply (c0Ideal A) a
@@ -91,15 +95,47 @@ theorem mk_eq_zero_iff {a : lp A ∞} : mk A a = 0 ↔ a ∈ c0Ideal A := by
   rw [mk_apply]
   exact TwoSidedIdeal.Quotient.eq_zero_iff_mem
 
-/-- **The norm of `lp.QuotientC0 A`** is the limit superior of the coordinate norms along the
+theorem mk_eq_mk_iff {a b : lp A ∞} : mk A a = mk A b ↔ a - b ∈ c0Ideal A := by
+  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
+
+variable (A) in
+@[simp]
+theorem ker_mk : TwoSidedIdeal.ker (mk A) = c0Ideal A :=
+  TwoSidedIdeal.ext fun _ ↦ (TwoSidedIdeal.mem_ker _).trans mk_eq_zero_iff
+
+/-- The norm of `lp.QuotientC0 A` is the limit superior of the coordinate norms along the
 cofinite filter. For a finite index type both sides are `0`. -/
 theorem norm_mk (a : lp A ∞) :
     ‖mk A a‖ = limsup (fun i ↦ ‖a i‖) cofinite := by
-  cases finite_or_infinite ι
-  · have h0 : mk A a = 0 := mk_eq_zero_iff.2 (mem_c0Ideal.2 (by simp [cofinite_eq_bot]))
-    simp [h0, cofinite_eq_bot, limsup, limsSup]
-  · rw [mk_apply]
-    exact norm_mk_c0Ideal a
+  rw [mk_apply]
+  exact norm_mk_c0Ideal a
+
+variable {B : Type*} [CStarAlgebra B]
+
+/-- Descend a unital `⋆`-algebra homomorphism `f : lp A ∞ →⋆ₐ[ℂ] B` vanishing on the `c₀` ideal
+to `lp.QuotientC0 A →⋆ₐ[ℂ] B`. -/
+noncomputable def lift (f : lp A ∞ →⋆ₐ[ℂ] B) (hf : ∀ a ∈ c0Ideal A, f a = 0) :
+    QuotientC0 A →⋆ₐ[ℂ] B :=
+  TwoSidedIdeal.Quotient.liftUnitalStarAlgHom (c0Ideal A) f hf
+
+@[simp]
+theorem lift_mk (f : lp A ∞ →⋆ₐ[ℂ] B) (hf : ∀ a ∈ c0Ideal A, f a = 0) (a : lp A ∞) :
+    lift f hf (mk A a) = f a := by
+  rw [mk_apply]
+  exact TwoSidedIdeal.Quotient.liftUnitalStarAlgHom_mk (c0Ideal A) f hf a
+
+@[simp]
+theorem lift_comp_mk (f : lp A ∞ →⋆ₐ[ℂ] B) (hf : ∀ a ∈ c0Ideal A, f a = 0) :
+    (lift f hf).comp (mk A) = f :=
+  StarAlgHom.ext (lift_mk f hf)
+
+/-- Two unital `⋆`-homomorphisms out of `lp.QuotientC0 A` agree when their compositions with
+`lp.QuotientC0.mk A` agree. -/
+@[ext 1100]
+theorem hom_ext ⦃f g : QuotientC0 A →⋆ₐ[ℂ] B⦄ (h : f.comp (mk A) = g.comp (mk A)) : f = g := by
+  ext x
+  obtain ⟨a, rfl⟩ := mk_surjective A x
+  exact DFunLike.congr_fun h a
 
 end QuotientC0
 
