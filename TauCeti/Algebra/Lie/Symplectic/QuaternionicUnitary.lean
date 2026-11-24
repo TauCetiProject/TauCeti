@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Basic
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The quaternionic unitary Lie algebra `𝔰𝔭(p, q)`
@@ -29,7 +28,8 @@ symplectic Lie algebra `𝔰𝔭(n)`.
 preserves `𝔰𝔭_{2n}(ℂ)` because `K` commutes with the symplectic matrix `J` and is symmetric. So
 each `Y ∈ 𝔰𝔭_{2n}(ℂ)` is `2 Y = A - i B` with `A = Y - K Yᴴ K` and `B = i (Y + K Yᴴ K)` in
 `𝔰𝔭(p, q)`. A central element of `𝔰𝔭(p, q)` therefore commutes with all of `𝔰𝔭_{2n}(ℂ)`, so it is
-scalar (`Matrix.mem_range_scalar_of_commute_sp`), and a scalar symplectic matrix is zero.
+scalar (`Matrix.mem_range_scalar_of_commute_sp`), and a scalar symplectic matrix is zero
+(`Matrix.scalar_mem_sp_iff`).
 
 ## Main definitions
 
@@ -76,24 +76,24 @@ variable {p q}
 
 /-- `K * K = 1`. -/
 @[simp]
-theorem quaternionicUnitaryGram_mul_self :
+theorem quaternionicUnitaryGram_mul_quaternionicUnitaryGram :
     quaternionicUnitaryGram p q * quaternionicUnitaryGram p q = 1 := by
   simp [quaternionicUnitaryGram, fromBlocks_multiply, indefiniteDiagonal_mul_indefiniteDiagonal,
     ← fromBlocks_one]
 
 /-- `K * (K * M) = M`. -/
 @[simp]
-theorem quaternionicUnitaryGram_mul_mul_self
+theorem quaternionicUnitaryGram_mul_quaternionicUnitaryGram_mul
     (M : Matrix ((p ⊕ q) ⊕ (p ⊕ q)) ((p ⊕ q) ⊕ (p ⊕ q)) ℂ) :
     quaternionicUnitaryGram p q * (quaternionicUnitaryGram p q * M) = M := by
-  rw [← Matrix.mul_assoc, quaternionicUnitaryGram_mul_self, Matrix.one_mul]
+  rw [← Matrix.mul_assoc, quaternionicUnitaryGram_mul_quaternionicUnitaryGram, Matrix.one_mul]
 
 /-- `M * K * K = M`. -/
 @[simp]
-theorem mul_quaternionicUnitaryGram_mul_self
+theorem mul_quaternionicUnitaryGram_mul_quaternionicUnitaryGram
     (M : Matrix ((p ⊕ q) ⊕ (p ⊕ q)) ((p ⊕ q) ⊕ (p ⊕ q)) ℂ) :
     M * quaternionicUnitaryGram p q * quaternionicUnitaryGram p q = M := by
-  rw [Matrix.mul_assoc, quaternionicUnitaryGram_mul_self, Matrix.mul_one]
+  rw [Matrix.mul_assoc, quaternionicUnitaryGram_mul_quaternionicUnitaryGram, Matrix.mul_one]
 
 omit [Fintype p] [Fintype q] in
 /-- `K` is Hermitian. -/
@@ -111,9 +111,9 @@ theorem transpose_quaternionicUnitaryGram :
   simp [quaternionicUnitaryGram, indefiniteDiagonal]
 
 /-- `K` commutes with the standard symplectic matrix `J`. -/
-theorem quaternionicUnitaryGram_mul_J :
-    quaternionicUnitaryGram p q * J (p ⊕ q) ℂ = J (p ⊕ q) ℂ * quaternionicUnitaryGram p q := by
-  simp [quaternionicUnitaryGram, J, fromBlocks_multiply]
+theorem commute_quaternionicUnitaryGram_J :
+    Commute (quaternionicUnitaryGram p q) (J (p ⊕ q) ℂ) := by
+  simp [Commute, SemiconjBy, quaternionicUnitaryGram, J, fromBlocks_multiply]
 
 /-- Conjugation by `K` preserves the complex symplectic Lie algebra. -/
 theorem quaternionicUnitaryGram_mul_mul_mem_sp
@@ -121,8 +121,9 @@ theorem quaternionicUnitaryGram_mul_mul_mem_sp
     quaternionicUnitaryGram p q * X * quaternionicUnitaryGram p q ∈ sp (p ⊕ q) ℂ := by
   rw [mem_sp] at hX ⊢
   rw [transpose_mul, transpose_mul, transpose_quaternionicUnitaryGram, Matrix.mul_assoc,
-    Matrix.mul_assoc, quaternionicUnitaryGram_mul_J, ← Matrix.mul_assoc Xᵀ, hX]
-  simp only [Matrix.neg_mul, Matrix.mul_neg, ← Matrix.mul_assoc, quaternionicUnitaryGram_mul_J]
+    Matrix.mul_assoc, commute_quaternionicUnitaryGram_J.eq, ← Matrix.mul_assoc Xᵀ, hX]
+  simp only [Matrix.neg_mul, Matrix.mul_neg, ← Matrix.mul_assoc,
+    commute_quaternionicUnitaryGram_J.eq]
 
 variable (p q)
 
@@ -155,6 +156,7 @@ def quaternionicUnitaryLieAlgebra :
 variable {p q}
 
 /-- Membership in `𝔰𝔭(p, q)`: `X ∈ 𝔰𝔭_{2(p + q)}(ℂ)` and `Xᴴ K = -(K X)`. -/
+@[simp]
 theorem mem_quaternionicUnitaryLieAlgebra_iff
     {X : Matrix ((p ⊕ q) ⊕ (p ⊕ q)) ((p ⊕ q) ⊕ (p ⊕ q)) ℂ} :
     X ∈ quaternionicUnitaryLieAlgebra p q ↔ X ∈ sp (p ⊕ q) ℂ ∧
@@ -171,11 +173,13 @@ theorem conjTranspose_mem_quaternionicUnitaryLieAlgebra
   calc X * quaternionicUnitaryGram p q
       = -(quaternionicUnitaryGram p q * -(quaternionicUnitaryGram p q * X) *
           quaternionicUnitaryGram p q) := by
-        simp only [Matrix.mul_neg, Matrix.neg_mul, neg_neg, quaternionicUnitaryGram_mul_mul_self]
+        simp only [Matrix.mul_neg, Matrix.neg_mul, neg_neg,
+          quaternionicUnitaryGram_mul_quaternionicUnitaryGram_mul]
     _ = -(quaternionicUnitaryGram p q * (Xᴴ * quaternionicUnitaryGram p q) *
           quaternionicUnitaryGram p q) := by rw [h]
     _ = -(quaternionicUnitaryGram p q * Xᴴ) := by
-        rw [Matrix.mul_assoc, Matrix.mul_assoc, quaternionicUnitaryGram_mul_self, Matrix.mul_one]
+        rw [Matrix.mul_assoc, Matrix.mul_assoc, quaternionicUnitaryGram_mul_quaternionicUnitaryGram,
+          Matrix.mul_one]
 
 /-- A matrix commuting with `𝔰𝔭(p, q)` commutes with the whole complex symplectic Lie algebra:
 `2 Y = A - i B` with `A = Y - K Yᴴ K` and `B = i (Y + K Yᴴ K)` in `𝔰𝔭(p, q)`. -/
@@ -190,16 +194,17 @@ theorem commute_of_forall_mem_quaternionicUnitaryLieAlgebra
     refine mem_quaternionicUnitaryLieAlgebra_iff.mpr ⟨sub_mem hY hσ, ?_⟩
     simp only [K, conjTranspose_sub, conjTranspose_mul, conjTranspose_quaternionicUnitaryGram,
       conjTranspose_conjTranspose, Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc,
-      quaternionicUnitaryGram_mul_self, Matrix.mul_one, quaternionicUnitaryGram_mul_mul_self]
+      quaternionicUnitaryGram_mul_quaternionicUnitaryGram, Matrix.mul_one,
+      quaternionicUnitaryGram_mul_quaternionicUnitaryGram_mul]
     abel
   have hB : Complex.I • (Y + K * Yᴴ * K) ∈ quaternionicUnitaryLieAlgebra p q := by
     refine mem_quaternionicUnitaryLieAlgebra_iff.mpr ⟨(sp (p ⊕ q) ℂ).smul_mem _ (add_mem hY hσ), ?_⟩
     simp only [K, conjTranspose_smul, conjTranspose_add, conjTranspose_mul,
       conjTranspose_quaternionicUnitaryGram, conjTranspose_conjTranspose, Complex.star_def,
       Complex.conj_I, Matrix.mul_smul, Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc,
-      quaternionicUnitaryGram_mul_mul_self, neg_smul, smul_add]
-    simp only [Matrix.neg_mul, Matrix.smul_mul, Matrix.mul_assoc, quaternionicUnitaryGram_mul_self,
-      Matrix.mul_one]
+      quaternionicUnitaryGram_mul_quaternionicUnitaryGram_mul, neg_smul, smul_add]
+    simp only [Matrix.neg_mul, Matrix.smul_mul, Matrix.mul_assoc,
+      quaternionicUnitaryGram_mul_quaternionicUnitaryGram, Matrix.mul_one]
     abel
   have h2 : (2 : ℂ) • Y = (Y - K * Yᴴ * K) - Complex.I • (Complex.I • (Y + K * Yᴴ * K)) := by
     rw [smul_smul, Complex.I_mul_I, neg_one_smul, sub_neg_eq_add, two_smul]
@@ -225,16 +230,6 @@ theorem center_quaternionicUnitaryLieAlgebra_eq_bot :
     exact this.symm
   obtain ⟨c, rfl⟩ := mem_range_scalar_of_commute_sp Z
     fun Y hY ↦ commute_of_forall_mem_quaternionicUnitaryLieAlgebra hcomm hY
-  have hZsp := (mem_symplecticLieAlgebra_iff _).mp (mem_quaternionicUnitaryLieAlgebra_iff.mp hZq).1
-  ext a b
-  rw [ZeroMemClass.coe_zero, Matrix.zero_apply]
-  by_cases hab : a = b
-  · subst hab
-    have hc0 : c = 0 := by
-      have := hZsp.2.2 (a.elim id id) (a.elim id id)
-      simp only [scalar_apply, diagonal_apply_eq] at this
-      linear_combination this / 2
-    simp [hc0]
-  · simp [scalar_apply, diagonal_apply_ne _ hab]
+  exact Subtype.ext ((scalar_mem_sp_iff c).mp (mem_quaternionicUnitaryLieAlgebra_iff.mp hZq).1)
 
 end TauCeti
