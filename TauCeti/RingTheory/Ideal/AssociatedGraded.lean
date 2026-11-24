@@ -556,37 +556,41 @@ theorem toAddMonoidHom_map (f : R →+* S) (h : I ≤ J.comap f) :
     (map f h).toAddMonoidHom = DirectSum.map fun n ↦ (gradedPieceMap f h n).toAddMonoidHom :=
   DirectSum.addHom_ext fun n x ↦ by simp [map]
 
+/-- The function underlying `AssociatedGraded.map f h` is that of the direct sum `DirectSum.map`
+of the degree-`n` maps `gradedPieceMap f h n`: `toAddMonoidHom_map` read through the coercion
+to functions. -/
+private theorem coe_map_eq_directSumMap (f : R →+* S) (h : I ≤ J.comap f) :
+    ⇑(map f h) = ⇑(DirectSum.map fun n ↦ (gradedPieceMap f h n).toAddMonoidHom) :=
+  congrArg DFunLike.coe (toAddMonoidHom_map f h)
+
 /-- The degree-`n` component of `AssociatedGraded.map f h x` is the image of the degree-`n`
 component of `x` under `gradedPieceMap f h n`. -/
 @[simp]
 theorem map_apply (f : R →+* S) (h : I ≤ J.comap f) (x : I.AssociatedGraded) (n : ℕ) :
-    map f h x n = gradedPieceMap f h n (x n) :=
-  (congrArg (· n) (DFunLike.congr_fun (toAddMonoidHom_map f h) x)).trans
-    (DirectSum.map_apply _ n x)
+    map f h x n = gradedPieceMap f h n (x n) := by
+  rw [coe_map_eq_directSumMap, DirectSum.map_apply, LinearMap.toAddMonoidHom_coe]
 
 /-- `AssociatedGraded.map f h` sends the summand of degree `n` to the summand of degree `n`,
 by `gradedPieceMap f h n`. -/
 @[simp]
 theorem map_of (f : R →+* S) (h : I ≤ J.comap f) (n : ℕ) (x : I.GradedPiece n) :
     map f h (DirectSum.of I.GradedPiece n x) =
-      DirectSum.of J.GradedPiece n (gradedPieceMap f h n x) :=
-  (DFunLike.congr_fun (toAddMonoidHom_map f h) _).trans (DirectSum.map_of _ n x)
+      DirectSum.of J.GradedPiece n (gradedPieceMap f h n x) := by
+  rw [coe_map_eq_directSumMap, DirectSum.map_of, LinearMap.toAddMonoidHom_coe]
 
 /-- **Injectivity of the induced graded map.** `gr_I R → gr_J S` is injective exactly when, for
 every `n`, an element `x ∈ Iⁿ` with `f x ∈ Jⁿ⁺¹` already lies in `Iⁿ⁺¹`, that is, when
 `Iⁿ ∩ f⁻¹(Jⁿ⁺¹) = Iⁿ⁺¹` for all `n`. Injectivity of `f` alone does not imply this. -/
 theorem map_injective_iff (f : R →+* S) (h : I ≤ J.comap f) :
     Function.Injective (map f h) ↔ ∀ n, I ^ n ⊓ (J ^ (n + 1)).comap f ≤ I ^ (n + 1) := by
-  change Function.Injective (map f h).toAddMonoidHom ↔ _
-  rw [toAddMonoidHom_map, DirectSum.map_injective]
+  rw [coe_map_eq_directSumMap, DirectSum.map_injective]
   simp_rw [LinearMap.toAddMonoidHom_coe, gradedPieceMap_injective_iff]
 
 /-- If `f` is surjective and `J ≤ I.map f`, for instance `J = I.map f`, then
 `gr_I R → gr_J S` is surjective. -/
 theorem map_surjective {f : R →+* S} (hf : Function.Surjective f) (h : I ≤ J.comap f)
     (hJ : J ≤ I.map f) : Function.Surjective (map f h) := by
-  change Function.Surjective (map f h).toAddMonoidHom
-  rw [toAddMonoidHom_map]
+  rw [coe_map_eq_directSumMap]
   exact (DirectSum.map_surjective _).mpr fun n ↦ gradedPieceMap_surjective hf h hJ n
 
 /-- Two ring homomorphisms out of `gr_I R` agree once they agree on every homogeneous class. -/
