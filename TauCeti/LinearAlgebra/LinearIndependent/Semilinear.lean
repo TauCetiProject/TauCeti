@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # Linear independence over a fixed field
@@ -47,9 +48,8 @@ theorem LinearIndependent.extend_scalars_of_semilinear_eq {F E M N ι : Type*} [
   have hrel (l : ι →₀ E) (hl : linearCombination E v l = 0) :
       linearCombination E v (l.mapRange σ (map_zero σ)) = 0 := by
     apply hQ
-    rw [map_zero, ← map_zero P, ← hl, linearCombination_apply, linearCombination_apply,
-      sum_mapRange_index fun i ↦ zero_smul E (v i), map_finsuppSum, map_finsuppSum]
-    simp [hPQ]
+    simpa [apply_linearCombinationₛₗ, apply_linearCombination, Function.comp_def, hPQ] using
+      congrArg P hl
   -- A nonzero relation of minimal support, normalized to have a coefficient `1`, is fixed by
   -- `σ`; so it is a relation over `F`.
   rw [linearIndependent_iff]
