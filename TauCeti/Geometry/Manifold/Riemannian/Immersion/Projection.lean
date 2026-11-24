@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.RankOne
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!

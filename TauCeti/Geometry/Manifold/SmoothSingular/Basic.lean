@@ -67,6 +67,7 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.SmoothSimplex.equiv₀`: smooth `0`-simplices identified with points of `M`.
 * `TauCeti.SmoothSimplex.ofContMDiffOn`, `TauCeti.SmoothSimplex.ofContMDiff`,
   `TauCeti.SmoothSimplex.ofCurve`: smooth simplices from smooth maps on `ℝᵖ` and smooth curves.
+* `TauCeti.SmoothSimplex.const`: the constant smooth simplex at a point.
 * `TauCeti.SmoothSimplex.extension`: a smooth simplex extended to `ℝᵖ`, smooth within `Δᵖ`.
 * `TauCeti.SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app`: a smooth map acts on
   smooth simplices by composition.
@@ -324,6 +325,24 @@ theorem toContinuousMap_ofContMDiff_apply {g : EuclideanSpace ℝ (Fin p) → M}
     (hg : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ g) (x : fullSimplex p) :
     (ofContMDiff hg).toContinuousMap x = g x :=
   toContinuousMap_ofContMDiffOn_apply hg.contMDiffOn Filter.univ_mem x
+
+/-- The constant smooth `p`-simplex at a point `x₀`: the constant singular simplex at `x₀`. -/
+def const (x₀ : M) : SmoothSimplex I M p :=
+  ⟨((TopCat.of M).toSSetObjEquiv _).symm (ContinuousMap.const _ x₀),
+    mem_smoothSingularSubcomplex_of_contMDiffOn _ (g := fun _ ↦ x₀) contMDiffOn_const
+      Filter.univ_mem fun _ ↦ by rw [Equiv.apply_symm_apply, ContinuousMap.const_apply]⟩
+
+/-- The underlying singular simplex of `const x₀` is the constant singular simplex at `x₀`. -/
+theorem coe_const (x₀ : M) :
+    (const (I := I) (p := p) x₀).val =
+      ((TopCat.of M).toSSetObjEquiv (op ⦋p⦌)).symm (ContinuousMap.const _ x₀) :=
+  (rfl)
+
+/-- Read on `Δᵖ`, the constant smooth simplex at `x₀` is constant. -/
+@[simp]
+theorem toContinuousMap_const_apply (x₀ : M) (x : fullSimplex p) :
+    (const (I := I) x₀).toContinuousMap x = x₀ := by
+  rw [toContinuousMap_apply, coe_const, Equiv.apply_symm_apply, ContinuousMap.const_apply]
 
 /-- Reading `TauCeti.TopCat.simplex₁` of the restriction of `γ : ℝ → M` to `I` through
 `fullSimplexEquivStdSimplex 1` evaluates `γ` at the unique coordinate. -/

@@ -23,13 +23,13 @@ operators of a finite-support integer-graded vector space.
 
 ## Main results
 
-* `TauCeti.LinearMap.IsHomogeneous.isNilpotent`: an endomorphism of nonzero degree for an
+* `LinearMap.IsHomogeneous.isNilpotent`: an endomorphism of nonzero degree for an
   exhaustive finite-support `ℤ`-grading is nilpotent.
 -/
 
 public section
 
-namespace TauCeti.LinearMap
+namespace LinearMap
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {𝒜 : ℤ → Submodule R M}
 
@@ -59,4 +59,4 @@ theorem IsHomogeneous.isNilpotent (h𝒜 : ⨆ a, 𝒜 a = ⊤) (hfin : {a | �
   · nlinarith
   · nlinarith
 
-end TauCeti.LinearMap
+end LinearMap

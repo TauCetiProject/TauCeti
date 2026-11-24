@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.Curve.Basic
+public import TauCeti.RingTheory.FormalGroup.Curve.Arithmetic
 import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
@@ -22,6 +22,8 @@ satisfies `[r] ∘ V_n = V_n ∘ [r^n]` and `f_n ∘ [r] = [r^n] ∘ f_n`.
 * `FormalGroup.homothetyCurve`: Cartier's homothety operator `[r] : γ(T) ↦ γ(r T)` on `F.Curve`.
 * `FormalGroup.homothetyCurve_homothetyCurve`, `FormalGroup.map_homothetyCurve`,
   `TauCeti.FormalGroupHom.mapCurve_homothetyCurve`: multiplicativity and naturality of `[r]`.
+* `FormalGroup.monomialCurve_eq_verschiebungCurve_homothetyCurve`: expression of a monomial
+  curve using Verschiebung and homothety.
 * `FormalGroup.homothetyCurve_verschiebungCurve`, `FormalGroup.frobeniusCurve_homothetyCurve`:
   Cartier's commutation relations `[r] ∘ V_n = V_n ∘ [r^n]` and `f_n ∘ [r] = [r^n] ∘ f_n`.
 
@@ -58,6 +60,14 @@ noncomputable def homothetyCurve (F : FormalGroup R) (r : R) : F.Curve →+ F.Cu
 @[simp]
 theorem toPowerSeries_homothetyCurve (F : FormalGroup R) (r : R) (γ : F.Curve) :
     (F.homothetyCurve r γ).toPowerSeries = PowerSeries.rescale r γ.toPowerSeries := (rfl)
+
+/-- A monomial curve is the Verschiebung of a homothety of the tautological curve. -/
+theorem monomialCurve_eq_verschiebungCurve_homothetyCurve (F : FormalGroup R)
+    (n : ℕ) (hn : n ≠ 0) (c : R) :
+    F.monomialCurve n hn c =
+      F.verschiebungCurve n hn (F.homothetyCurve c F.tautologicalCurve) := by
+  apply Curve.ext
+  simp [PowerSeries.rescale_X, PowerSeries.expand_C, PowerSeries.smul_eq_C_mul]
 
 /-- Homothety by `1` is the identity on curves. -/
 @[simp]

@@ -39,6 +39,13 @@ This turns estimates proved in weak form, by testing against `L²`-valued functi
 estimates. The typical application is to Strichartz estimates, where the `TT*` argument bounds the
 pairings `∫ ⟪U(t) f, G(t)⟫ dt` for `L²`-valued `G`.
 
+The file also records two elementary properties of mixed norms of families of `Lᵖ` functions:
+Minkowski's inequality `‖Φ + Ψ‖_{L^q L^r} ≤ ‖Φ‖_{L^q L^r} + ‖Ψ‖_{L^q L^r}` for `1 ≤ q, r`
+(`MeasureTheory.eLpNorm_eLpNorm_add_le`), and invariance under the reflection `b ↦ -b` of the
+parameter when `ρ` is invariant under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the
+time line is (`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); the latter reverses
+time in such estimates.
+
 ## The argument
 
 The test function is a truncated extremal function. In space, for `N > 0`, put
@@ -204,8 +211,8 @@ private theorem eLpNorm_le_of_enorm_rpow_le_re_inner {q q' r' : ℝ≥0∞} [q.H
   have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q q'
   -- `f` is bounded by `max K 0` and vanishes off `A`, which has finite measure.
   have hX : eLpNorm f q ρ ≠ ∞ := by
-    refine ((memLp_top_of_bound hf (max K 0) (ae_of_all _ fun b ↦ ?_)
-      ).mono_exponent_of_measure_support_ne_top hfA hρA le_top).eLpNorm_ne_top
+    refine (memLp_of_norm_le_of_measure_support_ne_top hf (c := max K 0) (ae_of_all _ fun b ↦ ?_)
+      hρA hfA q).eLpNorm_ne_top
     rw [Real.norm_of_nonneg (hf0 b)]
     by_cases hb : b ∈ A
     · exact (hfK b hb).trans (le_max_left _ _)
@@ -861,6 +868,29 @@ private theorem eLpNorm_truncNorm_top_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ :
 
 end TopCore
 
+/-! ### Minkowski's inequality -/
+
+section Elementary
+
+variable {F : Type*} [NormedAddCommGroup F] {p q r : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Minkowski's inequality for mixed norms.** For `1 ≤ q` and `1 ≤ r`, the `L^q_b L^r_x` mixed
+norm of the sum of two almost everywhere strongly measurable families of `Lᵖ` functions is at most
+the sum of their mixed norms. -/
+theorem eLpNorm_eLpNorm_add_le {u v : β → Lp F p μ} (hu : AEStronglyMeasurable u ρ)
+    (hv : AEStronglyMeasurable v ρ) (hq : 1 ≤ q) (hr : 1 ≤ r) :
+    eLpNorm (fun b ↦ eLpNorm (u b + v b) r μ) q ρ ≤
+      eLpNorm (fun b ↦ eLpNorm (u b) r μ) q ρ + eLpNorm (fun b ↦ eLpNorm (v b) r μ) q ρ :=
+  calc _ ≤ eLpNorm (fun b ↦ eLpNorm (u b) r μ + eLpNorm (v b) r μ) q ρ :=
+        eLpNorm_mono_eNorm ((hu.add hv).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
+          fun b ↦ by
+            simp only [eNorm_eq_self, Pi.add_apply]
+            rw [eLpNorm_congr_ae (Lp.coeFn_add _ _)]
+            exact eLpNorm_add_le hr
+    _ ≤ _ := eLpNorm_add_le hq
+
+end Elementary
+
 /-! ### The norming theorem -/
 
 variable {q q' r r' : ℝ≥0∞} [q.HolderConjugate q'] [r.HolderConjugate r']
@@ -904,5 +934,16 @@ theorem AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_l
   · obtain rfl : r' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ r').1 rfl
     exact eLpNorm_truncNorm_top_le hq hΦ' hM' _
   · exact eLpNorm_truncNorm_le hq hr hr2 hΦ' hM' _
+
+/-! ### Reflection of the parameter -/
+
+/-- Reflecting the parameter, `b ↦ -b`, preserves mixed norms when the measure `ρ` is invariant
+under negation, as Lebesgue measure on the time line is. -/
+theorem AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg [InvolutiveNeg β] [MeasurableNeg β]
+    [ρ.IsNegInvariant] {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {Φ : β → Lp F p μ} (hΦ : AEStronglyMeasurable Φ ρ) {q r : ℝ≥0∞} :
+    eLpNorm (fun b ↦ eLpNorm (Φ (-b)) r μ) q ρ = eLpNorm (fun b ↦ eLpNorm (Φ b) r μ) q ρ :=
+  eLpNorm_comp_measurePreserving (g := fun b ↦ eLpNorm (Φ b) r μ)
+    (hΦ.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable (Measure.measurePreserving_neg ρ)
 
 end MeasureTheory

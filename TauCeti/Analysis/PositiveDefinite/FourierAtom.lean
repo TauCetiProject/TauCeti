@@ -14,6 +14,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
@@ -33,6 +34,8 @@ It uses Mathlib's `2π` Fourier convention.
   the spatial variable.
 * `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the `k`-th derivative of the Fourier atom at
   frequency `q` has norm at most `(2π ‖q‖) ^ k`.
+* `Real.norm_iteratedFDeriv_fourierChar_inner_le`: the same bound `(2π ‖η‖) ^ k` for the plane
+  wave `x ↦ 𝐞 ⟪x, η⟫ = TauCeti.fourierAtom (-η) x`.
 * `TauCeti.norm_iteratedFDeriv_one_sub_fourierAtom_le`: for `‖q‖ ≤ 1`, the derivatives of
   `1 - fourierAtom q` at `v` are `O((1 + ‖v‖) ‖q‖)`.
 * `TauCeti.contDiff_tsum_smul_fourierAtom`: a series of Fourier atoms with coefficients decaying
@@ -139,11 +142,8 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] {n : WithT
 
 /-- Fourier atoms are jointly smooth in the frequency and the spatial variable. -/
 theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourierAtom (V := W))) := by
-  simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar, Real.fourierChar_apply]
-  exact Complex.contDiff_exp.comp
-    ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg)).mul
-        contDiff_const)
+  simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar]
+  exact (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg.fourierChar
 
 /-- Fourier atoms are smooth in the spatial variable. -/
 theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) :=
@@ -175,6 +175,18 @@ theorem norm_iteratedFDeriv_fourierAtom_le (q v : W) (k : ℕ) :
   refine (ℓ.norm_iteratedFDeriv_cexp_comp_le k v).trans ?_
   rw [hv, one_mul]
   gcongr
+
+/-- **Derivatives of a plane wave.** The derivative of order `k` of the plane wave
+`x ↦ 𝐞 ⟪x, η⟫ = exp(2πi ⟪x, η⟫)`, the Fourier atom of frequency `-η`, is bounded by `(2π ‖η‖) ^ k`
+at every point. -/
+theorem _root_.Real.norm_iteratedFDeriv_fourierChar_inner_le (η : W) (k : ℕ) (x : W) :
+    ‖iteratedFDeriv ℝ k (fun x : W ↦ (Real.fourierChar (inner ℝ x η) : ℂ)) x‖ ≤
+      (2 * Real.pi * ‖η‖) ^ k := by
+  have h : (fun x : W ↦ (Real.fourierChar (inner ℝ x η) : ℂ)) = fourierAtom (-η) := by
+    funext x
+    rw [fourierAtom_eq_fourierChar, inner_neg_right, neg_neg]
+  rw [h, ← norm_neg η]
+  exact norm_iteratedFDeriv_fourierAtom_le (-η) x k
 
 /-- For a frequency `q` of norm at most `1`, the `k`-th derivative of `1 - fourierAtom q` at `v`
 has norm at most `(2π) ^ (k + 1) (1 + ‖v‖) ‖q‖`: the atom is `1` at `q = 0`, uniformly on bounded

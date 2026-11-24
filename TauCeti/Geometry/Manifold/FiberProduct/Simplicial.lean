@@ -24,6 +24,9 @@ coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech
   alternating pullback differential `∑ᵢ (-1)ⁱ (face i)*` on `Y^[2]` is `pr₂* - pr₁*`;
 * `TauCeti.IteratedFiberProduct.degeneracy i : Y^[m + 1] → Y^[m + 2]`, repeating the `i`-th factor
   along the corresponding partial diagonal;
+* `TauCeti.IteratedFiberProduct.cons z y h : Y^[m + 2]`, prepending a point `z` over `baseProj y`
+  to `y : Y^[m + 1]`; omitting the prepended point recovers `y` (`face_zero_cons`), and omitting a
+  later coordinate commutes with prepending (`face_succ_cons`);
 * all five simplicial identities (`face_comp_face`,
   `face_castSucc_comp_degeneracy_succ_of_le`, `face_castSucc_comp_degeneracy` and
   `face_succ_comp_degeneracy`, `face_succ_comp_degeneracy_castSucc_of_gt`, and
@@ -41,7 +44,9 @@ each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChar
   `TauCeti.IteratedFiberProduct.surjective_face`);
 * every degeneracy map `degeneracy i` is a `C^n` smooth embedding (`TauCeti.contMDiff_degeneracy`,
   `TauCeti.isSmoothEmbedding_degeneracy`), and a closed topological embedding when `Y` is
-  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`).
+  Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`);
+* for a section `s` of `π`, prepending `s (baseProj y)` to `y` is `C^{m'}` at every `y` where `s`
+  is `C^{m'}` at `baseProj y` (`TauCeti.contMDiffAt_cons_section`).
 
 ## References
 
@@ -349,6 +354,67 @@ theorem degeneracy_castSucc_degeneracy {m : ℕ} {i j : Fin (m + 1)} (hij : i �
     degeneracy i.castSucc (degeneracy j y) = degeneracy j.succ (degeneracy i y) :=
   congrFun (degeneracy_castSucc_comp_degeneracy hij) y
 
+/-! ### Prepending a point -/
+
+/-- Prepend a point `z` of the fibre over `baseProj y` to the tuple `y`, giving the tuple
+`(z, y₀, …, y_m)` of `Y^[m + 2]`. -/
+def cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
+    IteratedFiberProduct π (m + 2) :=
+  ⟨Fin.cons z y.val, by
+    have key : ∀ i : Fin (m + 2), π (Fin.cons (α := fun _ ↦ Y) z y.val i) = baseProj y :=
+      Fin.cases h fun j ↦ by rw [Fin.cons_succ, ← eval_apply]; exact map_eval_eq_baseProj y j
+    exact fun i j ↦ (key i).trans (key j).symm⟩
+
+/-- The underlying tuple of `cons z y h` is `Fin.cons z y`. -/
+@[simp]
+theorem coe_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
+    (cons z y h : Fin (m + 2) → Y) = Fin.cons z y.val := (rfl)
+
+/-- Coordinate `0` of `cons z y h` is the prepended point `z`. -/
+theorem eval_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    eval 0 (cons z y h) = z := by
+  simp [eval_apply]
+
+/-- Coordinate `j + 1` of `cons z y h` is coordinate `j` of `y`. -/
+theorem eval_succ_cons {m : ℕ} (j : Fin (m + 1)) (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    eval j.succ (cons z y h) = eval j y := by
+  simp [eval_apply]
+
+/-- Prepending a point does not change the base point. -/
+@[simp]
+theorem baseProj_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    baseProj (cons z y h) = baseProj y := by
+  rw [baseProj_eq_apply _ 0]
+  exact h
+
+/-- Omitting the prepended point recovers the original tuple. -/
+@[simp]
+theorem face_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
+    (h : π z = baseProj y) :
+    face 0 (cons z y h) = y :=
+  ext fun j ↦ by simp [eval_apply]
+
+/-- Omitting coordinate `i + 1` after prepending `z` is prepending `z` after omitting
+coordinate `i`. -/
+@[simp]
+theorem face_succ_cons {m : ℕ} (i : Fin (m + 2)) (z : Y) (y : IteratedFiberProduct π (m + 2))
+    (h : π z = baseProj y) :
+    face i.succ (cons z y h) = cons z (face i y) (h.trans (baseProj_face i y).symm) := by
+  refine ext fun j ↦ ?_
+  cases j using Fin.cases with
+  | zero => simp [eval_apply]
+  | succ j => simp [eval_apply, Fin.succ_succAbove_succ]
+
+/-- On `Y^[1]`, omitting the original coordinate after prepending `z` leaves the one-point tuple
+`z`. -/
+@[simp]
+theorem face_one_cons (z : Y) (y : IteratedFiberProduct π 1) (h : π z = baseProj y) :
+    face 1 (cons z y h) = const 1 z :=
+  ext fun j ↦ by simp [eval_apply, Fin.fin_one_eq_zero j]
+
 end Set
 
 section Topology
@@ -571,6 +637,27 @@ theorem contMDiff_degeneracy {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   exact contMDiff_reindex hn hπ hm' i.predAbove
+
+/-- For a section `s` of `π`, prepending `s (baseProj y)` to `y`, a map `Y^[m + 1] → Y^[m + 2]`,
+is `C^{m'}` at `y` whenever `s` is `C^{m'}` at `baseProj y`. -/
+theorem contMDiffAt_cons_section {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) {s : M → Y}
+    (hs : ∀ x, π (s x) = x) {y : IteratedFiberProduct π (m + 1)}
+    (hsy : ContMDiffAt IM IY m' s (IteratedFiberProduct.baseProj y)) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
+    ContMDiffAt 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
+      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) m'
+      (fun y ↦ IteratedFiberProduct.cons (s (IteratedFiberProduct.baseProj y)) y (hs _)) y := by
+  let := iteratedFiberProductChartedSpace hn hπ m
+  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
+  refine (contMDiffAt_iteratedFiberProduct_iff hn hπ hm').2 fun i ↦ ?_
+  cases i using Fin.cases with
+  | zero =>
+    simp only [IteratedFiberProduct.eval_zero_cons]
+    exact hsy.comp y (contMDiff_baseProj hn hπ hm' y)
+  | succ j =>
+    simp only [IteratedFiberProduct.eval_succ_cons]
+    exact contMDiff_eval hn hπ hm' j y
 
 /-- Every diagonal degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is a `C^n` immersion,
 split on the left by `face i.castSucc`. -/

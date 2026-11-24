@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
 import Mathlib.Data.Nat.Find
@@ -28,6 +29,12 @@ automorphism of a tree acting on its axis, parametrized by the integers, is an e
 If the action of `g` commutes with an action of scalars and `g • v = μ • v`, then the powers of
 `g` act on `v` by the powers of `μ`.
 
+Along a path `a 0, a 1, …, a n` whose step `i` is carried back by `g i` to a translate by `l`, in
+the sense that `g i • a (i + 1) = l • a i`, with `l` commuting with every `g i`, the product
+`g 0 * ⋯ * g (n - 1)` carries the endpoint to `lⁿ • a 0`. Graded modules over a group graded
+algebra give such paths: when the structure map of a module raises degrees by a central `l`, a
+product of `n` coefficients along a path of generators shifts the degree by `lⁿ`.
+
 ## Main results
 
 * `TauCeti.exists_pow_smul_ne_zero_and_smul_eq_zero`: if `xⁿ • w = 0` for some `n` and `w ≠ 0`,
@@ -37,6 +44,8 @@ If the action of `g` commutes with an action of scalars and `g • v = μ • v`
 * `TauCeti.pow_smul_eq_add_nsmul`, `TauCeti.zpow_smul_eq_add_zsmul`: if `g • c n = c (n + t)` for
   all `n`, then `gᵏ • c n = c (n + k • t)`.
 * `TauCeti.pow_smul_eq_of_smul_eq`: if `g • v = μ • v`, then `gˡ • v = μˡ • v`.
+* `TauCeti.prod_ofFn_smul_eq_pow_smul`: if `g i • a (i + 1) = l • a i` along a path of length `n`,
+  then `(g 0 * ⋯ * g (n - 1)) • a n = lⁿ • a 0`.
 -/
 
 public section
@@ -97,5 +106,26 @@ theorem pow_smul_eq_of_smul_eq {G K α : Type*} [Monoid G] [Monoid K] [MulAction
   induction l with
   | zero => simp
   | succ l ih => rw [pow_succ', mul_smul, ih, smul_comm, hg, smul_smul, pow_succ]
+
+/-- **Products along a path of translates.** Along a path `a 0, …, a n` in which the step `i` is
+carried back by `g i` to the translate of the previous point by `l`, `g i • a (i + 1) = l • a i`,
+where `l` commutes with every `g i`, the product `g 0 * ⋯ * g (n - 1)` carries the endpoint to
+`lⁿ • a 0`. -/
+theorem prod_ofFn_smul_eq_pow_smul {M α : Type*} [Monoid M] [MulAction M α] {n : ℕ} {g : Fin n → M}
+    {l : M} (hl : ∀ i, Commute (g i) l) {a : Fin (n + 1) → α}
+    (h : ∀ i, g i • a i.succ = l • a i.castSucc) :
+    (List.ofFn g).prod • a (Fin.last n) = l ^ n • a 0 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have ih' := ih (g := fun i ↦ g i.succ) (a := fun i ↦ a i.succ) (fun i ↦ hl i.succ)
+      fun i ↦ by rw [Fin.succ_castSucc]; exact h i.succ
+    rw [Fin.succ_last] at ih'
+    simp only [List.ofFn_succ, List.prod_cons, mul_smul, ih']
+    calc g 0 • l ^ n • a (Fin.succ 0)
+        = l ^ n • g 0 • a (Fin.succ 0) := by
+          rw [← mul_smul, ((hl 0).pow_right n).eq, mul_smul]
+      _ = l ^ n • l • a 0 := by rw [h 0, Fin.castSucc_zero]
+      _ = l ^ (n + 1) • a 0 := by rw [← mul_smul, pow_succ]
 
 end TauCeti
