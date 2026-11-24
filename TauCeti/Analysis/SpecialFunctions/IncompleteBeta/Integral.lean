@@ -118,9 +118,9 @@ theorem regularizedIncompleteBeta_self_eq_regularizedIncompleteBeta_one_half_div
       regularizedIncompleteBeta_eq_zero_of_neg _ _ hy, zero_div]
   have hy : 4 * x * (1 - x) ∈ Icc (0 : ℝ) 1 := ⟨by nlinarith, by nlinarith⟩
   have hh : (0 : ℝ) < 1 / 2 := by norm_num
-  rw [regularizedIncompleteBeta_def_of_mem_Icc ha ha ⟨hx0, by linarith⟩,
-    regularizedIncompleteBeta_def_of_mem_Icc ha hh hy, ← incompleteBeta_def,
-    ← incompleteBeta_def, incompleteBeta_one_half_four_mul_mul_one_sub hx1,
+  rw [regularizedIncompleteBeta_eq_incompleteBeta_div_of_mem_Icc ha ha ⟨hx0, by linarith⟩,
+    regularizedIncompleteBeta_eq_incompleteBeta_div_of_mem_Icc ha hh hy,
+    incompleteBeta_one_half_four_mul_mul_one_sub hx1,
     beta_comm a (1 / 2), beta_one_half_left_eq_two_rpow_mul_beta_self]
   have h4 : (4 : ℝ) ^ a = 2 ^ (2 * a - 1) * 2 := by
     rw [← Real.rpow_add_one two_ne_zero, sub_add_cancel, Real.rpow_mul zero_le_two]

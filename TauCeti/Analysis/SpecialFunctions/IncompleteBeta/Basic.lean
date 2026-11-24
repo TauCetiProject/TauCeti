@@ -37,8 +37,10 @@ The real-variable theory of Euler's beta integral that the construction rests on
   `TauCeti.incompleteBeta_one_eq_beta` — the values `B_0(a, b) = 0`, `B_x(a, 1) = x ^ a / a` for
   `0 ≤ a`, and `B_1(a, b) = Β(a, b)` for `0 ≤ a` and `0 ≤ b`;
 * `TauCeti.regularizedIncompleteBeta` — the definition;
-* `TauCeti.regularizedIncompleteBeta_eq_incompleteBeta_div` — the normalization
-  `I_x(a, b) = B_x(a, b) / Β(a, b)` for `a, b > 0`, with the clamp displayed;
+* `TauCeti.regularizedIncompleteBeta_eq_incompleteBeta_div` and
+  `TauCeti.regularizedIncompleteBeta_eq_incompleteBeta_div_of_mem_Icc` — the normalization
+  `I_x(a, b) = B_x(a, b) / Β(a, b)` for `a, b > 0`, with the clamp displayed and with the clamp
+  already discharged on `[0, 1]`;
 * `TauCeti.regularizedIncompleteBeta_def_of_pos` and
   `TauCeti.regularizedIncompleteBeta_def_of_mem_Icc` — the defining normalized integral, with the
   clamp displayed and with the clamp already discharged on `[0, 1]`;
@@ -133,7 +135,8 @@ and `Β` takes the value `0` through `Γ(0) = 0`. -/
 @[simp]
 theorem incompleteBeta_one_eq_beta (ha : 0 ≤ a) (hb : 0 ≤ b) : incompleteBeta a b 1 = beta a b := by
   by_cases h : 0 < a ∧ 0 < b
-  · exact integral_rpow_mul_one_sub_rpow h.1 h.2
+  · rw [incompleteBeta_def]
+    exact integral_rpow_mul_one_sub_rpow h.1 h.2
   have hbeta : beta a b = 0 := by
     have h0 : a = 0 ∨ b = 0 := by
       by_contra! hne
@@ -181,6 +184,14 @@ theorem regularizedIncompleteBeta_def_of_mem_Icc (ha : 0 < a) (hb : 0 < b)
     regularizedIncompleteBeta a b x =
       (∫ t in (0 : ℝ)..x, t ^ (a - 1) * (1 - t) ^ (b - 1)) / beta a b := by
   rw [regularizedIncompleteBeta_def_of_pos ha hb, max_eq_left hx.1, min_eq_right hx.2]
+
+/-- On the support `[0, 1]` the clamp is invisible: for `a, b > 0` the regularized incomplete beta
+function is the incomplete beta function divided by Euler's beta function,
+`I_x(a, b) = B_x(a, b) / Β(a, b)` ([DLMF 8.17.2](https://dlmf.nist.gov/8.17.E2)). -/
+theorem regularizedIncompleteBeta_eq_incompleteBeta_div_of_mem_Icc (ha : 0 < a) (hb : 0 < b)
+    (hx : x ∈ Icc (0 : ℝ) 1) :
+    regularizedIncompleteBeta a b x = incompleteBeta a b x / beta a b := by
+  rw [regularizedIncompleteBeta_eq_incompleteBeta_div ha hb, max_eq_left hx.1, min_eq_right hx.2]
 
 /-- The boundary convention at `a = 0`: the regularized incomplete beta function is the cdf of
 `Measure.dirac 0`, the weak limit of `betaMeasure a b` as `a → 0⁺`. -/
@@ -700,7 +711,7 @@ incomplete beta function is the power `x ^ a`. -/
 @[simp]
 theorem regularizedIncompleteBeta_one_right (ha : 0 < a) (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
     regularizedIncompleteBeta a 1 x = x ^ a := by
-  rw [regularizedIncompleteBeta_def_of_mem_Icc ha one_pos ⟨hx0, hx1⟩, ← incompleteBeta_def,
+  rw [regularizedIncompleteBeta_eq_incompleteBeta_div_of_mem_Icc ha one_pos ⟨hx0, hx1⟩,
     incompleteBeta_one_right ha.le, beta_one_right ha.le]
   field_simp
 
