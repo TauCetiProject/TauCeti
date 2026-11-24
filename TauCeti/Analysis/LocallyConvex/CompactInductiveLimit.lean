@@ -61,13 +61,9 @@ inducing property when continuous
 strong-dual evaluation criterion in `TauCeti.Analysis.LocallyConvex.DoubleDual`. Continuity of
 `evalInductive` in fact forces the topology of `L` to equal that final locally convex topology
 (`TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`).
-Conversely, when `L` carries a topology equal to `finalLocallyConvexTopology` via `ht`, the setup
-lemmas `TauCeti.dualProjectiveLimit.isTopologicalAddGroup_of_finalLocallyConvexTopology`,
-`TauCeti.dualProjectiveLimit.locallyConvexSpace_of_finalLocallyConvexTopology`,
-`TauCeti.dualProjectiveLimit.continuousSMul_of_finalLocallyConvexTopology`,
-`TauCeti.dualProjectiveLimit.separatingDual_of_finalLocallyConvexTopology` (when `T₁`), and
-`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_finalLocallyConvexTopology` supply the
-transported instances and `evalInductive`-continuity directly (and
+Conversely, when `L` carries a topology equal to `finalLocallyConvexTopology` via `ht`,
+`continuous_evalInductive_of_le_finalLocallyConvexTopology` (`ht.ge`) supplies
+`evalInductive`-continuity directly (and
 `continuous_of_continuous_evalInductive_of_continuous_comp` then supplies functional continuity for
 `strongDualEquiv`).
 When the bonding maps are weakly compact over `ℝ` or `ℂ` and `evalInductive` is continuous
@@ -106,13 +102,6 @@ neighbourhoods, whose restriction maps are compact by Montel's theorem.
   `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_continuous_comp_seminorm`,
   `TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`:
   forward continuity and final-topology characterization.
-* `TauCeti.dualProjectiveLimit.isTopologicalAddGroup_of_finalLocallyConvexTopology`,
-  `TauCeti.dualProjectiveLimit.locallyConvexSpace_of_finalLocallyConvexTopology`,
-  `TauCeti.dualProjectiveLimit.continuousSMul_of_finalLocallyConvexTopology`,
-  `TauCeti.dualProjectiveLimit.separatingDual_of_finalLocallyConvexTopology`,
-  `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_finalLocallyConvexTopology`: setup lemmas
-  supplying the transported instances and `evalInductive`-continuity from a final-topology
-  equality.
 * `TauCeti.dualProjectiveLimit.evalEquiv`: topological linear isomorphism
   `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)` over `ℝ` or `ℂ` when `L` is `T₁` locally convex,
   the bonding maps are weakly compact, and `evalInductive` is continuous.
@@ -405,19 +394,6 @@ theorem continuous_evalInductive_of_le_finalLocallyConvexTopology
       (eval T n).continuous.congr fun z ↦ (evalInductive_ι hι hinj hcover n z).symm
   exact continuous_iff_le_induced.2 (hle.trans (continuous_iff_le_induced.1 hcont₀))
 
-/-- Over a nontrivially normed `ℝ`-algebra `𝕜`, whenever `L` carries the final locally convex
-topology of the compatible injective covering maps `ι n : B n →L[𝕜] L`, the glued evaluation
-map `evalInductive` is continuous. -/
-theorem continuous_evalInductive_of_finalLocallyConvexTopology
-    [NormedAlgebra ℝ 𝕜] [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
-    [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
-    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
-    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
-      ‹TopologicalSpace L›) :
-    Continuous (evalInductive hι hinj hcover) :=
-  continuous_evalInductive_of_le_finalLocallyConvexTopology hι hinj hcover ht.ge
-
 /-- If `evalInductive` is continuous, then every linear functional on `L` whose composites with all
 stage maps `ι n` are continuous is itself continuous on `L`. -/
 theorem continuous_of_continuous_evalInductive_of_continuous_comp
@@ -526,78 +502,6 @@ theorem finalLocallyConvexTopology_eq_of_continuous_evalInductive
     obtain ⟨n, z, rfl⟩ := hcover x
     exact (hev n z).trans (evalInductive_ι hι hinj hcover n z).symm
   rw [ht₀, heq, ← (isInducing_evalInductive_of_continuous hι hinj hcover hcont).eq_induced]
-
-end RCLike
-
-section FinalTopologySetup
-
-/-- A space `L` carrying the final locally convex topology of continuous linear maps
-`ι n : B n →L[𝕜] L` (over an `ℝ`-algebra `𝕜`) is a topological additive group. -/
-theorem isTopologicalAddGroup_of_finalLocallyConvexTopology
-    {𝕜 : Type*} [Semiring 𝕜] [Algebra ℝ 𝕜] {B : ℕ → Type*}
-    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
-    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
-    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
-    [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
-    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
-      ‹TopologicalSpace L›) :
-    IsTopologicalAddGroup L := by
-  rw [← ht]
-  infer_instance
-
-/-- A space `L` carrying the final locally convex topology of continuous linear maps
-`ι n : B n →L[𝕜] L` (over an `ℝ`-algebra `𝕜`) is a locally convex real vector space. -/
-theorem locallyConvexSpace_of_finalLocallyConvexTopology
-    {𝕜 : Type*} [Semiring 𝕜] [Algebra ℝ 𝕜] {B : ℕ → Type*}
-    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
-    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
-    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
-    [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
-    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
-      ‹TopologicalSpace L›) :
-    LocallyConvexSpace ℝ L := by
-  rw [← ht]
-  infer_instance
-
-/-- Over `ℝ` or `ℂ`, a space `L` carrying the final locally convex topology of continuous linear
-maps `ι n : B n →L[𝕜] L` has jointly continuous scalar multiplication. -/
-theorem continuousSMul_of_finalLocallyConvexTopology
-    {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
-    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
-    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)] [∀ n, ContinuousConstSMul 𝕜 (B n)]
-    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
-    [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
-    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
-      ‹TopologicalSpace L›) :
-    ContinuousSMul 𝕜 L := by
-  rw [← ht]
-  exact FinalLocallyConvexTopology.continuousSMul _ fun n ↦ (ι n).map_smul
-
-/-- Over `ℝ` or `ℂ`, a `T₁` space `L` carrying the final locally convex topology of continuous
-linear maps `ι n : B n →L[𝕜] L` has a separating continuous dual. -/
-theorem separatingDual_of_finalLocallyConvexTopology
-    {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
-    [∀ n, AddCommGroup (B n)] [∀ n, Module 𝕜 (B n)] [∀ n, TopologicalSpace (B n)]
-    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)] [∀ n, ContinuousConstSMul 𝕜 (B n)]
-    {L : Type*} [AddCommGroup L] [Module 𝕜 L] [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
-    [TopologicalSpace L] [T1Space L] {ι : ∀ n, B n →L[𝕜] L}
-    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
-      ‹TopologicalSpace L›) :
-    SeparatingDual 𝕜 L :=
-  let _ := isTopologicalAddGroup_of_finalLocallyConvexTopology ht
-  let _ := locallyConvexSpace_of_finalLocallyConvexTopology ht
-  let _ := continuousSMul_of_finalLocallyConvexTopology ht
-  instSeparatingDualOfLocallyConvexSpace
-
-end FinalTopologySetup
-
-section RCLike
-
-variable {𝕜 : Type*} [RCLike 𝕜] {B : ℕ → Type*}
-  [∀ n, NormedAddCommGroup (B n)] [∀ n, NormedSpace 𝕜 (B n)]
-  {T : ∀ n, B n →L[𝕜] B (n + 1)}
-  {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L]
-  {ι : ∀ n, B n →L[𝕜] L}
 
 /-- **Canonical evaluation isomorphism onto the strong dual of `dualProjectiveLimit T`.** Let `L`
 be a `T₁` locally convex space over `ℝ` or `ℂ`, covered by compatible injective continuous linear

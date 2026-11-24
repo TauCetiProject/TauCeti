@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import TauCeti.Analysis.RCLike.Basic
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
-import TauCeti.Analysis.LocallyConvex.Separation
 
 /-!
 # Final locally convex topologies
@@ -29,9 +27,7 @@ distributive and commutes with real scalars, each generator is `R`-equivariant, 
 `R`-scalar multiplication is continuous on each source, constant `R`-scalar multiplication is also
 continuous on the target (`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`); for `ℝ` or `ℂ`
 (`RCLike R`), `RCLike.continuousSMul_of_continuousConstSMul` upgrades this to joint continuity of
-scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`), and when the final
-topology is `T₁`, continuous `R`-linear functionals separate points
-(`TauCeti.FinalLocallyConvexTopology.separatingDual`). More precisely, over
+scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`). More precisely, over
 `ℝ` or `ℂ` scalar multiplication is jointly continuous exactly when multiplication by `RCLike.I`
 composed with each generating map is continuous
 (`TauCeti.FinalLocallyConvexTopology.continuousSMul_rclike_iff`).
@@ -250,18 +246,6 @@ theorem continuousSMul {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R 
   let := finalLocallyConvexTopology f
   have := continuousConstSMul f hf
   RCLike.continuousSMul_of_continuousConstSMul
-
-/-- Over `ℝ` or `ℂ`, continuous `𝕜`-linear functionals separate points of `F` in the final locally
-convex topology when every generator is `𝕜`-equivariant, each source has continuous constant
-`𝕜`-scalar multiplication, and `finalLocallyConvexTopology f` is `T₁`. -/
-theorem separatingDual {𝕜 : Type*} [RCLike 𝕜] [Module 𝕜 F] [IsScalarTower ℝ 𝕜 F]
-    [∀ i, SMul 𝕜 (E i)] [∀ i, ContinuousConstSMul 𝕜 (E i)]
-    (hf : ∀ i (c : 𝕜) x, f i (c • x) = c • f i x)
-    [@T1Space F (finalLocallyConvexTopology f)] :
-    @SeparatingDual 𝕜 F _ _ (finalLocallyConvexTopology f) _ _ :=
-  let := finalLocallyConvexTopology f
-  have := continuousSMul f hf
-  instSeparatingDualOfLocallyConvexSpace
 
 end SMul
 
