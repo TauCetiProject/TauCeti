@@ -404,6 +404,12 @@ def IsMulTable (f : Cubic R) (u v : A) : Prop :=
     u * u = algebraMap R A (-(f.a * f.c)) + f.b • u - f.a • v ∧
     v * v = algebraMap R A (-(f.b * f.d)) + f.d • u - f.c • v
 
+theorem isMulTable_iff {u v : A} :
+    IsMulTable f u v ↔ u * v = algebraMap R A (-(f.a * f.d)) ∧
+      u * u = algebraMap R A (-(f.a * f.c)) + f.b • u - f.a • v ∧
+      v * v = algebraMap R A (-(f.b * f.d)) + f.d • u - f.c • v :=
+  Iff.rfl
+
 theorem isMulTable_omega_theta : IsMulTable f (omega : f.CubicRing) theta :=
   ⟨omega_mul_theta, omega_mul_omega, theta_mul_theta⟩
 
