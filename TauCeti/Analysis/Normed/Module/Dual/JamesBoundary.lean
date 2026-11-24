@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Convex.Simons
+import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -36,7 +37,7 @@ For a bounded sequence `u` in `Y` and a James boundary `B`, we prove:
   `b (u n) → b y` for every `b ∈ B`, then `u n → y` weakly.
 
 Completeness of `Y` makes countable convex combinations of the bounded sequence converge, so that
-the abstract inequality `TauCeti.exists_mem_frequently_lt_of_forall_exists_le` applies to the
+Simons's inequality `TauCeti.exists_frequently_sub_lt_of_isMaxOn_tsum` applies to the
 functions `b ↦ re (b (u n))` on `B`.
 
 ## References
@@ -56,26 +57,23 @@ namespace TauCeti
 
 variable {𝕜 Y : Type*} [RCLike 𝕜] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 
-/-- A countable convex combination of a sequence bounded by `C` is summable. -/
-private theorem summable_ofReal_smul {u : ℕ → Y} {C : ℝ} (hu : ∀ n, ‖u n‖ ≤ C) [CompleteSpace Y]
-    {w : ℕ → ℝ} (hw0 : ∀ n, 0 ≤ w n) (hw : Summable w) :
-    Summable fun n ↦ (w n : 𝕜) • u n :=
-  Summable.of_norm_bounded (hw.mul_right C) fun n ↦ by
-    rw [norm_smul, norm_ofReal, abs_of_nonneg (hw0 n)]
-    exact mul_le_mul_of_nonneg_left (hu n) (hw0 n)
-
-/-- A lower bound on the norms of finite convex combinations passes to countable ones. -/
-private theorem le_norm_tsum_ofReal_smul {u : ℕ → Y} {C : ℝ} (hu : ∀ n, ‖u n‖ ≤ C)
-    [CompleteSpace Y] {r : ℝ}
+/-- A lower bound on the norms of finite convex combinations of a bounded sequence passes to its
+countable convex combinations. -/
+theorem le_norm_tsum_ofReal_smul [CompleteSpace Y] {u : ℕ → Y} {C : ℝ} (hu : ∀ n, ‖u n‖ ≤ C)
+    {r : ℝ}
     (hr : ∀ (s : Finset ℕ) (w : ℕ → ℝ), (∀ n, 0 ≤ w n) → ∑ n ∈ s, w n = 1 →
       r ≤ ‖∑ n ∈ s, (w n : 𝕜) • u n‖)
     {w : ℕ → ℝ} (hw0 : ∀ n, 0 ≤ w n) (hw : HasSum w 1) :
     r ≤ ‖∑' n, (w n : 𝕜) • u n‖ := by
   set m : ℕ → ℝ := fun N ↦ ∑ n ∈ range N, w n
   have hm : Tendsto m atTop (𝓝 1) := hw.tendsto_sum_nat
+  have hsum : Summable fun n ↦ (w n : 𝕜) • u n :=
+    Summable.of_norm_bounded (hw.summable.mul_right C) fun n ↦ by
+      rw [norm_smul, norm_ofReal, abs_of_nonneg (hw0 n)]
+      exact mul_le_mul_of_nonneg_left (hu n) (hw0 n)
   have hs : Tendsto (fun N ↦ ‖∑ n ∈ range N, (w n : 𝕜) • u n‖) atTop
       (𝓝 ‖∑' n, (w n : 𝕜) • u n‖) :=
-    ((summable_ofReal_smul hu hw0 hw.summable).hasSum.tendsto_sum_nat).norm
+    hsum.hasSum.tendsto_sum_nat.norm
   have hle : ∀ᶠ N in atTop, r * m N ≤ ‖∑ n ∈ range N, (w n : 𝕜) • u n‖ := by
     filter_upwards [hm.eventually (lt_mem_nhds one_pos)] with N hN
     have h := hr (range N) (fun n ↦ w n / m N) (fun n ↦ div_nonneg (hw0 n) hN.le)
@@ -103,30 +101,29 @@ theorem exists_mem_frequently_lt_re_apply_of_forall_le_norm [CompleteSpace Y]
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 hu
   have hu' (n : ℕ) : ‖u n‖ ≤ C := hC _ (mem_range_self n)
   -- The values of a countable convex combination under a functional.
-  have hval (w : ℕ → ℝ) (hw0 : ∀ n, 0 ≤ w n) (hw : HasSum w 1) (b : StrongDual 𝕜 Y) :
-      ∑' n, w n * re (b (u n)) = re (b (∑' n, (w n : 𝕜) • u n)) := by
-    have hs := summable_ofReal_smul (𝕜 := 𝕜) hu' hw0 hw.summable
-    rw [b.map_tsum hs, re_tsum 𝕜 (f := fun n ↦ b ((w n : 𝕜) • u n)) (hs.map b b.continuous)]
-    simp
+  have hval (w : ℕ → ℝ) (hw : HasSum w 1) (b : StrongDual 𝕜 Y) :
+      ∑' n, w n * re (b (u n)) = re (b (∑' n, (w n : 𝕜) • u n)) :=
+    (b.hasSum_mul_re_apply hw.summable hu').tsum_eq
   have hre_le (b : StrongDual 𝕜 Y) (hb : b ∈ B) (y : Y) : re (b y) ≤ ‖y‖ :=
     (re_le_norm _).trans ((b.le_opNorm y).trans (mul_le_of_le_one_left (norm_nonneg _) (hB₁ b hb)))
-  have hf (n : ℕ) (b : B) : |re ((b : StrongDual 𝕜 Y) (u n))| ≤ C :=
-    (abs_re_le_norm _).trans (((b : StrongDual 𝕜 Y).le_opNorm _).trans
-      ((mul_le_mul (hB₁ b b.prop) (hu' n) (norm_nonneg _) zero_le_one).trans (one_mul C).le))
-  obtain ⟨b, -, hb⟩ := exists_mem_frequently_lt_of_forall_exists_le (X := B)
-    (B := univ) (f := fun n (b : B) ↦ re ((b : StrongDual 𝕜 Y) (u n))) (M := C) hf
+  have hM (n : ℕ) (b : StrongDual 𝕜 Y) (hb : b ∈ B) : |re (b (u n))| ≤ C :=
+    (abs_re_le_norm _).trans ((b.le_opNorm _).trans
+      ((mul_le_mul (hB₁ b hb) (hu' n) (norm_nonneg _) zero_le_one).trans (one_mul C).le))
+  -- Every countable convex combination `y` attains its maximum on `B` where `re (b y) = ‖y‖`.
+  obtain ⟨b, hbB, hb⟩ := exists_frequently_sub_lt_of_isMaxOn_tsum (s := B)
+    (x := fun n b ↦ re (b (u n))) (c := r) hM
+    (fun w _ hw ↦ by
+      obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)
+      refine ⟨b, hbB, fun b' hb' ↦ ?_⟩
+      simp only [mem_setOf_eq, hval w hw, hb]
+      exact hre_le b' hb' _)
     (fun w hw0 hw ↦ by
       obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)
-      refine ⟨⟨b, hbB⟩, mem_univ _, fun x ↦ ?_⟩
-      simp only [hval w hw0 hw, hb]
-      exact hre_le x x.prop _)
-    (fun w hw0 hw ↦ by
-      obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)
-      refine ⟨⟨b, hbB⟩, ?_⟩
-      simp only [hval w hw0 hw, hb]
+      refine ⟨b, hbB, ?_⟩
+      simp only [hval w hw, hb]
       exact le_norm_tsum_ofReal_smul hu' hr hw0 hw)
-    hr'
-  exact ⟨b, b.prop, hb⟩
+    (sub_pos.2 hr')
+  exact ⟨b, hbB, by simpa using hb⟩
 
 /-- **The sup-limsup theorem.** For a James boundary `B` of a Banach space `Y` and a bounded
 sequence `u`, if some functional `φ` of norm at most `1` has `c < re (φ (u n))` for infinitely

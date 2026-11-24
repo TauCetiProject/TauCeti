@@ -27,6 +27,9 @@ the fundamental identity alone forces each summand `e * f` down to `1`.
   the count is maximal exactly when `e = f = 1` at every prime above `P`.
 * `Ideal.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank` —
   for `P` maximal, the same count makes the residue map `R ⧸ P → S ⧸ Q` bijective.
+* `Ideal.ncard_primesOver_eq_finrank_tower_bot` — in a tower `R → S → T`, a maximal count of
+  primes of `T` above `P` forces a maximal count of primes of `S` above `P`: complete splitting
+  descends to subextensions.
 
 ## Provenance
 
@@ -34,7 +37,10 @@ Built directly on Mathlib's fundamental identity for finite flat extensions of d
 (`Ideal.sum_ramification_inertia_eq_finrank`). The residue-field consequence additionally uses
 Mathlib's identification of the inertia degree with the rank of the residue extension
 (`Ideal.inertiaDeg_eq_of_isMaximal`) and its characterisation of rank-one algebras over a field
-(`Algebra.finrank_eq_one_iff_bijective_algebraMap`).
+(`Algebra.finrank_eq_one_iff_bijective_algebraMap`). The descent to subextensions uses the
+multiplicativity of ramification indices and inertia degrees in towers
+(`Ideal.ramificationIdx_tower`, `Ideal.inertiaDeg_tower`) and lying over
+(`Ideal.nonempty_primesOver`).
 -/
 
 public section
@@ -90,5 +96,26 @@ theorem bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank
   let := Ideal.Quotient.field P
   rw [← Algebra.finrank_eq_one_iff_bijective_algebraMap, ← inertiaDeg_eq_of_isMaximal P Q]
   exact (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank P Q hsplit).2
+
+/-- **Complete splitting descends to subextensions.** In a tower `R → S → T` of finite flat
+extensions, with `S → T` injective, if a prime `P` of `R` has as many primes above it in `T` as
+the rank of `T` allows, then it has as many primes above it in `S` as the rank of `S` allows.
+Every prime of `S` above `P` has a prime of `T` above it, and `e` and `f` are multiplicative in
+the tower. -/
+theorem ncard_primesOver_eq_finrank_tower_bot {R S T : Type*} [CommRing R] [IsDomain R]
+    [CommRing S] [CommRing T] [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
+    [Module.Finite R S] [Module.Flat R S] [Module.Finite R T] [Module.Flat R T] [Module.Flat S T]
+    [FaithfulSMul S T] (P : Ideal R) [P.IsPrime] (hsplit : (P.primesOver T).ncard = finrank R T) :
+    (P.primesOver S).ncard = finrank R S := by
+  have : Module.Finite S T := .of_restrictScalars_finite R S T
+  rw [ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one]
+  rintro q ⟨_, _⟩
+  obtain ⟨⟨Q, _, _⟩⟩ := q.nonempty_primesOver (S := T)
+  have : Q.LiesOver P := .trans Q q P
+  obtain ⟨he, hf⟩ := ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank
+    P Q hsplit
+  rw [ramificationIdx_tower (q := q)] at he
+  rw [inertiaDeg_tower (q := q)] at hf
+  exact ⟨Nat.eq_one_of_mul_eq_one_right he, Nat.eq_one_of_mul_eq_one_right hf⟩
 
 end Ideal

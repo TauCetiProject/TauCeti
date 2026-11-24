@@ -23,6 +23,9 @@ real-power moments, mean, variance, and exponential-integrability domain.
 
 * `TauCeti.Probability.logUniformMeasure` is the log-uniform law, totalized to zero unless
   `0 < a < b`;
+* `TauCeti.Probability.hasLaw_logUniformMeasure_of_hasLaw_uniformMeasure` and
+  `TauCeti.Probability.hasLaw_log_logUniformMeasure` give the exponential construction and its
+  logarithmic observable on random variables;
 * `TauCeti.Probability.logUniformMeasure_eq_withDensity` identifies its density and yields its
   topological support;
 * `TauCeti.Probability.cdf_logUniformMeasure_eq` and
@@ -61,6 +64,15 @@ theorem logUniformMeasure_of_pos (ha : 0 < a) (hab : a < b) :
     logUniformMeasure a b = (uniformMeasure (log a) (log b)).map exp := by
   rw [logUniformMeasure, ite_eq_left ⟨ha, hab⟩]
 
+/-- For `0 < a < b`, if `Y` is uniform on `(log a, log b]`, then `exp Y` is log-uniform on
+`(a, b]`. -/
+theorem hasLaw_logUniformMeasure_of_hasLaw_uniformMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {Y : Ω → ℝ} (ha : 0 < a) (hab : a < b)
+    (hY : HasLaw Y (uniformMeasure (log a) (log b)) P) :
+    HasLaw (fun ω ↦ exp (Y ω)) (logUniformMeasure a b) P := by
+  rw [logUniformMeasure_of_pos ha hab]
+  exact (hasLaw_map measurable_exp.aemeasurable).comp hY
+
 /-- Outside the valid parameter range the log-uniform law is zero. -/
 @[simp]
 theorem logUniformMeasure_of_not_pos (h : ¬ (0 < a ∧ a < b)) : logUniformMeasure a b = 0 := by
@@ -93,6 +105,15 @@ theorem map_log_logUniformMeasure (ha : 0 < a) (hab : a < b) :
   rw [logUniformMeasure_of_pos ha hab,
     Measure.map_map measurable_log measurable_exp]
   simp only [Function.comp_def, log_exp, Measure.map_id']
+
+/-- For `0 < a < b`, if `X` is log-uniform on `(a, b]`, then `log X` is uniform on
+`(log a, log b]`. -/
+theorem hasLaw_log_logUniformMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} (ha : 0 < a) (hab : a < b)
+    (hX : HasLaw X (logUniformMeasure a b) P) :
+    HasLaw (fun ω ↦ log (X ω)) (uniformMeasure (log a) (log b)) P := by
+  rw [← map_log_logUniformMeasure ha hab]
+  exact (hasLaw_map measurable_log.aemeasurable).comp hX
 
 /-! ### Density and topological support -/
 

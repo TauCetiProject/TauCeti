@@ -6,39 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.AtTopBot.Basic
+public import Mathlib.Order.Filter.Extr
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.SpecificLimits.HalfPowSucc
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
-# Simons's inequality
+# Simons' inequality
 
-Let `f n : X → ℝ` be a uniformly bounded sequence of real functions on a set `X`, and let
-`B ⊆ X`. Suppose that every countable convex combination `∑' n, w n * f n` attains its
-supremum over `X` at a point of `B`. **Simons's inequality** says that
+Let `x n : β → ℝ` be a sequence of real functions, uniformly bounded on a set `s : Set β`. A
+*σ-convex combination* of the sequence is a pointwise series `∑' n, w n * x n`, where the
+weights `w n` are nonnegative and sum to one. **Simons' inequality** says that if every
+σ-convex combination attains its supremum on `s`, then
+`inf_w sup_b ∑' n, w n * x n b ≤ sup_b limsup_n x n b`,
+the infimum being over all σ-convex combinations.
 
-`sup_{b ∈ B} limsup_n f n b ≥ inf_w sup_{x ∈ X} ∑' n, w n * f n x`,
+We state it in the form used for James's theorem: if every σ-convex combination attains its
+supremum on `s` and that supremum is at least `c`, then for every `ε > 0` there is a point
+`b ∈ s` with `c - ε < x n b` for infinitely many `n`
+(`TauCeti.exists_frequently_sub_lt_of_isMaxOn_tsum`).
 
-where the infimum is over the convex weights `w`. We state it without suprema and limits
-superior: if every convex combination takes a value at least `r` somewhere, then for each
-`r' < r` some `b ∈ B` has `r' < f n b` for infinitely many `n`
-(`TauCeti.exists_mem_frequently_lt_of_forall_exists_le`).
+## Proof
 
-This is the combinatorial core of the modern proofs of James's theorem: applied to a
-sequence in a Banach space, viewed as functions on a set of norming functionals, it gives
-the sup-limsup theorem and the Rainwater–Simons theorem on weak convergence.
-
-The proof chooses convex weights `w k`, supported on `[k, ∞)`, almost minimising the
-supremum of `∑_{j < k} 2^{-(j+1)} f_{w j} + 2^{-k} f_{w k}`, where `f_w = ∑' n, w n * f n`.
-A maximiser `b ∈ B` of `∑' j, 2^{-(j+1)} f_{w j}` then has tail averages
-`τ k = ∑' j, 2^{-(j+1)} f_{w (j + k)} b` that decrease by at most `ε 2^{-k}` at each step, so they
-stay above `r - 2ε`, which forces `f n b > r - 3ε` for infinitely many `n`.
+Write `λᵢ = 2⁻⁽ⁱ⁺¹⁾`, so that the weights `λₙ, λₙ₊₁, …` of the tail have total mass `μₙ = 2⁻ⁿ`.
+Recursively choose σ-convex weights `νₙ` supported on `[n, ∞)` such that, with
+`sₙ = ∑ i < n, λᵢ νᵢ`, the supremum of the combination `sₙ + μₙ νₙ` is within `δₙ` of its
+infimum over all such tail weights. Let `ζ = ∑ λᵢ νᵢ` and let `b` be a point where the combination
+`ζ` attains its supremum. Writing `yᵢ` for the value at `b` of the combination `νᵢ` and
+`Tₙ = ∑ i ≥ n, λᵢ yᵢ`, comparing `ζ` with the near-minimizing `sₙ + μₙ νₙ` gives
+`μₙ yₙ ≤ Tₙ + δₙ`. Since `Tₙ₊₁ = Tₙ - λₙ yₙ`, the normalized tails `Tₙ / μₙ` almost do not
+decrease, and the first one, the value of `ζ` at `b`, is at least `c`. A tail average of the
+values `x m b`, `m ≥ n`, close to `c` for every `n` forces `x m b` to be close to `c` for
+infinitely many `m`.
 
 ## References
 
 * S. Simons, *A convergence theorem with boundary*, Pacific J. Math. **40** (1972), 703–708.
-* M. Fabian, P. Habala, P. Hájek, V. Montesinos and V. Zizler, *Banach Space Theory*,
-  CMS Books in Mathematics, Springer (2011), Chapter 3.
 -/
 
 public section
@@ -47,259 +51,311 @@ open Filter Finset
 
 namespace TauCeti
 
-variable {X : Type*} {f : ℕ → X → ℝ} {M : ℝ}
+variable {β : Type*} {x : ℕ → β → ℝ} {M : ℝ}
 
-/-- A sequence of convex weights supported on `[k, ∞)`. -/
-private def IsTailWeight (k : ℕ) (w : ℕ → ℝ) : Prop :=
-  (∀ n, 0 ≤ w n) ∧ HasSum w 1 ∧ ∀ n < k, w n = 0
+/-- The σ-convex weights supported on `[n, ∞)`. -/
+private def tailWeights (n : ℕ) : Set (ℕ → ℝ) :=
+  {w | (∀ m, 0 ≤ w m) ∧ (∀ m < n, w m = 0) ∧ HasSum w 1}
 
-private theorem isTailWeight_indicator (k : ℕ) :
-    IsTailWeight k fun n ↦ if n = k then 1 else 0 :=
-  ⟨fun n ↦ by positivity, hasSum_ite_eq k 1, fun n hn ↦ by simp [hn.ne]⟩
+private lemma single_mem_tailWeights (n : ℕ) : Pi.single n 1 ∈ tailWeights n := by
+  refine ⟨fun m ↦ ?_, fun m hm ↦ ?_, hasSum_pi_single n 1⟩
+  · rw [Pi.single_apply]
+    split_ifs <;> norm_num
+  · simp [hm.ne]
 
-private theorem summable_mul_of_abs_le (hf : ∀ n x, |f n x| ≤ M) {w : ℕ → ℝ}
-    (hw0 : ∀ n, 0 ≤ w n) (hw : Summable w) (x : X) : Summable fun n ↦ w n * f n x :=
-  Summable.of_norm_bounded (hw.mul_right M) fun n ↦ by
-    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw0 n)]
-    exact mul_le_mul_of_nonneg_left (hf n x) (hw0 n)
+/-- The value at `b` of the combination with weights `w`. -/
+private noncomputable def comb (x : ℕ → β → ℝ) (w : ℕ → ℝ) (b : β) : ℝ :=
+  ∑' m, w m * x m b
 
-/-- A convex combination supported on `[k, ∞)` is at most any upper bound of its terms
-from `k` on. -/
-private theorem tsum_mul_le (hf : ∀ n x, |f n x| ≤ M) {k : ℕ} {w : ℕ → ℝ}
-    (hw : IsTailWeight k w) {x : X} {c : ℝ} (hc : ∀ n, k ≤ n → f n x ≤ c) :
-    ∑' n, w n * f n x ≤ c := by
-  have hle : ∀ n, w n * f n x ≤ w n * c := fun n ↦ by
-    rcases lt_or_ge n k with hn | hn
-    · simp [hw.2.2 n hn]
-    · exact mul_le_mul_of_nonneg_left (hc n hn) (hw.1 n)
-  calc ∑' n, w n * f n x ≤ ∑' n, w n * c :=
-        (summable_mul_of_abs_le hf hw.1 hw.2.1.summable x).tsum_le_tsum hle
-          (hw.2.1.summable.mul_right c)
-    _ = c := by rw [tsum_mul_right, hw.2.1.tsum_eq, one_mul]
+/-- The supremum over `β` of the combination with weights `w`. -/
+private noncomputable def supComb (x : ℕ → β → ℝ) (w : ℕ → ℝ) : ℝ :=
+  ⨆ b, comb x w b
 
-private theorem abs_tsum_mul_le (hf : ∀ n x, |f n x| ≤ M) {k : ℕ} {w : ℕ → ℝ}
-    (hw : IsTailWeight k w) (x : X) : |∑' n, w n * f n x| ≤ M := by
-  have hf' : ∀ n x, |(-f) n x| ≤ M := fun n x ↦ by simpa using hf n x
-  refine abs_le.2 ⟨?_, tsum_mul_le hf hw fun n _ ↦ (abs_le.1 (hf n x)).2⟩
-  have := tsum_mul_le hf' hw (x := x) (c := M) fun n _ ↦ by
-    simp only [Pi.neg_apply]; linarith [(abs_le.1 (hf n x)).1]
-  simp only [Pi.neg_apply, mul_neg, tsum_neg] at this
-  linarith
+/-- The partial mixture `∑ i < n, 2⁻⁽ⁱ⁺¹⁾ ν i` of a sequence of weights. -/
+private noncomputable def partialMix (ν : ℕ → ℕ → ℝ) (n : ℕ) : ℕ → ℝ :=
+  fun m ↦ ∑ i ∈ range n, (1 / 2) ^ (i + 1) * ν i m
 
-/-- A countable convex combination of convex weights is a convex weight. -/
-private theorem hasSum_tsum_mul {c : ℕ → ℝ} {s : ℝ} (hc0 : ∀ j, 0 ≤ c j) (hc : HasSum c s)
-    {w : ℕ → ℕ → ℝ} (hw0 : ∀ j n, 0 ≤ w j n) (hw : ∀ j, HasSum (w j) 1) :
-    HasSum (fun n ↦ ∑' j, c j * w j n) s := by
-  have hF : Summable (Function.uncurry fun j n ↦ c j * w j n) := by
-    refine (summable_prod_of_nonneg fun p ↦ mul_nonneg (hc0 p.1) (hw0 p.1 p.2)).2
-      ⟨fun j ↦ (hw j).summable.mul_left (c j), ?_⟩
-    simpa only [tsum_mul_left, (hw _).tsum_eq, mul_one] using hc.summable
-  have hsum : Summable fun n ↦ ∑' j, c j * w j n :=
-    (summable_prod_of_nonneg fun p ↦ mul_nonneg (hc0 p.2) (hw0 p.2 p.1)).1
-      ((Equiv.prodComm ℕ ℕ).summable_iff.2 hF) |>.2
-  convert hsum.hasSum using 1
-  rw [hF.tsum_comm]
-  simp only [tsum_mul_left, (hw _).tsum_eq, mul_one, hc.tsum_eq]
+/-- The mixture `∑ i, 2⁻⁽ⁱ⁺¹⁾ ν (i + n)` of the weights from index `n` on. -/
+private noncomputable def tailMix (ν : ℕ → ℕ → ℝ) (n : ℕ) : ℕ → ℝ :=
+  fun m ↦ ∑' i, (1 / 2) ^ (i + 1) * ν (i + n) m
 
-/-- Evaluation of a countable convex combination of convex combinations. -/
-private theorem tsum_tsum_mul_mul (hf : ∀ n x, |f n x| ≤ M) {c : ℕ → ℝ} (hc0 : ∀ j, 0 ≤ c j)
-    (hc : Summable c) {w : ℕ → ℕ → ℝ} (hw0 : ∀ j n, 0 ≤ w j n) (hw : ∀ j, HasSum (w j) 1)
-    (x : X) :
-    ∑' n, (∑' j, c j * w j n) * f n x = ∑' j, c j * ∑' n, w j n * f n x := by
-  have hF : Summable (Function.uncurry fun j n ↦ c j * w j n) := by
-    refine (summable_prod_of_nonneg fun p ↦ mul_nonneg (hc0 p.1) (hw0 p.1 p.2)).2
-      ⟨fun j ↦ (hw j).summable.mul_left (c j), ?_⟩
-    simpa only [tsum_mul_left, (hw _).tsum_eq, mul_one] using hc
-  have hG : Summable (Function.uncurry fun j n ↦ c j * w j n * f n x) := by
-    refine Summable.of_norm_bounded (hF.mul_right M) fun p ↦ ?_
-    simp only [Function.uncurry, Real.norm_eq_abs, abs_mul, abs_of_nonneg (hc0 p.1),
-      abs_of_nonneg (hw0 p.1 p.2)]
-    exact mul_le_mul_of_nonneg_left (hf p.2 x) (mul_nonneg (hc0 p.1) (hw0 p.1 p.2))
-  simp_rw [← tsum_mul_right, hG.tsum_comm, ← tsum_mul_left, mul_assoc]
+private lemma partialMix_nonneg {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    (n m : ℕ) : 0 ≤ partialMix ν n m :=
+  sum_nonneg fun i _ ↦ mul_nonneg (by positivity) ((hν i).1 m)
 
-/-- From the tail averages to frequent largeness: the real-number part of Simons's argument.
+private lemma summable_partialMix {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    (n : ℕ) : Summable (partialMix ν n) :=
+  summable_sum fun i _ ↦ (hν i).2.2.summable.mul_left _
 
-If `A = ∑_{j < k} 2^{-(j+1)} a j + 2^{-k} τ k` for all `k`, the near-optimality bound
-`∑_{j < k} 2^{-(j+1)} a j + 2^{-k} a k ≤ A + ε 4^{-k}` holds, and `r ≤ A`, then every
-`τ k` is at least `r - 2ε`. -/
-private theorem le_of_sum_add_le {a τ : ℕ → ℝ} {A r ε : ℝ}
-    (hA : ∀ k, A = ∑ j ∈ range k, (1 / 2) ^ (j + 1) * a j + (1 / 2) ^ k * τ k)
-    (hopt : ∀ k, ∑ j ∈ range k, (1 / 2) ^ (j + 1) * a j + (1 / 2) ^ k * a k ≤
-      A + ε * (1 / 4) ^ k)
-    (hr : r ≤ A) (k : ℕ) : r - 2 * ε * (1 - (1 / 2) ^ k) ≤ τ k := by
-  -- `a k ≤ τ k + ε 2^{-k}` and `τ (k + 1) = 2 τ k - a k`.
-  have hak (k : ℕ) : a k ≤ τ k + ε * (1 / 2) ^ k := by
-    have h := hopt k
-    rw [hA k] at h
-    have hpos : (0 : ℝ) < (1 / 2) ^ k := by positivity
-    have h4 : ε * (1 / 4 : ℝ) ^ k = (1 / 2) ^ k * (ε * (1 / 2) ^ k) := by
-      rw [show (1 / 4 : ℝ) = 1 / 2 * (1 / 2) by norm_num, mul_pow]; ring
-    rw [h4] at h
-    nlinarith
-  have hτ (k : ℕ) : τ (k + 1) = 2 * τ k - a k := by
-    have h := (hA k).symm.trans (hA (k + 1))
-    rw [sum_range_succ, pow_succ] at h
-    have hpos : (0 : ℝ) < (1 / 2) ^ k := by positivity
-    have h' : (1 / 2) ^ k * (2 * τ k - a k - τ (k + 1)) = 0 := by linarith
-    linarith [(mul_eq_zero.1 h').resolve_left hpos.ne']
-  induction k with
-  | zero =>
-    have h0 := hA 0
-    simp only [range_zero, sum_empty, pow_zero, one_mul, zero_add] at h0
-    simp only [pow_zero, sub_self, mul_zero, sub_zero]
-    linarith
-  | succ k ih =>
-    rw [hτ k, pow_succ]
-    nlinarith [hak k]
+private lemma tailMix_mem_tailWeights {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    (n : ℕ) : tailMix ν n ∈ tailWeights n := by
+  refine ⟨fun m ↦ tsum_nonneg fun i ↦ mul_nonneg (by positivity) ((hν _).1 m), fun m hm ↦ ?_,
+    hasSum_half_pow_succ.tsum_mul_of_hasSum_one (fun _ ↦ by positivity)
+      (fun i ↦ (hν (i + n)).1) fun i ↦ (hν (i + n)).2.2⟩
+  refine (tsum_congr fun i ↦ ?_).trans tsum_zero
+  rw [(hν (i + n)).2.1 m (by omega), mul_zero]
 
-/-- Near-optimal tail weights for a bounded leading part `H`: some `w` supported on `[k, ∞)`
-almost minimises the supremum of `H + 2^{-k} ∑' n, w n * f n` among such weights. -/
-private theorem exists_isTailWeight_forall_le_iSup (hf : ∀ n x, |f n x| ≤ M) [Nonempty X]
-    {δ : ℝ} (hδ : 0 < δ) (k : ℕ) (H : X → ℝ) (hH : ∀ x, |H x| ≤ M) :
-    ∃ w, IsTailWeight k w ∧ ∀ v, IsTailWeight k v → ∀ x,
-      H x + (1 / 2) ^ k * ∑' n, w n * f n x ≤
-        (⨆ y, H y + (1 / 2) ^ k * ∑' n, v n * f n y) + δ := by
-  have hpos : (0 : ℝ) < (1 / 2) ^ k := by positivity
-  have hbound (v : ℕ → ℝ) (hv : IsTailWeight k v) (y : X) :
-      |H y + (1 / 2) ^ k * ∑' n, v n * f n y| ≤ M + (1 / 2) ^ k * M := by
-    refine (abs_add_le _ _).trans (add_le_add (hH y) ?_)
-    rw [abs_mul, abs_of_pos hpos]
-    exact mul_le_mul_of_nonneg_left (abs_tsum_mul_le hf hv y) hpos.le
-  have hbdd (v : ℕ → ℝ) (hv : IsTailWeight k v) :
-      BddAbove (Set.range fun y ↦ H y + (1 / 2) ^ k * ∑' n, v n * f n y) :=
-    ⟨_, by rintro _ ⟨y, rfl⟩; exact (abs_le.1 (hbound v hv y)).2⟩
-  set val : (ℕ → ℝ) → ℝ := fun v ↦ ⨆ y, H y + (1 / 2) ^ k * ∑' n, v n * f n y
-  set S := val '' {v | IsTailWeight k v}
-  have hSne : S.Nonempty := ⟨_, Set.mem_image_of_mem _ (isTailWeight_indicator k)⟩
-  have hSbdd : BddBelow S := ⟨-(M + (1 / 2) ^ k * M), by
-    rintro _ ⟨v, hv, rfl⟩
-    obtain ⟨y⟩ := ‹Nonempty X›
-    exact (abs_le.1 (hbound v hv y)).1.trans (le_ciSup (hbdd v hv) y)⟩
-  obtain ⟨_, ⟨w, hw, rfl⟩, hlt⟩ := exists_lt_of_csInf_lt hSne (lt_add_of_pos_right (sInf S) hδ)
-  refine ⟨w, hw, fun v hv x ↦ ?_⟩
-  have h1 : H x + (1 / 2) ^ k * ∑' n, w n * f n x ≤ val w := le_ciSup (hbdd w hw) x
-  have h2 : sInf S ≤ val v := csInf_le hSbdd (Set.mem_image_of_mem _ hv)
-  linarith
-
-/-- The recursive step of Simons's argument: a sequence of tail weights `w k`, each almost
-minimising the supremum of `∑_{j < k} 2^{-(j+1)} f_{w j} + 2^{-k} f_{w k}` given its
-predecessors, where `f_w = ∑' n, w n * f n`. -/
-private theorem exists_seq_isTailWeight_forall_le_iSup (hf : ∀ n x, |f n x| ≤ M) [Nonempty X]
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ w : ℕ → ℕ → ℝ, (∀ k, IsTailWeight k (w k)) ∧ ∀ k v, IsTailWeight k v → ∀ x,
-      ∑ j ∈ range k, (1 / 2) ^ (j + 1) * ∑' n, w j n * f n x + (1 / 2) ^ k * ∑' n, w k n * f n x ≤
-        (⨆ y, ∑ j ∈ range k, (1 / 2) ^ (j + 1) * ∑' n, w j n * f n y +
-          (1 / 2) ^ k * ∑' n, v n * f n y) + ε * (1 / 4) ^ k := by
-  classical
-  obtain ⟨x₀⟩ := ‹Nonempty X›
-  have hM : 0 ≤ M := (abs_nonneg _).trans (hf 0 x₀)
-  choose! pick hpickW hpick using fun k ↦
-    exists_isTailWeight_forall_le_iSup hf (by positivity : 0 < ε * (1 / 4) ^ k) k
-  -- The leading parts, defined by recursion together with the chosen weights.
-  let Hs : ℕ → X → ℝ := fun k ↦
-    Nat.rec (fun _ ↦ 0) (fun k H x ↦ H x + (1 / 2) ^ (k + 1) * ∑' n, pick k H n * f n x) k
-  have hHs_succ (k : ℕ) (x : X) :
-      Hs (k + 1) x = Hs k x + (1 / 2) ^ (k + 1) * ∑' n, pick k (Hs k) n * f n x := rfl
-  have hle_one (k : ℕ) : (1 - (1 / 2 : ℝ) ^ k) * M ≤ M :=
-    mul_le_of_le_one_left hM (sub_le_self _ (by positivity))
-  have hHs_abs (k : ℕ) (x : X) : |Hs k x| ≤ (1 - (1 / 2) ^ k) * M := by
-    induction k generalizing x with
-    | zero => simp [Hs]
-    | succ k ih =>
-      have h2 := abs_tsum_mul_le hf (hpickW k (Hs k) fun x ↦ (ih x).trans (hle_one k)) x
-      rw [hHs_succ]
-      refine (abs_add_le _ _).trans ?_
-      rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < (1 / 2) ^ (k + 1))]
-      calc |Hs k x| + (1 / 2) ^ (k + 1) * |∑' n, pick k (Hs k) n * f n x|
-          ≤ (1 - (1 / 2) ^ k) * M + (1 / 2) ^ (k + 1) * M := by gcongr; exact ih x
-        _ = (1 - (1 / 2) ^ (k + 1)) * M := by ring
-  have hHs_le (k : ℕ) (x : X) : |Hs k x| ≤ M := (hHs_abs k x).trans (hle_one k)
-  have hHs_eq (k : ℕ) (x : X) :
-      Hs k x = ∑ j ∈ range k, (1 / 2) ^ (j + 1) * ∑' n, pick j (Hs j) n * f n x := by
-    induction k with
-    | zero => simp [Hs]
-    | succ k ih => rw [hHs_succ, ih, sum_range_succ]
-  refine ⟨fun k ↦ pick k (Hs k), fun k ↦ hpickW k (Hs k) (hHs_le k), fun k v hv x ↦ ?_⟩
-  simp_rw [← hHs_eq]
-  exact hpick k (Hs k) (hHs_le k) v hv x
-
-/-- The `k`-th tail `∑' j, 2^{-(j+1)} w (j + k)` of a sequence of tail weights is a tail weight
-supported on `[k, ∞)`. -/
-private theorem isTailWeight_tsum_half {w : ℕ → ℕ → ℝ} (hw : ∀ k, IsTailWeight k (w k))
-    (k : ℕ) : IsTailWeight k fun n ↦ ∑' j, (1 / 2 : ℝ) ^ (j + 1) * w (j + k) n := by
-  have hhalf : HasSum (fun j : ℕ ↦ (1 / 2 : ℝ) ^ (j + 1)) 1 := by
-    convert (hasSum_geometric_of_lt_one (r := (1 / 2 : ℝ)) (by norm_num) (by norm_num)).mul_left
-      (1 / 2) using 1
-    · ext j; ring
-    · norm_num
-  refine ⟨fun n ↦ tsum_nonneg fun j ↦ mul_nonneg (by positivity) ((hw (j + k)).1 n),
-    hasSum_tsum_mul (fun j ↦ by positivity) hhalf (fun j n ↦ (hw (j + k)).1 n)
-      fun j ↦ (hw (j + k)).2.1, fun n hn ↦ ?_⟩
-  dsimp only
-  rw [tsum_congr fun j ↦ by rw [(hw (j + k)).2.2 n (by omega), mul_zero], tsum_zero]
-
-/-- Splitting the combined weight `∑' j, 2^{-(j+1)} w j` into its first `k` terms and its
-`k`-th tail. -/
-private theorem tsum_tsum_half_mul_eq (hf : ∀ n x, |f n x| ≤ M) {w : ℕ → ℕ → ℝ}
-    (hw : ∀ k, IsTailWeight k (w k)) (k : ℕ) (x : X) :
-    ∑' n, (∑' j, (1 / 2) ^ (j + 1) * w (j + 0) n) * f n x =
-      ∑ j ∈ range k, (1 / 2) ^ (j + 1) * ∑' n, w j n * f n x +
-        (1 / 2) ^ k * ∑' n, (∑' j, (1 / 2) ^ (j + 1) * w (j + k) n) * f n x := by
-  have hhalf : Summable fun j : ℕ ↦ (1 / 2 : ℝ) ^ (j + 1) := by
-    simpa only [pow_succ] using (summable_geometric_two).mul_right (1 / 2)
-  have hhalf0 (j : ℕ) : (0 : ℝ) ≤ (1 / 2) ^ (j + 1) := by positivity
-  have heval (m : ℕ) := tsum_tsum_mul_mul hf hhalf0 hhalf (w := fun j ↦ w (j + m))
-    (fun j n ↦ (hw (j + m)).1 n) (fun j ↦ (hw (j + m)).2.1) x
-  have hs : Summable fun j ↦ (1 / 2 : ℝ) ^ (j + 1) * ∑' n, w j n * f n x :=
-    Summable.of_norm_bounded (hhalf.mul_right M) fun j ↦ by
-      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hhalf0 j)]
-      exact mul_le_mul_of_nonneg_left (abs_tsum_mul_le hf (hw j) x) (hhalf0 j)
-  have h0 := heval 0
-  simp only [add_zero] at h0 ⊢
-  rw [h0, heval k, ← hs.sum_add_tsum_nat_add k, ← tsum_mul_left]
-  congr 1
-  refine tsum_congr fun j ↦ ?_
-  rw [pow_add, pow_add, pow_add]
+private lemma half_pow_add_succ (i n : ℕ) :
+    (1 / 2 : ℝ) ^ (i + n + 1) = (1 / 2) ^ n * (1 / 2) ^ (i + 1) := by
   ring
 
-/-- **Simons's inequality.** Let `f n : X → ℝ` be uniformly bounded and `B ⊆ X`. Suppose every
-countable convex combination `∑' n, w n * f n` attains its supremum over `X` at a point of `B`,
-and takes a value at least `r` somewhere. Then for every `r' < r` there is `b ∈ B` with
-`r' < f n b` for infinitely many `n`.
+/-- The full mixture `tailMix ν 0` splits into the partial mixture and the scaled tail mixture. -/
+private lemma partialMix_add_smul_tailMix {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    (n : ℕ) :
+    partialMix ν n + (1 / 2 : ℝ) ^ n • tailMix ν n = tailMix ν 0 := by
+  -- The columns of the mixture of the weights from index `n` on are summable.
+  have hcol (n m : ℕ) : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * ν (i + n) m :=
+    (hasSum_half_pow_succ.summable.prod_mul_of_hasSum_one (fun _ ↦ by positivity)
+      (fun i ↦ (hν (i + n)).1) fun i ↦ (hν (i + n)).2.2).prod_symm.prod_factor m
+  funext m
+  have hcol₀ : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * ν i m := by simpa using hcol 0 m
+  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, partialMix, tailMix, add_zero]
+  rw [← hcol₀.sum_add_tsum_nat_add n, ← (hcol n m).tsum_mul_left]
+  simp only [half_pow_add_succ, mul_assoc]
 
-In terms of suprema: `sup_{b ∈ B} limsup_n f n b ≥ inf_w sup_X ∑' n, w n * f n`. -/
-theorem exists_mem_frequently_lt_of_forall_exists_le {B : Set X} {r r' : ℝ}
-    (hf : ∀ n x, |f n x| ≤ M)
-    (hB : ∀ w : ℕ → ℝ, (∀ n, 0 ≤ w n) → HasSum w 1 →
-      ∃ b ∈ B, ∀ x, ∑' n, w n * f n x ≤ ∑' n, w n * f n b)
-    (hr : ∀ w : ℕ → ℝ, (∀ n, 0 ≤ w n) → HasSum w 1 → ∃ x, r ≤ ∑' n, w n * f n x)
-    (hr' : r' < r) :
-    ∃ b ∈ B, ∃ᶠ n in atTop, r' < f n b := by
-  obtain ⟨x₀, -⟩ := hr _ (isTailWeight_indicator 0).1 (isTailWeight_indicator 0).2.1
-  have : Nonempty X := ⟨x₀⟩
-  have hε : 0 < (r - r') / 3 := by linarith
-  obtain ⟨w, hw, hopt⟩ := exists_seq_isTailWeight_forall_le_iSup hf hε
-  -- The tails `t k` of the combined weight `t 0`, and a maximiser `b ∈ B` of `f_{t 0}`.
-  set t : ℕ → ℕ → ℝ := fun k n ↦ ∑' j, (1 / 2) ^ (j + 1) * w (j + k) n
-  have ht := isTailWeight_tsum_half hw
-  have hsplit (k : ℕ) (y : X) : ∑ j ∈ range k, (1 / 2) ^ (j + 1) * ∑' n, w j n * f n y +
-      (1 / 2) ^ k * ∑' n, t k n * f n y = ∑' n, t 0 n * f n y :=
-    (tsum_tsum_half_mul_eq hf hw k y).symm
-  obtain ⟨b, hbB, hb⟩ := hB (t 0) (ht 0).1 (ht 0).2.1
-  refine ⟨b, hbB, frequently_atTop.2 fun K ↦ ?_⟩
-  have hsup (k : ℕ) : (⨆ y, ∑ j ∈ range k, (1 / 2) ^ (j + 1) * ∑' n, w j n * f n y +
-      (1 / 2) ^ k * ∑' n, t k n * f n y) = ∑' n, t 0 n * f n b := by
-    simp_rw [hsplit k]
-    exact le_antisymm (ciSup_le hb) (le_ciSup ⟨_, by rintro _ ⟨y, rfl⟩; exact hb y⟩ b)
-  -- The tail averages `∑' n, t k n * f n b` stay above `r - 2ε`.
-  obtain ⟨x₁, hx₁⟩ := hr (t 0) (ht 0).1 (ht 0).2.1
-  have hτ := le_of_sum_add_le (a := fun j ↦ ∑' n, w j n * f n b)
-    (τ := fun k ↦ ∑' n, t k n * f n b) (fun k ↦ (hsplit k b).symm)
-    (fun k ↦ hsup k ▸ hopt k (t k) (ht k) b) (hx₁.trans (hb x₁)) K
-  -- If `f n b ≤ r'` from `K` on, the tail average at `K` is at most `r'`.
-  by_contra! hK
-  have hle := tsum_mul_le hf (ht K) (x := b) (c := r') fun n hn ↦ hK n hn
-  have hpow : (0 : ℝ) ≤ (1 / 2) ^ K := by positivity
+section Bounded
+
+variable (hM : ∀ n b, |x n b| ≤ M)
+include hM
+
+private lemma abs_comb_le {w : ℕ → ℝ} (hw0 : ∀ m, 0 ≤ w m) (hw : Summable w) (b : β) :
+    |comb x w b| ≤ (∑' m, w m) * M := by
+  rw [comb, ← Real.norm_eq_abs]
+  refine tsum_of_norm_bounded (hw.hasSum.mul_right M) fun m ↦ ?_
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw0 m)]
+  exact mul_le_mul_of_nonneg_left (hM m b) (hw0 m)
+
+private lemma bddAbove_range_comb {w : ℕ → ℝ} (hw0 : ∀ m, 0 ≤ w m) (hw : Summable w) :
+    BddAbove (Set.range (comb x w)) :=
+  ⟨(∑' m, w m) * M, by
+    rintro _ ⟨b, rfl⟩
+    exact (le_abs_self _).trans (abs_comb_le hM hw0 hw b)⟩
+
+private lemma comb_le_supComb {w : ℕ → ℝ} (hw0 : ∀ m, 0 ≤ w m) (hw : Summable w) (b : β) :
+    comb x w b ≤ supComb x w :=
+  le_ciSup (bddAbove_range_comb hM hw0 hw) b
+
+private lemma comb_add_smul {s ν : ℕ → ℝ} (hs : Summable s) (hν : Summable ν) (μ : ℝ) (b : β) :
+    comb x (s + μ • ν) b = comb x s b + μ * comb x ν b := by
+  simp only [comb, Pi.add_apply, Pi.smul_apply, smul_eq_mul, add_mul, mul_assoc]
+  rw [(hs.mul_of_abs_le (hM · b)).tsum_add ((hν.mul_of_abs_le (hM · b)).mul_left μ),
+    (hν.mul_of_abs_le (hM · b)).tsum_mul_left]
+
+/-- The combination of a mixture of σ-convex weights is the mixture of the combinations. -/
+private lemma comb_mix {a : ℕ → ℝ} {A : ℝ} (ha0 : ∀ i, 0 ≤ a i) (ha : HasSum a A)
+    {ν : ℕ → ℕ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m) (hν : ∀ i, HasSum (ν i) 1) (b : β) :
+    comb x (fun m ↦ ∑' i, a i * ν i m) b = ∑' i, a i * comb x (ν i) b := by
+  have hh := ha.summable.prod_mul_of_hasSum_one ha0 hν0 hν
+  have hcol (m : ℕ) : Summable fun i ↦ a i * ν i m := hh.prod_symm.prod_factor m
+  set f : ℕ → ℕ → ℝ := fun i m ↦ a i * ν i m * x m b
+  have hf : Summable (Function.uncurry f) := hh.mul_of_abs_le fun p ↦ hM p.2 b
+  have hfswap : Summable fun p : ℕ × ℕ ↦ Function.uncurry f p.swap := hf.prod_symm
+  calc comb x (fun m ↦ ∑' i, a i * ν i m) b = ∑' m, ∑' i, f i m := by
+        refine tsum_congr fun m ↦ ?_
+        rw [(hcol m).tsum_mul_right]
+    _ = ∑' i, ∑' m, f i m :=
+        Summable.tsum_comm' hf (fun i ↦ hf.prod_factor i) fun m ↦ hfswap.prod_factor m
+    _ = ∑' i, a i * comb x (ν i) b := by
+        refine tsum_congr fun i ↦ ?_
+        simp only [f, comb, mul_assoc]
+        exact ((hν i).summable.mul_of_abs_le (hM · b)).tsum_mul_left (a i)
+
+/-- For nonnegative summable weights `s`, some tail weights `ν` make the supremum of `s + μ • ν`
+minimal up to `δ`. -/
+private lemma exists_supComb_le_add [Nonempty β] (n : ℕ) {μ δ : ℝ} (hμ : 0 ≤ μ) (hδ : 0 < δ)
+    (s : ℕ → ℝ) : ∃ ν ∈ tailWeights n, (∀ m, 0 ≤ s m) → Summable s →
+      ∀ ν' ∈ tailWeights n, supComb x (s + μ • ν) ≤ supComb x (s + μ • ν') + δ := by
+  by_cases hs : (∀ m, 0 ≤ s m) ∧ Summable s
+  swap
+  · exact ⟨_, single_mem_tailWeights n, fun h0 h ↦ absurd ⟨h0, h⟩ hs⟩
+  obtain ⟨hs0, hs⟩ := hs
+  let f : tailWeights n → ℝ := fun ν ↦ supComb x (s + μ • (ν : ℕ → ℝ))
+  obtain ⟨b₀⟩ := ‹Nonempty β›
+  have hbdd : BddBelow (Set.range f) := by
+    refine ⟨comb x s b₀ - μ * M, ?_⟩
+    rintro _ ⟨⟨ν, hν0, -, hν⟩, rfl⟩
+    -- The combination of `ν` at `b₀` is at least `-M`, as `ν` is a probability weight.
+    have hνb := abs_comb_le hM hν0 hν.summable b₀
+    rw [hν.tsum_eq, one_mul] at hνb
+    have hle := comb_le_supComb (w := s + μ • ν) hM
+      (fun m ↦ add_nonneg (hs0 m) (mul_nonneg hμ (hν0 m)))
+      (hs.add (hν.summable.mul_left μ)) b₀
+    rw [comb_add_smul hM hs hν.summable] at hle
+    have := mul_le_mul_of_nonneg_left (neg_le_of_abs_le hνb) hμ
+    simp only [f]
+    linarith
+  have : Nonempty (tailWeights n) := ⟨⟨_, single_mem_tailWeights n⟩⟩
+  obtain ⟨ν, hν⟩ := exists_lt_of_ciInf_lt (lt_add_of_pos_right (⨅ ν, f ν) hδ)
+  refine ⟨ν, ν.property, fun _ _ ν' hν' ↦ ?_⟩
+  have := ciInf_le hbdd ⟨ν', hν'⟩
+  simp only [f] at hν this
+  linarith
+
+/-- A sequence of tail weights `ν n`, each nearly minimizing, up to `δ n`, the supremum of the
+combination `partialMix ν n + 2⁻ⁿ • ν n`. -/
+private lemma exists_seq_tailWeights [Nonempty β] {δ : ℕ → ℝ} (hδ : ∀ n, 0 < δ n) :
+    ∃ ν : ℕ → ℕ → ℝ, (∀ n, ν n ∈ tailWeights n) ∧ ∀ n, ∀ ν' ∈ tailWeights n,
+      supComb x (partialMix ν n + (1 / 2 : ℝ) ^ n • ν n) ≤
+        supComb x (partialMix ν n + (1 / 2 : ℝ) ^ n • ν') + δ n := by
+  choose ν hνw hνmin using fun n s ↦
+    exists_supComb_le_add (x := x) hM n (μ := (1 / 2 : ℝ) ^ n) (by positivity) (hδ n) s
+  -- Choose `ν n` from the partial mixture `s n` of the earlier choices.
+  let s : ℕ → ℕ → ℝ := fun n ↦ Nat.rec 0 (fun k t ↦ t + (1 / 2 : ℝ) ^ (k + 1) • ν k t) n
+  set ν' : ℕ → ℕ → ℝ := fun n ↦ ν n (s n)
+  have hs_succ (n : ℕ) : s (n + 1) = s n + (1 / 2 : ℝ) ^ (n + 1) • ν' n := rfl
+  have hs : ∀ n, s n = partialMix ν' n := by
+    intro n
+    induction n with
+    | zero => funext m; simp [s, partialMix]
+    | succ n ih => funext m; simp [hs_succ, ih, partialMix, sum_range_succ]
+  have hν'w : ∀ n, ν' n ∈ tailWeights n := fun n ↦ hνw n (s n)
+  refine ⟨ν', hν'w, fun n ν'' hν'' ↦ ?_⟩
+  rw [← hs]
+  exact hνmin n (s n) (hs n ▸ partialMix_nonneg hν'w n) (hs n ▸ summable_partialMix hν'w n)
+    ν'' hν''
+
+private lemma comb_tailMix_zero {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    (b : β) :
+    comb x (tailMix ν 0) b = ∑' i, (1 / 2) ^ (i + 1) * comb x (ν i) b := by
+  have h : tailMix ν 0 = fun m ↦ ∑' i, (1 / 2 : ℝ) ^ (i + 1) * ν i m := by
+    funext m
+    simp only [tailMix, add_zero]
+  rw [h]
+  exact comb_mix hM (fun _ ↦ by positivity) hasSum_half_pow_succ (fun i ↦ (hν i).1)
+    (fun i ↦ (hν i).2.2) b
+
+private lemma comb_partialMix {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    (n : ℕ) (b : β) :
+    comb x (partialMix ν n) b = ∑ i ∈ range n, (1 / 2) ^ (i + 1) * comb x (ν i) b := by
+  simp only [comb, partialMix, sum_mul, mul_assoc]
+  rw [Summable.tsum_finsetSum fun i _ ↦
+    ((hν i).2.2.summable.mul_of_abs_le (hM · b)).mul_left _]
+  exact sum_congr rfl fun i _ ↦ ((hν i).2.2.summable.mul_of_abs_le (hM · b)).tsum_mul_left _
+
+/-- A value of a combination with tail weights from `i` on exceeding `a` forces a value
+`x m b`, `m ≥ i`, exceeding `a`. -/
+private lemma exists_le_lt_of_lt_comb {ν : ℕ → ℕ → ℝ} (hν : ∀ n, ν n ∈ tailWeights n)
+    {i : ℕ} {a : ℝ} {b : β} (h : a < comb x (ν i) b) :
+    ∃ m ≥ i, a < x m b := by
+  by_contra! hle
+  have hν1 := (hν i).2.2
+  refine h.not_ge ?_
+  calc comb x (ν i) b ≤ ∑' m, ν i m * a :=
+        (hν1.summable.mul_of_abs_le (hM · b)).tsum_le_tsum (fun m ↦ ?_)
+          (hν1.summable.mul_right _)
+    _ = a := by rw [hν1.summable.tsum_mul_right, hν1.tsum_eq, one_mul]
+  by_cases hm : m < i
+  · simp [(hν i).2.1 m hm]
+  · exact mul_le_mul_of_nonneg_left (hle m (not_lt.1 hm)) ((hν i).1 m)
+
+end Bounded
+
+/-- The real-sequence core of Simons' inequality. Let `Tₙ = ∑ i ≥ n, 2⁻⁽ⁱ⁺¹⁾ yᵢ`. If `c ≤ T₀`
+and `2⁻ⁿ yₙ ≤ Tₙ + ε 4⁻ⁿ / 4` for all `n`, then `c - ε < yᵢ` for infinitely many `i`. -/
+private lemma frequently_sub_lt_of_le_tsum {y : ℕ → ℝ} {c ε : ℝ} (hε : 0 < ε)
+    (hy : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * y i)
+    (h₀ : c ≤ ∑' i, (1 / 2 : ℝ) ^ (i + 1) * y i)
+    (hkey : ∀ n, (1 / 2 : ℝ) ^ n * y n ≤
+      ∑' i, (1 / 2 : ℝ) ^ (i + n + 1) * y (i + n) + ε / 4 * ((1 / 2) ^ n) ^ 2) :
+    ∃ᶠ i in atTop, c - ε < y i := by
+  set T : ℕ → ℝ := fun n ↦ ∑' i, (1 / 2 : ℝ) ^ (i + n + 1) * y (i + n) with hT
+  have hT_succ : ∀ n, T n = (1 / 2) ^ (n + 1) * y n + T (n + 1) := fun n ↦ by
+    have hsh : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + n + 1) * y (i + n) :=
+      (summable_nat_add_iff n).2 hy
+    simp only [hT]
+    rw [hsh.tsum_eq_zero_add, zero_add]
+    congr 1
+    refine tsum_congr fun i ↦ ?_
+    rw [show i + 1 + n = i + (n + 1) by omega]
+  -- The normalized tails `2ⁿ Tₙ` stay above `c - ε / 2`.
+  have hT_lower : ∀ n, (1 / 2) ^ n * (c - ε / 2 + ε / 2 * (1 / 2) ^ n) ≤ T n := by
+    intro n
+    induction n with
+    | zero => simpa [hT] using h₀
+    | succ n ih =>
+      have h₁ := hkey n
+      have h₂ := hT_succ n
+      rw [pow_succ] at h₂ ⊢
+      nlinarith
+  -- If `y i ≤ c - ε` for all `i ≥ N`, then `T N ≤ 2⁻ᴺ (c - ε)`.
+  by_contra hfreq
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (not_frequently.1 hfreq)
+  have hlN : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + N + 1) :=
+    (summable_nat_add_iff N).2 hasSum_half_pow_succ.summable
+  have hTle : T N ≤ (1 / 2) ^ N * (c - ε) :=
+    calc T N ≤ ∑' i, (1 / 2 : ℝ) ^ (i + N + 1) * (c - ε) :=
+          Summable.tsum_le_tsum
+            (fun i ↦ mul_le_mul_of_nonneg_left (not_lt.1 (hN _ (by omega))) (by positivity))
+            ((summable_nat_add_iff N).2 hy) (hlN.mul_right _)
+      _ = (1 / 2) ^ N * (c - ε) := by rw [hlN.tsum_mul_right, tsum_half_pow_add_succ]
+  have h₁ := hT_lower N
+  have h₂ : 0 < (1 / 2 : ℝ) ^ N * ε := by positivity
+  have h₃ : 0 < ((1 / 2 : ℝ) ^ N) ^ 2 * ε := by positivity
   nlinarith
+
+/-- Simons' inequality on the whole of `β`. -/
+private lemma exists_frequently_sub_lt_of_isMaxOn_univ_tsum {x : ℕ → β → ℝ} {M c ε : ℝ}
+    (hM : ∀ n b, |x n b| ≤ M)
+    (hmax : ∀ w : ℕ → ℝ, (∀ n, 0 ≤ w n) → HasSum w 1 →
+      ∃ b, IsMaxOn (fun b ↦ ∑' n, w n * x n b) Set.univ b)
+    (hc : ∀ w : ℕ → ℝ, (∀ n, 0 ≤ w n) → HasSum w 1 → ∃ b, c ≤ ∑' n, w n * x n b)
+    (hε : 0 < ε) : ∃ b, ∃ᶠ n in atTop, c - ε < x n b := by
+  obtain ⟨b₀, -⟩ := hc _ (single_mem_tailWeights 0).1 (single_mem_tailWeights 0).2.2
+  have : Nonempty β := ⟨b₀⟩
+  -- Near-minimizing tail weights `ν n`, their mixture `ζ`, and a point `b` where the
+  -- combination `ζ` attains its supremum.
+  obtain ⟨ν, hν, hνmin⟩ := exists_seq_tailWeights (x := x) hM
+    (δ := fun n ↦ ε / 4 * ((1 / 2) ^ n) ^ 2) fun n ↦ by positivity
+  obtain ⟨hζ0, -, hζ1⟩ := tailMix_mem_tailWeights hν 0
+  obtain ⟨b, hb⟩ := hmax _ hζ0 hζ1
+  have hbmax : ∀ b', comb x (tailMix ν 0) b' ≤ comb x (tailMix ν 0) b :=
+    fun b' ↦ hb (Set.mem_univ b')
+  have hsup : supComb x (tailMix ν 0) = comb x (tailMix ν 0) b :=
+    le_antisymm (ciSup_le hbmax) (comb_le_supComb hM hζ0 hζ1.summable b)
+  -- The values `y i` at `b` of the combinations `ν i`.
+  set y : ℕ → ℝ := fun i ↦ comb x (ν i) b
+  have hy : Summable fun i ↦ (1 / 2 : ℝ) ^ (i + 1) * y i :=
+    hasSum_half_pow_succ.summable.mul_of_abs_le fun i ↦ by
+      simpa [(hν i).2.2.tsum_eq] using abs_comb_le hM (hν i).1 (hν i).2.2.summable b
+  have hcomb : ∀ n, comb x (tailMix ν 0) b = ∑ i ∈ range n, (1 / 2) ^ (i + 1) * y i +
+      ∑' i, (1 / 2 : ℝ) ^ (i + n + 1) * y (i + n) := fun n ↦ by
+    rw [comb_tailMix_zero hM hν, ← hy.sum_add_tsum_nat_add n]
+  -- Comparing the mixture with the near-minimizing combination `partialMix ν n + 2⁻ⁿ • ν n`.
+  have hkey : ∀ n, (1 / 2 : ℝ) ^ n * y n ≤
+      ∑' i, (1 / 2 : ℝ) ^ (i + n + 1) * y (i + n) + ε / 4 * ((1 / 2) ^ n) ^ 2 := fun n ↦ by
+    have h₁ := comb_le_supComb (w := partialMix ν n + (1 / 2 : ℝ) ^ n • ν n) hM
+      (fun m ↦ add_nonneg (partialMix_nonneg hν n m) (mul_nonneg (by positivity) ((hν n).1 m)))
+      ((summable_partialMix hν n).add ((hν n).2.2.summable.mul_left _)) b
+    have h₂ := hνmin n _ (tailMix_mem_tailWeights hν n)
+    rw [partialMix_add_smul_tailMix hν, hsup, hcomb n] at h₂
+    rw [comb_add_smul hM (summable_partialMix hν n) (hν n).2.2.summable,
+      comb_partialMix hM hν] at h₁
+    linarith
+  obtain ⟨b', hb'⟩ := hc _ hζ0 hζ1
+  have hfreq := frequently_sub_lt_of_le_tsum hε hy
+    ((comb_tailMix_zero hM hν b).symm.trans_ge (hb'.trans (hbmax b'))) hkey
+  refine ⟨b, frequently_atTop.2 fun N ↦ ?_⟩
+  obtain ⟨i, hiN, hi⟩ := frequently_atTop.1 hfreq N
+  obtain ⟨m, hmi, hm⟩ := exists_le_lt_of_lt_comb hM hν hi
+  exact ⟨m, hiN.trans hmi, hm⟩
+
+/-- **Simons' inequality.** Let `x n` be a sequence of real functions on `β`, uniformly bounded on
+a set `s`. Suppose that every σ-convex combination `∑' n, w n * x n` (with `w n ≥ 0` and
+`∑ w n = 1`) attains its supremum on `s`, and that this supremum is at least `c`. Then for every
+`ε > 0` there is a point `b ∈ s` with `c - ε < x n b` for infinitely many `n`. In other words,
+`sup_{b ∈ s} limsup_n x n b` is at least the infimum over σ-convex combinations of their suprema
+on `s`. -/
+theorem exists_frequently_sub_lt_of_isMaxOn_tsum {s : Set β} {x : ℕ → β → ℝ} {M c ε : ℝ}
+    (hM : ∀ n, ∀ b ∈ s, |x n b| ≤ M)
+    (hmax : ∀ w : ℕ → ℝ, (∀ n, 0 ≤ w n) → HasSum w 1 →
+      ∃ b ∈ s, IsMaxOn (fun b ↦ ∑' n, w n * x n b) s b)
+    (hc : ∀ w : ℕ → ℝ, (∀ n, 0 ≤ w n) → HasSum w 1 → ∃ b ∈ s, c ≤ ∑' n, w n * x n b)
+    (hε : 0 < ε) : ∃ b ∈ s, ∃ᶠ n in atTop, c - ε < x n b := by
+  obtain ⟨b, hb⟩ := exists_frequently_sub_lt_of_isMaxOn_univ_tsum
+    (x := fun n (b : s) ↦ x n b) (fun n b ↦ hM n b b.property)
+    (fun w hw0 hw ↦ (hmax w hw0 hw).elim fun b ⟨hb, hbmax⟩ ↦
+      ⟨⟨b, hb⟩, fun b' _ ↦ hbmax b'.property⟩)
+    (fun w hw0 hw ↦ (hc w hw0 hw).elim fun b ⟨hb, hcb⟩ ↦ ⟨⟨b, hb⟩, hcb⟩) hε
+  exact ⟨b, b.property, hb⟩
 
 end TauCeti
