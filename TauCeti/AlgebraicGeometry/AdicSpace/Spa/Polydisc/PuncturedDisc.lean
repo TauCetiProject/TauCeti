@@ -6,11 +6,10 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Radial.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Radial.Polydisc
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
@@ -54,14 +53,6 @@ local notation "𝒯" => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set
   isWeightFamily_one_weight
 local notation "T" => weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0
 local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
-
-/-- Every point of the closed unit disc lies in the closed disc `|T| ≤ 1`: the coordinate is
-power-bounded. -/
-theorem val_mem_closedDisc_one (v : closedPolydisc 1 A) :
-    v.val ∈ closedDisc (powerBoundedSubring 𝒯) T 1 :=
-  (mem_closedDisc_iff _ _ _ _).mpr ⟨closedPolydisc_def 1 A ▸ v.property,
-    ((mem_closedPolydisc_iff 1 A v.val).mp v.property).2 T
-      (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0))⟩
 
 /-- The complement of the coordinate zero locus in the closed unit disc: the trace of the
 punctured closed disc `𝔻^×(A⟨T⟩°, T, 1)`. -/
