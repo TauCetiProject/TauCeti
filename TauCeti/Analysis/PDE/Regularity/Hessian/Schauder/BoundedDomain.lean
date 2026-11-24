@@ -60,8 +60,9 @@ values and without lower-order terms.
   farther apart `‖D²u z - D²u w‖ ≤ 2 N ≤ 2 N δ^(-α) ‖z - w‖^α`
   (`lebesgue_number_lemma_of_metric`, `HolderOnWith.of_dist_lt_of_dist_le`). This gives the
   estimate with `N` bounding `|u|`, `‖Du‖` and `‖D²u‖`.
-* **Interpolation.** A `C^{2,α}` boundary patch is a Lipschitz one, so the interpolation
-  inequalities on `closure Ω`
+* **Interpolation.** A `C^{2,α}` boundary patch is a Lipschitz one
+  (`Set.HasC2HolderBoundary.exists_lipschitzWith_patch`), so the interpolation inequalities on
+  `closure Ω`
   (`TauCeti.exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure`) bound `‖Du‖`
   and `‖D²u‖` at a scale `ε ≤ 1` by `C_ε N` plus `ε^α` times a fixed multiple of the Hölder
   constant of `D²u`. Applying the previous estimate
@@ -376,19 +377,6 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_
   · push_cast; linarith [hT z hz, norm_nonneg (iteratedFDeriv ℝ 2 u z), N.coe_nonneg]
   · push_cast; linarith [hT z hz, norm_nonneg (fderiv ℝ u z), N.coe_nonneg]
 
-/-- A `C^{2,α}` boundary patch is a Lipschitz boundary patch: `γ` is `G`-Lipschitz since
-`‖Dγ‖ ≤ G`. -/
-private theorem exists_lipschitzWith_patch {α : ℝ≥0} {Ω : Set E}
-    (hbdry : Ω.HasC2HolderBoundary α) :
-    ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ} := fun x hx => by
-  obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hpatch⟩ :=
-    Set.hasC2HolderBoundary_iff.1 hbdry x hx
-  exact ⟨ν, γ, G, r, hν, lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable (by norm_num))
-    fun z => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hG1 z, hγν, hr,
-    by rw [inter_comm, hpatch, inter_comm]⟩
-
 /-- Some scale `0 < ε ≤ ε₀` makes `c (ε^(1 + α) + ε^α)` at most `1 / 2`. -/
 private theorem exists_pos_le_mul_rpow_add_rpow_le {α : ℝ≥0} (hα : 0 < α) {c ε₀ : ℝ}
     (hc : 0 ≤ c) (hε₀ : 0 < ε₀) :
@@ -429,7 +417,7 @@ private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0}
     hα1 hΩ hbdry Lam L M hlam
   obtain ⟨CI, hCI, ε₀, hε₀, hint⟩ :=
     exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure (F := ℝ) hΩ
-      (exists_lipschitzWith_patch hbdry) α
+      hbdry.exists_lipschitzWith_patch α
   -- A scale `ε` at which the interpolation absorbs half of the Hölder constant.
   obtain ⟨ε, hε, hεε₀, hsmall⟩ := exists_pos_le_mul_rpow_add_rpow_le hα (c := CI * C₁)
     (by positivity) hε₀

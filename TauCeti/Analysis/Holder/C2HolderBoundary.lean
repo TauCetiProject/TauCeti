@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Sets with `C^{2,α}` boundary
@@ -16,9 +17,11 @@ A set `Ω` in a real inner product space has `C^{2,α}` boundary (`Set.HasC2Hold
 near every point of `frontier Ω`, in some ball, `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the
 graph of a `C^{2,α}` function `γ` over the hyperplane `ν^⊥`. These are the domains of the global
 Schauder theory (Gilbarg–Trudinger, Section 6.2). Such a set is open
-(`Set.HasC2HolderBoundary.isOpen`). The geometry of the region above a graph near the boundary is
-in `TauCeti/Analysis/InnerProductSpace/GraphPatch.lean`, and the global Schauder estimate on such a
-domain is in `TauCeti/Analysis/PDE/Regularity/Hessian/Schauder/BoundedDomain.lean`.
+(`Set.HasC2HolderBoundary.isOpen`), and its boundary patches are Lipschitz graph patches
+(`Set.HasC2HolderBoundary.exists_lipschitzWith_patch`). The geometry of the region above a graph
+near the boundary is in `TauCeti/Analysis/InnerProductSpace/GraphPatch.lean`, and the global
+Schauder estimate on such a domain is in
+`TauCeti/Analysis/PDE/Regularity/Hessian/Schauder/BoundedDomain.lean`.
 -/
 
 public section
@@ -61,5 +64,17 @@ theorem HasC2HolderBoundary.isOpen {Ω : Set E} {α : ℝ≥0} (h : Ω.HasC2Hold
     rw [hΩr]
     exact (isOpen_lt hγ.continuous (continuous_id.inner continuous_const)).inter isOpen_ball
   exact interior_maximal inter_subset_left hopen ⟨hzΩ, mem_ball_self hr⟩
+
+/-- A `C^{2,α}` boundary patch is a Lipschitz boundary patch: near each frontier point the set is
+the region above the graph of a `G`-Lipschitz function, since `‖Dγ‖ ≤ G`. -/
+theorem HasC2HolderBoundary.exists_lipschitzWith_patch {Ω : Set E} {α : ℝ≥0}
+    (h : Ω.HasC2HolderBoundary α) :
+    ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
+      LipschitzWith G γ ∧ (∀ x (t : ℝ), γ (x + t • ν) = γ x) ∧ 0 < r ∧
+      ball z r ∩ Ω = ball z r ∩ {x | γ x < ⟪x, ν⟫_ℝ} := fun z hz => by
+  obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hpatch⟩ := h z hz
+  exact ⟨ν, γ, G, r, hν, lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable (by norm_num))
+    fun x => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hG1 x, hγν, hr,
+    by rw [inter_comm, hpatch, inter_comm]⟩
 
 end Set

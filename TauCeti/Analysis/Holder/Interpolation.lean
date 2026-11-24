@@ -101,8 +101,6 @@ linear approximation error by the difference of the Hessians.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_subset` and
   `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset`: the local
   interpolation inequalities for the first and second derivatives on a ball.
-* `ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv`: the first and second derivatives of a
-  function that is `C²` on an open set `U ⊇ s`, as derivatives within `s`.
 * `HolderOnWith.norm_fderiv_le_of_contDiffOn` and
   `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`: the same for a `C²` function.
 * `HolderOnWith.norm_le_of_hasDerivWithinAt_Icc`: the interpolation inequality for derivatives
@@ -402,18 +400,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
     mul_le_mul_of_nonneg_left key hε.le
   have hMε : ε * (M / ε) = M := mul_div_cancel₀ M hε.ne'
   nlinarith
-
-/-- The first and second derivatives of a function that is `C²` on an open set `U ⊇ s`, as
-derivatives within `s`: `u` has derivative `fderiv ℝ u` and `fderiv ℝ u` has derivative
-`fderiv ℝ (fderiv ℝ u)` within `s` at every point of `s`. -/
-theorem _root_.ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv {U s : Set E} {u : E → F}
-    (hu : ContDiffOn ℝ 2 u U) (hU : IsOpen U) (hsU : s ⊆ U) :
-    (∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y) ∧
-      ∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y :=
-  ⟨fun y hy => ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt
-      (by norm_num)).hasFDerivAt.hasFDerivWithinAt,
-    fun y hy =>
-      ((hu.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt⟩
 
 /-- **Interpolation of the gradient of a `C²` function on a ball.** Let `u` be `C²` on an open set
 `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. Then
