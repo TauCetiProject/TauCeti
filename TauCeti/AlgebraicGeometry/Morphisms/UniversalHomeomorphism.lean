@@ -195,9 +195,8 @@ theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶
   exact Iff.rfl
 
 open scoped TensorProduct in
-/-- If `Spec R ⟶ Spec B` is a universal homeomorphism, then so is its base change
-`Spec (R ⊗[B] C) ⟶ Spec C` for every `B`-algebra `C`; in particular, contraction of prime ideals
-along `C → R ⊗[B] C` is a homeomorphism of prime spectra. -/
+/-- If `Spec R ⟶ Spec B` is a universal homeomorphism, then for every `B`-algebra `C`,
+contraction of prime ideals along `C → R ⊗[B] C` is a homeomorphism of prime spectra. -/
 theorem IsUniversalHomeomorphism.isHomeomorph_comap_includeRight {B R : Type u} [CommRing B]
     [CommRing R] [Algebra B R]
     [IsUniversalHomeomorphism (Spec.map (CommRingCat.ofHom (algebraMap B R)))]

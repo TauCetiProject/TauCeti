@@ -38,7 +38,7 @@ variable {R S : Type*}
 
 /-- If `Spec S → Spec R` is surjective, then two idempotents of `R` with the same image in `S`
 are equal. -/
-theorem injOn_isIdempotentElem_of_surjective_comap [CommSemiring R] [CommSemiring S] (f : R →+* S)
+theorem injOn_isIdempotentElem_of_comap_surjective [CommSemiring R] [CommSemiring S] (f : R →+* S)
     (hf : Function.Surjective (comap f)) :
     Set.InjOn f {e | IsIdempotentElem e} := by
   intro e he e' he' hee'
@@ -62,14 +62,13 @@ theorem surjOn_isIdempotentElem_of_isHomeomorph_comap (hf : IsHomeomorph (comap 
     (TopologicalSpace.Opens.ext (Set.ext fun q ↦ ?_))⟩
   have hq : q ∈ basicOpen (f e) ↔ comap f q ∈ basicOpen e := by
     simp only [mem_basicOpen, comap_asIdeal, Ideal.mem_comap]
-  rw [SetLike.mem_coe, hq, ← SetLike.mem_coe, ← hUe, hf.injective.mem_set_image,
-    SetLike.mem_coe]
+  exact hq.trans ((Set.ext_iff.mp hUe _).symm.trans hf.injective.mem_set_image)
 
 /-- If `Spec S → Spec R` is a homeomorphism, then `f` restricts to a bijection between the
 idempotents of `R` and those of `S`. -/
 theorem bijOn_isIdempotentElem_of_isHomeomorph_comap (hf : IsHomeomorph (comap f)) :
     Set.BijOn f {e | IsIdempotentElem e} {e | IsIdempotentElem e} :=
-  ⟨fun _ he ↦ he.map f, f.injOn_isIdempotentElem_of_surjective_comap
+  ⟨fun _ he ↦ he.map f, f.injOn_isIdempotentElem_of_comap_surjective
     hf.surjective, f.surjOn_isIdempotentElem_of_isHomeomorph_comap hf⟩
 
 end RingHom

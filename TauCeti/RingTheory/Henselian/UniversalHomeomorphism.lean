@@ -91,11 +91,11 @@ theorem henselianRing_map_iff_of_isUniversalHomeomorphism
       simp [π, ψ, ψ']
     have hπK : K.map ψ ≤ RingHom.ker π := map_le_iff_le_comap.mpr fun k hk ↦ by
       simp [hπ, Quotient.eq_zero_iff_mem.mpr hk]
-    refine ψ'.injOn_isIdempotentElem_of_surjective_comap
+    refine ψ'.injOn_isIdempotentElem_of_comap_surjective
       (IsUniversalHomeomorphism.isHomeomorph_comap_includeRight (C ⧸ K)).surjective
       (he.map (Quotient.mk K)) (Quotient.isIdempotentElem_mk_iff.mpr hs) ?_
     have := hπK (hK ▸ hts)
-    rwa [RingHom.mem_ker, map_sub, hπ, hπ, sub_eq_zero] at this
+    simpa only [RingHom.mem_ker, map_sub, hπ, sub_eq_zero] using this
 
 /-- **Henselian pairs and nil ideals.** For a nil ideal `N` of `B`, the pair `(B, I)` is
 henselian if and only if `(B ⧸ N, I (B ⧸ N))` is. -/
