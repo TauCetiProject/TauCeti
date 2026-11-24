@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecificLimits.Normed
 
@@ -25,7 +26,6 @@ evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
 
 ## Main results
 
-* `Complex.re_one_sub_pos`: on the closed unit disc away from `1`, `0 < re (1 - z)`.
 * `Complex.tendsto_sum_range_taylorSeries_neg_log`: the partial sums of `∑ zⁿ / n` tend to
   `-log (1 - z)` for `‖z‖ ≤ 1` and `z ≠ 1`.
 * `Real.tendsto_sum_Icc_sin_mul_div`: the sawtooth series
@@ -39,14 +39,6 @@ open Filter Finset
 open scoped Topology Real
 
 namespace Complex
-
-/-- On the closed unit disc away from `1`, the point `1 - z` has positive real part. -/
-theorem re_one_sub_pos {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) : 0 < (1 - z).re := by
-  rw [sub_re, one_re, sub_pos]
-  refine (re_le_norm z).trans hz |>.lt_of_ne fun h ↦ hz1 ?_
-  have hnorm : ‖z‖ = 1 := le_antisymm hz (h ▸ re_le_norm z)
-  have him : z.im = 0 := abs_re_eq_norm.1 (by rw [h, hnorm, abs_one])
-  exact Complex.ext (by simpa using h) (by simpa using him)
 
 /-- **The logarithmic series on the closed unit disc.** For `‖z‖ ≤ 1` and `z ≠ 1`, the ordered
 partial sums of `∑ zⁿ / n` tend to `-log (1 - z)`. On the open disc the series converges
