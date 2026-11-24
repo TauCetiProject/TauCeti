@@ -38,10 +38,16 @@ For `X` reduced, `Γ_f` does not depend on the representative: the graph of any 
 representing `f` has the same kernel as `γ_f`. If moreover `Y` is separated and `f` is a rational
 map over a separated base `S`, then `γ_f` factors through the closed subscheme `X ×_S Y` of
 `X × Y`, and `Γ_f` is the graph closure over `S` of the representative of `f` on its domain of
-definition. The graph closure API then gives the properties of the projections: `π_1` is proper
-when `Y` is proper over `S`, an isomorphism over the domain of definition of `f`, and a
-modification; `π_2` is surjective when `f` is dominant and `X` is proper over `S`; and over a
-field `Γ_f` has the dimension of `X`.
+definition. The graph closure API then gives the properties of the first projection: `π_1` is
+proper when `Y` is proper over `S`, an isomorphism over the domain of definition of `f` when the
+inclusion of that domain is quasi-compact, and a modification when both hold. Over a field `K`,
+with `X` irreducible and `X` and `Y` locally of finite type over `K`, `Γ_f` has the dimension of
+`X`.
+
+For any rational map `f` over a base `S` (with no reducedness or separatedness hypotheses), `π_2`
+is surjective when `f` is dominant and `X` is proper over `S`: the graph closure over `S` of the
+restriction of the representative of `f` to a dense open on which it is over `S` maps into `Γ_f`
+over `Y`.
 
 ## Main definitions
 
@@ -63,11 +69,15 @@ field `Γ_f` has the dimension of `X`.
   representative.
 * `AlgebraicGeometry.Scheme.RationalMap.isProper_graphFst`,
   `AlgebraicGeometry.Scheme.RationalMap.isIso_graphFst_restrict` and
-  `AlgebraicGeometry.Scheme.RationalMap.isModification_graphFst`: `π_1` is proper, an isomorphism
-  over the domain of definition of `f`, and a modification.
-* `AlgebraicGeometry.Scheme.RationalMap.surjective_graphSnd`: `π_2` is surjective for dominant `f`.
-* `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_graph`: over a field, `Γ_f` has the
-  dimension of `X`.
+  `AlgebraicGeometry.Scheme.RationalMap.isModification_graphFst`: for `X` reduced and `f` over a
+  separated base `S`, `π_1` is proper when `Y` is proper over `S`, an isomorphism over the domain
+  of definition of `f` when `Y` is separated and the inclusion of that domain is quasi-compact,
+  and a modification when `Y` is proper over `S` and that inclusion is quasi-compact.
+* `AlgebraicGeometry.Scheme.RationalMap.surjective_graphSnd`: `π_2` is surjective for dominant `f`
+  over a base `S` over which `X` is proper.
+* `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_graph`: over a field `K`, for `X`
+  reduced and irreducible, `Y` separated, and `X` and `Y` locally of finite type over `K`, `Γ_f`
+  has the dimension of `X`.
 
 ## References
 
@@ -158,7 +168,7 @@ section Base
 
 variable (sX : X ⟶ S) (sY : Y ⟶ S)
 
-/-- The closed immersion `X ×_S Y → X × Y` for a separated `S`. -/
+/-- The morphism `X ×_S Y → X × Y`, a closed immersion when `S` is separated. -/
 private def pullbackToProd :
     pullback sX sY ⟶ pullback (terminal.from X) (terminal.from Y) :=
   pullback.mapDesc sX sY (terminal.from S) ≫
@@ -177,6 +187,43 @@ private theorem pullbackToProd_fst :
 private theorem pullbackToProd_snd :
     pullbackToProd sX sY ≫ pullback.snd _ _ = pullback.snd sX sY := by
   simp [pullbackToProd]
+
+/-- **The second projection of the graph of a dominant rational map is surjective** when `X` is
+proper over a base `S` over which `f` is defined. -/
+theorem surjective_graphSnd [f.IsOver sX sY] [IsProper sX] [f.IsDominant] :
+    Surjective (graphSnd f) := by
+  -- restrict the representative of `f` to a dense open `U` on which it is over `S`
+  have : f.representative.toRationalMap.IsOver sX sY := by
+    rwa [f.toRationalMap_representative]
+  obtain ⟨U, hU, hUV, _⟩ := f.representative.exists_restrict_isOver sX sY
+  set g := f.representative.restrict U hU hUV
+  set h := opensGraph sX sY g.domain g.hom (g.over sX sY)
+  have hgV : g.domain ≤ f.representative.domain := hUV
+  -- the graph closure of `g` over `S` maps to `Γ_f` over `Y`
+  have e : h ≫ pullbackToProd sX sY = X.homOfLE hgV ≫ graphLift f := by
+    apply pullback.hom_ext
+    · rw [Category.assoc, pullbackToProd_fst, opensGraph_fst, Category.assoc, opensGraph_fst,
+        Scheme.homOfLE_ι]
+    · rw [Category.assoc, pullbackToProd_snd, opensGraph_snd, Category.assoc, opensGraph_snd]
+      rfl
+  have H : (graphι f).ker ≤ (h.imageι ≫ pullbackToProd sX sY).ker := by
+    rw [Scheme.Hom.ker_comp, IdealSheafData.ker_subschemeι, IdealSheafData.ker_subschemeι,
+      ← Scheme.Hom.ker_comp, e]
+    exact Scheme.Hom.le_ker_comp _ _
+  have e' : IsClosedImmersion.lift _ _ H ≫ graphSnd f =
+      graphClosureSnd sX sY g.domain g.hom (g.over sX sY) := by
+    rw [graphSnd, graphClosureSnd_def, graphClosureSnd_def, ← Category.assoc,
+      IsClosedImmersion.lift_fac, Category.assoc, pullbackToProd_snd]
+  suffices Surjective (graphClosureSnd sX sY g.domain g.hom (g.over sX sY)) by
+    rw [← e'] at this
+    exact Surjective.of_comp (IsClosedImmersion.lift _ _ H) _
+  -- the range of the second projection is closed and contains the dense range of `g`
+  refine ⟨Set.range_eq_univ.mp ?_⟩
+  rw [← (Scheme.Hom.isClosedMap _).isClosed_range.closure_eq, ← Set.univ_subset_iff,
+    ← g.hom.denseRange.closure_range]
+  refine closure_mono ?_
+  rintro _ ⟨x, rfl⟩
+  exact ⟨_, congr($(toGraphClosure_graphClosureSnd sX sY _ _ (g.over sX sY)) x)⟩
 
 variable [IsReduced X] [Y.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
 
@@ -257,25 +304,6 @@ theorem isModification_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f
   have := isModification_graphClosureFst (hg := f.toPartialMap.over sX sY) f.dense_domain
   rw [← graphIsoGraphClosure_hom_graphClosureFst f sX sY]
   infer_instance
-
-/-- **The second projection of the graph of a dominant rational map is surjective** when `X` is
-proper over a separated base `S` over which `f` is defined. -/
-theorem surjective_graphSnd [Y.IsSeparated] (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated]
-    [f.IsOver sX sY]
-    [IsProper sX] [f.IsDominant] : Surjective (graphSnd f) := by
-  rw [← graphIsoGraphClosure_hom_graphClosureSnd f sX sY]
-  suffices Surjective (graphClosureSnd sX sY f.toPartialMap.domain f.toPartialMap.hom
-      (f.toPartialMap.over sX sY)) from inferInstance
-  have : IsDominant f.toPartialMap.hom := by
-    rw [← PartialMap.isDominant_toRationalMap_iff, f.toRationalMap_toPartialMap]
-    infer_instance
-  -- the range of the second projection is closed and contains the dense range of `f`
-  refine ⟨Set.range_eq_univ.mp ?_⟩
-  rw [← (Scheme.Hom.isClosedMap _).isClosed_range.closure_eq, ← Set.univ_subset_iff,
-    ← f.toPartialMap.hom.denseRange.closure_range]
-  refine closure_mono ?_
-  rintro _ ⟨x, rfl⟩
-  exact ⟨_, congr($(toGraphClosure_graphClosureSnd sX sY _ _ (f.toPartialMap.over sX sY)) x)⟩
 
 /-- **The dimension of the graph.** Over a field `K`, for `X` reduced and irreducible, `Y`
 separated and `f : X ⤏ Y` a `K`-rational map with `X` and `Y` locally of finite type over `K`,
