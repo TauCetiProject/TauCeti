@@ -26,9 +26,6 @@ changes of a relatively representable diagonal `X ⟶ X ⨯ X`.
   along `F.map p ≫ g` satisfies `P`, then `f` satisfies `P.relative F`.
 * `CategoryTheory.MorphismProperty.relative_monomorphisms_of_mono`: if `F` reflects monomorphisms,
   a relatively representable monomorphism satisfies `(monomorphisms C).relative F`.
-* `CategoryTheory.MorphismProperty.relative_map_comp`: for `F` full and faithful and `P` stable
-  under composition, precomposing a morphism satisfying `P.relative F` with `F.map v` for `P v`
-  preserves `P.relative F`.
 * `CategoryTheory.Functor.relativelyRepresentable.isPullback_diag_snd`: for `a : F.obj U ⟶ X`
   relatively representable, `b : F.obj V ⟶ X`, and `G : F.obj T ⟶ X ⨯ X` with components
   `F.map u ≫ a` and `F.map v ≫ b`, the base change of the diagonal of `X` along `G` is the base
@@ -64,15 +61,6 @@ theorem relative_of_descendsAlong [P.RespectsIso] [P.DescendsAlong Q]
     IsPullback.of_right (by simpa [k] using hf.isPullback (F.map p ≫ g))
       (by simp [k, ← Functor.map_comp]) (hf.isPullback g)
   exact of_isPullback_of_descendsAlong (sq.of_map_of_faithful F).flip hp hP
-
-/-- Precomposing a morphism `b : F.obj U ⟶ X` satisfying `P.relative F` with `F.map v` for a
-morphism `v : U' ⟶ U` satisfying `P` preserves `P.relative F`. -/
-theorem relative_map_comp [HasPullbacks C] [P.IsStableUnderBaseChange]
-    [P.IsStableUnderComposition] {U' U : C} {v : U' ⟶ U}
-    [∀ c (g : c ⟶ U), PreservesLimit (cospan v g) F] (hv : P v)
-    {b : F.obj U ⟶ X} (hb : P.relative F b) :
-    P.relative F (F.map v ≫ b) :=
-  comp_mem _ _ _ (relative_map hv) hb
 
 end
 

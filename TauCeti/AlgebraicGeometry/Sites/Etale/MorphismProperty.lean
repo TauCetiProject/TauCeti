@@ -246,21 +246,22 @@ private lemma boundedGeometricFibers_compl_diagonal {V O : Scheme.{u}} (e' : V �
   let y₀ : {v : Spec (.of Ω) ⟶ V // v ≫ e' = y ≫ e'} := ⟨y, rfl⟩
   let φ : {w : Spec (.of Ω) ⟶ W₂.toScheme // w ≫ (W₂.ι ≫ pullback.snd e' e') = y} →
       {v : {v : Spec (.of Ω) ⟶ V // v ≫ e' = y ≫ e'} // v ≠ y₀} := fun w ↦
-    ⟨⟨w.1 ≫ W₂.ι ≫ pullback.fst e' e', by
+    ⟨⟨w.val ≫ W₂.ι ≫ pullback.fst e' e', by
         calc
-          (w.1 ≫ W₂.ι ≫ pullback.fst e' e') ≫ e'
-              = w.1 ≫ W₂.ι ≫ (pullback.fst e' e' ≫ e') := by simp only [Category.assoc]
-          _ = (w.1 ≫ (W₂.ι ≫ pullback.snd e' e')) ≫ e' := by
+          (w.val ≫ W₂.ι ≫ pullback.fst e' e') ≫ e'
+              = w.val ≫ W₂.ι ≫ (pullback.fst e' e' ≫ e') := by simp only [Category.assoc]
+          _ = (w.val ≫ (W₂.ι ≫ pullback.snd e' e')) ≫ e' := by
             rw [pullback.condition]; simp only [Category.assoc]
-          _ = y ≫ e' := by rw [w.2]⟩,
+          _ = y ≫ e' := by rw [w.property]⟩,
       fun heq ↦ by
-        have hw : w.1 ≫ W₂.ι = y ≫ pullback.diagonal e' := by
+        have hw : w.val ≫ W₂.ι = y ≫ pullback.diagonal e' := by
           apply pullback.hom_ext
-          · have h₁ : w.1 ≫ W₂.ι ≫ pullback.fst e' e' = y := congrArg (fun z ↦ z.1) heq
+          · have h₁ : w.val ≫ W₂.ι ≫ pullback.fst e' e' = y := congrArg Subtype.val heq
             rw [Category.assoc, h₁, Category.assoc, pullback.diagonal_fst, Category.comp_id]
-          · rw [Category.assoc, w.2, Category.assoc, pullback.diagonal_snd, Category.comp_id]
-        have hmem : W₂.ι (w.1 default) ∈ (W₂ : Set ↑(pullback e' e')) :=
-          W₂.range_ι ▸ Set.mem_range_self (w.1 default)
+          · rw [Category.assoc, w.property, Category.assoc, pullback.diagonal_snd,
+              Category.comp_id]
+        have hmem : W₂.ι (w.val default) ∈ (W₂ : Set ↑(pullback e' e')) :=
+          W₂.range_ι ▸ Set.mem_range_self (w.val default)
         rw [hW₂] at hmem
         exact hmem ⟨y default, by
           simpa only [← Scheme.Hom.comp_apply] using
@@ -268,12 +269,12 @@ private lemma boundedGeometricFibers_compl_diagonal {V O : Scheme.{u}} (e' : V �
   have hinj : Function.Injective φ := by
     intro w₁ w₂ h
     ext1
-    have hι : w₁.1 ≫ W₂.ι = w₂.1 ≫ W₂.ι := by
+    have hι : w₁.val ≫ W₂.ι = w₂.val ≫ W₂.ι := by
       apply pullback.hom_ext
-      · have h₁ : w₁.1 ≫ W₂.ι ≫ pullback.fst e' e' = w₂.1 ≫ W₂.ι ≫ pullback.fst e' e' :=
-          congrArg (fun z ↦ z.1.1) h
+      · have h₁ : w₁.val ≫ W₂.ι ≫ pullback.fst e' e' = w₂.val ≫ W₂.ι ≫ pullback.fst e' e' :=
+          congrArg (fun z ↦ z.val.val) h
         simpa only [Category.assoc] using h₁
-      · simpa only [Category.assoc] using w₁.2.trans w₂.2.symm
+      · simpa only [Category.assoc] using w₁.property.trans w₂.property.symm
     exact (cancel_mono W₂.ι).1 hι
   let _ := Fintype.ofFinite {v : Spec (.of Ω) ⟶ V // v ≫ e' = y ≫ e'}
   classical
@@ -305,20 +306,21 @@ private lemma exists_etale_surjective_factorization {V Y : Scheme.{u}} (e : V �
   have : IsSeparated (e' ≫ O.ι) := he'.symm ▸ ‹IsSeparated e›
   have hsep : IsSeparated e' := IsSeparated.of_comp e' O.ι
   have hsurj : Surjective e' := ⟨fun y ↦ by
-    obtain ⟨v, hv⟩ : y.1 ∈ Set.range e := y.2
+    obtain ⟨v, hv⟩ : y.val ∈ Set.range e := y.property
     refine ⟨v, O.ι.isOpenEmbedding.injective ?_⟩
     calc
       O.ι (e' v) = (e' ≫ O.ι) v := by rw [Scheme.Hom.comp_apply]
       _ = e v := by rw [he']
-      _ = y.1 := hv
+      _ = y.val := hv
       _ = O.ι y := rfl⟩
   have hb' : BoundedGeometricFibers e' d := by
     intro Ω _ y
     obtain ⟨hfin, hcard⟩ := hb Ω (y ≫ O.ι)
     let ψ : {v : Spec (.of Ω) ⟶ V // v ≫ e' = y} →
         {v : Spec (.of Ω) ⟶ V // v ≫ e = y ≫ O.ι} :=
-      fun v ↦ ⟨v.1, by rw [← he', ← Category.assoc, v.2]⟩
-    have hinj : Function.Injective ψ := fun _ _ h ↦ Subtype.ext (congrArg (fun z ↦ z.1) h)
+      fun v ↦ ⟨v.val, by rw [← he', ← Category.assoc, v.property]⟩
+    have hinj : Function.Injective ψ := fun _ _ h ↦
+      Subtype.ext (congrArg (fun z ↦ z.val) h)
     exact ⟨Finite.of_injective ψ hinj, (Nat.card_le_card_of_injective ψ hinj).trans hcard⟩
   exact ⟨O, e', het, hsep, hsurj, he', hb'⟩
 
@@ -382,7 +384,7 @@ private lemma exists_standardEtale_open_nhds {V Y : Scheme.{u}} (e : V ⟶ Y) [E
   obtain ⟨_, ⟨U_Y, hUY, rfl⟩, hvY, -⟩ := Y.isBasis_affineOpens.exists_subset_of_mem_open
     (Set.mem_univ (e v)) isOpen_univ
   obtain ⟨_, ⟨U_V, hUV, rfl⟩, hvV, hle : U_V ≤ e ⁻¹ᵁ U_Y⟩ :=
-    V.isBasis_affineOpens.exists_subset_of_mem_open hvY (e ⁻¹ᵁ U_Y).2
+    V.isBasis_affineOpens.exists_subset_of_mem_open hvY (e ⁻¹ᵁ U_Y).is_open'
   replace hUY : IsAffineOpen U_Y := hUY
   replace hUV : IsAffineOpen U_V := hUV
   have het : (e.appLE U_Y U_V hle).hom.Etale := e.etale_appLE hUY hUV hle

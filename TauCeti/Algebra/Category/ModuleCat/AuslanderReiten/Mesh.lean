@@ -80,7 +80,7 @@ theorem card_arrows_eq_card_arrows_of_translate_eq_some
   rw [← IrreducibleMorphismQuiver.of_representative m, (arTranslation k A).translate_of _ _ hp,
     Option.some.injEq] at h
   subst h
-  have hA : Module.Finite A (arTranslate k m.representative) := inferInstance
+  have hA : Module.Finite A (arTranslate k k m.representative) := inferInstance
   have hmesh := IrreducibleMorphismQuiver.card_arrows_of_almostSplit_right_eq_left (k := k)
     (P := fun M : ModuleCat.{max u v w} A ↦ Module.Finite A M) hS hA
     m.representative_property.1 x.representative_property.1 x.representative_property.2

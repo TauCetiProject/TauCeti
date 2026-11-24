@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 public import TauCeti.Topology.KrullDimension.Basic
 
 /-!

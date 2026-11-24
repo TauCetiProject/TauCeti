@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Coordinate isometries of orthonormal families
@@ -17,11 +19,15 @@ direction, Bessel's inequality makes the analysis map of an orthonormal family a
 
 The orthogonal projection onto the span of a finite orthonormal family is `x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`,
 synthesis after analysis, that is, the frame operator of the family. So Bessel's inequality
-becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
+becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`. The same formula shows that the
+projection onto the span of a continuous family of orthonormal families depends continuously on
+the parameter (`Orthonormal.continuous_starProjection`).
 
 Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
 when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
-identifies the changes of orthonormal frame with the unitary group.
+identifies the changes of orthonormal frame with the unitary group
+(`Orthonormal.orthonormal_sum_smul_iff_mem_unitaryGroup`), and a unitary change of frame
+preserves and reflects orthonormality (`TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup`).
 -/
 
 public section
@@ -109,6 +115,21 @@ theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule �
   obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hw
   simp [inner_sum, inner_smul_right, inner_sub_left, hv.inner_left_fintype]
 
+omit [Fintype ι] in
+/-- The orthogonal projection onto the spans `U x` of a continuous family of finite orthonormal
+families `f x` depends continuously on `x`. -/
+theorem continuous_starProjection [Finite ι] {X : Type*} [TopologicalSpace X]
+    {f : X → ι → E} (hf : Continuous f) (ho : ∀ x, Orthonormal 𝕜 (f x))
+    {U : X → Submodule 𝕜 E} [∀ x, (U x).HasOrthogonalProjection]
+    (hU : ∀ x, Submodule.span 𝕜 (Set.range (f x)) = U x) :
+    Continuous fun x ↦ (U x).starProjection := by
+  have := Fintype.ofFinite ι
+  have h x : (U x).starProjection = ∑ i, (innerSL 𝕜 (f x i)).smulRight (f x i) := by
+    ext w
+    simp [(ho x).starProjection_apply_eq_sum (hU x)]
+  simp only [h]
+  fun_prop
+
 /-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
 operator, synthesis after analysis. -/
 theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
@@ -116,6 +137,39 @@ theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U
     (U.starProjection : E →ₗ[𝕜] E) = TauCeti.frameOperator 𝕜 v := by
   ext x
   simp [hv.starProjection_apply_eq_sum hU]
+
+omit [Fintype ι] in
+/-- **Bessel's identity**: subtracting from `x` its components `⟪vᵢ, x⟫ vᵢ` along finitely many
+members of an orthonormal family removes their squared lengths `‖⟪vᵢ, x⟫‖²` from `‖x‖²`. This is
+the identity behind Mathlib's Bessel inequality `Orthonormal.sum_inner_products_le`, and the proof
+is the computation inside the proof of that lemma in
+`Mathlib/Analysis/InnerProductSpace/Orthonormal.lean`. -/
+theorem norm_sub_sum_inner_smul_sq (hv : Orthonormal 𝕜 v) (s : Finset ι) (x : E) :
+    ‖x - ∑ i ∈ s, ⟪v i, x⟫_𝕜 • v i‖ ^ 2 = ‖x‖ ^ 2 - ∑ i ∈ s, ‖⟪v i, x⟫_𝕜‖ ^ 2 := by
+  have h₂ : (∑ i ∈ s, ∑ j ∈ s, ⟪v i, x⟫_𝕜 * ⟪x, v j⟫_𝕜 * ⟪v j, v i⟫_𝕜) =
+      (∑ k ∈ s, ⟪v k, x⟫_𝕜 * ⟪x, v k⟫_𝕜 : 𝕜) :=
+    hv.inner_left_right_finset
+  have h₃ (z : 𝕜) : RCLike.re (z * (starRingEnd 𝕜) z) = ‖z‖ ^ 2 := by
+    simp only [RCLike.mul_conj]
+    norm_cast
+  rw [@norm_sub_sq 𝕜, sub_add]
+  simp only [@InnerProductSpace.norm_sq_eq_re_inner 𝕜 E, inner_sum, sum_inner]
+  simp only [inner_smul_right, two_mul, inner_smul_left, inner_conj_symm, ← mul_assoc, h₂,
+    add_sub_cancel_right, sub_right_inj]
+  simp only [map_sum, ← inner_conj_symm x, ← h₃]
+
+/-- Bessel's inequality against a unit vector: the squared lengths `‖⟪x, vᵢ⟫‖²` of the components
+of a unit vector `x` along an orthonormal family add up to at most `1`. -/
+theorem sum_sq_norm_inner_left_le_one (hv : Orthonormal 𝕜 v) {x : E} (hx : ‖x‖ = 1) :
+    ∑ i, ‖⟪x, v i⟫_𝕜‖ ^ 2 ≤ 1 := by
+  simpa [norm_inner_symm, hx] using hv.sum_inner_products_le (s := Finset.univ) (x := x)
+
+/-- The squared lengths `‖⟪bⱼ, vᵢ⟫‖²` of the coordinates of the members of an orthonormal family
+`v` in an orthonormal basis `b` add up to the number of members of `v`. -/
+theorem sum_sum_sq_norm_inner_eq_card {κ : Type*} [Fintype κ] (hv : Orthonormal 𝕜 v)
+    (b : OrthonormalBasis κ 𝕜 E) : ∑ j, ∑ i, ‖⟪b j, v i⟫_𝕜‖ ^ 2 = Fintype.card ι := by
+  rw [Finset.sum_comm]
+  simp [b.sum_sq_norm_inner_right, hv.1]
 
 /-- **Parseval's identity** on the span `U` of a finite orthonormal family: the orthogonal
 projection of `x` onto `U` has squared norm `∑ᵢ ‖⟪vᵢ, x⟫‖²`. -/
@@ -138,7 +192,31 @@ theorem orthonormal_sum_smul_iff {κ : Type*} [DecidableEq κ] (hv : Orthonormal
   simp only [hv.inner_sum, Matrix.mul_apply, Matrix.one_apply, Matrix.conjTranspose_apply,
     RCLike.star_def, mul_comm, eq_comm (a := k)]
 
+/-- Combining an orthonormal family with the rows of a square matrix `A` produces an orthonormal
+family exactly when `A` is unitary. -/
+theorem orthonormal_sum_smul_iff_mem_unitaryGroup [DecidableEq ι] (hv : Orthonormal 𝕜 v)
+    (A : Matrix ι ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ A ∈ Matrix.unitaryGroup ι 𝕜 := by
+  rw [hv.orthonormal_sum_smul_iff, Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
+
 end Orthonormal
+
+namespace TauCeti
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [Fintype ι] [DecidableEq ι] {v : ι → E}
+
+/-- A unitary change of frame `vⱼ ↦ ∑ i, A j i • vᵢ` preserves and reflects orthonormality. -/
+theorem orthonormal_sum_smul_iff_of_mem_unitaryGroup {A : Matrix ι ι 𝕜}
+    (hA : A ∈ Matrix.unitaryGroup ι 𝕜) :
+    Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ Orthonormal 𝕜 v := by
+  refine ⟨fun hw ↦ ?_, fun hv ↦ (hv.orthonormal_sum_smul_iff_mem_unitaryGroup A).2 hA⟩
+  -- The inverse change of frame is the one by `star A`, which is unitary too.
+  have := (hw.orthonormal_sum_smul_iff_mem_unitaryGroup (star A)).2 (Unitary.star_mem hA)
+  simp_rw [← Matrix.sum_mul_apply_smul, (Matrix.mem_unitaryGroup_iff').1 hA] at this
+  simpa [Matrix.one_apply] using this
+
+end TauCeti
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι]

@@ -35,8 +35,13 @@ On homology this gives the **relative cross product** (`TopCat.singularHomologyC
 
 which is compatible with the absolute cross product: the image of `a × b` in relative homology
 is the relative cross product of the image of `a` with `b`
-(`TopCat.singularHomologyCross_comp_singularHomologyπ`). The relative Künneth map
-`⨁_{p + q = n} Hₚ(X, B; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y, fst⁻¹(B); R ⊗ S)`
+(`TopCat.singularHomologyCross_comp_singularHomologyπ`). It is also compatible with the
+connecting morphisms of the long exact sequences of the pairs: the connecting morphism of
+`(X, B) × Y` sends `a × b` to `δ a × b` (`TopCat.singularHomologyCrossRel_comp_singularHomologyδ`),
+because the shuffle maps form a morphism of short exact sequences and the connecting morphism of
+the tensored sequence is computed by `HomologicalComplex.homologyCross_comp_δ_right`.
+
+The relative Künneth map `⨁_{p + q = n} Hₚ(X, B; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y, fst⁻¹(B); R ⊗ S)`
 (`TopCat.singularHomologyKunnethRel`) is an isomorphism exactly when the algebraic Künneth map of
 the chain complexes is (`TopCat.isIso_singularHomologyKunnethRel_iff`), for instance over a
 commutative semisimple ring such as a field (`TopCat.isIso_singularHomologyKunnethRel`). Whenever
@@ -73,6 +78,8 @@ second factor, to the simplicial shuffle map, with the pair in the first factor.
   of pairs `(X, B) ⟶ (X', B')` and in maps `Y ⟶ Y'`.
 * `TopCat.singularHomologyCross_comp_singularHomologyπ`: the absolute cross product followed by
   the map to relative homology is the relative cross product of the image of the first factor.
+* `TopCat.singularHomologyCrossRel_comp_singularHomologyδ`: the connecting morphism of the pair
+  `(X, B) × Y` on a relative cross product.
 * `TopCat.isIso_singularHomologyKunnethRel`: the relative Künneth theorem.
 * `TopCat.isSplitMono_singularHomologyKunnethRel`, `TopCat.mono_singularHomologyCrossRel`: the
   relative Künneth map is a split monomorphism, and the relative cross product injective, when the
@@ -341,6 +348,55 @@ theorem singularHomologyCross_comp_singularHomologyπ
       (singularChainComplexπ_tensorHom_id_shuffleRel X Y B R S).symm).trans <|
     (congrArg (_ ≫ ·) (homologyMap_comp _ _ n)).trans <| (Category.assoc _ _ _).symm.trans <|
     (congrArg (· ≫ homologyMap (shuffleRel X Y B R S) n) hn.symm).trans (Category.assoc _ _ _)
+
+/-- **The connecting morphism on a relative cross product.** The connecting morphism
+`Hₙ(X × Y, fst⁻¹(B)) ⟶ Hₙ₋₁(fst⁻¹(B))` of the pair `(X, B) × Y` sends the relative cross product
+`a × b` of `a ∈ Hₚ(X, B; R)` and `b ∈ H_q(Y; S)` to `δ a × b`, where `δ a ∈ Hₚ₋₁(B; R)` is the
+connecting morphism of `(X, B)` and `δ a × b ∈ Hₙ₋₁(B × Y; R ⊗ S)` is carried to `fst⁻¹(B)` by
+`B × Y ≅ fst⁻¹(B)`. There is no sign, since the pair is the first factor. -/
+@[reassoc]
+theorem singularHomologyCrossRel_comp_singularHomologyδ {p' n' : ℕ} (hp : p' + 1 = p)
+    (h' : p' + q = n')
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((toSSet.obj (TopPair.ofSubset B).snd).chainComplex R).homology p'))] :
+    singularHomologyCrossRel X Y B R S p q n h ≫
+        (TopPair.ofSubset (fst X Y ⁻¹' B)).singularHomologyδ (R ⊗ S) n n' (by omega) =
+      ((TopPair.ofSubset B).singularHomologyδ R p p' hp ▷
+          ((singularHomologyFunctor _ q).obj S).obj Y) ≫
+        singularHomologyCross (TopPair.ofSubset B).snd Y R S p' q n' h' ≫
+          ((singularHomologyFunctor C n').obj (R ⊗ S)).map (prodPreimageFstIso X Y B).hom := by
+  have hS := (TopPair.ofSubset B).shortExact_singularChainComplexShortComplex R
+  have hSK := shortExact_tensorRightShortComplex_singularChainComplexShortComplex X Y B R S
+  have hrel : (ComplexShape.down ℕ).Rel p p' := by simp [hp]
+  -- the shuffle maps form a morphism of short exact sequences, so they commute with the
+  -- connecting morphisms; on the tensored sequence the connecting morphism is computed by
+  -- `HomologicalComplex.homologyCross_comp_δ_right`
+  have hδ := HomologySequence.δ_naturality (shuffleShortComplexMap X Y B R S) hSK
+    ((TopPair.ofSubset (fst X Y ⁻¹' B)).shortExact_singularChainComplexShortComplex (R ⊗ S)) n n'
+    (by simp; omega)
+  -- the instances on the terms of the short exact sequence, which instance search does not
+  -- identify with those on the singular chain complexes
+  have : PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset B).singularChainComplexShortComplex R).X₃.homology p)) :=
+    ‹PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset B).singularChainComplex R).homology p))›
+  have : PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset B).singularChainComplexShortComplex R).X₁.homology p')) :=
+    ‹PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((toSSet.obj (TopPair.ofSubset B).snd).chainComplex R).homology p'))›
+  have hc := homologyCross_comp_δ_right ((toSSet.obj Y).chainComplex S) hS hSK hrel h h'
+  have key : homologyMap (shuffleRel X Y B R S) n ≫
+      (TopPair.ofSubset (fst X Y ⁻¹' B)).singularHomologyδ (R ⊗ S) n n' (by omega) =
+        hSK.δ n n' (by simp; omega) ≫ homologyMap (shuffleShortComplexMap X Y B R S).τ₁ n' :=
+    hδ.symm
+  rw [singularHomologyCrossRel_def, singularHomologyCross_def]
+  refine (Category.assoc _ _ _).trans ?_
+  rw [key]
+  -- the objects here are the singular complexes, which agree with the terms of the short exact
+  -- sequences only up to unfolding, so `hc` and `homologyMap_comp` are applied as terms
+  exact ((reassoc_of% hc) _).trans <| congrArg (_ ≫ ·) <|
+    (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n')).trans
+      (Category.assoc _ _ _).symm
 
 end Cross
 

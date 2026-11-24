@@ -51,8 +51,6 @@ induced morphism `h_W ⟶ F ×_H G` is an étale atlas (`EtaleAtlas.lift_isPullb
   algebraic spaces are algebraic spaces (Stacks, Lemma 65.7.3 (02X2)).
 * `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.ofScheme_relativelyRepresentable`: every morphism from
   an embedded scheme to an algebraic space is representable by schemes on underlying presheaves.
-* `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.ofScheme_preservesPullback`: `AlgSpace.ofScheme`
-  preserves pullbacks (and all limits).
 
 ## References
 
@@ -359,11 +357,6 @@ noncomputable instance : PreservesLimitsOfSize.{w, w'} ofScheme.{u} :=
   have : PreservesLimitsOfSize.{w, w'} (ofScheme.{u} ⋙ toPresheaf) :=
     preservesLimits_of_natIso ofSchemeCompToPresheafIso.symm
   preservesLimits_of_reflects_of_preserves ofScheme toPresheaf
-
-/-- `AlgSpace.ofScheme` preserves pullbacks of schemes. -/
-theorem ofScheme_preservesPullback {X Y Z : Scheme.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) :
-    PreservesLimit (cospan f g) ofScheme :=
-  inferInstance
 
 /-- Comparison isomorphism identifying the embedded fibre product of schemes with
 `AlgSpace.pullbackObj` of the embedded morphisms. -/

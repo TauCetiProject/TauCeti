@@ -123,9 +123,9 @@ noncomputable def residueFormQuotientPairing (a b : ℤ) :
       latticeQuotient R R (-b) (-a) →ₗ[R] R :=
   ((residueForm R).compl₁₂ (lattice R R a).subtype (lattice R R (-b)).subtype).liftQ₂ _ _
     (fun f hf ↦ LinearMap.mem_ker.mpr <| LinearMap.ext fun g ↦
-      residueForm_eq_zero_of_mem_lattice (R := R) hf g.2 (by omega))
+      residueForm_eq_zero_of_mem_lattice (R := R) hf g.property (by omega))
     (fun g hg ↦ LinearMap.mem_ker.mpr <| LinearMap.ext fun f ↦
-      residueForm_eq_zero_of_mem_lattice (R := R) f.2 hg (by omega))
+      residueForm_eq_zero_of_mem_lattice (R := R) f.property hg (by omega))
 
 /-- On classes of series, the induced pairing is the residue form. -/
 @[simp]
@@ -171,13 +171,13 @@ instance residueFormQuotientPairing.instIsPerfPair (a b : ℤ) :
   refine .of_bijective _ ⟨LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp
     (residueFormQuotientPairing_nondegenerate R a b).1), fun φ ↦ ?_⟩
   have hmem (k : Finset.Ico a b) : single (-1 - (k : ℤ)) (1 : R) ∈ lattice R R (-b) :=
-    single_mem_lattice (by have := (Finset.mem_Ico.mp k.2).2; omega) 1
+    single_mem_lattice (by have := (Finset.mem_Ico.mp k.property).2; omega) 1
   refine ⟨Submodule.Quotient.mk ⟨∑ k : Finset.Ico a b,
     single (k : ℤ) (φ (Submodule.Quotient.mk ⟨_, hmem k⟩)), Submodule.sum_mem _ fun k _ ↦
-      single_mem_lattice (Finset.mem_Ico.mp k.2).1 _⟩, ?_⟩
+      single_mem_lattice (Finset.mem_Ico.mp k.property).1 _⟩, ?_⟩
   refine (LinearMap.cancel_right (latticeQuotientEquiv R R (-b) (-a)).symm.surjective).mp
     (LinearMap.pi_ext fun j r ↦ ?_)
-  have hj := Finset.mem_Ico.mp j.2
+  have hj := Finset.mem_Ico.mp j.property
   have hk : -1 - (j : ℤ) ∈ Finset.Ico a b := Finset.mem_Ico.mpr ⟨by omega, by omega⟩
   have hsmul : (⟨single (j : ℤ) r, single_mem_lattice hj.1 r⟩ : lattice R R (-b)) =
       r • ⟨_, hmem ⟨_, hk⟩⟩ := Subtype.ext <| by ext n; simp [coeff_single]
