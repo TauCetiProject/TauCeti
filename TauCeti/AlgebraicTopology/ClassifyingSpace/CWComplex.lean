@@ -462,12 +462,11 @@ theorem classifyingSpaceBasepoint_mem_skeletonLT_one :
   refine ⟨universalGSpaceBasepoint G, ?_, classifyingSpaceProj_universalGSpaceBasepoint G⟩
   simp [c, universalGSpaceBasepoint_val]
 
-/-- **Milnor's classifying space is well-pointed.** Its base point is a `0`-cell, so it has the
-homotopy extension property. -/
+/-- **Milnor's classifying space is well-pointed.** Its base point lies in a Hausdorff CW complex,
+so it has the homotopy extension property. -/
 theorem hasHomotopyExtensionProperty_classifyingSpaceBasepoint (G : Type u) [Group G] :
     HasHomotopyExtensionProperty ({classifyingSpaceBasepoint G} : Set (classifyingSpace G)) :=
-  hasHomotopyExtensionProperty_singleton_of_mem_skeletonLT_one
-    (classifyingSpaceBasepoint_mem_skeletonLT_one G)
+  hasHomotopyExtensionProperty_singleton_of_cwComplex (classifyingSpaceBasepoint G)
 
 end ClassifyingSpace
 

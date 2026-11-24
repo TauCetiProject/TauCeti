@@ -19,7 +19,8 @@ Brauer invariant. Consequently the images are orthogonal under local Tate dualit
 nonarchimedean local field, including at places dividing `n`.
 
 The kernels of the maps to point-coefficient cohomology satisfy the same vanishing
-(`kerH1WeilPairing_eq_zero_of_mem_ker`). These kernels define the Selmer local conditions,
+(`kerH1WeilPairing_eq_zero_of_mem_localKummerCondition`). These kernels define the Selmer local
+conditions,
 so the result applies over both finite and infinite completions of a number field.
 For global classes satisfying the Selmer local conditions over an extension `L/K` in which the
 degree is invertible, the Brauer-valued cup product of their restrictions, for the base change of
@@ -90,13 +91,11 @@ omit [DecidableEq K] in
 /-- The kernels defining the isogeny and dual-isogeny Selmer local conditions are orthogonal.
 A class whose image in the point-coefficient cohomology vanishes pairs trivially with every
 such class for the dual isogeny. -/
-theorem kerH1WeilPairing_eq_zero_of_mem_ker
+theorem kerH1WeilPairing_eq_zero_of_mem_localKummerCondition
     {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
     {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
-    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
-      continuous_of_discreteTopology).ker)
-    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-      continuous_of_discreteTopology).ker) :
+    (ha : a ∈ φ.localKummerCondition)
+    (hb : b ∈ φ.dual.localKummerCondition) :
     φ.kerH1WeilPairing hn a b = 0 := by
   classical
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
@@ -126,9 +125,9 @@ theorem kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero
       (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
     (φ.baseChange L).kerWeilBrauerPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) = 0 := by
   refine ((φ.baseChange L).kerWeilBrauerPairing_eq_zero_iff hnL _ _).2
-    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_ker hnL ?_ ?_)
-  · rw [AddMonoidHom.mem_ker, ← pointRes_kerCoeffIncl, ha]
-  · rw [AddMonoidHom.mem_ker, ← pointRes_dualKerCoeffIncl, hb]
+    ((φ.baseChange L).kerH1WeilPairing_eq_zero_of_mem_localKummerCondition hnL ?_ ?_)
+  · rw [mem_localKummerCondition_iff, ← pointRes_kerCoeffIncl, ha]
+  · rw [mem_localKummerCondition_iff, ← pointRes_dualKerCoeffIncl, hb]
 
 end Restriction
 

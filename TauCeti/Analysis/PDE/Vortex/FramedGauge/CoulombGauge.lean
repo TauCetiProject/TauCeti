@@ -24,12 +24,13 @@ import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Real
 For an integer `k ≥ 3`, the Sobolev framed gauge group `G_(k+1)`
 (`TauCeti.Vortex.SobolevTopologicalGaugeGroup`) acts on the continuous fields of the affine space
 `A_m^k = x_m + H^k(ℂ; iT*ℂ ⊕ ℂ)` (`TauCeti.Vortex.SobolevFieldSpace`). At a field `x` the Coulomb
-slice is cut out by the gauge-fixing condition `d₀* (y - x) = 0`, with `d₀* = gaugeAdjoint x` the
-formal `L²` adjoint of the infinitesimal gauge action at `x`.
+slice `TauCeti.Vortex.SobolevFieldSpace.coulombSlice x` is cut out by the gauge-fixing condition
+`d₀* (y - x) = 0`, with `d₀* = gaugeAdjoint x` the formal `L²` adjoint of the infinitesimal gauge
+action at `x`.
 
 This file proves the existence half of the slice theorem at `x`: every field `y` near `x` is moved
 into the Coulomb slice of `x` by a gauge `g y` near `1`, depending continuously on `y`
-(`SobolevFieldSpace.exists_mem_nhds_continuousOn_forall_gaugeAdjoint_smul_sub_eq_zero`).
+(`SobolevFieldSpace.exists_mem_nhds_continuousOn_forall_smul_mem_coulombSlice`).
 The uniqueness half, that the slice meets each nearby orbit only once near `1`, is not treated here;
 together the two halves give the slice charts of the quotient `A_m^k / G_(k+1)` near `x`.
 
@@ -730,7 +731,7 @@ private theorem gaugeAdjoint_phaseGauge_sub_eq_zero_of_coulombMap_eq_zero (hj : 
   have hx1 : ContDiff ℝ 1 x := x.contDiff (by push_cast; linarith)
   have hy1 : ContDiff ℝ 1 y := y.contDiff (by push_cast; linarith)
   have hφ : ContDiff ℝ 2 (continuousRep F) :=
-    contDiff_continuousRep (by rw [Complex.finrank_real_complex]; push_cast; linarith) F
+    contDiff_continuousRep (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) F
   set φ := continuousRep F
   set G := coulombPhaseDeriv x F
   -- The continuous representative of `d₀* d₀ F` is minus the rest of the Coulomb defect.
@@ -779,15 +780,33 @@ namespace SobolevFieldSpace
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
 
+omit [Fact (1 < k)] in
+/-- **The Coulomb slice** through a continuous field `x` of `A_m^k`: the fields `y` with
+`d₀* (y - x) = 0`, where `d₀* = gaugeAdjoint x` is the formal adjoint of the infinitesimal gauge
+action at `x`. -/
+def coulombSlice (x : SobolevFieldSpace f m k) : Set (SobolevFieldSpace f m k) :=
+  {y | ∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0}
+
+omit [Fact (1 < k)] in
+@[simp]
+theorem mem_coulombSlice {x y : SobolevFieldSpace f m k} :
+    y ∈ coulombSlice x ↔ ∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0 :=
+  Iff.rfl
+
+omit [Fact (1 < k)] in
+/-- A field lies in its own Coulomb slice. -/
+theorem self_mem_coulombSlice (x : SobolevFieldSpace f m k) : x ∈ coulombSlice x := by
+  simp [gaugeAdjoint_def]
+
 variable (hs) in
 /-- **Existence of the Coulomb gauge near a field.** Let `x` be a continuous field of `A_m^k`,
 `k ≥ 3`. There are a neighbourhood `U` of `x` and a map `g` to the Sobolev gauge group `G_(k+1)`,
-continuous on `U` with `g x = 1`, such that `g y · y` lies in the Coulomb slice of `x` for every
-`y ∈ U`: `d₀* (g y · y - x) = 0`. -/
-theorem exists_mem_nhds_continuousOn_forall_gaugeAdjoint_smul_sub_eq_zero (hk : 3 ≤ k)
+continuous on `U` with `g x = 1`, such that `g y · y` lies in the Coulomb slice `coulombSlice x`
+of `x` for every `y ∈ U`: `d₀* (g y · y - x) = 0`. -/
+theorem exists_mem_nhds_continuousOn_forall_smul_mem_coulombSlice (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
     ∃ U ∈ 𝓝 x, ∃ g : SobolevFieldSpace f m k → SobolevTopologicalGaugeGroup hs,
-      ContinuousOn g U ∧ g x = 1 ∧ ∀ y ∈ U, ∀ z, gaugeAdjoint x (⇑(g y • y) - ⇑x) z = 0 := by
+      ContinuousOn g U ∧ g x = 1 ∧ ∀ y ∈ U, g y • y ∈ coulombSlice x := by
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
   have hj : 1 ≤ j := by omega
   have hs₀ : 1 < ((j + 2 : ℕ) : ℝ) := by push_cast; linarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
@@ -803,7 +822,8 @@ theorem exists_mem_nhds_continuousOn_forall_gaugeAdjoint_smul_sub_eq_zero (hk : 
     exact AddChar.map_zero_eq_one _
   · set F := Φ (y.realSubRef (Nat.cast_nonneg (j + 2)))
     have hφ : ContDiff ℝ 2 (continuousRep F) :=
-      contDiff_continuousRep (by rw [Complex.finrank_real_complex]; push_cast; linarith) _
+      contDiff_continuousRep
+        (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) _
     have hact : ⇑(expGauge hs F • y) = phaseGauge y (continuousRep F) := by
       rw [coe_smul, toSubgroup_expGauge]
       exact gaugeTransform_exp (hφ.differentiable two_ne_zero) y

@@ -279,13 +279,12 @@ theorem skeletonLT_one_cellularClassifyingSpace :
       {cellularClassifyingSpaceBasepoint R} := by
   simp [skeletonLT_one_eq_insert]
 
-/-- **The cellular classifying space is well-pointed.** Its base point is its unique `0`-cell, so
-it has the homotopy extension property. -/
+/-- **The cellular classifying space is well-pointed.** Its base point lies in a Hausdorff CW
+complex, so it has the homotopy extension property. -/
 theorem hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint :
     HasHomotopyExtensionProperty
       ({cellularClassifyingSpaceBasepoint R} : Set (cellularClassifyingSpace R)) :=
-  hasHomotopyExtensionProperty_singleton_of_mem_skeletonLT_one
-    (by rw [skeletonLT_one_cellularClassifyingSpace]; exact Set.mem_singleton _)
+  hasHomotopyExtensionProperty_singleton_of_cwComplex (cellularClassifyingSpaceBasepoint R)
 
 /-- **Maps out of the cellular classifying space are determined up to pointed homotopy by their
 effect on `π₁`.** If the homotopy groups of `Z` vanish in dimensions at least two, at every point,

@@ -50,7 +50,9 @@ submodule that contains the canonical components of each of its elements,
 `DirectSum.mem_of_forall_ne_eq_bot` shows that when all pieces outside one degree vanish, every
 element lies in that piece, and over a ring `DirectSum.isInternal_submodule_comap_subtype` turns a
 supremum-independent family with supremum `S` into an internal direct sum of `S` via
-`(A i).comap S.subtype`.
+`(A i).comap S.subtype`. Over any additive commutative monoid, if two sums over the same `Finset`
+take their `i`-th terms from the `i`-th summand of an internal direct sum and are equal, then their
+terms are equal at every index of that `Finset` (`DirectSum.IsInternal.eq_of_finsetSum_eq`).
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
@@ -66,7 +68,8 @@ of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectS
 has `i`-th component `DirectSum.of M i (x i)` (`DirectSum.coe_decompose_summand`).
 
 Over any semiring, the spans of the basis vectors in the fibers of a map on the index set of a basis
-form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`).
+form an internal direct sum (`Module.Basis.isInternal_span_image_fiber`), and the basis vectors in
+one fiber form a basis of their span (`Module.Basis.spanImageFiber`).
 -/
 
 public section
@@ -495,6 +498,22 @@ theorem iSup_inf_eq_of_component_mem
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).property⟩
 
+/-- **Finite sums in an internal direct sum are compared termwise.** If two sums over the same
+`Finset` `s`, each taking its `i`-th term from the `i`-th summand, are equal, then their terms are
+equal at every index in `s`. -/
+theorem eq_of_finsetSum_eq {ι M σ : Type*} [DecidableEq ι] [AddCommMonoid M] [SetLike σ M]
+    [AddSubmonoidClass σ M] {A : ι → σ} (h : IsInternal A) {s : Finset ι} {v w : ι → M}
+    (hv : ∀ i ∈ s, v i ∈ A i) (hw : ∀ i ∈ s, w i ∈ A i)
+    (hvw : ∑ i ∈ s, v i = ∑ i ∈ s, w i) {i : ι} (hi : i ∈ s) : v i = w i := by
+  let _ : Decomposition A := h.chooseDecomposition
+  -- the `i`-th component of such a sum is its `i`-th term
+  have component {u : ι → M} (hu : ∀ j ∈ s, u j ∈ A j) :
+      (decompose A (∑ j ∈ s, u j) i : M) = u i := by
+    rw [decompose_sum, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum,
+      Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ decompose_of_mem_ne A (hu j hj) hji,
+      decompose_of_mem_same A (hu i hi)]
+  rw [← component hv, hvw, component hw]
+
 end DirectSum.IsInternal
 
 namespace DirectSum
@@ -657,6 +676,20 @@ theorem Module.Basis.isInternal_span_image_fiber {R ι κ M : Type*} [Semiring R
   · rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
     exact ⟨DirectSum.of (fun c => A c) (w i) ⟨b i, Submodule.subset_span ⟨i, rfl, rfl⟩⟩, by simp⟩
+
+/-- The basis vectors of `b` in the fiber of `w : ι → κ` over `c`, as a basis of their span. -/
+noncomputable def Module.Basis.spanImageFiber {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (b : Module.Basis ι R M) (w : ι → κ) (c : κ) :
+    Module.Basis {i // w i = c} R (Submodule.span R (b '' {i | w i = c})) :=
+  (Module.Basis.span (b.linearIndependent.comp _ Subtype.val_injective)).map
+    (LinearEquiv.ofEq _ _ (by rw [Set.range_comp, Subtype.range_coe_subtype]))
+
+/-- The vectors of `Module.Basis.spanImageFiber` are the basis vectors of `b`. -/
+@[simp]
+theorem Module.Basis.spanImageFiber_apply {R ι κ M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (b : Module.Basis ι R M) (w : ι → κ) (c : κ) (i : {i // w i = c}) :
+    (b.spanImageFiber w c i : M) = b i := by
+  simp [Module.Basis.spanImageFiber, Module.Basis.span_apply]
 
 /-- If a supremum-independent family of submodules `A` over a ring has supremum `S`, then its
 traces `(A i).comap S.subtype` on `S` form an internal direct sum of `S` (the ring hypothesis is
