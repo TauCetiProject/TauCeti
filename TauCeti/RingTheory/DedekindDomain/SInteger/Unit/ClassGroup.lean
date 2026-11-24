@@ -114,14 +114,12 @@ positive orders `Set.unitOrd`. -/
 theorem mapDomain_unitOrd (u : Additive (S.unit K)) :
     (S.unitOrd K u).mapDomain Subtype.val =
       (OrderSystem.ofDedekindDomain R K).principalDivisor (.ofMul ((u.toMul : S.unit K) : Kˣ)) := by
-  refine Finsupp.ext fun w ↦ ?_
-  by_cases hw : w ∈ S
-  · rw [Finsupp.mapDomain_apply_of_injective Subtype.val_injective _ ⟨w, hw⟩, unitOrd_apply]
-    -- `coeff D w` is `D w` by definition
-    exact (OrderSystem.coeff_principalDivisor (OrderSystem.ofDedekindDomain R K) _ w).symm
-  · rw [Finsupp.mapDomain_of_notMem_range _ _ (by simpa using hw), eq_comm,
-      ← Finsupp.notMem_support_iff]
-    exact fun h ↦ hw ((mem_unit_iff_support_principalDivisor_subset S K).mp u.toMul.property h)
+  classical
+  rw [← Function.Embedding.coe_subtype, ← Finsupp.embDomain_eq_mapDomain,
+    ← Finsupp.extendDomain_eq_embDomain_subtype, unitOrd, AddMonoidHom.comp_apply,
+    AddMonoidHom.comp_apply, OrderSystem.principalHom_apply]
+  exact Finsupp.extendDomain_subtypeDomain _ fun _ hw ↦
+    (mem_unit_iff_support_principalDivisor_subset S K).mp u.toMul.property hw
 
 /-- An `S`-unit has positive order zero at every prime of `S` exactly when it is a unit at every
 prime, that is, an `∅`-unit. -/
