@@ -89,6 +89,7 @@ theorem contDiff_coeff_derivative_monicOfCoeff (k : ℕ) :
 
 /-- Evaluating the monic polynomial with smoothly varying lower coefficients at a smoothly varying
 point is smooth. -/
+@[fun_prop]
 theorem contDiff_eval_monicOfCoeff {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {c : E → Fin d → 𝕜} {r : E → 𝕜} (hc : ContDiff 𝕜 n c) (hr : ContDiff 𝕜 n r) :
     ContDiff 𝕜 n fun x ↦ (monicOfCoeff (c x)).eval (r x) := by

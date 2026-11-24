@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Divisor.Family
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Polynomial
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.PDE.Vortex.Reduced.HigherSmoothness
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
@@ -57,7 +56,7 @@ noncomputable section
 
 open Complex MeasureTheory Module
 open TauCeti.Polynomial BesselPotentialSpace
-open scoped ContDiff BesselPotentialSpace ComplexConjugate
+open scoped ContDiff BesselPotentialSpace
 
 namespace TauCeti.Vortex
 
@@ -94,39 +93,20 @@ theorem contDiff_reducedSolution_monicOfCoeff :
   simp only [Function.comp_apply, reCLM_apply]
   rw [toZeroAtInfty_ofRealSobolevFunction_reducedSolution hs p.1, ofReal_re]
 
-/-- The background amplitude `u₀ = -log (1 + ‖P_c‖²) / 2` is jointly smooth in the coefficients
-and the point. -/
-private theorem contDiff_backgroundAmplitude_monicOfCoeff :
-    ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ backgroundAmplitude (monicOfCoeff p.1).eval p.2 := by
-  have hP : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ (monicOfCoeff p.1).eval p.2 :=
-    (contDiff_eval_monicOfCoeff contDiff_fst contDiff_snd).restrict_scalars ℝ
-  simp only [backgroundAmplitude_apply]
-  exact ((contDiff_const.add ((contDiff_norm_sq ℝ).comp hP)).log
-    fun _ ↦ (add_pos_of_pos_of_nonneg one_pos (sq_nonneg _)).ne').neg.div_const 2
-
 /-- **The plane vortices are jointly smooth in the divisor and the point.** The vortex field
 `x_c` with zero divisor `P_c` (`TauCeti.Vortex.polynomialVortex`) satisfies: `(c, z) ↦ x_c(z)` is
 `C^∞`. -/
 theorem contDiff_polynomialVortex_monicOfCoeff :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ polynomialVortex (monicOfCoeff p.1) p.2 := by
-  -- the amplitude `u₀ + w_c` and its derivative in the point
-  have hu : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦
-      backgroundAmplitude (monicOfCoeff p.1).eval p.2 + reducedSolution (monicOfCoeff p.1) p.2 :=
-    contDiff_backgroundAmplitude_monicOfCoeff.add contDiff_reducedSolution_monicOfCoeff
-  have hdu := (hu.comp (contDiff_fst.fst.prodMk contDiff_snd)).fderiv
-    (f := fun p z ↦ backgroundAmplitude (monicOfCoeff p.1).eval z +
-      reducedSolution (monicOfCoeff p.1) z) contDiff_snd (n := ∞) (by simp)
   have hP : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ (monicOfCoeff p.1).eval p.2 :=
     (contDiff_eval_monicOfCoeff contDiff_fst contDiff_snd).restrict_scalars ℝ
   simp only [polynomialVortex_def]
-  apply (contDiff_piLp 2).2
-  intro i
-  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, amplitudeField_apply_zero,
-    amplitudeField_apply_one, amplitudeField_apply_two, amplitudeField_apply_three]
-  · exact (hdu.clm_apply contDiff_const).neg
-  · exact hdu.clm_apply contDiff_const
-  · exact (hu.exp.mul (reCLM.contDiff.comp hP)).div_const 2
-  · exact (hu.exp.mul (imCLM.contDiff.comp hP)).div_const 2
+  exact contDiff_parametric_amplitudeField (n := ⊤)
+    (u := fun c z ↦
+      backgroundAmplitude (monicOfCoeff c).eval z + reducedSolution (monicOfCoeff c) z)
+    (f := fun c ↦ (monicOfCoeff c).eval)
+    (((contDiff_parametric_backgroundAmplitude (f := fun c ↦ (monicOfCoeff c).eval) hP).add
+      contDiff_reducedSolution_monicOfCoeff).of_le (by simp)) hP
 
 /-- **The end-normalized plane vortices are jointly smooth in the divisor and the point.** The
 vortex field `x_c` with zero divisor `P_c`, transformed by the polynomial gauge `g_c`
@@ -134,26 +114,8 @@ vortex field `x_c` with zero divisor `P_c`, transformed by the polynomial gauge 
 satisfies: `(c, z) ↦ (g_c · x_c)(z)` is `C^∞`. -/
 theorem contDiff_gaugeTransform_polynomialGauge_polynomialVortex :
     ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦
-      gaugeTransform (polynomialGauge p.1) (polynomialVortex (monicOfCoeff p.1)) p.2 := by
-  have hx := contDiff_polynomialVortex_monicOfCoeff (m := m)
-  have hg : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ (polynomialGauge p.1 p.2 : ℂ) :=
-    contDiff_polynomialGauge
-  have hdg := (hg.comp (contDiff_fst.fst.prodMk contDiff_snd)).fderiv
-    (f := fun p z ↦ (polynomialGauge p.1 z : ℂ)) contDiff_snd (n := ∞) (by simp)
-  have hω (v : ℂ) :
-      ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦ gaugeForm (polynomialGauge p.1) p.2 v := by
-    simp only [gaugeForm_apply]
-    exact imCLM.contDiff.comp ((conjCLE.contDiff.comp hg).mul (hdg.clm_apply contDiff_const))
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × ℂ ↦
-      polynomialVortex (monicOfCoeff p.1) p.2 i :=
-    (contDiff_piLp 2).1 hx i
-  simp only [gaugeTransform_apply]
-  apply (contDiff_piLp 2).2
-  intro i
-  fin_cases i
-  · exact (hxi 0).sub (hω 1)
-  · exact (hxi 1).sub (hω I)
-  · exact ((reCLM.contDiff.comp hg).mul (hxi 2)).sub ((imCLM.contDiff.comp hg).mul (hxi 3))
-  · exact ((imCLM.contDiff.comp hg).mul (hxi 2)).add ((reCLM.contDiff.comp hg).mul (hxi 3))
+      gaugeTransform (polynomialGauge p.1) (polynomialVortex (monicOfCoeff p.1)) p.2 :=
+  contDiff_parametric_gaugeTransform (n := ∞) (x := fun c ↦ polynomialVortex (monicOfCoeff c))
+    (contDiff_polynomialGauge.of_le (by simp)) contDiff_polynomialVortex_monicOfCoeff
 
 end TauCeti.Vortex
