@@ -31,6 +31,7 @@ subrepresentations, is `Representation.IntertwiningMap.isCompl_range_ker_lcomp_c
 
 ## Main results
 
+* `LinearMap.compl₂_comp_eq_compl₁₂`: `q.compl₂ b ∘ₗ a = q.compl₁₂ a b`.
 * `LinearMap.injective_left_of_compl₁₂_eq_compr₂`,
   `LinearMap.injective_right_of_compl₁₂_eq_compr₂`: the maps `a` and `b` are injective.
 * `LinearMap.isCompl_range_ker_compl₂_of_compl₁₂_eq_compr₂`: the range of `a` and the
@@ -48,6 +49,15 @@ namespace LinearMap
 
 open Function
 
+/-- Precomposing `q.compl₂ b` with `a` is `q.compl₁₂ a b`. -/
+theorem compl₂_comp_eq_compl₁₂ {R₁ R₂ M N P Q Q' : Type*} [Semiring R₁] [Semiring R₂]
+    [AddCommMonoid M] [Module R₁ M] [AddCommMonoid N] [Module R₂ N]
+    [AddCommMonoid P] [Module R₁ P] [Module R₂ P] [SMulCommClass R₂ R₁ P]
+    [AddCommMonoid Q] [Module R₁ Q] [AddCommMonoid Q'] [Module R₂ Q']
+    (q : M →ₗ[R₁] N →ₗ[R₂] P) (a : Q →ₗ[R₁] M) (b : Q' →ₗ[R₂] N) :
+    q.compl₂ b ∘ₗ a = q.compl₁₂ a b :=
+  rfl
+
 section CommSemiring
 
 variable {R U U' V V' W W' : Type*} [CommSemiring R]
@@ -59,9 +69,8 @@ variable {R U U' V V' W W' : Type*} [CommSemiring R]
 /-- If `q (a x) (b y) = φ (p x y)` with `p` and `φ` injective, then `a` is injective. -/
 theorem injective_left_of_compl₁₂_eq_compr₂ {φ : W →ₗ[R] W'} (h : q.compl₁₂ a b = p.compr₂ φ)
     (hp : Injective p) (hφ : Injective φ) : Injective a := by
-  have hcomp : q.compl₂ b ∘ₗ a = p.compr₂ φ := ext₂ fun x y ↦ by simpa using congr_fun₂ h x y
   refine Injective.of_comp (f := q.compl₂ b) ?_
-  rw [← coe_comp, hcomp]
+  rw [← coe_comp, compl₂_comp_eq_compl₁₂, h]
   exact injective_compr₂_of_injective p φ hp hφ
 
 /-- If `q (a x) (b y) = φ (p x y)` with `p.flip` and `φ` injective, then `b` is injective. -/
@@ -87,10 +96,8 @@ theorem isCompl_range_ker_compl₂_of_compl₁₂_eq_compr₂ {φ : W ≃ₗ[R] 
     (h : q.compl₁₂ a b = p.compr₂ φ.toLinearMap) (hp : Bijective p) :
     IsCompl (range a) (ker (q.compl₂ b)) := by
   -- `y ↦ q · (b y)` after `a` is `p` followed by `φ`, which is bijective.
-  have hcomp : q.compl₂ b ∘ₗ a = p.compr₂ φ.toLinearMap :=
-    ext₂ fun x y ↦ by simpa using congr_fun₂ h x y
   refine (bijective_comp_iff.1 ?_).2.1
-  rw [hcomp]
+  rw [compl₂_comp_eq_compl₁₂, h]
   exact bijective_compr₂_of_equiv p φ hp
 
 end CommRing
