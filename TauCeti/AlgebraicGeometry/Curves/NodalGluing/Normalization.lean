@@ -115,32 +115,6 @@ theorem isIso_stalkMap_normalizationSheafedSpaceHom [∀ i, T1Space (X i)] {x : 
   rw [stalkMap_normalizationSheafedSpaceHom]
   exact quotientStalkBranch_bijective I d hx
 
-/-- The complement of the flag points, an open subset of the normalization. -/
-def complFlagPointSet [∀ i, T1Space (X i)] : Opens (Σ i, X i) :=
-  ⟨(flagPointSet d)ᶜ, (flagPointSet_finite d).isClosed.isOpen_compl⟩
-
-@[simp]
-theorem coe_complFlagPointSet [∀ i, T1Space (X i)] :
-    (complFlagPointSet d : Set (Σ i, X i)) = (flagPointSet d)ᶜ := (rfl)
-
-/-- A point lies in the complement of the flag points exactly when it is not a flag point. -/
-@[simp]
-theorem mem_complFlagPointSet [∀ i, T1Space (X i)] {x : Σ i, X i} :
-    x ∈ complFlagPointSet d ↔ x ∉ flagPointSet d := Iff.rfl
-
-/-- The complement of the nodes, an open subset of the glued curve. -/
-def complNodeSet [∀ i, T1Space (X i)] : Opens (GluedCurve d) :=
-  ⟨(nodeSet d)ᶜ, isOpen_compl_nodeSet d⟩
-
-@[simp]
-theorem coe_complNodeSet [∀ i, T1Space (X i)] :
-    (complNodeSet d : Set (GluedCurve d)) = (nodeSet d)ᶜ := (rfl)
-
-/-- A point lies in the complement of the nodes exactly when it is not a node. -/
-@[simp]
-theorem mem_complNodeSet [∀ i, T1Space (X i)] {z : GluedCurve d} :
-    z ∈ complNodeSet d ↔ z ∉ nodeSet d := Iff.rfl
-
 /-- On points, the normalization map restricted to the complement of the flag points is the
 restriction of the quotient map. -/
 theorem ofRestrict_comp_normalizationSheafedSpaceHom_hom_base [∀ i, T1Space (X i)] :
