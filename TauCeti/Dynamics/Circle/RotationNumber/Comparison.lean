@@ -43,13 +43,6 @@ namespace CircleDeg1Lift
 
 local notation "τ" => translationNumber
 
-/-- A translation `x ↦ a + x` is a continuous lift. -/
-theorem continuous_translate (a : ℝ) :
-    Continuous (translate (Multiplicative.ofAdd a) : CircleDeg1Lift) := by
-  rw [show ⇑(translate (Multiplicative.ofAdd a) : CircleDeg1Lift) = fun y ↦ a + y from
-    funext (translate_apply a)]
-  exact continuous_const_add a
-
 /-- **Uniform margin between continuous lifts.** Two continuous lifts with `f x < g x` for every
 `x` satisfy `f x + ε ≤ g x` for a single `ε > 0`. -/
 theorem exists_pos_forall_add_le_of_forall_lt {f g : CircleDeg1Lift} (hf : Continuous f)
