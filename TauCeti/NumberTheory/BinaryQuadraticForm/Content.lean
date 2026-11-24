@@ -468,13 +468,13 @@ def principalForm (D : ℤ) : BinaryQuadraticForm ℤ :=
 @[simp] theorem principalForm_c (D : ℤ) : (principalForm D).c = (D % 2 - D) / 4 := (rfl)
 
 private theorem four_mul_principalForm_c {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
-    4 * (principalForm D).c = D % 2 - D :=
-  Int.mul_ediv_cancel' (Int.dvd_iff_emod_eq_zero.mpr (by omega))
-
-private theorem emod_two_mul_self (D : ℤ) : D % 2 * (D % 2) = D % 2 := by
-  rcases Int.emod_two_eq_zero_or_one D with h | h <;> simp [h]
+    4 * (principalForm D).c = D % 2 * (D % 2) - D := by
+  have h4 : 4 * (principalForm D).c = D % 2 - D :=
+    Int.mul_ediv_cancel' (Int.dvd_iff_emod_eq_zero.mpr (by omega))
+  rcases Int.emod_two_eq_zero_or_one D with h | h <;> rw [h4, h] <;> norm_num
 
 /-- The principal form of discriminant `4N` is `x² - N y²`. -/
+@[simp]
 theorem principalForm_four_mul (N : ℤ) : principalForm (4 * N) = ⟨1, 0, -N⟩ := by
   ext <;> simp <;> omega
 
@@ -482,14 +482,14 @@ theorem principalForm_four_mul (N : ℤ) : principalForm (4 * N) = ⟨1, 0, -N�
 theorem discrim_principalForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
     (principalForm D).discrim = D := by
   rw [discrim_def, discrim, principalForm_a, principalForm_b]
-  linear_combination emod_two_mul_self D - four_mul_principalForm_c hD
+  linear_combination -four_mul_principalForm_c hD
 
 /-- Four times a value of the principal form of discriminant `D ≡ 0, 1 mod 4` is
 `(2x + δy)² - D y²`, with `δ = D mod 2`. -/
 theorem four_mul_eval_principalForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) (x y : ℤ) :
     4 * (principalForm D).eval x y = (2 * x + D % 2 * y) ^ 2 - D * y ^ 2 := by
   rw [eval_def, principalForm_a, principalForm_b]
-  linear_combination y ^ 2 * four_mul_principalForm_c hD - y ^ 2 * emod_two_mul_self D
+  linear_combination y ^ 2 * four_mul_principalForm_c hD
 
 /-- **The product of two values of a form is a value of the principal form.** For an integral
 form `f` of discriminant `D`, `f(x, y) f(z, w)` is represented by the principal form of

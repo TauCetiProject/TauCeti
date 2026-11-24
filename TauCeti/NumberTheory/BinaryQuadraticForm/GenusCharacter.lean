@@ -34,8 +34,8 @@ The assigned characters are genus characters. For a prime `p ∣ D` this is the 
 `ε(m) = (-1)^((m² - 1)/8)` (`ZMod.χ₈`) and `δε` (`ZMod.χ₈'`). Here `δ` is a genus character
 when `N ≡ 0, 3 mod 4` (`isGenusChar_χ₄`), `ε` when `N ≡ 0, 2 mod 8` (`isGenusChar_χ₈`), `δε`
 when `N ≡ 0, 6 mod 8` (`isGenusChar_χ₈'`), and every character modulo `8` when `8 ∣ N`
-(`isGenusChar_of_emod_eight_eq_zero`). These are exactly the residues of `N` for which each of
-them is constant on the odd values of `x² - Ny²`.
+(`isGenusChar_of_emod_eight_eq_zero`). For these residues of `N`, each of them is constant on
+the odd values of `x² - Ny²`.
 
 ## Main definitions
 
@@ -63,6 +63,12 @@ takes the value `1` at every value prime to `n` of the principal form of discrim
 def IsGenusChar (D : ℤ) (χ : MulChar (ZMod n) R) : Prop :=
   ∀ x y : ℤ, IsUnit (((principalForm D).eval x y : ℤ) : ZMod n) →
     χ ((principalForm D).eval x y) = 1
+
+/-- Unfolding `IsGenusChar`: `χ` is `1` at every value prime to `n` of the principal form. -/
+theorem isGenusChar_iff {D : ℤ} {χ : MulChar (ZMod n) R} :
+    IsGenusChar D χ ↔ ∀ x y : ℤ, IsUnit (((principalForm D).eval x y : ℤ) : ZMod n) →
+      χ ((principalForm D).eval x y) = 1 :=
+  Iff.rfl
 
 /-- The **genus character** of the form `f` for a character `χ` modulo `n`: the value of `χ` at a
 value of `f` prime to `n`. When `χ` is a genus character of the discriminant of `f`, this is the
@@ -165,11 +171,12 @@ end IsGenusChar
 /-! ### The assigned characters -/
 
 /-- For a prime `p` dividing `D ≡ 0, 1 mod 4`, the Legendre symbol `(· | p)` is a genus character
-of discriminant `D`: for odd `p`, four times a value of the principal form is `(2x + δy)² - Dy²`,
-a square modulo `p`, and for `p = 2` the only value prime to `p` modulo `p` is `1`. -/
+of discriminant `D`. -/
 theorem isGenusChar_quadraticChar {p : ℕ} [Fact p.Prime] {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1)
     (hpD : (p : ℤ) ∣ D) : IsGenusChar D (quadraticChar (ZMod p)) := by
   intro x y hxy
+  -- For `p = 2` the only value prime to `p` modulo `p` is `1`; for odd `p`, four times a value of
+  -- the principal form is `(2x + δy)² - Dy²`, a square modulo `p`.
   rcases eq_or_ne p 2 with rfl | hp
   · generalize (((principalForm D).eval x y : ℤ) : ZMod 2) = a at hxy ⊢
     fin_cases a
@@ -200,6 +207,10 @@ private theorem isGenusChar_four_mul {m : ℕ} {χ : MulChar (ZMod m) R} {N : �
     ← sub_eq_add_neg, Int.cast_sub, Int.cast_pow, Int.cast_mul, hr] at hxy ⊢
   exact h _ _ hxy
 
+/-- An integer with residue `k` modulo `8` is `k` in `ZMod 8`. -/
+private theorem intCast_zmod_eight {N k : ℤ} (hN : N % 8 = k) : (N : ZMod 8) = k := by
+  rw [← ZMod.intCast_mod N 8, Nat.cast_ofNat, hN]
+
 /-- **`δ` is a genus character of discriminant `4N` for `N ≡ 0, 3 mod 4`**: the odd values of
 `x² - Ny²` are then `1` modulo `4`. Here `δ(m) = (-1)^((m - 1)/2)` is Mathlib's `ZMod.χ₄`. -/
 theorem isGenusChar_χ₄ {N : ℤ} (hN : N % 4 = 0 ∨ N % 4 = 3) :
@@ -217,8 +228,7 @@ theorem isGenusChar_of_emod_eight_eq_zero {N : ℤ} (hN : N % 8 = 0)
     (χ : MulChar (ZMod 8) R) : IsGenusChar (4 * N) χ := by
   have hval : ∀ X : ZMod 8, X ^ 2 = 1 ∨ X ^ 2 * 2 = 0 := by decide
   refine isGenusChar_four_mul (r := 0) ?_ fun X Y hu ↦ ?_
-  · rw [← ZMod.intCast_mod N 8, Nat.cast_ofNat, hN]
-    rfl
+  · rw [intCast_zmod_eight hN, Int.cast_zero]
   · rw [zero_mul, sub_zero] at hu ⊢
     rcases hval X with h | h
     · rw [h, map_one]
@@ -234,8 +244,7 @@ theorem isGenusChar_χ₈ {N : ℤ} (hN : N % 8 = 0 ∨ N % 8 = 2) : IsGenusChar
     decide
   refine isGenusChar_four_mul ?_ fun X Y hu ↦
     (hval X Y).resolve_left (hu.map ZMod.χ₈).ne_zero
-  rw [← ZMod.intCast_mod N 8, Nat.cast_ofNat, hN]
-  rfl
+  rw [intCast_zmod_eight hN, Int.cast_ofNat]
 
 /-- **`δε` is a genus character of discriminant `4N` for `N ≡ 0, 6 mod 8`**: the odd values of
 `x² - Ny²` are then `1` or `3` modulo `8`. Here `δε` is Mathlib's `ZMod.χ₈'`. -/
@@ -247,8 +256,7 @@ theorem isGenusChar_χ₈' {N : ℤ} (hN : N % 8 = 0 ∨ N % 8 = 6) : IsGenusCha
     decide
   refine isGenusChar_four_mul ?_ fun X Y hu ↦
     (hval X Y).resolve_left (hu.map ZMod.χ₈').ne_zero
-  rw [← ZMod.intCast_mod N 8, Nat.cast_ofNat, hN]
-  rfl
+  rw [intCast_zmod_eight hN, Int.cast_ofNat]
 
 /-- At discriminant `-20` the character `δ` separates the two proper classes: the form
 `2x² + 2xy + 3y²` represents `3 ≡ 3 mod 4`, so its genus character is `-1`, while that of the

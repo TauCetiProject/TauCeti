@@ -27,9 +27,8 @@ therefore a homomorphism on the class group of `𝒪_D`, with values squaring to
 
 Each sends the class of a form `f` to `genusChar χ f` (`picGenusChar_picClass`,
 `narrowPicGenusChar_narrowPicClass`), and is trivial on squares (`picGenusChar_sq`,
-`narrowPicGenusChar_sq`). The genera of forms of discriminant `D` are the fibres of the family of
-assigned characters, so these homomorphisms are the coordinates of the genus map, whose kernel,
-the principal genus, contains the squares.
+`narrowPicGenusChar_sq`). They are meant as the coordinates of Gauss's genus map, whose kernel,
+the principal genus, then contains the squares; that map and the genera are not set up here.
 
 ## References
 
@@ -143,24 +142,23 @@ section PosDef
 
 variable (n : ℕ) [NeZero n] (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) [NeZero m]
 
-/-- Primitive positive definite forms of discriminant `-n` are primitive of discriminant `-n`. -/
-private theorem discrim_eq_and_isPrimitive_of_mem_posDef {f : BinaryQuadraticForm ℤ}
-    (hf : f ∈ posDef n ⊓ primitiveForms (-n)) : f.discrim = -n ∧ f.IsPrimitive :=
-  have h := (mem_posDef_inf_primitiveForms n).mp hf
-  ⟨h.1, h.2.2⟩
-
 /-- **The genus character on the Picard group.** For `D = -n < 0`, a genus character `χ` of
 discriminant `-n` with nonzero modulus defines a homomorphism `Pic 𝒪_{-n} →* R`, the value at the
 class of a primitive positive definite form `f` of discriminant `-n` being `genusChar χ f`
 (`picGenusChar_picClass`). -/
 noncomputable def picGenusChar (hχ : IsGenusChar (-n) χ) :
     Pic (QuadraticOrder.numberFieldOrder (-n) hn) →* R :=
-  genusCharHom (fun _ ↦ discrim_eq_and_isPrimitive_of_mem_posDef n) hχ
-    (Equiv.ofBijective _ ⟨posDefProperClassToPic_injective n hn,
-      posDefProperClassToPic_surjective n hn⟩)
+  genusCharHom (fun _ hf ↦ ⟨((mem_posDef_inf_primitiveForms n).mp hf).1,
+      ((mem_posDef_inf_primitiveForms n).mp hf).2.2⟩) hχ (posDefProperClassEquivPic n hn)
     ⟨principalForm (-n), principalForm_mem_posDef_inf_primitiveForms n hn⟩ rfl
-    (posDefProperClassToPic_principalForm n hn)
-    (exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq n hn)
+    ((posDefProperClassEquivPic_apply n hn _).trans (posDefProperClassToPic_principalForm n hn))
+    fun q₁ q₂ ↦ by
+      obtain ⟨a, a', B, C, f, g, h, h₁, h₂, h₃, h₄, h₅, h₆⟩ :=
+        exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq n hn q₁ q₂
+      exact ⟨a, a', B, C, f, g, h, h₁, h₂, h₃, h₄, h₅,
+        (congrArg₂ (· * ·) (posDefProperClassEquivPic_apply n hn q₁)
+          (posDefProperClassEquivPic_apply n hn q₂)).trans
+          (h₆.trans (posDefProperClassEquivPic_apply n hn _).symm)⟩
 
 /-- The genus character on `Pic 𝒪_{-n}` sends the Picard class of a primitive positive definite
 form `f` of discriminant `-n` to `genusChar χ f`. -/
@@ -171,7 +169,8 @@ theorem picGenusChar_picClass (hχ : IsGenusChar (-n) χ) {f : BinaryQuadraticFo
     picGenusChar n hn hχ (picClass (-n) hn ⟨f, hf⟩) = genusChar χ f := by
   have hmem : f ∈ posDef n ⊓ primitiveForms (-n) := (mem_posDef_inf_primitiveForms n).mpr
     ⟨((mem_primitiveForms _ f).mp hf).1, ha, ((mem_primitiveForms _ f).mp hf).2⟩
-  exact (posDefProperClassToPic_mk n hn ⟨f, hmem⟩).symm ▸ genusCharHom_apply_mk _ hχ ⟨f, hmem⟩
+  rw [← posDefProperClassToPic_mk n hn ⟨f, hmem⟩, ← posDefProperClassEquivPic_apply n hn]
+  exact genusCharHom_apply_mk _ hχ ⟨f, hmem⟩
 
 /-- The genus character on `Pic 𝒪_{-n}` is trivial on squares. -/
 theorem picGenusChar_sq (hχ : IsGenusChar (-n) χ)
