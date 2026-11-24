@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Group.Integral
 
 /-!
@@ -18,17 +23,22 @@ The function `t ↦ cos t / t` has a convergent improper integral on `(a, ∞)` 
 not Lebesgue integrable there. Translating by `π / 2` exchanges `|cos|` and `|sin|` up to a bounded
 factor, and `1 ≤ |cos t| + |sin t|`, so integrability would contradict that of `t⁻¹`
 (`not_integrableOn_Ioi_inv`). Oscillatory amplitudes such as `sin t / t` therefore have derivatives
-that are not integrable at infinity.
+that are not integrable at infinity: the derivative `cos t / t - sin t / t²` of `sinc` differs from
+`cos t / t` by an integrable function.
 
 ## Main results
 
 * `TauCeti.not_integrableOn_Ioi_cos_div`: `cos t / t` is not integrable on `(a, ∞)`.
+* `TauCeti.iteratedDerivWithin_one_sinc`: the derivative of `sinc` within `[a, ∞)`, as a
+  complex-valued function, is `cos t / t - sin t / t²` on `(a, ∞)`.
+* `TauCeti.not_integrableOn_iteratedDerivWithin_one_sinc`: that derivative is not integrable on
+  `(a, ∞)`.
 -/
 
 public section
 
 open Filter MeasureTheory Set
-open scoped Real
+open scoped Real Topology
 
 namespace TauCeti
 
@@ -79,5 +89,47 @@ theorem not_integrableOn_Ioi_cos_div {a : ℝ} (ha : 0 < a) :
     simp only [Pi.add_apply, Real.norm_eq_abs, abs_div, abs_of_pos ht0, abs_inv]
     rw [← add_div, inv_eq_one_div]
     exact div_le_div_of_nonneg_right hone ht0.le
+
+/-- For `0 < a < t`, the derivative of the complex-valued `sinc` within `[a, ∞)` at `t` is
+`cos t / t - sin t / t²`. -/
+theorem iteratedDerivWithin_one_sinc {a t : ℝ} (ha : 0 < a) (ht : t ∈ Ioi a) :
+    iteratedDerivWithin 1 (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici a) t =
+      ((Real.cos t / t - Real.sin t / t ^ 2 : ℝ) : ℂ) := by
+  have hat : a < t := ht
+  have ht0 : t ≠ 0 := (ha.trans hat).ne'
+  have hd : HasDerivAt (fun t : ℝ => Real.sin t / t) (Real.cos t / t - Real.sin t / t ^ 2) t := by
+    refine ((Real.hasDerivAt_sin t).fun_div (hasDerivAt_id' t) ht0).congr_deriv ?_
+    field_simp
+  have hev : (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) =ᶠ[𝓝 t]
+      fun t : ℝ => ((Real.sin t / t : ℝ) : ℂ) := by
+    filter_upwards [lt_mem_nhds hat] with u hu
+    rw [Real.sinc_of_ne_zero (ha.trans hu).ne']
+  rw [iteratedDerivWithin_one, derivWithin_of_mem_nhds (Ici_mem_nhds hat)]
+  exact (hd.ofReal_comp.congr_of_eventuallyEq hev).deriv
+
+/-- For `0 < a`, the derivative of `q(t) = sin t / t` within `[a, ∞)` is not integrable on
+`(a, ∞)`, although `q` tends to zero and its Fourier integral converges there. -/
+theorem not_integrableOn_iteratedDerivWithin_one_sinc {a : ℝ} (ha : 0 < a) :
+    ¬ IntegrableOn (iteratedDerivWithin 1 (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici a))
+      (Ioi a) := by
+  intro h
+  have hc : IntegrableOn (fun t : ℝ => ((Real.cos t / t - Real.sin t / t ^ 2 : ℝ) : ℂ))
+      (Ioi a) := h.congr_fun (fun _ ht => iteratedDerivWithin_one_sinc ha ht) measurableSet_Ioi
+  have hre : IntegrableOn (fun t : ℝ => Real.cos t / t - Real.sin t / t ^ 2) (Ioi a) := by
+    simpa only [RCLike.re_to_complex, Complex.ofReal_re] using hc.re
+  have hsq : IntegrableOn (fun t : ℝ => Real.sin t / t ^ 2) (Ioi a) := by
+    refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt (a := -2) (by norm_num) ha) ?_ ?_
+    · refine ContinuousOn.aestronglyMeasurable (fun t ht => ?_) measurableSet_Ioi
+      have ht0 : t ≠ 0 := (ha.trans ht).ne'
+      exact (Real.continuous_sin.continuousAt.div (continuousAt_id.pow 2)
+        (pow_ne_zero 2 ht0)).continuousWithinAt
+    · refine (ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall fun t ht => ?_)
+      have ht0 : 0 < t := ha.trans ht
+      rw [Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : 0 < t ^ 2),
+        Real.rpow_neg ht0.le, Real.rpow_two, div_eq_mul_inv]
+      exact mul_le_of_le_one_left (by positivity) (Real.abs_sin_le_one t)
+  refine not_integrableOn_Ioi_cos_div ha ((hre.add hsq).congr_fun (fun t _ => ?_)
+    measurableSet_Ioi)
+  simp
 
 end TauCeti

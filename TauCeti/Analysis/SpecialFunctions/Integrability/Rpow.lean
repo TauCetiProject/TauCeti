@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
@@ -20,6 +21,10 @@ On an interval `(0, c)`, the power `t ↦ t ^ (-a)` is in `Lᵖ` for every finit
 `(2 √t)⁻¹` of `t ↦ √t` is in `Lᵖ(0, c)` for `p < 2`. Translating `(0, b - a)` to `(a, b)` also
 gives the shifted integrability criterion `TauCeti.integrableOn_Ioo_sub_rpow_iff`: for `a < b`,
 `t ↦ (t - a) ^ s` is integrable on `(a, b)` if and only if `-1 < s`.
+
+At infinity, the inverse natural power `t ↦ t⁻¹ ^ k` is integrable on `(c, ∞)` for `0 < c` and
+`2 ≤ k` (`TauCeti.integrableOn_Ioi_inv_pow`), the natural-power form of Mathlib's
+`integrableOn_Ioi_rpow_of_lt`.
 -/
 
 public section
@@ -51,5 +56,14 @@ theorem integrableOn_Ioo_sub_rpow_iff {a b s : ℝ} (hab : a < b) :
     (measurableEmbedding_addRight a)]
   simpa [Function.comp_def, add_sub_cancel_right] using
     intervalIntegral.integrableOn_Ioo_rpow_iff (sub_pos.mpr hab)
+
+/-- On `(c, ∞)` with `0 < c`, the inverse power `t ↦ t⁻¹ ^ k` is integrable for `2 ≤ k`. -/
+theorem integrableOn_Ioi_inv_pow {k : ℕ} {c : ℝ} (hk : 2 ≤ k) (hc : 0 < c) :
+    IntegrableOn (fun t : ℝ => t⁻¹ ^ k) (Ioi c) := by
+  refine (integrableOn_Ioi_rpow_of_lt (a := -(k : ℝ)) ?_ hc).congr_fun (fun t ht => ?_)
+    measurableSet_Ioi
+  · have : (2 : ℝ) ≤ k := by exact_mod_cast hk
+    linarith
+  · simp only [Real.rpow_neg (hc.trans ht).le, Real.rpow_natCast, inv_pow]
 
 end TauCeti

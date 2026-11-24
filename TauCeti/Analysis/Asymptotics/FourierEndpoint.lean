@@ -11,7 +11,9 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.NonIntegrable
+import TauCeti.Analysis.Calculus.Deriv.InvPow
+import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-!
 # Endpoint expansions of Fourier integrals
@@ -23,8 +25,9 @@ formulas 2.3.4 to 2.3.6). On a compact interval,
 `∫_a^b e^{ixt} q(t) dt ∼ e^{iax} ∑ q^{(s)}(a) (i/x)^{s+1} - e^{ibx} ∑ q^{(s)}(b) (i/x)^{s+1}`,
 
 and on `[a, ∞)` only the sum at `a` remains, provided each `∫ e^{ixt} q^{(s)}(t) dt` converges at
-infinity uniformly for all large `x`. In both cases the remainder after `n` terms is at most
-`x^{-n} ∫ |q^{(n)}|`.
+infinity uniformly for all large `x`. On a compact interval the remainder after `n` terms is at
+most `x^{-n} ∫ |q^{(n)}|` for every `x > 0`; on `[a, ∞)` the same bound holds for all sufficiently
+large `x` when, in addition, `q^{(n)}` is integrable on `(a, ∞)`.
 
 On the half-line the boundary terms at infinity need an argument: convergence of two consecutive
 integrals only shows that `e^{ixT} q^{(s)}(T)` has a limit as `T → ∞`. That limit vanishes because
@@ -41,9 +44,9 @@ it exists at two different frequencies (`Asymptotics.eq_zero_of_tendsto_cexp_smu
 * `Asymptotics.norm_integral_cexp_smul_le_of_hasDerivAt`,
   `Asymptotics.exists_forall_norm_integral_cexp_smul_le`: decay of `r` with integrable `r'` gives
   convergence at infinity, uniformly for `x ≥ 1`.
-* `Asymptotics.hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc`,
-  `Asymptotics.not_integrableOn_iteratedDerivWithin_one_sinc`: that criterion is not necessary:
-  `q(t) = sin t / t` on `[1, ∞)` has the expansion although `q'` is not integrable.
+* `Asymptotics.hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc`: that criterion is not
+  necessary: `q(t) = sin t / t` on `[1, ∞)` has the expansion although `q'` is not integrable
+  there (`TauCeti.not_integrableOn_iteratedDerivWithin_one_sinc`).
 -/
 
 public section
@@ -493,16 +496,8 @@ theorem exists_forall_norm_integral_cexp_smul_le {r r' : ℝ → E} {a : ℝ}
     (hint : IntegrableOn r' (Ioi a)) {ε : ℝ} (hε : 0 < ε) :
     ∃ c : ℝ, ∀ x ≥ (1 : ℝ), ∀ T ≥ c, ∀ T' ≥ T,
       ‖∫ t in T..T', cexp (((x * t : ℝ) : ℂ) * I) • r t‖ ≤ ε := by
-  have htail : Tendsto (fun T : ℝ => ∫ t in Ioi T, ‖r' t‖) atTop (𝓝 0) := by
-    have h := intervalIntegral_tendsto_integral_Ioi a hint.norm tendsto_id
-    have h' := (tendsto_const_nhds (x := ∫ t in Ioi a, ‖r' t‖)).sub h
-    rw [sub_self] at h'
-    refine h'.congr' ?_
-    filter_upwards [eventually_ge_atTop a] with T hT
-    have := intervalIntegral.integral_interval_add_Ioi (a := a) (b := T)
-      (f := fun t => ‖r' t‖) hint.norm (hint.mono_set (Ioi_subset_Ioi hT)).norm
-    simp only [id]
-    linarith
+  have htail : Tendsto (fun T : ℝ => ∫ t in Ioi T, ‖r' t‖) atTop (𝓝 0) :=
+    tendsto_integral_Ioi_zero tendsto_id
   have hnorm : Tendsto (fun T : ℝ => ‖r T‖) atTop (𝓝 0) := by simpa using h0.norm
   have hε3 : 0 < ε / 3 := by positivity
   obtain ⟨c₁, hc₁⟩ := eventually_atTop.1 (hnorm.eventually (gt_mem_nhds hε3))
@@ -544,20 +539,10 @@ private theorem oscPow_mem {ν : ℝ} (hν : ν = 1 ∨ ν = -1) {k : ℕ} (hk :
     oscPow ν k ∈ oscSpan :=
   Submodule.subset_span ⟨ν, hν, k, hk, rfl⟩
 
-private theorem hasDerivAt_inv_pow (k : ℕ) {t : ℝ} (ht : t ≠ 0) :
-    HasDerivAt (fun t : ℝ => t⁻¹ ^ k) (-(k : ℝ) * t⁻¹ ^ (k + 1)) t := by
-  have h := (hasDerivAt_inv ht).fun_pow k
-  convert h using 1
-  rcases k with - | k
-  · simp
-  · simp only [Nat.add_sub_cancel]
-    rw [← inv_pow]
-    ring
-
 private theorem hasDerivAt_oscPow (ν : ℝ) (k : ℕ) {t : ℝ} (ht : t ≠ 0) :
     HasDerivAt (oscPow ν k)
       (((ν : ℂ) * I) • oscPow ν k t + (-(k : ℂ)) • oscPow ν (k + 1) t) t := by
-  have h := (hasDerivAt_cexp_mul_I ν t).mul (hasDerivAt_inv_pow k ht).ofReal_comp
+  have h := (hasDerivAt_cexp_mul_I ν t).mul (TauCeti.hasDerivAt_inv_pow k ht).ofReal_comp
   refine h.congr_deriv ?_
   simp only [oscPow, smul_eq_mul]
   push_cast
@@ -566,27 +551,6 @@ private theorem hasDerivAt_oscPow (ν : ℝ) (k : ℕ) {t : ℝ} (ht : t ≠ 0) 
 private theorem continuousOn_oscPow (ν : ℝ) (k : ℕ) : ContinuousOn (oscPow ν k) (Ici 1) :=
   fun t ht => (hasDerivAt_oscPow ν k (by have := mem_Ici.1 ht; positivity)).continuousAt
     |>.continuousWithinAt
-
-private theorem integrableOn_inv_pow_succ {k : ℕ} (hk : 1 ≤ k) :
-    IntegrableOn (fun t : ℝ => (((-(k : ℝ) * t⁻¹ ^ (k + 1) : ℝ)) : ℂ)) (Ioi 1) := by
-  have hbase : IntegrableOn (fun t : ℝ => (k : ℝ) * t ^ (-2 : ℝ)) (Ioi 1) :=
-    (integrableOn_Ioi_rpow_of_lt (by norm_num) one_pos).const_mul _
-  refine Integrable.mono' hbase ?_ ?_
-  · refine ContinuousOn.aestronglyMeasurable (fun t ht => ?_) measurableSet_Ioi
-    have ht0 : t ≠ 0 := (lt_trans one_pos ht).ne'
-    exact ((hasDerivAt_inv_pow (k + 1) ht0).const_mul (-(k : ℝ))).ofReal_comp.continuousAt
-      |>.continuousWithinAt
-  · refine (ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall fun t ht => ?_)
-    have ht1 : (1 : ℝ) < t := ht
-    have ht0 : 0 < t := one_pos.trans ht1
-    have hinv : t⁻¹ ≤ 1 := inv_le_one_of_one_le₀ ht1.le
-    have hpow : t⁻¹ ^ (k + 1) ≤ t⁻¹ ^ 2 :=
-      pow_le_pow_of_le_one (by positivity) hinv (by omega)
-    have hrpow : t ^ (-2 : ℝ) = t⁻¹ ^ 2 := by
-      rw [Real.rpow_neg ht0.le, Real.rpow_two, inv_pow]
-    rw [Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_neg, Nat.abs_cast,
-      abs_of_pos (by positivity : 0 < t⁻¹ ^ (k + 1)), hrpow]
-    exact mul_le_mul_of_nonneg_left hpow (by positivity)
 
 private theorem tailSmall_oscPow {ν : ℝ} (hν : ν = 1 ∨ ν = -1) {k : ℕ} (hk : 1 ≤ k) :
     TailSmall (oscPow ν k) := by
@@ -600,8 +564,8 @@ private theorem tailSmall_oscPow {ν : ℝ} (hν : ν = 1 ∨ ν = -1) {k : ℕ}
   obtain ⟨c, hc⟩ := exists_forall_norm_integral_cexp_smul_le (a := 1)
     (r := fun t : ℝ => ((t⁻¹ ^ k : ℝ) : ℂ))
     (r' := fun t : ℝ => (((-(k : ℝ) * t⁻¹ ^ (k + 1) : ℝ)) : ℂ))
-    (fun t ht => (hasDerivAt_inv_pow k (one_pos.trans ht).ne').ofReal_comp)
-    h0 (integrableOn_inv_pow_succ hk) hε
+    (fun t ht => (TauCeti.hasDerivAt_inv_pow k (one_pos.trans ht).ne').ofReal_comp)
+    h0 (((TauCeti.integrableOn_Ioi_inv_pow (by omega) one_pos).const_mul _).ofReal) hε
   refine ⟨max c 1, le_max_right _ _, fun x hx T hT T' hT' => ?_⟩
   have hfreq : x + ν ≥ 1 := by rcases hν with rfl | rfl <;> linarith
   refine le_of_eq_of_le ?_ (hc (x + ν) hfreq T ((le_max_left _ _).trans hT) T' hT')
@@ -713,16 +677,6 @@ private theorem exists_mem_oscSpan_eqOn_iteratedDerivWithin (s : ℕ) :
     rw [iteratedDerivWithin_succ, derivWithin_congr hEq (hEq ht)]
     exact (hf' t ht0).hasDerivWithinAt.derivWithin (uniqueDiffOn_Ici 1 t ht)
 
-private theorem contDiffOn_sinc_Ici_one :
-    ContDiffOn ℝ ∞ (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici 1) := by
-  have h : ContDiffOn ℝ ∞ (fun t : ℝ => ((Real.sin t / t : ℝ) : ℂ)) (Ici 1) := by
-    refine ofRealCLM.contDiff.comp_contDiffOn (Real.contDiff_sin.contDiffOn.div contDiffOn_id ?_)
-    intro t ht
-    have := mem_Ici.1 ht
-    positivity
-  refine h.congr fun t ht => ?_
-  rw [Real.sinc_of_ne_zero (by have := mem_Ici.1 ht; positivity)]
-
 /-- For `q(t) = sin t / t` on `[1, ∞)`, each `∫ e^{ixt} q^{(s)}(t) dt` converges at infinity
 uniformly for `x ≥ 2`. -/
 theorem exists_forall_norm_integral_cexp_smul_iteratedDerivWithin_sinc_le (s : ℕ) {ε : ℝ}
@@ -740,57 +694,17 @@ theorem exists_forall_norm_integral_cexp_smul_iteratedDerivWithin_sinc_le (s : �
   simp only [hEq (hc.trans (hT.trans ht.1) : (1 : ℝ) ≤ t)]
 
 /-- The expansion 2.3.5 applies to `q(t) = sin t / t` on `[1, ∞)`, although `q'` is not integrable
-there (`not_integrableOn_iteratedDerivWithin_one_sinc`). -/
+there (`TauCeti.not_integrableOn_iteratedDerivWithin_one_sinc`). -/
 theorem hasAsymptoticExpansion_of_tendsto_integral_cexp_smul_sinc {F : ℝ → ℂ}
     (hF : ∀ᶠ x : ℝ in atTop, Tendsto (fun T : ℝ => ∫ t in (1 : ℝ)..T,
       cexp (((x * t : ℝ) : ℂ) * I) • ((Real.sinc t : ℝ) : ℂ)) atTop (𝓝 (F x))) :
     HasAsymptoticExpansion atTop
       (fun (s : ℕ) (x : ℝ) => cexp (((x * (1 : ℝ) : ℝ) : ℂ) * I) * (I / (x : ℂ)) ^ (s + 1))
       (fun s => iteratedDerivWithin s (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici 1) 1) F :=
-  hasAsymptoticExpansion_of_tendsto_integral_cexp_smul contDiffOn_sinc_Ici_one
+  hasAsymptoticExpansion_of_tendsto_integral_cexp_smul
+    (ofRealCLM.contDiff.comp Real.contDiff_sinc).contDiffOn
     (fun s => ⟨2, fun _ hε =>
       exists_forall_norm_integral_cexp_smul_iteratedDerivWithin_sinc_le s hε⟩) hF
-
-private theorem iteratedDerivWithin_one_sinc {t : ℝ} (ht : t ∈ Ioi (1 : ℝ)) :
-    iteratedDerivWithin 1 (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici 1) t =
-      ((Real.cos t / t - Real.sin t / t ^ 2 : ℝ) : ℂ) := by
-  have ht1 : (1 : ℝ) < t := ht
-  have ht0 : t ≠ 0 := by positivity
-  have hd : HasDerivAt (fun t : ℝ => Real.sin t / t) (Real.cos t / t - Real.sin t / t ^ 2) t := by
-    refine ((Real.hasDerivAt_sin t).fun_div (hasDerivAt_id' t) ht0).congr_deriv ?_
-    field_simp
-  have hev : (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) =ᶠ[𝓝 t]
-      fun t : ℝ => ((Real.sin t / t : ℝ) : ℂ) := by
-    filter_upwards [lt_mem_nhds ht1] with u hu
-    rw [Real.sinc_of_ne_zero (by positivity)]
-  rw [iteratedDerivWithin_one, derivWithin_of_mem_nhds (Ici_mem_nhds ht1)]
-  exact (hd.ofReal_comp.congr_of_eventuallyEq hev).deriv
-
-/-- The derivative of `q(t) = sin t / t` is not integrable on `[1, ∞)`, so decay of `q` with
-integrable `q'` is sufficient but not necessary for uniform convergence of the Fourier integral:
-compare `exists_forall_norm_integral_cexp_smul_iteratedDerivWithin_sinc_le`. -/
-theorem not_integrableOn_iteratedDerivWithin_one_sinc :
-    ¬ IntegrableOn (iteratedDerivWithin 1 (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici 1))
-      (Ioi 1) := by
-  intro h
-  have hc : IntegrableOn (fun t : ℝ => ((Real.cos t / t - Real.sin t / t ^ 2 : ℝ) : ℂ))
-      (Ioi 1) := h.congr_fun (fun _ ht => iteratedDerivWithin_one_sinc ht) measurableSet_Ioi
-  have hre : IntegrableOn (fun t : ℝ => Real.cos t / t - Real.sin t / t ^ 2) (Ioi 1) := by
-    simpa only [RCLike.re_to_complex, Complex.ofReal_re] using hc.re
-  have hsq : IntegrableOn (fun t : ℝ => Real.sin t / t ^ 2) (Ioi 1) := by
-    refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt (a := -2) (by norm_num) one_pos) ?_ ?_
-    · refine ContinuousOn.aestronglyMeasurable (fun t ht => ?_) measurableSet_Ioi
-      have ht0 : t ≠ 0 := (one_pos.trans ht).ne'
-      exact (Real.continuous_sin.continuousAt.div (continuousAt_id.pow 2)
-        (pow_ne_zero 2 ht0)).continuousWithinAt
-    · refine (ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall fun t ht => ?_)
-      have ht0 : 0 < t := one_pos.trans ht
-      rw [Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : 0 < t ^ 2),
-        Real.rpow_neg ht0.le, Real.rpow_two, div_eq_mul_inv]
-      exact mul_le_of_le_one_left (by positivity) (Real.abs_sin_le_one t)
-  refine TauCeti.not_integrableOn_Ioi_cos_div one_pos ((hre.add hsq).congr_fun (fun t _ => ?_)
-    measurableSet_Ioi)
-  simp
 
 end SincCheck
 
