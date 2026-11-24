@@ -49,6 +49,8 @@ field, each with its own period.
   curve of `X` into one of `Y`.
 * `IsMIntegralCurve.exists_orderIso_isMIntegralCurve_comp`: reparametrization by an order
   automorphism of `ℝ`, for a continuous positive factor which is bounded above.
+* `IsMIntegralCurve.exists_homeomorph_isMIntegralCurve_comp_of_abs_le`: reparametrization by a
+  homeomorphism of `ℝ`, for a continuous nonvanishing factor which is bounded.
 * `IsMIntegralCurve.exists_homeomorph_isMIntegralCurve_comp_of_periodic`: reparametrization by a
   given continuous, periodic, nonvanishing factor.
 * `IsMIntegralCurve.exists_homeomorph_isMIntegralCurve_comp`: reparametrization when `Y` is
@@ -99,6 +101,32 @@ theorem exists_orderIso_isMIntegralCurve_comp (hγ : IsMIntegralCurve γ X) (hh 
     (hh.inv₀ fun t ↦ (hpos t).ne') (inv_pos.2 ((hpos 0).trans_le (hc 0)))
     (fun t ↦ inv_anti₀ (hpos t) (hc t)) 0
   exact ⟨ψ, by simpa using hψθ 0, hγ.comp_of_hasDerivAt hY fun s ↦ by simpa using hψd s⟩
+
+/-- **Reparametrizing an integral curve along a nonvanishing multiple of the field.** Let `γ` be an
+integral curve of `X`, and let `Y (γ t) = h t • X (γ t)` for a continuous nowhere vanishing
+function `h` with `|h| ≤ c`. Then `γ ∘ ψ` is an integral curve of `Y` for a homeomorphism `ψ` of
+`ℝ` fixing `0`, increasing if `h` is positive and decreasing if `h` is negative. -/
+theorem exists_homeomorph_isMIntegralCurve_comp_of_abs_le (hγ : IsMIntegralCurve γ X)
+    (hh : Continuous h) (hh0 : ∀ t, h t ≠ 0) {c : ℝ} (hc : ∀ t, |h t| ≤ c)
+    (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
+    ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ IsMIntegralCurve (γ ∘ ψ) Y := by
+  -- A continuous nonvanishing function on `ℝ` has the constant sign of its value at `0`.
+  have hsign : ∀ t, SignType.sign (h t) = SignType.sign (h 0) := fun t ↦
+    isPreconnected_univ.sign_eq_of_continuousOn hh.continuousOn (fun t _ ↦ hh0 t) trivial trivial
+  rcases (hh0 0).lt_or_gt with hneg0 | hpos0
+  · have hneg (t : ℝ) : h t < 0 := sign_eq_neg_one_iff.1 ((hsign t).trans (sign_neg hneg0))
+    -- `γ` run backwards is an integral curve of `-X`, of which `Y` is the positive multiple `-h`.
+    obtain ⟨φ, hφ0, hφ⟩ := (hγ.comp_mul (-1)).exists_orderIso_isMIntegralCurve_comp
+      (h := fun t ↦ -h (t * -1)) (Y := Y) (hh.comp (continuous_id.mul continuous_const)).neg
+      (fun t ↦ neg_pos.2 (hneg _)) (fun t ↦ (neg_le_abs _).trans (hc _)) fun t ↦ by simp [hY]
+    refine ⟨φ.toHomeomorph.trans (Homeomorph.neg ℝ), by simp [hφ0], ?_⟩
+    convert hφ using 1
+    ext t
+    simp
+  · obtain ⟨φ, hφ0, hφ⟩ := hγ.exists_orderIso_isMIntegralCurve_comp hh
+      (fun t ↦ sign_eq_one_iff.1 ((hsign t).trans (sign_pos hpos0)))
+      (fun t ↦ (le_abs_self _).trans (hc t)) hY
+    exact ⟨φ.toHomeomorph, by simpa using hφ0, hφ⟩
 
 /-- The reparametrization for a positive factor `h`, by the time change
 `Function.Periodic.exists_homeomorph_hasDerivAt_of_pos`. -/
