@@ -137,6 +137,17 @@ theorem mem_radical_rootLattice_iff (x : Fin t.nodes → ℚ) :
     (Pi.basisFun ℚ (Fin t.nodes)).ext fun i ↦ by rw [hform, h, Pi.zero_apply, LinearMap.zero_apply]
   rw [hx, LinearMap.zero_apply]
 
+/-- The generalized Cartan matrix commutes with transporting a vector along a ring hom. -/
+private lemma map_mulVec_comp {S R : Type*} [Ring S] [Ring R] (f : S →+* R)
+    (x : Fin t.nodes → S) :
+    t.cartanMatrix.map ((↑) : ℤ → R) *ᵥ (fun k ↦ f (x k)) =
+      fun i ↦ f ((t.cartanMatrix.map ((↑) : ℤ → S) *ᵥ x) i) := by
+  funext i
+  rw [RingHom.map_mulVec, Matrix.map_map]
+  congr 2
+  funext z
+  exact (map_intCast f z).symm
+
 /-- A rational vector killed by the generalized Cartan matrix of a valid diagram is its value at
 the affine node times the marks. This is the rational form of
 `TauCeti.AffineDynkinType.ker_mulVecLin_realCartanMatrix`, normalized by
@@ -146,10 +157,7 @@ private lemma smul_marks_eq_of_mulVec_eq_zero (ht : t.Valid) {x : Fin t.nodes �
     x t.affineNode • (fun i ↦ (t.marks i : ℚ)) = x := by
   have hr : (fun i ↦ (x i : ℝ)) ∈ LinearMap.ker (mulVecLin t.realCartanMatrix) := by
     rw [LinearMap.mem_ker, mulVecLin_apply, realCartanMatrix_eq_map]
-    funext i
-    have hi := congrFun hx i
-    simp only [mulVec, dotProduct, map_apply, Pi.zero_apply] at hi ⊢
-    exact_mod_cast hi
+    simpa [hx, Pi.zero_def] using map_mulVec_comp (Rat.castHom ℝ) x
   rw [ker_mulVecLin_realCartanMatrix ht, Submodule.mem_span_singleton] at hr
   obtain ⟨c, hc⟩ := hr
   have ha : c = x t.affineNode := by simpa using congrFun hc t.affineNode
@@ -161,10 +169,10 @@ private lemma smul_marks_eq_of_mulVec_eq_zero (ht : t.Valid) {x : Fin t.nodes �
 /-- The rational marks are killed by the generalized Cartan matrix. -/
 private lemma mulVec_marks_eq_zero (ht : t.Valid) :
     t.cartanMatrix.map ((↑) : ℤ → ℚ) *ᵥ (fun i ↦ (t.marks i : ℚ)) = 0 := by
-  funext i
-  have hi := congrFun (cartanMatrix_mulVec_marks_eq_zero ht) i
-  simp only [mulVec, dotProduct, map_apply, Pi.zero_apply] at hi ⊢
-  exact_mod_cast hi
+  have h := map_mulVec_comp (Int.castRingHom ℚ) t.marks
+  rw [show t.cartanMatrix.map (Int.cast : ℤ → ℤ) = t.cartanMatrix from ext fun _ _ ↦ Int.cast_id,
+    cartanMatrix_mulVec_marks_eq_zero ht] at h
+  simpa [Pi.zero_def] using h
 
 /-- **The radical of the affine root lattice is the line spanned by the marks**, the null root
 `δ`. -/
@@ -201,6 +209,11 @@ private noncomputable def deleteAffineNode (t : AffineDynkinType) :
   LinearMap.funLeft ℚ ℚ t.bourbakiNode ∘ₗ
     (LinearMap.id - (LinearMap.proj t.affineNode).smulRight (fun i ↦ (t.marks i : ℚ)))
 
+/-- A vector extended by zero along the Bourbaki relabelling vanishes at the affine node. -/
+private lemma extend_bourbakiNode_affineNode (ht : t.Valid) (x : Fin t.finiteType.rank → ℚ) :
+    Function.extend t.bourbakiNode x 0 t.affineNode = 0 :=
+  Function.extend_apply' _ _ _ fun ⟨i, hi⟩ ↦ bourbakiNode_ne_affineNode ht i hi
+
 private lemma deleteAffineNode_apply (v : Fin t.nodes → ℚ) (i : Fin t.finiteType.rank) :
     deleteAffineNode t v i =
       v (t.bourbakiNode i) - v t.affineNode * t.marks (t.bourbakiNode i) := by
@@ -210,10 +223,8 @@ private lemma deleteAffineNode_apply (v : Fin t.nodes → ℚ) (i : Fin t.finite
 vector back. -/
 private lemma deleteAffineNode_extend (ht : t.Valid) (x : Fin t.finiteType.rank → ℚ) :
     deleteAffineNode t (Function.extend t.bourbakiNode x 0) = x := by
-  have h0 : Function.extend t.bourbakiNode x 0 t.affineNode = 0 :=
-    Function.extend_apply' _ _ _ fun ⟨i, hi⟩ ↦ bourbakiNode_ne_affineNode ht i hi
   funext i
-  rw [deleteAffineNode_apply, h0, zero_mul, sub_zero,
+  rw [deleteAffineNode_apply, extend_bourbakiNode_affineNode ht, zero_mul, sub_zero,
     (bourbakiNode_injective ht).extend_apply]
 
 /-- Every vector differs from the extension by zero of its image under `deleteAffineNode` by a
@@ -224,8 +235,7 @@ private lemma extend_deleteAffineNode (ht : t.Valid) (v : Fin t.nodes → ℚ) :
   funext k
   by_cases hk : k = t.affineNode
   · subst hk
-    rw [Function.extend_apply' _ _ _ fun ⟨i, hi⟩ ↦ bourbakiNode_ne_affineNode ht i hi]
-    simp
+    simp [extend_bourbakiNode_affineNode ht]
   · obtain ⟨i, rfl⟩ := exists_bourbakiNode_eq ht hk
     rw [(bourbakiNode_injective ht).extend_apply, deleteAffineNode_apply]
     simp
@@ -256,7 +266,7 @@ private lemma deleteAffineNode_mem {v : Fin t.nodes → ℚ} (hv : ∀ k, ∃ z 
   refine ⟨z - w * t.marks (t.bourbakiNode i), ?_⟩
   rw [deleteAffineNode_apply, ← hz, ← hw]
   push_cast
-  rfl
+  ring
 
 /-- Extension by zero sends lattice vectors to lattice vectors. -/
 private lemma extend_mem {x : Fin t.finiteType.rank → ℚ} (hx : ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
@@ -310,13 +320,9 @@ private noncomputable def radicalQuotientIsometryAux (ht : t.Valid)
         intro x y
         induction x using Submodule.Quotient.induction_on with | _ x =>
         induction y using Submodule.Quotient.induction_on with | _ y =>
-        calc
-          _ = M.form (quotientEquiv ht L hrad (Submodule.Quotient.mk x))
-              (quotientEquiv ht L hrad (Submodule.Quotient.mk y)) := rfl
-          _ = L.radicalQuotient.form (Submodule.Quotient.mk x) (Submodule.Quotient.mk y) := by
-            rw [quotientEquiv_mk, quotientEquiv_mk, radicalQuotient_form,
-              mk_eq_mk_extend_deleteAffineNode ht L hrad x,
-              mk_eq_mk_extend_deleteAffineNode ht L hrad y, radicalQuotientForm_mk, hform] }
+        rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, quotientEquiv_mk, quotientEquiv_mk,
+          radicalQuotient_form, mk_eq_mk_extend_deleteAffineNode ht L hrad x,
+          mk_eq_mk_extend_deleteAffineNode ht L hrad y, radicalQuotientForm_mk, hform] }
   map_carrier := by
     ext x
     simp only [Submodule.mem_map, radicalQuotient_carrier, mem_radicalQuotientCarrier_iff, hM]
@@ -434,8 +440,7 @@ noncomputable def negRadicalQuotientIsometry (ht : t.Valid) :
   radicalQuotientIsometryAux ht _ _ ((radical_neg _).trans (radical_rootLattice ht))
     (fun v ↦ by rw [neg_carrier, mem_rootLattice_carrier_iff])
     (fun x ↦ by rw [neg_carrier, DynkinType.mem_rootLattice_carrier_iff])
-    fun x y ↦ by rw [neg_form, neg_form, LinearMap.neg_apply, LinearMap.neg_apply,
-      LinearMap.neg_apply, LinearMap.neg_apply, rootLattice_form_extend ht]
+    fun x y ↦ by simp [neg_form, rootLattice_form_extend ht]
 
 /-- The radical-quotient isometry of the negated lattice moves a representative off the affine
 node and reads off the remaining coordinates in the Bourbaki numbering. -/
