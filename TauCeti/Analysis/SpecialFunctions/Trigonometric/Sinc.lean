@@ -12,7 +12,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 /-!
 # The sinc function: nonnegativity and the scaled function `t ↦ t sinc (ω t)`
 
-`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
+`sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`, and its
+square has the integrable majorant `2 / (1 + x²)` (`Real.sinc_sq_le_two_div_one_add_sq`). Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
 the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently the real-line Fejér kernel
 `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` while `|y| ≤ T⁻¹`
@@ -33,6 +34,13 @@ namespace Real
 @[simp]
 theorem mul_sinc (x : ℝ) : x * sinc x = sin x := by
   simpa [sinc_eq_dslope] using sub_smul_dslope sin 0 x
+
+/-- The bound `sinc² x ≤ 2 / (1 + x²)`, from `sinc² ≤ 1` and `x² sinc² x = sin² x ≤ 1`. -/
+theorem sinc_sq_le_two_div_one_add_sq (x : ℝ) : sinc x ^ 2 ≤ 2 / (1 + x ^ 2) := by
+  have h1 : sinc x ^ 2 ≤ 1 := (sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one x)
+  have h2 : (x * sinc x) ^ 2 ≤ 1 := by rw [mul_sinc]; exact sin_sq_le_one x
+  rw [le_div_iff₀ (by positivity)]
+  nlinarith
 
 /-- For `ω ≠ 0`, `t sinc (ω t) = sin (ω t) / ω`. -/
 theorem mul_sinc_mul_of_ne_zero {ω : ℝ} (hω : ω ≠ 0) (t : ℝ) :
