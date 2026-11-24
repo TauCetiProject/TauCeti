@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Dynamics.OrderedSimplex.Branch
 
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Order.Interval.Finset.Fin
-
 /-!
 # The core and the cusp of the ordered simplex
 
@@ -208,9 +205,8 @@ theorem mapsTo_branchMap_zero_simplexCore (j : Fin (d + 1)) :
 `w_{n-1} / (1 + b)` and `w_{n-2} / (1 + b)`. -/
 theorem lastMoveMap_mem_simplexCusp {x : Fin (d + 1) → ℝ} (hx : x ∈ orderedSimplex (d + 1)) :
     lastMoveMap x ∈ simplexCusp d := by
-  obtain ⟨h0, -, hlast⟩ := mem_orderedSimplex_iff.mp hx
-  have hs : 0 ≤ ∑ k, x k := Finset.sum_nonneg fun k _ => h0 k
-  have hpos : 0 < 1 + ∑ k, x k := by linarith
+  have hlast := (mem_orderedSimplex_iff.mp hx).2.2
+  have hpos := one_add_sum_pos_of_mem_orderedSimplex hx
   refine ⟨lastMoveMap_mem_orderedSimplex hx, ?_⟩
   rw [mem_ofPred_eq, sum_lastMoveMap, lastMoveMap_apply, mul_div_assoc', one_sub_div hpos.ne',
     div_le_div_iff_of_pos_right hpos]
@@ -237,16 +233,6 @@ theorem mapsTo_branchMap_simplexCusp {a : ℕ × Fin (d + 1)} (ha : a.1 ≠ 0) :
   fun _ hx => branchMap_mem_simplexCusp ha hx
 
 /-! ### Coordinate bounds -/
-
-/-- The coordinates from `x i` on number `d - i` and are each at least `x i`. -/
-private theorem sub_mul_le_sum_of_mem_orderedSimplex {x : Fin d → ℝ}
-    (hx : x ∈ orderedSimplex d) (i : Fin d) : ((d - i : ℕ) : ℝ) * x i ≤ ∑ k, x k := by
-  obtain ⟨h0, hmono, -⟩ := mem_orderedSimplex_iff.mp hx
-  have h := Finset.card_nsmul_le_sum (Finset.Ici i) x (x i)
-    fun k hk => hmono (Finset.mem_Ici.mp hk)
-  rw [Fin.card_Ici, nsmul_eq_mul] at h
-  exact h.trans (Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _)
-    fun k _ _ => h0 k)
 
 /-- On `Δ₀` the last coordinate `w_{n-1}` is at least `1 / 2`. -/
 theorem one_half_le_one_sub_sum_of_mem_simplexHalf {x : Fin d → ℝ} (hx : x ∈ simplexHalf d) :

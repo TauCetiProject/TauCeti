@@ -407,16 +407,6 @@ theorem simplexPoint_lastMoveMap_last {x : Fin d → ℝ} (hx : 1 + ∑ k, x k �
   field_simp
   ring
 
-/-- The lift `(w, 1)` with the full point `w` written out. -/
-private theorem simplexLift_eq_snoc_snoc (x : Fin d → ℝ) :
-    simplexLift x = Fin.snoc (Fin.snoc x (1 - ∑ k, x k) : Fin (d + 1) → ℝ) 1 := by
-  ext i
-  induction i using Fin.lastCases with
-  | last => simp
-  | cast i => induction i using Fin.lastCases with
-    | last => simp
-    | cast i => simp
-
 /-- **The homogeneous identity** for `γ_{n-1}`: `γ_{n-1} (w, 1) = (1 + ∑ xᵢ) (G (w), 1)` for the
 last move `G = lastMoveMap`, wherever `1 + ∑ xᵢ ≠ 0`. -/
 theorem linearMove_last_simplexLift {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) :
@@ -437,8 +427,7 @@ theorem linearMove_last_simplexLift {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠
 theorem lastMoveMap_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
     lastMoveMap x ∈ orderedSimplex d := by
   obtain ⟨h0, hmono, -⟩ := mem_orderedSimplex_iff.mp hx
-  have hs : 0 ≤ ∑ k, x k := Finset.sum_nonneg fun k _ => h0 k
-  have hpos : 0 < 1 + ∑ k, x k := by linarith
+  have hpos := one_add_sum_pos_of_mem_orderedSimplex hx
   refine mem_orderedSimplex_iff.mpr ⟨fun i => div_nonneg (h0 i) hpos.le,
     fun i j hij => div_le_div_of_nonneg_right (hmono hij) hpos.le, fun i => ?_⟩
   rw [← simplexPoint_last, simplexPoint_lastMoveMap_last hpos.ne', lastMoveMap_apply]
@@ -462,10 +451,8 @@ theorem contDiffAt_lastMoveMap {x : Fin d → ℝ} (hx : 1 + ∑ k, x k ≠ 0) {
 
 /-- The last move is smooth on the ordered simplex. -/
 theorem contDiffOn_lastMoveMap {n : WithTop ℕ∞} :
-    ContDiffOn ℝ n lastMoveMap (orderedSimplex d) := fun x hx => by
-  have h0 := (mem_orderedSimplex_iff.mp hx).1
-  have hs : 0 ≤ ∑ k, x k := Finset.sum_nonneg fun k _ => h0 k
-  exact (contDiffAt_lastMoveMap (by linarith)).contDiffWithinAt
+    ContDiffOn ℝ n lastMoveMap (orderedSimplex d) := fun _ hx =>
+  (contDiffAt_lastMoveMap (one_add_sum_pos_of_mem_orderedSimplex hx).ne').contDiffWithinAt
 
 /-- Raising the acceleration by one adds `1 - w_j` to the denominator. -/
 theorem branchDenom_succ (A : ℕ) (j : Fin d) (x : Fin d → ℝ) :
@@ -479,8 +466,8 @@ the chart form of `γ_{n-1}^{A+1} γ_j = γ_{n-1} (γ_{n-1}^A γ_j)`. -/
 theorem branchMap_succ (A : ℕ) (j : Fin d) {x : Fin d → ℝ} (hx : branchDenom (A, j) x ≠ 0) :
     branchMap (A + 1, j) x = lastMoveMap (branchMap (A, j) x) := by
   ext i
-  rw [lastMoveMap_apply, sum_branchMap, branchMap_apply, branchMap_apply, branchDenom_succ,
-    one_add_div hx, div_div_div_cancel_right₀ hx]
+  rw [lastMoveMap_apply, sum_branchMap, branchMap_apply, branchMap_apply, branchDenom_succ]
+  field_simp
 
 /-- Each accelerated branch is an iterate of the last move after an unaccelerated branch:
 `F_{(A, j)} = G^A ∘ F_{(0, j)}` wherever `w_j ≤ 1`, in particular on the simplex. -/
