@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # The semi-Fredholm estimate along the input-exchange family
@@ -93,12 +94,6 @@ namespace Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {c : ℝ}
 
-/-- A point of the support of the translate `w ↦ ξ (w + a)` is moved into the support of `ξ` by
-the translation. -/
-private theorem mem_tsupport_comp_add_iff {α : Type*} [Zero α] {ξ : ℝ × ℝ → α} {a v : ℝ × ℝ} :
-    v ∈ tsupport (fun z ↦ ξ (z + a)) ↔ v + a ∈ tsupport ξ :=
-  Set.ext_iff.1 (tsupport_comp_eq_preimage ξ (Homeomorph.addRight a)) v
-
 /-- If the support of `ξ` lies at distance at least `r` from `0`, then the support of its translate
 `w ↦ ξ (w + c)` by `c ∈ [0, 1]` lies at distance at least `r - 1`. -/
 private theorem sub_one_le_norm_of_mem_tsupport_comp_add (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
@@ -106,7 +101,7 @@ private theorem sub_one_le_norm_of_mem_tsupport_comp_add (hc₀ : 0 ≤ c) (hc�
     (hξR : ∀ z ∈ tsupport ξ, r ≤ ‖Complex.equivRealProdCLM.symm z‖)
     {v : ℝ × ℝ} (hv : v ∈ tsupport fun z ↦ ξ (z + (c, 0))) :
     r - 1 ≤ ‖Complex.equivRealProdCLM.symm v‖ := by
-  have h := hξR _ (mem_tsupport_comp_add_iff.1 hv)
+  have h := hξR _ ((tsupport_comp_add_right ξ _).subset hv)
   rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero] at h
   have := norm_add_le (Complex.equivRealProdCLM.symm v) (c : ℂ)
   rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
@@ -175,7 +170,7 @@ private theorem lintegral_le_mul_setLIntegral_image_positiveEndChart_inf_add (hc
       have := cylindricalWeight_nonneg v
       nlinarith [mul_le_mul_of_nonneg_right hρ (sq_nonneg ‖ξ (v + a)‖),
         sq_nonneg ‖fderiv ℝ ξ (v + a) (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ (v + a) (0, 1)‖]
-    · rw [hW0 (mt mem_tsupport_comp_add_iff.2 hv)]
+    · rw [hW0 (by rwa [tsupport_comp_add_right] at hv)]
       exact bot_le
   have hsupp : Function.support (W fun z ↦ ξ (z + a)) ⊆
       positiveEndChart inf '' (Ioi 0 ×ˢ Ico 0 1) :=
@@ -373,7 +368,7 @@ private theorem integral_norm_floerLinearization_comp_exchangeMap_sq (ω : Sympl
       rw [← ω.floerLinearization_comp_add_right]
       simp only [floerLinearization_def, hu₁.fderiv_eq, hu₁.eq_of_nhds, hΦz.eq_of_nhds, hKs, hKt]
     · rw [ω.floerLinearization_of_notMem_tsupport _ _ _ _ hz,
-        ω.floerLinearization_of_notMem_tsupport _ _ _ _ (mt mem_tsupport_comp_add_iff.2 hz)]
+        ω.floerLinearization_of_notMem_tsupport _ _ _ _ (by rwa [tsupport_comp_add_right] at hz)]
   simp_rw [hD]
   exact integral_add_right_eq_self (fun z ↦ ‖ω.floerLinearization
     (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) (c, 0)

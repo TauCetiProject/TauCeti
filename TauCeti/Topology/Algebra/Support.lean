@@ -17,6 +17,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 
 ## Main results
 
+* `TauCeti.mulTSupport_comp_mul_right`: the topological multiplicative support of
+  `fun y => f (y * x)` is the preimage of that of `f` under `(· * x)`, with additive version
+  `TauCeti.tsupport_comp_add_right`.
 * `TauCeti.mulTSupport_comp_div_right`: the topological multiplicative support of
   `fun y => f (y / x)` is the preimage of that of `f` under `(· / x)`, with additive version
   `TauCeti.tsupport_comp_sub_right`.
@@ -62,6 +65,14 @@ public section
 namespace TauCeti
 
 variable {X G : Type*} [TopologicalSpace X] [Group X] [SeparatelyContinuousMul X] [One G]
+
+/-- The topological multiplicative support of a right translate `fun y => f (y * x)` is the
+preimage of the topological multiplicative support under the translation. -/
+@[to_additive /-- The topological support of a translate `fun y => f (y + x)` is the preimage of
+the topological support under the translation. -/]
+theorem mulTSupport_comp_mul_right (f : X → G) (x : X) :
+    (mulTSupport fun y => f (y * x)) = (· * x) ⁻¹' mulTSupport f :=
+  mulTSupport_comp_eq_preimage f (Homeomorph.mulRight x)
 
 /-- The topological multiplicative support of a right translate is the preimage of the
 topological multiplicative support under the opposite translation. -/
