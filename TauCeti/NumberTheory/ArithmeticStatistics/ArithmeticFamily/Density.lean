@@ -251,15 +251,37 @@ theorem upperDensity_mono_left (h : S ⊆ S') (T : Set ι) :
   limsup_le_limsup (.of_forall (ratio_mono_left h T))
     (F.isBoundedUnder_ge_ratio S T atTop).isCoboundedUnder_le (F.isBoundedUnder_le_ratio S' T atTop)
 
+/-- The proportion of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem ratio_inter_self_right (S T : Set ι) (X : ℝ) : F.ratio (S ∩ T) T X = F.ratio S T X := by
+  rw [ratio_apply, ratio_apply, Set.inter_assoc, Set.inter_self]
+
+/-- The lower relative density of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem lowerDensity_inter_self_right (S T : Set ι) :
+    F.lowerDensity (S ∩ T) T = F.lowerDensity S T := by
+  rw [lowerDensity_def, lowerDensity_def, funext (ratio_inter_self_right (F := F) S T)]
+
+/-- The upper relative density of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem upperDensity_inter_self_right (S T : Set ι) :
+    F.upperDensity (S ∩ T) T = F.upperDensity S T := by
+  rw [upperDensity_def, upperDensity_def, funext (ratio_inter_self_right (F := F) S T)]
+
+/-- The relative density of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem hasDensity_inter_self_right_iff : F.HasDensity (S ∩ T) T d ↔ F.HasDensity S T d := by
+  rw [hasDensity_iff_tendsto_ratio, hasDensity_iff_tendsto_ratio,
+    funext (ratio_inter_self_right (F := F) S T)]
+
 /-- Within a reference family with a member of height at most `X`, the proportion of the
 complement is one minus the proportion. -/
 theorem ratio_sdiff {X : ℝ} (hT : 0 < F.count T X) (S : Set ι) :
     F.ratio (T \ S) T X = 1 - F.ratio S T X := by
   have h := F.count_inter_add_count_sdiff T S X
   have hT' : (F.count T X : ℝ) ≠ 0 := by positivity
-  rw [ratio_apply, ratio_apply, Set.inter_eq_left.mpr Set.sdiff_subset, Set.inter_comm S T]
-  field_simp
-  rw [← h]
+  rw [ratio_apply, ratio_apply, Set.inter_eq_left.mpr Set.sdiff_subset, Set.inter_comm S T,
+    eq_sub_iff_add_eq, ← add_div, div_eq_one_iff_eq hT', ← h]
   push_cast
   ring
 
@@ -371,7 +393,7 @@ theorem hasDensity_inter_one_of_lowerDensity_pos {A : Set ι} (hA : F.HasDensity
       (F.isBoundedUnder_ge_ratio U T atTop)
   obtain ⟨X₀, hX₀⟩ := hpos.exists
   rcases U.eq_empty_or_nonempty with rfl | hU₀
-  · simp at hX₀
+  · simp only [ratio_empty_left] at hX₀
     linarith
   -- the proportion of `U` outside `A` is controlled by the proportion of `T` outside `A`
   have hbound : ∀ᶠ X in atTop,
@@ -389,7 +411,8 @@ theorem hasDensity_inter_one_of_lowerDensity_pos {A : Set ι} (hA : F.HasDensity
     rw [sub_self] at hTA
     refine squeeze_zero' (.of_forall (F.ratio_nonneg _ U)) hbound ?_
     simpa using hTA.div_const (F.lowerDensity U T / 2)
-  simpa [Set.sdiff_sdiff_right_self, Set.inter_comm] using hzero.sdiff hU₀
+  have h := hzero.sdiff hU₀
+  rwa [Set.sdiff_sdiff_right_self, Set.inter_comm U A, sub_zero] at h
 
 end ArithmeticFamily
 

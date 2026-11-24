@@ -250,26 +250,23 @@ theorem exists_countLT_eq_count_sub_and_count_eq_countLT_add (X : ℝ) :
     intro i hi hiX
     by_contra! hlt
     exact hball (Metric.mem_ball.mpr hlt) ⟨i, ⟨hi, hiX⟩, rfl⟩
-  refine ⟨min ε 1, lt_min hε one_pos, min_le_right _ _, fun S ↦ ⟨?_, ?_⟩⟩
-  · rw [countLT_eq_ncard, count_eq_ncard]
-    congr 1
-    ext i
-    simp only [Set.mem_ofPred_eq, and_congr_right_iff]
-    intro _
-    refine ⟨fun hi ↦ ?_, fun hi ↦ hi.trans_lt (by linarith [lt_min hε one_pos])⟩
+  obtain ⟨δ, hδ, hδε, hδ1⟩ : ∃ δ : ℝ, 0 < δ ∧ δ ≤ ε ∧ δ ≤ 1 :=
+    ⟨min ε 1, lt_min hε one_pos, min_le_left ε 1, min_le_right ε 1⟩
+  -- no height lies in `[X - δ, X)` or in `(X, X + δ)`
+  have hlt (i : ι) : F.height i < X ↔ F.height i ≤ X - δ := by
+    refine ⟨fun hi ↦ ?_, fun hi ↦ by linarith⟩
     have := hgap i (by linarith) hi.ne
     rw [abs_of_neg (by linarith)] at this
-    linarith [min_le_left ε 1]
-  · rw [countLT_eq_ncard, count_eq_ncard]
-    congr 1
-    ext i
-    simp only [Set.mem_ofPred_eq, and_congr_right_iff]
-    intro _
-    refine ⟨fun hi ↦ hi.trans_lt (by linarith [lt_min hε one_pos]), fun hi ↦ ?_⟩
+    linarith
+  have hle (i : ι) : F.height i ≤ X ↔ F.height i < X + δ := by
+    refine ⟨fun hi ↦ by linarith, fun hi ↦ ?_⟩
     by_contra! hXi
-    have := hgap i (by linarith [min_le_right ε 1]) hXi.ne'
+    have := hgap i (by linarith) hXi.ne'
     rw [abs_of_pos (by linarith)] at this
-    linarith [min_le_left ε 1]
+    linarith
+  refine ⟨δ, hδ, hδ1, fun S ↦ ⟨?_, ?_⟩⟩
+  · simp only [countLT_eq_ncard, count_eq_ncard, hlt]
+  · simp only [countLT_eq_ncard, count_eq_ncard, hle]
 
 /-- Descend an invariant height to a quotient, requiring finiteness on the quotient itself.
 Finiteness of representatives is neither required nor implied. -/
