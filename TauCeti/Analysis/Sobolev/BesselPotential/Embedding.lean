@@ -628,6 +628,14 @@ theorem finrank_real_complex_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ �
   push_cast
   linarith
 
+/-- For `s > n + 1`, the order `s` exceeds `n` plus half the real dimension of the plane, so
+`H^s(ℂ)` embeds into `C^n`. -/
+theorem finrank_real_complex_add_two_mul_lt_two_mul {s : ℝ} {n : ℕ} (hs : n + 1 < s) :
+    (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
+  rw [Complex.finrank_real_complex]
+  push_cast
+  linarith
+
 namespace Wkp
 
 variable {k : ℕ}
