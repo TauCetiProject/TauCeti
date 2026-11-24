@@ -131,6 +131,30 @@ lemma Cone.pullbackOverIso_hom_π_app (c : Cone D) {i j : I} (hji : j ⟶ i)
       pullback.snd _ _ := by
   apply pullback.hom_ext <;> simp [pullback.condition]
 
+/-- The inverse cone base-change comparison commutes with projection to the cone point. -/
+@[reassoc (attr := simp)]
+lemma Cone.pullbackOverIso_inv_fst (c : Cone D) {i j : I} (hji : j ⟶ i)
+    {Z : C} (s : Z ⟶ D.obj i) :
+    (c.pullbackOverIso hji s).inv ≫ pullback.fst _ _ = pullback.fst _ _ := by
+  simp [Cone.pullbackOverIso]
+
+/-- The inverse cone base-change comparison followed by projection to the stage is the cone
+projection. -/
+@[reassoc (attr := simp)]
+lemma Cone.pullbackOverIso_inv_snd_fst (c : Cone D) {i j : I} (hji : j ⟶ i)
+    {Z : C} (s : Z ⟶ D.obj i) :
+    (c.pullbackOverIso hji s).inv ≫ pullback.snd _ _ ≫ pullback.fst _ _ =
+      pullback.fst _ _ ≫ c.π.app j := by
+  simp [Cone.pullbackOverIso]
+
+/-- The inverse cone base-change comparison preserves the projection to the source of the
+base-changed map. -/
+@[reassoc (attr := simp)]
+lemma Cone.pullbackOverIso_inv_snd_snd (c : Cone D) {i j : I} (hji : j ⟶ i)
+    {Z : C} (s : Z ⟶ D.obj i) :
+    (c.pullbackOverIso hji s).inv ≫ pullback.snd _ _ ≫ pullback.snd _ _ = pullback.snd _ _ := by
+  simp [Cone.pullbackOverIso]
+
 /-- Compatible maps at a stage and at the cone point are conjugate by the canonical
 base-change comparisons. -/
 theorem Cone.pullbackMap_eq_of_pullbackMap_comp_eq (c : Cone D)
