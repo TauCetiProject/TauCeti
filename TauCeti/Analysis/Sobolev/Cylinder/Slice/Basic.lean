@@ -224,10 +224,7 @@ theorem ae_eq_zero_of_forall_slice_re_inner_ae_eq_zero [SecondCountableTopology 
   set ν : Measure ℝ := volume.restrict (Icc (0 : ℝ) 1)
   have hηp : MemLp η 2 ((volume : Measure ℝ).prod ν) := stripMeasure_eq_prod ▸ hη
   -- Almost every slice is integrable on `[0, 1]`.
-  have hslice : ∀ᵐ s, Integrable (fun t ↦ η (s, t)) ν := by
-    have h2 := ((memLp_two_iff_integrable_sq_norm hηp.aestronglyMeasurable).1 hηp).prod_right_ae
-    filter_upwards [h2, hηp.aestronglyMeasurable.prodMk_left] with s hs hm
-    exact ((memLp_two_iff_integrable_sq_norm hm).2 hs).integrable one_le_two
+  have hslice : ∀ᵐ s, Integrable (fun t ↦ η (s, t)) ν := StripSobolev.ae_integrable_slice hη
   obtain ⟨D, hDc, hD⟩ := TopologicalSpace.exists_countable_dense C(AddCircle (1 : ℝ), F)
   have hfin : ∀ᵐ s, ∀ᵐ t ∂ν, η (s, t) = 0 := by
     filter_upwards [hslice, (ae_ball_iff hDc).2 fun ψ _ ↦ h ψ] with s hs hsD
