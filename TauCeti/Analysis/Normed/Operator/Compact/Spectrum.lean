@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Data.Set.Countable
 import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Eigenspace
+import TauCeti.LinearAlgebra.Eigenspace.KernelChain
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Eigenvalue thresholds for compact operators
@@ -46,13 +47,18 @@ private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     (hμ : ∀ n, Module.End.HasEigenvalue (K : Module.End 𝕜 E) (μ n)) (hnorm : ∀ n, ε ≤ ‖μ n‖) :
     ¬ Function.Injective μ := by
   intro hinj
-  let P (n : ℕ) : E →L[𝕜] E :=
-    Polynomial.aeval K (∏ i ∈ Finset.range n, (Polynomial.X - Polynomial.C (μ i)))
-  have hlt (n : ℕ) : LinearMap.ker (P n : E →ₗ[𝕜] E) < LinearMap.ker (P (n + 1) : E →ₗ[𝕜] E) :=
-    K.ker_aeval_prod_range_lt_succ (fun _ hi ↦ hinj.ne hi.ne') (hμ n)
+  let f : Module.End 𝕜 E := K
+  let q (n : ℕ) : Polynomial 𝕜 :=
+    ∏ i ∈ Finset.range n, (Polynomial.X - Polynomial.C (μ i))
+  have hlt (n : ℕ) :
+      LinearMap.ker (Polynomial.aeval f (q n)) < LinearMap.ker (Polynomial.aeval f (q (n + 1))) :=
+    f.ker_aeval_prod_range_lt_succ (fun _ hi ↦ hinj.ne hi.ne') (hμ n)
+  have hclosed (n : ℕ) : IsClosed (LinearMap.ker (Polynomial.aeval f (q n)) : Set E) := by
+    rw [← ContinuousLinearMap.toLinearMap_aeval K (q n)]
+    exact (Polynomial.aeval K (q n)).isClosed_ker
   obtain ⟨p, hp⟩ := hK.exists_succ_eq_of_ascending_chain hε hnorm (fun n ↦ (hlt n).le)
-    (fun n ↦ (P n).isClosed_ker.preimage continuous_subtypeVal)
-    (fun n _ hx ↦ (K.mem_ker_aeval_prod_range_succ_iff μ n).1 hx)
+    (fun n ↦ (hclosed n).preimage continuous_subtypeVal)
+    (fun n _ hx ↦ (f.mem_ker_aeval_prod_range_succ_iff μ n).1 hx)
   exact (hlt p).ne' hp
 
 /-- A compact operator on a normed space over a nontrivially normed field has only finitely many

@@ -417,7 +417,6 @@ theorem _root_.Submodule.exists_finiteDimensional_le_infDist_le (D G : Submodule
     (hD : IsClosed (D : Set E)) [FiniteDimensional K G] {c : ℝ} (hc : 1 < c) :
     ∃ W : Submodule K E, W ≤ D ∧ FiniteDimensional K W ∧
       ∀ g ∈ G, infDist g W ≤ c * infDist g D := by
-  have : IsClosed (D : Set E) := hD
   -- A `t`-orthogonal basis `b` of the image of `G` in the normed quotient `E ⧸ D`, for some
   -- `c⁻¹ < t < 1`.
   obtain ⟨t, hct, ht⟩ : ∃ t : ℝ≥0, (c⁻¹ : ℝ) < t ∧ t < 1 := by
