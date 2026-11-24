@@ -40,6 +40,11 @@ large denominator are convergents `pₖ / qₖ`, and the lower bound then forces
 * `Real.fib_succ_le_den_convergent`, `Real.monotone_den_convergent`,
   `Real.tendsto_den_convergent`: growth of the denominators `qₙ`.
 * `Real.abs_sub_convergent_le`, `Real.one_div_lt_abs_sub_convergent`: the two error bounds.
+* `Real.neg_one_pow_mul_sub_convergent_pos`,
+  `Real.neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg`: the errors `ξ - pₙ / qₙ`
+  and `qₙ ξ - pₙ` have sign `(-1) ^ n`, the second vanishing after termination.
+* `Real.num_convergent_mul_den_convergent_succ_sub`: the determinant identity for the reduced
+  convergents.
 * `TauCeti.irrationalityExponent_eq_one_add_limsup`: the formula for `μ(ξ)`.
 
 ## References
@@ -81,10 +86,7 @@ private theorem isCoprime_of_nums_dens (ξ : ℝ) (n : ℕ) {a b : ℤ} (ha : (o
     · rw [nums_stable_of_terminated k.le_succ ht] at ha
       rw [dens_stable_of_terminated k.le_succ ht] at hb
       exact ih ha hb
-    -- `SimpContFract.of ξ` is `of ξ` bundled with its simplicity proof, so its determinant
-    -- formula applies to `of ξ`.
-    have hdet : (of ξ).nums k * (of ξ).dens (k + 1) - (of ξ).dens k * (of ξ).nums (k + 1) =
-        (-1) ^ (k + 1) := (SimpContFract.of ξ).determinant ht
+    have hdet := of_nums_mul_dens_succ_sub ht
     rw [hA₀, hB₀, ha, hb] at hdet
     have hdetZ : a₀ * b - b₀ * a = (-1) ^ (k + 1) := by exact_mod_cast hdet
     set u : ℤ := (-1) ^ (k + 1)
@@ -163,6 +165,53 @@ theorem one_div_lt_abs_sub_convergent (hξ : Irrational ξ) (n : ℕ) :
       |ξ - ξ.convergent n| := by
   rw [den_convergent, den_convergent, ← convs_eq_convergent]
   exact one_div_lt_abs_sub_convs (hξ.not_of_terminatedAt n)
+
+/-- Before the continued fraction of `ξ` terminates, the error `ξ - pₙ / qₙ` of its `n`-th
+convergent has sign `(-1) ^ n`. -/
+theorem neg_one_pow_mul_sub_convergent_pos (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
+    0 < (-1) ^ n * (ξ - ξ.convergent n) := by
+  obtain ⟨D, hD, -, herr⟩ := exists_sub_convs_eq_neg_one_pow_div hn
+  have hsq : (-1 : ℝ) ^ n * (-1) ^ n = 1 := by rw [← mul_pow]; norm_num
+  rw [← Real.convs_eq_convergent, herr, ← mul_div_assoc, hsq]
+  positivity
+
+/-- The determinant identity `pₙ qₙ₊₁ - qₙ pₙ₊₁ = (-1) ^ (n + 1)` for the reduced convergents
+of `ξ`, before its continued fraction terminates. -/
+theorem num_convergent_mul_den_convergent_succ_sub (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
+    (ξ.convergent n).num * (ξ.convergent (n + 1)).den -
+      (ξ.convergent n).den * (ξ.convergent (n + 1)).num = (-1) ^ (n + 1) := by
+  have h := of_nums_mul_dens_succ_sub hn
+  rw [← Real.num_convergent, ← Real.num_convergent, ← Real.den_convergent,
+    ← Real.den_convergent] at h
+  exact_mod_cast h
+
+/-- Before the continued fraction of `ξ` terminates, `qₙ ξ - pₙ` has sign `(-1) ^ n`. -/
+theorem neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos (ξ : ℝ) {n : ℕ}
+    (hn : ¬(of ξ).TerminatedAt n) :
+    0 < (-1) ^ n * ((ξ.convergent n).den * ξ - (ξ.convergent n).num) := by
+  have hden : (0 : ℝ) < (ξ.convergent n).den := mod_cast (ξ.convergent n).pos
+  have hQ : ((ξ.convergent n).den : ℝ) ≠ 0 := hden.ne'
+  have h := mul_pos hden (neg_one_pow_mul_sub_convergent_pos ξ hn)
+  rw [Rat.cast_def] at h
+  convert h using 1
+  field_simp
+
+/-- The error `qₙ ξ - pₙ` vanishes once the continued fraction of `ξ` has terminated. -/
+theorem den_convergent_mul_sub_num_convergent_eq_zero (ξ : ℝ) {n : ℕ}
+    (hn : (of ξ).TerminatedAt n) :
+    (ξ.convergent n).den * ξ - (ξ.convergent n).num = 0 := by
+  have h := of_correctness_of_terminatedAt hn
+  rw [convs_eq_convergent, Rat.cast_def] at h
+  have hQ : ((ξ.convergent n).den : ℝ) ≠ 0 := mod_cast (ξ.convergent n).pos.ne'
+  have h' := (eq_div_iff hQ).1 h
+  linarith
+
+/-- The error `qₙ ξ - pₙ` has sign `(-1) ^ n` or vanishes. -/
+theorem neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg (ξ : ℝ) (n : ℕ) :
+    0 ≤ (-1) ^ n * ((ξ.convergent n).den * ξ - (ξ.convergent n).num) := by
+  by_cases hn : (of ξ).TerminatedAt n
+  · rw [den_convergent_mul_sub_num_convergent_eq_zero ξ hn, mul_zero]
+  · exact (neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos ξ hn).le
 
 end Real
 
