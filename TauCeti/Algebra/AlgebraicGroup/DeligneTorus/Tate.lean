@@ -35,8 +35,8 @@ norm of a point with coordinates `(z₁, z₂)` is `z₁ * z₂`, the character 
 
 ## Main results
 
-* `TauCeti.DeligneTorus.apply_normHom_T_one`, `TauCeti.DeligneTorus.normHom_T_one`: the norm
-  morphism `TauCeti.NormTorus.normHom ℝ ℂ` sends the coordinate `T` of `𝔾ₘ` to the norm character.
+* `TauCeti.DeligneTorus.normHom_T_one`: the norm morphism `TauCeti.NormTorus.normHom ℝ ℂ` sends
+  the coordinate `T` of `𝔾ₘ` to the norm character.
 * `TauCeti.DeligneTorus.apply_normUnit`: a point `g` of `S` sends the norm character to `Nm(g)`.
 * `TauCeti.DeligneTorus.endOfPoint_tateComodule`: a point `g` acts on `ℝ(m)` by `Nm(g) ^ m`.
 * `TauCeti.DeligneTorus.hodgeComponent_tateComodule`: the Tate comodule has the single Hodge type
@@ -65,16 +65,16 @@ universal point of `S`. A point `g` of `S` sends it to `Nm(g)` (`apply_normUnit`
 noncomputable def normUnit : Sˣ :=
   norm S (toConv (AlgHom.id ℝ S))
 
-/-- **The norm morphism on points**: a point `g` of `S` sends the image under
-`TauCeti.NormTorus.normHom ℝ ℂ : Res_{ℂ/ℝ} 𝔾ₘ → 𝔾ₘ` of the coordinate `T` of `𝔾ₘ` to the norm
-`Nm(g)`. This is `TauCeti.NormTorus.pointsMulEquiv_comp_normHom` evaluated at `T`. -/
-theorem apply_normHom_T_one {R : Type*} [CommRing R] [Algebra ℝ R] (g : WithConv (S →ₐ[ℝ] R)) :
+/-- A point `g` of `S` sends the image under `TauCeti.NormTorus.normHom ℝ ℂ` of the coordinate
+`T` of `𝔾ₘ` to the norm `Nm(g)`: `TauCeti.NormTorus.pointsMulEquiv_comp_normHom` evaluated at `T`.
+The public form is `apply_normUnit`. -/
+private theorem apply_normHom_T_one {R : Type*} [CommRing R] [Algebra ℝ R]
+    (g : WithConv (S →ₐ[ℝ] R)) :
     g.ofConv (NormTorus.normHom ℝ ℂ (LaurentPolynomial.T 1)) = (norm R g : R) := by
   have hg : WeilRestriction.multiplicativeGroupPoints ℝ ℂ R g = pointsMulEquiv R g :=
     Units.ext (by rw [WeilRestriction.multiplicativeGroupPoints_apply, coe_pointsMulEquiv])
-  have h := congrArg Units.val (NormTorus.pointsMulEquiv_comp_normHom g)
-  rwa [MultiplicativeGroup.pointsMulEquiv_apply, ofConv_toConv, laurentEvalEquiv_symm_apply,
-    AlgHom.comp_apply, hg, ← norm_apply] at h
+  simpa [MultiplicativeGroup.pointsMulEquiv_apply, hg, norm_apply] using
+    congrArg Units.val (NormTorus.pointsMulEquiv_comp_normHom g)
 
 /-- The norm morphism `TauCeti.NormTorus.normHom ℝ ℂ` sends the coordinate `T` of `𝔾ₘ` to the norm
 character. -/
@@ -91,9 +91,7 @@ theorem apply_normUnit {R : Type*} [CommRing R] [Algebra ℝ R] (g : WithConv (S
 /-- **The norm character is group-like**: `ε(Nm) = 1` and `Δ(Nm) = Nm ⊗ Nm`. -/
 theorem isGroupLikeElem_normUnit : IsGroupLikeElem ℝ (normUnit : S) where
   counit_eq_one := by
-    have h := apply_normUnit (R := ℝ) 1
-    rwa [TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom, map_one, Units.val_one,
-      Bialgebra.counitAlgHom_apply] at h
+    simpa [TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] using apply_normUnit (R := ℝ) 1
   comul_eq_tmul_self := by
     -- `Δ` is the point `comulAlgHom` of `S`, the product of the two inclusions of `S` in `S ⊗ S`
     have h := apply_normUnit (toConv (Bialgebra.comulAlgHom ℝ S))
@@ -152,7 +150,7 @@ variable {M}
 theorem tateComodule_coact_apply (m : ℤ) (v : M) :
     (tateComodule M m).coact v =
       v ⊗ₜ[ℝ] ((normGroupLike ^ m : GroupLike ℝ S) : S) :=
-  (rfl)
+  Comodule.groupLike_coact_apply _ v
 
 /-- **A point of `S` acts on `ℝ(m)` by the `m`-th power of its norm.** -/
 theorem endOfPoint_tateComodule {R : Type*} [CommRing R] [Algebra ℝ R]

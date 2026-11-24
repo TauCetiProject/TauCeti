@@ -281,12 +281,11 @@ theorem coe_norm_eq_mul (f : WithConv (S →ₐ[ℝ] R)) :
     (f := ((Algebra.TensorProduct.comm ℝ ℂ R).symm.trans
       (complexTensorProductEquivProd R)).toRingEquiv)
     fun r ↦ by simp [Algebra.TensorProduct.algebraMap_apply]
-  rw [norm_apply, NormTorus.coe_norm, ← Algebra.norm_eq_of_algEquiv e, Algebra.norm_prod,
-    Algebra.norm_self, MonoidHom.id_apply, MonoidHom.id_apply, coe_complexSplitting_fst,
-    coe_complexSplitting_snd]
-  exact congrArg (fun x ↦ (complexTensorProductEquivProd R x).1 *
-      (complexTensorProductEquivProd R x).2)
-    ((Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply _)
+  have he : ∀ x, e (Algebra.TensorProduct.comm ℝ ℂ R x) = complexTensorProductEquivProd R x :=
+    fun x ↦ congrArg (complexTensorProductEquivProd R)
+      ((Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply x)
+  rw [norm_apply, NormTorus.coe_norm, ← Algebra.norm_eq_of_algEquiv e, Algebra.norm_prod]
+  simp [he, coe_complexSplitting_fst, coe_complexSplitting_snd]
 
 /-- **The norm is the character `(1, 1)`** of `S(R) ≃ Rˣ × Rˣ`, `(z₁, z₂) ↦ z₁ * z₂`. -/
 theorem norm_eq_characterGroup (f : WithConv (S →ₐ[ℝ] R)) :
