@@ -104,25 +104,28 @@ variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 /-- Algebra equivalence between algebraic and continuous endomorphisms of a finite-dimensional
 Hausdorff topological vector space over a complete nontrivially normed field, generalizing
 `Module.End.toContinuousLinearMap` beyond normed spaces. -/
-@[expose] def LinearMap.toContinuousLinearMapAlgEquiv : Module.End 𝕜 V ≃ₐ[𝕜] (V →L[𝕜] V) :=
+def LinearMap.toContinuousLinearMapAlgEquiv : Module.End 𝕜 V ≃ₐ[𝕜] (V →L[𝕜] V) :=
   { LinearMap.toContinuousLinearMap (𝕜 := 𝕜) (E := V) (F' := V) with
     map_mul' := fun _ _ ↦ rfl
     commutes' := fun _ ↦ rfl }
 
+/-- The underlying linear map of `LinearMap.toContinuousLinearMapAlgEquiv f` is `f`. -/
 @[simp]
 theorem LinearMap.coe_toContinuousLinearMapAlgEquiv (f : Module.End 𝕜 V) :
     (LinearMap.toContinuousLinearMapAlgEquiv f : Module.End 𝕜 V) = f :=
-  rfl
+  (rfl)
 
+/-- `LinearMap.toContinuousLinearMapAlgEquiv f` has the same underlying function as `f`. -/
 @[simp]
 theorem LinearMap.coe_toContinuousLinearMapAlgEquiv' (f : Module.End 𝕜 V) :
     ⇑(LinearMap.toContinuousLinearMapAlgEquiv f) = f :=
-  rfl
+  (rfl)
 
+/-- The inverse of `LinearMap.toContinuousLinearMapAlgEquiv` forgets continuity. -/
 @[simp]
 theorem LinearMap.toContinuousLinearMapAlgEquiv_symm_apply (f : V →L[𝕜] V) :
     LinearMap.toContinuousLinearMapAlgEquiv.symm f = (f : Module.End 𝕜 V) :=
-  rfl
+  (rfl)
 
 /-- On a nontrivial finite-dimensional Hausdorff topological vector space over a complete
 nontrivially normed field, the endomorphism ring `V →L[𝕜] V` is simple. -/

@@ -111,13 +111,9 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
   [CompleteSpace E]
 
 /-- On a Banach space, `compactIdeal` is closed in the operator-norm topology. -/
-theorem isClosed_compactIdeal : IsClosed (compactIdeal 𝕜 E : Set (E →L[𝕜] E)) := by
+instance isClosed_compactIdeal : IsClosed (compactIdeal 𝕜 E : Set (E →L[𝕜] E)) := by
   rw [coe_compactIdeal]
   exact isClosed_setOfPred_isCompactOperator
-
-/-- Typeclass witness that `compactIdeal` is closed on a Banach space. -/
-instance instIsClosedCompactIdeal : IsClosed (compactIdeal 𝕜 E : Set (E →L[𝕜] E)) :=
-  isClosed_compactIdeal
 
 end Banach
 
@@ -267,7 +263,7 @@ theorem mem_separableRangeIdeal_iff_separableSpace {f : E →L[𝕜] E} :
     ⟨fun h ↦ h.separableSpace, fun _ ↦ IsSeparable.of_subtype (Set.range f)⟩
 
 /-- On a seminormed space, `separableRangeIdeal` is closed in the operator-norm topology. -/
-theorem isClosed_separableRangeIdeal :
+instance isClosed_separableRangeIdeal :
     IsClosed (separableRangeIdeal 𝕜 E : Set (E →L[𝕜] E)) := by
   refine isClosed_of_closure_subset fun f hf ↦ mem_separableRangeIdeal.mpr ?_
   obtain ⟨g, hg, hlim⟩ := mem_closure_iff_seq_limit.mp hf
@@ -277,11 +273,6 @@ theorem isClosed_separableRangeIdeal :
   rintro _ ⟨x, rfl⟩
   exact mem_closure_of_tendsto ((ContinuousLinearMap.apply 𝕜 E x).continuous.tendsto f |>.comp hlim)
     (Eventually.of_forall fun n ↦ Set.mem_iUnion.mpr ⟨n, x, rfl⟩)
-
-/-- Typeclass witness that `separableRangeIdeal` is closed on a seminormed space. -/
-instance instIsClosedSeparableRangeIdeal :
-    IsClosed (separableRangeIdeal 𝕜 E : Set (E →L[𝕜] E)) :=
-  isClosed_separableRangeIdeal
 
 /-- Every compact operator on a seminormed space over a nontrivially normed field has separable
 range. -/
