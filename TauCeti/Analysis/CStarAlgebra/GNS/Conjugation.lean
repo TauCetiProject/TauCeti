@@ -57,37 +57,23 @@ private noncomputable def preGNSConj (hf : ∀ a b, f (a * b) = f (b * a)) :
   norm_map' x := by simp [preGNS_norm_def, hf (f.ofPreGNS x)]
 
 /-- The extension of `preGNSConj` to the GNS space. -/
-private noncomputable def gnsConjL (hf : ∀ a b, f (a * b) = f (b * a)) :
-    f.GNS →SL[starRingEnd ℂ] f.GNS :=
-  (preGNSConj f hf).toContinuousLinearMap.completion
+private noncomputable def gnsConjₗᵢ (hf : ∀ a b, f (a * b) = f (b * a)) :
+    f.GNS →ₗᵢ⋆[ℂ] f.GNS :=
+  (Completion.toComplₗᵢ.comp (preGNSConj f hf)).fromCompletion
 
-private theorem gnsConjL_coe (hf : ∀ a b, f (a * b) = f (b * a)) (x : f.PreGNS) :
-    gnsConjL f hf x = (f.toPreGNS (star (f.ofPreGNS x)) : f.GNS) :=
-  ContinuousLinearMap.completion_apply_coe _ x
-
-private theorem involutive_gnsConjL (hf : ∀ a b, f (a * b) = f (b * a)) :
-    Function.Involutive (gnsConjL f hf) := fun x ↦ by
+private theorem involutive_gnsConjₗᵢ (hf : ∀ a b, f (a * b) = f (b * a)) :
+    Function.Involutive (gnsConjₗᵢ f hf) := fun x ↦ by
   induction x using Completion.induction_on with
   | hp =>
-    exact isClosed_eq ((gnsConjL f hf).continuous.comp (gnsConjL f hf).continuous)
+    exact isClosed_eq ((gnsConjₗᵢ f hf).continuous.comp (gnsConjₗᵢ f hf).continuous)
       continuous_id
   | ih x =>
-    rw [gnsConjL_coe, gnsConjL_coe]
-    simp
-
-private theorem norm_gnsConjL (hf : ∀ a b, f (a * b) = f (b * a)) (x : f.GNS) :
-    ‖gnsConjL f hf x‖ = ‖x‖ := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (gnsConjL f hf).continuous.norm continuous_norm
-  | ih x =>
-    rw [gnsConjL_coe, Completion.norm_coe, Completion.norm_coe]
-    exact (preGNSConj f hf).norm_map x
+    simp [gnsConjₗᵢ, LinearIsometry.fromCompletion_apply_coe, preGNSConj]
 
 /-- The **modular conjugation** of a tracial positive functional `f`: the conjugate-linear
 isometric involution of the GNS space extending `[a] ↦ [a⋆]`. -/
 noncomputable def gnsConj (hf : ∀ a b, f (a * b) = f (b * a)) : f.GNS ≃ₗᵢ⋆[ℂ] f.GNS :=
-  LinearIsometryEquiv.ofSurjective ⟨(gnsConjL f hf).toLinearMap, norm_gnsConjL f hf⟩
-    (involutive_gnsConjL f hf).surjective
+  LinearIsometryEquiv.ofSurjective (gnsConjₗᵢ f hf) (involutive_gnsConjₗᵢ f hf).surjective
 
 variable (hf : ∀ a b, f (a * b) = f (b * a))
 
@@ -95,7 +81,7 @@ variable (hf : ∀ a b, f (a * b) = f (b * a))
 @[simp]
 theorem gnsConj_coe_toPreGNS (a : A) :
     gnsConj f hf (f.toPreGNS a : f.GNS) = (f.toPreGNS (star a) : f.GNS) :=
-  gnsConjL_coe f hf (f.toPreGNS a)
+  LinearIsometry.fromCompletion_apply_coe _ (f.toPreGNS a)
 
 /-- The modular conjugation sends the class of `a` to the class of `a⋆`, in terms of the class
 map `f.toGNS`. -/
@@ -106,7 +92,7 @@ theorem gnsConj_toGNS (a : A) : gnsConj f hf (f.toGNS a) = f.toGNS (star a) := b
 /-- The modular conjugation is an involution. -/
 @[simp]
 theorem gnsConj_gnsConj (x : f.GNS) : gnsConj f hf (gnsConj f hf x) = x :=
-  involutive_gnsConjL f hf x
+  involutive_gnsConjₗᵢ f hf x
 
 /-- The modular conjugation is its own inverse. -/
 @[simp]
@@ -114,6 +100,7 @@ theorem gnsConj_symm : (gnsConj f hf).symm = gnsConj f hf :=
   LinearIsometryEquiv.ext fun x ↦ (gnsConj f hf).symm_apply_eq.2 (gnsConj_gnsConj f hf x).symm
 
 /-- The modular conjugation is antiunitary: `⟪J x, J y⟫ = ⟪y, x⟫`. -/
+@[simp]
 theorem inner_gnsConj_gnsConj (x y : f.GNS) :
     inner ℂ (gnsConj f hf x) (gnsConj f hf y) = inner ℂ y x := by
   induction x, y using Completion.induction_on₂ with
