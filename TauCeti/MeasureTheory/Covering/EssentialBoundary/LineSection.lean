@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
-import TauCeti.MeasureTheory.Covering.Besicovitch
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Baire.RealSeparation
 
@@ -42,8 +41,9 @@ volume comparable to the ball, inside a ball where `sᶜ` is sparse. On any othe
 interval of parameters avoiding `∂ᵉs` lies in `I` or in `O`. Otherwise, by Baire's theorem applied
 to the parameters in the closures of both parts, some `G k` contains all such parameters near one
 of them, and the end of a maximal run of `O` next to it starts a segment in `O` from a point of
-`G k`. Lebesgue's density theorem then identifies the line section with `I` or `O` near every
-parameter off `∂ᵉs`.
+`G k`. Lebesgue's density theorem then shows that, near every parameter outside the closure of the
+parameters at which the line meets `∂ᵉs`, the line section is almost everywhere full or almost
+everywhere empty.
 
 ## Main results
 
@@ -74,10 +74,33 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### Lines leaving a point of small density into a set -/
 
-/-- The set `A` fills at most `c` times the volume of each closed ball of radius `r < ρ` in the
-open ball of radius `r` around `x`. -/
+/-- For each `0 < r < ρ`, the volume of `A ∩ ball x r` is at most `c` times the volume of
+`closedBall (0 : E) r`. -/
 private def SparseAt (c : ℝ≥0∞) (ρ : ℝ) (A : Set E) (x : E) : Prop :=
   ∀ r ∈ Ioo 0 ρ, volume (A ∩ ball x r) ≤ c * volume (closedBall (0 : E) r)
+
+/-- The point `y + t • e` is a point around which `A` is sparse below scale `ρ`, and from which the
+segment of length `δ` in the direction `σ • e` lies in `C`. -/
+private def SparseStart (c : ℝ≥0∞) (ρ : ℝ) (A C : Set E) (δ σ : ℝ) {e : E} (y : (ℝ ∙ e)ᗮ)
+    (t : ℝ) : Prop :=
+  SparseAt c ρ A ((y : E) + t • e) ∧ ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C
+
+/-- The point `y + t • e` is a `SparseStart` whose height `σ * t` lies in the `j`-th slab
+`[j * (δ / 2), (j + 1) * (δ / 2))`. -/
+private def SlabStart (c : ℝ≥0∞) (ρ : ℝ) (A C : Set E) (δ σ : ℝ) (j : ℤ) {e : E}
+    (y : (ℝ ∙ e)ᗮ) (t : ℝ) : Prop :=
+  SparseStart c ρ A C δ σ y t ∧ σ * t ∈ Ico (j * (δ / 2)) ((j + 1) * (δ / 2))
+
+/-- No point of the line through `y` is a `SparseStart` at scales `1 / (k + 1)` and
+`1 / (m + 1)`, in either direction along `e`. -/
+private def NoSparseStart (c : ℝ≥0∞) (A C : Set E) {e : E} (y : (ℝ ∙ e)ᗮ) : Prop :=
+  ∀ σ : ℝ, (σ = 1 ∨ σ = -1) → ∀ k m : ℕ, ∀ t : ℝ,
+    ¬ SparseStart c (1 / (k + 1)) A C (1 / (m + 1)) σ y t
+
+/-- The constant `c` is small enough for the dimension count in `volume_le_inv_two_mul`. -/
+private def IsSmallConst (e : E) (c : ℝ≥0∞) : Prop :=
+  c * volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E) ≤
+    2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- A point `q + τ • e` above a base point `q` lies in `C`, and near a point `yb + tb • e`, when
@@ -107,18 +130,19 @@ private theorem add_smul_mem_inter_ball (e : E) (he : ‖e‖ = 1) {C : Set E} {
           abel_nf
       _ ≤ ‖(q : E) - yb‖ + ‖(τ - tb) • e‖ := norm_add_le _ _
       _ = dist q yb + |τ - tb| := by
-          rw [norm_smul, he, mul_one, Real.norm_eq_abs, ← dist_eq_norm, Subtype.dist_eq]
+          have hq : ‖(q : E) - yb‖ = dist q yb := by rw [Subtype.dist_eq, dist_eq_norm]
+          have hτn : ‖(τ - tb) • e‖ = |τ - tb| := by rw [norm_smul, he, mul_one, Real.norm_eq_abs]
+          rw [hq, hτn]
       _ < 4 * r := by linarith
 
 /-- The dimension count behind `volume_inter_closedBall_le`: if a set `S` of the hyperplane times
 a segment of length `r / 2` has volume at most `c` times that of a ball of radius `4 r` in `E`,
 then `S` fills at most half of a ball of radius `r` of the hyperplane, for `c` small enough. -/
-private theorem volume_le_inv_two_mul (e : E) (he : ‖e‖ = 1) {c : ℝ≥0∞}
-    (hc : c * volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E) ≤
-      2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1))
+private theorem volume_le_inv_two_mul (e : E) (he : ‖e‖ = 1) {c : ℝ≥0∞} (hc : IsSmallConst e c)
     {S : Set (ℝ ∙ e)ᗮ} (z : (ℝ ∙ e)ᗮ) {r : ℝ} (hr : 0 < r)
     (h : volume S * ENNReal.ofReal (r / 2) ≤ c * volume (closedBall (0 : E) (4 * r))) :
     volume S ≤ 2⁻¹ * volume (closedBall z r) := by
+  rw [IsSmallConst] at hc
   have hdim : finrank ℝ E = finrank ℝ (ℝ ∙ e)ᗮ + 1 := by
     rw [← (ℝ ∙ e).finrank_add_finrank_orthogonal, finrank_span_singleton (by
       rintro rfl
@@ -149,50 +173,46 @@ slab over the ball at almost maximal height. Above every such base point, the se
 between `σ * t_b + r / 2` and `σ * t_b + r` lies in `C` and in the ball of radius `4 r` around `b`,
 where `A` is sparse. -/
 private theorem volume_inter_closedBall_le (e : E) (he : ‖e‖ = 1) {A C : Set E}
-    (hCA : C ≤ᵐ[volume] A) {c : ℝ≥0∞}
-    (hc : c * volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E) ≤
-      2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1))
+    (hCA : C ≤ᵐ[volume] A) {c : ℝ≥0∞} (hc : IsSmallConst e c)
     {ρ δ σ : ℝ} (hσ : σ = 1 ∨ σ = -1) (j : ℤ) (z : (ℝ ∙ e)ᗮ) {r : ℝ} (hr : 0 < r)
     (hrρ : 4 * r < ρ) (hrδ : 2 * r < δ) :
-    volume ({y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, (SparseAt c ρ A ((y : E) + t • e) ∧
-      ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C) ∧
-      σ * t ∈ Ico (j * (δ / 2)) ((j + 1) * (δ / 2))} ∩ closedBall z r) ≤
+    volume ({y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, SlabStart c ρ A C δ σ j y t} ∩ closedBall z r) ≤
       2⁻¹ * volume (closedBall z r) := by
-  set S := {y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, (SparseAt c ρ A ((y : E) + t • e) ∧
-      ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C) ∧
-      σ * t ∈ Ico (j * (δ / 2)) ((j + 1) * (δ / 2))} ∩ closedBall z r
-  rcases S.eq_empty_or_nonempty with hS | ⟨y₀, ⟨t₀, ht₀, ht₀j⟩, hy₀⟩
+  set S := {y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, SlabStart c ρ A C δ σ j y t} ∩ closedBall z r
+  rcases S.eq_empty_or_nonempty with hS | ⟨y₀, ⟨t₀, ht₀⟩, hy₀⟩
   · simp [hS]
   -- the heights of the points over the ball, and a point `b` of almost maximal height
-  set W := {w : ℝ | ∃ y ∈ S, ∃ t : ℝ, (SparseAt c ρ A ((y : E) + t • e) ∧
-      ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C) ∧
-      σ * t ∈ Ico (j * (δ / 2)) ((j + 1) * (δ / 2)) ∧ w = σ * t}
+  set W := {w : ℝ | ∃ y ∈ S, ∃ t : ℝ, SlabStart c ρ A C δ σ j y t ∧ w = σ * t}
   have hWbdd : BddAbove W := ⟨(j + 1) * (δ / 2), by
-    rintro _ ⟨_, _, t, _, htj, rfl⟩
+    rintro _ ⟨_, _, t, ⟨_, htj⟩, rfl⟩
     exact htj.2.le⟩
-  have hWne : W.Nonempty := ⟨σ * t₀, y₀, ⟨⟨t₀, ht₀, ht₀j⟩, hy₀⟩, t₀, ht₀, ht₀j, rfl⟩
-  obtain ⟨_, ⟨yb, hyb, tb, hLb, hjb, rfl⟩, hb⟩ :=
+  have hWne : W.Nonempty := ⟨σ * t₀, y₀, ⟨⟨t₀, ht₀⟩, hy₀⟩, t₀, ht₀, rfl⟩
+  obtain ⟨_, ⟨yb, hyb, tb, ⟨hLb, hjb⟩, rfl⟩, hb⟩ :=
     exists_lt_of_lt_csSup hWne (sub_lt_self (sSup W) (half_pos hr))
   -- the region above `S` lies in `C` near `b`, where `A` is sparse
   have hreg : S ×ˢ ((σ * ·) ⁻¹' Icc (σ * tb + r / 2) (σ * tb + r)) ⊆
       orthogonalLineEquiv e he ⁻¹' (C ∩ ball ((yb : E) + tb • e) (4 * r)) := by
     rintro ⟨q, τ⟩ ⟨hq, hτ⟩
-    obtain ⟨⟨tq, hLq, hjq⟩, hqz⟩ := hq
-    have hqW : σ * tq ≤ sSup W := le_csSup hWbdd ⟨q, ⟨⟨tq, hLq, hjq⟩, hqz⟩, tq, hLq, hjq, rfl⟩
-    have hjq₁ := hjq.1
+    obtain ⟨⟨tq, hqt⟩, hqz⟩ := hq
+    have hqW : σ * tq ≤ sSup W := le_csSup hWbdd ⟨q, ⟨⟨tq, hqt⟩, hqz⟩, tq, hqt, rfl⟩
+    have hjq₁ := hqt.2.1
     have hjb₂ := hjb.2
     have hyb₂ := hyb.2
     rw [mem_closedBall] at hqz hyb₂
     rw [mem_preimage, orthogonalLineEquiv_apply]
-    exact add_smul_mem_inter_ball e he hσ hr hrδ hLq.2 (by linarith [hjq₁, hjb₂])
+    exact add_smul_mem_inter_ball e he hσ hr hrδ hqt.1.2 (by linarith [hjq₁, hjb₂])
       (by linarith [hqW, hb]) hτ ((dist_triangle_right q yb z).trans (by linarith [hqz, hyb₂]))
   have hσ0 : σ ≠ 0 := by rcases hσ with rfl | rfl <;> norm_num
   have hσabs : |σ⁻¹| = 1 := by rcases hσ with rfl | rfl <;> norm_num
+  -- the heights above each base point form a segment of length `r / 2`
+  have hIcc : volume ((σ * ·) ⁻¹' Icc (σ * tb + r / 2) (σ * tb + r)) = ENNReal.ofReal (r / 2) := by
+    have hlen : σ * tb + r - (σ * tb + r / 2) = r / 2 := by ring
+    rw [Real.volume_preimage_mul_left hσ0, Real.volume_Icc, hσabs, ENNReal.ofReal_one, one_mul,
+      hlen]
   refine volume_le_inv_two_mul e he hc z hr ?_
   calc volume S * ENNReal.ofReal (r / 2)
       = (volume.prod volume) (S ×ˢ ((σ * ·) ⁻¹' Icc (σ * tb + r / 2) (σ * tb + r))) := by
-        rw [Measure.prod_prod, Real.volume_preimage_mul_left hσ0, Real.volume_Icc, hσabs,
-          ENNReal.ofReal_one, one_mul, show σ * tb + r - (σ * tb + r / 2) = r / 2 by ring]
+        rw [Measure.prod_prod, hIcc]
     _ ≤ (volume.prod volume)
           (orthogonalLineEquiv e he ⁻¹' (C ∩ ball ((yb : E) + tb • e) (4 * r))) :=
         measure_mono hreg
@@ -208,15 +228,11 @@ private theorem volume_inter_closedBall_le (e : E) (he : ‖e‖ = 1) {A C : Set
 of length `δ` in the direction `σ • e` lies in `C ⊆ A`, lie over a null set of the hyperplane.
 This is Claim 1 in the proof of Evans–Gariepy, Theorem 5.23. -/
 private theorem volume_setOf_exists_eq_zero (e : E) (he : ‖e‖ = 1) {A C : Set E}
-    (hCA : C ≤ᵐ[volume] A) {c : ℝ≥0∞}
-    (hc : c * volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E) ≤
-      2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1))
+    (hCA : C ≤ᵐ[volume] A) {c : ℝ≥0∞} (hc : IsSmallConst e c)
     {ρ δ σ : ℝ} (hρ : 0 < ρ) (hδ : 0 < δ) (hσ : σ = 1 ∨ σ = -1) :
-    volume {y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, SparseAt c ρ A ((y : E) + t • e) ∧
-      ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C} = 0 := by
-  refine measure_mono_null (t := ⋃ j : ℤ, {y : (ℝ ∙ e)ᗮ | ∃ t : ℝ,
-      (SparseAt c ρ A ((y : E) + t • e) ∧ ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C) ∧
-      σ * t ∈ Ico (j * (δ / 2)) ((j + 1) * (δ / 2))}) (fun y hy => ?_)
+    volume {y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, SparseStart c ρ A C δ σ y t} = 0 := by
+  refine measure_mono_null (t := ⋃ j : ℤ, {y : (ℝ ∙ e)ᗮ | ∃ t : ℝ, SlabStart c ρ A C δ σ j y t})
+    (fun y hy => ?_)
     (measure_iUnion_null fun j : ℤ =>
     measure_eq_zero_of_forall_measure_inter_closedBall_le _ _
       (ENNReal.inv_lt_one.2 ENNReal.one_lt_two) fun z => ?_)
@@ -234,9 +250,8 @@ private theorem volume_setOf_exists_eq_zero (e : E) (he : ‖e‖ = 1) {A C : Se
 /-- A constant `c` small enough for `volume_setOf_exists_eq_zero` and for
 `not_sparseAt_compl_and_sparseAt`. -/
 private theorem exists_const (e : E) :
-    ∃ c : ℝ≥0∞, c ≠ 0 ∧ 2 * c < 1 ∧
-      c * volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E) ≤
-        2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1) := by
+    ∃ c : ℝ≥0∞, c ≠ 0 ∧ 2 * c < 1 ∧ IsSmallConst e c := by
+  unfold IsSmallConst
   set X := volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E)
   set Y := 2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1)
   have hX : X ≠ ⊤ := ENNReal.mul_ne_top measure_ball_lt_top.ne ENNReal.ofReal_ne_top
@@ -244,10 +259,7 @@ private theorem exists_const (e : E) :
   have hY : Y ≠ 0 := mul_ne_zero (by simp) (measure_ball_pos _ _ one_pos).ne'
   refine ⟨min 4⁻¹ (Y / X), (lt_min (by simp) (ENNReal.div_pos hY hX)).ne', ?_, ?_⟩
   · calc 2 * min 4⁻¹ (Y / X) ≤ 2 * 4⁻¹ := by gcongr; exact min_le_left _ _
-      _ < 1 := by
-        rw [show (4 : ℝ≥0∞) = 2 * 2 by norm_num, ENNReal.mul_inv (by simp) (by simp), ← mul_assoc,
-          ENNReal.mul_inv_cancel (by simp) (by simp), one_mul]
-        exact ENNReal.inv_lt_one.2 ENNReal.one_lt_two
+      _ < 1 := ENNReal.mul_lt_of_lt_div (by norm_num)
   · rw [mul_assoc]
     calc min 4⁻¹ (Y / X) * X ≤ Y / X * X := by gcongr; exact min_le_right _ _
       _ = Y := ENNReal.div_mul_cancel hX0 hX
@@ -264,7 +276,7 @@ private theorem exists_nat_sparseAt_compl {s : Set E} (hs : NullMeasurableSet s 
       volume (sᶜ ∩ closedBall x r) / volume (closedBall x r) < c :=
     (hasDensityAt_iff.1 h0).eventually (gt_mem_nhds (pos_iff_ne_zero.2 hc))
   obtain ⟨ρ, hρ, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hev
-  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show 0 < ρ from hρ)
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (mem_Ioi.1 hρ)
   refine ⟨k, fun r hr => ?_⟩
   have hlt : volume (sᶜ ∩ closedBall x r) / volume (closedBall x r) < c :=
     hsub ⟨hr.1, hr.2.trans hk⟩
@@ -306,12 +318,8 @@ essential interior `I` and exterior `O` of `s`, an open interval of parameters c
 private theorem disjoint_or_disjoint_of_isPreconnected_lineSection [Nontrivial E] {s : Set E}
     (hs : NullMeasurableSet s volume) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc2 : 2 * c < 1) {e : E}
     {y : (ℝ ∙ e)ᗮ}
-    (hO : ∀ σ : ℝ, (σ = 1 ∨ σ = -1) → ∀ k m : ℕ, ∀ t : ℝ,
-      SparseAt c (1 / (k + 1)) sᶜ ((y : E) + t • e) →
-      ¬ ∀ τ ∈ Ioo (0 : ℝ) (1 / (m + 1)), (y : E) + (t + σ * τ) • e ∈ essentialExterior volume s)
-    (hI : ∀ σ : ℝ, (σ = 1 ∨ σ = -1) → ∀ k m : ℕ, ∀ t : ℝ,
-      SparseAt c (1 / (k + 1)) s ((y : E) + t • e) →
-      ¬ ∀ τ ∈ Ioo (0 : ℝ) (1 / (m + 1)), (y : E) + (t + σ * τ) • e ∈ essentialInterior volume s)
+    (hO : NoSparseStart c sᶜ (essentialExterior volume s) y)
+    (hI : NoSparseStart c s (essentialInterior volume s) y)
     {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
     (hTPN : T ⊆ {t | (y : E) + t • e ∈ essentialInterior volume s} ∪
       {t | (y : E) + t • e ∈ essentialExterior volume s}) :
@@ -337,26 +345,21 @@ private theorem disjoint_or_disjoint_of_isPreconnected_lineSection [Nontrivial E
   · obtain ⟨k', hk'⟩ := mem_iUnion.1 (hPg h')
     exact not_sparseAt_compl_and_sparseAt hc2 (hpos k') (hpos k) hk' h
   · obtain ⟨m, hm⟩ := exists_nat_one_div_lt hδ
-    exact hO σ hσ k m a ha fun τ hτ => hall τ ⟨hτ.1, hτ.2.trans hm⟩
+    exact hO σ hσ k m a ⟨ha, fun τ hτ => hall τ ⟨hτ.1, hτ.2.trans hm⟩⟩
   · obtain ⟨m, hm⟩ := exists_nat_one_div_lt hδ
-    exact hI σ hσ k m a ha fun τ hτ => hall τ ⟨hτ.1, hτ.2.trans hm⟩
+    exact hI σ hσ k m a ⟨ha, fun τ hτ => hall τ ⟨hτ.1, hτ.2.trans hm⟩⟩
 
 /-- The lines meeting a set of `volume_setOf_exists_eq_zero` at some scales `1 / (k + 1)` and
 `1 / (m + 1)` form a null set. -/
-private theorem ae_forall_not_sparseAt_and (e : E) (he : ‖e‖ = 1) {A C : Set E}
-    (hCA : C ≤ᵐ[volume] A) {c : ℝ≥0∞}
-    (hc : c * volume (ball (0 : E) 1) * ENNReal.ofReal (2 * 4 ^ finrank ℝ E) ≤
-      2⁻¹ * volume (ball (0 : (ℝ ∙ e)ᗮ) 1)) :
-    ∀ᵐ y : (ℝ ∙ e)ᗮ, ∀ σ : ℝ, (σ = 1 ∨ σ = -1) → ∀ k m : ℕ, ∀ t : ℝ,
-      SparseAt c (1 / (k + 1)) A ((y : E) + t • e) →
-      ¬ ∀ τ ∈ Ioo (0 : ℝ) (1 / (m + 1)), (y : E) + (t + σ * τ) • e ∈ C := by
+private theorem ae_noSparseStart (e : E) (he : ‖e‖ = 1) {A C : Set E}
+    (hCA : C ≤ᵐ[volume] A) {c : ℝ≥0∞} (hc : IsSmallConst e c) :
+    ∀ᵐ y : (ℝ ∙ e)ᗮ, NoSparseStart c A C y := by
   have h (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) : ∀ᵐ y : (ℝ ∙ e)ᗮ, ∀ k m : ℕ, ∀ t : ℝ,
-      SparseAt c (1 / (k + 1)) A ((y : E) + t • e) →
-      ¬ ∀ τ ∈ Ioo (0 : ℝ) (1 / (m + 1)), (y : E) + (t + σ * τ) • e ∈ C := by
+      ¬ SparseStart c (1 / (k + 1)) A C (1 / (m + 1)) σ y t := by
     refine ae_all_iff.2 fun k => ae_all_iff.2 fun m => ?_
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_exists_eq_zero e he hCA hc
-      (ρ := 1 / (k + 1)) (δ := 1 / (m + 1)) (by positivity) (by positivity) hσ)] with y hy t ht hτ
-    exact hy ⟨t, ht, hτ⟩
+      (ρ := 1 / (k + 1)) (δ := 1 / (m + 1)) (by positivity) (by positivity) hσ)] with y hy t ht
+    exact hy ⟨t, ht⟩
   filter_upwards [h 1 (Or.inl rfl), h (-1) (Or.inr rfl)] with y h₁ hm₁ σ hσ
   rcases hσ with rfl | rfl
   exacts [h₁, hm₁]
@@ -375,8 +378,8 @@ theorem ae_essentialBoundary_lineSection_subset_closure {s : Set E}
       closure {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
   have : Nontrivial E := nontrivial_of_ne e 0 (by rintro rfl; simp at he)
   obtain ⟨c, hc0, hc2, hc⟩ := exists_const (E := E) e
-  filter_upwards [ae_forall_not_sparseAt_and e he (essentialExterior_ae_eq hs).subset hc,
-    ae_forall_not_sparseAt_and e he (essentialInterior_ae_eq hs).subset hc,
+  filter_upwards [ae_noSparseStart e he (essentialExterior_ae_eq hs).subset hc,
+    ae_noSparseStart e he (essentialInterior_ae_eq hs).subset hc,
     ae_lineSection_eq e he (essentialInterior_ae_eq hs),
     ae_lineSection_eq e he (essentialExterior_ae_eq hs)] with y hO hI hIs hOs
   intro t ht
@@ -393,8 +396,8 @@ theorem ae_essentialBoundary_lineSection_subset_closure {s : Set E}
   · -- the ball lies in the essential exterior, so the section has density zero at `t`
     have hsub : {t : ℝ | (y : E) + t • e ∈ s} ≤ᵐ[volume] (ball t ε)ᶜ := by
       filter_upwards [hOs] with t' ht' hts ht'T
-      exact (ht'.mp ((hTPN ht'T).resolve_left fun h => hd.ne_of_mem ht'T h rfl) :
-        (y : E) + t' • e ∈ sᶜ) hts
+      exact notMem_of_mem_compl
+        (ht'.mp ((hTPN ht'T).resolve_left fun h => hd.ne_of_mem ht'T h rfl)) hts
     refine (mem_essentialBoundary.1 ht).2 (essentialExterior_anti_ae hsub
       (compl_closure_subset_essentialExterior ?_))
     rwa [closure_compl, compl_compl]
@@ -422,10 +425,12 @@ theorem ae_essentialBoundary_lineSection_inter_subset {s : Set E}
         {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
   filter_upwards [ae_essentialBoundary_lineSection_subset_closure hs e he] with y hy U hU hfin t
     ⟨ht, htU⟩
+  have hsep : {t ∈ U | (y : E) + t • e ∈ essentialBoundary volume s} =
+      U ∩ {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
+    ext t
+    simp only [mem_inter_iff, mem_ofPred_eq]
   have h := hU.inter_closure ⟨htU, hy ht⟩
-  rw [show U ∩ {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} =
-      {t ∈ U | (y : E) + t • e ∈ essentialBoundary volume s} from rfl,
-    hfin.isClosed.closure_eq] at h
+  rw [← hsep, hfin.isClosed.closure_eq] at h
   exact h.2
 
 /-- **Essential boundaries of line sections.** Let `s` be a null-measurable set and `e` a unit
@@ -438,6 +443,6 @@ theorem ae_essentialBoundary_lineSection_subset {s : Set E} (hs : NullMeasurable
       essentialBoundary volume {t : ℝ | (y : E) + t • e ∈ s} ⊆
         {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
   filter_upwards [ae_essentialBoundary_lineSection_inter_subset hs e he] with y hy hfin t ht
-  exact hy univ isOpen_univ (by simpa using hfin) ⟨ht, mem_univ t⟩
+  exact hy univ isOpen_univ (by simpa only [mem_univ, true_and] using hfin) ⟨ht, mem_univ t⟩
 
 end TauCeti
