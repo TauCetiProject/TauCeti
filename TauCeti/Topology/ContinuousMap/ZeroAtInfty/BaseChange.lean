@@ -181,17 +181,18 @@ theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖
 @[simp]
 theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (n : ℕ) :
-    (u ^ n).mapCoeffs f hf = u.mapCoeffs f hf ^ n :=
-  RingHom.map_pow (mapCoeffsRingHom f hf) u n
+    (u ^ n).mapCoeffs f hf = u.mapCoeffs f hf ^ n := by
+  simpa only [mapCoeffsRingHom_apply] using RingHom.map_pow (mapCoeffsRingHom f hf) u n
 
 /-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
 extension. -/
 @[simp]
 theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
-    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf :=
-  (Polynomial.map_aeval_eq_aeval_map (ψ := mapCoeffsRingHom f hf)
-    (RingHom.ext fun r ↦ by simp [Algebra.algebraMap_eq_smul_one]) P u).symm
+    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by
+  simpa only [mapCoeffsRingHom_apply] using
+    (Polynomial.map_aeval_eq_aeval_map (ψ := mapCoeffsRingHom f hf)
+      (RingHom.ext fun r ↦ by simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 section Topology
 
@@ -261,7 +262,8 @@ theorem mapCoeffs_id (u : C₀(J, R) →L[R] C₀(I, R))
 theorem mapCoeffsRingHom_id
     (hf : ∃ C : ℝ≥0, ∀ r : R, ‖(RingHom.id R) r‖ ≤ C * ‖r‖) :
     mapCoeffsRingHom (J := J) (RingHom.id R) hf = RingHom.id (C₀(J, R) →L[R] C₀(J, R)) :=
-  RingHom.ext fun u ↦ mapCoeffs_id u hf
+  RingHom.ext fun u ↦ by
+    simpa only [mapCoeffsRingHom_apply, RingHom.id_apply] using mapCoeffs_id u hf
 
 end Identity
 
@@ -286,6 +288,8 @@ theorem mapCoeffsRingHom_comp [TauCeti.NormedRing.IsTate S]
     (hgf : ∃ E : ℝ≥0, ∀ r, ‖(g.comp f) r‖ ≤ E * ‖r‖) :
     mapCoeffsRingHom (J := J) (g.comp f) hgf =
       (mapCoeffsRingHom g hg).comp (mapCoeffsRingHom f hf) :=
-  RingHom.ext fun u ↦ (mapCoeffs_mapCoeffs u f g hf hg hgf).symm
+  RingHom.ext fun u ↦ by
+    simpa only [mapCoeffsRingHom_apply, RingHom.comp_apply] using
+      (mapCoeffs_mapCoeffs u f g hf hg hgf).symm
 
 end ContinuousLinearMap

@@ -14,6 +14,7 @@ import TauCeti.Analysis.Polynomial.Coleman.Coprime
 import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.PowerSeries.Entire.Coprime
 import TauCeti.RingTheory.PowerSeries.Entire.Division
+import TauCeti.Topology.Algebra.Algebra.Basic
 
 /-!
 # The Riesz–Coleman decomposition on model spaces
@@ -184,35 +185,50 @@ private theorem isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse
     colemanDSeries_one_sub_C_mul_reverse_self hQ0 hc, hpow]
   exact hg.isGoodZero_X_sub_C_pow_mul_iff.mpr hgu
 
-omit [IsUltrametricDist R] [CompleteSpace R] in
-/-- For a Riesz projection `E` of `1 - lc(Q)⁻¹ Q*(u)` at `1` commuting with `u`, the operator
-`Q*(u * (1 - E))` is invertible when `Q.leadingCoeff` is a unit. -/
-private theorem isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection
+omit [IsUltrametricDist R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
+/-- For a commuting idempotent `E` such that `Q*(u)` has a complementary inverse modulo `E`,
+the operator `Q*(u * (1 - E))` is invertible when `Q.leadingCoeff` is a unit. -/
+private theorem isUnit_aeval_mul_one_sub_reverse
     {M : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-    {u E : M →L[R] M} {Q : R[X]} (hQ : IsUnit Q.leadingCoeff)
-    (hEv : IsRieszProjection
-      (Polynomial.aeval u (1 - Polynomial.C (Ring.inverse Q.leadingCoeff) * Q.reverse))
-      1 Q.natDegree E)
-    (hEu : Commute u E) :
+    {u E w : M →L[R] M} {Q : R[X]}
+    (hQ : IsUnit Q.leadingCoeff) (hE : IsIdempotentElem E) (hEu : Commute u E)
+    (hw₁ : Polynomial.aeval u Q.reverse * w = 1 - E)
+    (hw₂ : w * Polynomial.aeval u Q.reverse = 1 - E) :
     IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) := by
   set c := Ring.inverse Q.leadingCoeff
   have hcq : Q.leadingCoeff * c = 1 := mul_comm c _ ▸ Ring.inverse_mul_cancel _ hQ
-  have h1v : (1 - (1 : R) • Polynomial.aeval u (1 - Polynomial.C c * Q.reverse) : M →L[R] M) =
-      c • Polynomial.aeval u Q.reverse := by
-    simpa only [one_smul] using Polynomial.one_sub_aeval_one_sub_C_mul u c Q.reverse
-  have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
-    (A := M →L[R] M) hEv.isIdempotentElem
-    hEv.one_sub_smul_mul_inverse hEv.inverse_mul_one_sub_smul
-  rw [h1v] at hunit
-  have hulc : IsUnit (Q.leadingCoeff • (1 : M →L[R] M)) :=
-    Algebra.algebraMap_eq_smul_one (A := M →L[R] M) Q.leadingCoeff ▸
-      hQ.map (algebraMap R (M →L[R] M))
-  have heq : (Q.leadingCoeff • (1 : M →L[R] M)) *
-      (E + (c • Polynomial.aeval u Q.reverse) * (1 - E)) =
+  have hunit := hE.isUnit_add_mul_one_sub hw₁ hw₂
+  have hCE : Commute (Polynomial.aeval u Q.reverse) E := by
+    have hCw : Commute (Polynomial.aeval u Q.reverse) w := hw₁.trans hw₂.symm
+    have h1 : Commute (Polynomial.aeval u Q.reverse) (1 - E) :=
+      hw₂ ▸ hCw.mul_right (Commute.refl _)
+    simpa using (Commute.one_right _).sub_right h1
+  have hscale : IsUnit (1 + (Q.leadingCoeff - 1) • E) := by
+    have hcoeff : ∀ x y : R, x * y = 1 → (x - 1) + (y - 1) + (x - 1) * (y - 1) = 0 := by
+      intro x y hxy
+      rw [sub_mul, mul_sub, mul_sub, one_mul, mul_one, mul_one, hxy]
+      abel
+    have hmul : ∀ x y : R, x * y = 1 → (1 + (x - 1) • E) * (1 + (y - 1) • E) = 1 := by
+      intro x y hxy
+      rw [add_mul, mul_add, mul_add, one_mul, mul_one, mul_smul_comm, smul_mul_assoc,
+        mul_smul_comm, smul_smul, hE.eq, one_mul, add_assoc, ← add_smul, ← add_smul,
+        add_left_comm, ← add_assoc, hcoeff x y hxy, zero_smul, add_zero]
+    exact isUnit_iff_exists.mpr
+      ⟨1 + (c - 1) • E, hmul _ _ hcq, hmul _ _ (Ring.inverse_mul_cancel _ hQ)⟩
+  have hE_mul : E * (Polynomial.aeval u Q.reverse * (1 - E)) = 0 := by
+    rw [← mul_assoc, ← hCE.eq, mul_assoc]
+    simp [mul_sub, hE.eq]
+  have heq : (1 + (Q.leadingCoeff - 1) • E) *
+      (E + Polynomial.aeval u Q.reverse * (1 - E)) =
       Polynomial.aeval (u * (1 - E)) Q.reverse := by
-    rw [aeval_mul_one_sub_of_isIdempotentElem hEv.isIdempotentElem hEu, coeff_zero_reverse,
-      smul_one_mul, smul_add, smul_mul_assoc, smul_smul, hcq, one_smul, add_comm]
-  exact heq ▸ hulc.mul hunit
+    rw [aeval_mul_one_sub_of_isIdempotentElem hE hEu, coeff_zero_reverse, add_mul, one_mul,
+      mul_add, smul_mul_assoc, hE.eq, smul_mul_assoc, hE_mul, smul_zero, add_zero]
+    calc E + Polynomial.aeval u Q.reverse * (1 - E) + (Q.leadingCoeff - 1) • E
+        = Polynomial.aeval u Q.reverse * (1 - E) + (E + (Q.leadingCoeff - 1) • E) := by abel
+      _ = Polynomial.aeval u Q.reverse * (1 - E) + Q.leadingCoeff • E := by
+        conv_lhs => rhs; lhs; rw [← one_smul R E]
+        rw [← add_smul, add_sub_cancel]
+  exact heq ▸ hscale.mul hunit
 
 omit [IsUltrametricDist R] [CompleteSpace R] in
 /-- For a Riesz projection `E` of `1 - lc(Q)⁻¹ Q*(u)` at `1`, scaling `hEv.inverse` by
@@ -321,24 +337,22 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
     hv.isRieszProjection_rieszProjection
       (fun _ ↦ hv_good.evalAt_hasseDeriv_eq_zero) hv_good.isUnit_evalAt_hasseDeriv
   have : IsTopologicalSemiring (C₀(I, R) →L[R] C₀(I, R)) := inferInstance
-  have mem_elemental_iff (w x : C₀(I, R) →L[R] C₀(I, R)) :
-      x ∈ Algebra.elemental R w ↔
-        x ∈ closure (Algebra.adjoin R {w} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
-    rw [← SetLike.mem_coe, Algebra.elemental, Subalgebra.topologicalClosure_coe]
   have hsub : Algebra.elemental R v ≤ Algebra.elemental R u :=
     Algebra.elemental.le_of_mem (Algebra.elemental.isClosed R u)
-      ((mem_elemental_iff u v).mpr (subset_closure (Polynomial.aeval_mem_adjoin_singleton R u)))
+      (Algebra.mem_elemental_iff.mpr (subset_closure (Polynomial.aeval_mem_adjoin_singleton R u)))
   have hclosure : ∀ {x}, x ∈ closure (Algebra.adjoin R {v} : Set (C₀(I, R) →L[R] C₀(I, R))) →
       x ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
-    fun hx ↦ (mem_elemental_iff u _).mp (hsub ((mem_elemental_iff v _).mpr hx))
+    fun hx ↦ Algebra.mem_elemental_iff.mp (hsub (Algebra.mem_elemental_iff.mpr hx))
   have hE_mem : E ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) :=
     hclosure hEv.mem_closure_adjoin
   have hEu : Commute u E :=
     (Subalgebra.mem_centralizer_iff R).mp
-      (Algebra.elemental.le_centralizer_centralizer R u ((mem_elemental_iff u E).mpr hE_mem)) u
+      (Algebra.elemental.le_centralizer_centralizer R u (Algebra.mem_elemental_iff.mpr hE_mem)) u
       ((Subalgebra.mem_centralizer_iff R).mpr fun _ hy ↦ by rw [Set.mem_singleton_iff.mp hy])
   have hex := exists_inverse_aeval_reverse_of_isRieszProjection hEv fun _ hx ↦ hclosure hx
-  have hunit_compl := isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu
+  have hunit_compl : IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) := by
+    obtain ⟨w, hw₁, hw₂, _⟩ := hex
+    exact isUnit_aeval_mul_one_sub_reverse hQ hEv.isIdempotentElem hEu hw₁ hw₂
   have hE_rc := hEv.isRowCompact hv
   have hrank := hEv.rankAtStalk_range hv hv_good
   obtain ⟨hcharE, hcharCompl, hzero⟩ :=
