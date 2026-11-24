@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestric
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import Mathlib.Tactic.Abel
+import TauCeti.Data.ZMod.Torsion
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -102,7 +103,8 @@ is the fixed points of negation, the `2`-torsion `T[2]`
 (`TauCeti.groupCohomologyEvenNegEquivTorsionBy`), and the odd-degree cohomology is `T ⧸ 2 T`
 (`TauCeti.groupCohomologyOddNegEquivQuotSMulTop`). These are the cohomology groups of `C₂` acting
 on an abelian group by inversion, as in the extensions of `C₂` by a cyclic group with the dihedral
-action.
+action. For `T = ZMod d` with `d ≠ 0`, the second cohomology therefore has `gcd 2 d` elements
+(`TauCeti.natCard_groupCohomology_two_neg_zmod`).
 
 ## Main definitions
 
@@ -121,6 +123,8 @@ action.
 
 ## Main results
 
+* `TauCeti.natCard_groupCohomology_two_neg_zmod`: for `d ≠ 0`, `H²(C₂, ZMod d)` with the action
+  by negation has `gcd 2 d` elements.
 * `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_zero_iff`,
   `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_iff`: odd-degree classes are norm-zero elements
   modulo the image of `1 - A`.
@@ -887,6 +891,15 @@ theorem groupCohomologyEvenNegEquivTorsionBy_groupCohomologyπEven (i : ℕ) [Ne
         mem_zpowers_ofAdd_one i hi x) =
       ⟨x, (AddEquiv.mem_ker_cyclicRep_neg_applyAsHom_sub_iff _).1 x.property⟩ := by
   rw [← LinearEquiv.eq_symm_apply, groupCohomologyEvenNegEquivTorsionBy_symm_apply]
+
+/-- For `d ≠ 0`, the second cohomology of `C₂` acting on `ZMod d` by negation has `gcd 2 d`
+elements: it is the `2`-torsion of `ZMod d`. -/
+theorem natCard_groupCohomology_two_neg_zmod (d : ℕ) [NeZero d] :
+    Nat.card (groupCohomology ((AddEquiv.neg (ZMod d)).cyclicRep (AddEquiv.iterate_neg_two _)) 2) =
+      Nat.gcd 2 d := by
+  rw [Nat.card_congr (groupCohomologyEvenNegEquivTorsionBy (ZMod d) 2 even_two).toEquiv]
+  -- `AddSubgroup.torsionBy` is the additive subgroup underlying `Submodule.torsionBy ℤ`.
+  simpa using ZMod.card_torsionBy 2 d
 
 end Negation
 
