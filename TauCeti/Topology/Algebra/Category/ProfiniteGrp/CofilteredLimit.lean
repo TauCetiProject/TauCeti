@@ -17,7 +17,8 @@ import TauCeti.Topology.Category.TopCat.Limits.Compact
 
 Let `c` be a limit cone over a cofiltered diagram `F : J ⥤ ProfiniteGrp`. A continuous
 homomorphism from the limit `c.pt` to a discrete group factors through a stage, and two
-continuous homomorphisms out of a stage that agree on the limit already agree at a later stage.
+continuous maps out of a stage to a discrete space that agree on the limit already agree at a
+later stage.
 For a finite target `A` this says that the hom-sets into `A` turn the cofiltered limit into a
 filtered colimit:
 
@@ -31,7 +32,7 @@ The proof that a homomorphism factors runs as follows. Its kernel is an open sub
 limit, so it contains the preimage of an open normal subgroup `N` of some stage `F_j`
 (`ProfiniteGrp.exists_openNormalSubgroup_preimage_subset_of_isLimit`), and the homomorphism
 factors through the image of the limit in the finite group `F_j ⧸ N`. That image is the image of
-some later stage `F_k`, because open subgroups containing the image of the limit already contain
+some later stage `F_k`, because open subsets containing the image of the limit already contain
 the image of a later stage (`ProfiniteGrp.exists_range_map_subset_of_isLimit`); both statements
 are compactness arguments.
 
@@ -39,8 +40,8 @@ are compactness arguments.
 
 * `ProfiniteGrp.exists_comp_eq_of_isLimit`: a continuous homomorphism from the limit to a
   discrete group factors through a stage.
-* `ProfiniteGrp.exists_comp_map_eq_of_isLimit`: two continuous homomorphisms out of a stage that
-  agree on the limit agree at a later stage.
+* `ProfiniteGrp.exists_comp_map_eq_of_isLimit`: two continuous maps out of a stage to a discrete
+  space that agree on the limit agree at a later stage.
 * `ProfiniteGrp.isColimitMapCoconeOpYonedaObj`: for a finite profinite group `A`, the hom-sets
   into `A` turn a cofiltered limit cone into a filtered colimit cocone of types.
 
@@ -62,8 +63,10 @@ universe u v
 variable {J : Type v} [SmallCategory J] [IsCofiltered J] {F : J ⥤ ProfiniteGrp.{max u v}}
   {c : Cone F}
 
-/-- The underlying cone of profinite spaces of a limit cone of profinite groups is a limit cone. -/
-private noncomputable def isLimitMapConeForget₂ (hc : IsLimit c) :
+/-- The underlying cone of profinite spaces of a limit cone of profinite groups is a limit cone.
+This is `PreservesLimits (forget₂ ProfiniteGrp Profinite)` for cones indexed by a category in a
+universe at most that of the profinite groups. -/
+noncomputable def isLimitMapConeForget₂ (hc : IsLimit c) :
     IsLimit ((forget₂ ProfiniteGrp Profinite).mapCone c) :=
   have : PreservesLimitsOfSize.{v, v} (forget₂ ProfiniteGrp.{max u v} Profinite) :=
     preservesLimitsOfSize_shrink.{v, u, v, u} _
@@ -80,14 +83,14 @@ private theorem exists_preimage_map_eq_empty_of_isLimit (hc : IsLimit c) {j : J}
   exact TopCat.exists_preimage_eq_empty_of_isLimit G _
     (isLimitOfPreserves Profinite.toTopCat (isLimitMapConeForget₂ hc)) hs h
 
-/-- If an open subgroup of a stage contains the image of the limit, then it contains the image of
+/-- If an open subset of a stage contains the image of the limit, then it contains the image of
 some later stage. The transition maps need not be surjective. -/
-theorem exists_range_map_subset_of_isLimit (hc : IsLimit c) {j : J} (H : OpenSubgroup (F.obj j))
-    (hH : Set.range (c.π.app j) ⊆ H) :
-    ∃ (k : J) (a : k ⟶ j), Set.range (F.map a) ⊆ H := by
+theorem exists_range_map_subset_of_isLimit (hc : IsLimit c) {j : J} {U : Set (F.obj j)}
+    (hU : IsOpen U) (hU' : Set.range (c.π.app j) ⊆ U) :
+    ∃ (k : J) (a : k ⟶ j), Set.range (F.map a) ⊆ U := by
   obtain ⟨k, a, hk⟩ := exists_preimage_map_eq_empty_of_isLimit hc
-    (s := (H : Set (F.obj j))ᶜ) H.isOpen.isClosed_compl
-    (Set.eq_empty_of_forall_notMem fun x hx ↦ hx (hH ⟨x, rfl⟩))
+    (s := Uᶜ) hU.isClosed_compl
+    (Set.eq_empty_of_forall_notMem fun x hx ↦ hx (hU' ⟨x, rfl⟩))
   refine ⟨k, a, ?_⟩
   rintro _ ⟨y, rfl⟩
   by_contra hy
@@ -114,11 +117,11 @@ theorem exists_openNormalSubgroup_preimage_subset_of_isLimit (hc : IsLimit c)
   rw [hUV]
   exact hN hx
 
-variable {A : Type*} [Group A] [TopologicalSpace A] [DiscreteTopology A]
+variable {A : Type*} [TopologicalSpace A] [DiscreteTopology A]
 
 /-- A continuous homomorphism from a cofiltered limit of profinite groups to a discrete group
 factors through one of the stages. -/
-theorem exists_comp_eq_of_isLimit (hc : IsLimit c) (f : c.pt →ₜ* A) :
+theorem exists_comp_eq_of_isLimit [Group A] (hc : IsLimit c) (f : c.pt →ₜ* A) :
     ∃ (j : J) (g : F.obj j →ₜ* A), g.comp (c.π.app j).hom = f := by
   -- The kernel of `f` contains the preimage of an open normal subgroup `N` of a stage `F_j`.
   let U : OpenSubgroup c.pt :=
@@ -140,7 +143,7 @@ theorem exists_comp_eq_of_isLimit (hc : IsLimit c) (f : c.pt →ₜ* A) :
       isOpen' := Subgroup.isOpen_mono (H₁ := N.toSubgroup) (fun y hy ↦ by
         simp [Subgroup.mem_comap, (QuotientGroup.eq_one_iff y).mpr hy]) N.isOpen }
   -- A later stage `F_k` maps into it.
-  obtain ⟨k, a, hk⟩ := exists_range_map_subset_of_isLimit hc H (by
+  obtain ⟨k, a, hk⟩ := exists_range_map_subset_of_isLimit hc H.isOpen (by
     rintro _ ⟨x, rfl⟩
     exact ⟨x, rfl⟩)
   let g₀ : F.obj k →* p.range :=
@@ -154,7 +157,9 @@ theorem exists_comp_eq_of_isLimit (hc : IsLimit c) (f : c.pt →ₜ* A) :
     refine continuousAt_def.mpr fun s hs ↦ Filter.mem_of_superset
       (((N.isOpen).preimage (F.map a).hom.continuous).mem_nhds (by simp)) fun y hy ↦ ?_
     simpa [hg₀ y hy] using mem_of_mem_nhds hs
-  · ext x
+  · -- `ext` reduces to the values at `x`; the left side is `(φ.comp g₀) (c.π.app k x)` once the
+    -- bundled homomorphism `⟨φ.comp g₀, _⟩` is unfolded, which `hφ` states.
+    ext x
     have hx : g₀ (c.π.app k x) = p.rangeRestrict x :=
       Subtype.ext (congrArg (QuotientGroup.mk' N.toSubgroup) (c.w_apply a x))
     have hφ : (φ.comp g₀) (c.π.app k x) = f x := by
@@ -162,16 +167,17 @@ theorem exists_comp_eq_of_isLimit (hc : IsLimit c) (f : c.pt →ₜ* A) :
       exact MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ x
     exact hφ
 
-/-- Two continuous homomorphisms from a stage of a cofiltered limit of profinite groups to a
-discrete group that agree on the limit already agree after a transition map. -/
-theorem exists_comp_map_eq_of_isLimit (hc : IsLimit c) {j : J} {g g' : F.obj j →ₜ* A}
-    (h : g.comp (c.π.app j).hom = g'.comp (c.π.app j).hom) :
-    ∃ (k : J) (a : k ⟶ j), g.comp (F.map a).hom = g'.comp (F.map a).hom := by
+/-- Two continuous maps from a stage of a cofiltered limit of profinite groups to a discrete space
+that agree on the limit already agree after a transition map. -/
+theorem exists_comp_map_eq_of_isLimit (hc : IsLimit c) {j : J} {g g' : C(F.obj j, A)}
+    (h : g.comp (c.π.app j).hom.toContinuousMap = g'.comp (c.π.app j).hom.toContinuousMap) :
+    ∃ (k : J) (a : k ⟶ j),
+      g.comp (F.map a).hom.toContinuousMap = g'.comp (F.map a).hom.toContinuousMap := by
   obtain ⟨k, a, hk⟩ := exists_preimage_map_eq_empty_of_isLimit hc
     (s := {y : F.obj j | g y ≠ g' y})
     ((isClosed_discrete {q : A × A | q.1 ≠ q.2}).preimage (g.continuous.prodMk g'.continuous))
     (Set.eq_empty_of_forall_notMem fun x hx ↦ hx (DFunLike.congr_fun h x))
-  refine ⟨k, a, ContinuousMonoidHom.ext fun y ↦ ?_⟩
+  refine ⟨k, a, ContinuousMap.ext fun y ↦ ?_⟩
   by_contra hy
   exact (Set.eq_empty_iff_forall_notMem.mp hk) y hy
 
@@ -185,8 +191,10 @@ noncomputable def isColimitMapCoconeOpYonedaObj (hc : IsLimit c) (A : ProfiniteG
       obtain ⟨j, g, hg⟩ := exists_comp_eq_of_isLimit hc f.hom
       exact ⟨Opposite.op j, ofHom g, hom_ext hg.symm⟩)
     (fun j g g' h ↦ by
-      obtain ⟨k, a, hk⟩ := exists_comp_map_eq_of_isLimit hc (g := g.hom) (g' := g'.hom)
-        (congrArg Hom.hom h)
-      exact ⟨Opposite.op k, a.op, hom_ext hk⟩)
+      obtain ⟨k, a, hk⟩ := exists_comp_map_eq_of_isLimit hc (j := j.unop)
+        (g := g.hom.toContinuousMap) (g' := g'.hom.toContinuousMap)
+        (ContinuousMap.ext fun x ↦ DFunLike.congr_fun (congrArg Hom.hom h) x)
+      exact ⟨Opposite.op k, a.op,
+        hom_ext (ContinuousMonoidHom.ext fun y ↦ DFunLike.congr_fun hk y)⟩)
 
 end ProfiniteGrp
