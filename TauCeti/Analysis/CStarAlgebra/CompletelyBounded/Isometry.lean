@@ -22,10 +22,10 @@ contraction.
 An injective star homomorphism of C⋆-algebras is a complete isometry: its amplifications are
 injective star homomorphisms, hence isometric.
 
-For `E = ℂ`, evaluation at `1` is an isometric isomorphism `CB(ℂ, B) ≃ₗᵢ B` for every C⋆-algebra
-`B`, with inverse `b ↦ (z ↦ z • b)`. The amplification of `z ↦ z • b` sends a scalar matrix `x` to
-`[xᵢⱼ • b]`; in matrices over the unitization of `B` this is the product of the scalar matrix `x`
-and the diagonal matrix `diag(b, …, b)`, so its norm is at most `‖x‖ ‖b‖`.
+For `E = ℂ`, the map `b ↦ (z ↦ z • b)` is an isometric isomorphism `B ≃ₗᵢ CB(ℂ, B)` for every
+C⋆-algebra `B`, with inverse evaluation at `1`. The amplification of `z ↦ z • b` sends a scalar
+matrix `x` to `[xᵢⱼ • b]`; in matrices over the unitization of `B` this is the product of the
+scalar matrix `x` and the diagonal matrix `diag(b, …, b)`, so its norm is at most `‖x‖ ‖b‖`.
 
 ## Main declarations
 
@@ -36,7 +36,7 @@ and the diagonal matrix `diag(b, …, b)`, so its norm is at most `‖x‖ ‖b�
   closed under composition and contain the identity.
 * `NonUnitalStarAlgHom.isCompleteIsometry`: an injective star homomorphism is a complete isometry.
 * `LinearMap.cbNorm_toSpanSingleton`: `‖z ↦ z • b‖_cb = ‖b‖`.
-* `LinearMap.completelyBounded.evalOneEquiv`: `CB(ℂ, B) ≃ₗᵢ[ℂ] B`, `u ↦ u 1`.
+* `LinearMap.completelyBounded.toSpanSingletonLIE`: `B ≃ₗᵢ[ℂ] CB(ℂ, B)`, `b ↦ (z ↦ z • b)`.
 
 ## References
 
@@ -109,16 +109,16 @@ theorem isCompleteIsometry_id : IsCompleteIsometry (LinearMap.id : A →ₗ[ℂ]
 theorem IsCompleteContraction.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B}
     (hψ : IsCompleteContraction ψ) (hφ : IsCompleteContraction φ) :
     IsCompleteContraction (ψ ∘ₗ φ) := fun n x ↦ by
-  have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp
-  exact this ▸ (hψ n _).trans (hφ n x)
+  rw [coe_comp, ← CStarMatrix.map_map]
+  exact (hψ n _).trans (hφ n x)
 
 /-- The composite of complete isometries is a complete isometry. -/
 @[grind ←]
 theorem IsCompleteIsometry.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B}
     (hψ : IsCompleteIsometry ψ) (hφ : IsCompleteIsometry φ) :
     IsCompleteIsometry (ψ ∘ₗ φ) := fun n x ↦ by
-  have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp
-  exact this ▸ (hψ n _).trans (hφ n x)
+  rw [coe_comp, ← CStarMatrix.map_map]
+  exact (hψ n _).trans (hφ n x)
 
 end Comp
 
@@ -186,30 +186,27 @@ theorem cbNorm_toSpanSingleton (b : B) : (toSpanSingleton ℂ B b).cbNorm = ‖b
 
 namespace completelyBounded
 
-/-- **`CB(ℂ, B) ≃ B`.** Evaluation at `1` is an isometric isomorphism from the completely bounded
-maps `ℂ → B` onto the C⋆-algebra `B`, with inverse `b ↦ (z ↦ z • b)`. -/
-noncomputable def evalOneEquiv : completelyBounded ℂ B ≃ₗᵢ[ℂ] B where
-  toFun u := (u : ℂ →ₗ[ℂ] B) 1
-  invFun b :=
+/-- **`CB(ℂ, B) ≃ B`.** The map `b ↦ (z ↦ z • b)` is an isometric isomorphism from the
+C⋆-algebra `B` onto the completely bounded maps `ℂ → B`, with inverse evaluation at `1`. This is
+the completely bounded analogue of `ContinuousLinearMap.toSpanSingletonLIE`. -/
+noncomputable def toSpanSingletonLIE : B ≃ₗᵢ[ℂ] completelyBounded ℂ B where
+  toFun b :=
     ⟨toSpanSingleton ℂ B b, mem_completelyBounded.2 (isCompletelyBounded_toSpanSingleton b)⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv u := Subtype.ext (ext_ring (by simp))
-  right_inv b := by simp
-  norm_map' u := by
-    rw [norm_def, show (u : ℂ →ₗ[ℂ] B) = toSpanSingleton ℂ B ((u : ℂ →ₗ[ℂ] B) 1) from
-      ext_ring (by simp), cbNorm_toSpanSingleton]
-    -- the left side is `‖u 1‖` by definition of `toFun`
-    rfl
+  invFun u := (u : ℂ →ₗ[ℂ] B) 1
+  map_add' _ _ := Subtype.ext (ext_ring (by simp))
+  map_smul' _ _ := Subtype.ext (ext_ring (by simp))
+  left_inv b := by simp
+  right_inv u := Subtype.ext (ext_ring (by simp))
+  norm_map' b := (norm_def _).trans (cbNorm_toSpanSingleton b)
 
 @[simp]
-theorem evalOneEquiv_apply (u : completelyBounded ℂ B) :
-    evalOneEquiv u = (u : ℂ →ₗ[ℂ] B) 1 :=
+theorem coe_toSpanSingletonLIE_apply (b : B) :
+    (toSpanSingletonLIE b : ℂ →ₗ[ℂ] B) = toSpanSingleton ℂ B b :=
   (rfl)
 
 @[simp]
-theorem coe_evalOneEquiv_symm_apply (b : B) :
-    (evalOneEquiv.symm b : ℂ →ₗ[ℂ] B) = toSpanSingleton ℂ B b :=
+theorem toSpanSingletonLIE_symm_apply (u : completelyBounded ℂ B) :
+    toSpanSingletonLIE.symm u = (u : ℂ →ₗ[ℂ] B) 1 :=
   (rfl)
 
 end completelyBounded
