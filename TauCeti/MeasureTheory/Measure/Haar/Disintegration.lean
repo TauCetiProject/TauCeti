@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Disintegration
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Integral.Prod
-public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 
 /-!
 # Haar measures under surjective linear maps
