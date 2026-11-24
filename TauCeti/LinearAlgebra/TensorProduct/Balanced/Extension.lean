@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
 import TauCeti.Algebra.Module.Projective.Semilinear
+import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -604,9 +605,8 @@ theorem rangeMulVecBilinEquiv_symm_apply (he : IsIdempotentElem e)
     (rangeMulVecBilinEquiv f he).symm w =
       ∑ j, tmul (RingHom.op f) (op ((w : ι → S) j)) ⟨e.col j, e.col_mem_range_mulVecBilin j⟩ := by
   rw [LinearEquiv.symm_apply_eq]
-  obtain ⟨v, hv⟩ := w.property
-  have hw : (e.map f) *ᵥ (w : ι → S) = (w : ι → S) := by
-    rw [← hv, mulVecBilin_apply, mulVec_mulVec, (he.matrix_map f).eq]
+  have hw : (e.map f) *ᵥ (w : ι → S) = (w : ι → S) :=
+    (he.matrix_map f).mem_range_mulVecBilin_iff.mp w.property
   ext i
   simpa [mulVec, dotProduct] using (congrFun hw i).symm
 

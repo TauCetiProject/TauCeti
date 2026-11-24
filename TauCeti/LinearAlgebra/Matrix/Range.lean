@@ -37,8 +37,8 @@ column ranges over `R`, finiteness, `Matrix.submatrix`, the identity matrix
   decompositions for the row and column ranges of `Matrix.fromBlocks e 0 0 f`.
 * `Matrix.rangeVecMulLinearTransposeMapOpEquiv`: `Rᵐᵒᵖ`-linear isomorphism identifying the row
   range of `eᵀ.map MulOpposite.op` with the column range of `e`.
-* `Matrix.rangeMulVecBilinSubmatrixEquiv`: `Rᵐᵒᵖ`-linear isomorphism of column ranges under
-  `Matrix.submatrix`.
+* `Matrix.rangeMulVecBilinSubmatrixEquiv`: `Rᵐᵒᵖ`-linear isomorphism of column ranges when both
+  rows and columns are reindexed along equivalences via `Matrix.submatrix`.
 * `Matrix.rangeMulVecBilinOneEquiv` and `Matrix.rangeMulVecBilinSingleOneEquiv`: the column ranges
   of `1 : Matrix m m R` and of a diagonal matrix unit `Eᵢᵢ` are `m → Rᵐᵒᵖ` and `Rᵐᵒᵖ`.
 
@@ -333,10 +333,15 @@ def rangeMulVecBilinSubmatrixEquiv {ι₂ ι₂' : Type*} [Fintype ι₂] (M : M
   invFun w := ⟨(w : ι₂' → R) ∘ σ.symm, by
     obtain ⟨u, hu⟩ := w.property
     refine ⟨u ∘ τ.symm, ?_⟩
-    rw [mulVecBilin_apply]
-    conv_lhs => rw [← show (M.submatrix σ τ).submatrix σ.symm τ.symm = M by simp]
-    rw [submatrix_mulVec_equiv]
-    simpa [Function.comp_assoc] using congrArg (· ∘ σ.symm) hu⟩
+    have hM : (M.submatrix σ τ).submatrix σ.symm τ.symm = M := by simp
+    calc
+      mulVecBilin R Rᵐᵒᵖ M (u ∘ τ.symm)
+        = (M.submatrix σ τ).submatrix σ.symm τ.symm *ᵥ (u ∘ τ.symm) := by
+            rw [mulVecBilin_apply, hM]
+      _ = (M.submatrix σ τ *ᵥ u) ∘ σ.symm := by
+            simp [submatrix_mulVec_equiv, Function.comp_assoc]
+      _ = (w : ι₂' → R) ∘ σ.symm := by
+            simpa [mulVecBilin_apply] using congrArg (· ∘ σ.symm) hu⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv v := Subtype.ext <| funext fun i ↦ by simp
@@ -429,6 +434,7 @@ theorem coe_rangeMulVecBilinOneEquiv_symm_apply {m R : Type*} [Semiring R] [Fint
 
 /-- When `Rᵐᵒᵖ` has the strong rank condition, `range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)`
 has right `R`-rank `Fintype.card m`. -/
+@[simp]
 theorem finrank_range_mulVecBilin_one (R : Type*) [Semiring R] [StrongRankCondition Rᵐᵒᵖ]
     (m : Type*) [Fintype m] [DecidableEq m] :
     Module.finrank Rᵐᵒᵖ (LinearMap.range ((1 : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) =
@@ -442,13 +448,16 @@ def rangeMulVecBilinSingleOneEquiv (R : Type*) [Semiring R] {m : Type*} [Fintype
     LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ] Rᵐᵒᵖ where
   toFun w := MulOpposite.op ((w : m → R) i)
   invFun r := ⟨Pi.single i (MulOpposite.unop r), ⟨Pi.single i (MulOpposite.unop r), by
-    ext j; by_cases hj : j = i <;> simp [mulVec_apply, hj]⟩⟩
+    rw [mulVecBilin_apply, Matrix.single_mulVec]
+    ext j
+    simp [Function.update_apply, Pi.single_apply]⟩⟩
   map_add' _ _ := MulOpposite.op_add _ _
   map_smul' r w := by simp
   left_inv w := Subtype.ext <| by
     obtain ⟨v, hv⟩ := w.property
-    ext j; have hvj := congrFun hv j
-    by_cases hj : j = i <;> simp_all [mulVecBilin_apply, mulVec_apply]
+    simp_rw [← hv, mulVecBilin_apply, Matrix.single_mulVec]
+    ext j
+    simp [Function.update_apply, Pi.single_apply]
   right_inv _ := by simp
 
 @[simp]
@@ -464,6 +473,7 @@ theorem coe_rangeMulVecBilinSingleOneEquiv_symm_apply (R : Type*) [Semiring R] {
 
 /-- When `Rᵐᵒᵖ` has the strong rank condition, the column range of `Eᵢᵢ` has right `R`-rank `1`.
 -/
+@[simp]
 theorem finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R] [StrongRankCondition Rᵐᵒᵖ]
     {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
     Module.finrank Rᵐᵒᵖ (LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=

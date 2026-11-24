@@ -124,8 +124,22 @@ theorem lift_mk {β : Sort*} {F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), 
     lift F hF (mk e he) = F e he := by
   rw [← quotient_mk_eq_mk]; rfl
 
+/-- Uniqueness of `TauCeti.IdempotentMonoid.lift`: any function on `IdempotentMonoid A` that
+agrees with `F` on every `Fin n` representative equals `lift F hF`. -/
+theorem lift_unique {β : Sort*}
+    {F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdempotentElem e → β}
+    {hF : ∀ {n m : ℕ} (e : Matrix (Fin n) (Fin n) A) (f : Matrix (Fin m) (Fin m) A)
+      (he : IsIdempotentElem e) (hf : IsIdempotentElem f),
+      IdempotentEquivalent e f → F e he = F f hf}
+    {g : IdempotentMonoid A → β}
+    (hg : ∀ (n : ℕ) (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e),
+      g (mk e he) = F e he) :
+    g = lift F hF :=
+  funext fun x ↦ ind (fun n e he ↦ (hg n e he).trans (lift_mk e he).symm) x
+
 /-- `TauCeti.IdempotentMonoid.lift` computes `F` on `mk e he` for any finite index type `ι` via
-the canonical `Fin`-indexed representative. -/
+`e` relabelled along the chosen `Fintype.equivFin ι`; the value of `lift` is independent of the
+representative because `F` respects equivalence of idempotents. -/
 theorem lift_mk_eq {β : Sort*}
     {F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdempotentElem e → β}
     {hF : ∀ {n m : ℕ} (e : Matrix (Fin n) (Fin n) A) (f : Matrix (Fin m) (Fin m) A)
@@ -262,12 +276,13 @@ noncomputable def map (φ : R →ₙ+* S) : IdempotentMonoid R →+ IdempotentMo
   toFun := mapFun φ
   map_zero' := by
     rw [← mk_zero (ι := Fin 0), mapFun_mk]
-    exact (mk_eq_zero_iff (IsIdempotentElem.zero.matrix_map φ)).mpr (by ext i; exact Fin.elim0 i)
+    exact (mk_eq_zero_iff (IsIdempotentElem.zero.matrix_map φ)).mpr (Matrix.map_zero φ (map_zero φ))
   map_add' a b := by
     induction a using ind with | mk m e he =>
     induction b using ind with | mk n f hf =>
     rw [mk_add_mk, mapFun_mk, mapFun_mk, mapFun_mk, mk_add_mk]
-    exact mk_congr_matrix _ _ (by ext (_ | _) (_ | _) <;> simp)
+    exact mk_congr_matrix _ _
+      (by rw [fromBlocks_map, Matrix.map_zero φ (map_zero φ), Matrix.map_zero φ (map_zero φ)])
 
 @[simp]
 theorem map_mk {ι : Type*} [Fintype ι] (φ : R →ₙ+* S) (e : Matrix ι ι R)
@@ -278,7 +293,7 @@ theorem map_mk {ι : Type*} [Fintype ι] (φ : R →ₙ+* S) (e : Matrix ι ι R
 theorem map_id : map (NonUnitalRingHom.id R) = AddMonoidHom.id (IdempotentMonoid R) := by
   ext n e he; rw [map_mk, AddMonoidHom.id_apply]; exact mk_congr_matrix _ _ (by ext; simp)
 
-theorem map_comp (φ : R →ₙ+* S) (ψ : S →ₙ+* T) : (map ψ).comp (map φ) = map (ψ.comp φ) := by
+theorem map_comp (φ : R →ₙ+* S) (ψ : S →ₙ+* T) : map (ψ.comp φ) = (map ψ).comp (map φ) := by
   ext n e he; rw [AddMonoidHom.comp_apply, map_mk, map_mk, map_mk]
   exact mk_congr_matrix _ _ (by ext; rfl)
 
@@ -287,9 +302,9 @@ noncomputable def congr (e : R ≃+* S) : IdempotentMonoid R ≃+ IdempotentMono
   toFun := map e.toNonUnitalRingHom
   invFun := map e.symm.toNonUnitalRingHom
   map_add' := map_add (map e.toNonUnitalRingHom)
-  left_inv x := DFunLike.congr_fun ((map_comp _ _).trans
+  left_inv x := DFunLike.congr_fun ((map_comp _ _).symm.trans
     ((congrArg map (NonUnitalRingHom.ext e.symm_apply_apply)).trans map_id)) x
-  right_inv y := DFunLike.congr_fun ((map_comp _ _).trans
+  right_inv y := DFunLike.congr_fun ((map_comp _ _).symm.trans
     ((congrArg map (NonUnitalRingHom.ext e.apply_symm_apply)).trans map_id)) y
 
 /-- Pointwise evaluation of `congr` as `map e.toNonUnitalRingHom`. -/
@@ -506,7 +521,7 @@ noncomputable def grothendieckAddGroupEquivInt :
     _root_.Algebra.GrothendieckAddGroup.natIntLocalizationMap
     (AddSubmonoid.map_equiv_top (finrankAddEquiv D))
 
-theorem grothendieckAddGroupEquivInt_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι D)
+theorem grothendieckAddGroupEquivInt_of_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι D)
     (he : IsIdempotentElem e) :
     grothendieckAddGroupEquivInt D (_root_.Algebra.GrothendieckAddGroup.of (mk e he)) =
       (Module.finrank Dᵐᵒᵖ (range (e.mulVecBilin D Dᵐᵒᵖ)) : ℤ) :=

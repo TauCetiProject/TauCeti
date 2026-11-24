@@ -21,8 +21,8 @@ file proves `objectCodeAddEquiv : IdempotentMonoid R ≃+ ObjectCode (FiniteProj
 identifies the group completions of `V(R)` with split projective `K₀` for right modules
 (`kZeroEquiv`, `kZeroEquiv_of_mk`, `kZeroEquiv_of_mk_one`, `exists_kZeroEquiv_sub_nsmul_eq`,
 `toKZero`, `toKZero_mk`, `map_toKZero`, `map_comp_kZeroEquiv`, `toKZero_mk_eq_toKZero_mk_iff`,
-`mem_mrange_toKZero_iff`, `toKZero_sub_one_eq_classOf_of_linearEquiv`) and left modules via
-`opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
+`mem_mrange_toKZero_iff`, `toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv`) and left
+modules via `opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
 `extendScalarsOfIdempotentIso`.
 
 ## References
@@ -46,8 +46,9 @@ section KZero
 
 /-- The column range `e R^ι` of an idempotent matrix `e`, packaged as an object of
 `FiniteProjectiveRight R` via reindexing to `Fin (Fintype.card ι)`. -/
-noncomputable def FiniteProjectiveModules.ofIdempotent {R : Type u} [Ring R] {ι : Type*}
-    [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) : FiniteProjectiveRight R :=
+@[expose] noncomputable def FiniteProjectiveModules.ofIdempotent {R : Type u} [Ring R]
+    {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) :
+    FiniteProjectiveRight R :=
   let σ := Fintype.equivFin ι
   ⟨ModuleCat.of Rᵐᵒᵖ (range ((e.reindex σ σ).mulVecBilin R Rᵐᵒᵖ)),
     finiteProjectiveModules_iff.mpr ⟨inferInstance,
@@ -60,6 +61,20 @@ noncomputable def FiniteProjectiveModules.ofIdempotentLinearEquiv {R : Type u} [
     {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e) :
     (ofIdempotent e he).obj ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ) :=
   (e.rangeMulVecBilinSubmatrixEquiv (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm).symm
+
+@[simp]
+theorem FiniteProjectiveModules.coe_ofIdempotentLinearEquiv_apply {R : Type u} [Ring R]
+    {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e)
+    (v : (ofIdempotent e he).obj) :
+    (ofIdempotentLinearEquiv e he v : ι → R) = v.val ∘ Fintype.equivFin ι :=
+  coe_rangeMulVecBilinSubmatrixEquiv_symm_apply e _ _ v
+
+@[simp]
+theorem FiniteProjectiveModules.coe_ofIdempotentLinearEquiv_symm_apply {R : Type u} [Ring R]
+    {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempotentElem e)
+    (w : range (e.mulVecBilin R Rᵐᵒᵖ)) :
+    ((ofIdempotentLinearEquiv e he).symm w).val = (w : ι → R) ∘ (Fintype.equivFin ι).symm :=
+  coe_rangeMulVecBilinSubmatrixEquiv_apply e _ _ w
 
 namespace IdempotentMonoid
 
@@ -402,9 +417,10 @@ theorem mem_mrange_toKZero_iff {x : KZero R} :
     exact ⟨a, by simp [ha]⟩
 
 /-- Subtracting `[1ₘ]` from `[e]` in `K₀(R)` gives `classOf Rᵐᵒᵖ P m = [P] - m[R]`. -/
-theorem toKZero_sub_one_eq_classOf_of_linearEquiv {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
-    (he : IsIdempotentElem e) {P : Type u} [AddCommGroup P] [Module Rᵐᵒᵖ P] [Module.Finite Rᵐᵒᵖ P]
-    [Module.Projective Rᵐᵒᵖ P] (θ : P ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) (m : ℕ) :
+theorem toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv {ι : Type*} [Fintype ι]
+    {e : Matrix ι ι R} (he : IsIdempotentElem e) {P : Type u} [AddCommGroup P] [Module Rᵐᵒᵖ P]
+    [Module.Finite Rᵐᵒᵖ P] [Module.Projective Rᵐᵒᵖ P]
+    (θ : P ≃ₗ[Rᵐᵒᵖ] range (e.mulVecBilin R Rᵐᵒᵖ)) (m : ℕ) :
     toKZero R (mk e he) - toKZero R (mk (1 : Matrix (Fin m) (Fin m) R) IsIdempotentElem.one) =
       FiniteProjectiveModules.classOf Rᵐᵒᵖ P m := by
   rw [← kZeroEquiv_of, ← kZeroEquiv_of,

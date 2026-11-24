@@ -53,9 +53,8 @@ theorem IsIdempotentElem.eq_sum_smul_col {e : Matrix ι ι R} (he : IsIdempotent
       (⟨e.col j, e.col_mem_range_mulVecBilin j⟩ : range (e.mulVecBilin R Rᵐᵒᵖ)) := by
   ext1
   rw [Submodule.coe_sum]
-  ext i
-  simp only [Finset.sum_apply, Submodule.coe_smul, Pi.smul_apply, col_apply, op_smul_eq_mul]
-  exact congrFun (he.mem_range_mulVecBilin_iff.mp v.property).symm i
+  simp_rw [Submodule.coe_smul]
+  exact (he.mem_range_mulVecBilin_iff.mp v.property).symm.trans (Matrix.mulVec_eq_sum _ _)
 
 end ColumnRange
 
