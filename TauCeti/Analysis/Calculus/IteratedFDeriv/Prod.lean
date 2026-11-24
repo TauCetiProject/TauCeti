@@ -21,13 +21,15 @@ families in function spaces.
 
 The same holds for the iterated derivatives of `x ↦ F (x, p.2)` in the first variable of a `C^n`
 map `F` on an open subset `W` of `E × P`: they are continuous in `p` on `W`
-(`ContDiffOn.continuousOn_iteratedFDeriv_partial`), and the first derivative is itself `C^m` on
-`W` when `F` is `C^(m+1)` (`ContDiffOn.fderiv_partial_of_isOpen`). More generally, if a family
-`g : Q → E → G` indexed by a bare topological space `Q` agrees locally on `Q × s` (for a set `s`
-with unique derivatives) with `F (·, ξ q)` for a map `F` that is `C^n` at `(z₀, ξ q₀)` and a
-continuous parameter map `ξ`, its iterated derivatives within `s` through order `n` are jointly
-continuous at `(q₀, z₀)` (`ContDiffAt.continuousAt_iteratedFDerivWithin_partial`). Joint
-continuity of these partial derivatives is the hypothesis for differentiating under an integral
+(`ContDiffOn.continuousOn_iteratedFDeriv_partial`). The first derivative is itself `C^m` on
+`W` when `F` is `C^(m+1)` (`ContDiffOn.fderiv_partial_of_isOpen`), and the `k`-th derivative is
+`C^m` on `W` when `k + m ≤ n` (`ContDiffOn.contDiffOn_iteratedFDeriv_partial`). More generally,
+if a family `g : Q → E → G` indexed by a bare topological space `Q` agrees locally on `Q × s` (for
+a set `s` with unique derivatives) with `F (·, ξ q)` for a map `F` that is `C^n` at
+`(z₀, ξ q₀)` and a continuous parameter map `ξ`, its iterated derivatives within `s` through
+order `n` are jointly continuous at `(q₀, z₀)`
+(`ContDiffAt.continuousAt_iteratedFDerivWithin_partial`). Joint continuity of these partial
+derivatives is the hypothesis for differentiating under an integral
 over a compact parameter space without differentiable structure.
 
 The within-set versions require unique derivatives only on the product,
@@ -291,35 +293,38 @@ theorem ContDiffOn.fderiv_partial_of_isOpen {G : Type*} [NormedAddCommGroup G]
   exact (ContDiffAt.fderiv (f := fun (q : E × P) (x : E) ↦ F (x, q.2)) hFp contDiffAt_fst
     le_rfl).contDiffWithinAt
 
-private theorem ContDiffOn.continuousOn_iteratedFDeriv_partial_aux {G : Type max u v}
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (k : ℕ) {F : E × P → G}
-    (hF : ContDiffOn 𝕜 k F W) (hW : IsOpen W) :
-    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W := by
-  induction k generalizing G with
-  | zero => exact TauCeti.continuousOn_iteratedFDeriv_zero_partial_iff.2 hF.continuousOn
+/-- **Smoothness of iterated partial derivatives.** If `F` is `C^n` on an open set
+`W ⊆ E × P` and `k + m ≤ n`, then the `k`-th derivative of `x ↦ F (x, p.2)` at `p.1` is `C^m` in
+`p` on `W`. -/
+theorem ContDiffOn.contDiffOn_iteratedFDeriv_partial {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {F : E × P → G} {n m : WithTop ℕ∞} (hF : ContDiffOn 𝕜 n F W)
+    (hW : IsOpen W) {k : ℕ} (hkm : k + m ≤ n) :
+    ContDiffOn 𝕜 m (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W := by
+  induction k generalizing m with
+  | zero =>
+    have h : (fun p : E × P ↦ iteratedFDeriv 𝕜 0 (fun x ↦ F (x, p.2)) p.1) =
+        (continuousMultilinearCurryFin0 𝕜 E G).symm ∘ F := by
+      ext p
+      simp
+    rw [h]
+    exact (continuousMultilinearCurryFin0 𝕜 E G).symm.contDiff.comp_contDiffOn
+      (hF.of_le (by simpa using hkm))
   | succ k ih =>
-      have hD := ih (ContDiffOn.fderiv_partial_of_isOpen (m := k) (by exact_mod_cast hF) hW)
-      refine ((continuousMultilinearCurryRightEquiv' 𝕜 k E G).symm.continuous.comp_continuousOn
-        hD).congr fun p _ ↦ ?_
-      simp [iteratedFDeriv_succ_eq_comp_right]
+    -- The `(k+1)`-th derivative uncurries the derivative of the `k`-th one.
+    have hD := ContDiffOn.fderiv_partial_of_isOpen
+      (ih (m := m + 1) (by push_cast at hkm; rwa [add_comm m, ← add_assoc])) hW
+    refine ((continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (k + 1) ↦ E) G).symm.contDiff
+      |>.comp_contDiffOn hD).congr fun p _ ↦ ?_
+    rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, Function.comp_apply]
 
 /-- **Continuity of iterated partial derivatives.** If `F` is `C^n` on an open set `W ⊆ E × P`,
 then for every `k ≤ n` the `k`-th derivative of `x ↦ F (x, p.2)` at `p.1` is continuous in `p`
 on `W`. -/
-theorem ContDiffOn.continuousOn_iteratedFDeriv_partial {G : Type v} [NormedAddCommGroup G]
+theorem ContDiffOn.continuousOn_iteratedFDeriv_partial {G : Type*} [NormedAddCommGroup G]
     [NormedSpace 𝕜 G] {F : E × P → G} {n : WithTop ℕ∞} (hF : ContDiffOn 𝕜 n F W) (hW : IsOpen W)
     {k : ℕ} (hk : (k : WithTop ℕ∞) ≤ n) :
-    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W := by
-  let eG : Type max u v := ULift.{u} G
-  let isoG : eG ≃L[𝕜] G := ContinuousLinearEquiv.ulift
-  have hF' : ContDiffOn 𝕜 k (fun q ↦ isoG.symm (F q)) W :=
-    isoG.symm.contDiff.comp_contDiffOn (hF.of_le hk)
-  have hFp (p : E × P) (hp : p ∈ W) : ContDiffAt 𝕜 k (fun x ↦ isoG.symm (F (x, p.2))) p.1 :=
-    (hF'.contDiffAt (hW.mem_nhds hp)).comp (g := fun q ↦ isoG.symm (F q))
-      (f := fun x : E ↦ (x, p.2)) p.1 (contDiffAt_id.prodMk contDiffAt_const)
-  simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
-    TauCeti.continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG : eG →L[𝕜] G))
-      continuousOn_const hFp (ContDiffOn.continuousOn_iteratedFDeriv_partial_aux k hF' hW)
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv 𝕜 k (fun x ↦ F (x, p.2)) p.1) W :=
+  (hF.contDiffOn_iteratedFDeriv_partial hW (m := 0) (by simpa using hk)).continuousOn
 
 open scoped Topology in
 /-- If a family `g : Q → E → G` indexed by a topological space `Q` agrees near `(q₀, z₀)` on
