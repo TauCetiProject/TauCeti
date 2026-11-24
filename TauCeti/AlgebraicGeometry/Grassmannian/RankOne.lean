@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Grassmannian.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.RingTheory.Grassmannian.Chart.RankOne
 
@@ -74,12 +73,6 @@ theorem chartToProj_projToSpec (x : M) :
   congr 1
   ext r
   exact (ChartAlgebra.awayEquiv R x).symm.commutes r
-
-/-- The chart of `G(1, M)` at `x`, mapped to `Proj (Sym M)` or to `G(1, M)`, gives the same
-morphism to `Spec R`. -/
-theorem chartToProj_projToSpec_eq_chartι_toSpec (x : M) :
-    chartToProj R x ≫ projToSpec R M = chartι R (fun _ : Fin 1 ↦ x) ≫ toSpec R M 1 := by
-  rw [chartToProj_projToSpec, chartι_toSpec]
 
 /-- The images of the charts of `G(1, M)` cover `Proj (Sym M)`. -/
 theorem iSup_opensRange_chartToProj :

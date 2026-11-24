@@ -19,7 +19,8 @@ Let `M` be a module over a commutative ring `R`, and grade the symmetric algebra
 ## Main declarations
 
 * `TauCeti.SymmetricAlgebra.awayLinearMap`: the linear form `m ↦ m / x` with values in
-  `Sym(M)_(x)`; it takes the value `1` at `x` (`TauCeti.SymmetricAlgebra.awayLinearMap_self`).
+  `Sym(M)_(x)`; it takes the value `1` at `x` (`TauCeti.SymmetricAlgebra.awayLinearMap_self`,
+  in simp-normal form `TauCeti.SymmetricAlgebra.away_mk_ι_self`).
 * `AlgHom.apply_awayMk_eq_lift`: an algebra homomorphism `ψ` on `Sym(M)_(x)` evaluates a
   homogeneous fraction `a / xⁿ` as `a` at the linear form `m ↦ ψ (m / x)`.
 -/
@@ -47,10 +48,17 @@ theorem awayLinearMap_apply (x m : M) :
   simp only [awayLinearMap, LinearMap.comp_apply, Away.mkLinearMap_apply,
     LinearMap.codRestrict_apply]
 
-/-- The fraction `x / x` is one. -/
-theorem awayLinearMap_self (x : M) : awayLinearMap R x x = 1 := by
+/-- The fraction `x / x` in `Sym(M)_(x)` is one. -/
+@[simp]
+theorem away_mk_ι_self (x : M) :
+    Away.mk (homogeneousSubmodule R M) (ι_mem_homogeneousSubmodule R M x) 1
+      (SymmetricAlgebra.ι R M x) (ι_mem_homogeneousSubmodule_one_smul R M x) = 1 := by
   apply val_injective
-  rw [awayLinearMap_apply, Away.val_mk, val_one]
+  rw [Away.val_mk, val_one]
+  simp
+
+/-- The linear form `m ↦ m / x` takes the value one at `x`. -/
+theorem awayLinearMap_self (x : M) : awayLinearMap R x x = 1 := by
   simp
 
 variable {R}
