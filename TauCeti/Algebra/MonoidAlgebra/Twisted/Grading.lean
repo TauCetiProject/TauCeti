@@ -26,7 +26,8 @@ In particular:
   `α = 1` the canonical algebra equivalence `addMonoidAlgebraEquiv` identifies this grading with
   `AddMonoidAlgebra.gradeBy k w`.
 
-Combined with `TauCeti.TwistedMonoidAlgebra.instNoZeroDivisors` and
+Combined with the `NoZeroDivisors (twistedMonoidAlgebra k G α)` instance from
+`TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors` and
 `TauCeti.GradedAlgebra.width`, integer weights on twisted lattice algebras over domains give
 multiplicative extreme homogeneous parts and additive extreme degrees and width.
 
@@ -40,6 +41,15 @@ multiplicative extreme homogeneous parts and additive extreme degrees and width.
 * `TauCeti.TwistedMonoidAlgebra.addMonoidAlgebraEquiv`: `twistedMonoidAlgebra k (Multiplicative L) 1
   ≃ₐ[k] AddMonoidAlgebra k L`, intertwining `gradeBy` with `AddMonoidAlgebra.gradeBy`
   (`map_gradeBy_addMonoidAlgebraEquiv`).
+
+## Implementation notes
+
+The grading construction (`gradeBy`, `gradedMonoidOfMap`, `decomposeAlgHom`,
+`decomposeAlgHom_of_mem_aux`, and `gradedAlgebraOfMap`) and the span-induction step of
+`map_gradeBy_addMonoidAlgebraEquiv` are adapted from `Mathlib.Algebra.MonoidAlgebra.Grading`
+(`AddMonoidAlgebra.gradeBy`, `decomposeAux`, `decomposeAux_coe`, and `gradeBy.gradedAlgebra`),
+replacing untwisted monomial multiplication with the factor-set rule
+`of g * of h = α g h • of (g * h)` via `TwistedMonoidAlgebra.lift`.
 -/
 
 public section
@@ -61,7 +71,7 @@ noncomputable def gradeBy {M : Type*} (f : G → M) (m : M) :
 theorem gradeBy_eq_span_range {M : Type*} (f : G → M) (m : M) :
     gradeBy k G α f m =
       Submodule.span k (Set.range fun g : {g : G // f g = m} ↦
-        (of g.1 : twistedMonoidAlgebra k G α)) := by
+        (of g.val : twistedMonoidAlgebra k G α)) := by
   simp only [gradeBy, Set.image_eq_range]
   -- `↑{g : G | f g = m}` is definitionally `{g : G // f g = m}`.
   rfl
@@ -88,13 +98,6 @@ theorem of_mem_gradeBy_iff [Nontrivial k] {M : Type*} {f : G → M} {m : M} {g :
   refine ⟨fun h ↦ mem_gradeBy_iff.mp h g ?_, fun h ↦ h ▸ of_mem_gradeBy f g⟩
   rw [repr_of, Finsupp.mem_support_iff, Finsupp.single_eq_same]
   exact one_ne_zero
-
-private theorem gradedMonoid_mk_eq {M : Type*} {f : G → M} {i j : M}
-    {x : gradeBy k G α f i} {y : gradeBy k G α f j}
-    (hij : i = j) (hxy : (x : twistedMonoidAlgebra k G α) = y) :
-    GradedMonoid.mk (A := fun m ↦ gradeBy k G α f m) i x = GradedMonoid.mk j y := by
-  subst hij
-  exact congrArg _ (Subtype.ext hxy)
 
 end GradeBy
 
@@ -130,11 +133,11 @@ noncomputable def decomposeAlgHom [DecidableEq M] {f : G → M} (hf₁ : f 1 = 0
   lift (fun g ↦ DirectSum.of (fun m ↦ gradeBy k G α f m) (f g) ⟨of g, of_mem_gradeBy f g⟩)
     (by
       rw [DirectSum.one_def]
-      exact DirectSum.of_eq_of_gradedMonoid_eq (gradedMonoid_mk_eq hf₁ of_one))
+      exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext hf₁ of_one))
     (fun g h ↦ by
       rw [DirectSum.of_mul_of, ← DirectSum.of_smul]
       exact DirectSum.of_eq_of_gradedMonoid_eq
-        (gradedMonoid_mk_eq (hf_mul g h).symm (of_mul_of g h)))
+        (Sigma.subtype_ext (hf_mul g h).symm (of_mul_of g h)))
 
 /-- `decomposeAlgHom` sends each basis element `of g` to its homogeneous piece at degree `f g`. -/
 @[simp]
@@ -149,7 +152,7 @@ theorem decomposeAlgHom_of [DecidableEq M] {f : G → M} (hf₁ : f 1 = 0)
 private theorem decomposeAlgHom_of_mem_aux [DecidableEq M] {f : G → M} (hf₁ : f 1 = 0)
     (hf_mul : ∀ g h : G, f (g * h) = f g + f h) {m : M} {x : twistedMonoidAlgebra k G α}
     (hx : x ∈ Submodule.span k (Set.range fun g : {g : G // f g = m} ↦
-      (of g.1 : twistedMonoidAlgebra k G α))) :
+      (of g.val : twistedMonoidAlgebra k G α))) :
     letI := gradedMonoidOfMap k G α hf₁ hf_mul
     ∀ h : x ∈ gradeBy k G α f m,
       decomposeAlgHom k G α hf₁ hf_mul x =
@@ -180,7 +183,7 @@ noncomputable def gradedAlgebraOfMap [DecidableEq M] {f : G → M} (hf₁ : f 1 
     (algHom_ext fun g ↦ by
       simp [decomposeAlgHom_of])
     (fun m x ↦ decomposeAlgHom_of_mem_aux k G α hf₁ hf_mul
-      ((gradeBy_eq_span_range k G α f m).le x.2) x.2)
+      ((gradeBy_eq_span_range k G α f m).le x.property) x.property)
 
 instance gradeBy.instGradedMonoid (f : G →* Multiplicative M) :
     SetLike.GradedMonoid (gradeBy k G α (Multiplicative.toAdd ∘ f)) :=

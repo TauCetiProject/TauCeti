@@ -143,11 +143,11 @@ theorem trailingPart_zero : trailingPart 𝒜 (0 : A) = 0 := by
 
 /-- The greatest homogeneous part of `x` lies in `𝒜 (maxDegree 𝒜 x)`. -/
 theorem leadingPart_mem (x : A) : leadingPart 𝒜 x ∈ 𝒜 (maxDegree 𝒜 x) :=
-  (decompose 𝒜 x (maxDegree 𝒜 x)).2
+  (decompose 𝒜 x (maxDegree 𝒜 x)).property
 
 /-- The least homogeneous part of `x` lies in `𝒜 (minDegree 𝒜 x)`. -/
 theorem trailingPart_mem (x : A) : trailingPart 𝒜 x ∈ 𝒜 (minDegree 𝒜 x) :=
-  (decompose 𝒜 x (minDegree 𝒜 x)).2
+  (decompose 𝒜 x (minDegree 𝒜 x)).property
 
 private theorem supDegree_posDeg_eq {x : A} (hx : x ≠ 0) :
     (decomposeLaurent 𝒜 x).supDegree posDeg = posDeg (maxDegree 𝒜 x) := by
@@ -315,8 +315,8 @@ theorem mem_grade_maxDegree_of_width_eq_zero {x : A} (h : width 𝒜 x = 0) :
   have hx : x = (y : A) := by
     calc x = (decompose 𝒜).symm (decompose 𝒜 x) := ((decompose 𝒜).symm_apply_apply x).symm
       _ = (y : A) := by rw [hdec, decompose_symm_of]
-  have hy : (y : A) ∈ 𝒜 (maxDegree 𝒜 x) := y.2
-  rwa [← hx] at hy
+  have hy_mem : (y : A) ∈ 𝒜 (maxDegree 𝒜 x) := y.property
+  rwa [← hx] at hy_mem
 
 /-- **Width-zero characterization of homogeneity.** An element has width zero if and only if it is
 homogeneous. -/

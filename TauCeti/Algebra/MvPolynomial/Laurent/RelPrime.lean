@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.Algebra.MonoidAlgebra.RelPrime
 public import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
 import Mathlib.Algebra.MvPolynomial.Division
-import TauCeti.Algebra.MonoidAlgebra.Units
 
 /-!
 # Relative primality between polynomial and Laurent rings
@@ -36,8 +35,6 @@ commutative ring they generate a proper ideal (`TauCeti.LaurentRing.span_one_add
 
 ## Main results
 
-* `MvPolynomial.isUnit_toLaurent_iff`: over a commutative semiring without zero divisors,
-  `IsUnit (toLaurent d)` iff `d` is a monomial with unit coefficient.
 * `MvPolynomial.isRelPrime_of_isRelPrime_toLaurent`: polynomial descent of relative primality from
   `LaurentRing R K` over a commutative semiring without zero divisors when no variable divides both
   polynomials (or when one has no variable factor).
@@ -60,38 +57,7 @@ namespace MvPolynomial
 
 section CommSemiring
 
-variable {R K : Type*} [CommSemiring R]
-
-/-- Every monomial in `MvPolynomial K R` with unit coefficient maps to a unit in
-`LaurentRing R K`. -/
-theorem isUnit_toLaurent_monomial (s : K →₀ ℕ) {r : R} (hr : IsUnit r) :
-    IsUnit (toLaurent (monomial s r)) := by
-  cases subsingleton_or_nontrivial R
-  · exact isUnit_of_subsingleton _
-  rw [toLaurent_monomial]
-  exact (AddMonoidAlgebra.isUnit_single_iff _ _).mpr ⟨AddGroup.isAddUnit _, hr⟩
-
-variable [NoZeroDivisors R]
-
-/-- Over a commutative semiring without zero divisors, `toLaurent d` is a unit of `LaurentRing R K`
-if and only if `d` is a monomial with a unit coefficient. -/
-theorem isUnit_toLaurent_iff {d : MvPolynomial K R} :
-    IsUnit (toLaurent d) ↔ ∃ (s : K →₀ ℕ) (r : R), IsUnit r ∧ d = monomial s r := by
-  cases subsingleton_or_nontrivial R
-  · exact ⟨fun _ ↦ ⟨0, 1, isUnit_one, Subsingleton.elim _ _⟩, fun _ ↦ isUnit_of_subsingleton _⟩
-  refine ⟨fun h ↦ ?_, fun ⟨s, r, hr, hd⟩ ↦ hd ▸ isUnit_toLaurent_monomial s hr⟩
-  obtain ⟨m, r, -, hr, hd⟩ := (AddMonoidAlgebra.isUnit_iff_exists_single (toLaurent d)).mp h
-  have hm_mem : m ∈ (toLaurent d).coeff.support := by
-    rw [hd, coeff_single, Finsupp.mem_support_iff, Finsupp.single_eq_same]
-    exact hr.ne_zero
-  have hm_nonneg : ∀ i, 0 ≤ m i :=
-    mem_range_toLaurent_iff.mp ⟨d, rfl⟩ m hm_mem
-  let s : K →₀ ℕ := m.mapRange Int.toNat Int.toNat_zero
-  have hs : (s.mapRange Nat.cast Nat.cast_zero : K →₀ ℤ) = m := by
-    ext i
-    simpa [s] using hm_nonneg i
-  refine ⟨s, r, hr, toLaurent_injective ?_⟩
-  rw [hd, toLaurent_monomial, hs]
+variable {R K : Type*} [CommSemiring R] [NoZeroDivisors R]
 
 /-- **Polynomial descent of relative primality.** If `toLaurent p` and `toLaurent q` are relatively
 prime in `LaurentRing R K` and no variable `X i` divides both `p` and `q`, then `p` and `q` are

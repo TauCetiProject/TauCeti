@@ -168,13 +168,34 @@ private theorem subsingleton_support_of_dvd_of_linearIndependent_free [Module.Fr
 
 omit [NoZeroDivisors R] [HasUniqueDiv L] in
 private theorem support_subset_zmultiples_comapDomain {M : Submodule ℤ L} {a₀ : M}
-    {P : R[L]} (hPa : (P.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a₀.1) :
+    {P : R[L]} (hPa : (P.coeff.support : Set L) ⊆ AddSubgroup.zmultiples a₀.val) :
     ((comapDomain (Subtype.val : M → L) Subtype.val_injective P).coeff.support : Set M) ⊆
       AddSubgroup.zmultiples a₀ := fun x hx ↦ by
-  have hxP : x.1 ∈ P.coeff.support := by
+  have hxP : x.val ∈ P.coeff.support := by
     simpa [Finsupp.mem_support_iff] using hx
   obtain ⟨n, hn⟩ := AddSubgroup.mem_zmultiples_iff.mp (hPa hxP)
   exact AddSubgroup.mem_zmultiples_iff.mpr ⟨n, Subtype.ext hn⟩
+
+omit [NoZeroDivisors R] [HasUniqueDiv L] in
+private theorem mapDomain_comapDomain_subtype {M : Submodule ℤ L} {f : R[L]}
+    (hf : (f.coeff.support : Set L) ⊆ M) :
+    mapDomain M.subtype.toAddMonoidHom
+      (comapDomain (Subtype.val : M → L) Subtype.val_injective f) = f :=
+  mapDomain_comapDomain (fun x hx ↦ ⟨⟨x, hf hx⟩, rfl⟩) Subtype.val_injective
+
+omit [NoZeroDivisors R] [HasUniqueDiv L] in
+private theorem dvd_comapDomain_subtype {M : Submodule ℤ L} {D P U : R[L]}
+    (hPU : P = D * U) (hP : (P.coeff.support : Set L) ⊆ M)
+    (hD : (D.coeff.support : Set L) ⊆ M) (hU : (U.coeff.support : Set L) ⊆ M) :
+    comapDomain (Subtype.val : M → L) Subtype.val_injective D ∣
+      comapDomain (Subtype.val : M → L) Subtype.val_injective P := by
+  refine ⟨comapDomain (Subtype.val : M → L) Subtype.val_injective U,
+    mapDomain_injective Subtype.val_injective ?_⟩
+  simpa only [LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype] using
+    ((mapDomain_comapDomain_subtype hP).trans hPU).trans
+      ((mapDomain_mul M.subtype.toAddMonoidHom _ _).trans
+        (congrArg₂ (· * ·) (mapDomain_comapDomain_subtype hD)
+          (mapDomain_comapDomain_subtype hU))).symm
 
 /-- **Common divisors along independent cyclic directions are monomials.** If `P, Q : R[L]` are
 nonzero with supports in `ℤ ∙ a` and `ℤ ∙ b` for `LinearIndependent ℤ ![a, b]`, every common
@@ -196,43 +217,26 @@ theorem subsingleton_support_of_dvd_of_linearIndependent {a b : L}
   have : HasUniqueDiv M := .of_isTorsionFree ℤ M
   have hsub (T : Finset L) (hT : T ⊆ S) : (T : Set L) ⊆ M :=
     (Finset.coe_subset.mpr hT).trans Submodule.subset_span
+  have hPM : (P.coeff.support : Set L) ⊆ M := hsub P.coeff.support (by grind)
+  have hQM : (Q.coeff.support : Set L) ⊆ M := hsub Q.coeff.support (by grind)
   have hDM : (D.coeff.support : Set L) ⊆ M := hsub D.coeff.support (by grind)
-  have hmap_comap {f : R[L]} (hf : (f.coeff.support : Set L) ⊆ M) :
-      mapDomain M.subtype.toAddMonoidHom
-        (comapDomain (Subtype.val : M → L) Subtype.val_injective f) = f :=
-    mapDomain_comapDomain (fun x hx ↦ ⟨⟨x, hf hx⟩, rfl⟩) Subtype.val_injective
   let P₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective P
   let Q₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective Q
   let D₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective D
-  let U₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective U
-  let V₀ : R[M] := comapDomain (Subtype.val : M → L) Subtype.val_injective V
-  have hP₀_map : mapDomain M.subtype.toAddMonoidHom P₀ = P :=
-    hmap_comap (hsub P.coeff.support (by grind))
-  have hQ₀_map : mapDomain M.subtype.toAddMonoidHom Q₀ = Q :=
-    hmap_comap (hsub Q.coeff.support (by grind))
-  have hD₀_map : mapDomain M.subtype.toAddMonoidHom D₀ = D := hmap_comap hDM
-  have hU₀_map : mapDomain M.subtype.toAddMonoidHom U₀ = U :=
-    hmap_comap (hsub U.coeff.support (by grind))
-  have hV₀_map : mapDomain M.subtype.toAddMonoidHom V₀ = V :=
-    hmap_comap (hsub V.coeff.support (by grind))
   let a₀ : M := ⟨a, Submodule.subset_span (by simp [S])⟩
   let b₀ : M := ⟨b, Submodule.subset_span (by simp [S])⟩
   have hab₀ : LinearIndependent ℤ ![a₀, b₀] := by
     rw [LinearIndependent.pair_iff] at hab ⊢
     exact fun s t hst ↦ hab s t (by simpa [a₀, b₀] using congrArg Subtype.val hst)
-  have hP₀ : P₀ ≠ 0 := fun h0 ↦ hP (by simpa [h0] using hP₀_map.symm)
-  have hQ₀ : Q₀ ≠ 0 := fun h0 ↦ hQ (by simpa [h0] using hQ₀_map.symm)
-  have hDP₀ : D₀ ∣ P₀ := ⟨U₀, mapDomain_injective Subtype.val_injective
-    (by simpa only [LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype] using
-      (hP₀_map.trans hPU).trans ((mapDomain_mul M.subtype.toAddMonoidHom D₀ U₀).trans
-        (congrArg₂ (· * ·) hD₀_map hU₀_map)).symm)⟩
-  have hDQ₀ : D₀ ∣ Q₀ := ⟨V₀, mapDomain_injective Subtype.val_injective
-    (by simpa only [LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype] using
-      (hQ₀_map.trans hQV).trans ((mapDomain_mul M.subtype.toAddMonoidHom D₀ V₀).trans
-        (congrArg₂ (· * ·) hD₀_map hV₀_map)).symm)⟩
+  have hP₀ : P₀ ≠ 0 := fun h0 ↦
+    hP (by simpa [P₀, h0] using (mapDomain_comapDomain_subtype hPM).symm)
+  have hQ₀ : Q₀ ≠ 0 := fun h0 ↦
+    hQ (by simpa [Q₀, h0] using (mapDomain_comapDomain_subtype hQM).symm)
   have hsub₀ := subsingleton_support_of_dvd_of_linearIndependent_free hab₀ hP₀ hQ₀
     (support_subset_zmultiples_comapDomain hPa)
-    (support_subset_zmultiples_comapDomain hQb) hDP₀ hDQ₀
+    (support_subset_zmultiples_comapDomain hQb)
+    (dvd_comapDomain_subtype hPU hPM hDM (hsub U.coeff.support (by grind)))
+    (dvd_comapDomain_subtype hQV hQM hDM (hsub V.coeff.support (by grind)))
   intro x hx y hy
   have hx₀ : (⟨x, hDM hx⟩ : M) ∈ (D₀.coeff.support : Set M) := by
     simpa [D₀, Finsupp.mem_support_iff] using hx
