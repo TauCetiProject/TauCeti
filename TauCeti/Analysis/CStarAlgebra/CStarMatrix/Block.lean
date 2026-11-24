@@ -19,20 +19,23 @@ standard corner/diagonal `⋆`-algebra embeddings for `CStarMatrix`:
 * Block matrices `CStarMatrix.fromBlocks`, their algebraic and star operations, block-diagonal
   characterizations of self-adjointness, and reindexing under
   `Equiv.sumCongr`, `Equiv.sumComm`, and `Equiv.sumAssoc`.
-* Block-diagonal `⋆`-algebra embedding `CStarMatrix.blockDiagStarAlgHom`, corner embeddings
-  `CStarMatrix.inl` and `CStarMatrix.inr`, matrix units `CStarMatrix.single` and
-  `CStarMatrix.singleStarAlgHom`, and diagonal matrices `CStarMatrix.diagonal` and
-  `CStarMatrix.diagonalStarAlgHom`.
+* Block-diagonal `⋆`-algebra embedding `CStarMatrix.blockDiagNonUnitalStarAlgHom`, corner
+  embeddings `CStarMatrix.inl` and `CStarMatrix.inr`, matrix units `CStarMatrix.single` and
+  `CStarMatrix.singleNonUnitalStarAlgHom`, and block/norm properties
+  (`CStarMatrix.fromBlocks_diagonal`, `CStarMatrix.norm_diagonal`) of the diagonal embedding
+  `CStarMatrix.diagonal`.
 * Exact operator-norm formulas `‖fromBlocks M 0 0 N‖ = max ‖M‖ ‖N‖` and
   `‖fromBlocks 0 M N 0‖ = max ‖M‖ ‖N‖` for arbitrary rectangular blocks `M` and `N`, together with
-  isometry lemmas for `inl`, `inr`, `singleStarAlgHom`, `single`, and `diagonal`.
+  isometry lemmas for `inl`, `inr`, `singleNonUnitalStarAlgHom`, `single`, and `diagonal`.
 
 ## Main declarations
 
 * `CStarMatrix.fromBlocks`: `2 × 2` block matrices in `CStarMatrix (n ⊕ o) (l ⊕ m) A`.
-* `CStarMatrix.blockDiagStarAlgHom`: `⋆`-algebra embedding `(M, N) ↦ fromBlocks M 0 0 N`.
-* `CStarMatrix.inl`, `CStarMatrix.inr`, `CStarMatrix.singleStarAlgHom`,
-  `CStarMatrix.diagonalStarAlgHom`: isometric `⋆`-algebra corner and diagonal embeddings.
+* `CStarMatrix.blockDiagNonUnitalStarAlgHom`: `⋆`-algebra embedding `(M, N) ↦ fromBlocks M 0 0 N`.
+* `CStarMatrix.inl`, `CStarMatrix.inr`, `CStarMatrix.singleNonUnitalStarAlgHom`: isometric
+  `⋆`-algebra corner embeddings.
+* `CStarMatrix.fromBlocks_diagonal`, `CStarMatrix.norm_diagonal`: block-diagonal compatibility and
+  exact operator norm for `CStarMatrix.diagonal`.
 * `CStarMatrix.norm_fromBlocks_zero₁₂_zero₂₁`, `CStarMatrix.norm_fromBlocks_zero₁₁_zero₂₂`: exact
   operator-norm formulas `max ‖M‖ ‖N‖` for diagonal and anti-diagonal `2 × 2` block matrices.
 
@@ -228,7 +231,7 @@ variable {l m n o R A : Type*}
 
 /-- Block-diagonal inclusion of `CStarMatrix m m A × CStarMatrix n n A` into
 `CStarMatrix (m ⊕ n) (m ⊕ n) A` as a non-unital `⋆`-algebra homomorphism. -/
-def blockDiagStarAlgHom [Fintype m] [Fintype n] [Semiring R]
+def blockDiagNonUnitalStarAlgHom [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
     CStarMatrix m m A × CStarMatrix n n A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A where
   toFun x := fromBlocks x.1 0 0 x.2
@@ -238,21 +241,21 @@ def blockDiagStarAlgHom [Fintype m] [Fintype n] [Semiring R]
   map_mul' x y := by simp [fromBlocks_multiply]
   map_star' x := by simp [star_fromBlocks]
 
-@[simp] theorem blockDiagStarAlgHom_apply [Fintype m] [Fintype n] [Semiring R]
+@[simp] theorem blockDiagNonUnitalStarAlgHom_apply [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A]
     (x : CStarMatrix m m A × CStarMatrix n n A) :
-    blockDiagStarAlgHom (R := R) x = fromBlocks x.1 0 0 x.2 := (rfl)
+    blockDiagNonUnitalStarAlgHom (R := R) x = fromBlocks x.1 0 0 x.2 := (rfl)
 
-theorem blockDiagStarAlgHom_injective [Fintype m] [Fintype n] [Semiring R]
+theorem blockDiagNonUnitalStarAlgHom_injective [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
-    Function.Injective (blockDiagStarAlgHom (m := m) (n := n) (R := R) (A := A)) := by
+    Function.Injective (blockDiagNonUnitalStarAlgHom (m := m) (n := n) (R := R) (A := A)) := by
   rintro ⟨M₁, N₁⟩ ⟨M₂, N₂⟩ h; simpa [Prod.ext_iff] using h
 
 /-- Upper-left corner embedding `M ↦ fromBlocks M 0 0 0`. -/
 def inl [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
     CStarMatrix m m A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A :=
-  blockDiagStarAlgHom.comp (NonUnitalStarAlgHom.inl R _ _)
+  blockDiagNonUnitalStarAlgHom.comp (NonUnitalStarAlgHom.inl R _ _)
 
 @[simp] theorem inl_apply [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (M : CStarMatrix m m A) :
@@ -262,7 +265,7 @@ def inl [Fintype m] [Fintype n] [Semiring R]
 def inr [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] :
     CStarMatrix n n A →⋆ₙₐ[R] CStarMatrix (m ⊕ n) (m ⊕ n) A :=
-  blockDiagStarAlgHom.comp (NonUnitalStarAlgHom.inr R _ _)
+  blockDiagNonUnitalStarAlgHom.comp (NonUnitalStarAlgHom.inr R _ _)
 
 @[simp] theorem inr_apply [Fintype m] [Fintype n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (N : CStarMatrix n n A) :
@@ -334,7 +337,7 @@ theorem single_mul_single_of_ne [Fintype m] [DecidableEq l] [DecidableEq m] [Dec
   rw [single, single, of_mul_of, Matrix.single_mul_single_of_ne a i j j' h b, of_zero]
 
 /-- Diagonal corner embedding `a ↦ single i i a` into `CStarMatrix n n A`. -/
-def singleStarAlgHom [Fintype n] [DecidableEq n] [Semiring R]
+def singleNonUnitalStarAlgHom [Fintype n] [DecidableEq n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (i : n) :
     A →⋆ₙₐ[R] CStarMatrix n n A where
   toFun a := single i i a
@@ -344,22 +347,20 @@ def singleStarAlgHom [Fintype n] [DecidableEq n] [Semiring R]
   map_mul' a b := (single_mul_single_same i i i a b).symm
   map_star' a := (conjTranspose_single i i a).symm
 
-@[simp] theorem singleStarAlgHom_apply [Fintype n] [DecidableEq n] [Semiring R]
+@[simp] theorem singleNonUnitalStarAlgHom_apply [Fintype n] [DecidableEq n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (i : n) (a : A) :
-    singleStarAlgHom (R := R) i a = single i i a := (rfl)
+    singleNonUnitalStarAlgHom (R := R) i a = single i i a := (rfl)
 
-theorem singleStarAlgHom_injective [Fintype n] [DecidableEq n] [Semiring R]
+theorem singleNonUnitalStarAlgHom_injective [Fintype n] [DecidableEq n] [Semiring R]
     [NonUnitalNonAssocSemiring A] [Module R A] [StarAddMonoid A] (i : n) :
-    Function.Injective (singleStarAlgHom (R := R) (A := A) i) := fun a b h ↦ by
+    Function.Injective (singleNonUnitalStarAlgHom (R := R) (A := A) i) := fun a b h ↦ by
   simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
 
 @[simp] theorem fromBlocks_diagonal [DecidableEq l] [DecidableEq m] [Zero A]
     (d₁ : l → A) (d₂ : m → A) :
     fromBlocks (diagonal d₁) 0 0 (diagonal d₂) = diagonal (Sum.elim d₁ d₂) := by
   apply ofMatrix.symm.injective
-  rw [ofMatrix_symm_fromBlocks, ofMatrix_symm_diagonal, ofMatrix_symm_diagonal,
-    ofMatrix_symm_diagonal, ← of_zero (m := l) (n := m), ← of_zero (m := m) (n := l),
-    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Matrix.fromBlocks_diagonal]
+  simp [Matrix.fromBlocks_diagonal]
 
 end MatrixUnitsAndDiagonal
 
@@ -375,8 +376,8 @@ maximum of the operator norms of its diagonal blocks. -/
   have hsq (P : CStarMatrix l l A) (Q : CStarMatrix m m A) :
       ‖fromBlocks P 0 0 Q‖ = max ‖P‖ ‖Q‖ := by
     simpa [Prod.norm_def] using
-      NonUnitalStarAlgHom.norm_map (blockDiagStarAlgHom (R := ℂ) (A := A))
-        blockDiagStarAlgHom_injective (P, Q)
+      NonUnitalStarAlgHom.norm_map (blockDiagNonUnitalStarAlgHom (R := ℂ) (A := A))
+        blockDiagNonUnitalStarAlgHom_injective (P, Q)
   rw [← sq_eq_sq₀ (norm_nonneg _) (le_max_iff.mpr (.inl (norm_nonneg M))),
     ← norm_conjTranspose_mul_self]
   simp only [fromBlocks_conjTranspose, conjTranspose_zero, fromBlocks_multiply,
@@ -417,25 +418,26 @@ theorem isometry_inr [Semiring R] [Module R A] :
 @[simp] theorem norm_single [DecidableEq m] [DecidableEq n] (i : m) (j : n) (a : A) :
     ‖single i j a‖ = ‖a‖ := by
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← norm_conjTranspose_mul_self,
-    conjTranspose_single, single_mul_single_same, ← singleStarAlgHom_apply (R := ℂ),
-    NonUnitalStarAlgHom.norm_map (singleStarAlgHom (R := ℂ) (A := A) j)
-      (singleStarAlgHom_injective j),
+    conjTranspose_single, single_mul_single_same, ← singleNonUnitalStarAlgHom_apply (R := ℂ),
+    NonUnitalStarAlgHom.norm_map (singleNonUnitalStarAlgHom (R := ℂ) (A := A) j)
+      (singleNonUnitalStarAlgHom_injective j),
     CStarRing.norm_star_mul_self, sq]
 
-/-- The diagonal corner embedding `singleStarAlgHom i` preserves norms. -/
-theorem norm_singleStarAlgHom [DecidableEq n] [Semiring R] [Module R A] (i : n) (a : A) :
-    ‖singleStarAlgHom (R := R) i a‖ = ‖a‖ :=
+/-- The diagonal corner embedding `singleNonUnitalStarAlgHom i` preserves norms. -/
+theorem norm_singleNonUnitalStarAlgHom [DecidableEq n] [Semiring R] [Module R A] (i : n) (a : A) :
+    ‖singleNonUnitalStarAlgHom (R := R) i a‖ = ‖a‖ :=
   norm_single i i a
 
-/-- The diagonal corner embedding `singleStarAlgHom i` is an isometry. -/
-theorem isometry_singleStarAlgHom [DecidableEq n] [Semiring R] [Module R A] (i : n) :
-    Isometry (singleStarAlgHom (R := R) (A := A) i) :=
-  AddMonoidHomClass.isometry_of_norm _ (norm_singleStarAlgHom i)
+/-- The diagonal corner embedding `singleNonUnitalStarAlgHom i` is an isometry. -/
+theorem isometry_singleNonUnitalStarAlgHom [DecidableEq n] [Semiring R] [Module R A] (i : n) :
+    Isometry (singleNonUnitalStarAlgHom (R := R) (A := A) i) :=
+  AddMonoidHomClass.isometry_of_norm _ (norm_singleNonUnitalStarAlgHom i)
 
 /-- The operator norm of `diagonal d` equals `‖d‖` (`supᵢ ‖d i‖`). -/
 @[simp] theorem norm_diagonal [DecidableEq n] (d : n → A) : ‖diagonal d‖ = ‖d‖ := by
-  rw [← diagonalStarAlgHom_apply (R := ℂ)]
-  exact NonUnitalStarAlgHom.norm_map (diagonalStarAlgHom (R := ℂ)) diagonalStarAlgHom_injective d
+  rw [← piDiagonalNonUnitalStarAlgHom_apply (R := ℂ)]
+  exact NonUnitalStarAlgHom.norm_map (piDiagonalNonUnitalStarAlgHom (R := ℂ))
+    piDiagonalNonUnitalStarAlgHom_injective d
 
 end Norm
 

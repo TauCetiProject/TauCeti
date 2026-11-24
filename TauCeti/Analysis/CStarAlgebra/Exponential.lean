@@ -76,7 +76,8 @@ theorem coe_expUnitary_smul (hp : IsStarProjection p) (t : ℝ) :
 theorem coe_expUnitary_pi_smul (hp : IsStarProjection p) :
     (selfAdjoint.expUnitary (Real.pi • ⟨p, hp.isSelfAdjoint⟩) : A) = 1 - 2 * p := by
   rw [hp.coe_expUnitary_smul Real.pi, mul_comm Complex.I, Complex.exp_pi_mul_I,
-    sub_smul, neg_smul, one_smul, sub_eq_add_neg, ← neg_add, ← two_mul, ← sub_eq_add_neg]
+    two_mul, ← two_smul ℂ]
+  module
 
 /-- Bundled form of `IsStarProjection.coe_expUnitary_pi_smul` in `unitary A`. -/
 theorem expUnitary_pi_smul (hp : IsStarProjection p) :

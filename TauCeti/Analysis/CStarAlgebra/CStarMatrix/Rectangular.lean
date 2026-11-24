@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.PEquiv
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 
@@ -27,11 +27,11 @@ develops that rectangular calculus:
   C⋆-identities `‖M.conjTranspose‖ = ‖M‖`, `‖M * M.conjTranspose‖ = ‖M‖ ^ 2`, and
   `‖M.conjTranspose * M‖ = ‖M‖ ^ 2`.
 * Row-and-column reindexing `CStarMatrix.reindexₗᵢ` as a linear isometry equivalence, together
-  with rectangular `0`-`1` permutation matrices `CStarMatrix.permMatrix` implementing `reindexₐ`.
+  with rectangular `0`-`1` permutation matrices `CStarMatrix.permMatrix` implementing `reindexₗ`.
 
 ## Main declarations
 
-* `CStarMatrix.norm_hMul_le`, `CStarMatrix.norm_conjTranspose`,
+* `CStarMatrix.norm_mul_le`, `CStarMatrix.norm_conjTranspose`,
   `CStarMatrix.norm_self_mul_conjTranspose`, `CStarMatrix.norm_conjTranspose_mul_self`:
   rectangular operator-norm submultiplicativity and C⋆-identities.
 * `CStarMatrix.reindexₗᵢ`: rectangular row-and-column reindexing as a linear isometry equivalence.
@@ -157,7 +157,9 @@ theorem reindexₗ_mul [Fintype m] [Fintype o] [Semiring R] [AddCommMonoid A] [M
 theorem reindexₗ_conjTranspose [Semiring R] [AddCommMonoid A] [Module R A] [Star A]
     (e₁ : m ≃ l) (e₂ : n ≃ o) (M : CStarMatrix m n A) :
     (reindexₗ R A e₁ e₂ M).conjTranspose = reindexₗ R A e₂ e₁ M.conjTranspose := by
-  ext i j; rfl
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_reindexₗ, Matrix.reindex_apply,
+    Matrix.conjTranspose_submatrix]
 
 /-- On square matrices, `reindexₗ R A e e` agrees with `reindexₐ R A e`. -/
 @[simp] theorem reindexₗ_eq_reindexₐ [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A] [Mul A]
@@ -181,7 +183,7 @@ theorem toCLM_mul [Fintype l] [Fintype m] (M : CStarMatrix l m A) (N : CStarMatr
 variable [PartialOrder A] [StarOrderedRing A]
 
 /-- The operator norm on rectangular `CStarMatrix` values is submultiplicative. -/
-theorem norm_hMul_le [Fintype l] [Fintype m] [Fintype n]
+protected theorem norm_mul_le [Fintype l] [Fintype m] [Fintype n]
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) : ‖M * N‖ ≤ ‖M‖ * ‖N‖ := by
   rw [norm_def, norm_def, norm_def, toCLM_mul, mul_comm]
   exact (toCLM N).opNorm_comp_le (toCLM M)
@@ -288,8 +290,8 @@ theorem conjTranspose_permMatrix_mul_permMatrix_eq_reindexₗ [Fintype l] [Finty
   rw [conjTranspose_permMatrix]
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_mul, ofMatrix_symm_permMatrix, PEquiv.toMatrix_toPEquiv_mul,
-    PEquiv.mul_toMatrix_toPEquiv]
-  ext i j; rfl
+    PEquiv.mul_toMatrix_toPEquiv, ofMatrix_symm_reindexₗ, Matrix.reindex_apply,
+    Matrix.submatrix_submatrix, Function.id_comp, Function.comp_id]
 
 end PermMatrix
 

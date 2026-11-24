@@ -54,7 +54,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
-* `CStarMatrix.diagonal`, `CStarMatrix.diagonalStarAlgHom`,
+* `CStarMatrix.diagonal`, `CStarMatrix.piDiagonalNonUnitalStarAlgHom`,
   `CStarMatrix.diagonalNonUnitalStarAlgHom`: diagonal matrices `(n → B) →⋆ₙₐ[R] M_n(B)` and
   the constant-diagonal embedding `b ↦ diag(b, …, b)` of `B` in `M_n(B)`, with
   `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
@@ -162,9 +162,11 @@ theorem diagonal_zero [DecidableEq n] [Zero A] :
 theorem diagonal_one [DecidableEq n] [Zero A] [One A] :
     diagonal (1 : n → A) = 1 := Matrix.diagonal_one
 
+@[simp]
 theorem diagonal_add [DecidableEq n] [AddZeroClass A] (d₁ d₂ : n → A) :
-    diagonal (d₁ + d₂) = diagonal d₁ + diagonal d₂ := (Matrix.diagonal_add d₁ d₂).symm
+    diagonal d₁ + diagonal d₂ = diagonal (d₁ + d₂) := Matrix.diagonal_add d₁ d₂
 
+@[simp]
 theorem diagonal_mul [Fintype n] [DecidableEq n] [NonUnitalNonAssocSemiring A] (d₁ d₂ : n → A) :
     diagonal d₁ * diagonal d₂ = diagonal (fun i ↦ d₁ i * d₂ i) :=
   congrArg ofMatrix (Matrix.diagonal_mul_diagonal d₁ d₂)
@@ -174,26 +176,27 @@ theorem star_diagonal [DecidableEq n] [AddMonoid A] [StarAddMonoid A] (d : n →
     star (diagonal d) = diagonal (star d) :=
   congrArg ofMatrix (Matrix.diagonal_conjTranspose d)
 
-/-- Diagonal `⋆`-homomorphism `(n → A) →⋆ₙₐ[R] CStarMatrix n n A`. -/
-def diagonalStarAlgHom [Fintype n] [DecidableEq n] [Monoid R]
+/-- Diagonal non-unital `⋆`-homomorphism `(n → A) →⋆ₙₐ[R] CStarMatrix n n A`. -/
+def piDiagonalNonUnitalStarAlgHom [Fintype n] [DecidableEq n] [Monoid R]
     [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] :
     (n → A) →⋆ₙₐ[R] CStarMatrix n n A where
   toFun := diagonal
   map_smul' c d := congrArg ofMatrix (Matrix.diagonal_smul c d)
   map_zero' := diagonal_zero
-  map_add' := diagonal_add
+  map_add' d₁ d₂ := (diagonal_add d₁ d₂).symm
   map_mul' d₁ d₂ := (diagonal_mul d₁ d₂).symm
   map_star' d := (star_diagonal d).symm
 
 @[simp]
-theorem diagonalStarAlgHom_apply [Fintype n] [DecidableEq n] [Monoid R]
+theorem piDiagonalNonUnitalStarAlgHom_apply [Fintype n] [DecidableEq n] [Monoid R]
     [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] (d : n → A) :
-    (diagonalStarAlgHom : (n → A) →⋆ₙₐ[R] CStarMatrix n n A) d = diagonal d := (rfl)
+    (piDiagonalNonUnitalStarAlgHom : (n → A) →⋆ₙₐ[R] CStarMatrix n n A) d = diagonal d := (rfl)
 
-theorem diagonalStarAlgHom_injective [Fintype n] [DecidableEq n] [Monoid R]
+theorem piDiagonalNonUnitalStarAlgHom_injective [Fintype n] [DecidableEq n] [Monoid R]
     [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [StarAddMonoid A] :
-    Function.Injective (diagonalStarAlgHom (n := n) (R := R) (A := A)) := fun _ _ h ↦ by
-  ext i; simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
+    Function.Injective (piDiagonalNonUnitalStarAlgHom (n := n) (R := R) (A := A)) :=
+  fun _ _ h ↦ by
+    ext i; simpa using congrArg (fun M : CStarMatrix n n A ↦ M i i) h
 
 end Basic
 
@@ -201,9 +204,10 @@ variable (R n B : Type*) [Fintype n] [DecidableEq n] [Monoid R] [NonUnitalNonAss
   [StarAddMonoid B] [DistribMulAction R B]
 
 /-- The diagonal embedding `b ↦ diag(b, …, b)` of `B` in `CStarMatrix n n B`, obtained by
-precomposing `CStarMatrix.diagonalStarAlgHom` with the constant-function homomorphism. -/
+precomposing `CStarMatrix.piDiagonalNonUnitalStarAlgHom` with the constant-function
+homomorphism. -/
 def diagonalNonUnitalStarAlgHom : B →⋆ₙₐ[R] CStarMatrix n n B :=
-  (diagonalStarAlgHom (n := n) (R := R) (A := B)).comp
+  (piDiagonalNonUnitalStarAlgHom (n := n) (R := R) (A := B)).comp
     { toFun := Function.const n
       map_smul' _ _ := rfl
       map_zero' := rfl
@@ -241,6 +245,12 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
 lemma ofMatrix_symm_mul {m k : Type*} [Fintype n] [Mul A] [AddCommMonoid A]
     (M : CStarMatrix m n A) (N : CStarMatrix n k A) :
     ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
+
+/-- Transporting a `CStarMatrix` product identity to ordinary `Matrix` multiplication. -/
+lemma ofMatrix_symm_mul_eq {m k : Type*} [Fintype n] [Mul A] [AddCommMonoid A]
+    {M : CStarMatrix m n A} {N : CStarMatrix n k A} {P : CStarMatrix m k A} (h : M * N = P) :
+    ofMatrix.symm M * ofMatrix.symm N = ofMatrix.symm P :=
+  h ▸ (ofMatrix_symm_mul M N).symm
 
 /-- Reading a rectangular C⋆-matrix as an ordinary matrix preserves conjugate transpose. -/
 @[simp]
@@ -304,6 +314,39 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
+/-- If `v.conjTranspose * v = p` and `v * p = v`, then `p * v.conjTranspose = v.conjTranspose`. -/
+lemma mul_conjTranspose_eq_self_of_mul_eq {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {v : CStarMatrix n m A}
+    (hvp : v.conjTranspose * v = p) (hv : v * p = v) :
+    p * v.conjTranspose = v.conjTranspose := by
+  have hp_sa : p.conjTranspose = p := by rw [← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hp_sa] using congrArg conjTranspose hv
+
+/-- If `v.conjTranspose * v = p`, `v * v.conjTranspose = q`, and `v * p = v`, then `q * v = v`. -/
+lemma mul_self_eq_self_of_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalSemiring A]
+    [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) (hv : v * p = v) :
+    q * v = v := by
+  rw [← hvq, mul_assoc_rectangular, hvp, hv]
+
+/-- If `v.conjTranspose * v = p`, `v * v.conjTranspose = q`, and `v * p = v`, then
+`v.conjTranspose * q = v.conjTranspose`. -/
+lemma conjTranspose_mul_eq_self_of_mul_eq {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q)
+    (hv : v * p = v) : v.conjTranspose * q = v.conjTranspose := by
+  have hq_sa : q.conjTranspose = q := by rw [← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hq_sa] using congrArg conjTranspose (mul_self_eq_self_of_mul_eq hvp hvq hv)
+
+/-- If `v.conjTranspose * v = p`, `v * v.conjTranspose = q`, and `v * p = v`, then `q` is
+idempotent. -/
+lemma isIdempotentElem_of_mul_conjTranspose_eq {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+    {v : CStarMatrix n m A} (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q)
+    (hv : v * p = v) : IsIdempotentElem q := by
+  rw [IsIdempotentElem, ← hvq, mul_assoc_rectangular, hvq,
+    conjTranspose_mul_eq_self_of_mul_eq hvp hvq hv, hvq]
+
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
 an idempotent `p` is supported on `p`. -/
 lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
@@ -319,6 +362,41 @@ lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [N
   rw [← hv]
   apply ofMatrix.symm.injective
   simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent, then
+`p * v.conjTranspose = v.conjTranspose`. -/
+lemma mul_conjTranspose_eq_self_of_conjTranspose_mul_self {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
+    (hvp : v.conjTranspose * v = p) : p * v.conjTranspose = v.conjTranspose :=
+  mul_conjTranspose_eq_self_of_mul_eq hvp (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent and
+`v * v.conjTranspose = q`, then `q * v = v`. -/
+lemma mul_self_eq_self_of_self_mul_conjTranspose {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    q * v = v :=
+  mul_self_eq_self_of_mul_eq hvp hvq (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent and
+`v * v.conjTranspose = q`, then `v.conjTranspose * q = v.conjTranspose`. -/
+lemma conjTranspose_mul_eq_self_of_self_mul_conjTranspose {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    v.conjTranspose * q = v.conjTranspose :=
+  conjTranspose_mul_eq_self_of_mul_eq hvp hvq (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
+
+/-- Over a star-ordered ring with proper star, if `v.conjTranspose * v = p` is idempotent and
+`v * v.conjTranspose = q`, then `q` is idempotent. -/
+lemma isIdempotentElem_of_conjTranspose_mul_self {m : Type*} [Fintype m] [Fintype n]
+    [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
+    (hp : IsIdempotentElem p) (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
+    IsIdempotentElem q :=
+  isIdempotentElem_of_mul_conjTranspose_eq hvp hvq (mul_eq_self_of_conjTranspose_mul_eq v hp hvp)
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)

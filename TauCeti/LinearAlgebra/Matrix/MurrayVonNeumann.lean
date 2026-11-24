@@ -322,28 +322,43 @@ theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_single [DecidableEq
     simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose, hp.isIdempotentElem.eq,
       hp.isSelfAdjoint.star_eq]
 
+/-- If `vᴴ * v = p` and `v * p = v`, then `p * vᴴ = vᴴ`. -/
+theorem mul_conjTranspose_eq_self_of_mul_eq {p : Matrix m m R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hv : v * p = v) : p * vᴴ = vᴴ := by
+  have hpH : pᴴ = p := by rw [← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hpH] using congrArg conjTranspose hv
+
+/-- If `vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`, then `q * v = v`. -/
+theorem mul_self_eq_self_of_mul_eq {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) : q * v = v := by
+  rw [← hvq, Matrix.mul_assoc, hvp, hv]
+
+/-- If `vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`, then `vᴴ * q = vᴴ`. -/
+theorem conjTranspose_mul_eq_self_of_mul_eq {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
+    (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) : vᴴ * q = vᴴ := by
+  have hqH : qᴴ = q := by rw [← hvq, conjTranspose_mul, conjTranspose_conjTranspose]
+  simpa [hqH] using congrArg conjTranspose (mul_self_eq_self_of_mul_eq hvp hvq hv)
+
+/-- If `vᴴ * v = p`, `v * vᴴ = q`, and `v * p = v`, then `q` is idempotent. -/
+theorem isIdempotentElem_of_mul_conjTranspose_eq {p : Matrix m m R} {q : Matrix n n R}
+    {v : Matrix n m R} (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) :
+    IsIdempotentElem q := by
+  rw [IsIdempotentElem, ← hvq, Matrix.mul_assoc, hvq,
+    conjTranspose_mul_eq_self_of_mul_eq hvp hvq hv, hvq]
+
 /-- **Orthogonal sums.** If `p₁ * p₂ = 0` and `q₁ * q₂ = 0`, then adding supported implementing
 matrices `v₁ + v₂` witnesses `p₁ + p₂ ∼ q₁ + q₂`. -/
 theorem IsMurrayVonNeumannEquivalent.add_of_mul_eq_zero {p₁ p₂ : Matrix m m R}
     {q₁ q₂ : Matrix n n R} (h₁ : IsMurrayVonNeumannEquivalent p₁ q₁)
     (h₂ : IsMurrayVonNeumannEquivalent p₂ q₂) (hp : p₁ * p₂ = 0) (hq : q₁ * q₂ = 0) :
     IsMurrayVonNeumannEquivalent (p₁ + p₂) (q₁ + q₂) := by
-  have hp₁ := h₁.isStarProjection_left
-  have hq₁ := h₁.isStarProjection_right
-  have hp₂ := h₂.isStarProjection_left
-  have hq₂ := h₂.isStarProjection_right
   obtain ⟨v₁, hv₁p, hv₁q, hv₁⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
   obtain ⟨v₂, hv₂p, hv₂q, hv₂⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
   have hv₁_mul : v₁ * p₁ = v₁ := by rw [← hv₁p, ← Matrix.mul_assoc, hv₁]
   have hv₂_mul : v₂ * p₂ = v₂ := by rw [← hv₂p, ← Matrix.mul_assoc, hv₂]
-  have hq₁v₁ : q₁ * v₁ = v₁ := by rw [← hv₁q, Matrix.mul_assoc, hv₁p, hv₁_mul]
-  have hq₂v₂ : q₂ * v₂ = v₂ := by rw [← hv₂q, Matrix.mul_assoc, hv₂p, hv₂_mul]
-  have hp₂H : p₂ᴴ = p₂ := by rw [← star_eq_conjTranspose, hp₂.isSelfAdjoint.star_eq]
-  have hq₁H : q₁ᴴ = q₁ := by rw [← star_eq_conjTranspose, hq₁.isSelfAdjoint.star_eq]
-  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := by
-    simpa [hp₂H] using congrArg conjTranspose hv₂_mul
-  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := by
-    simpa [hq₁H] using congrArg conjTranspose hq₁v₁
+  have hp₂v₂ : p₂ * v₂ᴴ = v₂ᴴ := mul_conjTranspose_eq_self_of_mul_eq hv₂p hv₂_mul
+  have hq₂v₂ : q₂ * v₂ = v₂ := mul_self_eq_self_of_mul_eq hv₂p hv₂q hv₂_mul
+  have hv₁q₁ : v₁ᴴ * q₁ = v₁ᴴ := conjTranspose_mul_eq_self_of_mul_eq hv₁p hv₁q hv₁_mul
   have hv₁₂ : v₁ᴴ * v₂ = 0 := by
     calc v₁ᴴ * v₂ = (v₁ᴴ * q₁) * (q₂ * v₂) := by rw [hv₁q₁, hq₂v₂]
       _ = v₁ᴴ * (q₁ * q₂) * v₂ := by simp only [Matrix.mul_assoc]
@@ -354,7 +369,8 @@ theorem IsMurrayVonNeumannEquivalent.add_of_mul_eq_zero {p₁ p₂ : Matrix m m 
       _ = v₁ * (p₁ * p₂) * v₂ᴴ := by simp only [Matrix.mul_assoc]
       _ = 0 := by rw [hp, Matrix.mul_zero, Matrix.zero_mul]
   have hw₂₁ : v₂ * v₁ᴴ = 0 := by simpa using congrArg conjTranspose hw₁₂
-  refine ⟨hp₁.add hp₂ hp, hq₁.add hq₂ hq, v₁ + v₂, ?_, ?_⟩
+  refine ⟨h₁.isStarProjection_left.add h₂.isStarProjection_left hp,
+    h₁.isStarProjection_right.add h₂.isStarProjection_right hq, v₁ + v₂, ?_, ?_⟩
   · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
       hv₁p, hv₂p, hv₁₂, hv₂₁, add_zero, zero_add]
   · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
@@ -438,10 +454,8 @@ variable [Ring R] [StarRing R] [DecidableEq m] [DecidableEq n]
 `v * vᴴ = q`, and `v * p = v`. -/
 theorem fromBlocks_one_sub_mul_self {p : Matrix m m R} {q : Matrix n n R} {v : Matrix n m R}
     (hvp : vᴴ * v = p) (hvq : v * vᴴ = q) (hv : v * p = v) :
-    fromBlocks (1 - p) vᴴ v (1 - q) * fromBlocks (1 - p) vᴴ v (1 - q) = 1 := by
-  have hpH : pᴴ = p := by rw [← hvp, conjTranspose_mul, conjTranspose_conjTranspose]
-  have hea : p * vᴴ = vᴴ := by simpa [hpH] using congr_arg conjTranspose hv
-  exact fromBlocks_one_sub_mul_self_of_mul_eq hvp hvq hea hv
+    fromBlocks (1 - p) vᴴ v (1 - q) * fromBlocks (1 - p) vᴴ v (1 - q) = 1 :=
+  fromBlocks_one_sub_mul_self_of_mul_eq hvp hvq (mul_conjTranspose_eq_self_of_mul_eq hvp hv) hv
 
 /-- The stabilized block matrix `!![1 - p, vᴴ; v, 1 - q]` is unitary whenever `vᴴ * v = p`,
 `v * vᴴ = q`, and `v * p = v`. -/

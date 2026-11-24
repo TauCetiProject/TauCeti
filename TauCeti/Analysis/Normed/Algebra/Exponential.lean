@@ -48,7 +48,7 @@ Baker--Campbell--Hausdorff expansion.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
-* `IsIdempotentElem.exp_mul_of_commute`, `IsIdempotentElem.exp`, `IsIdempotentElem.exp_smul`:
+* `IsIdempotentElem.exp_mul_of_commute`, `IsIdempotentElem.exp_eq`, `IsIdempotentElem.exp_smul`:
   closed forms for exponentials of `a * e`, `e`, and `z • e` for an idempotent `e`.
 -/
 
@@ -243,7 +243,7 @@ theorem exp_mul_of_commute (he : IsIdempotentElem e) {a : A} (h : Commute a e) :
   exp_mul_of_commute_aux ℚ he h
 
 /-- In a complete normed `ℚ`-algebra, `exp e = 1 + (exp 1 - 1) * e` for an idempotent `e`. -/
-theorem exp (he : IsIdempotentElem e) :
+theorem exp_eq (he : IsIdempotentElem e) :
     NormedSpace.exp e = 1 + (NormedSpace.exp (1 : A) - 1) * e := by
   simpa using he.exp_mul_of_commute (Commute.one_left e)
 

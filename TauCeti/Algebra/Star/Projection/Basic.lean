@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
+public import TauCeti.Algebra.Algebra.Unitization
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
 
 /-!
 # Reflections and unitary conjugates of star projections
@@ -14,7 +16,8 @@ public import Mathlib.Algebra.Star.Unitary
 For a star projection `p` in a star ring, the reflection `1 - 2 * p` is the negative of the
 symmetry `2 * p - 1` in Mathlib's `IsStarProjection.two_mul_sub_one_mem_unitary`, so it is
 self-adjoint and lies in `unitary A`. We also record the witness identities for `u * p` used
-when descending unitary conjugacy of projections to Murray–von Neumann equivalence.
+when descending unitary conjugacy of projections to Murray–von Neumann equivalence, together with
+the `inr`-projection conjugation lemmas in `Unitization`.
 
 ## Main declarations
 
@@ -23,6 +26,8 @@ when descending unitary conjugacy of projections to Murray–von Neumann equival
 * `IsStarProjection.mul_star_mul_eq_mul_mul_star`: `(x * p) * star (x * p) = x * p * star x`.
 * `IsStarProjection.star_mul_mul_self_of_mem_unitary`: `star (u * p) * (u * p) = p` for `u`
   unitary.
+* `Unitization.inr_snd_conj`, `Unitization.isStarProjection_snd_conj`: conjugating an `inr`-image
+  star projection by a unitary in `Unitization R M` stays in `M` and remains a star projection.
 
 ## References
 
@@ -81,3 +86,29 @@ theorem one_sub_two_mul_mem_unitary (hp : IsStarProjection p) : 1 - 2 * p ∈ un
 end StarRing
 
 end IsStarProjection
+
+namespace Unitization
+
+variable {R M : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring M] [StarRing M]
+  [Module R M]
+
+/-- Conjugating `(x : Unitization R M)` by any `u : Unitization R M` has zero scalar part, so it
+equals the `inr` image of its `.snd` component. -/
+theorem inr_snd_conj (u : Unitization R M) (x : M) :
+    ((u * (x : Unitization R M) * star u).snd : Unitization R M) =
+      u * (x : Unitization R M) * star u :=
+  inr_snd_eq_of_fst_eq_zero (by simp [fst_mul, fst_inr])
+
+/-- Conjugating an `inr`-embedded star projection `x` by a unitary `u` in `Unitization R M`
+yields a star projection in `M` at `.snd`. -/
+theorem isStarProjection_snd_conj [IsScalarTower R M M] [SMulCommClass R M M] [StarModule R M]
+    {x : M} (hx : IsStarProjection x) {u : Unitization R M} (hu : u ∈ unitary (Unitization R M)) :
+    IsStarProjection (u * (x : Unitization R M) * star u).snd := by
+  have hprojU : IsStarProjection (u * (x : Unitization R M) * star u) := by
+    have h := hx.inr.map (Unitary.conjStarAlgAut R (Unitization R M) ⟨u, hu⟩)
+    rw [Unitary.conjStarAlgAut_apply] at h
+    exact h
+  rw [← inr_snd_conj u x] at hprojU
+  exact hprojU.of_inr
+
+end Unitization

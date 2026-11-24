@@ -189,11 +189,13 @@ variable {m n α : Type*} [Fintype m] [Fintype n] [NonUnitalRing α]
 `x - B * x - (x * B - B * x * B) = 0 ⊕ f`. -/
 public theorem Matrix.fromBlocks_sub_mul_sub_of_mul_eq (hab : a * b = e) (hba : b * a = f)
     (hbe : b * e = b) :
-    let B := Matrix.fromBlocks e (-a) (-b) f
-    let x := Matrix.fromBlocks e 0 0 (0 : Matrix n n α)
-    x - B * x - (x * B - B * x * B) = Matrix.fromBlocks 0 0 0 f := by
+    Matrix.fromBlocks e 0 0 (0 : Matrix n n α) -
+        Matrix.fromBlocks e (-a) (-b) f * Matrix.fromBlocks e 0 0 (0 : Matrix n n α) -
+        (Matrix.fromBlocks e 0 0 (0 : Matrix n n α) * Matrix.fromBlocks e (-a) (-b) f -
+          Matrix.fromBlocks e (-a) (-b) f * Matrix.fromBlocks e 0 0 (0 : Matrix n n α) *
+            Matrix.fromBlocks e (-a) (-b) f) =
+      Matrix.fromBlocks 0 0 0 f := by
   have hee : e * e = e := by nth_rw 1 [← hab]; rw [Matrix.mul_assoc, hbe, hab]
-  dsimp only
   simp only [Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
     Matrix.neg_mul, Matrix.mul_neg, neg_neg, hee, hbe, hba]
   ext (i | i) (j | j) <;> simp

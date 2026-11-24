@@ -33,11 +33,18 @@ of the unitization implementing the same conjugation on `B`.
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
+* `Unitization.inr_snd_eq_of_fst_eq_zero`: an element with zero scalar part equals the `inr`
+  image of its algebra part.
 -/
 
 public section
 
 namespace Unitization
+
+/-- If the scalar component `z.fst` is zero, then `z` equals the `inr` image of `z.snd`. -/
+theorem inr_snd_eq_of_fst_eq_zero {R A : Type*} [AddZeroClass R] [AddZeroClass A]
+    {z : Unitization R A} (hz : z.fst = 0) : (z.snd : Unitization R A) = z := by
+  simpa [hz] using inl_fst_add_inr_snd_eq z
 
 section Map
 
