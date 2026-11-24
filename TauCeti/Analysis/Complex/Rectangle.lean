@@ -22,6 +22,8 @@ rectangles.
   vertical segments as `×ℂ` products.
 * `Complex.frontier_rectangle`, `Complex.interior_rectangle`: the frontier of a rectangle is the
   union of its four edges, and its interior is the open rectangle.
+* `Complex.interior_rectangle_nonempty`: a rectangle with sides of positive length has nonempty
+  interior.
 * `Complex.mem_rectangle_iff`: membership in a rectangle given by its lower left and upper right
   corners.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
@@ -89,6 +91,13 @@ theorem frontier_rectangle (z w : ℂ) :
 theorem interior_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ w.im) :
     interior (Rectangle z w) = Ioo z.re w.re ×ℂ Ioo z.im w.im := by
   rw [Rectangle, interior_reProdIm, uIcc_of_le hre, uIcc_of_le him, interior_Icc, interior_Icc]
+
+/-- A rectangle whose opposite corners differ in both coordinates has nonempty interior. -/
+theorem interior_rectangle_nonempty (hre : z.re ≠ w.re) (him : z.im ≠ w.im) :
+    (interior (Rectangle z w)).Nonempty := by
+  rw [Rectangle, interior_reProdIm, reProdIm_nonempty, uIcc, uIcc, interior_Icc, interior_Icc,
+    nonempty_Ioo, nonempty_Ioo]
+  exact ⟨inf_lt_sup.2 hre, inf_lt_sup.2 him⟩
 
 /-- When `z` is the lower left corner, membership in the rectangle with opposite corners `z` and
 `w` is a pair of bounds on the real and imaginary parts. -/

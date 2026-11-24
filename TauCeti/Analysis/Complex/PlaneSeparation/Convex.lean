@@ -130,15 +130,9 @@ variable {z w : ℂ}
 sides of positive length satisfies `4π |R| < H¹(frontier R)²`. -/
 theorem ofReal_four_pi_mul_volume_rectangle_lt (hre : z.re ≠ w.re) (him : z.im ≠ w.im) :
     ENNReal.ofReal (4 * π) * volume (Rectangle z w) < μHE[1] (frontier (Rectangle z w)) ^ 2 := by
-  have hint {x y : ℝ} (h : x ≠ y) : (interior (uIcc x y)).Nonempty := by
-    rw [uIcc, interior_Icc]
-    exact nonempty_Ioo.2 (inf_lt_sup.2 h)
-  obtain ⟨x, hx⟩ := hint hre
-  obtain ⟨y, hy⟩ := hint him
-  have hne : (interior (Rectangle z w)).Nonempty :=
-    ⟨⟨x, y⟩, by rw [Rectangle, interior_reProdIm]; exact ⟨hx, hy⟩⟩
-  rw [(convex_rectangle z w).ofReal_four_pi_mul_volume_lt_iff hne
-    (isCompact_rectangle z w).isBounded, (isClosed_rectangle z w).closure_eq]
+  rw [(convex_rectangle z w).ofReal_four_pi_mul_volume_lt_iff
+    (interior_rectangle_nonempty hre him) (isCompact_rectangle z w).isBounded,
+    (isClosed_rectangle z w).closure_eq]
   rintro ⟨c, r, -, h⟩
   exact rectangle_ne_closedBall (fun h ↦ hre (congrArg re h)) c r h
 
