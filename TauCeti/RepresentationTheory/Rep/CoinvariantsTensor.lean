@@ -57,8 +57,6 @@ and this file adds it in `A`, both as a functor to the functors of `B` and for e
   and `v`.
 * `Rep.coinvariantsHomLinearEquiv`: `Hom(X_G, N) ≃ₗ[k] Hom_G(X, N)`.
 * `Rep.coinvariantsTensorHomLinearEquiv`: `Hom((A ⊗ X)_G, N) ≃ₗ[k] Hom_G(X, Homₖ(A, N))`.
-* `Rep.tensorLeftCompCoinvariantsTensorTrivialIso`: `(k ⊗ (A ⊗ X))_G ≅ (A ⊗ X)_G`, naturally in
-  `X`.
 * `Rep.tensorLeftCompCoinvariantsTensorObjIso`: the natural isomorphism
   `(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` given by the associator.
 
@@ -195,27 +193,6 @@ instance : (coinvariantsTensor k G).Additive where
 /-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A` for a fixed `B`.
 -/
 instance (B : Rep.{u} k G) : ((coinvariantsTensor k G).flip.obj B).Additive where
-
--- This typechecks as stated because the monoidal unit of `Rep k G` is the trivial representation
--- `Rep.trivial k G k` and `Rep.coinvariantsTensor` is the reducible composite of `- ⊗ -` with the
--- coinvariants functor, both by definition.
-variable (k G) in
-/-- Tensor coinvariants with the trivial representation `k`, precomposed with `A ⊗ -`, are tensor
-coinvariants with `A`: `(k ⊗ (A ⊗ X))_G ≅ (A ⊗ X)_G`, naturally in `X`, by the left unitor. -/
-def tensorLeftCompCoinvariantsTensorTrivialIso (A : Rep.{u} k G) :
-    tensorLeft A ⋙ (coinvariantsTensor k G).obj (Rep.trivial k G k) ≅
-      (coinvariantsTensor k G).obj A :=
-  Functor.isoWhiskerLeft (tensorLeft A)
-    (Functor.isoWhiskerRight (leftUnitorNatIso (Rep.{u} k G))
-      (coinvariantsFunctor k G) ≪≫ Functor.leftUnitor _)
-
-/-- The component of `Rep.tensorLeftCompCoinvariantsTensorTrivialIso` at `X` is the map of
-coinvariants induced by the left unitor of `A ⊗ X`. -/
-@[simp]
-theorem tensorLeftCompCoinvariantsTensorTrivialIso_hom_app (A X : Rep.{u} k G) :
-    (tensorLeftCompCoinvariantsTensorTrivialIso k G A).hom.app X =
-      (coinvariantsFunctor k G).map (λ_ (A ⊗ X)).hom :=
-  (rfl)
 
 /-- **Tensor coinvariants of a twisted representation**: for representations `D` and `A` of `G`,
 `(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` naturally in `X`, by the associator of the tensor product
