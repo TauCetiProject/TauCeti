@@ -109,15 +109,12 @@ theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
   have hu : Tendsto u cofinite (𝓝 1) := by
     rw [h.isInducing.tendsto_nhds_iff, Units.val_one]
     exact tendsto_ofAdicCompletion_cofinite hx
-  have hopen : IsOpen {a : 𝔸ᶠ[R, K] | ∀ w, a w ∈ w.adicCompletionIntegers K} :=
-    RestrictedProduct.isOpen_forall_mem fun w ↦ Valued.isOpen_valuationSubring _
   have hmem := ((Units.continuous_coe_inv.tendsto 1).comp hu).eventually
-    (hopen.mem_nhds fun w ↦ by
-      rw [inv_one, Units.val_one]
-      exact one_mem _)
+    ((isOpen_integralAdeles R K).mem_nhds (by simp))
   obtain ⟨v, hv⟩ := hmem.exists
-  refine hxinv v ?_
-  simpa [u, ← map_inv] using hv v
+  have hinv : (((u v)⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v = ((x v)⁻¹ : (v.adicCompletion K)ˣ) := by
+    rw [Units.coe_map_inv, ofAdicCompletion_apply_self]
+  exact hxinv v (hinv ▸ mem_integralAdeles.1 hv v)
 
 end Embedding
 

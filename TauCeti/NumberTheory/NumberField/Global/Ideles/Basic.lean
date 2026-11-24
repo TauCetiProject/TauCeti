@@ -33,7 +33,8 @@ at almost every finite place; `TauCeti.GlobalNumberFields.ideleFiniteCoord_idele
 `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits` recover those units.
 
 The embeddings of the units of the completions, at the infinite and at the finite places, into
-the idele group and the idele class group are continuous.
+the idele group and the idele class group are continuous, and so are `toFiniteIdele` and
+`ofFiniteIdele`.
 
 Finally, `NumberField.IdeleGroup.localUnitsEquiv` identifies the idele group, with its units
 topology, with the product of the unit groups `K_wˣ` at the infinite places and the restricted
@@ -154,6 +155,17 @@ continuous. -/
 theorem continuous_ofAdicCompletion (v : HeightOneSpectrum R) :
     Continuous (ofAdicCompletion R K v) :=
   (AdeleRing.continuous_ofAdicCompletion R K v).units_map _
+
+/-- The finite component of an idele depends continuously on the idele. -/
+@[continuity, fun_prop]
+theorem continuous_toFiniteIdele : Continuous (toFiniteIdele R K) :=
+  continuous_snd.units_map _
+
+/-- The idele with a given finite component and trivial infinite components depends continuously
+on the finite component. -/
+@[continuity, fun_prop]
+theorem continuous_ofFiniteIdele : Continuous (ofFiniteIdele R K) :=
+  (continuous_const.prodMk continuous_id).units_map _
 
 end NumberField.IdeleGroup
 
@@ -333,9 +345,11 @@ theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
   -- `ofFiniteIdele` is an embedding, since `toFiniteIdele` is a continuous left inverse
   have hof : IsEmbedding (ofFiniteIdele R K) :=
     Function.LeftInverse.isEmbedding (toFiniteIdele_ofFiniteIdele R K)
-      (Units.continuous_map continuous_snd)
-      (Units.continuous_map (continuous_const.prodMk continuous_id))
+      (continuous_toFiniteIdele R K) (continuous_ofFiniteIdele R K)
+  have hval : Units.val ∘ ofFiniteIdele R K =
+      (fun a ↦ ((1 : InfiniteAdeleRing K), a)) ∘ Units.val :=
+    funext fun a ↦ coe_ofFiniteIdele R K a
   exact FiniteAdeleRing.not_isEmbedding_val R K <|
-    .of_comp Units.continuous_val (continuous_const.prodMk continuous_id) (h.comp hof)
+    .of_comp Units.continuous_val (continuous_const.prodMk continuous_id) (hval ▸ h.comp hof)
 
 end NumberField.IdeleGroup

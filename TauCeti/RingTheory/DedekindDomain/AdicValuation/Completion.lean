@@ -230,9 +230,7 @@ theorem exists_mem_adicCompletionIntegers_inv_notMem :
   refine ⟨x, ?_, ?_⟩
   · rw [mem_adicCompletionIntegers, hx]
     exact exp_le_one_iff.2 (by norm_num)
-  · rw [mem_adicCompletionIntegers, Units.val_inv_eq_inv_val, map_inv₀, hx, ← exp_neg, neg_neg,
-      not_le]
-    exact one_lt_exp_iff.2 one_pos
+  · simp [mem_adicCompletionIntegers, hx]
 
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
