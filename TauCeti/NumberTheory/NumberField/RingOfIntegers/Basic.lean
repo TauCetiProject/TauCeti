@@ -41,11 +41,8 @@ theorem coe_tuple_eq_zero_iff {y : ι → 𝓞 K} : (fun i ↦ (y i : K)) = 0 �
 /-- An algebraic integer that is rational is an integer. -/
 theorem exists_intCast_eq_of_coe_mem_range [CharZero K] {y : 𝓞 K}
     (hy : (y : K) ∈ Set.range (algebraMap ℚ K)) : ∃ m : ℤ, (m : 𝓞 K) = y := by
-  obtain ⟨q, hq⟩ := hy
-  have h : IsIntegral ℤ (algebraMap ℚ K q) := hq ▸ isIntegral_coe y
-  have hint : IsIntegral ℤ q := isIntegral_algebraMap_iff.mp h
-  obtain ⟨m, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
-  exact ⟨m, ext (by simpa using hq)⟩
+  obtain ⟨m, hm⟩ := (IsIntegralClosure.mem_range_algebraMap ℤ (B := ℚ) (isIntegral_coe y)).mp hy
+  exact ⟨m, ext (by simpa using hm)⟩
 
 variable [NumberField K]
 
