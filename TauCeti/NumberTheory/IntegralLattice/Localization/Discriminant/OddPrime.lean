@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Rank
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed

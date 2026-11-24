@@ -23,6 +23,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.Algebra.Ring.BooleanRing
 
 /-!
 # Quadratic forms, idempotents, and the number of symmetric matrices
@@ -394,30 +395,6 @@ private theorem IsSymm.exists_vecMul_eq_diag_zmod_two {ι : Type*} [Fintype ι]
   have hj := LinearMap.congr_fun hc (Pi.single j 1)
   simpa [φ, vecMul, dotProduct, Matrix.toBilin'_apply', Matrix.mulVec, Pi.single_apply] using hj
 
-/-- For a finite subset `X` of a Boolean ring `S`, the indicator products
-`e T = (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)` form a partition of unity that diagonalizes
-multiplication by elements of `X`. -/
-private theorem booleanRing_partition_unity {S : Type*} [BooleanRing S] [DecidableEq S]
-    (X : Finset S) :
-    let e : Finset S → S := fun T ↦ (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)
-    (∑ T ∈ X.powerset, e T = 1) ∧
-      ∀ (T : Finset S) {x : S}, x ∈ X →
-        e T * x = (if x ∈ T then (1 : S) else 0) * e T := by
-  intro e
-  refine ⟨?_, fun T x hx ↦ ?_⟩
-  · simpa [e, add_sub_cancel] using
-      (Finset.prod_add (fun x : S ↦ x) (fun x : S ↦ 1 - x) X).symm
-  · by_cases hxT : x ∈ T
-    · simp only [hxT, ↓reduceIte, one_mul, e]
-      rw [← Finset.mul_prod_erase T (fun y ↦ y) hxT]
-      linear_combination
-        (∏ y ∈ T.erase x, y) * (∏ y ∈ X \ T, (1 - y)) * BooleanRing.mul_self x
-    · have hx_sdiff : x ∈ X \ T := Finset.mem_sdiff.mpr ⟨hx, hxT⟩
-      simp only [hxT, ↓reduceIte, zero_mul, e]
-      rw [← Finset.mul_prod_erase (X \ T) (fun y ↦ 1 - y) hx_sdiff]
-      have h1x : (1 - x) * x = 0 := by rw [sub_mul, one_mul, BooleanRing.mul_self x, sub_self]
-      linear_combination (∏ y ∈ T, y) * (∏ y ∈ (X \ T).erase x, (1 - y)) * h1x
-
 /-- For a symmetric finite matrix `G` over a Boolean ring `S`, there exists a vector `c : ι → S`
 such that `c ᵥ* G = G.diag`. -/
 theorem IsSymm.exists_vecMul_eq_diag {S ι : Type*} [BooleanRing S] [Fintype ι]
@@ -430,7 +407,7 @@ theorem IsSymm.exists_vecMul_eq_diag {S ι : Type*} [BooleanRing S] [Fintype ι]
   let X : Finset S := Finset.univ.image fun p : ι × ι ↦ G p.1 p.2
   have hG_mem (i j) : G i j ∈ X := Finset.mem_image.mpr ⟨(i, j), Finset.mem_univ _, rfl⟩
   let e : Finset S → S := fun T ↦ (∏ x ∈ T, x) * ∏ x ∈ X \ T, (1 - x)
-  obtain ⟨hsum_e, he_mul⟩ := booleanRing_partition_unity X
+  obtain ⟨hsum_e, he_mul⟩ := TauCeti.booleanRing_partition_unity X
   have hsol (T : Finset S) : ∃ c : ι → ZMod 2,
       ∀ j, ∑ i, c i * (if G i j ∈ T then 1 else 0) = if G j j ∈ T then 1 else 0 := by
     let A : Matrix ι ι (ZMod 2) := Matrix.of fun i j ↦ if G i j ∈ T then 1 else 0

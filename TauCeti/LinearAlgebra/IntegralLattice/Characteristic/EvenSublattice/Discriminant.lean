@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.EvenSublattice.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
@@ -106,7 +105,7 @@ theorem isLagrangian_evenSublattice_primaryComponent_two [L.IsNondegenerate]
 
 /-- The half-characteristic dual vector `w / 2` in `L.evenSublattice.dualCarrier` associated with a
 characteristic vector `w` of `L`. -/
-@[expose] noncomputable def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
+noncomputable def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
     L.evenSublattice.dualCarrier :=
   ⟨(1 / 2 : ℚ) • (w : V), by
     rw [LinearMap.BilinForm.mem_dualSubmodule]
@@ -121,8 +120,9 @@ characteristic vector `w` of `L`. -/
     push_cast; ring⟩
 
 /-- The ambient rational vector underlying `L.halfCharacteristicDual hw` is `(1 / 2 : ℚ) • w`. -/
+@[simp]
 theorem coe_halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
-    (L.halfCharacteristicDual hw : V) = (1 / 2 : ℚ) • (w : V) := rfl
+    (L.halfCharacteristicDual hw : V) = (1 / 2 : ℚ) • (w : V) := (rfl)
 
 /-- The discriminant quadratic value of `L.evenSublattice` at `[w / 2]` is `w² / 8 mod ℤ`. -/
 theorem discriminantQuadraticMap_mk_halfCharacteristicDual {w : L}

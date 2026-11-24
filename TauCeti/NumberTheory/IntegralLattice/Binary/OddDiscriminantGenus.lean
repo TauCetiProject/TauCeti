@@ -81,9 +81,12 @@ theorem not_sameGenus_rankOne_one_five_binaryDeterminantFive :
   have hk_lt : k < 5 := ZMod.val_lt _
   have hc5_pair : (rankOne 5).discriminantBilinearModule.pairing (e (f c)).2 (e (f c)).2 =
       ((((k : ℤ) : ℚ) * ((k : ℤ) : ℚ) / (5 : ℤ) : ℚ) : AddCircle (1 : ℚ)) := by
-    rw [show (e (f c)).2 = c₅ from rfl, ← zsmul_val_rankOneDiscriminantEquiv_rankOneClass 5 c₅]
-    exact discriminantBilinearModule_pairing_zsmul_rankOneClass 5 k k
-  rw [hc5_pair, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff] at hpair_img
+    have hcalc : (rankOne 5).discriminantBilinearModule.pairing c₅ c₅ =
+        ((((k : ℤ) : ℚ) * ((k : ℤ) : ℚ) / (5 : ℤ) : ℚ) : AddCircle (1 : ℚ)) := by
+      rw [← zsmul_val_rankOneDiscriminantEquiv_rankOneClass 5 c₅]
+      exact discriminantBilinearModule_pairing_zsmul_rankOneClass 5 k k
+    simpa only [c₅] using hcalc
+  rw [hc5_pair, AddCircle.coe_eq_coe_iff_exists_zsmul] at hpair_img
   obtain ⟨m, hm⟩ := hpair_img
   rw [zsmul_one] at hm
   have hmod : (k : ℤ) * k - 3 = 5 * m := by
@@ -157,7 +160,7 @@ private noncomputable def discriminantHom_one_thirtyNine_three_thirteen :
     rw [FiniteBilinearModule.prod_pairing, Subsingleton.elim x.1 0,
       FiniteBilinearModule.pairing_zero_left, zero_add, hx2, hy2,
       discriminantBilinearModule_pairing_zsmul_rankOneClass]
-  rw [hLHS, hRHS, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
+  rw [hLHS, hRHS, AddCircle.coe_eq_coe_iff_exists_zsmul]
   refine ⟨kx * ky, ?_⟩
   rw [zsmul_one]; push_cast; ring
 
