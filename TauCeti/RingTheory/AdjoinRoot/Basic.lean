@@ -44,6 +44,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
+* `AdjoinRoot.isUnit_mk_mul_sub_iff_isCoprime`: modulo a product `p * q`, the class of `p - q` is
+  a unit exactly when `p` and `q` are coprime.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
   class.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
@@ -201,6 +203,19 @@ theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0)
 theorem isUnit_mk_iff_isCoprime {f g : R[X]} : IsUnit (mk f g) ↔ IsCoprime f g :=
   -- `mk f` is by definition the quotient map `R[X] →+* R[X] ⧸ span {f}`, as in `mk_surjective`.
   Ideal.Quotient.isUnit_mk_iff.trans <| (Ideal.sup_eq_top_iff_isCoprime g f).trans isCoprime_comm
+
+/-- Modulo a product `p * q`, the class of the difference `p - q` is a unit exactly when `p` and
+`q` are coprime. For a relator `p * (X - C x)` with a linear factor, `p - (X - C x)` is the
+representative `C x - X + p`. -/
+@[simp↓]
+theorem isUnit_mk_mul_sub_iff_isCoprime {p q : R[X]} :
+    IsUnit (mk (p * q) (p - q)) ↔ IsCoprime p q := by
+  have h₁ : IsCoprime p (p - q) ↔ IsCoprime p q := by
+    simpa using IsCoprime.mul_sub_left_right_iff (x := p) (y := q) (z := 1)
+  have h₂ : IsCoprime q (p - q) ↔ IsCoprime p q := by
+    simpa [isCoprime_comm (x := q)] using
+      IsCoprime.sub_mul_left_right_iff (x := q) (y := p) (z := 1)
+  simp [-map_sub, IsCoprime.mul_left_iff, h₁, h₂]
 
 /-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
 `AdjoinRoot g`. -/
