@@ -698,6 +698,14 @@ private lemma continuous_log_mul_base_rpow_neg (ht : 1 < t) (m : ℝ) :
     ((by fun_prop : Continuous fun u => t + √(t ^ 2 - 1) * Real.cosh u).rpow_const
       fun u => Or.inl (base_pos ht u).ne')
 
+private lemma integrableOn_log_mul_base_rpow_neg (ht : 1 < t) {m : ℝ} (hm : 0 < m) :
+    IntegrableOn (fun u => Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)) (Ioi 0) :=
+  ((integrableOn_base_rpow_neg ht (by linarith : 0 < m / 2)).const_mul (2 / m)).mono'
+    (continuous_log_mul_base_rpow_neg ht m).aestronglyMeasurable (ae_of_all _ fun u => by
+      rw [Real.norm_of_nonneg (log_mul_base_rpow_neg_nonneg ht m u)]
+      exact log_mul_base_rpow_neg_le ht hm u)
+
 /-- Before the cut `U = log (2 / √(t² - 1))`, the log-weighted integrand is at most
 `b - 1 ≤ (t - 1) + √(t² - 1) eᵘ`, whose integral over `(0, U]` is at most `4` when `t < 2`. -/
 private lemma setIntegral_Ioc_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2) {m : ℝ}
@@ -744,7 +752,8 @@ private lemma setIntegral_Ioc_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2
 /-- After the cut `U = log (2 / √(t² - 1))`, the log-weighted integrand decays like
 `(2 / m) e ^ (-(m / 2) (u - U))`, since `b ≥ e ^ (u - U)`; its integral over `(U, ∞)` is at most
 `4 / m²`. -/
-private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m) :
+private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m)
+    (hU0 : 0 ≤ Real.log (2 / √(t ^ 2 - 1))) :
     ∫ u in Ioi (Real.log (2 / √(t ^ 2 - 1))), Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
       (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤ 4 / m ^ 2 := by
   have hε0 := sqrt_sq_sub_one_pos ht
@@ -770,12 +779,9 @@ private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (h
           ring_nf
   have hg := (integrableOn_exp_mul_Ioi (by linarith : -(m / 2) < 0) U).const_mul
     (2 / m * Real.exp (m / 2 * U))
-  have hφ : IntegrableOn (fun u => Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
-      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)) (Ioi U) :=
-    hg.mono' (continuous_log_mul_base_rpow_neg ht m).aestronglyMeasurable (ae_of_all _ fun u => by
-      rw [Real.norm_of_nonneg (log_mul_base_rpow_neg_nonneg ht m u)]
-      exact hle u)
-  refine (setIntegral_mono_on hφ hg measurableSet_Ioi fun u _ => hle u).trans_eq ?_
+  refine (setIntegral_mono_on
+    ((integrableOn_log_mul_base_rpow_neg ht hm).mono_set (Ioi_subset_Ioi hU0)) hg
+    measurableSet_Ioi fun u _ => hle u).trans_eq ?_
   rw [integral_const_mul, integral_exp_mul_Ioi (by linarith)]
   have he : Real.exp (m * U / 2) * Real.exp (-(m * U / 2)) = 1 := by
     rw [← Real.exp_add]
@@ -794,12 +800,7 @@ private lemma norm_legendreQ_sub_legendreQ_zero_le {ν : ℂ} (hν : -1 < ν.re)
   have hU0 : 0 ≤ Real.log (2 / √(t ^ 2 - 1)) := Real.log_nonneg (by
     rw [le_div_iff₀ hε0, one_mul]
     exact ((Real.sqrt_lt' two_pos).2 (by nlinarith)).le)
-  have hφ : IntegrableOn (fun u => Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
-      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)) (Ioi 0) :=
-    ((integrableOn_base_rpow_neg ht (by linarith : 0 < m / 2)).const_mul (2 / m)).mono'
-      (continuous_log_mul_base_rpow_neg ht m).aestronglyMeasurable (ae_of_all _ fun u => by
-        rw [Real.norm_of_nonneg (log_mul_base_rpow_neg_nonneg ht m u)]
-        exact log_mul_base_rpow_neg_le ht hm0 u)
+  have hφ := integrableOn_log_mul_base_rpow_neg ht hm0
   rw [legendreQ, legendreQ, ← integral_sub (integrableOn_legendreQ_integrand hν ht)
     (integrableOn_legendreQ_integrand (by simp) ht)]
   refine (norm_integral_le_of_norm_le (hφ.const_mul ‖ν‖) (ae_of_all _ fun u => ?_)).trans ?_
@@ -815,7 +816,7 @@ private lemma norm_legendreQ_sub_legendreQ_zero_le {ν : ℂ} (hν : -1 < ν.re)
       measurableSet_Ioi (hφ.mono_set Ioc_subset_Ioi_self) (hφ.mono_set (Ioi_subset_Ioi hU0))]
     gcongr
     · exact setIntegral_Ioc_log_mul_base_rpow_neg_le ht ht2 hm0.le
-    · exact setIntegral_Ioi_log_mul_base_rpow_neg_le ht hm0
+    · exact setIntegral_Ioi_log_mul_base_rpow_neg_le ht hm0 hU0
 
 /-- The logarithmic singularity of `Q_ν` at `t = 1`: for `-1 < re ν`,
 `Q_ν(t) = -½ log (t - 1) + O(1)` as `t → 1⁺`. -/
