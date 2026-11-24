@@ -206,16 +206,18 @@ noncomputable def tensorProductHomeomorph :
       ((continuous_eval a).comp continuous_fst).fun_mul
         ((continuous_eval b).comp continuous_snd)
 
-/-- The tensor-product comparison restricts a point to the left factor. -/
+/-- The tensor-product comparison restricts a point to the left factor, by precomposing with the
+left inclusion `a ↦ a ⊗ₜ 1`. -/
 @[simp]
-theorem tensorProductHomeomorph_apply_fst (x : A ⊗[k] B →ₐ[k] R) (a : A) :
-    (tensorProductHomeomorph k A B R x).1 a = x (a ⊗ₜ[k] 1) :=
+theorem tensorProductHomeomorph_apply_fst (x : A ⊗[k] B →ₐ[k] R) :
+    (tensorProductHomeomorph k A B R x).1 = x.comp Algebra.TensorProduct.includeLeft :=
   (rfl)
 
-/-- The tensor-product comparison restricts a point to the right factor. -/
+/-- The tensor-product comparison restricts a point to the right factor, by precomposing with the
+right inclusion `b ↦ 1 ⊗ₜ b`. -/
 @[simp]
-theorem tensorProductHomeomorph_apply_snd (x : A ⊗[k] B →ₐ[k] R) (b : B) :
-    (tensorProductHomeomorph k A B R x).2 b = x (1 ⊗ₜ[k] b) :=
+theorem tensorProductHomeomorph_apply_snd (x : A ⊗[k] B →ₐ[k] R) :
+    (tensorProductHomeomorph k A B R x).2 = x.comp Algebra.TensorProduct.includeRight :=
   (rfl)
 
 /-- The inverse tensor-product comparison multiplies the two coordinate values. -/
