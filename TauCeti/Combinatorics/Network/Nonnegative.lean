@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.NNReal.Defs
+public import TauCeti.Algebra.Order.Ring.Cast
 public import TauCeti.Combinatorics.Network.Coefficients
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
 
@@ -252,25 +253,17 @@ variable {cap : Assignment Q ℕ} {s t : V}
 namespace NatFlow
 
 variable (K) in
-/-- The integer cast as an order-preserving additive map, for `TauCeti.Flow.map`. -/
-private def intCastHom : ℤ →+o K :=
-  .mk' Int.cast Int.cast_mono Int.cast_add
-
-private theorem coe_intCastHom : ⇑(intCastHom K) = Int.cast :=
-  (rfl)
-
-variable (K) in
 /-- The ordinary flow for the natural capacities `cap` read in `K` whose arrow values are the
 natural arrow values of the integer flow `f`. It is `TauCeti.Flow.map` along the integer cast,
 with the mapped capacities written as `cap.map Nat.cast`. -/
 def castFlow (f : NatFlow cap s t) : Flow (cap.map (Nat.cast : ℕ → K)) s t where
   toFun := f.toFun.map Int.cast
   mem_Icc := by
-    simpa [coe_intCastHom, Assignment.map_map, Function.comp_def] using
-      (f.map (intCastHom K)).mem_Icc
-  conserve v hvs hvt := by simpa [coe_intCastHom] using (f.map (intCastHom K)).conserve v hvs hvt
+    simpa [Assignment.map_map, Function.comp_def] using
+      (f.map (Int.castOrderAddMonoidHom K)).mem_Icc
+  conserve v hvs hvt := by simpa using (f.map (Int.castOrderAddMonoidHom K)).conserve v hvs hvt
   excessAt_sink_nonneg := by
-    simpa [coe_intCastHom] using (f.map (intCastHom K)).excessAt_sink_nonneg
+    simpa using (f.map (Int.castOrderAddMonoidHom K)).excessAt_sink_nonneg
 
 /-- The arrow values of `f.castFlow K` are the casts of the integer arrow values of `f`. -/
 theorem castFlow_toFun_apply (f : NatFlow cap s t) {x y : V} (e : Q x y) :
@@ -286,8 +279,8 @@ theorem castFlow_toFun (f : NatFlow cap s t) :
 /-- The value of `f.castFlow K` is the cast of the integer value of `f`. -/
 @[simp]
 theorem val_castFlow (f : NatFlow cap s t) : (f.castFlow K).val = (f.val : K) := by
-  have h := Flow.val_map (intCastHom K) f
-  simp only [BoundedFlow.val_def, Flow.map_toFun, coe_intCastHom] at h ⊢
+  have h := Flow.val_map (Int.castOrderAddMonoidHom K) f
+  simp only [BoundedFlow.val_def, Flow.map_toFun, Int.coe_castOrderAddMonoidHom] at h ⊢
   exact h
 
 /-- Over `ℤ`, `TauCeti.NatFlow.castFlow` returns the integer flow itself. -/
@@ -336,17 +329,20 @@ theorem castFlow_injective [NeZero (1 : K)] :
 /-- The flow over `K` with the natural arrow values of a maximum integer flow is maximum. -/
 theorem isMaximum_castFlow {f : NatFlow cap s t} (hf : f.IsMaximum) :
     (f.castFlow K).IsMaximum := by
-  classical
   rcases eq_or_ne s t with rfl | hst
   · exact Flow.isMaximum_iff.2 fun g ↦
       (BoundedFlow.val_eq_zero_of_eq rfl _).trans_le (BoundedFlow.val_eq_zero_of_eq rfl _).ge
-  -- The integer cut capacity attained by `f` casts to a cut capacity over `K`.
-  obtain ⟨S, hs, ht, hS⟩ := hf.exists_val_eq_arrowSum hst
-  have hcut : ((arrowSum cap S Sᶜ : ℕ) : K) = arrowSum (cap.map (Nat.cast : ℕ → K)) S Sᶜ :=
-    map_arrowSum (Nat.castAddMonoidHom K) cap S Sᶜ
-  refine Flow.isMaximum_iff.2 fun g ↦ ?_
-  rw [val_castFlow, hS, ← coe_arrowSum_nat, Int.cast_natCast, hcut]
-  exact g.val_le_arrowSum hs ht
+  -- `f.castFlow K` is the image of `f` under the integer cast, with its capacities rewritten.
+  have hcap : (cap.map (Nat.cast : ℕ → ℤ)).map (Int.castOrderAddMonoidHom K) =
+      cap.map (Nat.cast : ℕ → K) := by
+    simp [Assignment.map_map, Function.comp_def]
+  have h : f.castFlow K = Flow.congr hcap rfl rfl (f.map (Int.castOrderAddMonoidHom K)) :=
+    Flow.ext <| by
+      simp only [Flow.toBoundedFlow_congr, BoundedFlow.congr_apply_toFun, Flow.map_toFun,
+        Int.coe_castOrderAddMonoidHom]
+      rfl
+  rw [h, Flow.isMaximum_congr_iff]
+  exact hf.map hst _
 
 /-- When `1 ≠ 0` in `K`, an integer flow for natural capacities is maximum exactly when the flow
 over `K` with the same natural arrow values is maximum. -/
