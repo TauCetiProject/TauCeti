@@ -22,7 +22,7 @@ of the cyclic subgroup `⟨P⟩` of order `M` together with the point `(M / N) P
 
 The preimage of the mixed level in `SL(2, ℤ)` is `Γ₁(N) ⊓ Γ₀(M)`. The upper-left entry maps the
 upper-triangular level onto `(ℤ / N)ˣ` with kernel the mixed level, so its index in
-`GL₂(ℤ / M)` is `φ(N) [SL(2, ℤ) : Γ₀(M)] = φ(N) ψ(M)`. It contains `-1` exactly when `N ≤ 2`, and
+`GL₂(ℤ / M)` is `φ(N) [SL(2, ℤ) : Γ₀(M)] = φ(N) ψ(M)`. It contains `-1` exactly when `N ∣ 2`, and
 its determinant image is all of `(ℤ / M)ˣ`. For `N = M` it is the level `Γ₁(N)`, and for `N = 1`
 the level `Γ₀(M)`.
 
@@ -34,7 +34,7 @@ the level `Γ₀(M)`.
 
 * `TauCeti.GL2Gamma1Gamma0.comap_mapGL`: its preimage in `SL(2, ℤ)` is `Γ₁(N) ⊓ Γ₀(M)`.
 * `TauCeti.GL2Gamma1Gamma0.index_eq`: its index is `φ(N) [SL(2, ℤ) : Γ₀(M)]`.
-* `TauCeti.GL2Gamma1Gamma0.neg_one_mem_iff`: it contains `-1` exactly when `N ≤ 2`.
+* `TauCeti.GL2Gamma1Gamma0.neg_one_mem_iff`: it contains `-1` exactly when `N ∣ 2`.
 * `TauCeti.GL2Gamma1Gamma0.map_det`: its determinant image is all of `(ℤ / M)ˣ`.
 * `TauCeti.GL2Gamma1Gamma0.dvd_refl_eq_GL2Gamma1` and
   `TauCeti.GL2Gamma1Gamma0.one_dvd_eq_GL2Borel`: the cases `N = M` and `N = 1`.
@@ -79,13 +79,18 @@ theorem mem_iff {g : GL (Fin 2) (ZMod M)} :
 
 variable (h)
 
+theorem le_comap_GL2Gamma1 :
+    GL2Gamma1Gamma0 h ≤
+      (GL2Gamma1 (ZMod N)).comap (GeneralLinearGroup.map (ZMod.castHom h (ZMod N))) :=
+  inf_le_left
+
 theorem le_GL2Borel : GL2Gamma1Gamma0 h ≤ GL2Borel (ZMod M) :=
   inf_le_right
 
 /-- **The preimage of the mixed level in `SL(2, ℤ)` is `Γ₁(N) ⊓ Γ₀(M)`.** -/
 @[simp]
 theorem comap_mapGL : (GL2Gamma1Gamma0 h).comap (mapGL (ZMod M)) = Gamma1 N ⊓ Gamma0 M := by
-  rw [GL2Gamma1Gamma0, Subgroup.comap_inf, Subgroup.comap_comap, GL2.map_castHom_comp_mapGL,
+  rw [GL2Gamma1Gamma0, Subgroup.comap_inf, Subgroup.comap_comap, map_comp_mapGL_int,
     comap_mapGL_GL2Gamma1, comap_mapGL_GL2Borel]
 
 /-- The upper-left entry modulo `N` of an upper-triangular matrix, as a homomorphism to
@@ -123,29 +128,21 @@ theorem index_eq : (GL2Gamma1Gamma0 h).index = N.totient * (Gamma0 M).index := b
   · rw [Gamma0_zero_index, mul_zero, mul_zero]
   · rw [relIndex_GL2Borel]
 
-/-- **`-1` lies in the mixed level exactly when `N ≤ 2`.** -/
-theorem neg_one_mem_iff [NeZero N] : (-1 : GL (Fin 2) (ZMod M)) ∈ GL2Gamma1Gamma0 h ↔ N ≤ 2 := by
+/-- **`-1` lies in the mixed level exactly when `N ∣ 2`.** -/
+theorem neg_one_mem_iff : (-1 : GL (Fin 2) (ZMod M)) ∈ GL2Gamma1Gamma0 h ↔ N ∣ 2 := by
   rw [GL2Gamma1Gamma0, Subgroup.mem_inf, Subgroup.mem_comap, GeneralLinearGroup.map_neg, map_one,
-    GL2Gamma1.neg_one_mem_iff, and_iff_left GL2Borel.neg_one_mem]
-  constructor
-  · intro h1
-    by_contra! h2
-    have : Fact (2 < N) := ⟨h2⟩
-    exact ZMod.neg_one_ne_one h1
-  · intro h2
-    have h1 : 1 ≤ N := NeZero.pos N
-    interval_cases N <;> decide
+    GL2Gamma1.neg_one_mem_iff, and_iff_left GL2Borel.neg_one_mem, ZMod.neg_one_eq_one_iff,
+    Nat.dvd_prime Nat.prime_two]
 
-/-- **The projective index of the mixed level** is its index for `N ≤ 2`. -/
-theorem projectiveIndex_eq_index [NeZero N] (hN : N ≤ 2) :
+/-- **The projective index of the mixed level** is its index for `N ∣ 2`. -/
+theorem projectiveIndex_eq_index (hN : N ∣ 2) :
     (GL2Gamma1Gamma0 h).projectiveIndex = (GL2Gamma1Gamma0 h).index :=
   Subgroup.projectiveIndex_eq_index ((neg_one_mem_iff h).mpr hN)
 
-/-- **The projective index of the mixed level** is half its index for `N ≥ 3`. -/
-theorem two_mul_projectiveIndex (hN : 3 ≤ N) :
-    2 * (GL2Gamma1Gamma0 h).projectiveIndex = (GL2Gamma1Gamma0 h).index := by
-  have : NeZero N := ⟨by omega⟩
-  exact Subgroup.two_mul_projectiveIndex ((neg_one_mem_iff h).not.mpr (by omega))
+/-- **The projective index of the mixed level** is half its index unless `N ∣ 2`. -/
+theorem two_mul_projectiveIndex (hN : ¬N ∣ 2) :
+    2 * (GL2Gamma1Gamma0 h).projectiveIndex = (GL2Gamma1Gamma0 h).index :=
+  Subgroup.two_mul_projectiveIndex ((neg_one_mem_iff h).not.mpr hN)
 
 /-- **The determinant maps the mixed level onto `(ℤ / M)ˣ`**: `!![1, 0; 0, u]` has determinant
 `u`. -/

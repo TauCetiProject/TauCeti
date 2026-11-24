@@ -22,6 +22,9 @@ all of which a construction transporting a group of matrices along a change of s
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
   membership in the positive-determinant subgroups.
+* `Matrix.SpecialLinearGroup.map_mapGL_int`: over `ℤ`, applying any ring hom `S →+* T` after
+  `mapGL S` is `mapGL T`; for instance reducing `SL(n, ℤ)` modulo `m` and then modulo `n ∣ m` is
+  reducing modulo `n`.
 * `Subgroup.map_mapGL`: extending a subgroup of `SL(n, R)` to `GL n S` and then to `GL n T`
   agrees with extending it directly to `GL n T`.
 -/
@@ -86,6 +89,26 @@ theorem det_coe_mapGL_pos [PartialOrder S] [IsStrictOrderedRing S] (g : SpecialL
     0 < ((mapGL S g : GL n S) : Matrix n n S).det := by
   rw [det_coe_mapGL]
   exact one_pos
+
+section Int
+
+variable {S} {T : Type*} [CommRing T]
+
+/-- **Over `ℤ`, change of scalars commutes with `mapGL`** along any ring hom `f : S →+* T`, since
+there is only one ring hom out of `ℤ`. Unlike Mathlib's `Matrix.SpecialLinearGroup.map_mapGL`, this
+needs no algebra structure on `T` over `S`; for instance it applies to `ZMod.castHom`. -/
+@[simp]
+theorem map_mapGL_int (f : S →+* T) (g : SpecialLinearGroup n ℤ) :
+    Matrix.GeneralLinearGroup.map f (mapGL S g) = mapGL T g := by
+  ext i j
+  simp [Matrix.GeneralLinearGroup.map_apply]
+
+/-- The homomorphism form of `Matrix.SpecialLinearGroup.map_mapGL_int`. -/
+theorem map_comp_mapGL_int (f : S →+* T) :
+    (Matrix.GeneralLinearGroup.map f).comp (mapGL (R := ℤ) (n := n) S) = mapGL T :=
+  MonoidHom.ext (map_mapGL_int f)
+
+end Int
 
 end Matrix.SpecialLinearGroup
 
