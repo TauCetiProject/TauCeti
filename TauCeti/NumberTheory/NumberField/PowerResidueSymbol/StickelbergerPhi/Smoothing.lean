@@ -7,8 +7,10 @@ module
 
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
 import Mathlib.NumberTheory.LegendreSymbol.Complex
+import TauCeti.Data.Nat.GCD
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.NumberField.NarrowClassGroup.CoprimeRepresentative
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Embeddings
 
 /-!
 # Positive smoothing of Gauss sums and Stickelberger annihilation
@@ -70,14 +72,6 @@ public section
 open NumberField UniqueFactorizationMonoid
 
 namespace Ideal
-
-/-- If `m ∤ b`, then `m ≥ 2`. -/
-private theorem two_le_of_not_dvd {m b : ℕ} [NeZero m] (hb : ¬m ∣ b) : 2 ≤ m :=
-  (Nat.two_le_iff m).2 ⟨NeZero.ne m, by rintro rfl; exact hb (one_dvd b)⟩
-
-/-- If `b` is prime to `m ≥ 2`, then `m ∤ b`. -/
-private theorem not_dvd_of_coprime {m b : ℕ} (hm : 2 ≤ m) (hb : b.Coprime m) : ¬m ∣ b :=
-  fun h ↦ by have := (Nat.coprime_comm.mp hb).eq_one_of_dvd h; lia
 
 variable {K : Type*} [Field K] [NumberField K] {m : ℕ} [NeZero m] [HasEnoughRootsOfUnity (𝓞 K) m]
 
@@ -200,7 +194,7 @@ theorem stickelbergerSmoothing_mul_gaussSum (P : Ideal (𝓞 K)) [P.IsMaximal] [
     f (stickelbergerSmoothing P m b) *
         gaussSum (((powerResidueSymbol P m)⁻¹ ^ b).ringHomComp f) ψ =
       gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f) ψ ^ b := by
-  have hm := two_le_of_not_dvd hb
+  have hm := Nat.two_le_of_not_dvd hb
   let _ := Ideal.Quotient.field P
   set χ := (powerResidueSymbol P m)⁻¹.ringHomComp f with hχdef
   have hχ : orderOf χ = m := by
@@ -220,7 +214,7 @@ theorem stickelbergerSmoothing_mul_gaussSum (P : Ideal (𝓞 K)) [P.IsMaximal] [
 /-- `Ψ_b(A)` is nonzero when `m ∤ b` and the norm of `A` is prime to `m`. -/
 theorem stickelbergerSmoothing_ne_zero {A : Ideal (𝓞 K)} (hA : (absNorm A).Coprime m) {b : ℕ}
     (hb : ¬m ∣ b) : stickelbergerSmoothing A m b ≠ 0 := by
-  have hm := two_le_of_not_dvd hb
+  have hm := Nat.two_le_of_not_dvd hb
   induction A using induction_on_prime with
   | h₁ =>
     rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
@@ -252,7 +246,7 @@ private theorem stickelbergerSmoothing_pow_mul_apply_of_isMaximal (P : Ideal (�
     [P.IsMaximal] (hP : (absNorm P).Coprime m) {b : ℕ} (hb : ¬m ∣ b) (σ : 𝓞 K ≃+* 𝓞 K)
     (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ b) :
     stickelbergerSmoothing P m b ^ m * σ (stickelbergerPhi P m) = stickelbergerPhi P m ^ b := by
-  have hm := two_le_of_not_dvd hb
+  have hm := Nat.two_le_of_not_dvd hb
   let _ := Ideal.Quotient.field P
   let _ := Fintype.ofFinite (𝓞 K ⧸ P)
   -- Read all three factors as Gauss sum expressions in `ℂ`.
@@ -270,7 +264,7 @@ cyclotomic field. If `m ∤ b` and the norm of the ideal `A` is prime to `m`, th
 theorem stickelbergerSmoothing_pow_mul_apply {A : Ideal (𝓞 K)} (hA : (absNorm A).Coprime m)
     {b : ℕ} (hb : ¬m ∣ b) (σ : 𝓞 K ≃+* 𝓞 K) (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ b) :
     stickelbergerSmoothing A m b ^ m * σ (stickelbergerPhi A m) = stickelbergerPhi A m ^ b := by
-  have hm := two_le_of_not_dvd hb
+  have hm := Nat.two_le_of_not_dvd hb
   induction A using induction_on_prime with
   | h₁ =>
     rw [zero_eq_bot, absNorm_bot, Nat.coprime_zero_left] at hA
@@ -301,7 +295,7 @@ theorem span_stickelbergerSmoothing (hm : 2 ≤ m) {b : ℕ} (hb : b.Coprime m) 
     (hA : (absNorm A).Coprime m) :
     span {stickelbergerSmoothing A m b} =
       ∏ σ : Gal(K/ℚ), (σ⁻¹ • A) ^ (b * (galEquivZMod m K σ : ZMod m).val / m) := by
-  have hbm := not_dvd_of_coprime hm hb
+  have hbm := hb.not_dvd_of_two_le hm
   have hA0 : A ≠ ⊥ := by
     rintro rfl
     rw [absNorm_bot, Nat.coprime_zero_left] at hA
@@ -375,7 +369,7 @@ theorem isPrincipal_prod_inv_smul_pow_mul_div (hm : 2 ≤ m) {b : ℕ} (hb : b.C
       span_singleton_pow]
   -- Cancel the nonzero principal ideal `(Ψ_b(J))`.
   have hΨ : stickelbergerSmoothing (J : Ideal (𝓞 K)) m b ≠ 0 :=
-    stickelbergerSmoothing_ne_zero hJm (not_dvd_of_coprime hm hb)
+    stickelbergerSmoothing_ne_zero hJm (hb.not_dvd_of_two_le hm)
   obtain ⟨w, hw⟩ := mem_span_singleton'.mp (mul_le_right (h.symm ▸ mem_span_singleton_self _))
   refine ⟨w, mul_right_cancel₀ (span_singleton_eq_bot.not.mpr hΨ) ?_⟩
   rw [h, ← hw, span_singleton_mul_span_singleton]

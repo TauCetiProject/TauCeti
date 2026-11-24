@@ -10,11 +10,11 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.SModEq.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 import Mathlib.NumberTheory.LegendreSymbol.Complex
-import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.JacobiSum.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.MulChar.Basic
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Embeddings
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.IntegralClosure.Map
 
@@ -296,13 +296,6 @@ theorem apply_stickelbergerPhi_eq_gaussSum_pow (P : Ideal (𝓞 K)) [P.IsMaximal
     rw [← MulChar.pow_apply_coe, h1, MulChar.one_apply_coe]
   rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, RingHom.comp_apply,
     RingEquiv.coe_toRingHom, hσ _ hu, MulChar.pow_apply_coe]
-
-variable (K) in
-/-- The ring of integers of a number field embeds into `ℂ`. -/
-theorem _root_.NumberField.RingOfIntegers.exists_injective_ringHom_complex :
-    ∃ f : 𝓞 K →+* ℂ, Function.Injective f :=
-  ⟨(Classical.arbitrary (K →+* ℂ)).comp (algebraMap (𝓞 K) K),
-    (Classical.arbitrary (K →+* ℂ)).injective.comp (FaithfulSMul.algebraMap_injective _ _)⟩
 
 /-- The case of a maximal ideal in `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`. -/
 private theorem stickelbergerPhi_mul_apply_eq_absNorm_pow_of_isMaximal (P : Ideal (𝓞 K))
