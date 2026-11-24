@@ -173,19 +173,14 @@ variable {Q : B → Type*} [TopologicalSpace (TotalSpace F Q)] (h : TotalSpace F
 
 /-- A trivialization of a map `proj : P → B` as a trivialization, with the same base set, of a
 family of fibres `Q` whose total space is identified with `P` over `B` by the homeomorphism `h`:
-the point `x` of the total space is sent to `e (h x)`. -/
+the point `x` of the total space is sent to `e (h x)`. This is `e.compHomeomorph h` with its
+projection `proj ∘ h` replaced by `π F Q` using `hh`. -/
 def compTotalSpaceHomeomorph : Trivialization F (π F Q) where
-  toOpenPartialHomeomorph := h.transOpenPartialHomeomorph e.toOpenPartialHomeomorph
-  baseSet := e.baseSet
-  open_baseSet := e.open_baseSet
+  __ := e.compHomeomorph h
   source_eq := by
     ext x
-    simp [e.mem_source, hh]
-  target_eq := e.target_eq
-  proj_toFun x hx := by
-    have hx : proj (h x) ∈ e.baseSet := by
-      simpa [e.mem_source] using hx
-    exact (e.coe_fst' hx).trans (hh x)
+    simp [(e.compHomeomorph h).mem_source, hh]
+  proj_toFun x hx := ((e.compHomeomorph h).proj_toFun x hx).trans (hh x)
 
 @[simp]
 theorem compTotalSpaceHomeomorph_apply (x : TotalSpace F Q) :
