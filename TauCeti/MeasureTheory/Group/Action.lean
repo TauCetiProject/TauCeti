@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
@@ -19,6 +20,8 @@ measurable set that is invariant up to null sets is again invariant
 (`SMulInvariantMeasure.restrict`), for a transitive isometric action all balls of one radius have
 the same invariant measure (`measure_ball_eq_measure_ball`), and on a finite measure space with
 measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`).
+For a countable group, pushing forward a measure without atoms to the orbit space gives a measure
+without atoms (`nullSingletonClass_map_quotientMk`).
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
@@ -85,6 +88,26 @@ theorem finite_orbit_of_measure_singleton_ne_zero {G α : Type*} [SMul G α]
   -- `{x}` lies in the preimage of `{g • x}` under `g • ·`, which has the same measure
   rw [← SMulInvariantMeasure.measure_preimage_smul g (measurableSet_singleton (g • x))]
   exact measure_mono (by simp)
+
+/-- **Points of the orbit space of a countable action are null.** If `G` is countable and `μ`
+vanishes on points of a space with measurable singletons, then the pushforward of `μ` to the orbit
+space of `G` vanishes on every point: the preimage of a point is an orbit, a countable set. This
+applies to restrictions `μ.restrict s` to a fundamental domain, so a quotient measure has no atoms,
+for instance at the elliptic points of a Fuchsian quotient. -/
+instance nullSingletonClass_map_quotientMk {G α : Type*} [Group G] [MulAction G α] [Countable G]
+    [MeasurableSpace α] [MeasurableSingletonClass α] {μ : Measure α} [NullSingletonClass μ] :
+    NullSingletonClass (μ.map (Quotient.mk (MulAction.orbitRel G α))) where
+  measure_singleton q := by
+    induction q using Quotient.inductionOn with
+    | h x =>
+      have hpre : Quotient.mk (MulAction.orbitRel G α) ⁻¹' {Quotient.mk _ x} =
+          MulAction.orbit G x := by
+        ext y
+        simp only [mem_preimage, mem_singleton_iff, Quotient.eq, MulAction.orbitRel_apply]
+      have hc : (MulAction.orbit G x).Countable := countable_range _
+      rw [Measure.map_apply measurable_quotient_mk''
+        (measurableSet_quotient.mpr (hpre ▸ hc.measurableSet)), hpre]
+      exact hc.measure_zero μ
 
 end Orbit
 
