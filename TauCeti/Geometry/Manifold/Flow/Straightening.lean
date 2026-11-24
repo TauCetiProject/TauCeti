@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Straightening
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -29,6 +30,11 @@ at every point. At a boundary point the statement fails: a chart preserves the b
 field tangent to the boundary at one boundary point and transverse to it at nearby ones cannot
 become constant.
 
+For a boundaryless model the chart, followed by the model and a translation, is a partial
+diffeomorphism onto an open subset of the model space sending `x` to `0`
+(`TauCeti.exists_partialDiffeomorph_mfderiv_eq_const`); in it the trajectory of `v` through `x` is
+the line `t ↦ t • u` for as long as it stays in the chart.
+
 The same holds for finitely many `C^m` vector fields `V i` whose values at `x` are linearly
 independent and whose pairwise Lie brackets vanish near `x`: one chart carries every `V i` to a
 constant field `u i`, with the `u i` linearly independent
@@ -47,6 +53,8 @@ interior chart of the model, it is a chart of the manifold
 
 * `TauCeti.exists_chart_mfderiv_eq_const`: a nonvanishing `C^m` vector field is constant in a
   suitable chart of the `C^m` maximal atlas.
+* `TauCeti.exists_partialDiffeomorph_mfderiv_eq_const`: for a boundaryless model, the same chart
+  as a partial diffeomorphism onto an open subset of the model space, centred at the given point.
 * `TauCeti.exists_chart_mfderiv_eq_const_of_eventually_mlieBracket_eq_zero`: finitely many
   pointwise independent `C^m` vector fields with vanishing brackets are simultaneously constant in a
   suitable chart of the `C^m` maximal atlas.
@@ -164,5 +172,46 @@ theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m)
       hxI (fun _ ↦ hv) hU (linearIndependent_unique_iff.2 hx)
       fun i j h ↦ (h (Subsingleton.elim i j)).elim
   exact ⟨e, u (), he, hxe, linearIndependent_unique_iff.1 hu, fun y hy ↦ heu y hy ()⟩
+
+/-- **The straightening theorem in a centred partial diffeomorphism.** Let `v` be a vector field on
+a `C^n` manifold with finite-dimensional boundaryless model, `C^m` on a neighbourhood of `x`, with
+`1 ≤ m`, `m + 1 ≤ n` and `v x ≠ 0`. Then some `C^m` partial diffeomorphism `Φ` from `M` onto an
+open subset of the model space, with `x` in its source and `Φ x = 0`, carries `v` to a constant
+nonzero vector field: `dΦ_y (v y) = u ≠ 0` at every point `y` of its source. -/
+theorem exists_partialDiffeomorph_mfderiv_eq_const [I.Boundaryless] {m : ℕ∞} {n : ℕ∞ω}
+    (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) [IsManifold I 1 M] [IsManifold I n M]
+    {v : (y : M) → TangentSpace I y} {U : Set M} {x : M}
+    (hv : ContMDiffOn I I.tangent m (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) U) (hU : U ∈ 𝓝 x)
+    (hx : v x ≠ 0) :
+    ∃ (Φ : PartialDiffeomorph I 𝓘(ℝ, E) M E m) (u : E), x ∈ Φ.source ∧ Φ x = 0 ∧ u ≠ 0 ∧
+      ∀ y ∈ Φ.source, mfderiv I 𝓘(ℝ, E) Φ y (v y) = u := by
+  obtain ⟨e, u, he, hxe, hu, heu⟩ :=
+    exists_chart_mfderiv_eq_const hm hmn BoundarylessManifold.isInteriorPoint hv hU hx
+  -- Follow the extended chart by the translation sending the image of `x` to `0`.
+  set Φ₀ := e.toPartialDiffeomorphOfMemMaximalAtlas he
+  let T : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E m :=
+    { toPartialEquiv := (Homeomorph.subRight (Φ₀ x)).toPartialEquiv
+      open_source := isOpen_univ
+      open_target := isOpen_univ
+      contMDiffOn_toFun := (contDiff_id.sub contDiff_const).contMDiff.contMDiffOn
+      contMDiffOn_invFun := (contDiff_id.add contDiff_const).contMDiff.contMDiffOn }
+  have hT (z : E) : T z = z - Φ₀ x := rfl
+  have hsource : (Φ₀.trans T).source = e.source := by
+    simp [Φ₀, T]
+  refine ⟨Φ₀.trans T, u, hsource ▸ hxe, by simp [hT], hu, fun y hy ↦ ?_⟩
+  rw [hsource] at hy
+  have hcomp : ⇑(Φ₀.trans T) = (fun z ↦ z - Φ₀ x) ∘ (I ∘ e) := by
+    ext z
+    simp [hT, Φ₀]
+  have hd : MDifferentiableAt I 𝓘(ℝ, E) (I ∘ e) y := by
+    rw [← OpenPartialHomeomorph.coe_toPartialDiffeomorphOfMemMaximalAtlas e he]
+    exact Φ₀.mdifferentiableAt (by simpa using (zero_lt_one.trans_le hm).ne')
+      (by simpa [Φ₀] using hy)
+  -- The translation has derivative the identity, so it does not change the image of `v y`.
+  have hsub : HasMFDerivAt 𝓘(ℝ, E) 𝓘(ℝ, E) (fun z : E ↦ z - Φ₀ x) (I (e y))
+      (ContinuousLinearMap.id ℝ E) :=
+    ((hasFDerivAt_id _).sub_const _).hasMFDerivAt
+  rw [hcomp, (hsub.comp y hd.hasMFDerivAt).mfderiv]
+  exact heu y hy
 
 end TauCeti

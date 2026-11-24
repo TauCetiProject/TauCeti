@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.VectorBundle.Basic
 
 import TauCeti.Topology.VectorBundle.Smul
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Continuous sections of vector bundles and partitions of unity
@@ -97,12 +98,10 @@ theorem ContinuousWithinAt.add_totalSpace
     (ht : ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (t y)) u y₀) :
     ContinuousWithinAt (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) u y₀ := by
   rw [FiberBundle.continuousWithinAt_totalSpace] at hs ht ⊢
-  let e := trivializationAt F E (b y₀)
-  have hy₀ : b y₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E (b y₀)
-  refine ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq ?_
-    ((e.linear 𝕜 hy₀).map_add (s y₀) (t y₀))⟩
-  filter_upwards [hs.1.eventually (e.open_baseSet.mem_nhds hy₀)] with y hy
-  exact (e.linear 𝕜 hy).map_add (s y) (t y)
+  obtain ⟨h, h₀⟩ :=
+    (trivializationAt F E (b y₀)).toPretrivialization.snd_apply_mk_op_eventuallyEq_and_eq 𝕜
+      (s := s) (t := t) (fun _ g ↦ g.map_add) hs.1 (mem_baseSet_trivializationAt F E (b y₀))
+  exact ⟨hs.1, (hs.2.add ht.2).congr_of_eventuallyEq h h₀⟩
 
 variable (𝕜) in
 include 𝕜 in

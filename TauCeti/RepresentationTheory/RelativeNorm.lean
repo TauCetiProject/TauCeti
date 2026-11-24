@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
@@ -47,6 +48,13 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
   vectors, over any semiring.
 * `Representation.relNorm_apply_of_forall_apply_eq`: on `G`-fixed vectors the relative norm is
   `[G : H] • ·`, over any semiring.
+* `Representation.relNorm_linHom_apply`, `Representation.relNorm_linHom_apply_comm`,
+  `Representation.relNorm_linHom_mem`, `Representation.relNorm_linHom_apply_of_mem`: relative-norm
+  averaging of linear maps under conjugation, sending `H`-equivariant maps to `G`-equivariant maps
+  and scaling projections onto `G`-invariant submodules by `[G : H]`.
+* `Representation.isProj_inv_index_smul_relNorm_linHom`: when `[G : H]` is invertible, the
+  normalized relative norm of a projection onto a `G`-invariant submodule is again a projection
+  onto it.
 * `Representation.relTransfer_mem_coinvariantsKer`: the relative transfer carries the augmentation
   submodule of `G` into the augmentation submodule of `H`.
 * `Representation.relTransfer_sub_index_nsmul_mem`: modulo the augmentation submodule of `G` the
@@ -190,6 +198,74 @@ theorem relNorm_apply_of_forall_apply_eq {x : V} (hx : ∀ g : G, ρ g x = x) :
 end FixedVectors
 
 end Semiring
+
+section LinHom
+
+variable [CommSemiring R] [AddCommMonoid V] [Module R V] {H : Subgroup G} [Fintype (G ⧸ H)]
+
+/-- The relative norm of the conjugation action on linear maps between two representations sums
+`σ q.out ∘ f ∘ ρ q.out⁻¹` over the chosen coset representatives of `H`. -/
+theorem relNorm_linHom_apply {W : Type*} [AddCommMonoid W] [Module R W]
+    (ρ : Representation R G V) (σ : Representation R G W) (f : V →ₗ[R] W) (x : V) :
+    relNorm (linHom ρ σ) H f x = ∑ q : G ⧸ H, σ q.out (f (ρ q.out⁻¹ x)) := by
+  simp only [relNorm_apply, LinearMap.sum_apply, linHom_apply, LinearMap.comp_apply]
+
+/-- Averaging an `H`-equivariant linear map `f` over a left transversal of `H` via `relNorm`
+produces a `G`-equivariant linear map. -/
+theorem relNorm_linHom_apply_comm {W : Type*} [AddCommMonoid W] [Module R W]
+    (ρ : Representation R G V) (σ : Representation R G W)
+    {f : V →ₗ[R] W} (hf : ∀ h : H, ∀ x : V, f (ρ h x) = σ h (f x))
+    (g : G) (x : V) :
+    relNorm (linHom ρ σ) H f (ρ g x) = σ g (relNorm (linHom ρ σ) H f x) := by
+  have hfix (h : H) : linHom ρ σ h f = f := by
+    ext y
+    rw [linHom_apply, LinearMap.comp_apply, LinearMap.comp_apply, ← hf h,
+      ← mul_apply_eq_comp (ρ h), ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+  have h := LinearMap.congr_fun (relNorm_apply_eq_self (linHom ρ σ) hfix g) (ρ g x)
+  rw [linHom_apply, LinearMap.comp_apply, LinearMap.comp_apply, ← mul_apply_eq_comp (ρ g⁻¹),
+    ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self] at h
+  exact h.symm
+
+/-- If `S` is a `G`-invariant submodule and `f` maps into `S`, then `relNorm (linHom ρ ρ) H f`
+also maps into `S`. -/
+theorem relNorm_linHom_mem (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S) {f : V →ₗ[R] V} (hf : ∀ x : V, f x ∈ S) (x : V) :
+    relNorm (linHom ρ ρ) H f x ∈ S := by
+  rw [relNorm_linHom_apply]
+  exact Submodule.sum_mem S fun q _ ↦ hS q.out _ (hf _)
+
+/-- If `S` is a `G`-invariant submodule and `f` fixes `S` pointwise, then `relNorm (linHom ρ ρ) H f`
+acts on `S` as multiplication by the index `[G : H]`. -/
+theorem relNorm_linHom_apply_of_mem (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S) {f : V →ₗ[R] V} (hf : ∀ x ∈ S, f x = x)
+    {x : V} (hx : x ∈ S) :
+    relNorm (linHom ρ ρ) H f x = H.index • x := by
+  have hterm (q : G ⧸ H) : ρ q.out (f (ρ q.out⁻¹ x)) = x := by
+    rw [hf _ (hS q.out⁻¹ x hx), ← mul_apply_eq_comp (ρ q.out), ← map_mul, mul_inv_cancel, map_one,
+      one_apply_eq_self]
+  rw [relNorm_linHom_apply, Finset.sum_congr rfl fun q _ ↦ hterm q, Finset.sum_const,
+    Finset.card_univ, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
+
+end LinHom
+
+section Semifield
+
+variable [Semifield R] [AddCommMonoid V] [Module R V] {H : Subgroup G} [Fintype (G ⧸ H)]
+
+/-- **Averaging a projection.** If `S` is a `G`-invariant submodule, `f` is a projection onto `S`
+and the index `[G : H]` is invertible, then `[G : H]⁻¹ • relNorm (linHom ρ ρ) H f` is again a
+projection onto `S`. It is `G`-equivariant when `f` is `H`-equivariant, by
+`Representation.relNorm_linHom_apply_comm`. -/
+theorem isProj_inv_index_smul_relNorm_linHom (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S)
+    {f : V →ₗ[R] V} (hf : LinearMap.IsProj S f) (hH : (H.index : R) ≠ 0) :
+    LinearMap.IsProj S ((H.index : R)⁻¹ • relNorm (linHom ρ ρ) H f) where
+  map_mem x := S.smul_mem _ (relNorm_linHom_mem ρ hS hf.map_mem x)
+  map_id x hx := by
+    rw [LinearMap.smul_apply, relNorm_linHom_apply_of_mem ρ hS hf.map_id hx,
+      ← Nat.cast_smul_eq_nsmul R, smul_smul, inv_mul_cancel₀ hH, one_smul]
+
+end Semifield
 
 section Ring
 

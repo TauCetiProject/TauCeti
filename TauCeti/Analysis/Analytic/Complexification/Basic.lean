@@ -8,11 +8,10 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Complex.Basic
 import TauCeti.Analysis.Analytic.ConvergenceRadius
-import Mathlib.Analysis.Analytic.CPolynomial
-import Mathlib.Analysis.Analytic.IsolatedZeros
+import TauCeti.Analysis.Analytic.Subfield
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.LinearAlgebra.Multilinear.Basis
-import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Complexification of real analytic functions
@@ -41,11 +40,10 @@ functions, such as the local behaviour of roots of a polynomial with analytic co
 applied to real analytic data.
 
 The complexification is determined by the real function: a complex analytic function vanishing at
-the real points near a real point vanishes near it. The proof restricts the power series to the
-real points, where it represents zero, so each homogeneous term vanishes on real vectors; along the
-complex line through two real vectors such a term is an entire function vanishing on the real
-axis, hence zero. Consequently every complex analytic extension of a real-valued real analytic germ
-commutes with complex conjugation near the point, not only the one constructed here.
+the real points near a real point vanishes near it. This is the case `ℝ ⊆ ℂ` of the identity
+theorem across a subfield, `AnalyticAt.eventually_eq_zero_of_eventually_algebraMap`. Consequently
+every complex analytic extension of a real-valued real analytic germ commutes with complex
+conjugation near the point, not only the one constructed here.
 
 ## Main declarations
 
@@ -61,12 +59,15 @@ commutes with complex conjugation near the point, not only the one constructed h
 * `AnalyticAt.exists_complexification_pi`: the same for real analytic maps to `κ → ℝ`.
 * `AnalyticAt.exists_complexification_prod`: the same for real analytic functions on
   `(ι → ℝ) × ℝ`, with values in `ℂ` on `(ι → ℂ) × ℂ`.
-* `AnalyticAt.eventually_eq_zero_of_eventually_real`, `AnalyticAt.eventuallyEq_of_eventually_real`:
+* `AnalyticAt.eventually_eq_zero_of_eventually_real`, `AnalyticAt.eventuallyEq_of_eventually_real`,
+  `AnalyticAt.eventuallyEq_of_eventually_real_prod`:
   the identity theorem for complex analytic functions on the real points.
 * `AnalyticAt.eventually_comp_eq_id_of_eventually_real`: complex analytic extensions preserve a
   composition law equal to the identity near a real point.
 * `AnalyticAt.eventually_apply_star`: a complex analytic function that is real at the real points
   near a real point commutes with conjugation near it.
+* `TauCeti.exists_complexification_family`: germ-level complexification for an indexed family of
+  real analytic functions at a common real point.
 * `TauCeti.eventually_ofReal_re_eq`: conversely, a function commuting with conjugation is real at
   points fixed by conjugation.
 
@@ -211,40 +212,6 @@ theorem norm_complexifyPi_le_two_pow :
 
 end ContinuousMultilinearMap
 
-namespace ContinuousMultilinearMap
-
-variable {ν ι E : Type*} [Finite ν] [Finite ι] [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- A complex multilinear map on `ι → ℂ` whose values on constant tuples of real vectors vanish
-also vanishes on constant tuples of complex vectors. -/
-theorem apply_const_eq_zero_of_forall_ofReal {Q : ContinuousMultilinearMap ℂ (fun _ : ν ↦ ι → ℂ) E}
-    (h : ∀ y : ι → ℝ, Q (fun _ ↦ fun i ↦ (y i : ℂ)) = 0) (z : ι → ℂ) : Q (fun _ ↦ z) = 0 := by
-  have := Fintype.ofFinite ν
-  have := Fintype.ofFinite ι
-  set x : ι → ℂ := fun i ↦ ((z i).re : ℂ)
-  set y : ι → ℂ := fun i ↦ ((z i).im : ℂ)
-  have hz : z = x + Complex.I • y := by
-    ext i; simp [x, y, mul_comm Complex.I, Complex.re_add_im]
-  -- `t ↦ Q (x + t y, …, x + t y)` is entire and vanishes on the real line, so it vanishes at `I`
-  set φ : ℂ → E := fun t ↦ Q (fun _ ↦ x + t • y)
-  have hφ : AnalyticOnNhd ℂ φ univ := fun t _ ↦ by
-    have : AnalyticAt ℂ (fun t : ℂ ↦ fun _ : ν ↦ x + t • y) t :=
-      AnalyticAt.pi fun _ ↦ analyticAt_const.add (analyticAt_id.smul analyticAt_const)
-    exact Q.analyticAt.comp this
-  have hreal (t : ℝ) : φ t = 0 := by
-    convert h fun i ↦ (z i).re + t * (z i).im using 2
-    ext _; simp [x, y]
-  have hfreq : ∃ᶠ t in 𝓝[≠] (0 : ℂ), φ t = 0 := by
-    have hT : Tendsto (fun t : ℝ ↦ (t : ℂ)) (𝓝[≠] 0) (𝓝[≠] 0) :=
-      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-        ((Complex.continuous_ofReal.tendsto' 0 0 (by simp)).mono_left nhdsWithin_le_nhds)
-        (eventually_nhdsWithin_of_forall fun t ht ↦ by simpa using ht)
-    exact hT.frequently (Frequently.of_forall hreal)
-  simpa [φ, ← hz] using hφ.eqOn_zero_of_preconnected_of_frequently_eq_zero isPreconnected_univ
-    (mem_univ 0) hfreq (mem_univ Complex.I)
-
-end ContinuousMultilinearMap
-
 namespace FormalMultilinearSeries
 
 variable {ι : Type*} [Fintype ι]
@@ -321,23 +288,9 @@ theorem eventually_eq_zero_of_eventually_real {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] {F : (ι → ℂ) → E} {a : ι → ℝ} (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ)))
     (h : ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = 0) :
     ∀ᶠ z in 𝓝 (fun i ↦ (a i : ℂ)), F z = 0 := by
-  obtain ⟨Q, r, hQ⟩ := hF
-  let u : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
-  have hu (x : ι → ℝ) : u x = fun i ↦ (x i : ℂ) := by ext i; simp [u]
-  -- restricted to the real points, the power series of `F` represents the zero function
-  have h0 : HasFPowerSeriesAt 0 ((Q.restrictScalars ℝ).compContinuousLinearMap u) a :=
-    (hQ.hasFPowerSeriesAt.restrictScalars (𝕜 := ℝ)).compContinuousLinearMap (u := u)
-      |>.congr (h.mono fun x hx ↦ by simpa [hu] using hx)
-  have hQ0 (n : ℕ) (z : ι → ℂ) : Q n (fun _ ↦ z) = 0 :=
-    (Q n).apply_const_eq_zero_of_forall_ofReal (fun y ↦ by
-      simpa [Function.comp_def, hu] using h0.apply_eq_zero n y) z
-  filter_upwards [Metric.eball_mem_nhds _ hQ.r_pos] with z hz
-  have hz' : z - (fun i ↦ (a i : ℂ)) ∈ Metric.eball 0 r := by
-    rwa [Metric.mem_eball, edist_zero_right, ← eDist_eq_eNorm_sub]
-  have hsum := hQ.hasSum hz'
-  rw [add_sub_cancel] at hsum
-  simp only [hQ0] at hsum
-  exact hsum.unique hasSum_zero
+  have key := eventually_eq_zero_of_eventually_algebraMap (E := ℝ) (C := ℂ) (F := F) (a := a)
+  simp only [Complex.coe_algebraMap] at key
+  exact key hF h
 
 /-- Two complex analytic functions of finitely many variables that agree at the real points near a
 real point agree near that point. -/
@@ -348,6 +301,46 @@ theorem eventuallyEq_of_eventually_real {E : Type*} [NormedAddCommGroup E] [Norm
     F =ᶠ[𝓝 fun i ↦ (a i : ℂ)] G := by
   filter_upwards [(hF.sub hG).eventually_eq_zero_of_eventually_real
     (h.mono fun x hx ↦ sub_eq_zero.2 hx)] with z hz using sub_eq_zero.1 hz
+
+private theorem piProdEquivPiOption_ofReal {ι : Type*} (p : (ι → ℝ) × ℝ) :
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ : Option ι ↦ ℂ)
+        ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) =
+      fun s ↦ (ContinuousLinearEquiv.piProdEquivPiOption ℝ
+        (M := fun _ : Option ι ↦ ℝ) p s : ℂ) := by
+  ext (i | _) <;> simp
+
+private theorem piProdEquivPiOption_star {ι : Type*} (p : (ι → ℂ) × ℂ) :
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ : Option ι ↦ ℂ) (star p) =
+      star (ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ : Option ι ↦ ℂ) p) := by
+  ext (i | _) <;> simp
+
+/-- Two complex analytic functions on `(ι → ℂ) × ℂ` that agree at the real points near a real
+point `(x₀, t₀)` agree near `(x₀, t₀)`. -/
+theorem eventuallyEq_of_eventually_real_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {F G : (ι → ℂ) × ℂ → E} {x₀ : ι → ℝ} {t₀ : ℝ}
+    (hF : AnalyticAt ℂ F ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)))
+    (hG : AnalyticAt ℂ G ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)))
+    (h : ∀ᶠ p in 𝓝 (x₀, t₀),
+      F ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = G ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ))) :
+    F =ᶠ[𝓝 ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ))] G := by
+  let L : ((ι → ℝ) × ℝ) ≃L[ℝ] (Option ι → ℝ) :=
+    ContinuousLinearEquiv.piProdEquivPiOption ℝ (M := fun _ ↦ ℝ)
+  let Lℂ : ((ι → ℂ) × ℂ) ≃L[ℂ] (Option ι → ℂ) :=
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ ↦ ℂ)
+  have hpt : Lℂ.symm (fun s ↦ (L (x₀, t₀) s : ℂ)) = ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)) := by
+    rw [← piProdEquivPiOption_ofReal, Lℂ.symm_apply_apply]
+  have hFG : (F ∘ Lℂ.symm) =ᶠ[𝓝 fun s ↦ (L (x₀, t₀) s : ℂ)] (G ∘ Lℂ.symm) := by
+    refine (hF.comp_of_eq (Lℂ.symm.analyticAt _) hpt).eventuallyEq_of_eventually_real
+      (hG.comp_of_eq (Lℂ.symm.analyticAt _) hpt) ?_
+    filter_upwards [(L.symm.continuous.tendsto' (L (x₀, t₀)) (x₀, t₀)
+      (L.symm_apply_apply _)).eventually h] with y hy
+    have hy' : Lℂ.symm (fun s ↦ (y s : ℂ)) =
+        ((fun i ↦ ((L.symm y).1 i : ℂ)), ((L.symm y).2 : ℂ)) := by
+      simp [L, Lℂ]
+    simpa only [Function.comp_apply, hy'] using hy
+  filter_upwards [(Lℂ.continuous.tendsto' _ _ (piProdEquivPiOption_ofReal (x₀, t₀))).eventually
+    hFG] with p hp
+  simpa only [Function.comp_apply, Lℂ.symm_apply_apply] using hp
 
 /-- If real maps have composition `g ∘ f` equal to the identity near a real point, their complex
 analytic extensions compose to the identity near the corresponding complex point. -/
@@ -440,25 +433,18 @@ theorem exists_complexification_prod {f : (ι → ℝ) × ℝ → ℝ} {x₀ : �
     ∃ F : (ι → ℂ) × ℂ → ℂ, AnalyticAt ℂ F ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)) ∧
       (∀ᶠ p in 𝓝 (x₀, t₀), F ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = f p) ∧
         ∀ p, F (star p) = star (F p) := by
-  -- identify `(ι → 𝕜) × 𝕜` with `Option ι → 𝕜`
   let L : ((ι → ℝ) × ℝ) ≃L[ℝ] (Option ι → ℝ) :=
-    ((LinearEquiv.prodComm ℝ _ _).trans
-      (LinearEquiv.piOptionEquivProd ℝ (M := fun _ : Option ι ↦ ℝ)).symm).toContinuousLinearEquiv
+    ContinuousLinearEquiv.piProdEquivPiOption ℝ (M := fun _ ↦ ℝ)
   let Lℂ : ((ι → ℂ) × ℂ) ≃L[ℂ] (Option ι → ℂ) :=
-    ((LinearEquiv.prodComm ℂ _ _).trans
-      (LinearEquiv.piOptionEquivProd ℂ (M := fun _ : Option ι ↦ ℂ)).symm).toContinuousLinearEquiv
-  have hL (p : (ι → ℝ) × ℝ) : Lℂ ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = fun o ↦ (L p o : ℂ) := by
-    funext o
-    cases o <;> simp [L, Lℂ, LinearEquiv.piOptionEquivProd]
-  have hLstar (p : (ι → ℂ) × ℂ) : Lℂ (star p) = star (Lℂ p) := by
-    funext o
-    cases o <;> simp [Lℂ, LinearEquiv.piOptionEquivProd]
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ ↦ ℂ)
   obtain ⟨r, hr, G, hG, hGf, hGstar⟩ :=
     (hf.comp_of_eq (L.symm.analyticAt _) (L.symm_apply_apply _)).exists_complexification
-  refine ⟨G ∘ Lℂ, (hG _ (mem_ball_self hr)).comp_of_eq (Lℂ.analyticAt _) (hL (x₀, t₀)), ?_,
-    fun p ↦ by simp only [Function.comp_apply, hLstar, hGstar]⟩
+  refine ⟨G ∘ Lℂ, (hG _ (mem_ball_self hr)).comp_of_eq (Lℂ.analyticAt _)
+      (piProdEquivPiOption_ofReal (x₀, t₀)), ?_,
+    fun p ↦ by simp only [Function.comp_apply, Lℂ, piProdEquivPiOption_star, hGstar]⟩
   filter_upwards [L.continuous.continuousAt.preimage_mem_nhds (ball_mem_nhds _ hr)] with p hp
-  rw [Function.comp_apply, hL, hGf _ hp, Function.comp_apply, L.symm_apply_apply]
+  rw [Function.comp_apply, piProdEquivPiOption_ofReal, hGf _ hp, Function.comp_apply,
+    L.symm_apply_apply]
 
 /-- **Conjugation compatibility of complexifications.** A complex analytic function of finitely
 many variables that takes real values at the real points near a real point `a` commutes with
@@ -487,6 +473,19 @@ theorem eventually_apply_star {F : (ι → ℂ) → ℂ} {a : ι → ℝ}
 end AnalyticAt
 
 namespace TauCeti
+
+/-- Complexifies an indexed family of real analytic functions at `a : ι → ℝ`, returning
+holomorphic germs at `fun j ↦ (a j : ℂ)` that agree with the original functions near `a` and
+commute with complex conjugation. -/
+theorem exists_complexification_family {ι κ : Type*} [Fintype ι] {a : ι → ℝ}
+    {f : κ → (ι → ℝ) → ℝ} (hf : ∀ k, AnalyticAt ℝ (f k) a) :
+    ∃ F : κ → (ι → ℂ) → ℂ,
+      (∀ k, AnalyticAt ℂ (F k) fun j ↦ (a j : ℂ)) ∧
+      (∀ k, ∀ᶠ x in 𝓝 a, (F k fun j ↦ (x j : ℂ)) = f k x) ∧
+      (∀ k z, F k (star z) = star (F k z)) := by
+  choose ρ hρ F hF hFf hFstar using fun k ↦ (hf k).exists_complexification
+  exact ⟨F, fun k ↦ hF k _ (Metric.mem_ball_self (hρ k)),
+    fun k ↦ Filter.mem_of_superset (Metric.ball_mem_nhds a (hρ k)) (hFf k), hFstar⟩
 
 /-- A complex-valued function commuting with conjugation is real at the points `φ x` near `x₀`,
 when the values of `φ` are fixed by conjugation and `φ` is continuous at `x₀`. -/

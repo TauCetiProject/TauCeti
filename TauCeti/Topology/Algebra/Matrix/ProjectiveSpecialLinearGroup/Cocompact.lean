@@ -70,7 +70,7 @@ theorem exists_tendsto_inv_smul_of_tendsto_cocompact {n 𝕜 : Type*} [Fintype n
       (norm_le_iff (norm_nonneg _)).2 fun i j ↦ hp k (i, j)
   have hm0 : ∀ k, m k ≠ 0 := fun k ↦ by
     rw [← norm_ne_zero_iff, hm_norm, norm_ne_zero_iff]
-    exact fun h ↦ by simpa [h] using (A k).2
+    exact fun h ↦ by simpa [h] using (A k).property
   set C : ℕ → Matrix n n 𝕜 := fun k ↦ (m k)⁻¹ • (A k : Matrix n n 𝕜) with hC
   have hC_norm : ∀ k, ‖C k‖ = 1 := fun k ↦ by
     rw [hC, norm_smul, norm_inv, hm_norm, inv_mul_cancel₀]
@@ -86,7 +86,7 @@ theorem exists_tendsto_inv_smul_of_tendsto_cocompact {n 𝕜 : Type*} [Fintype n
     simp at hB1
   · refine tendsto_nhds_unique ((continuous_id.matrix_det.tendsto B).comp hCB) ?_
     have hdetC : ∀ k, (C k).det = (m k)⁻¹ ^ Fintype.card n := fun k ↦ by
-      simp [hC, (A k).2]
+      simp [hC, (A k).property]
     simp only [Function.comp_def, id_eq, hdetC]
     rw [tendsto_zero_iff_norm_tendsto_zero]
     simpa [hm_norm, Fintype.card_ne_zero] using ((tendsto_inv_atTop_zero.comp

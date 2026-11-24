@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Complex.Conformal.NormalFamilies
+import TauCeti.Analysis.Complex.HolomorphicFunctions.NormalFamilies
 import TauCeti.MeasureTheory.Integral.RiemannSum
 
 /-!

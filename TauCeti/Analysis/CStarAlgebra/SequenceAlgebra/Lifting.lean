@@ -6,29 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Stability
+public import TauCeti.Analysis.CStarAlgebra.Lift
 public import TauCeti.Analysis.CStarAlgebra.SequenceAlgebra.Basic
 
 /-!
 # Lifting elements from C⋆-sequence algebras and ultrapowers
 
-Using the quantitative continuous-functional-calculus perturbation bounds from
-`TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Stability`, we lift structured elements
-from filter quotients `lp A ∞ ⧸ lp.nullIdeal A l` (and in particular from `CStarFilterQuotient A l`,
-`CStarSequenceAlgebra A`, and `CStarUltrapower A ω`) to bounded coordinate families satisfying the
-same relation at every index:
-
-* `lp.exists_isSelfAdjoint_mk_nullIdeal_eq_and_norm_eq`: self-adjoint elements lift to self-adjoint
-  bounded families of the same norm;
-* `lp.exists_isStarProjection_mk_nullIdeal_eq`: star projections lift to star projections;
-* `lp.exists_star_mul_self_eq_one_and_mk_nullIdeal_eq`: isometries (`star x * x = 1`) lift to
-  isometries;
-* `lp.unitary_map_mkUnitalStarAlgHom_surjective` and
-  `TauCeti.CStarFilterQuotient.exists_unitary_family_mk_eq`: unitaries lift to unitaries (hence to
-  coordinate families `u : ι → unitary A`).
-
-Finally, `TauCeti.CStarSequenceAlgebra.notMem_unitary_one_sub_invSuccSmul_one` exhibits the sequence
-`n ↦ (1 - (n + 1)⁻¹) • 1`, whose class in `CStarSequenceAlgebra A` is `1` (hence unitary) even
-though the sequence vanishes at `n = 0` and is therefore not unitary in `ℓ^∞(ℕ, A)`.
+Using `TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Stability` and
+`TauCeti.Analysis.CStarAlgebra.Lift`, we lift structured elements from `lp A ∞ ⧸ lp.nullIdeal A l`
+(and hence `CStarFilterQuotient A l`, `CStarSequenceAlgebra A`, and `CStarUltrapower A ω`) to
+bounded coordinate families satisfying the same relation at every index: norm-preserving
+self-adjoint lifts (`lp.exists_isSelfAdjoint_mk_nullIdeal_eq_and_norm_eq`), star projections
+(`lp.exists_isStarProjection_mk_nullIdeal_eq`), isometries
+(`lp.exists_star_mul_self_eq_one_and_mk_nullIdeal_eq`), and unitaries
+(`lp.unitary_map_mkUnitalStarAlgHom_surjective`,
+`TauCeti.CStarFilterQuotient.exists_unitary_family_mk_eq`), together with the non-unitary lift
+`1 - invSuccSmul 1` of `1` (`TauCeti.CStarSequenceAlgebra.notMem_unitary_one_sub_invSuccSmul_one`).
 
 ## References
 
@@ -43,72 +36,6 @@ open scoped ENNReal CStarAlgebra
 
 noncomputable section
 
-section Helpers
-
-private def liftProjCoord {B : Type*} [NonUnitalCStarAlgebra B] (x : B) (hx : IsSelfAdjoint x) :
-    B := by
-  classical
-  exact if h : ‖x * x - x‖ < 1 / 9 then
-    Classical.choose (hx.exists_isStarProjection_and_norm_sub_le h)
-  else 0
-
-private theorem isStarProjection_liftProjCoord {B : Type*} [NonUnitalCStarAlgebra B] (x : B)
-    (hx : IsSelfAdjoint x) : IsStarProjection (liftProjCoord x hx) := by
-  classical
-  unfold liftProjCoord
-  split_ifs with h
-  · exact (Classical.choose_spec (hx.exists_isStarProjection_and_norm_sub_le h)).1
-  · exact .zero B
-
-private theorem norm_liftProjCoord_sub_le {B : Type*} [NonUnitalCStarAlgebra B] {x : B}
-    (hx : IsSelfAdjoint x) (h : ‖x * x - x‖ < 1 / 9) :
-    ‖liftProjCoord x hx - x‖ ≤ 2 * ‖x * x - x‖ := by
-  classical
-  simp only [liftProjCoord, h, ↓reduceDIte]
-  exact (Classical.choose_spec (hx.exists_isStarProjection_and_norm_sub_le h)).2
-
-private def liftIsometryCoord {B : Type*} [CStarAlgebra B] (x : B) : B := by
-  classical
-  exact if h : ‖star x * x - 1‖ < 1 / 2 then
-    Classical.choose (TauCeti.exists_star_mul_self_eq_one_and_norm_sub_le h)
-  else 1
-
-private theorem star_liftIsometryCoord_mul_self {B : Type*} [CStarAlgebra B] (x : B) :
-    star (liftIsometryCoord x) * liftIsometryCoord x = 1 := by
-  classical
-  unfold liftIsometryCoord
-  split_ifs with h
-  · exact (Classical.choose_spec (TauCeti.exists_star_mul_self_eq_one_and_norm_sub_le h)).1
-  · simp
-
-private theorem norm_liftIsometryCoord_le {B : Type*} [CStarAlgebra B] [Nontrivial B] (x : B) :
-    ‖liftIsometryCoord x‖ ≤ 1 := by
-  have hsq : ‖liftIsometryCoord x‖ ^ 2 = 1 := by
-    rw [sq, ← CStarRing.norm_star_mul_self, star_liftIsometryCoord_mul_self, norm_one]
-  nlinarith [norm_nonneg (liftIsometryCoord x)]
-
-private theorem norm_liftIsometryCoord_sub_le {B : Type*} [CStarAlgebra B] {x : B}
-    (h : ‖star x * x - 1‖ < 1 / 2) :
-    ‖liftIsometryCoord x - x‖ ≤ ‖x‖ * ‖star x * x - 1‖ := by
-  classical
-  simp only [liftIsometryCoord, h, ↓reduceDIte]
-  exact (Classical.choose_spec (TauCeti.exists_star_mul_self_eq_one_and_norm_sub_le h)).2
-
-private def liftUnitaryCoord {B : Type*} [CStarAlgebra B] (x : B) : unitary B := by
-  classical
-  exact if h : ‖star x * x - 1‖ < 1 / 2 ∧ ‖x * star x - 1‖ < 1 then
-    Classical.choose (TauCeti.exists_unitary_and_norm_sub_le h.1 h.2)
-  else 1
-
-private theorem norm_liftUnitaryCoord_sub_le {B : Type*} [CStarAlgebra B] {x : B}
-    (h₁ : ‖star x * x - 1‖ < 1 / 2) (h₂ : ‖x * star x - 1‖ < 1) :
-    ‖(liftUnitaryCoord x : B) - x‖ ≤ ‖x‖ * ‖star x * x - 1‖ := by
-  classical
-  simp only [liftUnitaryCoord, h₁, h₂, and_self, ↓reduceDIte]
-  exact Classical.choose_spec (TauCeti.exists_unitary_and_norm_sub_le h₁ h₂)
-
-end Helpers
-
 namespace lp
 
 section NonUnital
@@ -121,16 +48,10 @@ theorem exists_isSelfAdjoint_mk_nullIdeal_eq_and_norm_eq (l : Filter ι)
     {x : lp A ∞ ⧸ lp.nullIdeal A l} (hx : IsSelfAdjoint x) :
     ∃ a : lp A ∞, IsSelfAdjoint a ∧ TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) a = x ∧
       ‖a‖ = ‖x‖ := by
-  obtain ⟨b, rfl, hb⟩ := exists_mk_nullIdeal_eq_and_norm_eq l x
-  have ha_mk : TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) (realPart b : lp A ∞) =
-      TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) b := by
-    rw [← TwoSidedIdeal.Quotient.mkStarAlgHom_apply, map_realPart,
-      TwoSidedIdeal.Quotient.mkStarAlgHom_apply, hx.coe_realPart]
-  refine ⟨(realPart b : lp A ∞), (realPart b).2, ha_mk, le_antisymm ?_ ?_⟩
-  · rw [AddSubgroup.norm_coe]
-    exact (realPart.norm_le b).trans_eq hb
-  · rw [← ha_mk]
-    exact TwoSidedIdeal.Quotient.norm_mk_le _ _
+  simpa only [TwoSidedIdeal.Quotient.mkStarAlgHom_apply] using
+    NonUnitalStarAlgHom.exists_isSelfAdjoint_apply_eq_norm_eq
+      (TwoSidedIdeal.Quotient.mkStarAlgHom (lp.nullIdeal A l))
+      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective (lp.nullIdeal A l) x) hx
 
 /-- **Projection lifting.** Every star projection in `lp A ∞ ⧸ lp.nullIdeal A l` lifts to a star
 projection in `lp A ∞`. -/
@@ -139,24 +60,27 @@ theorem exists_isStarProjection_mk_nullIdeal_eq (l : Filter ι)
     ∃ q : lp A ∞, IsStarProjection q ∧ TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) q = p := by
   obtain ⟨b, hb_sa, hb_mk, -⟩ :=
     exists_isSelfAdjoint_mk_nullIdeal_eq_and_norm_eq l hp.isSelfAdjoint
-  have hb_i : ∀ i, IsSelfAdjoint (b i) := isSelfAdjoint_iff.1 hb_sa
-  let q : lp A ∞ :=
-    ⟨fun i ↦ liftProjCoord (b i) (hb_i i), memℓp_infty ⟨1, by
-      rintro _ ⟨i, rfl⟩
-      exact IsStarProjection.norm_le _ (isStarProjection_liftProjCoord (b i) (hb_i i))⟩⟩
-  have hq_proj : IsStarProjection q :=
-    isStarProjection_iff.2 fun i ↦ isStarProjection_liftProjCoord (b i) (hb_i i)
+  have hb_i : ∀ i, IsSelfAdjoint (b i) := lp.isSelfAdjoint_iff.mp hb_sa
+  have hcoord (i : ι) : ∃ qᵢ : A i, IsStarProjection qᵢ ∧
+      (‖b i * b i - b i‖ < 1 / 9 → ‖qᵢ - b i‖ ≤ 2 * ‖b i * b i - b i‖) := by
+    by_cases hi : ‖b i * b i - b i‖ < 1 / 9
+    · obtain ⟨qᵢ, h₁, h₂⟩ := (hb_i i).exists_isStarProjection_and_norm_sub_le hi
+      exact ⟨qᵢ, h₁, fun _ ↦ h₂⟩
+    · exact ⟨0, .zero _, fun h ↦ (hi h).elim⟩
+  choose q₀ hq₀_proj hq₀_norm using hcoord
+  let q : lp A ∞ := ⟨q₀, memℓp_infty ⟨1, by
+    rintro _ ⟨i, rfl⟩; exact IsStarProjection.norm_le _ (hq₀_proj i)⟩⟩
+  have hbb : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (b * b) =
+      TwoSidedIdeal.Quotient.mk (nullIdeal A l) b := by
+    rw [map_mul, hb_mk, hp.isIdempotentElem.eq]
   have htend : Tendsto (fun i ↦ ‖b i * b i - b i‖) l (𝓝 0) := by
-    have hbb : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (b * b) =
-        TwoSidedIdeal.Quotient.mk (nullIdeal A l) b := by
-      rw [map_mul, hb_mk, hp.isIdempotentElem.eq]
-    simpa only [lp.infty_coeFn_mul, Pi.mul_apply] using mk_nullIdeal_eq_mk_iff.1 hbb
-  refine ⟨q, hq_proj, ?_⟩
+    simpa only [lp.infty_coeFn_mul, Pi.mul_apply] using mk_nullIdeal_eq_mk_iff.mp hbb
+  refine ⟨q, lp.isStarProjection_iff.mpr hq₀_proj, ?_⟩
   rw [← hb_mk, mk_nullIdeal_eq_mk_iff]
   refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
     (by simpa using htend.const_mul 2)
   filter_upwards [htend.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 9))] with i hi
-  exact norm_liftProjCoord_sub_le (hb_i i) hi
+  exact hq₀_norm i hi
 
 end NonUnital
 
@@ -170,26 +94,34 @@ theorem exists_star_mul_self_eq_one_and_mk_nullIdeal_eq (l : Filter ι)
     {x : lp A ∞ ⧸ lp.nullIdeal A l} (hx : star x * x = 1) :
     ∃ v : lp A ∞, star v * v = 1 ∧ TwoSidedIdeal.Quotient.mk (lp.nullIdeal A l) v = x := by
   obtain ⟨b, hb_mk⟩ := TwoSidedIdeal.Quotient.mk_surjective (lp.nullIdeal A l) x
-  let v : lp A ∞ :=
-    ⟨fun i ↦ liftIsometryCoord (b i), memℓp_infty ⟨1, by
-      rintro _ ⟨i, rfl⟩
-      exact norm_liftIsometryCoord_le (b i)⟩⟩
+  have hcoord (i : ι) : ∃ vᵢ : A i, star vᵢ * vᵢ = 1 ∧
+      (‖star (b i) * b i - 1‖ < 1 / 2 → ‖vᵢ - b i‖ ≤ ‖b i‖ * ‖star (b i) * b i - 1‖) := by
+    by_cases hi : ‖star (b i) * b i - 1‖ < 1 / 2
+    · obtain ⟨vᵢ, h₁, h₂⟩ := TauCeti.exists_star_mul_self_eq_one_and_norm_sub_le hi
+      exact ⟨vᵢ, h₁, fun _ ↦ h₂⟩
+    · exact ⟨1, by simp, fun h ↦ (hi h).elim⟩
+  choose v₀ hv₀_iso hv₀_norm using hcoord
+  let v : lp A ∞ := ⟨v₀, memℓp_infty ⟨1, by
+    rintro _ ⟨i, rfl⟩
+    have hsq : ‖v₀ i‖ ^ 2 = 1 := by
+      rw [sq, ← CStarRing.norm_star_mul_self, hv₀_iso i, norm_one]
+    nlinarith [norm_nonneg (v₀ i)]⟩⟩
   have hv_iso : star v * v = 1 := by
     ext i
     simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
-      Pi.one_apply] using star_liftIsometryCoord_mul_self (b i)
+      Pi.one_apply] using hv₀_iso i
+  have hb1 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (star b * b) =
+      TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
+    rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk, hx]
   have htend : Tendsto (fun i ↦ ‖star (b i) * b i - 1‖) l (𝓝 0) := by
-    have hb1 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (star b * b) =
-        TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
-      rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk, hx]
     simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
-      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.1 hb1
+      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.mp hb1
   refine ⟨v, hv_iso, ?_⟩
   rw [← hb_mk, mk_nullIdeal_eq_mk_iff]
   refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
     (by simpa using htend.const_mul ‖b‖)
   filter_upwards [htend.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2))] with i hi
-  exact (norm_liftIsometryCoord_sub_le hi).trans
+  exact (hv₀_norm i hi).trans
     (mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _))
 
 /-- **Unitary lifting.** For any filter `l : Filter ι`, the quotient map from `lp A ∞` to
@@ -200,21 +132,29 @@ theorem unitary_map_mkUnitalStarAlgHom_surjective (l : Filter ι) :
         (TwoSidedIdeal.Quotient.mkUnitalStarAlgHom (lp.nullIdeal A l)))) := by
   intro U
   obtain ⟨b, hb_mk⟩ := TwoSidedIdeal.Quotient.mk_surjective (lp.nullIdeal A l) (U : _)
-  let V : unitary (lp A ∞) := unitaryEquiv.symm fun i ↦ liftUnitaryCoord (b i)
+  have hcoord (i : ι) : ∃ uᵢ : unitary (A i),
+      ‖star (b i) * b i - 1‖ < 1 / 2 → ‖b i * star (b i) - 1‖ < 1 →
+        ‖(uᵢ : A i) - b i‖ ≤ ‖b i‖ * ‖star (b i) * b i - 1‖ := by
+    by_cases hi : ‖star (b i) * b i - 1‖ < 1 / 2 ∧ ‖b i * star (b i) - 1‖ < 1
+    · obtain ⟨uᵢ, h⟩ := TauCeti.exists_unitary_and_norm_sub_le hi.left hi.right
+      exact ⟨uᵢ, fun _ _ ↦ h⟩
+    · exact ⟨1, fun h₁ h₂ ↦ (hi ⟨h₁, h₂⟩).elim⟩
+  choose u₀ hu₀_norm using hcoord
+  let V : unitary (lp A ∞) := unitaryEquiv.symm u₀
+  have hb1 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (star b * b) =
+      TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
+    rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk,
+      (Unitary.mem_iff.mp U.property).left]
   have htend₁ : Tendsto (fun i ↦ ‖star (b i) * b i - 1‖) l (𝓝 0) := by
-    have hb1 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (star b * b) =
-        TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
-      rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk,
-        (Unitary.mem_iff.1 U.2).1]
     simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
-      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.1 hb1
+      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.mp hb1
+  have hb2 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (b * star b) =
+      TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
+    rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk,
+      (Unitary.mem_iff.mp U.property).right]
   have htend₂ : Tendsto (fun i ↦ ‖b i * star (b i) - 1‖) l (𝓝 0) := by
-    have hb2 : TwoSidedIdeal.Quotient.mk (nullIdeal A l) (b * star b) =
-        TwoSidedIdeal.Quotient.mk (nullIdeal A l) 1 := by
-      rw [map_mul, TwoSidedIdeal.Quotient.mk_star, TwoSidedIdeal.Quotient.mk_one, hb_mk,
-        (Unitary.mem_iff.1 U.2).2]
     simpa only [lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply, lp.infty_coeFn_one,
-      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.1 hb2
+      Pi.one_apply] using mk_nullIdeal_eq_mk_iff.mp hb2
   refine ⟨V, Subtype.ext ?_⟩
   rw [Unitary.coe_map, StarMonoidHom.ofClass_coe, TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply,
     ← hb_mk, mk_nullIdeal_eq_mk_iff]
@@ -223,7 +163,7 @@ theorem unitary_map_mkUnitalStarAlgHom_surjective (l : Filter ι) :
   filter_upwards [htend₁.eventually (gt_mem_nhds (by positivity : (0 : ℝ) < 1 / 2)),
     htend₂.eventually (gt_mem_nhds zero_lt_one)] with i hi₁ hi₂
   rw [coe_unitaryEquiv_symm_apply]
-  exact (norm_liftUnitaryCoord_sub_le hi₁ hi₂).trans
+  exact (hu₀_norm i hi₁ hi₂).trans
     (mul_le_mul_of_nonneg_right (norm_apply_le_norm ENNReal.top_ne_zero b i) (norm_nonneg _))
 
 end Unital
@@ -267,20 +207,17 @@ theorem exists_star_mul_self_eq_one_and_mk_eq (l : Filter ι)
 
 /-- The quotient map `unitalMk A l` is surjective on unitary groups. -/
 theorem unitary_map_unitalMk_surjective (l : Filter ι) :
-    Function.Surjective (Unitary.map (StarMonoidHom.ofClass (unitalMk A l))) := by
-  intro U
+    Function.Surjective (Unitary.map (StarMonoidHom.ofClass (unitalMk A l))) := fun U ↦ by
   obtain ⟨V, hV⟩ := lp.unitary_map_mkUnitalStarAlgHom_surjective (A := fun _ : ι ↦ A) l U
-  refine ⟨V, Subtype.ext ?_⟩
-  simpa [unitalMk_apply, mk_apply] using congrArg Subtype.val hV
+  exact ⟨V, Subtype.ext <| by simpa [unitalMk_apply, mk_apply] using congrArg Subtype.val hV⟩
 
 /-- Every unitary `U : unitary (CStarFilterQuotient A l)` lifts to a family `u : ι → unitary A` of
 unitaries in `A`. -/
 theorem exists_unitary_family_mk_eq (l : Filter ι) (U : unitary (CStarFilterQuotient A l)) :
     ∃ u : ι → unitary A, mk A l (lp.unitaryEquiv.symm u : lp (fun _ : ι ↦ A) ∞) = U := by
   obtain ⟨V, hV⟩ := unitary_map_unitalMk_surjective l U
-  refine ⟨lp.unitaryEquiv V, ?_⟩
-  rw [MulEquiv.symm_apply_apply]
-  simpa [unitalMk_apply] using congrArg Subtype.val hV
+  exact ⟨lp.unitaryEquiv V, by
+    rw [MulEquiv.symm_apply_apply]; simpa [unitalMk_apply] using congrArg Subtype.val hV⟩
 
 end Unital
 
@@ -303,10 +240,9 @@ theorem notMem_unitary_one_sub_invSuccSmul_one :
   intro h
   have h0 : ((star (1 - invSuccSmul (1 : A)) * (1 - invSuccSmul (1 : A))) :
       lp (fun _ : ℕ ↦ A) ∞) 0 = 1 := by
-    rw [(Unitary.mem_iff.1 h).1, lp.infty_coeFn_one, Pi.one_apply]
+    rw [(Unitary.mem_iff.mp h).left, lp.infty_coeFn_one, Pi.one_apply]
   have hz : (1 - invSuccSmul (1 : A)) 0 = (0 : A) := by
-    rw [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_one, Pi.one_apply, invSuccSmul_apply]
-    simp
+    rw [lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_one, Pi.one_apply, invSuccSmul_apply]; simp
   rw [lp.infty_coeFn_mul, Pi.mul_apply, hz, mul_zero] at h0
   exact zero_ne_one h0
 

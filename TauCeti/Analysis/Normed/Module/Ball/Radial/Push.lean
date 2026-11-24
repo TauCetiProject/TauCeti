@@ -112,23 +112,23 @@ theorem radialPushScale_nonneg (r : ℝ) (t : I) {a : ℝ} (ha : 0 ≤ a) :
     · exact mul_nonneg_of_nonpos_of_nonpos (inv_nonpos.2 hr.le)
         ((min_le_right _ _).trans (div_nonpos_of_nonpos_of_nonneg hr.le ha))
   rw [radialPushScale]
-  nlinarith [t.2.1, t.2.2, mul_nonneg t.2.1 hk]
+  nlinarith [t.property.1, t.property.2, mul_nonneg t.property.1 hk]
 
 /-- For `r > 0` the rescaling factor of `TauCeti.radialPush` is positive on positive norms. -/
 theorem radialPushScale_pos (hr : 0 < r) (t : I) {a : ℝ} (ha : 0 < a) :
     0 < radialPushScale r t a := by
   have hk : 0 < r⁻¹ * min 1 (r / a) := by positivity
   rw [radialPushScale]
-  rcases t.2.1.eq_or_lt with h | h
+  rcases t.property.1.eq_or_lt with h | h
   · simp [← h]
-  · nlinarith [mul_pos h hk, t.2.2]
+  · nlinarith [mul_pos h hk, t.property.2]
 
 /-- For `r > 0` the rescaling factor of `TauCeti.radialPush` is at most `1 + r⁻¹`. -/
 theorem radialPushScale_le (hr : 0 < r) (t : I) (a : ℝ) : radialPushScale r t a ≤ 1 + r⁻¹ := by
   have hm : r⁻¹ * min 1 (r / a) ≤ r⁻¹ :=
     mul_le_of_le_one_right (inv_nonneg.2 hr.le) (min_le_left _ _)
   rw [radialPushScale]
-  nlinarith [t.2.1, t.2.2, inv_nonneg.2 hr.le]
+  nlinarith [t.property.1, t.property.2, inv_nonneg.2 hr.le]
 
 /-- The rescaling factor of `TauCeti.radialPush` is continuous in the time and the norm, away from
 norm zero. -/
@@ -181,8 +181,8 @@ theorem inv_norm_smul_radialPush (hr : 0 < r) (t : I) :
     mul_right_comm, inv_mul_cancel₀ hc.ne', one_mul]
 
 theorem continuous_radialPush (hr : 0 ≤ r) : Continuous fun p : I × E ↦ radialPush r p.1 p.2 :=
-  ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul
-    continuous_snd).add <| (continuous_subtype_val.comp continuous_fst).smul <|
+  ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
+    continuous_snd).add <| (continuous_subtypeVal.comp continuous_fst).smul <|
       ((lipschitzWith_radialRetraction (E := E) hr).continuous.comp continuous_snd).const_smul _
 
 /-- The norm along `TauCeti.radialPush` is the linear interpolation between the initial
@@ -190,12 +190,12 @@ norm and the norm of the rescaled radial retraction. -/
 @[simp]
 theorem norm_radialPush (hr : 0 ≤ r) (t : I) :
     ‖radialPush r t y‖ = (1 - (t : ℝ)) * ‖y‖ + (t : ℝ) * (r⁻¹ * min ‖y‖ r) := by
-  have ht := t.2.1
+  have ht := t.property.1
   rw [radialPush, SameRay.norm_add]
-  · rw [norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), norm_smul_of_nonneg t.2.1,
+  · rw [norm_smul_of_nonneg (sub_nonneg.mpr t.property.2), norm_smul_of_nonneg t.property.1,
       norm_smul_of_nonneg (inv_nonneg.mpr hr), norm_radialRetraction hr]
   · rw [radialRetraction_def, smul_smul, smul_smul]
-    exact sameRay_smul_smul_of_mul_nonneg (mul_nonneg (sub_nonneg.mpr t.2.2) (by positivity))
+    exact sameRay_smul_smul_of_mul_nonneg (mul_nonneg (sub_nonneg.mpr t.property.2) (by positivity))
 
 /-- On the closed unit ball, `TauCeti.radialPush` does not decrease norms. -/
 theorem norm_le_norm_radialPush (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y‖ ≤ 1) :
@@ -204,7 +204,7 @@ theorem norm_le_norm_radialPush (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y�
     rw [inv_mul_eq_div, le_div_iff₀ hr, le_min_iff]
     constructor <;> nlinarith [norm_nonneg y]
   rw [norm_radialPush hr.le]
-  nlinarith [t.2.1]
+  nlinarith [t.property.1]
 
 /-- For every radius, `TauCeti.radialPush` maps the closed unit ball into itself. -/
 theorem norm_radialPush_le_one (t : I) (hy : ‖y‖ ≤ 1) : ‖radialPush r t y‖ ≤ 1 := by
@@ -215,9 +215,9 @@ theorem norm_radialPush_le_one (t : I) (hy : ‖y‖ ≤ 1) : ‖radialPush r t 
       · rw [inv_mul_le_iff₀ hr, mul_one]
         exact min_le_right _ _
     rw [norm_radialPush hr]
-    nlinarith [t.2.1, t.2.2, norm_nonneg y]
+    nlinarith [t.property.1, t.property.2, norm_nonneg y]
   · rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
-    · rw [radialPush_of_norm_eq_zero hy0, norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), hy0]
+    · rw [radialPush_of_norm_eq_zero hy0, norm_smul_of_nonneg (sub_nonneg.mpr t.property.2), hy0]
       simp
     · have hy0' : 0 < ‖y‖ := lt_of_le_of_ne (norm_nonneg y) hy0.symm
       have hpush : r⁻¹ • radialRetraction r y = ‖y‖⁻¹ • y := by
@@ -229,9 +229,9 @@ theorem norm_radialPush_le_one (t : I) (hy : ‖y‖ ≤ 1) : ‖radialPush r t 
       calc ‖(1 - (t : ℝ)) • y + (t : ℝ) • ‖y‖⁻¹ • y‖
           ≤ ‖(1 - (t : ℝ)) • y‖ + ‖(t : ℝ) • ‖y‖⁻¹ • y‖ := norm_add_le _ _
         _ = (1 - (t : ℝ)) * ‖y‖ + (t : ℝ) := by
-          rw [norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), norm_smul_of_nonneg t.2.1,
+          rw [norm_smul_of_nonneg (sub_nonneg.mpr t.property.2), norm_smul_of_nonneg t.property.1,
             norm_smul_of_nonneg (inv_nonneg.mpr hy0'.le), inv_mul_cancel₀ hy0, mul_one]
-        _ ≤ 1 := by nlinarith [t.2.1, t.2.2]
+        _ ≤ 1 := by nlinarith [t.property.1, t.property.2]
 
 /-- `TauCeti.radialPush` fixes the unit sphere. -/
 theorem radialPush_of_norm_eq_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖y‖ = 1) :

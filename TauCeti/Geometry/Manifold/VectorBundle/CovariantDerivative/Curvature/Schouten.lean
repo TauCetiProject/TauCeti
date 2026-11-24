@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -29,7 +29,7 @@ zero and returns `0`.
 ## Main declarations
 
 * `CovariantDerivative.schoutenTensor`: the Schouten tensor.
-* `CovariantDerivative.bilinFormTrace_schoutenTensor`: `tr_g P = Scal / (2 (n - 1))`.
+* `CovariantDerivative.metricTrace_schoutenTensor`: `tr_g P = Scal / (2 (n - 1))`.
 * `CovariantDerivative.ricciTensor_eq_smul_schoutenTensor_add`: `Ric = (n - 2) P + (tr_g P) g`.
 * `CovariantDerivative.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub`: constant
   curvature `κ` gives `P = (κ / 2) g`.
@@ -81,16 +81,16 @@ theorem schoutenTensor_apply (x : M) (u v : TangentSpace I x) :
   (rfl)
 
 /-- The metric trace of the Schouten tensor is `Scal / (2 (n - 1))`, away from dimension `2`. -/
-theorem bilinFormTrace_schoutenTensor (x : M)
+theorem metricTrace_schoutenTensor (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
-    TauCeti.bilinFormTrace (cov.schoutenTensor x) =
+    LinearMap.BilinMap.metricTrace (cov.schoutenTensor x) =
       cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) := by
   -- `map_sub` is applied as a term: the subtraction in `schoutenTensor` uses the model-space
   -- instances of `TangentSpace I x`, which `rw` does not match against those of the metric.
-  have hsub := map_sub TauCeti.bilinFormTrace (cov.ricciTensor x)
+  have hsub := map_sub LinearMap.BilinMap.metricTrace (cov.ricciTensor x)
     ((cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1))) •
       innerₗ (TangentSpace I x))
-  rw [map_smul, TauCeti.bilinFormTrace_inner, smul_eq_mul, ← scalarCurvature_apply] at hsub
+  rw [map_smul, LinearMap.BilinMap.metricTrace_inner, smul_eq_mul, ← scalarCurvature_apply] at hsub
   rw [schoutenTensor, map_smul, hsub, smul_eq_mul]
   have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 :=
     sub_ne_zero.mpr (by exact_mod_cast hn)
@@ -111,11 +111,11 @@ theorem ricciTensor_eq_smul_schoutenTensor_add (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
     cov.ricciTensor x =
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2) • cov.schoutenTensor x +
-        TauCeti.bilinFormTrace (cov.schoutenTensor x) • innerₗ (TangentSpace I x) := by
+        LinearMap.BilinMap.metricTrace (cov.schoutenTensor x) • innerₗ (TangentSpace I x) := by
   have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 :=
     sub_ne_zero.mpr (by exact_mod_cast hn)
   ext u v
-  rw [cov.bilinFormTrace_schoutenTensor x hn, LinearMap.add_apply, LinearMap.add_apply,
+  rw [cov.metricTrace_schoutenTensor x hn, LinearMap.add_apply, LinearMap.add_apply,
     LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.smul_apply,
     schoutenTensor_apply, innerₗ_apply_apply, smul_eq_mul, smul_eq_mul]
   field_simp

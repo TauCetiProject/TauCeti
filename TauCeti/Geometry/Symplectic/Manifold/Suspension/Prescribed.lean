@@ -122,7 +122,7 @@ private def cutoffFamily (l : Λ) (p : (ℝ × ℝ) × M) :
 
 private theorem cutoffFamily_of_mem {l : Λ} {p : (ℝ × ℝ) × M} (h : (l, p) ∈ V) :
     cutoffFamily hσn hK₀c hK₁c ρ hρ l p =
-      (hK₀c l p).cayleyInterp (V := E) (hK₁c l p h) (hρ (l, p)) :=
+      (hK₀c l p).cayleyInterp (V := E) (hK₁c l p h).tames (hρ (l, p)) :=
   hσn.cutoffInterp_of_mem _ _ _ _ (n := (l, p)) h
 
 private theorem cutoffFamily_of_notMem {l : Λ} {p : (ℝ × ℝ) × M} (h : (l, p) ∉ V) :

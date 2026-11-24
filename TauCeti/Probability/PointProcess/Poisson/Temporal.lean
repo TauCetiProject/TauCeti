@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Poisson.Count
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Construction
 import TauCeti.Probability.RandomMeasure.Cumulative
@@ -19,7 +20,9 @@ cumulative count process has independent Poisson increments. The increment param
 masses of the corresponding intervals under a locally finite intensity. The intensity must
 give zero mass to `{0}`, but may have atoms at positive times and need not be homogeneous.
 Simultaneous occurrences and zero intensity are allowed. No topology on the sample space is
-required. A specialization gives the homogeneous parameter `r * (t - s)`.
+required. A specialization gives the homogeneous parameter `r * (t - s)`, and
+`isPoissonRandomMeasure_zero_iff_ae_count_eq_zero` characterizes zero intensity directly as
+an identically zero count process almost surely.
 
 The count representation is required on one event of full measure for all times. It implies
 local finiteness of the realizations. The initial count is zero almost surely, excluding
@@ -148,5 +151,23 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
   simpa only [smul_nnvolume_Ioc, ENNReal.toNNReal_coe] using
     isPoissonRandomMeasure_iff_count_increments (Λ := (r : ℝ≥0∞) • nnvolume)
       (by simp) hM hcount
+
+/-- **Zero-rate temporal Poisson characterization.** A measurable random measure with a
+natural-valued cumulative count process on a probability space has zero Poisson intensity if and
+only if its count process is identically zero simultaneously at all times almost surely. -/
+theorem isPoissonRandomMeasure_zero_iff_ae_count_eq_zero
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+    {M : Ω → Measure ℝ≥0} {N : ℝ≥0 → Ω → ℕ}
+    (hM : Measurable M) (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
+    IsPoissonRandomMeasure P M (0 : Measure ℝ≥0) ↔ ∀ᵐ ω ∂P, ∀ t, N t ω = 0 := by
+  rw [isPoissonRandomMeasure_zero_iff, and_iff_right hM]
+  constructor
+  · intro h0
+    filter_upwards [h0, hcount] with ω hω hc t
+    have hzero : (N t ω : ℝ≥0∞) = 0 := (hc t).symm.trans (by simp [hω])
+    exact Nat.cast_eq_zero.mp hzero
+  · intro h0
+    filter_upwards [h0, hcount] with ω hω hc
+    exact Measure.ext_of_Iic' _ _ (fun t ↦ by simp [hc t]) fun t ↦ by simp [hc t, hω t]
 
 end TauCeti.Probability

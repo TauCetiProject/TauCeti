@@ -69,11 +69,11 @@ theorem exists_partialDiffeomorph_normalExp_norm_le_subset [Nonempty M]
     ∃ (Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J (TotalSpace P ν) N ∞)
         (r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯),
       ⇑Φ = f.normalExp hn ∧ (∀ x, 0 < r x) ∧ (∀ x, r x < ε x) ∧
-      {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ Φ.source ∧
+      {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ Φ.source ∧
       Φ.source ⊆ f.normalExpDomain hn ∧ Φ.target ⊆ O ∧
-      IsOpenEmbedding ({p : TotalSpace P ν | ‖p.2‖ < r p.proj}.domRestrict Φ) ∧
-      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}.domRestrict Φ) ∧
-      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.2‖ = r p.proj}.domRestrict Φ) := by
+      IsOpenEmbedding ({p : TotalSpace P ν | ‖p.snd‖ < r p.proj}.domRestrict Φ) ∧
+      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj}.domRestrict Φ) ∧
+      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.snd‖ = r p.proj}.domRestrict Φ) := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
@@ -119,16 +119,16 @@ theorem exists_isClosedEmbedding_normalExp_norm_le_subset
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     letI : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
     ∃ r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < r x) ∧ (∀ x, r x < ε x) ∧
-      {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆
+      {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆
         f.normalExpDomain hn ∧
       f.normalExp hn '' {p : TotalSpace P ν |
-        ‖p.2‖ ≤ r p.proj} ⊆ O ∧
+        ‖p.snd‖ ≤ r p.proj} ⊆ O ∧
       IsOpenEmbedding ({p : TotalSpace P ν |
-        ‖p.2‖ < r p.proj}.domRestrict (f.normalExp hn)) ∧
+        ‖p.snd‖ < r p.proj}.domRestrict (f.normalExp hn)) ∧
       IsClosedEmbedding ({p : TotalSpace P ν |
-        ‖p.2‖ ≤ r p.proj}.domRestrict (f.normalExp hn)) ∧
+        ‖p.snd‖ ≤ r p.proj}.domRestrict (f.normalExp hn)) ∧
       IsClosedEmbedding ({p : TotalSpace P ν |
-        ‖p.2‖ = r p.proj}.domRestrict (f.normalExp hn)) := by
+        ‖p.snd‖ = r p.proj}.domRestrict (f.normalExp hn)) := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)

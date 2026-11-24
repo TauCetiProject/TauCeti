@@ -211,21 +211,22 @@ theorem existsUnique_forall_mkQ_eq_toQuotientEnd (x : completedGroupAlgebra R Γ
   have hcore : ∀ N : Submodule R M, ∀ γ : Γ, ∀ x ∈ N.invariantCore Γ, γ • x ∈ N.invariantCore Γ :=
     fun _ γ _ hx ↦ Submodule.smul_mem_invariantCore γ hx
   let K : ∀ _ : {N : Submodule R M // IsOpen (N : Set M)}, OpenNormalSubgroup Γ := fun N ↦
-    Submodule.quotientActionKernel (hcore N.1) (N.1.isOpen_invariantCore Γ N.2)
-  have hK : ∀ N, (K N).toSubgroup ≤ (Submodule.quotientToModuleEnd (hcore N.1)).ker := fun N ↦
+    Submodule.quotientActionKernel (hcore N.val) (N.val.isOpen_invariantCore Γ N.property)
+  have hK : ∀ N, (K N).toSubgroup ≤ (Submodule.quotientToModuleEnd (hcore N.val)).ker := fun N ↦
     (Submodule.quotientActionKernel_toSubgroup _ _).le
   obtain ⟨n, hn, huniq⟩ := hM.existsUnique_forall_mkQ_eq
-    (fun N ↦ Submodule.factor (N.1.invariantCore_le Γ)
-      (toQuotientEnd (hcore N.1) (K N) (hK N) x ((N.1.invariantCore Γ).mkQ m)))
+    (fun N ↦ Submodule.factor (N.val.invariantCore_le Γ)
+      (toQuotientEnd (hcore N.val) (K N) (hK N) x ((N.val.invariantCore Γ).mkQ m)))
     fun N N' h ↦ by
       rw [Submodule.factor_comp_apply,
-        ← Submodule.factor_comp_apply (Submodule.invariantCore_mono h) (N'.1.invariantCore_le Γ),
-        factor_toQuotientEnd (hcore N.1) (K N) (hK N) (hcore N'.1), Submodule.factor_mk,
-        toQuotientEnd_eq (hcore N'.1) _ (hK N')]
+        ← Submodule.factor_comp_apply (Submodule.invariantCore_mono h) (N'.val.invariantCore_le Γ),
+        factor_toQuotientEnd (hcore N.val) (K N) (hK N) (hcore N'.val), Submodule.factor_mk,
+        toQuotientEnd_eq (hcore N'.val) _ (hK N')]
   refine ⟨n, fun V hV hVo U hU ↦ ?_, fun n' hn' ↦ huniq n' fun N ↦ ?_⟩
   · rw [hn ⟨V, hVo⟩, factor_toQuotientEnd (hcore V) (K ⟨V, hVo⟩) (hK ⟨V, hVo⟩) hV,
       Submodule.factor_mk, toQuotientEnd_eq hV _ hU]
-  · rw [← hn' (N.1.invariantCore Γ) (hcore N.1) (N.1.isOpen_invariantCore Γ N.2) (K N) (hK N),
+  · rw [← hn' (N.val.invariantCore Γ) (hcore N.val) (N.val.isOpen_invariantCore Γ N.property) (K N)
+      (hK N),
       Submodule.factor_mk]
 
 /-- **The scalar action of the completed group algebra** on a compact module `M` with a continuous

@@ -176,7 +176,7 @@ noncomputable def homogeneousSubcoalgebraBasis (d : ℕ) :
 theorem coe_homogeneousSubcoalgebraBasis (d : ℕ)
     (s : {s : (ι × ι) →₀ ℕ // s.degree = d}) :
     (homogeneousSubcoalgebraBasis R ι d s : coordinateBialgebra R ι) =
-      coordinateBialgebraAlgEquiv R ι (monomial s.1 1) := by
+      coordinateBialgebraAlgEquiv R ι (monomial s.val 1) := by
   simp [homogeneousSubcoalgebraBasis]
 
 /-- A matrix-entry coordinate, as an element of the degree-one coalgebra. -/

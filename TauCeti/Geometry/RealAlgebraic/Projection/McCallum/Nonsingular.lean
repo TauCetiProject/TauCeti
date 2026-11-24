@@ -54,23 +54,25 @@ theorem nonempty_delineation_of_leadingCoeff_discr_resultant_ne_zero
     (hlc : ∀ b ∈ B, ∀ x, φ x b.leadingCoeff ≠ 0)
     (hdiscr : ∀ b ∈ B, ∀ x, φ x b.discr ≠ 0)
     (hres : ∀ b ∈ B, ∀ c ∈ B, b ≠ c → ∀ x, φ x (resultant b c) ≠ 0) :
-    Nonempty (Delineation fun (b : B) x ↦ b.1.map (φ x)) := by
+    Nonempty (Delineation fun (b : B) x ↦ b.val.map (φ x)) := by
   classical
-  have hdeg (b : B) (x : X) : (b.1.map (φ x)).natDegree = b.1.natDegree :=
-    natDegree_map_of_leadingCoeff_ne_zero _ (hlc _ b.2 x)
-  have hs (b : B) (x : X) : (b.1.map (φ x)).Separable :=
-    (b.1.separable_map_iff_map_discr_ne_zero (φ x) (hlc _ b.2 x)).mpr (hdiscr _ b.2 x)
-  have hn (b : B) (x : X) : b.1.map (φ x) ≠ 0 := (hs b x).ne_zero
+  have hdeg (b : B) (x : X) : (b.val.map (φ x)).natDegree = b.val.natDegree :=
+    natDegree_map_of_leadingCoeff_ne_zero _ (hlc _ b.property x)
+  have hs (b : B) (x : X) : (b.val.map (φ x)).Separable :=
+    (b.val.separable_map_iff_map_discr_ne_zero (φ x) (hlc _ b.property x)).mpr
+        (hdiscr _ b.property x)
+  have hn (b : B) (x : X) : b.val.map (φ x) ≠ 0 := (hs b x).ne_zero
   have hcop (b c : B) (hne : b ≠ c) (x : X) :
-      IsCoprime (b.1.map (φ x)) (c.1.map (φ x)) := by
-    have hr : resultant (b.1.map (φ x)) (c.1.map (φ x)) ≠ 0 := by
+      IsCoprime (b.val.map (φ x)) (c.val.map (φ x)) := by
+    have hr : resultant (b.val.map (φ x)) (c.val.map (φ x)) ≠ 0 := by
       rw [resultant_map_of_natDegree_eq _ (hdeg b x) (hdeg c x)]
-      exact hres _ b.2 _ c.2 (Subtype.coe_ne_coe.mpr hne) x
+      exact hres _ b.property _ c.property (Subtype.coe_ne_coe.mpr hne) x
     exact not_not.mp fun h ↦ hr (resultant_eq_zero_iff.mpr ⟨Or.inl (hn b x), h⟩)
-  refine nonempty_delineation (fun b j ↦ by simpa only [Polynomial.coeff_map] using hc _ b.2 j)
+  refine nonempty_delineation
+      (fun b j ↦ by simpa only [Polynomial.coeff_map] using hc _ b.property j)
     (fun b ↦ Or.inr (hn b)) (fun b x y ↦ (hdeg b x).trans (hdeg b y).symm)
     (fun b x y ↦ ?_) (fun b c hne x y ↦ ?_)
-  · have hcard (x : X) : ((b.1.map (φ x)).aroots ℂ).toFinset.card = b.1.natDegree := by
+  · have hcard (x : X) : ((b.val.map (φ x)).aroots ℂ).toFinset.card = b.val.natDegree := by
       rw [aroots, Multiset.toFinset_card_of_nodup (nodup_roots (hs b x).map),
         ← (IsAlgClosed.splits _).natDegree_eq_card_roots, natDegree_map, hdeg b x]
     exact (hcard x).trans (hcard y).symm
@@ -96,7 +98,7 @@ theorem exists_delineation_orderAt_eq_of_nonsingular (hB : F.IsSquarefreeBasis B
     (hres : ∀ b ∈ B, ∀ c ∈ B, b ≠ c → ∀ x ∈ S,
       MvPolynomial.eval x (resultant b c) ≠ 0)
     (hcontent : ∀ f ∈ F, ∀ x ∈ S, ∀ y ∈ S, f.content.orderAt x = f.content.orderAt y) :
-    ∃ D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1),
+    ∃ D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.val.map (MvPolynomial.eval x.val),
       ∀ E ∈ TauCeti.stackCells S D.root,
         (∃ e, (e = d ∨ e = d + 1) ∧ TauCeti.IsAnalyticSubmanifold e E) ∧
         ∀ f ∈ F,
@@ -106,13 +108,13 @@ theorem exists_delineation_orderAt_eq_of_nonsingular (hB : F.IsSquarefreeBasis B
   classical
   have := isPreconnected_iff_preconnectedSpace.mp hconn
   obtain ⟨D⟩ := TauCeti.nonempty_delineation_of_leadingCoeff_discr_resultant_ne_zero
-    (fun x : S ↦ MvPolynomial.eval x.1)
-    (fun b _ j ↦ (MvPolynomial.continuous_eval (b.coeff j)).comp continuous_subtype_val)
-    (fun b hb x ↦ hlc b hb x x.2) (fun b hb x ↦ hdiscr b hb x x.2)
-    (fun b hb c hc hne x ↦ hres b hb c hc hne x x.2)
+    (fun x : S ↦ MvPolynomial.eval x.val)
+    (fun b _ j ↦ (MvPolynomial.continuous_eval (b.coeff j)).comp continuous_subtypeVal)
+    (fun b hb x ↦ hlc b hb x x.property) (fun b hb x ↦ hdiscr b hb x x.property)
+    (fun b hb c hc hne x ↦ hres b hb c hc hne x x.property)
   -- Intrinsic analyticity of coefficients makes sections analytic; sectors are relatively open.
   refine ⟨D, fun E hE ↦ ⟨D.exists_isAnalyticSubmanifold_of_mem_stackCells hS
-    (fun (b : B) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.1 j) hE,
+    (fun (b : B) j ↦ hS.analyticOnSubmanifold_coeff_map_eval b.val j) hE,
     fun f hf ↦ ?_⟩⟩
   -- Simple fiber zeros have ambient order one. Transfer these basis orders through factorization.
   have horder : ∀ y ∈ E, ∀ y' ∈ E, ((finSuccEquiv ℝ n).symm f).orderAt y =

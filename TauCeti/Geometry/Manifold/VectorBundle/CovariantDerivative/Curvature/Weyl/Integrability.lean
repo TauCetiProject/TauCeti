@@ -297,7 +297,7 @@ theorem mvfderiv_conformalFlatteningForm_sub_eq_conformalFlatteningDeriv {φ : M
   have hH (a b : TangentSpace I x) :
       ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, b⟫_ℝ =
         hessian I φ x a b :=
-    (hessian_def I φ x a b).symm
+    (I.hessian_eq_inner_leviCivitaConnection_mgradient φ x a b).symm
   rw [hfun, mvfderiv_sub (hPXY.add (hGX.mul hGY))
       ((hGG.mul mdifferentiableAt_const).mul hXY), mvfderiv_add hPXY (hGX.mul hGY),
     mvfderiv_mul hGX hGY, mvfderiv_mul (hGG.mul mdifferentiableAt_const) hXY,
@@ -372,7 +372,7 @@ theorem mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap {φ : M → ℝ}
   -- The Hessian paired with two differentiable fields is differentiable, being `⟪∇_X grad φ, W⟫`.
   have hHess {W : Π x : M, TangentSpace I x} (hW : MDiffAt (T% W) x) :
       MDiffAt (fun y ↦ hessian I φ y (X y) (W y)) x := by
-    simp only [hessian_def]
+    simp only [I.hessian_eq_inner_leviCivitaConnection_mgradient]
     exact mdifferentiableAt_inner ((cov.contMDiff_apply hX hG).mdifferentiableAt (by simp)) hW
   -- So is the right side of the equation, a sum of products of differentiable functions.
   have hΦ {W : Π x : M, TangentSpace I x} (hW : MDiffAt (T% W) x) :

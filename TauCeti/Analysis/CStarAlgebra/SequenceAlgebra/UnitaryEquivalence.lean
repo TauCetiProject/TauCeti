@@ -17,20 +17,14 @@ import TauCeti.Order.Filter.Ultrafilter
 Norm sequence algebras and ultrapowers convert approximate unitary equivalence into exact unitary
 conjugacy:
 
-* **Diagonal transfer without separability**
-  (`TauCeti.ApproximatelyUnitarilyEquivalent.cstarFilterQuotient_diag_iff`,
-  `TauCeti.ApproximatelyUnitarilyEquivalent.of_unitary_cstarFilterQuotient_diag`): for any
-  (possibly non-separable) `A`, nonzero unital `B`, and nontrivial filter `l : Filter ι`, two maps
-  `φ ψ : A →⋆ₙₐ[ℂ] B` are approximately unitarily equivalent if and only if their diagonal
-  compositions into `CStarFilterQuotient B l` are approximately unitarily equivalent; in particular,
-  exact unitary conjugacy of `diag B l ∘ φ` and `diag B l ∘ ψ` implies approximate unitary
-  equivalence of `φ` and `ψ`.
-* **Exact implementation for separable sources**
+* **Diagonal transfer** (`TauCeti.ApproximatelyUnitarilyEquivalent.cstarFilterQuotient_diag_iff`,
+  `TauCeti.ApproximatelyUnitarilyEquivalent.of_unitary_cstarFilterQuotient_diag`): without
+  separability, `φ ψ : A →⋆ₙₐ[ℂ] B` are approximately unitarily equivalent if and only if
+  `diag B l ∘ φ` and `diag B l ∘ ψ` are in `CStarFilterQuotient B l` (`[l.NeBot]`).
+* **Exact implementation**
   (`TauCeti.ApproximatelyUnitarilyEquivalent.iff_exists_unitary_cstarFilterQuotient`, specialized to
-  `CStarSequenceAlgebra B` and `CStarUltrapower B ω` for any free ultrafilter `ω` on `ℕ`): when `A`
-  is separable and `l : Filter ℕ` satisfies `l ≤ atTop`, any two `⋆`-homomorphisms
-  `Φ Ψ : A →⋆ₙₐ[ℂ] CStarFilterQuotient B l` are approximately unitarily equivalent if and only if
-  they are conjugate by a single unitary `U : unitary (CStarFilterQuotient B l)`.
+  `CStarSequenceAlgebra B` and `CStarUltrapower B ω`): for separable `A` and `l ≤ atTop` on `ℕ`,
+  approximate unitary equivalence into `CStarFilterQuotient B l` is exact unitary conjugacy.
 
 ## References
 
@@ -55,9 +49,8 @@ preserves approximate unitary equivalence. -/
 theorem comp_cstarFilterQuotient_diag (l : Filter ι) {φ ψ : A →⋆ₙₐ[ℂ] B}
     (h : ApproximatelyUnitarilyEquivalent φ ψ) :
     ApproximatelyUnitarilyEquivalent
-      ((CStarFilterQuotient.diag B l).comp φ) ((CStarFilterQuotient.diag B l).comp ψ) := by
-  rw [← CStarFilterQuotient.toNonUnitalStarAlgHom_unitalDiag l]
-  exact h.postcomp (CStarFilterQuotient.unitalDiag B l)
+      ((CStarFilterQuotient.diag B l).comp φ) ((CStarFilterQuotient.diag B l).comp ψ) :=
+  h.postcomp (CStarFilterQuotient.diag B l)
 
 /-- For any nontrivial filter `l`, approximate unitary equivalence of `diag B l ∘ φ` and
 `diag B l ∘ ψ` in `CStarFilterQuotient B l` is equivalent to approximate unitary equivalence of `φ`
@@ -66,12 +59,11 @@ theorem cstarFilterQuotient_diag_iff {l : Filter ι} [l.NeBot] {φ ψ : A →⋆
     ApproximatelyUnitarilyEquivalent
         ((CStarFilterQuotient.diag B l).comp φ) ((CStarFilterQuotient.diag B l).comp ψ) ↔
       ApproximatelyUnitarilyEquivalent φ ψ := by
-  refine ⟨fun h ↦ (approximatelyUnitarilyEquivalent_def φ ψ).2 fun F ε hε ↦ ?_,
+  refine ⟨fun h ↦ (approximatelyUnitarilyEquivalent_def φ ψ).mpr fun F ε hε ↦ ?_,
     comp_cstarFilterQuotient_diag l⟩
-  obtain ⟨U, hU⟩ := (approximatelyUnitarilyEquivalent_def _ _).1 h F ε hε
+  obtain ⟨U, hU⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp h F ε hε
   obtain ⟨u, hu⟩ := CStarFilterQuotient.exists_unitary_family_mk_eq l U
-  have hev : ∀ a ∈ F, ∀ᶠ i in l, ‖(u i : B) * φ a * star (u i : B) - ψ a‖ < ε := by
-    intro a ha
+  have hev : ∀ a ∈ F, ∀ᶠ i in l, ‖(u i : B) * φ a * star (u i : B) - ψ a‖ < ε := fun a ha ↦ by
     let z : lp (fun _ : ι ↦ B) ∞ :=
       (lp.unitaryEquiv.symm u : lp _ ∞) * lp.constNonUnitalStarAlgHom ℂ ι B (φ a) *
         star (lp.unitaryEquiv.symm u : lp _ ∞) - lp.constNonUnitalStarAlgHom ℂ ι B (ψ a)
@@ -79,13 +71,10 @@ theorem cstarFilterQuotient_diag_iff {l : Filter ι} [l.NeBot] {φ ψ : A →⋆
         (U : CStarFilterQuotient B l) * CStarFilterQuotient.diag B l (φ a) *
           star (U : CStarFilterQuotient B l) - CStarFilterQuotient.diag B l (ψ a) := by
       simp [z, map_star, hu, CStarFilterQuotient.diag_eq_mk_const]
-    have hz : ‖CStarFilterQuotient.mk B l z‖ < ε := by
-      rw [hmk]
-      exact hU a ha
-    refine (CStarFilterQuotient.eventually_norm_lt_of_norm_mk_lt z hz).mono fun i hi ↦ ?_
-    simpa only [z, lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply, lp.star_apply,
-      lp.coe_unitaryEquiv_symm_apply, lp.constNonUnitalStarAlgHom_apply] using hi
-  obtain ⟨i, hi⟩ := (F.eventually_all.2 hev).exists
+    refine (CStarFilterQuotient.eventually_norm_lt_of_norm_mk_lt z (hmk ▸ hU a ha)).mono fun i hi ↦
+      by simpa only [z, lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply,
+        lp.star_apply, lp.coe_unitaryEquiv_symm_apply, lp.constNonUnitalStarAlgHom_apply] using hi
+  obtain ⟨i, hi⟩ := (F.eventually_all.mpr hev).exists
   exact ⟨u i, hi⟩
 
 /-- Exact unitary conjugacy of `diag B l ∘ φ` and `diag B l ∘ ψ` in `CStarFilterQuotient B l`
@@ -95,7 +84,7 @@ theorem of_unitary_cstarFilterQuotient_diag {l : Filter ι} [l.NeBot] {φ ψ : A
     (hU : ∀ a, (U : CStarFilterQuotient B l) * CStarFilterQuotient.diag B l (φ a) *
       star (U : CStarFilterQuotient B l) = CStarFilterQuotient.diag B l (ψ a)) :
     ApproximatelyUnitarilyEquivalent φ ψ :=
-  (cstarFilterQuotient_diag_iff (l := l)).1 <| .of_unitary U fun a ↦
+  (cstarFilterQuotient_diag_iff (l := l)).mp <| .of_unitary U fun a ↦
     (congrArg (fun x ↦ (U : CStarFilterQuotient B l) * x * star (U : CStarFilterQuotient B l))
       (NonUnitalStarAlgHom.comp_apply (CStarFilterQuotient.diag B l) φ a)).trans
       ((hU a).trans (NonUnitalStarAlgHom.comp_apply (CStarFilterQuotient.diag B l) ψ a).symm)
@@ -121,20 +110,19 @@ private theorem exists_unitary_seq_tendsto_of_approx {B : Type*} [CStarAlgebra B
   let err (w : ℕ → unitary B) (j n : ℕ) : ℝ := ‖(w n : B) * x j n * star (w n : B) - y j n‖
   let P (k n : ℕ) : Prop := ∀ j < k, err (u k) j n < 1 / ((k : ℝ) + 1)
   have hPl (k : ℕ) : ∀ᶠ n in l, P k n := by
-    have hall : ∀ j ∈ Finset.range k, ∀ᶠ n in l, err (u k) j n < 1 / ((k : ℝ) + 1) := by
-      intro j hj
+    have hall : ∀ j ∈ Finset.range k, ∀ᶠ n in l, err (u k) j n < 1 / ((k : ℝ) + 1) := fun j hj ↦ by
       let z : lp (fun _ : ℕ ↦ B) ∞ :=
         (lp.unitaryEquiv.symm (u k) : lp _ ∞) * x j *
           star (lp.unitaryEquiv.symm (u k) : lp _ ∞) - y j
       have hz : ‖CStarFilterQuotient.mk B l z‖ < 1 / ((k : ℝ) + 1) := by
-        simpa only [z, map_sub, map_mul, map_star] using hu k j (Finset.mem_range.1 hj)
+        simpa only [z, map_sub, map_mul, map_star] using hu k j (Finset.mem_range.mp hj)
       refine (CStarFilterQuotient.eventually_norm_lt_of_norm_mk_lt z hz).mono fun n hn ↦ ?_
       simpa only [z, err, lp.coeFn_sub, Pi.sub_apply, lp.infty_coeFn_mul, Pi.mul_apply,
         lp.star_apply, lp.coe_unitaryEquiv_symm_apply] using hn
-    simpa only [P, Finset.mem_range] using (Finset.range k).eventually_all.2 hall
+    simpa only [P, Finset.mem_range] using (Finset.range k).eventually_all.mpr hall
   -- Diagonalize over `k` along `l ≤ atTop`.
   obtain ⟨κ, hκ_tend, hκ_P⟩ := TauCeti.exists_tendsto_atTop_of_forall_eventually hPl hl
-  refine ⟨fun n ↦ u (κ n) n, fun j ↦ Metric.tendsto_nhds.2 fun ε hε ↦ ?_⟩
+  refine ⟨fun n ↦ u (κ n) n, fun j ↦ Metric.tendsto_nhds.mpr fun ε hε ↦ ?_⟩
   obtain ⟨K, hKε, hjK⟩ : ∃ K : ℕ, 1 / ((K : ℝ) + 1) < ε ∧ j < K :=
     (((tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (gt_mem_nhds hε)).and
       (eventually_gt_atTop j)).exists
@@ -157,7 +145,7 @@ theorem iff_exists_unitary_cstarFilterQuotient {l : Filter ℕ} (hl : l ≤ atTo
       ∃ U : unitary (CStarFilterQuotient B l),
         ∀ a, (U : CStarFilterQuotient B l) * Φ a * star (U : CStarFilterQuotient B l) = Ψ a := by
   refine ⟨fun h ↦ ?_, fun ⟨U, hU⟩ ↦ .of_unitary U hU⟩
-  have hdef := (approximatelyUnitarilyEquivalent_def Φ Ψ).1 h
+  have hdef := (approximatelyUnitarilyEquivalent_def Φ Ψ).mp h
   classical
   let d := TopologicalSpace.denseSeq A
   choose x hx using fun j ↦ CStarFilterQuotient.mk_surjective l (Φ (d j))
@@ -167,12 +155,11 @@ theorem iff_exists_unitary_cstarFilterQuotient {l : Filter ℕ} (hl : l ≤ atTo
   choose u hu using fun k ↦ CStarFilterQuotient.exists_unitary_family_mk_eq l (U_seq k)
   obtain ⟨v, hv⟩ := exists_unitary_seq_tendsto_of_approx hl x y u fun k j hjk ↦ by
     rw [hu k, hx j, hy j]
-    exact hU_seq k (d j) (Finset.mem_image.2 ⟨j, Finset.mem_range.2 hjk, rfl⟩)
+    exact hU_seq k (d j) (Finset.mem_image.mpr ⟨j, Finset.mem_range.mpr hjk, rfl⟩)
   let U : unitary (CStarFilterQuotient B l) :=
     Unitary.map (StarMonoidHom.ofClass (CStarFilterQuotient.unitalMk B l)) (lp.unitaryEquiv.symm v)
   have hU_val : (U : CStarFilterQuotient B l) =
-      CStarFilterQuotient.mk B l (lp.unitaryEquiv.symm v) := by
-    simp [U]
+      CStarFilterQuotient.mk B l (lp.unitaryEquiv.symm v) := by simp [U]
   have hd (j : ℕ) :
       (U : CStarFilterQuotient B l) * Φ (d j) * star (U : CStarFilterQuotient B l) = Ψ (d j) := by
     rw [hU_val, ← hx j, ← hy j, ← map_star, ← map_mul, ← map_mul,
@@ -181,12 +168,11 @@ theorem iff_exists_unitary_cstarFilterQuotient {l : Filter ℕ} (hl : l ≤ atTo
       lp.coe_unitaryEquiv_symm_apply] using hv j
   have hcont : Continuous fun a ↦
       (U : CStarFilterQuotient B l) * Φ a * star (U : CStarFilterQuotient B l) :=
-    ((continuous_const.mul (map_continuous Φ)).mul continuous_const)
+    (continuous_const.mul (map_continuous Φ)).mul continuous_const
   exact ⟨U, isClosed_property (TopologicalSpace.denseRange_denseSeq A)
     (isClosed_eq hcont (map_continuous Ψ)) hd⟩
 
-/-- Specialization to the norm sequence algebra `CStarSequenceAlgebra B`: approximate unitary
-equivalence of `⋆`-homomorphisms from a separable C⋆-algebra `A` into `CStarSequenceAlgebra B` is
+/-- In `CStarSequenceAlgebra B`, approximate unitary equivalence from a separable C⋆-algebra `A` is
 equivalent to exact unitary conjugacy. -/
 theorem iff_exists_unitary_cstarSequenceAlgebra {Φ Ψ : A →⋆ₙₐ[ℂ] CStarSequenceAlgebra B} :
     ApproximatelyUnitarilyEquivalent Φ Ψ ↔
@@ -194,19 +180,17 @@ theorem iff_exists_unitary_cstarSequenceAlgebra {Φ Ψ : A →⋆ₙₐ[ℂ] CSt
         ∀ a, (U : CStarSequenceAlgebra B) * Φ a * star (U : CStarSequenceAlgebra B) = Ψ a :=
   iff_exists_unitary_cstarFilterQuotient le_rfl
 
-/-- Specialization to the norm C⋆-ultrapower `CStarUltrapower B ω` along a free ultrafilter `ω` on
-`ℕ`: approximate unitary equivalence from a separable C⋆-algebra `A` into `CStarUltrapower B ω` is
-equivalent to exact unitary conjugacy. -/
+/-- In `CStarUltrapower B ω` for a free ultrafilter `ω` on `ℕ`, approximate unitary equivalence from
+a separable C⋆-algebra `A` is equivalent to exact unitary conjugacy. -/
 theorem iff_exists_unitary_cstarUltrapower {ω : Ultrafilter ℕ} (hω : ∀ n, ω ≠ pure n)
     {Φ Ψ : A →⋆ₙₐ[ℂ] CStarUltrapower B ω} :
     ApproximatelyUnitarilyEquivalent Φ Ψ ↔
       ∃ U : unitary (CStarUltrapower B ω),
         ∀ a, (U : CStarUltrapower B ω) * Φ a * star (U : CStarUltrapower B ω) = Ψ a :=
-  iff_exists_unitary_cstarFilterQuotient (Ultrafilter.le_atTop_iff_forall_ne_pure.2 hω)
+  iff_exists_unitary_cstarFilterQuotient (Ultrafilter.le_atTop_iff_forall_ne_pure.mpr hω)
 
-/-- For separable `A` and any nontrivial filter `l ≤ atTop` on `ℕ`, `φ ψ : A →⋆ₙₐ[ℂ] B` are
-approximately unitarily equivalent in `B` if and only if `diag B l ∘ φ` and `diag B l ∘ ψ` are
-unitarily conjugate in `CStarFilterQuotient B l`. -/
+/-- For separable `A` and nontrivial `l ≤ atTop`, `φ ψ : A →⋆ₙₐ[ℂ] B` are approximately unitarily
+equivalent if and only if `diag B l ∘ φ` and `diag B l ∘ ψ` are unitarily conjugate. -/
 theorem iff_exists_unitary_cstarFilterQuotient_diag {l : Filter ℕ} [l.NeBot] (hl : l ≤ atTop)
     {φ ψ : A →⋆ₙₐ[ℂ] B} :
     ApproximatelyUnitarilyEquivalent φ ψ ↔
@@ -216,8 +200,7 @@ theorem iff_exists_unitary_cstarFilterQuotient_diag {l : Filter ℕ} [l.NeBot] (
   rw [← cstarFilterQuotient_diag_iff (l := l), iff_exists_unitary_cstarFilterQuotient hl]
   simp only [NonUnitalStarAlgHom.comp_apply]
 
-/-- For separable `A`, `φ ψ : A →⋆ₙₐ[ℂ] B` are approximately unitarily equivalent in `B` if and only
-if `diag B atTop ∘ φ` and `diag B atTop ∘ ψ` are unitarily conjugate in `CStarSequenceAlgebra B`. -/
+/-- Specialization of `iff_exists_unitary_cstarFilterQuotient_diag` to `CStarSequenceAlgebra B`. -/
 theorem iff_exists_unitary_cstarSequenceAlgebra_diag {φ ψ : A →⋆ₙₐ[ℂ] B} :
     ApproximatelyUnitarilyEquivalent φ ψ ↔
       ∃ U : unitary (CStarSequenceAlgebra B),
@@ -225,16 +208,14 @@ theorem iff_exists_unitary_cstarSequenceAlgebra_diag {φ ψ : A →⋆ₙₐ[ℂ
           star (U : CStarSequenceAlgebra B) = CStarFilterQuotient.diag B atTop (ψ a) :=
   iff_exists_unitary_cstarFilterQuotient_diag le_rfl
 
-/-- For separable `A` and a free ultrafilter `ω` on `ℕ`, `φ ψ : A →⋆ₙₐ[ℂ] B` are approximately
-unitarily equivalent in `B` if and only if `diag B ω ∘ φ` and `diag B ω ∘ ψ` are unitarily conjugate
-in `CStarUltrapower B ω`. -/
+/-- Specialization of `iff_exists_unitary_cstarFilterQuotient_diag` to `CStarUltrapower B ω`. -/
 theorem iff_exists_unitary_cstarUltrapower_diag {ω : Ultrafilter ℕ} (hω : ∀ n, ω ≠ pure n)
     {φ ψ : A →⋆ₙₐ[ℂ] B} :
     ApproximatelyUnitarilyEquivalent φ ψ ↔
       ∃ U : unitary (CStarUltrapower B ω),
         ∀ a, (U : CStarUltrapower B ω) * CStarFilterQuotient.diag B (ω : Filter ℕ) (φ a) *
           star (U : CStarUltrapower B ω) = CStarFilterQuotient.diag B (ω : Filter ℕ) (ψ a) :=
-  iff_exists_unitary_cstarFilterQuotient_diag (Ultrafilter.le_atTop_iff_forall_ne_pure.2 hω)
+  iff_exists_unitary_cstarFilterQuotient_diag (Ultrafilter.le_atTop_iff_forall_ne_pure.mpr hω)
 
 end ExactImplementation
 

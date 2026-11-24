@@ -109,10 +109,11 @@ theorem card_editedOn_le_editDiscrepancy3 [DecidableEq κ] (H H' : Colored3Graph
   have hm (f : Fin 3 ↪ V) : Set.powersetCard.map 3 f s =
       Set.powersetCard.ofFinEmb 3 V f := Subtype.ext (by simp [s])
   let f : H.editedOn H' supp → {f : Fin 3 ↪ V // H.comap f ≠ H'.comap f} :=
-    fun x ↦ ⟨⟨x.1.1, x.1.2⟩, fun h ↦ (mem_editedOn H H' supp x.1).mp x.2 |>.2 <| by
+    fun x ↦ ⟨⟨x.val.val, x.val.property⟩, fun h ↦ (mem_editedOn H H' supp x.val).mp x.property |>.2
+        <| by
       simpa only [color_comap, hm] using congrArg (fun K ↦ K.color s) h⟩
   have hf : Function.Injective f := fun x y h ↦
-    Subtype.ext (Subtype.ext (congrArg (fun z ↦ (z.1 : Fin 3 → V)) h))
+    Subtype.ext (Subtype.ext (congrArg (fun z ↦ (z.val : Fin 3 → V)) h))
   have hcount : #(H.editedOn H' supp) ≤ 6 * {t | H.color t ≠ H'.color t}.ncard := by
     have hle := (Nat.card_le_card_of_injective f hf).trans
       (H.card_comap_ne_le H' (W := Fin 3))

@@ -11,31 +11,41 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.Ideal.BigOperators
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.SetTheory.Cardinal.Finite
+
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 
 /-!
 # Matrix entries lying in an ideal
 
 A two-sided ideal containing every entry of a matrix contains every entry of any two-sided
-product formed from it, and an ideal contains every entry of any linear combination of matrices
-whose entries it contains: each such entry is an `S`-combination of entries of the original
-matrices.
+product formed from it, and a submodule (in particular an ideal) contains every entry of any
+linear combination of matrices whose entries it contains: each such entry is a combination of
+entries of the original matrices.
 
-Nothing here needs invertibility, a square shape, or a diagonal target — only that the products
-are conformable — so the statements are rectangular. Both hold over any `Semiring`; the
-two-sided product statement asks the ideal to be two-sided (`Ideal.IsTwoSided`), which is
-automatic over a commutative semiring. They are the membership computations a defining-ideal
-closure proof performs when it propagates a relation through a matrix identity.
+Nothing here needs invertibility or a square shape outside the statements about powers — only
+that the products are conformable — so the other statements are rectangular. Everything holds
+over any `Semiring`; the two-sided product statement asks the ideal to be two-sided
+(`Ideal.IsTwoSided`), which is automatic over a commutative semiring. These are the membership
+computations a defining-ideal closure proof performs when it propagates a relation through a
+matrix identity.
 
 ## Main results
 
 * `Matrix.mul_mul_apply_mem`: every entry of `P * A * Q` lies in a two-sided ideal containing
   every entry of `A`.
-* `Matrix.sum_smul_apply_mem`: every entry of `∑ a, c a • F a` lies in an ideal containing every
-  entry of every `F a`.
-* `Matrix.mul_eq_zero_of_sq_eq_bot`: the product of two matrices with entries in a square-zero
-  ideal vanishes.
+* `Matrix.mul_apply_mem_left`, `Matrix.mul_apply_mem_right`: the same for one-sided products
+  `P * A` (for a left ideal) and `A * Q`.
+* `Matrix.mul_apply_mem_mul`: every entry of `A * B` lies in `I * J` when the entries of `A` lie
+  in `I` and those of `B` lie in `J`.
+* `Matrix.sum_smul_apply_mem`: every entry of `∑ a, c a • F a` lies in a submodule containing
+  every entry of every `F a`.
+* `Matrix.mul_eq_zero_of_mul_eq_bot`: the product of a matrix with entries in `I` and a matrix
+  with entries in `J` vanishes when `I * J = ⊥`.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
+* `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
+  has `|ker f| ^ (n * n)` elements.
 * `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
   square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
   nilpotent ideal is nilpotent.
@@ -52,40 +62,73 @@ product formed from it.** Each entry of `P * A * Q` is an `S`-combination of ent
 theorem mul_mul_apply_mem [Semiring S] [Fintype m] [Fintype n] {A : Matrix m n S} {I : Ideal S}
     [I.IsTwoSided] (hA : ∀ i j, A i j ∈ I) (P : Matrix l m S) (Q : Matrix n o S) (i : l) (j : o) :
     (P * A * Q) i j ∈ I := by
+  simp only [Matrix.mul_apply, Finset.sum_mul]
+  exact Ideal.sum_mem _ fun k _ => Ideal.sum_mem _ fun t _ =>
+    I.mul_mem_right _ (I.mul_mem_left _ (hA t k))
+
+/-- **A left ideal containing the entries of a matrix contains the entries of every left multiple
+of it.** -/
+theorem mul_apply_mem_left [Semiring S] [Fintype m] {A : Matrix m n S} {I : Ideal S}
+    (hA : ∀ i j, A i j ∈ I) (P : Matrix l m S) (i : l) (j : n) : (P * A) i j ∈ I := by
   rw [Matrix.mul_apply]
-  refine Ideal.sum_mem _ fun k _ => ?_
-  rw [Matrix.mul_apply, Finset.sum_mul]
-  exact Ideal.sum_mem _ fun t _ =>
-    Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hA t k))
+  exact Ideal.sum_mem _ fun k _ => I.mul_mem_left _ (hA k j)
 
-/-- **An ideal containing the entries of a family of matrices contains the entries of every
+/-- **A two-sided ideal containing the entries of a matrix contains the entries of every right
+multiple of it.** -/
+theorem mul_apply_mem_right [Semiring S] [Fintype n] {A : Matrix m n S} {I : Ideal S}
+    [I.IsTwoSided] (hA : ∀ i j, A i j ∈ I) (Q : Matrix n o S) (i : m) (j : o) :
+    (A * Q) i j ∈ I := by
+  rw [Matrix.mul_apply]
+  exact Ideal.sum_mem _ fun k _ => I.mul_mem_right _ (hA i k)
+
+/-- **The entries of a product of matrices with entries in two ideals lie in the product
+ideal.** -/
+theorem mul_apply_mem_mul [Semiring S] [Fintype m] {I J : Ideal S} {A : Matrix l m S}
+    {B : Matrix m o S} (hA : ∀ i j, A i j ∈ I) (hB : ∀ i j, B i j ∈ J) (i : l) (j : o) :
+    (A * B) i j ∈ I * J := by
+  rw [Matrix.mul_apply]
+  exact Ideal.sum_mem _ fun k _ => Ideal.mul_mem_mul (hA i k) (hB k j)
+
+/-- **A submodule containing the entries of a family of matrices contains the entries of every
 linear combination of them.** -/
-theorem sum_smul_apply_mem [Semiring S] [Fintype ι] {F : ι → Matrix m n S} {I : Ideal S}
-    (hF : ∀ a i j, F a i j ∈ I) (c : ι → S) (i : m) (j : n) :
-    (∑ a, c a • F a) i j ∈ I := by
+theorem sum_smul_apply_mem {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    {F : ι → Matrix m n M} {p : Submodule R M} (hF : ∀ a i j, F a i j ∈ p) (c : ι → R) (i : m)
+    (j : n) : (∑ a, c a • F a) i j ∈ p := by
   rw [Matrix.sum_apply]
-  refine Ideal.sum_mem _ fun a _ => ?_
-  rw [Matrix.smul_apply, smul_eq_mul]
-  exact Ideal.mul_mem_left _ _ (hF a i j)
+  exact p.sum_mem fun a _ => p.smul_mem (c a) (hF a i j)
 
-/-- **The product of two matrices with entries in a square-zero ideal vanishes**: each entry of
-`A * B` is a sum of products of two elements of the ideal. -/
-theorem mul_eq_zero_of_sq_eq_bot [Semiring S] [Fintype m] {I : Ideal S} (hI : I ^ 2 = ⊥)
-    {A : Matrix l m S} {B : Matrix m o S} (hA : ∀ i j, A i j ∈ I) (hB : ∀ i j, B i j ∈ I) :
+/-- **The product of two matrices with entries in ideals whose product is zero vanishes**: each
+entry of `A * B` is a sum of elements of `I * J`. -/
+theorem mul_eq_zero_of_mul_eq_bot [Semiring S] [Fintype m] {I J : Ideal S} (hIJ : I * J = ⊥)
+    {A : Matrix l m S} {B : Matrix m o S} (hA : ∀ i j, A i j ∈ I) (hB : ∀ i j, B i j ∈ J) :
     A * B = 0 := by
-  rw [Submodule.pow_succ, Submodule.pow_one] at hI
   ext i j
   rw [Matrix.mul_apply, Matrix.zero_apply]
   refine Finset.sum_eq_zero fun k _ => ?_
-  have h := Ideal.mul_mem_mul (hA i k) (hB k j)
-  rw [hI] at h
-  exact Ideal.mem_bot.mp h
+  rw [← Ideal.mem_bot, ← hIJ]
+  exact Ideal.mul_mem_mul (hA i k) (hB k j)
 
 /-- The entries of a matrix lie in the kernel of `f` exactly when its image under `f` is zero. -/
 theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F : Type*}
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
   simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, Matrix.zero_apply]
+
+/-- **The kernel of an entrywise ring homomorphism** consists of the matrices with entries in
+`ker f`, so it has `|ker f| ^ (n * n)` elements. -/
+theorem _root_.RingHom.natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring S] [Fintype n]
+    [DecidableEq n] (f : R →+* S) :
+    Nat.card (RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S)) =
+      Nat.card (RingHom.ker f) ^ (Fintype.card n * Fintype.card n) := by
+  let e : RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S) ≃
+      Matrix n n (RingHom.ker f) :=
+    { toFun M := of fun i j ↦
+        ⟨M.val i j, forall_mem_ker_iff_map_eq_zero.mpr (RingHom.mem_ker.mp M.property) i j⟩
+      invFun M := ⟨of fun i j ↦ (M i j).val,
+        RingHom.mem_ker.mpr (forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ (M i j).property)⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [Nat.card_congr e, card_matrix, Nat.card_eq_fintype_card (α := n)]
 
 /-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
 lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/

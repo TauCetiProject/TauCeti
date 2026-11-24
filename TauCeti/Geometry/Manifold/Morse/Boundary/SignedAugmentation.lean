@@ -249,7 +249,7 @@ private theorem trajectorySign_eq_signBasis {p q : M} {φp : MorseChart E f p}
     rw [hB₀def, Module.Basis.reindex_apply, Module.Basis.reindex_apply]
     rcases finSumFinEquiv.symm ((finCongr hcard).symm j) with k | k
     · rw [Module.Basis.prod_apply_inl_fst, Module.Basis.singleton_apply]
-    · exact absurd k.2 (by omega)
+    · exact absurd k.isLt (by omega)
   -- The comparison map carries `C` to positive multiples of the vectors of `B₀`.
   have hCe : C.map e = B₀.unitsSMul fun j ↦ Units.mk0 _ (hC j).ne' := by
     refine Module.Basis.eq_of_apply_eq fun j ↦ Prod.ext ?_ (Subsingleton.elim _ _)
@@ -377,7 +377,7 @@ theorem finsum_augmentationSign_mul_signedMorseBoundaryCoeff (p : criticalPoints
   -- The two trajectories leaving `p` cross the middle levels at `w i` and end at `bc i`.
   obtain ⟨w, b, hb, hwmem, hw1, hwinj, hslice⟩ :=
     h.exists_morseTrajectorySlice_eq_image_of_morseIndex_eq_one hf
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) hp
   set bc : Fin 2 → criticalPoints 𝓘(ℝ, E) f :=
     fun i ↦ ⟨b i, mem_criticalPoints_iff_mfderiv_eq_zero.2 (hb i).1⟩
   have hpbc (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ, E) f p =
@@ -455,7 +455,7 @@ theorem signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero {m : criticalPoint
   have hsum := h.finsum_augmentationSign_mul_signedMorseBoundaryCoeff hf 𝔬 p
   rw [finsum_eq_single _ m fun q hqm ↦ by
     rw [𝔬.augmentationSign_of_morseIndex_ne_zero fun hq ↦ hqm (Subtype.ext
-      (huniq q (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hq)), zero_mul]] at hsum
+      (huniq q (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) hq)), zero_mul]] at hsum
   rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one hm with he | he <;> rw [he] at hsum <;> omega
 
 /-- **A unique critical point of index zero is not hit by the integral boundary.** If `m` is the

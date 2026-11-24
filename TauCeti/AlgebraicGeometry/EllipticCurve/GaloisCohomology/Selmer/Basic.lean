@@ -245,9 +245,10 @@ the inclusion `E(Kˢ)[m] → E(Kˢ)`, restricted to the Selmer group. -/
 def selmerShaMap :
     W.selmerGroup τ m →+ AddSubgroup.torsionBy (W.shafarevichTateGroup τ) m where
   toFun c := ⟨⟨explicitCoeff1 _ _ (W.torsionCoeffIncl m) continuous_of_discreteTopology c,
-    (W.mem_selmerGroup_iff τ m).1 c.2⟩, AddSubgroup.torsionBy.nsmul_iff.2 <| Subtype.ext <| by
+    (W.mem_selmerGroup_iff τ m).1 c.property⟩, AddSubgroup.torsionBy.nsmul_iff.2 <| Subtype.ext <|
+        by
       -- `m` kills the image of `H¹(G_K, E[m])`, as recorded by `torsionCoeffInclH1`.
-      have h := (W.torsionCoeffInclH1 m c).2
+      have h := (W.torsionCoeffInclH1 m c).property
       rw [coe_torsionCoeffInclH1, AddSubgroup.torsionBy.nsmul_iff] at h
       rw [AddSubgroup.coe_nsmul, h, ZeroMemClass.coe_zero]⟩
   map_zero' := by ext; simp

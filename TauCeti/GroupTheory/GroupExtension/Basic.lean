@@ -19,10 +19,17 @@ This file provides operations on an existing group extension.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
 * `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
 * `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
+* `GroupExtension.relabelEquivOfMulEquiv`: packages compatible multiplicative equivalences on all
+  three terms of two extensions into a `GroupExtension.Equiv` after relabelling.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
   the quotient group is surjective as soon as it is surjective on the kernel terms.
+* `GroupExtension.InducesAction`: the extension conjugates its kernel by a given action of the
+  quotient group.
+* `GroupExtension.inducesAction_iff_smul_eq_self`: a central extension induces exactly the trivial
+  action, and `GroupExtension.InducesAction.range_inl_le_center_iff`: an extension inducing an
+  action is central exactly when that action is trivial.
 
 The relabelling and homomorphism constructions are mirrored for additive groups by `to_additive`.
 Central extensions also admit character twists, preserved by equivalences of extensions. When the
@@ -152,6 +159,45 @@ theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtensio
   apply S.inl_injective
   rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
     GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
+
+/-- Compatible multiplicative equivalences `(eN, eE, eG)` between all three terms of two group
+extensions define an equivalence `(S.relabel eN.symm eG).Equiv S'` with fixed kernel `N'` and
+quotient `G'`. -/
+@[to_additive
+  /-- Compatible additive equivalences `(eN, eE, eG)` between all three terms of two additive group
+  extensions define an equivalence `(S.relabel eN.symm eG).Equiv S'` with fixed kernel `N'` and
+  quotient `G'`. -/]
+def relabelEquivOfMulEquiv (S : GroupExtension N E G) {N' E' G' : Type*} [Group N'] [Group E']
+    [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E') (eG : G ≃* G')
+    (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) :
+    (S.relabel eN.symm eG).Equiv S' where
+  toMulEquiv := eE
+  inl_comm := by
+    ext n'
+    have h := DFunLike.congr_fun hinl (eN.symm n')
+    simpa only [relabel_inl, Function.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, eN.apply_symm_apply] using h
+  rightHom_comm := by
+    ext x
+    simpa only [relabel_rightHom, Function.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom] using DFunLike.congr_fun hright x
+
+@[to_additive (attr := simp)]
+theorem relabelEquivOfMulEquiv_apply (S : GroupExtension N E G) {N' E' G' : Type*} [Group N']
+    [Group E'] [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E')
+    (eG : G ≃* G') (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (x : E) :
+    S.relabelEquivOfMulEquiv S' eN eE eG hinl hright x = eE x :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem relabelEquivOfMulEquiv_symm_apply (S : GroupExtension N E G) {N' E' G' : Type*} [Group N']
+    [Group E'] [Group G'] (S' : GroupExtension N' E' G') (eN : N ≃* N') (eE : E ≃* E')
+    (eG : G ≃* G') (hinl : eE.toMonoidHom.comp S.inl = S'.inl.comp eN.toMonoidHom)
+    (hright : S'.rightHom.comp eE.toMonoidHom = eG.toMonoidHom.comp S.rightHom) (y : E') :
+    (S.relabelEquivOfMulEquiv S' eN eE eG hinl hright).symm y = eE.symm y :=
+  (rfl)
 
 section Hom
 
@@ -298,4 +344,107 @@ theorem mulAutCongr_characterTwist (F : S.Equiv S') (hcentral : S.inl.range ≤ 
 
 end Equiv
 
+section InducesAction
+
+variable {M : Type*} [Group M] {S : GroupExtension M E G}
+
+/-- **A central extension acts trivially on its kernel**: conjugation by any element of `E` is the
+identity automorphism of `M`. -/
+theorem conjAct_eq_one_of_le_center (h : S.inl.range ≤ Subgroup.center E) (e : E) :
+    S.conjAct e = 1 := by
+  ext m
+  refine S.inl_injective ?_
+  rw [GroupExtension.inl_conjAct_comm, Subgroup.mem_center_iff.1 (h ⟨m, rfl⟩) e,
+    mul_inv_cancel_right]
+  simp
+
+variable (S) in
+/-- The extension `S` conjugates its kernel by the ambient action of `G` on `M`. When the kernel
+is abelian, this compatibility lets `TauCeti.GroupExtension.factorSet` bundle the factor set of a
+normalized section of `S` as a `TauCeti.FactorSet` for that action. For a central extension it says
+the ambient action is trivial. -/
+def InducesAction [MulDistribMulAction G M] : Prop :=
+  ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
+
+/-- Unfolds `GroupExtension.InducesAction S`: conjugation by each `e : E` acts on the kernel as the
+image `S.rightHom e` does. -/
+@[simp]
+theorem inducesAction_iff [MulDistribMulAction G M] :
+    InducesAction S ↔ ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m :=
+  Iff.rfl
+
+/-- Relabelling both the kernel and the quotient transports the induced action along the two
+equivalences, provided they identify the ambient actions. -/
+theorem InducesAction.relabel [MulDistribMulAction G M] (hact : InducesAction S)
+    {M' G' : Type*} [Group M'] [Group G'] [MulDistribMulAction G' M'] (eM : M' ≃* M)
+    (eG : G ≃* G') (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    InducesAction (S.relabel eM eG) := by
+  intro x m
+  apply (S.relabel eM eG).inl_injective
+  rw [GroupExtension.inl_conjAct_comm]
+  simp only [GroupExtension.relabel_inl, GroupExtension.relabel_rightHom, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, hsmul]
+  rw [← hact x (eM m), GroupExtension.inl_conjAct_comm]
+
+/-- Relabelling the quotient along `e : G ≃* H` preserves `GroupExtension.InducesAction`, provided
+the action of `H` on `M`, pulled back along `e`, is the action of `G`. This is
+`GroupExtension.InducesAction.relabel` with the identity of the kernel. -/
+theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
+    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
+    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
+    InducesAction (S.relabelQuotient e) :=
+  hact.relabel (MulEquiv.refl M) e hsmul
+
+/-- **A central extension induces exactly the trivial action.** This is the constructor for
+`GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the
+ambient action of `G` on `M` is trivial. -/
+theorem inducesAction_iff_smul_eq_self [MulDistribMulAction G M]
+    (h : S.inl.range ≤ Subgroup.center E) :
+    InducesAction S ↔ ∀ (g : G) (m : M), g • m = m := by
+  constructor
+  · intro hact g m
+    obtain ⟨e, rfl⟩ := S.rightHom_surjective g
+    rw [← hact e, conjAct_eq_one_of_le_center h e, MulAut.one_apply]
+  · intro htriv e m
+    rw [conjAct_eq_one_of_le_center h e, MulAut.one_apply, htriv]
+
+/-- **An extension inducing the ambient action is central exactly when that action is trivial.**
+Where `GroupExtension.inducesAction_iff_smul_eq_self` assumes centrality and characterizes
+`GroupExtension.InducesAction`, this assumes `GroupExtension.InducesAction` and characterizes
+centrality. -/
+theorem InducesAction.range_inl_le_center_iff [MulDistribMulAction G M] (hact : InducesAction S) :
+    S.inl.range ≤ Subgroup.center E ↔ ∀ (g : G) (m : M), g • m = m := by
+  refine ⟨fun h => (inducesAction_iff_smul_eq_self h).1 hact, fun h => ?_⟩
+  rintro _ ⟨m, rfl⟩
+  refine Subgroup.mem_center_iff.2 fun e => ?_
+  rw [← mul_inv_eq_iff_eq_mul, ← GroupExtension.inl_conjAct_comm, hact e m, h]
+
+/-- When `S` induces the ambient action, conjugating `S.inl m` by the value of a section `σ` at `g`
+gives `S.inl (g • m)`. -/
+theorem Section.inl_smul [MulDistribMulAction G M] (σ : S.Section) (hact : InducesAction S)
+    (g : G) (m : M) : S.inl (g • m) = σ g * S.inl m * (σ g)⁻¹ := by
+  have h := hact (σ g) m
+  rw [GroupExtension.Section.rightHom_section] at h
+  rw [← h, GroupExtension.inl_conjAct_comm]
+
+end InducesAction
+
 end GroupExtension
+
+namespace SemidirectProduct
+
+variable {N G : Type*} [Group N] [Group G] (φ : G →* MulAut N)
+
+/-- Evaluating the canonical splitting `SemidirectProduct.inr_splitting` applies
+`SemidirectProduct.inr`. -/
+@[simp]
+theorem inr_splitting_apply (g : G) : inr_splitting φ g = inr g :=
+  (rfl)
+
+/-- The underlying monoid homomorphism of `SemidirectProduct.inr_splitting` is
+`SemidirectProduct.inr`. -/
+@[simp]
+theorem toMonoidHom_inr_splitting : (inr_splitting φ).toMonoidHom = inr :=
+  (rfl)
+
+end SemidirectProduct

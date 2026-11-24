@@ -179,8 +179,8 @@ theorem isPrincipal_of_ne_maximalIdeal (hdim : ringKrullDim A ≤ 2) {p : Ideal 
     have hcd : (c : A) = y * d := mul_left_cancel₀ hx0 (by rw [hc', ← hd]; ring)
     have hdp : d ∈ p := by
       rcases hxy_p with h | h
-      · exact (‹p.IsPrime›.mem_or_mem (by rw [mul_comm, hd]; exact a.2)).resolve_left h
-      · exact (‹p.IsPrime›.mem_or_mem (hcd ▸ c.2)).resolve_left h
+      · exact (‹p.IsPrime›.mem_or_mem (by rw [mul_comm, hd]; exact a.property)).resolve_left h
+      · exact (‹p.IsPrime›.mem_or_mem (hcd ▸ c.property)).resolve_left h
     exact ⟨⟨d, hdp⟩, Submodule.mem_top, Subtype.ext (by simp [← hd, mul_comm])⟩
   have : Module.Free A p := free_of_isWeaklyRegular hxy hreg
   exact (Submodule.rank_le_one_iff_isPrincipal p).mp
