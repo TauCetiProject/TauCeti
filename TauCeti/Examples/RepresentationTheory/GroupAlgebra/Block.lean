@@ -49,22 +49,12 @@ private theorem isConj_of_id_eq {G : Type*} [Group G] (g h : G) (hgh : id g = id
   rw [id_eq, id_eq] at hgh
   exact hgh ▸ IsConj.refl g
 
-/-- The coefficient of `of k G g` at `h`. -/
-private theorem coeff_of_apply {k G : Type*} [Semiring k] [Monoid G] [DecidableEq G] (g h : G) :
-    (of k G g).coeff h = if g = h then 1 else 0 := by
-  rw [of_apply, coeff_single, Finsupp.single_apply]
-
-/-- The coefficient of `1` at `h`. -/
-private theorem coeff_one_apply {k G : Type*} [Semiring k] [Monoid G] [DecidableEq G] (h : G) :
-    (1 : MonoidAlgebra k G).coeff h = if 1 = h then 1 else 0 := by
-  rw [one_def, coeff_single, Finsupp.single_apply]
-
 /-- The coefficient function of `1` in the group algebra, read in the centre. -/
 private theorem coeff_one_center {k G : Type*} [CommSemiring k] [Group G] [DecidableEq G] :
     ⇑((1 : Subalgebra.center k (MonoidAlgebra k G)) : MonoidAlgebra k G).coeff =
       fun g ↦ if g = 1 then 1 else 0 := by
   funext g
-  rw [OneMemClass.coe_one, coeff_one_apply]
+  rw [OneMemClass.coe_one, one_def, coeff_single, Finsupp.single_apply]
   simp only [eq_comm]
 
 /-! ### The cyclic group of order `2` -/
@@ -80,7 +70,7 @@ theorem one_add_of_t_mul_self_eq_zero :
     (1 + of (ZMod 2) C₂ t) * (1 + of (ZMod 2) C₂ t) = 0 := by
   refine ext (Finsupp.ext fun g ↦ ?_)
   simp only [coeff_mul_eq_sum, coeff_add, Finsupp.add_apply, coeff_zero, Finsupp.zero_apply,
-    coeff_of_apply, coeff_one_apply]
+    of_apply, one_def, coeff_single, Finsupp.single_apply]
   revert g
   decide
 
@@ -89,8 +79,8 @@ theorem one_add_of_t_ne_zero : 1 + of (ZMod 2) C₂ t ≠ 0 := by
   intro h
   have := congr_arg (fun x : MonoidAlgebra (ZMod 2) C₂ ↦ x.coeff 1) h
   revert this
-  simp only [coeff_add, Finsupp.add_apply, coeff_zero, Finsupp.zero_apply, coeff_of_apply,
-    coeff_one_apply]
+  simp only [coeff_add, Finsupp.add_apply, coeff_zero, Finsupp.zero_apply, of_apply,
+    one_def, coeff_single, Finsupp.single_apply]
   decide
 
 /-- In `𝔽₂[C₂]` the element `ε = 1 + t` is not idempotent. -/
@@ -120,7 +110,7 @@ theorem isBlockIdempotent_ePlus : IsBlockIdempotent (toCenter ePlus) := by
   funext g
   revert g
   simp only [coe_toCenter, coeff_neg, coeff_add, Finsupp.neg_apply, Finsupp.add_apply,
-    coeff_of_apply, coeff_one_apply]
+    of_apply, one_def, coeff_single, Finsupp.single_apply]
   decide
 
 /-- `e₋ = (1 - t)/2` is a block idempotent of `𝔽₃[C₂]`. -/
@@ -130,7 +120,7 @@ theorem isBlockIdempotent_eMinus : IsBlockIdempotent (toCenter eMinus) := by
   funext g
   revert g
   simp only [coe_toCenter, coeff_neg, coeff_sub, Finsupp.neg_apply, Finsupp.sub_apply,
-    coeff_of_apply, coeff_one_apply]
+    of_apply, one_def, coeff_single, Finsupp.single_apply]
   decide
 
 /-- In `𝔽₃[C₂]` the blocks `e₊` and `e₋` form a complete orthogonal family of idempotents. -/
@@ -141,12 +131,12 @@ theorem completeOrthogonalIdempotents_ePlus_eMinus :
   · revert g
     simp only [MulMemClass.coe_mul, coe_toCenter, coeff_mul_eq_sum, coeff_neg, coeff_sub,
       coeff_add, Finsupp.neg_apply, Finsupp.sub_apply, Finsupp.add_apply, ZeroMemClass.coe_zero,
-      coeff_zero, Finsupp.zero_apply, coeff_of_apply, coeff_one_apply]
+      coeff_zero, Finsupp.zero_apply, of_apply, one_def, coeff_single, Finsupp.single_apply]
     decide
   · revert g
     simp only [AddMemClass.coe_add, coe_toCenter, coeff_neg, coeff_sub, coeff_add,
-      Finsupp.neg_apply, Finsupp.sub_apply, Finsupp.add_apply, OneMemClass.coe_one, coeff_of_apply,
-      coeff_one_apply]
+      Finsupp.neg_apply, Finsupp.sub_apply, Finsupp.add_apply, OneMemClass.coe_one, of_apply,
+      one_def, coeff_single, Finsupp.single_apply]
     decide
 
 /-- **`1` is not a block of `𝔽₃[C₂]`**: it is a central idempotent, the sum of the two
@@ -175,7 +165,8 @@ theorem isBlockIdempotent_one_add_r_add_r_sq :
     (by decide) (by decide)
   funext g
   revert g
-  simp only [coe_toCenter, coeff_add, Finsupp.add_apply, coeff_of_apply, coeff_one_apply]
+  simp only [coe_toCenter, coeff_add, Finsupp.add_apply, of_apply, one_def, coeff_single,
+    Finsupp.single_apply]
   decide
 
 /-- The block idempotent `r + r²` of `𝔽₂[C₃]`. -/
@@ -185,7 +176,8 @@ theorem isBlockIdempotent_r_add_r_sq :
     (by decide) (by decide) (by decide)
   funext g
   revert g
-  simp only [coe_toCenter, coeff_add, Finsupp.add_apply, coeff_of_apply]
+  simp only [coe_toCenter, coeff_add, Finsupp.add_apply, of_apply, coeff_single,
+    Finsupp.single_apply]
   decide
 
 section ScalarExtension
@@ -334,8 +326,8 @@ theorem one_add_of_ρ_add_of_ρ_sq_mem_center :
     1 + of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈
       Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) := by
   rw [← conjInvariants_top, mem_conjInvariants_iff_coeff]
-  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, coeff_of_apply,
-    coeff_one_apply]
+  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, of_apply,
+    one_def, coeff_single, Finsupp.single_apply]
   decide +kernel
 
 /-- `ρ + ρ²` is central in `𝔽₂[S₃]`. -/
@@ -343,7 +335,8 @@ theorem of_ρ_add_of_ρ_sq_mem_center :
     of (ZMod 2) S₃ ρ + of (ZMod 2) S₃ (ρ ^ 2) ∈
       Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) S₃) := by
   rw [← conjInvariants_top, mem_conjInvariants_iff_coeff]
-  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, coeff_of_apply]
+  simp only [Subgroup.mem_top, forall_const, coeff_add, Finsupp.add_apply, of_apply, coeff_single,
+    Finsupp.single_apply]
   decide +kernel
 
 /-- The block idempotent `1 + ρ + ρ²` of `𝔽₂[S₃]`. -/
@@ -359,7 +352,8 @@ theorem coeff_blockOneS₃ : ⇑(blockOneS₃ : MonoidAlgebra (ZMod 2) S₃).coe
     fun g ↦ if g * g * g = 1 then 1 else 0 := by
   funext g
   revert g
-  simp only [blockOneS₃, coeff_add, Finsupp.add_apply, coeff_of_apply, coeff_one_apply]
+  simp only [blockOneS₃, coeff_add, Finsupp.add_apply, of_apply, one_def, coeff_single,
+    Finsupp.single_apply]
   decide +kernel
 
 /-- The coefficient function of `ρ + ρ²` is the indicator of the `3`-cycles. -/
@@ -367,7 +361,8 @@ theorem coeff_blockTwoS₃ : ⇑(blockTwoS₃ : MonoidAlgebra (ZMod 2) S₃).coe
     fun g ↦ if g ≠ 1 ∧ g * g * g = 1 then 1 else 0 := by
   funext g
   revert g
-  simp only [blockTwoS₃, coeff_add, Finsupp.add_apply, coeff_of_apply]
+  simp only [blockTwoS₃, coeff_add, Finsupp.add_apply, of_apply, coeff_single,
+    Finsupp.single_apply]
   decide +kernel
 
 /-- `1 + ρ + ρ²` is a block idempotent of `𝔽₂[S₃]`. -/
@@ -384,7 +379,7 @@ theorem isBlockIdempotent_blockTwoS₃ : IsBlockIdempotent blockTwoS₃ :=
 theorem blockOneS₃_add_blockTwoS₃ : blockOneS₃ + blockTwoS₃ = 1 := by
   refine Subtype.ext (ext (Finsupp.ext fun g ↦ ?_))
   rw [Subalgebra.coe_add, coeff_add, Finsupp.add_apply, coeff_blockOneS₃, coeff_blockTwoS₃,
-    OneMemClass.coe_one, coeff_one_apply]
+    OneMemClass.coe_one, one_def, coeff_single, Finsupp.single_apply]
   revert g
   decide +kernel
 
