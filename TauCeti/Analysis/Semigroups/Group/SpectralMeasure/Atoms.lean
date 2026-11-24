@@ -23,6 +23,9 @@ norm of the eigenprojection onto `U.eigenspace hU.isComplexLinear ω` as the spe
 
 * `IsUnitary.norm_starProjection_eigenspace_sq_eq_measureReal_singleton`:
   `‖(U.eigenspace hU.isComplexLinear ω).starProjection v‖ ^ 2 = σ.real {ω}`.
+* `IsUnitary.exists_tendsto_twistedAverage`: existence of the twisted mean ergodic limit `w`
+  at frequency `a` (`ω = 2πa`) together with its eigenfunction, orthogonality, and spectral
+  atomic-mass properties.
 -/
 
 public section
@@ -77,6 +80,53 @@ theorem norm_starProjection_eigenspace_sq_eq_measureReal_singleton [CompleteSpac
     Submodule.re_inner_starProjection_eq_normSq, ← Submodule.norm_coe,
     ← Submodule.starProjection_apply, Complex.ofReal_re] at hre
   exact hre
+
+/-- **Continuous-time twisted mean ergodic theorem with spectral atomic mass.** For a unitary
+C₀-group `U` on a complete complex Hilbert space `H`, a frequency `a : ℝ`, and `v : H`, the
+twisted time averages `(T⁻¹ : ℂ) • ∫ t in (0 : ℝ)..T, exp (-(2 * π * a * t * I)) • U t v`
+converge in norm as `T → ∞` to a vector `w` satisfying `U t w = exp (2 * π * a * t * I) • w` for
+all `t`, orthogonal to `v - w` against every vector with the same eigenvalue behavior, and
+satisfying `‖w‖ ^ 2 = σ.real {2 * π * a}` for every finite Borel measure `σ` with
+`⟪v, U t v⟫_ℂ = charFun σ t`. -/
+theorem exists_tendsto_twistedAverage [CompleteSpace H] (hU : U.IsUnitary) (a : ℝ) (v : H) :
+    ∃ w : H, (∀ t : ℝ, U t w = Complex.exp (2 * Real.pi * a * t * Complex.I) • w) ∧
+      (∀ u : H, (∀ t : ℝ, U t u = Complex.exp (2 * Real.pi * a * t * Complex.I) • u) →
+        ⟪u, v - w⟫_ℂ = 0) ∧
+      Tendsto (fun T : ℝ ↦ (T⁻¹ : ℂ) •
+          ∫ t in (0 : ℝ)..T, Complex.exp (-(2 * Real.pi * a * t * Complex.I)) • U t v)
+        atTop (𝓝 w) ∧
+      ∀ σ : Measure ℝ, IsFiniteMeasure σ →
+        (∀ t : ℝ, ⟪v, U t v⟫_ℂ = charFun σ t) →
+        ‖w‖ ^ 2 = σ.real {2 * Real.pi * a} := by
+  let ω : ℝ := 2 * Real.pi * a
+  let E := U.eigenspace hU.isComplexLinear ω
+  let w : H := E.starProjection v
+  have hcast (t : ℝ) : (ω : ℂ) * (t : ℂ) * Complex.I = 2 * Real.pi * a * t * Complex.I := by
+    dsimp only [ω]
+    push_cast
+    ring
+  refine ⟨w, ?_, ?_, ?_, ?_⟩
+  · have hw : w ∈ E := by
+      dsimp only [w]
+      rw [Submodule.starProjection_apply]
+      exact Submodule.coe_mem _
+    rw [U.mem_eigenspace_iff hU.isComplexLinear ω w] at hw
+    simpa only [hcast] using hw
+  · intro u hu
+    have hu_mem : u ∈ E := by
+      rw [U.mem_eigenspace_iff hU.isComplexLinear ω u]
+      simpa only [hcast] using hu
+    have horth := Submodule.sub_starProjection_mem_orthogonal (K := E) v
+    rw [Submodule.mem_orthogonal] at horth
+    exact horth u hu_mem
+  · have hlim := hU.tendsto_twistedAverage_starProjection ω v
+    refine hlim.congr fun T ↦ ?_
+    conv_rhs => rw [← Complex.ofReal_inv, Complex.coe_smul]
+    congr 1
+    refine intervalIntegral.integral_congr fun t _ ↦ ?_
+    rw [hcast]
+  · intro σ _ hσ
+    exact hU.norm_starProjection_eigenspace_sq_eq_measureReal_singleton ω v hσ
 
 end IsUnitary
 
