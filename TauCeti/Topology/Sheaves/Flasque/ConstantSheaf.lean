@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import Mathlib.Topology.Sheaves.Flasque
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
-public import TauCeti.Topology.Sheaves.Flasque.Basic
 import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
@@ -27,7 +26,8 @@ are identities under these identifications. Over the empty open the sections are
 object (a zero object when `D` has one, by `TopCat.Sheaf.isZero_obj_of_eq_bot`). Hence, when
 `D` has a zero object, the constant sheaf on an irreducible space is flasque. For sheaves of
 abelian groups its cohomology therefore vanishes in positive degrees, by the instance
-`TauCeti.Topology.subsingleton_H_succ_of_isFlasque`. This does not happen automatically:
+`TauCeti.Topology.subsingleton_H_succ_of_isFlasque` from `TauCeti.Topology.Sheaves.Flasque.Basic`,
+which callers import themselves. This does not happen automatically:
 `TauCeti.Topology.isFlasque_constantSheaf` is a theorem rather than an instance (instance search
 for it times out for abelian groups), so callers first write `have := isFlasque_constantSheaf A`.
 A spectral space with a generic point is irreducible, so this applies to it.

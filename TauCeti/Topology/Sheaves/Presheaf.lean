@@ -19,8 +19,8 @@ of opens is thin, two successive restrictions of a section agree with the single
 the same opens.
 A family of sections over opens is compatible as soon as any two of its sections are restrictions
 of a common section in the family, and two sections of a sheaf of types that agree on the
-intersection of their domains glue to a section over the union. The sections of any sheaf over the
-empty open form a zero object.
+intersection of their domains glue to a section over the union. In a category with a zero object,
+the sections of a sheaf over the empty open form a zero object.
 
 ## Main results
 
@@ -36,8 +36,8 @@ empty open form a zero object.
   restrictions of a common member, is compatible.
 * `TopCat.Presheaf.IsSheaf.exists_gluing_sup`: two sections of a sheaf of types that agree on the
   intersection of their domains glue to a section over the union.
-* `TopCat.Sheaf.isZero_obj_of_eq_bot`: the sections of any sheaf over the empty open form a zero
-  object.
+* `TopCat.Sheaf.isZero_obj_of_eq_bot`: in a category with a zero object, the sections of a sheaf
+  over the empty open form a zero object.
 -/
 
 public section
@@ -111,7 +111,8 @@ end TopCat.Presheaf
 
 namespace TopCat.Sheaf
 
-/-- The sections of a sheaf over the empty open form a zero object. -/
+/-- In a category with a zero object, the sections of a sheaf over the empty open form a zero
+object. -/
 theorem isZero_obj_of_eq_bot {C : Type*} [Category* C] [HasZeroObject C] {X : TopCat}
     (F : X.Sheaf C) {U : Opens X} (h : U = ⊥) : IsZero (F.obj.obj (op U)) :=
   (isZero_zero C).of_iso ((isTerminalOfEqEmpty F h).uniqueUpToIso HasZeroObject.zeroIsTerminal)
