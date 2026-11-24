@@ -36,7 +36,7 @@ disc, and so over every compact window of divisors, collisions of zeros included
   obey such bounds (`TauCeti.Vortex.exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp`);
   the connection part of the end field is linear in `Dℓ` (`TauCeti.Vortex.exists_endField_eq_add`),
   and the derivatives of its section part `exp (ℓ / 2) - 1` follow by the Faà di Bruno bound
-  (`ContDiffAt.norm_iteratedFDeriv_exp_comp_le`) since `ℓ ≤ 0`.
+  (`ContDiffAt.norm_iteratedFDeriv_exp_sub_one_le`) since `ℓ ≤ 0`.
 * `exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_mem_norm_le`:
   if the zeros lie in the closed disc of radius `r`, the same bound holds with `exp (-c |z|)` for
   `|z| ≥ R`, with `K` and `R` depending only on `m`, `n`, `c` and `r`.
@@ -77,52 +77,6 @@ open scoped ContDiff _root_.Polynomial
 /-! ### The end field of a function -/
 
 open scoped Nat in
-/-- Pointwise bounds for `exp (ℓ / 2) - 1` with `ℓ ≤ 0`: if the derivatives of `ℓ` of order at most
-`n` have norm at most `K E` at `z`, with `0 ≤ E ≤ 1`, then the derivative of order `n` of
-`exp (ℓ / 2) - 1` at `z` has norm at most `n! max 1 K ^ (n + 1) E`. -/
-private theorem norm_iteratedFDeriv_exp_half_sub_one_le {ℓ : ℂ → ℝ} {z : ℂ} {n : ℕ} {K E : ℝ}
-    (hℓ : ContDiffAt ℝ ∞ ℓ z) (hℓ₀ : ℓ z ≤ 0) (hK : 0 ≤ K) (hE₀ : 0 ≤ E) (hE₁ : E ≤ 1)
-    (hD : ∀ j ≤ n, ‖iteratedFDeriv ℝ j ℓ z‖ ≤ K * E) :
-    ‖iteratedFDeriv ℝ n (fun w ↦ Real.exp (ℓ w / 2) - 1) z‖ ≤ n ! * max 1 K ^ (n + 1) * E := by
-  have hmK : (1 : ℝ) ≤ max 1 K := le_max_left 1 K
-  have hexp₁ : Real.exp (ℓ z / 2) ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · -- Order zero: `0 ≤ 1 - exp (ℓ / 2) ≤ -ℓ / 2 ≤ K E / 2`.
-    have h₀ := hD 0 le_rfl
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_of_nonpos hℓ₀] at h₀
-    have hexp := Real.add_one_le_exp (ℓ z / 2)
-    rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, abs_of_nonpos (by linarith)]
-    have hKE : K * E ≤ max 1 K * E := mul_le_mul_of_nonneg_right (le_max_right 1 K) hE₀
-    simp only [Nat.factorial_zero, Nat.cast_one, zero_add, pow_one, one_mul]
-    linarith
-  · -- Positive order: the Faà di Bruno bound for `exp (ℓ / 2)`.
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    rw [show (fun w ↦ Real.exp (ℓ w / 2) - 1) = fun w ↦ Real.exp (ℓ w / 2) + (-1) by
-      ext w; ring, iteratedFDeriv_succ_add_const]
-    -- The derivatives of `ℓ / 2` are at most `K E`.
-    have hD₂ : ∀ i, 1 ≤ i → i ≤ k + 1 →
-        ‖iteratedFDeriv ℝ i (fun w ↦ ℓ w / 2) z‖ ≤ K * E := fun i _ hi ↦ by
-      have h := iteratedFDeriv_fun_const_smul_apply ℓ (2⁻¹ : ℝ) z i
-      simp only [smul_eq_mul] at h
-      rw [show (fun w ↦ ℓ w / 2) = fun w ↦ 2⁻¹ * ℓ w by ext w; ring, h, norm_smul,
-        Real.norm_eq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 2⁻¹)]
-      have := hD i hi
-      nlinarith [norm_nonneg (iteratedFDeriv ℝ i ℓ z)]
-    have hB := ((hℓ.div_const 2).of_le (by simp)).norm_iteratedFDeriv_exp_comp_le
-      (mul_nonneg hK hE₀) hD₂
-    -- `max (K E) ((K E)ᵏ⁺¹) ≤ max 1 K ^ (k + 2) E`, since `E ≤ 1`.
-    have hmax : max (K * E) ((K * E) ^ (k + 1)) ≤ max 1 K ^ (k + 2) * E := by
-      refine max_le (mul_le_mul_of_nonneg_right ((le_max_right 1 K).trans
-        (le_self_pow₀ hmK (by omega))) hE₀) ?_
-      rw [mul_pow]
-      exact mul_le_mul ((pow_le_pow_left₀ hK (le_max_right 1 K) _).trans
-        (pow_le_pow_right₀ hmK (by omega))) (pow_le_of_le_one hE₀ hE₁ (by omega))
-        (pow_nonneg hE₀ _) (by positivity)
-    calc _ ≤ (k + 1)! * Real.exp (ℓ z / 2) * max (K * E) ((K * E) ^ (k + 1)) := hB
-      _ ≤ (k + 1)! * 1 * (max 1 K ^ (k + 2) * E) := by gcongr
-      _ = _ := by ring
-
-open scoped Nat in
 /-- Pointwise bounds for the end field `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of
 a function `ℓ ≤ 0`: if the derivatives of `ℓ` of order at most `n + 1` have norm at most `K E` at
 `z`, with `0 ≤ E ≤ 1`, then the derivative of order `n` of the end field at `z` has norm at most
@@ -144,12 +98,20 @@ private theorem exists_norm_iteratedFDeriv_endField_le (n : ℕ) {K : ℝ} (hK :
     have h := L₁.norm_iteratedFDeriv_comp_left hDℓ (n := n) (by exact_mod_cast le_top)
     rw [Function.comp_def, norm_iteratedFDeriv_fderiv] at h
     exact h.trans (mul_le_mul_of_nonneg_left (hD (n + 1) le_rfl) (norm_nonneg _))
-  -- The section part.
+  -- The section part: the derivatives of `ℓ / 2` of order at most `n` are at most `K E`.
+  have hD₂ : ∀ j ≤ n, ‖iteratedFDeriv ℝ j (fun w ↦ ℓ w / 2) z‖ ≤ K * E := fun j hj ↦ by
+    have h := iteratedFDeriv_fun_const_smul_apply ℓ (2⁻¹ : ℝ) z j
+    simp only [smul_eq_mul] at h
+    rw [show (fun w ↦ ℓ w / 2) = fun w ↦ 2⁻¹ * ℓ w by ext w; ring, h, norm_smul,
+      Real.norm_eq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 2⁻¹)]
+    have := hD j (by omega)
+    nlinarith [norm_nonneg (iteratedFDeriv ℝ j ℓ z)]
+  have hS := ((hℓ.div_const 2).of_le (by simp)).norm_iteratedFDeriv_exp_sub_one_le
+    (by linarith) hE₀ hE₁ hD₂
   have h₂ : ‖iteratedFDeriv ℝ n (fun w ↦ L₂ (Real.exp (ℓ w / 2) - 1)) z‖ ≤
       ‖L₂‖ * (n ! * max 1 K ^ (n + 1) * E) :=
     (L₂.norm_iteratedFDeriv_comp_left hE (n := n) (by exact_mod_cast le_top)).trans
-      (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_exp_half_sub_one_le hℓ hℓ₀ hK hE₀ hE₁
-        fun j hj ↦ hD j (by omega)) (norm_nonneg _))
+      (mul_le_mul_of_nonneg_left hS (norm_nonneg _))
   have hadd : iteratedFDeriv ℝ n (fun w ↦ L₁ (fderiv ℝ ℓ w) + L₂ (Real.exp (ℓ w / 2) - 1)) z =
       iteratedFDeriv ℝ n (fun w ↦ L₁ (fderiv ℝ ℓ w)) z +
         iteratedFDeriv ℝ n (fun w ↦ L₂ (Real.exp (ℓ w / 2) - 1)) z :=
