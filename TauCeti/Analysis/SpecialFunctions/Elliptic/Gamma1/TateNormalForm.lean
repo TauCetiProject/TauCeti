@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TateNormalForm
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Moduli
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.FieldPoints
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.DivisionValues
@@ -21,10 +22,12 @@ with the point `1 / N` of exact order `N` has a Tate normal form
 `z ↦ (a(z), b(z))` is a holomorphic map from `ℍ` to the pairs `(a, b)` for which the Tate normal
 form is elliptic and `(0, 0)` has exact order `N`
 (`TauCeti.PointedWeierstrassCurve.tateNormalFormExactOrder`), and that it induces a bijection from
-`Γ₁(N) \ ℍ` onto them (`TauCeti.gamma1QuotientEquivTateNormalForm`). In the coordinates of the
-plane model `Spec ℤ[A, B][Δ⁻¹]` these pairs describe the complex points of the fine moduli scheme
-`Y₁(N)`, so this is the analytic map `Γ₁(N) \ ℍ → Y₁(N)(ℂ)`; the complex structure of `Y₁(N)(ℂ)`
-and the comparison with the scheme are not made here.
+`Γ₁(N) \ ℍ` onto them (`TauCeti.gamma1QuotientEquivTateNormalForm`). These pairs are the
+coordinates in `Spec ℤ[A, B][Δ⁻¹]` of the complex points of the fine moduli scheme `Y₁(N)`
+(`TauCeti.AlgebraicGeometry.UniversalTate.yOnePointsEquiv`), so this is a bijection from
+`Γ₁(N) \ ℍ` onto the morphisms `Spec ℂ ⟶ Y₁(N)` (`TauCeti.gamma1QuotientEquivYOnePoints`), given
+in coordinates by the holomorphic functions `a` and `b`. The complex structure of `Y₁(N)(ℂ)` is
+not made here.
 
 * **The coefficients.** For a lattice `Λ` and `w ∈ ℂ`, write `x = ℘(w; Λ)`, `y = ℘'(w; Λ)` and
   `Q = Ψ₃(x) = 3 x⁴ - (3 / 2) g₂ x² - 3 g₃ x - g₂² / 16` for the value of the `3`-division
@@ -49,6 +52,9 @@ and the comparison with the scheme are not made here.
 * `TauCeti.gamma1QuotientEquivTateNormalForm N hN`: for `N ≥ 4`, the bijection from `Γ₁(N) \ ℍ`
   to the pairs `(a, b)` whose Tate normal form is elliptic with `(0, 0)` of exact order `N`, sending
   the orbit of `z` to the Tate normal form coefficients of `(E_z, 1 / N)`.
+* `TauCeti.gamma1QuotientEquivYOnePoints N hN`: for `N ≥ 4`, the bijection from `Γ₁(N) \ ℍ` to
+  the complex points of `Y₁(N)`, sending the orbit of `z` to the point with these coordinates
+  (`TauCeti.yOnePointsEquiv_gamma1QuotientEquivYOnePoints_mk`).
 
 ## Main results
 
@@ -248,6 +254,29 @@ theorem coe_gamma1QuotientEquivTateNormalForm_mk (hN : 4 ≤ N) (z : ℍ) :
   have : NeZero N := ⟨by omega⟩
   rw [gamma1QuotientEquivTateNormalForm_def, Equiv.trans_apply, gamma1QuotientEquivExactOrder_mk,
     PointedWeierstrassCurve.coe_exactOrderQuotientEquivTateNormalForm_mk]
+
+open _root_.CategoryTheory _root_.AlgebraicGeometry TauCeti.AlgebraicGeometry.UniversalTate in
+variable (N) in
+/-- **`Γ₁(N) \ ℍ` and the complex points of `Y₁(N)`.** For `N ≥ 4`, sending `z` to the point of
+the fine moduli scheme `Y₁(N)` with coordinates the Tate normal form coefficients `(a(z), b(z))`
+of `E_z = ℂ / (ℤ z + ℤ)` with the point `1 / N` induces a bijection from `Γ₁(N) \ ℍ` onto the
+morphisms `Spec ℂ ⟶ Y₁(N)`. -/
+noncomputable def gamma1QuotientEquivYOnePoints (hN : 4 ≤ N) :
+    MulAction.orbitRel.Quotient (Gamma1 N) ℍ ≃ (Spec (.of ℂ) ⟶ yOne.{0} N) :=
+  have : NeZero N := ⟨by omega⟩
+  (gamma1QuotientEquivTateNormalForm N hN).trans (yOnePointsEquiv ℂ N).symm
+
+open TauCeti.AlgebraicGeometry.UniversalTate in
+/-- The point of `Y₁(N)` attached to `z ∈ ℍ` has coordinates the Tate normal form coefficients
+`(a(z), b(z))` of `(E_z, 1 / N)`: by `coe_yOnePointsEquiv_apply`, its ring homomorphism
+`ℤ[A, B][Δ⁻¹] →+* ℂ` sends `A` to `a(z)` and `B` to `b(z)`. -/
+@[simp]
+theorem yOnePointsEquiv_gamma1QuotientEquivYOnePoints_mk [NeZero N] (hN : 4 ≤ N) (z : ℍ) :
+    yOnePointsEquiv ℂ N (gamma1QuotientEquivYOnePoints N hN ⟦z⟧) =
+      ⟨(z.pointedWeierstrassCurve N).tateNormalFormCoeffs,
+        tateNormalFormCoeffs_pointedWeierstrassCurve_mem_tateNormalFormExactOrder hN z⟩ := by
+  rw [gamma1QuotientEquivYOnePoints, Equiv.trans_apply, Equiv.apply_symm_apply]
+  exact Subtype.ext (coe_gamma1QuotientEquivTateNormalForm_mk hN z)
 
 end TauCeti
 

@@ -30,8 +30,8 @@ elliptic curves over `F` with a point of exact order `N` are in bijection with t
 for which the Tate normal form is elliptic and `(0, 0)` has exact order `N`
 (`TauCeti.PointedWeierstrassCurve.exactOrderQuotientEquivTateNormalForm`). Read in the coordinates
 `A = a`, `B = b` of `Spec ℤ[A, B][Δ⁻¹]`, these pairs describe the `F`-points of the fine moduli
-scheme `Y₁(N)` (`TauCeti.AlgebraicGeometry.UniversalTate.yOne`), and the bijection is the
-field-valued form of its universal property; the comparison with the scheme is not made here.
+scheme `Y₁(N)` (`TauCeti.AlgebraicGeometry.UniversalTate.yOnePointsEquiv`), and the bijection is
+the field-valued form of its universal property.
 
 ## Main definitions
 

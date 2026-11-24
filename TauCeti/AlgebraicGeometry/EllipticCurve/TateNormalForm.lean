@@ -484,6 +484,19 @@ theorem map_curveULift {S : Type*} [CommRing S] (φ : ULift.{u} Ring →+* S) :
     curveULift.map φ = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃) := by
   simp [curveULift]
 
+/-- Two ring homomorphisms out of `ULift.{u} ℤ[A, B][Δ⁻¹]` are equal as soon as they agree on the
+coefficients `a₁ = A` and `a₃ = B` of the universal Tate normal form. -/
+theorem ringHom_ext_uLift {S : Type*} [Semiring S] {f g : ULift.{u} Ring →+* S}
+    (h₁ : f curveULift.a₁ = g curveULift.a₁) (h₃ : f curveULift.a₃ = g curveULift.a₃) : f = g := by
+  have h : f.comp (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom =
+      g.comp (ULift.ringEquiv.symm : Ring ≃+* ULift.{u} Ring).toRingHom := by
+    -- `ULift.ringEquiv.symm` is `ULift.up`, and `curveULift.a₁ = .up A`, `curveULift.a₃ = .up B`
+    ext
+    · exact h₁
+    · exact h₃
+  ext x
+  exact RingHom.congr_fun h x.down
+
 /-- The universal Tate normal form over `ULift.{u} ℤ[A, B][Δ⁻¹]` is elliptic. -/
 instance : curveULift.{u}.IsElliptic := by
   rw [curveULift_eq]

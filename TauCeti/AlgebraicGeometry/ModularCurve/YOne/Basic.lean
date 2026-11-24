@@ -140,6 +140,10 @@ condition is a condition at the points of `S`.
 * `TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_yOneι_eq_iff`: the morphisms to the base
   factoring through `Y₁(N)` are those along which `N • (0, 0)` vanishes and no `k • (0, 0)`,
   `0 < k < N`, meets the zero section.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_eq_one_iff_of_isPullback`,
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback`: along a
+  morphism to the base exhibiting `(E, P)` as a pullback of `(0, 0)`, the conditions on `n • P`
+  are those on `n • (0, 0)`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_yOne`: for `N ≥ 4`, `Y₁(N)` is a fine
   moduli scheme for points of exact order `N` in every fibre.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_yOne_iff`: the pullback of `(0, 0)` along a
@@ -313,17 +317,22 @@ private theorem eq_pointsPullback_pointHom : P = pointsPullback hg h₀ pointHom
   (eq_pointsPullback_iff hg h₀).mpr hP
 
 include hg h₀ hP in
--- Along a classifying pair over `t`, `n • P = 0` exactly when `n • (0, 0)` vanishes along `t`.
-private theorem pow_eq_one_iff_of_isTate (n : ℕ) :
+/-- Let `g` exhibit `E` as the pullback of the universal Tate normal form along
+`t : S ⟶ Spec ℤ[A, B][Δ⁻¹]`, carrying the zero section to the zero section and `P` to `(0, 0)`.
+Then `n • P = 0` exactly when the pullback of `n • (0, 0)` along `t` is the pullback of the zero
+section. -/
+theorem pow_eq_one_iff_of_isPullback (n : ℕ) :
     P ^ n = 1 ↔ t ≫ (pointHom ^ n).left = t ≫ curveGeom.zero := by
   rw [eq_pointsPullback_pointHom hg h₀ hP, ← map_pow]
   simpa [Over.OverMorphism.ext_iff, hom_one_left] using
     comp_pointsPullback_left_eq_comp_zero_iff hg h₀ (pointHom ^ n) (𝟙 S)
 
 include hg h₀ hP in
--- Along a classifying pair over `t`, `n • P` meets the zero section at a point `s` of `S` exactly
--- when `n • (0, 0)` meets it at `t s`.
-private theorem pow_left_apply_eq_zero_iff_of_isTate (n : ℕ) (s : S) :
+/-- Let `g` exhibit `E` as the pullback of the universal Tate normal form along
+`t : S ⟶ Spec ℤ[A, B][Δ⁻¹]`, carrying the zero section to the zero section and `P` to `(0, 0)`.
+Then `n • P` meets the zero section at a point `s` of `S` exactly when `n • (0, 0)` meets it at
+`t s`. -/
+theorem pow_left_apply_eq_zero_iff_of_isPullback (n : ℕ) (s : S) :
     (P ^ n).left s = E.zero s ↔ (pointHom ^ n).left (t s) = curveGeom.zero (t s) := by
   rw [eq_pointsPullback_pointHom hg h₀ hP, ← map_pow]
   exact pointsPullback_left_apply_eq_zero_iff hg h₀ (pointHom ^ n) s
@@ -354,8 +363,8 @@ theorem existsUnique_yOne {N : ℕ} (hN : 4 ≤ N) (hPN : P ^ N = 1)
     E.existsUnique_tateNormalForm_curveGeom (left_comp_structureMap P) h₁ h₂ h₃
   -- the classifying morphism factors through `Y₁(N)`
   obtain ⟨h, rfl⟩ := (exists_comp_yOneι_eq_iff f N).mpr
-    ⟨(pow_eq_one_iff_of_isTate hg h₀ hgP N).mp hPN, fun s k hk hkN hs ↦
-      hPk k hk hkN s ((pow_left_apply_eq_zero_iff_of_isTate hg h₀ hgP k s).mpr hs)⟩
+    ⟨(pow_eq_one_iff_of_isPullback hg h₀ hgP N).mp hPN, fun s k hk hkN hs ↦
+      hPk k hk hkN s ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hgP k s).mpr hs)⟩
   refine ⟨(h, g), ⟨hg, h₀, hgP⟩, ?_⟩
   -- a second classifying pair through `Y₁(N)` is a second Tate normal form
   rintro ⟨h', g'⟩ hfg'
@@ -378,8 +387,8 @@ theorem exists_yOne_iff {N : ℕ} (hN : 4 ≤ N) :
     let ⟨⟨f, g⟩, h, _⟩ := existsUnique_yOne hN hPN hPk; ⟨f, g, h⟩⟩
   -- the classifying morphism `f ≫ yOneι N` satisfies the conditions defining `Y₁(N)`
   obtain ⟨hN', hk⟩ := (exists_comp_yOneι_eq_iff (f ≫ yOneι N) N).mp ⟨f, rfl⟩
-  exact ⟨(pow_eq_one_iff_of_isTate hg h₀ hgP N).mpr hN', fun k hk' hkN s hs ↦
-    hk s k hk' hkN ((pow_left_apply_eq_zero_iff_of_isTate hg h₀ hgP k s).mp hs)⟩
+  exact ⟨(pow_eq_one_iff_of_isPullback hg h₀ hgP N).mpr hN', fun k hk' hkN s hs ↦
+    hk s k hk' hkN ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hgP k s).mp hs)⟩
 
 /-- **`Y₁(N)` classifies naive `[Γ₁(N)]`-structures.** For `N ≥ 4`, let `φ : ℤ/Nℤ →* E(S)` be a
 homomorphism injective on every fibre of `E` over `S`. Then there are a unique morphism
