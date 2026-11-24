@@ -188,9 +188,9 @@ theorem eq_one_or_eq_neg_one_of_pow_eq_one_of_mem_maximalRealSubfield {K : Type*
   have hinv : (φ x)⁻¹ = φ x := by
     rw [Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hφ hn), ← Complex.star_def,
       (mem_maximalRealSubfield_iff x).1 hreal φ]
+  have hφ0 : φ x ≠ 0 := fun h ↦ zero_ne_one (by rwa [h, zero_pow hn] at hφ)
   refine mul_self_eq_one_iff.1 (φ.injective ?_)
-  rw [map_mul, map_one]
-  nth_rw 1 [← hinv]
-  exact inv_mul_cancel₀ fun h ↦ zero_ne_one (by rwa [h, zero_pow hn] at hφ)
+  calc φ (x * x) = (φ x)⁻¹ * φ x := by rw [map_mul, hinv]
+    _ = φ 1 := by rw [inv_mul_cancel₀ hφ0, map_one]
 
 end NumberField
