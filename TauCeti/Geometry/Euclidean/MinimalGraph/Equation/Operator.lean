@@ -273,19 +273,4 @@ theorem nondivergenceOperator_eq_mul_of_gradient_of_iteratedFDeriv_two
   rw [nondivergenceOperator_eq, nondivergenceOperator_eq, hgrad, hlap, hH]
   ring
 
-/-- Multiplying the height by a real scalar rescales its Laplacian linearly and its
-Hessian evaluated on two copies of its gradient cubically. -/
-theorem nondivergenceOperator_const_smul {u : E → ℝ} {x : E} (c : ℝ)
-    (hu : ContDiffAt ℝ 2 u x) :
-    nondivergenceOperator (c • u) x =
-      c * (1 + c ^ 2 * ‖∇ u x‖ ^ 2) * Δ u x -
-        c ^ 3 * fderiv ℝ (fderiv ℝ u) x (∇ u x) (∇ u x) := by
-  have hdu : DifferentiableAt ℝ (fderiv ℝ u) x :=
-    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [nondivergenceOperator_eq, InnerProductSpace.laplacian_smul c hu,
-    TauCeti.gradient_const_smul, fderiv_const_smul_field, fderiv_const_smul hdu c]
-  simp only [conj_trivial, smul_apply, map_smul, smul_eq_mul, norm_smul, Real.norm_eq_abs,
-    mul_pow, sq_abs]
-  ring
-
 end TauCeti.MinimalGraph

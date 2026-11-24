@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
+public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Scaling
 public import TauCeti.Geometry.Euclidean.PolarGraph.AngleBranch
 
 /-!

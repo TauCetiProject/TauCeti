@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-public import TauCeti.Analysis.Complex.LogDeriv
 public import TauCeti.Analysis.Calculus.Gradient
+public import TauCeti.Analysis.Complex.Coordinates
+public import TauCeti.Analysis.SpecialFunctions.Complex.Log.Deriv
 public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 
 /-!
@@ -16,7 +17,7 @@ public import TauCeti.Geometry.Euclidean.PolarGraph.Basic
 
 The logarithm is taken after rotating the chosen polar basepoint to the positive real axis.
 This gives a smooth Cartesian angle germ at every point of the polar cover, agreeing with
-the unrestricted polar angle on a sector of angular width less than a full turn.
+the unrestricted polar angle on the open sector of half-width `π` centered at the basepoint’s angle.
 
 We compute the first derivative, Hessian, Cartesian coordinate entries and gradient throughout
 the rotated slit plane. The Laplacian and the Hessian on two copies of the gradient vanish
@@ -112,35 +113,29 @@ theorem fderiv_fderiv_angleBranch_apply (p : PolarPoint) (x : Plane) (v w : Plan
       -((Complex.orthonormalBasisOneI.repr.symm v *
         Complex.orthonormalBasisOneI.repr.symm w) /
         (Complex.orthonormalBasisOneI.repr.symm x) ^ 2).im := by
-  let a := Complex.orthonormalBasisOneI.repr.symm x
   let L := Complex.orthonormalBasisOneI.repr.symm
-  let x₀ := x
-  have ha : a ≠ 0 := (div_ne_zero_iff.mp (Complex.slitPlane_ne_zero hx)).1
-  have hcenter : L x₀ = a := rfl
-  have hslit : ∀ᶠ y in 𝓝 x₀, L y / projection p ∈ Complex.slitPlane := by
-    have hcont : ContinuousAt (fun y : Plane ↦ L y / projection p) x₀ := by fun_prop
+  have ha : L x ≠ 0 := (div_ne_zero_iff.mp (Complex.slitPlane_ne_zero hx)).1
+  have hslit : ∀ᶠ y in 𝓝 x, L y / projection p ∈ Complex.slitPlane := by
+    have hcont : ContinuousAt (fun y : Plane ↦ L y / projection p) x := by fun_prop
     apply hcont.preimage_mem_nhds
     exact Complex.isOpen_slitPlane.mem_nhds hx
-  have heq : (fun y : Plane ↦ fderiv ℝ (angleBranch p) y w) =ᶠ[𝓝 x₀]
+  have heq : (fun y : Plane ↦ fderiv ℝ (angleBranch p) y w) =ᶠ[𝓝 x]
       (fun y : Plane ↦ (L w / L y).im) := by
     filter_upwards [hslit] with y hy
     exact fderiv_angleBranch_apply p y w hy
-  have hdiv : HasDerivAt (fun z : ℂ ↦ L w / z) (-(L w / a ^ 2)) a := by
-    convert (hasDerivAt_const (x := a) (c := L w)).fun_div (hasDerivAt_id a) ha
+  have hdiv : HasDerivAt (fun z : ℂ ↦ L w / z) (-(L w / (L x) ^ 2)) (L x) := by
+    convert (hasDerivAt_const (x := L x) (c := L w)).fun_div (hasDerivAt_id (L x)) ha
       using 1 <;> simp [div_eq_mul_inv]
   have hr : HasFDerivAt (fun y : Plane ↦ (L w / L y).im)
       (Complex.imCLM.comp
-        (((-(L w / a ^ 2)) • (1 : ℂ →L[ℝ] ℂ)).comp L.toContinuousLinearMap)) x₀ := by
+        (((-(L w / (L x) ^ 2)) • (1 : ℂ →L[ℝ] ℂ)).comp L.toContinuousLinearMap)) x := by
     have hreal := hdiv.complexToReal_fderiv
-    have hreal' : HasFDerivAt (fun z : ℂ ↦ L w / z)
-        (-(L w / a ^ 2) • (1 : ℂ →L[ℝ] ℂ)) (L x₀) := by
-      simpa only [hcenter] using hreal
     exact Complex.imCLM.hasFDerivAt.comp _
-      (hreal'.comp x₀ L.hasFDerivAt)
+      (hreal.comp x L.hasFDerivAt)
   have hgrad := differentiableAt_fderiv_angleBranch p x hx
   have hscalar : fderiv ℝ
-      (fun y : Plane ↦ fderiv ℝ (angleBranch p) y w) x₀ v =
-      -((L v * L w) / a ^ 2).im := by
+      (fun y : Plane ↦ fderiv ℝ (angleBranch p) y w) x v =
+      -((L v * L w) / (L x) ^ 2).im := by
     rw [heq.fderiv_eq, hr.fderiv]
     simp only [ContinuousLinearMap.comp_apply, Complex.imCLM_apply,
       smul_apply, one_apply_eq_self, smul_eq_mul]
@@ -150,9 +145,10 @@ theorem fderiv_fderiv_angleBranch_apply (p : PolarPoint) (x : Plane) (v w : Plan
     ring
   have hderiv := congrArg (fun M : Plane →L[ℝ] ℝ ↦ M v)
     (fderiv_clm_apply hgrad (differentiableAt_const w))
-  simp only [fderiv_const_apply, ContinuousLinearMap.comp_zero] at hderiv
+  simp only [fderiv_const_apply, ContinuousLinearMap.comp_zero, zero_add,
+    ContinuousLinearMap.flip_apply] at hderiv
   rw [hscalar] at hderiv
-  simpa [L, x₀, a] using hderiv.symm
+  exact hderiv.symm
 
 /-- The `x` partial derivative of the angle on its slit domain. -/
 theorem fderiv_angleBranch_x (p : PolarPoint) (x : Plane)
@@ -233,25 +229,11 @@ theorem repr_symm_gradient_angleBranch (p : PolarPoint) (x : Plane)
       Complex.I * Complex.orthonormalBasisOneI.repr.symm x /
         (Complex.normSq (Complex.orthonormalBasisOneI.repr.symm x) : ℂ) := by
   let a := Complex.orthonormalBasisOneI.repr.symm x
-  let x₀ := x
-  let g := ∇ (angleBranch p) x₀
-  have hg (i : Fin 2) : g i =
-      (Complex.orthonormalBasisOneI.repr.symm (EuclideanSpace.single i 1) / a).im := by
-    calc
-      g i = inner ℝ g (EuclideanSpace.basisFun (Fin 2) ℝ i) :=
-        (EuclideanSpace.inner_basisFun_real (Fin 2) g i).symm
-      _ = fderiv ℝ (angleBranch p) x₀ (EuclideanSpace.single i 1) := by
-        simpa only [g, EuclideanSpace.basisFun_apply] using
-          (inner_gradient_left (f := angleBranch p) (x := x₀)
-            (y := EuclideanSpace.single i 1))
-      _ = _ := by simpa only [x₀, a] using
-        fderiv_angleBranch_apply p x (EuclideanSpace.single i 1) hx
-  have hg0 : g 0 = -a.im / Complex.normSq a := by
-    simpa [Complex.orthonormalBasisOneI_repr_symm_apply, Complex.div_im]
-      using hg 0
-  have hg1 : g 1 = a.re / Complex.normSq a := by
-    simpa [Complex.orthonormalBasisOneI_repr_symm_apply, Complex.div_im]
-      using hg 1
+  let g := ∇ (angleBranch p) x
+  have hg0 : g 0 = -a.im / Complex.normSq a :=
+    (gradient_apply_eq_fderiv_apply_single _ x 0).trans (fderiv_angleBranch_x p x hx)
+  have hg1 : g 1 = a.re / Complex.normSq a :=
+    (gradient_apply_eq_fderiv_apply_single _ x 1).trans (fderiv_angleBranch_y p x hx)
   have hd : Complex.normSq a ≠ 0 :=
     (Complex.normSq_pos.mpr (div_ne_zero_iff.mp (Complex.slitPlane_ne_zero hx)).1).ne'
   calc

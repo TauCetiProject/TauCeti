@@ -24,7 +24,8 @@ at the corresponding point and multiplies the nondivergence minimal graph operat
 scale. Centering at a point and dividing the height by the radius gives the inverse normalization:
 the gradient is unchanged and the nondivergence operator is multiplied by the radius.
 
-All finite derivative and nondivergence operator identities hold without regularity assumptions,
+The vertical-only scaling identity `nondivergenceOperator_const_smul` assumes a `C²` height.
+The simultaneous dilation and normalization identities hold without regularity assumptions,
 including at scale zero. Gradient identities require nonzero scales. Height centering disappears
 only at positive derivative orders. Nonnegative scales give exact derivative norm identities.
 Positive scales transport differentiability between the corresponding balls. A gradient bound
@@ -181,6 +182,21 @@ section Operator
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E]
+
+/-- Multiplying the height by a real scalar rescales its Laplacian linearly and its
+Hessian evaluated on two copies of its gradient cubically. -/
+theorem nondivergenceOperator_const_smul {u : E → ℝ} {x : E} (c : ℝ)
+    (hu : ContDiffAt ℝ 2 u x) :
+    nondivergenceOperator (c • u) x =
+      c * (1 + c ^ 2 * ‖∇ u x‖ ^ 2) * Δ u x -
+        c ^ 3 * fderiv ℝ (fderiv ℝ u) x (∇ u x) (∇ u x) := by
+  have hdu : DifferentiableAt ℝ (fderiv ℝ u) x :=
+    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [nondivergenceOperator_eq, InnerProductSpace.laplacian_smul c hu,
+    TauCeti.gradient_const_smul, fderiv_const_smul_field, fderiv_const_smul hdu c]
+  simp only [conj_trivial, smul_apply, map_smul, smul_eq_mul, norm_smul, Real.norm_eq_abs,
+    mul_pow, sq_abs]
+  ring
 
 /-- The nondivergence minimal graph operator scales inversely under simultaneous graph dilation. -/
 theorem nondivergenceOperator_dilatedHeight (u : E → ℝ) (r : ℝ) (x : E) :
