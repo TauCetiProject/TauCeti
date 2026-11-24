@@ -13,18 +13,12 @@ import TauCeti.AlgebraicGeometry.ModularCurve.YOne.LevelFour
 /-!
 # Relative dimension of the fine modular curve `Y₁(N)`
 
-For `N ≥ 4` invertible on a base scheme `B`, the fine moduli scheme `Y₁(N)` (`EllObj.yOne B N`) is
-already known to be smooth over `B` (`EllObj.smooth_yOne_structureMap`), by exhibiting it as a
-retract over `B` of a finite étale cover of the two-dimensional universal Tate normal form base
-`B × Spec ℤ[A, B][Δ⁻¹]`. Because a retract of a smooth scheme of relative dimension `2` need not
-have relative dimension `1`, that argument does not determine the dimension of the fibres of
-`Y₁(N)`.
-
-This file proves that `Y₁(N)` is smooth of relative dimension `1` over `B`
-(`EllObj.smoothOfRelativeDimension_one_yOne_structureMap`), by transferring smooth relative
-dimension along étale surjective rigidifiers
-(`ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy`) over open subsets
-covering `B`:
+This file proves that for `N ≥ 4` invertible on a base scheme `B`, the fine moduli scheme `Y₁(N)`
+(`EllObj.yOne B N`) is smooth of relative dimension `1` over `B`
+(`EllObj.smoothOfRelativeDimension_one_yOne_structureMap`, and hence smooth,
+`EllObj.smooth_yOne_structureMap`), by transferring smooth relative dimension along étale
+surjective rigidifiers (`ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy`)
+over open subsets covering `B`:
 
 * At every point of `B`, either `2` (and hence `4`) or `3` is invertible in the residue field.
 * Over `B[1/2]`, comparing `[Γ₁(N)]` with the étale surjective rigidifier `[Γ₁(4)]` transfers
@@ -40,6 +34,8 @@ covering `B`:
 
 * `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_structureMap`: for `N ≥ 4`
   invertible on `B`, `Y₁(N)` is smooth of relative dimension `1` over `B`.
+* `TauCeti.AlgebraicGeometry.EllObj.smooth_yOne_structureMap`: for `N ≥ 4` invertible on `B`,
+  `Y₁(N)` is smooth over `B`.
 
 ## References
 
@@ -61,16 +57,13 @@ namespace TauCeti.AlgebraicGeometry.EllObj
 private theorem smoothOfRelativeDimension_restrict_yOne_of_open (B : Scheme.{u}) (U : B.Opens)
     (N : ℕ) [NeZero N] (hU : SmoothOfRelativeDimension 1 (yOne U.toScheme N).structureMap) :
     SmoothOfRelativeDimension 1 ((yOne B N).structureMap ∣_ U) := by
+  have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} 1) :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
   let h₁ := (isPullback_morphismRestrict (yOne B N).structureMap U).flip
   let h₂ := isPullback_yOneBaseMap U.ι N
-  let e : ↑((yOne B N).structureMap ⁻¹ᵁ U) ≅ (yOne U.toScheme N).base :=
-    h₁.isoPullback ≪≫ h₂.isoPullback.symm
-  have he : ((yOne B N).structureMap ∣_ U) = e.hom ≫ (yOne U.toScheme N).structureMap := by
-    simp [e]
-  have h : SmoothOfRelativeDimension (0 + 1) (e.hom ≫ (yOne U.toScheme N).structureMap) :=
-    inferInstance
-  rw [he]
-  simpa only [Nat.zero_add] using h
+  let e := h₁.isoIsPullback _ _ h₂
+  rw [← h₁.isoIsPullback_hom_snd _ _ h₂]
+  exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension 1) e.hom _).mpr hU
 
 -- Over `D(2) ⊆ B`, `4` is invertible, so `[Γ₁(4)]` transfers relative dimension `1` to `Y₁(N)`.
 private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_two (B : Scheme.{u})
@@ -130,5 +123,12 @@ theorem smoothOfRelativeDimension_one_yOne_structureMap
       (B.evaluation_ne_zero_iff_mem_basicOpen b trivial (2 : Γ(B, ⊤))).mp
         (by simpa only [map_ofNat] using h2),
       smoothOfRelativeDimension_one_yOne_restrict_basicOpen_two B N hN h4⟩
+
+/-- **`Y₁(N)` is smooth over `B`.** For `N ≥ 4` invertible on `B`, the structure morphism of the
+fine moduli scheme `Y₁(N)` to `B` is smooth; for example `Y₁(N)` is smooth over `ℤ[1/N]`. -/
+theorem smooth_yOne_structureMap (hN : ∀ b : B, (N : B.residueField b) ≠ 0) (h4 : 4 ≤ N) :
+    Smooth (yOne B N).structureMap :=
+  have := smoothOfRelativeDimension_one_yOne_structureMap B N hN h4
+  SmoothOfRelativeDimension.smooth 1 _
 
 end TauCeti.AlgebraicGeometry.EllObj

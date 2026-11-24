@@ -420,76 +420,59 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
 private theorem locallyOfFinitePresentation_of_comp_of_etale_of_surjective {X' X Y : Scheme.{u}}
     (p : X' ⟶ X) (f : X ⟶ Y) [Etale p] [Surjective p]
     [LocallyOfFinitePresentation (p ≫ f)] : LocallyOfFinitePresentation f := by
-  have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
-    HasRingHomProperty.instIsZariskiLocalAtSource
-  have hloc (x : X) :
-      ∃ (W : X.Opens), x ∈ W ∧ LocallyOfFinitePresentation (W.ι ≫ f) := by
-    obtain ⟨(U : Y.Opens), hU, hxU, -⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens
-        (TopologicalSpace.Opens.mem_top (f x))
-    obtain ⟨(W : X.Opens), hW, hxW, hWU⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens (U := f ⁻¹ᵁ U) hxU
-    have : IsAffine U.toScheme := hU
-    have : IsAffine W.toScheme := hW
-    let pW : (p ⁻¹ᵁ W).toScheme ⟶ W.toScheme := p ∣_ W
-    have : Etale pW := inferInstanceAs (Etale (p ∣_ W))
-    have : Surjective pW :=
-      MorphismProperty.of_isPullback (P := @Surjective) (isPullback_morphismRestrict p W).flip
-        inferInstance
-    obtain ⟨V : (p ⁻¹ᵁ W).toScheme.Opens, hV, hVim⟩ :=
-      pW.isOpenMap.exists_opens_image_eq_of_prespectralSpace
-        pW.continuous (by simp) isOpen_univ isCompact_univ
-    have : CompactSpace V.toScheme := isCompact_iff_compactSpace.mp hV
-    have hVpW_surj : Surjective (V.ι ≫ pW) := ⟨fun w ↦ by
-      obtain ⟨v, hvV, hvw⟩ := hVim.ge (Set.mem_univ w)
-      exact ⟨⟨v, hvV⟩, hvw⟩⟩
-    have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
-    have : MorphismProperty.ContainsIdentities (@Etale.{u}) :=
-      MorphismProperty.IsMultiplicative.toContainsIdentities
-    obtain ⟨Z, s, hs_surj, hs_et, hZ_aff⟩ :=
-      Scheme.exists_hom_isAffine_of_isZariskiLocalAtSource @Etale.{u} V.toScheme
-    let q : Z ⟶ W.toScheme := s ≫ V.ι ≫ pW
-    have : Etale q := by
-      have : Etale (V.ι ≫ pW) := IsZariskiLocalAtSource.comp (P := @Etale.{u}) inferInstance _
-      exact inferInstance
-    have : Surjective q := ⟨fun w ↦ by
-      obtain ⟨v, hv⟩ := hVpW_surj.surj w
-      obtain ⟨z, hz⟩ := hs_surj.surj v
-      refine ⟨z, ?_⟩
-      change (V.ι ≫ pW) (s z) = w
-      rw [hz, hv]⟩
-    have hqcomp : q ≫ f.resLE U W hWU ≫ U.ι = (s ≫ V.ι ≫ (p ⁻¹ᵁ W).ι) ≫ (p ≫ f) := by
-      simp only [q, pW, Category.assoc, Scheme.Hom.resLE_comp_ι, morphismRestrict_ι_assoc]
-    have : LocallyOfFinitePresentation (q ≫ f.resLE U W hWU) := by
-      refine locallyOfFinitePresentation_of_comp (q ≫ f.resLE U W hWU) U.ι (hfg := ?_)
-      rw [Category.assoc, hqcomp]
-      have : LocallyOfFinitePresentation (s ≫ V.ι ≫ (p ⁻¹ᵁ W).ι) := inferInstance
-      exact MorphismProperty.comp_mem @LocallyOfFinitePresentation _ _ this inferInstance
-    algebraize [(f.resLE U W hWU).appTop.hom, q.appTop.hom,
-      q.appTop.hom.comp (f.resLE U W hWU).appTop.hom]
-    have : Algebra.Etale Γ(W.toScheme, ⊤) Γ(Z, ⊤) := by
-      change q.appTop.hom.Etale
-      exact (HasRingHomProperty.iff_of_isAffine (P := @Etale)).mp inferInstance
-    have : Module.FaithfullyFlat Γ(W.toScheme, ⊤) Γ(Z, ⊤) :=
-      (Flat.flat_and_surjective_iff_faithfullyFlat_of_isAffine q).mp ⟨inferInstance, inferInstance⟩
-    have : Algebra.FinitePresentation Γ(U.toScheme, ⊤) Γ(Z, ⊤) := by
-      change (q.appTop.hom.comp (f.resLE U W hWU).appTop.hom).FinitePresentation
-      rw [← CommRingCat.hom_comp, ← Scheme.Hom.comp_appTop]
-      exact Scheme.Hom.finitePresentation_appTop (q ≫ f.resLE U W hWU)
-    have hFP : (f.resLE U W hWU).appTop.hom.FinitePresentation :=
-      finitePresentation_of_comp_etale_faithfullyFlat
-        (R := Γ(U.toScheme, ⊤)) (A := Γ(W.toScheme, ⊤)) (B := Γ(Z, ⊤))
-    have : LocallyOfFinitePresentation (f.resLE U W hWU) :=
-      (HasRingHomProperty.iff_of_isAffine (P := @LocallyOfFinitePresentation)).mpr hFP
-    refine ⟨W, hxW, ?_⟩
-    rw [← f.resLE_comp_ι (e := hWU)]
+  refine (HasRingHomProperty.iff_appLE (P := @LocallyOfFinitePresentation)).mpr ?_
+  intro U W hWU
+  let pW : (p ⁻¹ᵁ W.val).toScheme ⟶ W.val.toScheme := p ∣_ W.val
+  have : Etale pW := inferInstanceAs (Etale (p ∣_ W.val))
+  have : Surjective pW :=
+    MorphismProperty.of_isPullback (P := @Surjective) (isPullback_morphismRestrict p W.val).flip
+      inferInstance
+  obtain ⟨V : (p ⁻¹ᵁ W.val).toScheme.Opens, hV, hVim⟩ :=
+    pW.isOpenMap.exists_opens_image_eq_of_prespectralSpace
+      pW.continuous (by simp) isOpen_univ isCompact_univ
+  have : CompactSpace V.toScheme := isCompact_iff_compactSpace.mp hV
+  have hVpW_surj : Surjective (V.ι ≫ pW) := ⟨fun w ↦ by
+    obtain ⟨v, hvV, hvw⟩ := hVim.ge (Set.mem_univ w)
+    exact ⟨⟨v, hvV⟩, hvw⟩⟩
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  have : MorphismProperty.ContainsIdentities (@Etale.{u}) :=
+    MorphismProperty.IsMultiplicative.toContainsIdentities
+  obtain ⟨Z, s, hs_surj, hs_et, hZ_aff⟩ :=
+    Scheme.exists_hom_isAffine_of_isZariskiLocalAtSource @Etale.{u} V.toScheme
+  let q : Z ⟶ W.val.toScheme := s ≫ V.ι ≫ pW
+  have : Etale q := by
+    have : Etale (V.ι ≫ pW) := IsZariskiLocalAtSource.comp (P := @Etale.{u}) inferInstance _
+    exact inferInstance
+  have : Surjective q := ⟨fun w ↦ by
+    obtain ⟨v, hv⟩ := hVpW_surj.surj w
+    obtain ⟨z, hz⟩ := hs_surj.surj v
+    refine ⟨z, ?_⟩
+    change (V.ι ≫ pW) (s z) = w
+    rw [hz, hv]⟩
+  have hqcomp : q ≫ f.resLE U.val W.val hWU ≫ U.val.ι =
+      (s ≫ V.ι ≫ (p ⁻¹ᵁ W.val).ι) ≫ (p ≫ f) := by
+    simp only [q, pW, Category.assoc, Scheme.Hom.resLE_comp_ι, morphismRestrict_ι_assoc]
+  have : LocallyOfFinitePresentation (q ≫ f.resLE U.val W.val hWU) := by
+    refine locallyOfFinitePresentation_of_comp (q ≫ f.resLE U.val W.val hWU) U.val.ι (hfg := ?_)
+    rw [Category.assoc, hqcomp]
+    have : LocallyOfFinitePresentation (s ≫ V.ι ≫ (p ⁻¹ᵁ W.val).ι) := inferInstance
     exact MorphismProperty.comp_mem @LocallyOfFinitePresentation _ _ this inferInstance
-  choose W hxW hW using hloc
-  rw [IsZariskiLocalAtSource.iff_of_iSup_eq_top W (P := @LocallyOfFinitePresentation)]
-  · exact hW
-  · rw [eq_top_iff]
-    intro x _
-    exact TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxW x⟩
+  algebraize [(f.resLE U.val W.val hWU).appTop.hom, q.appTop.hom,
+    q.appTop.hom.comp (f.resLE U.val W.val hWU).appTop.hom]
+  have : Algebra.Etale Γ(W.val.toScheme, ⊤) Γ(Z, ⊤) := by
+    change q.appTop.hom.Etale
+    exact (HasRingHomProperty.iff_of_isAffine (P := @Etale)).mp inferInstance
+  have : Module.FaithfullyFlat Γ(W.val.toScheme, ⊤) Γ(Z, ⊤) :=
+    (Flat.flat_and_surjective_iff_faithfullyFlat_of_isAffine q).mp ⟨inferInstance, inferInstance⟩
+  have : Algebra.FinitePresentation Γ(U.val.toScheme, ⊤) Γ(Z, ⊤) := by
+    change (q.appTop.hom.comp (f.resLE U.val W.val hWU).appTop.hom).FinitePresentation
+    rw [← CommRingCat.hom_comp, ← Scheme.Hom.comp_appTop]
+    exact Scheme.Hom.finitePresentation_appTop (q ≫ f.resLE U.val W.val hWU)
+  have hFP : (f.resLE U.val W.val hWU).appTop.hom.FinitePresentation :=
+    finitePresentation_of_comp_etale_faithfullyFlat
+      (R := Γ(U.val.toScheme, ⊤)) (A := Γ(W.val.toScheme, ⊤)) (B := Γ(Z, ⊤))
+  exact (RingHom.finitePresentation_respectsIso.arrow_mk_iso_iff
+    (arrowResLEAppIso f U.val W.val hWU)).mp hFP
 
 -- Over a field, if `f : X ⟶ Spec k` is smooth, `p : X' ⟶ X` is étale and surjective, and
 -- `p ≫ f` is smooth of relative dimension `n`, then `f` is smooth of relative dimension `n`.
@@ -541,10 +524,11 @@ theorem SmoothOfRelativeDimension.of_comp_of_etale_of_surjective {X X' Y : Schem
         (pullbackRightPullbackFstIso f g p).hom ≫ pullback.snd (p ≫ f) g :=
       (pullbackRightPullbackFstIso f g p).inv_comp_eq.mp (by simp [q])
     have : SmoothOfRelativeDimension n (q ≫ pullback.snd f g) := by
+      have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} n) :=
+        MorphismProperty.IsStableUnderBaseChange.respectsIso
       rw [hcomp]
-      exact Nat.zero_add n ▸
-        (inferInstance : SmoothOfRelativeDimension (0 + n)
-          ((pullbackRightPullbackFstIso f g p).hom ≫ pullback.snd (p ≫ f) g))
+      exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension n)
+        (pullbackRightPullbackFstIso f g p).hom _).mpr inferInstance
     exact of_comp_of_etale_of_surjective_field (k := Y.residueField y) q (pullback.snd f g)
   have hpure (y : Y) : PureRelativeDimension n (f.fiberToSpecResidueField y) :=
     let := hfib y

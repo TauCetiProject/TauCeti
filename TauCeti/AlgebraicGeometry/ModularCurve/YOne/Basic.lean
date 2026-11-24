@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.ResidueField
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Retract
 
 /-!
 # The fine moduli scheme `Y₁(N)` for `N ≥ 4`
@@ -38,15 +37,10 @@ for the naive problem `[Γ₁(N)]` (which agrees with the Drinfeld `[Γ₁(N)]` 
 invertible on `B`). When `N` is invertible on `B`, it is a closed subscheme of
 `B × Spec ℤ[A, B][Δ⁻¹]` (`EllObj.isClosedImmersion_yOneι_base`), so it is affine over `B`
 (`EllObj.isAffineHom_yOne_structureMap`), and affine when `B` is, for example for
-`B = Spec ℤ[1/N]`. It is then also smooth over `B` (`EllObj.smooth_yOne_structureMap`): the point
-`(0, 0)` embeds `Y₁(N)` as a retract, over `B`, of the scheme of points of naive exact order `N`
-on the universal Tate normal form, the representing scheme of the naive problem `[Γ₁(N)]`
-(`ModuliProblem.gammaOneNaiveRelRepData`), which is finite étale over the smooth `B`-scheme
-`B × Spec ℤ[A, B][Δ⁻¹]`; the retraction classifies the tautological point. For every `N ≠ 0`, the
-base of `EllObj.yOne B N` is canonically isomorphic over `B` to `B × UniversalTate.yOne N` (`B`
-times the Tate exact-order-`N` locus over `ℤ`, which is naive `Y₁(N)` over `ℤ` for `N ≥ 4`,
-`EllObj.yOneBaseIsoProd`), so it commutes with arbitrary base change `B' ⟶ B`
-(`EllObj.isPullback_yOneBaseMap`).
+`B = Spec ℤ[1/N]`. For every `N ≠ 0`, the base of `EllObj.yOne B N` is canonically isomorphic over
+`B` to `B × UniversalTate.yOne N` (`B` times the Tate exact-order-`N` locus over `ℤ`, which is naive
+`Y₁(N)` over `ℤ` for `N ≥ 4`, `EllObj.yOneBaseIsoProd`), so it commutes with arbitrary base change
+`B' ⟶ B` (`EllObj.isPullback_yOneBaseMap`).
 
 The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`, a point `P` with
 `NP = 0` has one of `P`, `2P` and `3P` equal to the zero section. For `N ≤ 2` the automorphism
@@ -85,8 +79,6 @@ The hypothesis `N ≥ 4` is what makes the Tate normal form apply: for `N ≤ 3`
 * `TauCeti.AlgebraicGeometry.EllObj.existsUnique_hom_yOne`: for `N ≥ 4`, a point of naive exact
   order `N` on an object of `Ell/B` is the pullback of `(0, 0)` along exactly one arrow to
   `EllObj.yOne B N`.
-* `TauCeti.AlgebraicGeometry.EllObj.smooth_yOne_structureMap`: for `N ≥ 4` invertible on `B`,
-  `Y₁(N)` is smooth over `B`.
 * `TauCeti.AlgebraicGeometry.EllObj.isPullback_yOneBaseMap`: the base of `EllObj.yOne B N` commutes
   with arbitrary base change `B' ⟶ B`.
 
@@ -421,11 +413,6 @@ noncomputable def universalTatePoint :
     𝟙_ (Over (universalTate B).base) ⟶ Over.mk (universalTate B).curve.structureMap :=
   prodCurvePoint B UniversalTate.pointHom
 
-/-- `universalTatePoint B` is the base change `prodCurvePoint B UniversalTate.pointHom`. -/
-theorem universalTatePoint_def :
-    universalTatePoint B = prodCurvePoint B UniversalTate.pointHom :=
-  (rfl)
-
 section Classifying
 
 variable {B} {X : EllObj B}
@@ -757,65 +744,6 @@ variable (B) in
 instance smooth_universalTate_structureMap : Smooth (universalTate B).structureMap :=
   MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
 
-variable (B N) in
-/-- **`Y₁(N)` is smooth over `B`.** For `N ≥ 4` invertible on `B`, the structure morphism of the
-fine moduli scheme `Y₁(N)` to `B` is smooth; for example `Y₁(N)` is smooth over `ℤ[1/N]`. -/
-theorem smooth_yOne_structureMap (hN : ∀ b : B, (N : B.residueField b) ≠ 0) (h4 : 4 ≤ N) :
-    Smooth (yOne B N).structureMap := by
-  -- `Y₁(N)` is a retract over `B` of the scheme `Z` of points of naive exact order `N` on the
-  -- universal Tate normal form, which is finite étale over the smooth `B`-scheme
-  -- `B × Spec ℤ[A, B][Δ⁻¹]`: the point `(0, 0)` gives a section `Y₁(N) ⟶ Z`, and the morphism
-  -- `Z ⟶ Y₁(N)` classifying the tautological point `P` of `Z` retracts it
-  have hP := (universalTate B).isOfNaiveExactOrder_naiveExactOrderPoint N
-  have hPx := (universalTate B).naiveExactOrderPoint_left_comp_total N
-  set T := naiveLocusOver ((universalTate B).curve.torsionPointHom N)
-  set P := (universalTate B).naiveExactOrderPoint N
-  -- `Z` is étale over `B × Spec ℤ[A, B][Δ⁻¹]`, as the representing scheme of the naive problem
-  -- `[Γ₁(N)]` where `N` is invertible
-  have hT : Smooth T.hom :=
-    have : Etale T.hom := by
-      have := (ModuliProblem.RelRepData.hasProperty_iff _).mp
-        (ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData hN) (universalTate B)
-      rwa [ModuliProblem.gammaOneNaiveRelRepData_rep] at this
-    inferInstance
-  -- the retraction `r : Z ⟶ Y₁(N)` is the base of the arrow `k` classifying `P`
-  obtain ⟨k, hk, -⟩ := existsUnique_hom_yOne h4 hP
-  -- the section `i : Y₁(N) ⟶ Z` given by the point `(0, 0)`, and the arrow `j` of `Ell/B` over it
-  let i := naiveExactOrderPreimagePoint N (universalTatePoint B)
-  have hsq := isPullback_naiveExactOrderPreimage N (universalTatePoint B)
-  have hi : i ≫ T.hom = naiveExactOrderPreimageι N (universalTatePoint B) := by
-    have h := hsq.w =≫ (universalTate B).curve.structureMap
-    rw [Category.assoc, Category.assoc, left_comp_structureMap, Category.comp_id] at h
-    simpa [T, ← torsionι_left_structureMap] using h.symm
-  let j : yOne B N ⟶ (universalTate B).baseChangeFunctor.obj T :=
-    (universalTate B).baseChangeFunctor.map (Over.homMk i hi)
-  have hjι : j ≫ (universalTate B).baseChangeFunctorHom T = yOneι B N :=
-    baseChangeFunctor_map_baseChangeFunctorHom _
-  have hjb : j.base = i := baseChangeFunctor_map_base _ _
-  -- `P` pulls back along `j` to the point `(0, 0)` of the universal curve over `Y₁(N)`
-  have hj : yOnePoint.left ≫ j.total = j.base ≫ P.left := by
-    refine ((universalTate B).baseChangeFunctorHom T).isPullback.hom_ext ?_ ?_
-    · rw [Category.assoc, ← comp_total, hjι, yOnePoint, pointsPullback_left_comp, Category.assoc,
-        hPx, hjb, yOneι_base]
-      exact hsq.w
-    · simp [T]
-  -- so `j ≫ k` and the identity both classify `(0, 0)`, and agree
-  have hjk : j ≫ k = 𝟙 _ := by
-    refine (existsUnique_hom_yOne h4 isOfNaiveExactOrder_yOnePoint).unique ?_ ?_
-    · have hk' := (eq_pointsPullback_iff _ _).mp hk.symm
-      rw [comp_total, comp_base] at hk'
-      symm
-      rw [eq_pointsPullback_iff, comp_total, comp_total, comp_base, comp_base, Category.assoc,
-        reassoc_of% hj, hk']
-      simp only [Category.assoc]
-    · symm
-      rw [eq_pointsPullback_iff, Category.id_comp]
-      exact pointsPullback_left_comp _ _ _
-  refine Smooth.of_retract_of_comp_eq _ (T.hom ≫ (universalTate B).structureMap) i k.base ?_ ?_
-  · rw [← hjb]
-    exact (comp_base j k).symm.trans ((congrArg Hom.base hjk).trans (id_base _))
-  · exact k.base_structureMap.trans (baseChangeFunctor_obj_structureMap _ _)
-
 end Smoothness
 
 /-! ### Base change of `EllObj.yOne B N` -/
@@ -826,15 +754,11 @@ open UniversalTate
 
 variable (B : Scheme.{u}) (N : ℕ) [NeZero N]
 
-private theorem universalTatePoint_left_prodCurveProj :
-    (universalTatePoint B).left ≫ prodCurveProj B curveGeom = prod.snd ≫ pointHom.left := by
-  rw [universalTatePoint_def, prodCurvePoint_left_prodCurveProj]
-
 /-- The canonical projection `(yOne B N).base ⟶ UniversalTate.yOne N` to the Tate exact-order-`N`
 locus over `ℤ` (which is naive `Y₁(N)` over `ℤ` for `N ≥ 4`). -/
 noncomputable def yOneSnd : (yOne B N).base ⟶ UniversalTate.yOne.{u} N :=
   naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
-    (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B)
+    (zero_prodCurveProj B curveGeom) (prodCurvePoint_left_prodCurveProj (B := B) pointHom)
 
 /-- The projection `yOneSnd B N` commutes with the inclusions into the base of the universal Tate
 normal form. -/
@@ -850,7 +774,7 @@ theorem isPullback_yOneSnd :
     IsPullback (yOneSnd B N) (yOneι B N).base (UniversalTate.yOneι N) prod.snd := by
   rw [yOneι_base]
   exact isPullback_naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
-    (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B)
+    (zero_prodCurveProj B curveGeom) (prodCurvePoint_left_prodCurveProj (B := B) pointHom)
 
 /-- **The base of `EllObj.yOne B N` is `B × UniversalTate.yOne N`** (`B` times the Tate
 exact-order-`N` locus over `ℤ`; for `N ≥ 4` this is naive `Y₁(N)` over `ℤ`, agreeing with

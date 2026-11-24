@@ -198,13 +198,12 @@ theorem yOneFourIso_inv_yOneι :
 /-- Naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
 instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
     SmoothOfRelativeDimension 1 (terminal.from (yOne.{u} 4)) := by
-  have h : SmoothOfRelativeDimension (0 + 1)
-      (yOneFourIso.{u}.hom ≫
-        terminal.from (Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)))) :=
-    inferInstance
+  have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} 1) :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
   rw [terminal.hom_ext (terminal.from (yOne.{u} 4))
     (yOneFourIso.{u}.hom ≫ terminal.from _)]
-  simpa only [Nat.zero_add] using h
+  exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension 1)
+    yOneFourIso.{u}.hom _).mpr inferInstance
 
 end UniversalTate
 
@@ -214,13 +213,13 @@ namespace EllObj
 with Drinfeld `Y₁(4)` where `4` is invertible). -/
 instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
     SmoothOfRelativeDimension 1 (yOne B 4).structureMap := by
+  have : MorphismProperty.RespectsIso (@SmoothOfRelativeDimension.{u} 1) :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
   have hfst : SmoothOfRelativeDimension 1 (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B) :=
     MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
-  have h : SmoothOfRelativeDimension (0 + 1)
-      ((yOneBaseIsoProd B 4).hom ≫ (prod.fst : B ⨯ UniversalTate.yOne.{u} 4 ⟶ B)) :=
-    inferInstance
   rw [← yOneBaseIsoProd_hom_fst]
-  simpa only [Nat.zero_add] using h
+  exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension 1)
+    (yOneBaseIsoProd B 4).hom _).mpr hfst
 
 end EllObj
 
