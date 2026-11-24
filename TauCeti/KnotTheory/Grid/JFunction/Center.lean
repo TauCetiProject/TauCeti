@@ -257,6 +257,12 @@ theorem JCenter_singleton_right (s : Finset (Fin n × Fin n)) (p : Fin n × Fin 
         (s.filter fun q => IsSouthWest p q).card : ℕ) : ℚ) / 2 := by
   rw [JCenter_def, JNumCenter_singleton_right]
 
+/-- The marking pairing is the sum of the pairings with the single marked squares. -/
+theorem JCenter_eq_sum_singleton_right (s t : Finset (Fin n × Fin n)) :
+    JCenter s t = ∑ p ∈ t, JCenter s {p} := by
+  simp only [JCenter_eq_JMixed]
+  exact JMixed_eq_sum_singleton_right _ s t
+
 /-- The marking pairing on singleton sets is half its two-comparison numerator. -/
 @[simp]
 theorem JCenter_singleton_singleton (p q : Fin n × Fin n) :

@@ -109,11 +109,7 @@ theorem Preconnected.exists_isStuck_and_forall_not_isPrecarious_iff_posSemidef_a
     (∃ a : V → ℕ, a ≠ 0 ∧ G.IsStuck (fun i ↦ (a i : ℤ)) ∧
         ∀ i, ¬ G.IsPrecarious (fun i ↦ (a i : ℤ)) i) ↔
       (G.graphCartanMatrix R).PosSemidef ∧ (G.graphCartanMatrix R).det = 0 := by
-  rw [← hG.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero R]
-  refine exists_congr fun a ↦ and_congr_right fun _ ↦ ?_
-  rw [isStuck_and_forall_not_isPrecarious_iff_graphCartanMatrix_mulVec_eq_zero, funext_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [graphCartanMatrix_mulVec_apply, Pi.zero_apply, sub_eq_zero, eq_comm]
-  norm_cast
+  simp only [isStuck_and_forall_not_isPrecarious_natCast_iff_sum_eq_two_mul,
+    hG.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero R]
 
 end SimpleGraph

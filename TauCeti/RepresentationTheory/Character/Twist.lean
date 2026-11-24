@@ -67,7 +67,8 @@ representation need neither.
 * `Representation.invariants_charTwist_trivial_eq_bot`: if `χ g - 1` acts injectively on `V` for
   some `g`, then `G` acting on `V` through `χ` has no nonzero invariant vector.
 * `Representation.ker_inf_stabilizer_le_stabilizer_charTwist`: the kernel of `χ` meets the
-  stabilizer of `v` for `ρ` inside the stabilizer of `v` for the twist.
+  stabilizer of `v` for `ρ` inside the stabilizer of `v` for the twist, and
+  `Representation.ker_inf_ker_le_ker_charTwist` does the same for kernels.
 * `Representation.charTwist_comp`: restricting a twist along a homomorphism `f` twists the
   restriction by `χ.comp f`.
 * `Representation.charTwist_comp_subtype_of_le_ker`: on a subgroup inside the kernel of `χ`, the
@@ -315,6 +316,10 @@ theorem ker_inf_stabilizer_le_stabilizer_charTwist (v : V) :
     χ.ker ⊓ ρ.stabilizer v ≤ (charTwist χ ρ).stabilizer v := fun g hg ↦ by
   rw [Subgroup.mem_inf, MonoidHom.mem_ker, mem_stabilizer] at hg
   simp [mem_stabilizer, hg.1, hg.2]
+
+/-- An element in the kernels of `χ` and of `ρ` is in the kernel of the twist. -/
+theorem ker_inf_ker_le_ker_charTwist : χ.ker ⊓ ρ.ker ≤ (charTwist χ ρ).ker := fun g hg ↦ by
+  simp [MonoidHom.mem_ker.mp hg.1, MonoidHom.mem_ker.mp hg.2]
 
 /-- On a subgroup inside the kernel of `χ`, the twist by `χ` restricts to `ρ`. -/
 @[simp]

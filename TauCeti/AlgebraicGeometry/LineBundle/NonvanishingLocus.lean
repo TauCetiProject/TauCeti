@@ -46,6 +46,12 @@ class. These operations transport affine nonvanishing neighbourhoods in the stud
 The pullback, fibre and tensor arguments are adapted from `roed-math/TauCeti-w2-fresh`, branch
 `lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
 
+For a line bundle `L` whose class in the Picard group is trivial, `L` is only isomorphic to `𝒪_X`,
+not equal to it, but the nonvanishing loci of its sections over `U` are still exactly the basic
+open sets of the regular functions on `U`. When the global functions on `X` form a field, as on an
+integral scheme universally closed over a field (`AlgebraicGeometry.isField_of_universallyClosed`),
+a global section of `L` therefore vanishes either everywhere or nowhere.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus`: the open set `X_s` of points at which the
@@ -83,7 +89,12 @@ The pullback, fibre and tensor arguments are adapted from `roed-math/TauCeti-w2-
   and `X_{sᵏ} = X_s` for `k > 0`;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow`: every
   representative of the class `(mk L₀)ᵏ`, with `k > 0`, has a section with the same
-  nonvanishing locus as `s₀`.
+  nonvanishing locus as `s₀`;
+* `InvertibleSheaf.range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one`:
+  the nonvanishing loci of sections of a line bundle of trivial class are the basic open sets;
+* `InvertibleSheaf.nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one`:
+  when `Γ(X, ⊤)` is a field, a global section of a line bundle of trivial class vanishes
+  everywhere or nowhere.
 
 ## References
 
@@ -614,5 +625,31 @@ theorem exists_nonvanishingLocus_eq_of_mk_eq_pow
   refine ⟨e'.inv.app U (Scheme.Modules.tensorPowSection s₀ k), ?_⟩
   rw [← Iso.symm_hom, Scheme.Modules.nonvanishingLocus_hom_app,
     Scheme.Modules.nonvanishingLocus_tensorPowSection _ hk]
+
+/-- The nonvanishing loci of the sections over `U` of a line bundle of trivial class are exactly the
+basic open sets of the regular functions on `U`. -/
+theorem range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one {L : InvertibleSheaf X}
+    (hL : LineBundleClass.mk L = 1) (U : X.Opens) :
+    Set.range (L.obj.nonvanishingLocus (U := U)) = Set.range (X.basicOpen (U := U)) := by
+  -- The tensor unit `𝟙_ X.Modules` is by definition the structure sheaf `SheafOfModules.unit`.
+  obtain ⟨e⟩ : Nonempty (L.obj ≅ SheafOfModules.unit X.ringCatSheaf) :=
+    LineBundleClass.mk_eq_one_iff.mp hL
+  rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e U]
+  exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
+
+/-- When the global functions on `X` form a field, for instance on an integral scheme universally
+closed over a field, a global section of a line bundle of trivial class vanishes either everywhere
+or nowhere. -/
+theorem nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one (hX : IsField Γ(X, ⊤))
+    {L : InvertibleSheaf X} (hL : LineBundleClass.mk L = 1) (s : Γ(L.obj, ⊤)) :
+    L.obj.nonvanishingLocus s = ⊥ ∨ L.obj.nonvanishingLocus s = ⊤ := by
+  obtain ⟨r, hr⟩ : L.obj.nonvanishingLocus s ∈ Set.range (X.basicOpen (U := ⊤)) := by
+    rw [← range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one hL ⊤]
+    exact ⟨s, rfl⟩
+  let := hX.toField
+  rw [← hr]
+  obtain rfl | hr₀ := eq_or_ne r 0
+  · exact Or.inl (X.basicOpen_zero ⊤)
+  · exact Or.inr (X.basicOpen_of_isUnit hr₀.isUnit)
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.SheafH
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.SheafH.Basic
 
 /-!
 # Boundaries of torsor classes along abelian extensions
