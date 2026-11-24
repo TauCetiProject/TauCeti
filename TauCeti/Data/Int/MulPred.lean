@@ -8,9 +8,6 @@ module
 public import Mathlib.Algebra.Order.Group.Unbundled.Int
 import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
-public import Mathlib.RingTheory.Coprime.Basic
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.RingTheory.Int.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -27,15 +24,13 @@ More generally `0 ≤ s * (s - δ)` for every integer `δ` with `|δ| ≤ 1`: th
 The consecutive product `t * (t - 1)` is always even, so every integer satisfies `c ^ 2 ≡ c`
 modulo `2`, and the halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the
 addition law `T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural
-numbers it is the binomial coefficient `n.choose 2`. Likewise `24 ∣ c ^ 2 - 1` when `c` is coprime
-to `6`.
+numbers it is the binomial coefficient `n.choose 2`.
 
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_of_abs_le_one` : `0 ≤ s * (s - δ)` whenever `|δ| ≤ 1`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
-* `Int.twentyFour_dvd_sq_sub_one_of_isCoprime_six` : `24 ∣ c ^ 2 - 1` for `IsCoprime c 6`.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
 * `Int.one_sub_mul_one_sub_sub_one_ediv_two` : the reflection `n ↦ 1 - n` fixes `n * (n - 1) / 2`.
@@ -67,14 +62,6 @@ theorem zero_le_mul_sub_of_abs_le_one {δ : ℤ} (hδ : |δ| ≤ 1) (s : ℤ) : 
 theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
-
-/-- For an integer `c` coprime to `6`, `24 ∣ c ^ 2 - 1`. -/
-theorem twentyFour_dvd_sq_sub_one_of_isCoprime_six {c : ℤ} (hc : IsCoprime c 6) :
-    (24 : ℤ) ∣ c ^ 2 - 1 := by
-  have hc' : IsCoprime c (2 * 3) := hc
-  have hodd : Odd c := isCoprime_two_right.mp hc'.of_mul_right_left
-  have h3 : (3 : ℤ) ∣ c ^ 2 - 1 := prime_dvd_pow_sub_one Nat.prime_three hc'.of_mul_right_right
-  exact IsCoprime.mul_dvd (by decide : IsCoprime (8 : ℤ) 3) (eight_dvd_sq_sub_one_of_odd hodd) h3
 
 /-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
 @[simp]

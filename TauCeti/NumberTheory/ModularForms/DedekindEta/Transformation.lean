@@ -496,15 +496,12 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
   have h2 := eta_smul γ⁻¹ UpperHalfPlane.I
   set z : ℂ := ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℂ) * UpperHalfPlane.I + (γ⁻¹ : SL(2, ℤ)) 1 1
   set w : ℂ := (γ 1 0 : ℂ) * (γ⁻¹ • UpperHalfPlane.I : ℍ) + γ 1 1
+  have hdenom (g : SL(2, ℤ)) (τ : ℂ) :
+      UpperHalfPlane.denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ = (g 1 0 : ℂ) * τ + g 1 1 := by
+    simp [UpperHalfPlane.denom]
   have hw : w = z⁻¹ := by
-    have hcoc := UpperHalfPlane.denom_cocycle_σ
-      (γ : GL (Fin 2) ℝ) ((γ⁻¹ : SL(2, ℤ)) : GL (Fin 2) ℝ) UpperHalfPlane.I
-    have hdet : 0 < (((γ⁻¹ : SL(2, ℤ)) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
-      rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.det_coe]
-      exact zero_lt_one
-    rw [← map_mul, ← map_mul, mul_inv_cancel, map_one, map_one, UpperHalfPlane.denom_one,
-      UpperHalfPlane.σ_eq_refl_of_det_pos hdet, ContinuousAlgEquiv.refl_apply,
-      ← ModularGroup.sl_moeb, ModularGroup.denom_apply, ModularGroup.denom_apply] at hcoc
+    have hcoc := Matrix.SpecialLinearGroup.denom_mapGL_mul γ γ⁻¹ UpperHalfPlane.I
+    rw [mul_inv_cancel, map_one, UpperHalfPlane.denom_one, hdenom, hdenom] at hcoc
     exact eq_inv_of_mul_eq_one_left hcoc.symm
   have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 ∧ (γ 1 1 = 1 ∨ γ 1 1 = -1) := by
     have hdet := γ.fin_two_mul_sub_mul_eq_one
@@ -522,16 +519,10 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
     · have ha : γ 0 0 = -1 := by obtain ⟨_, _ | _⟩ := hdiag h.1 <;> omega
       have hz : z = -1 := by simp [z, h.1, ha]
       rw [ite_eq_left h, hw, hz, inv_neg, inv_one, Complex.sqrt_neg_one, I_mul_I]
-    · have hz_ne : z ≠ 0 := fun hz0 ↦ by
-        have hre : z.re = (γ 0 0 : ℝ) := by simp [z]
-        have him : z.im = -(γ 1 0 : ℝ) := by simp [z]
-        have hdet := γ.fin_two_mul_sub_mul_eq_one
-        have ha : γ 0 0 = 0 := Int.cast_injective (α := ℝ)
-          (by rw [← hre, hz0, Complex.zero_re, Int.cast_zero])
-        have hc : γ 1 0 = 0 := Int.cast_injective (α := ℝ)
-          (by rw [Int.cast_zero]; exact neg_eq_zero.mp (by rw [← him, hz0, Complex.zero_im]))
-        rw [ha, hc, zero_mul, mul_zero, sub_zero] at hdet
-        exact zero_ne_one hdet
+    · have hz_ne : z ≠ 0 := by
+        dsimp only [z]
+        rw [← hdenom γ⁻¹ UpperHalfPlane.I]
+        exact UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹) UpperHalfPlane.I
       rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h)]
       exact inv_mul_cancel₀ (Complex.sqrt_eq_zero_iff.not.mpr hz_ne)
   have hprod : etaMultiplier γ * etaMultiplier γ⁻¹ *
