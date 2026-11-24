@@ -53,7 +53,10 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
-  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`.
+  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
+  `CStarMatrix.norm_map_toOneByOne_linearMap`: `‖[φ a]‖ = ‖φ a‖` for a linear map `φ`.
+* `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
+  image under a linear map.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
@@ -444,9 +447,31 @@ theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
   NonUnitalStarAlgHom.norm_apply_le _ a
 
 /-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
-theorem norm_toOneByOne (a : A) : ‖toOneByOne (Fin 1) ℂ A a‖ = ‖a‖ :=
-  NonUnitalStarAlgHom.norm_map (toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
-    (toOneByOne (Fin 1) ℂ A).injective a
+theorem norm_toOneByOne {ι : Type*} [Unique ι] (a : A) : ‖toOneByOne ι ℂ A a‖ = ‖a‖ :=
+  NonUnitalStarAlgHom.norm_map (toOneByOne ι ℂ A).toNonUnitalStarAlgHom
+    (toOneByOne ι ℂ A).injective a
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- Reindexing a square matrix does not change the norm of its entrywise image under a linear
+map. -/
+theorem norm_map_reindexₐ_linearMap {κ ι B : Type*} [Fintype κ] [Fintype ι]
+    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B] (x : CStarMatrix κ κ A)
+    (e : κ ≃ ι) (φ : A →ₗ[ℂ] B) : ‖(reindexₐ ℂ A e x).map φ‖ = ‖x.map φ‖ := by
+  classical
+  have hmap : reindexₐ ℂ B e (x.map φ) = (reindexₐ ℂ A e x).map φ := by
+    simpa using mapₗ_reindexₐ (M := x) (e := e) φ
+  rw [← hmap, StarAlgEquiv.norm_map]
+
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- The entrywise image of the `1 × 1` C⋆-matrix `[a]` under a linear map `φ` has norm
+`‖φ a‖`. -/
+theorem norm_map_toOneByOne_linearMap {ι B : Type*} [Unique ι] [NonUnitalCStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] (a : A) (φ : A →ₗ[ℂ] B) :
+    ‖(toOneByOne ι ℂ A a).map φ‖ = ‖φ a‖ := by
+  have hmap : (toOneByOne ι ℂ A a).map φ = toOneByOne ι ℂ B (φ a) := by
+    ext
+    simp
+  rw [hmap, norm_toOneByOne]
 
 open scoped ComplexOrder in
 /-- The entrywise image of the scalar matrix `x` under `z ↦ z • a` has norm at most `‖x‖ ‖a‖`.

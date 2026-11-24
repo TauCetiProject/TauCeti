@@ -109,13 +109,15 @@ theorem IsCompleteIsometry.norm_map {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsom
     {κ : Type*} [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ = ‖x‖ := by
   classical
   let e := Fintype.equivFin κ
-  rw [← norm_map_reindexₐ φ e, ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
+  rw [← CStarMatrix.norm_map_reindexₐ_linearMap x e φ,
+    ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
   exact hφ _ _
 
 /-- A complete isometry is isometric. -/
 theorem IsCompleteIsometry.norm_apply {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) (a : A) :
     ‖φ a‖ = ‖a‖ := by
-  rw [← norm_map_toOneByOne φ a, ← CStarMatrix.norm_toOneByOne a]
+  rw [← CStarMatrix.norm_map_toOneByOne_linearMap (ι := Fin 1) a φ,
+    ← CStarMatrix.norm_toOneByOne (ι := Fin 1) a]
   exact hφ 1 _
 
 /-- A complete isometry is an isometry. -/

@@ -116,22 +116,14 @@ private theorem norm_map_le_cbNorm_mul_fin {φ : A →ₗ[ℂ] B} (hφ : IsCompl
   obtain ⟨c, hc, hb⟩ := hφ
   exact le_csInf ⟨c, hc, hb⟩ fun d hd => (div_le_iff₀ hx).mpr (hd.2 n x)
 
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- Reindexing a square matrix does not change the norm of its amplification. -/
-theorem norm_map_reindexₐ (φ : A →ₗ[ℂ] B) {κ ι : Type*} [Fintype κ] [Fintype ι] (e : κ ≃ ι)
-    (x : CStarMatrix κ κ A) : ‖(CStarMatrix.reindexₐ ℂ A e x).map φ‖ = ‖x.map φ‖ := by
-  classical
-  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
-    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
-  rw [← hmap, StarAlgEquiv.norm_map]
-
 /-- The cb norm bounds every amplification of a completely bounded map, for matrices over any
 finite index type. -/
 theorem norm_map_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) {κ : Type*}
     [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ cbNorm φ * ‖x‖ := by
   classical
   let e := Fintype.equivFin κ
-  rw [← norm_map_reindexₐ φ e, ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
+  rw [← CStarMatrix.norm_map_reindexₐ_linearMap x e φ,
+    ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
   exact norm_map_le_cbNorm_mul_fin hφ _
 
 /-- For a completely bounded map, the cb norm is at most `c ≥ 0` exactly when `c` bounds every
@@ -147,20 +139,11 @@ theorem isCompletelyBounded_iff_exists_bound {φ : A →ₗ[ℂ] B} :
   refine ⟨fun ⟨C, _, h⟩ => ⟨C, h⟩, fun ⟨C, h⟩ => ⟨max C 0, le_max_right _ _, fun n x => ?_⟩⟩
   exact (h n x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
 
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- At level one, the amplification of `φ` on the `1 × 1` matrix `[a]` has norm `‖φ a‖`. -/
-theorem norm_map_toOneByOne (φ : A →ₗ[ℂ] B) (a : A) :
-    ‖(CStarMatrix.toOneByOne (Fin 1) ℂ A a).map φ‖ = ‖φ a‖ := by
-  have hmap : (CStarMatrix.toOneByOne (Fin 1) ℂ A a).map φ =
-      CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) := by
-    ext
-    simp
-  rw [hmap, CStarMatrix.norm_toOneByOne]
-
 /-- The level-one comparison `‖φ a‖ ≤ ‖φ‖_cb ‖a‖` for a completely bounded map. -/
 theorem norm_apply_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (a : A) :
     ‖φ a‖ ≤ cbNorm φ * ‖a‖ := by
-  rw [← norm_map_toOneByOne φ a, ← CStarMatrix.norm_toOneByOne a]
+  rw [← CStarMatrix.norm_map_toOneByOne_linearMap (ι := Fin 1) a φ,
+    ← CStarMatrix.norm_toOneByOne (ι := Fin 1) a]
   exact norm_map_le_cbNorm_mul hφ _
 
 section Zero
