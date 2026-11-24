@@ -460,13 +460,7 @@ theorem toStrictConvexBilliardTable_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)
     (circle R).toStrictConvexBilliardTable =
       StrictConvexBilliardTable.circle (radius_pos (R := R)) := by
   -- Both tables have the parametrization `s ↦ circleMap 0 R (s / R)` and the period `2πR`.
-  have key : ∀ χ χ' : StrictConvexBilliardTable Complex.orientation,
-      χ.toFun = χ'.toFun → χ.period = χ'.period → χ = χ' := by
-    rintro ⟨⟩ ⟨⟩ h₁ h₂
-    cases h₁
-    cases h₂
-    rfl
-  refine key _ _ (funext fun s => ?_) ?_
+  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
   · exact (circle_apply R s).trans (StrictConvexBilliardTable.circle_apply s).symm
   · exact StrictConvexBilliardTable.period_circle.symm
 

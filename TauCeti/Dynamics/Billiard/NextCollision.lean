@@ -85,6 +85,7 @@ the plane `E` oriented by `o`. It is `L`-periodic with `L > 0`, has unit speed, 
 `[0, L)`, and the table lies strictly to the left of each oriented tangent line, which it meets only
 at the point of tangency: `0 < ω(χ'(s), χ(t) - χ(s))` whenever `χ(t) ≠ χ(s)`. The last condition
 combines the strict convexity of the table with the positive orientation of its boundary. -/
+@[ext]
 structure StrictConvexBilliardTable (o : Orientation ℝ E (Fin 2)) where
   /-- The parametrization of the boundary. -/
   toFun : ℝ → E
