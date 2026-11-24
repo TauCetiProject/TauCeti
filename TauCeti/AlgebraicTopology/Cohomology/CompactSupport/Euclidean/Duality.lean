@@ -89,7 +89,11 @@ private theorem bijective_dualityMap_comap_of_starConvex (o : HomologicalOrienta
   rw [o.bijective_capFundamentalClassOn_comap_iff hd L (j := j') hj h
     (ConcreteCategory.bijective_of_isIso _) K]
   refine (congrArg Function.Bijective (funext (o.capFundamentalClassOn_apply hd L _ p q h))).mpr ?_
-  exact o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L _ (y := y) hKy hyK p q h
+  -- The image of `K` under `j'` is `j '' K`.
+  have hjK : ((K.map (TopCat.ofHom j') j'.continuous : Compacts F) : Set F) = j '' K := by
+    simp only [Compacts.coe_map, ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk, j']
+  exact o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L _ (y := y)
+    (hjK ▸ hKy) (hjK ▸ hyK) p q h
 
 /-- **Poincaré duality for a star-convex open subset**: for an open embedding `j : U → F` whose
 image is star-convex, the duality map `Hᵖ_c(U; L) ⟶ H_q(U; L)` of any homological orientation of

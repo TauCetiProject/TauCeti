@@ -186,7 +186,7 @@ theorem isIso_compactSupportCohomologyExtend_of_starConvex {U : TopCat.{v}} [Non
     rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_comp_extend,
       ConcreteCategory.comp_apply] at hx
     have := isIso_compactSupportCohomologyι_of_starConvex R k M
-      (K := K.map j j.hom.continuous) hKy hyK n
+      (K := K.map j j.hom.continuous) (by rwa [Compacts.coe_map]) (by rwa [Compacts.coe_map]) n
     -- Both `Hⁿ(E, E ∖ j(K)) ⟶ Hⁿ_c(E)` and `Hⁿ(U, U ∖ K) ≅ Hⁿ(E, E ∖ j(K))` are injective.
     replace hx := (injective_iff_map_eq_zero _).1 (ConcreteCategory.bijective_of_isIso _).1 _ hx
     rw [(injective_iff_map_eq_zero _).1 (ConcreteCategory.bijective_of_isIso _).1 _ hx, map_zero]
