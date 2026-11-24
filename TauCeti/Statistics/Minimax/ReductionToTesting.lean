@@ -39,7 +39,7 @@ index of a nearest parameter to `y` (measurable by `TauCeti.measurable_nearestIn
 * `TauCeti.comp_map_ballIndex_compl_le`: the error of the test `κ.map (ballIndex θ s i₀)`, for
   parameters whose balls of radius `s` are pairwise disjoint.
 * `TauCeti.exists_isMarkovKernel_measure_compl_le_measure_dist_ge`: every estimator is dominated
-  by a test (roadmap target 2.1, suggested there as `le_max_measure_dist_ge_of_test`).
+  by a test.
 
 ## References
 
