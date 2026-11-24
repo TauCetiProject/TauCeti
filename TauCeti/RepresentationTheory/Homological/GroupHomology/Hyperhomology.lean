@@ -188,6 +188,14 @@ def groupHyperhomologySpectralSequenceAbutmentIso (C : ChainComplex (Rep.{u} k G
       C.groupHyperhomology n :=
   C.groupHyperhomologyBicomplex.columnFiltrationAbutmentIso n
 
+/-- The identification of the abutment of the spectral sequence of group hyperhomology is the
+identification `columnFiltrationAbutmentIso` of the abutment of the column filtration. -/
+lemma groupHyperhomologySpectralSequenceAbutmentIso_eq (C : ChainComplex (Rep.{u} k G) ℕ)
+    (n : ℕ) :
+    C.groupHyperhomologySpectralSequenceAbutmentIso n =
+      C.groupHyperhomologyBicomplex.columnFiltrationAbutmentIso n :=
+  (rfl)
+
 end HomologicalComplex
 
 namespace Rep
