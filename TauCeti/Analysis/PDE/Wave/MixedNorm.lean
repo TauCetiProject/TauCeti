@@ -87,6 +87,11 @@ All in the `ContDiffBump` namespace, with `φ` the bump function defining the cu
   estimate for the Duhamel pairings.
 * `exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`: the retarded
   estimate for the Duhamel integral, with the forcing measured along a second admissible pair.
+* `exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_halfWave` and
+  `exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWave`: for any
+  `1 ≤ q ≤ ∞`, block bounds for `W₊(t) Pⱼ` in `L^q_t L^r_x` with weights `2^{jσ}` give block
+  bounds for `cos(tD) Pⱼ` with weights `2^{jσ}` and for `D⁻¹ sin(tD) Pⱼ` with weights
+  `2^{j(σ - 1)}`.
 * `exists_eLpNorm_top_eLpNorm_halfWavePropagator_littlewoodPaley_le`,
   `exists_eLpNorm_top_eLpNorm_waveCosPropagator_littlewoodPaley_le` and
   `exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le`: the estimates for `W₊(t) Pⱼ`,
@@ -726,9 +731,11 @@ section HalfWave
 variable {q r : ℝ≥0∞}
 
 /-- Frequency-localized mixed-norm bounds for `W₊(t) Pⱼ` with weights `2^{jσ}` give the same
-bounds for `cos(tD) Pⱼ`, since `cos(tD) = (W₊(t) + W₊(-t)) / 2` and reflecting time preserves the
-mixed norms. -/
-private theorem exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_halfWave
+bounds for `cos(tD) Pⱼ`: for any `1 ≤ q ≤ ∞`, any `r` and any `σ : ℝ`, if
+`‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖f‖₂` for every `j ∈ ℤ`, then
+`‖cos(tD) Pⱼ f‖_{L^q_t L^r_x} ≤ C' 2^{jσ} ‖f‖₂` for every `j ∈ ℤ`. This holds since
+`cos(tD) = (W₊(t) + W₊(-t)) / 2` and reflecting time preserves the mixed norms. -/
+theorem exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_halfWave
     (hq : 1 ≤ q) (σ : ℝ)
     (hW : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
@@ -766,10 +773,12 @@ private theorem exists_eLpNorm_eLpNorm_waveCosPropagator_littlewoodPaley_le_of_h
         exact le_of_eq (by ring)
 
 /-- Frequency-localized mixed-norm bounds for `W₊(t) Pⱼ` with weights `2^{jσ}` give bounds for
-`D⁻¹ sin(tD) Pⱼ` with weights `2^{j(σ - 1)}`, since
+`D⁻¹ sin(tD) Pⱼ` with weights `2^{j(σ - 1)}`: for any `1 ≤ q ≤ ∞`, any `r` and any `σ : ℝ`, if
+`‖W₊(t) Pⱼ f‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖f‖₂` for every `j ∈ ℤ`, then
+`‖D⁻¹ sin(tD) Pⱼ g‖_{L^q_t L^r_x} ≤ C' 2^{j(σ - 1)} ‖g‖₂` for every `j ∈ ℤ`. This holds since
 `D⁻¹ sin(τD) Pⱼ = 2^{-j} (2i)⁻¹ (W₊(τ) - W₊(-τ)) Pⱼ Mⱼ` with `Mⱼ` bounded on `L²` uniformly
 in `j`. -/
-private theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWave
+theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWave
     (hq : 1 ≤ q) (σ : ℝ)
     (hW : ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp ℂ 2 (volume : Measure E),
