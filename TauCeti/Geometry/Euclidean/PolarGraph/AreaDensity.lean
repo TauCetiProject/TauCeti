@@ -25,70 +25,95 @@ namespace TauCeti.PolarGraph
 open Filter
 open scoped Gradient InnerProductSpace Topology
 
-/-- The graph parametrized by radius and angle in the Euclidean product `ℂ × ℝ`. -/
-@[expose] def polarHeightGraph (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) : WithLp 2 (ℂ × ℝ) :=
+/-- The graph parametrized on all radius-angle pairs, allowing signed and zero radius, in the
+Euclidean product `ℂ × ℝ`. On positive radii this is `PolarGraph.graph` with the codomain
+transported to `WithLp 2 (ℂ × ℝ)` and the height restricted to `PolarPoint`. -/
+def graphOfProd (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) : WithLp 2 (ℂ × ℝ) :=
   WithLp.toLp 2 (Complex.polarCoord.symm q, h q)
+
+/-- Evaluation of the graph on a radius-angle pair. -/
+@[simp] theorem graphOfProd_apply (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) :
+    graphOfProd h q = WithLp.toLp 2 (Complex.polarCoord.symm q, h q) := (rfl)
+
+/-- The graph is the pair of the polar projection and height, transported to the Euclidean
+product by its continuous linear equivalence. -/
+theorem graphOfProd_eq_comp (h : ℝ × ℝ → ℝ) :
+    graphOfProd h = (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ ℝ).symm ∘
+      (fun q ↦ (Complex.polarCoord.symm q, h q)) := by
+  funext q
+  simp
 
 /-- The differential of the graph pairs the polar-coordinate differential with that of
 the height. -/
-theorem fderiv_polarHeightGraph {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q)
-    (v : ℝ × ℝ) : fderiv ℝ (polarHeightGraph h) q v =
+theorem fderiv_graphOfProd {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q)
+    (v : ℝ × ℝ) : fderiv ℝ (graphOfProd h) q v =
       WithLp.toLp 2 (Complex.equivRealProdCLM.symm (fderivPolarCoordSymm q v), fderiv ℝ h q v) := by
   have hπ : HasFDerivAt Complex.polarCoord.symm
       (Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm q)) q := by
     simpa only [zero_add] using hasFDerivAt_add_polarCoord_symm q 0
-  exact congrArg (fun L : (ℝ × ℝ) →L[ℝ] WithLp 2 (ℂ × ℝ) ↦ L v)
-    (((WithLp.prodContinuousLinearEquiv 2 ℝ ℂ ℝ).symm.hasFDerivAt.comp q
-      (hπ.prodMk hh.hasFDerivAt)).fderiv : fderiv ℝ (polarHeightGraph h) q = _)
+  rw [graphOfProd_eq_comp]
+  have hD := (WithLp.prodContinuousLinearEquiv 2 ℝ ℂ ℝ).symm.hasFDerivAt.comp q
+    (hπ.prodMk hh.hasFDerivAt)
+  simp only [Function.comp_def] at hD ⊢
+  rw [hD.fderiv]
+  simp
 
 /-- The Gram matrix of the actual graph differential on the radial and angular coordinate
 vectors, in that order. -/
-@[expose] def polarHeightGram (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  Matrix.gram ℝ (fun i ↦ fderiv ℝ (polarHeightGraph h) q (![(1, 0), (0, 1)] i))
+def gram (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  Matrix.gram ℝ (fun i ↦ fderiv ℝ (graphOfProd h) q (![(1, 0), (0, 1)] i))
+
+/-- Each Gram entry is the inner product of the graph differential on the corresponding
+radial or angular coordinate vectors, without a differentiability assumption. -/
+@[simp] theorem gram_apply (h : ℝ × ℝ → ℝ) (q : ℝ × ℝ) (i j : Fin 2) :
+    gram h q i j =
+      ⟪fderiv ℝ (graphOfProd h) q (![(1, 0), (0, 1)] i),
+        fderiv ℝ (graphOfProd h) q (![(1, 0), (0, 1)] j)⟫_ℝ := (rfl)
 
 /-- The first fundamental form in the radius and angle coordinates. The mixed entry is the
 product of the height derivatives since the planar radial and angular velocities are orthogonal. -/
-theorem polarHeightGram_eq {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q) :
-    polarHeightGram h q =
+theorem gram_eq {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q) :
+    gram h q =
       !![1 + (fderiv ℝ h q (1, 0)) ^ 2, fderiv ℝ h q (1, 0) * fderiv ℝ h q (0, 1);
          fderiv ℝ h q (1, 0) * fderiv ℝ h q (0, 1), q.1 ^ 2 + (fderiv ℝ h q (0, 1)) ^ 2] := by
   have horth : ⟪Complex.exp (q.2 * Complex.I), circleMap 0 q.1 q.2 * Complex.I⟫_ℝ = 0 := by
-    simp [Complex.inner, circleMap_zero, Complex.mul_re, Complex.mul_im]
-    ring
-  have horth' := (real_inner_comm (Complex.exp (q.2 * Complex.I)) _).trans horth
+    rw [circleMap_zero, mul_assoc,
+      ← Complex.real_smul (x := q.1), real_inner_smul_right]
+    simpa only [smul_eq_mul, RCLike.I_to_complex, mul_comm, mul_zero] using
+      congrArg (q.1 * ·) (real_inner_I_smul_self ℂ (Complex.exp (q.2 * Complex.I)))
   ext i j
-  simp only [polarHeightGram, Matrix.gram_apply, fderiv_polarHeightGraph hh,
+  simp only [gram_apply, fderiv_graphOfProd hh,
     WithLp.prod_inner_apply, Real.inner_apply]
   fin_cases i <;> fin_cases j <;>
     simp [equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero,
-      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one, horth, horth'] <;> ring
+      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one, horth, real_inner_comm] <;> ring
 
 /-- The Gram determinant of a polar graph at a point of differentiability of the height. -/
-theorem det_polarHeightGram {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q) :
-    (polarHeightGram h q).det =
+theorem det_gram {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q) :
+    (gram h q).det =
       q.1 ^ 2 * (1 + (fderiv ℝ h q (1, 0)) ^ 2) + (fderiv ℝ h q (0, 1)) ^ 2 := by
-  rw [polarHeightGram_eq hh, Matrix.det_fin_two_of]
+  rw [gram_eq hh, Matrix.det_fin_two_of]
   ring
 
 /-- Away from the axis the area density factors into the polar Jacobian and the graph factor
 in the unit radial and angular directions. -/
-theorem sqrt_det_polarHeightGram {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q)
+theorem sqrt_det_gram {h : ℝ × ℝ → ℝ} {q : ℝ × ℝ} (hh : DifferentiableAt ℝ h q)
     (hr : q.1 ≠ 0) :
-    √(polarHeightGram h q).det =
+    √(gram h q).det =
       |q.1| * √(1 + (fderiv ℝ h q (1, 0)) ^ 2 + (fderiv ℝ h q (0, 1) / q.1) ^ 2) := by
-  rw [det_polarHeightGram hh, ← Real.sqrt_sq_eq_abs q.1, ← Real.sqrt_mul (sq_nonneg _)]
+  rw [det_gram hh, ← Real.sqrt_sq_eq_abs q.1, ← Real.sqrt_mul (sq_nonneg _)]
   congr 1
   field_simp
 
 /-- For a Cartesian height germ in a translated polar chart, the area density is the absolute
 polar Jacobian times the Cartesian graph area factor, including on the axis. -/
-theorem sqrt_det_polarHeightGram_eq_cartesian {f : ℂ → ℝ} {h : ℝ × ℝ → ℝ} (z₀ : ℂ)
+theorem sqrt_det_gram_eq_cartesian {f : ℂ → ℝ} {h : ℝ × ℝ → ℝ} (z₀ : ℂ)
     (q : ℝ × ℝ) (hf : DifferentiableAt ℝ f (z₀ + Complex.polarCoord.symm q))
     (he : h =ᶠ[𝓝 q] fun t ↦ f (z₀ + Complex.polarCoord.symm t)) :
-    √(polarHeightGram h q).det = |q.1| * √(1 + ‖∇ f (z₀ + Complex.polarCoord.symm q)‖ ^ 2) := by
+    √(gram h q).det = |q.1| * √(1 + ‖∇ f (z₀ + Complex.polarCoord.symm q)‖ ^ 2) := by
   have hd := hf.comp q (hasFDerivAt_add_polarCoord_symm q z₀).differentiableAt
   have hh := hd.congr_of_eventuallyEq he
-  rw [det_polarHeightGram hh, ← Real.sqrt_sq_eq_abs q.1, ← Real.sqrt_mul (sq_nonneg _)]
+  rw [det_gram hh, ← Real.sqrt_sq_eq_abs q.1, ← Real.sqrt_mul (sq_nonneg _)]
   congr 1
   linear_combination -sq_radius_mul_norm_gradient_sq z₀ q hf he
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import TauCeti.Analysis.Complex.Inner
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
@@ -24,13 +25,6 @@ open scoped Gradient RealInnerProductSpace Topology
 
 namespace TauCeti.PolarGraph
 
-private theorem norm_sq_eq_inner_radial_sq_add_inner_angular_sq (v w : ℂ) (hw : ‖w‖ = 1) :
-    ‖v‖ ^ 2 = ⟪v, w⟫ ^ 2 + ⟪v, w * Complex.I⟫ ^ 2 := by
-  have h : w.re * w.re + w.im * w.im = 1 := by
-    rw [← Complex.normSq_apply, ← Complex.sq_norm, hw, one_pow]
-  simp [Complex.sq_norm, Complex.normSq_apply, Complex.inner, Complex.mul_re]
-  linear_combination -(v.re ^ 2 + v.im ^ 2) * h
-
 /-- The polar slope identity with the radius factors cleared also holds at signed or zero
 radius. The height may be defined on a single sheet through local agreement. -/
 theorem sq_radius_mul_norm_gradient_sq {f : ℂ → ℝ} {h : ℝ × ℝ → ℝ} (z₀ : ℂ)
@@ -38,8 +32,8 @@ theorem sq_radius_mul_norm_gradient_sq {f : ℂ → ℝ} {h : ℝ × ℝ → ℝ
     (he : h =ᶠ[𝓝 p] fun q ↦ f (z₀ + Complex.polarCoord.symm q)) :
     p.1 ^ 2 * ‖∇ f (z₀ + Complex.polarCoord.symm p)‖ ^ 2 =
       p.1 ^ 2 * (fderiv ℝ h p (1, 0)) ^ 2 + (fderiv ℝ h p (0, 1)) ^ 2 := by
-  let w := Complex.exp (p.2 * Complex.I)
-  let v := ∇ f (z₀ + Complex.polarCoord.symm p)
+  set w := Complex.exp (p.2 * Complex.I)
+  set v := ∇ f (z₀ + Complex.polarCoord.symm p)
   have hD := hf.hasFDerivAt.comp p (TauCeti.hasFDerivAt_add_polarCoord_symm p z₀)
   have hD' := hD.congr_of_eventuallyEq he
   have h₁ : fderiv ℝ h p (1, 0) = ⟪v, w⟫ := by
@@ -51,8 +45,7 @@ theorem sq_radius_mul_norm_gradient_sq {f : ℂ → ℝ} {h : ℝ × ℝ → ℝ
       TauCeti.equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one, circleMap_zero]
     rw [mul_assoc, ← Complex.real_smul, map_smul]
     simp [v, w]
-  change p.1 ^ 2 * ‖v‖ ^ 2 = _
-  rw [h₁, h₂, norm_sq_eq_inner_radial_sq_add_inner_angular_sq v w
+  rw [h₁, h₂, Complex.norm_sq_eq_real_inner_sq_add_real_inner_mul_I_sq v w
     (Complex.norm_exp_ofReal_mul_I p.2)]
   ring
 
