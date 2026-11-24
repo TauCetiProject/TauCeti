@@ -46,11 +46,18 @@ Interval integrals of elementary functions in closed form or as series, continui
   `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
   `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
+* `TauCeti.integral_exp_mul_pos`, `TauCeti.integral_exp_mul_le`: the exponential integral
+  `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0` and at most `T e^{|λ|T}`;
+  `TauCeti.hasDerivAt_integral_exp_mul_sub`: `z ↦ E_λ(z - t)` has derivative `1` at `t`.
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
+  `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`, and at most `2 / |u|` for `u ≠ 0`.
+* `TauCeti.tendsto_average_integral_cexp`: the averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to
+  `1` at `u = 0` and to `0` elsewhere as `T → ∞`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
@@ -299,6 +306,37 @@ theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
   rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
     inv_mul_eq_div]
 
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` is positive for `T > 0`. -/
+theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
+    0 < ∫ r in 0..T, Real.exp (lam * r) :=
+  intervalIntegral.intervalIntegral_pos_of_pos_on
+    ((by fun_prop : Continuous fun r ↦ Real.exp (lam * r)).intervalIntegrable _ _)
+    (fun _ _ ↦ Real.exp_pos _) hT
+
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), Real.exp (lam * r)) 1 t := by
+  simpa using ((by fun_prop : Continuous fun r ↦ Real.exp (lam * r)).integral_hasStrictDerivAt
+    0 (t - t)).hasDerivAt.comp_sub_const t t
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
+theorem integral_exp_mul_le (lam T : ℝ) :
+    ∫ r in 0..T, Real.exp (lam * r) ≤ T * Real.exp (|lam| * T) := by
+  have hc : Continuous fun r ↦ Real.exp (lam * r) := by fun_prop
+  rcases le_total 0 T with hT | hT
+  · have := intervalIntegral.integral_mono_on (g := fun _ ↦ Real.exp (|lam| * T)) hT
+      (hc.intervalIntegrable _ _) (intervalIntegrable_const (μ := MeasureTheory.volume))
+      fun r hr ↦ Real.exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simpa using this
+  · rw [intervalIntegral.integral_symm]
+    have := intervalIntegral.integral_mono_on (f := fun _ ↦ Real.exp (|lam| * T)) hT
+      (intervalIntegrable_const (μ := MeasureTheory.volume)) (hc.intervalIntegrable _ _)
+      fun r hr ↦ Real.exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
+    linarith
+
 /-- The integral of `σ ↦ 1 / (σ (1 + C σ))` between positive limits, for `C ≥ 0`: an
 antiderivative is `σ ↦ log (σ / (1 + C σ))`. -/
 theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC : 0 ≤ C) :
@@ -332,6 +370,47 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
       Complex.exp_eq_exp_iff_exists_int.mpr ⟨k, by push_cast; ring⟩
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
+
+/-- The interval integral `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`. -/
+theorem norm_integral_cexp_le (u a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ |b - a| := by
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b) (C := 1)
+    (f := fun t ↦ Complex.exp (↑(t * u) * Complex.I))
+    fun t _ ↦ (Complex.norm_exp_ofReal_mul_I _).le
+  rwa [one_mul] at h
+
+/-- For `u ≠ 0` the interval integral `∫ t in a..b, exp (t u i)` has modulus at most `2 / |u|`,
+uniformly in `a` and `b`. -/
+theorem norm_integral_cexp_le_of_ne_zero {u : ℝ} (hu : u ≠ 0) (a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ 2 / |u| := by
+  have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.2 hu) Complex.I_ne_zero
+  have h : ∫ t in a..b, Complex.exp (↑(t * u) * Complex.I) =
+      (Complex.exp (↑(b * u) * Complex.I) - Complex.exp (↑(a * u) * Complex.I)) /
+        (u * Complex.I) := by
+    simp_rw [show ∀ t : ℝ, (↑(t * u) : ℂ) * Complex.I = u * Complex.I * t from fun t ↦ by
+      push_cast; ring]
+    rw [integral_exp_mul_complex hc]
+  rw [h, norm_div, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+  gcongr
+  exact (norm_sub_le _ _).trans (by simp_rw [Complex.norm_exp_ofReal_mul_I]; norm_num)
+
+open Filter Topology in
+/-- The averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to `1` at `u = 0` and to `0` elsewhere as
+`T → ∞`. -/
+theorem tendsto_average_integral_cexp (u : ℝ) :
+    Tendsto (fun T : ℝ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, Complex.exp (↑(t * u) * Complex.I))
+      atTop (𝓝 (({0} : Set ℝ).indicator 1 u)) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ne_atTop 0] with T hT
+    simp [hT]
+  · rw [Set.indicator_of_notMem (by simpa using hu)]
+    refine squeeze_zero_norm' ?_ ((tendsto_inv_atTop_zero.const_mul (2 / |u|)).trans
+      (by rw [mul_zero]))
+    filter_upwards [eventually_gt_atTop 0] with T hT
+    rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hT.le, mul_comm]
+    gcongr
+    exact norm_integral_cexp_le_of_ne_zero hu 0 T
 
 /-- The binomial expansion of `cosᵏ θ exp (n θ i)` into the Fourier characters
 `exp ((2m - k + n) θ i)`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.WeightedCircle.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Weighted circle actions with a common weight factor
@@ -25,8 +25,10 @@ coprime weights `a / g` and `b / g`, keeping the two actions distinct.
   after rescaling the level: `E(k a, k b, k ε) = E(a, b, ε)`
   (`TauCeti.Toric.weightedEllipsoid_mul_mul_mul`).
 * **The ineffective kernel.** For `ε > 0`, a circle element acts trivially on the whole ellipsoid
-  exactly when `u ^ g = 1` (`TauCeti.Toric.forall_smul_weightedEllipsoid_eq_self_iff`). So the
-  action on `E` is effective exactly when the weights are coprime
+  exactly when `u ^ g = 1` (`TauCeti.Toric.forall_smul_weightedEllipsoid_eq_self_iff`), so the
+  kernel of the action is the cyclic group of `g`-th roots of unity, of order `g`
+  (`TauCeti.Toric.natCard_fixingSubgroup_univ_weightedEllipsoid`). So the action on `E` is
+  effective exactly when the weights are coprime
   (`TauCeti.Toric.faithfulSMul_weightedEllipsoid_iff`).
 * **Orbits.** Since every circle element is a `k`-th power, the two actions have the same orbits
   (`TauCeti.Toric.exists_weightedRotation_mul_mul_eq_iff`). Hence the orbit spaces of the ellipsoid
@@ -100,27 +102,62 @@ theorem exists_mem_weightedEllipsoid_ne_zero (ha : 0 < a) (hb : 0 < b) (hε : 0 
     (r := (1, 1)) (by simp [Prod.ext_iff])
   exact ⟨_, hz, by simp [ht.ne'], by simp [ht.ne']⟩
 
-/-- **The ineffective kernel of the action.** For positive weights and `ε > 0`, a circle element
-acts trivially on the whole ellipsoid exactly when it is a `gcd(a, b)`-th root of unity. -/
-theorem forall_smul_weightedEllipsoid_eq_self_iff (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε)
-    {u : Circle} : (∀ z : weightedEllipsoid a b ε, u • z = z) ↔ u ^ a.gcd b = 1 := by
-  refine ⟨fun h ↦ ?_, fun h z ↦ ?_⟩
-  · obtain ⟨z, hz, h₁, h₂⟩ := exists_mem_weightedEllipsoid_ne_zero ha hb hε
-    exact (mem_stabilizer_weightedEllipsoid_iff_of_ne_zero (z := ⟨z, hz⟩) h₁ h₂).1 (h ⟨z, hz⟩)
-  · rw [← Subtype.coe_inj, coe_smul_weightedEllipsoid, weightedRotation_eq_self_iff]
-    exact ⟨fun _ ↦ (pow_gcd_eq_one.1 h).1, fun _ ↦ (pow_gcd_eq_one.1 h).2⟩
+/-- A point of the ellipsoid off the axis `z₁ = 0`, for a positive weight `a` and `ε > 0`. The
+weight `b` may vanish. -/
+private theorem exists_mem_weightedEllipsoid_fst_ne_zero (ha : 0 < a) (hε : 0 < ε) :
+    ∃ z ∈ weightedEllipsoid a b ε, z.1 ≠ 0 := by
+  have : (0 : ℝ) < a := Nat.cast_pos.2 ha
+  refine ⟨((√(2 * ε / a) : ℝ), 0), ?_,
+    Complex.ofReal_ne_zero.2 (Real.sqrt_ne_zero'.2 (by positivity))⟩
+  rw [mem_weightedEllipsoid, Complex.norm_real, Real.norm_eq_abs, sq_abs,
+    Real.sq_sqrt (by positivity)]
+  field_simp
+  simp
 
-/-- **The action on the ellipsoid is effective exactly for coprime weights**, for positive weights
-and `ε > 0`. -/
-theorem faithfulSMul_weightedEllipsoid_iff (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε) :
+/-- **The ineffective kernel of the action.** For `ε > 0`, a circle element acts trivially on the
+whole ellipsoid exactly when it is a `gcd(a, b)`-th root of unity. The weights may vanish. -/
+theorem forall_smul_weightedEllipsoid_eq_self_iff (hε : 0 < ε) {u : Circle} :
+    (∀ z : weightedEllipsoid a b ε, u • z = z) ↔ u ^ a.gcd b = 1 := by
+  simp only [pow_gcd_eq_one, ← Subtype.coe_inj, coe_smul_weightedEllipsoid,
+    weightedRotation_eq_self_iff, Subtype.forall]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h _ _ ↦ ⟨fun _ ↦ h.1, fun _ ↦ h.2⟩⟩
+  · rcases a.eq_zero_or_pos with rfl | ha
+    · exact pow_zero u
+    obtain ⟨z, hz, h₁⟩ := exists_mem_weightedEllipsoid_fst_ne_zero (b := b) ha hε
+    exact (h z hz).1 h₁
+  · rcases b.eq_zero_or_pos with rfl | hb
+    · exact pow_zero u
+    obtain ⟨z, hz, h₂⟩ := exists_mem_weightedEllipsoid_fst_ne_zero (b := a) hb hε
+    exact (h z.swap (swap_mem_weightedEllipsoid.2 hz)).2 h₂
+
+/-- **The ineffective kernel as a subgroup.** For `ε > 0`, the subgroup of circle elements fixing
+every point of the ellipsoid is the group of `gcd(a, b)`-th roots of unity. -/
+theorem fixingSubgroup_univ_weightedEllipsoid (hε : 0 < ε) :
+    fixingSubgroup Circle (univ : Set (weightedEllipsoid a b ε)) =
+      (powMonoidHom (a.gcd b)).ker := by
+  ext u
+  simpa [mem_fixingSubgroup_iff] using forall_smul_weightedEllipsoid_eq_self_iff hε
+
+/-- **The `Nat.card` of the ineffective kernel is `gcd(a, b)`** for `ε > 0`. When at least one
+weight is positive, this is the finite order of the kernel. For `a = b = 0` the kernel is the whole
+circle, which is infinite, so its `Nat.card` is `0` rather than an order. -/
+theorem natCard_fixingSubgroup_univ_weightedEllipsoid (hε : 0 < ε) :
+    Nat.card (fixingSubgroup Circle (univ : Set (weightedEllipsoid a b ε))) = a.gcd b := by
+  rw [fixingSubgroup_univ_weightedEllipsoid hε]
+  rcases (a.gcd b).eq_zero_or_pos with h | h
+  · have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+    have : Infinite Circle := .of_injective _ (AddCircle.injective_toCircle two_pi_pos.ne')
+    simp [h]
+  · have : NeZero (a.gcd b) := ⟨h.ne'⟩
+    exact natCard_powMonoidHom_ker Circle _
+
+/-- **The action on the ellipsoid is effective exactly for coprime weights**, for `ε > 0`. The
+weights may vanish. -/
+theorem faithfulSMul_weightedEllipsoid_iff (hε : 0 < ε) :
     FaithfulSMul Circle (weightedEllipsoid a b ε) ↔ a.Coprime b := by
-  simp_rw [faithfulSMul_iff, forall_smul_weightedEllipsoid_eq_self_iff ha hb hε]
-  have : NeZero (a.gcd b) := ⟨(Nat.gcd_pos_of_pos_left b ha).ne'⟩
-  refine ⟨fun h ↦ ?_, fun h u hu ↦ by simpa [h.gcd_eq_one] using hu⟩
-  -- The kernel of the `gcd(a, b)`-th power map has `gcd(a, b)` elements, and is trivial.
-  have hbot : (powMonoidHom (a.gcd b) : Circle →* Circle).ker = ⊥ :=
-    (Subgroup.eq_bot_iff_forall _).2 fun u hu ↦ h u hu
-  rw [Nat.Coprime, ← natCard_powMonoidHom_ker Circle (a.gcd b), hbot, Subgroup.card_bot]
+  rw [Nat.Coprime, ← natCard_fixingSubgroup_univ_weightedEllipsoid hε, Subgroup.card_eq_one,
+    Subgroup.eq_bot_iff_forall, faithfulSMul_iff]
+  simp [mem_fixingSubgroup_iff]
 
 /-! ### The orbit space -/
 

@@ -50,9 +50,9 @@ orders of `Sel_φ` and `Sel_φ̂`.
 
 All in the namespace `TauCeti.Isogeny`:
 
-* `natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1`: the local conditions of `φ`
+* `natCard_localKummerCondition_mul_dual_eq_natCard_H1`: the local conditions of `φ`
   and `φ̂` have orders multiplying to `#H¹(K, E₁[φ])`.
-* `ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype`: the local
+* `localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype`: the local
   condition of `φ` is the exact annihilator of that of `φ̂`.
 * `range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype`: the same for the Kummer
   images.
@@ -87,10 +87,9 @@ finite extension `K` of `ℚ_p`, the local conditions `H¹_φ(K) ⊆ H¹(K, E₁
 `#H¹_φ(K) · #H¹_φ̂(K) = #H¹(K, E₁[φ])`.
 
 The residue characteristic `p` may divide `deg φ`. -/
-theorem natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1 :
-    Nat.card (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker *
-      Nat.card (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-        continuous_of_discreteTopology).ker =
+theorem natCard_localKummerCondition_mul_dual_eq_natCard_H1 :
+    Nat.card φ.localKummerCondition *
+      Nat.card φ.dual.localKummerCondition =
       Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) := by
   classical
   have := FinitePadicExtension.charZero K p
@@ -101,25 +100,25 @@ theorem natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1 :
     (by rwa [degree_ofIsogeny])
   rw [dual_ofIsogeny, degree_ofIsogeny,
     natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat K p _ φ.degree_ne_zero] at h
-  rw [← φ.range_kummerMap, ← φ.dual.range_kummerMap, natCard_range_kummerMap,
+  rw [← φ.range_kummerMap,
+    ← φ.dual.range_kummerMap, natCard_range_kummerMap,
     natCard_range_kummerMap, h, φ.natCard_H1_kerCoeff p]
 
 /-- **The local condition of an isogeny is the exact annihilator of that of its dual**: over a
 finite extension `K` of `ℚ_p`, a class in `H¹(K, E₁[φ])` lies in the local condition of `φ`, the
 kernel of the map to `H¹(K, E₁)`, exactly when its local Tate pairing with every class in the local
 condition of `φ̂` vanishes. The residue characteristic `p` may divide `deg φ`. -/
-theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype :
+theorem localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype :
     haveI := FinitePadicExtension.charZero K p
-    (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology).ker =
+    φ.localKummerCondition =
       ((φ.localTateKerWeilPairing (Nat.cast_ne_zero.mpr φ.degree_ne_zero).isUnit).compl₂
-        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
-          continuous_of_discreteTopology).ker.subtype).ker := by
+        φ.dual.localKummerCondition.subtype).ker := by
   classical
   have := FinitePadicExtension.charZero K p
   have hn : IsUnit (φ.degree : K) := (Nat.cast_ne_zero.mpr φ.degree_ne_zero).isUnit
   have := hn.neZero_natCast
   obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero
-  have hcard := φ.natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1 p
+  have hcard := φ.natCard_localKummerCondition_mul_dual_eq_natCard_H1 p
   have := (ofIsogeny φ.dual).finite_H1_kerCoeff_of_isTopologicallyFinitelyGenerated
     (ofIsogeny_ne_zero φ.dual) (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K)
   have hkill (Q : (ofIsogeny φ.dual).KerCoeff) : φ.degree • Q = 0 := by
@@ -146,6 +145,6 @@ theorem range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype [De
   have := FinitePadicExtension.charZero K p
   obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.mpr (Nat.cast_ne_zero.mpr φ.degree_ne_zero)
   rw [φ.range_kummerMap, φ.dual.range_kummerMap]
-  exact φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype p
+  exact φ.localKummerCondition_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype p
 
 end TauCeti.Isogeny

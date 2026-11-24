@@ -26,6 +26,8 @@ local frame.
 
 ## Main results
 
+* `CovariantDerivative.contMDiff_covariantDerivative`: the covariant derivative `∇σ` of a
+  `C^(n + 1)` section is a `C^n` section of `Hom(TM, V)`.
 * `CovariantDerivative.contMDiffAt_apply`: the pointwise version of the next result.
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
@@ -62,6 +64,15 @@ variable
   [FiberBundle F V] [IsManifold I 1 M] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
+/-- The covariant derivative `∇σ` of a `C^(n + 1)` section for a `C^n` covariant derivative is a
+`C^n` section of the bundle `Hom(TM, V)` of `V`-valued one-forms. -/
+theorem contMDiff_covariantDerivative
+    (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n]
+    {σ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) :
+    ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (cov σ x)) :=
+  contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)
+
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a vector field which is
 `C^n` at `x` produces a section which is `C^n` at `x`. -/
 theorem contMDiffAt_apply
@@ -69,8 +80,7 @@ theorem contMDiffAt_apply
     {X : Π x : M, TangentSpace I x} {σ : Π x : M, V x} {x : M}
     (hX : CMDiffAt n (T% X) x) (hσ : CMDiff (n + 1) (T% σ)) :
     CMDiffAt n (T% (fun x ↦ cov σ x (X x))) x :=
-  ((contMDiffOn_univ.mp
-    (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)) x).clm_bundle_apply hX
+  (cov.contMDiff_covariantDerivative hσ x).clm_bundle_apply hX
 
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a `C^n` vector field
 produces a `C^n` section. -/
@@ -109,6 +119,19 @@ theorem alongVectorField_smul (cov : CovariantDerivative I F V)
   rw [alongVectorField_apply, hfun, cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
     (a.contMDiff.mdifferentiableAt (by simp))]
   simp
+
+/-- Adding a `C^n` endomorphism-valued one-form preserves the regularity of a connection.
+The model fibre need not have finite dimension. -/
+theorem ContMDiffCovariantDerivative.addOneForm
+    {cov : CovariantDerivative I F V} (hcov : ContMDiffCovariantDerivative cov n)
+    {A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x}
+    (hA : ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (F →L[𝕜] E →L[𝕜] F)
+        (E := fun y ↦ V y →L[𝕜] TangentSpace I y →L[𝕜] V y) x (A x))) :
+    ContMDiffCovariantDerivative (cov.addOneForm A) n where
+  contMDiff.contMDiff {σ} hσ := by
+    have h := hA.contMDiffOn.clm_bundle_apply (hσ.of_le le_self_add)
+    exact hcov.contMDiff.contMDiff hσ |>.add_section h
 
 section Real
 
