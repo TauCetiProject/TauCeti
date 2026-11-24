@@ -81,8 +81,13 @@ theorem isTOrthogonalFamily_def {t : ℝ≥0} {e : I → M} :
   Iff.rfl
 
 variable (R) in
-/-- A **`t`-orthogonal basis** of a normed module is a `t`-orthogonal family of nonzero vectors
-whose span is dense. -/
+/-- A **`t`-orthogonal basis** of a seminormed module is a `t`-orthogonal family of nonzero
+vectors whose span is dense.
+
+In a seminormed module that is not `T0Space`, the family may contain or repeat nonzero vectors of
+norm zero and need not be linearly independent; linear independence for `0 < t` follows only when
+null vectors are excluded, for example in a normed module (`NormedAddCommGroup`, see
+`IsTOrthogonalFamily.linearIndependent`). -/
 structure IsTOrthogonalBasis (t : ℝ≥0) (e : I → M) : Prop where
   /-- A `t`-orthogonal basis is a `t`-orthogonal family. -/
   isTOrthogonalFamily : IsTOrthogonalFamily R t e

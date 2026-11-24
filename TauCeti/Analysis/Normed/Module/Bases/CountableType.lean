@@ -51,7 +51,9 @@ nontrivially normed field and a normed space.
   subspace `D` into a seminormed space extends to a linear map `ψ` on `E` satisfying
   `‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖` on `D ⊔ G` for any finite-dimensional subspace `G` and `c > 1`.
 * `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional seminormed space
-  of countable type over any complete normed field has a `t`-orthogonal basis indexed by `ℕ`.
+  of countable type over any complete normed field has a `t`-orthogonal basis indexed by `ℕ`;
+  in a seminormed space that is not `T0Space`, the family may repeat a nonzero vector of norm zero
+  and need not be injective or linearly independent.
 * `Submodule.exists_finiteDimensional_le_infDist_le`: for a closed subspace `D`, a
   finite-dimensional subspace `G` and `c > 1`, some finite-dimensional `W ≤ D` satisfies
   `infDist g W ≤ c * infDist g D` for every `g ∈ G`. The subspace `W` is cut out of `D` by lifts
@@ -371,7 +373,11 @@ variable {K E : Type*} [NormedField K] [CompleteSpace K]
 
 /-- **`t`-orthogonal bases of infinite-dimensional spaces of countable type**: over a complete
 normed field, if a sequence has dense span in an infinite-dimensional ultrametric seminormed space
-`E`, then for every `t < 1` the space `E` has a `t`-orthogonal basis indexed by `ℕ`. -/
+`E`, then for every `t < 1` the space `E` has a `t`-orthogonal basis indexed by `ℕ`.
+
+In a seminormed space that is not `T0Space`, the family may repeat a nonzero vector of norm zero
+and need not be injective or linearly independent; in a normed space (`NormedAddCommGroup`), linear
+independence follows from `IsTOrthogonalFamily.linearIndependent` when `0 < t`. -/
 theorem exists_isTOrthogonalBasis_nat_of_dense_span (hE : ¬FiniteDimensional K E) {v : ℕ → E}
     (hv : Dense (span K (range v) : Set E)) {t : ℝ≥0} (ht : t < 1) :
     ∃ e : ℕ → E, IsTOrthogonalBasis K t e := by
