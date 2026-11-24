@@ -130,8 +130,7 @@ one-dimensional representation is the action of `ℤˣ` on `k`. -/
 theorem ofLinearCharacter_unitsMap_intCastRingHom [CommRing k] :
     ofLinearCharacter (Units.map (Int.castRingHom k : ℤ →* k)) = ofDistribMulAction k ℤˣ k := by
   ext u
-  rw [ofLinearCharacter_apply, ofDistribMulAction_apply_apply, Units.coe_map,
-    MonoidHom.coe_ofClass, eq_intCast, Units.smul_def, zsmul_eq_mul]
+  simp [ofLinearCharacter_apply, Units.smul_def]
 
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
