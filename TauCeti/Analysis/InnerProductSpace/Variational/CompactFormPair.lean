@@ -41,10 +41,12 @@ For a submodule `W` of `H`, the **constrained sphere** `S_W = {u | j u ∈ W, �
 (`TauCeti.CompactFormPair.unitConstraint`) is the admissible set of the Rayleigh minimization
 behind the eigenvalues of the pair: its first eigenvalue is the minimum of `q` on `S_H`, and the
 later ones are minima on the spheres of orthogonal complements of the eigenvectors already found.
-This file proves that these minima exist when `V` is complete and `W` is closed
-(`TauCeti.CompactFormPair.exists_isMinOn_energy_unitConstraint`). The sphere is not weakly
-closed in general (`TauCeti.CompactFormPair.not_isClosed_toWeakSpace_unitConstraint_top`), so the
-proof runs the sequential direct method in the reflexive space `V`:
+This file proves that these minima exist when `V` is complete, `W` is closed and `S_W` is
+nonempty (`TauCeti.CompactFormPair.exists_isMinOn_energy_unitConstraint`). Nonemptiness means
+that some `u` has `j u ∈ W` and `j u ≠ 0`; for `W = ⊤` it holds exactly when `H` is nontrivial.
+The sphere is not weakly closed in general
+(`TauCeti.CompactFormPair.not_isClosed_toWeakSpace_unitConstraint_top`), so the proof runs the
+sequential direct method in the reflexive space `V`:
 
 * compactness of `j` makes `S_W` sequentially weakly closed when `W` is closed;
 * the shifted coercivity bound gives `c ‖u‖² ≤ q(u) + ω` on `S_W`, so the energy has bounded
@@ -146,6 +148,12 @@ theorem unitConstraint_eq_preimage :
   ext u
   simp
 
+/-- The unconstrained sphere `S_H` is the set of `u` with `‖j u‖ = 1`. -/
+@[simp]
+theorem unitConstraint_top : P.unitConstraint ⊤ = {u | ‖P.inclusion u‖ = 1} := by
+  ext u
+  simp
+
 theorem unitConstraint_mono (h : W ≤ W') : P.unitConstraint W ⊆ P.unitConstraint W' :=
   fun _ hu ↦ ⟨h hu.1, hu.2⟩
 
@@ -160,8 +168,7 @@ theorem smul_mem_unitConstraint (hu : u ∈ P.unitConstraint W) {t : 𝕜} (ht :
 theorem inv_norm_smul_mem_unitConstraint (hu : P.inclusion u ∈ W) (hu0 : P.inclusion u ≠ 0) :
     ((‖P.inclusion u‖⁻¹ : ℝ) : 𝕜) • u ∈ P.unitConstraint W := by
   refine ⟨by simpa using W.smul_mem _ hu, ?_⟩
-  rw [map_smul, norm_smul, RCLike.norm_ofReal, abs_inv, abs_norm,
-    inv_mul_cancel₀ (norm_ne_zero_iff.2 hu0)]
+  simp [norm_smul, hu0]
 
 /-- The constrained sphere `S_W` is nonempty exactly when some form-domain vector has a nonzero
 image in `W`. A nonzero `W` does not suffice, since `W` may meet the range of `j` only in `0`. -/
@@ -193,14 +200,19 @@ theorem unitConstraint_top_nonempty_iff : (P.unitConstraint ⊤).Nonempty ↔ No
 
 /-! ### Bounds on constrained spheres -/
 
+/-- On a constrained sphere a shifted coercivity bound `c ‖v‖² ≤ q(v) + ω ‖j v‖²` reads
+`c ‖u‖² ≤ q(u) + ω`. -/
+theorem mul_norm_sq_le_energy_add_of_mem_unitConstraint {c ω : ℝ}
+    (h : ∀ v, c * ‖v‖ ^ 2 ≤ P.energy v + ω * ‖P.inclusion v‖ ^ 2) (hu : u ∈ P.unitConstraint W) :
+    c * ‖u‖ ^ 2 ≤ P.energy u + ω := by
+  simpa [hu.2] using h u
+
 /-- On a constrained sphere the energy is bounded below by `-ω`, for any shift `ω` in a
 shifted coercivity bound with constant `c ≥ 0`. -/
 theorem neg_le_energy_of_mem_unitConstraint {c ω : ℝ} (hc : 0 ≤ c)
     (h : ∀ v, c * ‖v‖ ^ 2 ≤ P.energy v + ω * ‖P.inclusion v‖ ^ 2) (hu : u ∈ P.unitConstraint W) :
     -ω ≤ P.energy u := by
-  have := h u
-  rw [hu.2, one_pow, mul_one] at this
-  nlinarith [sq_nonneg ‖u‖]
+  nlinarith [sq_nonneg ‖u‖, mul_norm_sq_le_energy_add_of_mem_unitConstraint h hu]
 
 variable (P W)
 
@@ -216,8 +228,7 @@ theorem hasBoundedSublevelsOn_energy_unitConstraint :
   obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
   refine hasBoundedSublevelsOn_iff.2 fun b ↦ isBounded_iff_forall_norm_le.2 ⟨1 + (b + ω) / c, ?_⟩
   rintro u ⟨hu, hub⟩
-  have hcu := h u
-  rw [hu.2, one_pow, mul_one] at hcu
+  have hcu := mul_norm_sq_le_energy_add_of_mem_unitConstraint h hu
   have hsq : ‖u‖ ^ 2 ≤ (b + ω) / c := by
     rw [le_div_iff₀ hc]
     linarith
@@ -227,7 +238,7 @@ theorem hasBoundedSublevelsOn_energy_unitConstraint :
 
 /-- On a constrained sphere the energy is lower semicontinuous for the weak topology of `V`.
 There it differs by a constant from the nonnegative Hermitian form `q + ω ‖j ·‖²`. -/
-theorem lowerSemicontinuousOn_energy_unitConstraint :
+theorem lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint :
     LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ P.energy ((toWeakSpace 𝕜 V).symm w))
       (toWeakSpace 𝕜 V '' P.unitConstraint W) := by
   obtain ⟨c, hc, ω, h⟩ := P.exists_shifted_coercive
@@ -259,10 +270,7 @@ theorem isSeqClosed_toWeakSpace_unitConstraint (hW : IsClosed (W : Set H)) :
 its weak closure. So constrained minima are found along sequences or inside bounded sets. -/
 theorem not_isClosed_toWeakSpace_unitConstraint_top (hV : ¬ FiniteDimensional 𝕜 V) :
     ¬ IsClosed (toWeakSpace 𝕜 V '' P.unitConstraint ⊤) := by
-  have heq : P.unitConstraint ⊤ = {u | ‖P.inclusion u‖ = 1} := by
-    ext u
-    simp
-  rw [heq]
+  rw [unitConstraint_top]
   exact not_isClosed_toWeakSpace_setOf_norm_eq hV P.injective one_pos
 
 /-- When `V` is complete and `W` is closed, the part of the constrained sphere `S_W` in any closed
@@ -285,7 +293,8 @@ theorem isCompact_toWeakSpace_sublevel_unitConstraint [CompleteSpace V]
   isCompact_toWeakSpace_sublevel_of_isSeqClosed
     surjective_inclusionInDoubleDual_of_innerProductSpace
     (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
-    (P.lowerSemicontinuousOn_energy_unitConstraint W).seqLowerSemicontinuousOn b
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn b
     ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel b)
 
 /-! ### Existence of constrained minima -/
@@ -297,7 +306,8 @@ theorem exists_isMinOn_energy_unitConstraint [CompleteSpace V] (hW : IsClosed (W
     ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
   exists_isMinOn_of_isSeqClosed surjective_inclusionInDoubleDual_of_innerProductSpace hne
     (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
-    (P.lowerSemicontinuousOn_energy_unitConstraint W).seqLowerSemicontinuousOn
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn
     (P.hasBoundedSublevelsOn_energy_unitConstraint W)
 
 /-- If `V` is complete and `W` is closed, the set of minimizers of the energy on the constrained
@@ -309,7 +319,8 @@ theorem isCompact_toWeakSpace_minimizers_unitConstraint [CompleteSpace V]
   isCompact_toWeakSpace_minimizers_of_isSeqClosed
     surjective_inclusionInDoubleDual_of_innerProductSpace
     (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
-    (P.lowerSemicontinuousOn_energy_unitConstraint W).seqLowerSemicontinuousOn
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn
     (P.hasBoundedSublevelsOn_energy_unitConstraint W)
 
 variable {P W}
@@ -324,7 +335,7 @@ theorem mul_norm_sq_le_energy_of_isMinOn {u₀ : V}
   · rw [P.injective (hu0.trans (map_zero P.inclusion).symm)]
     simp
   have h : P.energy u₀ ≤ P.energy _ := hmin (inv_norm_smul_mem_unitConstraint hu hu0)
-  rw [energy_smul, RCLike.norm_ofReal, abs_inv, abs_norm, inv_pow] at h
+  simp only [energy_smul, norm_inv, norm_algebraMap', norm_norm, inv_pow] at h
   calc P.energy u₀ * ‖P.inclusion u‖ ^ 2
       ≤ ((‖P.inclusion u‖ ^ 2)⁻¹ * P.energy u) * ‖P.inclusion u‖ ^ 2 := by gcongr
     _ = P.energy u := by field_simp

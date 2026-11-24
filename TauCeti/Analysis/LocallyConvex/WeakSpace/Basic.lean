@@ -80,6 +80,9 @@ theorem lowerSemicontinuous_re_apply_self_comp_toWeakSpace_symm (a : E →L⋆[�
       rw [ha x u, RCLike.star_def, RCLike.conj_re]
     simp only [map_sub, sub_apply] at hx
     linarith
+  -- `WeakSpace 𝕜 E` is by definition `WeakBilin (topDualPairing 𝕜 E).flip`, and evaluating the
+  -- functional `a u` at `x` is `(topDualPairing 𝕜 E).flip x (a u) = a u ((toWeakSpace 𝕜 E).symm x)`
+  -- by definition, so `WeakBilin.eval_continuous` gives the weak continuity of `a u`.
   have hcont : Continuous fun x : WeakSpace 𝕜 E ↦
       2 * RCLike.re (a u ((toWeakSpace 𝕜 E).symm x)) - RCLike.re (a u u) :=
     ((continuous_const.mul (RCLike.continuous_re.comp
