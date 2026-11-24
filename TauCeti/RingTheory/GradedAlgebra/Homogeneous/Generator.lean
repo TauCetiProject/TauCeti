@@ -48,8 +48,9 @@ graded isomorphism.
 * `TauCeti.GradedAlgebra.shiftClass_eq_iff`: two compatible `ℤ`-gradings of `A` on a preconnected
   spectrum are graded-isomorphic if and only if they have the same `shiftClass` in
   `ShiftClassGroup 𝒜`.
-* `TauCeti.GradedAlgebra.gradedSMul_shift`: shifting the degree of a compatible module grading
-  preserves compatibility with the scalar grading.
+* `TauCeti.GradedAlgebra.instDecompositionShift` and `TauCeti.GradedAlgebra.gradedSMul_shift`:
+  scoped instances in `TauCeti.GradedAlgebra` showing that shifting the degree of a grading
+  preserves direct-sum decomposition and compatibility with the scalar grading.
 * `TauCeti.GradedAlgebra.shiftClass_shift`: for every `d : ℤ`, the translated grading
   `fun n ↦ 𝒜 (n + d)` has `shiftClass` equal to `(d : ShiftClassGroup 𝒜)`.
 -/
@@ -64,11 +65,19 @@ section Shift
 
 /-- Shifting the degree of a compatible module grading by `d : ι` preserves compatibility with
 the scalar grading `𝒜`. -/
+@[scoped instance]
 theorem gradedSMul_shift {ι A M σA σM : Type*} [AddSemigroup ι] [SMul A M] [SetLike σA A]
     [SetLike σM M] (𝒜 : ι → σA) (ℳ : ι → σM) [SetLike.GradedSMul 𝒜 ℳ] (d : ι) :
     SetLike.GradedSMul 𝒜 (fun n ↦ ℳ (n + d)) :=
   ⟨fun _ _ _ _ ha hb ↦ by
     simpa only [vadd_eq_add, add_assoc] using SetLike.GradedSMul.smul_mem (B := ℳ) ha hb⟩
+
+/-- Shifting the degree of an internal direct-sum decomposition by `d : ι` preserves the
+decomposition. -/
+noncomputable scoped instance instDecompositionShift {ι M σ : Type*} [AddGroup ι]
+    [AddCommMonoid M] [SetLike σ M] [AddSubmonoidClass σ M] [DecidableEq ι] (ℳ : ι → σ)
+    [Decomposition ℳ] (d : ι) : Decomposition (fun n ↦ ℳ (n + d)) :=
+  DirectSum.Decomposition.compEquiv ℳ (Equiv.addRight d)
 
 end Shift
 
