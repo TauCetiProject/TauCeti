@@ -186,8 +186,7 @@ private theorem sum_flux_mul_fderiv {θ : F × E → ℝ} {a : F × E → ℂ} (
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     push_cast
     ring
-  rw [hsum, show (∑ k, partialDeriv θ (basis E k) (p, x) ^ 2 : ℝ) = gradSq θ (p, x) from rfl,
-    div_self (ofReal_ne_zero.2 hS), one_mul]
+  rw [hsum, ← gradSq, div_self (ofReal_ne_zero.2 hS), one_mul]
 
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
@@ -224,7 +223,7 @@ private theorem integral_eq_inv_mul_integral_transposeAmp {θ : F × E → ℝ} 
         -∫ x, partialDeriv (flux θ a k) (basis E k) (p, x) * g x ∂μ := by
     rw [integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (hint₁ k) (hint₂ k) (hint₃ k)
       (fun x _ ↦ (hfl k).differentiable (by simp) x) (fun x _ ↦ hg.differentiable (by simp) x)]
-    rfl
+    simp only [partialDeriv]
   have hsum : ∫ x, ∑ k, partialDeriv (flux θ a k) (basis E k) (p, x) * g x ∂μ =
       -(2 * π * t * I * ∫ x, a (p, x) * g x ∂μ) := by
     rw [← neg_eq_iff_eq_neg, eq_comm, ← integral_const_mul]

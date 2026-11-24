@@ -190,6 +190,12 @@ private theorem fderiv_coeffPhase_ne_zero {Φ : F × E → ℝ} (hΦ : ContDiff 
   rw [← real_inner_smul_left, ← inner_add_left, real_inner_self_eq_norm_sq] at h1
   exact hq (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 h1))
 
+/-- The gradient `∇Φ(p, ·)(x)` of the slices of a smooth `Φ` is continuous in `(p, x)`. -/
+private theorem continuous_gradient_slice {Φ : F × E → ℝ} (hΦ : ContDiff ℝ ∞ Φ) :
+    Continuous fun q : F × E ↦ gradient (fun y ↦ Φ (q.1, y)) q.2 :=
+  (InnerProductSpace.toDual ℝ E).symm.continuous.comp
+    (TauCeti.continuous_fderiv_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp)))
+
 variable [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
 
 /-- **Non-stationary Fourier coefficients.** For `p` in a compact set `V`, the Fourier transform of
@@ -201,8 +207,7 @@ private theorem exists_forall_pow_mul_norm_fourier_le (ψ : 𝓓(Ω, ℂ)) {Φ :
       (∀ x ∈ tsupport ψ, δ * (t + ‖m‖) ≤ ‖t • gradient (fun y ↦ Φ (p, y)) x + m‖) →
       (t + ‖m‖) ^ N * ‖𝓕 (fun x ↦ ψ x * (𝐞 (-(t * Φ (p, x))) : ℂ)) m‖ ≤ C := by
   set G : F × E → E := fun q ↦ gradient (fun y ↦ Φ (q.1, y)) q.2
-  have hGc : Continuous G := (InnerProductSpace.toDual ℝ E).symm.continuous.comp
-    (TauCeti.continuous_fderiv_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp)))
+  have hGc : Continuous G := continuous_gradient_slice hΦ
   -- The compact set of normalized parameters `(s, w, p)` of the non-stationary region.
   let Q : Set (ℝ × E × F) := Prod.fst ⁻¹' Icc 0 1 ∩ (fun q ↦ q.2.1) ⁻¹' closedBall 0 1 ∩
     (fun q ↦ q.2.2) ⁻¹' V ∩ ⋂ x ∈ tsupport ψ, {q | δ ≤ ‖q.1 • G (q.2.2, x) + q.2.1‖}
@@ -377,8 +382,7 @@ theorem IsMicrolocallySmoothAt.exists_nhds_forall_pow_mul_norm_complexPairing_le
   obtain ⟨Γ', hΓ'o, hξΓ', hΓ'c, c, hc, hΓ'⟩ := hΓo.exists_cone_closedBall_subset hΓc hξΓ
   -- Near `(p₀, x₀)` the gradient stays in `Γ'` and within `‖ξ₀‖ / 2` of `ξ₀`.
   have hGc : Continuous fun q : F × E ↦ gradient (fun y ↦ Φ (q.1, y)) q.2 :=
-    (InnerProductSpace.toDual ℝ E).symm.continuous.comp
-      (TauCeti.continuous_fderiv_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp)))
+    continuous_gradient_slice hΦ
   have hW : {q : F × E | gradient (fun y ↦ Φ (q.1, y)) q.2 ∈ Γ' ∧
       dist (gradient (fun y ↦ Φ (q.1, y)) q.2) ξ₀ < ‖ξ₀‖ / 2} ∈ 𝓝 (p₀, x₀) :=
     ((hΓ'o.preimage hGc).inter (isOpen_lt (hGc.dist continuous_const) continuous_const)).mem_nhds
