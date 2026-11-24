@@ -83,26 +83,16 @@ private lemma sheafificationStalkMap_germ (U : Opens X) (hx : x ∈ U) (m : P.ob
 
 private lemma sheafificationStalkMap_bijective :
     Function.Bijective (sheafificationStalkMap S P x) := by
-  have h : (sheafificationStalkMap S P x :
-      (TopCat.Presheaf.stalk (C := AddCommGrpCat.{u}) (X := X) P.presheaf x) →
-        (TopCat.Presheaf.stalk (C := AddCommGrpCat.{u}) (X := X)
-          (sheafified S P).val.presheaf x)) =
-      (TopCat.Presheaf.stalkFunctor AddCommGrpCat.{u} x).map
-        ((toPresheaf _).map (sheafificationUnit S P)) := by
-    funext m
-    obtain ⟨U, hx, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq P.presheaf m
-    erw [sheafificationStalkMap_germ, TopCat.Presheaf.stalkFunctor_map_germ_apply]
-    rfl
-  rw [h]
+  refine (bijective_stalkMapCommRing_iff_isIso (S := S.obj) x
+    (sheafificationUnit S P)).mpr ?_
   have hunit : (toPresheaf _).map (sheafificationUnit S P) =
       CategoryTheory.toSheafify (Opens.grothendieckTopology X) P.presheaf := by
     exact toPresheaf_map_sheafificationAdjunction_unit_app
       (R := TauCeti.SheafOfModules.ringCatSheaf S)
       (𝟙 (TauCeti.SheafOfModules.ringCatSheaf S).obj) P
-  erw [hunit]
-  have hIso := TopCat.Presheaf.stalkFunctor_map_unit_toSheafify_isIso x AddCommGrpCat.{u}
+  rw [hunit]
+  exact TopCat.Presheaf.stalkFunctor_map_unit_toSheafify_isIso x AddCommGrpCat.{u}
     P.presheaf
-  exact (ConcreteCategory.isIso_iff_bijective _).mp hIso
 
 /-- Sheafification preserves module stalks, linearly over the original commutative-ring stalk.
 The equivalence is induced by the unit of the sheafification adjunction. -/

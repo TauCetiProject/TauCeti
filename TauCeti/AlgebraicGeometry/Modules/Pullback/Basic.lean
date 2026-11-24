@@ -17,6 +17,8 @@ public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Stalk
 
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Composition
+
 /-!
 # Pullback and restriction of modules on schemes
 
@@ -82,6 +84,8 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
+* `AlgebraicGeometry.Scheme.Modules.isMonoidal_pullbackComp_hom`: the canonical composition
+  isomorphism of pullback is monoidal for its strong monoidal structure;
 * `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
   `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
   without its inverse, and `AlgebraicGeometry.Scheme.Modules.inv_δ_comp_pullbackComp_hom_app`, its
@@ -546,6 +550,10 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
   SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
+
+/-- The canonical composition isomorphism of module pullback is monoidal. -/
+instance isMonoidal_pullbackComp_hom : NatTrans.IsMonoidal (pullbackComp f g).hom :=
+  TauCeti.SheafOfModules.isMonoidal_pullbackComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
 agrees with the successive tensor comparisons followed by the composition isomorphisms on

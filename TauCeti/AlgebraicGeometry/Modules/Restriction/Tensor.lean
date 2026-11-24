@@ -18,8 +18,6 @@ canonical pullback comparison (`Scheme.Modules.restrictFunctorIsoPullback_inv_ap
 
 ## References
 
-* The Stacks Project, *Sheaves of Modules*, Lemma 03EL (pullback of tensor products).
-* R. Hartshorne, *Algebraic Geometry*, Proposition II.5.2.
 * G. M. Kelly, *Doctrinal adjunction*, Lecture Notes in Mathematics 420 (1974).
 -/
 

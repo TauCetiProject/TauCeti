@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Pullback
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
-import TauCeti.AlgebraicGeometry.Modules.Restriction.Tensor
 
 /-!
 # Invariance of Fitting ideal sheaves under twisting by a line bundle
