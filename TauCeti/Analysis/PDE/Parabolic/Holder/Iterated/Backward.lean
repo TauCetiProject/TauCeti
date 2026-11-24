@@ -233,12 +233,8 @@ theorem inclusionOfLEL_backwardParabolicOperatorL (hα : α ≤ 1) {m : ℕ} (h 
     inclusionOfLEL hα h (backwardParabolicOperatorL hα A B C u) =
       backwardParabolicOperatorL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B)
         (inclusionOfLEL hα h C) (inclusionOfLEL hα (Nat.add_le_add_right h 2) u) := by
-  refine ext fun p ↦ ?_
-  have h₂ := Nat.add_le_add_right h 2
-  simp only [inclusionOfLEL_apply, backwardParabolicOperatorL_apply, spatialFDerivBCF_apply,
-    mixedDerivL_inclusionOfLEL hα h₂ u (r := 1) (m := 0) (by omega),
-    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 2) (by omega),
-    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 1) (by omega)]
+  rw [backwardParabolicOperatorL_def, backwardParabolicOperatorL_def, _root_.add_apply, map_add,
+    _root_.add_apply, inclusionOfLEL_timeDerivL, inclusionOfLEL_spatialOperatorL]
 
 /-- Reading `u` and the coefficients at a lower order `m` reads the forcing of the terminal data at
 that order. -/

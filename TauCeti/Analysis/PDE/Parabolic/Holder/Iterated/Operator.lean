@@ -59,7 +59,9 @@ is the order-`k` form of `TauCeti.ParabolicC2HolderSpace.initialDataL`.
   `TauCeti.ParabolicCkHolderSpace.continuousAt_inverse_initialDataL`: continuity of the
   initial-data operator, and of the inverse of an invertible one, in the coefficients.
 * `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_parabolicOperatorL`: the operator commutes with
-  the inclusions between orders, and so do the initial data
+  the inclusions between orders, as do its parts
+  (`TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_timeDerivL` and
+  `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_spatialOperatorL`) and the initial data
   (`TauCeti.ParabolicCkHolderSpace.initialDataL_inclusionOfLEL_fst` and
   `TauCeti.ParabolicCkHolderSpace.coe_initialDataL_inclusionOfLEL_snd`).
 * `TauCeti.ParabolicCkHolderSpace.euclideanSecondOrderCoeff`, `euclideanFirstOrderCoeff` and
@@ -421,6 +423,32 @@ theorem equivHolderSpace_parabolicOperatorL (hα : α ≤ 1)
 
 /-! ### Reading the operator at a lower order -/
 
+/-- The time derivative commutes with the inclusions between orders: reading `∂ₜu` at a lower
+order `m` is differentiating `u` read at order `m + 2`. -/
+theorem inclusionOfLEL_timeDerivL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    inclusionOfLEL hα h (timeDerivL k α E F hab u) =
+      timeDerivL m α E F hab (inclusionOfLEL hα (Nat.add_le_add_right h 2) u) :=
+  ext fun p ↦ by
+    simp only [inclusionOfLEL_apply, timeDerivL_apply,
+      mixedDerivL_inclusionOfLEL hα (Nat.add_le_add_right h 2) u (r := 1) (m := 0) (by omega)]
+
+/-- The spatial operator commutes with the inclusions between orders: reading `L u` at a lower
+order `m` is applying the operator with the coefficients and `u` read at that order. -/
+theorem inclusionOfLEL_spatialOperatorL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    inclusionOfLEL hα h (spatialOperatorL hα A B C u) =
+      spatialOperatorL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B)
+        (inclusionOfLEL hα h C) (inclusionOfLEL hα (Nat.add_le_add_right h 2) u) := by
+  refine ext fun p ↦ ?_
+  have h₂ := Nat.add_le_add_right h 2
+  simp only [inclusionOfLEL_apply, spatialOperatorL_apply, spatialFDerivBCF_apply,
+    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 2) (by omega),
+    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 1) (by omega)]
+
 /-- The parabolic operator commutes with the inclusions between orders: reading `P u` at a lower
 order `m` is applying the operator with the coefficients and `u` read at that order. -/
 theorem inclusionOfLEL_parabolicOperatorL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
@@ -431,12 +459,8 @@ theorem inclusionOfLEL_parabolicOperatorL (hα : α ≤ 1) {m : ℕ} (h : m ≤ 
     inclusionOfLEL hα h (parabolicOperatorL hα A B C u) =
       parabolicOperatorL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B)
         (inclusionOfLEL hα h C) (inclusionOfLEL hα (Nat.add_le_add_right h 2) u) := by
-  refine ext fun p ↦ ?_
-  have h₂ := Nat.add_le_add_right h 2
-  simp only [inclusionOfLEL_apply, parabolicOperatorL_apply, spatialFDerivBCF_apply,
-    mixedDerivL_inclusionOfLEL hα h₂ u (r := 1) (m := 0) (by omega),
-    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 2) (by omega),
-    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 1) (by omega)]
+  rw [parabolicOperatorL_def, parabolicOperatorL_def, _root_.sub_apply, map_sub,
+    _root_.sub_apply, inclusionOfLEL_timeDerivL, inclusionOfLEL_spatialOperatorL]
 
 /-- Reading a map at a lower order keeps its spatial traces. -/
 theorem coe_spatialTrace_inclusionOfLEL (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n)

@@ -83,6 +83,35 @@ attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
 
 variable {ι : Type*} [Fintype ι]
 
+/-! ### Consistency between orders -/
+
+/-- Isomorphisms `e` of order `k` and `e'` of order `m ≤ k` onto forcing and trace data, with `e'`
+of `u` read at order `m + 2` being `e u` read at order `m`, have inverses with the same values on
+data with the same values. -/
+private theorem coe_symm_eq_of_inclusionOfLEL {k m : ℕ} {α : ℝ≥0} {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ}
+    {hab : a < b} (hα : α ≤ 1) (hm : m ≤ k)
+    (e : ParabolicCkHolderSpace (k + 2) α E F hab ≃L[ℝ]
+      ParabolicCkHolderSpace k α E F hab × CkHolderSpace (k + 2) α E F)
+    (e' : ParabolicCkHolderSpace (m + 2) α E F hab ≃L[ℝ]
+      ParabolicCkHolderSpace m α E F hab × CkHolderSpace (m + 2) α E F)
+    (hfst : ∀ u, (e' (inclusionOfLEL hα (Nat.add_le_add_right hm 2) u)).1 =
+      inclusionOfLEL hα hm (e u).1)
+    (hsnd : ∀ u, ⇑(e' (inclusionOfLEL hα (Nat.add_le_add_right hm 2) u)).2 = ⇑(e u).2)
+    {f : ParabolicCkHolderSpace k α E F hab} {g : CkHolderSpace (k + 2) α E F}
+    {f' : ParabolicCkHolderSpace m α E F hab} {g' : CkHolderSpace (m + 2) α E F}
+    (hf : ⇑f' = ⇑f) (hg : ⇑g' = ⇑g) :
+    ⇑(e'.symm (f', g')) = ⇑(e.symm (f, g)) := by
+  -- The order-`k` solution, read at order `m`, has the data `(f', g')`.
+  have hdata : e' (inclusionOfLEL hα (Nat.add_le_add_right hm 2) (e.symm (f, g))) = (f', g') := by
+    refine Prod.ext (ext fun p ↦ ?_) (CkHolderSpace.ext fun x ↦ ?_)
+    · rw [hfst, e.apply_symm_apply, inclusionOfLEL_apply]
+      exact (congrFun hf p).symm
+    · rw [congrFun (hsnd _) x, e.apply_symm_apply]
+      exact (congrFun hg x).symm
+  rw [← hdata, ContinuousLinearEquiv.symm_apply_apply]
+  exact funext fun p ↦ inclusionOfLEL_apply _ _ _ p
+
 /-! ### The initial-data isomorphism -/
 
 section Initial
@@ -293,23 +322,12 @@ theorem coe_euclideanInitialDataCLE_symm_of_le (hα₀ : 0 < α) (hα₁ : α < 
         (fun i ↦ inclusionOfLEL hα₁.le hm (b i)) (inclusionOfLEL hα₁.le hm c)
         (by simpa only [inclusionOfLEL_apply] using ha)).symm (f', g')) =
       ⇑((euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)) := by
-  set e := euclideanInitialDataCLE hα₀ hα₁ a b c ha
-  -- The order-`k` solution, read at order `m`, has the data `(f', g')`.
-  have hdata : euclideanInitialDataCLE hα₀ hα₁ (fun i j ↦ inclusionOfLEL hα₁.le hm (a i j))
-      (fun i ↦ inclusionOfLEL hα₁.le hm (b i)) (inclusionOfLEL hα₁.le hm c)
-      (by simpa only [inclusionOfLEL_apply] using ha)
-      (inclusionOfLEL hα₁.le (Nat.add_le_add_right hm 2) (e.symm (f, g))) = (f', g') := by
-    rw [euclideanInitialDataCLE_apply, ← inclusionOfLEL_euclideanSecondOrderCoeff,
-      ← inclusionOfLEL_euclideanFirstOrderCoeff, ← inclusionOfLEL_euclideanZerothOrderCoeff]
-    have he := e.apply_symm_apply (f, g)
-    rw [euclideanInitialDataCLE_apply] at he
-    refine Prod.ext (ext fun p ↦ ?_) (CkHolderSpace.ext fun x ↦ ?_)
-    · rw [initialDataL_inclusionOfLEL_fst, he, inclusionOfLEL_apply]
-      exact (congrFun hf p).symm
-    · rw [congrFun (coe_initialDataL_inclusionOfLEL_snd _ _ _ _ _ _) x, he]
-      exact (congrFun hg x).symm
-  rw [← hdata, ContinuousLinearEquiv.symm_apply_apply]
-  exact funext fun p ↦ inclusionOfLEL_apply _ _ _ p
+  refine coe_symm_eq_of_inclusionOfLEL hα₁.le hm _ _ (fun u ↦ ?_) (fun u ↦ ?_) hf hg <;>
+    rw [euclideanInitialDataCLE_apply, euclideanInitialDataCLE_apply,
+      ← inclusionOfLEL_euclideanSecondOrderCoeff, ← inclusionOfLEL_euclideanFirstOrderCoeff,
+      ← inclusionOfLEL_euclideanZerothOrderCoeff]
+  exacts [initialDataL_inclusionOfLEL_fst _ _ _ _ _ _,
+    coe_initialDataL_inclusionOfLEL_snd _ _ _ _ _ _]
 
 end Initial
 
@@ -459,23 +477,12 @@ theorem coe_euclideanTerminalDataCLE_symm_of_le (hα₀ : 0 < α) (hα₁ : α <
         (fun i ↦ inclusionOfLEL hα₁.le hm (b i)) (inclusionOfLEL hα₁.le hm c)
         (by simpa only [inclusionOfLEL_apply] using ha)).symm (f', g')) =
       ⇑((euclideanTerminalDataCLE hα₀ hα₁ a b c ha).symm (f, g)) := by
-  set e := euclideanTerminalDataCLE hα₀ hα₁ a b c ha
-  -- The order-`k` solution, read at order `m`, has the data `(f', g')`.
-  have hdata : euclideanTerminalDataCLE hα₀ hα₁ (fun i j ↦ inclusionOfLEL hα₁.le hm (a i j))
-      (fun i ↦ inclusionOfLEL hα₁.le hm (b i)) (inclusionOfLEL hα₁.le hm c)
-      (by simpa only [inclusionOfLEL_apply] using ha)
-      (inclusionOfLEL hα₁.le (Nat.add_le_add_right hm 2) (e.symm (f, g))) = (f', g') := by
-    rw [euclideanTerminalDataCLE_apply, ← inclusionOfLEL_euclideanSecondOrderCoeff,
-      ← inclusionOfLEL_euclideanFirstOrderCoeff, ← inclusionOfLEL_euclideanZerothOrderCoeff]
-    have he := e.apply_symm_apply (f, g)
-    rw [euclideanTerminalDataCLE_apply] at he
-    refine Prod.ext (ext fun p ↦ ?_) (CkHolderSpace.ext fun x ↦ ?_)
-    · rw [terminalDataL_inclusionOfLEL_fst, he, inclusionOfLEL_apply]
-      exact (congrFun hf p).symm
-    · rw [congrFun (coe_terminalDataL_inclusionOfLEL_snd _ _ _ _ _ _) x, he]
-      exact (congrFun hg x).symm
-  rw [← hdata, ContinuousLinearEquiv.symm_apply_apply]
-  exact funext fun p ↦ inclusionOfLEL_apply _ _ _ p
+  refine coe_symm_eq_of_inclusionOfLEL hα₁.le hm _ _ (fun u ↦ ?_) (fun u ↦ ?_) hf hg <;>
+    rw [euclideanTerminalDataCLE_apply, euclideanTerminalDataCLE_apply,
+      ← inclusionOfLEL_euclideanSecondOrderCoeff, ← inclusionOfLEL_euclideanFirstOrderCoeff,
+      ← inclusionOfLEL_euclideanZerothOrderCoeff]
+  exacts [terminalDataL_inclusionOfLEL_fst _ _ _ _ _ _,
+    coe_terminalDataL_inclusionOfLEL_snd _ _ _ _ _ _]
 
 end Terminal
 
