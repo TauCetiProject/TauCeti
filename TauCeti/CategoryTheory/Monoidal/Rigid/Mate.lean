@@ -305,6 +305,56 @@ theorem rightDualIso_congrLeft_tensorHom_evaluation {X₁ X₂ Y₁ Y₂ : C} (p
   exact h
 
 /-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `i : X₁ ≅ X₂` and comparing
+its right dual with `p₁ : ExactPairing X₁ Y₁` intertwines the evaluations via the inverse
+isomorphisms. -/
+@[reassoc]
+theorem rightDualIso_congrLeft_tensorHom_inv_evaluation {X₁ X₂ Y₁ Y₂ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (i : X₁ ≅ X₂) :
+    ((rightDualIso p₁ (@exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i)).inv ⊗ₘ i.inv) ≫
+        @ExactPairing.evaluation C _ _ X₁ Y₁ p₁ =
+      @ExactPairing.evaluation C _ _ X₂ Y₂ p₂ := by
+  rw [← rightDualIso_congrLeft_tensorHom_evaluation p₁ p₂ i,
+    MonoidalCategory.tensorHom_comp_tensorHom_assoc]
+  simp
+
+/-- Composing right-dual comparisons induced by `i : X₁ ≅ X₂` and `j : X₂ ≅ X₃` gives the
+comparison induced by `i ≪≫ j`. -/
+theorem rightDualIso_congrLeft_comp {X₁ X₂ X₃ Y₁ Y₂ Y₃ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (p₃ : ExactPairing X₃ Y₃)
+    (i : X₁ ≅ X₂) (j : X₂ ≅ X₃) :
+    (rightDualIso p₁ (@exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i)).hom ≫
+        (rightDualIso p₂ (@exactPairingCongrLeft C _ _ X₂ X₃ Y₃ p₃ j)).hom =
+      (rightDualIso p₁ (@exactPairingCongrLeft C _ _ X₁ X₃ Y₃ p₃ (i ≪≫ j))).hom := by
+  let : ExactPairing X₃ Y₃ := p₃
+  refine rightHom_ext (X := X₃) ?_
+  rw [← cancel_epi (Y₁ ◁ (i ≪≫ j).hom), ← tensorHom_def'_assoc, ← tensorHom_def'_assoc,
+    rightDualIso_congrLeft_tensorHom_evaluation p₁ p₃ (i ≪≫ j), Iso.trans_hom,
+    ← MonoidalCategory.tensorHom_comp_tensorHom_assoc,
+    rightDualIso_congrLeft_tensorHom_evaluation p₂ p₃ j,
+    rightDualIso_congrLeft_tensorHom_evaluation p₁ p₂ i]
+
+/-- The inverse of the right-dual comparison induced by `i : X₁ ≅ X₂` is the comparison induced
+by `i.symm`. -/
+theorem rightDualIso_congrLeft_inv {X₁ X₂ Y₁ Y₂ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (i : X₁ ≅ X₂) :
+    (rightDualIso p₁ (@exactPairingCongrLeft C _ _ X₁ X₂ Y₂ p₂ i)).inv =
+      (rightDualIso p₂ (@exactPairingCongrLeft C _ _ X₂ X₁ Y₁ p₁ i.symm)).hom := by
+  let : ExactPairing X₁ Y₁ := p₁
+  refine rightHom_ext (X := X₁) ?_
+  rw [← cancel_epi (Y₂ ◁ i.inv), ← tensorHom_def'_assoc, ← tensorHom_def'_assoc]
+  simpa using (rightDualIso_congrLeft_tensorHom_inv_evaluation p₁ p₂ i).trans
+    (rightDualIso_congrLeft_tensorHom_evaluation p₂ p₁ i.symm).symm
+
+/-- Comparing an exact pairing with itself transported along `Iso.refl` gives the identity
+isomorphism. -/
+theorem rightDualIso_congrLeft_refl {X Y : C} (p : ExactPairing X Y) :
+    rightDualIso p (@exactPairingCongrLeft C _ _ X X Y p (Iso.refl X)) = Iso.refl Y := by
+  ext
+  let : ExactPairing X Y := p
+  refine rightHom_ext (X := X) ?_
+  simpa [← tensorHom_id] using rightDualIso_congrLeft_tensorHom_evaluation p p (Iso.refl X)
+
+/-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `i : X₁ ≅ X₂` and comparing
 its right dual with `p₁ : ExactPairing X₁ Y₁` intertwines the coevaluations. -/
 @[reassoc]
 theorem coevaluation_comp_rightDualIso_congrLeft_tensorHom {X₁ X₂ Y₁ Y₂ : C}
@@ -521,6 +571,56 @@ theorem leftDualIso_congrRight_tensorHom_evaluation {X₁ X₂ Y₁ Y₂ : C} (p
     (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j)
   rw [TauCeti.exactPairingCongrRight_evaluation, ← tensorHom_def'_assoc] at h
   exact h
+
+/-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `j : Y₁ ≅ Y₂` and comparing
+its left dual with `p₁ : ExactPairing X₁ Y₁` intertwines the evaluations via the inverse
+isomorphisms. -/
+@[reassoc]
+theorem leftDualIso_congrRight_tensorHom_inv_evaluation {X₁ X₂ Y₁ Y₂ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (j : Y₁ ≅ Y₂) :
+    (j.inv ⊗ₘ (leftDualIso p₁ (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j)).inv) ≫
+        @ExactPairing.evaluation C _ _ X₁ Y₁ p₁ =
+      @ExactPairing.evaluation C _ _ X₂ Y₂ p₂ := by
+  rw [← leftDualIso_congrRight_tensorHom_evaluation p₁ p₂ j,
+    MonoidalCategory.tensorHom_comp_tensorHom_assoc]
+  simp
+
+/-- Composing left-dual comparisons induced by `i : Y₁ ≅ Y₂` and `j : Y₂ ≅ Y₃` gives the
+comparison induced by `i ≪≫ j`. -/
+theorem leftDualIso_congrRight_comp {X₁ X₂ X₃ Y₁ Y₂ Y₃ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (p₃ : ExactPairing X₃ Y₃)
+    (i : Y₁ ≅ Y₂) (j : Y₂ ≅ Y₃) :
+    (leftDualIso p₁ (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ i)).hom ≫
+        (leftDualIso p₂ (@exactPairingCongrRight C _ _ X₃ Y₂ Y₃ p₃ j)).hom =
+      (leftDualIso p₁ (@exactPairingCongrRight C _ _ X₃ Y₁ Y₃ p₃ (i ≪≫ j))).hom := by
+  let : ExactPairing X₃ Y₃ := p₃
+  refine leftDualHom_ext (Y := Y₃) ?_
+  rw [← cancel_epi ((i ≪≫ j).hom ▷ X₁), ← tensorHom_def_assoc, ← tensorHom_def_assoc,
+    leftDualIso_congrRight_tensorHom_evaluation p₁ p₃ (i ≪≫ j), Iso.trans_hom,
+    ← MonoidalCategory.tensorHom_comp_tensorHom_assoc,
+    leftDualIso_congrRight_tensorHom_evaluation p₂ p₃ j,
+    leftDualIso_congrRight_tensorHom_evaluation p₁ p₂ i]
+
+/-- The inverse of the left-dual comparison induced by `j : Y₁ ≅ Y₂` is the comparison induced
+by `j.symm`. -/
+theorem leftDualIso_congrRight_inv {X₁ X₂ Y₁ Y₂ : C}
+    (p₁ : ExactPairing X₁ Y₁) (p₂ : ExactPairing X₂ Y₂) (j : Y₁ ≅ Y₂) :
+    (leftDualIso p₁ (@exactPairingCongrRight C _ _ X₂ Y₁ Y₂ p₂ j)).inv =
+      (leftDualIso p₂ (@exactPairingCongrRight C _ _ X₁ Y₂ Y₁ p₁ j.symm)).hom := by
+  let : ExactPairing X₁ Y₁ := p₁
+  refine leftDualHom_ext (Y := Y₁) ?_
+  rw [← cancel_epi (j.inv ▷ X₂), ← tensorHom_def_assoc, ← tensorHom_def_assoc]
+  simpa using (leftDualIso_congrRight_tensorHom_inv_evaluation p₁ p₂ j).trans
+    (leftDualIso_congrRight_tensorHom_evaluation p₂ p₁ j.symm).symm
+
+/-- Comparing an exact pairing with itself transported along `Iso.refl` gives the identity
+isomorphism. -/
+theorem leftDualIso_congrRight_refl {X Y : C} (p : ExactPairing X Y) :
+    leftDualIso p (@exactPairingCongrRight C _ _ X Y Y p (Iso.refl Y)) = Iso.refl X := by
+  ext
+  let : ExactPairing X Y := p
+  refine leftDualHom_ext (Y := Y) ?_
+  simpa [← id_tensorHom] using leftDualIso_congrRight_tensorHom_evaluation p p (Iso.refl Y)
 
 /-- Transporting an exact pairing `p₂ : ExactPairing X₂ Y₂` along `j : Y₁ ≅ Y₂` and comparing
 its left dual with `p₁ : ExactPairing X₁ Y₁` intertwines the coevaluations. -/

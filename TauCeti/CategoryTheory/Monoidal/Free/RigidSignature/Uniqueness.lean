@@ -119,32 +119,12 @@ theorem projectObjIso_refl (X : RigidObject α) :
     simp
   | rightDual X ih =>
     dsimp only [projectObjIso, projectObj]
-    ext
-    let : ExactPairing (projectObj f X) (projectObj f X.rightDual) :=
-      (RightRigidCategory.rightDual (projectObj f X)).exact
-    refine ExactPairing.rightHom_ext (X := projectObj f X) ?_
-    have hev := ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation
-      (RightRigidCategory.rightDual (projectObj f X)).exact
-      (RightRigidCategory.rightDual (projectObj f X)).exact
-      (projectObjIso (fun a ↦ Iso.refl (f a)) X)
-    rw [ih, Iso.refl_hom, tensorHom_id] at hev
     rw [ih]
-    refine hev.trans ?_
-    rw [Iso.refl_hom, id_whiskerRight, Category.id_comp]
+    exact ExactPairing.rightDualIso_congrLeft_refl _
   | leftDual X ih =>
     dsimp only [projectObjIso, projectObj]
-    ext
-    let : ExactPairing (projectObj f X.leftDual) (projectObj f X) :=
-      (LeftRigidCategory.leftDual (projectObj f X)).exact
-    refine ExactPairing.leftDualHom_ext (Y := projectObj f X) ?_
-    have hev := ExactPairing.leftDualIso_congrRight_tensorHom_evaluation
-      (LeftRigidCategory.leftDual (projectObj f X)).exact
-      (LeftRigidCategory.leftDual (projectObj f X)).exact
-      (projectObjIso (fun a ↦ Iso.refl (f a)) X)
-    rw [ih, Iso.refl_hom, id_tensorHom] at hev
     rw [ih]
-    refine hev.trans ?_
-    rw [Iso.refl_hom, MonoidalCategory.whiskerLeft_id, Category.id_comp]
+    exact ExactPairing.leftDualIso_congrRight_refl _
 
 @[simp]
 theorem projectObjIso_trans (e : ∀ a, f a ≅ g a) (e' : ∀ a, g a ≅ h a) (X : RigidObject α) :
@@ -159,57 +139,14 @@ theorem projectObjIso_trans (e : ∀ a, f a ≅ g a) (e' : ∀ a, g a ≅ h a) (
     simp
   | rightDual X ih =>
     ext
-    let pF := (RightRigidCategory.rightDual (projectObj f X)).exact
-    let pG := (RightRigidCategory.rightDual (projectObj g X)).exact
-    let pH := (RightRigidCategory.rightDual (projectObj h X)).exact
-    let : ExactPairing (projectObj h X) (projectObj h X.rightDual) := pH
-    refine ExactPairing.rightHom_ext (X := projectObj h X) ?_
-    rw [← cancel_epi ((projectObj f X.rightDual) ◁ (projectObjIso (fun a ↦ e a ≪≫ e' a) X).hom),
-      ← tensorHom_def'_assoc, ← tensorHom_def'_assoc]
-    have h₁ : ((projectObjIso (fun a ↦ e a ≪≫ e' a) X.rightDual).hom ⊗ₘ
-          (projectObjIso (fun a ↦ e a ≪≫ e' a) X).hom) ≫
-        @ExactPairing.evaluation D _ _ (projectObj h X) (projectObj h X.rightDual) pH =
-        @ExactPairing.evaluation D _ _ (projectObj f X) (projectObj f X.rightDual) pF :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pF pH
-        (projectObjIso (fun a ↦ e a ≪≫ e' a) X)
-    have h₂ : ((projectObjIso e X.rightDual).hom ⊗ₘ (projectObjIso e X).hom) ≫
-        @ExactPairing.evaluation D _ _ (projectObj g X) (projectObj g X.rightDual) pG =
-        @ExactPairing.evaluation D _ _ (projectObj f X) (projectObj f X.rightDual) pF :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pF pG (projectObjIso e X)
-    have h₃ : ((projectObjIso e' X.rightDual).hom ⊗ₘ (projectObjIso e' X).hom) ≫
-        @ExactPairing.evaluation D _ _ (projectObj h X) (projectObj h X.rightDual) pH =
-        @ExactPairing.evaluation D _ _ (projectObj g X) (projectObj g X.rightDual) pG :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pG pH (projectObjIso e' X)
-    refine h₁.trans ?_
-    rw [← h₂, ← h₃, ← Category.assoc, MonoidalCategory.tensorHom_comp_tensorHom,
-      ← Iso.trans_hom, ← Iso.trans_hom, ← ih]
+    dsimp only [projectObjIso, Iso.trans_hom]
+    rw [ih]
+    exact (ExactPairing.rightDualIso_congrLeft_comp _ _ _ _ _).symm
   | leftDual X ih =>
     ext
-    let pF := (LeftRigidCategory.leftDual (projectObj f X)).exact
-    let pG := (LeftRigidCategory.leftDual (projectObj g X)).exact
-    let pH := (LeftRigidCategory.leftDual (projectObj h X)).exact
-    let : ExactPairing (projectObj h X.leftDual) (projectObj h X) := pH
-    refine ExactPairing.leftDualHom_ext (Y := projectObj h X) ?_
-    rw [← cancel_epi ((projectObjIso (fun a ↦ e a ≪≫ e' a) X).hom ▷ (projectObj f X.leftDual)),
-      ← tensorHom_def_assoc, ← tensorHom_def_assoc]
-    have h₁ : ((projectObjIso (fun a ↦ e a ≪≫ e' a) X).hom ⊗ₘ
-          (projectObjIso (fun a ↦ e a ≪≫ e' a) X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (projectObj h X.leftDual) (projectObj h X) pH =
-        @ExactPairing.evaluation D _ _ (projectObj f X.leftDual) (projectObj f X) pF :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pF pH
-        (projectObjIso (fun a ↦ e a ≪≫ e' a) X)
-    have h₂ : ((projectObjIso e X).hom ⊗ₘ (projectObjIso e X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (projectObj g X.leftDual) (projectObj g X) pG =
-        @ExactPairing.evaluation D _ _ (projectObj f X.leftDual) (projectObj f X) pF :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pF pG (projectObjIso e X)
-    have h₃ : ((projectObjIso e' X).hom ⊗ₘ (projectObjIso e' X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (projectObj h X.leftDual) (projectObj h X) pH =
-        @ExactPairing.evaluation D _ _ (projectObj g X.leftDual) (projectObj g X) pG :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pG pH (projectObjIso e' X)
-    refine h₁.trans ?_
-    rw [← h₂, ← h₃, ← Category.assoc, MonoidalCategory.tensorHom_comp_tensorHom,
-      ← Iso.trans_hom, ← ih]
-    rfl
+    dsimp only [projectObjIso, Iso.trans_hom]
+    rw [ih]
+    exact (ExactPairing.leftDualIso_congrRight_comp _ _ _ _ _).symm
 
 @[simp]
 theorem projectObjIso_symm (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
@@ -298,8 +235,10 @@ theorem wordIso_tensor_hom (X Y : S.FreeRigid) :
 theorem wordIso_tensor_inv (X Y : S.FreeRigid) :
     (wordIso F G e (X ⊗ Y).as).inv =
       δ G X Y ≫ ((wordIso F G e X.as).inv ⊗ₘ (wordIso F G e Y.as).inv) ≫ μ F X Y := by
-  rw [← Category.assoc]
-  rfl
+  have h : wordIso F G e (X ⊗ Y).as =
+      Functor.Monoidal.tensorIso F G (wordIso F G e X.as) (wordIso F G e Y.as) :=
+    wordIso_tensor F G e X.as Y.as
+  rw [h, Functor.Monoidal.tensorIso_inv]
 
 theorem wordIso_rightDual (X : RigidObject S.Obj) :
     wordIso F G e X.rightDual =
@@ -596,6 +535,15 @@ theorem mapWordIso_leftDual (X : RigidObject S.Obj) :
 
 end Computation
 
+/-- Evaluating `RigidObject.projectObj` at the generator images `(lift fo fc).obj (of ·)` is
+definitionally equal to evaluating at `fo`. -/
+private theorem projectObj_lift_obj (fo : S.Obj → D)
+    (fc : ∀ g : S.Coupon,
+      RigidObject.projectObj fo (S.src g) ⟶ RigidObject.projectObj fo (S.tgt g))
+    (X : RigidObject S.Obj) :
+    RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X = RigidObject.projectObj fo X :=
+  rfl
+
 /-- For the strong monoidal functor `lift fo fc`, whose monoidal and dual comparisons are
 identities, the comparison `mapWordIso` is the identity. -/
 @[simp]
@@ -610,90 +558,71 @@ theorem mapWordIso_lift (fo : S.Obj → D)
   | unit => rfl
   | tensor X Y ihX ihY =>
     refine (mapWordIso_tensor_hom (lift fo fc) X Y).trans ?_
-    rw [ihX, ihY, Iso.refl_hom, Iso.refl_hom]
-    exact (Category.id_comp _).trans (id_tensorHom_id _ _)
+    exact (congrArg (· ≫ _) (lift_δ fo fc ⟨X⟩ ⟨Y⟩)).trans <|
+      (Category.id_comp _).trans <| (congrArg₂ (· ⊗ₘ ·) ihX ihY).trans (id_tensorHom_id _ _)
   | rightDual X ih =>
+    -- Both `pF` and `pP` live on `RigidObject.projectObj fo X` by `projectObj_lift_obj`.
     let : ExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩ :=
       (RightRigidCategory.rightDual (⟨X⟩ : S.FreeRigid)).exact
     let pF := (lift fo fc).mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
-    let pP : ExactPairing (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X)
-        (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X.rightDual) :=
-      (RightRigidCategory.rightDual
-        (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X)).exact
-    let : ExactPairing (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X)
-        (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X.rightDual) := pP
-    refine ExactPairing.rightHom_ext
-      (X := RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X) ?_
-    have hev : (rightDualIso pF (exactPairingCongrLeft (mapWordIso (lift fo fc) X))).hom ▷
-        RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X ≫
-        @ExactPairing.evaluation _ _ _ _ _ pP =
-        @ExactPairing.evaluation _ _ _ (RigidObject.projectObj fo X)
-          (RigidObject.projectObj fo X.rightDual) pF := by
-      refine (congrArg (· ≫ @ExactPairing.evaluation _ _ _ _ _ pP)
-        (tensorHom_id _ _).symm).trans ?_
-      refine (congrArg (fun k ↦ (_ ⊗ₘ k) ≫ @ExactPairing.evaluation _ _ _ _ _ pP)
-        (ih.trans (Iso.refl_hom _)).symm).trans ?_
-      exact ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pF pP
-        (mapWordIso (lift fo fc) X)
-    refine (congrArg (fun k ↦ k ▷
-          RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X ≫
-        @ExactPairing.evaluation _ _ _ _ _ pP)
-      (congrArg Iso.hom (mapWordIso_rightDual (lift fo fc) X))).trans ?_
-    refine hev.trans ?_
-    have heq : @ExactPairing.evaluation _ _ _ (RigidObject.projectObj fo X)
-        (RigidObject.projectObj fo X.rightDual) pF =
-        @ExactPairing.evaluation _ _ _
-          (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X)
-          (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X.rightDual) pP :=
-      ((lift fo fc).mapExactPairing_evaluation (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩).trans
-        ((congrArg (· ≫ _ ≫ _) (lift_μ fo fc _ _)).trans
-          ((congrArg (fun k ↦ _ ≫ _ ≫ k) (lift_η fo fc)).trans
-            ((Category.id_comp _).trans ((Category.comp_id _).trans
-              (lift_map_evaluation_right fo fc ⟨X⟩)))))
-    refine heq.trans ?_
-    exact (Category.id_comp _).symm.trans (congrArg (· ≫ _)
-      ((id_whiskerRight _ _).symm.trans (congrArg (· ▷ _) (Iso.refl_hom _).symm)))
+    let pP : ExactPairing (RigidObject.projectObj fo X) (RigidObject.projectObj fo X.rightDual) :=
+      (RightRigidCategory.rightDual (RigidObject.projectObj fo X)).exact
+    let : ExactPairing (RigidObject.projectObj fo X) (RigidObject.projectObj fo X.rightDual) := pP
+    refine ExactPairing.rightHom_ext (X := RigidObject.projectObj fo X)
+      (Y := RigidObject.projectObj fo X.rightDual)
+      (f := (mapWordIso (lift fo fc) X.rightDual).hom)
+      (g := 𝟙 (RigidObject.projectObj fo X.rightDual)) ?_
+    have hev := ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pF pP
+      (mapWordIso (lift fo fc) X)
+    have hid :
+        (mapWordIso (lift fo fc) X.rightDual).hom ▷ RigidObject.projectObj fo X =
+          ((rightDualIso pF (@exactPairingCongrLeft D _ _ _ _ _ pP
+              (mapWordIso (lift fo fc) X))).hom ⊗ₘ (mapWordIso (lift fo fc) X).hom) :=
+      (tensorHom_id (mapWordIso (lift fo fc) X.rightDual).hom
+        (RigidObject.projectObj fo X)).symm.trans
+        (congrArg ((rightDualIso pF (@exactPairingCongrLeft D _ _ _ _ _ pP
+          (mapWordIso (lift fo fc) X))).hom ⊗ₘ ·) ih.symm)
+    refine (congrArg (· ≫ @ExactPairing.evaluation D _ _ (RigidObject.projectObj fo X)
+        (RigidObject.projectObj fo X.rightDual) pP) hid).trans (hev.trans ?_)
+    simp only [pF, Functor.mapExactPairing_evaluation, lift_μ, lift_η]
+    exact (Category.id_comp _).trans ((Category.comp_id _).trans
+      ((lift_map_evaluation_right fo fc (⟨X⟩ : S.FreeRigid)).trans
+        ((congrArg (· ≫ @ExactPairing.evaluation D _ _ (RigidObject.projectObj fo X)
+            (RigidObject.projectObj fo X.rightDual) pP)
+          (id_whiskerRight (RigidObject.projectObj fo X.rightDual)
+            (RigidObject.projectObj fo X))).trans (Category.id_comp _)).symm))
   | leftDual X ih =>
+    -- Both `pF` and `pP` live on `RigidObject.projectObj fo X` by `projectObj_lift_obj`.
     let : ExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩ :=
       (LeftRigidCategory.leftDual (⟨X⟩ : S.FreeRigid)).exact
     let pF := (lift fo fc).mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
-    let pP : ExactPairing (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X.leftDual)
-        (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X) :=
-      (LeftRigidCategory.leftDual
-        (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X)).exact
-    let : ExactPairing (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X.leftDual)
-        (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X) := pP
-    refine ExactPairing.leftDualHom_ext
-      (Y := RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X) ?_
-    have hev : RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X ◁
-        (leftDualIso pF (exactPairingCongrRight (mapWordIso (lift fo fc) X))).hom ≫
-        @ExactPairing.evaluation _ _ _ _ _ pP =
-        @ExactPairing.evaluation _ _ _ (RigidObject.projectObj fo X.leftDual)
-          (RigidObject.projectObj fo X) pF := by
-      refine (congrArg (· ≫ @ExactPairing.evaluation _ _ _ _ _ pP)
-        (id_tensorHom _ _).symm).trans ?_
-      refine (congrArg (fun k ↦ (k ⊗ₘ _) ≫ @ExactPairing.evaluation _ _ _ _ _ pP)
-        (ih.trans (Iso.refl_hom _)).symm).trans ?_
-      exact ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pF pP
-        (mapWordIso (lift fo fc) X)
-    refine (congrArg (fun k ↦
-          RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X ◁ k ≫
-        @ExactPairing.evaluation _ _ _ _ _ pP)
-      (congrArg Iso.hom (mapWordIso_leftDual (lift fo fc) X))).trans ?_
-    refine hev.trans ?_
-    have heq : @ExactPairing.evaluation _ _ _ (RigidObject.projectObj fo X.leftDual)
-        (RigidObject.projectObj fo X) pF =
-        @ExactPairing.evaluation _ _ _
-          (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X.leftDual)
-          (RigidObject.projectObj (fun a ↦ (lift fo fc).obj (of a)) X) pP :=
-      ((lift fo fc).mapExactPairing_evaluation (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩).trans
-        ((congrArg (· ≫ _ ≫ _) (lift_μ fo fc _ _)).trans
-          ((congrArg (fun k ↦ _ ≫ _ ≫ k) (lift_η fo fc)).trans
-            ((Category.id_comp _).trans ((Category.comp_id _).trans
-              (lift_map_evaluation_left fo fc ⟨X⟩)))))
-    refine heq.trans ?_
-    exact (Category.id_comp _).symm.trans (congrArg (· ≫ _)
-      ((MonoidalCategory.whiskerLeft_id _ _).symm.trans (congrArg (_ ◁ ·) (Iso.refl_hom _).symm)))
+    let pP : ExactPairing (RigidObject.projectObj fo X.leftDual) (RigidObject.projectObj fo X) :=
+      (LeftRigidCategory.leftDual (RigidObject.projectObj fo X)).exact
+    let : ExactPairing (RigidObject.projectObj fo X.leftDual) (RigidObject.projectObj fo X) := pP
+    refine ExactPairing.leftDualHom_ext (Y := RigidObject.projectObj fo X)
+      (X := RigidObject.projectObj fo X.leftDual)
+      (f := (mapWordIso (lift fo fc) X.leftDual).hom)
+      (g := 𝟙 (RigidObject.projectObj fo X.leftDual)) ?_
+    have hev := ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pF pP
+      (mapWordIso (lift fo fc) X)
+    have hid :
+        RigidObject.projectObj fo X ◁ (mapWordIso (lift fo fc) X.leftDual).hom =
+          ((mapWordIso (lift fo fc) X).hom ⊗ₘ
+            (leftDualIso pF (@exactPairingCongrRight D _ _ _ _ _ pP
+              (mapWordIso (lift fo fc) X))).hom) :=
+      (id_tensorHom (RigidObject.projectObj fo X)
+        (mapWordIso (lift fo fc) X.leftDual).hom).symm.trans
+        (congrArg (· ⊗ₘ (leftDualIso pF (@exactPairingCongrRight D _ _ _ _ _ pP
+          (mapWordIso (lift fo fc) X))).hom) ih.symm)
+    refine (congrArg (· ≫ @ExactPairing.evaluation D _ _ (RigidObject.projectObj fo X.leftDual)
+        (RigidObject.projectObj fo X) pP) hid).trans (hev.trans ?_)
+    simp only [pF, Functor.mapExactPairing_evaluation, lift_μ, lift_η]
+    exact (Category.id_comp _).trans ((Category.comp_id _).trans
+      ((lift_map_evaluation_left fo fc (⟨X⟩ : S.FreeRigid)).trans
+        ((congrArg (· ≫ @ExactPairing.evaluation D _ _ (RigidObject.projectObj fo X.leftDual)
+            (RigidObject.projectObj fo X) pP)
+          (whiskerLeft_id (RigidObject.projectObj fo X)
+            (RigidObject.projectObj fo X.leftDual))).trans (Category.id_comp _)).symm))
 
 /-- The isomorphisms `wordIso F G e` between two strong monoidal functors out of the free rigid
 category are the comparisons `mapWordIso` composed with the extension of `e` to formal rigid
@@ -702,139 +631,59 @@ theorem wordIso_eq_mapWordIso (F G : S.FreeRigid ⥤ D) [F.Monoidal] [G.Monoidal
     (e : ∀ a, F.obj (of a) ≅ G.obj (of a)) (X : RigidObject S.Obj) :
     wordIso F G e X =
       mapWordIso F X ≪≫ RigidObject.projectObjIso e X ≪≫ (mapWordIso G X).symm := by
-  ext
-  rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom]
+  -- Generators, unit, and tensor follow by definition; duals follow by composing the three
+  -- dual-comparison isomorphisms via `rightDualIso_congrLeft_comp`/`_inv` and their left mirrors.
   induction X with
   | of a =>
-    refine (congrArg Iso.hom (wordIso_of F G e a)).trans ?_
-    rw [mapWordIso_of, mapWordIso_of, RigidObject.projectObjIso_of, Iso.refl_hom, Iso.refl_inv]
-    exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+    ext
+    dsimp only [wordIso, mapWordIso, RigidObject.projectObjIso, RigidObject.projectObj]
+    simp
   | unit =>
-    rw [wordIso_unit, Functor.Monoidal.unitIso_hom, mapWordIso_tensorUnit_hom,
-      mapWordIso_tensorUnit_inv, RigidObject.projectObjIso_unit, Iso.refl_hom]
-    exact congrArg (η F ≫ ·) (Category.id_comp _).symm
+    ext
+    dsimp only [wordIso, mapWordIso, RigidObject.projectObjIso, RigidObject.projectObj]
+    simp
   | tensor X Y ihX ihY =>
-    rw [wordIso_tensor, Functor.Monoidal.tensorIso_hom, mapWordIso_tensor_hom,
-      mapWordIso_tensor_inv, RigidObject.projectObjIso_tensor, tensorIso_hom, ihX, ihY,
-      ← MonoidalCategory.tensorHom_comp_tensorHom,
-      ← MonoidalCategory.tensorHom_comp_tensorHom]
-    conv_lhs => simp only [Category.assoc]
-    exact (Category.assoc _ _ _).symm
+    ext
+    dsimp only [wordIso, mapWordIso, RigidObject.projectObjIso, RigidObject.projectObj]
+    simp [ihX, ihY, MonoidalCategory.tensorHom_comp_tensorHom_assoc]
   | rightDual X ih =>
+    ext
     let : ExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩ :=
       (RightRigidCategory.rightDual (⟨X⟩ : S.FreeRigid)).exact
-    let pF : ExactPairing (F.obj ⟨X⟩) (F.obj ⟨X.rightDual⟩) :=
-      F.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
-    let pG : ExactPairing (G.obj ⟨X⟩) (G.obj ⟨X.rightDual⟩) :=
-      G.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
-    let pPF := (RightRigidCategory.rightDual
+    let p₁ := F.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
+    let p₂ := (RightRigidCategory.rightDual
       (RigidObject.projectObj (fun a ↦ F.obj (of a)) X)).exact
-    let pPG := (RightRigidCategory.rightDual
+    let p₃ := (RightRigidCategory.rightDual
       (RigidObject.projectObj (fun a ↦ G.obj (of a)) X)).exact
-    refine ExactPairing.rightHom_ext (X := G.obj ⟨X⟩) ?_
-    rw [← cancel_epi (F.obj ⟨X.rightDual⟩ ◁ (wordIso F G e X).hom), ← tensorHom_def'_assoc,
-      ← tensorHom_def'_assoc]
-    have hw : ((wordIso F G e X.rightDual).hom ⊗ₘ (wordIso F G e X).hom) ≫
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X⟩) (G.obj ⟨X.rightDual⟩) pG =
-        @ExactPairing.evaluation D _ _ (F.obj ⟨X⟩) (F.obj ⟨X.rightDual⟩) pF :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pF pG (wordIso F G e X)
-    have hmF : ((mapWordIso F X.rightDual).hom ⊗ₘ (mapWordIso F X).hom) ≫
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ F.obj (of a)) X)
-          (RigidObject.projectObj (fun a ↦ F.obj (of a)) X.rightDual) pPF =
-        @ExactPairing.evaluation D _ _ (F.obj ⟨X⟩) (F.obj ⟨X.rightDual⟩) pF :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pF pPF (mapWordIso F X)
-    have he : ((RigidObject.projectObjIso e X.rightDual).hom ⊗ₘ
-          (RigidObject.projectObjIso e X).hom) ≫
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ G.obj (of a)) X)
-          (RigidObject.projectObj (fun a ↦ G.obj (of a)) X.rightDual) pPG =
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ F.obj (of a)) X)
-          (RigidObject.projectObj (fun a ↦ F.obj (of a)) X.rightDual) pPF :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pPF pPG
-        (RigidObject.projectObjIso e X)
-    have hmG : ((mapWordIso G X.rightDual).hom ⊗ₘ (mapWordIso G X).hom) ≫
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ G.obj (of a)) X)
-          (RigidObject.projectObj (fun a ↦ G.obj (of a)) X.rightDual) pPG =
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X⟩) (G.obj ⟨X.rightDual⟩) pG :=
-      ExactPairing.rightDualIso_congrLeft_tensorHom_evaluation pG pPG (mapWordIso G X)
-    have hmG' : ((mapWordIso G X.rightDual).inv ⊗ₘ (mapWordIso G X).inv) ≫
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X⟩) (G.obj ⟨X.rightDual⟩) pG =
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ G.obj (of a)) X)
-          (RigidObject.projectObj (fun a ↦ G.obj (of a)) X.rightDual) pPG := by
-      refine (congrArg (((mapWordIso G X.rightDual).inv ⊗ₘ (mapWordIso G X).inv) ≫ ·)
-        hmG.symm).trans ?_
-      refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
-        (MonoidalCategory.tensorHom_comp_tensorHom _ _ _ _))).trans ?_
-      exact (congrArg (fun k ↦ (k ⊗ₘ _) ≫ _) (Iso.inv_hom_id _)).trans
-        ((congrArg (fun k ↦ (_ ⊗ₘ k) ≫ _) (Iso.inv_hom_id _)).trans
-          ((congrArg (· ≫ _) (id_tensorHom_id _ _)).trans (Category.id_comp _)))
-    refine hw.trans ?_
-    refine Eq.trans ?_ (congrArg (· ≫ @ExactPairing.evaluation D _ _ _ _ pG)
-      (congrArg (· ⊗ₘ (wordIso F G e X).hom) rfl)).symm
-    have hstep : (((mapWordIso F X.rightDual).hom ≫ (RigidObject.projectObjIso e X.rightDual).hom ≫
-          (mapWordIso G X.rightDual).inv) ⊗ₘ
-          ((mapWordIso F X).hom ≫ (RigidObject.projectObjIso e X).hom ≫ (mapWordIso G X).inv)) ≫
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X⟩) (G.obj ⟨X.rightDual⟩) pG =
-        @ExactPairing.evaluation D _ _ (F.obj ⟨X⟩) (F.obj ⟨X.rightDual⟩) pF := by
-      rw [← MonoidalCategory.tensorHom_comp_tensorHom_assoc,
-        ← MonoidalCategory.tensorHom_comp_tensorHom_assoc, hmG', he, hmF]
-    exact hstep.symm.trans (congrArg (fun k ↦ ((_ ⊗ₘ k) ≫ _)) ih.symm)
+    let p₄ := G.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩
+    have hcomp :=
+      ((ExactPairing.rightDualIso_congrLeft_comp p₁ p₂ p₄
+        (mapWordIso F X) (RigidObject.projectObjIso e X ≪≫ (mapWordIso G X).symm)).symm.trans
+        (congrArg (_ ≫ ·) (ExactPairing.rightDualIso_congrLeft_comp p₂ p₃ p₄
+          (RigidObject.projectObjIso e X) (mapWordIso G X).symm).symm))
+    exact (congrArg (fun k ↦ (rightDualIso p₁
+      (@exactPairingCongrLeft D _ _ _ _ _ p₄ k)).hom) ih).trans
+      (hcomp.trans (congrArg (_ ≫ _ ≫ ·)
+        (ExactPairing.rightDualIso_congrLeft_inv p₄ p₃ (mapWordIso G X)).symm))
   | leftDual X ih =>
+    ext
     let : ExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩ :=
       (LeftRigidCategory.leftDual (⟨X⟩ : S.FreeRigid)).exact
-    let pF : ExactPairing (F.obj ⟨X.leftDual⟩) (F.obj ⟨X⟩) :=
-      F.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
-    let pG : ExactPairing (G.obj ⟨X.leftDual⟩) (G.obj ⟨X⟩) :=
-      G.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
-    let pPF := (LeftRigidCategory.leftDual
+    let p₁ := F.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
+    let p₂ := (LeftRigidCategory.leftDual
       (RigidObject.projectObj (fun a ↦ F.obj (of a)) X)).exact
-    let pPG := (LeftRigidCategory.leftDual
+    let p₃ := (LeftRigidCategory.leftDual
       (RigidObject.projectObj (fun a ↦ G.obj (of a)) X)).exact
-    refine ExactPairing.leftDualHom_ext (Y := G.obj ⟨X⟩) ?_
-    rw [← cancel_epi ((wordIso F G e X).hom ▷ F.obj ⟨X.leftDual⟩), ← tensorHom_def_assoc,
-      ← tensorHom_def_assoc]
-    have hw : ((wordIso F G e X).hom ⊗ₘ (wordIso F G e X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X.leftDual⟩) (G.obj ⟨X⟩) pG =
-        @ExactPairing.evaluation D _ _ (F.obj ⟨X.leftDual⟩) (F.obj ⟨X⟩) pF :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pF pG (wordIso F G e X)
-    have hmF : ((mapWordIso F X).hom ⊗ₘ (mapWordIso F X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ F.obj (of a)) X.leftDual)
-          (RigidObject.projectObj (fun a ↦ F.obj (of a)) X) pPF =
-        @ExactPairing.evaluation D _ _ (F.obj ⟨X.leftDual⟩) (F.obj ⟨X⟩) pF :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pF pPF (mapWordIso F X)
-    have he : ((RigidObject.projectObjIso e X).hom ⊗ₘ
-          (RigidObject.projectObjIso e X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ G.obj (of a)) X.leftDual)
-          (RigidObject.projectObj (fun a ↦ G.obj (of a)) X) pPG =
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ F.obj (of a)) X.leftDual)
-          (RigidObject.projectObj (fun a ↦ F.obj (of a)) X) pPF :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pPF pPG
-        (RigidObject.projectObjIso e X)
-    have hmG : ((mapWordIso G X).hom ⊗ₘ (mapWordIso G X.leftDual).hom) ≫
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ G.obj (of a)) X.leftDual)
-          (RigidObject.projectObj (fun a ↦ G.obj (of a)) X) pPG =
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X.leftDual⟩) (G.obj ⟨X⟩) pG :=
-      ExactPairing.leftDualIso_congrRight_tensorHom_evaluation pG pPG (mapWordIso G X)
-    have hmG' : ((mapWordIso G X).inv ⊗ₘ (mapWordIso G X.leftDual).inv) ≫
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X.leftDual⟩) (G.obj ⟨X⟩) pG =
-        @ExactPairing.evaluation D _ _ (RigidObject.projectObj (fun a ↦ G.obj (of a)) X.leftDual)
-          (RigidObject.projectObj (fun a ↦ G.obj (of a)) X) pPG := by
-      refine (congrArg (((mapWordIso G X).inv ⊗ₘ (mapWordIso G X.leftDual).inv) ≫ ·)
-        hmG.symm).trans ?_
-      refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
-        (MonoidalCategory.tensorHom_comp_tensorHom _ _ _ _))).trans ?_
-      exact (congrArg (fun k ↦ (k ⊗ₘ _) ≫ _) (Iso.inv_hom_id _)).trans
-        ((congrArg (fun k ↦ (_ ⊗ₘ k) ≫ _) (Iso.inv_hom_id _)).trans
-          ((congrArg (· ≫ _) (id_tensorHom_id _ _)).trans (Category.id_comp _)))
-    refine hw.trans ?_
-    have hstep : (((mapWordIso F X).hom ≫ (RigidObject.projectObjIso e X).hom ≫
-          (mapWordIso G X).inv) ⊗ₘ
-          ((mapWordIso F X.leftDual).hom ≫ (RigidObject.projectObjIso e X.leftDual).hom ≫
-            (mapWordIso G X.leftDual).inv)) ≫
-        @ExactPairing.evaluation D _ _ (G.obj ⟨X.leftDual⟩) (G.obj ⟨X⟩) pG =
-        @ExactPairing.evaluation D _ _ (F.obj ⟨X.leftDual⟩) (F.obj ⟨X⟩) pF := by
-      rw [← MonoidalCategory.tensorHom_comp_tensorHom_assoc,
-        ← MonoidalCategory.tensorHom_comp_tensorHom_assoc, hmG', he, hmF]
-    exact hstep.symm.trans (congrArg (fun k ↦ ((k ⊗ₘ _) ≫ _)) ih.symm)
+    let p₄ := G.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩
+    have hcomp :=
+      ((ExactPairing.leftDualIso_congrRight_comp p₁ p₂ p₄
+        (mapWordIso F X) (RigidObject.projectObjIso e X ≪≫ (mapWordIso G X).symm)).symm.trans
+        (congrArg (_ ≫ ·) (ExactPairing.leftDualIso_congrRight_comp p₂ p₃ p₄
+          (RigidObject.projectObjIso e X) (mapWordIso G X).symm).symm))
+    exact (congrArg (fun k ↦ (leftDualIso p₁
+      (@exactPairingCongrRight D _ _ _ _ _ p₄ k)).hom) ih).trans
+      (hcomp.trans (congrArg (_ ≫ _ ≫ ·)
+        (ExactPairing.leftDualIso_congrRight_inv p₄ p₃ (mapWordIso G X)).symm))
 
 /-- From a lift to a strong monoidal functor `G`, `wordIso` is the extension of the isomorphisms
 of generators to formal rigid objects followed by the inverse of `mapWordIso G`. -/

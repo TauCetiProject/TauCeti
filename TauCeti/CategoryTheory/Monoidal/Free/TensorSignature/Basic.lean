@@ -166,64 +166,9 @@ theorem projectObj_projectObj {T : TensorSignature.{u', v'}} {D : Type*} [Catego
 abbrev homMk {X Y : S.FreeMonoidal} (f : Hom (S := S) X.as Y.as) : X ⟶ Y :=
   MonoidalCore.homMk f
 
-/-- Two formal morphisms represent the same morphism if and only if they are related by
-`HomEquiv`. -/
-theorem homMk_eq_iff {X Y : S.FreeMonoidal} (f g : Hom (S := S) X.as Y.as) :
-    homMk f = homMk g ↔ HomEquiv f g :=
-  MonoidalCore.homMk_eq_iff (P := freeMonoidalPresentation S) f g
-
 /-- The generating morphism given by a coupon, from its source word to its target word. -/
 @[expose] def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeMonoidal) ⟶ ⟨S.tgt g⟩ :=
   homMk (Hom.coupon g)
-
-@[simp]
-theorem homMk_id (X : S.FreeMonoidal) : homMk (MonoidalCore.Hom.id X.as) = 𝟙 X := rfl
-
-@[simp]
-theorem homMk_comp {X Y Z : S.FreeMonoidal}
-    (f : Hom (S := S) X.as Y.as) (g : Hom (S := S) Y.as Z.as) :
-    homMk (Y := Z) (f.comp g) = homMk f ≫ homMk g := rfl
-
-@[simp]
-theorem homMk_tensor {X₁ Y₁ X₂ Y₂ : S.FreeMonoidal}
-    (f : Hom (S := S) X₁.as Y₁.as) (g : Hom (S := S) X₂.as Y₂.as) :
-    homMk (X := X₁ ⊗ X₂) (Y := Y₁ ⊗ Y₂) (f.tensor g) = homMk f ⊗ₘ homMk g := rfl
-
-@[simp]
-theorem homMk_whiskerLeft (X : S.FreeMonoidal) {Y₁ Y₂ : S.FreeMonoidal}
-    (f : Hom (S := S) Y₁.as Y₂.as) :
-    homMk (X := X ⊗ Y₁) (Y := X ⊗ Y₂) (f.whiskerLeft X.as) = X ◁ homMk f := rfl
-
-@[simp]
-theorem homMk_whiskerRight {X₁ X₂ : S.FreeMonoidal}
-    (f : Hom (S := S) X₁.as X₂.as) (Y : S.FreeMonoidal) :
-    homMk (X := X₁ ⊗ Y) (Y := X₂ ⊗ Y) (f.whiskerRight Y.as) = homMk f ▷ Y := rfl
-
-@[simp]
-theorem homMk_α_hom (X Y Z : S.FreeMonoidal) :
-    homMk (X := (X ⊗ Y) ⊗ Z) (Y := X ⊗ (Y ⊗ Z))
-      (MonoidalCore.Hom.α_hom X.as Y.as Z.as) = (α_ X Y Z).hom := rfl
-
-@[simp]
-theorem homMk_α_inv (X Y Z : S.FreeMonoidal) :
-    homMk (X := X ⊗ (Y ⊗ Z)) (Y := (X ⊗ Y) ⊗ Z)
-      (MonoidalCore.Hom.α_inv X.as Y.as Z.as) = (α_ X Y Z).inv := rfl
-
-@[simp]
-theorem homMk_l_hom (X : S.FreeMonoidal) :
-    homMk (X := 𝟙_ _ ⊗ X) (MonoidalCore.Hom.l_hom X.as) = (λ_ X).hom := rfl
-
-@[simp]
-theorem homMk_l_inv (X : S.FreeMonoidal) :
-    homMk (Y := 𝟙_ _ ⊗ X) (MonoidalCore.Hom.l_inv X.as) = (λ_ X).inv := rfl
-
-@[simp]
-theorem homMk_ρ_hom (X : S.FreeMonoidal) :
-    homMk (X := X ⊗ 𝟙_ _) (MonoidalCore.Hom.ρ_hom X.as) = (ρ_ X).hom := rfl
-
-@[simp]
-theorem homMk_ρ_inv (X : S.FreeMonoidal) :
-    homMk (Y := X ⊗ 𝟙_ _) (MonoidalCore.Hom.ρ_inv X.as) = (ρ_ X).inv := rfl
 
 @[simp]
 theorem homMk_coupon (g : S.Coupon) :

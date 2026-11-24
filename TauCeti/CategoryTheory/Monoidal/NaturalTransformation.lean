@@ -226,8 +226,7 @@ theorem tensorIso_hom (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
 theorem tensorIso_inv (F G : C ⥤ D) [F.Monoidal] [G.Monoidal] {X Y : C}
     (iX : F.obj X ≅ G.obj X) (iY : F.obj Y ≅ G.obj Y) :
     (tensorIso F G iX iY).inv = δ G X Y ≫ (iX.inv ⊗ₘ iY.inv) ≫ μ F X Y := by
-  rw [← Category.assoc]
-  rfl
+  simp [tensorIso]
 
 section StructuralNaturality
 

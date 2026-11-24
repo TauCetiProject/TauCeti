@@ -222,68 +222,6 @@ abbrev homMk {X Y : S.FreeBraided} (f : Hom (S := S) X.as Y.as) : X ⟶ Y :=
 def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeBraided) ⟶ ⟨S.tgt g⟩ :=
   homMk (Hom.coupon g)
 
-/-- The formal identity represents the categorical identity. -/
-@[simp]
-theorem homMk_id (X : S.FreeBraided) : homMk (MonoidalCore.Hom.id X.as) = 𝟙 X := (rfl)
-
-/-- Formal composition represents categorical composition. -/
-@[simp]
-theorem homMk_comp {X Y Z : S.FreeBraided}
-    (f : Hom (S := S) X.as Y.as) (g : Hom (S := S) Y.as Z.as) :
-    homMk (Y := Z) (f.comp g) = homMk f ≫ homMk g := (rfl)
-
-/-- Formal tensor product of morphisms represents categorical tensor product of morphisms. -/
-@[simp]
-theorem homMk_tensor {X₁ Y₁ X₂ Y₂ : S.FreeBraided}
-    (f : Hom (S := S) X₁.as Y₁.as) (g : Hom (S := S) X₂.as Y₂.as) :
-    homMk (X := X₁ ⊗ X₂) (Y := Y₁ ⊗ Y₂) (f.tensor g) = homMk f ⊗ₘ homMk g := (rfl)
-
-/-- Formal left whiskering represents categorical left whiskering. -/
-@[simp]
-theorem homMk_whiskerLeft (X : S.FreeBraided) {Y₁ Y₂ : S.FreeBraided}
-    (f : Hom (S := S) Y₁.as Y₂.as) :
-    homMk (X := X ⊗ Y₁) (Y := X ⊗ Y₂) (f.whiskerLeft X.as) = X ◁ homMk f := (rfl)
-
-/-- Formal right whiskering represents categorical right whiskering. -/
-@[simp]
-theorem homMk_whiskerRight {X₁ X₂ : S.FreeBraided}
-    (f : Hom (S := S) X₁.as X₂.as) (Y : S.FreeBraided) :
-    homMk (X := X₁ ⊗ Y) (Y := X₂ ⊗ Y) (f.whiskerRight Y.as) = homMk f ▷ Y := (rfl)
-
-/-- `Hom.α_hom` represents the forward associator. -/
-@[simp]
-theorem homMk_α_hom (X Y Z : S.FreeBraided) :
-    homMk (X := (X ⊗ Y) ⊗ Z) (Y := X ⊗ (Y ⊗ Z))
-      (MonoidalCore.Hom.α_hom X.as Y.as Z.as) = (α_ X Y Z).hom :=
-  (rfl)
-
-/-- `Hom.α_inv` represents the inverse associator. -/
-@[simp]
-theorem homMk_α_inv (X Y Z : S.FreeBraided) :
-    homMk (X := X ⊗ (Y ⊗ Z)) (Y := (X ⊗ Y) ⊗ Z)
-      (MonoidalCore.Hom.α_inv X.as Y.as Z.as) = (α_ X Y Z).inv :=
-  (rfl)
-
-/-- `Hom.l_hom` represents the forward left unitor. -/
-@[simp]
-theorem homMk_l_hom (X : S.FreeBraided) :
-    homMk (X := 𝟙_ _ ⊗ X) (MonoidalCore.Hom.l_hom X.as) = (λ_ X).hom := (rfl)
-
-/-- `Hom.l_inv` represents the inverse left unitor. -/
-@[simp]
-theorem homMk_l_inv (X : S.FreeBraided) :
-    homMk (Y := 𝟙_ _ ⊗ X) (MonoidalCore.Hom.l_inv X.as) = (λ_ X).inv := (rfl)
-
-/-- `Hom.ρ_hom` represents the forward right unitor. -/
-@[simp]
-theorem homMk_ρ_hom (X : S.FreeBraided) :
-    homMk (X := X ⊗ 𝟙_ _) (MonoidalCore.Hom.ρ_hom X.as) = (ρ_ X).hom := (rfl)
-
-/-- `Hom.ρ_inv` represents the inverse right unitor. -/
-@[simp]
-theorem homMk_ρ_inv (X : S.FreeBraided) :
-    homMk (Y := X ⊗ 𝟙_ _) (MonoidalCore.Hom.ρ_inv X.as) = (ρ_ X).inv := (rfl)
-
 /-- `Hom.βHom` represents the forward braiding. -/
 @[simp]
 theorem homMk_β_hom (X Y : S.FreeBraided) :

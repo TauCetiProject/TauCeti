@@ -8,7 +8,7 @@ module
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Basic
 public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
-import Mathlib.CategoryTheory.SingleObj
+import TauCeti.CategoryTheory.Monoidal.SingleObj
 import Mathlib.Algebra.Group.TypeTags.Basic
 import Mathlib.Algebra.Group.Nat.Defs
 
@@ -245,12 +245,6 @@ abbrev setoidHom (X Y : RigidObject S.Obj) : Setoid (Hom (S := S) X Y) :=
 abbrev homMk {X Y : S.FreeRigid} (f : Hom (S := S) X.as Y.as) : X ⟶ Y :=
   MonoidalCore.homMk f
 
-/-- Two formal morphisms represent the same morphism of `S.FreeRigid` if and only if they are
-related by `HomEquiv`. -/
-theorem homMk_eq_iff {X Y : S.FreeRigid} (f g : Hom (S := S) X.as Y.as) :
-    homMk f = homMk g ↔ HomEquiv f g :=
-  MonoidalCore.homMk_eq_iff (P := freeRigidPresentation S) f g
-
 instance : RightRigidCategory S.FreeRigid where
   rightDual X :=
     { rightDual := ⟨X.as.rightDual⟩
@@ -275,57 +269,6 @@ instance : RigidCategory S.FreeRigid where
 expression. -/
 @[expose] def coupon (g : S.Coupon) : (⟨S.src g⟩ : S.FreeRigid) ⟶ ⟨S.tgt g⟩ :=
   homMk (Hom.coupon g)
-
-@[simp]
-theorem homMk_id (X : S.FreeRigid) : homMk (MonoidalCore.Hom.id X.as) = 𝟙 X := rfl
-
-@[simp]
-theorem homMk_comp {X Y Z : S.FreeRigid}
-    (f : Hom (S := S) X.as Y.as) (g : Hom (S := S) Y.as Z.as) :
-    homMk (Y := Z) (f.comp g) = homMk f ≫ homMk g := rfl
-
-@[simp]
-theorem homMk_tensor {X₁ Y₁ X₂ Y₂ : S.FreeRigid}
-    (f : Hom (S := S) X₁.as Y₁.as) (g : Hom (S := S) X₂.as Y₂.as) :
-    homMk (X := X₁ ⊗ X₂) (Y := Y₁ ⊗ Y₂) (f.tensor g) = homMk f ⊗ₘ homMk g := rfl
-
-@[simp]
-theorem homMk_whiskerLeft (X : S.FreeRigid) {Y₁ Y₂ : S.FreeRigid}
-    (f : Hom (S := S) Y₁.as Y₂.as) :
-    homMk (X := X ⊗ Y₁) (Y := X ⊗ Y₂) (f.whiskerLeft X.as) = X ◁ homMk f := rfl
-
-@[simp]
-theorem homMk_whiskerRight {X₁ X₂ : S.FreeRigid}
-    (f : Hom (S := S) X₁.as X₂.as) (Y : S.FreeRigid) :
-    homMk (X := X₁ ⊗ Y) (Y := X₂ ⊗ Y) (f.whiskerRight Y.as) = homMk f ▷ Y := rfl
-
-@[simp]
-theorem homMk_α_hom (X Y Z : S.FreeRigid) :
-    homMk (X := (X ⊗ Y) ⊗ Z) (Y := X ⊗ (Y ⊗ Z))
-      (MonoidalCore.Hom.α_hom X.as Y.as Z.as) = (α_ X Y Z).hom :=
-  rfl
-
-@[simp]
-theorem homMk_α_inv (X Y Z : S.FreeRigid) :
-    homMk (X := X ⊗ (Y ⊗ Z)) (Y := (X ⊗ Y) ⊗ Z)
-      (MonoidalCore.Hom.α_inv X.as Y.as Z.as) = (α_ X Y Z).inv :=
-  rfl
-
-@[simp]
-theorem homMk_l_hom (X : S.FreeRigid) :
-    homMk (X := 𝟙_ _ ⊗ X) (MonoidalCore.Hom.l_hom X.as) = (λ_ X).hom := rfl
-
-@[simp]
-theorem homMk_l_inv (X : S.FreeRigid) :
-    homMk (Y := 𝟙_ _ ⊗ X) (MonoidalCore.Hom.l_inv X.as) = (λ_ X).inv := rfl
-
-@[simp]
-theorem homMk_ρ_hom (X : S.FreeRigid) :
-    homMk (X := X ⊗ 𝟙_ _) (MonoidalCore.Hom.ρ_hom X.as) = (ρ_ X).hom := rfl
-
-@[simp]
-theorem homMk_ρ_inv (X : S.FreeRigid) :
-    homMk (Y := X ⊗ 𝟙_ _) (MonoidalCore.Hom.ρ_inv X.as) = (ρ_ X).inv := rfl
 
 @[simp]
 theorem homMk_η_right (X : S.FreeRigid) :
@@ -645,61 +588,7 @@ theorem projectObj_of (X : RigidObject S.Obj) :
 
 section CouponCount
 
-private local instance : MonoidalCategory (SingleObj (Multiplicative ℕ)) where
-  tensorObj _ _ := SingleObj.star _
-  whiskerLeft _ _ _ f := f
-  whiskerRight f _ := f
-  tensorHom f g := @HMul.hMul (Multiplicative ℕ) (Multiplicative ℕ) (Multiplicative ℕ) _ f g
-  tensorUnit := SingleObj.star _
-  associator _ _ _ := Iso.refl _
-  leftUnitor _ := Iso.refl _
-  rightUnitor _ := Iso.refl _
-  tensorHom_def f g := by
-    simp only [SingleObj.comp_as_mul]
-    exact @mul_comm (Multiplicative ℕ) _ f g
-  id_tensorHom_id _ _ := by
-    simp only [SingleObj.id_as_one]
-    exact @one_mul (Multiplicative ℕ) _ 1
-  tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ := by
-    simp only [SingleObj.comp_as_mul]
-    exact @mul_mul_mul_comm (Multiplicative ℕ) _ g₁ g₂ f₁ f₂
-  associator_naturality f₁ f₂ f₃ := by
-    simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
-    exact @mul_assoc (Multiplicative ℕ) _ f₁ f₂ f₃
-  leftUnitor_naturality _ := by
-    simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
-  rightUnitor_naturality _ := by
-    simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
-  pentagon _ _ _ _ := rfl
-  triangle _ _ := rfl
-
-private local instance : RightRigidCategory (SingleObj (Multiplicative ℕ)) where
-  rightDual _ :=
-    { rightDual := SingleObj.star _
-      exact :=
-        { coevaluation' := (1 : Multiplicative ℕ)
-          evaluation' := (1 : Multiplicative ℕ)
-          coevaluation_evaluation' := by
-            simp only [SingleObj.comp_as_mul]
-            exact rfl
-          evaluation_coevaluation' := by
-            simp only [SingleObj.comp_as_mul]
-            exact rfl } }
-
-private local instance : LeftRigidCategory (SingleObj (Multiplicative ℕ)) where
-  leftDual _ :=
-    { leftDual := SingleObj.star _
-      exact :=
-        { coevaluation' := (1 : Multiplicative ℕ)
-          evaluation' := (1 : Multiplicative ℕ)
-          coevaluation_evaluation' := by
-            simp only [SingleObj.comp_as_mul]
-            exact rfl
-          evaluation_coevaluation' := by
-            simp only [SingleObj.comp_as_mul]
-            exact rfl } }
-
-private local instance : RigidCategory (SingleObj (Multiplicative ℕ)) where
+open scoped SingleObj
 
 private noncomputable def countLift (g₀ : S.Coupon) :
     S.FreeRigid ⥤ SingleObj (Multiplicative ℕ) :=
@@ -720,45 +609,43 @@ theorem couponCount_id (g₀ : S.Coupon) (X : S.FreeRigid) : couponCount g₀ (�
 @[simp]
 theorem couponCount_associator_hom (g₀ : S.Coupon) (X Y Z : S.FreeRigid) :
     couponCount g₀ (α_ X Y Z).hom = 0 := by
-  rw [couponCount, countLift, lift_map_associator_hom]
-  exact toAdd_one
+  simp [couponCount, countLift, SingleObj.id_as_one]
 
 @[simp]
 theorem couponCount_associator_inv (g₀ : S.Coupon) (X Y Z : S.FreeRigid) :
     couponCount g₀ (α_ X Y Z).inv = 0 := by
-  rw [couponCount, countLift, lift_map_associator_inv]
-  exact toAdd_one
+  simp [couponCount, countLift, SingleObj.id_as_one]
 
 @[simp]
 theorem couponCount_leftUnitor_hom (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀ (λ_ X).hom = 0 := by
   rw [couponCount, countLift, lift_map_leftUnitor_hom]
-  exact toAdd_one
+  simp [SingleObj.id_as_one]
 
 @[simp]
 theorem couponCount_leftUnitor_inv (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀ (λ_ X).inv = 0 := by
   rw [couponCount, countLift, lift_map_leftUnitor_inv]
-  exact toAdd_one
+  simp [SingleObj.id_as_one]
 
 @[simp]
 theorem couponCount_rightUnitor_hom (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀ (ρ_ X).hom = 0 := by
   rw [couponCount, countLift, lift_map_rightUnitor_hom]
-  exact toAdd_one
+  simp [SingleObj.id_as_one]
 
 @[simp]
 theorem couponCount_rightUnitor_inv (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀ (ρ_ X).inv = 0 := by
   rw [couponCount, countLift, lift_map_rightUnitor_inv]
-  exact toAdd_one
+  simp [SingleObj.id_as_one]
 
 @[simp]
 theorem couponCount_coevaluation_right (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀
         (@ExactPairing.coevaluation S.FreeRigid _ _ X _ (RightRigidCategory.rightDual X).exact) =
       0 := by
-  rw [couponCount, countLift, lift_map_coevaluation_right]
+  rw [couponCount, countLift, lift_map_coevaluation_right, SingleObj.coevaluation_right_as_one]
   exact toAdd_one
 
 @[simp]
@@ -766,7 +653,7 @@ theorem couponCount_evaluation_right (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀
         (@ExactPairing.evaluation S.FreeRigid _ _ X _ (RightRigidCategory.rightDual X).exact) =
       0 := by
-  rw [couponCount, countLift, lift_map_evaluation_right]
+  rw [couponCount, countLift, lift_map_evaluation_right, SingleObj.evaluation_right_as_one]
   exact toAdd_one
 
 @[simp]
@@ -774,7 +661,7 @@ theorem couponCount_coevaluation_left (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀
         (@ExactPairing.coevaluation S.FreeRigid _ _ _ X (LeftRigidCategory.leftDual X).exact) =
       0 := by
-  rw [couponCount, countLift, lift_map_coevaluation_left]
+  rw [couponCount, countLift, lift_map_coevaluation_left, SingleObj.coevaluation_left_as_one]
   exact toAdd_one
 
 @[simp]
@@ -782,7 +669,7 @@ theorem couponCount_evaluation_left (g₀ : S.Coupon) (X : S.FreeRigid) :
     couponCount g₀
         (@ExactPairing.evaluation S.FreeRigid _ _ _ X (LeftRigidCategory.leftDual X).exact) =
       0 := by
-  rw [couponCount, countLift, lift_map_evaluation_left]
+  rw [couponCount, countLift, lift_map_evaluation_left, SingleObj.evaluation_left_as_one]
   exact toAdd_one
 
 @[simp]
@@ -794,19 +681,17 @@ theorem couponCount_comp (g₀ : S.Coupon) {X Y Z : S.FreeRigid} (f : X ⟶ Y) (
 @[simp]
 theorem couponCount_whiskerLeft (g₀ : S.Coupon) (X : S.FreeRigid) {Y₁ Y₂ : S.FreeRigid}
     (f : Y₁ ⟶ Y₂) : couponCount g₀ (X ◁ f) = couponCount g₀ f := by
-  rw [couponCount, countLift, lift_map_whiskerLeft]
-  rfl
+  simp only [couponCount, countLift, lift_map_whiskerLeft, SingleObj.whiskerLeft_eq]
 
 @[simp]
 theorem couponCount_whiskerRight (g₀ : S.Coupon) {X₁ X₂ : S.FreeRigid} (f : X₁ ⟶ X₂)
     (Y : S.FreeRigid) : couponCount g₀ (f ▷ Y) = couponCount g₀ f := by
-  rw [couponCount, countLift, lift_map_whiskerRight]
-  rfl
+  simp only [couponCount, countLift, lift_map_whiskerRight, SingleObj.whiskerRight_eq]
 
 @[simp]
 theorem couponCount_tensorHom (g₀ : S.Coupon) {X₁ Y₁ X₂ Y₂ : S.FreeRigid} (f : X₁ ⟶ Y₁)
     (g : X₂ ⟶ Y₂) : couponCount g₀ (f ⊗ₘ g) = couponCount g₀ f + couponCount g₀ g := by
-  rw [couponCount, countLift, lift_map_tensorHom]
+  rw [couponCount, countLift, lift_map_tensorHom, SingleObj.tensorHom_as_mul]
   exact toAdd_mul _ _
 
 @[simp]
