@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.Analysis.Convex.Function
-public import TauCeti.Order.CompositionLift
+public import TauCeti.Analysis.Convex.Lifting.Basic
 import Mathlib.Algebra.Order.Hom.Monoid
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Prod
@@ -19,7 +19,7 @@ import TauCeti.Analysis.Convex.Strong
 
 Let `D` be a set in a real normed space `X`, `g : X → ι → ℝ` an inner map with finitely many
 coordinates, `h : (ι → ℝ) → ℝ` an outer function, `E` a set of admissible heights and `b` a budget.
-The constraint `h (g x) ≤ b` on `D` cuts out `TauCeti.CompositionLift.originalSet D g h b`.
+The constraint `h (g x) ≤ b` on `D` cuts out `TauCeti.ConvexLifting.originalSet D g h b`.
 Given anchors `a i ∈ D` and derivatives `Dg i` of `g` at `a i` and `Dh i` of `h` at `g (a i)`,
 there are three affine rows at each anchor:
 
@@ -53,38 +53,38 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
 
 ## Main definitions
 
-* `TauCeti.CompositionLift.componentRow`, `TauCeti.CompositionLift.outerRow`,
-  `TauCeti.CompositionLift.directRow`: the rows `G_i`, `H_i` and `C_i`.
-* `TauCeti.CompositionLift.directOuterApprox`: the direct outer approximation.
-* `TauCeti.CompositionLift.sharedOuterApprox`: the shared-height outer approximation.
-* `TauCeti.CompositionLift.sharedOuterApproxOn`: the shared approximation with exact rows on `J`.
+* `TauCeti.ConvexLifting.componentRow`, `TauCeti.ConvexLifting.outerRow`,
+  `TauCeti.ConvexLifting.directRow`: the rows `G_i`, `H_i` and `C_i`.
+* `TauCeti.ConvexLifting.directOuterApprox`: the direct outer approximation.
+* `TauCeti.ConvexLifting.sharedOuterApprox`: the shared-height outer approximation.
+* `TauCeti.ConvexLifting.sharedOuterApproxOn`: the shared approximation with exact rows on `J`.
 
 ## Main results
 
-* `TauCeti.CompositionLift.componentRow_apply_le`, `TauCeti.CompositionLift.outerRow_le`,
-  `TauCeti.CompositionLift.directRow_le`: tangent support of the three rows.
-* `TauCeti.CompositionLift.componentRow_apply_eq_of_eq_continuousAffineMap`: the component row
+* `TauCeti.ConvexLifting.componentRow_apply_le`, `TauCeti.ConvexLifting.outerRow_le`,
+  `TauCeti.ConvexLifting.directRow_le`: tangent support of the three rows.
+* `TauCeti.ConvexLifting.componentRow_apply_eq_of_eq_continuousAffineMap`: the component row
   of an affine coordinate is exact.
-* `TauCeti.CompositionLift.originalSet_subset_fst_image_sharedOuterApproxOn` and
-  `TauCeti.CompositionLift.fst_image_sharedOuterApproxOn_subset_directOuterApprox`: the
+* `TauCeti.ConvexLifting.originalSet_subset_fst_image_sharedOuterApproxOn` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApproxOn_subset_directOuterApprox`: the
   comparison with exact rows on `J`.
-* `TauCeti.CompositionLift.originalSet_subset_fst_image_sharedOuterApprox` and
-  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_subset_directOuterApprox`: the comparison
+* `TauCeti.ConvexLifting.originalSet_subset_fst_image_sharedOuterApprox` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_subset_directOuterApprox`: the comparison
   with inequality heights only, under monotone outer derivatives.
-* `TauCeti.CompositionLift.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
+* `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
   the same comparison when `h` is monotone on the whole height space.
-* `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
-  `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
+* `TauCeti.ConvexLifting.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
+  `TauCeti.ConvexLifting.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
   inclusion when, at every point of the direct approximation, all anchors share a common component
   row and that row is an admissible height.
-* `TauCeti.CompositionLift.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
-  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
+* `TauCeti.ConvexLifting.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
   combined into an equality.
-* `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
-  `TauCeti.CompositionLift.sharedOuterApproxOn_empty_heights`,
-  `TauCeti.CompositionLift.directOuterApprox_of_isEmpty`,
-  `TauCeti.CompositionLift.sharedOuterApproxOn_of_isEmpty` and
-  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
+* `TauCeti.ConvexLifting.sharedOuterApprox_empty_heights`,
+  `TauCeti.ConvexLifting.sharedOuterApproxOn_empty_heights`,
+  `TauCeti.ConvexLifting.directOuterApprox_of_isEmpty`,
+  `TauCeti.ConvexLifting.sharedOuterApproxOn_of_isEmpty` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
   admissible heights and no anchors.
 
 ## References
@@ -100,7 +100,7 @@ public section
 
 open Set
 
-namespace TauCeti.CompositionLift
+namespace TauCeti.ConvexLifting
 
 variable {X ι κ : Type*}
 
@@ -394,7 +394,7 @@ theorem mk_mem_sharedOuterApproxOn_of_mem_originalSet [Finite ι] (hgE : MapsTo 
     (hexact : ∀ i, ∀ j ∈ J, componentRow g (a i) (Dg i) x j = g x j)
     (hx : x ∈ originalSet D g h b) :
     (x, g x) ∈ sharedOuterApproxOn J D E g h a Dg Dh b := by
-  obtain ⟨hxD, hxb⟩ := mem_originalSet.1 hx
+  obtain ⟨hxD, hxb⟩ := mem_originalSet_iff.1 hx
   refine ⟨⟨hxD, hgE hxD, fun i ↦ ⟨fun j ↦ ?_, ?_⟩⟩, fun i j hj ↦ (hexact i j hj).symm⟩
   · by_cases hj : j ∈ J
     · exact (hexact i j hj).le
@@ -412,7 +412,7 @@ theorem originalSet_subset_fst_image_sharedOuterApproxOn [Finite ι] (hgE : Maps
     (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i))) :
     originalSet D g h b ⊆ Prod.fst '' sharedOuterApproxOn J D E g h a Dg Dh b :=
   fun x hx ↦ ⟨(x, g x), mk_mem_sharedOuterApproxOn_of_mem_originalSet hgE hc hh ha hg hdh
-    (fun i ↦ hexact i x (mem_originalSet.1 hx).1) hx, rfl⟩
+    (fun i ↦ hexact i x (mem_originalSet_iff.1 hx).1) hx, rfl⟩
 
 /-- **The shared approximation with exact rows on `J` lies in the direct one.** If every outer
 derivative `Dh i` is nonnegative on the nonnegative directions vanishing on `J`, then the
@@ -530,10 +530,10 @@ theorem originalSet_subset_directOuterApprox [Finite ι] (hc : ConvexOn ℝ D (h
     (hgE : MapsTo g D E) (ha : ∀ i, a i ∈ D) (hdh : ∀ i, HasFDerivWithinAt h (Dh i) E (g (a i)))
     (hg : ∀ i, HasFDerivWithinAt g (Dg i) D (a i)) :
     originalSet D g h b ⊆ directOuterApprox D g h a Dg Dh b :=
-  fun _ hx ↦ ⟨(mem_originalSet.1 hx).1, fun i ↦
-    (directRow_le hc hgE (ha i) (mem_originalSet.1 hx).1 (hdh i) (hg i)).trans
-      (mem_originalSet.1 hx).2⟩
+  fun _ hx ↦ ⟨(mem_originalSet_iff.1 hx).1, fun i ↦
+    (directRow_le hc hgE (ha i) (mem_originalSet_iff.1 hx).1 (hdh i) (hg i)).trans
+      (mem_originalSet_iff.1 hx).2⟩
 
 end Sets
 
-end TauCeti.CompositionLift
+end TauCeti.ConvexLifting
