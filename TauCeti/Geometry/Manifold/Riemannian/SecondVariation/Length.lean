@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential
+public import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Normal
 public import TauCeti.Geometry.Manifold.Riemannian.SecondVariation.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -39,7 +39,7 @@ projection of `V` onto the orthogonal complement of the velocity. Covariant diff
 commutes with this projection, and the curvature term does not see the tangential part, so the
 index-form integrand of `V^⊥` is that of `V` minus `⟪D_t V, γ'⟫² / ‖γ'‖²`
 (`TauCeti.Manifold.IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton`, in
-`TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential`). For a unit-speed
+`TauCeti.Geometry.Manifold.Riemannian.IndexForm.Normal`). For a unit-speed
 geodesic this gives the **second variation of length with free endpoints**
 
 `L''(0) = ∫_a^b (‖D_t V^⊥‖² - ⟪R(V^⊥, γ') γ', V^⊥⟫) dt + ⟪A(b), γ'(b)⟫ - ⟪A(a), γ'(a)⟫`.
