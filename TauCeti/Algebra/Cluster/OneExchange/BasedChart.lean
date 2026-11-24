@@ -26,6 +26,12 @@ agreeing with `Λ` on the other coordinates, the monomials
 form a based chart for `Λ'` (`BasedChart.exchange`). It keeps every monomial in the other
 coordinates and has `y` as its `k`th coordinate.
 
+The one-exchange data are public as well: `C` is `BasedChart.offAlgebra`, Laurent expansions in
+`x` have unique left coefficients in `C` (`BasedChart.linearIndependent_zpow_coordinate`), and
+every unit quasi-commuting with the monomials of `C` normalizes `C`
+(`BasedChart.inv_mul_mul_mem_offAlgebra_iff`). This applies to `x` and, by
+`BasedChart.mul_monomial_mul_monomial_eq_smul_mul`, to the exchange element `E = y * x`.
+
 The multiplication rule comes from the quasi-commutation of `y` with the other coordinates.
 Faithfulness of the new chart is the substance: the independence of all monomials of `M` makes
 the powers of `x` independent with left coefficients in `C`, the exchange `y = (y * x) * x⁻¹`
@@ -65,10 +71,70 @@ private theorem mul_mem_span (M : BasedChart u Λ B) (k : I) {x y : B}
   exact Submodule.smul_mem _ _
     (Submodule.subset_span ⟨⟨a.val + b.val, by simp [a.property, b.property]⟩, rfl⟩)
 
-/-- The subalgebra spanned by the monomials in the coordinates other than `k`. -/
-private noncomputable def offAlgebra (M : BasedChart u Λ B) (k : I) : Subalgebra R B :=
+/-- The subalgebra `C` spanned by the monomials in the coordinates other than `k`. Laurent
+expansions in the `k`th coordinate have unique left coefficients in `C`
+(`linearIndependent_zpow_coordinate`). -/
+noncomputable def offAlgebra (M : BasedChart u Λ B) (k : I) : Subalgebra R B :=
   (Submodule.span R (Set.range fun a : {a : I →₀ ℤ // a k = 0} ↦ (M.monomial a : B))).toSubalgebra
     (Submodule.subset_span ⟨⟨0, rfl⟩, by simp⟩) fun _ _ ↦ mul_mem_span M k
+
+/-- Membership in `C` is membership in the scalar span of the monomials in the other
+coordinates. -/
+theorem mem_offAlgebra (M : BasedChart u Λ B) (k : I) {c : B} :
+    c ∈ M.offAlgebra k ↔
+      c ∈ Submodule.span R (Set.range fun a : {a : I →₀ ℤ // a k = 0} ↦ (M.monomial a : B)) :=
+  Submodule.mem_toSubalgebra
+
+/-- Every monomial in the other coordinates lies in `C`. -/
+theorem monomial_mem_offAlgebra (M : BasedChart u Λ B) {k : I} {a : I →₀ ℤ} (ha : a k = 0) :
+    (M.monomial a : B) ∈ M.offAlgebra k :=
+  (M.mem_offAlgebra k).mpr (Submodule.subset_span ⟨⟨a, ha⟩, rfl⟩)
+
+/-- Conjugation preserves `C` once it sends every monomial of `C` into `C`. -/
+private theorem mul_mul_mem_offAlgebra (M : BasedChart u Λ B) (k : I) (p q : B)
+    (h : ∀ a : I →₀ ℤ, a k = 0 → p * M.monomial a * q ∈ M.offAlgebra k) {c : B}
+    (hc : c ∈ M.offAlgebra k) : p * c * q ∈ M.offAlgebra k := by
+  rw [mem_offAlgebra] at hc
+  induction hc using Submodule.span_induction with
+  | mem c hc =>
+    obtain ⟨a, rfl⟩ := hc
+    exact h a a.property
+  | zero => simp
+  | add c d _ _ hc hd => simpa [mul_add, add_mul] using add_mem hc hd
+  | smul r c _ hc => simpa using Subalgebra.smul_mem _ hc r
+
+/-- A unit of `B` that quasi-commutes with every monomial in the coordinates other than `k`
+normalizes `C`. This applies to the `k`th coordinate (`val_monomial_mul_monomial_eq_smul_mul`)
+and to the exchange element `y * M (single k 1)` (`mul_monomial_mul_monomial_eq_smul_mul`). -/
+theorem inv_mul_mul_mem_offAlgebra_iff (M : BasedChart u Λ B) (k : I) {z : Bˣ}
+    (hz : ∀ a : I →₀ ℤ, a k = 0 →
+      ∃ r : Rˣ, (z : B) * M.monomial a = (r : R) • ((M.monomial a : B) * z)) {c : B} :
+    (↑z⁻¹ : B) * c * z ∈ M.offAlgebra k ↔ c ∈ M.offAlgebra k := by
+  refine ⟨fun hc ↦ ?_, M.mul_mul_mem_offAlgebra k _ _ fun a ha ↦ ?_⟩
+  · have h := M.mul_mul_mem_offAlgebra k z ↑z⁻¹ (fun a ha ↦ ?_) hc
+    · simpa [mul_assoc] using h
+    obtain ⟨r, hr⟩ := hz a ha
+    rw [hr, smul_mul_assoc, mul_assoc, Units.mul_inv, mul_one]
+    exact Subalgebra.smul_mem _ (M.monomial_mem_offAlgebra ha) _
+  · obtain ⟨r, hr⟩ := hz a ha
+    have h : (↑z⁻¹ : B) * M.monomial a * z = ((r⁻¹ : Rˣ) : R) • (M.monomial a : B) := by
+      rw [mul_assoc, ← one_smul R ((M.monomial a : B) * z), ← Units.val_one, ← inv_mul_cancel r,
+        Units.val_mul, ← smul_smul, ← hr, Algebra.mul_smul_comm, ← mul_assoc, Units.inv_mul,
+        one_mul]
+    rw [h]
+    exact Subalgebra.smul_mem _ (M.monomial_mem_offAlgebra ha) _
+
+/-- A unit `y` that quasi-commutes with a monomial makes `y * M b` quasi-commute with it too. With
+`inv_mul_mul_mem_offAlgebra_iff`, the exchange element `E = y * M (single k 1)` is a unit of `B`
+normalizing `C`. -/
+theorem mul_monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) {y : Bˣ}
+    {a : I →₀ ℤ} {n : ℤ}
+    (hy : (y : B) * M.monomial a = ((u ^ n : Rˣ) : R) • ((M.monomial a : B) * y)) (b : I →₀ ℤ) :
+    (↑(y * M.monomial b) : B) * M.monomial a =
+      ((u ^ (n + 2 * Λ b a) : Rˣ) : R) • ((M.monomial a : B) * ↑(y * M.monomial b)) := by
+  rw [Units.val_mul, mul_assoc, M.val_monomial_mul_monomial_eq_smul_mul hΛ, Algebra.mul_smul_comm,
+    ← mul_assoc, hy, smul_mul_assoc, smul_smul, ← Units.val_mul, ← zpow_add, mul_assoc,
+    add_comm (2 * Λ b a)]
 
 /-- The monomials after exchanging coordinate `k` for `y`. -/
 private noncomputable def exchangeMonomial (Λ' : LinearMap.BilinForm ℤ (I →₀ ℤ))
@@ -128,6 +194,18 @@ private theorem apply_eq_of_isAlt (hΛ' : Λ'.IsAlt) {k : I}
     hΛ'.self_eq_zero, hoff _ _ Finsupp.erase_same Finsupp.erase_same] at h ⊢
   linear_combination (-b k) * h
 
+/-- Reorder a product of two exchanged monomials, moving the second power of `y` left. -/
+private theorem zpow_mul_monomial_mul_zpow_mul_monomial (M : BasedChart u Λ B) {k : I} {y : Bˣ}
+    {c : I →₀ ℤ} (hc : (y : B) * M.monomial c =
+      ((u ^ (2 * Λ' (Finsupp.single k 1) c) : Rˣ) : R) • ((M.monomial c : B) * y)) (m n : ℤ)
+    (d : I →₀ ℤ) :
+    (↑(y ^ m) : B) * M.monomial c * (↑(y ^ n) * M.monomial d) =
+      ((u ^ (-(2 * n * Λ' (Finsupp.single k 1) c) + Λ c d) : Rˣ) : R) •
+        ((↑(y ^ (m + n)) : B) * M.monomial (c + d)) := by
+  rw [mul_assoc, ← mul_assoc (M.monomial c : B), monomial_mul_zpow M hc, smul_mul_assoc,
+    Algebra.mul_smul_comm, mul_assoc (↑(y ^ n) : B), ← mul_assoc (↑(y ^ m) : B), ← Units.val_mul,
+    ← zpow_add, val_monomial_mul, Algebra.mul_smul_comm, smul_smul, ← Units.val_mul, ← zpow_add]
+
 private theorem exchangeMonomial_mul (M : BasedChart u Λ B) (hΛ' : Λ'.IsAlt) {k : I} {y : Bˣ}
     (hoff : ∀ a b, a k = 0 → b k = 0 → Λ' a b = Λ a b)
     (hcomm : ∀ a, a k = 0 → (y : B) * M.monomial a =
@@ -136,17 +214,12 @@ private theorem exchangeMonomial_mul (M : BasedChart u Λ B) (hΛ' : Λ'.IsAlt) 
     exchangeMonomial Λ' M k y a * exchangeMonomial Λ' M k y b =
       Units.map (algebraMap R B) (u ^ (Λ' a b)) * exchangeMonomial Λ' M k y (a + b) := by
   apply Units.ext
-  have hm := monomial_mul_zpow M (hcomm _ (Finsupp.erase_same (a := k) (f := a))) (b k)
-  rw [Units.val_mul, val_exchangeMonomial, val_exchangeMonomial, Units.val_mul,
-    val_exchangeMonomial, Units.coe_map, MonoidHom.coe_ofClass, ← Algebra.smul_def, smul_smul,
-    smul_mul_smul_comm, mul_assoc, ← mul_assoc (M.monomial (a.erase k) : B), hm,
-    smul_mul_assoc, Algebra.mul_smul_comm, smul_smul, ← mul_assoc, ← mul_assoc,
-    ← Units.val_mul (y ^ a k), ← zpow_add, mul_assoc ((y ^ (a k + b k) : Bˣ) : B),
-    val_monomial_mul, Algebra.mul_smul_comm,
-    smul_smul, Finsupp.coe_add, Pi.add_apply, Finsupp.erase_add]
-  congr 1
-  simp only [← Units.val_mul, ← zpow_add]
-  congr 2
+  rw [Units.val_mul, val_exchangeMonomial, val_exchangeMonomial, smul_mul_smul_comm,
+    zpow_mul_monomial_mul_zpow_mul_monomial M (hcomm _ Finsupp.erase_same), Units.val_mul,
+    val_exchangeMonomial, Units.coe_map, MonoidHom.coe_ofClass, ← Algebra.smul_def]
+  simp only [smul_smul, ← Units.val_mul, ← zpow_add, Finsupp.coe_add, Pi.add_apply,
+    Finsupp.erase_add]
+  congr 3
   rw [apply_eq_of_isAlt hΛ' hoff a b, map_add]
   ring
 
@@ -170,13 +243,10 @@ private theorem span_range_offMonomial (M : BasedChart u Λ B) (k : I) :
   obtain ⟨w, hw, hwz⟩ := hz
   exact Subtype.ext hwz ▸ hw
 
-private theorem offAlgebra_smul_def (M : BasedChart u Λ B) (k : I) (c : M.offAlgebra k) (v : B) :
-    c • v = (c : B) * v :=
-  (rfl)
-
 /-- Independence of all monomials makes the integer powers of the `k`th coordinate independent
-with left coefficients in the span of the other monomials. -/
-private theorem linearIndependent_zpow_coordinate (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I) :
+with left coefficients in the span `C` of the other monomials: Laurent expansions in the `k`th
+coordinate have unique left coefficients in `C`. -/
+theorem linearIndependent_zpow_coordinate (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I) :
     LinearIndependent (M.offAlgebra k)
       fun n : ℤ ↦ (↑(M.monomial (Finsupp.single k 1) ^ n) : B) := by
   refine LinearIndependent.of_smul_of_span_eq_top ?_ (M.span_range_offMonomial k)
@@ -191,23 +261,7 @@ private theorem linearIndependent_zpow_coordinate (M : BasedChart u Λ B) (hΛ :
   convert (M.linearIndependent.comp _ hinj).units_smul
     (fun p ↦ u ^ Λ p.1 (p.2 • Finsupp.single k 1)) using 1
   funext p
-  simp [offAlgebra_smul_def, offMonomial, M.monomial_zpow hΛ, Units.smul_def]
-
-/-- Conjugation by the `k`th coordinate preserves the span of the other monomials. -/
-private theorem inv_mul_mul_mem_offAlgebra (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (k : I)
-    {c : B} (hc : c ∈ M.offAlgebra k) :
-    (↑(M.monomial (Finsupp.single k 1))⁻¹ : B) * c * M.monomial (Finsupp.single k 1) ∈
-      M.offAlgebra k := by
-  simp only [offAlgebra, Submodule.mem_toSubalgebra] at hc ⊢
-  induction hc using Submodule.span_induction with
-  | mem c hc =>
-    obtain ⟨a, rfl⟩ := hc
-    rw [mul_assoc, M.val_monomial_mul_monomial_eq_smul_mul hΛ, Algebra.mul_smul_comm,
-      ← mul_assoc, Units.inv_mul, one_mul]
-    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨a, rfl⟩)
-  | zero => simp
-  | add c d _ _ hc hd => simpa [mul_add, add_mul] using add_mem hc hd
-  | smul r c _ hc => simpa using Submodule.smul_mem _ r hc
+  simp [Subalgebra.smul_def, smul_eq_mul, offMonomial, M.monomial_zpow hΛ, Units.smul_def]
 
 private theorem linearIndependent_exchangeMonomial (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) {k : I}
     {y : Bˣ} (hcomm : ∀ a, a k = 0 → (y : B) * M.monomial a =
@@ -217,10 +271,12 @@ private theorem linearIndependent_exchangeMonomial (M : BasedChart u Λ B) (hΛ 
     LinearIndependent R fun a ↦ (exchangeMonomial Λ' M k y a : B) := by
   -- the exchange `y = (y * x) * x⁻¹` keeps the powers independent over the other monomials
   have hE : ((y * M.monomial (Finsupp.single k 1) : Bˣ) : B) ∈ M.offAlgebra k := by
-    simpa only [offAlgebra, Submodule.mem_toSubalgebra, Units.val_mul] using hyx
+    simpa only [mem_offAlgebra, Units.val_mul] using hyx
   have hy : LinearIndependent (M.offAlgebra k) fun n : ℤ ↦ (↑(y ^ n) : B) := by
     simpa using linearIndependent_mul_inv_zpow (M.offAlgebra k) _ _
-      (fun _ ↦ M.inv_mul_mul_mem_offAlgebra hΛ k) hE (M.linearIndependent_zpow_coordinate hΛ k)
+      (fun _ ↦ (M.inv_mul_mul_mem_offAlgebra_iff k
+        fun a _ ↦ ⟨_, M.val_monomial_mul_monomial_eq_smul_mul hΛ _ a⟩).mpr)
+      hE (M.linearIndependent_zpow_coordinate hΛ k)
   -- expanding the coefficients in the other monomials gives independence over `R`
   have hprod := linearIndependent_smul (M.linearIndependent_offMonomial k) hy
   have hinj : Function.Injective fun a : I →₀ ℤ ↦
@@ -234,7 +290,7 @@ private theorem linearIndependent_exchangeMonomial (M : BasedChart u Λ B) (hΛ 
   funext a
   rw [val_exchangeMonomial, zpow_mul_monomial M (hcomm _ Finsupp.erase_same), smul_smul,
     ← Units.val_mul, ← zpow_add]
-  simp [offAlgebra_smul_def, offMonomial, Units.smul_def]
+  simp [Subalgebra.smul_def, smul_eq_mul, offMonomial, Units.smul_def]
 
 /-- The based chart obtained by exchanging coordinate `k` for a unit `y`. The unit must
 quasi-commute with the monomials in the other coordinates as prescribed by the new

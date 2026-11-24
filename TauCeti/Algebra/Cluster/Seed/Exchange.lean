@@ -313,11 +313,12 @@ theorem exchangeElement_mul_monomial (s : Seed c row u B) (k : K) {a : I →₀ 
     form_exchangeExponent_of_apply_eq_zero s k hl' ha, Algebra.mul_smul_comm, smul_comm]
 
 omit [DecidableEq K] in
-private theorem exchangeElement_mul_coordinate_mem (s : Seed c row u B) (k : K) :
-    s.exchangeElement k * s.chart.monomial (Finsupp.single (row k) 1) ∈
+private theorem unit_mul_coordinate_mem (s : Seed c row u B) (k : K)
+    (hE : IsUnit (s.exchangeElement k)) :
+    (hE.unit : B) * s.chart.monomial (Finsupp.single (row k) 1) ∈
       Submodule.span R
         (Set.range fun a : {a : I →₀ ℤ // a (row k) = 0} ↦ (s.chart.monomial a : B)) := by
-  rw [exchangeElement_def, Finset.sum_mul]
+  rw [IsUnit.unit_spec, exchangeElement_def, Finset.sum_mul]
   refine Submodule.sum_mem _ fun l _ ↦ ?_
   rw [smul_mul_assoc, BasedChart.val_monomial_mul]
   exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
@@ -337,6 +338,15 @@ private theorem isAlt_comp_latticeMutation (s : Seed c row u B) (k : K) :
   intro a
   exact s.isAlt _
 
+omit [DecidableEq K] in
+private theorem unit_mul_monomial (s : Seed c row u B) (k : K)
+    (hE : IsUnit (s.exchangeElement k)) {a : I →₀ ℤ} (ha : a (row k) = 0) :
+    (hE.unit : B) * s.chart.monomial a =
+      ((u ^ (2 * s.form.comp (latticeMutation s k) (latticeMutation s k)
+        (Finsupp.single (row k) 1) a) : Rˣ) : R) • ((s.chart.monomial a : B) * hE.unit) := by
+  rw [comp_latticeMutation_single_row_self s k ha, IsUnit.unit_spec]
+  exact s.exchangeElement_mul_monomial k ha
+
 /-- The mutation of a seed in a direction whose exchange element is a unit. It has the
 mutated state and form and the same weights; its chart replaces the coordinate at `row k`
 by the exchange element and keeps the other coordinates. -/
@@ -353,14 +363,21 @@ noncomputable def mutation (s : Seed c row u B) (k : K) (hE : IsUnit (s.exchange
     exact s.isColumnCompatible_formMutation k
   chart := s.chart.exchange s.isAlt (isAlt_comp_latticeMutation s k) (row k) hE.unit
     (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb)
-    (fun a ha ↦ by
-      rw [comp_latticeMutation_single_row_self s k ha, IsUnit.unit_spec]
-      exact s.exchangeElement_mul_monomial k ha)
-    (by simpa using exchangeElement_mul_coordinate_mem s k)
+    (fun _ ↦ unit_mul_monomial s k hE) (unit_mul_coordinate_mem s k hE)
 
 section Mutation
 
 variable (s : Seed c row u B) (k : K)
+
+/-- The chart of the mutated seed exchanges the coordinate at `row k` for the exchange
+element. -/
+private theorem mutation_chart (hE : IsUnit (s.exchangeElement k)) :
+    (s.mutation k hE).chart =
+      s.chart.exchange s.isAlt (isAlt_comp_latticeMutation s k) (row k) hE.unit
+        (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb)
+        (fun _ ↦ unit_mul_monomial s k hE)
+        (unit_mul_coordinate_mem s k hE) :=
+  (rfl)
 
 @[simp]
 theorem mutation_state (hE : IsUnit (s.exchangeElement k)) :
@@ -386,23 +403,21 @@ theorem mutation_chart_monomial (hE : IsUnit (s.exchangeElement k)) (a : I →�
       Units.map (algebraMap R B)
           (u ^ (-(a (row k) * s.form (s.state.exchangeExponent k 0) (a.erase (row k))))) *
         hE.unit ^ a (row k) * s.chart.monomial (a.erase (row k)) := by
-  dsimp only [mutation]
-  rw [BasedChart.exchange_monomial, comp_latticeMutation_single_row_self s k Finsupp.erase_same]
+  rw [mutation_chart, BasedChart.exchange_monomial,
+    comp_latticeMutation_single_row_self s k Finsupp.erase_same]
 
 /-- The coordinate of the mutated seed at `row k` is the exchange element. -/
 @[simp]
 theorem mutation_chart_monomial_single_self (hE : IsUnit (s.exchangeElement k)) :
     (s.mutation k hE).chart.monomial (Finsupp.single (row k) 1) = hE.unit := by
-  dsimp only [mutation]
-  rw [BasedChart.exchange_monomial_single_self]
+  rw [mutation_chart, BasedChart.exchange_monomial_single_self]
 
 /-- Mutation keeps every monomial in the coordinates other than `row k`. -/
 @[simp]
 theorem mutation_chart_monomial_of_apply_eq_zero (hE : IsUnit (s.exchangeElement k))
     {a : I →₀ ℤ} (ha : a (row k) = 0) :
     (s.mutation k hE).chart.monomial a = s.chart.monomial a := by
-  dsimp only [mutation]
-  rw [BasedChart.exchange_monomial_of_apply_eq_zero (ha := ha)]
+  rw [mutation_chart, BasedChart.exchange_monomial_of_apply_eq_zero (ha := ha)]
 
 /-- The constructed seed is a mutation of `s` in direction `k`. -/
 theorem isMutation_mutation (hE : IsUnit (s.exchangeElement k)) :
