@@ -41,9 +41,8 @@ example [X.IsFirstQuadrant] : X.HasConvergenceBounds 0 0 1 := by
   simpa using X.hasConvergenceBounds_of_isFirstQuadrant 0
 
 /-- The abutment of a first-quadrant spectral object vanishes in degree `-1`. -/
-example [X.IsFirstQuadrant] :
-    IsZero ((X.H (-1)).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) :=
-  X.isZero_H_of_isFirstQuadrant (by norm_num)
+example [X.IsFirstQuadrant] : IsZero (X.abutment (-1)) :=
+  X.isZero_abutment_of_isFirstQuadrant (by norm_num)
 
 /-- In cohomological degree `-2`, a third-quadrant spectral object has convergence bounds
 `a = -2` and `b = 1`. -/

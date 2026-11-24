@@ -23,7 +23,8 @@ The bounds follow from the vanishing of `H^m(⊥ ≤ i)` for `m ∈ {n, n + 1}`,
 convergence bounds (`HasConvergenceBounds.mono`), and they transport along isomorphisms of
 spectral objects (`HasConvergenceBounds.of_iso`). Under convergence bounds, the filtration of the
 abutment vanishes from `a` down (`HasConvergenceBounds.isZero_abutmentFiltration`) and is the whole
-abutment from `b` up (`HasConvergenceBounds.isIso_abutmentFiltrationι`).
+abutment from `b` up (`HasConvergenceBounds.isIso_abutmentFiltrationι`), so the abutment vanishes
+when `b ≤ a` (`HasConvergenceBounds.isZero_abutment`).
 
 A first-quadrant spectral object has convergence bounds `min 0 (n + 1)` and `n + 1` in every
 degree `n`, and its abutment vanishes in negative degrees; a third-quadrant one has convergence
@@ -42,6 +43,8 @@ bounds `min m 1` and `1` in every cohomological degree `m`.
 * `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isZero_abutmentFiltration`,
   `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isIso_abutmentFiltrationι`: the
   filtration of the abutment is bounded by `a` and `b`.
+* `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isZero_abutment`: convergence bounds
+  with `b ≤ a` force the abutment to vanish.
 * `CategoryTheory.Abelian.SpectralObject.hasConvergenceBounds_of_isFirstQuadrant`,
   `CategoryTheory.Abelian.SpectralObject.hasConvergenceBounds_of_isThirdQuadrant`: quadrant
   spectral objects have convergence bounds in every degree.
@@ -127,6 +130,13 @@ theorem isIso_abutmentFiltrationι (h : X.HasConvergenceBounds n a b) {j : ℤ} 
   have := h.isIso_H_map j hj
   X.isIso_abutmentFiltrationι_of_epi
 
+/-- Convergence bounds `a, b` in degree `n` with `b ≤ a` force the abutment in degree `n` to
+vanish: its filtration is the whole abutment at `b` and vanishes there. -/
+theorem isZero_abutment (h : X.HasConvergenceBounds n a b) (hba : b ≤ a) :
+    IsZero (X.abutment n) :=
+  have := h.isIso_abutmentFiltrationι (le_refl b)
+  (h.isZero_abutmentFiltration hba).of_iso (asIso (X.abutmentFiltrationι b n)).symm
+
 end HasConvergenceBounds
 
 section Quadrant
@@ -144,13 +154,9 @@ theorem hasConvergenceBounds_of_isFirstQuadrant [X.IsFirstQuadrant] (n : ℤ) :
     (fun j hj ↦ X.isZero₂_of_isFirstQuadrant _ _ _ _ (by simp; lia))
 
 /-- The abutment `H^n(⊥ ≤ ⊤)` of a first-quadrant spectral object vanishes in negative degrees. -/
-theorem isZero_H_of_isFirstQuadrant [X.IsFirstQuadrant] {n : ℤ} (hn : n < 0) :
-    IsZero ((X.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) :=
-  have := (X.hasConvergenceBounds_of_isFirstQuadrant n).isIso_H_map (n + 1) le_rfl
-  (X.isZero₁_of_isFirstQuadrant ⊥ ((n + 1 : ℤ) : EInt) bot_le
-    (WithBotTop.coe_le_coe.mpr (by lia)) n).of_iso (asIso ((X.H n).map (twoδ₂Toδ₁
-      (homOfLE (bot_le : (⊥ : EInt) ≤ (n + 1 : ℤ))) (homOfLE (le_top : ((n + 1 : ℤ) : EInt) ≤ ⊤))
-      (homOfLE bot_le) (Subsingleton.elim _ _)))).symm
+theorem isZero_abutment_of_isFirstQuadrant [X.IsFirstQuadrant] {n : ℤ} (hn : n < 0) :
+    IsZero (X.abutment n) :=
+  (X.hasConvergenceBounds_of_isFirstQuadrant n).isZero_abutment (by lia)
 
 /-- A third-quadrant spectral object has convergence bounds `min m 1` and `1` in every
 cohomological degree `m`. -/
