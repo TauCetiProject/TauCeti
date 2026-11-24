@@ -52,8 +52,8 @@ character are different representations on the same line, with no nonzero equiva
 * `TauCeti.SemilinearRep.act_smul_of_tower`: the action is linear over the scalars fixed by `G`.
 * `TauCeti.SemilinearRep.twist_one`, `TauCeti.SemilinearRep.twist_twist`: twisting by the trivial
   character does nothing, and successive twists multiply the characters.
-* `TauCeti.SemilinearRep.Hom.kerRep_ext`, `TauCeti.SemilinearRep.Hom.prod_ext`,
-  `TauCeti.SemilinearRep.Hom.coprod_ext`, `TauCeti.SemilinearRep.Hom.pi_ext`: morphisms into a
+* `TauCeti.SemilinearRep.Hom.kerRep_ext`, `TauCeti.SemilinearRep.Hom.ext_fst_snd`,
+  `TauCeti.SemilinearRep.Hom.ext_proj`, `TauCeti.SemilinearRep.Hom.prod_ext`: morphisms into a
   kernel, into a direct sum or product, or out of a direct sum are determined by their composites
   with the structure maps, so the lifts and (co)pairings above are unique.
 
@@ -608,7 +608,8 @@ theorem snd_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (snd ρ₁ ρ₂)
 
 /-- **Uniqueness in the universal property of the direct sum**: morphisms into the direct sum are
 determined by their composites with the two projections. -/
-theorem Hom.prod_ext {f f' : Hom σ (ρ₁.prod ρ₂)} (h₁ : (fst ρ₁ ρ₂).comp f = (fst ρ₁ ρ₂).comp f')
+theorem Hom.ext_fst_snd {f f' : Hom σ (ρ₁.prod ρ₂)}
+    (h₁ : (fst ρ₁ ρ₂).comp f = (fst ρ₁ ρ₂).comp f')
     (h₂ : (snd ρ₁ ρ₂).comp f = (snd ρ₁ ρ₂).comp f') : f = f' :=
   Hom.ext fun w =>
     Prod.ext (by simpa using DFunLike.congr_fun h₁ w) (by simpa using DFunLike.congr_fun h₂ w)
@@ -635,7 +636,7 @@ theorem coprod_comp_inr [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ)
 
 /-- **Uniqueness in the universal property of the direct sum as a coproduct**: morphisms out of the
 direct sum are determined by their composites with the two inclusions. -/
-theorem Hom.coprod_ext {f f' : Hom (ρ₁.prod ρ₂) σ} (h₁ : f.comp (inl ρ₁ ρ₂) = f'.comp (inl ρ₁ ρ₂))
+theorem Hom.prod_ext {f f' : Hom (ρ₁.prod ρ₂) σ} (h₁ : f.comp (inl ρ₁ ρ₂) = f'.comp (inl ρ₁ ρ₂))
     (h₂ : f.comp (inr ρ₁ ρ₂) = f'.comp (inr ρ₁ ρ₂)) : f = f' :=
   Hom.ext fun w => by
     have e₁ := DFunLike.congr_fun h₁ w.1
@@ -706,7 +707,7 @@ theorem proj_pi (f : ∀ i, Hom σ (ρ i)) (i : ι) : (proj ρ i).comp (Hom.pi f
 
 /-- **Uniqueness in the universal property of the product**: morphisms into the product are
 determined by their composites with the projections. -/
-theorem Hom.pi_ext {f f' : Hom σ (SemilinearRep.pi ρ)}
+theorem Hom.ext_proj {f f' : Hom σ (SemilinearRep.pi ρ)}
     (h : ∀ i, (proj ρ i).comp f = (proj ρ i).comp f') : f = f' :=
   Hom.ext fun w => funext fun i => by simpa using DFunLike.congr_fun (h i) w
 
