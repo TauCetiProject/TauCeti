@@ -27,6 +27,8 @@ rotations of the sphere needs.
 
 ## Main results
 
+* `Unitary.linearIsometryEquiv_smul_unitSphere`: on the sphere, a unitary operator and the
+  corresponding linear isometry equivalence act in the same way.
 * `Unitary.isPretransitive_unitSphere`: the action is transitive.
 -/
 
@@ -38,13 +40,20 @@ namespace Unitary
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 
+/-- On the unit sphere, a unitary operator acts as the linear isometry equivalence
+`Unitary.linearIsometryEquiv U` it corresponds to. -/
+theorem linearIsometryEquiv_smul_unitSphere (U : unitary (E →L[𝕜] E)) (x : sphere (0 : E) 1) :
+    linearIsometryEquiv U • x = U • x :=
+  Subtype.ext <| by
+    rw [TauCeti.Sphere.coe_smul_of_isIsometricSMul, LinearIsometryEquiv.coe_smul_unitSphere]
+    exact congr($(coe_linearIsometryEquiv_apply U) (x : E))
+
 /-- The unitary group of `E →L[𝕜] E` acts transitively on the unit sphere of `E`. -/
 instance isPretransitive_unitSphere :
     MulAction.IsPretransitive (unitary (E →L[𝕜] E)) (sphere (0 : E) 1) where
   exists_smul_eq x y := by
-    obtain ⟨e, he⟩ := MulAction.exists_smul_eq (E ≃ₗᵢ[𝕜] E) x y
-    refine ⟨linearIsometryEquiv.symm e, Subtype.ext ?_⟩
-    rw [← he, TauCeti.Sphere.coe_smul_of_isIsometricSMul, LinearIsometryEquiv.coe_smul_unitSphere]
-    exact congr($(coe_symm_linearIsometryEquiv_apply e) (x : E))
+    obtain ⟨e, rfl⟩ := MulAction.exists_smul_eq (E ≃ₗᵢ[𝕜] E) x y
+    refine ⟨linearIsometryEquiv.symm e, ?_⟩
+    rw [← linearIsometryEquiv_smul_unitSphere, MulEquiv.apply_symm_apply]
 
 end Unitary

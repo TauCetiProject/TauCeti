@@ -22,17 +22,16 @@ measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_si
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
-points of an orbit (`map_smul_const_eq_of_isPretransitive`). For a transitive action this law is
-the only invariant probability measure: every s-finite invariant measure `ν` equals
-`ν univ • μ.map (· • x)` (`eq_measure_univ_smul_map_smul_const`). This identifies, for instance,
-the uniform law on a sphere with the law of a Haar-random rotation of a fixed unit vector.
+points of an orbit (`map_smul_const_eq_of_isPretransitive`). For a transitive action every
+s-finite invariant measure `ν` equals `ν univ • μ.map (· • x)`
+(`eq_measure_univ_smul_map_smul_const`), so any invariant probability measure equals this law.
+This identifies, for instance, the uniform law on a sphere, which is invariant under rotations,
+with the law of a Haar-random rotation of a fixed unit vector.
 -/
 
 public section
 
 open Metric Set
-
-open scoped ENNReal
 
 open scoped Pointwise
 
@@ -111,7 +110,8 @@ omit [MeasurableSMul G X] in
 /-- **Uniqueness of invariant measures on a homogeneous space.** If `μ` is a right-invariant
 probability measure on a monoid acting transitively on `X`, then every s-finite invariant measure on
 `X` is its total mass times the law `μ.map (· • x)` of the orbit map at any point `x`. In
-particular this law is the unique invariant probability measure on `X`. -/
+particular `X` carries at most one invariant probability measure, and if one exists it equals this
+law. -/
 theorem eq_measure_univ_smul_map_smul_const [MeasurableSMul₂ G X] [IsProbabilityMeasure μ]
     [MulAction.IsPretransitive G X] (ν : Measure X) [SFinite ν] [SMulInvariantMeasure G X ν]
     (x : X) : ν = ν univ • μ.map (· • x) := by
@@ -120,19 +120,17 @@ theorem eq_measure_univ_smul_map_smul_const [MeasurableSMul₂ G X] [IsProbabili
   -- Average the invariance `ν ((g • ·) ⁻¹' s) = ν s` over `g ∼ μ` and swap the integrals: for each
   -- `y`, the inner integral is the law of the orbit map at `y`, which does not depend on `y`.
   calc ν s = ∫⁻ _ : G, ν s ∂μ := by rw [lintegral_const, measure_univ, mul_one]
-    _ = ∫⁻ g, ∫⁻ y, s.indicator 1 (g • y) ∂ν ∂μ := by
+    _ = ∫⁻ g, ∫⁻ y, s.indicator (fun _ ↦ 1) (g • y) ∂ν ∂μ := by
       refine lintegral_congr fun g ↦ ?_
-      rw [← SMulInvariantMeasure.measure_preimage_smul g hs, ← lintegral_indicator_one
-        (hs.preimage (measurable_const_smul g))]
-      simp only [← Set.indicator_comp_right (g • ·), Pi.one_comp]
-    _ = ∫⁻ y, ∫⁻ g, s.indicator 1 (g • y) ∂μ ∂ν :=
-      lintegral_lintegral_swap ((measurable_one.indicator hs).comp hsmul).aemeasurable
+      rw [lintegral_indicator_const_comp (measurable_const_smul g) hs, one_mul,
+        SMulInvariantMeasure.measure_preimage_smul g hs]
+    _ = ∫⁻ y, ∫⁻ g, s.indicator (fun _ ↦ 1) (g • y) ∂μ ∂ν :=
+      lintegral_lintegral_swap ((measurable_const.indicator hs).comp hsmul).aemeasurable
     _ = ∫⁻ _ : X, μ.map (· • x) s ∂ν := by
       refine lintegral_congr fun y ↦ ?_
       rw [map_smul_const_eq_of_isPretransitive μ x y,
         Measure.map_apply (measurable_smul_const y) hs,
-        ← lintegral_indicator_one (hs.preimage (measurable_smul_const y))]
-      simp only [← Set.indicator_comp_right (· • y), Pi.one_comp]
+        lintegral_indicator_const_comp (measurable_smul_const y) hs, one_mul]
     _ = (ν univ • μ.map (· • x)) s := by
       rw [lintegral_const, smul_apply, smul_eq_mul, mul_comm]
 

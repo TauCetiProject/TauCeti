@@ -60,28 +60,11 @@ instance smulInvariantMeasure_uniformSphereMeasure :
     set f := Unitary.linearIsometryEquiv U
     have hU : (U • · : sphere (0 : E) 1 → sphere (0 : E) 1) =
         Subtype.map f fun x hx ↦ by simpa using hx :=
-      funext fun x ↦ Subtype.ext <| by
-        rw [TauCeti.Sphere.coe_smul_of_isIsometricSMul, Subtype.map_coe]
-        exact congr($(Unitary.coe_linearIsometryEquiv_apply U) (x : E)).symm
+      funext fun x ↦ by
+        rw [← Unitary.linearIsometryEquiv_smul_unitSphere]
+        exact Subtype.ext (LinearIsometryEquiv.coe_smul_unitSphere f x)
     rw [hU, ← Measure.map_apply (f.continuous.measurable.subtype_map _) hs,
       f.map_uniformSphereMeasure]
-
-/-- **Uniqueness of the uniform law on the sphere.** Every s-finite measure on the unit sphere that
-is invariant under the rotation group is its total mass times the uniform law. In particular the
-uniform law is the only rotation-invariant probability law on the sphere. -/
-theorem eq_measure_univ_smul_uniformSphereMeasure (ν : Measure (sphere (0 : E) 1)) [SFinite ν]
-    [SMulInvariantMeasure (unitary (E →L[ℝ] E)) (sphere (0 : E) 1) ν] :
-    ν = ν univ • uniformSphereMeasure E := by
-  rcases isEmpty_or_nonempty (sphere (0 : E) 1) with hS | hS
-  · simp [Measure.eq_zero_of_isEmpty ν]
-  obtain ⟨x⟩ := hS
-  have : Nontrivial E := ⟨⟨x, 0, ne_zero_of_mem_sphere one_ne_zero x⟩⟩
-  -- Both `ν` and the uniform law are multiples of the law of a Haar-random rotation of `x`.
-  set μ := haarProb (unitary (E →L[ℝ] E))
-  have hσ := eq_measure_univ_smul_map_smul_const μ (uniformSphereMeasure E) x
-  rw [measure_univ, one_smul] at hσ
-  rw [hσ]
-  exact eq_measure_univ_smul_map_smul_const μ ν x
 
 /-- **A Haar-random rotation of a unit vector is uniform on the sphere.** The image of a fixed
 unit vector `x` under a rotation drawn from normalized Haar measure on `unitary (E →L[ℝ] E)` has
@@ -92,6 +75,18 @@ theorem map_smul_haarProb (x : sphere (0 : E) 1) :
   have h := eq_measure_univ_smul_map_smul_const (haarProb (unitary (E →L[ℝ] E)))
     (uniformSphereMeasure E) x
   rwa [measure_univ, one_smul, eq_comm] at h
+
+/-- **Uniqueness of the uniform law on the sphere.** Every s-finite measure on the unit sphere that
+is invariant under the rotation group is its total mass times the uniform law. In particular the
+uniform law is the only rotation-invariant probability law on the sphere. -/
+theorem eq_measure_univ_smul_uniformSphereMeasure (ν : Measure (sphere (0 : E) 1)) [SFinite ν]
+    [SMulInvariantMeasure (unitary (E →L[ℝ] E)) (sphere (0 : E) 1) ν] :
+    ν = ν univ • uniformSphereMeasure E := by
+  rcases isEmpty_or_nonempty (sphere (0 : E) 1) with hS | ⟨⟨x⟩⟩
+  · simp [Measure.eq_zero_of_isEmpty ν]
+  -- `ν` is a multiple of the law of a Haar-random rotation of `x`, which is the uniform law.
+  rw [← map_smul_haarProb x]
+  exact eq_measure_univ_smul_map_smul_const _ ν x
 
 /-- The random variable `U ↦ U • x` on the rotation group with normalized Haar measure has the
 uniform law on the sphere. -/
