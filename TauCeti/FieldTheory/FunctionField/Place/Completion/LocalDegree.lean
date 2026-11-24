@@ -27,8 +27,7 @@ adapting `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralCl
 separability of `F' / F` passes to `F̂'_{P'} / F̂_P` (`TauCeti.Place.isSeparable_completion`, the
 place-theoretic counterpart of
 `IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
-`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`, proved directly from the embedded
-generators rather than via surjectivity of the tensor-product projection).
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`).
 Neither separability nor perfectness is assumed, of `F' / F`, of the residue extension, or of the
 constants: an inseparable residue extension is counted with its full degree. This identifies the
 completion at a place as a finite extension of complete discrete valuation rings, the setting in
@@ -541,9 +540,7 @@ residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrar
 
 Formal counterpart of
 `IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
-`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`, which transports separability via
-surjectivity of the tensor-product projection; here the place-completion proof works directly from
-the embedded generators `Set.range P'.completionEmbedding`. -/
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`. -/
 theorem isSeparable_completion [Algebra.IsSeparable F F'] :
     letI := P.completionExtensionAlgebra P' hP
     Algebra.IsSeparable P.Completion P'.Completion := by

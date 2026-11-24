@@ -59,20 +59,22 @@ theorem map_centerIntegralClosure_completionIntegers
         ((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
           integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers) =
       algebraMap (integralClosure (P'.restrict k F).integers F') (w.adicCompletionIntegers F') := by
-    ext b
+    refine RingHom.ext fun b ↦ Subtype.ext ?_
     rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe,
       completionIntegersRingEquivAdicCompletionIntegersOfValuationEq_apply,
       coe_completionIntegersIntegralClosureHom,
-      completionEquivAdicCompletionOfValuationEq_completionEmbedding]
-    rfl
+      completionEquivAdicCompletionOfValuationEq_completionEmbedding,
+      HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply,
+      HeightOneSpectrum.algebraMap_adicCompletion, Subalgebra.algebraMap_apply]
+    simp only [Algebra.algebraMap_self, RingHom.coe_id, Function.comp_apply, id_eq]
   have hmap : ((w.asIdeal.map
       (((P'.restrict k F).completionIntegersIntegralClosureHom P' rfl :
         integralClosure (P'.restrict k F).integers F' →+* P'.completionPlace.integers))).map
       eB.toRingHom) =
       (IsLocalRing.maximalIdeal P'.completionPlace.integers).map eB.toRingHom := by
     rw [Ideal.map_map, hcomp, w.map_asIdeal_adicCompletionIntegers (K := F'),
-      RingEquiv.toRingHom_eq_coe, ← IsLocalRing.map_ringEquiv_maximalIdeal eB]
-    rfl
+      RingEquiv.toRingHom_eq_coe]
+    exact (IsLocalRing.map_ringEquiv_maximalIdeal eB).symm
   exact eB.idealComapOrderIso.symm.injective hmap
 
 end CenterIntegralClosure

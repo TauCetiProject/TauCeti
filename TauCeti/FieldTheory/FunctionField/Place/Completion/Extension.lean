@@ -459,7 +459,6 @@ theorem isScalarTower_restrictConstants_completion (P' : Place k' F') :
       (P'.restrictConstants k).instAlgebraCompletion.toSMul := by
   let _ := (P'.restrictConstants k).instAlgebraCompletion
   refine IsScalarTower.of_algebraMap_eq fun c ↦ ?_
-  change algebraMap k P'.Completion c = algebraMap k' P'.Completion (algebraMap k k' c)
   rw [← (P'.restrictConstants k).completionEmbedding.commutes c,
     ← P'.completionEmbedding.commutes (algebraMap k k' c),
     completionEmbedding_restrictConstants, IsScalarTower.algebraMap_apply k k' F']

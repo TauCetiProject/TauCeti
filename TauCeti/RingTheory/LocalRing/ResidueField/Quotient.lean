@@ -101,10 +101,12 @@ theorem finrank_residueField_eq_of_equiv_equiv
     Module.finrank (ResidueField R₀) (ResidueField S₀) =
       Module.finrank (ResidueField R₁) (ResidueField S₁) := by
   refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv i) (ResidueField.mapEquiv j) ?_
-  refine Ideal.Quotient.ringHom_ext <| RingHom.ext fun x ↦ ?_
-  change (algebraMap (ResidueField R₁) (ResidueField S₁)) (ResidueField.mapEquiv i (residue R₀ x)) =
-    ResidueField.mapEquiv j (algebraMap (ResidueField R₀) (ResidueField S₀) (residue R₀ x))
-  simp only [ResidueField.mapEquiv_apply, ResidueField.map_residue, ResidueField.algebraMap_residue]
+  refine RingHom.ext fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := residue_surjective y
+  rw [RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe, ResidueField.mapEquiv_apply,
+    ResidueField.map_residue, ResidueField.algebraMap_residue, ResidueField.algebraMap_residue,
+    ResidueField.mapEquiv_apply, ResidueField.map_residue]
   exact congrArg (residue S₁) (RingHom.congr_fun hc x)
 
 /-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
