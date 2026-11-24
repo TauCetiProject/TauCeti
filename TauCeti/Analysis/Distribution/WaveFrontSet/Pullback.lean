@@ -143,6 +143,10 @@ private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × 
   refine ⟨c, hc, fun ζ hζ ↦ ?_⟩
   simpa using hcΓ (a := ofLp ζ) (by simpa using hζ)
 
+/-- A vector of `WithLp 2 (α × β)` is the vector built from its two components. -/
+private theorem toLp_fst_snd {α β : Type*} (ζ : WithLp 2 (α × β)) : toLp 2 (ζ.fst, ζ.snd) = ζ := by
+  rw [← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
+
 /-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
 in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
 private theorem exists_cutoff {K : Set E} (hK : IsCompact K) {G : Set (WithLp 2 (E × D))}
@@ -169,48 +173,6 @@ private theorem exists_cutoff {K : Set E} (hK : IsCompact K) {G : Set (WithLp 2 
 
 /-! ### The limit of `T (ψ ⊗ ρ)` as `ρ` concentrates at `0` -/
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-/-- If `g` decays rapidly and the localized Fourier transform of `T` with cutoff `χ` decays rapidly
-on the cone `‖ζ.fst‖ < c ‖ζ.snd‖`, then `ζ ↦ g ζ.fst * T (χ e_(-ζ))` decays rapidly: off the cone
-`‖ζ‖` is comparable to `‖ζ.fst‖`, and the localized Fourier transform grows at most polynomially. -/
-private theorem exists_decay_mul_localFourier_neg (T : 𝓓'(W, ℂ)) {χ : 𝓓(W, ℂ)} {c : ℝ}
-    (hc : 0 < c) (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
-      ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C)
-    {g : E → ℂ} (hg : ∀ N : ℕ, ∃ C, ∀ a, (1 + ‖a‖) ^ N * ‖g a‖ ≤ C) (N : ℕ) :
-    ∃ C, ∀ ζ : WithLp 2 (E × D), (1 + ‖ζ‖) ^ N * ‖g ζ.fst * T.localFourier χ (-ζ)‖ ≤ C := by
-  obtain ⟨C₀, k, hC₀⟩ := exists_norm_localFourier_le T χ
-  have hC₀' : 0 ≤ C₀ := by simpa using (norm_nonneg _).trans (hC₀ 0)
-  obtain ⟨C₁, hC₁⟩ := hdecay N
-  obtain ⟨C₂, hC₂⟩ := hg 0
-  obtain ⟨C₃, hC₃⟩ := hg (N + k)
-  have hC₂' (a : E) : ‖g a‖ ≤ C₂ := by simpa using hC₂ a
-  set A := 1 + c⁻¹
-  have hA : 1 ≤ A := le_add_of_nonneg_right (inv_nonneg.2 hc.le)
-  refine ⟨max (C₂ * C₁) (C₀ * A ^ (N + k) * C₃), fun ζ ↦ ?_⟩
-  rw [norm_mul, mul_left_comm]
-  by_cases hζ : ‖ζ.fst‖ < c * ‖ζ.snd‖
-  · -- On the cone, the localized Fourier transform decays.
-    have h := hC₁ (-ζ) (by simpa using hζ)
-    rw [norm_neg] at h
-    exact (mul_le_mul (hC₂' _) h (by positivity) ((norm_nonneg _).trans (hC₂' 0))).trans
-      (le_max_left _ _)
-  · -- Off the cone, `1 + ‖ζ‖ ≤ A (1 + ‖ζ.fst‖)`.
-    have hsnd : ‖ζ.snd‖ ≤ c⁻¹ * ‖ζ.fst‖ := by
-      rw [le_inv_mul_iff₀ hc]
-      exact not_lt.1 hζ
-    have hle : 1 + ‖ζ‖ ≤ A * (1 + ‖ζ.fst‖) := by
-      have := prod_norm_le_norm_fst_add_norm_snd ζ
-      nlinarith [norm_nonneg ζ.fst]
-    calc ‖g ζ.fst‖ * ((1 + ‖ζ‖) ^ N * ‖T.localFourier χ (-ζ)‖)
-        ≤ ‖g ζ.fst‖ * ((1 + ‖ζ‖) ^ N * (C₀ * (1 + ‖ζ‖) ^ k)) := by
-          gcongr
-          simpa using hC₀ (-ζ)
-      _ = C₀ * ((1 + ‖ζ‖) ^ (N + k) * ‖g ζ.fst‖) := by ring
-      _ ≤ C₀ * ((A * (1 + ‖ζ.fst‖)) ^ (N + k) * ‖g ζ.fst‖) := by gcongr
-      _ = C₀ * A ^ (N + k) * ((1 + ‖ζ.fst‖) ^ (N + k) * ‖g ζ.fst‖) := by rw [mul_pow]; ring
-      _ ≤ C₀ * A ^ (N + k) * C₃ := by gcongr; exact hC₃ _
-      _ ≤ _ := le_max_right _ _
-
 /-- The summands `(covolume L)⁻¹ 𝓕 ψ (m.fst) T (χ e_(-m))` of the lattice series for the pullback
 decay rapidly, hence are summable over the dual lattice. -/
 private theorem summable_norm_fourier_mul_localFourier_neg [MeasurableSpace E] [BorelSpace E]
@@ -221,16 +183,32 @@ private theorem summable_norm_fourier_mul_localFourier_neg [MeasurableSpace E] [
     Summable fun m : ZLattice.dual L ↦ ‖(ZLattice.covolume L : ℂ)⁻¹ *
       𝓕 (fun x ↦ (ψ x : ℂ)) (m : WithLp 2 (E × D)).fst * T.localFourier χ (-m)‖ := by
   set a : ℂ := (ZLattice.covolume L : ℂ)⁻¹
+  set Ψ : E → ℂ := 𝓕 fun x ↦ (ψ x : ℂ)
+  -- Off the cone `‖ζ.fst‖ < c ‖ζ.snd‖`, `‖ζ‖` is comparable to `‖ζ.fst‖`.
+  have hsep : ∀ ξ ∈ ({0} : Set E), ∀ ζ ∉ {ζ : WithLp 2 (E × D) | ‖ζ.fst‖ < c * ‖ζ.snd‖},
+      c / (1 + c) * (‖ξ‖ + ‖ζ‖) ≤ ‖(-fstL 2 ℝ E D) ζ - ξ‖ := by
+    rintro _ rfl ζ hζ
+    rw [mem_ofPred_eq, not_lt] at hζ
+    rw [norm_zero, zero_add, sub_zero, neg_apply, norm_neg, fstL_apply,
+      div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+    nlinarith [mul_le_mul_of_nonneg_left (prod_norm_le_norm_fst_add_norm_snd ζ) hc.le]
   have h := ZLattice.summable_one_add_norm_pow_mul_norm_of_decay (ZLattice.dual L)
-    (f := fun ζ : WithLp 2 (E × D) ↦ a * (𝓕 (fun x ↦ (ψ x : ℂ)) ζ.fst * T.localFourier χ (-ζ)))
+    (f := fun ζ : WithLp 2 (E × D) ↦ a * (Ψ ζ.fst * T.localFourier χ (-ζ)))
     (fun N ↦ by
-      obtain ⟨C, hC⟩ := exists_decay_mul_localFourier_neg T hc hdecay
-        (fun N ↦ TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le
-          (ofRealCLM.contDiff.comp ψ.contDiff)
-          (ψ.hasCompactSupport.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero) N) N
+      obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le
+        (-fstL 2 ℝ E D) (div_pos hc (by positivity)) hsep (g := Ψ)
+        (F := fun ζ ↦ T.localFourier χ (-ζ))
+        (TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le (ofRealCLM.contDiff.comp ψ.contDiff)
+          (ψ.hasCompactSupport.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero))
+        ((exists_norm_localFourier_le T χ).imp fun _ ⟨k, hk⟩ ↦ ⟨k, fun ζ ↦ by
+          simpa using hk (-ζ)⟩)
+        (fun N ↦ (hdecay N).imp fun _ hC ζ hζ ↦ by simpa using hC (-ζ) (by simpa using hζ)) N
       exact ⟨‖a‖ * C, fun ζ ↦ by
+        have hζ := hC 0 rfl ζ
+        rw [norm_zero, add_zero, one_pow, one_mul, neg_apply, fstL_apply,
+          zero_sub, neg_neg] at hζ
         rw [norm_mul, mul_left_comm]
-        exact mul_le_mul_of_nonneg_left (hC ζ) (norm_nonneg _)⟩) 0
+        exact mul_le_mul_of_nonneg_left hζ (norm_nonneg _)⟩) 0
   simpa [mul_assoc] using h
 
 /-- **The core convergence.** Let `χ = 1` on `tsupport ψ × closedBall 0 δ`, let the localized
@@ -269,7 +247,7 @@ private theorem tendsto_apply_tsum [MeasurableSpace E] [BorelSpace E] [Measurabl
         rw [mem_closedBall, dist_zero_right] at this
         linarith
       have h := hχ p.fst (subset_tsupport _ hp'.1) p.snd hy
-      rwa [← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp] at h
+      rwa [toLp_fst_snd] at h
     · rw [hfun, Real.fourier_prod_mul (fun x ↦ (ψ x : ℂ)) (fun y ↦ (ρ i y : ℂ)), mul_assoc a]
   -- The factors `𝓕 (ρ i) (m.snd)` are bounded by `M` and tend to one.
   have hlim (b : D) : Tendsto (fun i ↦ 𝓕 (fun y ↦ (ρ i y : ℂ)) b) l (𝓝 1) :=
@@ -289,6 +267,21 @@ private theorem tendsto_apply_tsum [MeasurableSpace E] [BorelSpace E] [Measurabl
     nlinarith [mul_le_mul_of_nonneg_left h (by positivity : (0 : ℝ) ≤
       ‖a‖ * ‖Ψ (m : WithLp 2 (E × D)).fst‖ * ‖T.localFourier χ (-m)‖)]
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
+/-- If `T` has no wave front covectors `((x, 0), (0, η))` in the conormal directions, it is
+microlocally smooth at `(x, 0)` in every nonzero direction `ζ` with `ζ.fst = 0`. -/
+private theorem isMicrolocallySmoothAt_of_fst_eq_zero (T : 𝓓'(W, ℂ)) {x : E}
+    (hx : toLp 2 (x, (0 : D)) ∈ W)
+    (h : ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    {ζ : WithLp 2 (E × D)} (hζ0 : ζ ≠ 0) (hζ : ζ.fst = 0) :
+    T.IsMicrolocallySmoothAt (toLp 2 (x, 0)) ζ := by
+  have hζeq : toLp 2 ((0 : E), ζ.snd) = ζ := by rw [← hζ, toLp_fst_snd]
+  have hsnd : ζ.snd ≠ 0 := fun h0 ↦ hζ0 (by rw [← hζeq, h0, Prod.mk_zero_zero, toLp_zero])
+  by_contra hns
+  have hmem := mem_waveFrontSet_iff.2 ⟨hx, hζ0, hns⟩
+  rw [← hζeq] at hmem
+  exact h ζ.snd hsnd hmem
+
 /-- Around `K × {0}`, for a compact set `K` over which `T` has no conormal wave front covectors,
 there is a cutoff `χ` equal to one on `K × closedBall 0 δ` whose localized Fourier transform
 decays rapidly on a cone `‖ζ.fst‖ < c ‖ζ.snd‖`. -/
@@ -306,13 +299,7 @@ private theorem exists_cutoff_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsComp
       (V := {ζ : WithLp 2 (E × D) | ζ.fst = 0}) (isClosed_eq (by fun_prop) continuous_const)
       (fun t _ ζ hζ ↦ by simp_all) (by
         rintro _ ⟨x, hx, rfl⟩ ζ hζ hζ0
-        have hζeq : toLp 2 ((0 : E), ζ.snd) = ζ := by
-          rw [← show ζ.fst = 0 from hζ, ← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
-        have hsnd : ζ.snd ≠ 0 := fun h0 ↦ hζ0 (by rw [← hζeq, h0]; rfl)
-        by_contra hns
-        have hmem := mem_waveFrontSet_iff.2 ⟨hKW x hx, hζ0, hns⟩
-        rw [← hζeq] at hmem
-        exact h x hx ζ.snd hsnd hmem)
+        exact isMicrolocallySmoothAt_of_fst_eq_zero T (hKW x hx) (h x hx) hζ0 hζ)
   obtain ⟨c, hc, hcΓ⟩ := exists_pos_forall_norm_fst_lt_imp_mem hΓ hcone fun b hb ↦
     hVΓ _ (by simp) fun h0 ↦ hb (by simpa using congrArg WithLp.snd h0)
   obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
@@ -808,18 +795,13 @@ private theorem isMicrolocallySmoothAt_of_fst_eq_smul (T : 𝓓'(W, ℂ)) {x₀ 
     (hT : ∀ η : D, T.IsMicrolocallySmoothAt (toLp 2 (x₀, 0)) (toLp 2 (ξ₀, η)))
     {ζ : WithLp 2 (E × D)} (hζ0 : ζ ≠ 0) {s : ℝ} (hs : 0 ≤ s) (hsζ : s • ξ₀ = ζ.fst) :
     T.IsMicrolocallySmoothAt (toLp 2 (x₀, 0)) ζ := by
-  have hζeq : toLp 2 (ζ.fst, ζ.snd) = ζ := by rw [← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
   rcases hs.eq_or_lt with rfl | hs
   · -- A conormal direction.
     rw [zero_smul] at hsζ
-    have hsnd : ζ.snd ≠ 0 := fun h0 ↦ hζ0 (by rw [← hζeq, ← hsζ, h0]; rfl)
-    by_contra hns
-    have hmem := mem_waveFrontSet_iff.2 ⟨hx₀, hζ0, hns⟩
-    rw [← hζeq, ← hsζ] at hmem
-    exact h ζ.snd hsnd hmem
+    exact isMicrolocallySmoothAt_of_fst_eq_zero T hx₀ h hζ0 hsζ.symm
   · -- `ζ = s (ξ₀, s⁻¹ ζ.snd)` with `s > 0`, and microlocal smoothness is conic.
     have hζs : s • toLp 2 (ξ₀, s⁻¹ • ζ.snd) = ζ := by
-      rw [← toLp_smul, Prod.smul_mk, smul_smul, mul_inv_cancel₀ hs.ne', one_smul, hsζ, hζeq]
+      rw [← toLp_smul, Prod.smul_mk, smul_smul, mul_inv_cancel₀ hs.ne', one_smul, hsζ, toLp_fst_snd]
     rw [← hζs, isMicrolocallySmoothAt_smul_iff hs]
     exact hT _
 

@@ -384,7 +384,7 @@ theorem exists_cone_mul_add_le_norm_apply_sub {X : Type*} [NormedAddCommGroup X]
     rw [← smul_smul, ← smul_sub, norm_smul, norm_smul, Real.norm_of_nonneg ht.le, mul_left_comm]
     exact mul_lt_mul_of_pos_left hξs ht
   · obtain ⟨s, hs, hξs⟩ := mem_iUnion₂.1 hξ
-    have hξs : ‖ξ - s • ξ₀‖ < δ * ‖ξ‖ := hξs
+    simp only [mem_ofPred_eq] at hξs
     have h1 : ‖p ζ - s • ξ₀‖ ≤ ‖p ζ - ξ‖ + ‖ξ - s • ξ₀‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
     have h2 : ‖ξ‖ ≤ ‖p ζ - ξ‖ + M * ‖ζ‖ := by
       calc ‖ξ‖ ≤ ‖p ζ - ξ‖ + ‖p ζ‖ := by
