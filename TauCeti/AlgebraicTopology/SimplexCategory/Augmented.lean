@@ -20,8 +20,8 @@ morphism is a monotone map of the underlying finite ordinals. This file records 
   `toOrderHom_comp` and the extensionality lemma `AugmentedSimplexCategory.hom_ext`.
 * `TauCeti.AugmentedSimplexCategory.ofCard`, `TauCeti.AugmentedSimplexCategory.homOfOrderHom`:
   the object with `n` elements and the morphism given by a monotone map, with their
-  functoriality and the round trips `card_ofCard`, `ofCard_card`, `toOrderHom_homOfOrderHom` and
-  `homOfOrderHom_toOrderHom`.
+  functoriality and the round trips `card_ofCard`, `AugmentedSimplexCategory.ofCard_card`,
+  `toOrderHom_homOfOrderHom` and `homOfOrderHom_toOrderHom`.
 -/
 
 public section
@@ -103,9 +103,6 @@ lemma ofCard_succ (n : ℕ) : ofCard (n + 1) = .of ⦋n⦌ := rfl
 lemma card_ofCard (n : ℕ) : card (ofCard n) = n := by
   cases n <;> rfl
 
-lemma ofCard_card (X : AugmentedSimplexCategory) : ofCard (card X) = X := by
-  cases X <;> rfl
-
 /-- The morphism of the augmented simplex category given by a monotone map of finite
 ordinals. -/
 def homOfOrderHom : {n m : ℕ} → (Fin n →o Fin m) → (ofCard n ⟶ ofCard m)
@@ -141,3 +138,12 @@ lemma homOfOrderHom_comp {n m p : ℕ} (f : Fin n →o Fin m) (g : Fin m →o Fi
   | _ + 1, _ + 1, _ + 1, _, _ => rfl
 
 end TauCeti.AugmentedSimplexCategory
+
+namespace AugmentedSimplexCategory
+
+open TauCeti.AugmentedSimplexCategory
+
+lemma ofCard_card (X : AugmentedSimplexCategory) : ofCard (card X) = X := by
+  cases X <;> rfl
+
+end AugmentedSimplexCategory

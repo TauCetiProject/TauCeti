@@ -66,6 +66,7 @@ lemma castSucc_lt_map'_iff {n m : ℕ} (f : Fin (n + 1) →o Fin (m + 1)) (x : F
   constructor
   · intro h
     by_contra! hx
+    rw [map'] at h
     exact h.not_ge (Finset.min'_le _ _ ((castSucc_mem_finset_iff f x i).2 hx))
   · intro h
     by_contra! hle
