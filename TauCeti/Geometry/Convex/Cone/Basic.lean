@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Prod
+import Mathlib.Geometry.Convex.Cone.Dual
 
 /-!
 # Salience of images and products of cones, and the line spanned by a ray
@@ -15,10 +16,11 @@ public import Mathlib.LinearAlgebra.Prod
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file proves the
 two closure properties of salience that concern standard cone constructions, the image under an
 injective linear map and the product of two pointed cones, together with the salience of the cone
-hull of a single vector. It also computes the dimension of the linear span of the cone hull of a
-single nonzero vector, which is the one-dimensionality making such a cone a ray, and the invariance
-of that dimension under multiplying a cone by the zero cone. None of these statements involves a
-lattice, so they belong to the generic convex-cone API rather than to any consumer of it.
+hull of a single vector and of the cone hull of a set on which some linear functional is positive.
+It also computes the dimension of the linear span of the cone hull of a single nonzero vector,
+which is the one-dimensionality making such a cone a ray, and the invariance of that dimension
+under multiplying a cone by the zero cone. None of these statements involves a lattice, so
+they belong to the generic convex-cone API rather than to any consumer of it.
 
 ## Main declarations
 
@@ -26,6 +28,13 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
   salient.
 * `ConvexCone.Salient.prod`: a product of salient pointed cones is salient.
 * `PointedCone.salient_hull_singleton`: the cone hull of a single vector is salient.
+* `PointedCone.apply_nonneg_of_mem_hull`: a linear functional nonnegative on a set is nonnegative
+  on its cone hull.
+* `PointedCone.apply_pos_of_mem_hull` and `PointedCone.salient_hull_of_forall_pos`: a linear
+  functional positive on a set is positive on the nonzero vectors of its cone hull, which is
+  therefore salient; `PointedCone.eq_zero_of_add_eq_zero_of_mem_hull` is the additive form.
+* `PointedCone.hull_image_le_hull_insert`: the cone hull of the image of a set lies in the cone hull
+  of the image of one index together with the image of the other members of the set.
 * `PointedCone.finrank_span_coe_hull_singleton`: the cone hull of a nonzero vector spans a line.
 * `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
   multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
@@ -74,6 +83,96 @@ theorem salient_hull_singleton (x : V) : (hull R {x} : ConvexCone R V).Salient :
   · simp at hy0
 
 end HullSalient
+
+section HullPos
+
+variable {R V : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V] {s : Set V}
+  {f : Module.Dual R V} {x : V}
+
+section PartialOrder
+
+variable [PartialOrder R] [IsOrderedRing R]
+
+/-- A linear functional that is nonnegative on a set is nonnegative on its cone hull. -/
+theorem apply_nonneg_of_mem_hull (hs : ∀ y ∈ s, 0 ≤ f y) (hx : x ∈ hull R s) : 0 ≤ f x := by
+  have hf : f ∈ dual (Module.Dual.eval R V) (hull R s) := by
+    rw [dual_hull]
+    exact fun y hy => hs y hy
+  exact hf hx
+
+end PartialOrder
+
+variable [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- If a linear functional is positive on a set, then the only vector of its cone hull on which
+the functional vanishes is zero. -/
+theorem eq_zero_of_mem_hull_of_apply_eq_zero (hs : ∀ y ∈ s, 0 < f y) (hx : x ∈ hull R s)
+    (h : f x = 0) : x = 0 := by
+  have hs' : ∀ y ∈ s, 0 ≤ f y := fun y hy => (hs y hy).le
+  induction hx using Submodule.span_induction with
+  | mem x hx => exact ((hs x hx).ne' h).elim
+  | zero => rfl
+  | add x y hxs hys hx hy =>
+    rw [map_add] at h
+    have := (add_eq_zero_iff_of_nonneg (apply_nonneg_of_mem_hull hs' hxs)
+      (apply_nonneg_of_mem_hull hs' hys)).mp h
+    rw [hx this.1, hy this.2, add_zero]
+  | smul c x hxs hx =>
+    obtain ⟨c, hc⟩ := c
+    simp only [Nonneg.mk_smul, map_smul, smul_eq_mul] at h ⊢
+    rcases hc.eq_or_lt with rfl | hc
+    · simp
+    · rw [hx ?_, smul_zero]
+      by_contra hne
+      exact (mul_pos hc ((apply_nonneg_of_mem_hull hs' hxs).lt_of_ne' hne)).ne' h
+
+/-- If a linear functional is positive on a set, then it is positive on every nonzero vector of
+the cone hull of the set. -/
+theorem apply_pos_of_mem_hull (hs : ∀ y ∈ s, 0 < f y) (hx : x ∈ hull R s) (hx₀ : x ≠ 0) :
+    0 < f x :=
+  (apply_nonneg_of_mem_hull (fun y hy => (hs y hy).le) hx).lt_of_ne
+    fun h => hx₀ (eq_zero_of_mem_hull_of_apply_eq_zero hs hx h.symm)
+
+end HullPos
+
+section HullPosSalient
+
+variable {R V : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup V] [Module R V] {s : Set V} {f : Module.Dual R V} {x y : V}
+
+/-- If a linear functional is positive on a set, then the cone hull of the set is salient. -/
+theorem salient_hull_of_forall_pos (hs : ∀ y ∈ s, 0 < f y) :
+    (hull R s : ConvexCone R V).Salient := fun x hx hx₀ hnx => by
+  have h₁ := apply_pos_of_mem_hull hs hx hx₀
+  have h₂ := apply_pos_of_mem_hull hs hnx (neg_ne_zero.mpr hx₀)
+  rw [map_neg] at h₂
+  exact (neg_pos.mp h₂).not_gt h₁
+
+/-- If a linear functional is positive on a set, then two vectors of the cone hull of the set that
+add up to zero vanish. This is the salience of the hull in additive form. -/
+theorem eq_zero_of_add_eq_zero_of_mem_hull (hs : ∀ y ∈ s, 0 < f y) (hx : x ∈ hull R s)
+    (hy : y ∈ hull R s) (h : x + y = 0) : x = 0 := by
+  by_contra hx₀
+  exact salient_hull_of_forall_pos hs x hx hx₀ (neg_eq_of_add_eq_zero_right h ▸ hy)
+
+end HullPosSalient
+
+section HullInsert
+
+variable {ι R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V]
+
+/-- The cone hull of the image of a set under a family lies in the cone hull of the image of
+one index together with the image of the other members of the set. -/
+theorem hull_image_le_hull_insert (v : ι → V) (T : Set ι) (i : ι) :
+    hull R (v '' T) ≤ hull R (insert (v i) (v '' (T \ {i}))) := by
+  refine Submodule.span_mono ?_
+  rintro - ⟨k, hk, rfl⟩
+  by_cases hki : k = i
+  · exact hki ▸ Set.mem_insert _ _
+  · exact Set.mem_insert_of_mem _ ⟨k, ⟨hk, hki⟩, rfl⟩
+
+end HullInsert
 
 section HullSpan
 

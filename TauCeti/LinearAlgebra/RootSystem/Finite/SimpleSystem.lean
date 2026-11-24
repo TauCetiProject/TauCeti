@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import Mathlib.LinearAlgebra.QuadraticForm.Dual
+import TauCeti.Geometry.Convex.Cone.Basic
 import TauCeti.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
@@ -111,57 +112,6 @@ lemma simpleSystem_subset_positiveSystem : P.simpleSystem f ⊆ P.positiveSystem
 
 variable {P f}
 
-/-- A vector in the cone spanned by roots on which `f` is positive is zero as soon as `f`
-vanishes on it. -/
-private lemma nonneg_and_eq_zero_of_mem_hull {S : Set ι} (hS : S ⊆ P.positiveSystem f)
-    {x : M} (hx : x ∈ PointedCone.hull R (P.root '' S)) :
-    0 ≤ f x ∧ (f x = 0 → x = 0) := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨k, hk, rfl⟩ := hx
-    have := hS hk
-    exact ⟨this.le, fun h => (this.ne' h).elim⟩
-  | zero => simp
-  | add x y _ _ hx hy =>
-    refine ⟨by simpa using add_nonneg hx.1 hy.1, fun h => ?_⟩
-    rw [map_add] at h
-    rw [hx.2 (by linarith [hx.1, hy.1]), hy.2 (by linarith [hx.1, hy.1]), add_zero]
-  | smul c x _ hx =>
-    obtain ⟨c, hc⟩ := c
-    simp only [Nonneg.mk_smul, map_smul, smul_eq_mul]
-    refine ⟨mul_nonneg hc hx.1, fun h => ?_⟩
-    rcases mul_eq_zero.mp h with h | h
-    · simp [h]
-    · simp [hx.2 h]
-
-/-- A nonzero vector in the cone spanned by roots on which `f` is positive has positive value
-under `f`. -/
-private lemma apply_pos_of_mem_hull {S : Set ι} (hS : S ⊆ P.positiveSystem f)
-    {x : M} (hx : x ∈ PointedCone.hull R (P.root '' S)) (hx₀ : x ≠ 0) : 0 < f x :=
-  (nonneg_and_eq_zero_of_mem_hull hS hx).1.lt_of_ne
-    fun h => hx₀ ((nonneg_and_eq_zero_of_mem_hull hS hx).2 h.symm)
-
-/-- The cone spanned by roots on which `f` is positive is salient: if two of its vectors add up
-to zero, they vanish. -/
-private lemma eq_zero_of_add_eq_zero_of_mem_hull {S : Set ι} (hS : S ⊆ P.positiveSystem f)
-    {x y : M} (hx : x ∈ PointedCone.hull R (P.root '' S))
-    (hy : y ∈ PointedCone.hull R (P.root '' S)) (h : x + y = 0) : x = 0 := by
-  have h₁ := nonneg_and_eq_zero_of_mem_hull hS hx
-  have h₂ := nonneg_and_eq_zero_of_mem_hull hS hy
-  have hf : f x + f y = 0 := by rw [← map_add, h, map_zero]
-  exact h₁.2 (by linarith [h₁.1, h₂.1])
-
-/-- The cone of a set of roots lies in the cone of a root together with the other roots of the
-set. -/
-private lemma hull_root_image_le_hull_insert (T : Set ι) (i : ι) :
-    PointedCone.hull R (P.root '' T) ≤
-      PointedCone.hull R (insert (P.root i) (P.root '' (T \ {i}))) := by
-  refine span_mono ?_
-  rintro - ⟨k, hk, rfl⟩
-  by_cases hki : k = i
-  · exact hki ▸ mem_insert _ _
-  · exact mem_insert_of_mem _ ⟨k, ⟨hk, hki⟩, rfl⟩
-
 /-- The negative of a root is positive exactly when the root is negative. -/
 lemma reflectionPerm_self_mem_positiveSystem_iff :
     P.reflectionPerm i i ∈ P.positiveSystem f ↔ f (P.root i) < 0 := by
@@ -190,8 +140,10 @@ private lemma root_mem_hull_sdiff_singleton {T : Set ι} (hT : T ⊆ P.positiveS
     (hmem : P.root i ∈ PointedCone.hull R (P.root '' (P.positiveSystem f \ {i}))) :
     P.root i ∈ PointedCone.hull R (P.root '' (T \ {i})) := by
   set D := PointedCone.hull R (P.root '' (T \ {i}))
-  have hD : T \ {i} ⊆ P.positiveSystem f := sdiff_subset.trans hT
-  have hTD := hull_root_image_le_hull_insert (P := P) T i
+  have hD : ∀ y ∈ P.root '' (T \ {i}), 0 < f y := by
+    rintro - ⟨k, hk, rfl⟩
+    exact hT hk.1
+  have hTD := PointedCone.hull_image_le_hull_insert (R := R) P.root T i
   -- Every vector of the cone of the other positive roots splits as `b • αᵢ + u` with `u ∈ D`,
   -- where `u` vanishes only for the zero vector.
   have key : ∀ x ∈ PointedCone.hull R (P.root '' (P.positiveSystem f \ {i})),
@@ -209,8 +161,9 @@ private lemma root_mem_hull_sdiff_singleton {T : Set ι} (hT : T ⊆ P.positiveS
       obtain ⟨b, hb, u, hu, rfl, hu₀⟩ := hx
       obtain ⟨b', hb', u', hu', rfl, hu₀'⟩ := hy
       refine ⟨b + b', add_nonneg hb hb', u + u', add_mem hu hu', by module, fun h => ?_⟩
-      rw [hu₀ (eq_zero_of_add_eq_zero_of_mem_hull hD hu hu' h),
-        hu₀' (eq_zero_of_add_eq_zero_of_mem_hull hD hu' hu (by rwa [add_comm])), add_zero]
+      rw [hu₀ (PointedCone.eq_zero_of_add_eq_zero_of_mem_hull hD hu hu' h),
+        hu₀' (PointedCone.eq_zero_of_add_eq_zero_of_mem_hull hD hu' hu (by rwa [add_comm])),
+        add_zero]
     | smul c x _ hx =>
       obtain ⟨b, hb, u, hu, rfl, hu₀⟩ := hx
       obtain ⟨c, hc⟩ := c
@@ -224,7 +177,7 @@ private lemma root_mem_hull_sdiff_singleton {T : Set ι} (hT : T ⊆ P.positiveS
   have hu0 : u ≠ 0 := fun h => hroot (hu₀ h)
   have hsub : (1 - b) • P.root i = u := by rw [sub_smul, one_smul, sub_eq_iff_eq_add', ← hiu]
   have hb : 0 < 1 - b := by
-    have := apply_pos_of_mem_hull hD hu hu0
+    have := PointedCone.apply_pos_of_mem_hull hD hu hu0
     rw [← hsub, map_smul, smul_eq_mul] at this
     exact pos_of_mul_pos_left this hi.out.le
   have : P.root i = (1 - b)⁻¹ • u := by rw [← hsub, smul_smul, inv_mul_cancel₀ hb.ne', one_smul]
@@ -350,9 +303,10 @@ theorem reflectionPerm_mem_positiveSystem (hf : ∀ k, f (P.root k) ≠ 0)
     (hi : i ∈ P.simpleSystem f) (hj : j ∈ P.positiveSystem f) (hji : j ≠ i) :
     P.reflectionPerm i j ∈ P.positiveSystem f := by
   set D := PointedCone.hull R (P.root '' (P.simpleSystem f \ {i}))
-  have hD : P.simpleSystem f \ {i} ⊆ P.positiveSystem f :=
-    sdiff_subset.trans (P.simpleSystem_subset_positiveSystem f)
-  have hle := hull_root_image_le_hull_insert (P := P) (P.simpleSystem f) i
+  have hD : ∀ y ∈ P.root '' (P.simpleSystem f \ {i}), 0 < f y := by
+    rintro - ⟨k, hk, rfl⟩
+    exact hk.1.1
+  have hle := PointedCone.hull_image_le_hull_insert (R := R) P.root (P.simpleSystem f) i
   obtain ⟨⟨a, ha⟩, u, hu, hju⟩ := mem_span_insert.mp (hle (root_mem_hull_simpleSystem hj))
   by_contra hk
   have hneg : f (P.root (P.reflectionPerm i j)) < 0 := (not_lt.mp hk).lt_of_ne (hf _)
@@ -373,7 +327,7 @@ theorem reflectionPerm_mem_positiveSystem (hf : ∀ k, f (P.root k) ≠ 0)
       (PointedCone.mem_ofSubmodule_iff.mp (PointedCone.hull_le_span R _ hu'))
     rwa [hsum, Submodule.smul_mem_iff _ hc] at this
   rw [hc, zero_smul] at hsum
-  have hu0 : u = 0 := eq_zero_of_add_eq_zero_of_mem_hull hD hu hu' hsum
+  have hu0 : u = 0 := PointedCone.eq_zero_of_add_eq_zero_of_mem_hull hD hu hu' hsum
   exact root_ne_smul_root_of_mem_positiveSystem hi.1 hj hji a (by rw [hju, hu0, add_zero])
 
 /-- Every positive root has positive pairing with some simple root. -/
