@@ -82,7 +82,7 @@ private theorem coindH2Equiv_shapiro (x : H2 G (DiscreteCoind G U M)) :
       ⟨fun p ↦ discreteCoindAddEquivAlgebraic G M U ((z : G × G → DiscreteCoind G U M) p),
         (mem_cocycles₂_iff_of_equiv (MulEquiv.refl G)
           (discreteCoindAddEquivAlgebraic G M U)
-          (discreteCoindAddEquivAlgebraic_smul G M U) z).2 (mem_Z2_iff.1 z.2).2⟩
+          (discreteCoindAddEquivAlgebraic_smul G M U) z).2 (mem_Z2_iff.1 z.property).2⟩
     have hc : coindH2Equiv G M U (z : H2 G (DiscreteCoind G U M)) = H2π _ c :=
       explicitH2AddEquivGroupCohomology_mk (MulEquiv.refl G) (discreteCoindAddEquivAlgebraic G M U)
         (discreteCoindAddEquivAlgebraic_smul G M U) z c (fun _ ↦ rfl)

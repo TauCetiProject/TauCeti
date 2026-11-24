@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 public import TauCeti.Analysis.Holder.Algebra
 public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -56,7 +57,7 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
   weighted map `exp (ℓ x) • v(x, t)`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanWeightedFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanWeightedZerothOrderCoeff`: the coefficients `b_w` and
-  `c_w` of the conjugated operator, with the norm bounds
+  `c_w` of the conjugated operator, linear in `a`, `b`, `c`, with the norm bounds
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedZerothOrderCoeff_le` and their uniform
   forms `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le_of_le` and
@@ -101,10 +102,8 @@ theorem hasFDerivAt_exp_smul {x : E} (hℓ : DifferentiableAt ℝ ℓ x)
     (v : ParabolicC2HolderSpace α E F ht) (t : Icc t₀ t₁) :
     HasFDerivAt (fun y ↦ exp (ℓ y) • v (slabMk y t))
       (exp (ℓ x) • (spatialFDerivL v (slabMk x t) + (fderiv ℝ ℓ x).smulRight (v (slabMk x t))))
-      x := by
-  convert (hℓ.hasFDerivAt.exp).smul (v.hasSpatialFDerivAt t x) using 1
-  ext h
-  simp [smul_add, smul_smul]
+      x :=
+  TauCeti.hasFDerivAt_exp_smul hℓ.hasFDerivAt (v.hasSpatialFDerivAt t x)
 
 /-- The spatial gradient of a weighted map, as a function of the base point. -/
 theorem fderiv_exp_smul (hℓ : Differentiable ℝ ℓ) (v : ParabolicC2HolderSpace α E F ht)
@@ -128,12 +127,12 @@ theorem fderiv_fderiv_exp_smul_apply (hℓ : ContDiff ℝ 2 ℓ)
     ((hℓ.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero x).hasFDerivAt
   -- The gradient is `exp ℓ • (D_x v + Dℓ ⊗ v)`; differentiate each factor.
   have hG := ((hℓ₁ x).hasFDerivAt.exp).smul ((v.hasSpatialSecondFDerivAt t x).add
-    ((ContinuousLinearMap.smulRightL ℝ E F).hasFDerivAt_of_bilinear hDℓ
+    ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F).hasFDerivAt_of_bilinear hDℓ
       (v.hasSpatialFDerivAt t x)))
   have hfun : (fun y ↦ exp (ℓ y) • (spatialFDerivL v (slabMk y t) +
       (fderiv ℝ ℓ y).smulRight (v (slabMk y t)))) =
       (fun y ↦ exp (ℓ y)) • ((fun y ↦ spatialFDerivL v (slabMk y t)) +
-        fun y ↦ ContinuousLinearMap.smulRightL ℝ E F (fderiv ℝ ℓ y) (v (slabMk y t))) := by
+        fun y ↦ ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F (fderiv ℝ ℓ y) (v (slabMk y t))) := by
     ext y : 1
     simp
   rw [fderiv_exp_smul hℓ₁ v t, hfun, hG.fderiv]
@@ -163,7 +162,7 @@ theorem derivWithin_eq_exp_smul_timeDerivL (v : ParabolicC2HolderSpace α E F ht
       simp only [timeExtension_def, projIcc_of_mem ht.le hs]
       exact hu x ⟨s, hs⟩)
     (by simp only [timeExtension_def, projIcc_val]; exact hu x t),
-    (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.2)]
+    (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.property)]
 
 end WeightedMap
 
@@ -218,16 +217,47 @@ theorem euclideanWeightedZerothOrderCoeff_apply (p : slab (E := EuclideanSpace �
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff]
 
-/-- **Bound on the conjugated first-order coefficients.**
+/-- Linearity of the conjugated first-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, for a
+fixed weight. -/
+@[simp]
+theorem euclideanWeightedFirstOrderCoeff_sub
+    (a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) (i : ι) :
+    euclideanWeightedFirstOrderCoeff (a - a') (b - b') dℓ i =
+      euclideanWeightedFirstOrderCoeff a b dℓ i - euclideanWeightedFirstOrderCoeff a' b' dℓ i :=
+  HolderSpace.ext fun p ↦ by
+    simp only [euclideanWeightedFirstOrderCoeff_apply, HolderSpace.sub_apply, Pi.sub_apply,
+      sub_mul, add_mul, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+    ring
+
+/-- Linearity of the conjugated zeroth-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, `c`,
+for a fixed weight. -/
+@[simp]
+theorem euclideanWeightedZerothOrderCoeff_sub
+    (a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanWeightedZerothOrderCoeff (a - a') (b - b') (c - c') dℓ d2ℓ =
+      euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ -
+        euclideanWeightedZerothOrderCoeff a' b' c' dℓ d2ℓ :=
+  HolderSpace.ext fun p ↦ by
+    simp only [euclideanWeightedZerothOrderCoeff_apply, HolderSpace.sub_apply, Pi.sub_apply,
+      sub_mul, Finset.sum_sub_distrib]
+    ring
+
+variable (a b c dℓ d2ℓ) in
+/-- **Bound on the conjugated first-order coefficient.**
 `‖b_wⁱ‖ ≤ ‖bⁱ‖ + ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖`. -/
 theorem norm_euclideanWeightedFirstOrderCoeff_le (i : ι) :
-    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤ ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
+    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤
+      ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
   refine (norm_add_le _ _).trans (add_le_add le_rfl ((norm_sum_le _ _).trans
     (Finset.sum_le_sum fun j _ ↦ (norm_mul_le _ _).trans ?_)))
   gcongr
   · exact norm_add_le _ _
   · exact HolderSpace.norm_compSlabSpaceL_apply_le _
 
+variable (a b c dℓ d2ℓ) in
 /-- **Bound on the conjugated zeroth-order coefficient.**
 `‖c_w‖ ≤ ‖c‖ + ∑ᵢⱼ ‖aⁱʲ‖ (‖∂ᵢ∂ⱼℓ‖ + ‖∂ᵢℓ‖ ‖∂ⱼℓ‖) + ∑ᵢ ‖bⁱ‖ ‖∂ᵢℓ‖`. -/
 theorem norm_euclideanWeightedZerothOrderCoeff_le :
@@ -460,7 +490,7 @@ local instance weightNormedSpaceZerothCoeff : NormedSpace ℝ (F →L[ℝ] F) :=
 private def firstOrderCorrL :
     ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) →L[ℝ] (E →L[ℝ] ℝ) →L[ℝ] ((E →L[ℝ] F) →L[ℝ] F) :=
   ((compL ℝ (E →L[ℝ] F) (E →L[ℝ] E →L[ℝ] F) F).flip ∘L
-    (smulRightL ℝ E (E →L[ℝ] F) + compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ E F)).flip
+    (smulRightL ℝ ℝ ℝ E (E →L[ℝ] F) + compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ ℝ ℝ E F)).flip
 
 private theorem firstOrderCorrL_apply (A : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) (ℓ : E →L[ℝ] ℝ)
     (H : E →L[ℝ] F) : firstOrderCorrL A ℓ H = A (ℓ.smulRight H + (ℓ.smulRight H).flip) := by
@@ -468,9 +498,11 @@ private theorem firstOrderCorrL_apply (A : (E →L[ℝ] E →L[ℝ] F) →L[ℝ]
   exact congrArg A (by ext h k; simp)
 
 private theorem norm_firstOrderCorrL_le : ‖firstOrderCorrL (E := E) (F := F)‖ ≤ 2 := by
-  have hS : ‖smulRightL ℝ E (E →L[ℝ] F) + compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ E F‖ ≤ 2 := by
+  have hS : ‖smulRightL ℝ ℝ ℝ E (E →L[ℝ] F) +
+      compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ ℝ ℝ E F‖ ≤ 2 := by
     refine opNorm_le_bound₂ _ zero_le_two fun ℓ H ↦ ?_
-    have hS : (smulRightL ℝ E (E →L[ℝ] F) + compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ E F) ℓ H =
+    have hS : (smulRightL ℝ ℝ ℝ E (E →L[ℝ] F) +
+        compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ ℝ ℝ E F) ℓ H =
         ℓ.smulRight H + (ℓ.smulRight H).flip := by
       ext h k
       simp
@@ -481,17 +513,17 @@ private theorem norm_firstOrderCorrL_le : ‖firstOrderCorrL (E := E) (F := F)�
   refine (opNorm_comp_le _ _).trans ?_
   rw [opNorm_flip]
   nlinarith [norm_compL_le ℝ (E →L[ℝ] F) (E →L[ℝ] E →L[ℝ] F) F,
-    norm_nonneg (smulRightL ℝ E (E →L[ℝ] F) + compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ E F)]
+    norm_nonneg (smulRightL ℝ ℝ ℝ E (E →L[ℝ] F) + compL ℝ E F (E →L[ℝ] F) ∘L smulRightL ℝ ℝ ℝ E F)]
 
 /-- The bilinear map `(A, Q) ↦ (y ↦ A (Q ⊗ y))` giving the second-order part of the correction
 to `C`. -/
 private def zerothOrderCorrL :
     ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) →L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] (F →L[ℝ] F) :=
-  ((compL ℝ F (E →L[ℝ] E →L[ℝ] F) F).flip ∘L precompL E (smulRightL ℝ E F)).flip
+  ((compL ℝ F (E →L[ℝ] E →L[ℝ] F) F).flip ∘L precompL E (smulRightL ℝ ℝ ℝ E F)).flip
 
 private theorem zerothOrderCorrL_apply (A : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F)
     (Q : E →L[ℝ] E →L[ℝ] ℝ) (y : F) :
-    zerothOrderCorrL A Q y = A (precompL E (smulRightL ℝ E F) Q y) := by
+    zerothOrderCorrL A Q y = A (precompL E (smulRightL ℝ ℝ ℝ E F) Q y) := by
   simp [zerothOrderCorrL]
 
 private theorem norm_zerothOrderCorrL_le : ‖zerothOrderCorrL (E := E) (F := F)‖ ≤ 1 := by
@@ -499,13 +531,13 @@ private theorem norm_zerothOrderCorrL_le : ‖zerothOrderCorrL (E := E) (F := F)
   refine (opNorm_comp_le _ _).trans ?_
   rw [opNorm_flip]
   nlinarith [norm_compL_le ℝ F (E →L[ℝ] E →L[ℝ] F) F,
-    (norm_precompL_le E (smulRightL ℝ E F)).trans norm_smulRightL_le,
-    norm_nonneg (precompL E (smulRightL ℝ E F))]
+    (norm_precompL_le E (smulRightL ℝ ℝ ℝ E F)).trans norm_smulRightL_le,
+    norm_nonneg (precompL E (smulRightL ℝ ℝ ℝ E F))]
 
 /-- The bilinear map `(B, ℓ) ↦ (y ↦ B (ℓ ⊗ y))` giving the first-order part of the correction
 to `C`. -/
 private def gradCorrL : ((E →L[ℝ] F) →L[ℝ] F) →L[ℝ] (E →L[ℝ] ℝ) →L[ℝ] (F →L[ℝ] F) :=
-  ((compL ℝ F (E →L[ℝ] F) F).flip ∘L smulRightL ℝ E F).flip
+  ((compL ℝ F (E →L[ℝ] F) F).flip ∘L smulRightL ℝ ℝ ℝ E F).flip
 
 private theorem gradCorrL_apply (B : (E →L[ℝ] F) →L[ℝ] F) (ℓ : E →L[ℝ] ℝ) (y : F) :
     gradCorrL B ℓ y = B (ℓ.smulRight y) := by
@@ -516,7 +548,7 @@ private theorem norm_gradCorrL_le : ‖gradCorrL (E := E) (F := F)‖ ≤ 1 := b
   refine (opNorm_comp_le _ _).trans ?_
   rw [opNorm_flip]
   nlinarith [norm_compL_le ℝ F (E →L[ℝ] F) F, norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := F),
-    norm_nonneg (smulRightL ℝ E F)]
+    norm_nonneg (smulRightL ℝ ℝ ℝ E F)]
 
 /-! ### The conjugated coefficients -/
 
@@ -537,7 +569,7 @@ conjugated by the weight `exp φ` with gradient `ℓ = Dφ` and Hessian `M = D²
 `C_b^{α,α/2}`. -/
 def weightZerothOrderCoeff : HolderSpace α (slab (E := E) t₀ t₁) (F →L[ℝ] F) :=
   C + zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace
-      (M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ)) +
+      (M + (smulRightL ℝ ℝ ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ)) +
     gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace ℓ)
 
 @[simp]
@@ -548,15 +580,15 @@ theorem weightFirstOrderCoeff_apply (p : slab (E := E) t₀ t₁) (H : E →L[�
   simp [weightFirstOrderCoeff, firstOrderCorrL_apply]
 
 /-- The zeroth-order coefficient, evaluated: the bilinear form `M + ℓ ⊗ ℓ` is tensored with `y`
-through `Q ↦ ((smulRightL ℝ E F).flip y).comp Q`, that is `(h, k) ↦ Q h k • y`. -/
+through `Q ↦ ((smulRightL ℝ ℝ ℝ E F).flip y).comp Q`, that is `(h, k) ↦ Q h k • y`. -/
 @[simp]
 theorem weightZerothOrderCoeff_apply (p : slab (E := E) t₀ t₁) (y : F) :
     weightZerothOrderCoeff A B C ℓ M p y = C p y +
-      A p (((smulRightL ℝ E F).flip y).comp (M (p : ParabolicSpaceTime E).space +
+      A p (((smulRightL ℝ ℝ ℝ E F).flip y).comp (M (p : ParabolicSpaceTime E).space +
         (ℓ (p : ParabolicSpaceTime E).space).smulRight (ℓ (p : ParabolicSpaceTime E).space))) +
       B p ((ℓ (p : ParabolicSpaceTime E).space).smulRight y) := by
   have hQ (Q : E →L[ℝ] E →L[ℝ] ℝ) :
-      precompL E (smulRightL ℝ E F) Q y = ((smulRightL ℝ E F).flip y).comp Q := by
+      precompL E (smulRightL ℝ ℝ ℝ E F) Q y = ((smulRightL ℝ ℝ ℝ E F).flip y).comp Q := by
     ext h k
     simp
   simp [weightZerothOrderCoeff, zerothOrderCorrL_apply, gradCorrL_apply, hQ]
@@ -569,27 +601,25 @@ theorem norm_weightFirstOrderCoeff_le :
   refine (norm_compHolder₂_apply_le _ _ _).trans ?_
   gcongr
   · exact norm_firstOrderCorrL_le
-  · exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-      (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)
+  · exact HolderSpace.norm_compLipschitzL_apply_le _ _
 
 /-- **Bound on the conjugated zeroth-order coefficient.**
 `‖C_w‖ ≤ ‖C‖ + ‖A‖ (‖M‖ + ‖ℓ‖²) + ‖B‖ ‖ℓ‖`. -/
 theorem norm_weightZerothOrderCoeff_le :
     ‖weightZerothOrderCoeff A B C ℓ M‖ ≤ ‖C‖ + ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) + ‖B‖ * ‖ℓ‖ := by
-  have hQ : ‖M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ‖ ≤ ‖M‖ + ‖ℓ‖ * ‖ℓ‖ := by
+  have hQ : ‖M + (smulRightL ℝ ℝ ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ‖ ≤ ‖M‖ + ‖ℓ‖ * ‖ℓ‖ := by
     refine (norm_add_le _ _).trans ?_
     gcongr
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     nlinarith [norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := E →L[ℝ] ℝ), norm_nonneg ℓ]
   have h₁ : ‖zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _
       (lipschitzWith_slabSpace (a := t₀) (b := t₁))
-        (M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ))‖ ≤ ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
+        (M + (smulRightL ℝ ℝ ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ))‖ ≤ ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     calc _ ≤ 1 * ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
           gcongr
           · exact norm_zerothOrderCorrL_le
-          · exact (((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-              (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)).trans hQ
+          · exact (HolderSpace.norm_compLipschitzL_apply_le _ _).trans hQ
       _ = _ := by ring
   have h₂ : ‖gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _
       (lipschitzWith_slabSpace (a := t₀) (b := t₁)) ℓ)‖ ≤ ‖B‖ * ‖ℓ‖ := by
@@ -597,8 +627,7 @@ theorem norm_weightZerothOrderCoeff_le :
     calc _ ≤ 1 * ‖B‖ * ‖ℓ‖ := by
           gcongr
           · exact norm_gradCorrL_le
-          · exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le
-      (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)
+          · exact HolderSpace.norm_compLipschitzL_apply_le _ _
       _ = _ := by ring
   refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans ?_) h₂)
   gcongr
@@ -621,10 +650,8 @@ variable {A : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] E →L[ℝ]
 theorem hasFDerivAt_exp_smul_slice (hφ : ∀ x, HasFDerivAt φ (ℓ x) x)
     (v : ParabolicC2HolderSpace α E F ht) (t : Icc t₀ t₁) (x : E) :
     HasFDerivAt (fun y ↦ Real.exp (φ y) • v (slabMk y t))
-      (Real.exp (φ x) • (spatialFDerivL v (slabMk x t) + (ℓ x).smulRight (v (slabMk x t)))) x := by
-  refine (((hφ x).exp).smul (v.hasSpatialFDerivAt t x)).congr_fderiv ?_
-  ext h
-  simp [smul_add, smul_smul]
+      (Real.exp (φ x) • (spatialFDerivL v (slabMk x t) + (ℓ x).smulRight (v (slabMk x t)))) x :=
+  TauCeti.hasFDerivAt_exp_smul (hφ x) (v.hasSpatialFDerivAt t x)
 
 /-- **The Hessian of a weighted slice.** For `v ∈ C_b^{2+α,1+α/2}`, `ℓ = Dφ` and `M = D²φ`, the
 gradient of `y ↦ exp (φ y) • v (y, t)` has derivative
@@ -637,10 +664,10 @@ theorem hasFDerivAt_fderiv_exp_smul_slice (hφ : ∀ x, HasFDerivAt φ (ℓ x) x
       (Real.exp (φ x) • (spatialSecondFDerivL v (slabMk x t) +
         ((ℓ x).smulRight (spatialFDerivL v (slabMk x t)) +
           ((ℓ x).smulRight (spatialFDerivL v (slabMk x t))).flip) +
-        ((smulRightL ℝ E F).flip (v (slabMk x t))).comp (M x + (ℓ x).smulRight (ℓ x)))) x := by
+        ((smulRightL ℝ ℝ ℝ E F).flip (v (slabMk x t))).comp (M x + (ℓ x).smulRight (ℓ x)))) x := by
   rw [funext fun y ↦ (hasFDerivAt_exp_smul_slice hφ v t y).fderiv]
   have hK := (v.hasSpatialSecondFDerivAt t x).add
-    ((smulRightL ℝ E F).hasFDerivAt_of_bilinear (hℓ x) (v.hasSpatialFDerivAt t x))
+    ((smulRightL ℝ ℝ ℝ E F).hasFDerivAt_of_bilinear (hℓ x) (v.hasSpatialFDerivAt t x))
   refine (((hφ x).exp).smul hK).congr_fderiv ?_
   ext h k
   simp [mul_smul]
@@ -671,7 +698,7 @@ theorem exp_smul_parabolicOperatorL_weightCoeff (hφ : ∀ x, HasFDerivAt φ (�
   rw [hslice, (hasFDerivAt_fderiv_exp_smul_slice hφ hℓ v t x).fderiv,
     (hasFDerivAt_exp_smul_slice hφ v t x).fderiv, htime,
     ((v.hasTimeDerivWithinAt x t).const_smul (Real.exp (φ x))).derivWithin
-      (uniqueDiffOn_Icc ht t t.2), hu]
+      (uniqueDiffOn_Icc ht t t.property), hu]
   simp only [parabolicOperatorL_apply, weightFirstOrderCoeff_apply,
     weightZerothOrderCoeff_apply, space_slabMk, map_smul, map_add, smul_sub, smul_add]
   abel
@@ -725,7 +752,7 @@ local instance lineNormedSpaceHessian : NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[
 /-- The gradient `x ↦ sigmoid x` of `log (1 + exp x)`, as a bounded `α`-Hölder field of covectors
 on `ℝ`. -/
 def logOneAddExpGrad : HolderSpace α ℝ (ℝ →L[ℝ] ℝ) :=
-  (smulRightL ℝ ℝ ℝ).compHolder₂ (HolderSpace.const 1) <| HolderSpace.ofBoundedContinuousFunction
+  (smulRightL ℝ ℝ ℝ ℝ ℝ).compHolder₂ (.const 1) <| HolderSpace.ofBoundedContinuousFunction
     (BoundedContinuousFunction.ofNormedAddCommGroup sigmoid continuous_sigmoid 1 fun x ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (sigmoid_nonneg x)]
       exact sigmoid_le_one x)
@@ -734,8 +761,8 @@ def logOneAddExpGrad : HolderSpace α ℝ (ℝ →L[ℝ] ℝ) :=
 /-- The Hessian `x ↦ sigmoid x (1 - sigmoid x)` of `log (1 + exp x)`, as a bounded `α`-Hölder
 field of bilinear forms on `ℝ`. -/
 def logOneAddExpHess : HolderSpace α ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) :=
-  (smulRightL ℝ ℝ (ℝ →L[ℝ] ℝ)).compHolder₂ (HolderSpace.const 1) <|
-    (smulRightL ℝ ℝ ℝ).compHolder₂ (HolderSpace.const 1) <| HolderSpace.ofBoundedContinuousFunction
+  (smulRightL ℝ ℝ ℝ ℝ (ℝ →L[ℝ] ℝ)).compHolder₂ (HolderSpace.const 1) <|
+    (smulRightL ℝ ℝ ℝ ℝ ℝ).compHolder₂ (.const 1) <| HolderSpace.ofBoundedContinuousFunction
       (BoundedContinuousFunction.ofNormedAddCommGroup (fun x ↦ sigmoid x * (1 - sigmoid x))
         (by fun_prop) 1 fun x ↦ by
           rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (sigmoid_nonneg x)

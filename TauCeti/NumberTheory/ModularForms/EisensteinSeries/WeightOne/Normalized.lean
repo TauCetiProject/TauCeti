@@ -132,7 +132,9 @@ theorem normalizedCharE1MFRaise_eq_smul (htuv : t * (u * v) ∣ N) :
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans (dvd_of_mul_left_dvd htuv))
-  rw [normalizedCharE1MFRaise, normalizedCharE1MF_def, charE1MFRaise_eq_levelRaise]
+  rw [normalizedCharE1MFRaise]
+  dsimp only
+  rw [normalizedCharE1MF_def, charE1MFRaise_eq_levelRaise]
   simpa only [ModularForm.levelRaiseₗ_apply] using
     (ModularForm.levelRaiseₗ t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)).map_smul
       (2 * (-2 * π * I) / v * gaussSum φ⁻¹ stdAddChar)⁻¹ (charE1MF ψ φ dvd_rfl)

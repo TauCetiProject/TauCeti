@@ -98,7 +98,7 @@ theorem exists_unit_mul_balanced {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRa
   set c := ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖
   -- Approximate the vector `(mult w * (L - log w(x)))_w` by a logarithmic embedding.
   obtain ⟨n, hn⟩ := exists_norm_sub_logEmbedding_prod_zpow_le hu
-    (fun w ↦ mult w.1 * (L - Real.log (w.1 x)))
+    (fun w ↦ mult w.val * (L - Real.log (w.val x)))
   refine ⟨n, ?_⟩
   set ε : (𝓞 K)ˣ := ∏ j, u j ^ n j
   -- The deviation of `log w(ε x)` from `L`, weighted by `mult w`.
@@ -108,7 +108,7 @@ theorem exists_unit_mul_balanced {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRa
     rw [map_mul, Real.log_mul (pos_at_place ε w).ne' ((map_ne_zero w).mpr hx)]
   -- Away from `w₀`, the deviation is a coordinate of the approximation error.
   have hcoord (w : {w : InfinitePlace K // w ≠ w₀}) : |f w| ≤ c := by
-    have h := (norm_le_pi_norm (fun w ↦ mult w.1 * (L - Real.log (w.1 x)) -
+    have h := (norm_le_pi_norm (fun w ↦ mult w.val * (L - Real.log (w.val x)) -
       logEmbedding K (Additive.ofMul ε) w) w).trans hn
     rw [Real.norm_eq_abs, ← abs_neg] at h
     convert h using 2

@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
 
@@ -25,8 +26,12 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   on a finite vertex type, for local selection where decidable adjacency is unavailable.
 * `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
 * `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
+* `SimpleGraph.sum_neighborFinset_comm` — swapping the order of summation in a double sum over
+  neighbours.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
+* `SimpleGraph.indicator_edgeSet_eq_ite_mem_edgeFinset` — `G.edgeSet.indicator c` agrees with
+  `fun e ↦ if e ∈ G.edgeFinset then c e else 0`.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -73,12 +78,32 @@ theorem Iso.sum_neighborFinset_comp {W R : Type*} [Fintype V] [Fintype W]
       simpa only [mem_neighborFinset, RelIso.coe_fn_toEquiv] using e.map_adj_iff.symm)
     (fun _ _ ↦ by rw [RelIso.coe_fn_toEquiv])
 
+/-- **A sum over the oriented edges can be read from either endpoint.** Adjacency is symmetric, so
+summing `F i j` over the neighbours `j` of each vertex `i` is summing it over the neighbours `i`
+of each vertex `j`. -/
+theorem sum_neighborFinset_comm (G : SimpleGraph V) [Fintype V] [G.LocallyFinite]
+    [AddCommMonoid M] (F : V → V → M) :
+    ∑ i, ∑ j ∈ G.neighborFinset i, F i j = ∑ j, ∑ i ∈ G.neighborFinset j, F i j :=
+  sum_comm' fun i j ↦ by
+    simp only [mem_univ, true_and, and_true, mem_neighborFinset]
+    exact ⟨Adj.symm, Adj.symm⟩
+
 /-- A set of pairs contained in the edges of a graph `G` carries no diagonal pair, so it is the
 edge set of the graph it generates. -/
 theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
     (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
   rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
   exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
+
+/-- On a graph with finitely many edges and decidable equality on vertices, `G.edgeSet.indicator c`
+equals the `if`-`then`-`else` expression testing membership in `G.edgeFinset`. -/
+theorem indicator_edgeSet_eq_ite_mem_edgeFinset (G : SimpleGraph V) [Fintype G.edgeSet]
+    [DecidableEq V] [Zero K] (c : Sym2 V → K) :
+    G.edgeSet.indicator c = fun e ↦ if e ∈ G.edgeFinset then c e else 0 := by
+  funext e
+  by_cases he : e ∈ G.edgeSet
+  · simp [Set.indicator_of_mem he, mem_edgeFinset.mpr he]
+  · simp [he]
 
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 

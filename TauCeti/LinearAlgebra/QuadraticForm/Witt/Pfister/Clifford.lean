@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Pfister.Basic
 
 /-!

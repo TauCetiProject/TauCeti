@@ -76,7 +76,7 @@ theorem IsLinearlyReductive.of_injective (f : C →ₗc[k] D)
   intro V _ _ _ _
   let _ : Comodule k D V := Comodule.Corestrict f
   exact (Comodule.isCompletelyReducible_corestrict_iff_of_injective f hf).mp
-    (hD.isCompletelyReducible_sameUniverse k V)
+    (hD.isCompletelyReducible_same_universe k V)
 
 end Coalgebra
 

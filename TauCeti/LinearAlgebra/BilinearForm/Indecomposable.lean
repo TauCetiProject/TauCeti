@@ -155,7 +155,7 @@ private theorem span_le_orthogonal_span_supp {s : Set M} (hs : ∀ x ∈ s, B.Is
 theorem pairwise_orthComponents :
     B.orthComponents.Pairwise fun N N' ↦ N ≤ B.orthogonal N' := by
   rintro _ ⟨c', rfl⟩ _ ⟨c, rfl⟩ hne
-  refine span_le_orthogonal_span_supp (by rintro _ ⟨v, -, rfl⟩; exact v.2) c ?_
+  refine span_le_orthogonal_span_supp (by rintro _ ⟨v, -, rfl⟩; exact v.property) c ?_
   refine Set.disjoint_left.mpr ?_
   rintro _ ⟨v, hv, rfl⟩ ⟨w, hw, hvw⟩
   have hcc : c' = c := by rw [← hv, ← hw, Subtype.ext hvw]
@@ -197,10 +197,10 @@ theorem isOrthIndecomposable_of_mem_orthComponents (hB : B.IsRefl)
   obtain ⟨c, rfl⟩ := hN
   dsimp only
   obtain ⟨u₀, hu₀⟩ := c.nonempty_supp
-  refine ⟨(Submodule.ne_bot_iff _).mpr ⟨u₀, subset_span ⟨u₀, hu₀, rfl⟩, u₀.2.ne_zero⟩,
+  refine ⟨(Submodule.ne_bot_iff _).mpr ⟨u₀, subset_span ⟨u₀, hu₀, rfl⟩, u₀.property.ne_zero⟩,
     fun P Q hPQ hsup ↦ ?_⟩
   have hmem : ∀ u ∈ c.supp, (u : M) ∈ P ∨ (u : M) ∈ Q := fun u hu ↦
-    u.2.mem_or_mem_of_mem_sup hPQ (hsup ▸ subset_span ⟨u, hu, rfl⟩)
+    u.property.mem_or_mem_of_mem_sup hPQ (hsup ▸ subset_span ⟨u, hu, rfl⟩)
   -- No edge joins a vector of `P` to a vector of `Q`, so the component lies in one summand.
   have hadj : ∀ u v : {x : M // B.IsOrthIrreducible x}, (u : M) ∈ P → (v : M) ∈ Q →
       ¬(orthIrreducibleGraph B).Adj u v := fun u v hu hv huv ↦ by
@@ -289,14 +289,14 @@ private theorem eq_span_supp (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef)
   -- The component of `u` lies in `N`, since an edge never leaves a member of `S`.
   have hC : Subtype.val '' c.supp ⊆ I := by
     rintro _ ⟨v, hv, rfl⟩
-    refine ⟨v.2, ?_⟩
+    refine ⟨v.property, ?_⟩
     have h := (SimpleGraph.reachable_iff_reflTransGen _ _).mp
       (SimpleGraph.ConnectedComponent.exact hv.symm)
     clear hv
     induction h with
     | refl => exact hu
     | @tail w w' _ hww' hw =>
-      obtain ⟨N', hN', hw'⟩ := w'.2.exists_mem_of_sSup_eq_top hS htop
+      obtain ⟨N', hN', hw'⟩ := w'.property.exists_mem_of_sSup_eq_top hS htop
       by_contra hne
       have h₁ : B w' w = 0 := hS hN hN' (fun h ↦ hne (h ▸ hw')) hw w' hw'
       rw [orthIrreducibleGraph, SimpleGraph.fromRel_adj] at hww'
@@ -313,7 +313,7 @@ private theorem eq_span_supp (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef)
   · rw [h, sup_bot_eq] at hsplit
     exact hsplit.symm
   · exact absurd ((mem_bot ℤ).mp (h ▸ subset_span
-      ⟨u, SimpleGraph.ConnectedComponent.connectedComponentMk_mem, rfl⟩)) u.2.ne_zero
+      ⟨u, SimpleGraph.ConnectedComponent.connectedComponentMk_mem, rfl⟩)) u.property.ne_zero
 
 /-- **Eichler's theorem.** For a reflexive positive definite integral form, a set of submodules
 consists of pairwise orthogonal orthogonally indecomposable submodules spanning `M` exactly when
@@ -334,7 +334,7 @@ theorem eq_orthComponents_iff (hB : B.IsRefl) (hpos : B.toQuadraticMap.PosDef)
     exact ⟨_, (eq_span_supp hB hpos hind hS htop hN hu).symm⟩
   · rintro ⟨c, rfl⟩
     obtain ⟨u, rfl⟩ := c.exists_rep
-    obtain ⟨N, hN, hu⟩ := u.2.exists_mem_of_sSup_eq_top hS htop
+    obtain ⟨N, hN, hu⟩ := u.property.exists_mem_of_sSup_eq_top hS htop
     rw [eq_span_supp hB hpos hind hS htop hN hu] at hN
     exact hN
 

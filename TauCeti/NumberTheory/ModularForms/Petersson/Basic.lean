@@ -147,7 +147,7 @@ theorem petersson_psl_smul_of_mem {F F' : Type*} [FunLike F ℍ ℂ] [FunLike F'
     [SlashInvariantFormClass F' (Γ.map (mapGL ℝ)) k] (f : F) (f' : F')
     (g : Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) (τ : ℍ) :
     petersson k ⇑f ⇑f' ((g : PSL(2, ℤ)) • τ) = petersson k ⇑f ⇑f' τ := by
-  obtain ⟨γ, hγ, hg⟩ := g.2
+  obtain ⟨γ, hγ, hg⟩ := g.property
   rw [← hg]
   exact petersson_smul_of_mem k f f' hγ τ
 

@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Group.Neighborhood
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.UniformSpace.CompleteSeparated
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Topology.Algebra.IsUniformGroup.Defs
 
 /-!
@@ -48,7 +49,8 @@ series of a profinite group.
 
 ## Main results
 
-* `Subgroup.continuous_inclusion`: the inclusion of a subgroup into a larger one is continuous.
+* `Subgroup.continuous_subtype`, `Subgroup.continuous_inclusion`: the inclusion of a subgroup into
+  the ambient group, and into a larger subgroup, is continuous.
 * `Subgroup.subgroupOfContinuousMulEquivOfLe_smul`: the topological identification of a subgroup
   with its copy inside a larger subgroup respects every restricted ambient action.
 * `Subgroup.continuous_subgroupOf_codRestrict`: the inclusion of `U ⊓ D` into `U`, presented
@@ -87,6 +89,9 @@ series of a profinite group.
   closed.
 * `ContinuousMulEquiv.map_topologicalClosure_normalClosure`: a topological group isomorphism
   carries the closed normal closure of a set onto the closed normal closure of its image.
+* `ContinuousMulEquiv.isCompact_closure_zpowers_iff`: a topological group isomorphism `e` carries
+  the powers of `x` to a relatively compact set exactly when the powers of `x` are relatively
+  compact.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
 * `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
@@ -101,6 +106,7 @@ series of a profinite group.
 * `Subgroup.isCompact_sup_of_le_normalizer`: the join of two compact subgroups, the first
   normalizing the second, is compact.
 * `Subgroup.isCompact_conj_smul`: a conjugate of a compact subgroup is compact.
+* `Subgroup.isOpen_map_conj_iff`: a conjugate of a subgroup is open exactly when the subgroup is.
 * `Subgroup.maximal_isCompact_iff_exists_eq_conj_smul`: if every compact subgroup is conjugate
   into a maximal compact subgroup `U`, the maximal compact subgroups are the conjugates of `U`.
 * `Subgroup.isClosed_normalizer`: the normalizer of a closed subset is closed.
@@ -172,60 +178,53 @@ As an instance, it lets instance search find the separation and compactness prop
 quotients `K ⧸ H.subgroupOf K` such as the graded pieces of a closed central series. -/
 instance isClosed_subgroupOf (H K : Subgroup G) [IsClosed (H : Set G)] :
     IsClosed (H.subgroupOf K : Set K) :=
-  IsClosed.preimage continuous_subtype_val ‹_›
+  IsClosed.preimage continuous_subtypeVal ‹_›
 
 /-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
 of `D`, is continuous. -/
 theorem continuous_subgroupOf_codRestrict (D U : Subgroup G) :
-    Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) :=
-  (continuous_subtype_val.comp continuous_subtype_val).codRestrict _
+    Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.property) :=
+  (continuous_subtypeVal.comp continuous_subtypeVal).codRestrict _
 
 /-- A homomorphism of subgroups is continuous if its values are those of a continuous
 homomorphism of the ambient groups. -/
 theorem _root_.Continuous.subgroupHom {G' : Type*} [Group G'] [TopologicalSpace G']
     {U : Subgroup G} {U' : Subgroup G'} {φ : G →* G'} (hφ : Continuous φ) {ψ : U →* U'}
     (hψ : ∀ u, (ψ u : G') = φ u) : Continuous ψ :=
-  continuous_induced_rng.2 ((hφ.comp continuous_subtype_val).congr fun u ↦ (hψ u).symm)
+  continuous_induced_rng.2 ((hφ.comp continuous_subtypeVal).congr fun u ↦ (hψ u).symm)
 
 /-- **A dense subgroup meets an open subgroup densely.** If `D` is dense and `U` is open, the
 inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into `U` has dense
 range. -/
 theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
     (hD : Dense (D : Set G)) (hU : IsOpen (U : Set G)) :
-    DenseRange ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2) := by
+    DenseRange ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.property) := by
   -- The range is `D ∩ U`, viewed inside `U`, and `Subtype.val : U → G` is an open map.
-  have hrange : Set.range ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.2)
+  have hrange : Set.range ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦
+      x.property)
       = (Subtype.val : U → G) ⁻¹' (D : Set G) := by
     ext x
     constructor
     · rintro ⟨y, rfl⟩
-      exact y.1.2
+      exact y.val.property
     · intro hxD
-      exact ⟨⟨⟨x, hxD⟩, x.2⟩, rfl⟩
+      exact ⟨⟨⟨x, hxD⟩, x.property⟩, rfl⟩
   rw [DenseRange, hrange]
-  exact hD.preimage hU.isOpenMap_subtype_val
+  exact hD.preimage hU.isOpenMap_subtypeVal
 
 /-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
 and `U` is an open subgroup of a group `G` with continuous left translations, then the preimage of
 `U` has the same index in `G'` as `U` has in `G`: the range of `f` meets every coset of `U`, since
-the cosets are open.
-
-The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
+the cosets are open, so the coset-space map `TauCeti.QuotientGroup.mapComap` is a bijection. -/
 theorem index_comap_of_denseRange [ContinuousConstSMul G G] {G' : Type*} [Group G'] {f : G' →* G}
     (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
     (U.comap f).index = U.index := by
-  have key (x y : G') :
-      QuotientGroup.leftRel (U.comap f) x y ↔ QuotientGroup.leftRel U (f x) (f y) := by
-    simp only [QuotientGroup.leftRel_apply, mem_comap, map_mul, map_inv]
-  refine Nat.card_congr (Equiv.ofBijective (Quotient.map' f fun x y ↦ (key x y).1) ⟨?_, ?_⟩)
-  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
-    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
-  · -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
-    refine Quotient.ind' fun g ↦ ?_
-    obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
-    refine ⟨Quotient.mk'' x, Quotient.sound' ?_⟩
-    rw [QuotientGroup.leftRel_apply]
-    simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
+  refine Nat.card_congr (TauCeti.QuotientGroup.congrComapOfSurjectiveMk f U fun q ↦ ?_)
+  -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
+  induction q using QuotientGroup.induction_on with | H g =>
+  obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
+  refine ⟨x, QuotientGroup.eq.2 ?_⟩
+  simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
 
 variable [IsTopologicalGroup G]
 
@@ -247,10 +246,19 @@ theorem isClosed_of_weaklyLocallyCompactSpace [T0Space G] (K : Subgroup G)
   exact (Subtype.range_val (s := (K : Set G))) ▸ h
 
 omit [IsTopologicalGroup G] in
+/-- The inclusion of a subgroup into the ambient group, as a group homomorphism, is continuous.
+This is `continuous_subtype_val` stated for `H.subtype`, whose coercion to a function is
+`Subtype.val` only up to unfolding, so that constructions taking a continuous homomorphism can be
+applied to `H.subtype`. -/
+@[fun_prop]
+theorem continuous_subtype (H : Subgroup G) : Continuous H.subtype :=
+  continuous_subtypeVal
+
+omit [IsTopologicalGroup G] in
 /-- The inclusion of a subgroup into a larger subgroup is continuous. -/
 @[fun_prop]
 theorem continuous_inclusion {H K : Subgroup G} (h : H ≤ K) : Continuous (inclusion h) :=
-  continuous_induced_rng.2 continuous_subtype_val
+  continuous_induced_rng.2 continuous_subtypeVal
 
 /-- The topological closure of a subgroup is closed. -/
 instance instIsClosedTopologicalClosure (s : Subgroup G) :
@@ -281,7 +289,7 @@ theorem dense_preimage_val_iff_le_topologicalClosure {H K : Subgroup G} (h : H �
     rwa [himage, ← topologicalClosure_coe] at this
   · intro hle x
     rw [closure_subtype, himage, ← topologicalClosure_coe]
-    exact hle x.2
+    exact hle x.property
 
 omit [IsTopologicalGroup G] in
 /-- A closed subgroup of a compact group is compact. -/
@@ -307,6 +315,16 @@ theorem isCompact_conj_smul [ContinuousMul G] (g : G) {H : Subgroup G}
     (hH : IsCompact (H : Set G)) : IsCompact ((MulAut.conj g • H : Subgroup G) : Set G) := by
   rw [coe_pointwise_smul, ← Set.image_smul]
   exact hH.image (by simp only [MulAut.smul_def, MulAut.conj_apply]; fun_prop)
+
+omit [IsTopologicalGroup G] in
+/-- In a group with separately continuous multiplication, a conjugate `g H g⁻¹` of a subgroup `H`
+is open exactly when `H` is, since conjugation by `g` is a homeomorphism. -/
+theorem isOpen_map_conj_iff [SeparatelyContinuousMul G] (g : G) {H : Subgroup G} :
+    IsOpen (H.map (MulAut.conj g : G →* G) : Set G) ↔ IsOpen (H : Set G) := by
+  rw [coe_map]
+  convert (Homeomorph.smul (ConjAct.toConjAct g)).isOpen_image (s := (H : Set G)) using 2
+  ext h
+  simp [ConjAct.toConjAct_smul]
 
 omit [IsTopologicalGroup G] in
 open scoped Pointwise in
@@ -432,6 +450,16 @@ theorem _root_.ContinuousMulEquiv.map_topologicalClosure_normalClosure (α : G �
     _ = _ := by
       rw [map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
       congr 2
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The powers of `e x` are relatively compact exactly when the powers of `x` are, for a
+topological group isomorphism `e`. -/
+theorem _root_.ContinuousMulEquiv.isCompact_closure_zpowers_iff (e : G ≃ₜ* H) (x : G) :
+    IsCompact (_root_.closure (zpowers (e x) : Set H)) ↔
+      IsCompact (_root_.closure (zpowers x : Set G)) := by
+  have hs : (zpowers (e x) : Set H) = e.toHomeomorph '' zpowers x :=
+    congrArg SetLike.coe (MonoidHom.map_zpowers (e : G →* H) x).symm
+  rw [hs, ← e.toHomeomorph.image_closure, e.toHomeomorph.isCompact_image]
 
 open scoped commutatorElement in
 /-- A closed subgroup containing the commutators `⁅A, B⁆` contains the commutators
@@ -686,7 +714,7 @@ theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*}
     Topology.IsInducing.subtypeVal.separatelyContinuousMul f.range.subtype
   refine discreteTopology_of_isOpen_singleton_one
     (isOpen_singleton_of_finite_mem_nhds _ (s := Subtype.val ⁻¹' W)
-      (continuous_subtype_val.continuousAt.preimage_mem_nhds hW) ?_)
+      (continuous_subtypeVal.continuousAt.preimage_mem_nhds hW) ?_)
   refine (hfin.image f.rangeRestrict).subset ?_
   rintro ⟨_, g, rfl⟩ hg
   exact ⟨g, hg, Subtype.ext rfl⟩
@@ -709,12 +737,12 @@ theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group 
     -- inducing; and a neighbourhood of `1` in `H` can be shrunk into `W`.
     have : CompactSpace (f ⁻¹' W) := isCompact_iff_compactSpace.1 hc
     have hind : Topology.IsInducing (f ∘ Subtype.val : f ⁻¹' W → H) :=
-      ((hf.comp continuous_subtype_val).isClosedEmbedding
+      ((hf.comp continuous_subtypeVal).isClosedEmbedding
         (hinj.comp Subtype.val_injective)).isInducing
     intro s hs
     have h1 : (1 : G) ∈ f ⁻¹' W := by simpa using mem_of_mem_nhds hW
     have hs' : (Subtype.val : f ⁻¹' W → G) ⁻¹' s ∈ 𝓝 ⟨1, h1⟩ :=
-      continuous_subtype_val.continuousAt.preimage_mem_nhds hs
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds hs
     rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
     obtain ⟨t, ht, hts⟩ := hs'
     refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩

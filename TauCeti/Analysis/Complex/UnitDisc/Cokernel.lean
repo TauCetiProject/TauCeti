@@ -411,14 +411,15 @@ private theorem discExtend_apply {g : closedBall (0 : ℂ) 1 → ℂ} {v : ℂ �
 private theorem domRestrict_discExtend (g : closedBall (0 : ℂ) 1 → ℂ) :
     (closedBall (0 : ℂ) 1).domRestrict (discExtend g) = g :=
   funext fun z ↦ by
-    rw [Set.domRestrict_apply, Function.ExtendByZero.linearMap_apply, Function.extend_val_apply z.2]
+    rw [Set.domRestrict_apply, Function.ExtendByZero.linearMap_apply,
+        Function.extend_val_apply z.property]
 
 /-- The pairing integrand of an adjoint solution with data is integrable on the disc. -/
 private theorem integrableOn_discExtend_mul (g : unitDiscAdjointKernel k)
     (f : unitDiscCauchyRiemannData) :
     IntegrableOn (fun z ↦ (discExtend g z * discExtend f z).re) (ball (0 : ℂ) 1) := by
-  obtain ⟨v, hv, -, hgv⟩ := mem_unitDiscAdjointKernel_iff.1 g.2
-  obtain ⟨F, hF, hfF⟩ := f.2
+  obtain ⟨v, hv, -, hgv⟩ := mem_unitDiscAdjointKernel_iff.1 g.property
+  obtain ⟨F, hF, hfF⟩ := f.property
   have hint : IntegrableOn (fun z ↦ v z * F z) (ball (0 : ℂ) 1) :=
     ((hv.continuousOn_ball.mul fun z hz ↦ (hF z hz).continuousAt.continuousWithinAt)
       |>.integrableOn_compact (isCompact_closedBall 0 1)).mono_set ball_subset_closedBall
@@ -488,7 +489,7 @@ private theorem mem_ker_unitDiscAdjointPairing_iff {f : unitDiscCauchyRiemannDat
     ext g
     have hg := domRestrict_discExtend g
     rw [unitDiscAdjointPairing_apply_of_domRestrict_eq hF hg, LinearMap.zero_apply]
-    exact H _ (by rw [hg]; exact g.2)
+    exact H _ (by rw [hg]; exact g.property)
 
 /-- Solvability of the boundary problem is membership in the kernel of the pairing. -/
 private theorem exists_iff_mem_ker_unitDiscAdjointPairing (f : unitDiscCauchyRiemannData) :
@@ -544,7 +545,7 @@ theorem unitDiscCauchyRiemannRange_eq_top (hk : -1 ≤ k) : unitDiscCauchyRieman
   rw [LinearMap.mem_ker]
   ext g
   have hg : g = 0 :=
-    Subtype.ext ((Submodule.eq_bot_iff _).1 (unitDiscAdjointKernel_eq_bot hk) g g.2)
+    Subtype.ext ((Submodule.eq_bot_iff _).1 (unitDiscAdjointKernel_eq_bot hk) g g.property)
   rw [hg, map_zero, LinearMap.zero_apply]
 
 /-- An adjoint solution annihilated by all data is zero: it is `-I` times a polynomial `p`, and
@@ -552,7 +553,7 @@ the data `χ conj (-I p)` for a bump function `χ` pairs with it to `∫ χ |p|�
 private theorem eq_zero_of_forall_unitDiscAdjointPairing_eq_zero (g : unitDiscAdjointKernel k)
     (hg : ∀ f, unitDiscAdjointPairing k f g = 0) : g = 0 := by
   obtain ⟨p, -, hp⟩ := mem_unitDiscCauchyRiemannKernel_iff_exists_eval.1
-    (mem_unitDiscAdjointKernel_iff_smul_mem.1 g.2)
+    (mem_unitDiscAdjointKernel_iff_smul_mem.1 g.property)
   set G : ℂ → ℂ := fun z ↦ -I * p.eval z
   have hG : ContDiff ℝ 2 G :=
     ((differentiable_const _).mul p.differentiable).contDiff.restrict_scalars ℝ

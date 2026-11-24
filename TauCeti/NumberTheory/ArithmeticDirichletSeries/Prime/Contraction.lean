@@ -93,25 +93,26 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
     T.primeIdealZetaSum s = c * S.primeIdealZetaSum s := by
   classical
   let f : T → S := hmaps.restrict π T S
-  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)
+  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)
   -- The fibres of `f` are those of `π` over `S`, so each has `c` elements.
   have hcard (𝔭 : S) : Nat.card {t : T // f t = 𝔭} = c := by
-    rw [← hfiber 𝔭 𝔭.2]
+    rw [← hfiber 𝔭 𝔭.property]
     refine Nat.card_congr
       { toFun := fun t ↦
-          ⟨t.1.1, (hmaps.val_restrict_apply t.1).symm.trans (congrArg Subtype.val t.2), t.1.2⟩
+          ⟨t.val.val, (hmaps.val_restrict_apply t.val).symm.trans (congrArg Subtype.val t.property),
+              t.val.property⟩
         invFun := fun 𝔓 ↦
-          ⟨⟨𝔓.1, 𝔓.2.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.2.1)⟩
+          ⟨⟨𝔓.val, 𝔓.property.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.property.1)⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
   -- Each fibre is finite: `π` preserves the norm on `T`, and only finitely many primes have a
   -- given norm.
   have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} := by
     refine (Ring.HasFiniteQuotients.finite_absNorm_heightOneSpectrum_le
-      (S := 𝓞 E) (Ideal.absNorm 𝔭.1.asIdeal)).to_subtype.of_injective
-      (fun t ↦ ⟨t.1.1, ?_⟩) fun t t' h ↦ ?_
-    · rw [Set.mem_ofPred_eq, hnorm t.1.1 t.1.2]
-      exact (congrArg (fun q : S ↦ Ideal.absNorm q.1.asIdeal) t.2).le
+      (S := 𝓞 E) (Ideal.absNorm 𝔭.val.asIdeal)).to_subtype.of_injective
+      (fun t ↦ ⟨t.val.val, ?_⟩) fun t t' h ↦ ?_
+    · rw [Set.mem_ofPred_eq, hnorm t.val.val t.val.property]
+      exact (congrArg (fun q : S ↦ Ideal.absNorm q.val.asIdeal) t.property).le
     · simpa only [Subtype.mk.injEq, Subtype.ext_iff] using h
   have hinner (𝔭 : S) : ∑' _ : {t : T // f t = 𝔭}, g 𝔭 = c * g 𝔭 := by
     have := Fintype.ofFinite {t : T // f t = 𝔭}
@@ -122,7 +123,7 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
     rw [primeIdealZetaSum_def, ← (Equiv.sigmaFiberEquiv f).tsum_eq]
     refine tsum_congr fun ⟨𝔭, t, ht⟩ ↦ ?_
     subst ht
-    simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.1 t.2, g, f, hmaps.val_restrict_apply]
+    simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.val t.property, g, f, hmaps.val_restrict_apply]
   -- Both sides are summable together, so off summability both are the junk value `0`.
   rw [hT, primeIdealZetaSum_def]
   rcases eq_or_ne c 0 with rfl | _
@@ -163,29 +164,29 @@ prime sum over `T` is at most `m` times the prime sum over `S`, provided the lat
 theorem primeIdealZetaSum_le_mul_of_encard_fiber_le (hmaps : Set.MapsTo π T S)
     (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm (π 𝔓).asIdeal ≤ Ideal.absNorm 𝔓.asIdeal) {m : ℕ}
     (hfiber : ∀ 𝔭 ∈ S, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) {s : ℝ} (hs : 0 ≤ s)
-    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     T.primeIdealZetaSum s ≤ m * S.primeIdealZetaSum s := by
   classical
   let f : T → S := hmaps.restrict π T S
-  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)
+  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)
   -- Each fibre of `f` inside a finite set of primes of `T` has at most `m` elements.
   have hcard (F : Finset T) (𝔭 : S) : (F.filter (f · = 𝔭)).card ≤ m := by
     have hsub : (((F.filter (f · = 𝔭)).map (Function.Embedding.subtype _) : Finset _) :
-        Set (HeightOneSpectrum (𝓞 E))) ⊆ T ∩ π ⁻¹' {𝔭.1} := by
+        Set (HeightOneSpectrum (𝓞 E))) ⊆ T ∩ π ⁻¹' {𝔭.val} := by
       simp only [Finset.coe_map, Function.Embedding.subtype_apply, Set.image_subset_iff]
       rintro 𝔓 h𝔓
       rw [Finset.mem_coe, Finset.mem_filter] at h𝔓
-      exact ⟨𝔓.2, by simp [← h𝔓.2, f]⟩
-    have := (Set.encard_le_encard hsub).trans (hfiber 𝔭 𝔭.2)
+      exact ⟨𝔓.property, by simp [← h𝔓.2, f]⟩
+    have := (Set.encard_le_encard hsub).trans (hfiber 𝔭 𝔭.property)
     rwa [Set.encard_coe_eq_coe_finsetCard, Finset.card_map, Nat.cast_le] at this
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def]
   refine Real.tsum_le_of_sum_le (fun _ ↦ by positivity) fun F ↦ ?_
-  calc ∑ 𝔓 ∈ F, (Ideal.absNorm 𝔓.1.asIdeal : ℝ) ^ (-s)
+  calc ∑ 𝔓 ∈ F, (Ideal.absNorm 𝔓.val.asIdeal : ℝ) ^ (-s)
       ≤ ∑ 𝔓 ∈ F, g (f 𝔓) := Finset.sum_le_sum fun 𝔓 _ ↦ by
-        have hpos : (0 : ℝ) < Ideal.absNorm (π 𝔓.1).asIdeal :=
+        have hpos : (0 : ℝ) < Ideal.absNorm (π 𝔓.val).asIdeal :=
           zero_lt_one.trans_le (TauCeti.one_le_absNorm_real_of_nonZeroDivisors
-            ⟨_, mem_nonZeroDivisors_of_ne_zero (π 𝔓.1).ne_bot⟩)
-        exact Real.rpow_le_rpow_of_nonpos hpos (by exact_mod_cast hnorm 𝔓.1 𝔓.2)
+            ⟨_, mem_nonZeroDivisors_of_ne_zero (π 𝔓.val).ne_bot⟩)
+        exact Real.rpow_le_rpow_of_nonpos hpos (by exact_mod_cast hnorm 𝔓.val 𝔓.property)
           (neg_nonpos.mpr hs)
     _ = ∑ 𝔭 ∈ F.image f, (F.filter (f · = 𝔭)).card * g 𝔭 := by
         simp only [Finset.sum_comp, nsmul_eq_mul]

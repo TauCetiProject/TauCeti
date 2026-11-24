@@ -135,14 +135,12 @@ variable {AA : AInfinityAlgebra R A} {e : A}
 rank one returns the first letter on one-letter words and vanishes on longer words. -/
 theorem taylor_toRightModule_comp_tmulConcat (he : AA.StrictUnit e) :
     AA.toRightModule.taylor ∘ₗ tmulConcat R A A e =
-      (TensorProduct.rid R A).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor A := by
+      Comodule.cofreeCounit R (TensorWords R A) A := by
   have hte (q : ℤ) : AA.grading.koszulTwist q e = e :=
     AA.grading.koszulTwist_apply_of_mem_zero he.degree_zero q
   refine TensorProduct.ext (LinearMap.ext fun y ↦ TensorWords.linearMap_ext R A fun n a ↦ ?_)
   simp only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, LinearMap.comp_apply,
-    tmulConcat_tmul, toRightModule_taylor_tmul, prepend_of_tprod, LinearMap.lTensor_tmul,
-    LinearEquiv.coe_coe, TensorProduct.rid_tmul]
+    tmulConcat_tmul, toRightModule_taylor_tmul, prepend_of_tprod, Comodule.cofreeCounit_tmul]
   rw [reducedInclusion_of, prepend_of_tprod, taylor_of_tprod]
   rcases n with _ | n
   · have ha : TensorWords.of R A 0 (PiTensorProduct.tprod R a) = 1 := by
@@ -164,7 +162,7 @@ module of rank one: `b ∘ h + h ∘ b = 1` for `h (y ⊗ w) = e ⊗ y w`. -/
 theorem barDifferential_toRightModule_comp_tmulConcat_add (he : AA.StrictUnit e) :
     AA.toRightModule.barDifferential ∘ₗ tmulConcat R A A e +
       tmulConcat R A A e ∘ₗ AA.toRightModule.barDifferential = LinearMap.id := by
-  have hid := Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp
+  have hid := Comodule.Hom.cofreeLift_cofreeCounit_comp
     (Comodule.Hom.id R (TensorWords R A) (A ⊗[R] TensorWords R A))
   have hτ : (AA.toRightModule.grading.shift 1).koszulTwist 1 e = -e := by
     rw [toRightModule_grading, InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply,
@@ -172,9 +170,8 @@ theorem barDifferential_toRightModule_comp_tmulConcat_add (he : AA.StrictUnit e)
   rw [AInfinityRightModule.barDifferential_comp_tmulConcat, differential_toRightModule,
     differential_apply, he.unary_eq_zero, map_zero, zero_add,
     taylor_toRightModule_comp_tmulConcat he, hτ, map_neg, LinearMap.neg_comp]
-  rw [show (Comodule.Hom.cofreeLift (C := TensorWords R A) ((TensorProduct.rid R A).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor A)).toLinearMap = LinearMap.id
-    from congrArg Comodule.Hom.toLinearMap hid]
+  rw [Comodule.Hom.id_toLinearMap, LinearMap.comp_id] at hid
+  rw [congrArg Comodule.Hom.toLinearMap hid, Comodule.Hom.id_toLinearMap]
   abel
 
 end AInfinityAlgebra
@@ -234,7 +231,7 @@ theorem yonedaCochain_mem_homCochains {p : ℤ} {x : M} (hx : x ∈ MM.grading.p
 /-- The Yoneda cochains of the elements of degree `p`. -/
 noncomputable def yonedaCochains (p : ℤ) :
     MM.grading.piece p →ₗ[R] homCochains AA.toRightModule MM p where
-  toFun x := ⟨MM.yonedaCochain x, MM.yonedaCochain_mem_homCochains x.2⟩
+  toFun x := ⟨MM.yonedaCochain x, MM.yonedaCochain_mem_homCochains x.property⟩
   map_add' _ _ := Subtype.ext (map_add MM.yonedaCochain _ _)
   map_smul' r _ := Subtype.ext (map_smul MM.yonedaCochain r _)
 
@@ -250,14 +247,11 @@ variable {MM} in
 `e`. -/
 noncomputable def evalUnit (e : A) :
     (A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A) →ₗ[R] M :=
-  ((TensorProduct.rid R M).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M) ∘ₗ
-      LinearMap.applyₗ (e ⊗ₜ[R] (1 : TensorWords R A))
+  Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ LinearMap.applyₗ (e ⊗ₜ[R] (1 : TensorWords R A))
 
 /-- Evaluation at `e` applies the cochain to `e ⊗ 1` and then the counit. -/
 theorem evalUnit_apply (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A) :
-    evalUnit e F = TensorProduct.rid R M
-      ((Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M (F (e ⊗ₜ[R] 1))) :=
+    evalUnit e F = Comodule.cofreeCounit R (TensorWords R A) M (F (e ⊗ₜ[R] 1)) :=
   (rfl)
 
 /-- A cochain out of the free module of rank one sends `e ⊗ 1` to its value at the unit, followed
@@ -268,8 +262,7 @@ theorem homCochains.apply_tmul_one {p : ℤ} (F : homCochains AA.toRightModule M
   conv_lhs => rw [homCochains.eq_cofreeLift F]
   rw [Comodule.Hom.cofreeLift_toLinearMap, LinearMap.comp_apply, Comodule.cofree_coact_tmul,
     comul_eq_deconcatenation, deconcatenation_one, TensorProduct.assoc_symm_tmul,
-    LinearMap.rTensor_tmul, evalUnit_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe]
+    LinearMap.rTensor_tmul, evalUnit_apply, LinearMap.comp_apply]
 
 /-- Evaluation at a unit of degree zero sends cochains of degree `p` to elements of degree `p`. -/
 theorem evalUnit_mem_piece (he : e ∈ AA.grading.piece 0) {p : ℤ}
@@ -305,10 +298,10 @@ theorem evalUnit_homDifferential (he : AA.differential e = 0) {p : ℤ}
 
 /-- Evaluating the Yoneda cochain of `x` at `e` gives the binary module operation `m₂(x, e)`. -/
 theorem evalUnit_yonedaCochain (x : M) : evalUnit e (MM.yonedaCochain x) = MM.m 2 x ![e] := by
-  have h := LinearMap.congr_fun (Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift
+  have h := LinearMap.congr_fun (Comodule.Hom.cofreeCounit_comp_cofreeLift
     (C := TensorWords R A) (MM.taylor ∘ₗ tmulConcat R A M (MM.grading.koszulTwist 1 x)))
     (e ⊗ₜ[R] 1)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe] at h
+  rw [LinearMap.comp_apply] at h
   rw [evalUnit_apply, yonedaCochain_apply, h, LinearMap.comp_apply, tmulConcat_tmul, prepend_one,
     ReducedTensorWords.ofLetter_eq_of_tprod, reducedInclusion_of, taylor_tmul_of_tprod]
   congr 2
@@ -345,7 +338,7 @@ private theorem yonedaCochain_eq_smul {q : ℤ} {y : M} (hy : y ∈ MM.grading.p
 Yoneda cochain of the differential of `x`. -/
 theorem homDifferential_yonedaCochains {p : ℤ} (x : MM.grading.piece p) :
     homDifferential AA.toRightModule MM p (MM.yonedaCochains p x) =
-      MM.yonedaCochains (p + 1) ⟨MM.differential x, MM.differential_mem_piece x.2⟩ := by
+      MM.yonedaCochains (p + 1) ⟨MM.differential x, MM.differential_mem_piece x.property⟩ := by
   obtain ⟨x, hx⟩ := x
   have hdx := MM.differential_mem_piece hx
   have hdd : MM.differential (MM.differential x) = 0 :=
@@ -373,7 +366,7 @@ variable {MM} in
 noncomputable def evalUnitCochains (he : e ∈ AA.grading.piece 0) (p : ℤ) :
     homCochains AA.toRightModule MM p →ₗ[R] MM.grading.piece p where
   toFun F := ⟨evalUnit e (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A),
-    evalUnit_mem_piece MM he F.2⟩
+    evalUnit_mem_piece MM he F.property⟩
   map_add' _ _ := Subtype.ext (map_add (evalUnit e) _ _)
   map_smul' r _ := Subtype.ext (map_smul (evalUnit e) r _)
 
@@ -392,13 +385,11 @@ private theorem homCochains.comp_tmulConcat {p : ℤ} (F : homCochains AA.toRigh
     (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A) ∘ₗ tmulConcat R A A e =
       tmulConcat R A M (evalUnit e (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A)) +
         (Comodule.Hom.cofreeLift (C := TensorWords R A)
-          (((TensorProduct.rid R M).toLinearMap ∘ₗ
-            (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ
+          ((Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ
               (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A)) ∘ₗ
             tmulConcat R A A e)).toLinearMap := by
   conv_lhs => rw [homCochains.eq_cofreeLift F]
-  rw [cofreeLift_comp_tmulConcat, evalUnit_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe]
+  rw [cofreeLift_comp_tmulConcat, evalUnit_apply, LinearMap.comp_apply]
 
 variable {MM} in
 /-- The contracting homotopy of the Yoneda lemma, from cochains of degree `p` to cochains of degree
@@ -407,8 +398,7 @@ prepending the unit `e`. -/
 noncomputable def yonedaHomotopy (he : e ∈ AA.grading.piece 0) {p q : ℤ} (hpq : q + 1 = p) :
     homCochains AA.toRightModule MM p →ₗ[R] homCochains AA.toRightModule MM q where
   toFun F := ⟨((p.negOnePow : ℤ) : R) • (Comodule.Hom.cofreeLift (C := TensorWords R A)
-      (((TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ
+      ((Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ
           (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A)) ∘ₗ
         tmulConcat R A A e)).toLinearMap, by
     refine Submodule.smul_mem _ _ (cofreeLift_mem_homCochains ?_)
@@ -420,7 +410,8 @@ noncomputable def yonedaHomotopy (he : e ∈ AA.grading.piece 0) {p q : ℤ} (hp
     have ht := ((TensorWords.isHomogeneous_rid_comp_lTensor_counit (MM.grading.shift 1)
       (AA.grading.shift 1)).comp hF).comp (AA.toRightModule.isHomogeneous_tmulConcat_barGrading
         (p := 0) (by rwa [AInfinityAlgebra.toRightModule_grading]))
-    rw [show (0 : ℤ) - 1 + (p + 0) = q by omega, LinearMap.comp_assoc] at ht
+    rw [show (0 : ℤ) - 1 + (p + 0) = q by omega] at ht
+    rw [Comodule.cofreeCounit_def]
     exact ht⟩
   map_add' _ _ := by
     apply Subtype.ext
@@ -437,8 +428,7 @@ theorem coe_yonedaHomotopy (he : e ∈ AA.grading.piece 0) {p q : ℤ} (hpq : q 
     (F : homCochains AA.toRightModule MM p) :
     (yonedaHomotopy he hpq F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A) =
       ((p.negOnePow : ℤ) : R) • (Comodule.Hom.cofreeLift (C := TensorWords R A)
-        (((TensorProduct.rid R M).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ
+        ((Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ
             (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A)) ∘ₗ
           tmulConcat R A A e)).toLinearMap :=
   (rfl)
@@ -457,7 +447,7 @@ theorem homDifferential_yonedaHomotopy_add (he : AA.StrictUnit e) {p q : ℤ} (h
           (evalUnit e (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A)) := by
   subst hpq
   have hdF := evalUnit_homDifferential MM he.differential_eq_zero F
-  have hxp := evalUnit_mem_piece MM he.degree_zero F.2
+  have hxp := evalUnit_mem_piece MM he.degree_zero F.property
   have hK := homCochains.comp_tmulConcat MM (e := e) F
   have hKδ := homCochains.comp_tmulConcat MM (e := e)
     (homDifferential AA.toRightModule MM (q + 1) F)
@@ -528,7 +518,7 @@ noncomputable def yoneda : MM.cochainComplex ⟶ homComplex AA.toRightModule MM 
       (homComplexXEquiv AA.toRightModule MM (i + 1)).injective ?_)
     have hd : gradedCochainComplexXEquiv (i + 1) ((MM.cochainComplex.d i (i + 1)).hom x) =
         ⟨MM.differential (gradedCochainComplexXEquiv i x),
-          MM.differential_mem_piece (gradedCochainComplexXEquiv i x).2⟩ :=
+          MM.differential_mem_piece (gradedCochainComplexXEquiv i x).property⟩ :=
       Subtype.ext (gradedCochainComplexXEquiv_d i x)
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ConcreteCategory.hom_ofHom,
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, homComplexXEquiv_d, hd]

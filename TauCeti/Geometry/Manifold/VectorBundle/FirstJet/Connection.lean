@@ -45,8 +45,12 @@ trivialization.
   projection, whose image is the kernel of the covariant derivative, and
   `TauCeti.FirstJetBundle.connectionEquiv`: the resulting isomorphism
   `J¹Vₓ ≃ Vₓ × Hom(TₓM, Vₓ)`, `j ↦ (value j, ∇ j)`, which sends `j¹s(x)` to `(s x, ∇s(x))`
-  (`TauCeti.FirstJetBundle.connectionEquiv_jet`). A first jet is a horizontal lift exactly when
-  its covariant derivative vanishes (`TauCeti.FirstJetBundle.eq_horizontalLift_iff`,
+  (`TauCeti.FirstJetBundle.connectionEquiv_jet`). Thus two differentiable sections have equal
+  first jets exactly when their values and covariant derivatives agree
+  (`TauCeti.FirstJetBundle.jet_eq_iff`); in particular, a first jet vanishes exactly when both
+  its value and covariant derivative vanish (`TauCeti.FirstJetBundle.jet_eq_zero_iff`). A first
+  jet is a horizontal lift exactly when its covariant derivative vanishes
+  (`TauCeti.FirstJetBundle.eq_horizontalLift_iff`,
   `TauCeti.FirstJetBundle.jet_eq_horizontalLift_iff`), and
   `TauCeti.FirstJetBundle.horizontalLift_apply` gives the horizontal lift in coordinates.
 * `TauCeti.FirstJetBundle.covariantDerivative_add_one_form` and
@@ -444,13 +448,14 @@ value and its covariant derivative, and every pair of a value and a homomorphism
 `∇` when `x ∈ U`. -/
 def connectionEquiv (hcov : IsCovariantDerivativeOn F cov U) (x : M) :
     FirstJetBundle I F V x ≃L[𝕜] V x × (TangentSpace I x →L[𝕜] V x) :=
-  ContinuousLinearEquiv.equivOfInverse ((value I F x).prod (covariantDerivative hcov x))
+  ContinuousLinearEquiv.ofContinuousLinearMap ((value I F x).prod (covariantDerivative hcov x))
     ((horizontalLift hcov x).coprod (ofDeriv I F x))
-    (horizontalLift_value_add_ofDeriv_covariantDerivative hcov)
-    fun p ↦ by
-      rw [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coprod_apply, map_add, map_add,
+    (ContinuousLinearMap.ext fun p ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        ContinuousLinearMap.prod_apply, ContinuousLinearMap.coprod_apply, map_add, map_add,
         value_horizontalLift, value_ofDeriv, add_zero, covariantDerivative_horizontalLift,
-        covariantDerivative_ofDeriv, zero_add]
+        covariantDerivative_ofDeriv, zero_add])
+    (ContinuousLinearMap.ext (horizontalLift_value_add_ofDeriv_covariantDerivative hcov))
 
 /-- The splitting isomorphism sends a jet to its value and its covariant derivative. -/
 @[simp]
@@ -481,6 +486,23 @@ theorem jet_eq_horizontalLift_iff (hcov : IsCovariantDerivativeOn F cov U) (hx :
     jet I F s x = horizontalLift hcov x (s x) ↔ cov s x = 0 := by
   rw [eq_horizontalLift_iff, value_jet, covariantDerivative_jet hcov hx hs]
   exact and_iff_right rfl
+
+/-- A connection identifies the first jets of two differentiable sections exactly when their
+values and covariant derivatives agree. The connection laws are needed only on a set containing
+the point. -/
+theorem jet_eq_iff (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s t : Π x : M, V x} (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) :
+    jet I F s x = jet I F t x ↔ s x = t x ∧ cov s x = cov t x := by
+  rw [← (connectionEquiv hcov x).injective.eq_iff, connectionEquiv_jet hcov hx hs,
+    connectionEquiv_jet hcov hx ht, Prod.mk.injEq]
+
+/-- A differentiable section has zero first jet exactly when its value and covariant derivative
+vanish. The connection laws are needed only on a set containing the point. -/
+theorem jet_eq_zero_iff (hcov : IsCovariantDerivativeOn F cov U) (hx : x ∈ U)
+    {s : Π x : M, V x} (hs : MDiffAt (T% s) x) :
+    jet I F s x = 0 ↔ s x = 0 ∧ cov s x = 0 := by
+  rw [← (connectionEquiv hcov x).map_eq_zero_iff, connectionEquiv_jet hcov hx hs,
+    Prod.mk_eq_zero]
 
 end
 

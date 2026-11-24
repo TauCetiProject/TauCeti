@@ -289,7 +289,7 @@ theorem of_exact_middle [hM : Module.IsCoherent R M] [hP : Module.IsCoherent R P
   have : Module.Finite R K := Module.Finite.iff_fg.mpr hK
   have : Module.FinitePresentation R ↥(K.map g) := hP.finitePresentation_of_fg (hK.map g)
   let gK : K →ₗ[R] ↥(K.map g) :=
-    (g.comp K.subtype).codRestrict (K.map g) fun x ↦ Submodule.mem_map_of_mem x.2
+    (g.comp K.subtype).codRestrict (K.map g) fun x ↦ Submodule.mem_map_of_mem x.property
   have hgK : Function.Surjective gK := fun ⟨_, x, hx, rfl⟩ ↦ ⟨⟨x, hx⟩, rfl⟩
   have hfg_ker : (LinearMap.ker gK).FG := Module.FinitePresentation.fg_ker gK hgK
   -- Pull `ker gK ⊆ range f` back to `M` along the injection `f`; coherence of `M` makes it f.p.
@@ -377,7 +377,7 @@ instance inf [Module.IsCoherent R M] (N₁ N₂ : Submodule R M)
   have hex : Function.Exact ι δ := fun ⟨x₁, x₂⟩ ↦ by
     simp only [δ, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.fst_apply,
       LinearMap.snd_apply, Submodule.coe_subtype, sub_eq_zero, Set.mem_range]
-    exact ⟨fun h ↦ ⟨⟨x₁.1, x₁.2, h ▸ x₂.2⟩, Prod.ext rfl (Subtype.ext h)⟩,
+    exact ⟨fun h ↦ ⟨⟨x₁.val, x₁.property, h ▸ x₂.property⟩, Prod.ext rfl (Subtype.ext h)⟩,
       fun ⟨z, hz⟩ ↦ (congrArg (fun p : N₁ × N₂ ↦ (p.1 : M)) hz).symm.trans
         (congrArg (fun p : N₁ × N₂ ↦ (p.2 : M)) hz)⟩
   exact of_exact_left ι δ hι hex
@@ -615,7 +615,7 @@ theorem Module.IsCoherent.of_isLocalizedModule [IsLocalization T Rₜ] [hM : Mod
   classical
   obtain ⟨s, hs⟩ := hK
   -- Clear denominators on the finite generating set `s` of `K ≤ Mₜ` to obtain `L ≤ M` f.g.
-  choose p hp using fun y : s ↦ IsLocalizedModule.mk'_surjective T f y.1
+  choose p hp using fun y : s ↦ IsLocalizedModule.mk'_surjective T f y.val
   dsimp only [Function.uncurry] at hp
   let L : Submodule R M := Submodule.span R (Set.range fun y : s ↦ (p y).1)
   have hLfg : L.FG := ⟨Finset.univ.image fun y : s ↦ (p y).1, by simp [L]⟩
@@ -627,7 +627,7 @@ theorem Module.IsCoherent.of_isLocalizedModule [IsLocalization T Rₜ] [hM : Mod
       rintro _ ⟨_, ⟨y, rfl⟩, rfl⟩
       rw [← IsLocalizedModule.mk'_cancel' f (p y).1 (p y).2, hp y, Submonoid.smul_def,
         ← IsScalarTower.algebraMap_smul Rₜ]
-      exact K.smul_mem _ (hs ▸ Submodule.subset_span y.2)
+      exact K.smul_mem _ (hs ▸ Submodule.subset_span y.property)
     · rw [← hs, Submodule.span_le]
       exact fun y hy ↦ ⟨(p ⟨y, hy⟩).1, Submodule.subset_span ⟨⟨y, hy⟩, rfl⟩, (p ⟨y, hy⟩).2,
         hp ⟨y, hy⟩⟩

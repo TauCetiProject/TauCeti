@@ -262,7 +262,7 @@ theorem quotientGeneratorIdealHomEquiv_symm_apply_mk {T : Type w} [CommRing T] [
     (g : {g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A // IsAGenerator (pointsOfBialgHom H g)})
     (x : HomAlgebra R H (coordinateRing R A)) :
     (quotientGeneratorIdealHomEquiv R H A T).symm g (Ideal.Quotient.mk _ x) =
-      (HomAlgebra.homEquiv R H _ T).symm g.1 x :=
+      (HomAlgebra.homEquiv R H _ T).symm g.val x :=
   quotientFullSetIdealHomEquiv_symm_apply_mk _ _ x
 
 variable (R H A) in
@@ -295,11 +295,11 @@ theorem quotientGeneratorIdealHomEquivAGenerators_symm_apply_mk {T : Type w} [Co
     [Algebra R T] (φ : {φ : A →* WithConv (T ⊗[R] H →ₐ[T] T) // IsAGenerator φ})
     (x : HomAlgebra R H (coordinateRing R A)) :
     (quotientGeneratorIdealHomEquivAGenerators R H A T).symm φ (Ideal.Quotient.mk _ x) =
-      (HomAlgebra.homEquiv R H _ T).symm ((pointsOfBialgHomEquiv R H A T).symm φ.1) x :=
+      (HomAlgebra.homEquiv R H _ T).symm ((pointsOfBialgHomEquiv R H A T).symm φ.val) x :=
   quotientGeneratorIdealHomEquiv_symm_apply_mk
-    ⟨(pointsOfBialgHomEquiv R H A T).symm φ.1, by
+    ⟨(pointsOfBialgHomEquiv R H A T).symm φ.val, by
       rw [← pointsOfBialgHomEquiv_apply, Equiv.apply_symm_apply]
-      exact φ.2⟩ x
+      exact φ.property⟩ x
 
 end Locus
 

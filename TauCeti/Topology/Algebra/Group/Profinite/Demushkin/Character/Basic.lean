@@ -117,7 +117,7 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
   have h₀ : ∀ j, (p : ℤ_[p]) ∣ A 1 j := fun j ↦ by
     rw [hA 1 hone j]
     exact (isCrossedHom_crossedHom _ _).dvd_apply_of_mem_pLowerCentralSeries_one
-      (isProP_freeProP p X) (continuous_crossedHom _ _) n.2
+      (isProP_freeProP p X) (continuous_crossedHom _ _) n.property
   -- The linearisation of the Newton map is the lifted matrix of the degree-one form.
   have hlin : ∀ v v' : X → ℤ_[p], (∀ i, (p : ℤ_[p]) ∣ v i - (1 : X → ℤ_[p]) i) →
       (∀ i, (p : ℤ_[p]) ∣ v' i - (1 : X → ℤ_[p]) i) → ∀ k : ℕ, 1 ≤ k →

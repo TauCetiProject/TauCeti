@@ -9,6 +9,8 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Nat.Find
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # The unfinished interval in quadratic sums
@@ -18,10 +20,11 @@ interval containing that time. The sum over completed intervals does not. Their 
 is nonnegative and consists of at most one squared distance. On vanishing-mesh grids,
 continuity of the path makes this difference tend to zero uniformly on a compact horizon.
 
-This is the pathwise interpolation step for upgrading maximal estimates at partition dates
-to uniform-in-time quadratic-variation convergence. It requires no variation bound on the
-path. The grids may have repeated dates or no intervals. The distance formulation also
-applies to paths in arbitrary pseudometric spaces.
+The completed sum's time-centering error is bounded by the largest grid-point error plus
+the mesh. Together with the unfinished-cell estimate, this upgrades uniform convergence at
+the grid dates to uniform convergence of clipped quadratic sums throughout the horizon.
+It requires no variation bound on the path. The grids may have repeated dates or no intervals.
+The distance formulation also applies to paths in arbitrary pseudometric spaces.
 
 ## References
 
@@ -93,6 +96,64 @@ theorem sum_sq_dist_min_sub_completed_mem_Icc (x : ℝ≥0 → E) (hτ : Monoton
 
 end TauCeti
 
+namespace MonotoneOn
+
+/-- Completed quadratic sums differ from elapsed time by at most the largest grid-point
+error plus the mesh. Repeated dates and an empty grid are allowed. -/
+theorem abs_sum_completed_sq_sub_time_le {x : ℝ≥0 → ℝ} {τ : ℕ → ℝ≥0} {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) {u : ℝ≥0} (hu : u ∈ Icc (τ 0) (τ n))
+    {M δ : ℝ} (hM : ∀ j ≤ n,
+      |(∑ i ∈ range j, (x (τ (i + 1)) - x (τ i)) ^ 2) - ((τ j : ℝ) - τ 0)| ≤ M)
+    (hδ : 0 ≤ δ) (hmesh : ∀ i < n, (τ (i + 1) : ℝ) - τ i ≤ δ) :
+    |(∑ i ∈ range n, if τ (i + 1) ≤ u then (x (τ (i + 1)) - x (τ i)) ^ 2 else 0) -
+      ((u : ℝ) - τ 0)| ≤ M + δ := by
+  classical
+  -- The last completed grid date also works when several dates coincide.
+  let j := Nat.findGreatest (fun i ↦ τ i ≤ u) n
+  have hj : j ≤ n := Nat.findGreatest_le n
+  have hju : τ j ≤ u := Nat.findGreatest_spec (P := fun i ↦ τ i ≤ u) (Nat.zero_le n) hu.1
+  have htime : (u : ℝ) - τ j ≤ δ := by
+    by_cases hjn : j = n
+    · rw [hjn]
+      exact (sub_nonpos.mpr (NNReal.coe_le_coe.mpr hu.2)).trans hδ
+    · have hnext : u < τ (j + 1) := lt_of_not_ge fun h ↦ by
+        have := Nat.le_findGreatest (P := fun i ↦ τ i ≤ u) (by omega : j + 1 ≤ n) h
+        omega
+      have hmesh' := hmesh j (by omega)
+      exact (sub_le_sub_right (NNReal.coe_le_coe.mpr hnext.le) _).trans hmesh'
+  -- All completed cells form this prefix; cells after it contribute zero.
+  have hsum : (∑ i ∈ range n,
+      if τ (i + 1) ≤ u then (x (τ (i + 1)) - x (τ i)) ^ 2 else 0) =
+      ∑ i ∈ range j, (x (τ (i + 1)) - x (τ i)) ^ 2 := by
+    calc
+      _ = ∑ i ∈ range j, if τ (i + 1) ≤ u then
+          (x (τ (i + 1)) - x (τ i)) ^ 2 else 0 := by
+        symm
+        apply sum_subset (range_mono hj)
+        intro i hi hij
+        have hji : j < i + 1 := by simp only [Finset.mem_range] at hij; omega
+        have hnot : ¬τ (i + 1) ≤ u := fun h ↦ by
+          have := Nat.le_findGreatest (P := fun i ↦ τ i ≤ u) (Finset.mem_range.mp hi) h
+          omega
+        simp [hnot]
+      _ = _ := sum_congr rfl fun i hi ↦ by
+        have hin : i + 1 ≤ n := Nat.succ_le_of_lt ((Finset.mem_range.mp hi).trans_le hj)
+        have hij : i + 1 ≤ j := Finset.mem_range.mp hi
+        simp only [ite_eq_left ((hτ hin hj hij).trans hju)]
+  rw [hsum]
+  have habs : |(u : ℝ) - τ j| ≤ δ := by
+    rw [abs_of_nonneg (sub_nonneg.mpr (NNReal.coe_le_coe.mpr hju))]
+    exact htime
+  calc
+    _ ≤ |(∑ i ∈ range j, (x (τ (i + 1)) - x (τ i)) ^ 2) - ((τ j : ℝ) - τ 0)| +
+        |(u : ℝ) - τ j| := by
+      have h := abs_sub_le ((∑ i ∈ range j, (x (τ (i + 1)) - x (τ i)) ^ 2))
+        ((τ j : ℝ) - τ 0) ((u : ℝ) - τ 0)
+      rwa [sub_sub_sub_cancel_right, abs_sub_comm (τ j : ℝ)] at h
+    _ ≤ M + δ := add_le_add (hM j hj) habs
+
+end MonotoneOn
+
 namespace ContinuousOn
 
 variable {E : Type*} [PseudoMetricSpace E] {x : ℝ≥0 → E} {a b : ℝ≥0}
@@ -144,5 +205,56 @@ theorem tendstoUniformlyOn_sum_sq_dist_min_sub_completed (hx : ContinuousOn x (I
         _ < d := hk)
   simpa only [Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg hbound.1] using
     hbound.2.trans_lt hcε
+
+/-- Uniform convergence of centered grid-point quadratic sums and a vanishing mesh imply
+uniform convergence of the clipped quadratic sums of a continuous real path. -/
+theorem tendstoUniformlyOn_sum_sq_min_sub_time {x : ℝ≥0 → ℝ} {a b : ℝ≥0}
+    (hx : ContinuousOn x (Icc a b)) {ι : Type*} {l : Filter ι} {N : ι → ℕ}
+    {grid : ι → ℕ → ℝ≥0} (hgrid : ∀ k, MonotoneOn (grid k) (Set.Iic (N k)))
+    (ha : ∀ k, grid k 0 = a) (hb : ∀ k, grid k (N k) = b)
+    {δ M : ι → ℝ} (hδ : ∀ k, 0 ≤ δ k)
+    (hmesh : ∀ k i, i < N k → (grid k (i + 1) : ℝ) - grid k i ≤ δ k)
+    (hδlim : Tendsto δ l (𝓝 0)) (hMlim : Tendsto M l (𝓝 0))
+    (hM : ∀ k j, j ≤ N k →
+      |(∑ i ∈ range j, (x (grid k (i + 1)) - x (grid k i)) ^ 2) -
+        ((grid k j : ℝ) - a)| ≤ M k) :
+    TendstoUniformlyOn (fun k u ↦
+      (∑ i ∈ range (N k), (x (min u (grid k (i + 1))) - x (min u (grid k i))) ^ 2) -
+        ((u : ℝ) - a)) (fun _ ↦ 0) l (Icc a b) := by
+  let g k : Fin (N k + 1) → ℝ≥0 := fun i ↦ grid k i
+  have hg k : Monotone (g k) := fun i j hij ↦
+    hgrid k (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
+  have hm k (i : Fin (N k)) : dist (g k i.succ) (g k i.castSucc) ≤ δ k := by
+    have hi := hgrid k i.isLt.le i.isLt (Nat.le_succ i)
+    simpa only [g, NNReal.dist_eq, Fin.val_succ, Fin.val_castSucc,
+      abs_of_nonneg (sub_nonneg.mpr (NNReal.coe_le_coe.mpr hi))] using hmesh k i i.isLt
+  have hrem := hx.tendstoUniformlyOn_sum_sq_dist_min_sub_completed hg (fun k ↦ ha k)
+    (fun k ↦ hb k) hm hδlim
+  rw [Metric.tendstoUniformlyOn_iff] at hrem ⊢
+  intro ε hε
+  have hlim : Tendsto (fun k ↦ M k + δ k) l (𝓝 0) := by
+    simpa using hMlim.add hδlim
+  filter_upwards [hrem (ε / 2) (by positivity), hlim.eventually_lt_const (by linarith : 0 < ε / 2)]
+    with k hk hsmall
+  intro u hu
+  have hc := (hgrid k).abs_sum_completed_sq_sub_time_le
+    (by simpa only [ha k, hb k] using hu) (fun j hj ↦ by
+      simpa only [ha k] using hM k j hj) (hδ k) (hmesh k)
+  have hr := hk u hu
+  simp only [Real.dist_eq, sq_abs, zero_sub, abs_neg, g,
+    Fin.val_succ, Fin.val_castSucc] at hr
+  rw [← Finset.sum_range (fun i ↦ (x (min u (grid k (i + 1))) - x (min u (grid k i))) ^ 2),
+    ← Finset.sum_range (fun i ↦ if grid k (i + 1) ≤ u then
+      (x (grid k (i + 1)) - x (grid k i)) ^ 2 else 0)] at hr
+  simp only [Real.dist_eq, zero_sub, abs_neg]
+  calc
+    _ ≤ |(∑ i ∈ range (N k),
+        (x (min u (grid k (i + 1))) - x (min u (grid k i))) ^ 2) -
+        (∑ i ∈ range (N k), if grid k (i + 1) ≤ u then
+          (x (grid k (i + 1)) - x (grid k i)) ^ 2 else 0)| +
+        |(∑ i ∈ range (N k), if grid k (i + 1) ≤ u then
+          (x (grid k (i + 1)) - x (grid k i)) ^ 2 else 0) - ((u : ℝ) - a)| :=
+      abs_sub_le _ _ _
+    _ < ε := by rw [ha k] at hc; linarith
 
 end ContinuousOn

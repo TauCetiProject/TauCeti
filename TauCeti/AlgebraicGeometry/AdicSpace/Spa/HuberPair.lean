@@ -66,7 +66,7 @@ def spaComap (f : Hom S T) : spa T.plus → spa S.plus :=
 homomorphism of `f`. -/
 @[simp]
 theorem spaComap_val (f : Hom S T) (v : spa T.plus) :
-    (f.spaComap v).1 = ValuationSpectrum.comap f.toRingHom v.1 :=
+    (f.spaComap v).val = ValuationSpectrum.comap f.toRingHom v.val :=
   ValuationSpectrum.spaComap_val f.toRingHom f.continuous_toRingHom S.plus T.plus
     f.map_mem_plus v
 
@@ -89,7 +89,7 @@ theorem spaComap_id (S : Pair A) : (Hom.id S).spaComap = _root_.id := by
   funext v
   apply Subtype.ext
   rw [spaComap_val, Hom.toRingHom_id]
-  exact congr_fun ValuationSpectrum.comap_id v.1
+  exact congr_fun ValuationSpectrum.comap_id v.val
 
 /-- `spaComap` is contravariantly functorial for composition of morphisms of Huber pairs:
 `(g ∘ f).spaComap = f.spaComap ∘ g.spaComap`. -/
@@ -99,7 +99,7 @@ theorem spaComap_comp (g : Hom T U) (f : Hom S T) :
   funext v
   apply Subtype.ext
   simp only [spaComap_val, Hom.toRingHom_comp, Function.comp_apply]
-  exact congr_fun (ValuationSpectrum.comap_comp f.toRingHom g.toRingHom) v.1
+  exact congr_fun (ValuationSpectrum.comap_comp f.toRingHom g.toRingHom) v.val
 
 open scoped Classical in
 /-- The preimage of a rational subset under the map induced by a morphism of Huber pairs is the
@@ -132,19 +132,19 @@ private theorem spaComap_quotientHom_eq (S : Pair A) (J : Ideal A) :
         quotientSpaHomeomorph S J := by
   funext v
   apply Subtype.ext
-  have hev : ((quotientSpaHomeomorph S J) v).1 = v.1 := by
+  have hev : ((quotientSpaHomeomorph S J) v).val = v.val := by
     exact congr_arg Subtype.val (Homeomorph.setCongr_apply (quotient_spa_eq S J) v)
   calc
-    ((quotientHom S J).spaComap v).1 =
-        ValuationSpectrum.comap (Ideal.Quotient.mk J) v.1 := by
+    ((quotientHom S J).spaComap v).val =
+        ValuationSpectrum.comap (Ideal.Quotient.mk J) v.val := by
       rw [spaComap_val, toRingHom_quotientHom]
-    _ = ValuationSpectrum.comap (Ideal.Quotient.mk J) ((quotientSpaHomeomorph S J) v).1 :=
+    _ = ValuationSpectrum.comap (Ideal.Quotient.mk J) ((quotientSpaHomeomorph S J) v).val :=
       congr_arg (ValuationSpectrum.comap (Ideal.Quotient.mk J)) hev.symm
     _ = (ValuationSpectrum.spaComap (Ideal.Quotient.mk J) continuous_quotient_mk' S.plus
         (S.plus.map (Ideal.Quotient.mk J))
         (fun (a : A) (ha : a ∈ S.plus) ↦
           (Subring.mem_map (f := Ideal.Quotient.mk J)).mpr ⟨a, ha, rfl⟩)
-        ((quotientSpaHomeomorph S J) v)).1 :=
+        ((quotientSpaHomeomorph S J) v)).val :=
       (ValuationSpectrum.spaComap_val (Ideal.Quotient.mk J) continuous_quotient_mk' S.plus
         (S.plus.map (Ideal.Quotient.mk J)) _ _).symm
 

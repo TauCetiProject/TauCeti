@@ -153,7 +153,7 @@ theorem simplexVolume_le_exp_neg (m : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
         · exact div_nonneg (sub_nonneg.2 (Real.exp_le_one_iff.2 (by linarith))) hl.le
         · exact Real.one_sub_exp_neg_div_le_exp _
     _ = Real.exp (-(6 * m * ε ^ 2)) := by
-        rw [← Real.exp_nat_mul, ← Real.exp_add]
+        rw [← Real.exp_natCast_mul, ← Real.exp_add]
         ring_nf
 
 end TauCeti

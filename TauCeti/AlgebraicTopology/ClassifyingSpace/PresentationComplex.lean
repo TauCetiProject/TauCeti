@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.PresentedGroup
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TwoCellAttachment
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
-public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
+public import TauCeti.Topology.CWComplex.Classical.WedgeSum.Circles
 import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
@@ -115,7 +115,7 @@ theorem PresentationComplex.circleFundamentalGroupMulEquiv_attachingLoop (w : Fr
 the generators `S`, with a 2-cell attached along the loop `attachingLoop r` for each relator
 `r ∈ R`. It has one vertex, one 1-cell for each generator and one 2-cell for each relator. -/
 abbrev PresentationComplex (R : Set (FreeGroup S)) : Type u :=
-  TwoCellAttachment fun r : R => PresentationComplex.attachingLoop r.1
+  TwoCellAttachment fun r : R => PresentationComplex.attachingLoop r.val
 
 namespace PresentationComplex
 
@@ -143,7 +143,7 @@ def fundamentalGroupHom :
       FreeGroup.ext_hom _ _ fun s => by simp
     rw [h, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
       (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_attachingLoop r).symm]
-    exact TwoCellAttachment.map_incl_fromPath (γ := fun r : R => attachingLoop r.1) ⟨r, hr⟩
+    exact TwoCellAttachment.map_incl_fromPath (γ := fun r : R => attachingLoop r.val) ⟨r, hr⟩
 
 variable {R}
 
@@ -201,8 +201,8 @@ theorem exists_mapOfEq_comp_fundamentalGroupHom {Z : Type v} [TopologicalSpace Z
   -- So `f₀` makes every relator nullhomotopic, and extends over the 2-cells.
   obtain ⟨f, hf⟩ := (TwoCellAttachment.exists_comp_incl_eq_iff f₀).2 fun r : R =>
     (FundamentalGroup.mapOfEq_fromPath_eq_one_iff f₀ hf₀ _).1 <| by
-      rw [← (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_attachingLoop r.1).symm,
-        key, PresentedGroup.one_of_mem r.2, map_one]
+      rw [← (MulEquiv.symm_apply_eq _).2 (circleFundamentalGroupMulEquiv_attachingLoop r.val).symm,
+        key, PresentedGroup.one_of_mem r.property, map_one]
   have hfb : f (basepoint R) = z := by
     rw [← ContinuousMap.comp_apply, hf, hf₀]
   refine ⟨f, hfb, MonoidHom.ext fun g => ?_⟩

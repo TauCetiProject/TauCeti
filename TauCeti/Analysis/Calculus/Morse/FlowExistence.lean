@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Dynamics.Flow.OfLipschitz
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Dynamics.Flow.Variational
 
@@ -44,6 +45,8 @@ Lyapunov descent along every orbit.
 * `TauCeti.fderiv_negativeGradientFlow_apply_gradient`: `Dφₜ(x)(∇f x) = ∇f(φₜ x)`.
 * `TauCeti.continuous_fderiv_negativeGradientFlow_neg`: `σ ↦ Dφ_{-σ}(φ_σ x)` is continuous.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
+* `TauCeti.hasDerivAt_negativeGradientFlow_apply`: on a product `PiLp 2 β`, each coordinate of an
+  orbit has derivative the corresponding coordinate of `-∇f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
 * `TauCeti.isIntegralCurve_centeredNegativeGradientFlow`: an orbit written in displacement
@@ -138,6 +141,16 @@ theorem hasDerivAt_negativeGradientFlow_zero (f : E → ℝ) (hf : LipschitzWith
   have := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
   beta_reduce at this
   rwa [Flow.map_zero_apply] at this
+
+/-- On a product `PiLp 2 β`, each coordinate of an orbit of the negative-gradient flow has
+derivative the corresponding coordinate of `-∇f`. -/
+theorem hasDerivAt_negativeGradientFlow_apply {ι : Type*} [Fintype ι] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] [∀ i, InnerProductSpace ℝ (β i)] [∀ i, CompleteSpace (β i)]
+    (f : PiLp 2 β → ℝ) (hf : LipschitzWith K (∇ f)) (y : PiLp 2 β) (i : ι) (t : ℝ) :
+    HasDerivAt (fun t ↦ negativeGradientFlow f hf t y i)
+      (-∇ f (negativeGradientFlow f hf t y) i) t := by
+  have h := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y t
+  exact (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 _ i).comp_hasDerivAt t h
 
 /-- **The flow direction is tangent to an invariant set**: for a set `S` invariant under the
 negative-gradient flow and a point `y ∈ S`, the velocity `-∇ f y` lies in the tangent cone of `S`
