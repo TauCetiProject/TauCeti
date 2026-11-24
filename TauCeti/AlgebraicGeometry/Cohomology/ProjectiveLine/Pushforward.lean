@@ -23,7 +23,7 @@ of `F` is that of the quasi-coherent sheaf `𝒪_{ℙ¹_S}`, `R`-linearly
 (`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom`).
 The latter is `S` in degree zero and vanishes in positive degrees
 (`TauCeti.AlgebraicGeometry.projectiveLine.cohomologyZeroTrivialLinearEquiv`,
-`TauCeti.AlgebraicGeometry.projectiveLine.subsingleton_cohomology_one_trivial`).
+`TauCeti.AlgebraicGeometry.projectiveLine.subsingleton_cohomology_succ_trivial`).
 
 For a quotient `S = R ⧸ I` the projection is a closed immersion
 (`TauCeti.AlgebraicGeometry.projectiveLine.isClosedImmersion_baseChangeProjection`), and `F` is
@@ -78,8 +78,8 @@ theorem cohomologyZeroPushforwardLinearEquiv_symm_apply (s : S) :
       ((baseChangeProjection R S).cohomologyPushforwardIsoOfIsAffineHom _ 0).inv
         ((cohomologyZeroTrivialLinearEquiv S).symm s) := by
   simp only [cohomologyZeroPushforwardLinearEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply]
-  rfl
+    Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply,
+    LinearEquiv.restrictScalars_symm_apply]
 
 /-- **Higher cohomology of a direct image from a base change of the projective line vanishes.**
 `Hⁿ⁺¹(ℙ¹_R, p_* 𝒪_{ℙ¹_S}) = 0` for the projection `p : ℙ¹_S ⟶ ℙ¹_R`. -/
@@ -89,8 +89,6 @@ instance subsingleton_cohomology_pushforward_succ (n : ℕ) :
   suffices Subsingleton (Cohomology (InvertibleSheaf.trivial (projectiveLine S)).obj (n + 1)) from
     ((baseChangeProjection R S).cohomologyPushforwardIsoOfIsAffineHom _
       (n + 1)).addCommGroupIsoToAddEquiv.toEquiv.subsingleton
-  rcases n with _ | n
-  · exact subsingleton_cohomology_one_trivial S
-  · exact (Pi.basisFun S (Fin 2)).subsingleton_cohomology_proj_of_card_le _ (n + 2) (by simp)
+  infer_instance
 
 end TauCeti.AlgebraicGeometry.projectiveLine
