@@ -61,7 +61,8 @@ theorem exists_isAlmostSplit_arTranslate
   have hi := (E).functor.indecomposable_obj_of_map_bijective hiM
     ((E).fullyFaithfulFunctor.map_bijective _ _)
   obtain ⟨B, i, p, hip, hB, hS⟩ := ModuleCat.exists_isAlmostSplit_arTranslate.{u, max u v w, t}
-    k ((E).functor.obj M) hi (fun h ↦ hpM (((E).map_projective_iff M).mp h))
+    k k (TauCeti.length_quotient_linearMap_self_eq_one k) ((E).functor.obj M) hi
+      (fun h ↦ hpM (((E).map_projective_iff M).mp h))
   have := hB
   let a : arTranslate.{u, v, w, t} k Q M hM ≅
       (F).obj (ModuleCat.arTranslate.{u, max u v w, t} k k ((E).functor.obj M)) :=

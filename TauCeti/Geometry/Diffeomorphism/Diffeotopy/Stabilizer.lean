@@ -31,7 +31,8 @@ stabilizer (`TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`).
 
 Stabilizers are natural under intertwining maps: if a smooth map `g : M' → M` satisfies
 `g ∘ f' = f ∘ g` and `f` preserves `σ`, then `f'` preserves `g^* σ`
-(`TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`). Applied to the two
+(`TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth`). Applied to the two
 projections of a product, this shows that products `f × f'` of diffeomorphisms preserving `σ` on
 `M` and `τ` on `N` preserve the form `pr₁^* σ + pr₂^* τ` on `M × N`, and products of
 diffeomorphisms in the isotopy stabilizers lie in the isotopy stabilizer of `pr₁^* σ + pr₂^* τ`,
@@ -53,8 +54,6 @@ through the product diffeotopy `TauCeti.Diffeotopy.prodCongr`.
   stabilizer preserves the subgroup.
 * `TauCeti.SmoothForm.normal_isotopyStabilizer_subgroupOf`: the subgroup is normal in the
   stabilizer of `σ` (an instance).
-* `TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`: naturality of
-  stabilizers under intertwining maps.
 * `TauCeti.SmoothForm.prodCongr_mem_diffeomorphStabilizer`,
   `TauCeti.SmoothForm.timeSlice_prodCongr_mem_diffeomorphStabilizer`,
   `TauCeti.SmoothForm.prodCongr_mem_isotopyStabilizer`: products of form-preserving
@@ -178,14 +177,6 @@ section Naturality
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold J' 1 M']
-
-/-- **Naturality of stabilizers.** If a smooth map `g` intertwines two diffeomorphisms,
-`g ∘ f' = f ∘ g`, and `f` preserves `σ`, then `f'` preserves the pullback `g^* σ`. -/
-theorem mem_diffeomorphStabilizer_mpullback_of_semiconj {g : M' → M} (hg : ContMDiff J' J ∞ g)
-    {f' : M' ≃ₘ⟮J', J'⟯ M'} {f : M ≃ₘ⟮J, J⟯ M} (h : Function.Semiconj g f' f)
-    (hf : f ∈ diffeomorphStabilizer σ) : f' ∈ diffeomorphStabilizer (mpullback g hg σ) := by
-  rw [mem_diffeomorphStabilizer] at hf ⊢
-  rw [mpullback_mpullback_of_comp_eq f'.contMDiff hg hg f.contMDiff h.comp_eq, hf]
 
 /-- The product `f × f'` of a diffeomorphism `f` of `M` preserving `σ` and a diffeomorphism `f'`
 of `M'` preserving `τ` preserves the form `pr₁^* σ + pr₂^* τ` on `M × M'`. -/

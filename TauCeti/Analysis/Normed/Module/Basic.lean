@@ -52,6 +52,8 @@ normed spaces:
   `‖a • X + b • Y‖² + ‖(-b) • X + a • Y‖²` after composing with the conformal map agree up to the
   conformal factor `a² + b²` and a factor `2`. These compare `W^{1,2}` densities under a
   holomorphic change of coordinates.
+* `TauCeti.edist_map_smul`: evaluating two linear maps at `r • a` scales their extended
+  distance by `‖r‖ₑ`.
 * `TauCeti.norm_div_norm_smul_le`: for a bounded real scalar action, rescaling a vector `y` by
   `τ / ‖y‖` gives a vector of norm at most `‖τ‖`, for any real `τ` (exactly `‖τ‖` when `‖y‖ ≠ 0`
   and the action preserves norms; `0` when `‖y‖ = 0`).
@@ -62,6 +64,20 @@ normed spaces:
   diameter.
 * `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
   `K ‖c‖`-Lipschitz.
+* `LinearMap.norm_apply_le_sum_norm_mul`: for a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a
+  finite product over a semiring, into a seminormed group with a bounded scalar action of a
+  seminormed ring `S`, the values at the coordinate vectors bound every value:
+  `‖L v‖ ≤ ∑ j, ‖σ (v j)‖ * ‖L (Pi.single j 1)‖`. For the sup norm, `‖σ r‖ ≤ ‖r‖` and a bound `M`
+  on the values at the coordinate vectors this gives `‖L v‖ ≤ #ι * ‖v‖ * M`.
+* `LinearMap.norm_inv_smul_sub_apply`: for a semilinear map `L : E →ₛₗ[σ] F` from any module `E`
+  over a semiring, neither of which needs a norm, into a seminormed group with a bounded scalar
+  action of a normed division ring, and `σ t ≠ 0`, rescaling by `(σ t)⁻¹` turns the error at
+  `t • v` into the error at `v`: `‖(σ t)⁻¹ • w - L v‖ = ‖σ t‖⁻¹ * ‖w - L (t • v)‖`. No continuity
+  of `L` is needed.
+
+The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
+commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
 -/
 
 public section
@@ -189,6 +205,13 @@ theorem norm_smul_le_mul_norm_of_support_subset {α A E : Type*} [SeminormedAddG
   · exact (norm_smul_le _ _).trans
       (mul_le_mul_of_nonneg_right (hK x (hsupp hx)) (norm_nonneg _))
 
+/-- Evaluating two linear maps at `r • a` scales their extended distance by `‖r‖ₑ`. -/
+theorem edist_map_smul {𝕜 E G H : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [SeminormedAddCommGroup G] [Module 𝕜 G] [NormSMulClass 𝕜 G] [FunLike H E G]
+    [LinearMapClass H 𝕜 E G] (φ ψ : H) (r : 𝕜) (a : E) :
+    edist (φ (r • a)) (ψ (r • a)) = ‖r‖ₑ * edist (φ a) (ψ a) := by
+  rw [map_smul, map_smul, edist_smul₀, ENNReal.smul_def, smul_eq_mul, eNorm_eq_nnNorm]
+
 /-- The elementary inequality behind the comparison of `W^{1,2}` densities under conformal
 changes of coordinates. -/
 private theorem add_sq_add_add_sq_le (a b x y : ℝ) :
@@ -265,6 +288,39 @@ theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [Se
     exact norm_smul_le _ _
   rw [mul_comm]
   exact hc.comp hf
+
+namespace LinearMap
+
+/-- The value of a semilinear map `L : (ι → R) →ₛₗ[σ] F` on a finite product at a vector `v` is
+bounded by `∑ j, ‖σ (v j)‖ * ‖L (Pi.single j 1)‖`, its values at the coordinate vectors weighted
+by the coordinates of `v`, when `S` acts on `F` with bounded scalar action. -/
+theorem norm_apply_le_sum_norm_mul {ι R S F : Type*} [Fintype ι] [DecidableEq ι] [Semiring R]
+    [SeminormedRing S] [SeminormedAddCommGroup F] [Module S F] [IsBoundedSMul S F] {σ : R →+* S}
+    (L : (ι → R) →ₛₗ[σ] F) (v : ι → R) :
+    ‖L v‖ ≤ ∑ j, ‖σ (v j)‖ * ‖L (Pi.single j 1)‖ := by
+  -- Expand `v` in the coordinate vectors.
+  have hv : L v = ∑ j, σ (v j) • L (Pi.single j 1) := by
+    conv_lhs => rw [← Finset.univ_sum_single v]
+    simp only [map_sum, ← map_smulₛₗ, ← Pi.single_smul', smul_eq_mul, mul_one]
+  exact hv ▸ norm_sum_le_of_le _ fun j _ ↦ norm_smul_le _ _
+
+section Rescale
+
+variable {𝕜 𝕜₂ E F : Type*} [Semiring 𝕜] [NormedDivisionRing 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+  [AddCommMonoid E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜₂ F] [IsBoundedSMul 𝕜₂ F]
+
+/-- A first-order error at `t • v` rescales to one at `v`: for a semilinear map `L` into a
+seminormed group with a bounded scalar action of a normed division ring `𝕜₂`, and `σ t ≠ 0`, the
+distance from `(σ t)⁻¹ • w` to `L v` is `‖σ t‖⁻¹` times the distance from `w` to `L (t • v)`.
+Neither `E` nor `𝕜` needs a norm. -/
+theorem norm_inv_smul_sub_apply (L : E →ₛₗ[σ] F) {t : 𝕜} (ht : σ t ≠ 0) (w : F) (v : E) :
+    ‖(σ t)⁻¹ • w - L v‖ = ‖σ t‖⁻¹ * ‖w - L (t • v)‖ := by
+  have := NormedDivisionRing.toNormSMulClass (α := 𝕜₂) (β := F)
+  rw [← norm_inv, ← norm_smul, smul_sub, map_smulₛₗ, inv_smul_smul₀ ht]
+
+end Rescale
+
+end LinearMap
 
 open Filter Topology in
 /-- **Continuity of a radial rescaling.** If `τ` and `y` are continuous and `τ` vanishes on the

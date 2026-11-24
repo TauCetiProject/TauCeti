@@ -25,8 +25,9 @@ that into a linear equivalence and uses it to identify a norm with a resultant.
 
 For `g` monic and coprime to `h`, the same division solves the Bézout equation
 `g * b + h * a = c` within the degree bounds `deg a < deg g` and `deg b < deg h`, whenever
-`deg c < deg g + deg h`, and the solution is unique. This is the bijectivity of the Sylvester map
-of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's lemma
+`deg c < deg g + deg h`, and the solution is unique: writing `u * g + v * h = 1`, it is
+`a = (v * c) %ₘ g` and `b = u * c + h * ((v * c) /ₘ g)`. This is the bijectivity of the Sylvester
+map of `g` and `h` on these degree bounds, in the explicit form consumed by Hensel's lemma
 (`TauCeti.RingTheory.PowerSeries.Hensel`).
 
 It also exposes `Polynomial.evalDegreeLT R n`, the `R`-submodule of functions `R → R` obtained by
@@ -47,6 +48,9 @@ evaluating polynomials of degree `< n`.
 * `Polynomial.finrank_degreeLT`: `R[X]_n` has rank `n`.
 * `Polynomial.Monic.sub_mem_degreeLT`: the difference of two monic polynomials of the same degree
   `n` has degree `< n`.
+* `Polynomial.Monic.mul_add_mul_eq_iff`: given a Bézout relation `u * g + v * h = 1`, the
+  solution of `g * b + h * a = c` with `deg a < deg g` is `a = (v * c) %ₘ g` and
+  `b = u * c + h * ((v * c) /ₘ g)`.
 * `IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`, `IsCoprime.eq_zero_of_mul_add_mul_eq_zero`:
   existence and uniqueness of degree-bounded solutions of `g * b + h * a = c`.
 
@@ -162,22 +166,36 @@ theorem Monic.divByMonic_mul_add (hg : g.Monic) (v u : R[X]) :
   conv_rhs => rw [← modByMonic_add_div u g]
   ring
 
+/-- **Bézout and division solve `g * b + h * a = c`.** If `u * g + v * h = 1` with `g` monic
+and `a` of degree `< g.natDegree`, then `g * b + h * a = c` holds exactly when `a` is the
+remainder of `v * c` on division by `g` and `b = u * c + h * ((v * c) /ₘ g)`. No degree bound on
+`c` is needed. -/
+theorem Monic.mul_add_mul_eq_iff {g h u v a b c : R[X]} (hg : g.Monic) (huv : u * g + v * h = 1)
+    (ha : a ∈ degreeLT R g.natDegree) :
+    g * b + h * a = c ↔ a = (v * c) %ₘ g ∧ b = u * c + h * ((v * c) /ₘ g) := by
+  nontriviality R
+  refine ⟨fun hab ↦ ?_, fun ⟨hav, hbv⟩ ↦ ?_⟩
+  · have hdeg := (mem_degreeLT_natDegree_iff hg.ne_zero).mp ha
+    have hvc : v * c = g * (v * b - u * a) + a := by linear_combination (-v) * hab + a * huv
+    rw [hvc, hg.modByMonic_mul_add, (modByMonic_eq_self_iff hg).mpr hdeg, hg.divByMonic_mul_add,
+      (divByMonic_eq_zero_iff hg).mpr hdeg, add_zero]
+    exact ⟨rfl, by linear_combination (-b) * huv + u * hab⟩
+  · rw [hav, hbv]
+    linear_combination c * huv + h * modByMonic_add_div (v * c) g
+
 /-- For `g` monic and coprime to `h`, every `c` of degree `< g.natDegree + h.natDegree` is
 `g * b + h * a` with `a` of degree `< g.natDegree` and `b` of degree `< h.natDegree`. Writing
-`u * g + v * h = 1`, one may take `a = (v * c) %ₘ g`. -/
+`u * g + v * h = 1`, one may take `a = (v * c) %ₘ g`, by `Polynomial.Monic.mul_add_mul_eq_iff`. -/
 theorem _root_.IsCoprime.exists_mem_degreeLT_mul_add_mul_eq {g h c : R[X]} (hgh : IsCoprime g h)
     (hg : g.Monic) (hc : c ∈ degreeLT R (g.natDegree + h.natDegree)) :
     ∃ a b, a ∈ degreeLT R g.natDegree ∧ b ∈ degreeLT R h.natDegree ∧ g * b + h * a = c := by
   obtain ⟨u, v, huv⟩ := hgh
-  have hdiv := modByMonic_add_div (v * c) g
-  set a := (v * c) %ₘ g
-  have ha : a ∈ degreeLT R g.natDegree := modByMonic_mem_degreeLT hg _
-  have hab : g * (u * c + h * ((v * c) /ₘ g)) + h * a = c := by
-    linear_combination c * huv + h * hdiv
-  refine ⟨a, _, ha, ?_, hab⟩
+  have ha := modByMonic_mem_degreeLT hg (v * c)
+  have hab := (hg.mul_add_mul_eq_iff huv ha (b := u * c + h * ((v * c) /ₘ g))).mpr ⟨rfl, rfl⟩
+  refine ⟨_, _, ha, ?_, hab⟩
   have hgb : g * (u * c + h * ((v * c) /ₘ g)) ∈ degreeLT R (g.natDegree + h.natDegree) := by
     rw [eq_sub_of_add_eq hab]
-    exact sub_mem hc (mul_comm a h ▸ mem_degreeLT.mpr
+    exact sub_mem hc (mul_comm ((v * c) %ₘ g) h ▸ mem_degreeLT.mpr
       (degree_mul_lt_of_degree_lt_of_natDegree_le (mem_degreeLT.mp ha) le_rfl))
   simpa [mul_divByMonic_cancel_left _ hg] using divByMonic_mem_degreeLT hgb
 
@@ -186,12 +204,7 @@ theorem _root_.IsCoprime.exists_mem_degreeLT_mul_add_mul_eq {g h c : R[X]} (hgh 
 theorem _root_.IsCoprime.eq_zero_of_mul_add_mul_eq_zero {g h a b : R[X]} (hgh : IsCoprime g h)
     (hg : g.Monic) (ha : a ∈ degreeLT R g.natDegree) (hab : g * b + h * a = 0) :
     a = 0 ∧ b = 0 := by
-  nontriviality R
-  have hga : g ∣ a := hgh.dvd_of_dvd_mul_left ⟨-b, by linear_combination hab⟩
-  have ha0 : a = 0 := by
-    rw [← (modByMonic_eq_self_iff hg).mpr ((mem_degreeLT_natDegree_iff hg.ne_zero).mp ha),
-      (modByMonic_eq_zero_iff_dvd hg).mpr hga]
-  subst ha0
-  exact ⟨rfl, hg.mul_right_eq_zero_iff.mp (by simpa using hab)⟩
+  obtain ⟨u, v, huv⟩ := hgh
+  simpa using (hg.mul_add_mul_eq_iff huv ha).mp hab
 
 end Polynomial

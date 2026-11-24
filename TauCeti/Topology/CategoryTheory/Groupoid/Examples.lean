@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Metrizable.Basic
 
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Unit, pair and one-object topological groupoids
@@ -413,6 +413,20 @@ theorem isLocalHomeomorph_target [DiscreteTopology G] :
 theorem isProperMap_source_target [CompactSpace G] :
     IsProperMap fun a : Quiver.Total (SingleObj G) ↦ (a.left, a.right) :=
   (continuous_of_const fun _ _ ↦ Subsingleton.elim _ _).isProperMap
+
+/-- The identity arrows of `SingleObj G` form a closed subset of `Quiver.Total (SingleObj G)`
+if and only if `{1}` is closed in `G`. -/
+@[simp]
+theorem isClosed_range_unit_iff [Monoid G] :
+    IsClosed (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) ↔
+      IsClosed ({(1 : G)} : Set G) := by
+  have himg : arrowHomeomorph G ''
+      (Set.range fun x : SingleObj G ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total (SingleObj G))) =
+      ({(1 : G)} : Set G) := by
+    rw [← Set.range_comp]
+    exact Set.range_eq_singleton fun x ↦ by
+      simp only [Function.comp_apply, arrowHomeomorph_apply, SingleObj.id_as_one]
+  rw [← (arrowHomeomorph G).isClosed_image, himg]
 
 end OneObjectGroupoid
 

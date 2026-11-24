@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.Module.GradedModule.Trivial

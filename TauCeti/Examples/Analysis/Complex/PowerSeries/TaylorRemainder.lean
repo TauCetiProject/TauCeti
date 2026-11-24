@@ -16,7 +16,8 @@ import Mathlib.Tactic.FinCases
 
 Concrete checks of the constants and normalisations in
 `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`,
-`HasFPowerSeriesOnBall.norm_sub_partialSum_le`, `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le`, and
+`HasFPowerSeriesOnBall.norm_sub_partialSum_le`, `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le`,
+`HasFPowerSeriesOnBall.norm_mvCoeff_mul_prod_pow_le`, and
 `HasFPowerSeriesOnBall.norm_le_add_sum_mvCoeff`:
 
 * For `g w = w ^ 2` on `Metric.ball (0 : ℂ) 2` (`M = 4`, `T = 2`), at `w = 1` both `‖g 1‖` and
@@ -25,8 +26,11 @@ Concrete checks of the constants and normalisations in
   remainders at orders `T = 0, 2, 3` have norms `1, 1, 0` while `(1 + T) * 4 * (1 / 2) ^ T`
   evaluates to `4, 3, 2`.
 * On `Fin 2 → ℂ`, the bilinear monomial `F z = z 0 * z 1`, represented by the unsymmetrised
-  series with single nonzero term `p 2 (u, v) = u 0 * v 1`, has `p.mvCoeff ![1, 1] = 1` and
-  satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ < 2` (tight as `ρ → 2`).
+  series with single nonzero term `p 2 (u, v) = u 0 * v 1`, has `p.mvCoeff ![1, 1] = 1`,
+  satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ ≤ 2` (attained at `ρ = 2`), and
+  satisfies the unequal-polyradii bound at `ρ = ![1, 2]`.
+* A boundary counterexample shows that `‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
+  `HasFPowerSeriesOnBall.norm_sub_partialSum_le` (for `f z = if ‖z‖ < 1 then 0 else 1`).
 -/
 
 public section
@@ -171,11 +175,30 @@ private theorem norm_prodCoord_le_four {y : Fin 2 → ℂ} (hy : y ∈ ball (0 :
     _ ≤ 2 * 2 := mul_le_mul h0 h1 (norm_nonneg _) (by norm_num)
     _ = 4 := by norm_num
 
--- Multi-index Cauchy inequality on `Fin 2 → ℂ`: `‖mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for `0 ≤ ρ < 2`.
-example {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ < 2) :
+-- Multi-index Cauchy inequality on `Fin 2 → ℂ`: `‖mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for `0 ≤ ρ ≤ 2`.
+example {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ : ρ ≤ 2) :
     ‖prodCoordSeries.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4 := by
   simpa using hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1] hρ0 (by simpa using hρ)
+
+-- Multi-index Cauchy inequality at the boundary radius `ρ = 2` attains `4 = 4`.
+example :
+    ‖prodCoordSeries.mvCoeff ![1, 1]‖ * (2 : ℝ) ^ (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) ≤ 4 ∧
+      ‖prodCoordSeries.mvCoeff ![1, 1]‖ * (2 : ℝ) ^ (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 4 := by
+  refine ⟨hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_pow_le
+    (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1] (by positivity)
+    (by norm_num), ?_⟩
+  have hdeg : (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 2 := by decide
+  rw [mvCoeff_prodCoordSeries_one_one, hdeg]
+  norm_num
+
+-- Unequal-polyradii Cauchy inequality on `Fin 2 → ℂ` at `ρ = ![1, 2]`.
+example :
+    ‖prodCoordSeries.mvCoeff ![1, 1]‖ *
+      ∏ i : Fin 2, (![1, 2] : Fin 2 → ℝ) i ^ (![1, 1] : Fin 2 → ℕ) i ≤ 4 :=
+  hasFPowerSeriesOnBall_prodCoordSeries.norm_mvCoeff_mul_prod_pow_le
+    (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) ![1, 1]
+    (fun i ↦ by fin_cases i <;> norm_num) (fun i ↦ by fin_cases i <;> norm_num)
 
 -- Multi-index truncated Taylor bound at `T = 2` on `Fin 2 → ℂ`, `R = 2`, `r = 1`.
 example {z : Fin 2 → ℂ} (hz : ‖z‖ ≤ 1) :
@@ -183,5 +206,29 @@ example {z : Fin 2 → ℂ} (hz : ‖z‖ ≤ 1) :
       ∑ k ∈ range 2, ∑ α ∈ univ.piAntidiag k, ‖prodCoordSeries.mvCoeff α‖ * (1 : ℝ) ^ k :=
   hasFPowerSeriesOnBall_prodCoordSeries.norm_le_add_sum_mvCoeff
     (fun _ hy ↦ norm_prodCoord_le_four (by simpa using hy)) 2 hz (by norm_num)
+
+/-! ### Boundary counterexample for `‖z‖ < R` -/
+
+/-- `hz : ‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
+`HasFPowerSeriesOnBall.norm_sub_partialSum_le`: `f z = if ‖z‖ < 1 then 0 else 1` has formal power
+series `0` on `ball 0 1` (`M = 0`), yet at `z = 1` the remainder norm is `1`. -/
+example : ∃ (f : ℂ → ℂ) (z : ℂ),
+    HasFPowerSeriesOnBall f (0 : FormalMultilinearSeries ℂ ℂ ℂ) 0 (1 : ℝ≥0) ∧
+      (∀ y ∈ ball (0 : ℂ) (1 : ℝ≥0), ‖f y‖ ≤ 0) ∧ ‖z‖ ≤ (1 : ℝ≥0) ∧
+      ¬(‖f z - (0 : FormalMultilinearSeries ℂ ℂ ℂ).partialSum 1 z‖ ≤
+        (1 + (1 : ℕ)) * 0 * (‖z‖ / (1 : ℝ≥0)) ^ 1) := by
+  classical
+  refine ⟨fun z ↦ if ‖z‖ < 1 then 0 else 1, 1, ?_, ?_, by simp,
+    by simp [FormalMultilinearSeries.partialSum]⟩
+  · exact
+      { r_le := by simp
+        r_pos := by simp
+        hasSum := fun {y} hy ↦ by
+          rw [eball_coe] at hy
+          have hy' : ‖y‖ < 1 := by simpa using hy
+          simp [hy'] }
+  · intro y hy
+    have hy' : ‖y‖ < 1 := by simpa using hy
+    simp [hy']
 
 end TauCeti.TaylorRemainderExample

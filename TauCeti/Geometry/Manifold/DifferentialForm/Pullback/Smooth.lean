@@ -38,8 +38,10 @@ form pulled back from each factor is the product of their values
 (`TauCeti.SmoothForm.wedge_mpullback_fst_snd_apply_append`). Pullback along a smooth map
 with a smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms
 of `M` preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
-(`TauCeti.SmoothForm.diffeomorphStabilizer`). A diffeomorphism in the stabilizer of a two-form
-preserves its values on pushed-forward tangent vectors
+(`TauCeti.SmoothForm.diffeomorphStabilizer`). Stabilizers are natural under intertwining maps: if
+a smooth map `g` satisfies `g ∘ f' = f ∘ g` and `f` preserves `σ`, then `f'` preserves `g^* σ`
+(`TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`). A diffeomorphism in the
+stabilizer of a two-form preserves its values on pushed-forward tangent vectors
 (`TauCeti.SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer`,
 `TauCeti.SmoothForm.eval₂_mfderiv_left_of_mem_diffeomorphStabilizer`).
 
@@ -295,6 +297,12 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) :
 @[simp]
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' F k) :
     (mpullback f hf φ).val = TauCeti.mpullback (F := F) I I' f φ.val := (rfl)
+
+/-- Pulling a form back along equal maps gives the same form, whatever the smoothness proofs. -/
+theorem mpullback_congr {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+    (h : f = g) (φ : SmoothForm I' M' F k) : mpullback f hf φ = mpullback g hg φ := by
+  subst h
+  rfl
 
 /-- Pullback of smooth forms commutes with transport of the degree. -/
 theorem mpullback_cast {l : ℕ} (h : k = l) (f : M → M') (hf : ContMDiff I I' ∞ f)
@@ -594,6 +602,15 @@ theorem mem_diffeomorphStabilizer {σ : SmoothForm I M F k} {φ : M ≃ₘ⟮I, 
 theorem mem_diffeomorphStabilizer_iff_forall {σ : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
     φ ∈ diffeomorphStabilizer σ ↔ ∀ x, TauCeti.mpullback I I φ σ.val x = σ.val x := by
   rw [mem_diffeomorphStabilizer, Subtype.ext_iff, coe_mpullback, funext_iff]
+
+/-- **Naturality of stabilizers.** If a smooth map `g` intertwines two diffeomorphisms,
+`g ∘ f' = f ∘ g`, and `f` preserves `σ`, then `f'` preserves the pullback `g^* σ`. -/
+theorem mem_diffeomorphStabilizer_mpullback_of_semiconj {σ : SmoothForm I M F k} {g : M' → M}
+    (hg : ContMDiff I' I ∞ g) {f' : M' ≃ₘ⟮I', I'⟯ M'} {f : M ≃ₘ⟮I, I⟯ M}
+    (h : Function.Semiconj g f' f) (hf : f ∈ diffeomorphStabilizer σ) :
+    f' ∈ diffeomorphStabilizer (mpullback g hg σ) := by
+  rw [mem_diffeomorphStabilizer] at hf ⊢
+  rw [mpullback_mpullback_of_comp_eq f'.contMDiff hg hg f.contMDiff h.comp_eq, hf]
 
 /-- A diffeomorphism preserving a two-form `τ` preserves its values on pushed-forward tangent
 vectors: `τ(dφ a, dφ b) = τ(a, b)`. -/

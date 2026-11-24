@@ -29,7 +29,8 @@ linear factors by `card s` over any commutative ring, without the nontriviality 
 `Polynomial.natDegree_multiset_prod_X_sub_C_eq_card` needs.
 `Polynomial.natDegree_X_pow_add_C_mul_X_add_C` reads off the degree of the trinomial
 `X ^ n + C a * X + C b` for `2 ≤ n`, and `Polynomial.natDegree_comp_C_mul_X_add_C` shows
-that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree.
+that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree, while
+`Polynomial.natDegree_comp_C_mul_X_le` shows that a rescaling `X ↦ a X` never increases it.
 `Polynomial.sub_C_ne_zero` records that a nonconstant polynomial differs from every constant
 polynomial, `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
 of `p` (in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
@@ -157,5 +158,11 @@ theorem _root_.Polynomial.degree_C_add_X_sub_C_mul_lt {S : Type*} [Ring S] {a ζ
           norm_cast
           ring
       _ < ((d + 1 : ℕ) : WithBot ℕ) := Nat.cast_lt.mpr (Nat.add_lt_add_right hlt 1)
+
+/-- A rescaling `X ↦ a X` does not increase the degree. -/
+theorem _root_.Polynomial.natDegree_comp_C_mul_X_le (a : R) (p : R[X]) :
+    (p.comp (C a * X)).natDegree ≤ p.natDegree :=
+  natDegree_comp_le.trans
+    ((Nat.mul_le_mul_left _ ((natDegree_C_mul_le a X).trans natDegree_X_le)).trans_eq (mul_one _))
 
 end TauCeti

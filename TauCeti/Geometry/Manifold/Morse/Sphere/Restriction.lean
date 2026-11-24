@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!

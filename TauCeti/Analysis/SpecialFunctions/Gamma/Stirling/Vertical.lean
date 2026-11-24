@@ -10,7 +10,7 @@ import Mathlib.Analysis.Asymptotics.Prod
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -63,11 +63,21 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `TauCeti.exists_norm_Gamma_sub_I_le`: uniform upper bounds
   `C (1 + |t|) ^ (σ - 1/2) exp (-π |t| / 2)` and `C (1 + |y|) ^ (Re w - 1/2) exp (-π |y| / 2)` on
   pole-free vertical lines.
+* `TauCeti.exists_norm_Gamma_le_rpow`: `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ (x - 1/2) exp (-π |y| / 2)`
+  at all heights on a strip `u ≤ x ≤ v`, at the points keeping a distance `η > 0` from every pole
+  (the strip bound with `δ = 1`, and compactness below height `1`).
+* `TauCeti.exists_norm_Gamma_le`: the same with one natural exponent `K` in place of `x - 1/2`.
+* `TauCeti.exists_norm_Gamma_le_of_pos`: the sharp bound at all heights on a strip
+  `0 < u ≤ x ≤ v`.
 * `TauCeti.exists_norm_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
   and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
   balls.
+
+The statements of `TauCeti.exists_norm_Gamma_le` and `TauCeti.exists_norm_Gamma_le_of_pos` follow
+the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Gamma/VerticalStrips.lean`.
 -/
 
 public section
@@ -429,6 +439,84 @@ theorem exists_norm_Gamma_sub_I_le {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
         C * (1 + |y|) ^ (w.re - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
   obtain ⟨C, hC, hbnd⟩ := exists_norm_Gamma_add_I_le hw
   exact ⟨C, hC, fun y ↦ by simpa [sub_eq_add_neg] using hbnd (-y)⟩
+
+/-- On a bounded part of the strip, away from the poles, `Γ` is bounded by a multiple of the
+positive Stirling weight `(1 + |Im s|) ^ (Re s - 1/2) exp (-π |Im s| / 2)`: the admissible
+points form a compact set on which `Γ` and the weight are continuous, and the weight does not
+vanish. -/
+private theorem exists_norm_Gamma_le_weight_of_mem_reProdIm {u v η : ℝ} (hη : 0 < η) (T : ℝ) :
+    ∃ M, ∀ s ∈ Icc u v ×ℂ Icc (-T) T, (∀ n : ℕ, η ≤ ‖s + n‖) →
+      ‖Complex.Gamma s‖ ≤
+        M * ((1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))) := by
+  set S : Set ℂ := (Icc u v ×ℂ Icc (-T) T) ∩ ⋂ n : ℕ, {s | η ≤ ‖s + n‖}
+  have hS : IsCompact S :=
+    (isCompact_Icc.reProdIm isCompact_Icc).inter_right
+      (isClosed_iInter fun n ↦ isClosed_le continuous_const (by fun_prop))
+  have hc : ContinuousOn Complex.Gamma S := fun s hs ↦
+    (Complex.continuousAt_Gamma s fun m hm ↦ by
+      have := mem_iInter.1 hs.2 m
+      simp only [mem_ofPred_eq, hm, neg_add_cancel, norm_zero] at this
+      linarith).continuousWithinAt
+  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))
+  have hw_pos (s : ℂ) : 0 < w s := mul_pos (Real.rpow_pos_of_pos (by positivity) _) (Real.exp_pos _)
+  have hw : ContinuousOn (fun s : ℂ ↦ (w s : ℂ)) S :=
+    (continuous_stirlingWeight (by fun_prop) (by fun_prop)).continuousOn
+  have hO : Complex.Gamma =O[𝓟 S] fun s ↦ (w s : ℂ) :=
+    (hc.isBigO_principal hS (c := (1 : ℂ)) (by norm_num)).trans
+      (hw.isBigO_rev_principal hS (fun s _ ↦ ofReal_ne_zero.mpr (hw_pos s).ne') 1)
+  obtain ⟨M, hM⟩ := Asymptotics.isBigO_principal.1 hO
+  refine ⟨M, fun s hs hsep ↦ ?_⟩
+  simpa only [Complex.norm_real, Real.norm_of_nonneg (hw_pos s).le] using
+    hM s ⟨hs, mem_iInter.2 hsep⟩
+
+/-- **The Gamma function on vertical strips, sharp form.** For real `u`, `v` and `η > 0` there
+is `C > 0` such that `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ (x - 1/2) exp (-π |y| / 2)` whenever
+`u ≤ x ≤ v` and `‖x + i y + n‖ ≥ η` for every `n : ℕ`: the strip bound
+`TauCeti.exists_norm_Gamma_vertical_strip_le` at heights `|y| ≥ 1`, and compactness below. -/
+theorem exists_norm_Gamma_le_rpow {u v η : ℝ} (hη : 0 < η) :
+    ∃ C > 0, ∀ x y : ℝ, u ≤ x → x ≤ v → (∀ n : ℕ, η ≤ ‖(x : ℂ) + y * I + n‖) →
+      ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
+  obtain ⟨C, hC, hlarge⟩ := exists_norm_Gamma_vertical_strip_le u v one_pos
+  obtain ⟨M, hsmall⟩ := exists_norm_Gamma_le_weight_of_mem_reProdIm (u := u) (v := v) hη 1
+  refine ⟨C + |M|, by positivity, fun x y hux hxv hsep ↦ ?_⟩
+  have hB : 0 ≤ (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by positivity
+  have hre : (x + y * I : ℂ).re = x := by simp
+  have him : (x + y * I : ℂ).im = y := by simp
+  rw [mul_assoc]
+  rcases le_total 1 |y| with hy | hy
+  · have h := hlarge (x + y * I) (by rw [hre]; exact ⟨hux, hxv⟩) (by rw [him]; exact hy)
+    rw [hre, him, mul_assoc] at h
+    exact h.trans (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (abs_nonneg M)) hB)
+  · have h := hsmall (x + y * I) (by simpa [mem_reProdIm] using ⟨⟨hux, hxv⟩, abs_le.1 hy⟩) hsep
+    rw [hre, him] at h
+    exact h.trans (mul_le_mul_of_nonneg_right
+      ((le_abs_self M).trans (le_add_of_nonneg_left hC.le)) hB)
+
+/-- **The Gamma function on vertical strips.** For real `u`, `v` and `η > 0` there are `C > 0`
+and `K : ℕ` such that `‖Γ(x + i y)‖ ≤ C (1 + |y|) ^ K exp (-π |y| / 2)` whenever `u ≤ x ≤ v`
+and `‖x + i y + n‖ ≥ η` for every `n : ℕ`; one may take `K = ⌈v - 1/2⌉₊` in
+`TauCeti.exists_norm_Gamma_le_rpow`. -/
+theorem exists_norm_Gamma_le {u v η : ℝ} (hη : 0 < η) :
+    ∃ C > 0, ∃ K : ℕ, ∀ x y : ℝ, u ≤ x → x ≤ v → (∀ n : ℕ, η ≤ ‖(x : ℂ) + y * I + n‖) →
+      ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ K * Real.exp (-(π * |y|) / 2) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_Gamma_le_rpow (u := u) (v := v) hη
+  refine ⟨C, hC, ⌈v - 1 / 2⌉₊, fun x y hux hxv hsep ↦ (h x y hux hxv hsep).trans ?_⟩
+  rw [neg_div, ← Real.rpow_natCast]
+  gcongr
+  · linarith [abs_nonneg y]
+  · linarith [Nat.le_ceil (v - 1 / 2)]
+
+/-- On a closed strip `0 < u ≤ x ≤ v` in the right half-plane the sharp bound of
+`TauCeti.exists_norm_Gamma_le_rpow` holds at all heights. -/
+theorem exists_norm_Gamma_le_of_pos {u v : ℝ} (hu : 0 < u) :
+    ∃ C > 0, ∀ x y : ℝ, u ≤ x → x ≤ v →
+      ‖Complex.Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ (x - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_Gamma_le_rpow (u := u) (v := v) hu
+  refine ⟨C, hC, fun x y hux hxv ↦ h x y hux hxv fun n ↦ ?_⟩
+  have hre : ((x : ℂ) + y * I + n).re = x + n := by simp
+  refine le_trans ?_ (abs_re_le_norm _)
+  rw [hre]
+  exact le_abs.2 (Or.inl (by linarith [n.cast_nonneg (α := ℝ)]))
 
 /-- Uniform upper bound for the reciprocal Gamma function across an entire vertical strip
 `a ≤ Re s ≤ b` (including at poles, where `(Γ s)⁻¹ = 0`):
