@@ -247,6 +247,13 @@ end BaseChangeAlongIso
 
 section IdIso
 
+-- These declarations use main's `baseChangeSelfIso` API, stated for `Algebra.id A`, at the type
+-- `TensorAlong (RingHom.id A) M`. They rely on the definitional equality
+-- `(RingHom.id A).toAlgebra = Algebra.id A`: Mathlib defines `Algebra.id A` as
+-- `(RingHom.id A).toAlgebra` with its scalar action replaced by multiplication, which agrees with
+-- `RingHom.id A c * x` once `RingHom.id` is unfolded. So no algebra structure is installed here;
+-- only the `A`-module topology on `A ⊗[A] M` is.
+
 variable {Γ A M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
   [IsTopologicalSemiring A] [AddCommMonoid M] [Module A M] [TopologicalSpace M]
   [IsModuleTopology A M] [Module.Finite A M] (ρ : ContinuousRep Γ A M)
@@ -461,17 +468,12 @@ theorem not_nonempty_iso_frobTwist_ofCharacter_of_orderOf_eq [Fact p.Prime] (χ 
   have hp := (Fact.out : p.Prime).two_le
   refine not_nonempty_iso_frobTwist_ofCharacter p χ (g := g) fun h => ?_
   -- `χ g ^ p = χ g` forces `χ g ^ (p - 1) = 1`, so `p² - 1 ∣ p - 1`, which is impossible.
-  have hu : χ g ^ (p - 1) * χ g = 1 * χ g := by
-    rw [← pow_succ, Nat.sub_add_cancel (by omega), one_mul]
+  have hu : χ g ^ (p - 1) = 1 := mul_eq_right.1 <| by
+    rw [← pow_succ, Nat.sub_add_cancel (by omega)]
     exact Units.ext (by simpa using h)
-  have hdvd := orderOf_dvd_of_pow_eq_one (mul_right_cancel hu)
-  rw [hg] at hdvd
-  have hle := Nat.le_of_dvd (by omega) hdvd
-  have hsq : p * p ≤ p := by
-    have := Nat.one_le_pow 2 p (by omega)
-    rw [← sq]
-    omega
-  nlinarith
+  have hle := Nat.le_of_dvd (by omega) (hg ▸ orderOf_dvd_of_pow_eq_one hu)
+  have : p < p ^ 2 := by nlinarith
+  omega
 
 end FrobTwist
 
