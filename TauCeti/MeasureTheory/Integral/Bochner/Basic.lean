@@ -18,6 +18,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Order.Interval.Set.Pi
 import TauCeti.Analysis.Normed.Module.Basic
+import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -1225,22 +1226,6 @@ end TauCeti
 
 namespace MeasureTheory
 
-private theorem integrable_comp_of_dist_le
-    {E Ω : Type*} [MeasurableSpace E] [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
-    {X : Ω → E} (hX : AEMeasurable X μ) {F : E → ℝ} (hF_meas : Measurable F)
-    {M : ℝ} (hF_bd : ∀ x y, dist (F x) (F y) ≤ M) :
-    Integrable (fun ω ↦ F (X ω)) μ := by
-  rcases isEmpty_or_nonempty E with hE | ⟨⟨x₀⟩⟩
-  · have : IsEmpty Ω := ⟨fun ω ↦ hE.false (X ω)⟩
-    simp [Measure.eq_zero_of_isEmpty μ]
-  · refine Integrable.of_bound
-      (hF_meas.stronglyMeasurable.aestronglyMeasurable.comp_aemeasurable hX)
-      (|F x₀| + M) (ae_of_all _ fun ω ↦ ?_)
-    rw [Real.norm_eq_abs]
-    have h₁ := abs_sub_le (F (X ω)) (F x₀) 0
-    simp only [sub_zero, ← Real.dist_eq] at h₁
-    linarith [h₁, hF_bd (X ω) x₀]
-
 /-- For a bounded `L`-Lipschitz function `F : E → ℝ` and a finite measure `μ`, the difference of
 integrals `|∫ x, F x ∂(μ.map Y) - ∫ x, F x ∂(μ.map X)|` is bounded by
 `L * δ * μ.real Set.univ + M * μ.real {ω | δ ≤ dist (Y ω) (X ω)}` without assuming measurability
@@ -1257,8 +1242,9 @@ theorem abs_integral_map_sub_le_of_lipschitz
   · simp [Measure.eq_zero_of_isEmpty μ]
   have hM_nonneg : 0 ≤ M := dist_nonneg.trans (hF_bd (X ω₀) (X ω₀))
   have hF_meas : Measurable F := hF_lip.continuous.measurable
-  have h_int_Y : Integrable (fun ω ↦ F (Y ω)) μ := integrable_comp_of_dist_le hY hF_meas hF_bd
-  have h_int_X : Integrable (fun ω ↦ F (X ω)) μ := integrable_comp_of_dist_le hX hF_meas hF_bd
+  let f : BoundedContinuousFunction E ℝ := ⟨⟨F, hF_lip.continuous⟩, ⟨M, hF_bd⟩⟩
+  have h_int_Y : Integrable (fun ω ↦ F (Y ω)) μ := (f.integrable (μ.map Y)).comp_aemeasurable hY
+  have h_int_X : Integrable (fun ω ↦ F (X ω)) μ := (f.integrable (μ.map X)).comp_aemeasurable hX
   rw [integral_map hY hF_meas.stronglyMeasurable.aestronglyMeasurable,
     integral_map hX hF_meas.stronglyMeasurable.aestronglyMeasurable,
     ← integral_sub h_int_Y h_int_X, ← Real.norm_eq_abs]
