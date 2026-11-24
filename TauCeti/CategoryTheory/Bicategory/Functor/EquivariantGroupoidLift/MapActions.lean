@@ -220,13 +220,19 @@ private lemma id_whiskerRight_associator_whiskerLeft_whiskerRight {B : Type*} [B
       (α_ (x ≫ y) k l).inv ≫ ((α_ x y k).hom ≫ x ◁ my ≫ mx) ▷ l := by
   simp
 
+/-- The fiber isomorphism of an identity morphism of lifts, whiskered on the right, is the
+left unitor of the whiskered fiber comparison, up to the associator. -/
+private lemma id_whiskerRight_leftUnitor_comp {B : Type*} [Bicategory B] {a b c : B}
+    (f : a ⟶ b) (g : b ⟶ c) :
+    𝟙 (𝟙 a) ▷ (f ≫ g) ≫ (λ_ (f ≫ g)).hom = (α_ (𝟙 a) f g).inv ≫ (λ_ f).hom ▷ g := by
+  simp
+
 /-- Following the fiber comparisons by `φ` preserves the identity morphism of a lift. -/
 noncomputable def mapActionsIdIso (L : EquivariantGroupoidLift Γ actions) :
     (id L).mapActions φ hφ ≅ id (L.mapActions φ hφ) :=
   isoMk (Iso.refl _) (fun p a ↦ by
     rw [id_fiberIso_hom_as_app, mapActions_fiberIso_hom_as_app, id_fiberIso_hom_as_app]
-    exact (congrArg (· ≫ _) (id_whiskerRight _ _)).trans
-      ((Category.id_comp _).trans (leftUnitor_comp _ _)))
+    exact id_whiskerRight_leftUnitor_comp _ _)
 
 variable {L'' : EquivariantGroupoidLift Γ actions} in
 /-- Following the fiber comparisons by `φ` preserves composition of morphisms of lifts. -/
@@ -336,10 +342,9 @@ lemma mapActionsCounitHom_fiberIso_hom_as_app (L : EquivariantGroupoidLift Γ ac
   -- it against `(c ≫ ψ) ≫ φ`, where the simp lemmas for its components apply.
   change ((Hom.id L).fiberIso p ≪≫ (α_ (L.comparison p) (ψ p) (φ p) ≪≫
       L.comparison p ◁ᵢ θ p ≪≫ ρ_ (L.comparison p)).symm).hom.as.app a = _
-  simp
-  -- The two sides now differ only in implicit arguments, components of composite strong
-  -- transformations that agree after unfolding.
-  rfl
+  simp only [Iso.trans_symm, Iso.trans_assoc, Iso.trans_hom, Iso.symm_hom, whiskerLeftIso_inv,
+    homCategory_comp_as_app, rightUnitor_inv_as_app, whiskerLeft_as_app, associator_inv_as_app]
+  exact congrArg (· ≫ _) (Hom.id_fiberIso_hom_as_app L p a)
 
 /-- The coherence condition on the naturality isomorphisms of `mapActionsUnit`, in an arbitrary
 bicategory: `F` is the component of a joint transformation, `mf` its fiber isomorphism, and `t`
