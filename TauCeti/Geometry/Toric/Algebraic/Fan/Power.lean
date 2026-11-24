@@ -68,16 +68,11 @@ theorem nsmul_linearMap_id_apply_lattice (n : N) :
     (q • LinearMap.id : V →ₗ[ℝ] V) (i n) = i (nsmulAddMonoidHom q n) := by
   simp
 
-/-- Multiplication by a natural number carries a cone into itself. -/
-theorem mapsTo_nsmul_linearMap_id (σ : PointedCone ℝ V) :
-    Set.MapsTo (q • LinearMap.id : V →ₗ[ℝ] V) σ σ := fun x hx ↦ by
-  simpa using σ.nsmul_mem hx q
-
 /-- On a dual semigroup, the map induced by multiplication by `q` on the lattice is
 multiplication by `q`. -/
 theorem dualSemigroupMap_nsmul (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     dualSemigroupMap hi hi (nsmulAddMonoidHom q) (q • LinearMap.id)
-        (nsmul_linearMap_id_apply_lattice q) (mapsTo_nsmul_linearMap_id q σ) =
+        (nsmul_linearMap_id_apply_lattice q) (PointedCone.mapsTo_nsmul_linearMap_id q σ) =
       nsmulAddMonoidHom q := by
   ext m n
   simp
@@ -86,7 +81,7 @@ theorem dualSemigroupMap_nsmul (hi : IsIntegralLattice i) (σ : PointedCone ℝ 
 raising every monomial to its `q`-th power and fixing the coefficients. -/
 theorem affineCoordinateRingMap_nsmul (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     affineCoordinateRingMap hi hi (nsmulAddMonoidHom q) (q • LinearMap.id)
-        (nsmul_linearMap_id_apply_lattice q) (mapsTo_nsmul_linearMap_id q σ) =
+        (nsmul_linearMap_id_apply_lattice q) (PointedCone.mapsTo_nsmul_linearMap_id q σ) =
       MonoidAlgebra.mapDomainAlgHom ℂ ℂ (powMonoidHom q) := by
   refine MonoidAlgebra.algHom_ext (fun m ↦ ?_) (Subsingleton.elim _ _)
   rw [← ofAdd_toAdd m, affineCoordinateRingMap_single, dualSemigroupMap_nsmul]
@@ -96,7 +91,7 @@ theorem affineCoordinateRingMap_nsmul (hi : IsIntegralLattice i) (σ : PointedCo
 ring map raising every monomial to its `q`-th power. -/
 theorem affineToricSchemeMap_nsmul (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     affineToricSchemeMap hi hi (nsmulAddMonoidHom q) (q • LinearMap.id)
-        (nsmul_linearMap_id_apply_lattice q) (mapsTo_nsmul_linearMap_id q σ) =
+        (nsmul_linearMap_id_apply_lattice q) (PointedCone.mapsTo_nsmul_linearMap_id q σ) =
       Spec.map (CommRingCat.ofHom (MonoidAlgebra.mapDomainRingHom ℂ (powMonoidHom q))) := by
   rw [affineToricSchemeMap_def, affineCoordinateRingMap_nsmul]
   -- `MonoidAlgebra.mapDomainAlgHom` is built with `toRingHom := MonoidAlgebra.mapDomainRingHom`.
@@ -117,7 +112,8 @@ def nsmulHom (q : ℕ) : FanHom Φ Φ where
   latticeMap := nsmulAddMonoidHom q
   realMap := q • LinearMap.id
   map_lattice := nsmul_linearMap_id_apply_lattice q
-  map_cone σ hσ := ⟨σ, hσ, fun _ ⟨_, hx, hxy⟩ ↦ hxy ▸ mapsTo_nsmul_linearMap_id q σ hx⟩
+  map_cone σ hσ := ⟨σ, hσ, fun _ ⟨_, hx, hxy⟩ ↦
+    hxy ▸ PointedCone.mapsTo_nsmul_linearMap_id q σ hx⟩
 
 /-- The integral part of the power endomorphism is multiplication by `q`. -/
 @[simp]
@@ -148,7 +144,7 @@ theorem affineToricChartι_comp_algebraicMap_nsmulHom (σ : Φ.cones) :
       Spec.map (CommRingCat.ofHom (MonoidAlgebra.mapDomainRingHom ℂ (powMonoidHom q))) ≫
         Φ.affineToricChartι σ :=
   ((Φ.nsmulHom q).affineToricChartι_comp_algebraicMap_of_mapsTo σ σ
-    (mapsTo_nsmul_linearMap_id q σ.val)).trans
+    (PointedCone.mapsTo_nsmul_linearMap_id q σ.val)).trans
     (congrArg (· ≫ Φ.affineToricChartι σ) (affineToricSchemeMap_nsmul q Φ.lattice σ.val))
 
 /-- The toric power morphisms satisfy `φ_(q * r) = φ_q ∘ φ_r`. -/

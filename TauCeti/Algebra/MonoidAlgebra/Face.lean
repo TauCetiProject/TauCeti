@@ -293,7 +293,7 @@ theorem preimage_comap_mapDomainRingHom_nsmul_zeroLocus_faceIdeal (hn : n ≠ 0)
 
 /-- Raising monomials to the zeroth power sends each of them to `1`, so the preimage of the zero
 locus of the monomial ideal of a proper submonoid is empty. -/
-theorem preimage_comap_mapDomainRingHom_zero_zeroLocus_faceIdeal (hFtop : F ≠ ⊤) :
+theorem preimage_comap_mapDomainRingHom_nsmul_zero_zeroLocus_faceIdeal_eq_empty (hFtop : F ≠ ⊤) :
     PrimeSpectrum.comap (mapDomainRingHom R (nsmulAddMonoidHom 0)) ⁻¹'
         PrimeSpectrum.zeroLocus (F.faceIdeal R : Set (AddMonoidAlgebra R M)) = ∅ := by
   obtain ⟨a, ha⟩ : ∃ a, a ∉ F := by
