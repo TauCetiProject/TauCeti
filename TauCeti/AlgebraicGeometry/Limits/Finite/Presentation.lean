@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.BaseChange
-public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 
 /-!
 # Descent of morphisms and their properties along cofiltered limits
