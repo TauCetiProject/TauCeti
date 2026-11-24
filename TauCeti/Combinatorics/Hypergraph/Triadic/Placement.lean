@@ -48,6 +48,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
 ## Main definitions
 
 * `TauCeti.PatternPlacement3`: an assignment of the pattern vertices to vertex cells.
+* `TauCeti.PatternPlacement3.equivFun`: placements are the maps from the pattern vertices to the
+  vertex cells.
 * `TauCeti.PairColorPlacement3`: a route, assigning pair colors to canonical pattern pairs.
 * `TauCeti.placementInjectionCount`: the number of cell-respecting injections of a placement.
 * `TauCeti.Colored3Graph.placedInducedCopyCount`: the induced copies realizing a placement and a
@@ -65,6 +67,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
   add up to `|V| ^ F.k`.
 * `TauCeti.PairColorPlacement3.card_le_pairColorCount_pow`: a placement has at most
   `m ^ (F.k.choose 2)` routes, where `m` is the number of pair colors.
+* `TauCeti.PairColorPlacement3.sigma_ext`: a placement with a route is determined by its cells
+  and its pair colors.
 * `TauCeti.Colored3Graph.pairwiseDisjoint_placedInducedCopies`: distinct placements and routes
   are realized by disjoint sets of induced copies.
 * `TauCeti.Colored3Graph.inducedCopyCount_eq_sum_placedInducedCopyCount`: over a polyad
@@ -128,18 +132,38 @@ theorem eq_of_forall_mem {φ φ' : PatternPlacement3 C F} {g : Fin F.k → V}
   PatternPlacement3.ext <| funext fun i ↦
     C.skeleton.vertexPart.eq_of_mem_parts (φ.vertexCell_mem i) (φ'.vertexCell_mem i) (h i) (h' i)
 
+/-- A placement is the same as a map from the pattern vertices to the vertex cells. -/
+def equivFun : PatternPlacement3 C F ≃ (Fin F.k → C.skeleton.vertexPart.parts) where
+  toFun φ i := ⟨φ.vertexCell i, φ.vertexCell_mem i⟩
+  invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).property⟩
+
+/-- The cell of a pattern vertex under `PatternPlacement3.equivFun` is its assigned cell. -/
+@[simp]
+theorem coe_equivFun_apply (φ : PatternPlacement3 C F) (i : Fin F.k) :
+    (equivFun φ i : Finset V) = φ.vertexCell i :=
+  (rfl)
+
+/-- The placement of a map to the vertex cells assigns to each pattern vertex its image. -/
+@[simp]
+theorem equivFun_symm_apply_vertexCell (c : Fin F.k → C.skeleton.vertexPart.parts)
+    (i : Fin F.k) : (equivFun.symm c).vertexCell i = c i :=
+  (rfl)
+
+/-- A placement is transversal exactly when its map to the vertex cells is injective. -/
+@[simp]
+theorem injective_equivFun_iff (φ : PatternPlacement3 C F) :
+    Injective (equivFun φ) ↔ φ.Transversal := by
+  rw [transversal_iff]
+  exact ⟨fun h _ _ hij ↦ h (Subtype.ext hij), fun h _ _ hij ↦ h (congrArg Subtype.val hij)⟩
+
 /-- The boxes of cells of the placements partition the maps `Fin F.k → V`, so their sizes add up
 to `|V| ^ F.k`. -/
 theorem sum_prod_card_vertexCell :
     ∑ φ : PatternPlacement3 C F, ∏ i, #(φ.vertexCell i) = Fintype.card V ^ F.k := by
   classical
-  -- A placement is a map from the pattern vertices to the vertex cells.
-  let e : PatternPlacement3 C F ≃ (Fin F.k → C.skeleton.vertexPart.parts) :=
-    { toFun φ i := ⟨φ.vertexCell i, φ.vertexCell_mem i⟩
-      invFun c := ⟨fun i ↦ c i, fun i ↦ (c i).property⟩ }
   have h := C.skeleton.vertexPart.sum_card_filter_piFinset_parts (ι := Fin F.k) fun _ ↦ True
   simp only [filter_true, Fintype.card_piFinset, card_univ, prod_const, Fintype.card_fin] at h
-  exact (Fintype.sum_equiv e _ _ fun _ ↦ rfl).trans h
+  exact (Fintype.sum_equiv equivFun _ _ fun _ ↦ rfl).trans h
 
 end PatternPlacement3
 
@@ -224,6 +248,15 @@ theorem eq_of_forall_colorOfPair_eq_some {ψ ψ' : PairColorPlacement3 φ} {g : 
       C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ'.pairColor p)) :
     ψ = ψ' :=
   PairColorPlacement3.ext <| funext fun p ↦ Option.some_injective _ ((h p).symm.trans (h' p))
+
+/-- A placement together with a route over it is determined by its cells and its pair
+colors. -/
+theorem sigma_ext {σ τ : Σ φ : PatternPlacement3 C F, PairColorPlacement3 φ}
+    (h₁ : σ.1.vertexCell = τ.1.vertexCell) (h₂ : σ.2.pairColor = τ.2.pairColor) : σ = τ := by
+  obtain ⟨⟨A, hA⟩, ⟨k, hk⟩⟩ := σ
+  obtain ⟨⟨A', hA'⟩, ⟨k', hk'⟩⟩ := τ
+  subst h₁ h₂
+  rfl
 
 /-- The polyad that a route induces on the canonically ordered pattern triple `i < j < l`. -/
 def polyad (ψ : PairColorPlacement3 φ) (i j l : Fin F.k) (hij : i < j) (hjl : j < l) :

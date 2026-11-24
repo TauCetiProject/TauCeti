@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Entire.Division
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Normalization
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.PowerSeries.Weierstrass.Nested
 
 /-!
 # Normalised Weierstrass preparation of entire power series
@@ -49,10 +50,17 @@ entire factor.
 * `TauCeti.PowerSeries.IsEntirePreparation.eq_smul_and_smul_eq`: the normalised preparation is
   the rescaling of any factorization of `F` as a unit of the ring of restricted series times a
   monic polynomial of degree `d`, in particular of Weierstrass preparation.
+* `TauCeti.PowerSeries.IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq`: conversely, a
+  normalised preparation rescales to a unit of the ring of restricted series times a monic
+  polynomial of degree `d`.
 * `TauCeti.PowerSeries.IsEntirePreparation.isCoprime`: the two factors are coprime in the ring
   of entire series.
+* `TauCeti.PowerSeries.IsEntirePreparation.isCoprime_of_isCoprime_mul_eq`: a factor `g` of a
+  coprime factorization `P = g * a` is coprime to `a * G` in the ring of entire series.
 * `TauCeti.PowerSeries.IsEntirePreparation.mono`: a normalised preparation at `c` is one at every
   smaller radius.
+* `TauCeti.PowerSeries.IsEntirePreparation.dvd_of_le`: over a coefficient ring with multiplicative
+  norm, the polynomial factor at a smaller radius divides the polynomial factor at a larger one.
 
 ## References
 
@@ -96,6 +104,17 @@ structure IsEntirePreparation : Prop where
   /-- `F` is the product of the two factors. -/
   eq_mul : F = P * G
 
+/-- The polynomial factor of a normalised entire preparation over a nontrivial ring is
+nonzero. -/
+theorem IsEntirePreparation.coe_ne_zero [Nontrivial R] (h : IsEntirePreparation c d F P G) :
+    (P : R⟦X⟧) ≠ 0 := fun hP ↦ by
+  simpa [Polynomial.coe_eq_zero_iff.mp hP] using h.coeff_zero_eq_one
+
+/-- The series factor of a normalised entire preparation over a nontrivial ring is nonzero. -/
+theorem IsEntirePreparation.right_ne_zero [Nontrivial R] (h : IsEntirePreparation c d F P G) :
+    G ≠ 0 := fun hG ↦ by
+  simpa [hG] using h.constantCoeff_eq_one
+
 /-- **The normalised preparation rescales every unit-times-monic factorization.** Let `F` be
 multiplicatively distinguished of degree `d` at a positive radius `c`, and let `F = e * ω` with
 `e` a unit of the ring of series restricted at `c` and `ω` a monic polynomial of degree `d`. Then
@@ -110,6 +129,27 @@ theorem IsEntirePreparation.eq_smul_and_smul_eq (h : IsEntirePreparation c d F P
     P = P.leadingCoeff • ω ∧ P.leadingCoeff • G = e := by
   exact hF.eq_smul_and_smul_eq hc h.isUnit_leadingCoeff h.natDegree_eq h.isUnit
     h.eq_mul he hω heω
+
+/-- **A normalised preparation is a unit-times-monic factorization.** A normalised entire
+preparation `F = P * G` at `c` in degree `d` gives `F = e * (a⁻¹ • P)` for the leading
+coefficient `a` of `P`, with `e = a • G` a unit of the ring of series restricted at `c` and
+`a⁻¹ • P` monic of degree `d`. This is the converse of
+`TauCeti.PowerSeries.IsEntirePreparation.eq_smul_and_smul_eq`. -/
+theorem IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq
+    (h : IsEntirePreparation c d F P G) :
+    ∃ e : IsRestricted.subring (R := R) c, IsUnit e ∧
+      (Polynomial.C (Ring.inverse P.leadingCoeff) * P).IsMonicOfDegree d ∧
+      (e : R⟦X⟧) *
+        ((Polynomial.C (Ring.inverse P.leadingCoeff) * P : Polynomial R) : R⟦X⟧) = F := by
+  have ha := h.isUnit_leadingCoeff
+  refine ⟨polynomialToRestricted c (Polynomial.C P.leadingCoeff) *
+      ⟨G, h.isEntire.isRestricted c⟩,
+    ((ha.map Polynomial.C).map (polynomialToRestricted c)).mul h.isUnit,
+    ⟨by rw [Polynomial.natDegree_C_mul_of_isUnit ha.ringInverse, h.natDegree_eq],
+      Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (Ring.inverse_mul_cancel _ ha)⟩, ?_⟩
+  simp only [Subring.coe_mul, coe_polynomialToRestricted, Polynomial.coe_mul, Polynomial.coe_C]
+  rw [h.eq_mul, mul_mul_mul_comm, ← map_mul, Ring.mul_inverse_cancel _ ha, map_one, one_mul,
+    mul_comm]
 
 /-- **Uniqueness of the normalised entire preparation.** Over an ultrametric normed commutative
 ring, a series multiplicatively distinguished of degree `d` at a positive radius `c` has at most
@@ -172,8 +212,7 @@ multiplicatively distinguished of degree `d` at `c`, then `P` and `G` are coprim
 entire series. -/
 theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation c d F P G)
     (hF : IsMulDistinguished c d F) (hc : 0 < c) :
-    IsCoprime (⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ : IsEntire.subring R)
-      ⟨G, IsEntire.mem_subring.mpr h.isEntire⟩ := by
+    IsCoprime (IsEntire.polynomialHom P) ⟨G, IsEntire.mem_subring.mpr h.isEntire⟩ := by
   have hFe : F.IsEntire := h.eq_mul ▸ (isEntire_coe P).mul h.isEntire
   obtain ⟨e, ω, he, hω, hωd, heω⟩ :=
     hF.exists_isUnit_isMonicOfDegree_isMulDistinguished_mul_eq hc (hFe.isRestricted c)
@@ -190,8 +229,40 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   set u := h.isUnit_leadingCoeff.unit
   refine ⟨⟨((u⁻¹ : Rˣ) : R) • (G * q), IsEntire.mem_subring.mpr (hGq.smul _)⟩,
     ⟨b, IsEntire.mem_subring.mpr hbE⟩, Subtype.ext ?_⟩
-  simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
+  simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one, IsEntire.coe_polynomialHom]
   rw [hP, Polynomial.coe_smul, smul_mul_smul_comm, h.isUnit_leadingCoeff.val_inv_mul, one_smul]
   linear_combination hωGq
+
+/-- **Coprime factors of the polynomial factor.** Over a complete ultrametric normed commutative
+ring, let `F = P * G` be a normalised entire preparation at `c > 0`, with `F` multiplicatively
+distinguished of degree `d` at `c`. If `P = g * a` with `g` and `a` coprime polynomials, then `g`
+is coprime to `a * G` in the ring of entire series. -/
+theorem IsEntirePreparation.isCoprime_of_isCoprime_mul_eq [CompleteSpace R]
+    (h : IsEntirePreparation c d F P G) (hF : IsMulDistinguished c d F) (hc : 0 < c)
+    {g a : Polynomial R} (hga : IsCoprime g a) (hgaP : g * a = P) :
+    IsCoprime (IsEntire.polynomialHom g)
+      ⟨a * G, IsEntire.mem_subring.mpr ((isEntire_coe a).mul h.isEntire)⟩ := by
+  -- `g` is coprime to `a`, and to `G` since `g ∣ P`.
+  convert (hga.map IsEntire.polynomialHom).mul_right
+    ((h.isCoprime hF hc).of_isCoprime_of_dvd_left (map_dvd _ ⟨a, hgaP.symm⟩)) using 1
+  exact Subtype.ext (by simp)
+
+/-- **Nested normalised preparations.** Over an ultrametric normed commutative ring with
+multiplicative norm, let `F` be distinguished of degree `d` at a positive radius `c ≤ c'`. Then the
+polynomial factor of a normalised entire preparation of `F` at `c` in degree `d` divides the
+polynomial factor of any normalised entire preparation of `F` at `c'`. -/
+theorem IsEntirePreparation.dvd_of_le [NormMulClass R] {d' : ℕ}
+    (h : IsEntirePreparation c d F P G) (h' : IsEntirePreparation c' d' F P' G')
+    (hF : IsDistinguished c d F) (hc : 0 < c) (hcc' : c ≤ c') : P ∣ P' := by
+  -- Rescale both preparations to unit-times-monic factorizations and compare them.
+  obtain ⟨e, he, hω, heω⟩ := h.exists_isUnit_isMonicOfDegree_mul_eq
+  obtain ⟨e', he', hω', heω'⟩ := h'.exists_isUnit_isMonicOfDegree_mul_eq
+  obtain ⟨A, -, hA, -⟩ := hF.exists_isMonicOfDegree_mul_eq_of_preparations hc hcc' he he' hω hω'
+    heω heω'
+  have hP' : P' = Polynomial.C P'.leadingCoeff *
+      (Polynomial.C (Ring.inverse P'.leadingCoeff) * P') := by
+    rw [← mul_assoc, ← map_mul, Ring.mul_inverse_cancel _ h'.isUnit_leadingCoeff, map_one, one_mul]
+  rw [hP', hA]
+  exact Dvd.dvd.mul_left (Dvd.dvd.mul_right (dvd_mul_left _ _) _) _
 
 end TauCeti.PowerSeries

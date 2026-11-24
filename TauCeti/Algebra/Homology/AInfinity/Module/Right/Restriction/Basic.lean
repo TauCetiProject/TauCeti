@@ -139,15 +139,13 @@ private theorem coact_comp_lTensor_coaugmentedBarMap :
 
 /-- `id ⊗ F` preserves the counit components: applying the counit of `Tᶜ(sB)` after `id ⊗ F` is
 applying the counit of `Tᶜ(sA)`. -/
-theorem rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap
+theorem cofreeCounit_comp_lTensor_coaugmentedBarMap
     (X : P →ₗ[R] M ⊗[R] TensorWords R A) :
-    (TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor M ∘ₗ
-          f.coaugmentedBarMap.lTensor M ∘ₗ X =
-      (TensorProduct.rid R M).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ X := by
-  rw [← LinearMap.comp_assoc X, ← LinearMap.lTensor_comp, TensorWords.counit_eq_counit,
-    TensorWords.counit_eq_counit, f.counit_comp_coaugmentedBarMap]
+    Comodule.cofreeCounit R (TensorWords R B) M ∘ₗ f.coaugmentedBarMap.lTensor M ∘ₗ X =
+      Comodule.cofreeCounit R (TensorWords R A) M ∘ₗ X := by
+  rw [Comodule.cofreeCounit_def, Comodule.cofreeCounit_def, LinearMap.comp_assoc,
+    LinearMap.comp_assoc, ← LinearMap.comp_assoc X, ← LinearMap.lTensor_comp,
+    TensorWords.counit_eq_counit, TensorWords.counit_eq_counit, f.counit_comp_coaugmentedBarMap]
 
 /-- The coaction of `sM ⊗ Tᶜ(sA)` followed by `F` on the coalgebra factor: the map along which
 maps of cofree bar comodules over `F` are compatible with the coactions. -/
@@ -183,20 +181,15 @@ theorem lTensor_coaugmentedBarMap_comp_cofreeLift
       LinearMap.comp_assoc, coact_comp_lTensor_coaugmentedBarMap]
     simp only [← LinearMap.comp_assoc, ← TensorProduct.map_comp, LinearMap.id_comp,
       LinearMap.rTensor_comp_lTensor])
-  have hX' : (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+  have hX' : Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
         f.coaugmentedBarMap.lTensor N ∘ₗ (Comodule.Hom.cofreeLift (C := TensorWords R A)
           (G ∘ₗ f.coaugmentedBarMap.lTensor M)).toLinearMap =
         G ∘ₗ f.coaugmentedBarMap.lTensor M := by
-    rw [rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap,
-      Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift]
-  have hY' : (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+    rw [cofreeCounit_comp_lTensor_coaugmentedBarMap, Comodule.Hom.cofreeCounit_comp_cofreeLift]
+  have hY' : Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
         (Comodule.Hom.cofreeLift (C := TensorWords R B) G).toLinearMap ∘ₗ
           f.coaugmentedBarMap.lTensor M = G ∘ₗ f.coaugmentedBarMap.lTensor M := by
-    rw [← LinearMap.comp_assoc (f.coaugmentedBarMap.lTensor M),
-      ← LinearMap.comp_assoc (f.coaugmentedBarMap.lTensor M),
-      Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift]
+    rw [← LinearMap.comp_assoc, Comodule.Hom.cofreeCounit_comp_cofreeLift]
   rw [hX, hY, hX', hY']
 
 /-- **Naturality of generated coderivations.**  The map `id ⊗ F` intertwines the coderivation
@@ -243,12 +236,10 @@ theorem lTensor_coaugmentedBarMap_comp_gradedCoderiv (G : InternalGrading R M �
       ← TensorProduct.map_comp, LinearMap.rTensor_sub, LinearMap.sub_comp,
       LinearMap.rTensor_comp_lTensor, hτ, hb]
     abel)
-  have hπ : (TensorProduct.rid R M).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor M ∘ₗ (L ∘ₗ DA - DB ∘ₗ L) = 0 := by
-    rw [LinearMap.comp_sub, LinearMap.comp_sub,
-      rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap,
-      rid_comp_lTensor_counit_comp_gradedCoderiv, ← LinearMap.comp_assoc L DB,
-      ← LinearMap.comp_assoc L, rid_comp_lTensor_counit_comp_gradedCoderiv, sub_self]
+  have hπ : Comodule.cofreeCounit R (TensorWords R B) M ∘ₗ (L ∘ₗ DA - DB ∘ₗ L) = 0 := by
+    rw [LinearMap.comp_sub, cofreeCounit_comp_lTensor_coaugmentedBarMap,
+      cofreeCounit_comp_gradedCoderiv, ← LinearMap.comp_assoc L DB,
+      cofreeCounit_comp_gradedCoderiv, sub_self]
   rw [hπ, LinearMap.rTensor_zero, LinearMap.zero_comp] at hE
   exact sub_eq_zero.mp hE
 
@@ -408,9 +399,9 @@ theorem restrictScalars_id (MM : AInfinityRightModule BB M) :
     (AInfinityRightModuleHom.id MM).restrictScalars f =
       AInfinityRightModuleHom.id (MM.restrictScalars f) := by
   apply ext
-  rw [taylor_restrictScalars, taylor_id, taylor_id, LinearMap.comp_assoc]
+  rw [taylor_restrictScalars, taylor_id, taylor_id]
   simpa only [LinearMap.comp_id] using
-    AInfinityRightModule.rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap (M := M) f
+    AInfinityRightModule.cofreeCounit_comp_lTensor_coaugmentedBarMap (M := M) f
       LinearMap.id
 
 /-- Restriction preserves composition of morphisms. -/

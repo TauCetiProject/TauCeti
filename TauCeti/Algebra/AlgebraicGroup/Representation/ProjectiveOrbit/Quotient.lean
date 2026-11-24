@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lift
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 
 /-!
 # Projective orbits represent homogeneous quotients
@@ -39,6 +40,8 @@ A locally bijective morphism of sheaves is an isomorphism.
   projective orbit scheme.**
 * `HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`: every closed subgroup
   has a projective orbit representing its homogeneous quotient.
+* `Comodule.mem_quotientPointsSubgroup_iff_projectiveOrbitMap_kernelPoint_eq`: for such a vector,
+  the rational points of `N` are the stabilizer of the base point of the orbit.
 
 ## References
 
@@ -225,6 +228,26 @@ theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H]
   (rfl)
 
 end Descent
+
+omit [IsAlgClosed k] [Algebra.FiniteType k H] in
+/-- If the matrix coefficients at `m` detect the left cosets of the rational points of the closed
+subgroup `N`, then the rational points of `N` are exactly the stabilizer of the base point `[m]`
+of the projective orbit. -/
+theorem mem_quotientPointsSubgroup_iff_projectiveOrbitMap_kernelPoint_eq {I : HopfIdeal k H}
+    {m : M} (hm : Module.IsUnimodular k m)
+    (hcoset : ∀ g h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k),
+      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) ⧸
+          CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k)) = QuotientGroup.mk h ↔
+        ∃ c : kˣ, ∀ φ : Module.Dual k M,
+          h.ofConv (matrixCoefficient (C := H) φ m) = c * g.ofConv (matrixCoefficient (C := H) φ m))
+    (a : WithConv (H →ₐ[k] k)) :
+    a ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k) ↔
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint a.ofConv) =
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
+  have h := (hcoset 1 a).trans
+    (projectiveOrbitMap_kernelPoint_eq_iff_exists_units_matrixCoefficient m hm 1 a).symm
+  rw [QuotientGroup.eq, inv_one, one_mul, eq_comm] at h
+  simpa [AlgHom.convOne_def] using h
 
 end TauCeti.Comodule
 

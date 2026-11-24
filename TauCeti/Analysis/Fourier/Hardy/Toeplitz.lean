@@ -141,8 +141,7 @@ theorem hardyBasis_repr_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle 
     (f : HardySpace) (i : ℕ) :
     hardyBasis.repr (toeplitz a f) i =
       fourierCoeff (a • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) (i : ℤ) := by
-  rw [HilbertBasis.repr_apply_apply, inner_toeplitz_apply, coe_hardyBasis,
-    ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
+  rw [HilbertBasis.repr_apply_apply, inner_toeplitz_apply, coe_hardyBasis, inner_fourierBasis_left]
 
 /-- **Matrix formula.** In the Hardy basis `e₀, e₁, …`, the `(i, j)` entry of the Toeplitz
 operator `T_a` is the Fourier coefficient `â(i - j)`. -/

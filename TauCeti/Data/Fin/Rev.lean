@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Rev
+public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Abel
 
 /-!
@@ -24,6 +25,9 @@ Cast into an additive commutative group with one, the reversal of `i : Fin n` is
 
 `Fin.neg_one_pow_rev_add_rev_add_one` shows that reversing both indices preserves the sign
 `(-1) ^ (i + j + 1)`. This is the parity identity used by signed graph automorphisms.
+`Fin.neg_one_pow_val_rev_mul` compares the signs `(-1) ^ j` and `(-1) ^ (n - j)` with the
+reversal signs `(-1) ^ n.choose 2` and `(-1) ^ (n + 1).choose 2`, as needed to commute a
+reversal of vertices with a simplicial differential.
 -/
 
 public section
@@ -57,5 +61,17 @@ theorem neg_one_pow_rev_add_rev_add_one {M : Type*} [Monoid M] [HasDistribNeg M]
     (i j : Fin n) :
     (-1 : M) ^ ((j.rev : ℕ) + (i.rev : ℕ) + 1) = (-1) ^ ((i : ℕ) + (j : ℕ) + 1) :=
   neg_one_pow_congr (by simp only [Nat.even_iff, Fin.val_rev]; omega)
+
+/-- The sign `(-1) ^ j` of the coface `j` of `n + 1` vertices, times the sign of the reversal of
+`n + 1` vertices, is the sign of the coface `rev j` times the sign of the reversal of `n`
+vertices. -/
+theorem neg_one_pow_val_rev_mul {M : Type*} [Monoid M] [HasDistribNeg M] {n : ℕ}
+    (j : Fin (n + 1)) :
+    (-1 : M) ^ (j.rev : ℕ) * (-1) ^ n.choose 2 = (-1) ^ (n + 1).choose 2 * (-1) ^ (j : ℕ) := by
+  rw [← pow_add, ← pow_add, Nat.choose_succ_succ', Nat.choose_one_right]
+  exact neg_one_pow_congr (by
+    have := j.isLt
+    simp only [Nat.reduceAdd, Nat.even_iff, Fin.val_rev]
+    omega)
 
 end Fin

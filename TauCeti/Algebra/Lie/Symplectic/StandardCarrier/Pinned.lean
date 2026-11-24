@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.LieGeneration
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 import TauCeti.Algebra.Lie.Symplectic.Coordinates
 
@@ -90,6 +91,19 @@ theorem pinnedLieEquiv_lieBasis_f (i : Fin (n + 1)) :
       rootGenerator n (.inr i) :=
   (DynkinType.C (n + 1)).lieEquivOfIsSerreSystem_lieBasis_f ht (isSerreSystem_pinned n)
     (lieSpan_pinned n) (finrank_sp_eq_rank_add_numRoots n) i
+
+/-- The comparison sends each pinned signed simple-root generator to the standard signed
+simple-root generator with the same number. -/
+@[simp]
+theorem pinnedLieEquiv_lieBasis_rootGenerator
+    (k : Fin (DynkinType.C (n + 1)).rank ⊕ Fin (DynkinType.C (n + 1)).rank) :
+    pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).rootGenerator k) =
+      rootGenerator n k := by
+  cases k with
+  | inl i => exact (congrArg (pinnedLieEquiv n ht)
+      (LieAlgebra.Basis.rootGenerator_inl _ i)).trans (pinnedLieEquiv_lieBasis_e n ht i)
+  | inr i => exact (congrArg (pinnedLieEquiv n ht)
+      (LieAlgebra.Basis.rootGenerator_inr _ i)).trans (pinnedLieEquiv_lieBasis_f n ht i)
 
 /-- The inverse comparison recovers each numbered pinned Cartan generator. -/
 @[simp]

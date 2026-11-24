@@ -74,6 +74,9 @@ def toMoorePathFrom : C(MoorePathPullback f b, MoorePathFrom X b) :=
 theorem point_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
     point (f := f) (b := b) ⟨(d, γ), h⟩ = d := (rfl)
 
+/-- The parameter of a point of the pullback is its first coordinate. -/
+theorem point_def (x : MoorePathPullback f b) : x.point = x.val.1 := (rfl)
+
 @[simp]
 theorem path_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
     path (f := f) (b := b) ⟨(d, γ), h⟩ = γ.toMoorePath := (rfl)

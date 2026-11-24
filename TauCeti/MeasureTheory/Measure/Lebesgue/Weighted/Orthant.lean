@@ -27,7 +27,9 @@ linear form `x ↦ ∑ i, a i * x i` sends Lebesgue measure on the closed positi
 
 (`TauCeti.map_volume_restrict_pi_Ici_sum_mul`). Equivalently, the region
 `{x ∈ [0, ∞)^ι | ∑ i, a i * x i ≤ c}` has volume `c^n / (n! ∏ i, a i)` for `c ≥ 0`
-(`TauCeti.volume_setOf_forall_nonneg_and_sum_mul_le`). For unit weights the density is
+(`TauCeti.volume_setOf_forall_nonneg_and_sum_mul_le`), and so does the region cut out by the
+strict inequality `∑ i, a i * x i < c` for `c > 0`
+(`TauCeti.volume_setOf_forall_nonneg_and_sum_mul_lt`). For unit weights the density is
 `s^(n-1) / (n-1)!` and the region is the simplex of size `c`, of volume `c^n / n!`.
 
 The proof tilts Lebesgue measure on the orthant by `exp (-∑ i, x i)`. The tilted measure is the
@@ -81,7 +83,8 @@ theorem map_volume_restrict_pi_Ici_sum [Nonempty ι] :
   have hexp' : Measurable fun s : ℝ ↦ ENNReal.ofReal (Real.exp s) := by fun_prop
   -- Tilting by `exp (-s)` turns `ν` into the Gamma law of shape `m + 1`.
   have htilt : ν.withDensity (fun s ↦ ENNReal.ofReal (Real.exp (-s))) = gammaMeasure (m + 1) 1 := by
-    rw [← Measure.map_withDensity_comp hsum hexp, ← Probability.pi_expMeasure_one_eq_withDensity,
+    rw [← Measure.map_withDensity_comp hsum.aemeasurable hexp.aemeasurable,
+      ← Probability.pi_expMeasure_one_eq_withDensity,
       Probability.map_sum_pi_expMeasure one_pos, hm, Nat.cast_succ]
   -- Untilting by `exp s`, the inverse of `exp (-s)`, recovers `ν`.
   have hinv : (fun s ↦ (ENNReal.ofReal (Real.exp (-s)))⁻¹) =
@@ -186,6 +189,43 @@ theorem volume_setOf_forall_nonneg_and_sum_mul_le {a : ι → ℝ} (ha : ∀ i, 
   push_cast
   field_simp
   ring
+
+/-- **The volume of a weighted simplex without its slanted face.** For positive weights `a` and
+`c > 0`, the region `{x ∈ [0, ∞)^ι | ∑ i, a i * x i < c}` has the volume `c^n / (n! ∏ i, a i)` of
+the closed region, where `n` is the number of elements of `ι`: the face `∑ i, a i * x i = c` is a
+null set. -/
+theorem volume_setOf_forall_nonneg_and_sum_mul_lt {a : ι → ℝ} (ha : ∀ i, 0 < a i) {c : ℝ}
+    (hc : 0 < c) :
+    volume {x : ι → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i < c} =
+      ENNReal.ofReal (c ^ Fintype.card ι / ((Fintype.card ι).factorial * ∏ i, a i)) := by
+  rw [← volume_setOf_forall_nonneg_and_sum_mul_le ha hc.le]
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · congr 1
+    ext x
+    simp [hc, hc.le]
+  have hsum : Measurable fun x : ι → ℝ ↦ ∑ i, a i * x i := by fun_prop
+  -- The face `∑ i, a i * x i = c` of the orthant is null: the weighted sum pushes the volume of
+  -- the orthant to a measure with a density, which has no atoms.
+  have hnull : volume {x : ι → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i = c} = 0 := by
+    have hset : {x : ι → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i = c} =
+        (fun x ↦ ∑ i, a i * x i) ⁻¹' {c} ∩ univ.pi fun _ : ι ↦ Ici (0 : ℝ) := by
+      ext x
+      simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_singleton_iff, mem_univ_pi,
+        mem_Ici]
+      exact and_comm
+    rw [hset, ← Measure.restrict_apply (hsum (measurableSet_singleton c)),
+      ← Measure.map_apply hsum (measurableSet_singleton c), map_volume_restrict_pi_Ici_sum_mul ha]
+    refine withDensity_absolutelyContinuous _ _ ?_
+    rw [Measure.restrict_apply (measurableSet_singleton c)]
+    exact measure_mono_null inter_subset_left Real.volume_singleton
+  have hsub : {x : ι → ℝ | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i ≤ c} ⊆
+      {x | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i < c} ∪
+        {x | (∀ i, 0 ≤ x i) ∧ ∑ i, a i * x i = c} := fun x hx ↦
+    hx.2.lt_or_eq.imp (fun h ↦ ⟨hx.1, h⟩) fun h ↦ ⟨hx.1, h⟩
+  refine le_antisymm (measure_mono fun x hx ↦ ⟨hx.1, hx.2.le⟩) ?_
+  calc _ ≤ _ := measure_mono hsub
+    _ ≤ _ := measure_union_le _ _
+    _ = _ := by rw [hnull, add_zero]
 
 /-- **The Duistermaat–Heckman measure of a circle acting with positive weights.** Let the circle
 act on `ℂ^ι` by `z_i ↦ exp(-i a_i θ) z_i` with weights `a_i > 0`, with moment map

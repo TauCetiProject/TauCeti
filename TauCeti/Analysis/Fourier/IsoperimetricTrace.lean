@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Curve.Circle.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Circle
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Circular traces in the rectifiable isoperimetric equality case
@@ -142,9 +143,7 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_volume_real_filledHull_sdiff_of_im
     have hI : Icc a b = ∅ := image_eq_empty.1 (himage.trans (sphere_eq_empty_of_neg hr))
     simp [hI, filledHull_empty]
   rw [hcont.eVariationOn_eq_of_image_eq_sphere hinj himage, himage, filledHull_sphere c hr,
-    closedBall_sdiff_sphere, measureReal_def, Complex.volume_ball,
-    ENNReal.toReal_ofReal (by positivity)]
-  simp [ENNReal.toReal_pow, hr]
+    closedBall_sdiff_sphere, Complex.volume_real_ball c hr, ENNReal.toReal_ofReal (by positivity)]
   ring
 
 end ContinuousOn

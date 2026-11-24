@@ -93,15 +93,6 @@ section Pieces
 
 variable (φ : ContDiffBump (0 : CoordinateSpace n))
 
-/-- The frequency slices of the Littlewood–Paley pieces of a symbol are integrable, since the
-pieces have bounded frequency support. -/
-theorem integrable_coefficient_littlewoodPaleyPiece (a : Symbol n V W m) (j : ℕ)
-    (x : CoordinateSpace n) :
-    Integrable fun ξ ↦ (a.littlewoodPaleyPiece φ j).coefficient (x, ξ) := by
-  obtain ⟨b, hb⟩ := isSmoothing_iff.1 (a.isSmoothing_littlewoodPaleyPiece φ j) (-n - 1)
-  rw [← hb]
-  exact b.integrable_coefficient (by linarith) x
-
 /-- On the frequency support of the `j`-th piece, `‖ξ‖ ≤ 2^j φ.rOut`. -/
 private theorem norm_mul_norm_coefficient_littlewoodPaleyPiece_le (a : Symbol n V W m) (j : ℕ)
     (x ξ : CoordinateSpace n) :
@@ -115,7 +106,8 @@ private theorem norm_mul_norm_coefficient_littlewoodPaleyPiece_le (a : Symbol n 
 private theorem integrable_norm_mul_norm_coefficient_littlewoodPaleyPiece (a : Symbol n V W m)
     (j : ℕ) (x : CoordinateSpace n) :
     Integrable fun ξ ↦ ‖ξ‖ * ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ :=
-  ((integrable_coefficient_littlewoodPaleyPiece φ a j x).norm.const_mul (2 ^ j * φ.rOut)).mono'
+  (((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x).norm.const_mul
+    (2 ^ j * φ.rOut)).mono'
     (continuous_norm.mul ((a.littlewoodPaleyPiece φ j).continuous_coefficient_slice x).norm
       ).aestronglyMeasurable
     (ae_of_all _ fun ξ ↦ by
@@ -135,7 +127,7 @@ private theorem IsUniform.exists_integral_norm_mul_norm_coefficient_littlewoodPa
   calc ∫ ξ, ‖ξ‖ * ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖
       ≤ ∫ ξ, 2 ^ j * φ.rOut * ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ :=
         integral_mono (integrable_norm_mul_norm_coefficient_littlewoodPaleyPiece φ a j x)
-          ((integrable_coefficient_littlewoodPaleyPiece φ a j x).norm.const_mul _)
+          (((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x).norm.const_mul _)
           (norm_mul_norm_coefficient_littlewoodPaleyPiece_le φ a j x)
     _ = 2 ^ j * φ.rOut * ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖ :=
         integral_const_mul _ _
@@ -204,7 +196,7 @@ theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_right_
     ha.exists_integral_norm_mul_norm_coefficient_littlewoodPaleyPiece_le φ
   refine ⟨((2 * π) ^ n)⁻¹ * M, by positivity, fun j x y y' ↦ ?_⟩
   have h := norm_quantizationKernel_sub_quantizationKernel_right_le
-    (integrable_coefficient_littlewoodPaleyPiece φ a j x)
+    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x)
     (integrable_norm_mul_norm_coefficient_littlewoodPaleyPiece φ a j x) y y'
   rw [finrank_euclideanSpace_fin] at h
   calc _ ≤ _ := h
@@ -293,9 +285,9 @@ theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_left_l
   obtain ⟨G, hG0, hG⟩ := ha.exists_integral_norm_coefficient_littlewoodPaleyPiece_sub_le φ
   refine ⟨((2 * π) ^ n)⁻¹ * (M + G), by positivity, fun j x x' y ↦ ?_⟩
   have h := norm_quantizationKernel_sub_quantizationKernel_left_le
-    (integrable_coefficient_littlewoodPaleyPiece φ a j x)
+    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x)
     (integrable_norm_mul_norm_coefficient_littlewoodPaleyPiece φ a j x)
-    (integrable_coefficient_littlewoodPaleyPiece φ a j x') y
+    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x') y
   rw [finrank_euclideanSpace_fin] at h
   -- Since `2^j ≥ 1`, the bound `G (2^j)^(m + n)` of the coefficient term is at most `G T`.
   have hT : ((2 : ℝ) ^ j) ^ (m + n) ≤ ((2 : ℝ) ^ j) ^ (m + n + 1) := by
@@ -391,7 +383,7 @@ private theorem sum_quantizeSchwartzValue_littlewoodPaleyPiece_eq_integral [Comp
         quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z) (u z) := by
   have hint (j : ℕ) : Integrable fun z ↦
       quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z (u z) := by
-    have hK := integrable_coefficient_littlewoodPaleyPiece φ a j x
+    have hK := (a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x
     refine (u.integrable.norm.const_mul (((2 * π) ^ n)⁻¹ *
       ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖)).mono'
       ((continuous_quantizationKernel_right hK).clm_apply u.continuous).aestronglyMeasurable
@@ -403,7 +395,7 @@ private theorem sum_quantizeSchwartzValue_littlewoodPaleyPiece_eq_integral [Comp
   simp_rw [sum_apply]
   rw [integral_finsetSum _ fun j _ ↦ hint j]
   exact Finset.sum_congr rfl fun j _ ↦ quantizeSchwartzValue_eq_integral_quantizationKernel
-    (integrable_coefficient_littlewoodPaleyPiece φ a j x) u
+    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x) u
 
 /-- The kernel of a uniform symbol is represented, on test functions supported away from `x`, by
 the sum of the piece kernels: the partial sums converge with a bound `B ‖u z‖`. -/
@@ -434,7 +426,7 @@ private theorem IsUniform.quantizeSchwartzValue_eq_integral_tsum [CompleteSpace 
       (𝓝 (∫ z, (∑' j, K j z) (u z))) := by
     refine tendsto_integral_of_dominated_convergence (fun z ↦ B * ‖u z‖)
       (fun J ↦ ((continuous_finsetSum _ fun j _ ↦ continuous_quantizationKernel_right
-        (integrable_coefficient_littlewoodPaleyPiece φ a j x)).clm_apply
+        ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x)).clm_apply
           u.continuous).aestronglyMeasurable)
       (u.integrable.norm.const_mul B) (fun J ↦ ae_of_all _ fun z ↦ ?_) (ae_of_all _ fun z ↦ ?_)
     · by_cases hz : z ∈ tsupport u
@@ -472,7 +464,7 @@ private theorem IsUniform.continuousOn_tsum_quantizationKernel_littlewoodPaleyPi
     simp only [mem_ofPred_eq]
     linarith
   exact ((continuousOn_tsum (fun j ↦ (continuous_quantizationKernel_right
-    (integrable_coefficient_littlewoodPaleyPiece φ a j x)).continuousOn)
+    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x)).continuousOn)
     ((summable_geometric_of_lt_one hq0 hq1).mul_left (C * (‖x - z₀‖ / 2) ^ (-(N : ℝ))))
     fun j z hz ↦ hK j x z hδ (by simpa only [mem_ofPred_eq] using hz)).continuousAt hs
     ).continuousWithinAt

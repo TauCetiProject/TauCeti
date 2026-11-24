@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Data.Nat.Choose.Bounds
+import Mathlib.Algebra.Polynomial.Eval.SMul
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -18,10 +19,10 @@ The `k`-th Hasse derivative of `f = ∑ⱼ cⱼ Xʲ` at a point `a` is
 `∑ⱼ cⱼ · choose j k · a ^ (j - k)`, so the triangle inequality bounds its norm by the
 binomial-weighted sum of the coefficient norms. This file records that bound, its form for a
 polynomial of degree at most `d` with coefficients of norm at most `H` evaluated at a point of
-norm at most `A`, the coarser bound `H (d + 1) 2 ^ d max(1, A) ^ d`, and the resulting bounds on
-the family `j ↦ D^[k] (X ^ j) (a)` over a finite set of exponents, which is a row of a confluent
-Vandermonde matrix. The multivariate bounds are in
-`TauCeti/Analysis/MvPolynomial/HasseDerivBound.lean`.
+norm at most `A`, its `k!` multiple for the ordinary derivative, the coarser bound
+`H (d + 1) 2 ^ d max(1, A) ^ d`, and the resulting bounds on the family `j ↦ D^[k] (X ^ j) (a)`
+over a finite set of exponents, which is a row of a confluent Vandermonde matrix. The multivariate
+bounds are in `TauCeti/Analysis/MvPolynomial/HasseDerivBound.lean`.
 
 The length form `‖D^[k] f (a)‖ ≤ 2 ^ natDegree f ‖f‖₁ max(1, ‖a‖) ^ natDegree f` is the composite
 of `Polynomial.norm_eval_le_l1Norm_mul`, `Polynomial.l1Norm_hasseDeriv_le` and
@@ -35,6 +36,8 @@ of `Polynomial.norm_eval_le_l1Norm_mul`, `Polynomial.l1Norm_hasseDeriv_le` and
   `‖D^[k] f (a)‖ ≤ ∑_{j ∈ supp f} ‖cⱼ‖ · choose j k · ‖a‖ ^ (j - k)`.
 * `Polynomial.norm_eval_hasseDeriv_le`: for `natDegree f ≤ d`, `‖cⱼ‖ ≤ H` and `‖a‖ ≤ A`,
   `‖D^[k] f (a)‖ ≤ H ∑_{j = k}^{d} choose j k · A ^ (j - k)`.
+* `Polynomial.norm_eval_iterate_derivative_le`: the same bound for the ordinary derivative
+  `f⁽ᵏ⁾ = k! • D^[k] f`, with the extra factor `k!`.
 * `Polynomial.norm_eval_hasseDeriv_le_mul_two_pow_mul`: the coarse bound
   `‖D^[k] f (a)‖ ≤ H (d + 1) 2 ^ d max(1, A) ^ d`, from `Nat.sum_Icc_choose_mul_pow_le`.
 * `Polynomial.norm_eval_hasseDeriv_X_pow_le_sup'` and
@@ -108,6 +111,16 @@ theorem norm_eval_hasseDeriv_le {f : R[X]} {d : ℕ} (hd : f.natDegree ≤ d) {H
   gcongr
   · exact (norm_nonneg _).trans (hcoeff j hj)
   · exact hcoeff j hj
+
+/-- **The evaluated derivative bound**: for `natDegree f ≤ d`, coefficients of norm at most `H`
+and `‖a‖ ≤ A`, the `k`-th ordinary derivative satisfies
+`‖f⁽ᵏ⁾ (a)‖ ≤ k! H ∑_{j = k}^{d} choose j k · A ^ (j - k)`, since `f⁽ᵏ⁾ = k! • D^[k] f`. -/
+theorem norm_eval_iterate_derivative_le {f : R[X]} {d : ℕ} (hd : f.natDegree ≤ d) {H : ℝ}
+    (hcoeff : ∀ j ≤ d, ‖f.coeff j‖ ≤ H) {a : R} {A : ℝ} (ha : ‖a‖ ≤ A) (k : ℕ) :
+    ‖(derivative^[k] f).eval a‖ ≤
+      k.factorial * H * ∑ j ∈ Icc k d, (j.choose k : ℝ) * A ^ (j - k) := by
+  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, mul_assoc]
+  exact norm_nsmul_le.trans (by gcongr; exact norm_eval_hasseDeriv_le hd hcoeff ha k)
 
 /-- The coarse evaluated Hasse derivative bound: for `natDegree f ≤ d`, coefficients of norm at
 most `H` and `‖a‖ ≤ A`, `‖D^[k] f (a)‖ ≤ H (d + 1) 2 ^ d max(1, A) ^ d`. -/
