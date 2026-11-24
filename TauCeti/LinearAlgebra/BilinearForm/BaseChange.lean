@@ -61,7 +61,9 @@ compared with its real extension.
   preserves nondegeneracy, without a freeness or finiteness assumption on the module.
 * `LinearMap.BilinForm.baseChange_smul`, `LinearMap.BilinForm.baseChange_neg`: scalar extension
   commutes with scalar multiplication and negation of forms.
-* `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms.
+* `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms, using
+  `LinearMap.BilinForm.IsAlt.add_flip_eq_zero` (an alternating form is skew-symmetric over a
+  semiring).
 * `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
@@ -224,17 +226,21 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 @[simp]
 theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
     (r • B).baseChange A = algebraMap R A r • B.baseChange A := by
-  rw [LinearMap.BilinForm.baseChange, LinearMap.BilinForm.baseChange, BilinForm.tmul,
-    BilinForm.tmul, TensorProduct.tmul_smul, LinearMap.map_smul_of_tower, algebraMap_smul]
+  ext a x
+  simp [Algebra.smul_def, mul_comm]
+
+/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
+semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
+theorem IsAlt.add_flip_eq_zero {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
+  ext x y
+  have := hB (x + y)
+  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+  simpa [add_comm] using this
 
 /-- Scalar extension of an alternating bilinear form is alternating. -/
 theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
     (B.baseChange A).IsAlt := by
-  have hB' : B + B.flip = 0 := by
-    ext x y
-    have := hB (x + y)
-    simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
-    simpa [add_comm] using this
+  have hB' := hB.add_flip_eq_zero
   have hskew : B.baseChange A + (B.baseChange A).flip = 0 := by
     rw [← baseChange_flip, ← baseChange_zero, ← hB']
     simp only [LinearMap.BilinForm.baseChange, BilinForm.tmul, TensorProduct.tmul_add, map_add]

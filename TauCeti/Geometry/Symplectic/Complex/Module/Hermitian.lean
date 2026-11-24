@@ -89,10 +89,11 @@ theorem complexFormOfIm_smul_left (z : ℂ) (v w : U) :
     letI := J.complexModule
     J.complexFormOfIm B (z • v) w = z * J.complexFormOfIm B v w := by
   let := J.complexModule
-  rw [J.complexModule_smul_def, map_add, map_smul, map_smul, LinearMap.add_apply,
-    LinearMap.smul_apply, LinearMap.smul_apply, complexFormOfIm_apply_left, Complex.real_smul,
-    Complex.real_smul, ← mul_assoc, ← add_mul]
+  rw [J.complexModule_smul_def]
   conv_rhs => rw [← Complex.re_add_im z]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
+    complexFormOfIm_apply_left, Complex.real_smul]
+  ring
 
 /-- **Uniqueness of `H`**: a real bilinear map with imaginary part `B` that turns `J` in the first
 variable into multiplication by `i` is `J.complexFormOfIm B`. -/
@@ -119,10 +120,10 @@ theorem complexFormOfIm_smul_right (hBJ : ∀ v w, B (J v) (J w) = B v w) (z : �
     letI := J.complexModule
     J.complexFormOfIm B v (z • w) = conj z * J.complexFormOfIm B v w := by
   let := J.complexModule
-  rw [J.complexModule_smul_def, map_add, map_smul, map_smul, complexFormOfIm_apply_right hBJ,
-    Complex.real_smul, Complex.real_smul]
+  rw [J.complexModule_smul_def]
   conv_rhs => rw [← Complex.re_add_im z]
-  rw [map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal, Complex.conj_I]
+  simp only [map_add, map_smul, map_mul, complexFormOfIm_apply_right hBJ, Complex.real_smul,
+    Complex.conj_ofReal, Complex.conj_I]
   ring
 
 /-- On the diagonal, `H (v, v)` is real when `B v v = 0` (for instance for alternating `B`), equal
