@@ -191,38 +191,40 @@ theorem chernTripleSphereProduct_apply (s : ℤ × ℤ × ℤ) :
     chernTripleSphereProduct s = 2 * s.1 + 2 * s.2.1 + 2 * s.2.2 :=
   (rfl)
 
+/-- The ratio `(√3 - 1) / (√2 - 1)` is irrational. If it were a rational `q`, then
+`√3 = q √2 + (1 - q)`, and squaring gives `3 = 2 q (1 - q) √2 + 2 q ^ 2 + (1 - q) ^ 2`, so `√2`
+would be rational unless `q (1 - q) = 0`; but `q = 0` gives `√3 = 1` and `q = 1` gives
+`√3 = √2`. -/
+theorem irrational_sqrt_three_sub_one_div_sqrt_two_sub_one : Irrational ((√3 - 1) / (√2 - 1)) := by
+  have h2 := Real.one_lt_sqrt_two
+  rintro ⟨q, hq⟩
+  have h3 : √3 = q * √2 + (1 - q) := by
+    rw [eq_div_iff (by linarith)] at hq
+    linarith
+  have hsq : 2 * q * (1 - q) * √2 + (2 * q ^ 2 + (1 - q) ^ 2) = ((3 : ℕ) : ℝ) := by
+    have h3sq := Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num)
+    rw [h3] at h3sq
+    push_cast
+    linear_combination h3sq - (q : ℝ) ^ 2 * Real.sq_sqrt (show (0 : ℝ) ≤ 2 by norm_num)
+  by_cases hq₀ : 2 * q * (1 - q) = 0
+  · rcases mul_eq_zero.1 hq₀ with hq₀ | hq₀
+    · obtain rfl : q = 0 := by simpa using hq₀
+      norm_num at h3
+    · obtain rfl : q = 1 := (sub_eq_zero.1 hq₀).symm
+      norm_num at h3
+  · refine ((irrational_sqrt_two.ratCast_mul hq₀).add_ratCast (2 * q ^ 2 + (1 - q) ^ 2)).ne_nat
+      3 ?_
+    exact_mod_cast hsq
+
 /-- In the product of three spheres with areas `1`, `√2` and `√3`, the areas of the Chern-zero
 classes of the period group are dense in `ℝ`: they contain the areas `√3 - 1` and `√2 - 1` of the
-classes `(-1, 0, 1)` and `(-1, 1, 0)`, whose ratio is irrational. -/
+classes `(-1, 0, 1)` and `(-1, 1, 0)`, whose ratio is irrational
+(`DensePeriodExample.irrational_sqrt_three_sub_one_div_sqrt_two_sub_one`). -/
 theorem dense_map_area_ker_chern_tripleSphereProduct :
     Dense (((PeriodGroup.chern tripleArea chernTripleSphereProduct).ker.map
       (PeriodGroup.area tripleArea chernTripleSphereProduct) : AddSubgroup ℝ) : Set ℝ) := by
-  have h2 := Real.one_lt_sqrt_two
-  have h23 : √2 < √3 := Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
-  -- If `(√3 - 1) / (√2 - 1) = q`, then `√3 = q √2 + (1 - q)`, and squaring gives
-  -- `3 = 2 q (1 - q) √2 + 2 q ^ 2 + (1 - q) ^ 2`, so `√2` is rational unless `q (1 - q) = 0`.
-  have hirr : Irrational ((√3 - 1) / (√2 - 1)) := by
-    rintro ⟨q, hq⟩
-    have h3 : √3 = q * √2 + (1 - q) := by
-      rw [eq_div_iff (by linarith)] at hq
-      linarith
-    have hsq : 2 * q * (1 - q) * √2 + (2 * q ^ 2 + (1 - q) ^ 2) = ((3 : ℕ) : ℝ) := by
-      have h3sq := Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num)
-      rw [h3] at h3sq
-      push_cast
-      linear_combination h3sq - (q : ℝ) ^ 2 * Real.sq_sqrt (show (0 : ℝ) ≤ 2 by norm_num)
-    by_cases hq₀ : 2 * q * (1 - q) = 0
-    · rcases mul_eq_zero.1 hq₀ with hq₀ | hq₀
-      · obtain rfl : q = 0 := by simpa using hq₀
-        simp only [Rat.cast_zero, zero_mul, sub_zero, zero_add] at h3
-        linarith
-      · obtain rfl : q = 1 := (sub_eq_zero.1 hq₀).symm
-        simp only [Rat.cast_one, one_mul, sub_self, add_zero] at h3
-        linarith
-    · refine ((irrational_sqrt_two.ratCast_mul hq₀).add_ratCast (2 * q ^ 2 + (1 - q) ^ 2)).ne_nat
-        3 ?_
-      exact_mod_cast hsq
-  refine Dense.mono ?_ (dense_addSubgroupClosure_pair_iff.2 hirr)
+  refine Dense.mono ?_
+    (dense_addSubgroupClosure_pair_iff.2 irrational_sqrt_three_sub_one_div_sqrt_two_sub_one)
   rw [SetLike.coe_subset_coe, AddSubgroup.closure_le, pair_subset_iff]
   refine ⟨⟨((-1, 0, 1) : ℤ × ℤ × ℤ), ?_, ?_⟩, ⟨((-1, 1, 0) : ℤ × ℤ × ℤ), ?_, ?_⟩⟩ <;>
     simp [PeriodGroup.chern_mk, PeriodGroup.area_mk] <;> ring
@@ -232,11 +234,9 @@ classes do not form a discrete subgroup of `ℝ`, unlike those of the product of
 areas `1` and `√2` (`DensePeriodExample.discreteTopology_map_area_ker_chern_sphereProduct`). -/
 theorem not_discreteTopology_map_area_ker_chern_tripleSphereProduct :
     ¬DiscreteTopology ((PeriodGroup.chern tripleArea chernTripleSphereProduct).ker.map
-      (PeriodGroup.area tripleArea chernTripleSphereProduct)) := fun hdisc => by
-  refine (AddTorsor.infinite_setOf_eq_zero_and_mem_Ioo dense_map_area_ker_chern_tripleSphereProduct
-    zero_lt_one).mono ?_ (AddTorsor.finite_setOf_eq_and_mem_Icc
-      (PeriodGroup.disjoint_ker_area_ker_chern _ _) hdisc 0 0 1)
-  exact fun _ hγ => ⟨hγ.1, Ioo_subset_Icc_self hγ.2⟩
+      (PeriodGroup.area tripleArea chernTripleSphereProduct)) := by
+  rw [← AddSubgroup.isAddCyclic_iff_discreteTopology]
+  exact AddSubgroup.dense_iff_not_isAddCyclic.1 dense_map_area_ker_chern_tripleSphereProduct
 
 /-- In the product of three spheres with areas `1`, `√2` and `√3`, every open window of areas
 contains infinitely many classes of the period group of first Chern number `2 k`, for each integer
