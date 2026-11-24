@@ -177,9 +177,9 @@ theorem measurable_exterior_iff {α : Type*} {mα : MeasurableSpace α} {Λ : Se
 the coordinates outside `Λ` is moved by `g` to one depending only on the coordinates outside
 `g • Λ`. -/
 theorem measurable_const_smul_exterior (g : Γ) (Λ : Set I) :
-    Measurable[X.exterior Λ, X.exterior (g • Λ)] fun ω : X => g • ω := by
-  refine measurable_exterior_iff.2 fun i hi => measurable_apply_exterior fun h => hi ?_
-  exact ⟨_, h, smul_inv_smul g i⟩
+    Measurable[X.exterior Λ, X.exterior (g • Λ)] fun ω : X => g • ω :=
+  measurable_exterior_iff.2 fun _ hi =>
+    measurable_apply_exterior fun h => hi (Set.mem_smul_set_iff_inv_smul_mem.2 h)
 
 end Subshift
 
