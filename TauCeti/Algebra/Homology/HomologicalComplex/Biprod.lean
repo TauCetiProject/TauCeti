@@ -28,6 +28,8 @@ homology by morphisms into and out of `A ⊞ B` can be read off from their compo
   when the map induced on `Hᵢ(A ⊞ B)` is.
 * `HomologicalComplex.quasiIso_biprod_map`: a biproduct of quasi-isomorphisms is a
   quasi-isomorphism.
+* `HomologicalComplex.quasiIso_of_isColimit_cofan`: a map of finite coproducts which restricts to
+  quasi-isomorphisms on the summands is a quasi-isomorphism.
 -/
 
 public section
@@ -132,5 +134,34 @@ instance quasiIso_biprod_map {A' B' : HomologicalComplex C c} (g₁ : A ⟶ A') 
   infer_instance
 
 end
+
+section FiniteCoproduct
+
+variable {C ι J : Type*} [Category* C] [Preadditive C] [CategoryWithHomology C]
+  {c : ComplexShape ι} [Finite J] {K L : J → HomologicalComplex C c}
+
+/-- **A map of finite coproducts of quasi-isomorphisms is a quasi-isomorphism.** If `φ` is a map
+between colimit cofans of two finite families of homological complexes which restricts on the
+summands to quasi-isomorphisms `f j`, then `φ` is a quasi-isomorphism: homology is additive, so it
+preserves finite coproducts. -/
+lemma quasiIso_of_isColimit_cofan {cK : Cofan K} {cL : Cofan L} (hK : IsColimit cK)
+    (hL : IsColimit cL) (f : ∀ j, K j ⟶ L j) [∀ j, QuasiIso (f j)] (φ : cK.pt ⟶ cL.pt)
+    (hφ : ∀ j, cK.inj j ≫ φ = f j ≫ cL.inj j) : QuasiIso φ := by
+  rw [quasiIso_iff]
+  intro n
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  let G := homologyFunctor C c n
+  have (j : J) : IsIso (G.map (f j)) :=
+    (quasiIsoAt_iff_isIso_homologyMap (f j) n).1 inferInstance
+  let e := (isColimitOfPreserves G hK).coconePointsIsoOfNatIso (isColimitOfPreserves G hL)
+    (Discrete.natIso fun j ↦ asIso (G.map (f j.as)))
+  have : G.map φ = e.hom := (isColimitOfPreserves G hK).hom_ext fun j ↦ by
+    rw [IsColimit.comp_coconePointsIsoOfNatIso_hom]
+    simp only [Functor.mapCocone_ι_app, Discrete.natIso_hom_app]
+    rw [asIso_hom, ← G.map_comp, ← G.map_comp]
+    exact congrArg G.map (hφ j.as)
+  exact (this ▸ inferInstance : IsIso (G.map φ))
+
+end FiniteCoproduct
 
 end HomologicalComplex

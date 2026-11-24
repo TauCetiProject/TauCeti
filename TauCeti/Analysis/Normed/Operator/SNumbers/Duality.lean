@@ -13,8 +13,10 @@ import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.Dual.LocalReflexivity
 import TauCeti.Analysis.Normed.Module.Dual.Quotient
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 import TauCeti.Analysis.Normed.Operator.LinearIsometry
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
 # Duality between Gelfand and Kolmogorov numbers
@@ -288,7 +290,7 @@ theorem gelfandNumber_precomp_of_totallyBounded_image_closedBall (T : E →L[�
     ContinuousLinearMap.precomp_comp T J.toContinuousLinearMap
   rw [hQT_adj]
   have hQ_norm : ‖Q'‖₊ ≤ 1 := by
-    exact_mod_cast (ContinuousLinearMap.norm_precomp_le J.toContinuousLinearMap).trans
+    exact_mod_cast (ContinuousLinearMap.norm_precomp_le (Z := 𝕜) J.toContinuousLinearMap).trans
       J.norm_toContinuousLinearMap_le
   have hid_le : ‖ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E)‖₊ ≤ 1 := by
     exact_mod_cast norm_id_le

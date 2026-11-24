@@ -14,7 +14,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 import TauCeti.GroupTheory.PGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ProP
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
@@ -90,8 +90,10 @@ particular the wild inertia group `G_1`, is a `p`-group.
 * `TauCeti.ramificationGroupOneSylow` and `TauCeti.eq_ramificationGroupOneSylow`: the wild inertia
   group `G_1`, viewed inside `G_0`, is its unique normal Sylow `p`-subgroup.
 * `TauCeti.natCard_ramificationGroup_one`: the order of `G_1` is the `p`-part of the order of `G_0`.
+* `TauCeti.ker_tameCharacter`: the kernel of the tame character is `G_1`.
 * `TauCeti.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: `G_1` is
-  trivial exactly when `p` does not divide the order of `G_0`, the tame case.
+  trivial exactly when `p` does not divide `Nat.card G_0`, that is when `G_0` is finite of order
+  prime to `p` (the tame case), since `Nat.card G_0 = 0` when `G_0` is infinite.
 
 ## Implementation notes
 
@@ -183,7 +185,7 @@ def uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i
   ⟨Units.mk0 ((σ : G) • (ϖ : L) / (ϖ : L)) (by
       have hϖne : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
       exact div_ne_zero ((smul_ne_zero_iff_ne _).mpr hϖne) hϖne),
-    mem_unitFiltration_of_val_eq_smul_div hϖ σ.2 rfl⟩
+    mem_unitFiltration_of_val_eq_smul_div hϖ σ.property rfl⟩
 
 @[simp]
 theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
@@ -206,7 +208,7 @@ theorem smul_div_mem_unitFiltration (hσ : σ ∈ ramificationGroup G 𝒪[L] (i
   have h₁ : f (Units.mk0 _ hϖ0) ∈ unitFiltration L i :=
     mem_unitFiltration_of_val_eq_smul_div hϖ hσ (hf _)
   have h₂ : f u ∈ unitFiltration L i := unitFiltration_antitone (Nat.le_succ i)
-    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.2 (hf _))
+    (mem_unitFiltration_succ_of_val_eq_smul_div hσ u.property (hf _))
   rw [show z = f (Units.mk0 _ hϖ0 ^ k * u) from Units.ext (by rw [hz, hf]), map_mul, map_zpow]
   exact mul_mem (zpow_mem h₁ k) h₂
 
@@ -227,8 +229,8 @@ def ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
     rw [← QuotientGroup.mk_mul]
     refine QuotientGroup.eq.mpr ?_
     rw [Subgroup.mem_subgroupOf, ← Subgroup.inv_mem_iff]
-    refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.2
-      (unitFiltration_antitone (Nat.zero_le i) (uniformizerRatio i hϖ τ).2) ?_
+    refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.property
+      (unitFiltration_antitone (Nat.zero_le i) (uniformizerRatio i hϖ τ).property) ?_
     have hsmul : (σ : G) • ((τ : G) • (ϖ : L) / (ϖ : L))
         = ((σ : G) * (τ : G)) • (ϖ : L) / (σ : G) • (ϖ : L) := by
       rw [div_eq_mul_inv, smul_mul', smul_inv'', ← div_eq_mul_inv, ← mul_smul]
@@ -256,7 +258,7 @@ theorem ramificationGroupToUnitFiltrationGraded_eq_of_irreducible {ϖ' : 𝒪[L]
   rw [ramificationGroupToUnitFiltrationGraded_apply, ramificationGroupToUnitFiltrationGraded_apply]
   refine QuotientGroup.eq.mpr ?_
   rw [Subgroup.mem_subgroupOf]
-  refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.2
+  refine mem_unitFiltration_succ_of_val_eq_smul_div (σ := (σ : G)) σ.property
     (x := Units.map (Subring.subtype 𝒪[L]).toMonoidHom u) (mem_unitFiltration_iff_exists.mpr
       ⟨u, by simp, rfl⟩) ?_
   have hϖ'L : (ϖ' : L) = (ϖ : L) * ((u : 𝒪[L]) : L) := by
@@ -417,7 +419,7 @@ theorem ker_ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
   refine le_antisymm (fun σ hσ ↦ ?_) (ramificationGroup_succ_subgroupOf_le_ker hϖ)
   rw [mem_ker_ramificationGroupToUnitFiltrationGraded_iff hϖ] at hσ
   have hσ₀ : (σ : G) ∈ ramificationGroup G 𝒪[L] 0 :=
-    ramificationGroup_antitone G 𝒪[L] (Int.natCast_nonneg i) σ.2
+    ramificationGroup_antitone G 𝒪[L] (Int.natCast_nonneg i) σ.property
   rw [Subgroup.mem_subgroupOf, ← Nat.cast_succ,
     mem_ramificationGroup_natCast_iff_smul_sub_mem hϖ hσ₀, sub_mem_maximalIdeal_pow_iff hϖ]
   exact hσ
@@ -596,6 +598,15 @@ theorem tameCharacterGraded_injective (hϖ : Irreducible ϖ) :
   (unitFiltrationGradedZeroEquivResidueFieldUnits (K := L)).injective.comp
     (ramificationGroupGradedToUnitFiltrationGraded_injective (i := 0) hϖ)
 
+/-- **The kernel of the tame character is the wild inertia group `G_1`**, viewed inside `G_0`. -/
+@[simp]
+theorem ker_tameCharacter (hϖ : Irreducible ϖ) :
+    (tameCharacter (G := G) hϖ).ker =
+      (ramificationGroup G 𝒪[L] 1).subgroupOf (ramificationGroup G 𝒪[L] 0) := by
+  ext σ
+  rw [MonoidHom.mem_ker, ← tameCharacterGraded_mk,
+    map_eq_one_iff _ (tameCharacterGraded_injective hϖ), QuotientGroup.eq_one_iff, zero_add]
+
 variable (G L) in
 /-- **The tame quotient is cyclic**: `G_0 / G_1` embeds into the multiplicative group of the
 residue field, which is cyclic because the residue field is finite. -/
@@ -737,14 +748,26 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
-first ramification group `G_1` is trivial if and only if `p` does not divide the order of the
-inertia group `G_0`: `G_1` is the Sylow `p`-subgroup of `G_0`. -/
+first ramification group `G_1` is trivial if and only if `p` does not divide `Nat.card G_0`, that
+is, if and only if the inertia group `G_0` is finite of order prime to `p`: when `G_0` is infinite,
+`Nat.card G_0 = 0`, and `G_1` is nontrivial because `G_0 / G_1` embeds in the finite group
+`𝓀[L]ˣ`. When `G_0` is finite, `G_1` is its Sylow `p`-subgroup. -/
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
-    [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
+    [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
   have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
-  rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
-    Nat.factorization_eq_zero_iff]
-  simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+  by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
+  · rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
+      Nat.factorization_eq_zero_iff]
+    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+  · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
+    have hinf := not_finite_iff_infinite.mp hfin
+    rw [Nat.card_eq_zero_of_infinite]
+    simp only [dvd_zero, not_true_eq_false, iff_false]
+    intro h
+    obtain ⟨_, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+    have hker := ker_tameCharacter (G := G) hϖ
+    rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
+    exact hfin (Finite.of_injective _ hker)
 
 end TauCeti

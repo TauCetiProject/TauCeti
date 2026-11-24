@@ -53,9 +53,7 @@ noncomputable def zigzagComponentBasis (C : G.ConnectedComponent) :
   classical
   by_cases hC : Nontrivial C
   · letI := hC
-    exact (zigzagBasis k C.toSimpleGraph fun i =>
-      SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)).map
+    exact (zigzagBasis k C.toSimpleGraph C.exists_adj_toSimpleGraph).map
       (zigzagComponentAlgebraEquivNonisolated k G C).symm.toLinearEquiv
   · letI : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     -- DualNumber exposes the coordinatewise module of its underlying pair.

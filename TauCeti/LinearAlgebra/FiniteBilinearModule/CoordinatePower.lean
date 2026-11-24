@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 
 /-!
 # Coordinate powers of finite bilinear and quadratic modules

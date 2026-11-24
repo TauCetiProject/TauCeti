@@ -140,7 +140,7 @@ private theorem IsCapPosition.lt_inner_slide_iff (hK : IsCapPosition ι r K) (c 
 private theorem IsCapPosition.isConnectedSumPosition (hK : IsCapPosition ι r K) (hr : 0 < r) :
     IsConnectedSumPosition ι K where
   eventuallyEq_greatCircle {z} hz := by
-    filter_upwards [(Complex.continuous_im.comp continuous_subtype_val).continuousAt.eventually
+    filter_upwards [(Complex.continuous_im.comp continuous_subtypeVal).continuousAt.eventually
       (gt_mem_nhds (hz.trans_lt hr))] with w hw using hK.apply_eq hw.le
   inner_pos {z} hz := by
     rcases le_or_gt (z : ℂ).im r with h | h
@@ -166,7 +166,7 @@ private theorem IsConnectedSumPosition.eventually_isCapPosition_boost
   -- The knotted part `K (Uᶜ)` is compact and lies in the open upper hemisphere.
   set C := (fun z => (K z : E)) '' Uᶜ
   have hC : IsCompact C :=
-    hUo.isClosed_compl.isCompact.image (continuous_subtype_val.comp K.contMDiff.continuous)
+    hUo.isClosed_compl.isCompact.image (continuous_subtypeVal.comp K.contMDiff.continuous)
   have hCv : -ι Complex.I ∉ C := by
     rintro ⟨z, hz, hzv⟩
     have h := hK.inner_pos (hUc hz)
@@ -247,7 +247,7 @@ private theorem IsCapConfig.eventually_capSumFun_eq (h : IsCapConfig ι r c Ks) 
     (hz : ∀ k, ⟪(z : ℂ), (c k : ℂ) * Complex.I⟫ < r) :
     ∀ᶠ w in 𝓝 z, capSumFun ι c Ks w = greatCircle (n := n) ι w := by
   filter_upwards [eventually_all.2 fun k =>
-    (continuous_subtype_val.inner continuous_const).continuousAt.eventually
+    (continuous_subtypeVal.inner continuous_const).continuousAt.eventually
       (gt_mem_nhds (hz k))] with w hw
   rw [h.capSumFun_eq fun k => (hw k).le, coe_greatCircle_apply]
 
@@ -259,7 +259,7 @@ private theorem IsCapConfig.exists_eventually_capSumFun_eq (h : IsCapConfig ι r
   · obtain ⟨j, hj⟩ := hj
     refine ⟨slide ι (c j) (Ks j), ?_⟩
     filter_upwards [eventually_all.2 fun k : Fin m => eventually_imp_distrib_left.2 fun hkj =>
-      (continuous_subtype_val.inner continuous_const).continuousAt.eventually
+      (continuous_subtypeVal.inner continuous_const).continuousAt.eventually
         (gt_mem_nhds (h.inner_lt_of_le (Ne.symm hkj) hj))] with w hw
     exact h.capSumFun_eq_slide j fun k hk => (hw k hk).le
   · push Not at hj
@@ -269,7 +269,7 @@ private theorem IsCapConfig.capSumFun_mem_sphere (h : IsCapConfig ι r c Ks) (z 
     capSumFun ι c Ks z ∈ sphere (0 : E) 1 := by
   obtain ⟨G, hG⟩ := h.exists_eventually_capSumFun_eq z
   rw [hG.self_of_nhds]
-  exact (G z).2
+  exact (G z).property
 
 /-- The cap sum is in the cap around `ι (c j i)` exactly over the arc around `c j i`. -/
 private theorem IsCapConfig.lt_inner_capSumFun_iff (h : IsCapConfig ι r c Ks) (j : Fin m)

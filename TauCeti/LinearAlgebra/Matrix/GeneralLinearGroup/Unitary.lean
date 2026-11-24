@@ -60,7 +60,7 @@ theorem toGL_mem_unitarySubgroup_iff {g : SpecialLinearGroup n R} :
     SpecialLinearGroup.toGL g ∈ unitarySubgroup (GL n R) ↔
       (g : Matrix n n R) ∈ specialUnitaryGroup n R := by
   rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, SpecialLinearGroup.coe_GL_coe_matrix,
-    mem_specialUnitaryGroup_iff, and_iff_left g.2]
+    mem_specialUnitaryGroup_iff, and_iff_left g.property]
 
 variable [TrivialStar R]
 

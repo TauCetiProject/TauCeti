@@ -45,6 +45,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization`: in each
   normal-bundle trivialization, the normal Hessian is a `C^k` family of symmetric bilinear forms
   on the fibre model.
+* `IsCriticalSubmanifold.contMDiff_normalHessian_apply_self`: the quadratic form of the normal
+  Hessian is a `C^k` function on the total space of the normal bundle.
 * `IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_normalHessian_normalSpaceTrivialization`:
   for a Morse–Bott submanifold these bilinear forms are nondegenerate.
 
@@ -133,6 +135,45 @@ theorem exists_contMDiffOn_normalHessian_normalSpaceTrivialization {k : ℕ∞ω
       hg.fderiv_right_succ.fderiv_right_succ.comp_contMDiffAt (f := fun s ↦ φ (i s)) hφi
     exact ((contMDiffAt_const.clm_comp hD).clm_comp contMDiffAt_const).contMDiffWithinAt
   · rw [← heq hs, ← heq hs, (h.isSymm_normalHessian hn s).eq]
+
+omit [IsManifold J 1 S] in
+/-- **The quadratic form of the normal Hessian is `C^k` on the normal bundle.** Let `i` be a
+critical submanifold of `f`, with `f` of class `C^{k+2}` at every point of the submanifold and
+`k + 1 ≤ n`. Then `v ↦ Hessₛ (v, v)`, for `v` in the normal space over `s`, is a `C^k` function on
+the total space of the normal bundle. -/
+theorem contMDiff_normalHessian_apply_self {k : ℕ∞ω} [IsManifold I (k + 2) M]
+    [IsManifold J (k + 1) S] (h : i.IsCriticalSubmanifold f) (hk : k + 1 ≤ n)
+    (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    ContMDiff (J.prod 𝓘(ℝ, P)) 𝓘(ℝ) k
+      fun x : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦ h.normalHessian hn x.proj x.snd x.snd
+          := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := i.normalSpaceContMDiffVectorBundle hn hk hdim
+  intro x₀
+  obtain ⟨Q, hQ, hQe⟩ := h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn
+    (le_self_add.trans hk) hf hdim x₀.proj
+  rw [← i.normalSpaceFiberBundle_trivializationAt hn hdim] at hQ hQe
+  set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) x₀.proj
+  have hx₀ : x₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ x₀.proj
+  have hQx : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k (fun x ↦ Q x.proj) x₀ :=
+    (hQ.contMDiffAt (e.open_baseSet.mem_nhds hx₀)).comp x₀ (Bundle.contMDiff_proj _).contMDiffAt
+  have he : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P) k (fun x ↦ (e x).2) x₀ :=
+    ((e.contMDiffOn (IB := J) (n := k)).contMDiffAt
+      (e.open_source.mem_nhds (e.mem_source.mpr hx₀))).snd
+  -- Over the base set of `e`, a normal vector is the inverse trivialization of its coordinates.
+  refine ((hQx.clm_apply he).clm_apply he).congr_of_eventuallyEq ?_
+  filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
+    (e.open_baseSet.mem_nhds hx₀)] with x hx
+  rw [← (hQe x.proj hx (e x).2 (e x).2).1, e.symm_proj_apply x hx]
 
 end IsCriticalSubmanifold
 

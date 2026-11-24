@@ -225,7 +225,7 @@ ranks and root counts is checked by `numRoots_eq_rank_mul_coxeterNumber`. -/
 
 /-- Every component's root count is its rank times the displayed common Coxeter number. -/
 theorem numRoots_eq_rank_mul_coxeterNumber (r : RootfulNiemeierType) :
-    ∀ c ∈ r.components, c.1.numRoots = c.rank * r.coxeterNumber := by
+    ∀ c ∈ r.components, c.val.numRoots = c.rank * r.coxeterNumber := by
   cases r <;> decide
 
 /-- The 23 displayed root systems remain distinct after forgetting component order. -/
@@ -234,26 +234,26 @@ theorem components_multiset_injective :
       (r.components : Multiset DynkinType.Component)) := by
   -- Rank and root count together already distinguish these component multisets.
   have hinj : Function.Injective (fun r : RootfulNiemeierType ↦
-      (r.components.map fun c ↦ (c.rank, c.1.numRoots) : Multiset (ℕ × ℕ))) := by decide
+      (r.components.map fun c ↦ (c.rank, c.val.numRoots) : Multiset (ℕ × ℕ))) := by decide
   intro r s h
   exact hinj (by
     simpa only [Multiset.map_coe] using
-      congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.1.numRoots)) h)
+      congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.val.numRoots)) h)
 
 /-- The ADE components of a row as a family indexed by their positions. -/
 @[expose] def componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     DynkinType :=
-  r.components[i].1
+  r.components[i].val
 
 /-- The components of a row are simply laced. -/
 theorem isSimplyLaced_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     (r.componentType i).IsSimplyLaced :=
-  r.components[i].2.2
+  r.components[i].property.2
 
 /-- The components of a row are valid Dynkin types. -/
 theorem valid_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     (r.componentType i).Valid :=
-  r.components[i].2.1
+  r.components[i].property.1
 
 end RootfulNiemeierType
 

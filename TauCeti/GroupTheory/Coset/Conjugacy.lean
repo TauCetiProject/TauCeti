@@ -65,9 +65,10 @@ theorem isConj_iff_exists_of_check (hg : Subgroup.closure (Set.range g) = ⊤)
   constructor
   · intro hxy
     obtain ⟨c, hc⟩ := isConj_iff.mp hxy
-    obtain ⟨i, hmem⟩ := T.exists_inv_word_mul_mem hg hT hrels
+    obtain ⟨i, hmem⟩ := T.exists_inv_word_mul_mem hT hrels
       (H := Subgroup.centralizer {x})
-      (fun r hr ↦ Subgroup.mem_centralizer_singleton_iff.mpr (hstab r hr)) c
+      (fun r hr ↦ Subgroup.mem_centralizer_singleton_iff.mpr (hstab r hr))
+      (hg ▸ Subgroup.mem_top c)
     have hcomm := Subgroup.mem_centralizer_singleton_iff.mp hmem
     have heq := congrArg (fun z ↦ ((T.word i).map g).prod * z * c⁻¹) hcomm
     refine ⟨i, ?_⟩

@@ -370,42 +370,19 @@ variable {D : Type*} [NonUnitalCStarAlgebra D]
   (ρ : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] D)
   (hρ : ∀ f, ‖ρ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f)
 
-/-- A ⋆-homomorphism bounded by the full seminorm is continuous for that seminorm. -/
-private def liftCLM : FullConvolutionAlgebra α μ →L[ℂ] D :=
-  ((ρ : ConvolutionAlgebra α μ →ₗ[ℂ] D).comp
-    ((toFullStarAlgEquiv α μ).symm :
-      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
-      simpa [norm_def] using hρ (ofFull f)
-
-private theorem fromCompletion_liftCLM_of (f : ConvolutionAlgebra α μ) :
-    (liftCLM ρ hρ).fromCompletion (of α μ f) = ρ f := by
-  simpa [liftCLM] using
-    ContinuousLinearMap.fromCompletion_apply_coe (liftCLM ρ hρ) (toFull f)
-
 /-- Extend a ⋆-homomorphism bounded by the full seminorm to the full crossed product.
 Its values on compactly supported coefficients are given by `lift_of`, and these determine
 it uniquely by `starAlgHom_ext`. -/
-def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D where
-  toFun := (liftCLM ρ hρ).fromCompletion
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' x y := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f =>
-      induction y using induction_on with
-      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih g => simp only [← map_mul, fromCompletion_liftCLM_of]
-  map_star' x := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f => simp only [← map_star, fromCompletion_liftCLM_of]
+def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D :=
+  (ρ.comp (toFullStarAlgEquiv α μ).symm.toNonUnitalStarAlgHom).fromCompletion <|
+    AddMonoidHomClass.continuous_of_bound _ 1 fun f => by simpa [norm_def] using hρ (ofFull f)
 
 /-- The extension agrees with the original ⋆-homomorphism on compactly supported coefficients. -/
 @[simp]
-theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f :=
-  fromCompletion_liftCLM_of ρ hρ f
+theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f := by
+  rw [← coe_toFull_eq_of]
+  -- `lift ρ hρ` is by definition the extension from the completion of `FullConvolutionAlgebra α μ`.
+  exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toFull f)).trans (by simp)
 
 /-- Composing the extension with the canonical map recovers the original ⋆-homomorphism. -/
 @[simp]

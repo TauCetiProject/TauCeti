@@ -239,7 +239,7 @@ private lemma atkinLehnerHom_mem_Gamma0Image [NeZero N] (g : GL (Fin 2) ℚ)
   obtain ⟨c, hc⟩ := hσ_mem
   set A := (σ : Matrix (Fin 2) (Fin 2) ℤ) with hA_def
   set B : Matrix (Fin 2) (Fin 2) ℤ := atkinLehnerEntries N A c with hB
-  have hB_det : B.det = 1 := by rw [hB, atkinLehnerEntries_det N A c hc, hA_def, σ.2]
+  have hB_det : B.det = 1 := by rw [hB, atkinLehnerEntries_det N A c hc, hA_def, σ.property]
   refine ⟨⟨B, hB_det⟩, mem_Gamma0_iff_dvd.mpr ?_, Units.ext ?_⟩
   · simp only [hB, atkinLehnerEntries]
     exact dvd_mul_right _ _
@@ -622,7 +622,7 @@ representative. -/
   | h g =>
     rw [(atkinLehnerAntiInvolution N).onHeckeCoset_mk]
     exact HeckeCoset.mk_eq_mk_of_mem
-      (atkinLehnerAntiInvolution_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.2)
+      (atkinLehnerAntiInvolution_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.property)
 
 /-- **Shimura's Proposition 3.8 for `Γ₀(N)`**: for nonzero level `N`, the Hecke ring
 `R(Γ₀(N), Δ₀(N))` over any commutative semiring is commutative, the Atkin-Lehner bar being an

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Continuous annihilators and norm closure
@@ -30,7 +31,9 @@ subspace of the strong dual is the continuous annihilator of its preannihilator,
 topological vector space over a topological field its preannihilator has codimension equal to
 its dimension (`Submodule.lift_rank_quotient_orthogonalBilin_topDualPairing`,
 `Submodule.rank_quotient_orthogonalBilin_topDualPairing`,
-`Submodule.finrank_quotient_orthogonalBilin_topDualPairing`).
+`Submodule.finrank_quotient_orthogonalBilin_topDualPairing`). As an application,
+`ContinuousLinearMap.surjective_smul_add_apply_iff` decides when the map `(τ, ξ) ↦ τ • w + H ξ`
+onto the dual of a finite-dimensional space is onto, for a symmetric `H`.
 
 The analytic input is `exists_dual_vector''`, the norming-functional form of Hahn–Banach,
 applied to the seminormed quotient. In particular, the results also apply to seminormed
@@ -260,3 +263,49 @@ theorem finrank_quotient_orthogonalBilin_topDualPairing
 end PreannihilatorCodimension
 
 end Submodule
+
+/-! ### Maps onto the dual of a finite-dimensional space -/
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- For a symmetric map `H : E → E*` and a functional `w` on a finite-dimensional space, the map
+`(τ, ξ) ↦ τ • w + H ξ` from `𝕜 × E` to the dual of `E` is onto exactly when no nonzero vector lies
+in the kernels of both `H` and `w`. By symmetry the vectors annihilating the range of this map are
+those killed by both `H` and `w`, and a subspace of the dual with no nonzero annihilating vector is
+the whole dual. For `H` the Hessian of a function and `w` the parameter derivative of the
+differential, this is the transversality condition of a one-parameter family of functions. -/
+theorem surjective_smul_add_apply_iff {H : E →L[𝕜] StrongDual 𝕜 E} (hH : ∀ u v, H u v = H v u)
+    (w : StrongDual 𝕜 E) :
+    Function.Surjective (fun p : 𝕜 × E ↦ p.1 • w + H p.2) ↔ ∀ v, H v = 0 → w v = 0 → v = 0 := by
+  constructor
+  · intro hs v hHv hwv
+    by_contra hv
+    obtain ⟨φ, hφ⟩ : ∃ φ : Module.Dual 𝕜 E, φ v ≠ 0 := by
+      by_contra! h
+      exact hv ((Module.forall_dual_apply_eq_zero_iff 𝕜 v).1 h)
+    obtain ⟨p, hp⟩ := hs (LinearMap.toContinuousLinearMap φ)
+    have h := congrArg (fun ψ : StrongDual 𝕜 E ↦ ψ v) hp
+    simp only [add_apply, smul_apply, hwv, smul_zero, hH p.2 v, hHv, zero_apply, zero_add,
+      LinearMap.coe_toContinuousLinearMap'] at h
+    exact hφ h.symm
+  · intro hker
+    let L : 𝕜 × E →ₗ[𝕜] StrongDual 𝕜 E :=
+      (LinearMap.fst 𝕜 𝕜 E).smulRight w + (H : E →ₗ[𝕜] StrongDual 𝕜 E) ∘ₗ LinearMap.snd 𝕜 𝕜 E
+    have hL : ⇑L = fun p : 𝕜 × E ↦ p.1 • w + H p.2 := by
+      ext p : 1
+      simp [L]
+    rw [← hL, ← LinearMap.range_eq_top]
+    have hpre : (LinearMap.range L).orthogonalBilin (topDualPairing 𝕜 E) = ⊥ := by
+      refine (Submodule.eq_bot_iff _).2 fun v hv ↦ hker v ?_ ?_
+      · ext u
+        have := Submodule.mem_orthogonalBilin.1 hv (H u) ⟨((0 : 𝕜), u), by simp [L]⟩
+        simpa [hH u v] using this
+      · have := Submodule.mem_orthogonalBilin.1 hv w ⟨((1 : 𝕜), (0 : E)), by simp [L]⟩
+        simpa using this
+    rw [← Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional
+      (LinearMap.range L), hpre, Submodule.orthogonalBilin_bot]
+
+end ContinuousLinearMap

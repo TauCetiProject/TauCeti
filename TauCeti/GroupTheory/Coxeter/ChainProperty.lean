@@ -163,11 +163,11 @@ theorem minimalCosetRepCovBy_iff {y x : W} :
 `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of `W / W_J` has `ℓ x_l + l = ℓ x₀`; so all saturated chains between the same
 two elements have the same length. -/
 theorem MinimalCosetRepChain.length_last_add_length (C : cs.MinimalCosetRepChain J) :
-    ℓ C.last.1 + C.length = ℓ C.head.1 := by
+    ℓ C.last.val + C.length = ℓ C.head.val := by
   induction C using RelSeries.inductionOn with
   | singleton x => simp
   | cons C x hx ih =>
-    have := MinimalCosetRepCovBy.length_add_one_eq (y := C.head.1) (x := x.1) hx
+    have := MinimalCosetRepCovBy.length_add_one_eq (y := C.head.val) (x := x.val) hx
     simp only [RelSeries.last_cons, RelSeries.cons_length, RelSeries.head_cons]
     omega
 

@@ -139,7 +139,8 @@ private theorem eq_one_of_forall_irreducibleCharacter_eq (k : Type u) {G : Type 
       sub_eq_zero]
     exact hg f (mem_irreducibleCharacters_iff.mpr hf)
   have hmem : ((classIndicator (k := k) (1 : G) : ClassFunction k G) : G → k) ∈ E :=
-    hsub (ClassFunction.le_span_irreducibleCharacters k G (classIndicator (k := k) (1 : G)).2)
+    hsub (ClassFunction.le_span_irreducibleCharacters k G (classIndicator (k := k)
+        (1 : G)).property)
   -- but the indicator of the identity class does distinguish `g` from the identity
   have hmk : ConjClasses.mk g ≠ ConjClasses.mk (1 : G) :=
     fun h => hne (isConj_one_left.mp (ConjClasses.mk_eq_mk_iff_isConj.mp h))
@@ -156,8 +157,8 @@ irreducible character `φ` of `H` the exceptional extension `φ*` takes at `h : 
 is unmoved at `h`. -/
 private theorem eq_one_of_forall_indExtend_eq (hH : IsTISubgroup H) {h : H}
     (hh : ∀ j : Fin (Nat.card (ConjClasses H)),
-      (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).1 (h : G) =
-        (ofCharacter (irreducibleRepresentation ℂ j)).1 1) : h = 1 := by
+      (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).val (h : G) =
+        (ofCharacter (irreducibleRepresentation ℂ j)).val 1) : h = 1 := by
   classical
   let : Invertible (Nat.card H : ℂ) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
@@ -167,10 +168,10 @@ private theorem eq_one_of_forall_indExtend_eq (hH : IsTISubgroup H) {h : H}
       irreducibleCharacter ℂ j := funext fun y => by
     simp only [ofCharacter_apply, character_irreducibleRepresentation]
   rw [← hφcoe]
-  calc (ofCharacter (irreducibleRepresentation ℂ j)).1 h
-      = (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).1 (h : G) := by
+  calc (ofCharacter (irreducibleRepresentation ℂ j)).val h
+      = (indExtend H (ofCharacter (irreducibleRepresentation ℂ j))).val (h : G) := by
         simpa only [comap_apply, Subgroup.coe_subtype] using
-          (congrArg (fun F : ClassFunction ℂ H => F.1 h)
+          (congrArg (fun F : ClassFunction ℂ H => F.val h)
             (comap_subtype_indExtend hH
               (isUnit_natCard_subgroup H (isUnit_of_invertible _))
               (ofCharacter (irreducibleRepresentation ℂ j)))).symm
@@ -209,7 +210,7 @@ private theorem exists_normal_coe_eq_frobeniusKernel (hH : IsTISubgroup H) :
       simp only [hφdef, ofCharacter_apply, character_irreducibleRepresentation]
   -- each extends to an irreducible character of `G`, afforded by some representation `σ j`
   have hstar : ∀ j, ∃ (n : ℕ) (σ : Representation ℂ G (Fin n → ℂ)),
-      ∀ x : G, σ.character x = (indExtend H (φ j)).1 x := by
+      ∀ x : G, σ.character x = (indExtend H (φ j)).val x := by
     intro j
     obtain ⟨n, σ, -, hσ⟩ := mem_irreducibleCharacters_iff.mp
       (indExtend_mem_irreducibleCharacters hH (by rw [hφcoe j]; exact irreducibleCharacter_mem ℂ j))
@@ -217,7 +218,7 @@ private theorem exists_normal_coe_eq_frobeniusKernel (hH : IsTISubgroup H) :
   choose n σ hσ using hstar
   refine ⟨⨅ j, (σ j).ker, Subgroup.normal_iInf_normal fun _ => inferInstance, ?_⟩
   have hker : ∀ (j : Fin (Nat.card (ConjClasses H))) (x : G),
-      x ∈ (σ j).ker ↔ (indExtend H (φ j)).1 x = (φ j).1 1 := by
+      x ∈ (σ j).ker ↔ (indExtend H (φ j)).val x = (φ j).val 1 := by
     intro j x
     rw [Representation.mem_ker_iff_char_eq (σ j) (isOfFinOrder_of_finite x), hσ j x, hσ j 1,
       indExtend_apply_one]

@@ -188,7 +188,7 @@ private theorem rangeInv_compat (f g : ℕ+) (x : Br K)
 /-- Every class of the unramified Brauer group is inflated from some unramified layer. -/
 private theorem exists_mem_range_relBrInfl (x : unramifiedBr K) :
     ∃ f : ℕ+, (x : Br K) ∈ (relBrInfl K (𝓤 f) (𝓤 f).val).range :=
-  (AddSubgroup.mem_iSup_of_directed (directed_range_relBrInfl K)).1 x.2
+  (AddSubgroup.mem_iSup_of_directed (directed_range_relBrInfl K)).1 x.property
 
 /-- The invariant of the unramified Brauer group, glued from the invariants of the layers. -/
 private def unramifiedBrInvHom : unramifiedBr K →+ AddCircle (1 : ℚ) :=
@@ -198,7 +198,7 @@ private def unramifiedBrInvHom : unramifiedBr K →+ AddCircle (1 : ℚ) :=
   (Submodule.iSupLift (fun f : ℕ+ => (relBrInfl K (𝓤 f) (𝓤 f).val).range.toIntSubmodule)
     ((directed_range_relBrInfl K).mono_comp _ fun _ _ h => AddSubgroup.toIntSubmodule.monotone h)
     (fun f => (rangeInv K f).toIntLinearMap)
-    (fun f g h => LinearMap.ext fun x => rangeInv_compat K f g x x.2 (h x.2))
+    (fun f g h => LinearMap.ext fun x => rangeInv_compat K f g x x.property (h x.property))
     (unramifiedBr K).toIntSubmodule (AddSubgroup.toIntSubmodule.map_iSup _).le).toAddMonoidHom
 
 /-- The invariant of the unramified Brauer group may be read on any layer of a class. -/

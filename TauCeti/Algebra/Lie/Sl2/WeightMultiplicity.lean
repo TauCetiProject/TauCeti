@@ -233,7 +233,7 @@ theorem exists_int_and_toEnd_apply_eq_neg_smul (t : IsSl2Triple h e f) {x : H}
     rw [hbot, finrank_bot] at hsym
     exact hnB (Submodule.finrank_eq_zero.1 hsym)
   obtain ⟨u, humem, hu0⟩ := (Submodule.ne_bot_iff _).1 hnegB
-  refine ⟨m, hm, u, u.2, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
+  refine ⟨m, hm, u, u.property, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
   have h2 := congrArg Subtype.val (Module.End.mem_eigenspace_iff.1 humem)
   rw [hBA] at h2
   exact h2

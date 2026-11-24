@@ -169,7 +169,7 @@ theorem tendsto_hilleYosidaSemigroup (t : ℝ≥0) (x : X) :
   exact (tendsto_yosidaLimit_of_norm_resolvent_pow_le hM
     (LinearPMap.hilleYosida_zero_of hres hpow).1
     (LinearPMap.hilleYosida_zero_of hres hpow).2
-    (dense_subScalar_domain hdense) t.2 x).const_smul
+    (dense_subScalar_domain hdense) t.property x).const_smul
       (Real.exp (omega * (t : ℝ)) : ℝ)
 
 /-- The general Hille--Yosida semigroup has generator `A`. -/

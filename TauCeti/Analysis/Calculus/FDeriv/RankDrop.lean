@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.FDeriv.Norm
+public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Pencil
+import Mathlib.Analysis.Calculus.LocalExtr.LineDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # The Lefschetz–Whitehead rank estimate
@@ -31,8 +33,8 @@ because the derivative of a map of constant nonzero norm is orthogonal to its va
 
 * `HasFDerivAt.finrank_range_lt_of_infinite`: the Lefschetz–Whitehead rank estimate for a
   direction field `h` with `h x ∉ range h'`.
-* `HasFDerivAt.finrank_range_lt_of_infinite_of_norm_eq`: the same for a direction field of
-  locally constant nonzero norm, such as a map into the unit sphere.
+* `HasFDerivAt.finrank_range_lt_of_infinite_of_isLocalExtr_norm`: the same for a nonzero
+  direction field whose norm has a local extremum at `x`, such as a map into the unit sphere.
 
 ## References
 
@@ -43,7 +45,6 @@ because the derivative of a map of constant nonzero norm is orthogonal to its va
 public section
 
 open Module
-open scoped Topology RealInnerProductSpace
 
 namespace HasFDerivAt
 
@@ -85,24 +86,28 @@ theorem finrank_range_lt_of_infinite (hh : HasFDerivAt h h' x) (hg : HasFDerivAt
 end NontriviallyNormedField
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {g h : E → F} {g' h' : E →L[ℝ] F} {x : E}
 
 /-- **The Lefschetz–Whitehead rank estimate for unit directions.** Let `g` and `h` be
-differentiable at `x`, where `h x ≠ 0` and `‖h‖` is constant near `x`, for instance a map into the
-unit sphere. If the swept map `(y, t) ↦ g y + t • h y` has rank at most `p` at `(x, t)` for
-infinitely many `t`, then `h` has rank less than `p` at `x`. -/
-theorem finrank_range_lt_of_infinite_of_norm_eq (hh : HasFDerivAt h h' x)
-    (hg : HasFDerivAt g g' x) (hn : ∀ᶠ y in 𝓝 x, ‖h y‖ = ‖h x‖) (h0 : h x ≠ 0) {p : ℕ}
+differentiable at `x`, where `h x ≠ 0` and `‖h‖` has a local extremum at `x`, for instance when
+`h` is a map into the unit sphere. If the swept map `(y, t) ↦ g y + t • h y` has rank at most
+`p` at `(x, t)` for infinitely many `t`, then `h` has rank less than `p` at `x`. The norm on `F`
+need not come from an inner product. -/
+theorem finrank_range_lt_of_infinite_of_isLocalExtr_norm (hh : HasFDerivAt h h' x)
+    (hg : HasFDerivAt g g' x) (hn : IsLocalExtr (fun y ↦ ‖h y‖) x) (h0 : h x ≠ 0) {p : ℕ}
     (hp : {t : ℝ | finrank ℝ (LinearMap.range
       (fderiv ℝ (fun q : E × ℝ ↦ g q.1 + q.2 • h q.1) (x, t) : E × ℝ →ₗ[ℝ] F)) ≤ p}.Infinite) :
     finrank ℝ (LinearMap.range (h' : E →ₗ[ℝ] F)) < p := by
   refine hh.finrank_range_lt_of_infinite hg ?_ hp
-  -- The derivative of a map of constant norm is orthogonal to its value.
   rintro ⟨e, he⟩
-  have := TauCeti.inner_fderiv_eq_zero_of_eventually_norm_eq hn e
   rw [ContinuousLinearMap.coe_coe] at he
-  rw [hh.fderiv, he, inner_self_eq_zero] at this
-  exact h0 this
+  -- If `h' e = h x`, then `h` has derivative `1 • h x` along `e`, so `‖h‖` has derivative
+  -- `‖h x‖ ≠ 0` along `e`, which is impossible at a local extremum.
+  have hψ : HasDerivAt (fun t : ℝ ↦ h (x + t • e)) ((1 : ℝ) • h (x + (0 : ℝ) • e)) 0 := by
+    simpa [HasLineDerivAt, he] using hh.hasLineDerivAt e
+  have hφ : HasLineDerivAt ℝ (fun y ↦ ‖h y‖) ‖h x‖ x e := by
+    simpa [HasLineDerivAt] using hψ.norm_of_smul_self
+  exact h0 (norm_eq_zero.mp (hn.hasLineDerivAt_eq_zero hφ))
 
 end HasFDerivAt

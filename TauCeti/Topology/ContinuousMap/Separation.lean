@@ -26,8 +26,8 @@ public section
 theorem _root_.Set.SeparatesPoints.t2Space {X F : Type*} [TopologicalSpace X] [TopologicalSpace F]
     [T2Space F] {B : Set C(X, F)}
     (h : Set.SeparatesPoints ((fun b : C(X, F) => (b : X → F)) '' B)) : T2Space X := by
-  refine T2Space.of_injective_continuous (f := fun x (b : B) => b.1 x) (fun x y hxy => ?_)
-    (continuous_pi fun b => b.1.continuous)
+  refine T2Space.of_injective_continuous (f := fun x (b : B) => b.val x) (fun x y hxy => ?_)
+    (continuous_pi fun b => b.val.continuous)
   by_contra hne
   obtain ⟨_, ⟨b, hb, rfl⟩, hbxy⟩ := h hne
   exact hbxy (congrFun hxy ⟨b, hb⟩)
