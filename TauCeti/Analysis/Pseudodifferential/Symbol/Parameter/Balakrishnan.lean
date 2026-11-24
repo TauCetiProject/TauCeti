@@ -62,7 +62,8 @@ symbol of `s - Δ - z` is elliptic with parameter near the closed negative real 
 * `TauCeti.ParameterSymbol.balakrishnanIntegral`: the symbol
   `(x, ξ) ↦ (sin (π σ) / π) ∫₀^∞ t ^ (-σ) b((x, ξ), -t) dt` of order `m - 2 σ + 2`, with
   `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral` for its coefficient. It is linear in
-  the parameter-dependent symbol and commutes with the order inclusions.
+  the parameter-dependent symbol (`TauCeti.ParameterSymbol.balakrishnanIntegralₗ`) and commutes
+  with the order inclusions.
 * `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_eq_rpow`: the integral of a left
   inverse of `A + t` along the axis is `A ^ (-σ)`.
 * `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`: the integral of the inverse
@@ -142,7 +143,10 @@ and `σ < 1` with `m - 2 σ + 2 < 0`, the symbol
 
 of order `m - 2 σ + 2` (`TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral`). For a
 resolvent parametrix `b` of an operator `A` of order `2` (so `m = -2`) and `0 < σ < 1`, it is the
-symbol of Balakrishnan's resolvent integral of the negative power `A ^ (-σ)`, of order `-2 σ`. -/
+symbol-level analogue of Balakrishnan's resolvent integral for the negative power `A ^ (-σ)`, of
+order `-2 σ`. Pointwise, where `b` inverts `A + t` along the axis, it is the power `A ^ (-σ)`
+(`TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_eq_rpow`,
+`TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`). -/
 def balakrishnanIntegral (b : ParameterSymbol n Λ V W m) : Symbol n V W (m - 2 * σ + 2) :=
   Symbol.inclusion (le_of_eq (by ring)) (((Real.sin (Real.pi * σ) / Real.pi : ℝ) : ℂ) •
     b.contourIntegral continuous_neg_abs (neg_abs_mem hΛ) (aestronglyMeasurable_indicator_rpow σ)
@@ -193,6 +197,25 @@ theorem balakrishnanIntegral_sub (b c : ParameterSymbol n Λ V W m) :
     (b - c).balakrishnanIntegral hΛ hσ hm =
       b.balakrishnanIntegral hΛ hσ hm - c.balakrishnanIntegral hΛ hσ hm := by
   simp [balakrishnanIntegral, smul_sub]
+
+/-- The Balakrishnan integral as a `ℂ`-linear map from parameter-dependent symbols of order `m`
+to symbols of order `m - 2 σ + 2`. -/
+def balakrishnanIntegralₗ : ParameterSymbol n Λ V W m →ₗ[ℂ] Symbol n V W (m - 2 * σ + 2) where
+  toFun b := b.balakrishnanIntegral hΛ hσ hm
+  map_add' := balakrishnanIntegral_add hΛ hσ hm
+  map_smul' := balakrishnanIntegral_smul hΛ hσ hm
+
+@[simp]
+theorem balakrishnanIntegralₗ_apply (b : ParameterSymbol n Λ V W m) :
+    balakrishnanIntegralₗ hΛ hσ hm b = b.balakrishnanIntegral hΛ hσ hm :=
+  (rfl)
+
+/-- The Balakrishnan integral of a finite sum is the sum of the Balakrishnan integrals, so a
+finite parametrix expansion may be integrated term by term. -/
+@[simp]
+theorem balakrishnanIntegral_sum {ι : Type*} (s : Finset ι) (b : ι → ParameterSymbol n Λ V W m) :
+    (∑ i ∈ s, b i).balakrishnanIntegral hΛ hσ hm = ∑ i ∈ s, (b i).balakrishnanIntegral hΛ hσ hm :=
+  map_sum (balakrishnanIntegralₗ hΛ hσ hm) b s
 
 end
 
@@ -267,11 +290,11 @@ theorem coefficient_balakrishnanIntegral_inverse (hσ0 : 0 < σ) (hm : -m - 2 * 
 
 /-- **The principal part of Seeley's symbol of a negative power.** Let `a` be a symbol of order
 `m` elliptic with parameter, and `N : ℕ`. The Balakrishnan integral of its truncated right
-parametrix `Bₙ₊₁` (`TauCeti.ParameterSymbol.rightParametrix`) differs by one symbol `d` of order
-`-m - 2 σ + 1` from the integral of the inverse symbol. So at every `(x, ξ)` where
-`a((x, ξ), -t) = A + t` along the negative real axis, for a strictly positive operator `A`, the
-integral of `Bₙ₊₁` is `A ^ (-σ) + d(x, ξ)`: for `m = 2` it is the power `A ^ (-σ)`, of order
-`-2 σ`, up to a symbol of order `-2 σ - 1`. -/
+parametrix `Bₙ₊₁` (`TauCeti.ParameterSymbol.rightParametrix`) satisfies: there is one symbol `d`
+of order `-m - 2 σ + 1` such that at every `(x, ξ)` where `a((x, ξ), -t) = A + t` along the
+negative real axis, for a strictly positive operator `A`, the integral of `Bₙ₊₁` at `(x, ξ)` is
+`A ^ (-σ) + d(x, ξ)`. For `m = 2` it is pointwise the power `A ^ (-σ)`, of order `-2 σ`, up to
+the value of a symbol of order `-2 σ - 1`. -/
 theorem exists_coefficient_balakrishnanIntegral_rightParametrix_eq_rpow_add (hσ0 : 0 < σ)
     (hm : -m - 2 * σ + 2 < 0) {a : ParameterSymbol n Λ V V m} (ha : a.IsElliptic) (N : ℕ) :
     ∃ d : Symbol n V V (-m - 1 - 2 * σ + 2), ∀ (p : CoordinateSpace n × CoordinateSpace n)

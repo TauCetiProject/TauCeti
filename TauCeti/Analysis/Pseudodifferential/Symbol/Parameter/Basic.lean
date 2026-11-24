@@ -45,6 +45,9 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   `TauCeti.parameterWeight_rpow_le_mul_one_add_norm_sq_rpow`: the weight dominates
   `⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)` and `1 + ‖z‖ ^ (1 / 2)`, and at a fixed spectral parameter it is at
   most a multiple of `⟨ξ⟩`;
+* `TauCeti.parameterWeight_add_le`, `TauCeti.parameterWeight_rpow_le_mul_parameterWeight_add_rpow`:
+  shifting the spectral parameter by `u` changes the weight by at most the factor
+  `1 + ‖u‖ ^ (1 / 2)`;
 * `TauCeti.ParameterSymbol.inclusion`: the order inclusions, and the complex vector space
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
@@ -66,8 +69,9 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
 * `TauCeti.ParameterSymbol.shiftedLaplacian`, `TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian`:
   for `s ≥ 0` the symbol `(s + ‖ξ‖²) - z` of `s - Δ - z` has order `2` and is elliptic with
   parameter on every sector `Re z ≤ c ‖z‖`, `c < 1`, on which `s + ‖z‖` is bounded below by a
-  positive constant, and for `s > 0` also on the half plane `Re z ≤ s / 2`, which contains the
-  closed negative real axis (`TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian_of_re_le`).
+  positive constant, and also on every half plane `Re z ≤ s - δ`, `δ > 0`, which for `δ < s`
+  contains the closed negative real axis
+  (`TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian_of_re_le`).
   Hence the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` has order `-2`
   (`TauCeti.ParameterSymbol.coefficient_inverse_shiftedLaplacian`). For `s = 0` it is the principal
   resolvent symbol `(‖ξ‖² - z)⁻¹`, which keeps its low-frequency values: at `ξ = 0` it is `1` for
@@ -185,6 +189,33 @@ theorem parameterWeight_rpow_le_mul_one_add_norm_sq_rpow (ξ : CoordinateSpace n
       _ ≤ (3 * (1 + ‖z‖) * (1 + ‖ξ‖ ^ 2)) ^ (r / 2) :=
           Real.rpow_le_rpow (by positivity) hsq (by linarith)
       _ = _ := by rw [abs_of_nonneg hr, Real.mul_rpow (by positivity) (by positivity)]
+
+/-- Shifting the spectral parameter by `u` enlarges the parameter weight by at most the factor
+`1 + ‖u‖ ^ (1 / 2)`. -/
+theorem parameterWeight_add_le (ξ : CoordinateSpace n) (z u : ℂ) :
+    parameterWeight ξ (z + u) ≤ (1 + Real.sqrt ‖u‖) * parameterWeight ξ z := by
+  have hsq : Real.sqrt ‖z + u‖ ≤ Real.sqrt ‖z‖ + Real.sqrt ‖u‖ := by
+    rw [Real.sqrt_le_left (by positivity)]
+    nlinarith [norm_add_le z u, Real.sq_sqrt (norm_nonneg z), Real.sq_sqrt (norm_nonneg u),
+      mul_nonneg (Real.sqrt_nonneg ‖z‖) (Real.sqrt_nonneg ‖u‖)]
+  have := Real.sqrt_nonneg ‖u‖
+  have := Real.sqrt_nonneg ‖z‖
+  rw [parameterWeight_def, parameterWeight_def]
+  nlinarith [norm_nonneg ξ]
+
+/-- For a nonpositive exponent `r`, shifting the spectral parameter by `u` changes the power
+`w ^ r` of the parameter weight by at most the factor `(1 + ‖u‖ ^ (1 / 2)) ^ (-r)`. -/
+theorem parameterWeight_rpow_le_mul_parameterWeight_add_rpow (ξ : CoordinateSpace n) (z u : ℂ)
+    {r : ℝ} (hr : r ≤ 0) :
+    parameterWeight ξ z ^ r ≤ (1 + Real.sqrt ‖u‖) ^ (-r) * parameterWeight ξ (z + u) ^ r := by
+  have hk : 0 < 1 + Real.sqrt ‖u‖ := by positivity
+  calc parameterWeight ξ z ^ r
+      = (1 + Real.sqrt ‖u‖) ^ (-r) * ((1 + Real.sqrt ‖u‖) * parameterWeight ξ z) ^ r := by
+        rw [Real.mul_rpow hk.le (parameterWeight_pos ξ z).le, ← mul_assoc, ← Real.rpow_add hk,
+          neg_add_cancel, Real.rpow_zero, one_mul]
+    _ ≤ (1 + Real.sqrt ‖u‖) ^ (-r) * parameterWeight ξ (z + u) ^ r :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (parameterWeight_pos ξ _)
+          (parameterWeight_add_le ξ z u) hr) (by positivity)
 
 variable (n) in
 /-- The anisotropic dilation `((y, η), μ) ↦ ((y, t η), t² μ)` of the position, frequency and
@@ -1295,55 +1326,37 @@ theorem isElliptic_shiftedLaplacian {s c δ : ℝ} (hs : 0 ≤ s) (hc : c < 1) (
   · rw [coefficient_shiftedLaplacian s x ξ hz]
     exact (h x ξ hz).2
 
-/-- **Parameter-ellipticity of the shifted Laplacian near the negative real axis.** For `s > 0`,
+/-- **Parameter-ellipticity of the shifted Laplacian near the negative real axis.** For `δ > 0`,
 the symbol of `s - Δ - z` is elliptic with parameter on every open set `Λ` of spectral parameters
-in the half plane `Re z ≤ s / 2`. Unlike the sectors of
-`TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian`, such a set may contain `0`, and so a
-neighbourhood of the closed negative real axis. -/
-theorem isElliptic_shiftedLaplacian_of_re_le {s : ℝ} (hs : 0 < s) (hΛ : ∀ z ∈ Λ, z.re ≤ s / 2) :
+in the half plane `Re z ≤ s - δ`. Unlike the sectors of
+`TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian`, such a set may contain `0` when `δ < s`,
+and so a neighbourhood of the closed negative real axis. -/
+theorem isElliptic_shiftedLaplacian_of_re_le {s δ : ℝ} (hδ : 0 < δ)
+    (hΛ : ∀ z ∈ Λ, z.re ≤ s - δ) :
     (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).IsElliptic := by
-  have hs2 : 0 < s / 2 := by linarith
-  -- Write `(s + ‖ξ‖²) - z = (s / 2 + ‖ξ‖²) - (z - s / 2)`, with `z - s / 2` in the left half plane.
-  have h (ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :=
-    isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V one_pos zero_lt_one hs2
-      (q := s / 2 + ‖ξ‖ ^ 2) (ξ := ξ) (z := z - (s / 2 : ℝ)) (by linarith)
-      (by simp only [Complex.sub_re, Complex.ofReal_re, zero_mul]; linarith [hΛ z hz])
-      (by linarith [norm_nonneg (z - (s / 2 : ℝ)), sq_nonneg ‖ξ‖])
+  -- Write `(s + ‖ξ‖²) - z = (δ + ‖ξ‖²) - (z - (s - δ))`, with `z - (s - δ)` in the left half plane.
   have heq (ξ : CoordinateSpace n) (z : ℂ) :
-      (((s / 2 + ‖ξ‖ ^ 2 : ℝ) : ℂ) - (z - (s / 2 : ℝ))) = ((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z := by
+      (((δ + ‖ξ‖ ^ 2 : ℝ) : ℂ) - (z - (s - δ : ℝ))) = ((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z := by
     push_cast
     ring
-  set κ := (1 - max 0 (-1 : ℝ)) / 2 / (3 * (1 + 1⁻¹ + (s / 2)⁻¹))
-  -- The weights at `z` and at `z - s / 2` are comparable.
-  have hw (ξ : CoordinateSpace n) (z : ℂ) :
-      parameterWeight ξ (z - (s / 2 : ℝ)) ^ (-2 : ℝ) ≤
-        (1 + Real.sqrt (s / 2)) ^ 2 * parameterWeight ξ z ^ (-2 : ℝ) := by
-    have hw₀ := parameterWeight_pos ξ (z - (s / 2 : ℝ))
-    have hw₁ := parameterWeight_pos ξ z
-    have hle :
-        parameterWeight ξ z ≤ (1 + Real.sqrt (s / 2)) * parameterWeight ξ (z - (s / 2 : ℝ)) := by
-      have hz : ‖z‖ ≤ ‖z - (s / 2 : ℝ)‖ + s / 2 := by
-        calc ‖z‖ = ‖(z - (s / 2 : ℝ)) + (s / 2 : ℝ)‖ := by rw [sub_add_cancel]
-          _ ≤ ‖z - (s / 2 : ℝ)‖ + ‖((s / 2 : ℝ) : ℂ)‖ := norm_add_le _ _
-          _ = ‖z - (s / 2 : ℝ)‖ + s / 2 := by rw [Complex.norm_real, Real.norm_of_nonneg hs2.le]
-      have hsq : Real.sqrt ‖z‖ ≤ Real.sqrt ‖z - (s / 2 : ℝ)‖ + Real.sqrt (s / 2) := by
-        rw [Real.sqrt_le_left (by positivity)]
-        nlinarith [Real.sq_sqrt (norm_nonneg (z - (s / 2 : ℝ))), Real.sq_sqrt hs2.le,
-          mul_nonneg (Real.sqrt_nonneg ‖z - (s / 2 : ℝ)‖) (Real.sqrt_nonneg (s / 2))]
-      rw [parameterWeight_def, parameterWeight_def]
-      have := Real.sqrt_nonneg (s / 2)
-      have := Real.sqrt_nonneg ‖z - (s / 2 : ℝ)‖
-      nlinarith [norm_nonneg ξ]
-    rw [Real.rpow_neg hw₀.le, Real.rpow_neg hw₁.le, Real.rpow_two, Real.rpow_two,
-      ← div_eq_mul_inv, le_div_iff₀ (pow_pos hw₁ 2), inv_mul_eq_div,
-      div_le_iff₀ (pow_pos hw₀ 2), ← mul_pow]
-    exact pow_le_pow_left₀ hw₁.le hle 2
-  refine ⟨fun x ξ z hz ↦ ?_, fun K _ ↦ ⟨κ⁻¹ * (1 + Real.sqrt (s / 2)) ^ 2, fun x _ ξ z hz ↦ ?_⟩⟩
-  · rw [coefficient_shiftedLaplacian s x ξ hz, ← heq]
-    exact (h ξ hz).1
-  · rw [coefficient_shiftedLaplacian s x ξ hz, ← heq, mul_assoc]
-    refine (h ξ hz).2.trans (mul_le_mul_of_nonneg_left (hw ξ z) ?_)
+  obtain ⟨κ, h, hκ⟩ : ∃ κ : ℝ, (∀ (ξ : CoordinateSpace n) {z : ℂ}, z ∈ Λ →
+      ((((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z) • ContinuousLinearMap.id ℂ V).IsInvertible ∧
+        ‖((((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z) • ContinuousLinearMap.id ℂ V).inverse‖ ≤
+          κ * parameterWeight ξ (z - (s - δ : ℝ)) ^ (-2 : ℝ)) ∧ 0 ≤ κ := by
+    refine ⟨_, fun ξ z hz ↦ heq ξ z ▸
+      isInvertible_ofReal_sub_smul_id_and_norm_inverse_le V one_pos zero_lt_one hδ
+        (q := δ + ‖ξ‖ ^ 2) (by linarith)
+        (by simp only [Complex.sub_re, Complex.ofReal_re, zero_mul]; linarith [hΛ z hz])
+        (by linarith [norm_nonneg (z - (s - δ : ℝ)), sq_nonneg ‖ξ‖]), ?_⟩
     exact inv_nonneg.2 (div_nonneg (by norm_num) (by positivity))
+  refine ⟨fun x ξ z hz ↦ ?_, fun K _ ↦
+    ⟨κ * (1 + Real.sqrt ‖((s - δ : ℝ) : ℂ)‖) ^ (-(-2 : ℝ)), fun x _ ξ z hz ↦ ?_⟩⟩
+  · rw [coefficient_shiftedLaplacian s x ξ hz]
+    exact (h ξ hz).1
+  · rw [coefficient_shiftedLaplacian s x ξ hz, mul_assoc]
+    refine (h ξ hz).2.trans (mul_le_mul_of_nonneg_left ?_ hκ)
+    simpa using parameterWeight_rpow_le_mul_parameterWeight_add_rpow ξ (z - (s - δ : ℝ))
+      ((s - δ : ℝ) : ℂ) (by norm_num : (-2 : ℝ) ≤ 0)
 
 /-- The coefficient of the resolvent symbol: the inverse of the symbol of `s - Δ - z` is
 `((s + ‖ξ‖²) - z)⁻¹ • id`, a parameter-dependent symbol of order `-2`. -/
