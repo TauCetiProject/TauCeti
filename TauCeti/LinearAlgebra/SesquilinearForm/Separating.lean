@@ -8,19 +8,24 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
+
 /-!
 # Forms definite off the origin separate vectors
 
 A semilinear map of two arguments `B` that is definite off the origin, `B x x ≠ 0` for `x ≠ 0`,
 **separates** vectors: two vectors pairing identically against every vector are equal, because
 their difference pairs to zero with itself. On a finite-dimensional space, a separating form
-represents every pairing by a linear map.
+represents every pairing by a linear map, and a form definite off the origin identifies the space
+semilinearly with its dual.
 
 ## Main results
 
 * `LinearMap.eq_of_forall_sesq_eq`: a form definite off the origin separates vectors.
 * `LinearMap.exists_linearMap_forall_apply_eq_apply`: every pairing factors through a separating
   form on a finite-dimensional space.
+* `LinearMap.bijective_of_apply_self_ne_zero`: on a finite-dimensional space, a form definite off
+  the origin is a bijection onto the dual.
 -/
 
 public section
@@ -57,5 +62,23 @@ theorem exists_linearMap_forall_apply_eq_apply {K V W : Type*} [Field K] [AddCom
   have h : S.flip y = B.flip (e.symm (fun i ↦ S (b i) y)) := b.ext fun i ↦
     (congrFun (e.apply_symm_apply fun i ↦ S (b i) y) i).symm
   exact LinearMap.congr_fun h x
+
+/-- **Riesz representation for a form definite off the origin.** On a finite-dimensional space
+`V`, a form `B`, semilinear in the first variable for a surjective `I` and with `B x x ≠ 0` for
+`x ≠ 0`, identifies `V` semilinearly with its dual: every linear functional is `B u` for a unique
+`u`. -/
+theorem bijective_of_apply_self_ne_zero {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] {I : K →+* K} [RingHomSurjective I] {B : V →ₛₗ[I] V →ₗ[K] K}
+    (hdef : ∀ x : V, x ≠ 0 → B x x ≠ 0) : Function.Bijective B := by
+  have hdef' (u : V) (hu : B u u = 0) : u = 0 := not_not.1 fun hne ↦ hdef u hne hu
+  refine ⟨(injective_iff_map_eq_zero B).2 fun u hu ↦ hdef' u (congrArg (· u) hu),
+    LinearMap.range_eq_top.1 ?_⟩
+  apply Submodule.eq_top_of_finrank_eq
+  have hW := Subspace.finrank_add_finrank_dualCoannihilator_eq (LinearMap.range B)
+  have hbot : (LinearMap.range B).dualCoannihilator = ⊥ :=
+    (Submodule.eq_bot_iff _).2 fun u hu ↦
+      hdef' u ((Submodule.mem_dualCoannihilator u).1 hu _ ⟨u, rfl⟩)
+  rw [hbot, finrank_bot, add_zero] at hW
+  rw [hW, Subspace.dual_finrank_eq]
 
 end LinearMap

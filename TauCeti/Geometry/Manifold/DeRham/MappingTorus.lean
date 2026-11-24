@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.Iterate
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Homology
-public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+import TauCeti.Dynamics.PeriodicPts.Finite
 
 /-!
 # The time period homomorphism of a mapping torus
@@ -39,9 +39,10 @@ This file computes `N`:
 * `N` is natural: on the image `f_* c` of a class under a smooth map `f : X → Y_φ` it is the
   period of `f^* dt`. In particular it is preserved by the map of mapping tori induced by a smooth
   semiconjugacy, and the integer-iterate map `Y_(φ^k) → Y_φ` multiplies it by `k`;
-* if `M` is compact and `φ` is nondegenerate up to every period, then for distinct points `x i` of
-  positive periods `d i` the time periods `N [γ_(x i)] = d i` tend to infinity, so only finitely
-  many of these closed orbit classes lie below each bound on `N`.
+* if each positive iterate of `φ` has finitely many fixed points (for instance, `M` compact and `φ`
+  nondegenerate up to every period), then for distinct points `x i` of positive periods `d i` the
+  time periods `N [γ_(x i)] = d i` tend to infinity, so only finitely many of these closed orbit
+  classes lie below each bound on `N`.
 
 The opposite convention of circle-valued Morse theory integrates the closed form `α = -dt`, for
 which the suspension flow is the flow of `-α♯` in a metric making the suspension vector field dual
@@ -53,6 +54,8 @@ to `dt`; its period homomorphism is `-N`
 
 * `TauCeti.SmoothMappingTorus.timePeriodHom φ`: the homomorphism `N(h) = ∫_h dt` on
   `H₁(Y_φ; ℤ)`.
+* `TauCeti.SmoothMappingTorus.intTimePeriodHom φ`: the same homomorphism with values in `ℤ`
+  (`TauCeti.SmoothMappingTorus.intCast_intTimePeriodHom`).
 
 ## Main results
 
@@ -68,8 +71,8 @@ to `dt`; its period homomorphism is `-N`
   `TauCeti.SmoothMappingTorus.timePeriodHom_singularHomologyMap_iterateMap`: naturality under
   semiconjugacies and the iterate law.
 * `TauCeti.SmoothMappingTorus.tendsto_timePeriodHom_closedOrbitHomologyClass`: for distinct
-  periodic points of a diffeomorphism of a compact manifold, nondegenerate up to every period, the
-  time periods of their closed orbits tend to infinity.
+  periodic points of a diffeomorphism each of whose positive iterates has finitely many fixed
+  points, the time periods of their closed orbits tend to infinity.
 
 ## References
 
@@ -153,6 +156,33 @@ theorem exists_timePeriodHom_eq_intCast
   rw [timePeriodHom_eq_homologyPeriodHom_singularHomologyMap_proj]
   simpa using AddCircle.exists_homologyPeriodHom_timeForm_eq_intCast_mul (p := 1) _
 
+/-- The **integral time period homomorphism** `H₁(Y_φ; ℤ) → ℤ`: the time period `N(h) = ∫_h dt`,
+which takes integer values (`TauCeti.SmoothMappingTorus.exists_timePeriodHom_eq_intCast`), as an
+integer (`TauCeti.SmoothMappingTorus.intCast_intTimePeriodHom`). It is the exponent map
+specializing series indexed by `H₁(Y_φ; ℤ)` to series in one variable. -/
+def intTimePeriodHom :
+    ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1 →+ ℤ where
+  toFun c := (exists_timePeriodHom_eq_intCast φ c).choose
+  map_zero' := Int.cast_injective (α := ℝ) <| by
+    rw [← (exists_timePeriodHom_eq_intCast φ 0).choose_spec, map_zero, Int.cast_zero]
+  map_add' a b := Int.cast_injective (α := ℝ) <| by
+    rw [← (exists_timePeriodHom_eq_intCast φ (a + b)).choose_spec, Int.cast_add,
+      ← (exists_timePeriodHom_eq_intCast φ a).choose_spec,
+      ← (exists_timePeriodHom_eq_intCast φ b).choose_spec, map_add]
+
+/-- The integral time period is the time period. -/
+@[simp]
+theorem intCast_intTimePeriodHom
+    (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1) :
+    (intTimePeriodHom φ c : ℝ) = timePeriodHom φ c :=
+  (exists_timePeriodHom_eq_intCast φ c).choose_spec.symm
+
+/-- The integral time period rescales time periods by `1`: it is an exponent map along which
+Novikov series indexed by `H₁(Y_φ; ℤ)` push forward to series in one variable. -/
+theorem exists_period_rescale_intTimePeriodHom :
+    ∃ c > 0, ∀ h, Int.castAddHom ℝ (intTimePeriodHom φ h) = c * timePeriodHom φ h :=
+  ⟨1, one_pos, fun _ => by simp⟩
+
 variable {φ} in
 /-- **The period of a closed orbit.** The class `[γ] ∈ H₁(Y_φ; ℤ)` of the closed orbit
 `[t] ↦ [t, x]` through a point `x` of period `d` has time period `N [γ] = ∫_γ dt = d`: its
@@ -180,6 +210,13 @@ theorem timePeriodHom_closedOrbitHomologyClass_pos {d : ℕ} {x : M} (hx : IsPer
     (hd : 0 < d) : 0 < timePeriodHom φ (closedOrbitHomologyClass hx) := by
   rw [timePeriodHom_closedOrbitHomologyClass]
   exact_mod_cast hd
+
+variable {φ} in
+/-- The class of the closed orbit through a point of period `d` has integral time period `d`. -/
+@[simp]
+theorem intTimePeriodHom_closedOrbitHomologyClass {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x) :
+    intTimePeriodHom φ (closedOrbitHomologyClass hx) = d :=
+  Int.cast_injective (α := ℝ) <| by simp
 
 section Map
 
@@ -214,22 +251,22 @@ theorem timePeriodHom_singularHomologyMap_iterateMap (k : ℤ)
 
 section Finiteness
 
-variable {φ} [CompactSpace M] (hφ : ∀ N, IsNondegenerateUpToPeriod I φ N) {ι : Type*}
+variable {φ} (hfin : ∀ n, 0 < n → (ptsOfPeriod φ n).Finite) {ι : Type*}
   {x : ι → M} (hx : Injective x) {d : ι → ℕ} (hxd : ∀ i, IsPeriodicPt φ (d i) (x i))
   (hd : ∀ i, 0 < d i)
 
-include hφ hx hd in
-/-- **Finitely many closed orbits below each period.** For a diffeomorphism of a compact manifold
-which is nondegenerate up to every period, the time periods `N [γ_(x i)] = d i` of the closed
-orbits through distinct points `x i` of positive periods `d i` tend to infinity along the cofinite
-filter. -/
+include hfin hx hd in
+/-- **Finitely many closed orbits below each period.** If each positive iterate of `φ` has only
+finitely many fixed points, as for a diffeomorphism of a compact manifold nondegenerate up to every
+period (`TauCeti.IsNondegenerateUpToPeriod.finite_ptsOfPeriod`), the time periods
+`N [γ_(x i)] = d i` of the closed orbits through distinct points `x i` of positive periods `d i`
+tend to infinity along the cofinite filter
+(`Function.tendsto_cofinite_atTop_of_finite_ptsOfPeriod`). -/
 theorem tendsto_timePeriodHom_closedOrbitHomologyClass :
     Tendsto (fun i ↦ timePeriodHom φ (closedOrbitHomologyClass (hxd i))) cofinite atTop := by
   simp only [timePeriodHom_closedOrbitHomologyClass]
-  refine tendsto_natCast_atTop_atTop.comp (tendsto_atTop.2 fun N ↦ eventually_cofinite.2 ?_)
-  -- The points with a positive period at most `N` form a finite set.
-  exact (((hφ N).finite_setOf_isPeriodicPt φ.continuous).preimage hx.injOn).subset
-    fun i hi ↦ ⟨d i, hd i, (not_le.1 hi).le, hxd i⟩
+  exact tendsto_natCast_atTop_atTop.comp
+    (tendsto_cofinite_atTop_of_finite_ptsOfPeriod hfin hx hxd hd)
 
 end Finiteness
 

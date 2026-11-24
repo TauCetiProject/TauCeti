@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.KnotTheory.Signature
+import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
 # The Tristram--Levine signature of a Seifert matrix
@@ -158,10 +159,7 @@ theorem tristramLevineForm_congr [Fintype ι] (P V : Matrix ι ι ℝ) (ω : ℂ
     simp [Matrix.conjTranspose_apply]
   simp only [tristramLevineForm, hconj, Matrix.transpose_mul, Matrix.transpose_transpose,
     Matrix.transpose_map]
-  have map_mul (A B : Matrix ι ι ℝ) : (A * B).map ((↑) : ℝ → ℂ) =
-      A.map ((↑) : ℝ → ℂ) * B.map ((↑) : ℝ → ℂ) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  rw [map_mul, map_mul, map_mul, map_mul]
+  rw [map_ofReal_mul, map_ofReal_mul, map_ofReal_mul, map_ofReal_mul]
   noncomm_ring
 
 /-- The Tristram--Levine form of a block-diagonal Seifert matrix, the Seifert matrix of a

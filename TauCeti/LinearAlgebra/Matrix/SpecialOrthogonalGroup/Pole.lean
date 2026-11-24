@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Axis
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Stabilizer
 
 import Mathlib.Algebra.Order.Field.Basic
@@ -72,7 +73,8 @@ All declarations are in the namespace `TauCeti.Matrix.SpecialOrthogonalGroup`.
   or three orbits of poles.
 * `stabilizer_eq_top_of_card_orbitRel_quotient_poles_eq_two`: if there are two orbits, every pole
   is fixed by all of `K`, and `isCyclic_of_card_orbitRel_quotient_poles_eq_two`: `K` is then cyclic.
-* The stabilizer of a pole is cyclic, an instance deduced from `isCyclic_stabilizer`.
+* The stabilizer of a pole is cyclic, an instance deduced from
+  `isCyclic_stabilizer_of_ne_zero`.
 
 ## References
 
@@ -216,10 +218,10 @@ instance (p : poles K) : Nontrivial (stabilizer K p) := by
     fun h ↦ hg ((Subgroup.mk_eq_one _).mp h)⟩
 
 /-- **The stabilizer of a pole is cyclic**, for a finite group of rotations: it is a finite group
-of rotations about the axis through the pole (`isCyclic_stabilizer`). -/
+of rotations about the axis through the pole (`isCyclic_stabilizer_of_ne_zero`). -/
 instance [Finite K] (p : poles K) : IsCyclic (stabilizer K p) := by
   rw [SubMulAction.stabilizer_of_subMul]
-  exact isCyclic_stabilizer (poles.coe_ne_zero p)
+  exact isCyclic_stabilizer_of_ne_zero K (poles.coe_ne_zero p)
 
 /-- **Every orbit of poles has a stabilizer of order at least `2`**, for a finite group of
 rotations: the stabilizer of a pole contains a nonidentity rotation. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
@@ -13,6 +14,7 @@ import Mathlib.RingTheory.Regular.Flat
 import Mathlib.Tactic.Algebraize
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Regular.Flat
 
 /-!
 # Landweber sequences and Landweber-regular modules for formal group laws
@@ -45,6 +47,10 @@ foundational invariance and functoriality properties:
   with `i ≥ m` vanish, so weak regularity of `F.landweberSequence p n` for all `n` reduces to
   `n = m`
   (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_smul_top_eq_top`).
+  When `I_(n+1)(F) = R`, `v_n` is a unit modulo `I_n(F)`, so weak regularity for all `m` reduces
+  further to `m = n`
+  (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
+  `FormalGroup.isLandweberRegular_iff_of_heightIdeal_succ_eq_top`).
   In particular, a module is Landweber regular for `𝔾ₘ` precisely when every prime acts
   injectively on it (`FormalGroup.isLandweberRegular_𝔾ₘ_iff`), and for `𝔾ₐ` precisely when every
   prime acts bijectively (`FormalGroup.isLandweberRegular_𝔾ₐ_iff`).
@@ -52,6 +58,8 @@ foundational invariance and functoriality properties:
   and by flat base change of rings and modules (`FormalGroup.IsLandweberRegular.lTensor`,
   `FormalGroup.IsLandweberRegular.of_flat_module`,
   `FormalGroup.IsLandweberRegular.of_flat_of_isBaseChange`).
+  A faithfully flat base change also reflects it
+  (`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange`).
 
 ## Main definitions
 
@@ -69,11 +77,19 @@ foundational invariance and functoriality properties:
 * `FormalGroup.isWeaklyRegular_ofFn_iff_landweberSequence` and
   `FormalGroup.isRegular_ofFn_iff_landweberSequence`: replacing each `v_i` by any lift modulo
   `I_i(F)` preserves weak regularity and regularity.
+* `FormalGroup.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
+  `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`,
+  `FormalGroup.isLandweberRegular_iff_of_heightIdeal_succ_eq_top`, and
+  `FormalGroup.isLandweberRegular_iff_of_heightIdeal_two_eq_top`: when `I_(n+1)(F) = R`, Landweber
+  regularity at prime `p` reduces to `F.landweberSequence p n`, and when `I₂(F) = R` at every
+  prime `p`, Landweber regularity reduces to `p`-torsion-freeness.
 * `TauCeti.FormalGroupIso.isWeaklyRegular_landweberSequence_iff` and
   `TauCeti.FormalGroupIso.isLandweberRegular_iff`: invariance under arbitrary formal group
   isomorphisms.
 * `FormalGroup.IsLandweberRegular.of_flat_module` and `FormalGroup.IsLandweberRegular.of_flat`:
   stability under flat modules and flat algebras.
+* `FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange` and
+  `FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`: faithfully flat descent.
 * `FormalGroup.isLandweberRegular_𝔾ₘ_iff` and `FormalGroup.isLandweberRegular_𝔾ₐ_iff`: explicit
   characterizations for the multiplicative and additive formal group laws.
 
@@ -261,6 +277,53 @@ theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top (hp :
       IsWeaklyRegular M (F.landweberSequence p m) :=
   F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_smul_top_eq_top hp (by simp [hm])
 
+/-- If `I_(n+1)(F) = ⊤`, then `v_n` is a unit modulo `I_n(F)` (`isUnit_mk_coeff_nsmulSeries_iff`)
+and hence acts invertibly (in particular regularly) on `M ⧸ I_n(F) M`, while `M ⧸ I_i(F) M = 0` for
+`i > n`. Consequently, for `m ≥ n`, `F.landweberSequence p m` is weakly regular on `M` if and only
+if `F.landweberSequence p n` is. -/
+theorem isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p.Prime)
+    (M : Type*) [AddCommGroup M] [Module R M] {n m : ℕ} (hnm : n ≤ m)
+    (hI : F.heightIdeal p (n + 1) = ⊤) :
+    IsWeaklyRegular M (F.landweberSequence p m) ↔
+      IsWeaklyRegular M (F.landweberSequence p n) := by
+  refine ⟨fun hm ↦ ?_, fun hn ↦ ?_⟩
+  · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hm ⊢
+    exact fun i hi ↦ hm i (hi.trans_le hnm)
+  · have hn1 : IsWeaklyRegular M (F.landweberSequence p (n + 1)) := by
+      rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
+      intro i hi
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+      · exact hn i hi
+      · exact Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk _
+          ((F.isUnit_mk_coeff_nsmulSeries_iff hp _).mpr hI)
+    exact (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).mpr hn1 m
+
+/-- If `I_(n+1)(F) = ⊤`, weak regularity of `F.landweberSequence p m` on `M` for every `m : ℕ`
+is equivalent to weak regularity at `m = n`. -/
+theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p.Prime)
+    (M : Type*) [AddCommGroup M] [Module R M] {n : ℕ} (hI : F.heightIdeal p (n + 1) = ⊤) :
+    (∀ m : ℕ, IsWeaklyRegular M (F.landweberSequence p m)) ↔
+      IsWeaklyRegular M (F.landweberSequence p n) :=
+  (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).trans
+    (F.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M n.le_succ hI)
+
+/-- If `I_(n+1)(F) = ⊤` at every prime `p`, then `F` is Landweber regular on an `R`-module `M` if
+and only if `F.landweberSequence p n` is weakly regular on `M` for every prime `p`. -/
+theorem isLandweberRegular_iff_of_heightIdeal_succ_eq_top (M : Type*) [AddCommGroup M]
+    [Module R M] {n : ℕ} (hI : ∀ ⦃p : ℕ⦄, p.Prime → F.heightIdeal p (n + 1) = ⊤) :
+    F.IsLandweberRegular M ↔
+      ∀ ⦃p : ℕ⦄, p.Prime → IsWeaklyRegular M (F.landweberSequence p n) :=
+  forall₂_congr fun _ hp ↦
+    F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M (hI hp)
+
+/-- If `I₂(F) = ⊤` at every prime `p`, then `F` is Landweber regular on an `R`-module `M` if and
+only if multiplication by every prime `p` is injective on `M`. -/
+theorem isLandweberRegular_iff_of_heightIdeal_two_eq_top (M : Type*) [AddCommGroup M] [Module R M]
+    (hI : ∀ ⦃p : ℕ⦄, p.Prime → F.heightIdeal p 2 = ⊤) :
+    F.IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) := by
+  rw [F.isLandweberRegular_iff_of_heightIdeal_succ_eq_top M hI]
+  simp only [landweberSequence_one, isWeaklyRegular_singleton_iff]
+
 end Comm
 
 end FormalGroup
@@ -354,6 +417,25 @@ theorem isLandweberRegular_map_algebraMap_iff [Algebra R S] [Module R N] [Module
     (F.map (algebraMap R S)).IsLandweberRegular N ↔ F.IsLandweberRegular N := by
   simp only [IsLandweberRegular, ← map_landweberSequence, isWeaklyRegular_map_algebraMap_iff]
 
+/-- **Faithfully flat descent of Landweber regularity.** If `S` is a faithfully flat `R`-algebra
+and `N` is the base change of `M` to `S`, then `F.map (algebraMap R S)` is Landweber regular on `N`
+exactly when `F` is Landweber regular on `M`. -/
+theorem isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange [Algebra R S]
+    [Module.FaithfullyFlat R S] [Module R N] [Module S N] [IsScalarTower R S N] {f : M →ₗ[R] N}
+    (hf : IsBaseChange S f) (F : FormalGroup R) :
+    (F.map (algebraMap R S)).IsLandweberRegular N ↔ F.IsLandweberRegular M := by
+  simp only [IsLandweberRegular, ← map_landweberSequence,
+    isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange hf]
+
+/-- **Faithfully flat descent of Landweber regularity for rings.** For a faithfully flat
+`R`-algebra `S`, `F.map (algebraMap R S)` is Landweber regular on `S` exactly when `F` is Landweber
+regular on `R`. -/
+theorem isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat (S : Type*) [CommRing S]
+    [Algebra R S] [Module.FaithfullyFlat R S] (F : FormalGroup R) :
+    (F.map (algebraMap R S)).IsLandweberRegular S ↔ F.IsLandweberRegular R :=
+  isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange
+    (IsBaseChange.linearMap R S) F
+
 namespace IsLandweberRegular
 
 /-- Landweber regularity is preserved across `R`-linear equivalences of modules. -/
@@ -425,16 +507,9 @@ variable {R : Type*} [CommRing R]
 Landweber regular for `𝔾ₘ` if and only if multiplication by every prime `p` is injective on `M`
 (that is, `M` has no prime torsion as an abelian group). -/
 theorem isLandweberRegular_𝔾ₘ_iff (M : Type*) [AddCommGroup M] [Module R M] :
-    (𝔾ₘ : FormalGroup R).IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) := by
-  refine forall₂_congr fun p hp ↦ ?_
-  rw [(𝔾ₘ : FormalGroup R).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top
-    hp M (heightIdeal_𝔾ₘ_eq_top hp.one_lt (le_refl 2)),
-    landweberSequence_two, isWeaklyRegular_cons_iff, isWeaklyRegular_singleton_iff]
-  have hcoeff : PowerSeries.coeff p ((𝔾ₘ : FormalGroup R).nsmulSeries p) = 1 := by
-    rw [nsmulSeries_𝔾ₘ, map_sub, add_comm, add_pow]
-    simp [PowerSeries.coeff_X_pow, PowerSeries.coeff_one, hp.ne_zero]
-  rw [hcoeff]
-  exact and_iff_left (isUnit_one.isSMulRegular _)
+    (𝔾ₘ : FormalGroup R).IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) :=
+  (𝔾ₘ : FormalGroup R).isLandweberRegular_iff_of_heightIdeal_two_eq_top M
+    fun _ hp ↦ heightIdeal_𝔾ₘ_eq_top hp.one_lt le_rfl
 
 /-- **Landweber regularity for the additive formal group law `𝔾ₐ`.** An `R`-module `M` is
 Landweber regular for `𝔾ₐ` if and only if for every prime `p`, multiplication by `p` on `M` is

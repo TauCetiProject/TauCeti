@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Monoidal.TensorMk
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.Kronecker
+public import TauCeti.Algebra.Homology.ModuleCat.Tensor
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential

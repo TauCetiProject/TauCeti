@@ -8,8 +8,6 @@ module
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 
-import TauCeti.LinearAlgebra.CrossProduct
-
 /-!
 # Rotations of `R³` as oriented orthonormal frames
 
@@ -36,8 +34,6 @@ is `TauCeti.stiefelTwoHomeomorphSpecialOrthogonalGroup`.
   of the frame of its first two columns.
 * `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame_mulVec_mulVec`: rotating the frame by `g`
   multiplies its matrix by `g`.
-* `dotProduct_smul_add_dotProduct_smul_add_cross_dotProduct_smul` (in the same namespace): every
-  vector is the sum of its components along an orthonormal frame.
 -/
 
 public section
@@ -104,7 +100,9 @@ theorem ofFrame_mem_iff {u v : Fin 3 → R} :
   · simpa using congrFun₂ h 0 0
   · simpa using congrFun₂ h 1 1
   · simpa using congrFun₂ h 0 1
-  have hcross := TauCeti.cross_dotProduct_cross_self hu hv huv
+  have hcross : (u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) = 1 := by
+    rw [cross_dot_cross, hu, hv, dotProduct_comm v u, huv]
+    ring
   refine ⟨?_, hcross⟩
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -133,20 +131,6 @@ theorem ofFrame_mulVec_mulVec {g : Matrix (Fin 3) (Fin 3) R}
     mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hg u v
   refine ext_col fun j ↦ ?_
   fin_cases j <;> simp [col_mul_eq_mulVec_col, h2]
-
-/-- **Expansion in an orthonormal frame.** If `u` and `v` are orthonormal, every vector `x` is the
-sum of its components `(u ⬝ᵥ x) • u`, `(v ⬝ᵥ x) • v` and `((u ⨯₃ v) ⬝ᵥ x) • (u ⨯₃ v)` along the
-frame `(u, v, u ⨯₃ v)`. -/
-theorem dotProduct_smul_add_dotProduct_smul_add_cross_dotProduct_smul {u v : Fin 3 → R}
-    (hu : u ⬝ᵥ u = 1) (hv : v ⬝ᵥ v = 1) (huv : u ⬝ᵥ v = 0) (x : Fin 3 → R) :
-    (u ⬝ᵥ x) • u + (v ⬝ᵥ x) • v + ((u ⨯₃ v) ⬝ᵥ x) • (u ⨯₃ v) = x := by
-  -- The frame matrix `F` is orthogonal, so `x = F (Fᵀ x)`.
-  have hF : ofFrame u v * (ofFrame u v)ᵀ = 1 := (mem_orthogonalGroup_iff _ _).mp
-    (mem_specialOrthogonalGroup_iff.mp (ofFrame_mem_iff.mpr ⟨hu, hv, huv⟩)).1
-  conv_rhs => rw [← one_mulVec x, ← hF, ← mulVec_mulVec]
-  ext i
-  simp [mulVec, dotProduct, Fin.sum_univ_three, ofFrame_apply]
-  ring
 
 variable [TopologicalSpace R] [IsTopologicalRing R]
 
