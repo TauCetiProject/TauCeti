@@ -29,6 +29,9 @@ the triangle of `C`.
 
 ## Main definitions
 
+* `CategoryTheory.Idempotents.Karoubi.triangleOfIdempotent`: the triangle of `Karoubi C` cut out
+  of a triangle of `C` by an idempotent endomorphism, and `retractTriangleOfIdempotent`, which
+  exhibits it as a retract of the image of that triangle.
 * `CategoryTheory.Idempotents.Karoubi.distinguishedTriangles`: the retracts of images of
   distinguished triangles of `C`.
 * The instance `Pretriangulated (Karoubi C)`, whose axioms are
@@ -40,6 +43,10 @@ the triangle of `C`.
 
 * `CategoryTheory.Idempotents.Karoubi.mem_distTriang_iff`: the distinguished triangles of
   `Karoubi C` are the retracts of images of distinguished triangles of `C`.
+* `CategoryTheory.Idempotents.Karoubi.distinguished_of_retract`: distinguished triangles of
+  `Karoubi C` are closed under retracts.
+* `CategoryTheory.Idempotents.Karoubi.triangleOfIdempotent_distinguished`: the triangle cut out of
+  a distinguished triangle of `C` by an idempotent endomorphism is distinguished.
 * The instance `(toKaroubi C).IsTriangulated`. As `toKaroubi C` is fully faithful, Mathlib's
   `CategoryTheory.Functor.map_distinguished_iff` then shows that a triangle of `C` is
   distinguished exactly when its image in `Karoubi C` is.
@@ -62,7 +69,7 @@ variable {C : Type u} [Category.{v} C] [HasShift C ℤ]
 
 namespace Idempotents.Karoubi
 
-section TriangleOfIdem
+section TriangleOfIdempotent
 
 variable (T : Triangle C) (e : T ⟶ T) (he : e ≫ e = e)
 include he
@@ -76,20 +83,18 @@ private theorem idem₂ : e.hom₂ ≫ e.hom₂ = e.hom₂ := congr_arg Triangle
 @[reassoc]
 private theorem idem₃ : e.hom₃ ≫ e.hom₃ = e.hom₃ := congr_arg TriangleMorphism.hom₃ he
 
-variable [Preadditive C] [HasZeroObject C] [∀ n : ℤ, (CategoryTheory.shiftFunctor C n).Additive]
-  [Pretriangulated C]
-
 /-- The triangle of `Karoubi C` cut out of a triangle `T` of `C` by an idempotent endomorphism `e`
 of `T`: its objects are `(T.objᵢ, e.homᵢ)` and its morphisms are those of `T`, cut down by `e`. -/
-private noncomputable abbrev triangleOfIdem : Triangle (Karoubi C) :=
-  Triangle.mk (X := ⟨T.obj₁, e.hom₁, idem₁ T e he⟩) (Y := ⟨T.obj₂, e.hom₂, idem₂ T e he⟩)
-    (Z := ⟨T.obj₃, e.hom₃, idem₃ T e he⟩)
+noncomputable abbrev triangleOfIdempotent : Triangle (Karoubi C) :=
+  Triangle.mk (X := ⟨T.obj₁, e.hom₁, congr_arg TriangleMorphism.hom₁ he⟩)
+    (Y := ⟨T.obj₂, e.hom₂, congr_arg TriangleMorphism.hom₂ he⟩)
+    (Z := ⟨T.obj₃, e.hom₃, congr_arg TriangleMorphism.hom₃ he⟩)
     ⟨e.hom₁ ≫ T.mor₁, by simp [idem₁_assoc T e he]⟩ ⟨e.hom₂ ≫ T.mor₂, by simp [idem₂_assoc T e he]⟩
     ⟨e.hom₃ ≫ T.mor₃, by simp only [shiftFunctor_obj_p, assoc, e.comm₃, idem₃_assoc T e he]⟩
 
 /-- The triangle cut out of `T` by an idempotent endomorphism is a retract of the image of `T`. -/
-private noncomputable def retractTriangleOfIdem :
-    Retract (triangleOfIdem T e he) ((toKaroubi C).mapTriangle.obj T) where
+noncomputable def retractTriangleOfIdempotent :
+    Retract (triangleOfIdempotent T e he) ((toKaroubi C).mapTriangle.obj T) where
   i := Triangle.homMk _ _ ⟨e.hom₁, by simp [idem₁ T e he]⟩ ⟨e.hom₂, by simp [idem₂ T e he]⟩
     ⟨e.hom₃, by simp [idem₃ T e he]⟩
     (by ext; simp [e.comm₁, idem₁_assoc T e he])
@@ -106,7 +111,7 @@ private noncomputable def retractTriangleOfIdem :
     · exact idem₂ T e he
     · exact idem₃ T e he
 
-end TriangleOfIdem
+end TriangleOfIdempotent
 
 variable [Preadditive C] [HasZeroObject C] [∀ n : ℤ, (CategoryTheory.shiftFunctor C n).Additive]
   [Pretriangulated C]
@@ -123,23 +128,20 @@ theorem isomorphic_distinguished (T₁ : Triangle (Karoubi C))
   obtain ⟨D, hD, ⟨r⟩⟩ := h
   exact ⟨D, hD, ⟨(Retract.ofIso e).trans r⟩⟩
 
-private theorem triangleOfIdem_mem_distinguishedTriangles {T : Triangle C} (hT : T ∈ distTriang C)
-    (e : T ⟶ T) (he : e ≫ e = e) : triangleOfIdem T e he ∈ distinguishedTriangles :=
-  ⟨T, hT, ⟨retractTriangleOfIdem T e he⟩⟩
-
-/-- The contractible triangle `P ⟶ P ⟶ 0 ⟶ P⟦1⟧` of `Karoubi C` is distinguished: it is cut out of
-the contractible triangle on `P.X` by the idempotent endomorphism `(P.p, P.p, 0)`. -/
+/-- The contractible triangle `P ⟶ P ⟶ 0 ⟶ P⟦1⟧` of `Karoubi C` is distinguished. -/
 theorem contractible_distinguished (P : Karoubi C) :
     contractibleTriangle P ∈ distinguishedTriangles := by
+  -- It is cut out of the contractible triangle on `P.X` by the idempotent endomorphism
+  -- `(P.p, P.p, 0)`.
   let e : contractibleTriangle P.X ⟶ contractibleTriangle P.X :=
     { hom₁ := P.p, hom₂ := P.p, hom₃ := 0 }
   have he : e ≫ e = e := by ext <;> simp [e]
-  have hZ : IsZero (triangleOfIdem _ e he).obj₃ := by
+  have hZ : IsZero (triangleOfIdempotent _ e he).obj₃ := by
     rw [IsZero.iff_id_eq_zero]
     ext
     simp [e]
-  refine isomorphic_distinguished _ (triangleOfIdem_mem_distinguishedTriangles
-    (Pretriangulated.contractible_distinguished P.X) e he) _
+  refine isomorphic_distinguished _ ⟨_, Pretriangulated.contractible_distinguished P.X,
+    ⟨retractTriangleOfIdempotent _ e he⟩⟩ _
     (Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) ((isZero_zero _).iso hZ) ?_
       (hZ.eq_of_tgt _ _) ((isZero_zero _).eq_of_src _ _))
   ext
@@ -155,7 +157,7 @@ theorem distinguished_cocone_triangle {P Q : Karoubi C} (f : P ⟶ Q) :
   let e : Triangle.mk f.f g h ⟶ Triangle.mk f.f g h :=
     { hom₁ := P.p, hom₂ := Q.p, hom₃ := r, comm₂ := hr₂, comm₃ := hr₃ }
   have he : e ≫ e = e := by ext <;> simp [e, hr]
-  let T := triangleOfIdem _ e he
+  let T := triangleOfIdempotent _ e he
   -- The triangle cut out by `e` has first morphism `P.p ≫ f.f = f`.
   have hf : f = T.mor₁ := by
     ext
@@ -163,7 +165,7 @@ theorem distinguished_cocone_triangle {P Q : Karoubi C} (f : P ⟶ Q) :
   refine ⟨T.obj₃, T.mor₂, T.mor₃, ?_⟩
   rw [hf]
   -- `Triangle.mk T.mor₁ T.mor₂ T.mor₃` is `T` by structure eta.
-  exact triangleOfIdem_mem_distinguishedTriangles hD e he
+  exact ⟨_, hD, ⟨retractTriangleOfIdempotent _ e he⟩⟩
 
 /-- A triangle of `Karoubi C` is distinguished exactly when its rotation is. -/
 theorem rotate_distinguished_triangle (T : Triangle (Karoubi C)) :
@@ -225,6 +227,18 @@ theorem mem_distTriang_iff (T : Triangle (Karoubi C)) :
     T ∈ distTriang (Karoubi C) ↔
       ∃ D ∈ distTriang C, Nonempty (Retract T ((toKaroubi C).mapTriangle.obj D)) :=
   Iff.rfl
+
+/-- Distinguished triangles of `Karoubi C` are closed under retracts. -/
+theorem distinguished_of_retract {T T' : Triangle (Karoubi C)} (r : Retract T T')
+    (h : T' ∈ distTriang (Karoubi C)) : T ∈ distTriang (Karoubi C) := by
+  obtain ⟨D, hD, ⟨r'⟩⟩ := h
+  exact ⟨D, hD, ⟨r.trans r'⟩⟩
+
+/-- The triangle cut out of a distinguished triangle of `C` by an idempotent endomorphism is
+distinguished. -/
+theorem triangleOfIdempotent_distinguished {T : Triangle C} (hT : T ∈ distTriang C) (e : T ⟶ T)
+    (he : e ≫ e = e) : triangleOfIdempotent T e he ∈ distTriang (Karoubi C) :=
+  ⟨T, hT, ⟨retractTriangleOfIdempotent T e he⟩⟩
 
 /-- The embedding of a pretriangulated category in its idempotent completion is triangulated. -/
 instance : (toKaroubi C).IsTriangulated where

@@ -59,25 +59,21 @@ theorem Triangle.exists_idempotent_hom₃ (T : Triangle C) (hT : T ∈ distTrian
   obtain ⟨k, hk⟩ := Triangle.yoneda_exact₃ T hT (c ≫ c - c) (by rw [comp_sub, hcc₂, hc₂, sub_self])
   have hn : (c - c ≫ c) ≫ (c - c ≫ c) = 0 := by
     rw [← neg_sub (c ≫ c), neg_comp, comp_neg, neg_neg]
-    nth_rewrite 2 [hk]
+    conv_lhs => arg 2; rw [hk]
     rw [← assoc, sub_comp, hcc₃, hc₃, sub_self, zero_comp]
   let x : End T.obj₃ := .of c
   have hx : (x - x ^ 2) ^ 2 = 0 := by
     ext
     simpa [sq, x] using hn
   have he := isIdempotentElem_one_sub_one_sub_pow_pow x 2 hx
-  have he₂' : (𝟙 _ - e₂) ≫ (𝟙 _ - e₂) = 𝟙 _ - e₂ := by simp [he₂]
-  have he₁' : (𝟙 _ - e₁⟦(1 : ℤ)⟧') ≫ (𝟙 _ - e₁⟦(1 : ℤ)⟧') = 𝟙 _ - e₁⟦(1 : ℤ)⟧' := by
-    simp [← Functor.map_comp, he₁]
   have h₂ : T.mor₂ ≫ (𝟙 _ - c ≫ c) = (𝟙 _ - e₂) ≫ T.mor₂ := by simp [hcc₂]
   have h₃ : (𝟙 _ - c ≫ c) ≫ T.mor₃ = T.mor₃ ≫ (𝟙 _ - e₁⟦(1 : ℤ)⟧') := by simp [hcc₃]
   refine ⟨(1 - (1 - x ^ 2) ^ 2).asHom, congr_arg End.asHom he.eq, ?_, ?_⟩
-  · simp only [sq, End.sub_asHom, End.mul_asHom, End.one_asHom, x]
-    rw [comp_sub, comp_id, reassoc_of% h₂, h₂, ← assoc, he₂', sub_comp, id_comp,
-      sub_sub_cancel]
-  · simp only [sq, End.sub_asHom, End.mul_asHom, End.one_asHom, x]
-    rw [sub_comp, id_comp, assoc, h₃, reassoc_of% h₃, he₁', comp_sub, comp_id,
-      sub_sub_cancel]
+  all_goals
+    simp only [sq, End.sub_asHom, End.mul_asHom, End.one_asHom, x]
+    generalize 𝟙 T.obj₃ - c ≫ c = d at h₂ h₃ ⊢
+  · simp [comp_sub, sub_comp, reassoc_of% h₂, h₂, reassoc_of% he₂]
+  · simp [comp_sub, sub_comp, h₃, reassoc_of% h₃, ← Functor.map_comp, he₁]
 
 end Pretriangulated
 
