@@ -20,7 +20,8 @@ canonical map `of i : A i → L`,
 The inclusion `⊇` holds because `J` is closed. For `⊆`, approximate `x ∈ J` by `of i a`. The
 ⋆-homomorphism `A i → L → L ⧸ J` has kernel `J_i`, so it dominates the quotient map
 `A i → A i ⧸ J_i` in norm (`NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`); hence the
-distance from `a` to `J_i` is at most `‖of i a - x‖`, and a nearby `b ∈ J_i` gives `of i b ∈ J`
+distance from `a` to `J_i` is at most `‖of i a - x‖`
+(`NonUnitalStarAlgHom.exists_mem_comap_norm_sub_lt`), and a nearby `b ∈ J_i` gives `of i b ∈ J`
 close to `x`.
 
 As a consequence, an inductive limit of simple C⋆-algebras (only `⊥` and `⊤` are closed two-sided
@@ -57,50 +58,6 @@ variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι] {A : ι �
   [∀ i j (h : i ≤ j), NonUnitalAlgHomClass (T h) ℂ (A i) (A j)]
   [∀ i j (h : i ≤ j), StarHomClass (T h) (A i) (A j)] [DirectedSystem A (f · · ·)]
 
-/-- The preimage of a closed two-sided ideal of the limit in a stage is closed. -/
-theorem isClosed_comap (J : TwoSidedIdeal (CStarInductiveLimit A f))
-    (hJ : IsClosed (J : Set (CStarInductiveLimit A f))) (i : ι) :
-    IsClosed (J.comap (of A f i) : Set (A i)) := by
-  have : (J.comap (of A f i) : Set (A i)) = of A f i ⁻¹' J := by
-    ext a
-    exact TwoSidedIdeal.mem_comap _
-  rw [this]
-  exact hJ.preimage (map_continuous _)
-
-/-- **Distance to the preimage of an ideal.** If `x` lies in a closed two-sided ideal `J` of the
-limit, then for every `a ∈ A i` and `ε > 0` there is `b` in the preimage `J_i` of `J` with
-`‖a - b‖ < ‖of i a - x‖ + ε`. -/
-theorem exists_mem_comap_norm_sub_lt (J : TwoSidedIdeal (CStarInductiveLimit A f))
-    (hJ : IsClosed (J : Set (CStarInductiveLimit A f))) {x : CStarInductiveLimit A f}
-    (hx : x ∈ J) (i : ι) (a : A i) {ε : ℝ} (hε : 0 < ε) :
-    ∃ b ∈ J.comap (of A f i), ‖a - b‖ < ‖of A f i a - x‖ + ε := by
-  have : IsClosed (J : Set (CStarInductiveLimit A f)) := hJ
-  have : IsClosed (J.comap (of A f i) : Set (A i)) := isClosed_comap J hJ i
-  let φ := (TwoSidedIdeal.Quotient.mkStarAlgHom J).comp (of A f i)
-  let ψ := TwoSidedIdeal.Quotient.mkStarAlgHom (J.comap (of A f i))
-  have hker : TwoSidedIdeal.ker φ ≤ TwoSidedIdeal.ker ψ := fun c hc => by
-    rw [TwoSidedIdeal.mem_ker] at hc ⊢
-    simp only [φ, ψ, NonUnitalStarAlgHom.comp_apply,
-      TwoSidedIdeal.Quotient.mkStarAlgHom_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem,
-      TwoSidedIdeal.mem_comap] at hc ⊢
-    exact hc
-  -- `‖mk J_i a‖ ≤ ‖mk J (of i a)‖ = ‖mk J (of i a - x)‖ ≤ ‖of i a - x‖`
-  have hle : ‖ψ a‖ ≤ ‖of A f i a - x‖ := by
-    refine (NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le hker a).trans ?_
-    have hφ : φ a = TwoSidedIdeal.Quotient.mkStarAlgHom J (of A f i a - x) := by
-      rw [map_sub, TwoSidedIdeal.Quotient.mkStarAlgHom_apply J x,
-        TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 hx, sub_zero]
-      rfl
-    rw [hφ]
-    exact NonUnitalStarAlgHom.norm_apply_le _ _
-  obtain ⟨a', ha', hlt⟩ := TwoSidedIdeal.Quotient.exists_norm_mk_lt (ψ a) hε
-  refine ⟨a - a', ?_, ?_⟩
-  · have h0 : ψ (a - a') = 0 := by
-      rw [map_sub, TwoSidedIdeal.Quotient.mkStarAlgHom_apply _ a', ha', sub_self]
-    exact TwoSidedIdeal.Quotient.eq_zero_iff_mem.1 (by simpa [ψ] using h0)
-  · rw [sub_sub_cancel]
-    linarith
-
 /-- **Closed ideals of an inductive limit.** A closed two-sided ideal `J` of the C⋆-inductive
 limit is the closure of the union of the images of its preimages `J_i` in the stages. The
 connecting maps need not be injective. -/
@@ -113,7 +70,8 @@ theorem coe_eq_closure_iUnion_image_comap (J : TwoSidedIdeal (CStarInductiveLimi
     obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1
       ((dense_iUnion_range_of A f).closure_eq.symm ▸ Set.mem_univ x) (ε / 3) (by positivity)
     obtain ⟨i, a, rfl⟩ := Set.mem_iUnion.1 hy
-    obtain ⟨b, hb, hab⟩ := exists_mem_comap_norm_sub_lt J hJ hx i a (ε := ε / 3) (by positivity)
+    obtain ⟨b, hb, hab⟩ := NonUnitalStarAlgHom.exists_mem_comap_norm_sub_lt (of A f i) J hx a
+      (ε := ε / 3) (by positivity)
     refine ⟨of A f i b, Set.mem_iUnion.2 ⟨i, b, hb, rfl⟩, ?_⟩
     have h1 : ‖of A f i a - x‖ < ε / 3 := by rwa [← dist_eq_norm, dist_comm]
     have h2 : ‖of A f i (a - b)‖ ≤ ‖a - b‖ := NonUnitalStarAlgHom.norm_apply_le _ _
@@ -140,7 +98,7 @@ theorem forall_isClosed_eq_bot_or_eq_top
     have hrange (k : ι) : Set.range (of A f k) ⊆ J := by
       obtain ⟨j, hij, hkj⟩ := exists_ge_ge i k
       have hj : J.comap (of A f j) = ⊤ := by
-        refine (hA j _ (isClosed_comap J hJ j)).resolve_left fun hbot => hne ?_
+        refine (hA j _ (J.isClosed_comap (of A f j) hJ)).resolve_left fun hbot => hne ?_
         ext a
         have ha : f i j hij a ∈ J.comap (of A f j) := by
           rw [TwoSidedIdeal.mem_comap, of_f]
@@ -159,7 +117,7 @@ theorem forall_isClosed_eq_bot_or_eq_top
     left
     have hzero (i : ι) : of A f i '' (J.comap (of A f i) : Set (A i)) ⊆ {0} := by
       rintro _ ⟨b, hb, rfl⟩
-      rcases hA i _ (isClosed_comap J hJ i) with hbot | htop
+      rcases hA i _ (J.isClosed_comap (of A f i) hJ) with hbot | htop
       · rw [hbot, TwoSidedIdeal.coe_bot] at hb
         simp [Set.mem_singleton_iff.1 hb]
       · simp [h i htop]
