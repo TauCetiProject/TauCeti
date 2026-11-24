@@ -13,6 +13,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.RingTheory.Valuation.RamificationGroup
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # The Galois action on the places lying over a place

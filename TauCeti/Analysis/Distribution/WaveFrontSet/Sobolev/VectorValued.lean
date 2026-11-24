@@ -50,7 +50,8 @@ finite Sobolev order near every compact set
   `Distribution.vectorSobolevSingularSupport_eq_sobolevSingularSupport`: for `F = ℂ` they are the
   `H^s` wave front set and the `H^s` singular support of `T`.
 * `Distribution.vectorSobolevWaveFrontSet_eq_iUnion_basis`,
-  `Distribution.vectorSobolevSingularSupport_eq_iUnion_basis`: independence of the frame.
+  `Distribution.vectorSobolevSingularSupport_eq_iUnion_basis`,
+  `Distribution.notMem_vectorSobolevSingularSupport_iff_forall_basis`: independence of the frame.
 * `Distribution.notMem_vectorSobolevWaveFrontSet_iff`,
   `Distribution.notMem_vectorSobolevSingularSupport_iff`: one cutoff serves all components.
 * `Distribution.vectorSobolevWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`,
@@ -514,6 +515,15 @@ theorem vectorSobolevSingularSupport_eq_iUnion_basis (s : ℝ) (b : Module.Basis
         s := by
   simp only [← fst_image_vectorSobolevWaveFrontSet, vectorSobolevWaveFrontSet_eq_iUnion_basis s b,
     image_iUnion, fst_image_sobolevWaveFrontSet]
+
+/-- **Independence of the frame.** For every basis `b` of `F`, a point of `Ω` lies outside the
+`H^s` singular support of `T` exactly when every frame component `bᵢ* ∘ T` is `H^s` near it. -/
+theorem notMem_vectorSobolevSingularSupport_iff_forall_basis {s : ℝ} (b : Module.Basis ι ℂ F)
+    {T : 𝓓'(Ω, F)} {x : E} (hx : x ∈ Ω) :
+    x ∉ T.vectorSobolevSingularSupport s ↔
+      ∀ i, (mapCLM ((b.coord i).toContinuousLinearMap.restrictScalars ℝ) T).IsLocallySobolevAt
+        s x := by
+  simp [vectorSobolevSingularSupport_eq_iUnion_basis s b, hx]
 
 /-- **A common cutoff and cone.** A point `(x, ξ)` with `x ∈ Ω` and `ξ ≠ 0` lies outside the `H^s`
 wave front set of `T` exactly when one test function `φ` with `φ x ≠ 0` and one open cone `Γ`

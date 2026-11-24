@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 public import Mathlib.LinearAlgebra.Basis.Defs
+import TauCeti.LinearAlgebra.Alternating.Basic
 
 /-!
 # Replacing one basis vector by an arbitrary vector
@@ -34,11 +35,7 @@ theorem map_vecCons_removeNth_basis (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
   -- survives, since every other basis vector already occurs among the remaining arguments.
   rw [← f.neg_one_pow_smul_map_insertNth, Fin.insertNth_removeNth]
   conv_lhs => rw [← b.sum_repr w]
-  rw [f.map_update_sum, Finset.sum_eq_single i]
-  · rw [f.map_update_smul, Function.update_eq_self]
-    simp [mul_smul, ← Int.cast_smul_eq_zsmul R]
-  · intro j _ hji
-    rw [f.map_update_smul, f.map_update_self _ hji.symm, smul_zero]
-  · simp
+  rw [f.map_update_sum_smul b (Finset.mem_univ i)]
+  simp [mul_smul, ← Int.cast_smul_eq_zsmul R]
 
 end AlternatingMap

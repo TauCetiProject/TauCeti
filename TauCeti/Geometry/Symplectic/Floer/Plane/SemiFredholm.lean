@@ -72,31 +72,6 @@ open Floer Floer.PSSPlane
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 omit [FiniteDimensional ℝ V] in
-/-- On the cylinder of the end, the `W^{1,2}` energy density of the lift of a `C¹` section with
-compact support in a part `‖w‖ > exp (2π r)` of the end is integrable over `ℝ × [0, 1]`: the lift
-vanishes outside a band of finite length. -/
-private theorem integrableOn_comp_realChart_cylindricalEndLift (p : PSSPlane)
-    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) {r : ℝ}
-    (hξr : tsupport ξ ⊆ {z | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖}) :
-    IntegrableOn (fun ζ ↦
-      ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
-        ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2) (univ ×ˢ Icc (0 : ℝ) 1) := by
-  set φ := realChart p.cylindricalEndLift
-  have hφ : ContDiff ℝ 1 φ := contDiff_realChart p.contDiff_cylindricalEndLift
-  have hξφ : ContDiff ℝ 1 (ξ ∘ φ) := hξ.comp hφ
-  have := hξφ.continuous_fderiv one_ne_zero
-  have hg : Continuous fun ζ ↦ ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineImag‖ ^ 2 + ‖(ξ ∘ φ) ζ‖ ^ 2 := by fun_prop
-  -- The lift vanishes near every point outside a band of finite length.
-  obtain ⟨a, b, -, -, -, -, hout⟩ := p.exists_band_of_tsupport_subset hξc hξr
-  refine IntegrableOn.of_forall_sdiff_eq_zero (s := Icc a b ×ˢ Icc 0 1)
-    (hg.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-    (MeasurableSet.univ.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hev : ξ ∘ φ =ᶠ[𝓝 ζ] 0 := hout ζ fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-  simp [hev.fderiv_eq, show ξ (φ ζ) = 0 from hev.eq_of_nhds]
-
-omit [FiniteDimensional ℝ V] in
 /-- **Comparing with a cut-off section on the end.** If `β = 1` near every point with
 `‖w‖ ≥ exp (2π R)`, then on the part `ε s > R` of the end the lift of `ξ` has the energy density
 of the lift of `β ξ`, so its `W^{1,2}` energy there is at most that of the lift of `β ξ` over
@@ -193,9 +168,10 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
       Ks Kt u ξ z‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   have hI₂ : 0 ≤ ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 1))},
       ‖ξ z‖ ^ 2 := setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ ↦ by positivity)
+  obtain ⟨a, b, -, -, -, -, hout⟩ := p.exists_band_of_tsupport_subset hξ₁c hξ₁r
   calc _ ≤ _ := setIntegral_comp_realChart_le_of_eventuallyEq_one p hβ1
-        (integrableOn_comp_realChart_cylindricalEndLift p ((hβ.smul hξ).of_le one_le_two) hξ₁c
-          hξ₁r)
+        (p.integrableOn_comp_realChart_cylindricalEndLift ((hβ.smul hξ).of_le one_le_two)
+          MeasurableSet.univ fun ζ _ ↦ hout ζ)
     _ ≤ _ := he (hβ.smul hξ) hξ₁c hξ₁r
     _ ≤ max Ce 0 * ∫ z, ‖ω.floerLinearization
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 :=

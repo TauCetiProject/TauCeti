@@ -256,7 +256,7 @@ theorem seminorm_exponent_top_le_of_contDiffOn {j k : ℕ} (h : j ≤ k) (u : Wk
   have hmem := memLp_iteratedFDeriv_of_contDiffOn j (toOrderL h u) hf
     (by rwa [value_toOrderL]) j le_rfl
   rw [seminorm_eq_lpNorm_of_contDiffOn h u hf hu, ← Lp.norm_eq_lpNorm_of_ae_eq hmem.coeFn_toLp]
-  refine Lp.norm_top_le_of_ae_bound hC ?_
+  refine Lp.norm_le_of_ae_bound_top hC ?_
   filter_upwards [hmem.coeFn_toLp, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
   exact hx ▸ hbound x hxΩ
 
@@ -526,7 +526,7 @@ example :
     simp [hx, gradient_eq_deriv']
   have hu_norm : ‖u‖ = 1 := by
     apply le_antisymm
-    · refine (Submodule.norm_coe u₁).symm.trans_le (Lp.norm_top_le_of_ae_bound zero_le_one ?_)
+    · refine (Submodule.norm_coe u₁).symm.trans_le (Lp.norm_le_of_ae_bound_top zero_le_one ?_)
       filter_upwards [W1p.norm_apply_sq_ae u₁, hu, hgrad] with x hsq hv hg
       have hv' : W1p.value u₁ x = Real.sin x := by simpa only [value_one] using hv
       have h1sq : ‖(u₁ : Sobolev1JetLp volume Ω ∞) x‖ ^ 2 = 1 := by simp [hsq, hv', hg]

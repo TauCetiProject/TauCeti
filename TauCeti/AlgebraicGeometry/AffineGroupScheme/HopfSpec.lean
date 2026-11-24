@@ -278,7 +278,7 @@ theorem isCocomm_iff_isCommMonObj_hopfSpec
     have hswap :
         toConv ((Algebra.TensorProduct.comm R H H).toAlgHom.comp
           (Bialgebra.comulAlgHom R H)) = rightPoint * leftPoint := by
-      rw [Bialgebra.toConv_comp_comulAlgHom]
+      rw [AlgHom.toConv_comp_comulAlgHom]
       simp only [leftPoint, rightPoint,
         Algebra.TensorProduct.comm_comp_includeLeft,
         Algebra.TensorProduct.comm_comp_includeRight]
