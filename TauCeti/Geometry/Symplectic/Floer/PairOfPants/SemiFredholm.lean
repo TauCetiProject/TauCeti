@@ -108,6 +108,20 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- A `C¹` map `ℝ × ℝ → W` that vanishes near every point with `s > N` has integrable `W^{1,2}`
+energy density over every half-cylinder `(a, ∞) × [0, 1]`. -/
+private theorem integrableOn_sobolevDensity_of_eventuallyEq_zero {W : Type*}
+    [NormedAddCommGroup W] [NormedSpace ℝ W] {g : ℝ × ℝ → W} (hg : ContDiff ℝ 1 g) {N : ℝ}
+    (hzero : ∀ ζ : ℝ × ℝ, N < ζ.1 → g =ᶠ[𝓝 ζ] 0) (a : ℝ) :
+    IntegrableOn (sobolevDensity g) (Ioi a ×ˢ Icc 0 1) := by
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (((continuous_sobolevDensity hg).continuousOn).integrableOn_compact
+    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hζN : N < ζ.1 := by
+    by_contra! h
+    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
+  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
+
 /-- A `C¹` section with compact support in `S` has integrable `W^{1,2}` energy density in each
 positive end chart, over every half-cylinder `(a, ∞) × [0, 1]`: it vanishes far out on the end. -/
 theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V}
@@ -116,14 +130,8 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V
     IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `ξ` vanishes identically.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
-  have hg : ContDiff ℝ 1 (ξ ∘ positiveEndChart q) := hξ.comp (contDiff_positiveEndChart q 1)
-  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (((continuous_sobolevDensity hg).continuousOn).integrableOn_compact
-    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hζN : N < ζ.1 := by
-    by_contra! h
-    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
+  exact integrableOn_sobolevDensity_of_eventuallyEq_zero
+    (hξ.comp (contDiff_positiveEndChart q 1)) hzero a
 
 /-- When `J` and `u` are `C¹` along `u` on `S`, a `C¹` covector field with compact support in `S`
 reads in the positive end chart of `q` as a form `η (φ'_q ·) ∘ (a + b J)` that is `C¹`: it vanishes
@@ -173,20 +181,12 @@ theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart [FiniteDim
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η)) (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `η` vanishes identically, and so does its reading.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc hηS q
-  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (((continuous_sobolevDensity (contDiff_covectorPullback_positiveEndChart hJ hu hη hηS
-    q)).continuousOn).integrableOn_compact hK).of_forall_sdiff_eq_zero
-    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hζN : N < ζ.1 := by
-    by_contra! h
-    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  have h : covectorPullback (positiveEndChart q)
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η =ᶠ[𝓝 ζ] 0 := by
-    filter_upwards [hzero ζ hζN] with ζ' hζ'
-    have h0 : η (positiveEndChart q ζ') = 0 := by
-      simpa only [Function.comp_apply, Pi.zero_apply] using hζ'
-    rw [covectorPullback_apply, h0, ContinuousLinearMap.zero_comp, Pi.zero_apply]
-  rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
+  refine integrableOn_sobolevDensity_of_eventuallyEq_zero
+    (contDiff_covectorPullback_positiveEndChart hJ hu hη hηS q) (N := N) (fun ζ hζN ↦ ?_) a
+  filter_upwards [hzero ζ hζN] with ζ' hζ'
+  have h0 : η (positiveEndChart q ζ') = 0 := by
+    simpa only [Function.comp_apply, Pi.zero_apply] using hζ'
+  rw [covectorPullback_apply, h0, ContinuousLinearMap.zero_comp, Pi.zero_apply]
 
 end TauCeti.Floer
 
