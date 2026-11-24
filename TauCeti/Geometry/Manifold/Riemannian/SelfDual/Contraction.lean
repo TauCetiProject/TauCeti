@@ -110,18 +110,9 @@ theorem two_smul_inner_wedge_interior_selfDualPart_smul_riemannianVolumeForm
   ext v
   let := o.fact_finrank_tangentSpace x
   have hkk : 2 + 2 = finrank ℝ (TangentSpace I x) := (o.fact_finrank_tangentSpace x).out.symm
-  -- The wedge square is `⟨F, ⋆F⟩ vol`, since `⋆⋆F = F`.
-  have hFF : F.wedge F x v =
-      alternatingFormInner (TangentSpace I x) 2 (F x) (hodgeStar o rfl F x) *
-        riemannianVolumeForm o x v := by
-    have h := wedge_hodgeStar_apply o rfl F (hodgeStar o rfl F) x v
-    rw [hodgeStar_hodgeStar_of_even o even_two] at h
-    rw [wedge_def, wedgeWith_apply', ← ContinuousAlternatingMap.wedge_def, h]
-    simp
-  -- The interior product and the wedge `σ ∧ ι_T F` are taken pointwise.
-  have hint : F.interior T x = (F x).curryLeft (T x) := by
-    ext w
-    simp [ContinuousAlternatingMap.curryLeft_apply_apply]
+  -- The wedge square is `⟨F, ⋆F⟩ vol`, and `σ ∧ ι_T F` is taken pointwise.
+  have hFF := wedge_self_apply_eq_alternatingFormInner_hodgeStar o even_two F x v
+  have hint : F.interior T x = (F x).curryLeft (T x) := interior_apply_eq_curryLeft T F x
   have hwedge : (σ.wedge (F.interior T)) x =
       (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0
         (innerSL ℝ (T x))).wedge ((F x).curryLeft (T x)) := by

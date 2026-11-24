@@ -103,6 +103,8 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
   a self-dual, or anti-self-dual, form sees only the self-dual, or anti-self-dual, part.
 * `TauCeti.RoughForm.alternatingFormInner_self_eq_add`: `|α|² = |α⁺|² + |α⁻|²` pointwise in every
   middle degree.
+* `TauCeti.RoughForm.wedge_self_apply_eq_alternatingFormInner_hodgeStar`: `α ∧ α = ⟨α, ⋆α⟩ vol` for
+  even `k`.
 * `TauCeti.RoughForm.wedge_self_apply`: `α ∧ α = (|α⁺|² - |α⁻|²) vol` for even `k`.
 * `TauCeti.RoughForm.map_proj_selfDualForms`, `TauCeti.RoughForm.map_proj_antiSelfDualForms`: the
   values at `x` of rough (anti-)self-dual forms are `selfDualSubspace o x` and
@@ -866,6 +868,18 @@ theorem alternatingFormInner_self_eq_add (α : RoughForm I M ℝ k) (x : M) :
   rw [selfDualPart_eq_selfDualProjCLM, antiSelfDualPart_eq_antiSelfDualProjCLM]
   exact alternatingFormInner_eq_add_selfDualProjCLM_antiSelfDualProjCLM o x (α x) (α x)
 
+/-- The wedge square of a middle-degree form of even degree is `α ∧ α = ⟨α, ⋆α⟩ vol`, where `vol`
+is the Riemannian volume form: write the second factor as `⋆(⋆α)`. -/
+theorem wedge_self_apply_eq_alternatingFormInner_hodgeStar (hk : Even k) (α : RoughForm I M ℝ k)
+    (x : M) (v : Fin (k + k) → TangentSpace I x) :
+    α.wedge α x v =
+      alternatingFormInner (TangentSpace I x) k (α x) (hodgeStar o rfl α x) *
+        riemannianVolumeForm o x v := by
+  have h := wedge_hodgeStar_apply o rfl α (hodgeStar o rfl α) x v
+  rw [hodgeStar_hodgeStar_of_even o hk] at h
+  rw [wedge_def, wedgeWith_apply', ← ContinuousAlternatingMap.wedge_def, h]
+  simp
+
 /-- **The wedge square of a middle-degree form**: `α ∧ α = (|α⁺|² - |α⁻|²) vol`, where `vol` is
 the Riemannian volume form. -/
 theorem wedge_self_apply (hk : Even k) (α : RoughForm I M ℝ k) (x : M)
@@ -874,11 +888,7 @@ theorem wedge_self_apply (hk : Even k) (α : RoughForm I M ℝ k) (x : M)
       (alternatingFormInner (TangentSpace I x) k (selfDualPart o α x) (selfDualPart o α x) -
         alternatingFormInner (TangentSpace I x) k (antiSelfDualPart o α x)
           (antiSelfDualPart o α x)) * riemannianVolumeForm o x v := by
-  -- Write the second factor as `⋆(⋆α)`, so that `α ∧ ⋆(⋆α) = ⟨α, ⋆α⟩ vol`.
-  have hw : α.wedge α x v = (α x).wedge (hodgeStar o rfl (hodgeStar o rfl α) x) v := by
-    rw [hodgeStar_hodgeStar_of_even o hk, wedge_def, wedgeWith_apply',
-      ContinuousAlternatingMap.wedge_def]
-  rw [hw, wedge_hodgeStar_apply, finCongr_refl, Equiv.coe_refl, Function.comp_id]
+  rw [wedge_self_apply_eq_alternatingFormInner_hodgeStar o hk]
   congr 1
   -- Then `⟨α⁺ + α⁻, α⁺ - α⁻⟩ = |α⁺|² - |α⁻|²` by orthogonality.
   have h := alternatingFormInner_selfDualPart_antiSelfDualPart o hk α α x
