@@ -113,8 +113,8 @@ theorem mem_conjGL_scaleGL_iff {d : ℕ} [NeZero d] {γ : SL(2, ℤ)} :
   have hc : γ 1 0 = d * y 1 0 := by
     have := congrArg (fun M : GL (Fin 2) ℝ ↦ (M : Matrix (Fin 2) (Fin 2) ℝ) 1 0)
       (eq_mul_inv_iff_mul_eq.mp h)
-    simp [Matrix.mul_apply, Fin.sum_univ_two] at this
-    exact_mod_cast this.symm.trans (mul_comm _ _)
+    exact_mod_cast (by simpa [Matrix.mul_apply, Fin.sum_univ_two, mul_comm] using this.symm :
+      ((γ 1 0 : ℤ) : ℝ) = d * y 1 0)
   refine ⟨y 1 0, hc, ?_⟩
   rwa [mapGL_injective (R := ℤ) (S := ℝ) ((mapGL_conjScale γ _ hc).symm.trans h.symm)]
 
