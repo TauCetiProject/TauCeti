@@ -56,6 +56,8 @@ uniqueness of the step and the discrete energy estimates.
 
 * `TauCeti.exists_isGeneralizedGeodesicPlan`: on a Polish metric space, every finite base measure
   `μ` and two measures coupled with it carry such a three-plan, for every nonzero exponent.
+* `TauCeti.IsCoupling.isGeneralizedGeodesicPlan_map`: an optimal coupling `π` of `μ` and `ν`
+  gives the generalized-geodesic plan `(x, x, y)₊ π` from `μ` to `ν` based at `μ`.
 * `TauCeti.IsGeneralizedGeodesicPlan.generalizedGeodesic_zero` and
   `TauCeti.IsGeneralizedGeodesicPlan.generalizedGeodesic_one`: the generalized geodesic runs from
   `ν₀` to `ν₁`.
@@ -136,6 +138,40 @@ theorem isCoupling_snd (hγ : IsGeneralizedGeodesicPlan p γ μ ν₀ ν₁) : I
 end IsGeneralizedGeodesicPlan
 
 end ThreePlan
+
+section Diagonal
+
+variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] [MeasurableEq X] {p : ℝ≥0∞}
+  {π : Measure (X × X)} {μ ν : Measure X}
+
+/-- **Optimal couplings out of the base law are generalized-geodesic plans.** If `π` is a coupling
+of `μ` and `ν` realizing `W_p (μ, ν)`, then the law of `(x, x, y)` under `π` is a
+generalized-geodesic plan from `μ` to `ν` based at `μ`: its projection to the first two
+coordinates is the diagonal coupling of `μ`, of cost `0`, and its projection to the first and last
+coordinates is `π`. -/
+theorem IsCoupling.isGeneralizedGeodesicPlan_map (hπ : IsCoupling π μ ν)
+    (hopt : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π = wassersteinEDist p μ ν) :
+    IsGeneralizedGeodesicPlan p (π.map fun z ↦ (z.1, z.1, z.2)) μ μ ν := by
+  have hg : Measurable fun z : X × X ↦ (z.1, z.1, z.2) := by fun_prop
+  have hleft : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.fst) = graphPlan id μ := by
+    rw [Measure.map_map (by fun_prop) hg, graphPlan_def, ← hπ.fst_eq, Measure.fst,
+      Measure.map_map (by fun_prop) measurable_fst]
+    simp [Function.comp_def]
+  have hright : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.snd) = π := by
+    rw [Measure.map_map (by fun_prop) hg]
+    simp [Function.comp_def]
+  -- The diagonal coupling has zero displacement almost everywhere.
+  have hzero : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (graphPlan id μ) = 0 := by
+    refine eLpNorm_eq_zero_of_ae_zero ?_
+    filter_upwards [ae_snd_eq_graphPlan (T := (id : X → X)) (μ := μ) aemeasurable_id] with z hz
+    simp [hz]
+  refine ⟨by rw [hleft]; exact isCoupling_graphPlan_id μ, ?_, by rw [hright]; exact hπ,
+    by rw [hright]; exact hopt⟩
+  rw [hleft, hzero]
+  exact (nonpos_iff_eq_zero.1 ((wassersteinEDist_le (isCoupling_graphPlan_id μ) p).trans_eq
+    hzero)).symm
+
+end Diagonal
 
 section Polish
 
