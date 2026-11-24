@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift
 
 /-!
@@ -131,9 +131,7 @@ theorem index_firstCongruenceSubgroup :
 /-- The first congruence subgroup of `SL₂(ℤ_p)` has index `|SL₂(𝔽_p)| = p(p² - 1)`. -/
 theorem index_firstCongruenceSubgroup_fin_two :
     (firstCongruenceSubgroup (Fin 2) p).index = p * (p ^ 2 - 1) := by
-  have hp : 0 < p - 1 := Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt
-  simp only [index_firstCongruenceSubgroup, card_SL_field, ZMod.card, Fin.prod_univ_two]
-  exact Nat.div_eq_of_eq_mul_left hp (by simp [sq p, ← Nat.mul_sub_one]; ring)
+  rw [index_firstCongruenceSubgroup, natCard_SL_fin_two_zmod]
 
 /-! ### Products of first congruence subgroups -/
 

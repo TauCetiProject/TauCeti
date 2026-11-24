@@ -529,7 +529,6 @@ theorem topologicalClosure_commutator_le_of_forall_commutatorElement_mem {s : Se
     commutatorElement_eq_one_iff_commute]
   exact setLike_mul_comm (mem_top _) (mem_top _)
 
-
 /-- A product `Subgroup.pi Set.univ H` of subgroups of topological groups, with the subspace
 topology of the product group, is isomorphic as a topological group to the product of the
 subgroups `H i`, each with its subspace topology. -/
