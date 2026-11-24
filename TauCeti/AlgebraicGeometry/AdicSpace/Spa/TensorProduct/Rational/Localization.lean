@@ -201,6 +201,9 @@ theorem completedTensor.rationalSubset_interPresentation_eq
   have h := Set.ext_iff.mp
     ((completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC b.num b.den
       c.num c.den).symm.trans hd.symm) v
+  -- `inl_preimage_inter_inr_preimage_rationalSubset` uses `Classical.propDecidable` for `Finset`
+  -- operations on `CompletedTensor A B C`, whereas `interPresentation` takes
+  -- `[inst : DecidableEq _]`.
   have hdec : inst = fun x y ↦ Classical.propDecidable (x = y) := Subsingleton.elim _ _
   subst hdec
   simpa only [mem_spaBasicOpen, Set.mem_preimage, interPresentation_num,

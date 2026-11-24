@@ -64,9 +64,8 @@ variable {A B C A' B' C' A'' B'' C'' : Type*}
 `(B, B⁺) → (B', B'⁺)` and `(C, C⁺) → (C', C'⁺)` lying over `α : A → A'`. -/
 noncomputable def map : Hom (S.completedTensor A T) (S'.completedTensor A' T') :=
   lift ((inl A' S' T').comp f) ((inr A' S' T').comp g) (by
-    simp only [Hom.toRingHom_comp, toRingHom_inl, toRingHom_inr]
-    rw [RingHom.comp_assoc, hf, RingHom.comp_assoc, hg, ← RingHom.comp_assoc,
-      CompletedTensor.inl_comp_algebraMap, RingHom.comp_assoc])
+    simpa only [Hom.toRingHom_comp, toRingHom_inl, toRingHom_inr] using
+      CompletedTensor.inl_comp_comp_algebraMap α f.toRingHom g.toRingHom hf hg)
 
 /-- The underlying ring homomorphism of the induced morphism of Huber pairs is the induced map of
 completed tensor rings. -/

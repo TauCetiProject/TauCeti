@@ -66,7 +66,7 @@ omit [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C] [IsTopologic
   [IsTopologicalRing B] [IsTopologicalRing C] [IsAdicHom (algebraMap A B)]
   [IsAdicHom (algebraMap A C)] in
 /-- The composites of `φ` and `ψ` with the target coprojections agree on `A`. -/
-private theorem inl_comp_comp_algebraMap (α : A →+* A') (φ : B →+* B') (ψ : C →+* C')
+theorem inl_comp_comp_algebraMap (α : A →+* A') (φ : B →+* B') (ψ : C →+* C')
     (hφ : φ.comp (algebraMap A B) = (algebraMap A' B').comp α)
     (hψ : ψ.comp (algebraMap A C) = (algebraMap A' C').comp α) :
     ((inl A' B' C').comp φ).comp (algebraMap A B) =
