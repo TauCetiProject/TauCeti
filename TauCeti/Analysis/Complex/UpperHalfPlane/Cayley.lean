@@ -53,6 +53,9 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
 * `TauCeti.I_mul_one_add_sub_I_div_add_I_div_one_sub`: the inverse identity.
+* `TauCeti.sub_I_div_add_I_inverse`: the other inverse identity, away from `w = 1`.
+* `TauCeti.I_mul_one_add_div_one_sub_add_I` and `TauCeti.one_sub_sub_I_div_add_I`: the
+  denominators `z + i` and `1 - w` of the transform and its inverse, at each other's values.
 * `TauCeti.re_I_mul_one_add_div_one_sub_mul_norm_one_sub_sq`: the real part of the inverse
   transform, `re (i (1 + w) / (1 - w)) ‖1 - w‖² = -2 im w`.
 * `TauCeti.boundaryCayley`: the boundary Cayley map from `ℝ` to `Circle`.
@@ -164,15 +167,28 @@ theorem sub_I_div_add_I_sub_sub_I_div_add_I {s t : ℂ} (hs : s + I ≠ 0) (ht :
   rw [div_sub_div _ _ hs ht]
   ring
 
+/-- The denominator `z + i` of the Cayley transform at `z = i (1 + w) / (1 - w)` is
+`2 i / (1 - w)`. -/
+theorem I_mul_one_add_div_one_sub_add_I {w : ℂ} (hw : w ≠ 1) :
+    I * (1 + w) / (1 - w) + I = 2 * I / (1 - w) := by
+  have : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
+  field_simp
+  ring
+
+/-- The denominator `1 - w` of the inverse Cayley transform at `w = (z - i) / (z + i)` is
+`2 i / (z + i)`. -/
+theorem one_sub_sub_I_div_add_I {z : ℂ} (hz : z + I ≠ 0) :
+    1 - (z - I) / (z + I) = 2 * I / (z + I) := by
+  field_simp
+  ring
+
 /-- The inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` is a right inverse of the transform
 away from `w = 1`, and its value keeps the denominator `z + i` away from `0`. -/
-private theorem sub_I_div_add_I_inverse {w : ℂ} (hw : w ≠ 1) :
+theorem sub_I_div_add_I_inverse {w : ℂ} (hw : w ≠ 1) :
     I * (1 + w) / (1 - w) + I ≠ 0 ∧
       (I * (1 + w) / (1 - w) - I) / (I * (1 + w) / (1 - w) + I) = w := by
   have h1 : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
-  have hden : I * (1 + w) / (1 - w) + I = 2 * I / (1 - w) := by
-    field_simp
-    ring
+  have hden := I_mul_one_add_div_one_sub_add_I hw
   have hnum : I * (1 + w) / (1 - w) - I = 2 * I * w / (1 - w) := by
     field_simp
     ring

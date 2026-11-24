@@ -34,8 +34,9 @@ the closed unit ball onto the closure of `𝔖` in the one-point compactificatio
 
 For `E = ℂⁿ⁻¹` with its Euclidean norm, `WithLp 2 (E × ℂ)` is `ℂⁿ` and the open unit ball is the
 bounded model of complex hyperbolic `n`-space; the Siegel domain is its unbounded model, in which
-the stabiliser of the boundary point `b₀` acts by affine maps: the Heisenberg translations,
-which preserve `ρ`, and the dilations `(u, v) ↦ (s u, s² v)`, which multiply it by `s²`. For
+the stabiliser of the boundary point `b₀` acts by affine maps, including the Heisenberg
+translations and the rotations `(u, v) ↦ (A u, v)` for unitary `A`, which preserve `ρ`, and the
+dilations `(u, v) ↦ (s u, s² v)`, which multiply it by `s²`. For
 `E = 0` the transform is the classical map `w ↦ i (1 + w) / (1 - w)` from the unit disc onto the
 upper half-plane.
 
@@ -57,8 +58,8 @@ upper half-plane.
 
 * `TauCeti.siegelHeight_siegelCayley`: `ρ(C(w)) = (1 - ‖w‖²) / ‖1 - wₙ‖²`.
 * `TauCeti.one_sub_norm_sq_siegelCayley_symm`: `1 - ‖C⁻¹(p)‖² = 4 ρ(p) / ‖v + i‖²`.
-* `TauCeti.siegelCayley_image_ball`, `TauCeti.siegelCayley_image_sphere_diff` and
-  `TauCeti.siegelCayley_image_closedBall_diff`: the images of the open ball, of the sphere minus
+* `TauCeti.siegelCayley_image_ball`, `TauCeti.siegelCayley_image_sphere_sdiff` and
+  `TauCeti.siegelCayley_image_closedBall_sdiff`: the images of the open ball, of the sphere minus
   `b₀` and of the closed ball minus `b₀`.
 * `TauCeti.closure_siegelDomain` and `TauCeti.frontier_siegelDomain`: the closure `{ρ ≥ 0}` and
   the boundary `{ρ = 0}` of the Siegel domain.
@@ -150,28 +151,16 @@ theorem frontier_siegelDomain : frontier (siegelDomain E) = {p | siegelHeight p 
 
 variable [NormedSpace ℂ E]
 
-/-- The denominator `v + i` of the inverse transform at `v = i (1 + a) / (1 - a)`. -/
-private theorem I_mul_one_add_div_one_sub_add_I {a : ℂ} (ha : a ≠ 1) :
-    I * (1 + a) / (1 - a) + I = 2 * I / (1 - a) := by
-  have : 1 - a ≠ 0 := sub_ne_zero.mpr ha.symm
-  field_simp
-  ring
-
-/-- The denominator `1 - a` of the transform at `a = (v - i) / (v + i)`. -/
-private theorem one_sub_sub_I_div_add_I {v : ℂ} (hv : v ≠ -I) :
-    1 - (v - I) / (v + I) = 2 * I / (v + I) := by
-  have : v + I ≠ 0 := by rwa [ne_eq, add_eq_zero_iff_eq_neg]
-  field_simp
-  ring
-
-private theorem two_mul_I_ne_zero : (2 : ℂ) * I ≠ 0 := mul_ne_zero two_ne_zero I_ne_zero
+/-- The denominator `v + i` of the inverse transform is nonzero on its target `{v ≠ -i}`. -/
+private theorem add_I_ne_zero_of_ne_neg_I {v : ℂ} (hv : v ≠ -I) : v + I ≠ 0 :=
+  add_eq_zero_iff_eq_neg.not.mpr hv
 
 private theorem analyticAt_siegelCayley_toFun {w : WithLp 2 (E × ℂ)} (hw : w.snd ≠ 1) :
     AnalyticAt ℂ (fun w : WithLp 2 (E × ℂ) ↦
       ((1 - w.snd)⁻¹ • w.fst, I * (1 + w.snd) / (1 - w.snd))) w := by
   have hs : AnalyticAt ℂ (fun w : WithLp 2 (E × ℂ) ↦ w.snd) w := (sndL 2 ℂ E ℂ).analyticAt w
   have hf : AnalyticAt ℂ (fun w : WithLp 2 (E × ℂ) ↦ w.fst) w := (fstL 2 ℂ E ℂ).analyticAt w
-  have h1 : 1 - w.snd ≠ 0 := sub_ne_zero.mpr hw.symm
+  have h1 : 1 - w.snd ≠ 0 := sub_ne_zero_of_ne hw.symm
   exact (((analyticAt_const.sub hs).inv h1).smul hf).prod
     ((analyticAt_const.mul (analyticAt_const.add hs)).div (analyticAt_const.sub hs) h1)
 
@@ -180,7 +169,7 @@ private theorem analyticAt_siegelCayley_invFun {p : E × ℂ} (hp : p.2 ≠ -I) 
       toLp 2 ((2 * I / (p.2 + I)) • p.1, (p.2 - I) / (p.2 + I))) p := by
   have hs : AnalyticAt ℂ (fun p : E × ℂ ↦ p.2) p := analyticAt_snd
   have hf : AnalyticAt ℂ (fun p : E × ℂ ↦ p.1) p := analyticAt_fst
-  have h1 : p.2 + I ≠ 0 := by rwa [ne_eq, add_eq_zero_iff_eq_neg]
+  have h1 : p.2 + I ≠ 0 := add_I_ne_zero_of_ne_neg_I hp
   exact (prodContinuousLinearEquiv 2 ℂ E ℂ).symm.analyticAt _ |>.comp
     (((analyticAt_const.div (hs.add analyticAt_const) h1).smul hf).prod
       ((hs.sub analyticAt_const).div (hs.add analyticAt_const) h1))
@@ -194,28 +183,22 @@ noncomputable def siegelCayley : OpenPartialHomeomorph (WithLp 2 (E × ℂ)) (E 
   invFun p := toLp 2 ((2 * I / (p.2 + I)) • p.1, (p.2 - I) / (p.2 + I))
   source := {w | w.snd ≠ 1}
   target := {p | p.2 ≠ -I}
-  map_source' w hw := by
-    have h1 : 1 - w.snd ≠ 0 := sub_ne_zero.mpr (Ne.symm hw)
-    rw [mem_ofPred_eq, ne_eq, ← add_eq_zero_iff_eq_neg, I_mul_one_add_div_one_sub_add_I hw]
-    exact div_ne_zero two_mul_I_ne_zero h1
+  map_source' w hw := fun h ↦ (sub_I_div_add_I_inverse hw).1 (eq_neg_iff_add_eq_zero.mp h)
   map_target' p hp := by
+    have h1 := add_I_ne_zero_of_ne_neg_I hp
     simp only [mem_ofPred_eq, toLp_snd]
-    rw [ne_comm, ← sub_ne_zero, one_sub_sub_I_div_add_I hp]
-    exact div_ne_zero two_mul_I_ne_zero (by rwa [ne_eq, add_eq_zero_iff_eq_neg])
+    rw [ne_comm, ← sub_ne_zero, one_sub_sub_I_div_add_I h1]
+    exact div_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) h1
   left_inv' w hw := by
-    have h1 : 1 - w.snd ≠ 0 := sub_ne_zero.mpr (Ne.symm hw)
-    have hden := I_mul_one_add_div_one_sub_add_I hw
-    refine (WithLp.ext_iff 2).2 (Prod.ext ?_ ?_)
-    · simp only [ofLp_fst, hden, smul_smul]
-      rw [show 2 * I / (2 * I / (1 - w.snd)) * (1 - w.snd)⁻¹ = 1 by field_simp, one_smul]
-    · simp only [ofLp_snd, hden]
-      field_simp
-      ring
+    have h1 : 1 - w.snd ≠ 0 := sub_ne_zero_of_ne (Ne.symm hw)
+    refine (WithLp.ext_iff 2).2 (Prod.ext ?_ (sub_I_div_add_I_inverse hw).2)
+    simp only [ofLp_fst, I_mul_one_add_div_one_sub_add_I hw, smul_smul]
+    rw [show 2 * I / (2 * I / (1 - w.snd)) * (1 - w.snd)⁻¹ = 1 by field_simp, one_smul]
   right_inv' p hp := by
-    have h1 : p.2 + I ≠ 0 := by rwa [ne_eq, add_eq_zero_iff_eq_neg]
+    have h1 := add_I_ne_zero_of_ne_neg_I hp
     refine Prod.ext ?_ ?_
-    · simp only [toLp_fst, toLp_snd, one_sub_sub_I_div_add_I hp, smul_smul]
-      rw [inv_mul_cancel₀ (div_ne_zero two_mul_I_ne_zero h1), one_smul]
+    · simp only [toLp_fst, toLp_snd, one_sub_sub_I_div_add_I h1, smul_smul]
+      rw [inv_mul_cancel₀ (div_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) h1), one_smul]
     · exact I_mul_one_add_sub_I_div_add_I_div_one_sub h1
   open_source := isOpen_ne_fun (WithLp.continuous_snd 2 E ℂ) continuous_const
   open_target := isOpen_ne_fun continuous_snd continuous_const
@@ -224,9 +207,11 @@ noncomputable def siegelCayley : OpenPartialHomeomorph (WithLp 2 (E × ℂ)) (E 
   continuousOn_invFun := fun _ hp ↦
     (analyticAt_siegelCayley_invFun hp).continuousAt.continuousWithinAt
 
+@[simp]
 theorem siegelCayley_apply (w : WithLp 2 (E × ℂ)) :
     siegelCayley w = ((1 - w.snd)⁻¹ • w.fst, I * (1 + w.snd) / (1 - w.snd)) := (rfl)
 
+@[simp]
 theorem siegelCayley_symm_apply (p : E × ℂ) :
     siegelCayley.symm p = toLp 2 ((2 * I / (p.2 + I)) • p.1, (p.2 - I) / (p.2 + I)) := (rfl)
 
@@ -240,10 +225,20 @@ theorem siegelCayley_target :
     (siegelCayley : OpenPartialHomeomorph (WithLp 2 (E × ℂ)) (E × ℂ)).target =
       {p | p.2 ≠ -I} := (rfl)
 
+/-- A point lies in the source of the Cayley transform exactly when `wₙ ≠ 1`. -/
+theorem mem_siegelCayley_source {w : WithLp 2 (E × ℂ)} :
+    w ∈ siegelCayley.source ↔ w.snd ≠ 1 := Iff.rfl
+
+/-- A point lies in the target of the Cayley transform exactly when `v ≠ -i`. -/
+theorem mem_siegelCayley_target {p : E × ℂ} : p ∈ siegelCayley.target ↔ p.2 ≠ -I := Iff.rfl
+
 /-- The centre of the ball goes to the point `(0, i)` of height `1`. -/
-@[simp]
 theorem siegelCayley_zero : siegelCayley (0 : WithLp 2 (E × ℂ)) = (0, I) := by
-  simp [siegelCayley_apply]
+  simp
+
+/-- The point `(0, i)` of height `1` goes back to the centre of the ball. -/
+theorem siegelCayley_symm_zero_I : siegelCayley.symm ((0 : E), I) = 0 := by
+  simp
 
 /-- **The height of the Cayley transform**: `ρ(C(w)) = (1 - ‖w‖²) / ‖1 - wₙ‖²`. Both sides vanish
 when `wₙ = 1`. -/
@@ -258,12 +253,11 @@ theorem siegelHeight_siegelCayley (w : WithLp 2 (E × ℂ)) :
 /-- The inverse Cayley transform scales the height: `1 - ‖C⁻¹(u, v)‖² = 4 ρ(u, v) / ‖v + i‖²`. -/
 theorem one_sub_norm_sq_siegelCayley_symm {p : E × ℂ} (hp : p.2 ≠ -I) :
     1 - ‖siegelCayley.symm p‖ ^ 2 = 4 * siegelHeight p / ‖p.2 + I‖ ^ 2 := by
-  have h1 : p.2 + I ≠ 0 := by rwa [ne_eq, add_eq_zero_iff_eq_neg]
-  have hp' : p ∈ siegelCayley.target := hp
+  have h1 := add_I_ne_zero_of_ne_neg_I hp
   have key := siegelHeight_siegelCayley (siegelCayley.symm p)
-  rw [siegelCayley.right_inv hp'] at key
+  rw [siegelCayley.right_inv (mem_siegelCayley_target.2 hp)] at key
   have hden : 1 - (siegelCayley.symm p).snd = 2 * I / (p.2 + I) := by
-    rw [siegelCayley_symm_apply, toLp_snd, one_sub_sub_I_div_add_I hp]
+    rw [siegelCayley_symm_apply, toLp_snd, one_sub_sub_I_div_add_I h1]
   rw [hden, norm_div, norm_mul, Complex.norm_two, norm_I] at key
   have hn : ‖p.2 + I‖ ≠ 0 := norm_ne_zero_iff.mpr h1
   rw [key]
@@ -272,15 +266,17 @@ theorem one_sub_norm_sq_siegelCayley_symm {p : E × ℂ} (hp : p.2 ≠ -I) :
 
 /-- The open unit ball lies in the source `{wₙ ≠ 1}` of the Cayley transform. -/
 theorem ball_subset_siegelCayley_source :
-    ball (0 : WithLp 2 (E × ℂ)) 1 ⊆ siegelCayley.source := fun w hw h ↦ by
-  have := (WithLp.norm_snd_le E w).trans_lt (mem_ball_zero_iff.mp hw)
-  simp [show w.snd = 1 from h] at this
+    ball (0 : WithLp 2 (E × ℂ)) 1 ⊆ siegelCayley.source :=
+  fun w hw ↦ mem_siegelCayley_source.2 fun h ↦ by
+    have := (WithLp.norm_snd_le E w).trans_lt (mem_ball_zero_iff.mp hw)
+    simp [h] at this
 
 /-- The closed Siegel domain `{ρ ≥ 0}` lies in the target `{v ≠ -i}` of the Cayley transform. -/
 theorem setOf_siegelHeight_nonneg_subset_siegelCayley_target :
-    {p : E × ℂ | 0 ≤ siegelHeight p} ⊆ siegelCayley.target := fun p hp h ↦ by
-  simp only [mem_ofPred_eq, siegelHeight_def, show p.2 = -I from h, neg_im, I_im] at hp
-  nlinarith [sq_nonneg ‖p.1‖]
+    {p : E × ℂ | 0 ≤ siegelHeight p} ⊆ siegelCayley.target := fun p hp ↦ by
+  rw [mem_ofPred_eq, siegelHeight_def, sub_nonneg] at hp
+  exact mem_siegelCayley_target.2 fun h ↦
+    add_I_ne_zero_of_im_nonneg ((sq_nonneg _).trans hp) (by rw [h, neg_add_cancel])
 
 /-- The Siegel domain lies in the target `{v ≠ -i}` of the Cayley transform. -/
 theorem siegelDomain_subset_siegelCayley_target : siegelDomain E ⊆ siegelCayley.target :=
@@ -288,14 +284,18 @@ theorem siegelDomain_subset_siegelCayley_target : siegelDomain E ⊆ siegelCayle
     rw [mem_ofPred_eq]
     exact le_of_lt hp)
 
+/-- The denominator `‖1 - wₙ‖²` of the height identity is positive on the source. -/
+private theorem norm_one_sub_snd_sq_pos {w : WithLp 2 (E × ℂ)} (hw : w ∈ siegelCayley.source) :
+    0 < ‖1 - w.snd‖ ^ 2 := by
+  have : 1 - w.snd ≠ 0 := sub_ne_zero_of_ne (mem_siegelCayley_source.1 hw).symm
+  positivity
+
 /-- The Cayley transform maps a point `w` of its source into the closed Siegel domain exactly
 when `w` lies in the closed unit ball. -/
 theorem siegelCayley_isImage_closedBall :
     siegelCayley.IsImage (closedBall (0 : WithLp 2 (E × ℂ)) 1) {p | 0 ≤ siegelHeight p} :=
   fun w hw ↦ by
-    have h1 : 0 < ‖1 - w.snd‖ ^ 2 := by
-      have : 1 - w.snd ≠ 0 := sub_ne_zero.mpr (Ne.symm hw)
-      positivity
+    have h1 := norm_one_sub_snd_sq_pos hw
     simp only [mem_ofPred_eq, siegelHeight_siegelCayley, mem_closedBall_zero_iff]
     rw [le_div_iff₀ h1, zero_mul, sub_nonneg, sq_le_one_iff₀ (norm_nonneg w)]
 
@@ -304,9 +304,7 @@ lies in the open unit ball. -/
 theorem siegelCayley_isImage_ball :
     siegelCayley.IsImage (ball (0 : WithLp 2 (E × ℂ)) 1) (siegelDomain E) :=
   fun w hw ↦ by
-    have h1 : 0 < ‖1 - w.snd‖ ^ 2 := by
-      have : 1 - w.snd ≠ 0 := sub_ne_zero.mpr (Ne.symm hw)
-      positivity
+    have h1 := norm_one_sub_snd_sq_pos hw
     simp only [mem_siegelDomain, siegelHeight_siegelCayley, mem_ball_zero_iff,
       div_pos_iff_of_pos_right h1, sub_pos]
     rw [sq_lt_one_iff₀ (norm_nonneg w)]
@@ -336,41 +334,41 @@ theorem siegelCayley_symm_image_siegelDomain :
 not the boundary point `b₀ = (0, 1)`. -/
 theorem mem_siegelCayley_source_iff_ne {w : WithLp 2 (E × ℂ)} (hw : ‖w‖ ≤ 1) :
     w ∈ siegelCayley.source ↔ w ≠ toLp 2 (0, 1) := by
+  rw [mem_siegelCayley_source]
   refine ⟨fun h h' ↦ h (by simp [h']), fun h h' ↦ h ?_⟩
   have hw' := prod_norm_sq_eq_of_L2 w
-  rw [show w.snd = 1 from h', norm_one] at hw'
+  rw [h', norm_one] at hw'
   have : ‖w.fst‖ ^ 2 ≤ 0 := by nlinarith [norm_nonneg w]
   have hfst : w.fst = 0 := norm_eq_zero.mp (by nlinarith [norm_nonneg w.fst])
   exact (WithLp.ext_iff 2).2 (Prod.ext hfst h')
 
+/-- On a subset `S` of the closed unit ball, the source of the Cayley transform is `S` minus
+`b₀ = (0, 1)`. -/
+private theorem siegelCayley_source_inter_of_subset_closedBall {S : Set (WithLp 2 (E × ℂ))}
+    (hS : S ⊆ closedBall 0 1) : siegelCayley.source ∩ S = S \ {toLp 2 (0, 1)} := by
+  ext w
+  simp only [mem_inter_iff, Set.mem_sdiff, mem_singleton_iff]
+  refine and_comm.trans (and_congr_right fun h ↦ ?_)
+  exact mem_siegelCayley_source_iff_ne (mem_closedBall_zero_iff.mp (hS h))
+
 /-- The Cayley transform maps the closed unit ball minus `b₀ = (0, 1)` onto the closed Siegel
 domain `{ρ ≥ 0}`. -/
-theorem siegelCayley_image_closedBall_diff :
+theorem siegelCayley_image_closedBall_sdiff :
     siegelCayley '' (closedBall (0 : WithLp 2 (E × ℂ)) 1 \ {toLp 2 (0, 1)}) =
       {p | 0 ≤ siegelHeight p} := by
   have := (siegelCayley_isImage_closedBall (E := E)).image_eq
   rwa [inter_eq_right.mpr setOf_siegelHeight_nonneg_subset_siegelCayley_target,
-    show siegelCayley.source ∩ closedBall (0 : WithLp 2 (E × ℂ)) 1 =
-      closedBall 0 1 \ {toLp 2 (0, 1)} by
-      ext w
-      simp only [mem_inter_iff, Set.mem_sdiff, mem_singleton_iff, mem_closedBall_zero_iff]
-      exact ⟨fun h ↦ ⟨h.2, (mem_siegelCayley_source_iff_ne h.2).1 h.1⟩,
-        fun h ↦ ⟨(mem_siegelCayley_source_iff_ne h.1).2 h.2, h.1⟩⟩] at this
+    siegelCayley_source_inter_of_subset_closedBall subset_rfl] at this
 
 /-- The Cayley transform maps the unit sphere minus `b₀ = (0, 1)` onto the boundary `{ρ = 0}` of
 the Siegel domain. -/
-theorem siegelCayley_image_sphere_diff :
+theorem siegelCayley_image_sphere_sdiff :
     siegelCayley '' (sphere (0 : WithLp 2 (E × ℂ)) 1 \ {toLp 2 (0, 1)}) =
       {p | siegelHeight p = 0} := by
   have := (siegelCayley_isImage_sphere (E := E)).image_eq
   rwa [inter_eq_right.mpr fun p hp ↦ setOf_siegelHeight_nonneg_subset_siegelCayley_target
       (le_of_eq (Eq.symm hp)),
-    show siegelCayley.source ∩ sphere (0 : WithLp 2 (E × ℂ)) 1 =
-      sphere 0 1 \ {toLp 2 (0, 1)} by
-      ext w
-      simp only [mem_inter_iff, Set.mem_sdiff, mem_singleton_iff, mem_sphere_zero_iff_norm]
-      exact ⟨fun h ↦ ⟨h.2, (mem_siegelCayley_source_iff_ne h.2.le).1 h.1⟩,
-        fun h ↦ ⟨(mem_siegelCayley_source_iff_ne h.1.le).2 h.2, h.1⟩⟩] at this
+    siegelCayley_source_inter_of_subset_closedBall sphere_subset_closedBall] at this
 
 /-- The Cayley transform restricts to a homeomorphism from the open unit ball onto the Siegel
 domain. -/
@@ -392,12 +390,12 @@ theorem coe_ballHomeomorphSiegelDomain_symm_apply (p : siegelDomain E) :
 /-- The Cayley transform is analytic on its source `{wₙ ≠ 1}`. -/
 theorem analyticOnNhd_siegelCayley :
     AnalyticOnNhd ℂ (siegelCayley : WithLp 2 (E × ℂ) → E × ℂ) siegelCayley.source :=
-  fun _ hw ↦ analyticAt_siegelCayley_toFun hw
+  fun _ hw ↦ analyticAt_siegelCayley_toFun (mem_siegelCayley_source.1 hw)
 
 /-- The inverse Cayley transform is analytic on its source `{v ≠ -i}`. -/
 theorem analyticOnNhd_siegelCayley_symm :
     AnalyticOnNhd ℂ (siegelCayley.symm : E × ℂ → WithLp 2 (E × ℂ)) siegelCayley.target :=
-  fun _ hp ↦ analyticAt_siegelCayley_invFun hp
+  fun _ hp ↦ analyticAt_siegelCayley_invFun (mem_siegelCayley_target.1 hp)
 
 /-! ### Behaviour at the boundary point `b₀ = (0, 1)` -/
 
@@ -436,13 +434,13 @@ theorem tendsto_siegelCayley_symm_cobounded :
   -- Hence the second coordinate `(v - i) / (v + i)` of `C⁻¹(u, v)` tends to `1`.
   have hsnd : Tendsto (fun p ↦ (siegelCayley.symm p).snd) F (𝓝 1) :=
     (tendsto_sub_I_div_add_I_cobounded.comp hv).congr fun p ↦ by
-      simp [siegelCayley_symm_apply]
+      simp
   -- Since `C⁻¹(u, v)` lies in the closed ball, `‖C⁻¹(u, v)'‖² ≤ 1 - ‖(v - i) / (v + i)‖² → 0`.
   have hfst : Tendsto (fun p ↦ (siegelCayley.symm p).fst) F (𝓝 0) := by
     have hlim : Tendsto (fun p ↦ 1 - ‖(siegelCayley.symm p).snd‖ ^ 2) F (𝓝 0) := by
-      simpa using (hsnd.norm.pow 2).const_sub 1
+      simpa [-siegelCayley_symm_apply] using (hsnd.norm.pow 2).const_sub 1
     refine tendsto_zero_iff_norm_tendsto_zero.mpr (squeeze_zero' (.of_forall fun _ ↦ by positivity)
-      ?_ (by simpa using hlim.sqrt))
+      ?_ (by simpa [-siegelCayley_symm_apply] using hlim.sqrt))
     filter_upwards [hF] with p hp
     refine Real.le_sqrt_of_sq_le ?_
     have hball := one_sub_norm_sq_siegelCayley_symm
