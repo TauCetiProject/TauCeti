@@ -884,8 +884,7 @@ theorem walkRep_e_last_apply_snoc_snoc (hδ : IsPathEigenvectorUpTo G v₀ r δ 
   by_cases h : p = p' ∧ p (Fin.last n) = b ∧ b' = b
   · obtain ⟨rfl, rfl, rfl⟩ := h
     simp [hadj]
-  · rw [ite_eq_right_iff.2 fun h' ↦ (h h').elim,
-      ite_eq_right_iff.2 fun ⟨hb, ⟨⟨hp, _⟩, hb'⟩, _⟩ ↦ (h ⟨hp.symm, hb, hb'⟩).elim]
+  · split_ifs <;> simp_all
 
 /-- The trace of the path model is the trace of the path representation on walks, weighted by
 `TauCeti.TemperleyLieb.pathWeight`: the walks ending at `v` have weight `(r v / r v₀) ^ 2`. -/

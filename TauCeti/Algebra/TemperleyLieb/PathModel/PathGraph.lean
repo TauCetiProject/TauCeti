@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TemperleyLieb.PathModel
 public import TauCeti.QuantumGroups.QuantumInteger.Order
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.StdBasis
 import TauCeti.Algebra.TemperleyLieb.Dimension
@@ -24,8 +25,9 @@ as base vertex and nonzero vertex weights satisfying the eigenvector equation up
 walks (`TauCeti.TemperleyLieb.walkRep`) of the Temperley–Lieb algebra on `n` strands maps onto the
 *path algebra*: the matrices on the walks from `0` with `n` steps whose entries between walks with
 different endpoints vanish, that is, the direct sum over the vertices `v` of the full matrix
-algebras on the walks ending at `v`. Together with `TauCeti.TemperleyLieb.ker_walkRep`, this
-identifies the quotient of the Temperley–Lieb algebra by the trace radical with the path algebra.
+algebras on the walks ending at `v`. For self-adjoint weights in a star-ordered field (such as
+real weights over `ℂ`), together with `TauCeti.TemperleyLieb.ker_walkRep`, this identifies the
+quotient of the Temperley–Lieb algebra by the trace radical with the path algebra.
 
 The proof is an induction on the number of strands. Adding a strand extends walks by one step
 (`TauCeti.TemperleyLieb.walkRep_strandIncl_apply`), so a diagonal matrix unit on `n + 1` steps
@@ -37,10 +39,11 @@ of off-diagonal matrix units then join walks with the same last two vertices. Tw
 `z` from different penultimate vertices arrive from `z - 1` and from `z + 1`, so some walk with one
 step fewer ends at `z`, and the last generator joins its two extensions through `z - 1` and `z + 1`.
 
-When the path graph has at least `n + 1` vertices, the walks from `0` with `n` steps never reach the
-top vertex. Their endpoint multiplicities are ballot numbers, and the pairs of walks with a common
-endpoint number `catalan n`. So the image has dimension at least `catalan n`, and the Catalan bound
-on the Temperley–Lieb algebra makes the path representation injective. With positive weights
+When the path graph has at least `n + 1` vertices, the walks from `0` with `n` steps never try to
+step past the top vertex, so it never restricts them. Their endpoint multiplicities are ballot
+numbers, and the pairs of walks with a common endpoint number `catalan n`. So the image has
+dimension at least `catalan n`, and the Catalan bound on the Temperley–Lieb algebra makes the path
+representation injective. With positive weights
 `√[t + 1]`, this shows that the trace radical of every Markov trace on `n` strands vanishes whenever
 the quantum integers `[1], …, [n + 1]` are positive, in particular for `δ ≥ 2`.
 
@@ -103,7 +106,7 @@ private theorem exists_mem_range_walkRep_apply_eq_of_single_mem
   obtain ⟨x, hx⟩ := (AlgHom.mem_range _).1 hab
   refine ⟨_, (AlgHom.mem_range _).2 ⟨strandIncl x, rfl⟩, fun u v ↦ ?_⟩
   rw [walkRep_strandIncl_apply, hx]
-  simp only [single, of_apply, Subtype.ext_iff, eq_comm (a := a.val), eq_comm (a := b.val)]
+  simp only [single_apply, Subtype.ext_iff, eq_comm (a := a.val), eq_comm (a := b.val)]
   split_ifs <;> tauto
 
 /-- The strand inclusion of an element acting by the diagonal matrix unit at a walk `w` with
@@ -145,7 +148,7 @@ private theorem diagonal_mul_walkRep_e_last_mul_diagonal
   induction v using Fin.snocCases with | snoc v d'
   induction v using Fin.snocCases with | snoc q' c'
   rw [mul_diagonal, diagonal_mul, walkRep_e_last_apply_snoc_snoc, Matrix.smul_apply]
-  simp only [single, of_apply, Fin.init_snoc, Fin.snoc_inj, Subtype.mk.injEq, smul_eq_mul]
+  simp only [single_apply, Fin.init_snoc, Fin.snoc_inj, Subtype.mk.injEq, smul_eq_mul]
   split_ifs <;> grind
 
 /-- On the path graph, the one-step extensions of the walk `p a` are the extension `p a b` and the
@@ -168,7 +171,7 @@ private theorem single_eq_diagonal_sub_single
     induction u using Fin.snocCases with | snoc u d
     induction u using Fin.snocCases with | snoc q c
     rw [Matrix.sub_apply, diagonal_apply_eq]
-    simp only [single, of_apply, Fin.init_snoc, Fin.snoc_inj, Subtype.mk.injEq, and_self]
+    simp only [single_apply, Fin.init_snoc, Fin.snoc_inj, Subtype.mk.injEq, and_self]
     by_cases hqc : q = p ∧ c = a
     · obtain ⟨rfl, rfl⟩ := hqc
       -- `d`, `b` and the endpoint of `q` are neighbours of `c`, and the last two differ
@@ -182,7 +185,7 @@ private theorem single_eq_diagonal_sub_single
     · have hqc' : ¬(p = q ∧ a = c) := fun h ↦ hqc ⟨h.1.symm, h.2.symm⟩
       simp [hqc, hqc']
   · rw [Matrix.sub_apply, diagonal_apply_ne _ huv]
-    simp only [single, of_apply]
+    simp only [single_apply]
     rw [ite_eq_right_iff.2 fun h ↦ (huv (h.1.symm.trans h.2)).elim,
       ite_eq_right_iff.2 fun h ↦ (huv (h.1.symm.trans h.2)).elim, sub_zero]
 
@@ -288,9 +291,9 @@ private theorem single_mem_range_walkRep_succ
     rw [hx, hy] at hxy
     rw [pathGraph_adj] at hxz hyz
     by_cases hxz' : x.val = z.val + 1
-    · exact hs.init.exists_isWalkFrom_pathGraph_of_val_eq_add_one (by simpa [Fin.init, hx])
+    · exact hs.init.exists_isWalkFrom_pathGraph_of_val_eq_add_one (by simpa [Fin.init_def, hx])
     · exact ht.init.exists_isWalkFrom_pathGraph_of_val_eq_add_one
-        (by simp only [Fin.init, hy]; simp only [Fin.ext_iff] at hxy; omega)
+        (by simp only [Fin.init_def, hy]; simp only [Fin.ext_iff] at hxy; omega)
   have hq {w : Fin (k + 1)} (hwz : (pathGraph (k + 1)).Adj w z) : (pathGraph (k + 1)).IsWalkFrom 0
       (Fin.snoc (Fin.snoc p w : Fin (n + 2) → Fin (k + 1)) z : Fin (n + 3) → Fin (k + 1)) :=
     (isWalkFrom_snoc _ _).2 ⟨(isWalkFrom_snoc _ _).2 ⟨hp, hpz ▸ hwz.symm⟩,
