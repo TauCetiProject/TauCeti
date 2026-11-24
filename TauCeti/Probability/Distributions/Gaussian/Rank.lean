@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Matrix
+public import TauCeti.MeasureTheory.Measure.Matrix.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Constructions.Pi
