@@ -40,8 +40,9 @@ isomorphisms between `ofBundle 𝕜 n E₀` and `ofBundle 𝕜 n E₁` to contin
 continuous linear equivalences.
 
 When the chart domains of one core lie in those of a second, a fixed coordinate operator
-intertwining their transition maps is a bundle map with that operator on every fibre (`constHom`),
-and a fixed intertwining coordinate equivalence is an isomorphism (`constIso`).
+intertwining their transition maps is a bundle map with that operator on every fibre (`constHom`);
+the same holds for maps in the reverse direction, from the second core to the first
+(`constHomOfSupset`). A fixed intertwining coordinate equivalence is an isomorphism (`constIso`).
 
 A map into the total space of `trivial 𝕜 B n` is continuous exactly when its base point and its
 coordinate vector in `Fin n → 𝕜` are (`continuous_trivial_iff`). Hence bundle maps into a trivial
@@ -413,7 +414,7 @@ theorem coordChange_intertwines_symm (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin 
 chart domains lie in those of the source, when `T` intertwines the transition maps on the chart
 overlaps of the target. In the charts `i` and `j` it is represented by `T` after the source
 transition from `i` to `j`. -/
-private def constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet i)
+def constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet i)
     (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
     (hT : ∀ i j x, x ∈ D.core.baseSet i → x ∈ D.core.baseSet j →
       T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
@@ -436,7 +437,9 @@ private def constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet
       _ = T (A.core.coordChange i' j' x (A.core.coordChange i i' x v)) := by
           rw [A.core.coordChange_comp i i' j' x ⟨⟨hi, hi'⟩, hAj'⟩]
 
-private theorem fiberMap_constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet i)
+/-- A bundle map with constant coordinate matrix `T` into a core with smaller chart domains is `T`
+on every fibre. -/
+@[simp] theorem fiberMap_constHomOfSupset (hbase : ∀ i, D.core.baseSet i ⊆ A.core.baseSet i)
     (T : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
     (hT : ∀ i j x, x ∈ D.core.baseSet i → x ∈ D.core.baseSet j →
       T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) (x : B) :
