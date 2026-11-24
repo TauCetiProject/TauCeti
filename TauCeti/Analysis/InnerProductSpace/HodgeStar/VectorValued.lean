@@ -109,19 +109,29 @@ induced by a bilinear form `B` on `V`, where `(cᵢ)` is any orthonormal basis o
 with increasing indices (`LinearMap.BilinForm.vectorFormInner_eq_sum_powersetCard`). -/
 def vectorFormInner (B : LinearMap.BilinForm ℝ V) (k : ℕ) :
     LinearMap.BilinForm ℝ (⋀[ℝ]^k E →ₗ[ℝ] V) :=
-  LinearMap.mk₂ ℝ (fun F G ↦ bilinFormTrace (B.compl₁₂ F G))
+  LinearMap.mk₂ ℝ (fun F G ↦ BilinMap.metricTrace (B.compl₁₂ F G))
     (fun _ _ _ ↦ by
-      simp [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.mul_sum])
+      rw [← map_add]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.add_apply, map_add])
     (fun _ _ _ ↦ by
-      simp [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.mul_sum])
+      rw [← map_smul]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, map_smul])
+    (fun _ _ _ ↦ by
+      rw [← map_add]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.add_apply, map_add])
+    (fun _ _ _ ↦ by
+      rw [← map_smul]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, map_smul])
 
 variable {B : LinearMap.BilinForm ℝ V} {k : ℕ}
 
 /-- The pairing is the metric trace of the bilinear form `B (F ·) (G ·)` on `⋀ᵏ E`. -/
 theorem vectorFormInner_apply (F G : ⋀[ℝ]^k E →ₗ[ℝ] V) :
-    vectorFormInner B k F G = bilinFormTrace (B.compl₁₂ F G) :=
+    vectorFormInner B k F G = BilinMap.metricTrace (B.compl₁₂ F G) :=
   (rfl)
 
 /-- **The pairing in an orthonormal basis** `(cᵢ)` of `⋀ᵏ E`:
@@ -129,7 +139,7 @@ theorem vectorFormInner_apply (F G : ⋀[ℝ]^k E →ₗ[ℝ] V) :
 theorem vectorFormInner_eq_sum {ι : Type*} [Fintype ι] (c : OrthonormalBasis ι ℝ (⋀[ℝ]^k E))
     (F G : ⋀[ℝ]^k E →ₗ[ℝ] V) :
     vectorFormInner B k F G = ∑ i, B (F (c i)) (G (c i)) := by
-  rw [vectorFormInner_apply, bilinFormTrace_eq_sum _ c]
+  rw [vectorFormInner_apply, BilinMap.metricTrace_eq_sum _ c]
   simp
 
 /-- **The pairing in an orthonormal frame** `(eᵢ)` of `E` indexed by a linear order:
