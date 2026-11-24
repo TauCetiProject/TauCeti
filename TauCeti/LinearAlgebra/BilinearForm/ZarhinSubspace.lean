@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.Matrix.Module
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 
 /-!
@@ -34,7 +35,8 @@ Its properties:
   `dim W₁ = card ι * dim V`, half the dimension of `V^ι × V^ι`, so `W₁` is Lagrangian when `e` is
   also reflexive.
 
-The isotropy rests on the adjunction `∑ᵢ e ((u • x) i) (y i) = ∑ᵢ e (x i) ((uᵀ • y) i)`: the
+The isotropy rests on the adjunction `∑ᵢ e ((u • x) i) (y i) = ∑ᵢ e (x i) ((uᵀ • y) i)`
+(`LinearMap.BilinForm.pi_matrix_smul_left_eq_transpose_smul_right`): the
 pairing of `(x + y, u • (x - y))` with `(x' + y', u • (x' - y'))` is
 `e(x + y, x' + y') - e(x - y, x' - y') = 2 e(x, y') + 2 e(y, x')`, which vanishes because `W` and
 `W^⊥` are orthogonal. The graph sum is direct because `u • x = -u • x` forces `2 • u • x = 0`;
@@ -52,8 +54,6 @@ which `W` is recovered by the linear map above.
 
 * `LinearMap.BilinForm.zarhinSubspace`, `LinearMap.BilinForm.mem_zarhinSubspace_iff`: Zarhin's
   subspace, whose elements are the pairs `(x + y, u • (x - y))` with `x ∈ W^ι`, `y ∈ (W^⊥)^ι`.
-* `LinearMap.BilinForm.pi_matrix_smul_left`: a scalar matrix is adjoint to its transpose for the
-  orthogonal-sum form.
 * `LinearMap.BilinForm.zarhinSubspace_le_orthogonal`: Zarhin's subspace is isotropic.
 * `LinearMap.BilinForm.map_zarhinSubspace_le`,
   `LinearMap.BilinForm.map_zarhinSubspace_le_of_representation`: stability under similitudes.
@@ -78,13 +78,6 @@ namespace LinearMap.BilinForm
 section CommRing
 
 variable {ι k V : Type*} [Fintype ι] [DecidableEq ι] [CommRing k] [AddCommGroup V] [Module k V]
-
-/-- For the orthogonal-sum form on `V^ι`, a scalar matrix is adjoint to its transpose. -/
-theorem pi_matrix_smul_left (e : LinearMap.BilinForm k V) (u : Matrix ι ι k) (x y : ι → V) :
-    pi (fun _ : ι ↦ e) (u • x) y = pi (fun _ : ι ↦ e) x (uᵀ • y) := by
-  simp only [pi_apply, Matrix.Module.smul_apply, map_sum, map_smul, LinearMap.sum_apply,
-    LinearMap.smul_apply, smul_eq_mul, Matrix.transpose_apply]
-  exact Finset.sum_comm
 
 /-- Zarhin's subspace of `V^ι × V^ι` attached to a form `e`, a square matrix `u` and a
 submodule `W`: the sum of the graph of `u` over `W^ι` and the graph of `-u` over `(W^⊥)^ι`. -/
@@ -124,7 +117,7 @@ theorem zarhinSubspace_le_orthogonal {e : LinearMap.BilinForm k V} (he : e.IsRef
     simp [fun i ↦ hy' i (x i) (hx i)]
   have hyx : pi (fun _ : ι ↦ e) y x' = 0 := by
     simp [fun i ↦ he _ _ (hy i (x' i) (hx' i))]
-  rw [prod_apply, pi_matrix_smul_left, smul_smul, hu, neg_smul, one_smul]
+  rw [prod_apply, pi_matrix_smul_left_eq_transpose_smul_right, smul_smul, hu, neg_smul, one_smul]
   simp only [map_add, map_sub, map_neg, LinearMap.add_apply, LinearMap.sub_apply]
   linear_combination 2 * hxy + 2 * hyx
 
@@ -141,7 +134,7 @@ theorem map_zarhinSubspace_eq_pi [Invertible (2 : k)] (e : LinearMap.BilinForm k
     simp only [LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.fst_apply,
       LinearMap.comp_apply, LinearMap.snd_apply, Algebra.lsmul_coe, smul_smul, hu, neg_smul,
       one_smul]
-    rw [sub_neg_eq_add, add_add_sub_cancel, ← two_smul k x, smul_smul, invOf_mul_self, one_smul]
+    rw [show x + y - -(x - y) = (2 : k) • x by module, smul_smul, invOf_mul_self, one_smul]
   ext z
   constructor
   · rintro ⟨p, hp, rfl⟩
@@ -168,7 +161,9 @@ theorem map_zarhinSubspace_le {e : LinearMap.BilinForm k V} (u : Matrix ι ι k)
     obtain ⟨w, hw, rfl⟩ := hw
     simp [hg, hy i w hw]
   · rw [LinearMap.prodMap_apply, map_add, ← map_sub]
-    exact Prod.ext rfl ((g.mapMatrixModule ι).map_smul u (x - y))
+    refine Prod.ext rfl ?_
+    ext i
+    simp [Matrix.Module.smul_apply]
 
 /-- **Stability of Zarhin's subspace under a group.** If a group acts on `V` by similitudes of `e`
 and preserves `W`, it preserves Zarhin's subspace under the diagonal action on `V^ι × V^ι`. -/

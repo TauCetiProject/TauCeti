@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Matrix.Module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
@@ -23,9 +24,12 @@ modules carries.
 Symmetry, alternation, separation and nondegeneracy are componentwise, flipping is
 componentwise, and a product of perfect pairings is a perfect pairing.
 
-The same holds for the orthogonal sum of a finite family of bilinear forms on the product of
-their modules, the bilinear counterpart of `QuadraticMap.pi`. For a single form `B` on `M` it
-gives the orthogonal-sum form `∑ᵢ B (x i) (y i)` on `ι → M`.
+The orthogonal sum of a finite family of bilinear forms on the product of their modules is the
+bilinear counterpart of `QuadraticMap.pi`: its quadratic map is the `QuadraticMap.pi` of the
+quadratic maps. Symmetry, alternation, separation and nondegeneracy are again componentwise, and
+flipping is componentwise. For a single form `B` on `M` it gives the orthogonal-sum form
+`∑ᵢ B (x i) (y i)` on `ι → M`, for which the action of a square matrix `u` on `ι → M`
+(`Matrix.Module.matrixModule`) is adjoint to the action of its transpose `uᵀ`.
 
 ## Main declarations
 
@@ -43,6 +47,10 @@ gives the orthogonal-sum form `∑ᵢ B (x i) (y i)` on `ι → M`.
 * `LinearMap.BilinForm.pi`: the orthogonal sum of a finite family of forms on a product module.
 * `LinearMap.BilinForm.pi_apply_single_left`, `LinearMap.BilinForm.pi_apply_single_right`: a
   vector supported in one factor pairs through the form of that factor.
+* `LinearMap.BilinForm.pi_matrix_smul_left_eq_transpose_smul_right`: for the orthogonal-sum form
+  of a single form, the action of a matrix `u` on `ι → M` is adjoint to the action of `uᵀ`.
+* `LinearMap.BilinForm.toQuadraticMap_pi`: the quadratic map of the orthogonal sum is the
+  `QuadraticMap.pi` of the quadratic maps.
 * `LinearMap.BilinForm.isAlt_pi_iff`, `LinearMap.BilinForm.isSymm_pi_iff`,
   `LinearMap.BilinForm.nondegenerate_pi_iff`: the orthogonal sum is alternating (symmetric,
   nondegenerate) exactly when every member is.
@@ -189,6 +197,24 @@ theorem pi_apply_single_left [DecidableEq ι] (B : ∀ i, LinearMap.BilinForm R 
 theorem pi_apply_single_right [DecidableEq ι] (B : ∀ i, LinearMap.BilinForm R (Mᵢ i))
     (x : ∀ i, Mᵢ i) (i : ι) (y : Mᵢ i) : pi B x (Pi.single i y) = B i (x i) y := by
   rw [pi_apply, Fintype.sum_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj]]
+  simp
+
+open scoped Matrix Matrix.Module in
+/-- For the orthogonal-sum form `∑ᵢ B (x i) (y i)` on `ι → M`, the action of a matrix `u` on
+`ι → M` is adjoint to the action of its transpose `uᵀ`. -/
+theorem pi_matrix_smul_left_eq_transpose_smul_right {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [DecidableEq ι] (B : LinearMap.BilinForm R M) (u : Matrix ι ι R) (x y : ι → M) :
+    pi (fun _ : ι ↦ B) (u • x) y = pi (fun _ : ι ↦ B) x (uᵀ • y) := by
+  simp only [pi_apply, Matrix.Module.smul_apply, map_sum, map_smul, LinearMap.sum_apply,
+    LinearMap.smul_apply, smul_eq_mul, Matrix.transpose_apply]
+  exact Finset.sum_comm
+
+/-- The quadratic map of the orthogonal sum of a family of bilinear forms is the orthogonal sum of
+their quadratic maps. -/
+@[simp]
+theorem toQuadraticMap_pi (B : ∀ i, LinearMap.BilinForm R (Mᵢ i)) :
+    (pi B).toQuadraticMap = QuadraticMap.pi fun i ↦ (B i).toQuadraticMap := by
+  ext x
   simp
 
 /-- The orthogonal sum of a family of bilinear forms is alternating exactly when every member

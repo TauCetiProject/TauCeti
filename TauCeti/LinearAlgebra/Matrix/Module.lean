@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
 # Matrix modules
@@ -127,10 +128,10 @@ theorem disjoint_piGraph_neg [Invertible (2 : k)] {u : Matrix ι ι k} (hu : IsU
   rw [Submodule.disjoint_def]
   rintro p hp hq
   rw [mem_piGraph_iff] at hp hq
+  have h : u • p.1 = -(u • p.1) := hp.2.symm.trans (hq.2.trans (neg_smul u p.1))
   have h2 : (2 : k) • u • p.1 = 0 := by
     rw [two_smul]
-    nth_rw 1 [← hp.2]
-    rw [hq.2, neg_smul, neg_add_cancel]
+    exact eq_neg_iff_add_eq_zero.mp h
   have hu' : u • p.1 = 0 := by
     simpa using congr(⅟(2 : k) • $h2)
   have h1 : p.1 = 0 := (hu.smul_left_cancel).mp (hu'.trans (smul_zero u).symm)
@@ -153,7 +154,15 @@ theorem finrank_piGraph (u : Matrix ι ι k) (P : Submodule k V) :
     rw [LinearMap.range_compLeft, P.range_subtype]
   rw [piGraph, ← (Submodule.equivMapOfInjective _ hinj _).finrank_eq, hpi,
     LinearMap.finrank_range_of_inj hsub]
-  simp [Module.finrank, rank_pi]
+  by_cases hP : Module.Finite k P
+  · rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  · -- `P` is infinite-dimensional, and so is `P^ι` when `ι` is nonempty: both sides are `0`.
+    rcases isEmpty_or_nonempty ι with hι | hι
+    · simp [Module.finrank_zero_of_subsingleton]
+    · obtain ⟨i⟩ := hι
+      have hfin : ¬Module.Finite k (ι → P) := fun h ↦
+        hP (.of_surjective _ (LinearMap.proj_surjective (R := k) (φ := fun _ ↦ P) i))
+      rw [Module.finrank_of_not_finite hP, mul_zero, Module.finrank_of_not_finite hfin]
 
 end Field
 
