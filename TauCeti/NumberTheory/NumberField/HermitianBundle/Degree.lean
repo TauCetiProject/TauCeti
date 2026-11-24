@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Arakelov.SectionDegree
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
-public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.FractionalIdeal.Norm
 
-public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.NumberTheory.NumberField.FractionalIdeal
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
@@ -20,7 +19,8 @@ For a hermitian metric `h` on an `𝓞 K`-module `E` and a section `s : E`, the 
 `deg(s) = log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`, summed over the complex embeddings `σ`, is the
 Arakelov degree of the hermitian line `(E, h)` when `E` has rank one and `s ≠ 0`. Summed over the
 infinite places it is `log #(E / 𝓞 K • s) - Σ_v mult(v) log ‖s‖_v`, the multiplicity `mult(v)`
-counting the embeddings inducing `v`.
+counting the embeddings inducing `v`. It is `TauCeti.sectionDegreeOfNorms` for the norms
+`x ↦ ‖1 ⊗ x‖_σ`.
 
 ## Main definitions
 
@@ -31,7 +31,7 @@ counting the embeddings inducing `v`.
 * `TauCeti.HermitianMetric.sectionDegree_eq_sum_infinitePlace`: the sum over infinite places.
 * `TauCeti.HermitianMetric.sectionDegree_trivial_one`: `deg(Ō_K) = 0`.
 * `TauCeti.HermitianMetric.sectionDegree_rescale`: `deg(Ē(c)) = deg(Ē) + [K : ℚ] c`.
-* `TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_apply`: isometric lines have equal degree.
+* `TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map`: isometric lines have equal degree.
 * `TauCeti.HermitianMetric.sectionDegree_fractionalIdeal`:
   `deg(𝔞, e^{-λ_v} |·|_v) = -log N(𝔞) + Σ_v mult(v) λ_v`.
 
@@ -49,31 +49,19 @@ open NumberField NumberField.ComplexEmbedding
 
 namespace TauCeti.HermitianMetric
 
-variable {K : Type*} [Field K] {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E]
-  [AddCommGroup F] [Module (𝓞 K) F]
-
-/-- A nonzero element of a flat `𝓞 K`-module stays nonzero in every complex fibre, since
-`𝓞 K → ℂ` is injective. -/
-theorem one_tmul_ne_zero [Module.Flat (𝓞 K) E] (σ : K →+* ℂ) {x : E} (hx : x ≠ 0) :
-    (1 : Codomain σ) ⊗ₜ[𝓞 K] x ≠ 0 := by
-  have : FaithfulSMul (𝓞 K) (Codomain σ) :=
-    (faithfulSMul_iff_algebraMap_injective (𝓞 K) (Codomain σ)).mpr
-      ((RingHom.injective σ).comp (FaithfulSMul.algebraMap_injective (𝓞 K) K))
-  intro h
-  exact hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (Codomain σ) (by simpa using h))
-
-variable [NumberField K] (h : HermitianMetric K E)
+variable {K : Type*} [Field K] [NumberField K] {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E]
+  [AddCommGroup F] [Module (𝓞 K) F] (h : HermitianMetric K E)
 
 /-- The expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`, the sum
 running over all field embeddings `σ : K →+* ℂ`. For a nonzero section of a hermitian line
 bundle this is its Arakelov degree. -/
 def sectionDegree (s : E) : ℝ :=
-  Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (h.norm σ (1 ⊗ₜ s))
+  sectionDegreeOfNorms (fun σ x => h.norm σ (1 ⊗ₜ x)) s
 
 /-- The degree computed with `s` is `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`. -/
 theorem sectionDegree_def (s : E) : h.sectionDegree s =
     Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (h.norm σ (1 ⊗ₜ s)) :=
-  (rfl)
+  sectionDegreeOfNorms_def _ _
 
 /-- The degree computed with `s`, summed over the infinite places with their multiplicities:
 `log #(E / 𝓞 K • s) - Σ_v mult(v) log ‖s‖_v`. -/
@@ -93,20 +81,17 @@ theorem sectionDegree_eq_sum_infinitePlace (s : E) : h.sectionDegree s =
 section of a flat module. -/
 theorem sectionDegree_rescale [Module.Flat (𝓞 K) E] (c : ℝ) {s : E} (hs : s ≠ 0) :
     (h.rescale c).sectionDegree s = h.sectionDegree s + Module.finrank ℚ K * c := by
-  have hn σ : Real.log ((h.rescale c).norm σ (1 ⊗ₜ s)) = -c + Real.log (h.norm σ (1 ⊗ₜ s)) := by
-    rw [norm_rescale, Real.log_mul (Real.exp_pos _).ne' (h.norm_pos (one_tmul_ne_zero σ hs)).ne',
-      Real.log_exp]
-  simp only [sectionDegree_def, hn, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
-    NumberField.Embeddings.card, nsmul_eq_mul]
-  ring
+  simp only [sectionDegree, norm_rescale]
+  exact sectionDegreeOfNorms_exp_neg_mul _ c fun σ =>
+    (h.norm_pos (Codomain.one_tmul_ne_zero σ hs)).ne'
 
 /-- Isometric bundles have the same degree: the degree computed with `e s` is the degree computed
 with `s`. -/
-theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_apply {h' : HermitianMetric K F}
+theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map {h' : HermitianMetric K F}
     (e : IsometryEquiv h h') (s : E) : h'.sectionDegree (e s) = h.sectionDegree s := by
   have hspan : Submodule.span (𝓞 K) {e s} =
       (Submodule.span (𝓞 K) {s}).map (e.toLinearEquiv : E →ₗ[𝓞 K] F) := by
-    rw [Submodule.map_span, Set.image_singleton]; rfl
+    rw [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe, e.coe_toLinearEquiv]
   have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot := by
     rw [hspan, Submodule.cardQuot_apply, Submodule.cardQuot_apply]
     exact Nat.card_congr (Submodule.Quotient.equiv _ _ e.toLinearEquiv rfl).symm.toEquiv
@@ -114,39 +99,8 @@ theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_apply {h' : H
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
 @[simp]
-theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 := by
-  simp [sectionDegree_def, Ideal.span_singleton_one, Submodule.cardQuot_top]
-
-
-/-- For a nonzero element `s` of a nonzero fractional ideal `𝔞`, the index of `𝓞 K • s` in `𝔞`
-is `|N_{K/ℚ}(s)| / N(𝔞)`. -/
-theorem cardQuot_span_singleton_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I ≠ 0)
-    {s : (I : Submodule (𝓞 K) K)} (hs : s ≠ 0) :
-    ((Submodule.span (𝓞 K) {s}).cardQuot : ℚ) =
-      |Algebra.norm ℚ (s : K)| / FractionalIdeal.absNorm I := by
-  have hs' : (s : K) ≠ 0 := fun h => hs (Subtype.ext h)
-  have hJ : FractionalIdeal.spanSingleton (𝓞 K)⁰ (s : K) ≠ 0 := by
-    simpa using hs'
-  have hle : (Units.mk0 _ hJ : FractionalIdeal (𝓞 K)⁰ K) ≤
-      (Units.mk0 I hI : FractionalIdeal (𝓞 K)⁰ K) := by
-    simp only [Units.val_mk0]
-    rw [FractionalIdeal.spanSingleton_le_iff_mem]
-    exact s.property
-  have h := relIndex_fractionalIdeal_eq_absNorm_div_absNorm hle
-  simp only [Units.val_mk0, FractionalIdeal.absNorm_span_singleton] at h
-  rw [← h]
-  congr 1
-  rw [Submodule.cardQuot, AddSubgroup.relIndex]
-  congr 1
-  ext x
-  rw [Submodule.mem_toAddSubgroup, AddSubgroup.mem_addSubgroupOf, Submodule.mem_toAddSubgroup,
-    FractionalIdeal.coeToSubmodule_spanSingleton, Submodule.mem_span_singleton,
-    Submodule.mem_span_singleton]
-  constructor
-  · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
-  · rintro ⟨a, ha⟩
-    exact ⟨a, Subtype.ext ha⟩
+theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 :=
+  sectionDegreeOfNorms_eq_zero Ideal.span_singleton_one fun σ => by simp
 
 /-- The degree of the hermitian line `(𝔞, e^{-λ_v} |·|_v)` of a nonzero fractional ideal, computed
 with any nonzero section, is `-log N(𝔞) + Σ_v mult(v) λ_v`. -/
@@ -161,7 +115,7 @@ theorem sectionDegree_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K} (hI : 
     exact_mod_cast FractionalIdeal.absNorm_pos hI
   have hcard : ((Submodule.span (𝓞 K) {s}).cardQuot : ℝ) =
       |(Algebra.norm ℚ (s : K) : ℝ)| / FractionalIdeal.absNorm I := by
-    have := congrArg (fun q : ℚ => (q : ℝ)) (cardQuot_span_singleton_fractionalIdeal hI hs)
+    have := congrArg (fun q : ℚ => (q : ℝ)) (cardQuot_span_singleton_fractionalIdeal hs)
     push_cast at this
     exact this
   have hprod : ∑ v : InfinitePlace K, v.mult * Real.log (v (s : K)) =
