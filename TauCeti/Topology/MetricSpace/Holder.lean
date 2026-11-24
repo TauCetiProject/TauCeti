@@ -102,8 +102,8 @@ positive exponent, is equicontinuous on that set
   preserves Hölder bounds.
 * `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
   in both directions.
-* `LipschitzWith.comp_holderOnWith`: postcomposition with a `K`-Lipschitz map keeps the exponent
-  and multiplies the Hölder constant by `K`.
+* `LipschitzWith.comp_holderOnWith`, `LipschitzWith.comp_holderWith`: postcomposition with a
+  `K`-Lipschitz map keeps the exponent and multiplies the Hölder constant by `K`.
 * `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
@@ -241,6 +241,13 @@ theorem LipschitzWith.comp_holderOnWith {X Y Z : Type*} [PseudoEMetricSpace X]
     HolderOnWith (K * C) r (g ∘ f) s := by
   have h := hg.holderWith.comp_holderOnWith hf
   rwa [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
+
+/-- Postcomposition with a `K`-Lipschitz map preserves a global Hölder bound with the same
+exponent, multiplying the constant by `K`. -/
+theorem LipschitzWith.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {K : ℝ≥0} {g : Y → Z} (hg : LipschitzWith K g)
+    {C r : ℝ≥0} {f : X → Y} (hf : HolderWith C r f) : HolderWith (K * C) r (g ∘ f) :=
+  holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
 
 /-- Precomposition with a `1`-Lipschitz map preserves a global Hölder bound, with the same constant
 and exponent. -/
