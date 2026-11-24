@@ -45,7 +45,8 @@ pullback of global sections in degree zero. For the base change `Y = X ×_R R'` 
 For an open subset `U` the analogous map is `Scheme.Hom.cohomologyOnPullback`, from
 `Hⁿ(U, M)` to `Hⁿ(g⁻¹ U, g^* M)`. It is semilinear over global functions, commutes with
 restriction and with the connecting maps for the covers `U ∪ V` and `g⁻¹ U ∪ g⁻¹ V`, and
-in degree zero is pullback of sections. These comparisons provide the commutative
+in degree zero is pullback of sections; as `U` varies these maps form a morphism of cohomology
+presheaves (`Scheme.Hom.cohomologyPresheafPullback`). These comparisons provide the commutative
 Mayer–Vietoris ladders used to transport cohomological statements across a morphism of
 schemes, without any affine-diagonal hypothesis.
 
@@ -249,6 +250,23 @@ lemma cohomologyOnRes_comp_cohomologyOnPullback (M : X.Modules) (n : ℕ) {U V :
     Category.assoc, ← hn, ← Category.assoc,
     CategoryTheory.Sheaf.H'.pullback_comp_map]
   simp
+
+/-- Pullback on the cohomology of the opens of `X`, as a morphism from the cohomology presheaf
+`U ↦ Hⁿ(U, M)` to the presheaf `U ↦ Hⁿ(g⁻¹ U, g^* M)`. -/
+def cohomologyPresheafPullback (M : X.Modules) (n : ℕ) :
+    ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).cohomologyPresheaf n ⟶
+      (Opens.map g.base).op ⋙
+        ((SheafOfModules.toSheaf Y.ringCatSheaf).obj
+          ((Scheme.Modules.pullback g).obj M)).cohomologyPresheaf n where
+  app U := g.cohomologyOnPullback M n U.unop
+  naturality U V i := by
+    exact g.cohomologyOnRes_comp_cohomologyOnPullback M n (leOfHom i.unop)
+
+/-- The components of `cohomologyPresheafPullback` are pullback on the cohomology of opens. -/
+@[simp]
+lemma cohomologyPresheafPullback_app (M : X.Modules) (n : ℕ) (U : X.Opensᵒᵖ) :
+    (g.cohomologyPresheafPullback M n).app U = g.cohomologyOnPullback M n U.unop :=
+  (rfl)
 
 /-- Pullback on the cohomology of an open is semilinear over global functions. -/
 lemma cohomologyOnPullback_smul (M : X.Modules) (n : ℕ) (U : X.Opens)

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
+import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
 /-!
 # The base change map for higher direct images
@@ -25,8 +26,8 @@ that is, `g' ≫ f = f' ≫ g`. This file constructs, for affine `Y`, the base c
 
 `Scheme.Hom.higherDirectImageBaseChange h q : g^* R^q f_* M ⟶ R^q f'_* g'^* M`,
 
-natural in the sheaf of modules `M`, together with its adjoint
-`Scheme.Hom.higherDirectImageBaseChangeAdj h q : R^q f_* M ⟶ g_* R^q f'_* g'^* M`. No
+natural in the sheaf of modules `M`, together with its transpose under `g^* ⊣ g_*`
+`Scheme.Hom.higherDirectImageBaseChangeTranspose h q : R^q f_* M ⟶ g_* R^q f'_* g'^* M`. No
 hypothesis on `f`, `g` or `M` is needed, and the square need not be cartesian.
 
 `R^q f_* M` is the sheafification of the presheaf of modules `V ↦ H^q(f⁻¹ V, M)`
@@ -46,9 +47,9 @@ functions (`Scheme.Modules.app_smul_of_isAffine`), since a function on a basic o
 global function divided by a power of `s`.
 
 Over an affine open `V` of `Y` with `g⁻¹ V` affine, for quasi-compact quasi-separated `f` and `f'`
-and quasi-coherent `M`, the sections of the adjoint base change map are pullback on cohomology,
+and quasi-coherent `M`, the sections of the transposed base change map are pullback on cohomology,
 under the identifications of sections of higher direct images with cohomology
-(`Scheme.Hom.higherDirectImageBaseChangeAdj_app_sectionsAddEquiv`). At
+(`Scheme.Hom.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`). At
 `V = ⊤` this is the map `Scheme.Hom.cohomologyPullback` whose linear extension is the flat base
 change map `TauCeti.AlgebraicGeometry.cohomologyBaseChange` over an affine base.
 
@@ -56,13 +57,11 @@ change map `TauCeti.AlgebraicGeometry.cohomologyBaseChange` over an affine base.
 
 * `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChange`: the base change map
   `g^* R^q f_* M ⟶ R^q f'_* g'^* M`, natural in `M`, for affine `Y`;
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeAdj`: its adjoint
+* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeTranspose`: its transpose
   `R^q f_* M ⟶ g_* R^q f'_* g'^* M`;
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeAdj_app_app_presheafToSheaf` and
-  `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeAdj_app_sectionsAddEquiv`:
-  its sections are pullback on cohomology;
-* `AlgebraicGeometry.Scheme.Modules.app_smul_of_isAffine`: on an affine scheme, linearity over
-  global functions implies linearity.
+* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf` and
+  `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`:
+  its sections are pullback on cohomology.
 
 ## References
 
@@ -82,138 +81,6 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 open TauCeti.AlgebraicGeometry.Scheme.Modules
 
-section CohomologyPresheaf
-
-variable {X Y : Scheme.{u}} (g : Y ⟶ X)
-
-/-- Pullback on the cohomology of the opens of `X`, as a morphism from the cohomology presheaf
-`U ↦ Hⁿ(U, M)` to the presheaf `U ↦ Hⁿ(g⁻¹ U, g^* M)`. -/
-def cohomologyPresheafPullback (M : X.Modules) (n : ℕ) :
-    ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).cohomologyPresheaf n ⟶
-      (TopologicalSpace.Opens.map g.base).op ⋙
-        ((SheafOfModules.toSheaf Y.ringCatSheaf).obj
-          ((Scheme.Modules.pullback g).obj M)).cohomologyPresheaf n where
-  app U := g.cohomologyOnPullback M n U.unop
-  naturality U V i := by
-    exact g.cohomologyOnRes_comp_cohomologyOnPullback M n (leOfHom i.unop)
-
-/-- The components of `cohomologyPresheafPullback` are pullback on the cohomology of opens. -/
-@[simp]
-lemma cohomologyPresheafPullback_app (M : X.Modules) (n : ℕ) (U : X.Opensᵒᵖ) :
-    (g.cohomologyPresheafPullback M n).app U = g.cohomologyOnPullback M n U.unop :=
-  (rfl)
-
-end CohomologyPresheaf
-
-section Affine
-
-variable {Y : Scheme.{u}} [IsAffine Y]
-
-/-- **Linearity over an affine scheme.** On an affine scheme `Y`, a morphism of underlying
-abelian presheaves from a presheaf of modules to a sheaf of modules is linear as soon as it is
-linear over the restrictions of global functions: every function on a basic open is a global
-function divided by a power of the defining function. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.app_smul_of_isAffine {P : Y.PresheafOfModules}
-    {N : Y.Modules} (φ : P.presheaf ⟶ N.presheaf)
-    (hφ : ∀ (U : Y.Opens) (r : Γ(Y, ⊤)) (x : P.obj (.op U)),
-      φ.app (.op U) ((show Y.ringCatSheaf.obj.obj (.op U) from Y.presheaf.map U.leTop.op r) • x) =
-        (show Γ(Y, U) from Y.presheaf.map U.leTop.op r) •
-          (show Γ(N, U) from φ.app (.op U) x))
-    (U : Y.Opens) (r : Y.ringCatSheaf.obj.obj (.op U)) (x : P.obj (.op U)) :
-    φ.app (.op U) (r • x) = (show Γ(Y, U) from r) • (show Γ(N, U) from φ.app (.op U) x) := by
-  refine TopCat.Presheaf.IsSheaf.section_ext N.isSheaf fun p hp ↦ ?_
-  obtain ⟨s, hsU, hps⟩ := (isAffineOpen_top Y).exists_basicOpen_le ⟨p, hp⟩ trivial
-  refine ⟨Y.basicOpen s, hsU, hps, ?_⟩
-  -- Restrict to the basic open `D(s)`, where every function is `a / sⁿ` with `a` global.
-  have key (r' : Y.ringCatSheaf.obj.obj (.op (Y.basicOpen s)))
-      (x' : P.obj (.op (Y.basicOpen s))) :
-      φ.app _ (r' • x') = (show Γ(Y, Y.basicOpen s) from r') •
-        (show Γ(N, Y.basicOpen s) from φ.app _ x') := by
-    obtain ⟨⟨a, _, n, rfl⟩, ha⟩ := IsLocalization.surj (Submonoid.powers s)
-      (show Γ(Y, Y.basicOpen s) from r')
-    have hu : IsUnit (algebraMap Γ(Y, ⊤) Γ(Y, Y.basicOpen s) (s ^ n)) :=
-      IsLocalization.map_units _ (⟨s ^ n, n, rfl⟩ : Submonoid.powers s)
-    rw [← hu.smul_left_cancel]
-    change Y.presheaf.map (Y.basicOpen s).leTop.op (s ^ n) • _ = _
-    let u : Γ(Y, Y.basicOpen s) := Y.presheaf.map (Y.basicOpen s).leTop.op (s ^ n)
-    let a' : Γ(Y, Y.basicOpen s) := Y.presheaf.map (Y.basicOpen s).leTop.op a
-    have ha' : u * (show Γ(Y, Y.basicOpen s) from r') = a' := (mul_comm _ _).trans ha
-    have h₁ : (show Y.ringCatSheaf.obj.obj (.op (Y.basicOpen s)) from u) • r' • x' =
-        (show Y.ringCatSheaf.obj.obj (.op (Y.basicOpen s)) from a') • x' :=
-      (mul_smul _ _ _).symm.trans (congrArg (· • x') ha')
-    have h₂ : u • (show Γ(Y, Y.basicOpen s) from r') •
-        (show Γ(N, Y.basicOpen s) from φ.app _ x') = a' • φ.app _ x' :=
-      (mul_smul _ _ _).symm.trans (congrArg (· • _) ha')
-    exact (hφ _ (s ^ n) (r' • x')).symm.trans ((congrArg (φ.app _) h₁).trans
-      ((hφ _ a x').trans h₂.symm))
-  have hr := P.map_smul (homOfLE hsU).op r x
-  have hn := N.val.map_smul (homOfLE hsU).op r (φ.app _ x)
-  have hnat := ConcreteCategory.congr_hom (φ.naturality (homOfLE hsU).op)
-  exact (hnat (r • x)).symm.trans ((congrArg (φ.app _) hr).trans ((key _ _).trans
-    ((congrArg _ (hnat x)).trans hn.symm)))
-
-end Affine
-
-section Naturality
-
-variable {X Y : Scheme.{u}} (f : X ⟶ Y)
-
-/-- The identification of `V ↦ H^q(f⁻¹ V, M)` with cohomology is natural in `M`, on elements. -/
-lemma higherDirectImagePresheafToPresheafIso_hom_app_map {M N : X.Modules} (φ : M ⟶ N)
-    (q : ℕ) (V : Y.Opens) (x : ((f.higherDirectImagePresheaf q).obj M).obj (op V)) :
-    (f.higherDirectImagePresheafToPresheafIso N q).hom.app (op V)
-        (((f.higherDirectImagePresheaf q).map φ).app (op V) x) =
-      cohomologyOnMap φ q (f ⁻¹ᵁ V)
-        ((f.higherDirectImagePresheafToPresheafIso M q).hom.app (op V) x) :=
-  ConcreteCategory.congr_hom
-    (NatTrans.congr_app (f.higherDirectImagePresheafToPresheafIso_naturality φ q) (op V)) x
-
-/-- The inverse identification of cohomology with `V ↦ H^q(f⁻¹ V, M)` is natural in `M`, on
-elements. -/
-lemma higherDirectImagePresheafToPresheafIso_inv_app_cohomologyOnMap {M N : X.Modules}
-    (φ : M ⟶ N) (q : ℕ) (V : Y.Opens) (x : cohomologyOn M q (f ⁻¹ᵁ V)) :
-    (f.higherDirectImagePresheafToPresheafIso N q).inv.app (op V) (cohomologyOnMap φ q _ x) =
-      ((f.higherDirectImagePresheaf q).map φ).app (op V)
-        ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) x) := by
-  apply (ConcreteCategory.bijective_of_isIso
-    ((f.higherDirectImagePresheafToPresheafIso N q).hom.app (op V))).injective
-  have h₁ := f.higherDirectImagePresheafToPresheafIso_hom_app_map φ q V
-    ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) x)
-  simp only [Iso.inv_hom_id_app_apply] at h₁ ⊢
-  exact h₁.symm
-
-end Naturality
-
-section ToSheaf
-
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) (q : ℕ)
-
-/-- The map from the presheaf of modules `V ↦ H^q(f⁻¹ V, M)` to its sheafification `R^q f_* M`,
-natural in `M`. -/
-def higherDirectImagePresheafToSheaf :
-    f.higherDirectImagePresheaf q ⟶ f.higherDirectImage q ⋙
-      (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)) :=
-  Functor.whiskerLeft (f.higherDirectImagePresheaf q)
-      (PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit ≫
-    Functor.whiskerRight (f.higherDirectImagePresheafSheafificationIso q).hom
-      (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj))
-
-/-- Over an affine open `V`, the identification of `H^q(f⁻¹ V, M)` with the sections of
-`R^q f_* M` sends a class to the section defined by the corresponding section of the presheaf
-`V ↦ H^q(f⁻¹ V, M)`. -/
-lemma higherDirectImageSectionsAddEquiv_eq_presheafToSheaf [QuasiCompact f] [QuasiSeparated f]
-    (M : X.Modules) [M.IsQuasicoherent] {V : Y.Opens} (hV : IsAffineOpen V)
-    (c : cohomologyOn M q (f ⁻¹ᵁ V)) :
-    f.higherDirectImageSectionsAddEquiv M q hV c =
-      ((f.higherDirectImagePresheafToSheaf q).app M).app (op V)
-        ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) c) := by
-  have e := f.higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
-    M q hV ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) c)
-  simp only [Iso.inv_hom_id_app_apply] at e
-  exact e.trans ((f.higherDirectImagePresheafSectionsLinearEquiv_apply M q hV _).trans rfl)
-
-end ToSheaf
-
 section BaseChange
 
 variable {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
@@ -225,6 +92,13 @@ def preimageSquareIso (h : g' ≫ f = f' ≫ g) :
       (TopologicalSpace.Opens.map g.base).op ⋙ (TopologicalSpace.Opens.map f'.base).op :=
   NatIso.ofComponents (fun U ↦ eqToIso (congrArg op
     (congrArg (fun φ : X' ⟶ Y ↦ φ ⁻¹ᵁ U.unop) h))) (fun _ ↦ rfl)
+
+/-- The components of `preimageSquareIso` are the identifications of the two preimages. -/
+@[simp]
+lemma preimageSquareIso_hom_app (h : g' ≫ f = f' ≫ g) (U : Y.Opensᵒᵖ) :
+    (preimageSquareIso h).hom.app U =
+      eqToHom (congrArg op (congrArg (fun φ : X' ⟶ Y ↦ φ ⁻¹ᵁ U.unop) h)) :=
+  (rfl)
 
 variable (h : g' ≫ f = f' ≫ g) (q : ℕ)
 
@@ -260,8 +134,11 @@ lemma higherDirectImagePresheafBaseChangeToPresheaf_app_apply (M : X.Modules) (V
       (f'.higherDirectImagePresheafToPresheafIso _ q).inv.app (op (g ⁻¹ᵁ V))
         (cohomologyOnRes _ q (preimage_eq_of_comp_eq h V).le
           (g'.cohomologyOnPullback M q (f ⁻¹ᵁ V)
-            ((f.higherDirectImagePresheafToPresheafIso M q).hom.app (op V) x))) :=
-  (rfl)
+            ((f.higherDirectImagePresheafToPresheafIso M q).hom.app (op V) x))) := by
+  dsimp only [higherDirectImagePresheafBaseChangeToPresheaf, NatTrans.comp_app,
+    Functor.whiskerLeft_app, Functor.whiskerRight_app]
+  rw [cohomologyPresheafPullback_app]
+  rfl
 
 /-- The base change map on presheaves is linear over the global functions of `Y`, acting on
 `H^q(f'⁻¹ g⁻¹ V, g'^* M)` through `g`. -/
@@ -367,6 +244,14 @@ def higherDirectImagePresheafBaseChange (M : X.Modules) :
     Scheme.Modules.app_smul_of_isAffine (higherDirectImageBaseChangeToPresheaf h q M)
       (higherDirectImageBaseChangeToPresheaf_app_smul h q M) U.unop r x
 
+/-- The base change map of presheaves of modules has the same underlying maps of sections as the
+base change map of abelian presheaves `higherDirectImageBaseChangeToPresheaf`. -/
+lemma higherDirectImagePresheafBaseChange_app_apply (M : X.Modules) (V : Y.Opens)
+    (x : ((f.higherDirectImagePresheaf q).obj M).obj (op V)) :
+    (higherDirectImagePresheafBaseChange h q M).app (op V) x =
+      (higherDirectImageBaseChangeToPresheaf h q M).app (op V) x :=
+  (rfl)
+
 /-- The base change map of presheaves of modules is natural in the coefficient module. -/
 lemma higherDirectImagePresheafBaseChange_naturality {M N : X.Modules} (φ : M ⟶ N) :
     (f.higherDirectImagePresheaf q).map φ ≫ higherDirectImagePresheafBaseChange h q N =
@@ -377,11 +262,11 @@ lemma higherDirectImagePresheafBaseChange_naturality {M N : X.Modules} (φ : M �
   ext V x
   exact higherDirectImageBaseChangeToPresheaf_app_map h q φ V.unop x
 
-/-- **The base change map, adjoint form.** For a commutative square `g' ≫ f = f' ≫ g` with
+/-- **The base change map, transposed.** For a commutative square `g' ≫ f = f' ≫ g` with
 affine `Y`, the map `R^q f_* M ⟶ g_* R^q f'_* g'^* M`, natural in `M`. Over an open `V` of `Y`
 it is the sheafification of the pullback `H^q(f⁻¹ V, M) ⟶ H^q(f'⁻¹ g⁻¹ V, g'^* M)`
-(`higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeAdj`). -/
-def higherDirectImageBaseChangeAdj :
+(`higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeTranspose`). -/
+def higherDirectImageBaseChangeTranspose :
     f.higherDirectImage q ⟶ Scheme.Modules.pullback g' ⋙ f'.higherDirectImage q ⋙
       Scheme.Modules.pushforward g where
   app M := ((f.higherDirectImagePresheafSheafificationIso q).app M).inv ≫
@@ -396,27 +281,26 @@ def higherDirectImageBaseChangeAdj :
       ((Scheme.Modules.pushforward g).map
         ((f'.higherDirectImage q).map ((Scheme.Modules.pullback g').map φ)))
     rw [higherDirectImagePresheafBaseChange_naturality] at h₂
-    dsimp only [Functor.comp_obj, Functor.comp_map] at h₁ ⊢
-    erw [reassoc_of% h₁, ← h₂, h₃]
-    simp only [adj, Iso.app_inv]
-    exact (Category.assoc _ _ _).symm
+    simp only [Iso.app_inv, Functor.comp_map]
+    -- Chain the three squares with `Eq.trans`: it identifies `Y.PresheafOfModules` with
+    -- `PresheafOfModules Y.ringCatSheaf.obj` in the objects, which `rw` does not.
+    exact ((Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ _) h₁).trans (Category.assoc _ _ _))).trans
+      ((congrArg (_ ≫ ·) (h₂.symm.trans h₃)).trans (Category.assoc _ _ _).symm)
 
-/-- The adjoint base change map restricts, on the presheaf `V ↦ H^q(f⁻¹ V, M)`, to the base change
-map of presheaves: it is the sheafification of pullback on cohomology. -/
-lemma higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeAdj (M : X.Modules) :
+/-- The transposed base change map restricts, on the presheaf `V ↦ H^q(f⁻¹ V, M)`, to the base
+change map of presheaves: it is the sheafification of pullback on cohomology. -/
+lemma higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeTranspose (M : X.Modules) :
     (f.higherDirectImagePresheafToSheaf q).app M ≫
       (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map
-        ((higherDirectImageBaseChangeAdj h q).app M) =
+        ((higherDirectImageBaseChangeTranspose h q).app M) =
       higherDirectImagePresheafBaseChange h q M := by
   let adj := PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)
-  have e₁ : (f.higherDirectImagePresheafToSheaf q).app M = adj.unit.app _ ≫
-      (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map
-        ((f.higherDirectImagePresheafSheafificationIso q).hom.app M) := rfl
   have e₂ : (f.higherDirectImagePresheafSheafificationIso q).hom.app M ≫
-      (higherDirectImageBaseChangeAdj h q).app M =
+      (higherDirectImageBaseChangeTranspose h q).app M =
         (adj.homEquiv _ _).symm (higherDirectImagePresheafBaseChange h q M) :=
     Iso.hom_inv_id_app_assoc _ _ _
-  rw [e₁, Category.assoc]
+  rw [higherDirectImagePresheafToSheaf_app, Category.assoc]
   refine (congrArg (adj.unit.app _ ≫ ·) ((Functor.map_comp (SheafOfModules.forget _ ⋙
     PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)) _ _).symm.trans
       (congrArg _ e₂))).trans ?_
@@ -424,37 +308,37 @@ lemma higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeAdj (M : 
 
 /-- **The base change map.** For a commutative square `g' ≫ f = f' ≫ g` of schemes with affine
 `Y`, the base change map `g^* R^q f_* M ⟶ R^q f'_* g'^* M` of higher direct images, natural in the
-sheaf of modules `M`. It is adjoint to `higherDirectImageBaseChangeAdj`, whose sections are
+sheaf of modules `M`. It is adjoint to `higherDirectImageBaseChangeTranspose`, whose sections are
 pullback on cohomology. -/
 def higherDirectImageBaseChange :
     f.higherDirectImage q ⋙ Scheme.Modules.pullback g ⟶
       Scheme.Modules.pullback g' ⋙ f'.higherDirectImage q :=
-  Functor.whiskerRight (higherDirectImageBaseChangeAdj h q) (Scheme.Modules.pullback g) ≫
+  Functor.whiskerRight (higherDirectImageBaseChangeTranspose h q) (Scheme.Modules.pullback g) ≫
     Functor.whiskerLeft (Scheme.Modules.pullback g' ⋙ f'.higherDirectImage q)
       (Scheme.Modules.pullbackPushforwardAdjunction g).counit
 
-/-- The base change map is adjoint to `higherDirectImageBaseChangeAdj`. -/
+/-- The base change map is adjoint to `higherDirectImageBaseChangeTranspose`. -/
 lemma higherDirectImageBaseChange_app (M : X.Modules) :
     (higherDirectImageBaseChange h q).app M =
       ((Scheme.Modules.pullbackPushforwardAdjunction g).homEquiv _ _).symm
-        ((higherDirectImageBaseChangeAdj h q).app M) :=
+        ((higherDirectImageBaseChangeTranspose h q).app M) :=
   ((Scheme.Modules.pullbackPushforwardAdjunction g).homEquiv_counit _ _ _).symm
 
-/-- The base change map is adjoint to `higherDirectImageBaseChangeAdj`. -/
+/-- The base change map is adjoint to `higherDirectImageBaseChangeTranspose`. -/
 lemma homEquiv_higherDirectImageBaseChange_app (M : X.Modules) :
     (Scheme.Modules.pullbackPushforwardAdjunction g).homEquiv _ _
         ((higherDirectImageBaseChange h q).app M) =
-      (higherDirectImageBaseChangeAdj h q).app M := by
+      (higherDirectImageBaseChangeTranspose h q).app M := by
   rw [higherDirectImageBaseChange_app]
   exact Equiv.apply_symm_apply _ _
 
-/-- **Sections of the base change map.** Over an open `V` of `Y`, the adjoint base change map
+/-- **Sections of the base change map.** Over an open `V` of `Y`, the transposed base change map
 sends the section of `R^q f_* M` defined by a class `c ∈ H^q(f⁻¹ V, M)` to the section of
 `R^q f'_* g'^* M` over `g⁻¹ V` defined by the pullback of `c` to
 `H^q(g'⁻¹ f⁻¹ V, g'^* M) = H^q(f'⁻¹ g⁻¹ V, g'^* M)`. -/
-lemma higherDirectImageBaseChangeAdj_app_app_presheafToSheaf (M : X.Modules) (V : Y.Opens)
+lemma higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf (M : X.Modules) (V : Y.Opens)
     (c : cohomologyOn M q (f ⁻¹ᵁ V)) :
-    ((higherDirectImageBaseChangeAdj h q).app M).app V
+    ((higherDirectImageBaseChangeTranspose h q).app M).app V
         (((f.higherDirectImagePresheafToSheaf q).app M).app (op V)
           ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) c)) =
       ((f'.higherDirectImagePresheafToSheaf q).app _).app (op (g ⁻¹ᵁ V))
@@ -462,30 +346,29 @@ lemma higherDirectImageBaseChangeAdj_app_app_presheafToSheaf (M : X.Modules) (V 
           (cohomologyOnRes _ q (preimage_eq_of_comp_eq h V).le
             (g'.cohomologyOnPullback M q (f ⁻¹ᵁ V) c))) := by
   have e := ConcreteCategory.congr_hom (congrArg (fun ψ ↦ ψ.app (op V))
-    (higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeAdj h q M))
+    (higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeTranspose h q M))
     ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) c)
-  refine e.trans ?_
-  change ((f'.higherDirectImagePresheafToSheaf q).app _).app (op (g ⁻¹ᵁ V))
-    ((higherDirectImagePresheafBaseChangeToPresheaf h q M).app (op V) _) = _
-  refine congrArg _ ((higherDirectImagePresheafBaseChangeToPresheaf_app_apply h q M V _).trans ?_)
+  refine e.trans (((higherDirectImagePresheafBaseChange_app_apply h q M V _).trans
+    (higherDirectImageBaseChangeToPresheaf_app_apply h q M V _)).trans (congrArg _ ?_))
+  refine ((higherDirectImagePresheafBaseChangeToPresheaf_app_apply h q M V _).trans ?_)
   simp only [Iso.inv_hom_id_app_apply]
 
 /-- **Compatibility with cohomology over affine opens.** For quasi-compact quasi-separated `f` and
 `f'`, quasi-coherent `M`, an affine open `V` of `Y` and `g⁻¹ V` affine, the base change map on
 sections over `V`, read through `Γ(V, R^q f_* M) = H^q(f⁻¹ V, M)` and
 `Γ(g⁻¹ V, R^q f'_* g'^* M) = H^q(f'⁻¹ g⁻¹ V, g'^* M)`, is pullback on cohomology along `g'`. -/
-theorem higherDirectImageBaseChangeAdj_app_sectionsAddEquiv
+theorem higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv
     [QuasiCompact f] [QuasiSeparated f] [QuasiCompact f'] [QuasiSeparated f']
     (M : X.Modules) [M.IsQuasicoherent] {V : Y.Opens} (hV : IsAffineOpen V)
     (hV' : IsAffineOpen (g ⁻¹ᵁ V)) (c : cohomologyOn M q (f ⁻¹ᵁ V)) :
-    ((higherDirectImageBaseChangeAdj h q).app M).app V
+    ((higherDirectImageBaseChangeTranspose h q).app M).app V
         (f.higherDirectImageSectionsAddEquiv M q hV c) =
       f'.higherDirectImageSectionsAddEquiv _ q hV'
         (cohomologyOnRes _ q (preimage_eq_of_comp_eq h V).le
           (g'.cohomologyOnPullback M q (f ⁻¹ᵁ V) c)) := by
   rw [higherDirectImageSectionsAddEquiv_eq_presheafToSheaf,
     higherDirectImageSectionsAddEquiv_eq_presheafToSheaf]
-  exact higherDirectImageBaseChangeAdj_app_app_presheafToSheaf h q M V c
+  exact higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf h q M V c
 
 end BaseChange
 
