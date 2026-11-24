@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 import Mathlib.FieldTheory.Galois.IsGaloisGroup
+import TauCeti.NumberTheory.NumberField.ComplexEmbedding.IsReal
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
 import TauCeti.NumberTheory.NumberField.SignApproximation
@@ -37,7 +38,8 @@ is not real, and a target `β` with `Re ((φ β)²) < 0` at `|φ|` makes it nega
 ## Main results
 
 * `TauCeti.NumberField.comp_eq_conjugate_of_trace_mul_nonneg`: `φ ∘ σ = conj ∘ φ` for every
-  complex embedding `φ`.
+  complex embedding `φ`, with pointwise form
+  `TauCeti.NumberField.apply_eq_conj_of_trace_mul_nonneg`: `φ (σ x) = conj (φ x)`.
 * `TauCeti.NumberField.apply_apply_of_trace_mul_nonneg`: `σ` is an involution.
 * `TauCeti.NumberField.isTotallyReal_eqLocusField_of_trace_mul_nonneg`: the fixed field of `σ` is
   totally real.
@@ -48,8 +50,6 @@ is not real, and a target `β` with `Re ((φ β)²) < 0` at `|φ|` makes it nega
   `IsCMField` instance, `σ x = IsCMField.complexConj K x` for every `x`.
 * `isTotallyReal_and_eq_id_or_isCMField_and_eq_complexConj_of_trace_mul_nonneg` (in
   `TauCeti.NumberField`): the dichotomy.
-* `TauCeti.NumberField.exists_re_sq_neg_of_not_isReal`: a complex embedding that is not real takes
-  a value whose square has negative real part.
 
 ## References
 
@@ -86,25 +86,6 @@ private theorem re_sum_nonneg (hσ : ∀ x : K, 0 ≤ Algebra.trace ℚ K (x * �
     ← algebraMap_trace_eq_sum_ringHom]
   simpa using hσ (x n)
 
-/-- A complex embedding that is not real takes a value whose square has negative real part. -/
-theorem exists_re_sq_neg_of_not_isReal {φ : K →+* ℂ} (hφ : ¬ ComplexEmbedding.IsReal φ) :
-    ∃ β : K, (φ β ^ 2).re < 0 := by
-  obtain ⟨γ, hγ⟩ : ∃ γ, conjugate φ γ ≠ φ γ := by
-    by_contra! h
-    exact hφ (ComplexEmbedding.isReal_iff.2 (RingHom.ext h))
-  have him : 0 < |(φ γ).im| := by
-    refine abs_pos.2 fun h => hγ ?_
-    rw [conjugate_coe_eq, Complex.conj_eq_iff_im]
-    exact h
-  have hbtwn : (φ γ).re - |(φ γ).im| < (φ γ).re + |(φ γ).im| := by linarith
-  obtain ⟨q, hq₁, hq₂⟩ := exists_rat_btwn hbtwn
-  refine ⟨γ - q, ?_⟩
-  have hlt : |(φ γ).re - q| < |(φ γ).im| := abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
-  have := sq_lt_sq.2 hlt
-  simp only [map_sub, map_ratCast, sq, Complex.mul_re, Complex.sub_re, Complex.ratCast_re,
-    Complex.sub_im, Complex.ratCast_im, sub_zero]
-  nlinarith [sq_abs ((φ γ).re - q), sq_abs (φ γ).im]
-
 /-- The case of `TauCeti.NumberField.comp_eq_conjugate_of_trace_mul_nonneg` where `φ` and `φ ∘ σ`
 define the same place: then `σ = id`, `φ` is not real, and a target `β` with `Re ((φ β)²) < 0` at
 `|φ|` makes the approximated trace negative. -/
@@ -138,7 +119,10 @@ trace at most `-1`. -/
 private theorem false_of_mk_comp_ne (hσ : ∀ x : K, 0 ≤ Algebra.trace ℚ K (x * σ x))
     {φ : K →+* ℂ} (hw : mk (φ.comp σ) ≠ mk φ) : False := by
   classical
-  have hσs : Function.Surjective σ := (Algebra.IsAlgebraic.algHom_bijective σ.toRatAlgHom).2
+  let e : K ≃+* K := RingEquiv.ofBijective σ (Algebra.IsAlgebraic.algHom_bijective σ.toRatAlgHom)
+  have he (w : InfinitePlace K) : equivOfRingEquiv e.symm w = w.comap σ := by
+    rw [equivOfRingEquiv_eq_comap, RingEquiv.symm_symm]
+    congr 1
   let a : InfinitePlace K → K := fun v => if v = mk φ then 1 else if v = mk (φ.comp σ) then -1
     else 0
   have ha (ψ : K →+* ℂ) : ψ (a (mk ψ)) =
@@ -155,7 +139,7 @@ private theorem false_of_mk_comp_ne (hσ : ∀ x : K, 0 ≤ Algebra.trace ℚ K 
     · simp [h₁, hcomp h₁, hw]
     by_cases h₂ : mk ψ = mk (φ.comp σ)
     · have h₃ : mk (ψ.comp σ) ≠ mk (φ.comp σ) := fun h =>
-        h₁ (comap_injective_of_surjective hσs (by simpa only [comap_mk] using h))
+        h₁ ((equivOfRingEquiv e.symm).injective (by rwa [he, he, comap_mk, comap_mk]))
       split_ifs <;> simp_all
     · simp [h₁, h₂]
   · rw [ha, ha (φ.comp σ)]
@@ -172,8 +156,10 @@ theorem comp_eq_conjugate_of_trace_mul_nonneg
   · exact false_of_mk_comp_eq hσ hne hw
   · exact false_of_mk_comp_ne hσ hw
 
-/-- The pointwise form of `TauCeti.NumberField.comp_eq_conjugate_of_trace_mul_nonneg`. -/
-private theorem apply_eq_conj_of_trace_mul_nonneg
+/-- The pointwise form of `TauCeti.NumberField.comp_eq_conjugate_of_trace_mul_nonneg`: if
+`0 ≤ Tr_{K/ℚ}(x σ(x))` for every `x`, then `φ (σ x) = conj (φ x)` for every complex embedding
+`φ`. -/
+theorem apply_eq_conj_of_trace_mul_nonneg
     (hσ : ∀ x : K, 0 ≤ Algebra.trace ℚ K (x * σ x)) (φ : K →+* ℂ) (x : K) :
     φ (σ x) = (starRingEnd ℂ) (φ x) := by
   simpa only [RingHom.comp_apply, conjugate_coe_eq] using
@@ -208,12 +194,14 @@ theorem isTotallyReal_of_trace_mul_self_nonneg
     exact ((comp_eq_conjugate_of_trace_mul_nonneg (σ := RingHom.id K) h _).symm.trans
       (RingHom.comp_id _))
 
-/-- **A positive involution other than the identity makes `K` a CM field.** The proof adapts the
-fixed-field argument of Mathlib's `IsCMField.of_forall_isConj`, which assumes `IsGalois ℚ K`:
-working directly with the order-two subgroup generated by `σ` and `IsGaloisGroup` for its fixed
-field removes that hypothesis. -/
+/-- **A positive involution other than the identity makes `K` a CM field.** If
+`0 ≤ Tr_{K/ℚ}(x σ(x))` for every `x` and `σ ≠ id`, then `K` is a CM field. No Galois hypothesis on
+`K / ℚ` is needed. -/
 theorem isCMField_of_trace_mul_nonneg (hσ : ∀ x : K, 0 ≤ Algebra.trace ℚ K (x * σ x))
     (hne : σ ≠ RingHom.id K) : IsCMField K := by
+  -- This adapts the fixed-field argument of Mathlib's `IsCMField.of_forall_isConj`, which assumes
+  -- `IsGalois ℚ K`: working with the order-two subgroup generated by `σ` and `IsGaloisGroup` for
+  -- its fixed field removes that hypothesis.
   let τ : K ≃ₐ[ℚ] K :=
     AlgEquiv.ofBijective σ.toRatAlgHom (Algebra.IsAlgebraic.algHom_bijective _)
   have hτx (x : K) : τ x = σ x := by

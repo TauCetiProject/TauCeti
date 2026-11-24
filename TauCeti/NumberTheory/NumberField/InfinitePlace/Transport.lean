@@ -17,9 +17,7 @@ A ring isomorphism `e : K ≃+* L` of fields pushes infinite places forward by p
 real and complex places, multiplicities, and the canonical real embeddings at real places, and
 restricts to a bijection `NumberField.InfinitePlace.realEquivOfRingEquiv e` between the subtypes of
 real places. When a commuting square of field isomorphisms relates two extensions, the induced
-bijections preserve unramifiedness at infinite places. More generally, pulling back infinite
-places along any surjective ring homomorphism is injective
-(`NumberField.InfinitePlace.comap_injective_of_surjective`).
+bijections preserve unramifiedness at infinite places.
 
 Both constructions are functorial in `e` and require no number-field hypothesis on `K` or `L`. In
 particular, they identify the infinite and real places of a field with those of any isomorphic copy
@@ -34,9 +32,6 @@ in another universe, such as `Shrink K`.
 
 ## Main results
 
-* `NumberField.InfinitePlace.comap_injective_of_surjective`,
-  `NumberField.InfinitePlace.comap_inj_of_surjective`: pulling back along a surjective ring
-  homomorphism is injective on infinite places.
 * `NumberField.InfinitePlace.equivOfRingEquiv_apply`,
   `NumberField.InfinitePlace.equivOfRingEquiv_mk`: evaluation of the transported place and
   compatibility with `InfinitePlace.mk`.
@@ -90,19 +85,6 @@ def equivOfRingEquiv (e : K ≃+* L) : InfinitePlace K ≃ InfinitePlace L where
 
 -- Not `@[simp]`: unfolding `equivOfRingEquiv` to `comap` would take the `equivOfRingEquiv_*`
 -- lemmas out of simp normal form.
-/-- Pulling back infinite places along a surjective ring homomorphism is injective. -/
-theorem comap_injective_of_surjective {f : K →+* L} (hf : Function.Surjective f) :
-    Function.Injective fun w : InfinitePlace L ↦ w.comap f := fun w₁ w₂ h ↦
-  InfinitePlace.ext _ _ fun y ↦ by
-    obtain ⟨x, rfl⟩ := hf y
-    exact congrArg (fun w : InfinitePlace K ↦ w x) h
-
-/-- Along a surjective ring homomorphism, two infinite places with the same pullback are
-equal. -/
-theorem comap_inj_of_surjective {f : K →+* L} (hf : Function.Surjective f)
-    {w₁ w₂ : InfinitePlace L} : w₁.comap f = w₂.comap f ↔ w₁ = w₂ :=
-  (comap_injective_of_surjective hf).eq_iff
-
 /-- `equivOfRingEquiv e` sends an infinite place `w` to `w.comap e.symm`. -/
 theorem equivOfRingEquiv_eq_comap (e : K ≃+* L) (w : InfinitePlace K) :
     equivOfRingEquiv e w = w.comap (e.symm : L →+* K) :=
