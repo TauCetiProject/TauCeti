@@ -24,7 +24,9 @@ the germ map on any affine neighbourhood. Independence of that neighbourhood mak
 ideal order available for arbitrary schemes. On an affine chart it agrees with ideal order
 at the corresponding prime, without a rationality or regularity assumption on the point.
 
-The stalk construction preserves sums, products and powers. Its being a proper ideal
+The stalk construction preserves sums, products and powers, and it detects inclusion of ideal
+sheaves (`AlgebraicGeometry.Scheme.IdealSheafData.le_iff_forall_stalkIdeal_le`), because an
+ideal of a ring is determined by its localizations at maximal ideals. Its being a proper ideal
 characterizes membership in the support, so order at least one recovers the usual support;
 higher order thresholds retain information about multiplicity.
 
@@ -155,6 +157,24 @@ theorem stalkIdeal_eq_map_localization (I : X.IdealSheafData) (U : X.affineOpens
   exact (IsLocalization.algEquiv (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl
     (Localization.AtPrime (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal)
     (X.presheaf.stalk x)).commutes r |>.symm
+
+/-- **Inclusion of ideal sheaves is checked on stalks.** An ideal sheaf is contained in another
+exactly when its stalk ideal is contained in the other's at every point. -/
+theorem le_iff_forall_stalkIdeal_le {I J : X.IdealSheafData} :
+    I ≤ J ↔ ∀ x, I.stalkIdeal x ≤ J.stalkIdeal x := by
+  refine ⟨fun h ↦ stalkIdeal_mono h, fun h ↦ le_of_comap_Spec_isLocalRing fun R _ _ φ ↦ ?_⟩
+  -- `φ` factors through `Spec 𝒪_{X,x}` at the image `x` of the closed point, and on an affine
+  -- neighbourhood of `x` the inverse images along `Spec 𝒪_{X,x} ⟶ X` are the stalk ideals.
+  let x := φ (IsLocalRing.closedPoint R)
+  let U : X.affineOpens := ⟨_, isAffineOpen_opensRange (X.affineCover.f (X.affineCover.idx x))⟩
+  have hxU : x ∈ U.val := X.affineCover.covers x
+  have heq : X.fromSpecStalk x = Spec.map (X.presheaf.germ U.val x hxU) ≫ U.property.fromSpec :=
+    (U.property.fromSpecStalk_eq_fromSpecStalk hxU).symm
+  rw [← Scheme.Spec_stalkClosedPointTo_fromSpecStalk φ, heq, ← Category.assoc, ← Spec.map_comp]
+  refine (comap_SpecMap_fromSpec_le_iff U.property _).mpr ?_
+  rw [CommRingCat.hom_comp, ← Ideal.map_map, ← Ideal.map_map, ← stalkIdeal_eq_map,
+    ← stalkIdeal_eq_map]
+  exact Ideal.map_mono (h x)
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

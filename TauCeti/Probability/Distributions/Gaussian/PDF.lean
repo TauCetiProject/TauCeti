@@ -12,7 +12,8 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 
 This file connects nondegenerate real Gaussian laws to `HasPDF` and identifies `pdf` at every
 variance, including the singular zero-variance boundary. It also computes the logarithm of the
-density.
+density and, for a nonzero variance, writes the real mass of a set as the integral of the density
+over it (`measureReal_gaussianReal_eq_setIntegral`).
 -/
 public section
 noncomputable section
@@ -43,4 +44,10 @@ theorem log_gaussianPDFReal (m : ℝ) (w : ℝ≥0) (y : ℝ) :
   rw [gaussianPDFReal_def, Real.log_mul (by positivity) (Real.exp_pos _).ne', Real.log_inv,
     Real.log_sqrt (by positivity), Real.log_exp]
   ring
+/-- For a nonzero variance, the real mass of a set `s` under `gaussianReal m v` is the integral
+of the Gaussian density over `s`. -/
+theorem measureReal_gaussianReal_eq_setIntegral (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (s : Set ℝ) :
+    (gaussianReal m v).real s = ∫ t in s, gaussianPDFReal m v t := by
+  rw [measureReal_def, gaussianReal_apply_eq_integral m hv,
+    ENNReal.toReal_ofReal (integral_nonneg fun t => gaussianPDFReal_nonneg m v t)]
 end TauCeti.Probability

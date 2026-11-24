@@ -398,10 +398,8 @@ private theorem kepler_newton (hm : 0 < m) (hκ : 0 < κ)
     (hU t) (hq t) ▸ hγ t
   -- The energy is conserved.
   have hEt (t : ℝ) : centralForceHamiltonian m (fun r ↦ -κ / r) (γ t) = -κ / (2 * a) :=
-    ((stdSymplecticForm (V := V)).apply_eq_of_hasDerivWithinAt_hamiltonianVectorField
-      isPreconnected_univ (fun t _ ↦ (hγ t).hasDerivWithinAt)
-      (fun t _ ↦ (hasFDerivAt_centralForceHamiltonian (m := m) (hU t) (hq t)).differentiableAt)
-      (mem_univ 0) (mem_univ t)).trans hE
+    (centralForceHamiltonian_eq_of_hasDerivAt isPreconnected_univ (fun t _ ↦ hγ t)
+      (fun t _ ↦ hq t) (fun t _ ↦ (hU t).differentiableAt) (mem_univ 0) (mem_univ t)).trans hE
   refine ⟨fun t ↦ (hγ' t).fst, fun t ↦ (hγ' t).snd, fun t ↦ ?_, ?_⟩
   · have := hEt t
     rw [← Prod.mk.eta (p := γ t), centralForceHamiltonian_apply] at this
@@ -410,11 +408,8 @@ private theorem kepler_newton (hm : 0 < m) (hκ : 0 < κ)
   have hattr (t : ℝ) : 0 < deriv (fun r ↦ -κ / r) ‖(γ t).1‖ := by
     rw [(hU t).deriv]
     exact div_pos hκ (pow_pos (norm_pos_iff.2 (hq t)) 2)
-  refine lt_of_le_of_ne ?_ (sq_sub_inner_sq_ne_zero_of_hasDerivAt hm hγ hq
+  exact (sq_sub_inner_sq_nonneg (γ 0)).lt_of_ne (sq_sub_inner_sq_ne_zero_of_hasDerivAt hm hγ hq
     (fun t ↦ (hU t).differentiableAt) hattr 0).symm
-  have := real_inner_mul_inner_self_le (γ 0).1 (γ 0).2
-  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
-  linear_combination this
 
 /-- **Kepler's equation.** Let `m, κ, a > 0` and let `γ = (q, p)` be a motion of the Kepler
 problem, a solution of Hamilton's equations for `H(q, p) = ‖p‖² / (2m) - κ / ‖q‖` defined for all
