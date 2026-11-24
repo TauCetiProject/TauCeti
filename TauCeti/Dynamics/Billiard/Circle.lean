@@ -559,20 +559,22 @@ theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
 /-- The rotation number `c ↦ arccos c / π` of the constant invariant graphs of the circular table,
 as a homeomorphism from `(-1, 1)` onto `(0, 1)`, with inverse `r ↦ cos (π r)`. -/
 def circleRotationNumberHomeomorph : Ioo (-1 : ℝ) 1 ≃ₜ Ioo (0 : ℝ) 1 :=
-  Real.cosPartialHomeomorph.toHomeomorphSourceTarget.symm.trans <|
+  (Real.cosPartialHomeomorph.symm.homeomorphOfImageSubsetSource (s := Ioo (-1) 1)
+      (t := Ioo 0 π) (by simp)
+      (by simpa using Real.cosPartialHomeomorph.symm.image_source_eq_target)).trans <|
     ((Homeomorph.mulLeft₀ π pi_ne_zero).subtype (p := (· ∈ Ioo (0 : ℝ) 1))
       (q := (· ∈ Ioo 0 π)) fun _ ↦ and_congr (mul_pos_iff_of_pos_left pi_pos).symm
         (mul_lt_iff_lt_one_right pi_pos).symm).symm
 
 @[simp]
 theorem coe_circleRotationNumberHomeomorph_apply (c : Ioo (-1 : ℝ) 1) :
-    (circleRotationNumberHomeomorph c : ℝ) = Real.arccos c / π :=
-  inv_mul_eq_div _ _
+    (circleRotationNumberHomeomorph c : ℝ) = Real.arccos c / π := by
+  simp [circleRotationNumberHomeomorph, div_eq_inv_mul]
 
 @[simp]
 theorem coe_circleRotationNumberHomeomorph_symm_apply (r : Ioo (0 : ℝ) 1) :
-    (circleRotationNumberHomeomorph.symm r : ℝ) = Real.cos (π * r) :=
-  (rfl)
+    (circleRotationNumberHomeomorph.symm r : ℝ) = Real.cos (π * r) := by
+  simp [circleRotationNumberHomeomorph]
 
 /-- The rotation number `c ↦ arccos c / π` of the circular table is strictly antitone. -/
 theorem strictAnti_circleRotationNumberHomeomorph : StrictAnti circleRotationNumberHomeomorph :=
@@ -602,6 +604,8 @@ private theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ
     ψ = fun _ ↦ ψ s₀ := by
   have : Fact (0 < 2 * π * R) := ⟨by positivity⟩
   have hper : Periodic ψ (2 * π * R) := period_circle (hR := hR) ▸ h.periodic
+  have hlift : Continuous hper.lift := (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 <| by
+    simpa only [Function.comp_def, hper.lift_coe] using h.continuous
   -- The level set of `ψ s₀` descends to a nonempty closed subset of the circle that the rotation
   -- by `2 R arccos (ψ s₀)` maps into itself; that rotation is minimal.
   have hS := AddCircle.eq_univ_of_isClosed_of_mapsTo_add
@@ -610,14 +614,14 @@ private theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ
       rwa [show 2 * R * Real.arccos (ψ s₀) / (2 * π * R) = Real.arccos (ψ s₀) / π by
         field_simp])
     (s := hper.lift ⁻¹' {ψ s₀})
-    (isClosed_eq (h.continuous.quotient_liftOn' _) continuous_const) ⟨s₀, rfl⟩ <| by
+    (isClosed_eq hlift continuous_const) ⟨s₀, hper.lift_coe s₀⟩ <| by
       intro x hx
       induction x using QuotientAddGroup.induction_on with | H u => ?_
-      have hu : ψ u = ψ s₀ := hx
+      have hu : ψ u = ψ s₀ := by simpa [hper.lift_coe] using hx
       simp only [mem_preimage, mem_singleton_iff, ← AddCircle.coe_add, hper.lift_coe]
       rw [add_comm, ← hu]
       exact h.apply_add_circle hR u
-  exact funext fun t ↦ (eq_univ_iff_forall.1 hS t : _)
+  exact funext fun t ↦ by simpa [hper.lift_coe] using eq_univ_iff_forall.1 hS t
 
 /-- **The invariant graphs of the circular table are the constant graphs.** Every invariant graph
 `ψ` of the circular table is a constant graph `v = c` with `c ∈ (-1, 1)`. -/
@@ -634,7 +638,7 @@ theorem IsInvariantGraph.exists_eq_const_circle {ψ : ℝ → ℝ}
   have hφ := strictAnti_circleRotationNumberHomeomorph
   let A : Ioo (-1 : ℝ) 1 := ⟨ψ a, h.mem_Ioo a⟩
   let B : Ioo (-1 : ℝ) 1 := ⟨ψ b, h.mem_Ioo b⟩
-  obtain ⟨r, hr, hBr, hrA⟩ := exists_irrational_btwn (hφ (show A < B from hab))
+  obtain ⟨r, hr, hBr, hrA⟩ := exists_irrational_btwn (hφ (show A < B from Subtype.mk_lt_mk.2 hab))
   let C := circleRotationNumberHomeomorph.symm
     ⟨r, (circleRotationNumberHomeomorph B).property.1.trans hBr,
       hrA.trans (circleRotationNumberHomeomorph A).property.2⟩
@@ -644,7 +648,7 @@ theorem IsInvariantGraph.exists_eq_const_circle {ψ : ℝ → ℝ}
   have hCB : C < B := hφ.lt_iff_gt.1 <| show _ < circleRotationNumberHomeomorph C by
     rw [← Subtype.coe_lt_coe, hC]; exact hBr
   obtain ⟨s₀, -, hs₀⟩ := intermediate_value_uIcc h.continuous.continuousOn
-    (Set.mem_uIcc.2 (Or.inl ⟨le_of_lt hAC, le_of_lt hCB⟩))
+    (Set.mem_uIcc.2 (Or.inl ⟨(Subtype.coe_lt_coe.2 hAC).le, (Subtype.coe_lt_coe.2 hCB).le⟩))
   have hconst := h.eq_const_circle_of_irrational hR (s₀ := s₀) <| by
     rwa [hs₀, ← coe_circleRotationNumberHomeomorph_apply, hC]
   exact hAC.ne <| Subtype.ext <| (congrFun hconst a).trans hs₀
