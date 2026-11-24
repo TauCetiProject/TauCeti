@@ -32,14 +32,14 @@ open scoped ContDiff Manifold Topology
 namespace Bundle.ContMDiffRiemannianMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {γ : ℝ → M}
 
 /-- The speed of a curve in the copy carrying `g₀` is the square root of its squared norm
 computed with `g₀`. No differentiability assumption on the curve is required. -/
 theorem norm_curveVelocity_toWithMetric
-    (g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (u : ℝ) :
     ‖curveVelocity I (TauCeti.WithMetric.toWithMetric g₀ ∘ γ) u‖ =
       Real.sqrt (g₀.inner (γ u) (curveVelocity I γ u) (curveVelocity I γ u)) := by
@@ -62,7 +62,7 @@ theorem norm_curveVelocity_toWithMetric
 /-- The native length of a `C¹` curve in the copy carrying `g₀` is the integral of its speed
 computed with `g₀`, on a positively oriented interval. -/
 theorem toReal_pathELength_toWithMetric_eq_integral
-    (g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     {a b : ℝ} (hab : a ≤ b) (hγ : ∀ u ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ u) :
     (Manifold.pathELength I (TauCeti.WithMetric.toWithMetric g₀ ∘ γ) a b).toReal =
       ∫ u in a..b, Real.sqrt (g₀.inner (γ u) (curveVelocity I γ u)
@@ -83,7 +83,7 @@ theorem toReal_pathELength_toWithMetric_eq_integral
 /-- The native energy of a curve in the copy carrying `g₀` is half the integral of its
 squared speed computed with `g₀`. Both interval orientations and zero velocities are allowed. -/
 theorem energy_toWithMetric_eq_integral
-    (g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (a b : ℝ) :
     energy I (TauCeti.WithMetric.toWithMetric g₀ ∘ γ) a b =
       (∫ u in a..b, g₀.inner (γ u) (curveVelocity I γ u) (curveVelocity I γ u)) / 2 := by
