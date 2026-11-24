@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.IsoperimetricProfile
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 public import TauCeti.Probability.Distributions.Gaussian.Density
+public import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Checks for the Gaussian isoperimetric function and the orthogonal splitting
@@ -120,11 +121,7 @@ example {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDime
     [MeasurableSpace E] [BorelSpace E] :
     ((Measure.dirac (0 : (⊥ : Submodule ℝ E))).prod (stdGaussian (⊥ : Submodule ℝ E)ᗮ)).map
       (fun p ↦ (p.1 : E) + p.2) = stdGaussian E := by
-  have hδ : stdGaussian (⊥ : Submodule ℝ E) = Measure.dirac 0 := by
-    ext s -
-    apply Subsingleton.set_cases (p := fun s ↦ stdGaussian (⊥ : Submodule ℝ E) s = _)
-    all_goals simp
-  rw [← hδ]
+  rw [← Measure.eq_dirac_of_subsingleton (stdGaussian (⊥ : Submodule ℝ E))]
   exact Submodule.map_add_prod_stdGaussian ⊥
 
 /-- The splitting along `F = E`: `γ_E = γ_E ⊗ δ₀`. -/
@@ -135,11 +132,7 @@ example {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDime
   have : Subsingleton (⊤ : Submodule ℝ E)ᗮ := by
     rw [Submodule.top_orthogonal_eq_bot]
     infer_instance
-  have hδ : stdGaussian (⊤ : Submodule ℝ E)ᗮ = Measure.dirac 0 := by
-    ext s -
-    apply Subsingleton.set_cases (p := fun s ↦ stdGaussian (⊤ : Submodule ℝ E)ᗮ s = _)
-    all_goals simp
-  rw [← hδ]
+  rw [← Measure.eq_dirac_of_subsingleton (stdGaussian (⊤ : Submodule ℝ E)ᗮ)]
   exact Submodule.map_add_prod_stdGaussian ⊤
 
 /-- The standard Gaussian on `ℝ²` has the density `multivariateGaussianPDF 0 1`, and that density
