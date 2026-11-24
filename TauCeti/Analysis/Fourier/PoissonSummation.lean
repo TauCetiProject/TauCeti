@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -115,18 +116,14 @@ private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
 private noncomputable def latticeEquiv : (ι → ℤ) ≃ₗ[ℤ] span ℤ (range o.toBasis) :=
   (o.toBasis.restrictScalars ℤ).equivFun.symm
 
-private theorem repr_latticeEquiv (n : ι → ℤ) (i : ι) : o.repr (o.latticeEquiv n : E) i = n i := by
-  rw [← o.coe_toBasis_repr_apply, ← o.toBasis.restrictScalars_repr_apply ℤ, latticeEquiv,
-    ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  simp
-
 /-- The exponential monomial of index `n` on the torus is the character `x ↦ exp (2πi ⟪x, m⟫)`
 of the lattice vector `m` with coordinates `n`. -/
 private theorem mFourier_toTorus (n : ι → ℤ) (x : E) :
     mFourier n (o.toTorus x) = 𝐞 ⟪x, (o.latticeEquiv n : E)⟫ := by
   have h : ⟪x, (o.latticeEquiv n : E)⟫ = ∑ i, o.repr x i * n i := by
     rw [← o.sum_inner_mul_inner]
-    simp only [real_inner_comm _ x, ← o.repr_apply_apply, repr_latticeEquiv]
+    simp only [real_inner_comm _ x, ← o.repr_apply_apply, ← o.coe_toBasis_repr_apply,
+      latticeEquiv, Basis.repr_restrictScalars_equivFun_symm, eq_intCast]
   rw [h, toTorus_def, TauCeti.UnitAddTorus.mFourier_coe_apply, Real.fourierChar_apply]
   congr 1
   push_cast

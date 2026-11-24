@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.Hyperbolic
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.LinearAlgebra.Dual.Basis
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # The standard split even-dimensional polarization
@@ -27,6 +29,8 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.splitEvenForm`: its quadratic form `(f, x) ↦ f x`.
 * `TauCeti.splitEvenPolarization`: the canonical polarization by the two coordinate axes.
 * `TauCeti.splitEvenBasis`: the coordinate basis of the first isotropic summand.
+* `TauCeti.splitEvenDualBasis`: the basis of `M* × M` by dual coordinates and coordinates, in
+  which the polar form has Gram matrix `fromBlocks 0 1 1 0`.
 * `TauCeti.finrank_splitEvenPolarization_W`: the first isotropic summand has dimension `n`.
 
 ## References
@@ -124,6 +128,32 @@ theorem coe_splitEvenBasis (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
       (0, Pi.single i 1) := by
   rw [splitEvenBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply,
     SpinPolarizationData.coe_hyperbolicBasis_apply, Pi.basisFun_apply]
+
+/-- The basis of the standard split space `M* × M` given by the dual coordinate functionals and
+the coordinate vectors. -/
+noncomputable def splitEvenDualBasis (K : Type u) [CommRing K] (n : ℕ) :
+    Basis (Fin n ⊕ Fin n) K (SplitEvenSpace K n) :=
+  (Pi.basisFun K (Fin n)).dualBasis.prod (Pi.basisFun K (Fin n))
+
+/-- The first half of the split basis consists of the standard dual-coordinate axes. -/
+@[simp]
+theorem splitEvenDualBasis_inl (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
+    splitEvenDualBasis K n (Sum.inl i) = ((Pi.basisFun K (Fin n)).coord i, 0) := by
+  simp [splitEvenDualBasis, Basis.prod_apply]
+
+/-- The second half of the split basis consists of the standard coordinate axes. -/
+@[simp]
+theorem splitEvenDualBasis_inr (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
+    splitEvenDualBasis K n (Sum.inr i) = (0, Pi.single i 1) := by
+  simp [splitEvenDualBasis, Basis.prod_apply, Pi.basisFun_apply]
+
+/-- In the dual-coordinate and coordinate basis, the polar form of the standard split quadratic
+form has Gram matrix `fromBlocks 0 1 1 0`. -/
+theorem toMatrix_polarBilin_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
+    LinearMap.BilinForm.toMatrix (splitEvenDualBasis K n) (splitEvenForm K n).polarBilin =
+      Matrix.fromBlocks 0 1 1 0 := by
+  ext (i | i) (j | j) <;>
+    simp [LinearMap.BilinForm.toMatrix_apply, Matrix.one_apply, Pi.single_apply, eq_comm]
 
 variable (K : Type u) [Field K]
 
