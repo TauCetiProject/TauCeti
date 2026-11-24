@@ -76,6 +76,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   differentiable, respectively `Cⁿ`, circle-valued map is differentiable, respectively `Cⁿ`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
+* `Circle.continuous_toUnits`: the inclusion `Circle →* ℂˣ` is continuous.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 * `TauCeti.hasFDerivAt_circleExp_mul_ofReal` and `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the
   differential of a map `e^{iθ} r` in polar form, with real-valued angle `θ` and radius `r`, is
@@ -397,6 +398,14 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 /-- Every point of `Circle` belongs to `unitary ℂ`. -/
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
+/-- The inclusion `Circle →* ℂˣ` is continuous for the topology of the unit group. -/
+@[fun_prop]
+theorem continuous_toUnits : Continuous toUnits := by
+  refine Units.continuous_iff.2 ⟨?_, ?_⟩ <;>
+    simp only [Function.comp_def, toUnits_apply, Units.val_mk0]
+  · exact continuous_subtypeVal
+  · exact continuous_subtypeVal.comp (continuous_inv (G := Circle))
 
 /-! ### Elements of order two in powers of the circle -/
 

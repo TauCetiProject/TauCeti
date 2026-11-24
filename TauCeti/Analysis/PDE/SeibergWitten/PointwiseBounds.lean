@@ -257,7 +257,7 @@ theorem norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax {x₀ : M} (hc : 0 ≤ 
     ‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 ≤ 1 + (c ^ 2 + 8 * c) / r := by
   -- The function `fun x ↦ ‖α x‖ ^ 2 + ‖β x‖ ^ 2` is the pointwise sum of the two squared norms.
   have hlap : laplaceBeltrami I ((fun x ↦ ‖α x‖ ^ 2) + fun x ↦ ‖β x‖ ^ 2) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hα₂.add hβ₂) hmax
+    laplaceBeltrami_nonpos_of_isLocalMax (hα₂.add hβ₂) BoundarylessManifold.isInteriorPoint hmax
   rw [laplaceBeltrami_add_of_contMDiffAt I hα₂ hβ₂] at hlap
   exact sq_add_sq_le_of_weitzenbock hc hr hWα hWβ hlap
 
@@ -286,7 +286,7 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax {x₀ : M} (hc : 0 �
     contMDiffAt_const.mul hα₂
   have hlap : laplaceBeltrami I
       ((fun x ↦ ‖β x‖ ^ 2) + (4 * c ^ 2 / r) • fun x ↦ ‖α x‖ ^ 2) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hβ₂.add hkα) hmax
+    laplaceBeltrami_nonpos_of_isLocalMax (hβ₂.add hkα) BoundarylessManifold.isInteriorPoint hmax
   rw [laplaceBeltrami_add_of_contMDiffAt I hβ₂ hkα,
     laplaceBeltrami_smul_of_contMDiffAt I _ hα₂] at hlap
   exact sq_le_of_weitzenbock hc hr1 hr32 hrK hs hWα hWβ hlap

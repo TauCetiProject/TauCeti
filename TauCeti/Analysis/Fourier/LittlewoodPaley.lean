@@ -674,7 +674,7 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [DecidableEq ι]
   -- By duality, it suffices to bound the pairing of `f` with a bounded `g` of finite-measure
   -- support, which is an element `G` of `L²`.
   refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-    (q' := q) hp_top fun g s hs hgs hg ↦ ?_
+    (q' := q) fun g s hs hgs hg ↦ ?_
   have hg2 : MemLp g 2 volume := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
   set G := hg2.toLp g
   have hGg : (G : V → F) =ᵐ[volume] g := hg2.coeFn_toLp

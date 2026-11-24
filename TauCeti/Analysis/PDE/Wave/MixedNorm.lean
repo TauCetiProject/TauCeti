@@ -11,6 +11,7 @@ import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
@@ -744,8 +745,8 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le (hq : 2 < q
     (r' := (1 - r⁻¹)⁻¹) hq hpq hqr
   have := hpq.symm.coe_ennreal
   exact ⟨C, fun j m hm f ↦ (continuous_phasePropagator_apply _ _).aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := p)
-      (r' := (1 - r⁻¹)⁻¹) ENNReal.coe_ne_top hr2 fun G hG _ ↦
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (p' := p)
+      (q' := (1 - r⁻¹)⁻¹) fun G hG _ ↦
         hC j m hm f G hG.aestronglyMeasurable
           (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable
             ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hG))⟩
@@ -957,7 +958,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
     ((Lp.fourierMultiplierCLM ℂ m).integrable_comp hF)
   exact (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
     hPPF.aestronglyMeasurable).eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ)
-    (q' := (1 - q⁻¹)⁻¹) (r' := (1 - r⁻¹)⁻¹) hq_top hr2 fun G hG _ ↦ hC j m hm F G hF hG
+    (p' := (1 - q⁻¹)⁻¹) (q' := (1 - r⁻¹)⁻¹) fun G hG _ ↦ hC j m hm F G hF hG
 
 end ContDiffBump
 

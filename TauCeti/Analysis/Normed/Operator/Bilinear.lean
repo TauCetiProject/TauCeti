@@ -41,6 +41,11 @@ orthonormal basis taken twice, this is the dimension times `‖A‖`. Every valu
 Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
+Composing a bilinear map `f` with linear maps `g` and `h` gives a bilinear map of norm at most
+`‖f‖ ‖g‖ ‖h‖` (`ContinuousLinearMap.norm_bilinearComp_le`), and the bilinear map
+`(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`
+(`ContinuousLinearMap.norm_smulRightL_flip_comp_le`).
+
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
 invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and
 conversely (`ContinuousLinearMap.isInvertible_bilinearComp_iff`). It conjugates the comparison
@@ -348,6 +353,36 @@ theorem norm_apply_apply_le_mul_add_sq {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingH
   linarith
 
 end Semilinear₂
+
+section Comp
+
+variable {𝕜 E E' E'' F F' G H : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The operator norm of a bilinear map composed with two linear maps is at most the product of
+the three operator norms. -/
+theorem norm_bilinearComp_le (f : E →L[𝕜] F →L[𝕜] G) (g : E' →L[𝕜] E) (h : F' →L[𝕜] F) :
+    ‖f.bilinearComp g h‖ ≤ ‖f‖ * ‖g‖ * ‖h‖ :=
+  (f.bilinearComp g h).opNorm_le_bound₂ (by positivity) fun x y => by
+    rw [bilinearComp_apply]
+    calc ‖f (g x) (h y)‖ ≤ ‖f‖ * ‖g x‖ * ‖h y‖ := f.le_opNorm₂ _ _
+      _ ≤ ‖f‖ * (‖g‖ * ‖x‖) * (‖h‖ * ‖y‖) := by
+        gcongr
+        exacts [g.le_opNorm x, h.le_opNorm y]
+      _ = ‖f‖ * ‖g‖ * ‖h‖ * ‖x‖ * ‖y‖ := by ring
+
+/-- The bilinear map `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`. -/
+theorem norm_smulRightL_flip_comp_le (c : H) (B : E →L[𝕜] StrongDual 𝕜 E'') :
+    ‖((StrongDual.smulRightL 𝕜 E'' H).flip c).comp B‖ ≤ ‖c‖ * ‖B‖ := by
+  refine (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  refine (le_opNorm _ c).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
+  rw [opNorm_flip]
+  exact norm_smulRightL_le
+
+end Comp
 
 section ToLinearMap₁₂Flip
 

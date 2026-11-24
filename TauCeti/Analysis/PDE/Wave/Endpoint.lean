@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Wave.Strichartz
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
@@ -493,7 +493,7 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le_of_endpoint
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le_of_endpoint
     (r' := (1 - r⁻¹)⁻¹) hn hr
   exact ⟨C, fun j m hm f ↦ (continuous_phasePropagator_apply _ _).aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := 2) (r' := (1 - r⁻¹)⁻¹)
-      ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ hC j m hm f G hG⟩
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (p' := 2) (q' := (1 - r⁻¹)⁻¹)
+      fun G hG _ ↦ hC j m hm f G hG⟩
 
 end ContDiffBump
