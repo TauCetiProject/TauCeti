@@ -10,11 +10,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.ClosedSubgroup
 import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Diagonalizable
-import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
