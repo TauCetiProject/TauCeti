@@ -103,6 +103,7 @@ private theorem apply_coeff_formalGroup_sub_of_degree_eq
     have hdi : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (n + 1 - d 0) := by
       ext j
       fin_cases j <;> simp
+      -- `simp` closes `j = 0`; `j = 1` is `d 1 = n + 1 - d 0`
       omega
     have hmem := coeff_formalGroup_sub_nsmul_generator_mem_sq n (i := d 0)
       (Nat.pos_of_ne_zero hd0.1) (by omega)
@@ -117,9 +118,10 @@ private theorem apply_coeff_formalGroup_sub_of_degree_eq
       · convert coeff_formalGroup_mem_grading d using 2
         simp [hd]
       · simpa using hm
-    rw [hy, map_add, map_add, hrest, map_zsmul, map_zsmul, add_sub_add_right_eq_sub, ← smul_sub,
-      zsmul_eq_mul, Int.cast_natCast, hdi, coeff_single_add_single_lazardCocycle
-        (Nat.pos_of_ne_zero hd0.1) (by omega)]
+    rw [hy, map_add, map_add, hrest, hdi, coeff_single_add_single_lazardCocycle
+      (Nat.pos_of_ne_zero hd0.1) (by omega)]
+    simp only [zsmul_eq_mul, Int.cast_natCast, map_mul, map_natCast, c]
+    ring
   · -- the monomials `X^(n+1)` and `Y^(n+1)` have coefficient zero on both sides
     have hy : coeff d formalGroup.toPowerSeries = 0 := by
       rw [formalGroup_toPowerSeries, coeff_lazardSeries_eq]

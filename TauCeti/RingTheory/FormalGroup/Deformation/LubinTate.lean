@@ -209,6 +209,11 @@ theorem lubinTateLaw_of_le_one (hh : h ≤ 1) : F.lubinTateLaw hp h = F.map C :=
 
 variable {F hp}
 
+/-- Specializations agreeing on the coefficients agree on every constant. -/
+private theorem apply_C_eq {g g' : MvPowerSeries (Fin (h - 1)) R →+* A}
+    (hC : g.comp C = g'.comp C) (a : R) : g (C a) = g' (C a) :=
+  RingHom.congr_fun hC a
+
 /-- Specializations agreeing on the coefficients and on `t_j`, `j < i`, agree on the Lazard
 coordinates of the generic law below the index `lubinTateIndex hp i`. -/
 private theorem apply_lubinTateLaw_coordinate_eq {g g' : MvPowerSeries (Fin (h - 1)) R →+* A}
@@ -217,7 +222,7 @@ private theorem apply_lubinTateLaw_coordinate_eq {g g' : MvPowerSeries (Fin (h -
     (g.comp (lubinTateHom F hp h)) (generator m) =
       (g'.comp (lubinTateHom F hp h)) (generator m) := by
   rw [RingHom.comp_apply, RingHom.comp_apply, lubinTateHom_apply_generator, map_add, map_add,
-    ← RingHom.comp_apply, hC, RingHom.comp_apply]
+    apply_C_eq hC]
   congr 1
   by_cases hn : ∃ j : Fin (h - 1), lubinTateIndex hp j = m
   · obtain ⟨j, rfl⟩ := hn
@@ -249,10 +254,7 @@ theorem homogeneousComponent_map_lubinTateLaw_sub_map_eq_smul_lazardCocycle
   rw [lubinTateLaw, map_comp, map_comp, ← coe_lubinTateIndex_add_one hp,
     homogeneousComponent_map_sub_map_eq_smul_lazardCocycle fun _ hm ↦
       apply_lubinTateLaw_coordinate_eq hC hX hm]
-  have hc := RingHom.congr_fun hC
-    (LazardRing.lift ⟨F, inferInstance⟩ (generator (lubinTateIndex hp i)))
-  simp only [RingHom.comp_apply] at hc
   simp only [RingHom.comp_apply, lubinTateHom_apply_generator, lubinTateShift_lubinTateIndex,
-    map_add, hc, add_sub_add_left_eq_sub]
+    map_add, apply_C_eq hC, add_sub_add_left_eq_sub]
 
 end FormalGroup
