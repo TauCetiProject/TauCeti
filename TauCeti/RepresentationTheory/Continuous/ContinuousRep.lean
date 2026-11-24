@@ -95,6 +95,8 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.Iso.charpoly_apply_eq` and
   `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: on finite free carriers the characteristic
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
+* `TauCeti.ContinuousRep.charpoly_prod_apply`: on finite free carriers the characteristic
+  polynomial is multiplicative on products.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
   `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: on finite free carriers the
   characteristic polynomial and the determinant of `g` on a base change are the images of those
@@ -285,6 +287,11 @@ noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
   -- `LinearMap.prodMap`, which `fun_prop` does not unfold.
   continuous_action := show Continuous fun p : Γ × (M × N) => (ρ p.1 p.2.1, σ p.1 p.2.2) by
     fun_prop
+
+@[simp]
+theorem toRepresentation_prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.prod σ).toRepresentation = ρ.toRepresentation.prod σ.toRepresentation :=
+  (rfl)
 
 @[simp]
 theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M × N) :
@@ -1029,6 +1036,12 @@ variable (Γ A M) in
 theorem charpoly_trivial_apply (g : Γ) :
     (trivial Γ A M g).charpoly = (X - 1) ^ Module.finrank A M :=
   Representation.charpoly_trivial_apply A Γ M g
+
+/-- The characteristic polynomial is multiplicative on products of continuous representations. -/
+@[simp]
+theorem charpoly_prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    (ρ.prod σ g).charpoly = (ρ g).charpoly * (σ g).charpoly :=
+  Representation.charpoly_prod_apply ρ.toRepresentation σ.toRepresentation g
 
 /-- **The characteristic polynomial of a character line.** The element `g` acts on
 `ofCharacter χ` with characteristic polynomial `X - χ g`; the contragredient action would give

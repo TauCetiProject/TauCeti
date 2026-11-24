@@ -21,6 +21,8 @@ both defined through Tricomi's entire function `γ*` of
 
 * `Complex.lowerIncompleteGamma_eq_integral`: DLMF 8.2.1, `γ(a, z) = z^a ∫₀¹ s^{a−1} e^{−zs} ds`
   for `0 < Re a`;
+* `Complex.lowerIncompleteGamma_eq_mul_regularizedHGFun`: the regularized form of the Kummer
+  representation DLMF 8.5.1, `γ(a, z) = a⁻¹ z^a Γ(a + 1) 𝐌(a, a + 1, −z)`, for every `a`;
 * `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul`: DLMF 8.2.1 rescaled,
   `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0`, `0 ≤ x`;
 * `Complex.tendsto_mul_lowerIncompleteGamma`: for `z ≠ 0`, `γ(·, z)` has simple poles at
@@ -35,7 +37,8 @@ both defined through Tricomi's entire function `γ*` of
 * `Complex.lowerIncompleteGamma_neg_natCast`: `γ(−n, ·)` is identically `0`, Mathlib's junk value;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
-  `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12).
+  `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12);
+* `Complex.regularizedGamma_ofReal_im`: `P(a, x)` is real for every real `a` and `0 ≤ x`.
 
 ## Implementation notes
 
@@ -44,10 +47,14 @@ At the poles `a ∈ −ℕ`, `γ(a, z)` takes the value given by Mathlib's junk 
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §§8.2, 8.4, <https://dlmf.nist.gov/8.2>.
+* NIST Digital Library of Mathematical Functions, §§8.2, 8.4, 8.5, <https://dlmf.nist.gov/8.2>.
 
-The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
-file `DLMF/IncompleteGamma/ContinuedProperties.lean`, and restated on Tricomi's `γ*`.
+The continued properties (the integral, the poles, holomorphy and the special values) are adapted
+from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/IncompleteGamma/ContinuedProperties.lean`, and restated on Tricomi's `γ*`. The Kummer
+representation `Complex.lowerIncompleteGamma_eq_mul_regularizedHGFun` is adapted from lean-DLMF's
+`lowerIncompleteGamma_kummerM_pair` (file `DLMF/IncompleteGamma/SpecialValues.lean`) and
+`lowerIncompleteGamma_eq_regularized` (file `DLMF/Confluent/IncompleteGamma.lean`).
 The slit-plane holomorphy in `z`, the identification with `Complex.partialGamma` and the
 rescaled integral `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul` are new proofs.
 -/
@@ -87,6 +94,13 @@ theorem lowerIncompleteGamma_def (a z : ℂ) :
 theorem regularizedGammaQ_def (a z : ℂ) :
     regularizedGammaQ a z = 1 - regularizedGamma a z := (rfl)
 
+/-- `P(a, x) = x^a γ*(a, x)` is real for every real `a` and `0 ≤ x`. -/
+@[simp]
+theorem regularizedGamma_ofReal_im (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
+    (regularizedGamma a x).im = 0 := by
+  rw [regularizedGamma_def, ← ofReal_cpow hx, ← ofReal_tricomiIncompleteGamma_ofReal_re,
+    ← ofReal_mul, ofReal_im]
+
 /-- DLMF 8.2.5: `P(a, z) + Q(a, z) = 1`. -/
 theorem regularizedGamma_add_regularizedGammaQ (a z : ℂ) :
     regularizedGamma a z + regularizedGammaQ a z = 1 := by
@@ -100,6 +114,24 @@ theorem lowerIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
   rw [lowerIncompleteGamma_def, regularizedGamma_def, tricomiIncompleteGamma_eq_integral ha]
   have hG := Gamma_ne_zero_of_re_pos ha
   field_simp
+
+/-- **Kummer representation** of the lower incomplete Gamma function, regularized form of
+DLMF 8.5.1: `γ(a, z) = a⁻¹ z^a Γ(a + 1) 𝐌(a, a + 1, −z)`. DLMF writes it with Kummer's
+`M(a, a + 1, −z) = Γ(a + 1) 𝐌(a, a + 1, −z)`, which accounts for the factor `Γ(a + 1)`.
+DLMF states it for `a ∉ −ℕ`; the identity here also covers the nonpositive integers `a = −n`,
+where both sides are `0` by Mathlib's conventions `0⁻¹ = 0` and `Γ(1 − n) = 0` for `n ≥ 1`
+(the left side is `Complex.lowerIncompleteGamma_neg_natCast`).
+
+Adapted from lean-DLMF's `lowerIncompleteGamma_kummerM_pair` and
+`lowerIncompleteGamma_eq_regularized`. -/
+theorem lowerIncompleteGamma_eq_mul_regularizedHGFun (a z : ℂ) :
+    lowerIncompleteGamma a z =
+      a⁻¹ * z ^ a * Gamma (a + 1) * regularizedHGFun {a} {a + 1} (-z) := by
+  rw [lowerIncompleteGamma_def, regularizedGamma_def, tricomiIncompleteGamma_eq_regularizedHGFun]
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · rw [Gamma_add_one a ha]
+    field_simp
 
 /-- For `z ≠ 0`, `P(·, z)` is entire. -/
 theorem differentiable_regularizedGamma_left {z : ℂ} (hz : z ≠ 0) :
