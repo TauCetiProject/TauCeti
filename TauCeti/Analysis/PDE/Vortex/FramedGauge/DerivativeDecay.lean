@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
@@ -116,8 +116,7 @@ theorem gaugeTransform_inv_apply_eq {u : ℂ → Circle} {w : ℂ}
   -- Since `|α|` is gauge invariant, `ℓ = log |α|²` for the section of `y` as well.
   have hℓy : ℓ =ᶠ[𝓝 w] fun v ↦ Real.log (4 * (y v 2 ^ 2 + y v 3 ^ 2)) := by
     filter_upwards [hℓ] with v hv
-    rw [hv, ← sq_norm_sectionValue, ← sq_norm_sectionValue, sectionValue_gaugeTransform,
-      norm_mul, Circle.norm_coe, one_mul]
+    rw [hv, gaugeTransform_apply_two_sq_add_apply_three_sq]
   have h1 := fderiv_log_normSq_apply_one hpy hqy hαy hrows.1 hrows.2
   have hI := fderiv_log_normSq_apply_I hpy hqy hαy hrows.1 hrows.2
   rw [← hℓy.fderiv_eq, hy3.fderiv_eq, fderiv_const_apply, hsec.self_of_nhds.2] at h1 hI

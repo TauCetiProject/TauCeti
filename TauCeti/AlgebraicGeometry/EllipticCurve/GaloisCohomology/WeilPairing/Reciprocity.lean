@@ -191,7 +191,7 @@ theorem infiniteInvAt_kerWeilBrauerPairing (hn : IsUnit (φ.degree : K)) (w : In
         ((φ.baseChange w.Completion).infiniteTateKerWeilPairing (φ.kerRes τ' a)
           (φ.dualKerRes τ' b)) := by
   have hnw : IsUnit ((φ.baseChange w.Completion).degree : w.Completion) :=
-    isUnit_natCast_of_ne_zero (φ.baseChange w.Completion).degree_ne_zero
+    isUnit_natCast_of_ne_zero ℚ (φ.baseChange w.Completion).degree_ne_zero
   rw [infiniteInvAt_apply, φ.brBaseChange_kerWeilBrauerPairing τ' hn hnw]
   exact ((φ.baseChange w.Completion).toRatAddCircle_infiniteTateKerWeilPairing hnw _ _).symm
 
@@ -203,13 +203,13 @@ is restricted into the kernel of the dual of the base change of `φ`
 (`TauCeti.Isogeny.dualKerRes`). No prime-to-residue-characteristic hypothesis is required. -/
 theorem finiteInvAt_kerWeilBrauerPairing (v : HeightOneSpectrum (𝓞 K))
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K)) :
-    finiteInvAt K v (φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b) =
+    finiteInvAt K v (φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) a b) =
       ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-          (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+          (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
           (φ.kerRes τ a) (φ.dualKerRes τ b)) := by
   rw [finiteInvAt_apply, φ.brBaseChange_kerWeilBrauerPairing τ _
-    (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)]
+    (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)]
   exact ((φ.baseChange (v.adicCompletion K)).toRatAddCircle_localTateKerWeilPairing _ _ _).symm
 
 /-- The local Tate pairings of the restrictions of two global classes, for an isogeny and its
@@ -220,10 +220,10 @@ theorem hasFiniteSupport_localTateKerWeilPairing_kerRes
     (fun v : HeightOneSpectrum (𝓞 K) ↦ ZMod.toRatAddCircle
       (φ.baseChange (v.adicCompletion K)).degree
       ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-        (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+        (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
         (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b))).HasFiniteSupport := by
   refine (hasFiniteSupport_finiteInvAt K
-    (φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero φ.degree_ne_zero) a b)).subset ?_
+    (φ.kerWeilBrauerPairing (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) a b)).subset ?_
   intro v hv
   rwa [Function.mem_support, φ.finiteInvAt_kerWeilBrauerPairing a b v (τ v)]
 
@@ -241,13 +241,13 @@ theorem finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWei
     (∑ᶠ v : HeightOneSpectrum (𝓞 K), ZMod.toRatAddCircle
       (φ.baseChange (v.adicCompletion K)).degree
       ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-        (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+        (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
         (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b))) +
       ∑ w : InfinitePlace K, ZMod.toRatAddCircle (φ.baseChange w.Completion).degree
         ((φ.baseChange w.Completion).infiniteTateKerWeilPairing (φ.kerRes (τ' w) a)
           (φ.dualKerRes (τ' w) b)) = 0 := by
   simp only [← φ.finiteInvAt_kerWeilBrauerPairing a b _ (τ _),
-    ← φ.infiniteInvAt_kerWeilBrauerPairing a b (isUnit_natCast_of_ne_zero φ.degree_ne_zero) _
+    ← φ.infiniteInvAt_kerWeilBrauerPairing a b (isUnit_natCast_of_ne_zero ℚ φ.degree_ne_zero) _
       (τ' _)]
   exact finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero K _
 
@@ -272,14 +272,14 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
       (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
     ∑ v ∈ S, ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
       ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
-        (isUnit_natCast_of_ne_zero (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+        (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
         (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
   have h :=
     φ.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
       a b τ τ'
   rwa [Finset.sum_eq_zero fun w _ ↦ by
       rw [(φ.baseChange w.Completion).toRatAddCircle_infiniteTateKerWeilPairing
-          (isUnit_natCast_of_ne_zero (φ.baseChange w.Completion).degree_ne_zero),
+          (isUnit_natCast_of_ne_zero ℚ (φ.baseChange w.Completion).degree_ne_zero),
         φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha' w) (hb' w), map_zero],
     add_zero, finsum_eq_sum_of_support_subset _ (s := S) fun v hv ↦ by_contra fun hvS ↦ hv <| by
       rw [toRatAddCircle_localTateKerWeilPairing,
