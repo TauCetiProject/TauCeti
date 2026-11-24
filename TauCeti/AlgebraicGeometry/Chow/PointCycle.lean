@@ -13,18 +13,17 @@ public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 # Cycles of closed points
 
 A closed point `x` of a scheme `X` has height zero for the specialization order
-(`AlgebraicGeometry.Scheme.height_of_isClosed`), so the cycle `n [x]` is a zero-cycle. Over a
-field `k`, its degree is `[κ(x) : k] n`, and its pushforward along a morphism `f` over `k` is
-`[κ(x) : κ(f x)] n [f x]` (`Chow.cyclesMap_single`, for a point cycle of any dimension). In
-particular, pushing forward along the structure morphism of a quasi-compact `k`-scheme sends
-`[P]` to `[κ(P) : k] [pt]`. At a `k`-rational point the degree is `n`; the origin of the affine
+(`AlgebraicGeometry.Scheme.height_of_isClosed`), so the cycle `n [x]` is a zero-cycle
+(`Chow.single_mem_cyclesOfDimension_zero`, in `Chow.Basic`). Over a field `k`, its degree is
+`[κ(x) : k] n`, and its pushforward along a morphism `f` over `k` is `[κ(x) : κ(f x)] n [f x]`
+(`Chow.cyclesMap_single`, for a point cycle of any dimension). In particular, pushing
+forward along the structure morphism of a quasi-compact `k`-scheme sends `[P]` to
+`[κ(P) : k] [pt]`. At a `k`-rational point the degree is `n`; the origin of the affine
 line `Spec k[X]` is such a point, so `[0]` is a zero-cycle of degree `1` on `𝔸¹_k`
 (`Chow.cyclesDegree_single_affineLine_origin`).
 
 ## Main statements
 
-* `Chow.single_mem_cyclesOfDimension`: `n [x]` is a `d`-cycle for a point `x` of dimension `d`.
-* `Chow.single_mem_cyclesOfDimension_zero`: `n [x]` is a zero-cycle for a closed point `x`.
 * `Chow.cyclesDegree_single`: `deg (n [x]) = [κ(x) : k] n`.
 * `Chow.cyclesMap_single`: `f_* (n [x]) = n [κ(x) : κ(f x)] [f x]`.
 * `Chow.cyclesDegree_single_of_section`: at a `k`-rational point, `deg (n [x]) = n`.
@@ -33,30 +32,11 @@ line `Spec k[X]` is such a point, so `[0]` is a zero-cycle of degree `1` on `�
 
 public section
 
-open AlgebraicGeometry Order CategoryTheory
+open AlgebraicGeometry CategoryTheory
 
 universe u
 
 namespace TauCeti.AlgebraicGeometry.Chow
-
-/-- For a point `x` of dimension `d`, the cycle `n [x]` is a `d`-cycle. -/
-lemma single_mem_cyclesOfDimension {X : Scheme.{u}} [DecidableEq X] {d : ℤ} {x : X}
-    (hx : x ∈ pointsOfDimension X d) (n : ℤ) :
-    Function.locallyFinsuppWithin.single x n ∈ cyclesOfDimension X d := by
-  rw [mem_cyclesOfDimension_iff]
-  intro y hy
-  have : y = x := by
-    by_contra h
-    exact hy (by simp [Function.locallyFinsuppWithin.single_apply, h])
-  subst this
-  exact hx
-
-/-- For a closed point `x`, the cycle `n [x]` is a zero-cycle. -/
-lemma single_mem_cyclesOfDimension_zero {X : Scheme.{u}} [DecidableEq X] {x : X}
-    (hx : IsClosed ({x} : Set X)) (n : ℤ) :
-    Function.locallyFinsuppWithin.single x n ∈ cyclesOfDimension X 0 :=
-  single_mem_cyclesOfDimension
-    (mem_pointsOfDimension.2 ⟨0, by simp [Scheme.height_of_isClosed hx]⟩) n
 
 variable (k : Type u) [Field k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
 
