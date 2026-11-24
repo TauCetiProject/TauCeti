@@ -52,8 +52,11 @@ theorem surjective_smul_of_surjective [CommSemiring R] [∀ i, AddCommMonoid (M 
     [∀ i, Module R (M i)] (i₀ : ι) (h : Function.Surjective fun m : M i₀ ↦ r • m) :
     Function.Surjective fun x : ⨂[R] i, M i ↦ r • x := by
   classical
-  suffices hrange : LinearMap.range (DistribSMul.toLinearMap R (⨂[R] i, M i) r) = ⊤ from
-    LinearMap.range_eq_top.1 hrange
+  suffices hrange : LinearMap.range (DistribSMul.toLinearMap R (⨂[R] i, M i) r) = ⊤ by
+    have hf : ⇑(DistribSMul.toLinearMap R (⨂[R] i, M i) r) = fun x ↦ r • x :=
+      funext (DistribSMul.toLinearMap_apply R _ r)
+    rw [← hf]
+    exact LinearMap.range_eq_top.1 hrange
   rw [eq_top_iff, ← span_tprod_eq_top, Submodule.span_le]
   rintro _ ⟨f, rfl⟩
   obtain ⟨m, hm : r • m = f i₀⟩ := h (f i₀)

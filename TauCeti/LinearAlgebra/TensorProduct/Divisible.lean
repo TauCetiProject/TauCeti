@@ -56,14 +56,26 @@ variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Modu
 /-- Tensoring on the right with any module preserves `r`-divisibility. -/
 theorem surjective_smul_of_surjective_left (hM : Function.Surjective fun m : M ↦ r • m) :
     Function.Surjective fun x : M ⊗[R] N ↦ r • x := by
-  have h := LinearMap.rTensor_surjective N (g := DistribSMul.toLinearMap R M r) hM
-  rwa [LinearMap.rTensor_smul_action] at h
+  -- Multiplication by `r` as a linear map, on `M` and on `M ⊗[R] N`.
+  have hf : ⇑(DistribSMul.toLinearMap R M r) = fun m ↦ r • m :=
+    funext (DistribSMul.toLinearMap_apply R M r)
+  have hg : ⇑(DistribSMul.toLinearMap R (M ⊗[R] N) r) = fun x ↦ r • x :=
+    funext (DistribSMul.toLinearMap_apply R _ r)
+  rw [← hf] at hM
+  rw [← hg, ← LinearMap.rTensor_smul_action]
+  exact LinearMap.rTensor_surjective N hM
 
 /-- Tensoring on the left with any module preserves `r`-divisibility. -/
 theorem surjective_smul_of_surjective_right (hN : Function.Surjective fun n : N ↦ r • n) :
     Function.Surjective fun x : M ⊗[R] N ↦ r • x := by
-  have h := LinearMap.lTensor_surjective M (g := DistribSMul.toLinearMap R N r) hN
-  rwa [LinearMap.lTensor_smul_action] at h
+  -- Multiplication by `r` as a linear map, on `N` and on `M ⊗[R] N`.
+  have hf : ⇑(DistribSMul.toLinearMap R N r) = fun n ↦ r • n :=
+    funext (DistribSMul.toLinearMap_apply R N r)
+  have hg : ⇑(DistribSMul.toLinearMap R (M ⊗[R] N) r) = fun x ↦ r • x :=
+    funext (DistribSMul.toLinearMap_apply R _ r)
+  rw [← hf] at hN
+  rw [← hg, ← LinearMap.lTensor_smul_action]
+  exact LinearMap.lTensor_surjective M hN
 
 end Semiring
 
@@ -73,10 +85,15 @@ variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N
 No torsion-freeness of `M` or `N` is needed. -/
 theorem isSMulRegular_of_surjective_smul (hM : Function.Surjective fun m : M ↦ r • m)
     (hN : Function.Surjective fun n : N ↦ r • n) : IsSMulRegular (M ⊗[R] N) r := by
+  -- Multiplication by `r` as a linear map, on `M` and on `M ⊗[R] N`.
   set f := DistribSMul.toLinearMap R M r
+  have hf : ⇑f = fun m ↦ r • m := funext (DistribSMul.toLinearMap_apply R M r)
+  have hg : ⇑(DistribSMul.toLinearMap R (M ⊗[R] N) r) = fun x ↦ r • x :=
+    funext (DistribSMul.toLinearMap_apply R _ r)
+  rw [← hf] at hM
   -- Right exactness of `⊗[R] N` on `M[r] → M → M → 0`.
   have hexact := rTensor_exact N (LinearMap.exact_subtype_ker_map f) hM
-  rw [LinearMap.rTensor_smul_action] at hexact
+  rw [LinearMap.rTensor_smul_action, hg] at hexact
   -- The `r`-torsion of `M` dies after tensoring with the `r`-divisible module `N`.
   have hzero : (LinearMap.ker f).subtype.rTensor N = 0 := by
     ext k n

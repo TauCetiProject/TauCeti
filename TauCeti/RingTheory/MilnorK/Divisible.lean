@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Splits
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Root factorization divides the Steinberg tensors
@@ -29,9 +29,9 @@ the divisibility statements for tensor products in
 `TauCeti.LinearAlgebra.TensorProduct.Divisible` and
 `TauCeti.LinearAlgebra.PiTensorProduct.Divisible`, and for quotients in
 `TauCeti.RingTheory.Regular.IsSMulRegular`, this is the input for the unique divisibility of the
-Milnor K-groups `TauCeti.MilnorK` of an algebraically closed field in degrees at least two. In
-characteristic `p` the roots of `Xᵖ - a` all coincide, and the argument uses them with their
-multiplicity.
+Milnor K-groups `TauCeti.MilnorK` of an algebraically closed field in degrees at least two. Over
+a field of characteristic `p` the roots of `Xᵖ - a` all coincide, and the argument uses them with
+their multiplicity.
 
 ## Main results
 
@@ -52,12 +52,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 variable {R : Type*} [CommRing R]
-
-/-- A pure tensor with a multiset sum in its right factor is the sum of the pure tensors. -/
-private theorem tmul_multiset_sum {S M N : Type*} [CommSemiring S] [AddCommMonoid M] [Module S M]
-    [AddCommMonoid N] [Module S N] (m : M) (s : Multiset N) :
-    m ⊗ₜ[S] s.sum = (s.map (m ⊗ₜ[S] ·)).sum :=
-  map_multiset_sum (TensorProduct.mk S M N m) s
 
 /-- **Root factorization of a Steinberg tensor.** Let `a, b` be units of a commutative ring
 with `a + b = 1`, and suppose `Xⁿ - a` splits for some `n ≠ 0`. Then in
@@ -97,8 +91,8 @@ theorem exists_ofMul_tmul_ofMul_eq_nsmul_sum {n : ℕ} (hn : n ≠ 0) {a b : Rˣ
   · simp only [Multiset.mem_map]
     rintro _ ⟨c, hc, rfl⟩
     exact ⟨by simp [hd c hc], hpow c hc⟩
-  · simp only [hb, ofMul_multiset_prod, tmul_multiset_sum, Multiset.map_map, Function.comp_def,
-      ← Multiset.sum_map_nsmul]
+  · simp only [hb, ofMul_multiset_prod, TensorProduct.tmul_multiset_sum, Multiset.map_map,
+      Function.comp_def, ← Multiset.sum_map_nsmul]
     refine congrArg Multiset.sum (Multiset.map_congr rfl fun c hc ↦ ?_)
     rw [← hpow c hc, ofMul_pow, TensorProduct.smul_tmul']
 
