@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.SInteger.IntegralClosure
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Spectrum
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
+public import TauCeti.RingTheory.Localization.Tower
 
 /-!
 # Enlarging the set of inverted primes
@@ -20,11 +21,13 @@ compose in towers `S ⊆ S' ⊆ S''`, by Mathlib's `Subalgebra.inclusion_self` a
 `Subalgebra.inclusion_inclusion`.
 
 * **Uniqueness.** Every `R`-algebra map `𝒪_S → 𝒪_{S'}` is the inclusion inside `K`
-  (`IsDedekindDomain.coe_algebraMap_integer`), so the algebra structure in the localization
+  (`IsDedekindDomain.coe_algebraMap_integer`), hence injective
+  (`IsDedekindDomain.algebraMap_integer_injective`), so the algebra structure in the localization
   statement below is no extra datum.
 * **Localization.** Whenever `𝒪_{S'}` is the localization of `R` at a submonoid `M`, it is the
   localization of `𝒪_S` at the image of `M`
-  (`IsDedekindDomain.integer_isLocalization_algebraMapSubmonoid`). When the class group of `R` is
+  (`IsDedekindDomain.integer_isLocalization_algebraMapSubmonoid`, an instance of the general
+  `IsLocalization.isLocalization_algebraMapSubmonoid_of_injective`). When the class group of `R` is
   torsion, Mathlib's instance `IsDedekindDomain.isLocalizationSInteger` supplies this for the
   candidate denominators `M = Localization.submonoid S'`, for every `S'`; then `𝒪_S → 𝒪_{S'}`
   is the localization of `𝒪_S` at the images of the candidate denominators for `S'`. Given
@@ -69,21 +72,29 @@ variable {S S' : Set (HeightOneSpectrum R)}
 
 section Localization
 
-/-- **Every `R`-algebra map between rings of `S`-integers is the inclusion inside `K`.** An
-`S`-integer `x = a / b` with `a, b ∈ R` satisfies `x * b = a`, and an `R`-algebra map preserves
-this equation, which determines the image inside `K`. -/
+/-- **Every `R`-algebra map between rings of `S`-integers is the inclusion inside `K`.** Hence an
+`Algebra` structure on `𝒪_{S'}` over `𝒪_S` compatible with `R` is unique: it is
+`Subalgebra.inclusion`. -/
+@[simp]
 theorem coe_algebraMap_integer [Algebra (S.integer K) (S'.integer K)]
     [IsScalarTower R (S.integer K) (S'.integer K)] (x : S.integer K) :
     (algebraMap (S.integer K) (S'.integer K) x : K) = x := by
+  -- Write `x = a / b` with `a, b ∈ R`; the equation `x * b = a` is preserved by the map.
   obtain ⟨⟨a, b⟩, hab⟩ := IsLocalization.surj R⁰ (x : K)
   have hb : algebraMap R K b ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors b.property
   have hx : x * algebraMap R (S.integer K) b = algebraMap R (S.integer K) a :=
-    Subtype.ext hab
+    Subtype.ext (by simpa only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap] using hab)
   have hy := congrArg (fun y : S'.integer K ↦ (y : K))
     (congrArg (algebraMap (S.integer K) (S'.integer K)) hx)
   simp only [map_mul, ← IsScalarTower.algebraMap_apply, Subalgebra.coe_mul,
     Subalgebra.coe_algebraMap] at hy
   exact mul_right_cancel₀ hb (hy.trans hab.symm)
+
+/-- Every `R`-algebra map between rings of `S`-integers is injective. -/
+theorem algebraMap_integer_injective [Algebra (S.integer K) (S'.integer K)]
+    [IsScalarTower R (S.integer K) (S'.integer K)] :
+    Function.Injective (algebraMap (S.integer K) (S'.integer K)) := fun x y h ↦
+  Subtype.ext (by simpa only [coe_algebraMap_integer] using congrArg Subtype.val h)
 
 /-- **Enlarging the inverted primes is a localization.** If the `S'`-integers are the
 localization of `R` at a submonoid `M`, they are the localization of the `S`-integers at the
@@ -94,22 +105,13 @@ candidate denominators for `S'`. -/
 theorem integer_isLocalization_algebraMapSubmonoid [Algebra (S.integer K) (S'.integer K)]
     [IsScalarTower R (S.integer K) (S'.integer K)] (M : Submonoid R)
     [IsLocalization M (S'.integer K)] :
-    IsLocalization (Algebra.algebraMapSubmonoid (S.integer K) M) (S'.integer K) where
-  map_units := by
-    rintro ⟨_, m, hm, rfl⟩
-    rw [← IsScalarTower.algebraMap_apply]
-    exact IsLocalization.map_units _ ⟨m, hm⟩
-  surj z := by
-    obtain ⟨⟨a, m⟩, hz⟩ := IsLocalization.surj M z
-    refine ⟨⟨algebraMap R _ a, ⟨_, m, m.property, rfl⟩⟩, ?_⟩
-    simpa only [← IsScalarTower.algebraMap_apply] using hz
-  exists_of_eq {x y} hxy := ⟨1, by
-    rw [Subtype.ext_iff, coe_algebraMap_integer, coe_algebraMap_integer, ← Subtype.ext_iff] at hxy
-    rw [hxy]⟩
+    IsLocalization (Algebra.algebraMapSubmonoid (S.integer K) M) (S'.integer K) :=
+  IsLocalization.isLocalization_algebraMapSubmonoid_of_injective M (algebraMap_integer_injective K)
 
 /-- **The inclusion is the map of denominator presentations.** Given presentations
 `𝒪_S = M⁻¹R` and `𝒪_{S'} = M'⁻¹R` with `M ≤ M'`, the map of localizations induced by the identity
 of `R` is the inclusion inside `K`. -/
+@[simp]
 theorem coe_isLocalization_map_integer {M M' : Submonoid R} [IsLocalization M (S.integer K)]
     [IsLocalization M' (S'.integer K)] (hM : M ≤ M') (x : S.integer K) :
     (IsLocalization.map (S'.integer K) (RingHom.id R) hM x : K) = x := by
@@ -157,8 +159,7 @@ noncomputable def integerPrimeUnderOfSubset (h : S ⊆ S') (P : HeightOneSpectru
     integer_comap_ne_bot K S' P.ne_bot <| by
       rw [← AlgHom.comp_algebraMap (Subalgebra.inclusion (Set.integer_mono K h)),
         ← Ideal.comap_comap, hbot]
-      exact Ideal.comap_bot_of_injective _ fun a b hab ↦
-        IsFractionRing.injective R K (congrArg Subtype.val hab)
+      exact Ideal.comap_bot_of_injective _ (FaithfulSMul.algebraMap_injective R (S.integer K))
 
 @[simp]
 lemma integerPrimeUnderOfSubset_asIdeal (h : S ⊆ S') (P : HeightOneSpectrum (S'.integer K)) :
