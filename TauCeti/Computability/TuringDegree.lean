@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Indicator
 public import Mathlib.Computability.Reduce
 public import Mathlib.Computability.TuringDegree
 public import TauCeti.Data.Nat.Pairing
-import TauCeti.Computability.Primrec.Pairing
+import TauCeti.Computability.RE
 import TauCeti.Computability.RecursiveIn
 
 /-!
@@ -43,8 +43,8 @@ functions; on sets, it is the degree of the computable sets.
 
 ## Main results
 
-* `ManyOneReducible.turingReducible_oracle`: a many-one reduction of sets gives a Turing reduction
-  of their oracles.
+* `ManyOneReducible.turingReducible_oracle`, `OneOneReducible.turingReducible_oracle`: a many-one
+  or one-one reduction of sets gives a Turing reduction of their oracles.
 * `TuringReducible.turingJoin_left`, `TuringReducible.turingJoin_right`,
   `PFun.turingJoin_turingReducible_iff`: the Turing join is the least upper bound for Turing
   reducibility.
@@ -57,7 +57,7 @@ functions; on sets, it is the degree of the computable sets.
 * `Set.partrec_oracle_iff`: partial computability of a set oracle is equivalent to computability
   of membership.
 * `Set.turingReducible_empty_iff`: reducibility to the empty oracle characterizes computable sets.
-* `Set.turingReducible_oracle_empty_iff`: reducibility to the empty oracle characterizes partial
+* `TauCeti.turingReducible_oracle_empty_iff`: reducibility to the empty oracle characterizes partial
   computable functions.
 * `Set.union_turingReducible`, `TuringReducible.inter_oracle`: if two sets reduce to an oracle, so
   do their union and their intersection.
@@ -72,10 +72,14 @@ functions; on sets, it is the degree of the computable sets.
   `Set.toAntisymmetrization_oracle_preimage_equiv`, `Set.toAntisymmetrization_oracle_image_equiv`:
   the preimage and the image of a set under a computable permutation of the naturals are Turing
   equivalent to the set, and have its degree.
+* `Set.oracle_image_turingEquivalent_of_leftInverse`,
+  `Set.toAntisymmetrization_oracle_image_of_leftInverse`: more generally, the image of a set under
+  a computable function with a computable left inverse and computable range is Turing equivalent
+  to the set, and has its degree.
 * `Set.oracle_inter_pairColumn_turingEquivalent`,
   `Set.toAntisymmetrization_oracle_inter_pairColumn`: the part of a set in a column is Turing
   equivalent to the corresponding section, and has the same degree.
-* `TuringDegree.toAntisymmetrization_eq_bot_iff`: the least degree consists of the partial
+* `TauCeti.toAntisymmetrization_eq_bot_iff`: the least degree consists of the partial
   computable functions.
 * `Function.turingEquivalent_oracle_preimage_unpair_graph`: graph coding, a total function is
   Turing equivalent to the set of codes `Nat.pair x (g x)` of its graph.
@@ -159,18 +163,22 @@ theorem empty_turingReducible (g : ℕ →. ℕ) : TuringReducible (∅ : Set �
   rw [oracle_empty]
   exact (Computable.const 0).partrec.turingReducible
 
+end Set
+
 /-- A partial function is Turing reducible to the empty oracle exactly when it is partial
 computable. This is a `simp↓` lemma so that it fires before `Set.oracle_empty`. -/
 @[simp↓]
-theorem turingReducible_oracle_empty_iff {f : ℕ →. ℕ} :
+theorem TauCeti.turingReducible_oracle_empty_iff {f : ℕ →. ℕ} :
     TuringReducible f (∅ : Set ℕ).oracle ↔ Partrec f := by
-  rw [TuringReducible, oracle_empty]
+  rw [TuringReducible, Set.oracle_empty]
   exact TauCeti.recursiveIn_const_iff
+
+namespace Set
 
 /-- A set is Turing reducible to the empty oracle exactly when its membership is computable. -/
 theorem turingReducible_empty_iff (A : Set ℕ) :
     TuringReducible A.oracle (∅ : Set ℕ).oracle ↔ ComputablePred (· ∈ A) :=
-  turingReducible_oracle_empty_iff.trans (partrec_oracle_iff A)
+  TauCeti.turingReducible_oracle_empty_iff.trans (partrec_oracle_iff A)
 
 /-- If `A` and `B` are Turing reducible to an oracle `g`, so is `A ∪ B`: take the maximum of the
 two answers. -/
@@ -269,6 +277,11 @@ theorem ManyOneReducible.turingReducible_oracle {A B : Set ℕ}
   · simp [hn, (hAB n).1 hn]
   · simp [hn, mt (hAB n).2 hn]
 
+/-- A one-one reduction of sets of naturals gives a Turing reduction of their oracles. -/
+theorem OneOneReducible.turingReducible_oracle {A B : Set ℕ}
+    (h : OneOneReducible (· ∈ A) (· ∈ B)) : TuringReducible A.oracle B.oracle :=
+  h.to_many_one.turingReducible_oracle
+
 /-- Many-one equivalent sets of naturals have Turing equivalent oracles. -/
 theorem ManyOneEquiv.turingEquivalent_oracle {A B : Set ℕ} (h : ManyOneEquiv (· ∈ A) (· ∈ B)) :
     TuringEquivalent A.oracle B.oracle :=
@@ -303,11 +316,32 @@ theorem toAntisymmetrization_oracle_preimage_equiv (A : Set ℕ) {e : ℕ ≃ �
       toAntisymmetrization TuringReducible A.oracle :=
   (toAntisymmetrization_eq TuringReducible _ _).2 (A.oracle_preimage_turingEquivalent he)
 
+/-- The image of a set under a computable function `f` with a computable left inverse `g` and
+computable range is Turing equivalent to the set: `n ∈ f '' A` exactly when `n ∈ range f` and
+`g n ∈ A`, and `x ∈ A` exactly when `f x ∈ f '' A`. -/
+theorem oracle_image_turingEquivalent_of_leftInverse (A : Set ℕ) {f g : ℕ → ℕ}
+    (hf : Computable f) (hg : Computable g) (hgf : Function.LeftInverse g f)
+    (hrange : ComputablePred (· ∈ range f)) : TuringEquivalent (f '' A).oracle A.oracle :=
+  ⟨hgf.image_eq A ▸ (hrange.oracle_turingReducible _).inter_oracle
+      (A.oracle_preimage_turingReducible hg),
+    by simpa only [hgf.injective.preimage_image] using (f '' A).oracle_preimage_turingReducible hf⟩
+
+/-- The image of a set under a computable function with a computable left inverse and computable
+range has the degree of the set. -/
+theorem toAntisymmetrization_oracle_image_of_leftInverse (A : Set ℕ) {f g : ℕ → ℕ}
+    (hf : Computable f) (hg : Computable g) (hgf : Function.LeftInverse g f)
+    (hrange : ComputablePred (· ∈ range f)) :
+    toAntisymmetrization TuringReducible (f '' A).oracle =
+      toAntisymmetrization TuringReducible A.oracle :=
+  (toAntisymmetrization_eq TuringReducible _ _).2
+    (A.oracle_image_turingEquivalent_of_leftInverse hf hg hgf hrange)
+
 /-- The image of a set under a computable permutation of the naturals is Turing equivalent to the
 set. -/
 theorem oracle_image_turingEquivalent (A : Set ℕ) {e : ℕ ≃ ℕ} (he : e.Computable) :
     TuringEquivalent (e '' A).oracle A.oracle :=
-  e.image_eq_preimage_symm A ▸ A.oracle_preimage_turingEquivalent he.symm
+  A.oracle_image_turingEquivalent_of_leftInverse he.1 he.2 e.left_inv <|
+    ComputablePred.computable_iff.2 ⟨fun _ => true, Computable.const true, by ext; simp⟩
 
 /-- The image of a set under a computable permutation of the naturals has the degree of the
 set. -/
@@ -321,17 +355,12 @@ theorem toAntisymmetrization_oracle_image_equiv (A : Set ℕ) {e : ℕ ≃ ℕ} 
 `{x | ⟨x, e⟩ ∈ A}`. -/
 theorem oracle_inter_pairColumn_turingEquivalent (A : Set ℕ) (e : ℕ) :
     TuringEquivalent (A ∩ e.pairColumn).oracle ((Nat.pair · e) ⁻¹' A).oracle := by
-  -- a pair `n` in the column `e` lies in `A` exactly when its first coordinate lies in the section
-  have hA : A ∩ e.pairColumn = (fun n => n.unpair.1) ⁻¹' ((Nat.pair · e) ⁻¹' A) ∩ e.pairColumn := by
-    ext n
-    simp only [mem_inter_iff, Nat.mem_pairColumn, mem_preimage]
-    constructor <;> rintro ⟨h, rfl⟩ <;> simpa using h
-  refine ⟨hA ▸ TuringReducible.inter_oracle
-    (oracle_preimage_turingReducible _ (Primrec.fst.comp Primrec.unpair).to_comp)
-    (e.computablePred_mem_pairColumn.oracle_turingReducible _), ?_⟩
-  simpa [Nat.pairColumn_eq_range_pair, preimage_inter_range] using
-    (A ∩ e.pairColumn).oracle_preimage_turingReducible
-      (Primrec₂.natPair.comp Primrec.id (Primrec.const e)).to_comp
+  -- the part of `A` in the column is the image of the section under `(Nat.pair · e)`
+  rw [Nat.pairColumn_eq_range_pair, ← image_preimage_eq_inter_range]
+  exact oracle_image_turingEquivalent_of_leftInverse _
+    (Primrec₂.natPair.comp Primrec.id (Primrec.const e)).to_comp
+    (Primrec.fst.comp Primrec.unpair).to_comp (fun x => by simp)
+    (Nat.pairColumn_eq_range_pair e ▸ e.computablePred_mem_pairColumn)
 
 /-- The part of a set lying in the column `e.pairColumn` has the degree of its `e`-th section
 `{x | ⟨x, e⟩ ∈ A}`. -/
@@ -455,6 +484,10 @@ noncomputable instance instOrderBot : OrderBot TuringDegree where
     induction a using Antisymmetrization.ind with | _ f
     exact TauCeti.turingDegree_le_iff.2 (Set.empty_turingReducible f)
 
+end TuringDegree
+
+namespace TauCeti
+
 /-- The degree of the empty set is the least degree. -/
 @[simp↓]
 theorem toAntisymmetrization_oracle_empty :
@@ -465,10 +498,10 @@ theorem toAntisymmetrization_oracle_empty :
 @[simp]
 theorem toAntisymmetrization_eq_bot_iff {f : ℕ →. ℕ} :
     toAntisymmetrization TuringReducible f = ⊥ ↔ Partrec f := by
-  rw [← le_bot_iff, ← toAntisymmetrization_oracle_empty, TauCeti.turingDegree_le_iff]
-  exact Set.turingReducible_oracle_empty_iff
+  rw [← le_bot_iff, ← toAntisymmetrization_oracle_empty, turingDegree_le_iff]
+  exact turingReducible_oracle_empty_iff
 
-end TuringDegree
+end TauCeti
 
 /-! ### The parity join of sets -/
 

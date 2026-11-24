@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Computability.Jump.Basic
-import TauCeti.Computability.Primrec.Pairing
 import TauCeti.Computability.RE
 
 /-!
@@ -45,7 +44,7 @@ example : toAntisymmetrization TuringReducible ({0, 3, 5} : Set ℕ).oracle = �
 
 -- A column `{⟨x, e⟩ | x : ℕ}` has the least degree, although it is infinite.
 example (e : ℕ) : toAntisymmetrization TuringReducible e.pairColumn.oracle = ⊥ := by
-  rw [TuringDegree.toAntisymmetrization_eq_bot_iff, Set.partrec_oracle_iff]
+  rw [TauCeti.toAntisymmetrization_eq_bot_iff, Set.partrec_oracle_iff]
   exact e.computablePred_mem_pairColumn
 
 -- The halting set is a noncomputable subset of `Set.univ`, which has the least degree as the
@@ -56,7 +55,7 @@ example :
       ¬TuringReducible (∅ : Set ℕ).jump.oracle (Set.univ : Set ℕ).oracle := by
   have huniv : toAntisymmetrization TuringReducible (Set.univ : Set ℕ).oracle = ⊥ := by
     rw [← Set.compl_empty, Set.toAntisymmetrization_oracle_compl,
-      TuringDegree.toAntisymmetrization_oracle_empty]
+      TauCeti.toAntisymmetrization_oracle_empty]
   refine ⟨Set.subset_univ _, huniv, fun h => Set.not_computablePred_mem_jump ∅ ?_⟩
   have hK : toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle = ⊥ :=
     le_bot_iff.1 (huniv ▸ TauCeti.turingDegree_le_iff.2 h)
