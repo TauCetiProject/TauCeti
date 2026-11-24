@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Operator.LinearPMap.Yosida
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 public import TauCeti.Analysis.Semigroups.Dissipative.Basic
 import TauCeti.Analysis.Normed.Algebra.Exponential
-import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Yosida approximations
@@ -282,18 +281,17 @@ theorem exp_yosidaApproximation_uniformCauchySeqOn_compact_of_mem {A : X →ₗ.
     UniformCauchySeqOn
       (fun lambda t : ℝ => exp (t • yosidaApproximation A lambda) (x : X))
       Filter.atTop (Set.Icc 0 T) := by
-  apply TauCeti.uniformCauchySeqOn_of_dist_le_mul_dist
-    (tendsto_yosidaApproximation_apply_atTop hres hbound hdense x) (M * M * max T 0)
-  filter_upwards [(Filter.eventually_gt_atTop (0 : ℝ)).prod_mk
-    (Filter.eventually_gt_atTop (0 : ℝ))] with p hp
-  intro t ht
-  have hcompare := norm_exp_smul_sub_exp_smul_apply_le_of_commute
-    (yosidaApproximation A p.1) (yosidaApproximation A p.2)
-    (LinearPMap.yosidaApproximation_comm (hres p.1 hp.1) (hres p.2 hp.2))
-    (fun s hs => hexp p.1 hp.1 s hs) (fun s hs => hexp p.2 hp.2 s hs) ht.1 (x : X)
-  simp only [sub_apply, ← dist_eq_norm] at hcompare
-  exact hcompare.trans (mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_left (ht.2.trans (le_max_left T 0)) (mul_self_nonneg M)) dist_nonneg)
+  refine uniformCauchySeqOn_exp_smul_apply_of_tendsto
+    (M := M) (R := max T 0) ?_
+    (tendsto_yosidaApproximation_apply_atTop hres hbound hdense x) ?_ ?_
+  · filter_upwards [(Filter.eventually_gt_atTop (0 : ℝ)).prod_mk
+      (Filter.eventually_gt_atTop (0 : ℝ))] with p hp
+    exact LinearPMap.yosidaApproximation_comm (hres p.1 hp.1) (hres p.2 hp.2)
+  · filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with lambda hlambda t ht s hs
+    exact hexp lambda hlambda (s * t) (mul_nonneg hs.1 ht.1)
+  · intro t ht
+    rw [abs_of_nonneg ht.1]
+    exact ht.2.trans (le_max_left T 0)
 
 /-- The bounded Yosida semigroups are Cauchy uniformly on every compact time interval, on every
 vector of the Banach space.

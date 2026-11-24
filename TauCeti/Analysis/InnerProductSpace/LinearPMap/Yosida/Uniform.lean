@@ -6,11 +6,11 @@ Authors: Jon Crall, Claude Opus 5, OpenAI GPT-6
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Yosida.Basic
-public import TauCeti.Analysis.InnerProductSpace.Exponential
+import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 import TauCeti.Analysis.Semigroups.Group.Stone.Basic
 public import TauCeti.Analysis.Normed.Operator.Dense
 public import Mathlib.Data.PNat.Basic
-import TauCeti.Topology.MetricSpace.Pseudo.Basic
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Uniform convergence of Yosida exponential approximants
@@ -56,7 +56,8 @@ in the Kitware DKPS formalization at `b9a02d00c`
      group law and unitarity, all of which Mathlib already has.
   2. Norm preservation comes directly from the native bounded Stone group.
      The Duhamel estimate specializes the native bounded-semigroup comparison
-     at time one with bounds equal to one, using real restrictions of scaled generators.
+     through one shared bounded-generator uniform-Cauchy criterion. It uses time-one
+     comparison for scaled generators, covering signed times directly.
 -/
 
 public section
@@ -79,7 +80,6 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
     (hε : 0 < ε) : ∃ N : ℕ+, ∀ m ≥ N, ∀ n ≥ N, ∀ t : ℝ, |t| ≤ R →
       ‖NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (m : ℝ))) x -
         NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ < ε := by
-  let K := max R 0 + 1
   have hbound : ∀ᶠ n : ℕ+ in atTop, ∀ t ∈ {t : ℝ | |t| ≤ R}, ‖yosidaFlow A n t‖ ≤ 1 := by
     exact Filter.Eventually.of_forall fun n t _ =>
       Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le _
@@ -89,22 +89,18 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
     intro y hy
     have hconv := ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).mono_left
       atTop_le_cocompact).comp (tendsto_natCast_atTop_atTop.comp tendsto_PNat_val_atTop_atTop)
-    apply uniformCauchySeqOn_of_dist_le_mul_dist hconv K
-    exact Filter.Eventually.of_forall fun p t ht => by
-      have htK : |t| ≤ K := le_trans ht
-        (le_trans (le_max_left R 0) (by dsimp [K]; linarith))
-      calc
-        dist (yosidaFlow A p.1 t y) (yosidaFlow A p.2 t y) ≤
-            |t| * dist (A.symmetricYosidaApproximation (p.1 : ℝ) y)
-              (A.symmetricYosidaApproximation (p.2 : ℝ) y) := by
-          simpa only [yosidaFlow, dist_eq_norm, sub_apply] using
-            ContinuousLinearMap.norm_exp_smul_I_sub_exp_smul_I_apply_le
-              (hA.isSelfAdjoint_symmetricYosidaApproximation (p.1 : ℝ))
-              (hA.isSelfAdjoint_symmetricYosidaApproximation (p.2 : ℝ))
-              (hA.commute_symmetricYosidaApproximation (p.1 : ℝ) (p.2 : ℝ)) t y
-        _ ≤ K * dist (A.symmetricYosidaApproximation (p.1 : ℝ) y)
-            (A.symmetricYosidaApproximation (p.2 : ℝ) y) :=
-          mul_le_mul_of_nonneg_right htK dist_nonneg
+    have h := Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto
+      (G := fun n : ℕ+ => I • A.symmetricYosidaApproximation (n : ℝ))
+      (S := {t : ℝ | |t| ≤ R}) (M := 1) (R := R)
+      (Filter.Eventually.of_forall fun p =>
+        ((hA.commute_symmetricYosidaApproximation (p.1 : ℝ) (p.2 : ℝ)).smul_left I).smul_right I)
+      (hconv.const_smul I)
+      (Filter.Eventually.of_forall fun n t _ s _ => by
+        simpa only [Complex.coe_smul] using!
+          Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le _
+            (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ)) (s * t))
+      (fun _ ht => ht)
+    simpa only [yosidaFlow, Complex.coe_smul] using! h
   have hu := ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense
     (f := yosidaFlow A) (C := 1) hA.dense_domain hbound hdomain x
   obtain ⟨N, hN⟩ := Metric.uniformCauchySeqOn_iff.mp hu ε hε

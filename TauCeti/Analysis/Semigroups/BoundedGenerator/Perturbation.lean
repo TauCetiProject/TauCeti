@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Basic
 import TauCeti.Analysis.SpecialFunctions.Exponential
+import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Comparing commuting bounded-generator semigroups
 
 This file gives the perturbation estimate needed to compare the bounded semigroups in the
 Yosida approximation. If bounded operators `A` and `B` commute and their exponentials are bounded
-by `M` and `N` at nonnegative times, then
+by `M` and `N` between zero and `t`, then
 
 `‖exp (t A) x - exp (t B) x‖ ≤ M * N * t * ‖(A - B) x‖`.
 
@@ -28,10 +29,12 @@ dissipative operator have contractive exponentials, but under the Hille--Yosida 
 general growth constant `M` they only satisfy `‖exp (t A_lambda)‖ ≤ M`, and the resulting
 comparison carries the factor `M ^ 2`.
 
-## Main result
+## Main results
 
 * `TauCeti.Semigroups.norm_exp_smul_sub_exp_smul_apply_le_of_commute`: the pointwise comparison
-  estimate for commuting exponentials with uniform bounds.
+  estimate for commuting exponentials with bounds on the required time segment.
+* `TauCeti.Semigroups.uniformCauchySeqOn_exp_smul_apply_of_tendsto`: strong convergence of
+  eventually commuting generators gives uniform Cauchy convergence on bounded time sets.
 
 ## References
 
@@ -52,22 +55,22 @@ variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜
   [CompleteSpace X]
 
 /-- If `A` and `B` commute and their bounded-generator semigroups obey the uniform bounds `M` and
-`N` at nonnegative times, then their orbits differ by at most
+`N` between zero and `t`, then their orbits differ by at most
 
 `‖exp (t A) x - exp (t B) x‖ ≤ M * N * t * ‖(A - B) x‖` for `t ≥ 0`.
 
 This is the bounded Duhamel estimate in the commuting case; the contraction case is `M = N = 1`. -/
-theorem norm_exp_smul_sub_exp_smul_apply_le_of_commute {M N : ℝ} (A B : X →L[𝕜] X)
+theorem norm_exp_smul_sub_exp_smul_apply_le_of_commute {M N t : ℝ} (A B : X →L[𝕜] X)
     (hcomm : Commute A B)
-    (hA : ∀ s : ℝ, 0 ≤ s → ‖exp ((s : 𝕜) • A)‖ ≤ M)
-    (hB : ∀ s : ℝ, 0 ≤ s → ‖exp ((s : 𝕜) • B)‖ ≤ N)
-    {t : ℝ} (ht : 0 ≤ t) (x : X) :
+    (hA : ∀ s ∈ Icc 0 t, ‖exp ((s : 𝕜) • A)‖ ≤ M)
+    (hB : ∀ s ∈ Icc 0 t, ‖exp ((s : 𝕜) • B)‖ ≤ N)
+    (ht : 0 ≤ t) (x : X) :
     ‖exp ((t : 𝕜) • A) x - exp ((t : 𝕜) • B) x‖ ≤ M * N * t * ‖(A - B) x‖ := by
   let : NormedSpace ℝ X := .restrictScalars ℝ 𝕜 X
   let : NormedAlgebra ℝ (X →L[𝕜] X) := .restrictScalars ℝ 𝕜 _
   let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
   simp only [← RCLike.real_smul_eq_coe_smul] at hA hB ⊢
-  have hN : 0 ≤ N := (norm_nonneg _).trans (hB 0 le_rfl)
+  have hN : 0 ≤ N := (norm_nonneg _).trans (hB 0 ⟨le_rfl, ht⟩)
   have hsum : t • A + t • (B - A) = t • B := by module
   have hint := TauCeti.intervalIntegrable_exp_smul_mul_mul_exp_smul
     (t • A + t • (B - A)) (t • (B - A)) (t • A)
@@ -95,17 +98,45 @@ theorem norm_exp_smul_sub_exp_smul_apply_le_of_commute {M N : ℝ} (A B : X →L
               ‖exp ((s * t) • A) ((t • (B - A)) x)‖ := ContinuousLinearMap.le_opNorm _ _
       _ ≤ N * ‖exp ((s * t) • A) ((t • (B - A)) x)‖ := by
         gcongr
-        exact hB ((1 - s) * t) (mul_nonneg hone_sub_nonneg ht)
+        exact hB ((1 - s) * t) ⟨mul_nonneg hone_sub_nonneg ht, by nlinarith [hs_nonneg]⟩
       _ ≤ N * (M * ‖(t • (B - A)) x‖) :=
         mul_le_mul_of_nonneg_left
           ((ContinuousLinearMap.le_opNorm _ _).trans
-            (mul_le_mul_of_nonneg_right (hA (s * t) (mul_nonneg hs_nonneg ht)) (norm_nonneg _)))
+            (mul_le_mul_of_nonneg_right
+              (hA (s * t) ⟨mul_nonneg hs_nonneg ht, mul_le_of_le_one_left ht hs.2⟩)
+              (norm_nonneg _)))
           hN
       _ = M * N * t * ‖(A - B) x‖ := by
         rw [smul_apply, norm_smul, Real.norm_eq_abs, abs_of_nonneg ht,
           ← neg_sub, neg_apply, norm_neg]
         ring
   · simp
+
+/-- If bounded generators eventually commute pairwise and converge on a vector, their
+exponential orbits on that vector are uniformly Cauchy on a bounded set of real times.
+Only a uniform exponential bound along the segments from zero to those times is needed. -/
+theorem uniformCauchySeqOn_exp_smul_apply_of_tendsto {ι : Type*} {l : Filter ι}
+    {G : ι → X →L[𝕜] X} {x y : X} {S : Set ℝ} {M R : ℝ}
+    (hcomm : ∀ᶠ p in l ×ˢ l, Commute (G p.1) (G p.2))
+    (hconv : Filter.Tendsto (fun i => G i x) l (nhds y))
+    (hbound : ∀ᶠ i in l, ∀ t ∈ S, ∀ s ∈ Icc (0 : ℝ) 1,
+      ‖exp (((s * t : ℝ) : 𝕜) • G i)‖ ≤ M)
+    (htime : ∀ t ∈ S, |t| ≤ R) :
+    UniformCauchySeqOn (fun i (t : ℝ) => exp ((t : 𝕜) • G i) x) l S := by
+  apply TauCeti.uniformCauchySeqOn_of_dist_le_mul_dist hconv (M * M * R)
+  filter_upwards [hcomm, hbound.prod_mk hbound] with p hc hb
+  intro t ht
+  have hcompare := norm_exp_smul_sub_exp_smul_apply_le_of_commute
+    ((t : 𝕜) • G p.1) ((t : 𝕜) • G p.2)
+    ((hc.smul_left (t : 𝕜)).smul_right (t : 𝕜))
+    (fun s hs => by simpa only [smul_smul, RCLike.ofReal_mul] using! hb.1 t ht s hs)
+    (fun s hs => by simpa only [smul_smul, RCLike.ofReal_mul] using! hb.2 t ht s hs)
+    (by norm_num : (0 : ℝ) ≤ 1) x
+  simp only [RCLike.ofReal_one, one_smul, mul_one, ← smul_sub, smul_apply,
+    norm_smul, RCLike.norm_ofReal, sub_apply, ← dist_eq_norm] at hcompare
+  rw [← mul_assoc] at hcompare
+  exact hcompare.trans (mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left (htime t ht) (mul_self_nonneg M)) dist_nonneg)
 
 end TauCeti.Semigroups
 
