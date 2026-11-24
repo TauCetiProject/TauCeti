@@ -54,6 +54,8 @@ parity of the number of steps the endomorphism moves a single vertex.
   `SimpleGraph.IsBipartiteWith.isVertexCover_right`,
   `SimpleGraph.IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet`: vertex covers
   associated with a bipartition.
+* `SimpleGraph.IsBipartite.exists_sign`: a bipartite graph carries a sign `±1` changing along
+  every edge.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
 * `SimpleGraph.Coloring.forall_apply_eq_or_forall_apply_eq_not`: on a preconnected graph, an
@@ -225,6 +227,21 @@ theorem isBipartite_cycleGraph_iff {n : ℕ} : (cycleGraph n).IsBipartite ↔ Ev
   · rintro (h | rfl)
     · exact IsBipartite.cycleGraph_of_even h
     · exact (colorable_of_fintype _).mono (by simp)
+
+/-- **The sign of a two-colouring.** A bipartite graph carries a sign `ε v = ±1`, with values in
+any type with one and an involutive negation, which changes along every edge. -/
+theorem IsBipartite.exists_sign {R : Type*} [One R] [InvolutiveNeg R] {G : SimpleGraph V}
+    (hG : G.IsBipartite) :
+    ∃ ε : V → R, (∀ ⦃v w⦄, G.Adj v w → ε v = -ε w) ∧ ∀ v, ε v = 1 ∨ ε v = -1 := by
+  obtain ⟨c⟩ := hG
+  refine ⟨fun v ↦ if c v = 0 then 1 else -1, fun v w h ↦ ?_, fun v ↦ ?_⟩
+  · have hc := c.valid h
+    beta_reduce
+    revert hc
+    generalize c v = x, c w = y
+    fin_cases x <;> fin_cases y <;> simp
+  · beta_reduce
+    split_ifs <;> simp
 
 end SimpleGraph
 

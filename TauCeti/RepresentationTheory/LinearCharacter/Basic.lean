@@ -121,6 +121,16 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
 
+/-- The kernel of the line of a linear character is the kernel of the character. -/
+@[simp]
+theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
+    (ofLinearCharacter χ).ker = χ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker]
+  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h 1
+  · simp [h]
+
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
 theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :
@@ -260,11 +270,6 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
   choose c hc using fun g => hW.exists_forall_apply_eq_smul (W.ρ g) fun h v => by
     rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
-  have hmul (g h : G) : c (g * h) = c g * c h := by
-    refine smul_left_injective k hv ?_
-    dsimp only
-    rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
-  have hone : c 1 = 1 := smul_left_injective k hv (by simp [← hc])
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
   let line : Subrepresentation W.ρ :=
     ⟨k ∙ v, fun g w hw => by
@@ -277,7 +282,10 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
     exact hmem
   have hfin : Module.finrank k W = 1 :=
     (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
-  let χ : G →* k := { toFun := c, map_one' := hone, map_mul' := hmul }
+  let χ : G →* k :=
+    { toFun := c
+      map_one' := Representation.map_one_of_forall_apply_eq_smul W.ρ hc
+      map_mul' := Representation.map_mul_of_forall_apply_eq_smul W.ρ hc }
   refine ⟨χ.toHomUnits, funext fun g => ?_⟩
   have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)
   simp [χ, character, hρ, hfin]

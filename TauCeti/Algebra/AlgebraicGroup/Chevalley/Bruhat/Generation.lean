@@ -48,6 +48,13 @@ theorem borelSubgroup_le_extendedElementarySubgroup :
     (D.rootSubgroupPoints_mem_elementarySubgroup A γ u),
     D.torusPoints_mem_extendedElementarySubgroup A⟩
 
+/-- The negative unipotent subgroup lies in the extended elementary subgroup. -/
+theorem negativePoints_le_extendedElementarySubgroup :
+    D.negativePoints A ≤ D.extendedElementarySubgroup A :=
+  D.negativePoints_le_iff.mpr fun γ _ u =>
+    D.elementarySubgroup_le_extendedElementarySubgroup A
+      (D.rootSubgroupPoints_mem_elementarySubgroup A γ u)
+
 /-- The Weyl subgroup lies in the extended elementary subgroup. -/
 theorem weylSubgroup_le_extendedElementarySubgroup :
     D.weylSubgroup A ≤ D.extendedElementarySubgroup A := by
