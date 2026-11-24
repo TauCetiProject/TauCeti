@@ -244,23 +244,24 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
     let D : (Σ n : Fin (N + 1), Fin n → Fin (Module.finrank ℝ E)) → 𝓢'(E, ℂ) :=
       fun i ↦ ∂^{b ∘ i.2} (delta x)
     -- Tempered distributions as linear functionals.
-    let toLin (S : 𝓢'(E, ℂ)) : 𝓢(E, ℂ) →ₗ[ℂ] ℂ :=
-      { toFun f := S f
-        map_add' := by simp
-        map_smul' := by simp }
+    let toLin := PointwiseConvergenceCLM.coeLM ℂ 𝓢(E, ℂ) ℂ
     have hker : ⨅ i, LinearMap.ker (toLin (D i)) ≤ LinearMap.ker (toLin T) := by
       intro f hf
       simp only [Submodule.mem_iInf, LinearMap.mem_ker] at hf
       refine hN f fun n hn ↦ ContinuousMultilinearMap.toMultilinearMap_injective
         (Module.Basis.ext_multilinear (fun _ ↦ b) fun v ↦ ?_)
       have := hf ⟨⟨n, Nat.lt_succ_of_le hn⟩, v ∘ Fin.rev⟩
-      simpa [toLin, D, SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, Function.comp_def]
-        using this
+      change (∂^{b ∘ (v ∘ Fin.rev)} (delta x)) f = 0 at this
+      rw [iteratedLineDerivOp_delta_apply, mul_eq_zero] at this
+      simpa only [ContinuousMultilinearMap.coe_coe, ContinuousMultilinearMap.toMultilinearMap_zero,
+        zero_apply, Function.comp_def, Fin.rev_rev] using
+        this.resolve_left (pow_ne_zero _ (by norm_num))
     obtain ⟨c, hc⟩ :=
       (Submodule.mem_span_range_iff_exists_fun ℂ).1 (mem_span_of_iInf_ker_le_ker hker)
     have hT : T = ∑ i, c i • D i := by
+      simp only [← map_smul, ← map_sum] at hc
       ext f
-      simpa [toLin] using (LinearMap.congr_fun hc f).symm
+      exact (LinearMap.congr_fun hc f).symm
     rw [hT]
     refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ?_)
     exact mem_iUnion.2 ⟨i.1, b ∘ i.2, rfl⟩
