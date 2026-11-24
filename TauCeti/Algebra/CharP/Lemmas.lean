@@ -17,7 +17,8 @@ In an additive monoid with one of exponential characteristic `p`, the natural-nu
 one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzero cast; this is how one picks a prime `ℓ`
 different from the characteristic of a field. In a nontrivial ring only the characteristic can
 vanish among the primes, so there are arbitrarily large primes with nonzero cast. A natural number
-prime to the characteristic of a nontrivial ring is nonzero. In characteristic a prime `p`, the
+prime to the characteristic of a nontrivial ring is nonzero; conversely, when the characteristic
+is prime, a natural number with nonzero cast is prime to it. In characteristic a prime `p`, the
 binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
 natural-number representative of the inverse of `m` modulo `p` inverts the cast of `m` when `m` is
 prime to `p`, so in a semiring of characteristic a prime `p` every natural number prime to `p` is a
@@ -38,6 +39,8 @@ law.
   nonzero cast.
 * `TauCeti.ne_zero_of_coprime_ringChar`: a natural number prime to the characteristic of a
   nontrivial ring is nonzero.
+* `TauCeti.coprime_ringChar_of_natCast_ne_zero`: when the characteristic is prime, a natural
+  number with nonzero cast is prime to it.
 * `TauCeti.natCast_choose_sub_one_eq_neg_one_pow`: `(p - 1).choose k = (-1) ^ k` in
   characteristic `p`.
 * `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
@@ -79,6 +82,12 @@ theorem ne_zero_of_coprime_ringChar {R : Type*} [NonAssocSemiring R] [Nontrivial
     (hm : m.Coprime (ringChar R)) : m ≠ 0 := by
   rintro rfl
   exact CharP.ringChar_ne_one (Nat.coprime_zero_left _ |>.1 hm)
+
+/-- When the characteristic of a semiring is prime, a natural number with nonzero cast is prime to
+it. -/
+theorem coprime_ringChar_of_natCast_ne_zero {R : Type*} [NonAssocSemiring R]
+    (hp : (ringChar R).Prime) {m : ℕ} (hm : (m : R) ≠ 0) : m.Coprime (ringChar R) :=
+  (hp.coprime_iff_not_dvd.2 fun h ↦ hm ((ringChar.spec R m).2 h)).symm
 
 /-- **Arbitrarily large primes have nonzero cast** in a nontrivial ring: a prime with zero cast is
 divisible by the characteristic, so it is the characteristic. -/
