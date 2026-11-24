@@ -19,10 +19,10 @@ a locally finite order with respect to lower intervals (`LocallyFiniteOrderBot`)
 map `FinsetWithGreatest.greatest` to `α` with cofinal range, and when `α` is directed so is
 `FinsetWithGreatest α`.
 
-Together with Deligne's theorem that every filtered category receives a final functor from a
-directed poset, this replaces any filtered or cofiltered indexing category by a cofinite directed
-poset, which is what inductive constructions over predecessor sets (matching objects of
-pro-objects, for instance) require.
+Together with Deligne's theorem that every small filtered category receives a final functor from
+a directed poset, this replaces any small filtered or cofiltered category by a cofinite directed
+poset in the same universe, which is what inductive constructions over predecessor sets
+(matching objects of pro-objects, for instance) require.
 
 ## Main definitions and results
 
@@ -46,8 +46,9 @@ namespace TauCeti
 
 variable (α : Type*) [Preorder α]
 
-/-- The finite subsets of `α` that have a greatest element, ordered by inclusion. The body is
-exposed because the compiler must see that this type is a subtype in importing modules. -/
+/-- The finite subsets of `α` that have a greatest element, ordered by inclusion. -/
+-- The body is exposed because the compiler must see that this type is a subtype in importing
+-- modules.
 @[expose]
 def FinsetWithGreatest : Type _ := {s : Finset α // ∃ a, IsGreatest (s : Set α) a}
 
