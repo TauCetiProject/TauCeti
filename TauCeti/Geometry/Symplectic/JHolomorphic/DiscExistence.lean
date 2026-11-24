@@ -104,9 +104,9 @@ for `h ↦ K(u)` is the second-difference estimate
   `|w| < 1/2` with `u(0) = 0`, `∂ₛu(0) = ξ` for each `‖ξ‖ ≤ 1`, which is `C¹` on `|w| < 2` and has
   values of norm at most `2` on the unit disc.
 * `TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`:
-  the same for the Beltrami equation `\bar∂u = Q(u) ∂u` with a coefficient small on the ball of
-  radius `4`; if it is also conjugate-linear on the ball of radius `2`, the family satisfies
-  `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
+  the same for the Beltrami equation `\bar∂u = Q(u) ∂u` when `Q(0) = 0` and `DQ` and its
+  Lipschitz constant are small on the closed ball of radius `4`; if `Q` is also conjugate-linear
+  on the closed ball of radius `2`, the family satisfies `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
 * `TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`: for a structure of class
   `C²` near `0`, a solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`, for every `ξ`.
 * `TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`: for
@@ -884,15 +884,14 @@ private theorem norm_neg_half_smul_apply_I_le :
     rw [norm_I, mul_one] at h
     exact (mul_le_of_le_one_left (norm_nonneg _) (by norm_num)).trans h
 
-/-- If `\bar∂u(z) = -(A - i)(∂ₜu(z)) / 2`, then `∂ₛu(z) + A(∂ₜu(z)) = 0`. -/
+/-- If `\bar∂u(z) = -(A(∂ₜu(z)) - i ∂ₜu(z)) / 2`, then `∂ₛu(z) + A(∂ₜu(z)) = 0`. -/
 private theorem fderiv_one_add_apply_fderiv_I_eq_zero_of_conjWirtingerDeriv_eq
-    {u : ℂ → F} {A : F →L[ℝ] F} {z : ℂ}
+    {u : ℂ → F} {A : F → F} {z : ℂ}
     (hbar : conjWirtingerDeriv u z 1 = (-(2 : ℝ)⁻¹) • (A (fderiv ℝ u z I) - I • fderiv ℝ u z I)) :
     fderiv ℝ u z 1 + A (fderiv ℝ u z I) = 0 := by
-  rw [conjWirtingerDeriv_apply, show (2 : ℂ)⁻¹ = ((2⁻¹ : ℝ) : ℂ) by push_cast; rfl,
-    Complex.coe_smul] at hbar
-  have h : fderiv ℝ u z 1 + I • fderiv ℝ u z I = -(A (fderiv ℝ u z I) - I • fderiv ℝ u z I) := by
-    simpa [neg_smul] using congrArg ((2 : ℝ) • ·) hbar
+  have h := fderiv_apply_one_add_I_smul_fderiv_apply_I u z
+  rw [hbar, ← Complex.coe_smul, smul_smul] at h
+  norm_num at h
   linear_combination (norm := module) h
 
 /-- **Discs solving `∂ₛu + J(u) ∂ₜu = 0` for a nearly constant structure.** There is `η > 0`,
