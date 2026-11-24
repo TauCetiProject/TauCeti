@@ -77,8 +77,8 @@ structure of `exp_E` are in `TauCeti.Analysis.SpecialFunctions.Elliptic.Exponent
 * `WeierstrassCurve.Projective.isOpenMap_exp`: `exp_E` is an open map.
 * `WeierstrassCurve.Projective.pullback_invariantDifferential_exp`: the global holomorphic,
   nowhere-zero invariant differential pulls back to `dz`.
-* `WeierstrassCurve.Projective.mvfderiv_localInverse_exp`: a continuous local inverse of `exp_E`
-  integrates the invariant differential.
+* `WeierstrassCurve.Projective.mvfderiv_eq_invariantDifferential_of_exp_comp_eventuallyEq_id`:
+  a continuous local inverse of `exp_E` integrates the invariant differential.
 * `WeierstrassCurve.Projective.exp_variableChange`: the rescaling of `exp_E` under a change of
   variables.
 
@@ -428,8 +428,8 @@ theorem isLocalDiffeomorphAt_exp {n : ℕ∞ω} (z : ℂ) :
 /-- **Local logarithms integrate the invariant differential**: if `g` is continuous at `Q` and
 inverts `exp_E` near `Q`, its differential at `Q` is the invariant differential at `Q`. No
 differentiability of `g` is assumed: it follows from the local invertibility of `exp_E`. -/
-theorem mvfderiv_localInverse_exp {g : W.Point → ℂ} {Q : W.Point} (hg : ContinuousAt g Q)
-    (hid : W.exp ∘ g =ᶠ[𝓝 Q] id) :
+theorem mvfderiv_eq_invariantDifferential_of_exp_comp_eventuallyEq_id {g : W.Point → ℂ}
+    {Q : W.Point} (hg : ContinuousAt g Q) (hid : W.exp ∘ g =ᶠ[𝓝 Q] id) :
     mvfderiv 𝓘(ℂ) g Q = W.invariantDifferential Q := by
   have hmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g Q := by
     have hcomp : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) 1 (W.exp ∘ g) Q :=
