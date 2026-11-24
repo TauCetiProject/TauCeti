@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.MulDistribMulAction
 
 /-!
 # Automorphisms acting on line-bundle classes, and their stabilizers
@@ -121,14 +122,19 @@ lemma autStabilizer_eq_comap (a : LineBundleClass X) :
 fixes `a`. -/
 @[simp]
 lemma mem_autStabilizer_iff {a : LineBundleClass X} {g : Aut (Over.mk f)} :
-    g ∈ f.autStabilizer a ↔ LineBundleClass.pullback g.asIso.hom.left a = a :=
-  LineBundleClass.smul_eq_self_iff _ a
+    g ∈ f.autStabilizer a ↔ LineBundleClass.pullback g.asIso.hom.left a = a := by
+  rw [autStabilizer_eq_comap, Subgroup.mem_comap]
+  refine (MulAction.mem_stabilizer_iff (G := Aut X)).trans ?_
+  rw [LineBundleClass.smul_eq_self_iff, Functor.mapAut_apply_asIso, Functor.mapIso_hom,
+    Over.forget_map]
 
 /-- An automorphism of `X` over `S` stabilizes a line-bundle class `a` exactly when pullback
 along its inverse fixes `a`. -/
 lemma mem_autStabilizer_iff_pullback_inv {a : LineBundleClass X} {g : Aut (Over.mk f)} :
-    g ∈ f.autStabilizer a ↔ LineBundleClass.pullback g.asIso.inv.left a = a :=
-  Iff.rfl
+    g ∈ f.autStabilizer a ↔ LineBundleClass.pullback g.asIso.inv.left a = a := by
+  rw [autStabilizer_eq_comap, Subgroup.mem_comap]
+  refine (MulAction.mem_stabilizer_iff (G := Aut X)).trans ?_
+  rw [LineBundleClass.smul_def, Functor.mapAut_apply_asIso, Functor.mapIso_inv, Over.forget_map]
 
 /-- An automorphism `g` of `X` over `S` stabilizes the class of a line bundle `L` exactly when
 `g^* L` is isomorphic to `L`. -/
@@ -139,60 +145,58 @@ lemma mem_autStabilizer_mk_iff {L : InvertibleSheaf X} {g : Aut (Over.mk f)} :
 
 /-- Every automorphism over `S` stabilizes the trivial line-bundle class. -/
 @[simp]
-lemma autStabilizer_one : f.autStabilizer 1 = ⊤ :=
-  eq_top_iff.2 fun _ _ ↦ (f.mem_autStabilizer_iff).2 (LineBundleClass.pullback_one _)
+lemma autStabilizer_one : f.autStabilizer 1 = ⊤ := by
+  rw [autStabilizer_eq_comap, MulAction.stabilizer_one, Subgroup.comap_top]
 
 /-- A line-bundle class and its inverse have the same stabilizer. -/
 @[simp]
 lemma autStabilizer_inv (a : LineBundleClass X) : f.autStabilizer a⁻¹ = f.autStabilizer a := by
-  ext g
-  simp only [mem_autStabilizer_iff, LineBundleClass.pullback_inv, inv_inj]
+  rw [autStabilizer_eq_comap, autStabilizer_eq_comap, MulAction.stabilizer_inv]
 
 /-- An automorphism stabilizing two line-bundle classes stabilizes their product. -/
 lemma autStabilizer_inf_le_mul (a b : LineBundleClass X) :
-    f.autStabilizer a ⊓ f.autStabilizer b ≤ f.autStabilizer (a * b) := fun g hg ↦ by
-  rw [Subgroup.mem_inf, mem_autStabilizer_iff, mem_autStabilizer_iff] at hg
-  rw [mem_autStabilizer_iff, LineBundleClass.pullback_mul, hg.1, hg.2]
+    f.autStabilizer a ⊓ f.autStabilizer b ≤ f.autStabilizer (a * b) := by
+  simp only [autStabilizer_eq_comap, ← Subgroup.comap_inf]
+  exact Subgroup.comap_mono (MulAction.stabilizer_inf_le_mul a b)
 
 /-- An automorphism stabilizing a line-bundle class stabilizes all of its integer powers. -/
 lemma autStabilizer_le_zpow (a : LineBundleClass X) (n : ℤ) :
-    f.autStabilizer a ≤ f.autStabilizer (a ^ n) := fun g hg ↦ by
-  rw [mem_autStabilizer_iff] at hg ⊢
-  rw [LineBundleClass.pullback_zpow, hg]
+    f.autStabilizer a ≤ f.autStabilizer (a ^ n) :=
+  Subgroup.comap_mono (MulAction.stabilizer_le_zpow a n)
 
 /-- An automorphism stabilizing a line-bundle class stabilizes all of its natural powers. -/
 lemma autStabilizer_le_pow (a : LineBundleClass X) (n : ℕ) :
-    f.autStabilizer a ≤ f.autStabilizer (a ^ n) := by
-  simpa only [zpow_natCast] using f.autStabilizer_le_zpow a n
+    f.autStabilizer a ≤ f.autStabilizer (a ^ n) :=
+  Subgroup.comap_mono (MulAction.stabilizer_le_pow a n)
 
 /-- In a torsion-free Picard group, a line-bundle class and its nonzero integer powers have the
 same stabilizer: if `(g^* a) ^ n = a ^ n` then `g^* a = a`. -/
 lemma autStabilizer_zpow [IsMulTorsionFree (LineBundleClass X)] (a : LineBundleClass X) {n : ℤ}
     (hn : n ≠ 0) : f.autStabilizer (a ^ n) = f.autStabilizer a := by
-  ext g
   have := IsMulTorsionFree.hasUniqueRoots (M := LineBundleClass X)
-  rw [mem_autStabilizer_iff, mem_autStabilizer_iff, LineBundleClass.pullback_zpow]
-  exact zpow_left_inj (G := LineBundleClass X) hn
+  rw [autStabilizer_eq_comap, autStabilizer_eq_comap, MulAction.stabilizer_zpow a hn]
 
 /-- In a torsion-free Picard group, a line-bundle class and its nonzero natural powers have the
 same stabilizer. In particular, an ample class and its positive multiples define the same
 polarized automorphism group. -/
 lemma autStabilizer_pow [IsMulTorsionFree (LineBundleClass X)] (a : LineBundleClass X) {n : ℕ}
     (hn : n ≠ 0) : f.autStabilizer (a ^ n) = f.autStabilizer a := by
-  simpa only [zpow_natCast] using f.autStabilizer_zpow a (Int.natCast_ne_zero.2 hn)
+  have := IsMulTorsionFree.hasUniqueRoots (M := LineBundleClass X)
+  rw [autStabilizer_eq_comap, autStabilizer_eq_comap, MulAction.stabilizer_pow a hn]
 
 /-- Conjugation by an isomorphism `e` of schemes over `S` carries the stabilizer of a class `a`
 onto the stabilizer of every class `a'` with `e^* a' = a`. -/
 lemma map_autStabilizer_autMulEquivOfIso (e : Over.mk f ≅ Over.mk f') {a : LineBundleClass X}
     {a' : LineBundleClass X'} (ha : LineBundleClass.pullback e.hom.left a' = a) :
     (f.autStabilizer a).map (Aut.autMulEquivOfIso e).toMonoidHom = f'.autStabilizer a' := by
-  have hpull (b : LineBundleClass X) :
-      LineBundleClass.pullback e.hom.left (LineBundleClass.pullback e.inv.left b) = b := by
-    rw [LineBundleClass.pullback_comp, ← Over.comp_left, e.hom_inv_id]
-    exact LineBundleClass.pullback_id b
-  have ha' : a' = LineBundleClass.pullback e.inv.left a := by
-    rw [← ha, LineBundleClass.pullback_comp, ← Over.comp_left, e.inv_hom_id]
-    exact (LineBundleClass.pullback_id a').symm
+  -- Pullback along `e.hom.left` is a group isomorphism with inverse pullback along `e.inv.left`.
+  let E := LineBundleClass.pullbackEquiv ((Over.forget S).mapIso e)
+  have hE (b : LineBundleClass X') : E b = LineBundleClass.pullback e.hom.left b :=
+    LineBundleClass.pullbackEquiv_apply _ b
+  have hEs (b : LineBundleClass X) : E.symm b = LineBundleClass.pullback e.inv.left b := by
+    rw [LineBundleClass.pullbackEquiv_symm, LineBundleClass.pullbackEquiv_apply]
+    rfl
+  have ha' : a' = E.symm a := E.eq_symm_apply.2 ((hE a').trans ha)
   ext g'
   obtain ⟨g, rfl⟩ := (Aut.autMulEquivOfIso e).surjective g'
   -- The inverse of the conjugate `e ∘ g ∘ e⁻¹` is `e ∘ g⁻¹ ∘ e⁻¹`.
@@ -202,9 +206,7 @@ lemma map_autStabilizer_autMulEquivOfIso (e : Over.mk f ≅ Over.mk f') {a : Lin
       Category.assoc]
   rw [Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply, mem_autStabilizer_iff_pullback_inv,
     mem_autStabilizer_iff_pullback_inv, ha', hconj, ← LineBundleClass.pullback_comp,
-    ← LineBundleClass.pullback_comp, hpull]
-  refine ⟨congrArg _, fun h ↦ ?_⟩
-  simpa only [hpull] using congrArg (LineBundleClass.pullback e.hom.left) h
+    ← LineBundleClass.pullback_comp, ← hE, E.apply_symm_apply, ← hEs, E.symm.apply_eq_iff_eq]
 
 /-- An isomorphism `e` of schemes over `S` with `e^* a' = a` induces, by conjugation, an
 isomorphism between the stabilizer of `a` and the stabilizer of `a'`: an isomorphism of polarized
