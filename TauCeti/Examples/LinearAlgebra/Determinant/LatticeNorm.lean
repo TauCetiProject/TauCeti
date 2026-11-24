@@ -73,8 +73,10 @@ noncomputable def oneOneTwoZero : Basis (Fin 2) ℚ (Fin 2 → ℚ) :=
 theorem detNorm_int_int_oneOne_twoZero :
     (span ℤ (range (Pi.basisFun ℚ (Fin 2)))).detNorm oneOneTwoZero = ℤ ∙ (1 / 2 : ℚ) := by
   rw [detNorm_eq_inv_smul_detNorm _ (Pi.basisFun ℚ (Fin 2)), detNorm_span_range_self,
-    one_eq_span, smul_span, smul_set_singleton, Pi.basisFun_det_apply, oneOneTwoZero,
-    Basis.coe_mk, ← span_neg, neg_singleton]
+    one_eq_span, smul_span, smul_set_singleton, oneOneTwoZero, Basis.coe_mk,
+    Pi.basisFun_det_apply]
+  -- The determinant is `-2`, so the generator `(-2)⁻¹` differs from `1 / 2` by the unit `-1`.
+  refine span_singleton_eq_span_singleton.2 ⟨-1, ?_⟩
   norm_num [Matrix.det_fin_two]
 
 end TauCeti.DetNormExamples

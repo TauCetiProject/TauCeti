@@ -141,13 +141,13 @@ theorem detNorm_span_range (v : ι → V) (b : Basis ι K V) :
     have hw' : w = v ∘ σ := funext fun i ↦ (hσ i).symm
     by_cases hinj : Function.Injective σ
     · -- A bijective reindexing changes the determinant by a sign.
-      have hσe : w = v ∘ Equiv.ofBijective σ (Finite.injective_iff_bijective.1 hinj) := hw'
+      have hσe : w = v ∘ Equiv.ofBijective σ (Finite.injective_iff_bijective.1 hinj) := by
+        ext i
+        simp [hw']
       rw [hσe, AlternatingMap.map_perm, Units.smul_def]
       exact zsmul_mem (mem_span_singleton_self _) _
     · -- A non-injective reindexing repeats a vector, so the determinant vanishes.
-      obtain ⟨i, j, hij, hne⟩ : ∃ i j, σ i = σ j ∧ i ≠ j := by
-        simpa [Function.Injective] using hinj
-      rw [b.det.map_eq_zero_of_eq w (by simp [hw', hij]) hne]
+      rw [b.det.map_eq_zero_of_not_injective w fun h ↦ hinj (hw' ▸ h).of_comp]
       exact zero_mem _
   · rintro _ rfl
     exact subset_span ⟨v, fun i _ ↦ mem_range_self i, rfl⟩
@@ -165,7 +165,8 @@ theorem detNorm_map (M : Submodule R V) (b : Basis ι K V) (f : V →ₗ[K] V) :
   have h : (univ.pi fun _ : ι ↦ ((M.map (f.restrictScalars R) : Submodule R V) : Set V)) =
       (fun v : ι → V ↦ f ∘ v) '' univ.pi fun _ ↦ (M : Set V) := by
     rw [map_coe, ← piMap_image_univ_pi]
-    rfl
+    ext w
+    simp [funext_iff, Pi.map_apply]
   rw [detNorm, detNorm, h, image_image, ← span_smul, ← image_smul, image_image]
   simp_rw [b.det_comp, smul_eq_mul]
 
