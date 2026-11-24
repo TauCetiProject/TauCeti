@@ -27,16 +27,17 @@ Laurent ring, which is the localization of a polynomial ring at its variables. I
 Laurent rings `ℤ[N]` and `ℤ[v^{±1}][N]` of a lattice `N` are factorial.
 
 For an arbitrary torsion-free abelian group `G`, such as the multiplicative group of a
-coefficient semifield, `R[G]` need not be factorial: in `ℤ[ℚ]` the non-unit `X^1 - 1` is
+coefficient semifield, `R[G]` need not be factorial. In `ℤ[ℚ]` the non-unit `X^1 - 1` is
 `(X^{1/2} - 1) (X^{1/2} + 1)`, and `X^{1/2} - 1` splits in the same way, so the principal ideals
-`(X^1 - 1) ⊊ (X^{1/2} - 1) ⊊ (X^{1/4} - 1) ⊊ ⋯` form an infinite strictly ascending chain, which
-a factorial ring cannot contain. What survives is the divisibility property that relatively prime elements are
-used for: `R[G]` is a decomposition monoid, so `a ∣ b * c` splits as `a = a₁ * a₂` with
-`a₁ ∣ b` and `a₂ ∣ c`. Indeed finitely many elements of `R[G]`, together with the witnesses of a
-divisibility among them, lie in the group algebra of a finitely generated subgroup, which is free
-because `G` is torsion-free, so that its group algebra is factorial. The same holds for the group
-algebras `(R[G])[N]` of torsion-free abelian groups `N` over such group algebras, which include
-the Laurent rings over them, since they are group algebras of `N × G` over `R`.
+`(X^1 - 1) ⊊ (X^{1/2} - 1) ⊊ (X^{1/4} - 1) ⊊ ⋯` form an infinite strictly ascending chain,
+which a factorial ring cannot contain. What survives is the divisibility property that relatively
+prime elements are used for: `R[G]` is a decomposition monoid, so `a ∣ b * c` splits as
+`a = a₁ * a₂` with `a₁ ∣ b` and `a₂ ∣ c`. Indeed finitely many elements of `R[G]`, together with
+the witnesses of a divisibility among them, lie in the group algebra of a finitely generated
+subgroup, which is free because `G` is torsion-free, so that its group algebra is factorial. The
+same holds for the group algebras `(R[G])[N]` of torsion-free abelian groups `N` over such group
+algebras, which include the Laurent rings over them, since they are group algebras of `N × G`
+over `R`.
 
 Consequently, in all of these rings two relatively prime elements `a` and `b` satisfy
 `(a) ∩ (b) = (a b)`, by
