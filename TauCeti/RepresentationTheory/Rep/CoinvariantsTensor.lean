@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.Rep.Ihom
+import TauCeti.RepresentationTheory.Rep.Free
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
@@ -26,8 +27,10 @@ Tensor coinvariants with a projective representation are exact in the other repr
 (`CategoryTheory.ShortComplex.ShortExact.map_coinvariantsTensor_projective`). For a free
 representation the natural identification with finitely supported coefficient families proves
 exactness. A projective representation is a retract of a free one, so the result holds without
-any flatness assumption on the coefficient representations. This supplies coefficient long exact
-sequences for projective-resolution computations of group homology.
+any flatness assumption on the coefficient representations, and tensor coinvariants with a
+projective representation preserve homology
+(`Rep.preservesHomology_coinvariantsTensor_flip_obj_of_projective`). This supplies coefficient long
+exact sequences for projective-resolution computations of group homology.
 
 For a `k`-module `N`, a `k`-linear map `X_G ⟶ N` out of the coinvariants is the same as a
 morphism of representations `X ⟶ N` to the trivial representation (`Rep.coinvariantsAdjunction`);
@@ -42,6 +45,9 @@ map of internal homs) and, contravariantly, in `A` (precomposition with the map 
 group, with precomposition by the compatible coefficient map on the internal-hom side
 (`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`). Being a left adjoint followed by a left
 adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvariantsTensor_obj`).
+
+Tensor coinvariants `(A ⊗ B)_G` are additive in each variable; Mathlib provides additivity in `B`,
+and this file adds it in `A`, both as a functor to the functors of `B` and for each fixed `B`.
 
 ## Main definitions
 
@@ -170,6 +176,19 @@ theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ R
   have h := coinvariantsHomLinearEquiv_apply_hom_apply N ((coinvariantsHomLinearEquiv N X).symm φ) x
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
+
+/-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A`, as a functor
+to the functors of `B`; Mathlib provides additivity in `B`. -/
+instance : (coinvariantsTensor k G).Additive where
+  map_add {A B f g} := by
+    ext : 2
+    apply coinvariantsTensor_hom_ext
+    ext
+    simp
+
+/-- Tensor coinvariants `(A ⊗ B)_G` are additive in the first representation `A` for a fixed `B`.
+-/
+instance (B : Rep.{u} k G) : ((coinvariantsTensor k G).flip.obj B).Additive where
 
 end Monoid
 
@@ -343,14 +362,7 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
     (hS : S.ShortExact) (P : Rep.{u} k G) [Projective P] :
     (S.map ((coinvariantsTensor k G).flip.obj P)).ShortExact := by
   classical
-  -- Split the canonical free cover using projectivity.
-  let ε : Rep.free k G P ⟶ P := Rep.freeLift k G P id
-  have hε : Function.Surjective ε.hom := fun x ↦
-    ⟨Finsupp.single x (MonoidAlgebra.single 1 1), by
-      simp [ε, Rep.freeLift, Representation.freeLift_single_single]⟩
-  have : Epi ε := (Rep.epi_iff_surjective ε).mpr hε
-  let r : Retract P (Rep.free k G P) :=
-    ⟨Projective.factorThru (𝟙 P) ε, ε, Projective.factorThru_comp _ _⟩
+  let r := Rep.retractFree P
   let i := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.i)
   let p := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.r)
   have hip : i ≫ p = 𝟙 _ := by
@@ -365,6 +377,22 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
     ((TauCeti.isKernelCokernelPair_iff_shortExact _).mpr hfree) ⟨i, p, hip⟩).shortExact
 
 end CategoryTheory.ShortComplex.ShortExact
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Tensor coinvariants with a projective representation preserve homology in the other
+representation: they preserve short exact sequences
+(`CategoryTheory.ShortComplex.ShortExact.map_coinvariantsTensor_projective`). -/
+instance preservesHomology_coinvariantsTensor_flip_obj_of_projective (P : Rep.{u} k G)
+    [Projective P] : ((coinvariantsTensor k G).flip.obj P).PreservesHomology :=
+  -- An additive functor between abelian categories preserving short exact sequences (the first
+  -- condition of `Functor.exact_tfae`) preserves homology (its third condition).
+  ((Functor.exact_tfae ((coinvariantsTensor k G).flip.obj P)).out 1 3).1
+    fun _ hS ↦ ShortComplex.ShortExact.map_coinvariantsTensor_projective hS P
+
+end Rep
 
 namespace MonoidHom
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
 public import TauCeti.Analysis.Convex.Measure
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
 /-!
 # Chart integral comparison with ordinary manifold pullback
@@ -39,15 +40,8 @@ theorem inChartAt_ae_eq_mpullback (φ : RoughForm I M ℝ k) (α : M)
   have ht := TauCeti.measurableSet_extChartAt_target (I := I) α
   filter_upwards [ae_restrict_mem ht,
     ae_restrict_of_ae (I.convex_range.ae_mem_interior (μ := μ))] with y hy hinterior
-  have hI := hinterior (extChartAt_target_subset_range α hy)
-  have hd := mfderivWithin_of_mem_nhds (I := 𝓘(ℝ, E)) (I' := I)
-    (f := (extChartAt I α).symm) (mem_interior_iff_mem_nhds.mp hI)
-  ext v
-  have he := congrArg (fun L : TangentSpace 𝓘(ℝ, E) y →L[ℝ]
-    TangentSpace I ((extChartAt I α).symm y) ↦
-      φ ((extChartAt I α).symm y) (fun i ↦ L (v i))) hd
-  exact (inChartAt_apply φ α y v).trans (he.trans
-    (mpullback_apply (I := 𝓘(ℝ, E)) (I' := I) (extChartAt I α).symm φ y v).symm)
+  exact (mpullback_extChartAt_symm_eq_inChartAt φ α
+    (hinterior (extChartAt_target_subset_range α hy))).symm
 
 end TauCeti.RoughForm
 

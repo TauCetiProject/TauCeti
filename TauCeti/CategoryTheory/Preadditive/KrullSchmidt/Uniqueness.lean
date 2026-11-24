@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.Logic.Equiv.Option
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic
 
