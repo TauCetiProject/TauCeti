@@ -78,15 +78,16 @@ lemma hasLeftKanExtension_op_of_fullyFaithful [HasInitial A] (F : Cᵒᵖ ⥤ A)
   have := hasPointwiseLeftKanExtension_op_of_fullyFaithful hG hG' F
   inferInstance
 
-variable [∀ F : Cᵒᵖ ⥤ A, G.op.HasLeftKanExtension F]
-
 /-- For a fully faithful `G` along which pointwise left Kan extensions exist, evaluating the left
 Kan extension along `G.op` at an object isomorphic to `G.obj c` is evaluation at `c`. -/
+@[expose, simps!]
 noncomputable def lanCompEvaluationIsoOfIso [G.Full] [G.Faithful]
     [∀ F : Cᵒᵖ ⥤ A, G.op.HasPointwiseLeftKanExtension F] {c : C} {d : D} (e : G.obj c ≅ d) :
     G.op.lan ⋙ (evaluation Dᵒᵖ A).obj (op d) ≅ (evaluation Cᵒᵖ A).obj (op c) :=
   isoWhiskerLeft G.op.lan ((evaluation Dᵒᵖ A).mapIso e.op) ≪≫
     isoWhiskerRight (asIso G.op.lanUnit).symm ((evaluation Cᵒᵖ A).obj (op c))
+
+variable [∀ F : Cᵒᵖ ⥤ A, G.op.HasLeftKanExtension F]
 
 include hG' in
 /-- The left Kan extension along `G.op` vanishes at an object admitting no morphism to an object
