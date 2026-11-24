@@ -16,7 +16,7 @@ import TauCeti.RingTheory.Polynomial.Pochhammer
 
 Write `𝐌(a, b, z) = Complex.regularizedHGFun {a} {b} z` for Olver's regularized Kummer function,
 so that `Γ(b) 𝐌(a, b, z)` is Kummer's function `M(a, b, z)`. This file defines the even and odd
-solutions of Weber's equation `w″ = (z²/4 + a) w` (DLMF 12.2.2),
+solutions of Weber's equation `w'' = (z²/4 + a) w` (DLMF 12.2.2),
 
 `u₁(a, z) = e^{−z²/4} Γ(½) 𝐌(a/2 + ¼, ½, z²/2)`,
 `u₂(a, z) = z e^{−z²/4} Γ(3/2) 𝐌(a/2 + ¾, 3/2, z²/2)`
