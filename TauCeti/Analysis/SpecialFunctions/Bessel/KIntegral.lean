@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.MacdonaldIntegral
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The integral `∫₀^∞ s^{p-1} e^{-s - x/s} ds` as a series
@@ -70,6 +71,14 @@ namespace Complex
 
 /-! ### Residues of `x^{-t} Γ(t) Γ(t + p)` -/
 
+/-- For `0 < p < 1`, no pole `-k - p` of `Γ(t + p)` is a pole `-n` of `Γ(t)`. -/
+private lemma neg_natCast_sub_ofReal_ne_neg_natCast {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1)
+    (k n : ℕ) : -(k : ℂ) - p ≠ -n := fun h ↦
+  Real.sub_natCast_ne_neg_natCast hp0 hp1 n k (by
+    have := congrArg re h
+    simp only [sub_re, neg_re, natCast_re, ofReal_re] at this
+    linarith)
+
 /-- The residue of `x^{-t} Γ(t) Γ(t + p)` at the pole `t = -k` of `Γ(t)`, written through the
 reflection formula as the `k`th term of `(π / sin pπ) 𝐅(1 - p, x)`. -/
 private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (hp0 : 0 < p)
@@ -77,11 +86,8 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (
     TauCeti.Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) (-(k : ℂ)) =
       ((π / Real.sin (π * p) : ℝ) : ℂ) * ((x ^ k / (k ! * Real.Gamma (1 - p + k)) : ℝ) : ℂ) := by
   have hslit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
-  have hΓp : ∀ n : ℕ, -(k : ℂ) + p ≠ -n := by
-    intro n h
-    have h' := congrArg re h
-    simp only [add_re, neg_re, natCast_re, ofReal_re] at h'
-    exact Real.sub_natCast_ne_neg_natCast hp0 hp1 k n (by linarith)
+  have hΓp : ∀ n : ℕ, -(k : ℂ) + p ≠ -n := fun n h ↦
+    neg_natCast_sub_ofReal_ne_neg_natCast hp0 hp1 n k (by linear_combination -h)
   have hw : AnalyticAt ℂ (fun z ↦ (x : ℂ) ^ (-z) * Gamma (z + p)) (-(k : ℂ)) :=
     (analyticAt_const.cpow (by fun_prop) hslit).mul
       ((analyticAt_Gamma hΓp).comp (f := fun z : ℂ ↦ z + p) (x := -(k : ℂ)) (by fun_prop))
@@ -89,8 +95,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (
       fun z ↦ Gamma z * ((x : ℂ) ^ (-z) * Gamma (z + p)) := funext fun z ↦ by ring
   rw [hfun, residue_Gamma_mul_neg_nat k hw, neg_neg, cpow_natCast,
     show -(k : ℂ) + p = ((p - k : ℝ) : ℂ) by push_cast; ring, Gamma_ofReal]
-  have hsin : Real.sin (π * p) ≠ 0 :=
-    (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
+  have hsin : Real.sin (π * p) ≠ 0 := (TauCeti.sin_pi_mul_pos_of_pos_of_lt_one hp0 hp1).ne'
   have hreal : (-1) ^ k / (k ! : ℝ) * (x ^ k * Real.Gamma (p - k)) =
       π / Real.sin (π * p) * (x ^ k / (k ! * Real.Gamma (1 - p + k))) := by
     rw [mul_left_comm, Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin]
@@ -105,11 +110,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_natCast {p x : �
       -(((π / Real.sin (π * p) : ℝ) : ℂ) * (x : ℂ) ^ (p : ℂ)) *
         ((x ^ k / (k ! * Real.Gamma (1 + p + k)) : ℝ) : ℂ) := by
   have hslit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
-  have hΓ : ∀ n : ℕ, -(k : ℂ) - p ≠ -n := fun n h ↦
-    Real.sub_natCast_ne_neg_natCast hp0 hp1 n k (by
-      have := congrArg re h
-      simp only [sub_re, neg_re, natCast_re, ofReal_re] at this
-      linarith)
+  have hΓ : ∀ n : ℕ, -(k : ℂ) - p ≠ -n := neg_natCast_sub_ofReal_ne_neg_natCast hp0 hp1 k
   have hw : AnalyticAt ℂ (fun w : ℂ ↦ (x : ℂ) ^ (-(w - p)) * Gamma (w - p)) (-(k : ℂ)) :=
     (analyticAt_const.cpow (by fun_prop) hslit).mul
       ((analyticAt_Gamma hΓ).comp (f := fun w : ℂ ↦ w - p) (x := -(k : ℂ)) (by fun_prop))
@@ -124,7 +125,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_natCast {p x : �
     cpow_natCast, show -(k : ℂ) - p = ((-p - k : ℝ) : ℂ) by push_cast; ring, Gamma_ofReal]
   have hsin : Real.sin (π * -p) ≠ 0 := by
     rw [mul_neg, Real.sin_neg, neg_ne_zero]
-    exact (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
+    exact (TauCeti.sin_pi_mul_pos_of_pos_of_lt_one hp0 hp1).ne'
   have hreal : (-1) ^ k / (k ! : ℝ) * (x ^ k * Real.Gamma (-p - k)) =
       -(π / Real.sin (π * p)) * (x ^ k / (k ! * Real.Gamma (1 + p + k))) := by
     rw [mul_left_comm, Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin, mul_neg,
@@ -180,9 +181,7 @@ private lemma mellinInv_Gamma_mul_Gamma_add_eq {p x : ℝ} (hp0 : 0 < p) (hp1 : 
     refine Finset.disjoint_left.mpr fun z hzA hzB ↦ ?_
     obtain ⟨k, -, rfl⟩ := Finset.mem_image.mp hzA
     obtain ⟨j, -, hj⟩ := Finset.mem_image.mp hzB
-    have h' := congrArg re hj
-    simp only [sub_re, neg_re, ofReal_re, natCast_re] at h'
-    exact Real.sub_natCast_ne_neg_natCast hp0 hp1 k j (by linarith)
+    exact neg_natCast_sub_ofReal_ne_neg_natCast hp0 hp1 j k (by linear_combination hj)
   obtain ⟨C, -, hC⟩ := exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc p (δ - N) 1 1
   have hshift := TauCeti.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le (S := A ∪ B)
     (σ₀ := δ - N) (σ₁ := 1) (B := fun T ↦ C / T) (f := fun z ↦ Gamma z * Gamma (z + p))

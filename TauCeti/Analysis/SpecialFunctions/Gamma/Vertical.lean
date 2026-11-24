@@ -42,7 +42,8 @@ its coefficients.
   `Re s + n > 0`.
 * `Complex.norm_Gamma_mul_pow_mul_factorial_le`: `‖Γ(s)‖ (1 - a)^N N! ≤ Γ(a)` on the line
   `Re s = a - N` with `0 < a < 1`, so `Γ` decays factorially to the left; and
-  `Complex.norm_Gamma_mul_pow_mul_factorial_mul_le`, the same with the factor `a (1 + (Im s)²)`.
+  `Complex.norm_Gamma_mul_pow_mul_factorial_mul_le`:
+  `‖Γ(s)‖ (1 - a)^N N! a (1 + (Im s)²) ≤ Γ(a + 2)` on the same line.
 * `Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow`: `‖Γ(σ + i t)‖ ≤ C (1 + t²)⁻ᵐ` for every
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
 * `Complex.norm_Gamma_le_of_re_mem_Ioo`: explicit bound

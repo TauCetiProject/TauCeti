@@ -391,9 +391,9 @@ theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
     rw [h, mul_zero] at hrefl
     exact div_ne_zero pi_ne_zero (mul_ne_zero hsgn hc) hrefl.symm
   rw [eq_div_iff (mul_ne_zero hsgn hc)] at hrefl
-  set S := sin (π * c)
-  rw [← hrefl]
-  field_simp
+  rw [div_div, eq_div_iff (mul_ne_zero hc (mul_ne_zero (by positivity) hG)),
+    div_mul_eq_mul_div, div_mul_eq_mul_div, div_eq_iff (by positivity)]
+  linear_combination (k ! : ℝ) * hrefl
 
 /-- A real number strictly between `-(k + 1)` and `-k` is not a nonpositive integer. -/
 theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(k + 1 : ℝ)) (-k))
