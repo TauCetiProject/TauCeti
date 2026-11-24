@@ -69,11 +69,6 @@ namespace Complex
 private theorem two_div_sqrt_pi_ne_zero : 2 / (Real.sqrt π : ℂ) ≠ 0 :=
   div_ne_zero two_ne_zero (ofReal_ne_zero.mpr (Real.sqrt_pos.mpr Real.pi_pos).ne')
 
-/-- The derivative `erf′ z = (2/√π) e^{−z²}` never vanishes. -/
-theorem deriv_erf_ne_zero (z : ℂ) : deriv erf z ≠ 0 := by
-  rw [deriv_erf]
-  exact mul_ne_zero two_div_sqrt_pi_ne_zero (Complex.exp_ne_zero _)
-
 /-- Every zero of `erf` is simple. -/
 theorem analyticOrderAt_erf_eq_one {z : ℂ} (hz : erf z = 0) : analyticOrderAt erf z = 1 :=
   (differentiable_erf.analyticAt z).analyticOrderAt_eq_one_of_zero_deriv_ne_zero hz
@@ -95,20 +90,6 @@ theorem erf_ofReal_eq_zero_iff {x : ℝ} : erf x = 0 ↔ x = 0 := by
   rintro rfl
   exact TauCeti.Real.erf_zero
 
-/-- On the imaginary axis, `erf (iy) = (2i/√π) y ∫₀¹ e^{(sy)²} ds`. -/
-theorem erf_I_mul_ofReal (y : ℝ) :
-    erf (I * y) =
-      2 / (Real.sqrt π : ℂ) * I * ((y * ∫ s in (0 : ℝ)..1, Real.exp ((s * y) ^ 2) : ℝ) : ℂ) := by
-  have hint (s : ℝ) : (I * y) * cexp (-((s : ℂ) * (I * y)) ^ 2) =
-      I * ((y * Real.exp ((s * y) ^ 2) : ℝ) : ℂ) := by
-    push_cast
-    rw [show -((s : ℂ) * (I * y)) ^ 2 = ((s : ℂ) * y) ^ 2 by
-      linear_combination (-(s : ℂ) ^ 2 * (y : ℂ) ^ 2) * I_sq]
-    ring
-  rw [erf_def, intervalIntegral.integral_congr fun s _ ↦ hint s,
-    intervalIntegral.integral_const_mul, intervalIntegral.integral_ofReal,
-    intervalIntegral.integral_const_mul, mul_assoc]
-
 /-- On the imaginary axis, `erf` vanishes only at `0`. -/
 @[simp]
 theorem erf_I_mul_ofReal_eq_zero_iff {y : ℝ} : erf (I * y) = 0 ↔ y = 0 := by
@@ -120,24 +101,6 @@ theorem erf_I_mul_ofReal_eq_zero_iff {y : ℝ} : erf (I * y) = 0 ↔ y = 0 := by
     ofReal_eq_zero, mul_eq_zero, or_iff_left hpos.ne']
 
 /-! ### Order of growth -/
-
-/-- The growth bound `|erf z| ≤ (2/√π) |z| e^{|z|²}`. -/
-theorem norm_erf_le (z : ℂ) :
-    ‖erf z‖ ≤ 2 / Real.sqrt π * (‖z‖ * Real.exp (‖z‖ ^ 2)) := by
-  have hb : ∀ s ∈ Set.uIoc (0 : ℝ) 1,
-      ‖z * cexp (-((s : ℂ) * z) ^ 2)‖ ≤ ‖z‖ * Real.exp (‖z‖ ^ 2) := by
-    intro s hs
-    rw [Set.uIoc_of_le zero_le_one] at hs
-    rw [norm_mul]
-    refine mul_le_mul_of_nonneg_left ((norm_exp_le_exp_norm _).trans
-      (Real.exp_le_exp.mpr ?_)) (norm_nonneg z)
-    rw [norm_neg, norm_pow, norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos hs.1, mul_pow]
-    exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ hs.1.le hs.2)
-  rw [erf_def, norm_mul]
-  refine mul_le_mul (le_of_eq ?_) ((intervalIntegral.norm_integral_le_of_norm_le_const hb).trans
-    (by simp)) (norm_nonneg _) (by positivity)
-  rw [norm_div, norm_real, Real.norm_eq_abs, abs_of_pos (Real.sqrt_pos.mpr Real.pi_pos)]
-  norm_num
 
 /-- `erf` has order at most `2`. -/
 theorem orderLE_erf : OrderLE erf 2 := by
