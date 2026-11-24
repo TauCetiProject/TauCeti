@@ -38,9 +38,9 @@ noncomputable section
 variable (d : ReeG2LieIndex)
 
 private theorem weightTorus_torusPointMap_datumSpecialIsogeny
-    (s : Fin d.1.rank → d.1.Closureˣ) :
+    (s : Fin d.val.rank → d.val.Closureˣ) :
     d.weightTorus (torusPointMap d.toSuzukiReeIndex.datumSpecialIsogeny.weightMap s) =
-      G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure
+      G2ShortRoot.PrimeField.weightTorusPoints d.val.Closure
         (torusPointMap DynkinType.g2SpecialIsogeny.weightMap
           (fun i => s ((finCongr d.rank_eq_two).symm i))) := by
   obtain ⟨m, hm, rfl⟩ := d.exists_eq_of
@@ -63,7 +63,7 @@ theorem isCharacterMap_halfFrobenius :
   apply isCharacterMap_iff.mpr
   intro s
   rw [weightTorus_torusPointMap_datumSpecialIsogeny, weightTorus_apply, halfFrobenius_def]
-  exact (G2ShortRoot.PrimeField.isCharacterMap_specialIsogeny d.1.Closure).map_apply _
+  exact (G2ShortRoot.PrimeField.isCharacterMap_specialIsogeny d.val.Closure).map_apply _
 
 /-- The represented Ree G₂ Steinberg map pulls characters back by the native root-datum
 Steinberg map, for every valid Ree parameter. The exponent is the recorded `2 * m + 1`,
@@ -71,7 +71,7 @@ not the field order `3 ^ (2 * m + 1)`. -/
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.toSuzukiReeIndex.datumSteinberg.weightMap := by
   rw [SuzukiReeIndex.datumSteinberg_weightMap_eq_pow, steinberg_def]
-  exact d.isCharacterMap_halfFrobenius.pow d.1.fieldExponent
+  exact d.isCharacterMap_halfFrobenius.pow d.val.fieldExponent
 
 end
 

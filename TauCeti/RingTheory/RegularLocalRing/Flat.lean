@@ -133,7 +133,7 @@ theorem IsRegularRing.of_flat_of_isRegularRing_fiber [IsRegularRing R] [IsNoethe
   obtain ⟨q, rfl⟩ : ∃ q : PrimeSpectrum (P.Fiber S),
       q.asIdeal.comap Algebra.TensorProduct.includeRight = Q :=
     ⟨_, congr($((PrimeSpectrum.primesOverOrderIsoFiber R S P).symm_apply_apply
-      ⟨Q, ‹_›, ‹_›⟩).1)⟩
+      ⟨Q, ‹_›, ‹_›⟩).val)⟩
   set Q := q.asIdeal.comap Algebra.TensorProduct.includeRight
   let := Localization.AtPrime.algebraOfLiesOver P Q
   have : IsLocalHom (algebraMap (Localization.AtPrime P) (Localization.AtPrime Q)) := by

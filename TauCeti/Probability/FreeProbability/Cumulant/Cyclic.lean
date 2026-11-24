@@ -56,8 +56,8 @@ block moment of a noncrossing partition `π` into the block moment of the rotate
 `rotate n π`. -/
 theorem partitionMoment_comp_finRotate (hφ : ∀ x y, φ (x * y) = φ (y * x)) (a : Fin n → A)
     (π : NoncrossingPartition (univ : Finset (Fin n))) :
-    partitionMoment φ (a ∘ finRotate n) π.1 =
-      partitionMoment φ a (NoncrossingPartition.rotate n π).1 := by
+    partitionMoment φ (a ∘ finRotate n) π.val =
+      partitionMoment φ a (NoncrossingPartition.rotate n π).val := by
   rw [partitionMoment_def, partitionMoment_def, NoncrossingPartition.prod_parts_rotate]
   refine prod_congr rfl fun B _ => ?_
   -- The two words along `B` differ by a cyclic rotation, which a trace does not see.

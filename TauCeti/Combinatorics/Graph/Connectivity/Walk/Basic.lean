@@ -69,26 +69,16 @@ theorem copy_rfl_rfl (p : G.Walk x y) : p.copy rfl rfl = p :=
 @[simp]
 theorem copy_copy {x y x' y' x'' y'' : α} (p : G.Walk x y)
     (hx : x = x') (hy : y = y') (hx' : x' = x'') (hy' : y' = y'') :
-    (p.copy hx hy).copy hx' hy' = p.copy (hx.trans hx') (hy.trans hy') := by
-  subst x'
-  subst y'
-  subst x''
-  subst y''
-  rfl
+    (p.copy hx hy).copy hx' hy' = p.copy (hx.trans hx') (hy.trans hy') := by subst_vars; rfl
 
 @[simp]
 theorem copy_nil {x x' : α} (hx : x = x') :
-    (Walk.nil : G.Walk x x).copy hx hx = .nil := by
-  subst x'
-  rfl
+    (Walk.nil : G.Walk x x).copy hx hx = .nil := by subst_vars; rfl
 
 @[simp]
 theorem copy_cons {x y z x' z' : α} (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
     (hx : x = x') (hz : z = z') :
-    (Walk.cons e h p).copy hx hz = .cons e (hx ▸ h) (p.copy rfl hz) := by
-  subst x'
-  subst z'
-  rfl
+    (Walk.cons e h p).copy hx hz = .cons e (hx ▸ h) (p.copy rfl hz) := by subst_vars; rfl
 
 /-- The one-edge walk associated to an edge linking two vertices. -/
 def _root_.Graph.IsLink.toWalk {e : β} (h : G.IsLink e x y) : G.Walk x y :=
@@ -165,24 +155,15 @@ theorem edges_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
 
 @[simp]
 theorem length_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
-    (p.copy hx hy).length = p.length := by
-  subst x'
-  subst y'
-  rfl
+    (p.copy hx hy).length = p.length := by subst_vars; rfl
 
 @[simp]
 theorem support_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
-    (p.copy hx hy).support = p.support := by
-  subst x'
-  subst y'
-  rfl
+    (p.copy hx hy).support = p.support := by subst_vars; rfl
 
 @[simp]
 theorem edges_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
-    (p.copy hx hy).edges = p.edges := by
-  subst x'
-  subst y'
-  rfl
+    (p.copy hx hy).edges = p.edges := by subst_vars; rfl
 
 @[simp]
 theorem _root_.Graph.IsLink.length_toWalk {e : β} (h : G.IsLink e x y) :
@@ -297,12 +278,9 @@ theorem support_subset_vertexSet (p : G.Walk x y) (hx : x ∈ V(G)) :
     ∀ a ∈ p.support, a ∈ V(G) := by
   induction p with
   | nil => simpa
-  | @cons x y z e h p ih =>
-      intro a ha
-      simp only [support_cons, List.mem_cons] at ha
-      rcases ha with rfl | ha
-      · exact hx
-      · exact ih h.right_mem a ha
+  | cons e h p ih =>
+      rw [support_cons, List.forall_mem_cons]
+      exact ⟨hx, ih h.right_mem⟩
 
 /-- Every vertex on a positive-length walk is an actual vertex of the ambient graph. -/
 theorem support_subset_vertexSet_of_pos (p : G.Walk x y) (hp : 0 < p.length) :
@@ -319,9 +297,7 @@ theorem mem_support_of_isLink_of_mem_edges (p : G.Walk x y) {a b : α} {e : β}
   | @cons x' y' z' f hf p ih =>
       simp only [edges_cons, List.mem_cons] at he
       rcases he with rfl | he
-      · rcases h.left_eq_or_eq hf with ha | ha
-        · simp [ha]
-        · simp [ha]
+      · rcases h.left_eq_or_eq hf with ha | ha <;> simp [ha]
       · simp [ih he]
 
 /-- If a walk uses only edges of another walk and starts in its support, it ends there too. -/
@@ -370,11 +346,7 @@ theorem append_assoc (p : G.Walk x y) (q : G.Walk y z) (r : G.Walk z w) :
 @[simp]
 theorem append_copy_copy {x y z x' y' z' : α} (p : G.Walk x y) (q : G.Walk y z)
     (hx : x = x') (hy : y = y') (hz : z = z') :
-    (p.copy hx hy).append (q.copy hy hz) = (p.append q).copy hx hz := by
-  subst x'
-  subst y'
-  subst z'
-  rfl
+    (p.copy hx hy).append (q.copy hy hz) = (p.append q).copy hx hz := by subst_vars; rfl
 
 @[simp, grind =]
 theorem length_append (p : G.Walk x y) (q : G.Walk y z) :
@@ -439,10 +411,7 @@ theorem reverse_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
 
 @[simp]
 theorem reverse_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
-    (p.copy hx hy).reverse = p.reverse.copy hy hx := by
-  subst x'
-  subst y'
-  rfl
+    (p.copy hx hy).reverse = p.reverse.copy hy hx := by subst_vars; rfl
 
 @[simp]
 theorem reverse_append (p : G.Walk x y) (q : G.Walk y z) :
@@ -474,16 +443,9 @@ theorem support_reverse (p : G.Walk x y) : p.reverse.support = p.support.reverse
   | cons e h p ih => simp [ih]
 
 theorem tail_support_perm_dropLast_support (p : G.Walk x x) :
-    p.support.tail.Perm p.support.dropLast := by
-  cases p with
-  | nil => rfl
-  | @cons _ y _ e h p =>
-      rw [support_cons, List.tail_cons, List.dropLast_cons_of_ne_nil p.support_ne_nil]
-      have heq : p.support.dropLast ++ [x] = p.support := by
-        simpa only [getLast_support] using List.dropLast_append_getLast p.support_ne_nil
-      have hperm : (p.support.dropLast ++ [x]).Perm ([x] ++ p.support.dropLast) :=
-        List.perm_append_comm
-      exact (List.Perm.of_eq heq.symm).trans hperm
+    p.support.tail.Perm p.support.dropLast :=
+  -- The support of a closed walk starts and ends at the base vertex.
+  (List.IsRotated.dropLast_tail p.support_ne_nil (by simp)).symm.perm
 
 /-- A trail is a walk that traverses no edge identity more than once. -/
 def IsTrail (p : G.Walk x y) : Prop := p.edges.Nodup
@@ -504,23 +466,15 @@ theorem isCycle_def (p : G.Walk x x) :
 
 @[simp]
 theorem isTrail_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
-    (p.copy hx hy).IsTrail ↔ p.IsTrail := by
-  subst x'
-  subst y'
-  rfl
+    (p.copy hx hy).IsTrail ↔ p.IsTrail := by subst_vars; rfl
 
 @[simp]
 theorem isPath_copy {x y x' y' : α} (p : G.Walk x y) (hx : x = x') (hy : y = y') :
-    (p.copy hx hy).IsPath ↔ p.IsPath := by
-  subst x'
-  subst y'
-  rfl
+    (p.copy hx hy).IsPath ↔ p.IsPath := by subst_vars; rfl
 
 @[simp]
 theorem isCycle_copy {x x' : α} (p : G.Walk x x) (hx : x = x') :
-    (p.copy hx hx).IsCycle ↔ p.IsCycle := by
-  subst x'
-  rfl
+    (p.copy hx hx).IsCycle ↔ p.IsCycle := by subst_vars; rfl
 
 @[simp]
 theorem isTrail_nil : IsTrail (nil : G.Walk x x) := by
@@ -541,11 +495,7 @@ theorem isPath_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
 theorem isPath_iff_nil {p : G.Walk x x} : p.IsPath ↔ p.Nil := by
   cases p with
   | nil => simp [IsPath]
-  | cons e h p =>
-    constructor
-    · intro hp
-      exact absurd p.end_mem_support ((isPath_cons e h p).1 hp).2
-    · exact not_nil_cons.elim
+  | cons e h p => simp
 
 @[simp]
 theorem cons_isCycle_iff (e : β) (h : G.IsLink e x y) (p : G.Walk y x) :
@@ -561,6 +511,27 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+-- The append criteria and trail projections below are adapted from
+-- `SimpleGraph.Walk.isTrail_append`, `SimpleGraph.Walk.isPath_append`, and
+-- `SimpleGraph.Walk.isPath_append'` in `Mathlib.Combinatorics.SimpleGraph.Paths`.
+
+/-- A concatenation is a trail exactly when both parts are trails and use disjoint edge
+identities. -/
+@[simp]
+theorem isTrail_append (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsTrail ↔ p.IsTrail ∧ q.IsTrail ∧ p.edges.Disjoint q.edges := by
+  simp [isTrail_def, List.nodup_append']
+
+/-- The left part of a concatenated trail is a trail. -/
+theorem IsTrail.of_append_left {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsTrail) : p.IsTrail :=
+  ((isTrail_append p q).mp hpq).1
+
+/-- The right part of a concatenated trail is a trail. -/
+theorem IsTrail.of_append_right {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsTrail) : q.IsTrail :=
+  ((isTrail_append p q).mp hpq).2.1
+
 /-- The left part of a concatenated path is a path. -/
 theorem IsPath.of_append_left {p : G.Walk x y} {q : G.Walk y z}
     (hpq : (p.append q).IsPath) : p.IsPath := by
@@ -572,6 +543,31 @@ theorem IsPath.of_append_right {p : G.Walk x y} {q : G.Walk y z}
     (hpq : (p.append q).IsPath) : q.IsPath := by
   rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
   exact hpq.of_append_right
+
+/-- A concatenation is a path exactly when both parts are paths and the support of the left
+part is disjoint from the support of the right part after its initial vertex. -/
+theorem isPath_append (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsPath ↔
+      p.IsPath ∧ q.IsPath ∧ p.support.Disjoint q.support.tail := by
+  refine ⟨fun hpq ↦ ⟨hpq.of_append_left, hpq.of_append_right, ?_⟩,
+    fun ⟨hp, hq, hd⟩ ↦ ?_⟩
+  · rw [isPath_def, support_append] at hpq
+    exact List.disjoint_of_nodup_append hpq
+  · rw [isPath_def, support_append]
+    exact List.Nodup.append hp.support_nodup hq.support_nodup.tail hd
+
+/-- Symmetric form of `isPath_append`, using the support of the left part before its terminal
+vertex. -/
+theorem isPath_append' (p : G.Walk x y) (q : G.Walk y z) :
+    (p.append q).IsPath ↔
+      p.IsPath ∧ q.IsPath ∧ p.support.dropLast.Disjoint q.support := by
+  refine ⟨fun hpq ↦ ⟨hpq.of_append_left, hpq.of_append_right, ?_⟩,
+    fun ⟨hp, hq, hd⟩ ↦ ?_⟩
+  · rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
+    exact List.disjoint_of_nodup_append hpq
+  · rw [isPath_def, support_append_eq_support_dropLast_append]
+    exact List.Nodup.append (p.support.dropLast_sublist.nodup hp.support_nodup)
+      hq.support_nodup hd
 
 @[simp]
 theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
@@ -615,13 +611,9 @@ theorem _root_.Graph.IsLink.isCycle_toWalk {e : β} (h : G.IsLink e x x) :
 
 @[simp]
 theorem isCycle_reverse (p : G.Walk x x) : p.reverse.IsCycle ↔ p.IsCycle := by
-  have reverse_imp (q : G.Walk x x) (hq : q.IsCycle) : q.reverse.IsCycle := by
-    refine ⟨fun hr => hq.ne_nil (by simpa using congrArg reverse hr), ?_, ?_⟩
-    · simpa [IsTrail] using hq.isTrail
-    · have hd : q.support.dropLast.Nodup :=
-        (q.tail_support_perm_dropLast_support.nodup_iff).mp hq.2.2
-      simpa only [support_reverse, List.tail_reverse, List.nodup_reverse] using hd
-  exact ⟨fun hp => by simpa using reverse_imp p.reverse hp, reverse_imp p⟩
+  -- Reversal preserves length and reverses the edge list, and the tail of the reversed support
+  -- is the reverse of `p.support.dropLast`, a permutation of `p.support.tail`.
+  simp [isCycle_def, ← length_eq_zero_iff, p.tail_support_perm_dropLast_support.nodup_iff]
 
 /-- Two paths with opposite endpoints form a cycle when their interiors and edge identities are
 disjoint and at least one path is nonempty. -/
@@ -631,9 +623,8 @@ theorem IsPath.isCycle_append {p : G.Walk x y} {q : G.Walk y x} (hp : p.IsPath)
     (p.append q).IsCycle := by
   rw [isCycle_def, edges_append, support_append]
   refine ⟨fun h ↦ ?_, ?_, ?_⟩
-  · have hz : (p.append q).length = 0 := by
-      simpa only [length_nil] using congrArg Walk.length h
-    rw [length_append] at hz
+  · have hz := congrArg Walk.length h
+    simp only [length_append, length_nil] at hz
     omega
   · exact List.Nodup.append (isTrail_def p |>.mp hp.isTrail)
       (isTrail_def q |>.mp hq.isTrail) he
@@ -668,10 +659,8 @@ theorem reachable_def {x y : α} :
 
 namespace Walk
 
-theorem end_mem_vertexSet {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : y ∈ V(G) := by
-  induction p with
-  | nil => exact hx
-  | cons e h _ ih => exact ih h.right_mem
+theorem end_mem_vertexSet {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : y ∈ V(G) :=
+  p.support_subset_vertexSet hx y p.end_mem_support
 
 /-- A walk starting at an actual vertex witnesses reachability. -/
 theorem reachable {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : G.Reachable x y :=
@@ -689,9 +678,8 @@ variable {x y z : α}
 
 theorem left_mem (h : G.Reachable x y) : x ∈ V(G) := h.1
 
-theorem right_mem (h : G.Reachable x y) : y ∈ V(G) := by
-  rcases h with ⟨hx, ⟨p⟩⟩
-  exact p.end_mem_vertexSet hx
+theorem right_mem (h : G.Reachable x y) : y ∈ V(G) :=
+  h.2.elim (·.end_mem_vertexSet h.left_mem)
 
 protected theorem elim {p : Prop} (h : G.Reachable x y) (hp : G.Walk x y → p) : p :=
   Nonempty.elim h.2 hp

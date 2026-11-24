@@ -86,14 +86,8 @@ theorem TendstoGamma.isEVISolution_of_tendsto
     (hF : ∀ n, LowerSemicontinuous (F n)) (hU : ∀ n, IsEVISolution lam (F n) (U n))
     (hlim : ∀ t ≥ 0, Tendsto (fun n ↦ U n t) atTop (𝓝 (u t)))
     (hu : ContinuousOn u (Ici 0)) (hdom : ∃ y, φ y ≠ ⊤)
-    (hbot : ∀ t > 0, φ (u t) ≠ ⊥) : IsEVISolution lam φ u := by
-  have hreg := fun y (_ : φ y ≠ ⊤) s t hs hst ↦ hΓ.apply_le_of_isEVISolution hF hU hlim
-    (y := y) (s := s) (t := t) hs hst
-  have htop : ∀ t > 0, φ (u t) ≠ ⊤ := by
-    obtain ⟨y, hy⟩ := hdom
-    intro t ht
-    exact ne_top_of_le_ne_top (EReal.add_ne_top hy (EReal.coe_ne_top _))
-      (hreg y hy 0 t le_rfl ht)
-  exact (isEVISolution_iff_apply_le hΓ.lowerSemicontinuous).2 ⟨hu, htop, hbot, hreg⟩
+    (hbot : ∀ t > 0, φ (u t) ≠ ⊥) : IsEVISolution lam φ u :=
+  isEVISolution_of_apply_le hΓ.lowerSemicontinuous hu hdom hbot fun y _ s t hs hst ↦
+    hΓ.apply_le_of_isEVISolution hF hU hlim (y := y) (s := s) (t := t) hs hst
 
 end TauCeti

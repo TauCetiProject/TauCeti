@@ -77,7 +77,7 @@ noncomputable def commonKernelHopfIdeal (f : ∀ i, H ⟶ K i) : HopfIdeal R H :
 theorem commonKernelHopfIdeal_toIdeal_le_ker (f : ∀ i, H ⟶ K i) (i : ι) :
     (commonKernelHopfIdeal f).toIdeal ≤ RingHom.ker (f i).hom.toAlgHom.toRingHom := by
   rw [commonKernelHopfIdeal, HopfIdeal.sSup_toIdeal]
-  exact iSup_le fun I ↦ I.2 i
+  exact iSup_le fun I ↦ I.property i
 
 /-- A Hopf ideal lies below the common-kernel ideal exactly when every morphism kills it. -/
 theorem le_commonKernelHopfIdeal_iff (f : ∀ i, H ⟶ K i) (I : HopfIdeal R H) :

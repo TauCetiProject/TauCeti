@@ -46,6 +46,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
   is `PowSaturated` iff it equals its saturation.
 * `Submonoid.powSaturation_comap` and `Submonoid.powSaturation_inf`: saturation commutes with
   `comap` and `⊓`.
+* `AddMonoidHom.mem_powSaturation_mrange_toMultiplicative`: the saturation of the range of the
+  multiplicative form of an additive monoid homomorphism is the saturation of its range.
 * `Submonoid.subgroupClosure_powSaturation_inf_closure`,
   `Submonoid.powSaturationInfClosureToGroupClosure`, `Submonoid.powSaturationInfClosureEquiv`,
   and `Submonoid.powSaturated_comap_subtype_closure_iff`: saturation inside the generated subgroup.
@@ -217,7 +219,7 @@ def powSaturationInfClosureToGroupClosure :
     ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) →*
       Subgroup.closure (s : Set G) :=
   (s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid).subtype.codRestrict _
-    fun x => x.2.2
+    fun x => x.property.2
 
 /-- `powSaturationInfClosureToGroupClosure` preserves the underlying element of the ambient
 group. -/
@@ -247,7 +249,7 @@ theorem mrange_powSaturationInfClosureToGroupClosure :
       (s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation := by
   ext ⟨x, hx⟩
   rw [powSaturation_comap, mem_comap, Subgroup.coe_subtype]
-  exact ⟨fun ⟨y, hy⟩ => (congrArg Subtype.val hy) ▸ y.2.1,
+  exact ⟨fun ⟨y, hy⟩ => (congrArg Subtype.val hy) ▸ y.property.1,
     fun hx' => ⟨⟨x, mem_inf.mpr ⟨hx', hx⟩⟩, rfl⟩⟩
 
 /-- The canonical multiplicative equivalence identifying the saturation of `s` inside
@@ -259,10 +261,11 @@ theorem mrange_powSaturationInfClosureToGroupClosure :
 def powSaturationInfClosureEquiv :
     ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) ≃*
       ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation where
-  toFun x := ⟨s.powSaturationInfClosureToGroupClosure x, by rw [powSaturation_comap]; exact x.2.1⟩
-  invFun z := ⟨z.1.1, Submonoid.mem_inf.mpr
-    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.1).mp
-      z.2, z.1.2⟩⟩
+  toFun x := ⟨s.powSaturationInfClosureToGroupClosure x,
+      by rw [powSaturation_comap]; exact x.property.1⟩
+  invFun z := ⟨z.val.val, Submonoid.mem_inf.mpr
+    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.val).mp
+      z.property, z.val.property⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -350,3 +353,22 @@ theorem nsmulSaturationInfClosureEquiv_inclusion_apply (s : S) :
   simp
 
 end AddSubmonoid
+
+namespace AddMonoidHom
+
+variable {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
+
+/-- An element of `Multiplicative N` lies in the saturation of the range of the multiplicative
+form of `p : M →+ N` exactly when the corresponding element of `N` lies in the saturation of the
+range of `p`. -/
+theorem mem_powSaturation_mrange_toMultiplicative (p : M →+ N) {x : Multiplicative N} :
+    x ∈ (MonoidHom.mrange (AddMonoidHom.toMultiplicative p)).powSaturation ↔
+      x.toAdd ∈ (AddMonoidHom.mrange p).nsmulSaturation := by
+  simp only [Submonoid.mem_powSaturation, AddSubmonoid.mem_nsmulSaturation, MonoidHom.mem_mrange,
+    AddMonoidHom.mem_mrange, AddMonoidHom.coe_toMultiplicative, Function.comp_apply]
+  refine exists_congr fun n ↦ and_congr_right fun _ ↦ ⟨fun ⟨m, hm⟩ ↦ ⟨m.toAdd, ?_⟩,
+    fun ⟨m, hm⟩ ↦ ⟨Multiplicative.ofAdd m, ?_⟩⟩
+  · rw [← toAdd_pow, ← hm, toAdd_ofAdd]
+  · rw [toAdd_ofAdd, hm, ofAdd_nsmul, ofAdd_toAdd]
+
+end AddMonoidHom

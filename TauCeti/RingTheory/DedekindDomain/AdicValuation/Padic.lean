@@ -212,8 +212,8 @@ theorem algebraMap_padic_adicCompletion (w : HeightOneSpectrum B) [Finite (B ⧸
       (adicCompletionExtension ℚ K w.underInt w).comp
         (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP
           w.underInt p).symm.toRingHom := by
-  change (adicCompletion.padicAlgebra w K p).algebraMap = _
-  unfold adicCompletion.padicAlgebra
+  unfold TauCeti.FinitePadicExtension.toAlgebra adicCompletion.finitePadicExtension
+    adicCompletion.padicAlgebra
   exact RingHom.algebraMap_toAlgebra _
 
 /-- On a height-one prime `v` of `ℤ`, the `AdicCompletionPadic` algebra map agrees with
@@ -330,7 +330,8 @@ theorem natCard_quotient_span_natCast_adicCompletionIntegers_eq_pow_finrank
       Ideal.span {(n : w.adicCompletionIntegers K)} := by
     rw [Ideal.map_span, Set.image_singleton, RingEquiv.toRingHom_eq_coe, map_natCast]
   rw [← Nat.card_congr (Ideal.quotientEquiv _ _ e hmap.symm).toEquiv,
-    TauCeti.natCard_quotient_span_natCast_eq_pow_finrank (w.adicCompletion K) p hn]
+    TauCeti.natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat (w.adicCompletion K) p n
+      hn]
 
 end PadicCompletion
 

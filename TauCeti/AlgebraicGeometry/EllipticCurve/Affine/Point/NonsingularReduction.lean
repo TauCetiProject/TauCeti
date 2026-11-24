@@ -232,7 +232,7 @@ theorem equivVariableChange_mem_nonsingularReduction_iff {P : (C.baseChange F �
     -- of `C`
     have hx' : v (((C.baseChange F).u : F) ^ 2 * x + (C.baseChange F).r) ≤ 1 := by
       rw [hu, hr]
-      exact v.map_add_le (by rw [map_mul, map_pow, hv, one_pow, one_mul]; exact hx) C.r.2
+      exact v.map_add_le (by rw [map_mul, map_pow, hv, one_pow, one_mul]; exact hx) C.r.property
     rw [some_mem_nonsingularReduction_iff v _ hx', some_mem_nonsingularReduction_iff v _ hx,
       integralModel_baseChange_smul, ← map_variableChange]
     convert variableChange_nonsingular ((integralModel v.valuationSubring W).map
@@ -251,7 +251,7 @@ theorem equivVariableChange_mem_nonsingularReduction_iff {P : (C.baseChange F �
     have hx' : 1 < v (((C.baseChange F).u : F) ^ 2 * x + (C.baseChange F).r) := by
       have hux : v (((C.baseChange F).u : F) ^ 2 * x) = v x := by
         rw [map_mul, map_pow, hu, hv, one_pow, one_mul]
-      rwa [Valuation.map_add_eq_of_lt_left _ (by rw [hux, hr]; exact C.r.2.trans_lt hx), hux]
+      rwa [Valuation.map_add_eq_of_lt_left _ (by rw [hux, hr]; exact C.r.property.trans_lt hx), hux]
     exact iff_of_true (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
       (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
 
@@ -285,16 +285,16 @@ infinity. -/
 noncomputable def nonsingularReductionHom :
     W.nonsingularReduction v →+
       ((integralModel v.valuationSubring W).map (residue v.valuationSubring)).toAffine.Point where
-  toFun P := (⟨P.2⟩ : Projective.Point _).toAffineLift
+  toFun P := (⟨P.property⟩ : Projective.Point _).toAffineLift
   map_zero' := by
     have h0 : (⟨(W.nonsingularReduction v).zero_mem⟩ : Projective.Point _) = 0 :=
       Projective.Point.ext ((Point.reduction_zero (W := W) v).trans
         Projective.Point.zero_point.symm)
     exact h0 ▸ Projective.Point.toAffineLift_zero
   map_add' P Q := by
-    have hadd : (⟨(P + Q).2⟩ : Projective.Point _) = ⟨P.2⟩ + ⟨Q.2⟩ :=
-      Projective.Point.ext ((Point.reduction_add_of_nonsingularLift v P.2 Q.2).trans
-        (Projective.Point.add_point ⟨P.2⟩ ⟨Q.2⟩).symm)
+    have hadd : (⟨(P + Q).property⟩ : Projective.Point _) = ⟨P.property⟩ + ⟨Q.property⟩ :=
+      Projective.Point.ext ((Point.reduction_add_of_nonsingularLift v P.property Q.property).trans
+        (Projective.Point.add_point ⟨P.property⟩ ⟨Q.property⟩).symm)
     exact hadd ▸ Projective.Point.toAffineLift_add _ _
 
 /-- The reduction homomorphism, read in projective coordinates, is the reduction of points. -/
@@ -302,7 +302,8 @@ noncomputable def nonsingularReductionHom :
 theorem nonsingularReductionHom_toProjective_point (P : W.nonsingularReduction v) :
     (W.nonsingularReductionHom v P).toProjective.point = Point.reduction v (P : W.Point) :=
   -- `nonsingularReductionHom v P` is `toAffineLift` of the nonsingular projective point `⟨P.2⟩`
-  congrArg Projective.Point.point ((Projective.Point.toAffineAddEquiv _).symm_apply_apply ⟨P.2⟩)
+  congrArg Projective.Point.point ((Projective.Point.toAffineAddEquiv _).symm_apply_apply
+      ⟨P.property⟩)
 
 /-- A point with nonsingular reduction and integral `x`-coordinate reduces to the residues of its
 coordinates. -/
@@ -355,7 +356,7 @@ theorem nonsingularReductionHom_surjective [HenselianLocalRing v.valuationSubrin
     have := ((integralModel v.valuationSubring W).toAffine.map_nonsingular
       (IsFractionRing.injective v.valuationSubring F) x y).mpr hxy
     rwa [← baseChange_integralModel_eq v.valuationSubring W]
-  have hxv : v (x : F) ≤ 1 := (v.mem_valuationSubring_iff _).mp x.2
+  have hxv : v (x : F) ≤ 1 := (v.mem_valuationSubring_iff _).mp x.property
   refine ⟨⟨Point.some _ _ hF, (some_mem_nonsingularReduction_iff v hF hxv).mpr
     (hx ▸ hy ▸ hab)⟩, ?_⟩
   rw [nonsingularReductionHom_some_of_valuation_le_one v hF hxv (hx ▸ hy ▸ hab)]

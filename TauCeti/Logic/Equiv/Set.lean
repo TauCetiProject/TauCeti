@@ -13,6 +13,9 @@ public import Mathlib.Logic.Equiv.Set
 An equivalence `e : α ≃ β` carries `s` onto `t`, in the sense that `e x ∈ t ↔ x ∈ s` for every
 `x`, exactly when `e` maps `s` into `t` and `e.symm` maps `t` into `s`.
 
+The preimage of `{y}` under `e` is `{e.symm y}` (`Equiv.preimage_singleton`). Together with
+`Set.preimage_comp`, this identifies fibres after relabelling the base by an equivalence.
+
 A map `g : α → β` that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`
 (`Equiv.bijOn_of_coe_eq`). This is a converse to `Set.BijOn.equiv`, which turns a bijection
 between sets into an equivalence of the subtypes.
@@ -25,6 +28,12 @@ public section
 
 namespace Equiv
 
+/-- The preimage of a singleton under an equivalence is the singleton of its inverse image. -/
+@[simp]
+theorem preimage_singleton {α β : Type*} (e : α ≃ β) (y : β) :
+    e ⁻¹' {y} = {e.symm y} := by
+  rw [← e.image_symm_eq_preimage, Set.image_singleton]
+
 /-- An equivalence carries `s` onto `t` exactly when it maps `s` into `t` and its inverse maps `t`
 into `s`. -/
 theorem forall_apply_mem_iff_iff_mapsTo {α β : Type*} (e : α ≃ β) (s : Set α) (t : Set β) :
@@ -35,10 +44,10 @@ theorem forall_apply_mem_iff_iff_mapsTo {α β : Type*} (e : α ≃ β) (s : Set
 /-- A map that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`. -/
 theorem bijOn_of_coe_eq {α β : Type*} {s : Set α} {t : Set β} {g : α → β}
     (e : s ≃ t) (he : ∀ z : s, (e z : β) = g z) : Set.BijOn g s t := by
-  refine ⟨fun z hz => he ⟨z, hz⟩ ▸ (e ⟨z, hz⟩).2, fun x hx y hy hxy => ?_, fun y hy => ?_⟩
+  refine ⟨fun z hz => he ⟨z, hz⟩ ▸ (e ⟨z, hz⟩).property, fun x hx y hy hxy => ?_, fun y hy => ?_⟩
   · have := e.injective (Subtype.ext ((he ⟨x, hx⟩).trans (hxy.trans (he ⟨y, hy⟩).symm)))
     exact congrArg Subtype.val this
-  · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).2, by rw [← he, e.apply_symm_apply]⟩
+  · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).property, by rw [← he, e.apply_symm_apply]⟩
 
 open Classical in
 /-- An injective map `f : α → β` identifies `β` with the sum of `α`, sent to `β` by `f`, and the

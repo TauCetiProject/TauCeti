@@ -130,7 +130,7 @@ private theorem minpoly_eq_of_mem_rootSet_X_sq_sub_two_mul_X_sq_sub_three
     rw [← C_ofNat]; exact NumberField.irreducible_X_sq_sub_three.out
   have m2 : (X ^ 2 - 2 : ℚ[X]).Monic := by monicity!
   have m3 : (X ^ 2 - 3 : ℚ[X]).Monic := by monicity!
-  have hx := aeval_eq_zero_of_mem_rootSet x.2
+  have hx := aeval_eq_zero_of_mem_rootSet x.property
   rw [map_mul] at hx
   rcases mul_eq_zero.mp hx with h | h
   · exact .inl (minpoly.eq_of_irreducible_of_monic h2 h m2).symm
@@ -145,7 +145,7 @@ theorem natCard_orbit_X_sq_sub_two_mul_X_sq_sub_three
     Nat.card (MulAction.orbit ((X ^ 2 - 2) * (X ^ 2 - 3) : ℚ[X]).Gal x) = 2 := by
   have hsep : (minpoly ℚ (x : E)).Separable :=
     separable_X_sq_sub_two_mul_X_sq_sub_three.of_dvd (minpoly.dvd ℚ _
-      (aeval_eq_zero_of_mem_rootSet x.2))
+      (aeval_eq_zero_of_mem_rootSet x.property))
   rw [natCard_orbit_eq_natDegree_minpoly E x hsep]
   rcases minpoly_eq_of_mem_rootSet_X_sq_sub_two_mul_X_sq_sub_three E x with h | h <;>
     · rw [h]; compute_degree!

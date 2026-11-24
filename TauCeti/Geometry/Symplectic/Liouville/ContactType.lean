@@ -233,7 +233,7 @@ nondegenerate two-form `σ`, with primitive `α`, then the pullback `ι^* α` is
 `S`. -/
 theorem IsContactType.isContactForm_mpullback [IsManifold I (⊤ : ℕ∞) M] [IsManifold J 2 S]
     {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate)
-    {α : SmoothForm I M ℝ 1} (h : IsContactType J σ.1 α.1 ι) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    {α : SmoothForm I M ℝ 1} (h : IsContactType J σ.val α.val ι) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
     (SmoothForm.mpullback ι hι α).IsContactForm := by
   obtain ⟨U, -, hιU, hdα, Z, -, hZα, hZι⟩ := h

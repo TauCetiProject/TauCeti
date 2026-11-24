@@ -99,7 +99,7 @@ private def IsClimbDescent {a b : (ofParent p).V} (q : (ofParent p).Path a b) (k
   k + l = q.length ∧ (parent p)^[k] a = (parent p)^[l] b ∧
     (0 < k → 0 < l → (parent p)^[k - 1] a ≠ (parent p)^[l - 1] b) ∧
     ∀ {c : (ofParent p).V} (e : Quiver.Hom b c), Path.IsReduced (ofParent p) (q.cons e) →
-      if e.1.2 then l = 0 else l = 0 → 0 < k → (parent p)^[k - 1] a ≠ c
+      if e.val.2 then l = 0 else l = 0 → 0 < k → (parent p)^[k - 1] a ≠ c
 
 variable {p} in
 /-- Extending a reduced path by a dart away from a parent increases `l`. -/

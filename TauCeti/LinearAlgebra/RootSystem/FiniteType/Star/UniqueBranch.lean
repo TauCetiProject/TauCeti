@@ -91,8 +91,8 @@ private lemma doubleForkEmbedding_injective {V : Type*} {G : SimpleGraph V} {u v
   · exact (hleft_not_mem j (hij.symm ▸ q.getVert_mem_support i)).elim
   · apply congrArg (Sum.inr ∘ Sum.inl)
     apply Fin.ext
-    exact hq.getVert_injOn (by simp only [Set.mem_ofPred_eq, hn]; omega)
-      (by simp only [Set.mem_ofPred_eq, hn]; omega) hij
+    exact hq.getVert_injOn (by simp only [Set.mem_Iic, hn]; omega)
+      (by simp only [Set.mem_Iic, hn]; omega) hij
   · exact (hright_not_mem j (hij.symm ▸ q.getVert_mem_support i)).elim
   · exact (hleft_right_ne j i hij.symm).elim
   · exact (hright_not_mem i (hij ▸ q.getVert_mem_support j)).elim

@@ -67,8 +67,8 @@ theorem card_internalEdges_union (h : G.Compatible H) [Fintype E(h.union)]
   intro e heG heH
   obtain ⟨eG, -, rfl⟩ := mem_map.mp heG
   obtain ⟨eH, -, heH⟩ := mem_map.mp heH
-  have heq : eH.1 = eG.1 := heH
-  exact hE.notMem_of_mem_left eG.2 (heq ▸ eH.2)
+  have heq : eH.val = eG.val := heH
+  exact hE.notMem_of_mem_left eG.property (heq ▸ eH.property)
 
 open Classical in
 /-- Incident-edge counts add over a compatible union with disjoint edge sets, including when a
@@ -84,7 +84,7 @@ theorem card_incidentEdges_union (h : G.Compatible H) [Fintype E(h.union)]
   intro e heG heH
   obtain ⟨eG, -, rfl⟩ := mem_map.mp heG
   obtain ⟨eH, -, heH⟩ := mem_map.mp heH
-  have heq : eH.1 = eG.1 := heH
-  exact hE.notMem_of_mem_left eG.2 (heq ▸ eH.2)
+  have heq : eH.val = eG.val := heH
+  exact hE.notMem_of_mem_left eG.property (heq ▸ eH.property)
 
 end Graph.Compatible

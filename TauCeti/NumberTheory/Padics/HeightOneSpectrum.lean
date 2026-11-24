@@ -62,7 +62,7 @@ public section
 
 open IsDedekindDomain ValuativeRel
 
-local instance (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.2⟩
+local instance (p : Nat.Primes) : Fact (p : ℕ).Prime := ⟨p.property⟩
 local instance (q : ℕ) [Fact q.Prime] : StrongRankCondition ℚ_[q] :=
   let hfield : Field ℚ_[q] := @NormedField.toField _ (Padic.normedField q)
   @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
@@ -196,8 +196,8 @@ theorem adicCompletion.padicRingEquiv_vle_iff_vle (v : HeightOneSpectrum R)
     adicCompletion.padicRingEquiv v a ≤ᵥ adicCompletion.padicRingEquiv v b ↔ a ≤ᵥ b := by
   refine TauCeti.ValuativeRel.map_vle_map_iff_of_mem_integer_iff (padicRingEquiv v)
     (fun x ↦ ?_) a b
-  change padicEquiv v x ∈ 𝒪[ℚ_[primesEquiv v]] ↔ x ∈ 𝒪[v.adicCompletion ℚ]
-  rw [Padic.integerRing_eq_subring, v.integer_eq_adicCompletionIntegers (K := ℚ)]
+  rw [padicRingEquiv_apply, Padic.integerRing_eq_subring,
+    v.integer_eq_adicCompletionIntegers (K := ℚ)]
   refine ⟨fun h ↦ ?_, fun h ↦ (padicEquiv_bijOn v).mapsTo h⟩
   obtain ⟨c, hc, hce⟩ := (padicEquiv_bijOn v).surjOn h
   rwa [← (padicEquiv v).injective hce]
@@ -308,8 +308,8 @@ open scoped RatAdicCompletionPadic
 theorem adicCompletion.algebraMap_padic (v : HeightOneSpectrum R)
     (p : ℕ) [Fact p.Prime] [CharP (R ⧸ v.asIdeal) p] :
     algebraMap ℚ_[p] (v.adicCompletion ℚ) = (padicRingEquivOfCharP v p).symm.toRingHom := by
-  change (adicCompletion.padicAlgebra v p).algebraMap = _
-  unfold adicCompletion.padicAlgebra
+  unfold TauCeti.FinitePadicExtension.toAlgebra adicCompletion.finitePadicExtension
+    adicCompletion.padicAlgebra
   exact RingHom.algebraMap_toAlgebra _
 
 /-- The local degree `[v.adicCompletion ℚ : ℚ_[p]]` is `1`. -/
@@ -382,8 +382,8 @@ theorem adicCompletionRingEquiv_vle_iff_vle (p : Nat.Primes) (a b : ℚ_[p]) :
   let v := (primesEquiv (R := R)).symm p
   refine TauCeti.ValuativeRel.map_vle_map_iff_of_mem_integer_iff (adicCompletionRingEquiv R p)
     (fun x ↦ ?_) a b
-  change adicCompletionEquiv R p x ∈ 𝒪[v.adicCompletion ℚ] ↔ x ∈ 𝒪[ℚ_[p]]
-  rw [Padic.integerRing_eq_subring, v.integer_eq_adicCompletionIntegers (K := ℚ)]
+  rw [adicCompletionRingEquiv_apply, Padic.integerRing_eq_subring,
+    v.integer_eq_adicCompletionIntegers (K := ℚ)]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · let z : ℤ_[p] := (PadicInt.adicCompletionIntegersEquiv R p).symm
       ⟨adicCompletionEquiv R p x, h⟩
@@ -391,9 +391,9 @@ theorem adicCompletionRingEquiv_vle_iff_vle (p : Nat.Primes) (a b : ℚ_[p]) :
       rw [← PadicInt.coe_adicCompletionIntegersEquiv_apply]
       simp [z]
     rw [← (adicCompletionEquiv R p).injective hz]
-    exact z.2
+    exact z.property
   · rw [← PadicInt.coe_adicCompletionIntegersEquiv_apply R p ⟨x, h⟩]
-    exact ((PadicInt.adicCompletionIntegersEquiv R p) ⟨x, h⟩).2
+    exact ((PadicInt.adicCompletionIntegersEquiv R p) ⟨x, h⟩).property
 
 /-- The continuous `ℚ`-algebra equivalence `ℚ_[p] ≃A[ℚ] (primesEquiv.symm p).adicCompletion ℚ`
 preserves and reflects the valuative relation. -/

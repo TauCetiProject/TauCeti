@@ -151,4 +151,15 @@ theorem IsQuotientMapping.quotientLift_comp_quotientKerInverse {f : Hom S T}
   obtain ⟨a, rfl⟩ := hf.isOpenQuotientMap.surjective b
   simp
 
+/-- A morphism of Huber pairs whose underlying ring homomorphism is an open quotient map and that
+admits a right inverse as a morphism of Huber pairs is a quotient mapping. -/
+theorem isQuotientMapping_of_comp_eq_id {f : Hom S T} {g : Hom T S}
+    (hopen : IsOpenQuotientMap f.toRingHom) (hfg : f.comp g = id T) :
+    IsQuotientMapping f := by
+  refine (isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral f).mpr ⟨hopen, fun b hb ↦ ?_⟩
+  have hmem : b ∈ S.plus.map f.toRingHom := ⟨g.toRingHom b, g.map_mem_plus b hb, by
+    simpa only [toRingHom_comp, RingHom.comp_apply, toRingHom_id, RingHom.id_apply] using
+      congrArg (fun k : Hom T T ↦ k.toRingHom b) hfg⟩
+  exact isIntegral_algebraMap (R := S.plus.map f.toRingHom) (x := ⟨b, hmem⟩)
+
 end TauCeti.Huber.Pair.Hom

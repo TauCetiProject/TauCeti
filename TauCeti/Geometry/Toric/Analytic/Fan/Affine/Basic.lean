@@ -50,7 +50,7 @@ theorem analyticAffineChartι_ofCone_surjective :
     (isRegular_ofCone hi hσ) x
   exact ⟨_, (ofCone hi hσ.toIsToricCone).analyticAffineChartι_faceAffinePointMap
     (isRegular_ofCone hi hσ) (τ := τ) (σ := σₜ)
-    ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le y⟩
+    ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.property).le y⟩
 
 /-- The canonical homeomorphism from the maximal affine chart to the analytic realization of
 the fan of a regular cone. -/
@@ -74,12 +74,12 @@ theorem analyticOfConeHomeomorph_symm_analyticAffineChartι
     (x : (ofCone hi hσ.toIsToricCone).analyticAffineChartDiagram.obj τ) :
     (analyticOfConeHomeomorph hi hσ).symm
       ((ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x) =
-        faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x := by
+        faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.property) x := by
   rw [← (ofCone hi hσ.toIsToricCone).analyticAffineChartι_faceAffinePointMap
       (isRegular_ofCone hi hσ) (τ := τ) (σ := σₜ)
-      ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le x,
+      ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.property).le x,
     ← analyticOfConeHomeomorph_apply hi hσ
-      (faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x)]
+      (faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.property) x)]
   exact (analyticOfConeHomeomorph hi hσ).symm_apply_apply _
 
 section Manifold
@@ -155,12 +155,12 @@ theorem analyticOfConeDiffeomorph_symm_analyticAffineChartι (n : ℕ∞ω)
     letI := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
     (analyticOfConeDiffeomorph hi hσ hB κ g n).symm
       ((ofCone hi hσ.toIsToricCone).analyticAffineChartι (isRegular_ofCone hi hσ) τ x) =
-        faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2) x := by
+        faceAffinePointMap hi ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.property) x := by
   intro _ _
   let _ := (ofCone hi hσ.toIsToricCone).analyticChartedSpace (isRegular_ofCone hi hσ)
   rw [← (ofCone hi hσ.toIsToricCone).analyticAffineChartι_faceAffinePointMap
       (isRegular_ofCone hi hσ) (τ := τ) (σ := σₜ)
-      ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.2).le x,
+      ((mem_ofCone_cones hi hσ.toIsToricCone).1 τ.property).le x,
     ← analyticOfConeDiffeomorph_apply hi hσ hB κ g n]
   exact (analyticOfConeDiffeomorph hi hσ hB κ g n).symm_apply_apply _
 

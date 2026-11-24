@@ -163,7 +163,7 @@ theorem coe_stabilizerMulEquivAut_symm_apply (x : X) (e : Aut (objEquiv G X x)) 
 /-- Under the inclusion of automorphisms into endomorphisms, `stabilizerMulEquivAut` restricts
 to Mathlib's `ActionCategory.stabilizerIsoEnd` on the stabilizer submonoid. -/
 theorem toEnd_stabilizerMulEquivAut (x : X) (g : stabilizer G x) :
-    Aut.toEnd (stabilizerMulEquivAut G x g) = stabilizerIsoEnd G x ⟨g, g.2⟩ := (rfl)
+    Aut.toEnd (stabilizerMulEquivAut G x g) = stabilizerIsoEnd G x ⟨g, g.property⟩ := (rfl)
 
 /-- Transport of automorphisms along an arrow `f` of the action groupoid corresponds to
 conjugation of stabilizers by the label of `f`. -/
@@ -225,7 +225,7 @@ The vertex group multiplies in diagrammatic order, `f * g = f ≫ g`, while stab
 compose as `g * h = h ≫ g`. -/
 def stabilizerMulEquivVertexGroupMulOpposite (x : X) :
     stabilizer G x ≃* (objEquiv G X x ⟶ objEquiv G X x)ᵐᵒᵖ where
-  toFun g := .op (Functor.Elements.homMk (g : G) g.2)
+  toFun g := .op (Functor.Elements.homMk (g : G) g.property)
   invFun f := ⟨f.unop.hom, f.unop.map_val⟩
   left_inv _ := rfl
   right_inv _ := rfl

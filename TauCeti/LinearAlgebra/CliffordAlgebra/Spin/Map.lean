@@ -80,7 +80,7 @@ variable {R : Type u} [CommRing R]
 theorem map_mem_spinGroup (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     CliffordAlgebra.map f (x : CliffordAlgebra Q₁) ∈ spinGroup Q₂ := by
   rw [spinGroup.mem_iff]
-  refine ⟨?_, CliffordAlgebra.map_mem_even f x.2.2⟩
+  refine ⟨?_, CliffordAlgebra.map_mem_even f x.property.2⟩
   rw [pinGroup.mem_iff]
   refine ⟨?_, ?_⟩
   · have hu :
@@ -89,7 +89,7 @@ theorem map_mem_spinGroup (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
           (lipschitzGroup Q₂).toSubmonoid.map
             (Units.coeHom (CliffordAlgebra Q₂)) :=
       lipschitzGroup.coe_mem_iff_mem.mpr
-        (f.map_mem_lipschitzGroup (spinGroup.units_mem_lipschitzGroup x.2))
+        (f.map_mem_lipschitzGroup (spinGroup.units_mem_lipschitzGroup x.property))
     have hmap :
         (↑(Units.map (CliffordAlgebra.map f).toMonoidHom (spinGroup.toUnits x)) :
             CliffordAlgebra Q₂) = CliffordAlgebra.map f (x : CliffordAlgebra Q₁) :=
@@ -102,9 +102,9 @@ theorem map_mem_spinGroup (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     exact hu
   · rw [Unitary.mem_iff]
     constructor
-    · rw [← CliffordAlgebra.map_star, ← map_mul, spinGroup.star_mul_self_of_mem x.2,
+    · rw [← CliffordAlgebra.map_star, ← map_mul, spinGroup.star_mul_self_of_mem x.property,
         map_one]
-    · rw [← CliffordAlgebra.map_star, ← map_mul, spinGroup.mul_star_self_of_mem x.2,
+    · rw [← CliffordAlgebra.map_star, ← map_mul, spinGroup.mul_star_self_of_mem x.property,
         map_one]
 
 /-- The homomorphism of Spin groups induced by a quadratic isometry. -/
@@ -223,7 +223,7 @@ theorem map_vectorAction (g : spinGroup Q) (a : CliffordAlgebra Q) :
       (g : CliffordAlgebra Q) * a * star (g : CliffordAlgebra Q) := by
   let e := TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
     (CliffordAlgebra.spinToOrthogonal Q g)
-  let t : unitary (CliffordAlgebra Q) := ⟨g, pinGroup.mem_unitary g.2.1⟩
+  let t : unitary (CliffordAlgebra Q) := ⟨g, pinGroup.mem_unitary g.property.1⟩
   have h : CliffordAlgebra.map e.toIsometry =
       (Unitary.conjStarAlgAut R (CliffordAlgebra Q) t).toAlgEquiv.toAlgHom := by
     apply CliffordAlgebra.hom_ext
@@ -390,13 +390,13 @@ theorem spinGroupMap_fixed_of_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [Inver
       (CliffordAlgebra.ι Q (f₂ m₂)) := by
     simpa only [CliffordAlgebra.map_apply_ι] using
       CliffordAlgebra.commute_map_mul_map_of_isOrtho_of_mem_evenOdd_zero_left f₁ f₂ hOrtho
-        (x : CliffordAlgebra Q₁) (CliffordAlgebra.ι Q₂ m₂) x.2.2
+        (x : CliffordAlgebra Q₁) (CliffordAlgebra.ι Q₂ m₂) x.property.2
         (CliffordAlgebra.ι_mem_evenOdd_one Q₂ m₂)
   -- Unfold the vector action to the Clifford-algebra conjugation formula.
   change CliffordAlgebra.map f₁ (x : CliffordAlgebra Q₁) * CliffordAlgebra.ι Q (f₂ m₂) *
       star (CliffordAlgebra.map f₁ (x : CliffordAlgebra Q₁)) = CliffordAlgebra.ι Q (f₂ m₂)
   rw [hcomm.eq, mul_assoc, ← CliffordAlgebra.map_star, ← map_mul,
-    spinGroup.mul_star_self_of_mem x.2, map_one, mul_one]
+    spinGroup.mul_star_self_of_mem x.property, map_one, mul_one]
 
 /-- Under an orthogonal-product isometry, the image of a Spin element acts on the first summand
 by the original Spin action and fixes the second summand. -/

@@ -163,7 +163,7 @@ theorem encard_totallyRamifiedOfDegree_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
 `∑_{L ∈ σ_K(2)} q ^ (-c(L)) = 2`, where `q` is the cardinality of the residue field of `K`. Both
 members of `σ_K(2)` are tamely ramified, with weight `1`. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_two (h2 : ¬ ringChar 𝓀[K] ∣ 2) :
-    ∑' L : totallyRamifiedOfDegree K 2, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
+    ∑' L : totallyRamifiedOfDegree K 2, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = 2 := by
   rw [tsum_one_div_natCard_residueField_pow_wildExponent_eq_encard h2,
     encard_totallyRamifiedOfDegree_two h2]
   norm_num
@@ -187,7 +187,7 @@ theorem totallyRamifiedOfDegree_two_eq (hp : p ≠ 2) (u : 𝒪[ℚ_[p]]ˣ)
 /-- **Serre's mass formula for quadratic extensions of `ℚ_p`** for an odd prime `p`:
 `∑_{L ∈ σ_{ℚ_p}(2)} p ^ (-c(L)) = 2`. -/
 theorem tsum_one_div_pow_wildExponent_two (hp : p ≠ 2) :
-    ∑' L : totallyRamifiedOfDegree ℚ_[p] 2, 1 / (p : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
+    ∑' L : totallyRamifiedOfDegree ℚ_[p] 2, 1 / (p : ℝ≥0∞) ^ L.val.wildExponent = 2 := by
   have h2 : ¬ ringChar 𝓀[ℚ_[p]] ∣ 2 := IsLocalRing.isUnit_natCast_iff_not_dvd.1
     (by exact_mod_cast _root_.Padic.isUnit_two_integerRing hp)
   simpa using TauCeti.tsum_one_div_natCard_residueField_pow_wildExponent_two h2

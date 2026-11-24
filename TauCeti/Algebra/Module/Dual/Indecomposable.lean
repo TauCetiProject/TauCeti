@@ -48,23 +48,6 @@ theorem isIndecomposableModule_iff_of_dual (e : Q ≃ₗ[k] Module.Dual k N)
     rw [e.toEquiv.nontrivial_congr, ← not_subsingleton_iff_nontrivial,
       ← not_subsingleton_iff_nontrivial, not_iff_not]
     exact ⟨fun _ ↦ (Module.evalEquiv k N).toEquiv.subsingleton, fun _ ↦ inferInstance⟩
-  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem,
-    isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
-  refine and_congr hnon ?_
-  let d := e.dualEndRingEquiv he
-  constructor
-  · intro h f hf
-    have hop : IsIdempotentElem (MulOpposite.op f) :=
-      congrArg MulOpposite.op hf
-    have hd := h (d (MulOpposite.op f)) (hop.map d)
-    simpa using hd.imp (fun h ↦ congrArg (fun g ↦ (d.symm g).unop) h)
-      (fun h ↦ congrArg (fun g ↦ (d.symm g).unop) h)
-  · intro h f hf
-    have hop := hf.map d.symm
-    have hunop : IsIdempotentElem (d.symm f).unop :=
-      congrArg MulOpposite.unop hop
-    have hd := h (d.symm f).unop hunop
-    simpa using hd.imp (fun h ↦ congrArg (fun g ↦ d (MulOpposite.op g)) h)
-      (fun h ↦ congrArg (fun g ↦ d (MulOpposite.op g)) h)
+  exact (e.dualEndRingEquiv he).isIndecomposableModule_iff hnon
 
 end LinearEquiv
