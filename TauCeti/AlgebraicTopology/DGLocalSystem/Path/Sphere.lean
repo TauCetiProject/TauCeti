@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
@@ -535,5 +536,17 @@ theorem sphereLoopHomologyMulRightEquiv_homologyπ (q : ℕ)
     (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homologyπ (q + (m + 1))).hom w) = _
   rw [smul_smul, ← mul_pow]
   simp
+
+/-- **The loops of `Sⁿ` have no homology in the degrees not divisible by `n - 1`.** For the
+sphere `Sⁿ`, `n = m + 2`, the normalized cubical homology of the Moore loops at the pole vanishes
+in every degree `j` not divisible by `m + 1`, with coefficients in any commutative ring `k`; in
+particular in the degrees `1, …, n - 2`. It is the singular homology, which vanishes in these
+degrees (`TauCeti.isZero_singularHomology_mooreLoopSpace_sphere`). -/
+theorem isZero_homology_sphereLoop {j : ℕ} (hj : ¬ (m + 1) ∣ j) :
+    IsZero (((normalizedCubicalChainComplex k).obj
+      (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).homology j) :=
+  (isZero_singularHomology_mooreLoopSpace_sphere (n := m + 2)
+    (by simp [finrank_euclideanSpace, h]) (by omega) (spherePolePoint h) k hj).of_iso
+    (singularCubicalHomologyIso k _ j).symm
 
 end TauCeti

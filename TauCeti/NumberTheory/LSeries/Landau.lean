@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.LSeries.Positivity
 public import Mathlib.NumberTheory.LSeries.Deriv
 public import TauCeti.NumberTheory.LSeries.Convergence
 public import TauCeti.NumberTheory.LSeries.EntireExtension
+import TauCeti.NumberTheory.LSeries.Positivity
 
 /-!
 # Landau's theorem on Dirichlet series with nonnegative coefficients
@@ -102,13 +103,6 @@ private lemma logPowMul_nonneg (ha : 0 ≤ a) {x : ℝ}
     0 ≤ LSeries (LSeries.logMul^[k] a) (x : ℂ) :=
   (logPowMul_eq_alternating (s := (x : ℂ)) (by simpa using hx) k).symm ▸
     LSeries.iteratedDeriv_alternating ha hx k
-
-/-- The real part of a Dirichlet term at a real point. -/
-lemma re_term_of_ne_zero (a : ℕ → ℂ) (x : ℝ) {n : ℕ} (hn : n ≠ 0) :
-    (LSeries.term a (x : ℂ) n).re = (a n).re / (n : ℝ) ^ x := by
-  have hcast : (n : ℂ) ^ (x : ℂ) = (((n : ℝ) ^ x : ℝ) : ℂ) := by
-    rw [← Complex.ofReal_natCast, ← Complex.ofReal_cpow (Nat.cast_nonneg n)]
-  rw [LSeries.term_of_ne_zero hn, hcast, Complex.div_ofReal_re]
 
 /-- At a real point `x` in the half-plane of absolute convergence, the real series obtained by
 taking real parts of the terms of `logPowMul` converges to the real part of its L-series. -/

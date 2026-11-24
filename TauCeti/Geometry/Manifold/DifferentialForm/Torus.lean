@@ -272,9 +272,8 @@ theorem mpullback_update_torusTimeForm_of_ne (x : ∀ i, AddCircle (p i)) {i j :
   have hconst : (fun z : ∀ j, AddCircle (p j) ↦ z j) ∘ update x i = fun _ ↦ x j :=
     funext fun y ↦ update_of_ne h ..
   rw [torusTimeForm, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-  refine Subtype.ext <| funext fun y ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [SmoothForm.coe_mpullback, mpullback_apply, hconst, mfderiv_const]
-  exact (AddCircle.timeForm (p j)).val _ |>.map_coord_zero 0 rfl
+  refine Subtype.ext ?_
+  rw [SmoothForm.coe_mpullback, hconst, mpullback_const one_ne_zero, ZeroMemClass.coe_zero]
 
 /-- The integral of the coordinate time form `dt_i` along the `i`-th coordinate circle through `x`,
 `t ↦ update x i t`, from `a` to `b` is `b - a`. In particular one circuit `0 ≤ t ≤ p i` has
