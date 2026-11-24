@@ -117,17 +117,6 @@ variable [ProperSMul G Q] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {hαinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x) (contMDiff_const_smul g) α = α}
   {hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ}
 
-omit [FiniteDimensional ℝ EG] [FiniteDimensional ℝ E] [I.Boundaryless] [IsCancelSMul G Q]
-  [ProperSMul G Q] in
-include hαinv hα in
-/-- On a nonempty `Q`, a `G`-invariant one-form pairing every fundamental vector field with `-ν`
-forces `ν` to be coadjoint-fixed. -/
-private theorem coadjointRepresentation_apply_eq_self [Nonempty Q] (g : G) :
-    Lie.coadjointRepresentation ℝ IG G g ν = ν := by
-  refine neg_injective ?_
-  rw [← map_neg]
-  exact coadjointRepresentation_apply_eq_self_of_forall_eval_eq hαinv hα g
-
 variable (hreg : ∀ z, momentMap IG G z = ν → Surjective (h.differential z))
   (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
   (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν) F)
@@ -177,8 +166,8 @@ private theorem exists_diffeomorph_quotientMk_eq_magneticReductionMap :
   have : T2Space G := IG.t2Space_of_lieGroup ∞
   have hν : lieAnnihilator ℝ (GroupLieAlgebra IG G) ν = ⊤ :=
     eq_top_iff.2 fun ξ _ ↦ Lie.mulInvariantExp_smul_mem_stabilizer_coadjointRepresentation_iff.1
-      fun _ ↦ Representation.mem_stabilizer.2
-        (coadjointRepresentation_apply_eq_self (hαinv := hαinv) (hα := hα) _)
+      fun _ ↦ Representation.mem_stabilizer.2 <| neg_injective <| by
+        rw [← map_neg]; exact coadjointRepresentation_apply_eq_self_of_forall_eval_eq hαinv hα _
   have hi := (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
   refine (SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) Quotient.mk_surjective
