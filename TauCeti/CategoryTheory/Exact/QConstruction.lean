@@ -200,6 +200,7 @@ theorem homMk_self {X M : C} (e : M ⟶ X) [IsIso e] {hp : E.IsDeflation e}
 
 /-- **Composition in the Q-construction.** The composite of `X ↞ M ↣ Y` and `Y ↞ N ↣ Z` is
 represented by the outer span of any pullback `P` of `M ↣ Y ↞ N`. -/
+@[reassoc]
 theorem homMk_comp_homMk {X Y Z M N P : C} {p : M ⟶ X} (hp : E.IsDeflation p) {i : M ⟶ Y}
     (hi : E.IsInflation i) {q : N ⟶ Y} (hq : E.IsDeflation q) {j : N ⟶ Z}
     (hj : E.IsInflation j) {a : P ⟶ M} {b : P ⟶ N} (sq : IsPullback a b i q) :
@@ -256,7 +257,7 @@ theorem ofDeflation_comp {X Y Z : C} {p : X ⟶ Y} (hp : E.IsDeflation p) {q : Y
 
 /-- **Normal form of a Q-morphism.** The Q-morphism of a span `X ↞ M ↣ Y` is the reversed
 deflation `X ⟶ M` followed by the inflation `M ⟶ Y`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem ofDeflation_comp_ofInflation {X Y M : C} {p : M ⟶ X} (hp : E.IsDeflation p)
     {i : M ⟶ Y} (hi : E.IsInflation i) : ofDeflation p hp ≫ ofInflation i hi = homMk p hp i hi := by
   rw [ofDeflation, ofInflation, homMk_comp_homMk _ _ _ _ (IsPullback.id_vert (𝟙 M))]
@@ -264,6 +265,7 @@ theorem ofDeflation_comp_ofInflation {X Y M : C} {p : M ⟶ X} (hp : E.IsDeflati
 
 /-- An inflation followed by a reversed deflation is the reversed deflation followed by the
 inflation of any pullback square of the two. -/
+@[reassoc]
 theorem ofInflation_comp_ofDeflation {X Y N P : C} {i : X ⟶ Y} (hi : E.IsInflation i)
     {q : N ⟶ Y} (hq : E.IsDeflation q) {a : P ⟶ X} {b : P ⟶ N} (sq : IsPullback a b i q) :
     ofInflation i hi ≫ ofDeflation q hq =
