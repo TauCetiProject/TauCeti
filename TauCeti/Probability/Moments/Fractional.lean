@@ -54,7 +54,7 @@ theorem lintegral_rpow_mul_sub_re_charFun (hq : 0 < q) (hq2 : q < 2) :
     rw [← ofReal_integral_eq_lintegral_ofReal hint
       (ae_of_all _ fun x ↦ mul_nonneg (rpow_nonneg ht.le _) (hnonneg t x)),
       integral_const_mul, integral_sub (integrable_const _) hcos,
-      integral_const, smul_eq_mul, mul_one, integral_cos_mul_eq_re t]
+      integral_const, smul_eq_mul, mul_one, integral_cos_mul_eq_re_charFun t]
   calc
     _ = ∫⁻ t in Ioi (0 : ℝ), ∫⁻ x,
         ENNReal.ofReal (t ^ (-(q + 1)) * (1 - cos (t * x))) ∂μ := by

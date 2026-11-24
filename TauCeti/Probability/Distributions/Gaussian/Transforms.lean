@@ -230,7 +230,7 @@ the real part of its characteristic function. -/
 theorem integral_cos_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
     ∫ y, Real.cos (t * y) ∂gaussianReal μ v =
       Real.exp (-(v * t ^ 2) / 2) * Real.cos (t * μ) := by
-  rw [TauCeti.integral_cos_mul_eq_re, charFun_gaussianReal, Complex.exp_re]
+  rw [TauCeti.integral_cos_mul_eq_re_charFun, charFun_gaussianReal, Complex.exp_re]
   simp [← Complex.ofReal_pow, neg_div]
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]

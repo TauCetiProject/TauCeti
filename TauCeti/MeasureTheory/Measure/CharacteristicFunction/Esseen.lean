@@ -71,7 +71,7 @@ theorem integral_mul_sinc_sq_eq_integral_re_charFun (v T : ℝ) :
     _ = ∫ t in 0..T, ∫ x, (1 - t / T) * Real.cos (t * (x - v)) ∂μ :=
         (intervalIntegral_integral_swap hint).symm
     _ = ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
-        simp only [integral_const_mul, TauCeti.integral_cos_mul_sub_eq_re]
+        simp only [integral_const_mul, TauCeti.integral_cos_mul_sub_eq_re_exp_mul_charFun]
 
 omit [IsFiniteMeasure μ] in
 /-- For `T > 0`, the integral over `[0, T]`, weighted by `1 - t / T`, of the real part of the
