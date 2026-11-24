@@ -748,15 +748,16 @@ theorem sphericalPendulumUpperTurningPoint_zero_right {h : ℝ} (hh : -1 ≤ h) 
   rw [sphericalPendulumUpperTurningPoint_eq_sSup]
   exact (congrArg sSup (fibreHeights_zero_right h)).trans (csSup_Icc (le_min hh (by norm_num)))
 
-/-- Every height `y ∈ (-1, 1)` below `h₀` belongs to the fibres over all values near `(h₀, 0)`,
-since the radicand `2 (h₀ - y) (1 - y²)` is positive there. -/
-private theorem eventually_mem_fibreHeights_of_lt {h₀ y : ℝ} (hy : y ∈ Ioo (-1) 1) (hyh : y < h₀) :
-    ∀ᶠ c : ℝ × ℝ in 𝓝 (h₀, 0), y ∈ fibreHeights c.1 c.2 := by
+/-- For every height `y ∈ (-1, 1)` below `h₀`, the radicand `2 (h - y) (1 - y²) - j²` stays
+positive for all values `(h, j)` near `(h₀, 0)`, so `y` lies in those fibres
+(`mem_fibreHeights_of_lt`). -/
+private theorem eventually_sq_lt_radicand_of_lt {h₀ y : ℝ} (hy : y ∈ Ioo (-1) 1) (hyh : y < h₀) :
+    ∀ᶠ c : ℝ × ℝ in 𝓝 (h₀, 0), c.2 ^ 2 < 2 * (c.1 - y) * (1 - y ^ 2) := by
   have h₁ : 0 < 1 - y ^ 2 := by nlinarith [hy.1, hy.2]
   have hpos : 0 < 2 * (h₀ - y) * (1 - y ^ 2) - (0 : ℝ) ^ 2 := by
     simpa using mul_pos (mul_pos two_pos (sub_pos.2 hyh)) h₁
   filter_upwards [eventually_radicand_pos hpos] with c hc
-  exact mem_fibreHeights_of_lt hy (by linarith)
+  linarith
 
 /-- For `h₀ > -1`, the height `(-1 + min h₀ 1) / 2` lies in `(-1, 1)`, and the radicand at this
 height stays positive for all values near `(h₀, 0)`; in particular those fibres are nonempty. -/
@@ -765,14 +766,7 @@ private theorem eventually_radicand_pos_zero_right {h₀ : ℝ} (hh : -1 < h₀)
       c.2 ^ 2 < 2 * (c.1 - (-1 + min h₀ 1) / 2) * (1 - ((-1 + min h₀ 1) / 2) ^ 2) := by
   have hy : (-1 + min h₀ 1) / 2 ∈ Ioo (-1) 1 :=
     ⟨by linarith [lt_min hh (by norm_num : (-1 : ℝ) < 1)], by linarith [min_le_right h₀ 1]⟩
-  have h₁ : 0 < 1 - ((-1 + min h₀ 1) / 2) ^ 2 := by nlinarith [hy.1, hy.2]
-  have h₂ : 0 < h₀ - (-1 + min h₀ 1) / 2 := by linarith [min_le_left h₀ 1, hy.1]
-  have hpos : 0 < 2 * (h₀ - (-1 + min h₀ 1) / 2) * (1 - ((-1 + min h₀ 1) / 2) ^ 2) -
-      (0 : ℝ) ^ 2 := by
-    simpa using mul_pos (mul_pos two_pos h₂) h₁
-  refine ⟨hy, ?_⟩
-  filter_upwards [eventually_radicand_pos hpos] with c hc
-  linarith
+  exact ⟨hy, eventually_sq_lt_radicand_of_lt hy (by linarith [min_le_left h₀ 1])⟩
 
 /-- **Continuity of the lower turning point on the axis.** For `h > -1` the lower turning point
 `z₋` is continuous at `(h, 0)`, where it is the south pole. -/
@@ -790,10 +784,10 @@ theorem continuousAt_sphericalPendulumLowerTurningPoint_zero_right {h : ℝ} (hh
     have hm' : -1 < min u (min h 1) := lt_min hu hm
     have hy : (-1 + min u (min h 1)) / 2 ∈ Ioo (-1) 1 :=
       ⟨by linarith, by linarith [min_le_right u (min h 1), min_le_right h 1]⟩
-    filter_upwards [eventually_mem_fibreHeights_of_lt hy
+    filter_upwards [eventually_sq_lt_radicand_of_lt hy
       (by linarith [min_le_right u (min h 1), min_le_left h 1])] with c hc
     rw [sphericalPendulumLowerTurningPoint_eq_sInf]
-    exact (csInf_le (bddBelow_fibreHeights c.1 c.2) hc).trans_lt
+    exact (csInf_le (bddBelow_fibreHeights c.1 c.2) (mem_fibreHeights_of_lt hy hc)).trans_lt
       (by linarith [min_le_left u (min h 1)])
 
 /-- **Continuity of the upper turning point on the axis.** For `h > -1` the upper turning point
@@ -807,11 +801,11 @@ theorem continuousAt_sphericalPendulumUpperTurningPoint_zero_right {h : ℝ} (hh
     have hl' : max l (-1) < min h 1 := max_lt hl hm
     have hy : (max l (-1) + min h 1) / 2 ∈ Ioo (-1) 1 :=
       ⟨by linarith [le_max_right l (-1)], by linarith [min_le_right h 1]⟩
-    filter_upwards [eventually_mem_fibreHeights_of_lt hy (by linarith [min_le_left h 1])]
+    filter_upwards [eventually_sq_lt_radicand_of_lt hy (by linarith [min_le_left h 1])]
       with c hc
     rw [sphericalPendulumUpperTurningPoint_eq_sSup]
     exact (by linarith [le_max_left l (-1)] : l < _).trans_le
-      (le_csSup (bddAbove_fibreHeights c.1 c.2) hc)
+      (le_csSup (bddAbove_fibreHeights c.1 c.2) (mem_fibreHeights_of_lt hy hc))
   · -- The fibre is nonempty and its heights are at most `min c.1 1`, which tends to `min h 1`.
     obtain ⟨hy, hev⟩ := eventually_radicand_pos_zero_right hh
     have hlim : Tendsto (fun c : ℝ × ℝ ↦ min c.1 1) (𝓝 (h, 0)) (𝓝 (min h 1)) :=
