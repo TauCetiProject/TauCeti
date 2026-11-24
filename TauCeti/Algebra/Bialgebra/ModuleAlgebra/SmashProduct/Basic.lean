@@ -206,6 +206,21 @@ theorem smashMulPure_eq_sum (μ : LeftModuleAlgebra R H A) {h : H} {ι : Type*}
   simp only [TensorProduct.map_tmul, LinearMap.comp_apply, LinearMap.flip_apply,
     AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
 
+/-- When `b` is `H`-invariant, `smashMulPure a b h k` collapses to `(a * b) ⊗ₜ[R] (h * k)`. -/
+theorem smashMulPure_of_mem_invariants (μ : LeftModuleAlgebra R H A) (a : A) {b : A}
+    (hb : b ∈ μ.invariants) (h k : H) :
+    μ.smashMulPure a b h k = (a * b) ⊗ₜ[R] (h * k) := by
+  have hleft : LinearMap.mulLeft R a ∘ₗ μ.action.toLinearMap.flip b =
+      LinearMap.toSpanSingleton R A (a * b) ∘ₗ Coalgebra.counit (R := R) := by
+    ext x
+    simp [(mem_invariants_iff μ b).1 hb x]
+  calc μ.smashMulPure a b h k
+      = TensorProduct.map (LinearMap.toSpanSingleton R A (a * b)) (LinearMap.mulRight R k)
+          (Coalgebra.counit.rTensor H (Coalgebra.comul (R := R) h)) := by
+          simp [smashMulPure, hleft, LinearMap.rTensor_def, TensorProduct.map_map]
+    _ = (a * b) ⊗ₜ[R] (h * k) := by
+          simp [Coalgebra.rTensor_counit_comul]
+
 namespace SmashProduct
 
 section AlgebraConstruction
@@ -252,9 +267,7 @@ private theorem toEnd_tmul_tmul (a b : A) (h k : H) :
 private theorem toEnd_apply_one (x : A ⊗[R] H) : toEnd μ x (1 ⊗ₜ[R] 1) = x := by
   induction x using TensorProduct.inductionOn with
   | tmul a h =>
-    rw [toEnd_tmul_tmul, μ.smashMulPure_eq_sum (ℛ R h)]
-    simp only [μ.action_one, mul_one, Algebra.mul_smul_comm, TensorProduct.smul_tmul,
-      ← TensorProduct.tmul_sum, sum_counit_smul]
+    rw [toEnd_tmul_tmul, μ.smashMulPure_of_mem_invariants a (one_mem _) h 1, mul_one, mul_one]
   | add x y hx hy => simp [hx, hy]
 
 /-- Any covariant pair `(fA, fH)` turns `toEnd μ x y` into the product of `LinearMap.mulMap`
@@ -358,9 +371,8 @@ theorem smash_one_mul_smash (a b : A) (k : H) :
 @[simp]
 theorem smash_mul_one_smash (a : A) (h k : H) :
     μ.smash a h * μ.smash 1 k = μ.smash a (h * k) := by
-  rw [smash_mul_smash_eq_sum μ (ℛ R h)]
-  simp only [μ.action_one, Algebra.mul_smul_comm, mul_one, smul_smash, ← smash_smul,
-    ← Algebra.smul_mul_assoc, ← smash_sum, ← Finset.sum_mul, sum_counit_smul]
+  rw [smash_mul_smash, μ.smashMulPure_of_mem_invariants a (one_mem _) h k, mul_one,
+    tensorEquiv_symm_tmul]
 
 theorem one_smash_mul_smash_one {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (b : A) :
     μ.smash 1 h * μ.smash b 1 = ∑ i ∈ r.index, μ.smash (μ.action (r.left i) b) (r.right i) := by
@@ -409,6 +421,8 @@ theorem algebraMap_apply' (r : R) :
 end AlgebraConstruction
 
 end SmashProduct
+
+@[simp] theorem smash_one_one {μ : LeftModuleAlgebra R H A} : μ.smash 1 1 = 1 := (rfl)
 
 /-! ### Canonical inclusions of `A` and `H` -/
 
@@ -633,10 +647,8 @@ noncomputable def trivialAlgEquiv :
         | add y₁ y₂ hy₁ hy₂ => simp [mul_add, hy₁, hy₂]
         | smash b k =>
           rw [tensorEquiv_smash, tensorEquiv_smash, tensorEquiv_smash_mul_smash,
-            μ₀.smashMulPure_eq_sum (ℛ R h)]
-          simp only [μ₀, trivial_action, Algebra.mul_smul_comm, TensorProduct.smul_tmul]
-          simp only [← Algebra.smul_mul_assoc, ← TensorProduct.tmul_sum, ← Finset.sum_mul,
-            sum_counit_smul, Algebra.TensorProduct.tmul_mul_tmul])
+            μ₀.smashMulPure_of_mem_invariants a (by simp [μ₀]) h k,
+            Algebra.TensorProduct.tmul_mul_tmul])
 
 @[simp]
 theorem trivialAlgEquiv_smash (a : A) (h : H) :

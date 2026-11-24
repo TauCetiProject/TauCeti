@@ -121,10 +121,17 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
     TensorProduct.map
       (LinearMap.mulMap (fA.toLinearMap ∘ₗ μ.action.toLinearMap.flip a) fH.toLinearMap)
       gH.toLinearMap ∘ₗ (TensorProduct.assoc R H H H).symm.toLinearMap
-  have hco := congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
-  simp only [Φ, map_sum, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.mulMap_tmul,
-    LinearMap.flip_apply, AlgHom.toLinearMap_apply] at hco
+  have hco :
+      ∑ i ∈ r.index, ∑ j ∈ (r₁ i).index,
+        (fA (μ.action ((r₁ i).left j) a) * fH ((r₁ i).right j)) ⊗ₜ[R] gH (r.right i) =
+      ∑ i ∈ r.index, ∑ j ∈ (r₂ i).index,
+        (fA (μ.action (r.left i) a) * fH ((r₂ i).left j)) ⊗ₜ[R] gH ((r₂ i).right j) := by
+    simpa [Φ, map_sum, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      TensorProduct.assoc_symm_tmul, TensorProduct.map_tmul, LinearMap.mulMap_tmul,
+      LinearMap.flip_apply, AlgHom.toLinearMap_apply] using
+      congrArg Φ (Coalgebra.sum_tmul_tmul_eq r r₁ r₂)
+  -- Three-step calculation: expand `comul h`, apply covariance `hf`, then reassociate via
+  -- coassociativity.
   calc ((Algebra.TensorProduct.map fH gH).comp (Bialgebra.comulAlgHom R H)) h *
           (Algebra.TensorProduct.includeLeft.comp fA) a
       = (∑ i ∈ r.index, fH (r.left i) ⊗ₜ[R] gH (r.right i)) * (fA a ⊗ₜ[R] 1) := by
@@ -137,7 +144,8 @@ theorem SmashCompatible.includeLeft_map_comul {μ : LeftModuleAlgebra R H A} {C 
           rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, hf.mul_eq_sum (r₁ i) a,
             TensorProduct.sum_tmul]
     _ = ∑ i ∈ r.index, ∑ j ∈ (r₂ i).index,
-          (fA (μ.action (r.left i) a) * fH ((r₂ i).left j)) ⊗ₜ[R] gH ((r₂ i).right j) := hco
+          (fA (μ.action (r.left i) a) * fH ((r₂ i).left j)) ⊗ₜ[R] gH ((r₂ i).right j) := by
+          simpa only using hco
     _ = _ := by
           refine Finset.sum_congr rfl fun i _ => ?_
           simp only [AlgHom.comp_apply, Algebra.TensorProduct.includeLeft_apply,
