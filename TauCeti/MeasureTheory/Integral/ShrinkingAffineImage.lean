@@ -12,12 +12,13 @@ public import Mathlib.Topology.Algebra.Module.Basic
 /-!
 # Integrals along shrinking affine images of a compact set
 
-Let `K` be a compact set, `L` a continuous map from it into a topological vector space and `c` a
-point of that space. As `t → 0`, the affine images `y ↦ c + t • L y` of `K` eventually lie in any
-given neighbourhood of `c` (`IsCompact.eventually_forall_add_smul_mem`). Consequently, for a measure
-which is finite on compact sets and a function `Φ` continuous near `c`, the integral over `K` of
-`Φ (c + t • L y)` tends to `μ K • Φ c` (`IsCompact.tendsto_setIntegral_add_smul`), by dominated
-convergence with a constant bound.
+Let `K` be a compact subset of a topological space `X`, `L : X → E` a continuous map into a
+topological vector space and `c` a point of `E`. As `t → 0`, the affine images `y ↦ c + t • L y`
+of `K` eventually lie in any given neighbourhood of `c`
+(`IsCompact.eventually_forall_add_smul_mem`). Consequently, for a measure which is finite on
+compact sets and a function `Φ` continuous near `c`, the integral over `K` of `Φ (c + t • L y)`
+tends to `μ K • Φ c` (`IsCompact.tendsto_setIntegral_add_smul`), by dominated convergence with a
+constant bound.
 
 This is how a pointwise value of a continuous integrand is recovered from its integrals over small
 affine simplices, as in the proof that a continuous form with integer integrals over all smooth
