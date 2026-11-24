@@ -220,31 +220,37 @@ theorem truncatedColumnReflections_eq_piecewise_neg_of_nonpos (s : Finset ι) (c
     simp [hi]
   · simp [hi]
 
+private theorem truncatedColumnReflections_neg_single_eq_piecewise (s : Finset ι) (i : ι) :
+    A.truncatedColumnReflections s (-Pi.single i 1) =
+      s.piecewise (Pi.single i 1) (-Pi.single i 1) := by
+  simpa only [neg_neg] using
+    A.truncatedColumnReflections_eq_piecewise_neg_of_nonpos s (-Pi.single i 1) (by
+      intro j _ k _ _
+      by_cases hki : k = i <;> simp [hki])
+
 /-- A selected negative simple column is sent to the corresponding positive simple column. -/
 @[simp]
 theorem truncatedColumnReflections_neg_single_of_mem {s : Finset ι} {i : ι} (hi : i ∈ s) :
     A.truncatedColumnReflections s (-Pi.single i 1) = Pi.single i 1 := by
-  rw [A.truncatedColumnReflections_eq_piecewise_neg_of_nonpos s _ (by
-    intro j _ k _ _
-    by_cases hki : k = i <;> simp [hki])]
-  ext k
-  by_cases hki : k = i
-  · subst k
-    simp [hi]
-  · simp [Finset.piecewise, hki]
+  rw [A.truncatedColumnReflections_neg_single_eq_piecewise]
+  calc
+    _ = s.piecewise (Pi.single i 1) (Pi.single i 1) :=
+      s.piecewise_congr (fun _ _ ↦ rfl) (fun k hk ↦ by
+        have hki : k ≠ i := fun h ↦ hk (h.symm ▸ hi)
+        simp [hki])
+    _ = _ := Finset.piecewise_same _ _
 
 /-- An unselected negative simple column is fixed by the simultaneous update. -/
 @[simp]
 theorem truncatedColumnReflections_neg_single_of_notMem {s : Finset ι} {i : ι} (hi : i ∉ s) :
     A.truncatedColumnReflections s (-Pi.single i 1) = -Pi.single i 1 := by
-  rw [A.truncatedColumnReflections_eq_piecewise_neg_of_nonpos s _ (by
-    intro j _ k _ _
-    by_cases hki : k = i <;> simp [hki])]
-  ext k
-  by_cases hki : k = i
-  · subst k
-    simp [hi]
-  · simp [Finset.piecewise, hki]
+  rw [A.truncatedColumnReflections_neg_single_eq_piecewise]
+  calc
+    _ = s.piecewise (-Pi.single i 1) (-Pi.single i 1) :=
+      s.piecewise_congr (fun k hk ↦ by
+        have hki : k ≠ i := fun h ↦ hi (h ▸ hk)
+        simp [hki]) (fun _ _ ↦ rfl)
+    _ = _ := Finset.piecewise_same _ _
 
 /-- An independent colour class containing a simple column sends it to its negative. -/
 @[simp]
@@ -257,16 +263,16 @@ theorem truncatedColumnReflections_single_of_mem {s : Finset ι}
 
 /-- Reflection at `i` sends its negative simple column to its positive simple column. -/
 @[simp]
-theorem truncatedColumnReflection_neg_single (i : ι) :
+theorem truncatedColumnReflection_neg_single_self (i : ι) :
     A.truncatedColumnReflection i (-Pi.single i 1) = Pi.single i 1 := by
   simpa only [truncatedColumnReflections_singleton] using
     A.truncatedColumnReflections_neg_single_of_mem (Finset.mem_singleton_self i)
 
 /-- Reflection at a simple column sends it to its negative. -/
 @[simp]
-theorem truncatedColumnReflection_single (i : ι) :
+theorem truncatedColumnReflection_single_self (i : ι) :
     A.truncatedColumnReflection i (Pi.single i 1) = -Pi.single i 1 := by
-  have h := congrArg (A.truncatedColumnReflection i) (A.truncatedColumnReflection_neg_single i)
+  have h := congrArg (A.truncatedColumnReflection i) (A.truncatedColumnReflection_neg_single_self i)
   simpa only [A.truncatedColumnReflection_truncatedColumnReflection i] using h.symm
 
 /-- Truncated reflection fixes a negative simple column at any other vertex. -/
