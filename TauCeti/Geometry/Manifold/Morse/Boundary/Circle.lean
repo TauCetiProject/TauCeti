@@ -65,9 +65,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   is the sum of the two minima.
 * `exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq`: the weighted integral
   boundary coefficients of `p_j` at `q_0` and `q_1` are `ε_j` and `-ε_j`.
-* `signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul`: for the orientations `+∂_θ` of
-  the maxima, the coefficient of `q_i` in the boundary of `p_j` is `-ε_i` for `i = j` and `ε_i`
-  otherwise.
+* `signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul`: for the orientation `+∂_θ` of
+  the maximum `p_j`, the coefficient of `q_i` in the boundary of `p_j` is `-ε_i` for `i = j` and
+  `ε_i` otherwise.
 * `exists_fundamentalSign_augmentationSign_signedMorseBoundaryCoeff_circleCosTwo_eq`: there are
   orientation data with the orientations `+∂_θ` at the maxima and the negative orientations at
   the minima, and for them the differential is `I - S = [[1, -1], [-1, 1]]`.
@@ -450,11 +450,11 @@ private theorem ite_map_stableComparison_circleCosTwo (hδ : 0 < δ)
   have : Unique (Fin (finrank ℝ ℝ)) := by rw [finrank_self]; infer_instance
   -- The comparison map carries `bC` to `B` scaled by `df_y (bC k)`.
   have hdet : B.det (bC.map 𝒜) = mvfderiv 𝓘(ℝ) (circleCosTwo δ r) y (bC default) := by
-    rw [Module.Basis.det_apply, Matrix.det_unique, Module.Basis.toMatrix_apply,
-      Module.Basis.map_apply, Module.Basis.repr_reindex_apply, Module.Basis.repr_reindex_apply]
+    simp only [Module.Basis.det_apply, Matrix.det_unique, Module.Basis.toMatrix_apply,
+      Module.Basis.map_apply, B, Module.Basis.repr_reindex_apply]
     rcases finSumFinEquiv.symm ((finCongr _).symm default) with k | k
-    · rw [Module.Basis.prod_repr_inl, Module.Basis.singleton_repr]
-      rfl
+    · simp only [𝒜, LinearEquiv.ofBijective_apply, Module.Basis.prod_repr_inl]
+      exact Module.Basis.singleton_repr _ _ _ _
     · exact (k.cast hqi).elim0
   -- `df_y` along `+∂_θ` is `-2 δ` towards `q_j` and `2 δ` towards `q_{j + 1}`.
   have hdf : B.det (bC.map 𝒜) = -(2 * δ) * if i = j then 1 else -1 := by
@@ -472,31 +472,31 @@ private theorem ite_map_stableComparison_circleCosTwo (hδ : 0 < δ)
       Module.Basis.orientation_eq_iff_det_pos, hdf]
     split_ifs <;> first | rfl | (exfalso; nlinarith)
   rcases c.orientation_eq_or_eq_neg (𝔬.orientation (circleCosTwoMinCrit δ r i)) with ho | ho
-  · rw [hbC, ho, hτ, hkey, Orientation.signBasis_orientation, Units.val_one, one_mul]
+  · rw [hbC, ho, hτ, hkey]
+    simp
   · rw [hbC, ho, Orientation.prod_neg_right, Orientation.reindex_neg, hτ,
-      Orientation.ite_eq_neg_eq_neg_ite hcard, hkey, Orientation.signBasis_neg,
-      Orientation.signBasis_orientation, Units.val_neg, Units.val_one, neg_one_mul]
+      Orientation.ite_eq_neg_eq_neg_ite hcard, hkey]
+    simp [Orientation.signBasis_neg, neg_ite]
 
 /-- **The integral Morse differential of the circle for the orientations `+∂_θ`.** Let `δ > 0`, let
 `X` be a pseudo-gradient adapted to `θ ↦ δ cos (2 (θ - r))`, and let `𝔬` orient the unstable line
-of each maximum `p_j = r + j π` by `+∂_θ`, the positive orientation of the circle: the fundamental
+of the maximum `p_j = r + j π` by `+∂_θ`, the positive orientation of the circle: the fundamental
 sign of `p_j` for this orientation is `1`, that is, the unstable orientation of `p_j` is the
 orientation of the circle (`fundamentalSign`). Then the coefficient of the minimum
 `q_i = r + π / 2 + i π` in the integral Morse boundary of `p_j` is `-ε_i` if `i = j` and `ε_i`
 otherwise, where `ε_i` is the augmentation sign of the orientation at `q_i`. The trajectory from
 `p_j` to `q_j` leaves `p_j` in the direction `+∂_θ` and counts negatively, since `+∂_θ` points along
 `X` there, while a trajectory counts positively only when the orientation points along `-X`; the
-one from `p_j` to `q_{j + 1}` leaves in the direction `-∂_θ` and counts positively. So for the
-positive orientations at the minima the differential is `S - I`, and for the negative ones it is
-`I - S`, in the ordered bases `(p_0, p_1)` and `(q_0, q_1)`, where `S` exchanges the two
-generators. -/
+one from `p_j` to `q_{j + 1}` leaves in the direction `-∂_θ` and counts positively. So when both
+maxima are oriented by `+∂_θ`, the differential is `S - I` for the positive orientations at the
+minima and `I - S` for the negative ones, in the ordered bases `(p_0, p_1)` and `(q_0, q_1)`,
+where `S` exchanges the two generators. -/
 theorem signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X)
-    (𝔬 : MorseOrientation (circleCosTwo δ r) X)
-    (h𝔬 : ∀ j, hX.fundamentalSign 𝔬
+    (𝔬 : MorseOrientation (circleCosTwo δ r) X) (i j : Fin 2)
+    (h𝔬 : hX.fundamentalSign 𝔬
       ((AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm))
-      (circleCosTwoMaxCrit δ r j) = 1)
-    (i j : Fin 2) :
+      (circleCosTwoMaxCrit δ r j) = 1) :
     hX.signedMorseBoundaryCoeff 𝔬 (circleCosTwoMaxCrit δ r j) (circleCosTwoMinCrit δ r i) =
       𝔬.augmentationSign (circleCosTwoMinCrit δ r i) * if i = j then -1 else 1 := by
   classical
@@ -510,14 +510,14 @@ theorem signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul (hδ : 0 <
   have hslice : y ∈ hX.morseTrajectorySlice (circleCosTwoMaxCrit δ r j)
       (circleCosTwoMinCrit δ r i) := hy ▸ mem_singleton y
   have hz := hX.mem_morseTrajectorySlice.1 hslice
-  have hA := bijective_stableComparison hMS hf (𝔬.coord_mfderiv_chart _) (𝔬.coord_mfderiv_chart _)
-    hpE hpq ⟨hz.1, hz.2.1⟩
+  have hA := bijective_mvfderiv_prod_stableNormal hMS hf (𝔬.coord_mfderiv_chart _)
+    (𝔬.coord_mfderiv_chart _) hpE hpq ⟨hz.1, hz.2.1⟩
   -- With the fundamental sign `1` at `p_j`, the sign of the trajectory compares the orientation of
   -- the circle with that of `ℝ × V_q` through `v ↦ (df_y v, N_q v)`.
   have hs := fundamentalSign_mul_trajectorySign hMS hf 𝔬
     ((AddCircle.orientation (2 * π)).reindex (finCongr (finrank_self ℝ).symm)) hpE hpq
     ⟨hz.1, hz.2.1⟩ hA
-  rw [h𝔬 j, one_mul] at hs
+  rw [h𝔬, one_mul] at hs
   rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def, hy,
     finsum_mem_singleton, hs]
   exact ite_map_stableComparison_circleCosTwo hδ hX 𝔬 hslice hA
@@ -562,7 +562,7 @@ theorem exists_fundamentalSign_augmentationSign_signedMorseBoundaryCoeff_circleC
     rcases 𝔬₀.augmentationSign_eq_one_or_eq_neg_one
       (manifoldMorseIndex_circleCosTwoMinCrit hδ r i) with h | h <;> simp [hminS, h]
   refine ⟨𝔬₀.reverse S, hcond, haug, fun i j ↦ ?_⟩
-  rw [signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul hδ hX _ hcond, haug]
+  rw [signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul hδ hX _ i j (hcond j), haug]
   split_ifs <;> norm_num
 
 end IsAdaptedPseudoGradient
