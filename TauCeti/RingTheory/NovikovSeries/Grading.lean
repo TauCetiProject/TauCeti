@@ -270,22 +270,6 @@ theorem gradeProj_eq_zero_of_mem_gradeBy {f : H → ι} {i j : ι} (hij : j ≠ 
     exact hij ((mem_gradeBy_iff.1 ha (mem_support.2 hne) : f h = j).symm.trans hh)
   · rfl
 
-/-- The support of the homogeneous component of degree `i` is the part of the support of degree
-`i`. -/
-theorem support_gradeProj (f : H → ι) (i : ι) (a : NovikovSeries R H N) :
-    (gradeProj R N f i a).support = a.support ∩ f ⁻¹' {i} := by
-  ext h
-  simp [mem_support, and_comm]
-
-/-- The homogeneous component of degree `i` of a monomial is the monomial when its exponent has
-degree `i`, and zero otherwise. -/
-@[simp]
-theorem gradeProj_single (f : H → ι) (i : ι) (h : H) (r : R) :
-    gradeProj R N f i (single h r) = if f h = i then single h r else 0 := by
-  split_ifs with hh
-  · exact gradeProj_eq_self_of_mem_gradeBy (hh ▸ single_mem_gradeBy f h r)
-  · exact gradeProj_eq_zero_of_mem_gradeBy hh (single_mem_gradeBy f h r)
-
 /-- The sum of the homogeneous components of the degrees in a finite set `s` keeps the
 coefficients at the exponents whose degree lies in `s`. -/
 theorem coeff_sum_gradeProj (f : H → ι) (s : Finset ι) (a : NovikovSeries R H N) (h : H) :
