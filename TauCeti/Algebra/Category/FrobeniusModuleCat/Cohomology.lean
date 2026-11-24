@@ -258,7 +258,7 @@ theorem homologyZeroIso_hom_naturality {N : FrobeniusModuleCat σ} (f : M ⟶ N)
         (ker_frobeniusSubOne_le_comap f)) ≫
         ModuleCat.ofHom (LinearMap.ker N.frobeniusSubOne).subtype =
       ModuleCat.ofHom (LinearMap.ker M.frobeniusSubOne).subtype ≫ restrictScalarsHom f :=
-    (rfl)
+    ModuleCat.hom_ext (LinearMap.subtype_comp_restrict (ker_frobeniusSubOne_le_comap f))
   simp [h]
 
 variable {M} in
@@ -276,7 +276,7 @@ theorem homologyOneIso_inv_naturality {N : FrobeniusModuleCat σ} (f : M ⟶ N) 
         ModuleCat.ofHom ((LinearMap.range M.frobeniusSubOne).mapQ _ (restrictScalarsHom f).hom
           (range_frobeniusSubOne_le_comap f)) =
       restrictScalarsHom f ≫ ModuleCat.ofHom (LinearMap.range N.frobeniusSubOne).mkQ :=
-    (rfl)
+    ModuleCat.hom_ext (Submodule.mapQ_mkQ _ _ _ (h := range_frobeniusSubOne_le_comap f))
   simp [reassoc_of% h]
 
 /-- The Frobenius cohomology vanishes outside degrees `0` and `1`. -/
