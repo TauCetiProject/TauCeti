@@ -255,6 +255,11 @@ theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure �
     rw [Real.norm_of_nonneg (by positivity)]
     exact inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg x])
 
+/-- A finite multiple of a Poisson-finite measure is Poisson-finite. -/
+theorem IsPoissonFinite.smul_measure {ν : Measure ℝ} (hν : IsPoissonFinite ν) {c : ℝ≥0∞}
+    (hc : c ≠ ∞) : IsPoissonFinite (c • ν) :=
+  (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).smul_measure hc)
+
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
 @[simp]
 theorem upperHalfPlanePoissonKernel_conj (z : ℂ) (x : ℝ) :
@@ -318,6 +323,12 @@ theorem upperHalfPlanePoissonIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
 theorem upperHalfPlanePoissonIntegral_nonneg (ν : Measure ℝ) {z : ℂ} (hz : 0 ≤ z.im) :
     0 ≤ upperHalfPlanePoissonIntegral ν z :=
   integral_nonneg (upperHalfPlanePoissonKernel_nonneg hz)
+
+/-- The Poisson integral is linear in the measure: `P[c • ν] = c P[ν]`. -/
+theorem upperHalfPlanePoissonIntegral_smul_measure (ν : Measure ℝ) (c : ℝ≥0∞) (z : ℂ) :
+    upperHalfPlanePoissonIntegral (c • ν) z = c.toReal * upperHalfPlanePoissonIntegral ν z := by
+  rw [upperHalfPlanePoissonIntegral_def, integral_smul_measure, smul_eq_mul,
+    ← upperHalfPlanePoissonIntegral_def]
 
 /-- The Poisson integral of Lebesgue measure is `1` on the upper half-plane. -/
 @[simp]

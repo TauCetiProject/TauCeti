@@ -15,7 +15,8 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
 # Harmonic conjugates on the upper half-plane
 
 A harmonic function `u` on the upper half-plane `ℂ₊` is the imaginary part of a holomorphic
-function on `ℂ₊` (`TauCeti.exists_differentiableOn_im_eq_of_harmonicOnNhd`).
+function on `ℂ₊`
+(`InnerProductSpace.HarmonicOnNhd.exists_differentiableOn_upperHalfPlaneSet_im_eq`).
 
 The complex partial `∂ₓu - i ∂ᵧu` of `u` is holomorphic on `ℂ₊`
 (`HarmonicAt.differentiableAt_complex_partial`), so its wedge integral is a primitive there
@@ -28,8 +29,8 @@ part on a ball), replacing the primitive on a ball
 
 ## Main results
 
-* `TauCeti.exists_differentiableOn_im_eq_of_harmonicOnNhd`: a harmonic function on `ℂ₊` is the
-  imaginary part of a holomorphic function on `ℂ₊`.
+* `InnerProductSpace.HarmonicOnNhd.exists_differentiableOn_upperHalfPlaneSet_im_eq`: a harmonic
+  function on `ℂ₊` is the imaginary part of a holomorphic function on `ℂ₊`.
 -/
 
 public section
@@ -39,13 +40,13 @@ noncomputable section
 open Complex Set InnerProductSpace
 open UpperHalfPlane (upperHalfPlaneSet)
 
-namespace TauCeti
+namespace InnerProductSpace.HarmonicOnNhd
 
 /-- **A harmonic function on the upper half-plane is the imaginary part of a holomorphic
 function.** The proof adapts Mathlib's
 `InnerProductSpace.HarmonicOnNhd.exists_analyticOnNhd_ball_re_eq`, with the wedge-integral
 primitive on `ℂ₊` in place of the primitive on a ball. -/
-theorem exists_differentiableOn_im_eq_of_harmonicOnNhd {u : ℂ → ℝ}
+theorem exists_differentiableOn_upperHalfPlaneSet_im_eq {u : ℂ → ℝ}
     (hu : HarmonicOnNhd u upperHalfPlaneSet) :
     ∃ F : ℂ → ℂ, DifferentiableOn ℂ F upperHalfPlaneSet ∧
       EqOn (fun z ↦ (F z).im) u upperHalfPlaneSet := by
@@ -83,4 +84,4 @@ theorem exists_differentiableOn_im_eq_of_harmonicOnNhd {u : ℂ → ℝ}
   simp only [mul_im, I_re, zero_mul, I_im, one_mul, zero_add, add_re, ofReal_re] at this ⊢
   linarith
 
-end TauCeti
+end InnerProductSpace.HarmonicOnNhd

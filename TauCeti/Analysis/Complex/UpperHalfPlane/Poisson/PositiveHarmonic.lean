@@ -21,10 +21,11 @@ for some `c ≥ 0` and some Poisson-finite measure `ν` on `ℝ`, where `P[ν]` 
 (`TauCeti.exists_eq_mul_im_add_upperHalfPlanePoissonIntegral`).
 
 The proof goes through holomorphic functions. A harmonic `u` on `ℂ₊` is `Im F` for a holomorphic
-`F` on `ℂ₊` (`TauCeti.exists_differentiableOn_im_eq_of_harmonicOnNhd`). Since `Im F ≥ 0`, the
-Herglotz representation `TauCeti.exists_eq_subtractedResolventKernel_add` applies to `F`, and its
-imaginary part is the representation of `u`, because the imaginary part of the Schwarz kernel is
-`π` times the Poisson kernel (`TauCeti.im_integral_subtractedResolventKernel`).
+`F` on `ℂ₊` (`InnerProductSpace.HarmonicOnNhd.exists_differentiableOn_upperHalfPlaneSet_im_eq`).
+Since `Im F ≥ 0`, the Herglotz representation `TauCeti.exists_eq_subtractedResolventKernel_add`
+applies to `F`, and its imaginary part is the representation of `u`, because the imaginary part of
+the Schwarz kernel is `π` times the Poisson kernel
+(`TauCeti.im_integral_subtractedResolventKernel`).
 
 The constants are read off along the imaginary axis. For a Poisson-finite `ν` and `y > 0`,
 `π y P[ν](iy) = ∫ y² / (x² + y²) dν(x)`, which is monotone in `y` and tends to `ν(ℝ)` as `y → ∞`
@@ -69,17 +70,15 @@ theorem exists_eq_mul_im_add_upperHalfPlanePoissonIntegral {u : ℂ → ℝ}
     (hu : HarmonicOnNhd u upperHalfPlaneSet) (hpos : ∀ z ∈ upperHalfPlaneSet, 0 ≤ u z) :
     ∃ (c : ℝ) (ν : Measure ℝ), 0 ≤ c ∧ IsPoissonFinite ν ∧
       ∀ z ∈ upperHalfPlaneSet, u z = c * z.im + upperHalfPlanePoissonIntegral ν z := by
-  obtain ⟨F, hF, hFu⟩ := exists_differentiableOn_im_eq_of_harmonicOnNhd hu
+  obtain ⟨F, hF, hFu⟩ := hu.exists_differentiableOn_upperHalfPlaneSet_im_eq
   obtain ⟨b, ν, hb, hν, hrep⟩ := exists_eq_subtractedResolventKernel_add hF
     fun z hz ↦ (hFu hz).trans_ge (hpos z hz)
   refine ⟨b, ENNReal.ofReal π • ν, hb, ?_, fun z hz ↦ ?_⟩
-  · exact (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1
-      ((isPoissonFinite_iff_lintegral_lt_top ν).2 hν)).smul_measure ENNReal.ofReal_ne_top)
+  · exact ((isPoissonFinite_iff_lintegral_lt_top ν).2 hν).smul_measure ENNReal.ofReal_ne_top
   · rw [← hFu hz]
     dsimp only
-    rw [hrep z hz, upperHalfPlanePoissonIntegral_def, integral_smul_measure,
-      ENNReal.toReal_ofReal Real.pi_pos.le, smul_eq_mul, ← upperHalfPlanePoissonIntegral_def,
-      ← im_integral_subtractedResolventKernel]
+    rw [hrep z hz, upperHalfPlanePoissonIntegral_smul_measure,
+      ENNReal.toReal_ofReal Real.pi_pos.le, ← im_integral_subtractedResolventKernel]
     simp
 
 /-! ### Reading off the constants on the imaginary axis -/
@@ -184,9 +183,9 @@ theorem tendsto_upperHalfPlanePoissonIntegral_mul_I_div (ν : Measure ℝ) :
     fun _ _ ↦ rfl).congr fun y ↦ ?_
   have hπ :
       π * upperHalfPlanePoissonIntegral μ (y * I) = upperHalfPlanePoissonIntegral ν (y * I) := by
-    rw [upperHalfPlanePoissonIntegral_def, integral_smul_measure,
-      ENNReal.toReal_ofReal (inv_nonneg.2 Real.pi_pos.le), smul_eq_mul,
-      ← upperHalfPlanePoissonIntegral_def, ← mul_assoc, mul_inv_cancel₀ Real.pi_ne_zero, one_mul]
+    rw [upperHalfPlanePoissonIntegral_smul_measure,
+      ENNReal.toReal_ofReal (inv_nonneg.2 Real.pi_pos.le), ← mul_assoc,
+      mul_inv_cancel₀ Real.pi_ne_zero, one_mul]
   simp only [ofReal_zero, zero_mul, add_zero, zero_add]
   rw [im_integral_subtractedResolventKernel, hπ]
 
