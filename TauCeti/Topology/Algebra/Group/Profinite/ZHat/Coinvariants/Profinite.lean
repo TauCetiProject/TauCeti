@@ -14,6 +14,7 @@ import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Extension
 import TauCeti.Topology.Algebra.GroupAction.QuotientAddGroup
 import TauCeti.Topology.Algebra.GroupAction.TypeTags
@@ -194,12 +195,10 @@ theorem exists_apply_gen_eq_of_finiteDimensional (c : V) : ∃ f : Z1 zHat.{u} V
   have : ContinuousSMul zHat.{u} N := N.restrictDistribMulAction_continuousSMul hN
   have : CompactSpace N := isCompact_iff_compactSpace.mp hNc
   obtain ⟨f, hf⟩ := exists_apply_gen_eq_of_profinite.{u} (⟨c, hcN⟩ : N)
-  obtain ⟨hcont, hcoc⟩ := mem_Z1_iff.mp f.2
-  -- Composing with the inclusion `N → V` keeps continuity and the cocycle identity.
-  refine ⟨⟨fun x ↦ (f.val x : V), mem_Z1_iff.mpr ⟨continuous_subtype_val.comp hcont,
-    fun g h ↦ ?_⟩⟩, congrArg Subtype.val hf⟩
-  have := congrArg Subtype.val (hcoc g h)
-  rwa [AddSubgroup.coe_add, AddSubgroup.restrictDistribMulAction_coe_smul] at this
+  -- Push the cocycle forward along the equivariant inclusion `N → V`.
+  exact ⟨ContCohomology.cocyclesMap1 zHat N zHat V (ContinuousMonoidHom.id _) N.subtype
+    continuous_subtype_val (fun _ _ ↦ rfl) f,
+    (ContCohomology.cocyclesMap1_apply _ _ _ _ _ _ _ _ f gen).trans (congrArg Subtype.val hf)⟩
 
 include K in
 /-- **Evaluation at `zHat.gen` is surjective on `H¹(zHat, V)`** for every finite-dimensional
