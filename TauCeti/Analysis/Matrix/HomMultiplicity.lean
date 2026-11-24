@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.LinearAlgebra.Matrix.HomMultiplicity
+import TauCeti.Algebra.Star.MatrixUnitaryConjugacy
 import TauCeti.Analysis.Matrix.MurrayVonNeumann
 import TauCeti.LinearAlgebra.Matrix.Rank
 
