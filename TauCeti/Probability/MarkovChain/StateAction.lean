@@ -108,7 +108,7 @@ private theorem map_prefix_fst_snoc (μ : Measure (ℕ → α × β)) (n : ℕ) 
   rw [Measure.map_map (MeasureTheory.measurable_finSnoc (n + 1)) (by fun_prop)]
   congr 1
   funext x
-  exact (congrFun (prefix_succ_eq_finSnoc_comp (n + 1)) fun k ↦ (x k).1).symm
+  exact (congrFun (MeasureTheory.prefix_succ_eq_finSnoc_comp (n + 1)) fun k ↦ (x k).1).symm
 
 /-- If, given the states up to time `n`, the action at time `n` has law `ρ` at the state at time
 `n`, then, given the same states, the state at time `n + 1` has law `(ρ ⊗ₖ τ).snd` at the state
