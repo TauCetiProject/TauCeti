@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+import TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier
 
 /-!
 # The symplectic similitude group `GSp`
@@ -29,7 +30,7 @@ determinant therefore need not determine the multiplier: for even `g`, the multi
 `-1` give the same determinant.
 
 In genus one (`l` a singleton) every invertible matrix is a similitude, with multiplier its
-determinant: `γ J γᵀ = det(γ) • J` (`TauCeti.GSp.mul_J_mul_transpose_eq_det_smul`), so
+determinant: `γᵀ J γ = det(γ) • J` (`Matrix.transpose_mul_J_mul_eq_det_smul`), so
 `GSp(2) = GL₂`.
 
 The multiplier condition can be written as `γ J γᵀ = c • J` or as `γᵀ J γ = c • J`
@@ -392,40 +393,22 @@ section GenusOne
 
 variable [Unique l]
 
-/-- **The genus-one form identity**: for a `2 × 2` matrix, `γ J γᵀ = det(γ) • J`. -/
-theorem mul_J_mul_transpose_eq_det_smul (M : Matrix (l ⊕ l) (l ⊕ l) R) :
-    M * J l R * Mᵀ = M.det • J l R := by
-  set e : l ⊕ l ≃ Fin 2 :=
-    (Equiv.sumCongr (Equiv.ofUnique l (Fin 1)) (Equiv.ofUnique l (Fin 1))).trans finSumFinEquiv
-  have hdet : M.det =
-      M (Sum.inl default) (Sum.inl default) * M (Sum.inr default) (Sum.inr default) -
-        M (Sum.inl default) (Sum.inr default) * M (Sum.inr default) (Sum.inl default) := by
-    have h₀ : (finSumFinEquiv (m := 1) (n := 1)).symm (0 : Fin 2) = Sum.inl 0 := rfl
-    have h₁ : (finSumFinEquiv (m := 1) (n := 1)).symm (1 : Fin 2) = Sum.inr 0 := rfl
-    rw [← det_reindex_self e M, det_fin_two]
-    simp only [e, reindex_apply, submatrix_apply, Equiv.symm_trans_apply, h₀, h₁,
-      Equiv.sumCongr_symm, Equiv.sumCongr_apply, Sum.map_inl, Sum.map_inr]
-    simp only [Unique.eq_default]
-  rw [hdet]
-  ext (i | i) (j | j) <;>
-    simp [Matrix.J, Matrix.mul_apply, fromBlocks, Unique.eq_default i, Unique.eq_default j] <;>
-    ring
-
 variable (l R)
 
 /-- In genus one every invertible matrix is a similitude: `GSp(2) = GL₂`. -/
 theorem eq_top_of_unique : GSp l R = ⊤ :=
-  eq_top_iff.2 fun M _ ↦ ⟨Matrix.GeneralLinearGroup.det M, by
+  eq_top_iff.2 fun M _ ↦ mem_iff'.2 ⟨Matrix.GeneralLinearGroup.det M, by
     rw [Matrix.GeneralLinearGroup.val_det_apply]
-    exact mul_J_mul_transpose_eq_det_smul _⟩
+    exact Matrix.transpose_mul_J_mul_eq_det_smul _⟩
 
 variable {l R}
 
 /-- In genus one the multiplier is the determinant. -/
 theorem multiplier_eq_det (M : GSp l R) :
     multiplier l R M = Matrix.GeneralLinearGroup.det (M : GL (l ⊕ l) R) := by
-  rw [multiplier_eq_iff, Matrix.GeneralLinearGroup.val_det_apply]
-  exact mul_J_mul_transpose_eq_det_smul _
+  ext
+  rw [Matrix.GeneralLinearGroup.val_det_apply]
+  exact (Matrix.transpose_mul_J_mul_eq_smul_iff.1 (transpose_mul_J_mul M)).symm
 
 end GenusOne
 
