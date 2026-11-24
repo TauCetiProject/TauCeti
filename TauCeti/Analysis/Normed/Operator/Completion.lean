@@ -342,8 +342,7 @@ variable {R S α β : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
   [UniformContinuousConstSMul S β] [T0Space β] [CompleteSpace β]
 
 /-- Extending a compact operator into a complete Hausdorff space to the completion of its domain
-gives a compact operator: the closure of the image of a neighbourhood of `0` in `α` is a
-neighbourhood of `0` in `Completion α`. -/
+gives a compact operator. -/
 theorem fromCompletion {f : α →SL[σ] β} (hf : IsCompactOperator f) :
     IsCompactOperator f.fromCompletion := by
   obtain ⟨K, hK, hKf⟩ := hf

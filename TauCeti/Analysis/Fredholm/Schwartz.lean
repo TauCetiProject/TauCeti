@@ -21,19 +21,13 @@ on compact Riemann surfaces: a compact perturbation of a surjective map between 
 a complete nontrivially normed field has closed range of finite codimension. The kernel of the
 surjection need not be finite or complemented.
 
-The proof uses the compact-operator quotient estimate and bounded nonlinear right inverses.
-These lower-level APIs require neither Fredholm hypotheses nor complemented kernels. No
-approximation property or finite-rank operator-norm approximation is assumed.
-
 In the cohomological application the lemma is used in a second form: for a continuous linear map
 `δ : E →L[𝕜] F` between Banach spaces and a compact continuous linear map `r : G →L[𝕜] F` from a
 normed space `G` that need not be complete, if every `y` is `r g + δ e`, then the range of `δ` has
 finite codimension and is closed. Here `δ`
 is the coboundary of cochains and `r` restricts cocycles to a relatively compact refinement, so
 surjectivity of `(g, e) ↦ r g + δ e` says that every cocycle on the refinement is cohomologous to
-a restricted one. This is the lemma applied to the surjection `(g, e) ↦ r g + δ e` and the compact
-perturbation `(g, e) ↦ -r g`, after extending `r` to the completion of `G`
-(`IsCompactOperator.fromCompletion`).
+a restricted one.
 
 ## Main statements
 
@@ -49,12 +43,10 @@ perturbation `(g, e) ↦ -r g`, after extending `r` to the completion of `G`
 * O. Forster, *Lectures on Riemann Surfaces*, GTM 81, §14 (Lemma 14.8 and Theorem 14.9).
 * L. Schwartz, *Homomorphismes et applications complètement continues*, C. R. Acad. Sci. Paris
   237 (1953), 1355–1357.
-
-The statements of the cohomological form are taken from split 1 of the lookahead development
-`lookahead/ModularForms/finite-dimensional-h1-structure-sheaf`, where they were proved from that
-branch's own proof of Schwartz's lemma. Here they are re-proved from the lemma above, with
-`Submodule.CoFG` for finite codimension and without completeness of the source of `r`.
 -/
+
+/- The cohomological statements are adapted from split 1 of the formalization
+lookahead/ModularForms/finite-dimensional-h1-structure-sheaf; their proofs here are new. -/
 
 public noncomputable section
 
