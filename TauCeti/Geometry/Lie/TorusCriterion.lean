@@ -192,15 +192,11 @@ variable (I : ModelWithCorners ℝ E H) [LieGroup I ∞ G]
 include I in
 /-- **An aspherical compact connected Lie group is commutative**: its Lie algebra is abelian
 (`TauCeti.Lie.isLieAbelian_of_isAspherical`), and a connected Lie group with abelian Lie algebra
-is commutative. -/
+is commutative (`TauCeti.Lie.isMulCommutative_of_isLieAbelian`). -/
 theorem isMulCommutative_of_isAspherical [PreconnectedSpace G] {g : G} (hG : IsAspherical G g) :
-    IsMulCommutative G := by
+    IsMulCommutative G :=
   have := isLieAbelian_of_isAspherical (I := I) hG
-  refine ⟨⟨fun a b ↦ ?_⟩⟩
-  have h := ContMDiffMonoidMorphism.commute_of_lie_lieMap_eq_zero
-    (ContMDiffMonoidMorphism.id (I := I) (G := G)) ContMDiffMonoidMorphism.id
-    (fun X Y ↦ by rw [lieMap_id]; exact trivial_lie_zero _ _ _ _) a b
-  simpa only [ContMDiffMonoidMorphism.coe_id, id_eq] using h.eq
+  isMulCommutative_of_isLieAbelian I
 
 include I in
 /-- **The torus criterion.** A compact connected Lie group is aspherical, at any base point,

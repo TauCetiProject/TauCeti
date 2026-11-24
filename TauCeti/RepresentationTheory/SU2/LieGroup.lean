@@ -120,6 +120,7 @@ def nativeLieEquiv :
 
 /-- The identification `TauCeti.SU2.nativeLieEquiv` is the differential of the inclusion of
 `SU(2)` into `GL(2, ℂ)`. -/
+@[simp]
 theorem coe_nativeLieEquiv_apply
     (X : LeftInvariantDerivation 𝓘(ℝ, lieAlgebra.toSubmodule) (GLSpecialUnitary (Fin 2) ℂ)) :
     (nativeLieEquiv X : LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ)
