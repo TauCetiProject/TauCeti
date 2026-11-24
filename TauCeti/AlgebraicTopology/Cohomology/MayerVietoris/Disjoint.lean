@@ -30,7 +30,7 @@ so by the Mayer–Vietoris sequence of the pairs `(X, X ∖ S)` and `(X, X ∖ T
 `c - a - b` is a difference of restrictions of classes `a'` and `b'`, so `c` is the sum of the
 restrictions of `a + a'` and `b - b'`. Restricted to `(X ∖ T, (X ∖ T) ∖ S)`, every class of
 `Hⁿ(X, X ∖ T)` vanishes, as the inclusion factors through `X ∖ T`
-(`TopCat.singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_add`); so
+(`TopCat.singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero`); so
 `a + a'` and `a` have the same restriction there, and `a' = 0` by excision of `T`
 (`TopPair.injective_singularCohomologyMap_excisionMap_of_isClosed_subset`). Symmetrically
 `b' = 0`.
@@ -63,8 +63,8 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
 /-- Let `S, T ⊆ U`. On the pair `(X ∖ T, (X ∖ T) ∖ S)`, the restriction to `Hⁿ(X, X ∖ U)` of
 `a ∈ Hⁿ(X, X ∖ S)` plus that of `b ∈ Hⁿ(X, X ∖ T)` only sees `a`: the pair lies in `X ∖ T`, so `b`
 restricts to zero there. -/
-lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_add {U : Set X}
-    (hSU : S ⊆ U) (hTU : T ⊆ U) (h : Tᶜ ∩ Sᶜ ⊆ Uᶜ) {n : ℕ}
+private lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_add
+    {U : Set X} (hSU : S ⊆ U) (hTU : T ⊆ U) (h : Tᶜ ∩ Sᶜ ⊆ Uᶜ) {n : ℕ}
     (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n)
     (b : (TopPair.ofSubset Tᶜ).singularCohomology R k M n) :
     TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset h) n

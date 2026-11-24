@@ -115,28 +115,29 @@ theorem singularCohomologyMap_interPairMapOfSubset_thomClass {s₁ : ∀ b, E₁
   have hι : Continuous fun v : TotalSpace F₁ ((⇑g) *ᵖ E₁) ↦
       TotalSpace.mk' F₁ (g v.proj) (ContinuousLinearEquiv.refl ℝ (E₁ (g v.proj)) v.snd) :=
     Pullback.continuous_lift F₁ E₁ g
+  -- The inclusions of `(V, V ∖ Z₁)` are the maps of pairs induced by `g`.
+  have hinc {C : Set B} (hC : V ∩ Z₁ᶜ ⊆ C) : TopPair.interPairMapOfSubset (X := TopCat.of B) hC =
+      TopPair.ofSubsetMap (TopCat.ofHom g) fun b hb ↦ hC ⟨b.property, hb⟩ :=
+    TopPair.hom_ext_of_fst _
+      ((TopPair.interPairMapOfSubset_fst hC).trans (TopPair.ofSubsetMap_fst _ _).symm)
   -- Both relative classes are pulled back from the Thom class of `E₁|_V` along that section.
   have h₁ : TopPair.excisionMap (X := TopCat.of B) V Z₁ᶜ ≫ thomPairMapOfNeZero ⟨_, hs₁⟩ hZ₁ =
       thomPairMapOfNeZero ⟨_, hσ⟩ hσ₀ ≫
         thomPairMapOfFiberwise (g := g) (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (E₁ (g b)))
           hι := by
-    refine TopPair.hom_ext_of_fst _ (TopCat.ext fun b ↦ ?_)
-    simp only [TopPair.Hom.fst_comp, CategoryTheory.comp_apply]
-    refine ((thomPairMapOfNeZero_fst_apply _ _ _).trans ?_).trans
-      (thomPairMapOfFiberwise_fst_apply _ _).symm
-    rw [thomPairMapOfNeZero_fst_apply (X := V) ⟨_, hσ⟩ hσ₀ b,
-      TopPair.excisionMap_fst_apply (X := TopCat.of B) V Z₁ᶜ b]
-    exact congrArg (TotalSpace.mk' F₁ b.val) (ContinuousLinearEquiv.refl_apply ℝ (E₁ b.val) _).symm
+    rw [← TopPair.interPairMapOfSubset_eq_excisionMap, hinc]
+    exact (ofSubsetMap_comp_thomPairMapOfNeZero_of_comp_eq ⟨_, hs₁⟩ hZ₁ g _ rfl hσ₀).trans
+      (thomPairMapOfNeZero_comp_thomPairMapOfFiberwise_of_comp_eq ⟨_, hσ⟩ hσ₀ hι
+        (ContinuousMap.ext fun b ↦ congrArg (TotalSpace.mk' F₁ b.val)
+          (ContinuousLinearEquiv.refl_apply ℝ (E₁ b.val) _)) _).symm
   have h₃ : TopPair.interPairMapOfSubset (X := TopCat.of B) (B := Z₁ᶜ) hV ≫
       thomPairMapOfNeZero ⟨_, hs₃⟩ hZ₃ =
       thomPairMapOfNeZero ⟨_, hσ⟩ hσ₀ ≫ thomPairMapOfFiberwise (φ := fun b ↦ φ (g b)) hφ' := by
-    refine TopPair.hom_ext_of_fst _ (TopCat.ext fun b ↦ ?_)
-    simp only [TopPair.Hom.fst_comp, CategoryTheory.comp_apply]
-    refine ((thomPairMapOfNeZero_fst_apply _ _ _).trans ?_).trans
-      (thomPairMapOfFiberwise_fst_apply _ _).symm
-    rw [thomPairMapOfNeZero_fst_apply (X := V) ⟨_, hσ⟩ hσ₀ b,
-      TopPair.interPairMapOfSubset_fst_apply (X := TopCat.of B) hV b]
-    exact congrArg (TotalSpace.mk' F₃ b.val) (hs b.val b.property).symm
+    rw [hinc]
+    exact (ofSubsetMap_comp_thomPairMapOfNeZero_of_comp_eq ⟨_, hs₃⟩ hZ₃ g _ rfl
+      fun b hb ↦ hZ₃ b (hV ⟨b.property, hb⟩)).trans
+      (thomPairMapOfNeZero_comp_thomPairMapOfFiberwise_of_comp_eq ⟨_, hσ⟩ hσ₀ hφ'
+        (ContinuousMap.ext fun b ↦ congrArg (TotalSpace.mk' F₃ b.val) (hs b.val b.property)) _).symm
   have hU₁ := o₁.singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF₁ (o₁.pullback g) hF₁
     (g := g) (φ := fun b ↦ ContinuousLinearEquiv.refl ℝ (E₁ (g b))) hι fun b ↦ by
       rw [pullback_apply]
