@@ -74,7 +74,8 @@ theorem exists_fin_spanning_contMDiffSection [ENat.LEInfty n] :
   have hlocal (x : M) : ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F n V,
       ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
         ∀ y ∈ U, Submodule.span ℝ (range fun i ↦ s i y) = ⊤ := by
-    obtain ⟨s, -, hs⟩ := exists_compactlySupported_spanning_nhds (I := I) (F := F) (V := V) x
+    obtain ⟨s, -, hs⟩ :=
+      exists_compactlySupported_spanning_nhds (I := I) (F := F) (n := n) (V := V) x
     obtain ⟨U, hU, hUopen, hxU⟩ := eventually_nhds_iff.mp hs
     exact ⟨s, U, hUopen, hxU, hU⟩
   choose s U hU hxU hspan using hlocal

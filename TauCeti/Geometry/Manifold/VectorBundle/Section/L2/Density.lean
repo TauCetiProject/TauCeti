@@ -73,7 +73,7 @@ theorem eq_zero_of_forall_inner_toL2_eq_zero {u : LpSection ℝ F V 2 μ}
     rw [ae_iff]
     refine measure_null_of_locally_null _ fun x _ ↦ ?_
     obtain ⟨s, hs, hspan⟩ :=
-      TauCeti.exists_compactlySupported_spanning_nhds (I := I) (F := F) (V := V) x
+      TauCeti.exists_compactlySupported_spanning_nhds (I := I) (F := F) (n := ∞) (V := V) x
     refine ⟨_, inter_mem_nhdsWithin _ hspan, measure_mono_null ?_
       (ae_iff.1 (ae_all_iff.2 fun i ↦ hpair ⟨s i, hs i⟩))⟩
     rintro y ⟨hy, hyspan⟩ hall
