@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.PerfectPairing.TrilinearProduct
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The quantum relation of complex projective space
@@ -16,9 +17,8 @@ the hyperplane class `x`, and the Poincaré pairing `∫ x^i ⌣ x^j` is `1` whe
 otherwise. The small quantum product is read off from the three-point correlator
 `I(a, b, c) = ∑_A q^A ⟨a, b, c⟩_(0,3,A)` through this pairing,
 `a ⋆ b = LinearMap.trilinearProduct p I a b = ∑_j I(a, b, x^j) x^(n - j)`, the left dual of
-`x^j` being `x^(n - j)` (`LinearMap.coe_leftDualBasis_eq_comp_symm` with the reversal
-`Fin.revPerm`). This file proves that two axioms
-of the three-point classes reduce the whole product to one number, the count
+`x^j` being `x^(n - j)` (`LinearMap.coe_leftDualBasis_eq_comp_rev`). This file proves that two
+axioms of the three-point classes reduce the whole product to one number, the count
 `⟨x, x^n, x^n⟩_L` of lines through two points meeting a hyperplane, and that
 `x^(⋆(n+1)) = q^L ⟨x, x^n, x^n⟩_L · 1`. With the line count `1` this is the quantum relation
 `x^(⋆(n+1)) = q^L` of `CPⁿ`.
@@ -80,23 +80,6 @@ open Module LinearMap
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {n : ℕ}
 
-/-- The left dual of `x^j` for the anti-diagonal pairing is `x^(n - j)`. -/
-private theorem coe_leftDualBasis_eq_comp_rev (p : M →ₗ[R] M →ₗ[R] R) [p.IsPerfPair]
-    {x : Basis (Fin (n + 1)) R M}
-    (hp : ∀ i j : Fin (n + 1), p (x i) (x j) = if (i : ℕ) + j = n then 1 else 0) :
-    ⇑(p.leftDualBasis x) = x ∘ Fin.rev := by
-  rw [p.coe_leftDualBasis_eq_comp_symm x Fin.revPerm fun i j ↦ ?_, Fin.revPerm_symm]
-  · rfl
-  rw [hp]
-  refine if_congr ?_ rfl rfl
-  rw [Fin.revPerm_apply, Fin.ext_iff, Fin.val_rev]
-  omega
-
-/-- For `n ≠ 0`, the literal `1 : Fin (n + 1)` has value `1`. -/
-private theorem val_one_of_ne_zero (hn : n ≠ 0) : ((1 : Fin (n + 1)) : ℕ) = 1 := by
-  rw [Fin.val_one']
-  exact Nat.mod_eq_of_lt (by omega)
-
 section DegreeSelection
 
 variable (p : M →ₗ[R] M →ₗ[R] R) [p.IsPerfPair] {x : Basis (Fin (n + 1)) R M}
@@ -112,7 +95,7 @@ theorem trilinearProduct_apply_eq_of_add_le
       I (x a) (x b) (x d) = 0)
     {a b : Fin (n + 1)} (hab : (a : ℕ) + b ≤ n) :
     p.trilinearProduct I (x a) (x b) = x ⟨a + b, by omega⟩ := by
-  rw [p.trilinearProduct_apply_eq_sum x, coe_leftDualBasis_eq_comp_rev p hp,
+  rw [p.trilinearProduct_apply_eq_sum x, p.coe_leftDualBasis_eq_comp_rev x hp,
     Finset.sum_eq_single ⟨n - (a + b), by omega⟩]
   · rw [h₀ _ _ _ (by simp only; omega), one_smul, Function.comp_apply]
     congr 1
@@ -133,7 +116,7 @@ theorem trilinearProduct_apply_eq_smul_of_lt_add
     {a b : Fin (n + 1)} (hab : n < (a : ℕ) + b) :
     p.trilinearProduct I (x a) (x b) =
       I (x a) (x b) (x ⟨2 * n + 1 - (a + b), by omega⟩) • x ⟨a + b - (n + 1), by omega⟩ := by
-  rw [p.trilinearProduct_apply_eq_sum x, coe_leftDualBasis_eq_comp_rev p hp,
+  rw [p.trilinearProduct_apply_eq_sum x, p.coe_leftDualBasis_eq_comp_rev x hp,
     Finset.sum_eq_single ⟨2 * n + 1 - (a + b), by omega⟩]
   · rw [Function.comp_apply]
     congr 2
@@ -157,7 +140,7 @@ theorem trilinearProduct_pow_apply_eq_of_le
   induction k with
   | zero => rw [pow_zero, one_apply_eq_self, Fin.mk_zero']
   | succ k ih =>
-    have h1 := val_one_of_ne_zero (n := n) (by omega)
+    have h1 := Fin.val_one_of_two_le (m := n + 1) (by omega)
     rw [pow_succ', mul_apply_eq_comp, ih (by omega),
       trilinearProduct_apply_eq_of_add_le p hp h₀ h₁ (by simp only [h1]; omega)]
     congr 2
@@ -175,7 +158,7 @@ theorem trilinearProduct_pow_succ_apply_eq_smul
     (hn : n ≠ 0) :
     (p.trilinearProduct I (x 1) ^ (n + 1)) (x 0) =
       I (x 1) (x (Fin.last n)) (x (Fin.last n)) • x 0 := by
-  have h1 := val_one_of_ne_zero hn
+  have h1 := Fin.val_one_of_two_le (m := n + 1) (by omega)
   rw [pow_succ', mul_apply_eq_comp, trilinearProduct_pow_apply_eq_of_le p hp h₀ h₁ le_rfl,
     trilinearProduct_apply_eq_smul_of_lt_add p hp h₁ (by simp only [h1]; omega)]
   congr 3 <;> simp only [Fin.ext_iff, h1, Fin.val_last, Nat.zero_mod] <;> omega
@@ -311,7 +294,7 @@ theorem trilinearProduct_pow_succ_apply_eq_single_smul
     (p.trilinearProduct I (x 1) ^ (n + 1)) (x 0) =
       (NovikovSeries.single L ((I (x 1) (x (Fin.last n)) (x (Fin.last n))).coeff L) :
         NovikovSeries K S ω) • x 0 := by
-  have h1 := val_one_of_ne_zero hn
+  have h1 := Fin.val_one_of_two_le (m := n + 1) (by omega)
   rw [trilinearProduct_pow_succ_apply_eq_smul p hp
       (fun _ _ _ ↦ apply_apply_apply_eq_one_of_add_eq I hL hcL hdeg hpt)
       (fun _ _ _ ↦ apply_apply_apply_eq_zero_of_add_ne I hL hcL hdeg hpt) hn,
