@@ -680,8 +680,16 @@ noncomputable def degreeTwoEquiv (R : Type u) [CommSemiring R] :
     degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
   (degreeEquivQuotTensorPower R 2).trans
     (Submodule.Quotient.equiv (steinbergRelations R) (tensorRel R 2)
+      -- Re-synthesize `[Ring ℤ]` / `AddCommGroup.toIntModule` instances expected by
+      -- `Submodule.Quotient.equiv` at `implicit` transparency (unlike
+      -- `tensorProductEquivTensorSquare`, which carries `[CommSemiring ℤ]` and
+      -- `TensorProduct.instModule` / `PiTensorProduct.instModule`).
       (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)).toAddEquiv.toIntLinearEquiv
-      (by rw [← map_steinbergRelations_eq_tensorRel_two R]; congr 1)).symm
+      (by
+        -- Both `Submodule.map` applications agree definitionally (same underlying map, differing
+        -- only in those `ℤ`-module instance wrappers).
+        rw [← map_steinbergRelations_eq_tensorRel_two R]
+        congr 1)).symm
 
 /-- `degreeTwoEquiv` sends the product `ofUnit a * ofUnit b` to `SymbolGroup.symbol a b`. -/
 @[simp]
