@@ -10,13 +10,14 @@ public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Diffeomorphism.Topology
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.SinSqWeight
+public import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
 import TauCeti.Analysis.InnerProductSpace.Normalize
+import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Diffeomorphism.Composition
+import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Group
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path
-import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Open
-import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
 import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
@@ -26,25 +27,28 @@ Let `Sⁿ` be the unit sphere of a real inner product space `E` of dimension `n 
 a `C^k` diffeomorphism of `Sⁿ`, `1 ≤ k`. Its displacement `x ↦ f x - x` extends to `E` as the cone
 `u = TauCeti.sphereCone (fun x ↦ f x - x)`, positively homogeneous of degree one. When `u` is
 `L`-Lipschitz with `L < 1`, every map `y ↦ y + c • u y`, `0 ≤ c ≤ 1`, is a homeomorphism of `E`
-(`LipschitzWith.idAddHomeomorph`) commuting with positive dilations, so
+(`LipschitzWith.idAddSmulHomeomorph`) commuting with positive dilations, so
 
 `x ↦ (x + c • (f x - x)) / ‖x + c • (f x - x)‖`
 
 is a bijection of `Sⁿ`, with inverse the normalized inverse of `y ↦ y + c • u y`. Running `c` from
-`0` to `1` along the analytic weight `sin (π t / 2) ^ 2` gives a diffeotopy from the identity to
-`f` (`TauCeti.sphereInterpolationDiffeotopy`): the inverses depend smoothly on `(t, y)` by the
-inverse function theorem applied to `(s, y) ↦ (s, y + c(s) • u y)` away from the origin.
+`0` to `1` along the analytic weight `TauCeti.sinSqWeight t = sin (π t / 2) ^ 2` gives a diffeotopy
+from the identity to `f` (`TauCeti.sphereInterpolationDiffeotopy`): away from the origin, where `u`
+is `C^k`, the inverses of `y ↦ y + c(t) • u y` depend smoothly on `(t, y)` by the parametric inverse
+function theorem (`LipschitzWith.contDiffAt_idAddSmulHomeomorph_symm`).
 
 The weak Whitney topology controls the first derivatives of `f` on the sphere, read in `E` through
 the radial projection of the punctured space, so for `f` near the identity the displacement is
 small and `1 / 4`-Lipschitz, and its cone is `5 / 8`-Lipschitz (`TauCeti.lipschitzWith_sphereCone`).
 This is the **local isotopy lemma** for spheres: every diffeomorphism in a neighbourhood of the
 identity of `Diff(Sⁿ)` is the final diffeomorphism of a diffeotopy
-(`TauCeti.eventually_exists_diffeotopy_final_eq`). Translating it by the group structure, the
-classes of diffeomorphisms related by diffeotopies are open, hence closed, in `Diff(Sⁿ)`: two
-diffeomorphisms of `Sⁿ` are joined by a path in the weak Whitney topology exactly when they differ
+(`TauCeti.eventually_exists_diffeotopy_final_eq`). So the final diffeomorphisms of diffeotopies,
+the range of the homomorphism `TauCeti.Diffeotopy.finalHom`, form a subgroup of `Diff(Sⁿ)`
+which is a neighbourhood of the identity, hence open and closed: two diffeomorphisms of `Sⁿ` are
+joined by a path in the weak Whitney topology exactly when they differ
 by the final diffeomorphism of a diffeotopy (`TauCeti.joined_iff_exists_diffeotopy_mul_final_eq`).
-So `π₀ Diff(Sⁿ)` is the set of smooth isotopy classes.
+So the path components of the group of `C^k` diffeomorphisms of `Sⁿ` are its `C^k` diffeotopy
+classes.
 
 ## Main definitions
 
@@ -56,9 +60,10 @@ So `π₀ Diff(Sⁿ)` is the set of smooth isotopy classes.
 
 * `TauCeti.coe_sphereInterpolationDiffeotopy_apply`, `TauCeti.sphereInterpolationDiffeotopy_final`:
   the formula of the diffeotopy, and that it ends at `f`.
+* `TauCeti.coe_sphereInterpolationDiffeotopy_symm_apply`: the formula of its inverse slices.
 * `TauCeti.eventually_exists_diffeotopy_final_eq`: the local isotopy lemma.
-* `TauCeti.joined_iff_exists_diffeotopy_mul_final_eq`: the path components of `Diff(Sⁿ)` are the
-  diffeotopy classes.
+* `TauCeti.joined_iff_exists_diffeotopy_mul_final_eq`: the path components of the group of `C^k`
+  diffeomorphisms of `Sⁿ` are its `C^k` diffeotopy classes.
 
 ## References
 
@@ -82,114 +87,16 @@ variable {k : ℕ∞ω}
 
 section Interpolation
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V] {u : V → V}
+  {L : ℝ≥0}
 
-/-- The weight `sin (π s / 2) ^ 2`: analytic, with values in `[0, 1]`, vanishing at `0` and equal
-to `1` at `1`. -/
-private def weight (s : ℝ) : ℝ := Real.sin (Real.pi * s / 2) ^ 2
-
-private theorem weight_def (s : ℝ) : weight s = Real.sin (Real.pi * s / 2) ^ 2 :=
-  (rfl)
-
-private theorem weight_zero : weight 0 = 0 := by simp [weight]
-
-private theorem weight_one : weight 1 = 1 := by simp [weight]
-
-private theorem norm_weight_le_one (s : ℝ) : ‖weight s‖ ≤ 1 := by
-  unfold weight
-  rw [Real.norm_of_nonneg (sq_nonneg _)]
-  exact Real.sin_sq_le_one _
-
-private theorem contDiff_weight : ContDiff ℝ k weight :=
-  (Real.contDiff_sin.comp ((contDiff_const.mul contDiff_id).div_const 2)).pow 2
-
-variable {u : V → V} {L : ℝ≥0}
-
-/-- Scaling a perturbation by the weight keeps its Lipschitz constant. -/
-private theorem lipschitzWith_weight_smul (hu : LipschitzWith L u) (s : ℝ) :
-    LipschitzWith L fun y ↦ weight s • u y := by
-  have h : ‖weight s‖₊ ≤ 1 := by exact_mod_cast norm_weight_le_one s
-  exact ((lipschitzWith_smul (weight s)).comp hu).weaken
-    (mul_le_of_le_one_left zero_le h)
-
-variable [CompleteSpace V]
-
-/-- The homeomorphism `y ↦ y + weight s • u y` of `E`. -/
+/-- The homeomorphism `y ↦ y + sinSqWeight s • u y` of `V`. -/
 private def slice (hu : LipschitzWith L u) (hL : L < 1) (s : ℝ) : V ≃ₜ V :=
-  (lipschitzWith_weight_smul hu s).idAddHomeomorph ℝ hL
+  hu.idAddSmulHomeomorph hL (sinSqWeight s) (norm_sinSqWeight_le_one s)
 
 private theorem slice_apply (hu : LipschitzWith L u) (hL : L < 1) (s : ℝ) (y : V) :
-    slice hu hL s y = y + weight s • u y := by
-  simp only [slice, LipschitzWith.coe_idAddHomeomorph]
-
-/-- The inverses of the slices depend continuously on the parameter and the point: by the
-antilipschitz bound, `‖slice s⁻¹ y - a₀‖ ≤ (1 - L)⁻¹ ‖y - slice s a₀‖`. -/
-private theorem continuous_slice_symm (hu : LipschitzWith L u) (hL : L < 1) :
-    Continuous fun p : ℝ × V ↦ (slice hu hL p.1).symm p.2 := by
-  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  set a₀ := (slice hu hL p₀.1).symm p₀.2
-  have hle (p : ℝ × V) : ‖(slice hu hL p.1).symm p.2 - a₀‖ ≤
-      ((1 - L)⁻¹ : ℝ≥0) * ‖p.2 - (a₀ + weight p.1 • u a₀)‖ := by
-    have h := ((lipschitzWith_weight_smul hu p.1).antilipschitzWith_id_add hL).le_mul_dist
-      ((slice hu hL p.1).symm p.2) a₀
-    rwa [dist_eq_norm, dist_eq_norm, ← slice_apply hu hL, Homeomorph.apply_symm_apply] at h
-  have hc : Continuous fun p : ℝ × V ↦ p.2 - (a₀ + weight p.1 • u a₀) :=
-    continuous_snd.sub (continuous_const.add
-      (((contDiff_weight (k := 0)).continuous.comp continuous_fst).smul continuous_const))
-  have h0 : p₀.2 - (a₀ + weight p₀.1 • u a₀) = 0 := by
-    rw [← slice_apply hu hL, Homeomorph.apply_symm_apply, sub_self]
-  refine tendsto_iff_norm_sub_tendsto_zero.2 (squeeze_zero (fun _ ↦ norm_nonneg _) hle ?_)
-  simpa using ((hc.tendsto p₀).mono_right (congrArg 𝓝 h0).le).norm.const_mul
-    (((1 - L)⁻¹ : ℝ≥0) : ℝ)
-
-/-- The level-preserving homeomorphism `(s, y) ↦ (s, y + weight s • u y)` of `ℝ × E`. -/
-private def total (hu : LipschitzWith L u) (hL : L < 1) : (ℝ × V) ≃ₜ (ℝ × V) where
-  toFun p := (p.1, p.2 + weight p.1 • u p.2)
-  invFun p := (p.1, (slice hu hL p.1).symm p.2)
-  left_inv p := by simp [← slice_apply hu hL]
-  right_inv p := by simp [← slice_apply hu hL]
-  continuous_toFun := continuous_fst.prodMk (continuous_snd.add
-    (((contDiff_weight (k := 0)).continuous.comp continuous_fst).smul
-      (hu.continuous.comp continuous_snd)))
-  continuous_invFun := continuous_fst.prodMk (continuous_slice_symm hu hL)
-
-/-- At a point where `u` is differentiable, the derivative of `total` is the block triangular
-equivalence `(ds, dy) ↦ (ds, dy + weight s • Du dy + weight' s ds • u a)`. -/
-private theorem exists_hasFDerivAt_total (hu : LipschitzWith L u) (hL : L < 1) {s : ℝ} {a : V}
-    (ha : DifferentiableAt ℝ u a) :
-    ∃ T : (ℝ × V) ≃L[ℝ] (ℝ × V), HasFDerivAt (total hu hL) (T : (ℝ × V) →L[ℝ] (ℝ × V)) (s, a) := by
-  have hw : HasFDerivAt weight (fderiv ℝ weight s) s :=
-    ((contDiff_weight (k := 1)).differentiable one_ne_zero s).hasFDerivAt
-  have hlip := lipschitzWith_weight_smul hu s
-  refine ⟨(ContinuousLinearEquiv.refl ℝ ℝ).skewProd (hlip.idAddFDerivEquiv ℝ hL a)
-    ((fderiv ℝ weight s).smulRight (u a)), ?_⟩
-  have hfst : HasFDerivAt (Prod.fst : ℝ × V → ℝ) (ContinuousLinearMap.fst ℝ ℝ V) (s, a) :=
-    hasFDerivAt_fst
-  have hsnd : HasFDerivAt (Prod.snd : ℝ × V → V) (ContinuousLinearMap.snd ℝ ℝ V) (s, a) :=
-    hasFDerivAt_snd
-  have hD := hfst.prodMk (hsnd.add ((hw.comp (s, a) hfst).smul (ha.hasFDerivAt.comp (s, a) hsnd)))
-  refine hD.congr_fderiv (ContinuousLinearMap.ext fun q ↦ Prod.ext rfl ?_)
-  simp [fderiv_fun_const_smul ha, add_assoc]
-
-/-- The inverses of the slices are `C^k` in the parameter and the point away from the origin, by
-the inverse function theorem for `total`. -/
-private theorem contDiffAt_slice_symm (hu : LipschitzWith L u) (hL : L < 1) (hk : 1 ≤ k)
-    (hd : ∀ y ≠ 0, ContDiffAt ℝ k u y) (h0 : u 0 = 0) {p : ℝ × V} (hp : p.2 ≠ 0) :
-    ContDiffAt ℝ k (fun p : ℝ × V ↦ (slice hu hL p.1).symm p.2) p := by
-  set a := (slice hu hL p.1).symm p.2
-  have ha : a ≠ 0 := by
-    rintro h
-    apply hp
-    have hpa : p.2 = slice hu hL p.1 a := ((slice hu hL p.1).apply_symm_apply p.2).symm
-    rw [hpa, h, slice_apply, h0, smul_zero, add_zero]
-  have hc : ContDiffAt ℝ k (total hu hL) (p.1, a) :=
-    contDiffAt_fst.prodMk (contDiffAt_snd.add
-      ((contDiff_weight.contDiffAt.comp _ contDiffAt_fst).smul
-        ((hd a ha).comp (p.1, a) (contDiffAt_snd (p := (p.1, a))))))
-  obtain ⟨T, hT⟩ := exists_hasFDerivAt_total hu hL (s := p.1)
-    ((hd a ha).differentiableAt (zero_lt_one.trans_le hk).ne')
-  have h := (total hu hL).toOpenPartialHomeomorph.contDiffAt_symm (mem_univ p) hT hc
-  exact contDiffAt_snd.comp p h
+    slice hu hL s y = y + sinSqWeight s • u y := by
+  simp only [slice, LipschitzWith.coe_idAddSmulHomeomorph]
 
 /-- A slice fixes the origin when `u` does. -/
 private theorem slice_ne_zero (hu : LipschitzWith L u) (hL : L < 1) (h0 : u 0 = 0) (s : ℝ)
@@ -210,18 +117,6 @@ private theorem slice_symm_smul (hu : LipschitzWith L u) (hL : L < 1)
     (hh : ∀ c : ℝ, 0 ≤ c → ∀ y, u (c • y) = c • u y) (s : ℝ) {c : ℝ} (hc : 0 ≤ c) (y : V) :
     (slice hu hL s).symm (c • y) = c • (slice hu hL s).symm y := by
   rw [Homeomorph.symm_apply_eq, slice_smul hu hL hh s hc, Homeomorph.apply_symm_apply]
-
-omit [CompleteSpace V] in
-/-- A map commuting with nonnegative dilations commutes with `normalize` up to normalization. -/
-private theorem normalize_apply_normalize {g : V → V}
-    (hg : ∀ c : ℝ, 0 ≤ c → ∀ y, g (c • y) = c • g y) (z : V) :
-    normalize (g (normalize z)) = normalize (g z) := by
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp
-  calc normalize (g (normalize z)) = normalize (g (‖z‖⁻¹ • z)) := (rfl)
-    _ = normalize (g z) := by
-      rw [hg _ (inv_nonneg.2 (norm_nonneg z)),
-        normalize_smul_of_pos (inv_pos.2 (norm_pos_iff.2 hz))]
 
 end Interpolation
 
@@ -261,7 +156,7 @@ private theorem contMDiff_comp_coe_Icc {g : ℝ × sphere (0 : E) 1 → sphere (
 variable [CompleteSpace E] {f : sphere (0 : E) 1 → sphere (0 : E) 1} {L : ℝ≥0}
 
 /-- The slice at `s` of the interpolation, read on the sphere:
-`x ↦ normalize (x + weight s • (f x - x))`. -/
+`x ↦ normalize (x + sinSqWeight s • (f x - x))`. -/
 private def sphereSlice (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E) - x)) (hL : L < 1)
     (s : ℝ) (x : sphere (0 : E) 1) : sphere (0 : E) 1 :=
   ⟨normalize (slice hu hL s x), mem_sphere_zero_iff_norm.2 (norm_normalize
@@ -273,12 +168,21 @@ private def sphereSliceSymm (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E
   ⟨normalize ((slice hu hL s).symm y), mem_sphere_zero_iff_norm.2 (norm_normalize
     (slice_symm_ne_zero hu hL (sphereCone_zero _) s (ne_zero_of_mem_unit_sphere y)))⟩
 
+private theorem coe_sphereSlice (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E) - x))
+    (hL : L < 1) (s : ℝ) (x : sphere (0 : E) 1) :
+    (sphereSlice hu hL s x : E) = normalize (slice hu hL s x) :=
+  (rfl)
+
+private theorem coe_sphereSliceSymm (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E) - x))
+    (hL : L < 1) (s : ℝ) (y : sphere (0 : E) 1) :
+    (sphereSliceSymm hu hL s y : E) = normalize ((slice hu hL s).symm y) :=
+  (rfl)
+
 private theorem sphereSliceSymm_sphereSlice
     (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E) - x)) (hL : L < 1) (s : ℝ)
     (x : sphere (0 : E) 1) : sphereSliceSymm hu hL s (sphereSlice hu hL s x) = x := by
   refine Subtype.ext ?_
-  change normalize ((slice hu hL s).symm (normalize (slice hu hL s x))) = x
-  rw [normalize_apply_normalize fun c hc z ↦
+  rw [coe_sphereSliceSymm, coe_sphereSlice, normalize_apply_normalize fun c hc z ↦
       slice_symm_smul hu hL (fun c hc y ↦ sphereCone_smul hc y) s hc z,
     Homeomorph.symm_apply_apply, normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere x)]
 
@@ -286,16 +190,14 @@ private theorem sphereSlice_sphereSliceSymm
     (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E) - x)) (hL : L < 1) (s : ℝ)
     (y : sphere (0 : E) 1) : sphereSlice hu hL s (sphereSliceSymm hu hL s y) = y := by
   refine Subtype.ext ?_
-  change normalize (slice hu hL s (normalize ((slice hu hL s).symm y))) = y
-  rw [normalize_apply_normalize fun c hc z ↦
+  rw [coe_sphereSlice, coe_sphereSliceSymm, normalize_apply_normalize fun c hc z ↦
       slice_smul hu hL (fun c hc y ↦ sphereCone_smul hc y) s hc z,
     Homeomorph.apply_symm_apply, normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere y)]
 
 private theorem sphereSlice_zero (hu : LipschitzWith L (sphereCone fun x ↦ (f x : E) - x))
     (hL : L < 1) (x : sphere (0 : E) 1) : sphereSlice hu hL 0 x = x := by
   refine Subtype.ext ?_
-  change normalize (slice hu hL 0 x) = x
-  rw [slice_apply, weight_zero, zero_smul, add_zero,
+  rw [coe_sphereSlice, slice_apply, sinSqWeight_zero, zero_smul, add_zero,
     normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere x)]
 
 private theorem contMDiff_sphereSlice (hf : ContMDiff (𝓡 n) (𝓡 n) k f)
@@ -304,18 +206,15 @@ private theorem contMDiff_sphereSlice (hf : ContMDiff (𝓡 n) (𝓡 n) k f)
       sphereSlice hu hL p.1 p.2 := by
   refine ContMDiff.codRestrict_sphere (f := fun p : ℝ × sphere (0 : E) 1 ↦
     normalize (slice hu hL p.1 p.2)) (fun p ↦ ?_) _
-  have hne : (p.2 : E) + weight p.1 • sphereCone (fun x ↦ (f x : E) - x) p.2 ≠ 0 := by
-    rw [← slice_apply hu hL]
-    exact slice_ne_zero hu hL (sphereCone_zero _) p.1 (ne_zero_of_mem_unit_sphere p.2)
+  have hne : slice hu hL p.1 p.2 ≠ 0 :=
+    slice_ne_zero hu hL (sphereCone_zero _) p.1 (ne_zero_of_mem_unit_sphere p.2)
   have hF : ContDiffAt ℝ k (fun q : ℝ × E ↦ normalize (slice hu hL q.1 q.2)) (p.1, (p.2 : E)) := by
-    refine ((contDiffAt_normalize hne).comp (p.1, (p.2 : E)) (contDiffAt_snd.add
-      ((contDiff_weight.contDiffAt.comp _ contDiffAt_fst).smul
+    rw [slice_apply] at hne
+    simp only [slice_apply]
+    exact (contDiffAt_normalize hne).comp (p.1, (p.2 : E)) (contDiffAt_snd.add
+      ((contDiff_sinSqWeight.contDiffAt.comp _ contDiffAt_fst).smul
         ((contDiffAt_sphereCone_sub hf (ne_zero_of_mem_unit_sphere p.2)).comp (p.1, (p.2 : E))
-          (contDiffAt_snd (p := (p.1, (p.2 : E)))))))).congr_of_eventuallyEq
-      (.of_forall fun q ↦ ?_)
-    dsimp only [Function.comp_apply]
-    rw [slice_apply]
-    rfl
+          (contDiffAt_snd (p := (p.1, (p.2 : E)))))))
   exact hF.contMDiffAt.comp p (contMDiff_prodMk_coe_sphere (n := n) p)
 
 private theorem contMDiff_sphereSliceSymm (hk : 1 ≤ k) (hf : ContMDiff (𝓡 n) (𝓡 n) k f)
@@ -325,9 +224,11 @@ private theorem contMDiff_sphereSliceSymm (hk : 1 ≤ k) (hf : ContMDiff (𝓡 n
   refine ContMDiff.codRestrict_sphere (f := fun p : ℝ × sphere (0 : E) 1 ↦
     normalize ((slice hu hL p.1).symm p.2)) (fun p ↦ ?_) _
   have hne := slice_symm_ne_zero hu hL (sphereCone_zero _) p.1 (ne_zero_of_mem_unit_sphere p.2)
+  -- The inverses of the slices are jointly `C^k` away from the origin, where the cone is `C^k`.
   have h₁ : ContDiffAt ℝ k (fun q : ℝ × E ↦ (slice hu hL q.1).symm q.2) (p.1, (p.2 : E)) :=
-    contDiffAt_slice_symm hu hL hk (fun _ hy ↦ contDiffAt_sphereCone_sub hf hy)
-      (sphereCone_zero _) (ne_zero_of_mem_unit_sphere p.2)
+    hu.contDiffAt_idAddSmulHomeomorph_symm hL contDiff_sinSqWeight norm_sinSqWeight_le_one
+      isOpen_compl_singleton (fun _ hy ↦ (contDiffAt_sphereCone_sub hf hy).contDiffWithinAt) hk
+      (q := (p.1, (p.2 : E))) hne
   have hF : ContDiffAt ℝ k (NormedSpace.normalize ∘ fun q : ℝ × E ↦ (slice hu hL q.1).symm q.2)
       (p.1, (p.2 : E)) :=
     (contDiffAt_normalize hne).comp (p.1, (p.2 : E)) h₁
@@ -357,6 +258,11 @@ def sphereInterpolationDiffeotopy : Diffeotopy (𝓡 n) k (sphere (0 : E) 1) :=
     fst_apply _ := rfl
     snd_apply_zero' x := sphereSlice_zero hlip hL x }
 
+/-- At time `t`, the interpolation diffeotopy is the slice of the sphere at `t`. -/
+private theorem sphereInterpolationDiffeotopy_apply_eq (p : I × sphere (0 : E) 1) :
+    sphereInterpolationDiffeotopy f hL hlip hk p = sphereSlice hlip hL p.1 p.2 :=
+  (rfl)
+
 omit [CompleteSpace E] in
 /-- At time `t`, the interpolation diffeotopy sends `x` to the normalization of
 `x + sin (π t / 2) ^ 2 • (f x - x)`. -/
@@ -365,8 +271,24 @@ theorem coe_sphereInterpolationDiffeotopy_apply (p : I × sphere (0 : E) 1) :
     (sphereInterpolationDiffeotopy f hL hlip hk p : E) =
       normalize ((p.2 : E) + Real.sin (Real.pi * p.1 / 2) ^ 2 • ((f p.2 : E) - p.2)) := by
   let := completeSpace_of_fact (E := E) n
-  rw [← sphereCone_coe (f := fun x ↦ (f x : E) - x) p.2, ← weight_def, ← slice_apply hlip hL]
+  rw [sphereInterpolationDiffeotopy_apply_eq, coe_sphereSlice, slice_apply, sphereCone_coe,
+    sinSqWeight_def]
+
+/-- At time `t`, the inverse of the interpolation diffeotopy is the inverse slice of the sphere. -/
+private theorem sphereInterpolationDiffeotopy_symm_apply_eq (p : I × sphere (0 : E) 1) :
+    (sphereInterpolationDiffeotopy f hL hlip hk).symm p = sphereSliceSymm hlip hL p.1 p.2 := by
+  -- The inverse of the diffeomorphism of `I × Sⁿ` is assembled from `sphereSliceSymm`.
+  rw [Diffeotopy.symm_apply]
   rfl
+
+/-- At time `t`, the inverse of the interpolation diffeotopy sends `y` to the normalization of the
+solution `x` of `x + sin (π t / 2) ^ 2 • u x = y`, where `u` is the cone over the displacement
+`x ↦ f x - x` (`LipschitzWith.idAddSmulHomeomorph`). -/
+theorem coe_sphereInterpolationDiffeotopy_symm_apply (p : I × sphere (0 : E) 1) :
+    ((sphereInterpolationDiffeotopy f hL hlip hk).symm p : E) =
+      normalize ((hlip.idAddSmulHomeomorph hL (sinSqWeight p.1)
+        (norm_sinSqWeight_le_one _)).symm p.2) := by
+  rw [sphereInterpolationDiffeotopy_symm_apply_eq, coe_sphereSliceSymm, slice]
 
 omit [CompleteSpace E] in
 /-- The interpolation diffeotopy ends at `f`. -/
@@ -374,9 +296,11 @@ omit [CompleteSpace E] in
 theorem sphereInterpolationDiffeotopy_final :
     (sphereInterpolationDiffeotopy f hL hlip hk).final = f :=
   _root_.Diffeomorph.ext fun x ↦ Subtype.ext <| by
-    rw [Diffeotopy.final_apply, coe_sphereInterpolationDiffeotopy_apply, Set.Icc.coe_one, mul_one,
-      Real.sin_pi_div_two, one_pow, one_smul, add_sub_cancel,
-      normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere _)]
+    let := completeSpace_of_fact (E := E) n
+    rw [Diffeotopy.final_apply, sphereInterpolationDiffeotopy_apply_eq, coe_sphereSlice,
+      slice_apply, Set.Icc.coe_one, sinSqWeight_one, sphereCone_coe]
+    simp only [one_smul, add_sub_cancel]
+    exact normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere _)
 
 end Sphere
 
@@ -385,48 +309,31 @@ end Sphere
 section Local
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1)]
-
-/-- Points of a chord of length at most one between two unit vectors have norm at least
-`1 / 2`. -/
-private theorem norm_mem_Icc_of_mem_segment {p q z : E} (hp : ‖p‖ = 1) (hq : ‖q‖ = 1)
-    (hpq : ‖p - q‖ ≤ 1) (hz : z ∈ segment ℝ p q) : 1 / 2 ≤ ‖z‖ ∧ ‖z‖ ≤ 1 := by
-  obtain ⟨a, b, ha, hb, hab, rfl⟩ := hz
-  obtain rfl : a = 1 - b := by linarith
-  have h₁ := norm_le_norm_add_norm_sub' p ((1 - b) • p + b • q)
-  rw [show p - ((1 - b) • p + b • q) = b • (p - q) by module, norm_smul,
-    Real.norm_of_nonneg hb] at h₁
-  have h₂ := norm_le_norm_add_norm_sub' q ((1 - b) • p + b • q)
-  rw [show q - ((1 - b) • p + b • q) = (1 - b) • (q - p) by module, norm_smul,
-    Real.norm_of_nonneg ha, norm_sub_rev] at h₂
-  have h₃ : ‖(1 - b) • p + b • q‖ ≤ 1 := by
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul, norm_smul, hp, hq, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb]
-    linarith
-  constructor <;> nlinarith
-
-variable [FiniteDimensional ℝ E]
+  [Fact (finrank ℝ E = n + 1)] [FiniteDimensional ℝ E]
 
 /-- The punctured space `E \ {0}`, as an open subset of `E`. -/
 private abbrev punctured (E : Type*) [NormedAddCommGroup E] : Opens E :=
   ⟨{0}ᶜ, isOpen_compl_singleton⟩
 
-omit [FiniteDimensional ℝ E] in
-/-- The inclusion of the sphere into `E`, as a `C^k` map. -/
-private def coeSphereMap : C^k⟮𝓡 n, sphere (0 : E) 1; 𝓘(ℝ, E), E⟯ :=
-  ⟨_, contMDiff_coe_sphere⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- The radial projection of the punctured space onto the sphere, as a `C^k` map. -/
-private def normalizeMap : C^k⟮𝓘(ℝ, E), punctured E; 𝓡 n, sphere (0 : E) 1⟯ :=
-  ⟨_, contMDiff_normalize_sphere⟩
+omit [InnerProductSpace ℝ E] [Fact (finrank ℝ E = n + 1)] [FiniteDimensional ℝ E] in
+/-- The points of the annulus `1 / 2 ≤ ‖y‖` lie in the punctured space. -/
+private theorem ne_zero_of_half_le_norm {y : E} (hy : 1 / 2 ≤ ‖y‖) : y ≠ 0 :=
+  norm_pos_iff.1 (lt_of_lt_of_le (by norm_num) hy)
 
 omit [FiniteDimensional ℝ E] in
 /-- The displacement `y ↦ f (y / ‖y‖) - y / ‖y‖` of `f`, read on the punctured space through the
 radial projection, as a `C^k` map. -/
 private def displacement (f : Diff (𝓡 n) (sphere (0 : E) 1) k) :
     C^k⟮𝓘(ℝ, E), punctured E; 𝓘(ℝ, E), E⟯ :=
-  ContMDiffMap.comp (ContMDiffMap.comp coeSphereMap f.toContMDiffMap - coeSphereMap) normalizeMap
+  ContMDiffMap.comp (ContMDiffMap.comp coeSphereMap f.toContMDiffMap - coeSphereMap)
+    normalizeSphereMap
+
+omit [FiniteDimensional ℝ E] in
+private theorem displacement_apply (f : Diff (𝓡 n) (sphere (0 : E) 1) k) (y : punctured E) :
+    displacement f y = (f (normalizeSphereMap (m := k) (n := n) y) : E) - normalize (y : E) := by
+  rw [displacement, ContMDiffMap.comp_apply, ContMDiffMap.coe_sub, Pi.sub_apply,
+    ContMDiffMap.comp_apply, coeSphereMap_apply, coeSphereMap_apply,
+    Diffeomorph.coe_toContMDiffMap, coe_normalizeSphereMap_apply]
 
 /-- The displacement depends continuously on `f`. -/
 private theorem continuous_displacement :
@@ -437,7 +344,7 @@ private theorem continuous_displacement :
   have h₂ : Continuous fun g : C^k⟮𝓡 n, sphere (0 : E) 1; 𝓘(ℝ, E), E⟯ ↦ g - coeSphereMap :=
     ContMDiffMap.continuous_sub_manifoldWeakWhitney.comp (continuous_id.prodMk continuous_const)
   have h₃ : Continuous fun g : C^k⟮𝓡 n, sphere (0 : E) 1; 𝓘(ℝ, E), E⟯ ↦
-      ContMDiffMap.comp g (normalizeMap (E := E)) :=
+      ContMDiffMap.comp g (normalizeSphereMap (E := E)) :=
     ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_id.prodMk continuous_const)
   exact h₃.comp (h₂.comp (h₁.comp Diffeomorph.continuous_toContMDiffMap))
 
@@ -446,9 +353,11 @@ omit [FiniteDimensional ℝ E] in
 private theorem extend_displacement_eqOn (f : Diff (𝓡 n) (sphere (0 : E) 1) k) :
     EqOn (Function.extend Subtype.val (displacement f) fun _ ↦ (0 : E))
       (sphereExtend fun x ↦ (f x : E) - x) (punctured E) := fun y hy ↦ by
-  refine (Subtype.val_injective.extend_apply (displacement f) (fun _ ↦ (0 : E)) ⟨y, hy⟩).trans ?_
-  rw [sphereExtend_of_ne_zero _ hy]
-  rfl
+  have hy' : normalizeSphereMap (m := k) (n := n) ⟨y, hy⟩ =
+      ⟨normalize y, mem_sphere_zero_iff_norm.2 (norm_normalize hy)⟩ :=
+    Subtype.ext (coe_normalizeSphereMap_apply _)
+  rw [Subtype.val_injective.extend_apply (displacement f) (fun _ ↦ (0 : E)) ⟨y, hy⟩,
+    displacement_apply, sphereExtend_of_ne_zero _ hy, hy']
 
 /-- Near the identity, the jets of order at most one of the displacement are small on the closed
 annulus `1 / 2 ≤ ‖y‖ ≤ 1`, a compact subset of the punctured space. -/
@@ -460,7 +369,7 @@ private theorem eventually_forall_norm_iteratedFDerivWithin_lt (m : ℕ) (hm : (
   set A : Set (punctured E) := Subtype.val ⁻¹' (closedBall (0 : E) 1 ∩ {y | 1 / 2 ≤ ‖y‖})
   have hA : IsCompact A := IsInducing.subtypeVal.isCompact_preimage'
     ((isCompact_closedBall 0 1).inter_right (isClosed_le continuous_const continuous_norm))
-    fun y hy ↦ ⟨⟨y, fun h ↦ by norm_num [show y = 0 from h] at hy⟩, rfl⟩
+    fun y hy ↦ ⟨⟨y, ne_zero_of_half_le_norm hy.2⟩, rfl⟩
   have hc : Continuous fun f : Diff (𝓡 n) (sphere (0 : E) 1) k ↦
       ContMDiffMap.openIteratedFDerivContinuousMap (punctured E) (displacement f) m hm :=
     ((continuous_apply (⟨m, hm⟩ : {m : ℕ // (m : ℕ∞ω) ≤ k})).comp
@@ -473,38 +382,18 @@ private theorem eventually_forall_norm_iteratedFDerivWithin_lt (m : ℕ) (hm : (
         iteratedFDerivWithin ℝ m (sphereExtend fun x ↦ (f x : E) - (x : E)) (punctured E) y := by
     rw [ContMDiffMap.openIteratedFDerivContinuousMap_apply,
       iteratedFDerivWithin_congr (extend_displacement_eqOn f) y.property]
+  -- The displacement of the identity vanishes, and so do its jets.
+  have h0 : (fun x : sphere (0 : E) 1 ↦ ((1 : Diff (𝓡 n) (sphere (0 : E) 1) k) x : E) - x) = 0 :=
+    funext fun x ↦ by rw [Diffeomorph.one_apply, sub_self, Pi.zero_apply]
   have h₁ : MapsTo (ContMDiffMap.openIteratedFDerivContinuousMap (punctured E) (displacement 1) m
       hm) A (ball 0 r) := fun y _ ↦ by
-    have h0 : (fun x : sphere (0 : E) 1 ↦ ((1 : Diff (𝓡 n) (sphere (0 : E) 1) k) x : E) - x) = 0 :=
-      funext fun x ↦ sub_self _
-    rw [mem_ball_zero_iff, hjet, h0, sphereExtend_zero_fun, iteratedFDerivWithin_zero,
-      Pi.zero_apply, norm_zero]
-    exact hr
+    rw [mem_ball_zero_iff, hjet, h0]
+    simpa using hr
   filter_upwards [((ContinuousMap.isOpen_setOfPred_mapsTo hA isOpen_ball).preimage hc).mem_nhds
     h₁] with f hf y hy₁ hy₂
-  have hy : y ≠ 0 := fun h ↦ by norm_num [h] at hy₁
-  simpa only [mem_ball_zero_iff, hjet] using hf (show (⟨y, hy⟩ : punctured E) ∈ A from
-    ⟨mem_closedBall_zero_iff.2 hy₂, hy₁⟩)
-
-omit [FiniteDimensional ℝ E] in
-/-- **The mean value theorem on short chords.** If the derivative of the `0`-homogeneous extension
-of a `C^k` map `g` on the sphere, `1 ≤ k`, is bounded by `c` on the closed annulus
-`1 / 2 ≤ ‖y‖ ≤ 1`, then `‖g p - g q‖ ≤ c ‖p - q‖` whenever `‖p - q‖ ≤ 1`. -/
-private theorem norm_sub_le_of_norm_fderiv_sphereExtend_le (hk : 1 ≤ k)
-    {g : sphere (0 : E) 1 → E} (hg : ContMDiff (𝓡 n) 𝓘(ℝ, E) k g) {c : ℝ}
-    (hc : ∀ y : E, 1 / 2 ≤ ‖y‖ → ‖y‖ ≤ 1 → ‖fderiv ℝ (sphereExtend g) y‖ ≤ c)
-    {p q : sphere (0 : E) 1} (hpq : ‖(p : E) - q‖ ≤ 1) : ‖g p - g q‖ ≤ c * ‖(p : E) - q‖ := by
-  have hmem {z : E} (hz : z ∈ segment ℝ (q : E) p) := norm_mem_Icc_of_mem_segment
-    (norm_eq_of_mem_sphere q) (norm_eq_of_mem_sphere p) (by rwa [norm_sub_rev]) hz
-  have hne {z : E} (hz : z ∈ segment ℝ (q : E) p) : z ≠ 0 := fun h ↦ by
-    have h' := (hmem hz).1
-    rw [h, norm_zero] at h'
-    norm_num at h'
-  rw [← sphereExtend_coe g p, ← sphereExtend_coe g q]
-  exact (convex_segment (q : E) p).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
-    (fun z hz ↦ (contDiffAt_sphereExtend (hne hz) (hg _)).differentiableAt
-      (zero_lt_one.trans_le hk).ne')
-    (fun z hz ↦ hc z (hmem hz).1 (hmem hz).2) (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)
+  have hyA : (⟨y, ne_zero_of_half_le_norm hy₁⟩ : punctured E) ∈ A :=
+    ⟨mem_closedBall_zero_iff.2 hy₂, hy₁⟩
+  simpa only [mem_ball_zero_iff, hjet] using hf hyA
 
 /-- Near the identity, the displacement `x ↦ f x - x` is bounded by `1 / 8` and `1 / 4`-Lipschitz
 on the sphere, so its cone is Lipschitz with constant `1 / 8 + 2 / 4 < 1`. -/
@@ -522,7 +411,7 @@ private theorem eventually_exists_lipschitzWith_sphereCone_sub (hk : 1 ≤ k) :
     rw [norm_iteratedFDerivWithin_zero, sphereExtend_coe] at h
     exact h.le
   have hd (y : E) (hy₁ : 1 / 2 ≤ ‖y‖) (hy₂ : ‖y‖ ≤ 1) : ‖fderiv ℝ (sphereExtend g) y‖ ≤ 1 / 4 := by
-    have hy : y ≠ 0 := fun h ↦ by norm_num [h] at hy₁
+    have hy := ne_zero_of_half_le_norm hy₁
     have h := h₁ y hy₁ hy₂
     rw [norm_iteratedFDerivWithin_one _ ((punctured E).isOpen.uniqueDiffWithinAt hy),
       fderivWithin_of_isOpen (punctured E).isOpen hy] at h
@@ -541,6 +430,17 @@ private theorem eventually_exists_lipschitzWith_sphereCone_sub (hk : 1 ≤ k) :
   · push_cast
     exact hg₀ x
 
+end Local
+
+/-! ### Diffeotopy classes are path components -/
+
+section Path
+
+-- The weak Whitney topology of `Diff(Sⁿ)` needs the sphere to be compact, so `E` is
+-- finite-dimensional as an instance.
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] [FiniteDimensional ℝ E]
+
 /-- **The local isotopy lemma for spheres.** Every `C^k` diffeomorphism of the unit sphere close
 enough to the identity in the weak Whitney topology, `1 ≤ k`, is the final diffeomorphism of a
 `C^k` diffeotopy (`TauCeti.sphereInterpolationDiffeotopy`). -/
@@ -550,16 +450,6 @@ theorem eventually_exists_diffeotopy_final_eq (hk : 1 ≤ k) :
   (eventually_exists_lipschitzWith_sphereCone_sub hk).mono fun f ⟨_, hL, hlip⟩ ↦
     ⟨sphereInterpolationDiffeotopy f hL hlip hk, sphereInterpolationDiffeotopy_final f hL hlip hk⟩
 
-/-- Near every diffeomorphism `h` of the sphere, every diffeomorphism is `h` followed by the final
-diffeomorphism of a diffeotopy. -/
-private theorem eventually_exists_diffeotopy_mul_final_eq (hk : 1 ≤ k)
-    (h : Diff (𝓡 n) (sphere (0 : E) 1) k) :
-    ∀ᶠ h' in 𝓝 h, ∃ Ψ : Diffeotopy (𝓡 n) k (sphere (0 : E) 1), h * Ψ.final = h' := by
-  have ht : Tendsto (fun h' ↦ h⁻¹ * h') (𝓝 h) (𝓝 1) := by
-    simpa only [inv_mul_cancel] using (continuous_const_mul h⁻¹).tendsto h
-  filter_upwards [ht.eventually (eventually_exists_diffeotopy_final_eq hk)] with h' ⟨Ψ, hΨ⟩
-  exact ⟨Ψ, by rw [hΨ, mul_inv_cancel_left]⟩
-
 /-- **The path components of `Diff(Sⁿ)` are its diffeotopy classes.** Two `C^k` diffeomorphisms
 `f` and `g` of the unit sphere, `1 ≤ k`, are joined by a path in the weak Whitney topology exactly
 when `g = f ∘ φ₁` for the final diffeomorphism `φ₁` of a `C^k` diffeotopy. -/
@@ -568,21 +458,20 @@ theorem joined_iff_exists_diffeotopy_mul_final_eq (hk : 1 ≤ k)
     Joined f g ↔ ∃ Φ : Diffeotopy (𝓡 n) k (sphere (0 : E) 1), f * Φ.final = g := by
   refine ⟨fun hfg ↦ ?_, fun ⟨Φ, hΦ⟩ ↦ hΦ ▸ by
     simpa only [mul_one] using Φ.joined_one_final.map (continuous_const_mul f)⟩
-  -- The diffeomorphisms diffeotopic to `f` form a clopen set, so they contain its path component.
-  set C := {h | ∃ Φ : Diffeotopy (𝓡 n) k (sphere (0 : E) 1), f * Φ.final = h}
-  have hC : IsClopen C := by
-    refine ⟨isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun h hh ↦ ?_),
-      isOpen_iff_mem_nhds.2 fun h ⟨Φ, hΦ⟩ ↦ ?_⟩
-    · filter_upwards [eventually_exists_diffeotopy_mul_final_eq hk h] with h' ⟨Ψ, hΨ⟩ ⟨Φ, hΦ⟩
-      exact hh ⟨Ψ.symm.trans Φ, by
-        rw [Diffeotopy.final_symm_trans, ← mul_assoc, hΦ, ← hΨ, mul_inv_cancel_right]⟩
-    · filter_upwards [eventually_exists_diffeotopy_mul_final_eq hk h] with h' ⟨Ψ, hΨ⟩
-      exact ⟨Ψ.trans Φ, by
-        rw [Diffeotopy.final_trans, ← _root_.Diffeomorph.mul_def, ← mul_assoc, hΦ, hΨ]⟩
-  refine hC.connectedComponent_subset ⟨Diffeotopy.refl _ _ _, ?_⟩
-    (pathComponent_subset_component f (mem_pathComponent_iff.2 hfg))
-  rw [Diffeotopy.final_refl, ← _root_.Diffeomorph.one_def, mul_one]
+  -- The final diffeomorphisms of diffeotopies form a subgroup which is a neighbourhood of the
+  -- identity, so an open, hence closed, subgroup; it contains the path component of the identity.
+  set H := (Diffeotopy.finalHom (𝓡 n) k (sphere (0 : E) 1)).range
+  have hH : (H : Set (Diff (𝓡 n) (sphere (0 : E) 1) k)) ∈ 𝓝 1 :=
+    (eventually_exists_diffeotopy_final_eq hk).mono fun h ⟨Φ, hΦ⟩ ↦
+      MonoidHom.mem_range.2 ⟨Φ, (Diffeotopy.finalHom_apply Φ).trans hΦ⟩
+  have hC : IsClopen (H : Set (Diff (𝓡 n) (sphere (0 : E) 1) k)) :=
+    (⟨H, H.isOpen_of_mem_nhds hH⟩ : OpenSubgroup _).isClopen
+  have h₁ : Joined 1 (f⁻¹ * g) := by
+    simpa only [inv_mul_cancel] using hfg.map (continuous_const_mul f⁻¹)
+  obtain ⟨Φ, hΦ⟩ := MonoidHom.mem_range.1 (hC.connectedComponent_subset H.one_mem
+    (pathComponent_subset_component 1 (mem_pathComponent_iff.2 h₁)))
+  exact ⟨Φ, by rw [← Diffeotopy.finalHom_apply, hΦ, mul_inv_cancel_left]⟩
 
-end Local
+end Path
 
 end TauCeti

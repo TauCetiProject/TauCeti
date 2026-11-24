@@ -21,6 +21,8 @@ point `e` of the unit sphere.
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 * `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
   over a closed set `S` of directions is closed.
+* `NormedSpace.normalize_apply_normalize`: a map commuting with nonnegative dilations commutes
+  with normalization up to normalization.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 
 ## Main definitions
@@ -58,6 +60,18 @@ theorem _root_.NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem {S : Set E} (
   exact ContinuousOn.isOpen_inter_preimage
     (fun x hx ↦ ContinuousAt.continuousWithinAt (tendsto_id.normalize hx)) isOpen_ne
     hS.isOpen_compl
+
+/-- A map commuting with dilations by nonnegative scalars commutes with normalization up to
+normalization: `normalize (g (normalize z)) = normalize (g z)`. -/
+theorem _root_.NormedSpace.normalize_apply_normalize {g : E → E}
+    (hg : ∀ c : ℝ, 0 ≤ c → ∀ y, g (c • y) = c • g y) (z : E) :
+    normalize (g (normalize z)) = normalize (g z) := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  -- `normalize z` is the positive multiple `‖z‖⁻¹ • z` of `z`.
+  have hz' : normalize z = ‖z‖⁻¹ • z := (rfl)
+  rw [hz', hg _ (inv_nonneg.2 (norm_nonneg z)),
+    normalize_smul_of_pos (inv_pos.2 (norm_pos_iff.2 hz))]
 
 /-- Radial projection sends a continuous nowhere-zero map into a real normed space continuously
 to its unit sphere. -/

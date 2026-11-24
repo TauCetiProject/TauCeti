@@ -41,8 +41,8 @@ diffeomorphism of the closed unit ball `Dⁿ⁺¹` as a manifold with boundary
 Cerf's derivation of `Γ₄ = 0` from his theorem `π₀ Diff⁺(S³) = 0` (`TauCeti.CerfTheorem`): every
 diffeomorphism of `S³` is isotopic to an orthogonal one, and the isotopy, run along the radius,
 extends it over the four-ball. A path in the weak Whitney topology is replaced by a diffeotopy
-through `TauCeti.joined_iff_exists_diffeotopy_mul_final_eq`, so every diffeomorphism of `Sⁿ` joined
-to a linear isometry extends over the ball
+through `TauCeti.joined_iff_exists_diffeotopy_mul_final_eq`, so for `1 ≤ k ≤ ∞` every `C^k`
+diffeomorphism of `Sⁿ` joined to a linear isometry extends to a `C^k` diffeomorphism of the ball
 (`TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph`).
 
 ## Main definitions
@@ -63,9 +63,9 @@ to a linear isometry extends over the ball
   of the sphere diffeotopic to a linear isometry extends to a norm-preserving diffeomorphism of `E`.
 * `TauCeti.Diffeotopy.exists_diffeomorph_closedBall_final_mul_unitSphereDiffeomorph`: such a
   diffeomorphism is the boundary restriction of a diffeomorphism of the closed unit ball.
-* `TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph`: a diffeomorphism of the
-  sphere joined to a linear isometry in the weak Whitney topology is the boundary restriction of a
-  diffeomorphism of the closed unit ball.
+* `TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph`: for `1 ≤ k ≤ ∞`, a
+  `C^k` diffeomorphism of the sphere joined to a linear isometry in the weak Whitney topology is the
+  boundary restriction of a `C^k` diffeomorphism of the closed unit ball.
 
 ## References
 
