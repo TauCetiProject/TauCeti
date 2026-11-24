@@ -72,17 +72,6 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair_of_preconnectedSpace
     (fun s ↦ (h.isLocallyConstant_manifoldMorseIndex hn).apply_eq_of_preconnectedSpace s s₀)
     R n
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
-  [SecondCountableTopology M] [FiniteDimensional ℝ E'] [J.Boundaryless] [IsManifold J ∞ S] in
-/-- If every critical point of `f` in `f⁻¹[a, b]` lies in the range of `i`, where `f` takes the
-constant value `c > a`, then `a` is a regular value of `f`. -/
-private lemma isRegularValue_of_lt {a b c : ℝ} (hc : ∀ s, f (i s) = c) (hac : a < c)
-    (hcb : c < b) (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) :
-    IsRegularValue I 𝓘(ℝ) f a :=
-  isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨_, hxc, hx⟩ ↦ by
-    obtain ⟨s, rfl⟩ := hcrit ⟨hxc, le_of_eq hx.symm, hx.le.trans (hac.trans hcb).le⟩
-    exact hac.ne (hx.symm.trans (hc s))
-
 /-- **Relative homology of a compact cobordism across a Morse–Bott submanifold.** Under the
 hypotheses of `nonempty_singularHomology_sublevelPair_iso_thomPair`, the lower level `a` is regular,
 so the band pair `(f⁻¹[a, b], f⁻¹(a))` also has the relative homology of the Thom pair
@@ -107,7 +96,8 @@ theorem nonempty_singularHomology_bandPair_iso_thomPair
   let := i.normalSpaceVectorBundle hn hdim
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   have := isIso_singularHomologyMap_bandPairInclusion hfs (hac.trans hcb).le hcompact
-    (isRegularValue_of_lt hc hac hcb hcrit) R n
+    (isRegularValue_of_mem_of_ne (left_mem_Icc.2 (hac.trans hcb).le) hac.ne
+      (apply_eq_of_mem_criticalPoints_inter_preimage hc hcrit)) R n
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
     hcrit hdim g hr R n
   exact ⟨asIso (TopPair.singularHomologyMap (bandPairInclusion f (hac.trans hcb).le) R n) ≪≫ e⟩
@@ -165,7 +155,8 @@ theorem nonempty_singularCohomology_bandPair_iso_thomPair
   let := i.normalSpaceVectorBundle hn hdim
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   have := isIso_singularCohomologyMap_bandPairInclusion hfs (hac.trans hcb).le hcompact
-    (isRegularValue_of_lt hc hac hcb hcrit) R k N n
+    (isRegularValue_of_mem_of_ne (left_mem_Icc.2 (hac.trans hcb).le) hac.ne
+      (apply_eq_of_mem_criticalPoints_inter_preimage hc hcrit)) R k N n
   obtain ⟨e⟩ := h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
     hcrit hdim g hr R k N n
   exact ⟨(asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)

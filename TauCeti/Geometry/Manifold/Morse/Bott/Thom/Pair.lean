@@ -14,7 +14,7 @@ public import TauCeti.Topology.VectorBundle.Subbundle
 public import TauCeti.Topology.Order.Sublevel
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cohomology
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
-import TauCeti.Topology.VectorBundle.EulerClass
+import TauCeti.Topology.VectorBundle.Thom.Pair
 import TauCeti.Topology.VectorBundle.Riemannian.FiniteDimensional
 import TauCeti.Topology.VectorBundle.Thom.Attachment.Basic
 
@@ -1004,9 +1004,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair [T2Space M]
     let := hV.fiberBundle
     have := hV.vectorBundle
     -- Every critical point of the band lies on the submanifold, hence on the level `c`.
-    have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
-      obtain ⟨s, rfl⟩ := hcrit ⟨hx, hfx⟩
-      exact hc s
+    have hlev := apply_eq_of_mem_criticalPoints_inter_preimage hc hcrit
     -- The universe of the unused cohomology coefficient ring is irrelevant; take it to be `0`.
     obtain ⟨ε, hε, hεδ, φ, hφ, -⟩ :=
       h.exists_isIso_negativeNormalGauge_of_band.{u, v, w, _, _, _, _, 0} hn hfs hc hac hcb hcompact
@@ -1151,9 +1149,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair [T2Space M]
     let := hV.fiberBundle
     have := hV.vectorBundle
     -- Every critical point of the band lies on the submanifold, hence on the level `c`.
-    have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
-      obtain ⟨s, rfl⟩ := hcrit ⟨hx, hfx⟩
-      exact hc s
+    have hlev := apply_eq_of_mem_criticalPoints_inter_preimage hc hcrit
     obtain ⟨ε, hε, hεδ, φ, -, hφ⟩ :=
       h.exists_isIso_negativeNormalGauge_of_band hn hfs hc hac hcb hcompact hcrit hdim g hr
     have hρ := IsCriticalSubmanifold.isFiberGauge_negativeNormalGauge hn h.toIsCriticalSubmanifold
@@ -1218,6 +1214,12 @@ end IsNondegenerateCriticalSubmanifold
 end Attachment
 
 end SmoothEmbedding
+
+/-- The rank of the universe-lifted function space `ULift.{u} (Fin r) → R` over a semiring `R`
+satisfying the strong rank condition is `r`. -/
+theorem finrank_ulift_fin_fun (R : Type*) [Semiring R] [StrongRankCondition R] (r : ℕ) :
+    Module.finrank R (ULift.{u} (Fin r) → R) = r := by
+  rw [Module.finrank_pi, Fintype.card_ulift, Fintype.card_fin]
 
 section Family
 

@@ -21,19 +21,13 @@ critical points lie on `i`. Bott's theorem identifies the relative homology acro
 the homology of `S` shifted by the index and twisted by the orientation local system `o(ν⁻)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`):
 `Hⱼ({f ≤ b}, {f ≤ a}; ℤ) ≅ H_{j - r}(S; o(ν⁻))`. This file proves this identification in the
-degrees `j < r`, and also in the degree `j = r` when the index `r` is positive, with no
-orientation of `ν⁻`:
-
-* below the index the relative homology vanishes, with any coefficients
-  (`isZero_singularHomology_sublevelPair_of_lt`), and likewise the relative cohomology when the
-  chain coefficients are projective (`isZero_singularCohomology_sublevelPair_of_lt`);
-* in the degree of a positive index, `Hᵣ({f ≤ b}, {f ≤ a}; ℤ) ≅ H₀(S; o(ν⁻))`
-  (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, stated for index `r + 1`).
+degree `j = r` when the index `r` is positive, with no orientation of `ν⁻`
+(`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, stated for index `r + 1`);
+the vanishing below the index lives in `TauCeti.Geometry.Manifold.Morse.Bott.Thom.Vanishing`.
 
 The relative homology across the level is that of the Thom pair `(ν⁻, ν⁻₀)`
-(`nonempty_singularHomology_sublevelPair_iso_thomPair`), whose homology vanishes below the rank
-(`TauCeti.isZero_singularHomology_thomPair_of_compactSpace`) and is `H₀(S; o(ν⁻))` in the rank
-degree (`TauCeti.thomPairSingularHomologyIsoTwistedHomology`).
+(`nonempty_singularHomology_sublevelPair_iso_thomPair`), which in the rank degree is
+`H₀(S; o(ν⁻))` (`TauCeti.thomPairSingularHomologyIsoTwistedHomology`).
 
 For a connected critical submanifold of positive index the group `H₀(S; o(ν⁻))` is `ℤ` when `ν⁻`
 is orientable and `ℤ/2` when it is not, so the integral homology across the level in the degree of
@@ -47,9 +41,6 @@ the index detects the orientability of the negative normal bundle:
 For instance, a critical circle of index one whose negative normal bundle is a Möbius line
 contributes `ℤ/2` in degree one, not the group `H₀(S¹; ℤ) = ℤ` that constant coefficients would
 give.
-
-For the twisted-homology and orientability statements in the second part, `M`, `S` and the model
-space of `M` live in `Type`.
 
 ## References
 
@@ -68,63 +59,7 @@ open AlgebraicTopology Bundle CategoryTheory Limits Module Set Topology
 open TauCeti.VectorBundleOrientationCover TauCeti.LocalCoefficientSystem
 open scoped ContDiff Manifold
 
-universe u
-
 namespace TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
-
-section VanishingBelowIndex
-
-variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-  [SecondCountableTopology M] {E' H' : Type*} {S : Type u} [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S] [ChartedSpace H' S]
-  [IsManifold J ∞ S] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
-  (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
-  (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
-  (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
-
-include h hfs hc hac hcb hcompact hcrit in
-/-- **Across a Morse–Bott level the relative homology vanishes below the index.** Let
-`i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a Hausdorff,
-second-countable, finite-dimensional, boundaryless manifold, with `f = c` along `i` and Morse
-index `r` at every point of `i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and
-all its critical points lie on `i`. Then `Hₖ({f ≤ b}, {f ≤ a}) = 0` for `k < r`, with coefficients
-in any abelian category with coproducts. -/
-theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{u} C] (R : C) {k : ℕ} (hk : k < r) :
-    IsZero ((sublevelPair f (hac.trans hcb).le).singularHomology R k) := by
-  cases isEmpty_or_nonempty S with
-  | inl _ =>
-    exact isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit R k
-  | inr _ =>
-    have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
-      hc hac.le hcb.le hcompact hcrit
-    obtain ⟨V, _, _, _, _, _, _, ⟨e⟩⟩ := h.exists_thomPair_ulift_singularHomology_iso
-      hfs hc hac hcb hcompact hcrit hr R k
-    have hrank : finrank ℝ (ULift.{u} (Fin r) → ℝ) = r := by
-      rw [Module.finrank_pi, Fintype.card_ulift, Fintype.card_fin]
-    have hzero : IsZero ((thomPair (ULift.{u} (Fin r) → ℝ) V).singularHomology R k) :=
-      isZero_singularHomology_thomPair_of_compactSpace R (hrank.symm ▸ hk)
-    exact hzero.of_iso e
-
-include h hfs hc hac hcb hcompact hcrit in
-/-- **Across a Morse–Bott level the relative cohomology vanishes below the index.** Under the
-hypotheses of `isZero_singularHomology_sublevelPair_of_lt`, the relative singular cohomology
-`Hᵐ({f ≤ b}, {f ≤ a}; R, N)` vanishes for every `m < r` whenever the chain coefficient object
-`R` is projective. -/
-theorem isZero_singularCohomology_sublevelPair_of_lt {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
-    {C : Type*} [Category C] [Abelian C] [HasCoproducts.{u} C] (R : C) [Projective R]
-    (k : Type*) [Ring k] [Linear k C] (N : C) {m : ℕ} (hmr : m < r) :
-    IsZero ((sublevelPair f (hac.trans hcb).le).singularCohomology R k N m) :=
-  TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R N m fun _ hj ↦
-    h.isZero_singularHomology_sublevelPair_of_lt hfs hc hac hcb hcompact hcrit hr R
-      (hj.trans_lt hmr)
-
-end VanishingBelowIndex
 
 variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]

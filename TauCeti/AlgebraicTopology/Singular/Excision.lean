@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Order.Sublevel
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Topology.Closure
 
@@ -28,8 +29,8 @@ disjoint closed subsets of `X`, then relative to `s` the union `s ∪ t` has the
 inclusion `(t, ∅) ⟶ (s ∪ t, s)` induces isomorphisms
 (`TopPair.isIso_singularHomologyMap_ofInclusionMap_union_of_disjoint`). For a continuous real
 function `f` and `a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` gives isomorphisms for the
-collar inclusion `(f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
-(`TopPair.isIso_singularHomologyMap_ofInclusionMap_preimage_Icc`).
+collar inclusion `TauCeti.bandCollarPairInclusion : (f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+(`TopPair.isIso_singularHomologyMap_bandCollarPairInclusion`).
 
 All of these follow from a statement about an arbitrary map of topological pairs `f : P ⟶ P'`
 whose map on ambient spaces is an embedding and whose subspace is the full preimage of the subspace
@@ -822,98 +823,20 @@ theorem exists_singularHomologyMap_excisionMap_eq (hU : IsOpen U) (hV : IsOpen V
 
 end Union
 
-section PreimageIcc
-
-/-- For `a' ≤ b` with `a < a'` or `a' = b`, the open sets `{f < a'}` (or all of `{f ≤ b}` when
-`b ≤ a'`) and `{a < f}` form an open cover of `{f ≤ b}` satisfying the excision conditions for the
-inclusion `(f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`. -/
-lemma open_cover_ofInclusionMap_preimage_Icc {X : Type w} [TopologicalSpace X] {f : X → ℝ}
-    (hf : Continuous f) {a a' b : ℝ} (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b) :
-    IsEmbedding (Hom.fst (ofInclusionMap (X := TopCat.of X) (Y := TopCat.of X)
-      (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) : f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)
-      (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)
-      (ContinuousMap.inclusion (s := f ⁻¹' Set.Icc a b) (t := {x | f x ≤ b}) fun _ hx ↦ hx.2)
-      fun _ hx ↦ (hx : f _ ∈ Set.Icc a a').2)) ∧
-      (∀ x, Hom.fst (ofInclusionMap (X := TopCat.of X) (Y := TopCat.of X)
-          (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) :
-            f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)
-          (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)
-          (ContinuousMap.inclusion (s := f ⁻¹' Set.Icc a b) (t := {x | f x ≤ b})
-            fun _ hx ↦ hx.2)
-          fun _ hx ↦ (hx : f _ ∈ Set.Icc a a').2) x ∈
-          Set.range (ofInclusion (X := TopCat.of X)
-            (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)).map →
-        x ∈ Set.range (ofInclusion (X := TopCat.of X)
-          (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) :
-            f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)).map) ∧
-      (∀ i : Bool, IsOpen (bif i then ({x : {x | f x ≤ b} | f x.val < a' ∨ b ≤ a'})
-        else ({x : {x | f x ≤ b} | a < f x.val}))) ∧
-      (⋃ i : Bool, bif i then ({x : {x | f x ≤ b} | f x.val < a' ∨ b ≤ a'})
-        else ({x : {x | f x ≤ b} | a < f x.val})) = Set.univ ∧
-      (∀ i : Bool,
-        (bif i then ({x : {x | f x ≤ b} | f x.val < a' ∨ b ≤ a'})
-          else ({x : {x | f x ≤ b} | a < f x.val})) ⊆
-          Set.range (ofInclusion (X := TopCat.of X)
-            (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)).map ∨
-        (bif i then ({x : {x | f x ≤ b} | f x.val < a' ∨ b ≤ a'})
-          else ({x : {x | f x ≤ b} | a < f x.val})) ⊆
-          Set.range (Hom.fst (ofInclusionMap (X := TopCat.of X) (Y := TopCat.of X)
-            (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) :
-              f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)
-            (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)
-            (ContinuousMap.inclusion (s := f ⁻¹' Set.Icc a b) (t := {x | f x ≤ b})
-              fun _ hx ↦ hx.2)
-            fun _ hx ↦ (hx : f _ ∈ Set.Icc a a').2))) := by
-  have hWb : f ⁻¹' Set.Icc a b ⊆ {x | f x ≤ b} := fun _ hx ↦ hx.2
-  have hsub : {x | f x ≤ a'} ⊆ {x | f x ≤ b} := fun _ hx ↦ hx.trans ha'b
-  set ι := ofInclusionMap (X := TopCat.of X) (Y := TopCat.of X)
-    (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) : f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)
-    hsub (ContinuousMap.inclusion hWb) fun _ hx ↦ (hx : f _ ∈ Set.Icc a a').2
-  have hι : ⇑(Hom.fst ι) = ContinuousMap.inclusion hWb :=
-    funext fun _ ↦ ofInclusionMap_fst_apply _ _ _
-  refine ⟨hι ▸ IsEmbedding.inclusion hWb, ?_, ?_, ?_, ?_⟩
-  · rintro x ⟨y, hy⟩
-    have hy' : f x.val ≤ a' := by
-      have h := congrArg Subtype.val (hy.trans (congrFun hι x))
-      exact h ▸ y.property
-    exact ⟨⟨x.val, x.property.1, hy'⟩, rfl⟩
-  · intro i
-    cases i
-    · exact isOpen_lt continuous_const (hf.comp continuous_subtypeVal)
-    · exact (isOpen_lt (hf.comp continuous_subtypeVal) continuous_const).union isOpen_const
-  · refine Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 ?_
-    by_cases hx : f x.val < a'
-    · exact ⟨true, Or.inl hx⟩
-    rcases hlt with hlt | rfl
-    · exact ⟨false, hlt.trans_le (le_of_not_gt hx)⟩
-    · exact ⟨true, Or.inr le_rfl⟩
-  · intro i
-    cases i
-    · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩
-      rw [hι]
-      rfl
-    · refine Or.inl fun x (hx : f x.val < a' ∨ b ≤ a') ↦ ⟨⟨x.val, ?_⟩, rfl⟩
-      rcases hx with hx | hx
-      · exact hx.le
-      · exact (x.property : f x.val ≤ b).trans hx
+section BandCollar
 
 /-- **Collar excision for continuous real functions.** For a continuous function `f : X → ℝ` and
-`a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` from `({f ≤ b}, {f ≤ a'})` shows that the
-inclusion of pairs `(f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})` induces isomorphisms on
-relative singular homology in every degree. -/
-theorem isIso_singularHomologyMap_ofInclusionMap_preimage_Icc {X : Type w} [TopologicalSpace X]
+`a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` from `({f ≤ b}, {f ≤ a'})` shows that
+`TauCeti.bandCollarPairInclusion f a ha'b : (f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+induces isomorphisms on relative singular homology in every degree. -/
+theorem isIso_singularHomologyMap_bandCollarPairInclusion {X : Type w} [TopologicalSpace X]
     {f : X → ℝ} (hf : Continuous f) {a a' b : ℝ} (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b)
     (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap
-      (ofInclusionMap (X := TopCat.of X) (Y := TopCat.of X)
-        (Set.preimage_mono (Set.Icc_subset_Icc_right ha'b) :
-          f ⁻¹' Set.Icc a a' ⊆ f ⁻¹' Set.Icc a b)
-        (show {x | f x ≤ a'} ⊆ {x | f x ≤ b} from fun _ hx ↦ hx.trans ha'b)
-        (ContinuousMap.inclusion (s := f ⁻¹' Set.Icc a b) (t := {x | f x ≤ b}) fun _ hx ↦ hx.2)
-        fun _ hx ↦ (hx : f _ ∈ Set.Icc a a').2) R n) := by
-  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := open_cover_ofInclusionMap_preimage_Icc hf ha'b hlt
-  exact isIso_singularHomologyMap_of_open_cover R _ h₁ h₂ _ h₃ h₄ h₅ n
+    IsIso (TopPair.singularHomologyMap (TauCeti.bandCollarPairInclusion f a ha'b) R n) := by
+  obtain ⟨h₁, h₂, U, h₃, h₄, h₅⟩ :=
+    TauCeti.exists_open_cover_bandCollarPairInclusion hf ha'b hlt
+  exact isIso_singularHomologyMap_of_open_cover R _ h₁ h₂ U h₃ h₄ h₅ n
 
-end PreimageIcc
+end BandCollar
 
 end TopPair

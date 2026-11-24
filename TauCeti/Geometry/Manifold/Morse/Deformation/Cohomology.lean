@@ -253,19 +253,17 @@ theorem isIso_singularCohomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ
       (isZero_singularCohomology_collar hfc φ hφf hLN R k N n)
       fun m _ ↦ isZero_singularCohomology_collar hfc φ hφf hLN R k N m
   -- Excise `{f < a}` from `({f ≤ b}, {f ≤ a'})`.
-  let ι : TopPair.ofInclusion (X := TopCat.of M) hNW ⟶
-      TopPair.ofInclusion (X := TopCat.of M) (sublevel_mono f ha'b) :=
-    TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
-      fun _ hx ↦ (hx : f _ ∈ Icc a a').2
-  have h₃ : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) ι n) :=
-    TopPair.isIso_singularCohomologyMap_ofInclusionMap_preimage_Icc (R := R) (k := k) (M := N)
+  have h₃ : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
+      (bandCollarPairInclusion f a ha'b) n) :=
+    TopPair.isIso_singularCohomologyMap_bandCollarPairInclusion (R := R) (k := k) (M := N)
       hfc ha'b hlt n
   -- The two composites `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a'})` agree.
-  have hsq : bandPairInclusion f hab ≫ ψ₁ = ψ₂ ≫ ι := by
+  have hsq : bandPairInclusion f hab ≫ ψ₁ = ψ₂ ≫ bandCollarPairInclusion f a ha'b := by
     refine TopPair.hom_ext_of_fst _ ?_
-    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, bandPairInclusion_fst]
+    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, bandPairInclusion_fst,
+      bandCollarPairInclusion_fst]
     ext x
-    exact (TopPair.ofInclusionMap_fst_apply _ _ x).symm
+    rfl
   have h₁₂ : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) ψ₁ n ≫
       TopPair.singularCohomologyMap (R := R) (k := k) (M := N) (bandPairInclusion f hab) n) := by
     rw [← TopPair.singularCohomologyMap_comp, hsq, TopPair.singularCohomologyMap_comp]

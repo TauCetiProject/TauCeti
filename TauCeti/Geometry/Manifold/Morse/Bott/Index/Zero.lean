@@ -243,9 +243,9 @@ theorem isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_ze
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous)
       (preimage_mono (Icc_subset_Icc h₁ h₂))
   -- A critical point of the band lies on `i`, hence on the level `c`.
-  have hlev {x : M} (hx : mfderiv I 𝓘(ℝ) f x = 0) (h₁ : a ≤ f x) (h₂ : f x ≤ b) : f x = c := by
-    obtain ⟨s, rfl⟩ := hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hx, h₁, h₂⟩
-    exact hc s
+  have hlev {x : M} (hx : mfderiv I 𝓘(ℝ) f x = 0) (h₁ : a ≤ f x) (h₂ : f x ≤ b) : f x = c :=
+    apply_eq_of_mem_criticalPoints_inter_preimage hc hcrit x
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨h₁, h₂⟩
   -- The regular collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` can be cut off.
   refine (isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff hfs (s := c - ε) (t := c + ε)
     (by linarith) (by linarith) (by linarith) (hsub le_rfl (by linarith))

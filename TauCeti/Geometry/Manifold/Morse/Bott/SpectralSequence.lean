@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
-public import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.TwistedHomology
+public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Vanishing
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!

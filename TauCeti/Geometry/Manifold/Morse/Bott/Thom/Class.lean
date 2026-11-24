@@ -474,11 +474,10 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_two_eq_ze
   | inr _ =>
     obtain ⟨V, _, _, _, _, _, _, ⟨e⟩⟩ := h.exists_thomPair_ulift_singularHomology_iso
       hfs hc hac hcb hcompact hcrit hr (ModuleCat.of K K) m
-    have hrank : finrank ℝ (ULift.{u} (Fin r) → ℝ) = r := by
-      rw [Module.finrank_pi, Fintype.card_ulift, Fintype.card_fin]
     -- Every vector bundle has a Thom class with coefficients in `K`.
     obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := ULift.{u} (Fin r) → ℝ) (E := V) K h2
-    exact ⟨e ≪≫ homologyThomIso (ULift.{u} (Fin r) → ℝ) V p m (by rw [hrank, hm]) u hu⟩
+    exact ⟨e ≪≫ homologyThomIso (ULift.{u} (Fin r) → ℝ) V p m (by rw [finrank_ulift_fin_fun, hm])
+      u hu⟩
 
 end IsNondegenerateCriticalSubmanifold
 

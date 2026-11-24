@@ -71,8 +71,11 @@ topology across the band. The band itself, relative to its lower level, is the p
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
 `TauCeti.bandPairInclusion`; when `f⁻¹[a, b]` is a cobordism between regular levels, this is the
 cobordism relative to its incoming boundary, and a collar `f⁻¹[a, a']` traversed at unit speed by
-a flow strongly deformation retracts onto `f⁻¹(a)` (`TauCeti.exists_collarDeformation`). Relative to
-its upper level, the band is the pair
+a flow strongly deformation retracts onto `f⁻¹(a)` (`TauCeti.exists_collarDeformation`), while the
+band relative to the collar includes into `({f ≤ b}, {f ≤ a'})` via
+`TauCeti.bandCollarPairInclusion` with open-cover excision data
+`TauCeti.exists_open_cover_bandCollarPairInclusion`. Relative to its upper level, the band is the
+pair
 `TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
 negating `f` exchanges the two (`TauCeti.bandPair_neg`). All sublevels together form the functor
 `TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
@@ -417,6 +420,73 @@ theorem bandPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Pre
       TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
   ext x
   exact TopPair.ofInclusionMap_fst_apply _ _ x
+
+/-- The pair `(f⁻¹[a, b], f⁻¹[a, a'])` of a band relative to a lower collar, for `a' ≤ b`. -/
+abbrev bandCollarPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    (a : β) {a' b : β} (ha'b : a' ≤ b) : TopPair :=
+  TopPair.ofInclusion (X := TopCat.of X) (preimage_mono (Icc_subset_Icc_right ha'b) :
+    f ⁻¹' Icc a a' ⊆ f ⁻¹' Icc a b)
+
+/-- The inclusion `(f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})` of a band relative to a lower
+collar into the corresponding sublevel pair. -/
+def bandCollarPairInclusion {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    (a : β) {a' b : β} (ha'b : a' ≤ b) : bandCollarPair f a ha'b ⟶ sublevelPair f ha'b :=
+  TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
+    fun _ hx ↦ (hx : f _ ∈ Icc a a').2
+
+/-- On ambient spaces, `TauCeti.bandCollarPairInclusion` is the inclusion of the band `f⁻¹[a, b]`
+into the sublevel `{f ≤ b}`. -/
+@[simp]
+theorem bandCollarPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
+    (f : X → β) (a : β) {a' b : β} (ha'b : a' ≤ b) :
+    TopPair.Hom.fst (bandCollarPairInclusion f a ha'b) =
+      TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ x
+
+/-- For a continuous function `f : X → ℝ` and `a' ≤ b` with `a < a'` or `a' = b`, the open sets
+`{f < a'}` (or all of `{f ≤ b}` when `b ≤ a'`) and `{a < f}` form an open cover of `{f ≤ b}`
+satisfying the excision conditions for `TauCeti.bandCollarPairInclusion f a ha'b`. -/
+theorem exists_open_cover_bandCollarPairInclusion {X : Type u} [TopologicalSpace X] {f : X → ℝ}
+    (hf : Continuous f) {a a' b : ℝ} (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b) :
+    Topology.IsEmbedding (TopPair.Hom.fst (bandCollarPairInclusion f a ha'b)) ∧
+      (∀ x, TopPair.Hom.fst (bandCollarPairInclusion f a ha'b) x ∈
+          range (sublevelPair f ha'b).map →
+        x ∈ range (bandCollarPair f a ha'b).map) ∧
+      ∃ U : Bool → Set {x | f x ≤ b},
+        (∀ i, IsOpen (U i)) ∧ (⋃ i, U i) = univ ∧
+        ∀ i, U i ⊆ range (sublevelPair f ha'b).map ∨
+          U i ⊆ range (TopPair.Hom.fst (bandCollarPairInclusion f a ha'b)) := by
+  have hWb : f ⁻¹' Icc a b ⊆ {x | f x ≤ b} := fun _ hx ↦ hx.2
+  have hι : ⇑(TopPair.Hom.fst (bandCollarPairInclusion f a ha'b)) = ContinuousMap.inclusion hWb :=
+    by rw [bandCollarPairInclusion_fst]; rfl
+  refine ⟨hι ▸ IsEmbedding.inclusion hWb, ?_,
+    fun i ↦ bif i then {x : {x | f x ≤ b} | f x.val < a' ∨ b ≤ a'}
+      else {x : {x | f x ≤ b} | a < f x.val}, ?_, ?_, ?_⟩
+  · rintro x ⟨y, hy⟩
+    have hy' : f x.val ≤ a' := by
+      have h := congrArg Subtype.val (hy.trans (congrFun hι x))
+      exact h ▸ y.property
+    exact ⟨⟨x.val, x.property.1, hy'⟩, rfl⟩
+  · intro i
+    cases i
+    · exact isOpen_lt continuous_const (hf.comp continuous_subtypeVal)
+    · exact (isOpen_lt (hf.comp continuous_subtypeVal) continuous_const).union isOpen_const
+  · refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
+    by_cases hx : f x.val < a'
+    · exact ⟨true, Or.inl hx⟩
+    rcases hlt with hlt | rfl
+    · exact ⟨false, hlt.trans_le (le_of_not_gt hx)⟩
+    · exact ⟨true, Or.inr le_rfl⟩
+  · intro i
+    cases i
+    · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩
+      rw [hι]
+      rfl
+    · refine Or.inl fun x (hx : f x.val < a' ∨ b ≤ a') ↦ ⟨⟨x.val, ?_⟩, rfl⟩
+      rcases hx with hx | hx
+      · exact hx.le
+      · exact (x.property : f x.val ≤ b).trans hx
 
 section Neg
 
