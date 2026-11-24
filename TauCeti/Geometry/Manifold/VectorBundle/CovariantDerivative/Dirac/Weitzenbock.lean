@@ -383,17 +383,17 @@ theorem diracOperator_diracOperator_eq_roughLaplacian_add {ι : Type*} [Fintype 
       cov.secondCovariantDerivative covT σ x v u = cov.curvatureTensor x u v (σ x) := by
     rw [cov.secondCovariantDerivative_sub_swap covT hσ x, htor]
     simp
-  simp only [← hric, map_sub, Finset.sum_sub_distrib]
-  -- The symmetric part contracts to the trace, by the Clifford relation.
-  have hsym : ∑ k, ∑ i, c x (b k) (c x (b i) (cov.secondCovariantDerivative covT σ x (b k) (b i))) +
-      ∑ k, ∑ i, c x (b k) (c x (b i) (cov.secondCovariantDerivative covT σ x (b i) (b k))) =
-      -(2 : ℝ) • ∑ k, cov.secondCovariantDerivative covT σ x (b k) (b k) := by
-    conv_lhs => arg 2; rw [Finset.sum_comm]
-    simp only [← Finset.sum_add_distrib, (c x).apply_apply_add_swap_eq_neg_two_inner hcl,
-      b.inner_eq_ite, mul_ite,
-      mul_one, mul_zero, ite_smul, zero_smul, neg_smul, Finset.sum_neg_distrib, Finset.sum_ite_eq,
-      Finset.mem_univ, ite_true, Finset.smul_sum]
-  linear_combination (norm := module) (2 : ℝ)⁻¹ • hsym
+  -- The Clifford multiplications by the basis vectors satisfy the Clifford relations.
+  have hγ (i j : ι) (s : V x) : c x (b i) (c x (b j) s) + c x (b j) (c x (b i) s) =
+      if i = j then -(2 • s) else 0 := by
+    rw [(c x).apply_apply_add_swap_eq_neg_two_inner hcl, b.inner_eq_ite]
+    split_ifs <;> simp [two_smul]
+  -- The symmetric part contracts to the trace, the antisymmetric part to the curvature.
+  have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (b i)) hγ
+    (fun k i ↦ cov.secondCovariantDerivative covT σ x (b k) (b i))
+  simp only [hric, ← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat] at h
+  have h2 : (2 : ℝ) ≠ 0 := two_ne_zero
+  rw [← inv_smul_smul₀ h2 (∑ i, ∑ j, _), h, smul_add, smul_neg, inv_smul_smul₀ h2]
 
 /-- **The Weitzenböck formula for the Dirac operator.** Let `∇ᵀ` be metric on all of `M` with
 torsion vanishing at `x` (for instance, the Levi-Civita connection), and let the Clifford
