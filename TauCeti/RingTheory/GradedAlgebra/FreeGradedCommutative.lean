@@ -14,7 +14,7 @@ public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Data.Finsupp.Multiset
 public import TauCeti.Data.Multiset.Sort
-public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
+public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
 
 /-!
 # Free graded-commutative algebras

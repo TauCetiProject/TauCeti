@@ -88,8 +88,7 @@ theorem eval₂_ofCoeffList_reverse {S : Type*} [Semiring S] (f : R →+* S) (r 
 theorem degree_ofCoeffList_reverse_lt (l : List R) : (ofCoeffList l.reverse).degree < l.length := by
   rw [degree_lt_iff_coeff_zero]
   intro m hm
-  rw [coeff_ofCoeffList, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_none (by simpa using hm), Option.getD_none]
+  rw [coeff_ofCoeffList, List.getD_eq_default _ _ (by simpa using hm)]
 
 /-- Splitting off the leading coefficient of a list of coefficients. -/
 theorem ofCoeffList_reverse_cons (a : R) (l : List R) :
@@ -138,21 +137,22 @@ theorem coeff_ofCoeffList_reverse_length_sub_one (l : List R) :
       List.getD_append_right _ _ _ _ (by simp)]
     simp
 
+/-- A list of `n` coefficients defines a polynomial of natural degree at most `n - 1`. -/
+theorem natDegree_ofCoeffList_reverse_le (l : List R) :
+    (ofCoeffList l.reverse).natDegree ≤ l.length - 1 := by
+  by_cases hp : ofCoeffList l.reverse = 0
+  · simp [hp]
+  have := (natDegree_lt_iff_degree_lt hp).2 (degree_ofCoeffList_reverse_lt l)
+  omega
+
 /-- A list with no leading zero has exactly one more entry than the degree of the polynomial it
 defines. The empty list is allowed: it defines `0`, of natural degree `0`. -/
 theorem natDegree_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 ≠ 0) :
     (ofCoeffList l.reverse).natDegree = l.length - 1 := by
   rcases h with rfl | h
   · simp
-  have hl : l ≠ [] := by rintro rfl; exact h rfl
-  have hc : (ofCoeffList l.reverse).coeff (l.length - 1) ≠ 0 := by
-    rw [coeff_ofCoeffList_reverse_length_sub_one]; exact h
-  have hne : ofCoeffList l.reverse ≠ 0 := fun h0 => hc (by simp [h0])
-  refine le_antisymm ?_ (le_natDegree_of_ne_zero hc)
-  have hlt := degree_ofCoeffList_reverse_lt l
-  rw [degree_eq_natDegree hne, Nat.cast_lt] at hlt
-  have : l.length ≠ 0 := by simpa using hl
-  omega
+  exact natDegree_eq_of_le_of_coeff_ne_zero (natDegree_ofCoeffList_reverse_le l)
+    (by rwa [coeff_ofCoeffList_reverse_length_sub_one])
 
 /-- A list with no leading zero has its head as the leading coefficient of the polynomial it
 defines.  The empty list is allowed: it defines `0`, whose leading coefficient is `0`. -/
@@ -160,42 +160,41 @@ theorem leadingCoeff_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 
     (ofCoeffList l.reverse).leadingCoeff = l.headD 0 := by
   rw [leadingCoeff, natDegree_ofCoeffList_reverse h, coeff_ofCoeffList_reverse_length_sub_one]
 
-/-- Two lists of the same length define the same polynomial only if they are equal.  This is not
-injectivity on arbitrary descending lists, since leading zeros are discarded. -/
-theorem eq_of_length_eq_of_ofCoeffList_reverse_eq {l l' : List R} (hlen : l.length = l'.length)
-    (h : ofCoeffList l.reverse = ofCoeffList l'.reverse) : l = l' := by
-  have hrev : l.reverse = l'.reverse := by
-    refine List.ext_getElem (by simpa using hlen) fun i hi hi' => ?_
-    have hc := congrArg (fun p : R[X] => p.coeff i) h
-    rw [coeff_ofCoeffList, coeff_ofCoeffList, List.getD_eq_getElem _ _ hi,
-      List.getD_eq_getElem _ _ hi'] at hc
-    exact hc
-  simpa using congrArg List.reverse hrev
+/-- Two constant-first coefficient lists of the same length define the same polynomial if and only
+if they are equal.  This is not injectivity on arbitrary lists, since trailing zeros are
+discarded. -/
+theorem ofCoeffList_inj {l l' : List R} (hlen : l.length = l'.length) :
+    ofCoeffList l = ofCoeffList l' ↔ l = l' := by
+  refine ⟨fun h => List.ext_getElem hlen fun i hi hi' => ?_, fun h => h ▸ rfl⟩
+  have hc := congr(($h).coeff i)
+  rwa [coeff_ofCoeffList, coeff_ofCoeffList, List.getD_eq_getElem _ _ hi,
+    List.getD_eq_getElem _ _ hi'] at hc
 
-/-- Recovering a descending list with no leading zero from its polynomial. -/
-theorem coeffList_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 ≠ 0) :
+/-- Two descending lists of the same length define the same polynomial if and only if they are
+equal.  This is not injectivity on arbitrary descending lists, since leading zeros are
+discarded. -/
+theorem ofCoeffList_reverse_inj {l l' : List R} (hlen : l.length = l'.length) :
+    ofCoeffList l.reverse = ofCoeffList l'.reverse ↔ l = l' :=
+  (ofCoeffList_inj (by simpa using hlen)).trans List.reverse_inj
+
+/-- Recovering a descending list with no leading zero from its polynomial.  The hypothesis
+`l.head? ≠ some 0` says that `l` is empty or has a nonzero head, as the hypothesis
+`l = [] ∨ l.headD 0 ≠ 0` of `TauCeti.Polynomial.natDegree_ofCoeffList_reverse` does; it is stated
+through `List.head?` because that form is in simp normal form, so `simp` can discharge it. -/
+@[simp]
+theorem coeffList_ofCoeffList_reverse {l : List R} (h : l.head? ≠ some 0) :
     (ofCoeffList l.reverse).coeffList = l := by
   classical
-  rcases h with rfl | h
+  -- both lists define the same polynomial, so it suffices to compare their lengths
+  refine (ofCoeffList_reverse_inj ?_).1 (ofCoeffList_reverse_coeffList _)
+  rcases l with _ | ⟨a, l⟩
   · simp
-  have hl : l ≠ [] := by rintro rfl; exact h rfl
-  have hlpos : l.length ≠ 0 := by simpa using hl
-  have hne : ofCoeffList l.reverse ≠ 0 := by
-    intro h0
-    exact h (by rw [← coeff_ofCoeffList_reverse_length_sub_one, h0, coeff_zero])
-  have hlen : (ofCoeffList l.reverse).coeffList.length = l.length := by
-    rw [Polynomial.length_coeffList_eq_ite, ite_eq_right hne,
-      natDegree_ofCoeffList_reverse (Or.inr h)]
-    omega
-  have hdeg : (ofCoeffList l.reverse).natDegree + 1 = l.length := by
-    rw [← hlen, Polynomial.length_coeffList_eq_ite, ite_eq_right hne]
-  rw [Polynomial.coeffList_of_ne_zero hne] at hlen ⊢
-  refine List.ext_getElem hlen fun i hi hi' => ?_
-  simp only [List.getElem_map, List.getElem_reverse, List.length_range,
-    List.getElem_range, hdeg, coeff_ofCoeffList]
-  rw [List.getD_eq_getElem _ _ (by simp; omega), List.getElem_reverse]
-  congr 1
-  omega
+  replace h : (a :: l).headD 0 ≠ 0 := by simpa using h
+  have hne : ofCoeffList (a :: l).reverse ≠ 0 := by
+    rw [← leadingCoeff_ne_zero, leadingCoeff_ofCoeffList_reverse (.inr h)]
+    exact h
+  rw [length_coeffList_eq_ite, ite_eq_right hne, natDegree_ofCoeffList_reverse (.inr h),
+    List.length_cons, Nat.add_sub_cancel]
 
 /-- Multiplication of descending coefficient lists, by convolving them in ascending degree order.
 The output has the usual `l.length + m.length - 1` slots; if either input is empty, all of those
@@ -215,24 +214,17 @@ theorem ofCoeffList_reverse_mulCoeffList (l m : List R) :
   · rw [mulCoeffList, List.reverse_reverse, List.getD_eq_getElem]
     · simp
     · simpa using hn
-  · rw [List.getD_eq_getElem?_getD,
-      List.getElem?_eq_none (by simp [mulCoeffList]; omega),
-      Option.getD_none]
-    simp only [coeff_ofCoeffList]
-    symm
-    apply Finset.sum_eq_zero
-    intro jk hjk
-    rw [Finset.mem_antidiagonal] at hjk
-    by_cases hl : jk.1 < l.length
-    · have hm : m.length ≤ jk.2 := by omega
-      have hm0 : m.reverse.getD jk.2 0 = 0 := by
-        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hm),
-          Option.getD_none]
-      rw [hm0, mul_zero]
-    · have hl0 : l.reverse.getD jk.1 0 = 0 := by
-        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simpa using hl),
-          Option.getD_none]
-      rw [hl0, zero_mul]
+  · rw [List.getD_eq_default _ _ (by simp [mulCoeffList]; omega), ← coeff_mul]
+    by_cases hl : l = []
+    · simp [hl]
+    by_cases hm : m = []
+    · simp [hm]
+    -- both lists are nonempty, so `n` exceeds the bound on the natural degree of the product
+    have := List.length_pos_iff.2 hl
+    have := List.length_pos_iff.2 hm
+    have := natDegree_ofCoeffList_reverse_le l
+    have := natDegree_ofCoeffList_reverse_le m
+    exact (coeff_eq_zero_of_natDegree_lt (natDegree_mul_le.trans_lt (by omega))).symm
 
 /-- The divisor `X ^ t.length + ofCoeffList t.reverse` of `TauCeti.Polynomial.divModByMonicList` is
 monic. -/
@@ -242,7 +234,7 @@ theorem monic_X_pow_add_ofCoeffList_reverse (t : List R) :
 
 /-- The divisor `X ^ t.length + ofCoeffList t.reverse` has degree exactly `t.length`. -/
 theorem degree_X_pow_add_ofCoeffList_reverse [Nontrivial R] (t : List R) :
-    (X ^ t.length + ofCoeffList t.reverse).degree = ((t.length : ℕ) : WithBot ℕ) := by
+    (X ^ t.length + ofCoeffList t.reverse).degree = (t.length : WithBot ℕ) := by
   rw [degree_add_eq_left_of_degree_lt (by simpa using degree_ofCoeffList_reverse_lt t),
     degree_X_pow]
 
@@ -273,10 +265,8 @@ theorem ofCoeffList_reverse_zipWith_sub (c : R) {l l' : List R} (h : l.length = 
     | nil => simp at h
     | cons b l' =>
       have hlen : l.length = l'.length := by simpa using h
-      rw [List.zipWith_cons_cons, ofCoeffList_reverse_cons, ofCoeffList_reverse_cons,
-        ofCoeffList_reverse_cons, ih hlen, List.length_zipWith, hlen, min_self,
-        C_sub, C_mul, sub_mul, add_mul,
-        X_pow_mul_assoc_C]
+      simp only [List.zipWith_cons_cons, ofCoeffList_reverse_cons, ih hlen, List.length_zipWith,
+        hlen, min_self, C_sub, C_mul, sub_mul, add_mul, X_pow_mul_assoc_C]
       abel
 
 /-- One step of synthetic division by the monic polynomial `X ^ t.length + ofCoeffList t.reverse`.
@@ -348,26 +338,17 @@ theorem ofCoeffList_reverse_divModByMonicList (t l : List R) :
   induction l using List.reverseRecOn with
   | nil => simp
   | append_singleton l a ih =>
-    have hlen : (divModByMonicList t l).2.length = t.length := length_divModByMonicList_snd t l
-    have hwne : (divModByMonicList t l).2 ++ [a] ≠ [] := by simp
     have hwlen : ((divModByMonicList t l).2 ++ [a]).tail.length = t.length := by
-      simp [hlen]
-    have hw1 : ofCoeffList ((divModByMonicList t l).2 ++ [a]).reverse
-        = ofCoeffList (divModByMonicList t l).2.reverse * X + C a :=
-      ofCoeffList_reverse_concat _ _
-    have hw2 : ofCoeffList ((divModByMonicList t l).2 ++ [a]).reverse
-        = C (((divModByMonicList t l).2 ++ [a]).headD 0) * X ^ t.length
-          + ofCoeffList (((divModByMonicList t l).2 ++ [a]).tail).reverse := by
-      rw [ofCoeffList_reverse_eq_headD_add_tail hwne, hwlen]
+      simp [length_divModByMonicList_snd]
     -- the window, with its top coefficient split off and the quotient coefficient moved to the
     -- right of `X ^ t.length`, which is where the divisor puts it
     have hw : ofCoeffList (((divModByMonicList t l).2 ++ [a]).tail).reverse
         = ofCoeffList (divModByMonicList t l).2.reverse * X + C a
           - X ^ t.length * C (((divModByMonicList t l).2 ++ [a]).headD 0) := by
-      rw [eq_sub_iff_add_eq, X_pow_mul_C, add_comm, ← hw2, hw1]
-    rw [ofCoeffList_reverse_concat, ih, divModByMonicList_concat, divModByMonicStep_fst,
-      divModByMonicStep_snd, ofCoeffList_reverse_concat,
-      ofCoeffList_reverse_zipWith_sub _ hwlen, hw]
+      rw [eq_sub_iff_add_eq, X_pow_mul_C, add_comm, ← hwlen,
+        ← ofCoeffList_reverse_eq_headD_add_tail (by simp), ofCoeffList_reverse_concat]
+    simp only [ofCoeffList_reverse_concat, ih, divModByMonicList_concat, divModByMonicStep_fst,
+      divModByMonicStep_snd, ofCoeffList_reverse_zipWith_sub _ hwlen, hw]
     noncomm_ring
 
 /-- **Synthetic division computes the quotient**: the first output of
@@ -390,13 +371,9 @@ theorem ofCoeffList_reverse_divByMonicList (t l : List R) :
 theorem ofCoeffList_reverse_modByMonicList (t l : List R) :
     ofCoeffList (modByMonicList t l).reverse =
       ofCoeffList l.reverse %ₘ (X ^ t.length + ofCoeffList t.reverse) := by
-  nontriviality R
-  refine ((div_modByMonic_unique (ofCoeffList (divByMonicList t l).reverse)
-    (ofCoeffList (modByMonicList t l).reverse)
-    (monic_X_pow_add_ofCoeffList_reverse t) ⟨?_, ?_⟩).2).symm
-  · rw [add_comm]; exact (ofCoeffList_reverse_divModByMonicList t l).symm
-  · rw [degree_X_pow_add_ofCoeffList_reverse]
-    exact lt_of_lt_of_le (degree_ofCoeffList_reverse_lt _) (by rw [length_modByMonicList])
+  rw [modByMonic_eq_sub_mul_div, ← ofCoeffList_reverse_divByMonicList, eq_sub_iff_add_eq',
+    divByMonicList, modByMonicList]
+  exact (ofCoeffList_reverse_divModByMonicList t l).symm
 
 end Ring
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Data.Nat.Choose.Multinomial
 public import Mathlib.Data.Fintype.Pi
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Algebra.Order.Antidiag.Pi
 import Mathlib.Algebra.BigOperators.Ring.Finset
 
@@ -175,22 +176,14 @@ theorem prod_prod_pow_mul_pow_eq_prod_pow_gramFactorMultiIndex
     (L : Matrix ι κ R) (c : ι × ι → κ → ℕ) :
     (∏ q : ι × ι, ∏ k : κ, (L q.1 k ^ c q k * L q.2 k ^ c q k)) =
       ∏ rk : ι × κ, L rk.1 rk.2 ^ TauCeti.gramFactorMultiIndex c rk := by
-  simp_rw [Finset.prod_mul_distrib]
-  have hleft : (∏ q : ι × ι, ∏ k : κ, L q.1 k ^ c q k) =
-      ∏ rk : ι × κ, L rk.1 rk.2 ^ ∑ j : ι, c (rk.1, j) rk.2 := by
-    rw [Fintype.prod_prod_type, Fintype.prod_prod_type]
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    rw [Finset.prod_comm]
-    exact Finset.prod_congr rfl fun k _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
-  have hright : (∏ q : ι × ι, ∏ k : κ, L q.2 k ^ c q k) =
-      ∏ rk : ι × κ, L rk.1 rk.2 ^ ∑ j : ι, c (j, rk.1) rk.2 := by
-    rw [Fintype.prod_prod_type, Finset.prod_comm, Fintype.prod_prod_type]
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    rw [Finset.prod_comm]
-    exact Finset.prod_congr rfl fun k _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
-  rw [hleft, hright, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun rk _ ↦ ?_
-  rw [← pow_add, ← Finset.sum_add_distrib, ← TauCeti.gramFactorMultiIndex_apply]
+  rw [Finset.prod_comm]
+  simp_rw [← mul_pow]
+  trans ∏ k : κ, ∏ i : ι, L i k ^ ∑ j : ι, (c (i, j) k + c (j, i) k)
+  · refine Finset.prod_congr rfl fun k _ ↦ ?_
+    rw [← Finset.univ_product_univ]
+    exact Finset.prod_product_mul_pow Finset.univ (fun i ↦ L i k) (fun q ↦ c q k)
+  · rw [Finset.prod_comm, Fintype.prod_prod_type]
+    simp_rw [TauCeti.gramFactorMultiIndex_apply]
 
 /-- Every mixed natural monomial in the entries of `L * Lᵀ` expands as a multinomial sum of
 monomials in the entries of `L`. -/

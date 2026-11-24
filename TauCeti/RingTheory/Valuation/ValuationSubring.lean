@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.RingTheory.Valuation.LocalSubring
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Nonunits and domination for valuation subrings
@@ -17,7 +18,9 @@ valuation subring back along a field homomorphism `f` detects nonunits through `
 valuation subring dominates its pullback, and conversely a valuation subring pulls back to any
 valuation subring that it dominates through `f`. Units of a valuation subring stay units in any
 valuation subring whose pullback contains it, and among finitely many elements of the field, not
-all zero, one of largest valuation divides all the others in the valuation subring.
+all zero, one of largest valuation divides all the others in the valuation subring. The
+valuation ring of a surjective valuation is a proper subring once the units of its target are
+nontrivial.
 
 For a group acting on `L` by ring automorphisms, the translate `g • A` of a valuation subring is
 its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
@@ -40,6 +43,9 @@ subfield `K` do not change the restriction to `K`.
   the action of `g⁻¹`.
 * `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
   `K` have the same restriction to `K`.
+* `Valuation.valuationSubring_ne_top_of_surjective`: for a surjective valuation from a field into
+  a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial, the valuation ring is
+  a proper subring.
 
 ## References
 
@@ -176,3 +182,14 @@ theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [Com
     hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
 
 end RingHom
+
+namespace Valuation
+
+variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+
+/-- The valuation ring of a surjective valuation is a proper subring once `Γ₀ˣ` is nontrivial. -/
+theorem valuationSubring_ne_top_of_surjective [Nontrivial Γ₀ˣ] (v : Valuation K Γ₀)
+    (hv : Function.Surjective v) : v.valuationSubring ≠ ⊤ :=
+  fun h ↦ (valuationSubring_eq_top_iff v).mp h (isNontrivial_of_surjective hv)
+
+end Valuation

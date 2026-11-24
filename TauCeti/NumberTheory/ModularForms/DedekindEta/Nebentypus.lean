@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 import TauCeti.Algebra.BigOperators.ZPow
-import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Basic
 
@@ -36,9 +35,9 @@ positive.
 
 ## Implementation notes
 
-For `δ ∣ N ∣ c` the matrix `γ_δ = (a, b δ; c / δ, d) ∈ SL(2, ℤ)` maps `δ τ` to `δ (γ τ)` with the
-same automorphy factor `c τ + d`, so `f ∣[k] γ = (∏_δ ε(γ_δ) ^ r δ) f` by the transformation law
-of `η`. For `c ≥ 0` each `ε(γ_δ)` is evaluated by its Kronecker form
+By `TauCeti.ModularForm.etaQuotient_slash`, `f ∣[k] γ = (∏_δ ε(γ_δ) ^ r δ) f`, where
+`γ_δ = (a, δ b; c / δ, d)` is the conjugate `TauCeti.conjScaleGamma0` of `γ` by `diag(δ, 1)`.
+For `c ≥ 0` each `ε(γ_δ)` is evaluated by its Kronecker form
 (`TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker`): for odd `d` by the even-`c` form,
 which holds for all `c ≥ 0` when `d` is odd; for even `d`, when `c`, `N` and every `δ` are odd, by
 the odd-`c` form. The two congruences make the exponents of `e(x / 24)` sum to a multiple of `24`,
@@ -82,89 +81,32 @@ open scoped Real ModularForm MatrixGroups UpperHalfPlane Manifold
 
 namespace TauCeti.ModularForm
 
-/-! ### `η(δ γ τ)` for `δ ∣ c` -/
-
-/-- For `γ = (a b; c d) ∈ SL(2, ℤ)` and `δ ∣ c`, the matrix `(a, b δ; c / δ, d) ∈ SL(2, ℤ)`,
-which maps `δ τ` to `δ (γ τ)` with the same automorphy factor `c τ + d`; `1` when `δ ∤ c`. -/
-private def scaleSL (γ : SL(2, ℤ)) (δ : ℕ) : SL(2, ℤ) :=
-  if h : (δ : ℤ) ∣ γ 1 0 then
-    .mk !![γ 0 0, γ 0 1 * δ; γ 1 0 / δ, γ 1 1] (by
-      have hdet := γ.det_coe
-      rw [Matrix.det_fin_two] at hdet
-      rw [Matrix.det_fin_two_of]
-      linear_combination hdet - γ 0 1 * Int.mul_ediv_cancel' h)
-  else 1
-
-private theorem coe_scaleSL (γ : SL(2, ℤ)) {δ : ℕ} (h : (δ : ℤ) ∣ γ 1 0) :
-    (scaleSL γ δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, γ 0 1 * δ; γ 1 0 / δ, γ 1 1] := by
-  simp only [scaleSL, h, ↓reduceDIte, Matrix.SpecialLinearGroup.coe_mk]
-
-/-- `η(δ γ τ) = ε(γ_δ) √(c τ + d) η(δ τ)` for `δ ∣ c`, where `γ_δ = (a, b δ; c / δ, d)`. -/
-private theorem eta_natCast_mul_smul (γ : SL(2, ℤ)) {δ : ℕ} (hδ : 0 < δ) (h : (δ : ℤ) ∣ γ 1 0)
-    (τ : ℍ) :
-    η (δ * ((γ • τ : ℍ) : ℂ)) =
-      etaMultiplier (scaleSL γ δ) * Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η (δ * τ) := by
-  have hc : (γ 1 0 : ℂ) = δ * ((γ 1 0 / δ : ℤ) : ℂ) := by
-    exact_mod_cast (Int.mul_ediv_cancel' h).symm
-  let w : ℍ := ⟨δ * τ, by simpa using mul_pos (Nat.cast_pos.2 hδ : (0 : ℝ) < δ) τ.im_pos⟩
-  have hw : (w : ℂ) = δ * τ := rfl
-  have hden : ((scaleSL γ δ) 1 0 : ℂ) * w + (scaleSL γ δ) 1 1 = (γ 1 0 : ℂ) * τ + γ 1 1 := by
-    simp only [coe_scaleSL γ h, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, hw]
-    rw [hc]
-    ring
-  have hsmul : ((scaleSL γ δ • w : ℍ) : ℂ) = δ * ((γ • τ : ℍ) : ℂ) := by
-    rw [UpperHalfPlane.coe_specialLinearGroup_apply, UpperHalfPlane.coe_specialLinearGroup_apply]
-    simp only [algebraMap_int_eq, eq_intCast, Complex.ofReal_intCast]
-    rw [hden]
-    simp only [coe_scaleSL γ h, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, hw]
-    push_cast
-    field_simp
-  rw [← hsmul, eta_smul, hden, hw]
+/-! ### The conjugates `γ_δ` -/
 
 private theorem natCast_mul_natCast_div {N δ : ℕ} (hδ : δ ∈ N.divisors) :
     (δ : ℤ) * (N / δ : ℕ) = N := by
   exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
 
-/-- The entries of `γ_δ` when `c = N t` and `δ ∣ N`: `γ_δ = (a, b δ; (N / δ) t, d)`. -/
-private theorem coe_scaleSL_of_eq {N : ℕ} {δ : ℕ} (hδ : δ ∈ N.divisors) (γ : SL(2, ℤ)) {t : ℤ}
-    (ht : γ 1 0 = N * t) :
-    (scaleSL γ δ : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0, γ 0 1 * δ; ((N / δ : ℕ) : ℤ) * t, γ 1 1] := by
+/-- The entries of `γ_δ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
+private theorem conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∈ N.divisors) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
+    conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
+      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
+      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
+      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
   have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by
     rw [ht, ← mul_assoc, natCast_mul_natCast_div hδ]
-  rw [coe_scaleSL γ ⟨_, hc⟩, hc,
-    Int.mul_ediv_cancel_left _ (by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne')]
+  have hδ0 : (δ : ℤ) ≠ 0 := by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'
+  refine ⟨by simp, by simp [mul_comm], by simp [hc, Int.mul_ediv_cancel_left _ hδ0], by simp⟩
 
-/-! ### The transformation law on `Γ₀(N)` -/
-
-/-- `f(γ τ) = (∏_δ ε(γ_δ) ^ r δ) (√(c τ + d)) ^ (∑_δ r δ) f(τ)` for `N ∣ c`. -/
-private theorem etaQuotient_smul (N : ℕ) (r : ℕ → ℤ) (γ : SL(2, ℤ)) (hN : (N : ℤ) ∣ γ 1 0)
-    (τ : ℍ) :
-    etaQuotient N r (γ • τ : ℍ) = (∏ δ ∈ N.divisors, etaMultiplier (scaleSL γ δ) ^ r δ) *
-      Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ^ (∑ δ ∈ N.divisors, r δ) * etaQuotient N r τ := by
-  have hs : Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ≠ 0 :=
-    Complex.sqrt_eq_zero_iff.not.2 (UpperHalfPlane.denom_ne_zero γ τ)
-  rw [etaQuotient_apply, etaQuotient_apply,
-    ← Finset.prod_zpow_eq_zpow_sum_of_isUnit _ hs.isUnit, ← Finset.prod_mul_distrib,
-    ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun δ hδ ↦ ?_
-  rw [eta_natCast_mul_smul γ (Nat.pos_of_mem_divisors hδ)
-    ((Int.natCast_dvd_natCast.2 (Nat.dvd_of_mem_divisors hδ)).trans hN), mul_zpow, mul_zpow]
-
-/-- For `N ∣ c` and `∑_δ r δ = 2 k`, `f ∣[k] γ = (∏_δ ε(γ_δ) ^ r δ) f`. -/
-private theorem etaQuotient_slash (N : ℕ) (r : ℕ → ℤ) {k : ℤ}
-    (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (γ : SL(2, ℤ)) (hN : (N : ℤ) ∣ γ 1 0) :
-    (fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] γ =
-      (∏ δ ∈ N.divisors, etaMultiplier (scaleSL γ δ) ^ r δ) • fun τ : ℍ ↦ etaQuotient N r τ := by
-  ext τ
-  have hj : ((γ 1 0 : ℂ) * τ + γ 1 1) ≠ 0 := UpperHalfPlane.denom_ne_zero γ τ
-  rw [ModularForm.SL_slash_apply, etaQuotient_smul N r γ hN τ, hk, zpow_mul, zpow_ofNat,
-    Complex.sq_sqrt]
-  simp only [Pi.smul_apply, smul_eq_mul, UpperHalfPlane.denom, zpow_neg, coe_GL_coe_matrix,
-    map_apply_coe, Int.coe_castRingHom, Matrix.map_apply, ofReal_intCast]
-  field_simp
+/-- The multiplier `∏_δ ε(γ_δ) ^ r δ`, from the values `F δ` of the eta multipliers at the
+conjugates `γ_δ`. -/
+private theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {F : ℕ → ℂ} (hF : ∀ δ (hδ : δ ∈ N.divisors),
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) = F δ) :
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
+  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
+  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
 
 /-! ### The Kronecker-symbol value of the multiplier -/
 
@@ -175,13 +117,6 @@ private noncomputable def symb (N : ℕ) (r : ℕ → ℤ) (k d : ℤ) : ℂ :=
 private theorem sq_kroneckerSym_cast {a b : ℤ} (h : a.gcd b = 1) :
     (kroneckerSym a b : ℂ) ^ 2 = 1 := by
   exact_mod_cast sq_kroneckerSym_eq_one h
-
-/-- The entries of `γ_δ = (a, b δ; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
-private theorem scaleSL_apply_of_eq {N δ : ℕ} (hδ : δ ∈ N.divisors) (γ : SL(2, ℤ)) {t : ℤ}
-    (ht : γ 1 0 = N * t) :
-    scaleSL γ δ 0 0 = γ 0 0 ∧ scaleSL γ δ 0 1 = γ 0 1 * δ ∧
-      scaleSL γ δ 1 0 = (N / δ : ℕ) * t ∧ scaleSL γ δ 1 1 = γ 1 1 := by
-  simp [coe_scaleSL_of_eq hδ γ ht]
 
 /-- The sum over `δ ∣ N` of `r δ` times the even-`c` exponent of `γ_δ = (a, b δ; (N / δ) t, d)`,
 regrouped along the three sums of the congruence conditions. -/
@@ -283,20 +218,21 @@ private theorem symb_eq_prod_of_odd {N : ℕ} {r : ℕ → ℤ} {k : ℤ} (hNo :
 
 /-- **The multiplier of an eta quotient, for `c ≥ 0` and odd `d`.** Each `ε(γ_δ)` is given by the
 even-`c` Kronecker form; the exponents sum to `6 k (d - 1)` modulo `24`. -/
-private theorem prod_etaMultiplier_scaleSL_of_odd {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
-    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) (γ : SL(2, ℤ)) {t : ℤ}
-    (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) (hdo : Odd (γ 1 1)) :
-    ∏ δ ∈ N.divisors, etaMultiplier (scaleSL γ δ) ^ r δ = symb N r k (γ 1 1) := by
+    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) (hdo : Odd (γ 1 1)) :
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = symb N r k (γ 1 1) := by
   obtain ⟨A, hA⟩ := h24
   obtain ⟨B, hB⟩ := h24'
   obtain ⟨v, hv⟩ := hdo
   let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
     γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 - 3 * ((N / δ : ℕ) * t) * γ 1 1
-  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier (scaleSL γ δ) =
+  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
+      (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := scaleSL_apply_of_eq hδ γ ht
-    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d (scaleSL γ δ)
+    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
+    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
       (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact ⟨v, hv⟩),
       h00, h01, h10, h11, e24_def]
   -- The exponents sum to `k (12 v)` modulo `24`, and `e(12 v k / 24) = χ₄(d) ^ k = (-1 / d) ^ k`.
@@ -305,18 +241,18 @@ private theorem prod_etaMultiplier_scaleSL_of_odd {N : ℕ} {r : ℕ → ℤ} {k
       3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
     rw [sum_mul_evenExp, hA, hB, hk, hv]
     ring
-  rw [Finset.prod_congr rfl fun δ hδ ↦ congrArg (· ^ r δ) (hε δ hδ), prod_mul_e24_zpow,
+  rw [etaQuotientMultiplier_eq_prod r hγ hε, prod_mul_e24_zpow,
     e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
     kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]
 
 /-- **The multiplier of an eta quotient, for `c ≥ 0` and even `d`.** Then `c`, `N` and every
 `δ ∣ N` are odd, each `ε(γ_δ)` is given by the odd-`c` Kronecker form, and the exponents sum to a
 multiple of `24`. -/
-private theorem prod_etaMultiplier_scaleSL_of_even {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+private theorem etaQuotientMultiplier_eq_symb_of_even {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
-    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) (γ : SL(2, ℤ)) {t : ℤ}
-    (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) (hde : Even (γ 1 1)) :
-    ∏ δ ∈ N.divisors, etaMultiplier (scaleSL γ δ) ^ r δ = symb N r k (γ 1 1) := by
+    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) (hde : Even (γ 1 1)) :
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = symb N r k (γ 1 1) := by
   obtain ⟨A, hA⟩ := h24
   obtain ⟨B, hB⟩ := h24'
   have hco : Odd (γ 1 0) := Int.not_even_iff_odd.mp fun hce ↦ by
@@ -328,11 +264,12 @@ private theorem prod_etaMultiplier_scaleSL_of_even {N : ℕ} {r : ℕ → ℤ} {
   have hNo : Odd N := (Int.odd_natCast N).mp (Int.odd_mul.mp hNt).1
   let O : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
     γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) - 3 * ((N / δ : ℕ) * t)
-  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier (scaleSL γ δ) =
+  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
+      (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * e24 (O δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := scaleSL_apply_of_eq hδ γ ht
+    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
     have hm : Odd (N / δ) := hNo.of_dvd_nat (Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hδ))
-    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c (scaleSL γ δ)
+    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c _
       (by rw [h10]; exact mul_pos (by exact_mod_cast hm.pos) ht_pos)
       (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h00, h01, h10, h11,
       e24_def]
@@ -342,20 +279,20 @@ private theorem prod_etaMultiplier_scaleSL_of_even {N : ℕ} {r : ℕ → ℤ} {
       3 * t) + A * (γ 0 1 * γ 1 1), ?_⟩
     rw [sum_mul_oddExp, hA, hB]
     ring
-  rw [Finset.prod_congr rfl fun δ hδ ↦ congrArg (· ^ r δ) (hε δ hδ), prod_mul_e24_zpow,
+  rw [etaQuotientMultiplier_eq_prod r hγ hε, prod_mul_e24_zpow,
     e24_congr hsum, e24_zero, mul_one, prod_kroneckerSym_div_right hk γ ht ht_pos,
     symb_eq_prod_of_odd hNo hk hA]
 
 /-- **The multiplier of an eta quotient, for `c ≥ 0`.** If `c = N t` with `t ≥ 0`, then
 `∏_δ ε(γ_δ) ^ r δ = (-1 / d) ^ k ∏_δ (δ / d) ^ r δ`. -/
-private theorem prod_etaMultiplier_scaleSL_of_nonneg {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
+private theorem etaQuotientMultiplier_eq_symb_of_nonneg {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
     (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (h24 : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, (δ : ℤ) * r δ)
-    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) (γ : SL(2, ℤ)) {t : ℤ}
-    (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) :
-    ∏ δ ∈ N.divisors, etaMultiplier (scaleSL γ δ) ^ r δ = symb N r k (γ 1 1) := by
+    (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) :
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = symb N r k (γ 1 1) := by
   rcases Int.even_or_odd (γ 1 1) with hde | hdo
-  · exact prod_etaMultiplier_scaleSL_of_even hk h24 h24' γ ht ht0 hde
-  · exact prod_etaMultiplier_scaleSL_of_odd hk h24 h24' γ ht ht0 hdo
+  · exact etaQuotientMultiplier_eq_symb_of_even hk h24 h24' hγ ht ht0 hde
+  · exact etaQuotientMultiplier_eq_symb_of_odd hk h24 h24' hγ ht ht0 hdo
 
 /-- `((-1) ^ k ∏_δ δ ^ r δ / -d) = (-1) ^ k ((-1) ^ k ∏_δ δ ^ r δ / d)` for `d ≠ 0`. -/
 private theorem symb_neg (N : ℕ) (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd : d ≠ 0) :
@@ -385,12 +322,14 @@ theorem etaQuotient_slash_eq_smul {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   -- The scalar is `symb N r k (γ 1 1)` by definition.
   change _ = symb N r k (γ 1 1) • _
   rcases le_or_gt 0 t with ht0 | ht0
-  · rw [etaQuotient_slash N r hk γ ⟨t, ht⟩,
-      prod_etaMultiplier_scaleSL_of_nonneg hk h24 h24' γ ht ht0]
+  · rw [← etaQuotientMultiplier_eq_symb_of_nonneg hk h24 h24' hγ ht ht0]
+    exact etaQuotient_slash N r hk ⟨γ, hγ⟩
   -- For `c < 0`, pass to `-γ`, which multiplies the slash by `(-1) ^ k`.
   have hneg : (-γ) 1 0 = N * (-t) := by simp [ht]
-  have h := etaQuotient_slash N r hk (-γ) ⟨-t, hneg⟩
-  rw [prod_etaMultiplier_scaleSL_of_nonneg hk h24 h24' (-γ) hneg (by omega), SL_slash_neg,
+  have hγ' : -γ ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr ⟨-t, hneg⟩
+  have h := etaQuotient_slash N r hk ⟨-γ, hγ'⟩
+  rw [etaQuotientMultiplier_eq_symb_of_nonneg hk h24 h24' hγ' hneg (by omega), Subgroup.coe_mk,
+    SL_slash_neg,
     show (-γ) 1 1 = -γ 1 1 by simp] at h
   have hsymb : (-1 : ℂ) ^ k * symb N r k (-γ 1 1) = symb N r k (γ 1 1) := by
     by_cases hd : γ 1 1 = 0

@@ -62,7 +62,6 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_quadratic_reciprocity`: the
   first supplementary law `(-1 / b) = χ₄ b` at odd `b`, and quadratic reciprocity
   `(n / b) = (b / n) (-1 / b) ^ ((n - 1) / 2)` at an odd positive numerator `n` and every `b`.
-* `TauCeti.sq_kroneckerSym_eq_one`: `(a / b) ^ 2 = 1` for coprime `a` and `b`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
@@ -307,6 +306,10 @@ theorem kroneckerSym_sq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym (a ^ 2)
   · simp [h1]
   · simp [h1]
 
+/-- `(a / b) ^ 2 = 1` when `a` and `b` are coprime: the symbol is then `±1`. -/
+theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
+  rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
+
 /-- For a square integer `a` coprime to `b`, `(a / b) = 1`. -/
 theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd b = 1) :
     kroneckerSym a b = 1 := by
@@ -392,10 +395,6 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (
   · rw [abs_of_neg h]
     simp only [h, neg_lt_zero, zero_lt_one, and_self, ite_true]
     split_ifs <;> omega
-
-/-- `(a / b) ^ 2 = 1` when `a` and `b` are coprime, as for `jacobiSym.sq_one`. -/
-theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
-  rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
 
 /-- **Quadratic reciprocity for the Kronecker symbol** at an odd positive numerator `n`: for every
 integer `b`, `(n / b) = (b / n) · (-1 / b) ^ ((n - 1) / 2)`. For odd `b > 0` this is the
