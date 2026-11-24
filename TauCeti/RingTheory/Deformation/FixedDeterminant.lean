@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Subfunctor.Image
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.RingTheory.Deformation.Lift
+-- Non-public: the rank-one fact `M = scalar n (det M)` is used in proofs only.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unique
 
 /-!
 # Lifts and deformations with fixed determinant
@@ -227,17 +229,11 @@ section RankOne
 
 variable {ρbar : G →* GL n k} {χ : G →* Λˣ} {A : ArtinLocalAlg Λ k} [Unique n]
 
-/-- In rank one an invertible matrix is the scalar matrix of its determinant. -/
-private theorem eq_scalar_det {R : Type*} [CommRing R] (M : GL n R) :
-    M = GeneralLinearGroup.scalar n (GeneralLinearGroup.det M) :=
-  GeneralLinearGroup.ext fun i j ↦ by
-    simp [Subsingleton.elim i default, Subsingleton.elim j default, det_unique]
-
 /-- In rank one a lift with determinant `χ` is `χ_A`, viewed as a scalar matrix. -/
 theorem eq_scalar_of_mem_fixedDetLifts {ρ : Lift ρbar A} (hρ : ρ ∈ fixedDetLifts ρbar χ A)
     (g : G) :
     ρ g = GeneralLinearGroup.scalar n (Units.map (algebraMap Λ A.obj.left) (χ g)) := by
-  rw [eq_scalar_det (ρ g), hρ g]
+  rw [GeneralLinearGroup.eq_scalar_det (ρ g), hρ g]
 
 /-- In rank one there is at most one lift with determinant `χ`. -/
 instance subsingleton_fixedDetLifts : Subsingleton (fixedDetLifts ρbar χ A) :=
@@ -258,7 +254,7 @@ theorem nonempty_fixedDetLifts_iff :
   have hred : ∀ g, GeneralLinearGroup.map (A.augmentation : A.obj.left →+* k)
       (GeneralLinearGroup.scalar n (Units.map (algebraMap Λ A.obj.left) (χ g))) = ρbar g :=
     fun g ↦ by
-      rw [GeneralLinearGroup.map_scalar, eq_scalar_det (ρbar g), hdet g]
+      rw [GeneralLinearGroup.map_scalar, GeneralLinearGroup.eq_scalar_det (ρbar g), hdet g]
       congr 1
       ext
       simp
