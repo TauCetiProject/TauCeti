@@ -15,7 +15,6 @@ import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Spectrum
-import TauCeti.LinearAlgebra.Dimension.DirectSum
 import TauCeti.LinearAlgebra.Eigenspace.Commute
 import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
@@ -307,6 +306,12 @@ power of its value at `A` form the focus-focus block of `A` for the eigenvalue `
 noncomputable def focusFocusPolynomial (a b : ℝ) : ℝ[X] :=
   (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2))
 
+/-- The defining product of the focus-focus polynomial. -/
+theorem focusFocusPolynomial_def (a b : ℝ) :
+    focusFocusPolynomial a b =
+      (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2)) :=
+  (rfl)
+
 /-- The polynomial `focusFocusPolynomial a b` is even. -/
 theorem focusFocusPolynomial_comp_neg_X (a b : ℝ) :
     (focusFocusPolynomial a b).comp (-X) = focusFocusPolynomial a b := by
@@ -409,9 +414,9 @@ theorem aeval_focusFocusPolynomial_apply_eq_zero {A : Module.End ℝ V} {a b : �
     module
   rw [focusFocusPolynomial, mul_comm, map_mul, mul_apply_eq_comp, hq, map_zero]
 
-/-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, then `v`
-lies in the subspace of vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)`,
-which has dimension at least four. -/
+/-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, then the
+subspace of vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)` has dimension
+at least four. -/
 theorem four_le_finrank_maxGenEigenspace_aeval_focusFocusPolynomial {A : Module.End ℝ V}
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
     {v w : V} (hv : v ≠ 0) (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
@@ -422,8 +427,7 @@ theorem four_le_finrank_maxGenEigenspace_aeval_focusFocusPolynomial {A : Module.
   have hfv := aeval_focusFocusPolynomial_apply_eq_zero hAv hAw
   have hvG : v ∈ G := (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simpa using hfv⟩
   obtain ⟨r, hr⟩ := (ω.restrict G hGs.nondegenerate_restrict).even_finrank
-  have hpos : finrank ℝ G ≠ 0 := fun h0 ↦
-    hv ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hvG))
+  have h2 := hGs.two_le_finrank hvG hv
   -- On a plane, `A² = κ` and the polynomial acts as `(κ + a² + b²)² - 4a²κ > 0`.
   have hne2 : finrank ℝ G ≠ 2 := by
     intro h2
@@ -453,9 +457,8 @@ private theorem finrank_eq_four_of_four_le {k : ℕ} (hk : k * 4 = finrank ℝ V
     {G : Fin k → Submodule ℝ V} (hGs : ∀ j, ω.IsSymplectic (G j))
     (horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0)
     (h4 : ∀ j, 4 ≤ finrank ℝ (G j)) (j : Fin k) : finrank ℝ (G j) = 4 := by
-  have hsum : ∑ j, finrank ℝ (G j) ≤ finrank ℝ V := by
-    rw [← finrank_iSup_eq_sum_finrank_of_iSupIndep (iSupIndep_of_pairwise_apply_eq_zero hGs horth)]
-    exact Submodule.finrank_le _
+  have hsum : ∑ j, finrank ℝ (G j) ≤ finrank ℝ V :=
+    finrank_top ℝ V ▸ sum_finrank_le_finrank_of_pairwise_apply_eq_zero hGs horth fun _ ↦ le_top
   refine le_antisymm (not_lt.1 fun hlt ↦ ?_) (h4 j)
   have := Finset.sum_lt_sum (s := Finset.univ) (fun j _ ↦ h4 j) ⟨j, Finset.mem_univ _, hlt⟩
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at this

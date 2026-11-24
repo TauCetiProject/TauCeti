@@ -10,12 +10,13 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.FocusFocus
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Tactic.FinCases
 import TauCeti.Algebra.Polynomial.RingDivision
+import TauCeti.Data.Fin.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.Geometry.Symplectic.Spectrum
-import TauCeti.LinearAlgebra.Dimension.DirectSum
 import TauCeti.LinearAlgebra.Eigenspace.Commute
 import TauCeti.LinearAlgebra.Eigenspace.Aeval
+import TauCeti.LinearAlgebra.Eigenspace.Restrict
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -71,7 +72,8 @@ These subspaces are pairwise `ω`-orthogonal, so counting dimensions gives
 `dim L = 2 |s|` and `dim L^ω = 4 |c|`. The restrictions of the family to `L` and to `L^ω` are
 nondegenerate (`IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`,
 `IsNondegenerateQuadraticFamily.restrict_orthogonal`), and the elliptic–hyperbolic and
-focus-focus classifications apply to them. Their Darboux bases assemble to one of `V`, in which
+focus-focus classifications apply to them. Their Darboux bases assemble to one of `V`
+(`TauCeti.SymplecticForm.IsSymplectic.exists_isDarbouxBasis_castAdd_natAdd`), in which
 every `Q i` is a combination of the Williamson blocks; as these Poisson-commute, the
 maximality of a nondegenerate family
 (`TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.span_eq_of_span_le`) gives equality of the
@@ -96,19 +98,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {m k : ℕ}
 
 /-! ### The Williamson blocks of a Darboux basis -/
-
-variable (k) in
-/-- The first `m` planes of `Fin (m + k * 2)` are distinct from the last `k * 2`. -/
-private theorem castAdd_ne_natAdd (i : Fin m) (p : Fin (k * 2)) :
-    Fin.castAdd (k * 2) i ≠ Fin.natAdd m p := by
-  simp only [ne_eq, Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd]
-  omega
-
-variable (k) in
-/-- The last `k * 2` planes of `Fin (m + k * 2)` are distinct from the first `m`. -/
-private theorem natAdd_ne_castAdd (i : Fin m) (p : Fin (k * 2)) :
-    Fin.natAdd m p ≠ Fin.castAdd (k * 2) i :=
-  (castAdd_ne_natAdd k i p).symm
 
 /-- The **Williamson blocks** of a basis `b` of `V` indexed as a Darboux basis with `m + 2k` planes,
 `qᵢ = b (i, 0)` and `pᵢ = b (i, 1)`, for a set `t` of the first `m` planes. On the plane `i < m`,
@@ -194,7 +183,7 @@ theorem IsDarbouxBasis.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd
   obtain ⟨j, l⟩ := l
   have h (p : Fin (k * 2)) (c' : Fin 2) :
       b.coord (Fin.natAdd m p, c') (b (Fin.castAdd _ i, c)) = 0 := by
-    simp [(castAdd_ne_natAdd k i p).symm]
+    simp [Fin.natAdd_ne_castAdd]
   fin_cases l <;>
     simp [williamsonBlocks, hb.hamiltonianEnd_linMulLin_coord_apply, h]
 
@@ -249,56 +238,34 @@ theorem IsDarbouxBasis.quadraticPoissonBracket_williamsonBlocks (hb : ω.IsDarbo
         hb.hamiltonianEnd_williamsonBlocks_inr_apply_castAdd]
   | right p =>
     obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective p
-    have hn (i' : Fin m) (p' : Fin (k * 2)) : Fin.natAdd m p' ≠ Fin.castAdd (k * 2) i' :=
-      (castAdd_ne_natAdd k i' p').symm
     rcases x with i₁ | ⟨j₁, l₁⟩ <;> rcases y with i₂ | ⟨j₂, l₂⟩
     · fin_cases c <;>
         simp [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
-          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd, hn]
+          hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd, Fin.natAdd_ne_castAdd]
     all_goals
       fin_cases i <;> fin_cases c <;> (try fin_cases l₁) <;> (try fin_cases l₂) <;>
       simp only [Fin.zero_eta, Fin.mk_one, hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
         hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
         hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, hn, ite_false] <;>
+        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd,
+        ite_false] <;>
       split_ifs <;>
       simp_all [hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
         hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
         hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd]
+        hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd]
 
 /-! ### Dimension counts -/
 
-/-- A symplectic subspace containing a nonzero vector has dimension at least two. -/
-private theorem two_le_finrank_of_isSymplectic {G : Submodule ℝ V} (hG : ω.IsSymplectic G)
-    {v : V} (hv : v ∈ G) (hv0 : v ≠ 0) : 2 ≤ finrank ℝ G := by
-  obtain ⟨r, hr⟩ := (ω.restrict G hG.nondegenerate_restrict).even_finrank
-  have : finrank ℝ G ≠ 0 := fun h0 ↦
-    hv0 ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hv))
-  omega
-
-/-- Let `A ∈ sp(V, ω)` and let the `f j` be pairwise coprime even polynomials. If the vectors
-killed by a power of each `f j (A)` form a subspace of dimension at least `d` contained in `L`,
-then `L` has dimension at least `d` times the number of polynomials: these subspaces are
-symplectic and pairwise `ω`-orthogonal. -/
-private theorem card_mul_le_finrank {A : Module.End ℝ V}
-    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {κ : Type*} [Fintype κ] {f : κ → ℝ[X]}
-    (hf : ∀ j, (f j).comp (-X) = f j) (hcop : Pairwise fun j j' ↦ IsCoprime (f j) (f j'))
-    {L : Submodule ℝ V} (hL : ∀ j, (aeval A (f j)).maxGenEigenspace 0 ≤ L) {d : ℕ}
-    (hd : ∀ j, d ≤ finrank ℝ ((aeval A (f j)).maxGenEigenspace 0)) :
-    Fintype.card κ * d ≤ finrank ℝ L := by
-  have hGs (j : κ) : ω.IsSymplectic ((aeval A (f j)).maxGenEigenspace 0) :=
-    ω.isSymplectic_maxGenEigenspace_aeval hA (hf j)
-  have horth : Pairwise fun j j' ↦ ∀ v ∈ (aeval A (f j)).maxGenEigenspace 0,
-      ∀ w ∈ (aeval A (f j')).maxGenEigenspace 0, ω v w = 0 := fun j j' hjj' _ hv _ hw ↦
-    ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
-      (by rw [hf]; exact hcop hjj') hv hw
+/-- If pairwise `ω`-orthogonal symplectic subspaces `G j` of `L` all have dimension at least `d`,
+then `L` has dimension at least `d` times their number. -/
+private theorem card_mul_le_finrank {κ : Type*} [Fintype κ] {G : κ → Submodule ℝ V}
+    (hG : ∀ j, ω.IsSymplectic (G j)) (horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0)
+    {L : Submodule ℝ V} (hL : ∀ j, G j ≤ L) {d : ℕ} (hd : ∀ j, d ≤ finrank ℝ (G j)) :
+    Fintype.card κ * d ≤ finrank ℝ L :=
   calc Fintype.card κ * d = ∑ _j : κ, d := by simp [mul_comm]
-    _ ≤ ∑ j, finrank ℝ ((aeval A (f j)).maxGenEigenspace 0) := Finset.sum_le_sum fun j _ ↦ hd j
-    _ = finrank ℝ (⨆ j, (aeval A (f j)).maxGenEigenspace 0 : Submodule ℝ V) :=
-      (finrank_iSup_eq_sum_finrank_of_iSupIndep
-        (iSupIndep_of_pairwise_apply_eq_zero hGs horth)).symm
-    _ ≤ finrank ℝ L := Submodule.finrank_mono (iSup_le hL)
+    _ ≤ ∑ j, finrank ℝ (G j) := Finset.sum_le_sum fun j _ ↦ hd j
+    _ ≤ finrank ℝ L := sum_finrank_le_finrank_of_pairwise_apply_eq_zero hG horth hL
 
 /-- `X² - μ` is coprime to the focus-focus polynomial of `a + bi` for `a, b ≠ 0`: the roots
 `±a ± bi` of the latter have squares with nonzero imaginary part `±2ab`. -/
@@ -323,16 +290,10 @@ private theorem isCoprime_X_sq_sub_C_focusFocusPolynomial (μ : ℝ) {a b : ℝ}
     exact hb (abs_eq_zero.1 h₂.symm)
   exact mul_ne_zero hre hre' (by linarith)
 
-omit [FiniteDimensional ℝ V] in
-/-- An eigenvector of `A²` for `μ` is killed by `A² - μ`. -/
-private theorem mem_maxGenEigenspace_aeval_X_sq_sub_C {A : Module.End ℝ V} {μ : ℝ} {v : V}
-    (hv : (A ^ 2) v = μ • v) : v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0 :=
-  (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [hv]⟩
-
 /-- The polynomial `∏_{μ ∈ s} (X² - μ)` is even. -/
 private theorem prod_X_sq_sub_C_comp_neg_X (s : Finset ℝ) :
     (∏ μ ∈ s, (X ^ 2 - C μ)).comp (-X) = ∏ μ ∈ s, (X ^ 2 - C μ) := by
-  simp [prod_comp, sub_comp]
+  simp only [prod_comp, comp_neg_X_sq_sub_C]
 
 omit [FiniteDimensional ℝ V] in
 /-- For `A ∈ sp(V, ω)` and `a, b ≠ 0`, the focus-focus block of `A` for `a + bi` is `ω`-orthogonal
@@ -352,28 +313,28 @@ private theorem maxGenEigenspace_aeval_focusFocusPolynomial_le_orthogonal {A : M
 /-- **The dimension count.** Let `A ∈ sp(V, ω)` have distinct nonzero real
 eigenvalues `μ ∈ s` of `A²` and distinct eigenvalues `a + bi ∈ c` with `a, b > 0`, where
 `2 |s| + 4 |c| = dim V`. Then the vectors killed by a power of `∏_{μ ∈ s} (A² - μ)` form a subspace
-of dimension `2 |s|`. -/
+of dimension `2 |s|`, and its symplectic complement has dimension `4 |c|`. -/
 private theorem finrank_maxGenEigenspace_aeval_prod_eq {A : Module.End ℝ V}
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {s : Finset ℝ}
     {c : Finset ℂ} (hsc : s.card * 2 + c.card * 4 = finrank ℝ V)
     (hs : ∀ μ ∈ s, (A ^ 2).HasEigenvalue μ) (hc0 : ∀ z ∈ c, 0 < z.re ∧ 0 < z.im)
     (hc : ∀ z ∈ c, ∃ v w : V, v ≠ 0 ∧ A v = z.re • v - z.im • w ∧ A w = z.im • v + z.re • w) :
-    finrank ℝ ((aeval A (∏ μ ∈ s, (X ^ 2 - C μ))).maxGenEigenspace 0) = s.card * 2 := by
+    finrank ℝ ((aeval A (∏ μ ∈ s, (X ^ 2 - C μ))).maxGenEigenspace 0) = s.card * 2 ∧
+      finrank ℝ (ω.orthogonal ((aeval A (∏ μ ∈ s, (X ^ 2 - C μ))).maxGenEigenspace 0)) =
+        c.card * 4 := by
   set L := (aeval A (∏ μ ∈ s, (X ^ 2 - C μ))).maxGenEigenspace 0
   -- Each `μ ∈ s` contributes a symplectic subspace of `L` of dimension at least two.
   have hsL : s.card * 2 ≤ finrank ℝ L := by
     have h2 (μ : s) : 2 ≤ finrank ℝ ((aeval A (X ^ 2 - C (μ : ℝ))).maxGenEigenspace 0) := by
       obtain ⟨v, hv⟩ := (hs μ μ.property).exists_hasEigenvector
-      exact two_le_finrank_of_isSymplectic
-        (ω.isSymplectic_maxGenEigenspace_aeval hA (by simp [sub_comp]))
-        (mem_maxGenEigenspace_aeval_X_sq_sub_C hv.apply_eq_smul) hv.2
+      exact (isSymplectic_maxGenEigenspace_sq_sub hA _).two_le_finrank
+        (mem_maxGenEigenspace_sq_sub (by simpa [sq] using hv.apply_eq_smul)) hv.2
     have hle (μ : s) : (aeval A (X ^ 2 - C (μ : ℝ))).maxGenEigenspace 0 ≤ L :=
       Module.End.maxGenEigenspace_aeval_le_of_dvd A
         (Finset.dvd_prod_of_mem (fun ν : ℝ ↦ X ^ 2 - C ν) μ.property)
-    have hcop : Pairwise fun μ ν : s ↦ IsCoprime (X ^ 2 - C (μ : ℝ)) (X ^ 2 - C (ν : ℝ)) :=
-      fun μ ν hμν ↦ isCoprime_sub_C_of_isUnit_sub (X ^ 2)
-        (sub_ne_zero.2 fun h ↦ hμν (Subtype.ext h)).isUnit
-    have := card_mul_le_finrank (ω := ω) hA (fun _ ↦ by simp [sub_comp]) hcop hle h2
+    have := card_mul_le_finrank (fun μ : s ↦ isSymplectic_maxGenEigenspace_sq_sub hA μ)
+      (fun μ ν hμν _ hv _ hw ↦ apply_eq_zero_of_mem_maxGenEigenspace_sq_sub hA
+        (fun h ↦ hμν (Subtype.ext h)) hv hw) hle h2
     rwa [Fintype.card_coe] at this
   -- Each `a + bi ∈ c` contributes a symplectic subspace of `L^ω` of dimension at least four.
   have hcL' : c.card * 4 ≤ finrank ℝ (ω.orthogonal L) := by
@@ -382,104 +343,24 @@ private theorem finrank_maxGenEigenspace_aeval_prod_eq {A : Module.End ℝ V}
       obtain ⟨v, w, hv, hAv, hAw⟩ := hc z z.property
       exact four_le_finrank_maxGenEigenspace_aeval_focusFocusPolynomial hA
         (hc0 z z.property).1.ne' (hc0 z z.property).2.ne' hv hAv hAw
-    have hcop : Pairwise fun z z' : c ↦ IsCoprime (focusFocusPolynomial (z : ℂ).re (z : ℂ).im)
-        (focusFocusPolynomial (z' : ℂ).re (z' : ℂ).im) := fun z z' hzz' ↦ by
-      have h := isCoprime_focusFocusPolynomial (hc0 z z.property).1 (hc0 z z.property).2
-        (hc0 z' z'.property).1 (hc0 z' z'.property).2 (by
-          by_contra! hh
-          exact hzz' (Subtype.ext (Complex.ext hh.1 hh.2)))
-      rwa [focusFocusPolynomial_comp_neg_X] at h
-    have := card_mul_le_finrank (ω := ω) hA (fun _ ↦ focusFocusPolynomial_comp_neg_X _ _) hcop
-      (fun z ↦ maxGenEigenspace_aeval_focusFocusPolynomial_le_orthogonal hA s
+    have horth : Pairwise fun z z' : c ↦
+        ∀ v ∈ (aeval A (focusFocusPolynomial (z : ℂ).re (z : ℂ).im)).maxGenEigenspace 0,
+          ∀ w ∈ (aeval A (focusFocusPolynomial (z' : ℂ).re (z' : ℂ).im)).maxGenEigenspace 0,
+            ω v w = 0 := fun z z' hzz' _ hv _ hw ↦
+      ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
+        (isCoprime_focusFocusPolynomial (hc0 z z.property).1 (hc0 z z.property).2
+          (hc0 z' z'.property).1 (hc0 z' z'.property).2 (by
+            by_contra! hh
+            exact hzz' (Subtype.ext (Complex.ext hh.1 hh.2)))) hv hw
+    have := card_mul_le_finrank
+      (fun _ ↦ ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPolynomial_comp_neg_X _ _))
+      horth (fun z ↦ maxGenEigenspace_aeval_focusFocusPolynomial_le_orthogonal hA s
         (hc0 z z.property).1.ne' (hc0 z z.property).2.ne') h4
     rwa [Fintype.card_coe] at this
   have := ω.finrank_add_finrank_orthogonal L
-  omega
-
-/-! ### Restrictions to invariant subspaces -/
-
-omit [FiniteDimensional ℝ V] in
-/-- An eigenvector of `A²` in a subspace `L` preserved by `A` gives an eigenvalue of the square of
-the restriction of `A` to `L`. -/
-private theorem hasEigenvalue_restrict_sq {A : Module.End ℝ V} {L : Submodule ℝ V}
-    (hL : ∀ v ∈ L, A v ∈ L) {μ : ℝ} {v : V} (hvL : v ∈ L) (hv0 : v ≠ 0)
-    (hv : (A ^ 2) v = μ • v) : Module.End.HasEigenvalue ((A.restrict hL) ^ 2) μ := by
-  refine Module.End.hasEigenvalue_of_hasEigenvector (x := ⟨v, hvL⟩)
-    ⟨Module.End.mem_eigenspace_iff.2 (Subtype.ext ?_), by simpa using hv0⟩
-  simpa [sq, mul_apply_eq_comp] using hv
-
-omit [FiniteDimensional ℝ V] in
-/-- If `A v = a v - b w` and `A w = b v + a w` with `b ≠ 0`, and `v` lies in a subspace `L`
-preserved by `A`, then so does `w`, and the restriction of `A` to `L` satisfies the same
-relations. -/
-private theorem exists_restrict_apply_eq {A : Module.End ℝ V} {L : Submodule ℝ V}
-    (hL : ∀ v ∈ L, A v ∈ L) {a b : ℝ} (hb : b ≠ 0) {v w : V} (hvL : v ∈ L) (hv0 : v ≠ 0)
-    (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
-    ∃ v' w' : L, v' ≠ 0 ∧ A.restrict hL v' = a • v' - b • w' ∧
-      A.restrict hL w' = b • v' + a • w' := by
-  have hwL : w ∈ L := by
-    have hw : w = b⁻¹ • (a • v - A v) := by
-      rw [hAv, sub_sub_cancel, smul_smul, inv_mul_cancel₀ hb, one_smul]
-    rw [hw]
-    exact L.smul_mem _ (L.sub_mem (L.smul_mem _ hvL) (hL v hvL))
-  exact ⟨⟨v, hvL⟩, ⟨w, hwL⟩, by simpa using hv0, Subtype.ext (by simpa using hAv),
-    Subtype.ext (by simpa using hAw)⟩
-
-/-- If the Hamiltonian endomorphism of `R` preserves `L`, it preserves the symplectic complement
-`L^ω`. -/
-private theorem hamiltonianEnd_mem_orthogonal {L : Submodule ℝ V} {R : QuadraticForm ℝ V}
-    (hR : ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L) :
-    ∀ v ∈ ω.orthogonal L, ω.hamiltonianEnd R v ∈ ω.orthogonal L := fun v hv ↦
-  mem_orthogonal_iff.2 fun y hy ↦ by
-    rw [apply_hamiltonianEnd_right, ← apply_hamiltonianEnd, mem_orthogonal_iff.1 hv _ (hR y hy),
-      neg_zero]
+  exact ⟨by omega, by omega⟩
 
 /-! ### Assembling the two summands -/
-
-/-- **Assembling Darboux bases.** Darboux bases of a symplectic subspace `L`, with `m` planes, and
-of its symplectic complement, with `k * 2` planes, assemble to a Darboux basis of `V` whose first
-`m` planes are those of `L`. -/
-private theorem exists_isDarbouxBasis_castAdd_natAdd {L : Submodule ℝ V} (hL : ω.IsSymplectic L)
-    {b₁ : Basis (Fin m × Fin 2) ℝ L}
-    (hb₁ : (ω.restrict L hL.nondegenerate_restrict).IsDarbouxBasis b₁)
-    {b₂ : Basis (Fin (k * 2) × Fin 2) ℝ (ω.orthogonal L)}
-    (hb₂ : (ω.restrict _ hL.orthogonal.nondegenerate_restrict).IsDarbouxBasis b₂) :
-    ∃ b : Basis (Fin (m + k * 2) × Fin 2) ℝ V, ω.IsDarbouxBasis b ∧
-      (∀ i a, b (Fin.castAdd _ i, a) = b₁ (i, a)) ∧ ∀ i a, b (Fin.natAdd m i, a) = b₂ (i, a) := by
-  have horth : ∀ x ∈ L, ∀ y ∈ ω.orthogonal L, ω x y = 0 := fun x hx y hy ↦
-    mem_orthogonal_iff.1 hy x hx
-  have horth' : ∀ y ∈ ω.orthogonal L, ∀ x ∈ L, ω y x = 0 := fun y hy x hx ↦
-    mem_orthogonal_iff'.1 hy x hx
-  set u : Fin (m + k * 2) × Fin 2 → V := fun x ↦
-    Fin.addCases (fun i ↦ (b₁ (i, x.2) : V)) (fun i ↦ (b₂ (i, x.2) : V)) x.1
-  have hu₁ (i : Fin m) (a : Fin 2) : u (Fin.castAdd _ i, a) = b₁ (i, a) := by simp [u]
-  have hu₂ (i : Fin (k * 2)) (a : Fin 2) : u (Fin.natAdd m i, a) = b₂ (i, a) := by simp [u]
-  have hfin : finrank ℝ V = (m + k * 2) * 2 := by
-    rw [← ω.finrank_add_finrank_orthogonal L, finrank_eq_card_basis b₁, finrank_eq_card_basis b₂]
-    simp only [Fintype.card_prod, Fintype.card_fin]
-    ring
-  obtain ⟨b, hb, hbu⟩ := exists_isDarbouxBasis_coe_eq (ω := ω) hfin (v := u)
-    (fun i j ↦ by
-      induction i using Fin.addCases <;> induction j using Fin.addCases <;> simp only [hu₁, hu₂]
-      · simpa using hb₁.apply_fst_fst _ _
-      · exact horth _ (b₁ _).property _ (b₂ _).property
-      · exact horth' _ (b₂ _).property _ (b₁ _).property
-      · simpa using hb₂.apply_fst_fst _ _)
-    (fun i j ↦ by
-      induction i using Fin.addCases <;> induction j using Fin.addCases <;> simp only [hu₁, hu₂]
-      · simpa using hb₁.apply_snd_snd _ _
-      · exact horth _ (b₁ _).property _ (b₂ _).property
-      · exact horth' _ (b₂ _).property _ (b₁ _).property
-      · simpa using hb₂.apply_snd_snd _ _)
-    (fun i j ↦ by
-      induction i using Fin.addCases <;> induction j using Fin.addCases <;>
-        simp only [hu₁, hu₂, (Fin.castAdd_injective _ _).eq_iff, (Fin.natAdd_injective _ _).eq_iff,
-          castAdd_ne_natAdd, natAdd_ne_castAdd, ite_false]
-      · simpa using hb₁.apply_fst_snd _ _
-      · exact horth _ (b₁ _).property _ (b₂ _).property
-      · exact horth' _ (b₂ _).property _ (b₁ _).property
-      · simpa using hb₂.apply_fst_snd _ _)
-  exact ⟨b, hb, fun i a ↦ by rw [hbu, hu₁], fun i a ↦ by rw [hbu, hu₂]⟩
 
 /-- **Combinations of the Williamson blocks.** Let `b` be the Darboux basis of `V` assembled from
 Darboux bases `b₁` of a symplectic subspace `L` and `b₂` of `L^ω`. A quadratic form `R` whose
@@ -509,8 +390,7 @@ private theorem mem_span_williamsonBlocks {L : Submodule ℝ V} (hL : ω.IsSympl
       have hL₁ : ω.hamiltonianEnd R (b (Fin.castAdd _ j', a)) =
           ((ω.restrict L hL.nondegenerate_restrict).hamiltonianEnd (R.comp L.subtype)
             (b₁ (j', a)) : V) := by
-        rw [hamiltonianEnd_comp_subtype hL hRL, hb1]
-        rfl
+        rw [hamiltonianEnd_comp_subtype hL hRL, LinearMap.coe_restrict_apply, hb1]
       rw [hL₁, ← hd]
       fin_cases a <;>
         simp only [Fin.zero_eta, Fin.mk_one, map_add, map_sum, map_smul, LinearMap.add_apply,
@@ -523,12 +403,14 @@ private theorem mem_span_williamsonBlocks {L : Submodule ℝ V} (hL : ω.IsSympl
         by_cases hj : j' ∈ t <;> simp [hb1, hj, apply_ite, (Fin.castAdd_injective _ _).eq_iff]
     | right p =>
       obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective p
-      have hRL' := hamiltonianEnd_mem_orthogonal hRL
+      have hRL' : ∀ v ∈ ω.orthogonal L, ω.hamiltonianEnd R v ∈ ω.orthogonal L :=
+        (Module.End.mem_invtSubmodule _).1
+          (orthogonal_mem_invtSubmodule_hamiltonianEnd ((Module.End.mem_invtSubmodule _).2 hRL))
       have hL₂ : ω.hamiltonianEnd R (b (Fin.natAdd m (finProdFinEquiv (j', i')), a)) =
           ((ω.restrict _ hL.orthogonal.nondegenerate_restrict).hamiltonianEnd
             (R.comp (ω.orthogonal L).subtype) (b₂ (finProdFinEquiv (j', i'), a)) : V) := by
-        rw [hamiltonianEnd_comp_subtype hL.orthogonal hRL', hb2]
-        rfl
+        rw [hamiltonianEnd_comp_subtype hL.orthogonal hRL', LinearMap.coe_restrict_apply,
+          hb2]
       rw [hL₂, ← he]
       fin_cases i' <;> fin_cases a <;>
         simp only [Fin.zero_eta, Fin.mk_one, map_add, map_sum, map_smul, LinearMap.add_apply,
@@ -539,7 +421,7 @@ private theorem mem_span_williamsonBlocks {L : Submodule ℝ V} (hL : ω.IsSympl
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
           hb.hamiltonianEnd_williamsonBlocks_inl_apply_snd,
           hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-          hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, natAdd_ne_castAdd] <;>
+          hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd] <;>
         simp [hb2, apply_ite ((↑) : ω.orthogonal L → V), smul_ite, Finset.sum_add_distrib]
   rw [hR]
   exact add_mem (Submodule.sum_mem _ fun j _ ↦
@@ -557,8 +439,8 @@ forms on `V`, and suppose that its span contains a form `P` whose Hamiltonian en
 has the following eigenvalues: the distinct nonzero real eigenvalues `μ ∈ s` of `A_P²`, and the
 distinct eigenvalues `z = a + bi ∈ c` with `a, b > 0`, recorded as vectors `v ≠ 0` and `w` with
 `A_P v = a v - b w` and `A_P w = b v + a w`, with `2 |s| + 4 |c| = dim V`. Then the span of `Q` is
-the span of the Williamson blocks of some Darboux basis: elliptic or hyperbolic blocks on `|s|`
-planes and focus-focus pairs on `|c|` pairs of planes. -/
+the span of the Williamson blocks of some Darboux basis: elliptic or hyperbolic blocks on `m = |s|`
+planes and focus-focus pairs on `k = |c|` pairs of planes. -/
 theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
     (h : ω.IsNondegenerateQuadraticFamily Q) {P : QuadraticForm ℝ V}
     (hP : P ∈ Submodule.span ℝ (Set.range Q)) {s : Finset ℝ} {c : Finset ℂ}
@@ -568,11 +450,10 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
     (hPc : ∀ z ∈ c, ∃ v w : V, v ≠ 0 ∧ ω.hamiltonianEnd P v = z.re • v - z.im • w ∧
       ω.hamiltonianEnd P w = z.im • v + z.re • w) :
     ∃ (m k : ℕ) (b : Basis (Fin (m + k * 2) × Fin 2) ℝ V) (t : Finset (Fin m)),
-      ω.IsDarbouxBasis b ∧
+      m = s.card ∧ k = c.card ∧ ω.IsDarbouxBasis b ∧
         Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (williamsonBlocks b t)) := by
   set A := ω.hamiltonianEnd P
-  have hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm :=
-    ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P
+  have hA := ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P
   -- `L`: the vectors killed by a power of `∏_{μ ∈ s} (A² - μ)`; it has dimension `2 |s|`.
   set L := (aeval A (∏ μ ∈ s, (X ^ 2 - C μ))).maxGenEigenspace 0
   have hL : ω.IsSymplectic L :=
@@ -582,10 +463,8 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
     Module.End.mapsTo_genEigenspace_aeval_of_comm (ω.quadraticPoissonBracket_eq_zero_iff.1
       (ω.quadraticPoissonBracket_eq_zero_of_mem_span h.quadraticPoissonBracket_eq_zero hP hR))
       _ 0 ⊤ hv
-  have hLs : finrank ℝ L = s.card * 2 :=
+  obtain ⟨hLs, hL'c⟩ : finrank ℝ L = s.card * 2 ∧ finrank ℝ (ω.orthogonal L) = c.card * 4 :=
     finrank_maxGenEigenspace_aeval_prod_eq hA hsc hPs hc0 hPc
-  have hL'c : finrank ℝ (ω.orthogonal L) = c.card * 4 := by
-    linarith [ω.finrank_add_finrank_orthogonal L]
   -- The elliptic–hyperbolic classification on `L`.
   obtain ⟨m, b₁, t, hb₁, hspan₁⟩ : ∃ (m : ℕ) (b₁ : Basis (Fin m × Fin 2) ℝ L)
       (t : Finset (Fin m)), (ω.restrict L hL.nondegenerate_restrict).IsDarbouxBasis b₁ ∧
@@ -596,9 +475,9 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
       (QuadraticMap.comp_mem_span_range_comp hP L.subtype) hLs.symm hs0 fun μ hμ ↦ by
         obtain ⟨v, hv⟩ := (hPs μ hμ).exists_hasEigenvector
         rw [hamiltonianEnd_comp_subtype hL (hRL hP)]
-        exact hasEigenvalue_restrict_sq _ (Module.End.maxGenEigenspace_aeval_le_of_dvd A
+        exact Module.End.hasEigenvalue_restrict_sq _ (Module.End.maxGenEigenspace_aeval_le_of_dvd A
           (Finset.dvd_prod_of_mem (fun ν : ℝ ↦ X ^ 2 - C ν) hμ)
-          (mem_maxGenEigenspace_aeval_X_sq_sub_C hv.apply_eq_smul)) hv.2 hv.apply_eq_smul
+          (mem_maxGenEigenspace_sq_sub (by simpa [sq] using hv.apply_eq_smul))) hv
   -- The focus-focus classification on `L^ω`.
   obtain ⟨k, b₂, hb₂, hspan₂⟩ : ∃ (k : ℕ) (b₂ : Basis (Fin (k * 2) × Fin 2) ℝ (ω.orthogonal L)),
       (ω.restrict _ hL.orthogonal.nondegenerate_restrict).IsDarbouxBasis b₂ ∧
@@ -608,17 +487,21 @@ theorem exists_isDarbouxBasis_span_eq_span_williamsonBlocks
       hRL (Submodule.subset_span ⟨i, rfl⟩) v hv).exists_isDarbouxBasis_span_eq_span_focusFocusBlocks
       (QuadraticMap.comp_mem_span_range_comp hP _) hL'c.symm hc0 fun z hz ↦ by
         obtain ⟨v, w, hv, hAv, hAw⟩ := hPc z hz
-        rw [hamiltonianEnd_comp_subtype hL.orthogonal (hamiltonianEnd_mem_orthogonal (hRL hP))]
-        exact exists_restrict_apply_eq _ (hc0 z hz).2.ne'
+        rw [hamiltonianEnd_comp_subtype hL.orthogonal ((Module.End.mem_invtSubmodule _).1
+          (orthogonal_mem_invtSubmodule_hamiltonianEnd ((Module.End.mem_invtSubmodule _).2
+            (hRL hP))))]
+        exact Module.End.exists_restrict_apply_eq _ (hc0 z hz).2.ne'
           (maxGenEigenspace_aeval_focusFocusPolynomial_le_orthogonal hA s (hc0 z hz).1.ne'
             (hc0 z hz).2.ne' ((Module.End.mem_maxGenEigenspace _ _ _).2
               ⟨1, by simpa using aeval_focusFocusPolynomial_apply_eq_zero hAv hAw⟩)) hv hAv hAw
   -- Every `Q i` is a combination of the assembled Williamson blocks, which Poisson-commute.
-  obtain ⟨b, hb, hb1, hb2⟩ := exists_isDarbouxBasis_castAdd_natAdd hL hb₁ hb₂
-  refine ⟨m, k, b, t, hb, h.span_eq_of_span_le hb.quadraticPoissonBracket_williamsonBlocks
-    (Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦ mem_span_williamsonBlocks hL hb₁ hb₂ hb
-      hb1 hb2 (hRL (Submodule.subset_span ⟨i, rfl⟩)) (hspan₁ ▸ Submodule.subset_span ⟨i, rfl⟩)
-      (hspan₂ ▸ Submodule.subset_span ⟨i, rfl⟩)))⟩
+  obtain ⟨b, hb, hb1, hb2⟩ := hL.exists_isDarbouxBasis_castAdd_natAdd hb₁ hb₂
+  obtain ⟨hm, hk⟩ := And.intro (finrank_eq_card_basis b₁) (finrank_eq_card_basis b₂)
+  simp only [Fintype.card_prod, Fintype.card_fin] at hm hk
+  refine ⟨m, k, b, t, by omega, by omega, hb, h.span_eq_of_span_le
+    hb.quadraticPoissonBracket_williamsonBlocks (Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦
+      mem_span_williamsonBlocks hL hb₁ hb₂ hb hb1 hb2 (hRL (Submodule.subset_span ⟨i, rfl⟩))
+        (hspan₁ ▸ Submodule.subset_span ⟨i, rfl⟩) (hspan₂ ▸ Submodule.subset_span ⟨i, rfl⟩)))⟩
 
 end IsNondegenerateQuadraticFamily
 
@@ -668,24 +551,8 @@ private theorem IsDarbouxBasis.hamiltonianEnd_williamsonRegular_natAdd
   simp [williamsonRegular, map_sum, LinearMap.sum_apply,
     hb.hamiltonianEnd_williamsonBlocks_inl_apply_fst,
     hb.hamiltonianEnd_williamsonBlocks_inr_zero_apply_natAdd,
-    hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, natAdd_ne_castAdd, smul_ite,
+    hb.hamiltonianEnd_williamsonBlocks_inr_one_apply_natAdd, Fin.natAdd_ne_castAdd, smul_ite,
     Finset.sum_add_distrib]
-
-/-- The numbers `-(i + 1)²` for `i ∈ t` and `(i + 1)²` for `i ∉ t` are pairwise distinct. -/
-private theorem injective_ite_neg_sq (t : Finset (Fin m)) :
-    Function.Injective fun i : Fin m ↦
-      if i ∈ t then -((((i : ℕ) : ℝ) + 1) ^ 2) else (((i : ℕ) : ℝ) + 1) ^ 2 := by
-  have hpos (i : Fin m) : 0 < (((i : ℕ) : ℝ) + 1) ^ 2 := by positivity
-  have hmono : StrictMono fun i : Fin m ↦ (((i : ℕ) : ℝ) + 1) ^ 2 := fun i l hil ↦ by
-    dsimp only
-    gcongr
-    exact_mod_cast hil
-  intro i l hil
-  refine hmono.injective (?_ : (((i : ℕ) : ℝ) + 1) ^ 2 = (((l : ℕ) : ℝ) + 1) ^ 2)
-  have hi := hpos i
-  have hl := hpos l
-  by_cases hit : i ∈ t <;> by_cases hlt : l ∈ t <;>
-    simp only [hit, hlt, ↓reduceIte] at hil <;> linarith
 
 /-- In a Darboux basis, the square of the Hamiltonian endomorphism of the regular element has the
 eigenvalue `-(i + 1)²` if the plane `i < m` is elliptic and `(i + 1)²` if it is hyperbolic. -/
@@ -720,7 +587,9 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
         ω.IsDarbouxBasis b ∧
           Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (williamsonBlocks b t)) := by
   refine ⟨fun ⟨P, hP, s, c, hsc, hs0, hPs, hc0, hPc⟩ ↦
-    h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks hP hsc hs0 hPs hc0 hPc,
+    let ⟨m, k, b, t, _, _, hb, hspan⟩ :=
+      h.exists_isDarbouxBasis_span_eq_span_williamsonBlocks hP hsc hs0 hPs hc0 hPc
+    ⟨m, k, b, t, hb, hspan⟩,
     fun ⟨m, k, b, t, hb, hspan⟩ ↦ ?_⟩
   -- The regular element has the eigenvalues `∓(i + 1)²` of its square and `(j + 1) + i`.
   let z : Fin k → ℂ := fun j ↦ ((((j : ℕ) : ℝ) + 1 : ℝ) : ℂ) + Complex.I
@@ -729,11 +598,18 @@ theorem exists_mem_span_card_mul_two_add_card_mul_four_eq_finrank_iff
     simp only [z, Complex.add_re, Complex.ofReal_re, Complex.I_re, add_zero, add_left_inj,
       Nat.cast_inj] at this
     exact Fin.ext this
+  have hmono : StrictMono fun i : Fin m ↦ (((i : ℕ) : ℝ) + 1) ^ 2 := fun i l hil ↦ by
+    dsimp only
+    gcongr
+    exact_mod_cast hil
+  have hinj : Function.Injective fun i : Fin m ↦
+      if i ∈ t then -((((i : ℕ) : ℝ) + 1) ^ 2) else (((i : ℕ) : ℝ) + 1) ^ 2 :=
+    injective_ite_neg_sq t (fun _ _ hil _ ↦ hmono.injective.ne hil) fun _ ↦ by positivity
   refine ⟨williamsonRegular b t, hspan ▸ williamsonRegular_mem_span,
     Finset.univ.image fun i : Fin m ↦
       if i ∈ t then -((((i : ℕ) : ℝ) + 1) ^ 2) else (((i : ℕ) : ℝ) + 1) ^ 2,
     Finset.univ.image z, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [Finset.card_image_of_injective _ (injective_ite_neg_sq t),
+  · rw [Finset.card_image_of_injective _ hinj,
       Finset.card_image_of_injective _ hz, finrank_eq_card_basis b]
     simp only [Finset.card_univ, Fintype.card_fin, Fintype.card_prod]
     ring

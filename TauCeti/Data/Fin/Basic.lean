@@ -67,6 +67,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.castAdd_ne_natAdd`, `Fin.natAdd_ne_castAdd`: the first `m` and the last `n` indices of
+  `Fin (m + n)` are distinct.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
   with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
@@ -243,6 +245,15 @@ theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin 
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
+
+/-- The first `m` indices of `Fin (m + n)` are distinct from the last `n`. -/
+theorem castAdd_ne_natAdd {m n : ℕ} (i : Fin m) (j : Fin n) : castAdd n i ≠ natAdd m j := by
+  simp only [ne_eq, Fin.ext_iff, val_castAdd, val_natAdd]
+  omega
+
+/-- The last `n` indices of `Fin (m + n)` are distinct from the first `m`. -/
+theorem natAdd_ne_castAdd {m n : ℕ} (i : Fin m) (j : Fin n) : natAdd m j ≠ castAdd n i :=
+  (castAdd_ne_natAdd i j).symm
 
 /-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
 theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by

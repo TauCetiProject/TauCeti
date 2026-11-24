@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -333,13 +334,10 @@ theorem IsDarbouxBasis.prod {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W
   have hr (i : Fin k) (a : Fin 2) :
       (b.prod c).reindex e (Fin.natAdd m i, a) = (0, c (i, a)) := by
     ext <;> simp [e, Basis.reindex_apply]
-  have hne (i : Fin m) (j : Fin k) : Fin.castAdd k i ≠ Fin.natAdd m j := by
-    simp only [ne_eq, Fin.ext_iff, Fin.val_castAdd, Fin.val_natAdd]
-    omega
   refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
     induction i using Fin.addCases <;> induction j using Fin.addCases <;>
-    simp [hl, hr, hne, (hne _ _).symm, hb.apply_fst_fst, hb.apply_snd_snd, hb.apply_fst_snd,
-      hc.apply_fst_fst, hc.apply_snd_snd, hc.apply_fst_snd]
+    simp [hl, hr, Fin.castAdd_ne_natAdd, Fin.natAdd_ne_castAdd, hb.apply_fst_fst, hb.apply_snd_snd,
+      hb.apply_fst_snd, hc.apply_fst_fst, hc.apply_snd_snd, hc.apply_fst_snd]
 
 end SymplecticForm
 

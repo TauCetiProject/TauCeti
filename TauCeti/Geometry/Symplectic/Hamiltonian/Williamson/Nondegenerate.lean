@@ -38,8 +38,9 @@ with square `μₖ = -cₖ²` for `k ∈ s` and `μₖ = cₖ²` for `k ∉ s`. 
 squarefree polynomial `(∏ₜ (X² - t)) X` over the nonzero values `t` of the `μₖ`
 (`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic`). If the `cₖ` are
 nonzero and the squares of the coefficients of blocks of the same type are distinct, then the `μₖ`
-are pairwise distinct, and every quadratic form Poisson-commuting with `P` is a combination of the
-blocks (`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`; for the
+are pairwise distinct (`TauCeti.SymplecticForm.injective_ite_neg_sq`), and every quadratic form
+Poisson-commuting with `P` is a combination of the blocks
+(`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`; for the
 hyperbolic blocks alone, `IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero`).
 Indeed, if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`. Applied
 twice this shows that the polar form of `R` pairs distinct planes trivially. On an elliptic plane it
@@ -241,18 +242,32 @@ theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic
 are nonzero and coefficients of blocks of the same type have distinct squares. Then the squares
 `-cₖ²` and `cₖ²` of the Hamiltonian endomorphism on the elliptic and hyperbolic planes are pairwise
 distinct. -/
-private theorem ellipticHyperbolic_sq_ne
-    (hc : Pairwise fun k l ↦ (k ∈ s ↔ l ∈ s) → c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0)
-    {k l : Fin n} (hkl : k ≠ l) :
-    (if k ∈ s then -c k ^ 2 else c k ^ 2) ≠ (if l ∈ s then -c l ^ 2 else c l ^ 2) := by
+theorem injective_ite_neg_sq
+    (hc : Pairwise fun k l ↦ (k ∈ s ↔ l ∈ s) → c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0) :
+    Function.Injective fun k ↦ if k ∈ s then -c k ^ 2 else c k ^ 2 := by
+  intro k l e
+  by_contra hkl
   have hk := sq_pos_of_ne_zero (hc0 k)
   have hl := sq_pos_of_ne_zero (hc0 l)
   have h := hc hkl
-  by_cases hks : k ∈ s <;> by_cases hls : l ∈ s <;> simp only [hks, hls, ↓reduceIte] at h ⊢
-  · exact fun e ↦ h (by simp) (neg_inj.1 e)
+  by_cases hks : k ∈ s <;> by_cases hls : l ∈ s <;> simp only [hks, hls, ↓reduceIte] at h e
+  · exact h (by simp) (neg_inj.1 e)
   · linarith
   · linarith
-  · exact h (by simp)
+  · exact h (by simp) e
+
+/-- If a quadratic form `R` Poisson-commutes with `P`, then `A_P` is skew for the polar form of `R`:
+`polar R (A_P u) v = -polar R u (A_P v)`, since `A_R` commutes with `A_P ∈ sp(V, ω)`. -/
+private theorem polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero
+    {R P : QuadraticForm ℝ V} (hR : ω.quadraticPoissonBracket R P = 0) (u v : V) :
+    QuadraticMap.polar R (ω.hamiltonianEnd P u) v =
+      -QuadraticMap.polar R u (ω.hamiltonianEnd P v) := by
+  have hcomm : ω.hamiltonianEnd R (ω.hamiltonianEnd P u) =
+      ω.hamiltonianEnd P (ω.hamiltonianEnd R u) := by
+    simpa only [mul_apply_eq_comp] using
+      LinearMap.congr_fun (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).eq u
+  rw [← apply_hamiltonianEnd, ← apply_hamiltonianEnd, hcomm, apply_hamiltonianEnd,
+    apply_hamiltonianEnd_right, neg_neg]
 
 /-- A quadratic form `R` Poisson-commuting with a regular combination `∑ₖ cₖ Bₖ` of the
 elliptic–hyperbolic blocks pairs distinct planes trivially, and on each plane its polar form is
@@ -272,15 +287,8 @@ private theorem IsDarbouxBasis.polar_apply_of_quadraticPoissonBracket_eq_zero
     hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst s c j
   have hA₁ (j : Fin n) : A (b (j, 1)) = if j ∈ s then c j • b (j, 0) else -c j • b (j, 1) :=
     hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd s c j
-  -- Since `A_R` commutes with `A_P` and `A_P ∈ sp(V, ω)`,
-  -- `polar R (A_P u) v = -polar R u (A_P v)`.
-  have hcomm (u : V) : ω.hamiltonianEnd R (A u) = A (ω.hamiltonianEnd R u) := by
-    simpa only [mul_apply_eq_comp] using
-      LinearMap.congr_fun (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).eq u
-  have hskew (u v : V) :
-      QuadraticMap.polar R (A u) v = -QuadraticMap.polar R u (A v) := by
-    rw [← apply_hamiltonianEnd, ← apply_hamiltonianEnd, hcomm, apply_hamiltonianEnd,
-      apply_hamiltonianEnd_right, neg_neg]
+  have hskew (u v : V) : QuadraticMap.polar R (A u) v = -QuadraticMap.polar R u (A v) :=
+    polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero hR u v
   obtain ⟨l, a'⟩ := i
   rcases eq_or_ne l k with rfl | hlk
   · -- On the `l`-th plane, `polar R` is a multiple of `xₗ² + yₗ²` or of `xₗ yₗ`.
@@ -317,7 +325,7 @@ private theorem IsDarbouxBasis.polar_apply_of_quadraticPoissonBracket_eq_zero
       hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_apply,
       hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_apply, QuadraticMap.polar_smul_left,
       QuadraticMap.polar_smul_right, smul_eq_mul, smul_eq_mul] at e
-    have := ellipticHyperbolic_sq_ne s hc hc0 hlk.symm
+    have := (injective_ite_neg_sq s hc hc0).ne hlk.symm
     have h : ((if k ∈ s then -c k ^ 2 else c k ^ 2) - (if l ∈ s then -c l ^ 2 else c l ^ 2)) *
         QuadraticMap.polar R (b (k, a)) (b (l, a')) = 0 := by
       linear_combination e
