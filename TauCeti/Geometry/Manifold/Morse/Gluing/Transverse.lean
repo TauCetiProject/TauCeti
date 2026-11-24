@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
 import TauCeti.Analysis.Calculus.Morse.Gluing.Centre
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Data.Set.Function
 
@@ -132,13 +133,8 @@ private theorem MorseChart.exists_pos_forall_norm_lt_apply_lt {q : M} (φ : Mors
       𝓝 0 := by
     refine (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm h0).preimage_mem_nhds ?_
     simpa using hf.preimage_mem_nhds (gt_mem_nhds hqc)
-  -- A ball of the product, read through `WithLp.toLp`.
-  obtain ⟨ρc, hρc, hρcW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2
-    ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ)).tendsto 0
-    (by rw [WithLp.toLp_zero]; exact hW))
-  refine ⟨ρc, hρc, fun z hu hv ↦ hρcW (?_ : WithLp.ofLp z ∈ _)⟩
-  rw [← ball_prod_same]
-  exact ⟨mem_ball_zero_iff.2 hu, mem_ball_zero_iff.2 hv⟩
+  obtain ⟨ρc, hρc, hρcW⟩ := WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero hW
+  exact ⟨ρc, hρc, fun z hu hv ↦ hρcW z.fst z.snd hu hv⟩
 
 namespace IsAdaptedPseudoGradient
 

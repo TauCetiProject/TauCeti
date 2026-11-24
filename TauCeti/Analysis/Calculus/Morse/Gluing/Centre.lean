@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Passage
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Topology.MetricSpace.Contracting
 import Mathlib.Topology.Order.DenselyOrdered
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Calculus.Morse.Gluing.TransverseDisc
 import TauCeti.Analysis.Calculus.RadialRescaleGraph
 import TauCeti.Topology.Homeomorph.CompactQuotient
@@ -341,12 +342,7 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
         k (splitQuadraticFlow T (WithLp.toLp 2 (g y, y))).fst := by
   have hε : 0 ≤ ε := hgε 0 (mem_closedBall_self hδ.le) ▸ norm_nonneg _
   -- `W` contains the points whose two components are smaller than some `r`.
-  obtain ⟨r, hr, hrW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).tendsto 0
-    (by simpa using hW))
-  have hW' (x : Eₛ) (y : Eᵤ) (hx : ‖x‖ < r) (hy : ‖y‖ < r) : WithLp.toLp 2 (x, y) ∈ W :=
-    hrW (by
-      rw [← ball_prod_same]
-      exact mk_mem_prod (mem_ball_zero_iff.2 hx) (mem_ball_zero_iff.2 hy))
+  obtain ⟨r, hr, hW'⟩ := WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero hW
   -- The rate `e^{-T}` eventually beats every constant.
   have hsmall (C c : ℝ) (hc : 0 < c) : ∀ᶠ T in atTop, Real.exp (-T) * C < c := by
     simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.mul_const C).eventually
