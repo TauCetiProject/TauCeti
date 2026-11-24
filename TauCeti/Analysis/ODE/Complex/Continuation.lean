@@ -183,9 +183,9 @@ theorem IsSolutionNear.exists_isSolution (hU : IsSimplyConnected (U : Set ℂ))
   have h0 : E.IsSolutionNear (hjoin.somePath 0) F := by
     rw [hjoin.somePath.source]
     exact hy.congr hFy.symm
-  simpa only [hjoin.somePath.target] using
-    (isSolutionNear_iff.mp (hcont.isSolutionNear isPreconnected_univ
-      (fun t _ ↦ hjoin.somePath_mem t) (mem_univ 0) (mem_univ 1) h0)).self_of_nhds.2.2
+  obtain ⟨-, -, hzE⟩ := (isSolutionNear_iff.mp (hcont.isSolutionNear isPreconnected_univ
+    (fun t _ ↦ hjoin.somePath_mem t) (mem_univ 0) (mem_univ 1) h0)).self_of_nhds
+  simpa only [hjoin.somePath.target] using hzE
 
 /-- On a simply connected domain, every unscaled initial jet at a point of the domain is the jet of
 a solution on the whole domain. -/
@@ -195,13 +195,9 @@ theorem initialJet_surjective_of_isSimplyConnected (hU : IsSimplyConnected (U : 
   obtain ⟨φ, rfl⟩ := initialJetGerm_surjective (E := E) ha v
   obtain ⟨y, hy, hyφ⟩ := (mem_solutionGerms_iff ha).mp φ.property
   obtain ⟨F, hF, hFy⟩ := hy.exists_isSolution hU
-  let G := HolomorphicFunctions.of U F hF.analyticOnNhd.differentiableOn
-  have hGF : EqOn F (HolomorphicFunctions.extend G) U := fun z hz ↦
-    (HolomorphicFunctions.extend_of _ hz).symm
-  have hGF' : HolomorphicFunctions.extend G =ᶠ[𝓝 a] F :=
-    eventually_of_mem (U.isOpen.mem_nhds ha) fun z hz ↦ (hGF hz).symm
-  have hext : HolomorphicFunctions.extend G =ᶠ[𝓝 a] y := hGF'.trans hFy
-  refine ⟨⟨G, (E.mem_solutionSpace G).mpr (hF.congr hGF)⟩, funext fun j ↦ ?_⟩
+  have hext : HolomorphicFunctions.extend hF.toSolutionSpace.val =ᶠ[𝓝 a] y :=
+    (hF.eqOn_extend_toSolutionSpace.eventuallyEq_of_mem (U.isOpen.mem_nhds ha)).trans hFy
+  refine ⟨hF.toSolutionSpace, funext fun j ↦ ?_⟩
   rw [initialJet_apply, initialJetGerm_apply ha φ hyφ.symm j]
   exact hext.iteratedDeriv_eq j
 
@@ -220,7 +216,9 @@ noncomputable def initialJetEquivOfIsSimplyConnected (hU : IsSimplyConnected (U 
 @[simp]
 theorem initialJetEquivOfIsSimplyConnected_apply (hU : IsSimplyConnected (U : Set ℂ))
     (ha : a ∈ U) (f : E.solutionSpace) :
-    E.initialJetEquivOfIsSimplyConnected hU ha f = E.initialJet ha f := (rfl)
+    E.initialJetEquivOfIsSimplyConnected hU ha f = E.initialJet ha f := by
+  unfold initialJetEquivOfIsSimplyConnected
+  exact LinearEquiv.ofBijective_apply _ f
 
 /-- **The global initial-value theorem.** On a simply connected domain, every unscaled initial jet
 at a point `a` of the domain is the jet at `a` of a solution on the whole domain, unique on the
@@ -241,8 +239,8 @@ theorem exists_isSolution_of_isSimplyConnected (hU : IsSimplyConnected (U : Set 
 @[simp]
 theorem initialJet_initialJetEquivOfIsSimplyConnected_symm (hU : IsSimplyConnected (U : Set ℂ))
     (ha : a ∈ U) (v : Fin n → ℂ) :
-    E.initialJet ha ((E.initialJetEquivOfIsSimplyConnected hU ha).symm v) = v :=
-  (E.initialJetEquivOfIsSimplyConnected hU ha).apply_symm_apply v
+    E.initialJet ha ((E.initialJetEquivOfIsSimplyConnected hU ha).symm v) = v := by
+  rw [← initialJetEquivOfIsSimplyConnected_apply hU ha, LinearEquiv.apply_symm_apply]
 
 /-- The underlying linear map of `initialJetEquivOfIsSimplyConnected` is the unscaled initial
 jet. -/
@@ -250,15 +248,16 @@ jet. -/
 theorem initialJetEquivOfIsSimplyConnected_toLinearMap (hU : IsSimplyConnected (U : Set ℂ))
     (ha : a ∈ U) :
     (E.initialJetEquivOfIsSimplyConnected hU ha).toLinearMap = E.initialJet ha :=
-  LinearMap.ext fun _ ↦ rfl
+  LinearMap.ext fun f ↦ by
+    rw [LinearEquiv.coe_coe, initialJetEquivOfIsSimplyConnected_apply hU ha]
 
 /-- The inverse of `initialJetEquivOfIsSimplyConnected` recovers a solution from its initial
 jet. -/
 @[simp]
 theorem initialJetEquivOfIsSimplyConnected_symm_initialJet (hU : IsSimplyConnected (U : Set ℂ))
     (ha : a ∈ U) (f : E.solutionSpace) :
-    (E.initialJetEquivOfIsSimplyConnected hU ha).symm (E.initialJet ha f) = f :=
-  (E.initialJetEquivOfIsSimplyConnected hU ha).symm_apply_apply f
+    (E.initialJetEquivOfIsSimplyConnected hU ha).symm (E.initialJet ha f) = f := by
+  rw [← initialJetEquivOfIsSimplyConnected_apply hU ha, LinearEquiv.symm_apply_apply]
 
 /-- The `j`-th derivative at `a` of the extended solution
 `(E.initialJetEquivOfIsSimplyConnected hU ha).symm v` is `v j`. -/
