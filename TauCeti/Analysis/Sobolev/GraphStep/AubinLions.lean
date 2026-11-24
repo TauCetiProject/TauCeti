@@ -340,9 +340,10 @@ theorem norm_le_mul_norm_restrictBaseL {c : ℝ} (hc : 0 ≤ c)
     (hf : ∀ᵐ s ∂volume.restrict (Omega : Set ℝ), ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
     (hf₀ : ∀ᵐ s ∂volume.restrict (Omega : Set ℝ), s ∉ Ioo a b → f s = 0) :
     ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL p (volume.restrict (Omega : Set ℝ))) hΩ u‖ := by
+  have hΩ' : Ioo a b ⊆ Omega := SetLike.coe_subset_coe.2 hΩ
   have hμW : (volume.restrict (Omega : Set ℝ)).restrict (Ioo a b) =
       volume.restrict (Ioo a b) := by
-    rw [Measure.restrict_restrict measurableSet_Ioo, inter_eq_left.2 (show Ioo a b ⊆ Omega from hΩ)]
+    rw [Measure.restrict_restrict measurableSet_Ioo, inter_eq_left.2 hΩ']
   -- The `Lᵖ` norm of `f` is its `Lᵖ` norm on the window, where it is dominated by `ι ∘ u`.
   have hR : ∀ᵐ s ∂volume.restrict (Ioo a b), ‖f s‖ ≤
       c * ‖restrictBaseL (ι.compLpL p (volume.restrict (Omega : Set ℝ))) hΩ u s‖ := by
