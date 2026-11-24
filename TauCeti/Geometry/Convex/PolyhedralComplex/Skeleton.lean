@@ -15,8 +15,8 @@ Cells of ambient codimension at least `k` form a subcomplex. Near a relative int
 an exact-codimension cell, the support of this skeleton agrees with that cell. One ball avoids
 its relative boundary and every other cell in the skeleton, and meets only cells containing it.
 This isolates one wall or joint for studying local crossings or small loops around a joint.
-Relative frontiers and intersections of distinct cells of the same codimension lie in the
-next skeleton. No boundedness or salience is required.
+The relative frontiers of cells in each skeleton and the nonempty intersections of distinct
+cells in it lie in the next skeleton. No boundedness or salience is required.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Strata.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -171,12 +171,13 @@ theorem support_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
   ext x
   simp [mem_support, C.cells_codimensionGE_eq_empty hk]
 
-/-- The relative frontier of an exact-codimension cell is carried by the next skeleton. -/
+/-- The relative frontier of a cell of the codimension-`k` skeleton lies in the
+support of the next skeleton. -/
 theorem intrinsicFrontier_subset_support_codimensionGE_succ (C : FinitePolyhedralComplex h)
-    {k : ℕ} {P : Set V} (hP : P ∈ C.cellsOfCodimension k) :
+    {k : ℕ} {P : Set V} (hP : P ∈ (C.codimensionGE k).cells) :
     intrinsicFrontier ℝ P ⊆ (C.codimensionGE (k + 1)).support := by
   have := h.finiteDimensional
-  obtain ⟨hPC, hdP⟩ := mem_cellsOfCodimension.mp hP
+  obtain ⟨hPC, hdP⟩ := mem_cells_codimensionGE.mp hP
   intro x hx
   obtain ⟨F, hF, hxF, hdF⟩ :=
     (C.isConvexPolyhedron hPC).mem_intrinsicFrontier_iff_exists_facet.mp hx
@@ -184,13 +185,14 @@ theorem intrinsicFrontier_subset_support_codimensionGE_succ (C : FinitePolyhedra
   rw [← direction_affineSpan, ← direction_affineSpan] at hdF
   exact mem_support.mpr ⟨F, mem_cells_codimensionGE.mpr ⟨hFC, by omega⟩, hxF⟩
 
-/-- A nonempty intersection of distinct cells of the same exact codimension lies in
-the next skeleton. The two cells may have the same supporting direction. -/
+/-- A nonempty intersection of distinct cells of the codimension-`k` skeleton lies in the
+next skeleton. The two cells may have different codimensions. -/
 theorem inter_mem_cells_codimensionGE_succ (C : FinitePolyhedralComplex h)
-    {k : ℕ} {P Q : Set V} (hP : P ∈ C.cellsOfCodimension k) (hQ : Q ∈ C.cellsOfCodimension k)
+    {k : ℕ} {P Q : Set V} (hP : P ∈ (C.codimensionGE k).cells)
+    (hQ : Q ∈ (C.codimensionGE k).cells)
     (hne : P ≠ Q) (hnt : (P ∩ Q).Nonempty) : P ∩ Q ∈ (C.codimensionGE (k + 1)).cells := by
-  obtain ⟨hPC, hdP⟩ := mem_cellsOfCodimension.mp hP
-  obtain ⟨hQC, hdQ⟩ := mem_cellsOfCodimension.mp hQ
+  obtain ⟨hPC, hdP⟩ := mem_cells_codimensionGE.mp hP
+  obtain ⟨hQC, hdQ⟩ := mem_cells_codimensionGE.mp hQ
   have hPQ := C.inter_mem_cells hPC hQC hnt
   refine mem_cells_codimensionGE.mpr ⟨hPQ, ?_⟩
   by_contra! hd

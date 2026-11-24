@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.Tactic.Module
 public import TauCeti.Analysis.Convex.Recession.Basic
+import Mathlib.Data.Set.NAry
 
 /-!
 # Transverse sweeps
@@ -93,6 +94,19 @@ theorem mem_sweep_iff {P : Set V} {n y : V} :
     exact ⟨t, ht, by simpa using hx⟩
   · rintro ⟨t, ht, hx⟩
     exact ⟨y + t • n, hx, t, ht, by simp⟩
+
+private theorem sweep_eq_image2 (P : Set V) (v : V) :
+    sweep 𝕜 P v = image2 (fun x t => x - t • v) P (Ici (0 : 𝕜)) := by
+  ext y
+  simp only [mem_sweep_iff_exists, mem_image2, mem_Ici, eq_comm]
+
+/-- An affine map sends a sweep to the sweep of the image in the mapped direction. -/
+theorem image_sweep {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    (f : V →ᵃ[𝕜] W) (P : Set V) (v : V) :
+    f '' sweep 𝕜 P v = sweep 𝕜 (f '' P) (f.linear v) := by
+  simp only [sweep_eq_image2]
+  exact image_image2_distrib_left fun x t => by
+    simpa [sub_eq_add_neg, add_comm] using f.map_vadd x (-(t • v))
 
 /-- A zero sweeping vector leaves the base unchanged. -/
 @[simp]

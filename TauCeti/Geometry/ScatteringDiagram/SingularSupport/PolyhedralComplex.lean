@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Geometry.Convex.PolyhedralComplex.Skeleton
-public import TauCeti.Geometry.ScatteringDiagram.SingularSupport
+public import TauCeti.Geometry.ScatteringDiagram.SingularSupport.Basic
 
 /-!
 # Singular supports of codimension strata
@@ -28,17 +28,20 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
   {i : N →+ V} {h : Toric.IsIntegralLattice i}
 
 /-- The singular support of the exact-codimension-`k` cells is carried by the next skeleton.
-Points on a cell's relative boundary lie on its facets. Cells with different supporting
-directions are distinct, so their nonempty intersection is also in the next skeleton. -/
+Any set disjoint from the support of the next skeleton is therefore disjoint from this
+stratum's singular support. -/
 theorem singularSupport_cellsOfCodimension_subset_support_codimensionGE_succ
     (C : FinitePolyhedralComplex h) {k : ℕ} :
     singularSupport (Subtype.val : C.cellsOfCodimension k → Set V) ⊆
       (C.codimensionGE (k + 1)).support := by
   intro x hx
   rcases mem_singularSupport.mp hx with ⟨P, hxP⟩ | ⟨P, Q, hne, hxP, hxQ⟩
-  · exact C.intrinsicFrontier_subset_support_codimensionGE_succ P.property hxP
+  · exact C.intrinsicFrontier_subset_support_codimensionGE_succ
+      (C.cellsOfCodimension_subset_cells_codimensionGE k P.property) hxP
   · have hPQ : P.val ≠ Q.val := fun he => hne (congrArg (fun S => (affineSpan ℝ S).direction) he)
     exact mem_support.mpr ⟨P.val ∩ Q.val,
-      C.inter_mem_cells_codimensionGE_succ P.property Q.property hPQ ⟨x, hxP, hxQ⟩, hxP, hxQ⟩
+      C.inter_mem_cells_codimensionGE_succ
+        (C.cellsOfCodimension_subset_cells_codimensionGE k P.property)
+        (C.cellsOfCodimension_subset_cells_codimensionGE k Q.property) hPQ ⟨x, hxP, hxQ⟩, hxP, hxQ⟩
 
 end TauCeti.FinitePolyhedralComplex

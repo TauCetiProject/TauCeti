@@ -82,6 +82,14 @@ variable {k : Type*} [Ring k] {V W P Q : Type*}
   [AddCommGroup V] [Module k V] [AffineSpace V P]
   [AddCommGroup W] [Module k W] [AffineSpace W Q]
 
+/-- An arrangement is determined by its finite set of exceptions. -/
+@[ext]
+theorem ext {E F : ExceptionalArrangement k P} (h : E.exceptions = F.exceptions) : E = F := by
+  cases E
+  cases F
+  cases h
+  rfl
+
 /-- A point is generic if it avoids every affine exception. -/
 def IsGeneric (E : ExceptionalArrangement k P) (x : P) : Prop :=
   ∀ S ∈ E.exceptions, x ∉ S

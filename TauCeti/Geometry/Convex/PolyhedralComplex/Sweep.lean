@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Convex.Sweep.Exceptional
 public import TauCeti.Geometry.Convex.PolyhedralComplex.Map
-public import TauCeti.Geometry.Convex.PolyhedralComplex.Skeleton
 
 /-!
 # Sweep exceptions for a polyhedral skeleton
@@ -65,13 +64,6 @@ theorem add_smul_notMem_support_codimensionGE {C : FinitePolyhedralComplex h}
   obtain ⟨P, hP, htP⟩ := mem_support.mp ht
   exact isGeneric_codimensionGESweepExceptions_iff.mp hx P hP v hv t (subset_affineSpan ℝ P htP)
 
-private theorem exceptionalArrangement_eq {E F : ExceptionalArrangement ℝ V}
-    (he : E.exceptions = F.exceptions) : E = F := by
-  cases E
-  cases F
-  cases he
-  rfl
-
 /-- Sweeping in a union of directions combines the two arrangements. -/
 @[simp]
 theorem codimensionGESweepExceptions_union [DecidableEq V]
@@ -80,7 +72,7 @@ theorem codimensionGESweepExceptions_union [DecidableEq V]
     C.codimensionGESweepExceptions hk (S ∪ T) =
       (C.codimensionGESweepExceptions hk S).union (C.codimensionGESweepExceptions hk T) := by
   classical
-  apply exceptionalArrangement_eq
+  apply ExceptionalArrangement.ext
   simp only [codimensionGESweepExceptions, ExceptionalArrangement.exceptions_ofSweeps,
     ExceptionalArrangement.exceptions_union, Finset.product_union, Finset.image_union]
 
@@ -103,42 +95,20 @@ theorem codimensionGESweepExceptions_image [DecidableEq W] (C : FinitePolyhedral
     (C.image e).codimensionGESweepExceptions hk (vectors.image e.toAffineEquiv.linear) =
       (C.codimensionGESweepExceptions hk vectors).map e.toAffineEquiv := by
   classical
-  have hdim (P : Set V) : Module.finrank ℝ (affineSpan ℝ (e '' P)).direction =
-      Module.finrank ℝ (affineSpan ℝ P).direction := by
-    rw [← AffineEquiv.coe_toAffineMap, ← AffineSubspace.map_span, AffineSubspace.map_direction]
-    exact e.toAffineEquiv.linear.finrank_map_eq _
-  have hcells (Q : Set W) : Q ∈ ((C.image e).codimensionGE k).cells ↔
-      ∃ P ∈ (C.codimensionGE k).cells, e '' P = Q := by
-    simp only [mem_cells_codimensionGE, mem_cells_image]
-    have hv := e.toAffineEquiv.linear.finrank_eq
-    constructor
-    · rintro ⟨⟨P, hP, rfl⟩, hcod⟩
-      exact ⟨P, ⟨hP, by rwa [hdim, ← hv] at hcod⟩, rfl⟩
-    · rintro ⟨P, ⟨hP, hcod⟩, rfl⟩
-      exact ⟨⟨P, hP, rfl⟩, by rwa [hdim, ← hv]⟩
-  have hsweep (P : Set V) (v : V) :
-      affineSpan ℝ (Set.sweep ℝ (e '' P) (e.toAffineEquiv.linear v)) =
-        (affineSpan ℝ (Set.sweep ℝ P v)).map e.toAffineEquiv.toAffineMap := by
-    rw [AffineSubspace.map_span]
-    congr 1
-    have he (x : V) (t : ℝ) : e (x - t • v) = e x - t • e.toAffineEquiv.linear v := by
-      simpa [sub_eq_add_neg, add_comm] using e.toAffineEquiv.map_vadd x (-(t • v))
-    ext y
-    simp only [Set.mem_image, Set.mem_sweep_iff_exists]
-    constructor
-    · rintro ⟨_, ⟨x, hx, rfl⟩, t, ht, rfl⟩
-      exact ⟨x - t • v, ⟨x, hx, t, ht, rfl⟩, he x t⟩
-    · rintro ⟨_, ⟨x, hx, t, ht, rfl⟩, rfl⟩
-      exact ⟨e x, ⟨x, hx, rfl⟩, t, ht, he x t⟩
-  apply exceptionalArrangement_eq
-  ext A
+  have hcells : ((C.image e).codimensionGE k).cells =
+      ((C.codimensionGE k).cells).image (e '' ·) := by
+    rw [codimensionGE_image]
+    ext P
+    simp only [mem_cells_image, Finset.mem_image]
+  apply ExceptionalArrangement.ext
   simp only [codimensionGESweepExceptions, ExceptionalArrangement.exceptions_ofSweeps,
-    ExceptionalArrangement.exceptions_map, Finset.image_image, Function.comp_apply,
-    Finset.mem_image, Finset.mem_product, hcells]
-  constructor
-  · rintro ⟨⟨_, _⟩, ⟨⟨P, hP, rfl⟩, ⟨v, hv, rfl⟩⟩, rfl⟩
-    exact ⟨(P, v), ⟨hP, hv⟩, (hsweep P v).symm⟩
-  · rintro ⟨⟨P, v⟩, ⟨hP, hv⟩, rfl⟩
-    exact ⟨(e '' P, e.toAffineEquiv.linear v), ⟨⟨P, hP, rfl⟩, ⟨v, hv, rfl⟩⟩, hsweep P v⟩
+    ExceptionalArrangement.exceptions_map, hcells, ← Finset.prodMap_image_product,
+    Finset.image_image]
+  apply Finset.image_congr
+  rintro ⟨P, v⟩ _
+  change affineSpan ℝ (Set.sweep ℝ (e '' P) (e.toAffineEquiv.linear v)) =
+    (affineSpan ℝ (Set.sweep ℝ P v)).map e.toAffineEquiv.toAffineMap
+  rw [AffineSubspace.map_span, Set.image_sweep]
+  rfl
 
 end TauCeti.FinitePolyhedralComplex
