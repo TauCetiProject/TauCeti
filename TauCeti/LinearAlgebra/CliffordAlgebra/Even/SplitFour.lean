@@ -412,8 +412,8 @@ theorem splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange :
     splitEvenEvenBaseChange_ι, splitEvenTwoEvenEquivMatrixProd_ι,
     splitEvenTwoToMatrix_splitEvenSpaceBaseChange,
     splitEvenTwoToMatrixAdj_splitEvenSpaceBaseChange, AlgHom.prodMap_apply,
-    AlgHom.mapMatrix_apply, Matrix.map_mul]
-  rfl
+    AlgHom.mapMatrix_apply, Matrix.map_mul,
+    show ⇑(Algebra.ofId R S) = algebraMap R S from funext (Algebra.ofId_apply S)]
 
 /-- **Naturality in the base ring**: the equivalence `splitEvenTwoEvenEquivMatrixProd` commutes
 with the base change `splitEvenEvenBaseChange` along an algebra `R → S`, acting on matrices
@@ -422,8 +422,12 @@ theorem splitEvenTwoEvenEquivMatrixProd_splitEvenEvenBaseChange
     (x : even (splitEvenForm R 2)) :
     splitEvenTwoEvenEquivMatrixProd S (splitEvenEvenBaseChange R S 2 x) =
       Prod.map (Matrix.map · (algebraMap R S)) (Matrix.map · (algebraMap R S))
-        (splitEvenTwoEvenEquivMatrixProd R x) :=
-  DFunLike.congr_fun (splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange R S) x
+        (splitEvenTwoEvenEquivMatrixProd R x) := by
+  have h := DFunLike.congr_fun (splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange R S) x
+  simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom] at h
+  rw [h, AlgHom.prodMap_apply, Prod.map_apply]
+  simp only [AlgHom.mapMatrix_apply,
+    show ⇑(Algebra.ofId R S) = algebraMap R S from funext (Algebra.ofId_apply S)]
 
 end BaseChange
 
