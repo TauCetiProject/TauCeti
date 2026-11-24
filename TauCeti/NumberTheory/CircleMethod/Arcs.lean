@@ -34,8 +34,6 @@ inside the interval without wrapping around. The parameters are a natural number
 
 * `TauCeti.majorArc_eq_Icc`: when `2 Q² ≤ N`, each major arc is the full interval
   `[a/q - Q/N, a/q + Q/N]`.
-* `TauCeti.one_div_mul_le_abs_div_sub_div`: distinct fractions `a/q ≠ a'/q'` with positive
-  denominators satisfy `1/(q q') ≤ |a/q - a'/q'|`.
 * `TauCeti.pairwiseDisjoint_majorArc`: when `2 Q³ < N`, the major arcs are pairwise disjoint,
   since distinct fractions with denominators at most `Q` differ by at least `Q⁻²`.
 * `TauCeti.exists_abs_sub_div_le_of_mem_minorArcs`: when `1 ≤ Q` and `2 Q² ≤ N`, every `α` on
@@ -78,6 +76,9 @@ def minorArcs (N : ℕ) (Q : ℝ) : Set ℝ :=
   arcInterval N Q \ majorArcs N Q
 
 variable {N : ℕ} {Q α : ℝ}
+
+theorem arcInterval_eq_Icc : arcInterval N Q = Icc (Q / N) (1 + Q / N) :=
+  (rfl)
 
 @[simp]
 theorem mem_arcInterval : α ∈ arcInterval N Q ↔ Q / N ≤ α ∧ α ≤ 1 + Q / N :=
@@ -162,22 +163,6 @@ theorem majorArc_eq_Icc (hN : 2 * Q ^ 2 ≤ N) {q : ℕ} {a : ℤ} (hp : (q, a) 
     linarith [two_mul_div_le_one_div (by linarith) hN]
   · have : (a : ℝ) / q ≤ 1 := (div_le_one (by linarith)).2 haq'
     linarith
-
-/-- Distinct fractions `a/q ≠ a'/q'` with positive denominators are at distance at least
-`1/(q q')`, since `a q' - q a'` is a nonzero integer. -/
-theorem one_div_mul_le_abs_div_sub_div {a a' q q' : ℤ} (hq : 0 < q) (hq' : 0 < q')
-    (h : (a : ℝ) / q ≠ a' / q') : 1 / ((q : ℝ) * q') ≤ |(a : ℝ) / q - a' / q'| := by
-  have hq0 : (0 : ℝ) < q := by exact_mod_cast hq
-  have hq0' : (0 : ℝ) < q' := by exact_mod_cast hq'
-  have hne : a * q' - q * a' ≠ 0 := by
-    refine fun h' => h ?_
-    rw [div_eq_div_iff hq0.ne' hq0'.ne', mul_comm (a' : ℝ)]
-    exact_mod_cast sub_eq_zero.1 h'
-  have hone : (1 : ℝ) ≤ |((a * q' - q * a' : ℤ) : ℝ)| := by
-    exact_mod_cast Int.one_le_abs hne
-  push_cast at hone
-  rw [div_sub_div _ _ hq0.ne' hq0'.ne', abs_div, abs_of_pos (mul_pos hq0 hq0')]
-  exact div_le_div_of_nonneg_right hone (mul_pos hq0 hq0').le
 
 /-- The fraction `a/q` determines a pair `(q, a)` of `majorArcIndex Q`. -/
 private theorem eq_of_div_eq_div {p p' : ℕ × ℤ} (hp : p ∈ majorArcIndex Q)
