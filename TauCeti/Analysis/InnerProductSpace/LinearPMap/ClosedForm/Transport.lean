@@ -35,13 +35,13 @@ the graph relation of the form, compared through
 
 ## Main results
 
-* `ContinuousLinearMap.closedFormOperator_comp_linearIsometryEquiv`: unitary transport.
+* `ContinuousLinearMap.closedFormOperator_linearIsometryEquiv_comp`: unitary transport.
 * `ContinuousLinearMap.closedFormOperator_comp_continuousLinearEquiv`: change of carrier.
 * `ContinuousLinearMap.closedFormOperator_prod`: orthogonal sums of two forms.
 
 ## References
 
-* G. Teschl, *Mathematical Methods in Quantum Mechanics*, 2nd ed., AMS (2014), §2.2, Theorem 2.13,
+* G. Teschl, *Mathematical Methods in Quantum Mechanics*, 2nd ed., AMS (2014), §2.3, Theorem 2.13,
   for the operator represented by a closed form.
 -/
 
@@ -57,7 +57,7 @@ variable {𝕜 V H : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpac
 /-- **Unitary transport of the form operator.** For a linear isometric equivalence
 `U : H ≃ₗᵢ[𝕜] H'`, the operator represented by `q` along `U ∘ j` is the unitary conjugate
 `U A U⁻¹` of the operator `A` represented by `q` along `j`. -/
-theorem closedFormOperator_comp_linearIsometryEquiv {H' : Type*} [NormedAddCommGroup H']
+theorem closedFormOperator_linearIsometryEquiv_comp {H' : Type*} [NormedAddCommGroup H']
     [InnerProductSpace 𝕜 H'] (j : V →L[𝕜] H) (hj : Function.Injective j) (hdense : DenseRange j)
     (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (U : H ≃ₗᵢ[𝕜] H') :
     closedFormOperator ((U : H →L[𝕜] H').comp j) (U.injective.comp hj)
