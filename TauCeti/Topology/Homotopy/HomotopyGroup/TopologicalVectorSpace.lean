@@ -38,7 +38,7 @@ namespace GenLoop
 homotopic relative to the cube boundary. The homotopy is pointwise linear interpolation. -/
 theorem homotopic_of_topologicalVectorSpace (f g : Ω^ N E x) :
     Homotopic f g :=
-  ⟨{ toHomotopy := .affine f.1 g.1
+  ⟨{ toHomotopy := .affine f.val g.val
      prop' := fun _ u hu ↦ by simp [boundary f u hu, boundary g u hu] }⟩
 
 end GenLoop

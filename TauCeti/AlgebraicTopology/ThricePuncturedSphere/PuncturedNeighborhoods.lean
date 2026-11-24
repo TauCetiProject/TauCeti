@@ -41,6 +41,8 @@ punctures: their pairwise disjointness lets the three fillings be performed inde
   over all three punctures is made once.
 * `Puncture.coordInv` and `Puncture.coordInv_coord`: the inverse coordinate on `ℂ` and its
   compatibility with the puncture coordinate.
+* `Puncture.endFilter`: the end of the thrice-punctured sphere at each puncture, the filter of its
+  punctured neighborhoods, which is nontrivial.
 -/
 
 public section
@@ -95,15 +97,15 @@ theorem mem_puncturedDiscOneHalf {z : ℂ} :
 
 /-- The standard punctured neighborhood of `0` is open. -/
 theorem isOpen_puncturedNeighborhoodZero : IsOpen puncturedNeighborhoodZero :=
-  isOpen_lt continuous_subtype_val.norm continuous_const
+  isOpen_lt continuous_subtypeVal.norm continuous_const
 
 /-- The standard punctured neighborhood of `1` is open. -/
 theorem isOpen_puncturedNeighborhoodOne : IsOpen puncturedNeighborhoodOne :=
-  isOpen_lt (continuous_subtype_val.sub continuous_const).norm continuous_const
+  isOpen_lt (continuous_subtypeVal.sub continuous_const).norm continuous_const
 
 /-- The standard punctured neighborhood of `∞` is open. -/
 theorem isOpen_puncturedNeighborhoodInf : IsOpen puncturedNeighborhoodInf :=
-  isOpen_lt continuous_const continuous_subtype_val.norm
+  isOpen_lt continuous_const continuous_subtypeVal.norm
 
 /-! ### Disjointness -/
 
@@ -450,6 +452,46 @@ complex coordinate. -/
 theorem coordInv_coord (q : Puncture) (y : q.neighborhood) :
     coordInv q (q.coord y) = ((y : ThricePuncturedSphere) : ℂ) := by
   cases q <;> simp [coordInv]
+
+/-! ### The ends at the punctures -/
+
+open Filter Topology
+
+/-- The end of the thrice-punctured sphere at a puncture, the filter of its punctured
+neighborhoods: the pullback along the affine coordinate of `𝓝 0` at `0`, of `𝓝 1` at `1` and of
+`cocompact ℂ` at `∞`. A map tends to a limit along it when it extends continuously across the
+puncture. -/
+noncomputable def endFilter : Puncture → Filter ThricePuncturedSphere
+  | zero => comap ((↑) : ThricePuncturedSphere → ℂ) (𝓝 0)
+  | one => comap ((↑) : ThricePuncturedSphere → ℂ) (𝓝 1)
+  | inf => comap ((↑) : ThricePuncturedSphere → ℂ) (cocompact ℂ)
+
+@[simp]
+theorem endFilter_zero : zero.endFilter = comap ((↑) : ThricePuncturedSphere → ℂ) (𝓝 0) :=
+  (rfl)
+
+@[simp]
+theorem endFilter_one : one.endFilter = comap ((↑) : ThricePuncturedSphere → ℂ) (𝓝 1) :=
+  (rfl)
+
+@[simp]
+theorem endFilter_inf : inf.endFilter = comap ((↑) : ThricePuncturedSphere → ℂ) (cocompact ℂ) :=
+  (rfl)
+
+/-- The end at each puncture is nontrivial: the thrice-punctured sphere is dense in `ℂ`, so it
+meets every neighborhood of `0` and of `1` and every complement of a compact set. -/
+instance (q : Puncture) : q.endFilter.NeBot := by
+  have hd : DenseRange ((↑) : ThricePuncturedSphere → ℂ) := by
+    rw [DenseRange, range_coe, show ({0, 1} : Set ℂ)ᶜ = {1}ᶜ \ {0} by ext; simp [and_comm]]
+    exact (dense_compl_singleton 1).sdiff_singleton 0
+  cases q
+  · exact comap_neBot fun t ht => hd.mem_nhds ht
+  · exact comap_neBot fun t ht => hd.mem_nhds ht
+  · refine comap_neBot fun t ht => ?_
+    obtain ⟨K, hK, hKt⟩ := mem_cocompact.1 ht
+    obtain ⟨a, ha⟩ := hd.exists_mem_open hK.isClosed.isOpen_compl
+      (nonempty_of_mem hK.compl_mem_cocompact)
+    exact ⟨a, hKt ha⟩
 
 end Puncture
 

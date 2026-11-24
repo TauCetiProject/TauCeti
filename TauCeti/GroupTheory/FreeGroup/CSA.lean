@@ -7,7 +7,8 @@ module
 
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
-public import TauCeti.GroupTheory.HNNExtension
+public import TauCeti.GroupTheory.HNNExtension.Basic
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
 # Free groups are CSA
@@ -36,6 +37,10 @@ for a basis element `a`: there `t` commutes with `a ^ 2` but not with `a`, altho
 with `a ^ 2`. This is why an extension of the centralizer of `u` must use the full centralizer of
 `u`, here `zpowers a`, rather than `zpowers u`.
 
+Finally, the list `[a, a, b]` in the free group on `a` and `b` illustrates how lists of nonidentity
+elements of a CSA group are moved into general position by conjugating their entries
+(`Group.IsCSA.exists_conj_isChain_not_commute`).
+
 ## Main results
 
 * `IsFreeGroup.isCommTransitive`: commutation is transitive on the nontrivial elements of a free
@@ -62,7 +67,7 @@ with `a ^ 2`. This is why an extension of the centralizer of `u` must use the fu
 
 public section
 
-open Group Subgroup
+open Group TauCeti Subgroup
 
 namespace IsFreeGroup
 
@@ -121,7 +126,8 @@ theorem maximal_isMulCommutative_zpowers {u : G} (hu : ¬IsProperPower u) :
 not a proper power. -/
 theorem isTISubgroup_zpowers_iff {u : G} (hu : u ≠ 1) :
     TauCeti.IsTISubgroup (zpowers u) ↔ ¬IsProperPower u := by
-  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer hu ?_, isTISubgroup_zpowers⟩
+  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer (x := u)
+    (not_isOfFinOrder_of_isMulTorsionFree hu) ?_, isTISubgroup_zpowers⟩
   exact le_antisymm (zpowers_le_centralizer_singleton u)
     (h.centralizer_singleton_le (mem_zpowers u) hu)
 
@@ -129,8 +135,8 @@ theorem isTISubgroup_zpowers_iff {u : G} (hu : u ≠ 1) :
 `u` is not a proper power. -/
 theorem maximal_isMulCommutative_zpowers_iff {u : G} (hu : u ≠ 1) :
     Maximal (fun K : Subgroup G => IsMulCommutative K) (zpowers u) ↔ ¬IsProperPower u := by
-  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer hu ?_,
-    maximal_isMulCommutative_zpowers⟩
+  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer (x := u)
+    (not_isOfFinOrder_of_isMulTorsionFree hu) ?_, maximal_isMulCommutative_zpowers⟩
   have hle := zpowers_le_centralizer_singleton u
   exact le_antisymm hle (h.2 (isMulCommutative_centralizer hu) hle)
 
@@ -193,7 +199,8 @@ theorem not_isCommTransitive_hnnExtension_zpowers_sq {α : Type*} (a : α) :
     ¬ IsCommTransitive (HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2))
       (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) :=
   HNNExtension.not_isCommTransitive_zpowers_of_isProperPower (FreeGroup.isProperPower_of_sq a)
-    ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a))
+    (not_isOfFinOrder_of_isMulTorsionFree
+      ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a)))
 
 /-- The HNN extension of a free group along the identity of `zpowers (a ^ 2)` is not CSA. This
 is the extension of the centralizer of `a ^ 2` taken with `zpowers (a ^ 2)` in place of the full
@@ -202,5 +209,13 @@ theorem not_isCSA_hnnExtension_zpowers_sq {α : Type*} (a : α) :
     ¬ IsCSA (HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2))
       (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) := fun h =>
   not_isCommTransitive_hnnExtension_zpowers_sq a h.isCommTransitive
+
+/-- In the free group on `a` and `b`, the consecutive entries `a, a` of `[a, a, b]` commute and
+`a, b` do not. The list has entrywise conjugates with the same product in which no two
+consecutive entries commute. -/
+example : ∃ l' : List (FreeGroup (Fin 2)), List.Forall₂ IsConj [.of 0, .of 0, .of 1] l' ∧
+    l'.prod = [FreeGroup.of 0, .of 0, .of 1].prod ∧ l'.IsChain fun x y => ¬Commute x y :=
+  IsFreeGroup.isCSA.exists_conj_isChain_not_commute (by simp [FreeGroup.of_ne_one])
+    (by simpa using fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide))
 
 end Group

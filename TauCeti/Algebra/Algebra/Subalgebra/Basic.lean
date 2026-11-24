@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 
 /-!
-# Subalgebras over different base rings and restrictions to ranges
+# Subalgebras over different base rings, restrictions to ranges, and division by natural numbers
 
 Mathlib's `Subalgebra.equivOfEq` identifies two equal subalgebras of an algebra `A` over one and
 the same base ring `R`. Two subalgebras of `A` over *different* base rings cannot be equal, since
@@ -21,12 +21,17 @@ It also provides the generic range-restriction maps `AlgHom.rangeMap` and `AlgEq
 restricting `φ : B →ₐ[R] B'` (respectively `e : B ≃ₐ[R] B'`) from `α.range` onto `(φ.comp α).range`
 (respectively `((e : B →ₐ[R] B').comp α).range`) for any `α : H →ₐ[R] B`.
 
+A subalgebra over `K` is also closed under division by a natural number `m` that is a unit in `K`:
+it contains `m * t` exactly when it contains `t`.
+
 ## Main results
 
 * `Subalgebra.ringEquivOfSetEq`: the ring isomorphism between two subalgebras of `A`, over possibly
   different base rings, with the same underlying set.
 * `Subalgebra.coe_ringEquivOfSetEq_apply` and `Subalgebra.coe_ringEquivOfSetEq_symm_apply`: the
   isomorphism and its inverse commute with the inclusions into `A`.
+* `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
+  exactly when it contains `t`.
 * `AlgHom.rangeMap`, `AlgHom.coe_rangeMap_apply`, `AlgHom.rangeMap_surjective`: surjective
   restriction `α.range →ₐ[R] (φ.comp α).range` of an algebra homomorphism `φ : B →ₐ[R] B'`.
 * `AlgEquiv.rangeMap`, `AlgEquiv.coe_rangeMap_apply`, `AlgEquiv.coe_rangeMap_symm_apply`:
@@ -59,6 +64,13 @@ theorem coe_ringEquivOfSetEq_symm_apply (S₁ : Subalgebra R₁ A) (S₂ : Subal
     (h : (S₁ : Set A) = S₂) (b : S₂) : ((ringEquivOfSetEq S₁ S₂ h).symm b : A) = b :=
   (rfl)
 
+/-- A subalgebra over `K` contains `m * t` exactly when it contains `t`, provided the natural
+number `m` is invertible in `K`. -/
+theorem natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    (T : Subalgebra K L) {m : ℕ} (hm : IsUnit (m : K)) {t : L} : (m : L) * t ∈ T ↔ t ∈ T := by
+  rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul K]
+  exact Submodule.smul_mem_iff_of_isUnit (Subalgebra.toSubmodule T) hm
+
 end Subalgebra
 
 namespace AlgHom
@@ -74,7 +86,7 @@ def rangeMap (φ : B →ₐ[R] B') (α : H →ₐ[R] B) : α.range →ₐ[R] (φ
 /-- Applying `φ.rangeMap α` acts by `φ` on underlying elements. -/
 @[simp]
 theorem coe_rangeMap_apply (φ : B →ₐ[R] B') (α : H →ₐ[R] B) (x : α.range) :
-    (φ.rangeMap α x : B') = φ x.1 := by
+    (φ.rangeMap α x : B') = φ x.val := by
   simp [rangeMap]
 
 /-- `φ.rangeMap α` is surjective onto `(φ.comp α).range`. -/
@@ -100,14 +112,14 @@ def rangeMap (e : B ≃ₐ[R] B') (α : H →ₐ[R] B) :
 /-- Applying `e.rangeMap α` acts by `e` on underlying elements. -/
 @[simp]
 theorem coe_rangeMap_apply (e : B ≃ₐ[R] B') (α : H →ₐ[R] B) (x : α.range) :
-    (e.rangeMap α x : B') = e x.1 := by
+    (e.rangeMap α x : B') = e x.val := by
   simp [rangeMap]
 
 /-- Applying `(e.rangeMap α).symm` acts by `e.symm` on underlying elements. -/
 @[simp]
 theorem coe_rangeMap_symm_apply (e : B ≃ₐ[R] B') (α : H →ₐ[R] B)
     (y : ((e : B →ₐ[R] B').comp α).range) :
-    ((e.rangeMap α).symm y : B) = e.symm y.1 := by
+    ((e.rangeMap α).symm y : B) = e.symm y.val := by
   apply e.injective
   rw [e.apply_symm_apply, ← coe_rangeMap_apply]
   exact congrArg Subtype.val ((e.rangeMap α).apply_symm_apply y)

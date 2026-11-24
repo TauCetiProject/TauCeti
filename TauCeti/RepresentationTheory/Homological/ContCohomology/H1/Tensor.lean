@@ -220,15 +220,15 @@ noncomputable def h1TensorInvariantsEquiv
   toFun z := ⟨h1TensorEquiv (p := p) hN z,
     (mem_H1ConjInvariants_iff G A N).2 fun g ↦ by
       rw [← h1TensorEquiv_conj (p := p) hN]
-      exact congrArg (h1TensorEquiv (p := p) hN) (z.2 g)⟩
+      exact congrArg (h1TensorEquiv (p := p) hN) (z.property g)⟩
   invFun x := ⟨(h1TensorEquiv (p := p) hN).symm x, fun g ↦ by
     apply (h1TensorEquiv (p := p) hN).injective
     rw [h1TensorEquiv_conj (p := p), LinearEquiv.apply_symm_apply]
-    exact (mem_H1ConjInvariants_iff G A N).1 x.2 g⟩
+    exact (mem_H1ConjInvariants_iff G A N).1 x.property g⟩
   left_inv z := Subtype.ext ((h1TensorEquiv (p := p) hN).symm_apply_apply z)
   right_inv x := Subtype.ext ((h1TensorEquiv (p := p) hN).apply_symm_apply x)
-  map_add' x y := Subtype.ext (map_add (h1TensorEquiv (p := p) hN) x.1 y.1)
-  map_smul' c x := Subtype.ext (map_smul (h1TensorEquiv (p := p) hN) c x.1)
+  map_add' x y := Subtype.ext (map_add (h1TensorEquiv (p := p) hN) x.val y.val)
+  map_smul' c x := Subtype.ext (map_smul (h1TensorEquiv (p := p) hN) c x.val)
 
 /-- The forward map of `h1TensorInvariantsEquiv` is `h1TensorEquiv` on underlying elements. -/
 @[simp]

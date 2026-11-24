@@ -443,7 +443,7 @@ private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R�
     have h1 := mul_le_mul_of_nonneg_left has (by nlinarith : 0 ≤ 3 * (q - 1) * θ₀)
     have h2 := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hρ 2) hR₀
     nlinarith
-  · rw [smoothTransition.deriv_of_one_lt hu₁]
+  · rw [smoothTransition.deriv_of_one_le hu₁.le]
     simp only [mul_zero, zero_div, zero_mul]
     linarith
 
@@ -461,7 +461,7 @@ private theorem bend_second_le {q K : ℝ} (hq : 3 ≤ q) (hr₁ : 0 < r₁) (h�
       (by linarith [bendAngle_le h₀.le h₁ u, pi_pos])
   have hq₂ : 0 ≤ (q - 1) * (q - 2) := by nlinarith
   rcases lt_or_ge u 2 with hu | hu
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     simp only [mul_zero, zero_div, zero_mul]
     positivity
   have hb := smoothTransition.monotone.deriv_nonneg (x := u - 2)

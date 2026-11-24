@@ -36,6 +36,7 @@ from one approximation for each path component.
   point induce the same map on positive-dimensional homotopy groups.
 * `HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset`: a subspace containing the path
   component of the base point has the same positive-dimensional homotopy groups.
+* `HomotopyGroup.subtypeValMulEquivOfPathComponentSubset`: the same, as a group isomorphism.
 * `HomotopyGroup.bijective_map_sigmaMk`: a summand of a disjoint union has the same
   positive-dimensional homotopy groups as the disjoint union.
 -/
@@ -55,7 +56,7 @@ theorem apply_mem_pathComponent [Nonempty N] (p : Ω^ N X x) (t : I^N) : p t ∈
   obtain ⟨i⟩ := ‹Nonempty N›
   have : PathConnectedSpace I :=
     (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
-  have h : Joined (p 0) (p t) := (PathConnectedSpace.joined (0 : I^N) t).map p.1.continuous
+  have h : Joined (p 0) (p t) := (PathConnectedSpace.joined (0 : I^N) t).map p.val.continuous
   rw [_root_.GenLoop.boundary p 0 ⟨i, Or.inl rfl⟩] at h
   exact h
 
@@ -86,7 +87,7 @@ subspace `S` contains the path component of `x ∈ S`, its inclusion induces a b
 the boundary of the cube, take their values in the path component of `x`. -/
 theorem bijective_map_subtypeVal_of_pathComponent_subset [Nonempty N] {S : Set X} {x : S}
     {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
-    Function.Bijective (map (N := N) ⟨Subtype.val, continuous_subtype_val⟩ hx) := by
+    Function.Bijective (map (N := N) ⟨Subtype.val, continuous_subtypeVal⟩ hx) := by
   subst hx
   obtain ⟨i⟩ := ‹Nonempty N›
   have : PathConnectedSpace I :=
@@ -115,6 +116,25 @@ theorem bijective_map_subtypeVal_of_pathComponent_subset [Nonempty N] {S : Set X
     · exact (H.eq_fst s ht).trans (_root_.GenLoop.boundary _ t ht)
   · induction a using Quotient.inductionOn with | h p => ?_
     exact ⟨⟦lift p⟧, congrArg _ (_root_.GenLoop.ext _ _ fun t ↦ GenLoop.map_apply _ _ _ t)⟩
+
+/-- **The homotopy groups of a subspace containing a path component**, as a group isomorphism. In
+positive dimension, if a subspace `S` contains the path component of `x ∈ S`, its inclusion
+induces an isomorphism `π_N(S, x) ≃* π_N(X, x)`. -/
+noncomputable def subtypeValMulEquivOfPathComponentSubset [DecidableEq N] [Nonempty N]
+    {S : Set X} {x : S} {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
+    HomotopyGroup N S x ≃* HomotopyGroup N X x' :=
+  MulEquiv.ofBijective (mapHom ⟨Subtype.val, continuous_subtypeVal⟩ hx) <|
+    funext (mapHom_apply (N := N) (⟨Subtype.val, continuous_subtypeVal⟩ : C(S, X)) hx) ▸
+      bijective_map_subtypeVal_of_pathComponent_subset hS hx
+
+/-- `HomotopyGroup.subtypeValMulEquivOfPathComponentSubset` is the map induced by the inclusion. -/
+@[simp]
+theorem subtypeValMulEquivOfPathComponentSubset_apply [DecidableEq N] [Nonempty N] {S : Set X}
+    {x : S} {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x')
+    (a : HomotopyGroup N S x) :
+    subtypeValMulEquivOfPathComponentSubset hS hx a =
+      map ⟨Subtype.val, continuous_subtypeVal⟩ hx a := by
+  rw [subtypeValMulEquivOfPathComponentSubset, MulEquiv.ofBijective_apply, mapHom_apply]
 
 section Sigma
 

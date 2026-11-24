@@ -80,7 +80,7 @@ example :
     rw [Subsingleton.elim (α r) 0]
     exact End.isGhost_zero
   · ext x
-    simp [Subsingleton.elim x.1 0]
+    simp [Subsingleton.elim x.val 0]
   · apply Subtype.ext
     funext i
     apply End.ext
@@ -96,7 +96,7 @@ example :
     actionGhostKer α = ⊥ ∧
     α.imageGhostIdeal = ⊥ ∧
     e.hom (((α.imageGhostIdealQuotientEquivCohomologyImage
-      (Ideal.Quotient.mk _ (α.rangeRestrict 2))).1 0).asHom (e.inv 3)) = (6 : ℤ) := by
+      (Ideal.Quotient.mk _ (α.rangeRestrict 2))).val 0).asHom (e.inv 3)) = (6 : ℤ) := by
   intro X α e
   have hscalar : ∀ n : ℤ,
       e.hom ((X.cohomologyAction ℤ (algebraMap ℤ (End X) n) 0).asHom (e.inv 3)) = n * 3 := by
@@ -123,7 +123,7 @@ example :
     exact ⟨fun h ↦ halg_inj (by simpa [α] using hghost0 _ h), fun h ↦ by simp [h]⟩
   · ext x
     simp only [AlgHom.mem_imageGhostIdeal_iff, Ideal.mem_bot]
-    exact ⟨fun h ↦ Subtype.ext (hghost0 x.1 h), fun h ↦ by simp [h]⟩
+    exact ⟨fun h ↦ Subtype.ext (hghost0 x.val h), fun h ↦ by simp [h]⟩
   · rw [AlgHom.imageGhostIdealQuotientEquivCohomologyImage_mk_val]
     exact (hscalar 2).trans (by decide)
 
@@ -160,7 +160,7 @@ example :
       exact End.isGhost_zero
   · ext x
     simp only [AlgHom.mem_imageGhostIdeal_iff, Ideal.mem_bot]
-    exact ⟨fun h ↦ Subtype.ext (hghost0 x.1 h), fun h ↦ by simp [h]⟩
+    exact ⟨fun h ↦ Subtype.ext (hghost0 x.val h), fun h ↦ by simp [h]⟩
 
 example :
     let V := ModuleCat.of ℤ (ℤ × ℤ)

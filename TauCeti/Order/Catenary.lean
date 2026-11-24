@@ -173,7 +173,8 @@ nonempty and all its elements are equivalent. -/
 theorem krullDim_Icc_eq_zero_of_le_of_le (hab : a ≤ b) (hba : b ≤ a) :
     krullDim (Set.Icc a b) = 0 :=
   have : Nonempty (Set.Icc a b) := ⟨⟨a, le_rfl, hab⟩⟩
-  le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans (hba.trans x.2.1))
+  le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.property.2.trans
+      (hba.trans x.property.1))
     krullDim_nonneg
 
 end TauCeti.Order
@@ -189,9 +190,10 @@ theorem krullDim_Icc (hab : a ⋖ b) : Order.krullDim (Set.Icc a b) = 1 := by
   -- An element `x ≤ a` of `[a, b]` is minimal there; otherwise `a < x`, so `b ≤ x` since `a ⋖ b`,
   -- and `x` is maximal.
   by_cases hxa : (x : α) ≤ a
-  · exact Or.inl fun y _ => hxa.trans y.2.1
+  · exact Or.inl fun y _ => hxa.trans y.property.1
   · exact Or.inr fun y _ =>
-      y.2.2.trans (not_lt_iff_le_imp_ge.1 (hab.2 (x.2.1.lt_of_not_ge hxa)) x.2.2)
+      y.property.2.trans (not_lt_iff_le_imp_ge.1 (hab.2 (x.property.1.lt_of_not_ge hxa))
+          x.property.2)
 
 end CovBy
 
@@ -259,8 +261,8 @@ dimension the length of the chain. -/
 theorem krullDim_Icc_eq_length (s : RelSeries {(x, y) : α × α | x ⋖ y}) :
     krullDim (Set.Icc s.head s.last) = s.length := by
   refine le_antisymm (iSup_le fun u => ?_) ?_
-  · have := length_le_of_covBy s (u.map Subtype.val (Subtype.strictMono_coe _)) u.head.2.1
-      u.last.2.2
+  · have := length_le_of_covBy s (u.map Subtype.val (Subtype.strictMono_coe _)) u.head.property.1
+      u.last.property.2
     rw [LTSeries.map_length] at this
     exact_mod_cast this
   · let t : LTSeries α := s.map ⟨id, fun h => CovBy.lt h⟩

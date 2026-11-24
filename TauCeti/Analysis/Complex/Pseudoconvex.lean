@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Topology.MetricSpace.HausdorffDistance
-public import TauCeti.Analysis.Complex.LeviForm
+import TauCeti.Topology.MetricSpace.ContinuousRadius
+public import TauCeti.Analysis.Complex.LeviForm.Basic
 
 /-!
 # Strict plurisubharmonicity, strong `q`-pseudoconvexity and the Morse index
@@ -272,12 +272,12 @@ theorem isOpen_setOf_re_leviForm_posOnSubspace (q : ℕ) :
         (z.1.toBilinForm.leviForm (z.2 : V) z.2).re := by
       simp only [LinearMap.BilinForm.re_leviForm_apply]
       have hv : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ (z.2 : V) :=
-        continuous_subtype_val.comp continuous_snd
+        continuous_subtypeVal.comp continuous_snd
       have hvI : Continuous fun z : (V →L[ℝ] V →L[ℝ] ℝ) × P ↦ I • (z.2 : V) :=
         continuous_const_smul I |>.comp hv
       exact ((continuous_fst.clm_apply hv).clm_apply hv).add
         ((continuous_fst.clm_apply hvI).clm_apply hvI) |>.div_const 4
-    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.2 hv0)
+    exact (isOpen_lt continuous_const hcont).mem_nhds (hpos v v.property hv0)
   filter_upwards [key] with C hC
   refine ⟨P, hP, fun v hv hv0 ↦ ?_⟩
   let u : P := ⟨v, hv⟩
@@ -323,23 +323,12 @@ theorem exists_continuousOn_pos_forall_isStronglyPseudoconvexAt
   have hmem (x : V) (hx : x ∈ U) : fderiv ℝ (fderiv ℝ f) x ∈ S := by
     simpa only [S, Set.mem_ofPred_eq, leviForm_def] using
       (isStronglyPseudoconvexAt_iff.mp (hpos x hx))
-  rcases Sᶜ.eq_empty_or_nonempty with hempty | hne
-  · -- This occurs, for example, when `q ≥ dim_ℂ V`; then every positive tolerance works.
-    refine ⟨fun _ ↦ 1, continuousOn_const, fun _ _ ↦ one_pos, fun g x _ _ ↦ ?_⟩
-    have hg : fderiv ℝ (fderiv ℝ g) x ∈ S :=
-      (compl_empty_iff.mp hempty).symm ▸ mem_univ _
-    simpa only [isStronglyPseudoconvexAt_iff, S, Set.mem_ofPred_eq, leviForm_def] using hg
-  · -- Otherwise use the distance to the closed complement of the admissible forms.
-    refine ⟨fun x ↦ infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ,
-      (continuous_infDist_pt _).comp_continuousOn hf,
-      fun x hx ↦ (hS.isClosed_compl.notMem_iff_infDist_pos hne).mp
-        (not_not.mpr (hmem x hx)), fun g x _ hlt ↦ ?_⟩
-    have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
-        infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
-      (dist_comm _ _).trans_lt
-        ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
-    have hg : fderiv ℝ (fderiv ℝ g) x ∈ S :=
-      not_not.mp (notMem_of_dist_lt_infDist hdist)
-    simpa only [isStronglyPseudoconvexAt_iff, S, Set.mem_ofPred_eq, leviForm_def] using hg
+  -- A margin of the open set `S` along the second derivative of `f`.
+  obtain ⟨ε, hε, -, hεpos, hεS⟩ :=
+    hS.exists_continuousOn_forall_dist_lt (G := fun x ↦ fderiv ℝ (fderiv ℝ f) x) hf
+  refine ⟨ε, hε, fun x hx ↦ hεpos x (hmem x hx), fun g x _ hlt ↦ ?_⟩
+  have hg : fderiv ℝ (fderiv ℝ g) x ∈ S := hεS x _
+    ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
+  simpa only [isStronglyPseudoconvexAt_iff, S, Set.mem_ofPred_eq, leviForm_def] using hg
 
 end TauCeti

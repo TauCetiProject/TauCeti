@@ -79,7 +79,7 @@ theorem moduleFinite_homology_truncGE_obj (X : DerivedCategory (ModuleCat.{v} A)
       ((homologyFunctor (ModuleCat.{v} A) i).obj ((TStructure.t.truncGE n).obj X)) := by
   by_cases hi : n ≤ i
   · have : IsIso ((homologyFunctor (ModuleCat.{v} A) i).map ((TStructure.t.truncGEπ n).app X)) :=
-      isIso_homologyFunctor_map_truncGEπ X n i hi
+      isIso_homologyFunctor_map_truncGEπ_app X hi
     let e : (homologyFunctor (ModuleCat.{v} A) i).obj X ≅
         (homologyFunctor (ModuleCat.{v} A) i).obj ((TStructure.t.truncGE n).obj X) :=
       asIso ((homologyFunctor (ModuleCat.{v} A) i).map ((TStructure.t.truncGEπ n).app X))

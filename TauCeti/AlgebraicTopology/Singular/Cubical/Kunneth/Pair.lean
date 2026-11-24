@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Excisive
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Prod
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 
@@ -34,15 +36,31 @@ quasi-isomorphisms by the relative Eilenberg–Zilber theorem for a space and a 
 quasi-isomorphism (`TauCeti.quasiIso_cubicalCrossProductPair`): the **Eilenberg–Zilber theorem for
 a product of pairs**. Consequently the Künneth map
 `⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(N(P × Q))` is an isomorphism over a field
-(`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`). Everything is natural in both
-pairs.
+(`TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`), and over any commutative ring
+when the relative homology of `P` is projective
+(`TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`). Everything is natural in both pairs.
 
-No hypothesis is placed on the subspaces. When the interiors of `A × Y` and `X × B` cover
-`A × Y ∪ X × B`, for instance when `A` and `B` are open, the small-chain theorem identifies the
-homology of `N(P × Q)` with the relative homology of `(X × Y, A × Y ∪ X × B)`; that comparison is
-not made here. For compact manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair
-`(M × N, ∂M × N ∪ M × ∂N)`, and `N(P × Q)` is the complex in which cross products of fundamental
-chains rel boundary are relative cycles.
+No hypothesis is placed on the subspaces. When `A × Y` and `X × B` form an excisive couple, for
+instance when `A` and `B` are open, the homology of `N(P × Q)` is the relative homology of
+`(X × Y, A × Y ∪ X × B)`
+(`TopPair.quasiIso_cubicalChainComplexProdComparison_of_isIso`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Excisive`). When `A` and `B` are
+open, it is the relative singular homology of `(X × Y, A × Y ∪ X × B)`, and the Künneth map in
+relative singular homology (`TauCeti.singularHomologyKunnethPair`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`) is an isomorphism over a field
+(`TauCeti.isIso_singularHomologyKunnethPair_of_isSemisimpleRing`) or when the relative homology
+of `(X, A)` is projective (`TauCeti.isIso_singularHomologyKunnethPair_of_projective`). For compact
+manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair `(M × N, ∂M × N ∪ M × ∂N)`,
+and `N(P × Q)` is the complex in which cross products of fundamental chains rel boundary are
+relative cycles.
+
+On representatives the Künneth class is the class of the cross product: if the chains `a` and
+`b` are relative cycles of `(X, A)` and `(Y, B)` representing `μ` and `ν`, then `a × b` is a
+relative cycle of `(X × Y, A × Y ∪ X × B)` representing the Künneth class of `μ ⊗ ν`, read in the
+relative homology of that pair through the comparison
+`TopPair.cubicalChainComplexProdComparison` (`TopPair.IsCubicalRepresentative.crossProduct`).
+This is how fundamental chains of products of manifolds with boundary are recognized as relative
+cycles of the expected class.
 
 ## Main definitions
 
@@ -59,8 +77,12 @@ chains rel boundary are relative cycles.
 * `TauCeti.cubicalCrossProductPair_naturality`, `TauCeti.cubicalHomologyKunnethPair_naturality`:
   naturality in both pairs.
 * `TauCeti.isIso_cubicalHomologyKunnethPair`,
-  `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`: the Künneth theorem for a
-  product of pairs.
+  `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`,
+  `TauCeti.isIso_cubicalHomologyKunnethPair_of_projective`: the Künneth theorem for a product of
+  pairs.
+* `TopPair.IsCubicalRepresentative.crossProduct`: the cross product of relative cycles
+  representing `μ` and `ν` is a relative cycle of `(X × Y, A × Y ∪ X × B)` representing the
+  Künneth class of `μ ⊗ ν`.
 
 ## References
 
@@ -293,4 +315,66 @@ instance isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing [IsSemisimpleRing 
     IsIso (cubicalHomologyKunnethPair k P Q n) :=
   isIso_cubicalHomologyKunnethPair k P Q n
 
+/-- **The Künneth theorem for a product of pairs with projective homology**: if the relative
+cubical homology modules `Hₚ(X, A; k)` are all projective, then
+`⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(N(P × Q))`. No condition is placed on the pair
+`Q`. -/
+theorem isIso_cubicalHomologyKunnethPair_of_projective
+    [∀ p, Projective ((P.cubicalChainComplex k).homology p)] (n : ℕ) :
+    IsIso (cubicalHomologyKunnethPair k P Q n) := by
+  have := isIso_homologyKunneth_of_projective (P.cubicalChainComplex k) (Q.cubicalChainComplex k) n
+  rw [cubicalHomologyKunnethPair_def]
+  infer_instance
+
 end TauCeti
+
+namespace TopPair
+
+open TauCeti
+
+variable {k : Type u} [CommRing k] {P Q : TopPair.{u}}
+
+/-- **The cross product of representatives represents the Künneth class.** If the chain `a` is a
+relative cycle of `P = (X, A)` representing `μ ∈ Hₚ(X, A)` and `b` is one of `Q = (Y, B)`
+representing `ν ∈ H_q(Y, B)`, then the cross product `a × b`, reindexed along `p + q = n`, is a
+relative cycle of `(X × Y, A × Y ∪ X × B)`. Its class is the Künneth class of `μ ⊗ ν` in the
+homology of `N(P × Q)`, read in the relative homology of `(X × Y, A × Y ∪ X × B)` through the
+comparison map. -/
+theorem IsCubicalRepresentative.crossProduct {p q n : ℕ} (h : p + q = n)
+    {a : NormalizedCubicalChain P.fst k p} {μ : (P.cubicalChainComplex k).homology p}
+    (ha : P.IsCubicalRepresentative k a μ)
+    {b : NormalizedCubicalChain Q.fst k q} {ν : (Q.cubicalChainComplex k).homology q}
+    (hb : Q.IsCubicalRepresentative k b ν) :
+    (ofSubset (P.prodSubspace Q)).IsCubicalRepresentative k
+      (NormalizedCubicalChain.cast k h (NormalizedCubicalChain.crossProduct P.fst Q.fst k p q a b))
+      ((homologyMap (P.cubicalChainComplexProdComparison k Q) n).hom
+        ((GradedObject.Monoidal.ιTensorObj _ _ p q n h ≫
+          cubicalHomologyKunnethPair k P Q n).hom (μ ⊗ₜ ν))) := by
+  obtain ⟨r, hr, rfl⟩ := (isCubicalRepresentative_iff a μ).1 ha
+  obtain ⟨r', hr', rfl⟩ := (isCubicalRepresentative_iff b ν).1 hb
+  refine (isCubicalRepresentative_iff _ _).2
+    ⟨(cyclesMap (cubicalCrossProductPair k P Q ≫ P.cubicalChainComplexProdComparison k Q) n).hom
+      ((cyclesCross (P.cubicalChainComplex k) (Q.cubicalChainComplex k) p q n h).hom (r ⊗ₜ r')),
+      ?_, ?_⟩
+  · -- The cycle `r ⊗ r'` is the tensor product of the relative chains of `a` and `b`.
+    have hc : ((P.cubicalChainComplex k ⊗ Q.cubicalChainComplex k).iCycles n).hom
+        ((cyclesCross (P.cubicalChainComplex k) (Q.cubicalChainComplex k) p q n h).hom
+          (r ⊗ₜ r')) =
+        (ιTensorObj (P.cubicalChainComplex k) (Q.cubicalChainComplex k) p q n h).hom
+          ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f p a ⊗ₜ
+            (cokernel.π ((normalizedCubicalChainComplex k).map Q.map)).f q b) := by
+      rw [hr, hr']
+      exact ConcreteCategory.congr_hom (cyclesCross_iCycles (P.cubicalChainComplex k)
+        (Q.cubicalChainComplex k) p q n h) (r ⊗ₜ r')
+    rw [← ConcreteCategory.comp_apply, cyclesMap_i, ConcreteCategory.comp_apply, hc, comp_f,
+      ConcreteCategory.comp_apply, cubicalCrossProductPair_f_ιTensorObj_tmul,
+      ← ConcreteCategory.comp_apply, ← comp_f, π_cubicalChainComplexProdComparison]
+    refine Eq.trans ?_ (π_cubicalChainComplexMap_f_apply k (P.prodLeftToProdSubspace Q) n _).symm
+    rw [prodLeftToProdSubspace_fst]
+    -- The comparison is induced by the identity of `X × Y`.
+    exact congrArg _ (LinearMap.congr_fun (NormalizedCubicalChain.map_id k n) _).symm
+  · rw [ι_cubicalHomologyKunnethPair, ModuleCat.hom_comp, LinearMap.comp_apply,
+      ← LinearMap.comp_apply (homologyMap (P.cubicalChainComplexProdComparison k Q) n).hom,
+      ← ModuleCat.hom_comp, ← homologyMap_comp, moduleCat_homologyMap_homologyCross_tmul]
+
+end TopPair

@@ -117,8 +117,8 @@ private def invariantsToUnits
     (hQ : N.map (galEquivOfInjective hf : H →* Gal(L/fixedField f.range)) = Q)
     (x : ((Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)).quotientToInvariants N).V) :
     (fixedField Q)ˣ :=
-  Units.mk0 ⟨(((Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.1).toMul : Lˣ) : L),
-      (mem_invariants_iff hf N hQ _).1 x.2⟩
+  Units.mk0 ⟨(((Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.val).toMul : Lˣ) : L),
+      (mem_invariants_iff hf N hQ _).1 x.property⟩
     (fun h => Units.ne_zero _ (congrArg Subtype.val h))
 
 omit [FiniteDimensional K L] [Q.Normal] in
@@ -127,7 +127,7 @@ private theorem coe_invariantsToUnits
     (hQ : N.map (galEquivOfInjective hf : H →* Gal(L/fixedField f.range)) = Q)
     (x : ((Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)).quotientToInvariants N).V) :
     ((invariantsToUnits hf N hQ x : fixedField Q) : L) =
-      (((Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.1).toMul : Lˣ) : L) :=
+      (((Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.val).toMul : Lˣ) : L) :=
   rfl
 
 omit [FiniteDimensional K L] [Q.Normal] in
@@ -148,7 +148,7 @@ private def unitsToInvariants
     ((Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)).quotientToInvariants N).V :=
   ⟨(Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm
       (Additive.ofMul (Units.map (algebraMap (fixedField Q) L : fixedField Q →* L) u)),
-    (mem_invariants_iff hf N hQ _).2 (u : fixedField Q).2⟩
+    (mem_invariants_iff hf N hQ _).2 (u : fixedField Q).property⟩
 
 /-- The `N`-invariant units of `L` are the units of the fixed field of `Q`. -/
 private def invariantsUnitsEquiv
@@ -184,7 +184,7 @@ private theorem coe_toMul_invariantsUnitsEquiv_apply
     (((Additive.toMul (Rep.toAdditive (M := Gal(fixedField Q/fixedField f.range))
         (G := (fixedField Q)ˣ) (invariantsUnitsEquiv hf N hQ x)) : (fixedField Q)ˣ) :
           fixedField Q) : L) =
-      ((Additive.toMul (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.1) : Lˣ) : L) :=
+      ((Additive.toMul (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.val) : Lˣ) : L) :=
   rfl
 
 omit [FiniteDimensional K L] [Finite H] [Q.Normal] in
@@ -193,8 +193,8 @@ private theorem coe_toMul_quotientToInvariants_ρ_mk_apply (h : H)
     (x : ((Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)).quotientToInvariants N).V) :
     ((Additive.toMul (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)
         (((Rep.res f (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)).quotientToInvariants N).ρ
-          (h : H ⧸ N) x).1) : Lˣ) : L) =
-      f h ((Additive.toMul (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.1) : Lˣ) : L) :=
+          (h : H ⧸ N) x).val) : Lˣ) : L) =
+      f h ((Additive.toMul (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) x.val) : Lˣ) : L) :=
   rfl
 
 /-- `invariantsUnitsEquiv` intertwines the action of `H ⧸ N` with that of the Galois group of the

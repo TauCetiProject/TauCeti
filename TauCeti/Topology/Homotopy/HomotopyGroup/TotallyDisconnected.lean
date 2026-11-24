@@ -51,7 +51,7 @@ instance subsingleton_of_totallyDisconnectedSpace [Nonempty N] [TotallyDisconnec
   -- A point of the boundary of the cube, at which every generalized loop takes the value `x`.
   have hb : (fun _ ↦ 0 : I^N) ∈ Cube.boundary N := ⟨Classical.arbitrary N, Or.inl rfl⟩
   have hconst (p : Ω^ N X x) (y : I^N) : p y = x := by
-    have hpre := (isPreconnected_univ (α := I^N)).image p p.1.continuous.continuousOn
+    have hpre := (isPreconnected_univ (α := I^N)).image p p.val.continuous.continuousOn
     exact (hpre.subsingleton (Set.mem_image_of_mem p (Set.mem_univ y))
       (Set.mem_image_of_mem p (Set.mem_univ _))).trans (GenLoop.boundary p _ hb)
   exact ⟨fun a b ↦ Quotient.inductionOn₂ a b fun f g ↦

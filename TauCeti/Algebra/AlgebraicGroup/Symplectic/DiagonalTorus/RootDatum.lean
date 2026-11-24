@@ -39,6 +39,8 @@ is exactly the character through which the diagonal torus rescales that subgroup
   indexed by the type `C` root indices.
 * `TauCeti.Symplectic.diagonalRootDatum`: the type `Cₘ` root datum on the lattices of the diagonal
   torus.
+* `TauCeti.soOddRootDatum`: its dual, the root datum of `SO_{2m+1}` relative to its diagonal
+  torus (`TauCeti.Symplectic.flip_diagonalRootDatum`).
 
 ## Main results
 
@@ -672,5 +674,51 @@ theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root (r : RootSubg
 end Points
 
 end Symplectic
+
+section SOOdd
+
+universe u
+
+variable (n : ℕ)
+
+/-- **The root datum of `SO_{2n+1}`** relative to its diagonal torus: the dual of the root datum
+of `Sp₂ₙ`, with roots `±εᵢ`, `±εᵢ ± εⱼ` and coroots `±2εᵢ∨`, `±εᵢ∨ ± εⱼ∨`. -/
+noncomputable def soOddRootDatum :
+    RootDatum (GLSymplecticFin.RootSubgroupIndex n) (ULift.{u} (Fin n) → ℤ)
+      (ULift.{u} (Fin n) →₀ ℤ) :=
+  (Symplectic.diagonalRootDatum.{u} n).flip
+
+/-- The roots of `SO_{2n+1}` are the coroots of `Sp₂ₙ`. -/
+@[simp]
+theorem soOddRootDatum_root (i : GLSymplecticFin.RootSubgroupIndex n) :
+    (soOddRootDatum.{u} n).root i = (Symplectic.diagonalRootDatum.{u} n).coroot i :=
+  (rfl)
+
+/-- The coroots of `SO_{2n+1}` are the roots of `Sp₂ₙ`. -/
+@[simp]
+theorem soOddRootDatum_coroot (i : GLSymplecticFin.RootSubgroupIndex n) :
+    (soOddRootDatum.{u} n).coroot i = (Symplectic.diagonalRootDatum.{u} n).root i :=
+  (rfl)
+
+/-- The pairing of `SO_{2n+1}` is the split-torus dot pairing. -/
+@[simp]
+theorem soOddRootDatum_toLinearMap_apply (x : ULift.{u} (Fin n) → ℤ)
+    (y : ULift.{u} (Fin n) →₀ ℤ) :
+    (soOddRootDatum.{u} n).toLinearMap x y = SplitTorus.dotPairing y x := by
+  rw [soOddRootDatum, RootPairing.flip_toLinearMap, LinearMap.flip_apply,
+    Symplectic.diagonalRootDatum_toLinearMap]
+
+/-- **`Sp₂ₙ^∨ = SO_{2n+1}`**: the dual of the root datum of `Sp₂ₙ` is the root datum of
+`SO_{2n+1}`. -/
+theorem Symplectic.flip_diagonalRootDatum :
+    (Symplectic.diagonalRootDatum.{u} n).flip = soOddRootDatum.{u} n :=
+  (rfl)
+
+/-- **`SO_{2n+1}^∨ = Sp₂ₙ`**: the dual of the root datum of `SO_{2n+1}` is the root datum of
+`Sp₂ₙ`. -/
+theorem flip_soOddRootDatum : (soOddRootDatum.{u} n).flip = Symplectic.diagonalRootDatum.{u} n :=
+  (rfl)
+
+end SOOdd
 
 end TauCeti

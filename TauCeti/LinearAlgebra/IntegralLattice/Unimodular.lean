@@ -8,6 +8,9 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Finiteness
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 
 /-!
@@ -34,8 +37,13 @@ than reproving Smith normal form.
   criterion.
 * `TauCeti.IntegralLattice.IsUnimodular.isPerfPair_integralForm`: the integral form of a
   unimodular lattice is a perfect pairing.
+* `TauCeti.IntegralLattice.IsUnimodular.exists_integralForm_eq_one`: in a unimodular lattice
+  every primitive vector pairs to `1` with some lattice vector.
 * `TauCeti.IntegralLattice.isUnimodular_iff_discriminant_eq_one`: the determinant criterion.
 * `TauCeti.IntegralLattice.integralPairingEquiv`: the restricted pairing as a linear equivalence.
+* `TauCeti.IntegralLattice.isUnimodular_orthogonalSum_iff`: an orthogonal sum is unimodular
+  exactly when both summands are.
+* `TauCeti.IntegralLattice.isUnimodular_hyperbolicPlane`: the hyperbolic plane is unimodular.
 
 ## References
 
@@ -69,9 +77,9 @@ theorem isUnimodular_def (L : IntegralLattice V) :
 /-- A unimodular integral lattice has a nondegenerate rational form. -/
 theorem IsUnimodular.nondegenerate {L : IntegralLattice V}
     (hL : L.IsUnimodular) : L.form.Nondegenerate := by
-  apply L.isLattice_dualCarrier_iff_nondegenerate.mp
+  apply L.isFullLattice_dualCarrier_iff_nondegenerate.mp
   rw [L.isUnimodular_def] at hL
-  simpa only [← hL] using (inferInstance : L.carrier.IsLattice ℚ)
+  simpa only [← hL] using (inferInstance : L.carrier.IsFullLattice ℚ)
 
 /-- Unimodularity is equivalent to every vector in the dual carrier already belonging to the
 original carrier. -/
@@ -179,6 +187,17 @@ theorem IsUnimodular.isPerfPair_integralForm {L : IntegralLattice V} (hL : L.IsU
   let _ : L.IsNondegenerate := ⟨hL.nondegenerate⟩
   .of_bijective _ (L.isUnimodular_iff_integralForm_bijective.mp hL)
 
+/-- In a unimodular lattice every primitive vector pairs to `1` with some lattice vector. -/
+theorem IsUnimodular.exists_integralForm_eq_one {L : IntegralLattice V} (hL : L.IsUnimodular)
+    {v : L} (hv : IsPrimitive v) : ∃ w : L, L.integralForm v w = 1 := by
+  obtain ⟨f, hf⟩ := isPrimitive_def.1 hv
+  -- `IsPrimitive` uses the `ℤ`-module structure of an additive group, so `f` is converted to a
+  -- linear map for the `ℤ`-module structure of the carrier submodule.
+  obtain ⟨w, hw⟩ := hL.isPerfPair_integralForm.bijective_left.2 f.toAddMonoidHom.toIntLinearMap
+  refine ⟨w, ?_⟩
+  rw [L.isSymm_integralForm.eq v w, hw, AddMonoidHom.coe_toIntLinearMap]
+  exact hf
+
 section DeterminantCriteria
 
 variable (L : IntegralLattice V)
@@ -198,6 +217,12 @@ theorem isUnimodular_iff_isUnit_determinant :
   rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_def,
     ← Int.isUnit_iff_natAbs_eq]
 
+/-- An orthogonal sum is unimodular exactly when both summands are. -/
+theorem isUnimodular_orthogonalSum_iff {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (M : IntegralLattice W) :
+    (L.orthogonalSum M).IsUnimodular ↔ L.IsUnimodular ∧ M.IsUnimodular := by
+  simp only [isUnimodular_iff_isUnit_determinant, determinant_orthogonalSum, IsUnit.mul_iff]
+
 /-- In every carrier basis, unimodularity is equivalent to the Gram determinant having absolute
 value one. -/
 theorem isUnimodular_iff_natAbs_gramDet_eq_one {ι : Type v} [Fintype ι] [DecidableEq ι]
@@ -213,6 +238,10 @@ theorem isUnimodular_iff_isUnit_gramDet {ι : Type v} [Fintype ι] [DecidableEq 
   rw [L.isUnimodular_iff_natAbs_gramDet_eq_one e, ← Int.isUnit_iff_natAbs_eq]
 
 end DeterminantCriteria
+
+/-- The hyperbolic plane is unimodular. -/
+theorem isUnimodular_hyperbolicPlane : hyperbolicPlane.IsUnimodular :=
+  hyperbolicPlane.isUnimodular_iff_discriminant_eq_one.mpr hyperbolicPlane_discriminant
 
 end IntegralLattice
 

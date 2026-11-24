@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 public import TauCeti.Analysis.Normed.Module.TensorProduct.InjectiveSeminorm
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Functoriality of the projective and injective tensor products

@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.CategoryTheory.Linear.Conj
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 
+import TauCeti.Algebra.Homology.Homotopy
+
 /-!
 # Chain maps and endomorphism algebras for K-projective complexes
 
@@ -35,7 +37,8 @@ equivalences on the descended action ranges
 `CochainComplex.IsKProjective.homotopyToDerivedActionRangeEquivQ`).
 
 A quasi-isomorphism between `ℕ`-graded chain complexes of projective objects is a chain homotopy
-equivalence (Mathlib's `ChainComplex.quasiIso_iff_of_projective`). So the contravariant functor
+equivalence (Mathlib's `ChainComplex.quasiIso_iff_of_projective`), with forward map the given
+quasi-isomorphism (`HomotopyEquiv.ofQuasiIsoOfProjective`). So the contravariant functor
 `Hom(-, Y)` takes it to a cochain homotopy equivalence, and in particular to a quasi-isomorphism
 (`ChainComplex.homotopyEquivalences_linearYonedaFunctor_map_of_projective`,
 `ChainComplex.quasiIso_linearYonedaFunctor_map_of_projective`). This is how a map of spaces
@@ -195,7 +198,7 @@ noncomputable def homotopyToDerivedActionRangeEquiv [(Qh (C := C)).Linear R]
   ((homotopyToDerivedEndEquiv R K).rangeMap _).trans
     (Subalgebra.equivOfEq _ _ (by rw [homotopyToDerivedEndEquiv_toAlgHom]))
 
-/-- Applying `homotopyToDerivedActionRangeEquiv` sends `x` to `Qh.mapEndAlgHom R _ x.1`. -/
+/-- Applying `homotopyToDerivedActionRangeEquiv` sends `x` to `Qh.mapEndAlgHom R _ x.val`. -/
 @[simp]
 theorem homotopyToDerivedActionRangeEquiv_coe [(Qh (C := C)).Linear R]
     (K : CochainComplex C ℤ) [K.IsKProjective] {H : Type t'} [Semiring H] [Algebra R H]
@@ -203,7 +206,7 @@ theorem homotopyToDerivedActionRangeEquiv_coe [(Qh (C := C)).Linear R]
     (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
     (homotopyToDerivedActionRangeEquiv R K α x :
       End (Qh.obj ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K))) =
-      Qh.mapEndAlgHom R ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K) x.1 := by
+      Qh.mapEndAlgHom R ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K) x.val := by
   simp [homotopyToDerivedActionRangeEquiv, homotopyToDerivedEndEquiv_apply]
 
 /-- Applying `homotopyToDerivedActionRangeEquiv` acts by `Qh.map` on underlying morphisms. -/
@@ -213,7 +216,7 @@ theorem homotopyToDerivedActionRangeEquiv_apply_asHom [(Qh (C := C)).Linear R]
     (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
     (homotopyToDerivedActionRangeEquiv R K α x :
       End (Qh.obj ((HomotopyCategory.quotient C (ComplexShape.up ℤ)).obj K))).asHom =
-      Qh.map x.1.asHom := by
+      Qh.map x.val.asHom := by
   simp
 
 /-- For a K-projective cochain complex `K` and a chain-level `R`-algebra action
@@ -229,14 +232,14 @@ noncomputable def homotopyToDerivedActionRangeEquivQ [(Qh (C := C)).Linear R]
       rw [← AlgHom.comp_assoc, homotopyToDerivedEndEquivQ_comp_quotient_mapEndAlgHom]))
 
 /-- Applying `homotopyToDerivedActionRangeEquivQ` sends `x` to
-`homotopyToDerivedEndEquivQ R K x.1`. -/
+`homotopyToDerivedEndEquivQ R K x.val`. -/
 @[simp]
 theorem homotopyToDerivedActionRangeEquivQ_coe [(Qh (C := C)).Linear R] [(Q (C := C)).Linear R]
     (K : CochainComplex C ℤ) [K.IsKProjective] {H : Type t'} [Semiring H] [Algebra R H]
     (α : H →ₐ[R] End K)
     (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
     (homotopyToDerivedActionRangeEquivQ R K α x : End (Q.obj K)) =
-      homotopyToDerivedEndEquivQ R K x.1 := by
+      homotopyToDerivedEndEquivQ R K x.val := by
   simp [homotopyToDerivedActionRangeEquivQ]
 
 /-- Applying `homotopyToDerivedActionRangeEquivQ` applies `Qh.map` and conjugates by
@@ -246,7 +249,8 @@ theorem homotopyToDerivedActionRangeEquivQ_apply_asHom [(Qh (C := C)).Linear R]
     {H : Type t'} [Semiring H] [Algebra R H] (α : H →ₐ[R] End K)
     (x : (((HomotopyCategory.quotient C (ComplexShape.up ℤ)).mapEndAlgHom R K).comp α).range) :
     (homotopyToDerivedActionRangeEquivQ R K α x : End (Q.obj K)).asHom =
-      ((quotientCompQhIso C).app K).inv ≫ Qh.map x.1.asHom ≫ ((quotientCompQhIso C).app K).hom := by
+      ((quotientCompQhIso C).app K).inv ≫ Qh.map x.val.asHom ≫
+        ((quotientCompQhIso C).app K).hom := by
   simp
 
 /-- Applying `homotopyToDerivedActionRangeEquivQ` to the homotopy class of `x : α.range` gives
@@ -272,13 +276,34 @@ open HomologicalComplex
 variable {C : Type*} [Category* C] [Abelian C] {K L : ChainComplex C ℕ}
   [∀ n, Projective (K.X n)] [∀ n, Projective (L.X n)]
 
+/-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects, as a chain
+homotopy equivalence with forward map `φ` (Mathlib's `ChainComplex.quasiIso_iff_of_projective`). -/
+noncomputable def _root_.HomotopyEquiv.ofQuasiIsoOfProjective (φ : K ⟶ L) [QuasiIso φ] :
+    HomotopyEquiv K L :=
+  let h := (quasiIso_iff_of_projective φ).1 ‹_›
+  h.choose.copy (Homotopy.ofEq h.choose_spec)
+
+/-- The forward map of `HomotopyEquiv.ofQuasiIsoOfProjective φ` is `φ`. -/
+@[simp]
+theorem _root_.HomotopyEquiv.ofQuasiIsoOfProjective_hom (φ : K ⟶ L) [QuasiIso φ] :
+    (HomotopyEquiv.ofQuasiIsoOfProjective φ).hom = φ := by
+  rw [HomotopyEquiv.ofQuasiIsoOfProjective, HomotopyEquiv.copy_hom]
+
+/-- The map induced on homology by the inverse of `HomotopyEquiv.ofQuasiIsoOfProjective φ` is the
+inverse of the map induced by `φ`. -/
+@[simp]
+theorem _root_.HomotopyEquiv.homologyMap_ofQuasiIsoOfProjective_inv (φ : K ⟶ L) [QuasiIso φ]
+    (n : ℕ) :
+    homologyMap (HomotopyEquiv.ofQuasiIsoOfProjective φ).inv n = (asIso (homologyMap φ n)).inv := by
+  simp only [HomotopyEquiv.homologyMap_inv, HomotopyEquiv.ofQuasiIsoOfProjective_hom, asIso_inv]
+
 /-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects induces a
 cochain homotopy equivalence `Hom(L, Y) ⟶ Hom(K, Y)` by precomposition, for every object `Y`. -/
 theorem homotopyEquivalences_linearYonedaFunctor_map_of_projective (φ : K ⟶ L) [QuasiIso φ]
     (k : Type*) [Ring k] [Linear k C] (Y : C) :
-    homotopyEquivalences _ _ ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op) := by
-  obtain ⟨e, he⟩ := (quasiIso_iff_of_projective φ).1 ‹_›
-  exact ⟨e.linearYonedaFunctorMap k Y, by rw [HomotopyEquiv.linearYonedaFunctorMap_hom, he]⟩
+    homotopyEquivalences _ _ ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op) :=
+  TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map k Y
+    ((quasiIso_iff_of_projective φ).1 ‹_›)
 
 /-- A quasi-isomorphism `φ : K ⟶ L` of `ℕ`-graded chain complexes of projective objects induces a
 quasi-isomorphism `Hom(L, Y) ⟶ Hom(K, Y)` by precomposition, for every object `Y`. -/

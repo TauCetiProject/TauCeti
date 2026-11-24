@@ -404,7 +404,7 @@ noncomputable def imageGhostIdeal {H : Type t'} [Semiring H] [Algebra R H]
 @[simp]
 theorem mem_imageGhostIdeal_iff {H : Type t'} [Semiring H] [Algebra R H]
     {X : DerivedCategory C} {α : H →ₐ[R] CategoryTheory.End X} {x : α.range} :
-    x ∈ α.imageGhostIdeal ↔ x.1.IsGhost := by
+    x ∈ α.imageGhostIdeal ↔ x.val.IsGhost := by
   rw [imageGhostIdeal, mem_actionGhostKer_iff, Subalgebra.coe_val]
 
 /-- The image ghost ideal of `α` is a two-sided ideal of `α.range`. -/
@@ -446,13 +446,13 @@ noncomputable def imageGhostIdealQuotientEquivCohomologyImage {H : Type t'} [Sem
     Subalgebra.equivOfEq _ _ (by rw [Subalgebra.range_comp_val, ← AlgHom.range_comp])
 
 /-- Applying `α.imageGhostIdealQuotientEquivCohomologyImage` to the class of `x : α.range` gives
-`X.cohomologyAction R x.1`. -/
+`X.cohomologyAction R x.val`. -/
 @[simp]
 theorem imageGhostIdealQuotientEquivCohomologyImage_mk_val {H : Type t'} [Semiring H]
     [Algebra R H] {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X)
     (x : α.range) :
     (α.imageGhostIdealQuotientEquivCohomologyImage
-      (Ideal.Quotient.mk α.imageGhostIdeal x)).1 = X.cohomologyAction R x.1 := by
+      (Ideal.Quotient.mk α.imageGhostIdeal x)).val = X.cohomologyAction R x.val := by
   simp [imageGhostIdealQuotientEquivCohomologyImage, Ideal.quotientKerEquivRange]
 
 end CohomologyImageQuotient
