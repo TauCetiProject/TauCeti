@@ -14,12 +14,13 @@ import Mathlib.Tactic.LinearCombination
 # Jordan algebras from a cubic minimal polynomial
 
 Let `J` be a commutative, not necessarily associative, unital `R`-algebra, with a linear trace
-`T : J →ₗ[R] R` and two functions `S, N : J → R`, the spur and the norm. Suppose that
+`T : J →ₗ[R] R` and two functions `S, N : J → R`, the spur and the determinant (McCrimmon's
+cubic norm). Suppose that
 
 * every element is a root of the **generic minimal polynomial** `t³ - T(A) t² + S(A) t - N(A)`,
   that is, `A ∘ (A ∘ A) = T(A) A² - S(A) A + N(A) 1`;
 * twice the spur is `T(A)² - T(A ∘ A)`;
-* the **gradient of the norm** at `A` in the direction `B` is `T(A^# ∘ B)`, where
+* the **gradient of the determinant** at `A` in the direction `B` is `T(A^# ∘ B)`, where
   `A^# = A² - T(A) A + S(A) 1` is the adjoint of `A`, in the polarized form
   `N(A + B) - N(A - B) - 2 N(B) = 2 T(A^# ∘ B)`;
 * the **trace form is associative**: `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`.
@@ -47,8 +48,8 @@ associativity of the trace form: `J` satisfies the **Jordan identity**
 
 ## Main definitions
 
-* `TauCeti.Jordan.IsCubicMinimalPolynomial T S N`: the trace `T`, the spur `S` and the norm `N`
-  satisfy the cubic equation, the spur formula, the gradient formula and trace associativity.
+* `TauCeti.Jordan.IsCubicMinimalPolynomial T S N`: the trace `T`, the spur `S` and the determinant
+  `N` satisfy the cubic equation, the spur formula, the gradient formula and trace associativity.
 
 ## Main results
 
@@ -77,17 +78,17 @@ namespace Jordan
 
 variable {R J : Type*} [CommRing R] [NonAssocCommRing J] [Module R J]
 
-/-- The trace `T`, the spur `S` and the norm `N` of a commutative unital `R`-algebra `J` make `J` a
-**Jordan algebra of a cubic minimal polynomial**: every element satisfies the cubic equation
-`A ∘ (A ∘ A) = T(A) A² - S(A) A + N(A) 1`, twice the spur is `T(A)² - T(A ∘ A)`, the gradient of
-the norm at `A` is `B ↦ T(A^# ∘ B)` with `A^# = A² - T(A) A + S(A) 1`, and the trace form is
-associative. -/
+/-- The trace `T`, the spur `S` and the determinant `N` of a commutative unital `R`-algebra `J`
+make `J` a **Jordan algebra of a cubic minimal polynomial**: every element satisfies the cubic
+equation `A ∘ (A ∘ A) = T(A) A² - S(A) A + N(A) 1`, twice the spur is `T(A)² - T(A ∘ A)`, the
+gradient of the determinant at `A` is `B ↦ T(A^# ∘ B)` with `A^# = A² - T(A) A + S(A) 1`, and the
+trace form is associative. -/
 structure IsCubicMinimalPolynomial (T : J →ₗ[R] R) (S N : J → R) : Prop where
   /-- Twice the spur is `T(A)² - T(A ∘ A)`. -/
   two_mul_spur (A : J) : 2 * S A = T A ^ 2 - T (A * A)
   /-- The cubic equation `A ∘ (A ∘ A) = T(A) A² - S(A) A + N(A) 1`. -/
   mul_mul_self (A : J) : A * (A * A) = T A • (A * A) - S A • A + N A • 1
-  /-- The gradient of the norm, in polarized form. -/
+  /-- The gradient of the determinant, in polarized form. -/
   det_add_sub_det_sub (A B : J) :
     N (A + B) - N (A - B) - 2 * N B = 2 * (T (A * A * B) - T A * T (A * B) + S A * T B)
   /-- The trace form is associative. -/
@@ -97,7 +98,7 @@ namespace IsCubicMinimalPolynomial
 
 variable {T : J →ₗ[R] R} {S N : J → R}
 
-/-- **Newton's formula for the norm**, without division: when `T(1) = 3`,
+/-- **Newton's formula for the determinant**, without division: when `T(1) = 3`,
 `6 N(A) = T(A)³ - 3 T(A) T(A ∘ A) + 2 T(A ∘ (A ∘ A))`. -/
 theorem six_mul_det (h : IsCubicMinimalPolynomial T S N) (h1 : T 1 = 3) (A : J) :
     6 * N A = T A ^ 3 - 3 * T A * T (A * A) + 2 * T (A * (A * A)) := by
@@ -133,7 +134,7 @@ theorem spur_sub (h : IsCubicMinimalPolynomial T S N) (A B : J) :
   rw [sub_eq_add_neg, h.spur_add, h.spur_neg, map_neg, mul_neg, mul_neg, map_neg]
   ring
 
-/-- **Newton's formula for the norm**: when `T(1) = 3` and `2` and `3` are invertible,
+/-- **Newton's formula for the determinant**: when `T(1) = 3` and `2` and `3` are invertible,
 `N(A) = (T(A)³ - 3 T(A) T(A ∘ A) + 2 T(A ∘ (A ∘ A))) / 6`. -/
 theorem det_eq_invOf_two_mul_invOf_three_mul [Invertible (3 : R)]
     (h : IsCubicMinimalPolynomial T S N) (h1 : T 1 = 3) (A : J) :
