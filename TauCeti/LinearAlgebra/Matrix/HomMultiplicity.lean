@@ -21,16 +21,16 @@ import TauCeti.RingTheory.Idempotents.Matrix
 /-!
 # Homomorphisms between full matrix algebras
 
-Let `f : Mₙ(K) → Mₘ(K)` be a possibly nonunital algebra homomorphism between full matrix algebras
+Let `f : Mₙ(K) → Mₘ(K)` be a possibly nonunital ring homomorphism between full matrix algebras
 over a field `K`. The images `f (Eᵢᵢ)` of the diagonal matrix units are orthogonal idempotents of
-one common rank, the **multiplicity** `Matrix.homMultiplicity f` of `f`: the number of times the
-defining representation of `Mₙ(K)` occurs in `Kᵐ` through `f`. It determines the trace of `f`,
-`tr (f x) = homMultiplicity f * tr x`, and the rank of the image of every matrix,
-`rank (f x) = homMultiplicity f * rank x`. In particular `n * homMultiplicity f ≤ m`, with
-equality exactly when `f` is unital, and the multiplicity of a composite is the product of the
-multiplicities. For `n ≠ 0`, every multiplicity allowed by this inequality is realised by a
-`⋆`-homomorphism, unital in the case of equality, and a unital homomorphism `Mₙ(K) → Mₘ(K)` exists
-exactly when `n ∣ m`.
+one common rank, the **multiplicity** `Matrix.homMultiplicity f` of `f`. It determines the rank of
+the image of every matrix, `rank (f x) = homMultiplicity f * rank x`. When `f` is moreover
+`K`-linear, the multiplicity is the number of times the defining representation of `Mₙ(K)` occurs
+in `Kᵐ` through `f`, and it determines the trace of `f`, `tr (f x) = homMultiplicity f * tr x`.
+The rank formula gives `n * homMultiplicity f ≤ m`, with equality exactly when `f` is unital, and
+shows that the multiplicity of a composite is the product of the multiplicities. For `n ≠ 0`,
+every multiplicity allowed by this inequality is realised by a `⋆`-homomorphism, unital in the
+case of equality, and a unital homomorphism `Mₙ(K) → Mₘ(K)` exists exactly when `n ∣ m`.
 
 The rank of an idempotent is its class in `K₀(Mₙ(K)) = ℤ`, so the multiplicity is the map induced
 by `f` on `K₀` in these coordinates. Over `ℂ` the multiplicity classifies `⋆`-homomorphisms
@@ -80,9 +80,9 @@ namespace Matrix
 variable {K n m l F : Type*} [Field K] [Fintype n] [DecidableEq n]
 
 /-- The **multiplicity** of a homomorphism `f : Mₙ(K) → Mₘ(K)`: the rank of `f 1` divided by `n`.
-For an algebra homomorphism this is the common rank of the images of the diagonal matrix units
-(`Matrix.homMultiplicity_eq_rank_map_single`), the number of copies of the defining
-representation of `Mₙ(K)` in `Kᵐ`. -/
+For a ring homomorphism this is the common rank of the images of the diagonal matrix units
+(`Matrix.homMultiplicity_eq_rank_map_single`); for an algebra homomorphism it is the number of
+copies of the defining representation of `Mₙ(K)` in `Kᵐ`. -/
 noncomputable def homMultiplicity [FunLike F (Matrix n n K) (Matrix m m K)] (f : F) : ℕ :=
   (f 1).rank / Fintype.card n
 
@@ -92,10 +92,10 @@ theorem homMultiplicity_of_isEmpty [IsEmpty n] [FunLike F (Matrix n n K) (Matrix
     homMultiplicity f = 0 := by
   simp [homMultiplicity]
 
-section NonUnitalAlgHomClass
+section NonUnitalRingHomClass
 
 variable [Fintype m] [FunLike F (Matrix n n K) (Matrix m m K)]
-  [NonUnitalAlgHomClass F K (Matrix n n K) (Matrix m m K)] (f : F)
+  [NonUnitalRingHomClass F (Matrix n n K) (Matrix m m K)] (f : F)
 
 omit [DecidableEq n] in
 /-- The image of a product `a * b * c` has rank at most that of the image of `b`. -/
@@ -114,30 +114,6 @@ private theorem rank_map_single_le (i j : n) :
 /-- The images of the diagonal matrix units all have the same rank. -/
 theorem rank_map_single_eq (i j : n) : (f (single i i 1)).rank = (f (single j j 1)).rank :=
   le_antisymm (rank_map_single_le f j i) (rank_map_single_le f i j)
-
-/-- The image of an off-diagonal matrix unit `Eₖₗ = Eₖₗ Eₗₗ` is traceless, since its trace is that
-of `f (Eₗₗ Eₖₗ) = 0`; the image of a diagonal one is an idempotent whose trace is its rank. -/
-private theorem trace_map_single (i k l : n) :
-    (f (single k l 1)).trace = if k = l then ((f (single i i 1)).rank : K) else 0 := by
-  split_ifs with hkl
-  · subst hkl
-    rw [IsIdempotentElem.trace_eq_rank ((isIdempotentElem_single_one k).map f),
-      rank_map_single_eq f k i]
-  · calc (f (single k l 1)).trace = (f (single k l 1) * f (single l l 1)).trace := by
-          rw [← map_mul, single_mul_single_same, mul_one]
-      _ = (f (single l l 1) * f (single k l 1)).trace := trace_mul_comm _ _
-      _ = 0 := by
-          rw [← map_mul]
-          simp [Ne.symm hkl]
-
-private theorem trace_map_eq_rank_map_single_mul (i : n) (x : Matrix n n K) :
-    (f x).trace = (f (single i i 1)).rank * x.trace := by
-  conv_lhs => rw [matrix_eq_sum_single x]
-  simp only [single_eq_smul_single_one _ _ (x _ _), map_sum, map_smul, trace_sum, trace_smul,
-    trace_map_single f i, smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ,
-    ite_true]
-  rw [trace, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
 
 /-- `f 1` is the sum of the `n` orthogonal idempotents `f (Eᵢᵢ)`, each of rank
 `homMultiplicity f`. -/
@@ -162,16 +138,6 @@ theorem card_mul_homMultiplicity : Fintype.card n * homMultiplicity f = (f 1).ra
   | inr h =>
     obtain ⟨i⟩ := h
     rw [homMultiplicity_eq_rank_map_single f i, card_mul_rank_map_single]
-
-/-- **The trace of a homomorphism between matrix algebras**: `tr (f x) = μ * tr x`, where `μ` is
-the multiplicity of `f`. -/
-theorem trace_map_eq_homMultiplicity_mul (x : Matrix n n K) :
-    (f x).trace = homMultiplicity f * x.trace := by
-  cases isEmpty_or_nonempty n with
-  | inl _ => simp [Subsingleton.elim x 0]
-  | inr h =>
-    obtain ⟨i⟩ := h
-    rw [homMultiplicity_eq_rank_map_single f i, trace_map_eq_rank_map_single_mul]
 
 /-- The image of a matrix `x` has rank `homMultiplicity f * rank x`. For an idempotent `x` this
 says that, in the coordinates `K₀(Mₙ(K)) = ℤ` given by the rank, `f` acts on `K₀` as
@@ -240,6 +206,47 @@ theorem homMultiplicity_eq_of_map_one [DecidableEq m] [Nonempty n] (hf : f 1 = 1
 theorem card_dvd_card_of_map_one [DecidableEq m] (hf : f 1 = 1) : Fintype.card n ∣ Fintype.card m :=
   ⟨homMultiplicity f, ((card_mul_homMultiplicity_eq_card_iff f).mpr hf).symm⟩
 
+end NonUnitalRingHomClass
+
+section NonUnitalAlgHomClass
+
+variable [Fintype m] [FunLike F (Matrix n n K) (Matrix m m K)]
+  [NonUnitalAlgHomClass F K (Matrix n n K) (Matrix m m K)] (f : F)
+
+/-- The image of an off-diagonal matrix unit `Eₖₗ = Eₖₗ Eₗₗ` is traceless, since its trace is that
+of `f (Eₗₗ Eₖₗ) = 0`; the image of a diagonal one is an idempotent whose trace is its rank. -/
+private theorem trace_map_single (i k l : n) :
+    (f (single k l 1)).trace = if k = l then ((f (single i i 1)).rank : K) else 0 := by
+  split_ifs with hkl
+  · subst hkl
+    rw [IsIdempotentElem.trace_eq_rank ((isIdempotentElem_single_one k).map f),
+      rank_map_single_eq f k i]
+  · calc (f (single k l 1)).trace = (f (single k l 1) * f (single l l 1)).trace := by
+          rw [← map_mul, single_mul_single_same, mul_one]
+      _ = (f (single l l 1) * f (single k l 1)).trace := trace_mul_comm _ _
+      _ = 0 := by
+          rw [← map_mul]
+          simp [Ne.symm hkl]
+
+private theorem trace_map_eq_rank_map_single_mul (i : n) (x : Matrix n n K) :
+    (f x).trace = (f (single i i 1)).rank * x.trace := by
+  conv_lhs => rw [matrix_eq_sum_single x]
+  simp only [single_eq_smul_single_one _ _ (x _ _), map_sum, map_smul, trace_sum, trace_smul,
+    trace_map_single f i, smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ,
+    ite_true]
+  rw [trace, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
+
+/-- **The trace of a homomorphism between matrix algebras**: `tr (f x) = μ * tr x`, where `μ` is
+the multiplicity of `f`. -/
+theorem trace_map_eq_homMultiplicity_mul (x : Matrix n n K) :
+    (f x).trace = homMultiplicity f * x.trace := by
+  cases isEmpty_or_nonempty n with
+  | inl _ => simp [Subsingleton.elim x 0]
+  | inr h =>
+    obtain ⟨i⟩ := h
+    rw [homMultiplicity_eq_rank_map_single f i, trace_map_eq_rank_map_single_mul]
+
 end NonUnitalAlgHomClass
 
 section Zero
@@ -268,9 +275,9 @@ variable [Fintype m] [DecidableEq m] [Fintype l]
 homomorphisms between matrix algebras is the product of the multiplicities. -/
 theorem homMultiplicity_eq_mul_of_apply_eq {G H : Type*}
     [FunLike F (Matrix n n K) (Matrix m m K)]
-    [NonUnitalAlgHomClass F K (Matrix n n K) (Matrix m m K)]
+    [NonUnitalRingHomClass F (Matrix n n K) (Matrix m m K)]
     [FunLike G (Matrix m m K) (Matrix l l K)]
-    [NonUnitalAlgHomClass G K (Matrix m m K) (Matrix l l K)]
+    [NonUnitalRingHomClass G (Matrix m m K) (Matrix l l K)]
     [FunLike H (Matrix n n K) (Matrix l l K)] (f : F) (g : G) (h : H)
     (hgf : ∀ x, h x = g (f x)) : homMultiplicity h = homMultiplicity g * homMultiplicity f := by
   cases isEmpty_or_nonempty n with
