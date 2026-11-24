@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharZero.Infinite
-public import Mathlib.Analysis.Calculus.LocalExtr.Polynomial
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Convex.Star
+public import Mathlib.FieldTheory.IsRealClosed.Real
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Order.IntermediateValue
+public import TauCeti.FieldTheory.RealClosure.AbstractRolle
+public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.LineRestriction
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
@@ -37,9 +39,9 @@ point `x` lies in `Γ(p, a)` exactly when `p` does not vanish on the closed segm
 (`MvPolynomial.mem_gardingCone_iff_forall_mem_segment`), since the points `x + t • a`, `t ≥ 0`,
 are positive multiples of the points of that segment other than `a`. Consequently `Γ(p, a)` is an
 open set, star-convex with respect to `a`, invariant under positive dilations and under adding
-nonnegative multiples of `a`, and `p > 0` on it when `p(a) > 0`. For a symmetric `p` it is
-invariant under the permutations of the variables fixing `a`, for instance under all
-permutations when `a = e`. For a hyperbolic `p`, the line
+nonnegative multiples of `a`, and `p > 0` on it when `p(a) > 0`. It is invariant under every
+permutation of the variables fixing both `p` and `a`, for instance under all permutations when `p`
+is symmetric and `a = e`. For a hyperbolic `p`, the line
 restriction has exactly `m` real roots, and `x ∈ Γ(p, a)` exactly when all of them are negative.
 Finally, if `p` is hyperbolic of degree `m ≥ 1` in the direction `a`, then so is its directional
 derivative `D_a p = ∑ᵢ aᵢ ∂p/∂Xᵢ`, of degree `m - 1`, and `Γ(p, a) ⊆ Γ(D_a p, a)`: the line
@@ -56,8 +58,8 @@ logarithmic derivative `q'(t) / q(t) = ∑ⱼ 1 / (t - rⱼ)` is positive.
 
 * `MvPolynomial.isOpen_gardingCone`, `MvPolynomial.starConvex_gardingCone`,
   `MvPolynomial.smul_mem_gardingCone`: `Γ(p, a)` is an open cone, star-convex with respect to `a`.
-* `MvPolynomial.comp_mem_gardingCone`: for a symmetric `p`, `Γ(p, a)` is invariant under the
-  permutations of the variables that fix `a`.
+* `MvPolynomial.comp_mem_gardingCone`: `Γ(p, a)` is invariant under the permutations of the
+  variables that fix both `p` and `a`.
 * `MvPolynomial.eval_pos_of_mem_gardingCone`: `p > 0` on `Γ(p, a)`.
 * `MvPolynomial.mem_gardingCone_iff_forall_mem_roots`: `x ∈ Γ(p, a)` exactly when the roots of
   `t ↦ p(x + t • a)` are negative.
@@ -117,25 +119,26 @@ theorem smul_mem_gardingCone (hp : p.IsHomogeneous m) (hx : x ∈ gardingCone p 
     (hs : 0 < s) : s • x ∈ gardingCone p a := fun t ht ↦ by
   have : s • x + t • a = s • (x + (t / s) • a) := by
     rw [smul_add, smul_smul, mul_div_cancel₀ _ hs.ne']
-  rw [this, hp.eval_smul]
-  exact mul_ne_zero (pow_ne_zero _ hs.ne') (hx _ (div_nonneg ht hs.le))
+  rw [this, hp.eval_smul_ne_zero_iff hs.ne']
+  exact hx _ (div_nonneg ht hs.le)
 
-/-- The Gårding cone of a symmetric polynomial in a direction fixed by a permutation `e` of the
-variables is invariant under `e`. -/
-theorem comp_mem_gardingCone (hp : p.IsSymmetric) {e : Equiv.Perm σ} (ha : a ∘ e = a)
+/-- The Gårding cone of a polynomial invariant under a permutation `e` of the variables, in a
+direction fixed by `e`, is invariant under `e`. -/
+theorem comp_mem_gardingCone {e : Equiv.Perm σ} (hp : rename e p = p) (ha : a ∘ e = a)
     (hx : x ∈ gardingCone p a) : x ∘ e ∈ gardingCone p a := fun t ht ↦ by
   have : x ∘ e + t • a = (x + t • a) ∘ e := by
     ext i
     simp [← congrFun ha i]
-  rw [this, ← eval_rename, hp e]
+  rw [this, ← eval_rename, hp]
   exact hx t ht
 
 /-- The direction `a` lies in the Gårding cone `Γ(p, a)` of a homogeneous polynomial with
 `p(a) ≠ 0`. -/
 theorem self_mem_gardingCone (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :
     a ∈ gardingCone p a := fun t ht ↦ by
-  rw [show a + t • a = (1 + t) • a by rw [add_smul, one_smul], hp.eval_smul]
-  exact mul_ne_zero (pow_ne_zero _ (by positivity)) ha
+  rw [show a + t • a = (1 + t) • a by rw [add_smul, one_smul],
+    hp.eval_smul_ne_zero_iff (by positivity)]
+  exact ha
 
 /-- Scaling the polynomial by a nonzero constant does not change its Gårding cone. -/
 @[simp]
@@ -162,8 +165,8 @@ theorem mem_gardingCone_iff_forall_mem_segment (hp : p.IsHomogeneous m) (ha : ev
     · simpa [show u = 1 by linarith] using ha
     have : u • a + v • x = v • (x + (u / v) • a) := by
       rw [smul_add, smul_smul, mul_div_cancel₀ _ hv.ne', add_comm]
-    rw [this, hp.eval_smul]
-    exact mul_ne_zero (pow_ne_zero _ hv.ne') (hx _ (div_nonneg hu hv.le))
+    rw [this, hp.eval_smul_ne_zero_iff hv.ne']
+    exact hx _ (div_nonneg hu hv.le)
   · have h1 : 0 < 1 + t := by linarith
     have hmem : (t / (1 + t)) • a + (1 / (1 + t)) • x ∈ segment ℝ a x :=
       ⟨_, _, div_nonneg ht h1.le, div_nonneg zero_le_one h1.le,
@@ -171,8 +174,8 @@ theorem mem_gardingCone_iff_forall_mem_segment (hp : p.IsHomogeneous m) (ha : ev
     have : x + t • a = (1 + t) • ((t / (1 + t)) • a + (1 / (1 + t)) • x) := by
       rw [smul_add, smul_smul, smul_smul, mul_div_cancel₀ _ h1.ne', mul_div_cancel₀ _ h1.ne',
         one_smul, add_comm]
-    rw [this, hp.eval_smul]
-    exact mul_ne_zero (pow_ne_zero _ h1.ne') (h _ hmem)
+    rw [this, hp.eval_smul_ne_zero_iff h1.ne']
+    exact h _ hmem
 
 /-- The same criterion, with the segment parametrized by `θ ∈ [0, 1]`. -/
 private theorem mem_gardingCone_iff_forall_mem_Icc (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :
@@ -264,18 +267,13 @@ theorem sum_smul_pderiv [Fintype σ] (hp : IsHyperbolic p m a) (hm : 1 ≤ m) :
       simpa [smul_eq_C_mul] using hp.isHomogeneous.pderiv.C_mul (a i)
   eval_pos := by
     have := congrArg (eval a) hp.isHomogeneous.sum_X_mul_pderiv
-    simp only [map_sum, eval_mul, eval_X, nsmul_eq_mul] at this
-    simpa [smul_eval, this] using mul_pos (by exact_mod_cast hm) hp.eval_pos
+    simp only [map_sum, eval_mul, eval_X, nsmul_eq_mul, map_natCast] at this
+    simp only [map_sum, smul_eval, this]
+    exact mul_pos (Nat.cast_pos.2 (zero_lt_one.trans_le hm) : (0 : ℝ) < m) hp.eval_pos
   splits x := by
     -- The derivative of a real polynomial with only real roots has only real roots, by Rolle.
     rw [← derivative_aeval_C_add_C_mul_X]
-    set q := aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p
-    have hq : q.Splits := hp.splits x
-    have h₁ := Polynomial.card_roots_le_derivative q
-    have h₂ := Polynomial.card_roots' (Polynomial.derivative q)
-    have h₃ := Polynomial.natDegree_derivative_le q
-    rw [hq.natDegree_eq_card_roots] at h₃
-    exact Polynomial.splits_iff_card_roots.2 (by omega)
+    exact TauCeti.RealClosure.polynomialRolle_of_isRealClosed.splits_derivative (hp.splits x)
 
 /-- The Gårding cone of a hyperbolic polynomial of degree `m ≥ 1` in the direction `a` lies in the
 Gårding cone of its derivative `D_a p = ∑ᵢ aᵢ ∂p/∂Xᵢ` in the same direction. -/
