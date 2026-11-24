@@ -77,6 +77,7 @@ noncomputable def composeAndSheafifyIsoSheafCompose : composeAndSheafify J G ≅
 
 /-- The component of `composeAndSheafifyIsoSheafCompose` at `F` is the counit of the
 sheafification adjunction at `(sheafCompose J G).obj F`. -/
+@[simp]
 lemma composeAndSheafifyIsoSheafCompose_hom_app (F : Sheaf J A) :
     (composeAndSheafifyIsoSheafCompose J G).hom.app F =
       (sheafificationAdjunction J B).counit.app ((sheafCompose J G).obj F) :=

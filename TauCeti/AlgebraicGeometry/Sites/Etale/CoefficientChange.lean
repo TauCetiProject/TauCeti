@@ -80,13 +80,16 @@ theorem IsFiniteLisse.extendScalars {Λ Λ' : Type u} [CommRing Λ] [CommRing Λ
     letI := φ.toAlgebra
     Module.Finite.equiv (ModuleCat.extendScalarsAlgebraMapIso M).toLinearEquiv.symm
 
-/-- **Restriction of scalars of finite lisse sheaves.** For a finite ring homomorphism
-`φ : Λ →+* Λ'`, a finite lisse étale sheaf of `Λ'`-modules, viewed as a sheaf of `Λ`-modules, is
-finite lisse. -/
-theorem IsFiniteLisse.restrictScalars {Λ Λ' : Type u} [CommRing Λ] [CommRing Λ'] {φ : Λ →+* Λ'}
-    (hφ : φ.Finite) {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ')}
-    (hF : F.IsFiniteLisse) :
-    ((sheafCompose _ (ModuleCat.restrictScalars.{u, u, u} φ)).obj F).IsFiniteLisse := by
+/-- **Restriction of scalars of finite lisse sheaves.** For a ring homomorphism `φ : Λ →+* Λ'`
+making `Λ'` a finite `Λ`-module, a finite lisse étale sheaf of `Λ'`-modules, viewed as a sheaf of
+`Λ`-modules, is finite lisse. The `HasSheafCompose` hypothesis is found automatically for
+commutative rings, where restriction of scalars is a right adjoint. -/
+theorem IsFiniteLisse.restrictScalars {Λ Λ' : Type u} [Ring Λ] [Ring Λ'] {φ : Λ →+* Λ'}
+    [(smallEtaleTopology S).HasSheafCompose (ModuleCat.restrictScalars.{u, u, u} φ)]
+    (hφ : letI := φ.toModule; Module.Finite Λ Λ')
+    {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ')} (hF : F.IsFiniteLisse) :
+    ((sheafCompose (smallEtaleTopology S) (ModuleCat.restrictScalars.{u, u, u} φ)).obj
+      F).IsFiniteLisse := by
   refine IsLocallyConstantIn.of_iso
     ((composeAndSheafifyIsoSheafCompose (smallEtaleTopology S)
       (ModuleCat.restrictScalars.{u, u, u} φ)).app F) ?_

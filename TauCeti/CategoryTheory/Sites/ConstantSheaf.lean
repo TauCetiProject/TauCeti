@@ -184,6 +184,7 @@ noncomputable def constantSheafCompComposeAndSheafifyIso :
 `presheafToSheafCompComposeAndSheafifyIso` at the constant presheaf with value `X`, followed by
 the identification of the composite of that presheaf with `G` with the constant presheaf with
 value `G X`. -/
+@[simp, reassoc]
 lemma constantSheafCompComposeAndSheafifyIso_hom_app (X : A) :
     (constantSheafCompComposeAndSheafifyIso J G).hom.app X =
       (presheafToSheafCompComposeAndSheafifyIso J G).hom.app ((Functor.const Cᵒᵖ).obj X) ≫
@@ -192,6 +193,7 @@ lemma constantSheafCompComposeAndSheafifyIso_hom_app (X : A) :
 
 /-- The inverse component of `constantSheafCompComposeAndSheafifyIso` at `X`; see
 `constantSheafCompComposeAndSheafifyIso_hom_app`. -/
+@[simp, reassoc]
 lemma constantSheafCompComposeAndSheafifyIso_inv_app (X : A) :
     (constantSheafCompComposeAndSheafifyIso J G).inv.app X =
       (presheafToSheaf J B).map ((Functor.compConstIso Cᵒᵖ G).hom.app X) ≫
