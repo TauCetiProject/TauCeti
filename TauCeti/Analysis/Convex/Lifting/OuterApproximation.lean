@@ -496,6 +496,15 @@ private lemma not_fst_image_sharedOA_subset_directOA_of_rows
     rw [← outerRow_componentRow, houter 0, hcomp 0] at hdir
     norm_num at hdir
 
+private lemma proj_comp_pi_two (c₀ c₁ : ℝ) :
+    (ContinuousLinearMap.proj (R := ℝ) 0).comp (ContinuousLinearMap.pi
+      ![ContinuousLinearMap.toSpanSingleton ℝ c₀, ContinuousLinearMap.toSpanSingleton ℝ c₁]) =
+      ContinuousLinearMap.toSpanSingleton ℝ c₀ ∧
+    (ContinuousLinearMap.proj (R := ℝ) 1).comp (ContinuousLinearMap.pi
+      ![ContinuousLinearMap.toSpanSingleton ℝ c₀, ContinuousLinearMap.toSpanSingleton ℝ c₁]) =
+      ContinuousLinearMap.toSpanSingleton ℝ c₁ :=
+  ⟨by ext; simp, by ext; simp⟩
+
 /-- Exact rows on selected coordinates strictly extend the monotone-derivative comparison: there
 exist `g : ℝ → Fin 2 → ℝ`, `h : (Fin 2 → ℝ) → ℝ`, an anchor `a : Fin 1 → ℝ`, and actual Fréchet
 derivatives `Dg`, `Dh` satisfying all hypotheses of `affine_coordinate_comparison` for `J = {0}` on
@@ -527,26 +536,29 @@ theorem exists_affine_coordinate_comparison_not_monotone :
     (-2 : ℝ) • ContinuousLinearMap.proj (R := ℝ) (0 : Fin 2) + ContinuousLinearMap.proj (R := ℝ) 1
   have hg : ∀ i : Fin 1, HasFDerivAt g Dg0 (a i) := fun _ => hasFDerivAt_pi'.2 fun j => by
     fin_cases j
-    · simpa [g, Dg0, a] using (hasDerivAt_id' (-1 : ℝ)).hasFDerivAt
-    · simpa [g, Dg0, a] using (hasDerivAt_pow 2 (-1 : ℝ)).hasFDerivAt
+    · dsimp; rw [(proj_comp_pi_two 1 (-2)).1]; exact (hasDerivAt_id' (-1 : ℝ)).hasFDerivAt
+    · dsimp; rw [(proj_comp_pi_two 1 (-2)).2]
+      exact ((hasDerivAt_pow 2 (-1 : ℝ)).congr_deriv (by norm_num)).hasFDerivAt
   have hh : ∀ i : Fin 1, HasFDerivAt h Dh0 (g (a i)) := fun i => by
-    have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (-2 : ℝ) (g (a i) 0) := by
-      simpa [g, a] using hasDerivAt_pow 2 (g (a i) 0)
+    have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (-2 : ℝ) (g (a i) 0) :=
+      (hasDerivAt_pow 2 (g (a i) 0)).congr_deriv (by norm_num [g, a])
     exact (hpow.comp_hasFDerivAt (g (a i)) (hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 2) (g (a i)))).add
       (hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 2) (g (a i)))
   have hnotmono : ¬ Monotone Dh0 := fun hm => by
     have h0 := (monotone_iff_map_single_nonneg Dh0).1 hm 0
     norm_num [Dh0] at h0
-  have hcomp (i : Fin 1) (x : ℝ) : componentRow g (a i) Dg0 x = ![x, -2 * x - 1] := by
-    ext j; fin_cases j <;> simp [componentRow_apply, g, a, Dg0]; ring
+  have hcomp (i : Fin 1) (x : ℝ) : componentRow g (a i) Dg0 x = ![x, -2 * x - 1] :=
+    funext <| Fin.forall_fin_two.2
+      ⟨by dsimp [componentRow, g, a, Dg0]; ring, by dsimp [componentRow, g, a, Dg0]; ring⟩
   have houter (i : Fin 1) (y : Fin 2 → ℝ) : outerRow g h (a i) Dh0 y = -2 * y 0 + y 1 - 1 := by
-    simp [outerRow_apply, g, h, a, Dh0, Matrix.vecHead, Matrix.vecTail]
+    dsimp [outerRow, g, h, a, Dh0]
+    simp only [add_apply, smul_apply, ContinuousLinearMap.proj_apply, Pi.sub_apply,
+      Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul]
     ring
   have hnotSub := not_fst_image_sharedOA_subset_directOA_of_rows hcomp houter
   have haff : ∀ i : Fin 1, ∀ x : ℝ, ∀ j ∈ ({0} : Set (Fin 2)),
       componentRow g (a i) Dg0 x j = g x j := fun i x j hj => by
-    rw [mem_singleton_iff.1 hj, hcomp i, Matrix.cons_val_zero]
-    simp only [g, Matrix.cons_val_zero]
+    rw [mem_singleton_iff.1 hj, hcomp i, Matrix.cons_val_zero]; rfl
   have hc : ∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j) := fun j hj => by
     rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
     simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)

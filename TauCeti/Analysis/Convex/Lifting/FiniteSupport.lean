@@ -354,11 +354,14 @@ theorem exists_strict_sharedOA_ssubset_directOA :
   have ha : ∀ i, a i ∈ D := fun i =>
     Set.mem_pi.mpr fun _ _ => by by_cases hi : i = 0 <;> simp [a, hi]
   have hg : ∀ i, HasFDerivAt g (Dg i) (a i) := fun i => hasFDerivAt_pi'.2 fun j => by
-    have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (2 * a i j) (a i j) := by
-      simpa using hasDerivAt_pow 2 (a i j)
+    have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (2 * a i j) (a i j) :=
+      (hasDerivAt_pow 2 (a i j)).congr_deriv (by simp only [Nat.cast_ofNat, Nat.add_one_sub_one,
+        pow_one])
     have hL : (ContinuousLinearMap.proj (R := ℝ) j).comp (Dg i) =
         (2 * a i j) • ContinuousLinearMap.proj (R := ℝ) j := by
-      simp only [Dg, ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id, a]
+      ext v
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, smul_apply]
+      rfl
     rw [hL]; exact hpow.comp_hasFDerivAt (a i) (hasFDerivAt_apply (𝕜 := ℝ) j (a i))
   have hh : ∀ i, HasFDerivAt h (Dh i) (g (a i)) := fun i =>
     HasFDerivAt.fun_sum fun j _ => hasFDerivAt_apply (𝕜 := ℝ) j (g (a i))
@@ -374,7 +377,10 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     (fun _ _ hxy => sum_le_sum fun j _ => hxy j) hc hhc ha hg hh
   have hrow (i : Fin 2) (x : Fin 2 → ℝ) (j : Fin 2) :
       componentRow g (a i) (Dg i) x j = 2 * (if i = 0 then (1 : ℝ) else -1) * x j - 1 := by
-    by_cases hi : i = 0 <;> simp [componentRow_apply, g, a, Dg, hi] <;> ring
+    have hDg (v : Fin 2 → ℝ) : Dg i v = (2 * a i 0) • v := rfl
+    rw [componentRow_apply, hDg, Pi.smul_apply, smul_eq_mul, Pi.sub_apply]
+    dsimp only [g, a]
+    split_ifs <;> ring
   have hstrict1 := not_fst_image_sharedOA_sum_subset_sq D
     (Set.mem_pi.mpr fun j _ => by fin_cases j <;> norm_num) hrow
   have hstrict2 := not_directOA_sum_subset_fst_image_sharedOA_sq D

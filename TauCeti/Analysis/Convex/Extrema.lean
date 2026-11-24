@@ -108,4 +108,5 @@ all of `s`. No open-domain or interior-point hypothesis is needed. -/
 theorem ConvexOn.add_le_of_hasFDerivAt (hu : ConvexOn ℝ s u) (hx : x ∈ s)
     {ℓ : E →L[ℝ] β} (h : HasFDerivAt u ℓ x) :
     ∀ x' ∈ s, u x + ℓ (x' - x) ≤ u x' :=
-  hu.add_le_of_isLocalMinOn_sub hx h.hasFDerivWithinAt (by simp [IsLocalMinOn, IsMinFilter])
+  hu.add_le_of_isLocalMinOn_sub hx h.hasFDerivWithinAt
+    (by simpa only [sub_self] using isLocalMinOn_const)
