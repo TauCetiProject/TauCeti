@@ -200,12 +200,12 @@ theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace 
     (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     instTopologicalSpace = compactlySupportedTopology (I := I) (n := ∞) e U hU :=
   compactlySupportedTopology_eq_of_covers _ _ _
-    (fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2 (mem_baseSet_trivializationAt F V x)⟩)
+    (fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩)
     e U hU hcover
 
 instance : T2Space (BundleTest I F V) :=
   t2Space_compactlySupportedTopology (I := I) (n := ∞) _ _ _
-    fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2 (mem_baseSet_trivializationAt F V x)⟩
+    fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩
 
 instance : IsTopologicalAddGroup (BundleTest I F V) :=
   isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) _ _ _
@@ -222,8 +222,7 @@ theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ 
     (fun x ↦ (trivializationAt F V x).baseSetOpens)
     fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
   exact (ContMDiffSection.continuous_eval_const _ _ _
-    (fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2
-      (mem_baseSet_trivializationAt F V x)⟩) x).comp
+    (fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩) x).comp
     (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
 
 /-- Every fixed-compact support stage includes continuously into the bundle tests. -/

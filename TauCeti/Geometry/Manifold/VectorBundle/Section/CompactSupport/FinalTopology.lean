@@ -365,13 +365,9 @@ theorem isEmbedding_ofSupportedIn_chartTestTopology_of_chart_cover (K : Compacts
     letI := chartTestTopology (I := I) (F := F) (n := n) (V := V)
     Topology.IsEmbedding (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
   let := frameTopology (I := I) (n := n) e U hU
-  have h : @Topology.IsEmbedding _ _ _
-      (chartTestTopology (I := I) (F := F) (n := n) (V := V))
-      (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
-    rw [← compactlySupportedTopology_eq_chartTestTopology_of_chart_cover
-      e U hU hcover t c hc hc_symm hct hchart_cover]
-    exact isEmbedding_ofSupportedIn e U hU K
-  exact h
+  rw [← compactlySupportedTopology_eq_chartTestTopology_of_chart_cover
+    e U hU hcover t c hc hc_symm hct hchart_cover]
+  exact isEmbedding_ofSupportedIn e U hU K
 
 include hcover hc hc_symm hct hchart_cover in
 /-- On a compact manifold admitting a covering family of two-sided `C^n` charts subordinate to
@@ -432,12 +428,8 @@ theorem isEmbedding_ofSupportedIn_chartTestTopology (K : Compacts M) :
     letI := chartTestTopology (I := I) (F := F) (n := n) (V := V)
     Topology.IsEmbedding (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
   let := frameTopology (I := I) (n := n) e U hU
-  have h : @Topology.IsEmbedding _ _ _
-      (chartTestTopology (I := I) (F := F) (n := n) (V := V))
-      (ofSupportedIn (I := I) (F := F) (V := V) (n := n) K) := by
-    rw [chartTestTopology_eq_compactlySupportedTopology e U hU hcover]
-    exact isEmbedding_ofSupportedIn e U hU K
-  exact h
+  rw [chartTestTopology_eq_compactlySupportedTopology e U hU hcover]
+  exact isEmbedding_ofSupportedIn e U hU K
 
 include hcover in
 /-- On a compact boundaryless manifold, `chartTestTopology` equals the subspace topology induced
@@ -460,7 +452,7 @@ theorem chartTestTopology_eq_finalLocallyConvexTopology_bundleChartAt :
           (TauCeti.contMDiffOn_bundleChartAt x)
           (TauCeti.bundleChartAt_source_subset_baseSet x)) := by
   have hcover : ∀ x : M, ∃ y : M, x ∈ (trivializationAt F V y).baseSetOpens :=
-    fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2 (mem_baseSet_trivializationAt F V x)⟩
+    fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩
   rw [chartTestTopology_eq_compactlySupportedTopology (trivializationAt F V)
       (fun x ↦ (trivializationAt F V x).baseSetOpens)
       (fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset) hcover,

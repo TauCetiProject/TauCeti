@@ -36,8 +36,10 @@ For scalar coordinates `q : F ≃L[𝕜] 𝕜` of a rank-one model,
 `Bundle.Trivialization.scalarCoordChange` computes the actual scalar transition. Its
 application, nonvanishing, identity and cocycle laws follow from the native linear changes.
 
-The open base set of a trivialization is bundled as `Bundle.Trivialization.baseSetOpens`. The fibre
-coordinate of a continuous section in any trivialization is continuous on its base set
+The open base set of a trivialization is bundled as `Bundle.Trivialization.baseSetOpens`, and
+every base point lies in `(trivializationAt F E x).baseSetOpens`
+(`FiberBundle.mem_baseSetOpens_trivializationAt`). The fibre coordinate of a continuous section
+in any trivialization is continuous on its base set
 (`Bundle.Trivialization.continuousOn_snd_apply_mk`).
 
 Any linear trivialization sends a vector over its base set to a nonzero vector
@@ -202,6 +204,14 @@ theorem coe_baseSetOpens : (e.baseSetOpens : Set B) = e.baseSet := by
 @[simp]
 theorem mem_baseSetOpens {x : B} : x ∈ e.baseSetOpens ↔ x ∈ e.baseSet := by
   rw [← SetLike.mem_coe, coe_baseSetOpens]
+
+/-- Every point `b` lies in the open base set `(trivializationAt F E b).baseSetOpens`. -/
+theorem _root_.FiberBundle.mem_baseSetOpens_trivializationAt
+    (F : Type*) [TopologicalSpace F] (E : B → Type*) [∀ b, TopologicalSpace (E b)]
+    [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] (b : B) :
+    b ∈ (FiberBundle.trivializationAt F E b).baseSetOpens :=
+  (FiberBundle.trivializationAt F E b).mem_baseSetOpens.2
+    (FiberBundle.mem_baseSet_trivializationAt F E b)
 
 section Linear
 

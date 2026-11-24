@@ -207,6 +207,16 @@ theorem chartTestSection_mem_supportedIn (φ : 𝓓^{n}(⟨c.target, c.open_targ
   rw [ContMDiffSection.mem_supportedIn, tsupport_chartTestSection]
   exact image_mono hφ
 
+/-- A support bound in `c '' K` for `K ⊆ c.source` yields a support bound in `K`. -/
+theorem chartTestSection_mem_supportedIn_of_tsupport_subset_image
+    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) {K : Set M} (hKc : K ⊆ c.source)
+    (hφ : tsupport φ ⊆ c '' K) :
+    (e.chartTestSection c hc hce φ).val ∈ ContMDiffSection.supportedIn I F n V K := by
+  refine ContMDiffSection.mem_supportedIn.2 ((ContMDiffSection.mem_supportedIn.1
+    (e.chartTestSection_mem_supportedIn c hc hce φ hφ)).trans ?_)
+  rintro x ⟨y, ⟨z, hz, rfl⟩, rfl⟩
+  simpa [c.left_inv (hKc hz)] using hz
+
 /-- In a second bundle frame, the extended section has the actual vector-bundle transition
 applied to its defining coefficients. -/
 theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
@@ -482,11 +492,8 @@ theorem chartReadTestFunction_chartTestSection [T2Space M]
     (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
     (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) (hφ : tsupport φ ⊆ c '' (K : Set M)) :
     t.chartReadTestFunction c hc_symm hct hKc
-        ⟨(t.chartTestSection c hc hct φ).val, by
-          refine mem_supportedIn.2 ((mem_supportedIn.1
-            (t.chartTestSection_mem_supportedIn c hc hct φ hφ)).trans ?_)
-          rintro x ⟨y, ⟨z, hz, rfl⟩, rfl⟩
-          simpa [c.left_inv (hKc hz)] using hz⟩ = φ := by
+        ⟨(t.chartTestSection c hc hct φ).val,
+          t.chartTestSection_mem_supportedIn_of_tsupport_subset_image c hc hct φ hKc hφ⟩ = φ := by
   ext y
   by_cases hy : y ∈ c.target
   · rw [t.chartReadTestFunction_apply_of_mem c hc_symm hct hKc _ hy,
