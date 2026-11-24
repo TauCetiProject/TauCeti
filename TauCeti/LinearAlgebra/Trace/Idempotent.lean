@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Trace
-public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.LocalRing.Defs
 
 import Mathlib.LinearAlgebra.PID
@@ -48,10 +47,7 @@ maximal ideal.
 * `LinearMap.trace_eq_finrank_range_of_isIdempotentElem`: over a local ring, the trace of
   an idempotent endomorphism of a finite free module is the rank of its range.
 * `Matrix.IsIdempotentElem.trace_eq_rank`: over a local ring, the trace of an idempotent matrix
-  is its rank, and `Matrix.IsIdempotentElem.rank_one_sub_add_rank`: over a field, the ranks of
-  `e` and `1 - e` add up to the size of the matrix.
-* `Matrix.OrthogonalIdempotents.rank_sum`: over a field, the rank of a sum of orthogonal
-  idempotent matrices is the sum of their ranks.
+  is its rank.
 * `Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero`: over a field of characteristic zero, an
   idempotent matrix of trace zero is zero.
 * `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
@@ -210,55 +206,6 @@ theorem IsIdempotentElem.trace_eq_rank {ι A : Type*} [Fintype ι] [CommRing A] 
   classical
   rw [← trace_toLin'_eq, ← finrank_range_mulVecLin, ← toLin'_apply']
   exact LinearMap.trace_eq_finrank_range_of_isIdempotentElem (he.map toLinAlgEquiv')
-
-/-- The ranks of an idempotent matrix `e` and of the complementary idempotent `1 - e` add up to
-the size of the matrix: the range of `1 - e` is the kernel of `e`. -/
-theorem IsIdempotentElem.rank_one_sub_add_rank {ι K : Type*} [Fintype ι] [DecidableEq ι]
-    [Field K] {e : Matrix ι ι K} (he : IsIdempotentElem e) :
-    (1 - e).rank + e.rank = Fintype.card ι := by
-  -- `toLinAlgEquiv'` is `toLin'` bundled as an algebra equivalence
-  have he' : IsIdempotentElem (toLin' e) := he.map toLinAlgEquiv'
-  have hrange : LinearMap.range (toLin' (1 - e)) = LinearMap.ker (toLin' e) := by
-    rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub he', map_sub, toLin'_one,
-      Module.End.one_eq_id]
-  have h := LinearMap.finrank_range_add_finrank_ker (toLin' e)
-  rw [← hrange, Module.finrank_fintype_fun_eq_card, toLin'_apply', toLin'_apply',
-    finrank_range_mulVecLin, finrank_range_mulVecLin] at h
-  omega
-
-/-- The rank of a sum of orthogonal idempotent matrices is the sum of their ranks: the range of
-the sum is the direct sum of the ranges. -/
-theorem OrthogonalIdempotents.rank_sum {ι I K : Type*} [Fintype ι] [DecidableEq ι] [Field K]
-    {e : I → Matrix ι ι K} (he : OrthogonalIdempotents e) (s : Finset I) :
-    (∑ i ∈ s, e i).rank = ∑ i ∈ s, (e i).rank := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    set p := e a
-    set q := ∑ i ∈ s, e i
-    have hp : p * p = p := (he.idem a).eq
-    have hq : q * q = q := he.isIdempotentElem_sum.eq
-    have hpq : p * q = 0 := he.mul_sum_of_notMem ha
-    have hqp : q * p = 0 :=
-      Finset.sum_mul s e p ▸ Finset.sum_eq_zero fun i hi => he.ortho (ne_of_mem_of_not_mem hi ha)
-    -- the range of `p + q` is the direct sum of the ranges of `p` and `q`
-    have hsup : LinearMap.range (p + q).mulVecLin =
-        LinearMap.range p.mulVecLin ⊔ LinearMap.range q.mulVecLin := by
-      refine le_antisymm (by rw [mulVecLin_add]; exact LinearMap.range_add_le _ _) (sup_le ?_ ?_)
-      · rintro _ ⟨v, rfl⟩
-        exact ⟨p *ᵥ v, by simp [mulVec_mulVec, hp, hqp]⟩
-      · rintro _ ⟨v, rfl⟩
-        exact ⟨q *ᵥ v, by simp [mulVec_mulVec, hq, hpq]⟩
-    have hdisj : Disjoint (LinearMap.range p.mulVecLin) (LinearMap.range q.mulVecLin) := by
-      rw [Submodule.disjoint_def]
-      rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
-      simp only [mulVecLin_apply] at hw ⊢
-      calc p *ᵥ v = p *ᵥ (q *ᵥ w) := by rw [hw, mulVec_mulVec, hp]
-        _ = 0 := by rw [mulVec_mulVec, hpq, zero_mulVec]
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih, ← finrank_range_mulVecLin,
-      ← finrank_range_mulVecLin, ← finrank_range_mulVecLin, hsup,
-      ← Submodule.finrank_sup_add_finrank_inf_eq, hdisj.eq_bot, finrank_bot, add_zero]
 
 /-- Over a field of characteristic zero, an idempotent matrix of trace zero is zero: the trace of
 an idempotent is the dimension of its range. This is the matrix form of

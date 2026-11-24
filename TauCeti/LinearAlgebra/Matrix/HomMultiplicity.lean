@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
-import Mathlib.Algebra.Star.StarProjection
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.LinearAlgebra.Matrix.Trace
 import TauCeti.Data.Matrix.Block
@@ -58,7 +57,7 @@ classification of `⋆`-homomorphisms `Mₙ(ℂ) → Mₘ(ℂ)` to the multiplic
   trace and the rank of `f x`.
 * `Matrix.card_mul_homMultiplicity_le` and `Matrix.card_mul_homMultiplicity_eq_card_iff`:
   `n * homMultiplicity f ≤ m`, with equality exactly for unital `f`; hence
-  `Matrix.card_dvd_card_of_map_one`.
+  `Matrix.homMultiplicity_eq_of_map_one` and `Matrix.card_dvd_card_of_map_one`.
 * `Matrix.homMultiplicity_eq_mul_of_apply_eq` and its specialisations
   `NonUnitalAlgHom.homMultiplicity_comp`, `AlgHom.homMultiplicity_comp`,
   `NonUnitalStarAlgHom.homMultiplicity_comp` and `StarAlgHom.homMultiplicity_comp`: the
@@ -271,6 +270,13 @@ theorem card_mul_homMultiplicity_eq_card_iff [DecidableEq m] :
   exact (IsIdempotentElem.iff_eq_one_of_isUnit
     (mulVec_surjective_iff_isUnit.mp (mulVec_surjective_iff_rank_eq_card.mpr h))).mp he
 
+/-- For `n ≠ 0`, a unital homomorphism `Mₙ(K) → Mₘ(K)` has multiplicity `μ` whenever
+`n * μ = m`. -/
+theorem homMultiplicity_eq_of_map_one [DecidableEq m] [Nonempty n] (hf : f 1 = 1) {μ : ℕ}
+    (hμ : Fintype.card n * μ = Fintype.card m) : homMultiplicity f = μ :=
+  Nat.eq_of_mul_eq_mul_left Fintype.card_pos
+    (((card_mul_homMultiplicity_eq_card_iff f).mpr hf).trans hμ.symm)
+
 /-- If there is a unital homomorphism `Mₙ(K) → Mₘ(K)`, then `n ∣ m`. -/
 theorem card_dvd_card_of_map_one [DecidableEq m] (hf : f 1 = 1) : Fintype.card n ∣ Fintype.card m :=
   ⟨homMultiplicity f, ((card_mul_homMultiplicity_eq_card_iff f).mpr hf).symm⟩
@@ -385,9 +391,8 @@ variable [StarRing K] [Fintype m]
 @[simp]
 theorem homMultiplicity_kroneckerOneStarAlgHom [Nonempty n] (ι : Type*) [Fintype ι]
     [DecidableEq ι] : homMultiplicity (kroneckerOneStarAlgHom K ι : Matrix n n K →⋆ₐ[K] _) =
-      Fintype.card ι := by
-  refine Nat.eq_of_mul_eq_mul_left (Fintype.card_pos (α := n)) ?_
-  rw [(card_mul_homMultiplicity_eq_card_iff _).mpr (map_one _), Fintype.card_prod]
+      Fintype.card ι :=
+  homMultiplicity_eq_of_map_one _ (map_one _) (Fintype.card_prod n ι).symm
 
 /-- For `n * μ ≤ m`, the map `x ↦ (x ⊗ 1_μ) ⊕ 0`, reindexed to `m`, is a `⋆`-homomorphism
 `Mₙ(K) → Mₘ(K)` with `rank (φ 1) = n * μ`. -/
@@ -426,8 +431,7 @@ theorem exists_starAlgHom_homMultiplicity_eq_iff [DecidableEq m] [Nonempty n] {�
   refine ⟨fun ⟨φ, hφ⟩ => hφ ▸ (card_mul_homMultiplicity_eq_card_iff φ).mpr (map_one φ),
     fun hμ => ?_⟩
   obtain ⟨φ⟩ := nonempty_starAlgHom_of_card_mul_eq (K := K) hμ
-  exact ⟨φ, Nat.eq_of_mul_eq_mul_left (Fintype.card_pos (α := n))
-    (((card_mul_homMultiplicity_eq_card_iff φ).mpr (map_one φ)).trans hμ.symm)⟩
+  exact ⟨φ, homMultiplicity_eq_of_map_one φ (map_one φ) hμ⟩
 
 /-- A unital `⋆`-homomorphism `Mₙ(K) → Mₘ(K)` exists exactly when `n ∣ m`. -/
 theorem nonempty_starAlgHom_iff [DecidableEq m] :

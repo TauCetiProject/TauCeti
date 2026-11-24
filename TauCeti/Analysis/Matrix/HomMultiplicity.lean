@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.LinearAlgebra.Matrix.HomMultiplicity
 import TauCeti.Analysis.Matrix.MurrayVonNeumann
-import TauCeti.LinearAlgebra.Trace.Idempotent
+import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # Unitary classification of `⋆`-homomorphisms between full matrix algebras
@@ -88,6 +88,5 @@ theorem StarAlgHom.exists_mem_unitary_mul_map_mul_star_eq
   cases isEmpty_or_nonempty n with
   | inl _ => simp
   | inr _ =>
-    refine Nat.eq_of_mul_eq_mul_left (Fintype.card_pos (α := n)) ?_
-    rw [(card_mul_homMultiplicity_eq_card_iff _).mpr (by simp),
-      (card_mul_homMultiplicity_eq_card_iff _).mpr (by simp)]
+    exact homMultiplicity_eq_of_map_one φ.toNonUnitalStarAlgHom (map_one φ)
+      ((card_mul_homMultiplicity_eq_card_iff ψ.toNonUnitalStarAlgHom).mpr (map_one ψ))

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.RingTheory.Idempotents
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
@@ -60,6 +61,9 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
 * `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
+* `Matrix.IsIdempotentElem.rank_one_sub_add_rank` and `Matrix.OrthogonalIdempotents.rank_sum`:
+  over a field, the ranks of `e` and `1 - e` add up to the size of the matrix, and the rank of a
+  sum of orthogonal idempotent matrices is the sum of their ranks.
 * `Matrix.rank_fromBlocks_zero₁₂_zero₂₁`: over a field, the rank of a block-diagonal matrix is the
   sum of the ranks of its diagonal blocks.
 * `Matrix.rank_conjTranspose_of_field` and
@@ -405,7 +409,10 @@ theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Fini
         (A.mulVecLin.prodMap D.mulVecLin) ∘ₗ
           (LinearEquiv.sumArrowLequivProdArrow l l' K K).toLinearMap := by
     refine LinearMap.ext fun x => funext fun i => ?_
-    rcases i with i | i <;> simp [fromBlocks_mulVec, Function.comp_def] <;> rfl
+    rcases i with i | i <;>
+      simp [fromBlocks_mulVec, Function.comp_def,
+        funext (LinearEquiv.sumArrowLequivProdArrow_apply_fst (R := K) x),
+        funext (LinearEquiv.sumArrowLequivProdArrow_apply_snd (R := K) x)]
   rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin, ← finrank_range_mulVecLin, h,
     LinearMap.range_comp, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top,
     LinearMap.range_prodMap, LinearEquiv.finrank_map_eq]
@@ -457,6 +464,49 @@ lemma rank_add_rank_add_rank_eq_card [Fintype m] [DecidableEq m]
   have hσ := rank_mul_le_left A₁ σ
   have hτ := rank_mul_le_right τ A₂
   omega
+
+/-- The ranks of an idempotent matrix `e` and of the complementary idempotent `1 - e` add up to
+the size of the matrix: this is the decomposition `e + (1 - e) = 1` with `e (1 - e) = 0`. -/
+theorem IsIdempotentElem.rank_one_sub_add_rank [Fintype m] [DecidableEq m] {e : Matrix m m K}
+    (he : IsIdempotentElem e) : (1 - e).rank + e.rank = Fintype.card m := by
+  have h := rank_add_rank_add_rank_eq_card e (1 - e) (0 : Matrix m m K) 1 0 he.eq
+    (by rw [mul_sub, mul_one, he.eq, sub_self]) (zero_mul _) (zero_mul _) (by simp)
+  rw [rank_zero, add_zero] at h
+  omega
+
+/-- The rank of a sum of orthogonal idempotent matrices is the sum of their ranks: the range of
+the sum is the direct sum of the ranges. -/
+theorem OrthogonalIdempotents.rank_sum [Fintype m] [DecidableEq m] {I : Type*}
+    {e : I → Matrix m m K} (he : OrthogonalIdempotents e) (s : Finset I) :
+    (∑ i ∈ s, e i).rank = ∑ i ∈ s, (e i).rank := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    set p := e a
+    set q := ∑ i ∈ s, e i
+    have hp : p * p = p := (he.idem a).eq
+    have hq : q * q = q := he.isIdempotentElem_sum.eq
+    have hpq : p * q = 0 := he.mul_sum_of_notMem ha
+    have hqp : q * p = 0 :=
+      Finset.sum_mul s e p ▸ Finset.sum_eq_zero fun i hi => he.ortho (ne_of_mem_of_not_mem hi ha)
+    -- the range of `p + q` is the direct sum of the ranges of `p` and `q`
+    have hsup : LinearMap.range (p + q).mulVecLin =
+        LinearMap.range p.mulVecLin ⊔ LinearMap.range q.mulVecLin := by
+      refine le_antisymm (by rw [mulVecLin_add]; exact LinearMap.range_add_le _ _) (sup_le ?_ ?_)
+      · rintro _ ⟨v, rfl⟩
+        exact ⟨p *ᵥ v, by simp [mulVec_mulVec, hp, hqp]⟩
+      · rintro _ ⟨v, rfl⟩
+        exact ⟨q *ᵥ v, by simp [mulVec_mulVec, hq, hpq]⟩
+    have hdisj : Disjoint (LinearMap.range p.mulVecLin) (LinearMap.range q.mulVecLin) := by
+      rw [Submodule.disjoint_def]
+      rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
+      simp only [mulVecLin_apply] at hw ⊢
+      calc p *ᵥ v = p *ᵥ (q *ᵥ w) := by rw [hw, mulVec_mulVec, hp]
+        _ = 0 := by rw [mulVec_mulVec, hpq, zero_mulVec]
+    rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih, ← finrank_range_mulVecLin,
+      ← finrank_range_mulVecLin, ← finrank_range_mulVecLin, hsup,
+      ← Submodule.finrank_sup_add_finrank_inf_eq, hdisj.eq_bot, finrank_bot, add_zero]
 
 section Field
 
