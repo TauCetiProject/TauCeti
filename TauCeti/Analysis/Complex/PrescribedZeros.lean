@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.LocallyFinsupp
 public import TauCeti.Analysis.Complex.Runge.Operator
 import Mathlib.Analysis.Meromorphic.NormalForm
+import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.InfiniteProd
 import TauCeti.Analysis.Complex.Runge.Approximation
@@ -36,7 +37,7 @@ Applied to the points of the support of `m` in each shell
 `filledExhaustion Ω (n + 1) \ filledExhaustion Ω n`, with distance `2⁻ⁿ` from `1` on
 `filledExhaustion Ω n`, it produces factors whose infinite product converges locally uniformly on
 `Ω`, and whose analytic orders add up to `m`
-(`TauCeti.analyticOrderAt_tprod_nat_one_add_of_tail_lt`).
+(`TauCeti.analyticOrderAt_tprod_one_add`).
 
 Two consequences follow. Realizing the positive and negative parts of an integer divisor and
 dividing gives a meromorphic function with that divisor and finite order everywhere
@@ -116,42 +117,6 @@ theorem IsRungeCompactPair.exists_differentiableOn_analyticOrderAt_eq_norm_sub_o
           exact hgq z hz
       _ = ε := by field_simp
 
-/-- Bounds on the factors of an infinite product, of size `2⁻ⁿ` on the `n`th exhaustion stage
-and beyond, give summable norms with explicit tails on each stage. -/
-private theorem summable_and_tsum_le_of_norm_lt {u : ℕ → ℂ → ℂ}
-    (hu : ∀ n, ∀ z ∈ filledExhaustion Ω n, ‖u n z‖ < (1 / 2 : ℝ) ^ n) {N : ℕ} {z : ℂ}
-    (hz : z ∈ filledExhaustion Ω N) :
-    Summable (fun k ↦ ‖u (k + N) z‖) ∧ ∑' k, ‖u (k + N) z‖ ≤ 2 * (1 / 2 : ℝ) ^ N := by
-  have hle (k : ℕ) : ‖u (k + N) z‖ ≤ (1 / 2 : ℝ) ^ N * (1 / 2 : ℝ) ^ k := by
-    rw [← pow_add, add_comm N k]
-    exact (hu (k + N) z (filledExhaustion_mono (Nat.le_add_left N k) hz)).le
-  have hgeom : Summable fun k : ℕ ↦ (1 / 2 : ℝ) ^ N * (1 / 2 : ℝ) ^ k :=
-    summable_geometric_two.mul_left _
-  have hs : Summable (fun k ↦ ‖u (k + N) z‖) := hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hle
-  refine ⟨hs, ?_⟩
-  calc ∑' k, ‖u (k + N) z‖ ≤ ∑' k : ℕ, (1 / 2 : ℝ) ^ N * (1 / 2 : ℝ) ^ k :=
-        hs.tsum_le_tsum hle hgeom
-    _ = 2 * (1 / 2 : ℝ) ^ N := by rw [tsum_mul_left, tsum_geometric_two, mul_comm]
-
-/-- Bounds on the factors of an infinite product, of size `2⁻ⁿ` on the `n`th exhaustion stage
-of an open set `Ω`, give pointwise summable norms on `Ω` with tails vanishing uniformly on every
-compact subset of `Ω`. -/
-private theorem summable_and_tail_lt_of_norm_lt (hΩ : IsOpen Ω) {u : ℕ → ℂ → ℂ}
-    (hu : ∀ n, ∀ z ∈ filledExhaustion Ω n, ‖u n z‖ < (1 / 2 : ℝ) ^ n) :
-    (∀ z ∈ Ω, Summable fun n ↦ ‖u n z‖) ∧
-      ∀ L ⊆ Ω, IsCompact L → ∀ ε > 0, ∃ N : ℕ, ∀ z ∈ L, ∑' k, ‖u (k + N) z‖ < ε := by
-  refine ⟨fun z hz ↦ ?_, fun L hLΩ hL ε hε ↦ ?_⟩
-  · obtain ⟨N, hN⟩ := mem_iUnion.mp (hΩ.iUnion_filledExhaustion.symm ▸ hz)
-    exact (summable_nat_add_iff N).mp (summable_and_tsum_le_of_norm_lt hu hN).1
-  obtain ⟨N₀, hN₀⟩ := hΩ.exists_subset_filledExhaustion hL hLΩ
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (half_pos hε) (by norm_num : (1 / 2 : ℝ) < 1)
-  refine ⟨max N₀ n, fun z hz ↦ ?_⟩
-  calc ∑' k, ‖u (k + max N₀ n) z‖ ≤ 2 * (1 / 2 : ℝ) ^ max N₀ n :=
-        (summable_and_tsum_le_of_norm_lt hu (filledExhaustion_mono (le_max_left N₀ n) (hN₀ hz))).2
-    _ ≤ 2 * (1 / 2 : ℝ) ^ n := mul_le_mul_of_nonneg_left
-        (pow_le_pow_of_le_one (by norm_num) (by norm_num) (le_max_right N₀ n)) (by norm_num)
-    _ < ε := by linarith
-
 /-- Splitting the support of `m` into its part in the stage `filledExhaustion Ω 0` and its parts in
 the shells between consecutive stages, the multiplicities of the pieces at `z ∈ Ω` add up to
 `m z`. -/
@@ -206,11 +171,16 @@ theorem exists_holomorphic_with_zero_orders (hΩ : IsOpen Ω)
   have hone (n : ℕ) : (fun w ↦ 1 + u n w) = h n := by
     ext w
     simp [hu]
-  obtain ⟨hsum, htail⟩ := summable_and_tail_lt_of_norm_lt hΩ (u := u) hclose
-  have hprod := differentiableOn_tprod_nat_one_add_of_tail_lt hΩ hud hsum htail
+  have htail (L : Set ℂ) (hLΩ : L ⊆ Ω) (hL : IsCompact L) :
+      SummableUniformlyOn (fun n z ↦ ‖u n z‖) L := by
+    obtain ⟨N₀, hN₀⟩ := hΩ.exists_subset_filledExhaustion hL hLΩ
+    refine (HasSumUniformlyOn.of_norm_le_summable_eventually summable_geometric_two
+      (Nat.cofinite_eq_atTop ▸ eventually_atTop.2 ⟨N₀, fun n hn z hz ↦ ?_⟩)).summableUniformlyOn
+    simpa using (hclose n z (filledExhaustion_mono hn (hN₀ hz))).le
+  have hprod := differentiableOn_tprod_one_add hΩ hud htail
   refine ⟨h₀ * fun w ↦ ∏' n, (1 + u n w), hh₀.mul hprod, fun z hz ↦ ?_⟩
   rw [analyticOrderAt_mul (hh₀.analyticAt (hΩ.mem_nhds hz)) (hprod.analyticAt (hΩ.mem_nhds hz)),
-    analyticOrderAt_tprod_nat_one_add_of_tail_lt hΩ hud hsum htail hz, hord₀ z hz]
+    analyticOrderAt_tprod_one_add hΩ hud htail hz, hord₀ z hz]
   simp_rw [hone, fun n ↦ hord n z hz]
   exact ite_add_tsum_ite_sdiff_eq hΩ m hmemT hz
 
@@ -219,13 +189,9 @@ some function analytic on `Ω`. -/
 private theorem exists_analyticOnNhd_analyticOrderAt_eq_toNat (hΩ : IsOpen Ω)
     (D : Function.locallyFinsuppWithin Ω ℤ) : ∃ g : ℂ → ℂ, AnalyticOnNhd ℂ g Ω ∧
       ∀ z ∈ Ω, analyticOrderAt g z = ((D z).toNat : ℕ∞) := by
-  have hsupp : Function.support (fun z ↦ (D z).toNat) ⊆ D.support := fun z hz h0 ↦
-    hz (by simp [h0])
-  obtain ⟨g, hg, hord⟩ := exists_holomorphic_with_zero_orders hΩ
-    ⟨fun z ↦ (D z).toNat, hsupp.trans D.supportWithinDomain, fun z hz ↦
-      (D.supportLocallyFiniteWithinDomain z hz).imp fun _ ht ↦
-        ⟨ht.1, ht.2.subset (inter_subset_inter_right _ hsupp)⟩⟩
-  exact ⟨g, hg.analyticOnNhd hΩ, hord⟩
+  obtain ⟨g, hg, hord⟩ := exists_holomorphic_with_zero_orders hΩ (D.mapRange Int.toNat rfl)
+  exact ⟨g, hg.analyticOnNhd hΩ, fun z hz ↦ by
+    rw [hord z hz, Function.locallyFinsuppWithin.mapRange_apply]⟩
 
 /-- **Meromorphic functions with a prescribed divisor.** For every integer divisor `ν` on an open
 set `Ω ⊆ ℂ`, that is, integer multiplicities supported on a subset closed and discrete in `Ω`,
