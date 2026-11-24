@@ -95,15 +95,17 @@ localization of `A` with `α` (`TauCeti.fiberLocalization_singularHomologyCross_
 
 ## Main declarations
 
-* `TauCeti.BasedMap.actionClass`: the class `Φ_*(A × α)` over a commutative ring `R`, with its
-  coefficients `ULift R ⊗ ULift R` identified with `ULift R`. The self-map `f ↦ const (f(b₀))`
-  sends it to `Φ_*(A × c_* α)`
+* `TauCeti.BasedMap.actionClass`: the `R`-linear map `α ↦ Φ_*(A × α)` over a commutative ring `R`,
+  with its coefficients `ULift R ⊗ ULift R` identified with `ULift R`. The self-map
+  `f ↦ const (f(b₀))` sends it to `Φ_*(A × c_* α)`
   (`TauCeti.BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass`).
 
 ## Main results
 
-* `TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross`:
-  `Φ_*(A × α)` lives over the fundamental class at `x₀`.
+* `TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross`,
+  `TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionClass`: `Φ_*(A × α)` lives over
+  the fundamental class at `x₀`, both with coefficients `ℤ ⊗ ℤ` and via
+  `TauCeti.BasedMap.actionClass` with coefficients identified with `ℤ`.
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`: a manifold with such
   an action, a class `A` with `π_* A = ℓ • [M]` and a class `α` of positive degree of
   `Map_*(S², M)` with `ℓ • α ≠ 0`, fixed by the stabilizer, is abundant with 2-spheres.
@@ -144,30 +146,35 @@ variable {R : Type u} [CommRing R] {G M B : Type u} [TopologicalSpace G] [Group 
   [TopologicalSpace M] [MulAction G M] [ContinuousSMul G M] [TopologicalSpace B]
   (b₀ : B) (x₀ : M) {d : ℕ}
 
-/-- The class `Φ_*(A × α)` of `Map(B, M)` carried by `A ∈ H_d(G; R)` and a class `α` of the based
-mapping space `Map_*(B, M)` under the action map `Φ : G × Map_*(B, M) → Map(B, M)`
-(`TauCeti.BasedMap.actionMap`), with the coefficients `ULift R ⊗ ULift R` of the cross product
-identified with `ULift R`. For a group acting on itself, `R = ℤ`, `x₀ = 1` and `A = [G]` it is the
-class of Example 6.30 of Barraud–Damian–Humilière–Oancea. -/
+/-- The `R`-linear map `α ↦ Φ_*(A × α)` carrying a class `α` of the based mapping space
+`Map_*(B, M)` to a class of `Map(B, M)` using `A ∈ H_d(G; R)` and the action map
+`Φ : G × Map_*(B, M) → Map(B, M)` (`TauCeti.BasedMap.actionMap`), with the coefficients
+`ULift R ⊗ ULift R` of the cross product identified with `ULift R`. For a group acting on itself,
+`R = ℤ`, `x₀ = 1` and `A = [G]` it gives the class of Example 6.30 of
+Barraud–Damian–Humilière–Oancea. -/
 def actionClass
     (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of R (ULift.{u} R)) d :
-      ModuleCat.{u} R)) {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
-      (ModuleCat.of R (ULift.{u} R)) k : ModuleCat.{u} R)) :
+      ModuleCat.{u} R)) {k : ℕ} :
+    ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
+      (ModuleCat.of R (ULift.{u} R)) k : ModuleCat.{u} R) →ₗ[R]
     ((TopCat.toSSet.obj (TopCat.of C(B, M))).homology (ModuleCat.of R (ULift.{u} R))
       (d + k) : ModuleCat.{u} R) :=
   (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (actionMap (G := G) b₀ x₀)))
-      (ModuleCat.of R (ULift.{u} R)) (d + k)).hom
-    ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{u} R)).map
-      (ModuleCat.uliftTensorSelfIso R).hom).app
-        (TopCat.toSSet.obj (TopCat.of (G × BasedMap B M b₀ x₀)))) (d + k)).hom
-      ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap B M b₀ x₀))
-        (ModuleCat.of R (ULift.{u} R)) (ModuleCat.of R (ULift.{u} R)) d k (d + k) rfl).hom
-          (A ⊗ₜ α)))
+    (ModuleCat.of R (ULift.{u} R)) (d + k)).hom ∘ₗ
+  (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{u} R)).map
+    (ModuleCat.uliftTensorSelfIso R).hom).app
+      (TopCat.toSSet.obj (TopCat.of (G × BasedMap B M b₀ x₀)))) (d + k)).hom ∘ₗ
+  (TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap B M b₀ x₀))
+    (ModuleCat.of R (ULift.{u} R)) (ModuleCat.of R (ULift.{u} R)) d k (d + k) rfl).hom ∘ₗ
+  TensorProduct.mk R
+    ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of R (ULift.{u} R)) d :
+      ModuleCat.{u} R)
+    ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
+      (ModuleCat.of R (ULift.{u} R)) k : ModuleCat.{u} R) A
 
-/-- Unfold `TauCeti.BasedMap.actionClass`: the action map applied to the cross product `A × α`,
-with the coefficients `ULift R ⊗ ULift R` identified with `ULift R`. -/
-theorem actionClass_def
+/-- Evaluate `TauCeti.BasedMap.actionClass` at a class `α`: the action map applied to the cross
+product `A × α`, with the coefficients `ULift R ⊗ ULift R` identified with `ULift R`. -/
+theorem actionClass_apply
     (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of R (ULift.{u} R)) d :
       ModuleCat.{u} R)) {k : ℕ}
     (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
@@ -182,16 +189,6 @@ theorem actionClass_def
             (ModuleCat.of R (ULift.{u} R)) (ModuleCat.of R (ULift.{u} R)) d k (d + k) rfl).hom
               (A ⊗ₜ α))) :=
   (rfl)
-
-/-- `Φ_*(A × α)` preserves subtraction in `α`. -/
-theorem actionClass_sub
-    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of R (ULift.{u} R)) d :
-      ModuleCat.{u} R)) {k : ℕ}
-    (α β : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
-      (ModuleCat.of R (ULift.{u} R)) k : ModuleCat.{u} R)) :
-    actionClass b₀ x₀ A (α - β) = actionClass b₀ x₀ A α - actionClass b₀ x₀ A β :=
-  (congrArg _ ((congrArg _ (singularHomologyCross_tmul_sub _ _ rfl A α β)).trans
-    (map_sub _ _ _))).trans (map_sub _ _ _)
 
 /-- The constant maps at the values at the base point, `f ↦ const (f b₀)`, send `Φ_*(A × α)` to
 `Φ_*(A × c_* α)`, where `c` is the constant self-map of `Map_*(B, M)` at the constant map at `x₀`:
@@ -224,7 +221,7 @@ theorem homologyMap_const'_comp_mappingSpaceEval_actionClass
   simp only [TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
     ModuleCat.id_apply] at hcross
   -- Identify the coefficients before the maps, then commute the square `ρ ∘ Φ = Φ ∘ γ`.
-  rw [actionClass, actionClass, ← hcross, homologyMap_chainComplexFunctor_map_apply _ γ
+  rw [actionClass_apply, actionClass_apply, ← hcross, homologyMap_chainComplexFunctor_map_apply _ γ
     ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of Y) S S d k (d + k) rfl).hom (A ⊗ₜ α))]
   exact ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm S _ hΦ) _
 
@@ -625,9 +622,13 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
     (o.singularHomologyCrossRel_localHomologyIsoOfIsOpenEmbedding_inv_ne_zero hd
       hU.isOpenEmbedding_subtypeVal x₀ rfl hα)
 
-/-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at
-`x₀` when `π_* A = ℓ • [M]`, `ℓ • α ≠ 0` and `α` is fixed by the stabilizer of `x₀`. -/
-private theorem livesOverFundamentalClass_actionClass {B : Type} [TopologicalSpace B] (b₀ : B)
+/-- **Action classes living over the fundamental class.** Under the hypotheses of
+`TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross` (the
+orbit map `π : G → M`, `g ↦ g • x₀`, has continuous local sections around every point,
+`π_* A = ℓ • [M]`, `ℓ • α ≠ 0`, and `α` is fixed by the stabilizer of `x₀`), the class
+`TauCeti.BasedMap.actionClass b₀ x₀ A α`, with coefficients identified with `ℤ`, lives over the
+fundamental class of `M` at `x₀` for evaluation at `b₀`. -/
+theorem livesOverFundamentalClass_actionClass {B : Type} [TopologicalSpace B] (b₀ : B)
     {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
     (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
       ∀ z ∈ U, s z • x₀ = z) {ℓ : ℤ}
@@ -743,8 +744,7 @@ theorem isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero {x₀ : M
   -- The self-map `f ↦ const (f(north))` sends `Φ_*(A × α)` to `Φ_*(A × c_* α)`, and
   -- `ℓ • (α - c_* α) ≠ 0`.
   have h := o.livesOverFundamentalClass_actionClass hd Sphere2.north π hπ hloc hA hα hfix'
-  rwa [BasedMap.actionClass_sub,
-    ← BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
+  rwa [map_sub, ← BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
 
 /-! ### Abundance from higher homotopy groups (Propositions 6.29 and 6.33) -/
 

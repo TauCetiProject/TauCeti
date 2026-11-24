@@ -127,7 +127,7 @@ private theorem livesOverFundamentalClass_actionClass_iff (b : G) {k : ℕ}
     simp [Ψ]
   -- Carry the class back along the homeomorphism over `G`, identify the coefficients `ℤ ⊗ ℤ`
   -- with `ℤ`, and use that the cross product with `[G]` is injective.
-  rw [BasedMap.actionClass_def]
+  rw [BasedMap.actionClass_apply]
   refine (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (ModuleCat.of ℤ (ULift.{0} ℤ))
     Φ (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)) hτ h h'
       (b := b)).trans ?_
@@ -172,8 +172,7 @@ theorem isAbundantWithTwoSpheres_of_homologyMap_const_ne (b : G)
     ((o.livesOverFundamentalClass_actionClass_iff hn b).2 fun h ↦ hα (by rw [h, map_zero])) ?_
   -- The self-map `f ↦ const (f(north))` sends `[G] × α` to `[G] × c_* α`, and `α - c_* α ≠ 0`.
   have h := (o.livesOverFundamentalClass_actionClass_iff hn b).2 (sub_ne_zero.2 hα.symm)
-  rwa [BasedMap.actionClass_sub,
-    ← BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
+  rwa [map_sub, ← BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
 
 include o hn in
 /-- **A non-aspherical topological group is abundant with 2-spheres**
