@@ -33,8 +33,8 @@ formula (`QuotientGroup.lintegral_eq_lintegral_automorphize`), and `G ⧸ Γ` is
 
 ## Main results
 
-* `Subgroup.isLattice_iff_covolume_lt_top`: for discrete `Γ` in a unimodular group, `Γ` is a
-  lattice exactly when `MeasureTheory.covolume Γ.op G μ` is finite.
+* `Subgroup.isLattice_iff_discreteTopology_and_covolume_lt_top`: in a unimodular group, `Γ` is a
+  lattice exactly when it is discrete and `MeasureTheory.covolume Γ.op G μ` is finite.
 * `Subgroup.IsLattice.of_isHaarMeasure`, `Subgroup.IsUniformLattice.of_isHaarMeasure`: being a
   (uniform) lattice does not depend on the Haar measure.
 * `Subgroup.IsLattice.isFiniteMeasure_quotient`: the quotient measure on `G ⧸ Γ` of a lattice is
@@ -67,8 +67,8 @@ namespace Subgroup
 the right action of `Γ` on `G`, `g ↦ g γ`, has a fundamental domain of finite `μ`-measure. The
 intended setting is a unimodular locally compact group `G` with Haar measure `μ`; then the
 condition does not depend on the Haar measure (`Subgroup.IsLattice.of_isHaarMeasure`) nor on the
-fundamental domain, and it says that `MeasureTheory.covolume Γ.op G μ` is finite
-(`Subgroup.isLattice_iff_covolume_lt_top`). -/
+fundamental domain, and for discrete `Γ` it says that `MeasureTheory.covolume Γ.op G μ` is finite
+(`Subgroup.isLattice_iff_discreteTopology_and_covolume_lt_top`). -/
 structure IsLattice [TopologicalSpace G] (Γ : Subgroup G) (μ : Measure G) : Prop where
   /-- A lattice is a discrete subgroup. -/
   discreteTopology : DiscreteTopology Γ
@@ -130,7 +130,7 @@ theorem IsLattice.covolume_lt_top [MeasurableConstSMul Gᵐᵒᵖ G] [Countable 
 
 /-- In a unimodular, second countable, locally compact Hausdorff group, a subgroup is a lattice
 exactly when it is discrete and its right action has finite covolume. -/
-theorem isLattice_iff_covolume_lt_top [T2Space G] [LocallyCompactSpace G]
+theorem isLattice_iff_discreteTopology_and_covolume_lt_top [T2Space G] [LocallyCompactSpace G]
     [SecondCountableTopology G] :
     Γ.IsLattice μ ↔ DiscreteTopology Γ ∧ covolume Γ.op G μ < ∞ := by
   refine ⟨fun h ↦ ⟨h.discreteTopology, have := h.countable; h.covolume_lt_top⟩,
