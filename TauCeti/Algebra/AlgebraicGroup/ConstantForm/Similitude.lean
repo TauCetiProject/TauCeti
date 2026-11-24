@@ -67,6 +67,8 @@ None of these identities uses a property of `C`.
   `X C Xᵀ - r C`.
 * `TauCeti.ConstantFormSimilitude.definingHopfIdeal`: the Hopf ideal its entries generate, and
   `definingHopfIdeal_toIdeal_le_ker_iff`, the criterion for a coordinate morphism to kill it.
+* `TauCeti.ConstantFormSimilitude.coordinateMap`: the quotient coordinate morphism, with
+  `coordinateMap_relationMatrix`: the relations `X C Xᵀ = r C` hold in the quotient.
 * `TauCeti.ConstantFormSimilitude.groupScheme` and `TauCeti.ConstantFormSimilitude.inclusion`:
   the similitude group scheme and its closed immersion into `GLₙ × 𝔾_m`.
 * `TauCeti.ConstantFormSimilitude.multiplier` and
@@ -74,7 +76,8 @@ None of these identities uses a property of `C`.
   `GSim(C) → 𝔾_m` and its coordinate morphism.
 * `TauCeti.ConstantFormSimilitude.pointsSubgroup` and
   `TauCeti.ConstantFormSimilitude.pointsMulEquiv`: the points are the pairs `(h, r)` with
-  `h C hᵀ = r C`.
+  `h C hᵀ = r C`, with `pointsMulEquiv_fst` and `pointsMulEquiv_snd` computing the two
+  components.
 * `TauCeti.ConstantFormSimilitude.ambientPointsMulEquiv`: the points of `GLₙ × 𝔾_m` are
   `GLₙ(A) × Aˣ`, naturally in `A` (`ambientPointsMulEquiv_mapValue`).
 
@@ -359,6 +362,24 @@ theorem coordinateMap_def :
   unfold coordinateMap
   rfl
 
+/-- The coordinate morphism sends an ambient coordinate to its quotient class. -/
+-- Not `@[simp]`: its left-hand side subsumes that of the `@[simp]` elimination lemma
+-- `coordinateMap_relationMatrix`, and the named morphism is the normal form.
+theorem coordinateMap_apply (h : ambientHopfAlgebra R n) :
+    (coordinateMap R n C).hom h = Ideal.Quotient.mkₐ R (definingHopfIdeal R n C).toIdeal h := by
+  unfold coordinateMap
+  exact CommHopfAlgCat.mkQuotient_apply (ambientHopfAlgebra R n) (definingHopfIdeal R n C) h
+
+/-- Every defining relation vanishes in the coordinate Hopf algebra of the similitude group
+scheme: `X C Xᵀ = r C` holds there. -/
+@[simp]
+theorem coordinateMap_relationMatrix (i j : Fin n) :
+    (coordinateMap R n C).hom (relationMatrix R n C i j) = 0 := by
+  rw [coordinateMap_def]
+  exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
+    (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n C ▸
+      Ideal.subset_span (relationMatrix_mem_relationSet R n C i j)))
+
 /-! ### The group scheme, its closed immersion and the multiplier -/
 
 /-- **The similitude group scheme of `C`**: the closed subgroup scheme of `GLₙ × 𝔾_m` of pairs
@@ -417,6 +438,11 @@ private noncomputable def castPoints (A : Type w) [CommRing A] [Algebra R A] :
     HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A) ≃*
       WithConv ((GeneralLinear.coordinateHopfAlgebra R n ⊗[R] R[T;T⁻¹]) →ₐ[R] A) :=
   MulEquiv.refl _
+
+private theorem castPoints_apply (A : Type w) [CommRing A] [Algebra R A]
+    (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
+    castPoints R n A g = g :=
+  rfl
 
 /-- The points of `GLₙ × 𝔾_m`: the product-points equivalence followed by the points
 equivalences of the two factors. -/
@@ -538,9 +564,20 @@ theorem pointsMulEquiv_snd
     (((pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ).2 : Aˣ) : A) =
       f.ofConv ((multiplierCoordinateMap R n C).hom (LaurentPolynomial.T 1)) := by
   rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_snd,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoord, multiplierCoordinateMap,
-    coordinateMap_def, _root_.CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient,
-    BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
+    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoordinateMap, coordinateMap_def]
+  simp [multiplierCoord]
+
+/-- The matrix of a point, read through the points identification, is its value on the image of
+the generic matrix in the coordinate Hopf algebra. -/
+theorem pointsMulEquiv_fst
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A)) :
+    (((pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ).1 : GL (Fin n) A) :
+        Matrix (Fin n) (Fin n) A) =
+      (matrixCoord R n).map fun x ↦ f.ofConv ((coordinateMap R n C).hom x) := by
+  rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_fst]
+  ext i j
+  rw [Matrix.map_apply, Matrix.map_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
+    coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
 
 variable {B : Type*} [CommRing B] [Algebra R B]
 
@@ -550,13 +587,14 @@ theorem ambientPointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     ambientPointsMulEquiv R n B (AlgHom.mapValue (H := ambientHopfAlgebra R n) phi g) =
       Prod.map (Matrix.GeneralLinearGroup.map (phi : A →+* B)) (Units.map (phi : A →* B))
         (ambientPointsMulEquiv R n A g) := by
-  refine Prod.ext (Units.ext ?_) (Units.ext ?_)
-  · ext i j
-    rw [coe_ambientPointsMulEquiv_fst, Prod.map_fst, Matrix.GeneralLinearGroup.map_apply,
-      coe_ambientPointsMulEquiv_fst]
-    simp [AlgHom.mapValue_apply]
-  · rw [coe_ambientPointsMulEquiv_snd, Prod.map_snd, Units.coe_map, coe_ambientPointsMulEquiv_snd]
-    simp [AlgHom.mapValue_apply]
+  unfold ambientPointsMulEquiv
+  rw [MulEquiv.trans_apply, MulEquiv.trans_apply, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    castPoints_apply, castPoints_apply]
+  -- `ambientHopfAlgebra R n` is the tensor product `O(GLₙ) ⊗[R] R[T;T⁻¹]` of the two factors.
+  exact (congrArg (MulEquiv.prodCongr _ _)
+    (AffineGroup.Product.pointsMulEquiv_mapValue phi g)).trans
+      (Prod.ext (GeneralLinear.pointsMulEquiv_mapValue n phi _)
+        (MultiplicativeGroup.pointsMulEquiv_mapValue phi _))
 
 end Points
 

@@ -420,19 +420,17 @@ theorem transpose_mul_JFin_mul_eq_smul {M : Matrix (Fin (m + m)) (Fin (m + m)) R
     Mᵀ * JFin m R * M = (r : R) • JFin m R := by
   -- `M (J Mᵀ J) = r J J = -r`, so `-r⁻¹ J Mᵀ J` is a right, hence a left, inverse of `M`.
   have hright : M * (-((r⁻¹ : Rˣ) : R) • (JFin m R * Mᵀ * JFin m R)) = 1 := by
-    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h, Matrix.smul_mul,
-      JFin_mul_self, smul_smul, neg_mul, Units.inv_mul, smul_neg, neg_smul, one_smul, neg_neg]
+    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h]
+    simp [JFin_mul_self, smul_smul]
   have hleft := mul_eq_one_comm.mp hright
   rw [Matrix.smul_mul] at hleft
+  -- Cancelling the unit `-r⁻¹`: `J Mᵀ J M = -r`.
+  have hJ : JFin m R * Mᵀ * JFin m R * M = (-(r : R)) • (1 : Matrix _ _ R) := by
+    rw [← hleft, smul_smul, neg_mul_neg, Units.mul_inv, one_smul]
   calc Mᵀ * JFin m R * M
       = -(JFin m R * (JFin m R * Mᵀ * JFin m R * M)) := by
         simp only [← Matrix.mul_assoc, JFin_mul_self, Matrix.neg_mul, Matrix.one_mul, neg_neg]
     _ = (r : R) • JFin m R := by
-        have hJ : JFin m R * Mᵀ * JFin m R * M = (-(r : R)) • (1 : Matrix _ _ R) := by
-          calc JFin m R * Mᵀ * JFin m R * M
-              = ((-(r : R)) * -((r⁻¹ : Rˣ) : R)) • (JFin m R * Mᵀ * JFin m R * M) := by
-                rw [neg_mul_neg, Units.mul_inv, one_smul]
-            _ = (-(r : R)) • (1 : Matrix _ _ R) := by rw [← smul_smul, hleft]
         rw [hJ, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
 
 variable {m R} in
@@ -456,19 +454,9 @@ theorem _root_.Matrix.mul_JFin_one_mul_transpose_eq_det_smul
     (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
     M * JFin 1 R * Mᵀ = M.det • JFin 1 R := by
   rw [JFin_one_eq]
-  -- `Fin (1 + 1)` and `Fin 2` agree by evaluating `1 + 1`; restating in `Fin 2` lets the
-  -- literal `2 × 2` lemmas `Matrix.eta_fin_two`, `Matrix.det_fin_two_of` and
-  -- `Matrix.mul_fin_two` apply.
-  change (M : Matrix (Fin 2) (Fin 2) R) * !![0, -1; 1, 0] * Mᵀ =
-    Matrix.det (M : Matrix (Fin 2) (Fin 2) R) • !![0, -1; 1, 0]
-  obtain ⟨a, b, c, d, rfl⟩ : ∃ a b c d : R, (M : Matrix (Fin 2) (Fin 2) R) = !![a, b; c, d] :=
-    ⟨_, _, _, _, Matrix.eta_fin_two M⟩
-  have hT : (!![a, b; c, d] : Matrix (Fin 2) (Fin 2) R)ᵀ = !![a, c; b, d] := by
-    ext i j; fin_cases i <;> fin_cases j <;> rfl
-  rw [hT, Matrix.det_fin_two_of, Matrix.mul_fin_two, Matrix.mul_fin_two, Matrix.smul_of,
-    Matrix.smul_cons, Matrix.smul_cons]
-  simp only [Matrix.smul_cons, Matrix.smul_empty, smul_eq_mul]
-  congr 3 <;> ring_nf
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_succ, Matrix.det_succ_row_zero] <;> ring
 
 /-- The symplectic subgroup of `GL (Fin (m + m)) R`: the pullback of `TauCeti.GLSymplectic`
 along the reindexing isomorphism. -/

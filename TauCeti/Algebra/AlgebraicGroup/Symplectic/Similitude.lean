@@ -47,7 +47,7 @@ determinant, so that `GSp₂(A) ≃ GL₂(A)` (`TauCeti.SymplecticSimilitude.poi
   is in its kernel exactly when it is a pair `(h, 1)` with `h` symplectic
   (`TauCeti.SymplecticSimilitude.mk_one_mem_pointsSubgroup` builds such pairs).
 * `TauCeti.SymplecticSimilitude.pointsMulEquivGLTwo`: `GSp₂(A) ≃ GL₂(A)`, with multiplier the
-  determinant.
+  determinant (`TauCeti.SymplecticSimilitude.det_pointsMulEquivGLTwo`).
 
 ## References
 
@@ -225,6 +225,21 @@ theorem multiplierPoints_pointsSubgroupOneMulEquiv (h : GL (Fin (1 + 1)) A) :
     multiplierPoints R 1 A (pointsSubgroupOneMulEquiv R A h) =
       Matrix.GeneralLinearGroup.det h := by
   rw [multiplierPoints_apply, coe_pointsSubgroupOneMulEquiv_apply]
+
+/-- The invertible matrix attached to a point of `GSp₂` is the matrix of its similitude. -/
+@[simp]
+theorem pointsMulEquivGLTwo_apply
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 1) (CommAlgCat.of R A)) :
+    pointsMulEquivGLTwo R A f = (pointsMulEquiv R 1 A f : GL (Fin (1 + 1)) A × Aˣ).1 := by
+  rw [pointsMulEquivGLTwo, MulEquiv.trans_apply, pointsSubgroupOneMulEquiv_symm_apply]
+
+/-- **Under `GSp₂ = GL₂` on points, the multiplier is the determinant.** -/
+theorem det_pointsMulEquivGLTwo
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 1) (CommAlgCat.of R A)) :
+    Matrix.GeneralLinearGroup.det (pointsMulEquivGLTwo R A f) =
+      multiplierPoints R 1 A (pointsMulEquiv R 1 A f) := by
+  rw [pointsMulEquivGLTwo_apply, multiplierPoints_apply]
+  exact ((mem_pointsSubgroup_one_iff _).mp (pointsMulEquiv R 1 A f).property).symm
 
 end Points
 

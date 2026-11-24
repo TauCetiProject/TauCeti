@@ -130,6 +130,13 @@ theorem mul_mul_transpose_apply {l m n p R : Type*} [Fintype m] [Fintype n]
   simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
   exact Finset.sum_comm
 
+/-- Congruence by a left inverse undoes congruence: if `W X = 1`, then `W (X D Xᵀ) Wᵀ = D`. -/
+theorem mul_mul_mul_transpose_mul_transpose_of_mul_eq_one {n R : Type*} [Fintype n]
+    [DecidableEq n] [CommSemiring R] {W X : Matrix n n R} (hW : W * X = 1) (D : Matrix n n R) :
+    W * (X * D * Xᵀ) * Wᵀ = D := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hW, Matrix.one_mul, Matrix.mul_assoc,
+    ← Matrix.transpose_mul, hW, Matrix.transpose_one, Matrix.mul_one]
+
 section Similitude
 
 variable {n R : Type*} [Fintype n] [CommRing R]
@@ -143,12 +150,6 @@ theorem mul_mul_mul_transpose_sub_mul_smul (Y Z D : Matrix n n R) (r₁ r₂ : R
     Matrix.smul_mul, smul_smul, mul_comm r₂ r₁]
   simp only [Matrix.mul_assoc]
   abel
-
-/-- Congruence by a left inverse undoes congruence: if `W X = 1`, then `W (X D Xᵀ) Wᵀ = D`. -/
-theorem mul_mul_mul_transpose_mul_transpose_of_mul_eq_one [DecidableEq n] {W X : Matrix n n R}
-    (hW : W * X = 1) (D : Matrix n n R) : W * (X * D * Xᵀ) * Wᵀ = D := by
-  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hW, Matrix.one_mul, Matrix.mul_assoc,
-    ← Matrix.transpose_mul, hW, Matrix.transpose_one, Matrix.mul_one]
 
 /-- **The similitude defect of a left inverse**: for `f(X, r) = X D Xᵀ - r D`, if `W X = 1` and
 `s r = 1`, then `f(W, s) = -(s W f(X, r) Wᵀ)`. -/
