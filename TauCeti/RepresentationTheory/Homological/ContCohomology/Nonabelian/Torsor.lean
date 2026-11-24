@@ -51,8 +51,8 @@ The semilinearity class `TauCeti.IsSemilinearTorsor` and the isomorphisms
 ## Main results
 
 * `TauCeti.NonabelianH1.Cocycle.ofPoint_op_smul`: `c_{p · a}` is the twist of `c_p` by `a`.
-* `TauCeti.NonabelianH1.Cocycle.ofPoint_map`: isomorphisms of torsors preserve the cocycle of a
-  point.
+* `TauCeti.NonabelianH1.Cocycle.ofPoint_torsorEquiv_apply`: isomorphisms of torsors preserve the
+  cocycle of a point.
 * `TauCeti.NonabelianH1.ofTorsor_eq_ofTorsor_iff`: two torsors have the same class exactly when
   they are isomorphic.
 * `TauCeti.NonabelianH1.ofTorsor_torsorModel`: the torsor of a cocycle has the class of that
@@ -130,7 +130,8 @@ theorem ofPoint_op_smul [ContinuousMul A] [ContinuousSMul G A] (p : P) (a : A) :
 
 /-- An isomorphism of torsors preserves the cocycle of a point. -/
 @[simp]
-theorem ofPoint_map (e : TorsorEquiv G A P Q) (p : P) : ofPoint G (e p) = ofPoint G p := by
+theorem ofPoint_torsorEquiv_apply (e : TorsorEquiv G A P Q) (p : P) :
+    ofPoint G (e p) = ofPoint G p := by
   ext g
   rw [ofPoint_apply_eq_iff, ← e.map_smul, ← op_ofPoint_smul p g, e.map_op_smul]
 
@@ -335,7 +336,7 @@ theorem ofTorsor_eq_ofTorsor_iff :
     rw [Cocycle.ofPoint_op_smul]
     exact Cocycle.ext fun g ↦ by rw [Cocycle.twist_apply, ha]
   · rintro ⟨e⟩
-    rw [ofTorsor_eq_mk p, ofTorsor_eq_mk (e p), Cocycle.ofPoint_map]
+    rw [ofTorsor_eq_mk p, ofTorsor_eq_mk (e p), Cocycle.ofPoint_torsorEquiv_apply]
 
 /-- The torsor model of a cocycle has the class of that cocycle. -/
 @[simp]
