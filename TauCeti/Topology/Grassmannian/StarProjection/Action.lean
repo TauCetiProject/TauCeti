@@ -65,9 +65,8 @@ noncomputable instance instMulActionUnitary :
     rw [smul_eq_grassmannianCongr, map_one, LinearIsometryEquiv.one_def,
       LinearIsometryEquiv.grassmannianCongr_refl, Homeomorph.refl_apply, id]
   mul_smul u v P := by
-    rw [smul_eq_grassmannianCongr, map_mul, LinearIsometryEquiv.mul_def,
-      LinearIsometryEquiv.grassmannianCongr_trans]
-    rfl
+    simp only [smul_eq_grassmannianCongr, map_mul, LinearIsometryEquiv.mul_def,
+      LinearIsometryEquiv.grassmannianCongr_trans, Homeomorph.trans_apply]
 
 /-- The plane of `u • P` is the image of the plane of `P` under `u`. -/
 theorem range_coe_smul (u : unitary (E →L[𝕜] E)) (P : grassmannian 𝕜 E k) :
