@@ -14,6 +14,7 @@ import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.RingTheory.Adjoin.Conductor
 import TauCeti.RingTheory.DedekindDomain.Conductor
 import TauCeti.RingTheory.Kaehler.Hypersurface
+import TauCeti.RingTheory.Localization.FiniteDimensional
 
 /-!
 # The Kähler different and the Dedekind different
@@ -186,15 +187,7 @@ theorem fittingIdeal_kaehlerDifferential_eq_differentIdeal
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
     fittingIdeal B Ω[B⁄A] 0 = differentIdeal A B := by
   obtain ⟨x, hx⟩ := exists_adjoin_eq_top (R := A) (S := B)
-  -- `x` also generates `L` over `K`, and is algebraic over `K`, so `L / K` is finite.
-  have hK : IntermediateField.adjoin K {algebraMap B L x} = ⊤ :=
-    IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top hx
-  have hxK : IsIntegral K (algebraMap B L x) :=
-    ((IsIntegral.of_finite A x).map (IsScalarTower.toAlgHom A B L)).tower_top
-  have : FiniteDimensional K L := by
-    have := IntermediateField.adjoin.finiteDimensional hxK
-    rw [hK] at this
-    exact IntermediateField.topEquiv.toLinearEquiv.finiteDimensional
+  have := IsFractionRing.finiteDimensional_of_finite A B K L
   exact fittingIdeal_kaehlerDifferential_eq_differentIdeal_of_adjoin_eq_top A K L B hx
 
 end IsDiscreteValuationRing
