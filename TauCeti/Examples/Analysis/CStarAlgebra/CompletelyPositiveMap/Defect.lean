@@ -72,8 +72,8 @@ private theorem norm_unit (i j : n) : ‖unit i j‖ = 1 := by
 example : normalizedTwoNorm (diagEntryCP 0 (unit (0 : Fin 2) 1 * unit 1 0) -
       diagEntryCP 0 (unit (0 : Fin 2) 1) * diagEntryCP 0 (unit (1 : Fin 2) 0)) = 1 ∧
     √((diagEntryCP (0 : Fin 2)).twoNormDefect (star (unit 0 1))) * ‖unit (1 : Fin 2) 0‖ = 1 := by
-  rw [diagEntryCP_def, PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapMatrixOne_mul_sub,
-    PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapMatrixOne, star_star, star_unit,
+  rw [diagEntryCP_def, PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub,
+    PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId, star_star, star_unit,
     unit_mul_unit, norm_unit]
   simp [unit_apply]
 
@@ -81,8 +81,8 @@ example : normalizedTwoNorm (diagEntryCP 0 (unit (0 : Fin 2) 1 * unit 1 0) -
 example : normalizedTwoNorm (diagEntryCP 0 (unit (1 : Fin 2) 0 * unit 0 1) -
       diagEntryCP 0 (unit (1 : Fin 2) 0) * diagEntryCP 0 (unit (0 : Fin 2) 1)) = 0 ∧
     √((diagEntryCP (0 : Fin 2)).twoNormDefect (star (unit 1 0))) * ‖unit (0 : Fin 2) 1‖ = 0 := by
-  rw [diagEntryCP_def, PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapMatrixOne_mul_sub,
-    PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapMatrixOne, star_star, star_unit,
+  rw [diagEntryCP_def, PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub,
+    PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId, star_star, star_unit,
     unit_mul_unit]
   simp [unit_apply]
 
@@ -91,7 +91,7 @@ example : normalizedTwoNorm (diagEntryCP 0 (unit (1 : Fin 2) 0 * unit 0 1) -
 -- The defect of the trace at an off-diagonal matrix unit is `1/n`.
 example {i j : n} (h : i ≠ j) :
     normalizedTraceCP.twoNormDefect (unit i j) = (Fintype.card n : ℝ)⁻¹ := by
-  rw [normalizedTraceCP_def, PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapMatrixOne,
+  rw [normalizedTraceCP_def, PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId,
     star_unit, unit_mul_unit]
   simp [normalizedTrace_unit, h]
 
@@ -99,7 +99,7 @@ example {i j : n} (h : i ≠ j) :
 private theorem twoNormDefect_normalizedTraceCP_of_mem_unitary [Nonempty n]
     {u : CStarMatrix n n ℂ} (hu : u ∈ unitary (CStarMatrix n n ℂ)) :
     normalizedTraceCP.twoNormDefect u = 1 - ‖normalizedTrace u‖ ^ 2 := by
-  rw [normalizedTraceCP_def, PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapMatrixOne,
+  rw [normalizedTraceCP_def, PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId,
     Unitary.star_mul_self_of_mem hu]
   simp
 

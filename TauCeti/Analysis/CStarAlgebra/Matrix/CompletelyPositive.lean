@@ -9,24 +9,24 @@ public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Defect
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.Matrix.Order
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
 # Completely positive contractions from matrices to `M₁`
 
-A positive linear functional `ω` on a C⋆-algebra is completely positive
-(`PositiveLinearMap.toCompletelyPositiveMap`), and so is `a ↦ ω a • 1` into the one-by-one matrices
-`M₁ = CStarMatrix Unit Unit ℂ` (`PositiveLinearMap.toCompletelyPositiveMapMatrixOne`), whose norm
-at `a` is `‖ω a‖`. Its multiplicativity defects are scalar:
+A positive linear functional `ω` on a C⋆-algebra gives the completely positive map `a ↦ ω a • 1`
+into the one-by-one matrices `M₁ = CStarMatrix Unit Unit ℂ`
+(`PositiveLinearMap.toCompletelyPositiveMapOfId`), whose norm at `a` is `‖ω a‖`. Its
+multiplicativity defects are scalar:
 `d₂(ω, a) = Re ω(a⋆a) - |ω a|²` and `‖ω(ab) - ω(a)ω(b)‖₂ = |ω(ab) - ω(a)ω(b)|`
-(`PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapMatrixOne`,
-`PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapMatrixOne_mul_sub`).
+(`PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId`,
+`PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub`).
 
 This file applies it to two functionals on `M_n = CStarMatrix n n ℂ`:
 
 * the diagonal entry `x ↦ x i i` (`CStarMatrix.diagEntry`), a compression by a unit vector, giving
   the completely positive map `CStarMatrix.diagEntryCP i : M_n → M₁`;
-* the normalized trace `tr_n` (`CStarMatrix.normalizedTraceₚ`), giving
+* the normalized trace `tr_n` (`CStarMatrix.normalizedTraceMap`), giving
   `CStarMatrix.normalizedTraceCP : M_n → M₁`.
 
 Both maps are contractions (`CStarMatrix.norm_diagEntryCP_apply_le`,
@@ -45,52 +45,35 @@ namespace PositiveLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- A positive linear functional `ω : A →ₚ[ℂ] ℂ` as a completely positive map into the one-by-one
-matrices, `a ↦ ω a • 1`. -/
-def toCompletelyPositiveMapMatrixOne (ω : A →ₚ[ℂ] ℂ) : A →CP CStarMatrix Unit Unit ℂ :=
-  CompletelyPositiveMap.comp
-    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap
-      (StarAlgHom.ofId ℂ (CStarMatrix Unit Unit ℂ)))
-    ω.toCompletelyPositiveMap
-
-/-- `ω.toCompletelyPositiveMapMatrixOne a` is `ω a` times the identity. -/
-@[simp]
-theorem toCompletelyPositiveMapMatrixOne_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMapMatrixOne a = ω a • (1 : CStarMatrix Unit Unit ℂ) := by
-  rw [toCompletelyPositiveMapMatrixOne, CompletelyPositiveMap.comp_apply,
-    CompletelyPositiveMapClass.coe_toCompletelyPositiveLinearMap, toCompletelyPositiveMap_apply,
-    StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one]
-
-/-- The only entry of `ω.toCompletelyPositiveMapMatrixOne a` is `ω a`. -/
-theorem toCompletelyPositiveMapMatrixOne_apply_apply (ω : A →ₚ[ℂ] ℂ) (a : A) (i j : Unit) :
-    ω.toCompletelyPositiveMapMatrixOne a i j = ω a := by
+/-- The only entry of `ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) a` is `ω a`. -/
+theorem toCompletelyPositiveMapOfId_apply_apply (ω : A →ₚ[ℂ] ℂ) (a : A) (i j : Unit) :
+    ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) a i j = ω a := by
   simp
 
-/-- The norm of `ω.toCompletelyPositiveMapMatrixOne a` is `‖ω a‖`. -/
-theorem norm_toCompletelyPositiveMapMatrixOne_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ‖ω.toCompletelyPositiveMapMatrixOne a‖ = ‖ω a‖ := by
-  rw [toCompletelyPositiveMapMatrixOne_apply, norm_smul, norm_one, mul_one]
-
 /-- The 2-norm defect of `a ↦ ω a • 1` is `Re ω(a⋆a) - |ω a|²`. -/
-theorem twoNormDefect_toCompletelyPositiveMapMatrixOne (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMapMatrixOne.twoNormDefect a = (ω (star a * a)).re - ‖ω a‖ ^ 2 := by
-  simp only [CompletelyPositiveMap.twoNormDefect_def, toCompletelyPositiveMapMatrixOne_apply,
+theorem twoNormDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : A) :
+    (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)).twoNormDefect a =
+      (ω (star a * a)).re - ‖ω a‖ ^ 2 := by
+  simp only [CompletelyPositiveMap.twoNormDefect_def, toCompletelyPositiveMapOfId_apply,
     star_smul, star_one, smul_mul_smul, mul_one, ← sub_smul, CStarMatrix.normalizedTrace_smul,
     CStarMatrix.normalizedTrace_one, Complex.sub_re, Complex.star_def, Complex.conj_mul']
   norm_cast
 
 /-- The norm defect of `a ↦ ω a • 1` is `|ω(a⋆a) - |ω a|²|`. -/
-theorem normDefect_toCompletelyPositiveMapMatrixOne (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMapMatrixOne.normDefect a = ‖ω (star a * a) - star (ω a) * ω a‖ := by
-  simp only [CompletelyPositiveMap.normDefect_def, toCompletelyPositiveMapMatrixOne_apply,
+theorem normDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : A) :
+    (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)).normDefect a =
+      ‖ω (star a * a) - star (ω a) * ω a‖ := by
+  simp only [CompletelyPositiveMap.normDefect_def, toCompletelyPositiveMapOfId_apply,
     star_smul, star_one, smul_mul_smul, mul_one, ← sub_smul, norm_smul, norm_one]
 
 /-- The 2-norm of the multiplicativity error of `a ↦ ω a • 1` is `|ω(ab) - ω(a)ω(b)|`. -/
-theorem normalizedTwoNorm_toCompletelyPositiveMapMatrixOne_mul_sub (ω : A →ₚ[ℂ] ℂ) (a b : A) :
-    CStarMatrix.normalizedTwoNorm (ω.toCompletelyPositiveMapMatrixOne (a * b) -
-      ω.toCompletelyPositiveMapMatrixOne a * ω.toCompletelyPositiveMapMatrixOne b) =
+theorem normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub (ω : A →ₚ[ℂ] ℂ) (a b : A) :
+    CStarMatrix.normalizedTwoNorm
+        (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) (a * b) -
+          ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) a *
+            ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) b) =
       ‖ω (a * b) - ω a * ω b‖ := by
-  simp only [toCompletelyPositiveMapMatrixOne_apply, smul_mul_smul, mul_one, ← sub_smul,
+  simp only [toCompletelyPositiveMapOfId_apply, smul_mul_smul, mul_one, ← sub_smul,
     CStarMatrix.normalizedTwoNorm_smul, CStarMatrix.normalizedTwoNorm_one]
 
 end PositiveLinearMap
@@ -105,33 +88,20 @@ def diagEntry (i : n) : CStarMatrix n n ℂ →ₚ[ℂ] ℂ :=
     { toFun x := x i i
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
-    fun _ hx => (nonneg_iff_posSemidef.mp hx).diag_nonneg
+    fun _ hx => diag_nonneg_of_nonneg hx i
 
 /-- `diagEntry i x` is the entry `x i i`. -/
 @[simp]
 theorem diagEntry_apply (i : n) (x : CStarMatrix n n ℂ) : diagEntry i x = x i i :=
   (rfl)
 
-/-- The normalized trace `tr_n`, as a positive linear functional. -/
-def normalizedTraceₚ : CStarMatrix n n ℂ →ₚ[ℂ] ℂ :=
-  PositiveLinearMap.mk₀
-    { toFun := normalizedTrace
-      map_add' := normalizedTrace_add
-      map_smul' := normalizedTrace_smul }
-    fun _ => normalizedTrace_nonneg
-
-/-- `normalizedTraceₚ x` is the normalized trace of `x`. -/
-@[simp]
-theorem normalizedTraceₚ_apply (x : CStarMatrix n n ℂ) : normalizedTraceₚ x = normalizedTrace x :=
-  (rfl)
-
 /-- The completely positive compression `x ↦ x i i` from `M_n` to `M₁`. -/
 def diagEntryCP (i : n) : CStarMatrix n n ℂ →CP CStarMatrix Unit Unit ℂ :=
-  (diagEntry i).toCompletelyPositiveMapMatrixOne
+  (diagEntry i).toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)
 
 /-- Unfolding lemma for `diagEntryCP`. -/
 theorem diagEntryCP_def (i : n) :
-    diagEntryCP i = (diagEntry i).toCompletelyPositiveMapMatrixOne :=
+    diagEntryCP i = (diagEntry i).toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) :=
   (rfl)
 
 /-- `diagEntryCP i x` is `x i i` times the identity of `M₁`. -/
@@ -142,17 +112,18 @@ theorem diagEntryCP_apply (i : n) (x : CStarMatrix n n ℂ) :
 
 /-- The compression `x ↦ x i i` is a contraction. -/
 theorem norm_diagEntryCP_apply_le (i : n) (x : CStarMatrix n n ℂ) : ‖diagEntryCP i x‖ ≤ ‖x‖ := by
-  rw [diagEntryCP, PositiveLinearMap.norm_toCompletelyPositiveMapMatrixOne_apply, diagEntry_apply]
+  rw [diagEntryCP, PositiveLinearMap.norm_toCompletelyPositiveMapOfId_apply, diagEntry_apply]
   exact norm_entry_le_norm
 
 /-- The normalized trace `tr_n` as a completely positive map from `M_n` to `M₁`. -/
 def normalizedTraceCP : CStarMatrix n n ℂ →CP CStarMatrix Unit Unit ℂ :=
-  normalizedTraceₚ.toCompletelyPositiveMapMatrixOne
+  (normalizedTraceMap n).toPositiveLinearMap.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)
 
 /-- Unfolding lemma for `normalizedTraceCP`. -/
 theorem normalizedTraceCP_def :
     (normalizedTraceCP : CStarMatrix n n ℂ →CP CStarMatrix Unit Unit ℂ) =
-      normalizedTraceₚ.toCompletelyPositiveMapMatrixOne :=
+      (normalizedTraceMap n).toPositiveLinearMap.toCompletelyPositiveMapOfId
+        (CStarMatrix Unit Unit ℂ) :=
   (rfl)
 
 /-- `normalizedTraceCP x` is `tr_n x` times the identity of `M₁`. -/
@@ -163,8 +134,8 @@ theorem normalizedTraceCP_apply (x : CStarMatrix n n ℂ) :
 
 /-- The normalized trace `tr_n : M_n → M₁` is a contraction. -/
 theorem norm_normalizedTraceCP_apply_le (x : CStarMatrix n n ℂ) : ‖normalizedTraceCP x‖ ≤ ‖x‖ := by
-  rw [normalizedTraceCP, PositiveLinearMap.norm_toCompletelyPositiveMapMatrixOne_apply,
-    normalizedTraceₚ_apply]
+  rw [normalizedTraceCP, PositiveLinearMap.norm_toCompletelyPositiveMapOfId_apply,
+    PositiveContinuousLinearMap.coe_toPositiveLinearMap, normalizedTraceMap_apply]
   exact norm_normalizedTrace_le_norm x
 
 end CStarMatrix
