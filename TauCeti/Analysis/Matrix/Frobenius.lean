@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # The Frobenius inner product on matrices
@@ -35,6 +36,8 @@ and the inner product together.
   `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
+* `Matrix.IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg` — a Hermitian and a
+  skew-Hermitian matrix are orthogonal for the real inner product.
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
@@ -130,6 +133,15 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     conjTranspose_apply,
     RCLike.star_def]
   exact Finset.sum_comm
+
+/-- A Hermitian matrix and a skew-Hermitian matrix are orthogonal for the real Frobenius inner
+product. -/
+theorem IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg {A W : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (hW : Wᴴ = -W) : ⟪A, W⟫_ℝ = 0 := by
+  have hre : ⟪A, W⟫_ℝ = RCLike.re ⟪A, W⟫_𝕜 := by
+    simp [map_sum, real_inner_eq_re_inner 𝕜]
+  rw [hre, frobenius_inner_eq_trace_conjTranspose_mul, hA.eq]
+  exact hA.re_trace_mul_eq_zero_of_conjTranspose_eq_neg hW
 
 /-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
 theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :

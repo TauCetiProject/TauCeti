@@ -116,10 +116,22 @@ theorem matrixNearestPoint_coe {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) :
 section Manifold
 
 /-- The topology of the Frobenius norm on matrices, selected so that the units of the Frobenius
-normed algebra receive their charts. It is the entrywise topology up to unfolding. -/
+normed algebra receive their charts. It is the entrywise topology
+(`ClosedSubgroup.frobeniusTopologicalSpace_eq`). -/
 private abbrev frobeniusTopologicalSpace : TopologicalSpace (Matrix n n 𝕜) :=
   (Matrix.frobeniusSeminormedAddCommGroup (m := n) (n := n) (α := 𝕜)).toPseudoMetricSpace
     |>.toUniformSpace |>.toTopologicalSpace
+
+omit [DecidableEq n] in
+/-- The topology of the Frobenius norm is the entrywise topology on matrices.
+
+This holds by `rfl` by design of Mathlib's `Matrix.frobeniusSeminormedAddCommGroup`: it is built
+from `PiLp.seminormedAddCommGroupToPi`, which replaces the `L²` uniformity by the product
+uniformity, so the induced topology is the product topology, which is Mathlib's topology on
+matrices. -/
+private theorem frobeniusTopologicalSpace_eq :
+    frobeniusTopologicalSpace = (inferInstance : TopologicalSpace (Matrix n n 𝕜)) :=
+  rfl
 
 attribute [local instance] frobeniusTopologicalSpace
 
@@ -128,7 +140,8 @@ private def toUnits : Subgroup (Matrix n n 𝕜)ˣ :=
   (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
 
 private theorem isCompact_toUnits : IsCompact (G.toUnits : Set (Matrix n n 𝕜)ˣ) :=
-  G.isClosed'.isCompact.image Unitary.continuous_toUnits
+  G.isClosed'.isCompact.image
+    ((frobeniusTopologicalSpace_eq (n := n) (𝕜 := 𝕜)).symm ▸ Unitary.continuous_toUnits)
 
 /-- The inclusion of the units of `G` into the matrices. -/
 private def coeUnits (k : G.toUnits) : Matrix n n 𝕜 :=
@@ -291,23 +304,12 @@ theorem fderiv_matrixNearestPoint_one_of_forall_mem (hG : ∀ g, g ∈ G) (H : M
   · rw [LieSubalgebra.mem_toSubmodule, mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG,
       Matrix.conjTranspose_smul, Matrix.conjTranspose_sub, Matrix.conjTranspose_conjTranspose]
     simp [smul_sub]
-  -- The remainder `A = (H + Hᴴ) / 2` is Hermitian, so `tr (Aᴴ W)` is imaginary for a
-  -- skew-Hermitian `W`.
-  have hW' := (mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG).mp hW
-  have hre (A B : Matrix n n 𝕜) : ⟪A, B⟫_ℝ = RCLike.re ⟪A, B⟫_𝕜 := by
-    simp [Matrix.frobenius_inner_def, map_sum, real_inner_eq_re_inner 𝕜]
-  rw [hre, Matrix.frobenius_inner_eq_trace_conjTranspose_mul]
-  set A := H - (2⁻¹ : ℝ) • (H - Hᴴ)
-  have hA : Aᴴ = A := by
-    simp only [A, Matrix.conjTranspose_sub, Matrix.conjTranspose_smul,
-      Matrix.conjTranspose_conjTranspose, star_trivial]
-    module
-  have hz : star (Aᴴ * W).trace = -(Aᴴ * W).trace := by
-    rw [← Matrix.trace_conjTranspose, Matrix.conjTranspose_mul, hW', hA, hA, Matrix.neg_mul,
-      Matrix.trace_neg, Matrix.trace_mul_comm]
-  have h := congrArg RCLike.re hz
-  rw [RCLike.star_def, RCLike.conj_re, map_neg] at h
-  linarith
+  -- The remainder `H - (H - Hᴴ) / 2 = (H + Hᴴ) / 2` is Hermitian, and `W` is skew-Hermitian.
+  refine Matrix.IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg ?_
+    ((mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG).mp hW)
+  simp only [Matrix.IsHermitian, Matrix.conjTranspose_sub, Matrix.conjTranspose_smul,
+    Matrix.conjTranspose_conjTranspose, star_trivial]
+  module
 
 /-- **The derivative of `π_G` for a finite `G`.** If `G` is finite, such as `{±1}`, its Lie
 algebra is `0`, so the derivative of the nearest-point retraction at every `g ∈ G` is `0`, the
@@ -321,12 +323,13 @@ theorem fderiv_matrixNearestPoint_eq_zero_of_finite
     have h0 := eq_zero_of_mem_matrixLieAlgebra_of_finite hG (mem_matrixTangentSpace_iff.mp hV)
     have hV' : V = (g : Matrix n n 𝕜) * (star (g : Matrix n n 𝕜) * V) := by simp [← mul_assoc]
     rw [Submodule.mem_bot, hV', h0, mul_zero]
-  rw [fderiv_matrixNearestPoint, hbot, Submodule.starProjection_bot]
-  -- The two zeros are continuous linear maps for different topologies on the matrices: the
-  -- Frobenius-norm topology (from `Matrix.frobeniusNormedAddCommGroup`) and the entrywise
-  -- `instTopologicalSpaceMatrix`. These agree definitionally, as `fderiv_matrixNearestPoint`
-  -- already uses, but not reducibly, so `rw` and `simp` cannot close the goal.
-  rfl
+  -- `fderiv` is taken for the entrywise topology `instTopologicalSpaceMatrix` and the projection
+  -- for the Frobenius-norm topology, which agree (`frobeniusTopologicalSpace_eq`). Evaluating at
+  -- `H` compares the two maps through their values, which are plain matrices.
+  ext H : 1
+  have h : fderiv ℝ G.matrixNearestPoint g H = (G.matrixTangentSpace g).starProjection H :=
+    DFunLike.congr_fun (G.fderiv_matrixNearestPoint g) H
+  rw [h, hbot, Submodule.starProjection_bot, zero_apply, zero_apply]
 
 /-- **`0` lies outside `𝒰` for a nontrivial `G`.** Every point of `G` has Frobenius norm
 `√(card n)`, so every point of `G` is a nearest point to `0`. If nearest points are unique on the
