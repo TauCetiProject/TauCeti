@@ -354,9 +354,9 @@ theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
   have hL (α : V [⋀^Fin 2]→L[ℝ] ℝ) : (L α : ⋀[ℝ]^2 V) =
       (√2 / 2 : ℝ) • ((alternatingFormEquiv V 2).symm α +
         o.hodgeStar hkl ((alternatingFormEquiv V 2).symm α)) := by
-    change (((√2 : ℝ) • o.selfDualProj even_two hkl
-      ((alternatingFormEquiv V 2).symm α) : _) : ⋀[ℝ]^2 V) = _
-    rw [Submodule.coe_smul, Orientation.coe_selfDualProj_apply]
+    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearEquiv.coe_toContinuousLinearEquiv', LinearMap.coe_toContinuousLinearMap',
+      LinearMap.smul_apply, Submodule.coe_smul, Orientation.coe_selfDualProj_apply]
     module
   have hF : HasFDerivAt (quadraticTwoForm o ρ hkl) (quadraticTwoFormPolar o ρ hkl (χ p))
       (χ p + (0 : ℝ) • ζ p) := by simpa using hasFDerivAt_quadraticTwoForm o ρ hkl (χ p)
@@ -553,6 +553,14 @@ theorem gaugeFixedFlatOperator_apply (hkl : 2 + 2 = finrank ℝ V) (b : V → V 
          mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩) :=
   (rfl)
 
+/-- Coercion of the self-dual curvature component of `gaugeFixedFlatOperator` to `⋀[ℝ]^2 V`. -/
+theorem coe_gaugeFixedFlatOperator_snd_fst (hkl : 2 + 2 = finrank ℝ V)
+    (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ)
+    (δb : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ζ : V → positiveHalfSpinors o ρ) (p : V) :
+    ((gaugeFixedFlatOperator o ρ e hkl b χ δb ζ p).2.1 : ⋀[ℝ]^2 V) =
+      (√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl δb χ ζ p :=
+  (rfl)
+
 /-- `gaugeFixedFlatOperator` is independent of the choice of orthonormal basis of `V` at points
 of differentiability of the connection perturbation. -/
 theorem gaugeFixedFlatOperator_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4) ℝ V)
@@ -589,8 +597,7 @@ theorem gaugeFixedFlatOperator_smul (hkl : 2 + 2 = finrank ℝ V) (b : V → V [
   rw [gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply]
   refine Prod.ext (flatDeformationGauge_smul r δb χ ζ p) <|
     Prod.ext (Subtype.ext ?_) (Subtype.ext <| flatDeformationDirac_smul b r δb χ ζ p)
-  change (√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl (r • δb) χ (r • ζ) p =
-    r • (√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl δb χ ζ p
+  simp only [Prod.smul_snd, Prod.smul_fst, Submodule.coe_smul]
   rw [flatDeformationCurvature_smul, smul_comm]
 
 /-- `gaugeFixedFlatOperator` sends the zero perturbation to zero. -/

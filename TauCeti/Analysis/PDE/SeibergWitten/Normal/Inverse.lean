@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
-import TauCeti.Analysis.InnerProductSpace.ProdL2
+import TauCeti.Analysis.InnerProductSpace.Spectral.BlockSum
 import TauCeti.Analysis.PDE.Vortex.AdjointKernel
 
 /-!
@@ -277,12 +277,12 @@ def normalTargetSlowProj (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     Submodule.starProjection_comp_starProjection_of_le (le_refl _)]
 /-- `normalDomainSlowProj` is self-adjoint on `NormalL2 volume`. -/
 theorem isSelfAdjoint_normalDomainSlowProj : IsSelfAdjoint (normalDomainSlowProj x) :=
-  (isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel x)).withLpProdMap
-    (IsSelfAdjoint.zero _)
+  (ContinuousLinearMap.isSelfAdjoint_withLpProdMap_iff _ _).2
+    ⟨isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel x), IsSelfAdjoint.zero _⟩
 /-- `normalTargetSlowProj` is self-adjoint on `NormalL2 volume`. -/
 theorem isSelfAdjoint_normalTargetSlowProj : IsSelfAdjoint (normalTargetSlowProj x) :=
-  (IsSelfAdjoint.zero _).withLpProdMap
-    (isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel x))
+  (ContinuousLinearMap.isSelfAdjoint_withLpProdMap_iff _ _).2
+    ⟨IsSelfAdjoint.zero _, isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel x)⟩
 /-- `normalDomainSlowProj` is a contraction (`‖Π₊‖ ≤ 1`). -/
 theorem norm_normalDomainSlowProj_le : ‖normalDomainSlowProj x‖ ≤ 1 := by
   rw [normalDomainSlowProj, ContinuousLinearMap.norm_withLpProdMap, norm_zero, max_le_iff]

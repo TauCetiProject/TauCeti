@@ -93,15 +93,13 @@ theorem gaugeFixedFlatOperator_normalPerturbation (x : ℂ → EuclideanSpace �
   have hadj : Vortex.gaugeFixedAdjoint x (-η) z = -Vortex.gaugeFixedAdjoint x η z := by
     simpa only [neg_one_smul] using Vortex.gaugeFixedAdjoint_smul x η (-1) z
   have hω_sd := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  rw [gaugeFixedFlatOperator_apply, normalTargetEquiv_apply]
+  rw [normalTargetEquiv_apply]
   refine Prod.ext ?_ (Prod.ext ?_ ?_)
-  · simpa [z] using flatDeformationGauge_normalModel hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη'
-  · let c : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
-      ⟨(√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl (normalModelConnection e y (-η))
-          (normalModelSpinor e u₀ x 0) (normalModelSpinor e u₀ y (-η)) p,
-        Submodule.smul_mem _ _ (by
-          rw [Module.End.mem_eigenspace_iff, one_smul]
-          exact hodgeStar_flatDeformationCurvature hkl _ _ _ _)⟩
+  · rw [gaugeFixedFlatOperator_apply]
+    simpa [z] using flatDeformationGauge_normalModel hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη'
+  · dsimp only
+    set c := (gaugeFixedFlatOperator o ρ e hkl (normalConnection e x) (normalModelSpinor e u₀ x 0)
+      (normalModelConnection e y (-η)) (normalModelSpinor e u₀ y (-η)) p).2.1
     have hc_sd : o.hodgeStar hkl (c : ⋀[ℝ]^2 V) = c :=
       o.hodgeStar_coe_of_mem_eigenspace_one hkl c
     have hinner {j : Fin 4}
@@ -110,10 +108,10 @@ theorem gaugeFixedFlatOperator_normalPerturbation (x : ℂ → EuclideanSpace �
         ⟪σ, c⟫ = ⟪flatDeformationCurvature o ρ hkl (normalModelConnection e y (-η))
             (normalModelSpinor e u₀ x 0) (normalModelSpinor e u₀ y (-η)) p,
           ιMulti ℝ 2 ![e 0, e j]⟫ := by
-      rw [hσ, Submodule.coe_inner, o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hc_sd]
-      simp only [c, real_inner_smul_right]
-      rw [real_inner_comm (ιMulti ℝ 2 ![e 0, e j])]
-      rw [← mul_assoc, mul_div_assoc', Real.mul_self_sqrt zero_le_two]
+      rw [hσ, Submodule.coe_inner, o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hc_sd,
+        coe_gaugeFixedFlatOperator_snd_fst, real_inner_smul_right,
+        real_inner_comm (ιMulti ℝ 2 ![e 0, e j]), ← mul_assoc, mul_div_assoc',
+        Real.mul_self_sqrt zero_le_two]
       ring
     have hc0 : ⟪J.kahlerSelfDual o hkl hω_sd, c⟫ = Vortex.gaugeFixedOperator x y z 1 := by
       rw [hinner (AlmostComplexStructure.kahlerSelfDual_eq_selfDualWedge he h₀ h₂₃ hω_sd),
@@ -128,10 +126,11 @@ theorem gaugeFixedFlatOperator_normalPerturbation (x : ℂ → EuclideanSpace �
       rw [hinner AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
         inner_flatDeformationCurvature_normalModel_zero_three hQ hkl he h₀ h₂₃ hρ hu₀ x hu₀₁ hy hη',
         hadj, PiLp.neg_apply, neg_neg]
-    change c = _
     rw [AlmostComplexStructure.eq_inner_kahlerSelfDual_add_antiInvariantSelfDual
-      (e := e) (he := he) (h₀ := h₀) (h₂ := h₂₃) hω_sd c, hc0, hc1, hc2]
-  · apply Subtype.ext
+      (e := e) (he := he) (h₀ := h₀) (h₂ := h₂₃) hω_sd c, hc0, hc1, hc2,
+      normalFrameSelfDual_def]
+  · rw [gaugeFixedFlatOperator_apply, normalFrameNegSpinor_def]
+    apply Subtype.ext
     have hdir := flatDeformationDirac_normalModel hQ hkl he h₀ h₂₃ hu₀ x hy hη'
     rw [normalModelConnection_zero_right] at hdir
     dsimp only
