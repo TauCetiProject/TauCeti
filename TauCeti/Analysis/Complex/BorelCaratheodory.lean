@@ -16,8 +16,8 @@ import TauCeti.Analysis.Convex.SimplyConnected
 /-!
 # Consequences of the Borel–Carathéodory theorem
 
-Three consequences of Mathlib's Borel–Carathéodory theorem, which bounds a holomorphic function on
-a disc by an upper bound on its real part.
+Consequences of Mathlib's Borel–Carathéodory theorem, which bounds a holomorphic function on a
+disc by an upper bound on its real part.
 
 For an entire `H`, an upper bound `Complex.exp(H(z)) = O(Complex.exp(‖z‖^p))` with `p ≥ 0` forces
 `H(z) = O(‖z‖^p)`. An upper bound on the real part therefore controls the entire complex
@@ -48,6 +48,17 @@ exterior values are unrestricted.
   real-part bound.
 * `Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul`: the estimate from a relative
   norm bound.
+
+## References
+
+* A. Kupers, *Lectures on complex analysis*, Theorem 14.1.1 and Lemmas 14.1.4 and 14.1.5: the
+  polynomial-degree step of the finite-order Hadamard factorization, through Borel–Carathéodory
+  and Cauchy's estimates on circles where the canonical product is bounded below.
+* `Growth.lean` and `Order.lean` in
+  [PrimeNumberTheoremAnd, revision df0ccba](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/tree/df0ccba486bb86e273ecab565b6ab222c37f8320/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/HadamardFactorization),
+  where this step is part of `hadamard_factorization_of_growth`.
+  `Differentiable.exists_eq_polynomial_eval_of_frequently_re_le_rpow` is adapted from it, stated
+  for an arbitrary entire function and only on an unbounded set of circles.
 -/
 
 public section
@@ -142,8 +153,9 @@ theorem Differentiable.exists_eq_polynomial_eval_of_frequently_re_le_rpow {h : �
     · simp [t, max_eq_right hs, Nat.floor_of_nonpos hs]
     · simp [t, max_eq_left hs]
   rw [← ht]
+  have hhalf : Tendsto (fun R : ℝ ↦ R / 2) atTop atTop := tendsto_id.atTop_div_const two_pos
   refine hh.exists_eq_polynomial_eval_of_frequently_norm_le_rpow
-    (C := 2 * |C| * 2 ^ t + 2 + 3 * ‖h 0‖) ((tendsto_id.atTop_div_const two_pos).frequently
+    (C := 2 * |C| * 2 ^ t + 2 + 3 * ‖h 0‖) (hhalf.frequently
       ((hre.and_eventually (eventually_ge_atTop 2)).mono fun R ⟨hR, hR2⟩ z hz ↦ ?_))
   have hR0 : 0 < R := by linarith
   have hz' : ‖z‖ = R / 2 := by simpa using hz
@@ -159,9 +171,9 @@ theorem Differentiable.exists_eq_polynomial_eval_of_frequently_re_le_rpow {h : �
     (Complex.borelCaratheodory (by positivity) hh.differentiableOn hM hR0
       (by rw [Metric.mem_ball, dist_zero_right, hz']; linarith)).trans_eq
       (by rw [hz']; field_simp; ring)
-  have h1 : 1 ≤ (id R / 2) ^ t := Real.one_le_rpow (by simp; linarith) (le_max_right _ _)
-  have h2 : R ^ s ≤ 2 ^ t * (id R / 2) ^ t := by
-    rw [← Real.mul_rpow (by norm_num) (by simp; linarith), id, mul_div_cancel₀ _ two_ne_zero]
+  have h1 : 1 ≤ (R / 2) ^ t := Real.one_le_rpow (by linarith) (le_max_right _ _)
+  have h2 : R ^ s ≤ 2 ^ t * (R / 2) ^ t := by
+    rw [← Real.mul_rpow (by norm_num) (by linarith), mul_div_cancel₀ _ two_ne_zero]
     exact Real.rpow_le_rpow_of_exponent_le (by linarith) (le_max_left _ _)
   nlinarith [mul_le_mul_of_nonneg_left h2 (abs_nonneg C), norm_nonneg (h 0)]
 

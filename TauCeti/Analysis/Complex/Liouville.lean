@@ -36,6 +36,12 @@ circles is needed.
 
 * Daniel Huybrechts, *Complex Geometry: An Introduction*, Universitext, Springer, 2005,
   Section 2.6.
+* `Growth.lean` and `Order.lean` in
+  [PrimeNumberTheoremAnd, revision df0ccba](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/tree/df0ccba486bb86e273ecab565b6ab222c37f8320/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/HadamardFactorization),
+  whose order-rigidity step for the Hadamard quotient is the source of
+  `Differentiable.exists_eq_polynomial_eval_of_iteratedDeriv_eq_zero` and
+  `Differentiable.exists_eq_polynomial_eval_of_frequently_norm_le_rpow`; here only an unbounded
+  set of circles is assumed.
 -/
 
 public section
