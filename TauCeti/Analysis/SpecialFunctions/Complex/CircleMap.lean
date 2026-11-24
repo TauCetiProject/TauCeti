@@ -17,6 +17,8 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 * `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
   from `c`.
+* `TauCeti.one_sub_mul_circleMap_ne_zero`: a scaled circle subtracted from `1` avoids zero
+  whenever its radius after scaling differs from `1`.
 * `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
   `c`, so every point `w` is `circleMap c ‖w - c‖ (arg (w - c))`.
 * `TauCeti.hasDerivAt_circleMap_radius`: along the ray at angle `θ`, the radius derivative of
@@ -33,6 +35,9 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
+* `TauCeti.continuous_circleMap_uncurry`: `circleMap c r θ` is jointly continuous in `(r, θ)`.
+* `ContinuousOn.continuous_uncurry_circleMap`: a function jointly continuous on a product of two
+  circles pulls back along the two angle parametrizations to a continuous function on `ℝ × ℝ`.
 -/
 
 public section
@@ -46,6 +51,14 @@ open scoped Real
 theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :
     ‖circleMap c R θ - c‖ = R := by
   rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hR]
+
+/-- Subtracting a point of the scaled circle `z * circleMap 0 ρ θ` from `1` gives a nonzero
+point whenever the scaled radius differs from `1`. -/
+theorem one_sub_mul_circleMap_ne_zero {z : ℂ} {ρ : ℝ} (hzρ : ‖z‖ * |ρ| ≠ 1) (θ : ℝ) :
+    1 - z * circleMap 0 ρ θ ≠ 0 := by
+  intro heq
+  have hn := congrArg norm (sub_eq_zero.mp heq)
+  exact hzρ (by simpa [norm_mul, norm_circleMap_zero] using hn.symm)
 
 /-- Polar coordinates about `c`: the point at radius `‖w‖` and angle `arg w` about `c` is
 `c + w`. -/
@@ -121,4 +134,24 @@ theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
   simp_rw [circleMap_zero_zpow]
   exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
 
+/-- The point `circleMap c r θ` depends jointly continuously on the radius `r` and the angle `θ`. -/
+theorem continuous_circleMap_uncurry (c : ℂ) : Continuous fun p : ℝ × ℝ ↦ circleMap c p.1 p.2 := by
+  unfold circleMap
+  fun_prop
+
 end TauCeti
+
+namespace ContinuousOn
+
+open Metric
+
+/-- The pullback of a function jointly continuous on a product of circles
+`sphere c |R| ×ˢ sphere c' |R'|` along the two angle parametrizations is continuous on `ℝ × ℝ`. -/
+theorem continuous_uncurry_circleMap {X : Type*} [TopologicalSpace X] {F : ℂ → ℂ → X}
+    {c c' : ℂ} {R R' : ℝ}
+    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    Continuous (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ)) :=
+  hF.comp_continuous (f := fun p : ℝ × ℝ ↦ (circleMap c R p.1, circleMap c' R' p.2))
+    (by fun_prop) fun p ↦ ⟨circleMap_mem_sphere' c R p.1, circleMap_mem_sphere' c' R' p.2⟩
+
+end ContinuousOn

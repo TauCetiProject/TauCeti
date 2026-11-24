@@ -20,6 +20,10 @@ pointwise product `g f`. This file packages it as a continuous linear map
 `Distribution.smulLeftCLM` on `𝓓'^{n}(Ω, F)`, in the way Mathlib's `Distribution.lineDerivCLM`
 transposes differentiation of test functions.
 
+In a finite-dimensional space the multiplier only needs to be `C^n` on `Ω`
+(`Distribution.smulLeftCLMOfContDiffOn`), the transpose of `TestFunction.smulLeftCLMOfContDiffOn`,
+so a distribution on `Ω` can be multiplied by any function smooth on `Ω`.
+
 A complex multiplier `g + i h` acts on a complex distribution as `g T + i (h T)`; on complex test
 functions the product pairs as `(g T) ψ = T (g ψ)` (`Distribution.complexPairing_smulLeftCLM`).
 
@@ -39,7 +43,16 @@ compactly supported distribution `g T` from `Ω` to the whole space.
 * `Distribution.mapCLM_smulLeftCLM`: multiplying by `g` commutes with a linear map of the values.
 * `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of `g`
   and of `T`.
+* `Distribution.complexPairing_eq_of_coe_eq_comp`: a multiplication operator pairs with complex
+  test functions through multiplication of complex test functions.
 * `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
+* `Distribution.smulLeftCLMOfContDiffOn`: the product `g T` for a function `g` that is `C^n` on `Ω`
+  only, with `Distribution.smulLeftCLMOfContDiffOn_eq_smulLeftCLM`,
+  `Distribution.smulLeftCLMOfContDiffOn_congr`,
+  `Distribution.smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn`,
+  `Distribution.mapCLM_smulLeftCLMOfContDiffOn`,
+  `Distribution.dsupport_smulLeftCLMOfContDiffOn_subset_inter` and
+  `Distribution.complexPairing_smulLeftCLMOfContDiffOn`.
 * `Distribution.cutoffCLM`: the distribution `φ ↦ T (g φ)` on `Ω'`, with
   `Distribution.cutoffCLM_apply`, `Distribution.dsupport_cutoffCLM_subset_inter` and
   `Distribution.complexPairing_cutoffCLM`.
@@ -61,6 +74,20 @@ namespace Distribution
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E} {n : ℕ∞}
   [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [ContinuousSMul ℝ F] {g h : E → ℝ}
+
+/-- Let `S = T ∘ P` for a map `P` of real test functions on `Ω'` to real test functions on `Ω`
+acting as multiplication by `g`. Then the complex-linear extension of `S` pairs with a complex test
+function `ψ` as that of `T` with the complex test function `g ψ`. Every multiplication operator on
+distributions pairs with complex test functions this way. -/
+theorem complexPairing_eq_of_coe_eq_comp {Ω' : Opens E} {S : 𝓓'^{n}(Ω', ℂ)}
+    {T : 𝓓'^{n}(Ω, ℂ)} {P : 𝓓^{n}(Ω', ℝ) → 𝓓^{n}(Ω, ℝ)} (hS : ⇑S = ⇑T ∘ P)
+    (hP : ∀ φ x, P φ x = g x • φ x) {ψ : 𝓓^{n}(Ω', ℂ)} {ψ' : 𝓓^{n}(Ω, ℂ)}
+    (hψ : ∀ x, ψ' x = g x • ψ x) : S.complexPairing ψ = T.complexPairing ψ' := by
+  have hpart (L : ℂ →L[ℝ] ℝ) :
+      TestFunction.postcompCLM (𝕜 := ℝ) L ψ' = P (TestFunction.postcompCLM (𝕜 := ℝ) L ψ) := by
+    ext x
+    simp [hP, hψ, -real_smul]
+  simp [complexPairing_apply, hS, hpart]
 
 /-- The product `g T` of a distribution `T` with a `C^n` function `g`, defined by
 `(g T) φ = T (g φ)`, as a continuous linear map on distributions of order at most `n`. -/
@@ -117,13 +144,91 @@ with `g ψ`. -/
 @[simp]
 theorem complexPairing_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, ℂ))
     (ψ : 𝓓^{n}(Ω, ℂ)) :
-    (smulLeftCLM hg T).complexPairing ψ = T.complexPairing (TestFunction.smulLeftCLM hg ψ) := by
-  have hpart (L : ℂ →L[ℝ] ℝ) :
-      TestFunction.postcompCLM (𝕜 := ℝ) L (TestFunction.smulLeftCLM hg ψ) =
-        TestFunction.smulLeftCLM hg (TestFunction.postcompCLM (𝕜 := ℝ) L ψ) := by
-    ext x
-    simp [-real_smul]
-  simp [complexPairing_apply, hpart]
+    (smulLeftCLM hg T).complexPairing ψ = T.complexPairing (TestFunction.smulLeftCLM hg ψ) :=
+  complexPairing_eq_of_coe_eq_comp (coe_smulLeftCLM hg T) (TestFunction.smulLeftCLM_apply hg)
+    (TestFunction.smulLeftCLM_apply hg ψ)
+
+section SmulLeftOfContDiffOn
+
+variable [FiniteDimensional ℝ E]
+
+/-- The product `g T` of a distribution `T` on `Ω` with a function `g` that is `C^n` on `Ω` only,
+defined by `(g T) φ = T (g φ)`, as a continuous linear map on distributions of order at most `n`.
+Nothing is required of `g` off `Ω`. -/
+def smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω, F) :=
+  (TestFunction.smulLeftCLMOfContDiffOn hg).precompCompactConvergenceCLM F
+
+@[simp]
+theorem smulLeftCLMOfContDiffOn_apply (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n}(Ω, F))
+    (φ : 𝓓^{n}(Ω, ℝ)) :
+    smulLeftCLMOfContDiffOn hg T φ = T (TestFunction.smulLeftCLMOfContDiffOn hg φ) :=
+  (rfl)
+
+/-- As a function on test functions, `g T` is `T` composed with multiplication by `g`. -/
+theorem coe_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n}(Ω, F)) :
+    ⇑(smulLeftCLMOfContDiffOn hg T) = ⇑T ∘ ⇑(TestFunction.smulLeftCLMOfContDiffOn hg) :=
+  (rfl)
+
+/-- For a globally `C^n` multiplier `g`, `Distribution.smulLeftCLMOfContDiffOn` is
+`Distribution.smulLeftCLM`. -/
+theorem smulLeftCLMOfContDiffOn_eq_smulLeftCLM (hg : ContDiff ℝ n g) :
+    (smulLeftCLMOfContDiffOn hg.contDiffOn : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω, F)) =
+      smulLeftCLM hg := by
+  ext T φ
+  rw [smulLeftCLMOfContDiffOn_apply, smulLeftCLM_apply,
+    TestFunction.smulLeftCLMOfContDiffOn_eq_smulLeftCLM]
+
+/-- Multiplication of distributions by a function `C^n` on `Ω` depends only on the values of the
+multiplier on `Ω`. -/
+theorem smulLeftCLMOfContDiffOn_congr (hg : ContDiffOn ℝ n g Ω) (hh : ContDiffOn ℝ n h Ω)
+    (hgh : EqOn g h Ω) :
+    (smulLeftCLMOfContDiffOn hg : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω, F)) =
+      smulLeftCLMOfContDiffOn hh := by
+  ext T φ
+  rw [smulLeftCLMOfContDiffOn_apply, smulLeftCLMOfContDiffOn_apply,
+    TestFunction.smulLeftCLMOfContDiffOn_congr hg hh hgh]
+
+/-- Multiplying a distribution by `h` and then by `g`, both `C^n` on `Ω`, is multiplying it by
+`g h`. -/
+@[simp]
+theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω)
+    (hh : ContDiffOn ℝ n h Ω) (T : 𝓓'^{n}(Ω, F)) :
+    smulLeftCLMOfContDiffOn hg (smulLeftCLMOfContDiffOn hh T) =
+      smulLeftCLMOfContDiffOn (hg.mul hh) T := by
+  ext φ
+  simp only [smulLeftCLMOfContDiffOn_apply,
+    TestFunction.smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn]
+  congr 1
+  ext x
+  simp [mul_comm]
+
+/-- Multiplication by a function `C^n` on `Ω` commutes with applying a continuous linear map to
+the values. -/
+theorem mapCLM_smulLeftCLMOfContDiffOn {F' : Type*} [AddCommGroup F'] [Module ℝ F']
+    [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F')
+    (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (smulLeftCLMOfContDiffOn hg T) = smulLeftCLMOfContDiffOn hg (mapCLM A T) := by
+  ext φ
+  simp
+
+/-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
+theorem dsupport_smulLeftCLMOfContDiffOn_subset_inter (hg : ContDiffOn ℝ n g Ω)
+    (T : 𝓓'^{n}(Ω, F)) : dsupport (smulLeftCLMOfContDiffOn hg T) ⊆ tsupport g ∩ dsupport T := by
+  rw [coe_smulLeftCLMOfContDiffOn]
+  exact dsupport_comp_smulLeftCLMOfContDiffOn_subset T hg
+
+/-- The complex-linear extension of `g T` to complex test functions pairs `g T` with `ψ` as `T`
+with `g ψ`. -/
+@[simp]
+theorem complexPairing_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) (T : 𝓓'^{n}(Ω, ℂ))
+    (ψ : 𝓓^{n}(Ω, ℂ)) :
+    (smulLeftCLMOfContDiffOn hg T).complexPairing ψ =
+      T.complexPairing (TestFunction.smulLeftCLMOfContDiffOn hg ψ) :=
+  complexPairing_eq_of_coe_eq_comp (coe_smulLeftCLMOfContDiffOn hg T)
+    (TestFunction.smulLeftCLMOfContDiffOn_apply hg)
+    (TestFunction.smulLeftCLMOfContDiffOn_apply hg ψ)
+
+end SmulLeftOfContDiffOn
 
 section Cutoff
 
@@ -158,13 +263,9 @@ theorem dsupport_cutoffCLM_subset_inter (T : 𝓓'^{n}(Ω, F)) :
 @[simp]
 theorem complexPairing_cutoffCLM (T : 𝓓'^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(Ω', ℂ)) :
     (cutoffCLM hg hgΩ T).complexPairing ψ =
-      T.complexPairing (TestFunction.cutoffCLM hg hgΩ ψ) := by
-  have hpart (L : ℂ →L[ℝ] ℝ) :
-      TestFunction.postcompCLM (𝕜 := ℝ) L (TestFunction.cutoffCLM hg hgΩ ψ) =
-        TestFunction.cutoffCLM hg hgΩ (TestFunction.postcompCLM (𝕜 := ℝ) L ψ) := by
-    ext x
-    simp [-real_smul]
-  simp [complexPairing_apply, hpart]
+      T.complexPairing (TestFunction.cutoffCLM hg hgΩ ψ) :=
+  complexPairing_eq_of_coe_eq_comp (coe_cutoffCLM hg hgΩ T) (TestFunction.cutoffCLM_apply hg hgΩ)
+    (TestFunction.cutoffCLM_apply hg hgΩ ψ)
 
 end Cutoff
 

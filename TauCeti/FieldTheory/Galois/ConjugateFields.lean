@@ -24,6 +24,12 @@ the ambient Galois extension are indexed by the cosets of `E.fixingSubgroup`, wh
 distinct images of those embeddings are indexed by the cosets of
 `E.fixingSubgroup.normalizer`.  The latter quotient can be strictly smaller.
 
+Over a normal extension the conjugates of `E` are exactly the intermediate fields `K`-isomorphic
+to `E`, because a `K`-isomorphism between intermediate fields extends to an automorphism of the
+ambient field. Combined with the conjugation-equivariance of fixed fields, two finite subgroups of
+the automorphism group have isomorphic fixed fields exactly when they are conjugate; abstractly
+isomorphic subgroups need not have isomorphic fixed fields.
+
 ## Main definitions
 
 * `IntermediateField.conjugateFieldsEquivConjugateSubgroups`: the Galois-correspondence
@@ -36,6 +42,11 @@ distinct images of those embeddings are indexed by the cosets of
 * `IntermediateField.stabilizer_eq_normalizer_fixingSubgroup`: the field stabilizer is the
   normalizer of its fixing subgroup.
 * `IntermediateField.ncard_conjugateFields`: the number of fields is the normalizer index.
+* `IntermediateField.nonempty_algEquiv_iff_mem_conjugateFields`: over a normal extension, the
+  intermediate fields isomorphic to `E` are its conjugates.
+* `Subgroup.nonempty_fixedField_algEquiv_iff_exists_map_conj_eq`: two finite subgroups of the
+  automorphism group of a normal extension have isomorphic fixed fields exactly when they are
+  conjugate.
 -/
 
 public section
@@ -46,6 +57,22 @@ open scoped Pointwise
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 namespace IntermediateField
+
+/-- **Isomorphic intermediate fields of a normal extension are conjugate.** Two intermediate
+fields of a normal extension `L / K` are isomorphic as `K`-algebras exactly when an automorphism of
+`L` carries one onto the other. Normality is used only for the forward direction, where it extends
+a `K`-isomorphism `E ≃ₐ[K] E'` to an automorphism of `L`. -/
+theorem nonempty_algEquiv_iff_mem_conjugateFields [Normal K L] {E E' : IntermediateField K L} :
+    Nonempty (E ≃ₐ[K] E') ↔ E' ∈ conjugateFields E := by
+  rw [mem_conjugateFields_iff]
+  refine ⟨fun ⟨φ⟩ ↦ ⟨φ.liftNormal L, ?_⟩, fun ⟨σ, hσ⟩ ↦ ⟨(equivMap E σ).trans (equivOfEq hσ)⟩⟩
+  -- The lift of `φ` to `L` agrees with `φ` on `E`, so it maps `E` onto `φ(E) = E'`.
+  have hg (x : E) : φ.liftNormal L x = φ x := φ.liftNormal_commutes L x
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨φ.symm ⟨y, hy⟩, (φ.symm ⟨y, hy⟩).property, ?_⟩⟩
+  · rintro ⟨x, hx, rfl⟩
+    simp [hg ⟨x, hx⟩]
+  · simp [hg]
 
 section Galois
 
@@ -168,3 +195,30 @@ theorem ncard_conjugateFields (E : IntermediateField K L) :
 end Galois
 
 end IntermediateField
+
+namespace Subgroup
+
+/-- **Isomorphic fixed fields and conjugate subgroups.** For finite subgroups `H` and `H'` of the
+automorphism group of a normal extension `L / K`, the fixed fields of `H` and `H'` are isomorphic
+as `K`-algebras exactly when `H'` is a conjugate `σ H σ⁻¹` of `H`.
+
+For a finite Galois extension every subgroup is finite, so this compares the fixed fields of any
+two subgroups. Isomorphic subgroups do not suffice: in a Galois extension of `ℚ` with group `S₄`,
+the normal Klein four-group and a non-normal one are isomorphic but not conjugate, and their fixed
+fields are not isomorphic. -/
+theorem nonempty_fixedField_algEquiv_iff_exists_map_conj_eq [_root_.Normal K L]
+    (H H' : Subgroup (L ≃ₐ[K] L)) [Finite H] [Finite H'] :
+    Nonempty (fixedField H ≃ₐ[K] fixedField H') ↔
+      ∃ σ : L ≃ₐ[K] L, H.map (MulAut.conj σ : (L ≃ₐ[K] L) →* (L ≃ₐ[K] L)) = H' := by
+  rw [IntermediateField.nonempty_algEquiv_iff_mem_conjugateFields,
+    IntermediateField.mem_conjugateFields_iff]
+  refine exists_congr fun σ ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [← h, fixedField_map_conj]⟩
+  -- A finite subgroup is the fixing subgroup of its fixed field, so equal fixed fields force
+  -- equal subgroups.
+  have : Finite (H.map (MulAut.conj σ : (L ≃ₐ[K] L) →* (L ≃ₐ[K] L))) :=
+    Finite.of_equiv H (H.equivMapOfInjective _ (MulAut.conj σ).injective).toEquiv
+  rw [← IntermediateField.fixingSubgroup_fixedField_of_finite (H.map _), fixedField_map_conj,
+    ← IntermediateField.fixingSubgroup_fixedField_of_finite H']
+  exact congrArg IntermediateField.fixingSubgroup h
+
+end Subgroup

@@ -19,8 +19,9 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 ## Main results
 
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
-* `TauCeti.ValuativeRel.vle_of_vle_inv_mul` and
-  `TauCeti.ValuativeRel.vle_of_inv_mul_vle` : cancel a unit in valuation comparisons.
+* `Units.vle_inv_mul_iff_mul_vle` and `Units.inv_mul_vle_iff_vle_mul` : move a unit across a
+  valuation comparison; `Units.one_vle_inv_mul_iff` and `Units.inv_mul_vle_one_iff` are their
+  special cases with bound `1`.
 * `TauCeti.natCast_ne_zero_of_isUnit` and `TauCeti.two_ne_zero_of_isUnit_two`: an integer
   that is a unit in the ring of integers is nonzero in the ambient ring.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
@@ -47,29 +48,58 @@ pinned Mathlib.
 
 public section
 
+section
+
+variable {A : Type*} [Semiring A] [ValuativeRel A]
+
 namespace TauCeti.ValuativeRel
 
 /-- If `f` is a unit, then `¬ f ≤ᵥ 0`. -/
-theorem not_vle_zero_of_isUnit {A : Type*} [Semiring A] [ValuativeRel A] {f : A}
-    (hf : IsUnit f) : ¬ f ≤ᵥ (0 : A) := by
+theorem not_vle_zero_of_isUnit {f : A} (hf : IsUnit f) : ¬ f ≤ᵥ (0 : A) := by
   obtain ⟨u, rfl⟩ := hf
   intro h
   simpa [Units.inv_mul, ValuativeRel.not_vle.mpr ValuativeRel.zero_vlt_one] using
     ValuativeRel.mul_vle_mul_right h ↑u⁻¹
 
-/-- If `1 ≤ᵥ ϖ⁻¹ * t` for a unit `ϖ`, then `ϖ ≤ᵥ t`. -/
-theorem vle_of_vle_inv_mul {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) {t : A}
-    (h : 1 ≤ᵥ (ϖ⁻¹ : Aˣ) * t) : (ϖ : A) ≤ᵥ t := by
-  have h' := ValuativeRel.mul_vle_mul_right h ϖ
-  rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
-
-/-- If `ϖ⁻¹ * t ≤ᵥ 1` for a unit `ϖ`, then `t ≤ᵥ ϖ`. -/
-theorem vle_of_inv_mul_vle {A : Type*} [Semiring A] [ValuativeRel A] (ϖ : Aˣ) {t : A}
-    (h : (ϖ⁻¹ : Aˣ) * t ≤ᵥ 1) : t ≤ᵥ (ϖ : A) := by
-  have h' := ValuativeRel.mul_vle_mul_right h ϖ
-  rwa [mul_one, ← mul_assoc, Units.mul_inv, one_mul] at h'
-
 end TauCeti.ValuativeRel
+
+namespace Units
+
+/-- For a unit `ϖ`, `a ≤ᵥ ϖ⁻¹ * b` exactly when `ϖ * a ≤ᵥ b`. This is the unit analogue of
+Mathlib's `ValuativeRel.vle_div_iff` (stated there for a nonzero divisor in a division ring), in
+the shape of the ordered-group lemma `le_inv_mul_iff_mul_le`. -/
+@[simp]
+theorem vle_inv_mul_iff_mul_vle (ϖ : Aˣ) {a b : A} :
+    a ≤ᵥ (ϖ⁻¹ : Aˣ) * b ↔ (ϖ : A) * a ≤ᵥ b := by
+  -- multiply `ϖ * a ≤ᵥ b` by `ϖ⁻¹`, which is nonzero for `≤ᵥ`, and cancel `ϖ⁻¹ * ϖ`
+  rw [← ValuativeRel.mul_vle_mul_iff_right (y := (ϖ : A) * a)
+    (ValuativeRel.not_vle.mp (TauCeti.ValuativeRel.not_vle_zero_of_isUnit ϖ⁻¹.isUnit)),
+    ϖ.inv_mul_cancel_left]
+
+/-- For a unit `ϖ`, `ϖ⁻¹ * a ≤ᵥ b` exactly when `a ≤ᵥ ϖ * b`. This is the unit analogue of
+Mathlib's `ValuativeRel.div_vle_iff` (stated there for a nonzero divisor in a division ring), in
+the shape of the ordered-group lemma `inv_mul_le_iff_le_mul`. -/
+@[simp]
+theorem inv_mul_vle_iff_vle_mul (ϖ : Aˣ) {a b : A} :
+    (ϖ⁻¹ : Aˣ) * a ≤ᵥ b ↔ a ≤ᵥ (ϖ : A) * b := by
+  -- the case `ϖ⁻¹` of `Units.vle_inv_mul_iff_mul_vle`, read backwards
+  simpa only [inv_inv] using (vle_inv_mul_iff_mul_vle ϖ⁻¹ (a := a) (b := b)).symm
+
+/-- For a unit `ϖ`, `1 ≤ᵥ ϖ⁻¹ * a` exactly when `ϖ ≤ᵥ a`: the case `1` of
+`Units.vle_inv_mul_iff_mul_vle`, and the unit analogue of Mathlib's
+`ValuativeRel.one_vle_div_iff`. -/
+theorem one_vle_inv_mul_iff (ϖ : Aˣ) {a : A} : 1 ≤ᵥ (ϖ⁻¹ : Aˣ) * a ↔ (ϖ : A) ≤ᵥ a := by
+  simp
+
+/-- For a unit `ϖ`, `ϖ⁻¹ * a ≤ᵥ 1` exactly when `a ≤ᵥ ϖ`: the case `1` of
+`Units.inv_mul_vle_iff_vle_mul`, and the unit analogue of Mathlib's
+`ValuativeRel.div_vle_one_iff`. -/
+theorem inv_mul_vle_one_iff (ϖ : Aˣ) {a : A} : (ϖ⁻¹ : Aˣ) * a ≤ᵥ 1 ↔ a ≤ᵥ (ϖ : A) := by
+  simp
+
+end Units
+
+end
 
 open ValuativeRel
 
@@ -115,20 +145,11 @@ group of units `(ValueGroupWithZero K)ˣ`. -/
 @[simp]
 theorem valueGroup_valuation_eq_top :
     MonoidWithZeroHom.valueGroup (valuation K : K →*₀ ValueGroupWithZero K) = ⊤ := by
-  refine (Subgroup.eq_top_iff' _).2 fun γ ↦ ?_
+  refine (Subgroup.eq_top_iff' _).2 fun γ ↦ (MonoidWithZeroHom.mem_valueGroup_iff_of_comm _).2 ?_
+  -- write `γ = v a / v b` with `a, b` of positive valuation; then `v b * γ = v a`
   obtain ⟨a, b, hab⟩ := exists_valuation_posSubmonoid_div_valuation_posSubmonoid_eq γ
-  have ha0 : valuation K a ≠ 0 := by
-    rw [ne_eq, valuation_eq_zero_iff, not_vle]
-    exact (posSubmonoid_def _).1 a.property
-  have hb0 : valuation K b ≠ 0 := by
-    rw [ne_eq, valuation_eq_zero_iff, not_vle]
-    exact (posSubmonoid_def _).1 b.property
-  have hγ : γ = Units.mk0 (valuation K a) ha0 * (Units.mk0 (valuation K b) hb0)⁻¹ := by
-    ext
-    simp [div_eq_mul_inv, ← hab]
-  rw [hγ]
-  exact mul_mem (MonoidWithZeroHom.mem_valueGroup _ ⟨a, rfl⟩)
-    (MonoidWithZeroHom.inv_mem_valueGroup _ ⟨b, rfl⟩)
+  have hb := valuation_posSubmonoid_ne_zero b
+  exact ⟨b, hb, a, by simp [← hab, mul_div_cancel₀ _ hb]⟩
 
 /-- An element of a field has valuation below `1` exactly when it lies in the maximal ideal of the
 ring of integers. -/

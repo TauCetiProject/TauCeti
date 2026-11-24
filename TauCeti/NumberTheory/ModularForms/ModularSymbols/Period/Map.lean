@@ -67,8 +67,8 @@ theorem rawPairing_comp_symbolRep {F : Type*} [FunLike F UpperHalfPlane ℂ]
     rawPairing R f hk ∘ₗ symbolRep R w γ = rawPairing R f hk := by
   refine hom_ext_unimodular fun g P ↦ ?_
   rw [LinearMap.comp_apply, symbolRep_tmul, degreeZeroRep_apply,
-    degreeZeroGLRep_single_sub_single, rawPairing_single_sub_single_tmul,
-    rawPairing_single_sub_single_tmul, cuspIntegral_periodIntegrand_mapGL_smul_of_mem f hk _ hγ,
+    degreeZeroGLRep_divisor, rawPairing_divisor_tmul,
+    rawPairing_divisor_tmul, cuspIntegral_periodIntegrand_mapGL_smul_of_mem f hk _ hγ,
     binaryFormRep_binaryFormSLRep]
 
 /-- The descent of the raw pairing of `f` to `𝕄_w(Γ; R)`, the underlying function of the period
@@ -112,7 +112,7 @@ theorem periodMap_mk (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k)
 theorem periodMap_symbol (hk : k = w + 2) (f : CuspForm (Γ.map (mapGL ℝ)) k) (α β : OnePoint ℚ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     periodMap R Γ hk f (symbol Γ α β P) = cuspIntegral (periodIntegrand f P) β α := by
-  rw [symbol_apply, periodMap_mk, rawPairing_single_sub_single_tmul]
+  rw [symbol_apply, periodMap_mk, rawPairing_divisor_tmul]
 
 end TauCeti.ModularSymbols
 
