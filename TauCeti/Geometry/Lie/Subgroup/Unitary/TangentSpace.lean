@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Calculus.TangentCone.Defs
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -48,6 +49,8 @@ cone at `0` of `{Y : exp Y ∈ G}`. That cone lies in `𝔤` by the limit criter
 * `ClosedSubgroup.mem_posTangentConeAt_of_mem_matrixTangentSpace`: `g 𝔤` lies in the positive
   tangent cone of `G` at `g`.
 * `ClosedSubgroup.tangentConeAt_eq_matrixTangentSpace`: the tangent cone of `G` at `g` is `g 𝔤`.
+* `ClosedSubgroup.fderiv_apply_mem_matrixTangentSpace`: the derivative at `x` of a map with values
+  in `G` near `x` lies in the tangent space of `G` at its value.
 
 ## References
 
@@ -233,6 +236,21 @@ theorem tangentConeAt_eq_matrixTangentSpace (g : G) :
     rintro _ ⟨_, ⟨h, hh, rfl⟩, rfl⟩
     exact ⟨g⁻¹ * h, mul_mem (inv_mem g.property) hh, by simp⟩
   · exact tangentConeAt_mono_field (mem_posTangentConeAt_of_mem_matrixTangentSpace hV)
+
+/-- **The derivative of a `G`-valued map lies in the tangent space.** If `O` takes values in `G`
+near `x`, then every directional derivative `∂ᵥO(x)` lies in the tangent space `g 𝔤` of `G` at
+`g = O x`. No differentiability is assumed: where `O` is not differentiable, `fderiv` is `0`. -/
+theorem fderiv_apply_mem_matrixTangentSpace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {O : E → Matrix n n 𝕜} {x : E} {g : G}
+    (hO : ∀ᶠ y in 𝓝 x, O y ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
+    (hOx : O x = g) (v : E) : fderiv ℝ O x v ∈ G.matrixTangentSpace g := by
+  by_cases hd : DifferentiableAt ℝ O x
+  · rw [← SetLike.mem_coe, ← tangentConeAt_eq_matrixTangentSpace, ← hOx]
+    refine tangentConeAt_mono (image_preimage_subset O _) ?_
+    exact hd.hasFDerivAt.hasFDerivWithinAt.mapsTo_tangent_cone
+      (by rw [tangentConeAt_of_mem_nhds (show O ⁻¹' _ ∈ 𝓝 x from hO)]; trivial)
+  · rw [fderiv_zero_of_not_differentiableAt hd]
+    exact zero_mem _
 
 end TangentCone
 

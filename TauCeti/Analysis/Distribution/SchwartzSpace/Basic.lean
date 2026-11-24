@@ -13,6 +13,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -49,6 +50,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
@@ -159,6 +161,12 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
     norm_iteratedFDeriv_zero]
   gcongr
   exact f.norm_le_seminorm ℝ x
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The squared `L²` norm of a Schwartz function is the integral of its squared pointwise norm. -/
+theorem norm_toLp_sq [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] (f : 𝓢(E, F)) :
+    ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
+  (f.memLp 2 μ).norm_toLp_sq
 
 omit [SecondCountableTopology E] in
 /-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a
