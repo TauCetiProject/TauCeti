@@ -20,6 +20,9 @@ adjoint to the composite of `Φ_*` and `sheafCompose R`, which act by compositio
 different sides and so commute on the nose; the isomorphism is the uniqueness of left adjoints.
 It is characterized by its compatibility with the units of the two adjunctions
 (`CategoryTheory.Functor.unit_composeAndSheafifyCompSheafPullbackIso_hom_app`).
+
+When `G` maps sheaves to sheaves (`J.HasSheafCompose G`), the sheafified composite with `G`
+agrees with `sheafCompose J G` (`CategoryTheory.Sheaf.composeAndSheafifyIsoSheafCompose`).
 -/
 
 public section
@@ -52,6 +55,31 @@ lemma unit_composeAndSheafifyCompSheafPullbackIso_hom_app (F : Sheaf J A) :
           ((Φ.composeAndSheafifyCompSheafPullbackIso adj).hom.app F) =
       ((Φ.sheafAdjunctionContinuous A J K).comp (Sheaf.adjunction K adj)).unit.app F := by
   rw [composeAndSheafifyCompSheafPullbackIso, Adjunction.unit_leftAdjointUniq_hom_app]
-  exact Category.comp_id _
+  -- The unit of `ofNatIsoRight` along `Iso.refl _` is the original unit followed by an identity.
+  exact (NatTrans.congr_app (Adjunction.ofNatIsoRight_unit _ _) F).trans (Category.comp_id _)
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Sheaf
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {A B : Type*} [Category* A]
+  [Category* B] (G : A ⥤ B) [HasWeakSheafify J B] [J.HasSheafCompose G]
+
+/-- When the sectionwise composite with `G` of a sheaf is already a sheaf, the sheafified
+composite `Sheaf.composeAndSheafify J G` agrees with `sheafCompose J G`, through the counit of
+the sheafification adjunction, which is an isomorphism on sheaves. This uses that
+`(composeAndSheafify J G).obj F` is by definition the sheafification of the presheaf underlying
+`(sheafCompose J G).obj F`. -/
+noncomputable def composeAndSheafifyIsoSheafCompose : composeAndSheafify J G ≅ sheafCompose J G :=
+  NatIso.ofComponents
+    (fun F ↦ asIso ((sheafificationAdjunction J B).counit.app ((sheafCompose J G).obj F)))
+    fun f ↦ (sheafificationAdjunction J B).counit.naturality ((sheafCompose J G).map f)
+
+/-- The component of `composeAndSheafifyIsoSheafCompose` at `F` is the counit of the
+sheafification adjunction at `(sheafCompose J G).obj F`. -/
+lemma composeAndSheafifyIsoSheafCompose_hom_app (F : Sheaf J A) :
+    (composeAndSheafifyIsoSheafCompose J G).hom.app F =
+      (sheafificationAdjunction J B).counit.app ((sheafCompose J G).obj F) :=
+  (rfl)
+
+end CategoryTheory.Sheaf

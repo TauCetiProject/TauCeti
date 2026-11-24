@@ -31,8 +31,9 @@ For a ring homomorphism `φ : Λ →+* Λ'`, extension of scalars `Λ' ⊗_Λ -`
 restriction of scalars, which is left adjoint to coextension of scalars. So extension of scalars
 of étale sheaves (sheafified) preserves finite lisse sheaves
 (`CategoryTheory.Sheaf.IsFiniteLisse.extendScalars`), and so does restriction of scalars along
-a finite `φ` (`CategoryTheory.Sheaf.IsFiniteLisse.restrictScalars`). No invertibility hypothesis
-is needed.
+a finite `φ` (`CategoryTheory.Sheaf.IsFiniteLisse.restrictScalars`), whose sheafified composite
+agrees with `sheafCompose` (`CategoryTheory.Sheaf.composeAndSheafifyIsoSheafCompose`). No
+invertibility hypothesis is needed.
 
 ## References
 
@@ -86,9 +87,9 @@ theorem IsFiniteLisse.restrictScalars {Λ Λ' : Type u} [CommRing Λ] [CommRing 
     (hφ : φ.Finite) {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ')}
     (hF : F.IsFiniteLisse) :
     ((sheafCompose _ (ModuleCat.restrictScalars.{u, u, u} φ)).obj F).IsFiniteLisse := by
-  refine IsLocallyConstantIn.of_iso (asIso
-    ((sheafificationAdjunction (smallEtaleTopology S) (ModuleCat.{u} Λ)).counit.app
-      ((sheafCompose (smallEtaleTopology S) (ModuleCat.restrictScalars.{u, u, u} φ)).obj F))) ?_
+  refine IsLocallyConstantIn.of_iso
+    ((composeAndSheafifyIsoSheafCompose (smallEtaleTopology S)
+      (ModuleCat.restrictScalars.{u, u, u} φ)).app F) ?_
   exact hF.composeAndSheafify (ModuleCat.restrictCoextendScalarsAdj.{u, u, u} φ) fun M hM ↦
     (ModuleCat.isFG_iff _).mp (φ.isFG_restrictScalars_of_finite hφ ((ModuleCat.isFG_iff M).mpr hM))
 
