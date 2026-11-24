@@ -61,8 +61,9 @@ away from a finite set of primes.
   `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
   prescribed by the exponent divides the finite part, and membership in the finite part is
   detected by those prime powers.
-* `TauCeti.GlobalNumberFields.Modulus.exponent_eq_multiplicity`: the exponent is the multiplicity
-  of the prime in the finite part.
+* `TauCeti.GlobalNumberFields.Modulus.exponent_eq_multiplicity` and
+  `TauCeti.GlobalNumberFields.Modulus.count_normalizedFactors_finitePart`: the exponent is the
+  multiplicity of the prime in the finite part, and its number of occurrences in the factorization.
 * `TauCeti.GlobalNumberFields.Modulus.exists_exponent_eq_and_forall_ne`: the exponent of a modulus
   at one finite place can be changed to any value without changing the rest of the modulus.
 * `TauCeti.GlobalNumberFields.Modulus.valued_eq_one_of_valued_sub_one_le`: an element of the
@@ -124,6 +125,11 @@ theorem ext {m n : Modulus K} (hfinite : m.finitePart = n.finitePart)
 
 theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h ↦
   𝔪.finitePart_ne_bot (by rwa [Ideal.zero_eq_bot] at h)
+
+/-- The residue ring of `𝓞 K` modulo the finite part of a modulus is finite, the finite part being
+a nonzero ideal. -/
+instance finite_quotient_finitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
+  Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
 
 /-- **Divisibility of moduli**: `𝔪 ∣ 𝔫` when the finite part of `𝔪` divides that of `𝔫` and the
 infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence conditions imposed by
@@ -253,6 +259,12 @@ theorem exponent_eq_multiplicity (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞
     𝔪.exponent v = multiplicity v.asIdeal 𝔪.finitePart := by
   rw [exponent_def, Ideal.count_associates_factors_eq 𝔪.finitePart_ne_zero v.isPrime v.ne_bot,
     v.count_normalizedFactors_eq_multiplicity 𝔪.finitePart_ne_bot]
+
+/-- **The exponent counts the prime in the factorization of the finite part**: it is the number of
+times `v` occurs in Mathlib's `normalizedFactors` of the finite part. -/
+theorem count_normalizedFactors_finitePart (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
+    (UniqueFactorizationMonoid.normalizedFactors 𝔪.finitePart).count v.asIdeal = 𝔪.exponent v := by
+  rw [exponent_eq_multiplicity, v.count_normalizedFactors_eq_multiplicity 𝔪.finitePart_ne_bot]
 
 /-- **Changing the exponent at one place.** For a modulus `𝔪`, a finite place `v` and `n : ℕ`,
 there is a modulus with the infinite part of `𝔪`, with exponent `n` at `v`, and with the exponents

@@ -462,31 +462,32 @@ theorem cubeEdgeOrientation_neg (e : cubeEdgeSet) (j : Fin 4) :
 
 /-! ### Four rotations -/
 
+-- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
 /-- **The half-turn about the axis through the midpoints of two opposite edges**, the edges with
 midpoints `±(0, 1, 1)`: `(x, y, z) ↦ (-x, z, y)`. -/
 def cubeEdgeHalfTurn : cubeRotationGroup :=
-  ⟨⟨!![-1, 0, 0; 0, 0, 1; 0, 1, 0], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![-1, 0, 0; 0, 0, 1; 0, 1, 0] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨swap 1 2, ![-1, 1, 1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The half-turn about the axis through two opposite face centres**, the first coordinate axis:
 `(x, y, z) ↦ (x, -y, -z)`. -/
 def cubeFaceHalfTurn : cubeRotationGroup :=
-  ⟨⟨!![1, 0, 0; 0, -1, 0; 0, 0, -1], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![1, 0, 0; 0, -1, 0; 0, 0, -1] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨1, ![1, -1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The third-turn about a body diagonal**, the diagonal through `(-1, -1, 1)`:
 `(x, y, z) ↦ (y, -z, -x)`. -/
 def cubeDiagonalThirdTurn : cubeRotationGroup :=
-  ⟨⟨!![0, 1, 0; 0, 0, -1; -1, 0, 0], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![0, 1, 0; 0, 0, -1; -1, 0, 0] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨[0, 2, 1].formPerm, ![-1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
 /-- **The quarter-turn about the axis through two opposite face centres**, the second coordinate
 axis: `(x, y, z) ↦ (-z, y, x)`. -/
 def cubeFaceQuarterTurn : cubeRotationGroup :=
-  ⟨⟨!![0, 0, -1; 0, 1, 0; 1, 0, 0], by simp [Matrix.det_fin_three]⟩,
+  ⟨.mk !![0, 0, -1; 0, 1, 0; 1, 0, 0] (by simp [Matrix.det_fin_three]),
     mem_cubeRotationGroup_iff.mpr
       ⟨swap 0 2, ![1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 

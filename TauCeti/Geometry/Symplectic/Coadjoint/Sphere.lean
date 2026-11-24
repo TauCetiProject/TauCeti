@@ -53,7 +53,9 @@ along `x ↦ r x`. Since the unit sphere has area `4π`
 with its outward-normal orientation is `4π r` (`TauCeti.integralTopForm_smul_sphereAreaForm`). For
 `r > 0` this is the KKS area of the coadjoint sphere of radius `r`, not its Euclidean area `4π r²`:
 read on that sphere, the KKS form is `1 / r` times its Euclidean area form. For `r ≤ 0` the
-integral is a signed value.
+integral is a signed value. Its unsigned total Liouville measure `4π |r|` is computed in
+`TauCeti.Geometry.Symplectic.Manifold.Sphere.Area`
+(`Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ`).
 
 ## Main definitions
 
@@ -109,11 +111,9 @@ private theorem cross_mem_orthogonal (ξ : Fin 3 → ℝ) (x : S²) :
   exact dot_cross_self _ _
 
 private theorem exists_mvfderiv_eq_cross (ξ : Fin 3 → ℝ) (x : S²) :
-    ∃ v : TangentSpace (𝓡 2) x, mvfderiv (𝓡 2) ι x v = toLp 2 (ξ ⨯₃ ofLp (x : ℝ³)) := by
-  have h := cross_mem_orthogonal ξ x
-  rw [← range_mvfderiv_subtypeVal (n := 2)] at h
-  obtain ⟨v, hv⟩ := h
-  exact ⟨v, hv⟩
+    ∃ v : TangentSpace (𝓡 2) x, mvfderiv (𝓡 2) ι x v = toLp 2 (ξ ⨯₃ ofLp (x : ℝ³)) :=
+  exists_mvfderiv_coe_sphere_eq x
+    (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (cross_mem_orthogonal ξ x))
 
 /-- The tangent vector `ξ × x` at `x ∈ S²`. -/
 private def rotationTangent (ξ : Fin 3 → ℝ) (x : S²) : TangentSpace (𝓡 2) x :=

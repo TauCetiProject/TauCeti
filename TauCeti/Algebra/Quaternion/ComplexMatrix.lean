@@ -62,10 +62,14 @@ conjugate transpose *is* the adjugate (`Matrix.specialUnitaryGroup.star_eq_adjug
 degree two the adjugate swaps the diagonal and negates the off-diagonal, which is exactly the pair
 of identities carving out the real form.
 
+The presentation of the whole unitary group `U(2) ≅ (Sp(1) × U(1)) / {±1}` built from this
+equivalence is in `TauCeti/Analysis/Matrix/UnitaryGroup/Quaternion.lean`.
+
 ## Main definitions
 
 * `Quaternion.toComplexMatrix`: the `ℝ`-algebra embedding `ℍ[ℝ] →⋆ₐ[ℝ] M₂(ℂ)`.
 * `Quaternion.unitaryEquivSpecialUnitaryGroup`: the unit quaternions are `SU(2)`.
+* `Quaternion.ofFirstColumn`: the quaternion whose matrix has a given first column.
 
 ## Main results
 
@@ -287,6 +291,57 @@ theorem coe_inv_eq_toComplexMatrix_star {g : Matrix.specialUnitaryGroup (Fin 2) 
     ((g⁻¹ : Matrix.specialUnitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix (star q) := by
   rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, hg, ← map_star]
+
+/-! ### First columns -/
+
+/-- The quaternion whose matrix under `Quaternion.toComplexMatrix` has first column `z`
+(`toComplexMatrix_ofFirstColumn_apply_zero`), and every quaternion is recovered from the first
+column of its matrix (`ofFirstColumn_toComplexMatrix_apply_zero`). Through it, matrices of
+quaternions act on `ℂ²` by left multiplication (`ofFirstColumn_toComplexMatrix_mulVec`) and complex
+scalars by right multiplication (`ofFirstColumn_smul`). -/
+def ofFirstColumn (z : Fin 2 → ℂ) : ℍ[ℝ] :=
+  ⟨(z 0).re, (z 0).im, -(z 1).re, (z 1).im⟩
+
+/-- The real part of `ofFirstColumn z` is the real part of `z 0`. -/
+@[simp]
+theorem re_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).re = (z 0).re := (rfl)
+
+/-- The `i`-part of `ofFirstColumn z` is the imaginary part of `z 0`. -/
+@[simp]
+theorem imI_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).imI = (z 0).im := (rfl)
+
+/-- The `j`-part of `ofFirstColumn z` is minus the real part of `z 1`. -/
+@[simp]
+theorem imJ_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).imJ = -(z 1).re := (rfl)
+
+/-- The `k`-part of `ofFirstColumn z` is the imaginary part of `z 1`. -/
+@[simp]
+theorem imK_ofFirstColumn (z : Fin 2 → ℂ) : (ofFirstColumn z).imK = (z 1).im := (rfl)
+
+/-- A quaternion is recovered from the first column of its matrix. -/
+@[simp]
+theorem ofFirstColumn_toComplexMatrix_apply_zero (q : ℍ[ℝ]) :
+    ofFirstColumn (fun i => toComplexMatrix q i 0) = q := by
+  rw [toComplexMatrix_apply]
+  ext <;> simp
+
+/-- The first column of the matrix of `ofFirstColumn z` is `z`. -/
+@[simp]
+theorem toComplexMatrix_ofFirstColumn_apply_zero (z : Fin 2 → ℂ) (i : Fin 2) :
+    toComplexMatrix (ofFirstColumn z) i 0 = z i := by
+  rw [toComplexMatrix_apply]
+  fin_cases i <;> apply Complex.ext <;> simp [ofFirstColumn]
+
+/-- Left multiplication by `q` is the matrix `toComplexMatrix q` on first columns. -/
+theorem ofFirstColumn_toComplexMatrix_mulVec (q : ℍ[ℝ]) (z : Fin 2 → ℂ) :
+    ofFirstColumn (toComplexMatrix q *ᵥ z) = q * ofFirstColumn z := by
+  rw [toComplexMatrix_apply]
+  ext <;> simp [ofFirstColumn, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+
+/-- Complex scalars act on first columns by right multiplication. -/
+theorem ofFirstColumn_smul (c : ℂ) (z : Fin 2 → ℂ) :
+    ofFirstColumn (c • z) = ofFirstColumn z * (c : ℍ[ℝ]) := by
+  ext <;> simp [ofFirstColumn] <;> ring
 
 end Quaternion
 

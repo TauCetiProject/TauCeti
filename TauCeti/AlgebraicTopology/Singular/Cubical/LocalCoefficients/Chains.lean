@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
 public import TauCeti.Topology.Homotopy.Cube.Basic
 import Mathlib.Data.Fin.Parity
+import TauCeti.Data.Fin.FaceSwap
 
 /-!
 # Unnormalized cubical chains with local coefficients
@@ -237,17 +238,17 @@ private theorem boundary_ofSubcube {m n : ℕ} (c : SingularCube X n)
 /-- The boundary of a boundary vanishes. -/
 theorem boundary_boundary (n : ℕ) : boundary L n ∘ₗ boundary L (n + 1) = 0 := by
   -- As for `TauCeti.CubicalChain.boundary_boundary`: the terms of `∂ ∂ (c, a)` are subcubes of
-  -- `c`, and they cancel in pairs under `faceSwap`, by the cubical identity for the face
+  -- `c`, and they cancel in pairs under `Fin.faceSwap`, by the cubical identity for the face
   -- inclusions.
   refine hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.zero_apply, ← ofSubcube_id,
     boundary_ofSubcube, map_sum, map_zsmul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
   rw [← Finset.sum_product']
-  refine Finset.sum_involution (fun p _ ↦ CubicalChain.faceSwap p) (fun p _ ↦ ?_)
-    (fun p _ _ ↦ CubicalChain.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
-    (fun p _ ↦ CubicalChain.faceSwap_faceSwap p)
+  refine Finset.sum_involution (fun p _ ↦ Fin.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ Fin.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ Fin.faceSwap_faceSwap p)
   obtain ⟨i, j⟩ := p
-  simp only [CubicalChain.faceSwap_def, ContinuousMap.id_comp,
+  simp only [Fin.faceSwap_def, ContinuousMap.id_comp,
     ← face_id_comp_face_id, smul_sub, smul_smul, ← pow_add,
     Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
   abel

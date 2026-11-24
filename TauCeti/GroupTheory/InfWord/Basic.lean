@@ -29,6 +29,7 @@ represented as `X × Bool` as for Mathlib's `FreeGroup`, together with
 * the inverse `w⁻¹`, of length `|w|`, with `w⁻¹(β) = w(|w| + 1 - β)⁻¹`;
 * the initial segment `w.take β`, the restriction of `w` to `[1, β]`, and the complementary final
   segment `w.drop β`, so that `w = w.take β ++ w.drop β`;
+* the power `u.npow n`, the concatenation of `n` copies of `u`;
 * the predicate `TauCeti.InfWord.IsReduced`: `w(β + 1) ≠ w(β)⁻¹` for `1 ≤ β < |w|`, where
   `β + 1` is the successor `Order.succ β` of `β`.
 
@@ -63,6 +64,7 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
 * `TauCeti.InfWord.ofFun`: the word of a given length with letters given by a function on `Λ`.
 * `u ++ v`, `w⁻¹`, `TauCeti.InfWord.take`, `TauCeti.InfWord.drop`: concatenation, inverse, initial
   and final segments.
+* `TauCeti.InfWord.npow`: the concatenation of `n` copies of a word.
 * `TauCeti.InfWord.IsReduced`: reduced words.
 
 ## Main results
@@ -642,6 +644,56 @@ theorem append_eq_append_iff {a b c d : InfWord Λ X} : a ++ b = c ++ d ↔
   refine ⟨fun h => (le_total a.length c.length).imp (key h) (key h.symm), ?_⟩
   rintro (⟨e, rfl, rfl⟩ | ⟨e, rfl, rfl⟩) <;> simp
 
+/-- The concatenation of `n` copies of the word `u`. -/
+def npow (u : InfWord Λ X) : ℕ → InfWord Λ X
+  | 0 => empty Λ X
+  | n + 1 => npow u n ++ u
+
+@[simp]
+theorem npow_zero (u : InfWord Λ X) : u.npow 0 = empty Λ X := (rfl)
+
+theorem npow_succ (u : InfWord Λ X) (n : ℕ) : u.npow (n + 1) = u.npow n ++ u := (rfl)
+
+@[simp]
+theorem npow_one (u : InfWord Λ X) : u.npow 1 = u :=
+  (npow_succ u 0).trans (empty_append u)
+
+theorem npow_add (u : InfWord Λ X) (m n : ℕ) : u.npow (m + n) = u.npow m ++ u.npow n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [← add_assoc, npow_succ, ih]
+
+theorem npow_succ' (u : InfWord Λ X) (n : ℕ) : u.npow (n + 1) = u ++ u.npow n := by
+  rw [add_comm, npow_add, npow_one]
+
+@[simp]
+theorem length_npow (u : InfWord Λ X) (n : ℕ) : (u.npow n).length = n • u.length := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [npow_succ, ih, succ_nsmul]
+
+@[simp]
+theorem npow_empty (n : ℕ) : (empty Λ X).npow n = empty Λ X := by
+  induction n <;> simp [npow_succ, *]
+
+/-- A shorter power of `u` is an initial segment of a longer one. -/
+theorem take_npow_of_le {m n : ℕ} (hmn : m ≤ n) (hβ : β ≤ m • u.length) :
+    (u.npow n).take β = (u.npow m).take β := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
+  rw [npow_add, take_append_of_le_length _ (by simpa using hβ)]
+
+/-- A power of `u` has period `|u|`: its initial segment of length `|u| + β` is `u` followed by
+its initial segment of length `β`. -/
+theorem take_npow_length_add {n : ℕ} (hβ : 0 ≤ β) (hn : u.length + β ≤ n • u.length) :
+    (u.npow n).take (u.length + β) = u ++ (u.npow n).take β := by
+  cases n with
+  | zero =>
+    have : u = empty Λ X := length_eq_zero_iff.1 (by simp at hn; grind [u.length_nonneg])
+    simp [this]
+  | succ n =>
+    rw [npow_succ', take_append_length_add _ _ hβ, ← npow_succ',
+      take_npow_of_le n.le_succ (by rw [succ_nsmul] at hn; grind)]
+
 end Group
 
 section Discrete
@@ -723,6 +775,12 @@ theorem inv_take (w : InfWord Λ X) (β : Λ) : (w.take β)⁻¹ = w⁻¹.drop (
 length. -/
 theorem inv_drop (w : InfWord Λ X) (β : Λ) : (w.drop β)⁻¹ = w⁻¹.take (w.length - β) := by
   rw [inv_eq_iff_eq_inv, inv_take, inv_inv, length_inv, sub_sub_cancel]
+
+@[simp]
+theorem inv_npow (u : InfWord Λ X) (n : ℕ) : (u.npow n)⁻¹ = u⁻¹.npow n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [npow_succ, inv_append, ih, npow_succ']
 
 theorem IsReduced.inv (h : w.IsReduced) : w⁻¹.IsReduced := by
   intro β h0 hβ h'

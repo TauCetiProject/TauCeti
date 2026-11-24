@@ -25,6 +25,8 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   on a finite vertex type, for local selection where decidable adjacency is unavailable.
 * `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
 * `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
+* `SimpleGraph.sum_neighborFinset_comm` — swapping the order of summation in a double sum over
+  neighbours.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
@@ -72,6 +74,16 @@ theorem Iso.sum_neighborFinset_comp {W R : Type*} [Fintype V] [Fintype W]
     (fun j ↦ by
       simpa only [mem_neighborFinset, RelIso.coe_fn_toEquiv] using e.map_adj_iff.symm)
     (fun _ _ ↦ by rw [RelIso.coe_fn_toEquiv])
+
+/-- **A sum over the oriented edges can be read from either endpoint.** Adjacency is symmetric, so
+summing `F i j` over the neighbours `j` of each vertex `i` is summing it over the neighbours `i`
+of each vertex `j`. -/
+theorem sum_neighborFinset_comm (G : SimpleGraph V) [Fintype V] [G.LocallyFinite]
+    [AddCommMonoid M] (F : V → V → M) :
+    ∑ i, ∑ j ∈ G.neighborFinset i, F i j = ∑ j, ∑ i ∈ G.neighborFinset j, F i j :=
+  sum_comm' fun i j ↦ by
+    simp only [mem_univ, true_and, and_true, mem_neighborFinset]
+    exact ⟨Adj.symm, Adj.symm⟩
 
 /-- A set of pairs contained in the edges of a graph `G` carries no diagonal pair, so it is the
 edge set of the graph it generates. -/

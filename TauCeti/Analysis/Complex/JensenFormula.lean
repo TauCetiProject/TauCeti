@@ -209,7 +209,13 @@ about `c`, with `r ≠ 0`, the circle average of `log ‖f‖` is at least `k * 
 `k` is the order of `f` at `c` and `τ` its trailing coefficient there.
 
 This is Jensen's formula `MeromorphicOn.circleAverage_log_norm` with the contributions of the zeros
-other than `c` dropped, each of which is nonnegative. -/
+other than `c` dropped, each of which is nonnegative.
+
+Two conventions are in force. The radius `r` may be negative, and then `Real.log r = Real.log |r|`,
+which matches the circle of radius `|r|` that the average is taken over. If `f` vanishes
+identically near `c`, then `analyticOrderNatAt f c = 0` by convention and the trailing coefficient
+is `0`, so the inequality reads `0 ≤ 0` through `Real.log 0 = 0` rather than the mathematical
+`-∞ ≤ -∞`. -/
 theorem le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|)) (hr : r ≠ 0) :
     analyticOrderNatAt f c * Real.log r + Real.log ‖meromorphicTrailingCoeffAt f c‖ ≤
       circleAverage (fun z ↦ Real.log ‖f z‖) c r := by

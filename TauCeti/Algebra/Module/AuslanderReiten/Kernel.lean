@@ -47,26 +47,28 @@ variable {k : Type u} {A : Type v} [CommRing k] [Ring A] [Algebra k A]
 /-- The canonical embedding of `D Tr(f)` into `ν(P₁)`, obtained by dualizing the
 quotient onto the transpose. -/
 def auslanderReitenTranslateToNakayama (f : P₁ →ₗ[A] P₀) :
-    AuslanderReitenTranslate k f →ₗ[A] NakayamaModule k A P₁ where
+    AuslanderReitenTranslate k k f →ₗ[A] NakayamaModule k A P₁ where
   toFun φ := (NakayamaModule.equivDual k A P₁).symm
-    (((AuslanderReitenTranspose.mk f).restrictScalars k).dualMap φ)
+    (((AuslanderReitenTranspose.mk f).restrictScalars k).dualMap
+      (MatlisDual.equivLinearMap k k _ φ))
   map_add' := fun _ _ ↦ by ext; simp
   map_smul' := fun _ _ ↦ by
     ext
-    simp [AuslanderReitenTranslate.smul_apply, NakayamaModule.smul_apply]
+    simp [MatlisDual.smul_apply, NakayamaModule.smul_apply]
 
 /-- The embedding evaluates a translate functional on the class of the inner functional. -/
 @[simp]
 theorem auslanderReitenTranslateToNakayama_apply (f : P₁ →ₗ[A] P₀)
-    (φ : AuslanderReitenTranslate k f) (ψ : Module.Dual A P₁) :
+    (φ : AuslanderReitenTranslate k k f) (ψ : Module.Dual A P₁) :
     NakayamaModule.equivDual k A P₁ (auslanderReitenTranslateToNakayama f φ) ψ =
-      φ (AuslanderReitenTranspose.mk f ψ) := by
+      MatlisDual.equivLinearMap k k _ φ (AuslanderReitenTranspose.mk f ψ) := by
   simp [auslanderReitenTranslateToNakayama]
 
 /-- Dualizing the transpose quotient is injective. -/
 theorem auslanderReitenTranslateToNakayama_injective (f : P₁ →ₗ[A] P₀) :
     Function.Injective (auslanderReitenTranslateToNakayama (k := k) f) := by
   intro φ χ h
+  apply (MatlisDual.equivLinearMap k k _).injective
   apply LinearMap.dualMap_injective_of_surjective
     (f := (AuslanderReitenTranspose.mk f).restrictScalars k)
     (AuslanderReitenTranspose.mk_surjective f)
@@ -95,18 +97,19 @@ theorem exact_auslanderReitenTranslateToNakayama_nakayamaMap (f : P₁ →ₗ[A]
       simpa [d, LinearMap.lcomp_apply'] using
         congrArg (fun χ ↦ NakayamaModule.equivDual k A P₀ χ ψ) hφ
     obtain ⟨χ, hχ⟩ := hd ▸ hker
-    refine ⟨χ, (NakayamaModule.equivDual k A P₁).injective (LinearMap.ext fun ψ ↦ ?_)⟩
+    refine ⟨(MatlisDual.equivLinearMap k k _).symm χ,
+      (NakayamaModule.equivDual k A P₁).injective (LinearMap.ext fun ψ ↦ ?_)⟩
     simpa [q] using LinearMap.congr_fun hχ ψ
   · rintro ⟨χ, rfl⟩
     ext ψ
     simp only [LinearMap.nakayamaMap_apply, auslanderReitenTranslateToNakayama_apply, map_zero,
       LinearMap.zero_apply]
     simpa only [LinearMap.lcomp_apply', map_zero] using
-      congrArg χ (AuslanderReitenTranspose.mk_lcomp f ψ)
+      congrArg (MatlisDual.equivLinearMap k k _ χ) (AuslanderReitenTranspose.mk_lcomp f ψ)
 
 /-- The canonical algebra-linear identification of `D Tr(f)` with the kernel of `ν(f)`. -/
 noncomputable def auslanderReitenTranslateEquivKerNakayama (f : P₁ →ₗ[A] P₀) :
-    AuslanderReitenTranslate k f ≃ₗ[A] LinearMap.ker (f.nakayamaMap (k := k)) :=
+    AuslanderReitenTranslate k k f ≃ₗ[A] LinearMap.ker (f.nakayamaMap (k := k)) :=
   LinearEquiv.ofBijective
     ((auslanderReitenTranslateToNakayama f).codRestrict (LinearMap.ker f.nakayamaMap) fun φ ↦
       LinearMap.mem_ker.mpr
@@ -120,16 +123,17 @@ noncomputable def auslanderReitenTranslateEquivKerNakayama (f : P₁ →ₗ[A] P
 /-- Forward kernel transport evaluates on transpose classes. -/
 @[simp]
 theorem auslanderReitenTranslateEquivKerNakayama_apply (f : P₁ →ₗ[A] P₀)
-    (φ : AuslanderReitenTranslate k f) (ψ : Module.Dual A P₁) :
+    (φ : AuslanderReitenTranslate k k f) (ψ : Module.Dual A P₁) :
     NakayamaModule.equivDual k A P₁ (auslanderReitenTranslateEquivKerNakayama f φ).val ψ =
-      φ (AuslanderReitenTranspose.mk f ψ) :=
+      MatlisDual.equivLinearMap k k _ φ (AuslanderReitenTranspose.mk f ψ) :=
   auslanderReitenTranslateToNakayama_apply f φ ψ
 
 /-- Inverse kernel transport descends a Nakayama functional to the transpose quotient. -/
 @[simp]
 theorem auslanderReitenTranslateEquivKerNakayama_symm_apply_mk (f : P₁ →ₗ[A] P₀)
     (φ : LinearMap.ker (f.nakayamaMap (k := k))) (ψ : Module.Dual A P₁) :
-    (auslanderReitenTranslateEquivKerNakayama f).symm φ (AuslanderReitenTranspose.mk f ψ) =
+    MatlisDual.equivLinearMap k k _ ((auslanderReitenTranslateEquivKerNakayama f).symm φ)
+      (AuslanderReitenTranspose.mk f ψ) =
       NakayamaModule.equivDual k A P₁ φ.val ψ := by
   simpa only [auslanderReitenTranslateEquivKerNakayama_apply] using
     congrArg (fun χ ↦ NakayamaModule.equivDual k A P₁ χ.val ψ)
