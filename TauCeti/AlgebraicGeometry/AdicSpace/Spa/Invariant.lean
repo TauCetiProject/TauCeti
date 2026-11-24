@@ -25,19 +25,20 @@ every element of `A⁺` is a root of its orbit polynomial, whose coefficients li
 invariant, so lie in the image of `R⁺`.
 
 For a morphism of Huber pairs `(R, R⁺) → (A, A⁺)` with underlying map `algebraMap R A`, the map
-`Spa(A, A⁺) → Spa(R, R⁺)` is therefore surjective when `R → A` is injective, and its fibres are
-the `G`-orbits for `(g • y)(a) = y(g⁻¹ • a)`. When `R` is a Tate ring, a morphism of Huber pairs
-out of `(R, R⁺)` that is surjective on adic spectra induces a quotient map
-(`TauCeti.Huber.Pair.Hom.isQuotientMap_spaComap_of_isTateRing`), so `Spa(R, R⁺)` is the quotient
-of `Spa(A, A⁺)` by `G` as a topological space. Nothing is assumed about the order of `G`, which
-may be divisible by the residue characteristic.
+`Spa(A, A⁺) → Spa(R, R⁺)` is therefore surjective when `R → A` is injective. When moreover `G`
+acts by `R`-algebra automorphisms (`SMulCommClass G R A`), its fibres are the `G`-orbits for
+`(g • y)(a) = y(g⁻¹ • a)`. When `R` is a Tate ring, a morphism of Huber pairs out of `(R, R⁺)`
+that is surjective on adic spectra induces a quotient map
+(`TauCeti.Huber.Pair.Hom.isQuotientMap_spaComap_of_isTateRing`), so if `G` acts by `R`-algebra
+automorphisms, `Spa(R, R⁺)` is the quotient of `Spa(A, A⁺)` by `G` as a topological space.
+Nothing is assumed about the order of `G`, which may be divisible by the residue characteristic.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.mem_spa_iff_comap_mem_spa_comap_of_isInvariant`: `Spa(A, A⁺)` is the
   preimage of `Spa(R, R⁺)` in `Spv A`.
 * `TauCeti.Huber.Pair.Hom.spaComap_eq_spaComap_iff_of_isInvariant`: the fibres of
-  `Spa(A, A⁺) → Spa(R, R⁺)` are the `G`-orbits.
+  `Spa(A, A⁺) → Spa(R, R⁺)` are the `G`-orbits when `G` acts by `R`-algebra automorphisms.
 * `TauCeti.Huber.Pair.Hom.surjective_spaComap_of_isInvariant`: the map is surjective.
 * `TauCeti.Huber.Pair.Hom.isQuotientMap_spaComap_of_isInvariant`: over a Tate ring `R`, it is a
   quotient map.
@@ -143,8 +144,8 @@ include G in
 `G` act on `A` by continuous ring automorphisms preserving `A⁺`, and let `R → A` be an injective
 inducing ring map from a Tate ring whose image contains every invariant. A morphism of Huber pairs
 `φ : (R, R⁺) → (A, A⁺)` with underlying map `algebraMap R A` and `R⁺ ⊇ A⁺ ∩ R` induces a quotient
-map `Spa(A, A⁺) → Spa(R, R⁺)`, whose fibres are the `G`-orbits
-(`spaComap_eq_spaComap_iff_of_isInvariant`). -/
+map `Spa(A, A⁺) → Spa(R, R⁺)`. When `G` moreover acts by `R`-algebra automorphisms, its fibres
+are the `G`-orbits (`spaComap_eq_spaComap_iff_of_isInvariant`). -/
 theorem isQuotientMap_spaComap_of_isInvariant [FaithfulSMul R A] {φ : Hom S T}
     (hφ : φ.toRingHom = algebraMap R A) (hι : Topology.IsInducing (algebraMap R A))
     (hS : T.plus.comap (algebraMap R A) ≤ S.plus) (hT : ∀ g : G, ∀ a ∈ T.plus, g • a ∈ T.plus) :

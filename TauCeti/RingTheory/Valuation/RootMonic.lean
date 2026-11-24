@@ -177,9 +177,7 @@ theorem exists_pow_le_map_coeff_of_root_monic (ν : Valuation L Γ₀) {p : L[X]
 
 /-- **A root is bounded from below by a ratio of two coefficients.** If `t` is a root of `p` with
 `ν t ≠ 0` and some coefficient of `p` has nonzero value, then there are `i < j` with
-`ν (p.coeff i) ≠ 0` and `ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i)`. Here `i` is the least
-index with `ν (p.coeff i) ≠ 0`: otherwise the term `p.coeff i * t ^ i` would dominate
-`p.eval t`. -/
+`ν (p.coeff i) ≠ 0` and `ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i)`. -/
 theorem exists_map_coeff_le_mul_pow_of_root (ν : Valuation L Γ₀) {p : L[X]}
     (heq : p.eval t = 0) (ht : ν t ≠ 0) (hp : ∃ k, ν (p.coeff k) ≠ 0) :
     ∃ i j, i < j ∧ ν (p.coeff i) ≠ 0 ∧ ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i) := by
