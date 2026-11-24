@@ -164,6 +164,14 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_map (U : X.Opens) 
   rfl
 
 variable {X} in
+/-- On a section over `U`, the image of a morphism under the sections functor acts as the
+morphism's component `AlgebraicGeometry.Scheme.Modules.Hom.app` over `U`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_map_hom_apply (U : X.Opens)
+    {M N : X.Modules} (φ : M ⟶ N) (s : Γ(M, U)) :
+    ((Scheme.Modules.sectionsFunctor U).map φ).hom s = φ.app U s :=
+  rfl
+
+variable {X} in
 /-- Taking sections over an open preserves limits of `𝒪ₓ`-modules, in particular kernels. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorPreservesLimitsOfSize
     (U : X.Opens) : Limits.PreservesLimitsOfSize.{w, v} (Scheme.Modules.sectionsFunctor U) :=

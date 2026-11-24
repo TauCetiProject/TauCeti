@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.Algebra.Category.ModuleCat.Kernels
+public import TauCeti.AlgebraicGeometry.Modules.Unit
+public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Basic
 
 /-!
@@ -21,8 +23,9 @@ Let `j : V ⟶ Y` be an open immersion and `N` an `𝒪_Y`-module. The **support
 along `j` is the kernel of the unit `N ⟶ j_* (N|_V)` of the adjunction between restriction and
 pushforward: its sections over an open `W` are the sections of `N` over `W` that vanish on
 `W ∩ V`. The quotient of `N` by it is the image of `N` in `j_* (N|_V)`. When `N` is the pullback
-of a module along a base change, this quotient is the strict transform of that module; this file
-does not make that identification.
+`pr_X^* M` of a module `M` to `X ×_S S'` and `j` is the inclusion of the preimage `X ×_S φ⁻¹(U)`
+of the witness open `U`, this quotient is the strict transform of `M`; this file does not make that
+identification.
 
 When `j` is quasi-compact and `N` is quasi-coherent, both the supported kernel and the quotient
 are quasi-coherent, because `j_* (N|_V)` is. For quasi-coherent `N`, if `W` is quasi-compact and
@@ -44,7 +47,7 @@ generation gives one power of the ideal.
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_supportedKernel` and
   `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_supportedQuotient`: for quasi-compact `j` and
   quasi-coherent `N`, both are quasi-coherent.
-* `AlgebraicGeometry.Scheme.Modules.injective_supportedKernelι_app` and
+* `AlgebraicGeometry.Scheme.Modules.supportedKernelι_app_injective` and
   `AlgebraicGeometry.Scheme.Modules.mem_range_supportedKernelι_app_iff`: over any open `W`, the
   supported kernel is the submodule of sections of `N` vanishing on `j ''ᵁ (j ⁻¹ᵁ W)`.
 * `AlgebraicGeometry.Scheme.Modules.map_eq_zero_iff_mem_primaryComponent`: for quasi-coherent
@@ -95,8 +98,8 @@ Mathlib's `CategoryTheory.Abelian.coimage` of the unit `N ⟶ j_* (N|_V)`, the c
 `AlgebraicGeometry.Scheme.Modules.supportedKernelι`. Its projection from `N` is
 `CategoryTheory.Abelian.coimage.π`, and `CategoryTheory.Abelian.factorThruCoimage` is a
 monomorphism into `j_* (N|_V)` through which the unit factors, so it is the image of `N` there.
-When `N` is the pullback of a module along a base change, it gives the strict transform of that
-module. -/
+When `N` is the pullback `pr_X^* M` of a module `M` to `X ×_S S'` and `j` is the inclusion of the
+preimage `X ×_S φ⁻¹(U)` of the witness open `U`, it gives the strict transform of `M`. -/
 abbrev supportedQuotient : Y.Modules :=
   Abelian.coimage ((restrictAdjunction j).unit.app N : N ⟶ (pushforward j).obj (N.restrict j))
 
@@ -115,12 +118,6 @@ theorem supportedKernelι_comp_unit :
 instance mono_supportedKernelι :
     Mono (N.supportedKernelι j) :=
   inferInstanceAs (Mono (kernel.ι _))
-
-/-- The supported kernel is killed by the projection onto the quotient by it. -/
-@[reassoc (attr := simp)]
-theorem supportedKernelι_comp_coimageπ :
-    N.supportedKernelι j ≫ Abelian.coimage.π ((restrictAdjunction j).unit.app N) = 0 :=
-  cokernel.condition _
 
 /-- A morphism into `N` killed by the unit `N ⟶ j_* (N|_V)` factors through the supported
 kernel. -/
@@ -152,11 +149,10 @@ instance isQuasicoherent_supportedQuotient
 /-! ### Sections of the supported kernel -/
 
 /-- Over every open `W`, the inclusion of the supported kernel is injective on sections. -/
-theorem injective_supportedKernelι_app (W : Y.Opens) :
-    Function.Injective ((N.supportedKernelι j).app W) := by
-  -- `Hom.app` is the additive map underlying the component that the sections functor returns
-  change Function.Injective ((sectionsFunctor W).map (N.supportedKernelι j)).hom
-  exact (ModuleCat.mono_iff_injective _).mp ((sectionsFunctor W).map_mono _)
+theorem supportedKernelι_app_injective (W : Y.Opens) :
+    Function.Injective ((N.supportedKernelι j).app W) := fun s t h ↦
+  (ModuleCat.mono_iff_injective _).mp ((sectionsFunctor W).map_mono (N.supportedKernelι j))
+    (by rwa [sectionsFunctor_map_hom_apply, sectionsFunctor_map_hom_apply])
 
 /-- **The sections of the supported kernel.** Over an open `W`, a section of `N` comes from the
 supported kernel exactly when it vanishes on `j ''ᵁ (j ⁻¹ᵁ W)`, the intersection of `W` with
@@ -166,14 +162,20 @@ theorem mem_range_supportedKernelι_app_iff
     s ∈ Set.range ((N.supportedKernelι j).app W) ↔
       N.presheaf.map (homOfLE (j.image_preimage_le W)).op s = 0 := by
   let φ : N ⟶ (pushforward j).obj (N.restrict j) := (restrictAdjunction j).unit.app N
-  rw [← restrictAdjunction_unit_app_app]
-  -- `Hom.app` is the additive map underlying the component that the sections functor returns
-  change s ∈ Set.range ((sectionsFunctor W).map (kernel.ι φ)).hom ↔
-    ((sectionsFunctor W).map φ).hom s = 0
-  refine ⟨?_, (sectionsFunctor W).exists_map_kernel_ι_eq φ s⟩
-  rintro ⟨t, rfl⟩
-  simp only [← ModuleCat.comp_apply, ← Functor.map_comp, kernel.condition, Functor.map_zero,
-    ModuleCat.hom_zero, LinearMap.zero_apply]
+  have hφ : N.presheaf.map (homOfLE (j.image_preimage_le W)).op s = φ.app W s := by
+    rw [restrictAdjunction_unit_app_app]
+    -- the section types of `N` and of the source `(𝟭 _).obj N` of the unit differ in how they
+    -- are written
+    rfl
+  rw [hφ]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨t, rfl⟩
+    rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, supportedKernelι_comp_unit, Hom.zero_app]
+    -- the zero morphism sends `t` to zero
+    rfl
+  · obtain ⟨t, ht⟩ := (sectionsFunctor W).exists_map_kernel_ι_eq φ s
+      (by rwa [sectionsFunctor_map_hom_apply])
+    exact ⟨t, (sectionsFunctor_map_hom_apply W (kernel.ι φ) t).symm.trans ht⟩
 
 /-- **Sections vanishing on a union of basic opens are power torsion.** Let `W` be a
 quasi-compact open of `Y` and `G` a finite set of sections of `𝒪_Y` over `W`. For quasi-coherent
@@ -222,13 +224,6 @@ theorem mem_range_supportedKernelι_app_iff_mem_primaryComponent
   rw [hG]
   exact fun _ ↦ Iff.rfl
 
-/-- A section of `𝒪_Y`, viewed as a module over itself, restricts to zero exactly when it does as
-a section of the structure sheaf. -/
-private lemma unit_presheaf_map_eq_zero_iff {U U' : Y.Opens} (i : U ⟶ U') (s : Γ(Y, U')) :
-    (presheaf (SheafOfModules.unit Y.ringCatSheaf)).map i.op s = 0 ↔ Y.presheaf.map i.op s = 0 :=
-  -- the unit module has the structure presheaf as underlying presheaf, with the same zero
-  Iff.rfl
-
 omit N in
 /-- **The supported kernel of `𝒪_Y` is the ideal of the scheme-theoretic image.** For a
 quasi-compact open immersion `j`, over an affine open `U` the sections of the supported kernel of
@@ -236,15 +231,11 @@ quasi-compact open immersion `j`, over an affine open `U` the sections of the su
 of `j`, the scheme-theoretic closure of `V`. -/
 theorem mem_range_supportedKernelι_app_iff_mem_ker_ideal
     [QuasiCompact j] (U : Y.affineOpens) (s : Γ(Y, U)) :
-    s ∈ Set.range ((supportedKernelι (SheafOfModules.unit Y.ringCatSheaf) j).app U) ↔
-      s ∈ j.ker.ideal U := by
-  refine (mem_range_supportedKernelι_app_iff (SheafOfModules.unit Y.ringCatSheaf) j
-    (W := U) s).trans ?_
-  rw [Scheme.Hom.ker_apply, RingHom.mem_ker,
-    ← (ConcreteCategory.bijective_of_isIso (j.appIso (j ⁻¹ᵁ U)).inv).injective.eq_iff, map_zero,
-    ← ConcreteCategory.comp_apply, Scheme.Hom.app_appIso_inv, unit_presheaf_map_eq_zero_iff]
-  -- the two restrictions are along the same inclusion `j ''ᵁ (j ⁻¹ᵁ U) ≤ U`
-  congr!
+    s ∈ Set.range ((supportedKernelι (unit Y) j).app U) ↔ s ∈ j.ker.ideal U := by
+  refine (mem_range_supportedKernelι_app_iff (unit Y) j (W := U) s).trans ?_
+  rw [presheaf_unit_map_apply, Scheme.Hom.ker_apply, RingHom.mem_ker, Scheme.Hom.app_eq_zero_iff]
+  -- `s` is the same element, typed as a section of `𝒪_Y` or of the module `𝒪_Y`
+  exact Iff.rfl
 
 end
 
