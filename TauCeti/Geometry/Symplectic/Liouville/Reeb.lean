@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.RadialHamiltonian
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
+import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Symplectic.Liouville.Scaling
 
 /-!
@@ -151,31 +152,17 @@ theorem range_mfderiv_flowOf_comp (h : IsLiouvilleCompletion ω α W)
     (ht : 0 < t) (s : S) :
     (mfderiv J I (flowOf Z t ∘ ι) s).range =
       (mvfderiv I (liouvilleRadialCoordinate Z W) (flowOf Z t (ι s))).ker := by
-  set r := liouvilleRadialCoordinate Z W
-  set x := flowOf Z t (ι s)
-  have hx : x ∉ W := h.flowOf_comp_notMem hZ hιW ht s
-  have hrx : MDifferentiableAt I 𝓘(ℝ) r x :=
-    (h.contMDiffAt_liouvilleRadialCoordinate hZ hx).mdifferentiableAt (by simp)
-  have hg : MDifferentiableAt J I (flowOf Z t ∘ ι) s :=
-    (h.contMDiff_flowOf_comp hZ hι t s).mdifferentiableAt (by simp)
-  -- `r ∘ ψ_t ∘ ι` is the constant `e^t`, so the image of the differential lies in `ker dr`.
-  have hle : (mfderiv J I (flowOf Z t ∘ ι) s).range ≤ (mvfderiv I r x).ker := by
-    rintro _ ⟨w, rfl⟩
-    have hconst : r ∘ (flowOf Z t ∘ ι) = fun _ ↦ Real.exp t :=
-      funext fun s' ↦ h.liouvilleRadialCoordinate_flowOf hZ (hιW s') ht.le
-    have hcomp := mfderiv_comp s hrx hg
-    rw [hconst, mfderiv_const] at hcomp
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply]
-    exact (congrArg (· w) hcomp).symm
-  -- Both sides have dimension `dim E - 1`: `dr(Z) = r` does not vanish.
-  have hne : (mvfderiv I r x : TangentSpace I x →ₗ[ℝ] ℝ) ≠ 0 := fun h0 ↦ by
-    have hZx := h.mvfderiv_liouvilleRadialCoordinate_apply hZ hx
-    rw [← ContinuousLinearMap.coe_coe, h0, LinearMap.zero_apply] at hZx
-    linarith [one_le_liouvilleRadialCoordinate Z W x]
-  refine Submodule.eq_of_le_of_finrank_eq hle ?_
-  have hker := Module.Dual.finrank_ker_add_one_of_ne_zero hne
-  rw [LinearMap.finrank_range_of_inj (h.injective_mfderiv_flowOf_comp hZ hι hιs t s)]
-  exact (Nat.add_right_cancel (hdim.trans hker.symm))
+  have hx : flowOf Z t (ι s) ∉ W := h.flowOf_comp_notMem hZ hιW ht s
+  -- `r ∘ ψ_t ∘ ι` is the constant `e^t`, and `dr(Z) = r` does not vanish.
+  have hreg : IsRegularPoint I 𝓘(ℝ) (liouvilleRadialCoordinate Z W) (flowOf Z t (ι s)) :=
+    isRegularPoint_iff_mvfderiv_ne_zero.2 fun h0 ↦ by
+      have hZx := h.mvfderiv_liouvilleRadialCoordinate_apply hZ hx
+      rw [h0, zero_apply] at hZx
+      linarith [one_le_liouvilleRadialCoordinate Z W (flowOf Z t (ι s))]
+  rw [ker_mvfderiv]
+  exact hreg.range_mfderiv_eq_ker_mfderiv
+    (Filter.Eventually.of_forall fun s' ↦ h.liouvilleRadialCoordinate_flowOf hZ (hιW s') ht.le)
+    (h.injective_mfderiv_flowOf_comp hZ hι hιs t s) (by rwa [Module.finrank_self])
 
 /-- **The boundary of a Liouville domain is a contact manifold.** Let `ι : S → M` be a smooth map
 with injective differentials into the frontier of the Liouville domain `W`, from a manifold of one
@@ -302,7 +289,7 @@ theorem exists_periodic_hamiltonianVectorField_iff_reebVectorField [FiniteDimens
       isMIntegralCurve_globalFlow _ _ s₀
     have heq : (fun τ ↦ flowOf Z (Real.log c) (ι (γ (-τ)))) = δ :=
       h.eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate hZ hc
-        (h.isMIntegralCurve_flowOf_comp_reebVectorField hZ hι hιW hιs hdim ht hγ) hδ (hlevel γ) hδc
+        (h.isMIntegralCurve_flowOf_comp_reebVectorField hZ hι hιW hιs hdim ht hγ) hδ (hlevel γ)
         (by simp only [neg_zero, γ, Flow.map_zero_apply, hδ0])
     -- `ψ_{log c} ∘ ι` is injective, so the periodicity of `δ` passes to `γ`.
     have hinjg : Injective (flowOf Z (Real.log c) ∘ ι) := by
