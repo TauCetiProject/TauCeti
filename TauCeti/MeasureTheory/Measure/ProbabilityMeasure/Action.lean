@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 public import Mathlib.MeasureTheory.Group.Arithmetic
-public import TauCeti.MeasureTheory.Measure.DiracProba
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Dirac
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!

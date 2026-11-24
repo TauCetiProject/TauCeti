@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.MeasureTheory.Measure.DiracProba
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Dirac
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
