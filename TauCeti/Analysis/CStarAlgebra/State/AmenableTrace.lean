@@ -57,6 +57,9 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
   does `tr_k ∘ π` for every star homomorphism `π : A → M_k`.
 * `CStarMatrix.admitsFaithfulAmenableTrace`: a nonempty matrix algebra admits a faithful amenable
   trace, its normalized trace.
+* `TauCeti.admitsFaithfulAmenableTrace_congr`: admitting a faithful amenable trace is invariant
+  under star isomorphisms, and `TauCeti.not_admitsFaithfulAmenableTrace_of_subsingleton`: the
+  zero algebra admits none.
 * `TauCeti.pullbackFunctional_mem_amenableTraces` and its siblings: the restriction of an element
   of each of the three sets along a star homomorphism lies in the corresponding set as soon as it
   is a state. Hence `TauCeti.mapsTo_pullbackFunctional_amenableTraces_of_surjective` and its
@@ -333,6 +336,26 @@ variable {A}
 theorem admitsFaithfulAmenableTrace_iff : AdmitsFaithfulAmenableTrace A ↔
     ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧ τ.IsFaithfulTrace ∧ τ.IsAmenableTrace :=
   Iff.rfl
+
+/-- The zero algebra admits no faithful amenable trace: it has no tracial state, since every
+functional on it has norm `0`. -/
+theorem not_admitsFaithfulAmenableTrace_of_subsingleton [Subsingleton A] :
+    ¬ AdmitsFaithfulAmenableTrace A :=
+  fun ⟨τ, hτ, _⟩ => by simpa [Subsingleton.elim (τ : A →L[ℂ] ℂ) 0] using hτ.norm_eq_one
+
+/-- A faithful amenable tracial state of `B` pulls back along a star isomorphism `e : A ≃ B`. -/
+private theorem AdmitsFaithfulAmenableTrace.of_starAlgEquiv {B : Type*} [NonUnitalCStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] (e : A ≃⋆ₐ[ℂ] B) (h : AdmitsFaithfulAmenableTrace B) :
+    AdmitsFaithfulAmenableTrace A :=
+  let ⟨σ, hs, hf, ha⟩ := h
+  ⟨σ.comp (.ofClass e), hs.comp_of_surjective e e.surjective, hf.comp e e.injective, ha.comp e⟩
+
+/-- Admitting a faithful amenable trace is invariant under star isomorphisms. -/
+theorem admitsFaithfulAmenableTrace_congr {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] (e : A ≃⋆ₐ[ℂ] B) :
+    AdmitsFaithfulAmenableTrace A ↔ AdmitsFaithfulAmenableTrace B :=
+  ⟨AdmitsFaithfulAmenableTrace.of_starAlgEquiv e.symm,
+    AdmitsFaithfulAmenableTrace.of_starAlgEquiv e⟩
 
 end TauCeti
 
