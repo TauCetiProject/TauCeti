@@ -32,8 +32,9 @@ When `G` is a group, `VecTwisted k G c` is rigid. The left and right dual of `X`
 graded dual `VecTwisted.dual X`, whose component in degree `g` is the dual space of the component
 of `X` in degree `g⁻¹`; the pairings (`VecTwisted.gradedPairing` and
 `VecTwisted.leftGradedPairing`) are assembled from those of the components by
-`TauCeti.TwistedGradedObject.exactPairing`, with the evaluation twisted by the cocycle. In
-particular the dual of `δ_g` is `δ_{g⁻¹}` (`VecTwisted.dualDeltaIso`).
+`TauCeti.TwistedGradedObject.exactPairing`, with the coevaluation twisted by the cocycle. In
+particular the dual of `δ_g` is `δ_{g⁻¹}` (`VecTwisted.dualDeltaIso`), with evaluation `1` and
+coevaluation `ω(g, g⁻¹, g)⁻¹`.
 
 ## Main declarations
 
@@ -303,20 +304,20 @@ instance instHasLeftDual (X : VecTwisted k G c) : HasLeftDual X where
     letI := leftGradedPairing X
     inferInstance
 
-/-- The coevaluation of `X` with its right dual is the graded coevaluation
+/-- The coevaluation of `X` with its right dual is the twisted graded coevaluation
 `TauCeti.TwistedGradedObject.dualCoevaluation` of the componentwise pairings.
 
 Not a `simp` lemma: `simp` already reaches the right-hand side through
 `CategoryTheory.ObjectProperty.exactPairingFullSubcategory_coevaluation_hom` and
 `TauCeti.TwistedGradedObject.exactPairing_coevaluation`. -/
 theorem coevaluation_hom (X : VecTwisted k G c) :
-    (η_ X Xᘁ).hom = TwistedGradedObject.dualCoevaluation (Y := (dual X).obj) X.hasFiniteSupport
+    (η_ X Xᘁ).hom = TwistedGradedObject.dualCoevaluation (Y := (dual X).obj) c X.hasFiniteSupport
       (componentPairing X) :=
   letI := gradedPairing X
   (ObjectProperty.exactPairingFullSubcategory_coevaluation_hom X (dual X)).trans
     (TwistedGradedObject.exactPairing_coevaluation c _ _ _ _)
 
-/-- The evaluation of `X` with its right dual is the twisted graded evaluation
+/-- The evaluation of `X` with its right dual is the graded evaluation
 `TauCeti.TwistedGradedObject.dualEvaluation` of the componentwise pairings.
 
 Not a `simp` lemma: `simp` already reaches the right-hand side through
@@ -324,32 +325,32 @@ Not a `simp` lemma: `simp` already reaches the right-hand side through
 `TauCeti.TwistedGradedObject.exactPairing_evaluation`. -/
 theorem evaluation_hom (X : VecTwisted k G c) :
     (ε_ X Xᘁ).hom =
-      TwistedGradedObject.dualEvaluation (X := X.obj) (Y := (dual X).obj) c (componentPairing X) :=
+      TwistedGradedObject.dualEvaluation (X := X.obj) (Y := (dual X).obj) (componentPairing X) :=
   letI := gradedPairing X
   (ObjectProperty.exactPairingFullSubcategory_evaluation_hom X (dual X)).trans
     (TwistedGradedObject.exactPairing_evaluation c _ _ _ _)
 
-/-- The coevaluation of the left dual of `X` with `X` is the graded coevaluation
+/-- The coevaluation of the left dual of `X` with `X` is the twisted graded coevaluation
 `TauCeti.TwistedGradedObject.dualCoevaluation` of the componentwise pairings.
 
 Not a `simp` lemma: `simp` already reaches the right-hand side through
 `CategoryTheory.ObjectProperty.exactPairingFullSubcategory_coevaluation_hom` and
 `TauCeti.TwistedGradedObject.exactPairing_coevaluation`. -/
 theorem leftCoevaluation_hom (X : VecTwisted k G c) :
-    (η_ (ᘁX) X).hom = TwistedGradedObject.dualCoevaluation (X := (dual X).obj) (Y := X.obj)
+    (η_ (ᘁX) X).hom = TwistedGradedObject.dualCoevaluation (X := (dual X).obj) (Y := X.obj) c
       (dual X).hasFiniteSupport (leftComponentPairing X) :=
   letI := leftGradedPairing X
   (ObjectProperty.exactPairingFullSubcategory_coevaluation_hom (dual X) X).trans
     (TwistedGradedObject.exactPairing_coevaluation c _ _ _ _)
 
-/-- The evaluation of `X` with its left dual is the twisted graded evaluation
+/-- The evaluation of `X` with its left dual is the graded evaluation
 `TauCeti.TwistedGradedObject.dualEvaluation` of the componentwise pairings.
 
 Not a `simp` lemma: `simp` already reaches the right-hand side through
 `CategoryTheory.ObjectProperty.exactPairingFullSubcategory_evaluation_hom` and
 `TauCeti.TwistedGradedObject.exactPairing_evaluation`. -/
 theorem leftEvaluation_hom (X : VecTwisted k G c) :
-    (ε_ (ᘁX) X).hom = TwistedGradedObject.dualEvaluation (X := (dual X).obj) (Y := X.obj) c
+    (ε_ (ᘁX) X).hom = TwistedGradedObject.dualEvaluation (X := (dual X).obj) (Y := X.obj)
       (leftComponentPairing X) :=
   letI := leftGradedPairing X
   (ObjectProperty.exactPairingFullSubcategory_evaluation_hom (dual X) X).trans
