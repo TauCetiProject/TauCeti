@@ -44,8 +44,10 @@ at every point. This file proves the basic structure theory of this condition.
 * **Curvature compatibility.** For smooth data the curvature of a compatible connection
   satisfies `R(u, v) (c(w) e) = c(Rᵂ(u, v) w) e + c(w) R(u, v) e`, that is
   `[R(u, v), c(w)] = c(Rᵂ(u, v) w)`
-  (`CovariantDerivative.IsCliffordCompatible.curvatureTensor_leibniz`). This is the vanishing of
-  the curvature of the induced connection on `Hom(W, End V)` on the parallel section `c`, read
+  (`CovariantDerivative.IsCliffordCompatible.curvatureTensor_leibniz`). At a point `x` it only
+  needs compatibility and smoothness on an open neighbourhood of `x`
+  (`CovariantDerivative.curvatureTensor_leibniz_of_isCliffordCompatibleAt`). This is the vanishing
+  of the curvature of the induced connection on `Hom(W, End V)` on the parallel section `c`, read
   through `CovariantDerivative.curvatureTensor_hom_apply`.
 * **Scalar multiplication.** Every connection is compatible with the multiplication of `V` by the
   trivial line, `c(a) = a • id`, for the canonical connection `d` of the trivial line
@@ -276,6 +278,27 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffCovariantDerivative cov ∞] [ContMDiffCovariantDerivative covW ∞]
   {c : Π x : M, W x →L[ℝ] V x →L[ℝ] V x}
 
+/-- **Curvature compatibility, locally.** If `∇` is Clifford compatible at every point of an open
+neighbourhood `U` of `x` with a multiplication `c` smooth on `U`, then the curvature of `∇` acts on
+`c` at `x` as a derivation: `R(u, v) (c(w) e) = c(Rᵂ(u, v) w) e + c(w) R(u, v) e`. -/
+theorem curvatureTensor_leibniz_of_isCliffordCompatibleAt {U : Set M} (hU : IsOpen U) {x : M}
+    (hx : x ∈ U) (h : ∀ y ∈ U, cov.IsCliffordCompatibleAt covW c y)
+    (hc : ContMDiffOn I (I.prod 𝓘(ℝ, G →L[ℝ] F →L[ℝ] F)) ∞ (fun y ↦ TotalSpace.mk'
+      (G →L[ℝ] F →L[ℝ] F) (E := fun z ↦ W z →L[ℝ] V z →L[ℝ] V z) y (c y)) U)
+    (u v : TangentSpace I x) (w : W x) (e : V x) :
+    cov.curvatureTensor x u v (c x w e) =
+      c x (covW.curvatureTensor x u v w) e + c x w (cov.curvatureTensor x u v e) := by
+  have hpar (y : M) (hy : y ∈ U) : covW.hom (cov.hom cov) c y = 0 :=
+    (isCliffordCompatibleAt_iff_hom_hom_eq_zero cov covW c
+      (((hc y hy).contMDiffAt (hU.mem_nhds hy)).mdifferentiableAt (by simp))).1 (h y hy)
+  have h₀ := (covW.hom (cov.hom cov)).curvatureTensor_apply_eq_zero_of_cov_eq_zero
+    hU hx hc hpar u v
+  have h₁ := congr($h₀ w e)
+  rw [curvatureTensor_hom_apply, sub_apply,
+    curvatureTensor_hom_apply] at h₁
+  simp only [zero_apply, sub_sub, sub_eq_zero] at h₁
+  rw [h₁, add_comm]
+
 /-- **Curvature compatibility.** The curvature of a connection compatible with a smooth Clifford
 multiplication `c` acts on `c` as a derivation:
 `R(u, v) (c(w) e) = c(Rᵂ(u, v) w) e + c(w) R(u, v) e`. Equivalently, the commutator
@@ -285,16 +308,9 @@ theorem IsCliffordCompatible.curvatureTensor_leibniz (h : cov.IsCliffordCompatib
       (G →L[ℝ] F →L[ℝ] F) (E := fun z ↦ W z →L[ℝ] V z →L[ℝ] V z) y (c y)))
     (x : M) (u v : TangentSpace I x) (w : W x) (e : V x) :
     cov.curvatureTensor x u v (c x w e) =
-      c x (covW.curvatureTensor x u v w) e + c x w (cov.curvatureTensor x u v e) := by
-  have hpar :=
-    (isCliffordCompatible_iff_hom_hom_eq_zero fun y ↦ (hc y).mdifferentiableAt (by simp)).1 h
-  have h₀ := (covW.hom (cov.hom cov)).curvatureTensor_apply_eq_zero_of_cov_eq_zero
-    isOpen_univ (Set.mem_univ x) hc.contMDiffOn (fun y _ ↦ hpar y) u v
-  have h₁ := congr($h₀ w e)
-  rw [curvatureTensor_hom_apply, sub_apply,
-    curvatureTensor_hom_apply] at h₁
-  simp only [zero_apply, sub_sub, sub_eq_zero] at h₁
-  rw [h₁, add_comm]
+      c x (covW.curvatureTensor x u v w) e + c x w (cov.curvatureTensor x u v e) :=
+  curvatureTensor_leibniz_of_isCliffordCompatibleAt isOpen_univ (Set.mem_univ x)
+    (fun y _ ↦ h.isCliffordCompatibleAt y) hc.contMDiffOn u v w e
 
 end Curvature
 
