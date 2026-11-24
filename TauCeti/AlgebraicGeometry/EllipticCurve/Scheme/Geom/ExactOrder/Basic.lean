@@ -9,9 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.CategoryTheory.Monoidal.Grp.Translation
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.ClosedSubgroup.Basic
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
-import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
-import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.CategoryTheory.Comma.Over.StrictInitial
 
