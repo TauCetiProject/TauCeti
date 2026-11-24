@@ -11,7 +11,8 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Multilinear.Basis
-import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
@@ -33,8 +34,9 @@ The main results describe the tempered distributions supported at a point `x`.
   `T f = 0` for every Schwartz function `f` whose derivatives of order at most `N` vanish at `x`.
   Indeed `T` is bounded by finitely many Schwartz seminorms, of derivative order at most `N`. The
   value `T f` does not change when `f` is multiplied by a cutoff `φ (t • (· - x))` equal to one
-  near `x`, and the seminorms of order at most `N` of these products tend to zero as `t → ∞`
-  (`SchwartzMap.tendsto_seminorm_smulLeftCLM_of_iteratedFDeriv_eq_zero`).
+  near `x`, and the seminorms of order at most `N` of these products tend to zero as `t → ∞`,
+  since their derivatives of order at most `N` are `O(t⁻¹)`
+  (`TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`).
 * Consequently a scalar tempered distribution is supported in `{x}` exactly when it is a finite
   linear combination of derivatives `∂^m δ_x` of the Dirac distribution. In coordinates on `ℝⁿ`
   these are the combinations `∑_{|α| ≤ N} c_α ∂^α δ_x`.
@@ -49,8 +51,6 @@ in Tate's local theory at the archimedean places.
 
 ## Main results
 
-* `TemperedDistribution.iteratedLineDerivOp_delta_apply`:
-  `(∂^m δ_x) f = (-1) ^ n D^n f(x) (m ∘ rev)`.
 * `TemperedDistribution.isVanishingOn_compl_dsupport`: the localization principle.
 * `TemperedDistribution.isVanishingOn_iff_disjoint_dsupport`,
   `TemperedDistribution.dsupport_eq_empty_iff`: its consequences for open sets and for the zero
@@ -78,12 +78,14 @@ namespace TemperedDistribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The iterated derivative `∂^m δ_x` of the Dirac distribution at `x` evaluates the iterated
-derivative of a Schwartz function at `x` on the reversed tuple, with sign `(-1) ^ n`. -/
-theorem iteratedLineDerivOp_delta_apply (x : E) {n : ℕ} (m : Fin n → E) (f : 𝓢(E, ℂ)) :
-    (∂^{m} (delta x)) f = (-1) ^ n * iteratedFDeriv ℝ n f x (m ∘ Fin.rev) := by
-  rw [iteratedLineDerivOp_apply_apply, delta_apply,
-    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, smul_eq_mul]
+/-- Multiplying a Schwartz function by the shifted and dilated cutoff `φ (t • (· - x))`, for a
+smooth compactly supported `φ` and `t ≠ 0`, is pointwise multiplication. -/
+private theorem smulLeftCLM_comp_smul_sub_apply {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ) {t : ℝ} (ht : t ≠ 0) (x : E) (f : 𝓢(E, ℂ)) :
+    SchwartzMap.smulLeftCLM ℂ (fun y ↦ φ (t • (y - x))) f = fun y ↦ φ (t • (y - x)) • f y :=
+  SchwartzMap.smulLeftCLM_apply ((hφc.comp_homeomorph
+    ((Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero t ht))).hasTemperateGrowth
+    (hφ.comp ((contDiff_const_smul t).comp (contDiff_id.sub contDiff_const)))) f
 
 variable [FiniteDimensional ℝ E]
 
@@ -147,6 +149,46 @@ section PointSupport
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+/-- If the derivatives of `f` of order at most `N` vanish at `x`, the Schwartz seminorms of order
+`n ≤ N` of the products of `f` with the shrinking cutoffs `φ (t • (· - x))` tend to zero as
+`t → ∞`: by `TauCeti.exists_norm_iteratedFDeriv_smul_le_mul` their derivatives of order at most `N`
+are `O(t⁻¹)`, and they are supported in `closedBall x t⁻¹`. -/
+private theorem tendsto_seminorm_smulLeftCLM_comp_smul_sub {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ)
+    (hφs : tsupport φ ⊆ Metric.closedBall 0 1) (f : 𝓢(E, ℂ)) {x : E} {N : ℕ}
+    (hf : ∀ i ≤ N, iteratedFDeriv ℝ i f x = 0) (k : ℕ) {n : ℕ} (hn : n ≤ N) :
+    Tendsto (fun t : ℝ ↦ (SchwartzMap.smulLeftCLM ℂ (fun y ↦ φ (t • (y - x))) f).seminorm ℝ k n)
+      atTop (𝓝 0) := by
+  have hφc : HasCompactSupport φ :=
+    (isCompact_closedBall 0 1).of_isClosed_subset (isClosed_tsupport φ) hφs
+  obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_smul_le_mul (r := N)
+    (hφ.of_le (mod_cast le_top)) hφs (f.smooth _) hf
+  have hC0 : 0 ≤ C := by simpa using (norm_nonneg _).trans (hC 1 one_pos le_rfl 0 (Nat.zero_le _) x)
+  refine squeeze_zero' (g := fun t : ℝ ↦ (‖x‖ + 1) ^ k * C * t⁻¹)
+    (.of_forall fun _ ↦ apply_nonneg _ _) ?_
+    (by simpa using tendsto_inv_atTop_zero.const_mul ((‖x‖ + 1) ^ k * C))
+  filter_upwards [eventually_ge_atTop 1] with t ht
+  have ht0 : 0 < t := one_pos.trans_le ht
+  have ht1 : t⁻¹ ≤ 1 := inv_le_one_of_one_le₀ ht
+  refine SchwartzMap.seminorm_le_bound ℝ k n _ (by positivity) fun y ↦ ?_
+  have hy := hC t⁻¹ (inv_pos.2 ht0) ht1 n hn y
+  have hsupp := TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall hφs (inv_pos.2 ht0) x
+  simp only [inv_inv] at hy hsupp
+  rw [smulLeftCLM_comp_smul_sub_apply hφ hφc ht0.ne']
+  by_cases hyx : y ∈ Metric.closedBall x t⁻¹
+  · have hy1 : ‖y‖ ≤ ‖x‖ + 1 := by
+      calc ‖y‖ = ‖x + (y - x)‖ := by simp
+        _ ≤ ‖x‖ + ‖y - x‖ := norm_add_le _ _
+        _ ≤ ‖x‖ + 1 := by gcongr; exact (mem_closedBall_iff_norm.1 hyx).trans ht1
+    calc ‖y‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ φ (t • (y - x)) • f y) y‖
+        ≤ (‖x‖ + 1) ^ k * (C * t⁻¹) := by gcongr
+      _ = (‖x‖ + 1) ^ k * C * t⁻¹ := by ring
+  · -- Away from `closedBall x t⁻¹` the product vanishes near `y`.
+    have hy0 : y ∉ tsupport fun y ↦ φ (t • (y - x)) • f y :=
+      fun h ↦ hyx (hsupp (tsupport_smul_subset_left _ _ h))
+    rw [Function.notMem_support.mp fun h ↦ hy0 (support_iteratedFDeriv_subset n h), norm_zero,
+      mul_zero]
+    positivity
+
 /-- **A tempered distribution supported at a point has finite order there.** If a tempered
 distribution `T` with values in a normed space is supported in `{x}`, there is an `N` such that
 `T f = 0` for every Schwartz function `f` whose iterated derivatives of order at most `N` vanish
@@ -163,29 +205,24 @@ theorem exists_apply_eq_zero_of_dsupport_subset_singleton {T : 𝓢'(E, F)} {x :
   refine ⟨S.sup Prod.snd, fun f hf ↦ ?_⟩
   have hvan : IsVanishingOn T {x}ᶜ :=
     (isVanishingOn_compl_dsupport T).mono (compl_subset_compl.2 hT)
-  set b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
+  set b : ContDiffBump (0 : E) := ⟨1 / 2, 1, by norm_num, by norm_num⟩
   set g : ℝ → 𝓢(E, ℂ) := fun t ↦ SchwartzMap.smulLeftCLM ℂ (fun y ↦ b (t • (y - x))) f
   -- Cutting `f` off near `x` does not change the value of `T`.
   have heq : ∀ t : ℝ, 0 < t → T f = T (g t) := by
     intro t ht
-    have hχc : HasCompactSupport (fun y ↦ b (t • (y - x))) :=
-      b.hasCompactSupport.comp_homeomorph
-        ((Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero t ht.ne'))
-    have hχ : ContDiff ℝ ∞ (fun y ↦ b (t • (y - x))) :=
-      b.contDiff.comp ((contDiff_const_smul t).comp (contDiff_id.sub contDiff_const))
     rw [← sub_eq_zero, ← map_sub]
     refine hvan _ (subset_compl_singleton_iff.2 (notMem_tsupport_iff_eventuallyEq.2 ?_))
-    have hopen : IsOpen {y : E | t • (y - x) ∈ Metric.ball (0 : E) 1} :=
+    have hopen : IsOpen {y : E | t • (y - x) ∈ Metric.ball (0 : E) (1 / 2)} :=
       Metric.isOpen_ball.preimage (by fun_prop)
     filter_upwards [hopen.mem_nhds (by simp)] with y hy
     have hb : b (t • (y - x)) = 1 := b.one_of_mem_closedBall (Metric.ball_subset_closedBall hy)
-    simp [g, SchwartzMap.smulLeftCLM_apply (hχc.hasTemperateGrowth hχ), hb]
+    simp [g, smulLeftCLM_comp_smul_sub_apply b.contDiff b.hasCompactSupport ht.ne', hb]
   have hlim : Tendsto (fun t ↦ c * ∑ i ∈ S, SchwartzMap.seminorm ℂ i.1 i.2 (g t)) atTop
       (𝓝 0) := by
     -- The Schwartz seminorms do not depend on the scalar field.
     simpa [SchwartzMap.seminorm_apply] using (tendsto_finsetSum S fun i hi ↦
-      SchwartzMap.tendsto_seminorm_smulLeftCLM_of_iteratedFDeriv_eq_zero b.contDiff
-        b.hasCompactSupport f hf i.1 (Finset.le_sup (f := Prod.snd) hi)).const_mul (c : ℝ)
+      tendsto_seminorm_smulLeftCLM_comp_smul_sub b.contDiff b.tsupport_eq.subset f hf i.1
+        (Finset.le_sup (f := Prod.snd) hi)).const_mul (c : ℝ)
   refine norm_le_zero_iff.1 (ge_of_tendsto hlim ?_)
   filter_upwards [eventually_gt_atTop 0] with t ht
   rw [heq t ht]
@@ -217,9 +254,8 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
       refine hN f fun n hn ↦ ContinuousMultilinearMap.toMultilinearMap_injective
         (Module.Basis.ext_multilinear (fun _ ↦ b) fun v ↦ ?_)
       have := hf ⟨⟨n, Nat.lt_succ_of_le hn⟩, v ∘ Fin.rev⟩
-      simp only [toLin, D, LinearMap.coe_mk, AddHom.coe_mk, iteratedLineDerivOp_delta_apply,
-        mul_eq_zero, pow_eq_zero_iff', neg_eq_zero, one_ne_zero, false_and, false_or] at this
-      simpa [Function.comp_def] using this
+      simpa [toLin, D, SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, Function.comp_def]
+        using this
     obtain ⟨c, hc⟩ :=
       (Submodule.mem_span_range_iff_exists_fun ℂ).1 (mem_span_of_iInf_ker_le_ker hker)
     have hT : T = ∑ i, c i • D i := by
