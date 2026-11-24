@@ -92,13 +92,15 @@ theorem ordinaryProjection_pow_apply_comm (U : Module.End R M) (k : ℕ) (x : M)
 /-- The ordinary part is `U`-stable. -/
 theorem range_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
     range U.ordinaryProjection ∈ U.invtSubmodule := by
+  refine (mem_invtSubmodule_iff_forall_mem_of_mem _).mpr ?_
   rintro _ ⟨x, rfl⟩
   exact ⟨U x, by simpa using ordinaryProjection_pow_apply_comm U 1 x⟩
 
 /-- The non-ordinary part is `U`-stable. -/
 theorem ker_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
-    ker U.ordinaryProjection ∈ U.invtSubmodule := fun x hx ↦ by
-  simpa [mem_ker.mp hx] using ordinaryProjection_pow_apply_comm U 1 x
+    ker U.ordinaryProjection ∈ U.invtSubmodule :=
+  (mem_invtSubmodule_iff_forall_mem_of_mem _).mpr fun x hx ↦ by
+    simpa [mem_ker.mp hx] using ordinaryProjection_pow_apply_comm U 1 x
 
 @[simp]
 theorem ordinaryProjection_one : (1 : Module.End R M).ordinaryProjection = 1 :=
