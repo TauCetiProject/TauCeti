@@ -10,8 +10,8 @@ public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.SkewAdjoint
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.Algebra.Lie.OfAssociative
+import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
-import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 
 /-!
 # The Killing form of a skew-adjoint matrix Lie algebra
@@ -24,11 +24,13 @@ the case `ε = -1`. On the Lie algebra `skewAdjointMatricesLieSubalgebra J` of t
 `κ(X, Y) = (n - 2 ε) trace (X * Y)`.
 
 A matrix `A` lies in this Lie algebra exactly when `J⁻¹ Aᵀ J = -A`
-(`Matrix.isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg`), and `Z ↦ J⁻¹ Zᵀ J` is an involution
-of the matrices. So `Z ↦ Z - J⁻¹ Zᵀ J` maps `gl n K` onto the Lie algebra, acting on it as
-multiplication by two. The operator `ad X ∘ ad Y` of `gl n K` preserves the Lie algebra, so twice
-its trace there is its trace on `gl n K`, which is `2 n trace (X * Y)` (`Matrix.killingForm_apply`),
-minus the trace of its composite with `Z ↦ J⁻¹ Zᵀ J`, which is `4 ε trace (X * Y)`.
+(`TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg`), and
+`Matrix.transposeConj J : Z ↦ J⁻¹ Zᵀ J` is an involution of the matrices
+(`Matrix.transposeConj_transposeConj`). So `Z ↦ Z - J⁻¹ Zᵀ J` maps `gl n K` onto the Lie algebra,
+acting on it as multiplication by two. The operator `ad X ∘ ad Y` of `gl n K` preserves the Lie
+algebra, so twice its trace there is its trace on `gl n K`, which is `2 n trace (X * Y)`
+(`Matrix.killingForm_apply`), minus the trace of its composite with `Z ↦ J⁻¹ Zᵀ J`, which is
+`4 ε trace (X * Y)`.
 
 ## Main results
 
@@ -53,60 +55,16 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {n : Type*} [DecidableEq n] [Fintype n] {K : Type*} [Field K] {J : Matrix n n K} {ε : K}
 
-/-- The operator `Z ↦ J⁻¹ Zᵀ J` of the square matrices, whose fixed points up to sign are the
-skew-adjoint matrices for an invertible `J`. -/
-private noncomputable def transposeConj (J : Matrix n n K) : Matrix n n K →ₗ[K] Matrix n n K :=
-  LinearMap.mulLeft K J⁻¹ ∘ₗ LinearMap.mulRight K J ∘ₗ
-    (transposeLinearEquiv n n K K).toLinearMap
-
-private theorem transposeConj_apply (Z : Matrix n n K) : transposeConj J Z = J⁻¹ * Zᵀ * J := by
-  simp [transposeConj, mul_assoc]
-
-/-- For an invertible `J` with `Jᵀ = ε • J`, the operator `Z ↦ J⁻¹ Zᵀ J` is an involution. -/
-private theorem transposeConj_transposeConj (hJ : Jᵀ = ε • J) (hJu : IsUnit J)
-    (Z : Matrix n n K) : transposeConj J (transposeConj J Z) = Z := by
-  have hd := (isUnit_iff_isUnit_det J).mp hJu
-  -- Transposing `Jᵀ = ε • J` gives `J = ε • Jᵀ = (ε * ε) • J`, so `(ε * ε) • 1 = 1`.
-  have hJ' : J = ε • Jᵀ := by simpa using congrArg transpose hJ
-  have hε : (ε * ε) • (1 : Matrix n n K) = 1 := by
-    have h : (ε * ε) • J = J := by rw [mul_smul, ← hJ, ← hJ']
-    rw [← mul_nonsing_inv _ hd, ← Matrix.smul_mul, h]
-  have h1 : J⁻¹ * Jᵀ = ε • 1 := by
-    rw [hJ, Matrix.mul_smul, nonsing_inv_mul _ hd]
-  have h2 : (Jᵀ)⁻¹ * J = ε • 1 := calc
-    (Jᵀ)⁻¹ * J = (Jᵀ)⁻¹ * (ε • Jᵀ) := congrArg _ hJ'
-    _ = ε • 1 := by rw [Matrix.mul_smul, nonsing_inv_mul _ (isUnit_det_transpose J hd)]
-  rw [transposeConj_apply, transposeConj_apply, transpose_mul, transpose_mul, transpose_transpose,
-    transpose_nonsing_inv]
-  calc J⁻¹ * (Jᵀ * (Z * (Jᵀ)⁻¹)) * J = (J⁻¹ * Jᵀ) * Z * ((Jᵀ)⁻¹ * J) := by
-        simp only [Matrix.mul_assoc]
-    _ = Z := by
-        rw [h1, h2, Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul, Matrix.mul_one, smul_smul,
-          ← Matrix.one_mul Z, ← Matrix.smul_mul, hε, Matrix.one_mul]
-
-/-- The trace of `Z ↦ J⁻¹ (A Z B)ᵀ J` on the matrices, for `Jᵀ = ε • J`. -/
-private theorem trace_transposeConj_comp (hJ : Jᵀ = ε • J) (A B : Matrix n n K) :
-    LinearMap.trace K _ (transposeConj J ∘ₗ LinearMap.mulLeft K A ∘ₗ LinearMap.mulRight K B) =
-      ε * (J⁻¹ * Bᵀ * J * A).trace := by
-  have h : transposeConj J ∘ₗ LinearMap.mulLeft K A ∘ₗ LinearMap.mulRight K B =
-      LinearMap.mulLeft K (J⁻¹ * Bᵀ) ∘ₗ LinearMap.mulRight K (Aᵀ * J) ∘ₗ
-        (transposeLinearEquiv n n K K).toLinearMap := by
-    ext1 Z
-    simp [transposeConj_apply, transpose_mul, mul_assoc]
-  rw [h, trace_mulLeft_comp_mulRight_comp_transpose, transpose_mul, transpose_transpose, hJ,
-    Matrix.smul_mul, Matrix.mul_smul, trace_smul, smul_eq_mul]
-  simp only [mul_assoc]
-
 /-- For `A, B` skew-adjoint for an invertible `J` with `Jᵀ = ε • J`, the operator
 `Z ↦ J⁻¹ (⁅A, ⁅B, Z⁆⁆)ᵀ J` of the matrices has trace `4 ε trace (A * B)`. -/
 private theorem trace_transposeConj_comp_ad_comp_ad (hJ : Jᵀ = ε • J) (hJu : IsUnit J)
     {A B : Matrix n n K} (hA : A ∈ skewAdjointMatricesLieSubalgebra J)
     (hB : B ∈ skewAdjointMatricesLieSubalgebra J) :
     LinearMap.trace K _ (transposeConj J ∘ₗ ad K _ A ∘ₗ ad K _ B) = 4 * ε * (A * B).trace := by
-  have hA' := (isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJu).mp
-    ((mem_skewAdjointMatricesSubmodule J A).mp ((mem_skewAdjointMatricesLieSubalgebra J A).mp hA))
-  have hB' := (isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJu).mp
-    ((mem_skewAdjointMatricesSubmodule J B).mp ((mem_skewAdjointMatricesLieSubalgebra J B).mp hB))
+  have hA' :=
+    (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mp hA
+  have hB' :=
+    (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mp hB
   have hJJ : J⁻¹ * J = 1 := nonsing_inv_mul _ ((isUnit_iff_isUnit_det J).mp hJu)
   have hJJ' : J * J⁻¹ = 1 := mul_nonsing_inv _ ((isUnit_iff_isUnit_det J).mp hJu)
   have hBA : J⁻¹ * (B * A)ᵀ * J = A * B := by
@@ -123,8 +81,8 @@ private theorem trace_transposeConj_comp_ad_comp_ad (hJ : Jᵀ = ε • J) (hJu 
   rw [ad_comp_ad]
   simp only [LinearMap.comp_add, LinearMap.comp_sub, map_add, map_sub]
   rw [hl, hr]
-  simp only [trace_transposeConj_comp hJ, transpose_one, Matrix.mul_one, hJJ, Matrix.one_mul, hA',
-    hB', hBA, neg_mul, trace_neg, trace_mul_comm B A]
+  simp only [trace_transposeConj_comp_mulLeft_comp_mulRight hJ, transpose_one, Matrix.mul_one,
+    hJJ, Matrix.one_mul, hA', hB', hBA, neg_mul, trace_neg, trace_mul_comm B A]
   ring
 
 variable [NeZero (2 : K)]
@@ -140,11 +98,10 @@ private theorem two_mul_killingForm_skewAdjointMatricesLieSubalgebra_apply (hJ :
   -- on them.
   let P : Matrix n n K →ₗ[K] skewAdjointMatricesLieSubalgebra J :=
     LinearMap.codRestrict (skewAdjointMatricesLieSubalgebra J).toSubmodule
-      (LinearMap.id - transposeConj J) fun Z ↦ (mem_skewAdjointMatricesLieSubalgebra J _).mpr
-        ((mem_skewAdjointMatricesSubmodule J _).mpr
-          ((isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJu).mpr (by
-            rw [← transposeConj_apply, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
-              transposeConj_transposeConj hJ hJu, neg_sub])))
+      (LinearMap.id - transposeConj J) fun Z ↦
+        (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mpr (by
+          rw [← transposeConj_apply, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
+            transposeConj_transposeConj hJ hJu, neg_sub])
   -- `P` lands in the subtype of the submodule underlying the Lie subalgebra, which is the
   -- subtype of the Lie subalgebra itself, so `LinearMap.codRestrict_apply` computes it.
   have hP (Z : Matrix n n K) : (P Z : Matrix n n K) = Z - transposeConj J Z :=
@@ -154,9 +111,7 @@ private theorem two_mul_killingForm_skewAdjointMatricesLieSubalgebra_apply (hJ :
     ext1 W
     have hW : transposeConj J (L W) = -L W := by
       rw [transposeConj_apply]
-      refine (isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJu).mp
-        ((mem_skewAdjointMatricesSubmodule J _).mp
-          ((mem_skewAdjointMatricesLieSubalgebra J _).mp ?_))
+      refine (mem_skewAdjointMatricesLieSubalgebra_iff_inv_mul_transpose_mul_eq_neg hJu).mp ?_
       exact (skewAdjointMatricesLieSubalgebra J).lie_mem X.property
         ((skewAdjointMatricesLieSubalgebra J).lie_mem Y.property W.property)
     apply Subtype.ext
