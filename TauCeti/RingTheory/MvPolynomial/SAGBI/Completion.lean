@@ -793,22 +793,43 @@ private theorem chosenToricBinomials_span (m : MonomialOrder σ) {ι : Type u} [
         monomial p.1 (1 : k) - monomial p.2 1) '' (m.chosenToricBinomials c : Set _)) :=
   (TauCeti.exists_finset_toricIdeal_eq_span.{v} fun i ↦ m.degree (c i)).choose_spec.2 k
 
-/-- Chosen subduction expression and remainder for `f` with respect to `c`, defaulting to `(0, 0)`
-if `c` were ever to contain a zero polynomial. -/
+/-- Chosen subduction expression and remainder for `f` with respect to `c`, obtained by subducting
+against the nonzero entries of `c` and renaming back to `ι`. -/
 private noncomputable def chosenSubductionPair (m : MonomialOrder σ) {ι : Type u}
     (c : ι → MvPolynomial σ k) (f : MvPolynomial σ k) :
     MvPolynomial ι k × MvPolynomial σ k :=
+  have hb : ∀ i : {i : ι // c i ≠ 0}, (c ∘ Subtype.val) i ≠ 0 := fun i ↦ i.property
   open scoped Classical in
-  if hc : ∀ i, c i ≠ 0 then
-    ((m.exists_isSubduction hc f).choose, (m.exists_isSubduction hc f).choose_spec.choose)
-  else (0, 0)
+  (rename Subtype.val (m.exists_isSubduction hb f).choose,
+    (m.exists_isSubduction hb f).choose_spec.choose)
 
 private theorem chosenSubductionPair_spec (m : MonomialOrder σ) {ι : Type u}
-    {c : ι → MvPolynomial σ k} (hc : ∀ i, c i ≠ 0) (f : MvPolynomial σ k) :
+    (c : ι → MvPolynomial σ k) (f : MvPolynomial σ k) :
     m.IsSubduction c f (m.chosenSubductionPair c f).1 (m.chosenSubductionPair c f).2 := by
-  unfold chosenSubductionPair
-  split_ifs
-  exact (m.exists_isSubduction hc f).choose_spec.choose_spec
+  have hb : ∀ i : {i : ι // c i ≠ 0}, (c ∘ Subtype.val) i ≠ 0 := fun i ↦ i.property
+  have hs : m.IsSubduction (c ∘ Subtype.val) f (m.exists_isSubduction hb f).choose
+      (m.exists_isSubduction hb f).choose_spec.choose :=
+    (m.exists_isSubduction hb f).choose_spec.choose_spec
+  have hclosure : AddSubmonoid.closure (Set.range (m.degree ∘ c)) =
+      AddSubmonoid.closure
+        (Set.range (m.degree ∘ (c ∘ (Subtype.val : {i : ι // c i ≠ 0} → ι)))) := by
+    refine le_antisymm (AddSubmonoid.closure_le.2 ?_) (AddSubmonoid.closure_mono ?_)
+    · rintro _ ⟨i, rfl⟩
+      by_cases hi : c i = 0
+      · simp [hi]
+      · exact AddSubmonoid.subset_closure ⟨⟨i, hi⟩, rfl⟩
+    · rintro _ ⟨i, rfl⟩
+      exact ⟨i.val, rfl⟩
+  refine ⟨?_, ?_, ?_, hs.degree_le⟩
+  · simpa [chosenSubductionPair, aeval_rename] using hs.eq_aeval_add
+  · intro w hw
+    obtain ⟨u, hu, heq⟩ := linearCombination_degree_rename_eq_of_comp (c := c) rfl hw
+    change Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] m.degree f
+    rw [heq]
+    exact hs.support_le u hu
+  · intro a ha
+    rw [hclosure]
+    exact hs.irreducible a ha
 
 /-- Internal stage package for concrete certified batch SAGBI completion. -/
 private structure BatchStage (c₀ : ι₀ → MvPolynomial σ k) where
@@ -843,10 +864,8 @@ private noncomputable def batchStageSeq (m : MonomialOrder σ) (c₀ : ι₀ →
 `ι₀`, and stage `n + 1` extends stage `n` by a sum with the subtype of elements in a chosen finite
 binomial generating set of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` whose
 evaluation at `m.sagbiCompletionFamily c₀ n` has nonzero chosen remainder when subducted against
-`m.sagbiCompletionFamily c₀ n`. If stage `n` contains a zero polynomial, the underlying choice
-falls back silently to `(0, 0)` and no new indices are adjoined; nonzero generators suffice for
-certified `MonomialOrder.IsSubduction` pairs (`MonomialOrder.exists_sagbiCompletion_succ`), whereas
-monicity of `c₀` is needed for fairness (`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`).
+the nonzero entries of `m.sagbiCompletionFamily c₀ n` (`MonomialOrder.exists_sagbiCompletion_succ`).
+Monicity of `c₀` is needed for fairness (`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`).
 -/
 noncomputable def sagbiCompletionIndex (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : Type u :=
@@ -858,14 +877,13 @@ instance instFiniteSagbiCompletionIndex (m : MonomialOrder σ) (c₀ : ι₀ →
   (m.batchStageSeq c₀ n).instFinite
 
 /-- The generator family at stage `n` of batch SAGBI completion starting from `c₀`. Stage `0` is
-`c₀`; at stage `n + 1`, when all stage-`n` generators are nonzero, each binomial in a chosen finite
-binomial generating set of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` is
-evaluated at `m.sagbiCompletionFamily c₀ n`, the resulting polynomial is subducted against
-`m.sagbiCompletionFamily c₀ n` (`MonomialOrder.IsSubduction`), and `m.monicNormalize` of every
-nonzero remainder is adjoined. If stage `n` contains a zero generator, the internal choice falls
-back silently to `(0, 0)` and leaves the family unchanged. Nonzero generators suffice for certified
-subductions (`MonomialOrder.exists_sagbiCompletion_succ`), whereas monicity of `c₀` is required so
-that unscaled toric binomials cancel leading terms and yield a fair completion sequence
+`c₀`; at stage `n + 1`, each binomial in a chosen finite binomial generating set of
+`TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` is evaluated at
+`m.sagbiCompletionFamily c₀ n`, the resulting polynomial is subducted against
+`m.sagbiCompletionFamily c₀ n` (by filtering to its nonzero entries, yielding a certified
+`MonomialOrder.IsSubduction` pair via `MonomialOrder.exists_sagbiCompletion_succ`), and
+`m.monicNormalize` of every nonzero remainder is adjoined. Monicity of `c₀` is required so that
+unscaled toric binomials cancel leading terms and yield a fair completion sequence
 (`MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`). -/
 noncomputable def sagbiCompletionFamily (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : m.sagbiCompletionIndex c₀ n → MvPolynomial σ k :=
@@ -876,12 +894,11 @@ initial polynomial ring `MvPolynomial ι₀ k`. Starting from `AlgHom.id` at sta
 composes with `MonomialOrder.subductionRetract` for the chosen finite binomial generating set of
 `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)` and the chosen subduction pairs of
 their evaluations at `m.sagbiCompletionFamily c₀ n` against `m.sagbiCompletionFamily c₀ n` for
-nonzero remainders (silently falling back to `(0, 0)` with no new variables if stage `n` contains a
-zero generator). Nonzero generators suffice for certified `MonomialOrder.IsSubduction` pairs
-(`MonomialOrder.exists_sagbiCompletion_succ`), and the stepwise evaluation factorization
-(`MonomialOrder.aeval_comp_subductionRetract`) needs only those subduction certificates; the
-exported compatibility theorem `MonomialOrder.aeval_comp_sagbiCompletionRetract` assumes monicity
-of `c₀` (as does `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily` for fairness). -/
+nonzero remainders. Filtering zero generators internally makes `MonomialOrder.IsSubduction` hold
+unconditionally (`MonomialOrder.exists_sagbiCompletion_succ`), so the exported evaluation
+factorization `MonomialOrder.aeval_comp_sagbiCompletionRetract` holds for every finite initial
+family `c₀`, while `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily` assumes monicity of
+`c₀` for fairness. -/
 noncomputable def sagbiCompletionRetract (m : MonomialOrder σ) (c₀ : ι₀ → MvPolynomial σ k)
     (n : ℕ) : MvPolynomial (m.sagbiCompletionIndex c₀ n) k →ₐ[k] MvPolynomial ι₀ k :=
   (m.batchStageSeq c₀ n).retract
@@ -928,7 +945,7 @@ theorem sagbiCompletionRetract_zero (c₀ : ι₀ → MvPolynomial σ k) :
 binomial generating set `B` of `TauCeti.toricIdeal k (m.degree ∘ m.sagbiCompletionFamily c₀ n)`,
 evaluates each `p ∈ B` at `m.sagbiCompletionFamily c₀ n`, and chooses a subduction pair `(Q p, r p)`
 of that evaluated polynomial against `m.sagbiCompletionFamily c₀ n` (certified by
-`MonomialOrder.IsSubduction` when stage-`n` generators are nonzero), decomposes
+`MonomialOrder.IsSubduction`), decomposes
 `m.sagbiCompletionIndex c₀ (n + 1)` via an equivalence
 `e : m.sagbiCompletionIndex c₀ n ⊕ {p : B // r p ≠ 0} ≃ m.sagbiCompletionIndex c₀ (n + 1)`
 extending `m.sagbiCompletionIndexInclusion c₀ n`, adjoins `m.monicNormalize (r l.1)` on the new
@@ -946,10 +963,9 @@ theorem exists_sagbiCompletion_succ (c₀ : ι₀ → MvPolynomial σ k) (n : �
         Ideal.span ((fun p : (m.sagbiCompletionIndex c₀ n →₀ ℕ) ×
           (m.sagbiCompletionIndex c₀ n →₀ ℕ) ↦
             monomial p.1 (1 : k) - monomial p.2 1) '' (B : Set _)) ∧
-      ((∀ i, m.sagbiCompletionFamily c₀ n i ≠ 0) →
-        ∀ p : B, m.IsSubduction (m.sagbiCompletionFamily c₀ n)
-          (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.val.1 (1 : k) - monomial p.val.2 1))
-          (Q p) (r p)) ∧
+      (∀ p : B, m.IsSubduction (m.sagbiCompletionFamily c₀ n)
+        (aeval (m.sagbiCompletionFamily c₀ n) (monomial p.val.1 (1 : k) - monomial p.val.2 1))
+        (Q p) (r p)) ∧
       (∀ i, e (Sum.inl i) = m.sagbiCompletionIndexInclusion c₀ n i) ∧
       m.sagbiCompletionFamily c₀ (n + 1) ∘ e =
         Sum.elim (m.sagbiCompletionFamily c₀ n) (m.monicNormalize ∘ fun l ↦ r l.val) ∧
@@ -965,7 +981,7 @@ theorem exists_sagbiCompletion_succ (c₀ : ι₀ → MvPolynomial σ k) (n : �
   let e : m.sagbiCompletionIndex c₀ n ⊕ {p : B // (sub p).2 ≠ 0} ≃
       m.sagbiCompletionIndex c₀ (n + 1) := Equiv.refl _
   refine ⟨B, fun p ↦ (sub p).1, fun p ↦ (sub p).2, e, m.chosenToricBinomials_span _,
-    fun hc p ↦ m.chosenSubductionPair_spec hc _,
+    fun p ↦ m.chosenSubductionPair_spec _ _,
     fun _ ↦ by dsimp only [e, sagbiCompletionIndexInclusion]; rfl,
     funext fun _ ↦ by
       dsimp only [Function.comp_def, e, sagbiCompletionFamily, batchStageSeq, nextBatchStage]
@@ -1043,16 +1059,15 @@ theorem sagbiCompletionRetract_surjective (c₀ : ι₀ → MvPolynomial σ k) (
     rw [← AlgHom.coe_comp, hret, AlgHom.coe_comp]
     exact ih.comp subductionRetract_surjective
 
-/-- For a monic initial family `c₀`, evaluating `c₀` after `m.sagbiCompletionRetract c₀ n` equals
-evaluating stage `n` of `m.sagbiCompletionFamily c₀`. -/
-theorem aeval_comp_sagbiCompletionRetract (hc₀ : ∀ i, m.Monic (c₀ i)) (n : ℕ) :
+/-- Evaluating `c₀` after `m.sagbiCompletionRetract c₀ n` equals evaluating stage `n` of
+`m.sagbiCompletionFamily c₀`. -/
+theorem aeval_comp_sagbiCompletionRetract (c₀ : ι₀ → MvPolynomial σ k) (n : ℕ) :
     (aeval c₀).comp (m.sagbiCompletionRetract c₀ n) = aeval (m.sagbiCompletionFamily c₀ n) := by
   induction n with
   | zero => exact algHom_ext fun _ ↦ by simp
   | succ n ih =>
     obtain ⟨B, Q, r, e, -, hsub, -, hfam, hret⟩ := m.exists_sagbiCompletion_succ c₀ n
-    have hs := fun l : {p : B // r p ≠ 0} ↦
-      hsub (fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero) l.val
+    have hs := fun l : {p : B // r p ≠ 0} ↦ hsub l.val
     refine (AlgHom.cancel_right (rename_surjective e e.surjective)).mp ?_
     rw [AlgHom.comp_assoc, hret, ← AlgHom.comp_assoc, ih,
       m.aeval_comp_subductionRetract hs, ← hfam, aeval_comp_rename]
@@ -1065,16 +1080,15 @@ theorem isFairSAGBISequence_sagbiCompletionFamily (hc₀ : ∀ i, m.Monic (c₀ 
   range_subset n := fun _ ⟨i, hi⟩ ↦
     ⟨m.sagbiCompletionIndexInclusion c₀ n i, (m.sagbiCompletionFamily_succ_inclusion n i).trans hi⟩
   subset_adjoin n := by
-    rw [adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_sagbiCompletionRetract hc₀ n)
+    rw [adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_sagbiCompletionRetract c₀ n)
         (m.sagbiCompletionRetract_surjective c₀ n),
-      ← adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_sagbiCompletionRetract hc₀ (n + 1))
+      ← adjoin_range_eq_of_aeval_comp_eq (m.aeval_comp_sagbiCompletionRetract c₀ (n + 1))
         (m.sagbiCompletionRetract_surjective c₀ (n + 1))]
     exact Algebra.subset_adjoin
   fair n := by
     obtain ⟨B, Q, r, e, hB, hsub, -, hfam, -⟩ := m.exists_sagbiCompletion_succ c₀ n
-    have hs := hsub fun i ↦ (m.monic_sagbiCompletionFamily hc₀ n i).ne_zero
     refine ⟨(B : Set _), hB, fun p hp ↦ ?_⟩
-    refine ⟨n, n + 1, Nat.le_succ n, Q ⟨p, hp⟩, r ⟨p, hp⟩, hs ⟨p, hp⟩, fun hr ↦ ?_⟩
+    refine ⟨n, n + 1, Nat.le_succ n, Q ⟨p, hp⟩, r ⟨p, hp⟩, hsub ⟨p, hp⟩, fun hr ↦ ?_⟩
     refine ⟨e (Sum.inr ⟨⟨p, hp⟩, hr⟩), ?_⟩
     rw [← Function.comp_apply (f := m.sagbiCompletionFamily c₀ (n + 1)), hfam, Sum.elim_inr,
       Function.comp_apply]
@@ -1111,7 +1125,7 @@ theorem exists_finite_monic_isSAGBIBasis_of_fg {b : ι₀ → MvPolynomial σ k}
     D.symm.surjective.comp (m.sagbiCompletionRetract_surjective c₀ N), ?_⟩
   · have hN0 := hN N le_rfl
     rwa [m.range_sagbiCompletionFamily_zero, hadj] at hN0
-  · rw [← AlgHom.comp_assoc, haeval_Dinv, m.aeval_comp_sagbiCompletionRetract hc₀ N]
+  · rw [← AlgHom.comp_assoc, haeval_Dinv, m.aeval_comp_sagbiCompletionRetract c₀ N]
 
 end BatchCompletion
 
