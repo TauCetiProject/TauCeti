@@ -254,10 +254,22 @@ lemma pullbackCompIsoOfCommSq_inv_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} 
 
 /-- For a section `f` of `g`, i.e. `f ≫ g = 𝟙 X`, pulling back along `g` and then along `f` is
 the identity: `f^* g^* ≅ (f ≫ g)^* = (𝟙 X)^* ≅ 𝟭`. Along an isomorphism `g`, with `f = inv g`,
-this identifies `g^* (inv g)^*` with the identity. -/
+this identifies `(inv g)^* g^*` with the identity. -/
 def pullbackCompIsoId {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) :
     pullback g ⋙ pullback f ≅ 𝟭 X.Modules :=
   pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId X
+
+@[simp]
+lemma pullbackCompIsoId_hom_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).hom.app M =
+      (pullbackComp f g).hom.app M ≫ (pullbackCongr h).hom.app M ≫ (pullbackId X).hom.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoId_inv_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).inv.app M =
+      (pullbackId X).inv.app M ≫ (pullbackCongr h).inv.app M ≫ (pullbackComp f g).inv.app M :=
+  (rfl)
 
 end Coherence
 

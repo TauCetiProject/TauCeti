@@ -22,7 +22,7 @@ reductions `K ⧸ I ^ (n + 1) K` of the kernel `K` of the corresponding map of f
 which can differ from the levelwise kernels, as the multiplication-by-`t` example shows.
 
 Pullback along an isomorphism of adic thickening systems is an equivalence of categories of
-coherent formal modules (`CoherentFormalModule.pullback_isEquivalence`), so the abelian structure
+coherent formal modules (`CoherentFormalModule.isEquivalence_pullback`), so the abelian structure
 transports along such isomorphisms (`CoherentFormalModule.abelianOfIso`). Through the
 identifications `spf I ≅ Spf R̂` of the system `Spec (R ⧸ I ^ (n + 1))` with the formal spectrum
 of the `I`-adic completion `R̂` of `R`, and `X/V(I) ≅ spf J` of the formal completion of an affine

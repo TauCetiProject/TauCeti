@@ -66,7 +66,7 @@ described by finite modules over the completed ring (Stacks, Lemmas 30.23.1 and 
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.pullback`: the pullback of
   coherent formal modules along a morphism of adic thickening systems, an additive functor
   preserving epimorphisms, and an equivalence along an isomorphism
-  (`CoherentFormalModule.pullback_isEquivalence`).
+  (`CoherentFormalModule.isEquivalence_pullback`).
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
 * `AlgebraicGeometry.Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor`: its restriction
@@ -530,7 +530,7 @@ end EssSurj
 
 /-- **Pullback along an isomorphism of adic thickening systems is an equivalence** of categories of
 coherent formal modules. -/
-instance pullback_isEquivalence : (pullback g).IsEquivalence where
+instance isEquivalence_pullback : (pullback g).IsEquivalence where
   faithful := pullback_faithful g
   full := pullback_full g
   essSurj := pullback_essSurj g
