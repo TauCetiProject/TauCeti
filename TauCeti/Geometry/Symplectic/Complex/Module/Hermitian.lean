@@ -40,8 +40,8 @@ real part of `H` here.
   for `J`-invariant `B` it is conjugate linear in the second.
 * `TauCeti.AlmostComplexStructure.complexFormOfIm_conj_symm`: for alternating `J`-invariant `B`,
   `H` is conjugate symmetric.
-* `TauCeti.AlmostComplexStructure.complexFormOfIm_self_pos`: `0 < H (v, v)` when `B` is alternating
-  and `0 < B (J v) v`.
+* `TauCeti.AlmostComplexStructure.complexFormOfIm_self_pos`: `0 < H (v, v)` when `B v v = 0` (for
+  instance for alternating `B`) and `0 < B (J v) v`.
 -/
 
 public section
@@ -59,15 +59,8 @@ real bilinear form `B`, for an almost complex structure `J`. It is complex linea
 variable for `J.complexModule` (`complexFormOfIm_smul_left`); when `B` is alternating and
 `J`-invariant it is a Hermitian form (`complexFormOfIm_conj_symm`). -/
 noncomputable def complexFormOfIm : U →ₗ[ℝ] U →ₗ[ℝ] ℂ :=
-  LinearMap.mk₂ ℝ (fun v w ↦ (B (J v) w : ℂ) + Complex.I * B v w)
-    (fun v v' w ↦ by simp only [map_add, LinearMap.add_apply]; push_cast; ring)
-    (fun c v w ↦ by
-      simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, Complex.real_smul]
-      push_cast; ring)
-    (fun v w w' ↦ by simp only [map_add]; push_cast; ring)
-    (fun c v w ↦ by
-      simp only [map_smul, smul_eq_mul, Complex.real_smul]
-      push_cast; ring)
+  (B.compLeft J.toLinearMap).compr₂ Complex.ofRealAm.toLinearMap +
+    Complex.I • B.compr₂ Complex.ofRealAm.toLinearMap
 
 /-- The defining formula `H (v, w) = B (J v) w + i B v w`. -/
 @[simp]
@@ -132,10 +125,11 @@ theorem complexFormOfIm_smul_right (hBJ : ∀ v w, B (J v) (J w) = B v w) (z : �
   rw [map_add, map_mul, Complex.conj_ofReal, Complex.conj_ofReal, Complex.conj_I]
   ring
 
-/-- On the diagonal, `H` is real for alternating `B`, equal to `B (J v) v`. -/
-theorem complexFormOfIm_self (hB : B.IsAlt) (v : U) :
+/-- On the diagonal, `H (v, v)` is real when `B v v = 0` (for instance for alternating `B`), equal
+to `B (J v) v`. -/
+theorem complexFormOfIm_self {v : U} (hv : B v v = 0) :
     J.complexFormOfIm B v v = (B (J v) v : ℂ) := by
-  simp [hB v]
+  simp [hv]
 
 /-- **For an alternating `J`-invariant form, `H` is conjugate symmetric**:
 `conj (H (w, v)) = H (v, w)`. -/
@@ -145,10 +139,11 @@ theorem complexFormOfIm_conj_symm (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) =
   · simp [J.bilinForm_apply_left_symm hB hBJ v w]
   · simp [← hB.neg_eq v w]
 
-/-- **Positivity of `H`**: if `B` is alternating and `0 < B (J v) v`, then `0 < H (v, v)`. -/
-theorem complexFormOfIm_self_pos (hB : B.IsAlt) {v : U} (hv : 0 < B (J v) v) :
+/-- **Positivity of `H`**: if `B v v = 0` (for instance for alternating `B`) and `0 < B (J v) v`,
+then `0 < H (v, v)`. -/
+theorem complexFormOfIm_self_pos {v : U} (hvv : B v v = 0) (hv : 0 < B (J v) v) :
     0 < J.complexFormOfIm B v v := by
-  rw [complexFormOfIm_self hB]
+  rw [complexFormOfIm_self hvv]
   exact Complex.zero_lt_real.mpr hv
 
 end TauCeti.AlmostComplexStructure

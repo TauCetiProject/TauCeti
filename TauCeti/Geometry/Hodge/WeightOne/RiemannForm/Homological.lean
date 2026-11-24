@@ -54,20 +54,21 @@ structure**, on a flat integral module. The sign is forced by the convention `0 
 Weil operator `C = -J`: `Q (C v) v = E (J v) v`. -/
 theorem isPolarization_homological [Module.Flat ℤ V] (h : J.IsRiemannForm E)
     (hℂ : IsBaseChange ℂ ιℂ) : Hodge.IsPolarization hℂ (RiemannForm.homological J hℂ) (-E) :=
-  (h.neg.isPolarization hℂ).tateTwist 1
+  RiemannForm.homological_def J hℂ ▸ (h.neg.isPolarization hℂ).tateTwist 1
 
 /-- The polarization `Q = -E` of the homological Hodge structure defined by a Riemann form `E`, on
 a flat integral module: the Tate twist by one of the polarization `-E` of the weight-one structure
-of `-J`. -/
+of `-J` (`isPolarization_homological`). -/
 noncomputable def homologicalPolarization [Module.Flat ℤ V] (h : J.IsRiemannForm E)
-    (hℂ : IsBaseChange ℂ ιℂ) : Hodge.Polarization hℂ (RiemannForm.homological J hℂ) :=
-  (h.neg.polarization hℂ).tateTwist 1
+    (hℂ : IsBaseChange ℂ ιℂ) : Hodge.Polarization hℂ (RiemannForm.homological J hℂ) where
+  Qint := -E
+  isPolarization := h.isPolarization_homological hℂ
 
 /-- The integral form of the homological polarization of a Riemann form `E` is `-E`. -/
 @[simp]
 theorem homologicalPolarization_Qint [Module.Flat ℤ V] (h : J.IsRiemannForm E)
-    (hℂ : IsBaseChange ℂ ιℂ) : (h.homologicalPolarization hℂ).Qint = -E := by
-  rw [homologicalPolarization, Hodge.Polarization.tateTwist_Qint, polarization_Qint]
+    (hℂ : IsBaseChange ℂ ιℂ) : (h.homologicalPolarization hℂ).Qint = -E :=
+  (rfl)
 
 /-- The complex form of the homological polarization of a Riemann form `E` is the
 complexification of `-E`. -/

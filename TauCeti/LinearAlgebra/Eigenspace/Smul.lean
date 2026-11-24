@@ -72,8 +72,8 @@ theorem hasEigenvalue_smul_iff (f : End R M) {c : R} (hc : IsSMulRegular M c) (�
 /-- The `μ`-eigenspace of `-f` is the `-μ`-eigenspace of `f`. -/
 @[simp]
 theorem eigenspace_neg (f : End R M) (μ : R) : eigenspace (-f) μ = eigenspace f (-μ) := by
-  ext x
-  simp only [mem_eigenspace_iff, LinearMap.neg_apply, neg_smul, neg_eq_iff_eq_neg]
+  rw [← eigenspace_smul f (isUnit_one.neg.isSMulRegular M) (-μ), neg_one_smul, neg_one_mul,
+    neg_neg]
 
 end Module.End
 

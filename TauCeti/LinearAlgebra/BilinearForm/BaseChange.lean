@@ -224,38 +224,26 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 @[simp]
 theorem baseChange_smul (r : R) (B : LinearMap.BilinForm R M) :
     (r • B).baseChange A = algebraMap R A r • B.baseChange A := by
-  refine LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_
-  induction x using TensorProduct.inductionOn with
-  | tmul a x =>
-    induction y using TensorProduct.inductionOn with
-    | tmul b y => simp [Algebra.smul_def, mul_assoc]
-    | add y z hy hz => simp only [map_add, hy, hz]
-  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
+  rw [LinearMap.BilinForm.baseChange, LinearMap.BilinForm.baseChange, BilinForm.tmul,
+    BilinForm.tmul, TensorProduct.tmul_smul, LinearMap.map_smul_of_tower, algebraMap_smul]
 
 /-- Scalar extension of an alternating bilinear form is alternating. -/
 theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
     (B.baseChange A).IsAlt := by
-  have hB' (x y : M) : B x y + B y x = 0 := by
+  have hB' : B + B.flip = 0 := by
+    ext x y
     have := hB (x + y)
     simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
-    rwa [add_comm] at this
-  have hskew (x y : A ⊗[R] M) : B.baseChange A x y + B.baseChange A y x = 0 := by
-    induction x using TensorProduct.inductionOn with
-    | tmul a x =>
-      induction y using TensorProduct.inductionOn with
-      | tmul b y => rw [baseChange_tmul, baseChange_tmul, mul_comm b a, ← add_smul, hB', zero_smul]
-      | add y z hy hz =>
-        simp only [map_add, LinearMap.add_apply]
-        rw [add_add_add_comm, hy, hz, add_zero]
-    | add x x' hx hx' =>
-      simp only [map_add, LinearMap.add_apply]
-      rw [add_add_add_comm, hx, hx', add_zero]
+    simpa [add_comm] using this
+  have hskew : B.baseChange A + (B.baseChange A).flip = 0 := by
+    rw [← baseChange_flip, ← baseChange_zero, ← hB']
+    simp only [LinearMap.BilinForm.baseChange, BilinForm.tmul, TensorProduct.tmul_add, map_add]
   intro x
   induction x using TensorProduct.inductionOn with
   | tmul a x => simp [hB x]
   | add x x' hx hx' =>
     simp only [map_add, LinearMap.add_apply, hx, hx', zero_add, add_zero]
-    exact hskew x' x
+    simpa using congr($hskew x' x)
 
 end Arithmetic
 

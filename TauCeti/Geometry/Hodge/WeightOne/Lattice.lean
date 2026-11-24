@@ -105,11 +105,8 @@ theorem latticeComplexification_comp_self
 theorem latticeComplexification_neg (J : AlmostComplexStructure (Hodge.Realification V))
     (hℂ : IsBaseChange ℂ ιℂ) :
     (-J).latticeComplexification hℂ = -J.latticeComplexification hℂ := by
-  ext x
-  obtain ⟨y, rfl⟩ := (Hodge.realificationComplexEquiv hℂ).surjective x
-  rw [LinearMap.neg_apply, ← realificationComplexEquiv_baseChange_apply,
-    ← realificationComplexEquiv_baseChange_apply, neg_toLinearMap, LinearMap.baseChange_neg,
-    LinearMap.neg_apply, map_neg]
+  rw [latticeComplexification, latticeComplexification, neg_toLinearMap, LinearMap.baseChange_neg,
+    map_neg]
 
 /-- The eigenspaces of the transported endomorphism are the transports of the eigenspaces of the
 literal scalar extension. -/

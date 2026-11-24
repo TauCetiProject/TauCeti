@@ -53,7 +53,7 @@ variable (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChan
 realification: the weight `-1` structure on `Λ = H₁` with `H^{-1,0}` the `+i`-eigenspace of `J`
 (`homological_piece_neg_one`) and Weil operator `-J` (`homological_weilOperator`). It is the Tate
 twist by one of the weight-one structure of `-J`. -/
-@[expose] noncomputable def homological : Hodge.HodgeStructure hℂ (-1) :=
+noncomputable def homological : Hodge.HodgeStructure hℂ (-1) :=
   ((-J).latticeHodgeStructure hℂ).tateTwist 1
 
 /-- The homological structure is the Tate twist by one of the weight-one structure of `-J`. -/

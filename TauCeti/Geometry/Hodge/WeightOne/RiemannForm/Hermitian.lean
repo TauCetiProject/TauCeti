@@ -108,7 +108,7 @@ theorem hermitian_conj_symm (h : J.IsRiemannForm E) (v w : Hodge.Realification V
 `H (v, v) = E_ℝ (J v) v > 0` for every nonzero real vector `v`. -/
 theorem hermitian_self_pos (h : J.IsRiemannForm E) {v : Hodge.Realification V} (hv : v ≠ 0) :
     0 < RiemannForm.hermitian J E v v :=
-  complexFormOfIm_self_pos h.isAlt.baseChange (h.positive v hv)
+  complexFormOfIm_self_pos (h.isAlt.baseChange v) (h.positive v hv)
 
 end IsRiemannForm
 

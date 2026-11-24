@@ -5,9 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Hodge.Dimension
-public import TauCeti.Geometry.Hodge.Morphism
-public import TauCeti.Geometry.Hodge.Polarization
 public import TauCeti.Geometry.Hodge.WeilOperator
 
 /-!
