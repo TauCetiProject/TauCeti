@@ -310,15 +310,6 @@ by `p`. -/
   congr 2
   omega
 
-/-- Cancellation for coerced integer powers of the unit `T` in `H[1/T]`:
-`T ^ (-n) * x = y ↔ x = T ^ n * y`. -/
-theorem T_zpow_neg_mul_eq_iff (n : ℤ) (x y : A) :
-    (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ (-n) : Aˣ) : A) * x =
-        y ↔
-      x = (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ n : Aˣ) : A) *
-        y := by
-  rw [zpow_neg, Units.inv_mul_eq_iff_eq_mul]
-
 /-- Multiplication by an integer power `T ^ k` in `H[1/T]` shifts the coefficients by `k`
 degrees. -/
 @[simp] theorem localizedCoeff_T_zpow_mul (k : ℤ) (x : A) (m : ℤ) :
@@ -333,8 +324,8 @@ degrees. -/
   | negSucc n =>
     have hinv : (((u ^ ((n + 1 : ℕ) : ℤ) : Aˣ) : A) *
         (((u ^ Int.negSucc n : Aˣ) : A) * x)) = x := by
-      rw [Int.negSucc_eq, ← Nat.cast_add_one]
-      exact ((T_zpow_neg_mul_eq_iff (p := p) ((n + 1 : ℕ) : ℤ) x _).mp rfl).symm
+      rw [Int.negSucc_eq, ← Nat.cast_add_one, zpow_neg]
+      exact ((Units.inv_mul_eq_iff_eq_mul (u ^ ((n + 1 : ℕ) : ℤ))).mp rfl).symm
     have hmul : algebraMap (AnnularRing p) A T ^ (n + 1) * (((u ^ Int.negSucc n : Aˣ) : A) * x) =
         x := by
       simpa only [zpow_natCast, Units.val_pow_eq_pow_val, hu] using hinv
@@ -437,7 +428,7 @@ theorem mem_awayNhd_iff_norm_localizedCoeff_le {n : ℕ} {x : A} :
     rw [zpow_natCast, Units.val_pow_eq_pow_val,
       (IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit_spec, map_pow]
   exact exists_congr fun a ↦ by
-    rw [map_mul, ← hu, eq_comm (b := x), ← T_zpow_neg_mul_eq_iff (p := p), eq_comm]
+    rw [map_mul, ← hu, eq_comm (b := x), ← Units.inv_mul_eq_iff_eq_mul, ← zpow_neg, eq_comm]
 
 section Divergence
 

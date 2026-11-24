@@ -96,8 +96,9 @@ theorem norm_localizedEvalAt_le_of_eq (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖)
   rw [Huber.awayTateNormDatum_pseudoUniformizer, Huber.awayTateNormDatum_ringOfDefinition] at hmem
   obtain ⟨a, ha⟩ := hmem
   have hx : x = (((IsLocalization.Away.algebraMap_isUnit (T : AnnularRing p)).unit ^ n : Aˣ) : A) *
-      algebraMap (AnnularRing p) A a :=
-    (T_zpow_neg_mul_eq_iff (p := p) n x (algebraMap (AnnularRing p) A a)).mp ha.symm
+      algebraMap (AnnularRing p) A a := by
+    rw [← Units.inv_mul_eq_iff_eq_mul, ← zpow_neg]
+    exact ha.symm
   have hr' : ‖t‖ ^ n < r := by simpa only [d, Huber.awayTateNormDatum_radius] using hnr
   calc ‖localizedEvalAt t ht₀ ht₁ x‖
       = ‖t ^ n * evalAt t ht₀ ht₁ a‖ := by
