@@ -39,12 +39,18 @@ determines the Morse differential up to the orientations of the unstable manifol
 
 On an oriented manifold, the sign of each of these trajectories is read off the direction in which
 it leaves `p`. If the orientation of the unstable line of `p` induces the orientation of the
-manifold at `p`, the unstable frame carries it to the orientation of the manifold all along
+manifold at `p` (for orientation data, `TauCeti.MorseOrientation.InducesOrientationAt`), the
+unstable frame carries it to the orientation of the manifold all along
 `W^u(p)` (`TauCeti.IsAdaptedPseudoGradient.reindex_unstableFrameOrientation_eq_orientationAt_iff`),
 and the trajectory counts positively exactly when `f` increases along a positive tangent vector,
-the direction `-X` of the orientation conventions.
+that is, when the orientation points along `-X`, the direction in which `f` increases.
 
 ## Main results
+
+* `TauCeti.MorseOrientation.InducesOrientationAt`: orientation data induce an orientation `o` of
+  `M` at a critical point `p` when the unstable frame at `p` carries them to `o`;
+  `TauCeti.MorseOrientation.inducesOrientationAt_reverse_iff`: reversing the data at `p` toggles
+  this.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
@@ -85,6 +91,63 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+namespace MorseOrientation
+
+/-- **Orientation data inducing an orientation of `M` at a critical point.** Let `o` be an
+orientation of `M`. The orientation data `𝔬` induce `o` at the critical point `p` when the unstable
+frame of `X` at `p` carries the orientation `𝔬.orientation p` of the coordinates of negative
+weight, followed by the positive orientation of the coordinates of positive weight, to the
+orientation of `o` at `p` (`IsAdaptedPseudoGradient.unstableFrameOrientation`). When `p` has index
+`dim M`, this says that `𝔬` orients the unstable manifold of `p` like `o`. -/
+def InducesOrientationAt (𝔬 : MorseOrientation f X) (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) {n : ℕ} (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin n))
+    (p : criticalPoints 𝓘(ℝ, E) f) : Prop :=
+  have hx := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)
+  Orientation.reindex ℝ _ (finCongr (by
+      have h₁ := hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      have h₂ := o.card_eq
+      rw [Fintype.card_fin] at h₂
+      omega))
+    (IsAdaptedPseudoGradient.unstableFrameOrientation (𝔬.coord_mfderiv_chart p) hf hx
+      (𝔬.orientation p)
+      (finBasisOfFinrankEq ℝ _ ((𝔬.chart p).neg hx).finrank_negativeWeight_fun).orientation
+      (hX.mem_unstableSet_self hx.mem_criticalPoints)) =
+    o.orientationAt p
+
+variable {𝔬 : MorseOrientation f X} {hX : IsAdaptedPseudoGradient f X} {hf : IsMorse 𝓘(ℝ, E) f}
+  {n : ℕ} {o : Manifold.Orientation 𝓘(ℝ, E) M (Fin n)} {p : criticalPoints 𝓘(ℝ, E) f}
+
+/-- The defining formula of `InducesOrientationAt`, for any proofs that `p` is nondegenerate and
+that its two Morse indices add up to `n`. -/
+theorem inducesOrientationAt_iff (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
+    (h : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E) (-f) p = n) :
+    𝔬.InducesOrientationAt hX hf o p ↔
+      Orientation.reindex ℝ _ (finCongr h)
+        (IsAdaptedPseudoGradient.unstableFrameOrientation (𝔬.coord_mfderiv_chart p) hf hx
+          (𝔬.orientation p)
+          (finBasisOfFinrankEq ℝ _ ((𝔬.chart p).neg hx).finrank_negativeWeight_fun).orientation
+          (hX.mem_unstableSet_self hx.mem_criticalPoints)) =
+        o.orientationAt p :=
+  Iff.rfl
+
+/-- **Reversing orientation data at a critical point** makes them induce `o` there exactly when
+they did not: after reversing on `S`, the data induce `o` at `p` exactly when either they did and
+`p ∉ S`, or they did not and `p ∈ S`. -/
+theorem inducesOrientationAt_reverse_iff (S : Set (criticalPoints 𝓘(ℝ, E) f))
+    [DecidablePred (· ∈ S)] :
+    (𝔬.reverse S).InducesOrientationAt hX hf o p ↔ (𝔬.InducesOrientationAt hX hf o p ↔ p ∉ S) := by
+  unfold InducesOrientationAt
+  dsimp only [reverse]
+  by_cases hS : p ∈ S
+  · simp only [hS, ↓reduceIte, not_true_eq_false, iff_false]
+    exact IsAdaptedPseudoGradient.reindex_unstableFrameOrientation_neg_eq_orientationAt_iff
+      (𝔬.coord_mfderiv_chart p) hf _ o _ (𝔬.orientation p) _ _
+  · simp only [hS, ↓reduceIte, not_false_eq_true, iff_true]
+    exact Iff.rfl
+
+end MorseOrientation
 
 namespace IsAdaptedPseudoGradient
 
@@ -241,11 +304,9 @@ private theorem exists_pos_unstableFrame_eq_smul (hf : IsMorse 𝓘(ℝ, E) f) {
 manifold of dimension `1`, `p` a critical point of index `1`, oriented by `op`, and `q` a critical
 point of index `0`. Suppose that `op` induces the orientation of `o` at `p`: the unstable frame
 at `p` carries `op` to `o`, the coordinates of positive weight being zero and positively oriented
-(`unstableFrameOrientation`). Then at a point `y ≠ p` of `W^u(p)`, the sign of the trajectory of
-`y`, measured against the positive orientation at `q`, is the sign of the derivative of `f` at
-`y` along a positive tangent vector for `o`. Indeed the unstable frame carries `op` to `o` all
-along `W^u(p)`, and the trajectory counts positively when `op` points in the direction `-X y`,
-along which `f` increases. -/
+(`unstableFrameOrientation`). Then at a point `y` of `W^u(p)` where `df_y ≠ 0`, the sign of the
+trajectory of `y`, measured against the positive orientation at `q`, is the sign of the derivative
+of `f` at `y` along a positive tangent vector for `o`. -/
 theorem trajectorySign_eq_sign_mvfderiv (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
     {φp : MorseChart E f p} {φq : MorseChart E f q}
     (hφp : ∀ y ∈ φp.toChart.source,
@@ -266,6 +327,8 @@ theorem trajectorySign_eq_sign_mvfderiv (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
         (Module.finBasisOfFinrankEq ℝ _ φq.finrank_negativeWeight_fun).orientation hpq y =
       (SignType.sign (mvfderiv 𝓘(ℝ, E) f y (b 0)) : ℤ) := by
   have hm : manifoldMorseIndex 𝓘(ℝ, E) f p = 1 := by omega
+  -- The unstable frame carries `op` to `o` all along `W^u(p)`, and the trajectory counts positively
+  -- when `op` points along `-X y`, the direction in which `f` increases.
   -- A basis `C` of the line of coordinates of negative weight at `p`, positive for `op`; the
   -- frame carries it to a positive multiple `w` of `b 0`.
   have : Nonempty (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) := ⟨⟨0, by omega⟩⟩
@@ -302,11 +365,11 @@ theorem trajectorySign_eq_sign_mvfderiv (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
         linarith,
       ← hC, Orientation.signBasis_eq_neg_of_orientation_eq_neg _ C C' hC'o,
       Orientation.signBasis_orientation, sign_neg hneg]
-    rfl
+    simp
   · rw [trajectorySign_eq_signBasis hq hpq op C fun j ↦ by
         rwa [show j = i₀ from Subsingleton.elim _ _, hwb, map_smul, smul_eq_mul],
       ← hC, Orientation.signBasis_orientation, sign_pos hpos]
-    rfl
+    simp
 
 variable [ConnectedSpace M]
 
