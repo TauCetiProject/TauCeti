@@ -179,7 +179,8 @@ private lemma exists_glue {X Z P : Scheme.{u}} {W : X.Opens} (G : Z ⟶ X) [IsOp
     refine eq_top_iff.mpr fun y _ ↦ ?_
     rw [Scheme.opensRange_homOfLE]
     refine (TopologicalSpace.Opens.mem_sup.mp y.property).imp id fun ⟨z, hz⟩ ↦ ⟨z, ?_⟩
-    exact W'.ι.isOpenEmbedding.injective (by rw [← Scheme.Hom.comp_apply, hj₂, hz]; rfl)
+    exact W'.ι.isOpenEmbedding.injective
+      (by rw [← Scheme.Hom.comp_apply, hj₂, hz]; exact (W'.ι_apply y).symm)
   have : IsOpenImmersion i₁ :=
     MorphismProperty.of_isPullback (P := @IsOpenImmersion) h.flip inferInstance
   have : IsOpenImmersion i₂ :=
@@ -295,7 +296,8 @@ theorem exists_pullback_iso_of_isPullback_fromSpecStalk {X : Scheme.{u}} {W : X.
   have hx : x ∈ W ⊔ (g k).opensRange := by
     have h₁ : (c.π.app k ≫ g k) (IsLocalRing.closedPoint (X.presheaf.stalk x)) = x := by
       rw [hcg k]; exact Scheme.fromSpecStalk_closedPoint
-    exact Or.inr ⟨_, h₁⟩
+    exact TopologicalSpace.Opens.mem_sup.mpr (Or.inr (Scheme.Hom.mem_opensRange.mpr
+      ⟨_, (Scheme.Hom.comp_apply _ _ _).symm.trans h₁⟩))
   refine ⟨_, le_sup_left, hx, V', ⟨e₁⟩, ?_⟩
   -- The pullback of the glued cover to `Spec 𝒪_{X,x}` factors through `D(f')`.
   have hfac : (W ⊔ (g k).opensRange).fromSpecStalkOfMem x hx =

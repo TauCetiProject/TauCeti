@@ -140,6 +140,14 @@ noncomputable abbrev localizationAwayRingCocone :
 theorem localizationAwayRingCocone_pt : (localizationAwayRingCocone M S).pt = CommRingCat.of S :=
   rfl
 
+/-- A leg of `Submonoid.localizationAwayRingCocone` is the underlying ring map of the
+corresponding leg of the `R`-algebra cocone `Submonoid.localizationAwayCocone`. -/
+theorem localizationAwayRingCocone_ι_app_hom (s : Finset M) :
+    ((localizationAwayRingCocone M S).ι.app s).hom =
+      ((localizationAwayCocone M S).ι.app s ≫
+        eqToHom (localizationAwayCocone_pt M S)).hom.toRingHom :=
+  rfl
+
 /-- The legs of `Submonoid.localizationAwayRingCocone` are `R`-algebra maps. -/
 theorem localizationAwayRingCocone_ι_app_comp_algebraMap (s : Finset M) :
     ((localizationAwayRingCocone M S).ι.app s).hom.comp

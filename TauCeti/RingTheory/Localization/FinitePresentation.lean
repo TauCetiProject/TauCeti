@@ -68,7 +68,6 @@ theorem exists_factorization_localizationAway
       (IsLocalization.Away.lift (S := Localization.Away (s : R)) (s : R)
         (g := algebraMap R S) (IsLocalization.map_units S s)).comp g' = g := by
   obtain ⟨s, g', hg', hg⟩ := f.exists_factorization_localizationAwayRingCocone hf M a g h
-  let c := (M.localizationAwayCocone S).extend (eqToHom (M.localizationAwayCocone_pt S))
   let e := (eqToHom (M.localizationAwayDiagram_obj s)).hom.toRingHom
   refine ⟨⟨∏ x ∈ s, (x : R), M.prod_mem fun x _ ↦ x.property⟩, e.comp g', ?_, ?_⟩
   · ext x
@@ -77,9 +76,8 @@ theorem exists_factorization_localizationAway
   · have hleg := congrArg (fun k ↦ eqToHom (M.localizationAwayDiagram_obj s) ≫ k)
       (M.localizationAwayCocone_ι_app S s)
     simp only [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp] at hleg
-    have hg'' : g = (c.ι.app s).hom.toRingHom.comp g' := hg.symm
-    have hleg' : c.ι.app s = _ := hleg
-    rw [hleg'] at hg''
-    exact hg''.symm
+    rw [← hg, Submonoid.localizationAwayRingCocone_ι_app_hom, hleg]
+    ext x
+    simp [e]
 
 end RingHom
