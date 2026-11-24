@@ -15,8 +15,8 @@ An isomorphism `α : D.Iso D'` of open gluing data consists of a bijection betwe
 types together with homeomorphisms between corresponding pieces and between corresponding
 overlaps, which commute with the inclusions of the overlaps and with the transition maps.
 The two gluing data may live in different universes. Isomorphisms compose
-(`TopCat.GlueData.Iso.trans`), and reindexing along a bijection gives an isomorphism
-(`TopCat.GlueData.reindexIso`).
+(`TopCat.GlueData.Iso.trans`) and invert (`TopCat.GlueData.Iso.symm`), and reindexing along a
+bijection gives an isomorphism (`TopCat.GlueData.reindexIso`).
 
 An isomorphism preserves and reflects the identifications made by the gluing
 (`TopCat.GlueData.Iso.ι_eq_iff`), so it induces a homeomorphism of the existing glued carriers,
@@ -37,11 +37,13 @@ The hypotheses of the separation, countability and connectedness criteria for gl
 * the index types are equivalent and the pieces are homeomorphic, which transfers the
   countability hypotheses of `TopCat.GlueData.secondCountableTopology`.
 
-The conclusions of these criteria are Mathlib typeclasses and properties on the glued carriers,
-and they transfer along `gluedHomeomorph` by Mathlib's `Homeomorph.t2Space`,
-`Homeomorph.secondCountableTopology`, `Homeomorph.connectedSpace_iff`,
-`Homeomorph.compactSpace` and `Homeomorph.isProperMap`. No separation, countability or
-nonemptiness assumption is needed anywhere.
+The conclusions of these criteria are Mathlib typeclasses on the glued carriers, and they
+transfer along `gluedHomeomorph` by Mathlib's `Homeomorph.t2Space`,
+`Homeomorph.secondCountableTopology` and `Homeomorph.connectedSpace_iff`, and preconnectedness
+by `DenseRange.preconnectedSpace` along the surjective `gluedHomeomorph`. Likewise compactness of
+the glued carriers transfers by `Homeomorph.compactSpace`, and properness of maps out of or into
+them by composing with `Homeomorph.isProperMap`. No separation, countability or nonemptiness
+assumption is needed anywhere.
 
 ## References
 
@@ -51,6 +53,7 @@ nonemptiness assumption is needed anywhere.
 
 public section
 
+open CategoryTheory (eqToIso)
 open Set Topology
 
 namespace TopCat.GlueData
@@ -103,6 +106,60 @@ def trans (α : D.Iso D') (β : D'.Iso D'') : D.Iso D'' where
   overlapHomeomorph_t i j x :=
     (congrArg (β.overlapHomeomorph _ _) (α.overlapHomeomorph_t i j x)).trans
       (β.overlapHomeomorph_t _ _ _)
+
+/-- Transporting a point of a piece along an equality of indices commutes with the inclusions
+of the overlaps. -/
+private theorem homeoOfIso_eqToIso_f (D : TopCat.GlueData.{u}) {i j i' j' : D.J} (hi : i = i')
+    (hj : j = j') (x : D.V (i, j)) :
+    TopCat.homeoOfIso (eqToIso (congrArg D.U hi)) (D.f i j x) =
+      D.f i' j' (TopCat.homeoOfIso (eqToIso (congrArg D.V (Prod.ext hi hj : (i, j) = (i', j'))))
+        x) := by
+  subst hi hj
+  rfl
+
+/-- Transporting a point of an overlap along an equality of indices commutes with the transition
+maps. -/
+private theorem homeoOfIso_eqToIso_t (D : TopCat.GlueData.{u}) {i j i' j' : D.J} (hi : i = i')
+    (hj : j = j') (x : D.V (i, j)) :
+    TopCat.homeoOfIso (eqToIso (congrArg D.V (Prod.ext hj hi : (j, i) = (j', i')))) (D.t i j x) =
+      D.t i' j' (TopCat.homeoOfIso (eqToIso (congrArg D.V (Prod.ext hi hj : (i, j) = (i', j'))))
+        x) := by
+  subst hi hj
+  rfl
+
+/-- Transporting a point of a piece along an equality of indices does not change its image in
+the glued space. -/
+private theorem ι_homeoOfIso_eqToIso (D : TopCat.GlueData.{u}) {i i' : D.J} (hi : i = i')
+    (x : D.U i) :
+    D.toGlueData.ι i' (TopCat.homeoOfIso (eqToIso (congrArg D.U hi)) x) = D.toGlueData.ι i x := by
+  subst hi
+  rfl
+
+/-- The inverse of an isomorphism of gluing data. Its piece and overlap homeomorphisms are the
+inverses of those of `α`, after identifying the `i`-th piece (or overlap) of `D'` with the
+piece (or overlap) indexed by `α.indexEquiv (α.indexEquiv.symm i)`. -/
+-- Exposed so that the index bijection computes in the types of the piece homeomorphisms.
+@[expose, simps]
+def symm (α : D.Iso D') : D'.Iso D where
+  indexEquiv := α.indexEquiv.symm
+  pieceHomeomorph i :=
+    (TopCat.homeoOfIso (eqToIso (congrArg D'.U (α.indexEquiv.apply_symm_apply i).symm))).trans
+      (α.pieceHomeomorph _).symm
+  overlapHomeomorph i j :=
+    (TopCat.homeoOfIso (eqToIso (congrArg D'.V
+      (Prod.ext (α.indexEquiv.apply_symm_apply i).symm (α.indexEquiv.apply_symm_apply j).symm :
+        (i, j) = (α.indexEquiv (α.indexEquiv.symm i), α.indexEquiv (α.indexEquiv.symm j)))))).trans
+      (α.overlapHomeomorph _ _).symm
+  pieceHomeomorph_f i j x := by
+    apply (α.pieceHomeomorph _).injective
+    simp only [Homeomorph.trans_apply, Homeomorph.apply_symm_apply, α.pieceHomeomorph_f]
+    exact homeoOfIso_eqToIso_f D' (α.indexEquiv.apply_symm_apply i).symm
+      (α.indexEquiv.apply_symm_apply j).symm x
+  overlapHomeomorph_t i j x := by
+    apply (α.overlapHomeomorph _ _).injective
+    simp only [Homeomorph.trans_apply, Homeomorph.apply_symm_apply, α.overlapHomeomorph_t]
+    exact homeoOfIso_eqToIso_t D' (α.indexEquiv.apply_symm_apply i).symm
+      (α.indexEquiv.apply_symm_apply j).symm x
 
 variable (α : D.Iso D')
 
@@ -171,10 +228,6 @@ theorem reflTransGen_iff (i j : D.J) :
 
 /-! ### The homeomorphism of glued spaces -/
 
-private theorem isQuotientMap_sigma_ι (D : TopCat.GlueData.{u}) :
-    IsQuotientMap (ContinuousMap.sigma fun i ↦ (D.toGlueData.ι i).hom) :=
-  D.isOpenQuotientMap_sigma_ι.isQuotientMap
-
 /-- The piece homeomorphisms followed by the inclusions of the pieces of `D'`, on the disjoint
 union of the pieces of `D`. -/
 private noncomputable def sigmaMap : C(Σ i, D.U i, D'.toGlueData.glued) :=
@@ -187,11 +240,12 @@ private theorem factorsThrough_sigmaMap :
 /-- The continuous map of glued spaces induced by an isomorphism of gluing data, descended from
 the piece homeomorphisms along the quotient map from the disjoint union of the pieces. -/
 private noncomputable def gluedMap : C(D.toGlueData.glued, D'.toGlueData.glued) :=
-  (isQuotientMap_sigma_ι D).lift α.sigmaMap α.factorsThrough_sigmaMap
+  D.isOpenQuotientMap_sigma_ι.isQuotientMap.lift α.sigmaMap α.factorsThrough_sigmaMap
 
 private theorem gluedMap_ι (i : D.J) (x : D.U i) :
     α.gluedMap (D.toGlueData.ι i x) = D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) :=
-  DFunLike.congr_fun ((isQuotientMap_sigma_ι D).lift_comp α.sigmaMap α.factorsThrough_sigmaMap)
+  DFunLike.congr_fun
+    (D.isOpenQuotientMap_sigma_ι.isQuotientMap.lift_comp α.sigmaMap α.factorsThrough_sigmaMap)
     ⟨i, x⟩
 
 private theorem gluedMap_injective : Function.Injective α.gluedMap := by
@@ -216,15 +270,17 @@ private theorem isOpenMap_gluedMap : IsOpenMap α.gluedMap := by
 /-- The homeomorphism of glued spaces induced by an isomorphism of gluing data. On each piece it
 is the corresponding piece homeomorphism (`TopCat.GlueData.Iso.gluedHomeomorph_ι`). -/
 noncomputable def gluedHomeomorph : D.toGlueData.glued ≃ₜ D'.toGlueData.glued :=
-  (Equiv.ofBijective α.gluedMap ⟨α.gluedMap_injective, α.gluedMap_surjective⟩)
+  (Equiv.ofBijective α.gluedMap
+    (show Function.Bijective α.gluedMap from ⟨α.gluedMap_injective, α.gluedMap_surjective⟩))
     |>.toHomeomorphOfContinuousOpen α.gluedMap.continuous α.isOpenMap_gluedMap
 
 /-- The homeomorphism of glued spaces is the corresponding piece homeomorphism on each piece. -/
 @[simp]
 theorem gluedHomeomorph_ι (i : D.J) (x : D.U i) :
     α.gluedHomeomorph (D.toGlueData.ι i x) =
-      D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) :=
-  α.gluedMap_ι i x
+      D'.toGlueData.ι (α.indexEquiv i) (α.pieceHomeomorph i x) := by
+  rw [gluedHomeomorph, Equiv.toHomeomorphOfContinuousOpen_apply, Equiv.coe_ofBijective,
+    gluedMap_ι]
 
 /-- The inverse homeomorphism of glued spaces is the inverse piece homeomorphism on each
 corresponding piece. -/
@@ -274,6 +330,50 @@ theorem gluedHomeomorph_trans (β : D'.Iso D'') :
   -- The composite index occurs in the type of the point, so `simp` cannot rewrite it; it unfolds
   -- to the index of the two-step composite.
   rfl
+
+/-- The inverse isomorphism induces the inverse homeomorphism of glued spaces. -/
+@[simp]
+theorem gluedHomeomorph_symm : α.symm.gluedHomeomorph = α.gluedHomeomorph.symm := by
+  ext x
+  obtain ⟨i, x, rfl⟩ := D'.ι_jointly_surjective x
+  rw [Homeomorph.eq_symm_apply, gluedHomeomorph_ι, gluedHomeomorph_ι]
+  -- The index `α.symm.indexEquiv i` occurs in the type of the point, so `symm_pieceHomeomorph`
+  -- cannot be rewritten; it unfolds to `α.indexEquiv.symm i`.
+  exact (congrArg (D'.toGlueData.ι _)
+    ((α.pieceHomeomorph (α.indexEquiv.symm i)).apply_symm_apply _)).trans
+      (ι_homeoOfIso_eqToIso D' (α.indexEquiv.apply_symm_apply i).symm x)
+
+/-- Inverting an isomorphism of gluing data twice gives it back. -/
+@[simp]
+theorem symm_symm : α.symm.symm = α :=
+  ext (Equiv.symm_symm _) (by rw [gluedHomeomorph_symm, gluedHomeomorph_symm,
+    Homeomorph.symm_symm])
+
+/-- The inverse of the identity isomorphism is the identity. -/
+@[simp]
+theorem refl_symm : (Iso.refl D).symm = Iso.refl D :=
+  ext Equiv.refl_symm (by rw [gluedHomeomorph_symm, gluedHomeomorph_refl, Homeomorph.refl_symm])
+
+/-- An isomorphism followed by its inverse is the identity. -/
+@[simp]
+theorem self_trans_symm : α.trans α.symm = Iso.refl D :=
+  ext (Equiv.self_trans_symm _) (by
+    rw [gluedHomeomorph_trans, gluedHomeomorph_symm, gluedHomeomorph_refl,
+      Homeomorph.self_trans_symm])
+
+/-- The inverse of an isomorphism followed by the isomorphism is the identity. -/
+@[simp]
+theorem symm_trans_self : α.symm.trans α = Iso.refl D' :=
+  ext (Equiv.symm_trans_self _) (by
+    rw [gluedHomeomorph_trans, gluedHomeomorph_symm, gluedHomeomorph_refl,
+      Homeomorph.symm_trans_self])
+
+/-- The inverse of a composite is the composite of the inverses in reverse order. -/
+theorem symm_trans (β : D'.Iso D'') : (α.trans β).symm = β.symm.trans α.symm :=
+  ext (Equiv.symm_trans _ _) (by
+    rw [gluedHomeomorph_symm, gluedHomeomorph_trans, gluedHomeomorph_trans, gluedHomeomorph_symm,
+      gluedHomeomorph_symm]
+    rfl)
 
 end Iso
 
