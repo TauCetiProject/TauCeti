@@ -88,7 +88,7 @@ theorem sectionalCurvature_leviCivitaConnection_rescale
       (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   have hH (a b : TangentSpace I x) : g.inner x
       (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a) b =
-        hessian I φ x a b := (hessian_def I φ x a b).symm
+        hessian I φ x a b := (I.hessian_eq_inner_leviCivitaConnection_mgradient φ x a b).symm
   have hd (a : TangentSpace I x) : g.inner x (mgradient I φ x) a = mvfderiv I φ x a :=
     inner_mgradient a
   have hdet : ⟪u, u⟫ * ⟪v, v⟫ - ⟪u, v⟫ ^ 2 ≠ 0 := by
