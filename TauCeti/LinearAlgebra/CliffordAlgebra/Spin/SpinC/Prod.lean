@@ -36,7 +36,8 @@ nondegenerate forms its kernel is the antidiagonal circle
 * `CliffordAlgebra.det_spinCGroupProd`: the determinant character is multiplicative.
 * `CliffordAlgebra.toSpecialOrthogonal_spinCGroupProd`: its rotation is the block sum of the
   rotations.
-* `CliffordAlgebra.mem_ker_spinCGroupProd_iff`: its kernel is the antidiagonal circle.
+* `CliffordAlgebra.mem_ker_spinCGroupProd_iff` and `CliffordAlgebra.ker_spinCGroupProd`: its
+  kernel is the antidiagonal circle.
 
 ## References
 
@@ -168,6 +169,14 @@ theorem mem_ker_spinCGroupProd_iff (hn₁ : Q₁.Nondegenerate) (hn₂ : Q₂.No
     exact ⟨z, by rw [eq_inv_of_mul_eq_one_right hx]⟩
   · rintro ⟨z, rfl⟩
     rw [MonoidHom.mem_ker, spinCGroupProd_ofCircle_ofCircle, mul_inv_cancel, map_one]
+
+/-- The kernel of `spinCGroupProd` is the range of the antidiagonal circle `z ↦ ([1, z], [1, z⁻¹])`,
+for finite-dimensional nondegenerate forms. -/
+theorem ker_spinCGroupProd (hn₁ : Q₁.Nondegenerate) (hn₂ : Q₂.Nondegenerate) :
+    (spinCGroupProd Q₁ Q₂ hQ₁ hQ₂).ker =
+      ((spinCGroup.ofCircle Q₁ hQ₁).prod ((spinCGroup.ofCircle Q₂ hQ₂).comp invMonoidHom)).range :=
+  Subgroup.ext fun x ↦ (mem_ker_spinCGroupProd_iff Q₁ Q₂ hQ₁ hQ₂ hn₁ hn₂ x).trans <|
+    exists_congr fun _ ↦ eq_comm
 
 end Kernel
 
