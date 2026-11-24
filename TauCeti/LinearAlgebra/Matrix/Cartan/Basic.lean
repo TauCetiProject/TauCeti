@@ -8,11 +8,16 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 
+import Mathlib.Algebra.Order.Star.Rat
+import Mathlib.RingTheory.Localization.FractionRing
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
+
 /-!
 # Entries of Cartan matrices
 
 Entry characterizations of the standard Cartan matrices across arbitrary rank, together with
-closure and Cartan-product lemmas for `Matrix.IsGeneralizedCartan`:
+closure and Cartan-product lemmas for `Matrix.IsGeneralizedCartan` and rational constructors for
+`Matrix.IsFiniteCartan`:
 
 * `CartanMatrix.A_apply_eq_neg_one_iff`: entries equal to `-1` in the type-`A` Cartan matrix are
   exactly consecutive pairs of indices.
@@ -32,6 +37,9 @@ closure and Cartan-product lemmas for `Matrix.IsGeneralizedCartan`:
   `Matrix.IsGeneralizedCartan.one_le_apply_mul_apply`: closure of generalized Cartan matrices under
   injective principal submatrices, block-diagonal sums, and transposition, plus the lower bound
   `1 ≤ A i j * A j i` for nonzero entries.
+* `Matrix.IsFiniteCartan.mk_of_posDef_rat`: construct `Matrix.IsFiniteCartan` from diagonal
+  entries `2`, nonpositive off-diagonal entries, and a rational symmetrizer with positive definite
+  symmetrization.
 -/
 
 public section
@@ -151,3 +159,44 @@ theorem one_le_apply_mul_apply (h : A.IsGeneralizedCartan) {i j : ι} (hne : A i
   exact one_le_mul_of_one_le_of_one_le (by omega) (by omega)
 
 end Matrix.IsGeneralizedCartan
+
+namespace Matrix.IsFiniteCartan
+
+/-- Clearing denominators with a positive common integer scale on a finite index type. -/
+private lemma exists_pos_int_mul_eq {ι : Type*} [Finite ι] (d : ι → ℚ) :
+    ∃ (c : ℤ) (d' : ι → ℤ), 0 < c ∧ ∀ i, (d' i : ℚ) = (c : ℚ) * d i := by
+  classical
+  have _ : Fintype ι := Fintype.ofFinite ι
+  obtain ⟨⟨c, hc⟩, hc'⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ) d
+  choose d' hd' using hc'
+  exact ⟨c, d', hc, fun i ↦ by simpa [Algebra.smul_def] using hd' i⟩
+
+/-- Building a finite-type Cartan matrix from a rational symmetrizer `d` whose symmetrization
+`fun i j ↦ d i * (M i j : ℚ)` is positive definite. Positive definiteness already forces
+`0 < d i` on the diagonal (since `M i i = 2`) and the symmetric vanishing pattern
+`M i j = 0 ↔ M j i = 0`. -/
+theorem mk_of_posDef_rat {ι : Type*} [Fintype ι] [DecidableEq ι] {M : Matrix ι ι ℤ}
+    (h2 : ∀ i, M i i = 2) (hle : ∀ i j, i ≠ j → M i j ≤ 0)
+    {d : ι → ℚ} (hpd : (Matrix.of fun i j ↦ d i * (M i j : ℚ)).PosDef) :
+    M.IsFiniteCartan := by
+  have hd (i : ι) : 0 < d i := by
+    have hdiag : (0 : ℚ) < (Matrix.of fun p q ↦ d p * (M p q : ℚ)) i i := hpd.diag_pos
+    simp only [Matrix.of_apply, h2 i, Int.cast_ofNat] at hdiag
+    linarith
+  obtain ⟨c, d', hc_pos, hd'_eq⟩ := exists_pos_int_mul_eq d
+  have hc_qpos : (0 : ℚ) < (c : ℚ) := Int.cast_pos.mpr hc_pos
+  have hd'_pos (i : ι) : 0 < d' i := by
+    have : (0 : ℚ) < (d' i : ℚ) := by rw [hd'_eq i]; exact mul_pos hc_qpos (hd i)
+    exact_mod_cast this
+  have hpdZ : (Matrix.diagonal d' * M).PosDef := by
+    rw [← TauCeti.Matrix.posDef_map_intCast_iff]
+    have hsmul : (Matrix.diagonal d' * M).map (Int.cast : ℤ → ℚ) =
+        (c : ℚ) • Matrix.of fun i j ↦ d i * (M i j : ℚ) := by
+      ext i j
+      simp [Matrix.diagonal_mul, hd'_eq i, mul_assoc]
+    rw [hsmul]
+    exact hpd.smul hc_qpos
+  exact .mk_of_exists_posDef h2 hle ⟨d', hd'_pos, hpdZ⟩
+
+end Matrix.IsFiniteCartan
+

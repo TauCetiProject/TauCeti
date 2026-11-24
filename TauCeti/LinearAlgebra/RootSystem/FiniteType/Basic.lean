@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Order.Star.Rat
-import Mathlib.RingTheory.Localization.FractionRing
 import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
@@ -140,15 +139,6 @@ theorem _root_.Matrix.IsFiniteCartan.isFiniteType [Fintype B] [DecidableEq B]
     (hM : A.IsFiniteCartan) : IsFiniteType A :=
   ⟨inferInstance, inferInstance, hM⟩
 
-/-- Clearing denominators with a positive common integer scale on a finite index type. -/
-private lemma exists_pos_int_mul_eq [Finite B] (d : B → ℚ) :
-    ∃ (c : ℤ) (d' : B → ℤ), 0 < c ∧ ∀ i, (d' i : ℚ) = (c : ℚ) * d i := by
-  classical
-  have _ : Fintype B := Fintype.ofFinite B
-  obtain ⟨⟨c, hc⟩, hc'⟩ := IsLocalization.exist_integer_multiples_of_finite (Submonoid.pos ℤ) d
-  choose d' hd' using hc'
-  exact ⟨c, d', hc, fun i ↦ by simpa [Algebra.smul_def] using hd' i⟩
-
 /-- **Building a finite-type matrix.** The symmetric vanishing pattern demanded by
 `TauCeti.IsFiniteType` need not be checked: a symmetrizer making `fun i j ↦ d i * A i j`
 positive definite already forces `0 < d i` on the diagonal (since `A i i = 2`) and
@@ -159,24 +149,7 @@ theorem isFiniteType_of [Finite B] (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠
     IsFiniteType A := by
   classical
   have _ : Fintype B := Fintype.ofFinite B
-  have hd (i : B) : 0 < d i := by
-    have hdiag : (0 : ℚ) < (Matrix.of fun p q ↦ d p * (A p q : ℚ)) i i := hpd.diag_pos
-    simp only [Matrix.of_apply, h2 i, Int.cast_ofNat] at hdiag
-    linarith
-  obtain ⟨c, d', hc_pos, hd'_eq⟩ := exists_pos_int_mul_eq d
-  have hc_qpos : (0 : ℚ) < (c : ℚ) := Int.cast_pos.mpr hc_pos
-  have hd'_pos (i : B) : 0 < d' i := by
-    have : (0 : ℚ) < (d' i : ℚ) := by rw [hd'_eq i]; exact mul_pos hc_qpos (hd i)
-    exact_mod_cast this
-  have hpdZ : (Matrix.diagonal d' * A).PosDef := by
-    rw [← Matrix.posDef_map_intCast_iff]
-    have hsmul : (Matrix.diagonal d' * A).map (Int.cast : ℤ → ℚ) =
-        (c : ℚ) • _root_.Matrix.of fun i j ↦ d i * (A i j : ℚ) := by
-      ext i j
-      simp [_root_.Matrix.diagonal_mul, hd'_eq i, mul_assoc]
-    rw [hsmul]
-    exact hpd.smul hc_qpos
-  exact (_root_.Matrix.IsFiniteCartan.mk_of_exists_posDef h2 hle ⟨d', hd'_pos, hpdZ⟩).isFiniteType
+  exact (_root_.Matrix.IsFiniteCartan.mk_of_posDef_rat h2 hle hpd).isFiniteType
 
 /-- **A generalized Cartan matrix that is positive definite over `ℚ` is of finite type.** The
 symmetrizer is the constant-one vector, whose symmetrization of `A` is `A` itself read over `ℚ`;
@@ -246,7 +219,6 @@ theorem isFiniteCartan [instF : Fintype B] [instD : DecidableEq B] (h : IsFinite
 
 /-- Under `[Fintype B] [DecidableEq B]`, `TauCeti.IsFiniteType` is equivalent to Mathlib's
 `Matrix.IsFiniteCartan`. -/
-@[simp]
 theorem _root_.TauCeti.isFiniteType_iff_isFiniteCartan [Fintype B] [DecidableEq B] :
     IsFiniteType A ↔ A.IsFiniteCartan :=
   ⟨IsFiniteType.isFiniteCartan, Matrix.IsFiniteCartan.isFiniteType⟩

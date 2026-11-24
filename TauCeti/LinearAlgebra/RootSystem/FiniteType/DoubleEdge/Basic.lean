@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # The double-edge bound for finite-type Cartan matrices
@@ -72,6 +74,9 @@ branch vertex is established - is outside this file.
 * `TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_right` and
   `TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_left`: the two families the bound leaves are of
   finite type, so the bound is sharp and its hypothesis is not vacuous.
+* `TauCeti.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv`: a path-shaped generalized
+  Cartan matrix with one oriented double edge reindexes onto a nonempty
+  `TauCeti.doubleEdgeCartanMatrix p q`.
 
 ## References
 
@@ -399,4 +404,136 @@ theorem isFiniteType_doubleEdgeCartanMatrix_one_left (q : ℕ) :
     Sum.swap_leftInverse.injective
   rwa [Matrix.submatrix_submatrix, hswap, Matrix.submatrix_id_id] at h2
 
+/-! ## Recognizing a path-shaped double-edge matrix -/
+
+section PathEquiv
+
+variable {B : Type*} {A : Matrix B B ℤ} {n : ℕ}
+
+/-- The entries of a double-edge model, read along its underlying path. The only oriented
+exception to the value `-1` on adjacent vertices is the `-2` half of the double edge. -/
+private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (hq : 0 < q)
+    (hpq : p + q = n) (x y : Fin p ⊕ Fin q) :
+    doubleEdgeCartanMatrix p q x y =
+      if x = y then 2
+      else if x = Sum.inr ⟨q - 1, by omega⟩ ∧ y = Sum.inl ⟨p - 1, by omega⟩ then -2
+      else if (finSumFinRevEquiv p q n hpq x : ℕ) + 1 =
+          (finSumFinRevEquiv p q n hpq y : ℕ) ∨
+          (finSumFinRevEquiv p q n hpq y : ℕ) + 1 =
+            (finSumFinRevEquiv p q n hpq x : ℕ) then -1 else 0 := by
+  rcases x with x | x <;> rcases y with y | y <;>
+    simp only [doubleEdgeCartanMatrix_inl_inl, doubleEdgeCartanMatrix_inr_inr,
+      doubleEdgeCartanMatrix_inl_inr, doubleEdgeCartanMatrix_inr_inl, Sum.inl.injEq,
+      Sum.inr.injEq, Sum.inl.injEq, Sum.inr.injEq, Sum.inl_ne_inr, Sum.inr_ne_inl,
+      false_and, and_false, ite_false, finSumFinRevEquiv_inl_val,
+      finSumFinRevEquiv_inr_val, Fin.ext_iff]
+  · have _ := x.isLt
+    have _ := y.isLt
+    rw [chainEntry_def]
+    split_ifs <;> omega
+  · have hx := x.isLt
+    have hy := y.isLt
+    split_ifs <;> omega
+  · have hx := x.isLt
+    have hy := y.isLt
+    split_ifs <;> omega
+  · have hx := x.isLt
+    have hy := y.isLt
+    have _ : (x : ℕ) ≤ q - 1 := by omega
+    have _ : (y : ℕ) ≤ q - 1 := by omega
+    rw [chainEntry_def]
+    split_ifs <;> omega
+
+/-- Oriented core of `TauCeti.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv` with
+fixed split sizes `(k u : ℕ) + 1` and `n - ((k u : ℕ) + 1)`. -/
+private theorem exists_equiv_doubleEdgeCartanMatrix_of_succ
+    (h : A.IsGeneralizedCartan) (k : B ≃ Fin n)
+    (hk : ∀ i j, (diagramGraph A).Adj i j ↔
+      (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
+    {u v : B} (horder : (k u : ℕ) + 1 = (k v : ℕ)) (hvu : A v u = -2)
+    (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
+    0 < n - ((k u : ℕ) + 1) ∧
+      ∃ e : B ≃ Fin ((k u : ℕ) + 1) ⊕ Fin (n - ((k u : ℕ) + 1)),
+        ∀ i j, A i j =
+          doubleEdgeCartanMatrix ((k u : ℕ) + 1) (n - ((k u : ℕ) + 1)) (e i) (e j) := by
+  let p := (k u : ℕ) + 1
+  let q := n - p
+  -- Cutting immediately after `u` leaves two nonempty intervals, since `v` is its successor.
+  have hp : 0 < p := by simp [p]
+  have hpq : p + q = n := Nat.add_sub_of_le (by simp only [p]; omega)
+  have hq : 0 < q := by simp only [q]; omega
+  let e : B ≃ Fin p ⊕ Fin q := k.trans (finSumFinRevEquiv p q n hpq).symm
+  have hge (i : B) : finSumFinRevEquiv p q n hpq (e i) = k i := by simp [e]
+  -- The two endpoints of the cut become the last vertices of the two model chains.
+  have heu : e u = Sum.inl ⟨p - 1, by omega⟩ :=
+    (finSumFinRevEquiv p q n hpq).injective (by rw [hge]; apply Fin.ext; simp [p])
+  have hev : e v = Sum.inr ⟨q - 1, by omega⟩ :=
+    (finSumFinRevEquiv p q n hpq).injective (by rw [hge]; apply Fin.ext; simp [p, q]; omega)
+  refine ⟨hq, e, fun i j ↦ ?_⟩
+  -- Read both matrices along the same path. Equality, the exceptional oriented edge, and
+  -- adjacency are all reflected by `e`; the generalized Cartan axioms then determine the entry.
+  rw [doubleEdgeCartanMatrix_apply_eq_path p q n hp hq hpq, ← hev, ← heu]
+  have hrev : (e i = e v ∧ e j = e u) ↔ (i = v ∧ j = u) :=
+    and_congr e.injective.eq_iff e.injective.eq_iff
+  have hadj : ((finSumFinRevEquiv p q n hpq (e i) : ℕ) + 1 =
+      (finSumFinRevEquiv p q n hpq (e j) : ℕ) ∨
+      (finSumFinRevEquiv p q n hpq (e j) : ℕ) + 1 =
+        (finSumFinRevEquiv p q n hpq (e i) : ℕ)) ↔ (diagramGraph A).Adj i j := by
+    rw [hge, hge, hk]
+  rcases eq_or_ne i j with rfl | hij
+  · rw [ite_eq_left rfl, h.diag]
+  rw [ite_eq_right (fun he ↦ hij (e.injective he))]
+  by_cases hpair : i = v ∧ j = u
+  · rcases hpair with ⟨rfl, rfl⟩
+    rw [ite_eq_left (hrev.mpr ⟨rfl, rfl⟩), hvu]
+  rw [ite_eq_right (fun hp' ↦ hpair (hrev.mp hp'))]
+  by_cases ha : (diagramGraph A).Adj i j
+  · rw [ite_eq_left (hadj.mpr ha)]
+    exact (hsimple hij (h.diagramGraph_adj_iff.mp ha).2).resolve_left hpair
+  · rw [ite_eq_right (fun hp' ↦ ha (hadj.mp hp'))]
+    by_contra hne
+    exact ha (h.diagramGraph_adj_iff.mpr ⟨hij, hne⟩)
+
+/-- **Recognizing a path-shaped generalized Cartan matrix with one oriented double edge.** Given a
+path numbering `k : B ≃ Fin n` of `TauCeti.diagramGraph A`, an oriented double edge `u -- v` with
+`A v u = -2`, and the assumption that every other off-diagonal nonzero entry is `-1`, `A`
+reindexes onto a nonempty `TauCeti.doubleEdgeCartanMatrix p q`. -/
+theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
+    (h : A.IsGeneralizedCartan) (k : B ≃ Fin n)
+    (hk : ∀ i j, (diagramGraph A).Adj i j ↔
+      (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
+    {u v : B} (hvu : A v u = -2)
+    (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
+    ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
+      ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
+  have hvu_ne : v ≠ u := by
+    rintro rfl
+    rw [h.diag] at hvu
+    omega
+  have hadj : (diagramGraph A).Adj u v :=
+    (h.diagramGraph_adj_iff.mpr ⟨hvu_ne, by simp [hvu]⟩).symm
+  rcases (hk u v).mp hadj with horder | horder
+  · obtain ⟨hq, e, he⟩ :=
+      exists_equiv_doubleEdgeCartanMatrix_of_succ h k hk horder hvu hsimple
+    exact ⟨(k u : ℕ) + 1, n - ((k u : ℕ) + 1), Nat.succ_pos _, hq, e, he⟩
+  · let k' : B ≃ Fin n := k.trans Fin.revPerm
+    have hk' (i j : B) : (diagramGraph A).Adj i j ↔
+        (k' i : ℕ) + 1 = (k' j : ℕ) ∨ (k' j : ℕ) + 1 = (k' i : ℕ) := by
+      rw [hk i j]
+      simp only [k', Equiv.trans_apply, Fin.revPerm_apply, Fin.val_rev]
+      have := (k i).isLt
+      have := (k j).isLt
+      omega
+    have horder' : (k' u : ℕ) + 1 = (k' v : ℕ) := by
+      simp only [k', Equiv.trans_apply, Fin.revPerm_apply, Fin.val_rev]
+      have := (k u).isLt
+      have := (k v).isLt
+      omega
+    obtain ⟨hq, e, he⟩ :=
+      exists_equiv_doubleEdgeCartanMatrix_of_succ h k' hk' horder' hvu hsimple
+    exact ⟨(k' u : ℕ) + 1, n - ((k' u : ℕ) + 1), Nat.succ_pos _, hq, e, he⟩
+
+end PathEquiv
+
 end TauCeti
+
