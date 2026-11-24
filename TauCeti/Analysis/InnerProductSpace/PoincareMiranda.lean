@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.BrouwerFixedPoint
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Basic
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 
 /-!
@@ -36,8 +36,6 @@ space is a retract of the unit ball.
 
 * `TauCeti.exists_mem_closedBall_prod_eq_zero_of_inner_nonneg`: a field on a product of two balls
   whose components point weakly outward on the corresponding boundary faces has a zero.
-* `TauCeti.inner_sub_self_nonneg_of_norm_le`: if `‖a‖ ≤ ‖x‖`, then `0 ≤ ⟪x - a, x⟫`, so `x - a`
-  points weakly outward at `x`.
 * `TauCeti.productBallImages_intersect`: fillings of the two coordinate factors of a product of
   unit balls, fixed to the coordinate inclusions on the boundary spheres, intersect.
 
@@ -57,11 +55,6 @@ namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- If `‖a‖ ≤ ‖x‖`, then `x - a` points weakly outward at `x`: `0 ≤ ⟪x - a, x⟫`. -/
-theorem inner_sub_self_nonneg_of_norm_le {x a : E} (h : ‖a‖ ≤ ‖x‖) : 0 ≤ ⟪x - a, x⟫ := by
-  rw [inner_sub_left, real_inner_self_eq_norm_sq]
-  nlinarith [real_inner_le_norm a x, norm_nonneg a]
 
 /-- If retracting `x - w` radially onto the closed ball of radius `r > 0` gives back `x`, and `w`
 points weakly outward at `x` whenever `x` lies on the boundary sphere, then `w = 0`. -/
