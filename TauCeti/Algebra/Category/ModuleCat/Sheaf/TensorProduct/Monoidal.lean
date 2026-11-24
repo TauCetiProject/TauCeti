@@ -344,21 +344,6 @@ lemma forget_μ (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     ← sheafificationForgetAdjunction_counit_app]
   rfl
 
-/-- Under `tensorUnderlyingIso`, the tensor map of the forgetful functor is the
-sheafification unit on the sectionwise tensor product. -/
-lemma forget_μ_comp_tensorUnderlyingIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
-    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
-        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom =
-      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) := by
-  rw [forget_μ]
-  -- The tensor of the two forgotten objects is `M.val ⊗ N.val`; normalize that source
-  -- before composing, without exposing this presentation to downstream section proofs.
-  change ((sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) ≫
-      (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).inv) ≫
-      (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom = _
-  rw [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id, CategoryTheory.Functor.map_id]
-  exact Category.comp_id _
-
 /-- The tensor comparison of the original sheafification adjunction agrees with the
 canonical tensor comparison of the forgetful functor. This identifies the comparison data
 even when the right adjoint is presented with restriction of scalars along the identity. -/
@@ -391,6 +376,15 @@ lemma forget_μ_comp_map {M N P : _root_.SheafOfModules.{u} (ringCatSheaf R)} (p
   -- The two sides differ only in how the source of the unit is written: as `M.val ⊗ N.val`, or
   -- as the tensor product of the images of `M` and `N` under `forget`.
   rfl
+
+/-- Under `tensorUnderlyingIso`, the tensor map of the forgetful functor is the
+sheafification unit on the sectionwise tensor product. -/
+lemma forget_μ_comp_tensorUnderlyingIso_hom (R : Sheaf J CommRingCat.{u})
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N ≫
+        (_root_.SheafOfModules.forget (ringCatSheaf R)).map (M.tensorUnderlyingIso N).hom =
+      (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) := by
+  rw [forget_μ_comp_map, Iso.inv_hom_id, Adjunction.homEquiv_id]
 
 /-- Two morphisms out of a tensor product `M ⊗ N` of sheaves of modules agree as soon as they
 agree on the sectionwise tensor product `M.val ⊗ N.val` of the underlying presheaves of modules,
