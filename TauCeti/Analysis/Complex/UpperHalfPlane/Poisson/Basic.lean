@@ -301,6 +301,11 @@ theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure �
     IsPoissonFinite ν :=
   (isPoissonFinite_iff_lintegral_lt_top ν).2 (lintegral_inv_one_add_sq_lt_top ν)
 
+/-- A finite multiple of a Poisson-finite measure is Poisson-finite. -/
+theorem IsPoissonFinite.smul_measure {ν : Measure ℝ} (hν : IsPoissonFinite ν) {c : ℝ≥0∞}
+    (hc : c ≠ ∞) : IsPoissonFinite (c • ν) :=
+  (isPoissonFinite_iff _).2 (((isPoissonFinite_iff ν).1 hν).smul_measure hc)
+
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
 @[simp]
 theorem upperHalfPlanePoissonKernel_conj (z : ℂ) (x : ℝ) :
@@ -364,6 +369,13 @@ theorem upperHalfPlanePoissonIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
 theorem upperHalfPlanePoissonIntegral_nonneg (ν : Measure ℝ) {z : ℂ} (hz : 0 ≤ z.im) :
     0 ≤ upperHalfPlanePoissonIntegral ν z :=
   integral_nonneg (upperHalfPlanePoissonKernel_nonneg hz)
+
+/-- The Poisson integral scales with the measure: `P[c • ν] = c.toReal P[ν]`. -/
+@[simp]
+theorem upperHalfPlanePoissonIntegral_smul_measure (ν : Measure ℝ) (c : ℝ≥0∞) (z : ℂ) :
+    upperHalfPlanePoissonIntegral (c • ν) z = c.toReal * upperHalfPlanePoissonIntegral ν z := by
+  rw [upperHalfPlanePoissonIntegral_def, integral_smul_measure, smul_eq_mul,
+    ← upperHalfPlanePoissonIntegral_def]
 
 /-- The Poisson integral of Lebesgue measure is `1` on the upper half-plane. -/
 @[simp]
@@ -498,6 +510,14 @@ theorem re_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) (z : ℂ) :
     · simp [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonKernel_eq, hz]
     · refine (upperHalfPlanePoissonIntegral_of_not_isPoissonFinite (fun hν ↦ hK ?_) z).symm
       exact integrable_subtractedResolventKernel ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν) hz
+
+/-- The imaginary part of the integrated Schwarz kernel `TauCeti.subtractedResolventKernel` is `π`
+times the Poisson integral; this is `TauCeti.re_upperHalfPlaneSchwarzIntegral` before the
+normalization by `(π i)⁻¹`. If `ν` is not Poisson-finite, both sides take the junk value `0`. -/
+theorem im_integral_subtractedResolventKernel (ν : Measure ℝ) (z : ℂ) :
+    (∫ t, subtractedResolventKernel z t ∂ν).im = π * upperHalfPlanePoissonIntegral ν z := by
+  rw [← re_upperHalfPlaneSchwarzIntegral, upperHalfPlaneSchwarzIntegral_def]
+  simp [← ofReal_inv]
 
 /-- **The Schwarz integral is holomorphic** on the upper half-plane, for every measure `ν`. For a
 measure that is not Poisson-finite it is the junk value `0` there
