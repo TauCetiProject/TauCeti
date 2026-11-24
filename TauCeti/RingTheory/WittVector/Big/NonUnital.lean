@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.NonUnitalSubring.Basic
 public import TauCeti.RingTheory.WittVector.Big.Basic
 
+import TauCeti.Algebra.Algebra.NonUnitalHom
 import TauCeti.Algebra.Algebra.Unitization
 
 /-!
@@ -133,6 +134,7 @@ private theorem coordinates_toBigWitt (x : NonUnitalBigWitt S R) :
 private theorem inr_ghostPolynomial (x : NonUnitalBigWitt S R) (n : S) :
     (Unitization.inr (ghostPolynomial n (coordinates x)) : Unitization ℤ R) =
       BigWitt.ghostComponent n (toBigWitt x) := by
+  -- Mathlib has no `inrNonUnitalAlgHom_apply`; this homomorphism evaluates to `inr`.
   change (Unitization.inrNonUnitalAlgHom ℤ R) (ghostPolynomial n (coordinates x)) = _
   rw [map_ghostPolynomial, BigWitt.ghostComponent_apply, coordinates_toBigWitt]
 
@@ -158,7 +160,7 @@ theorem ghostComponent_apply (n : S) (x : NonUnitalBigWitt S R) :
 
 /-- Ghost components commute with the canonical kernel inclusion. -/
 @[simp]
-theorem toBigWitt_ghostComponent (n : S) (x : NonUnitalBigWitt S R) :
+theorem ghostComponent_toBigWitt (n : S) (x : NonUnitalBigWitt S R) :
     BigWitt.ghostComponent n (toBigWitt x) =
       (Unitization.inr (ghostComponent n x) : Unitization ℤ R) :=
   (inr_ghostPolynomial x n).symm
@@ -193,23 +195,20 @@ theorem restrict_comp {U : TruncationSet} (h : T ≤ S) (k : U ≤ T) :
 
 variable {A B : Type*} [NonUnitalCommRing A] [NonUnitalCommRing B]
 
-private def coefficientAlgHom (f : R →ₙ+* A) : R →ₙₐ[ℤ] A :=
-  { f with map_smul' := fun z x ↦ f.map_zsmul z x }
-
 /-- Functoriality in the nonunital coefficient ring, obtained from functoriality of
 unitization and of the unital Witt ring. -/
 noncomputable def map (S : TruncationSet) (f : R →ₙ+* A) :
     NonUnitalBigWitt S R →ₙ+* NonUnitalBigWitt S A :=
   NonUnitalRingHom.codRestrict
     ((BigWitt.map (R := Unitization ℤ R) (A := Unitization ℤ A) S
-      (Unitization.map (coefficientAlgHom f)).toRingHom).toNonUnitalRingHom.comp toBigWitt) _
+      (Unitization.map f.toIntNonUnitalAlgHom).toRingHom).toNonUnitalRingHom.comp toBigWitt) _
     fun x ↦ by
       apply NonUnitalSubring.mem_bot.mpr
       -- Express kernel membership as the unital augmentation equation.
       change BigWitt.map (R := Unitization ℤ A) (A := ℤ) S
         (Unitization.fstHom ℤ A).toRingHom
           (BigWitt.map (R := Unitization ℤ R) (A := Unitization ℤ A) S
-            (Unitization.map (coefficientAlgHom f)).toRingHom (toBigWitt x)) = 0
+            (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x)) = 0
       apply BigWitt.ext
       funext n
       simp
@@ -219,12 +218,12 @@ theorem map_coeff (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) (n : S) :
     coeff (map S f x) n = f (coeff x n) := by
   -- Compute the coefficient of the inherited unitization map, then take its second component.
   change ((BigWitt.map (R := Unitization ℤ R) (A := Unitization ℤ A) S
-      (Unitization.map (coefficientAlgHom f)).toRingHom
+      (Unitization.map f.toIntNonUnitalAlgHom).toRingHom
     (toBigWitt x)).coeff n).snd = _
   rw [BigWitt.map_coeff]
-  change (Unitization.map (coefficientAlgHom f) ((toBigWitt x).coeff n)).snd = _
-  rw [Unitization.snd_map]
-  rfl
+  -- Remove the ring-homomorphism wrapper on the unitization algebra homomorphism.
+  change (Unitization.map f.toIntNonUnitalAlgHom ((toBigWitt x).coeff n)).snd = _
+  rw [Unitization.snd_map, NonUnitalRingHom.toIntNonUnitalAlgHom_apply, coeff]
 
 @[simp]
 theorem map_id : map S (NonUnitalRingHom.id R) = NonUnitalRingHom.id (NonUnitalBigWitt S R) := by
@@ -237,7 +236,7 @@ theorem map_comp (f : R →ₙ+* A) (g : A →ₙ+* B) :
   ext x n
   simp
 
-theorem restrict_map (h : T ≤ S) (f : R →ₙ+* A) :
+theorem restrict_comp_map (h : T ≤ S) (f : R →ₙ+* A) :
     (restrict h).comp (map S f) = (map T f).comp (restrict h) := by
   ext x n
   simp
@@ -289,6 +288,8 @@ private noncomputable def toUnital : NonUnitalBigWitt S C →ₙ+* BigWitt S C :
 @[simp]
 private theorem toUnital_coeff (x : NonUnitalBigWitt S C) (n : S) :
     (toUnital x).coeff n = coeff x n := by
+  rw [toUnital, NonUnitalRingHom.comp_apply]
+  -- The underlying nonunital ring homomorphism has the same application as the ring map.
   change (BigWitt.map (R := Unitization ℤ C) (A := C) S
     (Unitization.lift (NonUnitalAlgHom.id ℤ C)).toRingHom
     (toBigWitt x)).coeff n = _

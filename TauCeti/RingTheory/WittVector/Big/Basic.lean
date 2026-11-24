@@ -17,8 +17,21 @@ import TauCeti.RingTheory.MvPolynomial.Expand
 /-!
 # Big Witt rings
 
-The integral operation polynomials are obtained by Dwork's criterion over a torsion-free
-polynomial ring. Ring identities are checked there by ghosts and then specialized.
+For any truncation set `S` and commutative ring `R`, `BigWitt S R` is the commutative ring
+of big Witt vectors with coordinates indexed by `S`. The ghost components are ring
+homomorphisms, and coefficient homomorphisms and restriction of truncation sets induce
+ring homomorphisms satisfying the usual identity, composition, and compatibility laws.
+
+## Main declarations
+
+* `TauCeti.BigWitt`: the carrier, equipped with a `CommRing` instance.
+* `TauCeti.BigWitt.ghostComponent`, `TauCeti.BigWitt.ghostMap`: the ghost homomorphisms.
+* `TauCeti.BigWitt.ghostMap_injective`: injectivity when multiplication by each prime in
+  the truncation set is injective on the coefficient ring.
+* `TauCeti.BigWitt.map`, `TauCeti.BigWitt.restrict`: coefficient transport and restriction.
+
+The integral operation polynomials are constructed using Dwork's criterion over a
+torsion-free polynomial ring. Ring identities are checked there by ghosts and specialized.
 
 ## References
 
@@ -90,22 +103,22 @@ private theorem coordinates_mapData (f : R →+* A) (x : BigWitt S R) :
 private theorem ghost_mapData (f : R →+* A) (x : BigWitt S R) (n : S) :
     ghost (mapData f x) n = f (ghost x n) := by
   rw [ghost, coordinates_mapData, ← map_ghostPolynomial]
-  rfl
+  rw [ghost]
 
-/-- Ghosts determine a vector when multiplication by each index is injective. -/
-private theorem ghost_injective (hR : ∀ n ∈ S, Function.Injective (n • · : R → R)) :
+/-- Ghosts determine a vector when multiplication by each prime in `S` is injective. -/
+private theorem ghost_injective
+    (hR : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R)) :
     Function.Injective (ghost : BigWitt S R → S → R) := by
   intro x y h
   apply BigWitt.ext
   funext n
-  have he := eqOn_of_ghostPolynomial_eq S hR (x := coordinates x) (y := coordinates y)
-    (fun n hn ↦ congrFun h ⟨n, hn⟩)
+  have he := eqOn_of_ghostPolynomial_eq_of_prime_nsmul_injective S hR
+    (x := coordinates x) (y := coordinates y) (fun n hn ↦ congrFun h ⟨n, hn⟩)
   simpa using he n.property
 
 private theorem polynomial_ghost_injective {ι : Type*} :
     Function.Injective (ghost : BigWitt S (MvPolynomial ι ℤ) → S → MvPolynomial ι ℤ) :=
-  ghost_injective fun n hn ↦ by
-    exact nsmul_right_injective (S.ne_zero_of_mem hn)
+  ghost_injective fun _ hp _ ↦ nsmul_right_injective hp.ne_zero
 
 /-- The universal polynomial giving an operation on ghosts has integral Witt coordinates. -/
 private theorem exists_operation (Φ : MvPolynomial Bool ℤ) :
@@ -168,6 +181,7 @@ private theorem mapData_operation (f : R →+* A) (Φ : MvPolynomial Bool ℤ)
   change f (eval₂Hom _ _ _) = eval₂Hom _ _ _
   rw [map_eval₂Hom]
   rw [RingHom.eq_intCast' (f.comp (Int.castRingHom R))]
+  -- Both variable assignments apply `f` to the same coordinate through `mapData`.
   rfl
 
 private theorem ghost_operation (Φ : MvPolynomial Bool ℤ) (x : Bool → BigWitt S R) (n : S) :
@@ -354,9 +368,10 @@ noncomputable def ghostMap : BigWitt S R →+* (S → R) :=
 theorem ghostMap_apply (x : BigWitt S R) (n : S) :
     ghostMap x n = ghostComponent n x := by rfl
 
-/-- Ghost components determine vectors if multiplication by every index is injective. -/
+/-- Ghost components determine vectors if multiplication by every prime in the truncation
+set is injective on the coefficient ring. -/
 theorem ghostMap_injective
-    (hR : ∀ n ∈ S, Function.Injective (n • · : R → R)) :
+    (hR : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R)) :
     Function.Injective (ghostMap : BigWitt S R →+* (S → R)) :=
   ghost_injective hR
 
@@ -446,7 +461,7 @@ theorem ghostComponent_restrict (h : T ≤ S) (x : BigWitt S R) (n : T) :
   ghost_restrictData h x n
 
 /-- Restriction commutes with applying a coefficient homomorphism. -/
-theorem restrict_map (h : T ≤ S) (f : R →+* A) :
+theorem restrict_comp_map (h : T ≤ S) (f : R →+* A) :
     (restrict h).comp (map S f) = (map T f).comp (restrict h) := by
   ext x n
   rfl

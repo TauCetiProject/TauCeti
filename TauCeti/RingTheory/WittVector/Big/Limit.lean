@@ -105,15 +105,15 @@ noncomputable def lift : A →+* BigWitt S R where
       liftFun_restrict f hf, liftFun_restrict f hf]
 
 @[simp]
-theorem lift_restrict (T : FiniteSubtruncation S) (a : A) :
+theorem restrict_lift (T : FiniteSubtruncation S) (a : A) :
     restrict T.property.1 (lift f hf a) = f T a :=
   liftFun_restrict f hf T a
 
 @[simp]
-theorem lift_restrict_comp (T : FiniteSubtruncation S) :
+theorem restrict_comp_lift (T : FiniteSubtruncation S) :
     (restrict T.property.1).comp (lift f hf) = f T := by
   ext1 a
-  exact lift_restrict f hf T a
+  exact restrict_lift f hf T a
 
 /-- A lift is determined by its finite restrictions. -/
 theorem lift_unique (g : A →+* BigWitt S R)
@@ -122,7 +122,7 @@ theorem lift_unique (g : A →+* BigWitt S R)
   ext1 a
   apply eq_of_restrict_eq
   intro T
-  rw [lift_restrict]
+  rw [restrict_lift]
   exact (DFunLike.congr_fun (hg T) a).symm
 
 /-- The big Witt ring is the inverse limit of its finite subtruncations. -/
@@ -138,7 +138,7 @@ noncomputable def liftEquiv :
     rintro ⟨f, hf⟩
     apply Subtype.ext
     funext T
-    exact lift_restrict_comp f hf T
+    exact restrict_comp_lift f hf T
   right_inv g := lift_unique _ _ _ fun _ ↦ rfl
 
 @[simp]
@@ -174,7 +174,7 @@ variable {S : TruncationSet} {R A : Type*}
 
 variable [NonUnitalCommRing R]
 
-/-- Finite restrictions determine a big Witt vector. -/
+/-- Finite restrictions determine a nonunital big Witt vector. -/
 theorem eq_of_restrict_eq {x y : NonUnitalBigWitt S R}
     (h : ∀ T : FiniteSubtruncation S, restrict T.property.1 x = restrict T.property.1 y) :
     x = y := by
@@ -206,7 +206,7 @@ private theorem liftFun_restrict (T : FiniteSubtruncation S) (a : A) :
     (DFunLike.congr_fun (hf T U h) a)
   simpa only [NonUnitalRingHom.comp_apply, restrict_coeff] using he
 
-/-- Lift a compatible family of ring homomorphisms to the big Witt ring. -/
+/-- Lift a compatible family of nonunital ring homomorphisms to `NonUnitalBigWitt S R`. -/
 noncomputable def lift : A →ₙ+* NonUnitalBigWitt S R where
   toFun := liftFun f
   map_zero' := eq_of_restrict_eq fun T ↦ by
@@ -219,15 +219,15 @@ noncomputable def lift : A →ₙ+* NonUnitalBigWitt S R where
       liftFun_restrict f hf, liftFun_restrict f hf]
 
 @[simp]
-theorem lift_restrict (T : FiniteSubtruncation S) (a : A) :
+theorem restrict_lift (T : FiniteSubtruncation S) (a : A) :
     restrict T.property.1 (lift f hf a) = f T a :=
   liftFun_restrict f hf T a
 
 @[simp]
-theorem lift_restrict_comp (T : FiniteSubtruncation S) :
+theorem restrict_comp_lift (T : FiniteSubtruncation S) :
     (restrict T.property.1).comp (lift f hf) = f T := by
   ext1 a
-  exact lift_restrict f hf T a
+  exact restrict_lift f hf T a
 
 /-- A lift is determined by its finite restrictions. -/
 theorem lift_unique (g : A →ₙ+* NonUnitalBigWitt S R)
@@ -236,10 +236,10 @@ theorem lift_unique (g : A →ₙ+* NonUnitalBigWitt S R)
   ext1 a
   apply eq_of_restrict_eq
   intro T
-  rw [lift_restrict]
+  rw [restrict_lift]
   exact (DFunLike.congr_fun (hg T) a).symm
 
-/-- The big Witt ring is the inverse limit of its finite subtruncations. -/
+/-- The nonunital big Witt vectors are the inverse limit of their finite subtruncations. -/
 noncomputable def liftEquiv :
     {f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWitt T.val R //
       ∀ (T U : FiniteSubtruncation S) (h : T.val ≤ U.val), (restrict h).comp (f U) = f T} ≃
@@ -252,7 +252,7 @@ noncomputable def liftEquiv :
     rintro ⟨f, hf⟩
     apply Subtype.ext
     funext T
-    exact lift_restrict_comp f hf T
+    exact restrict_comp_lift f hf T
   right_inv g := lift_unique _ _ _ fun _ ↦ rfl
 
 @[simp]
@@ -267,7 +267,8 @@ theorem liftEquiv_symm_apply (g : A →ₙ+* NonUnitalBigWitt S R) (T : FiniteSu
     (liftEquiv.symm g).val T = (restrict T.property.1).comp g := by
   rfl
 
-/-- Ring homomorphisms into a big Witt ring agree if their finite restrictions agree. -/
+/-- Nonunital ring homomorphisms into `NonUnitalBigWitt S R` agree if their finite
+restrictions agree. -/
 theorem hom_ext (g h : A →ₙ+* NonUnitalBigWitt S R)
     (hgh : ∀ T : FiniteSubtruncation S,
       (restrict T.property.1).comp g = (restrict T.property.1).comp h) : g = h := by
