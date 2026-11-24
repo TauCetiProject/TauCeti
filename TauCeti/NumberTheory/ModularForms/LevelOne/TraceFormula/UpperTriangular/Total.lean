@@ -50,43 +50,30 @@ namespace PopaZagier
 theorem sum_upperTriangularCoeff (a d : ℕ) (ha : 0 < a) :
     ∑ b ∈ Finset.range d, upperTriangularCoeff a b d =
       if a < d then ((d - a : ℕ) : ℚ) else if a = d then 1 / 6 else 0 := by
-  rcases lt_trichotomy a d with had | rfl | hda
-  · simp only [had, ↓reduceIte]
-    obtain ⟨r, hr⟩ : ∃ r, d = a + r + 1 := ⟨d - a - 1, by omega⟩
-    have hsub : Finset.range (r + 2) ⊆ Finset.range d := by
-      intro b hb
-      simp only [Finset.mem_range] at hb ⊢
-      omega
-    rw [← Finset.sum_subset hsub]
-    · -- the two endpoints `b = 0` and `b = d - a` have coefficient `1/2`, the interior `1`
-      have hmiddle : ∀ b ∈ Finset.range r,
-          upperTriangularCoeff a ((b + 1 : ℕ) : ℤ) d = 1 := by
-        intro b hb
-        rw [Finset.mem_range] at hb
-        grind [upperTriangularCoeff_def]
-      have hfirst : upperTriangularCoeff a ((0 : ℕ) : ℤ) d = 1 / 2 := by
-        grind [upperTriangularCoeff_def]
-      have hlast : upperTriangularCoeff a ((r + 1 : ℕ) : ℤ) d = 1 / 2 := by
-        grind [upperTriangularCoeff_def]
-      have hda : d - a = r + 1 := by omega
-      rw [Finset.sum_range_succ, Finset.sum_range_succ', Finset.sum_congr rfl hmiddle,
-        hfirst, hlast, hda]
-      simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Nat.cast_add,
-        Nat.cast_one]
-      ring
-    · intro b hbd hbr
-      simp only [Finset.mem_range] at hbd hbr
-      grind [upperTriangularCoeff_def]
-  · simp only [lt_irrefl, ↓reduceIte]
-    rw [Finset.sum_eq_single 0]
-    · grind [upperTriangularCoeff_def]
-    · intro b _ hb0
-      grind [upperTriangularCoeff_def]
-    · intro h
-      exact absurd (Finset.mem_range.mpr ha) h
-  · simp only [hda.not_gt, hda.ne', ↓reduceIte]
-    refine Finset.sum_eq_zero fun b _ ↦ ?_
-    grind [upperTriangularCoeff_def]
+  have haZ : (0 : ℤ) < a := by exact_mod_cast ha
+  have hcoeff : ∀ b : ℤ,
+      upperTriangularCoeff a b d = (weight !![(a : ℤ), b; 0, d] : ℚ) / 12 := fun b ↦ by
+    rw [weight_upperTriangular _ _ _ haZ, upperTriangularCoeff_def]
+    split_ifs <;> norm_num
+  have himg : (Finset.range d).image (Nat.cast : ℕ → ℤ) = Finset.Ico (0 : ℤ) d := by
+    ext b
+    simp only [Finset.mem_image, Finset.mem_range, Finset.mem_Ico]
+    exact ⟨fun ⟨k, hk, hkb⟩ ↦ hkb ▸ ⟨Nat.cast_nonneg k, by exact_mod_cast hk⟩,
+      fun ⟨hb0, _⟩ ↦ ⟨b.toNat, by omega, Int.toNat_of_nonneg hb0⟩⟩
+  calc
+    ∑ b ∈ Finset.range d, upperTriangularCoeff a b d
+        = ∑ b ∈ Finset.Ico (0 : ℤ) d, upperTriangularCoeff a b d := by
+          rw [← himg, Finset.sum_image fun _ _ _ _ h ↦ Nat.cast_injective h]
+    _ = ((∑ b ∈ Finset.Ico (0 : ℤ) d, weight !![(a : ℤ), b; 0, d] : ℤ) : ℚ) / 12 := by
+          simp_rw [hcoeff, div_eq_mul_inv, ← Finset.sum_mul, Int.cast_sum]
+    _ = _ := by
+          rw [sum_Ico_weight_upperTriangular a d haZ]
+          rcases lt_trichotomy a d with had | rfl | hda
+          · have hadZ : (a : ℤ) < d := by exact_mod_cast had
+            simp [had, hadZ, Nat.cast_sub had.le]
+          · norm_num
+          · have hdaZ : (d : ℤ) < a := by exact_mod_cast hda
+            simp [hda.not_gt, hda.ne', hdaZ.not_gt, hdaZ.ne']
 
 end PopaZagier
 

@@ -301,12 +301,7 @@ theorem contMDiff_liftRightTranslation {EM HM : Type*} [NormedAddCommGroup EM] [
   let _ := rightTranslationChartedSpace K Z I IZ F
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   rw [contMDiff_iff (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) le_rfl]
-  have hcomp :
-      liftRightTranslation ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
-        fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
-    funext fun x ↦ by
-      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
-  rw [hcomp]
+  rw [liftRightTranslation_comp_quotientMk]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
 
