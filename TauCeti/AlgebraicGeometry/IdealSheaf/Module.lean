@@ -36,7 +36,9 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
   (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), the ideal
   `I(U)ⁿ` for the power `Iⁿ` over an affine open `U` (`range_sheafι_app_pow`), and
-  `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`;
+  `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`,
+  compatibly with equality, addition and scalar multiplication (`sectionMk_inj`,
+  `sectionMk_add`, `smul_sectionMk`);
 * `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
   through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
@@ -175,6 +177,25 @@ lemma sheafι_app_sectionMk {U : X.Opens} (s : Γ(X, U)) (hs : s ∈ I.sections 
     Scheme.Modules.Hom.app I.sheafι U (I.sectionMk s hs) = s :=
   (rfl)
 
+/-- Sections built from regular functions are equal exactly when the functions are. -/
+@[simp]
+lemma sectionMk_inj {U : X.Opens} {s t : Γ(X, U)} (hs : s ∈ I.sections U)
+    (ht : t ∈ I.sections U) : I.sectionMk s hs = I.sectionMk t ht ↔ s = t :=
+  ⟨congrArg (Scheme.Modules.Hom.app I.sheafι U), fun h ↦ by subst h; rfl⟩
+
+/-- The section built from a sum of regular functions is the sum of the sections built from
+them. -/
+lemma sectionMk_add {U : X.Opens} {s t : Γ(X, U)} (hs : s ∈ I.sections U)
+    (ht : t ∈ I.sections U) :
+    I.sectionMk (s + t) (add_mem hs ht) = I.sectionMk s hs + I.sectionMk t ht :=
+  (rfl)
+
+/-- Scaling the section built from a regular function `s` by `r` gives the section built from
+`r * s`. -/
+lemma smul_sectionMk {U : X.Opens} (r : Γ(X, U)) {s : Γ(X, U)} (hs : s ∈ I.sections U) :
+    r • I.sectionMk s hs = I.sectionMk (r * s) (Ideal.mul_mem_left _ r hs) :=
+  (rfl)
+
 /-- The inclusion `I ⟶ 𝒪_X` commutes with restriction to a smaller open. -/
 @[simp]
 lemma sheafι_app_map {U V : X.Opens} (i : V ⟶ U) (t : Γ(I.sheaf, U)) :
@@ -186,6 +207,12 @@ lemma sheafι_app_map {U V : X.Opens} (i : V ⟶ U) (t : Γ(I.sheaf, U)) :
 lemma sheafι_app_mem (U : X.Opens) (t : Γ(I.sheaf, U)) :
     Scheme.Modules.Hom.app I.sheafι U t ∈ I.sections U :=
   t.property
+
+/-- Rebuilding a section of `I` from its image in `Γ(X, U)` gives back the section. -/
+@[simp]
+lemma sectionMk_sheafι_app {U : X.Opens} (t : Γ(I.sheaf, U)) :
+    I.sectionMk (Scheme.Modules.Hom.app I.sheafι U t) (I.sheafι_app_mem U t) = t :=
+  (rfl)
 
 /-- The inclusion of the ideal sheaf into `𝒪_X` is injective on sections. -/
 lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.Hom.app I.sheafι U) :=

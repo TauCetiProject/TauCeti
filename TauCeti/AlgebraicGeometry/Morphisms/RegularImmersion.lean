@@ -14,12 +14,20 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 An immersion `i : X ⟶ Y` is a *regular immersion of codimension `d`*
 (`Scheme.Hom.IsRegularImmersion`) if the ideal sheaf of the closed immersion `X ⟶ U` into the
 largest open `U = i.coborderRange` of `Y` in which `X` is closed is regular of codimension `d`
-(Stacks, Tag 063J; Fulton, Appendix B.7). For a closed immersion `U = Y`.
+(Stacks, Tag 063J; Fulton, Appendix B.7). For a closed immersion `U = Y`, and `i` is a regular
+immersion of codimension `d` exactly when its ideal sheaf `i.ker` is regular of codimension `d`
+(`isRegularImmersion_iff_of_isClosedImmersion`).
 
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Hom.IsRegularImmersion i d`: the immersion `i` is a regular immersion
   of codimension `d`, with its characterization `isRegularImmersion_iff`.
+
+## Main results
+
+* `AlgebraicGeometry.Scheme.Hom.isRegularImmersion_iff_of_isClosedImmersion`: a closed immersion
+  is a regular immersion of codimension `d` exactly when its ideal sheaf is regular of
+  codimension `d`.
 
 ## References
 
@@ -28,6 +36,8 @@ largest open `U = i.coborderRange` of `Y` in which `X` is closed is regular of c
 -/
 
 public section
+
+open CategoryTheory
 
 universe u
 
@@ -48,5 +58,20 @@ def IsRegularImmersion (i : X ⟶ Y) [IsImmersion i] (d : ℕ) : Prop :=
 theorem isRegularImmersion_iff {i : X ⟶ Y} [IsImmersion i] {d : ℕ} :
     i.IsRegularImmersion d ↔ i.liftCoborder.ker.IsLocallyRegular d :=
   Iff.rfl
+
+/-- A closed immersion `i` is a regular immersion of codimension `d` exactly when its ideal sheaf
+`i.ker` is regular of codimension `d`. -/
+theorem isRegularImmersion_iff_of_isClosedImmersion {i : X ⟶ Y} [IsClosedImmersion i] {d : ℕ} :
+    i.IsRegularImmersion d ↔ i.ker.IsLocallyRegular d := by
+  -- `X` is closed in `Y`, so `i.coborderRange` is all of `Y` and its inclusion is an isomorphism.
+  have htop : i.coborderRange = ⊤ :=
+    TopologicalSpace.Opens.ext i.isClosedEmbedding.isClosed_range.coborder_eq
+  have : IsIso i.coborderRange.ι := by rw [htop, ← Scheme.topIso_hom]; infer_instance
+  -- `i.liftCoborder` is the pullback of `i` along `i.coborderRange.ι`.
+  have hker : i.liftCoborder.ker = i.ker.comap i.coborderRange.ι := by
+    rw [Scheme.Hom.liftCoborder, ← IdealSheafData.ker_fst_of_isClosedImmersion,
+      ← (IsOpenImmersion.isPullback_lift_id i i.coborderRange.ι _).isoPullback_hom_fst,
+      Scheme.Hom.ker_comp_of_isIso]
+  rw [isRegularImmersion_iff, hker, IdealSheafData.isLocallyRegular_comap_iff_of_isIso]
 
 end AlgebraicGeometry.Scheme.Hom

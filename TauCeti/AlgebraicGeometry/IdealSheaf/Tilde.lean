@@ -52,26 +52,23 @@ theorem sheafι_app_ofIdealTopSectionsMk (a : J) :
 
 /-- The global sections of the ideal sheaf of `J` on `Spec R` are `J`, as `R`-modules. -/
 noncomputable def ofIdealTopSectionsEquiv :
-    J ≃ₗ[R] ((modulesSpecToSheaf.obj
-      (ofIdealTop (J.map (Scheme.ΓSpecIso R).inv.hom)).sheaf).presheaf.obj (op ⊤) :
-        ModuleCat R) :=
+    J ≃ₗ[R] Γ((ofIdealTop (J.map (Scheme.ΓSpecIso R).inv.hom)).sheaf, ⊤) :=
   LinearEquiv.ofBijective
     { toFun := ofIdealTopSectionsMk J
-      map_add' a b := sheafι_app_injective _ _ (by
-        rw [map_add]
-        simp
-        rfl)
-      map_smul' r a := sheafι_app_injective _ _ (by
-        -- `R` acts on the global sections through `Γ(Spec R, ⊤) ≅ R`.
-        refine Eq.trans ?_ (Scheme.Modules.Hom.app_smul (ofIdealTop _).sheafι _ _).symm
-        simp
-        rfl) }
-    ⟨fun a b h ↦ Subtype.ext ((ConcreteCategory.injective_of_mono_of_preservesPullback
-        (Scheme.ΓSpecIso R).inv) (by
-          have h' : ofIdealTopSectionsMk J a = ofIdealTopSectionsMk J b := h
-          have := congrArg (Scheme.Modules.Hom.app (ofIdealTop _).sheafι ⊤) h'
-          rw [sheafι_app_ofIdealTopSectionsMk, sheafι_app_ofIdealTopSectionsMk] at this
-          exact this)),
+      map_add' a b := by
+        simp only [ofIdealTopSectionsMk, Submodule.coe_add, map_add]
+        exact sectionMk_add _ _ _
+      map_smul' r a := by
+        -- `R` acts on the global sections through `Γ(Spec R, ⊤) ≅ R` (`smul_Spec_def`).
+        rw [RingHom.id_apply, Scheme.Modules.smul_Spec_def, ofIdealTopSectionsMk,
+          ofIdealTopSectionsMk, smul_sectionMk]
+        simp only [Submodule.coe_smul, smul_eq_mul, map_mul]
+        rw [Subsingleton.elim (⊤ : (Spec R).Opens).leTop (𝟙 ⊤), op_id,
+          CategoryTheory.Functor.map_id, CommRingCat.id_apply] }
+    ⟨fun a b h ↦ by
+        simp only [LinearMap.coe_mk, AddHom.coe_mk, ofIdealTopSectionsMk, sectionMk_inj] at h
+        exact Subtype.ext
+          (ConcreteCategory.injective_of_mono_of_preservesPullback (Scheme.ΓSpecIso R).inv h),
       fun t ↦ by
         -- `J.map φ⁻¹ ≤ J.comap φ` for the ring isomorphism `φ : Γ(Spec R, ⊤) ≅ R`.
         have key (x : Γ(Spec R, ⊤)) (hx : x ∈ J.map (Scheme.ΓSpecIso R).inv.hom) :
@@ -80,8 +77,8 @@ noncomputable def ofIdealTopSectionsEquiv :
             (fun r ↦ (Scheme.ΓSpecIso R).inv_hom_id_apply r) hx
         have ht := sheafι_app_mem _ ⊤ t
         rw [sections_ofIdealTop_top] at ht
-        exact ⟨⟨_, key _ ht⟩, sheafι_app_injective _ _ <|
-          (sheafι_app_ofIdealTopSectionsMk J _).trans ((Scheme.ΓSpecIso R).hom_inv_id_apply _)⟩⟩
+        exact ⟨⟨_, key _ ht⟩, ((sectionMk_inj _ _ _).mpr
+          ((Scheme.ΓSpecIso R).hom_inv_id_apply _)).trans (sectionMk_sheafι_app _ t)⟩⟩
 
 /-- `ofIdealTopSectionsEquiv J` sends `a ∈ J` to the global section `a` of the ideal sheaf. -/
 @[simp]
