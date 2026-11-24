@@ -34,6 +34,8 @@ smooth functions.
   evaluation of restriction of smooth maps between open subsets.
 * `ContMDiffMap.algebraMap_apply`: the scalars of the algebra of `C^n` functions are the constant
   functions.
+* `ContMDiffMap.eq_of_forall_mem_dense`: `C^n` maps into a Hausdorff space that agree on a dense
+  set are equal.
 * `ContMDiffMap.iteratedFDeriv_sub_apply`: the iterated derivatives of order at most `n` of a
   difference of `C^n` maps are the differences of their iterated derivatives.
 * `ContMDiffMap.compRightAlgHom`: precomposition with a smooth map `φ : N → M`, as an algebra
@@ -108,6 +110,17 @@ theorem algebraMap_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A] [ContMDiffRing 𝓘(𝕜, A) n A] (c : 𝕜) (x : N) :
     algebraMap 𝕜 C^n⟮I, N; 𝓘(𝕜, A), A⟯ c x = algebraMap 𝕜 A c :=
   (rfl)
+
+/-- Two `C^n` maps into a Hausdorff space that agree on a dense set are equal, by continuity. -/
+theorem eq_of_forall_mem_dense {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H N]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [T2Space M'] {s : Set N}
+    (hs : Dense s) {f g : C^n⟮I, N; I', M'⟯} (h : ∀ x ∈ s, f x = g x) : f = g :=
+  coe_injective <| f.contMDiff.continuous.ext_on hs g.contMDiff.continuous h
 
 /-- The iterated derivatives of order at most `n` of a difference of `C^n` maps between normed
 spaces are the differences of their iterated derivatives. -/

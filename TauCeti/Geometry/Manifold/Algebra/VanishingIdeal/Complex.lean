@@ -247,6 +247,20 @@ theorem complexSmoothCotangentEquiv_toCotangent {x : M} (hx : I.IsInteriorPoint 
       mvfderiv I (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x :=
   Ideal.Cotangent.lift_toCotangent _ (complexVanishingIdealDifferential_mul hx) f
 
+/-- The complex cotangent identification sends the class of `f - f(x)`, for any complex smooth
+function `f`, to the differential `df_x`. -/
+theorem complexSmoothCotangentEquiv_toCotangent_add_algebraMap {x : M} (hx : I.IsInteriorPoint x)
+    (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexSmoothCotangentEquiv hx ((complexSmoothVanishingIdeal I x).toCotangent
+        ⟨f + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-ContMDiffMap.complexEvalAlgHom x f), by simp⟩) =
+      mvfderiv I f x := by
+  -- Adding the constant `-f(x)` does not change the differential.
+  have hc : ⇑(algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-ContMDiffMap.complexEvalAlgHom x f)) =
+      fun _ ↦ -f x :=
+    funext fun _ ↦ by simp
+  rw [complexSmoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc]
+  exact mvfderiv_add_const (I := I) f _ x
+
 section Pullback
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']

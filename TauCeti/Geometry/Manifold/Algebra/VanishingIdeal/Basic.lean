@@ -363,6 +363,17 @@ theorem smoothCotangentEquiv_toCotangent {x : M} (hx : I.IsInteriorPoint x)
       mvfderiv I (f : C^∞⟮I, M; ℝ⟯) x :=
   Ideal.Cotangent.lift_toCotangent _ (mvfderivSmoothVanishingIdeal_mul x) f
 
+/-- The equivalence `I_x / I_x² ≃ T_x*M` sends the class of `f - f(x)`, for any smooth function
+`f`, to the differential `df_x`. -/
+theorem smoothCotangentEquiv_toCotangent_add_algebraMap {x : M} (hx : I.IsInteriorPoint x)
+    (f : C^∞⟮I, M; ℝ⟯) :
+    smoothCotangentEquiv hx ((smoothVanishingIdeal I x).toCotangent
+        ⟨f + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (-ContMDiffMap.evalAlgHom x f), by simp⟩) =
+      mvfderiv I f x := by
+  -- Adding the constant `-f(x)` does not change the differential.
+  rw [smoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add]
+  exact mvfderiv_add_const (I := I) f _ x
+
 /-- **Coordinate differentials.** If, near an interior point `x`, a function `f` vanishing at `x`
 agrees with a linear functional `ℓ` of the chart coordinates, then the cotangent class of `f`
 corresponds to `ℓ`. In particular, for a basis `b` of the model space, the classes of the

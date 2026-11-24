@@ -146,14 +146,7 @@ theorem complexSmoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : �
       commutatorSymbol ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
         C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m D f 1 x := by
   -- The differential of `fᵢ` is that of `fᵢ - fᵢ(x)`, which lies in `I_x`.
-  have hc (c : ℂ) : ⇑(algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (i : Fin m) : mvfderiv I (f i) x = complexSmoothCotangentEquiv hx
-      ((complexSmoothVanishingIdeal I x).toCotangent
-        ⟨f i + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-ContMDiffMap.complexEvalAlgHom x (f i)),
-          by simp⟩) := by
-    rw [complexSmoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc]
-    exact (mvfderiv_add_const _ _ x).symm
-  simp only [hd]
+  simp only [← complexSmoothCotangentEquiv_toCotangent_add_algebraMap hx]
   rw [complexSmoothCommutatorSymbol,
     pointCommutatorSymbol_toCotangent_add_algebraMap _
       (ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal x),
@@ -211,8 +204,7 @@ theorem forall_mem_complexSmoothCommutatorSymbol_eq_zero_iff {s : Set M} (hs : D
   refine Subtype.forall.symm.trans <| forall_pointCommutatorSymbol_eq_zero_iff
     (fun x : s ↦ ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal (x : M))
     (fun x ↦ complexSmoothCotangentEquiv (hsI x x.property)) (fun g hg ↦ ?_) D
-  exact ContMDiffMap.coe_injective <| Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
-    (ContMDiffMap.contMDiff _).continuous fun y hy ↦ by simpa using hg ⟨y, hy⟩
+  exact ContMDiffMap.eq_of_forall_mem_dense hs fun y hy ↦ by simpa using hg ⟨y, hy⟩
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` on complex smooth functions
 has vanishing commutator symbol at every point if and only if it has order at most `m`. -/
@@ -467,7 +459,8 @@ theorem complexSmoothFourierPrincipalSymbol_derivation [BoundarylessManifold I M
         ⟨δ, δ.mem_differentialOperators_one⟩ ξ =
       Complex.I * ξ (realPart _ (complexDerivationEquivComplexifiedVectorField δ) x) -
         ξ (imaginaryPart _ (complexDerivationEquivComplexifiedVectorField δ) x) := by
-  rw [complexSmoothFourierPrincipalSymbol_def, complexSmoothPrincipalSymbol_derivation, pow_one,
-    mul_add, ← mul_assoc, Complex.I_mul_I, neg_one_mul, sub_eq_add_neg]
+  rw [complexSmoothFourierPrincipalSymbol_def, complexSmoothPrincipalSymbol_derivation]
+  linear_combination ξ (imaginaryPart _ (complexDerivationEquivComplexifiedVectorField δ) x) *
+    Complex.I_mul_I
 
 end TauCeti

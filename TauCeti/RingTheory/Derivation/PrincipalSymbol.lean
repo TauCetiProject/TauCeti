@@ -482,8 +482,7 @@ theorem cotangentSymbol_smul {m : ℕ} (c : R) (D : differentialOperators R A M 
   obtain ⟨a, rfl⟩ : ∃ a : Fin m → I, (fun i ↦ I.toCotangent (a i)) = ω :=
     I.toCotangent_surjective.comp_left ω
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  rw [cotangentSymbol_toCotangent, cotangentSymbol_toCotangent, map_smul, smul_apply,
-    LinearMap.smul_apply, Submodule.Quotient.mk_smul]
+  simp [Submodule.Quotient.mk_smul]
 
 /-- The cotangent symbol is symmetric. -/
 theorem cotangentSymbol_comp_perm {m : ℕ} (D : differentialOperators R A M N m)
@@ -569,10 +568,7 @@ noncomputable def pointCommutatorSymbol (hJ : J ≤ RingHom.ker φ) (e : J.Cotan
     differentialOperators 𝕜 A A A m →ₗ[𝕜] MultilinearMap (RingHom.id 𝕜) (fun _ : Fin m ↦ V) 𝕜 where
   toFun := pointCommutatorForm hJ e
   map_add' D₁ D₂ := by ext; simp [pointCommutatorForm_apply]
-  map_smul' c D := by
-    ext
-    rw [smul_apply, pointCommutatorForm_apply, pointCommutatorForm_apply, cotangentSymbol_smul,
-      map_smul, RingHom.id_apply, smul_eq_mul]
+  map_smul' c D := by ext; simp [pointCommutatorForm_apply, cotangentSymbol_smul c D]
 
 /-- The point commutator symbol is `φ` applied to the cotangent symbol at the class of `1`. -/
 private theorem pointCommutatorSymbol_eq_quotientEval (hJ : J ≤ RingHom.ker φ)
@@ -593,6 +589,7 @@ theorem pointCommutatorSymbol_eq_of_mk_eq_cotangentSymbol {m : ℕ}
   rw [pointCommutatorSymbol_eq_quotientEval, ← hq, quotientEval_mk]
 
 /-- The point commutator symbol at the classes of `a₁, …, aₘ ∈ J` is `φ([⋯[D, a₁], …, aₘ] 1)`. -/
+@[simp]
 theorem pointCommutatorSymbol_toCotangent {m : ℕ} (D : differentialOperators 𝕜 A A A m)
     (a : Fin m → J) :
     pointCommutatorSymbol φ hJ e D (fun i ↦ e (J.toCotangent (a i))) =

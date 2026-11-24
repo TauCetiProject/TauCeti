@@ -209,13 +209,7 @@ theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
     smoothCommutatorSymbol I hx D (fun i ↦ mvfderiv I (f i) x) =
       commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m D f 1 x := by
   -- The differential of `fᵢ` is that of `fᵢ - fᵢ(x)`, which lies in `I_x`.
-  have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (i : Fin m) : mvfderiv I (f i) x = smoothCotangentEquiv hx
-      ((smoothVanishingIdeal I x).toCotangent
-        ⟨f i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (-ContMDiffMap.evalAlgHom x (f i)), by simp⟩) := by
-    rw [smoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc]
-    exact (mvfderiv_add_const _ _ x).symm
-  simp only [hd]
+  simp only [← smoothCotangentEquiv_toCotangent_add_algebraMap hx]
   rw [smoothCommutatorSymbol,
     pointCommutatorSymbol_toCotangent_add_algebraMap _ (ker_evalAlgHom_eq_smoothVanishingIdeal x),
     ContMDiffMap.evalAlgHom_apply]
@@ -274,8 +268,7 @@ theorem forall_mem_smoothCommutatorSymbol_eq_zero_iff {s : Set M} (hs : Dense s)
   refine Subtype.forall.symm.trans <| forall_pointCommutatorSymbol_eq_zero_iff
     (fun x : s ↦ ker_evalAlgHom_eq_smoothVanishingIdeal (x : M))
     (fun x ↦ smoothCotangentEquiv (hsI x x.property)) (fun g hg ↦ ?_) D
-  exact ContMDiffMap.coe_injective <| Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
-    (ContMDiffMap.contMDiff _).continuous fun y hy ↦ by simpa using hg ⟨y, hy⟩
+  exact ContMDiffMap.eq_of_forall_mem_dense hs fun y hy ↦ by simpa using hg ⟨y, hy⟩
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing commutator
 symbol at every point if and only if it has order at most `m`. -/
