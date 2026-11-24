@@ -84,38 +84,28 @@ theorem exists_degree_eq_index (hF : IsFunctionField k F) :
     ∃ D : Divisor k F, Divisor.degree D = index k F :=
   (index_mem_of_degree_pos (exists_degree_pos hF).choose_spec).2
 
-/-- **The index divides the degree of every divisor** of a function field. -/
-theorem index_dvd_degree (hF : IsFunctionField k F) (D : Divisor k F) :
-    (index k F : ℤ) ∣ Divisor.degree D := by
-  -- The remainder of `deg D` modulo the index is the degree of a divisor, so by minimality of
-  -- the index it is zero.
+/-- **The index generates the degrees**: the image of the degree map on divisors of a function
+field is the subgroup of multiples of the index. -/
+theorem Divisor.range_degree (hF : IsFunctionField k F) :
+    (Divisor.degree (k := k) (F := F)).range = AddSubgroup.zmultiples (index k F : ℤ) := by
+  -- The index is the least positive element of the range, hence generates it.
   obtain ⟨D₀, hD₀⟩ := exists_degree_eq_index hF
   have hpos := index_pos hF
-  have hr : Divisor.degree (D - (Divisor.degree D / index k F) • D₀) =
-      Divisor.degree D % index k F := by
-    rw [Divisor.degree_sub, Divisor.degree_zsmul, hD₀, Int.emod_def]
-    ring
-  have h0 : 0 ≤ Divisor.degree D % index k F := Int.emod_nonneg _ (by omega)
-  have hlt : Divisor.degree D % index k F < index k F := Int.emod_lt_of_pos _ (by omega)
-  refine Int.dvd_of_emod_eq_zero (by_contra fun hne ↦ ?_)
-  have := index_le_of_degree_eq (n := (Divisor.degree D % index k F).toNat) (by omega)
-    (by rw [hr]; omega)
+  refine (AddSubgroup.zmultiples_eq_of_isLeast_mem_and_pos (H := Divisor.degree.range)
+    ⟨⟨⟨D₀, hD₀⟩, by omega⟩, fun g ⟨⟨D, hD⟩, hg⟩ ↦ ?_⟩).symm
+  have := index_le_of_degree_eq (n := g.toNat) (by omega) (by rw [hD]; omega)
   omega
 
 /-- **The degrees of divisors are the multiples of the index**: an integer is the degree of a
 divisor of a function field exactly when the index divides it. -/
 theorem index_dvd_iff_exists_degree_eq (hF : IsFunctionField k F) {d : ℤ} :
     (index k F : ℤ) ∣ d ↔ ∃ D : Divisor k F, Divisor.degree D = d := by
-  refine ⟨fun ⟨m, hm⟩ ↦ ?_, fun ⟨D, hD⟩ ↦ hD ▸ index_dvd_degree hF D⟩
-  obtain ⟨D₀, hD₀⟩ := exists_degree_eq_index hF
-  exact ⟨m • D₀, by rw [Divisor.degree_zsmul, hD₀, hm, mul_comm]⟩
+  rw [← Int.mem_zmultiples_iff, ← Divisor.range_degree hF, AddMonoidHom.mem_range]
 
-/-- **The index generates the degrees**: the image of the degree map on divisors of a function
-field is the subgroup of multiples of the index. -/
-theorem Divisor.range_degree (hF : IsFunctionField k F) :
-    (Divisor.degree (k := k) (F := F)).range = AddSubgroup.zmultiples (index k F : ℤ) := by
-  ext d
-  rw [AddMonoidHom.mem_range, Int.mem_zmultiples_iff, index_dvd_iff_exists_degree_eq hF]
+/-- **The index divides the degree of every divisor** of a function field. -/
+theorem index_dvd_degree (hF : IsFunctionField k F) (D : Divisor k F) :
+    (index k F : ℤ) ∣ Divisor.degree D :=
+  (index_dvd_iff_exists_degree_eq hF).mpr ⟨D, rfl⟩
 
 /-- The index of a function field divides the degree of every place. -/
 theorem Place.index_dvd_degree (hF : IsFunctionField k F) (P : Place k F) :
