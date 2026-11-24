@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Data.Finset.Max
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Extremal homogeneous parts and degree width in graded rings
@@ -55,7 +56,7 @@ public section
 
 namespace TauCeti.GradedAlgebra
 
-open DirectSum
+open _root_.DirectSum
 
 section Decomposition
 
@@ -86,17 +87,6 @@ theorem minHomogPart_def (x : A) : minHomogPart 𝒜 x = (decompose 𝒜 x (minD
 theorem maxHomogPart_def (x : A) : maxHomogPart 𝒜 x = (decompose 𝒜 x (maxDeg 𝒜 x) : A) :=
   (rfl)
 
-omit [Zero ι] [LinearOrder ι] in
-private theorem support_decompose_nonempty_iff [∀ (i : ι) (x : 𝒜 i), Decidable (x ≠ 0)] {x : A} :
-    (decompose 𝒜 x).support.Nonempty ↔ x ≠ 0 := by
-  rw [Finset.nonempty_iff_ne_empty, not_iff_not, DFinsupp.support_eq_empty]
-  exact (decomposeAddEquiv 𝒜).map_eq_zero_iff
-
-omit [Zero ι] [LinearOrder ι] in
-private theorem mem_support_decompose_iff [∀ (i : ι) (x : 𝒜 i), Decidable (x ≠ 0)]
-    {x : A} {i : ι} : i ∈ (decompose 𝒜 x).support ↔ (decompose 𝒜 x i : A) ≠ 0 := by
-  rw [DFinsupp.mem_support_iff, Ne, ← Subtype.coe_inj, ZeroMemClass.coe_zero]
-
 @[simp]
 theorem minDeg_zero : minDeg 𝒜 (0 : A) = 0 := by
   classical simp [minDeg]
@@ -114,10 +104,10 @@ theorem maxHomogPart_zero : maxHomogPart 𝒜 (0 : A) = 0 := by
   simp [maxHomogPart]
 
 theorem minHomogPart_mem (x : A) : minHomogPart 𝒜 x ∈ 𝒜 (minDeg 𝒜 x) :=
-  (decompose 𝒜 x (minDeg 𝒜 x)).2
+  (decompose 𝒜 x (minDeg 𝒜 x)).property
 
 theorem maxHomogPart_mem (x : A) : maxHomogPart 𝒜 x ∈ 𝒜 (maxDeg 𝒜 x) :=
-  (decompose 𝒜 x (maxDeg 𝒜 x)).2
+  (decompose 𝒜 x (maxDeg 𝒜 x)).property
 
 theorem minHomogPart_ne_zero {x : A} (hx : x ≠ 0) : minHomogPart 𝒜 x ≠ 0 := by
   classical
@@ -238,11 +228,11 @@ least degree. -/
 theorem minDeg_add_eq_left {x y : A} (hx : x ≠ 0) (h : minDeg 𝒜 x < minDeg 𝒜 y) :
     minDeg 𝒜 (x + y) = minDeg 𝒜 x := by
   have hcomp : (decompose 𝒜 (x + y) (minDeg 𝒜 x) : A) = minHomogPart 𝒜 x := by
-    rw [decompose_add, DirectSum.add_apply, AddMemClass.coe_add,
+    rw [decompose_add, _root_.DirectSum.add_apply, AddMemClass.coe_add,
       coe_decompose_eq_zero_of_lt_minDeg 𝒜 h, add_zero, minHomogPart]
   have hxy : x + y ≠ 0 := fun h0 ↦ minHomogPart_ne_zero 𝒜 hx (by simpa [h0] using hcomp.symm)
   refine (minDeg_eq_iff 𝒜 hxy).mpr ⟨hcomp ▸ minHomogPart_ne_zero 𝒜 hx, fun i hi ↦ ?_⟩
-  rw [decompose_add, DirectSum.add_apply, AddMemClass.coe_add,
+  rw [decompose_add, _root_.DirectSum.add_apply, AddMemClass.coe_add,
     coe_decompose_eq_zero_of_lt_minDeg 𝒜 hi,
     coe_decompose_eq_zero_of_lt_minDeg 𝒜 (hi.trans h), add_zero]
 
@@ -251,11 +241,11 @@ greatest degree. -/
 theorem maxDeg_add_eq_left {x y : A} (hx : x ≠ 0) (h : maxDeg 𝒜 y < maxDeg 𝒜 x) :
     maxDeg 𝒜 (x + y) = maxDeg 𝒜 x := by
   have hcomp : (decompose 𝒜 (x + y) (maxDeg 𝒜 x) : A) = maxHomogPart 𝒜 x := by
-    rw [decompose_add, DirectSum.add_apply, AddMemClass.coe_add,
+    rw [decompose_add, _root_.DirectSum.add_apply, AddMemClass.coe_add,
       coe_decompose_eq_zero_of_maxDeg_lt 𝒜 h, add_zero, maxHomogPart]
   have hxy : x + y ≠ 0 := fun h0 ↦ maxHomogPart_ne_zero 𝒜 hx (by simpa [h0] using hcomp.symm)
   refine (maxDeg_eq_iff 𝒜 hxy).mpr ⟨hcomp ▸ maxHomogPart_ne_zero 𝒜 hx, fun i hi ↦ ?_⟩
-  rw [decompose_add, DirectSum.add_apply, AddMemClass.coe_add,
+  rw [decompose_add, _root_.DirectSum.add_apply, AddMemClass.coe_add,
     coe_decompose_eq_zero_of_maxDeg_lt 𝒜 hi,
     coe_decompose_eq_zero_of_maxDeg_lt 𝒜 (h.trans hi), add_zero]
 
@@ -337,7 +327,7 @@ theorem coe_decompose_mul_eq_zero_of_lt {x y : A} {k : ι} (hk : k < minDeg 𝒜
   · simp [hx]
   by_cases hy : y = 0
   · simp [hy]
-  rw [decompose_mul, DirectSum.coe_mul_apply]
+  rw [decompose_mul, _root_.DirectSum.coe_mul_apply]
   refine Finset.sum_eq_zero fun ij hij ↦ ?_
   rw [Finset.mem_filter, Finset.mem_product] at hij
   have hi : minDeg 𝒜 x ≤ ij.1 :=
@@ -354,7 +344,7 @@ theorem coe_decompose_mul_eq_zero_of_gt {x y : A} {k : ι} (hk : maxDeg 𝒜 x +
   · simp [hx]
   by_cases hy : y = 0
   · simp [hy]
-  rw [decompose_mul, DirectSum.coe_mul_apply]
+  rw [decompose_mul, _root_.DirectSum.coe_mul_apply]
   refine Finset.sum_eq_zero fun ij hij ↦ ?_
   rw [Finset.mem_filter, Finset.mem_product] at hij
   have hi : ij.1 ≤ maxDeg 𝒜 x :=
@@ -370,7 +360,7 @@ theorem coe_decompose_mul_minDeg_add {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
     (decompose 𝒜 (x * y) (minDeg 𝒜 x + minDeg 𝒜 y) : A) =
       minHomogPart 𝒜 x * minHomogPart 𝒜 y := by
   classical
-  rw [decompose_mul, DirectSum.coe_mul_apply]
+  rw [decompose_mul, _root_.DirectSum.coe_mul_apply]
   refine Finset.sum_eq_single (minDeg 𝒜 x, minDeg 𝒜 y) (fun ij hij hne ↦ ?_) (fun hnot ↦ ?_)
   · rw [Finset.mem_filter, Finset.mem_product] at hij
     have hi : minDeg 𝒜 x ≤ ij.1 :=
@@ -394,7 +384,7 @@ theorem coe_decompose_mul_maxDeg_add {x y : A} (hx : x ≠ 0) (hy : y ≠ 0) :
     (decompose 𝒜 (x * y) (maxDeg 𝒜 x + maxDeg 𝒜 y) : A) =
       maxHomogPart 𝒜 x * maxHomogPart 𝒜 y := by
   classical
-  rw [decompose_mul, DirectSum.coe_mul_apply]
+  rw [decompose_mul, _root_.DirectSum.coe_mul_apply]
   refine Finset.sum_eq_single (maxDeg 𝒜 x, maxDeg 𝒜 y) (fun ij hij hne ↦ ?_) (fun hnot ↦ ?_)
   · rw [Finset.mem_filter, Finset.mem_product] at hij
     have hi : ij.1 ≤ maxDeg 𝒜 x :=

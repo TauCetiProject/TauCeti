@@ -16,7 +16,7 @@ public import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
 
 Inverting the variables via `MvPolynomial.toLaurent : MvPolynomial K R →ₐ[R] LaurentRing R K`
 turns every monic monomial `monomial n 1` into a unit while preserving all divisibility relations
-that are prime to the coordinate hyperplanes `Xᵢ = 0`. Over a coefficient ring `R` without zero
+that are prime to the coordinate hyperplanes `Xᵢ = 0`. Over a commutative semiring `R` without zero
 divisors, this file characterizes the polynomials that become units in the Laurent ring, establishes
 descent and unconditional ascent of `IsRelPrime` along `MvPolynomial.toLaurent`, and transfers ray
 relative primality from `AddMonoidAlgebra` to both `LaurentRing R K` and `MvPolynomial K R`.
@@ -149,9 +149,9 @@ end CommSemiring
 
 /-! ### Ascent of relative primality from `MvPolynomial` to `LaurentRing` -/
 
-section CommRing
+section Ascent
 
-variable {R K : Type*} [CommRing R] [NoZeroDivisors R]
+variable {R K : Type*} [CommSemiring R] [NoZeroDivisors R]
 
 /-- If no variable `Xᵢ` divides `g`, divisibility by `toLaurent g` in `LaurentRing R K` descends to
 divisibility by `g` in `MvPolynomial K R`. -/
@@ -161,18 +161,14 @@ theorem dvd_of_toLaurent_dvd_of_forall_not_X_dvd {g p : MvPolynomial K R}
   obtain ⟨m, u₁, hu₁, -⟩ := LaurentRing.exists_mul_toLaurent_monomial u
   have hdvd_mon : g ∣ monomial m 1 * p := ⟨u₁, toLaurent_injective <| by
     rw [map_mul, mul_comm _ (toLaurent p), hu, mul_assoc, hu₁, map_mul]⟩
-  obtain ⟨k, r, -, hrp, hgr⟩ := dvd_monomial_mul_iff_exists.mp hdvd_mon
-  have hk0 : k = 0 := by
-    ext i
-    exact by_contra fun hki ↦ hX i (hgr ▸ dvd_mul_of_dvd_left (X_dvd_monomial.mpr (Or.inr hki)) r)
-  exact (show g = r by simpa [hk0] using hgr) ▸ hrp
+  exact (dvd_monomial_one_mul_iff_of_forall_not_X_dvd hX).mp hdvd_mon
 
 /-- When no variable `Xᵢ` divides `g`, `toLaurent` reflects and preserves divisibility by `g`. -/
 theorem toLaurent_dvd_toLaurent_iff_of_forall_not_X_dvd {g p : MvPolynomial K R}
     (hX : ∀ i : K, ¬ X i ∣ g) : toLaurent g ∣ toLaurent p ↔ g ∣ p :=
   ⟨dvd_of_toLaurent_dvd_of_forall_not_X_dvd hX, map_dvd toLaurent⟩
 
-/-- **Unconditional ascent of relative primality along `toLaurent`.** Over a commutative ring
+/-- **Unconditional ascent of relative primality along `toLaurent`.** Over a commutative semiring
 without zero divisors, relatively prime polynomials remain relatively prime in the Laurent ring. -/
 theorem isRelPrime_toLaurent {p q : MvPolynomial K R} (hpq : IsRelPrime p q) :
     IsRelPrime (toLaurent p) (toLaurent q) := by
@@ -192,21 +188,23 @@ theorem isRelPrime_toLaurent {p q : MvPolynomial K R} (hpq : IsRelPrime p q) :
   let winv : LaurentRing R K := ((vn⁻¹ : (LaurentRing R K)ˣ) : LaurentRing R K)
   have hf_eq : f = vk * toLaurent g * winv := by
     rw [← mul_one f, ← Units.mul_inv vn, ← mul_assoc, hvn, hfg₀, map_mul]
-  have hg_dvd_f : toLaurent g ∣ f := ⟨vk * winv, by rw [hf_eq]; ring⟩
+  have hg_dvd_f : toLaurent g ∣ f := ⟨vk * winv, by rw [hf_eq, mul_assoc, mul_left_comm]⟩
   have hug : IsUnit (toLaurent g) :=
     (hpq (dvd_of_toLaurent_dvd_of_forall_not_X_dvd hgX (dvd_trans hg_dvd_f hfp))
       (dvd_of_toLaurent_dvd_of_forall_not_X_dvd hgX (dvd_trans hg_dvd_f hfq))).map toLaurent
   exact hf_eq ▸ (((isUnit_toLaurent_monomial_one k).mul hug).mul vn⁻¹.isUnit)
 
-/-- **Characterization of polynomial relative primality via `LaurentRing`.** Over a domain, two
-polynomials `p` and `q` are relatively prime if and only if `toLaurent p` and `toLaurent q` are
-relatively prime and no variable `Xᵢ` divides both `p` and `q`. -/
+/-- **Characterization of polynomial relative primality via `LaurentRing`.** Over a nontrivial
+commutative semiring without zero divisors, two polynomials `p` and `q` are relatively prime if and
+only if `toLaurent p` and `toLaurent q` are relatively prime and no variable `Xᵢ` divides both `p`
+and `q`. -/
 theorem isRelPrime_iff_isRelPrime_toLaurent [Nontrivial R] {p q : MvPolynomial K R} :
     IsRelPrime p q ↔ IsRelPrime (toLaurent p) (toLaurent q) ∧ ∀ i : K, ¬ (X i ∣ p ∧ X i ∣ q) :=
-  ⟨fun h ↦ ⟨isRelPrime_toLaurent h, fun _ ⟨hp, hq⟩ ↦ prime_X.not_isUnit (h hp hq)⟩,
+  ⟨fun h ↦ ⟨isRelPrime_toLaurent h, fun _ ⟨hp, hq⟩ ↦
+      not_isUnit_zero (by simpa using (h hp hq).map constantCoeff : IsUnit (0 : R))⟩,
     fun ⟨hL, hX⟩ ↦ isRelPrime_of_toLaurent hL hX⟩
 
-end CommRing
+end Ascent
 
 end MvPolynomial
 

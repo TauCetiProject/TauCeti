@@ -29,6 +29,9 @@ integrable boundary data on a sphere is shown to be harmonic.
   of the Laplacians.
 * `TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`: an integral of harmonic functions against
   an integrable weight is harmonic.
+* `TauCeti.harmonicOnNhd_integral_mul_of_contDiffOn`: the same for a continuous weight with
+  compact support on the parameter space itself, integrated against a measure that is finite on
+  compact sets.
 -/
 
 public section
@@ -88,5 +91,32 @@ theorem harmonicOnNhd_integral_smul_of_contDiffOn {F : E × P → G} (hg : Integ
   rw [laplacian_integral_smul_of_contDiffOn hg hι hW hF (hUW x' hx')]
   have h0 : ∀ y, Δ (fun x ↦ F (x, ι y)) x' = 0 := fun y ↦ (hharm y x' hx').2.self_of_nhds
   simp [h0]
+
+/-- **Integrals of harmonic functions against compactly supported weights.** Let `f` be continuous
+with compact support on `P`. If `F` is `C²` on an open set `W ⊆ E × P` containing
+`U × tsupport f` for an open set `U`, and each slice `F(·, y)`, `y ∈ tsupport f`, is harmonic on
+`U`, then `x ↦ ∫ F(x, y) f(y) dν(y)` is harmonic on `U`. This is how potentials of compactly
+supported data against kernels harmonic in one variable are shown to be harmonic. -/
+theorem harmonicOnNhd_integral_mul_of_contDiffOn [MeasurableSpace P] [BorelSpace P]
+    {ν : Measure P} [IsFiniteMeasureOnCompacts ν] {F : E × P → ℝ} {f : P → ℝ}
+    (hf : Continuous f) (hc : HasCompactSupport f) (hW : IsOpen W) (hF : ContDiffOn ℝ 2 F W)
+    (hU : IsOpen U) (hUW : ∀ x ∈ U, ∀ y ∈ tsupport f, (x, y) ∈ W)
+    (hharm : ∀ y ∈ tsupport f, HarmonicOnNhd (fun x ↦ F (x, y)) U) :
+    HarmonicOnNhd (fun x ↦ ∫ y, F (x, y) * f y ∂ν) U := by
+  have hKm : MeasurableSet (tsupport f) := (isClosed_tsupport f).measurableSet
+  have : CompactSpace (tsupport f) := isCompact_iff_compactSpace.1 hc
+  -- The integral over `P` is an integral over the compact parameter space `tsupport f`.
+  have hrestr : ∀ x, ∫ y, F (x, y) * f y ∂ν =
+      ∫ y : tsupport f, f y • F (x, y) ∂ν.comap Subtype.val := fun x ↦ by
+    rw [integral_subtype_comap hKm fun y ↦ f y • F (x, y),
+      ← setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy ↦ by
+        rw [image_eq_zero_of_notMem_tsupport (f := f) hy, mul_zero]]
+    simp only [smul_eq_mul, mul_comm (f _)]
+  have hg : Integrable (fun y : tsupport f ↦ f y) (ν.comap Subtype.val) :=
+    (MeasurableEmbedding.subtypeVal hKm).integrable_map_iff.1
+      (by rw [map_comap_subtypeVal hKm]; exact hf.continuousOn.integrableOn_compact hc)
+  simp_rw [hrestr]
+  exact harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtypeVal hW hF hU
+    (fun x hx y ↦ hUW x hx y y.property) fun y ↦ hharm y y.property
 
 end TauCeti

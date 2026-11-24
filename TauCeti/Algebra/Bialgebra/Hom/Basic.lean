@@ -18,6 +18,8 @@ and `BialgHom.comp_toAlgHom`, which concern the algebra-homomorphism coercions.
 The ordinary kernel of a bialgebra morphism is killed by the counit, and its comultiplication
 lies in the kernel of the tensor-square map. These facts require only the algebra and coalgebra
 structures used to define a bialgebra morphism, without an antipode.
+`BialgHom.mem_ker_toAlgHom_toRingHom` reads membership in the kernel of the underlying ring
+homomorphism as vanishing under the bialgebra morphism.
 
 `Bialgebra.unitBialgHom_apply` evaluates Mathlib's unit bialgebra morphism as the structure map.
 -/
@@ -62,6 +64,12 @@ theorem counit_eq_zero_of_mem_ker (f : A →ₐc[R] B) {x : A}
     (hx : x ∈ RingHom.ker f.toAlgHom) : Coalgebra.counit (R := R) x = 0 := by
   simp only [RingHom.mem_ker, coe_toAlgHom] at hx
   rw [← CoalgHomClass.counit_comp_apply f x, hx, map_zero]
+
+/-- Membership in the kernel of the ring homomorphism underlying a bialgebra morphism is
+vanishing under the morphism. -/
+theorem mem_ker_toAlgHom_toRingHom {f : A →ₐc[R] B} {x : A} :
+    x ∈ RingHom.ker f.toAlgHom.toRingHom ↔ f x = 0 :=
+  Iff.rfl
 
 end BialgHom
 

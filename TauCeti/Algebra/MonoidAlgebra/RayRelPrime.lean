@@ -5,25 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Degree
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Algebra.Group.UniqueProds.TorsionFree
-public import TauCeti.Algebra.MonoidAlgebra.Grading
+public import TauCeti.Algebra.MonoidAlgebra.Degree
 public import TauCeti.Algebra.MonoidAlgebra.Units
-public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 import Mathlib.Algebra.Category.Grp.Injective
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
-# Weighted degree width and relative primality along independent rays in group algebras
+# Relative primality along independent rays in torsion-free group algebras
 
-For an additive homomorphism `w : M →+ ι` into a linearly ordered commutative monoid or group, the
-grading `AddMonoidAlgebra.gradeBy R w` of `R[M]` endows every nonzero `x` with `minDeg`, `maxDeg`,
-and (over an ordered group) `degWidth (gradeBy R w) x`. After connecting these graded invariants to
-`x.coeff.support`, `AddMonoidAlgebra.supDegree`, and `AddMonoidAlgebra.infDegree`, this file applies
+Using the weighted degree width API (`TauCeti.GradedAlgebra.degWidth` on
+`AddMonoidAlgebra.gradeBy R w` from `TauCeti.Algebra.MonoidAlgebra.Degree`), this file applies
 rational functionals `w : L →+ ℚ` (constructed via Baer's criterion) to divisibility in the group
 algebra `R[L]` of a torsion-free commutative group `L` over `[CommSemiring R] [NoZeroDivisors R]`:
 any divisor of a nonzero element supported on `ℤ • a` has ray-collinear support differences, common
@@ -33,10 +29,6 @@ finite-generation hypothesis on `L`.
 
 ## Main results
 
-* `AddMonoidAlgebra.supDegree_withBot_eq_maxDeg_gradeBy`,
-  `AddMonoidAlgebra.infDegree_withTop_eq_minDeg_gradeBy`,
-  `AddMonoidAlgebra.degWidth_gradeBy_eq_zero_iff_forall_mem_support`: compatibility of `maxDeg`,
-  `minDeg`, and `degWidth` for `gradeBy R w` with `supDegree`, `infDegree`, and `x.coeff.support`.
 * `AddMonoidAlgebra.exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul`: support differences
   of divisors of nonzero elements supported on `ℤ • a` lie in the `ℤ`-saturation of `ℤ • a`.
 * `AddMonoidAlgebra.exists_eq_single_of_dvd_of_support_subset_zsmul`: common divisors of nonzero
@@ -52,96 +44,9 @@ namespace AddMonoidAlgebra
 
 open TauCeti.GradedAlgebra
 
-section WeightDegree
-
-variable {R M ι : Type*} [CommSemiring R] [AddMonoid M] [DecidableEq ι]
-
-section AddCommMonoid
-
-variable [AddCommMonoid ι] [LinearOrder ι] (w : M →+ ι)
-
-/-- Every supported exponent of `x : R[M]` has weight at least `minDeg (gradeBy R w) x`. -/
-theorem minDeg_gradeBy_le_of_mem_support {x : R[M]} {m : M} (hm : m ∈ x.coeff.support) :
-    minDeg (gradeBy R w) x ≤ w m :=
-  minDeg_le_of_decompose_ne_zero (gradeBy R w)
-    ((coe_decompose_gradeBy_ne_zero_iff w x (w m)).mpr ⟨m, hm, rfl⟩)
-
-/-- Every supported exponent of `x : R[M]` has weight at most `maxDeg (gradeBy R w) x`. -/
-theorem le_maxDeg_gradeBy_of_mem_support {x : R[M]} {m : M} (hm : m ∈ x.coeff.support) :
-    w m ≤ maxDeg (gradeBy R w) x :=
-  le_maxDeg_of_decompose_ne_zero (gradeBy R w)
-    ((coe_decompose_gradeBy_ne_zero_iff w x (w m)).mpr ⟨m, hm, rfl⟩)
-
-/-- For nonzero `x : R[M]`, `minDeg (gradeBy R w) x` is attained at some supported exponent. -/
-theorem exists_mem_support_minDeg_gradeBy {x : R[M]} (hx : x ≠ 0) :
-    ∃ m ∈ x.coeff.support, w m = minDeg (gradeBy R w) x := by
-  have hne := minHomogPart_ne_zero (gradeBy R w) hx
-  rw [minHomogPart_def] at hne
-  exact (coe_decompose_gradeBy_ne_zero_iff w x _).mp hne
-
-/-- For nonzero `x : R[M]`, `maxDeg (gradeBy R w) x` is attained at some supported exponent. -/
-theorem exists_mem_support_maxDeg_gradeBy {x : R[M]} (hx : x ≠ 0) :
-    ∃ m ∈ x.coeff.support, w m = maxDeg (gradeBy R w) x := by
-  have hne := maxHomogPart_ne_zero (gradeBy R w) hx
-  rw [maxHomogPart_def] at hne
-  exact (coe_decompose_gradeBy_ne_zero_iff w x _).mp hne
-
-/-- For nonzero `x : R[M]`, `supDegree` along `w : M → WithBot ι` agrees with
-`maxDeg (gradeBy R w) x`. -/
-theorem supDegree_withBot_eq_maxDeg_gradeBy {x : R[M]} (hx : x ≠ 0) :
-    x.supDegree (fun m ↦ (w m : WithBot ι)) = maxDeg (gradeBy R w) x := by
-  refine le_antisymm
-    (Finset.sup_le fun m hm ↦ WithBot.coe_le_coe.mpr (le_maxDeg_gradeBy_of_mem_support w hm)) ?_
-  obtain ⟨m, hm, hwm⟩ := exists_mem_support_maxDeg_gradeBy w hx
-  rw [← hwm]
-  exact Finset.le_sup (f := fun m ↦ (w m : WithBot ι)) hm
-
-/-- For nonzero `x : R[M]`, `infDegree` along `w : M → WithTop ι` agrees with
-`minDeg (gradeBy R w) x`. -/
-theorem infDegree_withTop_eq_minDeg_gradeBy {x : R[M]} (hx : x ≠ 0) :
-    x.infDegree (fun m ↦ (w m : WithTop ι)) = minDeg (gradeBy R w) x := by
-  refine le_antisymm ?_
-    (Finset.le_inf fun m hm ↦ WithTop.coe_le_coe.mpr (minDeg_gradeBy_le_of_mem_support w hm))
-  obtain ⟨m, hm, hwm⟩ := exists_mem_support_minDeg_gradeBy w hx
-  rw [← hwm]
-  exact Finset.inf_le (f := fun m ↦ (w m : WithTop ι)) hm
-
-end AddCommMonoid
-
-section AddCommGroup
-
-variable [AddCommGroup ι] [LinearOrder ι] (w : M →+ ι)
-
-/-- The difference of weights of any two supported exponents of `x` is bounded above by
-`degWidth (gradeBy R w) x`. -/
-theorem le_degWidth_gradeBy_of_mem_support [IsOrderedAddMonoid ι] {x : R[M]} {m₁ m₂ : M}
-    (hm₁ : m₁ ∈ x.coeff.support) (hm₂ : m₂ ∈ x.coeff.support) :
-    w m₁ - w m₂ ≤ degWidth (gradeBy R w) x := by
-  rw [degWidth_def]
-  exact sub_le_sub (le_maxDeg_gradeBy_of_mem_support w hm₁)
-    (minDeg_gradeBy_le_of_mem_support w hm₂)
-
-/-- The degree width of `x : R[M]` along `w` vanishes if and only if `w` takes the same value on
-all supported exponents of `x`. -/
-theorem degWidth_gradeBy_eq_zero_iff_forall_mem_support {x : R[M]} :
-    degWidth (gradeBy R w) x = 0 ↔
-      ∀ m₁ ∈ x.coeff.support, ∀ m₂ ∈ x.coeff.support, w m₁ = w m₂ := by
-  rw [degWidth_eq_zero_iff]
-  refine ⟨fun ⟨d, hd⟩ m₁ hm₁ m₂ hm₂ ↦ by rw [hd m₁ hm₁, hd m₂ hm₂], fun h ↦ ?_⟩
-  by_cases hx : x = 0
-  · exact ⟨0, hx ▸ Submodule.zero_mem _⟩
-  · obtain ⟨m₀, hm₀⟩ := Finsupp.support_nonempty_iff.mpr (mt coeff_eq_zero.mp hx)
-    exact ⟨w m₀, fun m hm ↦ h m hm m₀ hm₀⟩
-
-end AddCommGroup
-
-end WeightDegree
-
-/-! ### Divisibility and relative primality along rays in torsion-free group algebras -/
-
 section RayDivisibility
 
-variable {R L : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCommGroup L] [HasUniqueDiv L]
+variable {R L : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCommGroup L] [IsAddTorsionFree L]
 
 /-- **Divisors of ray-supported elements have ray-collinear support differences.** If `h ∣ P` for a
 nonzero `P : R[L]` whose support lies in `ℤ • a`, then for any two exponents `x, y` in the support
@@ -156,12 +61,12 @@ theorem exists_zsmul_sub_eq_zsmul_of_dvd_of_support_subset_zsmul {a : L} {h P : 
   let d : L := x - y
   let S : Submodule ℤ L := Submodule.span ℤ {a}
   let i : S × ℤ →+ L :=
-    { toFun p := (p.1 : L) + p.2 • d
+    { toFun p := (p.fst : L) + p.snd • d
       map_zero' := by simp
       map_add' p q := by simp [add_smul]; abel }
   have hi : Function.Injective i := (injective_iff_map_eq_zero i).mpr fun ⟨z, v⟩ hzv ↦ by
     have hv : v = 0 := by_contra fun hv ↦ by
-      obtain ⟨k, hk⟩ := Submodule.mem_span_singleton.mp z.2
+      obtain ⟨k, hk⟩ := Submodule.mem_span_singleton.mp z.property
       have heq : v • d = (-k) • a := by
         rw [neg_smul, hk, eq_neg_iff_add_eq_zero, add_comm]
         exact hzv
@@ -213,8 +118,9 @@ theorem exists_eq_single_of_dvd_of_support_subset_zsmul {a b : L}
     Fintype.linearIndependent_iff.mp hlin ![n₂ * k₁, -(n₁ * k₂)]
       (by simpa [Fin.sum_univ_two] using hrel) 0
   have hk₁ : k₁ = 0 := (mul_eq_zero.mp hn₂k₁).resolve_left hn₂
-  have hxd : n₁ • (x - d) = n₁ • (0 : L) := by simp [h1, hk₁]
-  exact sub_eq_zero.mp ((zsmul_right_inj hn₁).mp hxd)
+  refine sub_eq_zero.mp (by_contra fun hne ↦ hn₁ ?_)
+  have h0 : n₁ • (x - d) = (0 : ℤ) • (x - d) := by simp [h1, hk₁]
+  exact (IsAddTorsionFree.zsmul_left_inj hne).mp h0
 
 /-- **Relative primality along `ℤ`-linearly independent rays.** In the group algebra `R[L]` of a
 torsion-free commutative group over a commutative semiring without zero divisors, if `P` is
@@ -300,12 +206,13 @@ theorem coeff_zero_prod_one_add_single {R L κ : Type*} [CommSemiring R] [AddCom
         rw [add_smul, one_smul, natCast_zsmul, hn, neg_add_cancel, zero_smul]
       have hn0 : (n : ℤ) + 1 = 0 := (IsAddTorsionFree.zsmul_left_inj ha).mp h0
       omega
-    rw [show (single a (c r) * P).coeff 0 = 0 by
-      rw [← add_neg_cancel a, coeff_single_mul_add, hneg, mul_zero], add_zero]
+    have hmul : (single a (c r) * P).coeff 0 = 0 := by
+      rw [← add_neg_cancel a, coeff_single_mul_add, hneg, mul_zero]
+    rw [hmul, add_zero]
 
-section UniqueDiv
+section TorsionFree
 
-variable {R L : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCommGroup L] [HasUniqueDiv L]
+variable {R L : Type*} [CommSemiring R] [NoZeroDivisors R] [AddCommGroup L] [IsAddTorsionFree L]
 
 /-- **Finite products of binomials along `ℤ`-linearly independent rays are relatively prime.** -/
 theorem isRelPrime_prod_one_add_single {a b : L} (hlin : LinearIndependent ℤ ![a, b])
@@ -331,7 +238,7 @@ theorem isRelPrime_one_add_single {a b : L} (hlin : LinearIndependent ℤ ![a, b
   simpa using isRelPrime_prod_one_add_single hlin ({()} : Finset Unit) ({()} : Finset Unit)
     (fun _ ↦ c) (fun _ ↦ d)
 
-end UniqueDiv
+end TorsionFree
 
 end RayBinomials
 

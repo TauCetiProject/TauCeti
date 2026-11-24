@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Group.UniqueProds.TorsionFree
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors
 public import TauCeti.RingTheory.GradedAlgebra.Degree.Width
 
@@ -19,11 +20,11 @@ sum of the fiber submodules `TauCeti.TwistedMonoidAlgebra.gradeBy k G α w i`, e
 `{g : G // w g = i}`. When `w : Additive G →+ ι` is additive, `gradeByHom k G α w` is an internal
 `GradedAlgebra` structure; specializing to `w = id` gives `grade k G α` and specializing to
 `G = Multiplicative L` gives `gradeByAddHom` for twisted lattice algebras. Over `[NoZeroDivisors k]`
-and `[AddCancelCommMonoid L] [HasUniqueDiv L]`, the `UniqueProds` instances in
-`TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors` supply `NoZeroDivisors` (and `IsDomain` over
-a domain `k`), making `minHomogPart` and `maxHomogPart` nonzero and multiplicative and `minDeg`,
-`maxDeg`, `degWidth` additive on nonzero products. For `α = 1`, `addMonoidAlgebraEquiv` identifies
-the algebra with `AddMonoidAlgebra k L`.
+and `[AddCancelCommMonoid L] [IsAddTorsionFree L]`, `TauCeti.Algebra.Group.UniqueProds.TorsionFree`
+and `TauCeti.Algebra.MonoidAlgebra.Twisted.NoZeroDivisors` supply `NoZeroDivisors` (and `IsDomain`
+over a domain `k`), making `minHomogPart` and `maxHomogPart` nonzero and multiplicative and
+`minDeg`, `maxDeg`, `degWidth` additive on nonzero products. For `α = 1`, `addMonoidAlgebraEquiv`
+identifies the algebra with `AddMonoidAlgebra k L`.
 
 ## Main definitions and results
 
@@ -40,7 +41,7 @@ public section
 
 namespace TauCeti.TwistedMonoidAlgebra
 
-open _root_.DirectSum Module
+open _root_.DirectSum _root_.Module
 
 section GradeBy
 
@@ -92,21 +93,15 @@ noncomputable instance instDecompositionGradeBy {ι : Type*} [DecidableEq ι] (w
 /-- The basis of `gradeBy k G α w i` formed by the elements `of g` with `w g = i`. -/
 noncomputable def basisGradeBy {ι : Type*} (w : G → ι) (i : ι) :
     Basis {g : G // w g = i} k (gradeBy k G α w i) :=
-  Basis.mk
-    (v := fun g ↦ ⟨of g.1, Submodule.subset_span ⟨g.1, g.2, rfl⟩⟩)
-    (LinearIndependent.of_comp (Submodule.subtype _) <| by
-      simpa only [Function.comp_def, Submodule.coe_subtype, ← basis_apply k G α] using
-        (basis k G α).linearIndependent.comp Subtype.val Subtype.val_injective)
-    (by
-      rintro ⟨x, hx⟩ -
-      refine Submodule.span_induction (p := fun y hy ↦ (⟨y, hy⟩ : gradeBy k G α w i) ∈ _)
-        (fun y ⟨g, hg, hy⟩ ↦ by subst hy; exact Submodule.subset_span ⟨⟨g, hg⟩, rfl⟩) (zero_mem _)
-        (fun _ _ _ _ ha hb ↦ add_mem ha hb)
-        (fun c _ _ ha ↦ Submodule.smul_mem _ c ha) hx)
+  (Basis.span (R := k) (v := (of : G → twistedMonoidAlgebra k G α) ∘ Subtype.val) <| by
+    simpa only [Function.comp_def, ← basis_apply k G α] using
+      (basis k G α).linearIndependent.comp Subtype.val Subtype.val_injective).map
+    (LinearEquiv.ofEq _ (gradeBy k G α w i) <| by
+      rw [gradeBy, Set.range_comp, Subtype.range_coe_subtype])
 
 @[simp]
 theorem coe_basisGradeBy {ι : Type*} (w : G → ι) (i : ι) (g : {g : G // w g = i}) :
-    ((basisGradeBy k G α w i g : gradeBy k G α w i) : twistedMonoidAlgebra k G α) = of g.1 := by
+    ((basisGradeBy k G α w i g : gradeBy k G α w i) : twistedMonoidAlgebra k G α) = of g.val := by
   simp [basisGradeBy]
 
 instance {ι : Type*} (w : G → ι) (i : ι) : Module.Free k (gradeBy k G α w i) :=
@@ -129,14 +124,14 @@ theorem repr_decompose_gradeBy {ι : Type*} [DecidableEq ι] (w : G → ι)
   | zero => simp
   | @homogeneous j y =>
     have hy : ∀ h ∈ ((basis k G α).repr (y : twistedMonoidAlgebra k G α)).support, w h = j :=
-      (mem_gradeBy_iff w j (y : twistedMonoidAlgebra k G α)).mp y.2
+      (mem_gradeBy_iff w j (y : twistedMonoidAlgebra k G α)).mp y.property
     by_cases hji : j = i
     · subst hji
-      rw [decompose_of_mem_same _ y.2]
+      rw [decompose_of_mem_same _ y.property]
       split_ifs with hg
       · rfl
       · exact Finsupp.notMem_support_iff.mp fun hmem ↦ hg (hy g hmem)
-    · rw [decompose_of_mem_ne _ y.2 hji, map_zero, Finsupp.zero_apply]
+    · rw [decompose_of_mem_ne _ y.property hji, map_zero, Finsupp.zero_apply]
       split_ifs with hg
       · symm
         exact Finsupp.notMem_support_iff.mp fun hmem ↦ hji ((hy g hmem).symm.trans hg)
@@ -320,7 +315,7 @@ end Lattice
 
 /-! ### Checks -/
 
-example {k L : Type*} [CommRing k] [IsDomain k] [AddCommGroup L] [HasUniqueDiv L]
+example {k L : Type*} [CommRing k] [IsDomain k] [AddCommGroup L] [IsAddTorsionFree L]
     (α : Multiplicative L → Multiplicative L → kˣ) [IsFactorSet α] (w : L →+ ℤ)
     {x y : twistedMonoidAlgebra k (Multiplicative L) α} (hx : x ≠ 0) (hy : y ≠ 0) :
     let 𝒜 := gradeByAddHom k L α w

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.LowDimTopology.Heegaard.Admissibility
 public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
@@ -73,6 +73,8 @@ indices of the periodic domains, and on the nose when those vanish.
   differential.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_eq_zero_iff`: the differential vanishes exactly
   when all of its coefficients do.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_mem_supported`: the differential preserves the
+  chains supported on a set of generators that no nonzero coefficient leaves.
 * `TauCeti.HeegaardRegionSystem.IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero`:
   in a nice weakly admissible diagram the differential only joins generators differing on one
   or two `α`-curves.
@@ -126,6 +128,16 @@ theorem mem_hatDomains_iff : D ∈ H.hatDomains χ x y ↔
     H.IsDomainBetween x y D ∧ (∀ z, D (H.basepoint z) = 0) ∧ 0 ≤ D ∧
       H.maslovIndex χ x y D = 1 :=
   Iff.rfl
+
+/-- A domain counted by the hat differential of `H` avoids all the basepoints, so it is counted
+by the hat differential of the diagram that keeps only some of them. -/
+theorem hatDomains_subset_hatDomains_withBasepoints {W : Type*} (ι : W → Basepoint)
+    (χ : Region → ℤ) (x y : H.Generator) :
+    H.hatDomains χ x y ⊆ (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y :=
+  fun _ hD =>
+    have ⟨hD, hz, hD0, hμ⟩ := mem_hatDomains_iff.mp hD
+    mem_hatDomains_iff.mpr ⟨(isDomainBetween_withBasepoints _).mpr hD, fun _ => hz _, hD0,
+      by rwa [maslovIndex_withBasepoints]⟩
 
 /-- In a diagram weakly admissible at `y` only finitely many domains are counted by the hat
 differential from any generator to `y`. -/
@@ -186,7 +198,7 @@ theorem hatCoefficient_eq_zero_of_hatDomains_eq_empty (h : H.hatDomains χ x y =
 from `x` to `y`. -/
 theorem nonempty_hatDomains_of_hatCoefficient_ne_zero (h : H.hatCoefficient χ x y ≠ 0) :
     (H.hatDomains χ x y).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun he => h (hatCoefficient_eq_zero_of_hatDomains_eq_empty he)
+  Set.ne_empty_iff_nonempty.mp fun he => h (hatCoefficient_eq_zero_of_hatDomains_eq_empty he)
 
 /-- In a weakly admissible diagram the hat differential has no diagonal terms. -/
 @[simp]
@@ -212,27 +224,30 @@ theorem IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero [Decidable
   obtain ⟨D, hD, hz, hD0, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
   exact h.hammingDist_eq_one_or_eq_two_of_maslovIndex_eq_one hW hD hD0 hz hμ
 
-/-- In a singly pointed diagram of a closed surface of genus `n` whose periodic domains have
-Maslov index zero at `x`, the hat differential lowers the relative Maslov grading by one: a
-nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`. -/
-theorem relativeGrading_eq_one_of_hatCoefficient_ne_zero [Subsingleton Basepoint]
-    (z : Basepoint) (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
+/-- When the relative Maslov grading is normalized, as in a singly pointed diagram of a closed
+surface of genus `n`
+(`maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`),
+and the periodic domains have Maslov index zero at `x`, the hat differential lowers the relative
+Maslov grading by one: a nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`. -/
+theorem relativeGrading_eq_one_of_hatCoefficient_ne_zero [Fintype Basepoint]
+    (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x)
     (hP : ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0)
-    (hc : H.hatCoefficient χ x y ≠ 0) : H.relativeGrading χ z x y = 1 := by
+    (hc : H.hatCoefficient χ x y ≠ 0) : H.relativeGrading χ x y = 1 := by
   obtain ⟨D, hD, hz, -, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
-  rw [hD.relativeGrading_eq z hχ hP, hμ, hz z]
-  simp
+  simp [hD.relativeGrading_eq hself hP, hμ, hz]
 
-/-- In a singly pointed diagram of a closed surface of genus `n`, the hat differential lowers
-the relative Maslov grading by one modulo the periodic Maslov indices at `x`: a nonzero
-coefficient from `x` to `y` forces `gr(x, y) = 1` there. -/
-theorem coe_relativeGrading_eq_one_of_hatCoefficient_ne_zero [Subsingleton Basepoint]
-    (z : Basepoint) (hχ : ∑ r, χ r - Fintype.card Point = 2 - 2 * (n : ℤ))
+/-- When the relative Maslov grading is normalized, as in a singly pointed diagram of a closed
+surface of genus `n`, the hat differential lowers the relative Maslov grading by one modulo the
+periodic Maslov indices at `x`: a nonzero coefficient from `x` to `y` forces `gr(x, y) = 1`
+there. -/
+theorem coe_relativeGrading_eq_one_of_hatCoefficient_ne_zero [Fintype Basepoint]
+    (hself : ∀ (x : H.Generator) (E : Region → ℤ), H.IsDomainBetween x x E →
+      H.maslovIndex χ x x E - 2 * ∑ z, (E (H.basepoint z) : ℚ) ∈ H.periodicMaslovIndices χ x)
     (hc : H.hatCoefficient χ x y ≠ 0) :
-    (H.relativeGrading χ z x y : ℚ ⧸ H.periodicMaslovIndices χ x) = (1 : ℚ) := by
+    (H.relativeGrading χ x y : ℚ ⧸ H.periodicMaslovIndices χ x) = (1 : ℚ) := by
   obtain ⟨D, hD, hz, -, hμ⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero hc
-  rw [hD.coe_relativeGrading_eq z hχ, hμ, hz z]
-  simp
+  simp [hD.coe_relativeGrading_eq hself, hμ, hz]
 
 end Coefficient
 
@@ -254,21 +269,30 @@ variable {χ : Region → ℤ}
 `TauCeti.HeegaardRegionSystem.hatCoefficient`. -/
 @[simp]
 theorem hatDifferential_single_apply (x y : H.Generator) (a : ZMod 2) :
-    H.hatDifferential χ (Finsupp.single x a) y = a * H.hatCoefficient χ x y := by
-  simp [hatDifferential]
+    H.hatDifferential χ (Finsupp.single x a) y = a * H.hatCoefficient χ x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the hat differential of a chain `c`. -/
 theorem hatDifferential_apply (c : H.Generator →₀ ZMod 2) (y : H.Generator) :
-    H.hatDifferential χ c y = c.sum fun x a => a * H.hatCoefficient χ x y := by
-  simp [hatDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+    H.hatDifferential χ c y = c.sum fun x a => a * H.hatCoefficient χ x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The hat differential vanishes exactly when all of its coefficients vanish. -/
 theorem hatDifferential_eq_zero_iff :
-    H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 := by
-  refine ⟨fun h x y => ?_, fun h => ?_⟩
-  · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single x 1)) y
-  · ext x y
-    simp [h]
+    H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff
+
+/-- The hat differential maps the chains supported on a set `s` of generators to chains supported
+on `s`, when no nonzero coefficient leads out of `s`. -/
+theorem hatDifferential_mem_supported {s : Set H.Generator}
+    (hs : ∀ x ∈ s, ∀ y, H.hatCoefficient χ x y ≠ 0 → y ∈ s) {c : H.Generator →₀ ZMod 2}
+    (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s) :
+    H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s := by
+  rw [Finsupp.mem_supported']
+  intro y hy
+  rw [hatDifferential_apply, Finsupp.sum]
+  refine Finset.sum_eq_zero fun x hx => ?_
+  rw [not_ne_iff.mp (mt (hs x ((Finsupp.mem_supported _ _).mp hc hx) y) hy), mul_zero]
 
 end Differential
 

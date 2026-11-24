@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Finite
-public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.Algebra.Colimit.FinitePresentation
 public import TauCeti.RingTheory.Etale.NoetherianDescent
 
 /-!
@@ -20,7 +20,7 @@ are an index `i` and a finite étale `G i`-algebra `Sᵢ` with `S ≃ₐ[R] R �
 By `Algebra.Etale.exists_subalgebra_fg_of_finite`, `S` is the base change of a finite étale
 algebra `S₀` over a subring `R₀` of `R` of finite type over `ℤ`. Such a subring is finitely
 presented over `ℤ`, so its inclusion into `R` factors through some `G i`
-(`Ring.DirectLimit.exists_of_comp_eq_of_finitePresentation`), and `Sᵢ = G i ⊗[R₀] S₀` works.
+(`RingHom.exists_of_comp_eq_of_finitePresentation`), and `Sᵢ = G i ⊗[R₀] S₀` works.
 
 The index set must be nonempty: the colimit of the empty system is `ℤ`, and the finite étale
 `ℤ`-algebra `ℤ × ℤ` comes from no stage.
@@ -62,7 +62,7 @@ theorem exists_etale_finite_algEquiv_tensorProduct (S : Type*) [CommRing S]
       Nonempty (S ≃ₐ[DirectLimit G (f · · ·)] DirectLimit G (f · · ·) ⊗[G i] Sᵢ) := by
   exact TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization G
     (of G (f · · ·))
-    (fun _ _ _ g ↦ exists_of_comp_eq_of_finitePresentation g) S
+    (fun _ _ _ g ↦ g.exists_of_comp_eq_of_finitePresentation) S
 
 /-- Every finite étale algebra over a directed colimit of rings is, up to isomorphism, the base
 change of a finite étale algebra over some stage. -/

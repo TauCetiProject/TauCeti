@@ -60,6 +60,9 @@ second derivatives of `C²` maps.
 * `TauCeti.euclideanWittenExtDeriv_apply_eq_exp_smul`: the conjugation formula
   `d_t = e^{-tf} d e^{tf}`.
 * `TauCeti.euclideanWittenExtDeriv_euclideanWittenExtDeriv_apply`: `d_t d_t = 0` on `C²` forms.
+* `Filter.EventuallyEq.euclideanWittenLaplacian`: the Witten Laplacian is a local operator.
+* `TauCeti.euclideanWittenLaplacian_comp_add_right`, `TauCeti.euclideanWittenLaplacian_const_add`:
+  it commutes with translations and does not see constants added to `f`.
 * `TauCeti.sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential`: the
   Lagrange identity exhibiting `d_t^*` as the formal adjoint of `d_t`.
 * `TauCeti.euclideanWittenLaplacian_apply`: Witten's frame formula for the Witten Laplacian.
@@ -176,6 +179,85 @@ theorem euclideanWittenLaplacian_const_smul (f : (ι → ℝ) → ℝ) (t c : �
     euclideanWittenLaplacian f t (c • φ) = c • euclideanWittenLaplacian f t φ := by
   simp only [euclideanWittenLaplacian_def, euclideanWittenCodifferential_const_smul,
     euclideanWittenExtDeriv_const_smul, smul_add]
+
+/-! ### Locality and translation -/
+
+section Locality
+
+open Topology
+
+/-- The Witten differential near `x` depends only on `f` and `φ` near `x`. -/
+theorem _root_.Filter.EventuallyEq.euclideanWittenExtDeriv {f g : (ι → ℝ) → ℝ}
+    {φ ψ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hf : f =ᶠ[𝓝 x] g) (hφ : φ =ᶠ[𝓝 x] ψ) (t : ℝ) :
+    euclideanWittenExtDeriv f t φ =ᶠ[𝓝 x] euclideanWittenExtDeriv g t ψ := by
+  filter_upwards [hf.eventuallyEq_nhds, hφ.eventuallyEq_nhds, hφ] with y hfy hφy hy
+  simp only [euclideanWittenExtDeriv_apply, hfy.fderiv_eq, hφy.fderiv_eq, hy]
+
+/-- The Witten codifferential near `x` depends only on `f` and `φ` near `x`. -/
+theorem _root_.Filter.EventuallyEq.euclideanWittenCodifferential {f g : (ι → ℝ) → ℝ}
+    {φ ψ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hf : f =ᶠ[𝓝 x] g) (hφ : φ =ᶠ[𝓝 x] ψ) (t : ℝ) :
+    euclideanWittenCodifferential f t φ =ᶠ[𝓝 x] euclideanWittenCodifferential g t ψ := by
+  filter_upwards [hf.eventuallyEq_nhds, hφ.eventuallyEq_nhds, hφ] with y hfy hφy hy
+  simp only [euclideanWittenCodifferential_apply, hfy.fderiv_eq, hφy.fderiv_eq, hy]
+
+/-- **The Witten Laplacian is a local operator.** Near `x` it depends only on `f` and `φ` near
+`x`. -/
+theorem _root_.Filter.EventuallyEq.euclideanWittenLaplacian {f g : (ι → ℝ) → ℝ}
+    {φ ψ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hf : f =ᶠ[𝓝 x] g) (hφ : φ =ᶠ[𝓝 x] ψ) (t : ℝ) :
+    euclideanWittenLaplacian f t φ =ᶠ[𝓝 x] euclideanWittenLaplacian g t ψ := by
+  filter_upwards [hf.euclideanWittenExtDeriv (hf.euclideanWittenCodifferential hφ t) t,
+    hf.euclideanWittenCodifferential (hf.euclideanWittenExtDeriv hφ t) t] with y h₁ h₂
+  simp only [euclideanWittenLaplacian_def, Pi.add_apply, h₁, h₂]
+
+/-- The Witten differential commutes with translations. -/
+theorem euclideanWittenExtDeriv_comp_add_right (f : (ι → ℝ) → ℝ) (t : ℝ)
+    (φ : (ι → ℝ) → Finset ι → ℝ) (p : ι → ℝ) :
+    euclideanWittenExtDeriv (fun x ↦ f (x + p)) t (fun x ↦ φ (x + p)) =
+      fun x ↦ euclideanWittenExtDeriv f t φ (x + p) := by
+  funext x
+  simp only [euclideanWittenExtDeriv_apply, fderiv_comp_add_right]
+
+/-- The Witten codifferential commutes with translations. -/
+theorem euclideanWittenCodifferential_comp_add_right (f : (ι → ℝ) → ℝ) (t : ℝ)
+    (φ : (ι → ℝ) → Finset ι → ℝ) (p : ι → ℝ) :
+    euclideanWittenCodifferential (fun x ↦ f (x + p)) t (fun x ↦ φ (x + p)) =
+      fun x ↦ euclideanWittenCodifferential f t φ (x + p) := by
+  funext x
+  simp only [euclideanWittenCodifferential_apply, fderiv_comp_add_right]
+
+/-- The Witten Laplacian commutes with translations: translating both `f` and `φ` by `p`
+translates `Δ_t φ` by `p`. -/
+theorem euclideanWittenLaplacian_comp_add_right (f : (ι → ℝ) → ℝ) (t : ℝ)
+    (φ : (ι → ℝ) → Finset ι → ℝ) (p : ι → ℝ) :
+    euclideanWittenLaplacian (fun x ↦ f (x + p)) t (fun x ↦ φ (x + p)) =
+      fun x ↦ euclideanWittenLaplacian f t φ (x + p) := by
+  funext x
+  simp only [euclideanWittenLaplacian_def, Pi.add_apply, euclideanWittenExtDeriv_comp_add_right,
+    euclideanWittenCodifferential_comp_add_right]
+
+/-- Adding a constant to `f` does not change the Witten differential. -/
+@[simp]
+theorem euclideanWittenExtDeriv_const_add (b : ℝ) (f : (ι → ℝ) → ℝ) (t : ℝ) :
+    euclideanWittenExtDeriv (fun x ↦ b + f x) t = euclideanWittenExtDeriv f t := by
+  funext φ x
+  simp only [euclideanWittenExtDeriv_apply, fderiv_const_add]
+
+/-- Adding a constant to `f` does not change the Witten codifferential. -/
+@[simp]
+theorem euclideanWittenCodifferential_const_add (b : ℝ) (f : (ι → ℝ) → ℝ) (t : ℝ) :
+    euclideanWittenCodifferential (fun x ↦ b + f x) t = euclideanWittenCodifferential f t := by
+  funext φ x
+  simp only [euclideanWittenCodifferential_apply, fderiv_const_add]
+
+/-- Adding a constant to `f` does not change the Witten Laplacian. -/
+@[simp]
+theorem euclideanWittenLaplacian_const_add (b : ℝ) (f : (ι → ℝ) → ℝ) (t : ℝ) :
+    euclideanWittenLaplacian (fun x ↦ b + f x) t = euclideanWittenLaplacian f t := by
+  funext φ
+  simp only [euclideanWittenLaplacian_def, euclideanWittenExtDeriv_const_add,
+    euclideanWittenCodifferential_const_add]
+
+end Locality
 
 /-- **The Witten differential is the conjugate `d_t = e^{-tf} d e^{tf}` of the exterior
 derivative.** For `f` and `φ` differentiable at `x`, `d_t φ = e^{-tf} d (e^{tf} φ)` at `x`. -/
