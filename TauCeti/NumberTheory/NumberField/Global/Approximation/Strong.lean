@@ -40,8 +40,8 @@ integral at every finite place other than `w`
   multiplied by an algebraic integer whose size Minkowski's theorem concentrates at `w`
   (`TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_mul_le`).
 * If `w` is finite, the class group is finite, so some nonzero algebraic integer `π` lies in the
-  prime of `w` and in no other prime (`IsDedekindDomain.exists_mem_submonoid_mem_asIdeal`). By
-  the product formula `∏_u |π|_u ^ mult u > 1` over the infinite places `u`
+  prime of `w` and in no other prime (`IsDedekindDomain.exists_mem_submonoid_mem_asIdeal`). As
+  `π` is not a unit, `∏_u |π|_u ^ mult u > 1` over the infinite places `u`
   (`TauCeti.GlobalNumberFields.one_lt_prod_infinitePlace_pow_mult`), so for large `m`
   Minkowski's theorem gives a nonzero algebraic integer `a` with `|a|_u` smaller than `|π|_u ^ m`
   by any prescribed factor, and `β` is a multiple of `a / π ^ m`.
@@ -90,9 +90,10 @@ private theorem exists_ne_zero_forall_apply_le_one_and_lt_of_finite
   -- Minkowski's theorem gives a nonzero algebraic integer `a` with `|a|_u < δ |π|_u ^ m` at every
   -- infinite place `u`, once `m` is large; then `γ = a / π ^ m`.
   set q := ∏ u : InfinitePlace K, u (π : K) ^ mult u
+  have hπunit : ¬IsUnit π := fun h ↦ v₀.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hπv₀ h)
   obtain ⟨m, hm⟩ : ∃ m : ℕ, TauCeti.NumberField.unitConst K / δ ^ Module.finrank ℚ K ≤ q ^ m :=
     ((tendsto_pow_atTop_atTop_of_one_lt
-      (one_lt_prod_infinitePlace_pow_mult hπ0 hπv₀ hπ)).eventually_ge_atTop _).exists
+      (one_lt_prod_infinitePlace_pow_mult hπ0 hπunit)).eventually_ge_atTop _).exists
   obtain ⟨a, ha0, ha⟩ := TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_lt
     (f := fun u ↦ δ * u (π : K) ^ m) (fun u ↦ by have := hπu u; positivity) <| by
       have hprod : ∏ u : InfinitePlace K, (δ * u (π : K) ^ m) ^ mult u =
