@@ -134,7 +134,8 @@ private lemma pullbackMul_def (i j : ℕ) :
       inv (δ (Scheme.Modules.pullback f) (A.obj.X i) (A.obj.X j)) ≫
         (Scheme.Modules.pullback f).map (A.obj.toMon.mul i j) := by
   simp only [pullbackMul, Scheme.Modules.pullbackToModules_μ,
-    Scheme.Modules.pullback_μ f ((degree i).obj A).obj ((degree j).obj A).obj]
+    ← Functor.Monoidal.inv_δ (Scheme.Modules.pullback f)
+      ((degree i).obj A).obj ((degree j).obj A).obj]
   -- The transport lemma needs invertibility at the degree objects with their scheme-module carrier.
   have := Scheme.Modules.isIso_pullback_δ f ((degree i).obj A).obj ((degree j).obj A).obj
   exact Functor.eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) (D := Y.Modules)

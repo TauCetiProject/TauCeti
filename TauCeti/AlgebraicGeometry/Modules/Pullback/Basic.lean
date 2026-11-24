@@ -501,19 +501,6 @@ with comparisons inverse to the canonical oplax comparisons. -/
 instance pullbackBraided : (pullback f).Braided :=
   SheafOfModules.pullbackBraided f.toRingCatSheafHom
 
-/-- The oplax structure of strong monoidal pullback is its canonical adjunction structure. -/
-theorem pullbackBraided_toOplaxMonoidal :
-    (pullbackBraided f).toMonoidal.toOplaxMonoidal = pullbackOplaxMonoidal f :=
-  SheafOfModules.pullbackBraided_toOplaxMonoidal f.toRingCatSheafHom
-
-/-- The tensor comparison of strong monoidal pullback inverts its canonical oplax map. -/
-lemma pullback_μ (M N : Y.Modules) :
-    Functor.LaxMonoidal.μ (pullback f) M N =
-      inv (Functor.OplaxMonoidal.δ (pullback f) M N) := by
-  apply IsIso.eq_inv_of_hom_inv_id
-  rw [← pullbackBraided_toOplaxMonoidal]
-  exact Functor.Monoidal.δ_μ (pullback f) M N
-
 /-- The unit comparison `𝒪_X ⟶ f^* 𝒪_Y` of strong monoidal pullback is the inverse of
 `pullbackObjUnitIso f`. -/
 @[simp]

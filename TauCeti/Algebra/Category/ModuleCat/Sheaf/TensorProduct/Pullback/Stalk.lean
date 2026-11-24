@@ -13,8 +13,9 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
 # Strong symmetric monoidal pullback
 
 For an arbitrary morphism of ringed spaces, the canonical oplax tensor comparison for pullback
-of sheaves of modules is an isomorphism. On stalks this is the standard equivalence distributing
-extension of scalars over tensor products (Stacks Project, Tag 01CD).
+of sheaves of modules is an isomorphism (Stacks Project, Tag 01CD, the ringed-space form of
+Tag 03EL for ringed topoi). On stalks the comparison is the standard equivalence distributing
+extension of scalars over tensor products.
 
 The inverse tensor and unit comparisons make pullback strong symmetric monoidal. Composition
 coherence for these structures is developed in `Pullback/Composition.lean`.
@@ -230,12 +231,6 @@ instance _root_.SheafOfModules.pullbackBraided :
   letI : (_root_.SheafOfModules.pullback.{u} φ).Monoidal :=
     Functor.Monoidal.ofOplaxMonoidal _
   exact (_root_.SheafOfModules.pullbackPushforwardAdjunction φ).leftAdjointBraided
-
-/-- The oplax structure of strong monoidal pullback is its canonical adjunction structure. -/
-theorem _root_.SheafOfModules.pullbackBraided_toOplaxMonoidal :
-    (_root_.SheafOfModules.pullbackBraided φ).toMonoidal.toOplaxMonoidal =
-      _root_.SheafOfModules.pullbackOplaxMonoidal φ :=
-  rfl
 
 /-- The unit comparison for strong monoidal pullback is the inverse of the canonical map
 from the pullback of the structure sheaf to the structure sheaf. -/

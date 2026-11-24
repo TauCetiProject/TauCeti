@@ -45,7 +45,10 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
         μ (Scheme.Modules.restrictFunctor j) M ((ihom M).obj N) := by
     apply (cancel_epi (δ P M ((ihom M).obj N))).mp
-    rw [Scheme.Modules.pullback_μ, ← Category.assoc, IsIso.hom_inv_id, Category.id_comp]
+    rw [← Functor.Monoidal.inv_δ, ← Category.assoc]
+    -- Identify the monoidal structure's oplax map with the canonical comparison.
+    change (δ P M ((ihom M).obj N) ≫ inv (δ P M ((ihom M).obj N))) ≫ _ = _
+    rw [IsIso.hom_inv_id, Category.id_comp]
     rw [← Category.assoc,
       ← Scheme.Modules.restrictFunctorIsoPullback_inv_app_tensor,
       Category.assoc, IsIso.inv_hom_id, Category.comp_id]
@@ -54,7 +57,9 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
       (Scheme.Modules.restrictFunctorIsoPullback j).symm M N hm).mpr hR
   have h : (pullbackIhomComparison M j).app N = (P.ihomComparison M).app N := by
     rw [pullbackIhomComparison_app_eq_curry, Functor.ihomComparison_app_eq_curry,
-      Scheme.Modules.pullback_μ]
+      ← Functor.Monoidal.inv_δ]
+    -- The strong monoidal structure is constructed from the canonical oplax comparison.
+    rfl
   exact h ▸ hP
 
 /-- Pullback to an open subscheme commutes with internal Hom of arbitrary module sheaves. -/
