@@ -139,6 +139,7 @@ theorem constantCoeff_comp_wittVector_truncate :
   RingHom.liftOfRightInverse_comp _ _ _ _
 
 /-- Truncation preserves the zeroth coordinate, applied to an element. -/
+@[simp]
 theorem constantCoeff_wittVector_truncate (x : WittVector p A) :
     constantCoeff (WittVector.truncate n x) = x.coeff 0 :=
   RingHom.liftOfRightInverse_comp_apply _ _ _ _ _
@@ -148,9 +149,9 @@ Kept as a named equation so generic ring-homomorphism laws retain their bundled 
 theorem constantCoeff_apply (x : TruncatedWittVector p n A) :
     constantCoeff x = x.coeff 0 := by
   obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) n A x
-  rw [constantCoeff_wittVector_truncate, WittVector.coeff_truncate]
-  congr
+  rw [constantCoeff_wittVector_truncate, WittVector.coeff_truncate, Fin.val_zero]
 
+@[simp]
 theorem constantCoeff_map (f : A →+* B) (x : TruncatedWittVector p n A) :
     constantCoeff (map n f x) = f (constantCoeff x) := by
   simp [constantCoeff_apply]

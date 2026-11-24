@@ -106,7 +106,7 @@ private theorem projective_quotient_smul_top [NeZero n]
   -- `φ^a(c)` is congruent to `c ^ p ^ a` modulo `p`.
   have hc : iterateFrobenius (A ⧸ I) p a (Ideal.Quotient.mk I c) = Ideal.Quotient.mk I (σ c) := by
     apply e.injective
-    simp [iterateFrobenius_def, he, hσ, constantCoeff_map]
+    simp [iterateFrobenius_def, he, hσ]
   -- The reduction of `F` acts on representatives (`Submodule.Quotient.equiv_apply`).
   have hmk (y : M) : (Submodule.Quotient.equiv _ _ Fσ hI).toAddEquiv (Submodule.Quotient.mk y) =
       Submodule.Quotient.mk (F y) := by
