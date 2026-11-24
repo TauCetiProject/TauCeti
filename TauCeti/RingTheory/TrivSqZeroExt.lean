@@ -66,6 +66,11 @@ def kerIdealLinearEquiv : M ≃ₗ[R] kerIdeal R M where
 
 variable {R M}
 
+/-- The kernel of `(fstHom R R M).toRingHom` is `kerIdeal R M`. -/
+theorem ker_fstHom_toRingHom :
+    RingHom.ker (fstHom R R M).toRingHom = kerIdeal R M :=
+  rfl
+
 /-- `kerIdealLinearEquiv` sends `m` to `inr m`. -/
 @[simp]
 theorem coe_kerIdealLinearEquiv (m : M) :
@@ -89,14 +94,18 @@ theorem fg_kerIdeal [Module.Finite R M] : (kerIdeal R M).FG := by
     exact (mem_kerIdeal_iff_inr R M _).mpr rfl
   · rw [mem_kerIdeal_iff_inr] at hx
     rw [hx]
-    have hm : x.snd ∈ Submodule.span R (s : Set M) := hs ▸ trivial
-    clear hx
-    revert hm
-    refine Submodule.span_induction (fun m hm ↦ ?_) (by simp) (fun a b _ _ ha hb ↦ ?_)
-      (fun r a _ ha ↦ ?_)
-    · exact Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem inr hm))
-    · rw [inr_add]; exact Ideal.add_mem _ ha hb
-    · rw [← inl_mul_inr, ← algebraMap_eq_inl]; exact Ideal.mul_mem_left _ _ ha
+    have key : ∀ m ∈ Submodule.span R (s : Set M),
+        inr m ∈ Ideal.span
+          (s.image (inr : M → TrivSqZeroExt R M) : Set (TrivSqZeroExt R M)) := by
+      intro m hm
+      induction hm using Submodule.span_induction with
+      | mem m hm => exact Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem inr hm))
+      | zero => simp
+      | add a b _ _ ha hb => rw [inr_add]; exact Ideal.add_mem _ ha hb
+      | smul r a _ ha =>
+        rw [← inl_mul_inr, ← algebraMap_eq_inl]
+        exact Ideal.mul_mem_left _ _ ha
+    exact key x.snd (hs ▸ trivial)
 
 end KerIdeal
 

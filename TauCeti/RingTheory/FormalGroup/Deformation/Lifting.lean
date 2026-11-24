@@ -24,6 +24,9 @@ of deformations (`TauCeti.FormalGroupDeformation.map_surjective`).
   homomorphism is surjective.
 * `TauCeti.FormalGroupDeformation.map_surjective`: base change of deformation classes along a
   surjective ring homomorphism is surjective.
+* `TauCeti.FormalGroupDeformation.exists_mk_eq_and_map_eq`: replaces a lift whose reduction along
+  a coordinate-lifting homomorphism is deformation-equivalent to `F.map q hq` with an equivalent
+  lift having literally the same reduction `G.map q hq = F.map q hq`.
 
 ## References
 
@@ -65,6 +68,27 @@ theorem map_surjective {q : A →+* B} (hq : π_B.comp q = π_A)
   induction y using Quotient.inductionOn with | _ G =>
   obtain ⟨F, rfl⟩ := FormalGroupLift.map_surjective hq hq_surj G
   exact ⟨⟦F⟧, map_mk q hq F⟩
+
+/-- Replaces a lift `G₀` whose reduction modulo `q` is deformation-equivalent to `F.map q hq` with
+an equivalent lift `G` having literally the same reduction `G.map q hq = F.map q hq`, whenever
+formal coordinates lift along `q` (for example, along a surjective local homomorphism or a
+surjection with nilpotent kernel). -/
+theorem exists_mk_eq_and_map_eq {q : A →+* B} (hq : π_B.comp q = π_A)
+    (hq_coord : Function.Surjective (FormalCoordinate.map q))
+    {F G₀ : FormalGroupLift π_A F₀}
+    (hx : FormalGroupDeformation.map q hq ⟦G₀⟧ = ⟦F.map q hq⟧) :
+    ∃ G : FormalGroupLift π_A F₀, (⟦G⟧ : FormalGroupDeformation π_A F₀) = ⟦G₀⟧ ∧
+      G.map q hq = F.map q hq := by
+  rw [map_mk] at hx
+  obtain ⟨ψ, hψ_π, hψ_eq⟩ := (mk_eq_mk_iff _ _).mp hx
+  obtain ⟨φ₀, hφ₀_q⟩ := hq_coord ψ
+  have hφ₀_π : FormalCoordinate.map π_A φ₀ = 1 := by
+    rw [← hq, FormalCoordinate.map_comp, hφ₀_q, hψ_π]
+  let φ : (FormalCoordinate.map π_A).ker := ⟨φ₀, MonoidHom.mem_ker.mpr hφ₀_π⟩
+  refine ⟨φ • G₀, ((mk_eq_mk_iff G₀ (φ • G₀)).mpr ⟨φ₀, hφ₀_π, rfl⟩).symm,
+    FormalGroupLift.ext ?_⟩
+  rw [FormalGroupLift.formalGroup_map, FormalGroupLift.formalGroup_smul, FormalGroup.map_smul,
+    hφ₀_q, ← FormalGroupLift.formalGroup_map G₀ q hq, hψ_eq]
 
 end FormalGroupDeformation
 

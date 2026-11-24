@@ -16,6 +16,7 @@ import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.Frobenius.Factorization
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Expand
@@ -59,6 +60,10 @@ by `I`, so `[n]_F` may be replaced by `u(X ^ q)`. Thus `(d ∘ u)(X ^ q) = 0`, h
   finite height modulo `𝔪` are determined by their reductions.
 * `TauCeti.FormalGroupIso.eq_of_map_residue_eq`: in the same situation, isomorphisms with the
   same reduction are equal; in particular ⋆-isomorphisms are unique.
+* `TauCeti.FormalCoordinate.eq_one_of_smul_eq_of_map_residue_eq_one`,
+  `TauCeti.FormalCoordinate.eq_one_of_smul_eq_of_map_eq_one`: in the same situation, a coordinate
+  reducing to `1` modulo `𝔪` (or along a surjection onto a field of characteristic `p`) that
+  fixes a commutative formal group law of finite height must equal `1`.
 
 ## References
 
@@ -233,5 +238,54 @@ theorem eq_of_map_residue_eq (e₁ e₂ : FormalGroupIso F G) {h : ℕ}
   ext (e₁.toHom.eq_of_map_residue_eq e₂.toHom hF he)
 
 end FormalGroupIso
+
+namespace FormalCoordinate
+
+open IsLocalRing
+
+/-- **Rigidity of coordinate automorphisms.** Over an `𝔪`-adically Hausdorff local ring whose
+residue field has characteristic `p`, a formal coordinate that reduces to `1` modulo the maximal
+ideal and fixes a commutative formal group law of finite height modulo `𝔪` must equal `1`. -/
+theorem eq_one_of_smul_eq_of_map_residue_eq_one {A : Type*} [CommRing A] [IsLocalRing A]
+    [IsHausdorff (maximalIdeal A) A] {F : FormalGroup A} [F.IsComm] {p h : ℕ} [Fact p.Prime]
+    [CharP (ResidueField A) p] (hF : (F.map (residue A)).height p = h)
+    {φ : FormalCoordinate A} (hφ₁ : FormalCoordinate.map (residue A) φ = 1)
+    (hφF : φ • F = F) : φ = 1 := by
+  let f : FormalGroupHom F F :=
+    ⟨φ.toPowerSeries, φ.constantCoeff_toPowerSeries, by
+      have hhom := (FormalGroup.smulIso φ F).toHom.hom
+      rwa [FormalGroup.smulIso_toHom_toPowerSeries, hφF] at hhom⟩
+  have hf : f.toPowerSeries.map (residue A) =
+      (FormalGroupHom.id F).toPowerSeries.map (residue A) := by
+    simpa [f, FormalCoordinate.toPowerSeries_one] using
+      congrArg FormalCoordinate.toPowerSeries hφ₁
+  have heq := f.eq_of_map_residue_eq (.id F) hF hf
+  ext n
+  simpa [f] using congrArg (fun u : FormalGroupHom F F ↦ coeff n u.toPowerSeries) heq
+
+/-- **Rigidity of coordinate automorphisms along a residue surjection.** Over an `𝔪`-adically
+Hausdorff local ring `A`, for any surjective ring homomorphism `π : A →+* k` onto a field of
+characteristic `p`, a formal coordinate that reduces to `1` along `π` and fixes a commutative
+formal group law whose reduction along `π` has finite height must equal `1`. -/
+theorem eq_one_of_smul_eq_of_map_eq_one {A k : Type*} [CommRing A] [IsLocalRing A]
+    [IsHausdorff (maximalIdeal A) A] [Field k] {π : A →+* k} (hπ : Function.Surjective π)
+    {F : FormalGroup A} [F.IsComm] {p h : ℕ} [Fact p.Prime] [CharP k p]
+    (hF : (F.map π).height p = h) {φ : FormalCoordinate A}
+    (hφ₁ : FormalCoordinate.map π φ = 1) (hφF : φ • F = F) : φ = 1 := by
+  let e_res : ResidueField A ≃+* k :=
+    (TauCeti.residueFieldAlgEquivOfSurjective (ψ := π.toIntAlgHom) hπ).toRingEquiv
+  have he_comp : e_res.toRingHom.comp (residue A) = π := RingHom.ext fun x ↦
+    TauCeti.residueFieldAlgEquivOfSurjective_residue (ψ := π.toIntAlgHom) hπ x
+  have : CharP (ResidueField A) p := (e_res.toRingHom.charP_iff_charP p).mpr ‹_›
+  have hheight : (F.map (residue A)).height p = h := by
+    rw [← FormalGroup.height_map _ e_res.toRingHom p, FormalGroup.map_comp, he_comp, hF]
+  have hres : FormalCoordinate.map (residue A) φ = 1 :=
+    FormalCoordinate.ext <| PowerSeries.map_injective e_res.toRingHom e_res.injective <| by
+      simpa only [← FormalCoordinate.toPowerSeries_map, ← FormalCoordinate.map_comp, he_comp,
+        FormalCoordinate.toPowerSeries_one, PowerSeries.map_X] using
+        congrArg FormalCoordinate.toPowerSeries hφ₁
+  exact eq_one_of_smul_eq_of_map_residue_eq_one hheight hres hφF
+
+end FormalCoordinate
 
 end TauCeti
