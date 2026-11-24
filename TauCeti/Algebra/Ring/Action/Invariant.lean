@@ -98,13 +98,4 @@ and preserves divisibility. -/
    (FixedPoints.subalgebra A B G).val.toRingHom.map_dvd⟩
 end FixedPointsDvd
 
-/-- The action of `G` on `B` commutes with scalar multiplication by the `G`-invariant subalgebra
-`FixedPoints.subalgebra A B G`. -/
-instance instSMulCommClassFixedPointsSubalgebra {A B G : Type*} [CommSemiring A] [Semiring B]
-    [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
-    SMulCommClass G (FixedPoints.subalgebra A B G) B where
-  smul_comm k r b := by
-    rw [Subalgebra.smul_def, smul_eq_mul, Subalgebra.smul_def, smul_eq_mul, smul_mul',
-      r.property k]
-
 end TauCeti
