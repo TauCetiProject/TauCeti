@@ -8,13 +8,14 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.NumberTheory.Padics.GeneralLinearGroup.Congruence
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Units
 public import TauCeti.Topology.Algebra.Group.Units
 public import TauCeti.Topology.Instances.Matrix
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.LevelSubgroup
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
@@ -54,9 +55,10 @@ surjective `ℓ`-adic projections `GL2Zhat.proj ℓ` and the join identity
   `TauCeti.GL2Zhat.existsUnique_forall_red_eq`: inverse-limit properties of `GL₂(ℤ̂)`.
 * `TauCeti.GL2Zhat.Gamma_le_Gamma_iff`, `TauCeti.GL2Zhat.Gamma_lcm_eq_inf`,
   `TauCeti.GL2Zhat.Gamma_gcd_eq_sup`: lattice and divisibility laws for `Gamma`.
-* `TauCeti.GL2Zhat.exists_Gamma_le`: every open subgroup of `GL₂(ℤ̂)` contains some `Gamma n`.
-* `TauCeti.GL2Zhat.isOpenMap_proj`, `TauCeti.GL2Zhat.proj_surjective`: each `ℓ`-adic projection
-  is open and surjective.
+* `OpenSubgroup.exists_Gamma_le`: every open subgroup of `GL₂(ℤ̂)` contains some `Gamma n`.
+* `TauCeti.GL2Zhat.isOpenMap_proj`, `TauCeti.GL2Zhat.proj_surjective`,
+  `TauCeti.GL2Zhat.redPadicPow_proj`: properties of the `ℓ`-adic projections and their compatibility
+  with reduction modulo `ℓ ^ k`.
 * `TauCeti.GL2Zhat.index_Gamma`: `[GL₂(ℤ̂) : Gamma n] = |GL₂(ℤ / n)|`.
 
 ## References
@@ -288,7 +290,7 @@ theorem iInf_Gamma_eq_bot : (⨅ n : ℕ+, (Gamma n).toSubgroup) = ⊥ := by
   simp [Subgroup.mem_iInf, red_ext_iff]
 
 /-- **Every open subgroup of `GL₂(ℤ̂)` contains a principal congruence subgroup `Gamma n`.** -/
-theorem exists_Gamma_le (H : OpenSubgroup GL2Zhat) : ∃ n : ℕ+, Gamma n ≤ H := by
+theorem _root_.OpenSubgroup.exists_Gamma_le (H : OpenSubgroup GL2Zhat) : ∃ n : ℕ+, Gamma n ≤ H := by
   have hclosed : ∀ n : ℕ+, IsClosed ((Gamma n).toSubgroup : Set GL2Zhat) :=
     fun n ↦ (Gamma n).isClosed
   have hdir : Directed (· ≥ ·) fun n : ℕ+ ↦ (Gamma n).toSubgroup := fun m n ↦
@@ -304,6 +306,12 @@ theorem exists_Gamma_le (H : OpenSubgroup GL2Zhat) : ∃ n : ℕ+, Gamma n ≤ H
 noncomputable def quotientGammaEquiv (n : ℕ+) :
     GL2Zhat ⧸ (Gamma n).toSubgroup ≃* GL (Fin 2) (ZMod n) :=
   QuotientGroup.quotientKerEquivOfSurjective (red n) (red_surjective n)
+
+@[simp]
+theorem quotientGammaEquiv_mk (n : ℕ+) (g : GL2Zhat) :
+    quotientGammaEquiv n (g : GL2Zhat ⧸ (Gamma n).toSubgroup) = red n g := by
+  rw [quotientGammaEquiv, QuotientGroup.quotientKerEquivOfSurjective]
+  rfl
 
 /-- The index of `Gamma n` in `GL₂(ℤ̂)` is `|GL₂(ℤ / n)|`. -/
 theorem index_Gamma (n : ℕ+) :
@@ -382,7 +390,7 @@ theorem proj_piPadicEquiv_symm (f : ∀ ℓ : Nat.Primes, GL (Fin 2) ℤ_[ℓ]) 
 /-- Each `ℓ`-adic projection is surjective. -/
 theorem proj_surjective (ℓ : Nat.Primes) : Function.Surjective (proj ℓ) := fun A ↦ by
   classical
-  refine ⟨piPadicEquiv.symm (fun q ↦ if h : q = ℓ then h ▸ A else 1), ?_⟩
+  refine ⟨piPadicEquiv.symm (Pi.mulSingle ℓ A), ?_⟩
   simp
 
 /-- Each `ℓ`-adic projection is an open map. -/
@@ -393,20 +401,20 @@ theorem isOpenMap_proj (ℓ : Nat.Primes) : IsOpenMap (proj ℓ) := by
   exact (isOpenMap_eval ℓ).comp piPadicEquiv.toHomeomorph.isOpenMap
 
 /-- Reducing the `ℓ`-adic projection modulo `ℓ ^ k` agrees with `red (ℓ ^ k)`. -/
-theorem map_toZModPow_proj (ℓ : Nat.Primes) (k : ℕ) (g : GL2Zhat) :
-    GeneralLinearGroup.map (PadicInt.toZModPow k) (proj ℓ g) =
-      red ⟨(ℓ : ℕ) ^ k, pow_pos ℓ.property.pos k⟩ g := by
+@[simp]
+theorem redPadicPow_proj (ℓ : Nat.Primes) (k : ℕ) (g : GL2Zhat) :
+    redPadicPow (ℓ : ℕ) k (proj ℓ g) = red ⟨(ℓ : ℕ) ^ k, pow_pos ℓ.property.pos k⟩ g := by
   ext i j
-  simp only [GeneralLinearGroup.map_apply, proj, red, zHat.toZModPow_component]
-  rfl
+  simp only [redPadicPow_apply, proj_apply, zHat.toZModPow_component]
+  exact (red_apply ⟨(ℓ : ℕ) ^ k, pow_pos ℓ.property.pos k⟩ g i j).symm
 
 /-- Membership in `Gamma n` is checked prime-power by prime-power on the `ℓ`-adic projections. -/
 theorem mem_Gamma_iff_forall_proj {n : ℕ+} {g : GL2Zhat} :
     g ∈ Gamma n ↔ ∀ ℓ : Nat.Primes,
-      GeneralLinearGroup.map (PadicInt.toZModPow ((n : ℕ).factorization ℓ)) (proj ℓ g) = 1 := by
+      redPadicPow (ℓ : ℕ) ((n : ℕ).factorization ℓ) (proj ℓ g) = 1 := by
   constructor
   · intro hg ℓ
-    rw [map_toZModPow_proj]
+    rw [redPadicPow_proj]
     have hdvd : (ℓ : ℕ) ^ (n : ℕ).factorization ℓ ∣ n :=
       Nat.ordProj_dvd n ℓ
     exact (mem_Gamma_iff _ g).mp (Gamma_le_Gamma_of_dvd hdvd hg)
@@ -418,9 +426,8 @@ theorem mem_Gamma_iff_forall_proj {n : ℕ+} {g : GL2Zhat} :
     let ℓ : Nat.Primes := ⟨p, hp⟩
     let m : ℕ+ := ⟨p ^ (n : ℕ).factorization p, pow_pos hp.pos _⟩
     let q : ℕ+ := ⟨p ^ k, pow_pos hp.pos k⟩
-    have hm_eq : GeneralLinearGroup.map (PadicInt.toZModPow ((n : ℕ).factorization ℓ))
-        (proj ℓ g) = red m g :=
-      map_toZModPow_proj ℓ ((n : ℕ).factorization ℓ) g
+    have hm_eq : redPadicPow (ℓ : ℕ) ((n : ℕ).factorization ℓ) (proj ℓ g) = red m g :=
+      redPadicPow_proj ℓ ((n : ℕ).factorization ℓ) g
     have hm1 : red m g = 1 := hm_eq.symm.trans (h ℓ)
     have hqm : (q : ℕ) ∣ m := pow_dvd_pow p hle
     rw [← map_castHom_red hqm g, hm1, map_one]
@@ -470,6 +477,12 @@ theorem Gamma_gcd_eq_sup (m n : ℕ+) :
       rwa [hfac] at hgℓ
   rw [← hmul]
   exact Subgroup.mul_mem_sup ha hb
+
+/-- Two principal congruence subgroups of coprime moduli generate `GL₂(ℤ̂)`. -/
+theorem Gamma_sup_Gamma_eq_top_of_coprime {m n : ℕ+} (h : Nat.Coprime m n) :
+    Gamma m ⊔ Gamma n = ⊤ := by
+  have hd : (⟨Nat.gcd m n, Nat.gcd_pos_of_pos_left n m.pos⟩ : ℕ+) = 1 := Subtype.ext h
+  exact (Gamma_gcd_eq_sup m n).trans ((congrArg Gamma hd).trans Gamma_one)
 
 end ProductDecomposition
 

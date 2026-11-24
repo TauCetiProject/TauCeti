@@ -50,7 +50,8 @@ cleared. At `N = 0` both sides vanish, since `SL n R` is infinite for an infinit
 * `TauCeti.natCard_SL_fin_two`, `TauCeti.natCard_SL_fin_two_zmod`: `|SL₂(𝔽_q)| = q (q² - 1)`.
 * `TauCeti.natCard_SL_fin_two_zmod_mul_prod_primeFactors`: `|SL₂(ℤ/N)| = N³ ∏_{p ∣ N} (1 - 1/p²)`.
 * `TauCeti.natCard_SL_fin_two_zmod_eq_mul_div`:
-  `|SL₂(ℤ/N)| = N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² - 1)`.
+  `Nat.card SL(2, ZMod N) = N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² - 1)` (returning `0` at
+  `N = 0`, where `SL₂(ℤ)` is infinite).
 
 ## References
 
@@ -191,7 +192,10 @@ theorem natCard_SL_fin_two_zmod_mul_prod_primeFactors (N : ℕ) :
   rw [natCard_SL_fin_two_zmod, hk, Fintype.card_fin, Nat.add_sub_cancel]
   ring
 
-/-- **The order of `SL₂(ℤ/N)`**: `N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² − 1)` for all `N : ℕ`. -/
+/-- **`Nat.card` of `SL₂(ℤ/N)`** in the factored form
+`N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² − 1)`, obtained by dividing
+`TauCeti.natCard_GL_fin_two_zmod` by `φ(N)` (see that theorem for its LMFDB citation). Holds for
+all `N : ℕ`: at `N = 0`, `SL₂(ℤ)` is infinite, so `Nat.card` returns `0`. -/
 theorem natCard_SL_fin_two_zmod_eq_mul_div (N : ℕ) :
     Nat.card SL(2, ZMod N) =
       N * (N / ∏ p ∈ N.primeFactors, p) ^ 2 * ∏ p ∈ N.primeFactors, (p ^ 2 - 1) := by

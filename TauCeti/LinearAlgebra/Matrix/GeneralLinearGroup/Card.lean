@@ -45,8 +45,9 @@ A surjective ring homomorphism `f : R →+* S` that reflects units (`IsLocalHom 
 reduction `ℤ/pᵏ → 𝔽_p`, multiplies the order of `GL n` by `|ker f| ^ (n²)`: an `n × n` matrix is
 invertible exactly when its image is, and the entrywise map on matrices is a surjective local
 homomorphism whose kernel is the matrices with entries in `ker f`. Combined with the Chinese
-remainder theorem this yields the LMFDB factored order of `GL (Fin 2) (ZMod N)` for every
-`N : ℕ` (both sides vanish at `N = 0`).
+remainder theorem this yields the factored formula for `Nat.card (GL (Fin 2) (ZMod N))` matching
+LMFDB's `full_torsion_field_degree` for every `N : ℕ` (at `N = 0`, `GL₂(ℤ)` is infinite, so
+`Nat.card` returns `0` by Mathlib's convention for infinite types).
 
 ## Main results
 
@@ -55,8 +56,13 @@ remainder theorem this yields the LMFDB factored order of `GL (Fin 2) (ZMod N)` 
 * `TauCeti.natCard_GL_fin_two`: `|GL₂(𝔽_q)| = (q - 1)² · q(q + 1)`.
 * `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: `|GL₂(𝔽_q)| = (q² - 1) · q(q - 1)`.
 * `TauCeti.natCard_GL_fin_two_of_card_eq_two`: `|GL₂(𝔽₂)| = 6`.
-* `TauCeti.natCard_GL_zmod_prime_pow`: `|GL_m(ℤ/p^{k+1})| = (p^k)^{m²} · |GL_m(𝔽_p)|`.
-* `TauCeti.natCard_GL_fin_two_zmod`: `|GL₂(ℤ/N)| = φ(N) · N · (N / ∏_{p∣N} p)² · ∏_{p∣N} (p² - 1)`.
+* `TauCeti.natCard_GL_zmod_pow`: `|GL ι (ℤ/p^{k+1})| = (p^k)^{|ι|²} · |GL ι (ℤ/p)|` for `p ≠ 0`.
+* `TauCeti.natCard_GL_fin_two_zmod`:
+  `Nat.card (GL (Fin 2) (ZMod N)) = φ(N) · N · (N / ∏_{p∣N} p)² · ∏_{p∣N} (p² - 1)`.
+
+## References
+
+* LMFDB, `full_torsion_field_degree` (factored degree formula for `GL₂(ℤ/Nℤ)`).
 -/
 
 public section
@@ -122,37 +128,40 @@ section ZMod
 
 open Matrix
 
-/-- **The order of `GL_m(ℤ/p^{k+1})`**: reduction modulo `p` is a surjective local ring
-homomorphism `ℤ/p^{k+1} →+* ℤ/p` with kernel of order `p ^ k`, so the induced map on `GL_m` has
-kernel of order `(p ^ k) ^ (m * m)`. -/
-theorem natCard_GL_zmod_prime_pow (m p k : ℕ) [hp : Fact p.Prime] :
-    Nat.card (GL (Fin m) (ZMod (p ^ (k + 1)))) =
-      (p ^ k) ^ (m * m) * Nat.card (GL (Fin m) (ZMod p)) := by
-  have : NeZero p := ⟨hp.out.ne_zero⟩
-  have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ hp.out.ne_zero⟩
+/-- **`Nat.card` of `GL ι (ℤ/p^{k+1})`**: for `p ≠ 0`, reduction modulo `p` is a surjective local
+ring homomorphism `ℤ/p^{k+1} →+* ℤ/p` with kernel of order `p ^ k`, so the induced map on `GL ι`
+has kernel of order `(p ^ k) ^ (|ι| * |ι|)`. -/
+theorem natCard_GL_zmod_pow {ι : Type*} [Fintype ι] [DecidableEq ι] (p k : ℕ) [NeZero p] :
+    Nat.card (GL ι (ZMod (p ^ (k + 1)))) =
+      (p ^ k) ^ (Fintype.card ι * Fintype.card ι) * Nat.card (GL ι (ZMod p)) := by
+  have hp : p ≠ 0 := NeZero.ne p
+  have : NeZero (p ^ (k + 1)) := ⟨pow_ne_zero _ hp⟩
   have := ZMod.isLocalHom_castHom_pow (n := p) k.succ_ne_zero
   rw [Matrix.natCard_GL_eq_natCard_ker_pow_mul
       (ZMod.castHom (dvd_pow_self p k.succ_ne_zero) (ZMod p))
       (ZMod.castHom_surjective (dvd_pow_self p k.succ_ne_zero)),
-    ZMod.natCard_ker_castHom p (by rw [pow_succ]) hp.out.ne_zero, Fintype.card_fin]
+    ZMod.natCard_ker_castHom p (by rw [pow_succ]) hp]
 
-private theorem natCard_GL_fin_two_zmod_factor {N p : ℕ} (hN : N ≠ 0) (hpN : p ∈ N.primeFactors) :
+private theorem natCard_GL_fin_two_zmod_factor {N p : ℕ} (hpN : p ∈ N.primeFactors) :
     Nat.card (GL (Fin 2) (ZMod (p ^ N.factorization p))) =
       Nat.totient (p ^ N.factorization p) * p ^ N.factorization p *
         (p ^ (N.factorization p - 1)) ^ 2 * (p ^ 2 - 1) := by
+  have hN : N ≠ 0 := by rintro rfl; simp at hpN
   have hp : p.Prime := Nat.prime_of_mem_primeFactors hpN
   have : Fact p.Prime := ⟨hp⟩
+  have : NeZero p := ⟨hp.ne_zero⟩
   have hpos : 0 < N.factorization p :=
     hp.factorization_pos_of_dvd hN (Nat.dvd_of_mem_primeFactors hpN)
   obtain ⟨k, hk⟩ := Nat.exists_eq_add_one.mpr hpos
-  rw [hk, Nat.add_sub_cancel, natCard_GL_zmod_prime_pow 2 p k,
+  rw [hk, Nat.add_sub_cancel, natCard_GL_zmod_pow p k, Fintype.card_fin,
     natCard_GL_fin_two_eq_sq_sub_one_mul (ZMod p), Nat.card_eq_fintype_card, ZMod.card,
     Nat.totient_prime_pow_succ hp, pow_succ]
   ring
 
-/-- **The order of `GL₂(ℤ/N)`** in the LMFDB factored form
-`φ(N) · N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² − 1)`. Holds for all `N : ℕ` (both sides vanish
-at `N = 0`). -/
+/-- **`Nat.card` of `GL₂(ℤ/N)`** in the factored form
+`φ(N) · N · (N / ∏_{p ∣ N} p)² · ∏_{p ∣ N} (p² − 1)` (see the LMFDB `full_torsion_field_degree`
+citation in the module overview). Holds for all `N : ℕ`: at `N = 0`, `GL₂(ℤ)` is infinite, so
+`Nat.card` returns `0` by convention. -/
 theorem natCard_GL_fin_two_zmod (N : ℕ) :
     Nat.card (GL (Fin 2) (ZMod N)) =
       Nat.totient N * N * (N / ∏ p ∈ N.primeFactors, p) ^ 2 *
@@ -173,7 +182,7 @@ theorem natCard_GL_fin_two_zmod (N : ℕ) :
   rw [Nat.card_congr e.toEquiv, Nat.card_pi,
     Finset.prod_coe_sort N.primeFactors
       (fun p ↦ Nat.card (GL (Fin 2) (ZMod (p ^ N.factorization p)))),
-    Finset.prod_congr rfl fun p hp ↦ natCard_GL_fin_two_zmod_factor hN hp]
+    Finset.prod_congr rfl fun p hp ↦ natCard_GL_fin_two_zmod_factor hp]
   simp only [Finset.prod_mul_distrib]
   have htot : ∏ p ∈ N.primeFactors, Nat.totient (p ^ N.factorization p) = N.totient := by
     rw [Nat.totient_eq_prod_factorization hN]

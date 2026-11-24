@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
+public import TauCeti.Topology.Algebra.Group.Units
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
@@ -28,8 +29,8 @@ to every `ℤ_p`) and valuation lemmas for `ℚ_p`.
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
 `ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
-topological monoid, recorded here as a shortcut instance; the instance
-`TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
+topological monoid, recorded here as a shortcut instance; totally disconnectedness follows from
+`Units.instTotallyDisconnectedSpace`.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
@@ -96,8 +97,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   when `q = 0` or `N ≤ v_p(q)`.
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
-* `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
-  profinite group.
+* `PadicInt.compactSpace_units`: `ℤ_[p]ˣ` is compact (and totally disconnected via
+  `Units.instTotallyDisconnectedSpace`), hence a profinite group.
 
 ## Main definitions
 
@@ -278,11 +279,6 @@ instance term matters for unification: elaborating continuous linear maps on `C(
 (`TauCeti.NumberTheory.Padics.Measure.UnitCoordinates`) identifies the sup-norm topology with the
 compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
 instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
-
-/-- `ℤ_pˣ` is totally disconnected, as a subspace of the ultrametric space `ℤ_p`. -/
-instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
-  ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
-    (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
 
 variable (p) in
 /-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
