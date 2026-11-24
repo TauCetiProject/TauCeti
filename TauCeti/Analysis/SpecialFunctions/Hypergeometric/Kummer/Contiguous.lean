@@ -38,7 +38,7 @@ Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
 * `Complex.regularizedHGFun_singleton_eq_sub_mul_add_mul` —
   `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3).
 * `Complex.regularizedHGFun_kummer_equation` —
-  `z 𝐌″(a, b, z) + (b - z) 𝐌′(a, b, z) - a 𝐌(a, b, z) = 0` (Kummer's equation, DLMF 13.2.1).
+  `z 𝐌''(a, b, z) + (b - z) 𝐌′(a, b, z) - a 𝐌(a, b, z) = 0` (Kummer's equation, DLMF 13.2.1).
 
 ## References
 
@@ -173,7 +173,7 @@ theorem regularizedHGFun_singleton_eq_sub_mul_add_mul (a b z : ℂ) :
   linear_combination h2 - a * h1
 
 /-- Kummer's equation for the regularized Kummer function (DLMF 13.2.1):
-`z 𝐌″(a, b, z) + (b - z) 𝐌′(a, b, z) - a 𝐌(a, b, z) = 0`, for all `a, b, z : ℂ`.
+`z 𝐌''(a, b, z) + (b - z) 𝐌′(a, b, z) - a 𝐌(a, b, z) = 0`, for all `a, b, z : ℂ`.
 
 It is a linear combination of `regularizedHGFun_singleton_sub_mul_add_one_left` at `(a, b)` and
 `regularizedHGFun_singleton_eq_sub_mul_add_mul` at `(a + 1, b + 1)`, once the derivatives are
