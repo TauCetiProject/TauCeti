@@ -12,14 +12,16 @@ public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
 
 The Gaussian ensemble `TauCeti.Probability.gaussianEnsemble β n g` is real-linear in the array
 `g`, so it is the combination `∑ p, g p • E p` of its coordinate matrices
-`E p = gaussianEnsemble β n (Pi.single p 1)` (`TauCeti.Probability.gaussianEnsemble_eq_sum_smul`).
+`E p = gaussianEnsemble β n (Pi.single p 1)` (`TauCeti.Probability.gaussianEnsemble_eq_sum_smul`
+in `GaussianEnsemble.Basic`).
 Matrix Brownian motion driven by real coordinates `B p` is therefore `H₀ + ∑ p, B p t • E p`, and
 every second-order computation for it, such as the quadratic covariation of two linear
 functionals or the Itô correction for a function of the matrix, reduces to a sum over `p` of
 products of two entries of `E p`. This file evaluates these sums.
 
-Each `E p` is a scaled matrix unit, or a scaled sum or difference of two matrix units. For
-`β ≠ 1` and `i < j`,
+Each `E p` is a scaled matrix unit, or a scaled sum or difference of two matrix units
+(`TauCeti.Probability.gaussianEnsemble_single_of_lt_of_ne_one` and its siblings in
+`GaussianEnsemble.Basic`). For `β ≠ 1` and `i < j`,
 
 * `E (i, i) = n^{-1/2} • single i i 1`,
 * `E (i, j) = (2n)^{-1/2} • (single i j 1 + single j i 1)`,
@@ -51,9 +53,9 @@ Contracting it gives the forms used in stochastic calculus:
 
 ## Main results
 
-* `TauCeti.Probability.gaussianEnsemble_eq_sum_smul`: the expansion in coordinate matrices.
-* `TauCeti.Probability.gaussianEnsemble_single_of_lt_of_ne_one` and its siblings: the
-  coordinate matrices as combinations of matrix units.
+* `TauCeti.Probability.sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one` and
+  `TauCeti.Probability.sum_gaussianEnsemble_one_single_apply_mul_apply`: the entry covariances
+  `∑ p, E p a b * E p c d`.
 * `TauCeti.Probability.sum_gaussianEnsemble_single_apply_smul_of_ne_one` and
   `TauCeti.Probability.sum_gaussianEnsemble_one_single_apply_smul`: the completeness relations.
 * `TauCeti.Probability.sum_trace_mul_gaussianEnsemble_single_mul_trace_mul_of_ne_one` and
@@ -82,168 +84,50 @@ namespace Probability
 
 variable {β n : ℕ}
 
-/-- **Expansion in coordinate matrices.** The Gaussian ensemble of an array `g` is the
-combination, with coefficients `g p`, of the ensembles `gaussianEnsemble β n (Pi.single p 1)` of
-the coordinate arrays. -/
-theorem gaussianEnsemble_eq_sum_smul (g : Fin n × Fin n → ℝ) :
-    gaussianEnsemble β n g = ∑ p, g p • gaussianEnsemble β n (Pi.single p 1) := by
-  have h := map_sum (AddMonoidHom.mk' (gaussianEnsemble β n) gaussianEnsemble_add)
-    (fun p ↦ Pi.single p (g p)) Finset.univ
-  simp only [AddMonoidHom.mk'_apply, Finset.univ_sum_single] at h
-  rw [h]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [← gaussianEnsemble_smul, ← Pi.single_smul, smul_eq_mul, mul_one]
-
-/-! ### The coordinate matrices as combinations of matrix units -/
-
-/-- For `β ≠ 1` the diagonal coordinate `(i, i)` gives `n^{-1/2}` times the matrix unit at
-`(i, i)`. -/
-@[simp]
-theorem gaussianEnsemble_single_self_of_ne_one (hβ : β ≠ 1) (i : Fin n) :
-    gaussianEnsemble β n (Pi.single (i, i) 1) = (Real.sqrt n : ℂ)⁻¹ • single i i 1 := by
-  ext c d
-  simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
-    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply, Prod.ext_iff,
-    smul_eq_mul]
-  split_ifs <;> first | ring1 | (exfalso; grind)
-
-/-- For `β ≠ 1` and `i < j` the coordinate `(i, j)` gives the real off-diagonal direction
-`(2n)^{-1/2} (single i j 1 + single j i 1)`. -/
-@[simp]
-theorem gaussianEnsemble_single_of_lt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h : i < j) :
-    gaussianEnsemble β n (Pi.single (i, j) 1) =
-      ((Real.sqrt n : ℂ)⁻¹ / Real.sqrt 2) • (single i j 1 + single j i 1) := by
-  ext c d
-  simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
-    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply,
-    Matrix.add_apply, Prod.ext_iff, smul_eq_mul]
-  split_ifs <;> first | ring1 | (exfalso; grind)
-
-/-- For `β ≠ 1` and `j < i` the coordinate `(i, j)` gives the imaginary off-diagonal direction
-`I (2n)^{-1/2} (single j i 1 - single i j 1)`. -/
-@[simp]
-theorem gaussianEnsemble_single_of_gt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h : j < i) :
-    gaussianEnsemble β n (Pi.single (i, j) 1) =
-      ((Real.sqrt n : ℂ)⁻¹ * Complex.I / Real.sqrt 2) • (single j i 1 - single i j 1) := by
-  ext c d
-  simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
-    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply,
-    Matrix.sub_apply, Prod.ext_iff, smul_eq_mul]
-  split_ifs <;> first | ring1 | (exfalso; grind)
-
-/-- For `β = 1` the diagonal coordinate `(i, i)` gives `√2 / √n` times the matrix unit at
-`(i, i)`. -/
-@[simp]
-theorem gaussianEnsemble_one_single_self (i : Fin n) :
-    gaussianEnsemble 1 n (Pi.single (i, i) 1) =
-      ((Real.sqrt n : ℂ)⁻¹ * Real.sqrt 2) • single i i 1 := by
-  ext c d
-  simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
-    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply, Prod.ext_iff,
-    smul_eq_mul, Complex.ofReal_mul]
-  split_ifs <;> first | ring1 | (exfalso; grind)
-
-/-- For `β = 1` and `i < j` the coordinate `(i, j)` gives
-`n^{-1/2} (single i j 1 + single j i 1)`. -/
-@[simp]
-theorem gaussianEnsemble_one_single_of_lt {i j : Fin n} (h : i < j) :
-    gaussianEnsemble 1 n (Pi.single (i, j) 1) =
-      (Real.sqrt n : ℂ)⁻¹ • (single i j 1 + single j i 1) := by
-  ext c d
-  simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
-    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply,
-    Matrix.add_apply, Prod.ext_iff, smul_eq_mul, Complex.ofReal_mul]
-  split_ifs <;> first | ring1 | (exfalso; grind)
-
-/-- For `β = 1` the strictly lower coordinates are not read: their coordinate matrices vanish. -/
-@[simp]
-theorem gaussianEnsemble_one_single_of_gt {i j : Fin n} (h : j < i) :
-    gaussianEnsemble 1 n (Pi.single (i, j) 1) = 0 := by
-  ext c d
-  simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
-    Complex.ofReal_one, Complex.ofReal_zero, Matrix.zero_apply, Prod.ext_iff, Complex.ofReal_mul]
-  split_ifs <;> first | ring1 | (exfalso; grind)
-
 /-! ### The completeness relations -/
 
-/-- Summing against the coordinate indicator `p ↦ Pi.single p 1 q` evaluates at `q`. -/
-private theorem sum_ofReal_single_apply_smul {M : Type*} [AddCommMonoid M] [Module ℂ M]
-    (q : Fin n × Fin n) (f : Fin n × Fin n → M) :
-    ∑ p, (((Pi.single p 1 : Fin n × Fin n → ℝ) q : ℝ) : ℂ) • f p = f q := by
-  simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), ite_smul]
-
 /-- The square of the diagonal scale `n^{-1/2}` of the ensembles. -/
-private theorem inv_sqrt_mul_inv_sqrt (m : ℕ) :
-    (Real.sqrt m : ℂ)⁻¹ * (Real.sqrt m : ℂ)⁻¹ = (m : ℂ)⁻¹ := by
-  rw [← mul_inv, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg _)]
+private theorem inv_sqrt_sq (m : ℕ) : (Real.sqrt m : ℂ)⁻¹ ^ 2 = (m : ℂ)⁻¹ := by
+  rw [inv_pow, ← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
   simp
 
-private theorem sqrt_two_mul_sqrt_two : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
-  rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two]
-  norm_num
+/-- **Entry covariance for `β ≠ 1`.** For the coordinate matrices `E p` of the Hermitian
+ensemble, `∑ p, E p a b * E p c d` is `n⁻¹` when `(c, d) = (b, a)` and `0` otherwise: the
+`(a, b)` entry of `E p` only sees the coordinates `(a, b)` and `(b, a)`. -/
+theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1) (a b c d : Fin n) :
+    ∑ p, gaussianEnsemble β n (Pi.single p 1) a b * gaussianEnsemble β n (Pi.single p 1) c d =
+      if b = c ∧ a = d then (n : ℂ)⁻¹ else 0 := by
+  have h2 := inv_sqrt_sq 2
+  push_cast at h2
+  rcases lt_trichotomy a b with hab | rfl | hab <;>
+    simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, add_mul, add_div, sub_div, mul_sub,
+      sub_mul, ite_div, ite_mul, mul_ite, Finset.sum_add_distrib, Finset.sum_sub_distrib, *,
+      Matrix.single_apply] <;>
+    split_ifs <;> grind [inv_sqrt_sq, Complex.I_sq]
 
-/-- The square of the off-diagonal real coefficient `(2n)^{-1/2}` of the `β ≠ 1` ensemble. -/
-private theorem offDiag_re_mul_self :
-    (Real.sqrt n : ℂ)⁻¹ / Real.sqrt 2 * ((Real.sqrt n : ℂ)⁻¹ / Real.sqrt 2) = (n : ℂ)⁻¹ / 2 := by
-  rw [div_mul_div_comm, inv_sqrt_mul_inv_sqrt, sqrt_two_mul_sqrt_two]
-
-/-- The square of the off-diagonal imaginary coefficient `I (2n)^{-1/2}` of the `β ≠ 1`
-ensemble. -/
-private theorem offDiag_im_mul_self :
-    (Real.sqrt n : ℂ)⁻¹ * Complex.I / Real.sqrt 2 *
-      ((Real.sqrt n : ℂ)⁻¹ * Complex.I / Real.sqrt 2) = -((n : ℂ)⁻¹ / 2) := by
-  rw [div_mul_div_comm, mul_mul_mul_comm, inv_sqrt_mul_inv_sqrt, Complex.I_mul_I,
-    sqrt_two_mul_sqrt_two]
-  ring
+/-- **Entry covariance for `β = 1`.** For the coordinate matrices `E p` of the real symmetric
+ensemble, `∑ p, E p a b * E p c d` is `n⁻¹` times the number of the conditions
+`(c, d) = (a, b)` and `(c, d) = (b, a)` that hold: the `(a, b)` entry of `E p` only sees the
+coordinate `(min a b, max a b)`. -/
+theorem sum_gaussianEnsemble_one_single_apply_mul_apply (a b c d : Fin n) :
+    ∑ p, gaussianEnsemble 1 n (Pi.single p 1) a b * gaussianEnsemble 1 n (Pi.single p 1) c d =
+      (n : ℂ)⁻¹ * ((if a = c ∧ b = d then 1 else 0) + if b = c ∧ a = d then 1 else 0) := by
+  have h2 : ((Real.sqrt 2 : ℝ) : ℂ) ^ 2 = 2 := by
+    rw [← Complex.ofReal_pow, Real.sq_sqrt zero_le_two]
+    norm_num
+  rcases lt_trichotomy a b with hab | rfl | hab <;>
+    simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, ite_mul, mul_ite, *,
+      Matrix.single_apply] <;>
+    split_ifs <;> grind [inv_sqrt_sq]
 
 /-- **Completeness relation for `β ≠ 1`.** Weighting each coordinate matrix of the Hermitian
-ensemble by its `(a, b)` entry and summing gives `n⁻¹` times the matrix unit at `(b, a)`:
-`∑ p, E p a b * E p c d = n⁻¹` if `(c, d) = (b, a)` and `0` otherwise. -/
+ensemble by its `(a, b)` entry and summing gives `n⁻¹` times the matrix unit at `(b, a)`. -/
 theorem sum_gaussianEnsemble_single_apply_smul_of_ne_one (hβ : β ≠ 1) (a b : Fin n) :
     ∑ p, gaussianEnsemble β n (Pi.single p 1) a b • gaussianEnsemble β n (Pi.single p 1) =
       (n : ℂ)⁻¹ • single b a 1 := by
-  -- The `(a, b)` entry of `E p` only sees the coordinates `(a, b)` and `(b, a)`.
-  rcases lt_trichotomy a b with hab | rfl | hab
-  · calc _ = ∑ p, (((Real.sqrt n : ℂ)⁻¹ / Real.sqrt 2) •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (a, b) : ℝ) : ℂ) •
-              gaussianEnsemble β n (Pi.single p 1)) +
-          ((Real.sqrt n : ℂ)⁻¹ * Complex.I / Real.sqrt 2) •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (b, a) : ℝ) : ℂ) •
-              gaussianEnsemble β n (Pi.single p 1))) :=
-          Finset.sum_congr rfl fun p _ ↦ by
-            rw [gaussianEnsemble_apply_of_lt_of_ne_one _ hβ hab, smul_smul, smul_smul, ← add_smul]
-            congr 1; ring
-      _ = _ := by
-          rw [Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.smul_sum,
-            sum_ofReal_single_apply_smul, sum_ofReal_single_apply_smul,
-            gaussianEnsemble_single_of_lt_of_ne_one hβ hab,
-            gaussianEnsemble_single_of_gt_of_ne_one hβ hab, smul_smul, smul_smul,
-            offDiag_re_mul_self, offDiag_im_mul_self]
-          module
-  · calc _ = ∑ p, (Real.sqrt n : ℂ)⁻¹ •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (a, a) : ℝ) : ℂ) •
-              gaussianEnsemble β n (Pi.single p 1)) :=
-          Finset.sum_congr rfl fun p _ ↦ by
-            rw [gaussianEnsemble_apply_self_of_ne_one _ hβ, smul_smul]
-      _ = _ := by
-          rw [← Finset.smul_sum, sum_ofReal_single_apply_smul,
-            gaussianEnsemble_single_self_of_ne_one hβ, smul_smul, inv_sqrt_mul_inv_sqrt]
-  · calc _ = ∑ p, (((Real.sqrt n : ℂ)⁻¹ / Real.sqrt 2) •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (b, a) : ℝ) : ℂ) •
-              gaussianEnsemble β n (Pi.single p 1)) -
-          ((Real.sqrt n : ℂ)⁻¹ * Complex.I / Real.sqrt 2) •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (a, b) : ℝ) : ℂ) •
-              gaussianEnsemble β n (Pi.single p 1))) :=
-          Finset.sum_congr rfl fun p _ ↦ by
-            rw [gaussianEnsemble_apply_of_gt_of_ne_one _ hβ hab, smul_smul, smul_smul, ← sub_smul]
-            congr 1; ring
-      _ = _ := by
-          rw [Finset.sum_sub_distrib, ← Finset.smul_sum, ← Finset.smul_sum,
-            sum_ofReal_single_apply_smul, sum_ofReal_single_apply_smul,
-            gaussianEnsemble_single_of_lt_of_ne_one hβ hab,
-            gaussianEnsemble_single_of_gt_of_ne_one hβ hab, smul_smul, smul_smul,
-            offDiag_re_mul_self, offDiag_im_mul_self]
-          module
+  ext c d
+  simp [Matrix.sum_apply, sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one hβ,
+    Matrix.single_apply]
 
 /-- **Completeness relation for `β = 1`.** Weighting each coordinate matrix of the real symmetric
 ensemble by its `(a, b)` entry and summing gives `n⁻¹ (single a b 1 + single b a 1)`; on the
@@ -251,49 +135,36 @@ diagonal this is `2 / n` times the matrix unit. -/
 theorem sum_gaussianEnsemble_one_single_apply_smul (a b : Fin n) :
     ∑ p, gaussianEnsemble 1 n (Pi.single p 1) a b • gaussianEnsemble 1 n (Pi.single p 1) =
       (n : ℂ)⁻¹ • (single a b 1 + single b a 1) := by
-  -- The `(a, b)` entry of `E p` only sees the coordinate `(min a b, max a b)`.
-  rcases lt_trichotomy a b with hab | rfl | hab
-  · calc _ = ∑ p, (Real.sqrt n : ℂ)⁻¹ •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (a, b) : ℝ) : ℂ) •
-              gaussianEnsemble 1 n (Pi.single p 1)) :=
-          Finset.sum_congr rfl fun p _ ↦ by
-            rw [gaussianEnsemble_apply_of_lt_of_eq_one _ rfl hab, smul_smul]
-      _ = _ := by
-          rw [← Finset.smul_sum, sum_ofReal_single_apply_smul,
-            gaussianEnsemble_one_single_of_lt hab, smul_smul, inv_sqrt_mul_inv_sqrt]
-  · calc _ = ∑ p, ((Real.sqrt n : ℂ)⁻¹ * Real.sqrt 2) •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (a, a) : ℝ) : ℂ) •
-              gaussianEnsemble 1 n (Pi.single p 1)) :=
-          Finset.sum_congr rfl fun p _ ↦ by
-            rw [gaussianEnsemble_apply_self_of_eq_one _ rfl, smul_smul, Complex.ofReal_mul,
-              mul_assoc]
-      _ = _ := by
-          rw [← Finset.smul_sum, sum_ofReal_single_apply_smul, gaussianEnsemble_one_single_self,
-            smul_smul, mul_mul_mul_comm, inv_sqrt_mul_inv_sqrt, sqrt_two_mul_sqrt_two]
-          module
-  · calc _ = ∑ p, (Real.sqrt n : ℂ)⁻¹ •
-            ((((Pi.single p 1 : Fin n × Fin n → ℝ) (b, a) : ℝ) : ℂ) •
-              gaussianEnsemble 1 n (Pi.single p 1)) :=
-          Finset.sum_congr rfl fun p _ ↦ by
-            rw [gaussianEnsemble_apply_of_gt_of_eq_one _ rfl hab, smul_smul]
-      _ = _ := by
-          rw [← Finset.smul_sum, sum_ofReal_single_apply_smul,
-            gaussianEnsemble_one_single_of_lt hab, smul_smul, inv_sqrt_mul_inv_sqrt, add_comm]
+  ext c d
+  simp [Matrix.sum_apply, sum_gaussianEnsemble_one_single_apply_mul_apply, Matrix.single_apply]
 
-/-- The entrywise form of `sum_gaussianEnsemble_single_apply_smul_of_ne_one`. -/
-private theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1)
-    (a b c d : Fin n) :
-    ∑ p, gaussianEnsemble β n (Pi.single p 1) a b * gaussianEnsemble β n (Pi.single p 1) c d =
-      ((n : ℂ)⁻¹ • single b a 1 : Matrix (Fin n) (Fin n) ℂ) c d := by
-  rw [← sum_gaussianEnsemble_single_apply_smul_of_ne_one hβ a b, Matrix.sum_apply]
-  simp only [Matrix.smul_apply, smul_eq_mul]
+/-- The entries of `∑ p, tr (A E p) • E p` through the entry covariance of the family `E`. -/
+private theorem sum_trace_mul_smul_apply {ι : Type*} [Fintype ι]
+    (E : ι → Matrix (Fin n) (Fin n) ℂ) (A : Matrix (Fin n) (Fin n) ℂ) (c d : Fin n) :
+    (∑ p, trace (A * E p) • E p) c d = ∑ a, ∑ b, A b a * ∑ p, E p a b * E p c d := by
+  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, trace, diag_apply, Matrix.mul_apply,
+    Finset.sum_mul, Finset.mul_sum, mul_assoc]
+  rw [Finset.sum_comm]
+  simp_rw [Finset.sum_comm (γ := ι)]
+  exact Finset.sum_comm
 
-/-- The entrywise form of `sum_gaussianEnsemble_one_single_apply_smul`. -/
-private theorem sum_gaussianEnsemble_one_single_apply_mul_apply (a b c d : Fin n) :
-    ∑ p, gaussianEnsemble 1 n (Pi.single p 1) a b * gaussianEnsemble 1 n (Pi.single p 1) c d =
-      ((n : ℂ)⁻¹ • (single a b 1 + single b a 1) : Matrix (Fin n) (Fin n) ℂ) c d := by
-  rw [← sum_gaussianEnsemble_one_single_apply_smul a b, Matrix.sum_apply]
-  simp only [Matrix.smul_apply, smul_eq_mul]
+/-- The entries of `∑ p, E p * M * E p` through the entry covariance of the family `E`. -/
+private theorem sum_mul_mul_apply {ι : Type*} [Fintype ι]
+    (E : ι → Matrix (Fin n) (Fin n) ℂ) (M : Matrix (Fin n) (Fin n) ℂ) (a d : Fin n) :
+    (∑ p, E p * M * E p) a d = ∑ b, ∑ c, M b c * ∑ p, E p a b * E p c d := by
+  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  simp_rw [Finset.sum_comm (γ := ι)]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+    Finset.sum_congr rfl fun _ _ ↦ by ring
+
+/-- A bilinear form `u ⬝ᵥ M *ᵥ v` as the trace of `M` against the rank-one matrix
+`vecMulVec v u`. -/
+private theorem dotProduct_mulVec_eq_trace_vecMulVec_mul {m R : Type*} [Fintype m]
+    [CommSemiring R] (u v : m → R) (M : Matrix m m R) :
+    u ⬝ᵥ M *ᵥ v = trace (vecMulVec v u * M) := by
+  rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
 
 /-! ### Contracted forms -/
 
@@ -304,12 +175,8 @@ theorem sum_trace_mul_gaussianEnsemble_single_smul_of_ne_one (hβ : β ≠ 1)
     ∑ p, trace (A * gaussianEnsemble β n (Pi.single p 1)) • gaussianEnsemble β n (Pi.single p 1) =
       (n : ℂ)⁻¹ • A := by
   ext c d
-  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, trace, diag_apply, Matrix.mul_apply,
-    Finset.sum_mul, mul_assoc]
-  rw [Finset.sum_comm]
-  simp_rw [Finset.sum_comm (γ := Fin n × Fin n), ← Finset.mul_sum,
-    sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one hβ]
-  simp [Matrix.single_apply, ite_and, mul_comm]
+  rw [sum_trace_mul_smul_apply]
+  simp [sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one hβ, ite_and, mul_comm]
 
 /-- **Reproducing property for `β = 1`.** Expanding a complex matrix `A` against the coordinate
 matrices of the real symmetric ensemble through the pairing `tr (A E p)` gives
@@ -318,12 +185,8 @@ theorem sum_trace_mul_gaussianEnsemble_one_single_smul (A : Matrix (Fin n) (Fin 
     ∑ p, trace (A * gaussianEnsemble 1 n (Pi.single p 1)) • gaussianEnsemble 1 n (Pi.single p 1) =
       (n : ℂ)⁻¹ • (A + Aᵀ) := by
   ext c d
-  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, trace, diag_apply, Matrix.mul_apply,
-    Finset.sum_mul, mul_assoc]
-  rw [Finset.sum_comm]
-  simp_rw [Finset.sum_comm (γ := Fin n × Fin n), ← Finset.mul_sum,
-    sum_gaussianEnsemble_one_single_apply_mul_apply]
-  simp [Matrix.single_apply, ite_and, mul_add, Finset.sum_add_distrib]
+  rw [sum_trace_mul_smul_apply]
+  simp [sum_gaussianEnsemble_one_single_apply_mul_apply, ite_and, mul_add, Finset.sum_add_distrib]
   ring
 
 /-- **Trace pairings for `β ≠ 1`.** `∑ p, tr (A E p) tr (B E p) = n⁻¹ tr (A B)` for all complex
@@ -363,10 +226,7 @@ theorem sum_dotProduct_mulVec_gaussianEnsemble_single_mul_dotProduct_mulVec_of_n
     ∑ p, (x ⬝ᵥ gaussianEnsemble β n (Pi.single p 1) *ᵥ y) *
         (z ⬝ᵥ gaussianEnsemble β n (Pi.single p 1) *ᵥ w) =
       (n : ℂ)⁻¹ * ((x ⬝ᵥ w) * (z ⬝ᵥ y)) := by
-  have h (u v : Fin n → ℂ) (M : Matrix (Fin n) (Fin n) ℂ) :
-      u ⬝ᵥ M *ᵥ v = trace (vecMulVec v u * M) := by
-    rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
-  simp_rw [h]
+  simp_rw [dotProduct_mulVec_eq_trace_vecMulVec_mul]
   rw [sum_trace_mul_gaussianEnsemble_single_mul_trace_mul_of_ne_one hβ, vecMulVec_mul_vecMulVec,
     trace_vecMulVec, dotProduct_smul, smul_eq_mul, dotProduct_comm y z]
 
@@ -379,10 +239,7 @@ theorem sum_dotProduct_mulVec_gaussianEnsemble_one_single_mul_dotProduct_mulVec
     ∑ p, (x ⬝ᵥ gaussianEnsemble 1 n (Pi.single p 1) *ᵥ y) *
         (z ⬝ᵥ gaussianEnsemble 1 n (Pi.single p 1) *ᵥ w) =
       (n : ℂ)⁻¹ * ((x ⬝ᵥ w) * (z ⬝ᵥ y) + (x ⬝ᵥ z) * (y ⬝ᵥ w)) := by
-  have h (u v : Fin n → ℂ) (M : Matrix (Fin n) (Fin n) ℂ) :
-      u ⬝ᵥ M *ᵥ v = trace (vecMulVec v u * M) := by
-    rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
-  simp_rw [h]
+  simp_rw [dotProduct_mulVec_eq_trace_vecMulVec_mul]
   rw [sum_trace_mul_gaussianEnsemble_one_single_mul_trace_mul, transpose_vecMulVec,
     vecMulVec_mul_vecMulVec, vecMulVec_mul_vecMulVec, trace_vecMulVec, trace_vecMulVec,
     dotProduct_smul, dotProduct_smul, smul_eq_mul, smul_eq_mul, dotProduct_comm y z]
@@ -393,16 +250,9 @@ theorem sum_gaussianEnsemble_single_mul_mul_gaussianEnsemble_single_of_ne_one (h
     ∑ p, gaussianEnsemble β n (Pi.single p 1) * M * gaussianEnsemble β n (Pi.single p 1) =
       ((n : ℂ)⁻¹ * trace M) • 1 := by
   ext a d
-  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul]
-  rw [Finset.sum_comm]
-  simp_rw [Finset.sum_comm (γ := Fin n × Fin n)]
-  have h (b c : Fin n) : ∑ p, gaussianEnsemble β n (Pi.single p 1) a b * M b c *
-      gaussianEnsemble β n (Pi.single p 1) c d =
-      M b c * ∑ p, gaussianEnsemble β n (Pi.single p 1) a b *
-        gaussianEnsemble β n (Pi.single p 1) c d := by
-    rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  simp_rw [h, sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one hβ]
-  simp [Matrix.single_apply, Matrix.one_apply, ite_and, trace, Finset.mul_sum, mul_comm]
+  rw [sum_mul_mul_apply]
+  simp_rw [sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one hβ]
+  simp [Matrix.one_apply, ite_and, trace, Finset.mul_sum, mul_comm]
 
 /-- **The sum `∑ p, E p * M * E p` for `β = 1`** is `n⁻¹ • (Mᵀ + tr M • 1)`. -/
 theorem sum_gaussianEnsemble_one_single_mul_mul_gaussianEnsemble_one_single
@@ -410,16 +260,9 @@ theorem sum_gaussianEnsemble_one_single_mul_mul_gaussianEnsemble_one_single
     ∑ p, gaussianEnsemble 1 n (Pi.single p 1) * M * gaussianEnsemble 1 n (Pi.single p 1) =
       (n : ℂ)⁻¹ • (Mᵀ + trace M • 1) := by
   ext a d
-  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul]
-  rw [Finset.sum_comm]
-  simp_rw [Finset.sum_comm (γ := Fin n × Fin n)]
-  have h (b c : Fin n) : ∑ p, gaussianEnsemble 1 n (Pi.single p 1) a b * M b c *
-      gaussianEnsemble 1 n (Pi.single p 1) c d =
-      M b c * ∑ p, gaussianEnsemble 1 n (Pi.single p 1) a b *
-        gaussianEnsemble 1 n (Pi.single p 1) c d := by
-    rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  simp_rw [h, sum_gaussianEnsemble_one_single_apply_mul_apply]
-  simp [Matrix.single_apply, Matrix.one_apply, ite_and, trace, Finset.mul_sum, mul_add,
+  rw [sum_mul_mul_apply]
+  simp_rw [sum_gaussianEnsemble_one_single_apply_mul_apply]
+  simp [Matrix.one_apply, ite_and, trace, Finset.mul_sum, mul_add,
     Finset.sum_add_distrib, mul_comm]
 
 end Probability

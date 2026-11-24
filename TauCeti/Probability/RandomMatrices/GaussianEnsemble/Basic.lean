@@ -32,6 +32,10 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
   `β ≠ 1` entry properties.
 * `TauCeti.Probability.gaussianEnsemble_add` and `TauCeti.Probability.gaussianEnsemble_smul`: the
   matrix is real-linear in the array.
+* `TauCeti.Probability.gaussianEnsemble_eq_sum_smul`: the expansion in the coordinate matrices
+  `gaussianEnsemble β n (Pi.single p 1)`.
+* `TauCeti.Probability.gaussianEnsemble_single_of_lt_of_ne_one` and its siblings: the
+  coordinate matrices as combinations of matrix units.
 * `TauCeti.Probability.continuous_gaussianEnsemble`: it depends continuously on the array.
 * `TauCeti.Probability.hasLaw_gaussianEnsemble`: with independent `N(0, v)` coordinates the
   ensemble has the law of `√v` times the ensemble of standard Gaussian coordinates.
@@ -161,6 +165,82 @@ theorem gaussianEnsemble_apply_of_gt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h
 
 end Entries
 
+section CoordinateMatrices
+
+/-! ### The coordinate matrices as combinations of matrix units -/
+
+variable {β n : ℕ}
+
+/-- For `β ≠ 1` the diagonal coordinate `(i, i)` gives `n^{-1/2}` times the matrix unit at
+`(i, i)`. -/
+@[simp]
+theorem gaussianEnsemble_single_self_of_ne_one (hβ : β ≠ 1) (i : Fin n) :
+    gaussianEnsemble β n (Pi.single (i, i) 1) = (Real.sqrt n : ℂ)⁻¹ • single i i 1 := by
+  ext c d
+  simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
+    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply, Prod.ext_iff,
+    smul_eq_mul]
+  split_ifs <;> first | ring1 | (exfalso; grind)
+
+/-- For `β ≠ 1` and `i < j` the coordinate `(i, j)` gives the real off-diagonal direction
+`(2n)^{-1/2} (single i j 1 + single j i 1)`. -/
+@[simp]
+theorem gaussianEnsemble_single_of_lt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h : i < j) :
+    gaussianEnsemble β n (Pi.single (i, j) 1) =
+      ((Real.sqrt n : ℂ)⁻¹ / Real.sqrt 2) • (single i j 1 + single j i 1) := by
+  ext c d
+  simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
+    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply,
+    Matrix.add_apply, Prod.ext_iff, smul_eq_mul]
+  split_ifs <;> first | ring1 | (exfalso; grind)
+
+/-- For `β ≠ 1` and `j < i` the coordinate `(i, j)` gives the imaginary off-diagonal direction
+`I (2n)^{-1/2} (single j i 1 - single i j 1)`. -/
+@[simp]
+theorem gaussianEnsemble_single_of_gt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h : j < i) :
+    gaussianEnsemble β n (Pi.single (i, j) 1) =
+      ((Real.sqrt n : ℂ)⁻¹ * Complex.I / Real.sqrt 2) • (single j i 1 - single i j 1) := by
+  ext c d
+  simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
+    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply,
+    Matrix.sub_apply, Prod.ext_iff, smul_eq_mul]
+  split_ifs <;> first | ring1 | (exfalso; grind)
+
+/-- For `β = 1` the diagonal coordinate `(i, i)` gives `√2 / √n` times the matrix unit at
+`(i, i)`. -/
+@[simp]
+theorem gaussianEnsemble_one_single_self (i : Fin n) :
+    gaussianEnsemble 1 n (Pi.single (i, i) 1) =
+      ((Real.sqrt n : ℂ)⁻¹ * Real.sqrt 2) • single i i 1 := by
+  ext c d
+  simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
+    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply, Prod.ext_iff,
+    smul_eq_mul, Complex.ofReal_mul]
+  split_ifs <;> first | ring1 | (exfalso; grind)
+
+/-- For `β = 1` and `i < j` the coordinate `(i, j)` gives
+`n^{-1/2} (single i j 1 + single j i 1)`. -/
+@[simp]
+theorem gaussianEnsemble_one_single_of_lt {i j : Fin n} (h : i < j) :
+    gaussianEnsemble 1 n (Pi.single (i, j) 1) =
+      (Real.sqrt n : ℂ)⁻¹ • (single i j 1 + single j i 1) := by
+  ext c d
+  simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
+    Complex.ofReal_one, Complex.ofReal_zero, Matrix.single_apply, Matrix.smul_apply,
+    Matrix.add_apply, Prod.ext_iff, smul_eq_mul, Complex.ofReal_mul]
+  split_ifs <;> first | ring1 | (exfalso; grind)
+
+/-- For `β = 1` the strictly lower coordinates are not read: their coordinate matrices vanish. -/
+@[simp]
+theorem gaussianEnsemble_one_single_of_gt {i j : Fin n} (h : j < i) :
+    gaussianEnsemble 1 n (Pi.single (i, j) 1) = 0 := by
+  ext c d
+  simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply, apply_ite ((↑) : ℝ → ℂ),
+    Complex.ofReal_one, Complex.ofReal_zero, Matrix.zero_apply, Prod.ext_iff, Complex.ofReal_mul]
+  split_ifs <;> first | ring1 | (exfalso; grind)
+
+end CoordinateMatrices
+
 section Linear
 
 variable {β n : ℕ}
@@ -200,6 +280,18 @@ theorem gaussianEnsemble_sub (g h : Fin n × Fin n → ℝ) :
   ext i j
   simp only [gaussianEnsemble_apply, Pi.sub_apply, Matrix.sub_apply]
   split_ifs <;> push_cast <;> ring
+
+/-- **Expansion in coordinate matrices.** The Gaussian ensemble of an array `g` is the
+combination, with coefficients `g p`, of the ensembles `gaussianEnsemble β n (Pi.single p 1)` of
+the coordinate arrays. -/
+theorem gaussianEnsemble_eq_sum_smul (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n g = ∑ p, g p • gaussianEnsemble β n (Pi.single p 1) := by
+  have h := map_sum (AddMonoidHom.mk' (gaussianEnsemble β n) gaussianEnsemble_add)
+    (fun p ↦ Pi.single p (g p)) Finset.univ
+  simp only [AddMonoidHom.mk'_apply, Finset.univ_sum_single] at h
+  rw [h]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [← gaussianEnsemble_smul, ← Pi.single_smul, smul_eq_mul, mul_one]
 
 /-- The Gaussian ensemble depends continuously on the array. -/
 @[fun_prop]
