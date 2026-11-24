@@ -16,7 +16,7 @@ Let `t` be an element of infinite additive order in an additive cancellative mon
 `t = 1` in `ℤ`). If a finite set is split into two blocks `A ∪ B` in two ways, `A ∪ B = C ∪ D`,
 and translating the first block by `t` again gives the same set in both ways,
 `(t +ᵥ A) ∪ B = (t +ᵥ C) ∪ D`, with all unions disjoint, then the two splittings coincide:
-`A = C` and `B = D` (`Finset.eq_and_eq_of_union_eq_of_vadd_union_eq`).
+`A = C` and `B = D` (`Finset.eq_and_eq_of_union_eq_of_vadd_finset_union_eq`).
 
 The proof compares multiplicities. Subtracting the two partitions shows that the difference of
 the multiplicity functions of `A` and `C` is invariant under translation by `t`; a finitely
@@ -34,7 +34,7 @@ multiplicity argument uses neither, and of the four disjointness conditions only
 
 * `Multiset.eq_of_add_eq_of_map_add_add_eq`: if `A + B = C + D` and
   `A.map (t + ·) + B = C.map (t + ·) + D` with `t` of infinite order, then `A = C`.
-* `Finset.eq_and_eq_of_union_eq_of_vadd_union_eq`: the finite-set version, concluding
+* `Finset.eq_and_eq_of_union_eq_of_vadd_finset_union_eq`: the finite-set version, concluding
   `A = C` and `B = D`.
 -/
 
@@ -88,8 +88,8 @@ variable [DecidableEq G]
 `(t +ᵥ A) ∪ B = (t +ᵥ C) ∪ D`, where `C ∪ D` and `(t +ᵥ A) ∪ B` are disjoint unions, then
 `A = C` and `B = D`. The remaining unions `A ∪ B` and `(t +ᵥ C) ∪ D` are then disjoint as well,
 by counting. -/
-theorem eq_and_eq_of_union_eq_of_vadd_union_eq (ht : ¬IsOfFinAddOrder t) {A B C D : Finset G}
-    (hCD : Disjoint C D) (hAB : Disjoint (t +ᵥ A) B) (h : A ∪ B = C ∪ D)
+theorem eq_and_eq_of_union_eq_of_vadd_finset_union_eq (ht : ¬IsOfFinAddOrder t)
+    {A B C D : Finset G} (hCD : Disjoint C D) (hAB : Disjoint (t +ᵥ A) B) (h : A ∪ B = C ∪ D)
     (h' : (t +ᵥ A) ∪ B = (t +ᵥ C) ∪ D) : A = C ∧ B = D := by
   -- Counting shows that the other two unions are disjoint too.
   have hcard : #(A ∪ B) = #A + #B ∧ #((t +ᵥ C) ∪ D) = #(t +ᵥ C) + #D := by
@@ -103,8 +103,10 @@ theorem eq_and_eq_of_union_eq_of_vadd_union_eq (ht : ¬IsOfFinAddOrder t) {A B C
     omega
   have hval {s u : Finset G} (hsu : Disjoint s u) : (s ∪ u).val = s.val + u.val := by
     rw [union_val, Multiset.add_eq_union_iff_disjoint.mpr (disjoint_val.mpr hsu)]
-  have hmap (s : Finset G) : (t +ᵥ s).val = s.val.map (t + ·) :=
-    image_val_of_injOn (add_right_injective t).injOn
+  have hmap (s : Finset G) : (t +ᵥ s).val = s.val.map (t + ·) := by
+    rw [vadd_finset_def]
+    simp only [vadd_eq_add]
+    exact image_val_of_injOn (add_right_injective t).injOn
   have hsum : A.val + B.val = C.val + D.val := by
     rw [← hval (card_union_eq_card_add_card.mp hcard.1), ← hval hCD, h]
   have hsum' : A.val.map (t + ·) + B.val = C.val.map (t + ·) + D.val := by
