@@ -22,7 +22,8 @@ measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_si
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
-points of an orbit (`map_smul_const_eq_of_isPretransitive`). For a transitive action every
+points of an orbit (`map_smul_const_smul`), so for a transitive action it does not depend on the
+point at all (`map_smul_const_eq_of_isPretransitive`). For a transitive action every
 s-finite invariant measure `ν` equals `ν univ • μ.map (· • x)`
 (`eq_measure_univ_smul_map_smul_const`), so any invariant probability measure equals this law.
 This identifies, for instance, the uniform law on a sphere, which is invariant under rotations,
