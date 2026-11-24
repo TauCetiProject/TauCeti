@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.LinHom.Basic
 
 /-!
 # Operations on jointly continuous representations
@@ -30,7 +31,8 @@ depends continuously on `g`.
 
 The comparisons between the operations hold for finite projective carriers: the evaluation
 isomorphism `M ≅ M^∨∨`, the isomorphism `M^∨ ⊗ N ≅ Hom_A(M, N)` (Mathlib's
-`dualTensorHomEquiv`, which is equivariant by `Representation.dualTensorHom_comm`), and the
+`dualTensorHomEquiv`, as the equivalence of representations
+`Representation.Equiv.dualTensorHomOfProjective`), and the
 identification of the twist `M(χ)` with the tensor product `M ⊗ A(χ)`. Twisting by `1` does
 nothing and twisting twice multiplies the characters. The invariants of the Hom representation are
 the morphisms of continuous representations. Evaluation `M^∨ ⊗ M → A` is a morphism to the trivial
@@ -229,13 +231,13 @@ theorem tprodCommIso_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N
 @[simp]
 theorem tprodCommIso_symm (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     (tprodCommIso ρ σ).symm = tprodCommIso σ ρ :=
-  have h (x : N ⊗[A] M) : tprodCommIso ρ σ (tprodCommIso σ ρ x) = x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul y x => simp
-    | add x y hx hy => simp only [map_add, hx, hy]
-  Iso.ext fun x => by
-    conv_lhs => rw [← h x]
-    exact Iso.symm_apply_apply _ _
+  (Iso.ofEquiv_symm _).trans (congrArg Iso.ofEquiv (Representation.TensorProduct.comm_symm _ _))
+
+/-- The braiding is an involution. -/
+@[simp]
+theorem tprodCommIso_tprodCommIso (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
+    (x : N ⊗[A] M) : tprodCommIso ρ σ (tprodCommIso σ ρ x) = x := by
+  rw [← tprodCommIso_symm σ ρ, Iso.symm_apply_apply]
 
 end Tensor
 
@@ -457,13 +459,15 @@ variable {N : Type*} [AddCommGroup N] [Module A N] [TopologicalSpace N] [IsModul
   [TopologicalSpace (M →ₗ[A] N)] [IsModuleTopology A (M →ₗ[A] N)]
 
 /-- **`M^∨ ⊗ N ≅ Hom_A(M, N)`** for a finite projective `M`: Mathlib's `dualTensorHomEquiv`,
-`ψ ⊗ y ↦ (x ↦ ψ x • y)`, is an isomorphism of continuous representations. -/
+`ψ ⊗ y ↦ (x ↦ ψ x • y)`, is an isomorphism of continuous representations. It is
+`Representation.Equiv.dualTensorHomOfProjective` with the automatic continuity of
+`TauCeti.ContinuousRep.Iso.ofEquiv`. -/
 noncomputable def dualTensorIsoHom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     Iso (ρ.dual.tprod σ) (ρ.linHom σ) :=
-  Iso.ofEquiv <| .mk (dualTensorHomEquiv A M N) fun g => by
-    rw [toRepresentation_tprod, toRepresentation_dual, toRepresentation_linHom,
-      toLinearMap_dualTensorHomEquiv]
-    exact Representation.dualTensorHom_comm ρ.toRepresentation σ.toRepresentation g
+  let e := Representation.Equiv.dualTensorHomOfProjective ρ.toRepresentation σ.toRepresentation
+  Iso.ofEquiv <| .mk e.toLinearEquiv fun g => by
+    rw [toRepresentation_tprod, toRepresentation_dual, toRepresentation_linHom]
+    exact e.toIntertwiningMap.isIntertwining' g
 
 @[simp]
 theorem dualTensorIsoHom_tmul_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
@@ -544,8 +548,7 @@ noncomputable def coevaluation (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A
 @[simp]
 theorem dualTensorIsoHom_tprodCommIso_coevaluation (ρ : ContinuousRep Γ A M) (a : A) :
     dualTensorIsoHom ρ ρ (tprodCommIso ρ ρ.dual (coevaluation ρ a)) = a • LinearMap.id := by
-  rw [← tprodCommIso_symm]
-  simp [coevaluation, -tprodCommIso_symm]
+  simp [coevaluation]
 
 end Coevaluation
 
