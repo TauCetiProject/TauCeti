@@ -23,9 +23,11 @@ sums, and they are stated equivalently as bounds for the *maximal interval sum*
 `M_χ = max_{0 ≤ M < q, 0 ≤ N ≤ q} ‖S_χ(M, N)‖`, a maximum over finitely many sums.
 
 A nonprincipal character sums to zero over a full period, so its interval sums depend only on
-`M` and `N` modulo `q`, and `M_χ` bounds every interval sum. For an even character the
-interval sums are symmetric about the middle of a period, and `M_χ` is exactly twice the largest
-initial sum `‖∑_{0 < n ≤ N} χ n‖`; for every nonprincipal character it is at most twice that.
+`M` and `N` modulo `q`, and `M_χ` bounds every interval sum. For an even nonprincipal
+character with values in a domain the initial sums are antisymmetric about the middle of a
+period, and if `χ` takes values in `ℝ` or `ℂ` (more generally an `RCLike` field), then `M_χ` is
+exactly twice the largest initial sum `‖∑_{0 < n ≤ N} χ n‖`; for every nonprincipal character
+with values in a normed field it is at most twice that.
 These are the elementary identities used by Pomerance (*Remarks on the Pólya–Vinogradov
 inequality*, Integers 11 (2011)) and by Frolenkov (*Numerically explicit version of the
 Pólya–Vinogradov inequality*, arXiv:1107.0381, equation (1)).
@@ -49,9 +51,10 @@ Pólya–Vinogradov inequality*, arXiv:1107.0381, equation (1)).
   maximal interval sum.
 * `DirichletCharacter.Even.intervalSum_level_sub_one_sub`: for an even nonprincipal character,
   `∑_{0 < n ≤ q - 1 - N} χ n = -∑_{0 < n ≤ N} χ n`.
-* `DirichletCharacter.Even.maxIntervalSum_eq_two_mul_sup'`: for an even nonprincipal character,
-  `M_χ = 2 max_{0 ≤ N < q} ‖∑_{0 < n ≤ N} χ n‖`; `maxIntervalSum_le_two_mul` is the inequality
-  for every nonprincipal character.
+* `DirichletCharacter.Even.maxIntervalSum_eq_two_mul_sup'`: for an even nonprincipal character
+  with values in an `RCLike` field, `M_χ = 2 max_{0 ≤ N < q} ‖∑_{0 < n ≤ N} χ n‖`;
+  `maxIntervalSum_le_two_mul` is the inequality for every nonprincipal character with values in a
+  normed field.
 -/
 
 public section
