@@ -93,10 +93,10 @@ theorem IsPrCompact.exists_isRieszColemanProjection_of_isMulDistinguished {u : M
   obtain ⟨Q, S, hQS⟩ := hN.exists_isEntirePreparation hc hu.isEntire_charPowerSeries
     u.constantCoeff_charPowerSeries
   have hcop := hQS.isCoprime hN hc
-  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hQS.coeff_zero_eq_one
-    hQS.isUnit_leadingCoeff hQS.isEntire hQS.eq_mul hcop
+  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hQS.isUnit_leadingCoeff
+    hQS.isEntire hQS.eq_mul hcop
   refine ⟨Q, S, E, hQS, hE, fun p ↦ ?_⟩
-  rw [hE.rankAtStalk_range_of_isPrCompact hu hQS.coeff_zero_eq_one hQS.isUnit_leadingCoeff
+  rw [hE.rankAtStalk_range_of_isPrCompact hu hQS.isUnit_leadingCoeff
     hQS.isEntire hQS.eq_mul hcop p, hQS.natDegree_eq]
 
 end Ring
@@ -145,8 +145,8 @@ theorem IsPrCompact.exists_isRieszColemanProjection_finiteSlope (hu : u.IsPrComp
   obtain ⟨Q, S, E, hQS, hE, -⟩ := hu.exists_isRieszColemanProjection_of_isMulDistinguished hc hN
   refine ⟨Q, S, E, hQS, hQS.newtonSlopeMultiplicity_left v hb hv hN.toIsDistinguished,
     hQS.newtonSlopeMultiplicity_right v hb hv hN.toIsDistinguished, hE, ?_⟩
-  rw [hE.finrank_range_of_isPrCompact hu hQS.coeff_zero_eq_one hQS.isEntire hQS.eq_mul
-    (hQS.isCoprime hN hc), hQS.natDegree_eq]
+  rw [hE.finrank_range_of_isPrCompact hu hQS.isEntire hQS.eq_mul (hQS.isCoprime hN hc),
+    hQS.natDegree_eq]
 
 /-- **The finite-slope summands increase with the cutoff.** Let `u` be `(Pr)`-compact, let
 `h ≤ h'`, and let `H_u = Q * S` be the normalised entire preparation at `b ^ h` in degree
@@ -196,10 +196,10 @@ theorem IsPrCompact.exists_isRieszColemanProjection_pureSlope (hu : u.IsPrCompac
   have hH : u.charPowerSeries = (g σ : K⟦X⟧) * ((c : K⟦X⟧) * S) := by
     rw [hQS.eq_mul, ← hgcQ, Polynomial.coe_mul, mul_assoc]
   have hcop := hQS.isCoprime_of_isCoprime_mul_eq hN hc hgc hgcQ
-  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection (hg.coeff_zero σ) hlc hcS hH hcop
+  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hlc hcS hH hcop
   refine ⟨g σ, E, hg.coeff_zero σ, hg.newtonSlopes_eq σ, hdeg, ⟨c, hgcQ.symm⟩, hE, ?_,
     fun E' hE' ↦ hE.range_le_range_of_dvd hE' hlc ⟨c, hgcQ.symm⟩⟩
-  rw [hE.finrank_range_of_isPrCompact hu (hg.coeff_zero σ) hcS hH hcop, hdeg]
+  rw [hE.finrank_range_of_isPrCompact hu hcS hH hcop, hdeg]
 
 end Field
 

@@ -14,7 +14,8 @@ The coordinate spatial derivatives `∂_{x_j}` of a symbol (`TauCeti.Symbol.spat
 into the spatial derivative in an arbitrary direction `v`,
 `∂_{x, v} a = ∑ⱼ vⱼ ∂_{x_j} a` (`TauCeti.Symbol.lineSpatialDeriv`). It is a symbol of the same
 order, whose coefficient at `(x, ξ)` is the derivative of `y ↦ a(y, ξ)` at `x` in the direction
-`v` (`TauCeti.Symbol.coefficient_lineSpatialDeriv`), and it preserves estimates uniform in the
+`v` (`TauCeti.Symbol.coefficient_lineSpatialDeriv`); along a basis vector it is `∂_{x_j} a`
+(`TauCeti.Symbol.lineSpatialDeriv_single`). It preserves estimates uniform in the
 position (`TauCeti.Symbol.IsUniform.lineSpatialDeriv`).
 -/
 
@@ -48,6 +49,13 @@ theorem coefficient_lineSpatialDeriv (v : CoordinateSpace n) (a : Symbol n V W m
   conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v]
   simp only [map_sum, map_smul, EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply,
     fderiv_coefficient_single, Complex.coe_smul]
+
+/-- Along the `j`-th basis vector `eⱼ`, `∂_{x, eⱼ} a` is the coordinate derivative `∂_{x_j} a`. -/
+@[simp]
+theorem lineSpatialDeriv_single (j : Fin n) (a : Symbol n V W m) :
+    lineSpatialDeriv (EuclideanSpace.single j 1) a = spatialDeriv j a := by
+  refine Symbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_)
+  rw [coefficient_lineSpatialDeriv, fderiv_coefficient_single]
 
 theorem IsUniform.lineSpatialDeriv {a : Symbol n V W m} (ha : a.IsUniform)
     (v : CoordinateSpace n) : (lineSpatialDeriv v a).IsUniform := by

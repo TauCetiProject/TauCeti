@@ -504,8 +504,8 @@ theorem cyclicCohomology.exact_connesB_periodicity (m : ℕ) :
       (cyclicCohomology.periodicity R A M m) := by
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
   have hu : IsUnit ((m + 1 : R) * (m + 2 : R)) :=
-    (isUnit_natCast_add_one (K := R) m).mul
-      (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)
+    (isUnit_natCast_add_one ℚ (A := R) m).mul
+      (isUnit_natCast_add_of_ne_zero ℚ (A := R) m two_ne_zero)
   refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
   · have hc' : cyclicTotalHomologyPeriodicity R A M m
         (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by
