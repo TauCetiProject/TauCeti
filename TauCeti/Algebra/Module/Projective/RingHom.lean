@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
-public import Mathlib.Algebra.Module.RingHom
 
 import TauCeti.Algebra.Ring.Prod
 

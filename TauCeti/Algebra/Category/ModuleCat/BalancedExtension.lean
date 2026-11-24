@@ -30,8 +30,9 @@ Mathlib's `ModuleCat.extendScalars f`, by `s ⊗ p ↦ s ⊗ₜ p`.
 * `TauCeti.BalancedExtension.extendScalarsIso f`: for commutative rings, the identification with
   `ModuleCat.extendScalars f`.
 * `TauCeti.BalancedExtension.restrictScalarsSelfEquiv`,
-  `subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero`, and `prodModuleLinearEquiv`:
-  surjective recovery, vanishing under annihilators, and `(R × S)`-module decomposition.
+  `subsingleton_extendScalars_restrictScalars_of_map_eq_one_of_map_eq_zero`, and
+  `prodModuleLinearEquiv`: surjective recovery, vanishing under annihilators, and
+  `(R × S)`-module decomposition.
 
 ## References
 
@@ -316,19 +317,6 @@ theorem functorCompCongr_hom_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D)
   refine (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans ?_
   rw [functorComp_inv_app_tmul_tmul, functorCongr_hom_app_tmul, functorComp_hom_app_tmul]
 
--- Not `@[simp]`: its left-hand side mentions the composite functor, which `Functor.comp_obj`
--- simplifies inside the coercion type parameter.
-/-- The inverse component of `functorCompCongr` sends `d ⊗ (c ⊗ m)` to `(d * g₂ c) ⊗ (1 ⊗ m)`. -/
-theorem functorCompCongr_inv_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →+* C)
-    (g₂ : C →+* D) (h : g₁.comp f₁ = g₂.comp f₂) (M : ModuleCat.{max v u₂ u₃} A)
-    (d : D) (c : C) (m : M) :
-    (functorCompCongr.{u₁, u₂, u₃, u₄, v} f₁ g₁ f₂ g₂ h).inv.app M (tmul g₂ d (tmul f₂ c m)) =
-      tmul g₁ (d * g₂ c) (tmul f₁ 1 m) := by
-  rw [functorCompCongr_def, Iso.trans_inv, Iso.trans_inv, Iso.symm_inv, Category.assoc,
-    NatTrans.comp_app, NatTrans.comp_app]
-  refine (ConcreteCategory.comp_apply _ _ _).trans <| (ConcreteCategory.comp_apply _ _ _).trans ?_
-  rw [functorComp_inv_app_tmul_tmul, functorCongr_inv_app_tmul, functorComp_hom_app_tmul]
-
 @[simp] theorem functorCompCongr_self (f : A →+* B) (g : B →+* D) :
     functorCompCongr.{u₁, u₂, u₂, u₄, v} f g f g rfl =
       Iso.refl (functor.{u₁, u₂, max v u₂} f ⋙ functor.{u₂, u₄, max v u₂} g) := by
@@ -338,6 +326,17 @@ theorem functorCompCongr_inv_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D)
     (h : g₁.comp f₁ = g₂.comp f₂) :
     (functorCompCongr.{u₁, u₂, u₃, u₄, v} f₁ g₁ f₂ g₂ h).symm =
       functorCompCongr f₂ g₂ f₁ g₁ h.symm := by simp [functorCompCongr_def]
+
+-- Not `@[simp]`: its left-hand side mentions the composite functor, which `Functor.comp_obj`
+-- simplifies inside the coercion type parameter.
+/-- The inverse component of `functorCompCongr` sends `d ⊗ (c ⊗ m)` to `(d * g₂ c) ⊗ (1 ⊗ m)`. -/
+theorem functorCompCongr_inv_app_tmul_tmul (f₁ : A →+* B) (g₁ : B →+* D) (f₂ : A →+* C)
+    (g₂ : C →+* D) (h : g₁.comp f₁ = g₂.comp f₂) (M : ModuleCat.{max v u₂ u₃} A)
+    (d : D) (c : C) (m : M) :
+    (functorCompCongr.{u₁, u₂, u₃, u₄, v} f₁ g₁ f₂ g₂ h).inv.app M (tmul g₂ d (tmul f₂ c m)) =
+      tmul g₁ (d * g₂ c) (tmul f₁ 1 m) := by
+  rw [← Iso.symm_hom, functorCompCongr_symm]
+  exact functorCompCongr_hom_app_tmul_tmul f₂ g₂ f₁ g₁ h.symm M d c m
 
 end Square
 
@@ -490,8 +489,8 @@ noncomputable def restrictScalarsSelfEquiv (p : E →+* A) (hp : Function.Surjec
 
 /-- If `p : E →+* A` and `p' : E →+* B` admit an element `e : E` with `p e = 1` and `p' e = 0`,
 then extending along `p` any `B`-module restricted along `p'` yields a subsingleton module. -/
-theorem subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero (p : E →+* A) (p' : E →+* B)
-    (e : E) (hp : p e = 1) (hp' : p' e = 0) (N : ModuleCat.{v} B) :
+theorem subsingleton_extendScalars_restrictScalars_of_map_eq_one_of_map_eq_zero (p : E →+* A)
+    (p' : E →+* B) (e : E) (hp : p e = 1) (hp' : p' e = 0) (N : ModuleCat.{v} B) :
     Subsingleton (BalancedExtension p ((ModuleCat.restrictScalars.{v} p').obj N)) :=
   subsingleton_of_isUnit_of_smul_eq_zero p e (by rw [hp]; exact isUnit_one) fun n ↦
     (ModuleCat.restrictScalarsAddEquiv p' N).symm.injective
@@ -597,9 +596,9 @@ noncomputable def prodModuleLinearEquiv (P : ModuleCat.{v} (R × S)) :
     (LinearMap.ext fun p ↦ by
       simp only [LinearMap.coprod_comp_prod, LinearMap.add_apply, LinearMap.comp_apply,
         splitInclude, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.id_apply]
+      have hid : ((1, 0) : R × S) + (0, 1) = 1 := by ext <;> simp
       rw [splitLift_tmul, splitLift_tmul, AddMonoidHom.inl_apply, AddMonoidHom.inr_apply,
-        ← add_smul, show ((1, 0) : R × S) + (0, 1) = 1 from Prod.ext (add_zero 1) (zero_add 1),
-        one_smul])
+        ← add_smul, hid, one_smul])
 
 @[simp] theorem prodModuleLinearEquiv_apply (P : ModuleCat.{v} (R × S)) (p : P) :
     prodModuleLinearEquiv R S P p =

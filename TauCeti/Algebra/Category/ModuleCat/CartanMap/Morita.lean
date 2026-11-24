@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Morita.Basic
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Equivalence
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Equivalence
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic
 public import TauCeti.CategoryTheory.Adjunction.Additive
 

@@ -28,8 +28,9 @@ The file defines `TauCeti.FiniteProjectiveModules.classOf R M n = [M] - n[R]`, w
 isomorphism invariance, stable-freeness and stable-equivalence criteria, additivity on products,
 and vanishing on finite free modules. These classes measure the obstruction to stable freeness.
 
-The file also records additivity on products of modules, `[P × Q] = [P] + [Q]` and
-`[Rⁿ] = n[R]`, in the form consumed by classes `[M] - n[R]`.
+The file also records additivity on finite products (`TauCeti.SplitK0.of_eq_sum_of_linearEquiv_pi`),
+while binary-product additivity `[P × Q] = [P] + [Q]` and finite-free class formulas `[Rⁿ] = n[R]`
+are in `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.SplitK0.Basic`.
 
 ## Main results
 

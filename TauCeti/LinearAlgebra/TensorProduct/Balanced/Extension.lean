@@ -537,9 +537,8 @@ theorem subsingleton_of_isUnit_of_smul_eq_zero {E : Type u₁} {A : Type u₂} [
   refine subsingleton_of_forall_eq 0 fun z ↦ ?_
   induction z using induction_on with
   | tmul a m =>
-    have h := tmul_smul (f := p) (a * (u⁻¹ : Aˣ)) e m
-    rwa [← hu, mul_assoc, ← Units.val_mul, inv_mul_cancel, Units.val_one, mul_one, hm, tmul_zero,
-      eq_comm] at h
+    have h := (tmul_smul (f := p) (a * (u⁻¹ : Aˣ)) e m).symm
+    simpa [← hu, Units.inv_mul_cancel_right, hm, eq_comm] using h
   | add x y hx hy => rw [hx, hy, add_zero]
 
 section Idempotent

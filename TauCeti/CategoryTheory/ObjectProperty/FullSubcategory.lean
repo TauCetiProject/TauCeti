@@ -22,9 +22,11 @@ linear whenever the ambient category is linear. No closure under isomorphisms is
 The construction uses Mathlib's `ObjectProperty.lift` and `ObjectProperty.ιOfLE`.
 
 The file also records `CategoryTheory.ObjectProperty.lift_comp_ι`: a lift through a full
-subcategory, followed by the inclusion, is the original functor; and
+subcategory, followed by the inclusion, is the original functor;
 `CategoryTheory.ObjectProperty.map_hom_of_comp_ι_eq`: a functor `G` with `G ⋙ P.ι = F` acts on
-morphisms as `F`, up to the identifications of the underlying objects.
+morphisms as `F`, up to the identifications of the underlying objects; and
+`CategoryTheory.ObjectProperty.liftNatIso`: lifting natural isomorphisms between ambient functors
+to functors between full subcategories.
 -/
 
 public section
@@ -171,5 +173,51 @@ instance hasFiniteBiproducts_fullSubcategory [P.IsClosedUnderFiniteProducts] :
   .of_hasFiniteProducts
 
 end Biproducts
+
+section LiftNatIso
+
+universe u₁ v₁ u₂ v₂
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+  {P : ObjectProperty C} {Q : ObjectProperty D}
+  {F G H : P.FullSubcategory ⥤ Q.FullSubcategory} {F' G' H' : C ⥤ D}
+  (eF : F ⋙ Q.ι ≅ P.ι ⋙ F') (eG : G ⋙ Q.ι ≅ P.ι ⋙ G') (eH : H ⋙ Q.ι ≅ P.ι ⋙ H')
+  (α : F' ≅ G') (β : G' ≅ H')
+
+/-- Lift a natural isomorphism `α : F' ≅ G'` between ambient functors to a natural isomorphism
+between functors on full subcategories compatible with `F'` and `G'` via `eF` and `eG`. -/
+noncomputable def liftNatIso : F ≅ G :=
+  (Q.fullyFaithfulι.whiskeringRight _).preimageIso
+    (eF ≪≫ P.ι.isoWhiskerLeft α ≪≫ eG.symm)
+
+theorem liftNatIso_refl : liftNatIso eF eF (Iso.refl F') = Iso.refl F :=
+  Iso.ext <| (Q.fullyFaithfulι.whiskeringRight _).map_injective <| by
+    simp [-Functor.whiskeringRight_obj_map, liftNatIso]
+
+theorem liftNatIso_symm : (liftNatIso eF eG α).symm = liftNatIso eG eF α.symm :=
+  Iso.ext <| (Q.fullyFaithfulι.whiskeringRight _).map_injective <| by
+    simp [-Functor.whiskeringRight_obj_map, liftNatIso, Category.assoc]
+
+theorem liftNatIso_trans :
+    liftNatIso eF eG α ≪≫ liftNatIso eG eH β = liftNatIso eF eH (α ≪≫ β) :=
+  Iso.ext <| (Q.fullyFaithfulι.whiskeringRight _).map_injective <| by
+    simp [-Functor.whiskeringRight_obj_map, liftNatIso, Category.assoc]
+
+theorem liftNatIso_hom_app_hom (X : P.FullSubcategory) :
+    ((liftNatIso eF eG α).hom.app X).hom = eF.hom.app X ≫ α.hom.app X.obj ≫ eG.inv.app X := by
+  rw [← ObjectProperty.ι_map, liftNatIso, Functor.FullyFaithful.preimageIso_hom,
+    Functor.FullyFaithful.whiskeringRight_preimage_app, Functor.FullyFaithful.map_preimage]
+  simp
+
+theorem liftNatIso_inv_app_hom (X : P.FullSubcategory) :
+    ((liftNatIso eF eG α).inv.app X).hom = eG.hom.app X ≫ α.inv.app X.obj ≫ eF.inv.app X := by
+  rw [← Iso.symm_hom, liftNatIso_symm, liftNatIso_hom_app_hom, Iso.symm_hom]
+
+@[reassoc]
+theorem liftNatIso_hom_app_hom_comp (X : P.FullSubcategory) :
+    ((liftNatIso eF eG α).hom.app X).hom ≫ eG.hom.app X = eF.hom.app X ≫ α.hom.app X.obj := by
+  simp [liftNatIso_hom_app_hom]
+
+end LiftNatIso
 
 end CategoryTheory.ObjectProperty

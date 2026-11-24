@@ -566,7 +566,8 @@ theorem map_extendScalars_comp_restrictScalars_eq_zero {E A B : Type u} [Ring E]
     rw [AddMonoidHom.comp_apply, SplitK0.map_of, SplitK0.map_of, AddMonoidHom.zero_apply]
     have : Subsingleton ((BalancedExtension.functor p).obj
         ((ModuleCat.restrictScalars.{u} p').obj N.obj)) :=
-      BalancedExtension.subsingleton_restrictScalars_of_map_eq_one_of_map_eq_zero p p' e hp hp' _
+      BalancedExtension.subsingleton_extendScalars_restrictScalars_of_map_eq_one_of_map_eq_zero
+        p p' e hp hp' _
     exact of_eq_zero_of_isZero <| Limits.IsZero.of_full_of_faithful_of_isZero
       (finiteProjectiveModules A).ι _ <| (ModuleCat.isZero_of_subsingleton _).of_iso <|
         eqToIso ((p.finiteProjectiveModulesExtendScalars_obj_obj _).trans <| congrArg
