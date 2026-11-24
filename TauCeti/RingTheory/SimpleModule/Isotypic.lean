@@ -158,13 +158,13 @@ theorem finsupp (h : IsIsotypicOfType R M N) (ι : Type*) :
   exact ⟨e.trans (h (LinearMap.range f)).some⟩
 
 /-- **Schur's lemma for multiples of simple modules.** If direct sums of copies of the simple
-modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`: the direct sum
-of copies of `V'` is isotypic of type `V'` (`IsIsotypicOfType.finsupp`), so a copy of `V` maps to
-zero in it unless `V ≅ V'`. -/
-theorem nonempty_linearEquiv_of_finsupp_linearEquiv {V V' ι ι' : Type*}
+modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`. -/
+theorem _root_.LinearEquiv.nonempty_linearEquiv_of_finsupp {V V' ι ι' : Type*}
     [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V'] [IsSimpleModule R V]
     [IsSimpleModule R V'] [Nonempty ι] (e : (ι →₀ V) ≃ₗ[R] (ι' →₀ V')) :
     Nonempty (V ≃ₗ[R] V') := by
+  -- The direct sum of copies of `V'` is isotypic of type `V'`, so a copy of `V` maps to zero in
+  -- it unless `V ≅ V'`.
   obtain ⟨j⟩ := ‹Nonempty ι›
   by_contra hne
   have h0 := ((IsIsotypicOfType.of_isSimpleModule R V').finsupp ι').linearMap_eq_zero hne

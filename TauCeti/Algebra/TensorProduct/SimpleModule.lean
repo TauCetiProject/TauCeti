@@ -29,10 +29,10 @@ Schur's lemma and density over the algebraically closed field `k`). The multipli
 that `W` is simple (`TauCeti.isotypicComponent_eq_top_of_commuting` and
 `TauCeti.isSimpleModule_linearMap_of_commuting`).
 
-For uniqueness, the restriction of `V ⊗[k] W` to `A` is a direct sum of copies of `V`
-(choose a basis of `W`), and Schur's lemma identifies `V` with `V'` as soon as such sums are
-isomorphic (`TauCeti.nonempty_linearEquiv_of_finsupp_linearEquiv`). This half needs neither
-finiteness nor algebraic closedness.
+For uniqueness, when `W` is free over `k` the restriction of `V ⊗[k] W` to `A` is a direct sum
+of copies of `V` (choose a basis of `W`), and Schur's lemma identifies `V` with `V'` as soon as
+such sums are isomorphic (`LinearEquiv.nonempty_linearEquiv_of_finsupp`). This half needs neither
+finiteness nor algebraic closedness, only that the four factors are free over `k`.
 
 Algebraic closedness cannot be dropped from the existence statement: `ℂ ⊗[ℝ] ℂ ≅ ℂ × ℂ` has
 the simple module `ℂ` of real dimension `2`, while a tensor product of two simple `ℂ`-modules
@@ -47,7 +47,8 @@ over `ℝ` has real dimension `4`.
   over `B`.
 * `TauCeti.nonempty_linearEquiv_of_tensorPairAction_equiv`: **the factors are unique**: an
   isomorphism `V ⊗[k] W ≅ V' ⊗[k] W'` of `A ⊗[k] B`-modules between exterior tensor products of
-  simple modules gives `V ≅ V'` over `A` and `W ≅ W'` over `B`.
+  simple modules that are free over the commutative semiring `k` gives `V ≅ V'` over `A` and
+  `W ≅ W'` over `B`.
 
 ## References
 
@@ -160,41 +161,38 @@ theorem exists_tensorProduct_equiv_of_isSimpleModule [IsScalarTower k (A ⊗[k] 
         ← Algebra.TensorProduct.smul_moduleLeft]
       exact (smul_comm a b (f v)).symm
 
-
 section Uniqueness
 
-variable {k A V V' W W' : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+variable {k A V V' : Type*} [CommSemiring k] [Ring A] [Algebra k A]
   [AddCommGroup V] [Module k V] [Module A V] [IsScalarTower k A V]
   [AddCommGroup V'] [Module k V'] [Module A V'] [IsScalarTower k A V']
-  [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
 
-/-- **Cancelling a vector space from a simple module.** If `V ⊗[k] W ≅ V' ⊗[k] W'` as
-`A`-modules, with `A` acting on the left factors, `V` and `V'` simple, `W` and `W'` free over `k`
-and `W` nonzero, then `V ≅ V'`: choosing bases writes both sides as direct sums of copies of `V`
-and `V'`. -/
-theorem nonempty_linearEquiv_of_tensorProduct_linearEquiv [IsSimpleModule A V]
+/-- **Cancelling a free right tensor factor from a simple module.** If `V ⊗[k] W ≅ V' ⊗[k] W'`
+as `A`-modules, with `A` acting on the left factors, `V` and `V'` simple, `W` and `W'` free over
+`k` and `W` nonzero, then `V ≅ V'`. -/
+theorem _root_.LinearEquiv.nonempty_linearEquiv_of_tensorProduct {W W' : Type*}
+    [AddCommMonoid W] [Module k W] [AddCommMonoid W'] [Module k W'] [IsSimpleModule A V]
     [IsSimpleModule A V'] [Module.Free k W] [Module.Free k W'] [Nontrivial W]
     (e : V ⊗[k] W ≃ₗ[A] V' ⊗[k] W') :
     Nonempty (V ≃ₗ[A] V') := by
+  -- Choosing bases writes both sides as direct sums of copies of `V` and `V'`.
   let b := Module.Free.chooseBasis k W
   let b' := Module.Free.chooseBasis k W'
   have : Nonempty (Module.Free.ChooseBasisIndex k W) := b.index_nonempty
   let f := AlgebraTensorModule.congr (.refl A V) b.repr ≪≫ₗ finsuppScalarRight k A V _
   let f' := AlgebraTensorModule.congr (.refl A V') b'.repr ≪≫ₗ finsuppScalarRight k A V' _
-  exact IsIsotypicOfType.nonempty_linearEquiv_of_finsupp_linearEquiv (f.symm ≪≫ₗ e ≪≫ₗ f')
+  exact (f.symm ≪≫ₗ e ≪≫ₗ f').nonempty_linearEquiv_of_finsupp
 
-/-- **Flath's finite-dimensional factorization** (uniqueness of the factors). If `V ⊗[k] W` and
-`V' ⊗[k] W'` are isomorphic as `A ⊗[k] B`-modules
+/-- **Uniqueness of the factors of an exterior tensor product of simple modules.** Over a
+commutative semiring `k`, if `V ⊗[k] W` and `V' ⊗[k] W'` are isomorphic as `A ⊗[k] B`-modules
 (`TauCeti.BialgebraModule.tensorPairAction`), where `V`, `V'` are simple `A`-modules and `W`,
-`W'` are simple `B`-modules, then `V ≅ V'` and `W ≅ W'`. Restricted to `A`, both sides are
-direct sums of copies of `V` and of `V'`, and Schur's lemma compares them; the same argument
-applies to `B`. No finiteness or algebraic closedness is needed, and over a commutative ring
-`k` it suffices that all four modules be free over `k`. Together with
+`W'` are simple `B`-modules, all four free over `k`, then `V ≅ V'` and `W ≅ W'`. Together with
 `TauCeti.exists_tensorProduct_equiv_of_isSimpleModule`, this shows that over an algebraically
 closed field a finite-dimensional simple `A ⊗[k] B`-module determines its factors up to
 isomorphism. -/
-theorem nonempty_linearEquiv_of_tensorPairAction_equiv {B : Type*} [Ring B] [Algebra k B]
-    [Module B W] [IsScalarTower k B W] [Module B W'] [IsScalarTower k B W']
+theorem nonempty_linearEquiv_of_tensorPairAction_equiv {B W W' : Type*} [Ring B] [Algebra k B]
+    [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W'] [Module B W]
+    [IsScalarTower k B W] [Module B W'] [IsScalarTower k B W']
     [IsSimpleModule A V] [IsSimpleModule A V'] [IsSimpleModule B W] [IsSimpleModule B W']
     [Module.Free k V] [Module.Free k V'] [Module.Free k W] [Module.Free k W']
     (e : V ⊗[k] W ≃ₗ[k] V' ⊗[k] W')
@@ -219,8 +217,8 @@ theorem nonempty_linearEquiv_of_tensorPairAction_equiv {B : Type*} [Ring B] [Alg
         rw [← BialgebraModule.comm_tensorPairAction_one_tmul (A := A) (M := V)]
         simpa only [c, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, RingHom.id_apply,
           LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] using h }
-  exact ⟨nonempty_linearEquiv_of_tensorProduct_linearEquiv eA,
-    nonempty_linearEquiv_of_tensorProduct_linearEquiv eB⟩
+  exact ⟨eA.nonempty_linearEquiv_of_tensorProduct,
+    eB.nonempty_linearEquiv_of_tensorProduct⟩
 
 end Uniqueness
 
