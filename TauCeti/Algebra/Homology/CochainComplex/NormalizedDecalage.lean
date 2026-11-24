@@ -336,7 +336,7 @@ cocycle of `E_p(M)`. -/
 lemma homologyπ_homologyToNormalizedDecalage (n : ℤ) :
     M.homologyπ n ≫ M.homologyToNormalizedDecalage p hM n =
       (M.normalizedDecalageCyclesIso p hM n).inv ≫ (M.normalizedDecalage p hM).homologyπ n :=
-  (M.homologyIsCokernel (n - 1) n (CochainComplex.prev ℤ n)).fac _ Limits.WalkingParallelPair.one
+  Limits.Cofork.IsColimit.π_desc (M.homologyIsCokernel (n - 1) n (CochainComplex.prev ℤ n))
 
 /-- The class of a cocycle of `M` is sent to its class in the cohomology of `E_p(M)`. -/
 @[simp]
@@ -406,7 +406,7 @@ lemma cyclesMap_comp_normalizedDecalageCyclesIso_inv (φ : M ⟶ N) (n : ℤ) :
     iCycles_normalizedDecalageCyclesIso_inv_apply]
 
 /-- The map `Hⁿ(M) ⟶ Hⁿ(E_p(M))` is natural in `M`. -/
-@[reassoc]
+@[reassoc, elementwise]
 lemma homologyMap_comp_homologyToNormalizedDecalage (φ : M ⟶ N) (n : ℤ) :
     HomologicalComplex.homologyMap φ n ≫ N.homologyToNormalizedDecalage p hN n =
       M.homologyToNormalizedDecalage p hM n ≫
@@ -419,24 +419,18 @@ lemma homologyMap_comp_homologyToNormalizedDecalage (φ : M ⟶ N) (n : ℤ) :
 /-- The normalized décalage preserves quasi-isomorphisms in each degree. -/
 instance quasiIsoAt_normalizedDecalageMap (φ : M ⟶ N) (n : ℤ) [QuasiIsoAt φ n] :
     QuasiIsoAt (normalizedDecalageMap hM hN φ) n := by
-  rw [quasiIsoAt_iff_isIso_homologyMap] at *
   have hφ := (ConcreteCategory.isIso_iff_bijective (HomologicalComplex.homologyMap φ n)).1
-    inferInstance
-  have key (x : M.homology n) :
-      (HomologicalComplex.homologyMap (normalizedDecalageMap hM hN φ) n).hom
-        ((M.homologyToNormalizedDecalage p hM n).hom x) =
-      (N.homologyToNormalizedDecalage p hN n).hom ((HomologicalComplex.homologyMap φ n).hom x) := by
-    rw [← AddCommGrpCat.comp_apply, ← homologyMap_comp_homologyToNormalizedDecalage,
-      AddCommGrpCat.comp_apply]
-  rw [ConcreteCategory.isIso_iff_bijective]
+    ((quasiIsoAt_iff_isIso_homologyMap φ n).1 inferInstance)
+  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
   refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := M.homologyToNormalizedDecalage_surjective hM n x
-    rw [key, homologyToNormalizedDecalage_apply_eq_zero_iff, ← map_nsmul] at hx
+    rw [← homologyMap_comp_homologyToNormalizedDecalage_apply,
+      homologyToNormalizedDecalage_apply_eq_zero_iff, ← map_nsmul] at hx
     rw [homologyToNormalizedDecalage_apply_eq_zero_iff]
     exact hφ.1 (hx.trans (map_zero _).symm)
   · obtain ⟨y, rfl⟩ := N.homologyToNormalizedDecalage_surjective hN n y
     obtain ⟨x, rfl⟩ := hφ.2 y
-    exact ⟨_, key x⟩
+    exact ⟨_, (homologyMap_comp_homologyToNormalizedDecalage_apply hM hN φ n x).symm⟩
 
 /-- The normalized décalage preserves quasi-isomorphisms. -/
 instance quasiIso_normalizedDecalageMap (φ : M ⟶ N) [QuasiIso φ] :
