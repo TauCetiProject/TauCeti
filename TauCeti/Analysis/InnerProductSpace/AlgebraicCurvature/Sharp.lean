@@ -219,10 +219,12 @@ theorem bivectorSharpBilin_conj_exteriorPower_map {W V : Type*}
         (map 2 e.symm.toLinearMap ∘ₗ A ∘ₗ map 2 e.toLinearMap)
         (map 2 e.symm.toLinearMap ∘ₗ B ∘ₗ map 2 e.toLinearMap) =
       map 2 e.symm.toLinearMap ∘ₗ TauCeti.bivectorSharpBilin A B ∘ₗ map 2 e.toLinearMap := by
-  let E := map 2 e.toLinearMap
-  let E' := map 2 e.symm.toLinearMap
-  let CW := TensorProduct.lift (TauCeti.twoVectorBracket (V := W))
-  let CV := TensorProduct.lift (TauCeti.twoVectorBracket (V := V))
+  rw [TauCeti.bivectorSharpBilin_eq, TauCeti.bivectorSharpBilin_eq,
+    LinearMap.smul_comp, LinearMap.comp_smul]
+  set E := map 2 e.toLinearMap with hE
+  set E' := map 2 e.symm.toLinearMap with hE'
+  set CW := TensorProduct.lift (TauCeti.twoVectorBracket (V := W))
+  set CV := TensorProduct.lift (TauCeti.twoVectorBracket (V := V))
   have hmap : E' ∘ₗ CV = CW ∘ₗ TensorProduct.map E' E' :=
     e.symm.toLinearIsometry.exteriorPower_map_comp_lift_twoVectorBracket
   have hcore :
@@ -237,10 +239,15 @@ theorem bivectorSharpBilin_conj_exteriorPower_map {W V : Type*}
             rw [← hmap, ← e.adjoint_lift_twoVectorBracket_comp_exteriorPower_map]
       _ = E' ∘ₗ (CV ∘ₗ TensorProduct.map A B ∘ₗ CV.adjoint) ∘ₗ E := by
             simp only [LinearMap.comp_assoc]
-  have hadj := congrArg (fun T : Module.End ℝ (⋀[ℝ]^2 W) ↦ (1 / 2 : ℝ) • T.adjoint) hcore
-  simpa only [TauCeti.bivectorSharpBilin_eq, CW, CV, E, E', LinearMap.adjoint_comp,
-    e.adjoint_exteriorPower_map, e.symm.adjoint_exteriorPower_map, LinearIsometryEquiv.symm_symm,
-    LinearMap.smul_comp, LinearMap.comp_smul, LinearMap.comp_assoc] using hadj
+  have hadj := congrArg LinearMap.adjoint hcore
+  have hrhs :
+      LinearMap.adjoint (E' ∘ₗ (CV ∘ₗ TensorProduct.map A B ∘ₗ CV.adjoint) ∘ₗ E) =
+        E' ∘ₗ LinearMap.adjoint (CV ∘ₗ TensorProduct.map A B ∘ₗ CV.adjoint) ∘ₗ E := by
+    rw [LinearMap.adjoint_comp, LinearMap.adjoint_comp,
+      e.adjoint_exteriorPower_map, e.symm.adjoint_exteriorPower_map,
+      LinearIsometryEquiv.symm_symm, ← hE, ← hE', LinearMap.comp_assoc]
+  congr 1
+  exact hadj.trans hrhs
 
 /-- Conjugating an endomorphism of `⋀[ℝ]^2 V` by the exterior square of a linear isometric
 equivalence commutes with `TauCeti.bivectorSharp`. -/

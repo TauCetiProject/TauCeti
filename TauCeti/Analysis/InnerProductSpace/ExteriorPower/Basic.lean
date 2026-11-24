@@ -349,6 +349,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-- The adjoint of `exteriorPower.map n e.toLinearMap` is
 `exteriorPower.map n e.symm.toLinearMap`. -/
+@[simp]
 theorem adjoint_exteriorPower_map (e : E ≃ₗᵢ[ℝ] F) :
     LinearMap.adjoint (map n e.toLinearMap) = map n e.symm.toLinearMap :=
   ((e.toLinearEquiv.exteriorPower n).isometryOfInner
@@ -670,18 +671,13 @@ noncomputable def twoVectorBracket : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →�
   (LieAlgebra.ad ℝ (⋀[ℝ]^2 V)).toLinearMap
 
 omit [FiniteDimensional ℝ V] in
-private theorem twoVectorBracket_eq_lie (F G : ⋀[ℝ]^2 V) :
-    letI := bivectorLieRing (negHalfInnerQ V)
-    twoVectorBracket F G = ⁅F, G⁆ :=
-  (rfl)
-
-omit [FiniteDimensional ℝ V] in
 private theorem bivectorExterior_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
     bivectorExterior (negHalfInnerQ V) (twoVectorBracket F G) =
       ⁅bivectorExterior (negHalfInnerQ V) F, bivectorExterior (negHalfInnerQ V) G⁆ := by
   let _ := bivectorLieRing (negHalfInnerQ V)
   let _ := bivectorLieAlgebra (negHalfInnerQ V)
-  rw [twoVectorBracket_eq_lie]
+  have hbracket : twoVectorBracket F G = ⁅F, G⁆ := rfl
+  rw [hbracket]
   calc
     bivectorExterior (negHalfInnerQ V) ⁅F, G⁆
         = ((bivectorLieEquiv (negHalfInnerQ V) ⁅F, G⁆ :
@@ -777,19 +773,16 @@ omit [FiniteDimensional ℝ V] in
 /-- The two-vector bracket is skew-symmetric. -/
 theorem twoVectorBracket_swap (F G : ⋀[ℝ]^2 V) :
     twoVectorBracket G F = -twoVectorBracket F G := by
-  let _ := bivectorLieRing (negHalfInnerQ V)
-  let _ := bivectorLieAlgebra (negHalfInnerQ V)
-  rw [twoVectorBracket_eq_lie, twoVectorBracket_eq_lie]
-  exact (lie_skew G F).symm
+  refine bivectorExterior_injective (negHalfInnerQ V) ?_
+  rw [bivectorExterior_twoVectorBracket, map_neg, bivectorExterior_twoVectorBracket]
+  exact (lie_skew _ _).symm
 
 omit [FiniteDimensional ℝ V] in
 /-- Every two-vector commutes with itself under `twoVectorBracket`. -/
 @[simp]
 theorem twoVectorBracket_self (F : ⋀[ℝ]^2 V) : twoVectorBracket F F = 0 := by
-  let _ := bivectorLieRing (negHalfInnerQ V)
-  let _ := bivectorLieAlgebra (negHalfInnerQ V)
-  rw [twoVectorBracket_eq_lie]
-  exact lie_self F
+  refine bivectorExterior_injective (negHalfInnerQ V) ?_
+  rw [bivectorExterior_twoVectorBracket, map_zero, lie_self]
 
 omit [FiniteDimensional ℝ V] in
 /-- **Jacobi identity** for `twoVectorBracket`:
@@ -798,10 +791,8 @@ theorem twoVectorBracket_jacobi (F G H : ⋀[ℝ]^2 V) :
     twoVectorBracket F (twoVectorBracket G H) +
       twoVectorBracket G (twoVectorBracket H F) +
       twoVectorBracket H (twoVectorBracket F G) = 0 := by
-  let _ := bivectorLieRing (negHalfInnerQ V)
-  let _ := bivectorLieAlgebra (negHalfInnerQ V)
-  simp only [twoVectorBracket_eq_lie]
-  exact lie_jacobi F G H
+  refine bivectorExterior_injective (negHalfInnerQ V) ?_
+  simp only [map_add, map_zero, bivectorExterior_twoVectorBracket, lie_jacobi]
 
 /-- Adjoint invariance of the inner product on `⋀² V`: `twoVectorBracket F` is skew-adjoint. -/
 theorem inner_twoVectorBracket_left (F G H : ⋀[ℝ]^2 V) :
