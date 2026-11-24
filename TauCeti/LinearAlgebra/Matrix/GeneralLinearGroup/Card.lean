@@ -18,6 +18,8 @@ import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.RingTheory.LocalRing.RingHom
 -- Non-public: `Finset.prod_range_add_sub_eq` reverses the factors `q ^ i - 1`.
 import TauCeti.Algebra.BigOperators.Finset.Range
+-- Non-public: `Nat.pow_sub_pow_eq_pow_mul_pow_sub_one` factors each difference `q ^ n - q ^ i`.
+import TauCeti.Data.Nat.Pow
 
 /-!
 # The order of general linear groups
@@ -60,12 +62,6 @@ namespace TauCeti
 
 variable (F : Type*) [Field F]
 
-/-- For `i ≤ n`, the difference `q ^ n - q ^ i` of two powers of `q` is `q ^ i` times the
-decremented power `q ^ (n - i) - 1`. -/
-private theorem pow_sub_pow_eq_pow_mul_pow_sub_one {q i n : ℕ} (hi : i ≤ n) :
-    q ^ n - q ^ i = q ^ i * (q ^ (n - i) - 1) := by
-  rw [← pow_sub_mul_pow q hi, Nat.mul_sub, Nat.mul_one, mul_comm (q ^ (n - i))]
-
 /-- **The order of `GLₙ` over a field**: for a field `𝔽` with `q` elements,
 `|GLₙ(𝔽)| = q ^ (n.choose 2) · ∏_{i = 1}^{n} (q ^ i - 1)`, the order of the upper-unitriangular
 group times its index. For an infinite field both sides are `1` when `n = 0` and `0` otherwise. -/
@@ -78,7 +74,7 @@ theorem natCard_GL_fin (n : ℕ) :
       (fun i => (Fintype.card F ^ n - Fintype.card F ^ i : ℕ)) n, ← Nat.card_eq_fintype_card]
     have hfactor : ∀ i ∈ Finset.range n, Nat.card F ^ n - Nat.card F ^ i =
         Nat.card F ^ i * (Nat.card F ^ (n - i) - 1) := fun i hi =>
-      pow_sub_pow_eq_pow_mul_pow_sub_one (Finset.mem_range_le hi)
+      Nat.pow_sub_pow_eq_pow_mul_pow_sub_one (Finset.mem_range_le hi)
     have hsum : ∏ i ∈ Finset.range n, Nat.card F ^ i = Nat.card F ^ n.choose 2 := by
       rw [Finset.prod_pow_eq_pow_sum, Finset.sum_range_id n, Nat.choose_two_right]
     have hreflect : ∏ i ∈ Finset.range n, (Nat.card F ^ (n - i) - 1) =
@@ -99,16 +95,11 @@ first factor is the order of the split torus and the second its index. -/
 theorem natCard_GL_fin_two :
     Nat.card (GL (Fin 2) F) =
       (Nat.card F - 1) ^ 2 * (Nat.card F * (Nat.card F + 1)) := by
-  rcases finite_or_infinite F with _ | hF
-  · rw [natCard_GL_fin F 2]
-    simp only [Nat.choose_two_right, Finset.prod_range_succ, Finset.prod_range_zero, pow_one,
-      Nat.zero_add, Nat.reduceAdd]
-    simp_rw [pow_two, mul_self_tsub_one]
-    ring
-  · have hcard : Nat.card (GL (Fin 2) F) = 0 :=
-      Finite.card_eq_zero_of_surjective Matrix.GeneralLinearGroup.det_surjective
-        (by simp [Nat.card_units])
-    simp [hcard]
+  rw [natCard_GL_fin F 2]
+  simp only [Nat.choose_two_right, Finset.prod_range_succ, Finset.prod_range_zero, pow_one,
+    Nat.zero_add, Nat.reduceAdd]
+  simp_rw [pow_two, mul_self_tsub_one]
+  ring
 
 /-- **The order of `GL₂` over a field**, in the factored form `(q² - 1) · q(q - 1)`: the
 first factor is the order of the non-split torus and the second its index. -/

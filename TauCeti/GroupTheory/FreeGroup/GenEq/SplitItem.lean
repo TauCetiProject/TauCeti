@@ -150,7 +150,7 @@ theorem mem_connections_splitItem
 `j ↦ j + 1` otherwise. -/
 private theorem val_succAbove_succ_castSucc (i : Fin (Ω.numItems + 1)) :
     (k.succ.castSucc.succAbove i : ℕ) = if (i : ℕ) ≤ k then (i : ℕ) else i + 1 := by
-  simp [Fin.val_succAbove]
+  simp [Fin.val_succAbove, Nat.lt_succ_iff]
 
 /-- A renumbered boundary of `Ω.splitItem k` crosses a base exactly when the boundary of `Ω`
 does. -/

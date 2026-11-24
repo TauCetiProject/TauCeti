@@ -9,10 +9,10 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular
 -- Non-public: the index of the upper-unitriangular group is the order of `GLₙ(𝔽)` divided by its
 -- own order.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
--- Non-public: `Fintype.card_product_filter_lt` counts the pairs `i < j`.
-import Mathlib.Data.Fintype.Prod
 -- Non-public: `Nat.card_fun` counts the functions on the pairs `i < j`.
 import Mathlib.SetTheory.Cardinal.NatCard
+-- Non-public: `Fintype.natCard_subtype_lt` counts the pairs `i < j`.
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The order of the upper-unitriangular group
@@ -54,9 +54,7 @@ infinite ring `R` both sides equal `1` in size at most one and `0` in larger siz
 theorem natCard_upperUnitriangularGroup :
     Nat.card (upperUnitriangularGroup ι R) = Nat.card R ^ (Fintype.card ι).choose 2 := by
   classical
-  rw [Nat.card_congr (upperUnitriangularGroupEquiv ι R), Nat.card_fun,
-    Nat.card_eq_fintype_card (α := {p : ι × ι // p.1 < p.2}), Fintype.card_subtype,
-    Fintype.card_product_filter_lt]
+  rw [Nat.card_congr (upperUnitriangularGroupEquiv ι R), Nat.card_fun, Fintype.natCard_subtype_lt]
 
 section Field
 
@@ -64,8 +62,8 @@ variable {n : ℕ} {𝔽 : Type*} [Field 𝔽]
 
 /-- The index of the upper-unitriangular group in `GLₙ(𝔽)`, for a field `𝔽` with `q` elements,
 is `∏_{i = 1}^{n} (q ^ i - 1)`: the order of `GLₙ(𝔽)` divided by the order of `Uₙ(𝔽)`. Over an
-infinite field both sides are `1` when `n = 0` and `0` otherwise, the determinant inducing a
-surjection from the coset space onto `𝔽ˣ`. -/
+infinite field both sides are `1` when `n = 0` and `0` otherwise: `Uₙ(𝔽)` lies in the kernel of
+the determinant, whose index is the cardinality of the infinite group `𝔽ˣ`. -/
 theorem index_upperUnitriangularGroup :
     (upperUnitriangularGroup (Fin n) 𝔽).index =
       ∏ i ∈ Finset.range n, (Nat.card 𝔽 ^ (i + 1) - 1) := by
@@ -80,30 +78,19 @@ theorem index_upperUnitriangularGroup :
       simp only [UpperUnitriangularGroup.mem_iff, Matrix.isUpperUnitriangular_def]
       exact ⟨fun i => i.elim0, fun i => i.elim0⟩
     | succ n =>
-      -- The determinant is trivial on `Uₙ₊₁(𝔽)`, hence constant on the left cosets, so it
-      -- induces a surjection of the coset space onto the infinite group `𝔽ˣ`.
-      have hdet : ∀ g : GL (Fin (n + 1)) 𝔽, g ∈ upperUnitriangularGroup (Fin (n + 1)) 𝔽 →
-          Matrix.GeneralLinearGroup.det g = 1 := fun g hg => Units.ext <| by
-        rw [Matrix.GeneralLinearGroup.val_det_apply,
-          (UpperUnitriangularGroup.mem_iff.1 hg).det_eq_one, Units.val_one]
-      have hdetcoset : ∀ a b : GL (Fin (n + 1)) 𝔽,
-          a⁻¹ * b ∈ upperUnitriangularGroup (Fin (n + 1)) 𝔽 →
-          Matrix.GeneralLinearGroup.det a = Matrix.GeneralLinearGroup.det b := by
-        intro a b hab
-        have hb : b = a * (a⁻¹ * b) := by rw [mul_inv_cancel_left]
-        rw [hb, Matrix.GeneralLinearGroup.det.map_mul, hdet _ hab, mul_one]
-      have hsurj : Function.Surjective
-          (fun q : GL (Fin (n + 1)) 𝔽 ⧸ upperUnitriangularGroup (Fin (n + 1)) 𝔽 =>
-            q.liftOn' (fun g => Matrix.GeneralLinearGroup.det g)
-              (fun a b hab => hdetcoset a b (QuotientGroup.leftRel_apply.mp hab))) := by
-        intro x
-        obtain ⟨g, hg⟩ := Matrix.GeneralLinearGroup.det_surjective (n := Fin (n + 1)) x
-        refine ⟨QuotientGroup.mk g, ?_⟩
-        simp only [QuotientGroup.quotient_liftOn_mk]
-        exact hg
-      rw [Subgroup.index_eq_card,
-        Finite.card_eq_zero_of_surjective hsurj (by simp [Nat.card_units]),
-        Nat.card_eq_zero_of_infinite (α := 𝔽)]
+      -- The determinant is trivial on `Uₙ₊₁(𝔽)`, so the index of the determinant's kernel, the
+      -- cardinality `0` of the infinite group `𝔽ˣ`, divides the index of `Uₙ₊₁(𝔽)`.
+      have hle : upperUnitriangularGroup (Fin (n + 1)) 𝔽 ≤ Matrix.GeneralLinearGroup.det.ker := by
+        intro g hg
+        exact Units.ext <| by
+          rw [Matrix.GeneralLinearGroup.val_det_apply,
+            (UpperUnitriangularGroup.mem_iff.1 hg).det_eq_one, Units.val_one]
+      have hindex : (upperUnitriangularGroup (Fin (n + 1)) 𝔽).index = 0 := by
+        have h := Subgroup.index_dvd_of_le hle
+        rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr Matrix.GeneralLinearGroup.det_surjective,
+          Subgroup.card_top, Nat.card_units, Nat.card_eq_zero_of_infinite] at h
+        exact Nat.eq_zero_of_zero_dvd h
+      rw [hindex, Nat.card_eq_zero_of_infinite]
       simp
 
 end Field
