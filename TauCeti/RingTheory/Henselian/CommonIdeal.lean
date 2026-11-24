@@ -66,7 +66,7 @@ theorem henselianRing_of_surjOn (hφ : Set.SurjOn φ I I') [HenselianRing A I] :
   have : HenselianRing A K := Ideal.henselianRing_of_le inf_le_left
   have hsurj : ∀ y ∈ I', ∃ x ∈ K, φ x = y := fun y hy ↦ by
     obtain ⟨x, hx, rfl⟩ := hφ hy
-    exact ⟨x, ⟨hx, hy⟩, rfl⟩
+    exact ⟨x, Ideal.mem_inf.mpr ⟨hx, Ideal.mem_comap.mpr hy⟩, rfl⟩
   rw [TauCeti.henselianRing_iff_forall_exists_isRoot_X_pow_mul_X_sub_one_add]
   refine ⟨fun y hy ↦ Ring.mem_jacobson_iff.mpr fun z ↦ ?_, fun n _ p hpn hp ↦ ?_⟩
   · -- `1 + yz` is the image of the unit `1 + x` for some `x ∈ K`.
@@ -83,7 +83,7 @@ theorem henselianRing_of_surjOn (hφ : Set.SurjOn φ I I') [HenselianRing A I] :
       simp only [q, Polynomial.map_sum, map_monomial, hc]
       exact (as_sum_range' p (n + 1) (by omega)).symm
     obtain ⟨a, ha, ha1⟩ := TauCeti.HenselianRing.exists_isRoot_X_pow_mul_X_sub_one_add n hqK
-    refine ⟨φ a, ?_, by simpa using ha1.2⟩
+    refine ⟨φ a, ?_, by simpa using Ideal.mem_comap.mp (Ideal.mem_inf.mp ha1).2⟩
     have := congrArg φ ha.eq_zero
     rw [← eval_map_apply] at this
     simpa [IsRoot, hqp] using this
@@ -102,10 +102,10 @@ theorem henselianRing_iff_of_bijOn (hφ : Set.BijOn φ I I') :
     -- `1 + xz` since `(1 + xz)(1 + y) - 1 ∈ I` is killed by `φ`.
     have hxz : x * z ∈ I := I.mul_mem_right z hx
     obtain ⟨u, hu⟩ := Ring.mem_jacobson_iff.mp (HenselianRing.jac (hφ.mapsTo hxz)) 1
+    have hinv : (↑u⁻¹ : A') - 1 = -(φ (x * z) * ↑u⁻¹) := by
+      linear_combination u.inv_mul - (↑u⁻¹ : A') * hu
     have hu1 : (↑u⁻¹ : A') - 1 ∈ I' := by
-      have : (↑u⁻¹ : A') - 1 = -(φ (x * z) * ↑u⁻¹) := by
-        linear_combination u.inv_mul - (↑u⁻¹ : A') * hu
-      rw [this]
+      rw [hinv]
       exact I'.neg_mem (I'.mul_mem_right _ (hφ.mapsTo hxz))
     obtain ⟨y, hy, hyu⟩ := hφ.surjOn hu1
     have hprod : (x * z + 1) * (1 + y) - 1 = 0 := hzero _ (by
@@ -113,7 +113,7 @@ theorem henselianRing_iff_of_bijOn (hφ : Set.BijOn φ I I') :
       rw [this]
       exact I.add_mem (I.mul_mem_right _ hxz) hy) (by
       rw [map_sub, map_mul, map_add, map_add, map_one, hyu]
-      linear_combination u.inv_mul - (↑u⁻¹ : A') * hu)
+      linear_combination hinv)
     exact IsUnit.of_mul_eq_one _ (sub_eq_zero.mp hprod)
   · -- Push `p` forward, take a root near `1` in `A'`, and pull it back.
     have hpI : ∀ k, (p.map φ).coeff k ∈ I' := fun k ↦ by
@@ -123,9 +123,7 @@ theorem henselianRing_iff_of_bijOn (hφ : Set.BijOn φ I I') :
     obtain ⟨y, hy, hya⟩ := hφ.surjOn ha'1
     refine ⟨1 + y, hzero _ ?_ ?_, by simpa using hy⟩
     · -- The value at `1 + y` lies in `I`, since the polynomial is `Xⁿ (X - 1)` modulo `I`.
-      have hp₀ : p.map (Ideal.Quotient.mk I) = 0 := by
-        ext k
-        simpa using Ideal.Quotient.eq_zero_iff_mem.mpr (hp k)
+      have hp₀ : p.map (Ideal.Quotient.mk I) = 0 := map_mk_eq_zero_iff.mpr hp
       rw [← Ideal.Quotient.eq_zero_iff_mem, ← eval_map_apply]
       simp [Polynomial.map_add, hp₀, Ideal.Quotient.eq_zero_iff_mem.mpr hy]
     · rw [← eval_map_apply, map_add, map_one, hya]
@@ -164,11 +162,11 @@ theorem henselianRing_span_singleton_iff (ϖ : R) {n : ℕ}
     rwa [← R.subtype_injective hsr]
   have hradR' : J.radical = (Ideal.span {(ϖ : R')}).radical := by
     rw [← Ideal.radical_pow (.span {(ϖ : R')}) n.succ_ne_zero, Ideal.span_singleton_pow]
+  have hsub : (J : Set R') ⊆ R := fun y hy ↦ by
+    obtain ⟨r, -, rfl⟩ := hJ y hy
+    exact r.property
   -- Henselianity depends only on the radical.
-  rw [← Ideal.henselianRing_radical_iff, ← hradR, Ideal.henselianRing_radical_iff,
-    R.henselianRing_comap_subtype_iff fun y hy ↦ ?_, ← Ideal.henselianRing_radical_iff, hradR',
-    Ideal.henselianRing_radical_iff]
-  obtain ⟨r, -, rfl⟩ := hJ y hy
-  exact r.property
+  exact (Ideal.henselianRing_iff_of_radical_eq hradR).symm.trans
+    ((R.henselianRing_comap_subtype_iff hsub).trans (Ideal.henselianRing_iff_of_radical_eq hradR'))
 
 end Subring
