@@ -101,7 +101,7 @@ theorem bernoulliFullMass_eight : bernoulliFullMass 8 = 691 / 277667181515243520
     bernoulli_eight, bernoulli_ten, bernoulli_twelve, bernoulli_fourteen]
   decide +kernel
 
-/-- **The mass in rank twenty-four**, `M₂₄ ≈ 1.587 · 10⁻¹⁴`. -/
+/-- **The mass in rank twenty-four**, `M₂₄ ≈ 7.937 · 10⁻¹⁵`. -/
 @[simp]
 theorem bernoulliFullMass_twelve :
     bernoulliFullMass 12 =

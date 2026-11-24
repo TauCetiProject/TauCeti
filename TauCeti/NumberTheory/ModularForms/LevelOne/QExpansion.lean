@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
+import TauCeti.NumberTheory.Bernoulli.Values
 import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
@@ -83,8 +84,6 @@ neither `norm_num` nor elaborator-side `decide` can evaluate it; the kernel can.
 private theorem bernoulli_four : bernoulli 4 = -1 / 30 := by decide +kernel
 
 private theorem bernoulli_six : bernoulli 6 = 1 / 42 := by decide +kernel
-
-private theorem bernoulli_twelve : bernoulli 12 = -691 / 2730 := by decide +kernel
 
 /-- The `q`-expansion of `E₄` is `1 + 240 ∑ σ₃(n) qⁿ`. -/
 theorem qExpansion_E₄_eq :
@@ -184,7 +183,7 @@ theorem E₆_qExpansion_coeff_three : (qExpansion 1 E₆).coeff 3 = -122976 := b
 theorem E_twelve_qExpansion_coeff (m : ℕ) :
     (qExpansion 1 (E (by norm_num : 3 ≤ 12))).coeff m =
       if m = 0 then 1 else (65520 / 691 : ℂ) * σ 11 m := by
-  rw [E_qExpansion_coeff _ ⟨6, rfl⟩, bernoulli_twelve]
+  rw [E_qExpansion_coeff _ ⟨6, rfl⟩, TauCeti.bernoulli_twelve]
   norm_num
 
 end TauCeti.ModularForm
