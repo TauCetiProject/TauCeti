@@ -31,7 +31,9 @@ of Künneth bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, `f ▷
 `HomologicalComplex.kunnethBicomplexMapRight K g`, `K ◁ Q(g).f p` on column `p` for the lift
 `Q(g) = ChainComplex.cartanEilenbergResolutionMap g` of `g` to the Cartan–Eilenberg resolutions,
 which depends on choices; it is compatible with the augmentations
-(`HomologicalComplex.total_map_kunnethBicomplexMapRight_kunnethBicomplexAugmentation`).
+(`HomologicalComplex.total_map_kunnethBicomplexMapRight_kunnethBicomplexAugmentation`). More
+generally, any morphism `ψ` of the Cartan–Eilenberg resolutions induces a morphism of Künneth
+bicomplexes `HomologicalComplex.kunnethBicomplexMapRightOfLift K ψ`, functorially in `ψ`.
 
 When every term of `K` is flat, this augmentation is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_kunnethBicomplexAugmentation`). Indeed, the row `n` of the bicomplex,
@@ -219,6 +221,53 @@ lemma total_map_kunnethBicomplexMapRight_kunnethBicomplexAugmentation :
   simp only [e]
 
 end MapRight
+
+section MapRightOfLift
+
+variable {L₁ L₂ L₃ : ChainComplex (ModuleCat.{u} R) ℕ}
+
+/-- The morphism of Künneth bicomplexes induced by a morphism `ψ` of the Cartan–Eilenberg
+resolutions of `L₁` and `L₂`: on column `p` it is `K ◁ ψ.f p`. For the lift
+`ChainComplex.cartanEilenbergResolutionMap g` of a chain map `g`, it is
+`HomologicalComplex.kunnethBicomplexMapRight K g`
+(`HomologicalComplex.kunnethBicomplexMapRight_eq`). -/
+def kunnethBicomplexMapRightOfLift
+    (ψ : cartanEilenbergResolution L₁ ⟶ cartanEilenbergResolution L₂) :
+    kunnethBicomplex K L₁ ⟶ kunnethBicomplex K L₂ :=
+  ((tensorLeft K).mapHomologicalComplex _).map ψ
+
+/-- The morphism `HomologicalComplex.kunnethBicomplexMapRightOfLift K ψ` is `K ◁ ψ.f p` on column
+`p`. -/
+@[simp]
+lemma kunnethBicomplexMapRightOfLift_f
+    (ψ : cartanEilenbergResolution L₁ ⟶ cartanEilenbergResolution L₂) (p : ℕ) :
+    (kunnethBicomplexMapRightOfLift K ψ).f p = K ◁ ψ.f p :=
+  (rfl)
+
+/-- The identity of the Cartan–Eilenberg resolution induces the identity of the Künneth
+bicomplex. -/
+@[simp]
+lemma kunnethBicomplexMapRightOfLift_id :
+    kunnethBicomplexMapRightOfLift K (𝟙 (cartanEilenbergResolution L₁)) = 𝟙 _ :=
+  CategoryTheory.Functor.map_id _ _
+
+/-- `HomologicalComplex.kunnethBicomplexMapRightOfLift` is compatible with composition. -/
+@[simp]
+lemma kunnethBicomplexMapRightOfLift_comp
+    (ψ : cartanEilenbergResolution L₁ ⟶ cartanEilenbergResolution L₂)
+    (ψ' : cartanEilenbergResolution L₂ ⟶ cartanEilenbergResolution L₃) :
+    kunnethBicomplexMapRightOfLift K (ψ ≫ ψ') =
+      kunnethBicomplexMapRightOfLift K ψ ≫ kunnethBicomplexMapRightOfLift K ψ' :=
+  CategoryTheory.Functor.map_comp _ _ _
+
+/-- The morphism of Künneth bicomplexes over a chain map `g` is the one induced by the lift
+`ChainComplex.cartanEilenbergResolutionMap g` of `g` to the Cartan–Eilenberg resolutions. -/
+lemma kunnethBicomplexMapRight_eq (g : L₁ ⟶ L₂) :
+    kunnethBicomplexMapRight K g =
+      kunnethBicomplexMapRightOfLift K (ChainComplex.cartanEilenbergResolutionMap g) :=
+  (rfl)
+
+end MapRightOfLift
 
 /-- In degree `n`, the map `K ⊗ Q.X 0 ⟶ K ⊗ L` vanishes on the image of the differential of the
 row `n` of the Künneth bicomplex. -/
