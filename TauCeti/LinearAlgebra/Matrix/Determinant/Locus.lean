@@ -9,8 +9,10 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Jacobson.Ideal
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.LinearAlgebra.Matrix.Adjugate
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The determinant locus of square matrices
@@ -153,14 +155,6 @@ theorem pow_smul_top_le_range_mulVecLin (hA : A ∈ detLocus n π N) :
   rintro _ ⟨v, -, rfl⟩
   obtain ⟨w, hw⟩ := exists_mulVec_eq_pow_smul hA v
   exact ⟨w, hw⟩
-
-/-- A matrix congruent to `1` modulo an element of the Jacobson radical is invertible. -/
-theorem isUnit_det_one_add_smul {r : B} (hr : r ∈ Ring.jacobson B) (D : Matrix n n B) :
-    IsUnit (1 + r • D).det := by
-  refine isUnit_of_sub_one_mem_jacobson _ ?_
-  rw [det_one_add_smul, add_assoc, add_sub_cancel_left]
-  exact (Ring.jacobson B).add_mem (Ideal.mul_mem_left _ _ hr)
-    (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hr 2 two_pos))
 
 /-- **Finite jets of the determinant locus.** Let `π` lie in the Jacobson radical and `N < h`. A
 matrix congruent modulo `π ^ h` to a matrix `A` of the determinant locus `V_N` is `A * γ` for an
