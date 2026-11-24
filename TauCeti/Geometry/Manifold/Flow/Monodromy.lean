@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.ReturnDerivative
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.LinearAlgebra.Projection.SplittingEquiv
+import TauCeti.Geometry.Manifold.Flow.Locality
 import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
@@ -46,6 +47,10 @@ The main results are:
 * `TauCeti.returnDerivative_eq_smul_of_mfderiv_flowOf_eq`: if the monodromy of a second field
   with the same closed orbit through `p` is that of `v` composed with a map acting as
   multiplication by `c` modulo `ℝ ∙ v p`, its linearized return map is `c • DP_p`.
+* `TauCeti.returnDerivative_eq_smul_of_eqOn_compl`: the same for a field agreeing with `v` off a
+  closed set avoided by the orbit after time `σ`, whose time-`σ` map at `p` differs from that of
+  `v` by a map acting as `c` modulo `ℝ ∙ v p`; the comparison rests on the composition of the flow
+  through a region where the two fields agree, `TauCeti.mfderiv_flowOf_add_eq_of_eqOn`.
 
 As in `TauCeti.Geometry.Manifold.Flow.ReturnDerivative`, `T₀` need not be the least period, and the
 return branch need not be the first return to the section.
@@ -303,5 +308,56 @@ theorem returnDerivative_eq_smul_of_mfderiv_flowOf_eq {w : (x : M) → TangentSp
   rw [hdiff, (mul_eq_zero.1 hk).resolve_right hgv, zero_smul]
 
 end Return
+
+/-- **Perturbing a closed orbit off a closed set.** Let `p` return to itself at time `T₀` under a
+`C¹` field `v`, and let `w` be a `C¹` field agreeing with `v` off a closed set `S` which the orbit
+of `p` avoids after time `σ`, with `0 ≤ σ ≤ T₀`. Suppose that the time-`σ` maps of `w` and `v` carry
+`p` to the same point, and that there the derivative of the time-`σ` map of `w` is that of `v`
+composed with a map `D` acting as multiplication by `c` modulo `ℝ ∙ v p`. Then `p` returns to
+itself at time `T₀` under `w` too, and the linearized return maps of `w` are `c` times those of
+`v`. -/
+theorem returnDerivative_eq_smul_of_eqOn_compl {w : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hP : (T₀, p) ∈ flowDomain v)
+    (hp : flowOf v T₀ p = p) {σ c : ℝ} (hσ : 0 ≤ σ) (hσT : σ ≤ T₀)
+    (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hw0 : w p = v p)
+    (hσw : (σ, p) ∈ flowDomain w) (hσvw : flowOf w σ p = flowOf v σ p)
+    {D : TangentSpace I p → TangentSpace I p} (hD : ∀ ξ, D ξ - c • ξ ∈ ℝ ∙ v p)
+    (hM : ∀ ξ : TangentSpace I p,
+      -- The tangent spaces at the two values are both the model space `E`.
+      @Eq E (mfderiv I I (flowOf w σ) p ξ) (mfderiv I I (flowOf v σ) p (D ξ)))
+    {S : Set M} (hS : IsClosed S) (hwv : EqOn w v Sᶜ)
+    (hSv : ∀ t ∈ Icc σ T₀, flowOf v t p ∉ S) :
+    (T₀, p) ∈ flowDomain w ∧ flowOf w T₀ p = p ∧
+      ∀ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g p → mvfderiv I g p (v p) ≠ 0 →
+        returnDerivative w g T₀ p = c • returnDerivative v g T₀ p := by
+  have hdom : ∀ t ∈ Icc 0 T₀, (t, p) ∈ flowDomain v := fun t ht ↦
+    uIcc_subset_setOf_mem_flowDomain hP (Icc_subset_uIcc ht)
+  have hσdom := hdom σ ⟨hσ, hσT⟩
+  set q := flowOf v σ p
+  -- After time `σ`, the trajectory runs where `w = v`, back to `p` at time `T₀`.
+  have hleg : (T₀ - σ, q) ∈ flowDomain v := by
+    rw [mem_flowDomain_flowOf_iff hv hσdom, add_sub_cancel]
+    exact hP
+  have hlegS : MapsTo (fun s ↦ flowOf v s q) (uIcc 0 (T₀ - σ)) Sᶜ := by
+    intro s hs
+    rw [uIcc_of_le (by linarith)] at hs
+    have hσs : σ + s ∈ Icc σ T₀ := ⟨by linarith [hs.1], by linarith [hs.2]⟩
+    dsimp only [q]
+    rw [(flowOf_add hv hσdom ((mem_flowDomain_flowOf_iff hv hσdom).2
+      (hdom _ ⟨hσ.trans hσs.1, hσs.2⟩))).2]
+    exact hSv _ hσs
+  obtain ⟨hdomw, hvalw, hderw⟩ :=
+    mfderiv_flowOf_add_eq_of_eqOn hv hw hS.isOpen_compl hwv hσw hσvw hleg hlegS
+  rw [add_sub_cancel] at hdomw hvalw hderw
+  have hvalv : flowOf v (T₀ - σ) q = p := by
+    rw [(flowOf_add hv hσdom hleg).2, add_sub_cancel, hp]
+  refine ⟨hdomw, hvalw.trans hvalv, fun g hg hgv ↦
+    returnDerivative_eq_smul_of_mfderiv_flowOf_eq hv hP hp hg hgv hw hdomw (hvalw.trans hvalv)
+      hw0 hD fun ξ ↦ ?_⟩
+  -- The monodromy of `w` is that of `v` composed with `D`.
+  have h₁ := mfderiv_flowOf_add_apply hv hσdom rfl hleg (D ξ)
+  rw [add_sub_cancel] at h₁
+  rw [hderw ξ, hM ξ]
+  exact h₁
 
 end TauCeti

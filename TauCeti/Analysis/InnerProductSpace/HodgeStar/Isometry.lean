@@ -37,13 +37,13 @@ star under rotations.
 In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to the
 volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
 (`Orientation.inner_hodgeStar_ιMulti_two`). For a positively oriented orthonormal basis `e`, this
-gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`
-(`Orientation.hodgeStar_ιMulti_zero_one` and its companions). Consequently a self-dual or
-anti-self-dual two-vector is determined by its coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and
-`e₀ ∧ e₃`, and its squared norm is twice the sum of their squares
+gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`, together with
+the values on the three complementary wedges (`Orientation.hodgeStar_ιMulti_zero_one` and its
+companions). Consequently a self-dual or anti-self-dual two-vector is determined by its coordinates
+along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`, and its squared norm is twice the sum of their squares
 (`Orientation.inner_ιMulti_two_of_hodgeStar_eq_neg`, `Orientation.norm_sq_of_hodgeStar_eq_neg`,
-`Orientation.inner_ιMulti_two_of_hodgeStar_eq_self`, `Orientation.norm_sq_of_hodgeStar_eq_self`).
-A self-dual or anti-self-dual two-vector thus vanishes exactly when these three coordinates do
+`Orientation.inner_ιMulti_two_of_hodgeStar_eq_self`, `Orientation.norm_sq_of_hodgeStar_eq_self`). A
+self-dual or anti-self-dual two-vector thus vanishes exactly when these three coordinates do
 (`Orientation.eq_zero_iff_of_hodgeStar_eq_neg`, `Orientation.eq_zero_iff_of_hodgeStar_eq_self`).
 
 ## References
@@ -308,6 +308,18 @@ theorem hodgeStar_ιMulti_zero_three :
   simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
     ← e.repr_apply_apply, OrthonormalBasis.repr_self]
   ring
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, `⋆(e₁ ∧ e₂) = e₀ ∧ e₃`. -/
+theorem hodgeStar_ιMulti_one_two :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 2]) = ιMulti ℝ 2 ![e 0, e 3] := by
+  rw [← o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_hodgeStar_of_even even_two hkl]
+
+/-- For a positively oriented orthonormal basis `e` in dimension four,
+`⋆(e₁ ∧ e₃) = -(e₀ ∧ e₂)`. -/
+theorem hodgeStar_ιMulti_one_three :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 3]) = -ιMulti ℝ 2 ![e 0, e 2] := by
+  rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he, map_neg,
+    o.hodgeStar_hodgeStar_of_even even_two hkl]
 
 /-- For a positively oriented orthonormal basis `e` in dimension four, the coordinates of an
 anti-self-dual `μ`, with `⋆μ = -μ`, in the basis `eᵢ ∧ eⱼ` are determined by its three coordinates

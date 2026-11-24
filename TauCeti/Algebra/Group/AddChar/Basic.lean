@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Group.AddChar
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 import Mathlib.Algebra.Group.Units.Equiv
+import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Additive characters
@@ -23,6 +26,8 @@ import Mathlib.Algebra.Group.Units.Equiv
   it unchanged.
 * `AddChar.sum_eq_zero_of_isLeftRegular_sub_one`: the values of an additive character of a finite
   group sum to zero once some `ψ b - 1` is left-regular, over any commutative ring.
+* `AddChar.isIntegral_apply`: the values of an additive character of a finite group are algebraic
+  integers.
 -/
 
 public section
@@ -54,6 +59,14 @@ the assumption that the target ring is a domain. -/
 theorem AddChar.sum_eq_zero_of_isLeftRegular_sub_one {A R : Type*} [AddGroup A] [Fintype A]
     [CommRing R] {ψ : AddChar A R} {b : A} (hb : IsLeftRegular (ψ b - 1)) : ∑ a, ψ a = 0 :=
   hb (by simp only [sub_mul, ψ.apply_mul_sum, one_mul, sub_self, mul_zero])
+
+/-- The values of an additive character of a finite additive group are algebraic integers: each
+is a root of unity of order dividing the order of the group. -/
+theorem AddChar.isIntegral_apply {A R : Type*} [AddGroup A] [Finite A] [CommRing R]
+    (ψ : AddChar A R) (a : A) : IsIntegral ℤ (ψ a) :=
+  IsIntegral.of_pow Nat.card_pos <| by
+    rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero', AddChar.map_zero_eq_one]
+    exact isIntegral_one
 
 /-- An additive character trivial at `x` is trivial at every `y` with `y + x = 0`. Over an
 additive group this says `ψ (-x) = 1`; the statement needs neither negation in the domain nor

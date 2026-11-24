@@ -13,7 +13,6 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -57,7 +56,7 @@ in time is not needed.
 In finite dimension, `G = ι.gelfandDual ∘ ι : V → V*`, the Gram operator `v ↦ ⟪ι v, ι ·⟫`, is
 invertible, and the equation is the linear ordinary differential equation
 `x' = G⁻¹ (f(t) - A(t) x)` in `V`. Its coefficients are only measurable in time, so it is solved in
-Carathéodory's sense (`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`), and the integral
+Carathéodory's sense (`TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard`), and the integral
 equation it gives makes `G x` weakly differentiable with derivative `f - A x`.
 
 When `f ∈ L²(a, b; V*)` and `A(t)` satisfies Gårding's inequality on `V`, it also does on each
@@ -183,15 +182,22 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
     filter_upwards [hK] with t ht
     rw [norm_neg]
     exact (Ginv.opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left ht (norm_nonneg _))
-  have hF : IntegrableOn F (Ioo a b) := Ginv.integrable_comp hf
-  obtain ⟨x, hx, hxa, hxeq⟩ := exists_continuousOn_eq_forall_mem_Icc_eq_picard hM hMK hF u₀
+  have hMi : IntegrableOn M (Icc a b) :=
+    (integrableOn_Icc_iff_integrableOn_Ioo (f := M)).2 ((integrable_const _).mono' hM hMK)
+  have hFi : IntegrableOn F (Icc a b) :=
+    (integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2 (Ginv.integrable_comp hf)
+  obtain ⟨x, hx, hxa, hxeq⟩ : ∃ x : ℝ → V, ContinuousOn x (Icc a b) ∧ x a = u₀ ∧
+      ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a u₀ x t := by
+    rcases lt_or_ge b a with hba | hab
+    · exact ⟨fun _ ↦ u₀, continuousOn_const, rfl, by simp [Icc_eq_empty_of_lt hba]⟩
+    obtain ⟨x, hx, h⟩ :=
+      exists_continuousOn_forall_mem_Icc_eq_picard (left_mem_Icc.2 hab) hMi hFi u₀
+    exact ⟨x, hx, by simpa using h a (left_mem_Icc.2 hab), h⟩
   refine ⟨x, hx, hxa, ?_⟩
   -- `x` is `u₀` plus the primitive of `M x + F` on `(a, b)`, so it has weak derivative `M x + F`.
   have hxg := ((hasWeakLineDerivOn_const (μ := volume) (Ω := ⟨Ioo a b, isOpen_Ioo⟩) (v := 1)
     u₀).add (hasWeakLineDerivOn_intervalIntegral_left
-      ((IntegrableOn.clm_apply_continuousOn_of_ae_mem (Integrable.of_bound hM _ hMK) hx
-        isCompact_Icc (ae_restrict_of_forall_mem measurableSet_Ioo fun _ ht ↦
-          Ioo_subset_Icc_self ht)).add hF))).congr_ae
+      ((integrableOn_Icc_clm_apply_add hMi hFi hx).mono_set Ioo_subset_Icc_self))).congr_ae
     ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht ↦
       (hxeq t (Ioo_subset_Icc_self ht)).symm)) |>.congr_ae_deriv (EventuallyEq.of_eq (zero_add _))
   -- Applying `G` gives the weak derivative `G (M x + F) = f - A x` of `G x`.
