@@ -343,13 +343,15 @@ theorem edgeConnectivity_ofSimpleGraph (H : SimpleGraph α) :
     rw [← isEdgeConnected_iff_le_edgeConnectivity,
       ← SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity, isEdgeConnected_ofSimpleGraph_iff]
 
-/-- Local edge reachability is monotone under inclusion of multigraphs. -/
+/-- Local edge reachability is monotone under inclusion of multigraphs.
+This is the multigraph analogue of `SimpleGraph.edgeReachability_mono`. -/
 @[gcongr]
 theorem edgeReachability_mono (hGH : G ≤ H) (x y : α) :
     G.edgeReachability x y ≤ H.edgeReachability x y :=
   iSup_mono fun _ ↦ iSup_mono' fun hk ↦ ⟨hk.mono hGH, le_rfl⟩
 
-/-- Edge connectivity is monotone under inclusion of multigraphs with the same actual vertices. -/
+/-- Edge connectivity is monotone under inclusion of multigraphs with the same actual vertices.
+This is the multigraph analogue of `SimpleGraph.edgeConnectivity_mono`. -/
 @[gcongr]
 theorem edgeConnectivity_mono (hGH : G ≤ H) (hV : V(G) = V(H)) :
     G.edgeConnectivity ≤ H.edgeConnectivity :=
