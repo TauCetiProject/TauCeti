@@ -72,9 +72,11 @@ linear maps used by the semigroup development.
   nonreal shift is injective, and bijective for a self-adjoint operator.
 * `LinearPMap.deficiencySubspace S z`: the deficiency subspace `N_z(S)`, the orthogonal complement
   of the range of the shift `conj z - S`; `LinearPMap.mem_deficiencySubspace_iff_adjoint`: for
-  densely defined `S` it is the eigenspace `ker (S† - z)`, and
-  `LinearPMap.IsFormalAdjoint.deficiencySubspace_eq_bot_iff_surjective`: for closed symmetric `S`
-  and nonreal `z` it vanishes exactly when `conj z - S` is surjective.
+  densely defined `S` on a Hilbert space it is the eigenspace `ker (S† - z)`;
+  `LinearPMap.deficiencySubspace_eq_bot_iff_denseRange`: on a Hilbert space it vanishes exactly
+  when `conj z - S` has dense range, and
+  `LinearPMap.IsFormalAdjoint.deficiencySubspace_eq_bot_iff_smul_sub_surjective`: for closed
+  symmetric `S` and nonreal `z` it vanishes exactly when `conj z - S` is surjective.
 * `LinearPMap.adjoint_smul`: the adjoint of a nonzero scalar multiple is the conjugate multiple of
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
@@ -323,12 +325,14 @@ theorem mem_deficiencySubspace_iff {y : E} :
   simp only [deficiencySubspace, Submodule.mem_orthogonal', LinearMap.mem_range,
     forall_exists_index, forall_apply_eq_imp_iff, smulSub_apply]
 
+/-- On a Hilbert space every deficiency subspace is complete, being an orthogonal complement. -/
 instance [CompleteSpace E] : CompleteSpace (S.deficiencySubspace z) :=
   inferInstanceAs (CompleteSpace (LinearMap.range (S.smulSub (starRingEnd 𝕜 z)))ᗮ)
 
 variable (S z) in
 /-- On a Hilbert space, the orthogonal complement of the deficiency subspace `N_z(S)` is the
 closure of the range of the shift `x ↦ conj z • x - S x`. -/
+@[simp]
 theorem orthogonal_deficiencySubspace [CompleteSpace E] :
     (S.deficiencySubspace z)ᗮ =
       (LinearMap.range (S.smulSub (starRingEnd 𝕜 z))).topologicalClosure :=
@@ -341,20 +345,23 @@ theorem mem_deficiencySubspace_iff_adjoint [CompleteSpace E] (hdense : Dense (S.
   rw [mem_deficiencySubspace_iff, forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq hdense,
     RCLike.conj_conj]
 
+/-- On a Hilbert space, the deficiency subspace `N_z(S)` vanishes exactly when the shift
+`x ↦ conj z • x - S x` has dense range. -/
+theorem deficiencySubspace_eq_bot_iff_denseRange [CompleteSpace E] :
+    S.deficiencySubspace z = ⊥ ↔
+      DenseRange fun x : S.domain ↦ starRingEnd 𝕜 z • (x : E) - S x := by
+  rw [deficiencySubspace, ← Submodule.topologicalClosure_eq_top_iff, DenseRange,
+    ← coe_range_smulSub, Submodule.dense_iff_topologicalClosure_eq_top]
+
 /-- For closed symmetric `S` on a Hilbert space and nonreal `z`, the deficiency subspace `N_z(S)`
 vanishes exactly when the shift `x ↦ conj z • x - S x` is surjective. -/
-theorem IsFormalAdjoint.deficiencySubspace_eq_bot_iff_surjective [CompleteSpace E]
+theorem IsFormalAdjoint.deficiencySubspace_eq_bot_iff_smul_sub_surjective [CompleteSpace E]
     (hS : S.IsFormalAdjoint S) (hcl : S.IsClosed) (hz : RCLike.im z ≠ 0) :
     S.deficiencySubspace z = ⊥ ↔
       Function.Surjective fun x : S.domain ↦ starRingEnd 𝕜 z • (x : E) - S x := by
-  have hcl' := hS.isClosed_range_smul_sub hcl (c := starRingEnd 𝕜 z)
-    (by rwa [RCLike.conj_im, neg_ne_zero])
-  rw [← coe_range_smulSub] at hcl'
-  have hfun : ⇑(S.smulSub (starRingEnd 𝕜 z)) =
-      fun x : S.domain ↦ starRingEnd 𝕜 z • (x : E) - S x :=
-    funext (smulSub_apply _ S)
-  rw [deficiencySubspace, ← Submodule.topologicalClosure_eq_top_iff,
-    IsClosed.submodule_topologicalClosure_eq hcl', LinearMap.range_eq_top, hfun]
+  rw [deficiencySubspace_eq_bot_iff_denseRange, DenseRange, dense_iff_closure_eq,
+    (hS.isClosed_range_smul_sub hcl (by rwa [RCLike.conj_im, neg_ne_zero])).closure_eq,
+    Set.range_eq_univ]
 
 end Deficiency
 

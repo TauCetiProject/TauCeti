@@ -52,7 +52,7 @@ theorem IsAcute.nonempty_linearIsometryEquiv (h : U.IsAcute V) : Nonempty (U ≃
   -- A vector of `V` orthogonal to the range of `T` is orthogonal to `U`, hence zero.
   have hdense : T.range.topologicalClosure = ⊤ := by
     refine topologicalClosure_eq_top_iff.2 (eq_bot_iff.2 fun v hv ↦ ?_)
-    have hvU : (v : E) ∈ Uᗮ := fun u hu ↦ by
+    have hvU : (v : E) ∈ Uᗮ := (U.mem_orthogonal (v : E)).2 fun u hu ↦ by
       simpa only [T, coe_coe, comp_apply, subtypeL_apply,
         inner_orthogonalProjectionOnto_eq_of_mem_right] using
         inner_right_of_mem_orthogonal (LinearMap.mem_range_self (T : U →ₗ[𝕜] V) ⟨u, hu⟩) hv

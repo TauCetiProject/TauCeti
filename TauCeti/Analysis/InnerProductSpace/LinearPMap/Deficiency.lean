@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SymmetricSpectrum
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.DualNorm
 public import TauCeti.Analysis.InnerProductSpace.Projection.Acute.Isometry
 
@@ -30,18 +30,20 @@ The proof is quantitative. For `u ∈ N_w(S)` and `v` in the closure of the rang
 `conj z - S`, symmetry gives `|im z| ‖⟪u, v⟫‖ ≤ ‖w - z‖ ‖u‖ ‖v‖`, so the directed gap from
 `N_w(S)` to `N_z(S)` satisfies `|im z| ‖P_{N_z(S)ᗮ} P_{N_w(S)}‖ ≤ ‖w - z‖`
 (`LinearPMap.IsFormalAdjoint.abs_im_mul_directedProjectionGap_deficiencySubspace_le`); for
-`im z ≠ 0` it is therefore at most `‖w - z‖ / |im z|`. For `w` close to `z` neither subspace then
-contains a nonzero vector orthogonal to the other, so the pair is acute and the two are unitarily
-equivalent (`Submodule.IsAcute.nonempty_linearIsometryEquiv`); connectedness spreads this over
-each half-plane.
-
-Over `ℂ`, a closed symmetric `S` is self-adjoint exactly when its deficiency subspaces at one point
-of each open half-plane vanish, equivalently at `±i`: this is von Neumann's criterion in terms of
-the deficiency subspaces.
+`im z ≠ 0` it is therefore at most `‖w - z‖ / |im z|`. Applying this estimate in both directions,
+if `‖w - z‖ < min |im z| |im w|` then both directed gaps are less than one, so neither subspace
+contains a nonzero vector orthogonal to the other. The pair is then acute and the two are
+unitarily equivalent (`Submodule.IsAcute.nonempty_linearIsometryEquiv`); connectedness spreads
+this over each half-plane.
 
 The definition of `N_z(S)` and its basic API (membership, the adjoint eigenspace description and
-the vanishing criterion `LinearPMap.IsFormalAdjoint.deficiencySubspace_eq_bot_iff_surjective`)
-live with the other shift API in `TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`.
+the vanishing criteria `LinearPMap.deficiencySubspace_eq_bot_iff_denseRange` and
+`LinearPMap.IsFormalAdjoint.deficiencySubspace_eq_bot_iff_smul_sub_surjective`) live with the
+other shift API in `TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`. Von Neumann's
+self-adjointness criterion in terms of deficiency subspaces (in the namespace
+`LinearPMap.IsFormalAdjoint`,
+`isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot`) lives with the
+resolvent criteria in `TauCeti.Analysis.InnerProductSpace.LinearPMap.SymmetricSpectrum`.
 
 ## Main results
 
@@ -52,11 +54,6 @@ live with the other shift API in `TauCeti.Analysis.InnerProductSpace.LinearPMap.
   linearly isometrically equivalent.
 * `LinearPMap.IsFormalAdjoint.nonempty_linearIsometryEquiv_deficiencySubspace_of_im_pos` and
   `..._of_im_neg`: the same on the open upper and lower half-planes.
-* `LinearPMap.IsFormalAdjoint.conj_mem_resolventSet_of_deficiencySubspace_eq_bot`: for closed
-  symmetric `S` and nonreal `z` with `N_z(S) = 0`, `conj z` is a resolvent point of `S`.
-* `IsFormalAdjoint.isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot`:
-  over `ℂ`, a closed symmetric `S` is self-adjoint exactly when `N_z(S) = 0` and `N_w(S) = 0` for
-  some (equivalently any) `z` in the upper and `w` in the lower half-plane.
 
 ## References
 
@@ -122,9 +119,8 @@ theorem IsFormalAdjoint.abs_im_mul_directedProjectionGap_deficiencySubspace_le [
   refine fun u hu ↦ (Submodule.norm_starProjection_le_iff_forall_norm_inner_le _ u
     (by positivity)).2 fun v hv ↦ ?_
   rw [orthogonal_deficiencySubspace] at hv
-  have h := hS.abs_im_mul_norm_inner_le hu hv
-  rw [norm_inner_symm, div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀' hz']
-  linarith
+  simpa [norm_inner_symm, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using
+    (le_div_iff₀' hz').2 (hS.abs_im_mul_norm_inner_le hu hv)
 
 /-- For symmetric `S` on a Hilbert space and `‖w - z‖ < |im z|`, no nonzero vector of `N_w(S)`
 is orthogonal to `N_z(S)`. -/
@@ -186,39 +182,5 @@ theorem IsFormalAdjoint.nonempty_linearIsometryEquiv_deficiencySubspace_of_im_ne
   hS.nonempty_linearIsometryEquiv_deficiencySubspace
     (convex_halfSpace_lt (imLm_coe (K := 𝕜) ▸ imLm.isLinear) 0).isPreconnected
     (fun _ h ↦ ne_of_lt h) hz hw
-
-/-- For closed symmetric `S` on a Hilbert space and nonreal `z`, if the deficiency subspace `N_z(S)`
-vanishes then `conj z` is a resolvent point of `S`. -/
-theorem IsFormalAdjoint.conj_mem_resolventSet_of_deficiencySubspace_eq_bot [CompleteSpace E]
-    (hS : S.IsFormalAdjoint S) (hcl : S.IsClosed) (hz : im z ≠ 0)
-    (h : S.deficiencySubspace z = ⊥) : starRingEnd 𝕜 z ∈ S.resolventSet :=
-  hcl.mem_resolventSet_iff_bijective.2 ⟨hS.smul_sub_injective (by rwa [conj_im, neg_ne_zero]),
-    (hS.deficiencySubspace_eq_bot_iff_surjective hcl hz).1 h⟩
-
-section Complex
-
-open Complex
-
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {S : H →ₗ.[ℂ] H} {z w : ℂ}
-
-/-- **Von Neumann's criterion via deficiency subspaces.** A closed symmetric operator `S` on a
-complex Hilbert space is self-adjoint exactly when both its deficiency subspaces `N_z(S)` and
-`N_w(S)` vanish, for any `z` in the open upper half-plane and `w` in the open lower half-plane; for
-`z = i`, `w = -i` these are `N₊` and `N₋`. -/
-theorem IsFormalAdjoint.isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot
-    (hS : S.IsFormalAdjoint S) (hcl : S.IsClosed) (hz : 0 < z.im) (hw : w.im < 0) :
-    IsSelfAdjoint S ↔ S.deficiencySubspace z = ⊥ ∧ S.deficiencySubspace w = ⊥ := by
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hz₀, hw₀⟩ ↦ ?_⟩
-  · exact (hS.deficiencySubspace_eq_bot_iff_surjective hcl hz.ne').2
-      (h.smul_sub_surjective (by simpa using hz.ne'))
-  · exact (hS.deficiencySubspace_eq_bot_iff_surjective hcl hw.ne).2
-      (h.smul_sub_surjective (by simpa using hw.ne))
-  -- `conj w` and `conj z` are resolvent points in the upper and lower half-planes.
-  exact hS.isSelfAdjoint_of_mem_resolventSet (by simpa using hw)
-    (hS.conj_mem_resolventSet_of_deficiencySubspace_eq_bot hcl hw.ne hw₀) (by simpa using hz)
-    (hS.conj_mem_resolventSet_of_deficiencySubspace_eq_bot hcl hz.ne' hz₀)
-
-end Complex
 
 end LinearPMap

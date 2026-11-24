@@ -29,20 +29,18 @@ theorem norm_starProjection_le_iff_forall_norm_inner_le (K : Submodule 𝕜 E)
     ‖K.starProjection x‖ ≤ c ↔ ∀ u ∈ K, ‖⟪u, x⟫_𝕜‖ ≤ c * ‖u‖ := by
   have he (u : E) (hu : u ∈ K) : ⟪u, K.starProjection x⟫_𝕜 = ⟪u, x⟫_𝕜 := by
     rw [← K.inner_starProjection_left_eq_right u x, K.starProjection_eq_self_iff.mpr hu]
-  constructor
-  · intro h u hu
-    rw [← he u hu, mul_comm c]
-    exact (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left h (norm_nonneg _))
-  · intro h
-    by_cases hz : K.starProjection x = 0
-    · simpa [hz] using hc
-    have hbound := h (K.starProjection x) (K.starProjection_apply_mem x)
-    rw [← he _ (K.starProjection_apply_mem x), ← inner_self_re_eq_norm,
-      inner_self_eq_norm_mul_norm] at hbound
-    exact le_of_mul_le_mul_right hbound (norm_pos_iff.mpr hz)
+  -- The projection is the Riesz representative of the inner-product functional on `K`.
+  rw [starProjection_apply, norm_coe, ← innerSL_apply_norm 𝕜,
+    ContinuousLinearMap.opNorm_le_iff hc, Subtype.forall]
+  refine forall₂_congr fun u hu ↦ ?_
+  rw [innerSL_apply_apply, coe_inner, ← norm_coe, coe_mk, norm_inner_symm, ← starProjection_apply,
+    he u hu, mul_comm]
 
-/-- For a contrast subspace inside the fitted subspace, projecting the fit's error onto the
-contrasts gives the same norm bound as projecting the original error. -/
+/-- For nested subspaces `S ≤ L` and any vector `m`, the pairings of `P_L x - m` with `S` are
+uniformly bounded, `‖⟪u, P_L x - m⟫‖ ≤ c ‖u‖` for all `u ∈ S`, exactly when
+`‖P_S (x - m)‖ ≤ c`. In statistical terms, with `L` the fitted subspace, `S ≤ L` a contrast
+subspace and `m` a hypothesised mean, the error of the fit `P_L x` has the same contrast bound as
+the original error `x - m`. -/
 theorem forall_norm_inner_starProjection_sub_le_iff (S : Submodule 𝕜 E) {L : Submodule 𝕜 E}
     [S.HasOrthogonalProjection] [L.HasOrthogonalProjection] (hSL : S ≤ L) (x m : E)
     {c : ℝ} (hc : 0 ≤ c) :

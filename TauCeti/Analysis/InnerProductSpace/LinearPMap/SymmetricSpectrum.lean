@@ -48,6 +48,11 @@ In the namespace `LinearPMap.IsFormalAdjoint`:
 * `mem_resolventSet_iff_forall_adjoint_apply_eq_smul`: for a closed densely defined symmetric
   operator, a nonreal `z` is a resolvent point exactly when `S†` has no eigenvector for
   `conj z`.
+* `conj_mem_resolventSet_of_deficiencySubspace_eq_bot`: for a closed symmetric operator and
+  nonreal `z`, vanishing of the deficiency subspace `N_z(S)` makes `conj z` a resolvent point.
+* `isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot`: a closed symmetric
+  operator is self-adjoint exactly when its deficiency subspaces at one point of each open
+  half-plane vanish.
 * `isSelfAdjoint_of_mem_resolventSet`: one resolvent point in each open half-plane makes a
   symmetric operator on a complex Hilbert space self-adjoint.
 * `resolventSet_alternatives`, `spectrum_alternatives`: the four possible resolvent sets and
@@ -166,6 +171,38 @@ theorem mem_resolventSet_iff_forall_adjoint_apply_eq_smul (hS : S.IsFormalAdjoin
     mem_resolventSet_iff_isClosed_denseRange_norm_le.mpr ⟨hS.isClosed_range_smul_sub hcl hz,
       (denseRange_smul_sub_iff hdense).mpr hker, _, abs_pos.mpr hz,
       hS.abs_im_mul_norm_le_norm_smul_sub z⟩⟩
+
+/-- **Vanishing deficiency subspaces give resolvent points.** For a closed symmetric operator `S`
+and a nonreal scalar `z`, if the deficiency subspace `N_z(S)` vanishes then `conj z` is a
+resolvent point of `S`. -/
+theorem conj_mem_resolventSet_of_deficiencySubspace_eq_bot (hS : S.IsFormalAdjoint S)
+    (hcl : S.IsClosed) {z : 𝕜} (hz : RCLike.im z ≠ 0) (h : S.deficiencySubspace z = ⊥) :
+    starRingEnd 𝕜 z ∈ S.resolventSet :=
+  hcl.mem_resolventSet_iff_bijective.2
+    ⟨hS.smul_sub_injective (by rwa [RCLike.conj_im, neg_ne_zero]),
+      (hS.deficiencySubspace_eq_bot_iff_smul_sub_surjective hcl hz).1 h⟩
+
+/-- **Von Neumann's criterion via deficiency subspaces.** A closed symmetric operator `S` is
+self-adjoint exactly when both its deficiency subspaces `N_z(S)` and `N_w(S)` vanish, for any `z`
+in the open upper half-plane and `w` in the open lower half-plane; over `ℂ`, for `z = i` and
+`w = -i` these are the classical deficiency spaces `N₊` and `N₋`. -/
+theorem isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot
+    (hS : S.IsFormalAdjoint S) (hcl : S.IsClosed) {z w : 𝕜} (hz : 0 < RCLike.im z)
+    (hw : RCLike.im w < 0) :
+    IsSelfAdjoint S ↔ S.deficiencySubspace z = ⊥ ∧ S.deficiencySubspace w = ⊥ := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hz₀, hw₀⟩ ↦ ?_⟩
+  · exact (hS.deficiencySubspace_eq_bot_iff_smul_sub_surjective hcl hz.ne').2
+      (h.smul_sub_surjective (by simpa using hz.ne'))
+  · exact (hS.deficiencySubspace_eq_bot_iff_smul_sub_surjective hcl hw.ne).2
+      (h.smul_sub_surjective (by simpa using hw.ne))
+  -- `conj w` is a resolvent point in the upper half-plane, and `w` is one in the lower
+  -- half-plane, since `conj z` is.
+  have hw' : w ∈ S.resolventSet := (hS.mem_resolventSet_iff_of_im_neg (by simpa using hz) hw).1
+    (hS.conj_mem_resolventSet_of_deficiencySubspace_eq_bot hcl hz.ne' hz₀)
+  refine isSelfAdjoint_def.2 (hS.adjoint_eq_of_smul_sub_surjective
+    (smul_sub_bijective (hS.conj_mem_resolventSet_of_deficiencySubspace_eq_bot hcl hw.ne hw₀)).2
+    ?_)
+  simpa only [RCLike.conj_conj] using (smul_sub_bijective hw').2
 
 end RCLike
 
