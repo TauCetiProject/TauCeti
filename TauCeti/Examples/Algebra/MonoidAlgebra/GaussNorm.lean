@@ -42,8 +42,8 @@ unique-sums hypothesis of `AddMonoidAlgebra.gaussNorm_mul` cannot be dropped. -/
 theorem gaussNorm_mul_ne_zmod_two {K : Type*} [Field K] (v : AbsoluteValue K ℝ) :
     gaussNorm v ((single 0 1 + single 1 1 : AddMonoidAlgebra K (ZMod 2)) *
         (single 0 1 - single 1 1)) = 0 ∧
-      gaussNorm v (single 0 1 + single 1 1 : AddMonoidAlgebra K (ZMod 2)) *
-        gaussNorm v (single 0 1 - single 1 1 : AddMonoidAlgebra K (ZMod 2)) = 1 := by
+      gaussNorm v (single 0 1 + single 1 1 : AddMonoidAlgebra K (ZMod 2)) = 1 ∧
+      gaussNorm v (single 0 1 - single 1 1 : AddMonoidAlgebra K (ZMod 2)) = 1 := by
   have hcoeff (c : K) (m : ZMod 2) : v ((single 0 1 + single 1 c :
       AddMonoidAlgebra K (ZMod 2)).coeff m) = if m = 0 then 1 else v c := by
     have h10 : (1 : ZMod 2) ≠ 0 := by decide
@@ -57,13 +57,13 @@ theorem gaussNorm_mul_ne_zmod_two {K : Type*} [Field K] (v : AbsoluteValue K ℝ
     · have := le_gaussNorm v (single 0 1 + single 1 c : AddMonoidAlgebra K (ZMod 2)) 0
       rw [hcoeff] at this
       simpa using this
-  refine ⟨?_, ?_⟩
+  refine ⟨?_, hnorm 1 (by simp), ?_⟩
   · have : ((single 0 1 + single 1 1 : AddMonoidAlgebra K (ZMod 2)) *
         (single 0 1 - single 1 1)) = 0 := by
       have h11 : (1 : ZMod 2) + 1 = 0 := by decide
       simp only [add_mul, mul_sub, single_mul_single, mul_one, add_zero, zero_add, h11]
       abel
     simp [this]
-  · rw [sub_eq_add_neg, ← single_neg, hnorm 1 (by simp), hnorm (-1) (by simp), one_mul]
+  · rw [sub_eq_add_neg, ← single_neg, hnorm (-1) (by simp)]
 
 end TauCeti.Examples.MonoidAlgebraGaussNorm
