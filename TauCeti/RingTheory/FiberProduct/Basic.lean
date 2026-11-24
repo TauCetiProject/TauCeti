@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.LocalRing.Pullback
+public import TauCeti.RingTheory.Pullback
 
 import Mathlib.Algebra.Category.Ring.Constructions
 import Mathlib.LinearAlgebra.Isomorphisms
@@ -88,26 +89,6 @@ theorem pullbackSndKerEquiv_symm_snd {B C D : Type*}
     [CommRing B] [Semiring C] [CommRing D]
     (p : B →+* C) (q : D →+* C) (b : ker p) :
     p.pullbackSnd q ((pullbackSndKerEquiv p q).symm b) = 0 := by rfl
-
-/-- The first projection carries the kernel of the second projection onto the kernel
-of the map out of the first factor. This is the factor-swapped counterpart of
-`RingHom.map_pullbackSnd_ker_pullbackFst_eq`. -/
-@[simp]
-theorem map_pullbackFst_ker_pullbackSnd_eq {B C D : Type*} [Ring B] [Semiring C] [Ring D]
-    (p : B →+* C) (q : D →+* C) :
-    (ker (p.pullbackSnd q)).map (p.pullbackFst q) = ker p := by
-  let e : p.pullback q ≃+* q.pullback p :=
-    (RingEquiv.prodComm : B × D ≃+* D × B).restrict _ _ (fun _ ↦ eq_comm)
-  have hswap_fst (x : p.pullback q) : q.pullbackFst p (e x) = p.pullbackSnd q x := rfl
-  have hswap_snd (x : p.pullback q) : q.pullbackSnd p (e x) = p.pullbackFst q x := rfl
-  have hker : ker (p.pullbackSnd q) = (ker (q.pullbackFst p)).comap e.toRingHom := by
-    rw [comap_ker]
-    exact congrArg ker (RingHom.ext fun x ↦ (hswap_fst x).symm)
-  have hfst : p.pullbackFst q = (q.pullbackSnd p).comp e.toRingHom := by
-    ext x
-    exact (hswap_snd x).symm
-  rw [hfst, ← Ideal.map_map, hker,
-    Ideal.map_comap_of_surjective e.toRingHom e.surjective, map_pullbackSnd_ker_pullbackFst_eq]
 
 /-- If `p` is surjective, the canonical map `B ⊗[B ×_C D] D → C` is an isomorphism.
 The algebra and tower data are determined by the four ring maps. -/

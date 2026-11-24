@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Group.Integral
@@ -15,7 +14,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Fourier.CharacterAnnihilator
 import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Linear change of variables for the Fourier transform
@@ -31,7 +30,7 @@ and multiplies the moment `∫ ‖y‖ ^ s ‖𝓕⁻ f y‖` of order `s` of th
 Fourier transform by `R ^ (n - n / r)`.
 
 The Jacobian factor comes from the linear change of variables
-`MeasureTheory.Measure.integral_comp_continuousLinearEquiv`. The formulas use the total Bochner
+`MeasureTheory.Measure.integral_comp_linearMap`. The formulas use the total Bochner
 integral, so no integrability hypothesis is necessary. They apply to functions with values in any
 complex normed space, including Schwartz functions by coercion.
 
@@ -83,8 +82,10 @@ theorem _root_.ContinuousLinearEquiv.fourier_comp (A : E ≃L[ℝ] E) (f : E →
     simp [ContinuousLinearMap.adjoint_inner_right]
   simp only [Real.fourier_eq, Function.comp_apply]
   simp_rw [← hinner]
-  exact Measure.integral_comp_continuousLinearEquiv volume
-    (fun x : E ↦ 𝐞 (-⟪x, ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y⟫) • f x) A
+  have h := Measure.integral_comp_linearMap volume
+    (fun x ↦ 𝐞 (-⟪x, ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y⟫) • f x)
+    A.toLinearEquiv.toLinearMap
+  simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv] using h
 
 /-- The inverse Fourier transform has the same linear change-of-variables law. -/
 theorem _root_.ContinuousLinearEquiv.fourierInv_comp (A : E ≃L[ℝ] E) (f : E → F) (y : E) :

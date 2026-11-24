@@ -28,8 +28,9 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 * `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
 * `Scheme.fromSpecResidueField_comp_over`: the spectrum of a residue field maps to `X` over the
   affine base.
-* `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over`: a `k`-algebra map of function fields
-  gives a morphism over the affine base between the spectra of the function fields.
+* `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over_iff`: a map of function fields is a
+  `k`-algebra map exactly when it gives a morphism over the affine base between the spectra of the
+  function fields; `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over` is one direction.
 * `Scheme.Hom.functionFieldAlgHom`: conversely, the pullback of rational functions along a
   dominant morphism over the affine base is a `k`-algebra map of function fields.
 * `Scheme.Hom.residueFieldMap_algebraMap`: the residue field maps of a morphism over the affine
@@ -261,6 +262,19 @@ theorem fromSpecStalk_genericPoint_comp_over [IsIntegral X] :
     Scheme.baseRingToFunctionField]
 
 /-- Through the generic points of integral schemes over `Spec k`, `Spec` of a map of function
+fields is compatible with the structure morphisms to `Spec k` exactly when the map is compatible
+with the `k`-algebra structures. -/
+theorem specMap_comp_fromSpecStalk_genericPoint_comp_over_iff
+    {Y Z : Scheme.{u}} [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y]
+    [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField) :
+    (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) =
+        Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) ↔
+      ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c := by
+  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
+    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp, Spec.map_inj]
+  exact ⟨fun h c ↦ congr($h c), fun h ↦ CommRingCat.hom_ext (RingHom.ext h)⟩
+
+/-- Through the generic points of integral schemes over `Spec k`, `Spec` of a map of function
 fields compatible with the `k`-algebra structures is compatible with the structure morphisms to
 `Spec k`. -/
 theorem specMap_comp_fromSpecStalk_genericPoint_comp_over
@@ -268,12 +282,8 @@ theorem specMap_comp_fromSpecStalk_genericPoint_comp_over
     [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField)
     (hf : ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c) :
     (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) =
-      Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) := by
-  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
-    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp]
-  congr 1
-  ext c
-  exact hf c
+      Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) :=
+  (specMap_comp_fromSpecStalk_genericPoint_comp_over_iff k f).mpr hf
 
 end CommRing
 
@@ -428,13 +438,9 @@ variable (k : Type u) [CommRing k] {X Y Z : Scheme.{u}} [X.Over (Spec (.of k))]
 `Spec k` is compatible with the `k`-algebra structures of the function fields. -/
 theorem functionFieldMap_algebraMap (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :
-    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c := by
-  have h : Spec.map (CommRingCat.ofHom (algebraMap k Y.functionField) ≫ f.functionFieldMap) =
-      Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
-    rw [Spec.map_comp, ← Scheme.fromSpecStalk_genericPoint_comp_over,
-      ← Scheme.fromSpecStalk_genericPoint_comp_over,
-      Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk_assoc, comp_over]
-  exact congr($(Spec.map_injective h) c)
+    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c :=
+  (Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over_iff k f.functionFieldMap).mp
+    (by rw [Scheme.Hom.SpecMap_functionFieldMap_fromSpecStalk, Category.assoc, comp_over]) c
 
 /-- The pullback of rational functions `f^* : k(Y) → k(X)` along a dominant morphism `f : X ⟶ Y`
 of integral schemes over `Spec k`, as a `k`-algebra homomorphism. -/

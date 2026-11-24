@@ -28,7 +28,8 @@ On a seminormed group, as `‖s‖ → ∞`:
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
 * `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
-  in particular `√‖s‖ = o(s)`.
+  in particular `√‖s‖ = o(s)`, and `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever
+  `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -181,6 +182,14 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     exact absurd h (Real.rpow_pos_of_pos hx b).ne'
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `1 / 2 < a * k`, the square root is negligible against the `k`-th power of `x ^ a`:
+`√x / (x ^ a) ^ k → 0` as `x → ∞`. -/
+theorem tendsto_sqrt_div_rpow_pow_atTop_nhds_zero {a : ℝ} {k : ℕ} (h : 1 / 2 < a * k) :
+    Tendsto (fun x : ℝ ↦ √x / (x ^ a) ^ k) atTop (𝓝 0) := by
+  refine (tendsto_rpow_neg_atTop (sub_pos.2 h)).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast hx.le, ← Real.rpow_sub hx, neg_sub]
 
 /-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
 theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
