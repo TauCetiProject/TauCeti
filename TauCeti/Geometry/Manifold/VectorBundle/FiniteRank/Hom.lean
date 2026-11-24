@@ -120,14 +120,11 @@ theorem contMDiff_totalSpaceMap_homEv :
   refine contMDiffOn_inChartCoordinates_of_coordChange_comp (homEv A D)
     (fun _ (hx : _ ∈ A.core.baseSet i ∩ (A.core.baseSet i ∩ D.core.baseSet i)) ↦ hx.2.2)
     (kroneckerHomEv 𝕜 A.rank D.rank) fun x hx v ↦ ?_
-  have hx' : x ∈ A.core.baseSet i := hx.1.1
-  have hcomp : (A.core.coordChange x i x).comp (A.core.coordChange i x x) =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-    (A.core.coordChange_linear_comp i x i x ⟨⟨hx', A.mem_baseSet_self x⟩, hx'⟩).trans
-      (A.core.coordChange_self_eq_id hx')
   rw [fiberMap_homEv, coordChange_tensorObj, coordChange_hom]
   exact DFunLike.congr_fun
-    (kroneckerHomEv_comp_kronecker_homCoordConj hcomp (D.core.coordChange i x x)) v
+    (kroneckerHomEv_comp_kronecker_homCoordConj
+      (A.core.coordChange_comp_coordChange_eq_id hx.1.1 (A.mem_baseSet_self x))
+      (D.core.coordChange i x x)) v
 
 omit [A'.core.IsContMDiff I n] [D.core.IsContMDiff I n] [D'.core.IsContMDiff I n] in
 /-- The coevaluation map `C ⟶ hom A (A ⊗ C)` of `C^n` cores is `C^n` on total spaces. -/
@@ -140,14 +137,11 @@ theorem contMDiff_totalSpaceMap_homCurry_id :
     (fun _ (hx : _ ∈ A.core.baseSet j ∩ (A.core.baseSet j ∩ C.core.baseSet j)) ↦ hx.2.2)
     (kroneckerCurry 𝕜 A.rank C.rank (A ⊗ C).rank (ContinuousLinearMap.id 𝕜 _))
     fun x hx v ↦ ?_
-  have hx' : x ∈ A.core.baseSet j := hx.2.1
-  have hcomp : (A.core.coordChange x j x).comp (A.core.coordChange j x x) =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-    (A.core.coordChange_linear_comp j x j x ⟨⟨hx', A.mem_baseSet_self x⟩, hx'⟩).trans
-      (A.core.coordChange_self_eq_id hx')
   rw [fiberMap_homCurry, fiberMap_id, coordChange_hom, coordChange_tensorObj]
   exact DFunLike.congr_fun
-    (homCoordConj_kronecker_comp_kroneckerCurry_id hcomp (C.core.coordChange x j x)) v
+    (homCoordConj_kronecker_comp_kroneckerCurry_id
+      (A.core.coordChange_comp_coordChange_eq_id hx.2.1 (A.mem_baseSet_self x))
+      (C.core.coordChange x j x)) v
 
 omit [A'.core.IsContMDiff I n] [D'.core.IsContMDiff I n] in
 /-- Currying a `C^n` bundle map `A ⊗ C ⟶ D` of `C^n` cores gives a `C^n` bundle map
@@ -298,7 +292,7 @@ noncomputable def homAdjunction (A : ContMDiffFiniteRankBundleCore I n B) :
         simp only [comp_toHom, homRightFunctor_map_toHom]
         exact FiniteRankBundleCore.homCurry_comp f.toHom k.toHom }
 
-theorem homAdjunction_homEquiv (A X Y : ContMDiffFiniteRankBundleCore I n B) :
+@[simp] theorem homAdjunction_homEquiv (A X Y : ContMDiffFiniteRankBundleCore I n B) :
     (homAdjunction A).homEquiv X Y = homCurryEquiv A X Y := by
   rw [homAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
 

@@ -226,12 +226,9 @@ instance (A : FiniteRankBundleCore 𝕜 B) : (homRightFunctor A).Additive where
 
 /-- Evaluation bundle morphism `A ⊗ hom A D ⟶ D`, given on every fibre by `kroneckerHomEv`. -/
 noncomputable def homEv (A D : FiniteRankBundleCore 𝕜 B) : A ⊗ hom A D ⟶ D :=
-  constHom (fun _ _ hx ↦ hx.2.2) (kroneckerHomEv 𝕜 A.rank D.rank) fun i j x hi hj ↦ by
-    have hcomp : (A.core.coordChange j i x).comp (A.core.coordChange i j x) =
-        ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-      (A.core.coordChange_linear_comp i j i x ⟨⟨hi.1, hj.1⟩, hi.1⟩).trans
-        (A.core.coordChange_self_eq_id hi.1)
-    exact kroneckerHomEv_comp_kronecker_homCoordConj hcomp (D.core.coordChange i j x)
+  constHom (fun _ _ hx ↦ hx.2.2) (kroneckerHomEv 𝕜 A.rank D.rank) fun i j x hi hj ↦
+    kroneckerHomEv_comp_kronecker_homCoordConj
+      (A.core.coordChange_comp_coordChange_eq_id hi.1 hj.1) (D.core.coordChange i j x)
 
 @[simp] theorem fiberMap_homEv (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
     (homEv A D).fiberMap x = kroneckerHomEv 𝕜 A.rank D.rank :=
