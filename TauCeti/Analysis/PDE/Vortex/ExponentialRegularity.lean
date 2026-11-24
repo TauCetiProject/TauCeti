@@ -208,8 +208,7 @@ theorem exists_forall_norm_iteratedFDeriv_expWeightCoeff_le_and_neg_le (c : ℝ)
   choose M hM hMb using fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k
   obtain ⟨N, hN⟩ := Finite.exists_le fun p : Fin 4 × Fin 4 ↦ M p.1 p.2
   refine ⟨N, (hM 0 0).trans (hN (0, 0)), fun i j n hn z ↦ ?_⟩
-  rw [norm_iteratedFDeriv_fun_neg, and_self]
-  exact (hMb i j n hn z).trans (hN (i, j))
+  simpa using (hMb i j n hn z).trans (hN (i, j))
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
 `w v` by the matrix `expWeightCoeff c`. -/

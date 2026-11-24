@@ -287,6 +287,7 @@ theorem iteratedFDeriv_fun_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i 
     simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
 
 /-- Negating a function does not change the norms of its iterated derivatives. -/
+@[simp]
 theorem norm_iteratedFDeriv_fun_neg (f : E → F) (n : ℕ) (x : E) :
     ‖iteratedFDeriv 𝕜 n (fun y ↦ -f y) x‖ = ‖iteratedFDeriv 𝕜 n f x‖ := by
   rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]

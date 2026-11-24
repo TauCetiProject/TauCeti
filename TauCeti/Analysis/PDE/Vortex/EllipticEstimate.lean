@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ExponentialRegularity
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.MeasureTheory.Function.L2Space
 
