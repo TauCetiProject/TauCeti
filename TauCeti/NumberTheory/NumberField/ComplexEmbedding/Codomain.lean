@@ -116,6 +116,12 @@ theorem one_tmul_ne_zero {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Modul
     {x : E} (hx : x ≠ 0) : (1 : Codomain σ) ⊗ₜ[𝓞 K] x ≠ 0 := fun h =>
   hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (Codomain σ) (by simpa using h))
 
+/-- `1 ⊗ (a • x) = σ(a) (1 ⊗ x)` in the complex fibre at `σ`. -/
+theorem one_tmul_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (a : 𝓞 K) (x : E) :
+    (1 : Codomain σ) ⊗ₜ[𝓞 K] (a • x) = σ a • (1 ⊗ₜ[𝓞 K] x) := by
+  rw [← TensorProduct.smul_tmul, tmul_eq_smul, Algebra.smul_def, mul_one,
+    equiv_algebraMap_ringOfIntegers]
+
 end Codomain
 
 end NumberField.ComplexEmbedding
