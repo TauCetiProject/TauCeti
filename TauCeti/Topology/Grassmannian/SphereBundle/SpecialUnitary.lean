@@ -191,6 +191,16 @@ theorem coe_specialUnitarySphereFiberHomeomorphMul_apply (A : specialUnitaryGrou
       A * specialUnitaryGroup.fromBlocksOne 𝕜 1 n B := by
   simp [specialUnitarySphereFiberHomeomorphMul, Homeomorph.subtype]
 
+/-- A special unitary matrix `C` with `C e₀ = A e₀` is `A diag(1, B)` for its image `B` in
+`SU(n)`. -/
+@[simp]
+theorem fromBlocksOne_specialUnitarySphereFiberHomeomorphMul_symm_apply
+    (A : specialUnitaryGroup (Fin (1 + n)) 𝕜)
+    (C : specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹' {specialUnitarySphereMap n A}) :
+    A * specialUnitaryGroup.fromBlocksOne 𝕜 1 n
+      ((specialUnitarySphereFiberHomeomorphMul 𝕜 n A).symm C) = C := by
+  rw [← coe_specialUnitarySphereFiberHomeomorphMul_apply, Homeomorph.apply_symm_apply]
+
 /-! ### Local triviality -/
 
 /-- For `n ≥ 1`, the evaluation map `SU(1 + n) → S` has a chart with fibre `SU(n)` around each

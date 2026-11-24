@@ -235,7 +235,7 @@ theorem isZero_singularHomology_sphereFibration_of_lt {m : ℕ} (hm : m < n) :
   exact (TopPair.singularHomologyMapIso (ModuleCat.of R R)
     (spherePreimageSkeletonPairIso h (by omega)) m).symm
 
-/-- **Below the dimension of the sphere, the fibre carries the homology of the total space.** For
+/-- **Below degree `n - 1`, the fibre carries the homology of the total space.** For
 a Serre fibration `p : E ⟶ Sⁿ` with fibre `F` over the pole, the inclusion `F ⟶ E` induces an
 isomorphism `Hₖ(F; R) ≅ Hₖ(E; R)` for `k + 1 < n`. -/
 theorem isIso_homologyMap_sphereFibration_of_lt {k : ℕ} (hk : k + 1 < n) :
@@ -259,8 +259,11 @@ def singularHomologySphereFibrationIsoOfIsZero (hn : 1 ≤ n) {q m : ℕ} (hm : 
         (ModuleCat.of R R)).obj E ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {sphereTopCellCenter h} : Set E)) :=
-  @asIso _ _ _ _ _ (TopPair.isIso_singularHomologyπ_of_isZero
-      (TopPair.ofSubset (p ⁻¹' {spherePolePoint h})) (ModuleCat.of R R) hm hq hm') ≪≫
+  eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ _ E) ≪≫
+    @asIso _ _ _ _ _ (by
+      rw [singularHomologyFunctor_obj_obj_eq_toSSet_homology] at hq hm'
+      exact TopPair.isIso_singularHomologyπ_of_isZero
+        (TopPair.ofSubset (p ⁻¹' {spherePolePoint h})) (ModuleCat.of R R) hm hq hm') ≪≫
     sphereFibrationSingularHomologyIso h hp R hn q
 
 section Contractible

@@ -21,12 +21,14 @@ With coefficients in any ring `R`, the singular homology of the special unitary 
 `TauCeti.isZero_singularHomology_specialUnitaryGroup_three`).
 
 **`SU(2)`.** The unit quaternions form the group `SU(2)`, so `SU(2)` is the three-sphere
-(`TauCeti.specialUnitaryGroupTwoHomeomorphSphere`). Its homology is `R` in degrees `0` and `3` and
-zero otherwise (`TauCeti.singularHomologySpecialUnitaryGroupTwoIso`,
+(`TauCeti.specialUnitaryGroupTwoHomeomorphSphere`). With coefficients `M` in any abelian category
+with coproducts, its homology is `M` in degrees `0` and `3` and zero otherwise
+(`TauCeti.singularHomologySpecialUnitaryGroupTwoIso`,
 `TauCeti.isZero_singularHomology_specialUnitaryGroup_two`).
 
 **`SU(3)`.** Evaluation on the first coordinate vector, `A ↦ A e₀`, is a locally trivial bundle
-`SU(2) → SU(3) → S⁵` (`TauCeti.specialUnitarySphereMap_mem_serreFibrations`), with fibre
+`SU(2) → SU(3) → S⁵` (`TauCeti.exists_trivialization_specialUnitarySphereMap`), hence a Serre
+fibration (`TauCeti.specialUnitarySphereMap_mem_serreFibrations`), with fibre
 `A · diag(1, SU(2))` over `A e₀` (`TauCeti.specialUnitarySphereFiberHomeomorphMul`). Filter `SU(3)`
 by the preimages of the skeleta of the CW structure of `S⁵` with one `0`-cell and one `5`-cell. The
 first page of this filtration has two columns, `H_*(SU(2))` over the `0`-cell and `H_*(SU(2))`
@@ -48,7 +50,7 @@ The ring structure `H^*(SU(3); ℤ) = Λ(x₃, x₅)` needs products and is not 
 
 ## Main definitions
 
-* `TauCeti.singularHomologySpecialUnitaryGroupTwoIso`: `Hₖ(SU(2); R) ≅ R` for `k ∈ {0, 3}`.
+* `TauCeti.singularHomologySpecialUnitaryGroupTwoIso`: `Hₖ(SU(2); M) ≅ M` for `k ∈ {0, 3}`.
 * `TauCeti.singularHomologySpecialUnitaryGroupThreeIsoOfLt`: `Hₖ(SU(3); R) ≅ Hₖ(SU(2); R)` for
   `k < 4`.
 * `TauCeti.singularHomologySpecialUnitaryGroupThreeAddFiveIso`:
@@ -58,7 +60,7 @@ The ring structure `H^*(SU(3); ℤ) = Λ(x₃, x₅)` needs products and is not 
 
 ## Main results
 
-* `TauCeti.isZero_singularHomology_specialUnitaryGroup_two`: `Hₖ(SU(2); R) = 0` for
+* `TauCeti.isZero_singularHomology_specialUnitaryGroup_two`: `Hₖ(SU(2); M) = 0` for
   `k ∉ {0, 3}`.
 * `TauCeti.isZero_singularHomology_specialUnitaryGroup_three`: `Hₖ(SU(3); R) = 0` for
   `k ∉ {0, 3, 5, 8}`.
@@ -81,80 +83,54 @@ open scoped Quaternion
 
 namespace TauCeti
 
-variable (R : Type) [Ring R]
+universe u v
 
 /-! ### `SU(2)` -/
 
-/-- **`SU(2)` is the three-sphere**: the unit quaternions form the group `SU(2)`, and they are the
-unit sphere of `ℍ`. -/
-def specialUnitaryGroupTwoHomeomorphSphere :
-    specialUnitaryGroup (Fin 2) ℂ ≃ₜ sphere (0 : ℍ[ℝ]) 1 :=
-  Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup.symm.toHomeomorph.trans
-    Quaternion.unitaryHomeomorphSphere
+section SpecialUnitaryTwo
 
-/-- The point of the three-sphere attached to `A ∈ SU(2)` is the unit quaternion whose complex
-matrix is `A`. -/
-@[simp]
-theorem toComplexMatrix_specialUnitaryGroupTwoHomeomorphSphere_apply
-    (A : specialUnitaryGroup (Fin 2) ℂ) :
-    Quaternion.toComplexMatrix (specialUnitaryGroupTwoHomeomorphSphere A : ℍ[ℝ]) =
-      (A : Matrix (Fin 2) (Fin 2) ℂ) := by
-  -- The homeomorphism underlying a continuous multiplicative equivalence applies it, by definition.
-  have h : Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup.symm.toHomeomorph A =
-      Quaternion.unitaryEquivSpecialUnitaryGroup.symm A :=
-    Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup_symm_apply A
-  rw [specialUnitaryGroupTwoHomeomorphSphere, Homeomorph.trans_apply,
-    Quaternion.coe_unitaryHomeomorphSphere_apply, h]
-  exact Quaternion.coe_unitaryEquivSpecialUnitaryGroup_symm_apply A
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (M : C)
 
 /-- The quaternions have real dimension `3 + 1`. -/
 private lemma finrank_quaternion : finrank ℝ ℍ[ℝ] = 3 + 1 :=
   Quaternion.finrank_eq_four
 
-/-- `SU(2)` is path connected, as the three-sphere is. -/
-private lemma pathConnectedSpace_specialUnitaryGroup_two :
-    PathConnectedSpace (specialUnitaryGroup (Fin 2) ℂ) :=
-  have : PathConnectedSpace (sphere (0 : ℍ[ℝ]) 1) :=
-    isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere (by
-      rw [← finrank_eq_rank, finrank_quaternion]; norm_num) 0 zero_le_one)
-  specialUnitaryGroupTwoHomeomorphSphere.symm.surjective.pathConnectedSpace
-    specialUnitaryGroupTwoHomeomorphSphere.symm.continuous
-
-/-- **The homology of `SU(2)` vanishes outside degrees `0` and `3`**, with coefficients in any
-ring. -/
+/-- **The homology of `SU(2)` vanishes outside degrees `0` and `3`**, with any coefficients. -/
 theorem isZero_singularHomology_specialUnitaryGroup_two {k : ℕ} (h₀ : k ≠ 0) (h₃ : k ≠ 3) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
+    IsZero (((singularHomologyFunctor C k).obj M).obj
       (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ))) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero h₀
-  exact ((isZero_reducedSingularHomologyFunctor_sphere_of_ne (ModuleCat.of R R)
-    finrank_quaternion (by omega)).of_iso
+  exact ((isZero_reducedSingularHomologyFunctor_sphere_of_ne M finrank_quaternion
+    (by omega)).of_iso
       (specialUnitaryGroupTwoHomeomorphSphere.toHomotopyEquiv.reducedSingularHomologyIso
         _ _)).of_iso
-    ((reducedSingularHomologySuccIso (ModuleCat.of R R) k).app _).symm
+    ((reducedSingularHomologySuccIso M k).app _).symm
 
-/-- `H₃(SU(2); R) ≅ R`: the top homology of the three-sphere, with the generator given by an
+/-- `H₃(SU(2); M) ≅ M`: the top homology of the three-sphere, with the generator given by an
 orthonormal basis of `ℍ`. -/
 private def singularHomologySpecialUnitaryGroupTwoThreeIso :
-    ((singularHomologyFunctor (ModuleCat.{0} R) 3).obj (ModuleCat.of R R)).obj
-        (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) ≅ ModuleCat.of R R :=
-  ((reducedSingularHomologySuccIso (ModuleCat.of R R) 2).app _).symm ≪≫
+    ((singularHomologyFunctor C 3).obj M).obj
+        (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) ≅ M :=
+  ((reducedSingularHomologySuccIso M 2).app _).symm ≪≫
     specialUnitaryGroupTwoHomeomorphSphere.toHomotopyEquiv.reducedSingularHomologyIso _ 3 ≪≫
-    reducedSingularHomologySphereIso (ModuleCat.of R R)
+    reducedSingularHomologySphereIso M
       ((stdOrthonormalBasis ℝ ℍ[ℝ]).reindex (finCongr finrank_quaternion))
 
-/-- **The homology of `SU(2)` in degrees `0` and `3`**: `Hₖ(SU(2); R) ≅ R` for `k ∈ {0, 3}`. In
+/-- **The homology of `SU(2)` in degrees `0` and `3`**: `Hₖ(SU(2); M) ≅ M` for `k ∈ {0, 3}`. In
 degree `0` this is the augmentation, `SU(2)` being path connected; in degree `3` it is the top
 homology of the three-sphere. -/
 def singularHomologySpecialUnitaryGroupTwoIso {k : ℕ} (hk : k = 0 ∨ k = 3) :
-    ((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
-        (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) ≅ ModuleCat.of R R :=
+    ((singularHomologyFunctor C k).obj M).obj
+        (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) ≅ M :=
   if h : k = 0 then
-    haveI := pathConnectedSpace_specialUnitaryGroup_two
     eqToIso (by rw [h]) ≪≫
-      asIso ((_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)).singularHomology₀ε
-        (ModuleCat.of R R))
+      asIso ((_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)).singularHomology₀ε M)
   else
-    eqToIso (by rw [hk.resolve_left h]) ≪≫ singularHomologySpecialUnitaryGroupTwoThreeIso R
+    eqToIso (by rw [hk.resolve_left h]) ≪≫ singularHomologySpecialUnitaryGroupTwoThreeIso M
+
+end SpecialUnitaryTwo
+
+variable (R : Type) [Ring R]
 
 /-! ### The bundle `SU(2) → SU(3) → S⁵` -/
 
@@ -177,6 +153,11 @@ private abbrev fiveSphereProj :
   _root_.TopCat.ofHom ⟨specialUnitarySphereMap 2, continuous_specialUnitarySphereMap ℂ 2⟩ ≫
     (_root_.TopCat.isoOfHomeo fiveSphereHomeomorph).hom
 
+/-- `fiveSphereProj` evaluates `A ↦ A e₀` and reads the result on the five-sphere of `ℝ⁶`. -/
+private lemma fiveSphereProj_apply (A : specialUnitaryGroup (Fin (1 + 2)) ℂ) :
+    fiveSphereProj A = fiveSphereHomeomorph (specialUnitarySphereMap 2 A) :=
+  rfl
+
 private lemma serreFibrations_fiveSphereProj : TopCat.serreFibrations fiveSphereProj :=
   MorphismProperty.RespectsIso.postcomp TopCat.serreFibrations _ _
     (specialUnitarySphereMap_mem_serreFibrations (𝕜 := ℂ) (n := 2))
@@ -191,6 +172,7 @@ private def fiveSphereProjFiberHomeomorph (b : FiveSphere) :
     ext B
     simp only [Set.mem_preimage, Set.mem_singleton_iff, A,
       (surjective_specialUnitarySphereMap (fiveSphereHomeomorph.symm b)).choose_spec]
+    rw [fiveSphereProj_apply]
     exact fiveSphereHomeomorph.eq_symm_apply))
 
 /-- The homology of a fibre of `SU(3) → S⁵` is that of `SU(2)`. -/
@@ -210,19 +192,28 @@ def singularHomologySpecialUnitaryGroupThreeIsoOfLt {k : ℕ} (hk : k < 4) :
         (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ)) ≅
       ((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
         (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) :=
-  (@asIso _ _ _ _ _ (TopCat.isIso_homologyMap_sphereFibration_of_lt card_fin_six
+  -- `SU(3)` is `SU(1 + 2)`, the total space of the bundle, as `1 + 2` reduces to `3`.
+  eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ k
+      (_root_.TopCat.of (specialUnitaryGroup (Fin (1 + 2)) ℂ))) ≪≫
+    (@asIso _ _ _ _ _ (TopCat.isIso_homologyMap_sphereFibration_of_lt card_fin_six
       serreFibrations_fiveSphereProj R (k := k) (by omega))).symm ≪≫
+    (eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ k _)).symm ≪≫
     singularHomologyFiveSphereProjFiberIso R _ k
 
 /-- **`H₄(SU(3); R) = 0`**: both `H₄` of a fibre of `SU(3) → S⁵` and `H₄` of `SU(3)` modulo that
 fibre vanish. -/
 theorem isZero_singularHomology_specialUnitaryGroup_three_four :
     IsZero (((singularHomologyFunctor (ModuleCat.{0} R) 4).obj (ModuleCat.of R R)).obj
-      (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ))) :=
-  TopPair.isZero_singularHomology_fst_of_isZero
-    (TopPair.ofSubset (fiveSphereProj ⁻¹' {spherePolePoint card_fin_six})) (ModuleCat.of R R)
-    ((isZero_singularHomology_specialUnitaryGroup_two R (by omega) (by omega)).of_iso
-      (singularHomologyFiveSphereProjFiberIso R _ 4))
+      (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ))) := by
+  -- `SU(3)` is `SU(1 + 2)`, the total space of the bundle, as `1 + 2` reduces to `3`.
+  change IsZero (((singularHomologyFunctor (ModuleCat.{0} R) 4).obj (ModuleCat.of R R)).obj
+    (_root_.TopCat.of (specialUnitaryGroup (Fin (1 + 2)) ℂ)))
+  have hF := (isZero_singularHomology_specialUnitaryGroup_two (ModuleCat.of R R)
+    (k := 4) (by omega) (by omega)).of_iso (singularHomologyFiveSphereProjFiberIso R
+      (spherePolePoint card_fin_six) 4)
+  rw [singularHomologyFunctor_obj_obj_eq_toSSet_homology] at hF ⊢
+  exact TopPair.isZero_singularHomology_fst_of_isZero
+    (TopPair.ofSubset (fiveSphereProj ⁻¹' {spherePolePoint card_fin_six})) (ModuleCat.of R R) hF
     (TopCat.isZero_singularHomology_sphereFibration_of_lt card_fin_six
       serreFibrations_fiveSphereProj R (by omega))
 
@@ -234,12 +225,13 @@ def singularHomologySpecialUnitaryGroupThreeAddFiveIso (q : ℕ) :
         (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ)) ≅
       ((singularHomologyFunctor (ModuleCat.{0} R) q).obj (ModuleCat.of R R)).obj
         (_root_.TopCat.of (specialUnitaryGroup (Fin 2) ℂ)) :=
+  -- `SU(3)` is `SU(1 + 2)`, the total space of the bundle, as `1 + 2` reduces to `3`.
   TopCat.singularHomologySphereFibrationIsoOfIsZero card_fin_six serreFibrations_fiveSphereProj R
       (by omega) (m := q + 4) (by omega)
-      ((isZero_singularHomology_specialUnitaryGroup_two R (by omega) (by omega)).of_iso
-        (singularHomologyFiveSphereProjFiberIso R _ _))
-      ((isZero_singularHomology_specialUnitaryGroup_two R (by omega) (by omega)).of_iso
-        (singularHomologyFiveSphereProjFiberIso R _ _)) ≪≫
+      ((isZero_singularHomology_specialUnitaryGroup_two (ModuleCat.of R R) (by omega)
+        (by omega)).of_iso (singularHomologyFiveSphereProjFiberIso R _ _))
+      ((isZero_singularHomology_specialUnitaryGroup_two (ModuleCat.of R R) (by omega)
+        (by omega)).of_iso (singularHomologyFiveSphereProjFiberIso R _ _)) ≪≫
     singularHomologyFiveSphereProjFiberIso R _ q
 
 /-- **The homology of `SU(3)` vanishes outside degrees `0`, `3`, `5` and `8`**, with coefficients
@@ -249,12 +241,12 @@ theorem isZero_singularHomology_specialUnitaryGroup_three {k : ℕ} (h₀ : k �
     IsZero (((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).obj
       (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ))) := by
   rcases lt_trichotomy k 4 with hk | rfl | hk
-  · exact (isZero_singularHomology_specialUnitaryGroup_two R h₀ h₃).of_iso
+  · exact (isZero_singularHomology_specialUnitaryGroup_two (ModuleCat.of R R) h₀ h₃).of_iso
       (singularHomologySpecialUnitaryGroupThreeIsoOfLt R hk)
   · exact isZero_singularHomology_specialUnitaryGroup_three_four R
   · obtain ⟨q, rfl⟩ : ∃ q, k = q + 5 := ⟨k - 5, by omega⟩
-    exact (isZero_singularHomology_specialUnitaryGroup_two R (by omega) (by omega)).of_iso
-      (singularHomologySpecialUnitaryGroupThreeAddFiveIso R q)
+    exact (isZero_singularHomology_specialUnitaryGroup_two (ModuleCat.of R R) (by omega)
+      (by omega)).of_iso (singularHomologySpecialUnitaryGroupThreeAddFiveIso R q)
 
 /-- **The homology of `SU(3)` in degrees `0`, `3`, `5` and `8`**: `Hₖ(SU(3); R) ≅ R` for
 `k ∈ {0, 3, 5, 8}`. In degrees `0` and `3` it comes from a fibre `SU(2)` of `SU(3) → S⁵`; in
@@ -265,12 +257,12 @@ def singularHomologySpecialUnitaryGroupThreeIso {k : ℕ} (hk : k = 0 ∨ k = 3 
         (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ)) ≅ ModuleCat.of R R :=
   if h : k < 4 then
     singularHomologySpecialUnitaryGroupThreeIsoOfLt R h ≪≫
-      singularHomologySpecialUnitaryGroupTwoIso R (by omega)
+      singularHomologySpecialUnitaryGroupTwoIso (ModuleCat.of R R) (by omega)
   else
     eqToIso (congrArg (fun j ↦ ((singularHomologyFunctor (ModuleCat.{0} R) j).obj
       (ModuleCat.of R R)).obj (_root_.TopCat.of (specialUnitaryGroup (Fin 3) ℂ)))
       (by omega : k = k - 5 + 5)) ≪≫
       singularHomologySpecialUnitaryGroupThreeAddFiveIso R (k - 5) ≪≫
-      singularHomologySpecialUnitaryGroupTwoIso R (by omega)
+      singularHomologySpecialUnitaryGroupTwoIso (ModuleCat.of R R) (by omega)
 
 end TauCeti
