@@ -117,7 +117,7 @@ private theorem lTensor_injective_splittingModule (C : Rep k G) (u : groupCohomo
   let f' : X →ₗ[k] LinearMap.ker q := f.codRestrict _ hfq
   let g' : LinearMap.ker q →ₗ[k] C.V := LinearMap.snd k _ _ ∘ₗ e ∘ₗ (LinearMap.ker q).subtype
   -- On `ker q` the map `e` takes values in `0 × C`.
-  have he (y : LinearMap.ker q) : e y = (0, g' y) := Prod.ext y.2 rfl
+  have he (y : LinearMap.ker q) : e y = (0, g' y) := Prod.ext y.property rfl
   have h' : Function.Injective (f'.lTensor M.V) := by
     refine hM f' g' (fun x y hxy ↦ hf (congrArg Subtype.val hxy)) (fun y ↦ ?_) (fun c ↦ ?_)
     · refine ⟨fun hy ↦ ?_, ?_⟩
@@ -391,7 +391,7 @@ theorem cup_bijective_of_forall_isPGroup_of_lTensor_injective (C : Rep ℤ G)
   -- of `δ (δ 1)`, so `m` is prime to `|G|`.
   obtain ⟨y, hy⟩ := exists_eq_δ_δ C u
   obtain ⟨m, hm⟩ : ∃ m : ℤ, H0π (Rep.trivial ℤ G ℤ) y = m • trivialTateHZeroOne G :=
-    ⟨y.1, by
+    ⟨y.val, by
       rw [trivialTateHZeroOne_def, ← map_zsmul]
       exact congrArg _ (Subtype.ext (by simp))⟩
   have huw : u = m • ((_root_.TateCohomology.isoGroupCohomology 2).app C).hom

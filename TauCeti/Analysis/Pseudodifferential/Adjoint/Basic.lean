@@ -175,7 +175,7 @@ theorem HasCompactSpatialSupport.continuous_fourierChar_smul_fourier_slice_sub_s
     Continuous fun θ : CoordinateSpace n ↦
       (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ := by
   have h₁ : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ) :=
-    (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).subtype_val
+    (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).subtypeVal
   have h₂ : Continuous fun θ : CoordinateSpace n ↦
       𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ := by
     exact ha.continuous_fourier_slice_comp continuous_id (by fun_prop)
@@ -293,7 +293,7 @@ private lemma integrable_pairingIntegrand {a : Symbol n V W m} (ha : a.IsUniform
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       pairingIntegrand a u v q.1 q.2 := by
     have h₁ : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 (-⟪q.1, q.2⟫) : ℂ) :=
-      (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
+      (Real.continuous_fourierChar.comp (by fun_prop)).subtypeVal
     have h₂ : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
         a.coefficient (q.1, (2 * π) • q.2) :=
       a.contDiff_coefficient.continuous.comp (by fun_prop)

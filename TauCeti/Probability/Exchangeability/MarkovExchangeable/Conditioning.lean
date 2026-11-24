@@ -47,8 +47,8 @@ theorem MarkovExchangeable.cond_initial_mem (h : MarkovExchangeable μ X) :
     obtain ⟨f, hf, heq⟩ := h.aemeasurable i
     exact ⟨f, hf, heq.filter_mono hac.ae_le⟩
   refine MarkovExchangeable.intro hX fun n u v huv hcount => ?_
-  rw [prefixLaw_singleton_cond_initial_mem h.aemeasurable n u,
-    prefixLaw_singleton_cond_initial_mem h.aemeasurable n v,
+  rw [prefixLaw_singleton_cond_initial_mem n (fun i => h.aemeasurable i.val) u,
+    prefixLaw_singleton_cond_initial_mem n (fun i => h.aemeasurable i.val) v,
     huv, h.prefixLaw_singleton_eq n u v huv hcount]
 
 /-- Conditioning on an initial state preserves Markov exchangeability. -/

@@ -123,7 +123,7 @@ theorem continuous_completionIntegersEquivPowerSeries :
     rw [Units.val_mk0, Valuation.restrict_lt_iff, valuation_completionEmbedding,
       P.valuation_eq_exp_neg_ord hs0, hs] at hy
     exact hy.le
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds hU] with y hy
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds hU] with y hy
   have hc := (P.completionPlace.sub_mem_filtration_iff_coeff_powerSeriesExpansion_eq
     (by simpa using hP) (by simpa using ht :
       P.completionPlace.ord (P.completionEmbedding t) = 1) (n + 1) y x).mp hy n (by omega)

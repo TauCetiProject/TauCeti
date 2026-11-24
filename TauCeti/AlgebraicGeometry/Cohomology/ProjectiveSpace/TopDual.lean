@@ -45,26 +45,26 @@ namespace TauCeti.SymmetricAlgebra
 noncomputable def negativeExponentsEquivFinsuppDegree (κ : Type*) [Fintype κ] {m : ℤ} {j : ℕ}
     (hj : (j : ℤ) = -m - Fintype.card κ) :
     negativeExponents κ m ≃ {d : κ →₀ ℕ // d.degree = j} where
-  toFun e := ⟨Finsupp.equivFunOnFinite.symm fun i ↦ (-e.1 i - 1).toNat, by
-    obtain ⟨hsum, hneg⟩ := mem_negativeExponents.1 e.2
-    have he : ∀ i, ((-e.1 i - 1).toNat : ℤ) = -e.1 i - 1 := fun i ↦
+  toFun e := ⟨Finsupp.equivFunOnFinite.symm fun i ↦ (-e.val i - 1).toNat, by
+    obtain ⟨hsum, hneg⟩ := mem_negativeExponents.1 e.property
+    have he : ∀ i, ((-e.val i - 1).toNat : ℤ) = -e.val i - 1 := fun i ↦
       Int.toNat_of_nonneg (by have := hneg i; omega)
-    have hdeg : ((∑ i, (-e.1 i - 1).toNat : ℕ) : ℤ) = j := by
+    have hdeg : ((∑ i, (-e.val i - 1).toNat : ℕ) : ℤ) = j := by
       push_cast
       simp only [he, Finset.sum_sub_distrib, Finset.sum_neg_distrib, hsum, Finset.sum_const,
         Finset.card_univ, nsmul_eq_mul, mul_one, hj]
     rw [Finsupp.degree_eq_sum, Finsupp.coe_equivFunOnFinite_symm]
     exact_mod_cast hdeg⟩
-  invFun d := ⟨fun i ↦ -(d.1 i : ℤ) - 1, by
+  invFun d := ⟨fun i ↦ -(d.val i : ℤ) - 1, by
     refine mem_negativeExponents.2 ⟨?_, fun i ↦ by omega⟩
-    have hd : ((∑ i, d.1 i : ℕ) : ℤ) = j := by rw [← Finsupp.degree_eq_sum, d.2]
+    have hd : ((∑ i, d.val i : ℕ) : ℤ) = j := by rw [← Finsupp.degree_eq_sum, d.property]
     push_cast at hd
     simp only [Finset.sum_sub_distrib, Finset.sum_neg_distrib, hd, Finset.sum_const,
       Finset.card_univ, nsmul_eq_mul, mul_one, hj]
     ring⟩
   left_inv e := by
     ext i
-    have := (mem_negativeExponents.1 e.2).2 i
+    have := (mem_negativeExponents.1 e.property).2 i
     simp only [Finsupp.coe_equivFunOnFinite_symm]
     omega
   right_inv d := by
@@ -75,8 +75,8 @@ noncomputable def negativeExponentsEquivFinsuppDegree (κ : Type*) [Fintype κ] 
 @[simp]
 theorem natCast_coe_negativeExponentsEquivFinsuppDegree_apply_apply {κ : Type*} [Fintype κ]
     {m : ℤ} {j : ℕ} (hj : (j : ℤ) = -m - Fintype.card κ) (e : negativeExponents κ m) (i : κ) :
-    ((negativeExponentsEquivFinsuppDegree κ hj e : κ →₀ ℕ) i : ℤ) = -e.1 i - 1 := by
-  have := (mem_negativeExponents.1 e.2).2 i
+    ((negativeExponentsEquivFinsuppDegree κ hj e : κ →₀ ℕ) i : ℤ) = -e.val i - 1 := by
+  have := (mem_negativeExponents.1 e.property).2 i
   simp only [negativeExponentsEquivFinsuppDegree, Equiv.coe_fn_mk,
     Finsupp.coe_equivFunOnFinite_symm]
   omega
@@ -85,7 +85,7 @@ theorem natCast_coe_negativeExponentsEquivFinsuppDegree_apply_apply {κ : Type*}
 @[simp]
 theorem coe_negativeExponentsEquivFinsuppDegree_symm_apply_apply {κ : Type*} [Fintype κ] {m : ℤ}
     {j : ℕ} (hj : (j : ℤ) = -m - Fintype.card κ) (d : {d : κ →₀ ℕ // d.degree = j}) (i : κ) :
-    ((negativeExponentsEquivFinsuppDegree κ hj).symm d : κ → ℤ) i = -(d.1 i : ℤ) - 1 := by
+    ((negativeExponentsEquivFinsuppDegree κ hj).symm d : κ → ℤ) i = -(d.val i : ℤ) - 1 := by
   simp only [negativeExponentsEquivFinsuppDegree, Equiv.coe_fn_symm_mk]
 
 end TauCeti.SymmetricAlgebra

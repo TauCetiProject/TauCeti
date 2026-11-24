@@ -29,7 +29,7 @@ ambient target space. -/
 theorem isMeagre_image (e : OpenPartialHomeomorph X Y) {s : Set X}
     (hs : IsMeagre s) (hse : s ⊆ e.source) : IsMeagre (e '' s) := by
   have h := e.isEmbedding_restrict.isInducing.isMeagre_image
-    (hs.preimage_of_isOpenMap continuous_subtype_val e.open_source.isOpenMap_subtype_val)
+    (hs.preimage_of_isOpenMap continuous_subtypeVal e.open_source.isOpenMap_subtypeVal)
   simpa only [image_domRestrict, inter_eq_left.mpr hse, e.toFun_eq_coe] using h
 
 end OpenPartialHomeomorph

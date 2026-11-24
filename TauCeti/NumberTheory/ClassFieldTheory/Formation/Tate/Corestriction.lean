@@ -170,7 +170,7 @@ def kerNormInclusion (T : LayerRestriction small big) (F : Formation G) :
     LinearMap.ker (small.rep F).ρ.norm →ₗ[ℤ] LinearMap.ker (big.rep F).ρ.norm :=
   ((T.repIso F).hom.hom.toLinearMap ∘ₗ (LinearMap.ker (small.rep F).ρ.norm).subtype).codRestrict
     (LinearMap.ker (big.rep F).ρ.norm) fun x ↦ by
-      have h := (TauCeti.TateCohomology.mapKerNorm (T.isIntertwiningMap_repIso_range F) x).2
+      have h := (TauCeti.TateCohomology.mapKerNorm (T.isIntertwiningMap_repIso_range F) x).property
       rw [TauCeti.TateCohomology.mapKerNorm_apply_coe] at h
       exact Representation.ker_norm_comp_subtype_le_ker_norm (ρ := (big.rep F).ρ)
         (H := T.galHom.range) h
@@ -242,7 +242,7 @@ theorem tateCor_zero_H0π (T : LayerRestriction small big) (F : Formation G)
     rfl
   rw [Representation.apply_eq_apply_of_quotientGroup_mk_eq _
     ((Representation.mem_invariants _ _).1
-      (TauCeti.TateCohomology.mapInvariants (T.isIntertwiningMap_repIso_range F) x).2)
+      (TauCeti.TateCohomology.mapInvariants (T.isIntertwiningMap_repIso_range F) x).property)
     (a := (e q).out)
     (b := QuotientGroup.mk (s := big.relativeTop) q.out) (by rw [QuotientGroup.out_eq']; exact hq),
     NormalLayer.rep_ρ_mk_apply_coe, TauCeti.TateCohomology.mapInvariants_apply_coe,

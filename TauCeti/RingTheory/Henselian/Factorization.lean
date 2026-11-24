@@ -84,8 +84,8 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
   have hpoint : ∀ gh : R[X] × R[X], gh.1.Monic → gh.2.Monic → gh.1 * gh.2 = p →
       gh.1.map (Ideal.Quotient.mk I) = g₀ → gh.2.map (Ideal.Quotient.mk I) = h₀ →
       ∃ φ : A →ₐ[R] R, (Ideal.Quotient.mkₐ R I).comp φ = ψ ∧
-        ((UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).1.1.1,
-          (UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).1.2.1) = gh := by
+        ((UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).val.1.val,
+          (UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ).val.2.val) = gh := by
     rintro ⟨g, h⟩ hg hh hgh hgmap hhmap
     have hgdeg : g.natDegree = m := by rw [← hg.natDegree_map (Ideal.Quotient.mk I), hgmap]
     have hhdeg : h.natDegree = k := by rw [← hh.natDegree_map (Ideal.Quotient.mk I), hhmap]
@@ -101,14 +101,15 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
         hhmap]
   obtain ⟨φ, hφ⟩ := (TauCeti.HenselianRing.comp_bijective I (A := A)).2 ψ
   set q := UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ
-  have hq₀ := congrArg (fun φ ↦ (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P φ).1)
+  have hq₀ := congrArg (fun φ ↦ (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P φ).val)
     hφ
   simp only [ψ, Equiv.apply_symm_apply] at hq₀
-  refine ⟨(q.1.1.1, q.1.2.1), ⟨q.1.1.monic, q.1.2.monic, by simpa [P] using q.2.1, ?_, ?_⟩, ?_⟩
+  refine ⟨(q.val.1.val, q.val.2.val), ⟨q.val.1.monic, q.val.2.monic, by simpa
+      [P] using q.property.1, ?_, ?_⟩, ?_⟩
   · simpa [q, UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_fst I m k hn P φ]
-      using congr(($hq₀).1.1)
+      using congr(($hq₀).1.val)
   · simpa [q, UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_snd I m k hn P φ]
-      using congr(($hq₀).2.1)
+      using congr(($hq₀).2.val)
   · rintro gh ⟨hg, hh, hgh, hgmap, hhmap⟩
     obtain ⟨φ', hφ', rfl⟩ := hpoint gh hg hh hgh hgmap hhmap
     rw [(TauCeti.HenselianRing.comp_bijective I (A := A)).1 (hφ'.trans hφ.symm)]

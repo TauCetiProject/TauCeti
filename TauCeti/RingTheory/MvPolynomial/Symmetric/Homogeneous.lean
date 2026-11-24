@@ -83,7 +83,7 @@ theorem isHomogeneous_esymm [Fintype σ] (k : ℕ) : (esymm σ R k).IsHomogeneou
   refine IsHomogeneous.sum _ _ _ fun t _ => ?_
   have h := IsHomogeneous.prod (t : Finset σ) (fun i => (X i : MvPolynomial σ R)) (fun _ => 1)
     fun i _ => isHomogeneous_X R i
-  rwa [Finset.sum_const, smul_eq_mul, mul_one, t.2] at h
+  rwa [Finset.sum_const, smul_eq_mul, mul_one, t.property] at h
 
 /-- The complete homogeneous symmetric polynomial `hₖ` is homogeneous of degree `k`. -/
 theorem isHomogeneous_hsymm [Fintype σ] [DecidableEq σ] (k : ℕ) :
@@ -92,6 +92,6 @@ theorem isHomogeneous_hsymm [Fintype σ] [DecidableEq σ] (k : ℕ) :
     induction t using Multiset.induction_on with
     | empty => simpa using isHomogeneous_one σ R
     | cons a t ih => simpa [add_comm] using (isHomogeneous_X R a).mul ih
-  exact IsHomogeneous.sum _ _ _ fun s _ => by simpa [s.2] using h s.1
+  exact IsHomogeneous.sum _ _ _ fun s _ => by simpa [s.property] using h s.val
 
 end MvPolynomial

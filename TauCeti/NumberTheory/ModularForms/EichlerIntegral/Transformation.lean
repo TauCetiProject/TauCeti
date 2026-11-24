@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.EichlerIntegral.Integral
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The transformation law of the Eichler integral
@@ -89,8 +89,8 @@ private lemma periodIntegrand_eichlerForm_slash (hk : k = n + 2) (f : ℍ → �
     (periodIntegrand f (eichlerForm n (σ • τ : ℍ)) ∣[(2 : ℤ)] mapGL ℚ σ) z =
       denom σ τ ^ (-(n : ℤ)) * ((f ∣[k] σ) z * ((z : ℂ) - τ) ^ n) := by
   rw [periodIntegrand_slash_apply hk f _ (det_coe_mapGL_pos ℚ σ), ModularForm.rat_slash_mapGL,
-    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
-    Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (S := ℝ), ← ModularForm.SL_slash,
+    Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (S := ℝ)]
   simp only [det_coe_mapGL, Rat.cast_one, one_zpow, one_mul, eichlerForm, map_pow, map_sub, aeval_X,
     map_mul, aeval_C, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
     Algebra.algebraMap_self, RingHom.id_apply]
@@ -142,7 +142,7 @@ theorem CuspFormClass.eichlerIntegral_slash_apply [Γ.IsArithmetic] [CuspFormCla
   set j : ℂ := denom σ τ
   have hsmul : (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (mapGL ℚ σ) • τ : ℍ) =
       σ • τ := by
-    rw [Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    rw [Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (S := ℝ),
       ← sl_moeb]
   -- the substitution `z ↦ σ • z`, by `TauCeti.integral_Ioi_slash_eq_add_cuspIntegral`
   have key := integral_Ioi_slash_eq_add_cuspIntegral

@@ -15,7 +15,7 @@ import TauCeti.Analysis.Convolution.CompactSupport
 
 Let `K` be a locally integrable kernel on a finite-dimensional real normed space with a locally
 integrable derivative `K'`, such as a fundamental solution, and suppose that integration by parts
-against `K` holds across its singularity: for every `C¹` function `g` with compact support and
+against `K` holds across its singularity: for every smooth function `g` with compact support and
 every pole `t`, `∫ ∂ᵥg (x) K(x - t) dx = -∫ g(x) K'(x - t) v dx`. Then for every integrable `f`
 with compact support the potential `K ⋆ f` has weak derivative `K' ⋆ f` on every open set
 (`TauCeti.hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub`).
@@ -36,7 +36,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace ContinuousLinearMap
-open scoped Convolution
+open scoped Convolution ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [μ.IsNegInvariant]
@@ -44,18 +44,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- **The weak derivative of the potential of a singular kernel.** Let `K` be locally integrable
 with locally integrable `K'`, and suppose `K'` is the derivative of `K` in the sense of
 integration by parts with any pole `t`: `∫ ∂ᵥg (x) K(x - t) dx = -∫ g(x) K'(x - t) v dx` for
-every `C¹` function `g` with compact support. Then for `f` integrable with compact support the
+every smooth function `g` with compact support. Then for `f` integrable with compact support the
 convolution `K ⋆ f` has weak derivative `K' ⋆ f`, `x ↦ ∫ f(x - y) • K'(y) dy`, on every open set. -/
 theorem hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub {K : E → ℝ}
     {K' : E → E →L[ℝ] ℝ} {f : E → ℝ} (hK : LocallyIntegrable K μ)
     (hK' : LocallyIntegrable K' μ)
-    (hibp : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v t,
+    (hibp : ∀ g : E → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → ∀ v t,
       ∫ x, fderiv ℝ g x v * K (x - t) ∂μ = -∫ x, g x * K' (x - t) v ∂μ)
     (hf : Integrable f μ) (hfc : HasCompactSupport f) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (K ⋆[lsmul ℝ ℝ, μ] f) (K' ⋆[(lsmul ℝ ℝ).flip, μ] f) := by
   refine hasWeakFDerivOn_of_forall_integral_fderiv_smul
     (hfc.locallyIntegrable_convolution_right _ hK hf)
-    (hfc.locallyIntegrable_convolution_right _ hK' hf) (fun g hg hgc v ↦ ?_) Ω
+    (hfc.locallyIntegrable_convolution_right _ hK' hf) (fun g hg' hgc v ↦ ?_) Ω
+  have hg : ContDiff ℝ 1 g := hg'.of_le (by simp)
   have hKv : LocallyIntegrableOn (fun z ↦ K' z v) univ μ :=
     (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp (hK'.locallyIntegrableOn univ)
   have hgv : Continuous fun x ↦ fderiv ℝ g x v :=
@@ -71,7 +72,7 @@ theorem hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub {K : E →
         integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hgv
           (hgc.fderiv_apply ℝ v) hK hf hfc
     _ = -∫ t, f t * ∫ x, g x * K' (x - t) v ∂μ ∂μ := by
-        simp_rw [hibp g hg hgc v, mul_neg, integral_neg]
+        simp_rw [hibp g hg' hgc v, mul_neg, integral_neg]
     _ = -∫ x, g x * (f ⋆[lsmul ℝ ℝ, μ] fun z ↦ K' z v) x ∂μ := by
         rw [integral_mul_convolution_eq_integral_mul_integral_comp_sub hg.continuous hgc hf hfc hKv
           fun _ _ _ _ ↦ mem_univ _]

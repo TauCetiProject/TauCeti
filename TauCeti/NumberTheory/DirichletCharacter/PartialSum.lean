@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.Data.Nat.Periodic
 import TauCeti.Data.ZMod.FinEquiv
@@ -14,13 +15,13 @@ import TauCeti.Data.ZMod.FinEquiv
 
 The sum of a nonprincipal character over a full period vanishes. Consequently its partial
 sums depend only on the endpoint modulo the level, and for characters valued in a normed
-field their norms are bounded by the level. This cancellation is the input to partial
-summation estimates for continued Dirichlet L-functions.
+field their norms are bounded by the level, hence are `O(1)` at infinity. This cancellation is
+the input to partial summation estimates for continued Dirichlet L-functions.
 -/
 
 public section
 
-open Finset
+open Finset Filter Asymptotics
 
 namespace DirichletCharacter
 
@@ -58,5 +59,11 @@ theorem norm_sum_Icc_le_level {F : Type*} [NormedField F]
       (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ χ.norm_le_one k)
     _ ≤ (N : ℝ) := by simpa using (Nat.cast_le.mpr (Nat.mod_lt (n + 1) (NeZero.pos N)).le :
       (((n + 1) % N : ℕ) : ℝ) ≤ N)
+
+/-- Partial sums of a nonprincipal character valued in a normed field are `O(1)` at infinity. -/
+theorem isBigO_sum_Icc_one {F : Type*} [NormedField F]
+    (χ : DirichletCharacter F N) (hχ : χ ≠ 1) :
+    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun _ ↦ (1 : ℝ) :=
+  isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ by simpa using χ.norm_sum_Icc_le_level hχ n⟩
 
 end DirichletCharacter

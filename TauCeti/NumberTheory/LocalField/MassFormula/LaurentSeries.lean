@@ -64,7 +64,7 @@ theorem infinite_totallyRamifiedOfDegree_ringChar_laurentSeries :
 of a separable closure of `F⸨X⸩` satisfy `∑_L q ^ (-c(L)) = n` in `ℝ≥0∞`, where `q` is the
 cardinality of the finite field `F` and `c(L)` is the wild exponent. -/
 theorem tsum_one_div_natCard_pow_wildExponent_laurentSeries {n : ℕ} :
-    ∑' L : totallyRamifiedOfDegree F⸨X⸩ n, 1 / (Nat.card F : ℝ≥0∞) ^ L.1.wildExponent = n := by
+    ∑' L : totallyRamifiedOfDegree F⸨X⸩ n, 1 / (Nat.card F : ℝ≥0∞) ^ L.val.wildExponent = n := by
   rw [← LaurentSeries.natCard_residueField F]
   exact tsum_one_div_natCard_residueField_pow_wildExponent
 
@@ -74,7 +74,7 @@ and the characteristic of `F` divides `n`, it has infinitely many terms
 (`TauCeti.infinite_totallyRamifiedOfDegree_laurentSeries`). -/
 theorem hasSum_one_div_natCard_pow_wildExponent_laurentSeries {n : ℕ} :
     HasSum (fun L : totallyRamifiedOfDegree F⸨X⸩ n ↦
-      1 / (Nat.card F : ℝ) ^ L.1.wildExponent) n := by
+      1 / (Nat.card F : ℝ) ^ L.val.wildExponent) n := by
   rw [← LaurentSeries.natCard_residueField F]
   exact hasSum_one_div_natCard_residueField_pow_wildExponent
 

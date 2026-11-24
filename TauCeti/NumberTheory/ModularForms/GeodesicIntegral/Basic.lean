@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.NumberTheory.ModularForms.ResToImagAxis
 public import TauCeti.NumberTheory.ModularForms.SlashActionRat
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Integrals of one-forms along geodesics between cusps
@@ -196,7 +196,7 @@ reading as an orientation reversal of a geodesic integral requires `0 < det g`. 
 theorem geodesicIntegral_mul_S (g : GL (Fin 2) ℚ) (F : ℍ → ℂ) :
     geodesicIntegral (g * mapGL ℚ S) F = -geodesicIntegral g F := by
   rw [geodesicIntegral_mul, geodesicIntegral, geodesicIntegral, ModularForm.rat_slash_mapGL,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash]
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash]
   set G := F ∣[(2 : ℤ)] g
   -- the substitution `t ↦ 1 / t` on the positive axis
   have hsub := integral_comp_rpow_Ioi (fun s ↦ -resToImagAxis G s) (by norm_num : (-1 : ℝ) ≠ 0)

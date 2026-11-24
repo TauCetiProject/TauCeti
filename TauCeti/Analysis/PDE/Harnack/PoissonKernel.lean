@@ -77,8 +77,8 @@ private theorem le_mul_and_mul_le_of_harmonicOnNhd_ball_one {n : ℕ} (hn : n �
   have hP := eqOn_ballPoissonIntegral_of_harmonicOnNhd hn hc hu
   let g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ := fun y ↦ u y
   have hgi : Integrable g volume.toSphere :=
-    (hc.comp_continuous continuous_subtype_val fun y ↦
-      sphere_subset_closedBall y.2).integrable_of_hasCompactSupport (.of_compactSpace _)
+    (hc.comp_continuous continuous_subtypeVal fun y ↦
+      sphere_subset_closedBall y.property).integrable_of_hasCompactSupport (.of_compactSpace _)
   have hKi := integrable_ballPoissonKernel_mul hgi (x := x)
   have hK0i := integrable_ballPoissonKernel_mul hgi (x := 0)
   have hux : u x = ∫ y, ballPoissonKernel n x y * g y ∂volume.toSphere := by
@@ -92,11 +92,11 @@ private theorem le_mul_and_mul_le_of_harmonicOnNhd_ball_one {n : ℕ} (hn : n �
   · rw [← mul_assoc]
     exact mul_le_mul_of_nonneg_right
       (ballPoissonKernel_le_mul_ballPoissonKernel_zero hx (norm_eq_of_mem_sphere y))
-      (hnonneg y y.2)
+      (hnonneg y y.property)
   · rw [← mul_assoc]
     exact mul_le_mul_of_nonneg_right
       (mul_ballPoissonKernel_zero_le_ballPoissonKernel hx (norm_eq_of_mem_sphere y))
-      (hnonneg y y.2)
+      (hnonneg y y.property)
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {c x y : E} {r R : ℝ}

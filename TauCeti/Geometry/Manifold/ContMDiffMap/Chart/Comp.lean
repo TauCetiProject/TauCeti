@@ -154,9 +154,9 @@ theorem continuous_comp_manifoldWeakWhitney :
   simp only [mem_chartJetSet]
   -- A compactness argument over `K` reduces the test to a neighbourhood of each of its points.
   refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
-  have h := eventually_comp_mem_source_and_iteratedFDerivWithin_mem w.2
+  have h := eventually_comp_mem_source_and_iteratedFDerivWithin_mem w.property
     ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
   rw [nhds_prod_eq]
-  exact (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually h
+  exact (tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually h
 
 end ContMDiffMap

@@ -19,7 +19,9 @@ A Lipschitz boundary chart parametrizes the part of the frontier inside its cyli
 This file identifies the image of that parametrization and compares tangential Lebesgue measure
 with normalized Euclidean Hausdorff measure on the frontier. It also gives the weighted area
 formula in chart coordinates. These results are the measure-theoretic bridge from local Sobolev
-traces in graph coordinates to traces on the boundary itself.
+traces in graph coordinates to traces on the boundary itself. Since tangential Lebesgue measure
+charges nonempty open sets, so does surface measure on the frontier, which turns
+almost-everywhere boundary statements about continuous functions into pointwise ones.
 
 ## Main declarations
 
@@ -37,6 +39,12 @@ traces in graph coordinates to traces on the boundary itself.
 * `Set.IsLipschitzChartWith.ae_restrict_frontier_inter_iff`: a property of the tangential
   coordinate holds almost everywhere on a frontier patch exactly when it holds for almost every
   tangential parameter in the chart.
+* `Set.IsLipschitzChartWith.euclideanHausdorffMeasure_frontier_inter_ne_zero` and
+  `Set.IsLipschitzDomainAtWith.euclideanHausdorffMeasure_frontier_inter_ne_zero`: surface measure
+  charges every relatively open piece of the frontier around a point with a boundary chart, since
+  its tangential parameters form a nonempty open set.
+* `Set.IsLipschitzDomainWith.eqOn_frontier_of_ae_eq`: on a Lipschitz domain, functions continuous
+  on the frontier that agree almost everywhere for surface measure agree at every frontier point.
 
 ## References
 
@@ -50,7 +58,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -197,6 +205,75 @@ theorem euclideanHausdorffMeasure_frontier_inter_eq_zero_iff
       volume (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b) = 0 := by
   rw [← h.image_boundaryParametrization]
   exact h.euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff _
+
+/-- **Surface measure charges the open pieces of a frontier patch.** If an open set `U` meets the
+part of the frontier inside the cylinder of a Lipschitz boundary chart, then `frontier Omega ∩ U`
+has positive normalized surface measure. -/
+theorem euclideanHausdorffMeasure_frontier_inter_ne_zero
+    (h : Omega.IsLipschitzChartWith L e phi a b) {U : Set F} (hU : IsOpen U)
+    (hne : (frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b ∩ U).Nonempty) :
+    μHE[finrank ℝ E] (frontier Omega ∩ U) ≠ 0 := by
+  -- The tangential parameters of the frontier points of the patch lying in `U` form a nonempty
+  -- open set, and the chart parametrization carries it into `frontier Omega ∩ U`.
+  set s := TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b ∩
+    (fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) ⁻¹' U
+  have hs : IsOpen s := ((TauCeti.isOpen_normalCylinder a b).preimage
+    h.lipschitzWith.normalGraphEmbedding.continuous).inter
+      (hU.preimage h.lipschitzWith_boundaryParametrization.continuous)
+  obtain ⟨x, hx, hxU⟩ := hne
+  rw [← h.image_boundaryParametrization] at hx
+  obtain ⟨y, hy, rfl⟩ := hx
+  have himage : (fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' s ⊆
+      frontier Omega ∩ U := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact ⟨(h.image_boundaryParametrization ▸ mem_image_of_mem _ hz.1 :
+      e.symm (TauCeti.normalGraphEmbedding phi z) ∈ frontier Omega ∩ _).1, hz.2⟩
+  exact fun h0 ↦ hs.measure_ne_zero volume ⟨y, hy, hxU⟩
+    ((h.euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff s).1
+      (measure_mono_null himage h0))
+
+/-- **Surface measure charges every neighbourhood of a regular boundary point.** If `Omega` has a
+Lipschitz boundary chart centred at `x`, then for every neighbourhood `U` of `x` the part of the
+frontier inside `U` has positive normalized surface measure. -/
+theorem _root_.Set.IsLipschitzDomainAtWith.euclideanHausdorffMeasure_frontier_inter_ne_zero
+    {x : F} (hx : Omega.IsLipschitzDomainAtWith (E := E) L x) {U : Set F} (hU : U ∈ 𝓝 x) :
+    μHE[finrank ℝ E] (frontier Omega ∩ U) ≠ 0 := by
+  obtain ⟨e, phi, a, b, hex, hc⟩ := (Omega.isLipschitzDomainAtWith_iff L x).1 hx
+  obtain ⟨ha, hb, hphi, -, -⟩ := (Omega.isLipschitzChartWith_iff L e phi a b).1 hc
+  -- The centre `x` is the boundary point over the tangential parameter `0`.
+  have hg0 : TauCeti.normalGraphEmbedding phi 0 = 0 := by
+    rw [TauCeti.normalGraphEmbedding_apply, hphi, ← Prod.zero_eq_mk, WithLp.toLp_zero]
+  have hxF : x ∈ frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b := by
+    rw [← hc.image_boundaryParametrization]
+    refine ⟨0, ?_, ?_⟩
+    · rw [mem_preimage, hg0]
+      exact TauCeti.zero_mem_normalCylinder ha hb
+    · simp only [hg0]
+      exact e.symm_apply_eq.2 hex.symm
+  exact fun h0 ↦ hc.euclideanHausdorffMeasure_frontier_inter_ne_zero isOpen_interior
+    ⟨x, hxF, mem_interior_iff_mem_nhds.2 hU⟩
+    (measure_mono_null (inter_subset_inter_right _ interior_subset) h0)
+
+/-- **Surface-almost-everywhere equality of continuous functions is equality on the frontier.**
+On a Lipschitz domain, two functions continuous on the frontier that agree almost everywhere for
+normalized surface measure on the frontier agree at every frontier point. -/
+theorem _root_.Set.IsLipschitzDomainWith.eqOn_frontier_of_ae_eq
+    {Omega : Set (WithLp 2 (ℝ × E))} (hΩ : Omega.IsLipschitzDomainWith L) {Y : Type*}
+    [TopologicalSpace Y] [T2Space Y] {f g : WithLp 2 (ℝ × E) → Y}
+    (hf : ContinuousOn f (frontier Omega)) (hg : ContinuousOn g (frontier Omega))
+    (hfg : f =ᵐ[(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict (frontier Omega)] g) :
+    EqOn f g (frontier Omega) := by
+  intro x hx
+  by_contra hne
+  -- The two functions differ on the part of the frontier inside some open `U ∋ x`, a set of
+  -- positive surface measure.
+  obtain ⟨U, hU, hxU, hUs⟩ := mem_nhdsWithin.1
+    (((hf x hx).prodMk (hg x hx)).eventually_mem (isClosed_diagonal.isOpen_compl.mem_nhds hne))
+  have hx' := ((isLipschitzDomainWith_iff Omega L).1 hΩ).2 x hx
+  refine hx'.euclideanHausdorffMeasure_frontier_inter_ne_zero (hU.mem_nhds hxU)
+    (measure_mono_null ?_ (ae_iff.1 ((ae_restrict_iff' isClosed_frontier.measurableSet).1 hfg)))
+  rintro y ⟨hyF, hyU⟩ hy
+  exact hUs ⟨hyU, hyF⟩ (hy hyF)
 
 /-- A property of the tangential coordinate holds almost everywhere on the frontier patch of a
 Lipschitz boundary chart, for normalized surface measure, exactly when it holds for almost every

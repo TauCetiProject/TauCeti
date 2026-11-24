@@ -86,7 +86,7 @@ theorem commute_spinGroupMap_inl_spinGroupMap_inr (x : spinGroup Q₁) (y : spin
   Subtype.ext <| by
     simpa only [Submonoid.coe_mul, Isometry.coe_spinGroupMap_apply] using
       (commute_map_mul_map_of_isOrtho_of_mem_evenOdd_zero_left (Isometry.inl Q₁ Q₂)
-        (Isometry.inr Q₁ Q₂) (fun a b ↦ IsOrtho.inl_inr a b) _ _ x.2.2 y.2.2).eq
+        (Isometry.inr Q₁ Q₂) (fun a b ↦ IsOrtho.inl_inr a b) _ _ x.property.2 y.property.2).eq
 
 /-- **The Spin group of an orthogonal sum receives the product of the Spin groups of the
 summands.** The homomorphism `Spin(Q₁) × Spin(Q₂) →* Spin(Q₁ ⊕ Q₂)` multiplies the images of the

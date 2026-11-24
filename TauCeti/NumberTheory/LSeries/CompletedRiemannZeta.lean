@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
+public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 public import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
@@ -32,11 +33,13 @@ continuation.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
   exactly the zeros of `riemannZeta` excluded neither by `RiemannHypothesis` as trivial zeros nor
   as the pole `1`.
+* `TauCeti.completedRiemannZeta_two`: the value `Λ(2) = π / 6`.
 -/
 
 public section
 
 open Complex Filter Topology Set
+open scoped Real
 
 namespace TauCeti
 
@@ -176,5 +179,14 @@ theorem zero_lt_divisor_completedRiemannZeta_iff {s : ℂ} :
       cases n with
       | zero => simp at hs0
       | succ m => exact absurd ⟨m, by push_cast; ring⟩ htriv
+
+/-- The completed Riemann zeta function takes the value `π / 6` at `2`. -/
+@[simp]
+theorem completedRiemannZeta_two : completedRiemannZeta 2 = (π : ℂ) / 6 := by
+  have h := riemannZeta_def_of_ne_zero (s := 2) two_ne_zero
+  rw [riemannZeta_two, eq_div_iff (Gammaℝ_ne_zero_of_re_pos (by simp))] at h
+  rw [← h, Gammaℝ_def]
+  norm_num [cpow_neg_one]
+  field_simp
 
 end TauCeti

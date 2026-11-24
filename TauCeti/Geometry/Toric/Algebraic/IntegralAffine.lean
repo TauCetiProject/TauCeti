@@ -294,7 +294,7 @@ theorem existsUnique_extension {f : V → V'} {s : Set V}
   have hE : IsLocallyConstant E := by
     apply (IsLocallyConstant.iff_exists_open E).mpr
     intro x
-    refine ⟨Subtype.val ⁻¹' U x, (hU x).preimage continuous_subtype_val, hxU x, ?_⟩
+    refine ⟨Subtype.val ⁻¹' U x, (hU x).preimage continuous_subtypeVal, hxU x, ?_⟩
     intro y hy
     apply eq_of_eqOn_open (hs.inter ((hU x).inter (hU y)))
       ⟨y.val, y.property, hy, hxU y⟩

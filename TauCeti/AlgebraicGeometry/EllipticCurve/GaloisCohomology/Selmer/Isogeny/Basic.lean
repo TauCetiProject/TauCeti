@@ -245,10 +245,11 @@ omit [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionFiel
 by the inclusion `E₁(Kˢ)[φ] → E₁(Kˢ)`, restricted to the `φ`-Selmer group. -/
 def selmerShaMap : φ.selmerGroup τ →+ φ.shafarevichTateGroupKer τ where
   toFun c := ⟨⟨explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c,
-    (φ.mem_selmerGroup_iff τ).1 c.2⟩,
+    (φ.mem_selmerGroup_iff τ).1 c.property⟩,
     (φ.mem_shafarevichTateGroupKer_iff τ).2 <|
       explicitCoeff1_explicitCoeff1_eq_zero _ _ (ofIsogeny φ).kerCoeffIncl
-        (ofIsogeny φ).pointCoeffMap _ _ (fun P ↦ by rw [Hom.kerCoeffIncl_apply]; exact P.2) c⟩
+        (ofIsogeny φ).pointCoeffMap _ _ (fun P ↦ by rw [Hom.kerCoeffIncl_apply]; exact P.property)
+            c⟩
   map_zero' := by ext; simp
   map_add' _ _ := by ext; simp
 
@@ -296,7 +297,7 @@ def selmerGroupToTorsion : φ.selmerGroup τ →+ W₁.selmerGroup τ φ.degree 
     (φ.selmerGroup τ).subtype).codRestrict _ fun c ↦ by
     rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, WeierstrassCurve.mem_selmerGroup_iff,
       explicitCoeff1_torsionCoeffIncl_kerCoeffToTorsionCoeff]
-    exact (φ.mem_selmerGroup_iff τ).1 c.2
+    exact (φ.mem_selmerGroup_iff τ).1 c.property
 
 @[simp]
 theorem coe_selmerGroupToTorsion (c : φ.selmerGroup τ) :
@@ -313,7 +314,7 @@ def selmerGroupTorsionToDual : W₁.selmerGroup τ φ.degree →+ φ.dual.selmer
     rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, mem_selmerGroup_iff,
       explicitCoeff1_kerCoeffIncl_torsionCoeffToDualKerCoeff]
     exact (ofIsogeny φ).pointH1Map_mem_shafarevichTateGroup τ
-      ((W₁.mem_selmerGroup_iff τ φ.degree).1 c.2)
+      ((W₁.mem_selmerGroup_iff τ φ.degree).1 c.property)
 
 @[simp]
 theorem coe_selmerGroupTorsionToDual (c : W₁.selmerGroup τ φ.degree) :
@@ -335,7 +336,7 @@ theorem exact_selmerGroupToTorsion_selmerGroupTorsionToDual :
     ← AddMonoidHom.mem_ker, ← range_explicitCoeff1_kerCoeffToTorsionCoeff]
   refine ⟨fun ⟨d, hd⟩ ↦ ⟨⟨d, (φ.mem_selmerGroup_iff τ).2 ?_⟩, Subtype.ext hd⟩, ?_⟩
   · rw [← explicitCoeff1_torsionCoeffIncl_kerCoeffToTorsionCoeff, hd]
-    exact (W₁.mem_selmerGroup_iff τ φ.degree).1 c.2
+    exact (W₁.mem_selmerGroup_iff τ φ.degree).1 c.property
   · rintro ⟨d, rfl⟩
     exact ⟨d, rfl⟩
 

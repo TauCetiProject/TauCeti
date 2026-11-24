@@ -60,14 +60,14 @@ def stalkEval : TopCat.Presheaf.stalk (X := TopCat.of X)
   colimit.desc _
     { pt := ModuleCat.of ℂ ℂ
       ι :=
-        { app := fun U ↦ ModuleCat.ofHom (sectionEval I X p U.unop.1 U.unop.2)
+        { app := fun U ↦ ModuleCat.ofHom (sectionEval I X p U.unop.val U.unop.property)
           naturality := by
             intro U V h
             apply ModuleCat.hom_ext
             apply LinearMap.ext
             intro f
             exact holomorphicStructureSheafModules.map_apply I X
-              ((OpenNhds.inclusion (X := TopCat.of X) p).map h.unop).op f ⟨p, V.unop.2⟩ } }
+              ((OpenNhds.inclusion (X := TopCat.of X) p).map h.unop).op f ⟨p, V.unop.property⟩ } }
 
 /-- Evaluation after taking a germ is evaluation of the original section. -/
 @[reassoc (attr := simp)]
@@ -152,7 +152,7 @@ theorem exact_vanishingSheafι_evaluationToSkyscraper_app (U : Opens X) :
   · rintro ⟨g, rfl⟩ hp
     rw [vanishingSheafι_app_apply]
     exact (mem_vanishingIdeal_single_one I X p U _).mp
-      (vanishingSheafSectionsEquiv I X _ U g).2 hp
+      (vanishingSheafSectionsEquiv I X _ U g).property hp
 
 /-- The inclusion of functions vanishing at `p` followed by evaluation is zero. -/
 @[reassoc (attr := simp)]

@@ -335,7 +335,7 @@ lemma isStableUnderLeftAction_restrictScalarsMonoidalLeftAction_iff {a : H →* 
       ∀ (h : H) (M : ModuleCat.{v} A), P M →
         P ((ModuleCat.restrictScalars ((a h).symm : A →+* A)).obj M) :=
   letI := a.restrictScalarsMonoidalLeftAction.{v}
-  ⟨fun hP h M hM => hP.1 (Discrete.mk h) M hM, fun hP => ⟨fun c M hM => hP c.as M hM⟩⟩
+  ⟨fun hP h M hM => hP.prop_actionObj (Discrete.mk h) M hM, fun hP => ⟨fun c M hM => hP c.as M hM⟩⟩
 
 /-- When `H` acts on a topological ring `A` by homeomorphisms, the twisting action preserves the
 discrete modules, so it restricts to the full subcategory of discrete `A`-modules. -/

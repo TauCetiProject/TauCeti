@@ -61,10 +61,10 @@ theorem isLocalDiffeomorph_subfanAnalyticMap (n : ℕ∞ω) :
   intro p
   obtain ⟨σ, x, rfl⟩ :=
     (Φ.subfan S hS hface).exists_analyticAffineChartι_apply_eq (hΦ.subfan S hS hface) p
-  have hσ := (isRegular_iff.mp (hΦ.subfan S hS hface)) σ.1 σ.2
+  have hσ := (isRegular_iff.mp (hΦ.subfan S hS hface)) σ.val σ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
   let g := (analyticChartGenerators (Φ.subfan S hS hface) σ).2
   -- Both chart inclusions of `σ` carry the complex structure of the same extending basis and
   -- generating family on its complex points; the subfan has the lattice of the ambient fan.
@@ -73,7 +73,7 @@ theorem isLocalDiffeomorph_subfanAnalyticMap (n : ℕ∞ω) :
   let PΨ := (Φ.subfan S hS hface).analyticAffineChartPartialDiffeomorph (hΦ.subfan S hS hface) σ
     hB κ g n
   let PΦ := Φ.analyticAffineChartPartialDiffeomorph hΦ
-    ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ hB κ g n
+    ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩ hB κ g n
   refine isLocalDiffeomorphAt_of_eqOn (Φ := PΨ.symm.trans PΦ) ?_ fun q hq ↦ ?_
   · simp [PΨ, PΦ]
   · -- A point of the source is the image of a complex point `y` of the chart of `σ`.

@@ -76,7 +76,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C]
 `f : X ⟶ Y`, in the sense that `ι ≫ φ = f[0] ≫ ι'`, then the coaugmentations
 `X ⟶ K⁰` and `Y ⟶ L⁰` commute with `f` and `φ⁰`. -/
 lemma fromSingle₀Equiv_comp_f_zero (hφ : ι ≫ φ = (single₀ C).map f ≫ ι') :
-    (fromSingle₀Equiv K X ι).1 ≫ φ.f 0 = f ≫ (fromSingle₀Equiv L Y ι').1 := by
+    (fromSingle₀Equiv K X ι).val ≫ φ.f 0 = f ≫ (fromSingle₀Equiv L Y ι').val := by
   simpa using congrArg (fun g ↦ HomologicalComplex.Hom.f g 0) hφ
 
 end Naturality

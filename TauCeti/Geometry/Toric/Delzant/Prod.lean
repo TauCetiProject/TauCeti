@@ -19,7 +19,12 @@ describes that product at the level of facet presentations.
 Let `i : N →+ V` and `i' : N' →+ V'` be lattices with facet presentations `(u, c)` and
 `(u', c')`. The product lattice is `i × i' : N × N' →+ V × V'` (`AddMonoidHom.prodMap`). Its facet
 normals are indexed by `ι ⊕ ι'`: they are `(u j, 0)` and `(0, u' j')`
-(`TauCeti.Toric.prodNormal u u'`), with support constants `Sum.elim c c'`. A point of the dual
+(`TauCeti.Toric.prodNormal u u'`), with support constants `Sum.elim c c'`. Their real linear
+combinations split into those of the factors (`TauCeti.Toric.linearCombination_prodNormal_apply`),
+so the kernel `𝔫` of `β_ℝ` is the product of the kernels
+(`TauCeti.Toric.mem_ker_linearCombination_prodNormal_iff`), and the real normals of the product span
+when those of both factors do (`TauCeti.Toric.surjective_linearCombination_prodNormal`). A point of
+the dual
 `(V × V')*` is a pair of points `y ∈ V*`, `y' ∈ V'*`, by `ContinuousLinearMap.coprod`, and
 
 * it lies in the product polyhedron exactly when `y ∈ Δ` and `y' ∈ Δ'`
@@ -75,9 +80,7 @@ open Set
 
 namespace TauCeti.Toric
 
-variable {ι ι' N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N']
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup V'] [NormedSpace ℝ V']
-  {i : N →+ V} {i' : N' →+ V'} {u : ι → N} {u' : ι' → N'} {c : ι → ℝ} {c' : ι' → ℝ}
+variable {ι ι' N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N'] {u : ι → N} {u' : ι' → N'}
 
 variable (u u') in
 /-- The facet normals of the product of two polytopes: `(u j, 0)` for the facets of the first
@@ -92,6 +95,44 @@ theorem prodNormal_inl (j : ι) : prodNormal u u' (.inl j) = (u j, 0) :=
 @[simp]
 theorem prodNormal_inr (j : ι') : prodNormal u u' (.inr j) = (0, u' j) :=
   (rfl)
+
+section LinearCombination
+
+variable [Fintype ι] [Fintype ι'] [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [Module ℝ V']
+  {i : N →+ V} {i' : N' →+ V'}
+
+/-- The real linear combination of the product normals with coefficients `t` is the pair of the
+combinations of the normals of the factors with the restrictions `t ∘ inl` and `t ∘ inr`. -/
+theorem linearCombination_prodNormal_apply (t : ι ⊕ ι' → ℝ) :
+    Fintype.linearCombination ℝ (fun j ↦ i.prodMap i' (prodNormal u u' j)) t =
+      (Fintype.linearCombination ℝ (fun j ↦ i (u j)) (t ∘ .inl),
+        Fintype.linearCombination ℝ (fun j ↦ i' (u' j)) (t ∘ .inr)) := by
+  simp [Fintype.linearCombination_apply, Fintype.sum_sum_type, Prod.ext_iff, Prod.fst_sum,
+    Prod.snd_sum]
+
+/-- The kernel `𝔫` of `β_ℝ` for the product normals consists of the pairs of elements of the
+kernels of the factors. -/
+theorem mem_ker_linearCombination_prodNormal_iff {t : ι ⊕ ι' → ℝ} :
+    t ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i.prodMap i' (prodNormal u u' j)) ↔
+      t ∘ .inl ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j)) ∧
+        t ∘ .inr ∈ LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i' (u' j)) := by
+  simp only [LinearMap.mem_ker, linearCombination_prodNormal_apply, Prod.mk_eq_zero]
+
+/-- If the real normals of both factors span, so do the real normals of the product. -/
+theorem surjective_linearCombination_prodNormal
+    (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
+    (hβ' : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i' (u' j))) :
+    Function.Surjective
+      (Fintype.linearCombination ℝ fun j ↦ i.prodMap i' (prodNormal u u' j)) := by
+  rintro ⟨v, v'⟩
+  obtain ⟨t, rfl⟩ := hβ v
+  obtain ⟨t', rfl⟩ := hβ' v'
+  exact ⟨Sum.elim t t', by rw [linearCombination_prodNormal_apply]; rfl⟩
+
+end LinearCombination
+
+variable [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup V'] [NormedSpace ℝ V']
+  {i : N →+ V} {i' : N' →+ V'} {c : ι → ℝ} {c' : ι' → ℝ}
 
 /-- The point `y.coprod y'` of the product lies in the product polyhedron exactly when `y` and
 `y'` lie in the factors. -/
@@ -192,10 +233,9 @@ theorem of_prod [FiniteDimensional ℝ V] [FiniteDimensional ℝ V']
   obtain ⟨x, hx⟩ := h.nonempty
   rw [← ContinuousLinearMap.coprod_comp_inl_inr x, coprod_mem_facetPolyhedron_prod_iff] at hx
   obtain ⟨hbdd₁, hbdd₂⟩ := (isBounded_facetPolyhedron_prod_iff ⟨_, hx.1⟩ ⟨_, hx.2⟩).1 h.isBounded
-  obtain ⟨z, hz⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron
-    hbdd₁).extremePoints_nonempty ⟨_, hx.1⟩
-  obtain ⟨z', hz'⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_facetPolyhedron
-    hbdd₂).extremePoints_nonempty ⟨_, hx.2⟩
+  obtain ⟨z, hz⟩ := (isCompact_facetPolyhedron_of_isBounded hbdd₁).extremePoints_nonempty ⟨_, hx.1⟩
+  obtain ⟨z', hz'⟩ :=
+    (isCompact_facetPolyhedron_of_isBounded hbdd₂).extremePoints_nonempty ⟨_, hx.2⟩
   -- An irredundancy witness of the product restricts to one of each factor.
   have hirr (k : ι ⊕ ι') : ∃ y₁ ∈ facetPolyhedron i u c, ∃ y₂ ∈ facetPolyhedron i' u' c',
       Sum.inl '' activeSet (facetPairing i u) c y₁ ∪

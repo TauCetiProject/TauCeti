@@ -54,21 +54,21 @@ noncomputable def mapParabolic (l : H →ₐc[R] LaurentPolynomial R)
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     parabolic A l →* parabolic B l :=
   ((AlgHom.mapValue (H := H) φ.hom).domRestrict (parabolic A l)).codRestrict
-    (parabolic B l) fun g ↦ parabolic_le_comap φ.hom g.2
+    (parabolic B l) fun g ↦ parabolic_le_comap φ.hom g.property
 
 /-- Change of value algebra, restricted to a dynamic Levi subgroup. -/
 noncomputable def mapLevi (l : H →ₐc[R] LaurentPolynomial R)
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     levi A l →* levi B l :=
   ((AlgHom.mapValue (H := H) φ.hom).domRestrict (levi A l)).codRestrict
-    (levi B l) fun g ↦ levi_le_comap φ.hom g.2
+    (levi B l) fun g ↦ levi_le_comap φ.hom g.property
 
 /-- Change of value algebra, restricted to a dynamic unipotent subgroup. -/
 noncomputable def mapUnipotent (l : H →ₐc[R] LaurentPolynomial R)
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     unipotent A l →* unipotent B l :=
   ((AlgHom.mapValue (H := H) φ.hom).domRestrict (unipotent A l)).codRestrict
-    (unipotent B l) fun g ↦ unipotent_le_comap φ.hom g.2
+    (unipotent B l) fun g ↦ unipotent_le_comap φ.hom g.property
 
 @[simp]
 theorem coe_mapParabolic_apply (l : H →ₐc[R] LaurentPolynomial R)

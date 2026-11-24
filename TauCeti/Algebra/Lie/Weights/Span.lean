@@ -75,14 +75,14 @@ theorem genWeightSpace_le_genWeightSpaceSpan {S : Set (H → R)} {chi : H → R}
 /-- Spans of weight spaces are monotone in the indexing set. -/
 theorem genWeightSpaceSpan_mono {S T : Set (H → R)} (h : S ⊆ T) :
     genWeightSpaceSpan H M S ≤ genWeightSpaceSpan H M T :=
-  iSup_le fun chi => genWeightSpace_le_genWeightSpaceSpan (h chi.2)
+  iSup_le fun chi => genWeightSpace_le_genWeightSpaceSpan (h chi.property)
 
 /-- The span of the weight spaces indexed by `S` is contained in an `H`-submodule exactly when each
 of the weight spaces it is spanned by is. -/
 theorem genWeightSpaceSpan_le_iff {S : Set (H → R)} {N : LieSubmodule R H M} :
     genWeightSpaceSpan H M S ≤ N ↔ ∀ chi ∈ S, genWeightSpace M chi ≤ N :=
   ⟨fun h _ hchi => (genWeightSpace_le_genWeightSpaceSpan hchi).trans h,
-    fun h => iSup_le fun chi => h chi chi.2⟩
+    fun h => iSup_le fun chi => h chi chi.property⟩
 
 variable (H M) in
 /-- **A weight space is disjoint from the span of any set of weight spaces not containing it**, the
@@ -100,7 +100,7 @@ theorem genWeightSpaceSpan_eq_iSup (S : Set (H → R)) :
     genWeightSpaceSpan H M S = ⨆ chi : S, genWeightSpace M (chi : H → R) :=
   le_antisymm (genWeightSpaceSpan_le_iff.mpr fun chi hchi =>
       le_iSup (fun psi : S => genWeightSpace M (psi : H → R)) ⟨chi, hchi⟩)
-    (iSup_le fun chi => genWeightSpace_le_genWeightSpaceSpan chi.2)
+    (iSup_le fun chi => genWeightSpace_le_genWeightSpaceSpan chi.property)
 
 end Span
 
@@ -122,7 +122,7 @@ theorem lie_mem_genWeightSpaceSpan {S T : Set (H → R)} {alpha : H → R} {x : 
   refine LieSubmodule.iSup_induction (fun chi : S => genWeightSpace M (chi : H → R))
     (motive := fun m => ⁅x, m⁆ ∈ genWeightSpaceSpan H M T) hm (fun chi y hy => ?_) (by simp)
     (fun y z hy hz => by rw [lie_add]; exact add_mem hy hz)
-  exact genWeightSpace_le_genWeightSpaceSpan (hST _ chi.2)
+  exact genWeightSpace_le_genWeightSpaceSpan (hST _ chi.property)
     (lie_mem_genWeightSpace_of_mem_genWeightSpace (M := M) hx hy)
 
 end Root

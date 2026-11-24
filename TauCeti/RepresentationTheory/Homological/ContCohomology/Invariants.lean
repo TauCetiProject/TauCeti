@@ -82,7 +82,7 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
   let h : ∀ m, m ∈ π.invariants ↔ m ∈ FixedPoints.addSubgroup H M := fun m ↦
     (ContRepresentation.mem_invariants m).trans (FixedPoints.mem_addSubgroup H M m).symm
   let f := ((FixedPoints.addSubgroup H M).continuousLinearEquivInvariants π h).toContinuousLinearMap
-  have f_apply (x : FixedPoints.addSubgroup H M) : (f x).1 = (x : M) :=
+  have f_apply (x : FixedPoints.addSubgroup H M) : (f x).val = (x : M) :=
     AddSubgroup.continuousLinearEquivInvariants_val _ π h x
   exact TopRep.ofHom
     { toContinuousLinearMap := f
@@ -93,16 +93,16 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
           -- Apply the composed operators and cross the categorical carrier wrappers once.
           change
             (f ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
-                (QuotientGroup.mk g) m)).1 =
+                (QuotientGroup.mk g) m)).val =
               (((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
-                (QuotientGroup.mk g) (f m)).1
+                (QuotientGroup.mk g) (f m)).val
           simp only [ofDiscreteModule_ρ_apply_apply, f_apply,
             coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
           -- State the public action formula over M: simp does not unfold the TopRep carrier.
           have haction :
               ((((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
-                (QuotientGroup.mk g) (f m)).1 : M) =
-                ((ofDiscreteModule ℤ G M).ρ g (f m).1 : M) :=
+                (QuotientGroup.mk g) (f m)).val : M) =
+                ((ofDiscreteModule ℤ G M).ρ g (f m).val : M) :=
             ContRepresentation.coe_quotientToInvariants_mk_apply
               (ofDiscreteModule ℤ G M).ρ H g (f m)
           simp only [ofDiscreteModule_ρ_apply_apply (R := ℤ) (G := G) (M := M),
@@ -116,7 +116,7 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
 @[simp]
 theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
-    (dsimp% only ((ofDiscreteModuleQuotient G M H m).1)) = (m : M) := by
+    (dsimp% only ((ofDiscreteModuleQuotient G M H m).val)) = (m : M) := by
   let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
   let π : ContRepresentation ℤ H M := (ofDiscreteModule ℤ G M).ρ.restrict H.subtype
   let h : ∀ m, m ∈ π.invariants ↔ m ∈ FixedPoints.addSubgroup H M := fun m ↦

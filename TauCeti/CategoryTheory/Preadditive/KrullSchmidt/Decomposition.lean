@@ -30,7 +30,7 @@ idempotents of `End Y`, then `End Y` is local by Fitting's lemma
 (`TauCeti.isLocalRing_end_of_idempotent_eq_zero_or_id`). Otherwise a nontrivial idempotent of `Y`
 writes `e` as the sum of two idempotents of `X` below `e`. Each of them has a strictly smaller
 submodule of left multiples in the Artinian `R`-module `X ⟶ X`
-(`TauCeti.range_leftComp_lt_range_leftComp`), so the splitting stops.
+(`TauCeti.range_leftComp_lt_range_leftComp_iff`), so the splitting stops.
 
 ## References
 
@@ -85,8 +85,8 @@ private theorem exists_isLocalRing_end_sum_comp_eq (X : C) [Module.Finite R (X �
   have hlt (v : Y ⟶ Y) (hv : v ≫ v = v) (hv1 : v ≠ 𝟙 Y) :
       LinearMap.range (Linear.leftComp R X (r ≫ v ≫ i)) <
         LinearMap.range (Linear.leftComp R X e) :=
-    range_leftComp_lt_range_leftComp R (hidem v hv) (by simp [← hri, reassoc_of% hir])
-      (by simp [← hri, reassoc_of% hir]) fun h ↦ hv1 (by
+    (range_leftComp_lt_range_leftComp_iff R (hidem v hv) (by simp [← hri, reassoc_of% hir])
+      (by simp [← hri, reassoc_of% hir])).mpr fun h ↦ hv1 (by
         simpa [reassoc_of% hir, hir, ← hri] using congrArg (fun φ ↦ i ≫ φ ≫ r) h)
   obtain ⟨ι, _, W, a, b, hW, hab⟩ := ih _ (hlt u hu hu1) _ (hidem u hu) rfl
   obtain ⟨κ, _, W', a', b', hW', hab'⟩ :=

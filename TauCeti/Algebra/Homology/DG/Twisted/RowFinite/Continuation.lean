@@ -282,6 +282,19 @@ theorem coefficientMap_comp (μ : RowFiniteContinuationCocycle mQ mS) (hA : IsDG
     coefficientMap_tmul]
   simp only [Finsupp.linearCombination_single, one_smul, comp_ν]
 
+/-- Continuation is natural in the coefficients: it commutes with applying a right-module map to
+every coefficient. -/
+theorem coefficientMap_mapRange {N : Type*} [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N]
+    [IsScalarTower R Aᵐᵒᵖ N] (f : M →ₗ[Aᵐᵒᵖ] N) (g : P →₀ M) :
+    ν.coefficientMap (Finsupp.mapRange.linearMap (f.restrictScalars R) g) =
+      Finsupp.mapRange.linearMap (f.restrictScalars R) (ν.coefficientMap g) := by
+  induction g using Finsupp.induction_linear with
+  | zero => simp
+  | add g g' hg hg' => simp only [map_add, hg, hg']
+  | single x α =>
+    ext y
+    simp
+
 /-- On finite bases, the actual finite-support/function equivalence recovers the original
 continuation map, with the same right action and no extra sign. -/
 theorem linearEquivFunOnFinite_coefficientMap [Fintype P] [Finite Q] (f : P →₀ M) :

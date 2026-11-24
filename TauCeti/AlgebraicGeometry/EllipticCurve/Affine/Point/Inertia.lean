@@ -172,7 +172,7 @@ theorem torsionGaloisAction_eq_one_of_mem_inertiaSubgroup {N : ℤ} (hN : (N : A
     · exact hN
     · rwa [Int.cast_neg, neg_mem_iff]
   refine Affine.Point.map_eq_self_of_mem_inertiaSubgroup u hn hσ ?_
-  rw [natAbs_nsmul_eq_zero.mpr ((Submodule.mem_torsionBy_iff (R := ℤ) _ _).mp P.2),
+  rw [natAbs_nsmul_eq_zero.mpr ((Submodule.mem_torsionBy_iff (R := ℤ) _ _).mp P.property),
     _root_.map_zero]
 
 variable {W} in

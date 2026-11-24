@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+-- Proof-only: height quantiles and their integrals, for the equality case of Brunn–Minkowski.
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Equality
 -- Proof-only: a convex set has positive volume exactly when its interior is nonempty, and
 -- containment in an open convex set from directional images.
 import TauCeti.Analysis.Convex.Measure

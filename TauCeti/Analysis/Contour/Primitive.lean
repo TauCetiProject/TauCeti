@@ -330,7 +330,7 @@ theorem exists_differentiableOn_pow_eq_of_filledHull_subset {g : ℂ → ℂ} (h
   refine ⟨fun z => Complex.exp (L z / n), fun z hz => ((hLd z hz).div_const _).cexp,
     fun z hz => ?_⟩
   dsimp only
-  rw [← Complex.exp_nat_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn)]
+  rw [← Complex.exp_natCast_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn)]
   exact hLeq hz
 
 end TauCeti.Contour

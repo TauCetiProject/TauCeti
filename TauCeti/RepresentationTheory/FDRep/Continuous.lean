@@ -9,8 +9,10 @@ public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Algebra.Category.FGModuleCat.Zero
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.RepresentationTheory.FDRep.Basic
+import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Continuous finite-dimensional representations
@@ -45,7 +47,8 @@ continuous representations, is built in
 
 * `FDRep.isContinuous_biprod`, `FDRep.isContinuous_tensor` and `FDRep.isContinuous_tensorUnit`:
   continuous representations are closed under direct sums and tensor products, and the trivial
-  representation is continuous.
+  representation is continuous. The zero representation is continuous as well, so
+  `TauCeti.ContFDRep k G` has a zero object.
 * `FDRep.isContinuous_ofShrink_iff`: continuity of a representation given on any carrier.
 * `ContRepresentation.isContinuous_ofShrink_iff_continuous`: over a complete nontrivially normed
   field, a continuous representation on a finite-dimensional normed space has continuous matrix
@@ -56,7 +59,7 @@ continuous representations, is built in
 
 public section
 
-open CategoryTheory CategoryTheory.Limits MonoidalCategory
+open CategoryTheory CategoryTheory.Limits MonoidalCategory ZeroObject
 
 universe u v w w'
 
@@ -78,6 +81,20 @@ variable {k G}
 theorem isContinuous_iff {V : FDRep k G} :
     isContinuous k G V ↔ ∀ (f : Module.Dual k V) (v : V), Continuous fun g => f (V.ρ g v) :=
   Iff.rfl
+
+/-- On a finite-dimensional representation with its module topology, continuity of all
+matrix coefficients is equivalent to joint continuity of the action. -/
+theorem isContinuous_iff_continuous_action [IsTopologicalRing k] (X : FDRep k G)
+    [TopologicalSpace X] [IsModuleTopology k X] :
+    isContinuous k G X ↔ Continuous fun p : G × X => X.ρ p.1 p.2 := by
+  rw [isContinuous_iff]
+  let b := Module.finBasis k X
+  refine ⟨fun h => ?_, fun h f x => ?_⟩
+  · apply (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b X.ρ).2
+    exact continuous_matrix fun i j => by
+      simpa only [LinearMap.toMatrix_apply, Module.Basis.coord_apply] using h (b.coord i) (b j)
+  · exact (IsModuleTopology.continuous_of_linearMap f).comp
+      (h.comp (continuous_id.prodMk continuous_const))
 
 /-- The matrix coefficients of the image of a continuous representation under a morphism are
 continuous: `f (ρ g (φ x)) = (f ∘ φ) (ρ g x)`. -/
@@ -109,6 +126,15 @@ theorem isContinuous_biprod [ContinuousAdd k] {X Y : FDRep k G} (hX : isContinuo
 instance [ContinuousAdd k] : (isContinuous k G).IsClosedUnderBinaryProducts :=
   ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hX hY =>
     isContinuous_biprod hX hY
+
+/-- The zero representation is continuous, so the continuous representations contain a zero
+object and `TauCeti.ContFDRep k G` has a zero object. -/
+instance : (isContinuous k G).ContainsZero where
+  exists_zero := ⟨0, isZero_zero _, fun f v => by
+    have : Subsingleton (0 : FDRep k G).V := FGModuleCat.isZero_iff_subsingleton.mp
+      ((Action.forget _ _).map_isZero (isZero_zero (FDRep k G)))
+    simp only [Subsingleton.elim v 0, map_zero]
+    exact continuous_const⟩
 
 /-- The trivial one-dimensional representation, the tensor unit, is continuous. -/
 theorem isContinuous_tensorUnit : isContinuous k G (𝟙_ (FDRep k G)) := fun f v => by
@@ -198,8 +224,27 @@ continuous matrix coefficients. It inherits the additive and the (braided) monoi
 abbrev ContFDRep : Type (max (u + 1) v) :=
   (FDRep.isContinuous k G).FullSubcategory
 
+/-- Forget the action of a continuous finite-dimensional representation to its underlying module. -/
+instance : HasForget₂ (ContFDRep k G) (ModuleCat k) where
+  forget₂ := (FDRep.isContinuous k G).ι ⋙ Action.forget (FGModuleCat k) G ⋙
+    forget₂ (FGModuleCat k) (ModuleCat k)
+  forget_comp := rfl
+
+instance : (forget₂ (ContFDRep k G) (ModuleCat k)).Additive where
+
+variable {k G} in
+/-- Forgetting an intertwiner gives its underlying module morphism. -/
+@[simp]
+theorem ContFDRep.forget₂_map {X Y : ContFDRep k G} (f : X ⟶ Y) :
+    (forget₂ (ContFDRep k G) (ModuleCat k)).map f = f.hom.hom.hom := (rfl)
+
 instance [ContinuousAdd k] : HasBinaryBiproducts (ContFDRep k G) :=
   HasBinaryBiproducts.of_hasBinaryProducts
+
+/-- The inclusion of continuous finite representations preserves binary biproducts. -/
+instance ContFDRep.preservesBinaryBiproducts_ι :
+    PreservesBinaryBiproducts ((FDRep.isContinuous k G).ι) :=
+  preservesBinaryBiproducts_of_preservesBinaryProducts _
 
 variable {G}
 

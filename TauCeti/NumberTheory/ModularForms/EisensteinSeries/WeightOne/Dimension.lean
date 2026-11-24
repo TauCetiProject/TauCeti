@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.ModularForms.Cusps.Weight.One
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Parity
 import TauCeti.NumberTheory.ModularForms.SturmBound
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The weight-one cusp–Eisenstein decomposition with nebentypus
@@ -284,7 +285,7 @@ end Profile
 
 /-- The matrix `!![1, 0; c, 1]`, which represents the cusp `1 / c`. -/
 private def lowerUnipotent (c : ℕ) : SL(2, ℤ) :=
-  ⟨!![1, 0; (c : ℤ), 1], by simp [Matrix.det_fin_two_of]⟩
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (c : ℤ)
 
 /-- The constant term of `E₁^{ψ,φ,t}` at the cusp `1 / c` in terms of the two profiles. -/
 private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZero u] [NeZero v]
@@ -297,8 +298,10 @@ private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZer
           (((u : ℂ) * v)⁻¹ * ∑ j : ZMod (u * v), ψ⁻¹ (j.val : ZMod u) * φ (j.val : ZMod v) *
             (π * cot (π * (j.val / (u * v))))) * profile φ ψ t c := by
   rw [constantTermAt_charE1MFRaise ψ φ hψ hφ htuv]
-  have h10 : (lowerUnipotent c) 1 0 = c := rfl
-  have h00 : (lowerUnipotent c) 0 0 = 1 := rfl
+  have h10 : (lowerUnipotent c) 1 0 = c := by
+    simp [lowerUnipotent]
+  have h00 : (lowerUnipotent c) 0 0 = 1 := by
+    simp [lowerUnipotent]
   simp only [h10, h00, mul_one, Int.gcd_natCast_natCast, ← Int.natCast_div,
     Int.natCast_dvd_natCast, Int.cast_natCast, Int.cast_neg, profile]
   have hφ1 (x : ZMod v) : φ x = φ (-1) * φ (-x) := by
@@ -370,37 +373,40 @@ private theorem sum_profile_filter_eq_zero {χ : (ZMod N)ˣ →* ℂˣ}
     {s : Finset {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1}}
     {g : {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1} → ℂ}
     (A B : CharIndex N 1 → ℂ)
-    (hc : ∀ c : ℕ, ∑ a ∈ s, g a * (A a.1 * profile a.1.psi a.1.phi a.1.t c -
-      B a.1 * profile a.1.phi a.1.psi a.1.t c) = 0)
+    (hc : ∀ c : ℕ, ∑ a ∈ s, g a * (A a.val * profile a.val.psi a.val.phi a.val.t c -
+      B a.val * profile a.val.phi a.val.psi a.val.t c) = 0)
     (ρ : DirichletCharacter ℂ N) (hρ : ρ (-1) = 1) (c : ℕ) :
-    ∑ a ∈ s with a.1.psi.changeLevel a.1.u_dvd = ρ,
-      g a * A a.1 * profile a.1.psi a.1.phi a.1.t c = 0 := by
+    ∑ a ∈ s with a.val.psi.changeLevel a.val.u_dvd = ρ,
+      g a * A a.val * profile a.val.psi a.val.phi a.val.t c = 0 := by
   -- replacing `c` by `c x` for a unit `x` multiplies the two profiles by the two characters
   have hscale (a : {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1}) (x : ZMod N) :
-      ρ⁻¹ x * (g a * (A a.1 * profile a.1.psi a.1.phi a.1.t (c * x.val) -
-        B a.1 * profile a.1.phi a.1.psi a.1.t (c * x.val))) =
-      g a * (A a.1 * profile a.1.psi a.1.phi a.1.t c * (ρ⁻¹ * a.1.psi.changeLevel a.1.u_dvd) x -
-        B a.1 * profile a.1.phi a.1.psi a.1.t c * (ρ⁻¹ * a.1.phi.changeLevel a.1.v_dvd) x) := by
-    have : NeZero a.1.u := NeZero.of_dvd a.1.u_dvd
-    have : NeZero a.1.v := NeZero.of_dvd a.1.v_dvd
+      ρ⁻¹ x * (g a * (A a.val * profile a.val.psi a.val.phi a.val.t (c * x.val) -
+        B a.val * profile a.val.phi a.val.psi a.val.t (c * x.val))) =
+      g a * (A a.val * profile a.val.psi a.val.phi a.val.t c *
+          (ρ⁻¹ * a.val.psi.changeLevel a.val.u_dvd) x -
+        B a.val * profile a.val.phi a.val.psi a.val.t c * (ρ⁻¹ * a.val.phi.changeLevel a.val.v_dvd)
+            x) := by
+    have : NeZero a.val.u := NeZero.of_dvd a.val.u_dvd
+    have : NeZero a.val.v := NeZero.of_dvd a.val.v_dvd
     by_cases hx : IsUnit x
     · have hcop : x.val.Coprime N := by simpa using ZMod.val_coe_unit_coprime hx.unit
-      have hdvd (w : ℕ) (hw : a.1.t * w ∣ N) :
-          (a.1.t * w).gcd (c * x.val) = (a.1.t * w).gcd c :=
+      have hdvd (w : ℕ) (hw : a.val.t * w ∣ N) :
+          (a.val.t * w).gcd (c * x.val) = (a.val.t * w).gcd c :=
         Nat.Coprime.gcd_mul_right_cancel_right c (hcop.coprime_dvd_right hw)
       rw [profile_mul _ _ (hdvd _ ((Nat.mul_dvd_mul_left _ (dvd_mul_left _ _)).trans
-          a.1.level_dvd)),
+          a.val.level_dvd)),
         profile_mul _ _ (hdvd _ ((Nat.mul_dvd_mul_left _ (dvd_mul_right _ _)).trans
-          a.1.level_dvd)),
+          a.val.level_dvd)),
         MulChar.mul_apply, MulChar.mul_apply,
-        ← DirichletCharacter.changeLevel_natCast_of_coprime a.1.u_dvd _ hcop,
-        ← DirichletCharacter.changeLevel_natCast_of_coprime a.1.v_dvd _ hcop,
+        ← DirichletCharacter.changeLevel_natCast_of_coprime a.val.u_dvd _ hcop,
+        ← DirichletCharacter.changeLevel_natCast_of_coprime a.val.v_dvd _ hcop,
         ZMod.natCast_zmod_val]
       ring
     · simp [MulChar.map_nonunit _ hx]
   have hsum := Finset.sum_eq_zero (s := (Finset.univ : Finset (ZMod N)))
-    (f := fun x ↦ ρ⁻¹ x * ∑ a ∈ s, g a * (A a.1 * profile a.1.psi a.1.phi a.1.t (c * x.val) -
-        B a.1 * profile a.1.phi a.1.psi a.1.t (c * x.val))) (fun x _ ↦ by rw [hc, mul_zero])
+    (f := fun x ↦ ρ⁻¹ x * ∑ a ∈ s, g a * (A a.val * profile a.val.psi a.val.phi a.val.t
+        (c * x.val) -
+        B a.val * profile a.val.phi a.val.psi a.val.t (c * x.val))) (fun x _ ↦ by rw [hc, mul_zero])
   simp_rw [Finset.mul_sum, hscale] at hsum
   rw [Finset.sum_comm] at hsum
   simp_rw [mul_sub, Finset.sum_sub_distrib, ← Finset.mul_sum] at hsum
@@ -413,11 +419,11 @@ private theorem sum_profile_filter_eq_zero {χ : (ZMod N)ˣ →* ℂˣ}
   simp only [horth] at hsum
   -- the second characters are odd while `ρ` is even
   have hphi (a : {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1}) :
-      a.1.phi.changeLevel a.1.v_dvd ≠ ρ := fun h ↦ by
-    have hpar : a.1.psi (-1) * a.1.phi (-1) = -1 := by simpa using a.1.parity
+      a.val.phi.changeLevel a.val.v_dvd ≠ ρ := fun h ↦ by
+    have hpar : a.val.psi (-1) * a.val.phi (-1) = -1 := by simpa using a.val.parity
     have h1 := congrArg (· (-1)) h
     simp only [DirichletCharacter.changeLevel_apply_neg_one, hρ] at h1
-    rw [a.2.2, h1, one_mul] at hpar
+    rw [a.property.2, h1, one_mul] at hpar
     norm_num at hpar
   simp only [hphi, ite_false, mul_zero, Finset.sum_const_zero, sub_zero] at hsum
   have hcard : (Fintype.card (ZMod N)ˣ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
@@ -432,45 +438,47 @@ first character is even are linearly independent. Every series of nebentypus `χ
 these, since `E₁^{ψ,φ,t} = E₁^{φ,ψ,t}` and exactly one of `ψ` and `φ` is even. -/
 theorem linearIndependent_constantTerms_weightOneForm (χ : (ZMod N)ˣ →* ℂˣ) :
     LinearIndependent ℂ fun a : {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1} ↦
-      constantTerms a.1.weightOneForm := by
+      constantTerms a.val.weightOneForm := by
   classical
   refine LinearIndependent.of_comp (LinearMap.funLeft ℂ ℂ lowerUnipotent) ?_
   rw [linearIndependent_iff']
   intro s g hg i hi
   choose A B hA hCT using exists_constantTermAt_lowerUnipotent_weightOneForm (N := N)
-  have hc (c : ℕ) : ∑ a ∈ s, g a * (A a.1 * profile a.1.psi a.1.phi a.1.t c -
-      B a.1 * profile a.1.phi a.1.psi a.1.t c) = 0 := by
+  have hc (c : ℕ) : ∑ a ∈ s, g a * (A a.val * profile a.val.psi a.val.phi a.val.t c -
+      B a.val * profile a.val.phi a.val.psi a.val.t c) = 0 := by
     simpa [hCT] using congrFun hg c
   -- keep the indices whose first character raises to that of `i`
-  set ρ := i.1.psi.changeLevel i.1.u_dvd
-  have hsep := sum_profile_filter_eq_zero A B hc ρ (by simp [ρ, i.2.2])
-  have : NeZero i.1.v := NeZero.of_dvd i.1.v_dvd
-  set s' := s.filter (fun a ↦ a.1.psi.changeLevel a.1.u_dvd = ρ)
-  have hmem {a} (ha : a ∈ s') : a.1.psi.changeLevel a.1.u_dvd = ρ := (Finset.mem_filter.mp ha).2
-  have hphi {a} (ha : a ∈ s') : a.1.phi.changeLevel a.1.v_dvd = i.1.phi.changeLevel i.1.v_dvd :=
-    phi_changeLevel_eq_of_nebentypus_eq (a.2.1.trans i.2.1.symm) (hmem ha)
+  set ρ := i.val.psi.changeLevel i.val.u_dvd
+  have hsep := sum_profile_filter_eq_zero A B hc ρ (by simp [ρ, i.property.2])
+  have : NeZero i.val.v := NeZero.of_dvd i.val.v_dvd
+  set s' := s.filter (fun a ↦ a.val.psi.changeLevel a.val.u_dvd = ρ)
+  have hmem {a} (ha : a ∈ s') : a.val.psi.changeLevel a.val.u_dvd = ρ := (Finset.mem_filter.mp ha).2
+  have hphi {a} (ha : a ∈ s') : a.val.phi.changeLevel a.val.v_dvd = i.val.phi.changeLevel
+      i.val.v_dvd :=
+    phi_changeLevel_eq_of_nebentypus_eq (a.property.1.trans i.property.1.symm) (hmem ha)
   have his' : i ∈ s' := Finset.mem_filter.mpr ⟨hi, rfl⟩
   -- these indices have the characters of `i` and differ only in their raising parameters
-  let T := s'.image fun a ↦ a.1.t
-  let l (t : ℕ) : ℂ := ∑ a ∈ s' with a.1.t = t, g a * A a.1
+  let T := s'.image fun a ↦ a.val.t
+  let l (t : ℕ) : ℂ := ∑ a ∈ s' with a.val.t = t, g a * A a.val
   have hT : 0 ∉ T := by
     simp only [T, Finset.mem_image, not_exists, not_and]
-    exact fun a _ h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ a.1.t_dvd))
-  have hl := eq_zero_of_forall_sum_profile_eq_zero i.1.psi i.1.phi hT (l := l) (fun c ↦ ?_) i.1.t
+    exact fun a _ h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ a.val.t_dvd))
+  have hl := eq_zero_of_forall_sum_profile_eq_zero i.val.psi i.val.phi hT (l := l)
+      (fun c ↦ ?_) i.val.t
     (Finset.mem_image_of_mem _ his')
-  · have hli : l i.1.t = g i * A i.1 :=
+  · have hli : l i.val.t = g i * A i.val :=
       Finset.sum_eq_single_of_mem i (Finset.mem_filter.mpr ⟨his', rfl⟩) fun b hb hbi ↦
         (hbi (Subtype.ext (eq_of_changeLevel_eq (Finset.mem_filter.mp hb).2
           (hmem (Finset.mem_filter.mp hb).1) (hphi (Finset.mem_filter.mp hb).1)))).elim
     rw [hli] at hl
-    exact (mul_eq_zero.mp hl).resolve_right (hA i.1)
+    exact (mul_eq_zero.mp hl).resolve_right (hA i.val)
   · rw [← hsep c, ← Finset.sum_fiberwise_of_maps_to
-      (fun a ha ↦ Finset.mem_image_of_mem (fun a : {a : CharIndex N 1 // _} ↦ a.1.t) ha)]
+      (fun a ha ↦ Finset.mem_image_of_mem (fun a : {a : CharIndex N 1 // _} ↦ a.val.t) ha)]
     refine Finset.sum_congr rfl fun t _ ↦ ?_
     rw [Finset.sum_mul]
     refine Finset.sum_congr rfl fun a ha ↦ ?_
     obtain ⟨ha', rfl⟩ := Finset.mem_filter.mp ha
-    rw [apply_eq_of_changeLevel_eq (fun ψ φ ↦ profile ψ φ a.1.t c) (hmem ha') (hphi ha')]
+    rw [apply_eq_of_changeLevel_eq (fun ψ φ ↦ profile ψ φ a.val.t c) (hmem ha') (hphi ha')]
 
 end CharIndex
 
@@ -487,7 +495,7 @@ whose first character is even. -/
 private theorem weightOneEisensteinSubspace_le_span (χ : (ZMod N)ˣ →* ℂˣ) :
     weightOneEisensteinSubspace χ ≤ Submodule.span ℂ (Set.range
       fun a : {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1} ↦
-        a.1.weightOneInCharSpace a.2.1) := by
+        a.val.weightOneInCharSpace a.property.1) := by
   refine weightOneEisensteinSubspace_le χ fun a hχ ↦ ?_
   rcases a.psi.even_or_odd with h | h
   · exact Submodule.subset_span ⟨⟨a, hχ, h⟩, rfl⟩
@@ -527,7 +535,7 @@ theorem weightOneEisensteinSubspace_eq_comap_span_range_weightOneForm (χ : (ZMo
     have := h.symm ▸ Submodule.mem_map_of_mem (f := (modFormCharSpace 1 χ).subtype) hf
     exact (Submodule.mem_inf.mp this).1
   · intro hf
-    obtain ⟨g, hg, hgf⟩ := Submodule.mem_map.mp (h ▸ Submodule.mem_inf.mpr ⟨hf, f.2⟩)
+    obtain ⟨g, hg, hgf⟩ := Submodule.mem_map.mp (h ▸ Submodule.mem_inf.mpr ⟨hf, f.property⟩)
     rwa [← Subtype.ext hgf]
 
 end TauCeti

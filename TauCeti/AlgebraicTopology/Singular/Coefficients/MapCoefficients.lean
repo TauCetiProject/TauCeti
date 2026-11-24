@@ -39,6 +39,8 @@ Extension of scalars is another example of the chain-level statement, since it p
   naturally in `X`.
 * `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`,
   naturally in `X`.
+* `CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`: when `F` is also faithful,
+  `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`.
 -/
 
 public section
@@ -87,5 +89,13 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
         HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).hom.app X)
           n :=
   (rfl)
+
+/-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,
+`Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
+lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :
+    IsZero (((singularHomologyFunctor D n).obj (F.obj R)).obj X) ↔
+      IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
+  rw [← ((singularHomologyFunctorObjCompIso F R n).app X).isZero_iff,
+    IsZero.iff_id_eq_zero, IsZero.iff_id_eq_zero, Functor.comp_obj, ← F.map_id, F.map_eq_zero_iff]
 
 end CategoryTheory.Functor

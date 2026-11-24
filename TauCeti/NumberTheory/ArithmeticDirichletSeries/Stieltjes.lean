@@ -42,6 +42,8 @@ open MeasureTheory Set Filter
 open scoped Topology NumberField
 open IsDedekindDomain
 
+section Summatory
+
 variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 
 /-- **Abel summation as Stieltjes integration by parts.** For real cutoffs `a ≤ b` and a function
@@ -58,7 +60,11 @@ theorem setIntegral_Ioc_summatoryStieltjes_eq_sub_sub_integral {𝕜 : Type*} [R
   simp only [setIntegral_Ioc_summatoryStieltjes N hw g hab, RCLike.real_smul_eq_coe_mul, hcast]
   exact summatory_mul_eq_sub_sub_integral_mul N _ hab hg_diff hg_int
 
+end Summatory
+
 /-! ### The prime counts of a number field -/
+
+section NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -117,5 +123,7 @@ theorem primeTheta_eq_integral_primeCountStieltjes (S : Set (HeightOneSpectrum (
   by_cases hv : v ∈ S
   · rw [indicator_of_mem hv, indicator_of_mem hv, Pi.one_apply, one_smul]
   · rw [indicator_of_notMem hv, indicator_of_notMem hv, zero_smul]
+
+end NumberField
 
 end TauCeti

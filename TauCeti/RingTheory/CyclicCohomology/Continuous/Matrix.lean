@@ -131,7 +131,7 @@ def continuousMatrixCyclicCochainExtension (ι : Type*) [Fintype ι] (n : ℕ) :
       continuousCyclicCochains 𝕜 (Matrix ι ι A) M n :=
   ((continuousMatrixCochainExtension ι n).comp
     (continuousCyclicCochains 𝕜 A M n).subtypeL).codRestrict _
-      (fun φ ↦ continuousMatrixCochainExtension_mem_continuousCyclicCochains ι φ.2)
+      (fun φ ↦ continuousMatrixCochainExtension_mem_continuousCyclicCochains ι φ.property)
 
 /-- The cyclic extension has the same underlying continuous multilinear map. -/
 @[simp]
@@ -254,7 +254,7 @@ def matrixExtension (n : ℕ) :
   desc ((mk 𝕜 (Matrix ι ι A) M n).comp
     (((continuousMatrixCyclicCochainExtension ι n).comp
       (continuousCyclicCocycles 𝕜 A M n).subtypeL).codRestrict _
-        (fun φ ↦ continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles ι φ.2)))
+        (fun φ ↦ continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles ι φ.property)))
     (fun _ hφ ↦ (mk_eq_zero_iff 𝕜 (Matrix ι ι A) M _).2
       (continuousMatrixCyclicCochainExtension_mem_continuousCyclicCoboundaries ι hφ))
 
@@ -262,8 +262,8 @@ def matrixExtension (n : ℕ) :
 @[simp]
 theorem matrixExtension_mk {n : ℕ} (φ : continuousCyclicCocycles 𝕜 A M n) :
     matrixExtension 𝕜 A M ι n (mk 𝕜 A M n φ) = mk 𝕜 (Matrix ι ι A) M n
-      ⟨continuousMatrixCyclicCochainExtension ι n φ.1,
-        continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles ι φ.2⟩ :=
+      ⟨continuousMatrixCyclicCochainExtension ι n φ.val,
+        continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles ι φ.property⟩ :=
   desc_mk _ _ φ
 
 /-- Matrix extension is compatible with the comparison to algebraic cyclic cohomology. -/

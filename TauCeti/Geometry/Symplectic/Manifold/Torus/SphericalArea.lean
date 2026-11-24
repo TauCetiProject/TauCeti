@@ -1,0 +1,188 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
+public import TauCeti.Geometry.Manifold.Degree.Global
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
+public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
+import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
+
+/-!
+# Spherical areas of a product with a torus
+
+Let `T = ∀ i : ι ⊕ ι, AddCircle (p i)` be a torus with its standard symplectic form
+`ω_T = ∑ j, dt_(inl j) ∧ dt_(inr j)` (`TauCeti.torusSymplecticForm`), and let `S` be a connected
+oriented boundaryless surface carrying a two-form `σ`, such as the round sphere `S²(a)` with `a`
+times its Fubini–Study form. This file computes the area `∫_C u^*(pr₁^*σ + pr₂^*ω_T)` of a smooth
+map `u : C → S × T` from a compact oriented boundaryless simply connected surface `C`, for
+instance the Riemann sphere `OnePoint ℂ`:
+
+`∫_C u^*(pr₁^*σ + pr₂^*ω_T) = deg(pr₁ ∘ u) · ∫_S σ`
+
+(`TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul`). So all spherical
+areas of `S × T` are integer multiples of the area `∫_S σ` of the first factor
+(`TauCeti.exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul`), and a
+positive spherical area is at least `∫_S σ`
+(`TauCeti.integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm`). This is the
+area gap of `S²(a) × T²ⁿ⁻²` in Gromov's proof of the nonsqueezing theorem: every sphere of
+positive area there, such as a nonconstant pseudoholomorphic sphere for a tame almost complex
+structure, has area at least `a`.
+
+The area splits as the sum of the areas of the two components `pr₁ ∘ u` and `pr₂ ∘ u`
+(`TauCeti.integralTopForm_mpullback_prod`). The first is `deg(pr₁ ∘ u) · ∫_S σ` by the degree
+formula. The second vanishes because `C` is simply connected
+(`TauCeti.integralTopForm_mpullback_torusSymplecticForm_eq_zero`): the pullbacks of the closed
+one-forms `dt_i` are closed, hence exact on `C`, say `w^* dt_i = d gᵢ`, so each term
+`w^*(dt_i ∧ dt_j) = d (gᵢ w^* dt_j)` is exact
+(`TauCeti.mpullback_torusSymplecticForm_mem_exactForms`), and exact top forms integrate to zero on
+a closed manifold. This replaces the homotopy-theoretic input `π₂(T) = 0` by the vanishing of
+`H¹_dR(C)`.
+
+## Main results
+
+* `TauCeti.mpullback_torusSymplecticForm_mem_exactForms`: the torus form pulls back to an exact
+  form on a simply connected manifold.
+* `TauCeti.integralTopForm_mpullback_torusSymplecticForm_eq_zero`: maps from a closed simply
+  connected surface to a torus have zero symplectic area.
+* `TauCeti.integralTopForm_mpullback_prod`: the area of a map to a product is the sum of the areas
+  of its components.
+* `TauCeti.integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul`: the area of a map
+  to `S × T` is the degree of its first component times `∫_S σ`.
+* `TauCeti.exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul`,
+  `TauCeti.integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm`: spherical areas
+  are integer multiples of `∫_S σ`, and positive ones are at least `∫_S σ`.
+
+## References
+
+* M. Gromov, *Pseudo holomorphic curves in symplectic manifolds*, Inventiones Mathematicae 82
+  (1985), 307–347, §0.3.A (the nonsqueezing theorem, proved through `S² × T^(2n-2)`).
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications 52, 2012, Section 9.3 (the proof of the nonsqueezing theorem).
+-/
+
+public section
+
+noncomputable section
+
+open scoped Manifold ContDiff
+
+namespace TauCeti
+
+variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
+  [IsManifold I ∞ C]
+
+/-! ### Maps to a product -/
+
+section Prod
+
+variable {E' H' S F H'' N : Type*}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'']
+  {K : ModelWithCorners ℝ F H''} [TopologicalSpace N] [ChartedSpace H'' N] [IsManifold K ∞ N]
+
+/-- **The area of a map to a product is the sum of the areas of its components.** For a smooth
+map `u : C → S × N` from a compact oriented surface and two-forms `σ` on `S` and `τ` on `N`,
+`∫_C u^*(pr₁^*σ + pr₂^*τ) = ∫_C (pr₁ ∘ u)^*σ + ∫_C (pr₂ ∘ u)^*τ`. -/
+theorem integralTopForm_mpullback_prod [CompactSpace C] (o : Manifold.Orientation I C (Fin 2))
+    (σ : SmoothTwoForm J S) (τ : SmoothTwoForm K N) {u : C → S × N}
+    (hu : ContMDiff I (J.prod K) ∞ u) :
+    integralTopForm o (SmoothForm.mpullback u hu (σ.prod τ)).val =
+      integralTopForm o (SmoothForm.mpullback (Prod.fst ∘ u) (contMDiff_fst.comp hu) σ).val +
+        integralTopForm o (SmoothForm.mpullback (Prod.snd ∘ u) (contMDiff_snd.comp hu) τ).val := by
+  rw [SmoothTwoForm.prod_def, map_add, SmoothForm.mpullback_mpullback,
+    SmoothForm.mpullback_mpullback, SmoothForm.add_toRoughForm]
+  exact integralTopForm_add_of_compactSpace o ((SmoothForm.isSmoothForm _).of_le (by simp))
+    ((SmoothForm.isSmoothForm _).of_le (by simp))
+
+end Prod
+
+/-! ### Maps to a torus -/
+
+variable [T2Space C] {ι : Type*} [Fintype ι] {p : ι ⊕ ι → ℝ} [∀ i, Fact (0 < p i)]
+
+/-- **The torus form pulls back to an exact form on a simply connected manifold.** Along a smooth
+map `w` from a simply connected manifold to the torus, each closed one-form `dt_i` pulls back to an
+exact one, so every term `w^*(dt_(inl j) ∧ dt_(inr j))` of `w^* ω_T` is exact. -/
+theorem mpullback_torusSymplecticForm_mem_exactForms [SimplyConnectedSpace C]
+    {w : C → ∀ i, AddCircle (p i)} (hw : ContMDiff I (ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)) ∞ w) :
+    SmoothForm.mpullback w hw (torusSymplecticForm p) ∈ exactForms I C 2 := by
+  have hclosed (i : ι ⊕ ι) :
+      SmoothForm.mpullback w hw (torusTimeForm p i) ∈ closedForms I C 1 :=
+    (mem_closedForms I _).mpr
+      ((SmoothForm.isClosed_def _).mp ((isClosed_torusTimeForm p i).mpullback w hw))
+  rw [torusSymplecticForm_def, map_sum]
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  have h := SmoothForm.wedge_mem_exactForms_of_simplyConnectedSpace (hclosed (.inl j))
+    (hclosed (.inr j))
+  rw [← SmoothForm.mpullback_wedge] at h
+  -- `h` is stated in degree `1 + 1`, which reduces to `2`.
+  exact h
+
+/-- **Spheres in a torus have zero area.** A smooth map `w` from a compact oriented boundaryless
+simply connected surface to the torus satisfies `∫_C w^* ω_T = 0`. -/
+theorem integralTopForm_mpullback_torusSymplecticForm_eq_zero [BoundarylessManifold I C]
+    [CompactSpace C] [SimplyConnectedSpace C] (o : Manifold.Orientation I C (Fin 2))
+    {w : C → ∀ i, AddCircle (p i)} (hw : ContMDiff I (ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)) ∞ w) :
+    integralTopForm o (SmoothForm.mpullback w hw (torusSymplecticForm p)).val = 0 :=
+  integralTopForm_eq_zero_of_mem_exactForms o (mpullback_torusSymplecticForm_mem_exactForms hw)
+
+/-! ### Spherical areas of a product with a torus -/
+
+variable {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
+  [IsManifold J ∞ S] [BoundarylessManifold J S] [T2Space S] [SigmaCompactSpace S]
+  [ConnectedSpace S]
+  [BoundarylessManifold I C] [CompactSpace C] [SimplyConnectedSpace C]
+  (o : Manifold.Orientation I C (Fin 2)) (o' : Manifold.Orientation J S (Fin 2))
+  {σ : SmoothTwoForm J S}
+  (hσ : IsCompact (_root_.tsupport (α := E' [⋀^Fin 2]→L[ℝ] ℝ) σ.val))
+  {u : C → S × ∀ i, AddCircle (p i)}
+  (hu : ContMDiff I (J.prod (ModelWithCorners.pi fun _ : ι ⊕ ι ↦ 𝓘(ℝ))) ∞ u)
+include hσ
+
+/-- **The area of a sphere in `S × T` is the degree of its first component times `∫_S σ`.** For a
+smooth map `u` from a compact oriented boundaryless simply connected surface `C` to the product
+of a connected oriented boundaryless surface `S` with the torus `T`, and a compactly supported
+two-form `σ` on `S`, `∫_C u^*(pr₁^*σ + pr₂^*ω_T) = deg(pr₁ ∘ u) · ∫_S σ`. -/
+theorem integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul :
+    integralTopForm o (SmoothForm.mpullback u hu (σ.prod (torusSymplecticForm p))).val =
+      degree o o' (Prod.fst ∘ u) * integralTopForm o' σ.val := by
+  rw [integralTopForm_mpullback_prod, integralTopForm_mpullback_torusSymplecticForm_eq_zero,
+    add_zero, SmoothForm.coe_mpullback]
+  exact integralTopForm_mpullback_eq_degree_mul o o' (contMDiff_fst.comp hu)
+    (contMDiff_fst.comp hu).continuous.isProperMap (SmoothForm.isSmoothForm _) hσ
+
+/-- **Spherical areas of `S × T` are integer multiples of `∫_S σ`.** For a smooth map `u` from a
+compact oriented boundaryless simply connected surface to the product of a connected oriented
+boundaryless surface `S` with the torus, the area `∫_C u^*(pr₁^*σ + pr₂^*ω_T)` lies in
+`ℤ · ∫_S σ`. -/
+theorem exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul :
+    ∃ m : ℤ, integralTopForm o (SmoothForm.mpullback u hu (σ.prod (torusSymplecticForm p))).val =
+      m * integralTopForm o' σ.val :=
+  ⟨_, integralTopForm_mpullback_prod_torusSymplecticForm_eq_degree_mul o o' hσ hu⟩
+
+/-- **A positive spherical area of `S × T` is at least `∫_S σ`.** For a smooth map `u` from a
+compact oriented boundaryless simply connected surface to the product of a connected oriented
+boundaryless surface `S` with the torus, if `∫_C u^*(pr₁^*σ + pr₂^*ω_T)` is positive then it is
+at least `∫_S σ`: it is a positive integer multiple of `∫_S σ`. -/
+theorem integralTopForm_le_integralTopForm_mpullback_prod_torusSymplecticForm
+    (hpos : 0 < integralTopForm o
+      (SmoothForm.mpullback u hu (σ.prod (torusSymplecticForm p))).val) :
+    integralTopForm o' σ.val ≤
+      integralTopForm o (SmoothForm.mpullback u hu (σ.prod (torusSymplecticForm p))).val := by
+  obtain ⟨m, hm⟩ :=
+    exists_integralTopForm_mpullback_prod_torusSymplecticForm_eq_intCast_mul o o' hσ hu
+  rw [hm] at hpos ⊢
+  rcases le_or_gt (integralTopForm o' σ.val) 0 with ha | ha
+  · exact ha.trans hpos.le
+  · have hm0 : (0 : ℤ) < m := by exact_mod_cast pos_of_mul_pos_left hpos ha.le
+    have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast (show (1 : ℤ) ≤ m by omega)
+    exact le_mul_of_one_le_left ha.le hm1
+
+end TauCeti
