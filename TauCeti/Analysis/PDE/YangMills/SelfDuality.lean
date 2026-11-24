@@ -34,9 +34,12 @@ The examples at the end fix the normalisation. For a nonzero `X`, the form
 `F = X (e⁰ ∧ e¹ + e² ∧ e³)` is self-dual with `|F|² = ⋆⟨F ∧ F⟩ = 2 |X|²`, so the Bogomol'nyi
 inequality is an equality; `F = X e⁰ ∧ e¹` has `F^± = ½ X (e⁰ ∧ e¹ ± e² ∧ e³)`, `|F|² = |X|²` and
 `⋆⟨F ∧ F⟩ = 0`, so it is strict. Summing over all indices instead, as `8 (⟨F₀₁, F₂₃⟩ - …)`, would
-make the first example violate the inequality. The examples are read off the decomposable-form
-lemmas `Orientation.vectorFormHodgeStar_innerₗ` and
-`LinearMap.BilinForm.vectorFormInner_smulRight_innerₗ_smulRight_innerₗ`.
+make the first example violate the inequality. The examples specialise the decomposable-form
+lemmas `Orientation.vectorFormHodgeStar_innerₗ`,
+`LinearMap.BilinForm.vectorFormInner_smulRight_innerₗ_smulRight_innerₗ`,
+`Orientation.vectorFormInner_smulRight_innerₗ_vectorFormHodgeStar_smulRight_innerₗ`,
+`Orientation.vectorFormSelfDualPart_smulRight_innerₗ` and
+`Orientation.vectorFormAntiSelfDualPart_smulRight_innerₗ` to the frame wedges.
 
 ## Main definitions
 
@@ -92,7 +95,8 @@ theorem vectorFormInner_two_eq_sum_finFour (e : OrthonormalBasis (Fin 4) ℝ E)
   simp [Fin.sum_univ_six]
 
 /-- For `F = X (e⁰ ∧ e¹ + e² ∧ e³)`, `|F|² = 2 B (X, X)`. -/
-theorem vectorFormInner_smulRight_innerₗ_add (e : OrthonormalBasis (Fin 4) ℝ E) (X : V) :
+theorem vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three
+    (e : OrthonormalBasis (Fin 4) ℝ E) (X : V) :
     vectorFormInner B 2
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X)
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X) =
@@ -103,7 +107,8 @@ theorem vectorFormInner_smulRight_innerₗ_add (e : OrthonormalBasis (Fin 4) ℝ
   ring
 
 /-- For `F = X e⁰ ∧ e¹`, `|F|² = B (X, X)`. -/
-theorem vectorFormInner_smulRight_innerₗ (e : OrthonormalBasis (Fin 4) ℝ E) (X : V) :
+theorem vectorFormInner_smulRight_innerₗ_ιMulti_zero_one (e : OrthonormalBasis (Fin 4) ℝ E)
+    (X : V) :
     vectorFormInner B 2 ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1])).smulRight X)
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1])).smulRight X) = B X X := by
   rw [vectorFormInner_smulRight_innerₗ_smulRight_innerₗ, inner_ιMulti_two]
@@ -201,7 +206,8 @@ theorem abs_wedgeDensity_eq_iff {B : LinearMap.BilinForm ℝ V} (hB : B.IsSymm)
 /-! ### Examples fixing the normalisation -/
 
 /-- The form `F = X (e⁰ ∧ e¹ + e² ∧ e³)` is self-dual. -/
-theorem vectorFormHodgeStar_smulRight_innerₗ_add (X : V) :
+theorem vectorFormHodgeStar_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three_eq_self
+    (X : V) :
     o.vectorFormHodgeStar hkl
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X) =
       (innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X := by
@@ -211,20 +217,21 @@ theorem vectorFormHodgeStar_smulRight_innerₗ_add (X : V) :
 /-- **The self-dual example**: for `F = X (e⁰ ∧ e¹ + e² ∧ e³)`, `⟨F, ⋆F⟩ = 2 B (X, X) = |F|²`.
 For symmetric `B` this is the density `⋆⟨F ∧ F⟩`, so the Bogomol'nyi inequality is an
 equality. -/
-theorem vectorFormInner_smulRight_innerₗ_add_vectorFormHodgeStar (B : LinearMap.BilinForm ℝ V)
-    (X : V) :
+theorem vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three_vectorFormHodgeStar
+    (B : LinearMap.BilinForm ℝ V) (X : V) :
     vectorFormInner B 2
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X)
         (o.vectorFormHodgeStar hkl
           ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X)) =
       2 * B X X := by
-  rw [o.vectorFormHodgeStar_smulRight_innerₗ_add hkl he, B.vectorFormInner_smulRight_innerₗ_add e]
+  rw [o.vectorFormHodgeStar_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three_eq_self hkl he,
+    B.vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three e]
 
 /-- **The normalisation is pinned**: for `F = X (e⁰ ∧ e¹ + e² ∧ e³)` with `B (X, X) > 0`, the
 all-index sum `8 (B (F₀₁, F₂₃) - …)`, four times `⋆⟨F ∧ F⟩`, exceeds `|F|²`, so with that
 normalisation the Bogomol'nyi inequality would fail. -/
-theorem vectorFormInner_smulRight_innerₗ_add_lt {B : LinearMap.BilinForm ℝ V} {X : V}
-    (hX : 0 < B X X) :
+theorem vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three_lt
+    {B : LinearMap.BilinForm ℝ V} {X : V} (hX : 0 < B X X) :
     vectorFormInner B 2
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X)
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X) <
@@ -232,44 +239,36 @@ theorem vectorFormInner_smulRight_innerₗ_add_lt {B : LinearMap.BilinForm ℝ V
         ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X)
         (o.vectorFormHodgeStar hkl
           ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3])).smulRight X)) := by
-  rw [o.vectorFormInner_smulRight_innerₗ_add_vectorFormHodgeStar hkl he,
-    B.vectorFormInner_smulRight_innerₗ_add e]
+  rw [vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three_vectorFormHodgeStar
+      hkl he,
+    B.vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three e]
   linarith
 
 /-- For `F = X e⁰ ∧ e¹`, the self-dual part is `F⁺ = ½ X (e⁰ ∧ e¹ + e² ∧ e³)`. -/
-theorem vectorFormSelfDualPart_smulRight_innerₗ (X : V) :
+theorem vectorFormSelfDualPart_smulRight_innerₗ_ιMulti_zero_one (X : V) :
     o.vectorFormSelfDualPart hkl ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1])).smulRight X) =
       (innerₗ (⋀[ℝ]^2 E)
         ((2⁻¹ : ℝ) • (ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3]))).smulRight X := by
-  rw [vectorFormSelfDualPart_apply, vectorFormHodgeStar_smulRight, vectorFormHodgeStar_innerₗ,
-    o.hodgeStar_ιMulti_zero_one hkl he]
-  refine LinearMap.ext fun x ↦ ?_
-  simp only [LinearMap.smul_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
-    innerₗ_apply_apply, real_inner_smul_left, inner_add_left]
-  module
+  rw [vectorFormSelfDualPart_smulRight_innerₗ, o.hodgeStar_ιMulti_zero_one hkl he]
 
 /-- For `F = X e⁰ ∧ e¹`, the anti-self-dual part is `F⁻ = ½ X (e⁰ ∧ e¹ - e² ∧ e³)`. -/
-theorem vectorFormAntiSelfDualPart_smulRight_innerₗ (X : V) :
+theorem vectorFormAntiSelfDualPart_smulRight_innerₗ_ιMulti_zero_one (X : V) :
     o.vectorFormAntiSelfDualPart hkl ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1])).smulRight X) =
       (innerₗ (⋀[ℝ]^2 E)
         ((2⁻¹ : ℝ) • (ιMulti ℝ 2 ![e 0, e 1] - ιMulti ℝ 2 ![e 2, e 3]))).smulRight X := by
-  rw [vectorFormAntiSelfDualPart_apply, vectorFormHodgeStar_smulRight, vectorFormHodgeStar_innerₗ,
-    o.hodgeStar_ιMulti_zero_one hkl he]
-  refine LinearMap.ext fun x ↦ ?_
-  simp only [LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.smulRight_apply,
-    innerₗ_apply_apply, real_inner_smul_left, inner_sub_left]
-  module
+  rw [vectorFormAntiSelfDualPart_smulRight_innerₗ, o.hodgeStar_ιMulti_zero_one hkl he]
 
 /-- **The strict example**: for `F = X e⁰ ∧ e¹`, `⟨F, ⋆F⟩ = 0`. For symmetric `B` this is the
 density `⋆⟨F ∧ F⟩`, so when `B (X, X) > 0` the Bogomol'nyi inequality
 `|⋆⟨F ∧ F⟩| ≤ |F|² = B (X, X)` is strict. -/
-theorem vectorFormInner_smulRight_innerₗ_vectorFormHodgeStar (B : LinearMap.BilinForm ℝ V)
-    (X : V) :
+theorem vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_vectorFormHodgeStar
+    (B : LinearMap.BilinForm ℝ V) (X : V) :
     vectorFormInner B 2 ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1])).smulRight X)
         (o.vectorFormHodgeStar hkl
           ((innerₗ (⋀[ℝ]^2 E) (ιMulti ℝ 2 ![e 0, e 1])).smulRight X)) = 0 := by
-  rw [o.vectorFormInner_vectorFormHodgeStar_finFour hkl he]
-  simp [inner_ιMulti_two, e.inner_eq_ite]
+  rw [vectorFormInner_smulRight_innerₗ_vectorFormHodgeStar_smulRight_innerₗ,
+    o.hodgeStar_ιMulti_zero_one hkl he, inner_ιMulti_two]
+  simp [e.inner_eq_ite]
 
 end Orientation
 

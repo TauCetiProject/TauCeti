@@ -160,14 +160,22 @@ theorem vectorFormInner_smulRight_smulRight (f g : ⋀[ℝ]^k E →ₗ[ℝ] ℝ)
     map_smul, LinearMap.smul_apply, smul_eq_mul, LinearMap.mul_apply', Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ ↦ by ring
 
+/-- For the real-valued forms `⟪ω, ·⟫` and `⟪η, ·⟫` defined by `k`-vectors, the pairing for the
+product of real numbers is `⟪ω, η⟫`. -/
+@[simp]
+theorem vectorFormInner_mul_innerₗ_innerₗ (ω η : ⋀[ℝ]^k E) :
+    vectorFormInner (LinearMap.mul ℝ ℝ) k (innerₗ (⋀[ℝ]^k E) ω) (innerₗ (⋀[ℝ]^k E) η) =
+      ⟪ω, η⟫ := by
+  set c := stdOrthonormalBasis ℝ (⋀[ℝ]^k E)
+  rw [vectorFormInner_eq_sum c, ← c.sum_inner_mul_inner ω η]
+  simp [real_inner_comm η]
+
 /-- The pairing of the decomposable forms `X ⟪ω, ·⟫` and `Y ⟪η, ·⟫`, with `ω, η` `k`-vectors and
 `X, Y ∈ V`, is `B (X, Y) ⟪ω, η⟫`. -/
 theorem vectorFormInner_smulRight_innerₗ_smulRight_innerₗ (ω η : ⋀[ℝ]^k E) (X Y : V) :
     vectorFormInner B k ((innerₗ (⋀[ℝ]^k E) ω).smulRight X) ((innerₗ (⋀[ℝ]^k E) η).smulRight Y) =
       B X Y * ⟪ω, η⟫ := by
-  set c := stdOrthonormalBasis ℝ (⋀[ℝ]^k E)
-  rw [vectorFormInner_smulRight_smulRight, vectorFormInner_eq_sum c, ← c.sum_inner_mul_inner ω η]
-  simp [real_inner_comm η]
+  rw [vectorFormInner_smulRight_smulRight, vectorFormInner_mul_innerₗ_innerₗ]
 
 /-- For real-valued forms, read as linear maps on `⋀ᵏ E`, the pairing for the product of real
 numbers is the inner product of forms `TauCeti.alternatingFormInner`. -/
@@ -181,10 +189,8 @@ theorem vectorFormInner_mul_continuousAlternatingMapLinearEquiv
   obtain ⟨b, rfl⟩ := (alternatingFormEquiv E k).surjective β
   rw [continuousAlternatingMapLinearEquiv_alternatingFormEquiv,
     continuousAlternatingMapLinearEquiv_alternatingFormEquiv,
-    alternatingFormInner_alternatingFormEquiv,
-    vectorFormInner_eq_sum (stdOrthonormalBasis ℝ (⋀[ℝ]^k E)),
-    ← (stdOrthonormalBasis ℝ (⋀[ℝ]^k E)).sum_inner_mul_inner a b]
-  simp [real_inner_comm b]
+    alternatingFormInner_alternatingFormEquiv]
+  exact vectorFormInner_mul_innerₗ_innerₗ a b
 
 /-- The pairing is symmetric when `B` is. -/
 theorem isSymm_vectorFormInner (hB : B.IsSymm) :
@@ -271,6 +277,17 @@ theorem vectorFormHodgeStar_innerₗ (hkl : k + l = finrank ℝ E) (ω : ⋀[ℝ
   rw [vectorFormHodgeStar_apply, innerₗ_apply_apply, innerₗ_apply_apply,
     ← o.inner_hodgeStar_hodgeStar hkl, LinearEquiv.apply_symm_apply]
 
+/-- The pairing of the decomposable form `X ⟪ω, ·⟫` with the Hodge star of `Y ⟪η, ·⟫` is
+`B (X, Y) ⟪ω, ⋆η⟫`. -/
+theorem vectorFormInner_smulRight_innerₗ_vectorFormHodgeStar_smulRight_innerₗ
+    (B : LinearMap.BilinForm ℝ V) (hkl : k + l = finrank ℝ E) (ω : ⋀[ℝ]^l E) (η : ⋀[ℝ]^k E)
+    (X Y : V) :
+    vectorFormInner B l ((innerₗ (⋀[ℝ]^l E) ω).smulRight X)
+        (o.vectorFormHodgeStar hkl ((innerₗ (⋀[ℝ]^k E) η).smulRight Y)) =
+      B X Y * ⟪ω, o.hodgeStar hkl η⟫ := by
+  rw [vectorFormHodgeStar_smulRight, vectorFormHodgeStar_innerₗ,
+    vectorFormInner_smulRight_innerₗ_smulRight_innerₗ]
+
 /-- On real-valued forms, read as linear maps on `⋀ᵏ E`, the Hodge star of vector-valued forms is
 the Hodge star of forms. -/
 @[simp]
@@ -281,10 +298,7 @@ theorem vectorFormHodgeStar_continuousAlternatingMapLinearEquiv (hkl : k + l = f
   obtain ⟨a, rfl⟩ := (alternatingFormEquiv E k).surjective α
   rw [formHodgeStar_alternatingFormEquiv, continuousAlternatingMapLinearEquiv_alternatingFormEquiv,
     continuousAlternatingMapLinearEquiv_alternatingFormEquiv]
-  refine LinearMap.ext fun x ↦ ?_
-  -- `⟪a, ⋆⁻¹ x⟫ = ⟪⋆a, x⟫`, since the Hodge star is an isometry.
-  rw [vectorFormHodgeStar_apply, innerₗ_apply_apply, innerₗ_apply_apply,
-    ← o.inner_hodgeStar_hodgeStar hkl, LinearEquiv.apply_symm_apply]
+  exact o.vectorFormHodgeStar_innerₗ hkl a
 
 /-- Reversing the orientation negates the Hodge star of vector-valued forms. -/
 @[simp]
@@ -374,6 +388,26 @@ theorem vectorFormSelfDualPart_apply (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
 theorem vectorFormAntiSelfDualPart_apply (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
     o.vectorFormAntiSelfDualPart hkk F = (2⁻¹ : ℝ) • (F - o.vectorFormHodgeStar hkk F) :=
   (rfl)
+
+/-- The self-dual part of the decomposable form `X ⟪ω, ·⟫` is `X ⟪(ω + ⋆ω) / 2, ·⟫`. -/
+theorem vectorFormSelfDualPart_smulRight_innerₗ (ω : ⋀[ℝ]^k E) (X : V) :
+    o.vectorFormSelfDualPart hkk ((innerₗ (⋀[ℝ]^k E) ω).smulRight X) =
+      (innerₗ (⋀[ℝ]^k E) ((2⁻¹ : ℝ) • (ω + o.hodgeStar hkk ω))).smulRight X := by
+  rw [vectorFormSelfDualPart_apply, vectorFormHodgeStar_smulRight, vectorFormHodgeStar_innerₗ]
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [LinearMap.smul_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
+    innerₗ_apply_apply, real_inner_smul_left, inner_add_left]
+  module
+
+/-- The anti-self-dual part of the decomposable form `X ⟪ω, ·⟫` is `X ⟪(ω - ⋆ω) / 2, ·⟫`. -/
+theorem vectorFormAntiSelfDualPart_smulRight_innerₗ (ω : ⋀[ℝ]^k E) (X : V) :
+    o.vectorFormAntiSelfDualPart hkk ((innerₗ (⋀[ℝ]^k E) ω).smulRight X) =
+      (innerₗ (⋀[ℝ]^k E) ((2⁻¹ : ℝ) • (ω - o.hodgeStar hkk ω))).smulRight X := by
+  rw [vectorFormAntiSelfDualPart_apply, vectorFormHodgeStar_smulRight, vectorFormHodgeStar_innerₗ]
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.smulRight_apply,
+    innerₗ_apply_apply, real_inner_smul_left, inner_sub_left]
+  module
 
 /-- A middle-degree form is the sum of its self-dual and anti-self-dual parts, `F = F⁺ + F⁻`. -/
 @[simp]
