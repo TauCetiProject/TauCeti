@@ -56,9 +56,10 @@ Linear equivalences `e₀ : C₀ ≃ D₀` and `e₁ : C₁ ≃ D₁` intertwini
 another complex `D` up to a nonzero scalar `u` transport the torsion:
 `τ(D, e c) = τ(C, c) · u ^ q / u ^ p`, where `p` and `q` are the ranks of `d₁ : C₁ → C₀` and
 `d₀ : C₀ → C₁` (`HomologicalComplex.parityTorsion_eq_mul_of_linearEquiv`). In particular the
-torsion is invariant under isomorphisms of based complexes (`HomologicalComplex.parityTorsion_map`):
-if `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` for an isomorphism `e : C ≅ D` in bases `c i` and `c' i`,
-then `τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`
+torsion is invariant under isomorphisms of based complexes (`HomologicalComplex.parityTorsion_map`).
+Combined with the basis-change formula, for an isomorphism `e : C ≅ D` and arbitrary bases `c' i`
+of `D`, if `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`
 (`HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`).
 If instead the equivalences exchange the parities, `e₀ : C₁ ≃ D₀` and `e₁ : C₀ ≃ D₁`, the odd
 bracket of `D` is the even bracket of `C` and conversely, so the torsion is inverted:
