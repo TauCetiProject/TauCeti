@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Probability.Independence.CondExp
 public import TauCeti.Probability.Distributions.Tilted
+import Mathlib.Probability.Independence.Integration
+
+import TauCeti.Probability.Distributions.Gaussian.Basic
 
 /-!
 # Gaussian change of measure with a known random drift
@@ -80,13 +83,11 @@ theorem withDensity_exp_inter_preimage_of_indep_gaussian (hm : m ≤ mΩ)
         ((measurable_const.indicator hB).comp (by fun_prop))
   -- For each fixed coefficient, tilt the Gaussian and translate its mean back to zero.
   have hfreeze (c : ℝ) : ∫⁻ y, F (c, y) ∂gaussianReal 0 v = gaussianReal 0 v B := by
-    have hZ : ∫ y, exp (c * y) ∂gaussianReal 0 v = exp ((v : ℝ) * c ^ 2 / 2) := by
-      simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := 0) (v := v)) c
     have htilt : (gaussianReal 0 v).withDensity
         (fun y ↦ ENNReal.ofReal (exp (c * y - v * c ^ 2 / 2))) =
         gaussianReal (v * c) v := by
       have ht := gaussianReal_tilted_mul 0 v c
-      simp only [zero_add, Measure.tilted, hZ, exp_sub] at ht ⊢
+      simp only [zero_add, zero_mul, Measure.tilted, integral_exp_mul_gaussianReal, exp_sub] at ht ⊢
       exact ht
     have hmap : (gaussianReal (v * c) v).map (fun y ↦ y - v * c) =
         gaussianReal 0 v := by
@@ -187,5 +188,61 @@ theorem indep_sub_mul_withDensity_exp_of_indep_gaussian (hm : m ≤ mΩ)
   rw [inter_comm, withDensity_exp_inter_preimage_of_indep_gaussian hm ha hind hlaw hA hBmeas,
     withDensity_exp_apply_of_indep_gaussian hm ha hind hlaw hA,
     ← h.map_eq, Measure.map_apply_of_aemeasurable h.aemeasurable hBmeas, mul_comm]
+
+/-- A past-measurable nonnegative weight can be included in a one-step Gaussian
+change of law. The weight need not be normalized, finite or integrable. The corrected
+increment still factors from every past event with its original centered Gaussian law. -/
+theorem withDensity_exp_mul_inter_preimage_of_indep_gaussian (hm : m ≤ mΩ)
+    (ha : Measurable[m] a) {w : Ω → ℝ≥0∞} (hw : Measurable[m] w)
+    (hind : Indep (.comap Y inferInstance) m P)
+    (hlaw : HasLaw Y (gaussianReal 0 v) P)
+    {A : Set Ω} (hA : MeasurableSet[m] A) {B : Set ℝ} (hB : MeasurableSet B) :
+    P.withDensity (fun ω ↦
+        ENNReal.ofReal (exp (a ω * Y ω - v * a ω ^ 2 / 2)) * w ω)
+      (A ∩ (fun ω ↦ Y ω - v * a ω) ⁻¹' B) =
+        P.withDensity w A * gaussianReal 0 v B := by
+  have := hlaw.isProbabilityMeasure
+  have ha' : Measurable a := ha.mono hm le_rfl
+  let Q := P.withDensity (fun ω ↦
+    ENNReal.ofReal (exp (a ω * Y ω - v * a ω ^ 2 / 2)))
+  let D := fun ω ↦ Y ω - v * a ω
+  have hD : AEMeasurable D P := hlaw.aemeasurable.sub (ha'.aemeasurable.const_mul _)
+  have hDQ : AEMeasurable D Q := hD.mono_ac (withDensity_absolutelyContinuous P _)
+  have hi := indep_sub_mul_withDensity_exp_of_indep_gaussian hm ha hind hlaw
+  have ht : Q.trim hm = P.trim hm := by
+    refine @Measure.ext Ω m _ _ fun s hs ↦ ?_
+    simp only [trim_measurableSet_eq hm hs]
+    exact withDensity_exp_apply_of_indep_gaussian hm ha hind hlaw hs
+  have hwA : Measurable[m] (A.indicator w) := hw.indicator hA
+  have hwint : ∫⁻ ω, A.indicator w ω ∂Q = ∫⁻ ω, A.indicator w ω ∂P := by
+    rw [← lintegral_trim hm hwA, ht, lintegral_trim hm hwA]
+  have hDB : Measurable[.comap D inferInstance] ((D ⁻¹' B).indicator (1 : Ω → ℝ≥0∞)) :=
+    measurable_const.indicator (MeasurableSpace.measurableSet_comap.mpr ⟨B, hB, rfl⟩)
+  have hfg : IndepFun (A.indicator w) ((D ⁻¹' B).indicator (1 : Ω → ℝ≥0∞)) Q :=
+    indep_of_indep_of_le_right (indep_of_indep_of_le_left hi.symm hwA.comap_le) hDB.comap_le
+  have hfactor := lintegral_mul_eq_lintegral_mul_lintegral_of_indepFun'
+    (hwA.mono hm le_rfl).aemeasurable
+    (measurable_one.aemeasurable.indicator₀ (hDQ.nullMeasurableSet_preimage hB)) hfg
+  simp only [Pi.mul_apply] at hfactor
+  have hmass : Q (D ⁻¹' B) = gaussianReal 0 v B := by
+    simpa [Q, D] using withDensity_exp_inter_preimage_of_indep_gaussian
+      hm ha hind hlaw (A := univ) MeasurableSet.univ hB
+  have hsplit : P.withDensity (fun ω ↦
+      ENNReal.ofReal (exp (a ω * Y ω - v * a ω ^ 2 / 2)) * w ω) = Q.withDensity w := by
+    simpa only [Pi.mul_def] using withDensity_mul₀ (μ := P)
+      (f := fun ω ↦ ENNReal.ofReal (exp (a ω * Y ω - v * a ω ^ 2 / 2)))
+      ((ha'.aemeasurable.mul hlaw.aemeasurable).sub
+        ((ha'.aemeasurable.pow_const 2).const_mul _ |>.div_const 2)).exp.ennreal_ofReal
+      (hw.mono hm le_rfl).aemeasurable
+  have hAB := (hm A hA).nullMeasurableSet.inter (hDQ.nullMeasurableSet_preimage hB)
+  rw [hsplit, withDensity_apply₀ _ hAB, ← lintegral_indicator₀ hAB]
+  calc
+    _ = ∫⁻ ω, A.indicator w ω * (D ⁻¹' B).indicator 1 ω ∂Q := by
+      apply lintegral_congr
+      intro ω
+      by_cases hωA : ω ∈ A <;> by_cases hωB : D ω ∈ B <;> simp [hωA, hωB]
+    _ = _ := by
+      rw [hfactor, hwint, lintegral_indicator_one₀ (hDQ.nullMeasurableSet_preimage hB), hmass,
+        lintegral_indicator (hm A hA), withDensity_apply _ (hm A hA)]
 
 end TauCeti.Probability

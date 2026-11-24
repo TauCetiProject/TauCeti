@@ -91,6 +91,8 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
   `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece_add`).
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
+* `TauCeti.OddComponentGridDiagram.support_decompose_bigradedChainMinusGrading_subset`: every
+  monomial of a homogeneous component of a chain is a monomial of the chain.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
   and `TauCeti.OddComponentGridDiagram.X_smul_mem_alexanderChainMinusPiece`: `∂⁻` preserves the
   Alexander grading and each variable `V_c` lowers it by one.
@@ -530,6 +532,32 @@ noncomputable def bigradedChainMinusGrading (R : Type*) [CommRing R] :
 theorem bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
     (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := by
   rw [bigradedChainMinusGrading]
+
+/-- Every monomial of a homogeneous component of a chain of `GC⁻` is a monomial of the chain. -/
+theorem support_decompose_bigradedChainMinusGrading_subset (R : Type*) [CommRing R]
+    (c : GridChainMinus R n) (g : ℤ × ℤ) (x : GridState n) :
+    ((DirectSum.decompose (G.bigradedChainMinusGrading R).piece c g : GridChainMinus R n)
+      x).support ⊆ (c x).support := by
+  classical
+  intro e he
+  have hmem (q : ℤ × ℤ) {f : Fin n →₀ ℕ}
+      (hf : f ∈ ((DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q :
+        GridChainMinus R n) x).support) : G.monomialBidegree x f = q := by
+    have hq : (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q :
+        GridChainMinus R n) ∈ G.bigradedChainMinusPiece R q := by
+      rw [← bigradedChainMinusGrading_piece]
+      exact (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q).property
+    rw [mem_bigradedChainMinusPiece] at hq
+    exact hq x f hf
+  rw [MvPolynomial.mem_support_iff] at he ⊢
+  rw [← DirectSum.sum_support_decompose (G.bigradedChainMinusGrading R).piece c,
+    Finsupp.finsetSum_apply, MvPolynomial.coeff_sum,
+    Finset.sum_eq_single_of_mem g (DFinsupp.mem_support_iff.mpr fun h0 => he (by simp [h0]))]
+  · exact he
+  · intro q _ hqg
+    by_contra hne
+    exact hqg ((hmem q (MvPolynomial.mem_support_iff.mpr hne)).symm.trans
+      (hmem g (MvPolynomial.mem_support_iff.mpr he)))
 
 /-- The unblocked grid differential is homogeneous of bidegree `(-1, 0)`. -/
 theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar
-public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
-public import TauCeti.Algebra.Homology.DG.Algebra.KoszulTwist
+public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Adjoin
 
 /-!
 # Twisting cochains and the cobar universal property
@@ -155,27 +154,9 @@ include hC hA in
 only if it does so on the desuspended generators. -/
 theorem map_cobarDifferential_iff (φ : tensorAlgebraPiece (G.shift (-1)) →ₐᵍ[R] 𝒜) :
     (∀ x, dA (φ x) = φ (cobarDifferential G Δ dC x)) ↔
-      ∀ c, dA (φ (ι R c)) = φ (cobarDifferential G Δ dC (ι R c)) := by
-  refine ⟨fun h c ↦ h _, fun h x ↦ ?_⟩
-  have hφ : LinearMap.IsHomogeneous φ.toAlgHom.toLinearMap
-      (InternalGrading.ofDecomposition (tensorAlgebraPiece (G.shift (-1)))).piece
-      (InternalGrading.ofDecomposition 𝒜).piece 0 :=
-    LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
-      simpa only [InternalGrading.ofDecomposition_piece, add_zero,
-        AlgHom.toLinearMap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using
-        φ.map_mem (by simpa only [InternalGrading.ofDecomposition_piece] using hx)
-  have htwist (x : TensorAlgebra R C) := hφ.koszulTwist_apply 1 x
-  simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-    AlgHom.toLinearMap_apply, GradedAlgHom.coe_toAlgHom] at htwist
-  induction x using TensorAlgebra.induction with
-  | algebraMap r => simp [hA.map_algebraMap]
-  | ι c => exact h c
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | mul x y hx hy =>
-    rw [map_mul, hA.toIsNonUnitalDGAlgebra.leibniz_koszulTwist,
-      hC.isDGAlgebra_cobarDifferential.toIsNonUnitalDGAlgebra.leibniz_koszulTwist,
-      map_add, map_mul, map_mul, hx, hy]
-    rw [htwist]
+      ∀ c, dA (φ (ι R c)) = φ (cobarDifferential G Δ dC (ι R c)) :=
+  ⟨fun h _ ↦ h _, fun h _ ↦ hC.isDGAlgebra_cobarDifferential.map_d_eq_of_mem_adjoin hA φ
+    (Set.forall_mem_range.mpr h) (adjoin_range_ι (R := R) (M := C) ▸ Algebra.mem_top)⟩
 
 /-- The unique graded algebra extension of `-τ` is a DG algebra map when `τ` is a twisting
 cochain. -/
