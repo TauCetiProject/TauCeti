@@ -87,6 +87,13 @@ theorem bruhatCell_weylProjection (n : D.weylSubgroup K) :
       DoubleCoset.doubleCoset (n : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) :=
   D.bruhatCell_eq_doubleCoset_of_weylProjection_eq K rfl
 
+/-- Every Weyl lift `n : D.weylSubgroup K` belongs to the Bruhat cell of `D.weylProjection K n`.
+-/
+theorem mem_bruhatCell_weylProjection (n : D.weylSubgroup K) :
+    (n : D.points K) ∈ D.bruhatCell K (D.weylProjection K n) := by
+  rw [D.bruhatCell_weylProjection]
+  exact DoubleCoset.mem_doubleCoset_self _ _ _
+
 /-- The identity Bruhat cell is the Borel subgroup `D.borelSubgroup K`. -/
 @[simp]
 theorem bruhatCell_one :
