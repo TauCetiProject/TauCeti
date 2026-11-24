@@ -71,7 +71,7 @@ theorem volume_lineSection_add_smul {E : Type*} [AddCommMonoid E] [Module ℝ E]
 
 /-- The restriction of the indicator of a set to the line `t ↦ y + t • e` is the indicator of the
 line section. -/
-theorem indicator_one_line {E : Type*} [AddCommMonoid E] [Module ℝ E] (s : Set E) (y e : E) :
+theorem indicator_one_line {E : Type*} [Add E] [SMul ℝ E] (s : Set E) (y e : E) :
     (fun t : ℝ ↦ s.indicator (1 : E → ℝ) (y + t • e)) = {t : ℝ | y + t • e ∈ s}.indicator 1 :=
   funext fun _ ↦ (indicator_comp_right (fun t : ℝ ↦ y + t • e)).symm
 

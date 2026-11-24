@@ -137,6 +137,23 @@ theorem tsupport_compOfIsClosedEmbedding_subset {D : Type*} [NormedAddCommGroup 
     tsupport (ψ.compOfIsClosedEmbedding hf hfe) ⊆ f ⁻¹' tsupport ψ :=
   tsupport_comp_subset_preimage (ψ : E → F) hfe.continuous
 
+/-- The pullback along the identity is the test function itself; the open sets agree
+definitionally (`Opens.comap_id`). -/
+@[simp]
+theorem compOfIsClosedEmbedding_id (ψ : 𝓓^{n}(Ω, F)) :
+    ψ.compOfIsClosedEmbedding contDiff_id IsClosedEmbedding.id = ψ :=
+  (rfl)
+
+/-- Pulling back along `f` and then along `g` is pulling back along `f ∘ g`; the open sets agree
+definitionally (`Opens.comap_comp`). -/
+theorem compOfIsClosedEmbedding_compOfIsClosedEmbedding {D D' : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup D'] [NormedSpace ℝ D'] (ψ : 𝓓^{n}(Ω, F)) {f : D → E}
+    (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) {g : D' → D} (hg : ContDiff ℝ n g)
+    (hge : IsClosedEmbedding g) :
+    (ψ.compOfIsClosedEmbedding hf hfe).compOfIsClosedEmbedding hg hge =
+      ψ.compOfIsClosedEmbedding (hf.comp hg) (hfe.comp hge) :=
+  (rfl)
+
 /-- The pullback of the zero test function is zero. -/
 @[simp]
 theorem compOfIsClosedEmbedding_zero {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]

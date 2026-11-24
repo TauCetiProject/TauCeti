@@ -86,7 +86,9 @@ theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeri
 
 /-- The derivative of the restriction `t ↦ ψ (y + t • e)` of a test function to a line is the
 directional derivative of `ψ` along the line. This holds at every smoothness `n` and for every
-codomain, with both sides `0` where `ψ` is not differentiable. -/
+codomain, with both sides `0` when the restriction `s ↦ ψ (y + s • e)` is not differentiable at
+`t`. -/
+@[simp]
 theorem deriv_lineTestFunction {n : ℕ∞} (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) (t : ℝ) :
     deriv (ψ.lineTestFunction y e he) t = lineDeriv ℝ ψ (y + t • e) e := by
   rw [show ⇑(ψ.lineTestFunction y e he) = fun s : ℝ => ψ (y + s • e) from
