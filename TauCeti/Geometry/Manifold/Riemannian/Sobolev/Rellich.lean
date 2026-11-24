@@ -100,24 +100,16 @@ private theorem exists_setLIntegral_le_mul_setLIntegral_comp (L : E ≃L[ℝ] F)
     ((continuousOn_chartVolumeDensity_extChartAt_symm (I := I) p).mono
       (mapsTo_iff_image_subset.1 hKt))
   -- The image of the Haar measure of `F` is a positive multiple `c` of the Haar measure of `E`.
-  have : ((volume : Measure F).map L.symm).IsAddHaarMeasure := L.symm.isAddHaarMeasure_map volume
-  set c := Measure.addHaarScalarFactor ((volume : Measure F).map L.symm)
-    (Module.finBasis ℝ E).addHaar
-  have hc : (volume : Measure F).map L.symm = (c : ℝ≥0∞) • (Module.finBasis ℝ E).addHaar := by
-    rw [← ENNReal.smul_def]
-    exact Measure.isAddLeftInvariant_eq_smul _ _
-  have hc0 : (c : ℝ≥0∞) ≠ 0 :=
-    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _).ne'
+  obtain ⟨c, hc0, hc⟩ := exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F) L.symm
+  replace hc0 : (c : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hc0
   refine ⟨ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹,
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hc0), fun g ↦ ?_⟩
   -- Changing variables along `L⁻¹`, the integral over `W` is `c⁻¹` times that over `V`.
-  set e := L.symm.toHomeomorph.toMeasurableEquiv
-  have he : (e : F → E) = L.symm := by
-    rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph]
   have hcoord : (c : ℝ≥0∞) * ∫⁻ z in W, g ((extChartAt I p).symm z)
       ∂(Module.finBasis ℝ E).addHaar = ∫⁻ y in V, g ((extChartAt I p).symm (L.symm y)) := by
-    rw [← smul_eq_mul, ← lintegral_smul_measure, ← Measure.restrict_smul, ← hc, ← he,
-      e.restrict_map, lintegral_map_equiv, he, L.symm.injective.preimage_image]
+    have hL : MeasurableEmbedding L.symm := L.symm.toHomeomorph.measurableEmbedding
+    rw [← smul_eq_mul, ← ENNReal.smul_def, ← lintegral_smul_measure, ← hc, hL.lintegral_map,
+      L.symm.injective.preimage_image]
   calc ∫⁻ x in (extChartAt I p).source ∩ extChartAt I p ⁻¹' W, g x ∂riemannianVolume I M
       ≤ ENNReal.ofReal D * ∫⁻ z in W, g ((extChartAt I p).symm z)
           ∂(Module.finBasis ℝ E).addHaar :=

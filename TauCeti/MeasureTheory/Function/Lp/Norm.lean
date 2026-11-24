@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -387,8 +388,7 @@ theorem Lp.eNorm_rpow_eq_lintegral {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (f : Lp F p m) :
     ‖f‖ₑ ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
-  rw [Lp.eNorm_def, eLpNorm_eq_eLpNorm' hp0 hp (Lp.aestronglyMeasurable f),
-    ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
+  rw [Lp.eNorm_def, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp (Lp.aestronglyMeasurable f)]
 
 /-- The squared extended norm of an `L²` function is the lower integral of its squared pointwise
 extended norm. -/
