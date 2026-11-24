@@ -107,6 +107,22 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart)
 open scoped NNReal ENNReal
 
+/-- The truncation `S_R`, read in real coordinates, for a neck length `L > 4` with `R ≤ L / 2`: it
+lies in the plumbed four-punctured sphere `Σ_L`, and the plumbing map `ψ_L` carries it into `Σ_L`.
+-/
+private theorem TauCeti.ThricePuncturedSphere.Puncture.preimage_truncation_subset_plumbedSphere
+    {q : Puncture} (hq : q ≠ inf) {R L : ℝ} (hL : 4 < L) (hRL : R ≤ L / 2) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ {z : ℝ × ℝ |
+        (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+          Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ∧
+      MapsTo (realChart (q.plumbingMap L)) (Complex.equivRealProdCLM.symm ⁻¹' truncation R)
+        {z | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+          Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  refine ⟨fun z hz ↦ mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hRL hz),
+    fun w hw ↦ ?_⟩
+  simp only [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
+  exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hRL hw)
+
 namespace TauCeti.SymplecticForm
 
 open Floer TauCeti.MeasureTheory
@@ -154,8 +170,7 @@ private theorem receiving_piece (ω : SymplecticForm V) (hq : q ≠ inf)
     Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   -- The truncation `S_R` lies in `Σ_L`, and there the plumbed datum is the datum of `S`.
-  have hTP : T ⊆ P := fun z hz ↦
-    mem_plumbedSphere_of_mem_truncation hq hL4 (truncation_mono (by linarith) hz)
+  have hTP : T ⊆ P := (preimage_truncation_subset_plumbedSphere hq hL4 (by linarith)).1
   set Kb : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦
     pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x v
   set Kp : ℂ → ℝ × ℝ → V → ℝ := fun v z x ↦
@@ -227,9 +242,7 @@ private theorem inserted_piece (ω : SymplecticForm V) (hq : q ≠ inf)
   set ψ := realChart (q.plumbingMap L)
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   -- The plumbing map carries the truncation `S_R` into `Σ_L`.
-  have hψP : MapsTo ψ T P := fun w hw ↦ by
-    simp only [P, ψ, mem_ofPred_eq, equivRealProdCLM_symm_realChart]
-    exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL4 (truncation_mono (by linarith) hw)
+  have hψP : MapsTo ψ T P := (preimage_truncation_subset_plumbedSphere hq hL4 (by linarith)).2
   have hψs : ContDiff ℝ 3 ψ := contDiff_realChart_plumbingMap q L
   have hU : IsOpen (thricePuncturedSphereReal ∩ ψ ⁻¹' P) :=
     isOpen_thricePuncturedSphereReal.inter ((isOpen_plumbedSphere q L).preimage hψs.continuous)
@@ -432,9 +445,9 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete_plumbedPerturbation
       (contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ hHbs r) 1)
       (contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ hHbs r) I) hJ
       isOpen_thricePuncturedSphereReal hK (prod_mono subset_rfl (subset_univ K)) hJt hU hUS hUC
-      hub hflb (fun k ↦ (huK k).mono_left fun z hz ↦
-        mem_plumbedSphere_of_mem_truncation hq (hL4 k)
-          (truncation_mono (by linarith [hL4 k]) (hUT k hz))) hintb (fun k ↦ hEb k)
+      hub hflb (fun k ↦ (huK k).mono_left ((hUT k).trans
+        (preimage_truncation_subset_plumbedSphere hq (hL4 k) (by linarith [hL4 k])).1))
+      hintb (fun k ↦ hEb k)
   obtain ⟨φ', Z', v', hφ', hZS', hZC', -, -, hvc', hvK', hlim'⟩ :=
     ω.exists_tendstoLocallyUniformlyOn_subseq_off_discrete hS
       (contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ hHas r) 1)
@@ -443,10 +456,8 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete_plumbedPerturbation
       (fun n ↦ hU (φ n)) (fun n ↦ hUS (φ n))
       (fun C hC hCS ↦ hφ.tendsto_atTop.eventually (hUC C hC hCS)) (fun n ↦ hua (φ n))
       (fun n ↦ hfla (φ n))
-      (fun n w hw ↦ huK (φ n) (by
-        simpa only [mem_ofPred_eq, equivRealProdCLM_symm_realChart] using
-          plumbingMap_mem_plumbedSphere_of_mem_truncation hq (hL4 (φ n))
-            (truncation_mono (by linarith [hL4 (φ n)]) (hUT (φ n) hw))))
+      (fun n ↦ (huK (φ n)).comp ((preimage_truncation_subset_plumbedSphere hq (hL4 (φ n))
+        (by linarith [hL4 (φ n)])).2.mono_left (hUT (φ n))))
       (fun n ↦ hinta (φ n)) fun n ↦ hEa (φ n)
   refine ⟨φ ∘ φ', Z, Z', v, v', hφ.comp hφ', hZS, hZC, hZS', hZC', hvc, hvK,
     hlim.comp_tendsto hφ'.tendsto_atTop, hvc', hvK', hlim'⟩
@@ -477,11 +488,8 @@ private theorem preimage_truncation_max_subset_plumbedSphere (hq : q ≠ inf) {R
       MapsTo (realChart (q.plumbingMap L)) (Complex.equivRealProdCLM.symm ⁻¹' truncation (max R 0))
         {z | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
           Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-  have hR₀ : max R 0 ≤ L / 2 := max_le (by linarith) (by linarith)
-  refine ⟨preimage_mono (truncation_mono (le_max_left R 0)), fun z hz ↦
-    mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hR₀ hz), fun w hw ↦ ?_⟩
-  simp only [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
-  exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hR₀ hw)
+  exact ⟨preimage_mono (truncation_mono (le_max_left R 0)),
+    preimage_truncation_subset_plumbedSphere hq hL (max_le (by linarith) (by linarith))⟩
 
 omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- **The receiving piece.** Let `u` be a `C³` solution of the Floer equation of the plumbed
