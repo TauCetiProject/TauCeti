@@ -9,12 +9,14 @@ public import TauCeti.RingTheory.Kaehler.Presentation
 import Mathlib.RingTheory.AdjoinRoot
 
 /-!
-# Kähler differentials do not commute with inseparable base change
+# The pullback of `Ω[K⁄k]` does not generate `Ω[X'⁄k]` for an inseparable extension
 
 Over a nontrivial ring `k` of characteristic `p ≠ 0` and for `t : k`, let
 `K = k[y] ⧸ (y ^ p - t)` and `X' = k[τ, y] ⧸ (τ ^ p - t, y ^ p - t)`. Then `Ω[K⁄k] = K dy`, while
 `Ω[X'⁄k]` is free on `dτ, dy` (`TauCeti.kaehlerDifferentialBasisPowSubC`), so the image `dy` of
-the generator of `Ω[K⁄k]` does not span `Ω[X'⁄k]`.
+the generator of `Ω[K⁄k]` does not span `Ω[X'⁄k]`. Base change itself is still an isomorphism:
+for `k' = k[τ] ⧸ (τ ^ p - t)`, Mathlib's `KaehlerDifferential.tensorKaehlerEquiv` identifies
+`X' ⊗[K] Ω[K⁄k]` with `Ω[X'⁄k']`.
 -/
 
 public section
@@ -41,7 +43,7 @@ private theorem nontrivial_powSubCQuotient {k : Type*} [CommRing k] [Nontrivial 
   simp only [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C] at hroot
   simpa [f, ← AdjoinRoot.algebraMap_eq] using hroot
 
-/-- **Ω does not commute with inseparable base change.** Over a nontrivial ring `k` of
+/-- **`dy` does not span `Ω[X'⁄k]`.** Over a nontrivial ring `k` of
 characteristic `p ≠ 0` and for `t : k`, the differentials of
 `X' = k[τ, y] ⧸ (τ ^ p - t, y ^ p - t)` are free on `dτ, dy`
 (`kaehlerDifferentialBasisPowSubC`), so the single differential `dy`, the image of the generator
