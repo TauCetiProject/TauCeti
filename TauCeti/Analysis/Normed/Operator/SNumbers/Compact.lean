@@ -80,6 +80,22 @@ open scoped NNReal Topology
 
 namespace ContinuousLinearMap
 
+/-- If `S` is totally bounded and `s` is antitone with `s |N| ≤ C ε` for every finite `ε`-cover
+`N` of `S`, then `s` tends to zero. -/
+private theorem tendsto_atTop_nhds_zero_of_isCover {X : Type*} [PseudoEMetricSpace X] {S : Set X}
+    (hS : TotallyBounded S) {s : ℕ → ℝ≥0} (hs : Antitone s) {C : ℝ≥0} (hC : C ≠ 0)
+    (h : ∀ (ε : ℝ≥0) (N : Finset X), IsCover ε S N → s N.card ≤ C * ε) :
+    Tendsto s atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
+  -- Cover `S` by finitely many balls of radius `a / (2 C)`.
+  have hε : a / (2 * C) ≠ 0 := (div_pos ha (by positivity)).ne'
+  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hS
+  refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
+  have hCa : C * (a / (2 * C)) = a / 2 := by field_simp
+  refine ((hs hn).trans (h _ _ (by simpa using hN))).trans_lt ?_
+  rw [hCa]
+  exact NNReal.half_lt_self ha.ne'
+
 /-! ### Kolmogorov numbers -/
 
 section Kolmogorov
@@ -114,16 +130,9 @@ theorem tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[�
     (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
     Tendsto T.kolmogorovNumber atTop (𝓝 0) := by
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
-  -- Cover `T(B_E)` by finitely many balls of radius `a / (2 ‖c‖)`.
-  have hc₀ : 0 < ‖c‖₊ := one_pos.trans (by exact_mod_cast hc)
-  have hε : a / (2 * ‖c‖₊) ≠ 0 := (div_pos ha (by positivity)).ne'
-  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hT
-  refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
-  refine ((T.antitone_kolmogorovNumber hn).trans
-    (T.kolmogorovNumber_le_nnnorm_mul_of_isCover le_rfl (by simpa using hN) hc)).trans_lt ?_
-  rw [mul_div_assoc', mul_comm 2, ← div_div, mul_div_cancel_left₀ _ hc₀.ne']
-  exact NNReal.half_lt_self ha.ne'
+  exact tendsto_atTop_nhds_zero_of_isCover hT T.antitone_kolmogorovNumber
+    (one_pos.trans (by exact_mod_cast hc)).ne'
+    fun _ _ hN ↦ T.kolmogorovNumber_le_nnnorm_mul_of_isCover le_rfl hN hc
 
 /-- Every compact operator has Kolmogorov numbers tending to zero. -/
 theorem _root_.IsCompactOperator.tendsto_kolmogorovNumber {T : E →L[𝕜] F}
@@ -256,7 +265,8 @@ theorem gelfandNumber_le_two_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε :
     mem_image_of_mem T (mem_closedBall_zero_iff.2 hx.le)
   have hxy' : ‖y - T x‖ ≤ ε := by rw [← dist_eq_norm, dist_comm]; exact mem_closedBall.1 hxy
   -- The centre `y` has norm `φ y (y - T x) ≤ ε`, since `φ y` vanishes at `T x`.
-  have hφx : φ y (T x) = 0 := congr_fun x.property ⟨y, hy⟩
+  have hφx : φ y (T x) = 0 := by
+    simpa [L] using congr_fun (LinearMap.mem_ker.1 x.property) ⟨y, hy⟩
   have hy' : ‖y‖ ≤ ε := by
     have h : φ y (y - T x) = ‖y‖ := by rw [map_sub, hφx, sub_zero, hφy]
     calc ‖y‖ = ‖φ y (y - T x)‖ := by rw [h, RCLike.norm_ofReal, abs_norm]
@@ -280,17 +290,9 @@ theorem gelfandNumber_two_pow_le_two_mul_entropyNumber (T : E →L[𝕜] F) (n :
 /-- If `T(B_E)` is totally bounded, the Gelfand numbers of `T` tend to zero. -/
 theorem tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
     (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
-    Tendsto T.gelfandNumber atTop (𝓝 0) := by
-  refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
-  -- Cover `T(B_E)` by finitely many balls of radius `a / 4`.
-  have hε : a / 4 ≠ 0 := (div_pos ha (by positivity)).ne'
-  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hT
-  refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
-  refine ((T.antitone_gelfandNumber hn).trans
-    (T.gelfandNumber_le_two_mul_of_isCover le_rfl (by simpa using hN))).trans_lt ?_
-  rw [mul_div_assoc', show (4 : ℝ≥0) = 2 * 2 by norm_num, ← div_div,
-    mul_div_cancel_left₀ _ two_ne_zero]
-  exact NNReal.half_lt_self ha.ne'
+    Tendsto T.gelfandNumber atTop (𝓝 0) :=
+  tendsto_atTop_nhds_zero_of_isCover hT T.antitone_gelfandNumber two_ne_zero
+    fun _ _ hN ↦ T.gelfandNumber_le_two_mul_of_isCover le_rfl hN
 
 /-- Every compact operator has Gelfand numbers tending to zero. -/
 theorem _root_.IsCompactOperator.tendsto_gelfandNumber {T : E →L[𝕜] F}
