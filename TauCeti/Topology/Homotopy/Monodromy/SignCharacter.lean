@@ -33,7 +33,8 @@ character of the loop `t ↦ f(e^{2πit})` at `f 1` is an invariant of the path 
 a double cover it is `1` exactly when `f` lifts to the cover
 (`IsCoveringMap.freeLoopSignCharacter_eq_one_iff`). On the Moore free loop space, the
 **sign exponent** of a free loop is `0` when its sign is `1` and `-1` otherwise
-(`IsCoveringMap.freeLoopSignExponent`); it is constant on path components
+(`IsCoveringMap.freeLoopSignExponent`), the exponent `TauCeti.MooreFreeLoopSpace.signExponent` of
+the family of sign characters; it is constant on path components
 (`IsCoveringMap.freeLoopSignExponent_eq_of_joined`).
 
 ## Main definitions
@@ -268,31 +269,47 @@ theorem freeLoopSignCharacter_eq_one_iff {σ : E → E}
       (by simp)).trans ?_)
     simp
 
+/-- The sign character of a free Moore loop, as a circle map, is the sign character at its base
+point of the loop read as a based Moore loop there. -/
+theorem freeLoopSignCharacter_toCircleMap (γ : MooreFreeLoopSpace X) :
+    hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) =
+      hp.signCharacter (hfin γ.basepoint)
+        (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) := by
+  rw [MooreFreeLoopSpace.toCircleMap_eq_toCircle, freeLoopSignCharacter_toCircle,
+    MooreLoopSpace.fundamentalGroupHom_apply, map_inv, Int.units_inv_eq_self]
+
 /-- **The sign exponent** `w` of a Moore free loop: `0` when the loop has sign `1`, so that
 for the orientation cover of a vector bundle the bundle pulled back along the loop is orientable,
-and `-1` otherwise. -/
+and `-1` otherwise. It is the exponent `TauCeti.MooreFreeLoopSpace.signExponent` of the family of
+sign characters of the cover. -/
 def freeLoopSignExponent (γ : MooreFreeLoopSpace X) : ℤ :=
-  if hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) = 1 then 0 else -1
+  MooreFreeLoopSpace.signExponent (fun x ↦ hp.signCharacter (hfin x)) γ
+
+theorem freeLoopSignExponent_def (γ : MooreFreeLoopSpace X) :
+    hp.freeLoopSignExponent hfin γ =
+      MooreFreeLoopSpace.signExponent (fun x ↦ hp.signCharacter (hfin x)) γ :=
+  (rfl)
 
 /-- The sign exponent of a free loop is `0` exactly when its sign in `ℤˣ` is `1`. -/
 @[simp]
 theorem freeLoopSignExponent_eq_zero_iff (γ : MooreFreeLoopSpace X) :
     hp.freeLoopSignExponent hfin γ = 0 ↔
       hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) = 1 := by
-  simp [freeLoopSignExponent]
+  rw [freeLoopSignExponent_def, MooreFreeLoopSpace.signExponent_eq_zero_iff,
+    freeLoopSignCharacter_toCircleMap]
 
 /-- The sign exponent of a free loop is `-1` exactly when its sign in `ℤˣ` is `-1`. -/
 @[simp]
 theorem freeLoopSignExponent_eq_neg_one_iff (γ : MooreFreeLoopSpace X) :
     hp.freeLoopSignExponent hfin γ = -1 ↔
       hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ) = -1 := by
-  rcases Int.units_eq_one_or (hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ))
-    with h | h <;> simp [freeLoopSignExponent, h]
+  rw [freeLoopSignExponent_def, MooreFreeLoopSpace.signExponent_eq_neg_one_iff,
+    freeLoopSignCharacter_toCircleMap]
 
 /-- The sign exponent is constant on the path components of the free loop space. -/
 theorem freeLoopSignExponent_eq_of_joined {γ δ : MooreFreeLoopSpace X} (h : Joined γ δ) :
-    hp.freeLoopSignExponent hfin γ = hp.freeLoopSignExponent hfin δ := by
-  rw [freeLoopSignExponent, freeLoopSignExponent, hp.freeLoopSignCharacter_eq_of_joined hfin
-    (h.map MooreFreeLoopSpace.toCircleMap.continuous)]
+    hp.freeLoopSignExponent hfin γ = hp.freeLoopSignExponent hfin δ :=
+  MooreFreeLoopSpace.signExponent_eq_of_joined
+    (signCharacter_fundamentalGroupMulEquivOfPath hp (hfin _) (hfin _)) h
 
 end IsCoveringMap

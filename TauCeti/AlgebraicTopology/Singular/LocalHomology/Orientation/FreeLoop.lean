@@ -23,7 +23,7 @@ The sign is constant on the path components of the free loop space
 classes after a change of base point along the track of the base point, and the orientation
 character is invariant under both, being a character with values in an abelian group and
 independent of the base point (`TauCeti.orientationCharacter_fundamentalGroupMulEquivOfPath`,
-`TauCeti.apply_fromPath_eq_of_joined_toCircle`). The
+`TauCeti.MooreFreeLoopSpace.apply_fundamentalGroupHom_toMooreLoop_eq_of_joined`). The
 statement for loops parametrized by the unit interval is
 `TauCeti.orientationCharacter_eq_of_joined_toCircle`.
 
@@ -109,13 +109,9 @@ theorem orientationSign_eq_orientationCharacter_toPath (γ : MooreFreeLoopSpace 
 /-- **The orientation sign is constant on the path components of the free loop space**: freely
 homotopic free loops preserve or reverse the local orientations together. -/
 theorem orientationSign_eq_of_joined {γ γ' : MooreFreeLoopSpace M} (h : Joined γ γ') :
-    orientationSign hd γ = orientationSign hd γ' := by
-  have hcircle (δ : MooreFreeLoopSpace M) : toCircleMap δ = δ.toMooreLoop.toPath.toCircle := by
-    simpa only [toFreeLoop_toMooreLoop] using toCircleMap_toFreeLoop_eq_toCircle _ δ.toMooreLoop
-  have h' := h.map (toCircleMap (X := M)).continuous
-  rw [hcircle, hcircle] at h'
-  simp only [orientationSign_eq_orientationCharacter_toPath]
-  exact orientationCharacter_eq_of_joined_toCircle hd h'
+    orientationSign hd γ = orientationSign hd γ' :=
+  apply_fundamentalGroupHom_toMooreLoop_eq_of_joined (orientationCharacter hd)
+    (orientationCharacter_fundamentalGroupMulEquivOfPath hd) h
 
 /-- **Constant loops preserve the orientation.** -/
 @[simp]

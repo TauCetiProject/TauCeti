@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.DGLocalSystem.FreeLoopTwist
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Orientation.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.FreeLoop
-public import TauCeti.Topology.PathSpace.Moore.Rotation
 
 /-!
 # The orientation part of the Viterbo twist
@@ -19,23 +19,22 @@ Humilière–Oancea, §§1.5 and 4.1). It is the product `σ ⊗ ev₀^*(o_M^{-1
 sign system `σ` built from the second Stiefel–Whitney class of `M` with an orientation part, where
 `o_M` is the orientation local system of `M` (`TauCeti.RankOneLocalSystem.orientation`),
 `ev₀ : 𝓛M → M` is evaluation at the base point, and `w(γ)` is `0` on the loops along which `M` is
-orientable and `-1` on the others (`TauCeti.MooreFreeLoopSpace.orientationExponent`). This file
-constructs the orientation part
+orientable and `-1` on the others: the sign exponent
+`TauCeti.MooreFreeLoopSpace.signExponent` of the orientation characters of `M`, constant on the
+path components of `𝓛M`. This file constructs the orientation part
 
 `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w(γ)})`
 
 as a rank-one local system on the free loop space based at a free loop `γ`
-(`TauCeti.RankOneLocalSystem.viterboOrientationTwist`). The exponent `w` is constant on the path
-components of `𝓛M` (`TauCeti.MooreFreeLoopSpace.orientationExponent_eq_of_joined`).
-
-Since `o_M` is its own inverse, the orientation part is `ev₀^* o_M` on the component of a loop
-preserving the local orientations
-(`TauCeti.RankOneLocalSystem.viterboOrientationTwist_of_orientationSign_eq_one`), and trivial on
-the component of a loop reversing them
-(`TauCeti.RankOneLocalSystem.viterboOrientationTwist_of_orientationSign_ne_one`). A loop of free
-loops acts accordingly by the orientation character of the loop traced by the base points, or
-trivially (`TauCeti.RankOneLocalSystem.viterboOrientationTwist_ρ_apply`). It is trivial on an
-orientable manifold and over a ring in which `2 = 0`, and it is its own inverse.
+(`TauCeti.RankOneLocalSystem.viterboOrientationTwist`,
+`TauCeti.RankOneLocalSystem.viterboOrientationTwist_def`). It is the twist
+`TauCeti.RankOneLocalSystem.freeLoopTwist` of the family of orientation characters of `M`
+(`TauCeti.RankOneLocalSystem.viterboOrientationTwist_eq_freeLoopTwist`), so the general laws of
+that twist apply: since `o_M` is its own inverse, it is `ev₀^* o_M` on the component of a loop
+preserving the local orientations and trivial on the component of a loop reversing them, a loop
+of free loops acts accordingly by the orientation character of the loop traced by the base points
+or trivially, it is its own inverse, and it is trivial over a ring in which `2 = 0`. It is trivial
+on an orientable manifold.
 
 The factor `ev₀^*(o_M^{-w})` is needed. Rotating a free loop `γ` once around itself is a loop of
 free loops based at `γ` whose base points trace `γ`
@@ -50,22 +49,18 @@ identification `i_M^* η₀ ≃ o_M` of the twist along the constant loops.
 
 ## Main definitions
 
-* `TauCeti.MooreFreeLoopSpace.orientationExponent`: the exponent `w(γ) ∈ {0, -1}`.
 * `TauCeti.RankOneLocalSystem.viterboOrientationTwist`: the orientation part
   `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w})` of the Viterbo twist.
 
 ## Main results
 
-* `TauCeti.RankOneLocalSystem.viterboOrientationTwist_of_orientationSign_eq_one`,
-  `TauCeti.RankOneLocalSystem.viterboOrientationTwist_of_orientationSign_ne_one`: it is `ev₀^* o_M`
-  on the orientable components and trivial on the others.
-* `TauCeti.RankOneLocalSystem.viterboOrientationTwist_ρ_apply`,
-  `TauCeti.RankOneLocalSystem.monodromy_viterboOrientationTwist`: its action and its monodromy.
 * `TauCeti.RankOneLocalSystem.viterboOrientationTwist_ρ_rotationLoop`: it is trivial along the
   rotation of every loop, while `ev₀^* o_M` is not
   (`TauCeti.RankOneLocalSystem.pullback_basepointMap_orientation_ρ_rotationLoop_ne_one`).
 * `TauCeti.RankOneLocalSystem.pullback_constMap_viterboOrientationTwist`: along the constant loops
   it is the orientation local system.
+* `TauCeti.HomologicalOrientation.viterboOrientationTwist_eq_one`: it is trivial on an orientable
+  manifold.
 
 ## References
 
@@ -89,117 +84,33 @@ variable {M E : Type w} [TopologicalSpace M] [T2Space M]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {d : ℕ}
   (R : Type*) [CommRing R] (hd : finrank ℝ E = d)
 
-namespace MooreFreeLoopSpace
-
-/-- The exponent `w(γ)` of a free loop `γ` in the degree-zero twist of the Viterbo isomorphism:
-`0` when `γ` preserves the local orientations and `-1` when it reverses them. -/
-def orientationExponent (γ : MooreFreeLoopSpace M) : ℤ :=
-  if orientationSign hd γ = 1 then 0 else -1
-
-/-- A loop preserving the orientation has exponent `0`. -/
-theorem orientationExponent_of_orientationSign_eq_one {γ : MooreFreeLoopSpace M}
-    (h : orientationSign hd γ = 1) : orientationExponent hd γ = 0 := by
-  simp [orientationExponent, h]
-
-/-- A loop reversing the orientation has exponent `-1`. -/
-theorem orientationExponent_of_orientationSign_ne_one {γ : MooreFreeLoopSpace M}
-    (h : orientationSign hd γ ≠ 1) : orientationExponent hd γ = -1 := by
-  simp [orientationExponent, h]
-
-/-- The exponent is constant on the path components of the free loop space. -/
-theorem orientationExponent_eq_of_joined {γ γ' : MooreFreeLoopSpace M} (h : Joined γ γ') :
-    orientationExponent hd γ = orientationExponent hd γ' := by
-  rw [orientationExponent, orientationExponent, orientationSign_eq_of_joined hd h]
-
-/-- Constant loops have exponent `0`. -/
-@[simp]
-theorem orientationExponent_const (x : M) : orientationExponent hd (const x) = 0 :=
-  orientationExponent_of_orientationSign_eq_one hd (orientationSign_const hd x)
-
-end MooreFreeLoopSpace
-
 namespace RankOneLocalSystem
 
 /-- The **orientation part of the Viterbo twist**, `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w})`, as a
 rank-one local system on the free loop space of a manifold `M` based at a free loop `γ`: `o_M` is
 the orientation local system of `M`, pulled back along evaluation at the base point, and `w` is the
-exponent `TauCeti.MooreFreeLoopSpace.orientationExponent`, `0` when `γ` preserves the local
-orientations and `-1` when it reverses them. -/
+sign exponent of the orientation characters, `0` when `γ` preserves the local orientations and
+`-1` when it reverses them. It is the twist `TauCeti.RankOneLocalSystem.freeLoopTwist` of the
+family of orientation characters. -/
 def viterboOrientationTwist (γ : MooreFreeLoopSpace M) :
     RankOneLocalSystem (MooreFreeLoopSpace M) γ R :=
-  pullback (basepointMap M) (basepointMap_apply γ) (orientation R hd γ.basepoint)⁻¹ *
-    pullback (basepointMap M) (basepointMap_apply γ)
-      (orientation R hd γ.basepoint ^ (-orientationExponent hd γ))
+  freeLoopTwist R (orientationCharacter hd) γ
 
 variable {R}
 
+theorem viterboOrientationTwist_eq_freeLoopTwist (γ : MooreFreeLoopSpace M) :
+    viterboOrientationTwist R hd γ = freeLoopTwist R (orientationCharacter hd) γ :=
+  (rfl)
+
+/-- The orientation part of the Viterbo twist is the tensor product
+`ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w(γ)})` of two pullbacks of the orientation local system along the
+evaluation at the base point. -/
 theorem viterboOrientationTwist_def (γ : MooreFreeLoopSpace M) :
     viterboOrientationTwist R hd γ =
       pullback (basepointMap M) (basepointMap_apply γ) (orientation R hd γ.basepoint)⁻¹ *
         pullback (basepointMap M) (basepointMap_apply γ)
-          (orientation R hd γ.basepoint ^ (-orientationExponent hd γ)) :=
-  (rfl)
-
-/-- **On the component of a loop preserving the orientation, the orientation part of the Viterbo
-twist is `ev₀^* o_M`.** -/
-theorem viterboOrientationTwist_of_orientationSign_eq_one {γ : MooreFreeLoopSpace M}
-    (h : orientationSign hd γ = 1) :
-    viterboOrientationTwist R hd γ =
-      pullback (basepointMap M) (basepointMap_apply γ) (orientation R hd γ.basepoint) := by
-  rw [viterboOrientationTwist_def, orientationExponent_of_orientationSign_eq_one hd h, neg_zero,
-    zpow_zero, map_one, mul_one, inv_orientation]
-
-/-- **On the component of a loop reversing the orientation, the orientation part of the Viterbo
-twist is trivial.** -/
-theorem viterboOrientationTwist_of_orientationSign_ne_one {γ : MooreFreeLoopSpace M}
-    (h : orientationSign hd γ ≠ 1) : viterboOrientationTwist R hd γ = 1 := by
-  rw [viterboOrientationTwist_def, orientationExponent_of_orientationSign_ne_one hd h, neg_neg,
-    zpow_one, ← map_mul, inv_mul_cancel, map_one]
-
-/-- A loop `Γ` of free loops based at `γ` acts on the orientation part of the Viterbo twist by the
-orientation character of the loop traced by the base points when `γ` preserves the orientation,
-and trivially when `γ` reverses it. -/
-theorem viterboOrientationTwist_ρ_apply (γ : MooreFreeLoopSpace M)
-    (Γ : MooreLoopSpace (MooreFreeLoopSpace M) γ) :
-    (viterboOrientationTwist R hd γ).ρ Γ =
-      if orientationSign hd γ = 1 then
-        Units.map (Int.castRingHom R).toMonoidHom
-          (orientationCharacter hd γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint
-            (MooreLoopSpace.map (basepointMap M) (basepointMap_apply γ) Γ)))
-      else 1 := by
-  split_ifs with h
-  · rw [viterboOrientationTwist_of_orientationSign_eq_one hd h, pullback_ρ_apply,
-      orientation_ρ_apply]
-  · rw [viterboOrientationTwist_of_orientationSign_ne_one hd h, one_ρ, MonoidHom.one_apply]
-
-/-- The monodromy of the orientation part of the Viterbo twist: the orientation character of `M`
-composed with the map of fundamental groups induced by evaluation at the base point, when `γ`
-preserves the orientation, and trivial when it reverses it. -/
-theorem monodromy_viterboOrientationTwist (γ : MooreFreeLoopSpace M) :
-    (viterboOrientationTwist R hd γ).monodromy =
-      if orientationSign hd γ = 1 then
-        ((Units.map (Int.castRingHom R).toMonoidHom).comp
-          (orientationCharacter hd γ.basepoint)).comp
-            (FundamentalGroup.mapOfEq (basepointMap M) (basepointMap_apply γ))
-      else 1 := by
-  split_ifs with h
-  · rw [viterboOrientationTwist_of_orientationSign_eq_one hd h, monodromy_pullback,
-      monodromy_orientation]
-  · rw [viterboOrientationTwist_of_orientationSign_ne_one hd h, monodromy_one]
-
-/-- **The orientation part of the Viterbo twist is its own inverse.** -/
-@[simp]
-theorem inv_viterboOrientationTwist (γ : MooreFreeLoopSpace M) :
-    (viterboOrientationTwist R hd γ)⁻¹ = viterboOrientationTwist R hd γ := by
-  by_cases h : orientationSign hd γ = 1
-  · rw [viterboOrientationTwist_of_orientationSign_eq_one hd h, ← map_inv, inv_orientation]
-  · rw [viterboOrientationTwist_of_orientationSign_ne_one hd h, inv_one]
-
-/-- **Over a ring of characteristic two the orientation part of the Viterbo twist is trivial.** -/
-theorem viterboOrientationTwist_eq_one_of_two_eq_zero (h2 : (2 : R) = 0)
-    (γ : MooreFreeLoopSpace M) : viterboOrientationTwist R hd γ = 1 := by
-  rw [viterboOrientationTwist_def, orientation_eq_one_of_two_eq_zero h2, inv_one, one_zpow,
-    map_one, one_mul]
+          (orientation R hd γ.basepoint ^ (-signExponent (orientationCharacter hd) γ)) := by
+  rw [viterboOrientationTwist_eq_freeLoopTwist, freeLoopTwist_def, orientation_def]
 
 /-! ### The rotation of a loop -/
 
@@ -209,7 +120,7 @@ theorem pullback_basepointMap_orientation_ρ_rotationLoop (γ : MooreFreeLoopSpa
     (pullback (basepointMap M) (basepointMap_apply γ) (orientation R hd γ.basepoint)).ρ
         γ.rotationLoop =
       Units.map (Int.castRingHom R).toMonoidHom (orientationSign hd γ) := by
-  rw [pullback_ρ_apply, map_basepointMap_rotationLoop, orientation_ρ_apply, orientationSign_def]
+  rw [orientation_def, pullback_basepointMap_ofMonodromy_ρ_rotationLoop, orientationSign_def]
 
 /-- **The pullback `ev₀^* o_M` alone is nontrivial along the rotation of a loop reversing the
 orientation**, over a ring in which `2 ≠ 0`. So the factor `ev₀^*(o_M^{-w})` of the Viterbo twist
@@ -219,17 +130,15 @@ theorem pullback_basepointMap_orientation_ρ_rotationLoop_ne_one (h2 : (2 : R) �
     {γ : MooreFreeLoopSpace M} (h : orientationSign hd γ ≠ 1) :
     (pullback (basepointMap M) (basepointMap_apply γ) (orientation R hd γ.basepoint)).ρ
       γ.rotationLoop ≠ 1 := by
-  rw [pullback_basepointMap_orientation_ρ_rotationLoop, Ne, Int.unitsMap_castRingHom_eq_one_iff]
-  exact not_or_intro h h2
+  rw [orientationSign_def] at h
+  rw [orientation_def]
+  exact pullback_basepointMap_ofMonodromy_ρ_rotationLoop_ne_one h2 h
 
 /-- **The orientation part of the Viterbo twist is trivial along the rotation of every loop.** -/
 @[simp]
 theorem viterboOrientationTwist_ρ_rotationLoop (γ : MooreFreeLoopSpace M) :
-    (viterboOrientationTwist R hd γ).ρ γ.rotationLoop = 1 := by
-  by_cases h : orientationSign hd γ = 1
-  · rw [viterboOrientationTwist_of_orientationSign_eq_one hd h,
-      pullback_basepointMap_orientation_ρ_rotationLoop, h, map_one]
-  · rw [viterboOrientationTwist_of_orientationSign_ne_one hd h, one_ρ, MonoidHom.one_apply]
+    (viterboOrientationTwist R hd γ).ρ γ.rotationLoop = 1 :=
+  freeLoopTwist_ρ_rotationLoop γ
 
 /-! ### Constant loops -/
 
@@ -237,20 +146,21 @@ theorem viterboOrientationTwist_ρ_rotationLoop (γ : MooreFreeLoopSpace M) :
 system**: its pullback along the inclusion `M → 𝓛M` of the constant loops is `o_M`. -/
 theorem pullback_constMap_viterboOrientationTwist (x : M) :
     pullback (constMap M) (constMap_apply x) (viterboOrientationTwist R hd (const x)) =
-      orientation R hd x :=
-  RankOneLocalSystem.ext <| MonoidHom.ext fun δ ↦ by
-    rw [viterboOrientationTwist_of_orientationSign_eq_one hd (orientationSign_const hd x),
-      pullback_ρ_apply, pullback_ρ_apply, orientation_ρ_apply, orientation_ρ_apply]
-    congr 1
-    exact orientationCharacter_fundamentalGroupHom_congr hd <| MoorePath.ext (by simp) fun t ↦ by
-      simp [MoorePath.map_apply]
+      orientation R hd x := by
+  have h := orientationSign_const hd x
+  rw [orientationSign_def] at h
+  refine RankOneLocalSystem.ext <| MonoidHom.ext fun δ ↦ ?_
+  rw [viterboOrientationTwist_eq_freeLoopTwist, freeLoopTwist_of_apply_eq_one h, pullback_ρ_apply,
+    pullback_ρ_apply, ofMonodromy_unitsMap_comp_ρ_apply, orientation_ρ_apply]
+  congr 1
+  exact orientationCharacter_fundamentalGroupHom_congr hd <| MoorePath.ext (by simp) fun t ↦ by
+    simp [MoorePath.map_apply]
 
 end RankOneLocalSystem
 
 /-- **On an orientable manifold the orientation part of the Viterbo twist is trivial.** -/
 theorem HomologicalOrientation.viterboOrientationTwist_eq_one (o : HomologicalOrientation M E d)
-    (γ : MooreFreeLoopSpace M) : RankOneLocalSystem.viterboOrientationTwist R hd γ = 1 := by
-  rw [RankOneLocalSystem.viterboOrientationTwist_of_orientationSign_eq_one hd
-      (o.orientationSign_eq_one hd γ), o.rankOneLocalSystem_orientation_eq_one R hd, map_one]
+    (γ : MooreFreeLoopSpace M) : RankOneLocalSystem.viterboOrientationTwist R hd γ = 1 :=
+  RankOneLocalSystem.freeLoopTwist_eq_one (o.orientationCharacter_eq_one hd γ.basepoint)
 
 end TauCeti

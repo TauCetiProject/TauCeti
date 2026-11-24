@@ -10,6 +10,7 @@ public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.Topology.Homotopy.Path
@@ -61,6 +62,12 @@ The Moore free loop space `MooreFreeLoopSpace X` is homotopy equivalent to `C(S�
 * `TauCeti.freeLoopComponentsEquivSigma`: `π₀(C(S¹, X)) ≃ Σ c, ConjClasses π₁(X, b_c)`.
 * `TauCeti.MooreFreeLoopSpace.conjClassesEquivZerothHomotopy`,
   `TauCeti.MooreFreeLoopSpace.zerothHomotopyEquivSigma`: the same on the Moore free loop space.
+* `TauCeti.MooreFreeLoopSpace.apply_fundamentalGroupHom_toMooreLoop_eq_of_joined`: a family of
+  characters invariant under change of base point is constant on the path components of the
+  Moore free loop space.
+* `TauCeti.MooreFreeLoopSpace.signExponent`: for a family of characters with values in `ℤˣ`, the
+  exponent `0` or `-1` of a free Moore loop, constant on path components
+  (`TauCeti.MooreFreeLoopSpace.signExponent_eq_of_joined`).
 
 ## References
 
@@ -333,6 +340,70 @@ def zerothHomotopyEquivSigma (B : PathComponentBasepoints X) :
 theorem zerothHomotopyEquivSigma_mk (B : PathComponentBasepoints X) (γ : MooreFreeLoopSpace X) :
     zerothHomotopyEquivSigma B (.mk γ) = freeLoopComponentsEquivSigma B (.mk (toCircleMap γ)) := by
   simp [zerothHomotopyEquivSigma]
+
+/-! ### Characters of free Moore loops -/
+
+/-- **Characters invariant under change of base point are constant on the path components of the
+Moore free loop space.** Let `χ` be a family of homomorphisms from the fundamental groups of `X` to
+a commutative group, unchanged by transport along paths. Joined free Moore loops `γ` and `γ'`,
+each read as a loop at its own base point, have the same value under `χ`. -/
+theorem apply_fundamentalGroupHom_toMooreLoop_eq_of_joined {G : Type*} [CommGroup G]
+    (χ : ∀ x : X, FundamentalGroup X x →* G)
+    (hχ : ∀ {x y : X} (p : Path x y) (g : FundamentalGroup X x),
+      χ y (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) = χ x g)
+    {γ γ' : MooreFreeLoopSpace X} (h : Joined γ γ') :
+    χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) =
+      χ γ'.basepoint (MooreLoopSpace.fundamentalGroupHom γ'.basepoint γ'.toMooreLoop) := by
+  have h' := h.map (toCircleMap (X := X)).continuous
+  rw [toCircleMap_eq_toCircle, toCircleMap_eq_toCircle] at h'
+  rw [MooreLoopSpace.fundamentalGroupHom_apply, MooreLoopSpace.fundamentalGroupHom_apply, map_inv,
+    map_inv, apply_fromPath_eq_of_joined_toCircle χ hχ h']
+
+variable (χ : ∀ x : X, FundamentalGroup X x →* ℤˣ)
+
+/-- The **sign exponent** `w(γ)` of a free Moore loop `γ` for a family `χ` of characters of the
+fundamental groups with values in `ℤˣ`: `0` when `χ` at the base point of `γ` takes the value `1`
+on `γ`, read as a loop there, and `-1` otherwise. It is the exponent `w` of the twists
+`ev₀^*(o⁻¹) ⊗ ev₀^*(o^{-w})` on the free loop space of Barraud–Damian–Humilière–Oancea (§4.1),
+where `o` is the rank-one local system with monodromy `χ`. -/
+def signExponent (γ : MooreFreeLoopSpace X) : ℤ :=
+  if χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1 then 0
+  else -1
+
+/-- The sign exponent of a free loop is `0` exactly when `χ` takes the value `1` on it. -/
+@[simp]
+theorem signExponent_eq_zero_iff (γ : MooreFreeLoopSpace X) :
+    signExponent χ γ = 0 ↔
+      χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1 := by
+  rw [signExponent]
+  split_ifs with h
+  · exact iff_of_true rfl h
+  · exact iff_of_false (by decide) h
+
+/-- The sign exponent of a free loop is `-1` exactly when `χ` takes the value `-1` on it. -/
+@[simp]
+theorem signExponent_eq_neg_one_iff (γ : MooreFreeLoopSpace X) :
+    signExponent χ γ = -1 ↔
+      χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = -1 := by
+  rcases Int.units_eq_one_or
+    (χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop)) with h | h <;>
+    rw [signExponent, h] <;> decide
+
+variable {χ} in
+/-- For a family of characters invariant under change of base point, the sign exponent is
+constant on the path components of the Moore free loop space. -/
+theorem signExponent_eq_of_joined
+    (hχ : ∀ {x y : X} (p : Path x y) (g : FundamentalGroup X x),
+      χ y (FundamentalGroup.fundamentalGroupMulEquivOfPath p g) = χ x g)
+    {γ γ' : MooreFreeLoopSpace X} (h : Joined γ γ') : signExponent χ γ = signExponent χ γ' := by
+  rw [signExponent, signExponent, apply_fundamentalGroupHom_toMooreLoop_eq_of_joined χ hχ h]
+
+/-- Constant loops have sign exponent `0`. -/
+@[simp]
+theorem signExponent_const (x : X) : signExponent χ (const x) = 0 := by
+  have h : (const x).toMooreLoop = 1 :=
+    MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
+  rw [signExponent_eq_zero_iff, h, map_one, map_one]
 
 end MooreFreeLoopSpace
 
