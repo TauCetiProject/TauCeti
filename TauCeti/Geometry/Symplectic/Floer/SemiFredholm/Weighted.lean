@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # The weighted semi-Fredholm estimate of the linearized Floer operator on a cylinder
@@ -37,6 +38,10 @@ absorbs the error `ε² ‖ξ‖² ≤ ε² W(ξ)`.
 * `SymplecticForm.exists_pos_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`
   is the weighted estimate along a Floer trajectory between nondegenerate orbits, from the
   unweighted estimate `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`.
+* `SymplecticForm.setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add` and
+  `exists_pos_forall_setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add` are the
+  two cases above for the weight `κ(s) = δ √(1 + s²)`, comparable to `δ |s|`, for small `|δ|`.
+  For `δ > 0` these are the weighted norms forcing exponential decay of sections at both ends.
 * `SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add`
   is the weighted estimate along a Floer trajectory for weights of any slope, read as the
   estimate of `D_u - κ'(s)` on `ξ = e^{κ} η`, when `κ'` equals constants `δ±` near `±∞` for which
@@ -311,6 +316,102 @@ theorem exists_pos_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearizat
         (fun _ ↦ contDiffAt_const)
         (fun _ ↦ (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt) hu hC₁ hest hκ hκ'
         hη hper hab hη₀⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- The exponent `κ(s) = δ √(1 + s²)` has slope `κ' = δ s / √(1 + s²)`, of absolute value at
+most `|δ|`, since `|s| ≤ √(1 + s²)`. -/
+private theorem abs_deriv_mul_sqrt_one_add_sq_le (δ s : ℝ) :
+    |deriv (fun s ↦ δ * √(1 + s ^ 2)) s| ≤ |δ| := by
+  have hpos : 0 < 1 + s ^ 2 := by positivity
+  have h1 : HasDerivAt (fun s ↦ 1 + s ^ 2) (2 * s) s := by
+    simpa using (hasDerivAt_pow 2 s).const_add 1
+  have hq : |2 * s / (2 * √(1 + s ^ 2))| ≤ 1 := by
+    rw [mul_div_mul_left _ _ two_ne_zero, abs_div, abs_of_pos (Real.sqrt_pos.2 hpos)]
+    exact div_le_one_of_le₀ (Real.abs_le_sqrt (by linarith)) (Real.sqrt_nonneg _)
+  rw [((h1.sqrt hpos.ne').const_mul δ).deriv, abs_mul]
+  calc _ ≤ |δ| * 1 := by gcongr
+    _ = |δ| := mul_one _
+
+/-- **The semi-Fredholm estimate with weight `e^{δ ⟨s⟩}` from the unweighted one.** Under the
+hypotheses of `setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`, every
+`|δ| ≤ (2 (C₁ + 1))⁻¹` gives the weighted estimate with constant `8 C₁` for the weight
+`e^{2 δ √(1 + s²)}`, which is comparable to `e^{2 δ |s|}`:
+
+`∫ e^{2δ⟨s⟩} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤
+  8 C₁ (∫ e^{2δ⟨s⟩} ‖D_u η‖² + ∫_{[-T, T] × [0, 1]} e^{2δ⟨s⟩} ‖η‖²)`,
+
+where `⟨s⟩ = √(1 + s²)`. -/
+theorem setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) {C₁ T : ℝ}
+    (hC₁ : 0 ≤ C₁)
+    (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+          C₁ * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
+            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2))
+    {δ : ℝ} (hδ : |δ| ≤ (2 * (C₁ + 1))⁻¹) {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η)
+    (hper : ∀ s t, η (s, t + 1) = η (s, t)) {a b : ℝ} (hab : a ≤ b)
+    (hη₀ : ∀ s t, s ∉ Ioo a b → η (s, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, Real.exp (2 * (δ * √(1 + z.1 ^ 2))) *
+        (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 +
+          ‖η z‖ ^ 2) ≤
+      8 * C₁ * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+          Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖ω.floerLinearization J Ks Kt u η z‖ ^ 2) +
+        ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
+          Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖η z‖ ^ 2) :=
+  ω.setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add hJ hKs hKt hu hC₁ hest
+    (κ := fun s ↦ δ * √(1 + s ^ 2))
+    (contDiff_const.mul ((contDiff_const.add (contDiff_id.pow 2)).sqrt fun s ↦ by positivity))
+    (fun s ↦ (abs_deriv_mul_sqrt_one_add_sq_le δ s).trans hδ) hη hper hab hη₀
+
+/-- **The semi-Fredholm estimate with weight `e^{δ ⟨s⟩}` along a Floer trajectory.** Under the
+hypotheses of
+`exists_pos_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add`, there are
+`ε > 0`, `C ≥ 0` and `T` such that for every `|δ| ≤ ε` the weighted estimate holds with the weight
+`e^{2 δ √(1 + s²)}`, which is comparable to `e^{2 δ |s|}`. For `δ > 0` these are the weighted
+norms forcing exponential decay of sections at both ends of the cylinder. -/
+theorem exists_pos_forall_setIntegral_exp_mul_sqrt_le_mul_setIntegral_floerLinearization_add
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (xm 0))
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (H t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (xp 0))
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (J t (xm t))) (hJxp : ∀ t, ω.Compatible (J t (xp t)))
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hJu : ∀ z, ω.Compatible (J z.2 (u z)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm Filter.atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp Filter.atTop (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 Filter.atBot
+        (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 Filter.atTop
+        (Icc 0 1)) :
+    ∃ ε > 0, ∃ C, 0 ≤ C ∧ ∃ T, ∀ ⦃δ : ℝ⦄, |δ| ≤ ε →
+      ∀ ⦃η : ℝ × ℝ → V⦄, ContDiff ℝ 2 η → (∀ s t, η (s, t + 1) = η (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, Real.exp (2 * (δ * √(1 + z.1 ^ 2))) *
+            (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 +
+              ‖η z‖ ^ 2) ≤
+          C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+              Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖ω.floerLinearization
+            (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+            (fun w ↦ H w.2) u η z‖ ^ 2) +
+            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
+              Real.exp (2 * (δ * √(1 + z.1 ^ 2))) * ‖η z‖ ^ 2) := by
+  obtain ⟨ε, hε, C, hC, T, hest⟩ :=
+    ω.exists_pos_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization_add hX hH hxm
+      hndm hxp hndp hJ hJxm hJxp hu hJu huxm huxp hδm hδp
+  exact ⟨ε, hε, C, hC, T, fun δ hδ ↦ hest (κ := fun s ↦ δ * √(1 + s ^ 2))
+    (contDiff_const.mul ((contDiff_const.add (contDiff_id.pow 2)).sqrt fun s ↦ by positivity))
+    fun s ↦ (abs_deriv_mul_sqrt_one_add_sq_le δ s).trans hδ⟩
 
 /-- **The weighted semi-Fredholm estimate along a Floer trajectory.** Let `H` be a jointly `C²`
 Hamiltonian, `J_t(y)` a `C¹` family of almost complex structures and `u : ℝ × ℝ → V` a `C¹` map
