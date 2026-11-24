@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+public import TauCeti.Geometry.Manifold.Riemannian.Conformal
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 

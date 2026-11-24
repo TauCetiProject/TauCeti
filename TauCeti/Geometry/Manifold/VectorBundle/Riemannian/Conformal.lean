@@ -39,8 +39,6 @@ conformal Laplacian of `g` applied to `u`.
 
 * `Bundle.ContMDiffRiemannianMetric.rescale`: the rescaled metric `f • g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass`: the conformal class `[g]`.
-* `TauCeti.rescaledMetric`: constant rescaling `c • g` (`0 < c`) of the ambient `C^m` Riemannian
-  metric on the tangent bundle of a `C¹` manifold.
 
 ## Main results
 
@@ -57,7 +55,6 @@ conformal Laplacian of `g` applied to `u`.
   `Bundle.ContMDiffRiemannianMetric.rescale_rpow_inj`,
   `Bundle.ContMDiffRiemannianMetric.rescale_const_mul_rpow`: the parametrization of `[g]` by real
   powers of positive functions, and its redundancy under constant factors.
-* `TauCeti.rescaledMetric_inner`: the fibrewise inner product of `rescaledMetric` scales by `c`.
 
 ## References
 
@@ -302,36 +299,3 @@ theorem mem_conformalClass_iff_existsUnique_rpow [∀ b, Nontrivial (E b)]
     exact (mem_conformalClass_iff_exists_rpow hp).mpr ⟨u, hu⟩
 
 end Bundle.ContMDiffRiemannianMetric
-
-namespace TauCeti
-
-open scoped RealInnerProductSpace
-
-/-- The constant rescaling `c • g` (`0 < c`) of the ambient `C^m` Riemannian metric on the tangent
-bundle of a `C¹` manifold `M`. -/
-def rescaledMetric {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (m : ℕ∞ω)
-    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
-    {c : ℝ} (hc : 0 < c) :
-    ContMDiffRiemannianMetric I m E (fun x : M ↦ TangentSpace I x) :=
-  (ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle (IB := I) (n := m)
-    (F := E) (V := fun x : M ↦ TangentSpace I x)).rescale (fun _ ↦ c) contMDiff_const
-      (fun _ ↦ hc)
-
-/-- The fibrewise inner product of `rescaledMetric` is `c` times the ambient inner product. -/
-@[simp]
-theorem rescaledMetric_inner {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {m : ℕ∞ω}
-    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
-    {c : ℝ} (hc : 0 < c) (x : M) (v w : TangentSpace I x) :
-    (rescaledMetric I M m hc).inner x v w = c * ⟪v, w⟫ := by
-  rw [rescaledMetric, ContMDiffRiemannianMetric.rescale_inner,
-    ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-  -- `RiemannianBundle` defines the fibre inner product to be `RiemannianBundle.g.inner`.
-  rfl
-
-end TauCeti
