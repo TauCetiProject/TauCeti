@@ -196,7 +196,7 @@ theorem isPBasis_iff_fintype [Fintype ι] (b : ι → k) :
       LinearIndependent (frobenius k p).fieldRange (fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) ∧
         Submodule.span (frobenius k p).fieldRange
           (Set.range fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) = ⊤ := by
-  rw [IsPBasis, isPIndependent_iff_fintype, pMonomial_comp_equivFunOnFinite_symm,
+  rw [IsPBasis, isPIndependent_iff_fintype, ← pMonomial_comp_equivFunOnFinite_symm,
     Finsupp.equivFunOnFinite.symm.surjective.range_comp]
 
 private theorem notMem_adjoin_of_isPIndependent_option {b : ι → k} {x : k}

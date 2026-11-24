@@ -123,7 +123,7 @@ private theorem eq_zero_of_sum_pow_mul_C_add_C_mul_X_pow_eq
     ring
   -- Hence every coefficient `Q m j` is the constant multiple `ε m j` of `h`.
   have hQh : ∀ m < p, ∀ j < p, Q m j = C (ε m j) * h := by
-    refine fun m hm j hj ↦ sub_eq_zero.mp <| hab.eq_zero_of_sum_pow_mul_C_eq_zero
+    refine fun m hm j hj ↦ sub_eq_zero.mp <| hab.eq_zero_of_sum_pow_mul_C_pair
       (P := fun m j ↦ Q m j - C (ε m j) * h) ?_ hm hj
     simp only [sub_pow_char, sub_mul, sum_sub_distrib, sub_eq_zero]
     rw [H, ← he, map_sum, sum_mul]

@@ -11,7 +11,6 @@ public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
-public import TauCeti.Data.Nat.Prime.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.LinearAlgebra.Span.Basic
 import TauCeti.Algebra.Polynomial.PowChar
@@ -41,7 +40,7 @@ In the two-element case `![a, b]`, `p`-independence means that the monomials `a 
 * `TauCeti.isPIndependent_pair_iff_linearIndependent`: `p`-independence of `![a, b]` is linear
   independence of the monomials `a ^ i * b ^ j` over the field range of Frobenius.
 * `TauCeti.isPIndependent_pair_iff`: coefficient criterion for `IsPIndependent p ![a, b]`.
-* `TauCeti.IsPIndependent.eq_zero_of_sum_pow_mul_C_eq_zero`: a `p`-independent pair stays
+* `TauCeti.IsPIndependent.eq_zero_of_sum_pow_mul_C_pair`: a `p`-independent pair stays
   `p`-independent over the `p`-th powers of `k[X]`.
 * `TauCeti.notMem_span_pair_of_pow_eq`: `α ∉ k + k β` for `p`-th roots `α` of `a` and `β` of `b`
   in an extension of `k`.
@@ -95,9 +94,9 @@ theorem pMonomial_eq_fintype_prod [Fintype ι] (b : ι → M) (e : ι →₀ Fin
 /-- Reindexing `pMonomial` along `Finsupp.equivFunOnFinite.symm` gives the finite-product family
 indexed by `ι → Fin p`. -/
 theorem pMonomial_comp_equivFunOnFinite_symm [Fintype ι] (b : ι → M) :
-    (fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) =
-      pMonomial p b ∘ Finsupp.equivFunOnFinite.symm := funext fun e ↦ by
-  simpa using (pMonomial_eq_fintype_prod p b (Finsupp.equivFunOnFinite.symm e)).symm
+    pMonomial p b ∘ Finsupp.equivFunOnFinite.symm = fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ) :=
+  funext fun e ↦ by
+    simpa using pMonomial_eq_fintype_prod p b (Finsupp.equivFunOnFinite.symm e)
 
 /-- Reindexing along an injective map corresponds to `Finsupp.mapDomain` on exponents. -/
 theorem pMonomial_comp_of_injective (b : ι → M) {f : ι' → ι} (hf : Function.Injective f)
@@ -197,7 +196,7 @@ theorem isPIndependent_iff_fintype [Fintype ι] (b : ι → k) :
     IsPIndependent p b ↔
       LinearIndependent (frobenius k p).fieldRange (fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) := by
   have : NeZero p := ⟨expChar_ne_zero k p⟩
-  rw [pMonomial_comp_equivFunOnFinite_symm, IsPIndependent, linearIndependent_equiv]
+  rw [← pMonomial_comp_equivFunOnFinite_symm, IsPIndependent, linearIndependent_equiv]
 
 /-- Composing a `p`-independent family with an injective map preserves `p`-independence. -/
 theorem IsPIndependent.comp {b : ι → k} (hb : IsPIndependent p b) {f : ι' → ι}
@@ -319,7 +318,7 @@ theorem IsPIndependent.eq_zero_of_sum_pow_mul_pair [ExpChar k p] (hab : IsPIndep
 open Polynomial in
 /-- `p`-independence of `a` and `b` over `k ^ p` gives `p`-independence over `k[X] ^ p`: a
 vanishing combination `∑ Pᵢⱼ ^ p a ^ i b ^ j` with polynomial `Pᵢⱼ` has `Pᵢⱼ = 0` for `i, j < p`. -/
-theorem IsPIndependent.eq_zero_of_sum_pow_mul_C_eq_zero [ExpChar k p]
+theorem IsPIndependent.eq_zero_of_sum_pow_mul_C_pair [ExpChar k p]
     (hab : IsPIndependent p ![a, b]) {P : ℕ → ℕ → k[X]}
     (h : ∑ i ∈ range p, ∑ j ∈ range p, P i j ^ p * C (a ^ i * b ^ j) = 0) {i j : ℕ} (hi : i < p)
     (hj : j < p) : P i j = 0 := by

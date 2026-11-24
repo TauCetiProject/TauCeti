@@ -42,8 +42,8 @@ formula `[k : k ^ p] = p ^ dim_k Ω[k⁄R]` when `[k : k ^ p]` is finite.
 * `TauCeti.isPIndependent_of_linearIndependent_D`,
   `TauCeti.isPIndependent_iff_linearIndependent_D`: a family is `p`-independent iff its
   differentials are linearly independent over `k`.
-* `TauCeti.IsPIndependent.mem_adjoin_fieldRange_frobenius_iff_D_mem_span`: for a `p`-independent
-  family `b`, `x ∈ k ^ p(range b)` iff `D R k x` lies in the `k`-span of `{D R k (b i)}`.
+* `TauCeti.mem_adjoin_fieldRange_frobenius_iff_D_mem_span`: for any family `b`,
+  `x ∈ k ^ p(range b)` iff `D R k x` lies in the `k`-span of `{D R k (b i)}`.
 * `TauCeti.adjoin_fieldRange_frobenius_eq_top_iff_span_D`: `k ^ p(range b) = k` iff
   `{D R k (b i)}` spans `Ω[k⁄R]`.
 * `TauCeti.isPBasis_iff_linearIndependent_and_span_D`: a family is a `p`-basis iff its
@@ -163,15 +163,10 @@ theorem isPIndependent_iff_linearIndependent_D
   rw [hcoe]
   exact (ht.kaehlerBasis hR).linearIndependent.comp f hf
 
-/-- For a `p`-independent family `b : ι → k`, an element `x : k` lies in `k ^ p(range b)` if and
-only if its differential `D R k x` lies in the `k`-linear span of `{D R k (b i)}`, for any base
-ring `R` whose image lies in `k ^ p`. -/
-theorem IsPIndependent.mem_adjoin_fieldRange_frobenius_iff_D_mem_span {b : ι → k}
+private theorem mem_adjoin_of_D_mem_span_of_isPIndependent {b : ι → k}
     (hb : IsPIndependent p b) (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange)
-    {x : k} :
-    x ∈ IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) ↔
-      D R k x ∈ Submodule.span k (Set.range fun i ↦ D R k (b i)) := by
-  refine ⟨(D R k).map_mem_span_of_mem_adjoin b, fun hmem ↦ ?_⟩
+    {x : k} (hmem : D R k x ∈ Submodule.span k (Set.range fun i ↦ D R k (b i))) :
+    x ∈ IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) := by
   by_contra hx
   have hopt : IsPIndependent p (Option.elim' x b) := (isPIndependent_option_iff hb x).mpr hx
   have hopt_lin : LinearIndependent k (fun o ↦ D R k (Option.elim' x b o)) :=
@@ -180,6 +175,27 @@ theorem IsPIndependent.mem_adjoin_fieldRange_frobenius_iff_D_mem_span {b : ι �
   rw [← Set.range_comp'] at hnotmem
   simp only [Option.elim'_some, Option.elim'_none] at hnotmem
   exact hnotmem hmem
+
+/-- For any family `b : ι → k`, an element `x : k` lies in `k ^ p(range b)` if and only if its
+differential `D R k x` lies in the `k`-linear span of `{D R k (b i)}`, for any base ring `R` whose
+image lies in `k ^ p`. -/
+theorem mem_adjoin_fieldRange_frobenius_iff_D_mem_span
+    (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (b : ι → k) {x : k} :
+    x ∈ IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) ↔
+      D R k x ∈ Submodule.span k (Set.range fun i ↦ D R k (b i)) := by
+  refine ⟨(D R k).map_mem_span_of_mem_adjoin b, fun hmem ↦ ?_⟩
+  obtain ⟨t, -, -, ht_ind, hadj_t⟩ :=
+    exists_isPIndependent_subset_adjoin_eq (p := p) (Set.empty_subset (Set.range b))
+      (isPIndependent_empty _)
+  have hle : Submodule.span k (Set.range fun i ↦ D R k (b i)) ≤
+      Submodule.span k (Set.range fun y : t ↦ D R k y) := by
+    rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    refine (D R k).map_mem_span_of_mem_adjoin (p := p) ((↑) : t → k) ?_
+    rw [Subtype.range_coe, hadj_t]
+    exact IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩
+  rw [← hadj_t, ← Subtype.range_coe (s := t)]
+  exact mem_adjoin_of_D_mem_span_of_isPIndependent ht_ind hR (hle hmem)
 
 /-- A family `b : ι → k` generates `k` over `k ^ p` if and only if its Kähler differentials
 `{D R k (b i)}` span `Ω[k⁄R]`, for any base ring `R` whose image lies in `k ^ p`. -/
@@ -191,21 +207,12 @@ theorem adjoin_fieldRange_frobenius_eq_top_iff_span_D
   · intro hadj
     rw [eq_top_iff, ← span_range_derivation R k, Submodule.span_le]
     rintro _ ⟨x, rfl⟩
-    exact (D R k).map_mem_span_of_mem_adjoin b (hadj.symm ▸ IntermediateField.mem_top)
+    exact (mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR b).mp
+      (hadj.symm ▸ IntermediateField.mem_top)
   · intro hspan
-    obtain ⟨t, -, -, ht_ind, hadj_t⟩ :=
-      exists_isPIndependent_subset_adjoin_eq (p := p) (Set.empty_subset (Set.range b))
-        (isPIndependent_empty _)
-    have hspan_t : Submodule.span k (Set.range fun y : t ↦ D R k y) = ⊤ := by
-      rw [eq_top_iff, ← hspan, Submodule.span_le]
-      rintro _ ⟨i, rfl⟩
-      rw [SetLike.mem_coe, ← ht_ind.mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR,
-        Subtype.range_coe, hadj_t]
-      exact IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩
     rw [eq_top_iff]
     intro x _
-    rw [← hadj_t, ← Subtype.range_coe (s := t)]
-    exact (ht_ind.mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR).mpr (hspan_t.symm ▸ ⟨⟩)
+    exact (mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR b).mpr (hspan.symm ▸ ⟨⟩)
 
 /-- A family in a field `k` of prime characteristic `p` is a `p`-basis if and only if its
 Kähler differentials over `R` are linearly independent and span `Ω[k⁄R]`, for any base ring `R`
@@ -224,8 +231,7 @@ theorem isPBasis_iff_linearIndependent_and_span_D
 theorem D_eq_zero_iff_mem_fieldRange_frobenius
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (x : k) :
     D R k x = 0 ↔ x ∈ (frobenius k p).fieldRange := by
-  have h := (isPIndependent_empty (p := p) (Empty.elim : Empty → k))
-    |>.mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR (x := x)
+  have h := mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR (Empty.elim : Empty → k) (x := x)
   simp only [Set.range_eq_empty, IntermediateField.adjoin_empty, IntermediateField.mem_bot,
     Submodule.span_empty, Submodule.mem_bot] at h
   exact ⟨fun hx ↦ (h.mpr hx).elim fun c hc ↦ hc ▸ c.property,

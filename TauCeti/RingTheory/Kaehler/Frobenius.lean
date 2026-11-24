@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Derivation.Frobenius
+import TauCeti.Algebra.Field.Subfield.Basic
 
 /-!
 # Kähler differentials in prime characteristic and the Frobenius subfield
@@ -30,21 +31,6 @@ namespace TauCeti
 
 open KaehlerDifferential
 
-@[instance_reducible]
-private def algebraFrobeniusRange {p : ℕ} {R k : Type*} [CommRing R] [Field k] [ExpChar k p]
-    [Algebra R k] (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) :
-    Algebra R (frobenius k p).fieldRange :=
-  RingHom.toAlgebra ((algebraMap R k).codRestrict (frobenius k p).fieldRange hR)
-
-private theorem isScalarTower_frobeniusRange {p : ℕ} {R k : Type*} [CommRing R] [Field k]
-    [ExpChar k p] [Algebra R k] (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) :
-    let := algebraFrobeniusRange hR
-    IsScalarTower R (frobenius k p).fieldRange k := by
-  let := algebraFrobeniusRange hR
-  refine IsScalarTower.of_algebraMap_eq fun r ↦ ?_
-  rw [Algebra.algebraMap_ofSubsemiring_apply, RingHom.algebraMap_toAlgebra,
-    RingHom.codRestrict_apply]
-
 variable (p : ℕ) [Fact p.Prime] (R k : Type*) [CommRing R] [Field k] [ExpChar k p] [Algebra R k]
 
 /-- The canonical `k`-linear equivalence `Ω[k⁄R] ≃ₗ[k] Ω[k⁄k ^ p]` when the image of `R` in `k`
@@ -52,8 +38,8 @@ lies in the Frobenius subfield `k ^ p`. -/
 def kaehlerEquivFrobeniusRange
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) :
     Ω[k⁄R] ≃ₗ[k] Ω[k⁄(frobenius k p).fieldRange] :=
-  letI := algebraFrobeniusRange hR
-  haveI := isScalarTower_frobeniusRange hR
+  letI := (frobenius k p).fieldRange.restrictAlgebra hR
+  haveI := (frobenius k p).fieldRange.isScalarTower_restrictAlgebra hR
   let fwd : Ω[k⁄R] →ₗ[k] Ω[k⁄(frobenius k p).fieldRange] :=
     KaehlerDifferential.map R (frobenius k p).fieldRange k k
   let bwd : Ω[k⁄(frobenius k p).fieldRange] →ₗ[k] Ω[k⁄R] :=
@@ -72,8 +58,8 @@ def kaehlerEquivFrobeniusRange
 theorem kaehlerEquivFrobeniusRange_D
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (x : k) :
     kaehlerEquivFrobeniusRange p R k hR (D R k x) = D (frobenius k p).fieldRange k x := by
-  let := algebraFrobeniusRange hR
-  have := isScalarTower_frobeniusRange hR
+  let := (frobenius k p).fieldRange.restrictAlgebra hR
+  have := (frobenius k p).fieldRange.isScalarTower_restrictAlgebra hR
   rw [kaehlerEquivFrobeniusRange, LinearEquiv.coe_ofLinearMap, KaehlerDifferential.map_D,
     Algebra.algebraMap_self, RingHom.id_apply]
 
@@ -83,8 +69,8 @@ theorem kaehlerEquivFrobeniusRange_D
 theorem kaehlerEquivFrobeniusRange_symm_D
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (x : k) :
     (kaehlerEquivFrobeniusRange p R k hR).symm (D (frobenius k p).fieldRange k x) = D R k x := by
-  let := algebraFrobeniusRange hR
-  have := isScalarTower_frobeniusRange hR
+  let := (frobenius k p).fieldRange.restrictAlgebra hR
+  have := (frobenius k p).fieldRange.isScalarTower_restrictAlgebra hR
   rw [kaehlerEquivFrobeniusRange, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
     Derivation.liftKaehlerDifferential_comp_D, Derivation.coe_ofMapAlgebraMap]
 

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Frobenius
+public import Mathlib.Algebra.Polynomial.Basic
+public import Mathlib.FieldTheory.Minpoly.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.FieldTheory.Minpoly.Finite
@@ -21,6 +23,9 @@ over `E`.
 
 ## Main results
 
+* `TauCeti.minpoly_eq_X_pow_sub_C_of_notMem_range`: in a field extension `k / E` where `k` has
+  characteristic `p` for a prime `p`, an element `x ∉ Set.range (algebraMap E k)` with
+  `x ^ p = algebraMap E k a` has minimal polynomial `X ^ p - C a` over `E`.
 * `TauCeti.linearIndependent_pow_of_notMem_range`: in a field extension `k / E` where `k` has
   characteristic `p` for a prime `p`, an element `x ∉ Set.range (algebraMap E k)` with
   `x ^ p ∈ Set.range (algebraMap E k)` has `1, x, …, x ^ (p - 1)` linearly independent over `E`.
@@ -31,24 +36,33 @@ public section
 namespace TauCeti
 
 /-- In a field extension `k / E` where `k` has characteristic `p` for a prime `p`, an element
+`x ∉ Set.range (algebraMap E k)` with `x ^ p = algebraMap E k a` has minimal polynomial
+`X ^ p - C a` over `E`. -/
+theorem minpoly_eq_X_pow_sub_C_of_notMem_range {p : ℕ} [Fact p.Prime] {E k : Type*}
+    [Field E] [Field k] [Algebra E k] [ExpChar k p] {x : k}
+    (hx : x ∉ Set.range (algebraMap E k)) {a : E} (hxp : x ^ p = algebraMap E k a) :
+    minpoly E x = Polynomial.X ^ p - Polynomial.C a := by
+  have hp : p.Prime := Fact.out
+  have ha : ∀ y : E, y ^ p ≠ a := fun y hy ↦
+    hx ⟨y, frobenius_inj k p (by simp only [frobenius_def, ← map_pow, hy, hxp])⟩
+  have hirr : Irreducible (Polynomial.X ^ p - Polynomial.C a) :=
+    irreducible_X_pow_sub_C_of_prime hp ha
+  have hmonic : (Polynomial.X ^ p - Polynomial.C a).Monic :=
+    Polynomial.monic_X_pow_sub_C a hp.ne_zero
+  have haeval : Polynomial.aeval x (Polynomial.X ^ p - Polynomial.C a) = 0 := by
+    simp [hxp]
+  exact (minpoly.eq_of_irreducible_of_monic hirr haeval hmonic).symm
+
+/-- In a field extension `k / E` where `k` has characteristic `p` for a prime `p`, an element
 `x ∉ Set.range (algebraMap E k)` with `x ^ p ∈ Set.range (algebraMap E k)` has
 `1, x, …, x ^ (p - 1)` linearly independent over `E`. -/
 theorem linearIndependent_pow_of_notMem_range {p : ℕ} [Fact p.Prime] {E k : Type*}
     [Field E] [Field k] [Algebra E k] [ExpChar k p] {x : k}
     (hx : x ∉ Set.range (algebraMap E k)) (hxp : x ^ p ∈ Set.range (algebraMap E k)) :
     LinearIndependent E (fun n : Fin p ↦ x ^ (n : ℕ)) := by
-  have hp : p.Prime := Fact.out
   obtain ⟨a, ha_eq⟩ := hxp
-  have ha : ∀ y : E, y ^ p ≠ a := by
-    intro y hy
-    have hy' : algebraMap E k y ^ p = x ^ p := by rw [← map_pow, hy, ha_eq]
-    exact hx ⟨y, frobenius_inj k p hy'⟩
-  let f : Polynomial E := Polynomial.X ^ p - Polynomial.C a
-  have hirr : Irreducible f := irreducible_X_pow_sub_C_of_prime hp ha
-  have hmonic : f.Monic := Polynomial.monic_X_pow_sub_C a hp.ne_zero
-  have haeval : Polynomial.aeval x f = 0 := by
-    simp only [f, map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C, ha_eq, sub_self]
-  have hmin : minpoly E x = f := (minpoly.eq_of_irreducible_of_monic hirr haeval hmonic).symm
+  have hmin : minpoly E x = Polynomial.X ^ p - Polynomial.C a :=
+    minpoly_eq_X_pow_sub_C_of_notMem_range hx ha_eq.symm
   have hdeg : (minpoly E x).natDegree = p := by
     rw [hmin]
     exact Polynomial.natDegree_X_pow_sub_C a

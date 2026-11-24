@@ -20,6 +20,8 @@ entire intermediate field `E(s)` into `S`.
 
 * `Derivation.map_mem_of_mem_adjoin`: derivatives on `IntermediateField.adjoin E s` stay in any
   `F`-submodule containing the derivatives of `s`, provided `d` vanishes on `E`.
+* `Derivation.ext_of_intermediateField_adjoin_eq_top`: two `R`-derivations out of `F` agreeing
+  on `E` and on a generating set `s` over `E` are equal.
 -/
 
 public section
@@ -29,8 +31,8 @@ namespace Derivation
 /-- If an `R`-derivation `d : Derivation R F M` into an `F`-module vanishes on an intermediate
 field `E` and maps every generator in `s` into an `F`-submodule `S`, then `d` maps the entire
 intermediate field `E(s)` into `S`. -/
-theorem map_mem_of_mem_adjoin {R E F M : Type*} [CommSemiring R] [Field E] [Field F]
-    [Algebra R F] [Algebra E F] [AddCommMonoid M] [Module R M] [Module F M]
+theorem map_mem_of_mem_adjoin {R E F M : Type*} [CommRing R] [Field E] [Field F]
+    [Algebra R F] [Algebra E F] [AddCommGroup M] [Module R M] [Module F M]
     (d : Derivation R F M) (S : Submodule F M) {s : Set F}
     (hE : ∀ e : E, d (algebraMap E F e) = 0) (hs : ∀ z ∈ s, d z ∈ S) {x : F}
     (hx : x ∈ IntermediateField.adjoin E s) : d x ∈ S := by
@@ -40,19 +42,21 @@ theorem map_mem_of_mem_adjoin {R E F M : Type*} [CommSemiring R] [Field E] [Fiel
   | add a b _ _ ha hb => rw [map_add]; exact S.add_mem ha hb
   | mul a b _ _ ha hb => rw [d.leibniz]; exact S.add_mem (S.smul_mem a hb) (S.smul_mem b ha)
   | inv a _ ha =>
-    by_cases ha0 : a = 0
-    · simp [ha0]
-    · have hmul := congrArg d (mul_inv_cancel₀ ha0)
-      rw [d.leibniz, d.map_one_eq_zero] at hmul
-      have hinv : d a⁻¹ = (-1 : F) • (a⁻¹ • (a⁻¹ • d a)) := by
-        calc d a⁻¹ = d a⁻¹ + (-1 : F) • (a⁻¹ • (a • d a⁻¹ + a⁻¹ • d a)) := by
-              rw [hmul, smul_zero, smul_zero, add_zero]
-          _ = (-1 : F) • (a⁻¹ • (a⁻¹ • d a)) := by
-              rw [smul_add, smul_add, smul_smul, smul_smul, mul_assoc, inv_mul_cancel₀ ha0,
-                mul_one, ← add_assoc]
-              nth_rw 1 [← one_smul F (d a⁻¹)]
-              rw [← add_smul, add_neg_cancel, zero_smul, zero_add]
-      rw [hinv]
-      exact S.smul_mem (-1 : F) (S.smul_mem a⁻¹ (S.smul_mem a⁻¹ ha))
+    rw [d.leibniz_inv]
+    exact S.smul_mem _ ha
+
+/-- Two `R`-derivations out of a field `F` into an `F`-module that agree on an intermediate field
+`E` and on a generating set `s` of `F` over `E` are equal. -/
+theorem ext_of_intermediateField_adjoin_eq_top {R E F M : Type*} [CommRing R] [Field E] [Field F]
+    [Algebra R F] [Algebra E F] [AddCommGroup M] [Module R M] [Module F M]
+    {s : Set F} (hs : IntermediateField.adjoin E s = ⊤) {d₁ d₂ : Derivation R F M}
+    (hE : ∀ e : E, d₁ (algebraMap E F e) = d₂ (algebraMap E F e))
+    (h : Set.EqOn d₁ d₂ s) : d₁ = d₂ := by
+  ext x
+  have hmem := (d₁ - d₂).map_mem_of_mem_adjoin (⊥ : Submodule F M)
+    (fun e ↦ by simp [hE e])
+    (fun z hz ↦ (Submodule.mem_bot F).mpr (sub_eq_zero.mpr (h hz)))
+    (hs.symm ▸ IntermediateField.mem_top (x := x))
+  exact sub_eq_zero.mp ((Submodule.mem_bot F).mp hmem)
 
 end Derivation

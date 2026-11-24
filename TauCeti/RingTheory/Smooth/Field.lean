@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.KummerPolynomial
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Smooth.Field
 public import TauCeti.FieldTheory.Frobenius.Range
 public import TauCeti.RingTheory.Ideal.Quotient.PowLift
+import TauCeti.FieldTheory.PurelyInseparable.PowerBasis
 
 /-!
 # Extensions of perfect fields are formally smooth
@@ -126,17 +126,12 @@ private theorem exists_le_of_pow_mem (p : ℕ) [Fact p.Prime] [CharP L p] (φ : 
       ∃ h : a ∈ φ'.carrier, φ'.emb ⟨a, h⟩ = b := by
   set M := φ.carrier
   -- `X ^ p - a ^ p` is the minimal polynomial of `a` over `M`
-  have hirr : Irreducible (X ^ p - C (⟨a ^ p, hap⟩ : M)) :=
-    _root_.irreducible_X_pow_sub_C_of_prime Fact.out fun c hc ↦ ha <| by
-      have hc' : (c : L) ^ p = a ^ p := congrArg Subtype.val hc
-      rw [← frobenius_def p, ← frobenius_def p] at hc'
-      exact frobenius_inj L p hc' ▸ c.property
-  have hroot : aeval a (X ^ p - C (⟨a ^ p, hap⟩ : M)) = 0 := by simp
-  have hint : IsIntegral M a := ⟨_, monic_X_pow_sub_C _ (Fact.out : p.Prime).ne_zero, by
-    rwa [← aeval_def]⟩
   have hmin : minpoly M a = X ^ p - C (⟨a ^ p, hap⟩ : M) :=
-    (minpoly.eq_of_irreducible_of_monic hirr hroot
-      (monic_X_pow_sub_C _ (Fact.out : p.Prime).ne_zero)).symm
+    TauCeti.minpoly_eq_X_pow_sub_C_of_notMem_range (p := p)
+      (fun ⟨c, hc⟩ ↦ ha (hc ▸ c.property)) rfl
+  have hint : IsIntegral M a :=
+    ⟨X ^ p - C (⟨a ^ p, hap⟩ : M), monic_X_pow_sub_C _ (Fact.out : p.Prime).ne_zero, by
+      simp [eval₂_sub, eval₂_X_pow, eval₂_C]⟩
   let : Algebra M B := φ.emb.toRingHom.toAlgebra
   let carrier := M⟮a⟯.restrictScalars K
   let : Algebra M carrier := M⟮a⟯.toSubalgebra.algebra
