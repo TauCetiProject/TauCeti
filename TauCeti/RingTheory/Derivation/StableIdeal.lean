@@ -88,12 +88,7 @@ theorem map_aeval_eq_aeval_pderiv (D : Derivation k R R) {x : σ → R} {i : σ}
   | C c => simp
   | add p q hp hq => simp [hp, hq]
   | mul_X p j hp =>
-    rw [map_mul, aeval_X, leibniz, hp, hx, pderiv_mul, pderiv_X, map_add, map_mul, map_mul,
-      aeval_X, Pi.single_apply]
-    by_cases h : i = j
-    · subst h
-      simp [mul_comm, add_comm]
-    · simp [h, Ne.symm h, mul_comm]
+    by_cases h : i = j <;> simp [leibniz, hp, hx, h, mul_comm, add_comm]
 
 end Derivation
 
@@ -119,9 +114,8 @@ theorem algebraicIndependent_mk_of_forall_apply_mem {k R ι : Type*} [Field k] [
   rw [algebraicIndependent_iff_injective_aeval, injective_iff_map_eq_zero]
   intro p hp
   have hp' : p ∈ P.comap (aeval x) := by
-    rw [Ideal.mem_comap, ← Ideal.Quotient.eq_zero_iff_mem, ← hp, ← Ideal.Quotient.mkₐ_eq_mk k,
-      ← AlgHom.comp_apply, comp_aeval]
-    simp only [Ideal.Quotient.mkₐ_eq_mk, Function.comp_def]
+    rw [Ideal.mem_comap, ← Ideal.Quotient.eq_zero_iff_mem, ← hp]
+    exact comp_aeval_apply (φ := Ideal.Quotient.mkₐ k P) x p
   simpa [(Ideal.derivativeIdeal_le_self_iff.mp hJ).resolve_right hJ'] using hp'
 
 end TauCeti
