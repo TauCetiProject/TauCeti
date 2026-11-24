@@ -61,15 +61,11 @@ theorem wronskian_eq_of_hasDerivAt
     ψ t * φ' t - φ t * ψ' t = ψ a * φ' a - φ a * ψ' a := by
   have h := mul_wronskian_eq_of_hasDerivAt (U := Set.univ) isOpen_univ isPreconnected_univ
     (f := 0) (g := -q) (E := fun _ ↦ (1 : 𝕜))
-    (fun z _ ↦ (hasDerivAt_const z (1 : 𝕜)).congr_deriv (by simp only [Pi.zero_apply, zero_mul]))
-    (fun z _ ↦ hψ z)
-    (fun z _ ↦ (hψ' z).congr_deriv (by simp only [Pi.zero_apply, Pi.neg_apply, zero_mul,
-      zero_add, neg_mul, neg_neg]))
-    (fun z _ ↦ hφ z)
-    (fun z _ ↦ (hφ' z).congr_deriv (by simp only [Pi.zero_apply, Pi.neg_apply, zero_mul,
-      zero_add, neg_mul, neg_neg]))
+    (fun z _ ↦ (hasDerivAt_const z (1 : 𝕜)).congr_deriv (by simp))
+    (fun z _ ↦ hψ z) (fun z _ ↦ (hψ' z).congr_deriv (by simp))
+    (fun z _ ↦ hφ z) (fun z _ ↦ (hφ' z).congr_deriv (by simp))
     (Set.mem_univ t) (Set.mem_univ a)
-  simpa only [one_mul, mul_comm (φ t), mul_comm (φ a)] using h
+  linear_combination h
 
 /-- The Wronskian `ψ φ' - φ ψ'` of the fundamental pair of solutions of `f'' = q f` at `a`, with
 `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1`, is identically one. The value `ψ'(a)` is irrelevant,

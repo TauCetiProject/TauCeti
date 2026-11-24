@@ -177,15 +177,13 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_descFactorial_mul_pow_sub
     ((p.hasFPowerSeriesOnBall_changeOrigin n (hf.r_pos.trans_le hf.r_le)).hasSum
       (mem_eball_zero_iff.mpr (hy.trans_le hf.r_le))) fun _ ↦ (1 : 𝕂)
   rw [zero_add] at hsum
-  -- shift by `n`: the prefix `k < n` vanishes since `k.descFactorial n = 0`
-  rw [hderiv, ← hasSum_nat_add_iff' n]
-  have hprefix : ∑ k ∈ Finset.range n, (k.descFactorial n : 𝕂) * c k * y ^ (k - n) = 0 :=
-    Finset.sum_eq_zero fun k hk ↦ by
-      simp [Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_range.mp hk)]
-  rw [hprefix, sub_zero]
-  refine (hsum.mul_left _).congr_fun fun l ↦ ?_
-  simpa only [p, Nat.add_sub_cancel] using
-    (factorial_mul_changeOriginSeries_ofScalars_one c y n l).symm
+  -- reindex along `l ↦ l + n`: the terms with `k < n` vanish since `k.descFactorial n = 0`
+  rw [hderiv]
+  refine ((add_left_injective n).hasSum_iff fun k hk ↦ ?_).mp
+    ((hsum.mul_left _).congr_fun fun l ↦ ?_)
+  · simp [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp fun h ↦ hk ⟨k - n, Nat.sub_add_cancel h⟩)]
+  · simpa only [Function.comp_apply, p, Nat.add_sub_cancel] using
+      (factorial_mul_changeOriginSeries_ofScalars_one c y n l).symm
 
 /-- Inside its ball of convergence, the iterated derivatives of a scalar power series centered at
 `0` are given by the termwise differentiated series. -/

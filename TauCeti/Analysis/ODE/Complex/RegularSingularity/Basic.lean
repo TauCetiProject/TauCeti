@@ -321,6 +321,13 @@ theorem isPreconnected_regularSingularSlitDisc (z₀ : ℂ) (r : ℝ) :
     IsPreconnected (regularSingularSlitDisc z₀ r : Set ℂ) :=
   isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
 
+/-- The slit punctured open disc `regularSingularSlitDisc z₀ r` is contained in the punctured open
+ball `ball z₀ r \ {z₀}`. -/
+theorem regularSingularSlitDisc_subset_ball_diff (z₀ : ℂ) (r : ℝ) :
+    (regularSingularSlitDisc z₀ r : Set ℂ) ⊆ ball z₀ r \ {z₀} :=
+  fun _ hz => ⟨by simpa [Metric.mem_ball, dist_eq_norm] using hz.2,
+    sub_ne_zero.mp (Complex.slitPlane_ne_zero hz.1)⟩
+
 /-- Construct the second-order `LinearEquation (regularSingularSlitDisc z₀ r) 2` associated with
 `w'' + f w' + g w = 0` from regular-singularity series expansions of `(z - z₀) f(z)` and
 `(z - z₀)² g(z)` on `0 < ‖z - z₀‖ < r`. -/
@@ -333,12 +340,9 @@ def regularSingularEquation {z₀ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs : 
   LinearEquation.ofTwo f g
     ((FormalMultilinearSeries.analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt z₀
       (k := 1) fun w hw0 hwr => by simpa only [pow_one] using hf w hw0 hwr).differentiableOn.mono
-        fun _ hz => ⟨by simpa [Metric.mem_ball, dist_eq_norm] using hz.2,
-          sub_ne_zero.mp (Complex.slitPlane_ne_zero hz.1)⟩)
+        (regularSingularSlitDisc_subset_ball_diff z₀ r))
     ((FormalMultilinearSeries.analyticOnNhd_of_hasSum_ofScalars_of_norm_sub_lt z₀
-      (k := 2) hg).differentiableOn.mono fun _ hz =>
-        ⟨by simpa [Metric.mem_ball, dist_eq_norm] using hz.2,
-          sub_ne_zero.mp (Complex.slitPlane_ne_zero hz.1)⟩)
+      (k := 2) hg).differentiableOn.mono (regularSingularSlitDisc_subset_ball_diff z₀ r))
 
 /-- The order-zero coefficient of `regularSingularEquation hf hg` evaluates to `g` on
 `regularSingularSlitDisc z₀ r`. -/
@@ -491,14 +495,14 @@ theorem hasSum_regularSingularLogForcing_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r
         (∑ k ∈ range m, a k * fs (m - k)) = ∑ k ∈ range m, fs (m - k) * a k :=
       sum_congr rfl fun _ _ => mul_comm _ _
     rw [sum_range_succ_mul_pow a fs u m, hsum_comm]; ring
-  -- Shift by `N`: terms below `N` vanish by `regularSingularLogForcing_of_lt`.
-  rw [← hasSum_nat_add_iff' N]
-  have hprefix : ∑ s ∈ range N, regularSingularLogForcing fs a α₂ N s * u ^ s = 0 :=
-    sum_eq_zero fun s hs => by simp [regularSingularLogForcing_of_lt _ _ _ (mem_range.mp hs)]
-  rw [hprefix, sub_zero]
-  refine (hunshifted.mul_left (u ^ N)).congr_fun fun m => ?_
-  rw [regularSingularLogForcing_of_le _ _ _ (Nat.le_add_left N m), Nat.add_sub_cancel, pow_add]
-  push_cast; ring
+  -- Reindex along `m ↦ m + N`: terms below `N` vanish by `regularSingularLogForcing_of_lt`.
+  refine ((add_left_injective N).hasSum_iff fun s hs => ?_).mp
+    ((hunshifted.mul_left (u ^ N)).congr_fun fun m => ?_)
+  · simp [regularSingularLogForcing_of_lt _ _ _
+      (not_le.mp fun h => hs ⟨s - N, Nat.sub_add_cancel h⟩)]
+  · simp only [Function.comp_apply]
+    rw [regularSingularLogForcing_of_le _ _ _ (Nat.le_add_left N m), Nat.add_sub_cancel, pow_add]
+    push_cast; ring
 
 /-- Algebraic recombination of `(z - z₀)^α` powers when adding the `(z - z₀)^α₂` series part
 to `c'` times the logarithmic forcing of `w₁(z) = (z - z₀)^{α₂ + N} A₁(z - z₀)`. -/
