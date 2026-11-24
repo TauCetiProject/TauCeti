@@ -131,17 +131,21 @@ image of `π`. -/
 theorem map_mem_detLocus (f : B →+* C) (hA : A ∈ detLocus n π N) :
     A.map f ∈ detLocus n (f π) N := by
   obtain ⟨u, hu⟩ := mem_detLocus_iff.mp hA
-  exact mem_detLocus_iff.mpr
-    ⟨Units.map f u, by rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hu]; simp⟩
+  exact mem_detLocus_iff.mpr ⟨Units.map f u, by simpa [f.map_det] using congrArg f hu⟩
+
+/-- If `A.det = u * π ^ N` with `u` a unit, then the adjugate of `A` divided by `u` is a right
+inverse of `A` up to `π ^ N`. -/
+theorem mul_smul_adjugate_eq {u : Bˣ} (hu : A.det = u * π ^ N) :
+    A * ((↑u⁻¹ : B) • A.adjugate) = π ^ N • 1 := by
+  rw [mul_smul_comm, mul_adjugate, hu, smul_smul, Units.inv_mul_cancel_left]
 
 /-- Every vector times `π ^ N` lies in the column span of a matrix in the determinant locus: the
 adjugate divided by the unit part of the determinant is an inverse up to `π ^ N`. -/
 theorem exists_mulVec_eq_pow_smul (hA : A ∈ detLocus n π N) (v : n → B) :
     ∃ w, A *ᵥ w = π ^ N • v := by
   obtain ⟨u, hu⟩ := mem_detLocus_iff.mp hA
-  refine ⟨(↑u⁻¹ : B) • (A.adjugate *ᵥ v), ?_⟩
-  rw [mulVec_smul, mulVec_mulVec, mul_adjugate, hu, smul_mulVec, one_mulVec, smul_smul,
-    ← mul_assoc, Units.inv_mul, one_mul]
+  exact ⟨((↑u⁻¹ : B) • A.adjugate) *ᵥ v, by
+    rw [mulVec_mulVec, mul_smul_adjugate_eq hu, smul_mulVec, one_mulVec]⟩
 
 /-- The column span of a matrix in the determinant locus contains `π ^ N B ^ n`. -/
 theorem pow_smul_top_le_range_mulVecLin (hA : A ∈ detLocus n π N) :
@@ -166,14 +170,12 @@ theorem exists_add_pow_smul_eq_mul (hπ : π ∈ Ring.jacobson B) (hNh : N < h)
     ∃ γ : GL n B, A + π ^ h • C = A * γ ∧ ∃ D : Matrix n n B, (γ : Matrix n n B) =
       1 + π ^ (h - N) • D := by
   obtain ⟨u, hu⟩ := mem_detLocus_iff.mp hA
-  set D := (↑u⁻¹ : B) • (A.adjugate * C)
+  set D := (↑u⁻¹ : B) • A.adjugate * C
   have hγ : IsUnit (1 + π ^ (h - N) • D).det :=
     isUnit_det_one_add_smul (Ideal.pow_mem_of_mem _ hπ _ (Nat.sub_pos_of_lt hNh)) D
   refine ⟨GeneralLinearGroup.mk'' _ hγ, ?_, D, GeneralLinearGroup.val_mk'' _ hγ⟩
-  rw [GeneralLinearGroup.val_mk'', mul_add, mul_one, mul_smul_comm, mul_smul_comm, ← mul_assoc,
-    mul_adjugate, hu, smul_mul_assoc, one_mul, smul_smul, smul_smul]
-  congr 2
-  rw [mul_assoc, Units.inv_mul_cancel_left, pow_sub_mul_pow π hNh.le]
+  have hAD : A * D = π ^ N • C := by rw [← mul_assoc, mul_smul_adjugate_eq hu, smul_one_mul]
+  simp [mul_add, hAD, smul_smul, pow_sub_mul_pow π hNh.le]
 
 /-- For `π` in the Jacobson radical and `N < h`, a matrix congruent modulo `π ^ h` to a matrix of
 the determinant locus `V_N` lies in `V_N`. -/
@@ -204,9 +206,10 @@ theorem map_mk_mem_detLocus_iff (hπ : π ∈ Ring.jacobson B) (hNh : N < h) :
   obtain ⟨u, hu⟩ := mem_detLocus_iff.mp hA
   obtain ⟨v, hv⟩ := Ideal.Quotient.mk_surjective (u : B ⧸ span {π ^ h})
   obtain ⟨w, rfl⟩ := (isUnit_map_iff (Ideal.Quotient.mk _) v).mp (hv ▸ u.isUnit)
-  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, ← hv, ← map_pow, ← map_mul, Ideal.Quotient.eq,
-    mem_span_singleton] at hu
-  obtain ⟨c, hc⟩ := hu
+  have hmem : A.det - w * π ^ N ∈ span {π ^ h} := by
+    rw [← Ideal.Quotient.eq]
+    simpa [RingHom.map_det, hv] using hu
+  obtain ⟨c, hc⟩ := mem_span_singleton.mp hmem
   have hdet : A.det = π ^ N * (w * (1 + π ^ (h - N) * (↑w⁻¹ * c))) := by
     rw [sub_eq_iff_eq_add] at hc
     rw [hc, ← pow_sub_mul_pow π hNh.le]
