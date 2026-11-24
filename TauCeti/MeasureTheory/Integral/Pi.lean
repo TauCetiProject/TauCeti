@@ -48,9 +48,10 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
 * `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
 * `TauCeti.ae_integrable_comp_update`, `TauCeti.ae_forall_integrable_comp_update_eval`,
-  `TauCeti.integrable_integral_update`, `TauCeti.integral_integral_update`: for an integrable
-  function, almost every section through one coordinate is integrable, and the partial integral
-  over the other coordinates is integrable with the same integral.
+  `TauCeti.integrable_integral_update`, `TauCeti.integral_integral_update_pi_swap`: for an
+  integrable function, almost every section through one coordinate is integrable, and the partial
+  integral over the other coordinates is integrable with the same integral (the last is
+  `TauCeti.integral_integral_update_pi` with the two integrals in the opposite order).
 * `TauCeti.integral_mul_comp_eval_eq`: Fubini for a function times a function of one coordinate,
   integrated against the partial integrals over the other coordinates.
 * `TauCeti.integral_comp_eval_mul_comp_eval`: functions of two distinct coordinates factorise.
@@ -176,9 +177,11 @@ theorem integrable_integral_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFini
   ((measurePreserving_update_prod_pi P i).integrable_comp_of_integrable hT).integral_prod_right
 
 /-- **The tower property for one coordinate.** Integrating the partial integral
-`a ↦ ∫ y, T (update y i a)` of an integrable `T` against `P i` gives the integral of `T`. -/
-theorem integral_integral_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)] (i : ι)
-    [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+`a ↦ ∫ y, T (update y i a)` of an integrable `T` against `P i` gives the integral of `T`. This is
+`TauCeti.integral_integral_update_pi` with the two integrals in the opposite order: there the
+inner integral is over the `i`-th coordinate, here it is over the others. -/
+theorem integral_integral_update_pi_swap (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)]
+    (i : ι) [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {T : (∀ i, α i) → E} (hT : Integrable T (Measure.pi P)) :
     ∫ a, ∫ y, T (update y i a) ∂(Measure.pi P) ∂(P i) = ∫ x, T x ∂(Measure.pi P) := by
   have hmp := measurePreserving_update_prod_pi P i

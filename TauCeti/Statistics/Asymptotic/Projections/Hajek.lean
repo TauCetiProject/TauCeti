@@ -142,7 +142,7 @@ theorem integral_hajekProjection (P : ∀ i, Measure (α i)) [∀ i, IsProbabili
   have hmean (i : ι) : ∫ x, ∫ y, T (update y i (x i)) ∂(Measure.pi P) ∂(Measure.pi P) =
       ∫ x, T x ∂(Measure.pi P) := by
     rw [integral_comp_eval (integrable_integral_update P i hT).aestronglyMeasurable,
-      integral_integral_update P i hT]
+      integral_integral_update_pi_swap P i hT]
   rw [funext (hajekProjection_def P T), integral_sub (integrable_finsetSum _ fun i _ ↦ hc i)
     (integrable_const _), integral_finsetSum _ fun i _ ↦ hc i]
   simp only [hmean, integral_const, probReal_univ, Finset.sum_const, Finset.card_univ,
@@ -212,7 +212,7 @@ theorem integral_hajekProjection_mul_comp_eval (P : ∀ i, Measure (α i))
   -- Each conditional expectation has mean `E T`, so the `d j` are centred.
   have hdmean : ∀ j, ∫ a, d j a ∂(P j) = 0 := fun j ↦ by
     rw [hd, integral_sub ((hcL j).integrable one_le_two) (integrable_const m),
-      integral_integral_update P j (hT.integrable one_le_two)]
+      integral_integral_update_pi_swap P j (hT.integrable one_le_two)]
     simp [m, μ]
   -- Only the term `j = i` of `∑ⱼ d j (xⱼ)` correlates with `g (xᵢ)`.
   have hsum : ∫ x, ∑ j, d j (x j) * g (x i) ∂μ =
