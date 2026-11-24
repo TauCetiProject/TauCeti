@@ -22,6 +22,9 @@ applies to representations such as `Representation.symmetricPower`, which is bui
 additive monoid instance of the symmetric power rather than on the one underlying its additive
 group.
 
+An element `g` acting by a scalar `c` has character `dim V · c`
+(`Representation.character_eq_finrank_mul_of_apply_eq_smul`).
+
 A commutator `g x g⁻¹ x⁻¹` acting by a scalar `a ≠ 1` forces the character to vanish at `g`
 (`Representation.character_eq_zero_of_commutator_apply_eq_smul`): conjugating `g` by `x`
 multiplies `ρ g` by that scalar while preserving the trace.
@@ -53,6 +56,17 @@ theorem trace_conj {R G M : Type*} [CommSemiring R] [Group G] [AddCommMonoid M] 
     (ρ : Representation R G M) (g h : G) :
     LinearMap.trace R M (ρ (h * g * h⁻¹)) = LinearMap.trace R M (ρ g) := by
   rw [map_mul, LinearMap.trace_mul_comm, ← map_mul, inv_mul_cancel_left]
+
+/-- **The character at an element acting by a scalar.** If `g` acts on `V` as multiplication by
+`c`, the character of `ρ` at `g` is `dim V · c`. When `V` is not finite-dimensional both sides are
+`0`. -/
+theorem character_eq_finrank_mul_of_apply_eq_smul {k G V : Type*} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) {g : G} {c : k}
+    (h : ∀ v, ρ g v = c • v) : ρ.character g = Module.finrank k V * c := by
+  by_cases hV : FiniteDimensional k V
+  · have hg : ρ g = c • (1 : Module.End k V) := LinearMap.ext fun v => (h v).trans (by simp)
+    simp [character, hg, mul_comm]
+  · simp [character_eq_zero_of_not_finite ρ hV, Module.finrank_of_not_finite hV]
 
 /-- **A commutator acting by a nontrivial scalar kills the character.** If the commutator
 `g x g⁻¹ x⁻¹` acts on `V` as multiplication by a scalar `a ≠ 1`, then the character of `ρ`

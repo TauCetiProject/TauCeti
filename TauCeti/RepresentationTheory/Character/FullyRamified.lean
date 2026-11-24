@@ -7,10 +7,8 @@ module
 
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RepresentationTheory.Character
-public import TauCeti.RepresentationTheory.FunLeft
 import TauCeti.RepresentationTheory.Character.Basic
 import TauCeti.RepresentationTheory.Irreducible
-import TauCeti.RepresentationTheory.LinearCharacter.Eigenspace
 
 /-!
 # Fully ramified characters
@@ -36,21 +34,21 @@ theorem is the case of a Heisenberg group `J = H(V)` over a finite field, with `
 is another, with `η` its two-dimensional representation. Such representations are the Heisenberg
 representations from which types of `p`-adic groups are built.
 
-The vanishing off `H` holds in any representation on which a commutator acts by a nontrivial
-scalar (`Representation.character_eq_zero_of_commutator_apply_eq_smul`). The rest follows from
+On `H` the character is `dim · θ`, as for any element acting by a scalar
+(`Representation.character_eq_finrank_mul_of_apply_eq_smul`). The vanishing off `H` holds in any
+representation on which a commutator acts by a nontrivial scalar
+(`Representation.character_eq_zero_of_commutator_apply_eq_smul`). The rest follows from
 the intertwiner count `[J : H] · dim Hom_J(ρ, σ) = dim ρ · dim σ`, a consequence of character
 orthogonality since the character pairing only sees `H`.
 
 When `H` is normal and `θ` is invariant under conjugation by `J`, such an `η` exists, without the
-commutator hypotheses: the `θ`-eigenspace of `H` in the regular representation is stable under
-`J`, nonzero, and contains an irreducible subrepresentation
-(`MonoidHom.exists_subrepresentation_isIrreducible_forall_apply_eq_smul`).
+commutator hypotheses (`Representation.exists_subrepresentation_isIrreducible_forall_apply_eq_smul`
+in `TauCeti.RepresentationTheory.LinearCharacter.NormalSubgroup`).
 
 ## Main statements
 
 * `MonoidHom.IsFullyRamified`: `H` contains the commutators and the commutator pairing of `θ` is
   nondegenerate modulo `H`.
-* `Representation.character_coe_eq_finrank_mul`: on `H` the character is `dim · θ`.
 * `MonoidHom.IsFullyRamified.character_eq_zero_of_notMem`: off `H` the character vanishes.
 * `MonoidHom.IsFullyRamified.sum_character_mul_character_inv`: the character pairing of two such
   representations is `|H| · dim · dim'`.
@@ -63,8 +61,6 @@ commutator hypotheses: the `θ`-eigenspace of `H` in the regular representation 
 * `MonoidHom.IsFullyRamified.finrank_eq_finrank_mul_finrank_intertwiningMap`: a
   finite-dimensional representation on which `H` acts by `θ` has dimension
   `dim η · dim Hom_J(η, σ)`.
-* `MonoidHom.exists_subrepresentation_isIrreducible_forall_apply_eq_smul`: for normal `H` and
-  invariant `θ`, an irreducible representation on which `H` acts by `θ` exists.
 
 ## References
 
@@ -77,24 +73,6 @@ commutator hypotheses: the `θ`-eigenspace of `H` in the regular representation 
 public section
 
 open Module Representation
-
-namespace Representation
-
-variable {k J E : Type*} [Field k] [Group J] [AddCommGroup E] [Module k E] {H : Subgroup J}
-  {θ : H →* kˣ}
-
-/-- **On `H` the character is `dim · θ`.** If every `h ∈ H` acts on `E` as multiplication by
-`θ h`, the character of `ρ` at `h` is `dim E · θ h`. When `E` is not finite-dimensional both
-sides are `0`. -/
-theorem character_coe_eq_finrank_mul (ρ : Representation k J E)
-    (hρ : ∀ (h : H) (ξ : E), ρ h ξ = (θ h : k) • ξ) (h : H) :
-    ρ.character h = finrank k E * θ h := by
-  by_cases hE : FiniteDimensional k E
-  · have hh : ρ h = (θ h : k) • (1 : Module.End k E) := LinearMap.ext fun ξ => by simp [hρ]
-    simp [character, hh, mul_comm]
-  · simp [character_eq_zero_of_not_finite ρ hE, finrank_of_not_finite hE]
-
-end Representation
 
 namespace MonoidHom
 
@@ -143,8 +121,8 @@ theorem sum_character_mul_character_inv [Fintype J] (hθ : θ.IsFullyRamified)
     _ = ∑ _h : H, (finrank k E * finrank k E' : k) := by
         refine Finset.sum_congr rfl fun h _ => ?_
         have hθh : (θ h : k) ≠ 0 := (θ h).ne_zero
-        rw [← Subgroup.coe_inv, character_coe_eq_finrank_mul ρ hρ,
-          character_coe_eq_finrank_mul σ hσ, map_inv, Units.val_inv_eq_inv_val]
+        rw [← Subgroup.coe_inv, ρ.character_eq_finrank_mul_of_apply_eq_smul (hρ h),
+          σ.character_eq_finrank_mul_of_apply_eq_smul (hσ h⁻¹), map_inv, Units.val_inv_eq_inv_val]
         field_simp
     _ = Nat.card H * (finrank k E * finrank k E' : k) := by
         simp [Nat.card_eq_fintype_card]
@@ -163,9 +141,9 @@ theorem index_mul_finrank_intertwiningMap [Finite J] [CharZero k] (hθ : θ.IsFu
   rw [hθ.sum_character_mul_character_inv σ ρ hσ hρ, ← H.card_mul_index, Nat.cast_mul] at h
   have hH : (Nat.card H : k) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
   have hI : (H.index : k) ≠ 0 := Nat.cast_ne_zero.2 H.index_ne_zero_of_finite
-  field_simp at h
-  exact_mod_cast (by linear_combination -h : (H.index * finrank k (IntertwiningMap ρ σ) : k) =
-    finrank k E * finrank k E')
+  -- `h : (|H| [J : H])⁻¹ (|H| dim E' dim E) = dim Hom_J(ρ, σ)`; cancel `|H|`, then `[J : H]`.
+  rw [mul_inv_rev, mul_assoc, inv_mul_cancel_left₀ hH, inv_mul_eq_iff_eq_mul₀ hI] at h
+  exact_mod_cast h.symm.trans (mul_comm _ _)
 
 /-- **`(dim η)² = [J : H]`.** If `θ` is fully ramified, then over an algebraically closed field of
 characteristic zero, an irreducible representation of the finite group `J` on which `H` acts by
@@ -209,48 +187,5 @@ theorem finrank_eq_finrank_mul_finrank_intertwiningMap [Finite J] [IsAlgClosed k
   exact (Nat.eq_of_mul_eq_mul_left (inferInstance : ρ.IsIrreducible).finrank_pos h).symm
 
 end IsFullyRamified
-
-/-- **Existence of a representation on which `H` acts by an invariant character.** Let `H` be a
-normal subgroup of a finite group `J` and `θ` a character of `H` invariant under conjugation by
-`J`. Then the representation of `J` on functions `J → k` by left translation has an irreducible
-subrepresentation on which `H` acts by `θ`. No hypothesis on the commutators or on the field
-is needed. -/
-theorem exists_subrepresentation_isIrreducible_forall_apply_eq_smul [Finite J] [hH : H.Normal]
-    (θ : H →* kˣ)
-    (hinv : ∀ (g : J) (h : H), θ ⟨g * h * g⁻¹, hH.conj_mem h h.property g⟩ = θ h) :
-    ∃ σ : Subrepresentation ((trivial k J k).funLeft J), σ.toRepresentation.IsIrreducible ∧
-      ∀ (h : H) (ξ : σ.toSubmodule), σ.toRepresentation h ξ = (θ h : k) • ξ := by
-  classical
-  have := Fintype.ofFinite J
-  set ρ := (trivial k J k).funLeft J
-  -- The `θ`-eigenspace of `H` is stable under `J`.
-  have hstab (g : J) ⦃ξ : J → k⦄ (hξ : ξ ∈ charEigenspace (ρ.comp H.subtype) θ) :
-      ρ g ξ ∈ charEigenspace (ρ.comp H.subtype) θ := by
-    rw [mem_charEigenspace_iff] at hξ ⊢
-    intro h
-    obtain ⟨h', hh'⟩ : ∃ h' : H, (h' : J) = g⁻¹ * h * g :=
-      ⟨⟨_, by simpa using hH.conj_mem h h.property g⁻¹⟩, rfl⟩
-    have hconj : (h : J) * g = g * h' := by rw [hh']; group
-    have hθ : θ h' = θ h := by
-      rw [← hinv g h']
-      congr 1
-      ext
-      simp [hh', mul_assoc]
-    have hξ' := hξ h'
-    simp only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype] at hξ' ⊢
-    rw [← mul_apply_eq_comp, ← map_mul, hconj, map_mul, mul_apply_eq_comp, hξ', map_smul, hθ]
-  let S : Subrepresentation ρ := ⟨charEigenspace (ρ.comp H.subtype) θ, hstab⟩
-  -- It contains the nonzero vector `∑_h θ(h)⁻¹ δ_h`.
-  have hS : S ≠ ⊥ := by
-    intro hS
-    have hmem : charSum (ρ.comp H.subtype) θ (Pi.single 1 1) ∈ S :=
-      charSum_apply_mem _ _ _
-    rw [hS] at hmem
-    have h0 := congrFun ((Submodule.mem_bot k).1 hmem) 1
-    simp [charSum_apply, ρ, Pi.single_apply] at h0
-  obtain ⟨τ, hτS, hτ⟩ := exists_isAtom_le hS
-  refine ⟨τ, isIrreducible_toRepresentation_of_isAtom hτ, fun h ξ => ?_⟩
-  have hξ := (mem_charEigenspace_iff _ _).1 (hτS ξ.property) h
-  exact Subtype.ext hξ
 
 end MonoidHom
