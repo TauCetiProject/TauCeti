@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import Mathlib.Analysis.LocallyConvex.Barrelled
 import Mathlib.Analysis.Normed.Group.Tannery
@@ -504,26 +505,25 @@ private theorem tendsto_apply_tensorCLM_pullbackInl (T : 𝓓'(W, ℂ))
 
 omit [FiniteDimensional ℝ E] in
 /-- Every test function `ψ` on `U` has a sequence of test functions `(x, y) ↦ ψ x ρ_n y` on `W`
-as in `Distribution.tendsto_pullbackInl`, for smooth nonnegative functions `ρ_n` of integral one
-supported in the closed balls of radii `r n → 0`. -/
+as in `Distribution.tendsto_pullbackInl`, where `ρ_n` is the normalized bump function of a bump
+`σ_n` centred at `0`: a smooth nonnegative function of integral one supported in the closed ball of
+radius `rOut (σ_n)`. These radii tend to zero, and the product of `supp ψ` with each of these closed
+balls lies in `W`. -/
 theorem exists_seq_tensor_mollifier [MeasurableSpace D] [BorelSpace D]
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) (ψ : 𝓓(U, ℝ)) :
-    ∃ (ρ : ℕ → D → ℝ) (r : ℕ → ℝ) (f : ℕ → 𝓓(W, ℝ)), (∀ n, ContDiff ℝ ∞ (ρ n)) ∧
-      (∀ n y, 0 ≤ ρ n y) ∧ (∀ n, ∫ y, ρ n y = 1) ∧
-      (∀ n, support (ρ n) ⊆ closedBall 0 (r n)) ∧ Tendsto r atTop (𝓝 0) ∧
-      ∀ n p, f n p = ψ p.fst * ρ n p.snd := by
+    ∃ (σ : ℕ → ContDiffBump (0 : D)) (f : ℕ → 𝓓(W, ℝ)),
+      Tendsto (fun n ↦ (σ n).rOut) atTop (𝓝 0) ∧
+      (∀ n, ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) (σ n).rOut, toLp 2 (x, y) ∈ W) ∧
+      ∀ n p, f n p = ψ p.fst * (σ n).normed volume p.snd := by
   set K : Compacts E := ⟨tsupport ψ, ψ.hasCompactSupport⟩
-  have hR := half_pos (tubeRadius_pos hU K ψ.tsupport_subset)
-  refine ⟨fun n ↦ (ContDiffBump.shrinking (c := (0 : D)) hR n).normed volume,
-    fun n ↦ (ContDiffBump.shrinking (c := (0 : D)) hR n).rOut,
+  have hδ := tubeRadius_pos hU K ψ.tsupport_subset
+  refine ⟨fun n ↦ ContDiffBump.shrinking (half_pos hδ) n,
     fun n ↦ tensorCLM hU K ψ.tsupport_subset n
       (ContDiffMapSupportedIn.of_support_subset ψ.contDiff (subset_tsupport _)),
-    fun n ↦ (ContDiffBump.shrinking hR n).contDiff_normed,
-    fun n ↦ (ContDiffBump.shrinking hR n).nonneg_normed,
-    fun n ↦ (ContDiffBump.shrinking hR n).integral_normed, fun n ↦ ?_,
-    ContDiffBump.tendsto_rOut_shrinking hR, fun n p ↦ ?_⟩
-  · rw [(ContDiffBump.shrinking hR n).support_normed_eq]
-    exact ball_subset_closedBall
+    ContDiffBump.tendsto_rOut_shrinking (half_pos hδ), fun n x hx y hy ↦ ?_, fun n p ↦ ?_⟩
+  · refine toLp_mem_of_lt_tubeRadius hU K ψ.tsupport_subset hx (by simpa using hδ) ?_
+    exact (mem_closedBall_zero_iff.1 hy).trans_lt
+      ((ContDiffBump.rOut_shrinking_le (half_pos hδ) n).trans_lt (half_lt_self hδ))
   · rw [tensorCLM_apply, ContDiffMapSupportedIn.coe_of_support_subset]
 
 /-- **Additivity of the pullback in the distribution.** -/
@@ -655,11 +655,14 @@ private theorem pullbackInl_apply_eq_tsum [MeasurableSpace E] [BorelSpace E] [Me
       ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C) :
     T.pullbackInl hU h ψ = ∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
       𝓕 (fun x ↦ (ψ x : ℂ)) (m : WithLp 2 (E × D)).fst * T.localFourier χ (-m) := by
-  obtain ⟨ρ, r, f, -, hρ0, hρ1, hρr, hr, hf⟩ := exists_seq_tensor_mollifier hU ψ
-  have hM : ∀ᶠ n in atTop, ∫ y, |ρ n y| ≤ 1 :=
-    Eventually.of_forall fun n ↦ by simp_rw [abs_of_nonneg (hρ0 n _), hρ1 n, le_rfl]
-  have h1 : Tendsto (fun n ↦ ∫ y, ρ n y) atTop (𝓝 1) :=
-    tendsto_const_nhds.congr fun n ↦ (hρ1 n).symm
+  obtain ⟨σ, f, hr, -, hf⟩ := exists_seq_tensor_mollifier hU ψ
+  set ρ : ℕ → D → ℝ := fun n ↦ (σ n).normed volume
+  have hM : ∀ᶠ n in atTop, ∫ y, |ρ n y| ≤ 1 := Eventually.of_forall fun n ↦ by
+    simp_rw [ρ, abs_of_nonneg ((σ n).nonneg_normed _), (σ n).integral_normed, le_rfl]
+  have h1 : Tendsto (fun n ↦ ∫ y, ρ n y) atTop (𝓝 1) := by
+    simp_rw [ρ, ContDiffBump.integral_normed, tendsto_const_nhds]
+  have hρr (n : ℕ) : support (ρ n) ⊆ closedBall 0 (σ n).rOut := by
+    simpa only [ρ, (σ n).support_normed_eq] using ball_subset_closedBall
   exact tendsto_nhds_unique
     (tendsto_pullbackInl T hU h ψ hM h1 (Eventually.of_forall hρr) hr (Eventually.of_forall hf))
     (tendsto_apply_tsum T hδ hχ L hL hc hdecay hM h1 (Eventually.of_forall hρr) hr
