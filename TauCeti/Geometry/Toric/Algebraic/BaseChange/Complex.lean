@@ -53,9 +53,13 @@ noncomputable def affineChartDiagramComplexIso : Φ.affineToricDiagram ≅ Φ.af
             _ →ₐ[ℂ] _) =
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ (dualSemigroup Φ.lattice τ.val) :
             _ →ₐ[ℂ] _).comp (faceAffineChartRingMap ℂ Φ.lattice hτσ) :=
-        -- On a monomial both sides give the same character; the two inclusions of dual semigroups
-        -- agree on underlying characters, which `rfl` closes.
-        AddMonoidAlgebra.algHom_ext (fun m ↦ by simp; rfl) (Subsingleton.elim _ _)
+        AddMonoidAlgebra.algHom_ext (fun m ↦ by
+          simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
+            AddMonoidAlgebra.toMultiplicativeAlgEquiv_single, faceAffineCoordinateRingMap_single,
+            faceAffineChartRingMap_single]
+          -- On a monomial both sides give the monomial of the same character of `τ`.
+          exact congrArg (MonoidAlgebra.single · 1) (congrArg Multiplicative.ofAdd
+            (Subtype.ext (AddSubmonoid.coe_inclusion _ m).symm))) (Subsingleton.elim _ _)
       -- The diagram maps and the components unfold to spectra of the ring maps in `hring`.
       have key :
           Spec.map (CommRingCat.ofHom (faceAffineCoordinateRingMap Φ.lattice hτσ).toRingHom) ≫
@@ -101,6 +105,17 @@ theorem affineChartι_finiteFanSchemeComplexIso_hom (σ : Φ.cones) :
       (affineToricSchemeIsoAddMonoidAlgebraSpec Φ.lattice σ).inv.left ≫
         Φ.affineToricChartι σ := by
   have h := (Φ.isColimitAffineChartCocone ℂ).comp_coconePointsIsoOfNatIso_hom
+    Φ.isColimitAffineToricCocone Φ.affineChartDiagramComplexIso.symm σ
+  rw [affineToricCocone_ι_app] at h
+  exact h
+
+/-- On the affine toric chart of a cone, the inverse comparison is the change of exponent notation
+followed by the inclusion of the complex affine chart. -/
+@[reassoc (attr := simp)]
+theorem affineToricChartι_finiteFanSchemeComplexIso_inv (σ : Φ.cones) :
+    Φ.affineToricChartι σ ≫ Φ.finiteFanSchemeComplexIso.inv =
+      (affineToricSchemeIsoAddMonoidAlgebraSpec Φ.lattice σ).hom.left ≫ Φ.affineChartι ℂ σ := by
+  have h := (Φ.isColimitAffineChartCocone ℂ).comp_coconePointsIsoOfNatIso_inv
     Φ.isColimitAffineToricCocone Φ.affineChartDiagramComplexIso.symm σ
   rw [affineToricCocone_ι_app] at h
   exact h

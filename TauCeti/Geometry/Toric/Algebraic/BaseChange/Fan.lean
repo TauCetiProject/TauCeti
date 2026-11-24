@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.RelativeGluing
+public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import TauCeti.Geometry.Toric.Algebraic.BaseChange.AffineChart
 
 /-!
@@ -95,30 +96,11 @@ instance isOpenImmersion_affineChartDiagram_map {τ σ : Φ.cones} (f : τ ⟶ �
 faces `τ` and `υ` of a cone `σ` have the same image in the chart of `σ`, they come from a common
 point of the chart of `τ ⊓ υ`. -/
 instance isLocallyDirected_affineChartDiagram :
-    (Φ.affineChartDiagram R ⋙ Scheme.forget).IsLocallyDirected := by
-  refine ⟨fun {τ υ σ} fτ fυ xτ xυ h ↦ ?_⟩
-  have hτσ := Φ.isFaceOf_of_le σ.property τ.property (leOfHom fτ)
-  have hυσ := Φ.isFaceOf_of_le σ.property υ.property (leOfHom fυ)
-  -- On points, the functor `Φ.affineChartDiagram R ⋙ Scheme.forget` applies the face maps.
-  have h' : faceAffineChartMap R Φ.lattice hτσ xτ = faceAffineChartMap R Φ.lattice hυσ xυ := h
-  have hσ := (Φ.isToricCone σ.property).rational
-  have := hσ.isOpenImmersion_faceAffineChartMap R Φ.lattice hτσ
-  have := hσ.isOpenImmersion_faceAffineChartMap R Φ.lattice hυσ
-  -- The common image lies in the image of the chart of `τ ⊓ υ`.
-  obtain ⟨x, hx⟩ : faceAffineChartMap R Φ.lattice hτσ xτ ∈
-      Set.range (faceAffineChartMap R Φ.lattice (hτσ.inf_left hυσ)) := by
-    rw [hσ.range_faceAffineChartMap_inf R Φ.lattice hτσ hυσ]
-    exact ⟨⟨xτ, rfl⟩, ⟨xυ, h'.symm⟩⟩
-  have hτ : faceAffineChartMap R Φ.lattice
-      (Φ.isFaceOf_of_le τ.property (Φ.inf_mem τ.property υ.property) inf_le_left) x = xτ := by
-    apply (faceAffineChartMap R Φ.lattice hτσ).isOpenEmbedding.injective
-    rw [← Scheme.Hom.comp_apply, faceAffineChartMap_comp, hx]
-  have hυ : faceAffineChartMap R Φ.lattice
-      (Φ.isFaceOf_of_le υ.property (Φ.inf_mem τ.property υ.property) inf_le_right) x = xυ := by
-    apply (faceAffineChartMap R Φ.lattice hυσ).isOpenEmbedding.injective
-    rw [← Scheme.Hom.comp_apply, faceAffineChartMap_comp, hx, h']
-  exact ⟨τ ⊓ υ, homOfLE (Subtype.coe_le_coe.1 inf_le_left),
-    homOfLE (Subtype.coe_le_coe.1 inf_le_right), x, hτ, hυ⟩
+    (Φ.affineChartDiagram R ⋙ Scheme.forget).IsLocallyDirected :=
+  Scheme.IsLocallyDirected.isLocallyDirected_of_range_inter_subset _ fun {τ υ σ} fτ fυ ↦
+    ((Φ.isToricCone σ.property).rational.range_faceAffineChartMap_inf R Φ.lattice
+      (Φ.isFaceOf_of_le σ.property τ.property (leOfHom fτ))
+      (Φ.isFaceOf_of_le σ.property υ.property (leOfHom fυ))).ge
 
 /-! ### The toric scheme of a finite fan -/
 
@@ -214,21 +196,8 @@ theorem affineChartι_apply_eq_affineChartι_apply_iff {σ τ : Φ.cones}
     Φ.affineChartι R σ x = Φ.affineChartι R τ y ↔
       ∃ z : affineChart R Φ.lattice (σ.val ⊓ τ.val),
         faceAffineChartMap R Φ.lattice (Φ.inf_isFaceOf_left σ.property τ.property) z = x ∧
-          faceAffineChartMap R Φ.lattice (Φ.inf_isFaceOf_right σ.property τ.property) z = y := by
-  refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
-  · obtain ⟨κ, fσ, fτ, (w : affineChart R Φ.lattice κ), hwx, hwy⟩ :=
-      (Scheme.IsLocallyDirected.ι_eq_ι_iff (Φ.affineChartDiagram R)).1 h
-    have hκ : κ.val.IsFaceOf (σ.val ⊓ τ.val) := Φ.isFaceOf_of_le
-      (Φ.inf_mem σ.property τ.property) κ.property (le_inf (leOfHom fσ) (leOfHom fτ))
-    -- `hwx` and `hwy` are stated with the diagram maps, which are the face chart morphisms.
-    refine ⟨faceAffineChartMap R Φ.lattice hκ w, ?_, ?_⟩
-    · rw [← Scheme.Hom.comp_apply, faceAffineChartMap_comp]
-      exact hwx
-    · rw [← Scheme.Hom.comp_apply, faceAffineChartMap_comp]
-      exact hwy
-  · rw [← hzx, ← hzy, ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply]
-    exact congrArg (· z) ((faceAffineChartMap_comp_affineChartι R (τ := σ ⊓ τ) _).trans
-      (faceAffineChartMap_comp_affineChartι R (τ := σ ⊓ τ) _).symm)
+          faceAffineChartMap R Φ.lattice (Φ.inf_isFaceOf_right σ.property τ.property) z = y :=
+  Scheme.IsLocallyDirected.ι_eq_ι_iff_inf (Φ.affineChartDiagram R)
 
 variable (Φ)
 
@@ -265,21 +234,10 @@ noncomputable instance : (Φ.affineChartOpenCover R).LocallyDirected where
   trans_id σ := (Φ.affineChartDiagram R).map_id σ
   trans_comp f g := (Φ.affineChartDiagram R).map_comp f g
   w {τ σ} f := faceAffineChartMap_comp_affineChartι R (τ := τ) (σ := σ) _
-  directed {σ τ : Φ.cones} x := by
-    obtain ⟨z, hzσ, -⟩ := (affineChartι_apply_eq_affineChartι_apply_iff R
-      (pullback.fst (Φ.affineChartι R σ) (Φ.affineChartι R τ) x)
-      (pullback.snd (Φ.affineChartι R σ) (Φ.affineChartι R τ) x)).1
-      congr($(pullback.condition (f := Φ.affineChartι R σ) (g := Φ.affineChartι R τ)) x)
-    refine ⟨(σ ⊓ τ : Φ.cones), (homOfLE inf_le_left : (σ ⊓ τ : Φ.cones) ⟶ σ),
-      (homOfLE inf_le_right : (σ ⊓ τ : Φ.cones) ⟶ τ), z, ?_⟩
-    -- The first projection of a pullback along an open immersion is injective.
-    apply (pullback.fst (Φ.affineChartι R σ) (Φ.affineChartι R τ)).isOpenEmbedding.injective
-    refine Eq.trans ?_ hzσ
-    exact congr($(pullback.lift_fst
-      ((Φ.affineChartDiagram R).map (homOfLE inf_le_left : (σ ⊓ τ : Φ.cones) ⟶ σ))
-      ((Φ.affineChartDiagram R).map (homOfLE inf_le_right : (σ ⊓ τ : Φ.cones) ⟶ τ))
-      ((faceAffineChartMap_comp_affineChartι R _).trans
-        (faceAffineChartMap_comp_affineChartι R _).symm)) z)
+  directed x := by
+    -- The cover is definitionally Mathlib's cover of the colimit by the members of the diagram;
+    -- a tactic proof sees through the chart inclusions to the colimit inclusions.
+    exact (Scheme.IsLocallyDirected.openCover (Φ.affineChartDiagram R)).exists_lift_trans_eq x
   property_trans f := isOpenImmersion_affineChartDiagram_map R f
 
 /-- The transition maps of the affine chart open cover are the face chart morphisms. -/
@@ -291,22 +249,39 @@ theorem affineChartOpenCover_trans {τ σ : Φ.cones} (f : τ ⟶ σ) :
 
 /-! ### The structure morphism -/
 
+-- The structure morphisms of the charts are compatible with the face chart morphisms.
+private theorem faceAffineChartMap_comp_specAlgebraMap_of_le {τ σ : Φ.cones} (h : τ ≤ σ) :
+    faceAffineChartMap R Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h) ≫
+      Spec.algebraMap R (affineChartRing R Φ.lattice σ) =
+        Spec.algebraMap R (affineChartRing R Φ.lattice τ) :=
+  faceAffineChartMap_comp_specAlgebraMap ..
+
 /-- The structure morphism from the toric scheme of a fan over `R` to `Spec R`. -/
 noncomputable def finiteFanSchemeToSpec : Φ.finiteFanScheme R ⟶ Spec (.of R) :=
   Φ.finiteFanSchemeDesc R (fun σ ↦ Spec.algebraMap R (affineChartRing R Φ.lattice σ))
-    fun _ ↦ faceAffineChartMap_comp_specAlgebraMap ..
+    (Φ.faceAffineChartMap_comp_specAlgebraMap_of_le R)
 
 /-- On each affine chart, the structure morphism is the structure morphism of `Spec R[P_σ]`. -/
 @[reassoc (attr := simp)]
 theorem affineChartι_finiteFanSchemeToSpec (σ : Φ.cones) :
     Φ.affineChartι R σ ≫ Φ.finiteFanSchemeToSpec R =
-      Spec.algebraMap R (affineChartRing R Φ.lattice σ) := by
-  rw [finiteFanSchemeToSpec]
-  exact Φ.affineChartι_finiteFanSchemeDesc R _ (fun _ ↦ faceAffineChartMap_comp_specAlgebraMap ..) σ
+      Spec.algebraMap R (affineChartRing R Φ.lattice σ) :=
+  Φ.affineChartι_finiteFanSchemeDesc R _ (Φ.faceAffineChartMap_comp_specAlgebraMap_of_le R) σ
 
 /-! ### Change of coefficients -/
 
 variable (S : Type u) [CommRing S] [Algebra R S]
+
+-- Changing coefficients in the charts is compatible with the face chart morphisms.
+private theorem faceAffineChartMap_comp_specAlgebraMap_comp_affineChartι_of_le {τ σ : Φ.cones}
+    (h : τ ≤ σ) :
+    faceAffineChartMap S Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h) ≫
+      Spec.algebraMap (affineChartRing R Φ.lattice σ) (affineChartRing S Φ.lattice σ) ≫
+        Φ.affineChartι R σ =
+      Spec.algebraMap (affineChartRing R Φ.lattice τ) (affineChartRing S Φ.lattice τ) ≫
+        Φ.affineChartι R τ := by
+  rw [faceAffineChartMap_comp_specAlgebraMap_affineChartRing_assoc,
+    faceAffineChartMap_comp_affineChartι]
 
 /-- The morphism `X_{Φ,S} ⟶ X_{Φ,R}` of toric schemes induced by an `R`-algebra `S`: on each
 affine chart it changes coefficients from `R` to `S`. -/
@@ -314,9 +289,7 @@ noncomputable def finiteFanSchemeMap : Φ.finiteFanScheme S ⟶ Φ.finiteFanSche
   Φ.finiteFanSchemeDesc S
     (fun σ ↦ Spec.algebraMap (affineChartRing R Φ.lattice σ) (affineChartRing S Φ.lattice σ) ≫
       Φ.affineChartι R σ)
-    fun _ ↦ by
-      rw [faceAffineChartMap_comp_specAlgebraMap_affineChartRing_assoc,
-        faceAffineChartMap_comp_affineChartι]
+    (Φ.faceAffineChartMap_comp_specAlgebraMap_comp_affineChartι_of_le R S)
 
 /-- On each affine chart, the coefficient change morphism is the coefficient change of the chart
 followed by the inclusion of the chart. -/
@@ -324,11 +297,9 @@ followed by the inclusion of the chart. -/
 theorem affineChartι_finiteFanSchemeMap (σ : Φ.cones) :
     Φ.affineChartι S σ ≫ Φ.finiteFanSchemeMap R S =
       Spec.algebraMap (affineChartRing R Φ.lattice σ) (affineChartRing S Φ.lattice σ) ≫
-        Φ.affineChartι R σ := by
-  rw [finiteFanSchemeMap]
-  exact Φ.affineChartι_finiteFanSchemeDesc S _ (fun _ ↦ by
-    rw [faceAffineChartMap_comp_specAlgebraMap_affineChartRing_assoc,
-      faceAffineChartMap_comp_affineChartι]) σ
+        Φ.affineChartι R σ :=
+  Φ.affineChartι_finiteFanSchemeDesc S _
+    (Φ.faceAffineChartMap_comp_specAlgebraMap_comp_affineChartι_of_le R S) σ
 
 /-- The coefficient change morphism lies over `Spec S ⟶ Spec R`. -/
 @[reassoc]
