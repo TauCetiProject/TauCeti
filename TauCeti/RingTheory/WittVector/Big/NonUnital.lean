@@ -8,10 +8,9 @@ module
 public import Mathlib.Algebra.Algebra.Unitization
 public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.NonUnitalSubring.Basic
+public import TauCeti.Algebra.Algebra.NonUnitalHom
+public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.RingTheory.WittVector.Big.Basic
-
-import TauCeti.Algebra.Algebra.NonUnitalHom
-import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Big Witt vectors over nonunital commutative rings
@@ -75,6 +74,18 @@ variable {S T : TruncationSet} {R : Type*} [NonUnitalCommRing R]
 noncomputable def toBigWitt : NonUnitalBigWitt S R →ₙ+* BigWittVector S (Unitization ℤ R) :=
   NonUnitalSubringClass.subtype _
 
+/-- The kernel inclusion is injective. -/
+theorem toBigWitt_injective :
+    Function.Injective (toBigWitt : NonUnitalBigWitt S R → BigWittVector S (Unitization ℤ R)) :=
+  Subtype.val_injective
+
+/-- An ambient Witt vector comes from the nonunital ring exactly when its augmentation is zero. -/
+theorem mem_range_toBigWitt (y : BigWittVector S (Unitization ℤ R)) :
+    y ∈ (toBigWitt (S := S) (R := R)).range ↔
+      BigWittVector.map (R := Unitization ℤ R) (R' := ℤ) ↑(Unitization.fstHom ℤ R) y = 0 := by
+  rw [toBigWitt, NonUnitalSubring.range_subtype]
+  exact NonUnitalSubring.mem_bot
+
 /-- The defining kernel equation. -/
 @[simp]
 theorem map_fst_toBigWitt (x : NonUnitalBigWitt S R) :
@@ -115,6 +126,7 @@ noncomputable def mk (x : S → R) : NonUnitalBigWitt S R := by
   · simp [hn]
   · simp [BigWittVector.coeff_eq_zero_of_notMem _ n hn]
 
+/-- The vector constructed from a family has that family as its coordinates. -/
 @[simp]
 theorem coeff_mk (x : S → R) (n : S) : coeff (mk x) n = x n := by
   classical
@@ -141,6 +153,7 @@ theorem ext {x y : NonUnitalBigWitt S R} (h : ∀ n, coeff x n = coeff y n) : x 
   · exact (x.val.coeff_eq_zero_of_notMem n hn).trans
       (y.val.coeff_eq_zero_of_notMem n hn).symm
 
+/-- Reconstructing a vector from its coordinates recovers the original vector. -/
 @[simp]
 theorem mk_coeff (x : NonUnitalBigWitt S R) : mk (coeff x) = x := by
   ext n
@@ -180,8 +193,9 @@ private theorem coeff_toBigWitt_pair (x y : NonUnitalBigWitt S R) :
   rw [Fin.forall_fin_two]
   exact ⟨congrFun (coordinates_toBigWitt x) k, congrFun (coordinates_toBigWitt y) k⟩
 
-/-- The coordinates of a sum are the addition structure polynomials evaluated on the
-summands' coordinates via the integral unitization. -/
+/-- Extend the summands' coordinates by zero and include them in the integral unitization.
+The coordinates of the sum are the second components of the addition structure polynomials
+evaluated on those inputs. -/
 theorem coeff_add (x y : NonUnitalBigWitt S R) (n : S) :
     coeff (x + y) n = (eval₂ (Int.castRingHom (Unitization ℤ R)) (fun ik : Fin 2 × ℕ ↦
       (Unitization.inr (coordinates (![x, y] ik.1) ik.2) : Unitization ℤ R))
@@ -190,8 +204,9 @@ theorem coeff_add (x y : NonUnitalBigWitt S R) (n : S) :
     coeff_toBigWitt_pair]
   simp only [aeval_def, algebraMap_int_eq]
 
-/-- The coordinates of a product are the multiplication structure polynomials evaluated on the
-factors' coordinates via the integral unitization. -/
+/-- Extend the factors' coordinates by zero and include them in the integral unitization.
+The coordinates of the product are the second components of the multiplication structure
+polynomials evaluated on those inputs. -/
 theorem coeff_mul (x y : NonUnitalBigWitt S R) (n : S) :
     coeff (x * y) n = (eval₂ (Int.castRingHom (Unitization ℤ R)) (fun ik : Fin 2 × ℕ ↦
       (Unitization.inr (coordinates (![x, y] ik.1) ik.2) : Unitization ℤ R))
@@ -200,8 +215,9 @@ theorem coeff_mul (x y : NonUnitalBigWitt S R) (n : S) :
     coeff_toBigWitt_pair]
   simp only [aeval_def, algebraMap_int_eq]
 
-/-- The coordinates of a negative are the negation structure polynomials evaluated on the
-vector's coordinates via the integral unitization. -/
+/-- Extend the vector's coordinates by zero and include them in the integral unitization.
+The coordinates of the negative are the second components of the negation structure
+polynomials evaluated on those inputs. -/
 theorem coeff_neg (x : NonUnitalBigWitt S R) (n : S) :
     coeff (-x) n = (eval₂ (Int.castRingHom (Unitization ℤ R)) (fun ik : Fin 1 × ℕ ↦
       (Unitization.inr (coordinates x ik.2) : Unitization ℤ R))
@@ -272,6 +288,13 @@ noncomputable def restrict (h : T ≤ S) : NonUnitalBigWitt S R →ₙ+* NonUnit
           ↑(Unitization.fstHom ℤ R) (toBigWitt x)) = 0
       rw [map_fst_toBigWitt, map_zero]
 
+/-- The kernel inclusion commutes with restriction of truncation sets. -/
+@[simp]
+theorem toBigWitt_restrict (h : T ≤ S) (x : NonUnitalBigWitt S R) :
+    toBigWitt (restrict h x) = BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x) :=
+  (rfl)
+
+/-- A coordinate of a restriction is the original coordinate at the included index. -/
 @[simp]
 theorem coeff_restrict (h : T ≤ S) (x : NonUnitalBigWitt S R) (n : T) :
     coeff (restrict h x) n = coeff x ⟨n, h n.property⟩ :=
@@ -279,13 +302,13 @@ theorem coeff_restrict (h : T ≤ S) (x : NonUnitalBigWitt S R) (n : T) :
     (BigWittVector.coeff_restrict_of_mem (R := Unitization ℤ R) h (toBigWitt x) n.property)
 
 @[simp]
-theorem restrict_refl : restrict (le_refl S) = NonUnitalRingHom.id (NonUnitalBigWitt S R) := by
+theorem restrict_self : restrict (le_refl S) = NonUnitalRingHom.id (NonUnitalBigWitt S R) := by
   ext x n
   simp
 
 @[simp]
-theorem restrict_comp {U : TruncationSet} (h : T ≤ S) (k : U ≤ T) :
-    (restrict k).comp (restrict h) = restrict (R := R) (k.trans h) := by
+theorem restrict_comp_restrict {U : TruncationSet} (hUT : U ≤ T) (hTS : T ≤ S) :
+    (restrict hUT).comp (restrict hTS) = restrict (R := R) (hUT.trans hTS) := by
   ext x n
   simp
 
@@ -293,7 +316,7 @@ variable {A B : Type*} [NonUnitalCommRing A] [NonUnitalCommRing B]
 
 /-- Functoriality in the nonunital coefficient ring, obtained from functoriality of
 unitization and of the unital Witt ring. -/
-noncomputable def map (S : TruncationSet) (f : R →ₙ+* A) :
+noncomputable def map (f : R →ₙ+* A) :
     NonUnitalBigWitt S R →ₙ+* NonUnitalBigWitt S A :=
   NonUnitalRingHom.codRestrict
     ((BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
@@ -313,38 +336,59 @@ noncomputable def map (S : TruncationSet) (f : R →ₙ+* A) :
         AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, Unitization.fstHom_apply,
         Unitization.fst_map] using hx
 
+/-- The kernel inclusion carries a coefficient map to the map induced by unitization. -/
+@[simp]
+theorem toBigWitt_map (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) :
+    toBigWitt (map f x) = BigWittVector.map
+      (R := Unitization ℤ R) (R' := Unitization ℤ A)
+      (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x) :=
+  (rfl)
+
+/-- A coefficient map applies the underlying nonunital homomorphism to each coordinate. -/
 @[simp]
 theorem coeff_map (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) (n : S) :
-    coeff (map S f x) n = f (coeff x n) := by
-  -- Compute the coefficient of the inherited unitization map, then take its second component.
-  change ((BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
-      (Unitization.map f.toIntNonUnitalAlgHom).toRingHom
-    (toBigWitt x)).coeff n).snd = _
-  rw [BigWittVector.coeff_map]
-  -- Remove the ring-homomorphism wrapper on the unitization algebra homomorphism.
-  change (Unitization.map f.toIntNonUnitalAlgHom ((toBigWitt x).coeff n)).snd = _
-  rw [Unitization.snd_map, NonUnitalRingHom.toIntNonUnitalAlgHom_apply, coeff]
+    coeff (map f x) n = f (coeff x n) := by
+  simp only [coeff, toBigWitt_map, BigWittVector.coeff_map, AlgHom.toRingHom_eq_coe,
+    AlgHom.coe_toRingHom,
+    Unitization.snd_map, NonUnitalRingHom.toIntNonUnitalAlgHom_apply]
 
 @[simp]
-theorem map_id : map S (NonUnitalRingHom.id R) = NonUnitalRingHom.id (NonUnitalBigWitt S R) := by
+theorem map_id : map (NonUnitalRingHom.id R) = NonUnitalRingHom.id (NonUnitalBigWitt S R) := by
   ext x n
   simp
 
 @[simp]
 theorem map_comp (f : R →ₙ+* A) (g : A →ₙ+* B) :
-    map S (g.comp f) = (map S g).comp (map S f) := by
+    map (S := S) (g.comp f) = (map g).comp (map f) := by
   ext x n
   simp
 
-theorem restrict_comp_map (h : T ≤ S) (f : R →ₙ+* A) :
-    (restrict h).comp (map S f) = (map T f).comp (restrict h) := by
+/-- An injective coefficient map induces an injective map of nonunital Witt vectors. -/
+theorem map_injective (f : R →ₙ+* A) (hf : Function.Injective f) :
+    Function.Injective (map f : NonUnitalBigWitt S R → NonUnitalBigWitt S A) := by
+  intro x y h
+  apply ext
+  intro n
+  exact hf (by simpa using congrArg (coeff · n) h)
+
+/-- A surjective coefficient map induces a surjective map of nonunital Witt vectors. -/
+theorem map_surjective (f : R →ₙ+* A) (hf : Function.Surjective f) :
+    Function.Surjective (map f : NonUnitalBigWitt S R → NonUnitalBigWitt S A) := by
+  intro y
+  choose x hx using fun n : S ↦ hf (coeff y n)
+  refine ⟨mk x, ext fun n ↦ ?_⟩
+  simpa only [coeff_map, coeff_mk] using hx n
+
+/-- Restriction is natural in the nonunital coefficient ring. -/
+theorem map_comp_restrict (h : T ≤ S) (f : R →ₙ+* A) :
+    (map f).comp (restrict h) = (restrict h).comp (map f) := by
   ext x n
   simp
 
 /-- Mapping coefficients acts pointwise on the coordinate function extended by zero. -/
 @[simp]
 theorem coordinates_map (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) :
-    coordinates (map S f x) = f ∘ coordinates x := by
+    coordinates (map f x) = f ∘ coordinates x := by
   classical
   funext n
   simp only [coordinates_apply, Function.comp_apply]
@@ -353,7 +397,7 @@ theorem coordinates_map (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) :
 /-- Ghost components are natural in the nonunital coefficient ring. -/
 @[simp]
 theorem ghostComponent_map (f : R →ₙ+* A) (x : NonUnitalBigWitt S R) (n : S) :
-    ghostComponent n (map S f x) = f (ghostComponent n x) := by
+    ghostComponent n (map f x) = f (ghostComponent n x) := by
   rw [ghostComponent_apply, ghostComponent_apply, map_ghostPolynomial, coordinates_map]
 
 /-- Ghost components commute with restriction of truncation sets. -/
@@ -414,15 +458,51 @@ noncomputable def unitalEquiv : NonUnitalBigWitt S C ≃+* BigWittVector S C whe
   map_mul' := map_mul toUnital
   map_add' := map_add toUnital
 
+/-- The comparison with unital Witt vectors preserves coordinates. -/
 @[simp]
 theorem coeff_unitalEquiv (x : NonUnitalBigWitt S C) (n : S) :
     (unitalEquiv x).coeff n = coeff x n :=
   coeff_toUnital x n
 
+/-- The inverse comparison with unital Witt vectors preserves coordinates. -/
 @[simp]
 theorem coeff_unitalEquiv_symm (x : BigWittVector S C) (n : S) :
     coeff (unitalEquiv.symm x) n = x.coeff n :=
   coeff_mk _ n
+
+/-- The comparison with unital Witt vectors commutes with coefficient ring maps. -/
+@[simp]
+theorem unitalEquiv_map {D : Type*} [CommRing D] (f : C →+* D) (x : NonUnitalBigWitt S C) :
+    unitalEquiv (map f.toNonUnitalRingHom x) = BigWittVector.map f (unitalEquiv x) := by
+  apply unitalEquiv.symm.injective
+  apply ext
+  intro n
+  simp
+  -- Forgetting the unit leaves the underlying coefficient function unchanged.
+  rfl
+
+/-- The comparison with unital Witt vectors commutes with restriction. -/
+@[simp]
+theorem unitalEquiv_restrict (h : T ≤ S) (x : NonUnitalBigWitt S C) :
+    unitalEquiv (restrict h x) = BigWittVector.restrict h (unitalEquiv x) := by
+  apply unitalEquiv.symm.injective
+  apply ext
+  intro n
+  simp only [RingEquiv.symm_apply_apply, coeff_restrict, coeff_unitalEquiv_symm, SetLike.coe_mem,
+    BigWittVector.coeff_restrict_of_mem]
+  exact (coeff_unitalEquiv x ⟨n, h n.property⟩).symm
+
+/-- The comparison with unital Witt vectors preserves the ghost map. -/
+@[simp]
+theorem ghostMap_unitalEquiv (x : NonUnitalBigWitt S C) :
+    BigWittVector.ghostMap (unitalEquiv x) = ghostMap x := by
+  funext n
+  rw [BigWittVector.ghostMap_apply, ghostMap_apply, ghostComponent_apply]
+  apply ghostPolynomial_congr
+  intro d hd
+  have hdS := S.mem_of_dvd n.property hd
+  rw [coordinates_apply, dite_eq_left hdS]
+  exact coeff_unitalEquiv x ⟨d, hdS⟩
 
 end Unital
 

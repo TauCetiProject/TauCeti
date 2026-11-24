@@ -101,11 +101,20 @@ noncomputable def lift : A →+* BigWittVector S R where
     rw [liftFun_restrict f hf, map_mul, map_mul,
       liftFun_restrict f hf, liftFun_restrict f hf]
 
+/-- Restricting the value of a lift to a finite stage recovers the given value there. -/
 @[simp]
 theorem restrict_lift (T : FiniteSubtruncation S) (a : A) :
     restrict T.property.1 (lift f hf a) = f T a :=
   liftFun_restrict f hf T a
 
+/-- The coordinate of a lift at `n` is read from the finite stage of divisors of `n`. -/
+theorem coeff_lift (a : A) (n : S) :
+    (lift f hf a).coeff n = (f (divisorStage n) a).coeff n := by
+  have hn := TruncationSet.mem_divisors_self (S.ne_zero_of_mem n.property)
+  simpa only [coeff_restrict_of_mem _ _ hn] using
+    congrArg (fun x ↦ x.coeff n) (restrict_lift f hf (divisorStage n) a)
+
+/-- Composing a lift with a finite restriction recovers the given homomorphism at that stage. -/
 @[simp]
 theorem restrict_comp_lift (T : FiniteSubtruncation S) :
     (restrict T.property.1).comp (lift f hf) = f T := by
@@ -138,12 +147,15 @@ noncomputable def liftEquiv :
     exact restrict_comp_lift f hf T
   right_inv g := lift_unique _ _ _ fun _ ↦ rfl
 
+/-- The forward limit equivalence lifts a compatible family of homomorphisms. -/
+@[simp]
 theorem liftEquiv_apply
     (f : {f : ∀ T : FiniteSubtruncation S, A →+* BigWittVector T.val R //
       ∀ (T U : FiniteSubtruncation S) (h : T.val ≤ U.val), (restrict h).comp (f U) = f T}) :
     liftEquiv f = lift f.val f.property := by
   rfl
 
+/-- The inverse limit equivalence sends a homomorphism to its finite restrictions. -/
 @[simp]
 theorem liftEquiv_symm_apply (g : A →+* BigWittVector S R) (T : FiniteSubtruncation S) :
     (liftEquiv.symm g).val T = (restrict T.property.1).comp g := by
@@ -165,7 +177,7 @@ end TauCeti.BigWittVector
 namespace TauCeti.NonUnitalBigWitt
 
 open BigWitt (TruncationSet)
-open BigWitt.TruncationSet (FiniteSubtruncation apply_eq_of_finiteSubtruncations)
+open BigWitt.TruncationSet (FiniteSubtruncation divisorStage apply_eq_of_finiteSubtruncations)
 
 variable {S : TruncationSet} {R A : Type*}
 
@@ -215,11 +227,21 @@ noncomputable def lift : A →ₙ+* NonUnitalBigWitt S R where
     rw [liftFun_restrict f hf, map_mul, map_mul,
       liftFun_restrict f hf, liftFun_restrict f hf]
 
+/-- Restricting the value of a lift to a finite stage recovers the given value there. -/
 @[simp]
 theorem restrict_lift (T : FiniteSubtruncation S) (a : A) :
     restrict T.property.1 (lift f hf a) = f T a :=
   liftFun_restrict f hf T a
 
+/-- The coordinate of a lift at `n` is read from the finite stage of divisors of `n`. -/
+theorem coeff_lift (a : A) (n : S) :
+    (lift f hf a).coeff n = (f (divisorStage n) a).coeff
+      ⟨n, TruncationSet.mem_divisors_self (S.ne_zero_of_mem n.property)⟩ := by
+  simpa only [coeff_restrict] using
+    congrArg (fun x ↦ x.coeff ⟨ n, TruncationSet.mem_divisors_self (S.ne_zero_of_mem n.property)⟩)
+      (restrict_lift f hf (divisorStage n) a)
+
+/-- Composing a lift with a finite restriction recovers the given homomorphism at that stage. -/
 @[simp]
 theorem restrict_comp_lift (T : FiniteSubtruncation S) :
     (restrict T.property.1).comp (lift f hf) = f T := by
@@ -244,7 +266,7 @@ noncomputable def liftEquiv :
   toFun f := lift f.val f.property
   invFun g := ⟨fun T ↦ (restrict T.property.1).comp g, by
     intro T U h
-    rw [← NonUnitalRingHom.comp_assoc, restrict_comp]⟩
+    rw [← NonUnitalRingHom.comp_assoc, restrict_comp_restrict]⟩
   left_inv := by
     rintro ⟨f, hf⟩
     apply Subtype.ext
@@ -252,12 +274,15 @@ noncomputable def liftEquiv :
     exact restrict_comp_lift f hf T
   right_inv g := lift_unique _ _ _ fun _ ↦ rfl
 
+/-- The forward limit equivalence lifts a compatible family of homomorphisms. -/
+@[simp]
 theorem liftEquiv_apply
     (f : {f : ∀ T : FiniteSubtruncation S, A →ₙ+* NonUnitalBigWitt T.val R //
       ∀ (T U : FiniteSubtruncation S) (h : T.val ≤ U.val), (restrict h).comp (f U) = f T}) :
     liftEquiv f = lift f.val f.property := by
   rfl
 
+/-- The inverse limit equivalence sends a homomorphism to its finite restrictions. -/
 @[simp]
 theorem liftEquiv_symm_apply (g : A →ₙ+* NonUnitalBigWitt S R) (T : FiniteSubtruncation S) :
     (liftEquiv.symm g).val T = (restrict T.property.1).comp g := by
