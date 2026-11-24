@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann
-public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
+import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
+import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
@@ -40,8 +41,9 @@ controlled by the `Lᵖ` norms of the chart data and of their weak derivative
 For a smooth section `s`, the reading of `χᵢ s` in chart `i` is `χ' u`, where `u` is the reading
 of `s` and `χ'` that of `χᵢ`. The set `K` of points of the chart image where `χ'` can be nonzero
 is compact, and the product rule bounds the derivative of `χ' u` by that of `u` on `K` and by
-`u` itself. In the chart, `D s` reads as `\bar∂u + Zᵢ u` for a zeroth-order term `Zᵢ` bounded on
-the chart image, so the interior estimate for `\bar∂`
+`u` itself (`TauCeti.eLpNorm_fderiv_le_of_eqOn_smul`). In the chart, `D s` reads as
+`\bar∂u + Zᵢ u` for a zeroth-order term `Zᵢ` bounded on the chart image, so the interior estimate
+for `\bar∂`
 (`TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le`, from
 `TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le`) bounds the derivative of `u`
 on `K` by the readings of `D s` and `s` on the chart image
@@ -53,16 +55,17 @@ extends from smooth sections to all of `W^{1,p}(Σ, V)`.
 
 ## Main results
 
-* `TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le`: the interior `Lᵖ`
-  estimate for `\bar∂` plus a bounded zeroth-order term, for maps into a finite-dimensional complex
-  normed space.
-* `TauCeti.SectionChartData.norm_le_mul_norm_chartValueL_add_norm_chartDerivL`: the `W^{1,p}` norm
-  of a chart component of an order-one tuple is controlled by the chart data and their weak
-  derivative.
 * `TauCeti.IsRealCauchyRiemannOperator.exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le`: the
   estimate in one chart, for smooth sections cut off inside the chart domain.
 * `TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevL_add_norm`: the elliptic
   estimate on `W^{1,p}(Σ, V)`.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix C.2 (the elliptic estimate for real
+  Cauchy–Riemann operators on closed surfaces) and Appendix B.4 (the interior Calderón–Zygmund
+  estimate for `\bar∂`).
 -/
 
 public section
@@ -70,289 +73,9 @@ public section
 noncomputable section
 
 open Bundle MeasureTheory Module Set TopologicalSpace
-open ContinuousLinearMap (complexAntilinearPartL complexAntilinearPartL_apply_apply)
 open scoped Manifold ENNReal NNReal ContDiff TauCeti.ComplexManifold
 
 namespace TauCeti
-
-section Local
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
-  [IsScalarTower ℝ ℂ F]
-
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-
-/-- The derivative of `e ∘ u` for a complex-linear isomorphism `e`. -/
-private theorem fderiv_comp_continuousLinearEquiv (e : F ≃L[ℂ] G) (u : ℂ → F) (z : ℂ) :
-    fderiv ℝ (fun y ↦ e (u y)) z =
-      ((e : F →L[ℂ] G).restrictScalars ℝ).comp (fderiv ℝ u z) :=
-  (ContinuousLinearEquiv.ofContinuousLinearMap ((e : F →L[ℂ] G).restrictScalars ℝ)
-    ((e.symm : G →L[ℂ] F).restrictScalars ℝ) (by ext; simp) (by ext; simp)).comp_fderiv
-
-/-- The conjugate Wirtinger derivative of `e ∘ u` is `e` applied to `\bar∂u` at `1`. -/
-private theorem conjWirtingerDeriv_comp_continuousLinearEquiv_one (e : F ≃L[ℂ] G) (u : ℂ → F)
-    (z : ℂ) : conjWirtingerDeriv (fun y ↦ e (u y)) z 1 =
-      e (complexAntilinearPartL (fderiv ℝ u z) 1) := by
-  rw [conjWirtingerDeriv_apply, fderiv_comp_continuousLinearEquiv,
-    complexAntilinearPartL_apply_apply]
-  simp only [ContinuousLinearMap.comp_apply, smul_eq_mul, mul_one]
-  rw [RCLike.real_smul_eq_coe_smul (K := ℂ), map_smul, map_add, map_smul]
-  push_cast
-  rfl
-
-/-- The derivative of `u` is bounded by `‖e⁻¹‖` times that of `e ∘ u`. -/
-private theorem norm_fderiv_le_of_continuousLinearEquiv (e : F ≃L[ℂ] G) (u : ℂ → F) (z : ℂ) :
-    ‖fderiv ℝ u z‖ ≤ ‖(e.symm : G →L[ℂ] F)‖ * ‖fderiv ℝ (fun y ↦ e (u y)) z‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  calc ‖fderiv ℝ u z v‖ = ‖e.symm (fderiv ℝ (fun y ↦ e (u y)) z v)‖ := by
-        simp [fderiv_comp_continuousLinearEquiv]
-    _ ≤ ‖(e.symm : G →L[ℂ] F)‖ * ‖fderiv ℝ (fun y ↦ e (u y)) z v‖ :=
-        (e.symm : G →L[ℂ] F).le_opNorm _
-    _ ≤ ‖(e.symm : G →L[ℂ] F)‖ * (‖fderiv ℝ (fun y ↦ e (u y)) z‖ * ‖v‖) := by
-        gcongr
-        exact ContinuousLinearMap.le_opNorm _ _
-    _ = ‖(e.symm : G →L[ℂ] F)‖ * ‖fderiv ℝ (fun y ↦ e (u y)) z‖ * ‖v‖ := by ring
-
-/-- A pointwise bound `‖g - \bar∂u‖ ≤ M ‖u‖` transported along a complex-linear isomorphism `e`,
-with `\bar∂(e ∘ u)` written as a conjugate Wirtinger derivative. -/
-private theorem norm_sub_conjWirtingerDeriv_comp_le (e : F ≃L[ℂ] G) {u : ℂ → F}
-    {g : ℂ →L[ℝ] F} {M : ℝ≥0} {z : ℂ}
-    (hg : ‖g - complexAntilinearPartL (fderiv ℝ u z)‖ ≤ M * ‖u z‖) :
-    ‖e (g 1) - conjWirtingerDeriv (fun y ↦ e (u y)) z 1‖ ≤
-      ‖(e : F →L[ℂ] G)‖ * M * ‖(e.symm : G →L[ℂ] F)‖ * ‖e (u z)‖ := by
-  rw [conjWirtingerDeriv_comp_continuousLinearEquiv_one, ← map_sub]
-  calc ‖e (g 1 - complexAntilinearPartL (fderiv ℝ u z) 1)‖
-      ≤ ‖(e : F →L[ℂ] G)‖ * ‖(g - complexAntilinearPartL (fderiv ℝ u z)) 1‖ :=
-        (e : F →L[ℂ] G).le_opNorm _
-    _ ≤ ‖(e : F →L[ℂ] G)‖ * (M * ‖e.symm (e (u z))‖) := by
-        gcongr
-        simpa using ((g - complexAntilinearPartL (fderiv ℝ u z)).le_opNorm 1).trans
-          (by simpa using hg)
-    _ ≤ ‖(e : F →L[ℂ] G)‖ * (M * (‖(e.symm : G →L[ℂ] F)‖ * ‖e (u z)‖)) := by
-        gcongr
-        exact (e.symm : G →L[ℂ] F).le_opNorm _
-    _ = ‖(e : F →L[ℂ] G)‖ * M * ‖(e.symm : G →L[ℂ] F)‖ * ‖e (u z)‖ := by ring
-
-variable [FiniteDimensional ℝ F]
-
-/-- **The interior `Lᵖ` estimate for `\bar∂` plus a zeroth-order term, with finite-dimensional
-values.** For `1 < p < ∞`, `U ⊆ ℂ` open, `K ⊆ U` compact and `M ≥ 0` there is a constant `C` such
-that every map `u` smooth on `U`, with values in a finite-dimensional complex normed space, and
-every field `g` of real-linear maps with `‖g - \bar∂u‖ ≤ M ‖u‖` on `U` satisfy
-`‖Du‖_{Lᵖ(K)} ≤ C (‖g‖_{Lᵖ(U)} + ‖u‖_{Lᵖ(U)})`. Here `\bar∂u` is the complex-antilinear part
-`complexAntilinearPartL (fderiv ℝ u z)` of the derivative, a `(0,1)`-form, and the real structure of
-the values is any one compatible with the complex structure. This is
-`TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le`, transported along a complex
-linear isomorphism with a Euclidean space. -/
-theorem exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le {p : ℝ≥0∞} (hp : 1 < p)
-    (hp_top : p ≠ (∞ : ℝ≥0∞)) {U K : Set ℂ} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U)
-    (M : ℝ≥0) :
-    ∃ C : ℝ≥0, ∀ (u : ℂ → F) (g : ℂ → ℂ →L[ℝ] F), ContDiffOn ℝ ∞ u U →
-      (∀ z ∈ U, ‖g z - complexAntilinearPartL (fderiv ℝ u z)‖ ≤ M * ‖u z‖) →
-      eLpNorm (fderiv ℝ u) p (volume.restrict K) ≤
-        C * (eLpNorm g p (volume.restrict U) + eLpNorm u p (volume.restrict U)) := by
-  have : FiniteDimensional ℂ F := Module.Finite.of_restrictScalars_finite ℝ ℂ F
-  let Eu := EuclideanSpace ℂ (Fin (finrank ℂ F))
-  let e : F ≃L[ℂ] Eu := .ofFinrankEq (by simp [Eu])
-  set a : ℝ≥0 := ‖(e : F →L[ℂ] Eu)‖₊ + 1
-  set b : ℝ≥0 := ‖(e.symm : Eu →L[ℂ] F)‖₊ + 1
-  have ha (x : F) : ‖e x‖₊ ≤ a * ‖x‖₊ :=
-    ((e : F →L[ℂ] Eu).le_opNNNorm x).trans (by gcongr; simp [a])
-  obtain ⟨δ, -, hδ⟩ := exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le (F := Eu) hp
-    hp_top
-  obtain ⟨C, hC⟩ := hδ hU hK hKU (a * M * b)
-  refine ⟨b * (C + 1) * a, fun u g hu hg ↦ ?_⟩
-  -- A nonmeasurable `g` has infinite `Lᵖ` norm, and there is nothing to prove.
-  by_cases hgm : AEStronglyMeasurable g (volume.restrict U)
-  swap
-  · rw [eLpNorm_of_not_aestronglyMeasurable hgm, top_add, ENNReal.mul_top (by positivity)]
-    exact le_top
-  have hCe := hC (fun y ↦ e (u y)) (fun z ↦ e (g z 1))
-    (((e : F →L[ℂ] Eu).restrictScalars ℝ).contDiff.comp_contDiffOn hu) fun z hz ↦
-      (norm_sub_conjWirtingerDeriv_comp_le e (hg z hz)).trans
-        (le_add_of_nonneg_of_le (by positivity) (by push_cast; gcongr <;> simp [a, b]))
-  have h₁ : eLpNorm (fderiv ℝ u) p (volume.restrict K) ≤
-      b * eLpNorm (fderiv ℝ fun y ↦ e (u y)) p (volume.restrict K) :=
-    (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (c := b)
-      (g := fderiv ℝ fun y ↦ e (u y)) (measurable_fderiv ℝ u).aestronglyMeasurable
-      (Filter.Eventually.of_forall fun z ↦ by
-        rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
-        exact (norm_fderiv_le_of_continuousLinearEquiv e u z).trans (by gcongr; simp [b])) p
-      ).trans_eq (by rw [ENNReal.smul_def, smul_eq_mul])
-  have h₂ : eLpNorm (fun z ↦ e (g z 1)) p (volume.restrict U) ≤
-      a * eLpNorm g p (volume.restrict U) :=
-    (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (f := fun z ↦ e (g z 1)) (g := g) (c := a)
-      ((e.continuous.comp (ContinuousLinearMap.apply ℝ F (1 : ℂ)).continuous
-        ).comp_aestronglyMeasurable hgm) (Filter.Eventually.of_forall fun z ↦
-          (ha _).trans (by gcongr; simpa using (g z).le_opNNNorm 1)) p).trans_eq
-      (by rw [ENNReal.smul_def, smul_eq_mul])
-  have h₃ : eLpNorm (fun z ↦ e (u z)) p (volume.restrict U) ≤
-      a * eLpNorm u p (volume.restrict U) :=
-    (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (f := fun z ↦ e (u z)) (g := u) (c := a)
-      (e.continuous.comp_aestronglyMeasurable
-      (hu.continuousOn.aestronglyMeasurable hU.measurableSet))
-      (Filter.Eventually.of_forall fun z ↦ ha _) p).trans_eq
-      (by rw [ENNReal.smul_def, smul_eq_mul])
-  calc eLpNorm (fderiv ℝ u) p (volume.restrict K)
-      ≤ b * (C * (a * eLpNorm g p (volume.restrict U) + a * eLpNorm u p (volume.restrict U))) :=
-        h₁.trans (by gcongr; exact hCe.trans (by gcongr))
-    _ ≤ b * ((C + 1) * (a * eLpNorm g p (volume.restrict U) +
-          a * eLpNorm u p (volume.restrict U))) := by gcongr; exact_mod_cast le_self_add
-    _ = ((b * (C + 1) * a : ℝ≥0) : ℝ≥0∞) *
-          (eLpNorm g p (volume.restrict U) + eLpNorm u p (volume.restrict U)) := by
-        push_cast
-        ring
-
-end Local
-
-section ChartDeriv
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
-  (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
-
-namespace SectionChartData
-
-/-- **The components are controlled by the chart data and their derivative.** The `W^{1,p}` norm of
-the `j`-th chart-`i` component of an order-one tuple is at most the norm of the `j`-th coordinate
-functional of `Module.finBasis ℝ F` times the sum of the `Lᵖ` norms of the chart data and of their
-weak derivative. -/
-theorem norm_le_mul_norm_chartValueL_add_norm_chartDerivL (i : Fin C.n)
-    (w : C.SobolevData μ p 1) (j : Fin (finrank ℝ F)) :
-    ‖w i j‖ ≤ ‖LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)‖ *
-      (‖C.chartValueL μ p 1 i w‖ + ‖C.chartDerivL μ p i w‖) := by
-  set c := LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)
-  have hv : ‖W1p.value (w i j)‖ ≤ ‖c‖ * ‖C.chartValueL μ p 1 i w‖ := by
-    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [C.chartValueL_apply_ae μ p 1 i w] with y hy
-    have : c (C.chartValueL μ p 1 i w y) = W1p.value (w i j) y := by
-      rw [hy]
-      simp [c, Finsupp.single_apply]
-    rw [← this]
-    exact c.le_opNorm _
-  have hg : ‖W1p.gradient (w i j)‖ ≤ ‖c‖ * ‖C.chartDerivL μ p i w‖ := by
-    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [C.chartDerivL_apply_ae μ p i w] with y hy
-    have : c.comp (C.chartDerivL μ p i w y) = innerSL ℝ (W1p.gradient (w i j) y) := by
-      rw [hy]
-      ext v
-      simp [c, Finsupp.single_apply]
-    rw [← innerSL_apply_norm ℝ, ← this]
-    exact c.opNorm_comp_le _
-  calc ‖w i j‖ ≤ ‖W1p.value (w i j)‖ + ‖W1p.gradient (w i j)‖ :=
-        W1p.norm_le_norm_value_add_norm_gradient _
-    _ ≤ ‖c‖ * (‖C.chartValueL μ p 1 i w‖ + ‖C.chartDerivL μ p i w‖) := by
-        rw [mul_add]
-        exact add_le_add hv hg
-
-end SectionChartData
-
-end ChartDeriv
-
-section Cutoff
-
-/-! ### Products with a cutoff on an open subset of the plane -/
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- If `v = χ u` on an open set `U ⊆ ℂ` with `|χ| ≤ B` on `U`, then
-`‖v‖_{Lᵖ(U)} ≤ B ‖u‖_{Lᵖ(U)}`. -/
-private theorem eLpNorm_le_of_eqOn_smul {p : ℝ≥0∞} {U : Set ℂ} (hU : IsOpen U) {u v : ℂ → F}
-    {χ : ℂ → ℝ} (hu : ContDiffOn ℝ 1 u U) (hχ : ContDiffOn ℝ 1 χ U)
-    (hv : EqOn v (fun y ↦ χ y • u y) U) {B : ℝ≥0} (hB : ∀ z ∈ U, |χ z| ≤ B) :
-    eLpNorm v p (volume.restrict U) ≤ B * eLpNorm u p (volume.restrict U) := by
-  have hUm := hU.measurableSet
-  refine (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
-    (((hχ.continuousOn.aestronglyMeasurable hUm).smul
-      (hu.continuousOn.aestronglyMeasurable hUm)).congr
-        ((ae_restrict_mem hUm).mono fun y hy ↦ (hv hy).symm)) ?_ p).trans_eq
-    (by rw [ENNReal.smul_def, smul_eq_mul])
-  filter_upwards [ae_restrict_mem hUm] with z hz
-  rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm, hv hz, norm_smul,
-    Real.norm_eq_abs]
-  gcongr
-  exact hB z hz
-
-variable [FiniteDimensional ℝ F]
-
-/-- **The product rule estimate for a cutoff.** Let `v = χ u` on an open set `U ⊆ ℂ`, with `u` and
-`χ` of class `C¹` on `U`, `|χ| ≤ B` and `‖Dχ‖ ≤ L` on `U`, and `χ = 0` on `U` off a measurable
-subset `K ⊆ U`. Then `‖Dv‖_{Lᵖ(U)} ≤ B ‖Du‖_{Lᵖ(K)} + L ‖u‖_{Lᵖ(U)}`. -/
-private theorem eLpNorm_fderiv_le_of_eqOn_smul {p : ℝ≥0∞} (hp : 1 ≤ p) {U K : Set ℂ}
-    (hU : IsOpen U) (hK : MeasurableSet K) (hKU : K ⊆ U) {u v : ℂ → F} {χ : ℂ → ℝ}
-    (hu : ContDiffOn ℝ 1 u U) (hχ : ContDiffOn ℝ 1 χ U) (hv : EqOn v (fun y ↦ χ y • u y) U)
-    {B L : ℝ≥0} (hB : ∀ z ∈ U, |χ z| ≤ B) (hL : ∀ z ∈ U, ‖fderiv ℝ χ z‖ ≤ L)
-    (hχK : ∀ z ∈ U, z ∉ K → χ z = 0) :
-    eLpNorm (fderiv ℝ v) p (volume.restrict U) ≤
-      B * eLpNorm (fderiv ℝ u) p (volume.restrict K) + L * eLpNorm u p (volume.restrict U) := by
-  have hUm := hU.measurableSet
-  have hχm : AEStronglyMeasurable χ (volume.restrict U) :=
-    hχ.continuousOn.aestronglyMeasurable hUm
-  have hum : AEStronglyMeasurable u (volume.restrict U) :=
-    hu.continuousOn.aestronglyMeasurable hUm
-  have h₁ : eLpNorm (fun z ↦ χ z • fderiv ℝ u z) p (volume.restrict U) ≤
-      B * eLpNorm (fderiv ℝ u) p (volume.restrict K) := by
-    rw [← Measure.restrict_restrict_of_subset hKU,
-      ← eLpNorm_indicator_eq_eLpNorm_restrict hK.nullMeasurableSet]
-    refine (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
-      (hχm.smul (measurable_fderiv ℝ u).aestronglyMeasurable) ?_ p).trans_eq
-      (by rw [ENNReal.smul_def, smul_eq_mul])
-    filter_upwards [ae_restrict_mem hUm] with z hz
-    rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
-    by_cases hzK : z ∈ K
-    · rw [indicator_of_mem hzK, Pi.smul_apply', norm_smul, Real.norm_eq_abs]
-      gcongr
-      exact hB z hz
-    · rw [Pi.smul_apply', hχK z hz hzK, zero_smul, norm_zero]
-      positivity
-  have h₂ : eLpNorm (fun z ↦ (fderiv ℝ χ z).smulRight (u z)) p (volume.restrict U) ≤
-      L * eLpNorm u p (volume.restrict U) := by
-    refine (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul ?_ ?_ p).trans_eq
-      (by rw [ENNReal.smul_def, smul_eq_mul])
-    · simpa using (StrongDual.smulRightL ℝ ℂ F).aestronglyMeasurable_comp₂
-        (measurable_fderiv ℝ χ).aestronglyMeasurable hum
-    filter_upwards [ae_restrict_mem hUm] with z hz
-    rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm,
-      ContinuousLinearMap.norm_smulRight_apply]
-    gcongr
-    exact hL z hz
-  -- On `U`, the derivative of `v` is `χ Du + Dχ ⊗ u`.
-  have hdv : fderiv ℝ v =ᵐ[volume.restrict U]
-      (fun z ↦ χ z • fderiv ℝ u z) + fun z ↦ (fderiv ℝ χ z).smulRight (u z) := by
-    filter_upwards [ae_restrict_mem hUm] with z hz
-    rw [Filter.EventuallyEq.fderiv_eq (hv.eventuallyEq_of_mem (hU.mem_nhds hz))]
-    exact fderiv_smul ((hχ.differentiableOn one_ne_zero).differentiableAt (hU.mem_nhds hz))
-      ((hu.differentiableOn one_ne_zero).differentiableAt (hU.mem_nhds hz))
-  exact (eLpNorm_congr_ae hdv).trans_le ((eLpNorm_add_le hp).trans (add_le_add h₁ h₂))
-
-end Cutoff
-
-section ChartBound
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
-  {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] (A : FiniteBundleAtlas ℂ M F V)
-
-/-- A smooth function on `M`, read in chart `i`, is bounded and has bounded derivative on the
-image of the chart. -/
-private theorem FiniteBundleAtlas.exists_bound_comp_chart_symm {χ : M → ℝ}
-    (hχ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ χ) (i : Fin A.n) :
-    ∃ B L : ℝ≥0, ∀ z ∈ (A.image i : Set ℂ), |χ ((A.chart i).symm z)| ≤ B ∧
-      ‖fderiv ℝ (fun y ↦ χ ((A.chart i).symm y)) z‖ ≤ L := by
-  have hχ' := A.contDiffOn_comp_chart_symm hχ i
-  have hcl := A.closure_image_subset_target i
-  obtain ⟨B, hB⟩ :=
-    (A.isCompact_closure_image i).exists_bound_of_continuousOn (hχ'.continuousOn.mono hcl)
-  obtain ⟨L, hL⟩ := (A.isCompact_closure_image i).exists_bound_of_continuousOn
-    ((hχ'.continuousOn_fderiv_of_isOpen (A.chart i).open_target (by simp)).mono hcl)
-  refine ⟨B.toNNReal, L.toNNReal, fun z hz ↦
-    ⟨?_, (hL z (subset_closure hz)).trans (Real.le_coe_toNNReal _)⟩⟩
-  have h := hB z (subset_closure hz)
-  rw [Real.norm_eq_abs] at h
-  exact h.trans (Real.le_coe_toNNReal _)
-
-end ChartBound
 
 section Global
 
@@ -378,28 +101,11 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 namespace IsRealCauchyRiemannOperator
 
 include hD hDs in
-/-- The zeroth-order term of a smooth real Cauchy–Riemann operator in chart `i` is bounded on the
-image of the chart. -/
-private theorem exists_bound_chartZeroOrder (i : Fin A.n) :
-    ∃ Z : ℝ≥0, ∀ z ∈ (A.image i : Set ℂ), ‖A.chartZeroOrder D i z‖ ≤ Z := by
-  have hZc : ContinuousOn (A.chartZeroOrder D i) (closure (A.image i : Set ℂ)) := by
-    refine (A.contDiffOn_chartZeroOrder hD hDs isOpen_univ i).continuousOn.mono ?_
-    simpa only [inter_univ] using (A.closure_image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i)
-  obtain ⟨Z, hZ⟩ :=
-    (A.isCompact_closure_image i).exists_bound_of_continuousOn (f := A.chartZeroOrder D i) hZc
-  exact ⟨Z.toNNReal, fun z hz ↦ (hZ z (subset_closure hz)).trans (Real.le_coe_toNNReal _)⟩
-
-include hD hDs in
 /-- **The elliptic estimate in a chart.** Let `χ` be a smooth function whose support has closure
 in the domain of chart `i`. For `1 < p < ∞` there is a constant `C` such that the reading `v` of
 `χ s` in chart `i`, for every smooth section `s`, satisfies
-`‖v‖_{Lᵖ} + ‖Dv‖_{Lᵖ} ≤ C (‖(D s)ᵢ‖_{Lᵖ} + ‖sᵢ‖_{Lᵖ})` on the image of the chart, where `sᵢ` and
-`(D s)ᵢ` are the readings of `s` and `D s`. In chart `i`, `D s` is `\bar∂ sᵢ + Zᵢ sᵢ` for a
-zeroth-order term `Zᵢ` bounded on the chart image, and the support of `χ` read in the chart is a
-compact subset of the chart image, so this is the interior estimate
-`TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le` together with the product
-rule for `χ s`. -/
+`‖v‖_{Lᵖ} + ‖dv‖_{Lᵖ} ≤ C (‖(D s)ᵢ‖_{Lᵖ} + ‖sᵢ‖_{Lᵖ})` on the image of the chart, where `dv` is the
+real derivative `fderiv ℝ v`, and `sᵢ` and `(D s)ᵢ` are the readings of `s` and of `D s`. -/
 theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) {i : Fin A.n} {χ : M → ℝ} (hχ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ χ)
     (hχi : tsupport χ ⊆ A.dom i) :
@@ -419,10 +125,10 @@ theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
     ((A.chart i).continuousOn.mono (hχi.trans (A.dom_subset_chart_source i)))
   have hKU : K ⊆ U := fun y hy ↦ A.mem_image.2 (image_mono hχi hy)
   set χ' : ℂ → ℝ := fun y ↦ χ ((A.chart i).symm y)
-  obtain ⟨B, L, hBL⟩ := A.exists_bound_comp_chart_symm hχ i
-  obtain ⟨Z, hZ⟩ := exists_bound_chartZeroOrder A hD hDs i
+  obtain ⟨B, L, hBL⟩ := A.exists_bound_comp_chart_symm (hχ.of_le (by exact_mod_cast le_top)) i
+  obtain ⟨Z, hZ⟩ := A.exists_norm_chartZeroOrder_apply_le hD hDs i
   obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le (F := F) hp
-    hp_top hU hK hKU Z
+    hp_top hU hK hKU Z.toNNReal
   refine ⟨B * C₀ + L + B, fun s hs ↦ ?_⟩
   set u := A.coord i s
   have hu : ContDiffOn ℝ ∞ u U :=
@@ -433,24 +139,27 @@ theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
   have hDs' := hC₀ u (A.tangentHom.coord i (D s)) hu fun z hz ↦ by
     rw [A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hz
       ((hs _).mdifferentiableAt (by simp)), add_sub_cancel_left]
-    exact ((A.chartZeroOrder D i z).le_opNorm _).trans (by gcongr; exact hZ z hz)
+    exact (hZ z (subset_closure hz) _).trans (by gcongr; exact Real.le_coe_toNNReal Z)
   -- The reading of `χ s` is `χ' u` on the chart image, and `χ'` vanishes off `K`.
   have hχK : ∀ z ∈ U, z ∉ K → χ' z = 0 := fun z hz hzK ↦ by
     by_contra h
     exact hzK ⟨_, subset_tsupport _ h, (A.chart i).right_inv (hcl (subset_closure hz))⟩
   have hvU : EqOn (A.coord i fun x ↦ χ x • s x) (fun y ↦ χ' y • u y) U :=
     fun y hy ↦ A.coord_fun_smul i χ s hy
-  have hχ'U : ContDiffOn ℝ 1 χ' U :=
-    ((A.contDiffOn_comp_chart_symm hχ i).mono (subset_closure.trans hcl)).of_le (by simp)
-  have h₁ := eLpNorm_le_of_eqOn_smul (p := p) hU (hu.of_le (by simp)) hχ'U hvU
-    fun z hz ↦ (hBL z hz).1
-  have h₂ := eLpNorm_fderiv_le_of_eqOn_smul (Fact.out : 1 ≤ p) hU hK.measurableSet hKU
-    (hu.of_le (by simp)) hχ'U hvU (fun z hz ↦ (hBL z hz).1) (fun z hz ↦ (hBL z hz).2) hχK
+  have hχ'U : DifferentiableOn ℝ χ' U :=
+    ((A.contDiffOn_comp_chart_symm hχ i).mono (subset_closure.trans hcl)).differentiableOn (by simp)
   set G := eLpNorm (A.tangentHom.coord i (D s)) p (volume.restrict U)
   set Y := eLpNorm u p (volume.restrict U)
-  calc eLpNorm (A.coord i fun x ↦ χ x • s x) p (volume.restrict U) +
-        eLpNorm (fderiv ℝ (A.coord i fun x ↦ χ x • s x)) p (volume.restrict U)
-      ≤ B * Y + (B * (C₀ * (G + Y)) + L * Y) := add_le_add h₁ (h₂.trans (by gcongr))
+  have h₁ : eLpNorm (A.coord i fun x ↦ χ x • s x) p (volume.restrict U) ≤ B * Y := by
+    rw [eLpNorm_congr_ae ((ae_restrict_mem hU.measurableSet).mono fun y hy ↦ hvU hy)]
+    refine (eLpNorm_le_mul_eLpNorm_of_ae_le_mul ((hχ'U.continuousOn.smul hu.continuousOn
+      ).aestronglyMeasurable hU.measurableSet) ?_ p).trans_eq (by rw [ENNReal.ofReal_coe_nnreal])
+    filter_upwards [ae_restrict_mem hU.measurableSet] with z hz
+    simpa [norm_smul] using mul_le_mul_of_nonneg_right (hBL z hz).1 (norm_nonneg (u z))
+  have h₂ := eLpNorm_fderiv_le_of_eqOn_smul (μ := volume) (Fact.out : 1 ≤ p) hU hK.measurableSet
+    hKU hχ'U (hu.differentiableOn (by simp)) hvU (fun z hz ↦ (hBL z hz).1) (fun z hz ↦ (hBL z hz).2)
+    hχK
+  calc _ ≤ B * Y + (B * (C₀ * (G + Y)) + L * Y) := add_le_add h₁ (h₂.trans (by gcongr))
     _ ≤ B * (G + Y) + (B * (C₀ * (G + Y)) + L * (G + Y)) := by gcongr <;> exact le_add_self
     _ = ((B * C₀ + L + B : ℝ≥0) : ℝ≥0∞) * (G + Y) := by
         push_cast
@@ -600,9 +309,9 @@ theorem exists_norm_le_norm_sobolevL_add_norm (hp : 1 < p) (hp_top : p ≠ (∞ 
     (p := p) (k := 1) hp_top
   refine hP.closure_subset_iff.2 ?_ (hdense.closure_eq ▸ mem_univ w)
   rintro _ ⟨s, hs, rfl⟩
+  rw [mem_ofPred_eq]
   set w := SobolevSection.ofContMDiffSection A volume p 1 s
   set X := ‖hD.sobolevL A hDs volume p w‖ + ‖A.sectionChartData.lowerOrderL volume p 0 w‖
-  change ‖w‖ ≤ C * X
   calc ‖w‖ = ‖∑ i, SobolevSection.contMDiffSMulL A volume p 1 (χ i).contMDiff w‖ := by
         rw [SobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one _ hχ1]
     _ ≤ ∑ i, ‖SobolevSection.contMDiffSMulL A volume p 1 (χ i).contMDiff w‖ := norm_sum_le _ _
