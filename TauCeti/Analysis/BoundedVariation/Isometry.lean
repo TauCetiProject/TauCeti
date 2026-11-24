@@ -40,15 +40,17 @@ perimeter.
 
 ## Main declarations
 
-* `LinearIsometryEquiv.totalVariationOn_comp_le`: pulling back into a smaller domain does not
-  increase total variation.
+* `AffineIsometryEquiv.totalVariationOn_comp_le`: pulling back into a smaller domain along an
+  affine isometry equivalence does not increase total variation.
+* `AffineIsometryEquiv.totalVariationOn_comap` and `AffineIsometryEquiv.perimeter_comap`:
+  invariance under affine isometry equivalences.
+* `LinearIsometryEquiv.totalVariationOn_comp_le`: specialization of
+  `AffineIsometryEquiv.totalVariationOn_comp_le` to linear isometry equivalences.
 * `LinearIsometryEquiv.totalVariationOn_comp` and `LinearIsometryEquiv.totalVariationOn_comap`:
   invariance under exact transport.
 * `LinearIsometryEquiv.perimeter_preimage_le`, `LinearIsometryEquiv.perimeter_preimage`,
   `LinearIsometryEquiv.perimeter_comap` and `LinearIsometryEquiv.perimeter_image`: the
   corresponding statements for perimeter.
-* `AffineIsometryEquiv.totalVariationOn_comap` and `AffineIsometryEquiv.perimeter_comap`:
-  invariance under affine isometry equivalences.
 * `TauCeti.BV.compLinearIsometryEquiv`: isometric equivalence of `TauCeti.BV` spaces along a
   measure-preserving linear isometry equivalence with measurable inverse.
 * `TauCeti.BV.isCompactOperator_toL1CLM_of_linearIsometryEquiv` and
@@ -81,15 +83,34 @@ private theorem perimeter_preimage_eq_totalVariationOn
   exact congrArg (totalVariationOn μ V)
     (funext fun _ => Set.indicator_comp_right (g := fun _ => (1 : ℝ)) f)
 
-/-- Pulling a function back along a measure-preserving affine isometry equivalence `f` with
-measurable inverse does not increase its total variation when `f` maps `V` into `Ω`. -/
-private theorem totalVariationOn_comp_affine_le
+/-- If precomposition with `f` preserves total variation and `g` is a left inverse of `f`, then
+precomposition with `g` preserves total variation in the opposite direction. -/
+private theorem totalVariationOn_comp_symm
     {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
     [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
     [MeasurableSpace E] [MeasurableSpace E']
-    {μ : Measure E} {ν : Measure E'} {V : Opens E} {Ω : Opens E'} {u : E' → ℝ}
-    (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
-    (hVO : MapsTo f V Ω) :
+    {μ : Measure E} {ν : Measure E'} {V : Opens E} {Ω : Opens E'}
+    {f : E → E'} {g : E' → E} (hgf : ∀ x, g (f x) = x)
+    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w) (w : E → ℝ) :
+    totalVariationOn ν Ω (w ∘ g) = totalVariationOn μ V w := by
+  rw [← htv (w ∘ g)]
+  exact congrArg (totalVariationOn μ V) (funext fun x => congrArg w (hgf x))
+
+end TauCeti
+
+section VariationAndPerimeter
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  [MeasurableSpace E] [MeasurableSpace E']
+  {μ : Measure E} {ν : Measure E'} {V : Opens E} {Ω : Opens E'} {u : E' → ℝ} {s : Set E'}
+
+namespace AffineIsometryEquiv
+
+/-- Pulling a function back along a measure-preserving affine isometry equivalence `f` with
+measurable inverse does not increase its total variation when `f` maps `V` into `Ω`. -/
+theorem totalVariationOn_comp_le (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) (hVO : MapsTo f V Ω) :
     totalVariationOn μ V (u ∘ f) ≤ totalVariationOn ν Ω u := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
   let L : E ≃L[ℝ] E' := f.linearIsometryEquiv.toContinuousLinearEquiv
@@ -116,14 +137,28 @@ private theorem totalVariationOn_comp_affine_le
     ContinuousLinearEquiv.transportTestFunction_apply, ← hfsymm]
   simpa [L] using hφ (f.symm y)
 
-end TauCeti
+/-- **Invariance of total variation under affine isometries.** Pulling a function and its open
+domain back along a measure-preserving affine isometry equivalence with measurable inverse does
+not change its total variation. -/
+theorem totalVariationOn_comap (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) :
+    totalVariationOn μ (Opens.comap ⟨f, f.continuous⟩ Ω) (u ∘ f) = totalVariationOn ν Ω u := by
+  refine le_antisymm
+    (totalVariationOn_comp_le f hf hinv fun _ hx => Opens.mem_comap.mp hx) ?_
+  simpa [Function.comp_def] using totalVariationOn_comp_le (u := u ∘ f) f.symm
+    (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) hf.measurable
+    fun y hy => Opens.mem_comap.mpr (by simpa using hy)
 
-section VariationAndPerimeter
+/-- **Invariance of perimeter under affine isometries.** Pulling a set and its open domain back
+along a measure-preserving affine isometry equivalence with measurable inverse does not change its
+perimeter. -/
+theorem perimeter_comap (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) :
+    perimeter μ (Opens.comap ⟨f, f.continuous⟩ Ω) (f ⁻¹' s) = perimeter ν Ω s := by
+  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
+  exact totalVariationOn_comap f hf hinv
 
-variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-  [MeasurableSpace E] [MeasurableSpace E']
-  {μ : Measure E} {ν : Measure E'} {V : Opens E} {Ω : Opens E'} {u : E' → ℝ} {s : Set E'}
+end AffineIsometryEquiv
 
 namespace LinearIsometryEquiv
 
@@ -132,7 +167,7 @@ measurable inverse does not increase its total variation when `e` maps `V` into 
 theorem totalVariationOn_comp_le (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm) (hVO : MapsTo e V Ω) :
     totalVariationOn μ V (u ∘ e) ≤ totalVariationOn ν Ω u :=
-  totalVariationOn_comp_affine_le e.toAffineIsometryEquiv he hinv hVO
+  e.toAffineIsometryEquiv.totalVariationOn_comp_le he hinv hVO
 
 /-- **Isometry invariance of total variation.** If a measure-preserving linear isometry
 equivalence `e` with measurable inverse identifies `V` with `Ω`, then pulling a function back
@@ -192,31 +227,6 @@ theorem perimeter_image {s : Set E} (e : E ≃ₗᵢ[ℝ] E')
 
 end LinearIsometryEquiv
 
-namespace AffineIsometryEquiv
-
-/-- **Invariance of total variation under affine isometries.** Pulling a function and its open
-domain back along a measure-preserving affine isometry equivalence with measurable inverse does
-not change its total variation. -/
-theorem totalVariationOn_comap (f : E ≃ᵃⁱ[ℝ] E')
-    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) :
-    totalVariationOn μ (Opens.comap ⟨f, f.continuous⟩ Ω) (u ∘ f) = totalVariationOn ν Ω u := by
-  refine le_antisymm
-    (totalVariationOn_comp_affine_le f hf hinv fun _ hx => Opens.mem_comap.mp hx) ?_
-  simpa [Function.comp_def] using totalVariationOn_comp_affine_le (u := u ∘ f) f.symm
-    (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) hf.measurable
-    fun y hy => Opens.mem_comap.mpr (by simpa using hy)
-
-/-- **Invariance of perimeter under affine isometries.** Pulling a set and its open domain back
-along a measure-preserving affine isometry equivalence with measurable inverse does not change its
-perimeter. -/
-theorem perimeter_comap (f : E ≃ᵃⁱ[ℝ] E')
-    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) :
-    perimeter μ (Opens.comap ⟨f, f.continuous⟩ Ω) (f ⁻¹' s) = perimeter ν Ω s := by
-  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
-  exact totalVariationOn_comap f hf hinv
-
-end AffineIsometryEquiv
-
 end VariationAndPerimeter
 
 namespace TauCeti.BV
@@ -274,11 +284,8 @@ private def compEquivAux {f : E → E'} {g : E' → E}
     (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
     (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w) :
     BV ν Ω ≃ₗᵢ[ℝ] BV μ V :=
-  have htv' (w : E → ℝ) : totalVariationOn ν Ω (w ∘ g) = totalVariationOn μ V w := by
-    rw [← htv (w ∘ g)]
-    exact congrArg (totalVariationOn μ V) (funext fun x => congrArg w (hgf x))
   { toFun := compAux hf htv
-    invFun := compAux hg htv'
+    invFun := compAux hg (totalVariationOn_comp_symm hgf htv)
     left_inv u := toL1_injective <| by
       rw [toL1_compAux, toL1_compAux]
       exact Lp.leftInverse_compMeasurePreserving hf hg (.of_forall hfg) u.toL1
@@ -306,9 +313,8 @@ private theorem compEquivAux_symm_apply {f : E → E'} {g : E' → E}
     (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
     (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
     (v : BV μ V) :
-    (compEquivAux hf hg hfg hgf htv).symm v = compAux hg (fun w => by
-      rw [← htv (w ∘ g)]
-      exact congrArg (totalVariationOn μ V) (funext fun x => congrArg w (hgf x))) v :=
+    (compEquivAux hf hg hfg hgf htv).symm v =
+      compAux hg (totalVariationOn_comp_symm hgf htv) v :=
   rfl
 
 /-- Factoring `BV.toL1CLM` through a linear isometry equivalence `L : BV ν Ω ≃ₗᵢ[ℝ] BV μ V`
