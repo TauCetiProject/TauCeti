@@ -217,6 +217,16 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
 
+/-- **A product of pseudouniformisers is a pseudouniformiser**: a topologically nilpotent element
+is power-bounded, and a power-bounded element times a topologically nilpotent one is
+topologically nilpotent. -/
+theorem IsPseudoUniformizer.mul {A : Type*} [CommMonoidWithZero A] [TopologicalSpace A]
+    [ContinuousMul A] {a b : A} (ha : IsPseudoUniformizer a) (hb : IsPseudoUniformizer b) :
+    IsPseudoUniformizer (a * b) :=
+  isPseudoUniformizer_iff.mpr ⟨ha.isUnit.mul hb.isUnit,
+    (IsPowerBounded.of_isTopologicallyNilpotent
+      ha.isTopologicallyNilpotent).isTopologicallyNilpotent_mul hb.isTopologicallyNilpotent⟩
+
 /-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
 at zero sends bounded sets to bounded sets.** -/
 theorem IsBounded.image_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
