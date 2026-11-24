@@ -315,6 +315,22 @@ theorem sheafHomResLE_hom_app {A : Type*} [Category.{u} A] {f : X ⟶ Y}
         R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W.unop)).op :=
   (rfl)
 
+/-- The composite preimage functor `Opens.map f ⋙ Opens.map U.inclusion'` is continuous. -/
+instance isContinuous_map_comp_map_inclusion' (f : X ⟶ Y) (U : Opens X) :
+    (Opens.map f ⋙ Opens.map U.inclusion').IsContinuous
+      (Opens.grothendieckTopology Y)
+      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+  Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology X) _
+
+/-- The composite preimage functor `Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)`
+is continuous. -/
+instance isContinuous_map_inclusion'_comp_map_resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) :
+    (Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)).IsContinuous
+      (Opens.grothendieckTopology Y)
+      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
+  Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V)) _
+
 /-- Compatibility of `sheafHomResLE` with `sheafInclusionHom`: restricting `S` to `V` and applying
 `sheafHomResLE` agrees with applying `φ` and restricting `R` to `U` along the commutative square
 `resLE_comp_inclusion'`. -/
@@ -323,15 +339,6 @@ theorem sheafInclusionHom_comp_map_sheafHomResLE {A : Type*} [Category.{u} A] {f
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous A
       (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj R)
     (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
-    letI : (Opens.map f ⋙ Opens.map U.inclusion').IsContinuous
-        (Opens.grothendieckTopology Y)
-        (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
-      Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology X) _
-    letI : (Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)).IsContinuous
-        (Opens.grothendieckTopology Y)
-        (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
-      Functor.isContinuous_comp _ _ _
-        (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V)) _
     (V.sheafInclusionHom A S ≫
           ((Opens.map V.inclusion').sheafPushforwardContinuous A
             (Opens.grothendieckTopology Y)
@@ -354,15 +361,6 @@ theorem sheafInclusionHom_comp_map_sheafHomResLE {A : Type*} [Category.{u} A] {f
           A (Opens.grothendieckTopology Y)
           (Opens.grothendieckTopology ((Opens.toTopCat X).obj U))).obj
             ((U.isOpenEmbedding.sheafPullback A).obj R)) := by
-  have : (Opens.map f ⋙ Opens.map U.inclusion').IsContinuous
-      (Opens.grothendieckTopology Y)
-      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
-    Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology X) _
-  have : (Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e)).IsContinuous
-      (Opens.grothendieckTopology Y)
-      (Opens.grothendieckTopology ((Opens.toTopCat X).obj U)) :=
-    Functor.isContinuous_comp _ _ _
-      (Opens.grothendieckTopology ((Opens.toTopCat Y).obj V)) _
   refine Sheaf.hom_ext (NatTrans.ext (funext fun Z ↦ ?_))
   let τ := (Opens.mapCompResLEIso f V U e).hom
   let a := S.obj.map (V.isOpenEmbedding.isOpenMap.adjunction.counit.app Z.unop).op

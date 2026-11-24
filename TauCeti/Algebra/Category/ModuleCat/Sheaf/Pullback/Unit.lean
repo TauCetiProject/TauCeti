@@ -166,6 +166,20 @@ theorem pullbackCongr_hom_app_pullbackObjUnitToUnit
   subst e
   simp
 
+/-- Section-level formula for
+`unitToPushforwardObjUnit φ ≫ (pushforwardCongr₂ φ e he).hom.app (unit R)` on sections over `U`. -/
+private lemma unitToPushforwardObjUnit_comp_pushforwardCongr₂_val_app_apply
+    {F' : C ⥤ D} [Functor.IsContinuous F' J K]
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
+    {ψ : S ⟶ (F'.sheafPushforwardContinuous RingCat.{u} J K).obj R}
+    (e : F' ≅ F)
+    (he : φ ≫ (Functor.sheafPushforwardContinuousNatTrans e.hom RingCat.{u} J K).app R = ψ)
+    (U : Cᵒᵖ) (x : S.obj.obj U) :
+    ((unitToPushforwardObjUnit φ ≫ (pushforwardCongr₂ φ e he).hom.app (unit R)).val.app U) x =
+      R.obj.map (e.hom.app U.unop).op
+        ((φ.hom.app U x : (F.sheafPushforwardContinuous RingCat.{u} J K).obj R |>.obj.obj U)) :=
+  rfl
+
 /-- `pullbackCongr₂` commutes with `pullbackObjUnitToUnit`. -/
 @[reassoc]
 theorem pullbackCongr₂_hom_app_pullbackObjUnitToUnit {F' : C ⥤ D} [Functor.IsContinuous F' J K]
@@ -187,13 +201,13 @@ theorem pullbackCongr₂_hom_app_pullbackObjUnitToUnit {F' : C ⥤ D} [Functor.I
     rw [conjugateEquiv_pullbackCongr₂_inv,
       pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit]
     ext U
-    change (((pushforwardCongr he).hom.app (unit R)).val.app U)
-        (((pushforwardNatTrans φ e.hom).app (unit R)).val.app U
-          ((unitToPushforwardObjUnit φ).val.app U (1 : S.obj.obj U))) =
-      (unitToPushforwardObjUnit ψ).val.app U (1 : S.obj.obj U)
-    rw [pushforwardCongr_hom_app_val_app, pushforwardNatTrans_app_val_app,
-      unitToPushforwardObjUnit_val_app_apply, unitToPushforwardObjUnit_val_app_apply,
-      map_one, map_one]
+    refine (unitToPushforwardObjUnit_comp_pushforwardCongr₂_val_app_apply φ e he U 1).trans ?_
+    have hψ : ((unitToPushforwardObjUnit ψ).val.app U) (1 : S.obj.obj U) =
+        (1 : R.obj.obj (Opposite.op (F'.obj U.unop))) := by
+      rw [unitToPushforwardObjUnit_val_app_apply, map_one]
+      rfl
+    refine .trans ?_ hψ.symm
+    rw [map_one]
     exact (R.obj.map (e.hom.app U.unop).op).hom.map_one
   rw [← hinv, ← Category.assoc]
   simp

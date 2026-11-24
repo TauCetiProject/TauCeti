@@ -32,7 +32,8 @@ restriction `SheafOfModules.overFunctor R U`.
   subspace, with `[simp]` section, restriction-map, and morphism-application formulas
   `sheafOfModulesRestrict_obj_val_obj`, `sheafOfModulesRestrict_obj_val_map`,
   `sheafOfModulesRestrict_map_val_app`, `sheafOfModulesRestrict_obj_val_presheaf_obj`, and
-  `sheafOfModulesRestrict_obj_val_presheaf_map`;
+  `sheafOfModulesRestrict_obj_val_presheaf_map`, plus element-level morphism application
+  `sheafOfModulesRestrict_map_val_app_apply`;
 * `TopologicalSpace.Opens.sheafOfModulesRestrictAdj` (with sectionwise unit and counit formulas
   `sheafOfModulesRestrictAdj_unit_app_val_app` and `sheafOfModulesRestrictAdj_counit_app_val_app`)
   and `TopologicalSpace.Opens.sheafOfModulesRestrictIsoPullback` (with adjunction transpose
@@ -126,6 +127,23 @@ theorem sheafOfModulesRestrict_obj_val_presheaf_map (M : SheafOfModules.{v} R)
         eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R M W').symm := by
   unfold sheafOfModulesRestrict
   exact (Category.id_comp _).symm.trans (Category.comp_id _).symm
+
+/-- Element-level action of `U.sheafOfModulesRestrict R` on a morphism of module sheaves: on a
+section over `W`, it evaluates `φ.val.app` over `U.isOpenEmbedding.functor.obj W.unop` modulo the
+presheaf section identification `sheafOfModulesRestrict_obj_val_presheaf_obj`. -/
+theorem sheafOfModulesRestrict_map_val_app_apply {M N : SheafOfModules.{v} R} (φ : M ⟶ N)
+    (W : (Opens ((Opens.toTopCat X).obj U))ᵒᵖ)
+    (x : ((U.sheafOfModulesRestrict.{v} R).obj M).val.obj W) :
+    ((U.sheafOfModulesRestrict.{v} R).map φ).val.app W x =
+      (eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R N W).symm :
+          N.val.presheaf.obj (op (U.isOpenEmbedding.functor.obj W.unop)) ⟶
+            ((U.sheafOfModulesRestrict.{v} R).obj N).val.presheaf.obj W)
+        (φ.val.app (op (U.isOpenEmbedding.functor.obj W.unop))
+          ((eqToHom (sheafOfModulesRestrict_obj_val_presheaf_obj U R M W) :
+              ((U.sheafOfModulesRestrict.{v} R).obj M).val.presheaf.obj W ⟶
+                M.val.presheaf.obj (op (U.isOpenEmbedding.functor.obj W.unop))) x)) := by
+  unfold sheafOfModulesRestrict
+  rfl
 
 /-- Restriction of module sheaves to an open subspace `U` is left adjoint to pushforward along
 `U.inclusion'`. -/

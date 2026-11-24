@@ -117,7 +117,9 @@ instance LocalGeneratorsData.isLocallyFreeData_pullback {M : SheafOfModules.{u} 
 
 /-- Quasi-coherent presentation data of an `S`-module sheaf `M` on an open cover `q.X` of `Y`,
 carried along a ringed-space morphism `(f, φ)` to quasi-coherent presentation data of
-`(pullback φ).obj M` on the preimage open cover `i ↦ (Opens.map f).obj (q.X i)` of `X`. -/
+`(pullback φ).obj M` on the preimage open cover `i ↦ (Opens.map f).obj (q.X i)` of `X`.
+As in Mathlib's `SheafOfModules.QuasicoherentData.pushforward`, presentations are transported by
+`SheafOfModules.Presentation.map` along the colimit-preserving functor `pullbackOver φ (q.X i)`. -/
 @[expose, simps I X presentation]
 def QuasicoherentData.pullback {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
