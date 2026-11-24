@@ -96,11 +96,23 @@ namespace TauCeti
 /-- The compact Cartan element `H_c = -iJ`, `J = E₁₂ - E₂₁`. -/
 def compactCartanH : Matrix (Fin 2) (Fin 2) ℂ := !![0, -I; I, 0]
 
+/-- The entries of `H_c`. -/
+theorem compactCartanH_def : compactCartanH = !![0, -I; I, 0] :=
+  (rfl)
+
 /-- The compact raising element `X_c = (A + iB) / 2`, `A = diag(1, -1)`, `B = E₁₂ + E₂₁`. -/
 def compactCartanX : Matrix (Fin 2) (Fin 2) ℂ := !![1 / 2, I / 2; I / 2, -1 / 2]
 
+/-- The entries of `X_c`. -/
+theorem compactCartanX_def : compactCartanX = !![1 / 2, I / 2; I / 2, -1 / 2] :=
+  (rfl)
+
 /-- The compact lowering element `Y_c = (A - iB) / 2`. -/
 def compactCartanY : Matrix (Fin 2) (Fin 2) ℂ := !![1 / 2, -I / 2; -I / 2, -1 / 2]
+
+/-- The entries of `Y_c`. -/
+theorem compactCartanY_def : compactCartanY = !![1 / 2, -I / 2; -I / 2, -1 / 2] :=
+  (rfl)
 
 /-- `[X_c, Y_c] = H_c`; explicitly `[X_c, Y_c] = [[0, -i], [i, 0]]`. -/
 theorem lie_compactCartanX_compactCartanY :
@@ -535,6 +547,10 @@ theorem isSl2Triple_compactCartan : IsSl2Triple compactCartanH compactCartanX co
 /-- `J = E₁₂ - E₂₁`, the generator of the rotations `r_θ = exp(θJ)` in `GL₂(ℝ)`. -/
 def glTwoRotationGenerator : Matrix (Fin 2) (Fin 2) ℂ := !![0, 1; -1, 0]
 
+/-- The entries of `J`. -/
+theorem glTwoRotationGenerator_def : glTwoRotationGenerator = !![0, 1; -1, 0] :=
+  (rfl)
+
 /-- `H_c = -iJ`. -/
 theorem compactCartanH_eq : compactCartanH = -I • glTwoRotationGenerator := by
   ext i j
@@ -542,6 +558,10 @@ theorem compactCartanH_eq : compactCartanH = -I • glTwoRotationGenerator := by
 
 /-- The reflection `A = diag(1, -1)` of `O(2)`, which normalizes the compact Cartan subalgebra. -/
 def compactCartanReflection : Matrix (Fin 2) (Fin 2) ℂ := !![1, 0; 0, -1]
+
+/-- The entries of `A`. -/
+theorem compactCartanReflection_def : compactCartanReflection = !![1, 0; 0, -1] :=
+  (rfl)
 
 /-- `A² = 1`, so that `A⁻¹ = A`. -/
 @[simp]
