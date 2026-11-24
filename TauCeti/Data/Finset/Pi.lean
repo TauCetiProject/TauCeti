@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Finset.Pi
 
 /-!
-# Dependent functions on a disjoint union of finite sets
+# Dependent functions on finite sets
 
 For disjoint finite sets `s` and `t`, Mathlib's `Equiv.piFinsetUnion` identifies pairs of
 dependent functions on `s` and on `t` with dependent functions on `s ∪ t`. This file describes it
@@ -23,6 +23,10 @@ as `f` with the gluing of `g` and `k`, or as the gluing of `f` and `g` with `k`,
 function once `s ∪ (t ∪ u)` is identified with `(s ∪ t) ∪ u`
 (`Equiv.restrict₂_piFinsetUnion_assoc`).
 
+A function `f` on `s` extends to a function on any `t`, equal to a fixed function `w` at the
+points of `t` outside `s` (`Finset.extendFamily`); extending in two steps is extending in one
+(`Finset.extendFamily_extendFamily`).
+
 ## Main results
 
 * `Finset.restrict₂_union_ext`: a function on `s ∪ t` is determined by its restrictions.
@@ -30,6 +34,7 @@ function once `s ∪ (t ∪ u)` is identified with `(s ∪ t) ∪ u`
   restrictions of a glued function.
 * `Equiv.piFinsetUnion_symm_apply`: the inverse of `Equiv.piFinsetUnion` takes restrictions.
 * `Equiv.restrict₂_piFinsetUnion_assoc`: associativity of gluing.
+* `Finset.extendFamily_extendFamily`: extending a function in two steps is extending in one.
 -/
 
 public section
@@ -57,6 +62,52 @@ theorem restrict₂_union_ext [DecidableEq ι] {f g : ∀ i : (s ∪ t : Finset 
   rcases mem_union.1 hi with h | h
   · exact congr_fun hs ⟨i, h⟩
   · exact congr_fun ht ⟨i, h⟩
+
+section extendFamily
+
+variable [DecidableEq ι]
+
+/-- The function on `t` that agrees with `f` on `s` and with `w` elsewhere. -/
+def extendFamily (w : ∀ i, π i) (t : Finset ι) (f : ∀ i : s, π i) : ∀ i : t, π i :=
+  fun i ↦ if h : i.val ∈ s then f ⟨i.val, h⟩ else w i.val
+
+/-- On `s`, the extended function is the original function. -/
+theorem extendFamily_apply_of_mem (w : ∀ i, π i) (t : Finset ι) (f : ∀ i : s, π i) (i : t)
+    (h : i.val ∈ s) : extendFamily w t f i = f ⟨i.val, h⟩ := by
+  simp [extendFamily, h]
+
+/-- Off `s`, the extended function is `w`. -/
+theorem extendFamily_apply_of_notMem (w : ∀ i, π i) (t : Finset ι) (f : ∀ i : s, π i) (i : t)
+    (h : i.val ∉ s) : extendFamily w t f i = w i.val := by
+  simp [extendFamily, h]
+
+/-- Extending a function to its own domain does nothing. -/
+theorem extendFamily_self (w : ∀ i, π i) (s : Finset ι) (f : ∀ i : s, π i) :
+    extendFamily w s f = f :=
+  funext fun i ↦ extendFamily_apply_of_mem w s f i i.property
+
+/-- Extending by `w` in two steps is extending in one step. -/
+theorem extendFamily_extendFamily (w : ∀ i, π i) (u : Finset ι) (h : s ⊆ t) (f : ∀ i : s, π i) :
+    extendFamily w u (extendFamily w t f) = extendFamily w u f := by
+  funext i
+  by_cases hs : i.val ∈ s
+  · rw [extendFamily_apply_of_mem w u _ i (h hs), extendFamily_apply_of_mem w t f _ hs,
+      extendFamily_apply_of_mem w u f i hs]
+  · rw [extendFamily_apply_of_notMem w u f i hs]
+    by_cases ht : i.val ∈ t
+    · rw [extendFamily_apply_of_mem w u _ i ht, extendFamily_apply_of_notMem w t f _ hs]
+    · rw [extendFamily_apply_of_notMem w u _ i ht]
+
+/-- Extending commutes with pointwise maps sending `w` to `w'`. -/
+theorem extendFamily_comp {π' : ι → Type*} (w : ∀ i, π i) (w' : ∀ i, π' i)
+    (f : ∀ i, π i → π' i) (hf : ∀ i, f i (w i) = w' i) (t : Finset ι) (g : ∀ i : s, π i) :
+    extendFamily w' t (fun i : s ↦ f i (g i)) = fun i : t ↦ f i (extendFamily w t g i) := by
+  funext i
+  by_cases hi : i.val ∈ s
+  · rw [extendFamily_apply_of_mem w' t _ i hi, extendFamily_apply_of_mem w t g i hi]
+  · rw [extendFamily_apply_of_notMem w' t _ i hi, extendFamily_apply_of_notMem w t g i hi, hf]
+
+end extendFamily
 
 end Finset
 
