@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
-import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -26,12 +25,13 @@ space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanis
   continuous. No regularity of `Γ` is used.
 * **Poincaré–Friedrichs**: if `Ω` is moreover connected and `Γ` charges the frontier,
   `σ(Γ) > 0`, there is a constant `C` with `‖u‖_{Lᵖ(Ω)} ≤ C ‖∇u‖_{Lᵖ(Ω)}` for every
-  `u ∈ W^{1,p}_Γ(Ω)`. The argument is Peetre's compact-error estimate
-  `ContinuousLinearMap.exists_pos_mul_norm_le_of_compact_estimate`, with Rellich compactness of
-  `W^{1,p}(Ω) → Lᵖ(Ω)` (`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`) as the
-  compact error. It needs the gradient to have no kernel on the closed subspace `W^{1,p}_Γ(Ω)`:
-  a function there with zero gradient is a constant `c` on the connected `Ω`, its trace is `c`,
-  and the trace vanishes on `Γ`, a set of positive surface measure, so `c = 0`.
+  `u ∈ W^{1,p}_Γ(Ω)`. The argument is Peetre's compact-error estimate, in the form
+  `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_isCompactOperator` shared with
+  Poincaré–Wirtinger, with Rellich compactness of `W^{1,p}(Ω) → Lᵖ(Ω)`
+  (`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`) as the compact error. It
+  needs the gradient to have no kernel on the closed subspace `W^{1,p}_Γ(Ω)`: a function there
+  with zero gradient is a constant `c` on the connected `Ω`, its trace is `c`, and the trace
+  vanishes on `Γ`, a set of positive surface measure, so `c = 0`.
 
 The hypothesis `σ(Γ) > 0` cannot be dropped: for `Γ = ∅` the constant `1` has zero gradient and
 nonzero norm. Neither can connectedness: on two disjoint balls with `Γ` on the frontier of the
@@ -42,7 +42,7 @@ first, the function equal to `0` on the first ball and `1` on the second is a co
 * `TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`: `W^{1,p}_∅(Ω) = W^{1,p}(Ω)`.
 * `TauCeti.W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: functions in
   `W^{1,p}_Γ(Ω)` have zero trace on `Γ`.
-* `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_isLipschitzDomainWith`: the
+* `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule`: the
   Poincaré–Friedrichs inequality on `W^{1,p}_Γ(Ω)`.
 
 ## References
@@ -129,19 +129,14 @@ private theorem W1p.eq_zero_of_gradient_eq_zero_of_mem_w1pVanishingOnSubmodule
   obtain ⟨x, hxc, hx0⟩ := ((ae_restrict_of_ae (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
     (f := fun _ => c) continuousOn_const hc)).and
       (W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hΩ hb hu)).exists
-  have hc0 : c = 0 := by simpa using hxc.symm.trans hx0
-  apply W1p.ext_value
-  rw [← W1p.valueL_apply, ← W1p.valueL_apply, map_zero]
-  apply Lp.ext
-  filter_upwards [hc, Lp.coeFn_zero ℝ p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))]
-    with x hx h0
-  rw [W1p.valueL_apply, hx, hc0, h0, Pi.zero_apply]
+  obtain rfl : c = 0 := by simpa using hxc.symm.trans hx0
+  exact W1p.ext_value (by rw [W1p.value_zero]; exact Lp.eq_zero_iff_ae_eq_zero.2 hc)
 
 /-- **The Poincaré–Friedrichs inequality.** Let `Ω` be a bounded connected Lipschitz domain, let
 `1 ≤ p < ∞`, and let `Γ` be a set meeting the frontier in a set of positive surface measure. Then
 there is a constant `C` with `‖u‖_{Lᵖ(Ω)} ≤ C ‖∇u‖_{Lᵖ(Ω)}` for every `u ∈ W^{1,p}_Γ(Ω)`. The
 constant depends on `Ω`, `Γ` and `p`, and is not explicit. -/
-theorem W1p.exists_norm_value_le_mul_norm_gradient_of_isLipschitzDomainWith
+theorem W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule
     (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
     (hconn : IsPreconnected (Ω : Set (WithLp 2 (ℝ × E))))
@@ -157,15 +152,9 @@ theorem W1p.exists_norm_value_le_mul_norm_gradient_of_isLipschitzDomainWith
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, W1p.gradientL_apply] at hgrad
     exact W1p.eq_zero_of_gradient_eq_zero_of_mem_w1pVanishingOnSubmodule hp hΩ hb hconn hΓ hu
       hgrad
-  -- Peetre's estimate, with Rellich compactness of the value map as the compact error.
-  obtain ⟨c, hc, hcM⟩ :=
-    (W1p.gradientL (mu := volume) (Omega := Ω) (p := p)).exists_pos_mul_norm_le_of_compact_estimate
-      (C := 1) (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) (fun u => by
-        rw [one_mul, add_comm, W1p.gradientL_apply, W1p.valueL_apply]
-        exact W1p.norm_le_norm_value_add_norm_gradient u)
-      (w1pVanishingOnSubmodule volume Ω p Γ).isClosed hdisj
-  refine ⟨c⁻¹, inv_nonneg.2 hc.le, fun u hu => ?_⟩
-  rw [le_inv_mul_iff₀ hc, ← W1p.gradientL_apply]
-  exact (mul_le_mul_of_nonneg_left (W1p.norm_value_le u) hc.le).trans (hcM u hu)
+  -- Rellich compactness of the value map makes the gradient bounded below there.
+  exact W1p.exists_norm_value_le_mul_norm_gradient_of_isCompactOperator
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb)
+    (w1pVanishingOnSubmodule volume Ω p Γ).isClosed hdisj
 
 end TauCeti

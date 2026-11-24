@@ -14,10 +14,11 @@ import TauCeti.Analysis.Calculus.ContDiff.Indicator
 
 For an open set `Ω`, a set `Γ` and `1 ≤ p ≤ ∞`, this file defines `W^{1,p}_Γ(Ω)`, the closure in
 `W^{1,p}(Ω)` of the restrictions to `Ω` of the smooth compactly supported functions on the whole
-space whose support stays away from `closure Γ`. It is the space of the mixed boundary value
-problem: a Dirichlet condition is imposed on the boundary part `Γ`, and nothing on the rest of
-the boundary, where the weak formulation produces the natural (Neumann) condition. No regularity
-of `Ω` or of `Γ` is assumed in the definition.
+space whose support stays away from `closure Γ`. For a boundary part `Γ ⊆ frontier Ω` it is the
+space of the mixed boundary value problem: a Dirichlet condition is imposed on `closure Γ`, which
+may be larger than `Γ`, and nothing on the rest `frontier Ω \ closure Γ` of the boundary, where
+the weak formulation produces the natural (Neumann) condition. No regularity of `Ω` or of `Γ` is
+assumed in the definition.
 
 The two extreme cases are the familiar ones. At `Γ = frontier Ω` every generator restricts to a
 test function supported in `Ω`, and conversely, so `W^{1,p}_Γ(Ω) = W^{1,p}_0(Ω)` for every open `Ω`
@@ -26,8 +27,8 @@ restrictions of test functions, which are dense in `W^{1,p}(Ω)` on bounded Lips
 finite `p`; that case lives with the Lipschitz-domain theory.
 
 The space shrinks as `Γ` grows and depends on `Γ` only through its closure. When `Γ` misses `Ω`,
-as a boundary part does, it contains `W^{1,p}_0(Ω)`; this fails when `Γ` meets `Ω`, since every
-generator then vanishes on an open neighbourhood of `Γ ∩ Ω`. Multiplication by a smooth function
+as a boundary part does, it contains `W^{1,p}_0(Ω)`; this can fail when `Γ` meets `Ω`, for
+instance when `Γ` contains a nonempty open subset of `Ω`. Multiplication by a smooth function
 bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
 
 ## Main declarations
@@ -38,7 +39,7 @@ bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`.
   containing them contains all of it.
 * `TauCeti.mem_w1pVanishingOnSubmodule_iff_exists_seq_tendsto`: its elements are the limits of
   sequences of generators.
-* `TauCeti.w1pVanishingOnSubmodule_anti` and `TauCeti.w1pVanishingOnSubmodule_closure`: it is
+* `TauCeti.w1pVanishingOnSubmodule_antitone` and `TauCeti.w1pVanishingOnSubmodule_closure`: it is
   antitone in `Γ` and depends only on `closure Γ`.
 * `TauCeti.w1p0Submodule_le_w1pVanishingOnSubmodule`: it contains `W^{1,p}_0(Ω)` when `Γ` misses
   `Ω`.
@@ -145,7 +146,7 @@ theorem mem_w1pVanishingOnSubmodule_iff_exists_seq_tendsto {u : W1p mu Omega p} 
 
 /-- **`W^{1,p}_Γ(Ω)` shrinks as `Γ` grows**: if `Γ ⊆ Γ'`, every generator for `Γ'` is a
 generator for `Γ`, so `W^{1,p}_{Γ'}(Ω) ≤ W^{1,p}_Γ(Ω)`. -/
-theorem w1pVanishingOnSubmodule_anti :
+theorem w1pVanishingOnSubmodule_antitone :
     Antitone (w1pVanishingOnSubmodule mu Omega p) := fun Γ _ hΓ _ hu =>
   w1pVanishingOnSubmodule_subset_of_isClosed (w1pVanishingOnSubmodule mu Omega p Γ).isClosed
     (fun _ hφ => W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
@@ -155,7 +156,7 @@ theorem w1pVanishingOnSubmodule_anti :
 @[simp]
 theorem w1pVanishingOnSubmodule_closure :
     w1pVanishingOnSubmodule mu Omega p (closure Γ) = w1pVanishingOnSubmodule mu Omega p Γ :=
-  le_antisymm (w1pVanishingOnSubmodule_anti subset_closure) fun _ hu =>
+  le_antisymm (w1pVanishingOnSubmodule_antitone subset_closure) fun _ hu =>
     w1pVanishingOnSubmodule_subset_of_isClosed
       (w1pVanishingOnSubmodule mu Omega p (closure Γ)).isClosed
       (fun _ hφ => W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
