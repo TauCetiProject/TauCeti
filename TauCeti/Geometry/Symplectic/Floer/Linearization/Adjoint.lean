@@ -295,21 +295,8 @@ theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
     gcongr
     · exact (le_opNorm _ _).trans (by simp [stdComplexLineImag, hM])
     · exact (opNorm_comp_le _ _).trans (by rw [mul_comm]; gcongr)
-  have h₀ : ‖f z • ω.floerLinearizationAdjoint J Ks Kt u η z‖ ≤
-      ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) hf₁
-  have hsum : ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ≤
-      ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ + M * (1 + B) * ‖η z‖ := by
-    rw [floerLinearizationAdjoint_fun_smul hf hη hJu]
-    have h₃ := norm_sub_le (f z • ω.floerLinearizationAdjoint J Ks Kt u η z)
-      (fderiv ℝ f z stdComplexLineReal • η z)
-    refine (norm_sub_le _ _).trans ?_
-    nlinarith
-  calc _ ≤ (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ + M * (1 + B) * ‖η z‖) ^ 2 := by
-        gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ - M * (1 + B) * ‖η z‖)]
+  rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_eq_add_neg, sub_eq_add_neg]
+  exact norm_smul_add_add_sq_le hf₁ ((norm_neg _).trans_le h₁) ((norm_neg _).trans_le h₂)
 
 /-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
 `e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
