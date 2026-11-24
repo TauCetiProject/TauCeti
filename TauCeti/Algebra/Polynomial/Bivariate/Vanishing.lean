@@ -51,9 +51,9 @@ coordinates and the Schwartz–Zippel zero bound `M * (F.natDegree + (Bivariate.
 for every irreducible `F : K[X][X]` of positive outer natural degree
 (`Polynomial.mul_card_le_of_forall_X_sub_C_pow_dvd`).
 
-Specializing to the image of a Cartesian grid `S × S` under `Matrix.linearGridMap M` for a
+Specializing to the image of a Cartesian grid `S × S` under `Matrix.toLinProd M` for a
 `2 × 2` matrix `M` with nonzero determinant over `K`
-(`Polynomial.card_filter_eval_eq_zero_linearGrid_le_of_natDegree_le`) whose second linear form
+(`Polynomial.card_filter_evalEval_eq_zero_linearGrid_le_of_natDegree_le`) whose second linear form
 separates grid points yields a vanishing criterion on sheared grids
 (`Polynomial.eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd`), and in characteristic zero fiber
 divisibility by `(X - C x) ^ k` is equivalent to vanishing of the first `k` outer iterated
@@ -76,7 +76,7 @@ derivatives
   characterization of fiberwise divisibility `(X - C x) ^ k ∣ P.map (evalRingHom y)` in
   characteristic zero via vanishing of the first `k` outer iterated derivatives at `(x, y)`.
 * `Polynomial.eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd`: vanishing criterion on a sheared
-  grid `(S ×ˢ S).image (Matrix.linearGridMap M)` for a `2 × 2` matrix `M` with nonzero
+  grid `(S ×ˢ S).image (Matrix.toLinProd M)` for a `2 × 2` matrix `M` with nonzero
   determinant.
 
 ## References
@@ -162,7 +162,7 @@ theorem sum_rootMultiplicity_le_of_squarefree {K : Type*} [CommRing K] [IsDomain
       (Ω.filter fun p : K × K ↦ F.evalEval p.2 p.1 = 0).card +
         (2 * F.natDegree - 1) * dY :=
   sum_rootMultiplicity_le_of_resultant_deriv_ne_zero
-    (resultant_deriv_ne_zero_of_squarefree hF) hdY hinj
+    hF.resultant_deriv_ne_zero hdY hinj
 
 end SquarefreeBound
 
@@ -331,24 +331,24 @@ theorem X_sub_C_pow_dvd_map_evalRingHom_iff_forall_evalEval_iterate_derivative_e
 characteristic zero be evaluated at `(x, y)` via `P.evalEval y x = (P.map (evalRingHom y)).eval x`,
 with first-coordinate (outer) natural degree `P.natDegree ≤ dX` and second-coordinate (inner)
 coefficient natural degrees `(P.coeff i).natDegree ≤ dY`. Let `M` be a `2 × 2` matrix over `K` with
-nonzero determinant such that `Prod.snd ∘ Matrix.linearGridMap M` is injective on `S × S`. If
-`P.map (evalRingHom (Matrix.linearGridMap M q).2)` vanishes to order at least `k` at
-`(Matrix.linearGridMap M q).1` for all `q ∈ S ×ˢ S`, and
+nonzero determinant such that `Prod.snd ∘ Matrix.toLinProd M` is injective on `S × S`. If
+`P.map (evalRingHom (Matrix.toLinProd M q).2)` vanishes to order at least `k` at
+`(Matrix.toLinProd M q).1` for all `q ∈ S ×ˢ S`, and
 `S.card * dX + max k S.card * dY + 2 * dX * dY < k * S.card ^ 2`, then `P = 0`. -/
 theorem eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd {K : Type*} [CommRing K] [IsDomain K]
     [IsGCDMonoid K] [CharZero K]
     {P : K[X][X]} {dX dY k : ℕ}
     (hdX : P.natDegree ≤ dX) (hdY : ∀ i, (P.coeff i).natDegree ≤ dY)
     {S : Finset K} {M : Matrix (Fin 2) (Fin 2) K} (hdet : M.det ≠ 0)
-    (hinj : Set.InjOn (Prod.snd ∘ Matrix.linearGridMap M) (S ×ˢ S : Finset (K × K)))
+    (hinj : Set.InjOn (Prod.snd ∘ Matrix.toLinProd M) (S ×ˢ S : Finset (K × K)))
     (hvan : ∀ q ∈ S ×ˢ S,
-      (X - C (Matrix.linearGridMap M q).1) ^ k ∣
-        P.map (evalRingHom (Matrix.linearGridMap M q).2))
+      (X - C (Matrix.toLinProd M q).1) ^ k ∣
+        P.map (evalRingHom (Matrix.toLinProd M q).2))
     (hlt : S.card * dX + max k S.card * dY + 2 * dX * dY < k * S.card ^ 2) :
     P = 0 := by
   classical
   by_contra hP
-  let Ω : Finset (K × K) := (S ×ˢ S).image (Matrix.linearGridMap M)
+  let Ω : Finset (K × K) := (S ×ˢ S).image (Matrix.toLinProd M)
   have hΩ_card : Ω.card = S.card ^ 2 := by
     rw [Finset.card_image_of_injOn hinj.of_comp, Finset.card_product, sq]
   have hΩ_inj : Set.InjOn Prod.snd (Ω : Set (K × K)) := by
@@ -358,7 +358,7 @@ theorem eq_zero_of_forall_linearGrid_X_sub_C_pow_dvd {K : Type*} [CommRing K] [I
     obtain ⟨q, hq, rfl⟩ := Finset.mem_image.mp hp
     exact hvan q hq
   have hbound := mul_card_le_of_forall_X_sub_C_pow_dvd hP hdX hdY hΩ_inj
-    (fun F hF _ ↦ card_filter_eval_eq_zero_linearGrid_le_of_natDegree_le hdet hF.ne_zero le_rfl
+    (fun F hF _ ↦ card_filter_evalEval_eq_zero_linearGrid_le_of_natDegree_le hdet hF.ne_zero le_rfl
       ((natDegree_swap_le_iff F _).mp le_rfl))
     hvanΩ
   rw [hΩ_card] at hbound

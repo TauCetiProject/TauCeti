@@ -46,12 +46,12 @@ permutation to vectors invariant under the row map.
 A right null vector whose last coordinate is a unit lets the submatrix omitting the last column
 reproduce every product `A *ᵥ x`.
 
-A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.linearGridMap` via
+A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.toLinProd` via
 `LinearEquiv.finTwoArrow`.
 
 ## Main definitions
 
-* `Matrix.linearGridMap`: the linear action of a `2 × 2` matrix on `K × K`.
+* `Matrix.toLinProd`: the linear action of a `2 × 2` matrix on `K × K`.
 
 ## Main results
 
@@ -75,7 +75,8 @@ A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.linearGridMap` via
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
-* `Matrix.linearGridMap_finTwoArrowEquiv`: transport of `Matrix.linearGridMap` along
+* `Matrix.toLinProd_apply`: explicit coordinate formula for `Matrix.toLinProd M q`.
+* `Matrix.toLinProd_finTwoArrowEquiv`: transport of `Matrix.toLinProd` along
   `finTwoArrowEquiv`.
 -/
 
@@ -235,21 +236,30 @@ theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
 
 end Ring
 
-section LinearGridMap
+section ToLinProd
 
 /-- The linear action of a `2 × 2` matrix `M` on `K × K`, defined by conjugating
 `Matrix.toLin' M` along `LinearEquiv.finTwoArrow`. -/
-def linearGridMap {K : Type*} [CommSemiring K] (M : Matrix (Fin 2) (Fin 2) K) :
+def toLinProd {K : Type*} [CommSemiring K] (M : Matrix (Fin 2) (Fin 2) K) :
     K × K →ₗ[K] K × K :=
   (LinearEquiv.finTwoArrow K K).conj (Matrix.toLin' M)
 
-/-- Applying `linearGridMap M` commutes with `finTwoArrowEquiv K` and `M.mulVec`. -/
-theorem linearGridMap_finTwoArrowEquiv {K : Type*} [CommSemiring K]
-    (M : Matrix (Fin 2) (Fin 2) K) (v : Fin 2 → K) :
-    linearGridMap M (finTwoArrowEquiv K v) = finTwoArrowEquiv K (M *ᵥ v) := by
-  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
-  simp [linearGridMap, LinearEquiv.conj_apply_apply, hv]
+/-- Applying `toLinProd M` to a pair `q : K × K` computes the `2 × 2` matrix-vector product
+coordinatewise. -/
+@[simp]
+theorem toLinProd_apply {K : Type*} [CommSemiring K] (M : Matrix (Fin 2) (Fin 2) K)
+    (q : K × K) :
+    toLinProd M q = (M 0 0 * q.1 + M 0 1 * q.2, M 1 0 * q.1 + M 1 1 * q.2) := by
+  simp [toLinProd, LinearEquiv.conj_apply_apply, Matrix.toLin'_apply, Matrix.mulVec,
+    dotProduct, Fin.sum_univ_two]
 
-end LinearGridMap
+/-- Applying `toLinProd M` commutes with `finTwoArrowEquiv K` and `M.mulVec`. -/
+theorem toLinProd_finTwoArrowEquiv {K : Type*} [CommSemiring K]
+    (M : Matrix (Fin 2) (Fin 2) K) (v : Fin 2 → K) :
+    toLinProd M (finTwoArrowEquiv K v) = finTwoArrowEquiv K (M *ᵥ v) := by
+  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
+  simp [toLinProd, LinearEquiv.conj_apply_apply, hv]
+
+end ToLinProd
 
 end Matrix
