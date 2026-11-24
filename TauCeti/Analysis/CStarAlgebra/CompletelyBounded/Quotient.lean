@@ -25,6 +25,8 @@ norm (`NonUnitalStarAlgHom.exists_apply_eq_norm_eq`).
 ## Main declarations
 
 * `LinearMap.IsCompleteQuotient`: complete quotient maps.
+* `LinearMap.IsCompleteQuotient.of_norm_map_le_of_exists_map_eq`: a linear map whose
+  amplifications are contractive and lift the open unit ball is a complete quotient map.
 * `LinearMap.IsCompleteQuotient.comp`, `LinearMap.isCompleteQuotient_id`: composition and the
   identity.
 * `LinearMap.IsCompleteQuotient.norm_map_le`, `LinearMap.IsCompleteQuotient.cbNorm_le_one`: a
@@ -58,6 +60,20 @@ theorem isCompleteQuotient_def {φ : A →ₗ[ℂ] B} :
     IsCompleteQuotient φ ↔ ∀ n : ℕ,
       (fun x : CStarMatrix (Fin n) (Fin n) A ↦ x.map φ) '' Metric.ball 0 1 = Metric.ball 0 1 :=
   (Iff.rfl)
+
+/-- A linear map whose amplifications at the levels `Fin n` are contractive and lift the open unit
+ball is a complete quotient map. -/
+theorem IsCompleteQuotient.of_norm_map_le_of_exists_map_eq {φ : A →ₗ[ℂ] B}
+    (hle : ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ ‖x‖)
+    (hlift : ∀ (n : ℕ) (y : CStarMatrix (Fin n) (Fin n) B), ‖y‖ < 1 →
+      ∃ x : CStarMatrix (Fin n) (Fin n) A, ‖x‖ < 1 ∧ x.map φ = y) :
+    IsCompleteQuotient φ := fun n ↦ by
+  ext y
+  simp only [Set.mem_image, mem_ball_zero_iff]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact (hle n x).trans_lt hx
+  · exact hlift n y
 
 /-- The identity is a complete quotient map. -/
 @[simp, grind .]
@@ -134,24 +150,16 @@ amplifications are surjective star homomorphisms, hence contractive, and every e
 range has a preimage of the same norm. -/
 theorem isCompleteQuotient (π : F) (hπ : Function.Surjective π) :
     (π : A →ₗ[ℂ] B).IsCompleteQuotient := by
-  intro n
-  let πₙ := CStarMatrix.mapₙₐ (n := Fin n) (ofClass π)
-  have hπₙ (x : CStarMatrix (Fin n) (Fin n) A) : πₙ x = x.map (π : A →ₗ[ℂ] B) := by simp [πₙ]
-  ext y
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [mem_ball_zero_iff] at hx ⊢
-    dsimp only
-    rw [← hπₙ]
-    exact (norm_apply_le πₙ x).trans_lt hx
-  · intro hy
-    have hrange : y ∈ Set.range πₙ := ⟨CStarMatrix.ofMatrix fun i j ↦ (hπ (y i j)).choose, by
+  have hπₙ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A) :
+      CStarMatrix.mapₙₐ (ofClass π) x = x.map (π : A →ₗ[ℂ] B) := by simp
+  refine .of_norm_map_le_of_exists_map_eq (fun n x ↦ hπₙ n x ▸ norm_apply_le _ x)
+    fun n y hy ↦ ?_
+  have hrange : y ∈ Set.range (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π)) :=
+    ⟨CStarMatrix.ofMatrix fun i j ↦ (hπ (y i j)).choose, by
       ext i j
       rw [hπₙ, CStarMatrix.map_apply]
       exact (hπ (y i j)).choose_spec⟩
-    obtain ⟨x, hxy, hxn⟩ := exists_apply_eq_norm_eq πₙ hrange
-    refine ⟨x, ?_, (hπₙ x).symm.trans hxy⟩
-    rw [mem_ball_zero_iff] at hy ⊢
-    rwa [hxn]
+  obtain ⟨x, hxy, hxn⟩ := exists_apply_eq_norm_eq _ hrange
+  exact ⟨x, hxn ▸ hy, (hπₙ n x).symm.trans hxy⟩
 
 end NonUnitalStarAlgHom
