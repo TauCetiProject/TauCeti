@@ -32,6 +32,8 @@ and the diagonal matrix `diag(b, …, b)`, so its norm is at most `‖x‖ ‖b�
 * `LinearMap.IsCompleteContraction`, `LinearMap.isCompleteContraction_iff`: complete contractions
   are the completely bounded maps of cb norm at most `1`.
 * `LinearMap.IsCompleteIsometry`, `LinearMap.IsCompleteIsometry.isCompleteContraction`.
+* `LinearMap.IsCompleteContraction.comp`, `LinearMap.IsCompleteIsometry.comp`: both classes are
+  closed under composition and contain the identity.
 * `NonUnitalStarAlgHom.isCompleteIsometry`: an injective star homomorphism is a complete isometry.
 * `LinearMap.cbNorm_toSpanSingleton`: `‖z ↦ z • b‖_cb = ‖b‖`.
 * `LinearMap.completelyBounded.evalOneEquiv`: `CB(ℂ, B) ≃ₗᵢ[ℂ] B`, `u ↦ u 1`.
@@ -63,11 +65,11 @@ def IsCompleteIsometry (φ : A →ₗ[ℂ] B) : Prop :=
 
 theorem isCompleteContraction_def {φ : A →ₗ[ℂ] B} :
     IsCompleteContraction φ ↔ ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ ≤ ‖x‖ :=
-  Iff.rfl
+  (Iff.rfl)
 
 theorem isCompleteIsometry_def {φ : A →ₗ[ℂ] B} :
     IsCompleteIsometry φ ↔ ∀ (n : ℕ) (x : CStarMatrix (Fin n) (Fin n) A), ‖x.map φ‖ = ‖x‖ :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- A complete contraction is a completely bounded map of cb norm at most `1`. -/
 theorem isCompleteContraction_iff {φ : A →ₗ[ℂ] B} :
@@ -77,14 +79,48 @@ theorem isCompleteContraction_iff {φ : A →ₗ[ℂ] B} :
   simpa using (cbNorm_le_iff hφ zero_le_one).1 h n x
 
 /-- A complete isometry is a complete contraction. -/
+@[grind →]
 theorem IsCompleteIsometry.isCompleteContraction {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) :
     IsCompleteContraction φ :=
   fun n x ↦ (hφ n x).le
 
 /-- A complete isometry is completely bounded. -/
+@[grind →]
 theorem IsCompleteIsometry.isCompletelyBounded {φ : A →ₗ[ℂ] B} (hφ : IsCompleteIsometry φ) :
     IsCompletelyBounded φ :=
   (isCompleteContraction_iff.1 hφ.isCompleteContraction).1
+
+section Comp
+
+variable {C : Type*} [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
+
+/-- The identity map is a complete contraction. -/
+@[simp, grind .]
+theorem isCompleteContraction_id : IsCompleteContraction (LinearMap.id : A →ₗ[ℂ] A) :=
+  fun n x ↦ by simp
+
+/-- The identity map is a complete isometry. -/
+@[simp, grind .]
+theorem isCompleteIsometry_id : IsCompleteIsometry (LinearMap.id : A →ₗ[ℂ] A) :=
+  fun n x ↦ by simp
+
+/-- The composite of complete contractions is a complete contraction. -/
+@[grind ←]
+theorem IsCompleteContraction.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B}
+    (hψ : IsCompleteContraction ψ) (hφ : IsCompleteContraction φ) :
+    IsCompleteContraction (ψ ∘ₗ φ) := fun n x ↦ by
+  have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp
+  exact this ▸ (hψ n _).trans (hφ n x)
+
+/-- The composite of complete isometries is a complete isometry. -/
+@[grind ←]
+theorem IsCompleteIsometry.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B}
+    (hψ : IsCompleteIsometry ψ) (hφ : IsCompleteIsometry φ) :
+    IsCompleteIsometry (ψ ∘ₗ φ) := fun n x ↦ by
+  have : x.map (ψ ∘ₗ φ) = (x.map φ).map ψ := by ext; simp
+  exact this ▸ (hψ n _).trans (hφ n x)
+
+end Comp
 
 end LinearMap
 
@@ -95,6 +131,7 @@ variable {F A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
 /-- A star homomorphism of C⋆-algebras is a complete contraction. -/
+@[grind .]
 theorem isCompleteContraction (π : F) : (π : A →ₗ[ℂ] B).IsCompleteContraction :=
   LinearMap.isCompleteContraction_iff.2 ⟨isCompletelyBounded π, cbNorm_le_one π⟩
 
@@ -133,12 +170,14 @@ private theorem norm_map_toSpanSingleton_le (b : B) {n : ℕ} (x : CStarMatrix (
   exact (CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le _).trans (Unitization.norm_inr b).le
 
 /-- The map `z ↦ z • b` from `ℂ` to a C⋆-algebra is completely bounded. -/
+@[simp, grind .]
 theorem isCompletelyBounded_toSpanSingleton (b : B) :
     (toSpanSingleton ℂ B b).IsCompletelyBounded :=
   isCompletelyBounded_def.2
     ⟨‖b‖, norm_nonneg b, fun _ x ↦ (norm_map_toSpanSingleton_le b x).trans_eq (mul_comm _ _)⟩
 
 /-- The map `z ↦ z • b` from `ℂ` to a C⋆-algebra has cb norm `‖b‖`. -/
+@[simp, grind =]
 theorem cbNorm_toSpanSingleton (b : B) : (toSpanSingleton ℂ B b).cbNorm = ‖b‖ :=
   le_antisymm
     (cbNorm_le_of_bound (norm_nonneg b) fun _ x ↦
