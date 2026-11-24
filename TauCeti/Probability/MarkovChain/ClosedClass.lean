@@ -191,18 +191,20 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s)
   rw [← MeasureTheory.lintegral_map hmean hhit',
     map_hittingAfter_markovChainLaw_subtype κ hs ν ht, MeasureTheory.lintegral_map hmean hhit]
 
+private theorem markovChainLaw_dirac_subtype_map (x : s) :
+    (markovChainLaw (Measure.dirac x) (κ.subtype hs)).map
+        (Pi.map fun _ : ℕ => (Subtype.val : s → S)) =
+      markovChainLaw (Measure.dirac x.val) κ := by
+  rw [← Measure.map_dirac' measurable_subtypeVal x]
+  exact markovChainLaw_map_subtype κ hs (Measure.dirac x)
+
 /-- Restricting a Markov kernel to a closed set preserves the extended mean positive return time
 of each of its states. -/
 @[simp]
 theorem meanReturnTime_subtype (x : s) :
     (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
-  rw [meanReturnTime_def, meanReturnTime_def, ← Measure.map_dirac' measurable_subtypeVal x,
-    ← markovChainLaw_map_subtype κ hs (Measure.dirac x)]
-  have hlint :=
-    (MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtypeVal hs).lintegral_map
-      (μ := markovChainLaw (Measure.dirac x) (κ.subtype hs))
-      (fun ω : ℕ → S => ENat.toENNReal (hittingAfter (fun n ω => ω n) {x.val} 1 ω))
-  refine Eq.trans ?_ hlint.symm
+  rw [meanReturnTime_def, meanReturnTime_def, ← markovChainLaw_dirac_subtype_map κ hs x,
+    (MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtypeVal hs).lintegral_map]
   congr 1
   funext ω
   exact congrArg ENat.toENNReal
@@ -213,12 +215,8 @@ theorem meanReturnTime_subtype (x : s) :
 @[simp]
 theorem isRecurrent_subtype_iff (x : s) :
     (κ.subtype hs).IsRecurrent x ↔ κ.IsRecurrent x.val := by
-  rw [isRecurrent_iff, isRecurrent_iff, ← Measure.map_dirac' measurable_subtypeVal x,
-    ← markovChainLaw_map_subtype κ hs (Measure.dirac x)]
-  have hmap :=
-    (MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtypeVal hs).map_apply
-      (markovChainLaw (Measure.dirac x) (κ.subtype hs))
-      {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x.val} 1 ω ≠ ⊤}
+  rw [isRecurrent_iff, isRecurrent_iff, ← markovChainLaw_dirac_subtype_map κ hs x,
+    (MeasurableEmbedding.piMap fun _ : ℕ => MeasurableEmbedding.subtypeVal hs).map_apply]
   have heq : (Pi.map fun _ : ℕ => (Subtype.val : s → S)) ⁻¹'
       {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x.val} 1 ω ≠ ⊤} =
       {ω : ℕ → s | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} := by
@@ -226,12 +224,7 @@ theorem isRecurrent_subtype_iff (x : s) :
     exact iff_of_eq (congrArg (· ≠ ⊤)
       (congrFun (Subtype.coe_injective.hittingAfter_singleton
         (fun n (w : ℕ → s) => w n) x 1) ω))
-  change (markovChainLaw (Measure.dirac x) (κ.subtype hs))
-      {ω | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} = 1 ↔
-    ((markovChainLaw (Measure.dirac x) (κ.subtype hs)).map
-      (Pi.map fun _ : ℕ => (Subtype.val : s → S)))
-      {ω | hittingAfter (fun n ω => ω n) {x.val} 1 ω ≠ ⊤} = 1
-  rw [hmap, heq]
+  rw [heq]
 
 /-- Restricting to a closed set preserves and reflects transience of each of its states. -/
 @[simp]

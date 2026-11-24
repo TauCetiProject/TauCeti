@@ -98,6 +98,11 @@ theorem Reaches.trans {x y z : S}
 @[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
     ⟨Reaches.refl x, Reaches.refl x⟩
 
+/-- Every state belongs to its own communicating class. -/
+theorem mem_communicatingClass_self (x : S) :
+    x ∈ κ.communicatingClass x :=
+  (mem_communicatingClass_iff x x).mpr (Communicates.refl x)
+
 /-- Communication is symmetric. -/
 theorem Communicates.symm {x y : S} (h : κ.Communicates x y) : κ.Communicates y x :=
   ⟨h.2, h.1⟩
