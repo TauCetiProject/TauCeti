@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
-import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
@@ -249,10 +248,9 @@ private def upperFamily (l : Fin (m (i + 1) + pairRank i (i + 1))) : C.X (i + 1)
       pivotMatrix c (pairIdx m i i (.inr rfl)) l) • c (i + 1) (pairIdx m i (i + 1) (.inl rfl))
 
 /-- The basis of `Cᵢ` after the elimination: the vector `z⁻` of the pair replaced by `d z⁺`. -/
-private def lowerFamily (l : Fin (m i + pairRank i i)) : C.X i :=
-  if l = pairIdx m i i (.inr rfl) then
-    (C.d (i + 1) i).hom (c (i + 1) (pairIdx m i (i + 1) (.inl rfl)))
-  else c i l
+private def lowerFamily : Fin (m i + pairRank i i) → C.X i :=
+  Function.update (c i) (pairIdx m i i (.inr rfl))
+    ((C.d (i + 1) i).hom (c (i + 1) (pairIdx m i (i + 1) (.inl rfl))))
 
 /-- The bases of `C` after the elimination. -/
 private def newFamily : ∀ j, Fin (m j + pairRank i j) → C.X j :=
@@ -284,15 +282,13 @@ private theorem det_upperFamily : (c (i + 1)).det (upperFamily c) = 1 := by
 private theorem det_lowerFamily :
     (c i).det (lowerFamily c) =
       pivotMatrix c (pairIdx m i i (.inr rfl)) (pairIdx m i (i + 1) (.inl rfl)) := by
-  rw [Basis.det_apply]
-  refine (Matrix.det_of_isUpperTriangular fun k l hkl ↦ ?_).trans ?_
-  · have hl : l ≠ pairIdx m i i (.inr rfl) := fun hl ↦
-      (le_pairIdx (.inr rfl) k).not_gt (hl ▸ hkl)
-    simp only [id_eq] at hkl
-    simp [Basis.toMatrix_apply, lowerFamily, hl, hkl.ne]
-  · rw [Finset.prod_eq_single (pairIdx m i i (.inr rfl)) (fun k _ hk ↦ by
-      simp [Basis.toMatrix_apply, lowerFamily, hk]) (by simp)]
-    simp [Basis.toMatrix_apply, lowerFamily, LinearMap.toMatrix_apply]
+  have h := Matrix.det_updateCol_sum (1 : Matrix _ _ F) (pairIdx m i i (.inr rfl))
+    ((c i).repr ((C.d (i + 1) i).hom (c (i + 1) (pairIdx m i (i + 1) (.inl rfl)))))
+  simp only [Matrix.one_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true, Matrix.det_one] at h
+  rw [Basis.det_apply, lowerFamily, Basis.toMatrix_update, Basis.toMatrix_self, pivotMatrix,
+    LinearMap.toMatrix_apply]
+  exact h
 
 private theorem det_newFamily (j : ℤ) :
     (c j).det (newFamily c j) = if j = i then
