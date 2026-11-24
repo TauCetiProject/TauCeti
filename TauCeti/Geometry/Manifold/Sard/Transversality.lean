@@ -135,15 +135,8 @@ theorem isRegularPoint_snd_fst_transverseFiberProduct_iff (hn : 1 ≤ n)
   rw [isRegularPoint_iff, hd, hslice]
   refine Iff.trans ?_ key
   -- The tangent image of the projection to `M × S` is `dF⁻¹(range dg)`.
-  constructor
-  · intro h
-    refine eq_top_iff.2 fun v _ ↦ ?_
-    obtain ⟨ξ, rfl⟩ := h v
-    exact Submodule.mem_map.2 ⟨_, (SetLike.ext_iff.1 hrange _).1 ⟨ξ, rfl⟩, rfl⟩
-  · intro h v
-    obtain ⟨w, hw, rfl⟩ := Submodule.mem_map.1 (h ▸ Submodule.mem_top (x := v))
-    obtain ⟨ξ, hξ⟩ := (SetLike.ext_iff.1 hrange w).2 hw
-    exact ⟨ξ, congrArg (LinearMap.snd ℝ (TangentSpace IM x) (TangentSpace IS s)) hξ⟩
+  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.range_eq_top]
+  exact Eq.congr_left ((LinearMap.range_comp _ _).trans (congrArg _ hrange))
 
 /-- **The parametric transversality theorem.** Let `F : M × S → N` be a `C^n` family of maps,
 transverse to a `C^n` embedding `g : Z → N`, where `M` is Lindelöf and
