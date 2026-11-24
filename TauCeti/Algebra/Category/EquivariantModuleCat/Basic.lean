@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Module.End
-public import Mathlib.Algebra.SkewMonoidAlgebra.Basic
+public import TauCeti.Algebra.SkewMonoidAlgebra.Basic
 
 /-!
 # Equivariant modules and modules over the skew monoid algebra
@@ -172,16 +172,10 @@ def toEnd (X : EquivariantModuleCat.{v} A Γ) : SkewMonoidAlgebra A Γ →+* Add
   SkewMonoidAlgebra.liftNCRingHom (Module.toAddMonoidEnd A X)
     (DistribMulAction.toAddMonoidEnd Γ X) (toAddMonoidEnd_comm X _ _)
 
-/-- `SkewMonoidAlgebra.liftNCRingHom` on `single g a` is `f a * u g`. -/
-private theorem liftNCRingHom_single {R : Type*} [Semiring R]
-    (f : A →+* R) (u : Γ →* R) (h : ∀ {a : A} {g : Γ}, f (g • a) * u g = u g * f a) (g : Γ)
-    (a : A) : SkewMonoidAlgebra.liftNCRingHom f u h (SkewMonoidAlgebra.single g a) = f a * u g :=
-  SkewMonoidAlgebra.liftNC_single _ _ _ _
-
 @[simp]
 theorem toEnd_single (X : EquivariantModuleCat.{v} A Γ) (g : Γ) (a : A) (x : X) :
     X.toEnd (SkewMonoidAlgebra.single g a) x = a • g • x := by
-  rw [toEnd, liftNCRingHom_single, AddMonoid.End.coe_mul, Function.comp_apply]
+  rw [toEnd, SkewMonoidAlgebra.liftNCRingHom_single, AddMonoid.End.coe_mul, Function.comp_apply]
   exact Module.toAddMonoidEnd_apply_apply A _ a (g • x)
 
 /-- An equivariant module is a left module over the skew monoid algebra `A ⋊ Γ`, with
