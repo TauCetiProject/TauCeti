@@ -14,9 +14,9 @@ Mathlib's `PiTensorProduct.map_update_add` says that `PiTensorProduct.map` is ad
 factor. This file records the form of that statement used when two tensor maps are compared
 directly: if two families of linear maps agree away from one index `k`, then the sum of their
 tensor maps is the tensor map of the family whose `k`-th factor is the sum of the two `k`-th
-factors. It also records that a tensor map over an empty index type is the identity and does not
-change the scalar identification `PiTensorProduct.isEmptyEquiv`, and that a tensor map with a
-zero factor is zero.
+factors. It also records that a tensor map over an empty index type is the identity, that a
+semilinear tensor map along `σ` over an empty index type is `σ` under the scalar identification
+`PiTensorProduct.isEmptyEquiv`, and that a tensor map with a zero factor is zero.
 
 ## Main results
 
@@ -24,8 +24,8 @@ zero factor is zero.
   agree away from one index.
 * `TauCeti.PiTensorProduct.map_of_isEmpty`: a tensor map over an empty index type is the
   identity.
-* `TauCeti.PiTensorProduct.isEmptyEquiv_map`: over an empty index type, a tensor map commutes with
-  the identification of the tensor product with the scalars.
+* `TauCeti.PiTensorProduct.isEmptyEquiv_map`: over an empty index type, a tensor map along
+  `σ : R →+* S` is `σ` under the identifications of the tensor products with the scalars.
 * `TauCeti.PiTensorProduct.map_eq_zero_of_eq_zero`: a tensor map with a zero factor is zero.
 -/
 
@@ -56,20 +56,27 @@ theorem map_of_isEmpty [IsEmpty ι] (f : ∀ i, s i →ₗ[R] s i) :
     PiTensorProduct.map f = LinearMap.id := by
   rw [Subsingleton.elim f fun _ ↦ LinearMap.id, PiTensorProduct.map_id]
 
-/-- Over an empty index type, a tensor map commutes with the identification
-`PiTensorProduct.isEmptyEquiv` of the tensor product with the scalars. -/
+section semilinear
+
+variable {S : Type*} [CommSemiring S] {σ : R →+* S} {u : ι → Type*} [∀ i, AddCommMonoid (u i)]
+  [∀ i, Module S (u i)]
+
+/-- Over an empty index type, a tensor map along `σ : R →+* S` corresponds to `σ` under the
+identifications `PiTensorProduct.isEmptyEquiv` of both tensor products with the scalars. -/
 @[simp]
-theorem isEmptyEquiv_map [IsEmpty ι] (f : ∀ i, s i →ₗ[R] t i) (x : ⨂[R] i, s i) :
+theorem isEmptyEquiv_map [IsEmpty ι] (f : ∀ i, s i →ₛₗ[σ] u i) (x : ⨂[R] i, s i) :
     PiTensorProduct.isEmptyEquiv ι (PiTensorProduct.map f x) =
-      PiTensorProduct.isEmptyEquiv ι x := by
+      σ (PiTensorProduct.isEmptyEquiv ι x) := by
   induction x using PiTensorProduct.induction_on with
   | smul_tprod r v => simp
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- A tensor map with a zero factor is zero. -/
-theorem map_eq_zero_of_eq_zero (f : ∀ i, s i →ₗ[R] t i) {k : ι} (hk : f k = 0) :
+theorem map_eq_zero_of_eq_zero (f : ∀ i, s i →ₛₗ[σ] u i) {k : ι} (hk : f k = 0) :
     PiTensorProduct.map f = 0 := by
   ext v
-  simpa using (PiTensorProduct.tprod R).map_coord_zero k (by simp [hk])
+  simpa using (PiTensorProduct.tprod S).map_coord_zero k (by simp [hk])
+
+end semilinear
 
 end TauCeti.PiTensorProduct

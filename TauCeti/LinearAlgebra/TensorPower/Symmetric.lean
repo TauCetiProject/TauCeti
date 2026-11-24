@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
-public import Mathlib.LinearAlgebra.TensorPower.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
-public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorPower.Basic
 
 /-!
@@ -50,9 +48,10 @@ map induces the zero map.
   symmetric.
 * `TensorPower.symmetricTensorsMap n f`: the map induced on symmetric tensors by a linear map `f`,
   with `TensorPower.symmetricTensorsMap_id` and `TensorPower.symmetricTensorsMap_comp`.
-* `TensorPower.algebraMap₀_symm_symmetricTensorsMap`,
-  `TensorPower.oneEquiv_symmetricTensorsMap` and `TensorPower.symmetricTensorsMap_zero`: the
-  induced maps in degree `0`, in degree `1`, and for the zero map.
+* `TensorPower.symmetricTensorsMap_zero`: in every positive degree the zero map induces the zero
+  map. In degrees `0` and `1`, `TensorPower.coe_symmetricTensorsMap_apply` reduces the induced map
+  to the tensor-power map, which `TensorPower.algebraMap₀_symm_map` and
+  `TauCeti.TensorPower.oneEquiv_map` identify with the identity of `R` and with `f`.
 
 ## References
 
@@ -62,7 +61,6 @@ map induces the zero map.
 public section
 
 open PiTensorProduct Module
-open TauCeti.TensorPower (oneEquiv)
 open scoped TensorProduct
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -150,27 +148,12 @@ theorem symmetricTensorsMap_id :
 /-- The map induced by a composite is the composite of the induced maps. -/
 @[simp]
 theorem symmetricTensorsMap_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
-    symmetricTensorsMap n (g ∘ₗ f) = symmetricTensorsMap n g ∘ₗ symmetricTensorsMap n f :=
-  LinearMap.ext fun t ↦ Subtype.ext <| by simp [PiTensorProduct.map_comp]
-
-/-- In degree `0` the induced map is the identity of `R`, under the identifications
-`TensorPower.algebraMap₀` of both sides with `R`, whatever the map `f`. -/
-theorem algebraMap₀_symm_symmetricTensorsMap (f : M →ₗ[R] N) (t : symmetricTensors R M 0) :
-    algebraMap₀.symm (symmetricTensorsMap 0 f t : ⨂[R]^0 N) =
-      algebraMap₀.symm (t : ⨂[R]^0 M) := by
-  simp [algebraMap₀]
-
-/-- In degree `1` the induced map is `f`, under the identifications `TauCeti.TensorPower.oneEquiv`
-of both sides with `M` and `N`. -/
-theorem oneEquiv_symmetricTensorsMap (f : M →ₗ[R] N) (t : symmetricTensors R M 1) :
-    oneEquiv R N (symmetricTensorsMap 1 f t : ⨂[R]^1 N) = f (oneEquiv R M (t : ⨂[R]^1 M)) := by
-  obtain ⟨a, ha⟩ := (oneEquiv R M).symm.surjective (t : ⨂[R]^1 M)
-  have h := LinearMap.congr_fun (TauCeti.TensorPower.oneEquiv_symm_comp f) a
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at h
-  rw [coe_symmetricTensorsMap_apply, ← ha, ← h, LinearEquiv.apply_symm_apply,
-    LinearEquiv.apply_symm_apply]
+    symmetricTensorsMap n (g ∘ₗ f) = symmetricTensorsMap n g ∘ₗ symmetricTensorsMap n f := by
+  simp only [symmetricTensorsMap, PiTensorProduct.map_comp]
+  exact LinearMap.restrict_comp _ _
 
 /-- In every positive degree the zero map induces the zero map. -/
+@[simp]
 theorem symmetricTensorsMap_zero (hn : n ≠ 0) :
     symmetricTensorsMap n (0 : M →ₗ[R] N) = 0 := by
   obtain ⟨k⟩ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp (Nat.pos_of_ne_zero hn)
