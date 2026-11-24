@@ -20,7 +20,9 @@ The forgetful functor to modules preserves kernels and cokernels and reflects is
 Consequently the coimage-to-image comparison is an isomorphism, making comodules an abelian
 category. In particular this applies to any coalgebra over a field, providing the exact-category
 structure used in the representation theory of affine groups. Since the forgetful functor is
-exact, exactness of a short complex of comodules can be read off from the underlying linear maps.
+exact, exactness of a short complex of comodules can be read off from the underlying linear maps,
+and a short exact sequence of comodules can be built from exact, injective and surjective
+underlying maps (`TauCeti.ComoduleCat.shortComplex_shortExact`).
 
 The comparison argument follows Mathlib's `FGModuleCat` abelian-category construction.
 -/
@@ -95,3 +97,29 @@ theorem ShortExact.comoduleCat_surjective_g (hS : S.ShortExact) : Function.Surje
   (hS.map_of_exact (forget₂ _ (ModuleCat.{w} R))).moduleCat_surjective_g
 
 end CategoryTheory.ShortComplex
+
+namespace TauCeti.ComoduleCat
+
+universe u v w
+
+variable {R : Type u} [CommRing R]
+variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Flat R C]
+
+/-- A short complex of comodules over a flat coalgebra whose underlying linear maps are exact is
+exact. -/
+theorem shortComplex_exact (S : ShortComplex (ComoduleCat.{u, v, w} R C))
+    (exac : Function.Exact S.f S.g) : S.Exact :=
+  S.comoduleCat_exact_iff_function_exact.2 exac
+
+/-- A short complex of comodules over a flat coalgebra is short exact when its underlying linear
+maps are exact, the first injective and the second surjective. -/
+theorem shortComplex_shortExact (S : ShortComplex (ComoduleCat.{u, v, w} R C))
+    (exac : Function.Exact S.f S.g) (inj : Function.Injective S.f)
+    (surj : Function.Surjective S.g) : S.ShortExact where
+  exact := shortComplex_exact S exac
+  mono_f :=
+    (forget₂ _ (ModuleCat.{w} R)).mono_of_mono_map ((ModuleCat.mono_iff_injective _).2 inj)
+  epi_g :=
+    (forget₂ _ (ModuleCat.{w} R)).epi_of_epi_map ((ModuleCat.epi_iff_surjective _).2 surj)
+
+end TauCeti.ComoduleCat
