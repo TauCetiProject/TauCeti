@@ -30,6 +30,9 @@ the same sum `∑ i, μ (W i) * ν (S i)`, which proves additivity and invarianc
 ## Main results
 
 * `TauCeti.HaarMeasureWithValues.prod_apply_prod`: `(μ.prod ν) (U ×ˢ V) = μ U * ν V`.
+* `TauCeti.HaarMeasureWithValues.prod_apply_eq_sum_slices`,
+  `TauCeti.HaarMeasureWithValues.prod_apply_eq_sum`: the volume of a general compact open set, as a
+  sum over its slices or over any presentation by rectangles with pairwise disjoint bases.
 * `TauCeti.HaarMeasureWithValues.eq_prod_of_apply_prod`: an `A`-valued Haar measure on `G × H`
   with these volumes on rectangles is `μ.prod ν`.
 
@@ -182,11 +185,26 @@ noncomputable def prod : HaarMeasureWithValues A (G × H) where
 private theorem prod_apply (K : CompactOpens (G × H)) : μ.prod ν K = prodVolume μ ν K := by
   rw [prod, coe_mk]
 
+/-- The product measure of a compact open set `K ⊆ G × H` is the sum over the slices `T` of `K` of
+the volume of `{g | K_g = T}` times that of `T`. -/
+theorem prod_apply_eq_sum_slices (K : CompactOpens (G × H)) :
+    μ.prod ν K = ∑ T ∈ K.slices, μ (K.sliceFiber T) * ν T := by
+  rw [prod_apply, prodVolume]
+
+/-- The product measure of a compact open set `K ⊆ G × H` is the sum of products of volumes over
+any presentation of `K` as a union of rectangles with pairwise disjoint bases. -/
+theorem prod_apply_eq_sum {K : CompactOpens (G × H)} {ι : Type*} {s : Finset ι}
+    {W : ι → CompactOpens G} {S : ι → CompactOpens H}
+    (hW : (s : Set ι).PairwiseDisjoint fun i ↦ (W i : Set G))
+    (hK : ∀ g h, (g, h) ∈ K ↔ ∃ i ∈ s, g ∈ W i ∧ h ∈ S i) :
+    μ.prod ν K = ∑ i ∈ s, μ (W i) * ν (S i) := by
+  rw [prod_apply, prodVolume_eq_sum μ ν hW hK]
+
 /-- The product measure gives a compact open rectangle `U ×ˢ V` volume `μ U * ν V`. -/
 @[simp]
 theorem prod_apply_prod (U : CompactOpens G) (V : CompactOpens H) :
     μ.prod ν (U ×ˢ V) = μ U * ν V := by
-  rw [prod_apply, prodVolume_eq_sum μ ν (s := Finset.univ) (W := fun _ : Unit ↦ U) (S := fun _ ↦ V)
+  rw [prod_apply_eq_sum μ ν (s := Finset.univ) (W := fun _ : Unit ↦ U) (S := fun _ ↦ V)
     (by simp) fun g h ↦ by
       rw [← SetLike.mem_coe, CompactOpens.coe_prod]
       simp]
@@ -197,13 +215,8 @@ compact open rectangle `U ×ˢ V` volume `μ U * ν V` is the product measure `�
 theorem eq_prod_of_apply_prod (ρ : HaarMeasureWithValues A (G × H))
     (hρ : ∀ U V, ρ (U ×ˢ V) = μ U * ν V) : ρ = μ.prod ν := by
   refine ext fun K ↦ ?_
-  have hK : K = K.slices.sup fun T ↦ K.sliceFiber T ×ˢ T := by
-    refine CompactOpens.ext (Set.ext fun ⟨g, h⟩ ↦ ?_)
-    simp only [CompactOpens.coe_finsetSup, CompactOpens.coe_prod, mem_iUnion, mem_prod,
-      SetLike.mem_coe, exists_prop]
-    exact K.mem_iff_exists_sliceFiber g h
-  rw [prod_apply, prodVolume]
-  conv_lhs => rw [hK]
+  rw [prod_apply_eq_sum_slices]
+  conv_lhs => rw [K.eq_finsetSup_sliceFiber_prod]
   rw [ρ.apply_finsetSup fun T hT T' hT' hTT' ↦ ?_]
   · simp only [hρ]
   simpa only [CompactOpens.coe_prod] using

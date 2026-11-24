@@ -39,7 +39,8 @@ This file also records that a compact open set is nonempty exactly when it is no
 * `TopologicalSpace.CompactOpens.slice_prod_of_mem`, `TopologicalSpace.CompactOpens.slice_sup`:
   slices of rectangles and of unions.
 * `TopologicalSpace.CompactOpens.mem_iff_exists_sliceFiber`,
-  `TopologicalSpace.CompactOpens.pairwiseDisjoint_sliceFiber`: the decomposition of a compact open
+  `TopologicalSpace.CompactOpens.pairwiseDisjoint_sliceFiber`,
+  `TopologicalSpace.CompactOpens.eq_finsetSup_sliceFiber_prod`: the decomposition of a compact open
   subset of a product into rectangles with pairwise disjoint bases.
 -/
 
@@ -178,6 +179,14 @@ theorem mem_iff_exists_sliceFiber (K : CompactOpens (X × Y)) (x : X) (y : Y) :
 theorem pairwiseDisjoint_sliceFiber (K : CompactOpens (X × Y)) :
     (K.slices : Set (CompactOpens Y)).PairwiseDisjoint fun T ↦ (K.sliceFiber T : Set X) :=
   IsLocallyConstant.pairwiseDisjoint_fiberCompactOpens _ _ _ _
+
+/-- A compact open set `K ⊆ X × Y` is the finite union of the rectangles `K.sliceFiber T ×ˢ T` over
+its slices `T`. -/
+theorem eq_finsetSup_sliceFiber_prod (K : CompactOpens (X × Y)) :
+    K = K.slices.sup fun T ↦ K.sliceFiber T ×ˢ T := by
+  refine CompactOpens.ext (Set.ext fun ⟨x, y⟩ ↦ ?_)
+  simp only [coe_finsetSup, coe_prod, mem_iUnion, mem_prod, SetLike.mem_coe, exists_prop]
+  exact K.mem_iff_exists_sliceFiber x y
 
 end T2Space
 
