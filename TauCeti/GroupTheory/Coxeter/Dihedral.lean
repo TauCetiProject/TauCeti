@@ -82,9 +82,10 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
   factor of an element with two left descents inherits both descents.
 * `CoxeterSystem.exists_wordProd_alternatingWord_mul_of_isLeftDescent_pair`: **Tits' lemma.**
 * `CoxeterSystem.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent` and
-  `CoxeterSystem.length_lt_of_mem_parabolic_pair_of_not_isRightDescent`: an element of a rank-two
-  standard parabolic subgroup without right descent at `i` is the alternating word of its length
-  ending in `i'`, and that length is below the braid length `M i i'`.
+  `CoxeterSystem.length_lt_or_eq_zero_of_mem_parabolic_pair_of_not_isRightDescent`: an element of
+  a rank-two standard parabolic subgroup without right descent at `i` is the alternating word of
+  its length ending in `i'`, and that length is below the braid length `M i i'` unless that entry
+  is `0`.
 * `CoxeterSystem.parabolic_pair_induction`: **Tits' induction** on the length, which reduces a
   property of all pairs `(w, i)` with `i` not a right descent of `w` to the rank-two parabolic
   subgroups.
@@ -93,7 +94,8 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
 
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
   Sections 2.2 and 3.3.
-* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Sections 1.9 and 5.12.
+* J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Sections 1.9 and 5.12, and
+  Section 5.4 (the proof of Theorem 5.4, for Tits' induction).
 -/
 
 public section
@@ -370,7 +372,7 @@ theorem wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent 
 
 /-- An element of `cs.parabolic {i, i'}` without right descent at `i` is shorter than the
 Coxeter-matrix entry `M i i'`, unless that entry is `0` (infinite). -/
-theorem length_lt_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B} {w : W}
+theorem length_lt_or_eq_zero_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B} {w : W}
     (hw : w ∈ cs.parabolic {i, i'}) (hwi : ¬cs.IsRightDescent w i) :
     ℓ w < M i i' ∨ M i i' = 0 := by
   have hred : cs.IsReduced (alternatingWord i' i (ℓ w + 1)) := by
@@ -382,9 +384,9 @@ theorem length_lt_of_mem_parabolic_pair_of_not_isRightDescent {i i' : B} {w : W}
   rw [not_or, not_lt, ← M.symmetric i' i] at hcon
   exact cs.not_isReduced_alternatingWord i' i hcon.2 (by omega) hred
 
-/-- **Tits' induction.** To prove `P w i` whenever `i` is not a right descent of `w`, it suffices
-to prove `P 1 i` for every `i`, and to deduce `P (u * v) i` from `P u i` and `P u i'` whenever `v`
-lies in `cs.parabolic {i, i'}` and has no right descent at `i`. -/
+/-- **Tits' induction** (Humphreys, Section 5.4). To prove `P w i` whenever `i` is not a right
+descent of `w`, it suffices to prove `P 1 i` for every `i`, and to deduce `P (u * v) i` from `P u i`
+and `P u i'` whenever `v` lies in `cs.parabolic {i, i'}` and has no right descent at `i`. -/
 theorem parabolic_pair_induction {P : W → B → Prop} (one : ∀ i, P 1 i)
     (mul : ∀ {u v : W} {i i' : B}, v ∈ cs.parabolic {i, i'} → ¬cs.IsRightDescent v i →
       P u i → P u i' → P (u * v) i)

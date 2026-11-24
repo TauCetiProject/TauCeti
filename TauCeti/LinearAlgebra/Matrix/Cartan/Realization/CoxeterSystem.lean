@@ -214,7 +214,7 @@ theorem exists_coxeterHom_apply_root_eq_of_mem_parabolic_pair {i j : I}
     (hvi : ¬(coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem.IsRightDescent v i) :
     ∃ a b : ℕ, R.coxeterHom hA hzero v (R.root i) = a • R.root i + b • R.root j := by
   set cs := (coxeterMatrixOfGeneralizedCartanMatrix A).toCoxeterSystem
-  have hk := cs.length_lt_of_mem_parabolic_pair_of_not_isRightDescent hv hvi
+  have hk := cs.length_lt_or_eq_zero_of_mem_parabolic_pair_of_not_isRightDescent hv hvi
   obtain ⟨p, hp⟩ := Int.eq_ofNat_of_zero_le (rankTwoCoeff_nonneg hzero hneg i j
     (n := cs.length v) (by omega))
   obtain ⟨q, hq⟩ := Int.eq_ofNat_of_zero_le (rankTwoCoeff_nonneg hzero hneg i j

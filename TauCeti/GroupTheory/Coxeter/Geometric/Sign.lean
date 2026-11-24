@@ -71,7 +71,7 @@ theorem exists_nonneg_geometricRepresentation_of_mem_parabolic_pair {i j : I} {v
       cs.geometricRepresentation v (Finsupp.single i 1) =
         a • Finsupp.single i 1 + b • Finsupp.single j 1 := by
   have hword := cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent hv hvi
-  have hk := cs.length_lt_of_mem_parabolic_pair_of_not_isRightDescent hv hvi
+  have hk := cs.length_lt_or_eq_zero_of_mem_parabolic_pair_of_not_isRightDescent hv hvi
   rw [← hword]
   exact cs.rankTwo_nonnegative i j hk
 
