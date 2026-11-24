@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Logic.Small.Basic
 public import Mathlib.Topology.Instances.Shrink
-public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
@@ -170,18 +169,6 @@ instance uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left [LocallyCompa
   (Topology.isGeneratedBy_compHaus_iff (X × Y)).1 inferInstance
 
 end TauCeti
-
-namespace UCompactlyGeneratedSpace
-
-instance instProdUnitIntervalRight (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (X × unitInterval) :=
-  inferInstance
-
-instance instProdUnitIntervalLeft (X : Type v) [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] : UCompactlyGeneratedSpace.{u} (unitInterval × X) :=
-  inferInstance
-
-end UCompactlyGeneratedSpace
 
 namespace Topology.ContinuousMapGeneratedBy
 
