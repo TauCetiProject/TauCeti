@@ -177,16 +177,23 @@ instance [CompactSpace X] [CompactSpace Y] : CompactSpace (SmashProduct x₀ y�
   haveI : CompactSpace (smashPair x₀ y₀).fst := inferInstanceAs (CompactSpace (X × Y))
   (smashPair x₀ y₀).compactSpace_ordinaryPairQuotient
 
+private lemma disjoint_nhdsSet_smashAxes [T2Space X] [T2Space Y] {x : X} {y : Y}
+    (hx : x ≠ x₀) (hy : y ≠ y₀) :
+    Disjoint (𝓝ˢ (univ ×ˢ {y₀} ∪ {x₀} ×ˢ univ : Set (X × Y))) (𝓝 (x, y)) := by
+  rw [nhdsSet_union, disjoint_sup_left, nhds_prod_eq]
+  exact ⟨(Filter.disjoint_prod.2 <| Or.inr <|
+      isCompact_singleton.disjoint_nhdsSet_nhds hy).mono_left (nhdsSet_prod_le _ _),
+    (Filter.disjoint_prod.2 <| Or.inl <|
+      isCompact_singleton.disjoint_nhdsSet_nhds hx).mono_left (nhdsSet_prod_le _ _)⟩
+
 instance [T2Space X] [T2Space Y] : T2Space (SmashProduct x₀ y₀) := by
+  -- The ambient space `(smashPair x₀ y₀).fst` is `TopCat.of (X × Y)`, whose carrier and topology
+  -- are definitionally `X × Y` with its product topology (`TopCat.coe_of`).
   have : T2Space (smashPair x₀ y₀).fst := inferInstanceAs (T2Space (X × Y))
   refine (smashPair x₀ y₀).t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet fun ⟨x, y⟩ h ↦ ?_
   rw [TopPair.range_ofSubset_map] at h ⊢
-  exact show Disjoint (𝓝ˢ (univ ×ˢ {y₀} ∪ {x₀} ×ˢ univ : Set (X × Y))) (𝓝 (x, y)) by
-    rw [nhdsSet_union, disjoint_sup_left, nhds_prod_eq]
-    exact ⟨(Filter.disjoint_prod.2 <| Or.inr <| isCompact_singleton.disjoint_nhdsSet_nhds
-        fun hy ↦ h (Or.inl ⟨trivial, hy⟩)).mono_left (nhdsSet_prod_le _ _),
-      (Filter.disjoint_prod.2 <| Or.inl <| isCompact_singleton.disjoint_nhdsSet_nhds
-        fun hx ↦ h (Or.inr ⟨hx, trivial⟩)).mono_left (nhdsSet_prod_le _ _)⟩
+  exact disjoint_nhdsSet_smashAxes
+    (fun hx ↦ h (Or.inr ⟨hx, trivial⟩)) (fun hy ↦ h (Or.inl ⟨trivial, hy⟩))
 
 instance subsingleton_left [Subsingleton X] : Subsingleton (SmashProduct x₀ y₀) :=
   subsingleton_of_forall_eq (basepoint x₀ y₀)
@@ -406,12 +413,12 @@ def ordinaryPairQuotientProdToSmash :
   (qProd A B).ordinaryPairQuotientDesc
     (TopCat.ofHom ((SmashProduct.mk _ _).comp
       (((qLeft A).ordinaryPairQuotientπ).hom.prodMap ((qRight B).ordinaryPairQuotientπ).hom)))
-    (SmashProduct.basepoint _ _) fun b ↦ b.2.elim
+    (SmashProduct.basepoint _ _) fun b ↦ b.property.elim
       (fun ⟨hxA, _⟩ ↦ (congrArg (fun u ↦ SmashProduct.mk _ _ (u, _))
-        ((qLeft A).ordinaryPairQuotientπ_map ⟨b.1.1, hxA⟩)).trans
+        ((qLeft A).ordinaryPairQuotientπ_map ⟨b.val.1, hxA⟩)).trans
         (SmashProduct.mk_basepoint_left _))
       (fun ⟨_, hyB⟩ ↦ (congrArg (fun v ↦ SmashProduct.mk _ _ (_, v))
-        ((qRight B).ordinaryPairQuotientπ_map ⟨b.1.2, hyB⟩)).trans
+        ((qRight B).ordinaryPairQuotientπ_map ⟨b.val.2, hyB⟩)).trans
         (SmashProduct.mk_basepoint_right _))
 
 @[simp]
@@ -438,7 +445,7 @@ private def prodQuotientFromRight (x : X)
       ((qProd A B).ordinaryPairQuotientπ).hom.continuous.comp
         (continuous_const.prodMk continuous_id)⟩)
     (qProd A B).ordinaryPairQuotientBasepoint
-    (fun b ↦ (qProd A B).ordinaryPairQuotientπ_map ⟨(x, b.1), Or.inr ⟨trivial, b.2⟩⟩) qb
+    (fun b ↦ (qProd A B).ordinaryPairQuotientπ_map ⟨(x, b.val), Or.inr ⟨trivial, b.property⟩⟩) qb
 
 @[simp]
 private lemma prodQuotientFromRight_π (x : X) (y : Y) :
@@ -475,9 +482,9 @@ private def prodQuotientFromBoth (qa : (qLeft A).ordinaryPairQuotient)
           fun x ↦ (prodQuotientFromRight_basepoint A B x).symm) qb⟩)
     (qProd A B).ordinaryPairQuotientBasepoint
     (fun a ↦ ordinaryPairQuotient_ind (P := qRight B)
-      (fun y ↦ (prodQuotientFromRight_π A B a.1 y).trans
-        ((qProd A B).ordinaryPairQuotientπ_map ⟨(a.1, y), Or.inl ⟨a.2, trivial⟩⟩))
-      (prodQuotientFromRight_basepoint A B a.1) qb) qa
+      (fun y ↦ (prodQuotientFromRight_π A B a.val y).trans
+        ((qProd A B).ordinaryPairQuotientπ_map ⟨(a.val, y), Or.inl ⟨a.property, trivial⟩⟩))
+      (prodQuotientFromRight_basepoint A B a.val) qb) qa
 
 @[simp]
 private lemma prodQuotientFromBoth_π (x : X) (qb : (qRight B).ordinaryPairQuotient) :

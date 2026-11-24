@@ -217,7 +217,7 @@ class of a continuous `α : G → 𝔽₂` to `S` gives the class of `α|_S`. -/
 theorem trivialF2ResMap_homClass (S : Subgroup G) (α : G →* Multiplicative (ZMod 2))
     (hα : Continuous α) :
     trivialF2ResMap G S 1 (homClass G α hα) =
-      homClass S (α.comp S.subtype) (hα.comp continuous_subtype_val) := by
+      homClass S (α.comp S.subtype) (hα.comp continuous_subtypeVal) := by
   rw [← trivialF2Map_subgroupSubtype, trivialF2Map_homClass, homClass_inj,
     ContinuousMonoidHom.coe_subgroupSubtype]
 

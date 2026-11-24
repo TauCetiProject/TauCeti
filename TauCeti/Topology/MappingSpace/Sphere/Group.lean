@@ -60,7 +60,7 @@ theorem sphereGroupHomeomorphIteratedLoopSpace_apply (g : G)
     sphereGroupHomeomorphIteratedLoopSpace k G s₀ (g, γ) =
       ContinuousMap.const _ g *
         ((BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace k ⟨G, 1⟩
-          s₀).symm γ).1 := by
+          s₀).symm γ).val := by
   rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.trans_apply,
     mappingSpaceGroupHomeomorph_apply]
   -- both sides are the constant map times the based sphere map of `γ`

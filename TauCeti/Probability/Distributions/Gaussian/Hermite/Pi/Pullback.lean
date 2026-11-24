@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Hermite.Pi.Basis
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import Mathlib.Probability.HasLaw
 
 /-!

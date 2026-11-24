@@ -34,6 +34,7 @@ on:
         default: ""
     secrets:
       FLEET_READ_TOKEN: { required: false }
+      FLEET_INVENTORY_APP_PRIVATE_KEY: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
       namespace-slot:
@@ -110,11 +111,23 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e8d03de2dcea1887d0c0b2b5c3e151d5b2793d62
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e8d03de2dcea1887d0c0b2b5c3e151d5b2793d62
           project-directory: .
+      # The runner inventory read uses a read-only App (organization self-hosted runners:
+      # read) when vars.FLEET_INVENTORY_APP_ID is set. Until then, or if minting fails, the
+      # FLEET_READ_TOKEN secret is used; with neither, the picker keeps GitHub-hosted capacity.
+      - name: Mint the read-only runner inventory token
+        id: inventory
+        if: ${{ vars.FLEET_INVENTORY_APP_ID != '' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        with:
+          app-id: ${{ vars.FLEET_INVENTORY_APP_ID }}
+          private-key: ${{ secrets.FLEET_INVENTORY_APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          permission-organization-self-hosted-runners: read
       - name: Select destination in configured preference order
         id: pick
         env:
@@ -128,7 +141,7 @@ jobs:
           PR_HEAD: ${{ inputs.pr-head }}
           FLEET_CI_ENABLED: ${{ vars.FLEET_CI_ENABLED }}
           FLEET_RUNNER_GROUP_ID: ${{ vars.FLEET_RUNNER_GROUP_ID }}
-          FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+          FLEET_READ_TOKEN: ${{ steps.inventory.outputs.token || secrets.FLEET_READ_TOKEN }}
         run: python3 scripts/fleet_runner.py --route
 
   queue-control-smoke:

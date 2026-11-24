@@ -95,9 +95,9 @@ theorem _root_.Measurable.exists_finite_occurrence_enumeration
   -- Choose on the space of all finite integer-valued measures, so the same measurable
   -- removal operation can be iterated for every member of the family.
   let M := FiniteIntegerMeasure X
-  have hcoe : Measurable (fun ν : M => (ν : Measure X)) := measurable_subtype_coe
+  have hcoe : Measurable (fun ν : M => (ν : Measure X)) := measurable_subtypeVal
   obtain ⟨pick, hpick, hnone, hmass⟩ := hcoe.exists_option_one_le_singleton
-    (fun ν => ν.2.1) (fun ν => ν.2.2)
+    (fun ν => ν.property.1) (fun ν => ν.property.2)
   let atom : M → Measure X := fun ν => (pick ν).elim 0 Measure.dirac
   have hatom : Measurable atom :=
     (Option.measurable_elim 0 Measure.measurable_dirac).comp hpick
@@ -110,10 +110,10 @@ theorem _root_.Measurable.exists_finite_occurrence_enumeration
   have hfinatom (ν : M) : IsFiniteMeasure (atom ν) := by
     cases h : pick ν <;> simp only [atom, h, Option.elim_none, Option.elim_some] <;> infer_instance
   let step : M → M := fun ν => ⟨ν.val - atom ν, by
-    refine ⟨by have := ν.2.1; infer_instance, ?_⟩
+    refine ⟨by have := ν.property.1; infer_instance, ?_⟩
     cases h : pick ν with
-    | none => simpa [atom, h] using ν.2.2
-    | some x => simpa [atom, h] using ν.2.2.sub_dirac x⟩
+    | none => simpa [atom, h] using ν.property.2
+    | some x => simpa [atom, h] using ν.property.2.sub_dirac x⟩
   have hstep : Measurable step := (hcoe.measure_sub hatom hfinatom hle).subtype_mk
   have hremove (ν : M) := sub_option_dirac_step ν.val (pick ν) (hle ν) (hnone ν)
   let start : α → M := fun a => ⟨μ a, hfinite a, hint a⟩

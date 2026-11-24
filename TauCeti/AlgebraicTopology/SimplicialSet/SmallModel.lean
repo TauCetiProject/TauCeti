@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SingularSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Codiscrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 
 /-!
 # Small models of simplicial homotopy types
@@ -30,7 +31,9 @@ obstruction: the discrete simplicial set on a type has a small model exactly whe
 discrete space on a small copy of the type.
 
 The universe lift of a small Kan complex retains that complex as a small model
-(`SSet.smallSpaceModelUlift`).
+(`SSet.smallSpaceModelUlift`). More generally, lifting the ambient simplicial set along
+`SSet.uliftFunctor` preserves and reflects small Kan models (`TauCeti.SmallSpaceModel.ulift`,
+`TauCeti.SmallSpaceModel.ofUlift`, `TauCeti.hasSmallSpaceModel_uliftFunctor_obj_iff`).
 
 ## References
 
@@ -43,7 +46,7 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory
 open scoped Simplicial
 open scoped SSet.modelCategoryQuillen
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
@@ -143,6 +146,115 @@ lemma transport_hom {X Z : SSet.{v}} (M : SmallSpaceModel.{u, v} X) (e : X ≅ Z
 lemma transport_inv {X Z : SSet.{v}} (M : SmallSpaceModel.{u, v} X) (e : X ≅ Z) :
     (M.transport e).inv = SSet.uliftFunctor.map e.inv ≫ M.inv := (rfl)
 
+/-- Lifting the ambient simplicial set to a larger universe preserves a small space model, keeping
+the same small Kan complex as model. -/
+noncomputable def ulift {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
+    SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X) where
+  model := M.model
+  kanComplex := M.kanComplex
+  hom := SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model ≫
+    SSet.uliftFunctor.{w, max u v}.map M.hom ≫
+    SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X
+  inv := SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X ≫
+    SSet.uliftFunctor.{w, max u v}.map M.inv ≫
+    SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model
+  homotopyHomInvId := SSet.Homotopy.mk'
+    (SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model ▷ Δ[1] ≫
+      (M.homotopyHomInvId.ulift.{max u v, w}).h ≫
+        SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model)
+    (by simp) (by simp)
+  homotopyInvHomId := SSet.Homotopy.mk'
+    (SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X ▷ Δ[1] ≫
+      (M.homotopyInvHomId.ulift.{max u v, w}).h ≫
+        SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X)
+    (by simp) (by simp)
+
+/-- Lifting the ambient simplicial set to a larger universe increases the model's ambient universe
+parameter while preserving the underlying small Kan complex. -/
+@[simp]
+lemma ulift_model {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
+    (M.ulift.{u, v, w}).model = M.model := (rfl)
+
+/-- The forward comparison map of `M.ulift` is `SSet.uliftFunctor.map M.hom`, conjugated by the
+universe-lift reindexing isomorphisms and transported across `ulift_model`. -/
+@[simp]
+lemma ulift_hom {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
+    (M.ulift.{u, v, w}).hom =
+      eqToHom (congrArg SSet.uliftFunctor.{max v w, u}.obj (ulift_model.{u, v, w} M)) ≫
+        SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model ≫
+          SSet.uliftFunctor.{w, max u v}.map M.hom ≫
+            SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X := by
+  unfold ulift
+  simp only [eqToHom_refl, Category.id_comp]
+
+/-- The backward comparison map of `M.ulift` is `SSet.uliftFunctor.map M.inv`, conjugated by the
+universe-lift reindexing isomorphisms and transported across `ulift_model`. -/
+@[simp]
+lemma ulift_inv {X : SSet.{v}} (M : SmallSpaceModel.{u, v} X) :
+    (M.ulift.{u, v, w}).inv =
+      SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X ≫
+        SSet.uliftFunctor.{w, max u v}.map M.inv ≫
+          SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model ≫
+            eqToHom
+              (congrArg SSet.uliftFunctor.{max v w, u}.obj (ulift_model.{u, v, w} M)).symm := by
+  unfold ulift
+  simp only [eqToHom_refl, Category.comp_id]
+
+/-- Lowering a small space model from a universe lift `uliftFunctor.obj X` back to `X`, keeping the
+same small Kan complex as model. -/
+noncomputable def ofUlift {X : SSet.{v}}
+    (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
+    SmallSpaceModel.{u, v} X where
+  model := M.model
+  kanComplex := M.kanComplex
+  hom := SSet.uliftFunctor.{w, max u v}.preimage
+    (SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model ≫ M.hom ≫
+      SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X)
+  inv := SSet.uliftFunctor.{w, max u v}.preimage
+    (SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X ≫ M.inv ≫
+      SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model)
+  homotopyHomInvId := SSet.Homotopy.ofUlift.{max u v, w} <| SSet.Homotopy.mk'
+    (SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model ▷ Δ[1] ≫
+      M.homotopyHomInvId.h ≫ SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model)
+    (by simp) (by simp)
+  homotopyInvHomId := SSet.Homotopy.ofUlift.{max u v, w} <| SSet.Homotopy.mk'
+    (SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X ▷ Δ[1] ≫
+      M.homotopyInvHomId.h ≫ SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X)
+    (by simp) (by simp)
+
+/-- Lowering a small space model from `uliftFunctor.obj X` preserves the underlying small Kan
+complex. -/
+@[simp]
+lemma ofUlift_model {X : SSet.{v}}
+    (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
+    M.ofUlift.model = M.model := (rfl)
+
+/-- The forward comparison map of `M.ofUlift` is the `SSet.uliftFunctor`-preimage of `M.hom`
+conjugated by the universe-lift reindexing isomorphisms, transported across `ofUlift_model`. -/
+@[simp]
+lemma ofUlift_hom {X : SSet.{v}}
+    (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
+    M.ofUlift.hom =
+      eqToHom (congrArg SSet.uliftFunctor.{v, u}.obj M.ofUlift_model) ≫
+        SSet.uliftFunctor.{w, max u v}.preimage
+          (SSet.uliftFunctorCompIso.{u, v, w}.hom.app M.model ≫ M.hom ≫
+            SSet.uliftFunctorCompCommIso.{v, u, w}.inv.app X) := by
+  unfold ofUlift
+  simp only [eqToHom_refl, Category.id_comp]
+
+/-- The backward comparison map of `M.ofUlift` is the `SSet.uliftFunctor`-preimage of `M.inv`
+conjugated by the universe-lift reindexing isomorphisms, transported across `ofUlift_model`. -/
+@[simp]
+lemma ofUlift_inv {X : SSet.{v}}
+    (M : SmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X)) :
+    M.ofUlift.inv =
+      SSet.uliftFunctor.{w, max u v}.preimage
+        (SSet.uliftFunctorCompCommIso.{v, u, w}.hom.app X ≫ M.inv ≫
+          SSet.uliftFunctorCompIso.{u, v, w}.inv.app M.model) ≫
+        eqToHom (congrArg SSet.uliftFunctor.{v, u}.obj M.ofUlift_model).symm := by
+  unfold ofUlift
+  simp only [eqToHom_refl, Category.comp_id]
+
 end SmallSpaceModel
 
 /-- A small Kan complex has a small space model. -/
@@ -154,6 +266,13 @@ lemma hasSmallSpaceModel_self (Y : SSet.{u}) [SSet.KanComplex Y] :
 lemma hasSmallSpaceModel_iff_of_iso {X Z : SSet.{v}} (e : X ≅ Z) :
     HasSmallSpaceModel.{u, v} X ↔ HasSmallSpaceModel.{u, v} Z :=
   ⟨fun ⟨M⟩ ↦ ⟨M.transport e⟩, fun ⟨M⟩ ↦ ⟨M.transport e.symm⟩⟩
+
+/-- Existence of a small Kan model is invariant under universe lifting. -/
+@[simp]
+lemma hasSmallSpaceModel_uliftFunctor_obj_iff (X : SSet.{v}) :
+    HasSmallSpaceModel.{u, max v w} (SSet.uliftFunctor.{w, v}.obj X) ↔
+      HasSmallSpaceModel.{u, v} X :=
+  ⟨fun ⟨M⟩ ↦ ⟨M.ofUlift⟩, fun ⟨M⟩ ↦ ⟨M.ulift⟩⟩
 
 /-- A nonempty codiscrete nerve has a small homotopy type in every universe. The model is the
 point, regardless of the size of the type of objects. -/

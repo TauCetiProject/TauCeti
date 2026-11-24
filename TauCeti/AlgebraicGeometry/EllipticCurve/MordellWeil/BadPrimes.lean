@@ -29,11 +29,10 @@ The arithmetic of Step 6 of the weak Mordell–Weil theorem needs less than good
 of the ring of integers of a field factor `K[X] ⧸ (p)` of the étale algebra, it needs `a₂`, `a₄`
 and `a₆` to be integral at the prime of `R` under `w`, which makes the root `θ` of `f` integral at
 `w`, and it needs the derivative `f' θ = 3θ² + 2a₂θ + a₄` to be a `w`-unit. The latter holds as
-soon as the discriminant `disc f` of the cubic is a unit at the prime under `w`: evaluating at `θ`
-the Bézout identity between `f` and `f'` exhibits `disc f` as `f' θ` times an explicit quadratic
-in `θ`, and both factors are integral (`Valuation.map_cubic_deriv_eq_one`). Since
-`Δ = 16 · disc f`, this holds at every good prime, but also at a prime above `2` at which `f` has
-separable reduction.
+soon as `a₂` and `a₄` are integral and the discriminant `disc f` of the cubic is a unit at the
+prime under `w`: at the root `θ`, `disc f = (f' θ)² ((a₂² - 3a₄) - f' θ)`, so that `f' θ` is a
+unit (`Valuation.map_cubic_deriv_eq_one`). Since `Δ = 16 · disc f`, this holds at every good prime,
+but also at a prime above `2` at which `f` has separable reduction.
 
 The lemmas here take exactly these hypotheses at the prime under `w`. They combine into
 `even_valuationOfNeZero_sub_root`: at such a prime the valuation of `x - θ` is **even**, for
@@ -55,8 +54,8 @@ puts the group theory back and reads it as membership in a Selmer group.
 * `WeierstrassCurve.Affine.valuation_root_le_one`: if `a₂`, `a₄`, `a₆` are integral at the prime
   under `w`, the root `θ` is integral at `w`.
 * `WeierstrassCurve.Affine.valuation_deriv_root_le_one`: then `f' θ` is integral at `w` too.
-* `WeierstrassCurve.Affine.valuation_deriv_root_eq_one`: if moreover `disc f` is a unit there,
-  `f' θ` is a `w`-unit.
+* `WeierstrassCurve.Affine.valuation_deriv_root_eq_one`: if `a₂` and `a₄` are integral and
+  `disc f` is a unit at the prime under `w`, `f' θ` is a `w`-unit.
 * `WeierstrassCurve.Affine.valuation_cofactor_eq_one`: if `f' θ` is a `w`-unit, `x` is integral
   and `x - θ` is not a unit, then the cofactor of `x - θ` in the Weierstrass equation is a unit.
 * `WeierstrassCurve.Affine.valuation_projFactor_torsion_eq_one`: at a root `x` of `f` with `f' x`
@@ -87,9 +86,9 @@ source carries its own `HeightOneSpectrum.below`; at our Mathlib pin that map is
 `v4.32.0`; this is a forward port.
 
 The per-prime hypotheses (integral `a₂`, `a₄`, `a₆` and a unit `disc f`, or a unit `f' θ`, resp.
-`f' x`, at the prime under `w`, in place of `w` not lying above a bad prime) and the Bézout
-identity with `disc f` rather than `Δ` on the right follow the later revision `3bfe124` of the
-same project, same file and sections.
+`f' x`, at the prime under `w`, in place of `w` not lying above a bad prime) and the use of
+`disc f` rather than `Δ` follow the later revision `3bfe124` of the same project, same file and
+sections.
 -/
 
 public section
@@ -305,15 +304,15 @@ lemma valuation_deriv_root_le_one :
   have h₂' : (2 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 2
   exact add_mem (add_mem (mul_mem h₃ (pow_mem hθ 2)) (mul_mem (mul_mem h₂' h₂) hθ)) h₄
 
-/-- If `a₂`, `a₄` and `a₆` are integral and `disc f` is a unit at the prime under `w`, then
+omit ha₆ in
+/-- If `a₂` and `a₄` are integral and `disc f` is a unit at the prime under `w`, then
 `f' θ = 3θ² + 2a₂θ + a₄` is a unit at `w` (`Valuation.map_cubic_deriv_eq_one`). The hypothesis is
 on `disc f` rather than on `Δ = 16 · disc f`, so this applies at primes above `2` as well. -/
 lemma valuation_deriv_root_eq_one
     (hd : (HeightOneSpectrum.under R w).valuation K W.f.discr = 1) :
     w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1 := by
   refine Valuation.map_cubic_deriv_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
-    (W.root_cubic_eq_zero p) ?_
+    (W.valuation_algebraMap_le_one R p w ha₄) (W.root_cubic_eq_zero p) ?_
   have h := W.valuation_algebraMap_eq_one R p hd
   rw [W.discr_f] at h
   simpa only [map_sub, map_add, map_mul, map_pow, map_ofNat] using h

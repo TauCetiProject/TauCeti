@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Ball.Action
-public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.PathComponent
 
@@ -35,8 +34,6 @@ the base case of the induction on dimension through the suspension isomorphism.
 * `TauCeti.exists_homeomorph_apply_eq_of_finrank_eq_one`: a homeomorphism onto the closed unit
   ball carrying exactly the image of an injection of the unit sphere onto the sphere can be chosen
   to invert that injection.
-* `TauCeti.TopCat.finite_sphere_zero`, `TauCeti.TopCat.discreteTopology_sphere_zero`:
-  `TopCat.sphere 0` is finite and discrete.
 -/
 
 public section
@@ -109,7 +106,7 @@ def zerothHomotopySphereUnique (h : finrank ℝ E = 1) (p : sphere (0 : E) 1) :
       rintro ⟨c, hc⟩
       obtain ⟨x, rfl⟩ := ZerothHomotopy.mk_surjective c
       have hx : (x : E) ∈ ({(p : E), -(p : E)} : Set E) :=
-        sphere_eq_pair_of_finrank_eq_one h p.2 ▸ x.2
+        sphere_eq_pair_of_finrank_eq_one h p.property ▸ x.property
       rcases hx with hx | hx
       · exact absurd (congrArg ZerothHomotopy.mk (Subtype.ext hx)) hc
       · exact Subtype.ext (congrArg ZerothHomotopy.mk (Subtype.ext hx)) }
@@ -128,7 +125,7 @@ theorem exists_continuous_injective_range_sphere_eq_pair {Y : Type*} [Topologica
     ∃ h : sphere (0 : ℝ) 1 → Y, Continuous h ∧ Function.Injective h ∧ Set.range h = {p, q} := by
   -- The `0`-sphere of `ℝ` is the discrete space `{1, -1}`.
   have hpm (t : sphere (0 : ℝ) 1) : (t : ℝ) = 1 ∨ (t : ℝ) = -1 :=
-    (sphere_eq_pair_of_finrank_eq_one (finrank_self ℝ) (p := (1 : ℝ)) (by simp)).subset t.2
+    (sphere_eq_pair_of_finrank_eq_one (finrank_self ℝ) (p := (1 : ℝ)) (by simp)).subset t.property
   have := discreteTopology_sphere_of_finrank_eq_one (finrank_self ℝ) 0 1
   let one : sphere (0 : ℝ) 1 := ⟨1, by simp⟩
   let negOne : sphere (0 : ℝ) 1 := ⟨-1, by simp⟩
@@ -185,21 +182,3 @@ theorem exists_homeomorph_apply_eq_of_finrank_eq_one {X : Type*} [TopologicalSpa
     · rw [hzu, hx]
 
 end TauCeti
-
-namespace TauCeti.TopCat
-
-universe u
-
-/-- The `0`-sphere `TopCat.sphere 0` is finite. -/
-instance finite_sphere_zero : Finite (TopCat.sphere.{u} 0) :=
-  have : Finite (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
-    TauCeti.finite_sphere_of_finrank_eq_one finrank_euclideanSpace_fin 0 1
-  Equiv.ulift.finite_iff.2 inferInstance
-
-/-- The `0`-sphere `TopCat.sphere 0` has the discrete topology. -/
-instance discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
-  have : DiscreteTopology (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
-    TauCeti.discreteTopology_sphere_of_finrank_eq_one finrank_euclideanSpace_fin 0 1
-  inferInstanceAs (DiscreteTopology (ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)))
-
-end TauCeti.TopCat

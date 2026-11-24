@@ -12,9 +12,10 @@ public import TauCeti.Topology.Algebra.Valued.Integer
 
 import Mathlib.Algebra.AlgebraicCard
 import TauCeti.Analysis.Normed.Field.Approximation
+import TauCeti.Analysis.Normed.Field.Basic
 
 /-!
-# `ℂ_p` is separable
+# `ℂ_p` is separable and densely normed
 
 The field `ℂ_[p]` of `p`-adic complex numbers is the completion of an algebraic closure of
 `ℚ_[p]`. It contains the countable set of algebraic numbers, the elements algebraic over `ℚ`, as
@@ -25,13 +26,18 @@ over `ℚ` and take a nearby root (`IsAlgebraic.mem_closure_setOf_isAlgebraic`).
 Separability is what makes `ℂ_p` fail to be spherically complete, so that the closed unit disc
 over `ℂ_p` has points of type (4).
 
-The file also compares the valuation with the norm, records `‖p‖ = p⁻¹ < 1` and the
+Because `PadicAlgCl p` and `ℂ_[p]` are algebraically closed nontrivially normed fields, their
+positive norms are dense in `(0, ∞)`, making both fields densely normed. The file also compares the
+valuation with the norm, records `‖p‖ = p⁻¹ < 1` (also `‖p‖ < 1` in `PadicAlgCl p`) and the
 residue characteristic, and provides the integral coefficient inclusion and topological
 nilpotence of `ζ - 1` for `p`-th roots of unity.
 
 ## Main results
 
 * `PadicComplex.valuation_coe`: the real value of the valuation is the norm.
+* `PadicComplexInt.mem_iff_norm_le_one`: `𝓞_ℂ_[p]` is the closed unit ball of the norm.
+* `PadicComplexInt.integers_normedFieldValuation`: `𝓞_ℂ_[p]` is the ring of integers of `ℂ_[p]`
+  for the norm-induced valuation `NormedField.valuation`.
 * `PadicComplex.residueFieldCharP`: the residue field of `𝓞_ℂ_[p]` has characteristic `p`.
 * `PadicComplex.instIsLinearTopologyInt`, `PadicComplex.instCompleteSpaceInt`: the integers
   of `ℂ_p` are complete and linearly topologized.
@@ -39,9 +45,12 @@ nilpotence of `ζ - 1` for `p`-th roots of unity.
 * `PadicComplex.isTopologicallyNilpotent_sub_one`: `ζ - 1` is topologically nilpotent
   if `ζ ^ p = 1`.
 * `PadicComplex.norm_p`: `‖p‖ = p⁻¹` in `ℂ_[p]`.
-* `PadicComplex.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]`.
+* `PadicComplex.norm_p_lt_one`, `PadicAlgCl.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]` and in
+  `PadicAlgCl p`.
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
 * `PadicComplex.separableSpace`: `ℂ_[p]` is a separable space.
+* `PadicComplex.denselyNormedField`, `PadicAlgCl.denselyNormedField`: `ℂ_[p]` and `PadicAlgCl p`
+  are densely normed fields.
 
 ## References
 
@@ -61,6 +70,23 @@ variable (p : ℕ) [Fact p.Prime]
 theorem valuation_coe (x : ℂ_[p]) : ((Valued.v x : NNReal) : ℝ) = ‖x‖ := by
   rw [PadicComplex.norm_eq_norm]
   simp [Valuation.norm_def, RankOne.hom_eq_embedding, Valuation.embedding_restrict]
+
+variable {p} in
+/-- An element of `ℂ_[p]` lies in `𝓞_ℂ_[p]` exactly when its norm is at most `1`. -/
+@[simp]
+theorem _root_.PadicComplexInt.mem_iff_norm_le_one {x : ℂ_[p]} : x ∈ 𝓞_ℂ_[p] ↔ ‖x‖ ≤ 1 := by
+  rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe, valuation_coe,
+    NNReal.coe_one]
+
+/-- `𝓞_ℂ_[p]` is the ring of integers of `ℂ_[p]` for the valuation induced by its norm. -/
+theorem _root_.PadicComplexInt.integers_normedFieldValuation :
+    (NormedField.valuation (K := ℂ_[p])).Integers 𝓞_ℂ_[p] :=
+  have hmem (x : ℂ_[p]) : x ∈ 𝓞_ℂ_[p] ↔ NormedField.valuation x ≤ 1 :=
+    PadicComplexInt.mem_iff_norm_le_one.trans
+      (Valued.integer.mem_iff.symm.trans (Valuation.mem_integer_iff _ _))
+  { hom_inj := Subtype.val_injective
+    map_le_one x := (hmem x).1 x.property
+    exists_of_le_one {x} hx := ⟨⟨x, (hmem x).2 hx⟩, rfl⟩ }
 
 /-- The norm of `p` in `ℂ_[p]` is `p⁻¹`. -/
 @[simp]
@@ -92,9 +118,8 @@ instance residueFieldCharP : CharP (IsLocalRing.ResidueField 𝓞_ℂ_[p]) p := 
 
 /-- The coefficient inclusion from the p-adic integers into the integers of `ℂ_p`. -/
 noncomputable def integralCoefficientMap : ℤ_[p] →+* 𝓞_ℂ_[p] :=
-  ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom).codRestrict _ fun x ↦ by
-    rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe, valuation_coe]
-    simpa using x.norm_le_one
+  ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom).codRestrict _ fun x ↦
+    PadicComplexInt.mem_iff_norm_le_one.2 (by simpa using x.norm_le_one)
 
 @[simp]
 theorem integralCoefficientMap_coe (x : ℤ_[p]) :
@@ -102,7 +127,7 @@ theorem integralCoefficientMap_coe (x : ℤ_[p]) :
 
 /-- The integral coefficient inclusion is continuous for the induced p-adic topologies. -/
 theorem continuous_integralCoefficientMap : Continuous (integralCoefficientMap p) :=
-  (continuous_algebraMap ℚ_[p] ℂ_[p] |>.comp continuous_subtype_val).subtype_mk _
+  (continuous_algebraMap ℚ_[p] ℂ_[p] |>.comp continuous_subtypeVal).subtype_mk _
 
 /-- Extending integral coefficients to `ℂ_p` loses no information. -/
 theorem integralCoefficientMap_injective : Function.Injective (integralCoefficientMap p) := by
@@ -139,4 +164,43 @@ theorem dense_setOf_isAlgebraic : Dense {x : ℂ_[p] | IsAlgebraic ℚ x} := by
 instance separableSpace : TopologicalSpace.SeparableSpace ℂ_[p] :=
   ⟨⟨_, Algebraic.countable ℚ ℂ_[p], dense_setOf_isAlgebraic p⟩⟩
 
+/-- **`ℂ_[p]` is densely normed**: as an algebraically closed nontrivially normed field, its
+positive norms are dense in `(0, ∞)`. -/
+noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] where
+  -- `by` enters a private proof context, keeping `Analysis.Normed.Field.Basic` a private import
+  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed ℂ_[p]
+
+-- Ensure that `DenselyNormedField` induces the existing normed and nontrivially normed field
+-- instances on `ℂ_[p]`.
+example : (inferInstance : NormedField ℂ_[p]) = PadicComplex.normedField p := by
+  with_reducible_and_instances rfl
+
+example :
+    (inferInstance : NontriviallyNormedField ℂ_[p]) = PadicComplex.nontriviallyNormedField p := by
+  with_reducible_and_instances rfl
+
 end PadicComplex
+
+namespace PadicAlgCl
+
+variable (p : ℕ) [Fact p.Prime]
+
+/-- `‖p‖ < 1` in `PadicAlgCl p`. -/
+theorem norm_p_lt_one : ‖(p : PadicAlgCl p)‖ < 1 := by
+  rw [← PadicComplex.norm_extends, PadicComplex.coe_natCast]
+  exact PadicComplex.norm_p_lt_one p
+
+/-- **`PadicAlgCl p` is densely normed**: as an algebraically closed nontrivially normed field, its
+positive norms are dense in `(0, ∞)`. -/
+noncomputable instance denselyNormedField : DenselyNormedField (PadicAlgCl p) where
+  -- `by` enters a private proof context, keeping `Analysis.Normed.Field.Basic` a private import
+  lt_norm_lt _ _ := by exact NormedField.exists_lt_norm_lt_of_isAlgClosed (PadicAlgCl p)
+
+-- Ensure that `DenselyNormedField` induces the existing nontrivially normed field instance on
+-- `PadicAlgCl p`.
+example :
+    (inferInstance : NontriviallyNormedField (PadicAlgCl p)) =
+      PadicAlgCl.nontriviallyNormedField p := by
+  with_reducible_and_instances rfl
+
+end PadicAlgCl

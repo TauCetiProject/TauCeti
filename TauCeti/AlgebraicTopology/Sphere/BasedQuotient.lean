@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Sphere.CubeQuotient
 public import TauCeti.Topology.Category.TopPair.Quotient
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import TauCeti.AlgebraicTopology.Sphere.Zero
 
 /-!
 # Based sphere quotients of disks and cubes
@@ -77,16 +76,17 @@ lemma sphereBasepoint_ne_sphereAntiBasepoint (n : ℕ) :
     PiLp.single_apply, ↓reduceIte] at h0
   norm_num at h0
 
+/-- `TauCeti.sphereBasepoint (d + 1)` coincides with `TauCeti.sphereBasePoint d`. -/
+lemma sphereBasePoint_eq_sphereBasepoint (d : ℕ) :
+    sphereBasePoint.{u} d = sphereBasepoint.{u} (d + 1) :=
+  sphere_ext (coe_sphereBasePoint_down d)
+
 /-- Every point of `TopCat.sphere 0` is either `sphereBasepoint 0` or `sphereAntiBasepoint 0`. -/
 lemma eq_sphereBasepoint_or_eq_sphereAntiBasepoint (s : TopCat.sphere.{u} 0) :
-    s = sphereBasepoint.{u} 0 ∨ s = sphereAntiBasepoint.{u} 0 := by
-  have hp : EuclideanSpace.single (0 : Fin 1) (1 : ℝ) ∈
-      sphere (0 : EuclideanSpace ℝ (Fin 1)) 1 := by simp
-  have hs : sphereVec s ∈ ({EuclideanSpace.single 0 1, -EuclideanSpace.single 0 1} : Set _) := by
-    rw [← sphere_eq_pair_of_finrank_eq_one finrank_euclideanSpace_fin hp]
-    exact (s : ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down.2
-  exact (mem_insert_iff.1 hs).imp sphere_ext
-    fun h ↦ sphere_ext ((mem_singleton_iff.1 h).trans (coe_sphereAntiBasepoint_down 0).symm)
+    s = sphereBasepoint.{u} 0 ∨ s = sphereAntiBasepoint.{u} 0 :=
+  (sq_eq_one_iff.1 (sq_diskBoundary_one_eq_one s)).imp
+    (fun h ↦ diskBoundary_one_ext (h.trans (by simp)))
+    (fun h ↦ diskBoundary_one_ext (h.trans (by simp)))
 
 /-- The coordinate linear isometry of `ℝⁿ⁺¹` moving `e_last` to `e₀`: the identity for `n = 0`,
 and `(x₀, x₁, …, xₙ) ↦ (xₙ, -x₀, x₁, …, xₙ₋₁)` for `n ≥ 1`. -/
@@ -215,7 +215,7 @@ lemma exists_basedCubeToSphere_eq_of_ne {n : ℕ} {s : TopCat.sphere.{u} n}
   let s' : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
     ⟨(spherePoleLinearIsometry n).symm (sphereVec s), by simp [sphereVec]⟩
   have hs' : s' ≠ sphereNorthPole n := fun h ↦ hs <| sphere_ext <| by
-    simpa [s', sphereVec] using congrArg (fun t : sphere _ 1 ↦ spherePoleLinearIsometry n t.1) h
+    simpa [s', sphereVec] using congrArg (fun t : sphere _ 1 ↦ spherePoleLinearIsometry n t.val) h
   obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne hs'
   exact ⟨y, sphere_ext (by simp [sphereVec, hy, s'])⟩
 
@@ -296,57 +296,21 @@ lemma basedDiskToSphere_diskCenter (n : ℕ) :
     basedDiskToSphere.{u} n (diskCenter.{u} n) = sphereAntiBasepoint.{u} n := by
   refine sphere_ext ?_
   rw [sphereVec, sphereVec, coe_basedDiskToSphere_down, coe_sphereAntiBasepoint_down]
+  let c0 : closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 := ⟨0, mem_closedBall_self zero_le_one⟩
   have h0 : ((diskCenter.{u} n : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-      closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) = 0 := Subtype.ext (coe_diskCenter_down n)
-  have hc : (closedBallToSphere n (0 : closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :
-      EuclideanSpace ℝ (Fin (n + 1))) = EuclideanSpace.single (Fin.last n) (-1) := by
-    ext i; refine Fin.lastCases (by simp) (fun _ ↦ by simp [Fin.castSucc_ne_last]) i
+      closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) = c0 := Subtype.ext (coe_diskCenter_down n)
+  have hc : (closedBallToSphere n c0 : EuclideanSpace ℝ (Fin (n + 1))) =
+      EuclideanSpace.single (Fin.last n) (-1) := by
+    ext i; refine Fin.lastCases (by simp [c0]) (fun _ ↦ by simp [c0, Fin.castSucc_ne_last]) i
   rw [h0, hc, spherePoleLinearIsometry_single_last]
   ext i; by_cases hi : i = 0 <;> simp [hi]
 
-private def cubeQuotientToSphereHom (n : ℕ) :
-    (cubeBoundaryPair.{u} n).ordinaryPairQuotient ⟶ TopCat.sphere.{u} n :=
-  (cubeBoundaryPair.{u} n).ordinaryPairQuotientDesc
-    (TopCat.ofHom ((basedCubeToSphere.{u} n).comp ⟨ULift.down, continuous_uliftDown⟩))
-    (sphereBasepoint.{u} n) fun b ↦ basedCubeToSphere_of_mem_boundary b.2
-
-private lemma bijective_cubeQuotientToSphereHom (n : ℕ) :
-    Function.Bijective (cubeQuotientToSphereHom.{u} n) := by
-  have hπ (y : (cubeBoundaryPair.{u} n).fst) :
-      cubeQuotientToSphereHom.{u} n ((cubeBoundaryPair.{u} n).ordinaryPairQuotientπ y) =
-        basedCubeToSphere.{u} n y.down :=
-    (cubeBoundaryPair.{u} n).ordinaryPairQuotientπ_desc_apply _ _ _ y
-  have hbase :
-      cubeQuotientToSphereHom.{u} n (cubeBoundaryPair.{u} n).ordinaryPairQuotientBasepoint =
-        sphereBasepoint.{u} n := (cubeBoundaryPair.{u} n).ordinaryPairQuotientDesc_basepoint _ _ _
-  refine ⟨fun p q hpq ↦ ?_, fun s ↦ ?_⟩
-  · induction p using TopPair.ordinaryPairQuotient_ind with
-    | hbase =>
-      induction q using TopPair.ordinaryPairQuotient_ind with
-      | hbase => rfl
-      | hπ z =>
-        rw [hbase, hπ, eq_comm, basedCubeToSphere_eq_sphereBasepoint_iff] at hpq
-        exact (((cubeBoundaryPair.{u} n).ordinaryPairQuotientπ_eq_basepoint_iff z).2
-          (by rw [TopPair.range_ofSubset_map]; exact hpq)).symm
-    | hπ y =>
-      induction q using TopPair.ordinaryPairQuotient_ind with
-      | hbase =>
-        rw [hπ, hbase, basedCubeToSphere_eq_sphereBasepoint_iff] at hpq
-        exact ((cubeBoundaryPair.{u} n).ordinaryPairQuotientπ_eq_basepoint_iff y).2
-          (by rw [TopPair.range_ofSubset_map]; exact hpq)
-      | hπ z =>
-        rw [hπ, hπ, basedCubeToSphere_eq_iff] at hpq
-        refine ((cubeBoundaryPair.{u} n).ordinaryPairQuotientπ_eq_iff y z).2 ?_
-        rw [TopPair.range_ofSubset_map]; exact hpq.imp ULift.ext id
-  · by_cases hs : s = sphereBasepoint.{u} n
-    · exact ⟨(cubeBoundaryPair.{u} n).ordinaryPairQuotientBasepoint, hs ▸ hbase⟩
-    · obtain ⟨y, rfl⟩ := exists_basedCubeToSphere_eq_of_ne hs
-      exact ⟨(cubeBoundaryPair.{u} n).ordinaryPairQuotientπ (ULift.up y), hπ (ULift.up y)⟩
+private instance compactSpace_cubeBoundaryPairFst (n : ℕ) :
+    CompactSpace (cubeBoundaryPair.{u} n).fst :=
+  inferInstanceAs (CompactSpace (ULift.{u} (I^(Fin n))))
 
 instance compactSpace_cubeBoundaryPairQuotient (n : ℕ) :
     CompactSpace (cubeBoundaryPair.{u} n).ordinaryPairQuotient :=
-  haveI : CompactSpace (cubeBoundaryPair.{u} n).fst :=
-    inferInstanceAs (CompactSpace (ULift.{u} (I^(Fin n))))
   (cubeBoundaryPair.{u} n).compactSpace_ordinaryPairQuotient
 
 /-- **The pointed cube quotient `Iⁿ / ∂Iⁿ` is homeomorphic to `TopCat.sphere n`** in every
@@ -354,9 +318,14 @@ dimension `n ≥ 0`, sending `y ∈ Iⁿ` to `basedCubeToSphere n y` and the col
 `sphereBasepoint n`. -/
 def cubeQuotientSphereHomeomorph (n : ℕ) :
     (cubeBoundaryPair.{u} n).ordinaryPairQuotient ≃ₜ TopCat.sphere.{u} n :=
-  Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective (cubeQuotientToSphereHom.{u} n) (bijective_cubeQuotientToSphereHom n))
-    (cubeQuotientToSphereHom.{u} n).hom.continuous
+  (cubeBoundaryPair.{u} n).ordinaryPairQuotientHomeomorph
+    (TopCat.ofHom ((basedCubeToSphere.{u} n).comp ⟨ULift.down, continuous_uliftDown⟩))
+    (sphereBasepoint.{u} n)
+    (fun _ ↦ basedCubeToSphere_eq_sphereBasepoint_iff.trans
+      (by rw [TopPair.range_ofSubset_map]; rfl))
+    (fun _ _ hy h ↦ ULift.ext <| (basedCubeToSphere_eq_iff.1 h).resolve_right fun hb ↦
+      hy (by rw [TopPair.range_ofSubset_map]; exact hb.1))
+    (fun _ hs ↦ let ⟨y, hy⟩ := exists_basedCubeToSphere_eq_of_ne hs; ⟨ULift.up y, hy⟩)
 
 instance t2Space_cubeBoundaryPairQuotient (n : ℕ) :
     T2Space (cubeBoundaryPair.{u} n).ordinaryPairQuotient :=
@@ -366,13 +335,13 @@ instance t2Space_cubeBoundaryPairQuotient (n : ℕ) :
 lemma cubeQuotientSphereHomeomorph_π (n : ℕ) (y : ULift.{u} (I^(Fin n))) :
     cubeQuotientSphereHomeomorph.{u} n ((cubeBoundaryPair.{u} n).ordinaryPairQuotientπ y) =
       basedCubeToSphere.{u} n y.down :=
-  (cubeBoundaryPair.{u} n).ordinaryPairQuotientπ_desc_apply _ _ _ y
+  (cubeBoundaryPair.{u} n).ordinaryPairQuotientHomeomorph_π _ _ _ y
 
 @[simp]
 lemma cubeQuotientSphereHomeomorph_basepoint (n : ℕ) :
     cubeQuotientSphereHomeomorph.{u} n (cubeBoundaryPair.{u} n).ordinaryPairQuotientBasepoint =
       sphereBasepoint.{u} n :=
-  (cubeBoundaryPair.{u} n).ordinaryPairQuotientDesc_basepoint _ _ _
+  (cubeBoundaryPair.{u} n).ordinaryPairQuotientHomeomorph_basepoint _ _ _
 
 @[simp]
 lemma cubeQuotientSphereHomeomorph_symm_sphereBasepoint (n : ℕ) :
@@ -393,7 +362,7 @@ dimension `n ≥ 0`, sending `z ∈ Dⁿ` to `basedDiskToSphere n z` and the col
 `sphereBasepoint n`, compatible with `TauCeti.diskBoundaryPairIsoCube`. -/
 def diskQuotientSphereHomeomorph (n : ℕ) :
     (diskBoundaryPair.{u} n).ordinaryPairQuotient ≃ₜ TopCat.sphere.{u} n :=
-  (TopPair.ordinaryPairQuotientHomeomorph (diskBoundaryPairIsoCube.{u} n)).trans
+  (TopPair.ordinaryPairQuotientCongrHomeomorph (diskBoundaryPairIsoCube.{u} n)).trans
     (cubeQuotientSphereHomeomorph.{u} n)
 
 instance compactSpace_diskBoundaryPairQuotient (n : ℕ) :
@@ -410,7 +379,7 @@ lemma diskQuotientSphereHomeomorph_π (n : ℕ) (z : TopCat.disk.{u} n) :
     diskQuotientSphereHomeomorph.{u} n ((diskBoundaryPair.{u} n).ordinaryPairQuotientπ z) =
       basedDiskToSphere.{u} n z :=
   (congrArg (cubeQuotientSphereHomeomorph.{u} n) <|
-    (TopPair.ordinaryPairQuotientHomeomorph_π (diskBoundaryPairIsoCube.{u} n) z).trans <|
+    (TopPair.ordinaryPairQuotientCongrHomeomorph_π (diskBoundaryPairIsoCube.{u} n) z).trans <|
       congrArg _ <| ULift.ext <| (congrArg
         (fun f : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n ↦ (TopPair.Hom.fst f z).down)
         (diskBoundaryPairIsoCube_hom n)).trans (diskBoundaryPairToCube_fst_apply_down z)).trans
@@ -421,7 +390,7 @@ lemma diskQuotientSphereHomeomorph_basepoint (n : ℕ) :
     diskQuotientSphereHomeomorph.{u} n (diskBoundaryPair.{u} n).ordinaryPairQuotientBasepoint =
       sphereBasepoint.{u} n :=
   (congrArg (cubeQuotientSphereHomeomorph.{u} n)
-    (TopPair.ordinaryPairQuotientHomeomorph_basepoint (diskBoundaryPairIsoCube.{u} n))).trans
+    (TopPair.ordinaryPairQuotientCongrHomeomorph_basepoint (diskBoundaryPairIsoCube.{u} n))).trans
     (cubeQuotientSphereHomeomorph_basepoint n)
 
 @[simp]
@@ -440,20 +409,20 @@ lemma diskQuotientSphereHomeomorph_symm_basedDiskToSphere (n : ℕ) (z : TopCat.
 
 /-- The homeomorphism induced on pointed quotients by `TauCeti.diskBoundaryPairIsoCube` commutes
 with `TauCeti.diskQuotientSphereHomeomorph` and `TauCeti.cubeQuotientSphereHomeomorph`. -/
-lemma ordinaryPairQuotientHomeomorph_diskBoundaryPairIsoCube_trans (n : ℕ) :
-    (TopPair.ordinaryPairQuotientHomeomorph (diskBoundaryPairIsoCube.{u} n)).trans
+lemma ordinaryPairQuotientCongrHomeomorph_diskBoundaryPairIsoCube_trans (n : ℕ) :
+    (TopPair.ordinaryPairQuotientCongrHomeomorph (diskBoundaryPairIsoCube.{u} n)).trans
       (cubeQuotientSphereHomeomorph.{u} n) = diskQuotientSphereHomeomorph.{u} n := (rfl)
 
 @[simp]
-lemma ordinaryPairQuotientHomeomorph_cubeBoundaryPairProdIso_π
+lemma ordinaryPairQuotientCongrHomeomorph_cubeBoundaryPairProdIso_π
     (m n : ℕ) (x : I^(Fin m)) (y : I^(Fin n)) :
-    TopPair.ordinaryPairQuotientHomeomorph (cubeBoundaryPairProdIso.{u} m n)
+    TopPair.ordinaryPairQuotientCongrHomeomorph (cubeBoundaryPairProdIso.{u} m n)
       ((TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
         ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ univ ∪
           univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n)))).ordinaryPairQuotientπ
         (ULift.up x, ULift.up y)) =
       (cubeBoundaryPair.{u} (m + n)).ordinaryPairQuotientπ (ULift.up (Fin.append x y)) :=
-  (TopPair.ordinaryPairQuotientHomeomorph_π (cubeBoundaryPairProdIso.{u} m n) _).trans <|
+  (TopPair.ordinaryPairQuotientCongrHomeomorph_π (cubeBoundaryPairProdIso.{u} m n) _).trans <|
     congrArg (cubeBoundaryPair.{u} (m + n)).ordinaryPairQuotientπ
       (cubeBoundaryPairProdIso_hom_fst_apply m n (ULift.up x, ULift.up y))
 

@@ -97,8 +97,9 @@ theorem mem_radicalQuotientCarrier_iff (x : V ⧸ L.radical) :
     Submodule.mkQ_apply]
 
 /-- The image of a full integral carrier in the radical quotient is again a full lattice. -/
-instance isLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsLattice ℚ where
-  fg := L.isLattice.fg.map _
+instance isFullLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsFullLattice ℚ where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := L.radicalQuotientCarrier)
+    ((Submodule.IsLattice.fg ℚ L.carrier).map _)
   span_eq_top := by
     -- Express the carrier set as the image of the original carrier under the rational projection
     have hcoe : (L.radicalQuotientCarrier : Set (V ⧸ L.radical)) =
@@ -106,7 +107,7 @@ instance isLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsLattice �
       ext x
       simp only [SetLike.mem_coe, radicalQuotientCarrier, Submodule.mem_map,
         LinearMap.restrictScalars_apply, Set.mem_image]
-    rw [hcoe, ← Submodule.map_span, L.isLattice.span_eq_top, Submodule.map_top,
+    rw [hcoe, ← Submodule.map_span, L.isFullLattice.span_eq_top, Submodule.map_top,
       Submodule.range_mkQ]
 
 /-- The radical quotient of an integral lattice. Its carrier is the image of the original carrier,
@@ -132,7 +133,7 @@ noncomputable def radicalQuotientMap : L →ₗ[ℤ] L.radicalQuotient :=
   L.radical.mkQ.restrictScalars ℤ |>.domRestrict L.carrier |>.codRestrict
     L.radicalQuotient.carrier fun x ↦ by
       rw [radicalQuotient_carrier]
-      exact Submodule.mem_map.mpr ⟨x, x.2, rfl⟩
+      exact Submodule.mem_map.mpr ⟨x, x.property, rfl⟩
 
 /-- Evaluation rule for the radical quotient map. -/
 @[simp]

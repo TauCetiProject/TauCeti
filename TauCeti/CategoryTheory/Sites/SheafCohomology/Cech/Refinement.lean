@@ -97,33 +97,7 @@ theorem isZero_cechCohomology_obj_comp_forget₂ (P : Cᵒᵖ ⥤ ModuleCat.{w} 
     IsZero ((cechCohomology AddCommGrpCat.{w} E hE n).obj
       (P ⋙ forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})) := by
   let G := forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w}
-  let a (j : J) : G.obj (((cechComplexFunctor (E j).obj).obj P).homology n) ≅
-      ((G.mapHomologicalComplex _).obj ((cechComplexFunctor (E j).obj).obj P)).homology n :=
-    ((((cechComplexFunctor (E j).obj).obj P).sc n).mapHomologyIso G).symm
-  have ha {j k : J} (φ : E k ⟶ E j) :
-      G.map (HomologicalComplex.homologyMap (cechComplexMap P φ) n) ≫ (a k).hom =
-        (a j).hom ≫ HomologicalComplex.homologyMap
-          ((G.mapHomologicalComplex _).map (cechComplexMap P φ)) n :=
-    ShortComplex.mapHomologyIso_inv_naturality _ G
-  let e (j : J) : G.obj (((cechComplexFunctor (E j).obj).obj P).homology n) ≅
-      ((cechComplexFunctor (E j).obj).obj (P ⋙ G)).homology n :=
-    a j ≪≫ HomologicalComplex.homologyMapIso ((cechComplexFunctorMapIso (E j).obj G).app P) n
-  have he {j k : J} (φ : E k ⟶ E j) :
-      G.map (HomologicalComplex.homologyMap (cechComplexMap P φ) n) ≫ (e k).hom =
-        (e j).hom ≫ HomologicalComplex.homologyMap (cechComplexMap (P ⋙ G) φ) n := by
-    simp only [e, Iso.trans_hom, HomologicalComplex.homologyMapIso_hom, Iso.app_hom]
-    calc
-      _ = (a j).hom ≫ HomologicalComplex.homologyMap
-          ((G.mapHomologicalComplex _).map (cechComplexMap P φ)) n ≫
-          HomologicalComplex.homologyMap
-            ((cechComplexFunctorMapIso (E k).obj G).hom.app P) n := by
-        simpa only [Category.assoc] using
-          ha φ =≫ HomologicalComplex.homologyMap
-            ((cechComplexFunctorMapIso (E k).obj G).hom.app P) n
-      _ = _ := by
-        have hc := congrArg (fun g ↦ HomologicalComplex.homologyMap g n)
-          (cechComplexFunctorMapIso_hom_app_comp_cechComplexMap (E k).obj G P φ)
-        simpa only [HomologicalComplex.homologyMap_comp, Category.assoc] using (a j).hom ≫= hc
+  let e (j : J) := cechComplexFunctorMapHomologyIso (E j).obj G P n
   let eD : (cechCohomologyDiagram (ModuleCat.{w} R) E hE n).flip.obj P ⋙ G ≅
       (cechCohomologyDiagram AddCommGrpCat.{w} E hE n).flip.obj (P ⋙ G) :=
     NatIso.ofComponents e fun {j k} f ↦ by
@@ -132,7 +106,8 @@ theorem isZero_cechCohomology_obj_comp_forget₂ (P : Cᵒᵖ ⥤ ModuleCat.{w} 
       have ha := NatTrans.congr_app
         (cechCohomologyDiagram_map AddCommGrpCat.{w} E hE n f (hE (leOfHom f)).some) (P ⋙ G)
       exact ((congrArg G.map (hm.trans (cechComplexHomologyMap_app ..))) =≫ _).trans
-        ((he (hE (leOfHom f)).some).trans
+        ((cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap _ G P
+          (hE (leOfHom f)).some n).trans
           (_ ≫= (ha.trans (cechComplexHomologyMap_app ..)).symm))
   exact (G.map_isZero h).of_iso
     (preservesColimitIso G _ ≪≫ HasColimit.isoOfNatIso eD).symm

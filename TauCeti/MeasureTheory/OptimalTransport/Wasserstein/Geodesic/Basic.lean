@@ -69,6 +69,9 @@ optimal coupling need not be unique.
   of such a plan between two points of `P_p (X)` trace a geodesic segment of `P_p (X)`.
 * `TauCeti.WassersteinSpace.instIsGeodesicSpace`: on a Polish geodesic space, `P_p (X)` is a
   geodesic space for every `1 ≤ p ≤ ∞`.
+* `TauCeti.WassersteinSpace.exists_ae_mem_geodesicPaths_of_isGeodesicSegment`: for `1 < p < ∞`,
+  every geodesic segment of `P_p (X)` is the curve of laws of an optimal dynamic plan concentrated
+  on geodesic paths; no geodesic structure is assumed on `X`.
 * `TauCeti.WassersteinSpace.isGeodesicSegment_iff_isDisplacementInterpolation`: for
   `1 < p < ∞`, the geodesic segments of `P_p (X)` are exactly the curves of laws of optimal
   dynamic plans concentrated on geodesic paths.
@@ -140,10 +143,11 @@ private theorem edist_zero_mul_add_edist_mul_add_edist_one_mul {s t : I} (hst : 
     (a : ℝ≥0∞) : edist 0 s * a + edist s t * a + edist t 1 * a = a := by
   have hst' : (s : ℝ) ≤ t := hst
   simp only [edist_dist, Subtype.dist_eq, Real.dist_eq, Icc.coe_zero, Icc.coe_one, zero_sub,
-    abs_neg, abs_of_nonneg s.2.1, abs_of_nonpos (sub_nonpos.2 hst'),
-    abs_of_nonpos (sub_nonpos.2 t.2.2), neg_sub, ← add_mul]
-  rw [← ENNReal.ofReal_add s.2.1 (sub_nonneg.2 hst'), add_sub_cancel,
-    ← ENNReal.ofReal_add t.2.1 (sub_nonneg.2 t.2.2), add_sub_cancel, ENNReal.ofReal_one, one_mul]
+    abs_neg, abs_of_nonneg s.property.1, abs_of_nonpos (sub_nonpos.2 hst'),
+    abs_of_nonpos (sub_nonpos.2 t.property.2), neg_sub, ← add_mul]
+  rw [← ENNReal.ofReal_add s.property.1 (sub_nonneg.2 hst'), add_sub_cancel,
+    ← ENNReal.ofReal_add t.property.1 (sub_nonneg.2 t.property.2), add_sub_cancel,
+        ENNReal.ofReal_one, one_mul]
 
 /-- **Wasserstein geodesics from optimal dynamic plans.** Let `η` be a finite dynamic plan
 concentrated on geodesic paths whose endpoint law is an optimal coupling, at finite cost, of its
@@ -405,7 +409,7 @@ theorem exists_ae_mem_geodesicPaths_of_isGeodesicSegment (hp1 : 1 < p) (hp : p �
     exists_map_IccExtend_eq_lintegral_curveAction_eq hp1 hp zero_lt_one
       h.absolutelyContinuousOnInterval (hA ▸ hW)
   have hmarg (t : I) : η.timeMarginal t = ((γ t : ProbabilityMeasure X) : Measure X) := by
-    rw [← hηmarg t t.2, Measure.timeMarginal_def]
+    rw [← hηmarg t t.property, Measure.timeMarginal_def]
     simp only [IccExtend_val]
   -- The endpoint law of `η` couples `μ` and `ν`, so its cost bounds `W_p (μ, ν) ^ p` from below.
   have hle : W ^ p.toReal ≤ ∫⁻ c, edist (c 0) (c 1) ^ p.toReal ∂η := by

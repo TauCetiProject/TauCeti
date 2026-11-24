@@ -56,7 +56,7 @@ theorem apply_eq_zero_of_isAlgebraic (D : Derivation R S S) {B : Subalgebra R S}
     { toFun := D
       map_add' := D.map_add
       map_smul' := fun b s ↦ by
-        simp [Subalgebra.smul_def, D.leibniz, hD b b.2]
+        simp [Subalgebra.smul_def, D.leibniz, hD b b.property]
       map_one_eq_zero' := D.map_one_eq_zero
       leibniz' := D.leibniz }
   -- Choose an annihilating polynomial of `x` over `B` of least degree.

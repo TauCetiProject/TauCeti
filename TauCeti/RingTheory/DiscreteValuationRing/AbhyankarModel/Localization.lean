@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
-import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Data.Nat.Cast.IsUnit
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.Basic
 
@@ -171,7 +171,7 @@ theorem exists_algEquiv_localization_abhyankarModel (hϖ : Irreducible ϖ) (hu :
   -- discrete valuation ring with uniformizer `x`. Then `ψ` is injective as `β ≠ 0`.
   have hunit (y : M.primeCompl) : IsUnit (φ y) := by
     by_contra h
-    exact y.2 ((mem_maximalIdeal _).mpr h)
+    exact y.property ((mem_maximalIdeal _).mpr h)
   obtain ⟨ψ, hψ⟩ : ∃ ψ : Localization.AtPrime M →ₐ[B] S, ∀ z, ψ (algebraMap _ _ z) = φ z :=
     ⟨IsLocalization.liftAlgHom hunit, fun _ ↦ IsLocalization.lift_eq _ _⟩
   have hψx : ψ (algebraMap _ _ (abhyankarModelRoot ϖ u e d)) = β := by

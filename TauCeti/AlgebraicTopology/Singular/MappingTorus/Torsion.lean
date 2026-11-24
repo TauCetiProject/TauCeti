@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 public import TauCeti.LinearAlgebra.Determinant.Basic
-public import Mathlib.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Int
 
 /-!
@@ -67,11 +67,8 @@ theorem torsion_homology_le_range_homologyMap_fibreInclusionChainMap (n : ℕ)
     Submodule.torsion k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
         (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology (n + 1)) ≤
       LinearMap.range (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) (n + 1)).hom := by
-  rintro x ⟨a, hax⟩
-  rw [range_homologyMap_fibreInclusionChainMap, LinearMap.mem_ker]
-  apply (isRegular_iff_mem_nonZeroDivisors.mpr a.2).isSMulRegular
-  dsimp only
-  rw [smul_zero, ← map_smul, ← Submonoid.smul_def, hax, map_zero]
+  rw [range_homologyMap_fibreInclusionChainMap]
+  exact LinearMap.torsion_le_ker _
 
 variable [IsDomain k]
 

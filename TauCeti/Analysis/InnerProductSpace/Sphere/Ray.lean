@@ -131,9 +131,9 @@ through `x` meets the unit sphere. It fixes the unit sphere
 def closedBallRayRetraction : C(closedBall (0 : E) 1, sphere (0 : E) 1) where
   toFun x := ⟨x + TauCeti.unitSphereRayTime (f x : E) x • ((x : E) - f x),
     mem_sphere_zero_iff_norm.2 <| TauCeti.norm_add_unitSphereRayTime_smul_sub
-      (fun h ↦ hf x (Subtype.ext h.symm)) (mem_closedBall_zero_iff.1 x.2)⟩
+      (fun h ↦ hf x (Subtype.ext h.symm)) (mem_closedBall_zero_iff.1 x.property)⟩
   continuous_toFun := by
-    have := (continuous_subtype_val.comp f.continuous).unitSphereRayTime continuous_subtype_val
+    have := (continuous_subtypeVal.comp f.continuous).unitSphereRayTime continuous_subtypeVal
       fun x h ↦ hf x (Subtype.ext h.symm)
     fun_prop
 
@@ -150,6 +150,6 @@ theorem closedBallRayRetraction_apply_of_mem_sphere {x : closedBall (0 : E) 1}
     (hx : (x : E) ∈ sphere (0 : E) 1) : (closedBallRayRetraction f hf x : E) = x := by
   rw [coe_closedBallRayRetraction_apply,
     TauCeti.unitSphereRayTime_eq_zero (mem_sphere_zero_iff_norm.1 hx)
-      (mem_closedBall_zero_iff.1 (f x).2), zero_smul, add_zero]
+      (mem_closedBall_zero_iff.1 (f x).property), zero_smul, add_zero]
 
 end ContinuousMap

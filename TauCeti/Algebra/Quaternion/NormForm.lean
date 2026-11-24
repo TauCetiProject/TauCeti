@@ -168,7 +168,7 @@ theorem pureNormForm_apply (x : LinearMap.ker (reₗ a (0 : R) b)) :
 theorem pureNormForm_apply_coordinates (x : LinearMap.ker (reₗ a (0 : R) b)) :
     pureNormForm a b x = -(a * (x : ℍ[R,a,b]).imI ^ 2) - b * (x : ℍ[R,a,b]).imJ ^ 2
       + a * b * (x : ℍ[R,a,b]).imK ^ 2 := by
-  have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+  have hx : (x : ℍ[R,a,b]).re = 0 := x.property
   simp [normForm_apply_coordinates, hx]
 
 /-- The coordinates `1, i, j, k` are an isometry from the norm form of `ℍ[R,a,b]` to the diagonal
@@ -200,11 +200,11 @@ def pureNormFormIsometryEquivWeightedSumSquares :
   map_smul' _ _ := by ext i; fin_cases i <;> simp
   invFun v := ⟨⟨0, v 0, v 1, v 2⟩, by simp⟩
   left_inv x := by
-    have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+    have hx : (x : ℍ[R,a,b]).re = 0 := x.property
     ext <;> simp [hx]
   right_inv _ := by ext i; fin_cases i <;> simp
   map_app' x := by
-    have hx : (x : ℍ[R,a,b]).re = 0 := x.2
+    have hx : (x : ℍ[R,a,b]).re = 0 := x.property
     simp [normForm_apply_coordinates, hx, Fin.sum_univ_three]
     ring
 
@@ -245,7 +245,7 @@ theorem mem_unitary_iff_normSq_eq_one (x : ℍ[R]) :
 /-- The quaternion underlying a unitary Hamilton quaternion has norm-square one. -/
 @[simp]
 theorem normSq_coe_unitary_eq_one (x : unitary ℍ[R]) : normSq (x : ℍ[R]) = 1 :=
-  (mem_unitary_iff_normSq_eq_one _).mp x.2
+  (mem_unitary_iff_normSq_eq_one _).mp x.property
 
 end Quaternion
 

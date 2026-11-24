@@ -60,9 +60,13 @@ universe u
 -- tensor induction is formed with.
 attribute [local instance 1100] DiscreteRep.module
 
-variable {G H : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-  {U : OpenSubgroup G} {V : OpenSubgroup H}
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {U : OpenSubgroup G}
+
+section Pullback
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {V : OpenSubgroup H}
   (φ : H →ₜ* G) (ψ : V.toSubgroup →ₜ* U.toSubgroup) (hψ : ∀ v, (ψ v : G) = φ v)
   {e : H ⧸ V.toSubgroup ≃ G ⧸ U.toSubgroup} (he : ∀ h : H, e h = (φ h : G ⧸ U.toSubgroup))
   (s : V.toSubgroup.LeftTransversal)
@@ -143,163 +147,10 @@ private theorem coeffPullback_apply (a : (DiscreteRep.trivialF2 U.toSubgroup).V)
     trivialF2Equiv V.toSubgroup (coeffPullback ψ a) = trivialF2Equiv U.toSubgroup a :=
   (trivialF2Equiv V.toSubgroup).apply_symm_apply _
 
-variable [CompactSpace U.toSubgroup] [CompactSpace V.toSubgroup]
-
-/-- Pulling back along `ψ`, as an intertwining map of the total resolutions. -/
-private noncomputable def resolutionPullback :
-    Representation.IntertwiningMap
-      ((resolutionRep U.toSubgroup).ρ.comp (ψ : V.toSubgroup →* U.toSubgroup))
-      (resolutionRep V.toSubgroup).ρ where
-  toLinearMap := TopRep.gradedResolutionMap ψ (eqToHom (res_trivialF2_hom _))
-  isIntertwining' v := by
-    ext x
-    exact TopRep.gradedResolutionMap_equivariant ψ _ v x
-
-/-- Pulling back along `ψ` carries the augmentation of the coefficients of `U` to that of `V`. -/
-private theorem resolutionPullback_augmentation (a : (DiscreteRep.trivialF2 U.toSubgroup).V) :
-    resolutionPullback ψ ((trivialF2 U.toSubgroup).gradedResolutionAugmentation a) =
-      (trivialF2 V.toSubgroup).gradedResolutionAugmentation (coeffPullback ψ a) := by
-  refine (TopRep.gradedResolutionMap_augmentation ψ _ a).trans (congrArg _ ?_)
-  apply (trivialF2Equiv V.toSubgroup).injective
-  exact ((congrArg (trivialF2Equiv V.toSubgroup) (TopRep.eqToHom_hom_apply
-    (res_trivialF2_hom (ψ : V.toSubgroup →* U.toSubgroup)) a)).trans
-    (trivialF2Equiv_cast U.toSubgroup _ a)).trans
-    (coeffPullback_apply ψ a).symm
-
-/-- Pulling back along `ψ` carries an included homogeneous cochain to the included pullback of
-the cochain. -/
-private theorem resolutionPullback_cochainToGradedResolution {n : ℕ}
-    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n) :
-    resolutionPullback ψ ((trivialF2 U.toSubgroup).cochainToGradedResolution n z) =
-      (trivialF2 V.toSubgroup).cochainToGradedResolution n
-        (((ContinuousCohomology.cochainsMap ψ (eqToHom (res_trivialF2_hom _))).f n).hom z) := by
-  classical
-  rw [TopRep.cochainToGradedResolution_apply, TopRep.cochainToGradedResolution_apply]
-  exact TopRep.gradedResolutionMap_lof ψ _ n _
+section
 
 variable [U.toSubgroup.FiniteIndex] [V.toSubgroup.FiniteIndex]
 
-/-- The comparison of the tensor-induced total resolutions carries the diagonal tensor of an
-included cochain to the diagonal tensor of its pullback. -/
-private theorem resolutionComparison_tprod {n : ℕ}
-    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n) :
-    (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
-        (PiTensorProduct.tprod ℤ fun _ ↦ (trivialF2 U.toSubgroup).cochainToGradedResolution n z) =
-      PiTensorProduct.tprod ℤ fun _ ↦ (trivialF2 V.toSubgroup).cochainToGradedResolution n
-        (((ContinuousCohomology.cochainsMap ψ (eqToHom (res_trivialF2_hom _))).f n).hom z) :=
-  (tensorComparisonHom_apply φ ψ hψ he s _ _).trans <|
-    ((congrArg _ (PiTensorProduct.reindex_tprod _ _)).trans (PiTensorProduct.map_tprod _ _)).trans
-      (congrArg _ (funext fun _ ↦ resolutionPullback_cochainToGradedResolution ψ z))
-
-variable [Fintype (G ⧸ U.toSubgroup)] [Fintype (H ⧸ V.toSubgroup)]
-
-/-- The comparison of the tensor-induced total resolutions preserves the total degree. -/
-private theorem isHomogeneous_resolutionComparison :
-    TauCeti.LinearMap.IsHomogeneous
-      (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom.toLinearMap
-      (smoothTensorInducedGradedResolutionPiece U.toSubgroup U.isOpen' (s.map (φ : H →* G) e he)
-        (coeffs U.toSubgroup))
-      (smoothTensorInducedGradedResolutionPiece V.toSubgroup V.isOpen' s
-        (coeffs V.toSubgroup)) 0 := by
-  have h1 := PiTensorProduct.isHomogeneous_reindex (R := ℤ)
-    (M := fun _ ↦ (resolutionRep U.toSubgroup).V)
-    (ℳ := fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionPiece) e.symm
-  have h2 := PiTensorProduct.isHomogeneous_map (ι := H ⧸ V.toSubgroup)
-    (ℳ := fun _ ↦ (trivialF2 V.toSubgroup).gradedResolutionPiece)
-    (𝒩 := fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionPiece)
-    (g := fun _ ↦ (resolutionPullback ψ).toLinearMap)
-    (fun _ ↦ TopRep.isHomogeneous_gradedResolutionMap ψ (eqToHom (res_trivialF2_hom _)))
-  rw [Finset.sum_const_zero] at h2
-  have h := h2.comp h1
-  rw [add_zero] at h
-  exact TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦
-    (congrArg (· ∈ _) (tensorComparisonHom_apply φ ψ hψ he s _ x)).mpr (h.map_mem hx)
-
-/-- The comparison of the tensor-induced total resolutions commutes with the differentials: both
-are slot sums of the total differential, which commutes with relabelling the factors and with
-pulling back along `ψ`. -/
-private theorem resolutionComparison_differential :
-    (TopRep.resFunctor (φ : H →* G)).map
-        (smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen'
-          (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)).hom ≫
-      tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ) =
-    tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ) ≫
-      (smoothTensorInducedGradedResolutionDifferential V.toSubgroup V.isOpen' s
-        (coeffs V.toSubgroup)).hom := by
-  classical
-  have hΨ : (trivialF2 V.toSubgroup).gradedResolutionDifferential ∘ₗ
-      (resolutionPullback ψ).toLinearMap =
-        (resolutionPullback ψ).toLinearMap ∘ₗ
-          (trivialF2 U.toSubgroup).gradedResolutionDifferential :=
-    LinearMap.ext fun x ↦ (TopRep.gradedResolutionMap_differential ψ _ x).symm
-  apply TopRep.hom_ext
-  apply ContIntertwiningMap.ext
-  apply ContinuousLinearMap.ext
-  intro x
-  have h := (LinearMap.congr_fun (PiTensorProduct.slotSum_comp_map (ι := H ⧸ V.toSubgroup)
-    (fun _ ↦ (resolutionPullback ψ).toLinearMap) fun _ ↦ hΨ)
-    (PiTensorProduct.reindex ℤ (fun _ ↦ (resolutionRep U.toSubgroup).V) e.symm x)).symm
-  have h' := LinearMap.congr_fun (PiTensorProduct.slotSum_comp_reindex
-    (fun _ : G ⧸ U.toSubgroup ↦ (trivialF2 U.toSubgroup).gradedResolutionDifferential) e.symm) x
-  simp only [LinearMap.comp_apply] at h h'
-  -- Composition in `TopRep` evaluates to composition of the underlying maps.
-  change (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
-      ((smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen'
-        (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)).hom.hom x) =
-    (smoothTensorInducedGradedResolutionDifferential V.toSubgroup V.isOpen' s
-      (coeffs V.toSubgroup)).hom.hom
-        ((tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom x)
-  rw [smoothTensorInducedGradedResolutionDifferential_apply]
-  -- The carriers of the comparison are the tensor powers only after unfolding
-  -- `DiscreteRep.tensorInduced`, so `rw` cannot rewrite with `tensorComparisonHom_apply` here and
-  -- the square is composed as terms: relabel and pull back, then commute each with the slot sum.
-  exact (tensorComparisonHom_apply φ ψ hψ he s _ _).trans <|
-    (congrArg (PiTensorProduct.map fun _ ↦ (resolutionPullback ψ).toLinearMap) h'.symm).trans <|
-      h.trans <| (congrArg _ (tensorComparisonHom_apply φ ψ hψ he s _ x).symm).trans
-        (smoothTensorInducedGradedResolutionDifferential_apply V.toSubgroup V.isOpen' s
-          (coeffs V.toSubgroup) _).symm
-
-/-- The comparison of the tensor-induced total resolutions lies over the comparison of the
-tensor-induced coefficients: it carries the augmentation of the contraction for `U` to that for
-`V`. -/
-private theorem resolutionComparison_ι [LinearOrder (G ⧸ U.toSubgroup)]
-    [LinearOrder (H ⧸ V.toSubgroup)]
-    (x : ((toSmoothDiscrete ℤ G).obj (DiscreteRep.tensorInduced U.toSubgroup U.isOpen'
-      (s.map (φ : H →* G) e he) (DiscreteRep.trivialF2 U.toSubgroup))).obj.V) :
-    (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
-        ((smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen'
-          (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)
-          (trivialF2_add_self U.toSubgroup)).ι.hom x).1 =
-      ((smoothTensorInducedGradedResolutionContraction V.toSubgroup V.isOpen' s
-          (coeffs V.toSubgroup) (trivialF2_add_self V.toSubgroup)).ι.hom
-        ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom x)).1 := by
-  have key : PiTensorProduct.map (fun _ ↦ (resolutionPullback ψ).toLinearMap) ∘ₗ
-      (PiTensorProduct.reindex ℤ (fun _ ↦ (resolutionRep U.toSubgroup).V) e.symm).toLinearMap ∘ₗ
-        PiTensorProduct.map (fun _ ↦ (coeffs U.toSubgroup).obj.gradedResolutionAugmentation) =
-      PiTensorProduct.map (fun _ ↦ (coeffs V.toSubgroup).obj.gradedResolutionAugmentation) ∘ₗ
-        PiTensorProduct.map (fun _ ↦ (coeffPullback ψ).toLinearMap) ∘ₗ
-          (PiTensorProduct.reindex ℤ (fun _ ↦ (DiscreteRep.trivialF2 U.toSubgroup).V)
-            e.symm).toLinearMap := by
-    apply PiTensorProduct.ext
-    apply MultilinearMap.ext
-    intro m
-    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
-    -- Both sides are the pure tensor of the augmented, pulled-back factors, relabelled along `e`.
-    -- The factor maps carry the semiring structure `Int.instRing.toSemiring` while the
-    -- `PiTensorProduct` lemmas are stated with `CommSemiring.toSemiring`, so `rw` and `simp` cannot
-    -- match them and the pure-tensor rules are applied as terms.
-    refine ((congrArg _ ((congrArg _ (PiTensorProduct.map_tprod _ m)).trans
-      (PiTensorProduct.reindex_tprod _ _))).trans (PiTensorProduct.map_tprod _ _)).trans ?_
-    refine Eq.trans ?_ ((congrArg _ ((congrArg _ (PiTensorProduct.reindex_tprod _ m)).trans
-      (PiTensorProduct.map_tprod _ _))).trans (PiTensorProduct.map_tprod _ _)).symm
-    exact congrArg _ (funext fun i ↦ resolutionPullback_augmentation ψ _)
-  rw [smoothTensorInducedGradedResolutionContraction_ι_apply,
-    smoothTensorInducedGradedResolutionContraction_ι_apply]
-  exact (tensorComparisonHom_apply φ ψ hψ he s _ _).trans ((LinearMap.congr_fun key x).trans
-    (congrArg _ (tensorComparisonHom_apply φ ψ hψ he s _ x).symm))
-
-omit [CompactSpace U.toSubgroup] [CompactSpace V.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
-  [Fintype (H ⧸ V.toSubgroup)] in
 /-- The comparison of the tensor-induced coefficients lies over the identity of `𝔽₂`: both
 identifications with the trivial coefficients multiply the tensor factors, and relabelling the
 factors along `e` does not change their product. -/
@@ -359,6 +210,163 @@ private theorem coeffComparison_trivialF2Iso :
       (map_add _ _ _))).trans (map_add _ _ _)).symm
     exact congrArg₂ (· + ·) hx hy
 
+end
+
+variable [CompactSpace U.toSubgroup] [CompactSpace V.toSubgroup]
+
+/-- Pulling back along `ψ`, as an intertwining map of the total resolutions. -/
+private noncomputable def resolutionPullback :
+    Representation.IntertwiningMap
+      ((resolutionRep U.toSubgroup).ρ.comp (ψ : V.toSubgroup →* U.toSubgroup))
+      (resolutionRep V.toSubgroup).ρ where
+  toLinearMap := TopRep.gradedResolutionMap ψ (eqToHom (res_trivialF2_hom _))
+  isIntertwining' v := by
+    ext x
+    exact TopRep.gradedResolutionMap_equivariant ψ _ v x
+
+/-- Pulling back along `ψ` carries the augmentation of the coefficients of `U` to that of `V`. -/
+private theorem resolutionPullback_augmentation (a : (DiscreteRep.trivialF2 U.toSubgroup).V) :
+    resolutionPullback ψ ((trivialF2 U.toSubgroup).gradedResolutionAugmentation a) =
+      (trivialF2 V.toSubgroup).gradedResolutionAugmentation (coeffPullback ψ a) := by
+  refine (TopRep.gradedResolutionMap_augmentation ψ _ a).trans (congrArg _ ?_)
+  apply (trivialF2Equiv V.toSubgroup).injective
+  exact ((congrArg (trivialF2Equiv V.toSubgroup) (TopRep.eqToHom_hom_apply
+    (res_trivialF2_hom (ψ : V.toSubgroup →* U.toSubgroup)) a)).trans
+    (trivialF2Equiv_cast U.toSubgroup _ a)).trans
+    (coeffPullback_apply ψ a).symm
+
+/-- Pulling back along `ψ` carries an included homogeneous cochain to the included pullback of
+the cochain. -/
+private theorem resolutionPullback_cochainToGradedResolution {n : ℕ}
+    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n) :
+    resolutionPullback ψ ((trivialF2 U.toSubgroup).cochainToGradedResolution n z) =
+      (trivialF2 V.toSubgroup).cochainToGradedResolution n
+        (((ContinuousCohomology.cochainsMap ψ (eqToHom (res_trivialF2_hom _))).f n).hom z) := by
+  classical
+  rw [TopRep.cochainToGradedResolution_apply, TopRep.cochainToGradedResolution_apply]
+  exact TopRep.gradedResolutionMap_lof ψ _ n _
+
+variable [U.toSubgroup.FiniteIndex] [V.toSubgroup.FiniteIndex]
+
+/-- The comparison of the tensor-induced total resolutions carries the diagonal tensor of an
+included cochain to the diagonal tensor of its pullback. -/
+private theorem resolutionComparison_tprod {n : ℕ}
+    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n) :
+    (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
+        (PiTensorProduct.tprod ℤ fun _ ↦ (trivialF2 U.toSubgroup).cochainToGradedResolution n z) =
+      PiTensorProduct.tprod ℤ fun _ ↦ (trivialF2 V.toSubgroup).cochainToGradedResolution n
+        (((ContinuousCohomology.cochainsMap ψ (eqToHom (res_trivialF2_hom _))).f n).hom z) :=
+  (tensorComparisonHom_apply φ ψ hψ he s _ _).trans <|
+    ((congrArg _ (PiTensorProduct.reindex_tprod _ _)).trans (PiTensorProduct.map_tprod _ _)).trans
+      (congrArg _ (funext fun _ ↦ resolutionPullback_cochainToGradedResolution ψ z))
+
+variable [Fintype (G ⧸ U.toSubgroup)] [Fintype (H ⧸ V.toSubgroup)]
+
+/-- The comparison of the tensor-induced total resolutions preserves the total degree. -/
+private theorem isHomogeneous_resolutionComparison :
+    LinearMap.IsHomogeneous
+      (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom.toLinearMap
+      (smoothTensorInducedGradedResolutionPiece U.toSubgroup U.isOpen' (s.map (φ : H →* G) e he)
+        (coeffs U.toSubgroup))
+      (smoothTensorInducedGradedResolutionPiece V.toSubgroup V.isOpen' s
+        (coeffs V.toSubgroup)) 0 := by
+  have h1 := PiTensorProduct.isHomogeneous_reindex (R := ℤ)
+    (M := fun _ ↦ (resolutionRep U.toSubgroup).V)
+    (ℳ := fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionPiece) e.symm
+  have h2 := PiTensorProduct.isHomogeneous_map (ι := H ⧸ V.toSubgroup)
+    (ℳ := fun _ ↦ (trivialF2 V.toSubgroup).gradedResolutionPiece)
+    (𝒩 := fun _ ↦ (trivialF2 U.toSubgroup).gradedResolutionPiece)
+    (g := fun _ ↦ (resolutionPullback ψ).toLinearMap)
+    (fun _ ↦ TopRep.isHomogeneous_gradedResolutionMap ψ (eqToHom (res_trivialF2_hom _)))
+  rw [Finset.sum_const_zero] at h2
+  have h := h2.comp h1
+  rw [add_zero] at h
+  exact LinearMap.isHomogeneous_def.2 fun p x hx ↦
+    (congrArg (· ∈ _) (tensorComparisonHom_apply φ ψ hψ he s _ x)).mpr (h.map_mem hx)
+
+/-- The comparison of the tensor-induced total resolutions commutes with the differentials: both
+are slot sums of the total differential, which commutes with relabelling the factors and with
+pulling back along `ψ`. -/
+private theorem resolutionComparison_differential :
+    (TopRep.resFunctor (φ : H →* G)).map
+        (smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen'
+          (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)).hom ≫
+      tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ) =
+    tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ) ≫
+      (smoothTensorInducedGradedResolutionDifferential V.toSubgroup V.isOpen' s
+        (coeffs V.toSubgroup)).hom := by
+  classical
+  have hΨ : (trivialF2 V.toSubgroup).gradedResolutionDifferential ∘ₗ
+      (resolutionPullback ψ).toLinearMap =
+        (resolutionPullback ψ).toLinearMap ∘ₗ
+          (trivialF2 U.toSubgroup).gradedResolutionDifferential :=
+    LinearMap.ext fun x ↦ (TopRep.gradedResolutionMap_differential ψ _ x).symm
+  apply TopRep.hom_ext
+  apply ContIntertwiningMap.ext
+  apply ContinuousLinearMap.ext
+  intro x
+  have h := (LinearMap.congr_fun (PiTensorProduct.slotSum_comp_map (ι := H ⧸ V.toSubgroup)
+    (fun _ ↦ (resolutionPullback ψ).toLinearMap) fun _ ↦ hΨ)
+    (PiTensorProduct.reindex ℤ (fun _ ↦ (resolutionRep U.toSubgroup).V) e.symm x)).symm
+  have h' := LinearMap.congr_fun (PiTensorProduct.slotSum_comp_reindex
+    (fun _ : G ⧸ U.toSubgroup ↦ (trivialF2 U.toSubgroup).gradedResolutionDifferential) e.symm) x
+  simp only [LinearMap.comp_apply] at h h'
+  -- Composition in `TopRep` evaluates to composition of the underlying maps.
+  change (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
+      ((smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen'
+        (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)).hom.hom x) =
+    (smoothTensorInducedGradedResolutionDifferential V.toSubgroup V.isOpen' s
+      (coeffs V.toSubgroup)).hom.hom
+        ((tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom x)
+  rw [smoothTensorInducedGradedResolutionDifferential_apply]
+  -- The carriers of the comparison are the tensor powers only after unfolding
+  -- `DiscreteRep.tensorInduced`, so `rw` cannot rewrite with `tensorComparisonHom_apply` here and
+  -- the square is composed as terms: relabel and pull back, then commute each with the slot sum.
+  exact (tensorComparisonHom_apply φ ψ hψ he s _ _).trans <|
+    (congrArg (PiTensorProduct.map fun _ ↦ (resolutionPullback ψ).toLinearMap) h'.symm).trans <|
+      h.trans <| (congrArg _ (tensorComparisonHom_apply φ ψ hψ he s _ x).symm).trans
+        (smoothTensorInducedGradedResolutionDifferential_apply V.toSubgroup V.isOpen' s
+          (coeffs V.toSubgroup) _).symm
+
+/-- The comparison of the tensor-induced total resolutions lies over the comparison of the
+tensor-induced coefficients: it carries the augmentation of the contraction for `U` to that for
+`V`. -/
+private theorem resolutionComparison_ι [LinearOrder (G ⧸ U.toSubgroup)]
+    [LinearOrder (H ⧸ V.toSubgroup)]
+    (x : ((toSmoothDiscrete ℤ G).obj (DiscreteRep.tensorInduced U.toSubgroup U.isOpen'
+      (s.map (φ : H →* G) e he) (DiscreteRep.trivialF2 U.toSubgroup))).obj.V) :
+    (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
+        ((smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen'
+          (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)
+          (trivialF2_add_self U.toSubgroup)).ι.hom x).val =
+      ((smoothTensorInducedGradedResolutionContraction V.toSubgroup V.isOpen' s
+          (coeffs V.toSubgroup) (trivialF2_add_self V.toSubgroup)).ι.hom
+        ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom x)).val := by
+  have key : PiTensorProduct.map (fun _ ↦ (resolutionPullback ψ).toLinearMap) ∘ₗ
+      (PiTensorProduct.reindex ℤ (fun _ ↦ (resolutionRep U.toSubgroup).V) e.symm).toLinearMap ∘ₗ
+        PiTensorProduct.map (fun _ ↦ (coeffs U.toSubgroup).obj.gradedResolutionAugmentation) =
+      PiTensorProduct.map (fun _ ↦ (coeffs V.toSubgroup).obj.gradedResolutionAugmentation) ∘ₗ
+        PiTensorProduct.map (fun _ ↦ (coeffPullback ψ).toLinearMap) ∘ₗ
+          (PiTensorProduct.reindex ℤ (fun _ ↦ (DiscreteRep.trivialF2 U.toSubgroup).V)
+            e.symm).toLinearMap := by
+    apply PiTensorProduct.ext
+    apply MultilinearMap.ext
+    intro m
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
+    -- Both sides are the pure tensor of the augmented, pulled-back factors, relabelled along `e`.
+    -- The factor maps carry the semiring structure `Int.instRing.toSemiring` while the
+    -- `PiTensorProduct` lemmas are stated with `CommSemiring.toSemiring`, so `rw` and `simp` cannot
+    -- match them and the pure-tensor rules are applied as terms.
+    refine ((congrArg _ ((congrArg _ (PiTensorProduct.map_tprod _ m)).trans
+      (PiTensorProduct.reindex_tprod _ _))).trans (PiTensorProduct.map_tprod _ _)).trans ?_
+    refine Eq.trans ?_ ((congrArg _ ((congrArg _ (PiTensorProduct.reindex_tprod _ m)).trans
+      (PiTensorProduct.map_tprod _ _))).trans (PiTensorProduct.map_tprod _ _)).symm
+    exact congrArg _ (funext fun i ↦ resolutionPullback_augmentation ψ _)
+  rw [smoothTensorInducedGradedResolutionContraction_ι_apply,
+    smoothTensorInducedGradedResolutionContraction_ι_apply]
+  exact (tensorComparisonHom_apply φ ψ hψ he s _ _).trans ((LinearMap.congr_fun key x).trans
+    (congrArg _ (tensorComparisonHom_apply φ ψ hψ he s _ x).symm))
+
 end Resolution
 
 variable [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
@@ -411,7 +419,10 @@ theorem trivialF2Map_evensNorm {n : ℕ} (x : continuousCohomology n (trivialF2 
     (by rw [Fintype.card_congr e])
     (resolutionComparison_tprod φ ψ hψ he s z) _ _ _ _ _ _
 
-omit [V.toSubgroup.FiniteIndex] [CompactSpace V.toSubgroup] [Fintype (H ⧸ V.toSubgroup)] in
+end Pullback
+
+variable [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
+
 /-- **The Evens norm commutes with inflation.** For a normal subgroup `N` contained in `U`,
 inflating to `G` the norm from the image `U / N` of `U` in `G ⧸ N` gives the norm from `U` of the
 inflated class: `infl (N_{U/N}^{G/N} x) = N_U^G (infl x)`, after transporting the degree along

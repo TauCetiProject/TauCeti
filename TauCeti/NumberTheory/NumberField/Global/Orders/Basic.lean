@@ -140,8 +140,8 @@ theorem mem_toRingOfIntegers (O : NumberFieldOrder K) {x : 𝓞 K} :
 This moves ideals of the order between the two models: comparisons with ideals of `𝓞 K` use the
 former, fractional ideals and Picard groups the latter. -/
 def toRingOfIntegersEquiv (O : NumberFieldOrder K) : O.toRingOfIntegers ≃+* O.toSubalgebra where
-  toFun x := ⟨((x : 𝓞 K) : K), x.2⟩
-  invFun y := ⟨⟨y, O.le_ringOfIntegers y.2⟩, O.mem_toRingOfIntegers.mpr y.2⟩
+  toFun x := ⟨((x : 𝓞 K) : K), x.property⟩
+  invFun y := ⟨⟨y, O.le_ringOfIntegers y.property⟩, O.mem_toRingOfIntegers.mpr y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

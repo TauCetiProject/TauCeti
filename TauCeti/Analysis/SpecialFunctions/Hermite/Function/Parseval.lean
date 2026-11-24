@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.HilbertBasis
 
 /-!
@@ -58,12 +57,12 @@ theorem tsum_inner_mul_inner_hermiteFunctionLp (f g : Lp 𝕜 2 (volume : Measur
 coordinates of `f` sum to `‖f‖²`. -/
 theorem tsum_norm_sq_inner_hermiteFunctionLp (f : Lp 𝕜 2 (volume : Measure ℝ)) :
     ∑' n : ℕ, ‖inner 𝕜 (hermiteFunctionLp 𝕜 n) f‖ ^ 2 = ‖f‖ ^ 2 := by
-  simpa using (hermiteHilbertBasis 𝕜).tsum_norm_sq_inner f
+  simpa using (hermiteHilbertBasis 𝕜).tsum_norm_inner_sq f
 
 /-- The squared Hermite coordinate family of an `L²` function is summable. -/
 theorem summable_norm_sq_inner_hermiteFunctionLp (f : Lp 𝕜 2 (volume : Measure ℝ)) :
     Summable fun n : ℕ => ‖inner 𝕜 (hermiteFunctionLp 𝕜 n) f‖ ^ 2 := by
-  simpa using (hermiteHilbertBasis 𝕜).summable_norm_sq_inner f
+  simpa using (hermiteHilbertBasis 𝕜).summable_norm_inner_sq f
 
 /-- **The Hermite expansion.** Every `f ∈ L²(ℝ)` is the sum of its Hermite series. -/
 theorem hasSum_hermiteFunctionLp_expansion (f : Lp 𝕜 2 (volume : Measure ℝ)) :

@@ -104,7 +104,7 @@ theorem span_range_eq_top_of_span_range_mk_eq_top {ι : Type*} (b : ι → Symme
       obtain ⟨N, f, g, rfl⟩ := Submodule.mem_span_set'.1 hq
       rw [map_sum]
       refine U.sum_mem fun j _ ↦ ?_
-      obtain ⟨hgA, m, hm, hgm⟩ := (g j).2
+      obtain ⟨hgA, m, hm, hgm⟩ := (g j).property
       rw [smul_eq_mul, GradedRing.proj_apply, DirectSum.coe_decompose_mul_of_right_mem _ _ hgm]
       split_ifs with hmn
       · have h := U.smul_mem ⟨_, hgA⟩ (ih (n - m) (by omega) _ (SetLike.coe_mem
@@ -175,7 +175,7 @@ theorem linearIndependent_of_linearIndependent_mk
     set ε : SymmetricAlgebra k M →ₐ[k] k := SymmetricAlgebra.algebraMapInv
     have hε : ∀ a : A, (a : SymmetricAlgebra k M) - algebraMap k _ (ε a) ∈
         ρ.symmetricAlgebraHilbertIdeal := fun a ↦
-      ρ.sub_algebraMap_algebraMapInv_mem_symmetricAlgebraHilbertIdeal a.2
+      ρ.sub_algebraMap_algebraMapInv_mem_symmetricAlgebraHilbertIdeal a.property
     have hc : ∀ i, ε (x i) = 0 := by
       refine Fintype.linearIndependent_iff.1 hli (fun i ↦ ε (x i)) ?_
       have hx : ∑ i, (x i : SymmetricAlgebra k M) * b i = 0 := by
@@ -233,7 +233,7 @@ theorem exists_basis_quotient_mk_eq_of_flat
     obtain ⟨p, rfl⟩ := Ideal.Quotient.mkₐ_surjective k _ y
     rw [← DirectSum.sum_support_decompose (homogeneousSubmodule k M) p, map_sum]
     exact Submodule.sum_mem _ fun n _ ↦ Submodule.subset_span ⟨n, _, SetLike.coe_mem _, rfl⟩
-  choose n b hb hbt using fun y : t ↦ hts y.2
+  choose n b hb hbt using fun y : t ↦ hts y.property
   have hmk : Ideal.Quotient.mkₐ k ρ.symmetricAlgebraHilbertIdeal ∘ b = (↑) := funext hbt
   have hli : LinearIndependent k (Ideal.Quotient.mkₐ k ρ.symmetricAlgebraHilbertIdeal ∘ b) :=
     hmk ▸ htli

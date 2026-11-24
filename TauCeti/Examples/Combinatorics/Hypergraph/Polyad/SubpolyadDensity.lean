@@ -31,7 +31,7 @@ example :
     let P : Polyad3 S := Polyad3.ofData univ univ univ (by simp [S]) (by simp [S]) (by simp [S])
       () () ()
     let Q : Subpolyad3 P :=
-      ⟨P.pairSupport₀₁.filter fun p ↦ p.1 = (0, 1) ∨ p.1 = (1, 2), P.pairSupport₀₂,
+      ⟨P.pairSupport₀₁.filter fun p ↦ p.val = (0, 1) ∨ p.val = (1, 2), P.pairSupport₀₂,
         P.pairSupport₁₂, filter_subset _ _, Subset.rfl, Subset.rfl⟩
     let H : Colored3Graph Bool (Fin 4) := ⟨fun s ↦ decide ((s : Finset (Fin 4)) = {0, 1, 2})⟩
     H.relativeDensity true P = 1 / 4 ∧ H.relDensityOn true Q.support = 1 / 2 := by
@@ -42,25 +42,25 @@ example :
     simp only [Polyad3.mem_support, mem_univ, iff_true, P, S, Polyad3.ofData_c₀,
       Polyad3.ofData_c₁, Polyad3.ofData_c₂, Polyad3.ofData_color₀₁, Polyad3.ofData_color₀₂,
       Polyad3.ofData_color₁₂, true_and]
-    refine ⟨?_, ?_, ?_⟩ <;> exact PairColorSystem.colorOfPair_of_ne _ (x.2.ne (by decide))
+    refine ⟨?_, ?_, ?_⟩ <;> exact PairColorSystem.colorOfPair_of_ne _ (x.property.ne (by decide))
   -- The subpolyad supports exactly the triples whose first two entries are `(0, 1)` or `(1, 2)`.
   have hQ : Q.support = univ.filter fun x : {x : Fin 3 → Fin 4 // Function.Injective x} ↦
-      (x.1 0 = 0 ∧ x.1 1 = 1) ∨ (x.1 0 = 1 ∧ x.1 1 = 2) := by
+      (x.val 0 = 0 ∧ x.val 1 = 1) ∨ (x.val 0 = 1 ∧ x.val 1 = 2) := by
     ext x
     rw [Subpolyad3.mem_support_iff_coordPair_mem]
     simp [Q, P, S, coe_coordPair]
   refine ⟨?_, ?_⟩
   · have htrue : #{x ∈ (univ : Finset {x : Fin 3 → Fin 4 // Function.Injective x}) |
-        H.color (Set.powersetCard.ofFinEmb 3 (Fin 4) ⟨x.1, x.2⟩) = true} = 6 := by decide
+        H.color (Set.powersetCard.ofFinEmb 3 (Fin 4) ⟨x.val, x.property⟩) = true} = 6 := by decide
     have hcard : #(univ : Finset {x : Fin 3 → Fin 4 // Function.Injective x}) = 24 := by decide
     rw [relativeDensity_def, hP, relDensityOn_def, htrue, hcard]
     norm_num
   · rw [hQ, relDensityOn_def]
     have htrue : #{x ∈ univ.filter fun x : {x : Fin 3 → Fin 4 // Function.Injective x} ↦
-        (x.1 0 = 0 ∧ x.1 1 = 1) ∨ (x.1 0 = 1 ∧ x.1 1 = 2) |
-          H.color (Set.powersetCard.ofFinEmb 3 (Fin 4) ⟨x.1, x.2⟩) = true} = 2 := by decide
+        (x.val 0 = 0 ∧ x.val 1 = 1) ∨ (x.val 0 = 1 ∧ x.val 1 = 2) |
+          H.color (Set.powersetCard.ofFinEmb 3 (Fin 4) ⟨x.val, x.property⟩) = true} = 2 := by decide
     have hcard : #(univ.filter fun x : {x : Fin 3 → Fin 4 // Function.Injective x} ↦
-        (x.1 0 = 0 ∧ x.1 1 = 1) ∨ (x.1 0 = 1 ∧ x.1 1 = 2)) = 4 := by decide
+        (x.val 0 = 0 ∧ x.val 1 = 1) ∨ (x.val 0 = 1 ∧ x.val 1 = 2)) = 4 := by decide
     rw [htrue, hcard]
     norm_num
 

@@ -246,9 +246,9 @@ theorem IsAnalyticSubmanifold.below {S : Set (Fin n → ℝ)} (hS : IsAnalyticSu
   refine hS.cylinder.of_isOpen_preimage_val (fun _ hv ↦ hv.1) ?_ hne
   have hf' : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦
       f (Fin.tail v.val)) :=
-    hf.comp_continuous continuous_subtype_val.finTail (fun v ↦ v.property)
+    hf.comp_continuous continuous_subtypeVal.finTail (fun v ↦ v.property)
   have ht : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦ v.val 0) :=
-    (continuous_apply 0).comp continuous_subtype_val
+    (continuous_apply 0).comp continuous_subtypeVal
   convert isOpen_lt ht hf' using 1
   ext v
   have hv : Fin.tail v.val ∈ S := v.property
@@ -266,9 +266,9 @@ theorem IsAnalyticSubmanifold.above {S : Set (Fin n → ℝ)} (hS : IsAnalyticSu
   refine hS.cylinder.of_isOpen_preimage_val (fun _ hv ↦ hv.1) ?_ hne
   have hf' : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦
       f (Fin.tail v.val)) :=
-    hf.comp_continuous continuous_subtype_val.finTail (fun v ↦ v.property)
+    hf.comp_continuous continuous_subtypeVal.finTail (fun v ↦ v.property)
   have ht : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦ v.val 0) :=
-    (continuous_apply 0).comp continuous_subtype_val
+    (continuous_apply 0).comp continuous_subtypeVal
   convert isOpen_lt hf' ht using 1
   ext v
   have hv : Fin.tail v.val ∈ S := v.property
@@ -285,12 +285,12 @@ theorem IsAnalyticSubmanifold.between {S : Set (Fin n → ℝ)} (hS : IsAnalytic
   refine hS.cylinder.of_isOpen_preimage_val (fun _ hv ↦ hv.1) ?_ hne
   have hf' : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦
       f (Fin.tail v.val)) :=
-    hf.comp_continuous continuous_subtype_val.finTail (fun v ↦ v.property)
+    hf.comp_continuous continuous_subtypeVal.finTail (fun v ↦ v.property)
   have hg' : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦
       g (Fin.tail v.val)) :=
-    hg.comp_continuous continuous_subtype_val.finTail (fun v ↦ v.property)
+    hg.comp_continuous continuous_subtypeVal.finTail (fun v ↦ v.property)
   have ht : Continuous (fun v : {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S} ↦ v.val 0) :=
-    (continuous_apply 0).comp continuous_subtype_val
+    (continuous_apply 0).comp continuous_subtypeVal
   convert (isOpen_lt hf' ht).inter (isOpen_lt ht hg') using 1
   ext v
   have hv : Fin.tail v.val ∈ S := v.property

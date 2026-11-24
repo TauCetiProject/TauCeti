@@ -66,7 +66,7 @@ theorem aemeasurable_iSup_le {Y : ι → Ω → ℝ≥0∞} {T : ι}
     AEMeasurable (fun ω ↦ ⨆ t ≤ T, Y t ω) μ := by
   obtain ⟨S, hSc, hST, hae⟩ := exists_countable_subset_Iic_iSup_ae_eq hcont
   have := hSc.to_subtype
-  refine (AEMeasurable.iSup fun s : S ↦ hY s (hST s.2)).congr ?_
+  refine (AEMeasurable.iSup fun s : S ↦ hY s (hST s.property)).congr ?_
   filter_upwards [hae] with ω hω
   rw [hω, iSup_subtype']
 

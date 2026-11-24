@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.BasedQuotient
-public import TauCeti.Topology.ReducedSuspension
-import TauCeti.AlgebraicTopology.Sphere.Zero
+public import TauCeti.Topology.Constructions.ReducedSuspension.Smash
 
 /-!
 # Smash products and reduced suspensions of spheres
@@ -19,8 +18,9 @@ first-coordinate basepoint `TauCeti.sphereBasepoint`:
 * `TauCeti.smashSphereHomeomorph`: `Sᵐ ∧ Sⁿ ≃ₜ Sᵐ⁺ⁿ` for all `m, n ≥ 0`, given on based cube
   representatives by `Fin.append x y`, together with its unit and associativity coherences.
 * `TauCeti.intervalQuotientSphereOneHomeomorph` (`I / {0, 1} ≃ₜ S¹`) and
-  `TauCeti.reducedSuspensionSphereHomeomorph` (`ΣSⁿ ≃ₜ Sⁿ⁺¹`), given on based cube representatives
-  by `Fin.snoc x t`.
+  `TauCeti.reducedSuspensionSphereHomeomorph` (`ΣSⁿ ≃ₜ Sⁿ⁺¹` for all `n ≥ 0`), given on based cube
+  representatives by `Fin.snoc x t` and complementing the `n ≥ 1` north-pole unlifted homeomorphism
+  `TauCeti.sphereReducedSuspensionHomeomorph`.
 
 ## References
 
@@ -125,7 +125,7 @@ def smashSphereHomeomorph (m n : ℕ) :
     (TopPair.ordinaryPairQuotientProdHomeomorph
       (ULift.down ⁻¹' Cube.boundary (Fin m))
       (ULift.down ⁻¹' Cube.boundary (Fin n))).symm.trans <|
-      (TopPair.ordinaryPairQuotientHomeomorph (cubeBoundaryPairProdIso.{u} m n)).trans
+      (TopPair.ordinaryPairQuotientCongrHomeomorph (cubeBoundaryPairProdIso.{u} m n)).trans
         (cubeQuotientSphereHomeomorph.{u} (m + n))
 
 @[simp]
@@ -148,10 +148,10 @@ lemma smashSphereHomeomorph_mk_basedCubeToSphere (m n : ℕ) (x : I^(Fin m)) (y 
   rw [SmashProduct.congrHomeomorph_mk, cubeQuotientSphereHomeomorph_symm_basedCubeToSphere,
     cubeQuotientSphereHomeomorph_symm_basedCubeToSphere]
   exact (congrArg (fun z ↦ cubeQuotientSphereHomeomorph.{u} (m + n)
-      (TopPair.ordinaryPairQuotientHomeomorph (cubeBoundaryPairProdIso.{u} m n) z))
+      (TopPair.ordinaryPairQuotientCongrHomeomorph (cubeBoundaryPairProdIso.{u} m n) z))
     (TopPair.ordinaryPairQuotientProdHomeomorph_symm_mk_π _ _ _ _)).trans <|
     (congrArg (cubeQuotientSphereHomeomorph.{u} (m + n))
-      (ordinaryPairQuotientHomeomorph_cubeBoundaryPairProdIso_π m n x y)).trans
+      (ordinaryPairQuotientCongrHomeomorph_cubeBoundaryPairProdIso_π m n x y)).trans
       (cubeQuotientSphereHomeomorph_π (m + n) _)
 
 /-- Swapping factors on `Sᵐ ∧ Sⁿ` reverses the order of cube concatenation from `Fin.append x y` to
@@ -160,7 +160,7 @@ lemma smashSphereHomeomorph_comm_mk_basedCubeToSphere (m n : ℕ) (x : I^(Fin m)
     smashSphereHomeomorph.{u} n m
       (SmashProduct.comm (sphereBasepoint.{u} m) (sphereBasepoint.{u} n)
         (SmashProduct.mk (sphereBasepoint.{u} m) (sphereBasepoint.{u} n)
-          (basedCubeToSphere.{u} m x, basedCubeToSphere.{u} n y))) =
+           (basedCubeToSphere.{u} m x, basedCubeToSphere.{u} n y))) =
       basedCubeToSphere.{u} (n + m) (Fin.append y x) := by
   rw [SmashProduct.comm_mk, smashSphereHomeomorph_mk_basedCubeToSphere]
 
@@ -246,7 +246,7 @@ def intervalEndpointPairIsoCubeOne :
 `basedCubeToSphere 1 (fun _ ↦ t)`. -/
 def intervalQuotientSphereOneHomeomorph :
     intervalEndpointPair.{u}.ordinaryPairQuotient ≃ₜ TopCat.sphere.{u} 1 :=
-  (TopPair.ordinaryPairQuotientHomeomorph intervalEndpointPairIsoCubeOne.{u}).trans
+  (TopPair.ordinaryPairQuotientCongrHomeomorph intervalEndpointPairIsoCubeOne.{u}).trans
     (cubeQuotientSphereHomeomorph.{u} 1)
 
 @[simp]
@@ -259,7 +259,7 @@ lemma intervalQuotientSphereOneHomeomorph_π (t : I) :
     rw [intervalEndpointPairIsoCubeOne, TopPair.ofSubsetIso_hom]
     apply TopPair.ofSubsetMap_fst_apply
   exact (congrArg (cubeQuotientSphereHomeomorph.{u} 1)
-    ((TopPair.ordinaryPairQuotientHomeomorph_π intervalEndpointPairIsoCubeOne.{u}
+    ((TopPair.ordinaryPairQuotientCongrHomeomorph_π intervalEndpointPairIsoCubeOne.{u}
       (ULift.up t)).trans (congrArg _ h₁))).trans (cubeQuotientSphereHomeomorph_π 1 _)
 
 @[simp]
@@ -271,7 +271,7 @@ lemma intervalQuotientSphereOneHomeomorph_basepoint :
 /-- **The reduced suspension of `Sⁿ` is `Sⁿ⁺¹`** for all `n ≥ 0`, with the interval coordinate
 placed last: `ΣSⁿ ≃ₜ Sⁿ ∧ (I / {0, 1}) ≃ₜ Sⁿ ∧ S¹ ≃ₜ Sⁿ⁺¹`. -/
 def reducedSuspensionSphereHomeomorph (n : ℕ) :
-    ReducedSuspension (sphereBasepoint.{u} n) ≃ₜ TopCat.sphere.{u} (n + 1) :=
+    ReducedSuspension (TopCat.sphere.{u} n) (sphereBasepoint.{u} n) ≃ₜ TopCat.sphere.{u} (n + 1) :=
   (ReducedSuspension.homeomorphSmashIntervalQuotient (sphereBasepoint.{u} n)).trans <|
     (SmashProduct.congrHomeomorph (x₀' := sphereBasepoint.{u} n)
       (Homeomorph.refl (TopCat.sphere.{u} n)) intervalQuotientSphereOneHomeomorph.{u}
@@ -281,7 +281,8 @@ def reducedSuspensionSphereHomeomorph (n : ℕ) :
 @[simp]
 lemma reducedSuspensionSphereHomeomorph_basepoint (n : ℕ) :
     reducedSuspensionSphereHomeomorph.{u} n
-      (ReducedSuspension.basepoint (sphereBasepoint.{u} n)) =
+      (ReducedSuspension.basepoint :
+        ReducedSuspension (TopCat.sphere.{u} n) (sphereBasepoint.{u} n)) =
       sphereBasepoint.{u} (n + 1) := by
   simp [reducedSuspensionSphereHomeomorph]
 
@@ -290,19 +291,18 @@ lemma reducedSuspensionSphereHomeomorph_basepoint (n : ℕ) :
 @[simp]
 lemma reducedSuspensionSphereHomeomorph_mk_basedCubeToSphere (n : ℕ) (x : I^(Fin n)) (t : I) :
     reducedSuspensionSphereHomeomorph.{u} n
-      (ReducedSuspension.mk (sphereBasepoint.{u} n) (basedCubeToSphere.{u} n x, t)) =
+      (ReducedSuspension.mk (basedCubeToSphere.{u} n x, t)) =
       basedCubeToSphere.{u} (n + 1) (Fin.snoc x t) := by
   simp [reducedSuspensionSphereHomeomorph, Fin.append_right_eq_snoc]
 
 /-- **Uniqueness of maps out of `ΣSⁿ`** from the based cube map `Iⁿ × I → ΣSⁿ`. -/
 lemma reducedSuspensionSphere_ext {n : ℕ} {Z : Sort*}
-    {f g : ReducedSuspension (sphereBasepoint.{u} n) → Z}
+    {f g : ReducedSuspension (TopCat.sphere.{u} n) (sphereBasepoint.{u} n) → Z}
     (hcube : ∀ (x : I^(Fin n)) (t : I),
-      f (ReducedSuspension.mk (sphereBasepoint.{u} n) (basedCubeToSphere.{u} n x, t)) =
-        g (ReducedSuspension.mk (sphereBasepoint.{u} n) (basedCubeToSphere.{u} n x, t))) :
+      f (ReducedSuspension.mk (basedCubeToSphere.{u} n x, t)) =
+        g (ReducedSuspension.mk (basedCubeToSphere.{u} n x, t))) :
     f = g := by
-  have hbase : f (ReducedSuspension.basepoint (sphereBasepoint.{u} n)) =
-      g (ReducedSuspension.basepoint (sphereBasepoint.{u} n)) := by
+  have hbase : f ReducedSuspension.basepoint = g ReducedSuspension.basepoint := by
     simpa using hcube (fun _ ↦ 0) 0
   refine funext <| ReducedSuspension.ind fun s t ↦ ?_
   by_cases hs : s = sphereBasepoint.{u} n
