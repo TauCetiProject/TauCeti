@@ -37,7 +37,7 @@ presented algebras.
 * `TauCeti.SplitAlgebra.of_isUnit_finrank`: the splitting statement alone.
 * `TauCeti.SplitAlgebra.of_injective_of_algebraRat`: over an integrally closed domain containing
   `ℚ`, every finite algebra with injective structure map is split.
-* `TauCeti.SplitAlgebra.of_injective_of_algebraRat_of_localization`: the same over a ring
+* `TauCeti.SplitAlgebra.of_injective_of_algebraRat_of_localization_maximal`: the same over a ring
   containing `ℚ` whose localizations at maximal ideals are integrally closed domains, for
   algebras finitely presented as modules.
 
@@ -128,7 +128,7 @@ theorem SplitAlgebra.of_injective_of_algebraRat {R S : Type*} [CommRing R] [IsDo
 ideals are integrally closed domains (for instance an integrally closed domain containing `ℚ`):
 every `R`-algebra `S` finitely presented as an `R`-module whose structure map is injective is split
 over `R`. -/
-theorem SplitAlgebra.of_injective_of_algebraRat_of_localization {R S : Type*} [CommRing R]
+theorem SplitAlgebra.of_injective_of_algebraRat_of_localization_maximal {R S : Type*} [CommRing R]
     [Algebra ℚ R] [CommRing S] [Algebra R S] [Module.FinitePresentation R S]
     (hR : ∀ (m : Ideal R) [m.IsMaximal], IsDomain (Localization.AtPrime m) ∧
       IsIntegrallyClosed (Localization.AtPrime m))
