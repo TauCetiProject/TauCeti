@@ -35,9 +35,13 @@ Chapter II, Section 4, Proposition 3; see also Klein--Malkiewich--Ramzi, Introdu
   `TauCeti.TopCat.weakEquivalences_isInvertedBy_singularHomologyFunctor`), fibres over points in the
   same path component have the same Euler characteristic whenever both have finite CW type
   (`TauCeti.TopCat.eulerChar_fiber_eq_of_joined`).
-* **Vanishing in large degrees and finite generation.** Over a base `B` of finite CW type, if the
-  singular homology of each fibre vanishes in large degrees, then so does `H_*(E; R)` over any ring
-  `R` (`eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall_eventually_isZero`);
+* **Vanishing in large degrees and finite generation.** If `B` has a CW model with cells only
+  in dimensions `< K` whose fibre singular homologies over cell centres vanish in degrees `≥ Q`,
+  then `H_n(E; R)` vanishes for `n ≥ K + Q` over any ring `R`
+  (`TauCeti.TopCat.isZero_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence`),
+  and in particular over a base `B` of finite CW type, if the singular homology of each fibre
+  vanishes in large degrees, then so does `H_*(E; R)`
+  (`eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall_eventually_isZero`);
   over a Noetherian ring `R`, if `B` has a CW model with finitely many cells in degrees `≤ n` (for
   instance if `B` has finite CW type) and `H_q(p⁻¹(b); R)` is finitely generated for every `b` and
   every `q ≤ n` (with no boundedness assumption on fibre homology), then `H_n(E; R)` is finitely
@@ -320,12 +324,19 @@ private def serreSpectralSequencePageXIsoCokernel
         ((serreSpectralObject C (_root_.TopCat.pullbackFst g p) R).abutmentFiltrationMap q m))
       (serrePagePos_snd n b) (serrePagePos_add n b)))
 
-/-- Over an exhaustive CW complex `C` with cells in dimensions `< K` and fibre homology vanishing in
-degrees `≥ Q`, if `g : B' ⟶ B` is a weak homotopy equivalence, then `H_n(E; R)` vanishes for all
-`n ≥ K + Q`. -/
-private lemma isZero_singularHomology_of_cell_and_fiber_bounds {K Q : ℕ}
-    (hg : g.hom.IsWeakHomotopyEquivalence)
+end PageTwo
+
+/-- **Vanishing of singular homology for a Serre fibration over a CW model.** Let `p : E ⟶ B`
+be a Serre fibration, let `g : B' ⟶ B` be a weak homotopy equivalence from a space with a CW
+complex `C ⊆ B'` covering the projection of the base change `B' ×_B E` (for instance `C = univ`),
+and let `R` be any ring. If `C` has no cells in dimensions `≥ K` and the fibres of `p` over the
+images under `g` of the cell centres of `C` in dimensions `< K` have vanishing singular homology in
+degrees `≥ Q`, then `H_n(E; R)` vanishes for all `n ≥ K + Q`. -/
+theorem isZero_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence
+    {E B B' : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
+    [T2Space B'] (C : Set B') [CWComplex C] (g : B' ⟶ B) (hg : g.hom.IsWeakHomotopyEquivalence)
     (hC : range (_root_.TopCat.pullbackFst g p) ⊆ C)
+    (R : Type u) [Ring R] {K Q : ℕ}
     (hK : ∀ m, K ≤ m → IsEmpty (cell C m))
     (hQ : ∀ m < K, ∀ (j : cell C m), ∀ q, Q ≤ q →
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
@@ -352,70 +363,6 @@ private lemma isZero_singularHomology_of_cell_and_fiber_bounds {K Q : ℕ}
       lia
   exact (S.isZero_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) hzero2 r hr).of_iso
     (serreSpectralSequencePageXIsoCokernel hp C g R hC r hr n b (by lia) (by lia)).symm
-
-/-- Computing `(S.page (N + 3)).eulerChar` over an exhaustive CW complex `C` when `S.page 2`
-vanishes outside `serreFirstPageRect K Q` with `N = K + Q` and `g : B' ⟶ B` is a weak homotopy
-equivalence: it equals the alternating `finsum` of the homology finranks of `E`. -/
-private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
-    [IsNoetherianRing R] [HasRankNullity.{u} R] {K Q : ℕ} (hg : g.hom.IsWeakHomotopyEquivalence)
-    (hC : range (_root_.TopCat.pullbackFst g p) ⊆ C)
-    (hfin : ∀ (b : B) (q : ℕ), Module.Finite R
-      (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b)))
-    (hK : ∀ m, K ≤ m → IsEmpty (cell C m))
-    (hQ : ∀ m < K, ∀ (j : cell C m), ∀ q, Q ≤ q →
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
-        (p.fiber (g (map m j 0))))) :
-    ((serreSpectralSequence C (_root_.TopCat.pullbackFst g p) R).page
-        (((K + Q : ℕ) : ℤ) + 3) (by lia)).eulerChar =
-      ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * finrank R
-        (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := by
-  classical
-  let N := K + Q
-  let r : ℤ := (N : ℤ) + 3
-  have hr : (2 : ℤ) ≤ r := by lia
-  let p' := _root_.TopCat.pullbackFst g p
-  let S := serreSpectralSequence C p' R
-  let O := serreSpectralObject C p' R
-  let s_rect := (Finset.range N ×ˢ Finset.Ico (-1 : ℤ) (N : ℤ)).image
-    (fun nb : ℕ × ℤ ↦ serrePagePos nb.1 nb.2)
-  have hzero_out (pq : ℤ × ℤ) (hpq : pq ∉ s_rect) : IsZero ((S.page r hr).X pq) := by
-    refine S.isZero_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2)
-      (isZero_serreSpectralSequence_page_two_X_of_notMem hp C g R hK hQ fun hmem ↦ hpq ?_) r hr
-    rcases Finset.mem_image.1 hmem with ⟨⟨m, q⟩, hmq, rfl⟩
-    rcases Finset.mem_product.1 hmq with ⟨hm, hq⟩
-    have hm' := Finset.mem_range.1 hm; have hq' := Finset.mem_range.1 hq
-    exact Finset.mem_image.2 ⟨(q + m, (m : ℤ) - 1),
-      Finset.mem_product.2 ⟨Finset.mem_range.2 (by lia), Finset.mem_Ico.2 ⟨by lia, by lia⟩⟩,
-      by dsimp [serrePagePos, serreFirstPagePos]; ext <;> lia⟩
-  have (pq : ℤ × ℤ) : Module.Finite R ((S.page 2).X pq) :=
-    finite_serreSpectralSequence_page_two_X hp C g R pq (fun k _ _ ↦ FiniteType.finite_cell k)
-      fun _ q _ b ↦ hfin b q
-  have (pq : ℤ × ℤ) : Module.Finite R ((S.page r hr).X pq) :=
-    S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
-  rw [(S.page r hr).eulerChar_eq_sum_finSet_of_finrankSupport_subset s_rect
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun pq hpq ↦
-        ModuleCat.finrank_eq_zero_of_isZero (hzero_out pq hpq)),
-    Finset.sum_image serrePagePos_injective.injOn, Finset.sum_product,
-    ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range fun n hn ↦
-      isZero_singularHomology_of_cell_and_fiber_bounds hp C g R hg hC hK hQ hn]
-  refine Finset.sum_congr rfl fun n hn ↦ ?_
-  have hnN : n < N := Finset.mem_range.1 hn
-  have : IsIso (O.abutmentFiltrationι (N : ℤ) (-n)) :=
-    isIso_serreSpectralObject_abutmentFiltrationι
-      (mem_serreFibrations_pullbackFst hp g) R C hC n (by lia)
-  have hcok_iso (b : ℤ) (hb : b ∈ Finset.Ico (-1 : ℤ) (N : ℤ)) :=
-    have hb' := Finset.mem_Ico.1 hb
-    serreSpectralSequencePageXIsoCokernel hp C g R hC r hr n b (by lia) (by lia)
-  rw [← (serreSpectralObjectPullbackAbutmentIso hp R C hg n).toLinearEquiv.finrank_eq,
-    O.finrank_abutment_eq_sum_Ico
-      (isZero_serreSpectralObject_abutmentFiltration p' R C (by lia : (-1 : ℤ) < 0) (-n))
-      (fun b hb ↦ Module.Finite.equiv (hcok_iso b hb).toLinearEquiv)]
-  simp only [Nat.cast_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun b hb ↦ ?_
-  rw [ComplexShape.coe_χ_up'_sub_of_add_eq_neg _ (serrePagePos_add n b),
-    (hcok_iso b hb).toLinearEquiv.finrank_eq]
-
-end PageTwo
 
 /-- **Finite generation of singular homology for a Serre fibration over a CW model.** Let
 `p : E ⟶ B` be a Serre fibration, let `g : B' ⟶ B` be a weak homotopy equivalence from a space
@@ -459,6 +406,71 @@ theorem finite_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivale
   exact Module.Finite.equiv
     (serreSpectralObjectPullbackAbutmentIso hp R C hg n).toLinearEquiv
 
+/-- Computing `(S.page (N + 3)).eulerChar` over an exhaustive CW complex `C` when `S.page 2`
+vanishes outside `serreFirstPageRect K Q` with `N = K + Q` and `g : B' ⟶ B` is a weak homotopy
+equivalence: it equals the alternating `finsum` of the homology finranks of `E`. -/
+private lemma eulerChar_serreSpectralSequence_page_top
+    {E B B' : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
+    [T2Space B'] (C : Set B') [CWComplex C] (g : B' ⟶ B) (R : Type u) [Ring R] [FiniteType C]
+    [IsNoetherianRing R] [HasRankNullity.{u} R] {K Q : ℕ} (hg : g.hom.IsWeakHomotopyEquivalence)
+    (hC : range (_root_.TopCat.pullbackFst g p) ⊆ C)
+    (hfin : ∀ (b : B) (q : ℕ), Module.Finite R
+      (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b)))
+    (hK : ∀ m, K ≤ m → IsEmpty (cell C m))
+    (hQ : ∀ m < K, ∀ (j : cell C m), ∀ q, Q ≤ q →
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+        (p.fiber (g (map m j 0))))) :
+    ((serreSpectralSequence C (_root_.TopCat.pullbackFst g p) R).page
+        (((K + Q : ℕ) : ℤ) + 3) (by lia)).eulerChar =
+      ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * finrank R
+        (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := by
+  classical
+  let N := K + Q
+  let r : ℤ := (N : ℤ) + 3
+  have hr : (2 : ℤ) ≤ r := by lia
+  let p' := _root_.TopCat.pullbackFst g p
+  let S := serreSpectralSequence C p' R
+  let O := serreSpectralObject C p' R
+  let s_rect := (Finset.range N ×ˢ Finset.Ico (-1 : ℤ) (N : ℤ)).image
+    (fun nb : ℕ × ℤ ↦ serrePagePos nb.1 nb.2)
+  have hzero_out (pq : ℤ × ℤ) (hpq : pq ∉ s_rect) : IsZero ((S.page r hr).X pq) := by
+    refine S.isZero_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2)
+      (isZero_serreSpectralSequence_page_two_X_of_notMem hp C g R hK hQ fun hmem ↦ hpq ?_) r hr
+    rcases Finset.mem_image.1 hmem with ⟨⟨m, q⟩, hmq, rfl⟩
+    rcases Finset.mem_product.1 hmq with ⟨hm, hq⟩
+    have hm' := Finset.mem_range.1 hm; have hq' := Finset.mem_range.1 hq
+    exact Finset.mem_image.2 ⟨(q + m, (m : ℤ) - 1),
+      Finset.mem_product.2 ⟨Finset.mem_range.2 (by lia), Finset.mem_Ico.2 ⟨by lia, by lia⟩⟩,
+      by dsimp [serrePagePos, serreFirstPagePos]; ext <;> lia⟩
+  have (pq : ℤ × ℤ) : Module.Finite R ((S.page 2).X pq) :=
+    finite_serreSpectralSequence_page_two_X hp C g R pq (fun k _ _ ↦ FiniteType.finite_cell k)
+      fun _ q _ b ↦ hfin b q
+  have (pq : ℤ × ℤ) : Module.Finite R ((S.page r hr).X pq) :=
+    S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
+  rw [(S.page r hr).eulerChar_eq_sum_finSet_of_finrankSupport_subset s_rect
+      ((GradedObject.finrankSupport_subset_iff _ _).2 fun pq hpq ↦
+        ModuleCat.finrank_eq_zero_of_isZero (hzero_out pq hpq)),
+    Finset.sum_image serrePagePos_injective.injOn, Finset.sum_product,
+    ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range fun n hn ↦
+      isZero_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence
+        hp C g hg hC R hK hQ hn]
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have hnN : n < N := Finset.mem_range.1 hn
+  have : IsIso (O.abutmentFiltrationι (N : ℤ) (-n)) :=
+    isIso_serreSpectralObject_abutmentFiltrationι
+      (mem_serreFibrations_pullbackFst hp g) R C hC n (by lia)
+  have hcok_iso (b : ℤ) (hb : b ∈ Finset.Ico (-1 : ℤ) (N : ℤ)) :=
+    have hb' := Finset.mem_Ico.1 hb
+    serreSpectralSequencePageXIsoCokernel hp C g R hC r hr n b (by lia) (by lia)
+  rw [← (serreSpectralObjectPullbackAbutmentIso hp R C hg n).toLinearEquiv.finrank_eq,
+    O.finrank_abutment_eq_sum_Ico
+      (isZero_serreSpectralObject_abutmentFiltration p' R C (by lia : (-1 : ℤ) < 0) (-n))
+      (fun b hb ↦ Module.Finite.equiv (hcok_iso b hb).toLinearEquiv)]
+  simp only [Nat.cast_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun b hb ↦ ?_
+  rw [ComplexShape.coe_χ_up'_sub_of_add_eq_neg _ (serrePagePos_add n b),
+    (hcok_iso b hb).toLinearEquiv.finrank_eq]
+
 section Main
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p) [FiniteCWType B]
@@ -479,8 +491,8 @@ theorem eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall_even
   let g : _root_.TopCat.of Z ⟶ B := _root_.TopCat.ofHom e.symm.toFun
   obtain ⟨K, Q, hK, hQ⟩ := exists_cell_and_fiber_bounds (univ : Set Z) g R hvanish
   exact Filter.eventually_atTop.2 ⟨K + Q, fun n hn ↦
-    isZero_singularHomology_of_cell_and_fiber_bounds hp univ g R e.symm.isWeakHomotopyEquivalence
-      (subset_univ _) hK hQ hn⟩
+    isZero_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence
+      hp univ g e.symm.isWeakHomotopyEquivalence (subset_univ _) R hK hQ hn⟩
 
 /-- **Finite generation of singular homology for a Serre fibration.** Let `p : E ⟶ B` be a Serre
 fibration over a space `B` of finite CW type, and let `R` be a Noetherian ring. If `H_q(p⁻¹(b); R)`
