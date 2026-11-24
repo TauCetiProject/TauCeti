@@ -107,6 +107,7 @@ theorem eq_derivationOfEnd {f : Module.End R M} {D : derivationLieAlgebra R (Ext
 
 /-- **The derivation rule on a decomposable wedge**: the derivation induced by `f` differentiates
 one factor at a time. -/
+@[simp]
 theorem derivationOfEnd_ιMulti (f : Module.End R M) {n : ℕ} (v : Fin n → M) :
     (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)) (ιMulti R n v) =
       ∑ i, ιMulti R n (Function.update v i (f (v i))) := by
@@ -144,6 +145,7 @@ variable {R L M}
 
 /-- **The defining equation of the exterior algebra of a Lie module**: `x` acts by the derivation
 extending its action on `M`. -/
+@[simp, grind =]
 theorem lie_def (x : L) (y : ExteriorAlgebra R M) :
     ⁅x, y⁆ =
       (derivationOfEnd R M (LieModule.toEnd R L M x) : Module.End R (ExteriorAlgebra R M)) y :=

@@ -15,7 +15,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.Algebra.Lie.Submodule.Atom
-import TauCeti.LinearAlgebra.CliffordAlgebra.Derivation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Casimir
