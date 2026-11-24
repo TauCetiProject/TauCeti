@@ -24,7 +24,7 @@ Clifford map `m ↦ !![z, x; φ 1, -z]` sends `e`, `f`, `u` to `E₁₂`, `E₂�
 and its restriction to the even subalgebra is the equivalence. For the inverse, the elements
 `i = ef` and `j = eu + fu` satisfy `i² = i`, `j² = -1` and `ij + ji = j`, so they define a map from
 the quaternion algebra `ℍ[R, 0, 1, -1]`, which is split by
-`TauCeti.QuaternionAlgebra.zeroOneNegOneEquivMatrix`.
+`TauCeti.QuaternionAlgebra.zeroOneEquivMatrix` at `c = -1`.
 
 ## Main definitions
 
@@ -219,20 +219,23 @@ private theorem splitOddOneEvenToMatrix_ι (m₁ m₂ : SplitOddSpace R 1) :
 
 private theorem splitOddOneEvenToMatrix_comp_liftHom :
     (splitOddOneEvenToMatrix R).comp (splitOddOneEvenBasis R).liftHom =
-      QuaternionAlgebra.zeroOneNegOneEquivMatrix.toAlgHom := by
-  ext : 1 <;> rw [AlgHom.comp_apply, splitOddOneEvenBasis_liftHom_apply] <;> ext i j <;>
+      (QuaternionAlgebra.zeroOneEquivMatrix (-1)).toAlgHom := by
+  ext : 1 <;>
+    rw [AlgHom.comp_apply, splitOddOneEvenBasis_liftHom_apply,
+      AlgEquiv.toAlgHom_apply, QuaternionAlgebra.zeroOneEquivMatrix_apply] <;> ext i j <;>
     fin_cases i <;> fin_cases j <;>
     simp [splitOddOneEvenBasis, splitOddOneEvenToMatrix_ι, vecE, vecF, vecU]
 
 private theorem liftHom_comp_symm_comp_splitOddOneEvenToMatrix :
     ((splitOddOneEvenBasis R).liftHom.comp
-      QuaternionAlgebra.zeroOneNegOneEquivMatrix.symm.toAlgHom).comp
+      (QuaternionAlgebra.zeroOneEquivMatrix (-1)).symm.toAlgHom).comp
         (splitOddOneEvenToMatrix R) = AlgHom.id R _ := by
   refine even.algHom_ext (splitOddForm R 1)
     (EvenHom.ext (LinearMap.ext₂ fun m₁ m₂ ↦ Subtype.ext ?_))
   simp only [EvenHom.compr₂_bilin, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
     AlgHom.comp_apply, AlgHom.id_apply, splitOddOneEvenToMatrix_ι,
-    splitOddOneEvenBasis_liftHom_apply]
+    splitOddOneEvenBasis_liftHom_apply, AlgEquiv.toAlgHom_apply,
+    QuaternionAlgebra.zeroOneEquivMatrix_symm_apply]
   conv_rhs => rw [eq_vec R m₁, eq_vec R m₂]
   simp [splitOddOneEvenBasis, Algebra.algebraMap_eq_smul_one, ι_vecE, ι_vecF, ι_vecU, cE_mul_cE,
     cF_mul_cF, cU_mul_cU, cF_mul_cE, cU_mul_cE, cU_mul_cF]
@@ -244,7 +247,7 @@ noncomputable def splitOddOneEvenEquivMatrix :
     even (splitOddForm R 1) ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
   AlgEquiv.ofAlgHom (splitOddOneEvenToMatrix R)
     ((splitOddOneEvenBasis R).liftHom.comp
-      QuaternionAlgebra.zeroOneNegOneEquivMatrix.symm.toAlgHom)
+      (QuaternionAlgebra.zeroOneEquivMatrix (-1)).symm.toAlgHom)
     (by
       rw [← AlgHom.comp_assoc, splitOddOneEvenToMatrix_comp_liftHom]
       ext : 1
