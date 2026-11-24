@@ -41,7 +41,7 @@ a complete classification of PD-nilpotence.
 
 * `PadicInt.pdFiltration_le_span_pow`: `(p - 1) * e ≤ (p - 2) * n → Fⁿ ≤ (p ^ e)`.
 * `PadicInt.pdFiltration_two_mul_le_span_pow`: for odd `p`, `F^(2e) ≤ (p ^ e)`.
-* `PadicInt.pdFiltration_two_eq`: for `p = 2` and `n ≠ 0`, `Fⁿ = (2)`.
+* `PadicInt.pdFiltration_dividedPowers_two`: for `p = 2` and `n ≠ 0`, `Fⁿ = (2)`.
 * `PadicInt.span_two_sq_lt_pdFiltration_two`: `(2) ^ 2 < F²` in `ℤ_[2]`.
 * `PadicInt.not_isPDNilpotent_dividedPowers`: `¬ (dividedPowers p).IsPDNilpotent`.
 * `ZMod.pdFiltration_dividedPowers` and `ZMod.pdFiltration_dividedPowers_eq_bot_iff`: quotient
@@ -105,7 +105,7 @@ section PrimeTwo
 /-- For `p = 2` and every `n ≠ 0`, the `n`-th divided power filtration step of `(2) ⊂ ℤ_[2]`
 equals `(2)` itself. -/
 @[simp]
-theorem pdFiltration_two_eq {n : ℕ} (hn : n ≠ 0) :
+theorem pdFiltration_dividedPowers_two {n : ℕ} (hn : n ≠ 0) :
     (dividedPowers 2).pdFiltration n = Ideal.span {(2 : ℤ_[2])} := by
   refine le_antisymm ?_ ?_
   · simpa only [Nat.cast_ofNat] using (dividedPowers 2).pdFiltration_le_self hn
@@ -118,11 +118,11 @@ theorem pdFiltration_two_eq {n : ℕ} (hn : n ≠ 0) :
     exact (Ideal.span_singleton_le_iff_mem _).mpr hmem
 
 /-- In `ℤ_[2]`, `2` lies in every step of the divided power filtration of `(2)`. -/
-theorem two_mem_pdFiltration_two (n : ℕ) :
+theorem two_mem_pdFiltration_dividedPowers_two (n : ℕ) :
     (2 : ℤ_[2]) ∈ (dividedPowers 2).pdFiltration n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  · rw [pdFiltration_two_eq hn]
+  · rw [pdFiltration_dividedPowers_two hn]
     exact Ideal.subset_span (Set.mem_singleton _)
 
 /-- Strict containment `(2) ^ 2 < F²((2))` in `ℤ_[2]`. -/
@@ -131,7 +131,7 @@ theorem span_two_sq_lt_pdFiltration_two :
   have hle : (Ideal.span {(2 : ℤ_[2])}) ^ 2 ≤ (dividedPowers 2).pdFiltration 2 := by
     simpa only [Nat.cast_ofNat] using (dividedPowers 2).pow_le_pdFiltration 2
   refine lt_of_le_of_ne hle fun h ↦ p_notMem_span_p_sq (p := 2) ?_
-  simpa only [Nat.cast_ofNat, h] using two_mem_pdFiltration_two 2
+  simpa only [Nat.cast_ofNat, h] using two_mem_pdFiltration_dividedPowers_two 2
 
 end PrimeTwo
 
@@ -173,7 +173,7 @@ section PrimeTwoAndClassification
 @[simp]
 theorem pdFiltration_dividedPowers_two {e n : ℕ} (hn : n ≠ 0) :
     (ZMod.dividedPowers 2 e).pdFiltration n = Ideal.span {(2 : ZMod (2 ^ e))} := by
-  rw [pdFiltration_dividedPowers 2 e n, PadicInt.pdFiltration_two_eq hn,
+  rw [pdFiltration_dividedPowers 2 e n, PadicInt.pdFiltration_dividedPowers_two hn,
     Ideal.map_span, Set.image_singleton, map_ofNat]
 
 /-- Complete classification of PD-nilpotence for the canonical divided power structure on

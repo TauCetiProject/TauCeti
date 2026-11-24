@@ -155,6 +155,7 @@ theorem IsDPMorphism.isPDNilpotent_iff_of_injective {f : R →+* S} (hf : IsDPMo
   ⟨hf.isPDNilpotent_of_injective hinj, fun h ↦ h.map hf hIJ⟩
 
 /-- PD-nilpotence is invariant under transfer along a ring equivalence. -/
+@[simp]
 theorem isPDNilpotent_ofRingEquiv {e : R ≃+* S} (h : I.map e = J) (hI : DividedPowers I) :
     (ofRingEquiv h hI).IsPDNilpotent ↔ hI.IsPDNilpotent := by
   simp only [isPDNilpotent_iff, pdFiltration_ofRingEquiv h hI,
@@ -202,7 +203,8 @@ PD-nilpotent. -/
 @[simp]
 theorem OfSquareZero.isPDNilpotent [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2 = 0) :
     (OfSquareZero.dividedPowers hI2).IsPDNilpotent :=
-  OfInvertibleFactorial.isPDNilpotent (by simp) hI2
+  (OfSquareZero.dividedPowers hI2).isPDNilpotent_iff_exists_eq_bot.mpr
+    ⟨2, OfSquareZero.pdFiltration_eq_bot hI2 le_rfl⟩
 
 /-- For `DividedPowers.IsNilpotent.dividedPowers`, the divided power ideal is PD-nilpotent. -/
 @[simp]
@@ -210,14 +212,16 @@ theorem IsNilpotent.isPDNilpotent {A : Type*} [CommRing A] {p : ℕ} [Fact p.Pri
     (hp : _root_.IsNilpotent (p : A)) {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)]
     (hJp : J ^ p = 0) :
     (DividedPowers.IsNilpotent.dividedPowers hp hJp).IsPDNilpotent :=
-  OfInvertibleFactorial.isPDNilpotent _ hJp
+  (DividedPowers.IsNilpotent.dividedPowers hp hJp).isPDNilpotent_iff_exists_eq_bot.mpr
+    ⟨p, by rw [IsNilpotent.pdFiltration_eq_pow hp hJp p, ← Ideal.zero_eq_bot, hJp]⟩
 
 /-- For `DividedPowers.CharP.dividedPowers`, the divided power ideal is PD-nilpotent. -/
 @[simp]
 theorem CharP.isPDNilpotent (A : Type*) [CommRing A] (p : ℕ) [_root_.CharP A p] [Fact p.Prime]
     {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)] (hJp : J ^ p = 0) :
     (DividedPowers.CharP.dividedPowers A p hJp).IsPDNilpotent :=
-  IsNilpotent.isPDNilpotent _ hJp
+  (DividedPowers.CharP.dividedPowers A p hJp).isPDNilpotent_iff_exists_eq_bot.mpr
+    ⟨p, by rw [CharP.pdFiltration_eq_pow A p hJp p, ← Ideal.zero_eq_bot, hJp]⟩
 
 end SpecialCases
 
