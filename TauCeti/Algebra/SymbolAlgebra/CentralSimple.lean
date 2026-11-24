@@ -181,12 +181,8 @@ theorem isCentral (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0) :
       B.repr_eq_zero_of_weight_ne (conj_basis _ ha hb) (c := fun _ => 1)
         (fun j => by fin_cases j <;> simp [hx, hy])
         fun h => hr (injective_conjWeight hζ (h.trans (by funext j; fin_cases j <;> simp)))
-    have hz1 : z = B.repr z 0 • B 0 := B.repr.injective <| Finsupp.ext fun r => by
-      rw [map_smul, B.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
-      by_cases hr : (0 : Fin n × Fin n) = r
-      · subst hr
-        simp
-      · simp [hr, h0 r (Ne.symm hr)]
+    have hz1 : z = B.repr z 0 • B 0 := B.eq_smul_of_repr_support_subset_singleton fun r hr =>
+      Finset.mem_singleton.2 (by_contra fun h => Finsupp.mem_support_iff.1 hr (h0 r h))
     rw [hz1, basis_apply]
     simp [Algebra.smul_def]
 
