@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Int.Units
+public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Covering.Proper
 
 /-!
 # Intermediate quotients of a quotient covering map
@@ -30,9 +33,13 @@ application is `TauCeti.UniversalCover.isCoveringMap_subgroupQuotientProj`.
 The file also records that a surjective covering map is an open quotient map: the companion,
 for a covering map with no group acting, of Mathlib's `IsQuotientCoveringMap.isOpenQuotientMap`
 that the rest of the file consumes. Finally, the quotient covering map of a finite group has
-finite fibres, which is what makes it a finite covering with a transfer on singular chains. The
-acting group may be replaced by any isomorphic group acting compatibly, which is how an abstract
-group identified with a fundamental group is made to act on a universal cover.
+finite fibres (and hence a compact covering space whenever the base is compact), which is what
+makes it a finite covering with a transfer on singular chains. The acting group may be replaced by
+any isomorphic group acting compatibly, which is how an abstract group identified with a
+fundamental group is made to act on a universal cover. Over a subset `s` of the base, the
+restriction `q ⁻¹' s → s` is again a quotient covering map for the restricted action, which is how
+a quotient covering of spaces becomes a quotient covering of the topological pairs `(E, q ⁻¹' s)`
+and `(X, s)`.
 
 For a discrete additive subgroup `L` of a topological additive group `E`, the orbit projection
 `E → AddAction.orbitRel.Quotient L E` for translation by `L` is a quotient covering map. Unlike
@@ -53,12 +60,30 @@ Neither normality nor a separation axiom is needed.
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
 * `IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup down to
   the quotient by the whole group is a covering map.
-* `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
-  fibres.
+* `IsQuotientCoveringMap.finite_fiber`, `IsAddQuotientCoveringMap.finite_fiber`: the quotient
+  covering map of a finite group has finite fibres.
+* `IsQuotientCoveringMap.compactSpace`, `IsAddQuotientCoveringMap.compactSpace`: the covering
+  space of a finite-group quotient covering over a compact base is compact.
+* `IsQuotientCoveringMap.natCard_fiber`: every fibre of the quotient covering map has as many
+  points as the acting group.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
+* `IsQuotientCoveringMap.injOn_of_disjoint`, `IsQuotientCoveringMap.injOn_smul`: the quotient
+  covering map is injective on a set disjoint from its nontrivial translates, and injectivity on a
+  set passes to its translates.
+* `IsQuotientCoveringMap.mapsTo_smul_preimage`: the preimage of a set under the quotient covering
+  map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
+* `TauCeti.involutive_of_forall_eq_neg_one_smul`: for any action of `ℤˣ`, the action of `-1` is an
+  involution.
+* `IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.ne_self_of_forall_eq_neg_one_smul`,
+  `IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul`: for a quotient cover by `ℤˣ`, the
+  involution `e ↦ -1 • e` lies over the base, fixes no point, and exchanges the two points of each
+  fibre.
+* `IsQuotientCoveringMap.restrict`: the restriction of a quotient covering map to the full
+  preimage of a subset of the base is a quotient covering map onto that subset.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
   discrete additive subgroup is a quotient covering map.
 
@@ -138,6 +163,27 @@ theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap 
     (s : Set E) : q '' (g • s) = q '' s := by
   rw [← Set.image_smul, Set.image_image]
   simp_rw [hq.map_smul]
+
+/-- A quotient covering map is injective on a set that is disjoint from its nontrivial
+translates. -/
+theorem _root_.IsQuotientCoveringMap.injOn_of_disjoint (hq : IsQuotientCoveringMap q G)
+    {U : Set E} (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) : Set.InjOn q U := by
+  intro a ha b hb hab
+  obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
+  obtain rfl := hU k ⟨_, ⟨b, hb, rfl⟩, ha⟩
+  simp
+
+/-- If a quotient covering map is injective on a set, then it is injective on every translate of
+that set, since `q (g • x) = q x`. -/
+theorem _root_.IsQuotientCoveringMap.injOn_smul (hq : IsQuotientCoveringMap q G) {S : Set E}
+    (hS : Set.InjOn q S) (g : G) : Set.InjOn q (g • S) := by
+  rw [← Set.image_smul]
+  exact Set.InjOn.image_of_comp (by simpa [Function.comp_def, hq.map_smul] using hS)
+
+/-- The preimage of a set under the quotient covering map is invariant under the action. -/
+theorem _root_.IsQuotientCoveringMap.mapsTo_smul_preimage (hq : IsQuotientCoveringMap q G)
+    (s : Set X) (g : G) : Set.MapsTo (g • ·) (q ⁻¹' s) (q ⁻¹' s) :=
+  fun e he ↦ by rwa [Set.mem_preimage, hq.map_smul]
 
 /-- **Openness in a quotient covering map is detected on a single translate.** A subset `W` of the
 image of `U` is open as soon as the part of its preimage lying in `U` is open, because the whole
@@ -254,10 +300,28 @@ end IsQuotientCoveringMap
 
 /-- The fibres of the quotient covering map of a finite group are finite, each being an orbit of
 the free action. -/
+@[to_additive
+/-- The fibres of the additive quotient covering map of a finite additive group are finite, each
+being an orbit of the free action. -/]
 theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCoveringMap q G)
     (x : X) : Finite ↥(q ⁻¹' {x}) := by
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
+
+/-- Every fibre of the quotient covering map has as many points as the acting group, each fibre
+being an orbit of the free action. -/
+theorem _root_.IsQuotientCoveringMap.natCard_fiber (hq : IsQuotientCoveringMap q G) (x : X) :
+    Nat.card ↥(q ⁻¹' {x}) = Nat.card G := by
+  obtain ⟨e, rfl⟩ := hq.surjective x
+  exact Nat.card_congr (hq.fiberEquivGroup ⟨e, rfl⟩)
+
+/-- The covering space of a finite-group quotient covering over a compact base is compact. -/
+@[to_additive
+/-- The covering space of a finite additive group quotient covering over a compact base is
+compact. -/]
+theorem _root_.IsQuotientCoveringMap.compactSpace [CompactSpace X] [Finite G]
+    (hq : IsQuotientCoveringMap q G) : CompactSpace E :=
+  hq.isCoveringMap.compactSpace hq.finite_fiber
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and
@@ -280,6 +344,63 @@ theorem _root_.IsQuotientCoveringMap.of_smul_eq {G' : Type*} [Group G'] [MulActi
     refine ⟨U, hU, fun g' hg' ↦ ?_⟩
     simp only [he'] at hg'
     simpa using hdisj (e.symm g') hg'
+
+/-! ### Quotient covers by `ℤˣ` -/
+
+/-- For any action of `ℤˣ`, the action of `-1` is an involution. -/
+theorem involutive_of_forall_eq_neg_one_smul {α : Type*} [MulAction ℤˣ α] {σ : α → α}
+    (hσ : ∀ a, σ a = (-1 : ℤˣ) • a) : Function.Involutive σ := fun a ↦ by
+  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
+
+section Units
+
+variable [MulAction ℤˣ E] (hq : IsQuotientCoveringMap q ℤˣ) {σ : E → E}
+  (hσ : ∀ e, σ e = (-1 : ℤˣ) • e)
+
+include hq hσ
+
+/-- The involution `e ↦ -1 • e` of a quotient cover by `ℤˣ` lies over the base. -/
+theorem _root_.IsQuotientCoveringMap.comp_eq_of_forall_eq_neg_one_smul : q ∘ σ = q :=
+  funext fun e ↦ (congrArg q (hσ e)).trans (hq.map_smul _)
+
+/-- The involution `e ↦ -1 • e` of a quotient cover by `ℤˣ` fixes no point, the action being
+free. -/
+theorem _root_.IsQuotientCoveringMap.ne_self_of_forall_eq_neg_one_smul (e : E) : σ e ≠ e := by
+  have := hq.isCancelSMul
+  rw [hσ]
+  intro h
+  exact absurd (IsCancelSMul.right_cancel _ _ e (h.trans (one_smul ℤˣ e).symm)) (by decide)
+
+/-- Two points of a quotient cover by `ℤˣ` with the same image are equal or exchanged by
+`e ↦ -1 • e`. -/
+theorem _root_.IsQuotientCoveringMap.eq_or_eq_of_forall_eq_neg_one_smul (e e' : E)
+    (h : q e' = q e) : e' = e ∨ e' = σ e := by
+  obtain ⟨u, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 h
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · exact .inl (one_smul ℤˣ e)
+  · exact .inr (hσ e).symm
+
+end Units
+
+/-- **A quotient covering map restricts to a quotient covering map over any subset.** Let `t` be
+the full preimage `q ⁻¹' s` of a subset `s` of the base, given as a subset of `E` with
+`Set.MapsTo q t s` and `q ⁻¹' s ⊆ t`, and let `G` act on `t` through its action on `E`. Then the
+restriction `t → s` of `q` is the quotient covering map of the restricted action. -/
+theorem _root_.IsQuotientCoveringMap.restrict (hq : IsQuotientCoveringMap q G) {t : Set E}
+    {s : Set X} [MulAction G t] (hsmul : ∀ (g : G) (e : t), ((g • e : t) : E) = g • (e : E))
+    (h : Set.MapsTo q t s) (ht : q ⁻¹' s ⊆ t) : IsQuotientCoveringMap (h.restrict q t s) G := by
+  have := hq.toContinuousConstSMul
+  -- The restriction is `Set.restrictPreimage`, once `t` is identified with `q ⁻¹' s`.
+  obtain rfl : t = q ⁻¹' s := h.subset_preimage.antisymm ht
+  refine (isQuotientCoveringMap_iff_isCoveringMap_and _ G).2
+    ⟨hq.isCoveringMap.restrictPreimage s, s.restrictPreimage_surjective hq.surjective,
+      ⟨fun g ↦ ?_⟩, isCancelSMul_iff_eq_one_of_smul_eq.2 fun g e he ↦ ?_, fun {e₁ e₂} ↦ ?_⟩
+  · refine Topology.IsInducing.subtypeVal.continuous_iff.2 ?_
+    simpa only [Function.comp_def, hsmul] using (continuous_const_smul g).comp continuous_subtypeVal
+  · have := hq.isCancelSMul
+    exact IsCancelSMul.eq_one_of_smul (x := e.val) (by rw [← hsmul, he])
+  · simp only [Subtype.ext_iff, Set.MapsTo.val_restrict_apply, MulAction.mem_orbit_iff, hsmul]
+    exact hq.apply_eq_iff_mem_orbit
 
 end TauCeti
 

@@ -71,25 +71,26 @@ theorem single_apply_eq_of_mem_corner {i : n} {x : Matrix n n α}
 /-- **The corner of the diagonal matrix unit `Eᵢᵢ` is the coefficient ring**, through the
 `(i, i)` entry. -/
 def cornerSingleOneEquiv (i : n) : (isIdempotentElem_single_one (α := α) i).Corner ≃+* α where
-  toFun x := x.1 i i
+  toFun x := x.val i i
   invFun a := ⟨single i i a, (Subsemigroup.mem_corner_iff (isIdempotentElem_single_one i)).mpr
     ⟨by simp, by simp⟩⟩
-  left_inv x := Subtype.ext (single_apply_eq_of_mem_corner x.2)
+  left_inv x := Subtype.ext (single_apply_eq_of_mem_corner x.property)
   right_inv a := by simp
   map_mul' x y := by
     rw [IsIdempotentElem.Corner.val_mul]
-    conv_lhs => rw [← single_apply_eq_of_mem_corner x.2, ← single_apply_eq_of_mem_corner y.2]
+    conv_lhs => rw [← single_apply_eq_of_mem_corner x.property, ← single_apply_eq_of_mem_corner
+        y.property]
     simp
   map_add' _ _ := rfl
 
 @[simp]
 theorem cornerSingleOneEquiv_apply (i : n) (x : (isIdempotentElem_single_one (α := α) i).Corner) :
-    cornerSingleOneEquiv i x = x.1 i i :=
+    cornerSingleOneEquiv i x = x.val i i :=
   (rfl)
 
 @[simp]
 theorem val_cornerSingleOneEquiv_symm_apply (i : n) (a : α) :
-    ((cornerSingleOneEquiv i).symm a).1 = single i i a :=
+    ((cornerSingleOneEquiv i).symm a).val = single i i a :=
   (rfl)
 
 end Semiring

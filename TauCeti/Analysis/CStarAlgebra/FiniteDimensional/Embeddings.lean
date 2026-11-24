@@ -60,14 +60,14 @@ theorem card_le_sum_degree_of_orthogonalIdempotents {A : Type u} [Semiring A] [S
   have hcard (i : Fin P.blockCount) : Fintype.card (S i) ≤ P.degree i := by
     let φ_i : A →+* Matrix (Fin (P.degree i)) (Fin (P.degree i)) ℂ :=
       (Pi.evalRingHom _ i).comp P.matrixStarAlgEquiv.toRingEquiv.toRingHom
-    have he_i : OrthogonalIdempotents (fun k : S i ↦ φ_i (e k.1)) :=
+    have he_i : OrthogonalIdempotents (fun k : S i ↦ φ_i (e k.val)) :=
       (he.map φ_i).embedding ⟨Subtype.val, Subtype.val_injective⟩
-    simpa only [Fintype.card_fin] using he_i.card_le_of_matrix fun k ↦ k.2
+    simpa only [Fintype.card_fin] using he_i.card_le_of_matrix fun k ↦ k.property
   have hex (k : ι) : ∃ i, P.matrixStarAlgEquiv (e k) i ≠ 0 := by
     refine Function.ne_iff.mp fun h ↦ hne k (EquivLike.injective P.matrixStarAlgEquiv ?_)
     exact h.trans (map_zero P.matrixStarAlgEquiv).symm
   let g : ι → Σ i, S i := fun k ↦ ⟨(hex k).choose, ⟨k, (hex k).choose_spec⟩⟩
-  have hg : Function.Injective g := fun _ _ h ↦ congrArg (fun x ↦ x.2.1) h
+  have hg : Function.Injective g := fun _ _ h ↦ congrArg (fun x ↦ x.snd.val) h
   calc
     Fintype.card ι ≤ Fintype.card (Σ i, S i) := Fintype.card_le_of_injective g hg
     _ = ∑ i, Fintype.card (S i) := Fintype.card_sigma

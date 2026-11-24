@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Algebra.Star.Projection.Family
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Projection
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.RCLike.Basic
 
 /-!
@@ -51,7 +52,6 @@ finite-dimensional Artin--Wedderburn `⋆`-upgrade and independently reusable in
 
 ## Main results
 
-* `IsStarProjection.norm_eq_one`: every nonzero star projection in a C⋆-ring has norm `1`.
 * `IsIdempotentElem.exists_isStarProjection_of_forall_mul_eq_smul`: normalize a nonzero
   scalar-corner idempotent to a left-equivalent minimal star projection.
 * `IsStarProjection.star_mul_of_mem_leftIdealSubmodule`: for `x, y ∈ leftIdealSubmodule R p`,
@@ -84,13 +84,6 @@ noncomputable instance instCStarAlgebraCentralSubalgebra {A : Type*} [NonUnitalC
   __ : Ring (hz.centralSubalgebra ℂ hc) := inferInstance
   __ : Algebra ℂ (hz.centralSubalgebra ℂ hc) := inferInstance
   norm_smul_le := NormedSpace.norm_smul_le
-
-/-- Every nonzero star projection in a C⋆-ring has norm `1`. -/
-theorem norm_eq_one {E : Type*} [NonUnitalNormedRing E] [StarRing E] [CStarRing E] {p : E}
-    (hp : IsStarProjection p) (hp_ne : p ≠ 0) : ‖p‖ = 1 := by
-  have hmul : ‖p‖ * ‖p‖ = ‖p‖ := by
-    rw [← CStarRing.norm_star_mul_self, hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
-  exact mul_left_cancel₀ (norm_ne_zero_iff.mpr hp_ne) (hmul.trans (mul_one ‖p‖).symm)
 
 end IsStarProjection
 
@@ -193,10 +186,10 @@ theorem star_mul_of_mem_leftIdealSubmodule {R B : Type*} [Semiring R] [NonUnital
     star (x : B) * (y : B) = ψ (star (x : B) * (y : B)) • p := by
   have hx : p * star (x : B) = star (x : B) := by
     simpa only [star_mul, hp.isSelfAdjoint.star_eq] using
-      congrArg star (TauCeti.mem_leftIdealSubmodule.mp x.2)
+      congrArg star (TauCeti.mem_leftIdealSubmodule.mp x.property)
   calc
     star (x : B) * (y : B) = p * (star (x : B) * (y : B)) * p := by
-      rw [← mul_assoc, hx, mul_assoc, TauCeti.mem_leftIdealSubmodule.mp y.2]
+      rw [← mul_assoc, hx, mul_assoc, TauCeti.mem_leftIdealSubmodule.mp y.property]
     _ = ψ (star (x : B) * (y : B)) • p := hcorner _
 
 -- `InnerProductSpace` extends `NormedSpace`; `@[expose]` lets `toNormedSpace` reduce to
@@ -246,16 +239,17 @@ noncomputable def leftMulNonUnitalStarAlgHom {B : Type*} [NonUnitalCStarAlgebra 
   letI := hp.leftIdealInnerProductSpace hp_ne hcorner
   let leftMul (b : B) : TauCeti.leftIdealSubmodule ℂ p →L[ℂ] TauCeti.leftIdealSubmodule ℂ p :=
     LinearMap.mkContinuous
-      { toFun x := ⟨b * x.1, by
-          rw [TauCeti.mem_leftIdealSubmodule, mul_assoc, TauCeti.mem_leftIdealSubmodule.mp x.2]⟩
-        map_add' x y := Subtype.ext (mul_add b x.1 y.1)
-        map_smul' r x := Subtype.ext (mul_smul_comm r b x.1) }
-      ‖b‖ fun x ↦ norm_mul_le b x.1
+      { toFun x := ⟨b * x.val, by
+          rw [TauCeti.mem_leftIdealSubmodule, mul_assoc,
+            TauCeti.mem_leftIdealSubmodule.mp x.property]⟩
+        map_add' x y := Subtype.ext (mul_add b x.val y.val)
+        map_smul' r x := Subtype.ext (mul_smul_comm r b x.val) }
+      ‖b‖ fun x ↦ norm_mul_le b x.val
   { toFun := leftMul
-    map_smul' r b := by ext x : 2; exact smul_mul_assoc r b x.1
-    map_zero' := by ext x : 2; exact zero_mul x.1
-    map_add' a b := by ext x : 2; exact add_mul a b x.1
-    map_mul' a b := by ext x : 2; exact mul_assoc a b x.1
+    map_smul' r b := by ext x : 2; exact smul_mul_assoc r b x.val
+    map_zero' := by ext x : 2; exact zero_mul x.val
+    map_add' a b := by ext x : 2; exact add_mul a b x.val
+    map_mul' a b := by ext x : 2; exact mul_assoc a b x.val
     map_star' b := by
       refine (ContinuousLinearMap.eq_adjoint_iff (leftMul (star b)) (leftMul b)).mpr fun x y ↦
         smul_left_injective ℂ hp_ne ?_
@@ -263,7 +257,7 @@ noncomputable def leftMulNonUnitalStarAlgHom {B : Type*} [NonUnitalCStarAlgebra 
         ψ (star (x : B) * (leftMul b y : B)) • p
       rw [← hp.star_mul_of_mem_leftIdealSubmodule hcorner (leftMul (star b) x) y,
         ← hp.star_mul_of_mem_leftIdealSubmodule hcorner x (leftMul b y)]
-      change star (star b * x.1) * y.1 = star x.1 * (b * y.1)
+      change star (star b * x.val) * y.val = star x.val * (b * y.val)
       rw [star_mul, star_star, mul_assoc] }
 
 @[simp]
@@ -273,7 +267,7 @@ theorem coe_leftMulNonUnitalStarAlgHom_apply {B : Type*} [NonUnitalCStarAlgebra 
     (b : B) (x : TauCeti.leftIdealSubmodule ℂ p) :
     letI := hp.leftIdealInnerProductSpace hp_ne hcorner
     ((hp.leftMulNonUnitalStarAlgHom hp_ne hcorner b x : TauCeti.leftIdealSubmodule ℂ p) : B) =
-      b * x.1 :=
+      b * x.val :=
   (rfl)
 
 /-- Bounded left multiplication of a unital `CStarAlgebra B` on the Hilbert space
@@ -287,8 +281,8 @@ noncomputable def leftMulStarAlgHom {B : Type*} [CStarAlgebra B] {p : B}
   letI := hp.leftIdealInnerProductSpace hp_ne hcorner
   let φ := hp.leftMulNonUnitalStarAlgHom hp_ne hcorner
   { φ with
-    map_one' := by ext x : 2; exact one_mul x.1
-    commutes' r := by ext x : 2; exact (Algebra.smul_def r x.1).symm }
+    map_one' := by ext x : 2; exact one_mul x.val
+    commutes' r := by ext x : 2; exact (Algebra.smul_def r x.val).symm }
 
 @[simp]
 theorem coe_leftMulStarAlgHom_apply {B : Type*} [CStarAlgebra B] {p : B}
@@ -296,7 +290,7 @@ theorem coe_leftMulStarAlgHom_apply {B : Type*} [CStarAlgebra B] {p : B}
     (hcorner : ∀ b : B, p * b * p = ψ b • p)
     (b : B) (x : TauCeti.leftIdealSubmodule ℂ p) :
     letI := hp.leftIdealInnerProductSpace hp_ne hcorner
-    ((hp.leftMulStarAlgHom hp_ne hcorner b x : TauCeti.leftIdealSubmodule ℂ p) : B) = b * x.1 :=
+    ((hp.leftMulStarAlgHom hp_ne hcorner b x : TauCeti.leftIdealSubmodule ℂ p) : B) = b * x.val :=
   (rfl)
 
 end IsStarProjection

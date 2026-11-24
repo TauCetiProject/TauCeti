@@ -87,9 +87,9 @@ structure IsPrimitivizationOf (q : BelyiRecord m) (r : PassportRecord n) (t : Co
   label_eq : q.label = r.primitivization
   /-- The map row is valid for the passport of the quotient by the primitivization block. -/
   exists_isValidFor :
-    ∃ e : orbit t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n)) ≃ Fin m,
+    ∃ e : orbit t.val.monodromyGroup (r.primitivizationBlock : Set (Fin n)) ≃ Fin m,
       q.IsValidFor
-        (ConnectedTriple.passportOf ⟨t.1.blockQuotient _ e, t.1.isConnected_blockQuotient _ e⟩)
+        (ConnectedTriple.passportOf ⟨t.val.blockQuotient _ e, t.val.isConnected_blockQuotient _ e⟩)
 
 namespace IsPrimitivizationOf
 
@@ -103,7 +103,7 @@ theorem isPrimitive_toTriple (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t
   obtain ⟨hsc, hsP⟩ := hq.hasPassport s hs
   refine (PassportSpec.isPrimitive_iff_of_hasPassport (ConnectedTriple.hasPassport_passportOf _)
     hsP).mp ?_
-  exact (isPrimitive_blockQuotient_iff e t.2.isPretransitive hr.isBlock_primitivizationBlock
+  exact (isPrimitive_blockQuotient_iff e t.property.isPretransitive hr.isBlock_primitivizationBlock
     (Finset.coe_nonempty.mpr hr.primitivizationBlock_nonempty)).mpr
     hr.eq_or_eq_univ_of_primitivizationBlock_subset
 
@@ -113,7 +113,7 @@ theorem card_mul_deg (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) :
     r.primitivizationBlock.card * q.deg = r.deg := by
   obtain ⟨e, hq⟩ := h.exists_isValidFor
   rw [hq.deg_eq, hr.deg_eq, ← Set.ncard_coe_finset]
-  exact ncard_mul_eq_of_isBlock t.2.isPretransitive hr.isBlock_primitivizationBlock
+  exact ncard_mul_eq_of_isBlock t.property.isPretransitive hr.isBlock_primitivizationBlock
     (Finset.coe_nonempty.mpr hr.primitivizationBlock_nonempty) e
 
 /-- The stored genus of the primitivization of a valid passport row is at most the stored genus of
@@ -121,7 +121,7 @@ the passport row: passing to a block quotient does not increase the genus. -/
 theorem g_le (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) : q.g ≤ r.g := by
   obtain ⟨e, hq⟩ := h.exists_isValidFor
   rw [hq.g_eq_genus (ConnectedTriple.hasPassport_passportOf _), hr.g_eq]
-  exact genus_blockQuotient_le e hr.isBlock_primitivizationBlock t.2
+  exact genus_blockQuotient_le e hr.isBlock_primitivizationBlock t.property
 
 /-- The stored primitivity flag of a valid passport row is set exactly when its primitivization
 has the same degree, that is, when the primitivization block is a single sheet. -/
@@ -130,7 +130,7 @@ theorem isPrimitive_eq_true_iff (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf 
   have hmul := h.card_mul_deg hr
   have hn : r.deg ≠ 0 := by
     rw [hr.deg_eq]
-    exact t.2.ne_zero
+    exact t.property.ne_zero
   rw [← hr.card_primitivizationBlock_eq_one_iff]
   constructor
   · intro hcard
@@ -146,15 +146,15 @@ for some passport of `t`: the quotient of `t` by the translates of a single shee
 theorem of_card_primitivizationBlock_eq_one {q : BelyiRecord n} {P : PassportSpec n}
     (hB : r.primitivizationBlock.card = 1) (hlabel : q.label = r.primitivization)
     (hP : PassportSpec.HasPassport t P) (hq : q.IsValidFor P) : q.IsPrimitivizationOf r t := by
-  have ht := t.2.isPretransitive
+  have ht := t.property.isPretransitive
   obtain ⟨x, hx⟩ := Finset.card_eq_one.mp hB
   have hBc : (r.primitivizationBlock : Set (Fin n)) = {x} := by simp [hx]
-  have hblock : IsBlock t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n)) :=
+  have hblock : IsBlock t.val.monodromyGroup (r.primitivizationBlock : Set (Fin n)) :=
     hBc ▸ IsBlock.of_subsingleton Set.subsingleton_singleton
   have hne : (r.primitivizationBlock : Set (Fin n)).Nonempty := hBc ▸ Set.singleton_nonempty x
   -- The translates of a single sheet are the single sheets, so there are `n` of them.
   have hcard := ncard_mul_eq_of_isBlock ht hblock hne
-    (Finite.equivFin (orbit t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n))))
+    (Finite.equivFin (orbit t.val.monodromyGroup (r.primitivizationBlock : Set (Fin n))))
   have hncard : (r.primitivizationBlock : Set (Fin n)).ncard = 1 := by
     rw [hBc, Set.ncard_singleton]
   rw [hncard, one_mul] at hcard

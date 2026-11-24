@@ -75,8 +75,9 @@ instance instSemiringCentralSubalgebra {R A : Type*} [CommSemiring R] [NonUnital
     (hc : IsMulCentral z) : Semiring (hz.centralSubalgebra R hc) where
   __ : NonUnitalSemiring (hz.centralSubalgebra R hc) := inferInstance
   one := ⟨z, (hz.mem_centralSubalgebra R hc).mpr hz.isIdempotentElem.eq⟩
-  one_mul x := Subtype.ext ((hz.mem_centralSubalgebra R hc).mp x.2)
-  mul_one x := Subtype.ext ((hc.comm x.1).symm.trans ((hz.mem_centralSubalgebra R hc).mp x.2))
+  one_mul x := Subtype.ext ((hz.mem_centralSubalgebra R hc).mp x.property)
+  mul_one x := Subtype.ext ((hc.comm x.val).symm.trans ((hz.mem_centralSubalgebra R hc).mp
+    x.property))
 
 @[simp]
 theorem coe_one_centralSubalgebra {R A : Type*} [CommSemiring R] [NonUnitalSemiring A]
@@ -95,9 +96,11 @@ instance instAlgebraCentralSubalgebra {R A : Type*} [CommSemiring R] [NonUnitalS
     (hz : IsStarProjection z) (hc : IsMulCentral z) : Algebra R (hz.centralSubalgebra R hc) :=
   Algebra.ofModule'
     (fun r x ↦ Subtype.ext <|
-      (smul_mul_assoc r z x.1).trans (congrArg (r • ·) ((hz.mem_centralSubalgebra R hc).mp x.2)))
-    (fun r x ↦ Subtype.ext <| (mul_smul_comm r x.1 z).trans
-      (congrArg (r • ·) ((hc.comm x.1).symm.trans ((hz.mem_centralSubalgebra R hc).mp x.2))))
+      (smul_mul_assoc r z x.val).trans
+        (congrArg (r • ·) ((hz.mem_centralSubalgebra R hc).mp x.property)))
+    (fun r x ↦ Subtype.ext <| (mul_smul_comm r x.val z).trans
+      (congrArg (r • ·) ((hc.comm x.val).symm.trans
+        ((hz.mem_centralSubalgebra R hc).mp x.property))))
 
 @[simp]
 theorem coe_algebraMap_centralSubalgebra {R A : Type*} [CommSemiring R] [NonUnitalSemiring A]
@@ -130,13 +133,13 @@ def centralSubalgebraSingle {R A ι : Type*} [CommSemiring R] [Semiring A] [Star
     B i ≃ₐ[R] hz.centralSubalgebra R (e.isMulCentral_symm_single_one i) where
   toFun b := ⟨e.symm (Pi.single i b), by
     rw [IsStarProjection.mem_centralSubalgebra, ← map_mul, ← Pi.single_mul, one_mul]⟩
-  invFun x := e x.1 i
+  invFun x := e x.val i
   left_inv b := by simp
   right_inv x := Subtype.ext <| e.injective <| by
     rw [e.apply_symm_apply]
-    have hx : e x.1 = Pi.single i 1 * e x.1 := by
+    have hx : e x.val = Pi.single i 1 * e x.val := by
       simpa only [map_mul, e.apply_symm_apply] using
-        congrArg e ((hz.mem_centralSubalgebra R _).mp x.2).symm
+        congrArg e ((hz.mem_centralSubalgebra R _).mp x.property).symm
     rw [hx, ← Pi.single_mul_left, one_mul]
   map_mul' b₁ b₂ := Subtype.ext <| by dsimp; rw [Pi.single_mul, map_mul]
   map_add' b₁ b₂ := Subtype.ext <| by dsimp; rw [Pi.single_add, map_add]
@@ -158,7 +161,7 @@ theorem centralSubalgebraSingle_symm_apply {R A ι : Type*} [CommSemiring R] [Se
     [∀ i, Algebra R (B i)] (e : A ≃ₐ[R] ∀ i, B i) {i : ι}
     (hz : IsStarProjection (e.symm (Pi.single i 1)))
     (x : hz.centralSubalgebra R (e.isMulCentral_symm_single_one i)) :
-    (e.centralSubalgebraSingle hz).symm x = e x.1 i :=
+    (e.centralSubalgebraSingle hz).symm x = e x.val i :=
   (rfl)
 
 end AlgEquiv
@@ -199,15 +202,15 @@ def IsCompleteOrthogonalProjectionFamily.starAlgEquivPiOfIsMulCentral [StarRing 
     R ≃⋆ₐ[S] ∀ i, (hz.isStarProjection i).centralSubalgebra S (hc i) where
   toFun a i := ⟨z i * a, by
     rw [IsStarProjection.mem_centralSubalgebra, ← mul_assoc, (hz.idem i).eq]⟩
-  invFun y := ∑ i, (y i).1
+  invFun y := ∑ i, (y i).val
   left_inv a := by simp [← Finset.sum_mul, hz.complete]
   right_inv y := by
     ext i : 2
     dsimp
     rw [Finset.mul_sum]
     refine (Finset.sum_eq_single i (fun j _ hji ↦ ?_) (by simp)).trans
-      (((hz.isStarProjection i).mem_centralSubalgebra S (hc i)).mp (y i).2)
-    rw [← ((hz.isStarProjection j).mem_centralSubalgebra S (hc j)).mp (y j).2,
+      (((hz.isStarProjection i).mem_centralSubalgebra S (hc i)).mp (y i).property)
+    rw [← ((hz.isStarProjection j).mem_centralSubalgebra S (hc j)).mp (y j).property,
       ← mul_assoc, hz.ortho hji.symm, zero_mul]
   map_mul' a b := by
     ext i : 2
@@ -239,7 +242,7 @@ theorem IsCompleteOrthogonalProjectionFamily.starAlgEquivPiOfIsMulCentral_symm_a
     (S : Type*) [CommSemiring S] [Module S R] [SMulCommClass S R R]
     (hc : ∀ i, IsMulCentral (z i))
     (y : ∀ i, (hz.isStarProjection i).centralSubalgebra S (hc i)) :
-    (hz.starAlgEquivPiOfIsMulCentral S hc).symm y = ∑ i, (y i).1 :=
+    (hz.starAlgEquivPiOfIsMulCentral S hc).symm y = ∑ i, (y i).val :=
   (rfl)
 
 end Family

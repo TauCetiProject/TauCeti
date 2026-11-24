@@ -136,7 +136,7 @@ theorem add_le_totalDegree_of_mem_support {φ : MvPolynomial (Fin 2) R} {s : Fin
 theorem exists_mem_support_add_eq_totalDegree {φ : MvPolynomial (Fin 2) R} (hφ : φ ≠ 0) :
     ∃ s ∈ φ.support, s 0 + s 1 = φ.totalDegree := by
   obtain ⟨s, hs, hsup⟩ := Finset.exists_mem_eq_sup φ.support
-    (Finset.nonempty_iff_ne_empty.mpr (mt support_eq_empty.mp hφ)) fun s ↦ s.sum fun _ e ↦ e
+    (Finset.ne_empty_iff_nonempty.mp (mt support_eq_empty.mp hφ)) fun s ↦ s.sum fun _ e ↦ e
   exact ⟨s, hs, by simpa [totalDegree, Finsupp.sum_fintype, Fin.sum_univ_two] using hsup.symm⟩
 
 /-- A monomial of a polynomial in two variables of total degree at most `n` whose exponent of

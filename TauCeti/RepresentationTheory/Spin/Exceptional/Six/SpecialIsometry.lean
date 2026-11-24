@@ -40,9 +40,9 @@ variable [Nontrivial K]
 @[simp]
 theorem spinSixSpecialLinearToIsometryGroup_det
     (g : Matrix.SpecialLinearGroup (Fin 4) K) :
-    LinearEquiv.det (spinSixSpecialLinearToIsometryGroup K g).1 = 1 := by
+    LinearEquiv.det (spinSixSpecialLinearToIsometryGroup K g).val = 1 := by
   apply Units.ext
-  have hmap : (spinSixSpecialLinearToIsometryGroup K g).1.toLinearMap =
+  have hmap : (spinSixSpecialLinearToIsometryGroup K g).val.toLinearMap =
       exteriorPower.map 2 (Matrix.toLin' (g : Matrix (Fin 4) (Fin 4) K)) := by
     have hrep : stdSLRep K 4 g = Matrix.toLin' (g : Matrix (Fin 4) (Fin 4) K) := by
       rw [stdSLRep_apply, Matrix.toLin'_apply']
@@ -51,8 +51,7 @@ theorem spinSixSpecialLinearToIsometryGroup_det
     simpa only [LinearEquiv.coe_coe, Representation.exteriorPower_apply, hrep] using
       spinSixSpecialLinearToIsometryGroup_apply K g x
   simp only [LinearEquiv.coe_det, hmap, Units.val_one]
-  rw [(Pi.basisFun K (Fin 4)).det_exteriorPower_two, LinearMap.det_toLin', g.property]
-  exact one_pow 3
+  rw [LinearMap.det_exteriorPower_map _ two_pos, LinearMap.det_toLin', g.property, one_pow]
 
 /-- The exterior-square action of `SL₄`, as a homomorphism to the determinant-one
 isometries of the wedge form. -/
@@ -63,14 +62,14 @@ noncomputable def spinSixSpecialLinearToSpecialIsometryGroup :
     (spinSixSpecialLinearToIsometryGroup K)).codRestrict
       (LinearMap.BilinForm.specialIsometryGroup (spinSixWedgeForm K))
       (fun g ↦ LinearMap.BilinForm.mem_specialIsometryGroup_iff.mpr
-        ⟨(spinSixSpecialLinearToIsometryGroup K g).2,
+        ⟨(spinSixSpecialLinearToIsometryGroup K g).property,
           spinSixSpecialLinearToIsometryGroup_det K g⟩)
 
 /-- The determinant-one lift acts by the exterior-square standard representation. -/
 @[simp]
 theorem spinSixSpecialLinearToSpecialIsometryGroup_apply
     (g : Matrix.SpecialLinearGroup (Fin 4) K) (x : ⋀[K]^2 (Fin 4 → K)) :
-    (spinSixSpecialLinearToSpecialIsometryGroup K g).1 x =
+    (spinSixSpecialLinearToSpecialIsometryGroup K g).val x =
       (stdSLRep K 4).exteriorPower 2 g x :=
   spinSixSpecialLinearToIsometryGroup_apply K g x
 

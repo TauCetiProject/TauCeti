@@ -242,8 +242,8 @@ theorem projectiveLinePartialDiffeomorph_transition_symm (n : ℕ∞ω) (z : ℂ
   · intro hz
     let w := (affineRayZeroFacePointHomeomorph g₀).symm (Units.mk0 z hz)
     have hwp : faceAffinePointMap projectiveLineFan.lattice
-        (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-          projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) w =
+        (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.property
+          projectiveLineZeroCone.property projectiveLineZeroCone_le_positiveCone) w =
         (affineRayPointHomeomorph gp).symm z := by
       apply (affineRayPointHomeomorph gp).injective
       rw [Homeomorph.apply_symm_apply]

@@ -128,8 +128,8 @@ theorem existsUnique_forall_mul_eq_and_mul_eq_of_locallyCompactSpace (A : Type*)
       ((hl.tendsto_mul_left a).mono_left inf_le_right)⟩
   refine ⟨e, hid, fun e' he' ↦ ?_⟩
   calc
-    e' = e * e' := ((hid e').1).symm
-    _ = e := (he' e).2
+    e' = e * e' := ((hid e').left).symm
+    _ = e := (he' e).right
 
 /-- In a locally compact complex C⋆-algebra, the unique two-sided multiplicative identity is a star
 projection. -/
@@ -138,9 +138,9 @@ theorem existsUnique_isStarProjection_and_forall_mul_eq_and_mul_eq_of_locallyCom
     ∃! e : A, IsStarProjection e ∧ ∀ a : A, e * a = a ∧ a * e = a := by
   obtain ⟨e, he, huniq⟩ := existsUnique_forall_mul_eq_and_mul_eq_of_locallyCompactSpace A
   have hsa : IsSelfAdjoint e := by
-    rw [IsSelfAdjoint, ← (he (star e)).1]
-    simpa only [star_mul, star_star] using congrArg star (he (star e)).1
-  exact ⟨e, ⟨⟨(he e).1, hsa⟩, he⟩, fun e' he' ↦ huniq e' he'.2⟩
+    rw [IsSelfAdjoint, ← (he (star e)).left]
+    simpa only [star_mul, star_star] using congrArg star (he (star e)).left
+  exact ⟨e, ⟨⟨(he e).left, hsa⟩, he⟩, fun e' he' ↦ huniq e' he'.right⟩
 
 /-- Every locally compact complex C⋆-algebra is unital (`IsUnital`). -/
 theorem isUnital_of_locallyCompactSpace (A : Type*) [NonUnitalCStarAlgebra A]
@@ -223,7 +223,7 @@ theorem exists_equiv_degree_eq (Q : CStarWedderburnPresentation A) :
   obtain ⟨σ, hσ⟩ := RingEquiv.wedderburn_blocks_unique
     P.matrixStarAlgEquiv.toRingEquiv Q.matrixStarAlgEquiv.toRingEquiv
   refine ⟨σ, fun i ↦ ?_⟩
-  simpa only [Fintype.card_fin] using (hσ i).1
+  simpa only [Fintype.card_fin] using (hσ i).left
 
 /-- The number of matrix blocks is an invariant of `A`. -/
 theorem blockCount_eq (Q : CStarWedderburnPresentation A) : P.blockCount = Q.blockCount := by
@@ -558,7 +558,7 @@ private def minimalLeftIdealColEquiv {B : Type*} [CStarAlgebra B] {n : ℕ} [NeZ
   { toFun v := ⟨g (Matrix.of fun i j ↦ if j = 0 then v i else 0), by
       rw [mem_leftIdealSubmodule, hright, ← map_mul, hcol]
       simp⟩
-    invFun x i := g.symm x.1 i 0
+    invFun x i := g.symm x.val i 0
     left_inv v := by ext i; simp
     right_inv x := by
       ext1
@@ -566,7 +566,7 @@ private def minimalLeftIdealColEquiv {B : Type*} [CStarAlgebra B] {n : ℕ} [NeZ
       rw [AlgEquiv.symm_apply_apply, ← hcol]
       exact g.injective <| by
         simpa only [map_mul, AlgEquiv.apply_symm_apply] using
-          (hright x.1).mp (mem_leftIdealSubmodule.mp x.2)
+          (hright x.val).mp (mem_leftIdealSubmodule.mp x.property)
     map_add' v₁ v₂ := by
       ext1; dsimp; rw [← map_add]; congr 1; ext i j; by_cases hj : j = 0 <;> simp [hj]
     map_smul' r v := by

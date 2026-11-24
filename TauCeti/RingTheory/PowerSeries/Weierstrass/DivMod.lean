@@ -101,7 +101,7 @@ private theorem eq_and_eq_of_mul_add_polynomialToRestricted_eq
     q = q' ∧ r = r' := by
   have h' : (g : PowerSeries R) * q + r = (g : PowerSeries R) * q' + r' := by
     simpa using congrArg Subtype.val h
-  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc q.2 q'.2
+  obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc q.property q'.property
     (fun _ ↦ coeff_coe_eq_zero_of_degree_lt hr) (fun _ ↦ coeff_coe_eq_zero_of_degree_lt hr') h'
   exact ⟨Subtype.ext hq, Polynomial.coe_inj.mp hr⟩
 
@@ -114,7 +114,7 @@ private theorem exists_mul_add_polynomialToRestricted_eq
     (f : PowerSeries.IsRestricted.subring (R := R) c) :
     ∃ p : PowerSeries.IsRestricted.subring (R := R) c × Polynomial R,
       p.2.degree < s ∧ g * p.1 + polynomialToRestricted c p.2 = f := by
-  obtain ⟨q, r, hq, hr, hqr⟩ := hg.exists_mul_add_eq hc g.2 f.2
+  obtain ⟨q, r, hq, hr, hqr⟩ := hg.exists_mul_add_eq hc g.property f.property
   refine ⟨(⟨q, hq⟩, PowerSeries.trunc s r), PowerSeries.degree_trunc_lt r s, ?_⟩
   rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero
     ⟨r, isRestricted_of_forall_coeff_eq_zero hr⟩ hr]
@@ -284,7 +284,7 @@ theorem gaussNorm_eq_max (f : PowerSeries.IsRestricted.subring (R := R) c) :
           (hg.weierstrassDiv hc f : PowerSeries R).gaussNorm norm c)
         ((hg.weierstrassMod hc f : PowerSeries R).gaussNorm norm c) := by
   conv_lhs => rw [← hg.mul_weierstrassDiv_add_weierstrassMod hc f]
-  simpa using hg.gaussNorm_mul_add_eq_max hc (hg.weierstrassDiv hc f).2 fun _ ↦
+  simpa using hg.gaussNorm_mul_add_eq_max hc (hg.weierstrassDiv hc f).property fun _ ↦
     coeff_coe_eq_zero_of_degree_lt (hg.degree_weierstrassMod_lt hc f)
 
 /-- **The Weierstrass quotient bound** `‖q‖ ≤ ‖f‖ / ‖g‖`, for the Gauss norm at `c`. -/

@@ -31,8 +31,9 @@ diagonal, and that of the matrix of an equivalence `f` is the matrix of the equi
 
 ## Main results
 
-* `Matrix.kroneckerPower_mul`, `Matrix.kroneckerPower_one`, `Matrix.transpose_kroneckerPower`:
-  the Kronecker power is multiplicative, sends `1` to `1` and commutes with transposition.
+* `Matrix.kroneckerPower_mul`, `Matrix.kroneckerPower_one`, `Matrix.transpose_kroneckerPower`,
+  `Matrix.reindex_kroneckerPower`: the Kronecker power is multiplicative, sends `1` to `1`, and
+  commutes with transposition and reindexing.
 * `Matrix.transpose_kroneckerPower_mul_self`: the Kronecker power of a matrix with `Aᵀ * A = 1`
   satisfies the same identity.
 * `Matrix.toMatrix_piTensorProductMap_mulVecLin`: the Kronecker power is the matrix of `A` acting
@@ -68,6 +69,16 @@ variable {κ}
 theorem transpose_kroneckerPower [CommMonoid R] [Fintype κ] (A : Matrix m n R) :
     (A.kroneckerPower κ)ᵀ = Aᵀ.kroneckerPower κ :=
   (rfl)
+
+/-- Reindexing the rows and columns of a Kronecker power along `Equiv.piCongrRight` is the
+Kronecker power of the reindexed matrix. -/
+theorem reindex_kroneckerPower [CommMonoid R] [Fintype κ] {m' n' : Type*}
+    (eₘ : m ≃ m') (eₙ : n ≃ n') (A : Matrix m n R) :
+    Matrix.reindex (Equiv.piCongrRight fun _ : κ => eₘ) (Equiv.piCongrRight fun _ : κ => eₙ)
+        (A.kroneckerPower κ) =
+      (Matrix.reindex eₘ eₙ A).kroneckerPower κ := by
+  ext v u
+  simp [kroneckerPower_apply]
 
 /-- The Kronecker power of the identity matrix is the identity matrix. -/
 @[simp]
