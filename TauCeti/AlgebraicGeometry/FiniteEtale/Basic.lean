@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Etale.Finite
 public import Mathlib.CategoryTheory.Limits.FintypeCat
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
