@@ -321,6 +321,13 @@ theorem closedAnnulus_zero_middle (Aplus : Subring A) (T b : A) :
   let := v.toValuativeRel
   simp
 
+/-- **Punctured closed discs are relatively open** in `Spa (A, A⁺)`, for an arbitrary radius:
+each is the closed annulus with inner radius `0`. -/
+theorem isOpen_val_preimage_puncturedClosedDisc (Aplus : Subring A) (T b : A) :
+    IsOpen (Subtype.val ⁻¹' puncturedClosedDisc Aplus T b : Set (spa Aplus)) := by
+  rw [← closedAnnulus_zero_middle]
+  exact isOpen_val_preimage_closedAnnulus Aplus T 0 b
+
 /-- The closed annulus with coordinate `0` is empty. -/
 @[simp]
 theorem closedAnnulus_zero_left (Aplus : Subring A) (a b : A) : closedAnnulus Aplus 0 a b = ∅ := by

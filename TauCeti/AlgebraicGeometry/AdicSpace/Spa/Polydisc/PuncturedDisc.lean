@@ -170,12 +170,9 @@ theorem exists_subset_puncturedDiscAnnulus_of_isCompact {c : A}
     (by rwa [iUnion_puncturedDiscAnnulus hc]) (monotone_puncturedDiscAnnulus hc).directed_le
 
 /-- The complement of the coordinate zero locus is open in the closed disc. -/
-theorem isOpen_puncturedDisc : IsOpen (puncturedDisc A) := by
-  have h : puncturedDisc A = Subtype.val ⁻¹' basicOpen (0 : 𝒯) T := by
-    ext v
-    simp [mem_puncturedDisc, mem_basicOpen_iff, ← valuation_le_iff]
-  rw [h]
-  exact (isOpen_basicOpen _ _).preimage continuous_subtypeVal
+theorem isOpen_puncturedDisc : IsOpen (puncturedDisc A) :=
+  (isOpen_val_preimage_puncturedClosedDisc _ _ _).preimage
+    (Homeomorph.setCongr (closedPolydisc_def 1 A)).continuous
 
 end TopologicalRing
 
