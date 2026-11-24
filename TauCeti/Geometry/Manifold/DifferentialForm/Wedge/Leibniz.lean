@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
 # The Leibniz rule for wedge products of differential forms
@@ -319,6 +320,19 @@ theorem extDerivWedgeₗ_funSMulₗ (f g : C^∞⟮I, M; ℝ⟯) (φ : SmoothFor
   simp only [extDerivWedgeₗ_apply, coe_funSMulₗ, RoughForm.wedge_def,
     RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right,
     ContinuousAlternatingMap.smul_apply]
+
+/-- The exterior derivative of `f dg` is `df ∧ dg`, for smooth functions `f` and `g`: evaluated on a
+pair of tangent vectors it is the determinant `df(v) dg(w) - df(w) dg(v)`. -/
+theorem mextDerivₗ_funSMulₗ_mextDerivₗ_ofFunction_apply
+    (f g : C^∞⟮I, M; ℝ⟯) (x : M) (v w : TangentSpace I x) :
+    (mextDerivₗ I 1 (funSMulₗ f (mextDerivₗ I 0 (ofFunction g)))).val x ![v, w] =
+      mvfderiv I f x v * mvfderiv I g x w - mvfderiv I f x w * mvfderiv I g x v := by
+  rw [mextDerivₗ_apply, coe_funSMulₗ,
+    mextDeriv_fun_smul_apply (f.contMDiff.mdifferentiableAt (by simp))
+      ((mextDerivₗ I 0 (ofFunction g)).mdifferentiableAt x),
+    mextDerivₗ_zero_apply, mextDerivₗ_zero_apply, ofFunction_apply_zero, mextDerivₗ_apply,
+    SmoothForm.mextDeriv_mextDeriv]
+  simp
 
 /-- **The exterior derivative has order one**: its double commutator with multiplication by
 smooth functions `f` and `g` vanishes, `[[d, f], g] = 0`. Since `d` changes the degree, the

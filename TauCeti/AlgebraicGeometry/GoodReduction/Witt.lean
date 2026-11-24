@@ -201,10 +201,10 @@ theorem HasWittGoodReductionAt.of_padicInt {Y XL : Scheme.{0}} (g : Y ⟶ Spec (
   -- `ℤₚ → W` is injective, so it extends to the fraction fields
   have hj : Function.Injective ((algebraMap _
       (FractionRing (WittVector p (AlgebraicClosure (ZMod p))))).comp
-        (WittVector.padicIntToWitt p (AlgebraicClosure (ZMod p)))) :=
+        (TauCeti.WittVector.padicIntHom p (AlgebraicClosure (ZMod p)))) :=
     (IsFractionRing.injective _ _).comp
-      (WittVector.padicIntToWitt_injective p (AlgebraicClosure (ZMod p)))
-  exact .of_isPullback _ _ (WittVector.padicIntToWitt p _) (IsFractionRing.lift hj)
+      (TauCeti.WittVector.padicIntHom_injective p (AlgebraicClosure (ZMod p)))
+  exact .of_isPullback _ _ (TauCeti.WittVector.padicIntHom p _) (IsFractionRing.lift hj)
     (IsLocalization.lift_comp _) g h φ s hX hY
 
 /-- **The generic fibre of a smooth proper `ℤ`-scheme has everywhere Witt good reduction.** If `X`

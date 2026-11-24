@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Manifold.ExtChartAt
 import Mathlib.Order.Disjointed
 
@@ -16,9 +17,11 @@ A top form on an oriented manifold is nonnegative when it takes nonnegative valu
 positively oriented bases of every tangent space. The integral of such a form is nonnegative
 (`TauCeti.integralTopForm_nonneg`), and it is positive as soon as the form is continuous,
 compactly supported and positive at one point (`TauCeti.integralTopForm_pos`). The manifold may
-have boundary or corners, and it need not be Hausdorff.
+have boundary or corners, and it need not be Hausdorff. In particular, on a nonempty compact
+manifold of positive dimension a nowhere-vanishing continuous top form has positive integral for
+the orientation it defines (`TauCeti.integralTopForm_ofTopForm_pos`).
 
-Both statements need positive degree. A zero-dimensional tangent space has a unique basis, and its
+These statements need positive degree. A zero-dimensional tangent space has a unique basis, and its
 orientation may be the opposite of the given one; the hypothesis on positively oriented bases is
 then vacuous at that point, where the form contributes its value with a negative sign.
 
@@ -30,6 +33,8 @@ then vacuous at that point, where the form contributes its value with a negative
 * `TauCeti.integralTopForm_nonneg`: the integral of a nonnegative top form is nonnegative.
 * `TauCeti.integralTopForm_pos`: the integral of a continuous, compactly supported, nonnegative
   top form that is positive somewhere is positive.
+* `TauCeti.integralTopForm_ofTopForm_pos`: on a nonempty compact manifold of positive dimension,
+  a nowhere-vanishing continuous top form has positive integral for the orientation it defines.
 
 ## Implementation notes
 
@@ -241,5 +246,24 @@ theorem integralTopForm_pos [NeZero k] (o : Manifold.Orientation I M (Fin k))
   rw [hpiece, ← integral_const_mul]
   exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b
     (by simp [α']) c₀ hc₀ hφ₀
+
+/-- **A nowhere-vanishing top form has positive integral for the orientation it defines**, on a
+nonempty compact manifold of positive dimension. -/
+theorem integralTopForm_ofTopForm_pos [NeZero k] [CompactSpace M] [Nonempty M]
+    (hk : Module.finrank ℝ E = k) {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
+    (h0 : ∀ x, φ x ≠ 0) :
+    0 < integralTopForm (Manifold.Orientation.ofTopForm hk φ hφ h0) φ := by
+  refine integralTopForm_pos _ hφ (isClosed_tsupport _).isCompact (fun x c hc ↦
+    ((Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 c).mp hc).le) ?_
+  obtain ⟨x⟩ := ‹Nonempty M›
+  -- A basis with the orientation of the form at `x`, built on the model space `E` because instance
+  -- search does not find the module structure of `TangentSpace I x` for `adjustToOrientation`.
+  let b : Module.Basis (Fin k) ℝ (TangentSpace I x) :=
+    Module.Basis.adjustToOrientation (R := ℝ) (M := E) (Module.finBasisOfFinrankEq ℝ E hk)
+      ((Manifold.Orientation.ofTopForm hk φ hφ h0).orientationAt x)
+  have hb : b.orientation = (Manifold.Orientation.ofTopForm hk φ hφ h0).orientationAt x :=
+    Module.Basis.orientation_adjustToOrientation (R := ℝ) (M := E) _ _
+  exact ⟨x, b, hb,
+    (Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp hb⟩
 
 end TauCeti
