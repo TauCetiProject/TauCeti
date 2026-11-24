@@ -61,6 +61,7 @@ lemma sigmaPresheafOverYonedaEquivPresheafOverIso_hom_app_apply (F : Over (yoned
 
 /-- The inverse of `sigmaPresheafOverYonedaEquivPresheafOverIso F` pairs a section `y` of `F.left`
 with its image in `yoneda.obj X`. -/
+@[simp]
 lemma sigmaPresheafOverYonedaEquivPresheafOverIso_inv_app_apply_fst (F : Over (yoneda.obj X))
     (T : Cᵒᵖ) (y : F.left.obj T) :
     ((sigmaPresheafOverYonedaEquivPresheafOverIso F).inv.app T y).1 = F.hom.app T y :=

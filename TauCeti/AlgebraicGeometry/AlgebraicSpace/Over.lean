@@ -33,7 +33,9 @@ Stacks Project.
   an algebraic space over `S`.
 * `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.overEquiv S`: algebraic spaces over `h_S` are
   equivalent to the full subcategory of presheaves on `Over S` satisfying
-  `IsAlgebraicSpaceOver S`.
+  `IsAlgebraicSpaceOver S`. Its functor and inverse are compared with those of
+  `TauCeti.overYonedaEquivPresheafOver S` by `AlgSpace.overEquiv_functor_comp_ι` and
+  `AlgSpace.overEquiv_inverse_comp_overPost`.
 
 ## Main results
 
@@ -181,6 +183,20 @@ theorem overEquiv_def (S : Scheme.{u}) :
 theorem overEquiv_functor_obj_obj (S : Scheme.{u}) (Y : Over (ofScheme.obj S)) :
     ((overEquiv S).functor.obj Y).obj =
       (overYonedaEquivPresheafOver S).functor.obj (Over.mk Y.hom.hom) :=
+  (rfl)
+
+/-- After forgetting the full-subcategory wrappers, the functor of `overEquiv S` is
+`Over.post toPresheaf` followed by `TauCeti.overYonedaEquivPresheafOver S`. -/
+theorem overEquiv_functor_comp_ι (S : Scheme.{u}) :
+    (overEquiv S).functor ⋙ ObjectProperty.ι _ =
+      Over.post toPresheaf ⋙ (overYonedaEquivPresheafOver S).functor :=
+  (rfl)
+
+/-- After forgetting the full-subcategory wrappers, the inverse of `overEquiv S` is the inverse
+of `TauCeti.overYonedaEquivPresheafOver S`. -/
+theorem overEquiv_inverse_comp_overPost (S : Scheme.{u}) :
+    (overEquiv S).inverse ⋙ Over.post toPresheaf =
+      ObjectProperty.ι _ ⋙ (overYonedaEquivPresheafOver S).inverse :=
   (rfl)
 
 end AlgSpace

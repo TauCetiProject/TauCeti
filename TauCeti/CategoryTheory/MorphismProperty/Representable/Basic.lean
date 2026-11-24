@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.MorphismProperty.Descent
 public import Mathlib.CategoryTheory.MorphismProperty.Representable
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 
 /-!
 # Relatively representable morphisms: descent, monomorphisms and diagonals
@@ -139,26 +139,6 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
   (i : F ⋙ e.functor ≅ F')
 
 include i
-
-/-- A square with a side `F.map snd` is a pullback square exactly when its image under the
-equivalence `e`, with `F ⋙ e.functor` replaced by `F'` through `i`, is a pullback square. -/
-lemma isPullback_equivalence_map_iff {X Y : D} {f : X ⟶ Y} {a b : C} {g : F.obj a ⟶ Y}
-    {fst : F.obj b ⟶ X} {snd : b ⟶ a} :
-    IsPullback (i.inv.app b ≫ e.functor.map fst) (F'.map snd) (e.functor.map f)
-      (i.inv.app a ≫ e.functor.map g) ↔ IsPullback fst (F.map snd) f g := by
-  have hsnd : F'.map snd ≫ i.inv.app a = i.inv.app b ≫ e.functor.map (F.map snd) :=
-    i.inv.naturality snd
-  constructor
-  · intro h
-    refine IsPullback.of_map e.functor (e.functor.map_injective ?_) ?_
-    · have := h.w
-      simp only [Category.assoc, reassoc_of% hsnd, cancel_epi] at this
-      simpa only [Functor.map_comp] using this
-    · exact h.of_iso (i.app b).symm (Iso.refl _) (i.app a).symm (Iso.refl _) (by simp) hsnd
-        (by simp) (by simp)
-  · intro h
-    exact (h.map e.functor).of_iso (i.app b) (Iso.refl _) (i.app a) (Iso.refl _)
-      (by simp) (i.hom.naturality snd) (by simp) (by simp)
 
 /-- Relative representability is invariant under replacing the target category through an
 equivalence `e : D ≌ D'`, the functor `F` by `F'` with `F ⋙ e.functor ≅ F'`. -/
