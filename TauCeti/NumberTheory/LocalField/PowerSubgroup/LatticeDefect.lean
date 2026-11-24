@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Finite
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Trivial
 public import TauCeti.RingTheory.RootsOfUnity.Basic

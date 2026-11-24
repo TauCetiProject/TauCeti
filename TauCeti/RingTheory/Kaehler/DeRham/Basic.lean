@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.IntegerGrading
 public import TauCeti.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
