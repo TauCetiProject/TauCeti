@@ -102,12 +102,14 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
   -- quotient map preserves norms, then lift each approximant back to the original initial span.
   let q : E →ₗ[K] SeparationQuotient E := (SeparationQuotient.mkCLM K E).toLinearMap
   have hq_nnnorm (x : E) : ‖q x‖₊ = ‖x‖₊ := by simp [q]
+  -- Strictly decreasing orthogonality constants `T n ∈ (t, 1)` for the initial segments.
   obtain ⟨T, hT, hTt, -⟩ := exists_seq_strictAnti_tendsto' ht
   have hT' (n : ℕ) : 0 < T n ∧ t ≤ T n ∧ T n ≤ 1 :=
     ⟨zero_le.trans_lt (hTt n).1, (hTt n).1.le, (hTt n).2.le⟩
   have hF (n : ℕ) : IsClosed (span K ((q ∘ w) '' Iio n) : Set (SeparationQuotient E)) :=
     have := FiniteDimensional.span_of_finite K ((finite_Iio n).image (q ∘ w))
     (span K ((q ∘ w) '' Iio n)).isClosed_of_finiteDimensional'
+  -- Approximate `q (w n)` in the previous image span with ratio `T (n + 1) / T n < 1`.
   choose z hzF hz using fun n ↦
     riesz_lemma_translate (F := (span K ((q ∘ w) '' Iio n)).toAddSubmonoid)
       (by simpa only [Submodule.coe_toAddSubmonoid] using hF n) (q (w n))
@@ -129,6 +131,7 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
           sub_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
       · rw [span_singleton_le_iff_mem, ← sub_add_cancel (w n) (y n)]
         exact add_mem (mem_sup_left (mem_span_singleton_self _)) (mem_sup_right (hyF n))
+  -- Hence the first `N` terms of `q ∘ e` are `T N`-orthogonal, with `t ≤ T N`.
   have key := isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub (K := K) (e := q ∘ e) hT.antitone
     (fun n ↦ ⟨(hT' n).1, (hT' n).2.2⟩) fun N u hu ↦ by
       rw [← hmap e N, hspan N, hmap w N] at hu
@@ -138,6 +141,7 @@ theorem exists_isTOrthogonalFamily_span_image_Iio_eq {K E : Type*} [NormedField 
   have hs (i : ℕ) (hi : i ∈ s) : i ∈ Iio (s.sup id + 1) :=
     Nat.lt_succ_of_le (Finset.le_sup (f := id) hi)
   rw [← Finset.subtype_map_of_mem hs, Finset.sup_map, Finset.sum_map]
+  -- Transfer `t`-orthogonality from `q ∘ e` to `e` via linearity and norm preservation of `q`.
   simpa only [Function.comp_def, Function.Embedding.coe_subtype, ← map_smul, ← map_sum,
     hq_nnnorm] using
     (mul_le_mul_of_nonneg_right (hT' _).2.1 zero_le).trans

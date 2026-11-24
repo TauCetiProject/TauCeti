@@ -54,8 +54,8 @@ private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddC
     simp only [P, Finset.prod_range_succ, map_mul, map_sub, aeval_X, aeval_C,
       Algebra.algebraMap_eq_smul_one]
   have hP' (n : ℕ) : P (n + 1) = (K - μ n • 1) * P n := by
-    simp only [P, Finset.prod_range_succ, mul_comm _ (X - C (μ n)), map_mul, map_sub, aeval_X,
-      aeval_C, Algebra.algebraMap_eq_smul_one]
+    simp only [P, Finset.prod_range_succ_comm, map_mul, map_sub, aeval_X, aeval_C,
+      Algebra.algebraMap_eq_smul_one]
   -- `P n` acts on the eigenvector `v m` by the value of its polynomial at `μ m`.
   have hPv (n m : ℕ) : P n (v m) = (∏ i ∈ Finset.range n, (μ m - μ i)) • v m := by
     rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_aeval,
@@ -66,9 +66,8 @@ private theorem exists_eigenvector_ker_chain {𝕜 E : Type*} [Field 𝕜] [AddC
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
   refine ⟨V, fun n ↦ (P n).isClosed_ker,
     fun n ↦ IsConcreteLE.lt_iff_le_and_exists.2 ⟨?_, v n, ?_, ?_⟩, fun n x hx ↦ ?_⟩
-  · intro x hx
-    rw [hmem] at hx ⊢
-    rw [hP', _root_.mul_apply_eq_comp, hx, map_zero]
+  · simpa only [V, hP', ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp] using
+      LinearMap.ker_le_ker_comp (P n : E →ₗ[𝕜] E) ((K - μ n • 1 : E →L[𝕜] E) : E →ₗ[𝕜] E)
   · rw [hmem, hPv, Finset.prod_eq_zero (Finset.self_mem_range_succ n) (sub_self _), zero_smul]
   · rw [hmem, hPv]
     refine smul_ne_zero (Finset.prod_ne_zero_iff.2 fun i hi ↦ sub_ne_zero.2 ?_)

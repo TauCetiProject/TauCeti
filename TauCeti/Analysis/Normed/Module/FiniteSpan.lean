@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Topology.Semicontinuity.Basic
 
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Distances to finite spans and closedness of finite-dimensional subspaces
@@ -115,8 +116,7 @@ private theorem isClosed_sup_span_singleton_of_discreteTopology {𝕜 E : Type*}
   · rwa [sup_eq_left.2 ((span_singleton_le_iff_mem v W).2 hv)]
   have hδ : 0 < infDist v W := (hW.notMem_iff_infDist_pos ⟨0, W.zero_mem⟩).1 hv
   -- A vector of `W ⊔ 𝕜 ∙ v` of norm less than `infDist v W` lies in `W`, because a nonzero
-  -- coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`. Hence near each of its
-  -- points `W ⊔ 𝕜 ∙ v` agrees with a translate of `W`.
+  -- coefficient `d` of `v` has norm `1`, so `‖w + d • v‖ = ‖v + d⁻¹ • w‖`.
   have hsmall {u : E} (hu : u ∈ W ⊔ 𝕜 ∙ v) (hlt : ‖u‖ < infDist v W) : u ∈ W := by
     obtain ⟨w, hw, _, hd, rfl⟩ := mem_sup.1 hu
     obtain ⟨d, rfl⟩ := mem_span_singleton.1 hd
@@ -129,24 +129,14 @@ private theorem isClosed_sup_span_singleton_of_discreteTopology {𝕜 E : Type*}
           rw [NormedDivisionRing.norm_eq_one_iff_ne_zero_of_discrete.2 hd, one_mul, dist_eq_norm,
             sub_neg_eq_add]
       _ = ‖w + d • v‖ := by rw [← norm_smul, smul_add, smul_inv_smul₀ hd, add_comm]
-  refine closure_subset_iff_isClosed.1 fun x hx ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx _ (half_pos hδ)
-  obtain ⟨w, hw, _, hc, rfl⟩ := mem_sup.1 hy
-  obtain ⟨c, rfl⟩ := mem_span_singleton.1 hc
-  -- Points of `W ⊔ 𝕜 ∙ v` close to `x` lie in the translate `W + c • v`, so `x` lies in it too.
-  have hx' : x - c • v ∈ W := by
-    refine hW.closure_subset (Metric.mem_closure_iff.2 fun ε hε ↦ ?_)
-    obtain ⟨z, hz, hxz⟩ := Metric.mem_closure_iff.1 hx _ (lt_min hε (half_pos hδ))
-    have hu : w + c • v - z ∈ W := by
-      refine hsmall (sub_mem hy hz) ?_
-      rw [← dist_eq_norm]
-      linarith [dist_triangle (w + c • v) x z, dist_comm x (w + c • v),
-        min_le_right ε (infDist v W / 2)]
-    refine ⟨z - c • v, ?_, (dist_sub_right _ _ _).trans_lt (hxz.trans_le (min_le_left _ _))⟩
-    have hzc : z - c • v = w - (w + c • v - z) := by abel
-    rw [SetLike.mem_coe, hzc]
-    exact sub_mem hw hu
-  exact mem_sup.2 ⟨_, hx', _, mem_span_singleton.2 ⟨c, rfl⟩, sub_add_cancel x _⟩
+  -- On `ball 0 (infDist v W)`, `W ⊔ 𝕜 ∙ v` agrees with the closed set `W`, so it is locally closed
+  -- at `0`, hence closed as an additive subgroup.
+  refine (W ⊔ 𝕜 ∙ v).toAddSubgroup.isClosed_of_isLocallyClosedAt (zero_mem _)
+    ⟨ball 0 (infDist v W), Metric.ball_mem_nhds 0 hδ, W, hW, ?_⟩
+  ext u
+  simp only [mem_inter_iff, Metric.mem_ball, dist_zero_right, SetLike.mem_coe,
+    Submodule.mem_toAddSubgroup]
+  exact ⟨fun ⟨hlt, hu⟩ ↦ ⟨hlt, hsmall hu hlt⟩, fun ⟨hlt, hu⟩ ↦ ⟨hlt, mem_sup_left hu⟩⟩
 
 /-- Over any complete normed field (trivially normed or not), the supremum of a closed subspace
 and a finite-dimensional subspace of a seminormed space is closed.
