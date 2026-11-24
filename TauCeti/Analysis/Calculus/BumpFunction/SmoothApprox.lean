@@ -23,7 +23,7 @@ of bounded smooth real functions with the same Lipschitz constant and a common b
 
 The construction combines Mathlib's McShane extension and normalized smooth bumps with
 `LipschitzWith.normed_convolution`. Derivative bounds follow directly from Mathlib's
-`norm_fderiv_le_of_lipschitz`, restated for the extended norm as `LipschitzWith.enorm_fderiv_le`.
+`norm_fderiv_le_of_lipschitz`.
 `LipschitzWith.exists_contDiffBump_normed_convolution` also bounds the bump's outer radius,
 so additional local properties can be proved for the same approximating convolution; for instance
 `LipschitzWith.exists_contDiff_lipschitzWith_dist_lt_fderiv_eq_zero` gives approximations whose
@@ -46,13 +46,6 @@ public section
 
 open ContinuousLinearMap Filter MeasureTheory Metric Set
 open scoped Convolution ContDiff NNReal Topology
-
-/-- A `C`-Lipschitz function has derivative of extended norm at most `C` everywhere. -/
-theorem LipschitzWith.enorm_fderiv_le (𝕜 : Type*) [NontriviallyNormedField 𝕜] {G H : Type*}
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-    {f : G → H} {C : ℝ≥0} (hf : LipschitzWith C f) {x : G} : ‖fderiv 𝕜 f x‖ₑ ≤ C := by
-  rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
-  exact norm_fderiv_le_of_lipschitz 𝕜 hf
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]

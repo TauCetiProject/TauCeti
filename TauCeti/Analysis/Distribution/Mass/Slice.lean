@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Normal
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
