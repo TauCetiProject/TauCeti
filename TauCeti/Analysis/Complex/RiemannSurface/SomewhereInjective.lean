@@ -136,6 +136,7 @@ variable {S S'' : Type*} [TopologicalSpace S] [ChartedSpace ℂ S] [TopologicalS
 
 /-- Precomposing with a biholomorphism `a` of Riemann surfaces carries the injective points of `u`
 at `a z` to injective points of `u ∘ a` at `z`, and conversely. -/
+@[simp]
 theorem isInjectivePoint_comp_biholomorph_iff (a : S'' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ S) {u : S → N} {z : S''} :
     IsInjectivePoint 𝓘(ℝ, ℂ) I (u ∘ a) z ↔ IsInjectivePoint 𝓘(ℝ, ℂ) I u (a z) := by
   simpa only [modelWithCornersSelf_restrictScalars, coe_restrictScalars] using
@@ -143,6 +144,7 @@ theorem isInjectivePoint_comp_biholomorph_iff (a : S'' ≃ₘ⟮𝓘(ℂ), 𝓘(
       (by simp)
 
 /-- Precomposing with a biholomorphism of Riemann surfaces preserves somewhere injectivity. -/
+@[simp]
 theorem isSomewhereInjective_comp_biholomorph_iff (a : S'' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ S) {u : S → N} :
     IsSomewhereInjective 𝓘(ℝ, ℂ) I (u ∘ a) ↔ IsSomewhereInjective 𝓘(ℝ, ℂ) I u := by
   simpa only [modelWithCornersSelf_restrictScalars, coe_restrictScalars] using

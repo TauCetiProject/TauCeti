@@ -20,8 +20,7 @@ Definition 4.5, for maps from Riemann surfaces into almost complex manifolds, wh
 characterizes the simple curves among the nonconstant closed pseudoholomorphic curves and is the
 condition under which the transversality theory of moduli spaces of curves applies.
 
-At a point where `f` is not differentiable, Mathlib's `mfderiv` is `0`, which is not injective
-unless the model space of `M` is trivial; so an injective point is a point of differentiability
+An injective point is always a point of differentiability
 (`TauCeti.IsInjectivePoint.mdifferentiableAt`), as the definition intends.
 
 Injective points compose: if `x` is an injective point of `f` and `f x` one of `g`, then `x` is
@@ -34,6 +33,11 @@ diffeomorphism on either side preserves injective points and somewhere injectivi
 `Diffeomorph.isSomewhereInjective_diffeomorph_comp_iff`). For curves these are the
 reparametrization by a biholomorphism of the source and the transport by a diffeomorphism of the
 target intertwining the almost complex structures.
+
+For a `C^n` map, `1 ≤ n`, from a compact manifold modelled on a finite-dimensional space over `ℝ`
+or `ℂ` to a Hausdorff manifold, the injective points form an open set
+(`TauCeti.isOpen_setOf_isInjectivePoint`). This is the open half of the statement that the
+injective points of a simple curve are open and dense.
 
 ## Main definitions
 
@@ -65,9 +69,8 @@ namespace TauCeti
 
 variable (I I') in
 /-- A point `x` is an **injective point** of `f : M → N` when the manifold derivative of `f` at `x`
-is injective and `x` is the only point of `M` with image `f x`. Since `mfderiv` is `0` where `f` is
-not differentiable, an injective point is a point of differentiability whenever the model space of
-`M` is nontrivial. -/
+is injective and `x` is the only point of `M` with image `f x`. An injective point is always a point
+of differentiability (`TauCeti.IsInjectivePoint.mdifferentiableAt`). -/
 structure IsInjectivePoint (f : M → N) (x : M) : Prop where
   /-- The manifold derivative at an injective point is injective. -/
   injective_mfderiv : Injective (mfderiv I I' f x)
@@ -134,23 +137,14 @@ theorem isOpen_setOf_isInjectivePoint [IsRCLikeNormedField 𝕜] [FiniteDimensio
   -- `f` is injective on a neighbourhood `t` of `x`, and its derivative stays injective near `x`.
   obtain ⟨t, ht, hinj⟩ :=
     (hf x).exists_mem_nhds_injOn (zero_lt_one.trans_le hn).ne' hx.injective_mfderiv
-  have hF : ContMDiffAt (I.prod I) I' n (uncurry fun (_ : M) ↦ f) (x, x) :=
-    (hf x).comp (x, x) contMDiffAt_snd
-  have hD : ∀ᶠ y in 𝓝 x, Injective (mfderiv I I' f y) :=
-    ((continuous_id.prodMk continuous_id).tendsto x).eventually
-      (hF.eventually_injective_mfderiv hn hx.injective_mfderiv)
-  -- The image of the compact complement of the interior of `t` avoids `f x`, so the fibres
-  -- through the points near `x` lie in `t`.
-  have hK : IsCompact (interior t)ᶜ := isOpen_interior.isClosed_compl.isCompact
-  have hfK : f x ∉ f '' (interior t)ᶜ := by
-    rintro ⟨y, hy, hyx⟩
-    exact hy (hx.eq_of_apply_eq hyx ▸ mem_interior_iff_mem_nhds.2 ht)
-  have hU : f ⁻¹' (f '' (interior t)ᶜ)ᶜ ∈ 𝓝 x := (hf x).continuousAt.preimage_mem_nhds
-    ((hK.image hf.continuous).isClosed.isOpen_compl.mem_nhds hfK)
-  filter_upwards [ht, hU, hD] with y hyt hyU hyD
-  refine ⟨hyD, fun w hw ↦ hinj ?_ hyt hw⟩
-  by_contra hwt
-  exact hyU ⟨w, fun hw' ↦ hwt (interior_subset hw'), hw⟩
+  have hD := (hf x).eventually_injective_mfderiv_of_injective hn hx.injective_mfderiv
+  -- `f` is a closed map whose fibre through `x` is `{x}`, so the fibres through the points
+  -- near `x` lie in `t`.
+  have hfib : ∀ᶠ y in 𝓝 x, ∀ w ∈ f ⁻¹' {f y}, w ∈ t :=
+    (hf x).continuousAt.eventually (hf.continuous.isClosedMap.eventually_nhds_fiber (f x)
+      fun w hw ↦ hx.eq_of_apply_eq hw ▸ ht)
+  filter_upwards [ht, hD, hfib] with y hyt hyD hyf
+  exact ⟨hyD, fun w hw ↦ hinj (hyf w hw) hyt hw⟩
 
 end TauCeti
 
@@ -168,6 +162,7 @@ theorem isInjectivePoint (Φ : M ≃ₘ^n⟮I, I'⟯ N) (hn : n ≠ 0) (x : M) :
 
 /-- Precomposing with a `C^n` diffeomorphism `Φ`, `n ≠ 0`, carries the injective points of `f`
 at `Φ x` to injective points of `f ∘ Φ` at `x`, and conversely. -/
+@[simp]
 theorem isInjectivePoint_comp_diffeomorph_iff (Φ : M ≃ₘ^n⟮I, I'⟯ N) (hn : n ≠ 0) {f : N → N'}
     {x : M} : IsInjectivePoint I I'' (f ∘ Φ) x ↔ IsInjectivePoint I' I'' f (Φ x) := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp (Φ.isInjectivePoint hn x)⟩
@@ -177,6 +172,7 @@ theorem isInjectivePoint_comp_diffeomorph_iff (Φ : M ≃ₘ^n⟮I, I'⟯ N) (hn
 
 /-- Postcomposing with a `C^n` diffeomorphism `Ψ`, `n ≠ 0`, does not change the injective points
 of a map. -/
+@[simp]
 theorem isInjectivePoint_diffeomorph_comp_iff (Ψ : N ≃ₘ^n⟮I', I''⟯ N') (hn : n ≠ 0) {f : M → N}
     {x : M} : IsInjectivePoint I I'' (Ψ ∘ f) x ↔ IsInjectivePoint I I' f x := by
   refine ⟨fun h ↦ ?_, fun h ↦ (Ψ.isInjectivePoint hn (f x)).comp h⟩
@@ -184,6 +180,7 @@ theorem isInjectivePoint_diffeomorph_comp_iff (Ψ : N ≃ₘ^n⟮I', I''⟯ N') 
   rwa [← comp_assoc, show Ψ.symm ∘ ⇑Ψ = id from funext Ψ.symm_apply_apply, id_comp] at h'
 
 /-- Precomposing with a `C^n` diffeomorphism, `n ≠ 0`, preserves somewhere injectivity. -/
+@[simp]
 theorem isSomewhereInjective_comp_diffeomorph_iff (Φ : M ≃ₘ^n⟮I, I'⟯ N) (hn : n ≠ 0)
     {f : N → N'} : IsSomewhereInjective I I'' (f ∘ Φ) ↔ IsSomewhereInjective I' I'' f := by
   refine ⟨fun ⟨x, hx⟩ ↦ ⟨Φ x, (Φ.isInjectivePoint_comp_diffeomorph_iff hn).1 hx⟩,
@@ -191,6 +188,7 @@ theorem isSomewhereInjective_comp_diffeomorph_iff (Φ : M ≃ₘ^n⟮I, I'⟯ N)
   rwa [Φ.apply_symm_apply]
 
 /-- Postcomposing with a `C^n` diffeomorphism, `n ≠ 0`, preserves somewhere injectivity. -/
+@[simp]
 theorem isSomewhereInjective_diffeomorph_comp_iff (Ψ : N ≃ₘ^n⟮I', I''⟯ N') (hn : n ≠ 0)
     {f : M → N} : IsSomewhereInjective I I'' (Ψ ∘ f) ↔ IsSomewhereInjective I I' f :=
   exists_congr fun _ ↦ Ψ.isInjectivePoint_diffeomorph_comp_iff hn
