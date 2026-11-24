@@ -311,7 +311,9 @@ theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Spac
 /-- A nonempty compact set whose points are pairwise comparable for specialization contains a
 point that is a specialization of each of its points. This is the analogue of
 `IsCompact.exists_isGreatest` for the specialization preorder, which need not be linear and in
-which `closure {x}` plays the role of the closed interval `Set.Ici x`. -/
+which `closure {x}` plays the role of the closed interval `Set.Ici x`. The proof is adapted from
+Mathlib's proof of `IsCompact.exists_isLeast` (in `Mathlib/Topology/Order/Compact.lean`), with the
+closed sets `closure {y}` in place of the intervals `Set.Iic y`. -/
 theorem _root_.IsCompact.exists_forall_specializes {K : Set X} (hK : IsCompact K)
     (hne : K.Nonempty) (hc : IsChain (· ⤳ ·) K) : ∃ x ∈ K, ∀ y ∈ K, y ⤳ x := by
   have : Nonempty K := hne.to_subtype
