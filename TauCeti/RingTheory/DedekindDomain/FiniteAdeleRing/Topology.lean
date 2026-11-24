@@ -30,7 +30,8 @@ topology of the local unit groups.
 
 For the arithmetic maps in `IsDedekindDomain.FiniteAdeleRing`, use:
 
-* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`;
+* `TauCeti.isOpen_integralUnits` and `TauCeti.isCompact_integralUnits` for `integralUnits`, and
+  `TauCeti.le_integralUnits_of_isCompact`: every compact subgroup lies in `integralUnits`;
 * `TauCeti.isOpen_sIntegralUnits`, `TauCeti.isClosed_sIntegralUnits` and
   `IsDedekindDomain.FiniteAdeleRing.isEmbedding_coe_sIntegralUnits` for `sIntegralUnits`;
 * `TauCeti.isLocallyConstant_toFractionalIdeal` and
@@ -88,6 +89,31 @@ theorem isLocallyConstant_toFractionalIdeal :
   apply MonoidHom.continuous_of_isOpen_ker
   rw [ker_toFractionalIdeal]
   exact isOpen_integralUnits R K
+
+/-- **Every compact subgroup of the finite ideles consists of everywhere-integral units.** The
+fractional-ideal map is locally constant, so it takes finitely many values on a compact subgroup;
+the fractional ideal of each element then has finite order, and invertible fractional ideals are
+torsion-free, as the multiplicity of `v` in `I ^ n` is `n` times that in `I`. -/
+theorem le_integralUnits_of_isCompact {H : Subgroup (FiniteAdeleRing R K)ˣ}
+    (hH : IsCompact (H : Set (FiniteAdeleRing R K)ˣ)) : H ≤ integralUnits R K := by
+  intro x hx
+  have : CompactSpace H := isCompact_iff_compactSpace.mp hH
+  have hfin : (Set.range fun y : H ↦ toFractionalIdeal (y : (FiniteAdeleRing R K)ˣ)).Finite :=
+    ((isLocallyConstant_toFractionalIdeal R K).comp_continuous continuous_subtypeVal).range_finite
+  have hord : IsOfFinOrder (toFractionalIdeal x) := by
+    refine finite_powers.mp (hfin.subset ?_)
+    rintro _ ⟨n, rfl⟩
+    exact ⟨⟨x ^ n, H.pow_mem hx n⟩, map_pow _ _ _⟩
+  obtain ⟨n, hn, hxn⟩ := isOfFinOrder_iff_pow_eq_one.mp hord
+  have hpow (v : HeightOneSpectrum R) (m : ℕ) : adicOrd (x ^ m) v = m * adicOrd x v := by
+    induction m with
+    | zero => simp
+    | succ m ih => rw [pow_succ, adicOrd_mul, ih]; push_cast; ring
+  rw [← ker_toFractionalIdeal, MonoidHom.mem_ker, toFractionalIdeal_eq_one_iff]
+  intro v
+  have h0 := toFractionalIdeal_eq_one_iff.mp ((map_pow _ x n).trans hxn) v
+  rw [hpow] at h0
+  exact (mul_eq_zero.mp h0).resolve_left (by exact_mod_cast hn.ne')
 
 /-- The ideal class attached to a finite idele is locally constant. -/
 theorem isLocallyConstant_toClassGroup :
