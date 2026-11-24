@@ -541,21 +541,24 @@ theorem mellin_smoothCutoff (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc (1 / 2
     mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s = mellin (fun x ↦ (ν x : ℂ)) (ε * s) / s :=
   (hasMellin_smoothCutoff hνs hνi hε hs).2
 
+/-- The window `[1/2, 2]` carrying the bumps `ν` lies in `(0, ∞)`. -/
+theorem Icc_one_half_two_subset_Ioi : Icc (1 / 2 : ℝ) 2 ⊆ Ioi 0 :=
+  fun _ hx ↦ lt_of_lt_of_le (by norm_num) hx.1
+
 /-- A function continuous on `[1/2, 2]` and vanishing on `(0, ∞)` off `[1/2, 2]` has
 `x ↦ ν x / x` integrable on `(0, ∞)`. -/
 theorem integrableOn_div_of_continuousOn_of_support_subset (hν : ContinuousOn ν (Icc (1 / 2) 2))
     (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc (1 / 2) 2) :
     IntegrableOn (fun x ↦ ν x / x) (Ioi 0) := by
-  have hpos : Icc (1 / 2 : ℝ) 2 ⊆ Ioi 0 := fun x hx ↦ lt_of_lt_of_le (by norm_num) hx.1
-  refine ((hν.div continuousOn_id fun x hx ↦ (hpos hx).ne').integrableOn_compact
-    isCompact_Icc).of_forall_sdiff_eq_zero measurableSet_Ioi fun x hx ↦ ?_
+  refine ((hν.div continuousOn_id fun x hx ↦
+    (Icc_one_half_two_subset_Ioi hx).ne').integrableOn_compact
+      isCompact_Icc).of_forall_sdiff_eq_zero measurableSet_Ioi fun x hx ↦ ?_
   have h0 : ν x = 0 := Function.notMem_support.mp fun h ↦ hx.2 (hνs ⟨h, hx.1⟩)
   rw [Pi.div_apply, h0, zero_div]
 
 private lemma isCompact_tsupport_ofReal_inter_Ioi
     (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc (1 / 2) 2) :
     IsCompact (tsupport (fun x ↦ (ν x : ℂ)) ∩ Ioi 0) := by
-  have hpos : Icc (1 / 2 : ℝ) 2 ⊆ Ioi 0 := fun x hx ↦ lt_of_lt_of_le (by norm_num) hx.1
   -- `Ioi 0` is open, so the positive closed support lies in the closure of the positive support.
   have hts : tsupport (fun x ↦ (ν x : ℂ)) ∩ Ioi 0 ⊆ Icc (1 / 2) 2 := by
     rw [inter_comm]
@@ -564,7 +567,8 @@ private lemma isCompact_tsupport_ofReal_inter_Ioi
     simpa [Function.support] using hνs
   have heq : tsupport (fun x ↦ (ν x : ℂ)) ∩ Ioi 0 =
       tsupport (fun x ↦ (ν x : ℂ)) ∩ Icc (1 / 2) 2 :=
-    Subset.antisymm (subset_inter inter_subset_left hts) (inter_subset_inter_right _ hpos)
+    Subset.antisymm (subset_inter inter_subset_left hts) (inter_subset_inter_right _
+      Icc_one_half_two_subset_Ioi)
   rw [heq]
   exact isCompact_Icc.inter_left (isClosed_tsupport _)
 
@@ -579,8 +583,8 @@ theorem differentiableOn_mellin_smoothCutoff (hνs : Function.support ν ∩ Ioi
       continuous_ofReal.continuousOn isOpen_Ioi.isLocallyClosed
     refine h.congr ((ae_restrict_mem measurableSet_Ioi).mono fun x hx ↦ ?_)
     have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr (ne_of_gt hx)
-    change (x : ℂ) * ((ν x / x : ℝ) : ℂ) = ν x
-    rw [ofReal_div]
+    -- `Integrable.ofReal` casts through `RCLike`, which is `Complex.ofReal` on `ℂ`
+    rw [RCLike.ofReal_eq_complex_ofReal, ofReal_div]
     field_simp
   have hd := hloc.differentiable_mellin_of_isCompact_tsupport_inter_Ioi
     (isCompact_tsupport_ofReal_inter_Ioi hνs)
@@ -599,7 +603,7 @@ theorem exists_norm_mellin_smoothCutoff_le {k : ℕ} (hν : ContDiffOn ℝ k ν 
     ∃ C : ℝ, ∀ ε : ℝ, 0 < ε → ε ≤ 1 → ∀ s : ℂ, σ₁ ≤ s.re → s.re ≤ σ₂ →
       ‖mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s‖ ≤ C / (‖s‖ * (1 + ε * ‖s‖) ^ k) := by
   have hνi := integrableOn_div_of_continuousOn_of_support_subset
-    (hν.continuousOn.mono fun _ hx ↦ lt_of_lt_of_le (by norm_num) hx.1) hνs
+    (hν.continuousOn.mono Icc_one_half_two_subset_Ioi) hνs
   obtain ⟨C, -, hC⟩ := exists_one_add_abs_im_pow_mul_norm_mellin_le
     (ofRealCLM.contDiff.comp_contDiffOn hν) (isCompact_tsupport_ofReal_inter_Ioi hνs)
     (isCompact_Icc (a := 0) (b := σ₂))
@@ -641,7 +645,7 @@ theorem verticalIntegrable_mellin_smoothCutoff (hν : ContDiffOn ℝ 1 ν (Ioi 0
     (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc (1 / 2) 2) (hε : 0 < ε) {σ : ℝ} (hσ : 0 < σ) :
     VerticalIntegrable (mellin fun x ↦ (smoothCutoff ν ε x : ℂ)) σ := by
   have hνi := integrableOn_div_of_continuousOn_of_support_subset
-    (hν.continuousOn.mono fun _ hx ↦ lt_of_lt_of_le (by norm_num) hx.1) hνs
+    (hν.continuousOn.mono Icc_one_half_two_subset_Ioi) hνs
   have h := ((ofRealCLM.contDiff.comp_contDiffOn hν).verticalIntegrable_mellin_div
     (isCompact_tsupport_ofReal_inter_Ioi hνs) (mul_pos hε hσ).ne').comp_mul_left' hε.ne'
   simp only [Function.comp_def, ofRealCLM_apply] at h
@@ -662,7 +666,7 @@ theorem mellinInv_mellin_smoothCutoff (hν : ContDiffOn ℝ 1 ν (Ioi 0))
     (hx : 0 < x) :
     mellinInv σ (mellin fun x ↦ (smoothCutoff ν ε x : ℂ)) x = smoothCutoff ν ε x := by
   have hνi := integrableOn_div_of_continuousOn_of_support_subset
-    (hν.continuousOn.mono fun _ hx ↦ lt_of_lt_of_le (by norm_num) hx.1) hνs
+    (hν.continuousOn.mono Icc_one_half_two_subset_Ioi) hνs
   exact mellinInv_mellin_eq σ _ hx (hasMellin_smoothCutoff hνs hνi hε (by simpa using hσ)).1
     (verticalIntegrable_mellin_smoothCutoff hν hνs hε hσ)
     (continuous_ofReal.continuousAt.comp ((continuousOn_smoothCutoff hνi hε).continuousAt

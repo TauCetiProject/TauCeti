@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Residue.Rectangle
-public import TauCeti.NumberTheory.LSeries.SmoothedSum
+public import TauCeti.NumberTheory.LSeries.SmoothedSum.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Contour.Residue.SimplePole
 import TauCeti.NumberTheory.LSeries.Continuity
@@ -156,7 +156,7 @@ theorem tsum_mul_smoothCutoff_eq_residue_add_contour {a : ℕ → ℂ} {G f : �
     simp [smoothCutoff_of_nonpos, fun t ↦ hR σ₀ t (Or.inl (by linarith)),
       fun t ↦ hR σ₁ t (Or.inl hσ₁.ne'), fun σ ↦ hR σ T (Or.inr hT.ne'), hR']
   have hνi := integrableOn_div_of_continuousOn_of_support_subset
-    (hν.continuousOn.mono fun _ hy ↦ lt_of_lt_of_le (by norm_num) hy.1) hνs
+    (hν.continuousOn.mono Icc_one_half_two_subset_Ioi) hνs
   obtain rfl : f = _ := funext hf
   have h1 : (1 : ℂ) ∈ Ioo σ₁ σ₀ ×ℂ Ioo (-T) T := by
     rw [mem_reProdIm]
