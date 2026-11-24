@@ -24,6 +24,8 @@ Tag 03RW; no Noetherian hypothesis on `X` or `Λ` enters it.
 
 * `CategoryTheory.Sheaf.IsConstructibleOn F U`: some constructible stratification of the open `U`
   has strata on which `F` is finite lisse.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.Refines.isFiniteLisse`: being finite lisse
+  on the strata passes to refinements.
 * `CategoryTheory.Sheaf.IsConstructibleOn.mono`,
   `CategoryTheory.Sheaf.IsConstructibleOn.of_iSup_eq` and
   `CategoryTheory.Sheaf.isConstructibleOn_of_isCompact`: the condition passes to smaller opens,
@@ -53,6 +55,30 @@ public section
 universe u
 
 open CategoryTheory Limits Topology Set.Notation AlgebraicGeometry Scheme
+
+namespace AlgebraicGeometry.Scheme.ConstructibleStratification
+
+variable {X : Scheme.{u}} {Λ : Type u} [Ring Λ] {F : Sheaf (smallEtaleTopology X) (ModuleCat.{u} Λ)}
+  {U V : X.Opens} {S : X.ConstructibleStratification U}
+
+/-- A sheaf finite lisse on the strata of `S` is finite lisse on every scheme mapping to `X`
+through a stratum of `S`. -/
+lemma Factors.isFiniteLisse {Z : Scheme.{u}} {g : Z ⟶ X} (hg : S.Factors g)
+    (hS : ∀ i, (((S.f i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse) :
+    ((g.smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse := by
+  obtain ⟨i, h, hh⟩ := factors_iff.mp hg
+  exact ((hS i).smallEtalePullback h).of_iso
+    (((Hom.smallEtalePullbackComp h (S.f i) _).app F).symm ≪≫
+      (Hom.smallEtalePullbackCongr hh _).app F)
+
+/-- **Refinement.** A sheaf finite lisse on the strata of `S` is finite lisse on the strata of
+every stratification refining `S`. -/
+lemma Refines.isFiniteLisse {T : X.ConstructibleStratification V} (hTS : T.Refines S)
+    (hS : ∀ i, (((S.f i).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse) (j : T.ι) :
+    (((T.f j).smallEtalePullback (ModuleCat.{u} Λ)).obj F).IsFiniteLisse :=
+  (refines_iff.mp hTS j).isFiniteLisse hS
+
+end AlgebraicGeometry.Scheme.ConstructibleStratification
 
 namespace CategoryTheory.Sheaf
 
@@ -87,9 +113,7 @@ lemma IsFiniteLisse.isConstructibleOn (hF : F.IsFiniteLisse) (U : X.Opens) :
 lemma IsConstructibleOn.mono (hF : F.IsConstructibleOn U) (hVU : V ≤ U) :
     F.IsConstructibleOn V := by
   obtain ⟨S, hS⟩ := hF
-  refine ⟨S.restrict hVU, fun i ↦ ?_⟩
-  exact ((hS i).smallEtalePullback (Limits.pullback.fst (S.f i) V.ι)).of_iso
-    ((Hom.smallEtalePullbackComp (Limits.pullback.fst (S.f i) V.ι) (S.f i) _).app F).symm
+  exact ⟨S.restrict hVU, (S.restrict_refines hVU).isFiniteLisse hS⟩
 
 /-- **Pullback of constructibility.** If `F` is constructible on `U ⊆ X`, then its pullback along
 `g : Y ⟶ X` is constructible on `g ⁻¹ᵁ U`. -/
@@ -119,10 +143,8 @@ lemma IsConstructibleOn.of_iSup_eq {κ : Type*} [Finite κ] {V : κ → X.Opens}
   choose S hS using hF
   obtain ⟨T, hT⟩ := ConstructibleStratification.exists_of_iSup_eq hVU hV S
   refine ⟨T, fun j ↦ ?_⟩
-  obtain ⟨k, i, h, hh⟩ := hT j
-  exact ((hS k i).smallEtalePullback h).of_iso
-    (((Hom.smallEtalePullbackComp h ((S k).f i) _).app F).symm ≪≫
-      (Hom.smallEtalePullbackCongr hh _).app F)
+  obtain ⟨k, hk⟩ := hT j
+  exact hk.isFiniteLisse (hS k)
 
 /-- **Constructibility is local on a quasi-compact quasi-separated open.** If every point of the
 quasi-compact quasi-separated open `U` has an open neighbourhood inside `U` on which `F` is

@@ -34,6 +34,12 @@ quasi-separated open:
   stratification of `U` to an open `V ≤ U`.
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.map`: the image of a stratification under
   an open immersion.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.range_f_single`, `range_f_pullback`,
+  `range_f_restrict` and `range_f_map`: the images of the strata of these stratifications.
+* `AlgebraicGeometry.Scheme.ConstructibleStratification.Factors` and
+  `AlgebraicGeometry.Scheme.ConstructibleStratification.Refines`: a morphism factoring through a
+  stratum, and a stratification each of whose strata factors through a stratum of another one;
+  `restrict_refines` says that restriction refines.
 * `AlgebraicGeometry.Scheme.ConstructibleStratification.exists_of_iSup_eq`: stratifications of the
   members of a finite cover of `U` by retrocompact opens glue to a stratification of `U` each of
   whose strata factors through a stratum of one of the given stratifications.
@@ -103,13 +109,14 @@ noncomputable def pullback (g : Y ⟶ X) : Y.ConstructibleStratification (g ⁻�
   pairwise_disjoint_range i j h := by
     simpa only [Pullback.range_snd] using (S.pairwise_disjoint_range h).preimage g
   iUnion_range := by
-    simp only [Pullback.range_snd, ← Set.preimage_iUnion, S.iUnion_range]
-    rfl
+    simp only [Pullback.range_snd, ← Set.preimage_iUnion, S.iUnion_range, Scheme.Hom.coe_preimage]
   isConstructible_range i := by
     have heq : (g ⁻¹ᵁ U : Set Y) ↓∩ Set.range (Limits.pullback.snd (S.f i) g) =
         (g ∣_ U) ⁻¹' ((U : Set X) ↓∩ Set.range (S.f i)) := by
       ext x
       simp only [Pullback.range_snd, Set.mem_preimage, morphismRestrict_base]
+      -- Both sides say that `g x` lies in the image of the stratum: `Set.restrictPreimage`
+      -- applies `g` to the underlying point, and `g ⁻¹ᵁ U` has `g ⁻¹' U` as its carrier.
       rfl
     rw [heq]
     exact (g ∣_ U).isConstructible_preimage (S.isConstructible_range i)
@@ -151,16 +158,62 @@ noncomputable def map {W : Y.Opens} (S : Y.ConstructibleStratification W) (j : Y
   isConstructible_range i := by
     -- Transport along the homeomorphism `W ≃ j '' W` induced by `j`.
     have H : Set.MapsTo j (W : Set Y) (j ''ᵁ W : Set X) := Set.mapsTo_image _ _
-    have hrange : IsRetrocompact (Set.range H.restrict) := by
+    have hrange : Set.range H.restrict = Set.univ := by
       rw [Set.MapsTo.range_restrict, Scheme.Hom.coe_image, Subtype.coe_preimage_self]
-      exact IsRetrocompact.univ
-    convert (S.isConstructible_range i).image_of_isOpenEmbedding
-      (j.isOpenEmbedding.restrict H W.isOpen) hrange using 1
+    refine (isConstructible_preimage_iff_of_isOpenEmbedding (j.isOpenEmbedding.restrict H W.isOpen)
+      (hrange ▸ IsRetrocompact.univ) (hrange ▸ Set.subset_univ _)).mp ?_
+    convert S.isConstructible_range i using 1
     ext x
-    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, Set.mem_preimage]
-    refine ⟨fun ⟨y, hy, hyx⟩ ↦ ⟨⟨y, S.range_subset i hy⟩, hy, Subtype.ext hyx⟩, ?_⟩
-    rintro ⟨y, hy, rfl⟩
-    exact ⟨y.val, hy, rfl⟩
+    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, Set.mem_preimage,
+      Set.MapsTo.val_restrict_apply, j.isOpenEmbedding.injective.mem_set_image]
+
+/-! ### Images of the strata -/
+
+/-- The single stratum of `single U` has image `U`. -/
+lemma range_f_single (U : X.Opens) (i : (single U).ι) : Set.range ((single U).f i) = U :=
+  U.range_ι
+
+/-- The strata of `S.pullback g` have the preimages under `g` of the strata of `S` as images. -/
+lemma range_f_pullback (g : Y ⟶ X) (i : S.ι) :
+    Set.range ((S.pullback g).f i) = g ⁻¹' Set.range (S.f i) :=
+  Pullback.range_snd (S.f i) g
+
+/-- The strata of `S.restrict hVU` have the traces on `V` of the strata of `S` as images. -/
+lemma range_f_restrict {V : X.Opens} (hVU : V ≤ U) (i : S.ι) :
+    Set.range ((S.restrict hVU).f i) = Set.range (S.f i) ∩ V :=
+  (Pullback.range_fst_comp (S.f i) V.ι).trans (congrArg _ V.range_ι)
+
+/-- The strata of `S.map j` have the images under `j` of the strata of `S` as images. -/
+lemma range_f_map {W : Y.Opens} (S : Y.ConstructibleStratification W) (j : Y ⟶ X)
+    [IsOpenImmersion j] (i : S.ι) : Set.range ((S.map j).f i) = j '' Set.range (S.f i) :=
+  Set.range_comp (⇑j) (⇑(S.f i))
+
+/-! ### Refinement -/
+
+/-- A morphism `g : Z ⟶ X` *factors through* a constructible stratification `S` when it factors
+through the immersion of one of its strata. -/
+def Factors {Z : Scheme.{u}} (g : Z ⟶ X) : Prop :=
+  ∃ (i : S.ι) (h : Z ⟶ S.Z i), h ≫ S.f i = g
+
+variable {S} in
+lemma factors_iff {Z : Scheme.{u}} {g : Z ⟶ X} :
+    S.Factors g ↔ ∃ (i : S.ι) (h : Z ⟶ S.Z i), h ≫ S.f i = g :=
+  Iff.rfl
+
+/-- A constructible stratification `T` of `V` *refines* a constructible stratification `S` of `U`
+when every stratum of `T` factors through a stratum of `S`. -/
+def Refines {V : X.Opens} (T : X.ConstructibleStratification V)
+    (S : X.ConstructibleStratification U) : Prop :=
+  ∀ j, S.Factors (T.f j)
+
+variable {S} in
+lemma refines_iff {V : X.Opens} {T : X.ConstructibleStratification V} :
+    T.Refines S ↔ ∀ j, S.Factors (T.f j) :=
+  Iff.rfl
+
+/-- The restriction of `S` to an open `V ≤ U` refines `S`. -/
+lemma restrict_refines {V : X.Opens} (hVU : V ≤ U) : (S.restrict hVU).Refines S :=
+  fun i ↦ ⟨i, Limits.pullback.fst _ _, rfl⟩
 
 section Glue
 
@@ -242,17 +295,13 @@ private lemma isConstructible_range_glueι (hVU : ⨆ m, V m = U)
   obtain ⟨m, i⟩ := p
   have hVmU : V m ≤ U := hVU ▸ le_iSup V m
   rw [range_glueι, Set.preimage_sdiff]
-  have hR : IsConstructible ((U : Set X) ↓∩ Set.range ((S m).f i)) := by
-    have hrange : Set.range (Set.inclusion hVmU) = (U : Set X) ↓∩ (V m : Set X) := by
-      ext x
-      exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
-    convert ((S m).isConstructible_range i).image_of_isOpenEmbedding
+  have hrange : Set.range (Set.inclusion hVmU) = (U : Set X) ↓∩ (V m : Set X) :=
+    Set.range_inclusion hVmU
+  have hR : IsConstructible ((U : Set X) ↓∩ Set.range ((S m).f i)) :=
+    (isConstructible_preimage_iff_of_isOpenEmbedding
       (IsOpenEmbedding.inclusion hVmU ((V m).isOpen.preimage continuous_subtypeVal))
-      (hrange ▸ hV m) using 1
-    ext x
-    refine ⟨fun hx ↦ ⟨⟨x, (S m).range_subset i hx⟩, hx, rfl⟩, ?_⟩
-    rintro ⟨y, hy, rfl⟩
-    exact hy
+      (hrange ▸ hV m) (hrange ▸ fun _ hx ↦ (S m).range_subset i hx)).mp
+      ((S m).isConstructible_range i)
   refine hR.sdiff (IsRetrocompact.isConstructible ((isOpen_before m).preimage
     continuous_subtypeVal) ?_)
   simp only [before, Set.preimage_iUnion]
@@ -262,14 +311,13 @@ end Glue
 
 /-- Constructible stratifications of the members `V k` of a finite cover of `U` by opens whose
 traces on `U` are retrocompact glue to a constructible stratification of `U`, each of whose strata
-factors through a stratum of one of the given stratifications. For a chosen enumeration of the
-cover, the strata of the glued stratification are the reduced closed subschemes of the strata of
-`S k` lying outside the earlier members of the cover. -/
+factors through a stratum of one of the given stratifications. -/
 theorem exists_of_iSup_eq {κ : Type*} [Finite κ] {V : κ → X.Opens} (hVU : ⨆ k, V k = U)
     (hV : ∀ k, IsRetrocompact ((U : Set X) ↓∩ (V k : Set X)))
     (S : ∀ k, X.ConstructibleStratification (V k)) :
-    ∃ T : X.ConstructibleStratification U, ∀ j, ∃ (k : κ) (i : (S k).ι)
-      (h : T.Z j ⟶ (S k).Z i), h ≫ (S k).f i = T.f j := by
+    ∃ T : X.ConstructibleStratification U, ∀ j, ∃ k, (S k).Factors (T.f j) := by
+  -- For a chosen enumeration of the cover, the strata of the glued stratification are the reduced
+  -- closed subschemes of the strata of `S k` lying outside the earlier members of the cover.
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin κ
   have hVU' : ⨆ m, V (e.symm m) = U := (e.symm.iSup_comp (g := V)).trans hVU
   exact ⟨{
