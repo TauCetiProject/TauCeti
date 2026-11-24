@@ -519,8 +519,7 @@ private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoG
     have hc := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (z := φ.splitCoord (φ.coord (φ.toChart y₁))) (by simpa using φ.toChart.map_source hy₁φ)
     have h' := hc.tendsto.comp (hψ₀ ▸ hψ.continuousAt.tendsto)
-    rwa [show φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
-      (φ.splitCoord (φ.coord (φ.toChart y₁))))) = y₁ by simp [φ.toChart.left_inv hy₁φ]] at h'
+    rwa [φ.toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart hy₁φ] at h'
   have hψf : ∀ᶠ z in 𝓝 0, ‖(ψ z).fst‖ < 2 * ε ∧ ‖(ψ z).snd‖ < ε := by
     have h₁ : ContinuousAt (fun z ↦ ‖(ψ z).fst‖) 0 :=
       ((WithLp.continuous_fst 2 _ _).norm.continuousAt).comp hψ.continuousAt
