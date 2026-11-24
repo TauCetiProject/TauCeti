@@ -34,9 +34,9 @@ classicality of overconvergent forms of small slope.
 
 * `Derivation.iterate_apply_pow_add_mul_pow_add_one`: Bol's identity.
 * `Derivation.iterate_apply_pow_mul_aeval`: Bol's identity for polynomials composed with `N / L`.
-* `PowerSeries.iterate_derivative_pow_add_mul_inv_pow_add_one` and
-  `PowerSeries.iterate_derivative_pow_mul_aeval`: the same identities for formal power series
-  over a field, with `N = a X + b` and `L = c X + d`.
+* `TauCeti.PowerSeries.iterate_derivative_pow_add_mul_inv_pow_add_one` and
+  `TauCeti.PowerSeries.iterate_derivative_pow_mul_aeval`: the same identities for formal power
+  series over a field, with `N = a X + b` and `L = c X + d`.
 
 ## References
 
@@ -133,7 +133,9 @@ theorem iterate_apply_pow_mul_aeval {N L M : A} (hN : D (D N) = 0) (hL : D (D L)
 
 end Derivation
 
-namespace PowerSeries
+open PowerSeries
+
+namespace TauCeti.PowerSeries
 
 variable {K : Type*} [Field K]
 
@@ -186,4 +188,4 @@ theorem iterate_derivative_pow_mul_aeval (a b c d : K) (n : ℕ) (f : K[X]) :
     rw [(d⁄dX).iterate_apply_pow_mul_aeval (derivative_derivative_C_mul_X_add_C a b)
       (derivative_derivative_C_mul_X_add_C c d) hLM, derivative_mul_sub_mul_derivative]
 
-end PowerSeries
+end TauCeti.PowerSeries
