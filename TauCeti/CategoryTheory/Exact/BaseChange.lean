@@ -39,8 +39,9 @@ extension-closed subcategories inherit axiom E1.
 * `TauCeti.ExactStructure.conflation_comp_of_isPushout` and
   `TauCeti.ExactStructure.conflation_comp_of_isPullback`: the cokernel of a composite of
   inflations, and the kernel of a composite of deflations, computed as a pushout resp. pullback.
-* `TauCeti.ExactStructure.isInflation_of_isPullback`: the base change of an inflation along a
-  deflation is an inflation.
+* `TauCeti.ExactStructure.isInflation_of_isPullback` and
+  `TauCeti.ExactStructure.isDeflation_of_isPushout`: inflations are stable under base change along
+  deflations, and deflations under cobase change along inflations.
 * `TauCeti.ExactStructure.exists_conflation_comp`: the Noether package for a composite of two
   inflations.
 
@@ -48,7 +49,8 @@ extension-closed subcategories inherit axiom E1.
 
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1--69,
   <https://arxiv.org/abs/0811.1480>. Proposition 2.12 identifies the cokernel along a cobase
-  change and Lemma 3.5 is the Noether isomorphism proved here.
+  change, Proposition 2.15 is the base change of an inflation along a deflation, and Lemma 3.5 is
+  the Noether isomorphism proved here.
 -/
 
 public section
@@ -234,19 +236,35 @@ theorem conflation_comp_of_isPullback {X Y Z W V Q : C} {i : X ⟶ Y} {p : Y ⟶
   exact KernelFork.IsLimit.ofι' _ _ fun {T} t ht =>
     ⟨(key T t ht).choose, (key T t ht).choose_spec⟩
 
-/-- **Base change of an inflation along a deflation is an inflation.** In a pullback square
-whose bottom map `p` is a deflation, the pullback of an inflation `i` along `p` is an
+/-- **Cobase change of a deflation along an inflation is a deflation.** In a pushout square of a
+deflation `p : Y ⟶ Z` along an inflation `j : Y ⟶ W`, the morphism `W ⟶ Q` opposite `p` is a
+deflation. -/
+theorem isDeflation_of_isPushout {Y Z W Q : C} {j : Y ⟶ W} {p : Y ⟶ Z} {c : W ⟶ Q} {α : Z ⟶ Q}
+    (sq : IsPushout j p c α) (hj : E.IsInflation j) (hp : E.IsDeflation p) :
+    E.IsDeflation c := by
+  obtain ⟨X, i, hip, h₁⟩ := (E.isDeflation_iff p).1 hp
+  obtain ⟨V, v, hjv, h₂⟩ := (E.isInflation_iff j).1 hj
+  exact E.isDeflation_g (E.conflation_comp_of_isPushout h₁ h₂ sq)
+
+/-- **Base change of an inflation along a deflation is an inflation.** In a pullback square of an
+inflation `i : X ⟶ Y` along a deflation `q : W ⟶ Y`, the morphism `Q ⟶ W` opposite `i` is an
 inflation. -/
-theorem isInflation_of_isPullback {W X Y Z : C} {f' : W ⟶ Z} {i' : W ⟶ X} {i : Z ⟶ Y}
-    {p : X ⟶ Y} (sq : IsPullback f' i' i p) (hi : E.IsInflation i) (hp : E.IsDeflation p) :
-    E.IsInflation i' := by
-  obtain ⟨_, q, _, hS⟩ := (E.isInflation_iff i).1 hi
-  obtain ⟨_, k, _, hT⟩ := (E.isDeflation_iff p).1 hp
-  exact E.isInflation_f (E.conflation_comp_of_isPullback hS hT sq.flip)
+theorem isInflation_of_isPullback {X Y W Q : C} {i : X ⟶ Y} {q : W ⟶ Y} {c : Q ⟶ W} {α : Q ⟶ X}
+    (sq : IsPullback c α q i) (hi : E.IsInflation i) (hq : E.IsDeflation q) :
+    E.IsInflation c := by
+  obtain ⟨Z, p, hip, h₁⟩ := (E.isInflation_iff i).1 hi
+  obtain ⟨V, v, hvq, h₂⟩ := (E.isDeflation_iff q).1 hq
+  exact E.isInflation_f (E.conflation_comp_of_isPullback h₁ h₂ sq)
+
+/-- Deflations are stable under cobase change along inflations. -/
+instance : E.deflations.IsStableUnderCobaseChangeAgainst E.inflations where
+  isStableUnderCobaseChangeAlong _ _ _ hf :=
+    ⟨fun sq hg => E.isDeflation_of_isPushout sq hf hg⟩
 
 /-- Inflations are stable under base change along deflations. -/
 instance : E.inflations.IsStableUnderBaseChangeAgainst E.deflations where
-  isStableUnderBaseChangeAlong _ _ _ hp := ⟨fun sq hi => E.isInflation_of_isPullback sq hi hp⟩
+  isStableUnderBaseChangeAlong _ _ _ hf :=
+    ⟨fun sq hg => E.isInflation_of_isPullback sq.flip hg hf⟩
 
 /-- **The Noether isomorphism for exact categories.** Given conflations `X ⟶ Y ⟶ Z` and
 `Y ⟶ W ⟶ V`, there is an object `Q` — the pushout of `Y ⟶ W` along `Y ⟶ Z` — which is at once

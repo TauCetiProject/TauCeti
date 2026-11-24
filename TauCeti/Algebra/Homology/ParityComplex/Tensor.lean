@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.CochainComplex.SignedDifferential
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 public import TauCeti.Algebra.Homology.ParityComplex.Basic
@@ -139,7 +142,7 @@ theorem ιTensorObj_superTensorObj_d (τ : ZMod 2) (K L : CochainComplex (Module
           ((K.X p ◁ ((L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).hom ≫ L.d r r' ≫
               (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r').inv)) ≫
             HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r' n' (by omega)) := by
-  simp only [HomologicalComplex.ι_tensorObj_d' K (L.signedDifferential τ) h hp hr hn,
+  simp only [HomologicalComplex.ιTensorObj_tensor_d' K (L.signedDifferential τ) h hp hr hn,
     CochainComplex.scaleDifferential_d_eq, whiskerLeft_zsmul, Preadditive.zsmul_comp,
     Units.smul_def, smul_smul, ← Units.val_mul, negOnePow_mul_uzpow]
 
@@ -191,8 +194,8 @@ theorem ιTensorObj_superBraiding_hom_f (τ τ' : ZMod 2) (K L : CochainComplex 
           (β_ (K.X p) (L.X r)).hom ≫
           (L.X r ◁ (K.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ') p).inv) ≫
           HomologicalComplex.ιTensorObj L (K.signedDifferential τ') r p n (by omega)) := by
-  simp only [superBraiding, braiding_eq_koszulBraiding, koszulBraiding_hom,
-    ι_koszulBraidingHom_assoc, koszulBraidingSummand_def,
+  simp only [superBraiding, braiding_eq_tensorBraiding,
+    HomologicalComplex.ιTensorObj_tensorBraiding_hom_f_assoc, ComplexShape.σ_up_ℤ,
     ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
     ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
     HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
@@ -210,13 +213,14 @@ theorem ιTensorObj_superBraiding_inv_f (τ τ' : ZMod 2) (K L : CochainComplex 
           (β_ (K.X p) (L.X r)).inv ≫
           (K.X p ◁ (L.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ) r).inv) ≫
           HomologicalComplex.ιTensorObj K (L.signedDifferential τ) p r n (by omega)) := by
-  simp only [superBraiding, braiding_eq_koszulBraiding, ι_koszulBraiding_inv_assoc,
+  simp only [superBraiding, braiding_eq_tensorBraiding,
+    HomologicalComplex.ιTensorObj_tensorBraiding_inv_f_assoc, ComplexShape.σ_up_ℤ,
     ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
     ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
     HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     Units.smul_def, smul_smul]
   -- The sign is that of the `hom` summand formula, with its factors in another order.
-  rw [← uzpow_superBraiding τ τ' p r, mul_comm r p]
+  rw [← uzpow_superBraiding τ τ' p r]
   congr 1
   ring
 

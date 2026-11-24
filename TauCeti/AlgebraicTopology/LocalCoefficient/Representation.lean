@@ -20,7 +20,8 @@ from `x` to `y` and to `z`.  The chosen path at `x` itself is the constant one, 
 `x` is `ρ` on the nose (`monodromyRepresentation_ofRepresentation`).  Conversely, every local
 system `L` is the local system of its monodromy representation at `x`, up to an isomorphism which
 is the identity at `x` (`ofRepresentationMonodromyIso`), so `ofRepresentation` inverts the
-monodromy representation up to isomorphism.
+monodromy representation up to isomorphism. An equivalence of representations induces an
+isomorphism of their local systems (`ofRepresentationIso`).
 
 The functor out of the fundamental groupoid is `TauCeti.Groupoid.functorOfEndHom`, which only
 uses that every point is joined to `x`.
@@ -29,6 +30,8 @@ uses that every point is joined to `x`.
 
 * `TauCeti.LocalCoefficientSystem.pathFromBase`: the chosen path classes out of the basepoint.
 * `TauCeti.LocalCoefficientSystem.ofRepresentation`: the local system of a representation.
+* `TauCeti.LocalCoefficientSystem.ofRepresentationIso`: equivalent representations have isomorphic
+  local systems.
 * `TauCeti.LocalCoefficientSystem.ofRepresentationMonodromyIso`: a local system is the local system
   of its monodromy representation.
 
@@ -105,6 +108,39 @@ theorem ofRepresentation_map_apply (ρ : Representation R (FundamentalGroup X x)
   rw [Groupoid.functorOfEndHom_map, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
   -- `endRingEquiv.symm f` is `End.of (ModuleCat.ofHom f)` by definition, whose linear map is `f`.
   rfl
+
+/-- **Equivalent representations have isomorphic local systems**: an equivalence `e` of
+representations of `π₁(X, x)` is an isomorphism of their local systems which is `e` on every
+fiber. -/
+def ofRepresentationIso {W : Type w} [AddCommGroup W] [Module R W]
+    {ρ : Representation R (FundamentalGroup X x) V} {σ : Representation R (FundamentalGroup X x) W}
+    (e : ρ.Equiv σ) : ofRepresentation x ρ ≅ ofRepresentation x σ :=
+  NatIso.ofComponents (fun _ ↦ e.toLinearEquiv.toModuleIso) fun p ↦ by
+    ext v
+    -- Every fiber is `V`, respectively `W`, only by unfolding `ofRepresentation_obj`, so the
+    -- composites in `ModuleCat` are evaluated by `change` rather than by `ModuleCat.hom_comp`.
+    change e ((ofRepresentation x ρ).map p v) = (ofRepresentation x σ).map p (e v)
+    refine (congrArg e (ofRepresentation_map_apply x ρ p v)).trans ?_
+    refine (Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap _ v).trans ?_
+    exact (ofRepresentation_map_apply x σ p (e v)).symm
+
+/-- The isomorphism of local systems induced by an equivalence of representations is that
+equivalence on every fiber. -/
+@[simp]
+theorem ofRepresentationIso_hom_app_apply {W : Type w} [AddCommGroup W] [Module R W]
+    {ρ : Representation R (FundamentalGroup X x) V} {σ : Representation R (FundamentalGroup X x) W}
+    (e : ρ.Equiv σ) (y : FundamentalGroupoid X) (v : V) :
+    ((ofRepresentationIso x e).hom.app y).hom v = e v :=
+  (rfl)
+
+/-- The inverse of the isomorphism of local systems induced by an equivalence of representations
+is the inverse equivalence on every fiber. -/
+@[simp]
+theorem ofRepresentationIso_inv_app_apply {W : Type w} [AddCommGroup W] [Module R W]
+    {ρ : Representation R (FundamentalGroup X x) V} {σ : Representation R (FundamentalGroup X x) W}
+    (e : ρ.Equiv σ) (y : FundamentalGroupoid X) (w : W) :
+    ((ofRepresentationIso x e).inv.app y).hom w = e.symm w :=
+  (rfl)
 
 /-- **The monodromy of the local system of a representation is that representation.** -/
 @[simp]

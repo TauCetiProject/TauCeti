@@ -149,7 +149,7 @@ theorem norm_apply_le_of_forall_inner_eq_zero
     ‖T x‖ ≤ c * ‖x‖ := by
   rcases lt_or_ge c 0 with hc0 | hc0
   · -- A negative bound forces every index into `s`, so that `x = 0`.
-    have hx0 : ‖x‖ ^ 2 = 0 := (b.hasSum_norm_sq_inner x).unique (by
+    have hx0 : ‖x‖ ^ 2 = 0 := (b.hasSum_norm_inner_sq x).unique (by
       convert hasSum_zero with i
       by_cases hi : i ∈ s
       · simp [hx i hi]
@@ -158,7 +158,7 @@ theorem norm_apply_le_of_forall_inner_eq_zero
   have hsq : ‖T x‖ ^ 2 ≤ (c * ‖x‖) ^ 2 := by
     rw [mul_pow]
     refine hasSum_le (fun i ↦ ?_) (b.hasSum_norm_sq_inner_mul_norm_sq_apply hT x)
-      ((b.hasSum_norm_sq_inner x).mul_left (c ^ 2))
+      ((b.hasSum_norm_inner_sq x).mul_left (c ^ 2))
     by_cases hi : i ∈ s
     · simp [hx i hi]
     · rw [mul_comm]
@@ -177,7 +177,7 @@ theorem mul_norm_le_norm_apply_of_forall_inner_eq_zero
   · exact (mul_nonpos_of_nonpos_of_nonneg hc0 (norm_nonneg _)).trans (norm_nonneg _)
   have hsq : (c * ‖x‖) ^ 2 ≤ ‖T x‖ ^ 2 := by
     rw [mul_pow]
-    refine hasSum_le (fun i ↦ ?_) ((b.hasSum_norm_sq_inner x).mul_left (c ^ 2))
+    refine hasSum_le (fun i ↦ ?_) ((b.hasSum_norm_inner_sq x).mul_left (c ^ 2))
       (b.hasSum_norm_sq_inner_mul_norm_sq_apply hT x)
     by_cases hi : i ∈ s
     · rw [mul_comm]
@@ -220,7 +220,7 @@ theorem norm_sub_sum_rankOne_le (hT : Pairwise fun i j ↦ ⟪T (b i), T (b j)�
   -- Dropping coordinates does not increase the norm.
   have hyx : ‖y‖ ≤ ‖x‖ := by
     refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp
-      (hasSum_le (fun i ↦ ?_) (b.hasSum_norm_sq_inner y) (b.hasSum_norm_sq_inner x))
+      (hasSum_le (fun i ↦ ?_) (b.hasSum_norm_inner_sq y) (b.hasSum_norm_inner_sq x))
     rw [hcoord i]
     split_ifs <;> simp
   rw [hy]

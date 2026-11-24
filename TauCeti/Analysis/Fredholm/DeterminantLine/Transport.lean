@@ -34,7 +34,9 @@ rescaling by positive functions, that is, a continuous orientation of the determ
 of the same transition at `x₀`, with a coefficient which depends continuously on `x` and equals `1`
 at `x₀`, hence is positive nearby (`ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`).
 So the condition holds for every kernel chart valid at `x₀` as soon as it holds for one
-(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`).
+(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`), and conversely, when `T x₀` is Fredholm,
+coherence may be checked in any kernel chart valid at `x₀`
+(`TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`).
 
 * **Uniqueness.** Two coherent families on a preconnected set that lie on the same ray at one point
   lie on the same ray everywhere (`TauCeti.IsDetLineCoherentOn.sameRay`). The set where they agree
@@ -101,6 +103,10 @@ by invertibility: the determinant sign of the endpoint is positive.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
   families.
+* `TauCeti.detLineOrientationTransport_rayOfNeZero_of_mul_pos`,
+  `TauCeti.detLineOrientationTransport_rayOfNeZero_of_mul_neg`: if a coherent family is
+  `c_a • g_a` at `a` and `c_b • g_b` at `b`, transport carries the orientation of `g_a` to that of
+  `g_b` or to its opposite, according to the sign of `c_a * c_b`.
 * `TauCeti.isDetLineCoherentOn_of_isInvertible`: the orientations given by invertibility are
   coherent.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero_detLineEquivOfBijective_symm_one`: transport
@@ -522,6 +528,42 @@ theorem detLineOrientationTransport_rayOfNeZero (hT : ContinuousOn T (uIcc a b))
     (hv.ne_zero left_mem_uIcc)).choose_spec
   exact (ray_eq_iff _ _).2 (hex.2.sameRay hT isPreconnected_uIcc hv left_mem_uIcc right_mem_uIcc
     (by rw [hex.1]))
+
+/-- **Transport between multiples of a coherent family, with the same sign.** If a coherent family
+`v` on `[[a, b]]` is `c_a • g_a` at `a` and `c_b • g_b` at `b` with `c_a * c_b > 0`, orientation
+transport carries the orientation of `g_a` to that of `g_b`. -/
+theorem detLineOrientationTransport_rayOfNeZero_of_mul_pos
+    (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
+    {v : ∀ t, (T t : E →ₗ[ℝ] F).detLine} (hv : IsDetLineCoherentOn T v (uIcc a b)) {ca cb : ℝ}
+    {ga : (T a : E →ₗ[ℝ] F).detLine} {gb : (T b : E →ₗ[ℝ] F).detLine} (hva : v a = ca • ga)
+    (hvb : v b = cb • gb) (hga : ga ≠ 0) (hgb : gb ≠ 0) (h : 0 < ca * cb) :
+    detLineOrientationTransport a b hT hF (rayOfNeZero ℝ ga hga) = rayOfNeZero ℝ gb hgb := by
+  have hca : ca ≠ 0 := left_ne_zero_of_mul h.ne'
+  -- Scaling `v` by `c_a` gives `c_a ^ 2 • g_a` at `a`, on the ray of `g_a`, and
+  -- `(c_a * c_b) • g_b` at `b`, on the ray of `g_b`.
+  have key := detLineOrientationTransport_rayOfNeZero hT hF (hv.smul hca)
+  refine (congrArg _ ((ray_eq_iff _ _).2 ?_)).trans (key.trans ((ray_eq_iff _ _).2 ?_))
+  · rw [hva, smul_smul]
+    exact SameRay.sameRay_pos_smul_right _ (mul_self_pos.2 hca)
+  · rw [hvb, smul_smul]
+    exact SameRay.sameRay_pos_smul_left _ h
+
+/-- **Transport between multiples of a coherent family, with opposite signs.** If a coherent
+family `v` on `[[a, b]]` is `c_a • g_a` at `a` and `c_b • g_b` at `b` with `c_a * c_b < 0`,
+orientation transport carries the orientation of `g_a` to the opposite of that of `g_b`. -/
+theorem detLineOrientationTransport_rayOfNeZero_of_mul_neg
+    (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
+    {v : ∀ t, (T t : E →ₗ[ℝ] F).detLine} (hv : IsDetLineCoherentOn T v (uIcc a b)) {ca cb : ℝ}
+    {ga : (T a : E →ₗ[ℝ] F).detLine} {gb : (T b : E →ₗ[ℝ] F).detLine} (hva : v a = ca • ga)
+    (hvb : v b = cb • gb) (hga : ga ≠ 0) (hgb : gb ≠ 0) (h : ca * cb < 0) :
+    detLineOrientationTransport a b hT hF (rayOfNeZero ℝ ga hga) = -rayOfNeZero ℝ gb hgb := by
+  -- Negation of orientations of determinant lines is `Module.Ray`'s negation for the additive
+  -- group structure of the tensor product (`LinearMap.instNegRayDetLine`).
+  let : AddCommGroup (T b : E →ₗ[ℝ] F).detLine := TensorProduct.addCommGroup
+  -- `v b = (-c_b) • (-g_b)` with `c_a * (-c_b) > 0`.
+  exact (detLineOrientationTransport_rayOfNeZero_of_mul_pos hT hF hv hva
+    (by rw [hvb, neg_smul_neg]) hga (neg_ne_zero.2 hgb) (by rwa [mul_neg, neg_pos])).trans
+    (neg_rayOfNeZero ℝ _ hgb).symm
 
 /-- Orientation transport from a point to itself is the identity. -/
 @[simp]

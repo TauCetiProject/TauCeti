@@ -37,7 +37,10 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
   `D : A →ₗ[R] M` has order at most one exactly when `D = δ + (· • m)` for a derivation `δ` and
   `m : M`, and this splitting is unique, with `m = D 1`.
 * `AlgEquiv.conjDifferentialOperators`: conjugation `D ↦ e ∘ D ∘ e⁻¹` by an algebra isomorphism
-  `e : A ≃ B` preserves the order of operators on the algebra itself.
+  `e : A ≃ B` preserves the order of operators on the algebra itself. More generally, an operator
+  intertwined with one of order at most `m` by a surjective algebra homomorphism has order at most
+  `m` (`mem_differentialOperators_of_comp_eq_comp`), since the homomorphism also intertwines
+  their commutators (`smulCommutator_comp_eq_comp`).
 * `apply_mem_smul_top_of_mem_pow_smul_top`: an operator of order at most `m` sends
   `I ^ (m + 1) • M` into `I • N` for every ideal `I`, so the value of `D x` modulo `I` depends
   only on `x` modulo `I ^ (m + 1)`. For the vanishing ideal of a point this is the statement
@@ -45,9 +48,22 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
   `mem_differentialOperators_iff_forall_apply_mem_smul_top` is the converse: when the points of
   `A` separate `N`, an operator that factors through `m`-jets at every point has order at most
   `m`.
+* `mem_differentialOperators_of_intertwining`: the order of an operator can be checked after
+  mapping to a jointly injective family of targets, for instance on the members of an open
+  cover.
+* `comp_comp_mem_differentialOperators`: sandwiching `D` between maps `ρ` and `σ` that intertwine
+  multiplication by each `b` with multiplication by some `a` preserves the order, since the
+  commutator of `σ ∘ D ∘ ρ` with `b` is `σ ∘ [D, a] ∘ ρ` (`smulCommutator_comp_comp`). This reads
+  operators on a manifold in a chart through cutoffs.
 * `smulCommutator_pow_comp_of_mem`: the top iterated commutators of a composition multiply,
   `ad_a ^ (m + k) (P ∘ Q) = (m + k).choose m • (ad_a ^ m P ∘ ad_a ^ k Q)`. Dividing by
   factorials over a `ℚ`-algebra, this is multiplicativity of principal symbols.
+* `Derivation.smulCommutator_pow_pow_apply`: the `n`-fold commutator of the `n`-th power of a
+  derivation `δ` with multiplication by `a` is multiplication by `n! (δ a) ^ n`, so `δ ^ (n + 1)`
+  does not have order at most `n` unless `(n + 1)! (δ a) ^ (n + 1) = 0` for all `a`
+  (`Derivation.pow_succ_notMem_differentialOperators`). In a reduced algebra without additive
+  torsion, `δ ^ (n + 1)` therefore has order at most `n` only when `δ = 0`
+  (`Derivation.pow_succ_mem_differentialOperators_iff`).
 * `derivative_comp_derivative_notMem_differentialOperators_one`: the second derivative on
   `R[X]` does not have order one when `2 ≠ 0` in `R`, since `[[∂², X], X] = 2`.
 
@@ -388,7 +404,91 @@ theorem apply_mem_smul_top_of_mem_pow_smul_top {D : M →ₗ[R] N} {m : ℕ}
     exact add_mem (ih (smulCommutator_mem_differentialOperators hD a) hy)
       (Submodule.smul_mem_smul ha Submodule.mem_top)
 
+/-! ### Checking the order on a jointly injective family -/
+
+/-- Let `φ i : A →+* B i` be a family of ring maps, and let `f i : M → M' i` and
+`g i : N → N' i` be additive maps semilinear over `φ i`, with the `g i` jointly injective. If
+`D : M → N` is intertwined with operators `D' i : M' i → N' i` of order at most `m`, that is
+`g i ∘ D = D' i ∘ f i`, then `D` has order at most `m`. For restriction maps of a sheaf to
+the members of an open cover, this says that the order of an operator on sections is local. -/
+theorem mem_differentialOperators_of_intertwining {ι : Type*} {B M' N' : ι → Type*}
+    [∀ i, CommSemiring (B i)] [∀ i, Algebra R (B i)]
+    [∀ i, AddCommMonoid (M' i)] [∀ i, Module (B i) (M' i)] [∀ i, Module R (M' i)]
+    [∀ i, IsScalarTower R (B i) (M' i)]
+    [∀ i, AddCommGroup (N' i)] [∀ i, Module (B i) (N' i)] [∀ i, Module R (N' i)]
+    [∀ i, IsScalarTower R (B i) (N' i)]
+    (φ : ∀ i, A →+* B i) (f : ∀ i, M →ₛₗ[φ i] M' i) (g : ∀ i, N →ₛₗ[φ i] N' i)
+    (hg : ∀ y : N, (∀ i, g i y = 0) → y = 0) {m : ℕ} {D : M →ₗ[R] N}
+    {D' : ∀ i, M' i →ₗ[R] N' i} (hD : ∀ i x, g i (D x) = D' i (f i x))
+    (hD' : ∀ i, D' i ∈ differentialOperators R (B i) (M' i) (N' i) m) :
+    D ∈ differentialOperators R A M N m := by
+  induction m generalizing D D' with
+  | zero =>
+    refine mem_differentialOperators_zero_iff.2 fun a x ↦ sub_eq_zero.1 (hg _ fun i ↦ ?_)
+    rw [map_sub, hD, LinearMap.map_smulₛₗ, LinearMap.map_smulₛₗ, hD,
+      mem_differentialOperators_zero_iff.1 (hD' i), sub_self]
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun a ↦
+      ih (D' := fun i ↦ smulCommutator R (φ i a) (D' i)) (fun i x ↦ ?_)
+        fun i ↦ smulCommutator_mem_differentialOperators (hD' i) _
+    simp [hD, LinearMap.map_smulₛₗ]
+
 end
+
+/-! ### Sandwiching between intertwining maps -/
+
+section Sandwich
+
+variable {R A B M N M' N' : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [CommSemiring B] [Algebra R B]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  [AddCommMonoid M'] [Module B M'] [Module R M'] [IsScalarTower R B M']
+  [AddCommGroup N'] [Module B N'] [Module R N'] [IsScalarTower R B N']
+  {ρ : M' →ₗ[R] M} {σ : N →ₗ[R] N'} {a : A} {b : B}
+
+/-- Let `ρ : M' → M` and `σ : N → N'` intertwine multiplication by `b : B` with multiplication by
+`a : A`, in the sense that `ρ (b • x) = a • ρ x` and `σ (a • y) = b • σ y`. Then the commutator
+with `b` of the sandwiched operator `σ ∘ D ∘ ρ` is the sandwiched commutator of `D` with `a`. -/
+theorem smulCommutator_comp_comp (hρ : ∀ x, ρ (b • x) = a • ρ x)
+    (hσ : ∀ y, σ (a • y) = b • σ y) (D : M →ₗ[R] N) :
+    smulCommutator R b (σ ∘ₗ D ∘ₗ ρ) = σ ∘ₗ smulCommutator R a D ∘ₗ ρ := by
+  ext x
+  simp [hρ, hσ]
+
+/-- The iterated form of `TauCeti.smulCommutator_comp_comp`. -/
+theorem smulCommutator_pow_comp_comp (hρ : ∀ x, ρ (b • x) = a • ρ x)
+    (hσ : ∀ y, σ (a • y) = b • σ y) (D : M →ₗ[R] N) (k : ℕ) :
+    (smulCommutator R b ^ k) (σ ∘ₗ D ∘ₗ ρ) = σ ∘ₗ (smulCommutator R a ^ k) D ∘ₗ ρ := by
+  induction k with
+  | zero => rfl
+  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, smulCommutator_comp_comp hρ hσ,
+      pow_succ', mul_apply_eq_comp]
+
+/-- **Sandwiching preserves the order.** Let `D : M → N` be a differential operator of order at
+most `m` over `A`, and let `ρ : M' → M` and `σ : N → N'` be `R`-linear maps from and to modules
+over a second algebra `B`, such that each `b : B` is intertwined by `ρ` and `σ` with some `a : A`:
+`ρ (b • x) = a • ρ x` and `σ (a • y) = b • σ y`. Then `σ ∘ D ∘ ρ` is a differential operator of
+order at most `m` over `B`. For instance, `ρ` may cut functions on a chart off and pull them back
+to a manifold, and `σ` may push functions on the manifold forward to the chart and cut them off. -/
+theorem comp_comp_mem_differentialOperators
+    (h : ∀ b : B, ∃ a : A, (∀ x, ρ (b • x) = a • ρ x) ∧ ∀ y, σ (a • y) = b • σ y)
+    {D : M →ₗ[R] N} {m : ℕ} (hD : D ∈ differentialOperators R A M N m) :
+    σ ∘ₗ D ∘ₗ ρ ∈ differentialOperators R B M' N' m := by
+  induction m generalizing D with
+  | zero =>
+    refine mem_differentialOperators_zero_iff_smulCommutator.2 fun b ↦ ?_
+    obtain ⟨a, hρ, hσ⟩ := h b
+    rw [smulCommutator_comp_comp hρ hσ,
+      smulCommutator_eq_zero_of_mem_differentialOperators_zero hD, LinearMap.zero_comp,
+      LinearMap.comp_zero]
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun b ↦ ?_
+    obtain ⟨a, hρ, hσ⟩ := h b
+    rw [smulCommutator_comp_comp hρ hσ]
+    exact ih (smulCommutator_mem_differentialOperators hD a)
+
+end Sandwich
 
 /-! ### Detecting the order at points -/
 
@@ -439,6 +539,14 @@ theorem _root_.LinearMap.mulLeft_mem_differentialOperators_zero {R A : Type*} [C
     [CommRing A] [Algebra R A] (a : A) :
     LinearMap.mulLeft R a ∈ differentialOperators R A A A 0 :=
   mem_differentialOperators_zero_iff.2 fun b x ↦ by simp [mul_left_comm]
+
+/-- Multiplication by an element of `A` on an `A`-module is a differential operator of order
+`0`. -/
+theorem _root_.Algebra.lsmul_mem_differentialOperators_zero {R A M : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [AddCommGroup M] [Module R M] [Module A M]
+    [IsScalarTower R A M] (a : A) :
+    Algebra.lsmul R R M a ∈ differentialOperators R A M M 0 :=
+  mem_differentialOperators_zero_iff.2 fun b x ↦ smul_comm a b x
 
 /-! ### First-order operators on the algebra -/
 
@@ -521,6 +629,52 @@ theorem mem_differentialOperators_one_iff {D : A →ₗ[R] M} :
 
 end FirstOrder
 
+/-! ### Powers of a derivation -/
+
+section DerivationPow
+
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+
+/-- The `n`-fold commutator of the `n`-th power of a derivation `δ` with multiplication by `a` is
+multiplication by `n! (δ a) ^ n`: the principal symbol of `δ ^ n` at `da` is `(δ a) ^ n`. -/
+theorem _root_.Derivation.smulCommutator_pow_pow_apply (δ : Derivation R A A) (a : A) (n : ℕ)
+    (x : A) :
+    (smulCommutator R a ^ n) ((δ : Module.End R A) ^ n) x = n.factorial • (δ a ^ n * x) := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    have hpow : (δ : Module.End R A) ^ n ∈ differentialOperators R A A A n := by
+      simpa using SetLike.pow_mem_graded n δ.mem_differentialOperators_one
+    have h := smulCommutator_pow_comp_of_mem δ.mem_differentialOperators_one hpow a
+    rw [add_comm 1 n] at h
+    rw [pow_succ' (δ : Module.End R A), Module.End.mul_eq_comp, h]
+    simp [ih, smulCommutator_apply_apply, Nat.factorial_succ, Derivation.leibniz]
+    ring
+
+/-- The `(n + 1)`-st power of a derivation `δ` does not have order at most `n` when
+`(n + 1)! (δ a) ^ (n + 1) ≠ 0` for some `a`: its `(n + 1)`-fold commutator with `a` sends `1` to
+this element. -/
+theorem _root_.Derivation.pow_succ_notMem_differentialOperators (δ : Derivation R A A) {a : A}
+    {n : ℕ} (h : (n + 1).factorial • δ a ^ (n + 1) ≠ 0) :
+    (δ : Module.End R A) ^ (n + 1) ∉ differentialOperators R A A A n := fun hδ ↦ h <| by
+  simpa [δ.smulCommutator_pow_pow_apply] using
+    congr($(smulCommutator_pow_eq_zero hδ n.lt_add_one a) 1)
+
+/-- In a reduced algebra without additive torsion, the `(n + 1)`-st power of a derivation `δ` has
+order at most `n` only when `δ = 0`. So the `n`-th power of a nonzero derivation has order exactly
+`n`. -/
+theorem _root_.Derivation.pow_succ_mem_differentialOperators_iff [IsReduced A] [HasUniqueDiv A]
+    (δ : Derivation R A A) (n : ℕ) :
+    (δ : Module.End R A) ^ (n + 1) ∈ differentialOperators R A A A n ↔ δ = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  ext a
+  by_contra ha
+  refine δ.pow_succ_notMem_differentialOperators (a := a) (fun h₀ ↦ ha ?_) h
+  rw [← nsmul_zero (n + 1).factorial] at h₀
+  exact IsNilpotent.eq_zero ⟨_, nsmul_right_injective (Nat.factorial_ne_zero _) h₀⟩
+
+end DerivationPow
+
 /-! ### Transport along algebra isomorphisms -/
 
 section Conj
@@ -536,21 +690,45 @@ theorem _root_.AlgEquiv.smulCommutator_conj (a : A) (D : A →ₗ[R] A) :
   ext y
   simp
 
+/-- If an algebra homomorphism `ρ : A → B` intertwines an operator `P` on `A` with an operator `Q`
+on `B`, that is `Q ∘ ρ = ρ ∘ P`, then it intertwines the commutator of `P` with `a` with the
+commutator of `Q` with `ρ a`. -/
+theorem smulCommutator_comp_eq_comp {ρ : A →ₐ[R] B} {P : A →ₗ[R] A} {Q : B →ₗ[R] B}
+    (h : Q ∘ₗ ρ.toLinearMap = ρ.toLinearMap ∘ₗ P) (a : A) :
+    smulCommutator R (ρ a) Q ∘ₗ ρ.toLinearMap = ρ.toLinearMap ∘ₗ smulCommutator R a P := by
+  ext x
+  have h' (y : A) : Q (ρ y) = ρ (P y) := congr($h y)
+  simp [← map_mul, h']
+
+/-- If a surjective algebra homomorphism `ρ : A → B` intertwines an operator `P` on `A` with an
+operator `Q` on `B`, that is `Q ∘ ρ = ρ ∘ P`, then `Q` has order at most `m` whenever `P` does.
+For instance, restriction of smooth functions on a disjoint union of manifolds to one component
+is such a homomorphism. -/
+theorem mem_differentialOperators_of_comp_eq_comp {ρ : A →ₐ[R] B} (hρ : Function.Surjective ρ)
+    {P : A →ₗ[R] A} {Q : B →ₗ[R] B} (h : Q ∘ₗ ρ.toLinearMap = ρ.toLinearMap ∘ₗ P) {m : ℕ}
+    (hP : P ∈ differentialOperators R A A A m) : Q ∈ differentialOperators R B B B m := by
+  induction m generalizing P Q with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hP ⊢
+    intro b
+    obtain ⟨a, rfl⟩ := hρ b
+    have h0 := smulCommutator_comp_eq_comp h a
+    rw [hP a, LinearMap.comp_zero] at h0
+    ext y
+    obtain ⟨x, rfl⟩ := hρ y
+    exact congr($h0 x)
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hP ⊢
+    intro b
+    obtain ⟨a, rfl⟩ := hρ b
+    exact ih (smulCommutator_comp_eq_comp h a) (hP a)
+
 /-- Conjugation by an algebra isomorphism preserves the order of a differential operator. -/
 theorem _root_.AlgEquiv.conj_mem_differentialOperators {D : A →ₗ[R] A} {m : ℕ}
     (hD : D ∈ differentialOperators R A A A m) :
-    e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap ∈ differentialOperators R B B B m := by
-  induction m generalizing D with
-  | zero =>
-    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
-    intro b
-    rw [← e.apply_symm_apply b, e.smulCommutator_conj, hD]
-    simp
-  | succ m ih =>
-    rw [mem_differentialOperators_succ_iff] at hD ⊢
-    intro b
-    rw [← e.apply_symm_apply b, e.smulCommutator_conj]
-    exact ih (hD _)
+    e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap ∈ differentialOperators R B B B m :=
+  mem_differentialOperators_of_comp_eq_comp (ρ := (e : A →ₐ[R] B)) e.surjective
+    (by ext; simp) hD
 
 /-- Iterated commutators commute with conjugation by an algebra isomorphism `e`, the entries
 being transported by `e`. -/
