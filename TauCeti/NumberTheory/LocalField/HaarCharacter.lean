@@ -43,8 +43,11 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 
 ## Main results
 
+* `TauCeti.isCompact_integer`: the ring of integers is compact.
 * `TauCeti.existsUnique_isAddHaarMeasure_measure_integer_eq_one`: there is exactly one additive
   Haar measure on `K` giving `𝒪[K]` mass one.
+* `MeasureTheory.measure_smul_integer_of_irreducible`: the maximal ideal `ϖ • 𝒪[K]` has `q⁻¹`
+  times the mass of `𝒪[K]`.
 * `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue`: the Haar character of `a ∈ Kˣ`
   is `|a|_K`; `MeasureTheory.distribHaarChar_eq_zpow` writes it as `q ^ (-v_K(a))`.
 * `MeasureTheory.distribHaarChar_of_isUniformizer`: a uniformizer has character `q⁻¹`.
@@ -54,6 +57,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   for every `a ∈ K`, including `a = 0`.
 * `MeasureTheory.Measure.map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul`: for `a ≠ 0`,
   multiplication by `a` pushes `μ` forward to `|a|_K⁻¹ • μ`.
+* `MeasureTheory.Measure.addHaar_setOf_valuation_eq_one`: the units of `𝒪[K]`, the elements of
+  valuation one, have mass `(1 - q⁻¹) μ 𝒪[K]`.
 
 ## References
 
@@ -87,6 +92,20 @@ noncomputable def integerPositiveCompacts : PositiveCompacts K where
 theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪[K] :=
   (rfl)
 
+/-- The ring of integers of a nonarchimedean local field is compact. -/
+theorem isCompact_integer : IsCompact (𝒪[K] : Set K) :=
+  isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
+
+variable {K} in
+/-- The units of the ring of integers, the elements of valuation one, form a measurable set: they
+are the compact set `𝒪[K]` minus the compact maximal ideal `ϖ • 𝒪[K]`. -/
+theorem measurableSet_setOf_valuation_eq_one [MeasurableSpace K] [BorelSpace K] :
+    MeasurableSet {x : K | valuation K x = 1} := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  rw [hϖ.setOf_valuation_eq_one_eq_sdiff]
+  exact (isCompact_integer K).isClosed.measurableSet.diff
+    ((isCompact_integer K).smul (ϖ : K)).isClosed.measurableSet
+
 /-- **The normalized Haar measure of a local field.** There is exactly one additive Haar measure
 on `K` giving the ring of integers `𝒪[K]` mass one, namely
 `MeasureTheory.Measure.addHaarMeasure (integerPositiveCompacts K)`. -/
@@ -108,7 +127,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 `ϖ • 𝒪[K]` has `q⁻¹` times the mass of `𝒪[K]`, where `q` is the cardinality of the residue field:
 the box formula `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow` in one
 coordinate. -/
-private theorem measure_smul_integer_of_irreducible [MeasurableSpace K] [BorelSpace K]
+theorem measure_smul_integer_of_irreducible [MeasurableSpace K] [BorelSpace K]
     (μ : Measure K) [μ.IsAddHaarMeasure] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
     μ ((ϖ : K) • (𝒪[K] : Set K)) = (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ * μ 𝒪[K] := by
   have hm : ((↑) : 𝒪[K] → K) '' ↑𝓂[K] = (ϖ : K) • (𝒪[K] : Set K) := by
@@ -195,6 +214,22 @@ theorem map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul {a : K} (ha : a ≠
   rw [map_apply (measurable_const_smul a) hs, Set.preimage_smul₀ ha,
     addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, smul_apply]
   simp
+
+/-- **The Haar mass of the units.** The units of the ring of integers of a nonarchimedean local
+field, the elements of valuation one, have Haar mass `(1 - q⁻¹) μ 𝒪[K]`, where `q` is the
+cardinality of the residue field: they are the complement in `𝒪[K]` of the maximal ideal
+`ϖ 𝒪[K]`, of mass `q⁻¹ μ 𝒪[K]`. -/
+theorem addHaar_setOf_valuation_eq_one :
+    μ {x : K | valuation K x = 1} = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hsub : (ϖ : K) • (𝒪[K] : Set K) ⊆ 𝒪[K] := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact mul_mem ϖ.property hy
+  have hcpt := (isCompact_integer K).smul (ϖ : K)
+  rw [hϖ.setOf_valuation_eq_one_eq_sdiff, measure_sdiff hsub
+    hcpt.isClosed.measurableSet.nullMeasurableSet hcpt.measure_lt_top.ne,
+    measure_smul_integer_of_irreducible μ hϖ,
+    ENNReal.sub_mul fun _ _ ↦ (isCompact_integer K).measure_lt_top.ne, one_mul]
 
 end Measure
 
