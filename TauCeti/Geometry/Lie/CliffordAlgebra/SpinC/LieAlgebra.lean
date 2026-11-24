@@ -209,11 +209,9 @@ def realSpinProdDetLinearEquiv : (𝔰 × ℝ) ≃ₗ[ℝ] 𝔤 :=
 /-- Reconstruction adds the Spin Lie-algebra image to the half-speed central determinant lift. -/
 theorem realSpinProdDetLinearEquiv_apply (p : 𝔰 × ℝ) :
     realSpinProdDetLinearEquiv n hQ p = ιS p.1 + realDetLieLift n hQ p.2 := by
-  unfold realSpinProdDetLinearEquiv
-  rw [LinearEquiv.trans_apply, realDetLieLinearEquiv_apply, LinearEquiv.prodCongr_apply,
-    LinearEquiv.trans_apply, LieEquiv.coe_toLinearEquiv, LinearEquiv.refl_apply]
-  dsimp only
-  rw [LinearEquiv.coe_ofEq_apply, coe_realSpinLieEquivDetKer_apply]
+  dsimp only [realSpinProdDetLinearEquiv]
+  rw [LinearEquiv.trans_apply, realDetLieLinearEquiv_apply]
+  rfl
 
 /-- Evaluating the determinant weight on `realSpinProdDetLinearEquiv (X, a)` recovers `a`. -/
 @[simp]

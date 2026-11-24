@@ -198,14 +198,26 @@ theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
 theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
-  simpa only [ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO),
-    ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO),
-    realSpinToSpecialOrthogonalLieEquiv_apply,
-    realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
-    realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
-    realSpinLieEquivUnitsRange_apply] using
-    congrArg (fun φ ↦ ContinuousMonoidHom.lieMap (I := IS) (I' := ISO) φ X)
-      (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
+  -- Factor through the composite `Spin(n) → Spinᶜ(n) → SO(n)`, which agrees with the compact
+  -- Spin-to-SO(n) projection on `SpinUnitsRange(n)`.
+  calc
+    πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
+        (ofSpinContinuousMonoidHom _ hQ) X)
+      = ContinuousMonoidHom.lieMap (I := IS) (I' := ISO)
+          ((realToSpecialOrthogonalRange n hQ).comp (ofSpinContinuousMonoidHom _ hQ)) X :=
+        (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO)
+          (ofSpinContinuousMonoidHom _ hQ) (realToSpecialOrthogonalRange n hQ) X).symm
+    _ = ContinuousMonoidHom.lieMap (I := IS) (I' := ISO)
+          ((realCliffordSpinToSpecialOrthogonalCarrierRange n).comp
+            (realCliffordSpinContinuousMulEquivUnitsRange n :
+              spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)) X := by
+        rw [realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom]
+    _ = realSpinToSpecialOrthogonalLieEquiv n X := by
+        rw [ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO),
+          ← realSpinLieEquivUnitsRange_apply,
+          ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+          ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
+          ← realSpinToSpecialOrthogonalLieEquiv_apply]
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/

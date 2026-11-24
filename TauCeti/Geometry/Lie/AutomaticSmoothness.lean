@@ -175,8 +175,7 @@ theorem toContMDiffMonoidMorphism_fst :
       ContMDiffMonoidMorphism.fst := by
   apply DFunLike.coe_injective
   funext p
-  rw [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_fst]
-  exact rfl
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_fst]
 
 /-- Converting the continuous second projection to a smooth morphism recovers
 `ContMDiffMonoidMorphism.snd`. -/
@@ -186,7 +185,6 @@ theorem toContMDiffMonoidMorphism_snd :
       ContMDiffMonoidMorphism.snd := by
   apply DFunLike.coe_injective
   funext p
-  rw [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_snd]
-  exact rfl
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_snd]
 
 end ContinuousMonoidHom

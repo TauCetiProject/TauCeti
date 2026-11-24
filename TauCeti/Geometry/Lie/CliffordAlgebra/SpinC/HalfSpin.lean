@@ -242,12 +242,23 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_ofSpin
   let φ := realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε
   let ψ := realHalfSpinSmoothHom o hQ b ρ ε
   let f := spinCGroup.ofSpinContinuousMonoidHom (realCliffordForm 4 0) hpos
+  -- Factor through the restricted smooth representation `φ ∘ ofSpin` on `Spin(4)`, which agrees
+  -- with `ψ` transported along `realCliffordSpinContinuousMulEquivUnitsRange`.
   have hlie :
       lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) =
         lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
-    simpa only [lieMap_comp, LieHom.comp_apply, ContinuousMonoidHom.lieMap_def,
-      realSpinLieEquivUnitsRange_apply] using
-      congrArg (fun k ↦ lieMap k X) (realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin o hQ b ρ ε)
+    calc
+      lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X)
+        = lieMap (φ.comp (f.toContMDiffMonoidMorphism IS IC)) X := by
+          rw [ContinuousMonoidHom.lieMap_def, ← LieHom.comp_apply, ← lieMap_comp]
+      _ = lieMap (ψ.comp ((realCliffordSpinContinuousMulEquivUnitsRange 4 :
+            spinGroup (realCliffordForm 4 0) →ₜ*
+              MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)))
+            |>.toContMDiffMonoidMorphism IS IS)) X := by
+          rw [realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin]
+      _ = lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
+          rw [lieMap_comp, LieHom.comp_apply, ← ContinuousMonoidHom.lieMap_def,
+            ← realSpinLieEquivUnitsRange_apply]
   rw [hlie, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply (R := S →L[ℂ] S),
     unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom]
   simp only [realSpinLieEquivQuadratic_apply, realQuadraticLieSubalgebraEvenIncl_apply]

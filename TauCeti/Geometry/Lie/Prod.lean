@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import Mathlib.Algebra.Lie.Prod
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Prod
 
 /-!
 # The Lie algebra of a product Lie group
@@ -148,16 +149,12 @@ theorem prodLieEquiv_continuousMonoidHom_lieMap_prod
     ← ContinuousMonoidHom.toContMDiffMonoidMorphism_fst (I := I) (I' := I') (G := G) (G' := G'),
     ← ContinuousMonoidHom.toContMDiffMonoidMorphism_snd (I := I) (I' := I') (G := G) (G' := G'),
     ← ContinuousMonoidHom.lieMap_def, ← ContinuousMonoidHom.lieMap_def]
-  have hfst : (ContinuousMonoidHom.fst G G').comp (f.prod g) = f := by
-    apply ContinuousMonoidHom.ext; intro x; rfl
-  have hsnd : (ContinuousMonoidHom.snd G G').comp (f.prod g) = g := by
-    apply ContinuousMonoidHom.ext; intro x; rfl
   have h1 := ContinuousMonoidHom.lieMap_comp_apply (I := I'') (I' := I.prod I') (I'' := I)
     (f.prod g) (ContinuousMonoidHom.fst G G') D
   have h2 := ContinuousMonoidHom.lieMap_comp_apply (I := I'') (I' := I.prod I') (I'' := I')
     (f.prod g) (ContinuousMonoidHom.snd G G') D
-  rw [hfst] at h1
-  rw [hsnd] at h2
+  rw [ContinuousMonoidHom.fst_comp_prod] at h1
+  rw [ContinuousMonoidHom.snd_comp_prod] at h2
   exact Prod.ext h1.symm h2.symm
 
 /-- The left factor inclusion maps a derivation to the first summand of the product Lie algebra. -/
@@ -166,10 +163,8 @@ theorem prodLieEquiv_continuousMonoidHom_lieMap_inl (X : LeftInvariantDerivation
         (ContinuousMonoidHom.lieMap (I := I) (I' := I.prod I')
           (ContinuousMonoidHom.inl G G') X) =
       (X, 0) := by
-  have hinl : ContinuousMonoidHom.inl G G' = (ContinuousMonoidHom.id G).prod 1 := by
-    apply ContinuousMonoidHom.ext; intro x; rfl
-  rw [hinl, prodLieEquiv_continuousMonoidHom_lieMap_prod, ContinuousMonoidHom.lieMap_id,
-    ContinuousMonoidHom.lieMap_one, one_apply_eq_self, zero_apply]
+  rw [ContinuousMonoidHom.inl, prodLieEquiv_continuousMonoidHom_lieMap_prod,
+    ContinuousMonoidHom.lieMap_id, ContinuousMonoidHom.lieMap_one, one_apply_eq_self, zero_apply]
 
 /-- The right factor inclusion maps a derivation to the second summand of the product Lie
 algebra. -/
@@ -178,11 +173,8 @@ theorem prodLieEquiv_continuousMonoidHom_lieMap_inr (Y : LeftInvariantDerivation
         (ContinuousMonoidHom.lieMap (I := I') (I' := I.prod I')
           (ContinuousMonoidHom.inr G G') Y) =
       (0, Y) := by
-  have hinr : ContinuousMonoidHom.inr G G' =
-      (1 : G' →ₜ* G).prod (ContinuousMonoidHom.id G') := by
-    apply ContinuousMonoidHom.ext; intro y; rfl
-  rw [hinr, prodLieEquiv_continuousMonoidHom_lieMap_prod, ContinuousMonoidHom.lieMap_one,
-    ContinuousMonoidHom.lieMap_id, zero_apply, one_apply_eq_self]
+  rw [ContinuousMonoidHom.inr, prodLieEquiv_continuousMonoidHom_lieMap_prod,
+    ContinuousMonoidHom.lieMap_one, ContinuousMonoidHom.lieMap_id, zero_apply, one_apply_eq_self]
 
 /-- The inverse product Lie equivalence reconstructs a pair of derivations as the sum of their
 images under the two factor inclusions. -/
