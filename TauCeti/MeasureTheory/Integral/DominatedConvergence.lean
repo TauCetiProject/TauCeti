@@ -84,6 +84,33 @@ theorem aestronglyMeasurable_of_tendsto_ae_of_eventually {ι β : Type*} [Topolo
   filter_upwards [lim] with x hx
   exact hx.comp (hu.comp (tendsto_add_atTop_nat N))
 
+/-- **Integrability of an a.e. series.** If the integrals of the norms of integrable functions
+`G n` are summable and `g x` is the sum of the `G n x` for almost every `x`, then `g` is
+integrable. Mathlib's `MeasureTheory.hasSum_integral_of_summable_integral_norm` computes the
+integral of `∑' n, G n`; this lemma identifies an a.e. pointwise sum `g` as integrable. When `E` is
+complete the series of the `G n` converges in `L¹`, and the statement also follows from
+`MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`; the proof here does not use completeness. -/
+theorem integrable_of_hasSum_of_summable_integral_norm {E : Type*} [NormedAddCommGroup E]
+    {G : ℕ → α → E} {g : α → E} (hG : ∀ n, Integrable (G n) μ)
+    (hsum : Summable fun n ↦ ∫ x, ‖G n x‖ ∂μ) (hg : ∀ᵐ x ∂μ, HasSum (fun n ↦ G n x) (g x)) :
+    Integrable g μ := by
+  have hmeas : AEStronglyMeasurable g μ :=
+    aestronglyMeasurable_of_tendsto_ae atTop
+      (fun N ↦ (integrable_finsetSum (Finset.range N) fun n _ ↦ hG n).aestronglyMeasurable)
+      (hg.mono fun x hx ↦ hx.tendsto_sum_nat)
+  have hle : ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ ∑' n, ‖G n x‖ₑ := by
+    filter_upwards [hg] with x hx
+    rw [← hx.tsum_eq]
+    exact eNorm_tsum_le_tsum_eNorm
+  refine ⟨hmeas, hasFiniteIntegral_iff_eNorm.2 ?_⟩
+  calc ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ∑' n, ‖G n x‖ₑ ∂μ := lintegral_mono_ae hle
+    _ = ∑' n, ∫⁻ x, ‖G n x‖ₑ ∂μ := lintegral_tsum fun n ↦ (hG n).aestronglyMeasurable.eNorm
+    _ = ∑' n, ENNReal.ofReal (∫ x, ‖G n x‖ ∂μ) :=
+      tsum_congr fun n ↦ (ofReal_integral_norm_eq_lintegral_eNorm (hG n)).symm
+    _ = ENNReal.ofReal (∑' n, ∫ x, ‖G n x‖ ∂μ) :=
+      (ENNReal.ofReal_tsum_of_nonneg (fun n ↦ integral_nonneg fun _ ↦ norm_nonneg _) hsum).symm
+    _ < ⊤ := ENNReal.ofReal_lt_top
+
 /-- **Dominated convergence away from one point.** Suppose `K i` is eventually a.e.-strongly
 measurable, and `K i` is eventually dominated by `K₀` and converges to it away from a point
 `x₀` with `μ {x₀} = 0`. If `K₀ * w` is integrable, then the integrals of `K i * w` converge to the
@@ -367,33 +394,6 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
     · refine tendsto_const_nhds.congr fun k => ?_
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
-
-/-- **Integrability of an a.e. series.** If the integrals of the norms of integrable functions
-`G n` are summable and `g x` is the sum of the `G n x` for almost every `x`, then `g` is
-integrable. Mathlib's `MeasureTheory.hasSum_integral_of_summable_integral_norm` computes the
-integral of `∑' n, G n`; this lemma identifies an a.e. pointwise sum `g` as integrable. When `E` is
-complete the series of the `G n` converges in `L¹`, and the statement also follows from
-`MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`; the proof here does not use completeness. -/
-theorem integrable_of_hasSum_of_summable_integral_norm {E : Type*} [NormedAddCommGroup E]
-    {G : ℕ → α → E} {g : α → E} (hG : ∀ n, Integrable (G n) μ)
-    (hsum : Summable fun n ↦ ∫ x, ‖G n x‖ ∂μ) (hg : ∀ᵐ x ∂μ, HasSum (fun n ↦ G n x) (g x)) :
-    Integrable g μ := by
-  have hmeas : AEStronglyMeasurable g μ :=
-    aestronglyMeasurable_of_tendsto_ae atTop
-      (fun N ↦ (integrable_finsetSum (Finset.range N) fun n _ ↦ hG n).aestronglyMeasurable)
-      (hg.mono fun x hx ↦ hx.tendsto_sum_nat)
-  have hle : ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ ∑' n, ‖G n x‖ₑ := by
-    filter_upwards [hg] with x hx
-    rw [← hx.tsum_eq]
-    exact eNorm_tsum_le_tsum_eNorm
-  refine ⟨hmeas, hasFiniteIntegral_iff_eNorm.2 ?_⟩
-  calc ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ∑' n, ‖G n x‖ₑ ∂μ := lintegral_mono_ae hle
-    _ = ∑' n, ∫⁻ x, ‖G n x‖ₑ ∂μ := lintegral_tsum fun n ↦ (hG n).aestronglyMeasurable.eNorm
-    _ = ∑' n, ENNReal.ofReal (∫ x, ‖G n x‖ ∂μ) :=
-      tsum_congr fun n ↦ (ofReal_integral_norm_eq_lintegral_eNorm (hG n)).symm
-    _ = ENNReal.ofReal (∑' n, ∫ x, ‖G n x‖ ∂μ) :=
-      (ENNReal.ofReal_tsum_of_nonneg (fun n ↦ integral_nonneg fun _ ↦ norm_nonneg _) hsum).symm
-    _ < ⊤ := ENNReal.ofReal_lt_top
 
 end TauCeti
 
