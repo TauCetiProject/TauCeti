@@ -8,17 +8,18 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.DiscMollification
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Winding.Number.Circle.Loop
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 import TauCeti.Topology.Discrete
 import TauCeti.Analysis.Contour.Winding.Number.Homotopy
 import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic
+import TauCeti.Analysis.Contour.AbsolutelyContinuous
 
 /-!
 # Integer disc charges of the cutoff current
@@ -35,7 +36,7 @@ the boundary circle (`exists_int_integral_cutoffCurrent_comp_closedBall`). The f
 `TauCeti.SeibergWitten.integral_cutoffCurrent_closedBall` already writes `∫_D Θ` as the winding
 integral `∮ Im (α⁻¹ dα)`, with no contribution from the connection. Here that integral is
 identified, through the real winding formula
-`TauCeti.Contour.windingNumber_eq_real_integral_of_closed`, with `2π` times the winding number
+`AbsolutelyContinuousOnInterval.windingNumber_eq_real_integral`, with `2π` times the winding number
 `TauCeti.Contour.windingNumber`, which is an integer because the boundary loop is closed and
 misses `0`. The pullback naturality of the cutoff current
 (`TauCeti.SeibergWitten.cutoffCurrent_comp`) reduces the statement for a disc `σ : ℂ → E` in an
@@ -181,8 +182,9 @@ theorem exists_int_integral_cutoffCurrent_closedBall {α : ℂ → ℂ}
     hγc.continuousOn hdiff (fun θ _ ↦ hγ₀ θ)
   refine ⟨n, hn, ?_⟩
   -- The winding number of the boundary loop is `(2π)⁻¹` times its real winding integral.
-  have hreal := Contour.windingNumber_eq_real_integral_of_closed hclosed countable_empty
-    hγc.continuousOn hdiff (fun θ _ ↦ hγ₀ θ) hint
+  have hac := ContinuousOn.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv
+    hγc.continuousOn countable_empty hdiff (fun θ _ ↦ hγ₀ θ) hint
+  have hreal := hac.windingNumber_eq_real_integral hclosed fun ⟨θ, _, h⟩ ↦ hγ₀ θ h
   rw [hn, ← ofReal_intCast, ofReal_inj] at hreal
   rw [integral_cutoffCurrent_closedBall hr hα hb hχ hχ₀ hbd]
   calc ∫ θ in -π..π, phaseForm α (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I)
@@ -514,8 +516,9 @@ theorem exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul {E : Type*
   have hclosed : ℓ (-π) = ℓ π := by
     simp only [hℓ, Function.comp_apply, ← periodic_circleMap z₁ r₁ (-π)]
     ring_nf
-  obtain ⟨n, hn⟩ := (IsPiecewiseC1On.of_contDiffOn hℓc.contDiffOn).exists_int_windingNumber
-    hclosed fun t _ h ↦ by
+  obtain ⟨n, hn⟩ :=
+    (hℓc.contDiffOn (s := uIcc (-π) π)).absolutelyContinuousOnInterval.exists_int_windingNumber
+      (z := z₀) hclosed fun ⟨t, _, h⟩ ↦ by
       have := Metric.mem_sphere.1 (hℓs t)
       rw [h, dist_self] at this
       exact hr.ne this
