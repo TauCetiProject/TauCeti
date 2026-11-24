@@ -112,12 +112,6 @@ theorem measurable_coordinateFluxIntegrand (g : EuclideanSpace ℝ (Fin n) → F
   rw [funext (coordinateFluxIntegrand_def g)]
   fun_prop
 
-/-- The factor `x_j / |x|` of the flux density is bounded, along any filter. -/
-theorem isBigO_apply_div_norm {ι : Type*} [Fintype ι] (l : Filter (EuclideanSpace ℝ ι)) (j : ι) :
-    (fun x : EuclideanSpace ℝ ι ↦ x j / ‖x‖) =O[l] fun _ ↦ (1 : ℝ) :=
-  ((Asymptotics.isBigO_inv_norm_smul_apply _ (fun _ ↦ EuclideanSpace.proj j) id).trans
-    (Asymptotics.isBigO_const_const _ one_ne_zero _)).congr_left fun x ↦ by simp [div_eq_inv_mul]
-
 /-- Coefficients with derivatives `o(|x|⁻¹)` at infinity have flux density `o(|x|⁻¹)`. -/
 theorem isLittleO_coordinateFluxIntegrand {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
     (hg : ∀ i j, (fun x ↦ fderiv ℝ (fun y ↦ g y i j) x) =o[Bornology.cobounded _]
@@ -130,7 +124,7 @@ theorem isLittleO_coordinateFluxIntegrand {g : EuclideanSpace ℝ (Fin n) → Fi
   rw [funext (coordinateFluxIntegrand_def g)]
   refine Asymptotics.IsLittleO.fun_sum fun j _ ↦ ?_
   simpa using ((Asymptotics.IsLittleO.fun_sum fun i _ ↦ (hD i j i).sub (hD i i j))).mul_isBigO
-    (isBigO_apply_div_norm _ j)
+    (Asymptotics.isBigO_apply_div_norm _ j)
 
 /-- The flux density vanishes at the origin, where `x_j / |x|` is `0`. -/
 @[simp]
