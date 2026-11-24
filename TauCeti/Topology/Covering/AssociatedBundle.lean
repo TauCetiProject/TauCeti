@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
-public import Mathlib.Topology.Homeomorph.Quotient
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 
@@ -230,6 +229,15 @@ section AssociatedCore
 variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   (ρ : G →* (F →L[𝕜] F)ˣ) {y : E}
 
+/-- The identity of `G` acts trivially through a representation `ρ`. -/
+private theorem rep_one_apply (v : F) : (ρ 1 : F →L[𝕜] F) v = v := by
+  rw [map_one, Units.val_one, one_apply_eq_self]
+
+/-- Through a representation `ρ`, the action of `g⁻¹` undoes the action of `g`. -/
+private theorem rep_inv_apply_apply (g : G) (v : F) :
+    (ρ g⁻¹ : F →L[𝕜] F) ((ρ g : F →L[𝕜] F) v) = v := by
+  rw [← mul_apply_eq_comp, ← Units.val_mul, ← map_mul, inv_mul_cancel, rep_one_apply]
+
 /-- The vector bundle `E ×_G F` over `X` associated with a representation `ρ` of the deck group
 on `F`. Its chart through `e : E` lives over the domain of the local section of `p` through `e`,
 and the transition from the chart through `e` to the chart through `e'` over `x` is
@@ -244,7 +252,7 @@ noncomputable def associatedCore : VectorBundleCore 𝕜 X F E where
         (x := Function.surjInv hp.surjective x)
   coordChange e e' x := ρ (hp.deckChange e e' x)
   coordChange_self e x hx v := by
-    rw [hp.deckChange_self hx, map_one, Units.val_one, one_apply_eq_self]
+    rw [hp.deckChange_self hx, rep_one_apply]
   continuousOn_coordChange e e' x hx :=
     (continuousAt_const.congr (by
       filter_upwards [hp.eventually_deckChange_eq hx] with x' hx'
@@ -342,8 +350,7 @@ private theorem associatedCore_coordChange_localInverseAt {e : E} {x : X}
   rw [hz] at hmem
   have hy : x ∈ (hp.associatedCore ρ).baseSet y := by rwa [associatedCore_baseSet]
   rw [← (hp.associatedCore ρ).coordChange_comp _ y _ x ⟨⟨he, hy⟩, hmem⟩,
-    associatedCore_coordChange, hp.deckChange_localInverseAt hx, map_one, Units.val_one,
-    one_apply_eq_self]
+    associatedCore_coordChange, hp.deckChange_localInverseAt hx, rep_one_apply]
 
 /-- The equivariance of the coordinates of a section in the charts through the points of `E`. -/
 private theorem localTriv_associatedCore_smul (σ : ∀ x, (hp.associatedCore ρ).Fiber x) (g : G)
@@ -488,7 +495,7 @@ theorem localTriv_associatedMk_of_mem_target {e y : E}
     rw [associatedCore_baseSet]
     exact hp.apply_mem_localInverseAt_source_of_mem_target hy
   rw [hp.localTriv_associatedMk ρ he, associatedCore_coordChange,
-    hp.deckChange_eq_one_of_mem_target hy, map_one, Units.val_one, one_apply_eq_self]
+    hp.deckChange_eq_one_of_mem_target hy, rep_one_apply]
 
 /-- Two points over the domain of the chart through `e` agree when the chart takes them to the
 same point. -/
@@ -592,12 +599,10 @@ quotient covering `p : E → X`, its quotient is the total space of the associat
 (`IsQuotientCoveringMap.associatedQuotientHomeomorph`). -/
 def _root_.TauCeti.associatedOrbitRel : Setoid (E × F) where
   r q q' := ∃ g : G, g • q.1 = q'.1 ∧ (ρ g : F →L[𝕜] F) q.2 = q'.2
-  iseqv.refl _ := ⟨1, one_smul _ _, by rw [map_one, Units.val_one, one_apply_eq_self]⟩
+  iseqv.refl _ := ⟨1, one_smul _ _, rep_one_apply ρ _⟩
   iseqv.symm := by
     rintro ⟨z, w⟩ ⟨-, -⟩ ⟨g, rfl, rfl⟩
-    refine ⟨g⁻¹, inv_smul_smul _ _, ?_⟩
-    rw [← mul_apply_eq_comp, ← Units.val_mul, ← map_mul, inv_mul_cancel, map_one,
-      Units.val_one, one_apply_eq_self]
+    exact ⟨g⁻¹, inv_smul_smul _ _, rep_inv_apply_apply ρ g w⟩
   iseqv.trans := by
     rintro ⟨z, w⟩ ⟨-, -⟩ ⟨-, -⟩ ⟨g, rfl, rfl⟩ ⟨g', rfl, rfl⟩
     refine ⟨g' * g, mul_smul _ _ _, ?_⟩
@@ -621,18 +626,23 @@ orbit relation `(y, v) ∼ (g • y, ρ g v)`; the homeomorphism sends the class
 point it represents (`IsQuotientCoveringMap.associatedQuotientHomeomorph_mk`). -/
 noncomputable def associatedQuotientHomeomorph :
     Quotient (TauCeti.associatedOrbitRel E ρ) ≃ₜ (hp.associatedCore ρ).TotalSpace :=
-  (Homeomorph.Quotient.congrRight (Setoid.ext_iff.1 (hp.associatedOrbitRel_eq_ker ρ))).trans
-    (Topology.IsQuotientMap.homeomorph
-      (f := ⟨_, (hp.isLocalHomeomorph_associatedMk ρ).continuous⟩)
-      (hp.isOpenQuotientMap_associatedMk ρ).isQuotientMap)
+  have hker := Setoid.ext_iff.1 (hp.associatedOrbitRel_eq_ker ρ)
+  have hmk := hp.isOpenQuotientMap_associatedMk ρ
+  IsHomeomorph.homeomorph
+    (Quotient.lift (hp.associatedMk ρ) fun _ _ h ↦ Setoid.ker_def.1 ((hker _ _).1 h))
+    ⟨hmk.continuous.quotient_lift _,
+      .of_comp (f := Quotient.mk _) continuous_quotient_mk' Quotient.mk_surjective
+        (by rw [Quotient.lift_comp_mk]; exact hmk.isOpenMap),
+      fun a b ↦ Quotient.inductionOn₂ a b fun _ _ h ↦
+        Quotient.sound ((hker _ _).2 (Setoid.ker_def.2 h)),
+      .of_comp (g := Quotient.mk _) (by rw [Quotient.lift_comp_mk]; exact hmk.surjective)⟩
 
 /-- The homeomorphism `associatedQuotientHomeomorph` sends the class of `(y, v)` to the point it
 represents. -/
 @[simp]
 theorem associatedQuotientHomeomorph_mk (q : E × F) :
     hp.associatedQuotientHomeomorph ρ (Quotient.mk _ q) = hp.associatedMk ρ q := by
-  rw [associatedQuotientHomeomorph, Homeomorph.trans_apply, Topology.IsQuotientMap.homeomorph_apply]
-  rfl
+  rw [associatedQuotientHomeomorph, IsHomeomorph.homeomorph_apply, Quotient.lift_mk]
 
 end AssociatedCore
 
@@ -667,7 +677,7 @@ noncomputable def associatedFiniteRankCore {r : ℕ}
         ρ (hp.deckChange (Function.surjInv hp.surjective i)
           (Function.surjInv hp.surjective j) x)
       coordChange_self i x hx v := by
-        rw [hp.deckChange_self hx, map_one, Units.val_one, one_apply_eq_self]
+        rw [hp.deckChange_self hx, rep_one_apply]
       continuousOn_coordChange i j x hx :=
         ((continuousAt_const : ContinuousAt (fun _ : X ↦
           (ρ (hp.deckChange (Function.surjInv hp.surjective i)
