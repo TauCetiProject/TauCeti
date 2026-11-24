@@ -116,6 +116,16 @@ theorem coe_smul (u : SobolevTopologicalGaugeGroup hs) (x : SobolevFieldSpace f 
     ⇑(u • x) = gaugeTransform (toSubgroup hs u) x :=
   (rfl)
 
+/-- Coercing `u • x` to `framedFieldSpace` agrees with the `sobolevGaugeGroup` action on
+`x.toFramedFieldSpace`. -/
+@[simp]
+theorem toFramedFieldSpace_smul (u : SobolevTopologicalGaugeGroup hs)
+    (x : SobolevFieldSpace f m k) :
+    (u • x).toFramedFieldSpace = SobolevTopologicalGaugeGroup.toSubgroup hs u •
+      x.toFramedFieldSpace :=
+  Subtype.ext (by rw [coe_toFramedFieldSpace, coe_smul, coe_sobolevGaugeGroup_smul,
+    coe_toFramedFieldSpace])
+
 /-- **The action of `G_(k+1)` on the continuous fields of `A_m^k`**, for an integer `k > 1`, by the
 charge-one transformation `(a, α) ↦ (a - u⁻¹ du, u α)`. -/
 instance instMulAction : MulAction (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k) where
@@ -382,6 +392,23 @@ theorem orbitRel_iff {x y : SobolevFieldSpace f m k} :
     rw [inv_smul_eq_iff]
     ext1
     simp [hxy]
+
+/-- Two continuous fields of `A_m^k` lie in the same `SobolevTopologicalGaugeGroup` orbit if and
+only if their underlying elements of `framedFieldSpace f m k` lie in the same `sobolevGaugeGroup`
+orbit. -/
+theorem orbitRel_iff_orbitRel_toFramedFieldSpace {x y : SobolevFieldSpace f m k} :
+    MulAction.orbitRel (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k) x y ↔
+      MulAction.orbitRel (sobolevGaugeGroup hs) (framedFieldSpace f m k)
+        x.toFramedFieldSpace y.toFramedFieldSpace := by
+  simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  constructor
+  · rintro ⟨u, rfl⟩
+    exact ⟨toSubgroup hs u, (toFramedFieldSpace_smul u y).symm⟩
+  · rintro ⟨u, hu⟩
+    refine ⟨(toSubgroup hs).symm u, ?_⟩
+    have h := toFramedFieldSpace_smul ((toSubgroup hs).symm u) y
+    rw [MulEquiv.apply_symm_apply, hu] at h
+    exact ext (congrArg Subtype.val h)
 
 /-- **The Sobolev moduli space of framed fields is Hausdorff**: for an integer `k ≥ 3`, the
 quotient `A_m^k / G_(k+1)` of the continuous fields of `A_m^k` by the Sobolev gauge group is a

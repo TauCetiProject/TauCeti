@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Coupling
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.PDE.Vortex.Coupling
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 
 /-!
@@ -200,11 +200,9 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace
         iteratedFDeriv ℝ n (u • x - referenceField f m) =O[cocompact ℂ]
           fun z ↦ Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
-  exact ⟨u, hu,
-    fun f ↦ (gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
-      hframe hu).1,
-    fun f ↦ (gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
-      hframe hu).2⟩
+  have h f :=
+    gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol hframe hu
+  exact ⟨u, hu, fun f ↦ (h f).1, fun f ↦ (h f).2⟩
 
 /-- **Existence of smooth Sobolev framed vortices with prescribed zeros.** Every effective divisor
 `D ∈ Sym ℂ m` is the zero divisor of a smooth plane vortex `x` whose section equals `|α|` times
@@ -291,6 +289,17 @@ def sobolevVortexModuliEquivFramedVortexModuli {hs : 1 < (k : ℝ) + 1} (hk : 3 
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction 1 m) :=
   (sobolevVortexModuliEquiv hk).trans (framedVortexModuliEquiv one_pos m).symm
 
+/-- Passing from Sobolev to smooth framed vortex moduli and taking the divisor recovers
+`sobolevVortexModuliEquiv`. -/
+@[simp]
+theorem framedVortexModuliEquiv_sobolevVortexModuliEquivFramedVortexModuli
+    {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
+    (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
+      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)) :
+    framedVortexModuliEquiv one_pos m (sobolevVortexModuliEquivFramedVortexModuli hk q) =
+      sobolevVortexModuliEquiv hk q :=
+  Equiv.apply_symm_apply _ _
+
 /-- The equivalence between Sobolev and smooth framed vortex moduli sends the orbit of any `C²`
 Sobolev vortex `x` to the orbit of a smooth framed vortex `x'` if and only if their zero divisors
 agree. -/
@@ -301,8 +310,9 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff {hs : 1 < (k : �
     sobolevVortexModuliEquivFramedVortexModuli hk (Quotient.mk'' x) = Quotient.mk'' x' ↔
       sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ =
         framedVortexDivisor x' := by
-  rw [← (framedVortexModuliEquiv one_pos m).apply_eq_iff_eq]
-  simp [sobolevVortexModuliEquivFramedVortexModuli]
+  rw [← (framedVortexModuliEquiv one_pos m).apply_eq_iff_eq,
+    framedVortexModuliEquiv_sobolevVortexModuliEquivFramedVortexModuli]
+  simp
 
 /-- On the `G_(k+1)`-orbit of any smooth vortex in `A_m^k`,
 `sobolevVortexModuliEquivFramedVortexModuli` agrees with taking its `framedGaugeGroup`-orbit. -/

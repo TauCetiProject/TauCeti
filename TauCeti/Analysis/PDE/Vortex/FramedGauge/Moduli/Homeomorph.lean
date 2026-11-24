@@ -80,27 +80,6 @@ theorem toFramedFieldSpace_mem_sobolevVortices_of_equation_eq_zero (hk : 3 < k)
 
 variable [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
 
-private theorem toFramedFieldSpace_smul (u : SobolevTopologicalGaugeGroup hs)
-    (x : SobolevFieldSpace f m k) :
-    (u • x).toFramedFieldSpace = SobolevTopologicalGaugeGroup.toSubgroup hs u •
-      x.toFramedFieldSpace :=
-  Subtype.ext (by rw [coe_toFramedFieldSpace, coe_smul, coe_sobolevGaugeGroup_smul,
-    coe_toFramedFieldSpace])
-
-private theorem orbitRel_iff_orbitRel_toFramedFieldSpace {x y : SobolevFieldSpace f m k} :
-    MulAction.orbitRel (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k) x y ↔
-      MulAction.orbitRel (sobolevGaugeGroup hs) (framedFieldSpace f m k)
-        x.toFramedFieldSpace y.toFramedFieldSpace := by
-  simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨u, rfl⟩
-    exact ⟨SobolevTopologicalGaugeGroup.toSubgroup hs u, (toFramedFieldSpace_smul u y).symm⟩
-  · rintro ⟨u, hu⟩
-    refine ⟨(SobolevTopologicalGaugeGroup.toSubgroup hs).symm u, ?_⟩
-    have h := toFramedFieldSpace_smul ((SobolevTopologicalGaugeGroup.toSubgroup hs).symm u) y
-    rw [MulEquiv.apply_symm_apply, hu] at h
-    exact ext (congrArg Subtype.val h)
-
 /-- **Every vortex orbit has a `ℝ^(2m)`-chart.** For `k ≥ 4`, every point `q` of `vortexModuli`
 in `A_m^k / G_(k+1)` admits a chart modelled on `Fin (2 * m) → ℝ` sending `q` to `0`, without
 assuming a smooth representative in advance. -/
@@ -145,6 +124,21 @@ private noncomputable def continuousVortexEquivSobolevVortex (hk : 3 < k) :
   left_inv _ := Subtype.ext (ext rfl)
   right_inv _ := Subtype.ext (Subtype.ext rfl)
 
+private theorem continuousVortexEquivSobolevVortex_apply (hk : 3 < k)
+    (x : sobolevVortexContinuousSubMulAction (f := f) (m := m) (hs := hs) hk) :
+    continuousVortexEquivSobolevVortex hk x =
+      ⟨x.val.toFramedFieldSpace, mem_sobolevVortexSubMulAction.2
+        (toFramedFieldSpace_mem_sobolevVortices_of_equation_eq_zero hk x.property)⟩ :=
+  rfl
+
+private theorem continuousVortexEquivSobolevVortex_symm_apply (hk : 3 < k)
+    (y : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
+    (continuousVortexEquivSobolevVortex hk).symm y =
+      ⟨⟨y.val, y.val.property,
+          (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).1.continuous⟩,
+        (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 y.property)).2⟩ :=
+  rfl
+
 private theorem mem_sobolevVortexContinuousSubMulAction (hk : 3 < k)
     {x : SobolevFieldSpace f m k} :
     x ∈ sobolevVortexContinuousSubMulAction (f := f) (m := m) (hs := hs) hk ↔
@@ -181,9 +175,9 @@ theorem vortexModuliEquivSobolevVortexModuli_symm_mk (hk : 3 < k)
         mk_mem_vortexModuli
           (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).2⟩ := by
   rw [vortexModuliEquivSobolevVortexModuli, Equiv.symm_trans_apply,
-    MulAction.orbitRelQuotientCongr_symm_mk,
-    Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk]
-  rfl
+    MulAction.orbitRelQuotientCongr_symm_mk, Quotient.mk''_eq_mk,
+    Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk,
+    continuousVortexEquivSobolevVortex_symm_apply]
 
 /-- `vortexModuliEquivSobolevVortexModuli` sends the orbit of a continuous vortex `x` of `A_m^k` to
 its `sobolevGaugeGroup`-orbit in `sobolevVortexSubMulAction`. -/
@@ -196,8 +190,8 @@ theorem vortexModuliEquivSobolevVortexModuli_mk (hk : 3 < k) {x : SobolevFieldSp
         mem_sobolevVortexSubMulAction.2
           (toFramedFieldSpace_mem_sobolevVortices_of_equation_eq_zero hk hx)⟩ := by
   rw [vortexModuliEquivSobolevVortexModuli, Equiv.trans_apply,
-    Equiv.subtypeQuotientEquivQuotientSubtype_mk, MulAction.orbitRelQuotientCongr_mk]
-  rfl
+    Equiv.subtypeQuotientEquivQuotientSubtype_mk, ← Quotient.mk''_eq_mk,
+    MulAction.orbitRelQuotientCongr_mk, continuousVortexEquivSobolevVortex_apply]
 
 /-- **The divisor bijection on `vortexModuli`.** For `k ≥ 4`, the zero divisor identifies the
 Sobolev vortex moduli space `vortexModuli f m hs ⊆ A_m^k / G_(k+1)` bijectively with
