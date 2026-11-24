@@ -40,7 +40,7 @@ schemes (`StackInGroupoids.isEquivalence_lift_ofSheafMap_yoneda_map_app`).
   and composites.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.ofScheme`: the stack represented by a scheme, with
   `ofScheme.objEquiv` identifying the objects of its fibre over `T` with the morphisms `T ⟶ X`.
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheafMapCompIso`: the invertible modification
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheafMapCompIsoOfEq`: the invertible modification
   between composites of induced morphisms attached to a commutative square of fppf sheaves.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.isPullback_iff_isEquivalence_lift_ofSheafMap_app`:
   a commutative square of fppf sheaves is a pullback exactly when the comparison from the stack
@@ -142,11 +142,11 @@ lemma ofScheme.objEquiv_map_toFunctor_obj (X : Scheme.{u}) {T T' : Scheme.{u}} (
 open scoped Pseudofunctor.StrongTrans in
 /-- A commutative square `f ≫ α = g ≫ β` of fppf sheaves gives an invertible modification
 between the composites of the induced morphisms of stacks. -/
-def ofSheafMapCompIso {P F G H : Sheaf Scheme.fppfTopology (Type u)} {f : P ⟶ F} {g : P ⟶ G}
+def ofSheafMapCompIsoOfEq {P F G H : Sheaf Scheme.fppfTopology (Type u)} {f : P ⟶ F} {g : P ⟶ G}
     {α : F ⟶ H} {β : G ⟶ H} (w : f ≫ α = g ≫ β) :
     Iso (C := (ofSheaf P).toSchPseudofunctor ⟶ (ofSheaf H).toSchPseudofunctor)
       ((ofSheafMap f).vcomp (ofSheafMap α)) ((ofSheafMap g).vcomp (ofSheafMap β)) :=
-  Pseudofunctor.ofPresheafMapCompIso (Sheaf.hom_ext_iff.1 w)
+  Pseudofunctor.ofPresheafMapCompIsoOfEq (Sheaf.hom_ext_iff.1 w)
 
 open scoped Pseudofunctor.StrongTrans in
 /-- The 2-fibre product of stacks in setoids of fppf sheaves is the stack in setoids of their

@@ -36,7 +36,7 @@ in setoids.
 * `CategoryTheory.Pseudofunctor.ofPresheafMap`: the strong transformation induced by a morphism
   of presheaves, with `ofPresheafMapId` and `ofPresheafMapComp` comparing it with identities and
   composites.
-* `CategoryTheory.Pseudofunctor.ofPresheafMapCompIso`,
+* `CategoryTheory.Pseudofunctor.ofPresheafMapCompIsoOfEq`,
   `CategoryTheory.Pseudofunctor.eq_of_ofPresheafMap_modification`: a commutative square of
   presheaves gives an invertible modification between the composites of the induced strong
   transformations, and a modification `ofPresheafMap φ ⟶ ofPresheafMap ψ` forces `φ = ψ`.
@@ -202,7 +202,7 @@ def ofPresheafMapComp {Q R : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) (β : Q ⟶ R) :
 open scoped StrongTrans in
 /-- A commutative square `f ≫ α = g ≫ β` of presheaves of types gives an invertible
 modification between the composites of the induced strong transformations. -/
-def ofPresheafMapCompIso {Q₁ Q₂ R : Cᵒᵖ ⥤ Type w} {f : P ⟶ Q₁} {g : P ⟶ Q₂} {α : Q₁ ⟶ R}
+def ofPresheafMapCompIsoOfEq {Q₁ Q₂ R : Cᵒᵖ ⥤ Type w} {f : P ⟶ Q₁} {g : P ⟶ Q₂} {α : Q₁ ⟶ R}
     {β : Q₂ ⟶ R} (w : f ≫ α = g ≫ β) :
     Iso (C := ofPresheaf.{w'} P ⟶ ofPresheaf.{w'} R)
       ((ofPresheafMap f).vcomp (ofPresheafMap α)) ((ofPresheafMap g).vcomp (ofPresheafMap β)) :=

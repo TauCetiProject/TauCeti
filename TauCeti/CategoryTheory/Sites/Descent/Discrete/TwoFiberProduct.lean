@@ -17,7 +17,7 @@ discrete pseudofunctor of their fiber product. Precisely, let `f : P ⟶ F`, `g 
 `α : F ⟶ H` and `β : G ⟶ H` be morphisms of presheaves of types on `C` and let
 `e : ofPresheafMap f ≫ ofPresheafMap α ≅ ofPresheafMap g ≫ ofPresheafMap β` be an invertible
 modification (one exists exactly when `f ≫ α = g ≫ β`, see
-`CategoryTheory.Pseudofunctor.ofPresheafMapCompIso`). The square is a pullback of presheaves
+`CategoryTheory.Pseudofunctor.ofPresheafMapCompIsoOfEq`). The square is a pullback of presheaves
 exactly when the induced strong transformation
 `twoFiberProduct.lift _ _ (ofPresheafMap f) (ofPresheafMap g) e` from `ofPresheaf P` to
 `twoFiberProduct (ofPresheafMap α) (ofPresheafMap β)` is an equivalence on every fiber.
