@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
+import TauCeti.Geometry.Manifold.ContMDiff.Pi
 import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
 
 /-!
@@ -198,12 +199,6 @@ end FlowAction
 
 /-! ### Coordinates around a fibre and their Hamiltonian flow action -/
 
-private theorem contMDiff_dotProduct_comp {ι : Type*} [Fintype ι] {κ : B → ι → ℝ} {n : WithTop ℕ∞}
-    (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) n κ) (v : ι → ℝ) :
-    ContMDiff J 𝓘(ℝ) n fun c ↦ v ⬝ᵥ κ c := by
-  classical
-  exact ((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).contMDiff.of_le le_top).comp hκ
-
 /-- The number of coordinates is half the dimension of `M`. -/
 private theorem two_mul_card_eq [FiniteDimensional ℝ E] (h : hσ.IsLagrangianTorusFibration J π)
     (x : M) : 2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E :=
@@ -329,7 +324,7 @@ theorem coe_fiberAction_smul_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
     (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgα : mvfderiv J g b = α) (t : ℝ) (x : π ⁻¹' {b}) :
     (h.fiberAction hσc b (t • α) x : M) = flowOf (σ.hamiltonianVectorField (g ∘ π)) t x := by
   have hφ : ContMDiff J 𝓘(ℝ) 2 fun c ↦ h.dualCoord b α ⬝ᵥ h.coord b c :=
-    contMDiff_dotProduct_comp ((h.coord_spec b).1.of_le (by simp)) (h.dualCoord b α)
+    contMDiff_const.dotProduct ((h.coord_spec b).1.of_le (by simp))
   have hx : π x = b := x.property
   rw [coe_fiberAction, map_smul, hamiltonianFlowActionComp,
     ← IsSymplectic.flowOf_hamiltonianVectorField_dotProduct]
@@ -441,7 +436,7 @@ theorem mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) {β
   by_cases hg : MDifferentiableAt J 𝓘(ℝ) g b
   · set w := h.dualCoord b β
     have hd : MDifferentiableAt J 𝓘(ℝ) (fun c ↦ w ⬝ᵥ h.coord b c) b :=
-      (contMDiff_dotProduct_comp (h.coord_spec b).1 w b).mdifferentiableAt (by simp)
+      (contMDiffAt_const.dotProduct ((h.coord_spec b).1 b)).mdifferentiableAt (by simp)
     rw [(h.hasMFDerivAt_fiberAction_apply hσc b x α).mfderiv]
     -- The velocity is the Hamiltonian vector of `w ⬝ᵥ (coord ∘ π)`, and `d(w ⬝ᵥ coord)_b = β`.
     refine ((⟨hσc, hσ⟩ : σ.IsSymplectic).mfderiv_hamiltonianFlowAction_apply _ _ _ x _ w).trans <|
@@ -451,21 +446,15 @@ theorem mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) {β
       (x := (h.fiberAction hσc b α x : M))
       (h.mdifferentiableAt _) (by rw [hy]; exact hd) (by rw [hy]; exact hg)
       (by rw [hy, h.mvfderiv_dualCoord_dotProduct_coord b β, hgβ])
-  · -- If `g` is not differentiable at `b`, neither is `g ∘ π` at `fiberAction α x` (via a local
-    -- section of the submersion `π`), so both sides vanish.
+  · -- If `g` is not differentiable at `b`, neither is `g ∘ π` at `fiberAction α x`, so both
+    -- sides vanish.
     have hβ : β = 0 := by
       rw [← hgβ, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg]
       -- `TangentSpace J b` is a type synonym of `F`.
       rfl
-    have hgπ : ¬ MDifferentiableAt I 𝓘(ℝ) (g ∘ π) (h.fiberAction hσc b α x) := by
-      intro hdiff
-      obtain ⟨U, hU, hbU, s, hsb, hs, hπs⟩ :=
-        h.isSubmersion.exists_contMDiffOn_section (h.fiberAction hσc b α x)
-      rw [hy] at hbU hsb
-      have hcomp : MDifferentiableAt J 𝓘(ℝ) ((g ∘ π) ∘ s) b :=
-        (hsb ▸ hdiff).comp b ((hs.contMDiffAt (hU.mem_nhds hbU)).mdifferentiableAt (by simp))
-      exact hg <| hcomp.congr_of_eventuallyEq <|
-        Filter.eventually_of_mem (hU.mem_nhds hbU) fun c hc ↦ by simp [hπs c hc]
+    have hgπ : ¬ MDifferentiableAt I 𝓘(ℝ) (g ∘ π) (h.fiberAction hσc b α x) :=
+      ((h.isSubmersion.isSubmersionAt _).mdifferentiableAt_comp_iff (by simp)).not.mpr
+        (by rwa [hy])
     rw [hβ, σ.hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt hgπ]
     exact map_zero _
 
@@ -532,7 +521,7 @@ theorem mem_periodLattice_iff_mem_hamiltonianFlowStabilizer {ι : Type*} [Fintyp
       v ∈ (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (hκ.comp h.contMDiff)
         (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
         (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp))) x := by
-  rw [h.mem_periodLattice_iff_flowOf_eq hσc b (contMDiff_dotProduct_comp (hκ.of_le (by simp)) v)
+  rw [h.mem_periodLattice_iff_flowOf_eq hσc b (contMDiff_const.dotProduct (hκ.of_le (by simp)))
     hα x, IsSymplectic.mem_hamiltonianFlowStabilizer]
   exact iff_of_eq (congrArg (· = (x : M)) (h.hamiltonianFlowActionComp_apply hσc hκ v x).symm)
 
