@@ -22,12 +22,11 @@ value the product of the two finitely generated modules
 
 ## Main declarations
 
-* `CategoryTheory.Sheaf.IsFiniteLisse.prod`, `CategoryTheory.Sheaf.IsFiniteLisse.biprod`,
-  `CategoryTheory.Sheaf.IsFiniteLisse.of_isZero`: binary products, binary biproducts and zero
-  sheaves.
 * The instances `ContainsZero` and `IsClosedUnderFiniteProducts` for the object property
   `CategoryTheory.Sheaf.IsFiniteLisse`; it is closed under isomorphisms by the instance for
-  `CategoryTheory.Sheaf.IsLocallyConstantIn`.
+  `CategoryTheory.Sheaf.IsLocallyConstantIn`. Binary products, binary biproducts and zero sheaves
+  are then finite lisse by the generic lemmas `ObjectProperty.prop_prod`,
+  `ObjectProperty.prop_biprod_of_isClosedUnderBinaryProducts` and `ObjectProperty.prop_of_isZero`.
 
 ## References
 
@@ -45,28 +44,11 @@ namespace CategoryTheory.Sheaf
 
 variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
 
-/-- **Binary products of finite lisse sheaves.** The product of two finite lisse étale sheaves of
-`Λ`-modules is finite lisse. -/
-theorem IsFiniteLisse.prod {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-    (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse) : (F ⨯ G).IsFiniteLisse :=
-  IsLocallyConstantIn.prod hF hG
-
-/-- **Binary biproducts of finite lisse sheaves.** The direct sum of two finite lisse étale sheaves
-of `Λ`-modules is finite lisse. -/
-theorem IsFiniteLisse.biprod {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-    (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse) : (F ⊞ G).IsFiniteLisse :=
-  ObjectProperty.prop_biprod_of_isClosedUnderBinaryProducts _ hF hG
-
-/-- **Zero sheaves are finite lisse.** A zero étale sheaf of `Λ`-modules is the constant sheaf on
-the zero module. -/
-theorem IsFiniteLisse.of_isZero {F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-    (hF : IsZero F) : F.IsFiniteLisse :=
-  .of_isTerminal (ModuleCat.isFG Λ).prop_terminal hF.isTerminal
-
 instance containsZero_isFiniteLisse :
     ObjectProperty.ContainsZero
       (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
-  exists_zero := ⟨0, isZero_zero _, .of_isZero (isZero_zero _)⟩
+  exists_zero :=
+    ⟨0, isZero_zero _, .of_isTerminal (ModuleCat.isFG Λ).prop_terminal (isZero_zero _).isTerminal⟩
 
 instance isClosedUnderFiniteProducts_isFiniteLisse :
     ObjectProperty.IsClosedUnderFiniteProducts
