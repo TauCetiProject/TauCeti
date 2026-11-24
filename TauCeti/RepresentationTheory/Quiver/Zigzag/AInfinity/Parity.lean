@@ -212,9 +212,12 @@ private theorem sum_word_cut_sub_eq_neg_one_pow_mul {m : ℕ}
   let σ := Equiv.arrowCongr (finCycle rFin).symm (Equiv.refl G.Dart)
   rw [hsub, Finset.mul_sum, ← Equiv.sum_comp σ]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  have hw : a (σ w) = (-1 : k) ^ d * a w :=
-    apply_comp_finCycle_of_anticyclic hrot rFin w
-  have hσ : σ w = w ∘ finCycle rFin := rfl
+  have hσ : σ w = w ∘ finCycle rFin := by
+    funext t
+    simp only [σ, Equiv.arrowCongr_apply, Equiv.symm_symm, Equiv.refl_apply, Function.comp_apply]
+  have hw : a (σ w) = (-1 : k) ^ d * a w := by
+    rw [hσ]
+    exact apply_comp_finCycle_of_anticyclic hrot rFin w
   obtain ⟨hs0, hs1⟩ := subword_comp_finCycle (k := k) w rFin
   rw [hw, hσ]
   dsimp only [rFin, Function.comp_apply] at hs0 hs1 ⊢
@@ -241,8 +244,12 @@ private theorem exists_sum_word_cut_mid_eq_two_mul {m : ℕ}
     have hsum : rFin.val + rFin.val = 2 * m + 2 := by dsimp [rFin]; omega
     have h0 : rFin + rFin = 0 := Fin.ext (by rw [Fin.val_add, Fin.val_zero, hsum, Nat.mod_self])
     rw [finCycle_apply, finCycle_apply, add_assoc, h0, add_zero]
-  have hsw (w : Fin (2 * m + 2) → G.Dart) := by
-    simpa only [rFin, hsub] using subword_comp_finCycle (k := k) w rFin
+  have hsw (w : Fin (2 * m + 2) → G.Dart) :
+      subword k (fun t ↦ 𝔞 (w (finCycle rFin t))) 0 (m + 1) =
+        subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1) ∧
+      subword k (fun t ↦ 𝔞 (w (finCycle rFin t))) (m + 1) (m + 1) =
+        subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1) := by
+    simpa only [rFin, Fin.val_mk, hsub] using subword_comp_finCycle (k := k) w rFin
   refine Finset.sum_mem_of_involution Finset.univ τ (fun _ _ ↦ Finset.mem_univ _)
     (fun w _ ↦ hτ w) (fun w _ hw ↦ ?_) (fun w _ _ ↦ ?_)
   · have heq := (hsw w).1.symm

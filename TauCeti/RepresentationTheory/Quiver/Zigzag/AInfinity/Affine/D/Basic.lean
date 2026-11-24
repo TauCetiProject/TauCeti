@@ -92,6 +92,26 @@ def affineDWalk {n : ℕ} (hn : 4 ≤ n) : Fin 4 → (AffineDynkinType.D n).grap
     (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
   ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩]
 
+/-- The defining dart list of `affineDWalk`: in product order, the darts `n - 1 → 1`, `1 → n - 1`,
+`0 → 1` and `1 → 0`. -/
+theorem affineDWalk_def {n : ℕ} (hn : 4 ≤ n) :
+    affineDWalk hn =
+      ![⟨(⟨n - 1, by have := AffineDynkinType.nodes_D n; omega⟩,
+           ⟨1, by have := AffineDynkinType.nodes_D n; omega⟩),
+          ((AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))).symm⟩,
+        ⟨(⟨1, by have := AffineDynkinType.nodes_D n; omega⟩,
+           ⟨n - 1, by have := AffineDynkinType.nodes_D n; omega⟩),
+          (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))⟩,
+        ⟨(⟨0, by have := AffineDynkinType.nodes_D n; omega⟩,
+           ⟨1, by have := AffineDynkinType.nodes_D n; omega⟩),
+          ((AffineDynkinType.graph_D_adj hn).2
+            (Or.inr (Or.inl ⟨rfl, (by omega : 1 ≤ n - 2)⟩))).symm⟩,
+        ⟨(⟨1, by have := AffineDynkinType.nodes_D n; omega⟩,
+           ⟨0, by have := AffineDynkinType.nodes_D n; omega⟩),
+          (AffineDynkinType.graph_D_adj hn).2
+            (Or.inr (Or.inl ⟨rfl, (by omega : 1 ≤ n - 2)⟩))⟩] := by
+  rw [affineDWalk]
+
 /-- Consecutive darts of `affineDWalk` are cyclically composable in product order. -/
 theorem affineDWalk_fst_eq_snd {n : ℕ} (hn : 4 ≤ n) (i : Fin 4) :
     (affineDWalk hn i).fst = (affineDWalk hn (i + 1)).snd := by
