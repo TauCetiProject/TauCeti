@@ -236,11 +236,11 @@ theorem IsLocalOfOrder.borcherds {A B : VertexOperator R V} {N : ℕ}
   obtain ⟨K₃, hK₃⟩ := A.exists_forall_ncoeff_add_apply_eq_zero v m
   let M := max K₁ (max K₂ K₃)
   have hcut (i : ℕ) (hi : M ≤ i) : nthProduct (n + i) A B = 0 :=
-    hK₁ i (le_trans (le_max_left _ _) hi)
+    hK₁ i (by omega)
   have hB (i : ℕ) (hi : M ≤ i) : (B[[r + i]]) v = 0 :=
-    hK₂ i (le_trans ((le_max_left _ _).trans (le_max_right _ _)) hi)
+    hK₂ i (by omega)
   have hA (i : ℕ) (hi : M ≤ i) : (A[[m + i]]) v = 0 :=
-    hK₃ i (le_trans ((le_max_right _ _).trans (le_max_right _ _)) hi)
+    hK₃ i (by omega)
   refine ⟨M, fun i hi ↦ by simp [hcut i hi],
     fun i hi ↦ ⟨by simp [hB i hi], by simp [hA i hi]⟩, ?_⟩
   have hfin := borcherds_eq h v m n r

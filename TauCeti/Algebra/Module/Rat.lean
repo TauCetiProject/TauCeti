@@ -54,10 +54,8 @@ theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n 
 theorem eq_inv_smul_of_nsmul {R M : Type*} [Semiring R] [Algebra ℚ R] [AddCommMonoid M]
     [Module R M] {n : ℕ} (hn : n ≠ 0) {x y : M} (h : n • x = y) :
     x = algebraMap ℚ R (n : ℚ)⁻¹ • y := by
-  let : Module ℚ M := Module.compHom M (algebraMap ℚ R)
   subst h
-  change x = (n : ℚ)⁻¹ • (n • x)
-  rw [← Nat.cast_smul_eq_nsmul ℚ]
-  simp [hn]
+  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, ← map_natCast (algebraMap ℚ R) n, ← map_mul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), map_one, one_smul]
 
 end TauCeti

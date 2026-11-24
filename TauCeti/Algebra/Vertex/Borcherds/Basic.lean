@@ -174,11 +174,11 @@ theorem exists_borcherds [HasUniqueDiv V] (a b c : V) (m n q : ℤ) :
   obtain ⟨K₂, hK₂⟩ := (A.field b).exists_forall_ncoeff_add_apply_eq_zero c q
   obtain ⟨K₃, hK₃⟩ := (A.field a).exists_forall_ncoeff_add_apply_eq_zero b n
   have ha : ∀ j : ℕ, max K₁ (max K₂ K₃) ≤ j → ((A.field a)[[m + j]]) c = 0 :=
-    fun j hj ↦ hK₁ j (le_trans (le_max_left _ _) hj)
+    fun j hj ↦ hK₁ j (by omega)
   have hb : ∀ j : ℕ, max K₁ (max K₂ K₃) ≤ j → ((A.field b)[[q + j]]) c = 0 :=
-    fun j hj ↦ hK₂ j (le_trans ((le_max_left _ _).trans (le_max_right _ _)) hj)
+    fun j hj ↦ hK₂ j (by omega)
   have hab : ∀ j : ℕ, max K₁ (max K₂ K₃) ≤ j → ((A.field a)[[n + j]]) b = 0 :=
-    fun j hj ↦ hK₃ j (le_trans ((le_max_right _ _).trans (le_max_right _ _)) hj)
+    fun j hj ↦ hK₃ j (by omega)
   exact ⟨_, ha, hb, hab, A.borcherds a b c m n q ha hb hab⟩
 
 end FormalVertexAxioms
