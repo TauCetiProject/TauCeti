@@ -18,7 +18,6 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 import TauCeti.LinearAlgebra.TensorProduct.Separation
-import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # The stabilizer of a subspace of a representation

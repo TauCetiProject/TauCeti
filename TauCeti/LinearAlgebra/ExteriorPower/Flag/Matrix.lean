@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Flag.Basic
 import Mathlib.LinearAlgebra.Basis.Flag
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
-import TauCeti.LinearAlgebra.Unimodular
+import TauCeti.LinearAlgebra.TensorProduct.Segre
 
 /-!
 # Flag stabilizers and upper-triangular matrices

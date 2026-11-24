@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Unimodular
 
 /-!
