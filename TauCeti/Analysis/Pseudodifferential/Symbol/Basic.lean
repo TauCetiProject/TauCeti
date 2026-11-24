@@ -791,13 +791,6 @@ theorem coefficient_frequencyLaplacianPow_eventuallyEq {m' : ℝ} {a : Symbol n 
     simp only [coefficient_frequencyLaplacianPow_succ', coefficient_frequencyLaplacian]
     exact Finset.sum_congr rfl fun j _ => hη j
 
-/-- The coefficient of `Δ_ξ^N a` depends only on the coefficient of `a`, not on its order. -/
-theorem coefficient_frequencyLaplacianPow_congr {m' : ℝ} {a : Symbol n V W m}
-    {b : Symbol n V W m'} (h : a.coefficient = b.coefficient) (N : ℕ) :
-    (frequencyLaplacianPow N a).coefficient = (frequencyLaplacianPow N b).coefficient :=
-  funext fun p => (coefficient_frequencyLaplacianPow_eventuallyEq
-    (.of_forall fun η => congrFun h (p.1, η)) N (ξ := p.2)).eq_of_nhds
-
 /-- If `a` vanishes at `x` for all frequencies in an open set `U`, then so does `Δ_ξ^N a`. -/
 theorem coefficient_frequencyLaplacianPow_eq_zero_of_isOpen {U : Set (CoordinateSpace n)}
     (hU : IsOpen U) {a : Symbol n V W m} (x : CoordinateSpace n)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Littlewood–Paley decomposition of symbols
@@ -260,41 +261,6 @@ private theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow_of_le (a 
   · rw [a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x hξ, norm_zero]
     positivity
 
-/-- A function bounded by `C (2^j) ^ μ` and vanishing outside the ball of radius `2^j φ.rOut`
-satisfies `∫ ‖f ξ‖ dξ ≤ C φ.rOut ^ n v (2^j) ^ (μ + n)`, where `v` is the volume of the unit
-ball. -/
-theorem integral_norm_le_of_norm_le_of_eq_zero {E : Type*} [NormedAddCommGroup E]
-    {f : CoordinateSpace n → E} {C μ : ℝ} (j : ℕ) (hf : ∀ ξ, ‖f ξ‖ ≤ C * ((2 : ℝ) ^ j) ^ μ)
-    (hf0 : ∀ ξ ∉ closedBall (0 : CoordinateSpace n) (2 ^ j * φ.rOut), f ξ = 0) :
-    ∫ ξ, ‖f ξ‖ ≤ C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1) *
-      ((2 : ℝ) ^ j) ^ (μ + n) := by
-  set v := (volume : Measure (CoordinateSpace n)).real (ball 0 1)
-  set R := (2 : ℝ) ^ j * φ.rOut
-  have hR : 0 ≤ R := by have := φ.rOut_pos; positivity
-  -- the integrand is dominated by a constant on the ball of radius `2^j φ.rOut`
-  have hle : ∀ ξ, ‖f ξ‖ ≤
-      (closedBall (0 : CoordinateSpace n) R).indicator (fun _ => C * ((2 : ℝ) ^ j) ^ μ) ξ :=
-    fun ξ => by
-      by_cases hξ : ξ ∈ closedBall (0 : CoordinateSpace n) R
-      · rw [indicator_of_mem hξ]
-        exact hf ξ
-      · rw [indicator_of_notMem hξ, hf0 ξ hξ, norm_zero]
-  have hint : Integrable ((closedBall (0 : CoordinateSpace n) R).indicator
-      fun _ => C * ((2 : ℝ) ^ j) ^ μ) :=
-    (integrableOn_const (measure_closedBall_lt_top (x := (0 : CoordinateSpace n))).ne
-      ).integrable_indicator measurableSet_closedBall
-  calc ∫ ξ, ‖f ξ‖
-      ≤ ∫ ξ, (closedBall (0 : CoordinateSpace n) R).indicator
-          (fun _ => C * ((2 : ℝ) ^ j) ^ μ) ξ :=
-        integral_mono_of_nonneg (Eventually.of_forall fun _ => norm_nonneg _) hint
-          (Eventually.of_forall hle)
-    _ = R ^ n * v * (C * ((2 : ℝ) ^ j) ^ μ) := by
-        rw [integral_indicator_const _ measurableSet_closedBall,
-          Measure.addHaar_real_closedBall _ _ hR, finrank_euclideanSpace_fin, smul_eq_mul]
-    _ = C * φ.rOut ^ n * v * ((2 : ℝ) ^ j) ^ (μ + n) := by
-        rw [Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
-        ring
-
 /-- **Dyadic estimates.** For a uniform symbol of order `m`, the `j`-th piece and its mixed
 derivatives satisfy `‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ ≤ C (2^j) ^ (m - |β|)` uniformly in `x`, `ξ` and `j`:
 each frequency derivative gains a factor `2^{-j}`. -/
@@ -319,10 +285,15 @@ theorem IsUniform.exists_integral_norm_mixedDeriv_littlewoodPaleyPiece_le {a : S
       ∫ ξ, ‖mixedDeriv α β (a.littlewoodPaleyPiece φ j).coefficient x ξ‖ ≤
         C * ((2 : ℝ) ^ j) ^ (m - β.length + n) := by
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow φ α β
+  have := φ.rOut_pos
   refine ⟨C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
-    by have := φ.rOut_pos; positivity, fun j x => integral_norm_le_of_norm_le_of_eq_zero φ j
-      (hC j x) fun ξ hξ => a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x
-        fun h => hξ (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j h)⟩
+    by positivity, fun j x => ?_⟩
+  refine (integral_norm_le_of_eq_zero_off_closedBall (fun ξ _ => hC j x ξ) fun ξ hξ =>
+    a.mixedDeriv_littlewoodPaleyPiece_eq_zero_of_notMem_tsupport φ α β x
+      fun h => hξ (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j h)).trans_eq ?_
+  rw [Measure.addHaar_real_closedBall _ _ (by positivity), finrank_euclideanSpace_fin,
+    Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
+  ring
 
 /-- **Dyadic estimates on compact sets.** For a symbol of order `m` and a compact set `K` of
 positions, the `j`-th piece and its mixed derivatives satisfy
@@ -392,14 +363,19 @@ theorem exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPi
   obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_frequencyLaplacianPow_le
     (a.littlewoodPaleyPiece φ) (a.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow φ hK [])
     N []
+  have := φ.rOut_pos
   refine ⟨C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
-    by have := φ.rOut_pos; positivity, fun j x hx => ?_⟩
+    by positivity, fun j x hx => ?_⟩
   -- The piece and all its frequency derivatives vanish outside the ball of radius `2^j φ.rOut`.
-  refine integral_norm_le_of_norm_le_of_eq_zero φ j (fun ξ => by simpa using hC j x hx ξ)
-    fun ξ hξ => coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
-      (U := {η | 2 ^ j * φ.rOut < ‖η‖}) (isOpen_lt continuous_const continuous_norm) x
-      (fun ξ' hξ' => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x (le_of_lt hξ'))
-      N (by simpa using hξ)
+  refine (integral_norm_le_of_eq_zero_off_closedBall (x₀ := 0) (R := 2 ^ j * φ.rOut)
+    (K := C * ((2 : ℝ) ^ j) ^ (m - 2 * N)) (fun ξ _ => by simpa using hC j x hx ξ) fun ξ hξ =>
+      coefficient_frequencyLaplacianPow_eq_zero_of_isOpen
+        (U := {η | 2 ^ j * φ.rOut < ‖η‖}) (isOpen_lt continuous_const continuous_norm) x
+        (fun ξ' hξ' => a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x (le_of_lt hξ'))
+        N (by simpa using hξ)).trans_eq ?_
+  rw [Measure.addHaar_real_closedBall _ _ (by positivity), finrank_euclideanSpace_fin,
+    Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
+  ring
 
 /-- **Integrated size of the pieces.** For a uniform symbol of order `m` on `ℝⁿ`, the pieces
 satisfy `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)` uniformly in `x` and `j`: the case `α = β = []` of
