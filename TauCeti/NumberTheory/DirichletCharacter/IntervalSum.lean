@@ -41,8 +41,8 @@ Pólya–Vinogradov inequality*, arXiv:1107.0381, equation (1)).
 ## Main statements
 
 * `DirichletCharacter.intervalSum_periodic`: interval sums are `q`-periodic in the left endpoint.
-* `DirichletCharacter.intervalSum_level`: a nonprincipal character has interval sum `0` over
-  every full period.
+* `DirichletCharacter.intervalSum_level_eq_zero`: a nonprincipal character has interval sum `0`
+  over every full period.
 * `DirichletCharacter.intervalSum_neg`: reflecting the interval multiplies the sum by `χ (-1)`.
 * `DirichletCharacter.isGreatest_maxIntervalSum`: for a nonprincipal character, `M_χ` is the
   largest norm of an interval sum; `isGreatest_maxIntervalSum_Icc` is the same over closed
@@ -151,7 +151,7 @@ section Domain
 variable {R : Type*} [CommRing R] [IsDomain R] {q : ℕ} {χ : DirichletCharacter R q}
 
 /-- A nonprincipal character has interval sum `0` over every full period. -/
-theorem intervalSum_level (hχ : χ ≠ 1) (M : ℤ) : χ.intervalSum M q = 0 := by
+theorem intervalSum_level_eq_zero (hχ : χ ≠ 1) (M : ℤ) : χ.intervalSum M q = 0 := by
   rcases eq_or_ne q 0 with rfl | hq
   · exact χ.intervalSum_zero M
   have : NeZero q := ⟨hq⟩
@@ -173,7 +173,7 @@ theorem intervalSum_level (hχ : χ ≠ 1) (M : ℤ) : χ.intervalSum M q = 0 :=
 interval sum. -/
 theorem intervalSum_add_level (hχ : χ ≠ 1) (M : ℤ) (N : ℕ) :
     χ.intervalSum M (N + q) = χ.intervalSum M N := by
-  rw [intervalSum_add, intervalSum_level hχ, add_zero]
+  rw [intervalSum_add, intervalSum_level_eq_zero hχ, add_zero]
 
 /-- For a nonprincipal character, an interval sum depends only on the length modulo the
 level. -/
@@ -330,7 +330,7 @@ theorem Even.intervalSum_level_sub_one_sub (hχe : χ.Even) (hχ : χ ≠ 1) {N 
     rw [show ((q - 1 - N : ℕ) : ℤ) = -((N + 1 : ℕ) : ℤ) + q by omega]
     exact (χ.intervalSum_periodic (N + 1) _).trans (hneg.trans hinit)
   have h := χ.intervalSum_add 0 (q - 1 - N) (N + 1)
-  rw [show q - 1 - N + (N + 1) = q by omega, intervalSum_level hχ, zero_add, hrest] at h
+  rw [show q - 1 - N + (N + 1) = q by omega, intervalSum_level_eq_zero hχ, zero_add, hrest] at h
   exact eq_neg_of_add_eq_zero_left h.symm
 
 end Parity
