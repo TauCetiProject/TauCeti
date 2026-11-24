@@ -268,18 +268,18 @@ theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : Set E}
 private theorem tendsto_blowUp_closedBall (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ.blowUp (finrank ℝ T) x r (closedBall 0 1)) (𝓝[>] 0)
       (𝓝 (θ * volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
-  simpa [Submodule.euclideanHausdorffMeasure_restrict_closedBall T.zero_mem] using
+  simpa [Submodule.euclideanHausdorffMeasure_restrict_apply_closedBall T.zero_mem] using
     h.tendsto_blowUp_apply measurableSet_closedBall isBounded_closedBall
       (measure_mono_null frontier_closedBall_subset_sphere
-        (Submodule.euclideanHausdorffMeasure_restrict_sphere T.zero_mem one_ne_zero))
+        (Submodule.euclideanHausdorffMeasure_restrict_apply_sphere T.zero_mem one_ne_zero))
 
 private theorem tendsto_blowUp_ball (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ.blowUp (finrank ℝ T) x r (ball 0 1)) (𝓝[>] 0)
       (𝓝 (θ * volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
-  simpa [Submodule.euclideanHausdorffMeasure_restrict_ball T.zero_mem] using
+  simpa [Submodule.euclideanHausdorffMeasure_restrict_apply_ball T.zero_mem] using
     h.tendsto_blowUp_apply measurableSet_ball isBounded_ball
       (measure_mono_null frontier_ball_subset_sphere
-        (Submodule.euclideanHausdorffMeasure_restrict_sphere T.zero_mem one_ne_zero))
+        (Submodule.euclideanHausdorffMeasure_restrict_apply_sphere T.zero_mem one_ne_zero))
 
 /-- `r ^ (-k) m / ω = m / (r ^ k ω)`, the conversion between the mass of a blow-up and a density
 ratio. -/

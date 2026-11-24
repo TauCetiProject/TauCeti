@@ -78,9 +78,9 @@ For a linear subspace `T` of dimension `k` of a finite-dimensional real inner pr
 `μHE[k]⌞T` is the image of the Lebesgue measure of `T` under the inclusion
 (`Submodule.euclideanHausdorffMeasure_restrict_eq_map`). It is locally finite, gives balls about
 points of `T` the volume of the balls of the same radius in `EuclideanSpace ℝ (Fin k)`
-(`Submodule.euclideanHausdorffMeasure_restrict_ball`,
-`Submodule.euclideanHausdorffMeasure_restrict_closedBall`) and spheres of nonzero radius about
-them measure zero (`Submodule.euclideanHausdorffMeasure_restrict_sphere`), and determines `T`
+(`Submodule.euclideanHausdorffMeasure_restrict_apply_ball`,
+`Submodule.euclideanHausdorffMeasure_restrict_apply_closedBall`) and spheres of nonzero radius about
+them measure zero (`Submodule.euclideanHausdorffMeasure_restrict_apply_sphere`), and determines `T`
 (`Submodule.eq_of_euclideanHausdorffMeasure_restrict_eq`).
 
 ## References
@@ -474,7 +474,7 @@ instance isLocallyFiniteMeasure_euclideanHausdorffMeasure_restrict (T : Submodul
 
 /-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a sphere of nonzero
 radius about a point of `T` measure zero. -/
-theorem euclideanHausdorffMeasure_restrict_sphere {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+theorem euclideanHausdorffMeasure_restrict_apply_sphere {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
     {r : ℝ} (hr : r ≠ 0) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.sphere x r) = 0 := by
   rw [T.euclideanHausdorffMeasure_restrict_apply Metric.isClosed_sphere.measurableSet,
     ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_sphere,
@@ -482,7 +482,7 @@ theorem euclideanHausdorffMeasure_restrict_sphere {T : Submodule ℝ E} {x : E} 
 
 /-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives an open ball about a
 point of `T` the volume of the ball of the same radius in `k`-dimensional Euclidean space. -/
-theorem euclideanHausdorffMeasure_restrict_ball {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+theorem euclideanHausdorffMeasure_restrict_apply_ball {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
     (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.ball x r) =
       volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
   rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_ball,
@@ -492,7 +492,7 @@ theorem euclideanHausdorffMeasure_restrict_ball {T : Submodule ℝ E} {x : E} (h
 /-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a closed ball about a
 point of `T` the volume of the closed ball of the same radius in `k`-dimensional Euclidean
 space. -/
-theorem euclideanHausdorffMeasure_restrict_closedBall {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+theorem euclideanHausdorffMeasure_restrict_apply_closedBall {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
     (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.closedBall x r) =
       volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
   rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_closedBall,
@@ -511,7 +511,7 @@ theorem le_of_euclideanHausdorffMeasure_restrict_eq {T₁ T₂ : Submodule ℝ E
     rw [Measure.restrict_apply measurableSet_ball, disjoint_iff_inter_eq_empty.1
       (subset_compl_iff_disjoint_right.1 hball), measure_empty]
   subst h₁
-  rw [← h, euclideanHausdorffMeasure_restrict_ball hv] at h0
+  rw [← h, euclideanHausdorffMeasure_restrict_apply_ball hv] at h0
   exact (Metric.measure_ball_pos volume _ hε).ne' h0
 
 /-- **The restricted Euclidean Hausdorff measure determines the subspace.** Two subspaces of
