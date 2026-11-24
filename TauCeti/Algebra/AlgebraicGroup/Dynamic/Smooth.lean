@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
-import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
@@ -197,8 +196,8 @@ instance formallySmooth_quotient_parabolicDefiningHopfIdeal (l : H →ₐc[R] La
     rw [parabolicDefiningHopfIdeal_toIdeal, Ideal.span_le]
     rintro _ ⟨h, n, hn, rfl⟩
     rw [SetLike.mem_coe, RingHom.mem_ker, constCoeffAlgHom_apply,
-      twistedPoint_coeff_conjugationAlgHom, ← LaurentPolynomial.T_mul,
-      LaurentPolynomial.coeff_T_mul, zero_sub, neg_neg]
+      twistedPoint_coeff_conjugationAlgHom,
+      LaurentPolynomial.coeff_mul_T, zero_sub, neg_neg]
     exact exists_toLaurent_eq_iff.mp ⟨_, rfl⟩ n hn
   refine ⟨Ideal.Quotient.liftₐ _ g fun x hx ↦ RingHom.mem_ker.mp (hgI hx),
     Ideal.Quotient.algHom_ext R ?_⟩

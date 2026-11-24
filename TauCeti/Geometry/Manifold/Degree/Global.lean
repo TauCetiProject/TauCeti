@@ -61,6 +61,8 @@ linear, and the integral over `M` of `f^*θ` is `deg_y(f)`.
   compactly supported cohomology, read through integration, is multiplication by the degree.
 * `TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul`,
   `TauCeti.integralTopForm_mpullback_eq_degree_mul`: `∫_M f^*φ = deg(f) ∫_N φ`.
+* `TauCeti.integralTopForm_mpullback_comp_eq_degree_mul`: for compact `N` and a smooth map
+  `g : N → P`, `∫_M (g ∘ f)^*β = deg(f) ∫_N g^*β`.
 * `TauCeti.degreeAtRegularValue_eq_of_isRegularValue`: the signed count does not depend on the
   regular value.
 * `TauCeti.degree_eq_degreeAtRegularValue`: the degree is the signed count at every regular value.
@@ -215,6 +217,24 @@ theorem integralTopForm_mpullback_eq_degree_mul (o : Manifold.Orientation I M (F
     (hf.mdifferentiable (by simp))).nonempty
   rw [degree_eq_degreeAtRegularValue o o' hf hfp hy]
   exact integralTopForm_mpullback_eq_degreeAtRegularValue_mul o o' hf hfp hy hφ hc
+
+omit [SigmaCompactSpace N] in
+/-- **The degree formula for forms pulled back through a compact manifold.** For a proper smooth
+map `f : M → N` to a compact manifold, a smooth map `g : N → P` and a smooth top form `β` on `P`,
+`∫_M (g ∘ f)^*β = deg(f) ∫_N g^*β`. -/
+theorem integralTopForm_mpullback_comp_eq_degree_mul {E'' H'' P : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
+    [CompactSpace N]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    {g : N → P} (hf : ContMDiff I J ∞ f) (hfp : IsProperMap f) (hg : ContMDiff J K ∞ g)
+    (β : SmoothForm K P ℝ k) :
+    integralTopForm o (SmoothForm.mpullback (g ∘ f) (hg.comp hf) β).val =
+      degree o o' f * integralTopForm o' (SmoothForm.mpullback g hg β).val := by
+  rw [← SmoothForm.mpullback_mpullback _ _ hf hg, SmoothForm.coe_mpullback]
+  -- On the compact manifold `N`, every form has compact support.
+  exact integralTopForm_mpullback_eq_degree_mul o o' hf hfp (SmoothForm.isSmoothForm _)
+    (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))
 
 /-- A proper smooth map of nonzero degree to a connected manifold of the same dimension is
 surjective. -/

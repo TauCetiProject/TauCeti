@@ -338,8 +338,10 @@ theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace 
   refine withDensity_congr_ae (.of_forall fun y => ?_)
   simp only [multivariateGaussianPDF, multivariateGaussianPDFReal,
     Matrix.toEuclideanCLE_symm_apply]
-  rw [← ENNReal.ofReal_mul (by positivity), hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt,
-    abs_of_pos (by positivity), hdetR, hrpow]
+  have hnorm : ‖(CFC.sqrt S)⁻¹.toEuclideanLin (y - m)‖ ^ 2 =
+      ⟪y - m, S⁻¹.toEuclideanLin (y - m)⟫ := by
+    simpa using hS.posSemidef.norm_sq_toEuclideanLin_inv_sqrt (y - m)
+  rw [← ENNReal.ofReal_mul (by positivity), hnorm, abs_of_pos (by positivity), hdetR, hrpow]
   congr 1
   ring
 
