@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.LSeries.Convolution
+public import TauCeti.NumberTheory.ArithmeticFunction.CompletelyAdditive
 
 /-!
 # Completely multiplicative arithmetic functions
@@ -31,7 +32,9 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
   a completely multiplicative `f` is `μ · f`.
 * `ArithmeticFunction.IsCompletelyMultiplicative.ppow`: pointwise powers of a completely
   multiplicative function are completely multiplicative.
-* Instances: `ζ`, `id`, `pow k`, `n ↦ n ^ ν` for complex `ν` and the Liouville function;
+* Instances: `ζ`, `id`, `pow k`, `n ↦ n ^ ν` for complex `ν`, the Liouville function and
+  `powOfAdditive k f` for completely additive `f`, with value `k ^ f n` at positive `n`
+  (`ArithmeticFunction.IsCompletelyAdditive.isCompletelyMultiplicative_powOfAdditive`);
   `ArithmeticFunction.not_isCompletelyMultiplicative_moebius`: `μ` is not completely
   multiplicative.
 
@@ -275,6 +278,13 @@ theorem isCompletelyMultiplicative_cpow (ν : ℂ) :
 /-- The Liouville function is completely multiplicative. -/
 theorem isCompletelyMultiplicative_liouville : liouville.IsCompletelyMultiplicative :=
   ⟨liouville_apply_one, liouville_apply_mul⟩
+
+/-- Powers along a completely additive function are completely multiplicative: `powOfAdditive k f`,
+with value `k ^ f n` at positive `n` and `0` at zero, as for `k ^ Ω`. -/
+theorem IsCompletelyAdditive.isCompletelyMultiplicative_powOfAdditive [MonoidWithZero R]
+    {f : ArithmeticFunction ℕ} (hf : f.IsCompletelyAdditive) (k : R) :
+    (powOfAdditive k f).IsCompletelyMultiplicative :=
+  ⟨powOfAdditive_apply_one k hf.map_one, hf.powOfAdditive_mul k⟩
 
 /-- The Möbius function is not completely multiplicative: `μ(4) = 0 ≠ 1 = μ(2) ^ 2`. -/
 theorem not_isCompletelyMultiplicative_moebius : ¬ IsCompletelyMultiplicative μ := by

@@ -113,8 +113,8 @@ theorem isRepresentationFinite_iff_exists_isAdditiveGenerator [IsArtinianRing A]
     IsRepresentationFinite.{w} A ↔ ∃ G : FGModuleCat.{w} A, IsAdditiveGenerator G := by
   rw [exists_isAdditiveGenerator_iff]
   refine ⟨fun h ↦ h.exists_indecomposable_iso, fun ⟨m, P, hP⟩ ↦ ?_⟩
-  refine isRepresentationFinite_of_forall_exists_iso (S := Set.range fun i ↦ (P i).obj)
-    (Set.finite_range _) fun M hf hi ↦ ?_
+  refine isRepresentationFinite_iff_exists_finite_forall_exists_iso.mpr
+    ⟨Set.range fun i ↦ (P i).obj, Set.finite_range _, fun M hf hi ↦ ?_⟩
   let X : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hf⟩
   have : IsLocalRing (End X) := FGModuleCat.isLocalRing_end_of_indecomposable hi
   obtain ⟨i, ⟨e⟩⟩ := hP X indecomposable_of_isLocalRing_end

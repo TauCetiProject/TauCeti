@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.TensorProduct
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 

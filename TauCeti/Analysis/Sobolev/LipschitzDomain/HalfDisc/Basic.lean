@@ -35,6 +35,10 @@ The frontier is compact, so a single Lipschitz bound serves all frontier points
 * `TauCeti.halfDisc`: the open half-disc of radius `r`.
 * `TauCeti.closure_halfDisc`, `TauCeti.frontier_halfDisc`: its closure is the closed half-disc and
   its frontier is the flat segment together with the closed arc.
+* `TauCeti.halfDisc_mono`, `TauCeti.halfDiscFlatSegment_mono`: increasing the radius enlarges
+  the half-disc and its flat segment.
+* `TauCeti.mapsTo_add_halfDisc`, `TauCeti.mapsTo_add_halfDiscFlatSegment`: translation along the
+  flat axis maps smaller half-discs and flat segments into larger ones when `|c| + ρ ≤ r`.
 * `TauCeti.halfDiscFlatSegment`: the flat segment of the frontier of the half-disc, the image of
   `[-r, r]` under `t ↦ (0, t)` (`TauCeti.image_Icc_eq_halfDiscFlatSegment`).
 * `TauCeti.isLipschitzDomain_halfDisc`: the half-disc is a Lipschitz domain.
@@ -131,6 +135,44 @@ def halfDiscFlatSegment (r : ℝ) : Set (WithLp 2 (ℝ × ℝ)) :=
 theorem mem_halfDiscFlatSegment {r : ℝ} {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ halfDiscFlatSegment r ↔ ‖x‖ ≤ r ∧ x.fst = 0 := by
   rw [halfDiscFlatSegment, mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq]
+
+section Translation
+
+variable {r ρ c : ℝ}
+
+/-- **Shifted half-discs.** If `|c| + ρ ≤ r`, translation by `(0, c)` maps the half-disc of
+radius `ρ` into the half-disc of radius `r`. -/
+theorem mapsTo_add_halfDisc (hc : |c| + ρ ≤ r) :
+    MapsTo (· + WithLp.toLp 2 ((0 : ℝ), c)) (halfDisc ρ : Set (WithLp 2 (ℝ × ℝ)))
+      (halfDisc r) := by
+  intro x hx
+  rw [SetLike.mem_coe, mem_halfDisc] at hx ⊢
+  refine ⟨?_, by simpa using hx.2⟩
+  calc ‖x + WithLp.toLp 2 ((0 : ℝ), c)‖ ≤ ‖x‖ + ‖WithLp.toLp 2 ((0 : ℝ), c)‖ := norm_add_le _ _
+    _ = ‖x‖ + |c| := by simp
+    _ < r := by linarith [hx.1]
+
+/-- If `|c| + ρ ≤ r`, translation by `(0, c)` maps the flat segment of radius `ρ` into the flat
+segment of radius `r`. -/
+theorem mapsTo_add_halfDiscFlatSegment (hc : |c| + ρ ≤ r) :
+    MapsTo (· + WithLp.toLp 2 ((0 : ℝ), c)) (halfDiscFlatSegment ρ) (halfDiscFlatSegment r) := by
+  intro x hx
+  rw [mem_halfDiscFlatSegment] at hx ⊢
+  refine ⟨?_, by simpa using hx.2⟩
+  calc ‖x + WithLp.toLp 2 ((0 : ℝ), c)‖ ≤ ‖x‖ + ‖WithLp.toLp 2 ((0 : ℝ), c)‖ := norm_add_le _ _
+    _ = ‖x‖ + |c| := by simp
+    _ ≤ r := by linarith [hx.1]
+
+/-- For `ρ ≤ r` the half-disc of radius `ρ` lies in the half-disc of radius `r`. -/
+theorem halfDisc_mono : Monotone halfDisc := fun _ _ hρr _ hx =>
+  mem_halfDisc.2 ⟨(mem_halfDisc.1 hx).1.trans_le hρr, (mem_halfDisc.1 hx).2⟩
+
+/-- The flat segment grows with its radius. -/
+theorem halfDiscFlatSegment_mono : Monotone halfDiscFlatSegment := fun _ _ hρr _ hx =>
+  mem_halfDiscFlatSegment.2
+    ⟨(mem_halfDiscFlatSegment.1 hx).1.trans hρr, (mem_halfDiscFlatSegment.1 hx).2⟩
+
+end Translation
 
 /-- The flat segment is the image of `[-r, r]` under `t ↦ (0, t)`. -/
 theorem image_Icc_eq_halfDiscFlatSegment (r : ℝ) :

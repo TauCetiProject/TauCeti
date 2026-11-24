@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.Algebra.Group.Conj
+import Mathlib.GroupTheory.FreeGroup.Reduce
 import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
@@ -42,6 +43,7 @@ namespace FreeGroup
 class. -/
 theorem infinite_setOf_isConj {α : Type*} [Nontrivial α] {g : FreeGroup α} (hg : g ≠ 1) :
     {x : FreeGroup α | IsConj g x}.Infinite :=
-  IsFreeGroup.infinite_setOf_isConj not_isMulCommutative hg
+  IsFreeGroup.infinite_setOf_isConj
+    (fun h => not_subsingleton α (isMulCommutative_iff_subsingleton.mp h)) hg
 
 end FreeGroup

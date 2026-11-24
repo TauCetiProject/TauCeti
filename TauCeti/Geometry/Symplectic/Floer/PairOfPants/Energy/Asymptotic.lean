@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
@@ -47,12 +48,13 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 
 ## Main results
 
-* `TauCeti.Floer.tendsto_setIntegral_truncation`,
+* `TauCeti.Floer.tendsto_setIntegral_exchangeTruncation`,
+  `TauCeti.Floer.tendsto_setIntegral_truncation`,
   `TauCeti.Floer.tendsto_intervalIntegral_endLoop`,
   `TauCeti.Floer.tendsto_intervalIntegral_endChart_of_isCompact`: integrals over `S` are limits of
-  integrals over its truncations, and integrals of a Hamiltonian along the end loops converge to
-  its integral along their pointwise limits, either when the Hamiltonian is globally bounded or
-  when the map takes values in a compact set.
+  integrals over its truncations, with the output end recentred at any `c` or not, and integrals
+  of a Hamiltonian along the end loops converge to its integral along their pointwise limits,
+  either when the Hamiltonian is globally bounded or when the map takes values in a compact set.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -62,6 +64,9 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 * `SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`,
   `SymplecticForm.neg_sum_le_integral_add_sum_of_isComplexLinearMap`: the lower bound on the
   topological energy of a Floer solution.
+* `SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le`: the
+  energy of a Floer solution over any part of the pair of pants is at most its topological energy
+  plus `B₀ + B₁ + B_∞`, the energy bound of compactness.
 * `SmoothTwoForm.IsNondegenerate.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`,
   `SymplecticForm.sum_mul_integral_le_integral_add_sum_of_isComplexLinearMap`: the lower bound
   with the one-sided constant `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` for functions of time `h_q ≤ H_q` on
@@ -86,18 +91,35 @@ namespace TauCeti
 
 namespace Floer
 
+/-- The truncation with output end recentred at `c` lies in `S`, in real coordinates. -/
+theorem preimage_exchangeTruncation_subset (c R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ exchangeTruncation_subset c R hz
+
+/-- The truncations with output end recentred at `c` exhaust `S`, in real coordinates. -/
+theorem iUnion_preimage_exchangeTruncation (c : ℝ) :
+    ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R =
+      thricePuncturedSphereReal := by
+  ext z
+  simp only [← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
+    mem_thricePuncturedSphereReal_iff]
+
+/-- Integrals over `S` are the limits of the integrals over its truncations with output end
+recentred at `c`. -/
+theorem tendsto_setIntegral_exchangeTruncation (c : ℝ) {f : ℝ × ℝ → ℝ}
+    (hf : IntegrableOn f thricePuncturedSphereReal) :
+    Tendsto (fun R : ℝ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R, f z)
+      atTop (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
+  rw [← iUnion_preimage_exchangeTruncation c] at hf ⊢
+  exact tendsto_setIntegral_of_monotone (measurableSet_preimage_exchangeTruncation c)
+    (fun _ _ h ↦ preimage_mono (exchangeTruncation_mono c h)) hf
+
 /-- Integrals over `S` are the limits of the integrals over its truncations. -/
 theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
     (hf : IntegrableOn f thricePuncturedSphereReal) :
     Tendsto (fun R : ℝ => ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z) atTop
       (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
-  have hS : ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' truncation R =
-      thricePuncturedSphereReal := by
-    rw [← preimage_iUnion, iUnion_truncation]
-    rfl
-  rw [← hS] at hf ⊢
-  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
-    (fun _ _ h => preimage_mono (truncation_mono h)) hf
+  simpa only [exchangeTruncation_zero] using tendsto_setIntegral_exchangeTruncation 0 hf
 
 /-- If the loops of `u` along the circles `±s = R` of the end `q` converge pointwise to a loop `x`
 as `R → ∞`, then the integrals of a bounded continuous Hamiltonian along them converge to its
@@ -281,6 +303,52 @@ theorem IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap
     fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
+  linarith [h.2]
+
+/-- **The energy of a Floer pair of pants over any part of the domain, for a manifold target.**
+Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_isComplexLinearMap`, the energy of
+the solution over any part `Ω` of `S` is at most its topological energy plus `B₀ + B₁ + B_∞`:
+
+`∫_Ω ρ(u) ≤ ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt + ∑ q, B_q`.
+
+The energy density is nonnegative, since the structures are tamed, so the energy over `Ω` is at
+most the energy over `S`, which the energy identity bounds. This is the energy bound with which
+Gromov–Floer compactness applies to the solutions on every part of the domain. -/
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
+    (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap)
+    {Ω : Set (ℝ × ℝ)} (hΩ : Ω ⊆ thricePuncturedSphereReal) :
+    ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z ≤
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)) + ∑ q, B q := by
+  have h := abs_le.1
+    (hω.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le hH hHs hB hu hx hE hA)
+  refine (hω.setIntegral_floerEnergyDensity_mono_set hΩ
+    isOpen_thricePuncturedSphereReal.measurableSet hE hJ hfloer).trans ?_
   linarith [h.2]
 
 /-- **The one-sided lower bound on the topological energy of a pair-of-pants solution, for a

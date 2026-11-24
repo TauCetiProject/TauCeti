@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Leibniz
-public import TauCeti.RingTheory.NovikovModule.Tensor
+public import TauCeti.RingTheory.NovikovModule.Tensor.Basic
 import TauCeti.Algebra.BigOperators.Finprod
 import Mathlib.Tactic.LinearCombination
 

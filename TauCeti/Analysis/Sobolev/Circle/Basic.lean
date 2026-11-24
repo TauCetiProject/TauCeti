@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.PSeries.Shifted
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -40,8 +40,11 @@ product when `E` has them.
 * `TauCeti.CircleSobolev.reflect`: the linear isometric reflection `n ↦ -n` of the Fourier
   coefficients.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
-* `TauCeti.CircleSobolev.fourierMultiplier g hg`: the Fourier multiplier `H^s → H^t` multiplying
-  the `n`-th coefficient by `g n`, for a symbol with `(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s`.
+* `TauCeti.CircleSobolev.fourierMultiplierOfBound g hg`: the Fourier multiplier `H^s → H^t`
+  multiplying the `n`-th coefficient by `g n`, for a symbol with
+  `(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s` with an explicit constant `C`. The multipliers with a
+  symbol of a given order are `TauCeti.CircleSobolev.fourierMultiplier`, in
+  `TauCeti/Analysis/Sobolev/Circle/FourierMultiplier.lean`.
 * `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
   `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem), and
   `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
@@ -94,6 +97,14 @@ def weight (s : ℝ) (n : ℤ) : ℝ :=
 
 theorem weight_def (s : ℝ) (n : ℤ) : weight s n = (1 + |(n : ℝ)|) ^ s :=
   (rfl)
+
+/-- At a natural-number order `k` the weight is the ordinary power `(1 + |n|) ^ k`. -/
+theorem weight_natCast (k : ℕ) (n : ℤ) : weight k n = (1 + |(n : ℝ)|) ^ k :=
+  Real.rpow_natCast _ k
+
+theorem weight_ofNat (k : ℕ) [k.AtLeastTwo] (n : ℤ) :
+    weight (OfNat.ofNat k) n = (1 + |(n : ℝ)|) ^ (OfNat.ofNat k : ℕ) :=
+  weight_natCast k n
 
 private theorem one_le_one_add_abs (n : ℤ) : 1 ≤ 1 + |(n : ℝ)| :=
   le_add_of_nonneg_right (abs_nonneg _)
@@ -173,12 +184,8 @@ theorem weight_le_of_le_abs {s : ℝ} (hs : s ≤ 0) {N : ℕ} {n : ℤ} (hn : (
   Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hs
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
-theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith)) ?_
-  filter_upwards [eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, norm_weight]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
+theorem summable_weight {r : ℝ} (hr : r < -1) : Summable (weight r) :=
+  (summable_one_add_abs_int_rpow hr).congr fun n ↦ (weight_def r n).symm
 
 /-- Exponential decay beats every polynomial weight: `∑ₙ (1 + |n|) ^ r e^{-a |n|} < ∞` for
 `a > 0` and every real `r`. -/
@@ -675,10 +682,10 @@ private theorem weight_mul_norm_smul_coeff_le (hg : ∀ n, weight t n * ‖g n�
   rw [norm_smul, ← mul_assoc, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right (hg n) (norm_nonneg _)
 
-/-- The **Fourier multiplier** with symbol `g`, as a bounded operator `H^s → H^t`: it multiplies
-the `n`-th Fourier coefficient by `g n`. It is bounded, with norm at most `C`, as soon as
-`(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s` for every `n`. -/
-def fourierMultiplier (g : ℤ → ℂ) (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) :
+/-- The **Fourier multiplier** with symbol `g` and an explicit bound, as a bounded operator
+`H^s → H^t`: it multiplies the `n`-th Fourier coefficient by `g n`. It is bounded, with norm at
+most `C`, as soon as `(1 + |n|) ^ t ‖g n‖ ≤ C (1 + |n|) ^ s` for every `n`. -/
+def fourierMultiplierOfBound (g : ℤ → ℂ) (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) :
     CircleSobolev s E →L[ℂ] CircleSobolev t E :=
   LinearMap.mkContinuous
     { toFun a := ⟨fun n ↦ g n • a.coeff n, memℓp_of_forall_le (weight_mul_norm_smul_coeff_le hg a)⟩
@@ -687,18 +694,18 @@ def fourierMultiplier (g : ℤ → ℂ) (hg : ∀ n, weight t n * ‖g n‖ ≤ 
     C fun a ↦ norm_le_of_forall_le (weight_mul_norm_smul_coeff_le hg a)
 
 @[simp]
-theorem coeff_fourierMultiplier (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+theorem coeff_fourierMultiplierOfBound (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
     (a : CircleSobolev s E) (n : ℤ) :
-    (fourierMultiplier g hg a).coeff n = g n • a.coeff n :=
+    (fourierMultiplierOfBound g hg a).coeff n = g n • a.coeff n :=
   (rfl)
 
-theorem norm_fourierMultiplier_le (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
-    (a : CircleSobolev s E) : ‖fourierMultiplier g hg a‖ ≤ C * ‖a‖ :=
+theorem norm_fourierMultiplierOfBound_le (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n)
+    (a : CircleSobolev s E) : ‖fourierMultiplierOfBound g hg a‖ ≤ C * ‖a‖ :=
   norm_le_of_forall_le (weight_mul_norm_smul_coeff_le hg a)
 
 @[simp]
-theorem fourierMultiplier_single (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) (n : ℤ)
-    (x : E) : fourierMultiplier g hg (single n x) = single n (g n • x) :=
+theorem fourierMultiplierOfBound_single (hg : ∀ n, weight t n * ‖g n‖ ≤ C * weight s n) (n : ℤ)
+    (x : E) : fourierMultiplierOfBound g hg (single n x) = single n (g n • x) :=
   CircleSobolev.ext (funext fun m ↦ by
     rcases eq_or_ne m n with rfl | hm
     · simp
