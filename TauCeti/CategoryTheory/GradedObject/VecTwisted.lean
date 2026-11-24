@@ -37,8 +37,9 @@ concentrated in degree `g⁻¹`, and its coevaluation carries the scalar `ω(g, 
 `VecTwisted.rightDual_coevaluation_hom` and their left analogues identify the chosen duals and
 their structure maps; `VecTwisted.rightDual_obj_evaluation` and
 `VecTwisted.rightDual_obj_coevaluation` describe the pairings of the components.
-`VecTwisted.rightDualDeltaIso` identifies the right dual of `δ_g` with `δ_{g⁻¹}`, by evaluating
-linear functionals on the field at `1`.
+`VecTwisted.rightDualDeltaIso` and `VecTwisted.leftDualDeltaIso` identify the right and left
+duals of `δ_g` with `δ_{g⁻¹}`, by evaluating linear functionals on the field at `1`; the
+component of `δ_g` in degree `g` is identified with the field by `VecTwisted.deltaObjIso`.
 
 ## References
 
@@ -123,9 +124,9 @@ instance finite_component (X : VecTwisted k G c) (g : Additive G) :
 
 /-- Form an object of `VecTwisted` from a finitely supported graded vector space with finite
 components. -/
-@[expose] def of (X : CategoryTheory.GradedObject (Additive G) (ModuleCat.{u} k))
+def of (X : CategoryTheory.GradedObject (Additive G) (ModuleCat.{u} k))
     (hX : X.HasFiniteSupport) [∀ g, Module.Finite k (X g)] : VecTwisted k G c :=
-  ⟨X, (objects_iff c X).2 ⟨hX, inferInstance⟩⟩
+  ⟨X, hX, inferInstance⟩
 
 @[simp]
 theorem of_obj (X : CategoryTheory.GradedObject (Additive G) (ModuleCat.{u} k))
@@ -136,7 +137,7 @@ theorem of_obj (X : CategoryTheory.GradedObject (Additive G) (ModuleCat.{u} k))
 variable [DecidableEq G]
 
 /-- A finite-dimensional vector space concentrated in degree `g`. -/
-@[expose] def single (g : G) (V : ModuleCat.{u} k) [Module.Finite k V] : VecTwisted k G c := by
+def single (g : G) (V : ModuleCat.{u} k) [Module.Finite k V] : VecTwisted k G c := by
   letI (i : Additive G) := CategoryTheory.GradedObject.finite_single_obj (Additive.ofMul g) V i
   exact of ((CategoryTheory.GradedObject.single (Additive.ofMul g)).obj V)
     (CategoryTheory.GradedObject.hasFiniteSupport_single _ _)
@@ -154,13 +155,36 @@ theorem support_single (g : G) (V : ModuleCat.{u} k) [Module.Finite k V]
   exact CategoryTheory.GradedObject.support_single _ V hV
 
 /-- The one-dimensional graded object concentrated in degree `g`. -/
-@[expose] def delta (g : G) : VecTwisted k G c :=
+def delta (g : G) : VecTwisted k G c :=
   single g (ModuleCat.of k k)
 
 /-- The underlying graded vector space of `δ_g` is the single-degree copy of the field. -/
 theorem delta_obj (g : G) : (delta (c := c) g).obj =
     (CategoryTheory.GradedObject.single (Additive.ofMul g)).obj (ModuleCat.of k k) :=
   (rfl)
+
+/-- The component of `δ_g` in a degree `h` equal to `g` is the field. -/
+def deltaObjIso (g : G) (h : Additive G) (hh : h = Additive.ofMul g) :
+    (delta (c := c) g).obj h ≅ ModuleCat.of k k :=
+  CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g) (ModuleCat.of k k) h hh
+
+/-- `VecTwisted.deltaObjIso` is `GradedObject.singleObjApplyIsoOfEq` after rewriting by
+`VecTwisted.delta_obj`. -/
+theorem deltaObjIso_hom (g : G) (h : Additive G) (hh : h = Additive.ofMul g) :
+    (deltaObjIso (c := c) g h hh).hom = eqToHom (congrFun (delta_obj g) h) ≫
+      (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
+        (ModuleCat.of k k) h hh).hom :=
+  -- `delta_obj` holds by `rfl`, so the `eqToHom` is the identity.
+  (Category.id_comp _).symm
+
+/-- The inverse of `VecTwisted.deltaObjIso` is that of `GradedObject.singleObjApplyIsoOfEq`
+after rewriting by `VecTwisted.delta_obj`. -/
+theorem deltaObjIso_inv (g : G) (h : Additive G) (hh : h = Additive.ofMul g) :
+    (deltaObjIso (c := c) g h hh).inv =
+      (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
+        (ModuleCat.of k k) h hh).inv ≫ eqToHom (congrFun (delta_obj g) h).symm :=
+  -- As for `deltaObjIso_hom`, the `eqToHom` is the identity.
+  (Category.comp_id _).symm
 
 /-- The support of `δ_g` is exactly the degree `g`; in particular these objects are nonzero
 also when the grading group is infinite. -/
@@ -183,11 +207,10 @@ namespace VecTwisted
 
 /-- The right dual of an object of `VecTwisted`: its component in degree `g` is the dual of the
 component of `X` in degree `g⁻¹`. -/
-@[expose] def rightDual (X : VecTwisted k G c) : VecTwisted k G c where
+def rightDual (X : VecTwisted k G c) : VecTwisted k G c where
   obj g := (X.obj (-g))ᘁ
-  property := (objects_iff c _).2
-    ⟨X.hasFiniteSupport.of_injective neg_injective fun _ ↦ isZero_right_of_isZero_left,
-      fun _ ↦ (ModuleCat.finite_projective_of_hasLeftDual _).1⟩
+  property := ⟨X.hasFiniteSupport.of_injective neg_injective fun _ ↦ isZero_right_of_isZero_left,
+    fun _ ↦ (ModuleCat.finite_projective_of_hasLeftDual _).1⟩
 
 /-- The component of the right dual in degree `g` is the dual of the component in degree `g⁻¹`. -/
 @[simp]
@@ -296,40 +319,15 @@ theorem leftDual_coevaluation_hom (X : VecTwisted k G c) :
 /-- `Vec^ω_G` is rigid: the duals of an object are graded by inverse degrees. -/
 instance rigidCategory : RigidCategory (VecTwisted k G c) where
 
-/-- For modules `A` and `B` identified with the field by `e` and `f`, the dual of `A` is
-identified with `B`: a linear functional `φ` is sent to the element of `B` corresponding to the
-value of `φ` at the element of `A` corresponding to `1`. This is the component of
-`VecTwisted.rightDualDeltaIso` in degree `g⁻¹`. -/
-private def rightDualIsoOfIsoField {A B : ModuleCat.{u} k} [Module.Finite k A]
-    [Module.Projective k A] (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k) : (A)ᘁ ≅ B :=
-  (ModuleCat.homLinearEquiv (S := k) ≪≫ₗ e.symm.toLinearEquiv.dualMap ≪≫ₗ
-    LinearMap.ringLmapEquivSelf k k k).toModuleIso ≪≫ f.symm
-
-private lemma rightDualIsoOfIsoField_hom_apply {A B : ModuleCat.{u} k} [Module.Finite k A]
-    [Module.Projective k A] (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k)
-    (φ : A ⟶ ModuleCat.of k k) :
-    (rightDualIsoOfIsoField e f).hom.hom φ = f.inv.hom (φ.hom (e.inv.hom 1)) :=
-  -- Both sides agree by unfolding `rightDualIsoOfIsoField`.
-  rfl
-
-private lemma rightDualIsoOfIsoField_inv_apply {A B : ModuleCat.{u} k} [Module.Finite k A]
-    [Module.Projective k A] (e : A ≅ ModuleCat.of k k) (f : B ≅ ModuleCat.of k k) (x : B)
-    (v : A) :
-    ((rightDualIsoOfIsoField e f).inv.hom x : A ⟶ ModuleCat.of k k).hom v =
-      e.hom.hom v * f.hom.hom x :=
-  -- By unfolding, as for `rightDualIsoOfIsoField_hom_apply`: `LinearMap.ringLmapEquivSelf` sends
-  -- `x` back to multiplication by `x`, and scalar multiplication on `k` is multiplication.
-  rfl
-
 /-- The component in degree `h` of `VecTwisted.rightDualDeltaIso`: in degree `g⁻¹` it is
-`rightDualIsoOfIsoField` for the identifications of `δ_g` and `δ_{g⁻¹}` with the field there, and
-in the other degrees both objects are zero. -/
+`ModuleCat.rightDualIsoOfIsoSelf` followed by the identification of `δ_{g⁻¹}` with the field
+there, and in the other degrees both objects are zero. The components of the left dual of `δ_g`
+are definitionally the same, so this is also the component of `VecTwisted.leftDualDeltaIso`. -/
 private def rightDualDeltaIsoApp (g : G) (h : Additive G) :
     (rightDual (delta (c := c) g)).obj h ≅ (delta (c := c) g⁻¹).obj h :=
   if hh : h = Additive.ofMul g⁻¹ then
-    rightDualIsoOfIsoField (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
-        (ModuleCat.of k k) (-h) (by rw [hh, ofMul_inv, neg_neg]))
-      (CategoryTheory.GradedObject.singleObjApplyIsoOfEq _ (ModuleCat.of k k) h hh)
+    ModuleCat.rightDualIsoOfIsoSelf (deltaObjIso g (-h) (by rw [hh, ofMul_inv, neg_neg])) ≪≫
+      (deltaObjIso g⁻¹ h hh).symm
   else
     (show IsZero ((delta (c := c) g).obj (-h))ᘁ from
       isZero_right_of_isZero_left (X := (delta (c := c) g).obj (-h))
@@ -341,11 +339,8 @@ private def rightDualDeltaIsoApp (g : G) (h : Additive G) :
 first branch of its defining `dite`. -/
 private lemma rightDualDeltaIsoApp_neg_ofMul (g : G) :
     rightDualDeltaIsoApp (c := c) g (-Additive.ofMul g) =
-      rightDualIsoOfIsoField (A := (delta (c := c) g).obj (- -Additive.ofMul g))
-        (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
-          (ModuleCat.of k k) (- -Additive.ofMul g) (neg_neg _))
-        (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹)
-          (ModuleCat.of k k) (-Additive.ofMul g) (ofMul_inv g).symm) :=
+      ModuleCat.rightDualIsoOfIsoSelf (deltaObjIso g (- -Additive.ofMul g) (neg_neg _)) ≪≫
+        (deltaObjIso g⁻¹ (-Additive.ofMul g) (ofMul_inv g).symm).symm :=
   dite_eq_left (ofMul_inv g).symm
 
 /-- The right dual of `δ_g` is `δ_{g⁻¹}`. In degree `g⁻¹` the isomorphism is the identification
@@ -358,37 +353,68 @@ linear functional on the field at `1`: it sends `φ` to the element of `δ_{g⁻
 the value of `φ` at the element of `δ_g` corresponding to `1`. -/
 @[simp]
 theorem rightDualDeltaIso_hom_hom_apply (g : G)
-    (φ : (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k) :
+    (φ : (rightDual (delta (c := c) g)).obj (-Additive.ofMul g)) :
     ((rightDualDeltaIso (c := c) g).hom.hom (-Additive.ofMul g)).hom φ =
-      (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹) (ModuleCat.of k k)
-          (-Additive.ofMul g) (ofMul_inv g).symm).inv.hom
-        (φ.hom ((CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g)
-          (ModuleCat.of k k) (- -Additive.ofMul g) (neg_neg _)).inv.hom 1)) := by
-  -- The component of `rightDualDeltaIso` is `rightDualDeltaIsoApp` by definition of the `isoMk`s.
-  -- A component of a morphism of `TwistedGradedObject` is only a function after unfolding that
-  -- type synonym, so `change` and `exact` check these steps up to unfolding.
+      (deltaObjIso g⁻¹ (-Additive.ofMul g) (ofMul_inv g).symm).inv.hom
+        (((eqToHom (rightDual_obj (delta (c := c) g) (-Additive.ofMul g))).hom φ :
+          (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom
+          ((deltaObjIso g (- -Additive.ofMul g) (neg_neg _)).inv.hom 1)) := by
+  -- The component of `rightDualDeltaIso` is `rightDualDeltaIsoApp` by definition of the `isoMk`s,
+  -- and the `eqToHom` along the `rfl` lemma `rightDual_obj` is the identity. A component of a
+  -- morphism of `TwistedGradedObject` is only a function after unfolding that type synonym, so
+  -- `change` checks this step up to unfolding.
   change (rightDualDeltaIsoApp g (-Additive.ofMul g)).hom.hom φ = _
   rw [rightDualDeltaIsoApp_neg_ofMul]
-  exact rightDualIsoOfIsoField_hom_apply _ _ φ
+  exact congrArg _ (ModuleCat.rightDualIsoOfIsoSelf_hom_apply _ _)
 
 /-- In degree `g⁻¹`, written `-Additive.ofMul g`, the inverse of `VecTwisted.rightDualDeltaIso`
 sends `x` to the linear functional on `δ_g` that multiplies by the scalar corresponding to `x`. -/
-@[simp]
 theorem rightDualDeltaIso_inv_hom_apply (g : G)
     (x : (delta (c := c) g⁻¹).obj (-Additive.ofMul g))
     (v : (delta (c := c) g).obj (- -Additive.ofMul g)) :
-    (((rightDualDeltaIso (c := c) g).inv.hom (-Additive.ofMul g)).hom x :
+    ((eqToHom (rightDual_obj (delta (c := c) g) (-Additive.ofMul g))).hom
+        (((rightDualDeltaIso (c := c) g).inv.hom (-Additive.ofMul g)).hom x) :
         (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom v =
-      (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g) (ModuleCat.of k k)
-          (- -Additive.ofMul g) (neg_neg _)).hom.hom v *
-        (CategoryTheory.GradedObject.singleObjApplyIsoOfEq (Additive.ofMul g⁻¹)
-          (ModuleCat.of k k) (-Additive.ofMul g) (ofMul_inv g).symm).hom.hom x := by
+      (deltaObjIso g (- -Additive.ofMul g) (neg_neg _)).hom.hom v *
+        (deltaObjIso g⁻¹ (-Additive.ofMul g) (ofMul_inv g).symm).hom.hom x := by
   -- As in `rightDualDeltaIso_hom_hom_apply`, the component is `rightDualDeltaIsoApp` by
-  -- definition.
+  -- definition and the `eqToHom` is the identity.
   change ((rightDualDeltaIsoApp g (-Additive.ofMul g)).inv.hom x :
     (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom v = _
   rw [rightDualDeltaIsoApp_neg_ofMul]
-  exact rightDualIsoOfIsoField_inv_apply _ _ x v
+  exact ModuleCat.rightDualIsoOfIsoSelf_inv_apply _ _ v
+
+/-- The left dual of `δ_g` is `δ_{g⁻¹}`. Its components are those of
+`VecTwisted.rightDualDeltaIso`, since the left and right duals of a finite-dimensional vector
+space are the same module of linear functionals. -/
+def leftDualDeltaIso (g : G) : leftDual (delta (c := c) g) ≅ delta g⁻¹ :=
+  ObjectProperty.isoMk _ <| CategoryTheory.GradedObject.isoMk _ _ (rightDualDeltaIsoApp g)
+
+/-- In degree `g⁻¹`, written `-Additive.ofMul g`, `VecTwisted.leftDualDeltaIso` evaluates a
+linear functional on the field at `1`, as `VecTwisted.rightDualDeltaIso` does. -/
+@[simp]
+theorem leftDualDeltaIso_hom_hom_apply (g : G)
+    (φ : (leftDual (delta (c := c) g)).obj (-Additive.ofMul g)) :
+    ((leftDualDeltaIso (c := c) g).hom.hom (-Additive.ofMul g)).hom φ =
+      (deltaObjIso g⁻¹ (-Additive.ofMul g) (ofMul_inv g).symm).inv.hom
+        (((eqToHom (leftDual_obj (delta (c := c) g) (-Additive.ofMul g))).hom φ :
+          (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom
+          ((deltaObjIso g (- -Additive.ofMul g) (neg_neg _)).inv.hom 1)) :=
+  -- The components of `leftDualDeltaIso` and `rightDualDeltaIso` are both `rightDualDeltaIsoApp`.
+  rightDualDeltaIso_hom_hom_apply g φ
+
+/-- In degree `g⁻¹`, written `-Additive.ofMul g`, the inverse of `VecTwisted.leftDualDeltaIso`
+sends `x` to the linear functional on `δ_g` that multiplies by the scalar corresponding to `x`. -/
+theorem leftDualDeltaIso_inv_hom_apply (g : G)
+    (x : (delta (c := c) g⁻¹).obj (-Additive.ofMul g))
+    (v : (delta (c := c) g).obj (- -Additive.ofMul g)) :
+    ((eqToHom (leftDual_obj (delta (c := c) g) (-Additive.ofMul g))).hom
+        (((leftDualDeltaIso (c := c) g).inv.hom (-Additive.ofMul g)).hom x) :
+        (delta (c := c) g).obj (- -Additive.ofMul g) ⟶ ModuleCat.of k k).hom v =
+      (deltaObjIso g (- -Additive.ofMul g) (neg_neg _)).hom.hom v *
+        (deltaObjIso g⁻¹ (-Additive.ofMul g) (ofMul_inv g).symm).hom.hom x :=
+  -- As for `leftDualDeltaIso_hom_hom_apply`, the components agree with those of the right dual.
+  rightDualDeltaIso_inv_hom_apply g x v
 
 end VecTwisted
 
