@@ -72,8 +72,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   exponentially small below its centre.
 * `Real.one_sub_exp_neg_div_le_exp` — `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)`: the
   resulting bound on that exponential moment, for every real `l`.
-* `TauCeti.tanh_isEquivalent_id` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4). It follows the
-  lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+* `TauCeti.complexTanh_isEquivalent_id` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4). It follows
+  the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
   `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
@@ -442,7 +442,7 @@ namespace TauCeti
 open Asymptotics Topology in
 /-- `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4), along the full neighbourhood filter: `tanh` has
 derivative `1` at `0`, where both sides vanish. -/
-theorem tanh_isEquivalent_id : (fun z : ℂ ↦ Complex.tanh z) ~[𝓝 0] fun z ↦ z := by
+theorem complexTanh_isEquivalent_id : (fun z : ℂ ↦ Complex.tanh z) ~[𝓝 0] fun z ↦ z := by
   have hd : HasDerivAt Complex.tanh 1 0 := by
     have h := (Complex.hasDerivAt_sinh 0).div (Complex.hasDerivAt_cosh 0) (by simp)
     simp only [Complex.cosh_zero, Complex.sinh_zero, mul_zero, sub_zero, one_pow, div_one,

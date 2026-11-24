@@ -25,14 +25,15 @@ sector `|ph z| ≤ π/2 - δ` with `δ > 0` but not in the open half-plane `|ph 
   `n → ±∞` (DLMF 2.1.6).
 
 The other examples are `example`s citing the general results: DLMF 2.1.4, `tanh z ∼ z` as
-`z → 0`, is `TauCeti.tanh_isEquivalent_id` of `TauCeti.Analysis.SpecialFunctions.Hyperbolic`;
-DLMF 2.1.5, `e^{-x} = o(1)` as `x → +∞`, is Mathlib's `Real.tendsto_exp_neg_atTop_nhds_zero`;
-the sector statements are `TauCeti.cexp_neg_isLittleO_one_sector` and
-`TauCeti.not_cexp_neg_isLittleO_one_halfPlane` of `TauCeti.Analysis.SpecialFunctions.Exp.Decay`;
-DLMF 2.1.7, `e^{ix} = O(1)` on `ℝ`, is `Complex.norm_exp_ofReal_mul_I`. DLMF 2.1.8, that the tail
-from index `n` of a power series converging near `0` is `O(zⁿ)`, is
-`TauCeti.tsum_tail_isBigO_pow` of `TauCeti.Analysis.Analytic.OfScalars`, recorded here for
-`𝕜 = ℂ`. DLMF 2.1.9, `e^z = 1 + z + O(z²)` as `z → 0`, is the case `n = 2` of Mathlib's
+`z → 0`, is `TauCeti.complexTanh_isEquivalent_id` of
+`TauCeti.Analysis.SpecialFunctions.Hyperbolic`; DLMF 2.1.5, `e^{-x} = o(1)` as `x → +∞`, is
+Mathlib's `Real.tendsto_exp_neg_atTop_nhds_zero`; the sector statements are
+`TauCeti.cexp_neg_isLittleO_one_sector` and `TauCeti.not_cexp_neg_isLittleO_one_rightHalfPlane`
+of `TauCeti.Analysis.SpecialFunctions.Exp.Decay`; DLMF 2.1.7, `e^{ix} = O(1)` on `ℝ`, is
+`Complex.norm_exp_ofReal_mul_I`. DLMF 2.1.8, that the tail from index `n` of a power series
+converging near `0` is `O(zⁿ)`, is `TauCeti.tsum_tail_isBigO_pow` of
+`TauCeti.Analysis.Analytic.OfScalars`, recorded here for `𝕜 = ℂ`. DLMF 2.1.9,
+`e^z = 1 + z + O(z²)` as `z → 0`, is the case `n = 2` of Mathlib's
 `Complex.exp_sub_sum_range_isBigO_pow`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
@@ -60,9 +61,9 @@ theorem sin_pi_mul_intCast_add_inv_isBigO_inv :
   IsBigO.of_bound 1 (Eventually.of_forall fun n => by
     simpa [Real.norm_eq_abs] using n.abs_sin_pi_mul_intCast_add_le (n : ℝ)⁻¹)
 
-/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.tanh_isEquivalent_id`. -/
+/-- DLMF 2.1.4: `tanh z ∼ z` as `z → 0` in `ℂ`, the result `TauCeti.complexTanh_isEquivalent_id`. -/
 example : (fun z : ℂ => tanh z) ~[𝓝 0] fun z => z :=
-  tanh_isEquivalent_id
+  complexTanh_isEquivalent_id
 
 /-- DLMF 2.1.5: `e^{-x} = o(1)` as `x → +∞` in `ℝ`. -/
 example : (fun x : ℝ => Real.exp (-x)) =o[atTop] fun _ => (1 : ℝ) :=
@@ -76,11 +77,11 @@ example {δ : ℝ} (hδ : 0 < δ) :
   cexp_neg_isLittleO_one_sector hδ
 
 /-- DLMF §2.1(i), after 2.1.7: `e^{-z} = o(1)` fails as `z → ∞` in the open half-plane
-`|ph z| < π/2`, the result `TauCeti.not_cexp_neg_isLittleO_one_halfPlane`. -/
+`|ph z| < π/2`, the result `TauCeti.not_cexp_neg_isLittleO_one_rightHalfPlane`. -/
 example :
     ¬ (fun z : ℂ => exp (-z)) =o[Bornology.cobounded ℂ ⊓ 𝓟 {z | |arg z| < π / 2}]
       fun _ => (1 : ℂ) :=
-  not_cexp_neg_isLittleO_one_halfPlane
+  not_cexp_neg_isLittleO_one_rightHalfPlane
 
 /-- DLMF 2.1.6: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ`, from the global bound
 `TauCeti.sin_pi_mul_intCast_add_inv_isBigO_inv`. -/

@@ -33,7 +33,7 @@ lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
   complex rate of positive real part.
 * `Complex.lipschitzOnWith_exp_setOf_re_nonpos`: `exp` is `1`-Lipschitz on `Re z ≤ 0`.
 * `Complex.norm_one_sub_exp_neg_le`: `‖1 - exp (-ζ)‖ ≤ ‖ζ‖` for `0 ≤ ζ.re`.
-* `TauCeti.cexp_neg_isLittleO_one_sector`, `TauCeti.not_cexp_neg_isLittleO_one_halfPlane`:
+* `TauCeti.cexp_neg_isLittleO_one_sector`, `TauCeti.not_cexp_neg_isLittleO_one_rightHalfPlane`:
   `e^{-z} = o(1)` as `z → ∞` in `|arg z| ≤ π/2 - δ` with `δ > 0`, and not in `|arg z| < π/2`.
 -/
 
@@ -118,7 +118,7 @@ theorem cexp_neg_isLittleO_one_sector {δ : ℝ} (hδ : 0 < δ) :
 
 /-- DLMF §2.1(i), after 2.1.7: `e^{-z} = o(1)` fails as `z → ∞` in the open half-plane
 `|arg z| < π/2`. Along `z = 1 + it`, `|e^{-z}| = e^{-1}`. -/
-theorem not_cexp_neg_isLittleO_one_halfPlane :
+theorem not_cexp_neg_isLittleO_one_rightHalfPlane :
     ¬ (fun z : ℂ => exp (-z)) =o[Bornology.cobounded ℂ ⊓ 𝓟 {z | |arg z| < π / 2}]
       fun _ => (1 : ℂ) := by
   intro h
