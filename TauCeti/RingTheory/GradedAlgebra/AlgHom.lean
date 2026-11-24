@@ -37,8 +37,8 @@ variable {ι : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [
 
 /-- The linear map underlying a graded algebra map is homogeneous of degree zero. -/
 theorem isHomogeneous_toLinearMap (φ : 𝒜 →ₐᵍ[R] ℬ) :
-    TauCeti.LinearMap.IsHomogeneous φ.toAlgHom.toLinearMap 𝒜 ℬ 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    LinearMap.IsHomogeneous φ.toAlgHom.toLinearMap 𝒜 ℬ 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
     simpa only [add_zero, AlgHom.toLinearMap_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
       using φ.map_mem hx
 
@@ -52,7 +52,7 @@ variable [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
 theorem map_koszulTwist (φ : 𝒜 →ₐᵍ[R] ℬ) (q : ℤ) (a : A) :
     φ ((TauCeti.InternalGrading.ofDecomposition 𝒜).koszulTwist q a) =
       (TauCeti.InternalGrading.ofDecomposition ℬ).koszulTwist q (φ a) := by
-  have hφ : TauCeti.LinearMap.IsHomogeneous φ.toAlgHom.toLinearMap
+  have hφ : LinearMap.IsHomogeneous φ.toAlgHom.toLinearMap
       (TauCeti.InternalGrading.ofDecomposition 𝒜).piece
       (TauCeti.InternalGrading.ofDecomposition ℬ).piece 0 := by
     rw [TauCeti.InternalGrading.ofDecomposition_piece,

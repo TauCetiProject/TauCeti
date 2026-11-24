@@ -143,16 +143,17 @@ end Comparison
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
-/-- The set of points at finite Riemannian distance from `x` is open: any point close enough to a
-point `y` of this set is at Riemannian distance `< 1` from `y`, hence at finite distance from `x` by
-the triangle inequality. -/
-theorem isOpen_setOfPred_riemannianEDist_lt_top (x : M) :
-    IsOpen {y | riemannianEDist I x y < ⊤} := by
+/-- Open Riemannian balls are open: any point close enough to a point `y` at Riemannian distance
+less than `r` from `x` is again at distance less than `r` from `x`, by the triangle inequality. In
+particular, with `r = ⊤`, the set of points at finite Riemannian distance from `x` is open. -/
+theorem isOpen_setOfPred_riemannianEDist_lt (x : M) (r : ℝ≥0∞) :
+    IsOpen {y | riemannianEDist I x y < r} := by
   rw [isOpen_iff_mem_nhds]
   intro y hy
-  filter_upwards [eventually_riemannianEDist_lt I y zero_lt_one] with z hz
+  obtain ⟨δ, hδ, hδr⟩ := ENNReal.lt_iff_exists_add_pos_lt.1 hy
+  filter_upwards [eventually_riemannianEDist_lt I y (ENNReal.coe_pos.2 hδ)] with z hz
   exact (riemannianEDist_triangle (y := y)).trans_lt
-    (ENNReal.add_lt_top.2 ⟨hy, hz.trans_le le_top⟩)
+    ((ENNReal.add_lt_add_left (ne_top_of_lt hy) hz).trans hδr)
 
 variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is closed: if `y` is at infinite
@@ -171,7 +172,7 @@ variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is clopen. -/
 theorem isClopen_setOfPred_riemannianEDist_lt_top (x : M) :
     IsClopen {y | riemannianEDist I x y < ⊤} :=
-  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt_top I x⟩
+  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt I x ⊤⟩
 
 variable (I) in
 /-- Two points of a preconnected set are at finite Riemannian distance. -/

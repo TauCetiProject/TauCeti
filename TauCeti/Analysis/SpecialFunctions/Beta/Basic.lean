@@ -11,6 +11,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
@@ -85,8 +86,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   `TauCeti.integral_mul_inv_add_sub_inv_add_div_one_add_sq` — the Mellin integrals of the rational
   sine-compensated Laplace transform `(x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)`, with a power formula
   for `0 < α < 2`, `α ≠ 1`, and the logarithmic value `a * log a` at exponent one;
-* `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
-  second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
+* `TauCeti.inv_sq_smul_rpow_mul_one_add_rpow` — the change-of-variables identity relating the first
+  and second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
   `TauCeti.integrable_one_add_sq_div_rpow`, and `TauCeti.integral_one_add_sq_div_rpow` — the
   Cauchy-type kernel `(1 + x ^ 2 / ν) ^ (-s)` is integrable on the line for `0 < ν` and
@@ -119,11 +120,12 @@ descend from `Complex.betaIntegral` by taking real parts.
 The substitution `u = t ^ p` carries the open unit interval onto itself and is run through
 `MeasureTheory.integral_image_eq_integral_abs_deriv_smul`, like the changes of variables below.
 
-Both changes of variables for the second integral are one-dimensional, run through
-`MeasureTheory.integral_image_eq_integral_abs_deriv_smul` and its integrability companion. The
-chart `u ↦ u / (1 - u)` carries `(0, 1)` onto `(0, ∞)` and turns the first integrand into the
-second; the chart `t ↦ √t` carries `(0, ∞)` onto itself and turns `(1 + x ^ 2) ^ (-s)` into the
-second integrand with first parameter `1 / 2`. Full-line integrability is an instance of Mathlib's
+The chart `u ↦ u / (1 - u)` carries `(0, 1)` onto `(0, ∞)` and turns the first integrand into
+the second; its substitution and integrability formulas come from `Analysis.Calculus.RealCharts`.
+The chart `t ↦ √t` carries `(0, ∞)` onto itself and turns `(1 + x ^ 2) ^ (-s)` into the
+second integrand with first parameter `1 / 2`, using
+`MeasureTheory.integral_image_eq_integral_abs_deriv_smul`.
+Full-line integrability is an instance of Mathlib's
 `integrable_rpow_neg_one_add_norm_sq`, and the integral value folds the two halves of the line
 together with `MeasureTheory.integral_comp_abs`.
 
@@ -432,11 +434,11 @@ variable {s : ℝ}
 
 /-- Under the chart `u ↦ u / (1 - u)` the integrand of Euler's second beta integral becomes the
 integrand of Euler's first one, for every `u < 1`. -/
-lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
-    |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
+lemma inv_sq_smul_rpow_mul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
+    ((1 - u) ^ 2)⁻¹ • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
       u ^ (a - 1) * (1 - u) ^ (b - 1) := by
   have h1u : (0 : ℝ) < 1 - u := by linarith
-  have hbase : (1 : ℝ) + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
+  have hbase := one_add_div_one_sub h1u.ne'
   have e1 : ((1 - u) ^ (2 : ℕ))⁻¹ = (1 - u) ^ (-2 : ℝ) := by
     have hneg : (-2 : ℝ) = -(2 : ℕ) := by norm_num
     rw [hneg, Real.rpow_neg h1u.le, Real.rpow_natCast]
@@ -447,7 +449,7 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     rw [← Real.rpow_neg h1u.le, ← Real.rpow_add h1u, ← Real.rpow_add h1u]
     congr 1
     ring
-  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
+  rw [smul_eq_mul, hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
     e1, e2, div_eq_mul_inv]
   calc (1 - u) ^ (-2 : ℝ) * (u ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))
       = u ^ (a - 1) *
@@ -463,14 +465,12 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     exact (intervalIntegrable_iff_integrableOn_Ioc_of_le (zero_le_one : (0 : ℝ) ≤ 1)).mp
       (intervalIntegrable_rpow_mul_one_sub_rpow ha hb ⟨le_rfl, zero_le_one⟩
         ⟨zero_le_one, le_rfl⟩)
-  have hchart : (fun u : ℝ => u / (1 - u)) '' Ioo (0 : ℝ) 1 = Ioi (0 : ℝ) := by
-    rw [image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
-    norm_num
-  rw [← hchart,
-    integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
-      (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
-  exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu.2).symm) measurableSet_Ioo
+  have hchart := (integrableOn_Ioi_iff_integrableOn_div_one_sub
+    (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (ρ := 0) zero_lt_one).2
+  simp only [zero_div] at hchart
+  apply hchart
+  refine hIoo.congr_fun (fun u hu => ?_) measurableSet_Ioo
+  exact (inv_sq_smul_rpow_mul_one_add_rpow a b hu.2).symm
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
     ∀ᶠ x in atTop,
@@ -566,17 +566,14 @@ theorem integrableOn_rpow_mul_one_add_rpow_iff (ha : 0 < a) :
 `x ^ (a - 1) * (1 + x) ^ (-(a + b))` over the positive half-line is `Β(a, b)`. -/
 theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
     ∫ x in Ioi (0 : ℝ), x ^ (a - 1) * (1 + x) ^ (-(a + b)) = beta a b := by
-  have hchart : (fun u : ℝ => u / (1 - u)) '' Ioo (0 : ℝ) 1 = Ioi (0 : ℝ) := by
-    rw [image_div_one_sub_Ioo (u0 := 0) zero_lt_one]
-    norm_num
-  rw [← hchart,
-    integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
-      (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
-    setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu.2),
+  have hchart := integral_Ioi_eq_integral_div_one_sub
+    (fun x : ℝ => x ^ (a - 1) * (1 + x) ^ (-(a + b))) (ρ := 0) zero_lt_one
+  simp only [zero_div] at hchart
+  rw [hchart, setIntegral_congr_fun measurableSet_Ioo (fun u hu => ?_),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
-  exact setIntegral_congr_set Ioo_ae_eq_Ioc
+  · exact setIntegral_congr_set Ioo_ae_eq_Ioc
+  · exact inv_sq_smul_rpow_mul_one_add_rpow a b hu.2
 
 /-! ### The Cauchy-type kernel `(1 + x ^ 2) ^ (-s)` -/
 

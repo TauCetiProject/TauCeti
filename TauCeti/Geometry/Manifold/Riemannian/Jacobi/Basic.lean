@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Reg
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!

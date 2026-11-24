@@ -53,6 +53,13 @@ orbits. It is the estimate of `TauCeti.Geometry.Symplectic.Floer.SemiFredholm` f
   nondegenerate limits
   (`exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_tendstoUniformlyOn`)
   then applies to the reflected operator, and the reflection and `ω` carry it back to `D_u^*`.
+* **One end.** The estimate on one end at a time needs only the end of `u` at `+∞`: for covector
+  fields supported far out on that end it holds without the error term, from the estimate of
+  Cauchy–Riemann operators on one end
+  (`exists_mem_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_of_tendstoUniformlyOn`). There
+  `u` need only be `C¹` far out, so the reflected coefficients are evaluated at the reflected
+  point pushed into that region, which makes them continuous on the whole cylinder. This is the
+  form of the estimate that applies to the ends of a punctured domain such as the pair of pants.
 
 ## Main results
 
@@ -64,6 +71,9 @@ In the namespace `TauCeti.SymplecticForm`:
   one in `t`.
 * `exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add`:
   the estimate along a Floer trajectory, for the datum `K = H_t dt`.
+* `exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint`: the estimate on the
+  end at `+∞` of a map asymptotic there to a nondegenerate orbit, for covector fields supported far
+  out on that end, for the datum `K = H_t dt`.
 
 The Sobolev completion of `D_u^*`, the regularity of weak `L²` cokernel elements and the Fredholm
 property are not treated here.
@@ -388,29 +398,31 @@ private theorem norm_flatEquiv_symm_sq_le (ω : SymplecticForm V) (φ : V →L[�
   exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
 
 /-- **Transferring the estimate.** Let `P ζ = ∂s ζ + Jr ∂t ζ + Ar ζ` satisfy the semi-Fredholm
-estimate with error region `[-T, T] × [0, 1]`, and let `D` be an operator on covector fields such
-that, for every `C²` field `η`, `D η` is continuous and `D η (ρ z) = ω♭ (P ζ z)` for the reflected
-vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ`. Then `D` satisfies the semi-Fredholm estimate with the same error
-region. -/
+estimate with error region `[-T, T] × [0, 1]` on the strips reflected into a set `I` of slices, and
+let `D` be an operator on covector fields such that, for every `C²` field `η`, `D η` is continuous
+over `I` and `D η (ρ z) = ω♭ (P ζ z)` wherever `ρ z` lies over `I`, for the reflected vector field
+`ζ = ω♭⁻¹ ∘ η ∘ ρ`. Then `D` satisfies the semi-Fredholm estimate with the same error region on the
+strips over `I`. -/
 private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : SymplecticForm V)
     {Jr : ℝ × ℝ → AlmostComplexStructure V} {Ar : ℝ × ℝ → V →L[ℝ] V}
     (hJr : Continuous fun z ↦ (Jr z).toLinearMap.toContinuousLinearMap) (hAr : Continuous Ar)
-    {D : (ℝ × ℝ → V →L[ℝ] ℝ) → ℝ × ℝ → V →L[ℝ] ℝ}
-    (hDc : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → Continuous (D η))
-    (hD : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ∀ z, D η (reflectL z) = ω.flatEquiv
-      (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineReal +
-        Jr z (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineImag) +
-        Ar z (ω.flatEquiv.symm (η (reflectL z)))))
+    {D : (ℝ × ℝ → V →L[ℝ] ℝ) → ℝ × ℝ → V →L[ℝ] ℝ} {I : Set ℝ}
+    (hDc : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ContinuousOn (D η) (I ×ˢ univ))
+    (hD : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ∀ z, (reflectL z).1 ∈ I →
+      D η (reflectL z) = ω.flatEquiv
+        (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineReal +
+          Jr z (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineImag) +
+          Ar z (ω.flatEquiv.symm (η (reflectL z)))))
     {C₀ T : ℝ} (hC₀ : 0 ≤ C₀)
     (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s ∈ Icc a b, -s ∈ I) → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
         ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
           C₀ * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ ξ z stdComplexLineReal +
             Jr z (fderiv ℝ ξ z stdComplexLineImag) + Ar z (ξ z)‖ ^ 2) +
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2)) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
-      (∀ s t, η (s, t + 1) = η (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b →
+      (∀ s t, η (s, t + 1) = η (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ I →
       (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →
         ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
@@ -418,30 +430,27 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2) := by
   set c₁ := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
   set c₂ := ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
-  refine ⟨c₁ ^ 2 * C₀ * c₂ ^ 2, by positivity, fun η hη hper a b hab hη₀ ↦ ?_⟩
+  refine ⟨c₁ ^ 2 * C₀ * c₂ ^ 2, by positivity, fun η hη hper a b hab hI hη₀ ↦ ?_⟩
   set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η (reflectL w))
   have hζ : ContDiff ℝ 2 ζ := ω.flatEquiv.symm.contDiff.comp (hη.comp reflectL.contDiff)
   have hζ₀ (s t : ℝ) (hs : s ∉ Ioo (-b) (-a)) : ζ (s, t) = 0 := by
-    have : -s ∉ Ioo a b := fun h ↦ hs ⟨by linarith [h.2], by linarith [h.1]⟩
-    simp [ζ, reflectL_apply, hη₀ _ t this]
-  have hb := ω.norm_flatEquiv_symm_sq_le
-  have hP (w : ℝ × ℝ) : ‖fderiv ℝ ζ w stdComplexLineReal + Jr w (fderiv ℝ ζ w stdComplexLineImag) +
-      Ar w (ζ w)‖ ^ 2 ≤ c₂ ^ 2 * ‖D η (reflectL w)‖ ^ 2 := by
-    rw [← ContinuousLinearEquiv.symm_apply_apply ω.flatEquiv (_ + _), ← hD hη w]
-    exact hb _
-  have hm : MeasurableSet (Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1) :=
-    measurableSet_Icc.prod measurableSet_Icc
-  have hmT : MeasurableSet (Icc (-T) T ×ˢ Icc (0 : ℝ) 1) :=
-    measurableSet_Icc.prod measurableSet_Icc
-  have hηc := hη.continuous.comp reflectL.continuous
-  have hDρ := (hDc hη).comp reflectL.continuous
-  have hTr := setIntegral_comp_reflectL (fun z ↦ ‖η z‖ ^ 2) (-T) T
-  rw [neg_neg] at hTr
-  calc _ = ∫ w in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1,
-          (‖fderiv ℝ η (reflectL w) stdComplexLineReal‖ ^ 2 +
+    simp [ζ, reflectL_apply, hη₀ (-s) t fun h ↦ hs ⟨by linarith [h.2], by linarith [h.1]⟩]
+  set K := Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1
+  -- On the reflected strip, `ρ` lands over `I`.
+  have hKI {w : ℝ × ℝ} (hw : w ∈ K) : (reflectL w).1 ∈ I :=
+    hI ⟨by rw [reflectL_apply]; linarith [hw.1.2], by rw [reflectL_apply]; linarith [hw.1.1]⟩
+  have hP {w : ℝ × ℝ} (hw : w ∈ K) : ‖fderiv ℝ ζ w stdComplexLineReal +
+      Jr w (fderiv ℝ ζ w stdComplexLineImag) + Ar w (ζ w)‖ ^ 2 ≤
+      c₂ ^ 2 * ‖D η (reflectL w)‖ ^ 2 := by
+    rw [← ContinuousLinearEquiv.symm_apply_apply ω.flatEquiv (_ + _), ← hD hη w (hKI hw)]
+    exact ω.norm_flatEquiv_symm_sq_le _
+  have hm : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
+  have hDρ : ContinuousOn (fun w ↦ D η (reflectL w)) K :=
+    (hDc hη).comp reflectL.continuous.continuousOn fun w hw ↦ ⟨hKI hw, mem_univ _⟩
+  calc _ = ∫ w in K, (‖fderiv ℝ η (reflectL w) stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ η (reflectL w) stdComplexLineImag‖ ^ 2 + ‖η (reflectL w)‖ ^ 2) :=
         (setIntegral_comp_reflectL _ a b).symm
-    _ ≤ ∫ w in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1, c₁ ^ 2 * (‖fderiv ℝ ζ w stdComplexLineReal‖ ^ 2 +
+    _ ≤ ∫ w in K, c₁ ^ 2 * (‖fderiv ℝ ζ w stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ζ w stdComplexLineImag‖ ^ 2 + ‖ζ w‖ ^ 2) :=
         setIntegral_mono_on
           (Continuous.integrableOn_Icc_prod_Icc (by
@@ -451,20 +460,22 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
             simpa only [funext (Floer.sobolevDensity_apply ζ)] using
               Floer.continuous_sobolevDensity (hζ.of_le one_le_two)))) hm
           fun w _ ↦ sobolev_reflectL_le ω (hη.differentiable (by norm_num)) w
-    _ ≤ c₁ ^ 2 * (C₀ * ((∫ w in Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1,
-          c₂ ^ 2 * ‖D η (reflectL w)‖ ^ 2) +
+    _ ≤ c₁ ^ 2 * (C₀ * ((∫ w in K, c₂ ^ 2 * ‖D η (reflectL w)‖ ^ 2) +
           ∫ w in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, c₂ ^ 2 * ‖η (reflectL w)‖ ^ 2)) := by
       rw [integral_const_mul]
       refine mul_le_mul_of_nonneg_left ((hest hζ (fun s t ↦ by simp [ζ, reflectL_apply, hper])
-        (neg_le_neg hab) hζ₀).trans (mul_le_mul_of_nonneg_left (add_le_add ?_ ?_) hC₀))
-        (sq_nonneg _)
+        (neg_le_neg hab) (fun s hs ↦ hI ⟨by linarith [hs.2], by linarith [hs.1]⟩) hζ₀).trans
+        (mul_le_mul_of_nonneg_left (add_le_add ?_ ?_) hC₀)) (sq_nonneg _)
       · exact setIntegral_mono_on ((continuous_cauchyRiemann hJr hAr
           (hζ.of_le one_le_two)).norm.pow 2).integrableOn_Icc_prod_Icc
-          (continuous_const.mul (hDρ.norm.pow 2)).integrableOn_Icc_prod_Icc hm fun w _ ↦ hP w
-      · exact setIntegral_mono_on (hζ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
-          (continuous_const.mul (hηc.norm.pow 2)).integrableOn_Icc_prod_Icc hmT
-          fun w _ ↦ hb (η (reflectL w))
+          ((continuousOn_const.mul (hDρ.norm.pow 2)).integrableOn_compact
+            (isCompact_Icc.prod isCompact_Icc)) hm fun w hw ↦ hP hw
+      · exact setIntegral_mono (hζ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
+          (continuous_const.mul ((hη.continuous.comp reflectL.continuous).norm.pow 2)
+            ).integrableOn_Icc_prod_Icc fun w ↦ ω.norm_flatEquiv_symm_sq_le (η (reflectL w))
     _ = _ := by
+      have hTr := setIntegral_comp_reflectL (fun z ↦ ‖η z‖ ^ 2) (-T) T
+      rw [neg_neg] at hTr
       rw [integral_const_mul, integral_const_mul,
         setIntegral_comp_reflectL (fun z ↦ ‖D η z‖ ^ 2) a b, hTr]
       ring
@@ -509,8 +520,8 @@ private theorem tendstoUniformlyOn_reflectL (ω : SymplecticForm V)
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hHe : ContDiff ℝ 2 (uncurry He))
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t)
-    (hJx : ∀ t, ω.Compatible (Je t (x t))) (hu : Differentiable ℝ u) {l l' : Filter ℝ}
-    (hl : Tendsto Neg.neg l' l)
+    (hJx : ∀ t, ω.Compatible (Je t (x t))) {l l' : Filter ℝ}
+    (hu : ∀ᶠ s in l, ∀ t, DifferentiableAt ℝ u (s, t)) (hl : Tendsto Neg.neg l' l)
     (hagree : ∀ᶠ s in l, ∀ t, ∀ᶠ w in 𝓝 (s, t), J w = Je w.2 ∧ Ks w = 0 ∧ Kt w = He w.2)
     (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
     (hδ : TendstoUniformlyOn
@@ -531,21 +542,21 @@ private theorem tendstoUniformlyOn_reflectL (ω : SymplecticForm V)
   have hc1 : 1 ≤ c := by simp only [c]; linarith [norm_nonneg ω.leftAdjointL]
   have hev (ε : ℝ) (hε : 0 < ε) := hl.eventually
     ((eventually_norm_sub_le_of_tendstoUniformlyOn hHe hJe hxc hux hδ
-      (ε := ε / (2 * c)) (by positivity)).and hagree)
+      (ε := ε / (2 * c)) (by positivity)).and (hagree.and hu))
   have hεc (ε : ℝ) (hε : 0 < ε) : c * (ε / (2 * c)) < ε := by
     have h : c * (ε / (2 * c)) = ε / 2 := by field_simp
     linarith
   have hεc' (ε : ℝ) (hε : 0 < ε) : ε / (2 * c) < ε :=
     lt_of_le_of_lt (le_mul_of_one_le_left (by positivity) hc1) (hεc ε hε)
   constructor <;> refine Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦ (hev ε hε).mono
-    fun s ⟨hs, hag⟩ t ht ↦ ?_ <;> rw [dist_comm, dist_eq_norm] <;>
-    simp only [reflectL_apply] at hs hag ⊢
+    fun s ⟨hs, hag, hus⟩ t ht ↦ ?_ <;> rw [dist_comm, dist_eq_norm] <;>
+    simp only [reflectL_apply] at hs hag hus ⊢
   · rw [(hag t).self_of_nhds.1]
     exact ((hs t ht).1).trans_lt (hεc' ε hε)
   · have hB := leftAdjointL_cylindricalAdjointCoeff hJe hHe hx hJx t
     simp only [endLoop] at hB
     rw [fderiv_sub_floerLinearizationCoeff_eq_of_eventuallyEq ω (hJe.differentiable one_ne_zero)
-      (hu _) (hag t), ← mul_def, ← hB, neg_sub_neg, ← map_sub]
+      (hus t) (hag t), ← mul_def, ← hB, neg_sub_neg, ← map_sub]
     refine (le_opNorm _ _).trans_lt (lt_of_le_of_lt ?_ (hεc ε hε))
     exact mul_le_mul (by simp only [c]; linarith)
       (by rw [norm_sub_rev]; exact (hs t ht).2) (norm_nonneg _) hc.le
@@ -652,10 +663,12 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_a
   have hagp := eventually_atTop_of_isCylindricalNearEnds hcyl
   have hagm := eventually_atBot_of_isCylindricalNearEnds hcyl
   -- The ends of the reflected operator: its positive end is the negative end of `u`.
-  obtain ⟨hJlp, hAlp⟩ := tendstoUniformlyOn_reflectL ω hJm hHm hxm hJxm
-    (hu.differentiable one_ne_zero) tendsto_neg_atTop_atBot hagm huxm hδm
-  obtain ⟨hJlm, hAlm⟩ := tendstoUniformlyOn_reflectL ω hJp hHp hxp hJxp
-    (hu.differentiable one_ne_zero) tendsto_neg_atBot_atTop hagp huxp hδp
+  have hud {l : Filter ℝ} : ∀ᶠ s in l, ∀ t, DifferentiableAt ℝ u (s, t) :=
+    .of_forall fun _ _ ↦ hu.differentiable one_ne_zero _
+  obtain ⟨hJlp, hAlp⟩ := tendstoUniformlyOn_reflectL ω hJm hHm hxm hJxm hud
+    tendsto_neg_atTop_atBot hagm huxm hδm
+  obtain ⟨hJlm, hAlm⟩ := tendstoUniformlyOn_reflectL ω hJp hHp hxp hJxp hud
+    tendsto_neg_atBot_atTop hagp huxp hδp
   have hxmc : Continuous xm := continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt
   have hxpc : Continuous xp := continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt
   have hJrc : Continuous fun z ↦
@@ -678,14 +691,15 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_a
   -- Transfer the estimate back to the formal adjoint on covector fields.
   obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_le_of_flatEquiv_reflectL ω hJrc hArc
     (D := ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-      u)
-    (fun η hη ↦ continuous_floerLinearizationAdjoint (fun z ↦ hcyl.contDiffAt_almostComplex z)
-      hcyl.contDiffAt_hamiltonianS hcyl.contDiffAt_hamiltonianT hu (hη.of_le one_le_two))
-    (fun η hη z ↦ by
+      u) (I := univ)
+    (fun η hη ↦ (continuous_floerLinearizationAdjoint (fun z ↦ hcyl.contDiffAt_almostComplex z)
+      hcyl.contDiffAt_hamiltonianS hcyl.contDiffAt_hamiltonianT hu
+        (hη.of_le one_le_two)).continuousOn)
+    (fun η hη z _ ↦ by
       rw [floerLinearizationAdjoint_reflectL_eq ω (hη.differentiable (by norm_num) _)
         (hJu₁.differentiable one_ne_zero _) (hJu _).invariant, sub_eq_add_neg, ← neg_apply])
-    hC₀ hest
-  exact ⟨C, hC, T, h⟩
+    hC₀ fun ξ hξ hper a b hab _ hξ₀ ↦ hest hξ hper hab hξ₀
+  exact ⟨C, hC, T, fun η hη hper a b hab hη₀ ↦ h hη hper hab (subset_univ _) hη₀⟩
 
 /-- **The semi-Fredholm estimate of the formal adjoint along a Floer trajectory.** Let `H` be a
 jointly `C²` Hamiltonian whose suspended vector field is globally Lipschitz, and let `J_t(y)` be a
@@ -729,7 +743,167 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_a
             (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
             (fun w ↦ H w.2) u η z‖ ^ 2) + ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2) :=
   ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_add_of_cylindrical
-    (Floer.isCylindricalNearEnds_comp_snd hJ hH u) hu hJu hX hH hxm hndm hJ hJ1 hJxm huxm hδm hX hH
-    hxp hndp hJ hJ1 hJxp huxp hδp
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH (R := 0) u) hu hJu hX hH hxm hndm hJ hJ1 hJxm huxm
+    hδm hX hH hxp hndp hJ hJ1 hJxp huxp hδp
+
+/-- **The reflected coefficients on one end.** Let `u` be `C¹` near every point `(s, t)` with
+`s ≥ s₀`, with loops converging uniformly at `+∞` to an orbit `x` of `H` and vanishing slice
+defect. Then there are continuous coefficient fields `Jr`, `Ar` on the whole cylinder that agree,
+where `s ≤ -s₀`, with the coefficients `J_t(u (ρ z))` and `-A(ρ z)ᵀ` of the reflected adjoint of
+the datum `K = H_t dt`, and converge uniformly at `-∞` to `j_t` and `-j_t S''_t`. They are the
+reflected coefficients evaluated at the reflected point pushed into the end `s ≥ s₀`. -/
+private theorem exists_continuous_reflectL_coeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {u : ℝ × ℝ → V} {s₀ : ℝ}
+    (hu : ∀ s, s₀ ≤ s → ∀ t, ContDiffAt ℝ 1 u (s, t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x atTop (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    ∃ (Jr : ℝ × ℝ → AlmostComplexStructure V) (Ar : ℝ × ℝ → V →L[ℝ] V),
+      (Continuous fun z ↦ (Jr z).toLinearMap.toContinuousLinearMap) ∧ Continuous Ar ∧
+      (∀ z, z.1 ≤ -s₀ → Jr z = J z.2 (u (reflectL z)) ∧ Ar z = -ω.leftAdjointL
+        (fderiv ℝ (fun w ↦ (J w.2 (u w)).toLinearMap.toContinuousLinearMap) (reflectL z)
+            stdComplexLineImag -
+          ω.floerLinearizationCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+            (fun _ _ ↦ 0) (fun w ↦ H w.2) u (reflectL z))) ∧
+      TendstoUniformlyOn (fun s t ↦ (Jr (s, t)).toLinearMap.toContinuousLinearMap)
+        (fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap) atBot (Icc 0 1) ∧
+      TendstoUniformlyOn (fun s t ↦ Ar (s, t))
+        (fun t ↦ -((J t (x t)).toLinearMap.toContinuousLinearMap ∘L rotatedField ω J H x t))
+        atBot (Icc 0 1) := by
+  have hJu' : ContDiff ℝ 1 (uncurry fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) := by
+    simpa only [uncurry_def] using hJ
+  -- The reflected point, pushed into the end `s ≥ s₀` where `u` is `C¹`.
+  set g : ℝ × ℝ → ℝ × ℝ := fun z ↦ (max (-z.1) s₀, z.2)
+  have hg : Continuous g := (continuous_fst.neg.max continuous_const).prodMk continuous_snd
+  have hgρ {z : ℝ × ℝ} (hz : z.1 ≤ -s₀) : g z = reflectL z := by
+    simp only [g, reflectL_apply, max_eq_left (le_neg.2 hz)]
+  have hug : Continuous fun z ↦ u (g z) :=
+    (show ContinuousOn u {p | s₀ ≤ p.1} from fun p hp ↦
+      (hu p.1 hp p.2).continuousAt.continuousWithinAt).comp_continuous hg
+        fun _ ↦ le_max_right (α := ℝ) _ _
+  have hdug : Continuous fun z ↦ fderiv ℝ u (g z) stdComplexLineImag :=
+    (show ContinuousOn (fun p ↦ fderiv ℝ u p stdComplexLineImag) {p | s₀ ≤ p.1} from
+      fun p hp ↦ (((hu p.1 hp p.2).continuousAt_fderiv one_ne_zero).clm_apply
+        continuousAt_const).continuousWithinAt).comp_continuous hg
+        fun _ ↦ le_max_right (α := ℝ) _ _
+  have hρ {z : ℝ × ℝ} (hz : z.1 ≤ -s₀) : DifferentiableAt ℝ u (reflectL z) :=
+    (hu (-z.1) (by linarith) z.2).differentiableAt one_ne_zero
+  refine ⟨fun z ↦ J z.2 (u (g z)), fun z ↦ -ω.leftAdjointL (ω.cylindricalAdjointCoeff
+    (fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) H
+    (z.2, u (g z), fderiv ℝ u (g z) stdComplexLineImag)),
+    hJ.continuous.comp (continuous_snd.prodMk hug), (ω.leftAdjointL.continuous.comp
+      ((ω.continuous_cylindricalAdjointCoeff hJu' hH).comp
+        (continuous_snd.prodMk (hug.prodMk hdug)))).neg, ?_⟩
+  -- Beyond `-s₀` the fields are the reflected coefficients, which converge at `-∞`.
+  have heq {z : ℝ × ℝ} (hz : z.1 ≤ -s₀) : J z.2 (u (g z)) = J z.2 (u (reflectL z)) ∧
+      -ω.leftAdjointL (ω.cylindricalAdjointCoeff
+        (fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap) H
+        (z.2, u (g z), fderiv ℝ u (g z) stdComplexLineImag)) = -ω.leftAdjointL
+      (fderiv ℝ (fun w ↦ (J w.2 (u w)).toLinearMap.toContinuousLinearMap) (reflectL z)
+          stdComplexLineImag -
+        ω.floerLinearizationCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+          (fun _ _ ↦ 0) (fun w ↦ H w.2) u (reflectL z)) := by
+    rw [ω.fderiv_sub_floerLinearizationCoeff_eq_cylindricalAdjointCoeff
+      (J := fun t y ↦ (J t y).toLinearMap.toContinuousLinearMap)
+      (hJu'.differentiable one_ne_zero) (hρ hz), hgρ hz, reflectL_apply]
+    exact ⟨rfl, rfl⟩
+  obtain ⟨hJl, hAl⟩ := tendstoUniformlyOn_reflectL ω (J := fun w ↦ J w.2) (Ks := fun _ _ ↦ 0)
+    (Kt := fun w ↦ H w.2) hJ hH hx hJx
+    ((eventually_ge_atTop s₀).mono fun s hs t ↦ (hu s hs t).differentiableAt one_ne_zero)
+    tendsto_neg_atBot_atTop (.of_forall fun _ _ ↦ .of_forall fun _ ↦ ⟨rfl, rfl, rfl⟩) hux hδ
+  have hρs : ∀ᶠ s in (atBot : Filter ℝ), s ≤ -s₀ := eventually_le_atBot _
+  refine ⟨fun z hz ↦ heq hz, hJl.congr (hρs.mono fun s hs t _ ↦ ?_),
+    hAl.congr (hρs.mono fun s hs t _ ↦ (heq (z := (s, t)) hs).2.symm)⟩
+  simp only [(heq (z := (s, t)) hs).1, reflectL_apply]
+
+/-- **The end estimate of the formal adjoint.** Let `H` be a jointly `C²` Hamiltonian whose
+suspended vector field is globally Lipschitz, and let `J_t(y)` be a `C¹` family of almost complex
+structures of period one in `t`. Let `u : ℝ × ℝ → V` be a map that is `C¹` near every point
+`(s, t)` with `s` large, along which `J_t` is `ω`-compatible there, whose loops converge uniformly
+at `+∞` to an orbit `x` starting at a nondegenerate fixed point of the time-one map, with `J_t`
+compatible along it, while its slice defect `∂t u - X_{H_t}(u)` tends uniformly to zero, as on the
+positive end of a Floer trajectory. Then there are `C ≥ 0` and `R` such that every `C²` covector
+field `η` of period one in `t` that vanishes for `s ∉ (a, b)`, with `R ≤ a`, satisfies
+
+`∫ (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C ∫ ‖D_u^* η‖²`
+
+over `[a, b] × [0, 1]`, for the formal adjoint `D_u^*` of the linearized Floer operator of the
+datum `K = H_t dt`. Only the end of `u` at `+∞` enters. -/
+theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ1 : J 1 = J 0) (hJx : ∀ t, ω.Compatible (J t (x t))) {u : ℝ × ℝ → V}
+    (hu : ∀ᶠ s in atTop, ∀ t, ContDiffAt ℝ 1 u (s, t))
+    (hJu : ∀ᶠ s in atTop, ∀ t, ω.Compatible (J t (u (s, t))))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x atTop (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ R, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      (∀ s t, η (s, t + 1) = η (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → R ≤ a →
+      (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+          C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint
+            (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+            (fun w ↦ H w.2) u η z‖ ^ 2 := by
+  obtain ⟨s₀, hs₀⟩ := eventually_atTop.1 ((hu.and hJu).mono fun _ h (t : ℝ) ↦ And.intro (h.1 t)
+    (h.2 t))
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  obtain ⟨Jr, Ar, hJrc, hArc, hρ, hJl, hAl⟩ := exists_continuous_reflectL_coeff ω hH hx hJ hJx
+    (fun s hs t ↦ (hs₀ s hs t).1) hux hδ
+  -- The Cauchy–Riemann estimate at `-∞` for the reflected coefficients.
+  obtain ⟨C₀, hC₀, U, hU, hest⟩ :=
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_of_tendstoUniformlyOn hJx
+      (hJ.continuous.comp (continuous_id.prodMk hxc)) (apply_rotatedField_add hJ hH hx hJx)
+      (continuous_rotatedField hH hJ hxc)
+      (det_one_sub_dysonSeriesLeft_rotatedField_ne_zero hX hH hx hnd hJ hJ1) hJrc hArc hJl hAl
+  obtain ⟨r, hr⟩ := mem_atBot_sets.1 hU
+  -- Transfer it to the adjoint on the slices `s ≥ R`, with an empty error region.
+  set R := max (max s₀ (-r)) 1
+  have hRs₀ : s₀ ≤ R := (le_max_left _ _).trans (le_max_left _ _)
+  have hRr : -r ≤ R := (le_max_right _ _).trans (le_max_left _ _)
+  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_le_of_flatEquiv_reflectL ω hJrc hArc
+    (D := ω.floerLinearizationAdjoint (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ H w.2) u) (I := Ici R) (T := 0)
+    (fun η hη p hp ↦ (continuousAt_floerLinearizationAdjoint (ω := ω)
+      (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+      (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+      contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
+      (hs₀ p.1 (hRs₀.trans hp.1) p.2).1 (hη.contDiffAt.of_le one_le_two)).continuousWithinAt)
+    (fun η hη z hz ↦ by
+      have hz₀ : z.1 ≤ -s₀ := by rw [reflectL_apply] at hz; linarith [mem_Ici.1 hz]
+      obtain ⟨hJrz, hArz⟩ := hρ z hz₀
+      have hs := hs₀ (reflectL z).1 (hRs₀.trans hz) (reflectL z).2
+      rw [floerLinearizationAdjoint_reflectL_eq ω (J := fun w ↦ J w.2)
+        (hη.differentiable (by norm_num) _) ((hJ.differentiable one_ne_zero _).comp _
+          (differentiableAt_snd.prodMk (hs.1.differentiableAt one_ne_zero))) hs.2.invariant,
+        hJrz, hArz]
+      simp only [reflectL_apply, sub_eq_add_neg, neg_apply])
+    hC₀ fun ξ hξ hper a b hab hI hξ₀ ↦ by
+      have hbr : b ≤ r := by linarith [mem_Ici.1 (hI b ⟨hab, le_rfl⟩)]
+      refine (hest hξ hper hab (fun s hs ↦ hr s (hs.2.trans hbr)) (fun t ↦ hξ₀ a t
+        fun h ↦ lt_irrefl _ h.1) (fun t ↦ hξ₀ b t fun h ↦ lt_irrefl _ h.2)).trans ?_
+      exact mul_le_mul_of_nonneg_left (le_add_of_nonneg_right (setIntegral_nonneg
+        (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _)) hC₀
+  refine ⟨C, hC, R, fun η hη hper a b hab hRa hη₀ ↦ ?_⟩
+  -- The error region `{0} × [0, 1]` lies outside the strip, where `η` vanishes.
+  have h₀ : ∫ z in Icc (-0 : ℝ) 0 ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2 = 0 :=
+    setIntegral_eq_zero_of_forall_eq_zero fun ⟨s, t⟩ hz ↦ by
+      have hs : s = 0 := by linarith [hz.1.1, hz.1.2]
+      rw [hs, hη₀ 0 t fun h ↦ by linarith [h.1, le_max_right (max s₀ (-r)) 1], norm_zero]
+      norm_num
+  simpa only [h₀, add_zero] using
+    h hη hper hab (fun s hs ↦ mem_Ici.2 (hRa.trans hs.1)) hη₀
 
 end TauCeti.SymplecticForm

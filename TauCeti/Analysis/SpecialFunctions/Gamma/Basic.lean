@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
@@ -42,8 +43,9 @@ formula is also recorded in the reciprocal form `Γ(s) sin (π s) = π / Γ(1 - 
 valid including at positive integers where both sides vanish. Over `ℂ`, Euler's
 limit formula is also written with the rising factorial `(s)ₙ = s (s + 1) ⋯ (s + n - 1)`:
 `n^(s - 1) n! / (s)ₙ → Γ(s)` and `(s)ₙ / (n^(s - 1) n!) → 1 / Γ(s)` for every complex `s`, both
-sides of either limit being `0` at the poles `s = -k`. The second limit is the asymptotic
-`(s)ₙ ∼ n^(s - 1) n! / Γ(s)` from which the growth of hypergeometric coefficients is read off.
+sides of either limit being `0` at the poles `s = -k`. For `s` off the poles, where `Γ(s) ≠ 0`,
+the second limit is the asymptotic equivalence `(s)ₙ ∼ n^(s - 1) n! / Γ(s)`; the normalized limit,
+valid for every `s`, is the form from which the growth of hypergeometric coefficients is read off.
 
 ## Main results
 
@@ -54,6 +56,7 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
+* `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
@@ -78,8 +81,6 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast`,
   `Real.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast` — `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`
   for all `s` and `n`, including at the nonpositive integer poles of `Γ`.
-* `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
-  `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 * `Complex.Gamma_mul_sin_pi_mul` — Euler's reflection formula in reciprocal form:
   `Γ(s) * sin (π * s) = π / Γ(1 - s)` for `s ∉ -ℕ`, including at positive integers where both
   sides vanish.
@@ -182,6 +183,12 @@ theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
   | succ n ih =>
     rw [Finset.prod_range_succ, mul_right_comm, ih, Nat.cast_succ, ← add_assoc,
       Gamma_add_one (by positivity), mul_comm]
+
+/-- The real Gamma function is at most `1` on `[1, 2]`: it is convex there, with
+`Γ 1 = Γ 2 = 1`. -/
+theorem Gamma_le_one_of_mem_Icc {s : ℝ} (hs : s ∈ Set.Icc (1 : ℝ) 2) : Gamma s ≤ 1 := by
+  simpa [Gamma_one, Gamma_two] using
+    convexOn_Gamma.le_max_of_mem_Icc (by norm_num : (1 : ℝ) ∈ Set.Ioi 0) (by norm_num) hs
 
 /-- The half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the factorial form of
 `Real.Gamma_nat_add_half`, obtained from Legendre's duplication formula at `n + 1 / 2`. -/
@@ -397,38 +404,6 @@ end Real
 
 namespace Complex
 
-open Finset in
-/-- A finite alternating sum of reciprocal Gamma values: for `a ∉ −ℕ`,
-`∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))`. This is the coefficient
-identity behind the expansion of Tricomi's incomplete Gamma function in powers of `−z`
-(DLMF 8.7.1). -/
-theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
-    (m : ℕ) :
-    ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1)) =
-      (-1) ^ m / (m ! * (a + m)) * (Gamma a)⁻¹ := by
-  induction m generalizing a with
-  | zero =>
-    have ha0 : a ≠ 0 := by simpa using ha 0
-    simp [Gamma_add_one a ha0, mul_comm]
-  | succ m ih =>
-    have ha1 : ∀ n : ℕ, a + 1 ≠ -n := fun n h => ha (n + 1) (by push_cast; linear_combination h)
-    have ha0 : a ≠ 0 := by simpa using ha 0
-    have ham : a + (m + 1 : ℕ) ≠ 0 := fun h => ha (m + 1) (by linear_combination h)
-    have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha
-    rw [sum_range_succ, Nat.sub_self, Nat.cast_zero, add_zero]
-    have hsum : ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m + 1 - i : ℕ) + 1)) =
-        ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + 1 + (m - i : ℕ) + 1)) := by
-      refine sum_congr rfl fun i hi => ?_
-      rw [Nat.sub_add_comm (Nat.lt_succ_iff.1 (mem_range.1 hi))]
-      push_cast
-      ring_nf
-    rw [hsum, ih ha1, Gamma_add_one a ha0, Nat.factorial_succ]
-    push_cast at ham ⊢
-    have hm : (m : ℂ) + 1 ≠ 0 := by norm_cast
-    have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
-    field_simp
-    ring
-
 open scoped Real in
 /-- Euler's reflection formula in reciprocal form: for `s ∉ -ℕ`,
 `Γ(s) * sin (π * s) = π / Γ(1 - s)`. This identity also holds at positive integers `s = n + 1`,
@@ -482,17 +457,13 @@ theorem tendsto_natCast_cpow_mul_factorial_div_ascPochhammer_eval (s : ℂ) :
   rw [mul_one] at h
   refine h.congr' ?_
   filter_upwards [eventually_ne_atTop 0,
-    (tendsto_natCast_atTop_atTop (R := ℝ)).eventually_gt_atTop ‖s‖] with n hn hs
+    tendsto_natCast_atTop_cobounded.eventually_ne_cobounded (-s)] with n hn hs
   have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hsn : s + n ≠ 0 := by
-    intro h
-    rw [eq_neg_of_add_eq_zero_left h, norm_neg, norm_natCast] at hs
-    exact lt_irrefl _ hs
-  rw [GammaSeq, Finset.prod_range_succ, ← TauCeti.ascPochhammer_eval_eq_prod_range,
-    cpow_sub _ _ hn', cpow_one]
-  rcases eq_or_ne ((ascPochhammer ℂ n).eval s) 0 with hp | hp
-  · simp [hp]
-  · field_simp
+  have hsn : s + n ≠ 0 := fun h => hs (by linear_combination h)
+  -- Only the last factor `s + n` of the product cancels against the correction `(s + n) / n`.
+  rw [GammaSeq, Finset.prod_range_succ, ← TauCeti.ascPochhammer_eval_eq_prod_range, ← div_div,
+    div_add_one hn', div_mul_div_cancel₀ hsn, cpow_sub _ _ hn', cpow_one]
+  ring
 
 /-- **Euler's limit formula for `1 / Γ` in Pochhammer form.** For every complex `s`,
 `(s)ₙ / (n^(s - 1) n!) → (Γ(s))⁻¹` as `n → ∞`; at the poles `s = -k` both sides are eventually

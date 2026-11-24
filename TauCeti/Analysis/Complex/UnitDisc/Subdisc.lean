@@ -105,6 +105,10 @@ theorem coe_subdisc_sub_div (z : 𝔻) : ((subdisc c r hc hr z : ℂ) - c) / r =
   have hr0 : (r : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 hr.ne'
   simp [mul_div_cancel_left₀ _ hr0]
 
+/-- The round subdisc map `subdisc c r` is injective. -/
+theorem subdisc_injective : Function.Injective (subdisc c r hc hr) :=
+  isOpenEmbedding_coe_comp_subdisc.injective.of_comp
+
 /-- Round subdisc maps compose like the affine maps they are:
 `subdisc c r ∘ subdisc c' r' = subdisc (c + r c') (r r')`. -/
 theorem subdisc_comp_subdisc {hc' : ‖c'‖ + r' ≤ 1} {hr' : 0 < r'}

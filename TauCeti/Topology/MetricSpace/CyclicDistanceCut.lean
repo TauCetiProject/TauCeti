@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
@@ -35,6 +37,13 @@ arbitrary pseudometric space, before any geodesic interpolation is chosen.
 * Repeating the first vertex `k` more times, `(q₀, …, qₙ) ↦ (q₀, …, q₀, q₁, …, qₙ)`, maps the cut
   with cut-offs `δ` into the cut with cut-offs `δ'` when `δ (j - k) ≤ δ' j` for every `j`. This
   is the iterate `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ` (`TauCeti.cyclicDistanceCutRepeatFirstIterate`).
+* For cut-offs `δ n` at each stage `n` which grow from each stage to the next,
+  `δ n i ≤ δ (n + 1) j` for all `i` and `j`, and with `0 ≤ δ 0 0`, the cuts and the maps `ιⁿ` form
+  a sequence of spaces `𝓛⁰Q → 𝓛¹Q → 𝓛²Q → ⋯` (`TauCeti.cyclicDistanceCutFunctor`), whose map
+  from stage `n` to stage `n + k` is the iterate
+  (`TauCeti.cyclicDistanceCutFunctor_map_homOfLE`). This is the diagram whose singular homology
+  has the singular homology of the free loop space as its colimit
+  (`TauCeti.Manifold.isColimitMapCoconeSingularHomologyCyclicDistanceCutCocone`).
 
 The sampling of compact families of free Moore loops into these cuts is in
 `TauCeti.Topology.PathSpace.Moore.Sampling`.
@@ -45,6 +54,7 @@ The sampling of compact families of free Moore loops into these cuts is in
 * `TauCeti.cyclicDistanceCutRepeatFirst`: the map between cuts repeating the first vertex.
 * `TauCeti.cyclicDistanceCutRepeatFirstIterate`: the map between cuts repeating the first vertex
   several times.
+* `TauCeti.cyclicDistanceCutFunctor`: the sequence of cuts for growing cut-offs.
 
 ## Main results
 
@@ -56,6 +66,8 @@ The sampling of compact families of free Moore loops into these cuts is in
 * `TauCeti.isEmbedding_cyclicDistanceCutRepeatFirst`,
   `TauCeti.isClosedEmbedding_cyclicDistanceCutRepeatFirst`: it is an embedding, closed when the
   space is Hausdorff.
+* `TauCeti.cyclicDistanceCutFunctor_map_homOfLE`: the maps of the sequence of cuts repeat the
+  first vertex.
 
 ## References
 
@@ -303,5 +315,83 @@ theorem cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate {k : �
     exact congrArg q.val (Fin.ext (by simp))
   · rw [Fin.cons_succ, coe_cyclicDistanceCutRepeatFirstIterate_apply]
     exact congrArg q.val (Fin.ext (by simp))
+
+/-! ### The sequence of distance cuts -/
+
+section Sequence
+
+open CategoryTheory
+
+variable {δ : (n : ℕ) → Fin (n + 1) → ℝ}
+
+/-- Cut-offs which grow from each stage to the next, `δ n i ≤ δ (n + 1) j` for all `i` and `j`,
+grow from each stage to every later one. -/
+theorem cutoff_le_of_forall_le_succ_of_lt (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {n m : ℕ}
+    (h : n < m) (i : Fin (n + 1)) (j : Fin (m + 1)) : δ n i ≤ δ m j := by
+  induction m, h using Nat.le_induction with
+  | base => exact hδ n i j
+  | succ m _ ih => exact (ih 0).trans (hδ m 0 j)
+
+/-- For cut-offs which grow from each stage to the next, the cut-off of the vertex `q_{j - k}` at
+the stage `n` is at most the cut-off of the position `j` at the stage `n + k`: this is the
+condition under which repeating the first vertex `k` more times maps the cut of the stage `n` into
+the cut of the stage `n + k` (`TauCeti.cyclicDistanceCutRepeatFirstIterate`). -/
+theorem cutoff_sub_le_of_forall_le_succ (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (n k : ℕ)
+    (j : Fin (n + k + 1)) : δ n ⟨j - k, by omega⟩ ≤ δ (n + k) j := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · exact le_of_eq (congrArg (δ n) (Fin.ext (Nat.sub_zero _)))
+  · exact cutoff_le_of_forall_le_succ_of_lt hδ (by omega) _ _
+
+variable (X)
+
+/-- **The sequence of distance cuts** `𝓛⁰X → 𝓛¹X → 𝓛²X → ⋯`: the distance cut with cut-offs
+`δ n` at the stage `n`, and the maps `ιⁿ` repeating the first vertex
+(`TauCeti.cyclicDistanceCutRepeatFirst`), for cut-offs which grow from each stage to the next,
+`δ n i ≤ δ (n + 1) j` for all `i` and `j`, and start nonnegative, `0 ≤ δ 0 0`. -/
+@[expose, implicit_reducible, simps! obj]
+def cyclicDistanceCutFunctor (h0 : 0 ≤ δ 0 0) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) :
+    ℕ ⥤ TopCat :=
+  Functor.ofSequence fun n ↦ TopCat.ofHom (cyclicDistanceCutRepeatFirst (X := X) (δ := δ n)
+    (δ' := δ (n + 1)) (hδ n 0 0) (h0.trans (cutoff_le_of_forall_le_succ_of_lt hδ n.succ_pos 0 1))
+    fun _ ↦ hδ n _ _)
+
+/-- The map of the sequence of distance cuts from the stage `n` to the stage `n + 1` is the map
+`ιⁿ` repeating the first vertex (`TauCeti.cyclicDistanceCutRepeatFirst`). -/
+theorem cyclicDistanceCutFunctor_map_homOfLE_succ (h0 : 0 ≤ δ 0 0)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (n : ℕ) (h₀ : δ n 0 ≤ δ (n + 1) 0)
+    (h₁ : 0 ≤ δ (n + 1) 1) (h : ∀ i : Fin n, δ n i.succ ≤ δ (n + 1) i.succ.succ) :
+    ((cyclicDistanceCutFunctor X h0 hδ).map (homOfLE (Nat.le_add_right n 1))).hom =
+      cyclicDistanceCutRepeatFirst h₀ h₁ h := by
+  simp only [cyclicDistanceCutFunctor, Functor.ofSequence_map_homOfLE_succ, TopCat.hom_ofHom]
+
+/-- **The maps of the sequence of distance cuts.** The map from the stage `n` to the stage `n + k`
+repeats the first vertex `k` more times (`TauCeti.cyclicDistanceCutRepeatFirstIterate`). -/
+theorem cyclicDistanceCutFunctor_map_homOfLE (h0 : 0 ≤ δ 0 0)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (n k : ℕ)
+    (h : ∀ j : Fin (n + k + 1), δ n ⟨j - k, by omega⟩ ≤ δ (n + k) j) :
+    ((cyclicDistanceCutFunctor X h0 hδ).map (homOfLE (Nat.le_add_right n k))).hom =
+      cyclicDistanceCutRepeatFirstIterate k h := by
+  induction k with
+  | zero =>
+    -- The map from a stage to itself is the identity.
+    have h1 : homOfLE (Nat.le_add_right n 0) = 𝟙 n := Subsingleton.elim _ _
+    ext q : 1
+    simp only [h1, CategoryTheory.Functor.map_id, TopCat.hom_id, ContinuousMap.id_apply]
+    exact Subtype.ext (coe_cyclicDistanceCutRepeatFirstIterate_zero_apply le_rfl q).symm
+  | succ k ih =>
+    -- The map to the stage `n + k + 1` is the map to the stage `n + k` followed by `ιⁿ⁺ᵏ`.
+    have h1 : homOfLE (Nat.le_add_right n (k + 1)) =
+        homOfLE (Nat.le_add_right n k) ≫ homOfLE (Nat.le_add_right (n + k) 1) :=
+      Subsingleton.elim _ _
+    have h₀ := hδ (n + k) 0 0
+    have h₁ := h0.trans (cutoff_le_of_forall_le_succ_of_lt hδ (n + k).succ_pos 0 1)
+    have h₂ (i : Fin (n + k)) := hδ (n + k) i.succ i.succ.succ
+    ext q : 1
+    rw [h1, CategoryTheory.Functor.map_comp, TopCat.hom_comp, ContinuousMap.comp_apply,
+      ih (cutoff_sub_le_of_forall_le_succ hδ n k),
+      cyclicDistanceCutFunctor_map_homOfLE_succ X h0 hδ (n + k) h₀ h₁ h₂]
+    exact cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate _ h h₀ h₁ h₂ q
+
+end Sequence
 
 end TauCeti

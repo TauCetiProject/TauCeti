@@ -23,8 +23,8 @@ a normal crossings divisor are another. No boundedness of the grading is assumed
 The bigrading is a family of complex subspaces `𝒜 : ℤ × ℤ → Submodule ℂ A`, and the results
 that need the type components of a vector assume that it is an internal direct sum, as
 `DirectSum.Decomposition 𝒜`. The Deligne complex of a real Dolbeault complex is built in
-`TauCeti.Geometry.Hodge.DolbeaultComplex.Deligne` from the operators and type projections whose
-interaction is recorded here.
+`TauCeti.Geometry.Hodge.DolbeaultComplex.Deligne.Basic` from the operators and type projections
+whose interaction is recorded here.
 
 ## Main definitions
 
@@ -40,9 +40,16 @@ interaction is recorded here.
 * `TauCeti.Hodge.DolbeaultComplex.del_delBar_d`: `∂∂bar` kills the image of `d`.
 * `TauCeti.Hodge.DolbeaultComplex.del_mem_iSup`, `TauCeti.Hodge.DolbeaultComplex.delBar_mem_iSup`
   and `TauCeti.Hodge.DolbeaultComplex.conj_mem_iSup`: the operators move sums of type pieces as
-  their bidegrees prescribe, and so does `TauCeti.Hodge.DolbeaultComplex.d_mem_iSup`.
-* `TauCeti.Hodge.DolbeaultComplex.conj_supportedProj`: projection onto a set of types stable under
-  exchanging the two indices commutes with conjugation.
+  their bidegrees prescribe, and so does `TauCeti.Hodge.DolbeaultComplex.d_mem_iSup`; in
+  particular `d` raises the total degree by one
+  (`TauCeti.Hodge.DolbeaultComplex.d_mem_iSup_degree`).
+* `TauCeti.Hodge.DolbeaultComplex.conj_supportedProj`: conjugation carries the projection onto a
+  set of types to the projection onto the set of exchanged types.
+* `TauCeti.Hodge.DolbeaultComplex.supportedProj_d_supportedProj_eq_zero`: `π_S d π_T = 0` when
+  `d` carries no type in `T` into `S`.
+* `TauCeti.Hodge.DolbeaultComplex.twistProj_mem_iSup`: the projections to the real twists preserve
+  every sum of type pieces stable under exchanging the two indices, and they commute with the total
+  differential (`TauCeti.Hodge.DolbeaultComplex.d_twistProj`).
 
 ## References
 
@@ -159,11 +166,30 @@ theorem d_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, (i.1 + 1, i.2) �
   exact add_mem (X.del_mem_iSup (fun i hi ↦ (hST i hi).1) hx)
     (X.delBar_mem_iSup (fun i hi ↦ (hST i hi).2) hx)
 
+/-- The total differential carries the sum of the type pieces of total degree `n` into the sum of
+those of total degree `n + 1`. -/
+theorem d_mem_iSup_degree {n m : ℤ} (h : n + 1 = m) {x : A}
+    (hx : x ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = n}, 𝒜 i) :
+    X.d x ∈ ⨆ i : {i : ℤ × ℤ | i.1 + i.2 = m}, 𝒜 i :=
+  X.d_mem_iSup (fun i hi ↦ by simp only [Set.mem_ofPred_eq] at hi ⊢; omega) hx
+
 /-- Conjugation carries a sum of type pieces indexed by `S` into the sum indexed by `T` when `T`
 contains the exchange of every type in `S`. -/
 theorem conj_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, i.swap ∈ T) {x : A}
     (hx : x ∈ ⨆ i : S, 𝒜 i) : X.conj.toEquiv x ∈ ⨆ i : T, 𝒜 i :=
   TauCeti.DirectSum.map_mem_iSup X.conj.toEquiv (fun _ _ ↦ X.conj_mem) hST hx
+
+/-- The projection to a real twist preserves a sum of type pieces indexed by a set stable under
+exchanging the two indices. -/
+theorem twistProj_mem_iSup {S : Set (ℤ × ℤ)} (hS : ∀ i ∈ S, i.swap ∈ S) (p : ℤ) {x : A}
+    (hx : x ∈ ⨆ i : S, 𝒜 i) : X.conj.twistProj p x ∈ ⨆ i : S, 𝒜 i := by
+  rw [Conjugation.twistProj_apply]
+  exact Submodule.smul_of_tower_mem _ _ (add_mem hx (Submodule.smul_of_tower_mem _ _
+    (X.conj_mem_iSup hS hx)))
+
+/-- The total differential commutes with the projections to the real twists. -/
+theorem d_twistProj (p : ℤ) (x : A) : X.d (X.conj.twistProj p x) = X.conj.twistProj p (X.d x) :=
+  X.conj.map_twistProj X.conj (conj_d X) p x
 
 section Decomposition
 
@@ -171,11 +197,19 @@ variable [DirectSum.Decomposition 𝒜]
 
 open TauCeti.DirectSum
 
-/-- Projection onto the types in a set stable under exchanging the two indices commutes with
-conjugation. -/
-theorem conj_supportedProj {S : Set (ℤ × ℤ)} (hS : ∀ i, i.swap ∈ S ↔ i ∈ S) (x : A) :
-    X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 S (X.conj.toEquiv x) :=
-  map_supportedProj X.conj.toEquiv (e := Prod.swap) (fun _ _ ↦ X.conj_mem) hS x
+/-- Conjugation carries the projection onto the types in `S` to the projection onto the types in
+`T`, when `T` is the set of exchanged types of `S`. -/
+theorem conj_supportedProj {S T : Set (ℤ × ℤ)} (hST : ∀ i, i.swap ∈ T ↔ i ∈ S) (x : A) :
+    X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 T (X.conj.toEquiv x) :=
+  map_supportedProj X.conj.toEquiv (e := Prod.swap) (fun _ _ ↦ X.conj_mem) hST x
+
+/-- The projection onto the types in `S` kills the total differential of the projection onto the
+types in `T` when `d` carries no type in `T` into `S`. -/
+theorem supportedProj_d_supportedProj_eq_zero {S T : Set (ℤ × ℤ)}
+    (h : ∀ i ∈ T, (i.1 + 1, i.2) ∉ S ∧ (i.1, i.2 + 1) ∉ S) (y : A) :
+    supportedProj 𝒜 S (X.d (supportedProj 𝒜 T y)) = 0 :=
+  supportedProj_eq_zero_of_disjoint disjoint_compl_right
+    (X.d_mem_iSup (T := Sᶜ) h (supportedProj_mem_iSup 𝒜 T y))
 
 end Decomposition
 

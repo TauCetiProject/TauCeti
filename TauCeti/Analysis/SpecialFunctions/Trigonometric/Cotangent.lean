@@ -38,6 +38,7 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 
 * `Complex.cot_neg`, `Complex.cot_zero`: the cotangent is odd, with junk value `0` at `0`.
 * `Complex.cot_pi_sub`: reflection about `π/2` negates the cotangent.
+* `Complex.cot_pi_div_two`: the cotangent vanishes at `π/2`.
 * `Complex.cot_add_pi`: the cotangent is `π`-periodic.
 * `Complex.cot_mul_I`: the cotangent at an imaginary argument is a hyperbolic cotangent.
 * `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast`: the expansion over `ℤ`.
@@ -81,6 +82,11 @@ theorem cot_neg (z : ℂ) : cot (-z) = -cot z := by
 @[simp]
 theorem cot_zero : cot 0 = 0 := by
   simp [cot_eq_cos_div_sin]
+
+/-- The cotangent vanishes at `π / 2`. -/
+@[simp]
+theorem cot_pi_div_two : cot ((π : ℂ) / 2) = 0 := by
+  rw [cot_eq_cos_div_sin, cos_pi_div_two, zero_div]
 
 /-- The cotangent is `π`-periodic, including its values at poles. -/
 @[simp]
