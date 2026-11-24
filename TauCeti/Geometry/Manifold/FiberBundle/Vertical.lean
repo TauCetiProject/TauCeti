@@ -237,20 +237,12 @@ theorem continuousLinearMapAt_coe_fst {i z : ManifoldTotalSpace F E}
   rw [ManifoldTotalSpace.fst_continuousLinearMapAt_tangent hi, mfderiv_proj_coe, map_zero]
 
 /-- In any preferred tangent trivialization around `i` containing `z`, a tangent vector with
-coordinate `(0, w)` lies in `ker (mfderiv proj z)`. -/
-theorem mfderiv_proj_symmL_zero {i z : ManifoldTotalSpace F E}
-    (hi : z ∈ (chartAt (ModelProd HB HF) i).source) (w : EF) :
-    mfderiv (IB.prod IF) IB (ManifoldTotalSpace.proj : ManifoldTotalSpace F E → B) z
-        ((trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i).symmL 𝕜 z (0, w)) = 0 := by
-  rw [ManifoldTotalSpace.mfderiv_proj_symmL hi, map_zero]
-
-/-- In any preferred tangent trivialization around `i` containing `z`, a tangent vector with
 coordinate `(0, w)` belongs to `verticalSubmodule`. -/
 theorem symmL_zero_mem_verticalSubmodule {i z : ManifoldTotalSpace F E}
     (hi : z ∈ (chartAt (ModelProd HB HF) i).source) (w : EF) :
     (trivializationAt (EB × EF) (TangentSpace (IB.prod IF)) i).symmL 𝕜 z (0, w) ∈
       verticalSubmodule IB IF F E z :=
-  mem_verticalSubmodule_iff.2 (mfderiv_proj_symmL_zero hi w)
+  mem_verticalSubmodule_iff.2 (by rw [ManifoldTotalSpace.mfderiv_proj_symmL hi, map_zero])
 
 open Classical in
 /-- Local pretrivialization of `VerticalSpace IB IF F E` over the chart domain of `i`. -/
@@ -689,7 +681,9 @@ theorem hasMFDerivAt_homeomorph_mk_add_smul (z : ManifoldTotalSpace F V) (w : V 
     refine ManifoldTotalSpace.contMDiffAt_iff.2 ⟨contMDiffAt_const, ?_⟩
     dsimp only [γ]; simp_rw [hlin]
     exact contMDiffAt_const.add (contMDiffAt_id.smul contMDiffAt_const)
-  have hγ0 : γ 0 = z := by simp [γ]
+  have hγ0 : γ 0 = z := by
+    simp only [γ, zero_smul, add_zero]
+    exact (ManifoldTotalSpace.homeomorph F V).apply_symm_apply z
   -- Step 2: translate the target continuous linear map into model coordinates `EB × F`.
   have hw_coord : modelEquivAt (IB := IB) z (verticalLift IB z w) =
       (trivializationAt F V z.proj ⟨z.proj, w⟩).2 := by
@@ -736,7 +730,9 @@ theorem continuousLinearMapAt_verticalLift [IsManifold IB 1 B] [ContMDiffVectorB
         (verticalLift IB z w) =
       (trivializationAt F V i.proj).continuousLinearMapAt 𝕜 z.proj w := by
   have hbi := (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).1
-  have h0eq : ManifoldTotalSpace.homeomorph F V ⟨z.proj, z.snd + (0 : 𝕜) • w⟩ = z := by simp
+  have h0eq : ManifoldTotalSpace.homeomorph F V ⟨z.proj, z.snd + (0 : 𝕜) • w⟩ = z := by
+    rw [zero_smul, add_zero]
+    exact (ManifoldTotalSpace.homeomorph F V).apply_symm_apply z
   have hcomp := ((mdifferentiableAt_extChartAt (I := IB.prod 𝓘(𝕜, F))
     (h0eq.symm ▸ hi)).hasMFDerivAt.comp 0
       (hasMFDerivAt_homeomorph_mk_add_smul (IB := IB) z w)).2

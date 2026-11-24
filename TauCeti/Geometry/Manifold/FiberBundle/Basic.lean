@@ -81,9 +81,8 @@ right action is constant on the fibres, because each fibre is a single orbit.
   coordinate in the trivialization at its base point is `C^n`.
 * `TauCeti.ManifoldTotalSpace.contMDiffOn_trivialization` and `contMDiffOn_trivialization_symm`:
   the trivializations of the atlas are `C^n` with `C^n` inverses.
-* `TauCeti.ManifoldTotalSpace.extChartAt_snd_eq`, `contMDiff_homeomorph`, and
-  `contMDiff_homeomorph_symm`: for a normed space fibre with its self model, the second extended
-  chart coordinate is the trivialization coordinate and the new charts are `C^n` compatible with
+* `TauCeti.ManifoldTotalSpace.contMDiff_homeomorph` and `contMDiff_homeomorph_symm`: for a
+  normed space fibre with its self model, the new charts are `C^n` compatible with
   `FiberBundle.chartedSpace`.
 
 ## References
@@ -276,12 +275,6 @@ theorem snd_homeomorph_heq (p : TotalSpace F E) : (homeomorph F E p).snd ≍ p.s
 theorem cast_snd_homeomorph (p : TotalSpace F E) :
     cast (congrArg E (proj_homeomorph p)) (homeomorph F E p).snd = p.snd :=
   cast_eq_iff_heq.2 (snd_homeomorph_heq p)
-
-/-- Reassembling `(z.proj, z.snd)` through `homeomorph F E` recovers `z`. -/
-@[simp]
-theorem homeomorph_mk_proj_snd (z : ManifoldTotalSpace F E) :
-    homeomorph F E ⟨z.proj, z.snd⟩ = z :=
-  (homeomorph F E).apply_symm_apply z
 
 end CarrierProj
 
@@ -540,21 +533,6 @@ theorem contMDiff_proj :
     ContMDiff (IB.prod IF) IB n fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj :=
   fun x ↦ (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
     (.of_forall (homeomorph F E).apply_symm_apply))).1
-
-/-- The bundle projection `ManifoldTotalSpace.proj` is `C^n` at every point. -/
-theorem contMDiffAt_proj {x : ManifoldTotalSpace F E} :
-    ContMDiffAt (IB.prod IF) IB n (proj : ManifoldTotalSpace F E → B) x :=
-  contMDiff_proj n F E IB IF x
-
-/-- The bundle projection `ManifoldTotalSpace.proj` is `C^n` within any set at every point. -/
-theorem contMDiffWithinAt_proj {s : Set (ManifoldTotalSpace F E)} {x : ManifoldTotalSpace F E} :
-    ContMDiffWithinAt (IB.prod IF) IB n (proj : ManifoldTotalSpace F E → B) s x :=
-  contMDiffAt_proj.contMDiffWithinAt
-
-/-- The bundle projection `ManifoldTotalSpace.proj` is `C^n` on any set. -/
-theorem contMDiffOn_proj {s : Set (ManifoldTotalSpace F E)} :
-    ContMDiffOn (IB.prod IF) IB n (proj : ManifoldTotalSpace F E → B) s :=
-  (contMDiff_proj n F E IB IF).contMDiffOn
 
 variable (n IB IF) in
 /-- Near a point `x` of the total space, the fibre coordinate in the trivialization at the base
@@ -841,17 +819,6 @@ instance ContMDiffFiberBundle.ofContMDiffVectorBundle [∀ b, AddCommMonoid (E b
     exact h.congr fun _ _ ↦ rfl
 
 namespace ManifoldTotalSpace
-
-variable (IB) in
-/-- For a normed space fibre with its self model, the second coordinate of `w` in the preferred
-extended chart at `i` is its fibre coordinate in `trivializationAt F E i.proj`. -/
-theorem extChartAt_snd_eq (i w : ManifoldTotalSpace F E) :
-    (extChartAt (IB.prod 𝓘(𝕜, F)) i w).2 =
-      (trivializationAt F E i.proj ((homeomorph F E).symm w)).2 := by
-  obtain ⟨xi, rfl⟩ := (homeomorph F E).surjective i
-  obtain ⟨xw, rfl⟩ := (homeomorph F E).surjective w
-  rw [extChartAt_homeomorph_apply]
-  simp
 
 variable (n F E IB) in
 /-- For a normed space fibre with its self model, the identification of the total space with its
