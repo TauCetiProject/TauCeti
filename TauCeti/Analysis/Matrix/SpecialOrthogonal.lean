@@ -111,12 +111,29 @@ noncomputable def sphereRotationUnitary (b y : sphere (0 : EuclideanSpace ℝ (F
   (matrixSpecialOrthogonalContinuousMulEquivEuclidean (Fin N) (sphereRotation b y) :
     unitary (EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)))
 
+/-- `sphereRotationUnitary b y` is the image of the special orthogonal matrix
+`sphereRotation b y`, so it lies in `TauCeti.specialOrthogonalGroup`. -/
+theorem sphereRotationUnitary_def (b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    sphereRotationUnitary b y =
+      (matrixSpecialOrthogonalContinuousMulEquivEuclidean (Fin N) (sphereRotation b y) :
+        unitary (EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N))) :=
+  (rfl)
+
+/-- The underlying continuous linear map of `sphereRotationUnitary b y` is the matrix
+`sphereRotation b y` acting through `Matrix.toEuclideanCLM`. -/
+@[simp]
+theorem coe_sphereRotationUnitary (b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    (sphereRotationUnitary b y : EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)) =
+      Matrix.toEuclideanCLM (n := Fin N) (𝕜 := ℝ)
+        (sphereRotation b y : Matrix (Fin N) (Fin N) ℝ) := by
+  rw [sphereRotationUnitary_def, coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean]
+
 /-- The operator `sphereRotationUnitary b y` takes `b` to `y` when `y ≠ -b`. -/
 theorem sphereRotationUnitary_apply_of_ne {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1}
     (h : y ≠ -b) :
     (sphereRotationUnitary b y : EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)) b =
       y := by
-  rw [sphereRotationUnitary, coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean,
+  rw [coe_sphereRotationUnitary,
     ← WithLp.toLp_ofLp (p := 2) (b : EuclideanSpace ℝ (Fin N)), Matrix.toEuclideanCLM_toLp,
     sphereRotation_mulVec h, WithLp.toLp_ofLp]
 
