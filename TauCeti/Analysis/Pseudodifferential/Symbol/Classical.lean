@@ -704,6 +704,15 @@ theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
 
+variable {k hk b} in
+/-- The principal symbol of `b` is the term of index `k` of its inclusion `inclusion k hk b`. -/
+theorem coefficient_principal_of_inclusion_eq {a : ClassicalSymbol n V W m}
+    (h : inclusion k hk b = a) (z : CoordinateSpace n × CoordinateSpace n) :
+    b.principal.coefficient z = (a.term k).coefficient z := by
+  subst h
+  simpa [coefficient_principal] using
+    (congrArg (fun s => s.coefficient z) (term_inclusion_add k hk b 0)).symm
+
 end Inclusion
 
 /-! ### Removing the leading term -/
