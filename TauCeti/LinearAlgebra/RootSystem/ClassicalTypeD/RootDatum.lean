@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.RootPairing
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 import TauCeti.Algebra.Group.Submonoid.Closure
 
