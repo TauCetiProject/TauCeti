@@ -96,14 +96,6 @@ theorem IsRationalSemilinear.isFiniteBranchOn {D : Set V}
   rw [← hcover]
   exact Set.subset_iUnion S k
 
-/-- An injective affine representative on a locally closed rational-normal polyhedron
-is a finite branch, as a special case of the semilinear-domain constructor. -/
-theorem IsLocallyClosedPolyhedron.isFiniteBranchOn {D : Set V}
-    (hD : IsLocallyClosedPolyhedron h D) (g : V →ᵃ[ℝ] W)
-    (hg : TauCeti.Toric.IsRationalLinearMap h h' g.linear) (hinj : Set.InjOn g D) :
-    IsFiniteBranchOn h h' D (fun x => g x) :=
-  hD.isRationalSemilinear.isFiniteBranchOn g hg hinj
-
 namespace IsRationalPiecewiseAffine
 
 /-- The domain of a rational piecewise-affine map is rational semilinear. -/
@@ -121,7 +113,9 @@ theorem inter {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f
   obtain ⟨κ, _, S, g, hD, hS⟩ := hf
   refine ⟨κ, ‹_›, fun k => S k ∩ (D ∩ P), g, ?_, fun k =>
     ⟨(hS k).1.inter hP, (hS k).2.1, fun x hx => (hS k).2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
-  rw [← Set.iUnion_inter, hD, ← Set.inter_assoc, Set.inter_self]
+  calc
+    (⋃ k, S k ∩ (D ∩ P)) = D ∩ (D ∩ P) := by rw [← Set.iUnion_inter, hD]
+    _ = D ∩ P := Set.inter_eq_right.mpr Set.inter_subset_left
 
 /-- Composing the values with an affine map with rational linear part
 keeps the map piecewise affine. -/
@@ -157,8 +151,10 @@ theorem inter {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) {P : Se
   refine ⟨κ × μ, inferInstance, fun p => S p.1 ∩ C p.2, fun p => g p.1, ?_, fun p =>
     ⟨(hS p.1).1.inter (hC p.2), (hS p.1).2.1, (hS p.1).2.2.1.mono Set.inter_subset_left,
       fun x hx => (hS p.1).2.2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
-  rw [Set.iUnion_prod', ← Set.iUnion_inter_iUnion, hD, hcover,
-    ← Set.inter_assoc, Set.inter_self]
+  calc
+    (⋃ p : κ × μ, S p.1 ∩ C p.2) = D ∩ (D ∩ P) := by
+      rw [Set.iUnion_prod', ← Set.iUnion_inter_iUnion, hD, hcover]
+    _ = D ∩ P := Set.inter_eq_right.mpr Set.inter_subset_left
 
 /-- Rational affine post-composition preserves finite branches when injective on the image. -/
 theorem postcomp {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f)
@@ -169,12 +165,10 @@ theorem postcomp {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f)
     ⟨(hS k).1, ?_, ?_, ?_⟩⟩
   · rw [AffineMap.comp_linear]
     exact hφ.comp (hS k).2.1
-  · intro x hx y hy he
-    apply (hS k).2.2.1 hx hy
-    apply hinj
-    · exact ⟨⟨x, hD ▸ Set.mem_iUnion.mpr ⟨k, hx⟩⟩, (hS k).2.2.2 _ hx⟩
-    · exact ⟨⟨y, hD ▸ Set.mem_iUnion.mpr ⟨k, hy⟩⟩, (hS k).2.2.2 _ hy⟩
-    · simpa only [AffineMap.comp_apply] using he
+  · have hmaps : Set.MapsTo (g k) (S k) (Set.range f) := by
+      intro x hx
+      exact ⟨⟨x, hD ▸ Set.mem_iUnion.mpr ⟨k, hx⟩⟩, (hS k).2.2.2 _ hx⟩
+    exact hinj.comp (hS k).2.2.1 hmaps
   · intro x hx
     simp only [AffineMap.comp_apply, (hS k).2.2.2 x hx]
 
