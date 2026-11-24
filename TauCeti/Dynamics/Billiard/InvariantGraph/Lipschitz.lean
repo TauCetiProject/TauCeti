@@ -139,7 +139,7 @@ theorem frequently_lt_slope (hχ : ContDiff ℝ 2 χ) (s' : ℝ) {r : ℝ}
   have hT := χ.hasDerivAt_nextParam (s := s') hv₀
   have hT' : deriv T v₀ ≠ 0 := (χ.deriv_nextParam_neg hv₀).ne
   rw [← hT.deriv] at hT
-  have hW := χ.hasDerivAt_nextTangential hχ (s := s') hv₀
+  have hW := χ.hasDerivAt_nextTangential (s := s') hχ.contDiffAt hχ.contDiffAt hv₀
   -- The difference quotients of the image curve tend to `∂_v w / ∂_v t`.
   have hlim : Tendsto (fun v ↦ slope W v₀ v / slope T v₀ v) (𝓝[<] v₀)
       (𝓝 (χ.verticalImageSlope s' v₀)) :=
