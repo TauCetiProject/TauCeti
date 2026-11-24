@@ -107,12 +107,9 @@ theorem isWeilNumber_iff_forall_mem_roots_map_minpoly {α : L} (hα : IsIntegral
     rw [← isWeilNumber_map_iff (AdjoinRoot.lift (algebraMap E L) α hα'), AdjoinRoot.lift_root]
   rw [hroot', isWeilNumber_iff_forall_norm_apply_eq]
   refine and_congr_right fun _ ↦ ⟨fun h σ z hz ↦ ?_, fun h τ ↦ h (τ.comp (algebraMap E _)) _ ?_⟩
-  · have hz' : (minpoly E α).eval₂ σ z = 0 := by
-      rw [eval₂_eq_eval_map]
-      exact (mem_roots (Polynomial.map_ne_zero (minpoly.ne_zero hα))).mp hz
-    simpa using h (AdjoinRoot.lift σ z hz')
-  · rw [mem_roots (Polynomial.map_ne_zero (minpoly.ne_zero hα)), IsRoot, ← eval₂_eq_eval_map,
-      ← hom_eval₂, ← aeval_def, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
+  · simpa using h (AdjoinRoot.lift σ z ((mem_roots_map (minpoly.ne_zero hα)).mp hz))
+  · rw [mem_roots_map (minpoly.ne_zero hα), ← hom_eval₂, ← aeval_def, AdjoinRoot.aeval_eq,
+      AdjoinRoot.mk_self, map_zero]
 
 /-- Let `E` be a field algebraic over `ℚ` and `P ∈ E[X]` nonzero. If, for every field embedding
 `σ : E → ℂ`, every complex root of `σ(P)` has absolute value `q ^ (n / 2)`, then every root of `P`
@@ -140,9 +137,7 @@ theorem forall_isWeilNumber_mem_aroots_iff [IsAlgClosed L] (hq : 1 < q) (P : E[X
   -- Make `ℂ` an `E`-algebra through `σ`, and pick a root `α` in `L` of the minimal polynomial of
   -- `z` over `E`; it is a root of `P` with the same minimal polynomial as `z`.
   let _ : Algebra E ℂ := σ.toAlgebra
-  have hzP : aeval z P = 0 := by
-    rw [aeval_def, RingHom.algebraMap_toAlgebra, eval₂_eq_eval_map]
-    exact (mem_roots (Polynomial.map_ne_zero hP)).mp hz
+  have hzP : aeval z P = 0 := (mem_roots_map hP).mp hz
   have hzint : IsIntegral E z := (isAlgebraic_iff_isIntegral).mp ⟨P, hP, hzP⟩
   obtain ⟨α, hα⟩ := IsAlgClosed.exists_aeval_eq_zero L (minpoly E z)
     (minpoly.degree_pos hzint).ne'
@@ -152,8 +147,8 @@ theorem forall_isWeilNumber_mem_aroots_iff [IsAlgClosed L] (hq : 1 < q) (P : E[X
     mem_aroots.mpr ⟨hP, aeval_eq_zero_of_dvd_aeval_eq_zero (minpoly.dvd E z hzP) hα⟩
   have hαint : IsIntegral E α := (isAlgebraic_iff_isIntegral).mp ⟨P, hP, (mem_aroots.mp hαP).2⟩
   refine ((isWeilNumber_iff_forall_mem_roots_map_minpoly hαint).mp (h α hαP)).2 σ z ?_
-  rw [← hmin, mem_roots (Polynomial.map_ne_zero (minpoly.ne_zero hzint)), IsRoot,
-    ← eval₂_eq_eval_map, ← RingHom.algebraMap_toAlgebra σ, ← aeval_def, minpoly.aeval]
+  rw [← hmin]
+  exact (mem_roots_map (minpoly.ne_zero hzint)).mpr (minpoly.aeval E z)
 
 /-- Every root of a rational polynomial `P` in an algebraically closed field of
 characteristic zero is a Weil `q`-number of weight `n` if and only if every complex root of `P`
@@ -175,12 +170,10 @@ theorem irreducible_X_pow_four_sub_X_pow_three_sub_X_sq_sub_X_add_one :
   have hmonic : (X ^ 4 - X ^ 3 - X ^ 2 - X + 1 : ℤ[X]).Monic := by monicity!
   have hmod : (X ^ 4 - X ^ 3 - X ^ 2 - X + 1 : ℤ[X]).map (Int.castRingHom (ZMod 2)) =
       cyclotomic 5 (ZMod 2) := by
-    rw [cyclotomic_prime, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
-      Finset.sum_range_succ, Finset.sum_range_one]
     have h2 : (2 : (ZMod 2)[X]) = 0 := by
       rw [← C_ofNat, show (2 : ZMod 2) = 0 from rfl, C_0]
-    simp only [Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, map_X,
-      Polynomial.map_one]
+    simp only [cyclotomic_prime, Finset.sum_range_succ, Polynomial.map_add, Polynomial.map_sub,
+      Polynomial.map_pow, map_X, Polynomial.map_one]
     linear_combination (-X - X ^ 2 - X ^ 3) * h2
   have hirr : Irreducible (cyclotomic 5 (ZMod 2)) :=
     ZMod.irreducible_of_dvd_cyclotomic_of_natDegree (by norm_num) dvd_rfl <| by
