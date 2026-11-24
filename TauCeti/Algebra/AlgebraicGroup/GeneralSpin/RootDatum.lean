@@ -28,8 +28,8 @@ and `SO_{2n}` by the central cocharacter `ε₀∨` (`RootPairing.extendCoroot`)
   simple coroots `εᵢ∨ - εᵢ₊₁∨` and `εₙ₋₁∨ + εₙ∨ - ε₀∨`.
 * `GSO₂ₙ` (`TauCeti.gsoRootDatum`): roots `εᵢ - εⱼ`, `±(εᵢ + εⱼ - ε₀)`, and coroots `±εᵢ∨ ± εⱼ∨`.
 
-The general spin data are those of Asgari and of Cai–Friedberg–Kaplan §1, here with the
-coordinates `ε₁, …, εₙ` numbered from zero. In both, `ε₀∨` is
+The general spin data are those of Asgari and of Cai–Friedberg–Kaplan §1. An index `i : Fin n`
+stands for the coordinate `ε_{i+1}`, so `ε₀` always denotes the multiplier. In both, `ε₀∨` is
 central, it pairs to zero with every root, and the character `Υ = 2ε₀ + ε₁ + ⋯ + εₙ` (the Clifford
 norm `ν`) pairs to zero with every coroot and to `2` with `ε₀∨`. Dividing out `ε₀∨`, that is,
 restricting to the characters orthogonal to `ε₀∨` and projecting the coroots to `N`, returns the
@@ -211,14 +211,15 @@ theorem gspRootDatum_coroot (i : GLSymplecticFin.RootSubgroupIndex n) :
     (gspRootDatum.{u} n).coroot i = ((Symplectic.diagonalRootDatum.{u} n).coroot i, 0) := by
   rw [gspRootDatum_eq_extendRoot, RootPairing.extendRoot_coroot]
 
-/-- The coroot of the short root `εᵢ` of `GSpin_{2n+1}` is `2εᵢ∨ - ε₀∨`. -/
+/-- The coroot of the short root `ε_{i+1}` of `GSpin_{2n+1}` is `2ε_{i+1}∨ - ε₀∨`. -/
 theorem gspinOddRootDatum_coroot_positiveLong (i : Fin n) :
     (gspinOddRootDatum.{u} n).coroot (.positiveLong i) = (Finsupp.single (ULift.up i) 2, -1) := by
   rw [gspinOddRootDatum_coroot, soOddRootDatum_coroot,
     Symplectic.diagonalRootDatum_root_positiveLong]
   rfl
 
-/-- For `i < j`, the coroot of `εᵢ + εⱼ` in `GSpin_{2n+1}` is `εᵢ∨ + εⱼ∨ - ε₀∨`. -/
+/-- For `i < j`, the coroot of `ε_{i+1} + ε_{j+1}` in `GSpin_{2n+1}` is
+`ε_{i+1}∨ + ε_{j+1}∨ - ε₀∨`. -/
 theorem gspinOddRootDatum_coroot_positiveSum {i j : Fin n} (hij : i < j) :
     (gspinOddRootDatum.{u} n).coroot (.positiveSum i j hij) =
       (Finsupp.single (ULift.up i) 1 + Finsupp.single (ULift.up j) 1, -1) := by
@@ -226,24 +227,24 @@ theorem gspinOddRootDatum_coroot_positiveSum {i j : Fin n} (hij : i < j) :
     Symplectic.diagonalRootDatum_root_positiveSum]
   rfl
 
-/-- The short root `εᵢ` of `GSpin_{2n+1}`. -/
+/-- The short root `ε_{i+1}` of `GSpin_{2n+1}`. -/
 theorem gspinOddRootDatum_root_positiveLong (i : Fin n) :
     (gspinOddRootDatum.{u} n).root (.positiveLong i) = (Pi.single (ULift.up i) 1, 0) := by
   rw [gspinOddRootDatum_root, soOddRootDatum_root,
     Symplectic.diagonalRootDatum_coroot_positiveLong]
 
-/-- The long root `2εᵢ - ε₀` of `GSp₂ₙ`. -/
+/-- The long root `2ε_{i+1} - ε₀` of `GSp₂ₙ`. -/
 theorem gspRootDatum_root_positiveLong (i : Fin n) :
     (gspRootDatum.{u} n).root (.positiveLong i) = (Finsupp.single (ULift.up i) 2, -1) := by
   rw [← flip_gspinOddRootDatum, RootPairing.flip_root, gspinOddRootDatum_coroot_positiveLong]
 
-/-- For `i < j`, the root `εᵢ + εⱼ - ε₀` of `GSp₂ₙ`. -/
+/-- For `i < j`, the root `ε_{i+1} + ε_{j+1} - ε₀` of `GSp₂ₙ`. -/
 theorem gspRootDatum_root_positiveSum {i j : Fin n} (hij : i < j) :
     (gspRootDatum.{u} n).root (.positiveSum i j hij) =
       (Finsupp.single (ULift.up i) 1 + Finsupp.single (ULift.up j) 1, -1) := by
   rw [← flip_gspinOddRootDatum, RootPairing.flip_root, gspinOddRootDatum_coroot_positiveSum]
 
-/-- The coroot `εᵢ∨` of the long root `2εᵢ - ε₀` of `GSp₂ₙ`. -/
+/-- The coroot `ε_{i+1}∨` of the long root `2ε_{i+1} - ε₀` of `GSp₂ₙ`. -/
 theorem gspRootDatum_coroot_positiveLong (i : Fin n) :
     (gspRootDatum.{u} n).coroot (.positiveLong i) = (Pi.single (ULift.up i) 1, 0) := by
   rw [← flip_gspinOddRootDatum, RootPairing.flip_coroot, gspinOddRootDatum_root_positiveLong]

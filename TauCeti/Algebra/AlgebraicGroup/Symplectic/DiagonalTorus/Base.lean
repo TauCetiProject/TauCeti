@@ -379,20 +379,25 @@ variable (m : ℕ)
 
 /-- **The base of `SO_{2m+1}`**: the dual of `TauCeti.Symplectic.diagonalRootBase`, with simple
 roots `e_i - e_(i+1)` and `e_(m-1)` and simple coroots `e_i - e_(i+1)` and `2 e_(m-1)`. -/
-noncomputable def soOddBase : (soOddRootDatum.{u} m).Base :=
-  -- `soOddRootDatum` is not exposed, so the flipped base is transported along the duality.
-  Symplectic.flip_diagonalRootDatum.{u} m ▸ (Symplectic.diagonalRootBase.{u} m).flip
+noncomputable def soOddBase : (soOddRootDatum.{u} m).Base where
+  support := (Symplectic.diagonalRootBase.{u} m).support
+  linearIndepOn_root := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.linearIndepOn_root
+  linearIndepOn_coroot := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.linearIndepOn_coroot
+  root_mem_or_neg_mem := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.root_mem_or_neg_mem
+  coroot_mem_or_neg_mem := by
+    rw [← Symplectic.flip_diagonalRootDatum]
+    exact (Symplectic.diagonalRootBase.{u} m).flip.coroot_mem_or_neg_mem
 
 /-- The base of `SO_{2m+1}` has the support of `TauCeti.Symplectic.diagonalRootBase`. -/
 theorem soOddBase_support :
-    (soOddBase.{u} m).support = (Symplectic.diagonalRootBase.{u} m).support := by
-  have key : ∀ (P : RootDatum (GLSymplecticFin.RootSubgroupIndex m) (ULift.{u} (Fin m) → ℤ)
-      (ULift.{u} (Fin m) →₀ ℤ)) (h : (Symplectic.diagonalRootDatum.{u} m).flip = P),
-      (h ▸ (Symplectic.diagonalRootBase.{u} m).flip).support =
-        (Symplectic.diagonalRootBase.{u} m).support := by
-    rintro _ rfl
-    rfl
-  exact key _ _
+    (soOddBase.{u} m).support = (Symplectic.diagonalRootBase.{u} m).support :=
+  (rfl)
 
 /-- The simple roots of `SO_{2m+1}` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`.
 -/
