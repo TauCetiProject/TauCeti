@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Classical
-public import TauCeti.Analysis.Calculus.Hadamard
+public import TauCeti.Analysis.Calculus.Hadamard.Basic
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.Deriv.Abs
