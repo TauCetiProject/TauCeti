@@ -5,6 +5,7 @@ Authors: Wentao Li
 -/
 module
 public import TauCeti.NumberTheory.QuadraticOrder.Field
+public import TauCeti.Algebra.Ring.Hom
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -65,11 +66,6 @@ theorem algEquivOfSqrt_omega (D : ℤ) [Fact (¬ IsSquare D)]
     (hK : Module.finrank ℚ (QuadraticAlgebra ℚ (D : ℚ) 0) = 2) :
     algEquivOfSqrt D ω hω hK = AlgEquiv.refl := by
   ext z <;> simp [algEquivOfSqrt_apply, Algebra.smul_def]
-
-/-- A ring homomorphism sends a square root of an integer `D` to a square root of `D`. -/
-theorem sq_map_of_sq_eq_intCast {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
-    [RingHomClass F R S] (f : F) {D : ℤ} {δ : R} (hδ : δ ^ 2 = (D : R)) : f δ ^ 2 = (D : S) := by
-  rw [← map_pow, hδ, map_intCast]
 
 /-- **Composition of model equivalences**: the model equivalence of `K`, followed by a
 `ℚ`-isomorphism `σ : K ≃ₐ[ℚ] L`, is the model equivalence of `L` presented by `σ δ`. -/

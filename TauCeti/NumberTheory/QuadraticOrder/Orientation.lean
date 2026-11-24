@@ -156,9 +156,7 @@ theorem ringHom_eq_complexEmbeddingOfSqrt_or_eq_conjugate (φ : K →+* ℂ) :
   have hpos := sqrt_neg_intCast_pos hd
   have hφ : φ θ ^ 2 = (d : ℂ) := sq_map_of_sq_eq_intCast φ hθ
   have hs : ((√(-(d : ℝ)) : ℝ) : ℂ) ^ 2 = -(d : ℂ) := by
-    rw [← ofReal_pow, Real.sq_sqrt (by simpa using hd.le)]
-    push_cast
-    rfl
+    rw [← ofReal_pow, Real.sq_sqrt (by simpa using hd.le), ofReal_neg, ofReal_intCast]
   have hsq : φ θ * φ θ = ((√(-(d : ℝ)) : ℂ) * I) * ((√(-(d : ℝ)) : ℂ) * I) := by
     linear_combination hφ + hs - ((√(-(d : ℝ)) : ℂ) ^ 2) * I_sq
   rcases mul_self_eq_mul_self_iff.mp hsq with h | h
