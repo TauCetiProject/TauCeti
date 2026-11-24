@@ -21,8 +21,9 @@ index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with 
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
-**Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
-products with a sequence of bounded partial sums have Cauchy partial sums.
+On the closed unit ball away from `1`, the geometric partial sums are bounded by
+`2 / ‖x - 1‖`. **Dirichlet's test** holds for coefficients of bounded variation tending to zero:
+their products with a sequence of bounded partial sums have Cauchy partial sums.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -198,6 +199,20 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
+
+/-- On the closed unit ball of a normed division ring, away from `1`, the partial sums of the
+geometric series `∑ xⁱ` are bounded by `2 / ‖x - 1‖`. These are the bounded partial sums fed to
+Dirichlet's test below on the unit circle. -/
+theorem norm_geom_sum_le {D : Type*} [NormedDivisionRing D] {x : D} (hx : ‖x‖ ≤ 1)
+    (hx1 : x ≠ 1) (n : ℕ) : ‖∑ i ∈ Finset.range n, x ^ i‖ ≤ 2 / ‖x - 1‖ := by
+  rw [geom_sum_eq hx1, norm_div]
+  gcongr
+  calc ‖x ^ n - 1‖ ≤ ‖x ^ n‖ + ‖(1 : D)‖ := norm_sub_le _ _
+    _ ≤ 1 + 1 := by
+      gcongr
+      · rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hx
+      · simp
+    _ = 2 := one_add_one_eq_two
 
 /-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
 differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the

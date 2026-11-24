@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # The logarithmic series on the closed unit disc
@@ -24,8 +25,6 @@ evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
 
 ## Main results
 
-* `Complex.norm_sum_range_pow_succ_le`: on the closed unit disc away from `1`, the partial sums
-  of `∑ zⁿ⁺¹` are bounded by `2 / ‖z - 1‖`.
 * `Complex.re_one_sub_pos`: on the closed unit disc away from `1`, `0 < re (1 - z)`.
 * `Complex.tendsto_sum_range_taylorSeries_neg_log`: the partial sums of `∑ zⁿ / n` tend to
   `-log (1 - z)` for `‖z‖ ≤ 1` and `z ≠ 1`.
@@ -41,31 +40,12 @@ open scoped Topology Real
 
 namespace Complex
 
-/-- The partial sums of `∑ zⁿ⁺¹` are bounded by `2 / ‖z - 1‖` on the closed unit disc away
-from `1`. -/
-theorem norm_sum_range_pow_succ_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) (n : ℕ) :
-    ‖∑ i ∈ range n, z ^ (i + 1)‖ ≤ 2 / ‖z - 1‖ := by
-  have hpos : 0 < ‖z - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz1)
-  have hpow : ‖z ^ n - 1‖ ≤ 2 := by
-    calc ‖z ^ n - 1‖ ≤ ‖z ^ n‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-      _ ≤ 1 + 1 := by
-        gcongr
-        · rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hz
-        · simp
-      _ = 2 := by norm_num
-  simp_rw [pow_succ, ← sum_mul, geom_sum_eq hz1, norm_mul, norm_div]
-  calc ‖z ^ n - 1‖ / ‖z - 1‖ * ‖z‖ ≤ 2 / ‖z - 1‖ * 1 := by gcongr
-    _ = 2 / ‖z - 1‖ := mul_one _
-
 /-- On the closed unit disc away from `1`, the point `1 - z` has positive real part. -/
 theorem re_one_sub_pos {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) : 0 < (1 - z).re := by
   rw [sub_re, one_re, sub_pos]
   refine (re_le_norm z).trans hz |>.lt_of_ne fun h ↦ hz1 ?_
-  have him : z.im = 0 := by
-    have hsq := sq_norm_sub_sq_re z
-    have : ‖z‖ = 1 := le_antisymm hz (h ▸ re_le_norm z)
-    rw [this, ← h] at hsq
-    nlinarith [sq_nonneg z.im]
+  have hnorm : ‖z‖ = 1 := le_antisymm hz (h ▸ re_le_norm z)
+  have him : z.im = 0 := abs_re_eq_norm.1 (by rw [h, hnorm, abs_one])
   exact Complex.ext (by simpa using h) (by simpa using him)
 
 /-- **The logarithmic series on the closed unit disc.** For `‖z‖ ≤ 1` and `z ≠ 1`, the ordered
@@ -83,8 +63,12 @@ theorem tendsto_sum_range_taylorSeries_neg_log {z : ℂ} (hz : ‖z‖ ≤ 1) (h
       one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.succ_le_succ hab)
     have h0 : Tendsto (fun i : ℕ ↦ (1 : ℝ) / (i + 1)) atTop (𝓝 0) :=
       tendsto_one_div_add_atTop_nhds_zero_nat
-    convert hanti.cauchySeq_series_mul_of_tendsto_zero_of_bounded h0
-      (norm_sum_range_pow_succ_le hz hz1) using 3 with n i
+    -- the shifted geometric partial sums `∑ zⁱ⁺¹ = (∑ zⁱ) z` stay bounded
+    have hbdd (n : ℕ) : ‖∑ i ∈ range n, z ^ (i + 1)‖ ≤ 2 / ‖z - 1‖ := by
+      simp_rw [pow_succ, ← sum_mul, norm_mul]
+      calc _ ≤ 2 / ‖z - 1‖ * 1 := by gcongr; exact TauCeti.norm_geom_sum_le hz hz1 n
+        _ = 2 / ‖z - 1‖ := mul_one _
+    convert hanti.cauchySeq_series_mul_of_tendsto_zero_of_bounded h0 hbdd using 3 with n i
     simp [hf, div_eq_inv_mul, Complex.real_smul]
   -- Abel's theorem identifies `l` with the radial limit of `-log (1 - r z) / r`
   have habel := tendsto_tsum_powerSeries_nhdsWithin_lt hl
