@@ -82,7 +82,7 @@ theorem measure_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
     exact .iInter fun i => .iInter fun j => hm.preimage Matrix.measurable_apply
   have hset : {M : Matrix (Fin n) (Fin n) R | IsUnit M} = φ ⁻¹' {N | IsUnit N} := by
     ext M
-    exact (isUnit_map_iff (residue R) M).symm
+    simp [φ, RingHom.mapMatrix_apply]
   have hGL : Nat.card {N : Matrix (Fin n) (Fin n) k | IsUnit N} =
       ∏ i : Fin n, (Nat.card k ^ n - Nat.card k ^ (i : ℕ)) := by
     have e : GL (Fin n) k ≃ {N : Matrix (Fin n) (Fin n) k | IsUnit N} :=
@@ -103,9 +103,7 @@ theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
       ∏ i ∈ Finset.range n, (1 - ((Nat.card (ResidueField R) : ℝ)⁻¹) ^ (i + 1)) := by
   rw [measureReal_def, measure_setOf_isUnit n hm μ, measure_univ, mul_one, ENNReal.toReal_div]
   set q := Nat.card (ResidueField R)
-  have hq : (q : ℝ) ≠ 0 := by
-    have : Fintype (ResidueField R) := Fintype.ofFinite _
-    exact_mod_cast Nat.card_pos.ne'
+  have hq : (q : ℝ) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
   have hcast : ((∏ i : Fin n, (q ^ n - q ^ (i : ℕ)) : ℕ) : ℝ) =
       ∏ i : Fin n, ((q : ℝ) ^ n - (q : ℝ) ^ (i : ℕ)) := by
     rw [Nat.cast_prod]
