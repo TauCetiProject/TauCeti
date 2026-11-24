@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Subalgebra.Center
 import Mathlib.Algebra.Central.Basic
 
 /-!
-# The central character of a simple module
+# Central characters
 
 A central element `z` of a `k`-algebra `A` acts on an `A`-module `M` by an `A`-linear map, because
 `z` commutes with every scalar; this is the algebra homomorphism `TauCeti.centerToEnd`. Since an
@@ -67,7 +67,9 @@ size and normalized by the degree: `ωᵪ(K_C) = |C| · χ(g) / χ(1)`, when `χ
 
 ## References
 
-Central characters are treated here in the generality of a simple module over an arbitrary algebra.
+Central characters are treated here for any module over an arbitrary algebra whose commutant has
+centre `k`, with the finite-dimensional simple module over an algebraically closed field as the
+special case `TauCeti.centralCharacter`.
 See I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 3, or C. W. Curtis and I. Reiner,
 *Representation Theory of Finite Groups and Associative Algebras*, §33.
 -/
