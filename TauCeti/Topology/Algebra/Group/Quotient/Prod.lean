@@ -40,6 +40,8 @@ the quotient map `(ℝʳ ⧸ Λ) × K → G` is a finite covering of `G` by the 
 
 * `Subgroup.continuous_prodQuotientMap`: the map `(A ⧸ Λ) × K → (A × K) ⧸ Γ` is continuous.
 * `Subgroup.isCoveringMap_prodQuotientMap`: it is a covering map.
+* `Subgroup.compactSpace_quotient_map_snd`: if `(A × K) ⧸ Γ` is compact, so is the quotient of `K`
+  by the image of `Γ`.
 
 ## References
 
@@ -79,6 +81,21 @@ instance discreteTopology_comap_inl [DiscreteTopology Γ] :
     DiscreteTopology (Γ.comap (MonoidHom.inl A K)) :=
   isDiscrete_iff_discreteTopology.1 <| (isDiscrete_iff_discreteTopology.2 ‹_›).preimage
     (continuous_id.prodMk continuous_const).continuousOn (Prod.mk_left_injective 1)
+
+/-- **The image of a cocompact subgroup of `A × K` in `K` is cocompact.** The second projection
+induces a continuous surjection `(A × K) ⧸ Γ → K ⧸ Γ.map (MonoidHom.snd A K)`,
+`[(a, k)] ↦ [k]`, so if `(A × K) ⧸ Γ` is compact, then so is `K ⧸ Γ.map (MonoidHom.snd A K)`. -/
+theorem compactSpace_quotient_map_snd [CompactSpace ((A × K) ⧸ Γ)] :
+    CompactSpace (K ⧸ Γ.map (MonoidHom.snd A K)) := by
+  have hrel : ∀ x y : A × K, QuotientGroup.leftRel Γ x y →
+      QuotientGroup.leftRel (Γ.map (MonoidHom.snd A K)) x.2 y.2 := fun x y h ↦ by
+    rw [QuotientGroup.leftRel_apply] at h ⊢
+    exact ⟨_, h, rfl⟩
+  have hsurj : Function.Surjective
+      (Quotient.map' Prod.snd hrel : (A × K) ⧸ Γ → K ⧸ Γ.map (MonoidHom.snd A K)) := by
+    rintro ⟨k⟩
+    exact ⟨Quotient.mk'' ((1 : A), k), rfl⟩
+  exact hsurj.compactSpace (continuous_snd.quotient_map' hrel)
 
 variable [IsTopologicalGroup A]
 
