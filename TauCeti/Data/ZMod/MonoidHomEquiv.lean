@@ -75,7 +75,7 @@ theorem ofAdd_neg_one_ne_one_of_ne_one (hN : N ≠ 1) :
 
 /-- Any homomorphism out of `Multiplicative (ZMod N)` sends `ofAdd (k : ZMod N)` to the `k`-th
 power of its value at `ofAdd 1`. -/
-theorem zmodMonoidHom_map_ofAdd_intCast {G : Type*} [Group G]
+theorem zmodMonoidHom_map_ofAdd_intCast {G : Type*} [DivisionMonoid G]
     (φ : Multiplicative (ZMod N) →* G) (k : ℤ) :
     φ (.ofAdd (k : ZMod N)) = φ (.ofAdd 1) ^ k := by
   rw [← zsmul_one k, ofAdd_zsmul, map_zpow]
