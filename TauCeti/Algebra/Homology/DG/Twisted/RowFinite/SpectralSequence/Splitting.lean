@@ -81,8 +81,8 @@ theorem rowFiniteIndexGradedPieceComplexXEquiv_apply_mem (n : ℤ)
     (f : (rowFiniteIndexGradedPieceComplex ind hM p).X n) (x : {x // ind x = p}) :
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n f : {x // ind x = p} →₀ M) x ∈ ℳ (n + p) := by
   have hf := (mem_rowFiniteTotalGrading_iff ℳ _).1
-    (rowFiniteIndexGradedPieceComplexXEquiv hM p n f).2 x
-  rwa [x.2] at hf
+    (rowFiniteIndexGradedPieceComplexXEquiv hM p n f).property x
+  rwa [x.property] at hf
 
 /-- The insertion at a generator `x` of index `p`, from `ℳ (n + p)` to the degree-`n` term of the
 graded piece of index `p`. -/
@@ -94,7 +94,7 @@ noncomputable def rowFiniteIndexGradedPieceSingleX (x : {x // ind x = p}) (n : �
       (mem_rowFiniteTotalGrading_iff ℳ _).2 fun y ↦ by
         by_cases hy : y = x
         · subst hy
-          simp [y.2]
+          simp [y.property]
         · simp [Finsupp.single_eq_of_ne hy]) ∘ₗ
     (shiftedModuleComplexXEquiv hM p n).toLinearMap
 
@@ -208,7 +208,6 @@ noncomputable def isColimitRowFiniteIndexGradedPieceHomologyCofan (n : ℤ) :
     IsColimit (Cofan.mk ((rowFiniteIndexGradedPieceComplex ind hM p).homology n)
       fun x : {x // ind x = p} ↦
         HomologicalComplex.homologyMap (rowFiniteIndexGradedPieceSingle hM ind x) n) :=
-  haveI : AB4OfSize.{uP} (ModuleCat.{max uP uM} R) := AB4OfSize_shrink.{uP, uM} _
   isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ n) _ _
     (isColimitRowFiniteIndexGradedPieceCofan hM ind)
 

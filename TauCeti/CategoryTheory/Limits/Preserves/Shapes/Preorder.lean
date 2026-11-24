@@ -47,7 +47,7 @@ nonempty linear order. -/
 instance Under.preservesWellOrderContinuousOfShape_forget (X : C) :
     PreservesWellOrderContinuousOfShape J (Under.forget X) where
   preservesColimitsOfShape j hj := by
-    obtain ⟨k, hk⟩ := not_isMin_iff.1 hj.1
+    obtain ⟨k, hk⟩ := not_isMin_iff.1 hj.not_isMin
     have : Nonempty (Set.Iio j) := ⟨⟨k, hk⟩⟩
     infer_instance
 

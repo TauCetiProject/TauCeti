@@ -61,19 +61,19 @@ theorem existsUnique_eq_ofFun_const_of_locally (T : 𝓓'^{n}(Ω, F))
         T φ = (∫ y, φ y ∂μ) • c) :
     ∃! c : F, T = ofFun Ω (fun _ ↦ c) μ n := by
   classical
-  choose U hU hxU c hc using fun x : Ω ↦ h x x.2
+  choose U hU hxU c hc using fun x : Ω ↦ h x x.property
   -- An integral-one test in the overlap recovers both local coefficients.
   have hceq {x y : Ω} (hy : (y : E) ∈ U x) : c y = c x := by
     obtain ⟨φ, hφ, -, hint⟩ := TestFunction.exists_nonneg_integral_eq_one
       (μ := μ) (n := n) ((hU x).inter (hU y) |>.inter Ω.isOpen)
-      ⟨y, ⟨⟨hy, hxU y⟩, y.2⟩⟩ (fun _ hz ↦ hz.2)
+      ⟨y, ⟨⟨hy, hxU y⟩, y.property⟩⟩ (fun _ hz ↦ hz.2)
     calc
       c y = T φ := by rw [hc y φ (fun z hz ↦ (hφ hz).1.2), hint, one_smul]
       _ = c x := by rw [hc x φ (fun z hz ↦ (hφ hz).1.1), hint, one_smul]
   have hlc : IsLocallyConstant c := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro x
-    filter_upwards [((hU x).preimage continuous_subtype_val).mem_nhds (hxU x)] with y hy
+    filter_upwards [((hU x).preimage continuous_subtypeVal).mem_nhds (hxU x)] with y hy
     exact hceq hy
   let : PreconnectedSpace Ω := isPreconnected_iff_preconnectedSpace.mp hΩ.isPreconnected
   obtain ⟨x₀, hx₀⟩ := hΩ.nonempty

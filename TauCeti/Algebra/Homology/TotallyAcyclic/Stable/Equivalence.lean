@@ -89,7 +89,6 @@ instance (n : ℤ) : (stableCyclesFunctor.{v} A n).Faithful :=
   (MorphismIdeal.faithful_lift_iff _ _ _).2 (ker_stableCycles_le_homotopyIdeal A n)
 
 /-- The cycles in degree zero of the lift of a map of cycles give back that map. -/
-@[simp]
 theorem cyclesFunctor_map_lift {P Q : TotallyAcyclicComplex.{v} A}
     (g : (cyclesFunctor A 0).obj P ⟶ (cyclesFunctor A 0).obj Q) :
     (cyclesFunctor A 0).map (ObjectProperty.homMk

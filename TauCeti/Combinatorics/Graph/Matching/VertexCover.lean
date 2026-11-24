@@ -8,6 +8,8 @@ module
 public import TauCeti.Combinatorics.Graph.Matching.Capacitated
 public import TauCeti.Combinatorics.Graph.VertexCover.SimpleGraph
 
+import TauCeti.Combinatorics.Graph.Simple
+
 /-!
 # Matchings and the vertex cover number
 
@@ -57,18 +59,15 @@ theorem IsMatching.encard_le_of_isVertexCover_toSimpleGraph {M : Set E(G)} (hM :
     M.encard ≤ C.encard := by
   -- Each selected edge is nonloop, so it projects to a simple-graph edge and meets `C`; since
   -- matching edges are vertex-disjoint, choosing an incident cover vertex is injective.
-  have hex (e : M) : ∃ v : C, G.Inc e.1 v.1 := by
-    obtain ⟨x, y, he⟩ := G.exists_isLink_of_mem_edgeSet e.1.2
-    have hxy : (⟨x, he.left_mem⟩ : V(G)) ≠ ⟨y, he.right_mem⟩ := fun h ↦
-      hM.not_isLoopAt e.2 x (isLink_self_iff.mp (Subtype.mk.inj h ▸ he))
-    have hadj : G.toSimpleGraph.Adj ⟨x, he.left_mem⟩ ⟨y, he.right_mem⟩ := by
-      rw [G.toSimpleGraph_adj]
-      exact ⟨hxy, e.1, he⟩
-    rcases hC hadj with hx | hy
+  have hex (e : M) : ∃ v : C, G.Inc e.val v.val := by
+    obtain ⟨x, y, he⟩ : ∃ x y, G.IsLink e.val x y := G.exists_isLink_of_mem_edgeSet e.val.property
+    have hxy : x ≠ y := fun h ↦
+      hM.not_isLoopAt e.property x (isLink_self_iff.mp (h ▸ he))
+    rcases hC (he.toSimpleGraph_adj hxy) with hx | hy
     exacts [⟨⟨⟨x, he.left_mem⟩, hx⟩, he.inc_left⟩, ⟨⟨⟨y, he.right_mem⟩, hy⟩, he.inc_right⟩]
   choose f hf using hex
   exact Function.Embedding.encard_le
-    ⟨f, fun e₁ e₂ h ↦ Subtype.ext <| hM.eq_of_inc e₁.2 e₂.2 (hf e₁) (h ▸ hf e₂)⟩
+    ⟨f, fun e₁ e₂ h ↦ Subtype.ext <| hM.eq_of_inc e₁.property e₂.property (hf e₁) (h ▸ hf e₂)⟩
 
 /-- **Weak duality for ordinary matchings.** The cardinality of a matching is at most that of any
 vertex cover. -/

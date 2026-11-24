@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 
 /-!
 # The cup product in singular cohomology
@@ -38,13 +39,18 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
 ## Main definitions and results
 
 * `TopCat.ιChainComplex_cupCochain_alexanderWhitneyDiagonal`: the cup product of singular
-  cochains on a singular simplex.
+  cochains on a singular simplex, with
+  `TopCat.cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal` the product of values for
+  coefficients in a commutative ring, and `TopCat.cochainValuesEquiv_cupCochain_one_one` its
+  case of two `1`-cochains on a `2`-simplex.
 * `TopCat.singularCup`: the cup product on singular cohomology, with `TopCat.singularCup_homologyπ`
   computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality.
 * `TopCat.singularCup_eq_homologyMap_singularCup`: the cup product along a coefficient morphism
   `u` is the cup product along the identity followed by the coefficient change induced by `u`.
 * `TopCat.singularCup_precomp`: compatibility of the cup product with the change of chain
-  coefficients `TopCat.singularCohomologyChainCoefficientMap`.
+  coefficients `TopCat.singularCohomologyChainCoefficientMap`, and
+  `TopCat.singularCup_comp_tensorHom` its compatibility with the changes of chain coefficients of
+  the two factors.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology, with
   `TopCat.singularCup_assoc_unit` the commutative-ring case and
@@ -197,6 +203,50 @@ end Laws
 
 end Cochain
 
+/-- **The cup product of cochains with coefficients in a commutative ring on a simplex**: for
+cochains `φ` of degree `p` and `ψ` of degree `q` with values in `k`, the value of `φ ⌣ ψ` on a
+singular `(p + q)`-simplex `σ` is the product of the value of `φ` on the front `p`-face of `σ` and
+that of `ψ` on its back `q`-face. -/
+lemma cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal (X : TopCat.{w}) (k : Type w)
+    [CommRing k] (p q n : ℕ) (h : p + q = n)
+    (φ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X p ⟶ 𝟙_ (ModuleCat.{w} k))
+    (ψ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X q ⟶ 𝟙_ (ModuleCat.{w} k))
+    (σ : (toSSet.obj X) _⦋n⦌) :
+    TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) n
+        (TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal (λ_ _).inv) (λ_ _).hom
+          p q n h φ ψ) σ =
+      TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) p φ
+          ((toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) *
+        TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) q ψ
+          ((toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) := by
+  simp only [TauCeti.cochainValuesEquiv_apply]
+  -- `simp` does not apply `ModuleCat.comp_apply` here, where the coefficient object is both the
+  -- monoidal unit and `ModuleCat.of k k`, so the formula is unfolded by `rw`.
+  rw [← ModuleCat.comp_apply, ιChainComplex_cupCochain_alexanderWhitneyDiagonal,
+    ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
+    smul_eq_mul, ModuleCat.comp_apply, ModuleCat.comp_apply]
+
+/-- **The cup product of two `1`-cochains with coefficients in a commutative ring on a
+`2`-simplex**: the value of `φ ⌣ ψ` on a singular `2`-simplex `σ` is the product of the value of
+`φ` on its front edge `δ 2 σ` and that of `ψ` on its back edge `δ 0 σ`. -/
+lemma cochainValuesEquiv_cupCochain_one_one (X : TopCat.{w}) (k : Type w) [CommRing k]
+    (φ ψ : ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X 1 ⟶ 𝟙_ (ModuleCat.{w} k))
+    (σ : (toSSet.obj X) _⦋2⦌) :
+    TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) 2
+        (TauCeti.ChainComplex.cupCochain k (X.alexanderWhitneyDiagonal (λ_ _).inv) (λ_ _).hom
+          1 1 2 rfl φ ψ) σ =
+      TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) 1 φ ((toSSet.obj X).δ 2 σ) *
+        TauCeti.cochainValuesEquiv k (ModuleCat.of k k) (toSSet.obj X) 1 ψ
+          ((toSSet.obj X).δ 0 σ) := by
+  -- The front and back edges of a `2`-simplex.
+  have h₀ : SimplexCategory.subinterval (n := 2) 0 1 (by omega) = SimplexCategory.δ 2 := by
+    ext i; fin_cases i <;> rfl
+  have h₁ : SimplexCategory.subinterval (n := 2) 1 1 (by omega) = SimplexCategory.δ 0 := by
+    ext i; fin_cases i <;> rfl
+  rw [cochainValuesEquiv_cupCochain_alexanderWhitneyDiagonal, h₀, h₁, SimplicialObject.δ_def,
+    SimplicialObject.δ_def]
+
 section Cohomology
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
@@ -265,6 +315,25 @@ lemma singularCup_precomp (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
       Category.assoc]
   rw [singularCup, singularCup, hD]
   exact TauCeti.ChainComplex.cup_precomp _ _ _ _ _ _ _ _ _
+
+/-- The cup product along `u ≫ (f ⊗ g)` is the cup product along `u` of the classes pulled back
+along the changes of chain coefficients `f` and `g` of the two factors. -/
+lemma singularCup_comp_tensorHom (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {R' S' : C} (u : T ⟶ R' ⊗ S') (f : R' ⟶ R) (g : S' ⟶ S)
+    (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology S k N q) :
+    X.singularCup k (u ≫ (f ⊗ₘ g)) μ p q n h a b =
+      X.singularCup k u μ p q n h (X.singularCohomologyChainCoefficientMap k M f p a)
+        (X.singularCohomologyChainCoefficientMap k N g q b) := by
+  have h' := TauCeti.ChainComplex.cup_naturality (k := k) (X.alexanderWhitneyDiagonal
+    (u ≫ (f ⊗ₘ g))) μ (X.alexanderWhitneyDiagonal u) (𝟙 _) _ _
+    -- The tensor product `⊗ₘ` of chain maps is `HomologicalComplex.tensorHom` by definition.
+    (by rw [Category.id_comp, alexanderWhitneyDiagonal_comp_tensorHom]; rfl) p q n h a b
+  rw [singularCup, singularCup]
+  refine .trans ?_ h'.symm
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyMap_id
+    (((toSSet.obj X).chainComplex T).linearYonedaObj k P) n) _).symm
 
 section Laws
 

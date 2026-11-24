@@ -25,6 +25,9 @@ identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
 
 ## Main results
 
+* `Module.Basis.coe_finTwoProd`: the vectors of the basis `Module.Basis.finTwoProd R`.
+* `Module.Basis.det_finTwoProd_apply`: the determinant of two vectors of `R × R` with respect to
+  the basis `Module.Basis.finTwoProd R`.
 * `LinearMap.det_finTwoProd`: the determinant of an endomorphism of `R × R`.
 * `LinearMap.det_mul_wedge_finTwoProd`: an endomorphism of `R × R` multiplies the wedge product
   of two linear forms by its determinant.
@@ -33,6 +36,23 @@ identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
 -/
 
 public section
+
+namespace Module.Basis
+
+/-- The basis `Module.Basis.finTwoProd R` consists of the standard basis vectors `(1, 0)` and
+`(0, 1)`. -/
+theorem coe_finTwoProd (R : Type*) [Semiring R] :
+    ⇑(Module.Basis.finTwoProd R) = ![((1 : R), (0 : R)), (0, 1)] := by
+  ext i : 1
+  fin_cases i <;> simp
+
+/-- The determinant of two vectors `v` and `w` of `R × R` with respect to the basis
+`Module.Basis.finTwoProd R` is the `2 × 2` determinant `v₁ w₂ - v₂ w₁`. -/
+theorem det_finTwoProd_apply {R : Type*} [CommRing R] (v w : R × R) :
+    (Module.Basis.finTwoProd R).det ![v, w] = v.1 * w.2 - v.2 * w.1 := by
+  simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, mul_comm]
+
+end Module.Basis
 
 namespace LinearMap
 

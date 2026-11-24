@@ -96,6 +96,24 @@ lemma ω_zero_right (i₁ i₂ : I) : c.ω i₁ i₂ 0 = 1 := by
 
 end TwistingCocycle
 
+namespace TwistingCocycle
+
+variable {I : Type*} [AddGroup I] {R : Type*} [Monoid R] (c : TwistingCocycle I R)
+
+/-- The values of a twisting cocycle on a group at `(i, -i, i)` and `(-i, i, -i)` are mutually
+inverse: this is the cocycle identity at `(-i, i, -i, i)`, using the normalization. -/
+lemma ω_mul_ω_neg_eq_one (i : I) : c.ω i (-i) i * c.ω (-i) i (-i) = 1 := by
+  simpa using (c.cocycle (-i) i (-i) i).symm
+
+/-- The inverses of the values of a twisting cocycle on a group at `(i, -i, i)` and `(-i, i, -i)`
+multiply to `1` in `R`. -/
+lemma inv_ω_mul_inv_ω_neg (i : I) :
+    (((c.ω i (-i) i)⁻¹ : Rˣ) : R) * ((c.ω (-i) i (-i))⁻¹ : Rˣ) = 1 := by
+  rw [← Units.val_mul, ← mul_inv_rev, mul_eq_one_comm.1 (c.ω_mul_ω_neg_eq_one i), inv_one,
+    Units.val_one]
+
+end TwistingCocycle
+
 /-- A multiplicative `3`-cocycle `f` of a monoid `G` acting trivially on `Rˣ`, in the sense of
 `TauCeti.groupCohomology.IsMulCocycle₃`, which is normalized in the middle variable, as a twisting
 cocycle on `Additive G`. By `TauCeti.groupCohomology.exists_normalized_of_isMulCocycle₃`, every
