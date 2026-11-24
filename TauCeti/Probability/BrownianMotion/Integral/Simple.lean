@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 /-!
@@ -199,17 +200,17 @@ theorem tendsto_eLpNorm_simpleGains_l2Integral (hW : IsFilteredPreBrownianReal �
           (Function.uncurry H)))) 2 P) l (𝓝 0) := by
   classical
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hev_prod : ∀ᶠ m in l,
+      MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) 2
+        ((timeMeasure T).prod P) :=
+    TauCeti.eventually_memLp_of_tendsto_eLpNorm_sub ENNReal.zero_ne_top hH₂ hlim
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   let hHT := (ℱ.memLp_predictableMeasure_iff P hH T 2).2 hH₂
   have hev : ∀ᶠ m in l,
       MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) 2
-        (ℱ.predictableMeasure P T) := by
-    filter_upwards [hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)] with m hm
-    have hsub : MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m)) -
-        Function.uncurry H) 2 ((timeMeasure T).prod P) :=
-      hm
-    exact (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding (ha m))
-      T 2).2 (by simpa only [sub_add_cancel] using hsub.add hH₂)
+        (ℱ.predictableMeasure P T) :=
+    hev_prod.mono fun m hm ↦ (ℱ.memLp_predictableMeasure_iff P
+      (Finance.isStronglyPredictable_simpleHolding (ha m)) T 2).2 hm
   let g (m : ι) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
     if h : MemLp (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m))) 2
         (ℱ.predictableMeasure P T) then

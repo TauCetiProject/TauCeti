@@ -9,8 +9,7 @@ public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
-import Mathlib.Analysis.Normed.Group.FunctionSeries
-import Mathlib.Topology.Algebra.IsUniformGroup.Basic
+import TauCeti.Analysis.Normed.Group.FunctionSeries
 
 /-!
 # Continuous adapted limits from summable uniform errors
@@ -55,22 +54,6 @@ namespace TauCeti.Probability
 variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   [NormedAddCommGroup E] [CompleteSpace E]
   {ℱ : Filtration ℝ≥0 mΩ} {X : ℕ → ℝ≥0 → Ω → E} {u : ℕ → ℝ}
-
-private theorem tendstoUniformlyOn_limUnder_of_eventually {α : Type*}
-    {f : ℕ → α → E} {s : Set α} (hu : Summable u)
-    (hbound : ∀ᶠ n in atTop, ∀ x ∈ s, ‖f (n + 1) x - f n x‖ ≤ u n) :
-    TendstoUniformlyOn f (fun x ↦ limUnder atTop (fun n ↦ f n x)) atTop s := by
-  have hs := tendstoUniformlyOn_tsum_nat_eventually
-    (f := fun n x ↦ f (n + 1) x - f n x) (s := s) hu hbound
-  have hconst : TendstoUniformlyOn (fun (_ : ℕ) x ↦ f 0 x) (fun x ↦ f 0 x) atTop s := by
-    intro V hV
-    exact Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hV
-  have ht : TendstoUniformlyOn f (fun x ↦ (∑' n, (f (n + 1) x - f n x)) + f 0 x) atTop s := by
-    have htel (n : ℕ) (x : α) :
-        ∑ i ∈ Finset.range n, (f (i + 1) x - f i x) = f n x - f 0 x :=
-      Finset.sum_range_sub (fun i ↦ f i x) n
-    simpa only [Pi.add_def, htel, sub_add_cancel] using hs.add hconst
-  exact ht.congr_right fun x hx ↦ (ht.tendsto_at hx).limUnder_eq.symm
 
 /-- Select a continuous adapted limit from approximants with summable uniform increment errors.
 Only almost-sure continuity is required of each approximant. The conclusion uses one common

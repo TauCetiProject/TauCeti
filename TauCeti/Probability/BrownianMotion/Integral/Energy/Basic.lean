@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
+public import Mathlib.Probability.Martingale.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.Order.Monotone.Basic
+import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 
 /-!
@@ -172,5 +174,29 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     hW.eLpNorm_simpleGains hτ ha ha₂,
     eLpNorm_two_sq_eq_lintegral (hholding.mono ℱ.predictable_le_prod).aestronglyMeasurable]
   simp only [Function.uncurry_def]
+
+/-- The gains of a left-measurable simple holding in `L²((timeMeasure T).prod P)` agree on
+`[0, T]` with an almost surely continuous martingale, realized as the gains of a clipped holding
+whose heights are all square integrable. -/
+theorem exists_martingale_simpleGains_eq_on_Iic
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
+    {T : ℝ≥0} (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hK : MemLp (Function.uncurry (simpleHolding τ n a)) 2 ((timeMeasure T).prod P)) :
+    ∃ M : ℝ≥0 → Ω → ℝ, Martingale M ℱ P ∧ (∀ᵐ ω ∂P, Continuous fun t ↦ M t ω) ∧
+      ∀ t ≤ T, ∀ ω, M t ω = simpleGains τ n a W t ω := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨a', ha', ha'₂, -, hgain⟩ :=
+    exists_memLp_simpleHolding_simpleGains_eq_on_Iic hτ ha hK
+  refine ⟨simpleGains τ n a' W, hW.martingale.simpleGains hτ ha' fun j hj t ↦ ?_,
+    hWc.mono fun _ hω ↦ continuous_simpleGains hω, hgain W⟩
+  by_cases hjt : τ j ≤ t
+  · rw [min_eq_left hjt]
+    exact (hW.memLp_mul_sub (le_min (hτ hj.le hj (Nat.le_succ j)) hjt)
+      (ha' j hj) (ha'₂ j hj)).integrable one_le_two
+  · have htj : t ≤ τ j := (not_le.1 hjt).le
+    simp only [min_eq_right htj, min_eq_right (htj.trans (hτ hj.le hj (Nat.le_succ j))),
+      sub_self, mul_zero]
+    exact integrable_zero _ _ _
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

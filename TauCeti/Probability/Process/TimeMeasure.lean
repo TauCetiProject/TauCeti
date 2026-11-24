@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Measure.NNReal
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -88,11 +89,10 @@ instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
 
 /-- Every finite-horizon time measure gives singletons zero mass. -/
-instance (T : ℝ≥0) : NullSingletonClass (timeMeasure T) where
-  measure_singleton t := by
-    rw [timeMeasure_apply T (measurableSet_singleton t)]
-    exact measure_mono_null (fun _ ⟨_, hy, hyx⟩ ↦ hyx ▸ congrArg ((↑) : ℝ≥0 → ℝ) hy.1)
-      Real.volume_singleton
+instance (T : ℝ≥0) : NullSingletonClass (timeMeasure T) :=
+  have h : timeMeasure T = TauCeti.nnvolume.restrict (Ioc 0 T) := by
+    rw [timeMeasure_def, TauCeti.nnvolume_def]
+  h ▸ inferInstanceAs (NullSingletonClass (TauCeti.nnvolume.restrict (Ioc 0 T)))
 
 /-- Almost every time lies in the finite horizon, excluding the origin. -/
 theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ Ioc 0 T := by

@@ -261,7 +261,7 @@ theorem dyadicStopIndex_coe (d : ℕ) (T : ℝ≥0) (r : ℝ≥0) :
   rw [← WithTop.coe_zero, dyadicStopIndex_coe]; simp
 
 /-- The horizon-clipped dyadic grid is nondecreasing in the step index. -/
-theorem dyadicGrid_mono (d : ℕ) (T : ℝ≥0) : Monotone (dyadicGrid d T) :=
+theorem monotone_dyadicGrid (d : ℕ) (T : ℝ≥0) : Monotone (dyadicGrid d T) :=
   fun _ _ hab ↦ min_le_min_right T (div_le_div_of_nonneg_right (Nat.cast_le.2 hab) (by positivity))
 
 /-- The horizon-clipped dyadic grid starts at zero. -/
@@ -285,7 +285,8 @@ theorem dyadicGrid_of_lt (d : ℕ) (T : ℝ≥0) {k : ℕ} (hk : k < dyadicCount
 /-- From `dyadicCount d T` onwards, `dyadicGrid d T` stays clamped at `T`. -/
 theorem dyadicGrid_of_ge (d : ℕ) (T : ℝ≥0) {k : ℕ} (hk : dyadicCount d T ≤ k) :
     dyadicGrid d T k = T :=
-  le_antisymm (dyadicGrid_le d T k) ((dyadicGrid_count d T).symm.trans_le (dyadicGrid_mono d T hk))
+  le_antisymm (dyadicGrid_le d T k)
+    ((dyadicGrid_count d T).symm.trans_le (monotone_dyadicGrid d T hk))
 
 /-- Every step of `dyadicGrid d T` has length at most `2⁻ᵈ`. -/
 theorem dyadicGrid_add_one_sub_le (d : ℕ) (T : ℝ≥0) (k : ℕ) :
@@ -315,7 +316,7 @@ theorem dyadicStopIndex_le (d : ℕ) (T : ℝ≥0) (u : WithTop ℝ≥0) :
     rcases le_total ⌈r * 2 ^ d⌉₊ (dyadicCount d T) with hle | hge
     · simp [min_eq_left hle, dyadicGrid, min_comm]
     · rw [min_eq_right hge, dyadicGrid_count, min_eq_left
-        (le_min_iff.1 ((dyadicGrid_count d T).symm.trans_le (dyadicGrid_mono d T hge))).1]
+        (le_min_iff.1 ((dyadicGrid_count d T).symm.trans_le (monotone_dyadicGrid d T hge))).1]
 
 /-- Evaluating any process at `dyadicGrid d T (dyadicStopIndex d T (τ ω))` equals the process
 stopped at `dyadicCeilTime d ∘ τ` at horizon `T`. -/
@@ -347,7 +348,7 @@ theorem coe_le_dyadicCeilTime_iff_of_mem_Ioc (d : ℕ) (T : ℝ≥0) (u : WithTo
       (dyadicGrid d T k : WithTop ℝ≥0) < dyadicCeilTime d u :=
   ⟨fun hs_le ↦ (WithTop.coe_lt_coe.2 hs.1).trans_le hs_le, fun hlt ↦
     ((WithTop.le_untopA_iff ((min_le_left _ _).trans_lt (WithTop.coe_lt_top T)).ne).1 <|
-      hs.2.trans ((dyadicGrid_mono d T ((dyadicGrid_lt_dyadicCeilTime_iff d T u hk).1 hlt))
+      hs.2.trans ((monotone_dyadicGrid d T ((dyadicGrid_lt_dyadicCeilTime_iff d T u hk).1 hlt))
         |>.trans_eq (dyadicGrid_dyadicStopIndex d T u))).trans (min_le_right _ _)⟩
 
 end TauCeti

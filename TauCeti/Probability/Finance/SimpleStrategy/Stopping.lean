@@ -51,7 +51,7 @@ theorem simpleHolding_dyadicGrid_ite_lt (d : ℕ) (T : ℝ≥0) (τ : Ω → Wit
   obtain ⟨k, hk, hsk⟩ := exists_lt_mem_Ioc_of_mem_Ioc
     (by simpa only [dyadicGrid_zero, dyadicGrid_count] using hs :
       s ∈ Ioc (dyadicGrid d T 0) (dyadicGrid d T (dyadicCount d T)))
-  rw [simpleHolding_of_mem_Ioc ((dyadicGrid_mono d T).monotoneOn _) hk hsk]
+  rw [simpleHolding_of_mem_Ioc ((monotone_dyadicGrid d T).monotoneOn _) hk hsk]
   simp only [coe_le_dyadicCeilTime_iff_of_mem_Ioc d T (τ ω) hk hsk]
 
 /-- At every time `s ≤ T`, the elementary gains of the unit cutoff strategy on `dyadicGrid d T`
@@ -114,9 +114,9 @@ theorem exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime {τ : Ω 
     have hu_le : ‖simpleHolding q (dyadicCount d T) u (r (i + 1)) ω‖ ≤ 1 := by
       by_cases hq : r (i + 1) ∈ Ioc (q 0) (q (dyadicCount d T))
       · obtain ⟨k, hk, hkq⟩ := exists_lt_mem_Ioc_of_mem_Ioc hq
-        rw [simpleHolding_of_mem_Ioc ((dyadicGrid_mono d T).monotoneOn _) hk hkq]
+        rw [simpleHolding_of_mem_Ioc ((monotone_dyadicGrid d T).monotoneOn _) hk hkq]
         dsimp only [u]; split_ifs <;> simp
-      · rw [simpleHolding_of_notMem_Ioc ((dyadicGrid_mono d T).monotoneOn _) hq]; simp
+      · rw [simpleHolding_of_notMem_Ioc ((monotone_dyadicGrid d T).monotoneOn _) hq]; simp
     have ha_le : ‖simpleHolding g n a (r (i + 1)) ω‖ ≤ ∑ j ∈ range n, ‖a j ω‖ := by
       rw [simpleHolding_def]
       exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_indicator_le_norm_self _ _)
@@ -128,7 +128,7 @@ theorem exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime {τ : Ω 
     · rw [hhold, sum_product, ← simpleHolding_mul_eq_sum,
         simpleHolding_dyadicGrid_ite_lt d T τ ⟨hs0, hs⟩]; split_ifs <;> simp
   · rw [hgains, sum_product,
-      ← simpleGains_simpleGains_eq_sum hg ((dyadicGrid_mono d T).monotoneOn _),
+      ← simpleGains_simpleGains_eq_sum hg ((monotone_dyadicGrid d T).monotoneOn _),
       simpleGains_dyadicGrid_ite_lt d T τ hs, simpleGains_of_le hg zero_le, sub_zero]
 
 end TauCeti.Finance

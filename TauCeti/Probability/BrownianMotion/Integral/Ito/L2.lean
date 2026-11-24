@@ -13,6 +13,7 @@ import Mathlib.Topology.Sequences
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
@@ -256,31 +257,6 @@ private theorem integral_sub_sq_eq_integral_indicator_Ioc
     Measure.restrict_restrict (measurableSet_Ioc.prod MeasurableSet.univ), hinter,
     ← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
 
-/-- Integrals of an integrable function over thin slabs `(min (u n) t, max (u n) t] × Ω` vanish
-as `u n → t`. -/
-private theorem tendsto_integral_indicator_Ioc_prod_univ [IsFiniteMeasure P]
-    {f : ℝ≥0 × Ω → ℝ} {T : ℝ≥0} (hf : Integrable f ((timeMeasure T).prod P))
-    {u : ℕ → ℝ≥0} {t : ℝ≥0} (hu : Tendsto u atTop (𝓝 t)) :
-    Tendsto (fun n ↦ ∫ p, (Ioc (min (u n) t) (max (u n) t) ×ˢ Set.univ).indicator f p
-      ∂(timeMeasure T).prod P) atTop (𝓝 0) := by
-  have hprod_null : ((timeMeasure T).prod P) ({t} ×ˢ Set.univ) = 0 := by
-    rw [Measure.prod_prod, measure_singleton, zero_mul]
-  have hpt : ∀ᵐ p ∂(timeMeasure T).prod P, Tendsto (fun n ↦
-      (Ioc (min (u n) t) (max (u n) t) ×ˢ Set.univ).indicator f p) atTop (𝓝 0) := by
-    have hae : ∀ᵐ p : ℝ≥0 × Ω ∂(timeMeasure T).prod P, p.1 ≠ t := by
-      simpa [ae_iff, Set.prod_univ, Set.preimage] using hprod_null
-    filter_upwards [hae] with p hp
-    apply tendsto_const_nhds.congr'
-    rcases lt_or_gt_of_ne hp with hlt | hgt
-    · filter_upwards [hu.eventually (eventually_gt_nhds hlt)] with n hn
-      simp [not_lt.mpr (le_min hn.le hlt.le)]
-    · filter_upwards [hu.eventually (eventually_lt_nhds hgt)] with n hn
-      simp [not_le.mpr (max_lt hn hgt)]
-  simpa only [integral_zero] using tendsto_integral_of_dominated_convergence
-    (f := fun _ ↦ (0 : ℝ)) (fun p ↦ ‖f p‖)
-    (fun n ↦ hf.aestronglyMeasurable.indicator (measurableSet_Ioc.prod MeasurableSet.univ))
-    hf.norm (fun n ↦ Eventually.of_forall fun p ↦ norm_indicator_le_norm_self _ _) hpt
-
 /-- **Finite-horizon `L²(P)` continuity of the Itô integral.** When `H` has finite expected square
 energy on `(0, T]`, the map taking `t ∈ [0, T]` to the `L²(P)` class of `I t` is continuous. -/
 theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -301,8 +277,8 @@ theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
   have hlim_int : Tendsto (fun n ↦ ∫ ω, (I (u n) ω - I t ω) ^ 2 ∂P) atTop (𝓝 0) := by
     simp_rw [fun n ↦ hI.integral_sub_sq_eq_integral_indicator_Ioc hW
       (u n).property t.property hH]
-    exact tendsto_integral_indicator_Ioc_prod_univ hmem_sq
-      (continuous_subtypeVal.continuousAt.tendsto.comp hu)
+    exact TauCeti.tendsto_integral_indicator_Ioc_prod_univ hmem_sq
+      (continuous_subtypeVal.continuousAt.tendsto.comp hu) (measure_singleton _)
   have hlim_edist : Tendsto (fun n ↦ ENNReal.ofReal √(∫ ω, (I (u n) ω - I t ω) ^ 2 ∂P))
       atTop (𝓝 0) := by
     have hcont : Tendsto (fun x ↦ ENNReal.ofReal √x) (𝓝 0) (𝓝 0) := by

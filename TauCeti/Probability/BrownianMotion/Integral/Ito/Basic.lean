@@ -393,9 +393,7 @@ theorem tendstoInMeasure_simpleGains_of_le (hW : IsFilteredPreBrownianReal ℱ W
     TendstoInMeasure P (fun i ↦ Finance.simpleGains (τ i) (n i) (a i) W v) l (I v) :=
   hI.tendstoInMeasure_simpleGains hW hτ ha fun ε hε ↦
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hE ε hε) (fun _ ↦ zero_le)
-      fun _ ↦ measure_mono fun _ hω ↦ hω.trans <| lintegral_mono' (by
-        rw [← min_eq_left hv, ← timeMeasure_restrict]; exact Measure.restrict_le_self)
-        le_rfl
+      fun _ ↦ measure_mono fun _ hω ↦ hω.trans <| lintegral_mono' (timeMeasure_mono hv) le_rfl
 
 /-- **Predictable `ℱ s`-multiplier rule on `(s, ∞)`.** Against a filtered pre-Brownian motion,
 multiplying `H` on `(s, ∞)` by an `ℱ s`-measurable `ξ` yields the Itô integral

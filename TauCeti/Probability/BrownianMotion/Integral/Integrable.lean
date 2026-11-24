@@ -27,9 +27,8 @@ domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-meas
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
 
 Time measure on `(0,T]` is `TauCeti.Probability.timeMeasure T`, the restriction to `(0,T]` of
-the pullback Lebesgue measure on `ℝ≥0`. The domain definitions, the conjunction characterizations
-(`brownianIntegrable_iff_timeMeasure`, `locallyBrownianIntegrable_iff_timeMeasure`), and the
-bridge to `Filtration.predictableMeasure` (`BrownianIntegrable.memLp_predictableMeasure`) use
+the pullback Lebesgue measure on `ℝ≥0`. Both domain definitions and the bridge to
+`Filtration.predictableMeasure` (`BrownianIntegrable.memLp_predictableMeasure`) use
 `TauCeti.Probability.timeMeasure` directly. Pathwise membership uses native `MemLp`, so square
 energy means a finite nonnegative lower integral, never the default value of a divergent Bochner
 integral.
@@ -234,19 +233,6 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
-
-/-- `BrownianIntegrable` as a conjunction of predictability and `L²(timeMeasure · × P)`. -/
-theorem brownianIntegrable_iff_timeMeasure :
-    BrownianIntegrable ℱ P H ↔ IsStronglyPredictable ℱ H ∧
-      ∀ t : ℝ≥0, MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P) :=
-  ⟨fun h ↦ ⟨h.isStronglyPredictable, h.memLp⟩, fun ⟨hp, hm⟩ ↦ ⟨hp, hm⟩⟩
-
-/-- `LocallyBrownianIntegrable` expressed as a conjunction of predictability and pathwise
-`L²(timeMeasure ·)`. -/
-theorem locallyBrownianIntegrable_iff_timeMeasure :
-    LocallyBrownianIntegrable ℱ P H ↔ IsStronglyPredictable ℱ H ∧
-      ∀ᵐ ω ∂P, ∀ t : ℝ≥0, MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure t) :=
-  ⟨fun h ↦ ⟨h.isStronglyPredictable, h.ae_memLp⟩, fun ⟨hp, hm⟩ ↦ ⟨hp, hm⟩⟩
 
 /-- Every `BrownianIntegrable` integrand lies in `L²(ℱ.predictableMeasure P t)` at each `t`. -/
 theorem BrownianIntegrable.memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :

@@ -114,8 +114,7 @@ theorem brownianIntegrable_ite_le_energyLocalizer [IsFiniteMeasure P]
     (hH : LocallyBrownianIntegrable ℱ P H) (C : ℝ≥0) :
     BrownianIntegrable ℱ P
       (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H C ω then H t ω else 0) := by
-  refine brownianIntegrable_iff_timeMeasure.2
-    ⟨hH.isStronglyPredictable.ite_le
+  refine ⟨hH.isStronglyPredictable.ite_le
       (hH.isStronglyPredictable.isStoppingTime_energyLocalizer nnvolume C), fun T ↦
       (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer C).memLp T
         |>.ae_eq ?_⟩

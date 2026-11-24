@@ -602,4 +602,43 @@ theorem IsFilteredPreBrownianReal.measure_exists_le_abs_simpleGains_sub_gt_le
             Finance.simpleHolding τ₂ n₂ a₂ s ω‖ₑ ^ 2 ∂timeMeasure T} := by
       simp_rw [hhold]
 
+/-- Two families of left-measurable simple holdings whose pathwise square-energy errors against a
+predictable integrand `H` on `(0, T]` converge to zero in probability along `l₁` and `l₂` have
+elementary gains uniformly close on `[0, T]` in outer probability along `l₁ ×ˢ l₂`. -/
+theorem IsFilteredPreBrownianReal.tendsto_measure_exists_le_norm_simpleGains_sub_prod
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω)
+    {ι₁ ι₂ : Type*} {l₁ : Filter ι₁} {l₂ : Filter ι₂} {T : ℝ≥0}
+    {H : ℝ≥0 → Ω → ℝ}
+    {n₁ : ι₁ → ℕ} {τ₁ : ι₁ → ℕ → ℝ≥0} {a₁ : ι₁ → ℕ → Ω → ℝ}
+    {n₂ : ι₂ → ℕ} {τ₂ : ι₂ → ℕ → ℝ≥0} {a₂ : ι₂ → ℕ → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H)
+    (hτ₁ : ∀ i, MonotoneOn (τ₁ i) (Iic (n₁ i)))
+    (ha₁ : ∀ i j, j < n₁ i → StronglyMeasurable[ℱ (τ₁ i j)] (a₁ i j))
+    (hτ₂ : ∀ i, MonotoneOn (τ₂ i) (Iic (n₂ i)))
+    (ha₂ : ∀ i j, j < n₂ i → StronglyMeasurable[ℱ (τ₂ i j)] (a₂ i j))
+    (hE₁ : ∀ δ : ℝ≥0∞, 0 < δ → Filter.Tendsto (fun i ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ₁ i) (n₁ i) (a₁ i) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T}) l₁ (nhds 0))
+    (hE₂ : ∀ δ : ℝ≥0∞, 0 < δ → Filter.Tendsto (fun i ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ₂ i) (n₂ i) (a₂ i) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure T}) l₂ (nhds 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    Filter.Tendsto (fun p : ι₁ × ι₂ ↦ P {ω | ∃ t ≤ T, ε <
+      ‖Finance.simpleGains (τ₁ p.1) (n₁ p.1) (a₁ p.1) W t ω -
+        Finance.simpleGains (τ₂ p.2) (n₂ p.2) (a₂ p.2) W t ω‖})
+      (l₁ ×ˢ l₂) (nhds 0) := by
+  refine tendsto_measure_of_le_ofReal_div_sq_add (ε := ε) (fun γ hγ ↦ ?_) fun γ _ p ↦ by
+    simpa only [Real.norm_eq_abs] using
+      hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ₁ p.1) (hτ₂ p.2)
+        (ha₁ p.1) (ha₂ p.2) T hε
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (tendsto_measure_lintegral_enorm_sub_sq (l := l₁ ×ˢ l₂)
+      (f := fun p ↦ Finance.simpleHolding (τ₁ p.1) (n₁ p.1) (a₁ p.1))
+      (g := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (h := fun _ ↦ H)
+      (.of_forall fun p ↦ .of_forall fun ω ↦
+        (Finance.isStronglyPredictable_simpleHolding (ha₁ p.1)).aemeasurable_enorm_sub_pow hH ω 2)
+      (fun _ hγ ↦ (hE₁ _ hγ).comp Filter.tendsto_fst)
+      (fun _ hγ ↦ (hE₂ _ hγ).comp Filter.tendsto_snd) (ENNReal.ofReal_pos.2 hγ))
+    (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ (hω : ENNReal.ofReal γ < _) ↦ hω.le
+
 end TauCeti.Probability

@@ -24,8 +24,9 @@ increase the Lebesgue integral of its extended norm beyond that of `u` over `s`.
 * `TauCeti.lintegral_enorm_mul_le_setLIntegral_of_support_subset`: `∫ |χ u| ≤ ∫_s |u|`.
 * `TauCeti.tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one`: cutoffs with values in `[0, 1]`
   that are eventually `1` at almost every point recover an integrable function in `L¹`.
-* `TauCeti.tendsto_lintegral_ite_le_rpow_of_tendsto_of_le` / `..._pow_...`: `WithTop` cutoffs
-  converging from above along a countably generated filter tend to zero in lower `p`-th power norm.
+* `TauCeti.tendsto_lintegral_ite_le_rpow_of_tendsto_of_le` / `..._pow_...`: for `WithTop` cutoffs
+  `v` converging to `u` from above along a countably generated filter, the lower integral of the
+  `p`-th power of the difference between the two truncated functions tends to zero.
 * `TauCeti.tendsto_measure_lintegral_ite_le_rpow_of_tendsto_measure_le` / `..._pow_...`: random
   `WithTop` cutoffs exceeding `T` in measure yield cutoff errors tending to zero in measure.
 -/
@@ -78,8 +79,9 @@ variable {β ι E : Type*} [LinearOrder ι] [MeasurableSpace ι] [SeminormedAddC
   {l : Filter β} {μ : Measure ι}
 
 /-- Along any countably generated filter `l` on which `v` converges to `u` eventually from above,
-the lower `p`-th power norm error (`0 < p`) between the `[0, v a]` and `[0, u]` cutoffs of `f`
-tends to zero whenever `s ↦ ‖f s‖ₑ ^ p` is `μ`-a.e. measurable with finite lower integral. -/
+the lower integral of the `p`-th power (`0 < p`) of the difference between the cutoffs of `f` on
+the initial segments `{s | ↑s ≤ v a}` and `{s | ↑s ≤ u}` tends to zero whenever `s ↦ ‖f s‖ₑ ^ p`
+is `μ`-a.e. measurable with finite lower integral. -/
 theorem tendsto_lintegral_ite_le_rpow_of_tendsto_of_le [TopologicalSpace ι] [OrderTopology ι]
     [OpensMeasurableSpace ι] [l.IsCountablyGenerated] {f : ι → E} {v : β → WithTop ι}
     {u : WithTop ι} {p : ℝ} (hp : 0 < p) (hv : Tendsto v l (𝓝 u)) (hle : ∀ᶠ a in l, u ≤ v a)
