@@ -16,7 +16,8 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 
 This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)` for
 `0 ≤ γ ≤ 1` of the `1/2`-Hölder bound for the square root, the derivatives of `x ↦ √(x² + p)`,
-`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)` and `y ↦ α / (β y + √(y² + c))`, that the radial
+`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)` and `y ↦ α / (β y + √(y² + c))`, that
+`1 / √(1 + f²)` is as smooth as `f`, that the radial
 profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`, and the
 Gaussian normalization `√(4 / π) = 2 / √π`. The elementary square-root bounds, identities and
 limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`.
@@ -25,6 +26,7 @@ limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt
 
 * `Real.abs_sqrt_sub_sqrt_mul_max_rpow_le`: for `0 ≤ γ ≤ 1`, the weighted bound
   `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`.
+* `ContDiff.inv_sqrt_one_add_sq`: `x ↦ 1 / √(1 + f(x)²)` is as smooth as `f`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 * `Real.hasDerivAt_sqrt_sq_add`, `Real.hasDerivAt_mul_add_sqrt_sq_add`: the derivatives of
@@ -88,6 +90,12 @@ theorem abs_sqrt_sub_sqrt_mul_max_rpow_le (t s : ℝ) {γ : ℝ} (hγ₀ : 0 ≤
     (rpow_le_rpow (abs_nonneg _) ?_ (by positivity))
   rw [sq_sqrt', sq_sqrt']
   exact abs_max_sub_max_le_abs t s 0
+
+/-- The function `x ↦ 1 / √(1 + f(x)²)` is as smooth as `f`. -/
+theorem _root_.ContDiff.inv_sqrt_one_add_sq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n fun x ↦ (√(1 + f x ^ 2))⁻¹ :=
+  ((contDiff_const.add (hf.pow 2)).sqrt fun _ ↦ by positivity).inv fun _ ↦ by positivity
 
 /-- The radial profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function `ψ` supported in `(0, ∞)` is
 `C^k`. -/

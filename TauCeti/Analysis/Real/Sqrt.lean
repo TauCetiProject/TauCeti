@@ -42,13 +42,14 @@ These bounds control scalar spectral factors of positive operators close to the 
 rest on the factorisation `|√x - √y| (√x + √y) = |x - y|` for nonnegative `x` and `y`.
 
 The modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, and
-`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. For `d ≠ 0` and `0 ≤ c`, a square factor cancels against its
-absolute value, `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`, as in changes of variables. For `p > 0` the
-substitution `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto `(0, ∞)`, and for `c > 0` the map
-`y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. For `a ≥ 0`, `{x | x² ≤ a}` is the
-interval `[-√a, √a]`, and for every `a`, `{x | a ≤ x²}` is a union of two rays. Finally, `c √u`
-tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when `c > 0`), and
-`α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`.
+`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. The map `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)`, and
+`y ↦ √(1 - y²) / y` recovers `|t|` from `1 / √(1 + t²)`. For `d ≠ 0` and `0 ≤ c`, a square
+factor cancels against its absolute value, `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`, as in changes of
+variables. For `p > 0` the substitution `t ↦ t + √(t² + p)` is positive and maps `ℝ` onto
+`(0, ∞)`, and for `c > 0` the map `y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. For
+`a ≥ 0`, `{x | x² ≤ a}` is the interval `[-√a, √a]`, and for every `a`, `{x | a ≤ x²}` is a union
+of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when
+`c > 0`), and `α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`.
 
 ## Main results
 
@@ -77,6 +78,10 @@ tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when `c >
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_sq_add_le_one`: for `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`.
+* `Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq`: `y ↦ y / √(1 - y²)` inverts
+  `t ↦ t / √(1 + t²)`.
+* `Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq`: `y ↦ √(1 - y²) / y` recovers `|t|` from
+  `1 / √(1 + t²)`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
@@ -339,6 +344,26 @@ theorem abs_div_sqrt_sq_add_le_one {p : ℝ} (hp : 0 ≤ p) (t : ℝ) :
     |t / √(t ^ 2 + p)| ≤ 1 := by
   rw [abs_div, abs_of_nonneg (sqrt_nonneg _)]
   exact div_le_one_of_le₀ (abs_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
+
+/-- The map `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)` on every real `t`. -/
+theorem mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq (t : ℝ) :
+    t * (√(1 + t ^ 2))⁻¹ / √(1 - (t * (√(1 + t ^ 2))⁻¹) ^ 2) = t := by
+  have hs : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (sqrt_pos.2 (by positivity))
+  have h : 1 - (t * (√(1 + t ^ 2))⁻¹) ^ 2 = (√(1 + t ^ 2))⁻¹ ^ 2 := by
+    rw [mul_pow, inv_pow, sq_sqrt (by positivity)]
+    field_simp
+    ring
+  rw [h, sqrt_sq hs.le, mul_div_assoc, div_self hs.ne', mul_one]
+
+/-- The map `y ↦ √(1 - y²) / y` recovers `|t|` from `1 / √(1 + t²)`, for every real `t`. -/
+theorem sqrt_one_sub_sq_div_inv_sqrt_one_add_sq (t : ℝ) :
+    √(1 - ((√(1 + t ^ 2))⁻¹) ^ 2) / (√(1 + t ^ 2))⁻¹ = |t| := by
+  have hs : 0 < (√(1 + t ^ 2))⁻¹ := inv_pos.2 (sqrt_pos.2 (by positivity))
+  have h : 1 - ((√(1 + t ^ 2))⁻¹) ^ 2 = (|t| * (√(1 + t ^ 2))⁻¹) ^ 2 := by
+    rw [mul_pow, inv_pow, sq_sqrt (by positivity), sq_abs]
+    field_simp
+    ring
+  rw [h, sqrt_sq (by positivity), mul_div_assoc, div_self hs.ne', mul_one]
 
 /-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
 theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
