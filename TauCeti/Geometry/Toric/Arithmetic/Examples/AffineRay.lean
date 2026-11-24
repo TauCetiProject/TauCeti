@@ -47,9 +47,7 @@ theorem affineRayArithmeticFan_cones {Cstar : Set (Fin 1 → ℝ)}
 theorem support_affineRayArithmeticFan {Cstar : Set (Fin 1 → ℝ)}
     (h : (affineRayCone : Set _) ⊆ Cstar) :
     (affineRayArithmeticFan h).support = affineRayCone := by
-  rw [← support_affineRayFan]
-  ext
-  simp only [ArithmeticFan.mem_support, affineRayArithmeticFan_cones, Fan.mem_support]
+  rw [affineRayArithmeticFan, Fan.support_toArithmeticFan, support_affineRayFan]
 
 /-- The positive-ray system is complete exactly when the rational closure of the positivity cone
 is the closed positive ray. In particular it is complete for `Cstar = ℝ_{≥0}`, and not complete
@@ -70,7 +68,6 @@ theorem not_isComplete_affineRayArithmeticFan_univ :
   rw [isComplete_affineRayArithmeticFan_iff]
   intro h
   have : (-1 : Fin 1 → ℝ) ∈ (affineRayCone : Set (Fin 1 → ℝ)) := h ▸ Set.mem_univ _
-  simp at this
-  linarith
+  norm_num at this
 
 end TauCeti.Toric

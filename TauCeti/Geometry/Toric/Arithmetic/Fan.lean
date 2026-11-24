@@ -124,19 +124,14 @@ theorem inf_mem (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) : σ ⊓ τ ∈ 
 theorem bot_mem (hσ : σ ∈ Φ.cones) : (⊥ : PointedCone ℝ V) ∈ Φ.cones :=
   Φ.mem_of_isFaceOf hσ (Φ.isToricCone hσ).salient.bot_isFaceOf
 
-omit [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] in
-/-- Mapping a cone by a product of linear automorphisms maps it by each factor in turn. -/
-private theorem map_mul (σ : PointedCone ℝ V) (g h : V ≃ₗ[ℝ] V) :
-    σ.map ((g * h : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V) = (σ.map (h : V →ₗ[ℝ] V)).map (g : V →ₗ[ℝ] V) := by
-  rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, PointedCone.map_map]
-
 /-- A cone belongs to the system exactly when one of its `Γ`-translates does. -/
 @[simp]
 theorem map_mem_iff {g : V ≃ₗ[ℝ] V} (hg : g ∈ Γ) :
     σ.map (g : V →ₗ[ℝ] V) ∈ Φ.cones ↔ σ ∈ Φ.cones := by
   refine ⟨fun h ↦ ?_, fun h ↦ Φ.map_mem hg h⟩
   have h' := Φ.map_mem (inv_mem hg) h
-  rwa [← map_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one, PointedCone.map_id] at h'
+  rwa [← PointedCone.map_linearEquiv_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one,
+    PointedCone.map_id] at h'
 
 /-! ### Local finiteness -/
 
@@ -374,7 +369,7 @@ private theorem exists_finite_orbit_representatives_of_isFiniteRelIndex
     group
   refine ⟨τ.map ((((QuotientGroup.mk g⁻¹ : Γ ⧸ H).out⁻¹ : Γ) : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V),
     Set.mem_biUnion hτ ⟨_, rfl⟩, (h : Γ), Subgroup.mem_subgroupOf.1 h.property, ?_⟩
-  rw [← map_mul, ← Subgroup.coe_mul, ← hgh]
+  rw [← PointedCone.map_linearEquiv_mul, ← Subgroup.coe_mul, ← hgh]
 
 /-- An arithmetic cone system for `Γ` is one for every subgroup `Γ'` of finite index in `Γ`, with
 the same cones: each `Γ`-orbit splits into finitely many `Γ'`-orbits. -/
