@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Conway.One
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Golay
+public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionB.Naturality
 public import Mathlib.GroupTheory.SemidirectProduct
 
 /-!
@@ -79,19 +80,12 @@ namespace Co0
 private def wordSign (c : Fin 24 → ZMod 2) (i : Fin 24) : ℤˣ :=
   if c i = 0 then 1 else -1
 
-/-- A rational vector of the Golay Construction B lattice is an integer vector. -/
-private theorem exists_intCast_eq_of_mem {x : Fin 24 → ℚ}
-    (hx : x ∈ constructionBLattice.carrier) : ∃ z : Fin 24 → ℤ, x = fun i ↦ (z i : ℚ) := by
-  obtain ⟨z, -, rfl⟩ := (ConstructionA.mem_lattice 2).mp
-    (ConstructionB.lattice_le BinaryGolay.code (constructionBLattice_carrier ▸ hx))
-  exact ⟨z, rfl⟩
-
 /-- A vector with a half-odd coordinate does not lie in the Golay Construction B lattice, whose
 vectors are integral. -/
 private theorem notMem_of_apply_eq_add_half {x : Fin 24 → ℚ} {j : Fin 24} {m : ℤ}
     (hx : x j = m + 1 / 2) : x ∉ constructionBLattice.carrier := by
   intro hK
-  obtain ⟨z, rfl⟩ := exists_intCast_eq_of_mem hK
+  obtain ⟨z, rfl⟩ := ConstructionB.exists_intCast_eq_of_mem (constructionBLattice_carrier ▸ hK)
   have h2 : ((2 * z j : ℤ) : ℚ) = ((2 * m + 1 : ℤ) : ℚ) := by push_cast; linarith
   have := Int.cast_injective h2
   omega
@@ -130,36 +124,20 @@ private theorem ofSignedEquiv_apply (u : Fin 24 → ℤˣ) (σ : Equiv.Perm (Fin
 
 /-! #### Sign changes -/
 
-/-- The sign change by a Golay codeword preserves the Golay Construction B lattice: the change in
-the coordinate sum is twice the sum over the support of `c`, which is even because the code is
-self-orthogonal. -/
+/-- The sign word of the sign change by a binary word is the word itself. -/
+private theorem wordSign_signWord (c : Fin 24 → ZMod 2) :
+    (fun i ↦ if wordSign c i = 1 then (0 : ZMod 2) else 1) = c := by
+  funext i
+  rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) (c i) with h | h <;>
+    simp [wordSign, h, show (-1 : ℤˣ) ≠ 1 by decide]
+
+/-- The sign change by a Golay codeword preserves the Golay Construction B lattice. -/
 private theorem signedEquiv_wordSign_mem {c : Fin 24 → ZMod 2} (hc : c ∈ BinaryGolay.code)
     {x : Fin 24 → ℚ} (hx : x ∈ constructionBLattice.carrier) :
     signedEquiv (wordSign c) (Equiv.refl _) x ∈ constructionBLattice.carrier := by
-  obtain ⟨z, rfl⟩ := exists_intCast_eq_of_mem hx
-  obtain ⟨hz, hsum⟩ :=
-    (ConstructionB.intCast_mem_lattice _ z).mp (constructionBLattice_carrier ▸ hx)
-  have heq : signedEquiv (wordSign c) (Equiv.refl _) (fun i ↦ (z i : ℚ)) =
-      fun i ↦ ((z i - 2 * if c i = 0 then 0 else z i : ℤ) : ℚ) := by
-    funext i
-    simp only [signedEquiv_apply, Equiv.refl_symm, Equiv.refl_apply, wordSign]
-    by_cases h : c i = 0 <;> simp [h]
-    ring
-  rw [heq, constructionBLattice_carrier, ConstructionB.intCast_mem_lattice]
-  constructor
-  · convert hz using 2 with i
-    push_cast
-    simp only [CharTwo.two_eq_zero, zero_mul, sub_zero]
-  · -- The sum over the support of `c` reduces to the dot product of `c` with `z` modulo two.
-    have hdot : ((∑ i, if c i = 0 then 0 else z i : ℤ) : ZMod 2) = 0 := by
-      have h := (Submodule.isSelfOrthogonal_iff.mp isDoublyEven_code.isSelfOrthogonal) c hc _ hz
-      rw [dotProduct] at h
-      push_cast
-      have hmul : ∀ a b : ZMod 2, (if a = 0 then 0 else b) = a * b := by decide
-      simpa only [apply_ite (Int.cast : ℤ → ZMod 2), Int.cast_zero, hmul] using h
-    obtain ⟨k, hk⟩ := (ZMod.intCast_zmod_eq_zero_iff_dvd _ 2).mp hdot
-    rw [Finset.sum_sub_distrib, ← Finset.mul_sum, hk]
-    exact dvd_sub hsum ⟨k, by ring⟩
+  rw [constructionBLattice_carrier] at hx ⊢
+  exact ConstructionB.signedEquiv_refl_mem_lattice isDoublyEven_code.isSelfOrthogonal
+    ((wordSign_signWord c).symm ▸ hc) hx
 
 /-- The sign change by a Golay codeword moves the Leech shift by an element of the Golay
 Construction B lattice: the difference is the integer vector which is `3` at the coordinate `0`
@@ -178,7 +156,7 @@ private theorem signedEquiv_wordSign_leechShift_sub_mem {c : Fin 24 → ZMod 2}
     · subst hi
       split_ifs <;> simp_all
     · rw [leechShift_of_ne_zero hi]
-      split_ifs <;> simp_all; norm_num
+      split_ifs <;> norm_num [*]
   rw [heq, constructionBLattice_carrier, ConstructionB.intCast_mem_lattice]
   constructor
   · convert hc using 1
@@ -207,37 +185,7 @@ private theorem signedEquiv_wordSign_mem_leechLattice {c : Fin 24 → ZMod 2}
   map_mem_leechLattice (signedEquiv (wordSign c) (Equiv.refl _)).toLinearMap
     (fun _ ↦ signedEquiv_wordSign_mem hc) (signedEquiv_wordSign_leechShift_sub_mem hc) hx
 
-/-- A sign change is an involution. -/
-private theorem signedEquiv_wordSign_symm_apply (c : Fin 24 → ZMod 2) (x : Fin 24 → ℚ) :
-    (signedEquiv (wordSign c) (Equiv.refl _)).symm x =
-      signedEquiv (wordSign c) (Equiv.refl _) x := by
-  rw [LinearEquiv.symm_apply_eq, signedEquiv_signedEquiv]
-
 /-! #### Coordinate permutations -/
-
-/-- The coordinates of the Leech shift. -/
-private theorem leechShift_apply (i : Fin 24) :
-    leechShift i = if i = 0 then -(3 / 2) else 1 / 2 := by
-  split_ifs with h
-  · rw [h, leechShift_zero]
-  · exact leechShift_of_ne_zero h
-
-/-- A Golay permutation automorphism preserves the Golay Construction B lattice: it permutes the
-coordinates of an integer vector, preserving its reduction modulo two in the code and its
-coordinate sum. -/
-private theorem signedEquiv_one_mem {σ : Equiv.Perm (Fin 24)}
-    (hσ : σ ∈ AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup) {x : Fin 24 → ℚ}
-    (hx : x ∈ constructionBLattice.carrier) :
-    signedEquiv 1 σ x ∈ constructionBLattice.carrier := by
-  obtain ⟨z, rfl⟩ := exists_intCast_eq_of_mem hx
-  obtain ⟨hz, hsum⟩ :=
-    (ConstructionB.intCast_mem_lattice _ z).mp (constructionBLattice_carrier ▸ hx)
-  have heq : signedEquiv 1 σ (fun i ↦ (z i : ℚ)) = fun i ↦ ((z (σ.symm i) : ℤ) : ℚ) := by
-    funext i
-    simp [signedEquiv_apply]
-  rw [heq, constructionBLattice_carrier, ConstructionB.intCast_mem_lattice,
-    Equiv.sum_comp σ.symm z]
-  exact ⟨AdditiveCode.comp_symm_mem_of_mem_permutationAut hσ hz, hsum⟩
 
 /-- A coordinate permutation moves the Leech shift by the integer vector which is `2` at the
 coordinate `0` and `-2` at the coordinate `σ 0` (and zero if they coincide). It is even with
@@ -262,15 +210,11 @@ private theorem signedEquiv_one_leechShift_sub_mem (σ : Equiv.Perm (Fin 24)) :
 private theorem signedEquiv_one_mem_leechLattice {σ : Equiv.Perm (Fin 24)}
     (hσ : σ ∈ AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup) {x : Fin 24 → ℚ}
     (hx : x ∈ leechLattice.carrier) : signedEquiv 1 σ x ∈ leechLattice.carrier :=
-  map_mem_leechLattice (signedEquiv 1 σ).toLinearMap (fun _ ↦ signedEquiv_one_mem hσ)
+  map_mem_leechLattice (signedEquiv 1 σ).toLinearMap
+    (fun _ hx ↦ by
+      rw [constructionBLattice_carrier] at hx ⊢
+      exact ConstructionB.signedEquiv_one_mem_lattice hσ hx)
     (signedEquiv_one_leechShift_sub_mem σ) hx
-
-/-- The inverse of a coordinate permutation is the permutation by the inverse. -/
-private theorem signedEquiv_one_symm_apply (σ : Equiv.Perm (Fin 24)) (x : Fin 24 → ℚ) :
-    (signedEquiv 1 σ).symm x = signedEquiv 1 σ⁻¹ x := by
-  rw [LinearEquiv.symm_apply_eq]
-  funext i
-  simp [signedEquiv_apply, Equiv.Perm.inv_def]
 
 /-! ### The sign changes and coordinate permutations as homomorphisms -/
 
@@ -280,7 +224,7 @@ private def signChange (c : BinaryGolay.code.toAddSubgroup) : Co0 :=
   ofSignedEquiv (wordSign c) (Equiv.refl _)
     (fun _ ↦ signedEquiv_wordSign_mem_leechLattice c.property)
     (fun x hx ↦ by
-      rw [signedEquiv_wordSign_symm_apply]
+      rw [signedEquiv_symm, Equiv.refl_symm, Equiv.coe_refl, Function.comp_id]
       exact signedEquiv_wordSign_mem_leechLattice c.property hx)
 
 private theorem signChange_apply (c : BinaryGolay.code.toAddSubgroup) (x : Fin 24 → ℚ)
@@ -317,12 +261,10 @@ def coordPermHom : AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup �
   toFun σ :=
     ofSignedEquiv 1 σ (fun _ ↦ signedEquiv_one_mem_leechLattice σ.property)
       (fun x hx ↦ by
-        rw [signedEquiv_one_symm_apply]
+        rw [signedEquiv_symm, Pi.one_comp, ← Equiv.Perm.inv_def]
         exact signedEquiv_one_mem_leechLattice (inv_mem σ.property) hx)
   map_one' := Isometry.ext fun x ↦ funext fun i ↦ by
-    simp only [ofSignedEquiv_apply, signedEquiv_apply, Pi.one_apply, Units.val_one, Int.cast_one,
-      one_mul, Isometry.one_apply, OneMemClass.coe_one]
-    rfl
+    simp [ofSignedEquiv_apply, signedEquiv_apply, Equiv.Perm.one_def]
   map_mul' σ τ := Isometry.ext fun x ↦ funext fun i ↦ by
     simp [ofSignedEquiv_apply, signedEquiv_apply, Equiv.Perm.mul_def]
 
@@ -332,30 +274,18 @@ theorem coordPermHom_apply (σ : AdditiveCode.permutationAut BinaryGolay.code.to
     (x : Fin 24 → ℚ) (i : Fin 24) : coordPermHom σ x i = x ((σ : Equiv.Perm (Fin 24)).symm i) := by
   simp [coordPermHom, ofSignedEquiv_apply, signedEquiv_apply]
 
-/-- The action of the Golay permutation automorphisms on the code, `σ • c = c ∘ σ⁻¹`, written
-multiplicatively. -/
-noncomputable def codeAction : AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup →*
-    MulAut (Multiplicative BinaryGolay.code.toAddSubgroup) where
-  toFun σ := AddEquiv.toMultiplicative (DistribMulAction.toAddEquiv _ σ)
-  map_one' := MulEquiv.ext fun c ↦ by simp
-  map_mul' σ τ := MulEquiv.ext fun c ↦ by simp [mul_smul]
-
-/-- The action of a Golay permutation automorphism on a codeword is `c ↦ c ∘ σ⁻¹`. -/
-@[simp]
-theorem codeAction_apply (σ : AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup)
-    (c : Multiplicative BinaryGolay.code.toAddSubgroup) :
-    codeAction σ c = Multiplicative.ofAdd (σ • c.toAdd) := (rfl)
-
 /-- **The conjugation formula** `π_σ ε_c π_σ⁻¹ = ε_{σ • c}`. -/
 theorem coordPermHom_mul_signChangeHom_mul_inv
     (σ : AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup)
     (c : Multiplicative BinaryGolay.code.toAddSubgroup) :
-    coordPermHom σ * signChangeHom c * (coordPermHom σ)⁻¹ = signChangeHom (codeAction σ c) := by
+    coordPermHom σ * signChangeHom c * (coordPermHom σ)⁻¹ =
+      signChangeHom (AdditiveCode.permutationAutToMulAut _ σ c) := by
   rw [← map_inv coordPermHom σ]
   refine Isometry.ext fun x ↦ funext fun i ↦ ?_
-  simp only [Isometry.mul_apply, coordPermHom_apply, signChangeHom_apply, codeAction_apply,
-    toAdd_ofAdd, AdditiveCode.coe_smul_permutationAut, Function.comp_apply, InvMemClass.coe_inv,
-    Equiv.Perm.inv_def, Equiv.symm_symm, Equiv.apply_symm_apply]
+  simp only [Isometry.mul_apply, coordPermHom_apply, signChangeHom_apply,
+    AdditiveCode.permutationAutToMulAut_apply, toAdd_ofAdd, AdditiveCode.coe_smul_permutationAut,
+    Function.comp_apply, InvMemClass.coe_inv, Equiv.Perm.inv_def, Equiv.symm_symm,
+    Equiv.apply_symm_apply]
 
 /-! ### The monomial subgroup -/
 
@@ -364,7 +294,7 @@ coordinate permutations assemble into a homomorphism from the semidirect product
 code, written multiplicatively, by its permutation automorphism group, sending `(c, σ)` to
 `ε_c π_σ`. -/
 noncomputable def monomialHom :
-    Multiplicative BinaryGolay.code.toAddSubgroup ⋊[codeAction]
+    Multiplicative BinaryGolay.code.toAddSubgroup ⋊[AdditiveCode.permutationAutToMulAut _]
       AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup →* Co0 :=
   SemidirectProduct.lift signChangeHom coordPermHom fun σ ↦ MonoidHom.ext fun c ↦
     (coordPermHom_mul_signChangeHom_mul_inv σ c).symm
@@ -372,7 +302,7 @@ noncomputable def monomialHom :
 /-- The monomial isometry of `(c, σ)` is `ε_c π_σ`. -/
 @[simp]
 theorem monomialHom_apply
-    (p : Multiplicative BinaryGolay.code.toAddSubgroup ⋊[codeAction]
+    (p : Multiplicative BinaryGolay.code.toAddSubgroup ⋊[AdditiveCode.permutationAutToMulAut _]
       AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup) :
     monomialHom p = signChangeHom p.left * coordPermHom p.right := (rfl)
 
@@ -423,14 +353,14 @@ theorem monomialSubgroup_def : monomialSubgroup = monomialHom.range := (rfl)
 code by its permutation automorphism group, which is `M₂₄` by
 `TauCeti.Sporadic.M24.golayAdditivePermutationAutEquiv`. -/
 noncomputable def monomialSubgroupEquiv :
-    Multiplicative BinaryGolay.code.toAddSubgroup ⋊[codeAction]
+    Multiplicative BinaryGolay.code.toAddSubgroup ⋊[AdditiveCode.permutationAutToMulAut _]
       AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup ≃* monomialSubgroup :=
   MonoidHom.ofInjective monomialHom_injective
 
 /-- The equivalence `monomialSubgroupEquiv` is `monomialHom` with its codomain restricted. -/
 @[simp]
 theorem coe_monomialSubgroupEquiv_apply
-    (p : Multiplicative BinaryGolay.code.toAddSubgroup ⋊[codeAction]
+    (p : Multiplicative BinaryGolay.code.toAddSubgroup ⋊[AdditiveCode.permutationAutToMulAut _]
       AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup) :
     (monomialSubgroupEquiv p : Co0) = monomialHom p :=
   MonoidHom.ofInjective_apply _
@@ -471,12 +401,9 @@ private theorem mem_permutationAut_of_signedEquiv {u : Fin 24 → ℤˣ} {σ : E
   have key : ∀ w ∈ BinaryGolay.code, w ∘ σ.symm ∈ BinaryGolay.code := by
     intro w hw
     have hz : (fun i ↦ (((w i).val : ℤ) : ℚ)) ∈ constructionBLattice.carrier := by
-      rw [constructionBLattice_carrier, ConstructionB.intCast_mem_lattice]
-      refine ⟨by simpa using hw, ?_⟩
-      have hsum : ∑ i, ((w i).val : ℤ) = (hammingNorm w : ℤ) := by
-        rw [← sum_val_eq_hammingNorm, Nat.cast_sum]
-      rw [hsum]
-      exact Int.natCast_dvd_natCast.mpr (BinaryCode.isDoublyEven_iff.mp isDoublyEven_code w hw)
+      rw [constructionBLattice_carrier]
+      simpa using (ConstructionB.val_add_two_mul_mem_lattice_iff BinaryGolay.code
+        isDoublyEven_code hw 0).mpr (by simp)
     have himg := h _ (constructionBLattice_carrier_le_leechLattice_carrier hz)
     set z : Fin 24 → ℤ := fun j ↦ (u (σ.symm j) : ℤ) * ((w (σ.symm j)).val : ℤ)
     have heq : signedEquiv u σ (fun i ↦ (((w i).val : ℤ) : ℚ)) = fun j ↦ (z j : ℚ) := by
@@ -524,7 +451,8 @@ private theorem signWord_mem {u : Fin 24 → ℤˣ} {σ : Equiv.Perm (Fin 24)}
       rw [h1]
       push_cast
       ring
-  · obtain ⟨y, hy⟩ := exists_intCast_eq_of_mem himg
+  · obtain ⟨y, hy⟩ :=
+      ConstructionB.exists_intCast_eq_of_mem (constructionBLattice_carrier ▸ himg)
     convert ((ConstructionB.intCast_mem_lattice _ y).mp
       (constructionBLattice_carrier ▸ hy ▸ himg)).1 using 1
     funext j
