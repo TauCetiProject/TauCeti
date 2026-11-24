@@ -44,11 +44,6 @@ open DualNumber TrivSqZeroExt
 
 variable {R : Type*} [CommSemiring R]
 
-/-- The `ε`-coefficient of the image of `ε` under `e.trivSqZeroExtCongr` is `e 1`. -/
-private theorem snd_trivSqZeroExtCongr_apply_eps (e : R ≃ₗ[R] R) :
-    (e.trivSqZeroExtCongr ε).snd = e 1 := by
-  rw [LinearEquiv.coe_trivSqZeroExtCongr, snd_map, snd_eps, LinearEquiv.coe_coe]
-
 namespace AlgEquiv
 
 /-- An automorphism of the dual numbers multiplies `ε`, up to an `R`-component, by a unit. -/
@@ -68,8 +63,7 @@ theorem exists_trivSqZeroExtCongr_eq_iff (φ : R[ε] ≃ₐ[R] R[ε]) :
   refine ⟨DistribMulAction.toLinearEquiv R R u,
     coe_toAlgHom_injective <| DualNumber.algHom_ext <| TrivSqZeroExt.ext ?_ ?_⟩
   · simp [h, Units.smul_def]
-  · rw [coe_toAlgHom, coe_toAlgHom, snd_trivSqZeroExtCongr_apply_eps, ← hu,
-      DistribMulAction.toLinearEquiv_apply, Units.smul_def, smul_eq_mul, mul_one]
+  · simp [← hu, Units.smul_def]
 
 end AlgEquiv
 
@@ -109,7 +103,8 @@ by the `ε`-coefficient of `φ ε`. -/
 theorem linearEquivEquivAlgEquiv_symm_apply_apply (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0)
     (φ : R[ε] ≃ₐ[R] R[ε]) (r : R) : (linearEquivEquivAlgEquiv hR).symm φ r = r * (φ ε).snd := by
   obtain ⟨e, rfl⟩ := (linearEquivEquivAlgEquiv hR).surjective φ
-  rw [MulEquiv.symm_apply_apply, linearEquivEquivAlgEquiv_apply,
-    snd_trivSqZeroExtCongr_apply_eps, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+  -- A linear endomorphism of `R` is the multiplication by its value at `1`.
+  rw [MulEquiv.symm_apply_apply]
+  simpa using e.map_smul r 1
 
 end TauCeti.DualNumber

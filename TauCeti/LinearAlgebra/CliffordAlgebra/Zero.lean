@@ -26,8 +26,8 @@ form on `Unit` to any subsingleton module.
 * `CliffordAlgebra.even_eq_top_of_subsingleton` says that every element is even.
 * `CliffordAlgebra.reverse_eq_self_of_subsingleton` says that reversal is the identity.
 * `CliffordAlgebra.unitsEquivOfSubsingleton` identifies Clifford units with scalar units.
-* `QuadraticMap.subsingleton_cliffordAlgebra_algEquiv_of_subsingleton`: the identity is the only
-  automorphism of a zero-dimensional Clifford algebra.
+* `CliffordAlgebra.subsingleton_cliffordAlgebra_algEquiv_of_subsingleton`: the identity is the
+  only automorphism of a zero-dimensional Clifford algebra.
 -/
 
 public section
@@ -102,26 +102,17 @@ theorem coe_unitsEquivOfSubsingleton_symm_apply [Subsingleton M] (u : Rˣ) :
   simpa only [coe_unitsEquivOfSubsingleton_apply, AlgEquiv.apply_symm_apply] using
     congrArg Units.val ((unitsEquivOfSubsingleton Q).apply_symm_apply u)
 
-end CliffordAlgebra
-
-namespace QuadraticMap
-
-universe u v
-
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [Subsingleton M]
-  (Q : QuadraticForm R M)
-
 /-- When `M` is subsingleton, there is at most one `R`-algebra map from `CliffordAlgebra Q` into
 any `R`-algebra `A`. -/
-instance subsingleton_cliffordAlgebra_algHom_of_subsingleton {A : Type*} [Semiring A]
-    [Algebra R A] : Subsingleton (CliffordAlgebra Q →ₐ[R] A) :=
-  ⟨fun _ _ ↦ CliffordAlgebra.hom_ext <| Subsingleton.elim _ _⟩
+instance subsingleton_cliffordAlgebra_algHom_of_subsingleton [Subsingleton M] {A : Type*}
+    [Semiring A] [Algebra R A] : Subsingleton (CliffordAlgebra Q →ₐ[R] A) :=
+  ⟨fun _ _ ↦ hom_ext <| Subsingleton.elim _ _⟩
 
 /-- When `M` is subsingleton, the identity is the only automorphism of `CliffordAlgebra Q`. -/
-instance subsingleton_cliffordAlgebra_algEquiv_of_subsingleton :
+instance subsingleton_cliffordAlgebra_algEquiv_of_subsingleton [Subsingleton M] :
     Subsingleton (CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q) :=
   AlgEquiv.coe_toAlgHom_injective.subsingleton
 
-end QuadraticMap
+end CliffordAlgebra
 
 end
