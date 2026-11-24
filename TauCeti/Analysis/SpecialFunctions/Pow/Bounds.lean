@@ -73,6 +73,9 @@ For every real exponent `β` and `0 ≤ t ≤ x`, `(x + t) ^ β ≤ max 1 (2 ^ �
 power of either sign uniformly across `[x, 2 * x]` as needed for derivative remainder bounds on
 dyadic intervals.
 
+For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
+all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
+
 ## Main results
 
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
@@ -97,6 +100,8 @@ dyadic intervals.
   for `α ≤ 0`.
 * `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
   and every real `β`.
+* `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
+  every real `p`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -343,6 +348,17 @@ theorem add_rpow_le_max_two_rpow_mul (β : ℝ) {x t : ℝ} (ht₀ : 0 ≤ t) (h
         _ = 1 * x ^ β := (one_mul _).symm
         _ ≤ max 1 (2 ^ β) * x ^ β :=
           mul_le_mul_of_nonneg_right (le_max_left _ _) (rpow_nonneg hx.le β)
+
+/-- For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`, whatever
+the sign of `p`. -/
+theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x) (p : ℝ) :
+    (n : ℝ) ^ p ≤ max 1 (x ^ p) := by
+  rcases le_total p 0 with h | h
+  · refine le_trans ?_ (le_max_left _ _)
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using zero_rpow_le_one p
+    · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
+  · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
 
 end Real
 
