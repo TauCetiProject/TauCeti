@@ -21,7 +21,8 @@ of its preimage.
 For opens `V ≤ W` of `X`, an open `Q` of `W` pulled back to `V` along the inclusion and pushed
 forward to `X` lies in the image of `Q` in `X`. The inclusion of `V` into `W` is an open embedding,
 and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` lying in an open set
-`U` is the image of a compact subset of `U`.
+`U` is the image of a compact subset of `U`. For an injective open map `f`, the point `f y` lies in
+the image of an open `V` exactly when `y` lies in `V`.
 
 ## Main results
 
@@ -34,6 +35,8 @@ and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` ly
   embedding.
 * `TopologicalSpace.Opens.exists_compacts_map_inclusion'_eq`: a compact subset of `X` lying in an
   open set `U` is the image of a compact subset of `U` under its inclusion.
+* `IsOpenMap.apply_mem_functor_obj_iff`: for an injective open map `f`, the point `f y` lies in the
+  image of an open `V` exactly when `y` lies in `V`.
 -/
 
 public section
@@ -90,5 +93,16 @@ instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).
   inferInstanceAs (T2Space V)
 
 end TopologicalSpace.Opens
+
+namespace IsOpenMap
+
+/-- For an injective open map `f`, the point `f y` lies in the image of an open set `V` exactly when
+`y` lies in `V`. -/
+theorem apply_mem_functor_obj_iff {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenMap f)
+    (hf' : Function.Injective f) {y : Y} {V : TopologicalSpace.Opens Y} :
+    f y ∈ hf.functor.obj V ↔ y ∈ V :=
+  hf'.mem_set_image
+
+end IsOpenMap
 
 end

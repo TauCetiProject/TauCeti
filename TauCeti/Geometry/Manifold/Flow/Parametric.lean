@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.NondegenerateOrbit
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.FixedPoint
+import TauCeti.Dynamics.Flow.PeriodBound
 import TauCeti.Geometry.Manifold.Flow.Related
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -64,6 +65,9 @@ orbits of bounded period in a compact window is an open condition on the vector 
   `TauCeti.flowOf_verticalField`: the flow of the vertical field is the flow of the fields of the
   family, with the parameter fixed.
 * `ContMDiff.apply_param`: the fields of a `C^n` family are `C^n`.
+* `TauCeti.exists_pos_eventually_period_le_of_isCompact_param`: positive return times in the maximal
+  flow domain near a compact set where one field does not vanish have a uniform positive lower
+  bound for nearby parameters, without completeness of the fields.
 * `TauCeti.eventually_mem_flowDomain_param`, `TauCeti.contMDiffAt_flowOf_param`: the flow of a
   `C^n` family is defined on an open set of parameters, times and points, and is `C^n` there.
 * `TauCeti.eventually_contMDiffAt_and_mvfderiv_apply_ne_zero`: transversality of a function to
@@ -273,6 +277,37 @@ section Flow
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E] [CompleteSpace F] [T2Space N]
   [BoundarylessManifold J N] [IsManifold I 1 M] [IsManifold J 1 N]
   {v : N → (x : M) → TangentSpace I x} {a₀ : N} {t : ℝ} {x : M}
+
+/-- Positive return times in the maximal flow domain near a compact set are uniformly bounded
+away from zero for nearby parameters of a jointly `C¹` family, provided the reference field
+vanishes nowhere on the compact set. The fields need not be complete, and the compact set need
+not be flow invariant. Domain membership excludes the junk values of `flowOf` outside the
+maximal interval of existence. -/
+theorem exists_pos_eventually_period_le_of_isCompact_param
+    (hv : ContMDiff (J.prod I) I.tangent 1
+      (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)))
+    {K : Set M} (hK : IsCompact K) (hmove : ∀ x ∈ K, v a₀ x ≠ 0) :
+    ∃ ε > 0, ∀ᶠ a in 𝓝 a₀, ∀ᶠ x in 𝓝ˢ K, ∀ T > 0,
+      (T, x) ∈ flowDomain (v a) → flowOf (v a) T x = x → ε ≤ T := by
+  have hV := contMDiff_verticalField hv
+  have hmove' : ∀ z ∈ ({a₀} : Set N) ×ˢ K, verticalField J v z ≠ 0 := by
+    intro z hz hzero
+    have hsnd : v z.1 z.2 = 0 := by
+      rw [← verticalField_snd (J := J) v z, hzero]
+      rfl
+    exact hmove z.2 hz.2 (hz.1 ▸ hsnd)
+  obtain ⟨ε, hε, hbound⟩ := exists_pos_eventually_period_le_of_isCompact_of_locally
+    (isCompact_singleton.prod hK)
+    (P := fun z T ↦ (T, z) ∈ flowDomain (verticalField J v) ∧
+      flowOf (verticalField J v) T z = z) fun z hz ↦ by
+    obtain ⟨ε, hε, U, hU, hbound⟩ := exists_pos_period_le_nhds_flowOf hV (hmove' z hz)
+    exact ⟨ε, hε, U, hU, fun y hy T hT hret ↦ hbound y hy T hT hret.1 hret.2⟩
+  rw [isCompact_singleton.nhdsSet_prod_eq hK, nhdsSet_singleton] at hbound
+  refine ⟨ε, hε, ?_⟩
+  filter_upwards [hbound.curry] with a ha
+  filter_upwards [ha] with x hx T hT hdom hfix
+  exact hx T hT ⟨mem_flowDomain_verticalField_iff.2 hdom,
+    by rw [flowOf_verticalField (hv.apply_param a), hfix]⟩
 
 /-- **The flow domain of a family is open.** If the flow of `v a₀` is defined at `(t, x)`,
 then for `(a, t', x')` near `(a₀, t, x)` the flow of `v a` is defined at `(t', x')`, provided the

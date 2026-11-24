@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 

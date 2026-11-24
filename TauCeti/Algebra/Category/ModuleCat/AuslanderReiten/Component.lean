@@ -17,16 +17,17 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Length
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
-import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit
+import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
 import TauCeti.Algebra.Category.ModuleCat.Connected
-import TauCeti.Algebra.Category.ModuleCat.HaradaSai
+import TauCeti.Algebra.Category.ModuleCat.Length
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
 import TauCeti.CategoryTheory.AlmostSplit.Finiteness
+import TauCeti.CategoryTheory.Abelian.HaradaSai
 import TauCeti.CategoryTheory.Generator.Biproduct
 import TauCeti.CategoryTheory.Preadditive.CentralIdempotent
 import TauCeti.CategoryTheory.Preadditive.Radical.Basic
@@ -114,7 +115,8 @@ private theorem ofSequence_map_eq_zero_of_prop (M : ℕ → FGModuleCat.{w} A)
   (ObjectProperty.ι _).map_injective <| by
     rw [Functor.map_zero]
     refine map_eq_zero_of_length_le (F := Functor.ofSequence f ⋙ ObjectProperty.ι _)
-      (fun n ↦ hS _ (hM n)) (fun n ↦ hb _ (hM n)) (fun n h ↦ hf n ?_) _ (by omega)
+      (fun n ↦ hS _ (hM n)) (fun n ↦ (ModuleCat.length_eq _).trans_le (hb _ (hM n)))
+      (fun n h ↦ hf n ?_) _ (by omega)
     rw [Functor.comp_map, Functor.ofSequence_map_homOfLE_succ] at h
     exact (isIso_iff_of_reflects_iso (f n) (ObjectProperty.ι _)).mp h
 
@@ -177,7 +179,8 @@ theorem eq_zero_of_length_le_of_not_prop_of_prop
       -- The Harada–Sai lemma for descending chains, read in `ModuleCat A`.
       rw [Functor.map_zero]
       refine map_op_eq_zero_of_length_le (G := Functor.ofOpSequence f ⋙ ObjectProperty.ι _)
-        (fun n ↦ hS _ (hM n)) (fun n ↦ hb _ (hM n)) (fun n h ↦ hf n ?_) _ (by omega)
+        (fun n ↦ hS _ (hM n)) (fun n ↦ (ModuleCat.length_eq _).trans_le (hb _ (hM n)))
+        (fun n h ↦ hf n ?_) _ (by omega)
       rw [Functor.comp_map, Functor.ofOpSequence_map_homOfLE_succ] at h
       exact (isIso_iff_of_reflects_iso (f n) (ObjectProperty.ι _)).mp h) hY hf
   exact hSX (S.prop_of_iso e.symm hQ)
@@ -255,7 +258,8 @@ theorem forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAl
       exact ⟨n, F, i, fun j ↦ (hirr _ (hirrF j) (hS X hX) (hF j)).mp hX, hi⟩)
     (2 ^ b - 1) (S.ofSequence_map_eq_zero_of_prop hS b hb) (Set.finite_range P')
     (by rintro _ ⟨j, rfl⟩; exact hPS j)
-  refine ⟨hall, isRepresentationFinite_of_forall_exists_iso (hT.image (·.obj)) fun M hM hiM ↦ ?_⟩
+  refine ⟨hall, isRepresentationFinite_iff_exists_finite_forall_exists_iso.mpr
+    ⟨_, hT.image (·.obj), fun M hM hiM ↦ ?_⟩⟩
   let Y : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hM⟩
   obtain ⟨j, f, hf⟩ := hG.exists_hom_ne_zero_of_iso_biproduct e hiM.1
   obtain ⟨Q, hQ, ⟨e'⟩⟩ := hTmem Y (hall Y hiM) (P' j) ⟨j, rfl⟩ _ (homMk_ne_zero (Y := Y) hf)
@@ -295,7 +299,8 @@ theorem forall_prop_and_isRepresentationFinite_of_length_le (hA : centralIdempot
       have := ModuleCat.projective_of_module_projective (R := A) M.obj
       exact FGModuleCat.projective_of_moduleProjective A M
     obtain ⟨E, _, p, _, hE, hseq⟩ :=
-      ModuleCat.exists_isAlmostSplit_arTranslate k M.obj (hS M hM) hproj'
+      ModuleCat.exists_isAlmostSplit_arTranslate k k
+        (TauCeti.length_quotient_linearMap_self_eq_one k) M.obj (hS M hM) hproj'
     exact ⟨⟨E, (ModuleCat.isFG_iff _).mpr hE⟩, ObjectProperty.homMk p,
       (ObjectProperty.ι _).isRightAlmostSplit_of_map _ hseq.isRightAlmostSplit_g⟩
 

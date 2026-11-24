@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
 public import TauCeti.LinearAlgebra.Determinant.Complex.LinearMap
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 import TauCeti.LinearAlgebra.Complex.Finrank
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Analysis.Normed.Operator.Splitting.Family
 
 /-!
 # Complex orientations of determinant lines of complex-linear Fredholm operators
@@ -52,6 +55,19 @@ read in any real kernel chart as positive multiples of one fixed vector
 (`ContinuousLinearMap.exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul`): the
 complex orientations form a continuous orientation of the determinant line bundle of the family.
 
+Kernel charts need no complex norm near an operator that is onto. Let `E` and `F` be real Banach
+spaces on which the complex numbers act compatibly with the real scalars, `E` with continuous
+multiplication by `i`, such as a real Banach space with a continuous almost complex structure.
+At a continuous family of complex-linear operators `T x : E →L[ℂ] F` with `T x₀` onto and with
+finite-dimensional kernel, a continuous complex-linear projection `P` onto the kernel of `T x₀`,
+read in complex coordinates of that kernel, is a complex kernel coordinate, valid with the trivial
+stabilizer throughout a neighbourhood of `x₀`
+(`ContinuousLinearMap.exists_isOpen_isInvertible_prod_coprod_of_surjective`). Being complex, this
+chart reads the complex orientations of all the `T x` near `x₀` as the one complex orientation of
+the fixed line `det ℂᵐ ⊗ (det ℂ⁰)^*`
+(`ContinuousLinearMap.isComplexPositiveTMulDual_detLineChartEquiv_iff`), so they form a
+continuous orientation of the determinant line bundle of the family near `x₀`.
+
 Over an arbitrary parameter space, a family of complex positive elements along a family of
 complex-linear operators which is continuous and Fredholm on `s` is coherent on `s`
 (`TauCeti.isDetLineCoherentOn_of_isComplexPositiveDetLine`): near each parameter, one complex
@@ -61,6 +77,16 @@ coherence may be checked in that chart
 path of complex-linear Fredholm operators carries the complex orientation
 (`ContinuousLinearMap.IsFredholm.complexDetLineOrientation`) at one end to the complex
 orientation at the other (`TauCeti.detLineOrientationTransport_complexDetLineOrientation`).
+
+At a bijective complex-linear operator the complex orientation is the orientation given by
+bijectivity (`LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`), and along a
+path of invertible operators transport preserves the orientations given by invertibility. Hence,
+along a path of invertible operators starting at a complex-linear one, transport carries the
+complex orientation to the orientation given by invertibility at the other end
+(`TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`):
+an operator joined to a complex-linear reference through invertible operators has positive
+determinant sign. This holds for real Banach spaces with compatible complex structures that need
+not come from complex norms.
 
 ## Main definitions
 
@@ -73,10 +99,16 @@ orientation at the other (`TauCeti.detLineOrientationTransport_complexDetLineOri
   complex orientations as complex orientations.
 * `ContinuousLinearMap.exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul`: the
   complex orientations of a continuous family of complex-linear operators are continuous.
+* `ContinuousLinearMap.exists_isOpen_isInvertible_prod_coprod_of_surjective`: near an onto
+  complex-linear operator with finite-dimensional kernel there is a complex kernel chart with
+  trivial stabilizer, without a complex norm.
 * `TauCeti.isDetLineCoherentOn_of_isComplexPositiveDetLine`: complex orientations of a continuous
   family of complex-linear Fredholm operators are coherent.
 * `TauCeti.detLineOrientationTransport_complexDetLineOrientation`: transport along complex-linear
   paths preserves complex orientations.
+* `TauCeti.detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine`:
+  transport from a complex-linear operator along invertible operators gives the orientation of
+  invertibility.
 
 ## References
 
@@ -341,6 +373,72 @@ theorem exists_forall_isComplexPositiveDetLine_detLineChartEquiv_eq_smul (hT : C
 
 end Continuity
 
+section Surjective
+
+/-! ### Complex kernel charts at onto operators -/
+
+variable {E F X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] [Module ℂ E]
+  [IsScalarTower ℝ ℂ E] [ContinuousConstSMul ℂ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [CompleteSpace F] [Module ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace X]
+  {T : X → E →L[ℂ] F} {x₀ : X}
+
+/-- **Complex kernel charts at an onto operator.** Let `T` be a family of complex-linear operators
+between real Banach spaces with compatible complex structures, continuous at `x₀` as a family of
+real operators, with `T x₀` onto and with finite-dimensional kernel, of real dimension `2 m`. Then
+there is a complex-linear kernel coordinate `q : E × ℂ⁰ →L[ℂ] ℂᵐ` such that, with the zero
+stabilizer, the pair `(T x).coprod 0` and `q` of underlying real operators is invertible for every
+`x` in an open neighbourhood of `x₀`. The coordinate is a continuous complex-linear projection onto
+the kernel of `T x₀` (`Submodule.ClosedComplemented.of_restrictScalars`), read in a complex basis
+of it; neither `E` nor `F` needs a complex norm. Since the chart is complex,
+`ContinuousLinearMap.isComplexPositiveTMulDual_detLineChartEquiv_iff` reads the complex
+orientations of the determinant lines of all these `T x` as the complex orientation of
+`det ℂᵐ ⊗ (det ℂ⁰)^*`. -/
+theorem exists_isOpen_isInvertible_prod_coprod_of_surjective
+    (hT : ContinuousAt (fun x ↦ (T x).restrictScalars ℝ) x₀)
+    (h₀ : Function.Surjective ((T x₀).restrictScalars ℝ))
+    [FiniteDimensional ℝ ((T x₀).restrictScalars ℝ).ker] :
+    ∃ m : ℕ, finrank ℝ ((T x₀).restrictScalars ℝ).ker = 2 * m ∧
+      ∃ q : E × (Fin 0 → ℂ) →L[ℂ] (Fin m → ℂ), ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
+        ∀ x ∈ U, ((((T x).restrictScalars ℝ).coprod
+          ((0 : (Fin 0 → ℂ) →L[ℂ] F).restrictScalars ℝ)).prod
+            (q.restrictScalars ℝ)).IsInvertible := by
+  have : FiniteDimensional ℝ (T x₀).ker := (kerEquiv (T x₀)).symm.finiteDimensional
+  have : FiniteDimensional ℂ (T x₀).ker := Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have : FiniteDimensional ℝ ((T x₀).ker.restrictScalars ℝ) :=
+    ((Submodule.restrictScalarsEquiv ℝ ℂ E (T x₀).ker).restrictScalars ℝ).symm.finiteDimensional
+  obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_restrictScalars
+    (Submodule.ClosedComplemented.of_finiteDimensional ((T x₀).ker.restrictScalars ℝ))
+  -- Complex coordinates on the kernel, continuous since the kernel is finite-dimensional.
+  let ε := (Module.finBasis ℂ (T x₀).ker).equivFun
+  let εL : (T x₀).ker →L[ℂ] (Fin (finrank ℂ (T x₀).ker) → ℂ) :=
+    ⟨ε.toLinearMap, LinearMap.continuous_of_finiteDimensional (ε.toLinearMap.restrictScalars ℝ)⟩
+  have hεL (k : (T x₀).ker) : εL k = ε k := (rfl)
+  refine ⟨_, ?_, εL ∘L P ∘L fst ℂ E (Fin 0 → ℂ), ?_⟩
+  · rw [← (kerEquiv (T x₀)).finrank_eq, finrank_real_eq_two_mul_finrank_complex]
+  let A : X → E × (Fin 0 → ℂ) →L[ℝ] F := fun x ↦
+    ((T x).restrictScalars ℝ).coprod ((0 : (Fin 0 → ℂ) →L[ℂ] F).restrictScalars ℝ)
+  have hA : ContinuousAt A x₀ := hT.continuousLinearMapCoprod continuousAt_const
+  -- At `x₀` the pair `(e, l) ↦ (T x₀ e, ε (P e))` is bijective, hence invertible.
+  let B := (A x₀).prod ((εL ∘L P ∘L fst ℂ E (Fin 0 → ℂ)).restrictScalars ℝ)
+  have hB (e : E) (l : Fin 0 → ℂ) : B (e, l) = (T x₀ e, ε (P e)) := by simp [B, A, hεL]
+  have hinj : B.ker = ⊥ := by
+    refine LinearMap.ker_eq_bot'.2 fun ⟨e, l⟩ he ↦ ?_
+    rw [coe_coe, hB, Prod.mk_eq_zero, LinearEquiv.map_eq_zero_iff] at he
+    have hmem : e ∈ (T x₀).ker := he.1
+    have : e = 0 := by simpa [hP ⟨e, hmem⟩] using congrArg Subtype.val he.2
+    exact Prod.ext this (Subsingleton.elim _ _)
+  have hsurj : B.range = ⊤ := by
+    refine LinearMap.range_eq_top.2 fun ⟨f, w⟩ ↦ ?_
+    obtain ⟨e, rfl⟩ := h₀ f
+    refine ⟨(e - P e + ε.symm w, 0), ?_⟩
+    rw [coe_coe, hB]
+    refine Prod.ext ?_ ?_
+    · simp
+    · simp [hP]
+  exact exists_isOpen_isInvertible_prod hA ⟨ContinuousLinearEquiv.ofBijective B hinj hsurj, rfl⟩
+
+end Surjective
+
 end ContinuousLinearMap
 
 /-! ### Complex orientations along families -/
@@ -477,5 +575,71 @@ theorem detLineOrientationTransport_complexDetLineOrientation {T : ℝ → E →
     (hF b right_mem_uIcc).complexDetLineOrientation_eq (hv b right_mem_uIcc).1
       (hv b right_mem_uIcc).2]
   exact detLineOrientationTransport_rayOfNeZero _ _ hcoh
+
+section Invertible
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [Module ℂ F] [IsScalarTower ℝ ℂ F]
+
+/-- A complex positive element `z` of the determinant line of a complex-linear map `f` whose
+underlying real map is an onto operator `A` is nonzero, and so is its image in the determinant line
+of `A`. -/
+theorem _root_.LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_ne_zero {f : E →ₗ[ℂ] F}
+    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z) {A : E →L[ℝ] F}
+    (hf : f.restrictScalars ℝ = A) (hA : Function.Surjective A) :
+    LinearMap.detLineCongrOfEq hf z ≠ 0 := by
+  rw [LinearEquiv.map_ne_zero_iff]
+  refine hz.ne_zero_of_surjective ?_
+  rw [← LinearMap.coe_restrictScalars ℝ f, hf, ContinuousLinearMap.coe_coe]
+  exact hA
+
+/-- A complex positive element `z` of the determinant line of a complex-linear map `f` whose
+underlying real map is a Fredholm operator `A` is nonzero, and so is its image in the determinant
+line of `A`. -/
+theorem _root_.LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_ne_zero_of_isFredholm
+    {f : E →ₗ[ℂ] F} {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z)
+    {A : E →L[ℝ] F} (hf : f.restrictScalars ℝ = A) (hA : A.IsFredholm) :
+    LinearMap.detLineCongrOfEq hf z ≠ 0 :=
+  have := hA.finiteDimensional_quotient_range_of_restrictScalars_eq hf
+  (LinearEquiv.map_ne_zero_iff _).2 hz.ne_zero
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- **Transport from a complex-linear operator along invertible operators.** Let `T` be a path of
+invertible operators between real Banach spaces with compatible complex structures, continuous
+between `a` and `b`, whose operator `T a` is complex linear: it is the real map underlying `f`.
+Orientation transport carries the complex orientation of `T a`, that of any complex positive
+element `z` of its determinant line (`LinearMap.IsComplexPositiveDetLine`), to the orientation of
+the determinant line of `T b` given by invertibility, that of the element `1` under
+`LinearMap.detLineEquivOfBijective`. So, relative to the complex orientation at `T a`, the
+determinant sign of `T b` is positive. The complex structures need not come from complex norms. -/
+theorem detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine
+    {T : ℝ → E →L[ℝ] F} {a b : ℝ} (hT : ContinuousOn T (uIcc a b))
+    (hinv : ∀ t ∈ uIcc a b, (T t).IsInvertible) {f : E →ₗ[ℂ] F}
+    (hf : f.restrictScalars ℝ = T a) {z : (f.restrictScalars ℝ).detLine}
+    (hz : f.IsComplexPositiveDetLine z) :
+    detLineOrientationTransport a b hT (fun t ht ↦ (hinv t ht).isFredholm)
+        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z)
+          (hz.detLineCongrOfEq_ne_zero hf (hinv a left_mem_uIcc).surjective)) =
+      rayOfNeZero ℝ ((LinearMap.detLineEquivOfBijective
+        (hinv b right_mem_uIcc).bijective).symm 1) (by simp) := by
+  have hfb : Function.Bijective (f.restrictScalars ℝ) := by
+    rw [hf, ContinuousLinearMap.coe_coe]
+    exact (hinv a left_mem_uIcc).bijective
+  have : Subsingleton (F ⧸ LinearMap.range f) :=
+    Submodule.Quotient.subsingleton_iff.2 (LinearMap.range_eq_top.2 hfb.2)
+  -- `z` is a positive multiple of the element `1` of invertibility, which is complex positive.
+  obtain ⟨c, hc, rfl⟩ :=
+    (f.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one hfb).exists_pos_smul_eq hz
+  simp_rw [LinearEquiv.map_smul]
+  rw [ray_pos_smul ((LinearEquiv.map_ne_zero_iff _).2 ((LinearEquiv.map_ne_zero_iff _).2
+      one_ne_zero)) hc,
+    ← detLineOrientationTransport_rayOfNeZero_detLineEquivOfBijective_symm_one hT hinv]
+  congr 2
+  apply (LinearMap.detLineEquivOfBijective (hinv a left_mem_uIcc).bijective).injective
+  rw [LinearMap.detLineEquivOfBijective_detLineCongrOfEq, LinearEquiv.apply_symm_apply,
+    LinearEquiv.apply_symm_apply]
+
+end Invertible
 
 end TauCeti

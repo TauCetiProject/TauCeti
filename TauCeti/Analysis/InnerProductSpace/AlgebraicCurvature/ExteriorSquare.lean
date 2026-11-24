@@ -28,7 +28,8 @@ to `algebraicCurvatureSubmodule V` gives a linear equivalence `curvatureEndomorp
 
 Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
 2 • exteriorPower.symmMap₂ (bilinFormToEnd h) (bilinFormToEnd k)`, and for any pair-antisymmetric
-`r`, `2 * tr(curvatureEndomorphism r ∘ symmMap₂ A id) = bilinFormTrace ((ricci r).compLeft A)`.
+`r`, `2 * tr(curvatureEndomorphism r ∘ symmMap₂ A id) =
+LinearMap.BilinMap.metricTrace ((ricci r).compLeft A)`.
 
 ## Main definitions
 
@@ -45,7 +46,8 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
   `TauCeti.FourTensor.curvatureEndomorphism_constantCurvature`,
   `TauCeti.FourTensor.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm`,
   `TauCeti.FourTensor.scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm`,
-  `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`, and
+  `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`,
+  `ContinuousLinearMap.inner_curvatureEndomorphism_compContinuousLinearMap`, and
   `LinearIsometryEquiv.map_comp_curvatureEndomorphism_compContinuousLinearMap`.
 
 ## References
@@ -256,9 +258,9 @@ theorem two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm {r : 
     (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) (A : Module.End ℝ V) :
     2 * LinearMap.trace ℝ (⋀[ℝ]^2 V)
         (curvatureEndomorphism r ∘ₗ exteriorPower.symmMap₂ A LinearMap.id) =
-      bilinFormTrace ((ricci r).compLeft A) := by
+      LinearMap.BilinMap.metricTrace ((ricci r).compLeft A) := by
   let b := stdOrthonormalBasis ℝ V
-  rw [← b.sum_inner_ιMulti_two_eq_two_mul_trace, bilinFormTrace_eq_sum _ b]
+  rw [← b.sum_inner_ιMulti_two_eq_two_mul_trace, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   have hterm (i j : Fin (Module.finrank ℝ V)) :
       ⟪(curvatureEndomorphism r ∘ₗ exteriorPower.symmMap₂ A LinearMap.id)
           (exteriorPower.ιMulti ℝ 2 ![b i, b j]), exteriorPower.ιMulti ℝ 2 ![b i, b j]⟫ =
@@ -276,7 +278,7 @@ theorem IsBivectorSymmetric.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_
     {r : FourTensor V} (hr : IsBivectorSymmetric r) (A : Module.End ℝ V) :
     2 * LinearMap.trace ℝ (⋀[ℝ]^2 V)
         (curvatureEndomorphism r ∘ₗ exteriorPower.symmMap₂ A LinearMap.id) =
-      bilinFormTrace ((ricci r).compLeft A) :=
+      LinearMap.BilinMap.metricTrace ((ricci r).compLeft A) :=
   two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm hr.antisymm_first
       hr.antisymm_last A
 
@@ -285,7 +287,7 @@ theorem IsAlgebraicCurvature.two_mul_trace_curvatureEndomorphism_comp_symmMap₂
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (A : Module.End ℝ V) :
     2 * LinearMap.trace ℝ (⋀[ℝ]^2 V)
         (curvatureEndomorphism r ∘ₗ exteriorPower.symmMap₂ A LinearMap.id) =
-      bilinFormTrace ((ricci r).compLeft A) :=
+      LinearMap.BilinMap.metricTrace ((ricci r).compLeft A) :=
   hr.isBivectorSymmetric.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id A
 
 /-- For pair-antisymmetric `r`, `scalar r = 2 * tr(curvatureEndomorphism r)`. -/
@@ -327,6 +329,16 @@ theorem curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) (r : F
     simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_left,
       exteriorPower.map_apply_ιMulti_two, inner_curvatureEndomorphism_ιMulti,
       compContinuousLinearMap_apply_vec, ContinuousLinearMap.coe_coe]
+
+/-- The bivector form of the pullback of a four-tensor along `f : W →L[ℝ] V` evaluates the bivector
+form of `r` on the images under `exteriorPower.map 2 f`. -/
+theorem inner_curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) (r : FourTensor V)
+    (ω ω' : ⋀[ℝ]^2 W) :
+    ⟪curvatureEndomorphism (r.compContinuousLinearMap fun _ ↦ f) ω, ω'⟫ =
+      ⟪curvatureEndomorphism r (exteriorPower.map 2 f.toLinearMap ω),
+        exteriorPower.map 2 f.toLinearMap ω'⟫ := by
+  rw [f.curvatureEndomorphism_compContinuousLinearMap, LinearMap.comp_apply,
+    LinearMap.adjoint_inner_left, LinearMap.comp_apply]
 
 end ContinuousLinearMap
 

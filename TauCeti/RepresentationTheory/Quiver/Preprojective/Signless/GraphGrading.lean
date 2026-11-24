@@ -15,7 +15,8 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 For a finite simple graph with vertices labelled by natural numbers, every numerical
 `TauCeti.signlessArrow` is homogeneous of degree one. Consequently, a valley word made from
-these arrows is homogeneous in its word length. This packages the graph-word interface to the
+these arrows, and more generally the class of any walk given by its vertices, is homogeneous in
+its word length. This packages the graph-word interface to the
 path grading of the signless preprojective algebra. For an arbitrary simple graph, a product of
 `n` backtracks at a common vertex has path degree `2 * n`.
 -/
@@ -47,6 +48,23 @@ theorem signlessArrow_mem_grade_one (i j : ℕ) :
       exact Submodule.zero_mem _
   · rw [signlessArrow_eq_zero k (fun hi hj _ => hbounds ⟨hi, hj⟩)]
     exact Submodule.zero_mem _
+
+/-- The class of the walk through the vertices `l` is homogeneous of degree one less than the
+number of vertices, its number of steps. This holds for every list, the empty list and lists
+which are not walks having class `0`. -/
+theorem signlessWord_mem_grade (l : List (Fin n)) :
+    signlessWord k G l ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (l.length - 1) := by
+  induction l with
+  | nil => simp
+  | cons j l ih =>
+    cases l with
+    | nil =>
+      rw [signlessWord_singleton]
+      exact signlessPreprojectiveMk_mem_grade k _ (vertexIdempotent_mem_grade_zero (vertex G j))
+    | cons i r =>
+      rw [signlessWord_cons_cons]
+      simpa [add_comm] using
+        mul_mem_signlessPreprojectiveGrade k _ (signlessArrow_mem_grade_one k G i j) ih
 
 /-- A valley word of numerical graph arrows with `s` descents and `r` climbs is homogeneous of
 degree `s + r`. -/

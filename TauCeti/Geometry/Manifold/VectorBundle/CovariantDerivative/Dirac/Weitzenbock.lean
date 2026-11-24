@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondCovariantDerivative
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Dirac.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.Algebra.BigOperators.Finset.Pairs
@@ -18,14 +18,14 @@ import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
-# The Weitzenböck formula for the Dirac operator
+# The Weitzenböck formula for the square of a Dirac operator
 
 Let `V` be a vector bundle over a Riemannian manifold `M`, with a smooth connection `∇` and a
 Clifford multiplication `c x : T_x M → End (V x)`, and let `∇ᵀ` be a connection on the tangent
 bundle. The Dirac operator `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ` is `CovariantDerivative.diracOperator`.
 Assume that `∇ᵀ` is compatible with the metric on all of `M`, and, at a point `x`, that `c` is
-differentiable and compatible with the two connections: for vector fields `v` and sections `s`
-differentiable at `x`, the section `c(v) s` is differentiable at `x` and
+differentiable and compatible with the two connections: for smooth vector fields `v` and smooth
+sections `s`, the section `c(v) s` is differentiable at `x` and
 `∇_w (c(v) s) = c(∇ᵀ_w v) s + c(v) ∇_w s`.
 
 Then the covariant derivative of `D σ` at `x` is the Clifford contraction of the second
@@ -37,19 +37,19 @@ covariant derivative `∇²σ(u, v) = ∇_u ∇_v σ - ∇_{∇ᵀ_u v} σ`
 (`CovariantDerivative.covariantDerivative_diracOperator_apply`), for every orthonormal basis
 `eᵢ` of `T_x M`. If moreover the torsion of `∇ᵀ` vanishes at `x` (for instance, `∇ᵀ` is the
 Levi-Civita connection) and `c` satisfies the Clifford relation `c(v)² = -⟪v, v⟫` at `x`, then
-splitting
-`∑ₖ ∑ᵢ c(eₖ) c(eᵢ) ∇²σ(eₖ, eᵢ)` into its symmetric and antisymmetric parts gives the
+splitting `∑ₖ ∑ᵢ c(eₖ) c(eᵢ) ∇²σ(eₖ, eᵢ)` into its symmetric and antisymmetric parts gives the
 **Weitzenböck formula** (the general Bochner–Lichnerowicz–Weitzenböck square formula)
 
-`D (D σ) = ∇*∇ σ + ∑_{i < j} c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ`
+`D (D σ) = ∇*∇ σ + (1 / 2) ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ`
 
-(`CovariantDerivative.diracOperator_diracOperator_eq_sum_lt`), where `∇*∇` is the rough Laplacian
-`CovariantDerivative.roughLaplacian` and `R` is the curvature of `∇`. The symmetric part is the
-negative trace of `∇²σ` because `c(eₖ) c(eᵢ) + c(eᵢ) c(eₖ) = -2 δₖᵢ`, and the antisymmetric part
-is the curvature by the Ricci identity (`CovariantDerivative.secondCovariantDerivative_sub_swap`).
-Summed over all
-ordered pairs, the curvature term carries a factor `1 / 2`
-(`CovariantDerivative.diracOperator_diracOperator_eq`).
+(`CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add`), where `∇*∇` is the
+rough Laplacian `CovariantDerivative.roughLaplacian` and `R` is the curvature of `∇`. The
+symmetric part is the negative trace of `∇²σ` because `c(eₖ) c(eᵢ) + c(eᵢ) c(eₖ) = -2 δₖᵢ`, and
+the antisymmetric part is the curvature by the Ricci identity
+(`CovariantDerivative.secondCovariantDerivative_sub_swap`). Since
+`c(eⱼ) c(eᵢ) R(eⱼ, eᵢ) = c(eᵢ) c(eⱼ) R(eᵢ, eⱼ)` for `i ≠ j` and the diagonal terms vanish, the
+curvature term is the sum `∑_{i < j} c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ` over unordered pairs
+(`CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt`).
 
 This is the formula for the Dirac operator induced by the connection: adding a term of order
 zero to `D` changes its square by terms of order one and zero which do not have this form. Its
@@ -59,6 +59,26 @@ manifold, where the curvature of the spin connection contracts to `Scal / 4`
 the Weitzenböck formula `D_A² = ∇_A*∇_A + Scal / 4 + c(F_A⁺) / 2` of Seiberg–Witten theory, where
 the curvature of the twisting line contributes the last term. Those computations of the curvature
 of an actual spinor bundle are not made here.
+
+The same formula holds in an orthonormal frame `eᵢ` near `x` whose covariant derivatives vanish
+at `x`, such as a geodesic frame: there the Clifford multiplications `c(eᵢ)` pass through `∇` at
+`x`, and `D² σ = ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) ∇²σ(eᵢ, eⱼ)` at `x`
+(`CovariantDerivative.diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative`,
+`CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add_of_frame`).
+
+## Main results
+
+* `CovariantDerivative.mdifferentiableAt_diracOperator`: `D σ` is differentiable where `c` is.
+* `CovariantDerivative.covariantDerivative_diracOperator_apply`:
+  `∇_w (D σ) = ∑ᵢ c(eᵢ) ∇²σ(w, eᵢ)`.
+* `CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add`: the Weitzenböck
+  formula, in every orthonormal basis.
+* `CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt`: the same, with
+  the curvature term summed over pairs `i < j`.
+* `CovariantDerivative.diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative`:
+  `D² σ = ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) ∇²σ(eᵢ, eⱼ)` in an orthonormal frame parallel at the point.
+* `CovariantDerivative.diracOperator_diracOperator_eq_roughLaplacian_add_of_frame`: the
+  Weitzenböck formula in such a frame, for any torsion-free connection on the tangent bundle.
 
 ## Proof
 
@@ -74,7 +94,7 @@ bracket is symmetric, so the sum vanishes.
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press, 1989,
   Chapter II, Theorem 8.2.
-* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific,
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed., World Scientific, 2007,
   Theorem 12.1.67.
 -/
 
@@ -95,14 +115,107 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V]
   (cov : _root_.CovariantDerivative I F V)
   (c : Π x : M, TangentSpace I x →L[ℝ] V x →L[ℝ] V x)
-  {σ : Π y : M, V y} {x : M}
+  {σ : Π y : M, V y}
+
+section ParallelFrame
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [FiniteDimensional ℝ F]
+  [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I] [ContMDiffCovariantDerivative cov ∞]
+  (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] in
+/-- **The square of the Dirac operator in a frame parallel at a point.** Let `e₁, …, eₖ` be
+smooth vector fields forming an orthonormal frame near `x`, with vanishing covariant derivatives
+`∇ᵀ eᵢ = 0` at `x`. Suppose that each `c(eᵢ)` is parallel at `x` on the section `∇_{eᵢ} σ`,
+and that the sections `c(eᵢ) ∇_{eᵢ} σ` are differentiable at `x`. Then for a smooth section `σ`,
+
+`D (D σ) = ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) ∇²σ(eᵢ, eⱼ)`
+
+at `x`, where `∇²σ` is the second covariant derivative for `∇` and `∇ᵀ`. -/
+theorem diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative
+    (hσ : CMDiff ∞ (T% σ)) {ι : Type*} [Fintype ι] (e : ι → Π y : M, TangentSpace I y)
+    (he : ∀ i, CMDiff ∞ (T% (e i))) {x : M}
+    (hframe : ∀ᶠ y in 𝓝 x, ∃ b : OrthonormalBasis ι ℝ (TangentSpace I y), ∀ i, b i = e i y)
+    (hpar : ∀ i, covT (e i) x = 0)
+    (hc : ∀ i u, cov (fun y ↦ c y (e i y) (cov σ y (e i y))) x u =
+      c x (e i x) (cov (fun y ↦ cov σ y (e i y)) x u))
+    (hdiff : ∀ i, MDiffAt (T% (fun y ↦ c y (e i y) (cov σ y (e i y)))) x) :
+    cov.diracOperator c (cov.diracOperator c σ) x =
+      ∑ i, ∑ j, c x (e i x) (c x (e j x)
+        (cov.secondCovariantDerivative covT σ x (e i x) (e j x))) := by
+  -- Near `x` the Dirac operator of `σ` is the frame sum `∑ⱼ c(eⱼ) ∇_{eⱼ} σ`.
+  set S : ι → Π y : M, V y := fun j y ↦ c y (e j y) (cov σ y (e j y)) with hS
+  have hsum : ∀ᶠ y in 𝓝 x, cov.diracOperator c σ y = (∑ j, S j) y := by
+    filter_upwards [hframe] with y ⟨b, hb⟩
+    rw [diracOperator_eq_sum cov c σ y b, Finset.sum_apply]
+    simp only [hb, hS]
+  have hsumdiff : MDiffAt (T% (∑ j, S j)) x := by
+    simpa [Finset.sum_apply] using
+      MDifferentiableAt.sum_section (s := Finset.univ) fun j _ ↦ hdiff j
+  have hDdiff : MDiffAt (T% (cov.diracOperator c σ)) x :=
+    hsumdiff.congr_of_eventuallyEq (hsum.mono fun y hy ↦ by simp only [hy])
+  -- At `x`, `∇_u (c(eⱼ) ∇_{eⱼ} σ) = c(eⱼ) ∇²σ(u, eⱼ)`, since `∇ᵀ eⱼ = 0` there.
+  have hsecond (j : ι) (u : TangentSpace I x) :
+      cov.secondCovariantDerivative covT σ x u (e j x) =
+        cov (fun y ↦ cov σ y (e j y)) x u := by
+    simp [secondCovariantDerivative_apply cov covT hσ x (he j) u, hpar j]
+  obtain ⟨b, hb⟩ := hframe.self_of_nhds
+  rw [diracOperator_eq_sum cov c _ x b,
+    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hDdiff hsumdiff univ_mem hsum,
+    cov.isCovariantDerivativeOnUniv.sum fun j _ ↦ hdiff j]
+  simp only [hb, FunLike.coe_sum, Finset.sum_apply, map_sum, hc, hsecond]
+
+/-- **The Weitzenböck formula in a frame parallel at a point.** Let `∇ᵀ` be a torsion-free
+connection on the tangent bundle and `e₁, …, eₖ` smooth vector fields forming an orthonormal frame
+near `x`, with `∇ᵀ eᵢ = 0` at `x`. Suppose that Clifford multiplication satisfies the Clifford
+relation `c(u) c(w) + c(w) c(u) = -2 ⟪u, w⟫` at `x`, that each `c(eᵢ)` is parallel at `x` on the
+section `∇_{eᵢ} σ`, and that the sections `c(eᵢ) ∇_{eᵢ} σ` are differentiable at `x`. Then for a
+smooth section `σ`,
+
+`D (D σ) = ∇*∇ σ + (1 / 2) ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ`
+
+at `x`, where `∇*∇` is the rough Laplacian and `R` the curvature of `∇`. -/
+theorem diracOperator_diracOperator_eq_roughLaplacian_add_of_frame (ht : covT.IsTorsionFree)
+    (hσ : CMDiff ∞ (T% σ)) {ι : Type*} [Fintype ι] (e : ι → Π y : M, TangentSpace I y)
+    (he : ∀ i, CMDiff ∞ (T% (e i))) {x : M}
+    (hframe : ∀ᶠ y in 𝓝 x, ∃ b : OrthonormalBasis ι ℝ (TangentSpace I y), ∀ i, b i = e i y)
+    (hpar : ∀ i, covT (e i) x = 0)
+    (hcl : ∀ u w s, c x u (c x w s) + c x w (c x u s) = -(2 * ⟪u, w⟫) • s)
+    (hc : ∀ i u, cov (fun y ↦ c y (e i y) (cov σ y (e i y))) x u =
+      c x (e i x) (cov (fun y ↦ cov σ y (e i y)) x u))
+    (hdiff : ∀ i, MDiffAt (T% (fun y ↦ c y (e i y) (cov σ y (e i y)))) x) :
+    cov.diracOperator c (cov.diracOperator c σ) x =
+      cov.roughLaplacian covT σ x +
+        (2 : ℝ)⁻¹ • ∑ i, ∑ j, c x (e i x) (c x (e j x)
+          (cov.curvatureTensor x (e i x) (e j x) (σ x))) := by
+  classical
+  obtain ⟨b, hb⟩ := hframe.self_of_nhds
+  -- The Clifford multiplications by the frame vectors at `x` satisfy the Clifford relations.
+  have hγ (i j : ι) (s : V x) : c x (e i x) (c x (e j x) s) + c x (e j x) (c x (e i x) s) =
+      if i = j then -(2 • s) else 0 := by
+    rw [hcl, ← hb i, ← hb j, orthonormal_iff_ite.mp b.orthonormal i j]
+    split_ifs <;> simp [two_smul]
+  have h := TauCeti.two_nsmul_sum_sum_apply_apply_eq (fun i ↦ c x (e i x)) hγ
+    (fun i j ↦ cov.secondCovariantDerivative covT σ x (e i x) (e j x))
+  simp only [secondCovariantDerivative_sub_swap_of_isTorsionFree cov covT ht hσ x] at h
+  rw [diracOperator_diracOperator_eq_sum_sum_secondCovariantDerivative cov c covT hσ e he hframe
+      hpar hc hdiff, roughLaplacian_eq_sum cov covT σ x b]
+  simp only [hb]
+  simp only [← Nat.cast_smul_eq_nsmul ℝ 2, Nat.cast_ofNat] at h
+  have h2 : (2 : ℝ) ≠ 0 := two_ne_zero
+  rw [← inv_smul_smul₀ h2 (∑ i, ∑ j, _), h, smul_add, smul_neg, inv_smul_smul₀ h2]
+
+end ParallelFrame
+
+variable {x : M}
 
 section Frame
 
 variable [VectorBundle ℝ F V] [IsManifold I ∞ M] [ContMDiffCovariantDerivative cov ∞]
   (hσ : CMDiff ∞ (T% σ))
-  (hcd : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, MDiffAt (T% v) x →
-    MDiffAt (T% s) x → MDiffAt (T% (fun y ↦ c y (v y) (s y))) x)
+  (hcd : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, CMDiff ∞ (T% v) →
+    CMDiff ∞ (T% s) → MDiffAt (T% (fun y ↦ c y (v y) (s y))) x)
 include hσ hcd
 
 /-- The terms `c(Yᵢ) ∇_{Yᵢ} σ` of the Dirac operator in a smooth frame are differentiable. -/
@@ -111,8 +224,7 @@ private theorem mdifferentiableAt_sum_frame {ι : Type*} [Fintype ι]
     MDiffAt (T% (∑ i, fun y : M ↦ c y (Y i y) (cov σ y (Y i y)))) x := by
   have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
   have h (i : ι) : MDiffAt (T% (fun y : M ↦ c y (Y i y) (cov σ y (Y i y)))) x :=
-    hcd ((hYs i).mdifferentiable (by simp) x)
-      ((cov.contMDiff_apply (hYs i) hσ').mdifferentiable (by simp) x)
+    hcd (hYs i) (cov.contMDiff_apply (hYs i) hσ')
   simpa [Finset.sum_apply] using
     MDifferentiableAt.sum_section (t := fun i (y : M) ↦ c y (Y i y) (cov σ y (Y i y)))
       (s := Finset.univ) fun i _ ↦ h i
@@ -180,13 +292,13 @@ variable [T2Space M]
 
 variable [VectorBundle ℝ F V] [ContMDiffCovariantDerivative cov ∞]
   (hσ : CMDiff ∞ (T% σ))
-  (hcd : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, MDiffAt (T% v) x →
-    MDiffAt (T% s) x → MDiffAt (T% (fun y ↦ c y (v y) (s y))) x)
+  (hcd : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, CMDiff ∞ (T% v) →
+    CMDiff ∞ (T% s) → MDiffAt (T% (fun y ↦ c y (v y) (s y))) x)
 include hσ hcd
 
 /-- **The Dirac operator of a smooth section is differentiable** wherever the Clifford
-multiplication is: if `c(v) s` is differentiable at `x` for all vector fields `v` and sections `s`
-differentiable at `x`, then so is `D σ` for every smooth section `σ`. -/
+multiplication is: if `c(v) s` is differentiable at `x` for all smooth vector fields `v` and
+smooth sections `s`, then so is `D σ` for every smooth section `σ`. -/
 theorem mdifferentiableAt_diracOperator : MDiffAt (T% (cov.diracOperator c σ)) x := by
   obtain ⟨Y, hYs, hY⟩ := TauCeti.exists_contMDiff_orthonormal_frame_nhds (I := I) (F := E)
     (V := fun y : M ↦ TangentSpace I y) (n := ∞) x
@@ -194,8 +306,8 @@ theorem mdifferentiableAt_diracOperator : MDiffAt (T% (cov.diracOperator c σ)) 
   filter_upwards [eventually_diracOperator_eq cov c hY] with y hy
   rw [hy]
 
-variable (hcomp : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, MDiffAt (T% v) x →
-    MDiffAt (T% s) x → ∀ w, cov (fun y ↦ c y (v y) (s y)) x w =
+variable (hcomp : ∀ {v : Π y : M, TangentSpace I y} {s : Π y : M, V y}, CMDiff ∞ (T% v) →
+    CMDiff ∞ (T% s) → ∀ w, cov (fun y ↦ c y (v y) (s y)) x w =
       c x (covT v x w) (s x) + c x (v x) (cov s x w))
 include hcovT hcomp
 
@@ -208,16 +320,13 @@ private theorem covariantDerivative_sum_frame {ι : Type*} [Fintype ι]
     cov (∑ i, fun y : M ↦ c y (Y i y) (cov σ y (Y i y))) x w =
       ∑ i, c x (Y i x) (cov.secondCovariantDerivative covT σ x w (Y i x)) := by
   have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
-  have hYd (i : ι) : MDiffAt (T% (Y i)) x := (hYs i).mdifferentiable (by simp) x
-  have hsd (i : ι) : MDiffAt (T% (fun y : M ↦ cov σ y (Y i y))) x :=
-    (cov.contMDiff_apply (hYs i) hσ').mdifferentiable (by simp) x
+  have hss (i : ι) : CMDiff ∞ (T% (fun y : M ↦ cov σ y (Y i y))) := cov.contMDiff_apply (hYs i) hσ'
   -- `∇_w (∇_{Yᵢ} σ) = ∇²σ(w, Yᵢ) + ∇_{∇ᵀ_w Yᵢ} σ`.
   have h2 (i : ι) : cov (fun y : M ↦ cov σ y (Y i y)) x w =
       cov.secondCovariantDerivative covT σ x w (Y i x) + cov σ x (covT (Y i) x w) := by
     rw [cov.secondCovariantDerivative_apply covT hσ x (hYs i) w, sub_add_cancel]
-  rw [TauCeti.Manifold.covariantDerivative_sum cov.isCovariantDerivativeOnUniv (mem_univ x)
-    fun i _ ↦ hcd (hYd i) (hsd i), _root_.sum_apply]
-  simp only [hcomp (hYd _) (hsd _), h2, map_add]
+  rw [cov.isCovariantDerivativeOnUniv.sum fun i _ ↦ hcd (hYs i) (hss i), _root_.sum_apply]
+  simp only [hcomp (hYs _) (hss _), h2, map_add]
   rw [← sub_eq_zero, ← Finset.sum_sub_distrib]
   convert sum_frame_eq_zero cov c covT hcovT hYs hY w using 2 with i
   abel
@@ -261,7 +370,7 @@ let the Clifford multiplication `c` satisfy `c(v)² = -⟪v, v⟫` at `x` and be
 compatible with `∇` and `∇ᵀ` there. Then for every smooth section `σ` and every orthonormal basis
 `eᵢ` of `T_x M`, `D (D σ) = ∇*∇ σ + (1 / 2) ∑ᵢ ∑ⱼ c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ` at `x`, where `R` is
 the curvature of `∇`. -/
-theorem diracOperator_diracOperator_eq {ι : Type*} [Fintype ι]
+theorem diracOperator_diracOperator_eq_roughLaplacian_add {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.diracOperator c (cov.diracOperator c σ) x =
       cov.roughLaplacian covT σ x +
@@ -292,12 +401,12 @@ multiplication `c` satisfy `c(v)² = -⟪v, v⟫` at `x` and be differentiable a
 and `∇ᵀ` there. Then for every smooth section `σ` and every orthonormal basis `eᵢ` of `T_x M`,
 indexed by a linear order, `D (D σ) = ∇*∇ σ + ∑_{i < j} c(eᵢ) c(eⱼ) R(eᵢ, eⱼ) σ` at `x`, where
 `R` is the curvature of `∇`. -/
-theorem diracOperator_diracOperator_eq_sum_lt {ι : Type*} [Fintype ι] [LinearOrder ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+theorem diracOperator_diracOperator_eq_roughLaplacian_add_sum_lt {ι : Type*} [Fintype ι]
+    [LinearOrder ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.diracOperator c (cov.diracOperator c σ) x =
       cov.roughLaplacian covT σ x +
         ∑ i, ∑ j with i < j, c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x))) := by
-  rw [diracOperator_diracOperator_eq cov c covT hcovT hσ hcd hcomp htor hcl b]
+  rw [diracOperator_diracOperator_eq_roughLaplacian_add cov c covT hcovT hσ hcd hcomp htor hcl b]
   congr 1
   set f : ι → ι → V x := fun i j ↦ c x (b i) (c x (b j) (cov.curvatureTensor x (b i) (b j) (σ x)))
     with hf

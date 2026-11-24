@@ -50,6 +50,8 @@ the differential with `d₀₁`, Mathlib's `d₁₂` and, after forgetting alter
 * `TauCeti.LieModule.Cohomology.curryLeft_d_succ`: Cartan's formula.
 * `TauCeti.LieModule.Cohomology.lie_d`: the differential is a map of `L`-modules.
 * `TauCeti.LieModule.Cohomology.d_d`: the differential squares to zero.
+* `TauCeti.LieModule.Cohomology.compLinearMap_d_eq_compAlternatingMap_d`: naturality of the
+  differential along a Lie algebra morphism and a compatible map of coefficients.
 * `TauCeti.LieModule.Cohomology.twoCochainEquiv_d_one`,
   `TauCeti.LieModule.Cohomology.d₂₃_twoCochainEquiv`: the comparison with `d₁₂` and `d₂₃`.
 
@@ -201,6 +203,34 @@ theorem d_d (n : ℕ) (ω : L [⋀^Fin n]→ₗ[R] M) : d R L M (n + 1) (d R L M
 /-- The Chevalley–Eilenberg differential squares to zero, as a composite of linear maps. -/
 theorem d_comp_d (n : ℕ) : d R L M (n + 1) ∘ₗ d R L M n = 0 :=
   LinearMap.ext (d_d n)
+
+/-- Naturality of the differential: if `φ : L' → L` is a morphism of Lie algebras and
+`f : M' → M` intertwines the action of each `y` on `M'` with that of `φ y` on `M`, then a relation
+`ω ∘ φ = f ∘ ω'` between cochains of `L` and of `L'` passes to their differentials. -/
+theorem compLinearMap_d_eq_compAlternatingMap_d {L' M' : Type*} [LieRing L'] [LieAlgebra R L']
+    [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
+    (φ : L' →ₗ⁅R⁆ L) {f : M' →ₗ[R] M} (hf : ∀ y m, f ⁅y, m⁆ = ⁅φ y, f m⁆) {n : ℕ}
+    {ω : L [⋀^Fin n]→ₗ[R] M} {ω' : L' [⋀^Fin n]→ₗ[R] M'}
+    (h : ω.compLinearMap (φ : L' →ₗ[R] L) = f.compAlternatingMap ω') :
+    (d R L M n ω).compLinearMap (φ : L' →ₗ[R] L) = f.compAlternatingMap (d R L' M' n ω') := by
+  have hφ (y z : L') : (φ : L' →ₗ[R] L) ⁅y, z⁆ = ⁅φ y, (φ : L' →ₗ[R] L) z⁆ := φ.map_lie y z
+  -- Cartan's formula reduces the claim for `d ω` to the action of `φ y` on `ω` and, by
+  -- induction, to the differential of the interior product `ι_{φ y} ω`.
+  induction n with
+  | zero =>
+    refine curryLeft_injective (LinearMap.ext fun y ↦ ?_)
+    simpa using compLinearMap_lie_eq_compAlternatingMap_lie (hφ y) (hf y) h
+  | succ n ih =>
+    refine curryLeft_injective (LinearMap.ext fun y ↦ ?_)
+    have hι : (ω.curryLeft (φ y)).compLinearMap (φ : L' →ₗ[R] L) =
+        f.compAlternatingMap (ω'.curryLeft y) := by
+      simpa using congr(($h).curryLeft y)
+    ext v
+    have h₁ := congr($(compLinearMap_lie_eq_compAlternatingMap_lie (hφ y) (hf y) h) v)
+    have h₂ := congr($(ih hι) v)
+    simp only [curryLeft_compLinearMap, curryLeft_compAlternatingMap, curryLeft_d_succ,
+      compLinearMap_apply, LinearMap.compAlternatingMap_apply, sub_apply, map_sub] at h₁ h₂ ⊢
+    exact congr($h₁ - $h₂)
 
 end Differential
 
