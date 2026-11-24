@@ -112,12 +112,6 @@ private theorem fderiv_slice_fst_apply (hΦ : DifferentiableAt ℝ Φ p) (v : �
   rw [hΦ.hasFDerivAt_slice_fst.fderiv]
   simp
 
-/-- The normal slices of a compactly supported family are compactly supported. -/
-private theorem hasCompactSupport_slice_snd (hΦ : HasCompactSupport Φ) (w : ℂ) :
-    HasCompactSupport fun z ↦ Φ (w, z) :=
-  HasCompactSupport.comp_of_forall_mem_imp_mem (hΦ.isCompact.image continuous_snd)
-    (fun _ hz ↦ ⟨_, hz, rfl⟩) fun _ hq ↦ image_eq_zero_of_notMem_tsupport hq
-
 /-- The gradients of the four coordinates of the normal slice, as a linear function of the
 derivative `D` of a family at a point: the gradient of the coordinate `j` is dual to
 `u ↦ D (0, u) j`. -/
@@ -299,7 +293,7 @@ private theorem integral_inner_gaugeFixedOperator_slice (hx : Continuous x)
       simp [gaugeFixedAdjoint_slice_eq_zero (x := x) hq])]
   exact integral_congr_ae (.of_forall fun w ↦ Vortex.integral_inner_gaugeFixedOperator (μ := ν)
     (hΨ.comp (contDiff_const.prodMk contDiff_id)) (hΗ.comp (contDiff_const.prodMk contDiff_id))
-    (Or.inr (hasCompactSupport_slice_snd hΗc w)))
+    (Or.inr (hΗc.comp_prodMk_right w)))
 
 /-- **The cross term along a base direction.** For `C²` families `Ξ`, `Η`, with `Η` compactly
 supported, and a base direction `v`, the pairing of `L_x Ξ` with `∂_v Η` and the pairing of
@@ -531,7 +525,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNormalModel
   -- Integrate the gap along each normal slice.
   rw [integral_prod _ hΗi, integral_prod _ hAi, ← integral_const_mul]
   exact integral_mono (hΗi.integral_prod_left.const_mul c) hAi.integral_prod_left fun w ↦
-    hgap _ (hΗ.comp (contDiff_const.prodMk contDiff_id)) (hasCompactSupport_slice_snd hΗc w)
+    hgap _ (hΗ.comp (contDiff_const.prodMk contDiff_id)) (hΗc.comp_prodMk_right w)
 
 /-- **Coercivity of the paired block at a plane vortex.** At a `C¹` plane vortex `x` whose
 section has modulus tending to one at infinity there is `c > 0` such that every pair of compactly
