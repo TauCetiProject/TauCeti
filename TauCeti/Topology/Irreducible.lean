@@ -8,17 +8,22 @@ module
 public import Mathlib.Topology.Irreducible
 
 /-!
-# Irreducible components: preimages and the component through a point
+# Irreducible components: preimages, images and the component through a point
 
 A continuous surjection whose preimages of irreducible components are irreducible induces, by
 taking preimages, a bijection between the irreducible components of the target and those of the
 source. Over a field, this recognises base changes along which every irreducible component stays
 irreducible, that is, geometrically irreducible components.
 
+A homeomorphism `h` induces a bijection `Homeomorph.irreducibleComponentsEquiv h` between
+irreducible components that sends a component to its image under `h`.
+
 Mathlib's `irreducibleComponent x` is a maximal irreducible set containing `x`. We bundle it as
 an element `irreducibleComponentOf x` of `irreducibleComponents α`, giving a map from points to
 irreducible components. When every point lies on a unique irreducible component, as in a scheme
-whose stalks are integral domains, this map sends a point to the component containing it.
+whose stalks are integral domains, this map sends a point to the component containing it, and
+`Homeomorph.irreducibleComponentsEquiv h` carries the component through `x` to the component
+through `h x`.
 -/
 
 public section
