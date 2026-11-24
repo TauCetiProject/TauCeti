@@ -52,6 +52,8 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
 * `DifferentiableOn.analyticAt_of_finiteDimensional`,
   `DifferentiableOn.analyticOnNhd_of_finiteDimensional`: a function on a finite-dimensional complex
   normed space which is complex differentiable on a neighbourhood of a point is analytic there.
+  `Differentiable.analyticOnNhd_of_finiteDimensional` is the case of a function differentiable
+  everywhere, which is analytic on every set.
 * `DifferentiableOn.contDiffOn_of_finiteDimensional`: such a function is `C^n` on an open set on
   which it is complex differentiable, for every `n`.
   `Differentiable.contDiff_of_finiteDimensional` and `Differentiable.fderiv_of_finiteDimensional`
@@ -357,6 +359,12 @@ open set is analytic on it. This is the several-variable form of `Differentiable
 theorem _root_.DifferentiableOn.analyticOnNhd_of_finiteDimensional (hd : DifferentiableOn ℂ f s)
     (hs : IsOpen s) : AnalyticOnNhd ℂ f s :=
   fun _z hz => hd.analyticAt_of_finiteDimensional (hs.mem_nhds hz)
+
+/-- A complex differentiable function on a finite-dimensional complex normed space is analytic on
+every set. This is the several-variable form of `Differentiable.analyticAt`. -/
+theorem _root_.Differentiable.analyticOnNhd_of_finiteDimensional (hd : Differentiable ℂ f) :
+    AnalyticOnNhd ℂ f s :=
+  (hd.differentiableOn.analyticOnNhd_of_finiteDimensional isOpen_univ).mono (subset_univ s)
 
 /-- A function on a finite-dimensional complex normed space which is complex differentiable on an
 open set is `C^n` on it for every `n`, including `n = ω`. This is the several-variable form of

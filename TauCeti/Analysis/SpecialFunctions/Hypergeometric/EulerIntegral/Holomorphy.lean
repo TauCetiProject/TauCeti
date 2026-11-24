@@ -141,7 +141,6 @@ theorem analyticOnNhd_eulerIntegral_joint :
     exact (differentiable_one_div_Gamma.comp (by fun_prop)).mul
       (differentiable_one_div_Gamma.comp (by fun_prop))
   simp only [eulerIntegral_def]
-  exact ((hG.differentiableOn.analyticOnNhd_of_finiteDimensional isOpen_univ).mono
-    (subset_univ _)).mul analyticOnNhd_integral_eulerIntegrand_joint
+  exact hG.analyticOnNhd_of_finiteDimensional.mul analyticOnNhd_integral_eulerIntegrand_joint
 
 end Complex

@@ -169,13 +169,6 @@ theorem eulerIntegralShift_succ_right (p q : ℕ) (a b c z : ℂ) :
     simp only [eulerIntegralShift_succ_left, ih]
     ring
 
-/-- A complex differentiable function of `(a, b, c, z)`, such as an affine change of parameters,
-is analytic on every set. -/
-private theorem analyticOnNhd_of_differentiable {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] [CompleteSpace F] {f : ℂ × ℂ × ℂ × ℂ → F} (hf : Differentiable ℂ f)
-    (s : Set (ℂ × ℂ × ℂ × ℂ)) : AnalyticOnNhd ℂ f s :=
-  (hf.differentiableOn.analyticOnNhd_of_finiteDimensional isOpen_univ).mono (subset_univ s)
-
 /-- `eulerIntegralShift p q` is holomorphic in `(a, b, c, z)` jointly on
 `eulerIntegralShiftRegion p q`. -/
 theorem analyticOnNhd_eulerIntegralShift (p q : ℕ) :
@@ -192,58 +185,52 @@ theorem analyticOnNhd_eulerIntegralShift (p q : ℕ) :
       exact ⟨hb, by linarith, hz⟩
     | succ q ih =>
       have h₁ := ih.comp (f := fun x : ℂ × ℂ × ℂ × ℂ ↦ (x.1, x.2.1, x.2.2.1 + 1, x.2.2.2))
-        (analyticOnNhd_of_differentiable (by fun_prop) _)
+        (Differentiable.analyticOnNhd_of_finiteDimensional (by fun_prop))
           fun x hx ↦ mem_eulerIntegralShiftRegion_shift_c x.1 hx
       have h₂ := ih.comp (f := fun x : ℂ × ℂ × ℂ × ℂ ↦ (x.1 + 1, x.2.1, x.2.2.1 + 1, x.2.2.2))
-        (analyticOnNhd_of_differentiable (by fun_prop) _)
+        (Differentiable.analyticOnNhd_of_finiteDimensional (by fun_prop))
           fun x hx ↦ mem_eulerIntegralShiftRegion_shift_c (x.1 + 1) hx
       simp only [eulerIntegralShift_succ_right]
-      exact ((analyticOnNhd_of_differentiable (f := fun x ↦ x.2.2.1 - x.1) (by fun_prop) _).mul
-        h₁).add ((analyticOnNhd_of_differentiable (f := fun x ↦ x.1) (by fun_prop) _).mul h₂)
+      exact ((Differentiable.analyticOnNhd_of_finiteDimensional (f := fun x ↦ x.2.2.1 - x.1)
+        (by fun_prop)).mul h₁).add
+          ((Differentiable.analyticOnNhd_of_finiteDimensional (f := fun x ↦ x.1)
+            (by fun_prop)).mul h₂)
   | succ p ih =>
     have h₁ := (ih q).comp (f := fun x : ℂ × ℂ × ℂ × ℂ ↦ (x.1, x.2.1 + 1, x.2.2.1, x.2.2.2))
-      (analyticOnNhd_of_differentiable (by fun_prop) _)
+      (Differentiable.analyticOnNhd_of_finiteDimensional (by fun_prop))
         fun x hx ↦ mem_eulerIntegralShiftRegion_shift_b x.1 hx
     have h₂ := (ih q).comp
       (f := fun x : ℂ × ℂ × ℂ × ℂ ↦ (x.1 + 1, x.2.1 + 1, x.2.2.1 + 1, x.2.2.2))
-      (analyticOnNhd_of_differentiable (by fun_prop) _)
+      (Differentiable.analyticOnNhd_of_finiteDimensional (by fun_prop))
         fun x hx ↦ mem_eulerIntegralShiftRegion_shift_bc (x.1 + 1) hx
     simp only [eulerIntegralShift_succ_left]
-    exact h₁.sub
-      ((analyticOnNhd_of_differentiable (f := fun x ↦ x.1 * x.2.2.2) (by fun_prop) _).mul h₂)
+    exact h₁.sub ((Differentiable.analyticOnNhd_of_finiteDimensional
+      (f := fun x ↦ x.1 * x.2.2.2) (by fun_prop)).mul h₂)
 
 /-- On the unit disk, `eulerIntegralShift p q` is the regularized Gauss series. -/
 theorem eulerIntegralShift_eq_regularizedGaussHGFun {p q : ℕ} {a b c z : ℂ}
     (hb : -(p : ℝ) < b.re) (hcb : (p : ℝ) - q < c.re - b.re) (hz : ‖z‖ < 1) :
     eulerIntegralShift p q a b c z = regularizedGaussHGFun a b c z := by
+  have hzs : 1 - z ∈ slitPlane := by
+    simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -z) (by simpa using hz)
+  suffices h : ∀ {p q : ℕ} {a b c : ℂ}, (a, b, c, z) ∈ eulerIntegralShiftRegion p q →
+      eulerIntegralShift p q a b c z = regularizedGaussHGFun a b c z from h ⟨hb, hcb, hzs⟩
+  intro p q a b c hx
   induction p generalizing q a b c with
   | zero =>
     induction q generalizing a b c with
     | zero =>
+      obtain ⟨hb, hcb, -⟩ := hx
       simp only [CharP.cast_eq_zero, neg_zero, sub_zero] at hb hcb
       rw [eulerIntegralShift_zero_zero,
         regularizedGaussHGFun_eq_eulerIntegral a hb (by linarith) hz]
     | succ q ih =>
-      have hcb' : ((0 : ℕ) : ℝ) - q < (c + 1).re - b.re := by
-        simp only [add_re, one_re]
-        push_cast at hcb ⊢
-        linarith
-      rw [eulerIntegralShift_succ_right, ih hb hcb', ih hb hcb',
+      rw [eulerIntegralShift_succ_right, ih (mem_eulerIntegralShiftRegion_shift_c a hx),
+        ih (mem_eulerIntegralShiftRegion_shift_c (a + 1) hx),
         ← regularizedGaussHGFun_eq_sub_mul_add_mul a b c hz]
   | succ p ih =>
-    have hb' : -(p : ℝ) < (b + 1).re := by
-      simp only [add_re, one_re]
-      push_cast at hb
-      linarith
-    have hcb₁ : (p : ℝ) - q < c.re - (b + 1).re := by
-      simp only [add_re, one_re]
-      push_cast at hcb
-      linarith
-    have hcb₂ : (p : ℝ) - q < (c + 1).re - (b + 1).re := by
-      simp only [add_re, one_re]
-      push_cast at hcb
-      linarith
-    rw [eulerIntegralShift_succ_left, ih hb' hcb₁, ih hb' hcb₂,
+    rw [eulerIntegralShift_succ_left, ih (mem_eulerIntegralShiftRegion_shift_b a hx),
+      ih (mem_eulerIntegralShiftRegion_shift_bc (a + 1) hx),
       ← regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul a b c hz]
 
 /-- At fixed `(a, b, c)`, two functions jointly analytic on regions containing
@@ -254,12 +241,11 @@ private theorem eq_of_forall_norm_lt_one_eq {F G : ℂ × ℂ × ℂ × ℂ → 
     (ht : ∀ w : ℂ, 1 - w ∈ slitPlane → (a, b, c, w) ∈ t)
     (hFG : ∀ w : ℂ, ‖w‖ < 1 → F (a, b, c, w) = G (a, b, c, w)) (hz : 1 - z ∈ slitPlane) :
     F (a, b, c, z) = G (a, b, c, z) := by
-  have hball : Metric.ball (0 : ℂ) 1 ⊆ {w | 1 - w ∈ slitPlane} := fun w hw ↦ by
-    simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -w) (by simpa using hw)
-  exact AnalyticOnNhd.eqOn_setOf_one_sub_mem_slitPlane_of_eqOn
+  exact AnalyticOnNhd.eqOn_setOf_one_sub_mem_slitPlane_of_eventuallyEq
     (f := fun w ↦ F (a, b, c, w)) (g := fun w ↦ G (a, b, c, w))
     (hF.comp (by fun_prop) fun w hw ↦ hs w hw) (hG.comp (by fun_prop) fun w hw ↦ ht w hw)
-    Metric.isOpen_ball ⟨0, by simp⟩ hball (fun w hw ↦ hFG w (by simpa using hw)) hz
+    (by simp) (Filter.eventually_of_mem (Metric.ball_mem_nhds 0 one_pos)
+      fun w hw ↦ hFG w (by simpa using hw)) hz
 
 /-- On its region, `eulerIntegralShift p q` agrees with Euler's integral where
 `0 < re b < re c`. -/
