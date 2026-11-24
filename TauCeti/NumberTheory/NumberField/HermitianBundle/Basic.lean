@@ -415,6 +415,17 @@ theorem apply_symm_apply (e : IsometryEquiv h h') (x : F) : e (e.symm x) = x :=
 theorem trans_apply (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') (x : E) :
     e.trans e' x = e' (e x) := (rfl)
 
+@[simp]
+theorem toLinearEquiv_refl : (refl h).toLinearEquiv = LinearEquiv.refl (𝓞 K) E := (rfl)
+
+@[simp]
+theorem toLinearEquiv_symm (e : IsometryEquiv h h') : e.symm.toLinearEquiv = e.toLinearEquiv.symm :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_trans (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') :
+    (e.trans e').toLinearEquiv = e.toLinearEquiv.trans e'.toLinearEquiv := (rfl)
+
 end IsometryEquiv
 
 /-! ### Hermitian lines inside `K` -/

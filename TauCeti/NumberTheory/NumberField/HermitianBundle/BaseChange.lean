@@ -221,34 +221,34 @@ def baseChange (e : IsometryEquiv h h') :
       baseChangeFiberEquiv_one_tmul_baseChange, e.form_toLinearMap_baseChange]
 
 @[simp]
+theorem toLinearEquiv_baseChange (e : IsometryEquiv h h') :
+    (e.baseChange (L := L)).toLinearEquiv = e.toLinearEquiv.baseChange (𝓞 K) (𝓞 L) E F := (rfl)
+
+@[simp]
 theorem baseChange_tmul (e : IsometryEquiv h h') (a : 𝓞 L) (x : E) :
     e.baseChange (L := L) (a ⊗ₜ x) = a ⊗ₜ e x :=
   LinearEquiv.baseChange_tmul _ _ _ _ a x
 
 @[simp]
-theorem baseChange_refl : (refl h).baseChange (L := L) = refl h.baseChange := by
-  ext z
-  induction z using TensorProduct.inductionOn with
-  | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
-  | tmul a x => rw [baseChange_tmul, refl_apply, refl_apply]
+theorem baseChange_refl : (refl h).baseChange (L := L) = refl h.baseChange :=
+  toLinearEquiv_injective <| by
+    rw [toLinearEquiv_baseChange, toLinearEquiv_refl, toLinearEquiv_refl]
+    exact LinearEquiv.baseChange_one (𝓞 K) (𝓞 L) E
 
 @[simp]
 theorem baseChange_trans (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') :
-    (e.trans e').baseChange (L := L) = e.baseChange.trans e'.baseChange := by
-  ext z
-  induction z using TensorProduct.inductionOn with
-  | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
-  | tmul a x => rw [baseChange_tmul, trans_apply, trans_apply, baseChange_tmul, baseChange_tmul]
+    (e.trans e').baseChange (L := L) = e.baseChange.trans e'.baseChange :=
+  toLinearEquiv_injective <| by
+    rw [toLinearEquiv_baseChange, toLinearEquiv_trans, toLinearEquiv_trans,
+      toLinearEquiv_baseChange, toLinearEquiv_baseChange]
+    exact LinearEquiv.baseChange_trans (𝓞 K) (𝓞 L) E F e.toLinearEquiv e'.toLinearEquiv
 
 @[simp]
 theorem baseChange_symm (e : IsometryEquiv h h') :
-    e.symm.baseChange (L := L) = e.baseChange.symm := by
-  ext z
-  refine EquivLike.injective (e.baseChange (L := L)) ?_
-  rw [apply_symm_apply]
-  induction z using TensorProduct.inductionOn with
-  | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
-  | tmul a x => rw [baseChange_tmul, baseChange_tmul, apply_symm_apply]
+    e.symm.baseChange (L := L) = e.baseChange.symm :=
+  toLinearEquiv_injective <| by
+    rw [toLinearEquiv_baseChange, toLinearEquiv_symm, toLinearEquiv_symm, toLinearEquiv_baseChange]
+    exact LinearEquiv.baseChange_symm (𝓞 K) (𝓞 L) E F e.toLinearEquiv
 
 end IsometryEquiv
 
@@ -304,13 +304,13 @@ end HermitianMetric
 
 namespace HermitianBundle
 
-universe u v
+universe u u' v
 
-variable {K L : Type u} [Field K] [Field L] [Algebra K L]
+variable {K : Type u} {L : Type u'} [Field K] [Field L] [Algebra K L]
 
 /-- The **base change** `Ē_{𝓞 L}` of a hermitian vector bundle along `K → L`: the module
 `𝓞 L ⊗_{𝓞 K} E` with the metric `(h_{τ|K})_τ` of `TauCeti.HermitianMetric.baseChange`. -/
-@[expose] def baseChange (Ē : HermitianBundle.{u, v} K) : HermitianBundle.{u, max u v} L where
+@[expose] def baseChange (Ē : HermitianBundle.{u, v} K) : HermitianBundle.{u', max u' v} L where
   carrier := 𝓞 L ⊗[𝓞 K] Ē
   metric := Ē.metric.baseChange
 
