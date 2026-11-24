@@ -297,8 +297,7 @@ theorem localIndex_eq_sign_det_mul_of_apply_eq_sub {F G' : C(M, V)} {a b : M →
   rw [← hcomp]
   -- `G'` differs from `L ∘ F` by `o(‖F‖)`, which is small compared with `‖L ∘ F‖`, so Rouché's
   -- principle applies.
-  refine (o.localIndex_eq_of_norm_sub_le o' hV (c := 1 / 2) (by norm_num) ?_ ?_).symm
-  · simp [LF, hF0, hG', hab]
+  refine (o.localIndex_eq_of_norm_sub_le o' hV (c := 1 / 2) (by norm_num) ?_).symm
   set C := ‖(e.symm : V →L[ℝ] V)‖ + 1
   have hC : 0 < C := by positivity
   have hT : Tendsto (fun p ↦ (a p, b p)) (𝓝 x) (𝓝 (a x, a x)) := by

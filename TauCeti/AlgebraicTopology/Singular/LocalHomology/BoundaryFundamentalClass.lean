@@ -8,10 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
-import TauCeti.AlgebraicTopology.Singular.Excision
-import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
-import TauCeti.AlgebraicTopology.Singular.Triple
 
 /-!
 # The boundary of the relative fundamental class
@@ -31,9 +28,10 @@ cubical cycle of `∂X` representing `∂[X, ∂X]`, and such a cycle is a funda
 this is the homological input of fundamental chains of manifolds with corners.
 
 The argument uses neither the orientation nor the integral coefficients, only that the class
-generates the local homology at the interior points. With coefficients in any module `R` over a
-ring `Λ`, a class of `Hₙ₊₁(X, ∂X; R)` whose local images at the points of `ι(M)` generate is sent
-to a fundamental class of `∂X` with coefficients in `R`
+generates the local homology at every point of a subset `S ⊆ X` whose complement `∂X = Sᶜ` is
+collared (`IsCollared (Subtype.val : ↥(Sᶜ) → X)`). With coefficients in any module `R` over a ring
+`Λ`, a class of `Hₙ₊₁(X, ∂X; R)` whose local images at the points of `S` generate is sent to a
+fundamental class of `∂X` with coefficients in `R`
 (`TauCeti.isFundamentalClass_singularHomologyδ_of_forall_span_eq_top`). With coefficients in a
 Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, this applies to the fundamental class
 relative to the boundary of an unoriented `X`
@@ -161,14 +159,8 @@ private lemma isClosed_segment [T1Space B] : IsClosed (segment b) :=
     (isClosed_le (continuous_subtypeVal.comp continuous_snd) continuous_const)
 
 private lemma isCompact_segment : IsCompact (segment b) := by
-  have hI : IsCompact {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
-    rw [IsEmbedding.subtypeVal.isCompact_iff]
-    have hEq : Subtype.val '' {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} = Icc (0 : ℝ) (1 / 2) := by
-      ext t
-      refine ⟨?_, fun ht ↦ ⟨⟨t, ht.1, by linarith [ht.2]⟩, ht.2, rfl⟩⟩
-      rintro ⟨t, ht, rfl⟩
-      exact ⟨t.property.1, ht⟩
-    rw [hEq]
+  have hI : IsCompact (Iic half) := by
+    rw [IsEmbedding.subtypeVal.isCompact_iff, Set.image_subtype_val_Ico_Iic half]
     exact isCompact_Icc
   exact isCompact_singleton.prod hI
 
@@ -290,8 +282,9 @@ private instance isIso_singularHomologyδ_triple (k : ℕ) :
     (isZero_localHomology_segment R b _)
     (isZero_localHomology_segment R b _)
 
-/-- **Excision of the points of depth at least `1 / 2`**: they form a closed subset of
-`B × [0, 1) ∖ {(b, 1 / 2)}` inside the open complement of the segment. -/
+/-- The inclusion `lowerPairMap b` induces an isomorphism on relative singular homology in every
+degree, by excising the closed subset of points of depth at least `1 / 2` in
+`B × [0, 1) ∖ {(b, 1 / 2)}`, which lies inside the open complement of the segment. -/
 private instance isIso_singularHomologyMap_lowerPairMap [T1Space B] (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (lowerPairMap b) R k) := by
   refine TopPair.isIso_singularHomologyMap_of_open_cover R (lowerPairMap b) ?_ ?_
@@ -519,35 +512,34 @@ end CollarModel
 
 section Coefficients
 
-variable {X : Type w} {M N : Type*} [TopologicalSpace X] [TopologicalSpace N] [T2Space X]
-  {ι : M → X} {f : N → X} {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ) {n : ℕ}
+variable {X : Type w} [TopologicalSpace X] [T2Space X] {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
+  {n : ℕ}
 
-/-- **The boundary of a relative class generating at every interior point is a fundamental class
-of the boundary.** Let `X` be a Hausdorff space and `∂X = X ∖ ι(M)` the collared image of
-`f : N → X`, and let `R` be a module over a ring `Λ`. If the image of `γ ∈ Hₙ₊₁(X, ∂X; R)` in the
-local homology `Hₙ₊₁(X, X ∖ {p}; R)` generates that `Λ`-module at every point `p` of `ι(M)`, then
-the connecting morphism `Hₙ₊₁(X, ∂X; R) ⟶ Hₙ(∂X; R)` sends `γ` to a fundamental class of `∂X`.
+/-- **The boundary of a relative class generating at every point of a subset with collared
+complement is a fundamental class of the complement.** Let `X` be a Hausdorff space, `S ⊆ X` a
+subset whose complement `∂X = Sᶜ` is collared (`IsCollared (Subtype.val : ↥(Sᶜ) → X)`), and `R` a
+module over a ring `Λ`. If the image of `γ ∈ Hₙ₊₁(X, ∂X; R)` in the local homology
+`Hₙ₊₁(X, X ∖ {p}; R)` generates that `Λ`-module at every point `p` of `S`, then the connecting
+morphism `Hₙ₊₁(X, ∂X; R) ⟶ Hₙ(∂X; R)` sends `γ` to a fundamental class of `∂X`.
 
-No manifold structure is used, on `M` or on `∂X`: the collar identifies the local homology of
-`∂X` at `z` with that of `X` at an interior point one dimension up. For integral coefficients this
-gives `TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`.
-With coefficients in a Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, it applies to
-the fundamental class relative to the boundary of
+No manifold structure is used, on `S` or on `∂X`: the collar identifies the local homology of `∂X`
+at `z` with that of `X` at a point of `S` one dimension up. For integral coefficients and
+`S = range ι` this gives
+`TauCeti.HomologicalOrientation.isFundamentalClass_singularHomologyδ_fundamentalClassRel`. With
+coefficients in a Dedekind-finite ring whose only unit is `1`, such as `ZMod 2`, it applies to the
+fundamental class relative to the boundary of
 `TauCeti.existsUnique_span_localHomologyRestriction_range_eq_top`, with no orientation. -/
-theorem isFundamentalClass_singularHomologyδ_of_forall_span_eq_top
-    (hιf : range ι = (range f)ᶜ) (hf : IsCollared f)
-    {γ : (localHomology R (range ι) (n + 1) : ModuleCat.{w} Λ)}
-    (hγ : ∀ p (hp : p ∈ range ι),
+theorem isFundamentalClass_singularHomologyδ_of_forall_span_eq_top {S : Set X}
+    (hS : IsCollared (Subtype.val : ↥(Sᶜ) → X))
+    {γ : (localHomology R S (n + 1) : ModuleCat.{w} Λ)}
+    (hγ : ∀ p (hp : p ∈ S),
       Submodule.span Λ {localHomologyRestriction R (singleton_subset_iff.2 hp) (n + 1) γ} = ⊤) :
-    IsFundamentalClass (M := ↥((range ι)ᶜ : Set X)) (n := n)
-      ((TopPair.ofSubset (X := TopCat.of X) (range ι)ᶜ).singularHomologyδ R (n + 1) n rfl γ) := by
+    IsFundamentalClass (M := ↥(Sᶜ : Set X)) (n := n)
+      ((TopPair.ofSubset (X := TopCat.of X) Sᶜ).singularHomologyδ R (n + 1) n rfl γ) := by
   refine (isFundamentalClass_iff _).2 fun z ↦ ?_
-  -- A collar of the inclusion of the boundary `∂X = f(N)`.
-  have hD : range f = (range ι)ᶜ := by rw [hιf, compl_compl]
-  obtain ⟨c, hc⟩ := isCollared_iff.1
-    (hD ▸ hf.subtypeVal_range : IsCollared (Subtype.val : ↥((range ι)ᶜ : Set X) → X))
+  obtain ⟨c, hc⟩ := isCollared_iff.1 hS
   -- The interior point `p = c (z, 1 / 2)` of the collar.
-  have hp : c (z, CollarModel.half) ∈ range ι := by
+  have hp : c (z, CollarModel.half) ∈ S := by
     simpa using CollarModel.apply_half_notMem hc z
   have houter : TopPair.singularHomologyMap
       (TopTriple.outerPair.map (CollarModel.boundaryTripleMap hc z)) R (n + 1) =
@@ -563,7 +555,7 @@ theorem isFundamentalClass_singularHomologyδ_of_forall_span_eq_top
   -- outer pair of `spaceTriple z` unfolds to `TopPair.ofSubset {p}ᶜ`, so `key` identifies the
   -- image of `∂γ` at `z` with `localHomologyIso` applied to the local class of `γ` at `p`.
   have hval : singularHomologyToLocalHomology R z n
-      ((TopPair.ofSubset (X := TopCat.of X) (range ι)ᶜ).singularHomologyδ R (n + 1) n rfl γ) =
+      ((TopPair.ofSubset (X := TopCat.of X) Sᶜ).singularHomologyδ R (n + 1) n rfl γ) =
       (CollarModel.localHomologyIso R hc z n).hom
         (localHomologyRestriction R (singleton_subset_iff.2 hp) (n + 1) γ) :=
     (singularHomologyToLocalHomology_eq_singularHomologyπ _ z _).trans
@@ -594,7 +586,8 @@ theorem isFundamentalClass_singularHomologyδ_fundamentalClassRel :
     IsFundamentalClass (M := ↥((range ι)ᶜ : Set X)) (n := n)
       ((TopPair.ofSubset (X := TopCat.of X) (range ι)ᶜ).singularHomologyδ
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + 1) n rfl (o.fundamentalClassRel hn hι hιf hf)) :=
-  isFundamentalClass_singularHomologyδ_of_forall_span_eq_top _ hιf hf fun _ hp ↦
+  isFundamentalClass_singularHomologyδ_of_forall_span_eq_top _
+    ((by rw [hιf, compl_compl] : range f = (range ι)ᶜ) ▸ hf.subtypeVal_range) fun _ hp ↦
     (isLocalOrientation_iff_span_eq_top _ _ _).1
       (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel hn hι hιf hf hp)
 

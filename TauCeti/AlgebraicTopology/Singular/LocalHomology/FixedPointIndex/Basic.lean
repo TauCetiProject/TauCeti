@@ -345,7 +345,7 @@ theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)}
       -- `Ac` is `A` as a continuous map, by definition.
       rfl
     refine HomologicalOrientation.localIndex_eq_of_norm_sub_le _ _ rfl one_half_lt_one
-      (by rw [hG, hAD, hfW, sub_self, sub_self, map_zero]) (.of_forall fun z ↦ ?_)
+      (.of_forall fun z ↦ ?_)
     rw [hG, hAD, hAD xW, hfW, sub_self, map_zero, sub_zero, one_div_mul_eq_div]
     exact (hkW z).2.2
   -- By the chain rule, both sides are `sign det A` times a local fixed-point index.
