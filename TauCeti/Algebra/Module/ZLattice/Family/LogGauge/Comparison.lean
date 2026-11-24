@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Diffeomorph
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Twist
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Representative-change comparison for the logarithmic gauge
@@ -125,32 +126,14 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
             (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
       logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
     letI := Opens.instChartedSpace (H := ModelProd ℂ E)
-      (torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
-        (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-        (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-        (logTranslationSection P (l + m • μ))
-        (torusFamilyProjection_logTranslationSection P (l + m • μ))
-        (logTranslationSection_mul P (l + m • μ)))
+      (logTranslationQuotientNonzeroOpens P (l + m • μ))
     letI := Opens.instChartedSpace (H := ModelProd ℂ E)
-      (torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
-        (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-        (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-        (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-        (logTranslationSection_mul P l))
+      (logTranslationQuotientNonzeroOpens P l)
     torusFamilyLogGaugeDiffeomorph P hP hinj (l + m • μ) hr
         (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree) =
       ((logTranslationQuotientAddNsmulDiffeomorph P hP hinj l μ hfree).subtype
-          (U := torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E)
-            (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-            (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-            (logTranslationSection P (l + m • μ))
-            (torusFamilyProjection_logTranslationSection P (l + m • μ))
-            (logTranslationSection_mul P (l + m • μ)))
-          (V := torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E)
-            (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-            (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-            (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-            (logTranslationSection_mul P l)) fun q ↦ by
+          (U := logTranslationQuotientNonzeroOpens P (l + m • μ))
+          (V := logTranslationQuotientNonzeroOpens P l) fun q ↦ by
             simp only [Opens.mem_mk, Set.mem_ofPred_eq, ← Diffeomorph.coe_toEquiv,
               logTranslationQuotientAddNsmulDiffeomorph_toEquiv,
               torusFamilyCyclicQuotientProjection_logTranslationQuotientAddNsmulEquiv]).trans
@@ -174,27 +157,14 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
     logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
   let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
-    (torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
-      (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-      (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-      (logTranslationSection P (l + m • μ))
-      (torusFamilyProjection_logTranslationSection P (l + m • μ))
-      (logTranslationSection_mul P (l + m • μ)))
+    (logTranslationQuotientNonzeroOpens P (l + m • μ))
   let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
-    (torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
-      (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-      (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-      (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-      (logTranslationSection_mul P l))
+    (logTranslationQuotientNonzeroOpens P l)
   apply Diffeomorph.toEquiv_injective
-  rw [torusFamilyLogGaugeDiffeomorph_toEquiv]
-  refine (torusFamilyLogGaugeEquiv_add_nsmul P l μ hr).trans ?_
-  exact (congrArg₂ Equiv.trans
-    (by simp only [Diffeomorph.subtype_toEquiv, logTranslationQuotientAddNsmulDiffeomorph_toEquiv])
-    (congrArg₂ Equiv.trans
-      (torusFamilyLogGaugeDiffeomorph_toEquiv P hP hinj l hr hfree)
-      (torusFamilyLogTwistDiffeomorph_toEquiv Subtype.val P hinj
-        contMDiff_subtypeVal_ball hP (-μ)))).symm
+  simp only [Diffeomorph.trans_toEquiv, Diffeomorph.subtype_toEquiv,
+    logTranslationQuotientAddNsmulDiffeomorph_toEquiv,
+    torusFamilyLogGaugeDiffeomorph_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv]
+  exact torusFamilyLogGaugeEquiv_add_nsmul P l μ hr
 
 end DiffeomorphComparison
 

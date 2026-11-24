@@ -101,25 +101,6 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  have heq : torusFamilyLogGauge P l =
-      torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r) ∘
-        ⇑(torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P) (-l)) := by
-    funext y
-    induction y using Quotient.inductionOn with
-    | h p =>
-      obtain ⟨z, e⟩ := p
-      have htwmk := torusFamilyLogTwistMap_mk Subtype.val (powPullbackPeriod m r P) (-l) z e
-      have hbcmk := torusFamilyBaseChangeMap_mk P (rootsOfUnityBall.powMap m r) z
-        (e + (log (z : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z (-l))
-      have h1 : torusFamilyLogGauge P l (Quotient.mk _ (z, e)) =
-          torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r)
-            (Quotient.mk _
-              (z, e + (log (z : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z (-l))) := by
-        refine (torusFamilyLogGauge_mk P l z e).trans (Eq.trans ?_ hbcmk.symm)
-        congr 3
-        simp [powPullbackPeriod_apply, sub_eq_add_neg]
-      exact h1.trans
-        (congrArg (torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r)) htwmk.symm)
   have hbc := contMDiff_torusFamilyBaseChangeMap P hinj hP (rootsOfUnityBall.powMap m r)
     rootsOfUnityBall.contMDiff_powMap
   have htw : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
@@ -128,7 +109,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
       (fun z ↦ powPullbackPeriod_injective P z (hinj _)) rootsOfUnityBall.contMDiff_val
       (fun l' ↦ contMDiff_powPullbackPeriod P (hP l')) (-l) hx
   have hbcAt := hbc (torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P) (-l) x)
-  rw [heq]
+  rw [torusFamilyLogGauge_eq_baseChange_comp_logTwist]
   let _ := periodAddAction (P ∘ rootsOfUnityBall.powMap m r)
   let _ := torusFamilyChartedSpace (H := ℂ) (P ∘ rootsOfUnityBall.powMap m r)
     (fun l ↦ ((hP l).comp rootsOfUnityBall.contMDiff_powMap).continuous)

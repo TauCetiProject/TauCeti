@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
-# Regularity and right-inverse law of the centered complex logarithm branch
+# Regularity of the centered complex logarithm branch
 
 For any `a : ℂ`, the branch `v ↦ a + Complex.log (v / Complex.exp a)` centred at `a` is `C^n`
 (over `ℂ`, hence holomorphic) wherever `v / Complex.exp a ∈ Complex.slitPlane`
