@@ -70,6 +70,8 @@ namespace TauCeti
 
 namespace CycloCompletion
 
+open PolyFamilyLimit
+
 variable {R : Type*} [CommRing R] {S : Set ℕ} {n : ℕ} {B : Type*} [CommRing B] [Algebra R B]
 
 section EvalRoot
@@ -89,7 +91,8 @@ variable (hn : n ∈ S) (ζ : B) (hζ : aeval ζ (cyclotomic n R) = 0)
 /-- Root evaluation is the projection modulo `Φ_n` followed by evaluation of the class at `ζ`. -/
 theorem evalRoot_apply (x : CycloCompletion R S) :
     evalRoot hn ζ hζ x = (AdjoinRoot.algHomEquiv B (cyclotomic n R)).symm ⟨ζ, hζ⟩
-      (proj ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ x) :=
+      (proj (g := fun f : cycloIndex R S ↦ (f : R[X]))
+        ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ x) :=
   (rfl)
 
 /-- Root evaluation can be computed from a representative at any index divisible by `Φ_n`. -/
@@ -109,7 +112,7 @@ modulo `Φ_n`. -/
 theorem evalRoot_root :
     evalRoot hn (AdjoinRoot.root (cyclotomic n R))
         (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) =
-      proj (S := S) ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ := by
+      proj (⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ : cycloIndex R S) := by
   ext x
   obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj (cyclotomicIndex hn) x)
   rw [evalRoot_eq_aeval_of_proj_eq_mk hn _ _ (f := cyclotomicIndex hn) dvd_rfl hp.symm,
