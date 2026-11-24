@@ -7,33 +7,12 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
-# Lengths and distances under constant rescaling of a metric
+# Vector norms and path lengths under constant rescaling
 
-Let `g` be a Riemannian metric on a vector bundle and `c > 0` a constant. For the rescaled metric
-`c g` (`Bundle.ContMDiffRiemannianMetric.rescale` by the constant function `c`) the norm of every
-vector is `√c` times its norm for `g`. On the tangent bundle of a manifold, the length of every
-path, and hence the Riemannian distance, the infimum of the lengths of the `C¹` paths between two
-points, are multiplied by `√c`.
-
-With `c = λ²`, intrinsic lengths and distances are multiplied by `λ`. Together with the scaling
-`|A|² ↦ λ⁻² |A|²` of the second fundamental form
-(`TauCeti.Manifold.IsIsometricImmersion.secondFundamentalFormNormSq_rescale_const`), this gives the
-invariance of the hypothesis `r sup_(B_r(p)) |A| ≤ c₀` under `(g, r) ↦ (λ² g, λ r)`.
-
-## Main statements
-
-* `Bundle.ContMDiffRiemannianMetric.norm_rescale_const`: `‖v‖_(c g) = √c ‖v‖_g`.
-* `Bundle.ContMDiffRiemannianMetric.enorm_rescale_const`: the same for extended norms.
-* `Bundle.ContMDiffRiemannianMetric.pathELength_rescale_const`: the length of a path is multiplied
-  by `√c`.
-* `Bundle.ContMDiffRiemannianMetric.riemannianEDist_rescale_const`: the Riemannian distance is
-  multiplied by `√c`.
-* `Bundle.ContMDiffRiemannianMetric.riemannianEDist_rescale_const_lt_iff`,
-  `Bundle.ContMDiffRiemannianMetric.riemannianEDist_rescale_const_le_iff`: the open and closed
-  intrinsic balls of radius `√c r` for `c g` are those of radius `r` for `g`.
+Multiplying a Riemannian metric by a positive constant `c` multiplies the norm of each
+vector and the extended length of each path by `√c`.
 
 ## References
 
@@ -120,52 +99,6 @@ theorem pathELength_rescale_const (γ : ℝ → M) (a b : ℝ) :
     pathELength_eq_lintegral_mfderiv_Icc (I := I) (γ := γ) (a := a) (b := b))
   rw [h₁, h₂, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   exact lintegral_congr fun t ↦ enorm_rescale_const g hc _ _
-
-/-- Multiplying a metric by a positive constant `c` multiplies the Riemannian distance between
-any two points by `√c`. -/
-theorem riemannianEDist_rescale_const (x y : M) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      riemannianEDist I x y) =
-      ENNReal.ofReal √c *
-        (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-          riemannianEDist I x y) := by
-  have h₁ := (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-    riemannianEDist_def I x y)
-  have h₂ := (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-    riemannianEDist_def I x y)
-  have hc₀ : ENNReal.ofReal √c ≠ 0 := (ENNReal.ofReal_pos.2 (Real.sqrt_pos.2 hc)).ne'
-  rw [h₁, h₂, ENNReal.mul_iInf_of_ne hc₀ ENNReal.ofReal_ne_top]
-  refine iInf_congr fun γ ↦ ?_
-  rw [ENNReal.mul_iInf_of_ne hc₀ ENNReal.ofReal_ne_top]
-  refine iInf_congr fun _ ↦ ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  exact lintegral_congr fun t ↦ enorm_rescale_const g hc _ _
-
-/-- **Intrinsic open balls under rescaling.** A point is at `c g`-distance less than `√c r` from
-`x` exactly when it is at `g`-distance less than `r`. -/
-theorem riemannianEDist_rescale_const_lt_iff (x y : M) (r : ℝ≥0∞) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      riemannianEDist I x y) < ENNReal.ofReal √c * r ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      riemannianEDist I x y) < r := by
-  rw [riemannianEDist_rescale_const g hc]
-  exact ENNReal.mul_lt_mul_iff_right (ENNReal.ofReal_pos.2 (Real.sqrt_pos.2 hc)).ne'
-    ENNReal.ofReal_ne_top
-
-/-- **Intrinsic closed balls under rescaling.** A point is at `c g`-distance at most `√c r` from
-`x` exactly when it is at `g`-distance at most `r`. -/
-theorem riemannianEDist_rescale_const_le_iff (x y : M) (r : ℝ≥0∞) :
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
-      riemannianEDist I x y) ≤ ENNReal.ofReal √c * r ↔
-    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      riemannianEDist I x y) ≤ r := by
-  rw [riemannianEDist_rescale_const g hc]
-  exact ENNReal.mul_le_mul_iff_right (ENNReal.ofReal_pos.2 (Real.sqrt_pos.2 hc)).ne'
-    ENNReal.ofReal_ne_top
 
 end Manifold
 
