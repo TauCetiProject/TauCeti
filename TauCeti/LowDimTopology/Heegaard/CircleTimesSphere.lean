@@ -552,7 +552,7 @@ section BasepointChange
 
 /-- Moving the basepoint of the genus-one diagram of `S¹ × S²` gives the same diagram with the
 basepoint in another region. -/
-theorem circleTimesSphere_withBasepoints (r s : Fin 3) :
+theorem withBasepoints_circleTimesSphere (r s : Fin 3) :
     (circleTimesSphere r).withBasepoints (fun _ : Unit => s) = circleTimesSphere s :=
   (rfl)
 
@@ -560,21 +560,21 @@ theorem circleTimesSphere_withBasepoints (r s : Fin 3) :
 `B₁`, is a path from `A` to `B₁` crossing only `α`-arcs. -/
 theorem isAlphaPath_circleTimesSphere (r : Fin 3) :
     (circleTimesSphere r).IsAlphaPath 0 [(0, true)] 1 := by
-  simpa using (IsAlphaPath.nil _).cons_true (H := circleTimesSphere r) (p := 0)
+  simp
 
 /-- The path from `A` to `B₁` crosses `α` algebraically once. -/
 theorem alphaCrossingNumber_circleTimesSphere (r : Fin 3) :
     (circleTimesSphere r).alphaCrossingNumber [(0, true)] = Pi.single 0 1 := by
   ext i
   fin_cases i
-  simp [alphaCrossingNumber_cons]
+  simp
 
 /-- The difference `B₁ - B₂` of the two bigons is a periodic domain for the basepoint in the
 annulus. -/
 theorem sub_mem_periodicDomains_circleTimesSphere_zero :
     Pi.single 1 1 - Pi.single 2 1 ∈
       ((circleTimesSphere 0).withBasepoints fun _ : Unit => 0).periodicDomains := by
-  rw [circleTimesSphere_withBasepoints, periodicDomains_circleTimesSphere_zero]
+  rw [withBasepoints_circleTimesSphere, periodicDomains_circleTimesSphere_zero]
   exact AddSubgroup.mem_zmultiples _
 
 /-- Moving the basepoint from the annulus `A` into the bigon `B₁` carries the generator `B₁ - B₂`
@@ -588,9 +588,10 @@ theorem coe_basepointChangeEquiv_circleTimesSphere :
 
 /-- Moving the basepoint from the annulus `A` across `α` into the bigon `B₁` lowers the Maslov
 index of the periodic domain `B₁ - B₂`, whose `α`-coefficient is one, from `0` to `-2` at both
-generators. So the pairing of the first Chern class of the spin^c structure of the generators
-with the generator of `H₂(S¹ × S²)` changes by twice the pairing with the dual class of `α`, and
-by the same amount at both generators. -/
+generators. This is the combinatorial form of `s_{z₂}(x) - s_{z₁}(x) = α*` (up to the
+orientation convention), which via the Chern class formula, not formalized here, predicts that the
+pairing of the first Chern class with the generator of `H₂(S¹ × S²)` changes by twice the pairing
+with the dual class of `α`, by the same amount at both generators. -/
 theorem maslovIndex_basepointChangeEquiv_circleTimesSphere (a : Fin 2) :
     (circleTimesSphere 0).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator 0 a)
       (circleTimesSphereGenerator 0 a)
@@ -598,7 +599,7 @@ theorem maslovIndex_basepointChangeEquiv_circleTimesSphere (a : Fin 2) :
         ⟨_, sub_mem_periodicDomains_circleTimesSphere_zero⟩) = -2 := by
   rw [(isAlphaPath_circleTimesSphere 0).maslovIndex_basepointChangeEquiv_of_eq_single
       (alphaCrossingNumber_circleTimesSphere 0) (by decide) _ _ _ (a := fun _ => 1)
-    (fun p => by fin_cases p <;> simp [circleTimesSphere]),
+    (fun p => by fin_cases p <;> simp [alphaBoundary_apply]),
     maslovIndex_circleTimesSphere_periodic]
   norm_num
 

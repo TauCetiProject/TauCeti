@@ -119,6 +119,24 @@ inductive IsAlphaPath : Region → List (Point × Bool) → Region → Prop
   | cons_false {p : Point} {l : List (Point × Bool)} {r : Region} :
       IsAlphaPath (H.alphaRight p) l r → IsAlphaPath (H.alphaLeft p) ((p, false) :: l) r
 
+/-- The empty list of crossings is a path from `r` to `r'` exactly when `r = r'`. -/
+@[simp]
+theorem isAlphaPath_nil_iff {r r' : Region} : H.IsAlphaPath r [] r' ↔ r = r' :=
+  ⟨by rintro ⟨⟩; rfl, by rintro rfl; exact .nil r⟩
+
+/-- A list of crossings starting with `(p, b)` is a path from `r` exactly when `r` is the region
+on the side of the `α`-arc starting at `p` that the crossing leaves, and the rest of the list is a
+path from the region on the other side. -/
+@[simp]
+theorem isAlphaPath_cons_iff {r r' : Region} {p : Point} {b : Bool} {l : List (Point × Bool)} :
+    H.IsAlphaPath r ((p, b) :: l) r' ↔
+      r = (if b then H.alphaRight p else H.alphaLeft p) ∧
+        H.IsAlphaPath (if b then H.alphaLeft p else H.alphaRight p) l r' := by
+  constructor
+  · rintro (_ | h | h) <;> simpa
+  · cases b <;> rintro ⟨rfl, h⟩
+    exacts [.cons_false h, .cons_true h]
+
 /-- The algebraic crossing number of a list of crossings with the `α`-curve `αᵢ`: each crossing of
 an arc of `αᵢ` from right to left counts `+1`, and each crossing from left to right counts
 `-1`. -/
@@ -129,6 +147,7 @@ def alphaCrossingNumber (l : List (Point × Bool)) (i : Fin n) : ℤ :=
 theorem alphaCrossingNumber_nil (i : Fin n) : H.alphaCrossingNumber [] i = 0 :=
   (rfl)
 
+@[simp]
 theorem alphaCrossingNumber_cons (s : Point × Bool) (l : List (Point × Bool)) (i : Fin n) :
     H.alphaCrossingNumber (s :: l) i =
       (if H.alpha s.1 = i then (if s.2 then 1 else -1) else 0) + H.alphaCrossingNumber l i := by
@@ -187,11 +206,7 @@ theorem sub_eq_sum_map (h : H.IsAlphaPath r l r') (D : Region → ℤ) :
     D r' - D r = (l.map fun s => (if s.2 then 1 else -1) * H.alphaBoundary D s.1).sum := by
   induction h with
   | nil => simp
-  | cons_true _ ih =>
-    rw [List.map_cons, List.sum_cons, ← ih, alphaBoundary_apply]
-    simp only [↓reduceIte]
-    ring
-  | cons_false _ ih =>
+  | cons_true _ ih | cons_false _ ih =>
     rw [List.map_cons, List.sum_cons, ← ih, alphaBoundary_apply]
     simp only [Bool.false_eq_true, ↓reduceIte]
     ring
@@ -202,20 +217,13 @@ The change only depends on the traced cycle of the path. -/
 theorem sub_eq_sum_alphaCrossingNumber_mul (h : H.IsAlphaPath r l r') {D : Region → ℤ}
     {a : Fin n → ℤ} (ha : ∀ p, H.alphaBoundary D p = a (H.alpha p)) :
     D r' - D r = ∑ i, H.alphaCrossingNumber l i * a i := by
-  induction h with
+  simp_rw [h.sub_eq_sum_map D, ha]
+  clear h
+  induction l with
   | nil => simp
-  | @cons_true p l r _ ih =>
-    have hp := ha p
-    rw [alphaBoundary_apply] at hp
-    simp only [alphaCrossingNumber_cons, add_mul, sum_add_distrib, ← ih]
-    simp
-    linarith
-  | @cons_false p l r _ ih =>
-    have hp := ha p
-    rw [alphaBoundary_apply] at hp
-    simp only [alphaCrossingNumber_cons, add_mul, sum_add_distrib, ← ih]
-    simp
-    linarith
+  | cons s l ih =>
+    rw [List.map_cons, List.sum_cons, ih]
+    simp [add_mul, sum_add_distrib, ite_mul]
 
 end IsAlphaPath
 
@@ -224,15 +232,6 @@ end AlphaPath
 section BasepointChange
 
 variable {z₁ z₂ z₃ : Region}
-
-/-- A domain is periodic for the diagram pointed at the region `z` exactly when it vanishes at
-`z` and its `α`- and `β`-parts are cycles. -/
-theorem mem_periodicDomains_withBasepoints_iff {P : Region → ℤ} :
-    P ∈ (H.withBasepoints fun _ : Unit => z₁).periodicDomains ↔
-      P z₁ = 0 ∧ H.alphaArcBoundary (H.alphaBoundary P) = 0 ∧
-        H.betaArcBoundary (H.betaBoundary P) = 0 := by
-  simp only [mem_periodicDomains_iff, forall_const, funext_iff, alphaArcBoundary_apply,
-    alphaBoundary_apply, betaArcBoundary_apply, betaBoundary_apply]
 
 /-- Subtracting `n_{z₂}(P)` copies of the whole surface from a periodic domain `P` for one
 basepoint gives a periodic domain for the basepoint `z₂`, with the same boundary. -/
@@ -255,11 +254,11 @@ def basepointChangeEquiv :
   toFun P := ⟨P - (P : Region → ℤ) z₂ • 1, sub_smul_one_mem_periodicDomains H P.property⟩
   invFun Q := ⟨Q - (Q : Region → ℤ) z₁ • 1, sub_smul_one_mem_periodicDomains H Q.property⟩
   left_inv P := Subtype.ext <| by
-    have h := ((mem_periodicDomains_withBasepoints_iff H).mp P.property).1
+    have h := (mem_periodicDomains_withBasepoints_iff.mp P.property).1
     ext r
     simp [h]
   right_inv Q := Subtype.ext <| by
-    have h := ((mem_periodicDomains_withBasepoints_iff H).mp Q.property).1
+    have h := (mem_periodicDomains_withBasepoints_iff.mp Q.property).1
     ext r
     simp [h]
   map_add' P Q := Subtype.ext <| by
@@ -284,7 +283,7 @@ theorem basepointChangeEquiv_symm :
 @[simp]
 theorem basepointChangeEquiv_self : H.basepointChangeEquiv z₁ z₁ = AddEquiv.refl _ := by
   ext P r
-  simp [((mem_periodicDomains_withBasepoints_iff H).mp P.property).1]
+  simp [(mem_periodicDomains_withBasepoints_iff.mp P.property).1]
 
 /-- Moving the basepoint from `z₁` to `z₂` and then to `z₃` is moving it from `z₁` to `z₃`. -/
 @[simp]
@@ -308,7 +307,7 @@ theorem apply_eq_sum_alphaCrossingNumber_mul (h : H.IsAlphaPath z₁ l z₂)
     (ha : ∀ p, H.alphaBoundary P p = a (H.alpha p)) :
     (P : Region → ℤ) z₂ = ∑ i, H.alphaCrossingNumber l i * a i := by
   rw [← h.sub_eq_sum_alphaCrossingNumber_mul ha,
-    ((mem_periodicDomains_withBasepoints_iff H).mp P.property).1, sub_zero]
+    (mem_periodicDomains_withBasepoints_iff.mp P.property).1, sub_zero]
 
 end IsAlphaPath
 
