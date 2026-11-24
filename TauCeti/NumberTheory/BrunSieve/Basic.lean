@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.NumberTheory.BoundingSieve
+import TauCeti.Data.Multiset.Sort
 
 /-!
 # Brun's combinatorial sieve weights and first-failure brackets
@@ -189,18 +190,6 @@ theorem brunWeights_ne_zero_iff {P d : ℕ} (hP : Squarefree P) (y β : ℝ) (pa
 
 /-! ### Strict support of Brun weights -/
 
-private theorem prod_sort_ge_eq_prod (s : Finset ℕ) :
-    (s.sort (· ≥ ·)).prod = ∏ x ∈ s, x := by
-  rw [Finset.prod_eq_multiset_prod, Multiset.map_id', ← Finset.sort_eq s (· ≥ ·),
-    Multiset.prod_coe]
-
-private theorem lt_rpow_one_div_iff_mul_rpow_lt {p P y β : ℝ} (hp : 0 ≤ p) (hP : 0 < P)
-    (hy : 0 < y) (hβ : 0 < β) :
-    p < (y / P) ^ (1 / β) ↔ P * p ^ β < y := by
-  have hyP : 0 ≤ y / P := div_nonneg hy.le hP.le
-  rw [← rpow_lt_rpow_iff hp (rpow_nonneg hyP _) hβ, ← rpow_mul hyP,
-    one_div_mul_cancel hβ.ne', rpow_one, lt_div_iff₀' hP]
-
 private theorem list_prod_lt_of_admissible {l : List ℕ} {y β : ℝ} (parity : ℕ)
     (hsort : l.SortedGT) (hp2 : ∀ p ∈ l, 2 ≤ p) (hy : 1 < y) (hβ : 1 < β)
     (hpy : ∀ p ∈ l, (p : ℝ) < y)
@@ -215,14 +204,14 @@ private theorem list_prod_lt_of_admissible {l : List ℕ} {y β : ℝ} (parity :
   have hlen_pos : 0 < l.length := Nat.pos_of_ne_zero hlen
   by_cases hpar : l.length % 2 = parity % 2
   · have hi : l.length - 1 < l.length := Nat.sub_lt hlen_pos zero_lt_one
+    have hlpos : (0 : ℝ) < (l.prod : ℕ) := by simpa using hpos_prod l.length
     have hstep := hadm (l.length - 1) hi (by omega)
-    rw [brunStepLt, Nat.sub_add_cancel hlen_pos, List.take_length] at hstep
-    have hmul := (lt_rpow_one_div_iff_mul_rpow_lt (Nat.cast_nonneg _)
-      (by simpa using hpos_prod l.length) hy0 hβ0).mp hstep
+    rw [brunStepLt, Nat.sub_add_cancel hlen_pos, List.take_length, one_div,
+      lt_rpow_inv_iff_of_pos (Nat.cast_nonneg _) (div_nonneg hy0.le hlpos.le) hβ0,
+      lt_div_iff₀' hlpos] at hstep
     have hge1 : (1 : ℝ) ≤ (l[l.length - 1] : ℕ) := by
       have := hp2 l[l.length - 1] (List.getElem_mem _); exact_mod_cast (by omega : 1 ≤ _)
     have hrpow : (1 : ℝ) ≤ ((l[l.length - 1] : ℕ) : ℝ) ^ β := one_le_rpow hge1 hβ0.le
-    have hlpos : (0 : ℝ) < (l.prod : ℕ) := by simpa using hpos_prod l.length
     nlinarith [mul_le_mul_of_nonneg_left hrpow hlpos.le]
   · rcases eq_or_ne l.length 1 with h1 | hgt1
     · obtain ⟨p, hp⟩ := List.length_eq_one_iff.mp h1
@@ -231,8 +220,9 @@ private theorem list_prod_lt_of_admissible {l : List ℕ} {y β : ℝ} (parity :
       have hi : l.length - 2 < l.length := by omega
       have hj : l.length - 1 < l.length := by omega
       have hstep := hadm (l.length - 2) hi (by omega)
-      rw [brunStepLt, show l.length - 2 + 1 = l.length - 1 by omega,
-        lt_rpow_one_div_iff_mul_rpow_lt (Nat.cast_nonneg _) (hpos_prod _) hy0 hβ0] at hstep
+      rw [brunStepLt, show l.length - 2 + 1 = l.length - 1 by omega, one_div,
+        lt_rpow_inv_iff_of_pos (Nat.cast_nonneg _) (div_nonneg hy0.le (hpos_prod _).le) hβ0,
+        lt_div_iff₀' (hpos_prod _)] at hstep
       have hlt_p : ((l[l.length - 1] : ℕ) : ℝ) < (l[l.length - 2] : ℕ) := by
         exact_mod_cast hsort.getElem_gt_getElem_of_lt (by omega : l.length - 2 < l.length - 1)
       have hpi1 : (1 : ℝ) < (l[l.length - 2] : ℕ) := by
@@ -252,7 +242,8 @@ theorem lt_of_brunWeights_ne_zero {P d : ℕ} (hP : Squarefree P) {y β : ℝ} {
     (h : brunWeights P y β parity d ≠ 0) : (d : ℝ) < y := by
   obtain ⟨hd, hadm⟩ := (brunWeights_ne_zero_iff hP y β parity).mp h
   have hd_eq : (d.primeFactors.sort (· ≥ ·)).prod = d := by
-    rw [prod_sort_ge_eq_prod, Nat.prod_primeFactors_of_squarefree (hP.squarefree_of_dvd hd)]
+    rw [(sort_perm_toList _ (· ≥ ·)).prod_eq, prod_toList,
+      Nat.prod_primeFactors_of_squarefree (hP.squarefree_of_dvd hd)]
   rw [← hd_eq]
   refine list_prod_lt_of_admissible parity (sortedGT_sort d.primeFactors) ?_ hy hβ ?_ ?_
   · intro p hp
@@ -263,13 +254,6 @@ theorem lt_of_brunWeights_ne_zero {P d : ℕ} (hP : Squarefree P) {y β : ℝ} {
     simpa only [brunStepLt, Nat.cast_list_prod] using hadm i hi hmod
 
 /-! ### Kedlaya's first-failure partition (Lemma 12.1) -/
-
-private theorem sort_ge_union_eq_append {B C : Finset ℕ} (hBC : ∀ b ∈ B, ∀ c ∈ C, c < b) :
-    (B ∪ C).sort (· ≥ ·) = B.sort (· ≥ ·) ++ C.sort (· ≥ ·) :=
-  (sortedGT_sort _).eq_of_mem_iff
-    (List.sortedGT_append.mpr ⟨sortedGT_sort _, sortedGT_sort _, fun _ hb _ hc ↦
-      hBC _ ((mem_sort _).mp hb) _ ((mem_sort _).mp hc)⟩)
-    (by simp)
 
 /-- Minimal-failing subsets `B`: nonempty, cardinality congruent to `parity` mod `2`, all strictly
 shorter parity-selected prefixes pass, and the full set fails at its last element. -/
@@ -297,7 +281,11 @@ private theorem union_not_admissible_of_minFailing {y β : ℝ} {parity : ℕ} {
     ¬ isBrunAdmissible y β parity (B ∪ C) := by
   obtain ⟨hlen, hpar, _, hfail⟩ := hB
   intro hadm
-  have happ := sort_ge_union_eq_append hBC
+  have hd : Disjoint B.val C.val :=
+    disjoint_val.mpr (disjoint_left.mpr fun b hb hc ↦ (lt_irrefl b) (hBC b hb b hc))
+  have happ : (B ∪ C).sort (· ≥ ·) = B.sort (· ≥ ·) ++ C.sort (· ≥ ·) := by
+    rw [Finset.sort, union_val, ← Multiset.add_eq_union_iff_disjoint.mpr hd,
+      Multiset.sort_add (· ≥ ·) (fun b hb c hc ↦ (hBC b hb c hc).le), sort_val, sort_val]
   have hiB : (B.sort (· ≥ ·)).length - 1 < (B.sort (· ≥ ·)).length := Nat.sub_lt hlen zero_lt_one
   have hiU : (B.sort (· ≥ ·)).length - 1 < ((B ∪ C).sort (· ≥ ·)).length := by
     rw [happ, List.length_append]; omega
@@ -325,8 +313,16 @@ private theorem minFailing_eq_of_union_eq {y β : ℝ} {parity : ℕ} {B₁ C₁
     (hB₁ : isBrunMinFailing y β parity B₁) (hC₁ : ∀ b ∈ B₁, ∀ c ∈ C₁, c < b)
     (hB₂ : isBrunMinFailing y β parity B₂) (hC₂ : ∀ b ∈ B₂, ∀ c ∈ C₂, c < b)
     (heq : B₁ ∪ C₁ = B₂ ∪ C₂) : B₁ = B₂ := by
+  have hd₁ : Disjoint B₁.val C₁.val :=
+    disjoint_val.mpr (disjoint_left.mpr fun b hb hc ↦ (lt_irrefl b) (hC₁ b hb b hc))
+  have hd₂ : Disjoint B₂.val C₂.val :=
+    disjoint_val.mpr (disjoint_left.mpr fun b hb hc ↦ (lt_irrefl b) (hC₂ b hb b hc))
   have happ : B₁.sort (· ≥ ·) ++ C₁.sort (· ≥ ·) = B₂.sort (· ≥ ·) ++ C₂.sort (· ≥ ·) := by
-    rw [← sort_ge_union_eq_append hC₁, heq, sort_ge_union_eq_append hC₂]
+    rw [← sort_val, ← sort_val,
+      ← Multiset.sort_add (· ≥ ·) (fun b hb c hc ↦ (hC₁ b hb c hc).le),
+      Multiset.add_eq_union_iff_disjoint.mpr hd₁, ← union_val, ← Finset.sort, heq,
+      Finset.sort, union_val, ← Multiset.add_eq_union_iff_disjoint.mpr hd₂,
+      Multiset.sort_add (· ≥ ·) (fun b hb c hc ↦ (hC₂ b hb c hc).le), sort_val, sort_val]
   rcases lt_trichotomy (B₁.sort (· ≥ ·)).length (B₂.sort (· ≥ ·)).length with hlt | heql | hgt
   · have hpref : B₁.sort (· ≥ ·) = (B₂.sort (· ≥ ·)).take (B₁.sort (· ≥ ·)).length := by
       have h1 := congrArg (List.take (B₁.sort (· ≥ ·)).length) happ
@@ -346,7 +342,7 @@ private theorem exists_minFailing_decomp_of_not_admissible {S₀ A : Finset ℕ}
     ∃ B ∈ S₀.powerset, isBrunMinFailing y β parity B ∧
       ∃ C ∈ (S₀.filter (fun q ↦ ∀ b ∈ B, q < b)).powerset, A = B ∪ C := by
   classical
-  set l := A.sort (· ≥ ·)
+  set l := A.sort (· ≥ ·) with hl
   let bad := (Finset.range l.length).filter (fun i ↦
     ∃ hi : i < l.length, (i + 1) % 2 = parity % 2 ∧ ¬ brunStepLt y β l i hi)
   have hbad : bad.Nonempty := by
@@ -365,9 +361,7 @@ private theorem exists_minFailing_decomp_of_not_admissible {S₀ A : Finset ℕ}
     (sortedGT_sort A).pairwise.rel_of_mem_take_of_mem_drop
       (List.mem_toFinset.mp hb) (List.mem_toFinset.mp hc)
   have hAB : A = B ∪ C := by
-    rw [← sort_toFinset A (· ≥ ·)]
-    change l.toFinset = B ∪ C
-    rw [← List.take_append_drop (i₀ + 1) l, List.toFinset_append]
+    rw [← sort_toFinset A (· ≥ ·), ← hl, ← List.take_append_drop (i₀ + 1) l, List.toFinset_append]
   have hBS : B ⊆ S₀ := fun b hb ↦ hAS (hAB ▸ mem_union_left C hb)
   have hCS : C ⊆ S₀.filter (fun q ↦ ∀ b ∈ B, q < b) := fun c hc ↦
     mem_filter.mpr ⟨hAS (hAB ▸ mem_union_right B hc), fun b hb ↦ hBC_lt b hb c hc⟩
@@ -465,8 +459,7 @@ private theorem sum_admissible_sub_prod_one_sub (S₀ : Finset ℕ) (g : ℕ →
         union_not_admissible_of_minFailing hBm fun b hb c hc ↦ (mem_filter.mp (hCS hc)).2 b hb⟩
   have hdisj : (M : Set (Finset ℕ)).PairwiseDisjoint fiber := by
     intro B₁ hB₁ B₂ hB₂ hne
-    change Disjoint (fiber B₁) (fiber B₂)
-    rw [Finset.disjoint_left]
+    rw [Function.onFun, Finset.disjoint_left]
     intro A hA₁ hA₂
     obtain ⟨C₁, hC₁, rfl⟩ := mem_image.mp hA₁
     obtain ⟨C₂, hC₂, heq⟩ := mem_image.mp hA₂
@@ -674,10 +667,13 @@ private theorem take_prod_le_rpow_of_minFailing {l : List ℕ} {y β z : ℝ}
       have hprod_m' : (((l.take m').prod : ℕ) : ℝ) = A * (l[m' - 1] : ℕ) := by
         conv_lhs => rw [← Nat.sub_add_cancel hm'1, List.prod_take_succ l (m' - 1) hidx]
         exact Nat.cast_mul _ _
+      have hpm'_pos : (0 : ℝ) < ((l.take m').prod : ℕ) := by rw [hprod_m']; positivity
       have hstep := hpass (m' - 1) hidx (by omega) (by omega)
-      rw [brunStepLt, Nat.sub_add_cancel hm'1, lt_rpow_one_div_iff_mul_rpow_lt hp_pos.le
-        (by rw [hprod_m']; positivity) (zero_lt_one.trans hy) (zero_lt_one.trans hβ),
-        hprod_m', mul_assoc, ← rpow_one_add' hp_pos.le (by linarith), add_comm 1 β] at hstep
+      rw [brunStepLt, Nat.sub_add_cancel hm'1, one_div,
+        lt_rpow_inv_iff_of_pos hp_pos.le (div_nonneg (zero_lt_one.trans hy).le hpm'_pos.le)
+          (zero_lt_one.trans hβ),
+        lt_div_iff₀' hpm'_pos, hprod_m', mul_assoc, ← rpow_one_add' hp_pos.le (by linarith),
+        add_comm 1 β] at hstep
       have hlt_next : ((l[m'] : ℕ) : ℝ) ≤ (l[m' - 1] : ℕ) := by
         exact_mod_cast (hsort.getElem_gt_getElem_of_lt (by omega : m' - 1 < m')).le
       have htake_m : (((l.take (m - 1)).prod : ℕ) : ℝ) ≤ A * ((l[m' - 1] : ℕ) : ℝ) ^ 2 := by
@@ -685,36 +681,32 @@ private theorem take_prod_le_rpow_of_minFailing {l : List ℕ} {y β z : ℝ}
         nlinarith [mul_le_mul_of_nonneg_left hlt_next (mul_nonneg hA_pos.le hp_pos.le)]
       exact htake_m.trans (hm'_eq ▸ two_step_rpow_le hA_pos hp_pos hy hβ ihm hstep)
 
-private theorem list_prod_le_pow_length {l : List ℕ} {z : ℝ} (hz0 : 0 ≤ z)
-    (hlz : ∀ p ∈ l, (p : ℝ) ≤ z) : ((l.prod : ℕ) : ℝ) ≤ z ^ l.length := by
-  induction l with
-  | nil => simp
-  | cons a tl ih =>
-    rw [List.prod_cons, Nat.cast_mul, List.length_cons, pow_add, pow_one, mul_comm (z ^ tl.length)]
-    exact mul_le_mul (hlz a List.mem_cons_self)
-      (ih fun p hp ↦ hlz p (List.mem_cons_of_mem a hp)) (Nat.cast_nonneg _) hz0
-
 private theorem minFailing_last_fail {B : Finset ℕ} {y β : ℝ} {parity : ℕ}
     (hB : isBrunMinFailing y β parity B) (hpB : ∀ b ∈ B, b.Prime) (hy : 1 < y) (hβ : 1 < β) :
-    let l := B.sort (· ≥ ·)
-    have hlen : 0 < l.length := hB.choose
-    y ≤ (((l.take (l.length - 1)).prod : ℕ) : ℝ) *
-      ((l[l.length - 1]'(Nat.sub_lt hlen zero_lt_one) : ℕ) : ℝ) ^ (β + 1) := by
+    y ≤ ((((B.sort (· ≥ ·)).take ((B.sort (· ≥ ·)).length - 1)).prod : ℕ) : ℝ) *
+      (((B.sort (· ≥ ·))[(B.sort (· ≥ ·)).length - 1]'(Nat.sub_lt hB.choose zero_lt_one) : ℕ) : ℝ) ^
+        (β + 1) := by
   obtain ⟨hlen, _, _, hfail⟩ := hB
-  let l := B.sort (· ≥ ·)
-  have hp1 : ∀ p ∈ l, 1 ≤ p := fun p hp ↦ (hpB p ((mem_sort _).mp hp)).one_le
-  have hlast : l.length - 1 < l.length := Nat.sub_lt hlen zero_lt_one
-  have hA_pos : (0 : ℝ) < (((l.take (l.length - 1)).prod : ℕ) : ℝ) :=
-    Nat.cast_pos.mpr (List.prod_pos fun p hp ↦ hp1 p (List.mem_of_mem_take hp))
-  have hp_pos : (0 : ℝ) < (l[l.length - 1] : ℕ) := Nat.cast_pos.mpr (hp1 _ (List.getElem_mem _))
-  have hprod_full : (((l.take l.length).prod : ℕ) : ℝ) =
-      (((l.take (l.length - 1)).prod : ℕ) : ℝ) * (l[l.length - 1] : ℕ) := by
-    conv_lhs => rw [← Nat.sub_add_cancel hlen, List.prod_take_succ l (l.length - 1) hlast]
+  have hp1 : ∀ p ∈ B.sort (· ≥ ·), 1 ≤ p := fun p hp ↦ (hpB p ((mem_sort _).mp hp)).one_le
+  have hlast : (B.sort (· ≥ ·)).length - 1 < (B.sort (· ≥ ·)).length := Nat.sub_lt hlen zero_lt_one
+  have hp_pos : (0 : ℝ) < ((B.sort (· ≥ ·))[(B.sort (· ≥ ·)).length - 1] : ℕ) :=
+    Nat.cast_pos.mpr (hp1 _ (List.getElem_mem _))
+  have hprod_full : ((((B.sort (· ≥ ·)).take (B.sort (· ≥ ·)).length).prod : ℕ) : ℝ) =
+      ((((B.sort (· ≥ ·)).take ((B.sort (· ≥ ·)).length - 1)).prod : ℕ) : ℝ) *
+        ((B.sort (· ≥ ·))[(B.sort (· ≥ ·)).length - 1] : ℕ) := by
+    conv_lhs => rw [← Nat.sub_add_cancel hlen,
+      List.prod_take_succ (B.sort (· ≥ ·)) ((B.sort (· ≥ ·)).length - 1) hlast]
     exact Nat.cast_mul _ _
-  change ¬ brunStepLt y β l (l.length - 1) hlast at hfail
-  rw [brunStepLt, Nat.sub_add_cancel hlen, lt_rpow_one_div_iff_mul_rpow_lt hp_pos.le
-    (by rw [hprod_full]; positivity) (zero_lt_one.trans hy) (zero_lt_one.trans hβ),
-    not_lt, hprod_full, mul_assoc, ← rpow_one_add' hp_pos.le (by linarith), add_comm 1 β] at hfail
+  have hpfull_pos : (0 : ℝ) < (((B.sort (· ≥ ·)).take (B.sort (· ≥ ·)).length).prod : ℕ) := by
+    have hA_pos :
+        (0 : ℝ) < ((((B.sort (· ≥ ·)).take ((B.sort (· ≥ ·)).length - 1)).prod : ℕ) : ℝ) :=
+      Nat.cast_pos.mpr (List.prod_pos fun p hp ↦ hp1 p (List.mem_of_mem_take hp))
+    rw [hprod_full]; positivity
+  rw [brunStepLt, show (B.sort (· ≥ ·)).length - 1 + 1 = (B.sort (· ≥ ·)).length by omega, one_div,
+    lt_rpow_inv_iff_of_pos hp_pos.le (div_nonneg (zero_lt_one.trans hy).le hpfull_pos.le)
+      (zero_lt_one.trans hβ),
+    lt_div_iff₀' hpfull_pos, not_lt, hprod_full, mul_assoc,
+    ← rpow_one_add' hp_pos.le (by linarith), add_comm 1 β] at hfail
   exact hfail
 
 private theorem lt_rpow_card_add_of_minFailing {B : Finset ℕ} {y β z : ℝ} {parity : ℕ}
@@ -729,9 +721,9 @@ private theorem lt_rpow_card_add_of_minFailing {B : Finset ℕ} {y β z : ℝ} {
     Nat.cast_pos.mpr (List.prod_pos fun p hp ↦
       (hpB p ((mem_sort _).mp (List.mem_of_mem_take hp))).one_le)
   have htake_le : (((l.take (l.length - 1)).prod : ℕ) : ℝ) ≤ z ^ (l.length - 1) := by
-    have h := list_prod_le_pow_length (l := l.take (l.length - 1)) hz0.le
-      (fun p hp ↦ (hlz p (List.mem_of_mem_take hp)).le)
-    rwa [List.length_take_of_le (Nat.sub_le l.length 1)] at h
+    have h := List.prod_map_le_pow_length₀ (f := Nat.castRingHom ℝ) (t := l.take (l.length - 1))
+      (fun p _ ↦ by simp) (fun p hp ↦ by simpa using (hlz p (List.mem_of_mem_take hp)).le)
+    simpa [Nat.cast_list_prod, List.length_take_of_le (Nat.sub_le l.length 1)] using h
   have hlast_lt : ((l[l.length - 1]'(Nat.sub_lt hlen zero_lt_one) : ℕ) : ℝ) ^ (β + 1) <
       z ^ (β + 1) :=
     rpow_lt_rpow (Nat.cast_nonneg _) (hlz _ (List.getElem_mem _)) (by linarith)
@@ -936,9 +928,9 @@ theorem brun_mainSum_defect_le (s : BoundingSieve) {y β z : ℝ} (parity : ℕ)
         (∏ p ∈ S n, (1 - s.nu p)⁻¹) * ∑ B ∈ (S n).powersetCard n, ∏ p ∈ B, s.nu p := by
   classical
   intro V w S
-  let P' := s.prodPrimes.primeFactors
-  let M := P'.powerset.filter (TauCeti.isBrunMinFailing y β parity)
   have hid := congrArg ((-1 : ℝ) ^ (parity + 1) * ·) (s.mainSum_brunWeights_sub_prod_eq y β parity)
+  set P' := s.prodPrimes.primeFactors
+  set M := P'.powerset.filter (TauCeti.isBrunMinFailing y β parity)
   have hsign : (-1 : ℝ) ^ (parity + 1) * (-1 : ℝ) ^ (parity + 1) = 1 := by
     rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
   rw [← mul_assoc, hsign, one_mul] at hid
@@ -954,13 +946,9 @@ theorem brun_mainSum_defect_le (s : BoundingSieve) {y β z : ℝ} (parity : ℕ)
     exact ⟨B.card, ⟨⟨Nat.succ_le_of_lt hpos, card_le_card hBP⟩, hbds.1⟩, ⟨hBP, hBm⟩, rfl⟩
   have hdisj : (Nset : Set ℕ).PairwiseDisjoint (fun n ↦ M.filter (fun B ↦ B.card = n)) := by
     intro n₁ _ n₂ _ hne
-    change Disjoint _ _
-    rw [Finset.disjoint_left]
+    rw [Function.onFun, Finset.disjoint_left]
     exact fun B h₁ h₂ ↦ hne ((mem_filter.mp h₁).2.symm.trans (mem_filter.mp h₂).2)
-  rw [hid]
-  change ∑ B ∈ M, _ ≤ _
-  conv_lhs => rw [hpart]
-  rw [sum_biUnion hdisj, mul_sum]
+  rw [hid, hpart, sum_biUnion hdisj, mul_sum]
   exact sum_le_sum fun n _ ↦ s.sum_minFailing_card_le hy hβ hz1 hzy hprimes
 
 end BoundingSieve

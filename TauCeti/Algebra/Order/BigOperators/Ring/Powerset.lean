@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Algebra.Order.Ring.Pow
 import TauCeti.Algebra.BigOperators.Finset.Powerset
 
 /-!
@@ -29,28 +30,6 @@ a subset of all `n`-tuples from `s`.
 public section
 
 namespace Finset
-
-/-- For nonnegative `a` and `b` in an ordered commutative semiring,
-`a ^ (n + 1) + (n + 1) * b * a ^ n ≤ (a + b) ^ (n + 1)`. -/
-private theorem pow_succ_add_mul_pow_le_add_pow {R : Type*} [CommSemiring R]
-    [PartialOrder R] [IsOrderedRing R] {a b : R} (ha : 0 ≤ a) (hb : 0 ≤ b) (n : ℕ) :
-    a ^ (n + 1) + (n + 1 : ℕ) * b * a ^ n ≤ (a + b) ^ (n + 1) := by
-  induction n with
-  | zero =>
-    simp
-  | succ k ih =>
-    have h0 : 0 ≤ ((k + 1 : ℕ) : R) * b ^ 2 * a ^ k :=
-      mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (pow_nonneg hb 2)) (pow_nonneg ha k)
-    calc a ^ (k + 2) + (k + 2 : ℕ) * b * a ^ (k + 1)
-        = a ^ (k + 2) + (k + 2 : ℕ) * b * a ^ (k + 1) + 0 := (add_zero _).symm
-      _ ≤ a ^ (k + 2) + (k + 2 : ℕ) * b * a ^ (k + 1) +
-            ((k + 1 : ℕ) : R) * b ^ 2 * a ^ k := add_le_add_right h0 _
-      _ = (a ^ (k + 1) + (k + 1 : ℕ) * b * a ^ k) * (a + b) := by
-          push_cast
-          ring
-      _ ≤ (a + b) ^ (k + 1) * (a + b) :=
-          mul_le_mul_of_nonneg_right ih (add_nonneg ha hb)
-      _ = (a + b) ^ (k + 2) := (pow_succ _ _).symm
 
 /-- For nonnegative weights on a finite set `s` in an ordered commutative semiring, `n!` times the
 sum of products over `n`-element subsets of `s` is at most `(∑ x ∈ s, f x) ^ n`. -/
@@ -88,8 +67,11 @@ theorem factorial_mul_sum_powersetCard_prod_le_sum_pow {α R : Type*} [CommSemir
             · exact ih hs (m + 1)
             · exact mul_nonneg (Nat.cast_nonneg _) ha0
             · exact ih hs m
-        _ ≤ (∑ x ∈ s, f x + f a) ^ (m + 1) :=
-            pow_succ_add_mul_pow_le_add_pow hS0 ha0 m
+        _ ≤ (∑ x ∈ s, f x + f a) ^ (m + 1) := by
+            have h := pow_add_mul_le_add_pow_of_sq_nonneg hS0 (pow_nonneg ha0 2)
+              (pow_nonneg (add_nonneg hS0 ha0) 2)
+              (add_nonneg (mul_nonneg zero_le_two hS0) ha0) (m + 1)
+            simpa only [Nat.add_sub_cancel, mul_right_comm _ _ (f a)] using h
         _ = (∑ x ∈ insert a s, f x) ^ (m + 1) := by
             rw [sum_insert ha, add_comm]
 

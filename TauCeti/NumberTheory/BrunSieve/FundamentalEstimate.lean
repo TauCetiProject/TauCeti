@@ -6,34 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.BrunSieve.Basic
+public import TauCeti.NumberTheory.SieveDimension.BoundingSieve
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Algebra.Order.BigOperators.Ring.Powerset
 import TauCeti.Analysis.SpecialFunctions.Exp.Factorial
 
 /-!
-# Euler-product sieve dimension and Brun's fundamental estimate
+# Brun's fundamental estimate
 
-An arithmetic density `g : ℕ → ℝ` on a prime set `P` has Euler-product sieve dimension `κ` with
-constant `K` if for all `2 ≤ w ≤ z`,
-`∏_{p ∈ P, p prime, w ≤ p < z} (1 - g(p))⁻¹ ≤ K (log z / log w)^κ`.
-
-When a `BoundingSieve` satisfies this Euler-product hypothesis on `s.prodPrimes.primeFactors` with
-`0 < κ`, `1 < K`, `1 < y`, and `9 * κ + 1 ≤ u`, evaluating the combinatorial main-sum defect bound
-`BoundingSieve.brun_mainSum_defect_le` at parameter `β = 9 * κ + 1` and prime threshold
-`z = y ^ (1 / u)` bounds each failure-length summand by a geometric series with ratio
-`exp (10 / 9) / 9 < exp (-1)`. Summing the tail yields Kedlaya's Theorem 12.2 (with the corrected
-`(1 - δ)` lower main-term factor): for `V = ∏_{p ∣ P} (1 - ν(p))` and
-`δ = exp (9 * κ + 1 - u) * K ^ 10`,
+When a `BoundingSieve` satisfies `BoundingSieve.HasProductDimension κ K` on
+`s.prodPrimes.primeFactors` with `0 < κ`, `1 < K`, `1 < y`, and `9 * κ + 1 ≤ u`, evaluating the
+combinatorial main-sum defect bound `BoundingSieve.brun_mainSum_defect_le` at parameter
+`β = 9 * κ + 1` and prime threshold `z = y ^ (1 / u)` bounds each failure-length summand by a
+geometric series with ratio `exp (10 / 9) / 9 < exp (-1)`. Summing the tail yields Kedlaya's
+Theorem 12.2 (with the corrected `(1 - δ)` lower main-term factor): for
+`V = ∏_{p ∣ P} (1 - ν(p))` and `δ = exp (9 * κ + 1 - u) * K ^ 10`,
 `(1 - δ) * V * X - remainderMass s y ≤ s.siftedSum ≤ (1 + δ) * V * X + remainderMass s y`.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.HasProductSieveDimension`: standalone Euler-product sieve dimension predicate on a prime
-  set `P : Set ℕ` and density `g : ℕ → ℝ`, with `mono_const` and `mono_dim`.
-* `BoundingSieve.HasProductDimension`: Euler-product sieve dimension on `s.prodPrimes.primeFactors`
-  for `s.nu`, bridged to `TauCeti.HasProductSieveDimension` by
-  `hasProductDimension_iff_hasProductSieveDimension`, with `mono_const` and `mono_dim`.
 * `BoundingSieve.brun_mainSum_bounds`: lower and upper bounds `(1 - δ) * V ≤ s.mainSum λ⁻ ≤ V` and
   `V ≤ s.mainSum λ⁺ ≤ (1 + δ) * V` for Brun's combinatorial weights at `β = 9 * κ + 1`.
 * `BoundingSieve.brun_fundamental_estimate`: Brun's fundamental estimate with product dimension and
@@ -49,96 +41,7 @@ public noncomputable section
 
 open Finset Nat Real
 
-namespace TauCeti
-
-/-- Standalone Euler-product sieve dimension predicate for a prime set `P : Set ℕ` and prime
-density `g : ℕ → ℝ`: for all `2 ≤ w ≤ z`, the Euler-product ratio over primes `p ∈ P` in `[w, z)`
-is at most `K * (log z / log w) ^ κ`. -/
-def HasProductSieveDimension (P : Set ℕ) (g : ℕ → ℝ) (κ K : ℝ) : Prop :=
-  by
-    classical
-    exact ∀ w z : ℝ, 2 ≤ w → w ≤ z →
-      (∏ p ∈ (Finset.range ⌈z⌉₊).filter (fun p : ℕ ↦ p ∈ P ∧ p.Prime ∧ w ≤ (p : ℝ)),
-        (1 - g p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ
-
-/-- Explicit formula for `TauCeti.HasProductSieveDimension`. -/
-theorem hasProductSieveDimension_def (P : Set ℕ) (g : ℕ → ℝ) (κ K : ℝ) :
-    HasProductSieveDimension P g κ K ↔
-      by
-        classical
-        exact ∀ w z : ℝ, 2 ≤ w → w ≤ z →
-          (∏ p ∈ (Finset.range ⌈z⌉₊).filter (fun p : ℕ ↦ p ∈ P ∧ p.Prime ∧ w ≤ (p : ℝ)),
-            (1 - g p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ := Iff.rfl
-
-/-- Monotonicity of `HasProductSieveDimension` in the multiplicative constant `K`. -/
-theorem HasProductSieveDimension.mono_const {P : Set ℕ} {g : ℕ → ℝ} {κ K₁ K₂ : ℝ}
-    (h : HasProductSieveDimension P g κ K₁) (hK : K₁ ≤ K₂) :
-    HasProductSieveDimension P g κ K₂ := by
-  classical
-  intro w z hw hwz
-  have hlw : 0 < Real.log w := Real.log_pos (by linarith)
-  have hlz : 0 ≤ Real.log z := hlw.le.trans (Real.log_le_log (by linarith) hwz)
-  exact (h w z hw hwz).trans (mul_le_mul_of_nonneg_right hK (rpow_nonneg (div_nonneg hlz hlw.le) _))
-
-/-- Monotonicity of `HasProductSieveDimension` in the dimension parameter `κ` for `0 ≤ K`. -/
-theorem HasProductSieveDimension.mono_dim {P : Set ℕ} {g : ℕ → ℝ} {κ₁ κ₂ K : ℝ}
-    (h : HasProductSieveDimension P g κ₁ K) (hK : 0 ≤ K) (hκ : κ₁ ≤ κ₂) :
-    HasProductSieveDimension P g κ₂ K := by
-  classical
-  intro w z hw hwz
-  have hlw : 0 < Real.log w := Real.log_pos (by linarith)
-  have h1 : 1 ≤ Real.log z / Real.log w :=
-    (one_le_div hlw).mpr (Real.log_le_log (by linarith) hwz)
-  exact (h w z hw hwz).trans (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_exponent_le h1 hκ) hK)
-
-end TauCeti
-
 namespace BoundingSieve
-
-/-- The Euler-product dimension bound on the prime factors of the native sieve product. -/
-def HasProductDimension (s : BoundingSieve) (κ K : ℝ) : Prop :=
-  ∀ w z : ℝ, 2 ≤ w → w ≤ z →
-    (∏ p ∈ s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z),
-      (1 - s.nu p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ
-
-/-- Explicit formula for `BoundingSieve.HasProductDimension`. -/
-theorem hasProductDimension_def (s : BoundingSieve) (κ K : ℝ) :
-    s.HasProductDimension κ K ↔
-      ∀ w z : ℝ, 2 ≤ w → w ≤ z →
-        (∏ p ∈ s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z),
-          (1 - s.nu p)⁻¹) ≤ K * (Real.log z / Real.log w) ^ κ := Iff.rfl
-
-/-- `BoundingSieve.HasProductDimension` agrees with `TauCeti.HasProductSieveDimension` on the prime
-set `(s.prodPrimes.primeFactors : Set ℕ)` and density `s.nu`. -/
-theorem hasProductDimension_iff_hasProductSieveDimension (s : BoundingSieve) (κ K : ℝ) :
-    s.HasProductDimension κ K ↔
-      TauCeti.HasProductSieveDimension (s.prodPrimes.primeFactors : Set ℕ) s.nu κ K := by
-  classical
-  rw [hasProductDimension_def, TauCeti.hasProductSieveDimension_def]
-  refine forall₄_congr fun w z _ _ ↦ ?_
-  have hfin : s.prodPrimes.primeFactors.filter (fun p : ℕ ↦ w ≤ (p : ℝ) ∧ (p : ℝ) < z) =
-      (Finset.range ⌈z⌉₊).filter
-        (fun p : ℕ ↦ p ∈ (s.prodPrimes.primeFactors : Set ℕ) ∧ p.Prime ∧ w ≤ (p : ℝ)) := by
-    ext p
-    simp only [mem_filter, mem_range, Nat.lt_ceil, mem_coe]
-    exact ⟨fun ⟨hp, hw, hz⟩ ↦ ⟨hz, hp, Nat.prime_of_mem_primeFactors hp, hw⟩,
-      fun ⟨hz, hp, _, hw⟩ ↦ ⟨hp, hw, hz⟩⟩
-  rw [hfin]
-  convert Iff.rfl
-
-/-- Monotonicity of `BoundingSieve.HasProductDimension` in the constant `K`. -/
-theorem HasProductDimension.mono_const {s : BoundingSieve} {κ K₁ K₂ : ℝ}
-    (h : s.HasProductDimension κ K₁) (hK : K₁ ≤ K₂) :
-    s.HasProductDimension κ K₂ := by
-  rw [hasProductDimension_iff_hasProductSieveDimension] at h ⊢
-  exact h.mono_const hK
-
-/-- Monotonicity of `BoundingSieve.HasProductDimension` in the dimension `κ` for `0 ≤ K`. -/
-theorem HasProductDimension.mono_dim {s : BoundingSieve} {κ₁ κ₂ K : ℝ}
-    (h : s.HasProductDimension κ₁ K) (hK : 0 ≤ K) (hκ : κ₁ ≤ κ₂) :
-    s.HasProductDimension κ₂ K := by
-  rw [hasProductDimension_iff_hasProductSieveDimension] at h ⊢
-  exact h.mono_dim hK hκ
 
 /-! ### Numerical and single-step estimates for `β = 9 * κ + 1` -/
 
@@ -202,7 +105,7 @@ private theorem euler_ratio_slice_le (s : BoundingSieve) {κ K z : ℝ} (n : ℕ
     exact h1.trans ((hinv_eq ▸ pow_le_pow_left₀ (by positivity) hexp1 n).trans_eq
       (Real.exp_nat_mul _ n).symm)
   calc ∏ p ∈ S, (1 - s.nu p)⁻¹
-      ≤ K * (Real.log z / Real.log w) ^ κ := hdim w z hw2 hwz
+      ≤ K * (Real.log z / Real.log w) ^ κ := (s.hasProductDimension_def κ K).mp hdim w z hw2 hwz
     _ ≤ K * (Real.exp ((n : ℝ) * (1 / (9 * κ)))) ^ κ :=
         mul_le_mul_of_nonneg_left (rpow_le_rpow (div_nonneg hlz.le hlw.le) hdiv hκ.le) (by linarith)
     _ = K * Real.exp ((n : ℝ) / 9) := by
