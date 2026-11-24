@@ -96,15 +96,16 @@ instance : Mono (reducedOverι G) :=
 variable [PerfectField k]
 
 /-- The fibre product `G_red ×_k G_red` is reduced, since `k` is perfect. -/
-instance : IsReduced (reducedOver G ⊗ reducedOver G).left :=
-  inferInstanceAs (IsReduced (Limits.pullback (reducedOver G).hom (reducedOver G).hom))
+instance : IsReduced (reducedOver G ⊗ reducedOver G).left := by
+  rw [Over.tensorObj_left]; infer_instance
 
 /-- The group structure on `G_red`: the unit, multiplication and inversion of `G` factor through
 the thickening `G_red ⟶ G`, since their sources `Spec k`, `G_red ×_k G_red` and `G_red` are
 reduced. -/
 noncomputable instance : GrpObj (reducedOver G) :=
   grpObjOfClosedImmersion (reducedOverι G)
-    (have : IsReduced (𝟙_ (Over (Spec (.of k)))).left := inferInstanceAs (IsReduced (Spec (.of k)))
+    (have : IsReduced (𝟙_ (Over (Spec (.of k)))).left := by
+      rw [Over.tensorUnit_left]; infer_instance
     IsThickening.ker_le_ker _ _)
     (IsThickening.ker_le_ker _ _) (IsThickening.ker_le_ker _ _)
 
