@@ -294,6 +294,18 @@ lemma singularChainComplexπ_ofSubsetMap_naturality_assoc {X Y : TopCat.{w}} (g 
     ((eq_whisker (singularChainComplexπ_ofSubsetMap_naturality g hB M) h).trans
       (Category.assoc _ _ _))
 
+/-- A map of pairs `(X, A) ⟶ (X, B)` given by the identity of `X` carries the quotient map to the
+relative singular chains of `(X, A)` to the quotient map to those of `(X, B)`. -/
+@[reassoc]
+lemma singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id {X A B : TopCat.{w}}
+    {i : A ⟶ X} {j : B ⟶ X} {hi : Topology.IsEmbedding i} {hj : Topology.IsEmbedding j}
+    (f : TopPair.of i hi ⟶ TopPair.of j hj) (hf : Hom.fst f = 𝟙 X) :
+    (TopPair.of i hi).singularChainComplexπ R ≫ singularChainComplexMap f R =
+      (TopPair.of j hj).singularChainComplexπ R := by
+  rw [← singularChainComplexπ_pair_naturality, hf]
+  exact (congrArg (· ≫ _) ((TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R).map_id X)).trans
+    (Category.id_comp _)
+
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
 @[reassoc]
@@ -344,6 +356,16 @@ lemma singularChainComplexMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ 
   -- `(toSSetPair.obj P').right.chainComplex R` and as `(TopCat.toSSet.obj P'.fst).chainComplex R`.
   exact (Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) (chainComplexMap_comp_singularChainComplexπ P' R)).trans comp_zero)
+
+/-- **A pair whose subspace is everything has zero relative singular chains.** If the embedding
+of the subspace of `P` is surjective, for instance for `(X, X)`, the relative singular chain
+complex of `P` is zero, and in particular acyclic. -/
+lemma isZero_singularChainComplex_of_surjective_map (hP : Function.Surjective P.map) :
+    IsZero (P.singularChainComplex R) := by
+  -- The identity of `P` factors through the subspace, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularChainComplexMap_id]
+  exact singularChainComplexMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x)
 
 /-- The cokernel cofork presenting the relative singular chain complex as the quotient of the
 ambient singular chains by the subspace singular chains. -/
@@ -482,6 +504,22 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- A map of pairs `(t, s) ⟶ (t', s')` of subspaces induces on relative singular homology the
+same map as a map of pairs `(t₁, s₁) ⟶ (t₁', s₁')` of equal subspaces, written differently, with
+the same values, through the identifications `TopPair.ofInclusion_congr` of the pairs. -/
+lemma singularHomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ : Set X}
+    {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
+    (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφψ : ∀ x : t, (Hom.fst φ x).val = (Hom.fst ψ ⟨x, ht ▸ x.property⟩).val) (n : ℕ) :
+    TopPair.singularHomologyMap φ R n ≫
+        eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h' h₁' hs' ht')) =
+      eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h h₁ hs ht)) ≫
+        TopPair.singularHomologyMap ψ R n := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
+  simp
+
 /-- Two maps of pairs of subspaces acting by the same map `g` induce the same map on homology, up
 to equalities of the subspaces: one is an isomorphism exactly when the other is. -/
 lemma isIso_singularHomologyMap_ofInclusion_congr {X Y : TopCat.{w}} (g : X → Y)
@@ -499,11 +537,9 @@ lemma isIso_singularHomologyMap_ofInclusion_congr {X Y : TopCat.{w}} (g : X → 
 /-- **A pair whose subspace is everything has no relative homology.** If the embedding of the
 subspace of `P` is surjective, the relative singular homology of `P` vanishes in every degree. -/
 lemma isZero_singularHomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
-    IsZero (P.singularHomology R n) := by
-  -- The identity of `P` factors through the subspace, so it induces zero.
-  rw [IsZero.iff_id_eq_zero, ← singularHomologyMap_id]
-  exact singularHomologyMap_eq_zero_of_fac _ R
-    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x) n
+    IsZero (P.singularHomology R n) :=
+  (HomologicalComplex.homologyFunctor C _ n).map_isZero
+    (isZero_singularChainComplex_of_surjective_map P R hP)
 
 /-- **A subspace relative to itself has no relative homology.** For every subset `s` of `X`, the
 relative singular homology of the pair `(s, s)` vanishes in every degree. -/

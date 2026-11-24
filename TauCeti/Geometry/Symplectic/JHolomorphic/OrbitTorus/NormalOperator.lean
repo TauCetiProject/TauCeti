@@ -463,13 +463,13 @@ theorem fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero (h
     (by rw [sq_abs, hε₂])
   set g : ℝ × ℝ → ℝ := fun z => ‖fderiv ℝ u z stdComplexLineReal‖
   have hg₁ (t : ℝ) : Function.Periodic (fun s => g (s, t)) ℓ := fun s => by
-    have := fderiv_add_eq_smul (𝕜 := ℝ) (c := (ℓ, (0 : ℝ))) (fun ⟨a, b⟩ => by simpa using hs a b)
-      (s, t)
+    have := fderiv_add_eq_smul (𝕜 := ℝ) (c := (ℓ, (0 : ℝ))) (a := ε₁)
+      (fun ⟨a, b⟩ => by simpa using hs a b) (s, t)
     simp only [Prod.mk_add_mk, add_zero] at this
     simp [g, this, norm_smul, habs₁]
   have hg₂ (s : ℝ) : Function.Periodic (fun t => g (s, t)) d := fun t => by
-    have := fderiv_add_eq_smul (𝕜 := ℝ) (c := ((0 : ℝ), d)) (fun ⟨a, b⟩ => by simpa using ht a b)
-      (s, t)
+    have := fderiv_add_eq_smul (𝕜 := ℝ) (c := ((0 : ℝ), d)) (a := ε₂)
+      (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
     simp only [Prod.mk_add_mk, add_zero] at this
     simp [g, this, norm_smul, habs₂]
   obtain ⟨s, t⟩ := z

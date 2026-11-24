@@ -218,7 +218,7 @@ theorem smul {n : ℤ} (hn : n ≠ 0) (h : L.SameGenus M) : (n • L).SameGenus 
       exact h.signature_eq
   · rw [localIntegralForm_smul, localIntegralForm_smul]
     exact (LinearMap.BilinForm.equivalent_smul_iff
-      (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast hn))).mpr
+      (IsRegular.of_ne_zero (by exact_mod_cast hn))).mpr
       (h.localIntegralForm_equivalent p)
 
 /-- **Lattices in the same genus have isometric completed rational spaces**: at every prime `p`
@@ -244,7 +244,7 @@ theorem sameGenus_smul_iff {L : IntegralLattice V} {M : IntegralLattice W} {n : 
   · have hloc := h.localIntegralForm_equivalent p
     rw [localIntegralForm_smul, localIntegralForm_smul] at hloc
     exact (LinearMap.BilinForm.equivalent_smul_iff
-      (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast hn))).mp hloc
+      (IsRegular.of_ne_zero (by exact_mod_cast hn))).mp hloc
 
 /-- A lattice in the genus of the scaling `n • L` by a nonzero integer is the scaling by `n` of a
 lattice in the genus of `L`. The genus fixes the scale ideal, so `n` divides every value of the

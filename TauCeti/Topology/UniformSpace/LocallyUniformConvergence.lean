@@ -34,6 +34,8 @@ Locally uniform convergence along a filter `l` passes to any family of indices t
 for instance to a subsequence (`TendstoLocallyUniformlyOn.comp_tendsto`,
 `TendstoLocallyUniformly.comp_tendsto`), and a family that does not depend on its index
 converges locally uniformly to its constant value (`TauCeti.tendstoLocallyUniformly_const`).
+Locally uniform convergence on the whole space gives pointwise convergence
+(`TendstoLocallyUniformly.tendsto_at`).
 
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
@@ -66,6 +68,13 @@ theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [Topologic
     {q : Filter ι'} (h : TendstoLocallyUniformlyOn F f p s) (hg : Tendsto g q p) :
     TendstoLocallyUniformlyOn (F ∘ g) f q s :=
   fun u hu x hx ↦ (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, hg.eventually hev⟩
+
+/-- A locally uniform limit is a pointwise limit: if `F i → f` locally uniformly along `p`, then
+`F i a → f a` for every `a`. -/
+theorem TendstoLocallyUniformly.tendsto_at {ι α β : Type*} [TopologicalSpace α] [UniformSpace β]
+    {F : ι → α → β} {f : α → β} {p : Filter ι} (h : TendstoLocallyUniformly F f p) (a : α) :
+    Tendsto (fun i ↦ F i a) p (𝓝 (f a)) :=
+  (tendstoLocallyUniformlyOn_univ.2 h).tendsto_at (mem_univ a)
 
 /-- **Locally uniform convergence to a continuous limit is continuous convergence.** On an open
 set on which the limit is continuous, `F i → f` locally uniformly exactly when `F i y → f x` as
