@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.Dimension.Basic
 public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
-import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.Connected
 
@@ -42,25 +41,6 @@ open Bornology Filter Metric Set Topology
 
 namespace TauCeti
 
-/-- Under `z ↦ (z - a₀)⁻¹`, the image of an unbounded preconnected set `S ⊆ Kᶜ \ {a₀}` lies in
-the complementary component of `0` whenever `0 ∉ (fun z ↦ (z - a₀)⁻¹) '' K`. -/
-private theorem image_inv_sub_subset_connectedComponentIn_zero {𝕜 : Type*} [NormedDivisionRing 𝕜]
-    {K S : Set 𝕜} {a₀ : 𝕜} (hS : IsPreconnected S) (hSK : S ⊆ Kᶜ) (hSa₀ : a₀ ∉ S)
-    (hSub : ¬ IsBounded S) (h0 : (0 : 𝕜) ∉ (fun z ↦ (z - a₀)⁻¹) '' K) :
-    (fun z ↦ (z - a₀)⁻¹) '' S ⊆ connectedComponentIn ((fun z ↦ (z - a₀)⁻¹) '' K)ᶜ 0 := by
-  let φ : 𝕜 → 𝕜 := fun z ↦ (z - a₀)⁻¹
-  have hS_img : IsPreconnected (φ '' S) :=
-    hS.image φ ((continuousOn_inv_sub_compl_singleton a₀).mono fun _ hz hza ↦ hSa₀ (hza ▸ hz))
-  have hImg_sub : φ '' S ⊆ (φ '' K)ᶜ :=
-    (image_mono hSK).trans (Set.image_compl_subset (inv_sub_injective a₀))
-  have h0_cl : (0 : 𝕜) ∈ closure (φ '' S) := by
-    rw [closure_image_inv_sub hSub]
-    exact mem_insert 0 _
-  exact (subset_insert 0 _).trans <|
-    (hS_img.subset_closure (subset_insert _ _)
-      (insert_subset h0_cl subset_closure)).subset_connectedComponentIn
-      (mem_insert 0 _) (insert_subset h0 hImg_sub)
-
 /-- Under inversion `z ↦ (z - a₀)⁻¹` about a point `a₀` in the unbounded complementary component of
 a closed set `K` in a normed division ring of real dimension greater than one, the image of
 `connectedComponentIn Kᶜ a₀ \ {a₀}` lies in the unbounded component of
@@ -81,7 +61,9 @@ theorem _root_.IsClosed.zero_notMem_filledHull_image_inv_sub {𝕜 : Type*} [Nor
   have hD_open : IsOpen D := hK.isOpen_compl.connectedComponentIn
   have hD_sdiff_preconn : IsPreconnected (D \ {a₀}) :=
     isPreconnected_connectedComponentIn.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank hrank hD_open
-      isClosed_singleton (Set.finite_singleton a₀).isDiscrete
+      (isClosed_singleton.preimage continuous_subtypeVal)
+      ((Set.finite_singleton a₀).isDiscrete.preimage continuous_subtypeVal.continuousOn
+        Subtype.val_injective)
   have hD_sdiff_unbdd : ¬ IsBounded (D \ {a₀}) := fun hbd ↦
     (mem_filledHull_iff.not.mp ha₀) <| (hbd.insert a₀).subset fun z hz ↦ by
       by_cases hza : z = a₀
@@ -119,30 +101,25 @@ theorem _root_.IsClosed.image_inv_sub_inter_connectedComponentIn_nonempty {𝕜 
   have hxa₀ : x ≠ a₀ := fun h ↦ inv_ne_zero hw0 (by simpa [x] using h)
   have hφx : φ x = w := by simp [φ, x]
   have hxK : x ∈ Kᶜ := fun hxK ↦ hwK' ⟨x, hxK, hφx⟩
-  have ha₀_not_comp : a₀ ∉ connectedComponentIn Kᶜ x := by
-    intro hmem
-    have hxD : x ∈ connectedComponentIn Kᶜ a₀ :=
-      (connectedComponentIn_eq hmem).symm ▸ mem_connectedComponentIn hxK
-    have hw0c : w ∈ connectedComponentIn (φ '' K)ᶜ 0 := hD_sub ⟨x, ⟨hxD, hxa₀⟩, hφx⟩
-    exact h0_not (mem_filledHull_iff.mpr <|
-      (connectedComponentIn_eq hw0c).symm ▸ mem_filledHull_iff.mp hwH)
+  have hw_not_comp0 : w ∉ connectedComponentIn (φ '' K)ᶜ 0 := fun hw0c ↦
+    h0_not ((mem_filledHull_iff_of_mem_connectedComponentIn hw0c).mp hwH)
+  have ha₀_not_comp : a₀ ∉ connectedComponentIn Kᶜ x := fun hmem ↦
+    hw_not_comp0 <| hD_sub ⟨x, ⟨(connectedComponentIn_eq hmem).symm ▸ mem_connectedComponentIn hxK,
+      hxa₀⟩, hφx⟩
   have hxH : x ∈ filledHull K := by
     by_contra hx_not
-    have hw0c : w ∈ connectedComponentIn (φ '' K)ᶜ 0 :=
-      image_inv_sub_subset_connectedComponentIn_zero isPreconnected_connectedComponentIn
-        (connectedComponentIn_subset Kᶜ x) ha₀_not_comp
-        (mem_filledHull_iff.not.mp hx_not) h0K' ⟨x, mem_connectedComponentIn hxK, hφx⟩
-    exact h0_not (mem_filledHull_iff.mpr <|
-      (connectedComponentIn_eq hw0c).symm ▸ mem_filledHull_iff.mp hwH)
+    exact hw_not_comp0 <| image_inv_sub_subset_connectedComponentIn_zero
+      isPreconnected_connectedComponentIn (connectedComponentIn_subset Kᶜ x) ha₀_not_comp
+      (mem_filledHull_iff.not.mp hx_not) h0K' ⟨x, mem_connectedComponentIn hxK, hφx⟩
   obtain ⟨b, hbA, hbc⟩ := hA x ⟨hxH, hxK⟩
   have hba₀ : b ≠ a₀ := fun h ↦ ha₀_not_comp (h ▸ hbc)
-  have hcomp_sub : φ '' connectedComponentIn Kᶜ x ⊆ connectedComponentIn (φ '' K)ᶜ w :=
-    (isPreconnected_connectedComponentIn.image φ
-      ((continuousOn_inv_sub_compl_singleton a₀).mono
-        fun _ hz hza ↦ ha₀_not_comp (hza ▸ hz))).subset_connectedComponentIn
-      ⟨x, mem_connectedComponentIn hxK, hφx⟩
-      ((image_mono (connectedComponentIn_subset Kᶜ x)).trans
-        (Set.image_compl_subset (inv_sub_injective a₀)))
-  exact ⟨φ b, ⟨b, ⟨hbA, hba₀⟩, rfl⟩, hcomp_sub ⟨b, hbc, rfl⟩⟩
+  have hcomp := ContinuousOn.mapsTo_connectedComponentIn (f := φ)
+    ((continuousOn_inv_sub_compl_singleton a₀).mono fun _ hz hza ↦ ha₀_not_comp (hza ▸ hz))
+    (mem_connectedComponentIn hxK)
+  rw [isPreconnected_connectedComponentIn.connectedComponentIn (mem_connectedComponentIn hxK),
+    hφx] at hcomp
+  exact ⟨φ b, ⟨b, ⟨hbA, hba₀⟩, rfl⟩, connectedComponentIn_mono w
+    ((image_mono (connectedComponentIn_subset Kᶜ x)).trans
+      (Set.image_compl_subset (inv_sub_injective a₀))) (hcomp hbc)⟩
 
 end TauCeti

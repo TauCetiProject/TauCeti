@@ -168,15 +168,10 @@ theorem IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull 
   have hUb : ¬Bornology.IsBounded (filledHull C)ᶜ := fun h =>
     NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
   refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl hUc,
-    ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
-  · -- the inverted outside is connected, and `0`, the image of infinity, lies in its closure
-    have hcont : ContinuousOn (fun z : ℂ => (z - p)⁻¹) (filledHull C)ᶜ :=
-      ContinuousOn.inv₀ (by fun_prop) fun z hz =>
-        sub_ne_zero.mpr fun h => hpU (h ▸ subset_closure hz)
-    refine ((isConnected_compl_filledHull hrank hC.isCompact.isBounded).image _
-      hcont).subset_closure (subset_insert _ _) (insert_subset ?_ subset_closure)
-    rw [closure_image_inv_sub hUb]
-    exact mem_insert _ _
+    ⟨insert_nonempty 0 _, isPreconnected_insert_zero_image_inv_sub
+      (isConnected_compl_filledHull hrank hC.isCompact.isBounded).isPreconnected
+      (fun h ↦ hpU (subset_closure h)) hUb⟩,
+    (isBounded_image_inv_sub hpU).insert 0, ?_⟩
   · rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp]
     exact hC.image
       (ContinuousOn.inv₀ (by fun_prop) fun z hz => sub_ne_zero.mpr fun h => hp.2 (h ▸ hz))

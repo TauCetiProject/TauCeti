@@ -9,9 +9,8 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Complex.Runge.Rational.Basic
 import TauCeti.Analysis.Normed.Field.FilledHull
 import TauCeti.Analysis.Normed.Field.Inversion
@@ -72,7 +71,8 @@ theorem _root_.IsCompact.exists_rational_natDegree_le_norm_sub_lt {K U A : Set �
     hKU'
     (hK.isClosed.image_inv_sub_inter_connectedComponentIn_nonempty Complex.one_lt_rank_real ha₀
       fun x hx ↦ hA x hx.2)
-    (hf.comp ((differentiableOn_add_inv a₀).mono inter_subset_left) inter_subset_right) hε
+    (hf.comp (((differentiableOn_const a₀).add differentiableOn_inv).mono inter_subset_left)
+      inter_subset_right) hε
   have hQ0 : Q.eval 0 ≠ 0 := by
     intro h0
     obtain ⟨b, ⟨-, hba⟩, hb0⟩ := (hQA' 0 h0).1

@@ -23,9 +23,9 @@ the local input for showing that removing a discrete set from a connected manifo
 greater than one keeps it connected: through a partial homeomorphism to the affine space, every
 point of its source has arbitrarily small neighbourhoods whose punctured versions are connected.
 On an open subset of the affine space itself, applying `TauCeti.isPreconnected_compl_of_isDiscrete`
-to the open subtype shows that removing a closed discrete set from a preconnected open set keeps it
-preconnected (`IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`), without manifold
-machinery.
+to the open subtype shows that removing a set relatively closed and discrete in `U` from a
+preconnected open set `U` keeps it preconnected
+(`IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`), without manifold machinery.
 
 In any real seminormed space, the `δ`-thickening of a preconnected set is again preconnected
 (`IsPreconnected.thickening`), because `thickening δ s = s + ball 0 δ` is the continuous sum image
@@ -37,12 +37,12 @@ of the product of two preconnected sets.
   connected.
 * `TauCeti.isPathConnected_ball_sdiff_singleton`, `TauCeti.isConnected_ball_sdiff_singleton`: a
   punctured open ball is path connected, hence connected.
-* `IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from
-  a preconnected open subset of a real affine space of dimension greater than one keeps it
-  preconnected.
 * `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source`: every point in the
   source of a partial homeomorphism to the affine space has arbitrarily small neighbourhoods whose
   punctured versions are connected.
+* `IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`: removing a set relatively closed
+  and discrete in `U` from a preconnected open subset `U` of a real affine space of dimension
+  greater than one keeps it preconnected.
 * `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
   is preconnected.
 -/
@@ -84,56 +84,11 @@ theorem isConnected_ball_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : P) {r 
     (hr : 0 < r) : IsConnected (ball x r \ {x}) :=
   (isPathConnected_ball_sdiff_singleton h x hr).isConnected
 
-/-- Removing a closed discrete set from a preconnected open subset of a real affine space of
-dimension greater than one leaves it preconnected. -/
-theorem _root_.IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank
-    (h : 1 < Module.rank ℝ E) {U s : Set P} (hUc : IsPreconnected U) (hU : IsOpen U)
-    (hs : IsClosed s) (hd : IsDiscrete s) : IsPreconnected (U \ s) := by
-  let V : TopologicalSpace.Opens P := ⟨U, hU⟩
-  let : PreconnectedSpace V := isPreconnected_iff_preconnectedSpace.mp hUc
-  have hc : IsPreconnected (Subtype.val ⁻¹' s : Set V)ᶜ := by
-    refine isPreconnected_compl_of_isDiscrete
-      (hs.preimage (continuous_subtypeVal : Continuous (Subtype.val : V → P)))
-      (hd.preimage continuous_subtypeVal.continuousOn Subtype.val_injective)
-      fun x _ W hW ↦ ?_
-    have hWU : Subtype.val '' W ∈ 𝓝 (x : P) :=
-      hU.isOpenEmbedding_subtypeVal.image_mem_nhds.mpr hW
-    obtain ⟨r, hr, hrWU⟩ :=
-      Metric.nhds_basis_ball.mem_iff.mp (Filter.inter_mem hWU (hU.mem_nhds x.property))
-    refine ⟨Subtype.val ⁻¹' ball (x : P) r,
-      continuous_subtypeVal.continuousAt.preimage_mem_nhds (ball_mem_nhds _ hr),
-      fun y hy ↦ ?_, ?_⟩
-    · obtain ⟨w, hwW, hwy⟩ := (hrWU hy).1
-      exact Subtype.val_injective hwy ▸ hwW
-    · have himg : Subtype.val '' ((Subtype.val ⁻¹' ball (x : P) r : Set V) \ {x}) =
-          ball (x : P) r \ {(x : P)} := by
-        ext y
-        constructor
-        · rintro ⟨z, ⟨hzb, hzx⟩, rfl⟩
-          exact ⟨hzb, fun hzy ↦ hzx (Subtype.val_injective hzy)⟩
-        · rintro ⟨hyb, hyx⟩
-          exact ⟨⟨y, (hrWU hyb).2⟩, ⟨hyb, fun hy ↦ hyx (congrArg Subtype.val hy)⟩, rfl⟩
-      have hconn := isConnected_ball_sdiff_singleton h (x : P) hr
-      rw [← himg] at hconn
-      exact ⟨hconn.nonempty.of_image,
-        Topology.IsInducing.subtypeVal.isPreconnected_image.mp hconn.isPreconnected⟩
-  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set V)ᶜ = U \ s := by
-    rw [image_compl_preimage, Subtype.range_val, TopologicalSpace.Opens.coe_mk]
-  rw [← himage]
-  exact hc.image _ continuous_subtypeVal.continuousOn
-
-/-- The `δ`-thickening of a preconnected set in a real seminormed space is preconnected. -/
-theorem _root_.IsPreconnected.thickening {s : Set E} (hs : IsPreconnected s) (δ : ℝ) :
-    IsPreconnected (thickening δ s) := by
-  rw [← add_ball_zero, ← image2_add, ← image_uncurry_prod]
-  exact (hs.prod (convex_ball (0 : E) δ).isPreconnected).image _ continuous_add.continuousOn
-
-variable {X : Type*} [TopologicalSpace X]
-
 /-- If `P` is an affine space over a real seminormed space of dimension greater than one, every
 point `x` in the source of a partial homeomorphism `φ : X → P` has arbitrarily small neighbourhoods
 `V` with `V \ {x}` connected. -/
 theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
+    {X : Type*} [TopologicalSpace X]
     (h : 1 < Module.rank ℝ E) (φ : OpenPartialHomeomorph X P) {x : X} (hx : x ∈ φ.source)
     {U : Set X} (hU : U ∈ 𝓝 x) : ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x}) := by
   -- The inverse chart carries the balls about `φ x` inside `φ.target` to a basis of `𝓝 x`.
@@ -148,5 +103,28 @@ theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
   rw [hsdiff]
   exact (isConnected_ball_sdiff_singleton h (φ x) hr).image _
     (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
+
+/-- Removing a set relatively closed and discrete in `U` from a preconnected open subset `U` of a
+real affine space of dimension greater than one leaves it preconnected. -/
+theorem _root_.IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank
+    (h : 1 < Module.rank ℝ E) {U s : Set P} (hUc : IsPreconnected U) (hU : IsOpen U)
+    (hs : IsClosed (Subtype.val ⁻¹' s : Set U))
+    (hd : IsDiscrete (Subtype.val ⁻¹' s : Set U)) : IsPreconnected (U \ s) := by
+  let V : TopologicalSpace.Opens P := ⟨U, hU⟩
+  let : PreconnectedSpace V := isPreconnected_iff_preconnectedSpace.mp hUc
+  have hc : IsPreconnected (Subtype.val ⁻¹' s : Set V)ᶜ :=
+    isPreconnected_compl_of_isDiscrete hs hd fun x _ _ hW ↦
+      exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source h
+        (V.openPartialHomeomorphSubtypeCoe ⟨x⟩) (mem_univ x) hW
+  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set V)ᶜ = U \ s := by
+    rw [image_compl_preimage, Subtype.range_val, TopologicalSpace.Opens.coe_mk]
+  rw [← himage]
+  exact hc.image _ continuous_subtypeVal.continuousOn
+
+/-- The `δ`-thickening of a preconnected set in a real seminormed space is preconnected. -/
+theorem _root_.IsPreconnected.thickening {s : Set E} (hs : IsPreconnected s) (δ : ℝ) :
+    IsPreconnected (thickening δ s) := by
+  rw [← add_ball_zero, ← image2_add, ← image_uncurry_prod]
+  exact (hs.prod (convex_ball (0 : E) δ).isPreconnected).image _ continuous_add.continuousOn
 
 end TauCeti

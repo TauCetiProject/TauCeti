@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Complex.Runge.Hull
 public import TauCeti.Analysis.Complex.Runge.CompactPair
 public import TauCeti.Analysis.Normed.Module.Exhaustion
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.SummableUniformlyOn
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn

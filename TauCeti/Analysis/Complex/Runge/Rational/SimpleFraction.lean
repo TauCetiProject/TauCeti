@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledHull
 import Mathlib.Analysis.Normed.Algebra.Spectrum
-import Mathlib.Topology.ContinuousMap.Algebra
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
 

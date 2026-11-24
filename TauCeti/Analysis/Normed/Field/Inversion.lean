@@ -55,10 +55,13 @@ estimates that describe a Cauchy-type integral far from its data.
   `TauCeti.frontier_image_inv_sub`: the inversion of an open set about a point outside it is open,
   the interior of the inversion of a set is the inversion of its interior, and inverting an
   unbounded set about a point outside it adds `0` to the inverted frontier.
-* `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
+* `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub`,
+  `TauCeti.isPreconnected_insert_zero_image_inv_sub`,
+  `TauCeti.image_inv_sub_subset_connectedComponentIn_zero`, and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   any point and completed by `0`, is open; the completed inversion of any set has the completed
-  inverted closure as closure; and for a set with bounded complement and a centre outside its
+  inverted closure as closure; inverting an unbounded preconnected set maps it into the
+  complementary component of `0`; and for a set with bounded complement and a centre outside its
   closure, the inverted frontier as frontier.
 * `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
   of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
@@ -297,6 +300,28 @@ theorem closure_image_inv_sub (hUb : ¬IsBounded U) :
       (mem_inf_of_right (mem_principal.mpr fun z hz => mem_image_of_mem _ hz))
   rw [← closure_insert_zero_image_inv_sub, insert_eq, closure_union, closure_singleton,
     ← insert_eq, insert_eq_of_mem h0]
+
+/-- Inverting an unbounded preconnected set `U` about a point `q ∉ U` and adding `0` gives a
+preconnected set. -/
+theorem isPreconnected_insert_zero_image_inv_sub (hU : IsPreconnected U) (hqU : q ∉ U)
+    (hUb : ¬IsBounded U) :
+    IsPreconnected (insert (0 : 𝕜) ((fun z : 𝕜 ↦ (z - q)⁻¹) '' U)) := by
+  have h0 : (0 : 𝕜) ∈ closure ((fun z : 𝕜 ↦ (z - q)⁻¹) '' U) := by
+    rw [closure_image_inv_sub hUb]
+    exact mem_insert 0 _
+  exact (hU.image _ ((continuousOn_inv_sub_compl_singleton q).mono fun _ hz h ↦
+    hqU (h ▸ hz))).subset_closure (subset_insert _ _) (insert_subset h0 subset_closure)
+
+/-- Under `z ↦ (z - q)⁻¹`, the image of an unbounded preconnected set `S ⊆ Kᶜ \ {q}` lies in the
+complementary component of `0` whenever `0 ∉ (fun z ↦ (z - q)⁻¹) '' K`. -/
+theorem image_inv_sub_subset_connectedComponentIn_zero {K S : Set 𝕜}
+    (hS : IsPreconnected S) (hSK : S ⊆ Kᶜ) (hSq : q ∉ S) (hSub : ¬IsBounded S)
+    (h0 : (0 : 𝕜) ∉ (fun z : 𝕜 ↦ (z - q)⁻¹) '' K) :
+    (fun z : 𝕜 ↦ (z - q)⁻¹) '' S ⊆ connectedComponentIn ((fun z : 𝕜 ↦ (z - q)⁻¹) '' K)ᶜ 0 :=
+  (subset_insert 0 _).trans <|
+    (isPreconnected_insert_zero_image_inv_sub hS hSq hSub).subset_connectedComponentIn
+      (mem_insert 0 _)
+      (insert_subset h0 ((image_mono hSK).trans (Set.image_compl_subset (inv_sub_injective q))))
 
 /-- Inverting an open set `U` about a point `q` outside it, the image is open. -/
 theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :

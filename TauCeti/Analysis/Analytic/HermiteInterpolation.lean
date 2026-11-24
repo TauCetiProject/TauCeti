@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Analytic.ExtractZeros

@@ -84,7 +84,9 @@ protected theorem IsFilledIn.insert {K Ω : Set E} (h : IsFilledIn K Ω)
   let C₁ := connectedComponentIn (Ω \ insert z K) x
   have hpre : IsPreconnected (C \ {z}) :=
     isPreconnected_connectedComponentIn.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank hrank
-      hΩK.connectedComponentIn isClosed_singleton (finite_singleton z).isDiscrete
+      hΩK.connectedComponentIn (isClosed_singleton.preimage continuous_subtypeVal)
+      ((finite_singleton z).isDiscrete.preimage continuous_subtypeVal.continuousOn
+        Subtype.val_injective)
   have hC_sub : C \ {z} ⊆ C₁ :=
     hpre.subset_connectedComponentIn ⟨mem_connectedComponentIn hxΩK, hxz⟩ fun w ⟨hwC, hwz⟩ =>
       ⟨(connectedComponentIn_subset _ _ hwC).1,
