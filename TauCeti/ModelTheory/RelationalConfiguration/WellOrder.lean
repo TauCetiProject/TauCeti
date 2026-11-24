@@ -40,6 +40,8 @@ model existence.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.isomorphismInvariant_setOf_codeRel`: a class defined by an
+  isomorphism-invariant property of `codeRel lt c` is isomorphism invariant.
 * `TauCeti.RelationalConfiguration.isomorphismInvariant_wellOrderClass`: the class is isomorphism
   invariant.
 * `TauCeti.RelationalConfiguration.analyticSet_compl_wellOrderClass`: the class is coanalytic.
@@ -130,20 +132,19 @@ theorem mem_wellOrderClass {lt : L.Relations 2} {c : RelationalConfiguration L V
     c ∈ wellOrderClass lt ↔ IsWellOrder V (codeRel lt c) :=
   Iff.rfl
 
-/-- Relabelling by a permutation preserves being a coded well-order. -/
-theorem perm_smul_mem_wellOrderClass_iff {lt : L.Relations 2} {σ : Equiv.Perm V}
-    {c : RelationalConfiguration L V} :
-    σ • c ∈ wellOrderClass lt ↔ c ∈ wellOrderClass lt := by
-  let e : codeRel lt c ≃r codeRel lt (σ • c) := ⟨σ, by simp⟩
-  rw [mem_wellOrderClass, mem_wellOrderClass]
-  exact ⟨fun _ => e.toRelEmbedding.isWellOrder, fun _ => e.symm.toRelEmbedding.isWellOrder⟩
+/-- The configurations whose relation `codeRel lt c` has a property `P` invariant under relation
+isomorphisms form an isomorphism-invariant class. -/
+theorem isomorphismInvariant_setOf_codeRel [L.IsRelational] (lt : L.Relations 2)
+    {P : (V → V → Prop) → Prop} (hP : ∀ {r s : V → V → Prop}, r ≃r s → P r → P s) :
+    IsomorphismInvariant {c : RelationalConfiguration L V | P (codeRel lt c)} := by
+  refine isomorphismInvariant_iff.2 fun c d hcd hc => ?_
+  obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 hcd
+  exact hP ⟨σ, by simp⟩ hc
 
 /-- The coded well-orders form an isomorphism-invariant class. -/
 theorem isomorphismInvariant_wellOrderClass [L.IsRelational] (lt : L.Relations 2) :
-    IsomorphismInvariant (wellOrderClass (V := V) lt) := by
-  refine isomorphismInvariant_iff.2 fun c d hcd hc => ?_
-  obtain ⟨σ, rfl⟩ := isoSetoid_iff_exists_perm_smul_eq.1 hcd
-  exact perm_smul_mem_wellOrderClass_iff.2 hc
+    IsomorphismInvariant (wellOrderClass (V := V) lt) :=
+  isomorphismInvariant_setOf_codeRel lt fun e _ => e.symm.toRelEmbedding.isWellOrder
 
 /-! ### Coanalyticity -/
 
