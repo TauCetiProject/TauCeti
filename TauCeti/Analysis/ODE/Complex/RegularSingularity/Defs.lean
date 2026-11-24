@@ -54,18 +54,19 @@ namespace TauCeti
 /-- The indicial polynomial `Q(α) = α(α - 1) + f₀ α + g₀` of `w'' + f w' + g w = 0` at a regular
 singularity with leading Taylor coefficients `f₀` of `(z - z₀) f(z)` and `g₀` of
 `(z - z₀)² g(z)`. -/
-def indicialPoly (f₀ g₀ α : ℂ) : ℂ :=
+def indicialPoly {𝕜 : Type*} [Ring 𝕜] (f₀ g₀ α : 𝕜) : 𝕜 :=
   α * (α - 1) + f₀ * α + g₀
 
 /-- Explicit formula for `indicialPoly`. -/
-theorem indicialPoly_def (f₀ g₀ α : ℂ) :
+theorem indicialPoly_def {𝕜 : Type*} [Ring 𝕜] (f₀ g₀ α : 𝕜) :
     indicialPoly f₀ g₀ α = α * (α - 1) + f₀ * α + g₀ := (rfl)
 
 @[simp]
-theorem indicialPoly_zero (f₀ g₀ : ℂ) : indicialPoly f₀ g₀ 0 = g₀ := by simp [indicialPoly]
+theorem indicialPoly_zero {𝕜 : Type*} [Ring 𝕜] (f₀ g₀ : 𝕜) : indicialPoly f₀ g₀ 0 = g₀ := by
+  simp [indicialPoly]
 
 /-- Shifting the argument of `indicialPoly` expands quadratically in the shift. -/
-theorem indicialPoly_add (f₀ g₀ α β : ℂ) :
+theorem indicialPoly_add {𝕜 : Type*} [CommRing 𝕜] (f₀ g₀ α β : 𝕜) :
     indicialPoly f₀ g₀ (α + β) = indicialPoly f₀ g₀ α + β * (β + (2 * α + f₀ - 1)) := by
   simp only [indicialPoly]; ring
 

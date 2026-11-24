@@ -20,7 +20,6 @@ import TauCeti.Analysis.ODE.Complex.RegularSingularity.Primary
 import TauCeti.Analysis.ODE.Complex.SecondOrder
 import TauCeti.Analysis.ODE.SecondOrder.Operator
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.SpecificLimits.DiscreteGronwall.Polynomial
 
 /-!
 # Convergent series solutions at a regular singularity
@@ -61,240 +60,6 @@ open Complex Filter Finset Metric Set
 open scoped Topology ENNReal
 
 namespace TauCeti
-
-/-! ### Internal analytic and majorant helpers -/
-
-/-- Lower bound `s² / 2 ≤ ‖indicialPoly f₀ g₀ (σ + s)‖` for sufficiently large `s : ℕ`. -/
-private theorem exists_sq_div_two_le_norm_indicialPoly (f₀ g₀ σ : ℂ) :
-    ∃ s₀ : ℕ, 1 ≤ s₀ ∧ ∀ s : ℕ, s₀ ≤ s → (s : ℝ) ^ 2 / 2 ≤ ‖indicialPoly f₀ g₀ (σ + s)‖ := by
-  set B : ℝ := ‖2 * σ + f₀ - 1‖ + ‖indicialPoly f₀ g₀ σ‖
-  obtain ⟨N, hN⟩ := exists_nat_gt (2 * B + 1)
-  refine ⟨max N 1, le_max_right _ _, fun s hs => ?_⟩
-  have hs1 : (1 : ℝ) ≤ s := by exact_mod_cast (le_max_right N 1).trans hs
-  have hNs : (N : ℝ) ≤ s := by exact_mod_cast (le_max_left N 1).trans hs
-  have htri : (s : ℝ) ^ 2 ≤ ‖indicialPoly f₀ g₀ (σ + s)‖ +
-      ‖(2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ‖ := by
-    have h := norm_sub_le (indicialPoly f₀ g₀ (σ + s))
-      ((2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ)
-    have hdiff_id : indicialPoly f₀ g₀ (σ + s) -
-        ((2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ) = (s : ℂ) ^ 2 := by
-      rw [indicialPoly_add]; ring
-    rwa [hdiff_id, norm_pow, Complex.norm_natCast] at h
-  have hrem : ‖(2 * σ + f₀ - 1) * (s : ℂ) + indicialPoly f₀ g₀ σ‖ ≤ B * s := by
-    have h := norm_add_le ((2 * σ + f₀ - 1) * (s : ℂ)) (indicialPoly f₀ g₀ σ)
-    rw [norm_mul, Complex.norm_natCast] at h
-    nlinarith [norm_nonneg (indicialPoly f₀ g₀ σ)]
-  nlinarith [hs1, hNs, hN, htri, hrem]
-
-/-- Convolution-sum majorant for a single step of an indicial recursion at radius `ρ > 0`. -/
-private theorem indicial_conv_sum_bound {σ : ℂ} {ρ Mf Mg : ℝ} {fs gs d : ℕ → ℂ} {s : ℕ}
-    (hρ_pos : 0 < ρ) (hs1 : 1 ≤ s)
-    (hMf : ∀ k, ‖fs k‖ * ρ ^ k ≤ Mf) (hMg : ∀ k, ‖gs k‖ * ρ ^ k ≤ Mg) :
-    (∑ k ∈ range s, ‖((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s) ≤
-      ((Mf + Mg) * (‖σ‖ + 1) * s) * ∑ k ∈ range s, ‖d k‖ * ρ ^ k := by
-  have hs_ge1 : (1 : ℝ) ≤ s := by exact_mod_cast hs1
-  rw [mul_sum]
-  refine Finset.sum_le_sum fun k hk => ?_
-  have hk_lt := mem_range.mp hk
-  have hks : (k : ℝ) ≤ s := by exact_mod_cast hk_lt.le
-  have htri : ‖(σ + k) * fs (s - k) + gs (s - k)‖ ≤ (‖σ‖ + k) * ‖fs (s - k)‖ + ‖gs (s - k)‖ := by
-    have h1 := norm_add_le ((σ + k) * fs (s - k)) (gs (s - k))
-    have h2 := norm_add_le σ (k : ℂ)
-    rw [norm_mul] at h1; rw [Complex.norm_natCast] at h2; nlinarith [norm_nonneg (fs (s - k))]
-  have hfgk :
-      ‖(σ + k) * fs (s - k) + gs (s - k)‖ * ρ ^ (s - k) ≤ (Mf + Mg) * (‖σ‖ + 1) * s := by
-    have hMf0 : 0 ≤ Mf := (by positivity : 0 ≤ ‖fs 0‖ * ρ ^ 0).trans (hMf 0)
-    have hMg0 : 0 ≤ Mg := (by positivity : 0 ≤ ‖gs 0‖ * ρ ^ 0).trans (hMg 0)
-    have hm := mul_le_mul_of_nonneg_right htri (pow_nonneg hρ_pos.le (s - k))
-    have hMf' := hMf (s - k); have hMg' := hMg (s - k)
-    nlinarith [norm_nonneg σ, le_mul_of_one_le_right (norm_nonneg σ) hs_ge1]
-  have hρs : ρ ^ s = ρ ^ (s - k) * ρ ^ k := by rw [← pow_add, Nat.sub_add_cancel hk_lt.le]
-  calc ‖((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s
-      = (‖(σ + k) * fs (s - k) + gs (s - k)‖ * ρ ^ (s - k)) * (‖d k‖ * ρ ^ k) := by
-          rw [norm_mul, hρs]; ring
-    _ ≤ ((Mf + Mg) * (‖σ‖ + 1) * s) * (‖d k‖ * ρ ^ k) :=
-        mul_le_mul_of_nonneg_right hfgk (by positivity)
-
-/-- One-step majorant inequality for a perturbed indicial convolution recursion at radius
-`ρ > 0`. -/
-private theorem indicial_rec_step_bound {σ : ℂ} {ρ Mf Mg CE : ℝ} {fs gs d E : ℕ → ℂ} {s K : ℕ}
-    (hρ_pos : 0 < ρ) (hs1 : 1 ≤ s)
-    (hMf : ∀ k, ‖fs k‖ * ρ ^ k ≤ Mf) (hMg : ∀ k, ‖gs k‖ * ρ ^ k ≤ Mg)
-    (hCE : ‖E s‖ * ρ ^ s ≤ CE * (s + 1))
-    (hK : 2 * ((Mf + Mg) * (‖σ‖ + 1) + 2 * CE) < K)
-    (hQs : (s : ℝ) ^ 2 / 2 ≤ ‖indicialPoly (fs 0) (gs 0) (σ + s)‖)
-    (hds : indicialPoly (fs 0) (gs 0) (σ + s) * d s =
-      -(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s) :
-    ‖d s‖ * ρ ^ s ≤ (K : ℝ) / s * (1 + ∑ k ∈ range s, ‖d k‖ * ρ ^ k) := by
-  -- 1. Nonnegativity of majorant constants and weighted norms `μ k = ‖d k‖ * ρ ^ k`.
-  have hCE0 : 0 ≤ CE := nonneg_of_mul_nonneg_left
-    ((by positivity : 0 ≤ ‖E s‖ * ρ ^ s).trans hCE) (by positivity : (0 : ℝ) < s + 1)
-  set C₁ : ℝ := (Mf + Mg) * (‖σ‖ + 1); set μ : ℕ → ℝ := fun k => ‖d k‖ * ρ ^ k
-  set S : ℝ := 1 + ∑ k ∈ range s, μ k
-  have hs_pos : (0 : ℝ) < s := by exact_mod_cast hs1
-  have hs_ge1 : (1 : ℝ) ≤ s := by exact_mod_cast hs1
-  have hμ_nn : ∀ k, 0 ≤ μ k := fun _ => by positivity
-  -- 2. Apply triangle inequality to the recurrence and bound the convolution plus error `E s`.
-  have hconv := indicial_conv_sum_bound (σ := σ) (d := d) hρ_pos hs1 hMf hMg
-  have hrec : ‖indicialPoly (fs 0) (gs 0) (σ + s)‖ * μ s =
-      ‖-(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s‖ * ρ ^ s := by
-    simpa [μ, norm_mul, mul_assoc] using congrArg (fun w => ‖w‖ * ρ ^ s) hds
-  have htri_tot := mul_le_mul_of_nonneg_right
-    (norm_add_le (-(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k)) (E s))
-    (pow_nonneg hρ_pos.le s)
-  rw [norm_neg, add_mul] at htri_tot
-  have hnorm_sum : ‖∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s ≤
-      ∑ k ∈ range s, ‖((σ + k) * fs (s - k) + gs (s - k)) * d k‖ * ρ ^ s := by
-    rw [← Finset.sum_mul]; exact mul_le_mul_of_nonneg_right (norm_sum_le _ _) (by positivity)
-  -- 3. Combine the lower bound `s² / 2 ≤ ‖Q(σ + s)‖` with `2 * (C₁ + 2 * CE) < K`.
-  have hsum_nn : 0 ≤ ∑ k ∈ range s, μ k := sum_nonneg fun k _ => hμ_nn k
-  have hMf0 : 0 ≤ Mf := (by positivity : 0 ≤ ‖fs 0‖ * ρ ^ 0).trans (hMf 0)
-  have hMg0 : 0 ≤ Mg := (by positivity : 0 ≤ ‖gs 0‖ * ρ ^ 0).trans (hMg 0)
-  have hC₁0 : 0 ≤ C₁ := by positivity
-  have hsum_le : C₁ * s * (∑ k ∈ range s, μ k) + CE * (s + 1) ≤ (C₁ + 2 * CE) * s * S := by
-    dsimp only [S]
-    nlinarith [hC₁0, mul_nonneg hCE0 (mul_nonneg hs_pos.le hsum_nn),
-      mul_le_mul_of_nonneg_left hs_ge1 hCE0]
-  have hprod_le : ((s : ℝ) ^ 2 / 2) * μ s ≤ ((K : ℝ) / 2 * s) * S := by
-    have h1 := (mul_le_mul_of_nonneg_right hQs (hμ_nn s)).trans_eq hrec
-    have hK' : (C₁ + 2 * CE) * s * S ≤ ((K : ℝ) / 2 * s) * S :=
-      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (by linarith) hs_pos.le)
-        (by dsimp [S]; linarith)
-    linarith [h1, htri_tot, hnorm_sum, hconv, hCE, hsum_le, hK']
-  rw [div_mul_eq_mul_div, le_div_iff₀ hs_pos]; nlinarith [hprod_le, hs_pos]
-
-/-- Perturbed indicial majorant convergence: if `Q(σ + s) d_s = -∑_{k < s} ((σ + k) f_{s - k} +
-g_{s - k}) d_k + E_s` for `s ≥ s₁`, where `‖E_s‖ ρ^s` grows at most linearly in `s` on every
-sub-radius `0 < ρ < r`, then `∑ d_s (z - z₀)^s` converges on the entire open disc `‖z - z₀‖ < r`. -/
-private theorem summable_of_perturbed_indicial_rec {z₀ σ : ℂ} {r : ℝ}
-    {fs gs d E : ℕ → ℂ} {s₁ : ℕ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => gs s * (z - z₀) ^ s)
-    (hE : ∀ ρ : ℝ, 0 < ρ → ρ < r → ∃ C : ℝ, ∀ s : ℕ, ‖E s‖ * ρ ^ s ≤ C * (s + 1))
-    (hd : ∀ s : ℕ, s₁ ≤ s → indicialPoly (fs 0) (gs 0) (σ + s) * d s =
-      -(∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * d k) + E s) :
-    ∀ z, ‖z - z₀‖ < r → Summable fun s => d s * (z - z₀) ^ s := by
-  intro z hz
-  set ρ : ℝ := (‖z - z₀‖ + r) / 2
-  have hρ_gt : ‖z - z₀‖ < ρ := by dsimp [ρ]; linarith
-  have hρ_pos : 0 < ρ := (norm_nonneg _).trans_lt hρ_gt
-  have hρ_lt : ρ < r := by dsimp [ρ]; linarith
-  obtain ⟨Mf, _, hMf⟩ :=
-    FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt fs z₀ hρ_pos.le hρ_lt hf
-  obtain ⟨Mg, _, hMg⟩ :=
-    FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt gs z₀ hρ_pos.le hρ_lt hg
-  obtain ⟨CE, hCE⟩ := hE ρ hρ_pos hρ_lt
-  obtain ⟨s₂, hs₂1, hQ⟩ := exists_sq_div_two_le_norm_indicialPoly (fs 0) (gs 0) σ
-  set s₀ : ℕ := max s₁ s₂; have hs₀1 : 1 ≤ s₀ := hs₂1.trans (le_max_right _ _)
-  obtain ⟨K, hK⟩ := exists_nat_gt (2 * ((Mf + Mg) * (‖σ‖ + 1) + 2 * CE))
-  set μ : ℕ → ℝ := fun s => ‖d s‖ * ρ ^ s; set S₀ : ℝ := 1 + ∑ k ∈ range s₀, μ k
-  have hμ0 : ∀ s, 0 ≤ μ s := fun _ => by positivity
-  have hS₀_pos : 1 ≤ S₀ := by dsimp [S₀]; linarith [sum_nonneg fun k (_ : k ∈ range s₀) => hμ0 k]
-  have hpoly := add_sum_range_le_mul_pow_of_le_div hs₀1 zero_le_one hμ0 fun s hs =>
-    indicial_rec_step_bound hρ_pos (hs₀1.trans hs) hMf hMg (hCE s) hK
-      (hQ s ((le_max_right _ _).trans hs)) (hd s ((le_max_left _ _).trans hs))
-  set q : ℝ := ‖z - z₀‖ / ρ; have hq0 : 0 ≤ q := div_nonneg (norm_nonneg _) hρ_pos.le
-  have hq1 : ‖q‖ < 1 := by rw [Real.norm_of_nonneg hq0, div_lt_one hρ_pos]; exact hρ_gt
-  refine Summable.of_norm_bounded_eventually_nat (f := fun s => d s * (z - z₀) ^ s)
-    ((summable_pow_mul_geometric_of_norm_lt_one K hq1).mul_left (S₀ * 2 ^ K)) ?_
-  filter_upwards [eventually_ge_atTop s₀] with s hs
-  have hs1 : (1 : ℝ) ≤ s := by exact_mod_cast (hs₀1.trans hs)
-  have h2s : ((s + 1 : ℕ) : ℝ) ^ K ≤ 2 ^ K * (s : ℝ) ^ K := by
-    rw [← mul_pow]; exact pow_le_pow_left₀ (by positivity) (by push_cast; linarith) K
-  have hμ_le_sum : μ s ≤ 1 + ∑ k ∈ range (s + 1), μ k := by
-    rw [sum_range_succ]; linarith [sum_nonneg fun k (_ : k ∈ range s) => hμ0 k]
-  have hμ_le : μ s ≤ S₀ * (2 ^ K * (s : ℝ) ^ K) :=
-    (hμ_le_sum.trans (hpoly (s + 1) (hs.trans (Nat.le_succ s)))).trans
-      (mul_le_mul_of_nonneg_left h2s (by linarith))
-  have hpow_q : ‖z - z₀‖ ^ s = ρ ^ s * q ^ s := by
-    rw [← mul_pow, mul_div_cancel₀ _ hρ_pos.ne']
-  rw [norm_mul, norm_pow, hpow_q, ← mul_assoc]
-  exact (mul_le_mul_of_nonneg_right hμ_le (pow_nonneg hq0 s)).trans_eq (by ring)
-
-/-! ### Differential operator on `(z - z₀)^σ ∑ c_s (z - z₀)^s` and `w₁(z) log(z - z₀)` -/
-
-/-- Power-series identity for the indicial operator applied to `A(u) = ∑' s, c s * u ^ s` on
-`‖u‖ < r`. -/
-private theorem hasSum_operator_cpow_series {z₀ σ : ℂ} {r : ℝ} {fs gs c : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => gs s * (z - z₀) ^ s)
-    (hc : ∀ z, ‖z - z₀‖ < r → Summable fun s => c s * (z - z₀) ^ s)
-    {u : ℂ} (hu : ‖u‖ < r) :
-    let A : ℂ → ℂ := fun w => ∑' s, c s * w ^ s
-    HasSum (fun s : ℕ => (indicialPoly (fs 0) (gs 0) (σ + s) * c s +
-        ∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * u ^ s)
-      ((u ^ 2 * deriv (deriv A) u + 2 * σ * (u * deriv A u) + σ * (σ - 1) * A u) +
-        (u * deriv A u + σ * A u) * (∑' s, fs s * u ^ s) +
-        A u * (∑' s, gs s * u ^ s)) := by
-  intro A
-  have hr : 0 < r := (norm_nonneg u).trans_lt hu
-  have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
-  have hpA := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt c z₀ hr
-    fun z _ hzr => hc z hzr
-  have hfr :=
-    (FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt fs z₀ hr hf).r_le
-  have hgr :=
-    (FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt gs z₀ hr hg).r_le
-  have hf_sum :=
-    (FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt fs z₀ hf hu).of_norm
-  have hg_sum :=
-    (FormalMultilinearSeries.summable_norm_mul_pow_of_norm_sub_lt gs z₀ hg hu).of_norm
-  have heul := hasSum_eulerOperator_ofScalars (σ := σ) hpA hue (hue.trans_le hfr) (hue.trans_le hgr)
-    hf_sum.hasSum hg_sum.hasSum
-  have hrhs :
-      σ * (σ - 1) * A u + 2 * σ * (u * deriv A u) + u ^ 2 * deriv (deriv A) u +
-          (∑' s, fs s * u ^ s) * (σ * A u + u * deriv A u) + (∑' s, gs s * u ^ s) * A u =
-        (u ^ 2 * deriv (deriv A) u + 2 * σ * (u * deriv A u) + σ * (σ - 1) * A u) +
-          (u * deriv A u + σ * A u) * (∑' s, fs s * u ^ s) +
-          A u * (∑' s, gs s * u ^ s) := by
-    ring
-  rw [hrhs] at heul
-  simpa only [indicialPoly_def] using heul
-
-/-- Operator evaluation for `ψ(z) = (z - z₀)^σ ∑' s, c s * (z - z₀)^s` on the slit punctured
-disc `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
-private theorem operator_cpow_mul_tsum_eq {z₀ σ : ℂ} {r : ℝ} {f g : ℂ → ℂ} {fs gs c : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hc : ∀ z, ‖z - z₀‖ < r → Summable fun s => c s * (z - z₀) ^ s)
-    {z : ℂ} (hzs : z - z₀ ∈ slitPlane) (hzb : ‖z - z₀‖ < r) :
-    let ψ : ℂ → ℂ := fun w => (w - z₀) ^ σ * ∑' s, c s * (w - z₀) ^ s
-    deriv (deriv ψ) z + f z * deriv ψ z + g z * ψ z =
-      (z - z₀) ^ (σ - 2) * ∑' s : ℕ,
-        (indicialPoly (fs 0) (gs 0) (σ + s) * c s +
-          ∑ k ∈ range s, ((σ + k) * fs (s - k) + gs (s - k)) * c k) * (z - z₀) ^ s := by
-  intro ψ
-  set A : ℂ → ℂ := fun u => ∑' s, c s * u ^ s; set u : ℂ := z - z₀
-  have hr : 0 < r := (norm_nonneg u).trans_lt hzb
-  have hu0 : u ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have han := FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt c z₀ hr
-    fun w _ => hc w
-  have hsub : HasDerivAt (fun w : ℂ => w - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hinner := (((han u (mem_ball_zero_iff.mpr hzb)).differentiableAt.hasDerivAt.comp_sub_const
-    z z₀).const_mul σ).add (hsub.mul
-      ((han.deriv u (mem_ball_zero_iff.mpr hzb)).differentiableAt.hasDerivAt.comp_sub_const z z₀))
-  have hev : deriv ψ =ᶠ[𝓝 z] ((fun w : ℂ => (w - z₀) ^ (σ - 1)) *
-      ((fun w : ℂ => σ * A (w - z₀)) + (fun w : ℂ => w - z₀) * fun w : ℂ => deriv A (w - z₀))) := by
-    filter_upwards [(isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r).mem_nhds ⟨hzs, hzb⟩]
-      with w hw
-    exact (hasDerivAt_cpow_mul_tsum hc hw.1 hw.2).deriv
-  have hσ_sub : σ - 1 - 1 = σ - 2 := by ring
-  have hcpow1 : u ^ (σ - 1) = u ^ (σ - 2) * u := by
-    simpa [hσ_sub, Nat.cast_one, pow_one] using cpow_eq_cpow_sub_natCast_mul_pow hu0 (σ - 1) 1
-  have hcpow2 : u ^ σ = u ^ (σ - 2) * u ^ 2 := by
-    simpa using cpow_eq_cpow_sub_natCast_mul_pow hu0 σ 2
-  have hderiv2 : deriv (deriv ψ) z =
-      u ^ (σ - 2) * (u ^ 2 * deriv (deriv A) u + 2 * σ * (u * deriv A u) + σ * (σ - 1) * A u) := by
-    rw [(((hsub.cpow_const (c := σ - 1) hzs).mul hinner).congr_of_eventuallyEq hev).deriv]
-    simp only [Pi.add_apply, Pi.mul_apply]; dsimp only [u] at hcpow1 ⊢
-    rw [hσ_sub, hcpow1]; ring
-  rw [(hasSum_operator_cpow_series (σ := σ) (fun w hw0 hwr => (hf w hw0 hwr).summable)
-      (fun w hw0 hwr => (hg w hw0 hwr).summable) hc hzb).tsum_eq,
-    (hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq, (hg z (norm_pos_iff.mpr hu0) hzb).tsum_eq, hderiv2,
-    (hasDerivAt_cpow_mul_tsum hc hzs hzb).deriv]
-  dsimp only [ψ, A, u]; rw [hcpow1, hcpow2]; ring
 
 /-! ### Slit punctured disc and `LinearEquation` setup -/
 
@@ -421,11 +186,8 @@ theorem regularSingularCoeff_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ → �
     (hres : ∀ s : ℕ, 1 ≤ s → indicialPoly (fs 0) (gs 0) (ρ + s) ≠ 0) :
     (∀ z, ‖z - z₀‖ < r → Summable fun s => regularSingularCoeff fs gs ρ s * (z - z₀) ^ s) ∧
       (regularSingularEquation hf hg).IsSolution (regularSingularSolution fs gs z₀ ρ) := by
-  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg
-    (by simpa [indicialPoly_def] using hρ)
-    (fun s hs => by simpa [indicialPoly_def] using hres s hs)
-    (fun s hs => by
-      simpa [indicialPoly_def] using indicialPoly_mul_regularSingularCoeff hs (hres s hs))
+  obtain ⟨hsum, hdiff, hsol⟩ := regularSingular_solution hf hg hρ hres
+    (fun s hs => indicialPoly_mul_regularSingularCoeff hs (hres s hs))
     (regularSingularSolution_eq fs gs z₀ ρ)
   exact ⟨hsum, (isSolution_regularSingularEquation_iff hf hg _).mpr
     ⟨hdiff, fun z hz => hsol z hz.1 hz.2⟩⟩
@@ -449,10 +211,12 @@ theorem eq_regularSingularCoeff_of_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ
         g z * ((z - z₀) ^ ρ * ∑' s, a s * (z - z₀) ^ s) = 0) :
     a = regularSingularCoeff fs gs ρ := by
   have hall := eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := ρ - 2) hr
-    (fun u _ hu => (hasSum_operator_cpow_series (σ := ρ)
+    (fun u _ hu => (hasSum_eulerOperator_ofScalars_of_norm_sub_lt (σ := ρ)
       (fun w hw0 hwr => (hf w hw0 hwr).summable)
       (fun w hw0 hwr => (hg w hw0 hwr).summable) hsum hu).summable)
-    fun z hzs hzb => (operator_cpow_mul_tsum_eq hf hg hsum hzs hzb).symm.trans (hsol z hzs hzb)
+    fun z hzs hzb =>
+      (deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum hf hg hsum hzs hzb).symm.trans
+        (hsol z hzs hzb)
   exact eq_regularSingularCoeff_of_rec hres ha0 fun s _ => by linear_combination hall s
 
 /-! ### Second solution when the indicial roots differ by a natural number -/
@@ -574,7 +338,8 @@ private theorem operator_second_ansatz_eq {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
           ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) * u ^ s) +
         c' * (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
           (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s))) := fun u hu =>
-    (((hasSum_operator_cpow_series (σ := α₂) (fun w hw0 hwr => (hf w hw0 hwr).summable)
+    (((hasSum_eulerOperator_ofScalars_of_norm_sub_lt (σ := α₂)
+        (fun w hw0 hwr => (hf w hw0 hwr).summable)
         (fun w hw0 hwr => (hg w hw0 hwr).summable) hb'_sum hu).summable.hasSum).add
       ((hlog_sum u hu).mul_left c')).congr_fun fun _ => by dsimp [D]; ring
   refine ⟨by rw [hw₂'_eq]; exact hψ_diff.add (hΦ_diff.const_mul c'),
@@ -586,7 +351,8 @@ private theorem operator_second_ansatz_eq {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
     (Eventually.mono (hopen.mem_nhds hzU) fun _ hw => hΦ_diff.differentiableAt (hopen.mem_nhds hw))
     ((hψ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
     ((hΦ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
-  rw [hw₂'_eq, hlin, operator_cpow_mul_tsum_eq (σ := α₂) hf hg hb'_sum hzs hzb,
+  rw [hw₂'_eq, hlin,
+    deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum (σ := α₂) hf hg hb'_sum hzs hzb,
     hΦ_op z hzU, (hD_hasSum (z - z₀) hzb).tsum_eq]
   have hu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
   have hdw₁ : deriv w₁ z = (z - z₀) ^ (α₂ + (N : ℂ) - 1) *
@@ -670,18 +436,22 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
   set b := regularSingularSecondCoeff fs gs α₂ N
   set c := regularSingularLogMultiplier fs gs α₂ N
   have hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s := by
-    refine summable_of_perturbed_indicial_rec (σ := α₂)
-      (E := fun s => -c * regularSingularLogForcing fs a α₂ N s) (s₁ := 0)
-      (fun z hz0 hzr => (hf z hz0 hzr).summable) (fun z hz0 hzr => (hg z hz0 hzr).summable)
-      (fun ρ hρ0 hρr => ?_) (fun s _ => by
-        linear_combination regularSingularSecondCoeff_rec hfact s)
-    obtain ⟨CF, hCF0, hCF⟩ := FormalMultilinearSeries.exists_norm_mul_pow_le_of_norm_sub_lt
-      (regularSingularLogForcing fs a α₂ N) z₀ hρ0.le hρr fun z _ hzr => (hlog_sum _ hzr).summable
-    refine ⟨‖c‖ * CF, fun s => ?_⟩
-    rw [norm_mul, norm_neg, mul_assoc]
-    exact (mul_le_mul_of_nonneg_left
-      ((hCF s).trans (le_mul_of_one_le_right hCF0.le (le_add_of_nonneg_left (Nat.cast_nonneg s))))
-      (norm_nonneg c)).trans_eq (mul_assoc _ _ _).symm
+    by_cases hr : 0 < r
+    · have hfr := FormalMultilinearSeries.le_radius_ofScalars_of_summable fs fun w hw0 hwr => by
+        simpa using (hf (w + z₀) (by simpa using hw0)
+          (by simpa using (eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).summable
+      have hgr := FormalMultilinearSeries.le_radius_ofScalars_of_summable gs fun w hw0 hwr => by
+        simpa using (hg (w + z₀) (by simpa using hw0)
+          (by simpa using (eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).summable
+      have hEr := FormalMultilinearSeries.le_radius_ofScalars_of_summable
+        (fun s => -c * regularSingularLogForcing fs a α₂ N s) fun w _ hwr => by
+          simpa [mul_assoc] using
+            ((hlog_sum w ((eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).mul_left (-c)).summable
+      have hbr := le_radius_ofScalars_of_perturbed_regularSingular (σ := α₂) (d := b) (s₁ := 0)
+        hfr hgr hEr fun s _ => by linear_combination regularSingularSecondCoeff_rec hfact s
+      exact fun z hz => (FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius b
+        ((eNorm_lt_ofReal_iff.mpr hz).trans_le hbr)).of_norm
+    · exact fun z hz => False.elim (hr ((norm_nonneg _).trans_lt hz))
   obtain ⟨hw₂_diff, _, hw₂_op⟩ :=
     operator_second_ansatz_eq (c' := c) hf hg ha_sum hw₁_sol hlog_sum hb_sum
   have hw₂_eq : regularSingularSecondSolution fs gs z₀ α₂ N = fun w =>

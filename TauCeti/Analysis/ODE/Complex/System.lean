@@ -212,7 +212,7 @@ theorem norm_propagatorCoeff_le_of_forall_mem_sphere_norm_le
     exact Finset.single_le_sum (fun j _ ↦ by positivity) (Finset.mem_range.mpr (Nat.lt_succ_self n))
   have hS1 : 0 + ∑ k ∈ Finset.range 1, μ k = ‖(1 : B)‖ := by simp [μ]
   rw [le_div_iff₀ (pow_pos hρ n), mul_comm]
-  exact hsingle.trans (hpoly.trans_eq (by rw [hS1]; push_cast; rfl))
+  exact hsingle.trans (hpoly.trans_eq (by rw [hS1]; push_cast; ring))
 
 private theorem exists_subdisc_bound_of_mem_eball
     {A : ℂ → B} {z₀ z : ℂ} {r : ℝ≥0∞} (hA : DifferentiableOn ℂ A (eball z₀ r))
