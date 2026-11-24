@@ -75,6 +75,8 @@ the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`.
   `TauCeti.continuousOn_sphericalPendulumPeriod`: after the sine substitution the period is the
   integral of a continuous positive function, so it is bounded below by `2π / √(2 (h + 3))` and
   continuous in `(h, j)` above the curve of relative equilibria.
+* `TauCeti.continuousAt_sphericalPendulumPeriod_zero_right`: the period is also continuous at the
+  values `(h, 0)` on the axis, for `h > -1` with `h ≠ 1`.
 
 ## References
 
@@ -466,6 +468,19 @@ theorem continuousOn_sphericalPendulumPeriod :
     (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
     (g := fun _ _ ↦ 1) continuousOn_const)).congr fun c _ ↦ by
       simp only [sphericalPendulumPeriod_def, one_div, Pi.mul_apply]
+
+/-- **Continuity of the period across the axis.** For `h > -1` with `h ≠ 1`, the period `T` of the
+height is continuous at the value `(h, 0)` on the axis of zero vertical angular momentum. The
+excluded values `(1, 0)` and `(-1, 0)` are genuine discontinuities: at the focus–focus value
+`(1, 0)` the period integral diverges, and at the bottom value `(-1, 0)` the period is `0` while
+nearby periods are close to `π`. Values with `h < -1` are left out because their fibres are empty
+(the period is `0` there by convention), not because continuity fails. -/
+theorem continuousAt_sphericalPendulumPeriod_zero_right {h : ℝ} (hh : -1 < h) (h1 : h ≠ 1) :
+    ContinuousAt (fun c : ℝ × ℝ ↦ sphericalPendulumPeriod c.1 c.2) (h, 0) :=
+  ((continuousAt_const (y := (2 : ℝ))).mul
+    (continuousAt_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+    (g := fun _ _ ↦ 1) hh h1 Filter.univ_mem continuousOn_const)).congr <|
+      .of_forall fun c ↦ by simp only [sphericalPendulumPeriod_def, one_div, Pi.mul_apply]
 
 /-- **The period of the height of the spherical pendulum.** Above the curve of relative
 equilibria, let a motion of the spherical pendulum with energy `h` and vertical angular momentum
