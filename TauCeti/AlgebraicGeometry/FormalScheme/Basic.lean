@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Restrict
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Discrete
-public import Mathlib.AlgebraicGeometry.Scheme
+public import Mathlib.AlgebraicGeometry.AffineScheme
 public import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 /-!
@@ -135,6 +135,15 @@ theorem isAffineOpen_iff (X : FormalScheme) (U : Opens X) :
       e.inv ≫ j, inferInstance, ?_⟩
     exact (LocallyRingedSpace.range_iso_inv_comp e j).trans
       Subtype.range_coe
+
+/-- The sections of `X` over the image `U` of an open immersion `Spf B → X` are `B`. -/
+noncomputable def sectionsIsoOfIsOpenImmersion {X : FormalScheme.{u}} {B : Type u} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B] (f : Spf B ⟶ X.toLocallyRingedSpace)
+    [LocallyRingedSpace.IsOpenImmersion f] {U : Opens X} (hU : Set.range f.base = (U : Set X)) :
+    X.presheaf.obj (Opposite.op U) ≅ CommRingCat.of B :=
+  X.presheaf.mapIso (eqToIso (congrArg Opposite.op (Opens.ext (by
+    rw [IsOpenMap.coe_functor_obj, Opens.coe_top, Set.image_univ, hU])))) ≪≫
+    (asIso (PresheafedSpace.IsOpenImmersion.invApp f.toHom ⊤)).symm ≪≫ Spf.topSectionsIso B
 
 /-- Every formal spectrum is an affine formal open in itself. -/
 @[simp]
@@ -357,6 +366,20 @@ noncomputable def fullyFaithfulOfScheme : ofScheme.FullyFaithful where
 instance : ofScheme.Full := fullyFaithfulOfScheme.full
 
 instance : ofScheme.Faithful := fullyFaithfulOfScheme.faithful
+
+/-- An affine open `U` of a scheme `X` is an affine formal open of `X` regarded as a formal
+scheme: it is the image of the formal spectrum of the discrete ring `Γ(X, U)`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.isAffineOpen_toFormalScheme {X : Scheme.{u}}
+    {U : X.Opens} (hU : AlgebraicGeometry.IsAffineOpen U) : X.toFormalScheme.IsAffineOpen U := by
+  let : TopologicalSpace Γ(X, U) := ⊥
+  have : DiscreteTopology Γ(X, U) := ⟨rfl⟩
+  let e := (Spf.discreteIsoSpec Γ(X, U)).symm
+  -- `X.toFormalScheme` has the locally ringed space of `X`, so `hU.fromSpec` lands in it
+  exact (isAffineOpen_def X.toFormalScheme U).mpr ⟨Γ(X, U), inferInstance, inferInstance,
+    inferInstance, inferInstance, e.inv ≫ hU.fromSpec.toLRSHom,
+    @LocallyRingedSpace.IsOpenImmersion.comp _ _ _ e.inv inferInstance hU.fromSpec.toLRSHom
+      hU.isOpenImmersion_fromSpec,
+    (LocallyRingedSpace.range_iso_inv_comp e _).trans hU.range_fromSpec⟩
 
 /-- Forgetting the formal atlas of an ordinary scheme recovers the original scheme's
 locally ringed space, on objects and morphisms. -/

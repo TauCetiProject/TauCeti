@@ -38,6 +38,7 @@ generated one.
   locally ringed space.
 * `TauCeti.FormalScheme.Spf.stalkResidueFieldEquiv`: the residue field of `Spf A` at `p` is
   `Frac(A ⧸ p)`.
+* `TauCeti.FormalScheme.Spf.topSectionsIso`: the global sections of `Spf A` are `A`.
 
 ## Main results
 
@@ -48,6 +49,9 @@ generated one.
   local rings.
 * `TauCeti.FormalScheme.Spf.stalkResidueFieldEquiv_residue_germ`: the residue field
   isomorphism sends the residue class of `a ∈ A` to the image of `a` in `Frac(A ⧸ p)`.
+* `TauCeti.FormalScheme.Spf.isUnit_Γgerm_iff`, `TauCeti.FormalScheme.Spf.toRingedSpace_basicOpen`:
+  a global section of `Spf A` is invertible at `p` exactly when the corresponding element of `A`
+  does not lie in `p`, so its invertibility locus is the basic open set `D(a)`.
 
 ## References
 
@@ -232,6 +236,65 @@ theorem stalkResidueFieldEquiv_residue_germ {p : carrier A} (f : BasicNeighbourh
   -- `stalkResidueIso`, so the residue class of the germ is that of `a` in the colimit
   exact (congrArg (fun x ↦ stalkResidueIso p (IsLocalRing.residue _ x)) h).trans
     (stalkResidueIso_coeff p f a)
+
+/-- The identification `Γ(Spf A, ⊤) ≅ A` of the global sections of the formal spectrum, for the
+chosen ideal of definition. -/
+noncomputable abbrev topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] : (Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
+  have := (IsAdicRing.ideal_spec A).2.2
+  globalSectionsIso (IsAdicRing.ideal_spec A).2.1
+
+/-- The global section of `Spf A` corresponding to `a ∈ A` restricts on `D(f)` to the section
+corresponding to the image of `a` in `A_{f}`; the pointwise form of
+`globalSectionsIso_inv_comp_basicOpenSectionsIso_hom`. -/
+theorem map_topSectionsIso_inv_apply (a f : A) :
+    (Spf A).presheaf.map (homOfLE (le_top : basicOpen f ≤ ⊤)).op ((topSectionsIso A).inv a) =
+      (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f).inv
+        (algebraMap A (AdicRing.CompletedAway A f) a) := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  have h := ConcreteCategory.congr_hom (globalSectionsIso_inv_comp_basicOpenSectionsIso_hom
+    (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f) a
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
+  exact (Iso.hom_inv_id_apply _ _).symm.trans (congrArg _ h)
+
+/-- A global section of `Spf A` is invertible at an open prime `p` exactly when the corresponding
+element of `A` does not lie in `p`. -/
+theorem isUnit_Γgerm_iff (s : (Spf A).presheaf.obj (op ⊤)) (p : carrier A) :
+    IsUnit ((Spf A).presheaf.Γgerm p s) ↔
+      (topSectionsIso A).hom s ∉ (p : PrimeSpectrum A).asIdeal := by
+  have hp : (1 : A) ∉ (p : PrimeSpectrum A).asIdeal := (p : PrimeSpectrum A).isPrime.one_notMem
+  -- restricted to `D(1)`, the section `s` is the image of `a` in `A_{1}`, where `s ↔ a`
+  have hres : (Spf A).presheaf.map (homOfLE (le_top : basicOpen (1 : A) ≤ ⊤)).op s =
+      (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 1).inv
+        (algebraMap A (AdicRing.CompletedAway A 1) ((topSectionsIso A).hom s)) := by
+    rw [← map_topSectionsIso_inv_apply, Iso.hom_inv_id_apply]
+  -- so the germ of `s` at `p` is the germ of the image of `a` in `A_{1}`
+  have hgerm := ((Spf A).presheaf.Γgerm_res_apply (i := homOfLE le_top) p
+    (mem_basicOpen.mpr hp) s).symm.trans (congrArg _ hres)
+  have key := stalkResidueFieldEquiv_residue_germ (p := p) ⟨1, hp⟩ ((topSectionsIso A).hom s)
+  refine (iff_of_eq (congrArg IsUnit hgerm)).trans ?_
+  calc _ ↔ IsLocalRing.residue _ _ ≠ 0 := (IsLocalRing.residue_ne_zero_iff_isUnit _).symm
+    _ ↔ stalkResidueFieldEquiv p ((Spf A).residue p _) ≠ 0 :=
+      (map_ne_zero_iff _ (stalkResidueFieldEquiv p).injective).symm
+    _ ↔ algebraMap _ (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal))
+        (Ideal.Quotient.mk _ ((topSectionsIso A).hom s)) ≠ 0 := iff_of_eq (congrArg (· ≠ 0) key)
+    _ ↔ _ := by rw [ne_eq, IsFractionRing.to_map_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]
+
+/-- The locus where a global section of `Spf A` is invertible is the basic open set of the
+corresponding element of `A`. -/
+theorem toRingedSpace_basicOpen (s : (Spf A).presheaf.obj (op ⊤)) :
+    (Spf A).toRingedSpace.basicOpen s = basicOpen ((topSectionsIso A).hom s) := by
+  ext p
+  exact ((Spf A).toRingedSpace.mem_top_basicOpen s p).trans
+    ((isUnit_Γgerm_iff s p).trans mem_basicOpen.symm)
+
+/-- Isomorphic formal spectra have isomorphic rings of global sections, so one ring is noetherian
+if the other is. -/
+theorem isNoetherianRing_of_iso {B : Type u} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [IsAdicRing B] [IsNoetherianRing A] (e : Spf A ≅ Spf B) :
+    IsNoetherianRing B :=
+  isNoetherianRing_of_ringEquiv A ((topSectionsIso A).symm ≪≫
+    LocallyRingedSpace.Γ.mapIso e.symm.op ≪≫ topSectionsIso B).commRingCatIsoToRingEquiv
 
 end Spf
 
