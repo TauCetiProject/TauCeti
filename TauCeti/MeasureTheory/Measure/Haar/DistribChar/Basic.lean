@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 
 /-!
 # Pushforward and transport of the distributive Haar character
@@ -16,8 +16,9 @@ images under its action: `μ (g • s) = distribHaarChar A g * μ s` for every r
 measure `μ` on `A` (Mathlib's `MeasureTheory.distribHaarChar_mul`). This file records the
 consequences used to compute such characters.
 
-* Pushforwards carry the inverse factor: `μ.map (g • ·) = (distribHaarChar A g)⁻¹ • μ`. So `g`
-  preserves `μ` exactly when its character is `1`.
+* Pushforwards carry the inverse factor
+  (`MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`), so `g` preserves `μ` exactly
+  when its character is `1`.
 * The character is transported along isomorphisms of topological additive groups intertwining
   two actions, in particular along ring isomorphisms that are homeomorphisms.
 * A positive compact set has finite positive mass for every additive Haar measure, which is what
@@ -26,8 +27,6 @@ consequences used to compute such characters.
 
 ## Main results
 
-* `MeasureTheory.Measure.map_smul_eq_inv_distribHaarChar_smul`: the pushforward of a Haar measure
-  under the action of `g`.
 * `MeasureTheory.Measure.map_smul_eq_self_iff_distribHaarChar_eq_one`: the action of `g` preserves
   a Haar measure exactly when the character of `g` is `1`.
 * `MeasureTheory.distribHaarChar_eq_of_continuousAddEquiv`,
@@ -73,16 +72,6 @@ variable {G A : Type*} [Group G] [AddCommGroup A] [DistribMulAction G A] [Topolo
 section Pushforward
 
 variable [MeasurableSpace A] [BorelSpace A]
-
-/-- **Pushforward of Haar measure under a distributive action.** The action of `g` pushes every
-regular additive Haar measure `μ` forward to `(distribHaarChar A g)⁻¹ • μ`. -/
-theorem Measure.map_smul_eq_inv_distribHaarChar_smul (μ : Measure A) [μ.IsAddHaarMeasure]
-    [μ.Regular] (g : G) :
-    μ.map (g • ·) = (distribHaarChar A g)⁻¹ • μ := by
-  have hmeas : Measurable fun a : A ↦ g • a := (continuous_const_smul g).measurable
-  ext s hs
-  rw [map_apply hmeas hs, Set.preimage_smul, ← distribHaarChar_mul μ g⁻¹ s, map_inv, smul_apply,
-    ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv (distribHaarChar_pos (A := A)).ne']
 
 /-- The action of `g` preserves a regular additive Haar measure exactly when the distributive Haar
 character of `g` is `1`. -/

@@ -8,9 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Algebra.Polynomial.Roots
-import TauCeti.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.Convex.Mul
+import TauCeti.Analysis.Real.Sqrt
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -111,9 +109,6 @@ for set and probability integrals.
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
   pair of sets `s ⊆ S` to any `f` close to `K` in square mean on `S`.
-* `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
-  integral, in squared form; on a probability space, with `S` the whole space, it is the
-  second-moment lower bound `(∫ f)² ≤ ∫ f²`.
 * `measureReal_inter_lt_le_setIntegral_max_sub_sq_div` is Chebyshev's inequality for truncations:
   the level set `{l < g}` in `s` has measure at most `∫_s ((g - k)⁺)² / (l - k)²`.
 * `ae_le_of_setIntegral_max_sub_sq_eq_zero` gives `g ≤ k` almost everywhere on `s` when the
@@ -166,9 +161,9 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
   weight `w` converge along any filter when scalar multipliers, in a space acting boundedly on the
   codomain of `w`, converge uniformly to `f`, with `f • w` integrable and the products `fs i • w`
   eventually almost everywhere strongly measurable.
-* `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
-  compact support pass to limits of maps, eventually continuous on the support of the weight, that
-  converge uniformly on that support.
+* `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a compactly supported weight,
+  continuous on its support, pass to limits of maps, eventually continuous on the support of the
+  weight, that converge uniformly on that support.
 * `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
   is perturbed uniformly on a set of finite measure.
 
@@ -545,28 +540,6 @@ theorem setIntegral_norm_sub_sq_le_add_of_le {X F : Type*} [MeasurableSpace X] {
   have h5 := mul_le_mul_of_nonneg_left (mul_le_of_le_one_left hE0 hq1) hD
   linarith
 
-/-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
-theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} (f : Ω → ℝ) (S : Set Ω) (hS_top : μ S ≠ ⊤)
-    (hf_sq : IntegrableOn (fun x => f x ^ 2) S μ) :
-    (∫ x in S, f x ∂μ) ^ 2 ≤ μ.real S * ∫ x in S, f x ^ 2 ∂μ := by
-  by_cases hf : IntegrableOn f S μ
-  swap
-  · rw [integral_undef hf]
-    simpa using mul_nonneg measureReal_nonneg (integral_nonneg fun x => sq_nonneg (f x))
-  by_cases hS : μ S = 0
-  · rw [Measure.restrict_eq_zero.mpr hS]
-    simp
-  · have hS_pos : 0 < μ.real S := ENNReal.toReal_pos hS hS_top
-    have hconv : ConvexOn ℝ Set.univ (fun x : ℝ => x ^ 2) :=
-      Even.convexOn_pow (by norm_num : Even 2)
-    have hjensen := hconv.map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
-      hS hS_top (ae_of_all _ fun _ => Set.mem_univ _) hf hf_sq
-    simp only [setAverage_eq, smul_eq_mul, mul_pow] at hjensen
-    have hkey := mul_le_mul_of_nonneg_left hjensen (sq_nonneg (μ.real S))
-    field_simp at hkey
-    exact hkey
-
 /-- A weight `ψ` with `|ψ| ≤ 1` almost everywhere on `s` whose square equals one almost everywhere
 on a subset `t ⊆ s` bounds the integral over `t` of a function nonnegative almost everywhere on `s`
 by its `ψ²`-weighted integral over `s`. Only `ψ ^ 2` enters, so it need only be a.e. strongly
@@ -916,13 +889,14 @@ theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {α E ι : Type
     _ ≤ ε := hηε.le
 
 /-- **Integrals against a compactly supported weight pass to uniform limits.** Let `a` be a
-continuous weight with compact support. If maps `f i`, eventually continuous on the support of `a`,
-converge to a map `g` uniformly on the support of `a`, then
-`∫ x, a x • f i x ∂μ → ∫ x, a x • g x ∂μ`. -/
+weight with compact support that is continuous on its support (it may jump at the boundary of the
+support). If maps `f i`, eventually continuous on the support of `a`, converge to a map `g`
+uniformly on the support of `a`, then `∫ x, a x • f i x ∂μ → ∫ x, a x • g x ∂μ`. -/
 theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [TopologicalSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
     {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {l : Filter ι}
-    {f : ι → X → F} {g : X → F} {a : X → ℝ} (ha : Continuous a) (hac : HasCompactSupport a)
+    {f : ι → X → F} {g : X → F} {a : X → ℝ} (ha : ContinuousOn a (tsupport a))
+    (hac : HasCompactSupport a)
     (hf : ∀ᶠ i in l, ContinuousOn (f i) (tsupport a))
     (hlim : TendstoUniformlyOn f g l (tsupport a)) :
     Tendsto (fun i ↦ ∫ x, a x • f i x ∂μ) l (𝓝 (∫ x, a x • g x ∂μ)) := by
@@ -932,9 +906,14 @@ theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [Topologica
     intro h hh
     exact (hh.integrableOn_compact' hac (isClosed_tsupport a).measurableSet
       ).locallyIntegrableOn.integrable_smul_left_of_hasCompactSupport ha hac subset_rfl
-  obtain ⟨B, hB⟩ := ha.bounded_above_of_compact_support hac
+  -- `a` is bounded on its compact support and vanishes off it.
+  obtain ⟨B, hB⟩ := hac.isCompact.exists_bound_of_continuousOn ha
+  have hB' (x : X) : ‖a x‖ ≤ max B 0 := by
+    by_cases hx : x ∈ tsupport a
+    · exact (hB x hx).trans (le_max_left _ _)
+    · simp [image_eq_zero_of_notMem_tsupport hx]
   exact tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
-    (Eventually.of_forall hB) (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
+    (Eventually.of_forall hB') (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
     (hf.mono fun i hi ↦ hint hi) (hint (hlim.continuousOn hf.frequently)).aestronglyMeasurable
     (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
 

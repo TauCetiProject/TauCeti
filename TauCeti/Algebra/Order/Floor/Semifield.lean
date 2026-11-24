@@ -35,6 +35,7 @@ of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`.
 
 ## Main results
 
+* `TauCeti.natFloor_natCast_add_inv_two`: `⌊N + 1/2⌋₊ = N`.
 * `TauCeti.le_ceil_div_mul`: `t ≤ ⌈t / τ⌉₊ * τ` for `τ > 0`.
 * `TauCeti.ceil_div_mul_lt_add`: `⌈t / τ⌉₊ * τ < t + τ` for `t ≥ 0` and `τ > 0`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
@@ -61,6 +62,12 @@ namespace TauCeti
 
 variable {K : Type*} [DivisionSemiring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorSemiring K]
   {τ s t B : K}
+
+/-- The natural floor of a half-integer: `⌊N + 1/2⌋₊ = N`. -/
+@[simp]
+theorem natFloor_natCast_add_inv_two (N : ℕ) : ⌊(N : K) + 2⁻¹⌋₊ = N := by
+  rw [add_comm, Nat.floor_add_natCast (by positivity),
+    Nat.floor_eq_zero.mpr (inv_lt_one_of_one_lt₀ one_lt_two), zero_add]
 
 /-- For a positive step `τ`, `t ≤ ⌈t / τ⌉₊ * τ`. -/
 theorem le_ceil_div_mul (hτ : 0 < τ) : t ≤ (⌈t / τ⌉₊ : K) * τ :=
