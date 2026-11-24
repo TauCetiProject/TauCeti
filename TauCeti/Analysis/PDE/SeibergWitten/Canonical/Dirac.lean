@@ -197,14 +197,20 @@ theorem sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero
               twoVectorAlternatingSum θ (e 0) (e 2) (e 3) * Complex.I) • ρ (ι Q (e 0)) u₀ +
           ((twoVectorAlternatingSum θ (e 0) (e 1) (e 3) : ℂ) -
               twoVectorAlternatingSum θ (e 0) (e 1) (e 2) * Complex.I) • ρ (ι Q (e 2)) u₀) := by
-  obtain ⟨q1, q3⟩ :=
-    AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
-      (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
-  have q0 := e.map_ι_apply_map_ι_apply hQ ρ 0 (ρ (ι Q (e 2)) (u₀ : W))
-  have q2 : ρ (ι Q (e 2)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (u₀ : W))) = ρ (ι Q (e 0)) u₀ := by
-    rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), e.map_ι_apply_map_ι_apply hQ ρ, map_neg,
-      neg_neg]
   set β₀ := ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (u₀ : W)) with hβ₀
+  -- Clifford multiplication by the frame on `β₀ = -c(e₂) c(e₀) u₀`, the negated paired spinor.
+  have hβ : β₀ = -(pairedSpinor e u₀ : W) := by
+    rw [hβ₀, e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), coe_pairedSpinor]
+  have q0 : ρ (ι Q (e 0)) β₀ = -ρ (ι Q (e 2)) u₀ := by
+    rw [hβ, map_neg, ι_zero_apply_pairedSpinor hQ]
+  have q1 : ρ (ι Q (e 1)) β₀ = Complex.I • ρ (ι Q (e 2)) u₀ := by
+    rw [hβ, map_neg, ι_one_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀,
+      neg_smul, neg_neg]
+  have q2 : ρ (ι Q (e 2)) β₀ = ρ (ι Q (e 0)) u₀ := by
+    rw [hβ, map_neg, ι_two_apply_pairedSpinor hQ, neg_neg]
+  have q3 : ρ (ι Q (e 3)) β₀ = (-Complex.I) • ρ (ι Q (e 0)) u₀ := by
+    rw [hβ, map_neg, ι_three_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀,
+      neg_smul]
   -- Each derivative is `P_β (u v) = C(iθ v) u₀ / 4 = (i / 4) c₂(θ v) u₀`.
   have hd (v : V) : (u v : W) = (Complex.I / 4) • ρ (bivectorExterior Q (θ v)) u₀ := by
     have h := cliffordProjection_neg_apply_eq_smul_cliffordRestriction_apply (ω := J.kahlerForm)

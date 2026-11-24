@@ -340,33 +340,23 @@ theorem inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self :
 
 include hQ h₀ h₂ hu₀
 
-/-- `c(e₁) u₀ = i c(e₀) u₀` and `c(e₃) u₀ = i c(e₂) u₀` for a canonical spinor `u₀`
-(`AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply`). -/
-private theorem ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self :
-    ρ (ι Q (e 1)) u₀ = I • ρ (ι Q (e 0)) u₀ ∧ ρ (ι Q (e 3)) u₀ = I • ρ (ι Q (e 2)) u₀ :=
-  AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
-
-/-- `c(e₁) β₀ = -i c(e₂) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
+/-- `c(e₁) β₀ = -i c(e₂) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`
+(`AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply`). -/
 theorem ι_one_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
     ρ (ι Q (e 1)) (pairedSpinor e u₀ : W) = -I • ρ (ι Q (e 2)) u₀ := by
-  obtain ⟨h₁, -⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
-  rw [coe_pairedSpinor,
-    map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (1 : Fin 4) ≠ 2)),
-    map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (1 : Fin 4) ≠ 0)),
-    h₁]
-  simp [hQ, e.orthonormal.1 0]
+  rw [coe_pairedSpinor, e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide),
+    map_neg,
+    (AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
+      (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)).1, neg_smul]
 
-/-- `c(e₃) β₀ = i c(e₀) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
+/-- `c(e₃) β₀ = i c(e₀) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`
+(`AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply`). -/
 theorem ι_three_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
     ρ (ι Q (e 3)) (pairedSpinor e u₀ : W) = I • ρ (ι Q (e 0)) u₀ := by
-  obtain ⟨-, h₃⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
-  rw [coe_pairedSpinor,
-    map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (3 : Fin 4) ≠ 2)),
-    map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (3 : Fin 4) ≠ 0)),
-    h₃]
-  simp [map_ι_apply_map_ι_apply_comm_of_isOrtho ρ
-    (e.isOrtho_apply hQ (by decide : (0 : Fin 4) ≠ 2)), hQ, e.orthonormal.1 2]
+  rw [coe_pairedSpinor, e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide),
+    map_neg,
+    (AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
+      (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)).2, neg_smul, neg_neg]
 
 /-- **The Dirac symbol on the paired spinor**: for the paired spinor `β₀ = c(e₂) c(e₀) u₀` of a
 canonical spinor `u₀`,
@@ -387,7 +377,8 @@ theorem sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self (y : 
 theorem cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self :
     cliffordRestriction o ρ (ιMulti ℝ 2 ![e 0, e 1]) u₀ = u₀ := by
   apply Subtype.ext
-  obtain ⟨h₁, -⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
+  obtain ⟨h₁, -⟩ := AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply
+    hQ h₀ h₂ (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
   rw [coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ (e.orthonormal.2 (by decide)),
     map_mul, mul_apply_eq_comp, h₁, map_smul, smul_smul, I_mul_I]
   simp [hQ, e.orthonormal.1 0]
@@ -396,7 +387,8 @@ theorem cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_e
 theorem cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self :
     cliffordRestriction o ρ (ιMulti ℝ 2 ![e 0, e 3]) u₀ = pairedSpinor e u₀ := by
   apply Subtype.ext
-  obtain ⟨-, h₃⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
+  obtain ⟨-, h₃⟩ := AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply
+    hQ h₀ h₂ (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
   rw [coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ (e.orthonormal.2 (by decide)),
     map_mul, mul_apply_eq_comp, h₃, map_smul, smul_smul, I_mul_I,
     coe_pairedSpinor,
