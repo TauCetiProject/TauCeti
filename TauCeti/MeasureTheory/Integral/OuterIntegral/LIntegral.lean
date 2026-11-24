@@ -32,8 +32,9 @@ condition, so `outerLIntegral μ f = ∞` whenever `f` admits no integrable meas
 * `TauCeti.outerLIntegral_indicator_const` and `TauCeti.outerLIntegral_indicator_one`: the outer
   Lebesgue integral of a constant indicator recovers the outer measure `c * μ s`.
 * `TauCeti.exists_measurable_ge_outerLIntegral_eq` and
-  `TauCeti.exists_minimal_measurable_ge_outerLIntegral`: existence of an attaining measurable
-  majorant, minimal almost everywhere whenever the outer integral is finite or `μ` is s-finite.
+  `TauCeti.exists_measurable_ge_outerLIntegral_eq_of_sFinite`: existence of an attaining
+  measurable majorant, minimal almost everywhere whenever the outer integral is finite or `μ` is
+  s-finite.
 * `TauCeti.outerLIntegral_iSup` and `TauCeti.outerLIntegral_liminf_le`: monotone convergence and
   Fatou's lemma for `outerLIntegral`.
 * `TauCeti.outerLIntegral_add_le`, `TauCeti.outerLIntegral_tsum_le`, and
@@ -256,7 +257,8 @@ theorem exists_measurable_ge_outerLIntegral_eq (μ : Measure α) (f : α → ℝ
 /-- For an s-finite measure `μ`, every function `f : α → ℝ≥0∞` (even with infinite outer integral)
 admits a measurable majorant `g ≥ f` attaining `outerLIntegral μ f` that is minimal a.e. among all
 a.e.-measurable a.e. majorants. -/
-theorem exists_minimal_measurable_ge_outerLIntegral (μ : Measure α) [SFinite μ] (f : α → ℝ≥0∞) :
+theorem exists_measurable_ge_outerLIntegral_eq_of_sFinite (μ : Measure α) [SFinite μ]
+    (f : α → ℝ≥0∞) :
     ∃ g : α → ℝ≥0∞, Measurable g ∧ f ≤ g ∧ ∫⁻ ω, g ω ∂μ = outerLIntegral μ f ∧
       ∀ h : α → ℝ≥0∞, AEMeasurable h μ → f ≤ᵐ[μ] h → g ≤ᵐ[μ] h := by
   obtain ⟨ν, hν_fin, hμν, hνμ⟩ := exists_isFiniteMeasure_absolutelyContinuous (μ := μ)
@@ -283,7 +285,7 @@ theorem exists_minimal_measurable_ge_outerLIntegral (μ : Measure α) [SFinite �
     have hle : ENNReal.orderIsoIicOneBirational (f ω) ≤
         (⟨g₂ ω, mem_Iic.mpr (min_le_right _ _)⟩ : Iic (1 : ℝ≥0∞)) :=
       Subtype.coe_le_coe.mp (le_min (hfg₁ ω) (hφ_le_one (f ω)))
-    simpa [g] using ENNReal.orderIsoIicOneBirational.symm.monotone hle
+    exact (OrderIso.le_symm_apply ENNReal.orderIsoIicOneBirational).mpr hle
   have hg_min : ∀ h : α → ℝ≥0∞, AEMeasurable h μ → f ≤ᵐ[μ] h → g ≤ᵐ[μ] h := by
     intro h hh hfh
     have hφh_ae : φ ∘ f ≤ᵐ[ν] φ ∘ h :=
@@ -294,7 +296,7 @@ theorem exists_minimal_measurable_ge_outerLIntegral (μ : Measure α) [SFinite �
     have hle : (⟨g₂ ω, mem_Iic.mpr (min_le_right _ _)⟩ : Iic (1 : ℝ≥0∞)) ≤
         ENNReal.orderIsoIicOneBirational (h ω) :=
       Subtype.coe_le_coe.mp ((min_le_left _ _).trans hω)
-    simpa [g] using ENNReal.orderIsoIicOneBirational.symm.monotone hle
+    exact (OrderIso.symm_apply_le ENNReal.orderIsoIicOneBirational).mpr hle
   refine ⟨g, hg_meas, hfg, le_antisymm ?_ (outerLIntegral_le_lintegral hg_meas hfg), hg_min⟩
   exact le_outerLIntegral fun h hh hfh ↦
     lintegral_mono_ae (hg_min h hh.aemeasurable (ae_of_all _ hfh))

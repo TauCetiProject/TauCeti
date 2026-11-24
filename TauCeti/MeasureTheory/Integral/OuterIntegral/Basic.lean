@@ -501,25 +501,27 @@ theorem outerIntegral_mono {μ : Measure α} {f₁ f₂ : α → ℝ} (h : f₁ 
   le_outerIntegral hu₂ fun _ hg_meas hg_int h₂g ↦
     outerIntegral_le_integral hg_meas hg_int (h.trans h₂g) hl₁
 
+private theorem range_integral_majorants_subset_of_ae_le {μ : Measure α} {f₁ f₂ : α → ℝ}
+    (h : f₂ ≤ᵐ[μ] f₁) (hu₂ : ∃ u, Measurable u ∧ f₂ ≤ u) :
+    Set.range (fun g : {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f₁ ≤ g} ↦ ∫ ω, g.val ω ∂μ) ⊆
+      Set.range (fun g : {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f₂ ≤ g} ↦
+        ∫ ω, g.val ω ∂μ) := by
+  obtain ⟨u₂, hu₂_meas, hf₂u₂⟩ := hu₂
+  rintro x ⟨⟨g, hg_meas, hg_int, hfg⟩, rfl⟩
+  obtain ⟨g', hg'_meas, hf₂g', hg'_ae⟩ :=
+    hg_meas.aemeasurable.exists_measurable_ge_ae_eq_of_ae_le
+      (h.trans (ae_of_all _ hfg)) hu₂_meas hf₂u₂
+  exact ⟨⟨g', hg'_meas, hg_int.congr hg'_ae, hf₂g'⟩, integral_congr_ae hg'_ae.symm⟩
+
 /-- Functions equal almost everywhere that each admit a measurable majorant have equal
 `outerIntegral`. -/
 theorem outerIntegral_congr_ae {μ : Measure α} {f₁ f₂ : α → ℝ} (h : f₁ =ᵐ[μ] f₂)
     (hu₁ : ∃ u, Measurable u ∧ f₁ ≤ u) (hu₂ : ∃ u, Measurable u ∧ f₂ ≤ u) :
     outerIntegral μ f₁ = outerIntegral μ f₂ := by
-  obtain ⟨u₁, hu₁_meas, hf₁u₁⟩ := hu₁
-  obtain ⟨u₂, hu₂_meas, hf₂u₂⟩ := hu₂
   rw [outerIntegral_def, outerIntegral_def, iInf, iInf]
-  congr 1
-  ext x
-  constructor <;> rintro ⟨⟨g, hg_meas, hg_int, hfg⟩, rfl⟩
-  · obtain ⟨g', hg'_meas, hf₂g', hg'_ae⟩ :=
-      hg_meas.aemeasurable.exists_measurable_ge_ae_eq_of_ae_le
-        (h.symm.le.trans (ae_of_all _ hfg)) hu₂_meas hf₂u₂
-    exact ⟨⟨g', hg'_meas, hg_int.congr hg'_ae, hf₂g'⟩, integral_congr_ae hg'_ae.symm⟩
-  · obtain ⟨g', hg'_meas, hf₁g', hg'_ae⟩ :=
-      hg_meas.aemeasurable.exists_measurable_ge_ae_eq_of_ae_le
-        (h.le.trans (ae_of_all _ hfg)) hu₁_meas hf₁u₁
-    exact ⟨⟨g', hg'_meas, hg_int.congr hg'_ae, hf₁g'⟩, integral_congr_ae hg'_ae.symm⟩
+  exact congrArg sInf (Set.Subset.antisymm
+    (range_integral_majorants_subset_of_ae_le h.symm.le hu₂)
+    (range_integral_majorants_subset_of_ae_le h.le hu₁))
 
 /-- Subadditivity of `outerIntegral`. -/
 theorem outerIntegral_add_le {μ : Measure α} {f g : α → ℝ}
@@ -617,6 +619,28 @@ theorem abs_outerIntegral_le_outerIntegral_abs {μ : Measure α} {f : α → ℝ
   · rw [outerIntegral_eq_zero_of_not_exists hu, abs_zero]
     exact outerIntegral_nonneg (ae_of_all _ fun _ ↦ abs_nonneg _)
 
+/-- One-sided triangle inequality for `outerIntegral`: `outerIntegral μ f` is bounded by
+`outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|)`. -/
+theorem outerIntegral_le_add_outerIntegral_abs_sub {μ : Measure α} {f g : α → ℝ}
+    (hgu : ∃ u, Measurable u ∧ Integrable u μ ∧ g ≤ u)
+    (hgl : ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] g)
+    (hdu : ∃ w, Measurable w ∧ Integrable w μ ∧ (fun ω ↦ |f ω - g ω|) ≤ w) :
+    outerIntegral μ f ≤ outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|) := by
+  obtain ⟨ug, hug_meas, hug_int, hug⟩ := hgu
+  obtain ⟨lg, hlg_int, hlg⟩ := hgl
+  obtain ⟨w, hw_meas, hw_int, hdw⟩ := hdu
+  have hfl : ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] f :=
+    ⟨lg - w, hlg_int.sub hw_int, hlg.mono fun ω hω ↦ by
+      simp only [Pi.sub_apply]
+      linarith [hdw ω, neg_abs_le (f ω - g ω)]⟩
+  calc outerIntegral μ f ≤ outerIntegral μ (g + fun ω ↦ |f ω - g ω|) :=
+        outerIntegral_mono
+          (fun ω ↦ by simp only [Pi.add_apply]; linarith [le_abs_self (f ω - g ω)])
+          ⟨ug + w, hug_meas.add hw_meas, hug_int.add hw_int, add_le_add hug hdw⟩ hfl
+    _ ≤ outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|) :=
+        outerIntegral_add_le ⟨ug, hug_meas, hug_int, hug⟩ ⟨w, hw_meas, hw_int, hdw⟩
+          ⟨lg, hlg_int, hlg⟩ ⟨0, integrable_zero α ℝ μ, ae_of_all _ fun _ ↦ abs_nonneg _⟩
+
 /-- Triangle inequality for `outerIntegral`: `|outerIntegral μ f - outerIntegral μ g|` is bounded
 by `outerIntegral μ (fun ω ↦ |f ω - g ω|)`. -/
 theorem abs_outerIntegral_sub_le {μ : Measure α} {f g : α → ℝ}
@@ -635,28 +659,13 @@ theorem abs_outerIntegral_sub_le {μ : Measure α} {f g : α → ℝ}
       (huf_int.sub hlg_int).sup (hug_int.sub hlf_int),
       fun ω ↦ abs_le.mpr ⟨by linarith [hlf ω, hug ω, le_max_right (uf ω - lg ω) (ug ω - lf ω)],
         by linarith [huf ω, hlg ω, le_max_left (uf ω - lg ω) (ug ω - lf ω)]⟩⟩
-  have hdl : ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] fun ω ↦ |f ω - g ω| :=
-    ⟨0, integrable_zero α ℝ μ, ae_of_all _ fun _ ↦ abs_nonneg _⟩
-  have hfg : outerIntegral μ f ≤ outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|) := by
-    obtain ⟨w, hw_meas, hw_int, hdw⟩ := hdu
-    calc outerIntegral μ f ≤ outerIntegral μ (g + fun ω ↦ |f ω - g ω|) :=
-          outerIntegral_mono
-            (fun ω ↦ by simp only [Pi.add_apply]; linarith [le_abs_self (f ω - g ω)])
-            ⟨ug + w, hug_meas.add hw_meas, hug_int.add hw_int, add_le_add hug hdw⟩
-            ⟨lf, hlf_int, ae_of_all _ hlf⟩
-      _ ≤ outerIntegral μ g + outerIntegral μ (fun ω ↦ |f ω - g ω|) :=
-          outerIntegral_add_le ⟨ug, hug_meas, hug_int, hug⟩ ⟨w, hw_meas, hw_int, hdw⟩
-            ⟨lg, hlg_int, ae_of_all _ hlg⟩ hdl
-  have hgf : outerIntegral μ g ≤ outerIntegral μ f + outerIntegral μ (fun ω ↦ |f ω - g ω|) := by
-    obtain ⟨w, hw_meas, hw_int, hdw⟩ := hdu
-    calc outerIntegral μ g ≤ outerIntegral μ (f + fun ω ↦ |f ω - g ω|) :=
-          outerIntegral_mono
-            (fun ω ↦ by simp only [Pi.add_apply]; linarith [neg_abs_le (f ω - g ω)])
-            ⟨uf + w, huf_meas.add hw_meas, huf_int.add hw_int, add_le_add huf hdw⟩
-            ⟨lg, hlg_int, ae_of_all _ hlg⟩
-      _ ≤ outerIntegral μ f + outerIntegral μ (fun ω ↦ |f ω - g ω|) :=
-          outerIntegral_add_le ⟨uf, huf_meas, huf_int, huf⟩ ⟨w, hw_meas, hw_int, hdw⟩
-            ⟨lf, hlf_int, ae_of_all _ hlf⟩ hdl
+  have hdu' : ∃ w, Measurable w ∧ Integrable w μ ∧ (fun ω ↦ |g ω - f ω|) ≤ w := by
+    simpa only [abs_sub_comm] using hdu
+  have hfg := outerIntegral_le_add_outerIntegral_abs_sub
+    ⟨ug, hug_meas, hug_int, hug⟩ ⟨lg, hlg_int, ae_of_all _ hlg⟩ hdu
+  have hgf := outerIntegral_le_add_outerIntegral_abs_sub
+    ⟨uf, huf_meas, huf_int, huf⟩ ⟨lf, hlf_int, ae_of_all _ hlf⟩ hdu'
+  simp_rw [abs_sub_comm (g _)] at hgf
   rw [abs_le]
   exact ⟨by linarith, by linarith⟩
 
