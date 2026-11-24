@@ -57,6 +57,8 @@ none of the further theory built on it.
   exactly when it acts injectively on `R`.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
+  group, as a convolution.
 
 ## References
 
@@ -369,6 +371,12 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
+
+/-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
+theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
+    (x y : MonoidAlgebra k G) (g : G) :
+    (x * y).coeff g = ∑ h, x.coeff h * y.coeff (h⁻¹ * g) := by
+  rw [coeff_mul_apply_left, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
 
 /-- The basis monomials `of ℤ M m` generate the integral monoid algebra `ℤ[M]` as an additive
 group. -/

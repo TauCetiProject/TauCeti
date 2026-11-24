@@ -9,7 +9,6 @@ public import Mathlib.FieldTheory.Finite.GaloisField
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Criterion
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Lift
-public import TauCeti.RepresentationTheory.GroupAlgebra.Block.ScalarExtension
 public import TauCeti.RepresentationTheory.GroupAlgebra.RelativeTrace
 
 /-!
@@ -42,7 +41,7 @@ public section
 
 namespace TauCeti.GroupAlgebraBlockExamples
 
-open MonoidAlgebra
+open _root_.MonoidAlgebra
 
 /-- `id` only identifies conjugate elements. -/
 private theorem isConj_of_id_eq {G : Type*} [Group G] (g h : G) (hgh : id g = id h) :
@@ -68,6 +67,13 @@ private theorem coeff_one_center {k G : Type*} [CommSemiring k] [Group G] [Decid
   rw [OneMemClass.coe_one, coeff_one_apply]
   simp only [eq_comm]
 
+/-- The sum of two orthogonal block idempotents is not a block idempotent. -/
+private theorem not_isBlockIdempotent_add {k G : Type*} [CommSemiring k] [Monoid G]
+    {e f : Subalgebra.center k (MonoidAlgebra k G)} (he : IsBlockIdempotent e)
+    (hf : IsBlockIdempotent f) (hef : e * f = 0) : ¬ IsBlockIdempotent (e + f) := fun h ↦
+  (h.eq_zero_or_eq_zero_of_add he.isIdempotentElem hf.isIdempotentElem hef
+    (by rw [mul_comm, hef]) rfl).elim he.ne_zero hf.ne_zero
+
 /-! ### The cyclic group of order `2` -/
 
 /-- The cyclic group `C₂` of order `2`. -/
@@ -77,7 +83,7 @@ abbrev C₂ : Type := Multiplicative (ZMod 2)
 abbrev t : C₂ := Multiplicative.ofAdd 1
 
 /-- In `𝔽₂[C₂]` the element `ε = 1 + t` squares to `0`, so `𝔽₂[C₂] ≅ 𝔽₂[ε]/(ε²)`. -/
-theorem one_add_of_t_mul_self :
+theorem one_add_of_t_mul_self_eq_zero :
     (1 + of (ZMod 2) C₂ t) * (1 + of (ZMod 2) C₂ t) = 0 := by
   refine ext (Finsupp.ext fun g ↦ ?_)
   simp only [coeff_mul_eq_sum, coeff_add, Finsupp.add_apply, coeff_zero, Finsupp.zero_apply,
@@ -96,7 +102,7 @@ theorem one_add_of_t_ne_zero : 1 + of (ZMod 2) C₂ t ≠ 0 := by
 
 /-- In `𝔽₂[C₂]` the element `ε = 1 + t` is not idempotent. -/
 theorem not_isIdempotentElem_one_add_of_t : ¬ IsIdempotentElem (1 + of (ZMod 2) C₂ t) :=
-  fun h ↦ one_add_of_t_ne_zero (h.eq.symm.trans one_add_of_t_mul_self)
+  fun h ↦ one_add_of_t_ne_zero (h.eq.symm.trans one_add_of_t_mul_self_eq_zero)
 
 /-- **`𝔽₂[C₂]` has a single block**: its only block idempotent is `1`. -/
 theorem isBlockIdempotent_iff_eq_one_zmod_two_c₂
@@ -154,13 +160,12 @@ theorem completeOrthogonalIdempotents_ePlus_eMinus :
 orthogonal block idempotents `e₊` and `e₋`, so it is not primitive. -/
 theorem not_isBlockIdempotent_one_zmod_three_c₂ :
     ¬ IsBlockIdempotent (1 : Subalgebra.center (ZMod 3) (MonoidAlgebra (ZMod 3) C₂)) := by
-  intro h
   have hc := completeOrthogonalIdempotents_ePlus_eMinus
   have hsum := hc.complete
   rw [Fin.sum_univ_two] at hsum
-  rcases h.eq_zero_or_eq_zero_of_add (hc.idem 0) (hc.idem 1) (hc.ortho (by decide))
-    (hc.ortho (by decide)) hsum with h0 | h0
-  exacts [isBlockIdempotent_ePlus.ne_zero h0, isBlockIdempotent_eMinus.ne_zero h0]
+  rw [← hsum]
+  exact not_isBlockIdempotent_add isBlockIdempotent_ePlus isBlockIdempotent_eMinus
+    (hc.ortho (by decide))
 
 /-! ### The cyclic group of order `3` -/
 
@@ -232,13 +237,13 @@ private theorem sq_sq_eq_self (hα : α ^ 2 + α + 1 = 0) : (α ^ 2) ^ 2 = α :=
   linear_combination α * cube_eq_one hα
 
 /-- `1 + α r + α² r²` is `1 + β² r + β r²` for the other root `β = α²` of `X² + X + 1`. -/
-theorem eTwo_eq_eOne_sq (hα : α ^ 2 + α + 1 = 0) : eTwo α = eOne (α ^ 2) := by
+theorem eTwo_eq_eOne_pow_two_arg (hα : α ^ 2 + α + 1 = 0) : eTwo α = eOne (α ^ 2) := by
   rw [eTwo, eOne, sq_sq_eq_self hα]
 
 /-- `r` acts on `1 + α r + α² r²` by `α²`. -/
 theorem eTwo_mul_of (hα : α ^ 2 + α + 1 = 0) (g : C₃) :
     eTwo α * of K C₃ g = (if g = 1 then 1 else if g = r then α ^ 2 else α) • eTwo α := by
-  rw [eTwo_eq_eOne_sq hα, eOne_mul_of (sq_sq_add_sq_add_one_eq_zero hα), sq_sq_eq_self hα]
+  rw [eTwo_eq_eOne_pow_two_arg hα, eOne_mul_of (sq_sq_add_sq_add_one_eq_zero hα), sq_sq_eq_self hα]
 
 /-- For a root `α` of `X² + X + 1`, the elements `1 + α² r + α r²` and `1 + α r + α² r²` of `K[C₃]`
 are orthogonal. -/
@@ -254,7 +259,8 @@ variable [CharP K 2]
 /-- Over a field of characteristic `2` containing a root `α` of `X² + X + 1`, for instance `𝔽₄`,
 `1 + α² r + α r²` is a block idempotent of `K[C₃]`. -/
 theorem isBlockIdempotent_eOne (hα : α ^ 2 + α + 1 = 0) : IsBlockIdempotent (toCenter (eOne α)) :=
-  isBlockIdempotent_of_mul_of_eq_smul _ (eOne_mul_of hα) (by simp +decide [one_def]) <| by
+  isBlockIdempotent_of_mul_of_eq_smul _ (by simpa only [coe_toCenter] using eOne_mul_of hα)
+    (by simp +decide [one_def]) <| by
     rw [sum_c₃]
     simp +decide [one_def]
     grind [cube_eq_one hα]
@@ -263,7 +269,7 @@ theorem isBlockIdempotent_eOne (hα : α ^ 2 + α + 1 = 0) : IsBlockIdempotent (
 `1 + α r + α² r²` is a block idempotent of `K[C₃]`. -/
 theorem isBlockIdempotent_eTwo (hα : α ^ 2 + α + 1 = 0) :
     IsBlockIdempotent (toCenter (eTwo α)) := by
-  rw [eTwo_eq_eOne_sq hα]
+  rw [eTwo_eq_eOne_pow_two_arg hα]
   exact isBlockIdempotent_eOne (sq_sq_add_sq_add_one_eq_zero hα)
 
 /-- **Scalar extension splits a block.** Along `𝔽₂ → K`, for a field `K` of characteristic `2`
@@ -283,11 +289,10 @@ theorem not_isBlockIdempotent_centerMapRingHom_r_add_r_sq (hα : α ^ 2 + α + 1
     ¬ IsBlockIdempotent (centerMapRingHom C₃ (ZMod.castHom (dvd_refl 2) K)
         (toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)))) := by
   rw [centerMapRingHom_r_add_r_sq hα]
-  intro h
-  have h₁₂ : toCenter (eOne α) * toCenter (eTwo α) = 0 := Subtype.ext (eOne_mul_eTwo hα)
-  rcases h.eq_zero_or_eq_zero_of_add (isBlockIdempotent_eOne hα).isIdempotentElem
-    (isBlockIdempotent_eTwo hα).isIdempotentElem h₁₂ (by rw [mul_comm, h₁₂]) rfl with h0 | h0
-  exacts [(isBlockIdempotent_eOne hα).ne_zero h0, (isBlockIdempotent_eTwo hα).ne_zero h0]
+  refine not_isBlockIdempotent_add (isBlockIdempotent_eOne hα) (isBlockIdempotent_eTwo hα)
+    (Subtype.ext ?_)
+  rw [Subalgebra.coe_mul, coe_toCenter, coe_toCenter, ZeroMemClass.coe_zero]
+  exact eOne_mul_eTwo hα
 
 end ScalarExtension
 
@@ -429,6 +434,17 @@ theorem eq_of_centerMapRingHom_toZMod_eq {G : Type*} [Group G] [Finite G]
   (bijOn_centerMapRingHom_isBlockIdempotent (maximalIdeal ℤ_[2]) (ZMod.ringHom_surjective _)
     PadicInt.ker_toZMod).injOn hb hc h
 
+/-- If `1` is the only block idempotent of `𝔽₂[G]`, then `1` is the only block idempotent of
+`ℤ₂[G]`. -/
+private theorem isBlockIdempotent_iff_eq_one_padicInt_of_zmod {G : Type*} [Group G] [Finite G]
+    (h : ∀ c : Subalgebra.center (ZMod 2) (MonoidAlgebra (ZMod 2) G), IsBlockIdempotent c ↔ c = 1)
+    (b : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] G)) : IsBlockIdempotent b ↔ b = 1 := by
+  have h1 : IsBlockIdempotent (1 : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] G)) := by
+    rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff .one, map_one, h]
+  refine ⟨fun hb ↦ eq_of_centerMapRingHom_toZMod_eq hb h1 ?_, fun h' ↦ h' ▸ h1⟩
+  rw [map_one, ← h]
+  exact (isBlockIdempotent_centerMapRingHom_toZMod_iff hb.isIdempotentElem).mpr hb
+
 /-- The maximal ideal `(2)` of `ℤ₂` is not nilpotent. -/
 theorem not_isNilpotent_maximalIdeal_padicInt_two : ¬ IsNilpotent (maximalIdeal ℤ_[2]) := by
   rintro ⟨n, hn⟩
@@ -443,15 +459,10 @@ theorem not_isNilpotent_maximalIdeal_padicInt_two : ¬ IsNilpotent (maximalIdeal
 of `𝔽₂[1]`, although the maximal ideal of `ℤ₂` is not nilpotent
 (`not_isNilpotent_maximalIdeal_padicInt_two`). -/
 theorem isBlockIdempotent_iff_eq_one_padicInt_unit
-    (b : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] Unit)) : IsBlockIdempotent b ↔ b = 1 := by
-  have h1 : IsBlockIdempotent (1 : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] Unit)) := by
-    rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff .one, map_one]
-    exact isBlockIdempotent_of_coeff id isConj_of_id_eq coeff_one_center (by decide) (by decide)
-      (by decide)
-  refine ⟨fun hb ↦ eq_of_centerMapRingHom_toZMod_eq hb h1 ?_, fun h ↦ h ▸ h1⟩
-  rw [map_one]
-  exact eq_of_isBlockIdempotent_of_coeff id isConj_of_id_eq coeff_one_center (by decide)
-    ((isBlockIdempotent_centerMapRingHom_toZMod_iff hb.isIdempotentElem).mpr hb)
+    (b : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] Unit)) : IsBlockIdempotent b ↔ b = 1 :=
+  isBlockIdempotent_iff_eq_one_padicInt_of_zmod (fun c ↦ ⟨eq_of_isBlockIdempotent_of_coeff id
+    isConj_of_id_eq coeff_one_center (by decide), fun h ↦ h ▸ isBlockIdempotent_of_coeff id
+    isConj_of_id_eq coeff_one_center (by decide) (by decide) (by decide)⟩) b
 
 /-- `3` is a unit of `ℤ₂`. -/
 theorem exists_three_mul_eq_one_padicInt_two : ∃ u : ℤ_[2], 3 * u = 1 := by
@@ -508,9 +519,9 @@ theorem centerMapRingHom_toZMod_smul_one_add_r_add_r_sq (hu : 3 * u = 1) :
 (here `u = 1/3`). -/
 theorem isBlockIdempotent_smul_one_add_r_add_r_sq (hu : 3 * u = 1) :
     IsBlockIdempotent (toCenter (u • (1 + of ℤ_[2] C₃ r + of ℤ_[2] C₃ (r ^ 2)))) := by
-  rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff
-    (isIdempotentElem_toCenter (isIdempotentElem_smul_one_add_r_add_r_sq hu)),
-    centerMapRingHom_toZMod_smul_one_add_r_add_r_sq hu]
+  refine (isBlockIdempotent_centerMapRingHom_toZMod_iff (G := C₃)
+    (isIdempotentElem_toCenter (isIdempotentElem_smul_one_add_r_add_r_sq hu))).mp ?_
+  rw [centerMapRingHom_toZMod_smul_one_add_r_add_r_sq hu]
   exact isBlockIdempotent_one_add_r_add_r_sq
 
 /-- The reduction of `(2 - r - r²)/3 ∈ ℤ₂[C₃]` in `𝔽₂[C₃]` is `r + r²` (here `u = 1/3`). -/
@@ -529,7 +540,7 @@ theorem centerMapRingHom_toZMod_smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
 (here `u = 1/3`). -/
 theorem isBlockIdempotent_smul_two_sub_r_sub_r_sq (hu : 3 * u = 1) :
     IsBlockIdempotent (toCenter (u • (2 - of ℤ_[2] C₃ r - of ℤ_[2] C₃ (r ^ 2)))) := by
-  rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff
+  rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff (G := C₃)
     (isIdempotentElem_toCenter (by
       rw [smul_two_sub_r_sub_r_sq hu]
       exact (isIdempotentElem_smul_one_add_r_add_r_sq hu).one_sub)),
@@ -553,13 +564,8 @@ theorem two_smul_ne_one_add_of_t_and_one_sub_of_t (x : MonoidAlgebra ℤ_[2] C�
 /-- **Blocks of `ℤ₂[C₂]`.** The only block idempotent of `ℤ₂[C₂]` is `1`, matching the single block
 of `𝔽₂[C₂]`. -/
 theorem isBlockIdempotent_iff_eq_one_padicInt_c₂
-    (b : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] C₂)) : IsBlockIdempotent b ↔ b = 1 := by
-  have h1 : IsBlockIdempotent (1 : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] C₂)) := by
-    rw [← isBlockIdempotent_centerMapRingHom_toZMod_iff .one, map_one,
-      isBlockIdempotent_iff_eq_one_zmod_two_c₂]
-  refine ⟨fun hb ↦ eq_of_centerMapRingHom_toZMod_eq hb h1 ?_, fun h ↦ h ▸ h1⟩
-  rw [map_one, ← isBlockIdempotent_iff_eq_one_zmod_two_c₂]
-  exact (isBlockIdempotent_centerMapRingHom_toZMod_iff hb.isIdempotentElem).mpr hb
+    (b : Subalgebra.center ℤ_[2] (MonoidAlgebra ℤ_[2] C₂)) : IsBlockIdempotent b ↔ b = 1 :=
+  isBlockIdempotent_iff_eq_one_padicInt_of_zmod isBlockIdempotent_iff_eq_one_zmod_two_c₂ b
 
 end Lift
 

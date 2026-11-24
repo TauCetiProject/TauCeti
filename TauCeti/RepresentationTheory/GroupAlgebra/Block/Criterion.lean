@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Eigenvector
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 
@@ -24,11 +26,10 @@ decidable, which gives a criterion for `b` to be a block idempotent
 (`TauCeti.isBlockIdempotent_of_coeff`) and one for `b` to be the only block idempotent
 (`TauCeti.eq_of_isBlockIdempotent_of_coeff`).
 
-Over a domain, a central element `b` on which every `g ∈ G` acts by a scalar `c(g)` spans its block
-algebra `b k[G] = k b`, and is a block idempotent as soon as it is idempotent
+A central element `b` on which every `g ∈ G` acts by a scalar `c(g)` spans its block algebra
+`b k[G] = k b` (`TauCeti.mul_eq_smul_of_mul_of_eq_smul`). Over a domain it is a block idempotent
+when its coefficient at `1` is `1` and `∑ g, b(g) c(g) = 1`
 (`TauCeti.isBlockIdempotent_of_mul_of_eq_smul`).
-
-For a commutative group every element of `k[G]` is central (`MonoidAlgebra.toCenter`).
 
 ## Main results
 
@@ -41,59 +42,9 @@ public section
 
 open MonoidAlgebra
 
-namespace MonoidAlgebra
-
-/-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
-theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
-    (x y : MonoidAlgebra k G) (g : G) :
-    (x * y).coeff g = ∑ h, x.coeff h * y.coeff (h⁻¹ * g) := by
-  rw [coeff_mul_apply_left, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-
-/-- An element of the monoid algebra of a commutative monoid, as an element of its centre. -/
-@[expose] def toCenter {k G : Type*} [CommSemiring k] [CommGroup G] (x : MonoidAlgebra k G) :
-    Subalgebra.center k (MonoidAlgebra k G) :=
-  ⟨x, Subalgebra.mem_center_iff.mpr fun y ↦ mul_comm y x⟩
-
-/-- `toCenter x` is `x`, read in the monoid algebra. -/
-@[simp]
-theorem coe_toCenter {k G : Type*} [CommSemiring k] [CommGroup G] (x : MonoidAlgebra k G) :
-    (toCenter x : MonoidAlgebra k G) = x := by
-  simp [toCenter]
-
-/-- An idempotent of the monoid algebra of a commutative monoid is an idempotent of its centre. -/
-theorem isIdempotentElem_toCenter {k G : Type*} [CommSemiring k] [CommGroup G]
-    {x : MonoidAlgebra k G} (hx : IsIdempotentElem x) : IsIdempotentElem (toCenter x) :=
-  Subtype.ext (by rw [Subalgebra.coe_mul, coe_toCenter]; exact hx.eq)
-
-end MonoidAlgebra
-
 namespace TauCeti
 
-/-- If `cls : G → ι` only identifies conjugate elements, the coefficients of a central element of
-`k[G]` factor through `cls`. -/
-theorem exists_center_coeff_eq_comp {k G ι : Type*} [CommSemiring k] [Group G] (cls : G → ι)
-    (hcls : ∀ g h, cls g = cls h → IsConj g h) (z : Subalgebra.center k (MonoidAlgebra k G)) :
-    ∃ ψ : ι → k, ⇑(z : MonoidAlgebra k G).coeff = ψ ∘ cls := by
-  classical
-  refine ⟨fun i ↦ (z : MonoidAlgebra k G).coeff (Function.invFun cls i), funext fun g ↦ ?_⟩
-  exact center_coeff_eq_of_isConj z (hcls _ _ (Function.invFun_eq ⟨g, rfl⟩)).symm
-
-/-- If every `g ∈ G` acts on `b` by a scalar, `b * g = c(g) b`, then `b * x = (∑ g, x(g) c(g)) • b`
-for every `x`. -/
-theorem mul_eq_smul_of_mul_of_eq_smul {k G : Type*} [CommSemiring k] [Group G] [Fintype G]
-    {b : MonoidAlgebra k G} {c : G → k} (hc : ∀ g, b * of k G g = c g • b)
-    (x : MonoidAlgebra k G) :
-    b * x = (∑ g, x.coeff g * c g) • b := by
-  classical
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [mul_add, hx, hy, add_mul, add_smul, Finset.sum_add_distrib]
-  | single g r =>
-    have : single g r = r • of k G g := by simp [smul_single]
-    rw [this, mul_smul_comm, hc, smul_smul]
-    simp [Finsupp.single_apply]
-
-variable {k G : Type*} [CommRing k] [Group G] [Fintype G]
+variable {k G : Type*} [CommSemiring k] [Group G] [Fintype G]
 
 /-- **A block criterion on coefficients.** Let `cls : G → ι` identify only conjugate elements, so
 that central elements are functions of `cls`. A central element `b` with coefficient function `χ`
