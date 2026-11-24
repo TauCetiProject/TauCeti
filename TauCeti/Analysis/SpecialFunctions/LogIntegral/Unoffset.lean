@@ -9,8 +9,8 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.SmoothSeries
-import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
 /-!
 # The unoffset logarithmic integral
@@ -36,7 +36,8 @@ Termwise differentiation of the series gives `(e^y - 1) / y` at `y = log x`
 then gives `li' x = (log x)⁻¹` on `(0, 1)` and on `(1, ∞)`. Hence `li` is an antiderivative of
 `(log t)⁻¹` on both intervals: it is strictly decreasing on `(0, 1)`, strictly increasing on
 `(1, ∞)`, tends to `-∞` at `1` from either side and to `+∞` at infinity. From the lower bounds
-`γ > 1 / 2` (Mathlib), `log (3 / 2) > 2 / 5` and the first two terms of the series one gets
+`γ > 1 / 2` (Mathlib), `log (3 / 2) > 2 / 5` (`Real.two_fifths_lt_log_three_halves`) and the
+first two terms of the series one gets
 `li (3 / 2) > 0`, so `li` has exactly one zero in `(1, ∞)`, Soldner's constant, and it lies in
 `(1, 3 / 2)`.
 
@@ -44,8 +45,11 @@ then gives `li' x = (log x)⁻¹` on `(0, 1)` and on `(1, ∞)`. Hence `li` is a
 
 * `TauCeti.Real.li`: the unoffset logarithmic integral, with defining equation `li_def`.
 * `TauCeti.Real.liSeries`: its entire part `∑_{n ≥ 1} yⁿ / (n · n!)`, with
-  `TauCeti.Real.li_eq_add_liSeries`, the summability `TauCeti.Real.summable_liSeries` and the
-  partial-sum lower bound `TauCeti.Real.sum_range_le_liSeries` for `y ≥ 0`.
+  `TauCeti.Real.li_eq_add_liSeries`, the summability `TauCeti.Real.summable_liSeries`, the
+  partial-sum lower bound `TauCeti.Real.sum_range_le_liSeries` for `y ≥ 0`, and the derivative
+  `TauCeti.Real.hasDerivAt_liSeries`, which is `(e^y - 1) / y` for `y ≠ 0`
+  (`TauCeti.Real.hasDerivAt_liSeries_of_ne_zero`) and `1` at `0`
+  (`TauCeti.Real.hasDerivAt_liSeries_zero`).
 * `TauCeti.Real.hasDerivAt_li`: `li' x = (log x)⁻¹` for `0 < x ≠ 1`.
 * `TauCeti.Real.integral_inv_log_eq_li_sub_li`,
   `TauCeti.Real.integral_inv_log_eq_li_sub_li_of_lt_one`: `∫ t in a..b, (log t)⁻¹ = li b - li a`
@@ -55,7 +59,6 @@ then gives `li' x = (log x)⁻¹` on `(0, 1)` and on `(1, ∞)`. Hence `li` is a
   `(1, ∞)` and on `(0, 1)`.
 * `TauCeti.Real.tendsto_li_nhdsNE_one`, `TauCeti.Real.tendsto_li_atTop`: `li x → -∞` as `x → 1`,
   and `li x → +∞` as `x → ∞`.
-* `TauCeti.Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `TauCeti.Real.li_pos`: `0 < li x` for every `x ≥ 3 / 2`.
 * `TauCeti.Real.existsUnique_li_eq_zero`: `li` has exactly one zero in `(1, ∞)`, Soldner's
   constant, and `TauCeti.Real.lt_three_halves_of_li_eq_zero` locates it below `3 / 2`.
@@ -115,7 +118,7 @@ theorem summable_liSeries (y : ℝ) :
   exact div_le_div_of_nonneg_left (by positivity) hf (le_mul_of_one_le_left hf.le (by simp))
 
 /-- The termwise derivative `∑_{n ≥ 0} yⁿ / (n + 1)!` of `liSeries`. -/
-private theorem hasDerivAt_liSeries (y : ℝ) :
+theorem hasDerivAt_liSeries (y : ℝ) :
     HasDerivAt liSeries (∑' n : ℕ, y ^ n / ((n + 1)! : ℝ)) y := by
   set R : ℝ := |y| + 1
   have hR : 0 < R := by positivity
@@ -134,6 +137,17 @@ private theorem hasDerivAt_liSeries (y : ℝ) :
     rw [norm_div, norm_pow, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
     exact div_le_div₀ (by positivity) (pow_le_pow_left₀ (abs_nonneg z) hz' n) hf
       (mod_cast Nat.factorial_le n.le_succ)
+
+/-- For `y ≠ 0`, the derivative of `liSeries` at `y` is `(e^y - 1) / y`. -/
+theorem hasDerivAt_liSeries_of_ne_zero {y : ℝ} (hy : y ≠ 0) :
+    HasDerivAt liSeries ((exp y - 1) / y) y := by
+  simpa [Real.tsum_pow_div_factorial_succ hy] using hasDerivAt_liSeries y
+
+/-- The derivative of `liSeries` at `0` is `1`. -/
+theorem hasDerivAt_liSeries_zero : HasDerivAt liSeries 1 0 := by
+  convert hasDerivAt_liSeries 0 using 1
+  rw [tsum_eq_single 0 fun n hn ↦ by simp [hn]]
+  simp
 
 /-- The series `liSeries` is continuous. -/
 theorem continuous_liSeries : Continuous liSeries :=
@@ -157,8 +171,8 @@ theorem hasDerivAt_li {x : ℝ} (hx : 0 < x) (hx1 : x ≠ 1) :
   have hl : log x ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hx hx1
   have hlog := Real.hasDerivAt_log hx.ne'
   have h := ((hlog.log hl).const_add eulerMascheroniConstant).add
-    ((hasDerivAt_liSeries (log x)).comp x hlog)
-  rw [Real.tsum_pow_div_factorial_succ hl, Real.exp_log hx] at h
+    ((hasDerivAt_liSeries_of_ne_zero hl).comp x hlog)
+  rw [Real.exp_log hx] at h
   convert h using 1
   · ext y
     exact li_eq_add_liSeries y
@@ -257,22 +271,12 @@ theorem tendsto_li_atTop : Tendsto li atTop atTop := by
 
 /-! ### Positivity and Soldner's constant -/
 
-/-- `2 / 5 < log (3 / 2)`, from `e² < (3 / 2) ^ 5`. -/
-theorem two_fifths_lt_log_three_halves : (2 / 5 : ℝ) < log (3 / 2) := by
-  rw [Real.lt_log_iff_exp_lt (by norm_num)]
-  refine (pow_lt_pow_iff_left₀ (exp_pos _).le (by norm_num) (by norm_num : (5 : ℕ) ≠ 0)).1 ?_
-  rw [← Real.exp_natCast_mul, show ((5 : ℕ) : ℝ) * (2 / 5) = (2 : ℕ) * 1 by norm_num,
-    Real.exp_natCast_mul]
-  have h := Real.exp_one_lt_d9
-  have h0 := (exp_pos 1).le
-  nlinarith
-
 /-- `li (3 / 2) > 0`: with `y = log (3 / 2) > 2 / 5`, the bounds `γ > 1 / 2` and
 `liSeries y ≥ y + y² / 4` reduce it to `1 < y e^(1 / 2 + y + y² / 4)`, and
 `e^(47 / 50) > 5 / 2` by the first four terms of the exponential series. -/
 private theorem li_three_halves_pos : 0 < li (3 / 2) := by
   set y := log (3 / 2) with hy_def
-  have hy := two_fifths_lt_log_three_halves
+  have hy := Real.two_fifths_lt_log_three_halves
   rw [← hy_def] at hy
   have hy0 : 0 < y := by linarith
   have hs := sum_range_le_liSeries hy0.le 2
