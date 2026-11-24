@@ -63,8 +63,8 @@ lets them pass to the completion `lim R[q] / (P_N)`.
 * `TauCeti.X_pow_sub_one_pow_dvd_factorialPoly`, `TauCeti.factorialPoly_dvd_X_pow_sub_one_pow`:
   `(X ^ m - 1) ^ k ∣ P_N` for `0 < m` and `m k ≤ N`, and `P_N ∣ (X ^ m - 1) ^ N` when every
   `1 ≤ i ≤ N` divides `m`.
-* `TauCeti.cyclotomic_pow_dvd_factorialPoly_iff`: over a ring of characteristic zero,
-  `Φ_d ^ k ∣ P_N ↔ d k ≤ N`.
+* `TauCeti.cyclotomic_pow_dvd_factorialPoly_iff`, `TauCeti.cyclotomic_dvd_factorialPoly_iff`:
+  over a ring of characteristic zero, `Φ_d ^ k ∣ P_N ↔ d k ≤ N` and `Φ_d ∣ P_N ↔ d ≤ N`.
 * `TauCeti.eventually_dvd_factorialIndex`: every index of the full completion divides
   `(-1) ^ N P_N` for all large `N`.
 * `Polynomial.sum_factorialDigit_mul_add_mul_factorialResidual`: the finite factorial expansion
@@ -345,6 +345,14 @@ theorem cyclotomic_pow_dvd_factorialPoly_iff {d k N : ℕ} :
   · simp
   rw [cyclotomic_pow_dvd_factorialPoly_iff_int, ← cyclotomic_pow_dvd_factorialPoly_iff_int ℚ,
     cyclotomic_pow_dvd_factorialPoly_rat_iff hd]
+
+/-- In characteristic zero `Φ_d ∣ P_N` if and only if `d ≤ N`. This is the case `k = 1` of
+`cyclotomic_pow_dvd_factorialPoly_iff`, stated separately since `simp` rewrites `Φ_d ^ 1` to
+`Φ_d`. -/
+@[simp]
+theorem cyclotomic_dvd_factorialPoly_iff {d N : ℕ} :
+    cyclotomic d R ∣ factorialPoly R N ↔ d ≤ N := by
+  simpa using cyclotomic_pow_dvd_factorialPoly_iff (R := R) (d := d) (k := 1) (N := N)
 
 end CharZero
 
