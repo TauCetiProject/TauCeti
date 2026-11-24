@@ -221,6 +221,20 @@ private theorem convex_setOf_exists_weights (P Q : ι → Prop) [DecidablePred P
     nlinarith [mul_le_mul_of_nonneg_left hlo hθ, mul_le_mul_of_nonneg_left hhi hθ,
       mul_le_mul_of_nonneg_left hlo' hθ', mul_le_mul_of_nonneg_left hhi' hθ']
 
+omit [LinearOrder ι] in
+/-- A point `(v i, t)` over a base vertex lies in the convex set of
+`convex_setOf_exists_weights`, with the weights `Pi.single i 1`, when its height lies between the
+two graphs that `P i` and `Q i` select. -/
+private theorem exists_weights_single (P Q : ι → Prop) [DecidablePred P]
+    [DecidablePred Q] (i : ι) {t : ℝ} (hP : P i → b (v i) ≤ t) (hP' : ¬ P i → a (v i) ≤ t)
+    (hQ : Q i → t ≤ b (v i)) (hQ' : ¬ Q i → t ≤ a (v i)) :
+    ∃ w : ι → ℝ, (∀ j, 0 ≤ w j) ∧ ∑ j, w j = 1 ∧ ∑ j, w j • v j = v i ∧
+      ∑ j with P j, w j * (b (v j) - a (v j)) ≤ t - ∑ j, w j * a (v j) ∧
+      t - ∑ j, w j * a (v j) ≤ ∑ j with Q j, w j * (b (v j) - a (v j)) := by
+  classical
+  refine ⟨Pi.single i 1, Pi.single_nonneg.2 zero_le_one, by simp, by simp, ?_, ?_⟩ <;>
+    by_cases P i <;> by_cases Q i <;> simp [Pi.single_apply, *]
+
 /-- A point over `∑ i, w i • v i`, for barycentric weights `w`, whose excess
 `p.2 - ∑ i, w i * a (v i)` over the lower boundary lies between the sums of the weighted height
 differences `w i * (b (v i) - a (v i))` over `k < i` and over `k ≤ i`, lies in the `k`-th staircase
@@ -262,12 +276,10 @@ theorem mem_convexHull_staircaseSimplex_iff (hab : ∀ i, a (v i) ≤ b (v i)) {
   refine ⟨fun hp ↦ convexHull_min (fun q hq ↦ ?_) (convex_setOf_exists_weights _ _) hp,
     fun ⟨w, hw0, hw1, hwv, hlo, hhi⟩ ↦ mem_convexHull_staircaseSimplex hw0 hw1 hwv hlo hhi⟩
   rcases mem_staircaseSimplex.1 hq with ⟨i, hik, rfl⟩ | ⟨i, hki, rfl⟩
-  · refine ⟨Pi.single i 1, fun j ↦ ?_, ?_, ?_, ?_, ?_⟩ <;>
-      simp [Pi.single_apply, not_lt.2 hik]
-    all_goals split_ifs <;> linarith [hab i]
-  · refine ⟨Pi.single i 1, fun j ↦ ?_, ?_, ?_, ?_, ?_⟩ <;>
-      simp [Pi.single_apply, hki]
-    all_goals split_ifs <;> linarith [hab i]
+  · exact exists_weights_single _ _ i (fun h ↦ absurd hik (not_le.2 h))
+      (fun _ ↦ le_rfl) (fun _ ↦ hab i) fun _ ↦ le_rfl
+  · exact exists_weights_single _ _ i (fun _ ↦ le_rfl) (fun _ ↦ hab i)
+      (fun _ ↦ le_rfl) (absurd hki)
 
 /-- **The staircase simplices cover the band.** A point over `∑ i, w i • v i`, for barycentric
 weights `w`, whose excess `p.2 - ∑ i, w i * a (v i)` over the lower boundary lies between `0` and
@@ -512,18 +524,13 @@ theorem space_staircaseComplex (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v
     exacts [.inl (Set.mem_graphOn.2 ⟨⟨i, rfl⟩, rfl⟩), .inr (Set.mem_graphOn.2 ⟨⟨i, rfl⟩, rfl⟩)]
   · intro hp
     -- the band consists of the points with excess between `0` and the weighted height difference
-    have hgraph : (range v).graphOn a ∪ (range v).graphOn b ⊆ {p : E × ℝ | ∃ w : ι → ℝ,
-        (∀ i, 0 ≤ w i) ∧ ∑ i, w i = 1 ∧ ∑ i, w i • v i = p.1 ∧
-        ∑ i with False, w i * (b (v i) - a (v i)) ≤ p.2 - ∑ i, w i * a (v i) ∧
-        p.2 - ∑ i, w i * a (v i) ≤ ∑ i with True, w i * (b (v i) - a (v i))} := by
-      rintro ⟨x, t⟩ hq
-      rcases hq with hq | hq <;> simp only [Set.mem_graphOn] at hq <;>
-        obtain ⟨⟨i, rfl⟩, rfl⟩ := hq <;>
-        exact ⟨Pi.single i 1, fun j ↦ by simp [Pi.single_apply]; split_ifs <;> norm_num,
-          by simp, by simp [Pi.single_apply], by simp [Pi.single_apply, hab i],
-          by simp [Pi.single_apply, hab i]⟩
-    obtain ⟨w, hw0, hw1, hwv, hlo, hhi⟩ :=
-      convexHull_min hgraph (convex_setOf_exists_weights _ _) hp
+    obtain ⟨w, hw0, hw1, hwv, hlo, hhi⟩ := convexHull_min (fun q hq ↦ by
+        rcases hq with ⟨_, ⟨i, rfl⟩, rfl⟩ | ⟨_, ⟨i, rfl⟩, rfl⟩
+        · exact exists_weights_single _ _ i False.elim (fun _ ↦ le_rfl)
+            (fun _ ↦ hab i) (absurd trivial)
+        · exact exists_weights_single _ _ i False.elim (fun _ ↦ hab i)
+            (fun _ ↦ le_rfl) (absurd trivial))
+      (convex_setOf_exists_weights (v := v) (a := a) (b := b) (fun _ ↦ False) fun _ ↦ True) hp
     simp only [filter_false, sum_empty, filter_true] at hlo hhi
     obtain ⟨k, hk⟩ := exists_mem_convexHull_staircaseSimplex hw0 hw1 hwv hlo hhi
     exact ⟨_, staircaseSimplex_mem_staircaseComplex_faces hv hab k, hk⟩
