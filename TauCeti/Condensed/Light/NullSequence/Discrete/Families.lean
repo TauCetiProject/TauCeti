@@ -5,7 +5,7 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Condensed.Light.NullSequence.Discrete
+public import TauCeti.Condensed.Light.NullSequence.Discrete.Basic
 public import Mathlib.Condensed.Light.Monoidal
 public import TauCeti.Data.Finsupp.Difference
 
@@ -31,25 +31,21 @@ namespace ModuleCat
 
 variable {R : Type u} [CommRing R]
 
-local instance (S : LightProfinite.{u}) :
-    (tensorLeft ((LightCondensed.free R).obj S.toCondensed)).Additive :=
-  preservesFiniteColimits_le_additiveFunctor _ _ _ ⟨inferInstance⟩
-
 private noncomputable def nullSeqDiscreteHomEquiv (M : ModuleCat.{u} R)
     (S : LightProfinite.{u}) :
     (nullSeq R ⟶ ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M)) ≃+
     (nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj
       (ModuleCat.of R (LocallyConstant S M))) :=
-  (Linear.homCongr ℤ (Iso.refl _) (internalHomDiscreteIso M S)).toAddEquiv
+  (Linear.homCongr ℤ (Iso.refl _) (lightCondFreeInternalHomDiscreteIso M S)).toAddEquiv
 
 private lemma nullSeqDiscreteHomEquiv_apply (M : ModuleCat.{u} R)
     (S : LightProfinite.{u})
     (g : nullSeq R ⟶ ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M)) :
-    nullSeqDiscreteHomEquiv M S g = g ≫ (internalHomDiscreteIso M S).hom := by
+    nullSeqDiscreteHomEquiv M S g = g ≫ (lightCondFreeInternalHomDiscreteIso M S).hom := by
   calc
-    _ = Linear.homCongr ℤ (Iso.refl _) (internalHomDiscreteIso M S) g := by rfl
+    _ = Linear.homCongr ℤ (Iso.refl _) (lightCondFreeInternalHomDiscreteIso M S) g := by rfl
     _ = _ := by rw [Linear.homCongr_apply, Iso.refl_inv, Category.id_comp]
 
 private lemma nullSeqDiscreteHomEquiv_shift (M : ModuleCat.{u} R)
@@ -76,7 +72,7 @@ lemma nullSeqDiscreteTensorHomEquivFinsupp_apply (M : ModuleCat.{u} R)
     (g : nullSeq R ⊗ (LightCondensed.free R).obj S.toCondensed ⟶
       (LightCondMod.LocallyConstant.functor R).obj M) (n : ℕ) (x : S) :
     nullSeqDiscreteTensorHomEquivFinsupp M S g n x =
-      sectionsEquiv M (S ⊗ liftedSequence.{u})
+      lightLocallyConstantSectionsEquiv M (S ⊗ liftedSequence.{u})
         ((S ⊗ liftedSequence.{u}).freeModuleHomEquiv
           ((Functor.Monoidal.μIso (lightProfiniteToLightCondSet ⋙ LightCondensed.free R)
               S liftedSequence.{u}).inv ≫
@@ -88,9 +84,10 @@ lemma nullSeqDiscreteTensorHomEquivFinsupp_apply (M : ModuleCat.{u} R)
   rw [ModuleCat.nullSeqHomEquivFinsupp_apply, nullSeqDiscreteHomEquiv_apply,
     reducedLightFreeHomEquiv_postcomp_val]
   -- The reduced free section is indexed by the pointed test object's underlying space.
-  erw [internalHomDiscreteIso_hom_app_apply M S liftedSequence]
-  rw [internalHomSectionsEquiv_apply, internalHomProductEquiv_apply,
+  erw [lightCondFreeInternalHomDiscreteIso_hom_app_apply M S liftedSequence]
+  rw [lightCondFreeInternalHomSectionsEquiv_apply, lightCondFreeInternalHomProductEquiv_apply,
     reducedLightFreeHomEquiv_apply_val]
+  -- Currying gives the section on the underlying space of the pointed test object.
   erw [AddEquiv.symm_apply_apply liftedSequence.freeModuleHomEquiv]
   rw [MonoidalClosed.uncurry_natural_left, tensorSwapCurryEquiv_apply,
     MonoidalClosed.uncurry_curry]

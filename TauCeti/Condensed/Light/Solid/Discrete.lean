@@ -5,7 +5,7 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Condensed.Light.NullSequence.DiscreteFamilies
+public import TauCeti.Condensed.Light.NullSequence.Discrete.Families
 public import TauCeti.Condensed.Light.Solid.Basic
 
 /-!

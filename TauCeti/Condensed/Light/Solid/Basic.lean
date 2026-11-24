@@ -8,6 +8,8 @@ module
 public import TauCeti.Condensed.Light.NullSequence.Basic
 public import TauCeti.Condensed.Light.InternalHom.Basic
 
+import TauCeti.Condensed.Light.Basic
+
 /-!
 # Light solid modules
 
@@ -41,17 +43,6 @@ noncomputable def lightSolidDifference (M : LightCondMod R) :
 /-- The characteristic equation of the internal null-sequence difference. -/
 lemma lightSolidDifference_def (M : LightCondMod R) :
     lightSolidDifference M = 𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M := by rfl
-
-/-- Evaluating a difference of light condensed module maps subtracts their evaluations. -/
-private lemma hom_app_sub_apply {R : Type u} [Ring R] {M N : LightCondMod R} (f g : M ⟶ N)
-    (S : LightProfinite.{u})
-    (s : M.obj.obj (Opposite.op S)) :
-    (f - g).hom.app (Opposite.op S) s =
-      f.hom.app (Opposite.op S) s - g.hom.app (Opposite.op S) s := by
-  have h := (sheafToPresheaf (coherentTopology LightProfinite.{u}) (ModuleCat R) ⋙
-    (evaluation _ _).obj (Opposite.op S)).map_sub (f := f) (g := g)
-  simpa only [Functor.comp_map, evaluation_obj_map, ObjectProperty.ι_map,
-    ModuleCat.hom_sub, LinearMap.sub_apply] using congrArg (fun h => h.hom s) h
 
 /-- On sections, the internal null-sequence difference subtracts the precomposition map. -/
 @[simp]

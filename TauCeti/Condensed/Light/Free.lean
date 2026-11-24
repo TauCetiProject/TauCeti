@@ -35,6 +35,16 @@ noncomputable def freeModuleHomEquiv (S : LightProfinite.{u}) :
   (ModuleCat.adj R).freeYonedaSectionsAddEquiv
     (A := forget₂ (ModuleCat R) AddCommGrpCat) (coherentTopology LightProfinite) S M
 
+/-- The underlying natural transformation of the free-forgetful adjunction is the
+coefficient adjunction after the sheafification adjunction. -/
+private lemma freeForgetAdjunction_homEquiv_hom (S : LightProfinite.{u})
+    (g : (free R).obj S.toCondensed ⟶ M) :
+    ((freeForgetAdjunction R).homEquiv _ _ g).hom =
+      ((ModuleCat.adj R).whiskerRight LightProfiniteᵒᵖ).homEquiv _ _
+        ((sheafificationAdjunction (coherentTopology LightProfinite)
+          (ModuleCat R)).homEquiv _ _ g) := by
+  rfl
+
 /-- The free-section comparison agrees with the free-forgetful adjunction and sheaf Yoneda. -/
 lemma freeModuleHomEquiv_apply (S : LightProfinite.{u})
     (g : (free R).obj S.toCondensed ⟶ M) :
@@ -44,12 +54,11 @@ lemma freeModuleHomEquiv_apply (S : LightProfinite.{u})
     (coherentTopology LightProfinite) S M g
   · exact (ModuleCat.adj R).freeYonedaSectionsAddEquiv_apply
       (A := forget₂ (ModuleCat R) AddCommGrpCat) _ S M g
+  -- Free on the Yoneda sheaf is definitionally sheafification of the free representable.
   erw [Adjunction.freeYonedaSectionsEquiv_apply]
-  simp [freeForgetAdjunction, Sheaf.adjunction, Adjunction.restrictFullyFaithful,
-    GrothendieckTopology.yonedaEquiv, Adjunction.homEquiv, Adjunction.mkOfHomEquiv,
-    Functor.FullyFaithful.homEquiv]
-  -- The sheaf inclusion sends composition to composition of underlying natural transformations.
-  rfl
+  rw [GrothendieckTopology.yonedaEquiv_apply, yonedaEquiv_apply]
+  exact congrArg (fun f => f.app (Opposite.op S) (𝟙 S))
+    (freeForgetAdjunction_homEquiv_hom S g).symm
 
 /-- Precomposing with the free map induced by `f : S ⟶ T` restricts a section on `T`
 to `S` along `f`. -/
