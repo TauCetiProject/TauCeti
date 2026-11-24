@@ -61,8 +61,7 @@ components of `Jᶜ`.
   is a Jordan curve is the inside of the curve, hence connected.
 * `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two` — **the Jordan curve theorem**:
   the complement of a Jordan curve in the plane has exactly two connected components.
-* `TauCeti.sdiff_biUnion_closure_filledHull_sdiff`,
-  `TauCeti.IsJordanCurve.closure_filledHull_sdiff_biUnion`, and
+* `TauCeti.IsJordanCurve.closure_filledHull_sdiff_biUnion` and
   `TauCeti.IsJordanCurve.frontier_filledHull_sdiff_biUnion` — closure and frontier of a finitely
   connected Jordan region `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)`.
 
@@ -292,14 +291,6 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
 section JordanRegionTopology
 
 variable {ι : Type*} {C₀ : Set ℂ} {s : Finset ι} {C : ι → Set ℂ}
-
-/-- Since `closure (filledHull (C i) \ C i) = filledHull (C i)` for each Jordan curve `C i`,
-deleting the closures of the hole insides is the same as deleting their filled hulls. -/
-theorem sdiff_biUnion_closure_filledHull_sdiff (C₀ : Set ℂ)
-    (hC : ∀ i ∈ s, IsJordanCurve (C i)) :
-    (filledHull C₀ \ C₀) \ (⋃ i ∈ s, closure (filledHull (C i) \ C i)) =
-      (filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i) :=
-  congrArg _ (iUnion₂_congr fun i hi ↦ (hC i hi).closure_filledHull_sdiff)
 
 /-- For a Jordan curve `C₀` and finitely many Jordan curves `C i` (`i ∈ s`) whose filled hulls are
 pairwise disjoint and contained in the inside `filledHull C₀ \ C₀`, the closure of
