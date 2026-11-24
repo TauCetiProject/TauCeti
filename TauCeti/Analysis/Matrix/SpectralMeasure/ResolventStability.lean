@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Analysis.Matrix.Resolvent.Stability
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
+public import TauCeti.Analysis.Matrix.HoffmanWielandt
+public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
+public import TauCeti.Analysis.Matrix.Resolvent.RankBound
+import TauCeti.Analysis.Matrix.MeasurableSpace
 
 /-!
 # Stability of spectral-measure resolvent transforms
@@ -14,11 +18,15 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 The resolvent transform of a Hermitian matrix's empirical spectral measure is its normalized
 resolvent trace. Its variation in both the matrix and the spectral parameter is bounded by the
 corresponding operator-norm resolvent estimate, uniformly in the matrix dimension.
+At a fixed parameter, the normalized Frobenius error gives a second bound. Splitting a
+perturbation into a low-rank part and a Frobenius-small remainder combines both controls.
 
 ## Main results
 
 * `Matrix.norm_resolventTransform_spectralMeasure_sub_le`: a joint stability estimate.
 * `Matrix.norm_resolventTransform_spectralMeasure_sub_le_matrix`: fixed-parameter stability.
+* `Matrix.norm_resolventTransform_spectralMeasure_sub_le_frobenius`: a normalized Frobenius bound.
+* `Matrix.norm_resolventTransform_spectralMeasure_sub_le_rank_add_frobenius`: the mixed bound.
 -/
 
 public section
@@ -31,6 +39,34 @@ open scoped Matrix.Norms.L2Operator
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+
+/-- At a nonreal parameter, the spectral resolvent transform of an a.e.-measurable
+Hermitian matrix family is a.e. measurable. -/
+theorem _root_.AEMeasurable.resolventTransform_spectralMeasure {Ω : Type*}
+    [MeasurableSpace Ω] {P : Measure Ω} {A : Ω → Matrix n n ℂ}
+    (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    AEMeasurable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)
+      P := by
+  have ht : Measurable (fun B : Matrix n n ℂ ↦ (Fintype.card n : ℂ)⁻¹ *
+      ((B - z • 1)⁻¹).trace) := by
+    simp only [Matrix.trace, Matrix.diag]
+    fun_prop
+  simp_rw [fun ω ↦ Matrix.resolventTransform_spectralMeasure (A ω) (hHerm ω)
+    ((hHerm ω).notMem_spectrum_of_im_ne_zero hz)]
+  exact ht.comp_aemeasurable hA
+
+/-- The spectral resolvent transform of an a.e.-measurable Hermitian matrix family is
+integrable over a finite measure at any nonreal parameter. -/
+theorem _root_.AEMeasurable.integrable_resolventTransform_spectralMeasure {Ω : Type*}
+    [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {A : Ω → Matrix n n ℂ}
+    (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)
+      P := by
+  refine Integrable.of_bound (hA.resolventTransform_spectralMeasure hHerm hz).aestronglyMeasurable
+    |z.im|⁻¹ (.of_forall fun ω ↦ ?_)
+  simpa only [probReal_univ, mul_one] using
+    norm_resolventTransform_le (μ := ((A ω).spectralMeasure (hHerm ω) : Measure ℝ)) hz
 
 /-- Quantitative stability of the resolvent transforms of two Hermitian spectral measures. -/
 theorem norm_resolventTransform_spectralMeasure_sub_le
@@ -53,5 +89,43 @@ theorem norm_resolventTransform_spectralMeasure_sub_le_matrix
       resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ ≤
         |z.im|⁻¹ * ‖B - A‖ * |z.im|⁻¹ := by
   simpa using norm_resolventTransform_spectralMeasure_sub_le hA hB hz hz
+
+open scoped Matrix.Norms.Frobenius in
+/-- At a fixed nonreal parameter, the transform error is bounded by the Frobenius error
+divided by the square root of the dimension and by `|Im z|²`. -/
+theorem norm_resolventTransform_spectralMeasure_sub_le_frobenius
+    {𝕜 : Type*} [RCLike 𝕜] {A B : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (hB : B.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    ‖resolventTransform (A.spectralMeasure hA : Measure ℝ) z -
+      resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ ≤
+        |z.im|⁻¹ ^ 2 * ‖A - B‖ / Real.sqrt (Fintype.card n) := by
+  simpa only [resolventTransform_apply, NNReal.coe_pow, NNReal.coe_inv, coe_nnNorm,
+    Real.norm_eq_abs] using norm_integral_spectralMeasure_sub_integral_spectralMeasure_le
+      hA hB (Complex.lipschitzWith_resolvent_real hz)
+
+open scoped Matrix.Norms.Frobenius in
+/-- Splitting a Hermitian perturbation into a low-rank part `P` and a small Frobenius remainder
+controls its spectral-transform error without controlling the norm of `P`. -/
+theorem norm_resolventTransform_spectralMeasure_sub_le_rank_add_frobenius
+    {A B P : Matrix n n ℂ} (hA : A.IsHermitian) (hB : B.IsHermitian)
+    (hP : P.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    ‖resolventTransform (A.spectralMeasure hA : Measure ℝ) z -
+      resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ ≤
+      (P.rank : ℝ) / ((Fintype.card n : ℝ) * |z.im|) +
+        |z.im|⁻¹ ^ 2 * ‖A - B - P‖ / Real.sqrt (Fintype.card n) := by
+  calc
+    _ ≤ ‖resolventTransform ((B + P).spectralMeasure (hB.add hP) : Measure ℝ) z -
+          resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ +
+        ‖resolventTransform (A.spectralMeasure hA : Measure ℝ) z -
+          resolventTransform ((B + P).spectralMeasure (hB.add hP) : Measure ℝ) z‖ := by
+      simpa only [add_comm] using norm_sub_le_norm_sub_add_norm_sub
+        (resolventTransform (A.spectralMeasure hA : Measure ℝ) z)
+        (resolventTransform ((B + P).spectralMeasure (hB.add hP) : Measure ℝ) z)
+        (resolventTransform (B.spectralMeasure hB : Measure ℝ) z)
+    _ ≤ _ := add_le_add
+      (by simpa only [add_sub_cancel_left] using
+        (hB.add hP).norm_resolventTransform_spectralMeasure_sub_le_rank hB hz)
+      (by simpa only [sub_add_eq_sub_sub] using
+        norm_resolventTransform_spectralMeasure_sub_le_frobenius hA (hB.add hP) hz)
 
 end Matrix

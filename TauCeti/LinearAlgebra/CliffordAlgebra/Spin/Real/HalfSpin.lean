@@ -87,8 +87,8 @@ private theorem halfSpinRep_realSpinGroupEquiv_eq_quaternionProdAction (ε : ℂ
     (s : spinGroup (realCliffordForm 4 0)) :
     halfSpinRep o ρ ε (b.realSpinGroupEquiv hQ s) =
       quaternionProdAction o hQ b ρ ε
-        ((realSpinFourEquivQuaternionUnitaryProd s).1,
-          (realSpinFourEquivQuaternionUnitaryProd s).2) := by
+        ((realSpinFourEquivQuaternionUnitaryProd s).fst,
+          (realSpinFourEquivQuaternionUnitaryProd s).snd) := by
   rw [coe_realSpinFourEquivQuaternionUnitaryProd_apply,
     evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply, halfSpinRep_apply,
     OrthonormalBasis.spinGroupToEven_realSpinGroupEquiv]
@@ -105,7 +105,7 @@ private theorem quaternionProdAction_neg_one_one (hb : b.toBasis.orientation = o
       chirality_eq o hQ b hb]
     simp [coe_even_ι_bilin, mul_assoc]
   simp only [quaternionProdAction, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    coe_evenHalfSpinAction_apply, ← hchir, mem_eigenspace_iff.1 ψ.2]
+    coe_evenHalfSpinAction_apply, ← hchir, mem_eigenspace_iff.mp ψ.property]
   simp [Algebra.algebraMap_eq_smul_one]
 
 include hQ in
@@ -163,14 +163,14 @@ include hQ in
 theorem halfSpinRep_one_realSpinGroupEquiv_eq (hb : b.toBasis.orientation = o)
     (s : spinGroup (realCliffordForm 4 0)) :
     halfSpinRep o ρ 1 (b.realSpinGroupEquiv hQ s) =
-      positiveQuaternionAction o hQ b ρ hb (realSpinFourEquivQuaternionUnitaryProd s).2 := by
+      positiveQuaternionAction o hQ b ρ hb (realSpinFourEquivQuaternionUnitaryProd s).snd := by
   let φ := (quaternionProdAction o hQ b ρ 1).comp
     ((AlgHom.snd ℝ ℍ[ℝ] ℍ[ℝ]).prod (AlgHom.fst ℝ ℍ[ℝ] ℍ[ℝ]))
   have hφ : φ (1, 0) = 1 := by simpa [φ] using quaternionProdAction_zero_one o hQ b ρ hb
   rw [halfSpinRep_realSpinGroupEquiv_eq_quaternionProdAction, positiveQuaternionAction,
     AlgHom.prodFirst_apply, ← AlgHom.map_eq_map_fst φ hφ
-      ((realSpinFourEquivQuaternionUnitaryProd s).2,
-        (realSpinFourEquivQuaternionUnitaryProd s).1)]
+      ((realSpinFourEquivQuaternionUnitaryProd s).snd,
+        (realSpinFourEquivQuaternionUnitaryProd s).fst)]
   rfl
 
 include hQ in
@@ -179,13 +179,13 @@ include hQ in
 theorem halfSpinRep_neg_one_realSpinGroupEquiv_eq (hb : b.toBasis.orientation = o)
     (s : spinGroup (realCliffordForm 4 0)) :
     halfSpinRep o ρ (-1) (b.realSpinGroupEquiv hQ s) =
-      negativeQuaternionAction o hQ b ρ hb (realSpinFourEquivQuaternionUnitaryProd s).1 := by
+      negativeQuaternionAction o hQ b ρ hb (realSpinFourEquivQuaternionUnitaryProd s).fst := by
   let φ := quaternionProdAction o hQ b ρ (-1)
   have hφ : φ (1, 0) = 1 := quaternionProdAction_one_zero o hQ b ρ hb
   rw [halfSpinRep_realSpinGroupEquiv_eq_quaternionProdAction, negativeQuaternionAction,
     AlgHom.prodFirst_apply, ← AlgHom.map_eq_map_fst φ hφ
-      ((realSpinFourEquivQuaternionUnitaryProd s).1,
-        (realSpinFourEquivQuaternionUnitaryProd s).2)]
+      ((realSpinFourEquivQuaternionUnitaryProd s).fst,
+        (realSpinFourEquivQuaternionUnitaryProd s).snd)]
 
 section Characters
 
@@ -195,7 +195,7 @@ on `W⁺` is `Re q₂ · dim_ℂ W⁺`, where `q₂` is the second unit quaterni
 theorem trace_halfSpinRep_one_realSpinGroupEquiv (hb : b.toBasis.orientation = o)
     (s : spinGroup (realCliffordForm 4 0)) :
     LinearMap.trace ℂ _ (halfSpinRep o ρ 1 (b.realSpinGroupEquiv hQ s)) =
-      (((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ]).re : ℂ) *
+      (((realSpinFourEquivQuaternionUnitaryProd s).snd : ℍ[ℝ]).re : ℂ) *
         finrank ℂ (eigenspace (ρ (chirality Q o)) 1) := by
   rw [halfSpinRep_one_realSpinGroupEquiv_eq o hQ b ρ hb, trace_quaternionAlgHom]
 
@@ -205,7 +205,7 @@ on `W⁻` is `Re q₁ · dim_ℂ W⁻`, where `q₁` is the first unit quaternio
 theorem trace_halfSpinRep_neg_one_realSpinGroupEquiv (hb : b.toBasis.orientation = o)
     (s : spinGroup (realCliffordForm 4 0)) :
     LinearMap.trace ℂ _ (halfSpinRep o ρ (-1) (b.realSpinGroupEquiv hQ s)) =
-      (((realSpinFourEquivQuaternionUnitaryProd s).1 : ℍ[ℝ]).re : ℂ) *
+      (((realSpinFourEquivQuaternionUnitaryProd s).fst : ℍ[ℝ]).re : ℂ) *
         finrank ℂ (eigenspace (ρ (chirality Q o)) (-1)) := by
   rw [halfSpinRep_neg_one_realSpinGroupEquiv_eq o hQ b ρ hb, trace_quaternionAlgHom]
 
@@ -216,9 +216,9 @@ theorem trace_halfSpinRep_one_realSpinGroupEquiv_specialUnitary (hb : b.toBasis.
     (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2)
     (s : spinGroup (realCliffordForm 4 0)) :
     LinearMap.trace ℂ _ (halfSpinRep o ρ 1 (b.realSpinGroupEquiv hQ s)) =
-      ((realSpinFourEquivSpecialUnitaryProd s).2 : Matrix (Fin 2) (Fin 2) ℂ).trace := by
-  have hsnd : ((realSpinFourEquivSpecialUnitaryProd s).2 : Matrix (Fin 2) (Fin 2) ℂ) =
-      Quaternion.toComplexMatrix (realSpinFourEquivQuaternionUnitaryProd s).2 :=
+      ((realSpinFourEquivSpecialUnitaryProd s).snd : Matrix (Fin 2) (Fin 2) ℂ).trace := by
+  have hsnd : ((realSpinFourEquivSpecialUnitaryProd s).snd : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix (realSpinFourEquivQuaternionUnitaryProd s).snd :=
     congrArg Prod.snd (coe_realSpinFourEquivSpecialUnitaryProd_apply s)
   rw [trace_halfSpinRep_one_realSpinGroupEquiv o hQ b ρ hb, h₂, hsnd,
     Quaternion.trace_toComplexMatrix]
@@ -232,9 +232,9 @@ theorem trace_halfSpinRep_neg_one_realSpinGroupEquiv_specialUnitary (hb : b.toBa
     (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2)
     (s : spinGroup (realCliffordForm 4 0)) :
     LinearMap.trace ℂ _ (halfSpinRep o ρ (-1) (b.realSpinGroupEquiv hQ s)) =
-      ((realSpinFourEquivSpecialUnitaryProd s).1 : Matrix (Fin 2) (Fin 2) ℂ).trace := by
-  have hfst : ((realSpinFourEquivSpecialUnitaryProd s).1 : Matrix (Fin 2) (Fin 2) ℂ) =
-      Quaternion.toComplexMatrix (realSpinFourEquivQuaternionUnitaryProd s).1 :=
+      ((realSpinFourEquivSpecialUnitaryProd s).fst : Matrix (Fin 2) (Fin 2) ℂ).trace := by
+  have hfst : ((realSpinFourEquivSpecialUnitaryProd s).fst : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix (realSpinFourEquivQuaternionUnitaryProd s).fst :=
     congrArg Prod.fst (coe_realSpinFourEquivSpecialUnitaryProd_apply s)
   rw [trace_halfSpinRep_neg_one_realSpinGroupEquiv o hQ b ρ hb,
     finrank_eigenspace_chirality_neg o ρ 1, h₂, hfst, Quaternion.trace_toComplexMatrix]
@@ -252,7 +252,8 @@ theorem trace_spinCGroupHalfSpinRep_one_realSpinCGroupHom (hb : b.toBasis.orient
     LinearMap.trace ℂ _
         (spinCGroupHalfSpinRep o ρ 1 hQ₀
           (b.realSpinCGroupHom hQ hpos hQ₀ (spinCGroup.mk _ hpos (s, z)))) =
-      (z : ℂ) * ((realSpinFourEquivSpecialUnitaryProd s).2 : Matrix (Fin 2) (Fin 2) ℂ).trace := by
+      (z : ℂ) *
+        ((realSpinFourEquivSpecialUnitaryProd s).snd : Matrix (Fin 2) (Fin 2) ℂ).trace := by
   rw [OrthonormalBasis.realSpinCGroupHom_mk, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply,
     map_smul, trace_halfSpinRep_one_realSpinGroupEquiv_specialUnitary o hQ b ρ hb h₂, smul_eq_mul]
 
@@ -267,7 +268,8 @@ theorem trace_spinCGroupHalfSpinRep_neg_one_realSpinCGroupHom (hb : b.toBasis.or
     LinearMap.trace ℂ _
         (spinCGroupHalfSpinRep o ρ (-1) hQ₀
           (b.realSpinCGroupHom hQ hpos hQ₀ (spinCGroup.mk _ hpos (s, z)))) =
-      (z : ℂ) * ((realSpinFourEquivSpecialUnitaryProd s).1 : Matrix (Fin 2) (Fin 2) ℂ).trace := by
+      (z : ℂ) *
+        ((realSpinFourEquivSpecialUnitaryProd s).fst : Matrix (Fin 2) (Fin 2) ℂ).trace := by
   rw [OrthonormalBasis.realSpinCGroupHom_mk, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply,
     map_smul, trace_halfSpinRep_neg_one_realSpinGroupEquiv_specialUnitary o hQ b ρ hb h₂,
     smul_eq_mul]
@@ -319,7 +321,7 @@ theorem adjoint_negativeQuaternionAction
 include hQ in
 /-- **Orthonormal half-spinor basis for `W⁺`**: on a Hermitian Clifford module of half-spin rank
 two, `W⁺` admits an orthonormal basis in which `halfSpinRep` at `b.realSpinGroupEquiv hQ s` has
-matrix equal to the **second** `SU(2)` factor `(realSpinFourEquivSpecialUnitaryProd s).2`. -/
+matrix equal to the **second** `SU(2)` factor `(realSpinFourEquivSpecialUnitaryProd s).snd`. -/
 theorem exists_orthonormalBasis_toMatrix_halfSpinRep_one
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (hb : b.toBasis.orientation = o)
@@ -327,7 +329,7 @@ theorem exists_orthonormalBasis_toMatrix_halfSpinRep_one
     ∃ c : OrthonormalBasis (Fin 2) ℂ (eigenspace (ρ (chirality Q o)) 1),
       ∀ s : spinGroup (realCliffordForm 4 0),
         LinearMap.toMatrix c.toBasis c.toBasis (halfSpinRep o ρ 1 (b.realSpinGroupEquiv hQ s)) =
-          ((realSpinFourEquivSpecialUnitaryProd s).2 : Matrix (Fin 2) (Fin 2) ℂ) := by
+          ((realSpinFourEquivSpecialUnitaryProd s).snd : Matrix (Fin 2) (Fin 2) ℂ) := by
   obtain ⟨c, hc⟩ := exists_orthonormalBasis_toMatrix_eq_toComplexMatrix h₂
     (positiveQuaternionAction o hQ b ρ hb) (adjoint_positiveQuaternionAction o hQ b hρ hb)
   refine ⟨c, fun s ↦ ?_⟩
@@ -337,7 +339,7 @@ theorem exists_orthonormalBasis_toMatrix_halfSpinRep_one
 include hQ in
 /-- **Orthonormal half-spinor basis for `W⁻`**: on a Hermitian Clifford module of half-spin rank
 two, `W⁻` admits an orthonormal basis in which `halfSpinRep` at `b.realSpinGroupEquiv hQ s` has
-matrix equal to the **first** `SU(2)` factor `(realSpinFourEquivSpecialUnitaryProd s).1`. -/
+matrix equal to the **first** `SU(2)` factor `(realSpinFourEquivSpecialUnitaryProd s).fst`. -/
 theorem exists_orthonormalBasis_toMatrix_halfSpinRep_neg_one
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (hb : b.toBasis.orientation = o)
@@ -345,7 +347,7 @@ theorem exists_orthonormalBasis_toMatrix_halfSpinRep_neg_one
     ∃ c : OrthonormalBasis (Fin 2) ℂ (eigenspace (ρ (chirality Q o)) (-1)),
       ∀ s : spinGroup (realCliffordForm 4 0),
         LinearMap.toMatrix c.toBasis c.toBasis (halfSpinRep o ρ (-1) (b.realSpinGroupEquiv hQ s)) =
-          ((realSpinFourEquivSpecialUnitaryProd s).1 : Matrix (Fin 2) (Fin 2) ℂ) := by
+          ((realSpinFourEquivSpecialUnitaryProd s).fst : Matrix (Fin 2) (Fin 2) ℂ) := by
   have h₂_neg : finrank ℂ (eigenspace (ρ (chirality Q o)) (-1)) = 2 := by
     rw [finrank_eigenspace_chirality_neg o ρ 1, h₂]
   obtain ⟨c, hc⟩ := exists_orthonormalBasis_toMatrix_eq_toComplexMatrix h₂_neg
@@ -372,9 +374,9 @@ include hQ in
 `re(w₁ w₂) + im(w₁ w₂) k` in the second factor (which acts on `W⁺`). -/
 theorem coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus (w₁ w₂ : Circle) :
     (((realSpinFourEquivQuaternionUnitaryProd
-        ((b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂)))).1 : ℍ[ℝ]),
+        ((b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂)))).fst : ℍ[ℝ]),
       ((realSpinFourEquivQuaternionUnitaryProd
-        ((b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂)))).2 : ℍ[ℝ])) =
+        ((b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂)))).snd : ℍ[ℝ])) =
       (⟨((w₁ * w₂⁻¹ : Circle) : ℂ).re, 0, 0, ((w₁ * w₂⁻¹ : Circle) : ℂ).im⟩,
         ⟨((w₁ * w₂ : Circle) : ℂ).re, 0, 0, ((w₁ * w₂ : Circle) : ℂ).im⟩) := by
   set s := (b.realSpinGroupEquiv hQ).symm (b.spinTorus hQ (w₁, w₂))
@@ -405,3 +407,5 @@ theorem coe_realSpinFourEquivQuaternionUnitaryProd_symm_spinTorus (w₁ w₂ : C
     simp [Circle.coe_mul, QuaternionAlgebra.mk_mul_mk, Algebra.algebraMap_eq_smul_one]
 
 end OrthonormalBasis
+
+end

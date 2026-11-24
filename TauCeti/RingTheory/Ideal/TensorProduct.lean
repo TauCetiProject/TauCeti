@@ -20,6 +20,9 @@ import TauCeti.RingTheory.Ideal.Operations
 The scalar multiplication equivalence `S ⊗[R] R ≃ₗ[S] S` identifies the base change of
 an ideal with its extension along `algebraMap R S`. This permits kernel computations
 on tensor products to be read as membership statements in extended ideals.
+A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
+injective scalar map (`Ideal.comap_map_includeRight_of_flat_quotient_of_injective`). In particular,
+a flat closed subscheme over a domain is the schematic closure of its generic fibre.
 The extension of a module annihilator is contained in its annihilator after arbitrary
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
@@ -65,6 +68,27 @@ theorem map_eq_baseChange_map_rid (I : Ideal R) :
   simp only [LinearEquiv.coe_coe, TensorProduct.mk_apply,
     AlgebraTensorModule.rid_tmul, Algebra.smul_def, mul_one]
   rfl
+
+/-- A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
+injective scalar map. The scalar extension need not be faithfully flat. -/
+theorem comap_map_includeRight_of_flat_quotient_of_injective {R A B : Type*} [CommRing R]
+    [Ring A] [Ring B] [Algebra R A] [Algebra R B] (I : Ideal B) [I.IsTwoSided]
+    [Module.Flat R (B ⧸ I)] (h : Function.Injective (algebraMap R A)) :
+    (I.map (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B)).comap
+      (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) = I := by
+  have hker := Algebra.TensorProduct.lTensor_ker (A := A) (Ideal.Quotient.mkₐ R I)
+    (Ideal.Quotient.mkₐ_surjective R I)
+  rw [← RingHom.ker_coe_toRingHom (Ideal.Quotient.mkₐ R I), Ideal.Quotient.mkₐ_ker] at hker
+  refine le_antisymm ?_ Ideal.le_comap_map
+  intro b hb
+  have hb' : Algebra.TensorProduct.map (AlgHom.id R A) (Ideal.Quotient.mkₐ R I)
+      (1 ⊗ₜ[R] b) = 0 := by
+    exact RingHom.mem_ker.mp (hker.ge hb)
+  have hzero : Ideal.Quotient.mk I b = 0 := by
+    apply Algebra.TensorProduct.includeRight_injective (B := B ⧸ I) h
+    simpa only [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.map_tmul,
+      AlgHom.id_apply, Ideal.Quotient.mkₐ_eq_mk, TensorProduct.tmul_zero] using hb'
+  exact Ideal.Quotient.eq_zero_iff_mem.mp hzero
 
 end Ideal
 
@@ -151,7 +175,7 @@ theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
   have h (t : Ideal.span {x} ⊗[R] M) : ∃ m, t = x' ⊗ₜ m := by
     induction t using TensorProduct.inductionOn with
     | tmul y m =>
-      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.2
+      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp y.property
       exact ⟨a • m, by rw [← smul_tmul]; congr 1; ext; simp [x', ← ha]⟩
     | add t u ht hu =>
       obtain ⟨m, rfl⟩ := ht
@@ -200,7 +224,7 @@ theorem liftBaseChange_idealMap_surjective :
     map_le_iff_le_comap.mpr fun a ha ↦
       ⟨⟨algebraMap R S a, mem_map_of_mem _ ha⟩, ⟨1 ⊗ₜ ⟨a, ha⟩, by ext; simp⟩, rfl⟩
   intro y
-  obtain ⟨z, hz, hzy⟩ := hle y.2
+  obtain ⟨z, hz, hzy⟩ := hle y.property
   obtain ⟨x, rfl⟩ := hz
   exact ⟨x, Subtype.ext hzy⟩
 

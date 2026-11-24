@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 
 /-!
 # The root datum of the special linear group relative to its diagonal torus
@@ -174,7 +174,7 @@ theorem diagonalRootDatum_toLinearMap (r : ℕ) :
 theorem diagonalRootDatum_root_apply (p : SplitTorus.CoordinateRootIndex (Fin (r + 1)))
     (i : ULift.{u} (Fin r)) :
     (diagonalRootDatum.{u} r).root p i =
-      diagonalTorusWeight r p.1.1 i - diagonalTorusWeight r p.1.2 i := by
+      diagonalTorusWeight r p.val.1 i - diagonalTorusWeight r p.val.2 i := by
   simp [diagonalRootDatum_root_eq, characterEquiv_apply, diagonalTorusWeight_apply,
     SlStd.weight_def]
 
@@ -186,7 +186,7 @@ theorem weightCharacter_diagonalTorusWeight_sub_eq_root_iff
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) (a b : Fin (r + 1)) :
     SplitTorus.weightCharacter (diagonalTorusWeight.{u} r a - diagonalTorusWeight r b) =
         Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) ↔
-      a = p.1.1 ∧ b = p.1.2 := by
+      a = p.val.1 ∧ b = p.val.2 := by
   constructor
   · intro h
     have hfun : diagonalTorusWeight.{u} r a - diagonalTorusWeight r b =
@@ -216,7 +216,8 @@ whose `i`-th simple-coroot coordinate is `[a ≤ i] - [b ≤ i]`. -/
 theorem diagonalRootDatum_coroot_apply (p : SplitTorus.CoordinateRootIndex (Fin (r + 1)))
     (i : ULift.{u} (Fin r)) :
     (diagonalRootDatum.{u} r).coroot p i =
-      (if p.1.1 ≤ i.down.castSucc then 1 else 0) - (if p.1.2 ≤ i.down.castSucc then 1 else 0) := by
+      (if p.val.1 ≤ i.down.castSucc then 1 else 0) - (if p.val.2 ≤ i.down.castSucc then 1 else 0)
+          := by
   rw [diagonalRootDatum_coroot_eq, cocharacterEquiv_apply, coroot_typeAIndexEquiv]
 
 /-- The pairing of `diagonalRootDatum` is the pinned type `A_r` pairing, read on ordered pairs. -/
@@ -232,8 +233,8 @@ private lemma diagonalRootDatum_pairing_eq (p q : SplitTorus.CoordinateRootIndex
 @[simp]
 theorem diagonalRootDatum_pairing_apply (p q : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).pairing p q =
-      (if p.1.1 = q.1.1 then 1 else 0) - (if p.1.1 = q.1.2 then 1 else 0) -
-        ((if p.1.2 = q.1.1 then 1 else 0) - (if p.1.2 = q.1.2 then 1 else 0)) := by
+      (if p.val.1 = q.val.1 then 1 else 0) - (if p.val.1 = q.val.2 then 1 else 0) -
+        ((if p.val.2 = q.val.1 then 1 else 0) - (if p.val.2 = q.val.2 then 1 else 0)) := by
   rw [diagonalRootDatum_pairing_eq, pairing_typeAIndexEquiv]
 
 /-- The root--coroot pairing of the diagonal root datum is symmetric. -/
@@ -252,7 +253,7 @@ the root indexed by `(c, d)` to the one indexed by `(s c, s d)`, where `s` is th
 @[simp]
 theorem diagonalRootDatum_reflectionPerm (p q : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootDatum.{u} r).reflectionPerm p q =
-      SplitTorus.coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q := by
+      SplitTorus.coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q := by
   apply Subtype.ext
   rw [SplitTorus.coordinatePermRootIndex_coe, ← typeAIndexEquiv_symm_reflectionPerm]
   simp [diagonalRootDatum, RootPairing.map]
@@ -291,10 +292,11 @@ theorem charOfPoint_ofAdd_diagonalRootDatum_root
     (t : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A)) :
     DiagonalizableGroup.charOfPoint t.ofConv
         (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p)) =
-      torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight r p.1.1) /
-        torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight r p.1.2) := by
+      torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight r p.val.1) /
+        torusCharacter (SplitTorus.pointsMulEquiv t) (diagonalTorusWeight r p.val.2) := by
   have hw : Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) =
-      SplitTorus.weightCharacter (diagonalTorusWeight r p.1.1 - diagonalTorusWeight r p.1.2) := by
+      SplitTorus.weightCharacter (diagonalTorusWeight r p.val.1 - diagonalTorusWeight r p.val.2)
+          := by
     apply Multiplicative.toAdd.injective
     ext i
     rw [SplitTorus.toAdd_weightCharacter, toAdd_ofAdd, diagonalRootDatum_root_apply, Pi.sub_apply]
@@ -307,8 +309,9 @@ theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1)))
     (t : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] A))
     (c : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
-    diagonalTorusPoints r R A t * rootSubgroupPoints p.2 c * (diagonalTorusPoints r R A t)⁻¹ =
-      rootSubgroupPoints p.2
+    diagonalTorusPoints r R A t * rootSubgroupPoints p.property c * (diagonalTorusPoints r R A t)⁻¹
+        =
+      rootSubgroupPoints p.property
         ((AdditiveGroup.gaPointsMulEquiv (R := R) (A := A)).symm <|
           Multiplicative.ofAdd
             (((DiagonalizableGroup.charOfPoint t.ofConv

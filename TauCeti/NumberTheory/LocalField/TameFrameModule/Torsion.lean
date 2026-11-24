@@ -62,6 +62,52 @@ open _root_.MonoidAlgebra
 
 universe u v
 
+section RelationMap
+
+variable {R : Type u} [Ring R] {G : Type v} [Monoid G] {σ τ : G} {a b : R}
+
+/-- Divisibility of the two coordinates of the relation map. -/
+private theorem exists_tameFrameRelationMap_eq_nsmul {n : ℕ} {x : MonoidAlgebra R G}
+    (h₀ : ∀ g, (n : R) ∣ (x * (single σ (1 : R) - single 1 a)).coeff g)
+    (h₁ : ∀ g, (n : R) ∣ (x * (single τ (1 : R) - single 1 b)).coeff g) :
+    ∃ y, tameFrameRelationMap R G σ τ a b x = n • y := by
+  obtain ⟨u₀, hu₀⟩ := (MonoidAlgebra.exists_eq_smul_iff_dvd_coeff _).mpr h₀
+  obtain ⟨u₁, hu₁⟩ := (MonoidAlgebra.exists_eq_smul_iff_dvd_coeff _).mpr h₁
+  refine ⟨Finsupp.single 0 u₀ + Finsupp.single 1 u₁, ?_⟩
+  ext i : 1
+  fin_cases i <;> simp [hu₀, hu₁, Nat.cast_smul_eq_nsmul]
+
+/-- If the relation map sends `w` to `n • y` and `x w` is divisible by `n`, then `x` kills the
+class of `y` in the tame-frame module. The relation map need not be injective. -/
+private theorem smul_toQuotient_eq_zero_of_exists_mul_eq_nsmul {n : ℕ} (hn : IsSMulRegular R n)
+    {w : MonoidAlgebra R G} {y : Fin 2 →₀ MonoidAlgebra R G}
+    (hy : tameFrameRelationMap R G σ τ a b w = n • y) {x : MonoidAlgebra R G}
+    (hxw : ∃ u, x * w = n • u) :
+    x • (tameFrameRelations R G σ τ a b).toQuotient y = 0 := by
+  obtain ⟨u, hu⟩ := hxw
+  rw [← map_smul, ← LinearMap.mem_ker, Module.Relations.ker_toQuotient,
+    ← range_tameFrameRelationMap, LinearMap.mem_range]
+  exact ⟨u, (MonoidAlgebra.isSMulRegular_iff.mpr hn).finsupp (by
+    -- Applying the injectivity of `(n • ·)` leaves its lambda unreduced.
+    beta_reduce
+    rw [← map_nsmul, ← hu, ← smul_eq_mul, map_smul, hy, smul_comm])⟩
+
+/-- If the relation map sends `w` to `n • y`, then `x` kills the class of `y` in the tame-frame
+module exactly when `x w` is divisible by `n`. -/
+private theorem smul_toQuotient_eq_zero_iff {n : ℕ} (hn : IsSMulRegular R n)
+    (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b)) {w : MonoidAlgebra R G}
+    {y : Fin 2 →₀ MonoidAlgebra R G} (hy : tameFrameRelationMap R G σ τ a b w = n • y)
+    (x : MonoidAlgebra R G) :
+    x • (tameFrameRelations R G σ τ a b).toQuotient y = 0 ↔ ∃ u, x * w = n • u := by
+  refine ⟨fun h ↦ ?_, smul_toQuotient_eq_zero_of_exists_mul_eq_nsmul hn hy⟩
+  rw [← map_smul, ← LinearMap.mem_ker, Module.Relations.ker_toQuotient,
+    ← range_tameFrameRelationMap, LinearMap.mem_range] at h
+  obtain ⟨u, hu⟩ := h
+  refine ⟨u, hinj ?_⟩
+  rw [map_nsmul, hu, ← smul_eq_mul, map_smul, hy, smul_comm]
+
+end RelationMap
+
 variable {R : Type u} [CommRing R] {G : Type v} [Group G]
 
 section TwistedNorm
@@ -141,12 +187,6 @@ private theorem coeff_nsmul (n : ℕ) (u : MonoidAlgebra R G) (g : G) :
     (n • u).coeff g = n * u.coeff g := by
   rw [coeff_smul_apply, nsmul_eq_mul]
 
-private theorem isSMulRegular_relationModule {n : ℕ} (hn : IsSMulRegular R n) :
-    IsSMulRegular (Fin 2 →₀ MonoidAlgebra R G) n :=
-  (hn.finsupp.of_injective
-    MonoidAlgebra.coeffAddEquiv.toAddMonoidHom.toNatLinearMap
-    MonoidAlgebra.coeff_injective).finsupp
-
 section RightMultiple
 
 variable {σ τ : G} {a b : R}
@@ -224,36 +264,6 @@ section Torsion
 
 variable {σ τ : G} {a b : R}
 
-/-- Divisibility of the two coordinates of the relation map. -/
-private theorem exists_tameFrameRelationMap_eq_nsmul {n : ℕ} {x : MonoidAlgebra R G}
-    (h₀ : ∀ g, (n : R) ∣ (x * (single σ (1 : R) - single 1 a)).coeff g)
-    (h₁ : ∀ g, (n : R) ∣ (x * (single τ (1 : R) - single 1 b)).coeff g) :
-    ∃ y, tameFrameRelationMap R G σ τ a b x = n • y := by
-  obtain ⟨u₀, hu₀⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff h₀
-  obtain ⟨u₁, hu₁⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff h₁
-  refine ⟨Finsupp.single 0 u₀ + Finsupp.single 1 u₁, ?_⟩
-  ext i : 1
-  fin_cases i <;> simp [hu₀, hu₁]
-
-/-- If the relation map sends `w` to `n • y`, then `x` kills the class of `y` in the tame-frame
-module exactly when `x w` is divisible by `n`. -/
-private theorem smul_toQuotient_eq_zero_iff {n : ℕ} (hn : IsSMulRegular R n)
-    (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b)) {w : MonoidAlgebra R G}
-    {y : Fin 2 →₀ MonoidAlgebra R G} (hy : tameFrameRelationMap R G σ τ a b w = n • y)
-    (x : MonoidAlgebra R G) :
-    x • (tameFrameRelations R G σ τ a b).toQuotient y = 0 ↔ ∃ u, x * w = n • u := by
-  rw [← map_smul, ← LinearMap.mem_ker, Module.Relations.ker_toQuotient,
-    ← range_tameFrameRelationMap, LinearMap.mem_range]
-  constructor
-  · rintro ⟨u, hu⟩
-    refine ⟨u, hinj ?_⟩
-    rw [map_nsmul, hu, ← smul_eq_mul, map_smul, hy, smul_comm]
-  · rintro ⟨u, hu⟩
-    exact ⟨u, isSMulRegular_relationModule hn (by
-      -- Applying the injectivity of `(n • ·)` leaves its lambda unreduced.
-      beta_reduce
-      rw [← map_nsmul, ← hu, ← smul_eq_mul, map_smul, hy, smul_comm])⟩
-
 variable [Finite G] {p k : ℕ} {c : G → R} {y₀ : Fin 2 →₀ MonoidAlgebra R G}
   (hp : IsSMulRegular R p) (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b))
   (hJ : Ideal.comap (algebraMap R (MonoidAlgebra R G))
@@ -261,7 +271,7 @@ variable [Finite G] {p k : ℕ} {c : G → R} {y₀ : Fin 2 →₀ MonoidAlgebra
       Ideal.span {(p : R) ^ k})
   (hc : ∀ g, single g (1 : R) - single 1 (c g) ∈
     Ideal.span {single σ (1 : R) - single 1 a, single τ 1 - single 1 b})
-include hp hinj hJ hc in
+include hp hJ hc in
 /-- The left ideal `(σ - a, τ - b)` kills the class `t₀` of `y₀`. -/
 private theorem smul_toQuotient_eq_zero_of_mem
     (hy₀ : tameFrameRelationMap R G σ τ a b (twistedNorm c) = p ^ k • y₀) {x : MonoidAlgebra R G}
@@ -273,9 +283,10 @@ private theorem smul_toQuotient_eq_zero_of_mem
         ((tameFrameRelations R G σ τ a b).toQuotient y₀)) := by
     rw [Ideal.span, Submodule.span_le]
     rintro x (rfl | rfl) <;>
-      exact (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).2
-        (MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff fun g ↦
-          hpk ▸ dvd_coeff_mul_twistedNorm hJ hc (Ideal.subset_span (by simp)) g)
+      exact smul_toQuotient_eq_zero_of_exists_mul_eq_nsmul (hp.pow k) hy₀
+        (((MonoidAlgebra.exists_eq_smul_iff_dvd_coeff _).mpr fun g ↦
+          hpk ▸ dvd_coeff_mul_twistedNorm hJ hc (Ideal.subset_span (by simp)) g).imp
+            fun _ h ↦ h.trans (Nat.cast_smul_eq_nsmul R _ _))
   exact hle hx
 
 include hp hinj hJ hc in
@@ -290,7 +301,7 @@ private theorem mem_of_smul_toQuotient_eq_zero
   obtain ⟨e, he⟩ := exists_sub_single_one_mem hgen x
   have he₀ : (single (1 : G) e : MonoidAlgebra R G) •
       (tameFrameRelations R G σ τ a b).toQuotient y₀ = 0 := by
-    have := smul_toQuotient_eq_zero_of_mem hp hinj hJ hc hy₀ he
+    have := smul_toQuotient_eq_zero_of_mem hp hJ hc hy₀ he
     rwa [sub_smul, hx, zero_sub, neg_eq_zero] at this
   -- Comparing coefficients at `1` shows that `p ^ k` divides `e`.
   obtain ⟨u, hu⟩ := (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).1 he₀
@@ -351,11 +362,12 @@ private theorem exists_smul_toQuotient_eq
     rw [← hu'₁, hd]
     push_cast
     ring
-  obtain ⟨v, hv⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff hcoeff
+  obtain ⟨v, hv⟩ := (MonoidAlgebra.exists_eq_smul_iff_dvd_coeff _).mpr hcoeff
+  rw [Nat.cast_smul_eq_nsmul] at hv
   refine ⟨u.coeff 1, ?_⟩
   -- Dividing by `p ^ (n + k)`, `y = d y₀` modulo the relation.
   have hy : y = single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v := by
-    exact isSMulRegular_relationModule (hp.pow (n + k)) (by
+    exact (MonoidAlgebra.isSMulRegular_iff.mpr (hp.pow (n + k))).finsupp (by
       -- Applying the injectivity of `(p ^ (n + k) • ·)` leaves its lambda unreduced.
       beta_reduce
       rw [← hw, smul_add, ← map_nsmul, ← hv, pow_add, mul_smul, smul_comm (p ^ k), ← hy₀,
@@ -391,14 +403,14 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective
   let t₀ := (tameFrameRelations R G σ τ a b).toQuotient y₀
   -- The class of `x` maps to `x t₀`.
   let φ := Submodule.liftQ _ (LinearMap.toSpanSingleton (MonoidAlgebra R G) _ t₀)
-    fun x hx ↦ smul_toQuotient_eq_zero_of_mem hp hinj hJ hc hy₀ hx
+    fun x hx ↦ smul_toQuotient_eq_zero_of_mem hp hJ hc hy₀ hx
   have hφ (x : MonoidAlgebra R G) : φ (Submodule.Quotient.mk x) = x • t₀ := rfl
   have hφT (z) : φ z ∈ pPowerTorsion p (MonoidAlgebra R G) (TameFrameModule R G σ τ a b) := by
     induction z using Submodule.Quotient.induction_on with
     | H x =>
       refine mem_pPowerTorsion_iff.mpr ⟨k, ?_⟩
       rw [hφ, smul_comm, ← Nat.cast_smul_eq_nsmul (MonoidAlgebra R G),
-        (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).2 ⟨_, (nsmul_eq_mul _ _).symm⟩,
+        smul_toQuotient_eq_zero_of_exists_mul_eq_nsmul (hp.pow k) hy₀ ⟨_, (nsmul_eq_mul _ _).symm⟩,
         smul_zero]
   have hinjφ : Function.Injective φ := by
     rw [← LinearMap.ker_eq_bot, eq_bot_iff]
@@ -409,8 +421,8 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective
         (mem_of_smul_toQuotient_eq_zero hp hinj hJ hc hy₀ hgen' hz))
   refine ⟨(LinearEquiv.ofBijective (φ.codRestrict _ hφT)
     ⟨fun z z' h ↦ hinjφ (congrArg Subtype.val h), fun s ↦ ?_⟩).symm⟩
-  obtain ⟨y, hy⟩ := (tameFrameRelations R G σ τ a b).surjective_toQuotient s.1
-  obtain ⟨d, hd⟩ := exists_smul_toQuotient_eq hp hJ hc hy₀ hgen' (hy ▸ s.2)
+  obtain ⟨y, hy⟩ := (tameFrameRelations R G σ τ a b).surjective_toQuotient s.val
+  obtain ⟨d, hd⟩ := exists_smul_toQuotient_eq hp hJ hc hy₀ hgen' (hy ▸ s.property)
   exact ⟨Submodule.Quotient.mk (single 1 d), Subtype.ext (hd.trans hy)⟩
 
 end Torsion
@@ -450,8 +462,7 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv [Finite G] {σ τ : G}
   obtain ⟨k, hk⟩ := PadicInt.ideal_eq_span_pow_p hne
   exact nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective hgen
     (IsSMulRegular.nat_of_hasUniqueDiv (M := ℤ_[p]) (Fact.out : p.Prime).ne_zero)
-    (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
-      (isOfFinOrder_of_finite τ) hcard) hk
+    (tameFrameRelationMap_injective_of_card_ne_zero (.all σ) (.all τ) hcard) hk
 
 /-- **The torsion of the tame-frame module for supplied sharp exponents.** Let `σ, τ` generate
 the finite automorphism group of `L/K`. If `a, b` describe their action on the `p`-power roots of

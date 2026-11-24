@@ -90,7 +90,8 @@ theorem exists_unit_eigenvector_quaternionAlgHom_i
   have : Nontrivial (eigenspace A 1) := Submodule.nontrivial_iff_ne_bot.mpr hne
   let := NormedSpace.restrictScalars ℝ ℂ (eigenspace A 1)
   obtain ⟨u, hu⟩ := exists_norm_eq (eigenspace A 1) zero_le_one
-  have huA : (-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u = (u : S) := by simpa [A, mem_eigenspace_iff] using u.2
+  have huA : (-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u = (u : S) := by
+    simpa [A, mem_eigenspace_iff] using u.property
   refine ⟨u, by simpa using hu, ?_⟩
   calc ψ ⟨0, 1, 0, 0⟩ u = Complex.I • ((-Complex.I) • ψ ⟨0, 1, 0, 0⟩ u) := by simp [smul_smul]
     _ = Complex.I • (u : S) := by rw [huA]

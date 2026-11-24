@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.HalfSpinor
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Intertwiner
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Hilbert
 import TauCeti.Geometry.Symplectic.Finrank
 
@@ -29,9 +29,10 @@ import `TauCeti.Topology.Algebra.CliffordAlgebra.Basic` (such as smooth `Spinᶜ
 bundle files) already carry `CliffordAlgebra.instTopologicalSpaceCliffordAlgebra` on `⋀ W`. To
 provide a diamond-free carrier with no preexisting `TopologicalSpace` instance, this file also
 packages `⋀ W` into `TauCeti.AlmostComplexStructure.FockSpinors` with global `AddCommGroup`,
-`Module ℂ`, `FiniteDimensional ℂ`, and `Nontrivial` instances, Clifford action `fockSpinorAction`,
-and named abbreviations `fockSpinorsNormedAddCommGroup` and `fockSpinorsInnerProductSpace` for
-local installation given `hQ`.
+`Module ℂ`, `FiniteDimensional ℂ`, and `Nontrivial` instances, `toExterior` algebraic projection
+simplification lemmas, Clifford action `fockSpinorAction`, and named abbreviations
+`fockSpinorsNormedAddCommGroup` and `fockSpinorsInnerProductSpace` for local installation given
+`hQ`.
 
 ## Main definitions
 
@@ -48,8 +49,6 @@ local installation given `hQ`.
 
 * `TauCeti.AlmostComplexStructure.finrank_fock`,
   `TauCeti.AlmostComplexStructure.finrank_fockSpinors`: complex dimension `2 ^ (finrank ℝ V / 2)`.
-* `TauCeti.AlmostComplexStructure.complexifyAction_realFockAction`: complexifying `realFockAction`
-  recovers `fockAction`.
 * `TauCeti.AlmostComplexStructure.exists_unitary_intertwiner_realFockAction`,
   `TauCeti.AlmostComplexStructure.existsUnique_circle_smul_intertwiner_realFockAction`: existence
   and `Circle`-uniqueness of unitary Fock intertwiners on `⋀ W`.
@@ -71,7 +70,6 @@ noncomputable section
 namespace TauCeti.AlmostComplexStructure
 
 open CliffordAlgebra Module
-open scoped TensorProduct
 
 section Dimension
 
@@ -85,14 +83,6 @@ theorem finrank_fock :
     finrank ℂ (ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W) =
       2 ^ (finrank ℝ V / 2) := by
   rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, J.finrank_spinPolarizationData_W hQJ hQnd]
-
-/-- Complexifying `realFockAction` via `CliffordAlgebra.complexifyAction` recovers `fockAction`. -/
-@[simp]
-theorem complexifyAction_realFockAction :
-    complexifyAction (J.realFockAction hQJ hQnd) = J.fockAction hQJ hQnd := by
-  refine CliffordAlgebra.hom_ext ?_
-  ext v
-  simp [realFockAction_ι]
 
 end Dimension
 
@@ -150,8 +140,8 @@ theorem existsUnique_circle_smul_intertwiner_realFockAction {f : V → V'} :
   let := J'.fockNormedAddCommGroup hQJ' hQnd' hQ'
   let := J'.fockInnerProductSpace hQJ' hQnd' hQ'
   intro U₁ U₂ hU₁ hU₂
-  have hsurj : Function.Surjective (complexifyAction (J.realFockAction hQJ hQnd)) := by
-    rw [J.complexifyAction_realFockAction hQJ hQnd]
+  have hsurj : Function.Surjective (liftBaseChange ℂ Q (J.realFockAction hQJ hQnd)) := by
+    rw [J.liftBaseChange_realFockAction hQJ hQnd]
     exact (J.fockAction_bijective hQJ hQnd).surjective
   exact existsUnique_circle_smul_intertwiner hsurj U₁ U₂ hU₁ hU₂
 
@@ -204,6 +194,45 @@ instance instModuleFockSpinors : Module ℂ (J.FockSpinors hQJ hQnd) where
   add_smul _ _ _ := FockSpinors.ext (add_smul _ _ _)
   zero_smul _ := FockSpinors.ext (zero_smul ℂ _)
 
+namespace FockSpinors
+
+variable {J hQJ hQnd}
+
+/-- `toExterior` sends `0` to `0`. -/
+@[simp]
+theorem toExterior_zero : (0 : J.FockSpinors hQJ hQnd).toExterior = 0 := (rfl)
+
+/-- `toExterior` preserves addition. -/
+@[simp]
+theorem toExterior_add (x y : J.FockSpinors hQJ hQnd) :
+    (x + y).toExterior = x.toExterior + y.toExterior := (rfl)
+
+/-- `toExterior` preserves negation. -/
+@[simp]
+theorem toExterior_neg (x : J.FockSpinors hQJ hQnd) : (-x).toExterior = -x.toExterior := (rfl)
+
+/-- `toExterior` preserves subtraction. -/
+@[simp]
+theorem toExterior_sub (x y : J.FockSpinors hQJ hQnd) :
+    (x - y).toExterior = x.toExterior - y.toExterior := (rfl)
+
+/-- `toExterior` commutes with complex scalar multiplication. -/
+@[simp]
+theorem toExterior_smul (c : ℂ) (x : J.FockSpinors hQJ hQnd) :
+    (c • x).toExterior = c • x.toExterior := (rfl)
+
+/-- `toExterior` commutes with natural-number scalar multiplication. -/
+@[simp]
+theorem toExterior_nsmul (n : ℕ) (x : J.FockSpinors hQJ hQnd) :
+    (n • x).toExterior = n • x.toExterior := (rfl)
+
+/-- `toExterior` commutes with integer scalar multiplication. -/
+@[simp]
+theorem toExterior_zsmul (n : ℤ) (x : J.FockSpinors hQJ hQnd) :
+    (n • x).toExterior = n • x.toExterior := (rfl)
+
+end FockSpinors
+
 /-- The underlying `ℂ`-linear equivalence `J.FockSpinors hQJ hQnd ≃ₗ[ℂ] ⋀ W`. -/
 def fockSpinorsLinearEquiv :
     J.FockSpinors hQJ hQnd ≃ₗ[ℂ] ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQnd).W where
@@ -253,11 +282,11 @@ theorem fockSpinorsLinearEquiv_fockSpinorAction_apply (a : CliffordAlgebra Q)
 theorem finrank_fockSpinors : finrank ℂ (J.FockSpinors hQJ hQnd) = 2 ^ (finrank ℝ V / 2) := by
   rw [(J.fockSpinorsLinearEquiv hQJ hQnd).finrank_eq, J.finrank_fock hQJ hQnd]
 
-/-- `complexifyAction (J.fockSpinorAction hQJ hQnd)` is surjective onto
+/-- `liftBaseChange ℂ Q (J.fockSpinorAction hQJ hQnd)` is surjective onto
 `Module.End ℂ (J.FockSpinors hQJ hQnd)`. -/
-theorem complexifyAction_fockSpinorAction_surjective :
-    Function.Surjective (complexifyAction (J.fockSpinorAction hQJ hQnd)) :=
-  (complexifyAction_bijective_of_finrank_eq (J.fockSpinorAction hQJ hQnd) hQnd
+theorem liftBaseChange_fockSpinorAction_surjective :
+    Function.Surjective (liftBaseChange ℂ Q (J.fockSpinorAction hQJ hQnd)) :=
+  (liftBaseChange_bijective_of_finrank_eq (J.fockSpinorAction hQJ hQnd) hQnd
     (Nat.two_mul_div_two_of_even J.even_finrank_real).symm
     (J.finrank_fockSpinors hQJ hQnd)).surjective
 
@@ -377,8 +406,10 @@ theorem existsUnique_circle_smul_intertwiner_fockSpinorAction {f : V → V'} :
   let := J'.fockSpinorsInnerProductSpace hQJ' hQnd' hQ'
   intro U₁ U₂ hU₁ hU₂
   exact existsUnique_circle_smul_intertwiner
-    (J.complexifyAction_fockSpinorAction_surjective hQJ hQnd) U₁ U₂ hU₁ hU₂
+    (J.liftBaseChange_fockSpinorAction_surjective hQJ hQnd) U₁ U₂ hU₁ hU₂
 
 end CarrierIntertwiner
 
 end TauCeti.AlmostComplexStructure
+
+end
