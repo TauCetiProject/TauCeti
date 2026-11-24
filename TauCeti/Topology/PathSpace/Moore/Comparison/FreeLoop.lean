@@ -169,6 +169,12 @@ theorem toCircleMap_toFreeLoop_eq_toCircle (x : X) (γ : MooreLoopSpace X x) :
     toCircleMap γ.toFreeLoop = γ.toPath.toCircle :=
   (toCircleMap_toFreeLoop x γ).trans (coe_basedMapCircleOneHomeomorphPath_symm x γ.toPath)
 
+/-- A free Moore loop `γ`, as a circle map, is the circle map of the loop `γ.toMooreLoop.toPath` at
+its base point. -/
+theorem toCircleMap_eq_toCircle (γ : MooreFreeLoopSpace X) :
+    toCircleMap γ = γ.toMooreLoop.toPath.toCircle := by
+  rw [← toCircleMap_toFreeLoop_eq_toCircle, toFreeLoop_toMooreLoop]
+
 /-- On the based circle-map fibre over `x`, `ofCircleMap` agrees with
 `basedMapCircleOneHomeomorphPath x` followed by `Path.toMooreLoop` and `toFreeLoop`. -/
 theorem ofCircleMap_coe_basedMap (x : X) (f : BasedMap Circle X 1 x) :

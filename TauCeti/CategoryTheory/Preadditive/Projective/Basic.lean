@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
-# Projective objects: isomorphism closure and coproducts
+# Projective objects: closure properties and coproducts
 
 The object property `CategoryTheory.isProjective C` of being projective is closed under
 isomorphisms, so it can serve as the resolving property of finite resolutions, which are
-transported along isomorphisms.
+transported along isomorphisms. It is also stable under retracts, contains a zero object, and,
+in a category with binary biproducts, is closed under binary products. These are the closure
+properties under which the ideal of morphisms factoring through a projective object has an
+elementwise description (`CategoryTheory.ObjectProperty.mem_factorIdeal_iff`).
 
 The point of any colimit cofan of a family of projective objects is projective. Mathlib's
 instance for the chosen coproduct `∐ X` requires the index type to live in the universe of the
@@ -27,7 +32,7 @@ Objects that are both projective and injective are closed under binary biproduct
 
 public section
 
-open CategoryTheory Limits
+open CategoryTheory Limits ZeroObject
 
 namespace CategoryTheory
 
@@ -36,6 +41,21 @@ variable {C : Type*} [Category* C]
 /-- Being projective is invariant under isomorphism. -/
 instance isClosedUnderIsomorphisms_isProjective : (isProjective C).IsClosedUnderIsomorphisms :=
   ⟨fun e h => @Projective.of_iso _ _ _ _ e h⟩
+
+/-- A retract of a projective object is projective. -/
+instance isStableUnderRetracts_isProjective : (isProjective C).IsStableUnderRetracts :=
+  ⟨fun r h => @Retract.projective _ _ _ _ r h⟩
+
+/-- A zero object is projective. -/
+instance containsZero_isProjective [HasZeroObject C] : (isProjective C).ContainsZero :=
+  ⟨⟨0, isZero_zero C, Projective.zero_projective⟩⟩
+
+/-- In a category with binary biproducts, a binary product of projective objects is projective,
+since it is a biproduct. -/
+instance isClosedUnderBinaryProducts_isProjective [HasZeroMorphisms C] [HasBinaryBiproducts C] :
+    (isProjective C).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _
+    fun _ _ (_ : Projective _) (_ : Projective _) => inferInstance
 
 namespace Projective
 

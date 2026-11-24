@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
 # The ring of integers of an extension of local fields is a finite free module
@@ -83,11 +84,7 @@ instance integerRingModuleFinite : Module.Finite 𝒪[K] 𝒪[L] := by
   -- `𝒪[L]` is `𝓂[K]`-adically separated since `𝓂[K] 𝒪[L] ≤ 𝓂[L]` (Krull intersection theorem).
   have : IsHausdorff 𝓂[K] 𝒪[L] := .of_map (map_maximalIdeal_le (algebraMap 𝒪[K] 𝒪[L]))
   have := finite_quotient_maximalIdeal_smul_integerRing K L
-  obtain ⟨n, f, hf⟩ :=
-    Module.Finite.exists_fin' 𝒪[K] (𝒪[L] ⧸ (𝓂[K] • ⊤ : Submodule 𝒪[K] 𝒪[L]))
-  obtain ⟨g, hg⟩ :=
-    Module.projective_lifting_property (Submodule.mkQ _) f (Submodule.mkQ_surjective _)
-  exact .of_surjective g (surjective_of_mkQ_comp_surjective (I := 𝓂[K]) (hg ▸ hf))
+  exact .of_finite_quotient_smul_top 𝓂[K] 𝒪[L]
 
 /-- The ring of integers of an extension of nonarchimedean local fields is a free module over the
 ring of integers of the base: it is finite and torsion-free over the principal ideal domain

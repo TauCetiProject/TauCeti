@@ -105,7 +105,7 @@ theorem isUnit_exp_add_one {Y : Matrix m m ℂ} (hYπ : ‖Y‖ < Real.pi) : IsU
 theorem isUnit_exp_sub_one_real {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖ < 2 * Real.pi) :
     IsUnit (exp Y - 1) := by
   rw [← isUnit_map_ofReal_iff, Matrix.map_sub _ Complex.ofReal_sub,
-    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
+    map_ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_sub_one (isUnit_map_ofReal_iff.2 hY) (by rwa [l2_opNorm_map_ofReal])
 
 /-- The real case of `Matrix.isUnit_exp_add_one`: if a real matrix `Y` has `‖Y‖ < π`, then
@@ -113,7 +113,7 @@ theorem isUnit_exp_sub_one_real {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : �
 theorem isUnit_exp_add_one_real {Y : Matrix m m ℝ} (hYπ : ‖Y‖ < Real.pi) :
     IsUnit (exp Y + 1) := by
   rw [← isUnit_map_ofReal_iff, Matrix.map_add _ Complex.ofReal_add,
-    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
+    map_ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_add_one (by rwa [l2_opNorm_map_ofReal])
 
 end Matrix

@@ -281,7 +281,7 @@ theorem exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm_of_forall_mem_fra
         ‖u‖ ≤ K * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume).toReal :=
   exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm hs
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hsol
+    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hc
 
 /-- **The weighted Sobolev estimate for the complementary projection at a vortex of every
@@ -304,7 +304,7 @@ theorem exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm_of_forall_mem_fr
         ‖u‖ ≤ K * ‖v‖ :=
   exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm hs
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hsol
+    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hc
 
 end TauCeti.Vortex

@@ -53,7 +53,10 @@ identity theorem (`TauCeti.RiemannSurface.not_eventuallyConst_of_ne` in
 
 ## Main declarations
 
-* `TauCeti.RiemannSurface.finite_preimage_singleton`: fibre finiteness over a compact source.
+* `TauCeti.RiemannSurface.finite_preimage_singleton_of_isCompact`: a compact fibre near whose
+  points the map is holomorphic and nonconstant is finite, and
+  `TauCeti.RiemannSurface.finite_preimage_singleton`: a holomorphic map from a compact surface
+  which is constant near no point has finite fibres.
 * `TauCeti.RiemannSurface.fiberMultiplicitySum`: the fibre sum of local multiplicities, and
   `TauCeti.RiemannSurface.eventually_fiberMultiplicitySum_eq`, its local constancy.
 * `TauCeti.RiemannSurface.degree`: the degree, with
@@ -207,23 +210,31 @@ variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-! ### Fibre finiteness -/
 
-/-- **Finiteness of fibres.** A holomorphic map from a compact Riemann surface which is constant
-near no point has finite fibres: each fibre is compact, and each of its points has a neighbourhood
-containing no other point of the fibre. -/
-theorem finite_preimage_singleton [CompactSpace X]
-    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) (y : Y) :
+/-- **Finiteness of compact fibres.** A compact fibre of a map which is holomorphic and constant
+near none of its points is finite: each point of the fibre has a neighbourhood containing no other
+point of the fibre. -/
+theorem finite_preimage_singleton_of_isCompact {y : Y} (hc : IsCompact (f ⁻¹' {y}))
+    (hf : ∀ x ∈ f ⁻¹' {y}, ∀ᶠ z in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f z)
+    (hne : ∀ x ∈ f ⁻¹' {y}, ¬ EventuallyConst f (𝓝 x)) :
     (f ⁻¹' {y}).Finite := by
-  have : T1Space Y := 𝓘(ℂ).t1Space Y
-  refine (isClosed_singleton.preimage hf.continuous).isCompact.finite
-    (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_)
+  refine hc.finite (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_)
   obtain ⟨U, hU, -, V, -, hUx, -⟩ :=
-    exists_nhds_localMultiplicity_fiber_sum (.of_forall fun z ↦ hf z) (hne x) univ_mem
+    exists_nhds_localMultiplicity_fiber_sum (hf x hx) (hne x hx) univ_mem
   have hfx : f x = y := hx
   rw [hfx] at hUx
   refine ⟨interior U, isOpen_interior, subset_antisymm (fun x' hx' ↦ ?_)
     (singleton_subset_iff.2 ⟨mem_interior_iff_mem_nhds.2 hU, hx⟩)⟩
   rw [← hUx]
   exact ⟨hx'.2, interior_subset hx'.1⟩
+
+/-- **Finiteness of fibres.** A holomorphic map from a compact Riemann surface which is constant
+near no point has finite fibres. -/
+theorem finite_preimage_singleton [CompactSpace X]
+    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) (y : Y) :
+    (f ⁻¹' {y}).Finite :=
+  have : T1Space Y := 𝓘(ℂ).t1Space Y
+  finite_preimage_singleton_of_isCompact (isClosed_singleton.preimage hf.continuous).isCompact
+    (fun _ _ ↦ .of_forall hf) fun x _ ↦ hne x
 
 /-! ### Local constancy of the fibre sum -/
 
