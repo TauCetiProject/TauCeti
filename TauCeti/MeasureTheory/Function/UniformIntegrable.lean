@@ -54,6 +54,8 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
   integrable supremum of its `p`-th powers of norms is uniformly integrable with a uniform
   `Lᵖ` bound;
 * `MeasureTheory.UniformIntegrable.comp` — uniform integrability passes to reindexed families;
+* `MeasureTheory.MemLp.tendsto_eLpNorm_indicator_of_tendsto_measure` — for `1 ≤ p < ∞`, the
+  `Lᵖ` seminorm of one `Lᵖ` function on sets `sᵢ` tends to zero when `μ(sᵢ)` does;
 * `TauCeti.uniformIntegrable_of_setIntegral_le` — over a finite measure, a family of
   nonnegative integrable real functions with uniformly small upper-tail integrals is uniformly
   integrable;
@@ -114,6 +116,19 @@ theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
     (hV : ∀ i, AEStronglyMeasurable (V i) μ)
     (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D x‖ₑ) : UniformIntegrable V p μ :=
   (uniformIntegrable_const hp hp_top hD).ae_mono hV hle
+
+/-- The `Lᵖ` seminorm of `f ∈ Lᵖ`, `1 ≤ p < ∞`, restricted to sets `sᵢ` tends to zero when the
+measures of the sets do: the integral of `‖f‖ᵖ` is absolutely continuous. -/
+theorem MeasureTheory.MemLp.tendsto_eLpNorm_indicator_of_tendsto_measure {α β ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞} {f : α → β}
+    (hf : MemLp f p μ) (hp : 1 ≤ p) (hp_top : p ≠ ∞) {l : Filter ι} {s : ι → Set α}
+    (hs : ∀ i, NullMeasurableSet (s i) μ) (hμs : Tendsto (fun i ↦ μ (s i)) l (𝓝 0)) :
+    Tendsto (fun i ↦ eLpNorm ((s i).indicator f) p μ) l (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨δ, hδ, hδf⟩ := hf.eLpNorm_indicator_le hp hp_top hε
+  filter_upwards [ENNReal.tendsto_nhds_zero.1 hμs δ hδ] with i hi
+  exact hδf _ (hs i) hi
 
 /-- A family uniformly bounded in `Lᵠ` has uniformly absolutely continuous `Lᵖ` integrals
 when `p < q`. Neither finiteness of the measure nor `q < ∞` is required. -/
