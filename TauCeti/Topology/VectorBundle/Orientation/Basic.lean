@@ -449,6 +449,12 @@ variable (F E ι) in
 theorem positive_apply (b : B) : positive F E ι b = positiveOrientation :=
   (rfl)
 
+/-- The pullback of the positive orientation is the positive orientation of the pullback bundle. -/
+@[simp]
+theorem pullback_positive {B' : Type*} [TopologicalSpace B'] (f : C(B', B)) :
+    (positive F E ι).pullback f = positive F ((⇑f) *ᵖ E) ι :=
+  ext fun _ ↦ (rfl)
+
 /-- At every point, an orientation indexed by an empty type is the positive orientation of the
 fibre or its opposite. -/
 theorem eq_positiveOrientation_or_eq_neg (o : VectorBundleOrientation F E ι) (b : B) :
