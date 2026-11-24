@@ -35,6 +35,9 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
+* `TauCeti.hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc`: a function on real Euclidean
+  space vanishing wherever some coordinate leaves its interval, so outside a coordinate box, has
+  compact support.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
@@ -53,6 +56,8 @@ Borel measurable structure on the scalar field.
   of its values at the vertices.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
+* `EuclideanSpace.consPiEquivL`: the same splitting onto `𝕜 × (Fin n → 𝕜)`, linear over any ring of
+  scalars acting on `𝕜`.
 * `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
   product `WithLp 2 (𝕜 × 𝕜)`.
 * `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
@@ -69,6 +74,10 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
+  linear automorphism of `ι → 𝕜`.
+* `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
+  norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
@@ -288,6 +297,42 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+variable (𝕜) in
+/-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × (Fin n → 𝕜)`: the continuous
+`R`-linear equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`, for any ring `R` of scalars acting on `𝕜`.
+Unlike `EuclideanSpace.consEquivL`, the tail is the plain function space `Fin n → 𝕜` and the
+scalars need not be `𝕜`; for instance `ℂᵐ⁺¹` splits as a real vector space into `ℂ × (Fin m → ℂ)`.
+-/
+def consPiEquivL (R : Type*) [Semiring R] [Module R 𝕜] (n : ℕ) :
+    (𝕜 × (Fin n → 𝕜)) ≃L[R] EuclideanSpace 𝕜 (Fin (n + 1)) :=
+  (Fin.consEquivL R fun _ => 𝕜).trans (PiLp.continuousLinearEquiv 2 R fun _ => 𝕜).symm
+
+/-- `EuclideanSpace.consPiEquivL` prepends the first coordinate to the tail. -/
+theorem consPiEquivL_apply {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ} (z : 𝕜 × (Fin n → 𝕜)) :
+    consPiEquivL 𝕜 R n z = WithLp.toLp 2 (Fin.cons z.1 z.2) := by
+  ext i
+  simp [consPiEquivL, Fin.consEquivL_apply]
+
+/-- The first coordinate of `EuclideanSpace.consPiEquivL 𝕜 R n z` is `z.1`. -/
+@[simp]
+theorem consPiEquivL_apply_zero {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (z : 𝕜 × (Fin n → 𝕜)) : consPiEquivL 𝕜 R n z 0 = z.1 := by
+  simp [consPiEquivL_apply]
+
+/-- The coordinate `i + 1` of `EuclideanSpace.consPiEquivL 𝕜 R n z` is `z.2 i`. -/
+@[simp]
+theorem consPiEquivL_apply_succ {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (z : 𝕜 × (Fin n → 𝕜)) (i : Fin n) : consPiEquivL 𝕜 R n z i.succ = z.2 i := by
+  simp [consPiEquivL_apply]
+
+/-- The inverse of `EuclideanSpace.consPiEquivL` splits off the first coordinate,
+`x ↦ (x 0, (x (i + 1))ᵢ)`. -/
+@[simp]
+theorem consPiEquivL_symm_apply {R : Type*} [Semiring R] [Module R 𝕜] {n : ℕ}
+    (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    (consPiEquivL 𝕜 R n).symm x = (x 0, fun i => x i.succ) := by
+  ext <;> simp [consPiEquivL, Fin.tail]
 
 variable (𝕜) in
 /-- The two coordinates identify `𝕜²` with the `L²` product `WithLp 2 (𝕜 × 𝕜)`, as a linear
@@ -544,6 +589,19 @@ end EuclideanSpace
 
 namespace TauCeti
 
+/-- A function on real Euclidean space that vanishes at every point with some coordinate `x i`
+outside `[a i, b i]`, that is, outside the coordinate box `∏ i, [a i, b i]`, has compact
+support. -/
+theorem hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc {ι α : Type*}
+    [Zero α] {f : EuclideanSpace ℝ ι → α} (a b : ι → ℝ)
+    (hf : ∀ x i, x i ∉ Set.Icc (a i) (b i) → f x = 0) :
+    HasCompactSupport f :=
+  HasCompactSupport.intro ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isCompact_preimage.2
+    (isCompact_univ_pi fun i ↦ isCompact_Icc (a := a i) (b := b i))) fun x hx ↦ by
+    simp only [Set.mem_preimage, Set.mem_univ_pi, not_forall] at hx
+    obtain ⟨i, hi⟩ := hx
+    exact hf x i hi
+
 variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- Sum the coordinates of a Euclidean vector over each fibre of `f`.
@@ -597,7 +655,44 @@ theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : T
     fun x y h ↦ by ext j; rw [Subsingleton.elim j i]; exact h
   exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
 
+variable (𝕜 ι) in
+/-- A unitary transformation of `EuclideanSpace 𝕜 ι`, as a linear automorphism of `ι → 𝕜`. -/
+def euclideanLinearEquivHom :
+    unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →* (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜) where
+  toFun g := (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).symm.trans
+    ((Unitary.linearIsometryEquiv g).toLinearEquiv.trans (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)))
+  map_one' := by ext; simp
+  map_mul' _ _ := by ext; simp
+
+@[simp]
+theorem euclideanLinearEquivHom_apply
+    (g : unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) (v : ι → 𝕜) :
+    euclideanLinearEquivHom 𝕜 ι g v =
+      WithLp.ofLp ((g : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (WithLp.toLp 2 v)) :=
+  (rfl)
+
 end TauCeti
+
+namespace LinearEquiv
+
+variable {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+
+/-- A linear automorphism of `ι → 𝕜` preserving the Euclidean norm, as a linear isometric
+automorphism of `EuclideanSpace 𝕜 ι`. -/
+def toEuclideanIsometry (A : (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜))
+    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) :
+    EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι where
+  toLinearEquiv := A.withLpCongr 2
+  norm_map' w := hA w.ofLp
+
+/-- `LinearEquiv.toEuclideanIsometry A hA` acts on coordinates by `A`. -/
+@[simp]
+theorem toEuclideanIsometry_toLp (A : (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜))
+    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) (v : ι → 𝕜) :
+    A.toEuclideanIsometry hA (WithLp.toLp 2 v) = WithLp.toLp 2 (A v) :=
+  (rfl)
+
+end LinearEquiv
 
 namespace PiLp
 

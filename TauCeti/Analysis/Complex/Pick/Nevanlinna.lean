@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Pick.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
+import TauCeti.Basic.Complex.OfRealSub
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
 # Boundary Cayley coordinates and Nevanlinna measure transport
@@ -41,6 +44,10 @@ Nevanlinna kernel `(1 + x * z) / (x - z)`.
 * `TauCeti.nevanlinnaKernel_ofReal`: the kernel is real at a real parameter.
 * `TauCeti.exists_isFiniteMeasure_eq_nevanlinnaKernel_add`: the Nevanlinna representation of a
   Pick function by a nonnegative linear coefficient and a finite real-line measure.
+* `MeasureTheory.Measure.integral_nevanlinnaKernel_eq_add_mul_resolventTransform` and
+  `MeasureTheory.Measure.ext_of_integral_nevanlinnaKernel`: off the real axis the Nevanlinna
+  integral of a finite measure is `ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)` for its resolvent transform
+  `m_ρ`, so a finite measure is determined by its Nevanlinna integral on the upper half-plane.
 
 ## References
 
@@ -55,26 +62,6 @@ noncomputable section
 open Complex MeasureTheory Metric Set
 
 namespace TauCeti
-
-/-- The real coordinate of a point of the circle.  At the omitted point `1` the denominator is
-zero and Lean's totalized division assigns the harmless value `0`; the measure transport below
-first restricts away from that point. -/
-def circleCayleyInv (z : Circle) : ℝ :=
-  -(z : ℂ).im / (1 - (z : ℂ).re)
-
-/-- The real boundary coordinate in terms of the real and imaginary parts. -/
-theorem circleCayleyInv_def (z : Circle) :
-    circleCayleyInv z = -(z : ℂ).im / (1 - (z : ℂ).re) := (rfl)
-
-/-- Applying the real boundary coordinate after the boundary Cayley map gives the original real
-number. -/
-@[simp]
-theorem circleCayleyInv_boundaryCayley (x : ℝ) :
-    circleCayleyInv (boundaryCayley x) = x := by
-  simp only [circleCayleyInv, coe_boundaryCayley, div_re, div_im, sub_re, sub_im,
-    ofReal_re, ofReal_im, I_re, I_im, add_re, add_im, normSq_apply]
-  field_simp
-  ring
 
 /-- The real part of a boundary Cayley point. -/
 @[simp]
@@ -106,9 +93,13 @@ private theorem one_sub_re_ne_zero_of_ne_one {z : Circle} (hz : z ≠ 1) :
   apply Circle.ext
   apply Complex.ext <;> simp [hre, him]
 
-/-- A non-`1` point of the circle is recovered from its real boundary coordinate. -/
-theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
-    boundaryCayley (circleCayleyInv z) = z := by
+/-- A non-`1` point of the circle is recovered from its real boundary coordinate
+`Complex.inverseCayleyCoord`, which inverts the boundary Cayley map
+(`Complex.inverseCayleyCoord_cayley`). At the omitted point `1` that coordinate takes the harmless
+value `0`; the measure transport below first restricts away from that point. -/
+theorem boundaryCayley_inverseCayleyCoord {z : Circle} (hz : z ≠ 1) :
+    boundaryCayley (inverseCayleyCoord z) = z := by
+  rw [inverseCayleyCoord_eq_neg_im_div (Circle.norm_coe z)]
   apply Circle.ext
   have hden := one_sub_re_ne_zero_of_ne_one hz
   have hcircle := Circle.normSq_coe z
@@ -120,27 +111,16 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
     add_pos_of_nonneg_of_pos (sq_nonneg _) (sq_pos_of_ne_zero hden)
   apply Complex.ext
   · rw [coe_boundaryCayley, boundaryCayley_re]
-    simp only [circleCayleyInv]
     have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
     rw [div_eq_iff hdenom.ne']
     field_simp [hden, hquadpos.ne']
     nlinarith [hquad]
   · rw [coe_boundaryCayley, boundaryCayley_im]
-    simp only [circleCayleyInv]
     have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
     rw [div_eq_iff hdenom.ne']
     field_simp [hden, hquadpos.ne']
     rw [hquad]
     ring
-
-/-- On the unit circle, the real inverse Cayley coordinate agrees with `TauCeti.circleCayleyInv`. -/
-@[simp] theorem _root_.Complex.inverseCayleyCoord_coe_circle (z : Circle) :
-    Complex.inverseCayleyCoord (z : ℂ) = circleCayleyInv z := by
-  by_cases hz : z = 1
-  · subst z
-    simp [circleCayleyInv_def]
-  conv_lhs => rw [← boundaryCayley_circleCayleyInv hz, coe_boundaryCayley]
-  simp only [Complex.inverseCayleyCoord_cayley, Complex.ofReal_re]
 
 /-- The boundary Cayley map is continuous. -/
 @[fun_prop]
@@ -153,27 +133,21 @@ theorem continuous_boundaryCayley : Continuous boundaryCayley := by
     have := congrArg im h
     norm_num at this
 
-/-- The inverse boundary coordinate is measurable on the whole circle. -/
-@[fun_prop]
-theorem measurable_circleCayleyInv : Measurable circleCayleyInv := by
-  unfold circleCayleyInv
-  fun_prop
-
 /-- The inverse boundary coordinate is continuous away from the omitted point `1`. -/
-theorem continuous_circleCayleyInv_restrict :
-    Continuous fun z : {z : Circle // z ≠ 1} ↦ circleCayleyInv z := by
-  unfold circleCayleyInv
+theorem continuous_inverseCayleyCoord_restrict :
+    Continuous fun z : {z : Circle // z ≠ 1} ↦ inverseCayleyCoord (z : Circle) := by
+  simp_rw [inverseCayleyCoord_eq_neg_im_div (Circle.norm_coe _)]
   exact Continuous.div₀ (by fun_prop) (by fun_prop) fun z ↦
     one_sub_re_ne_zero_of_ne_one z.property
 
 /-- The boundary Cayley homeomorphism from the real line onto the circle punctured at `1`. -/
 def boundaryCayleyHomeomorph : ℝ ≃ₜ {z : Circle // z ≠ 1} where
   toFun x := ⟨boundaryCayley x, boundaryCayley_ne_one x⟩
-  invFun z := circleCayleyInv z
-  left_inv := circleCayleyInv_boundaryCayley
-  right_inv z := Subtype.ext (boundaryCayley_circleCayleyInv z.property)
+  invFun z := inverseCayleyCoord (z : Circle)
+  left_inv x := by simp
+  right_inv z := Subtype.ext (boundaryCayley_inverseCayleyCoord z.property)
   continuous_toFun := continuous_boundaryCayley.subtype_mk _
-  continuous_invFun := continuous_circleCayleyInv_restrict
+  continuous_invFun := continuous_inverseCayleyCoord_restrict
 
 @[simp]
 theorem boundaryCayleyHomeomorph_apply (x : ℝ) :
@@ -182,13 +156,13 @@ theorem boundaryCayleyHomeomorph_apply (x : ℝ) :
 
 @[simp]
 theorem boundaryCayleyHomeomorph_symm_apply (z : {z : Circle // z ≠ 1}) :
-    boundaryCayleyHomeomorph.symm z = circleCayleyInv z :=
+    boundaryCayleyHomeomorph.symm z = inverseCayleyCoord (z : Circle) :=
   by simp [boundaryCayleyHomeomorph]
 
 /-- The real-line measure obtained by deleting the atom at `1` from a circle measure and pushing
 the remainder forward through the inverse boundary Cayley coordinate. -/
 def _root_.MeasureTheory.Measure.cayleyPushforward (mu : Measure Circle) : Measure ℝ :=
-  (mu.restrict ({1}ᶜ : Set Circle)).map circleCayleyInv
+  (mu.restrict ({1}ᶜ : Set Circle)).map fun z : Circle ↦ inverseCayleyCoord z
 
 /-- The Cayley pushforward of a finite circle measure is finite. -/
 instance _root_.MeasureTheory.Measure.isFiniteMeasure_cayleyPushforward
@@ -220,13 +194,13 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
       -- Expose the composition expected by `integral_map`; the two integrands are definitionally
       -- equal, but its rewrite lemma matches the composition form.
       change ∫ z, f z ∂mu.restrict ({1}ᶜ : Set Circle) =
-        ∫ x, (f ∘ boundaryCayley) x ∂Measure.map circleCayleyInv
+        ∫ x, (f ∘ boundaryCayley) x ∂Measure.map (fun z : Circle ↦ inverseCayleyCoord z)
           (mu.restrict ({1}ᶜ : Set Circle))
-      rw [integral_map measurable_circleCayleyInv.aemeasurable
+      rw [integral_map (by fun_prop)
         (hf.comp continuous_boundaryCayley).aestronglyMeasurable]
       refine integral_congr_ae ((ae_restrict_mem (measurableSet_singleton 1).compl).mono ?_)
       intro z hz
-      exact congrArg f (boundaryCayley_circleCayleyInv (by simpa using hz)).symm
+      exact congrArg f (boundaryCayley_inverseCayleyCoord (by simpa using hz)).symm
 
 /-- The Nevanlinna kernel on the upper half-plane. -/
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
@@ -354,11 +328,7 @@ bound depending only on the distance of the point from the boundary in Cayley co
 theorem norm_nevanlinnaKernel_le {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) (x : ℝ) :
     ‖nevanlinnaKernel z x‖ ≤ (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) := by
   have hzim : 0 < z.im := hz
-  have hlt : ‖z - I‖ < ‖z + I‖ := by
-    refine lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) ?_
-    rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq]
-    simp only [normSq_apply, sub_re, sub_im, add_re, add_im, I_re, I_im]
-    nlinarith
+  have hlt : ‖z - I‖ < ‖z + I‖ := norm_sub_I_lt_norm_add_I_iff.2 hzim
   have hDpos : (0 : ℝ) < ‖z + I‖ := lt_of_le_of_lt (norm_nonneg _) hlt
   have hEnonneg : (0 : ℝ) ≤ ‖z - I‖ := norm_nonneg _
   set D := ‖z + I‖ with hD
@@ -459,6 +429,65 @@ theorem exists_isFiniteMeasure_eq_nevanlinnaKernel_add {F : ℂ → ℂ}
   refine ⟨mu.cayleyPushforward, mu.real {1}, inferInstance, measureReal_nonneg, fun z hz ↦ ?_⟩
   rw [hrep z hz, I_mul_herglotzTransform_cayley_eq mu hz]
 
+/-- Off the real axis, the Nevanlinna integral of a finite measure `ρ` is
+`ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)`, where `m_ρ` is the resolvent transform. -/
+theorem _root_.MeasureTheory.Measure.integral_nevanlinnaKernel_eq_add_mul_resolventTransform
+    (rho : Measure ℝ) [IsFiniteMeasure rho] {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, nevanlinnaKernel z t ∂rho =
+      rho.real Set.univ * z + (1 + z ^ 2) * resolventTransform rho z := by
+  have hk : ∀ t : ℝ, nevanlinnaKernel z t = z + (1 + z ^ 2) * resolvent z t := fun t ↦ by
+    rw [nevanlinnaKernel_eq_add_div (ofReal_sub_ne_zero_of_im_ne_zero hz t), resolvent,
+      Ring.inverse_eq_inv', div_eq_mul_inv]
+    simp
+  simp_rw [hk]
+  rw [integral_add (integrable_const _)
+      ((integrable_resolvent_of_im_ne_zero hz).const_mul _), integral_const, integral_const_mul,
+    resolventTransform_apply, real_smul]
+
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti Filter Topology
+
+/-- **A finite measure is determined by its Nevanlinna integral.** Two finite measures on `ℝ`
+whose Nevanlinna kernels have the same integral at every point of the upper half-plane are equal. -/
+theorem ext_of_integral_nevanlinnaKernel {rho rho' : Measure ℝ} [IsFiniteMeasure rho]
+    [IsFiniteMeasure rho']
+    (h : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      ∫ t, nevanlinnaKernel z t ∂rho = ∫ t, nevanlinnaKernel z t ∂rho') :
+    rho = rho' := by
+  have hrep (z : ℂ) (hz : 0 < z.im) := by
+    have := h z hz
+    rwa [rho.integral_nevanlinnaKernel_eq_add_mul_resolventTransform hz.ne',
+      rho'.integral_nevanlinnaKernel_eq_add_mul_resolventTransform hz.ne'] at this
+  have hmass : rho.real Set.univ = rho'.real Set.univ := by
+    simpa using congrArg im (hrep I (by simp))
+  have hne {z : ℂ} (hz : 0 < z.im) (hzI : z ≠ I) :
+      resolventTransform rho z = resolventTransform rho' z := by
+    have h1 : 1 + z ^ 2 ≠ 0 := by
+      have : 1 + z ^ 2 = (z - I) * (z + I) := by linear_combination I_sq
+      rw [this]
+      refine mul_ne_zero (sub_ne_zero.2 hzI) fun h0 ↦ ?_
+      have := congrArg im h0
+      simp at this
+      linarith
+    have := hrep z hz
+    rw [hmass, _root_.add_right_inj] at this
+    exact mul_left_cancel₀ h1 this
+  refine ext_of_resolventTransform fun z hz ↦ ?_
+  rcases eq_or_ne z I with rfl | hzI
+  · -- At `i`, the transforms agree on a punctured neighbourhood, so by continuity also at `i`.
+    have hcont (μ : Measure ℝ) [IsFiniteMeasure μ] :
+        Tendsto (resolventTransform μ) (𝓝[≠] I) (𝓝 (resolventTransform μ I)) :=
+      (continuousAt_resolventTransform_of_im_ne_zero (by simp)).tendsto.mono_left
+        nhdsWithin_le_nhds
+    refine tendsto_nhds_unique (hcont rho) ((hcont rho').congr' ?_)
+    filter_upwards [nhdsWithin_le_nhds (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hz),
+      self_mem_nhdsWithin] with w hw hwI
+    exact (hne hw hwI).symm
+  · exact hne hz hzI
+
+end MeasureTheory.Measure
 
 end

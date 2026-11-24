@@ -15,7 +15,9 @@ Let `X ⟶ S` and `Y ⟶ S` be two objects over `S`, and let `X' ⟶ S'` and `Y'
 changes along `f : S' ⟶ S`. Then the fibre product `X' ×_{S'} Y'` is the base change of
 `X ×_S Y` along `f`, through the morphism `pullback.map` induced by `X' ⟶ X` and `Y' ⟶ Y`
 (`CategoryTheory.IsPullback.pullback_map`). In other words, base change preserves fibre
-products over the base. The canonical comparison isomorphism
+products over the base. The first step needs only `Y' ⟶ S'` to be a base change: for any
+`X' ⟶ X` over `f`, `X' ×_{S'} Y'` is the base change of the first projection `X ×_S Y ⟶ X` along
+`X' ⟶ X` (`CategoryTheory.IsPullback.pullback_map_fst`). The canonical comparison isomorphism
 `CategoryTheory.Limits.pullbackBaseChangeIso` has explicit projection formulas and is natural
 in both objects over the base.
 
@@ -40,20 +42,25 @@ open Limits
 variable {C : Type*} [Category* C] {S S' X Y X' Y' : C} {f : S' ⟶ S} {pX : X ⟶ S} {pY : Y ⟶ S}
   {pX' : X' ⟶ S'} {pY' : Y' ⟶ S'} {iX : X' ⟶ X} {iY : Y' ⟶ Y}
 
+/-- If `Y' ⟶ S'` is the base change of `Y ⟶ S` along `f : S' ⟶ S`, then for any `X' ⟶ X` over
+`f`, the morphism `X' ×_{S'} Y' ⟶ X ×_S Y` induced by `X' ⟶ X` and `Y' ⟶ Y` is the base change of
+`X' ⟶ X` along the first projection `X ×_S Y ⟶ X`. -/
+theorem pullback_map_fst [HasPullback pX pY] [HasPullback pX' pY'] (wX : pX' ≫ f = iX ≫ pX)
+    (hY : IsPullback pY' iY f pY) :
+    IsPullback (pullback.map pX' pY' pX pY iX iY f wX hY.w)
+      (pullback.fst pX' pY') (pullback.fst pX pY) iX := by
+  refine .of_right (h₁₂ := pullback.snd pX pY) ?_ (by simp)
+    (IsPullback.of_hasPullback pX pY).flip
+  simpa [wX] using (IsPullback.of_hasPullback pX' pY').flip.paste_horiz hY.flip
+
 /-- **Base change preserves fibre products.** If `X' ⟶ S'` and `Y' ⟶ S'` are the base changes of
 `X ⟶ S` and `Y ⟶ S` along `f : S' ⟶ S`, then `X' ×_{S'} Y'`, as an object over `S'`, is the base
 change of `X ×_S Y` along `f`. -/
 theorem pullback_map [HasPullback pX pY] [HasPullback pX' pY']
     (hX : IsPullback pX' iX f pX) (hY : IsPullback pY' iY f pY) :
     IsPullback (pullback.fst pX' pY' ≫ pX')
-      (pullback.map pX' pY' pX pY iX iY f hX.w hY.w) f (pullback.fst pX pY ≫ pX) := by
-  -- `X' ×_{S'} Y'` is the base change of `X ×_S Y ⟶ X` along `X' ⟶ X`
-  have top : IsPullback (pullback.map pX' pY' pX pY iX iY f hX.w hY.w)
-      (pullback.fst pX' pY') (pullback.fst pX pY) iX := by
-    refine .of_right (h₁₂ := pullback.snd pX pY) ?_ (by simp)
-      (IsPullback.of_hasPullback pX pY).flip
-    simpa [hX.w] using (IsPullback.of_hasPullback pX' pY').flip.paste_horiz hY.flip
-  exact (top.paste_vert hX.flip).flip
+      (pullback.map pX' pY' pX pY iX iY f hX.w hY.w) f (pullback.fst pX pY ≫ pX) :=
+  ((pullback_map_fst hX.w hY).paste_vert hX.flip).flip
 
 section Interchange
 
@@ -71,23 +78,16 @@ theorem pullback_map_pullback_map [HasPullback t x] [HasPullback t₁ x₁] [Has
       (pullback.map t x t₂ x₂ p₂ q₂ (𝟙 S) (by simp [← hT.w, ht₁]) (by simp [← hX.w, hx₁]))
       (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂) := by
   have hx₂ : q₂ ≫ x₂ = x := hX.w.symm.trans hx₁
-  have hc₁ {W : C} (a : W ⟶ pullback t₁ x₁) :
-      a ≫ pullback.fst t₁ x₁ ≫ t₁ = a ≫ pullback.snd t₁ x₁ ≫ x₁ := by
-    rw [pullback.condition]
-  have hc₂ {W : C} (b : W ⟶ pullback t₂ x₂) :
-      b ≫ pullback.fst t₂ x₂ ≫ t₂ = b ≫ pullback.snd t₂ x₂ ≫ x₂ := by
-    rw [pullback.condition]
   -- A cone over the two factor fibre products gives compatible maps to `T` and to `X`.
   let lT (c : PullbackCone (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂)) : c.pt ⟶ T :=
     hT.lift (c.fst ≫ pullback.fst _ _) (c.snd ≫ pullback.fst _ _) <| by
-      simpa only [Category.assoc, hc₁, hc₂] using c.condition
+      simpa only [Category.assoc, pullback.condition] using c.condition
   let lX (c : PullbackCone (pullback.snd t₁ x₁ ≫ x₁) (pullback.snd t₂ x₂ ≫ x₂)) : c.pt ⟶ X :=
     hX.lift (c.fst ≫ pullback.snd _ _) (c.snd ≫ pullback.snd _ _) <| by
       simpa only [Category.assoc] using c.condition
   refine ⟨⟨by simp [hx₁, hx₂]⟩, ⟨PullbackCone.IsLimit.mk _
     (fun c ↦ pullback.lift (lT c) (lX c) ?_) (fun c ↦ ?_) (fun c ↦ ?_) (fun c m h₁ h₂ ↦ ?_)⟩⟩
-  · rw [← ht₁, ← hx₁, hT.lift_fst_assoc, hX.lift_fst_assoc, Category.assoc, Category.assoc,
-      pullback.condition]
+  · simp [lT, lX, ← ht₁, ← hx₁, pullback.condition]
   · apply pullback.hom_ext <;> simp [lT, lX]
   · apply pullback.hom_ext <;> simp [lT, lX]
   · apply pullback.hom_ext
@@ -106,8 +106,9 @@ namespace CategoryTheory.Limits
 
 section BaseChange
 
-variable {C : Type*} [Category* C] [HasPullbacks C] {X Y S S' : C}
-  (f : X ⟶ S) (g : Y ⟶ S) (φ : S' ⟶ S)
+variable {C : Type*} [Category* C] {X Y S S' : C}
+  (f : X ⟶ S) (g : Y ⟶ S) (φ : S' ⟶ S) [HasPullback f g] [HasPullback f φ] [HasPullback g φ]
+  [HasPullback (pullback.fst f g ≫ f) φ] [HasPullback (pullback.snd f φ) (pullback.snd g φ)]
 
 /-- Base change of a fibre product is the fibre product of the base changes, with both
 base-changed factors regarded as objects over `S'` through their second projections. -/
@@ -146,7 +147,8 @@ theorem pullbackBaseChangeIso_inv_fst :
         φ pullback.condition.symm pullback.condition.symm := by
   simp [pullbackBaseChangeIso]
 
-/-- The base-change comparison is an isomorphism over the new base. -/
+/-- The inverse base-change comparison commutes with the structure morphisms to the new base
+`S'`, so the comparison is an isomorphism over `S'`. -/
 @[reassoc (attr := simp)]
 theorem pullbackBaseChangeIso_inv_snd :
     (pullbackBaseChangeIso f g φ).inv ≫ pullback.snd _ _ =
@@ -156,7 +158,9 @@ theorem pullbackBaseChangeIso_inv_snd :
 /-- The base-change comparison is natural in both objects over the base. -/
 @[reassoc]
 theorem pullbackBaseChangeIso_naturality {X' Y' : C}
-    (f' : X' ⟶ S) (g' : Y' ⟶ S) (a : X ⟶ X') (b : Y ⟶ Y')
+    (f' : X' ⟶ S) (g' : Y' ⟶ S) [HasPullback f' g'] [HasPullback f' φ] [HasPullback g' φ]
+    [HasPullback (pullback.fst f' g' ≫ f') φ] [HasPullback (pullback.snd f' φ) (pullback.snd g' φ)]
+    (a : X ⟶ X') (b : Y ⟶ Y')
     (ha : a ≫ f' = f) (hb : b ≫ g' = g) :
     pullback.map (pullback.fst f g ≫ f) φ (pullback.fst f' g' ≫ f') φ
         (pullback.map f g f' g' a b (𝟙 S) (by simp [ha]) (by simp [hb]))

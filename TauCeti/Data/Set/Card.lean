@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Nat.Set
 import TauCeti.Data.Set.Prod
 import TauCeti.Logic.Function.Fiber
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Order.Interval.Set.Nat
 
 /-!
 # Cardinalities of images, complements, coverings, preimages, fibres, products and doubled sets
@@ -26,7 +29,8 @@ For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n`
 repeat each term `n` times, such as the singular values of a block sum of `n` copies of one map.
 
 Adding a fresh element to a set removes one element from its complement
-(`Set.encard_compl_insert_add_one`).
+(`Set.encard_compl_insert_add_one`). A set of naturals containing `0` has one more element, in
+`ℕ∞`, than the set of indices whose successor lies in it (`Set.encard_preimage_succ_add_one`).
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
@@ -44,8 +48,19 @@ the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
 (`Set.encard_setOf_ncard_setOf_lt_eq`). For a strictly monotone map on `Fin n`, the rank of `f k`
 is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
+The same count works for an infinite set `s`, provided only finitely many of its points lie below
+each one. For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
+(`Set.InjOn.injOn_ncard_sep_lt`), and when `s` is infinite every natural number is such a count
+(`Set.Infinite.exists_mem_ncard_sep_lt_eq`). This lists `s` in increasing order of `f`, as a
+sequence indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
+
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
-(`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
+(`Set.finite_and_ncard_le_sum_of_subset_biUnion`). Over a finite index type, the triples
+`(i, a, b)` with `a ∈ A i` and `b ∈ B i` are counted fibrewise by `∑ i, |A i| * |B i|`
+(`Set.ncard_setOf_and_and_mem_and_mem`); this is the count behind the coefficients of a composite
+of two counting matrices. Cast into a semiring, the count is `∑ i, a i * b i` for coefficients
+`a i` equal to `|A i|` when `P i` holds and `0` otherwise, and `b i` likewise for `B i` and `Q i`
+(`Set.natCast_ncard_setOf_and_and_mem_and_mem`).
 
 A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
 numbers up to `2n` outside it, so its complement is infinite
@@ -88,6 +103,13 @@ theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x �
   rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
     inter_comm]
 
+/-- A set of natural numbers containing `0` has one more element than the set of indices `n` with
+`n + 1 ∈ s`; both sides are `⊤` when `s` is infinite. -/
+theorem encard_preimage_succ_add_one {s : Set ℕ} (hs : 0 ∈ s) :
+    (Nat.succ ⁻¹' s).encard + 1 = s.encard := by
+  rw [← Nat.succ_injective.encard_image, image_preimage_eq_inter_range, ← compl_compl (range _),
+    Nat.compl_range_succ, ← sdiff_eq, encard_sdiff_singleton_add_one hs]
+
 /-- The points of the range of an injective map into a sigma type lying over the index `i` are
 counted by the arguments mapped over `i`. -/
 theorem ncard_preimage_sigmaMk_range {κ α : Type*} {Y : κ → Type*}
@@ -112,6 +134,67 @@ theorem finite_and_ncard_le_sum_of_subset_biUnion {ι α : Type*} {S : Set α} {
   have hfin : (⋃ i ∈ t, C i).Finite := t.finite_toSet.biUnion fun i hi => (hC i hi).1
   exact ⟨hfin.subset hS, (ncard_le_ncard hS hfin).trans <|
     (t.set_ncard_biUnion_le C).trans (Finset.sum_le_sum fun i hi => (hC i hi).2)⟩
+
+/-- Over a finite index type, the triples `(i, a, b)` with `P i`, `Q i`, `a ∈ A i` and `b ∈ B i`
+form a finite set when `A i` is finite whenever `P i` holds and `B i` is finite whenever `Q i`
+holds. -/
+theorem finite_setOf_and_and_mem_and_mem {ι α β : Type*} [Finite ι] {P Q : ι → Prop}
+    {A : ι → Set α} {B : ι → Set β} (hA : ∀ i, P i → (A i).Finite)
+    (hB : ∀ i, Q i → (B i).Finite) :
+    {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite :=
+  ((toFinite {i | P i ∧ Q i}).biUnion fun i hi ↦
+    ((hA i hi.1).prod (hB i hi.2)).image (Prod.mk i)).subset
+    fun x hx ↦ mem_biUnion ⟨hx.1, hx.2.1⟩ ⟨x.2, ⟨hx.2.2.1, hx.2.2.2⟩, rfl⟩
+
+/-- **Counting triples fibrewise.** Over a finite index type, the triples `(i, a, b)` with `P i`,
+`Q i`, `a ∈ A i` and `b ∈ B i`, when finitely many, are counted by summing `|A i| * |B i|` over
+the indices with `P i` and `Q i`. This is the count behind the coefficients of a composite of two
+linear maps given by counting matrices. -/
+theorem ncard_setOf_and_and_mem_and_mem {ι α β : Type*} [Fintype ι] {P Q : ι → Prop}
+    [DecidablePred P] [DecidablePred Q] {A : ι → Set α} {B : ι → Set β}
+    (hfin : {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite) :
+    {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.ncard =
+      ∑ i with P i ∧ Q i, (A i).ncard * (B i).ncard := by
+  classical
+  -- Sort the triples by their index `i`; the fibre over `i` is a copy of `A i ×ˢ B i`.
+  rw [ncard_eq_toFinset_card _ hfin,
+    Finset.card_eq_sum_card_fiberwise fun x _ ↦ Finset.mem_univ x.1, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← ncard_coe_finset, Finset.coe_filter,
+    ← ncard_preimage_of_injective_subset_range (Prod.mk_right_injective i) ?_]
+  swap
+  · rintro ⟨_, z⟩ ⟨-, rfl⟩
+    exact ⟨z, rfl⟩
+  split_ifs with hi
+  · rw [← ncard_prod]
+    congr 1
+    ext
+    simp [hi]
+  · convert ncard_empty (α × β)
+    refine eq_empty_of_forall_notMem fun z hz ↦ hi ?_
+    simp only [mem_preimage, Finite.mem_toFinset, mem_ofPred_eq] at hz
+    exact ⟨hz.1.1, hz.1.2.1⟩
+
+/-- **Counting triples fibrewise, against coefficients.** Let `a i` be `|A i|` when `P i` holds and
+`0` otherwise, and `b i` be `|B i|` when `Q i` holds and `0` otherwise, both read in a semiring `R`.
+Over a finite index type, the triples `(i, a, b)` with `P i`, `Q i`, `a ∈ A i` and `b ∈ B i`, when
+finitely many, are counted in `R` by `∑ i, a i * b i`. This is the coefficient of a composite of two
+linear maps whose matrices count the elements of `A i` and of `B i`. -/
+theorem natCast_ncard_setOf_and_and_mem_and_mem {ι α β R : Type*} [Fintype ι] [Semiring R]
+    {P Q : ι → Prop} {A : ι → Set α} {B : ι → Set β} {a b : ι → R}
+    (ha : ∀ i, P i → a i = (A i).ncard) (ha₀ : ∀ i, ¬P i → a i = 0)
+    (hb : ∀ i, Q i → b i = (B i).ncard) (hb₀ : ∀ i, ¬Q i → b i = 0)
+    (hfin : {x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.Finite) :
+    ({x : ι × α × β | P x.1 ∧ Q x.1 ∧ x.2.1 ∈ A x.1 ∧ x.2.2 ∈ B x.1}.ncard : R) =
+      ∑ i, a i * b i := by
+  classical
+  rw [ncard_setOf_and_and_mem_and_mem hfin, Nat.cast_sum, Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases hP : P i
+  · by_cases hQ : Q i
+    · rw [ite_eq_left ⟨hP, hQ⟩, Nat.cast_mul, ha i hP, hb i hQ]
+    · rw [ite_eq_right fun h ↦ hQ h.2, hb₀ i hQ, mul_zero]
+  · rw [ite_eq_right fun h ↦ hP h.1, ha₀ i hP, zero_mul]
 
 /-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
 up to `2 * n`, for every `n`, has an infinite complement. -/
@@ -152,19 +235,53 @@ theorem ncard_preimage_div (S : Set ℕ) (n : ℕ) : ((· / n) ⁻¹' S).ncard =
       congrArg (· / n) hpq
   exact Prod.ext h₁ (Fin.ext (by simpa [h₁] using hpq))
 
+/-- If `a ∈ s` has a smaller value under `f` than `b`, and only finitely many points of `s` have
+value below `f b`, then fewer points of `s` have value below `f a` than below `f b`. -/
+theorem ncard_sep_lt_lt_ncard_sep_lt {ι α : Type*} [Preorder α] {f : ι → α} {s : Set ι}
+    {a b : ι} (ha : a ∈ s) (hab : f a < f b) (hb : {i ∈ s | f i < f b}.Finite) :
+    {i ∈ s | f i < f a}.ncard < {i ∈ s | f i < f b}.ncard :=
+  ncard_lt_ncard ⟨fun _ hi ↦ ⟨hi.1, hi.2.trans hab⟩,
+    fun hsub ↦ lt_irrefl (f a) (hsub ⟨ha, hab⟩).2⟩ hb
+
+/-- For a map `f` into a linear order that is injective on `s`, if only finitely many points of `s`
+have value below each point of `s`, then the number of points of `s` whose value lies below `f a`
+determines `a ∈ s`. -/
+theorem InjOn.injOn_ncard_sep_lt {ι α : Type*} [LinearOrder α] {f : ι → α} {s : Set ι}
+    (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite) :
+    InjOn (fun a ↦ {i ∈ s | f i < f a}.ncard) s := by
+  intro a ha b hb h
+  by_contra hne
+  rcases lt_or_gt_of_ne (hf.ne ha hb hne) with hlt | hlt
+  · exact (ncard_sep_lt_lt_ncard_sep_lt ha hlt (hfin b hb)).ne h
+  · exact (ncard_sep_lt_lt_ncard_sep_lt hb hlt (hfin a ha)).ne h.symm
+
+/-- For a map `f` into a linear order that is injective on the infinite set `s`, if only finitely
+many points of `s` have value below each point of `s`, then every natural number `n` is the number
+of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
+`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`, indexed by `ℕ`. -/
+theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
+    {s : Set ι} (hs : s.Infinite) (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
+    (n : ℕ) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n := by
+  set r : ι → ℕ := fun a ↦ {i ∈ s | f i < f a}.ncard
+  have hrinj : InjOn r s := hf.injOn_ncard_sep_lt hfin
+  -- The values of `r` on `s` are unbounded, since `s` is infinite and `r` is injective on it.
+  obtain ⟨_, ⟨b, hb, rfl⟩, hnb⟩ := (Infinite.image hrinj hs).exists_gt n
+  -- The `r b` points of `s` below `b` take distinct values of `r`, all below `r b`; so each value
+  -- below `r b`, in particular `n`, is taken.
+  have hsub : r '' {i ∈ s | f i < f b} ⊆ Iio (r b) := by
+    rintro _ ⟨i, hi, rfl⟩
+    exact ncard_sep_lt_lt_ncard_sep_lt hi.1 hi.2 (hfin b hb)
+  have heq : r '' {i ∈ s | f i < f b} = Iio (r b) :=
+    eq_of_subset_of_ncard_le hsub
+      (by rw [ncard_Iio_nat]; exact (hrinj.mono (sep_subset s _)).ncard_image.ge) (finite_Iio _)
+  obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from hnb)
+  exact ⟨a, ha.1, hra⟩
+
 /-- For an injective map `f` from a finite type into a linear order, the number of indices whose
 value lies below `f a` determines `a`. -/
 theorem injective_ncard_setOf_lt {ι α : Type*} [Finite ι] [LinearOrder α] {f : ι → α}
     (hf : Function.Injective f) : Function.Injective fun a ↦ {i | f i < f a}.ncard := by
-  -- The set of values below the larger of `f a`, `f b` strictly contains the other set.
-  have key (a b : ι) (hab : f a < f b) : {i | f i < f a}.ncard < {i | f i < f b}.ncard :=
-    ncard_lt_ncard ⟨fun i hi ↦ lt_trans hi hab, fun hsub ↦ lt_irrefl (f a) (hsub hab)⟩
-      (toFinite _)
-  intro a b h
-  by_contra hne
-  rcases lt_or_gt_of_ne (hf.ne hne) with hlt | hlt
-  · exact (key a b hlt).ne h
-  · exact (key b a hlt).ne h.symm
+  simpa [injOn_univ] using hf.injOn.injOn_ncard_sep_lt (s := univ) fun _ _ ↦ toFinite _
 
 /-- For an injective map `f` from a finite type into a linear order, every `j < Nat.card ι` is the
 number of indices whose value lies below `f k` for exactly one index `k`, and no larger `j` is. -/

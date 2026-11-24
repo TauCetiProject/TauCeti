@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
-public import TauCeti.RepresentationTheory.CharacterTable.Degree
+public import TauCeti.RepresentationTheory.CharacterTable.Degree.Basic
 -- `FDRep.character_mem_irreducibleCharacters` is stated for a simple object of `FDRep k G`.
 public import TauCeti.RepresentationTheory.Simple.Basic
 import TauCeti.SetTheory.Cardinal.Finite

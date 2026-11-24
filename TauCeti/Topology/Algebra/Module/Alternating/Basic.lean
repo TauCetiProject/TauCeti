@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Alternating pullbacks and postcompositions
@@ -201,9 +202,7 @@ theorem compContinuousLinearMap_fst_add_snd_apply (ω₁ : V [⋀^Fin 2]→L[R] 
     (ω₁.compContinuousLinearMap (ContinuousLinearMap.fst R V W) +
         ω₂.compContinuousLinearMap (ContinuousLinearMap.snd R V W)) ![p, q] =
       ω₁ ![p.1, q.1] + ω₂ ![p.2, q.2] := by
-  have h₁ : Prod.fst ∘ ![p, q] = ![p.1, q.1] := by ext i; fin_cases i <;> rfl
-  have h₂ : Prod.snd ∘ ![p, q] = ![p.2, q.2] := by ext i; fin_cases i <;> rfl
-  simp [h₁, h₂]
+  simp [Matrix.comp_vec2]
 
 end Prod
 

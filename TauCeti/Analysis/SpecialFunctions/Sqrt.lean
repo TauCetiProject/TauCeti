@@ -5,238 +5,117 @@ Authors: Claude Fable 5, Claude Opus 4.8, Claude Opus 5
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Tactic.FieldSimp
-
-import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
-# Square-root displacement estimates and limits at zero
+# Weighted square-root bounds, derivatives and regularity
 
-Two estimates comparing the real square-root and inverse-square-root functions
-with the identity near `1`. These bounds control scalar spectral factors of
-positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, and that
-`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
-modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
-to `0` as
-`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
-`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
-`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
+This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)` for
+`0 ≤ γ ≤ 1` of the `1/2`-Hölder bound for the square root, the derivatives of `x ↦ √(x² + p)`,
+`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)` and `y ↦ α / (β y + √(y² + c))`, that
+`1 / √(1 + f²)` is as smooth as `f`, that `t ↦ √(1 + t²)` is smooth and `t ↦ δ √(1 + t²)` has
+slope at most `|δ|`, that the radial
+profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`, and the
+Gaussian normalization `√(4 / π) = 2 / √π`. The elementary square-root bounds, identities and
+limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`.
 
 ## Main results
 
-* `Real.abs_sqrt_sub_one_le_abs_sub_one`: for every real `μ`,
-  `|√μ - 1| ≤ |μ - 1|`.
-* `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
-  `|1 - (√μ)⁻¹| ≤ δ`.
-* `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
-* `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
-* `Real.abs_div_sqrt_sq_add_le_one`: for `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`.
-* `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
-* `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
-* `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
-  `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
-* `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`: `t ↦ √(1 + t²)` is `1`-Lipschitz.
-* `Real.one_add_div_two_le_sqrt_one_add_sq`: for every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`.
-* `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
-* `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
-  `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
-* `Real.inv_sqrt_two_sq_add_inv_sqrt_two_sq`: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`.
-* `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
-* `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
-  `c √u → 0⁺` as `u → 0⁺`.
-* `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
-  `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)`
-  is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
+* `Real.abs_sqrt_sub_sqrt_mul_max_rpow_le`: for `0 ≤ γ ≤ 1`, the weighted bound
+  `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`.
+* `ContDiff.inv_sqrt_one_add_sq`: `x ↦ 1 / √(1 + f(x)²)` is as smooth as `f`.
+* `Real.contDiff_sqrt_one_add_sq`: `t ↦ √(1 + t²)` is smooth.
+* `Real.abs_deriv_mul_sqrt_one_add_sq_le`: the slope of `t ↦ δ √(1 + t²)` is at most `|δ|`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
+* `Real.hasDerivAt_sqrt_sq_add`, `Real.hasDerivAt_mul_add_sqrt_sq_add`: the derivatives of
+  `x ↦ √(x² + p)` and `x ↦ β x + √(x² + p)` wherever `t² + p ≠ 0`.
+* `Real.hasDerivAt_add_sqrt_sq_add`: the substitution `t ↦ t + √(t² + p)` has an explicit
+  derivative wherever `t² + p > 0`.
+* `Real.hasDerivAt_div_mul_add_sqrt_sq_add`: the function `y ↦ α / (β y + √(y² + c))` has an
+  explicit derivative where `y² + c` and the denominator do not vanish.
+* `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
 
-[AIQ DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization),
-`ForTauCeti/Analysis/SpecialFunctions/Sqrt.lean`.
+`Real.hasDerivAt_add_sqrt_sq_add` is extracted from, and its proof adapted from, Jeremy Tan's
+[Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397), commit
+`376352b6e080265bc0380074baaf9aafa0b70a80`.
 
-`Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add` and
-`Real.image_add_sqrt_sq_add_eq_Ioi` are extracted from, and their proofs adapted from, Jeremy
-Tan's [Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397),
-commit `376352b6e080265bc0380074baaf9aafa0b70a80`.
+`Real.hasDerivAt_div_mul_add_sqrt_sq_add` is adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`.
 -/
 
 public section
 
-open Filter
 open scoped Topology
 
 namespace Real
 
-/-- For every real `μ`, the square root is no farther from `1` than `μ` is:
-`|√μ - 1| ≤ |μ - 1|`. -/
-theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
-    |sqrt μ - 1| ≤ |μ - 1| := by
-  rcases le_total 0 μ with hμ | hμ
-  · have hs : 0 ≤ sqrt μ := sqrt_nonneg μ
-    have hsq : sqrt μ * sqrt μ = μ := mul_self_sqrt hμ
-    have key : |sqrt μ - 1| * (sqrt μ + 1) = |μ - 1| := by
-      rw [← abs_of_nonneg (by linarith : (0 : ℝ) ≤ sqrt μ + 1), ← abs_mul]
-      congr 1
-      nlinarith [hsq]
-    nlinarith [key, mul_nonneg (abs_nonneg (sqrt μ - 1)) hs]
-  · have hsqrt : sqrt μ = 0 := sqrt_eq_zero_of_nonpos hμ
-    calc
-      |sqrt μ - 1| = 1 := by rw [hsqrt]; norm_num
-      _ ≤ |μ - 1| := by
-        rw [abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
-        linarith
+/-- **A weighted Hölder bound for the square root.** For all reals `t` and `s` and `0 ≤ γ ≤ 1`,
+`|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)`. At `γ = 0` this is the `1/2`-Hölder
+bound `Real.abs_sqrt_sub_sqrt_le`. It is the time increment of a parabolic rescaling `x - √t y`
+against a `γ`-Hölder modulus, as in the temporal Hölder estimate of heat potentials of `C^{1,γ}`
+data. -/
+theorem abs_sqrt_sub_sqrt_mul_max_rpow_le (t s : ℝ) {γ : ℝ} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) :
+    |√t - √s| * max √t √s ^ γ ≤ |t - s| ^ ((1 + γ) / 2) := by
+  -- First the bound `|a - b| max a b ^ γ ≤ |a² - b²| ^ ((1 + γ) / 2)` for `a, b ≥ 0`.
+  have key : ∀ {a b : ℝ}, 0 ≤ a → 0 ≤ b →
+      |a - b| * max a b ^ γ ≤ |a ^ 2 - b ^ 2| ^ ((1 + γ) / 2) := by
+    intro a b ha hb
+    wlog hab : b ≤ a generalizing a b
+    · simpa [abs_sub_comm, max_comm] using this hb ha (le_of_not_ge hab)
+    rcases (add_nonneg ha hb).eq_or_lt with hs | hs
+    · obtain rfl : a = 0 := by linarith
+      obtain rfl : b = 0 := by linarith
+      simp only [sub_self, abs_zero, zero_mul]
+      positivity
+    have hd : 0 ≤ a - b := sub_nonneg.2 hab
+    rw [abs_of_nonneg hd, max_eq_left hab, show a ^ 2 - b ^ 2 = (a - b) * (a + b) by ring,
+      abs_of_nonneg (mul_nonneg hd hs.le), mul_rpow hd hs.le]
+    -- Split `a - b = (a - b) ^ ((1 + γ) / 2) (a - b) ^ ((1 - γ) / 2)` and use `a - b ≤ a + b`.
+    have he : (1 + γ) / 2 + (1 - γ) / 2 = 1 := by ring
+    have h₁ : a - b ≤ (a - b) ^ ((1 + γ) / 2) * (a + b) ^ ((1 - γ) / 2) := by
+      calc a - b = (a - b) ^ ((1 + γ) / 2) * (a - b) ^ ((1 - γ) / 2) := by
+            rw [← rpow_add' hd (by rw [he]; exact one_ne_zero), he, rpow_one]
+        _ ≤ _ := by gcongr; linarith
+    have h₂ : a ^ γ ≤ (a + b) ^ γ := by gcongr; linarith
+    calc (a - b) * a ^ γ
+        ≤ (a - b) ^ ((1 + γ) / 2) * (a + b) ^ ((1 - γ) / 2) * (a + b) ^ γ := by gcongr
+      _ = (a - b) ^ ((1 + γ) / 2) * (a + b) ^ ((1 + γ) / 2) := by
+          rw [mul_assoc, ← rpow_add hs, show (1 - γ) / 2 + γ = (1 + γ) / 2 by ring]
+  refine (key (sqrt_nonneg t) (sqrt_nonneg s)).trans
+    (rpow_le_rpow (abs_nonneg _) ?_ (by positivity))
+  rw [sq_sqrt', sq_sqrt']
+  exact abs_max_sub_max_le_abs t s 0
 
-/-- If `|μ - 1| ≤ δ ≤ 1 / 2`, then `|1 - (√μ)⁻¹| ≤ δ`.
+/-- The function `x ↦ 1 / √(1 + f(x)²)` is as smooth as `f`. -/
+theorem _root_.ContDiff.inv_sqrt_one_add_sq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n fun x ↦ (√(1 + f x ^ 2))⁻¹ :=
+  ((contDiff_const.add (hf.pow 2)).sqrt fun _ ↦ by positivity).inv fun _ ↦ by positivity
 
-The hypotheses force `μ` to be positive and keep the inverse square root
-bounded near `1`. -/
-theorem abs_one_sub_inv_sqrt_le {μ δ : ℝ} (hδ : δ ≤ 1 / 2) (hμ : |μ - 1| ≤ δ) :
-    |1 - (sqrt μ)⁻¹| ≤ δ := by
-  have hμlb : 1 - δ ≤ μ := by rw [abs_le] at hμ; linarith
-  have hμpos : (0 : ℝ) < μ := by linarith
-  set s := sqrt μ
-  have hs0 : 0 < s := sqrt_pos.mpr hμpos
-  have hssq : s ^ 2 = μ := sq_sqrt (le_of_lt hμpos)
-  -- `s ≥ 1/2` (since `s² = μ ≥ 1/2`)
-  have hssqlb : (1 : ℝ) / 2 ≤ s ^ 2 := by rw [hssq]; linarith
-  have hsge : (1 : ℝ) / 2 ≤ s := by nlinarith [hs0, hssqlb]
-  have hδ0 : 0 ≤ δ := le_trans (abs_nonneg _) hμ
-  rw [abs_le] at hμ ⊢
-  obtain ⟨hμ1, hμ2⟩ := hμ
-  have hssq' : s * s = μ := by nlinarith [hssq]
-  -- Lower bound `1 ≤ (1 + δ) * s`: its square is `(1 + δ)² μ ≥ (1 + δ)² (1 - δ) ≥ 1`.
-  have hlow : 1 ≤ (1 + δ) * s := by
-    have hpos : 0 < (1 + δ) * s := by positivity
-    nlinarith [hpos, hssq', hμ1, hμ2, hδ0, hsge, mul_nonneg hδ0 hδ0,
-      mul_nonneg (mul_nonneg hδ0 hδ0) hδ0]
-  -- Upper bound `(1 - δ) * s ≤ 1`: equivalently `(1 - δ)² μ ≤ 1` when `1 - δ ≥ 0`.
-  have hhigh : (1 - δ) * s ≤ 1 := by
-    rcases le_or_gt (1 - δ) 0 with h | h
-    · nlinarith [hs0, h]
-    · nlinarith [hssq', hμ1, hμ2, hδ0, hsge, h, mul_nonneg hδ0 hδ0]
-  -- Translate the two multiplicative bounds into bounds on `s⁻¹`.
-  have hinv_le : s⁻¹ ≤ 1 + δ := by
-    rw [inv_eq_one_div, div_le_iff₀ hs0]; linarith [hlow]
-  have hle_inv : 1 - δ ≤ s⁻¹ := by
-    rw [inv_eq_one_div, le_div_iff₀ hs0]; linarith [hhigh]
-  exact ⟨by linarith [hinv_le], by linarith [hle_inv]⟩
+/-- The function `t ↦ √(1 + t²)` is smooth. -/
+theorem contDiff_sqrt_one_add_sq {n : WithTop ℕ∞} : ContDiff ℝ n fun t : ℝ ↦ √(1 + t ^ 2) :=
+  (contDiff_const.add (contDiff_id.pow 2)).sqrt fun t ↦ by positivity
 
-/-- For all reals `t` and `s`, `√t ≤ √s + √|t - s|`. -/
-theorem sqrt_le_sqrt_add_sqrt_abs_sub (t s : ℝ) : √t ≤ √s + √|t - s| := by
-  rw [sqrt_le_left (by positivity)]
-  have hts := sq_sqrt (abs_nonneg (t - s))
-  rcases le_total 0 s with hs | hs
-  · nlinarith [sq_sqrt hs, le_abs_self (t - s), mul_nonneg (sqrt_nonneg s) (sqrt_nonneg |t - s|)]
-  · rw [sqrt_eq_zero_of_nonpos hs]
-    nlinarith [le_abs_self (t - s)]
-
-/-- **The square root is `1/2`-Hölder.** For all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`. -/
-theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
-  have h₁ := sqrt_le_sqrt_add_sqrt_abs_sub t s
-  have h₂ := sqrt_le_sqrt_add_sqrt_abs_sub s t
-  rw [abs_sub_comm s t] at h₂
-  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
-
-/-- For every real `t`, `1 ≤ √(1 + t²)`. -/
-theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
-  one_le_sqrt.mpr (by nlinarith [sq_nonneg t])
-
-/-- For `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`, including when the
-square root vanishes. -/
-theorem abs_div_sqrt_sq_add_le_one {p : ℝ} (hp : 0 ≤ p) (t : ℝ) :
-    |t / √(t ^ 2 + p)| ≤ 1 := by
-  rw [abs_div, abs_of_nonneg (sqrt_nonneg _)]
-  exact div_le_one_of_le₀ (abs_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
-
-/-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
-theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
-  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
-  nlinarith [abs_nonneg t, sq_abs t]
-
-/-- The modular `√(1 + t²) - 1` is at most quadratic: `√(1 + t²) - 1 ≤ t² / 2`. -/
-theorem sqrt_one_add_sq_sub_one_le_sq_div_two (t : ℝ) : √(1 + t ^ 2) - 1 ≤ t ^ 2 / 2 := by
-  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
-  nlinarith [sq_nonneg (t ^ 2)]
-
-/-- The modular `√(1 + t²) - 1` is locally Lipschitz with a linear modulus:
-`|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`. -/
-theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
-    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| * (|a| + |b|) := by
-  have ha := one_le_sqrt_one_add_sq a
-  have hb := one_le_sqrt_one_add_sq b
-  have hA : √(1 + a ^ 2) ^ 2 = 1 + a ^ 2 := sq_sqrt (by positivity)
-  have hB : √(1 + b ^ 2) ^ 2 = 1 + b ^ 2 := sq_sqrt (by positivity)
-  have key : (√(1 + a ^ 2) - √(1 + b ^ 2)) * (√(1 + a ^ 2) + √(1 + b ^ 2)) =
-      (a - b) * (a + b) := by linear_combination hA - hB
-  calc |√(1 + a ^ 2) - √(1 + b ^ 2)|
-      ≤ |√(1 + a ^ 2) - √(1 + b ^ 2)| * (√(1 + a ^ 2) + √(1 + b ^ 2)) :=
-        le_mul_of_one_le_right (abs_nonneg _) (by linarith)
-    _ = |a - b| * |a + b| := by
-        rw [← abs_of_pos (by linarith : 0 < √(1 + a ^ 2) + √(1 + b ^ 2)), ← abs_mul, key,
-          abs_mul]
-    _ ≤ |a - b| * (|a| + |b|) := mul_le_mul_of_nonneg_left (abs_add_le a b) (abs_nonneg _)
-
-/-- The function `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line:
-`|√(1 + a²) - √(1 + b²)| ≤ |a - b|`. -/
-theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub (a b : ℝ) :
-    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| := by
-  have hpos : 0 < √(1 + a ^ 2) + √(1 + b ^ 2) := by
-    linarith [one_le_sqrt_one_add_sq a, one_le_sqrt_one_add_sq b]
-  have hA : √(1 + a ^ 2) ^ 2 = 1 + a ^ 2 := sq_sqrt (by positivity)
-  have hB : √(1 + b ^ 2) ^ 2 = 1 + b ^ 2 := sq_sqrt (by positivity)
-  -- `|a| ≤ √(1 + a²)` and `|b| ≤ √(1 + b²)`, so the sum of the roots dominates `|a + b|`.
-  have hab : |a + b| ≤ √(1 + a ^ 2) + √(1 + b ^ 2) :=
-    (abs_add_le a b).trans (add_le_add (abs_le_sqrt (by nlinarith)) (abs_le_sqrt (by nlinarith)))
-  refine le_of_mul_le_mul_right ?_ hpos
-  -- `(√(1 + a²) - √(1 + b²)) (√(1 + a²) + √(1 + b²)) = (a - b) (a + b)`.
-  rw [← abs_of_pos hpos, ← abs_mul, abs_of_pos hpos,
-    show (√(1 + a ^ 2) - √(1 + b ^ 2)) * (√(1 + a ^ 2) + √(1 + b ^ 2)) = (a - b) * (a + b) by
-      linear_combination hA - hB, abs_mul]
-  exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
-
-/-- For every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`. -/
-theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t ^ 2) :=
-  le_sqrt_of_sq_le (by nlinarith [sq_nonneg (t - 1)])
-
-/-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
-theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
-    a ≤ √c * b :=
-  calc a ≤ |a| := le_abs_self a
-    _ = √(a ^ 2) := (sqrt_sq_eq_abs a).symm
-    _ ≤ √(c * b ^ 2) := sqrt_le_sqrt h
-    _ = √c * b := by rw [sqrt_mul' _ (sq_nonneg b), sqrt_sq hb]
-
-/-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
-`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
-of variables against the square root of an integrand that has acquired the factor `d²`. -/
-theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p : ℝ) :
-    |d| * (√(d ^ 2 * c * p))⁻¹ = (√c)⁻¹ * (√p)⁻¹ := by
-  rw [sqrt_mul (mul_nonneg (sq_nonneg d) hc), sqrt_mul (sq_nonneg d), sqrt_sq_eq_abs, mul_inv,
-    mul_inv, mul_assoc, mul_inv_cancel_left₀ (abs_ne_zero.2 hd)]
-
-/-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length: `((√2)⁻¹)² + ((√2)⁻¹)² = 1`. -/
-theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : (√2)⁻¹ ^ 2 + (√2)⁻¹ ^ 2 = (1 : ℝ) := by
-  rw [inv_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
-
-/-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
-theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
-  have h : Continuous fun u => c * √u := by fun_prop
-  simpa using h.tendsto 0
-
-/-- For `c > 0`, `c √u` tends to `0` through positive values as `u → 0⁺`. -/
-theorem tendsto_mul_sqrt_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
-    Tendsto (fun u => c * √u) (𝓝[>] 0) (𝓝[>] 0) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨(tendsto_mul_sqrt_nhds_zero c).mono_left nhdsWithin_le_nhds, ?_⟩
-  filter_upwards [self_mem_nhdsWithin] with u hu
-  exact mul_pos hc (sqrt_pos.2 hu)
-
-/-- The square root tends to `0` through positive values as `u → 0⁺`. -/
-theorem tendsto_sqrt_nhdsGT_zero : Tendsto (√·) (𝓝[>] 0) (𝓝[>] (0 : ℝ)) := by
-  simpa using tendsto_mul_sqrt_nhdsGT_zero one_pos
+/-- The slope of `t ↦ δ √(1 + t²)` has absolute value at most `|δ|`, since `t ↦ √(1 + t²)` is
+`1`-Lipschitz. For small `|δ|` this makes `e^{δ √(1 + t²)}` an admissible weight, comparable to
+`e^{δ |t|}`, in weighted estimates that require a bounded slope. -/
+theorem abs_deriv_mul_sqrt_one_add_sq_le (δ t : ℝ) :
+    |deriv (fun t ↦ δ * √(1 + t ^ 2)) t| ≤ |δ| := by
+  have h : LipschitzWith ‖δ‖₊ fun t : ℝ ↦ δ * √(1 + t ^ 2) :=
+    LipschitzWith.of_dist_le_mul fun a b ↦ by
+      rw [dist_eq, dist_eq, ← mul_sub, abs_mul, coe_nnNorm, norm_eq_abs]
+      exact mul_le_mul_of_nonneg_left (abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub a b)
+        (abs_nonneg δ)
+  simpa using norm_deriv_le_of_lipschitz (x₀ := t) h
 
 /-- The radial profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function `ψ` supported in `(0, ∞)` is
 `C^k`. -/
@@ -256,51 +135,46 @@ lemma contDiff_div_sqrt_pow {k : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContD
       simp [image_eq_zero_of_notMem_tsupport hs]
     exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq hev
 
-/-- For `0 < p`, `t + √(t² + p)` is positive. -/
-theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2 + p) := by
-  rcases le_or_gt 0 t with ht | ht; · positivity
-  rw [← neg_lt_iff_pos_add']
-  nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
-  gcongr
+/-- The derivative of `x ↦ √(x² + p)` at a point `t` where `t² + p ≠ 0`. Where `t² + p < 0`
+the function vanishes near `t`, matching the junk value `t / √(t² + p) = 0`. -/
+theorem hasDerivAt_sqrt_sq_add {p : ℝ} (t : ℝ) (h : t ^ 2 + p ≠ 0) :
+    HasDerivAt (fun x : ℝ ↦ √(x ^ 2 + p)) (t / √(t ^ 2 + p)) t :=
+  (((hasDerivAt_pow 2 t).add_const p).sqrt h).congr_deriv
+    (by norm_num [mul_div_mul_left _ _ (two_ne_zero' ℝ)])
 
-/-- The derivative of `t ↦ t + √(t² + p)` for `0 < p`. -/
-theorem hasDerivAt_add_sqrt_sq_add {p : ℝ} (hp : 0 < p) (t : ℝ) :
+/-- The derivative of `x ↦ β x + √(x² + p)` at a point `t` where `t² + p ≠ 0`. -/
+theorem hasDerivAt_mul_add_sqrt_sq_add (β : ℝ) {p : ℝ} (t : ℝ) (h : t ^ 2 + p ≠ 0) :
+    HasDerivAt (fun x : ℝ ↦ β * x + √(x ^ 2 + p)) (β + t / √(t ^ 2 + p)) t :=
+  (((hasDerivAt_id t).const_mul β).add (hasDerivAt_sqrt_sq_add t h)).congr_deriv (by simp)
+
+/-- The derivative of `t ↦ t + √(t² + p)` at a point `t` where `0 < t² + p`. -/
+theorem hasDerivAt_add_sqrt_sq_add {p : ℝ} (t : ℝ) (h : 0 < t ^ 2 + p) :
     HasDerivAt (fun t : ℝ ↦ t + √(t ^ 2 + p)) ((t + √(t ^ 2 + p)) / √(t ^ 2 + p)) t := by
-  rw [← div_add_one (by positivity), add_comm]
-  apply (hasDerivAt_id' _).fun_add
-  rw [← mul_div_mul_left _ _ two_ne_zero]
-  refine ((HasDerivAt.add_const _) ?_).sqrt (by positivity)
-  convert hasDerivAt_pow 2 t using 1
-  ring
-
-/-- For `0 < p`, the map `t ↦ t + √(t² + p)` sends `ℝ` onto `(0, ∞)`. -/
-theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
-    (fun t : ℝ ↦ t + √(t ^ 2 + p)) '' Set.univ = Set.Ioi 0 := by
-  ext x
-  rw [Set.image_univ, Set.mem_range, Set.mem_Ioi]
-  refine ⟨fun ⟨t, ht⟩ ↦ ht.symm ▸ add_sqrt_sq_add_pos hp t, fun hx ↦ ?_⟩
-  use (x ^ 2 - p) / (2 * x)
-  have hradicand : ((x ^ 2 - p) / (2 * x)) ^ 2 + p = ((x ^ 2 + p) / (2 * x)) ^ 2 := by
-    field_simp
+  convert hasDerivAt_mul_add_sqrt_sq_add 1 t h.ne' using 1
+  · simp only [one_mul]
+  · rw [add_div, div_self (sqrt_pos.2 h).ne']
     ring
-  have hsqrt : √(((x ^ 2 - p) / (2 * x)) ^ 2 + p) = (x ^ 2 + p) / (2 * x) := by
-    rw [hradicand, sqrt_sq (by positivity)]
-  rw [hsqrt]
-  field_simp
-  ring
 
-/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
-theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
-  rcases le_or_gt 0 a with ha | ha
-  · rcases le_or_gt 0 b with hb | hb
-    · have h := rpow_add_le_add_rpow (p := 1 / 2) (a := a) (b := b) ha hb (by norm_num)
-        (by norm_num)
-      simpa only [← sqrt_eq_rpow] using h
-    · rw [sqrt_eq_zero_of_nonpos hb.le, add_zero]
-      exact sqrt_le_sqrt (by linarith)
-  · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
-    exact sqrt_le_sqrt (by linarith)
+/-- The derivative of `y ↦ α / (β y + √(y² + c))` at a point where `y² + c` and the denominator
+do not vanish. -/
+theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 2 + c ≠ 0)
+    (hy : β * y + √(y ^ 2 + c) ≠ 0) :
+    HasDerivAt (fun y => α / (β * y + √(y ^ 2 + c)))
+      (-α * (β + y / √(y ^ 2 + c)) / (β * y + √(y ^ 2 + c)) ^ 2) y := by
+  have := (hasDerivAt_const y α).div (hasDerivAt_mul_add_sqrt_sq_add β y hyc) hy
+  refine this.congr_deriv ?_
+  ring
 
 end Real
+
+namespace TauCeti
+
+/-- The Gaussian normalization `√(4/π) = 2/√π`. It relates the constant `4/π` in the Mills-ratio
+bounds of DLMF 7.8.2 to the prefactor `2/√π` of the error function. -/
+theorem sqrt_four_div_pi : √(4 / Real.pi) = 2 / √Real.pi := by
+  rw [Real.sqrt_div' _ Real.pi_pos.le,
+    (Real.sqrt_eq_iff_mul_self_eq_of_pos two_pos).2 (by norm_num)]
+
+end TauCeti
 
 end

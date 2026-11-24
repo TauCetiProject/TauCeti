@@ -123,6 +123,13 @@ theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
   ext v
   rw [mem_kerDistribution, LinearMap.mem_ker, degreeOneEquiv_coe_apply]
 
+/-- Two tangent vectors are congruent modulo `ker α_x` exactly when `α` takes the same value on
+them. -/
+theorem sub_mem_kerDistribution_iff {α : SmoothForm I M ℝ 1} {x : M} {v w : TangentSpace I x} :
+    v - w ∈ α.kerDistribution x ↔ α.val x ![v] = α.val x ![w] := by
+  rw [kerDistribution_def, LinearMap.sub_mem_ker_iff, degreeOneEquiv_coe_apply,
+    degreeOneEquiv_coe_apply]
+
 /-- A real one-form `α` is a **contact form** when, at every point `x`, the covector `α_x` is
 nonzero and `dα_x` restricts to a nondegenerate bilinear form on `ker α_x`. -/
 def IsContactForm (α : SmoothForm I M ℝ 1) : Prop :=

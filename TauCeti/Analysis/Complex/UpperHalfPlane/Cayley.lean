@@ -29,6 +29,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 
 ## Main statements
 
+* `TauCeti.norm_sub_I_lt_norm_add_I_iff`: a point is closer to `i` than to `-i` exactly when it
+  lies in the open upper half-plane.
 * `TauCeti.norm_sub_I_div_add_I_le_one_iff` and `TauCeti.norm_sub_I_div_add_I_lt_one_iff`: the
   transform lands in the closed (open) unit disc exactly at points of the closed (open) upper
   half-plane.
@@ -67,6 +69,11 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
   closed upper half-plane, with inverse `w ↦ ζ (i - w) / (w + i)`.
 * `TauCeti.contDiffAt_I_mul_sub_div_add` and `TauCeti.contDiffAt_mul_I_sub_div_add_I`: these
   two maps are analytic away from their poles `-ζ` and `-i`.
+* `Complex.inverseCayleyCoord`: the inverse transform `w ↦ i (1 + w) / (1 - w)` read as a real
+  number, which inverts the transform (`Complex.inverseCayleyCoord_cayley`,
+  `Complex.cayley_inverseCayleyCoord`) and agrees with the complex expression on the unit circle
+  (`Complex.ofReal_inverseCayleyCoord`), where it is `w ↦ -Im w / (1 - Re w)`
+  (`Complex.inverseCayleyCoord_eq_neg_im_div`).
 
 The real inverse coordinate API is adapted from Kitware DKPS
 `ForTauCeti/Analysis/InnerProductSpace/LinearPMap/SpectralMeasure/Construction.lean`
@@ -91,9 +98,14 @@ theorem add_I_ne_zero_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) : z + I ≠ 0 := 
   linarith
 
 /-- The squared distances from `z` to `-i` and to `i` differ by `4 * z.im`. -/
-private theorem norm_add_I_sq (z : ℂ) : ‖z + I‖ ^ 2 = ‖z - I‖ ^ 2 + 4 * z.im := by
+theorem norm_add_I_sq (z : ℂ) : ‖z + I‖ ^ 2 = ‖z - I‖ ^ 2 + 4 * z.im := by
   simp only [Complex.sq_norm, normSq_apply, add_re, add_im, sub_re, sub_im, I_re, I_im]
   ring
+
+/-- A point is closer to `i` than to `-i` exactly when it lies in the open upper half-plane. -/
+theorem norm_sub_I_lt_norm_add_I_iff {z : ℂ} : ‖z - I‖ < ‖z + I‖ ↔ 0 < z.im := by
+  rw [← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _), norm_add_I_sq]
+  constructor <;> intro h <;> linarith
 
 /-- The Cayley transform lies in the closed unit disc exactly on the closed upper half-plane. -/
 theorem norm_sub_I_div_add_I_le_one_iff {z : ℂ} (hz : z + I ≠ 0) :
@@ -526,5 +538,29 @@ theorem cayley_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) (h1 : w ≠ 1) :
   have hreal : (z.re : ℂ) = z := by
     apply Complex.ext <;> simp [him]
   rw [← hzw, inverseCayleyCoord_cayley, hreal]
+
+/-- On the unit circle the inverse Cayley coordinate is real:
+`inverseCayleyCoord w = i (1 + w) / (1 - w)`. -/
+theorem ofReal_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) :
+    (inverseCayleyCoord w : ℂ) = I * (1 + w) / (1 - w) := by
+  have him : (I * (1 + w) / (1 - w)).im = 0 := by
+    simpa [normSq_eq_norm_sq, hw, sub_eq_add_neg] using TauCeti.im_I_mul_sub_div_add 1 (-w)
+  exact Complex.ext (by simp [inverseCayleyCoord_def]) (by simp [him])
+
+/-- On the unit circle the inverse Cayley coordinate is `w ↦ -Im w / (1 - Re w)`. -/
+theorem inverseCayleyCoord_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) :
+    inverseCayleyCoord w = -w.im / (1 - w.re) := by
+  have hre : w.re ^ 2 + w.im ^ 2 = 1 := by
+    have := normSq_eq_norm_sq w
+    rw [hw, normSq_apply] at this
+    nlinarith
+  rw [inverseCayleyCoord_def]
+  simp only [div_re, mul_re, mul_im, I_re, I_im, add_re, add_im, sub_re, sub_im, one_re, one_im,
+    normSq_apply]
+  by_cases h1 : 1 - w.re = 0
+  · have : w.im = 0 := by nlinarith
+    simp [this, show w.re = 1 by linarith]
+  · field_simp
+    linear_combination w.im * hre
 
 end Complex

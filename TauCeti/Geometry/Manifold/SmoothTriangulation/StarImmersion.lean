@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.Analysis.Calculus.Deriv.Slope
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 import Mathlib.Algebra.Order.Group.PosPart
 import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import Mathlib.Analysis.Calculus.Deriv.AffineMap

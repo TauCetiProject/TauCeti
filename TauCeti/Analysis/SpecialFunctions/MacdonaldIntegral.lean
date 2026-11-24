@@ -14,7 +14,7 @@ import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
 /-!
@@ -101,14 +101,8 @@ theorem integrableOn_cpow_mul_exp_neg_add_div_Ioi (a : ℂ) {c : ℝ} (hc : 0 < 
   refine ((Real.GammaIntegral_convergent hn).const_mul (n.factorial / c ^ n)).mono'
     (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-  -- `e^{-c/s} ≤ n! (s/c)^n`, since `(c/s)^n / n! ≤ e^{c/s}`
-  have hexp : Real.exp (-(c / s)) ≤ n.factorial / c ^ n * s ^ n := by
-    have h := Real.pow_div_factorial_le_exp _ (div_pos hc hs).le n
-    rw [Real.exp_neg, inv_le_iff_one_le_mul₀ (Real.exp_pos _)]
-    rw [div_pow, div_div, div_le_iff₀ (by positivity)] at h
-    calc (1 : ℝ) = n.factorial / c ^ n * s ^ n * (c ^ n / (s ^ n * n.factorial)) := by
-          field_simp
-      _ ≤ _ := by gcongr; rwa [div_le_iff₀ (by positivity)]
+  have hexp : Real.exp (-(c / s)) ≤ n.factorial / c ^ n * s ^ n :=
+    (TauCeti.exp_neg_le_factorial_div_pow (div_pos hc hs) n).trans_eq (by rw [div_pow]; field_simp)
   calc ‖(s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))‖
       = s ^ (a.re - 1) * (Real.exp (-s) * Real.exp (-(c / s))) := by
         simp [norm_cpow_eq_rpow_re_of_pos hs, norm_exp, Real.exp_add, mul_comm]
@@ -148,13 +142,11 @@ theorem hasMellin_integral_cpow_mul_exp_neg_add_div_Ioi {a t : ℂ} (ht : 0 < t.
   have hf : MellinConvergent (fun s : ℝ ↦ (s : ℂ) ^ a • (Real.exp (-s) : ℂ)) t :=
     MellinConvergent.cpow_smul.mpr <|
       (GammaIntegral_convergent hta).congr_fun (fun _ _ ↦ mul_comm _ _) measurableSet_Ioi
-  have hg : MellinConvergent (fun s : ℝ ↦ (Real.exp (-s) : ℂ)) t :=
-    (GammaIntegral_convergent ht).congr_fun (fun _ _ ↦ mul_comm _ _) measurableSet_Ioi
-  have h := TauCeti.hasMellin_integral_mul_div hf hg
-  rw [mellin_cpow_smul, ← GammaIntegral_eq_mellin, ← Gamma_eq_integral hta,
-    ← Gamma_eq_integral ht, mul_comm] at h
-  refine (TauCeti.hasMellin_congr fun c _ ↦ setIntegral_congr_fun measurableSet_Ioi
-    fun s (hs : 0 < s) ↦ ?_).mp h
+  have h := TauCeti.hasMellin_mellinConv hf (TauCeti.hasMellin_exp_neg ht).1
+  rw [mellin_cpow_smul, (TauCeti.hasMellin_exp_neg hta).2, (TauCeti.hasMellin_exp_neg ht).2,
+    mul_comm] at h
+  refine (TauCeti.hasMellin_congr fun c _ ↦ (TauCeti.mellinConv_def _ _ c).trans <|
+    setIntegral_congr_fun measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_).mp h
   rw [smul_eq_mul, cpow_sub _ _ (ofReal_ne_zero.mpr hs.ne'), cpow_one, neg_add, Real.exp_add]
   push_cast
   ring

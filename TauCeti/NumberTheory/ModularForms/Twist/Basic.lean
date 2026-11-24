@@ -108,11 +108,12 @@ theorem exists_upperRightHom_mul_mapGL_eq_mapGL_mul_upperRightHom (γ : SL(2, �
     rw [ha]
     linear_combination (-(a : ZMod M) * γ 1 1) * hAD
   let γ' : SL(2, ℤ) :=
-    ⟨!![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c], by
+    .mk !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] (by
       rw [Matrix.det_fin_two_of]
-      linear_combination hdet + (M * c) * he + (a * a' * c - e) * hc⟩
+      linear_combination hdet + (M * c) * he + (a * a' * c - e) * hc)
   have hγ' : (γ' : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] := rfl
+      !![γ 0 0 + a * M * c, γ 0 1 + e - a * a' * c; γ 1 0, γ 1 1 - a' * M * c] :=
+    Matrix.SpecialLinearGroup.coe_mk _
   refine ⟨γ', by simp [hγ'], by simp [hγ'], by simp [hγ'], ?_⟩
   have hM : (M : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hM0
   have hcR : (γ 1 0 : ℝ) = M * M * c := by exact_mod_cast hc

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Montel.Basic
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Montel.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.UniformSpace.Ascoli
@@ -26,7 +26,7 @@ criterion `tendsto_of_subseq_tendsto` gives locally uniform convergence of the o
 
 When the family already converges pointwise on the *whole* of `Ω`, none of that machinery is
 needed. Local boundedness makes the family equicontinuous on `Ω`
-(`TauCeti.IsLocallyBoundedOn.equicontinuousOn`, the Cauchy-estimate half of Montel's theorem), and
+(`TauCeti.IsLocallyBoundedOn.equicontinuousOn`, the equicontinuity half of Montel's theorem), and
 on an equicontinuous family pointwise convergence *is* uniform convergence on each compact subset,
 by Mathlib's Arzelà–Ascoli lemma `Equicontinuous.tendsto_uniformFun_iff_pi`. This is why the
 whole-domain statements below are not corollaries of `TauCeti.vitali`: they spend no identity

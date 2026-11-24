@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 public import TauCeti.Geometry.Manifold.Distribution
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed

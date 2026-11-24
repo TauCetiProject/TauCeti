@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -82,6 +83,14 @@ and proves:
   orders `m` and `m - 1`, and their homogeneous terms are the derivatives of those of `a`. These
   are the factors `∂_ξ^α a` and `∂_x^α b` of the terms of the composition expansion
   `∑_α (1 / α!) ∂_ξ^α a D_x^α b`;
+* `TauCeti.ClassicalSymbol.map`: the image `(x, ξ) ↦ Φ (a(x, ξ))` of a classical symbol under a
+  continuous real-linear map `Φ` of the coefficient spaces is classical, with the images of the
+  homogeneous terms. Applied to left and right composition with an operator `T`, this shows that
+  if every value of the full symbol commutes with `T`, so does every value of each homogeneous term
+  (`TauCeti.ClassicalSymbol.commute_coefficient_term`);
+* `TauCeti.ClassicalSymbol.scalar`: a scalar classical symbol `p` times the identity of `V`, whose
+  values commute with every operator on `V`
+  (`TauCeti.ClassicalSymbol.commute_coefficient_toSymbol_scalar`);
 * `TauCeti.ClassicalSymbol.IsElliptic`: ellipticity, the invertibility of the principal symbol at
   every nonzero frequency; its pointwise inverse is the homogeneous symbol
   `TauCeti.HomogeneousSymbol.inverse` of degree `-m`. By
@@ -96,6 +105,10 @@ and proves:
   (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`). If the full symbol outside a
   compact set repeats its values on that set, the radius is uniform in the position
   (`TauCeti.ClassicalSymbol.IsElliptic.exists_isEllipticAbove`).
+* `TauCeti.ClassicalSymbol.pointwiseAdjoint`: between Hilbert spaces, the pointwise adjoint
+  `(x, ξ) ↦ a(x, ξ)†` of a classical symbol is classical of the same order, with the pointwise
+  adjoints of the homogeneous terms of `a` as its terms. This is not the symbol of the formal
+  adjoint of the operator, whose lower order terms also involve derivatives of the symbol.
 
 ## References
 
@@ -399,6 +412,16 @@ theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ :
   simpa using ((hσ.tendsto.comp tendsto_snd).add
     (b.tendsto_rpow_neg_smul_coefficient_smul_zero (by linarith) hξ)).congr' heq
 
+/-- The principal symbol vanishes at every position where the full symbol vanishes. -/
+theorem coefficient_principal_eq_zero_of_forall {x : CoordinateSpace n}
+    (h : ∀ η, a.toSymbol.coefficient (x, η) = 0) (ξ : CoordinateSpace n) :
+    a.principal.coefficient (x, ξ) = 0 := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · exact a.principal.zero_covector x
+  refine tendsto_nhds_unique ((a.tendsto_rpow_neg_smul_coefficient_smul hξ).comp
+    (tendsto_id.prodMk tendsto_const_nhds)) ?_
+  simp [Function.comp_def, h]
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _
@@ -680,6 +703,15 @@ theorem principal_inclusion_succ (k : ℕ) (hk : m' = m - (k + 1 : ℕ)) :
 theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
+
+variable {k hk b} in
+/-- The principal symbol of `b` is the term of index `k` of its inclusion `inclusion k hk b`. -/
+theorem coefficient_principal_of_inclusion_eq {a : ClassicalSymbol n V W m}
+    (h : inclusion k hk b = a) (z : CoordinateSpace n × CoordinateSpace n) :
+    b.principal.coefficient z = (a.term k).coefficient z := by
+  subst h
+  simpa [coefficient_principal] using
+    (congrArg (fun s => s.coefficient z) (term_inclusion_add k hk b 0)).symm
 
 end Inclusion
 
@@ -1039,6 +1071,115 @@ theorem principal_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
 
 end Deriv
 
+/-! ### Images under maps of the coefficient spaces -/
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W'] (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+
+/-- The image `(x, ξ) ↦ Φ (a(x, ξ))` of a classical symbol under a continuous real-linear map `Φ`
+of the coefficient spaces is classical of the same order, with the images `Φ ∘ a_{m-j}` of the
+homogeneous terms of `a`. -/
+def map (a : ClassicalSymbol n V W m) : ClassicalSymbol n V' W' m where
+  toSymbol := a.toSymbol.map Φ
+  term j := (a.term j).map Φ
+  exists_remainder' := ⟨default, fun N => ⟨(a.remainder default N).map Φ, fun p => by
+    simp [map_sum, map_smul]⟩⟩
+
+variable (a : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_map : (a.map Φ).toSymbol = a.toSymbol.map Φ :=
+  (rfl)
+
+@[simp]
+theorem term_map (j : ℕ) : (a.map Φ).term j = (a.term j).map Φ :=
+  (rfl)
+
+@[simp]
+theorem principal_map : (a.map Φ).principal = a.principal.map Φ :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ _ => by simp
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (j : Fin n) : spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ :=
+  ext (Symbol.spatialDeriv_map Φ a.toSymbol j)
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (j : Fin n) :
+    frequencyDeriv j (a.map Φ) = (frequencyDeriv j a).map Φ :=
+  ext (Symbol.frequencyDeriv_map Φ a.toSymbol j)
+
+/-- If every value of the full symbol of a classical symbol commutes with an operator `T`, so does
+every value of each of its homogeneous terms. The images of `a` under left and right composition
+with `T` have the same full symbol, hence the same terms. -/
+theorem commute_coefficient_term {a : ClassicalSymbol n V V m} {T : V →L[ℂ] V}
+    (h : ∀ p, Commute (a.toSymbol.coefficient p) T) (j : ℕ)
+    (p : CoordinateSpace n × CoordinateSpace n) : Commute ((a.term j).coefficient p) T := by
+  have hterm := congrArg (fun b : HomogeneousSymbol _ _ V V (m - j) => b.coefficient p)
+    (term_eq_of_toSymbol_eq
+      (a := a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ))
+      (b := a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ))
+      (Symbol.map_compL_flip_eq_map_compL h) j)
+  simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using hterm
+
+end Map
+
+/-! ### Scalar symbols times the identity -/
+
+section Scalar
+
+variable (V) in
+/-- The classical symbol `p · Id_V` with values in the endomorphisms of `V`, for a scalar classical
+symbol `p`, as a linear map. Its full symbol and its homogeneous terms are those of `p` times the
+identity (`TauCeti.ClassicalSymbol.coefficient_toSymbol_scalar`,
+`TauCeti.ClassicalSymbol.coefficient_term_scalar`). -/
+def scalar : ClassicalSymbol n ℂ ℂ m →ₗ[ℂ] ClassicalSymbol n V V m where
+  toFun p := p.map
+    (((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).smulRight
+      (ContinuousLinearMap.id ℂ V)).restrictScalars ℝ)
+  map_add' p q := ext <| Symbol.ext <| funext fun z => by simp [add_smul]
+  map_smul' c p := ext <| Symbol.ext <| funext fun z => by simp [smul_smul]
+
+variable (p : ClassicalSymbol n ℂ ℂ m)
+
+@[simp]
+theorem coefficient_toSymbol_scalar (z : CoordinateSpace n × CoordinateSpace n) :
+    (scalar V p).toSymbol.coefficient z =
+      p.toSymbol.coefficient z 1 • ContinuousLinearMap.id ℂ V := by
+  simp [scalar]
+
+@[simp]
+theorem coefficient_term_scalar (j : ℕ) (z : CoordinateSpace n × CoordinateSpace n) :
+    ((scalar V p).term j).coefficient z =
+      (p.term j).coefficient z 1 • ContinuousLinearMap.id ℂ V := by
+  simp [scalar]
+
+@[simp]
+theorem spatialDeriv_scalar (j : Fin n) :
+    spatialDeriv j (scalar V p) = scalar V (spatialDeriv j p) := by
+  simp [scalar]
+
+@[simp]
+theorem frequencyDeriv_scalar (j : Fin n) :
+    frequencyDeriv j (scalar V p) = scalar V (frequencyDeriv j p) := by
+  simp [scalar]
+
+/-- Every value of `p · Id_V` commutes with every operator on `V`. -/
+theorem commute_coefficient_toSymbol_scalar (z : CoordinateSpace n × CoordinateSpace n)
+    (T : V →L[ℂ] V) : Commute ((scalar V p).toSymbol.coefficient z) T := by
+  rw [coefficient_toSymbol_scalar, ← ContinuousLinearMap.one_def]
+  exact (Commute.one_left T).smul_left _
+
+/-- If `p` vanishes for positions outside a compact set, so does `p · Id_V`. -/
+theorem hasCompactSpatialSupport_toSymbol_scalar (hp : p.toSymbol.HasCompactSpatialSupport) :
+    (scalar V p).toSymbol.HasCompactSpatialSupport := by
+  simpa [scalar] using hp.map _
+
+end Scalar
+
 /-! ### Elliptic classical symbols -/
 
 section Elliptic
@@ -1167,6 +1308,15 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
     (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
     hM (hC₁ x hx ξ h2)
 
+/-- **Ellipticity on compact sets of positions.** On every compact set `K` of positions, an
+elliptic classical symbol is elliptic at the frequencies of norm at least some radius `R`, in the
+sense of `TauCeti.Symbol.IsEllipticOn`. -/
+theorem IsElliptic.exists_isEllipticOn {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} := by
+  obtain ⟨R, C, hC⟩ := ha.exists_isInvertible_and_norm_inverse_le hK
+  exact ⟨R, Symbol.isEllipticOn_iff.2 fun _ _ ↦ ⟨C, fun p hp _ ↦ hC p.1 hp.1 p.2 hp.2⟩⟩
+
 /-- **Elliptic symbols with coefficients constant off a compact set.** An elliptic classical
 symbol whose full symbol at every position outside a compact set `K` is its full symbol at some
 position of `K` is elliptic above a radius independent of the position. -/
@@ -1223,6 +1373,76 @@ theorem isElliptic_iff_forall_isCompact {a : ClassicalSymbol n V W m} :
       (h {x} isCompact_singleton).imp fun _ ↦ .imp fun _ hC ξ ↦ hC x rfl ξ⟩
 
 end Elliptic
+
+/-! ### The pointwise adjoint -/
+
+section PointwiseAdjoint
+
+open ContinuousLinearMap (adjointRealCLM adjointRealCLM_apply)
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- The pointwise adjoint `(x, ξ) ↦ a(x, ξ)†` of a classical symbol between Hilbert spaces: a
+classical symbol of the same order, whose homogeneous terms are the pointwise adjoints of those of
+`a`. Its quantization is not the formal adjoint of `Op(a)`; that is the quantization of
+`TauCeti.ClassicalSymbol.adjoint`, of which `a†` is the leading term. -/
+def pointwiseAdjoint (a : ClassicalSymbol n V W m) : ClassicalSymbol n W V m :=
+  a.map adjointRealCLM
+
+variable (a b : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_pointwiseAdjoint : a.pointwiseAdjoint.toSymbol = a.toSymbol.map adjointRealCLM :=
+  toSymbol_map _ a
+
+@[simp]
+theorem term_pointwiseAdjoint (j : ℕ) : a.pointwiseAdjoint.term j = (a.term j).adjoint := by
+  ext1
+  funext z
+  simp [pointwiseAdjoint, adjointRealCLM_apply]
+
+/-- The principal symbol of `a†` is the pointwise adjoint of the principal symbol of `a`. -/
+@[simp]
+theorem principal_pointwiseAdjoint : a.pointwiseAdjoint.principal = a.principal.adjoint := by
+  ext1
+  funext z
+  simp
+
+@[simp]
+theorem pointwiseAdjoint_pointwiseAdjoint : a.pointwiseAdjoint.pointwiseAdjoint = a :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_zero : (0 : ClassicalSymbol n V W m).pointwiseAdjoint = 0 :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_add : (a + b).pointwiseAdjoint = a.pointwiseAdjoint + b.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_neg : (-a).pointwiseAdjoint = -a.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+@[simp]
+theorem pointwiseAdjoint_sub : (a - b).pointwiseAdjoint = a.pointwiseAdjoint - b.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by simp [adjointRealCLM_apply]
+
+/-- The pointwise adjoint is conjugate linear. -/
+@[simp]
+theorem pointwiseAdjoint_smul (c : ℂ) :
+    (c • a).pointwiseAdjoint = (starRingEnd ℂ c) • a.pointwiseAdjoint :=
+  ext <| Symbol.ext <| funext fun p => by
+    simpa [adjointRealCLM_apply] using map_smulₛₗ ContinuousLinearMap.adjoint c _
+
+/-- The pointwise adjoint `a†` is elliptic exactly when `a` is. -/
+@[simp]
+theorem isElliptic_pointwiseAdjoint_iff : a.pointwiseAdjoint.IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_pointwiseAdjoint, HomogeneousSymbol.isElliptic_adjoint_iff,
+    isElliptic_def]
+
+end PointwiseAdjoint
 
 /-! ### The homogeneous terms as a linear map -/
 
