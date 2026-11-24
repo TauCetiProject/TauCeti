@@ -70,11 +70,11 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- **Dévissage of finite trivial coefficients.** Let `G` be a locally compact group, `n` a degree
+/-- **Dévissage of finite trivial coefficients.** Let `G` be a topological group, `n` a degree
 and `N` a natural number. If `Hⁿ(G, A)` is finite for every discrete `G`-module `A` of prime order
 dividing `N` on which `G` acts trivially, then `Hⁿ(G, M)` is finite for every finite discrete
 `G`-module `M` killed by `N` on which `G` acts trivially. -/
-theorem finite_continuousCohomology_of_forall_natCard_prime [LocallyCompactSpace G] {N n : ℕ}
+theorem finite_continuousCohomology_of_forall_natCard_prime {N n : ℕ}
     (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
       [DistribMulAction G A] [ContinuousSMul G A] [Finite A], (Nat.card A).Prime →
       Nat.card A ∣ N → (∀ (g : G) (a : A), g • a = a) →
@@ -163,7 +163,6 @@ theorem finite_continuousCohomology_of_isOpen_of_normal_of_prime {V : Subgroup G
     [DistribMulAction G A] [ContinuousSMul G A] [Finite A] (hN : ∀ a : A, N • a = 0)
     (htriv : ∀ v ∈ V, ∀ a : A, v • a = a) :
     Finite (continuousCohomology i (ofDiscreteModule ℤ G A)) :=
-  have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
   finite_continuousCohomology_of_isOpen_of_normal hV i
     (fun j hj₀ hj M _ _ _ _ _ _ hM hMtriv ↦
       finite_continuousCohomology_of_forall_natCard_prime (h j hj₀ hj) M hM hMtriv) A hN htriv

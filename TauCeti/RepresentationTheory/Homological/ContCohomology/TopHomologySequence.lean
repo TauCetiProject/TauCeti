@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCocha
 /-!
 # The long exact sequence of continuous cohomology for topological coefficients
 
-Let `G` be a locally compact group (for instance a profinite group) and let
+Let `G` be a topological group and let
 `0 → X₁ → X₂ → X₃ → 0` be a topologically short exact sequence of topological representations
 (`CategoryTheory.ShortComplex.TopShortExact`): `X₁ → X₂` is a topological embedding, the sequence
 is exact at `X₂`, `X₂ → X₃` has a continuous set-theoretic section, and `G` acts jointly
@@ -72,7 +72,7 @@ open _root_.ContinuousCohomology TauCeti.ContinuousCohomology
 universe u v
 
 variable {R : Type u} [Ring R] [TopologicalSpace R]
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {S : ShortComplex (TopRep.{v} R G)} (hS : S.TopShortExact)
 
 /-- **The connecting map of continuous cohomology** `δ : Hⁿ(G, X₃) ⟶ Hⁿ⁺¹(G, X₁)` attached to a

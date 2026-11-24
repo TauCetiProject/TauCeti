@@ -14,9 +14,9 @@ import TauCeti.Topology.Discrete
 
 A map of topological representations admitting a continuous set-theoretic section induces
 surjections on homogeneous continuous cochains in every degree, provided the source action is
-jointly continuous and the group is locally compact. In particular, this holds for surjections
-onto discrete representations. This is the degreewise lifting input for Tate's inverse-limit
-theorem; see K. Rubin, *Euler Systems*, Appendix B, §2, Remark 2.2.
+jointly continuous. In particular, this holds for surjections onto discrete representations. This
+is the degreewise lifting input for Tate's inverse-limit theorem; see K. Rubin, *Euler Systems*,
+Appendix B, §2, Remark 2.2.
 -/
 
 public section
@@ -29,10 +29,10 @@ universe u v
 
 variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] {Y Z : TopRep.{v} R G}
+  {Y Z : TopRep.{v} R G}
 
-/-- Over a locally compact topological group, a coefficient map admitting a continuous
-set-theoretic section induces a surjection on continuous homogeneous cochains in every degree,
+/-- Over a topological group, a coefficient map admitting a continuous set-theoretic section
+induces a surjection on continuous homogeneous cochains in every degree,
 when the source action is jointly continuous. -/
 theorem continuousCochainsFunctor_map_f_surjective_of_continuous_section (g : Y ⟶ Z)
     (hs : ∃ s : Z.V → Y.V, Continuous s ∧ ∀ z, g.hom (s z) = z)
@@ -47,8 +47,8 @@ theorem continuousCochainsFunctor_map_f_surjective_of_continuous_section (g : Y 
       continuous_ρ₂ := hρ }
   exact hS.cochainsMap_g_f_surjective n
 
-/-- Over a locally compact topological group, a surjective coefficient map onto a discrete
-representation induces a surjection on continuous homogeneous cochains in every degree, when the
+/-- Over a topological group, a surjective coefficient map onto a discrete representation
+induces a surjection on continuous homogeneous cochains in every degree, when the
 source action is jointly continuous. -/
 theorem continuousCochainsFunctor_map_f_surjective_of_discrete [DiscreteTopology Z.V] (g : Y ⟶ Z)
     (hg : Function.Surjective g.hom)

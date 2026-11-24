@@ -41,8 +41,8 @@ those:
   twisted section `(h, c) ↦ h • s (h⁻¹ • c)` is jointly continuous because the actions are, and
   it is equivariant in the sense
   `k • σ(h, c) = σ(k h, k • c)`, which is what makes the lift invariant. Carrying this through the
-  iterated function spaces uses continuity of evaluation `C(G, V) × G → V`, which is where local
-  compactness of `G` enters; profinite groups are locally compact.
+  iterated function spaces uses continuity of evaluation after restriction to compact subsets
+  of `G`, where evaluation is jointly continuous.
 
 The cochain functor is defined in `Additive.lean`, and the coefficient short complex is defined
 in `ShortExact.lean`.
@@ -60,7 +60,7 @@ in `ShortExact.lean`.
 
 * `TauCeti.ContinuousCohomology.cochainsMap_id_f_surjective_of_section`: invariant cochains lift
   along any coefficient map admitting a continuous family of sections `σ : G × Z → Y` that is
-  equivariant in the sense `k • σ(h, z) = σ(k h, k • z)`, over a locally compact group.
+  equivariant in the sense `k • σ(h, z) = σ(k h, k • z)`.
 * `CategoryTheory.ShortComplex.TopShortExact.cochains_shortExact_moduleCat`: after forgetting
   topologies, the cochains of a topologically short exact sequence form a short exact sequence of
   cochain complexes of modules.
@@ -215,18 +215,30 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {Y Z : TopRep.{v} R G}
 
-variable [LocallyCompactSpace G]
-
 /-- A continuous family `σ : G × Z → Y` of maps, transported to every level of the coinduced
-resolution by `σₙ₊₁ (h, φ) = (y ↦ σₙ (h, φ y))`. Continuity at each level uses continuity of
-evaluation on `C(G, -)`, which is where local compactness of `G` is used. -/
+resolution by `σₙ₊₁ (h, φ) = (y ↦ σₙ (h, φ y))`. Continuity at each level is checked after
+restriction to compact subsets of `G`, where evaluation is jointly continuous. -/
 private noncomputable def levelLift (σ : C(G × Z.V, Y.V)) :
     (n : ℕ) → C(G × (TopRep.resolutionX Z n).V, (TopRep.resolutionX Y n).V)
   | 0 => σ
-  | n + 1 => ContinuousMap.curry
-      ⟨fun p : (G × C(G, (TopRep.resolutionX Z n).V)) × G ↦ levelLift σ n (p.1.1, p.1.2 p.2),
-        (levelLift σ n).continuous.comp <| continuous_fst.fst.prodMk <|
-          continuous_eval.comp (continuous_fst.snd.prodMk continuous_snd)⟩
+  | n + 1 => ⟨fun p ↦ ⟨fun y ↦ levelLift σ n (p.1, p.2 y),
+      (levelLift σ n).continuous.comp (continuous_const.prodMk p.2.continuous)⟩, by
+    -- Expose the compact-open topology of the successor term to restrict to compact subsets.
+    change @Continuous _ C(G, (TopRep.resolutionX Y n).V) _ ContinuousMap.compactOpen _
+    rw [ContinuousMap.compactOpen_eq_iInf_induced]
+    apply continuous_iInf_rng.2
+    intro K
+    apply continuous_iInf_rng.2
+    intro hK
+    rw [continuous_induced_rng]
+    let : CompactSpace K := isCompact_iff_compactSpace.mp hK
+    apply ContinuousMap.continuous_of_continuous_uncurry
+    -- The uncurried restriction evaluates the original cochain at the underlying point of K.
+    change Continuous (fun p : (G × C(G, (TopRep.resolutionX Z n).V)) × K ↦
+      levelLift σ n (p.1.1, p.1.2 p.2))
+    exact (levelLift σ n).continuous.comp <| continuous_fst.fst.prodMk <|
+      continuous_eval.comp (((ContinuousMap.continuous_restrict K).comp
+        continuous_fst.snd).prodMk continuous_snd)⟩
 
 private theorem levelLift_succ_apply (σ : C(G × Z.V, Y.V)) (n : ℕ) (h : G)
     (φ : C(G, (TopRep.resolutionX Z n).V)) (y : G) :
@@ -380,10 +392,9 @@ theorem continuous_ρ₃ : Continuous fun p : G × S.X₃ ↦ S.X₃.ρ p.1 p.2 
 end
 
 /-- **Continuous cochains lift along the second map** of a topologically short exact sequence,
-in every degree, over a locally compact group. The lift uses the twisted section
-`(h, z) ↦ h • s (h⁻¹ • z)`, which is continuous by joint continuity of the actions and
-equivariant. -/
-theorem cochainsMap_g_f_surjective [LocallyCompactSpace G] (n : ℕ) :
+in every degree. The lift uses the twisted section `(h, z) ↦ h • s (h⁻¹ • z)`, which is continuous
+by joint continuity of the actions and equivariant. -/
+theorem cochainsMap_g_f_surjective (n : ℕ) :
     Function.Surjective ((cochainsMap (ContinuousMonoidHom.id G) S.g).f n).hom := by
   obtain ⟨s, hs, hgs⟩ := hS.exists_continuous_section
   let σ : C(G × S.X₃, S.X₂) :=
@@ -396,9 +407,9 @@ theorem cochainsMap_g_f_surjective [LocallyCompactSpace G] (n : ℕ) :
 
 /-- **The cochain sequence of a topologically short exact sequence is short exact.** After
 forgetting topologies, `0 → C•(G, X₁) → C•(G, X₂) → C•(G, X₃) → 0` is a short exact sequence of
-cochain complexes of modules, for a locally compact group `G`. This is the input to the snake
-lemma, and hence to the long exact sequence of continuous cohomology in every degree. -/
-theorem cochains_shortExact_moduleCat [LocallyCompactSpace G] :
+cochain complexes of modules. This is the input to the snake lemma, and hence to the long exact
+sequence of continuous cohomology in every degree. -/
+theorem cochains_shortExact_moduleCat :
     ((S.map (continuousCochainsFunctor R G)).map
       ((forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _)).ShortExact :=
   HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
@@ -534,21 +545,19 @@ theorem topShortExact [ContinuousSMul G B] : S.toShortComplex.TopShortExact wher
     continuous_of_discreteTopology (α := C), Function.surjInv_eq S.proj_surjective⟩
   continuous_ρ₂ := continuous_smul (M := G) (X := B)
 
-/-- **Continuous cochains lift along `B → C` in every degree.** For a locally compact group `G`
+/-- **Continuous cochains lift along `B → C` in every degree.** For a topological group `G`
 acting continuously on the discrete module `B`, every homogeneous continuous `n`-cochain with
 values in `C` is the image of one with values in `B`. -/
-theorem continuousCochainsShortExact_g_surjective [LocallyCompactSpace G]
-    [ContinuousSMul G B] (n : ℕ) :
+theorem continuousCochainsShortExact_g_surjective [ContinuousSMul G B] (n : ℕ) :
     Function.Surjective (S.continuousCochainsShortExact.g.f n).hom :=
   S.topShortExact.cochainsMap_g_f_surjective n
 
 /-- **The cochain sequence of a short exact sequence of discrete modules is short exact.** After
 forgetting topologies, `0 → C•(G, A) → C•(G, B) → C•(G, C) → 0` is a short exact sequence of
-cochain complexes of `ℤ`-modules, for a locally compact group `G` acting continuously on `B`.
+cochain complexes of `ℤ`-modules, for a topological group `G` acting continuously on `B`.
 This is the input to the snake lemma, and hence to the long exact sequence of continuous
 cohomology in every degree. -/
-theorem continuousCochainsShortExact_shortExact_moduleCat [LocallyCompactSpace G]
-    [ContinuousSMul G B] :
+theorem continuousCochainsShortExact_shortExact_moduleCat [ContinuousSMul G B] :
     (S.continuousCochainsShortExact.map
       ((forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)).mapHomologicalComplex _)).ShortExact :=
   S.topShortExact.cochains_shortExact_moduleCat

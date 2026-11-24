@@ -26,11 +26,11 @@ principle** `TauCeti.IsProP.finite_pPrimary_induction`, the pro-`p` case of dév
 (NSW (3.3.2), final clause; Koch takes it as the definition of cohomological dimension for pro-`p`
 groups), and the instance of the general principle
 `TauCeti.ContCohomology.finite_induction_of_exists_addSubgroup` for the `p`-primary modules.
-The principle itself needs no topology on `G` beyond the pro-`p` hypothesis; compactness enters
-only through the long exact cohomology sequence in the corollaries below.
+The induction principle uses the pro-`p` hypothesis. The cohomology corollaries also assume that
+multiplication and inversion are continuous.
 
-For a compact pro-`p` group `G`, two properties of the continuous cohomology `Hⁿ(G, -)` in a fixed
-degree `n` are run through it, using exactness of the long exact sequence at `Hⁿ(G, M)`
+For a pro-`p` topological group `G`, two properties of the continuous cohomology `Hⁿ(G, -)` in a
+fixed degree `n` are run through it, using exactness of the long exact sequence at `Hⁿ(G, M)`
 (`TauCeti.ContCohomology.DiscreteShortExact.longExact_exact₂`), which passes a property from
 `Hⁿ(G, N)` and `Hⁿ(G, M ⧸ N)` to `Hⁿ(G, M)`. If `Hⁿ(G, A)` vanishes for every discrete `G`-module
 `A` of order `p` with **trivial** action, then it vanishes for every finite discrete `p`-primary
@@ -52,16 +52,16 @@ continuous cohomology with filtered colimits of coefficients, and is not part of
   zero module and the trivial modules of order `p` and is closed under extensions by a trivial
   module of order `p`.
 * `TauCeti.IsProP.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self`: for a
-  compact pro-`p` group, vanishing of `Hⁿ` on the trivial modules of order `p` gives vanishing on
-  every finite discrete `p`-primary module.
+  pro-`p` topological group, vanishing of `Hⁿ` on the trivial modules of order `p` gives vanishing
+  on every finite discrete `p`-primary module.
 * `TauCeti.IsProP.subsingleton_continuousCohomology_of_forall_smul_eq_self`: the same with the
   finite trivial modules killed by `p` as test class.
 * `TauCeti.IsProP.forall_subsingleton_continuousCohomology_iff_forall_natCard_eq` and
   `TauCeti.IsProP.forall_subsingleton_continuousCohomology_iff`: vanishing on every finite discrete
   `p`-primary module is equivalent to vanishing on either test class.
-* `TauCeti.IsProP.finite_continuousCohomology_of_forall_natCard_eq_smul_eq_self`: for a compact
-  pro-`p` group, finiteness of `Hⁿ` on the trivial modules of order `p` gives finiteness on every
-  finite discrete `p`-primary module.
+* `TauCeti.IsProP.finite_continuousCohomology_of_forall_natCard_eq_smul_eq_self`: for a
+  pro-`p` topological group, finiteness of `Hⁿ` on the trivial modules of order `p` gives finiteness
+  on every finite discrete `p`-primary module.
 
 ## References
 
@@ -80,9 +80,9 @@ open ContCohomology
 universe u
 
 variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G] [CompactSpace G]
+  [IsTopologicalGroup G]
 
-omit [IsTopologicalGroup G] [CompactSpace G] in
+omit [IsTopologicalGroup G] in
 /-- **The dévissage induction principle for pro-`p` groups.** Let `G` be a pro-`p` group and let
 `motive` be a property of discrete `G`-modules. Suppose that `motive` holds for the zero module and
 for every discrete `G`-module of order `p` with trivial action, and that `motive` is closed under
@@ -117,7 +117,7 @@ theorem IsProP.finite_pPrimary_induction (hG : IsProP p G)
         hB hC (prime A hA hAtriv))
     M hM
 
-/-- **Dévissage for pro-`p` groups.** Let `G` be a compact pro-`p` group. If `Hⁿ(G, A)` vanishes
+/-- **Dévissage for pro-`p` groups.** Let `G` be a pro-`p` topological group. If `Hⁿ(G, A)` vanishes
 for every discrete `G`-module `A` of order `p` on which `G` acts trivially, then `Hⁿ(G, M)`
 vanishes for every finite discrete `p`-primary `G`-module `M`. -/
 theorem IsProP.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self
@@ -137,9 +137,10 @@ theorem IsProP.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_se
   · -- exactness in the middle of `Hⁿ(G, A) → Hⁿ(G, B) → Hⁿ(G, C)`, with trivial outer terms
     exact subsingleton_of_exact (S.longExact_exact₂ n)
 
-/-- **Dévissage for pro-`p` groups, elementary abelian test class.** Let `G` be a compact pro-`p`
-group. If `Hⁿ(G, A)` vanishes for every finite discrete `G`-module `A` killed by `p` on which `G`
-acts trivially, then `Hⁿ(G, M)` vanishes for every finite discrete `p`-primary `G`-module `M`. -/
+/-- **Dévissage for pro-`p` groups, elementary abelian test class.** Let `G` be a pro-`p`
+topological group. If `Hⁿ(G, A)` vanishes for every finite discrete `G`-module `A` killed by `p`
+on which `G` acts trivially, then `Hⁿ(G, M)` vanishes for every finite discrete `p`-primary
+`G`-module `M`. -/
 theorem IsProP.subsingleton_continuousCohomology_of_forall_smul_eq_self (hG : IsProP p G)
     {n : ℕ}
     (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
@@ -152,7 +153,7 @@ theorem IsProP.subsingleton_continuousCohomology_of_forall_smul_eq_self (hG : Is
   hG.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self
     (fun A _ _ _ _ _ _ hA ↦ h A fun a ↦ by rw [← hA]; exact card_nsmul_eq_zero') M hM
 
-/-- **Dévissage for pro-`p` groups, as an equivalence.** For a compact pro-`p` group `G` and a
+/-- **Dévissage for pro-`p` groups, as an equivalence.** For a pro-`p` topological group `G` and a
 degree `n`, the continuous cohomology `Hⁿ(G, M)` vanishes for every finite discrete `p`-primary
 `G`-module `M` if and only if it vanishes for every discrete `G`-module of order `p` on which `G`
 acts trivially. -/
@@ -170,7 +171,7 @@ theorem IsProP.forall_subsingleton_continuousCohomology_iff_forall_natCard_eq (h
       hG.subsingleton_continuousCohomology_of_forall_natCard_eq_smul_eq_self h M hM⟩
 
 /-- **Dévissage for pro-`p` groups, as an equivalence with the elementary abelian test class.**
-For a compact pro-`p` group `G` and a degree `n`, the continuous cohomology `Hⁿ(G, M)` vanishes
+For a pro-`p` topological group `G` and a degree `n`, the continuous cohomology `Hⁿ(G, M)` vanishes
 for every finite discrete `p`-primary `G`-module `M` if and only if it vanishes for every finite
 discrete `G`-module killed by `p` on which `G` acts trivially. -/
 theorem IsProP.forall_subsingleton_continuousCohomology_iff (hG : IsProP p G) (n : ℕ) :
@@ -185,9 +186,9 @@ theorem IsProP.forall_subsingleton_continuousCohomology_iff (hG : IsProP p G) (n
     H A (fun a ↦ ⟨1, by rw [pow_one]; exact hA a⟩),
     fun h M _ _ _ _ _ _ hM ↦ hG.subsingleton_continuousCohomology_of_forall_smul_eq_self h M hM⟩
 
-/-- **Finiteness dévissage for pro-`p` groups.** Let `G` be a compact pro-`p` group. If `Hⁿ(G, A)`
-is finite for every discrete `G`-module `A` of order `p` on which `G` acts trivially, then
-`Hⁿ(G, M)` is finite for every finite discrete `p`-primary `G`-module `M`. -/
+/-- **Finiteness dévissage for pro-`p` groups.** Let `G` be a pro-`p` topological group. If
+`Hⁿ(G, A)` is finite for every discrete `G`-module `A` of order `p` on which `G` acts trivially,
+then `Hⁿ(G, M)` is finite for every finite discrete `p`-primary `G`-module `M`. -/
 theorem IsProP.finite_continuousCohomology_of_forall_natCard_eq_smul_eq_self (hG : IsProP p G)
     {n : ℕ}
     (h : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
