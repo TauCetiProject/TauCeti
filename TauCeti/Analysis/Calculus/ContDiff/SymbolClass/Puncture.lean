@@ -328,7 +328,7 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
         filter_upwards [hs] with z hz
         exact (hz.1.iteratedFDeriv_right (m := ∞) (i := j + 1) (by simp)).comp z hz.2
       have hprod := ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_rpow
-        (H := E →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)
+        (Z := E →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)
         ((ContinuousLinearMap.compL ℝ E F (ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ F) G)).comp
           (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ F)
             G).toContinuousLinearEquiv.toContinuousLinearMap) hDj hDφ.eventually_contDiffAt (n := k)

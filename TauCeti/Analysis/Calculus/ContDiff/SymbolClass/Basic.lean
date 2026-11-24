@@ -58,42 +58,7 @@ namespace TauCeti
 variable {E F G H : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
   [NormedAddCommGroup H]
 
-/-- The exponents in the Leibniz rule for derivative bounds add up, along any filter: the product
-of the bounds of orders `i` and `n - i` for symbols of orders `ℓ` and `m` is at most the bound of
-order `n` for order `ℓ + m`. -/
-private theorem isBigO_rpow_mul_rpow (l : Filter E) (ℓ m : ℝ) {n i : ℕ} (hi : i ≤ n) :
-    (fun x : E ↦ ‖x‖ ^ (ℓ - i) * ‖x‖ ^ (m - (n - i : ℕ))) =O[l] fun x ↦ ‖x‖ ^ (ℓ + m - n) := by
-  have he : ℓ - i + (m - (n - i : ℕ)) = ℓ + m - n := by
-    push_cast [Nat.cast_sub hi]
-    ring
-  refine IsBigO.of_bound 1 (Eventually.of_forall fun x ↦ ?_)
-  rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), ← he]
-  exact Real.le_rpow_add (norm_nonneg x) _ _
-
 variable [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G] [NormedSpace ℝ H]
-
-/-- **The Leibniz rule for derivative bounds.** Along a filter `l` on which `f` and `g` are
-eventually `C^N`, if for `i ≤ n ≤ N` the `i`-th derivatives of `f` and `g` are `O(‖x‖ ^ (ℓ - i))`
-and `O(‖x‖ ^ (m - i))`, then the `n`-th derivative of `x ↦ B (f x) (g x)` is
-`O(‖x‖ ^ (ℓ + m - n))`. -/
-theorem _root_.ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear_rpow
-    (B : F →L[ℝ] G →L[ℝ] H) {l : Filter E} {f : E → F} {g : E → G} {N : ℕ∞ω}
-    (hf : ∀ᶠ x in l, ContDiffAt ℝ N f x) (hg : ∀ᶠ x in l, ContDiffAt ℝ N g x) {ℓ m : ℝ} {n : ℕ}
-    (hn : n ≤ N) (hfn : ∀ i ≤ n, iteratedFDeriv ℝ i f =O[l] fun x ↦ ‖x‖ ^ (ℓ - i))
-    (hgn : ∀ i ≤ n, iteratedFDeriv ℝ i g =O[l] fun x ↦ ‖x‖ ^ (m - i)) :
-    iteratedFDeriv ℝ n (fun x ↦ B (f x) (g x)) =O[l] fun x ↦ ‖x‖ ^ (ℓ + m - n) :=
-  B.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt (ρ₁ := fun i x ↦ ‖x‖ ^ (ℓ - i))
-    (ρ₂ := fun i x ↦ ‖x‖ ^ (m - i)) hf hg hn hfn hgn fun _ hi ↦ isBigO_rpow_mul_rpow l ℓ m hi
-
-/-- **The inductive step of derivative bounds.** If `fderiv ℝ f` agrees near every point of a set
-of `l` with a map `g` whose `n`-th derivative is `O(‖x‖ ^ (a - n))` along `l`, then the
-`(n + 1)`-th derivative of `f` is `O(‖x‖ ^ (b - (n + 1)))` along `l`, for `b = a + 1`. -/
-theorem isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq {l : Filter E} {f : E → F}
-    {g : E → E →L[ℝ] F} {a b : ℝ} {n : ℕ} (hf : ∀ᶠ x in l, fderiv ℝ f =ᶠ[𝓝 x] g)
-    (hg : iteratedFDeriv ℝ n g =O[l] fun x ↦ ‖x‖ ^ (a - n)) (hab : a + 1 = b) :
-    iteratedFDeriv ℝ (n + 1) f =O[l] fun x ↦ ‖x‖ ^ (b - (n + 1 : ℕ)) := by
-  rw [show b - (n + 1 : ℕ) = a - n by push_cast; linarith]
-  exact isBigO_iteratedFDeriv_succ_of_eventuallyEq hf hg
 
 /-- A map `f` is a **symbol of order `ℓ` and regularity `n` along a filter `l`** if it is `Cⁿ` at
 the points of a set of `l` and, for every `j ≤ n`, its `j`-th derivative is `O(‖x‖ ^ (ℓ - j))`
@@ -211,7 +176,7 @@ theorem isSymbolAlong_add_one_iff {f : E → F} :
       (f =O[l] fun x ↦ ‖x‖ ^ ℓ) ∧ IsSymbolAlong l n (ℓ - 1) (fderiv ℝ f) := by
   refine ⟨fun hf ↦ ⟨hf.1, hf.isBigO, hf.fderiv⟩, fun ⟨hC, h0, hD⟩ ↦ ⟨hC, fun j hj ↦ ?_⟩⟩
   cases j with
-  | zero => simpa using isBigO_iteratedFDeriv_zero_iff.2 h0
+  | zero => simpa using h0
   | succ j =>
     have hj' : (j : ℕ∞) ≤ n := (ENat.add_le_add_iff_right ENat.one_ne_top).1 (by exact_mod_cast hj)
     have h := (hD.2 j hj').norm_left

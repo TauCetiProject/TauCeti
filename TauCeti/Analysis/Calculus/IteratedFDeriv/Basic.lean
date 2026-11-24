@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
@@ -59,7 +60,8 @@ those of `g ∘ f` (`TauCeti.norm_iteratedFDeriv_iteratedFDeriv_zero_comp`). Alo
 zeroth derivative of `f` is `O(ρ)` exactly when `f` is
 (`TauCeti.isBigO_iteratedFDeriv_zero_iff`), and where `Df` agrees locally with a map `g` whose
 `n`-th derivative is `O(ρ)`, the `(n + 1)`-th derivative of `f` is `O(ρ)`
-(`TauCeti.isBigO_iteratedFDeriv_succ_of_eventuallyEq`).
+(`TauCeti.isBigO_iteratedFDeriv_succ_of_eventuallyEq`); for power bounds the order goes up by one
+(`TauCeti.isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq`).
 -/
 
 public section
@@ -361,6 +363,7 @@ theorem fderiv_iteratedFDeriv_comp {G : Type*} [NormedAddCommGroup G] [NormedSpa
 
 /-- The derivatives of `(D^0 g) ∘ f` have the same norms as those of `g ∘ f`: `D^0 g` is `g` read
 through the isometry `G ≃ (Fin 0 → F) → G`. -/
+@[simp]
 theorem norm_iteratedFDeriv_iteratedFDeriv_zero_comp {G : Type*} [NormedAddCommGroup G]
     [NormedSpace 𝕜 G] (g : F → G) (f : E → F) (i : ℕ) (x : E) :
     ‖iteratedFDeriv 𝕜 i (fun y ↦ iteratedFDeriv 𝕜 0 g (f y)) x‖ =
@@ -373,6 +376,7 @@ theorem norm_iteratedFDeriv_iteratedFDeriv_zero_comp {G : Type*} [NormedAddCommG
 
 open Asymptotics in
 /-- The zeroth derivative of `f` is `O(ρ)` along a filter exactly when `f` is. -/
+@[simp]
 theorem isBigO_iteratedFDeriv_zero_iff {l : Filter E} {f : E → F} {R : Type*} [Norm R]
     {ρ : E → R} : iteratedFDeriv 𝕜 0 f =O[l] ρ ↔ f =O[l] ρ := by
   rw [← isBigO_norm_left, ← isBigO_norm_left (f' := f)]
@@ -388,6 +392,17 @@ theorem isBigO_iteratedFDeriv_succ_of_eventuallyEq {l : Filter E} {f : E → F}
   refine IsBigO.of_norm_left (hg.norm_left.congr' ?_ Filter.EventuallyEq.rfl)
   filter_upwards [hf] with x hx
   rw [← (hx.iteratedFDeriv 𝕜 n).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+
+open Asymptotics in
+/-- **The inductive step of power bounds on derivatives.** If `fderiv 𝕜 f` agrees near every point
+of a set of `l` with a map `g` whose `n`-th derivative is `O(‖x‖ ^ (a - n))` along `l`, then the
+`(n + 1)`-th derivative of `f` is `O(‖x‖ ^ (b - (n + 1)))` along `l`, for `b = a + 1`. -/
+theorem isBigO_iteratedFDeriv_succ_rpow_of_eventuallyEq {l : Filter E} {f : E → F}
+    {g : E → E →L[𝕜] F} {a b : ℝ} {n : ℕ} (hf : ∀ᶠ x in l, fderiv 𝕜 f =ᶠ[𝓝 x] g)
+    (hg : iteratedFDeriv 𝕜 n g =O[l] fun x ↦ ‖x‖ ^ (a - n)) (hab : a + 1 = b) :
+    iteratedFDeriv 𝕜 (n + 1) f =O[l] fun x ↦ ‖x‖ ^ (b - (n + 1 : ℕ)) := by
+  rw [show b - (n + 1 : ℕ) = a - n by push_cast; linarith]
+  exact isBigO_iteratedFDeriv_succ_of_eventuallyEq hf hg
 
 /-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
 at `x` is that of `u`. -/

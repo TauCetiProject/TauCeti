@@ -31,7 +31,10 @@ along `l` exactly when each of its entries is. -/
 theorem isSymbolAlong_matrix_iff :
     IsSymbolAlong l r ℓ A ↔ ∀ i j, IsSymbolAlong l r ℓ fun x ↦ A x i j := by
   refine ⟨fun hA i j ↦
-    hA.continuousLinearMap_comp (Matrix.entryLinearMap ℝ ℝ i j).toContinuousLinearMap,
+    (hA.continuousLinearMap_comp (Matrix.entryLinearMap ℝ ℝ i j).toContinuousLinearMap
+      ).congr_of_eventually_nhds (.of_forall fun _ ↦ .of_forall fun x ↦
+        (congrFun (LinearMap.coe_toContinuousLinearMap' _) (A x)).trans
+          (Matrix.entryLinearMap_apply ..)),
     fun hA ↦ ?_⟩
   classical
   have hsum : A = fun x ↦ ∑ i, ∑ j, A x i j • Matrix.single i j (1 : ℝ) := by

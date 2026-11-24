@@ -129,7 +129,10 @@ theorem isSymbolAtInfinity_sqrt_det_pullbackMetricCoeff_sub_one
   -- `A ↦ √(det A)` is smooth at the identity matrix, where the determinant is `1`.
   have hG : ContDiffAt ℝ (max 2 1 : ℕ) (fun B : Matrix (Fin n) (Fin n) ℝ ↦ √B.det) 1 :=
     (Real.contDiffAt_sqrt (by simp)).comp _ (ContDiffAt.matrix_det fun i j ↦
-      (Matrix.entryLinearMap ℝ ℝ i j).toContinuousLinearMap.contDiff.contDiffAt)
+      ((Matrix.entryLinearMap ℝ ℝ i j).toContinuousLinearMap.contDiff.contDiffAt
+        ).congr_of_eventuallyEq (.of_forall fun B ↦
+          ((congrFun (LinearMap.coe_toContinuousLinearMap' _) B).trans
+            (Matrix.entryLinearMap_apply ..)).symm))
   simpa using hg.comp_sub (neg_neg_of_pos ht) hG
 
 end IsAsymptoticallyEuclideanEnd
