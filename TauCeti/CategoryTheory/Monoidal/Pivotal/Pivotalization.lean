@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Transport
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # The pivotalization of a rigid category
@@ -27,7 +27,8 @@ the tensor comparison of the double right dual functor, and the unit is `𝟙_ C
 comparison; that the square of `a ⊗ b` is `e_{X ⊗ Y}` is the monoidality of `e`. It is right
 rigid: the right dual of `(X, a)` is `(Xᘁ, (a⁻¹)ᘁ)`, with the evaluation and coevaluation of `C`.
 Here the square of `(a⁻¹)ᘁ` is `(e_X⁻¹)ᘁ`, which is `e_{Xᘁ}` by the Freyd–Yetter identity
-`CategoryTheory.Iso.hom_app_rightDual` for the monoidal isomorphism `e`. Finally the components
+`CategoryTheory.Iso.hom_app_rightDual` for the monoidal isomorphism `e`, from
+`TauCeti.CategoryTheory.Monoidal.Rigid.Functor`. Finally the components
 `a` form a monoidal natural isomorphism from the identity to the double right dual functor of the
 pivotalization: this is its tautological pivotal structure, which also makes it rigid. The
 forgetful functor to `C` is faithful and strict monoidal, and it computes the traces of morphisms
@@ -42,8 +43,6 @@ arbitrary monoidal `e`, and proves nothing specific to the Radford isomorphism.
 
 ## Main declarations
 
-* `CategoryTheory.Iso.hom_app_rightDual`: a monoidal natural isomorphism `e` from the identity to
-  the fourth right dual functor satisfies `e_{Xᘁ} = (e_X⁻¹)ᘁ`;
 * `TauCeti.Pivotalization`: the pivotalization of `C` along `e`, with its faithful forgetful
   functor `TauCeti.Pivotalization.forget` and the constructor `TauCeti.Pivotalization.isoMk` for
   isomorphisms;
@@ -52,6 +51,7 @@ arbitrary monoidal `e`, and proves nothing specific to the Radford isomorphism.
   `PivotalCategory (Pivotalization e)`, whose structure is computed in `C` by the `simp` lemmas
   of this file;
 * `TauCeti.Pivotalization.pivotalIso`: the tautological pivotal structure, with components
+  `TauCeti.Pivotalization.pivotalIso_hom_app_hom` and
   `TauCeti.Pivotalization.pivotalIsoApp_hom_hom`;
 * `TauCeti.Pivotalization.rightDim_hom`, `TauCeti.Pivotalization.leftDim_hom`,
   `TauCeti.Pivotalization.squaredNorm_hom` and `TauCeti.Pivotalization.squaredNorm_iso`: the
@@ -70,69 +70,6 @@ arbitrary monoidal `e`, and proves nothing specific to the Radford isomorphism.
 open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
 
 universe v u
-
-namespace TauCeti
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
-
-/-- The fourth right dual functor carries the evaluation of `(Y, Yᘁ)` to the evaluation of
-`(Yᘁᘁᘁᘁ, Yᘁᘁᘁᘁᘁ)`, up to its tensor and unit comparisons. -/
-theorem fourthRightDual_μ_comp_map_evaluation (Y : C) :
-    μ (doubleRightDualFunctor C ⋙ doubleRightDualFunctor C) Yᘁ Y ≫
-        (doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).map (ε_ Y Yᘁ) =
-      ε_ ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).obj Y)
-          ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).obj Y)ᘁ ≫
-        ε (doubleRightDualFunctor C ⋙ doubleRightDualFunctor C) := by
-  have h₁ := doubleRightDualFunctor_μ_comp_map_evaluation Y
-  have h₂ := doubleRightDualFunctor_μ_comp_map_evaluation ((doubleRightDualFunctor C).obj Y)
-  simp only [Functor.LaxMonoidal.comp_μ, Functor.LaxMonoidal.comp_ε, Functor.comp_map,
-    Category.assoc]
-  -- The objects `(Yᘁᘁ)ᘁ` and `(Yᘁ)ᘁᘁ` agree only up to unfolding, so the steps are chained by
-  -- `Eq.trans` rather than by rewriting.
-  exact (congrArg (_ ≫ ·) ((doubleRightDualFunctor C).map_comp _ _).symm).trans
-    ((congrArg (fun t => _ ≫ (doubleRightDualFunctor C).map t) h₁).trans
-      ((congrArg (_ ≫ ·) ((doubleRightDualFunctor C).map_comp _ _)).trans
-        (((Category.assoc _ _ _).symm.trans (h₂ =≫ _)).trans (Category.assoc _ _ _))))
-
-end TauCeti
-
-namespace CategoryTheory.Iso
-
-open TauCeti
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
-
-variable (e : 𝟭 C ≅ doubleRightDualFunctor C ⋙ doubleRightDualFunctor C) [NatTrans.IsMonoidal e.hom]
-
-/-- A monoidal natural isomorphism `e` from the identity to the fourth right dual functor carries
-the evaluation of `(X, Xᘁ)` to the evaluation of `(Xᘁᘁᘁᘁ, Xᘁᘁᘁᘁᘁ)`. -/
-theorem tensorHom_hom_app_comp_evaluation (X : C) :
-    (e.hom.app Xᘁ ⊗ₘ e.hom.app X) ≫
-        ε_ ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).obj X)
-          ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).obj X)ᘁ = ε_ X Xᘁ := by
-  rw [← cancel_mono (ε (doubleRightDualFunctor C ⋙ doubleRightDualFunctor C))]
-  refine (Category.assoc _ _ _).trans ?_
-  refine (congrArg (_ ≫ ·) (fourthRightDual_μ_comp_map_evaluation X).symm).trans ?_
-  have hT := NatTrans.IsMonoidal.tensor (τ := e.hom) Xᘁ X
-  have hU := NatTrans.IsMonoidal.unit (τ := e.hom)
-  simp only [Functor.LaxMonoidal.id_μ, Functor.LaxMonoidal.id_ε, Category.id_comp] at hT hU
-  exact (Category.assoc _ _ _).symm.trans
-    ((hT.symm =≫ _).trans ((e.hom.naturality (ε_ X Xᘁ)).symm.trans (_ ≫= hU)))
-
-/-- **The Freyd–Yetter identity for the fourth dual**: a monoidal natural isomorphism `e` from the
-identity to the fourth right dual functor satisfies `e_{Xᘁ} = (e_X⁻¹)ᘁ`. -/
-theorem hom_app_rightDual (X : C) : e.hom.app Xᘁ = (e.inv.app X)ᘁ := by
-  refine ExactPairing.rightHom_ext
-    (X := (doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).obj X)
-    (Y := ((doubleRightDualFunctor C ⋙ doubleRightDualFunctor C).obj X)ᘁ) ?_
-  rw [rightAdjointMate_comp_evaluation, ← cancel_epi (Xᘁ ◁ e.hom.app X)]
-  -- After cancelling `Xᘁ ◁ e_X`, the left side is `(e_{Xᘁ} ⊗ e_X) ≫ ε`; the objects
-  -- `(Xᘁᘁᘁᘁ)ᘁ` and `(Xᘁ)ᘁᘁᘁᘁ` agree only up to unfolding, hence the `Eq.trans` chain.
-  refine ((whisker_exchange_assoc _ _ _).trans ((tensorHom_def_assoc _ _ _).symm.trans
-    (e.tensorHom_hom_app_comp_evaluation X))).trans ?_
-  simp [← MonoidalCategory.whiskerLeft_comp_assoc]
-
-end CategoryTheory.Iso
 
 namespace TauCeti
 
@@ -435,6 +372,8 @@ noncomputable abbrev rightDualObj (X : Pivotalization e) : Pivotalization e wher
   iso :=
     -- The implicit arguments are given so that the mates are taken between `X.obj` and
     -- `(doubleRightDualFunctor C).obj X.obj`, rather than between unfoldings of these objects.
+    -- `X.iso.symm.rightAdjointMate` has the same components, but its definition is not exposed,
+    -- so it would not compute them definitionally here.
     { hom := @rightAdjointMate C _ _ ((doubleRightDualFunctor C).obj X.obj) X.obj _ _ X.iso.inv
       inv := @rightAdjointMate C _ _ X.obj ((doubleRightDualFunctor C).obj X.obj) _ _ X.iso.hom
       hom_inv_id := (comp_rightAdjointMate (f := X.iso.hom) (g := X.iso.inv)).symm.trans
@@ -447,29 +386,46 @@ noncomputable abbrev rightDualObj (X : Pivotalization e) : Pivotalization e wher
       rw [Iso.app_hom, ← X.iso_hom_comp_map_iso_hom, Category.assoc,
         ← (doubleRightDualFunctor C).map_comp_assoc, Iso.hom_inv_id,
         CategoryTheory.Functor.map_id, Category.id_comp, Iso.hom_inv_id]
-    -- The mates are stated at `(doubleRightDualFunctor C).obj X.obj`, which agrees with the
-    -- objects of the goal only up to unfolding, so the steps are chained by `Eq.trans`.
-    exact (comp_rightAdjointMate (g := X.iso.inv)).symm.trans
-      ((congrArg rightAdjointMate h).trans (e.hom_app_rightDual X.obj).symm)
+    have h' : ((doubleRightDualFunctor C).map X.iso.inv ≫ X.iso.inv)ᘁ = e.hom.app X.objᘁ := by
+      rw [h, e.hom_app_rightDual]
+    -- The square of the mate is the mate of `h`'s left side, by `comp_rightAdjointMate`.
+    exact comp_rightAdjointMate.symm.trans h'
 
 /-- The coevaluation of `X.obj` with its right dual, as a morphism of the pivotalization. -/
 noncomputable def coevaluation (X : Pivotalization e) :
     𝟙_ (Pivotalization e) ⟶ X ⊗ rightDualObj X where
   hom := η_ X.obj X.objᘁ
   -- The right dual `(X.objᘁᘁ)ᘁ` of `X.objᘁᘁ` and the double right dual `(X.objᘁ)ᘁᘁ` of `X.objᘁ`
-  -- agree only up to unfolding, so the steps are chained by `Eq.trans` rather than by rewriting.
-  comm := (X.iso.coevaluation_comp_hom_tensorHom_rightAdjointMate_inv_assoc _).trans
-    ((Functor.Monoidal.ε_η_assoc _ _).symm.trans
-      (congrArg (_ ≫ ·) (doubleRightDualFunctor_map_coevaluation X.obj).symm))
+  -- agree only up to unfolding, so the steps are stated in a `calc` block rather than rewritten.
+  comm := calc
+    η_ X.obj X.objᘁ ≫ (X.iso.hom ⊗ₘ X.iso.invᘁ) ≫ μ (doubleRightDualFunctor C) X.obj X.objᘁ
+      = η_ ((doubleRightDualFunctor C).obj X.obj) ((doubleRightDualFunctor C).obj X.obj)ᘁ ≫
+          μ (doubleRightDualFunctor C) X.obj X.objᘁ :=
+        X.iso.coevaluation_comp_hom_tensorHom_rightAdjointMate_inv_assoc _
+    _ = ε (doubleRightDualFunctor C) ≫ η (doubleRightDualFunctor C) ≫
+          η_ ((doubleRightDualFunctor C).obj X.obj) ((doubleRightDualFunctor C).obj X.obj)ᘁ ≫
+          μ (doubleRightDualFunctor C) X.obj X.objᘁ :=
+        (Functor.Monoidal.ε_η_assoc _ _).symm
+    _ = ε (doubleRightDualFunctor C) ≫ (doubleRightDualFunctor C).map (η_ X.obj X.objᘁ) :=
+        ε (doubleRightDualFunctor C) ≫= (doubleRightDualFunctor_map_coevaluation X.obj).symm
 
 /-- The evaluation of `X.obj` with its right dual, as a morphism of the pivotalization. -/
 noncomputable def evaluation (X : Pivotalization e) :
     rightDualObj X ⊗ X ⟶ 𝟙_ (Pivotalization e) where
   hom := ε_ X.obj X.objᘁ
   -- As for `coevaluation`, the objects agree only up to unfolding.
-  comm := ((X.iso.rightAdjointMate_inv_tensorHom_hom_comp_evaluation_assoc _).symm.trans
-    (congrArg (_ ≫ ·) (doubleRightDualFunctor_μ_comp_map_evaluation X.obj).symm)).trans
-      (Category.assoc _ _ _).symm
+  comm := calc
+    ε_ X.obj X.objᘁ ≫ ε (doubleRightDualFunctor C)
+      = (X.iso.invᘁ ⊗ₘ X.iso.hom) ≫
+          ε_ ((doubleRightDualFunctor C).obj X.obj) ((doubleRightDualFunctor C).obj X.obj)ᘁ ≫
+          ε (doubleRightDualFunctor C) :=
+        (X.iso.rightAdjointMate_inv_tensorHom_hom_comp_evaluation_assoc _).symm
+    _ = (X.iso.invᘁ ⊗ₘ X.iso.hom) ≫ μ (doubleRightDualFunctor C) X.objᘁ X.obj ≫
+          (doubleRightDualFunctor C).map (ε_ X.obj X.objᘁ) :=
+        (X.iso.invᘁ ⊗ₘ X.iso.hom) ≫= (doubleRightDualFunctor_μ_comp_map_evaluation X.obj).symm
+    _ = ((X.iso.invᘁ ⊗ₘ X.iso.hom) ≫ μ (doubleRightDualFunctor C) X.objᘁ X.obj) ≫
+          (doubleRightDualFunctor C).map (ε_ X.obj X.objᘁ) :=
+        (Category.assoc _ _ _).symm
 
 /-- An object `(X, a)` of the pivotalization is paired with `(Xᘁ, (a⁻¹)ᘁ)` by the evaluation
 and coevaluation of `C`. -/
@@ -547,6 +503,19 @@ which is a morphism of the pivotalization from `(X, a)` to its double right dual
 noncomputable def pivotalIso : 𝟭 (Pivotalization e) ≅ doubleRightDualFunctor (Pivotalization e) :=
   NatIso.ofComponents (fun X => isoMk X.iso rfl) fun f => hom_ext f.comm
 
+/-- The component at `(X, a)` of the tautological pivotal structure is `a`. -/
+@[simp]
+theorem pivotalIso_hom_app_hom (X : Pivotalization e) :
+    ((pivotalIso e).hom.app X).hom = X.iso.hom :=
+  (rfl)
+
+/-- The inverse of the component at `(X, a)` of the tautological pivotal structure is the inverse
+of `a`. -/
+@[simp]
+theorem pivotalIso_inv_app_hom (X : Pivotalization e) :
+    ((pivotalIso e).inv.app X).hom = X.iso.inv :=
+  (rfl)
+
 /-- The tautological pivotal structure is monoidal: the unit and tensor comparisons of the double
 right dual functor of the pivotalization are those of `C`. -/
 instance : NatTrans.IsMonoidal (pivotalIso e).hom where
@@ -568,17 +537,15 @@ noncomputable instance : PivotalCategory (Pivotalization e) :=
 /-- The component at `(X, a)` of the pivotal structure of the pivotalization is `a`. -/
 @[simp]
 theorem pivotalIsoApp_hom_hom (X : Pivotalization e) : (pivotalIsoApp X).hom.hom = X.iso.hom := by
-  rw [pivotalIsoApp_pivotalCategoryOfRightRigid (pivotalIso e) X]
-  -- The components of `pivotalIso e` are defined by `isoMk X.iso`.
-  rfl
+  rw [pivotalIsoApp_pivotalCategoryOfRightRigid (pivotalIso e) X, Iso.app_hom,
+    pivotalIso_hom_app_hom]
 
 /-- The inverse of the component at `(X, a)` of the pivotal structure of the pivotalization is
 the inverse of `a`. -/
 @[simp]
 theorem pivotalIsoApp_inv_hom (X : Pivotalization e) : (pivotalIsoApp X).inv.hom = X.iso.inv := by
-  rw [pivotalIsoApp_pivotalCategoryOfRightRigid (pivotalIso e) X]
-  -- The components of `pivotalIso e` are defined by `isoMk X.iso`.
-  rfl
+  rw [pivotalIsoApp_pivotalCategoryOfRightRigid (pivotalIso e) X, Iso.app_inv,
+    pivotalIso_inv_app_hom]
 
 /-- The trace of a morphism `b : X ⟶ Xᘁᘁ` of the pivotalization is computed in `C`. -/
 @[simp]
@@ -591,17 +558,19 @@ theorem doubleDualTrace_hom {X : Pivotalization e} (b : X ⟶ (Xᘁ)ᘁ) :
 /-- The squared norm of an object of the pivotalization, with respect to an isomorphism
 `a : X ≅ Xᘁᘁ`, is the squared norm of the underlying object with respect to the underlying
 isomorphism: the forgetful functor preserves squared norms. -/
+@[simp]
 theorem squaredNorm_hom {X : Pivotalization e} (a : X ≅ (Xᘁ)ᘁ) :
     (squaredNorm a).hom = squaredNorm ((forget e).mapIso a) := by
-  rw [squaredNorm_def, squaredNorm_def, comp_hom, doubleDualTrace_hom, doubleDualTrace_hom]
-  -- Mates are computed in `C`, by `rightAdjointMate_hom`.
-  rfl
+  rw [squaredNorm_def, squaredNorm_def, comp_hom, doubleDualTrace_hom, doubleDualTrace_hom,
+    rightAdjointMate_hom, Functor.mapIso_hom, Functor.mapIso_inv, forget_map, forget_map]
 
 /-- The right dimension of `(X, a)` in the pivotalization is the trace of `a`. -/
+@[simp]
 theorem rightDim_hom (X : Pivotalization e) : (rightDim X).hom = doubleDualTrace X.iso.hom := by
   rw [← doubleDualTrace_pivotalIsoApp_hom, doubleDualTrace_hom, pivotalIsoApp_hom_hom]
 
 /-- The left dimension of `(X, a)` in the pivotalization is the trace of the mate `(a⁻¹)ᘁ`. -/
+@[simp]
 theorem leftDim_hom (X : Pivotalization e) :
     (leftDim X).hom = doubleDualTrace (rightAdjointMate X.iso.inv) := by
   rw [← doubleDualTrace_rightAdjointMate_pivotalIsoApp_inv, doubleDualTrace_hom,
