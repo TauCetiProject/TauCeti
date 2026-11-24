@@ -69,12 +69,6 @@ theorem a1ReflectionIsogeny_def (c : ℕ+) : a1ReflectionIsogeny c =
     a1ReflectionIsogeny c * a1ReflectionIsogeny c =
       smulId (typeASimplyConnectedRootDatum 1) (c ^ 2) := by rw [a1ReflectionIsogeny_def]; simp
 
-/-- Every power of `a1ReflectionIsogeny c` squares to `smulId _ ((c ^ 2) ^ n)`. -/
-theorem a1ReflectionIsogeny_pow_mul_self (c : ℕ+) (n : ℕ) :
-    a1ReflectionIsogeny c ^ n * a1ReflectionIsogeny c ^ n =
-      smulId (typeASimplyConnectedRootDatum 1) ((c ^ 2) ^ n) :=
-  RootPairingIsogeny.pow_mul_self_eq_smulId _ (a1ReflectionIsogeny_mul_self c) n
-
 /-- **`a1ReflectionIsogeny c` is not based** with respect to any base `b`. -/
 @[simp] theorem not_isBased_a1ReflectionIsogeny (b : (typeASimplyConnectedRootDatum 1).Base)
     (c : ℕ+) : ¬ (a1ReflectionIsogeny c).IsBased b := by
@@ -97,13 +91,14 @@ theorem a1ReflectionIsogeny_ne_of_isBased (b : (typeASimplyConnectedRootDatum 1)
 @[simp] theorem conj_ofEquiv_a1ReflectionIsogeny
     (g : RootPairing.Aut (typeASimplyConnectedRootDatum 1)) (c : ℕ+) :
     ofEquiv g * a1ReflectionIsogeny c * ofEquiv g⁻¹ = a1ReflectionIsogeny c := by
-  let P := typeASimplyConnectedRootDatum 1
-  let s := RootPairing.Equiv.reflection P (typeASimpleIndex 1 0)
-  have hgs : ofEquiv g * ofEquiv s * ofEquiv g⁻¹ = ofEquiv s := by
-    rw [← RootPairingIsogeny.ofEquivHom_apply, ← RootPairingIsogeny.ofEquivHom_apply,
-      ← RootPairingIsogeny.ofEquivHom_apply, ← map_mul, ← map_mul,
-      aut_typeASimplyConnectedRootDatum_one_mul_comm g s, mul_inv_cancel_right]
-  rw [a1ReflectionIsogeny_def, mul_assoc, mul_assoc,
-    (RootPairingIsogeny.commute_smulId P (ofEquiv g⁻¹) c).eq, ← mul_assoc, ← mul_assoc, hgs]
+  have hgs : Commute (ofEquiv g) (ofEquiv (RootPairing.Equiv.reflection
+      (typeASimplyConnectedRootDatum 1) (typeASimpleIndex 1 0))) := by
+    simpa only [RootPairingIsogeny.ofEquivHom_apply] using
+      Commute.map (aut_typeASimplyConnectedRootDatum_one_mul_comm g _)
+        (RootPairingIsogeny.ofEquivHom (typeASimplyConnectedRootDatum 1))
+  have hcomm : Commute (ofEquiv g) (a1ReflectionIsogeny c) :=
+    hgs.mul_right (RootPairingIsogeny.commute_smulId _ (ofEquiv g) c).symm
+  rw [hcomm.eq, mul_assoc, ← RootPairingIsogeny.ofEquivHom_apply,
+    ← RootPairingIsogeny.ofEquivHom_apply, ← map_mul, mul_inv_cancel, map_one, mul_one]
 
 end TauCeti.DynkinType

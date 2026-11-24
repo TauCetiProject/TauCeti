@@ -14,14 +14,16 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 /-!
 # Injectivity and distinctness of root subgroups of a Chevalley datum
 
-For `TauCeti.DynkinType.scChevalleyDatum`, every root subgroup is a closed immersion over `ℤ`
-(`TauCeti.DynkinType.isClosedImmersion_rootSubgroup_scChevalleyDatum`). For any
-`TauCeti.DynkinType.ChevalleyDatum`, we prove root-subgroup faithfulness and separation:
-`rootSubgroupPoints_injective`, `rootSubgroupPoints_inj`, `rootSubgroupPoints_eq_one_iff`, and
-`inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot` over every commutative ring, and
-`rootSubgroupPoints_ofAdd_one_mem_range_iff`, `range_rootSubgroupPoints_le_iff`,
+For any `TauCeti.DynkinType.ChevalleyDatum`, we prove pointwise root-subgroup faithfulness and
+separation: `rootSubgroupPoints_injective`, `rootSubgroupPoints_inj`,
+`rootSubgroupPoints_eq_one_iff`, and `inf_range_rootSubgroupPoints_reflectionPerm_self_eq_bot` over
+every commutative ring, and `rootSubgroupPoints_ofAdd_one_mem_range_iff`,
+`exists_rootSubgroupPoints_eq_ofAdd_one_iff`, `range_rootSubgroupPoints_le_iff`,
 `range_rootSubgroupPoints_injective`, and `range_rootSubgroupPoints_inj` over every nontrivial
-commutative ring.
+commutative ring. For the scheme-level closed-immersion result on
+`TauCeti.DynkinType.scChevalleyDatum` over `ℤ`, see
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion`
+(`TauCeti.DynkinType.isClosedImmersion_rootSubgroup_scChevalleyDatum`).
 
 ## References
 
@@ -86,38 +88,44 @@ private theorem simpleRootSubgroup_matrix_eq_sum (i : Fin t.rank) (A : Type*) [C
           simp only [simpleDivPowMat, simpleDivPowEnd, LinearMap.toMatrixAlgEquiv_apply])
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (ofAdd u))
 
+private theorem dvd_matrix_of_pow_eq_factorial_nsmul {m : Type*} [Fintype m] [DecidableEq m]
+    (M : ℕ → Matrix m m ℤ) (hpow : ∀ n, M 1 ^ n = n.factorial • M n)
+    {p : ℕ} (hp : p.Prime) (hdiv : ∀ r s, (p : ℤ) ∣ M 1 r s)
+    {n : ℕ} (hn : n ≠ 0) (r s : m) : (p : ℤ) ∣ M n r s := by
+  have hpow_div : ∀ k r s, (p : ℤ) ^ k ∣ (M 1 ^ k) r s := Nat.rec
+    (fun _ _ => by simp) fun k ih r s => by
+      rw [pow_succ, pow_succ, Matrix.mul_apply]
+      exact Finset.dvd_sum fun l _ => mul_dvd_mul (ih r l) (hdiv l s)
+  have : Fact p.Prime := ⟨hp⟩
+  have hdvdN : p ^ n ∣ n.factorial * (M n r s).natAbs := by
+    rw [← Int.natCast_dvd_natCast, Nat.cast_mul, Nat.cast_pow]
+    simpa only [hpow n, Matrix.smul_apply, nsmul_eq_mul, Int.natAbs_mul,
+      Int.natAbs_natCast, Nat.cast_mul] using Int.dvd_natAbs.mpr (hpow_div n r s)
+  by_contra hndvd
+  have hcop := (hp.coprime_iff_not_dvd.mpr fun h => hndvd (Int.natCast_dvd.mpr h)).pow_left n
+  have hfin := Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.factorial_pos n⟩
+  exact (not_lt_of_ge (hfin.pow_dvd_iff_le_multiplicity.mp (hcop.dvd_of_dvd_mul_right hdvdN)))
+    (multiplicity_factorial_lt_of_ne_zero p hn)
+
 private theorem exists_bezout_simpleDivPowMat_one (i : Fin t.rank) :
     ∃ c : Fin D.dim × Fin D.dim → ℤ,
       ∑ pq : Fin D.dim × Fin D.dim, c pq * D.simpleDivPowMat i 1 pq.1 pq.2 = 1 := by
   let I : Ideal ℤ := Ideal.span (Set.range fun pq : Fin D.dim × Fin D.dim =>
     D.simpleDivPowMat i 1 pq.1 pq.2)
   have hI : I = ⊤ := by_contra fun hne => by
-    obtain ⟨p, hp, hdiv⟩ : ∃ p : ℕ, p.Prime ∧ ∀ r s, (p : ℤ) ∣ D.simpleDivPowMat i 1 r s := by
-      let d := Submodule.IsPrincipal.generator I
-      have hd r s : d ∣ D.simpleDivPowMat i 1 r s :=
-        (Submodule.IsPrincipal.mem_iff_generator_dvd I).mp (Ideal.subset_span ⟨(r, s), rfl⟩)
-      by_cases hd0 : d.natAbs = 0
-      · exact ⟨2, Nat.prime_two, fun r s => by
-          have h0 := hd r s; rw [Int.natAbs_eq_zero.mp hd0, zero_dvd_iff] at h0; simp [h0]⟩
-      · exact ⟨d.natAbs.minFac, Nat.minFac_prime fun h1 => hne (by
-          rw [← Submodule.IsPrincipal.span_singleton_generator I, Ideal.span_singleton_eq_top]
-          exact Int.isUnit_iff_natAbs_eq.mpr h1),
-          fun r s => (Int.natCast_dvd.mpr (Nat.minFac_dvd d.natAbs)).trans (hd r s)⟩
-    have hpow_div : ∀ n r s, (p : ℤ) ^ n ∣ (D.simpleDivPowMat i 1 ^ n) r s := Nat.rec
-      (fun _ _ => by simp) fun n ih r s => by
-        rw [pow_succ, pow_succ, Matrix.mul_apply]
-        exact Finset.dvd_sum fun k _ => mul_dvd_mul (ih r k) (hdiv k s)
+    let d := Submodule.IsPrincipal.generator I
+    have hd r s : d ∣ D.simpleDivPowMat i 1 r s :=
+      (Submodule.IsPrincipal.mem_iff_generator_dvd I).mp (Ideal.subset_span ⟨(r, s), rfl⟩)
+    have hd1 : d.natAbs ≠ 1 := fun h1 => hne (by
+      rw [← Submodule.IsPrincipal.span_singleton_generator I, Ideal.span_singleton_eq_top]
+      exact Int.isUnit_iff_natAbs_eq.mpr h1)
+    obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd hd1
     have : Fact p.Prime := ⟨hp⟩
-    have hdiv_all (n : ℕ) (hn : n ≠ 0) (r s : Fin D.dim) : (p : ℤ) ∣ D.simpleDivPowMat i n r s := by
-      have hdvdN : p ^ n ∣ n.factorial * (D.simpleDivPowMat i n r s).natAbs := by
-        rw [← Int.natCast_dvd_natCast, Nat.cast_mul, Nat.cast_pow]
-        simpa only [D.simpleDivPowMat_pow i n, Matrix.smul_apply, nsmul_eq_mul, Int.natAbs_mul,
-          Int.natAbs_natCast, Nat.cast_mul] using Int.dvd_natAbs.mpr (hpow_div n r s)
-      by_contra hndvd
-      have hcop := (hp.coprime_iff_not_dvd.mpr fun h => hndvd (Int.natCast_dvd.mpr h)).pow_left n
-      have hfin := Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.factorial_pos n⟩
-      exact (not_lt_of_ge (hfin.pow_dvd_iff_le_multiplicity.mp (hcop.dvd_of_dvd_mul_right hdvdN)))
-        (multiplicity_factorial_lt_of_ne_zero p hn)
+    have hdiv_all {n : ℕ} (hn : n ≠ 0) (r s : Fin D.dim) :
+        (p : ℤ) ∣ D.simpleDivPowMat i n r s :=
+      dvd_matrix_of_pow_eq_factorial_nsmul (D.simpleDivPowMat i)
+        (D.simpleDivPowMat_pow i) hp (fun r' s' => (Int.natCast_dvd.mpr hpd).trans (hd r' s'))
+        hn r s
     refine D.rootSubgroupPoints_ofAdd_one_ne_one (ZMod p) (t.simpleIndex ht i)
       (Subtype.ext (Matrix.GeneralLinearGroup.ext fun r s => ?_))
     rw [D.simpleRootSubgroup_matrix_eq_sum i (ZMod p) 1, Finset.sum_range_succ']
@@ -126,7 +134,7 @@ private theorem exists_bezout_simpleDivPowMat_one (i : Fin t.rank) :
         ((1 : ZMod p) ^ (k + 1) • (D.simpleDivPowMat i (k + 1)).map
           (Int.cast : ℤ → ZMod p)) r s = 0 := Finset.sum_eq_zero fun k _ => by
       simpa only [one_pow, one_smul, Matrix.map_apply] using
-        (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mpr (hdiv_all (k + 1) (Nat.succ_ne_zero k) r s)
+        (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mpr (hdiv_all (Nat.succ_ne_zero k) r s)
     rw [Matrix.add_apply, Matrix.sum_apply, hsum0]; simp [hM0]
   obtain ⟨c, hc⟩ := Ideal.mem_span_range_iff_exists_fun.mp (by rw [hI]; trivial : (1 : ℤ) ∈ I)
   exact ⟨c, by simpa only [smul_eq_mul] using hc⟩
@@ -238,6 +246,15 @@ theorem rootSubgroupPoints_ofAdd_one_mem_range_iff (A : Type v) [CommRing A] [No
     rw [D.map_rootSubgroupPoints, D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] at hmap
     exact D.eq_of_rootSubgroupPoints_ofAdd_one_mem_range K ⟨_, hmap⟩,
    fun h => h ▸ ⟨ofAdd 1, rfl⟩⟩
+
+/-- **Over any nontrivial commutative ring, `x_α(1)` lies in the image of `x_β` iff `α = β`
+(normal form after `simp` expands `MonoidHom.mem_range`).** -/
+@[simp] theorem exists_rootSubgroupPoints_eq_ofAdd_one_iff (A : Type v) [CommRing A] [Nontrivial A]
+    {α β : Fin t.numRoots} :
+    (∃ a : A, D.rootSubgroupPoints β A (ofAdd a) = D.rootSubgroupPoints α A (ofAdd 1)) ↔
+      α = β := by
+  simpa only [MonoidHom.mem_range, Multiplicative.exists] using
+    D.rootSubgroupPoints_ofAdd_one_mem_range_iff A (α := α) (β := β)
 
 /-- **Over any nontrivial commutative ring, one root subgroup is contained in another only at the
 same root.** -/

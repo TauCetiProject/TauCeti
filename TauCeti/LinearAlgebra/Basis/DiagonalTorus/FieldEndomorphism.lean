@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 Consequences of the pinning equation `f (ξ(s) * u) = η(s) * f u` for characters `ξ, η` of `𝔾ₘ^κ`:
 `AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul` and
 `RingHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_eq` (over an infinite field, positive
-rational proportionality `d • η = m • ξ`), `AddMonoidHom.toRingHomOfTorusCharacter` (upgrading `f`
-to a ring endomorphism when `s ↦ torusCharacter s ξ` is surjective onto `Kˣ`), and
+rational proportionality `d • η = m • ξ`), `AddMonoidHom.toRingHomOfTorusCharacter`
+(upgrading a unital additive map `f` with `f 1 = 1` and the intertwining equation to a ring
+endomorphism when `s ↦ torusCharacter s ξ` is surjective onto `Kˣ`), and
 `TauCeti.eq_of_map_torusCharacter_eq` (uniqueness of zero-preserving maps on a surjective
 character).
 
@@ -110,8 +111,8 @@ variable {κ K : Type*} [Fintype κ] [Field K] (f : K →+ K) {ξ η : κ → �
   (hscale : ∀ (s : κ → Kˣ) (u : K),
     f ((torusCharacter s ξ : K) * u) = (torusCharacter s η : K) * f u)
 
-/-- **Upgrading an additive map intertwined with a surjective split-torus character to a ring
-endomorphism.** -/
+/-- **Upgrading a unital additive map (`f 1 = 1`) intertwined with a surjective split-torus
+character to a ring endomorphism.** -/
 def toRingHomOfTorusCharacter : K →+* K where
   toFun := f; map_zero' := f.map_zero; map_add' := f.map_add; map_one' := hf1
   map_mul' x y := by

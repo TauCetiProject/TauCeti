@@ -114,17 +114,21 @@ theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Mod
 `R` is scalar multiplication by a unit of `R`. -/
 theorem exists_eq_smulOfUnit_of_unique {R ι : Type*} [CommSemiring R] [Unique ι]
     (e : (ι → R) ≃ₗ[R] (ι → R)) : ∃ u : Rˣ, e = LinearEquiv.smulOfUnit u := by
-  have hscale (f : (ι → R) →ₗ[R] (ι → R)) (x : ι → R) : f x = f (fun _ => 1) default • x := by
-    have hx : x = x default • fun _ => 1 := funext fun i => by simp [Unique.eq_default i]
-    funext i; conv_lhs => rw [hx, LinearMap.map_smul]
-    simp [Unique.eq_default i, mul_comm]
-  refine ⟨⟨e (fun _ => 1) default, e.symm (fun _ => 1) default, ?_, ?_⟩, ?_⟩
-  · have h1 : e (e.symm (fun _ => 1)) default = 1 := by simp
-    rw [← coe_toLinearMap, hscale] at h1; simpa [mul_comm] using h1
-  · have h1 : e.symm (e (fun _ => 1)) default = 1 := by simp
-    rw [← coe_toLinearMap, hscale] at h1; simpa [mul_comm] using h1
-  · ext x i; conv_lhs => rw [← coe_toLinearMap, hscale]
-    simp [smulOfUnit]
+  let φ := LinearEquiv.funUnique ι R R
+  let e' : R ≃ₗ[R] R := (φ.symm.trans e).trans φ
+  have h1 (f : R →ₗ[R] R) (x : R) : f x = f 1 * x := by
+    have h := LinearMap.congr_fun
+      (LinearEquiv.symm_apply_apply (LinearMap.ringLmapEquivSelf (R := R) (M := R) (S := R)) f) x
+    simpa [mul_comm] using h.symm
+  refine ⟨⟨e' 1, e'.symm 1, ?_, ?_⟩, ?_⟩
+  · rw [← coe_toLinearMap, ← h1]; exact e'.apply_symm_apply 1
+  · rw [← coe_toLinearMap, ← h1]; exact e'.symm_apply_apply 1
+  · ext x i
+    rw [Unique.eq_default i]
+    change φ (e x) = _
+    have hx : φ (e x) = e' (φ x) := by simp [e']
+    rw [hx]
+    exact (h1 (e' : R →ₗ[R] R) (φ x)).trans (by simp [φ, smulOfUnit, mul_comm])
 
 /-- Every `ℤ`-linear automorphism of `ι → ℤ` (`Unique ι`) is `id` or `-id`. -/
 theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι → ℤ) ≃ₗ[ℤ] (ι → ℤ)) :

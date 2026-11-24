@@ -245,15 +245,22 @@ reflected root subgroup, over every commutative ring `A`. -/
       (D.rootSubgroupPoints
         ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A).range := by
   let ε : ℤˣ := t.chevalleyWeylSign ht (t.simpleIndex ht i) γ
-  refine le_antisymm (fun _ ⟨_, ⟨u, rfl⟩, hu⟩ => ⟨ofAdd (((ε : ℤ) : A) * toAdd u), by
-    rw [← hu, MonoidHom.coe_ofClass, MulAut.conj_apply]
-    conv_rhs => rw [← ofAdd_toAdd u, D.weylElement_conj_rootSubgroupPoints]⟩)
-    (fun _ ⟨u, hu⟩ => ⟨D.rootSubgroupPoints γ A (ofAdd ((((ε⁻¹ : ℤˣ) : ℤ) : A) * toAdd u)),
-      ⟨_, rfl⟩, by
-        have hε : ((ε : ℤ) : A) * (((ε⁻¹ : ℤˣ) : ℤ) : A) = 1 := by
-          rw [← Int.cast_mul, Units.mul_inv, Int.cast_one]
-        rw [MonoidHom.coe_ofClass, MulAut.conj_apply, D.weylElement_conj_rootSubgroupPoints,
-          ← mul_assoc, hε, one_mul, ofAdd_toAdd, hu]⟩)
+  have hcomp :
+      (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A).comp
+          (D.rootSubgroupPoints γ A) =
+        (D.rootSubgroupPoints
+          ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A).comp
+          (AddMonoidHom.toMultiplicative (AddMonoidHom.mulLeft ((ε : ℤ) : A))) :=
+    MonoidHom.ext fun u => by
+      simpa only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, MulAut.conj_apply,
+        AddMonoidHom.coe_toMultiplicative, AddMonoidHom.coe_mulLeft, Function.comp_apply,
+        Equiv.apply_symm_apply, ofAdd_toAdd] using
+        D.weylElement_conj_rootSubgroupPoints i γ A (toAdd u)
+  rw [MonoidHom.map_range, hcomp, MonoidHom.range_comp,
+    MonoidHom.range_eq_top_of_surjective _ fun y =>
+      ⟨ofAdd ((((ε⁻¹ : ℤˣ) : ℤ) : A) * toAdd y), by
+        simp [← mul_assoc, ← Int.cast_mul]⟩,
+    Subgroup.map_top]
 
 /-- A root subgroup of the datum is injective exactly when the underlying divided-power
 exponential on the base-changed lattice is. -/

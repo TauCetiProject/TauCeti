@@ -107,13 +107,20 @@ open Multiplicative in
 itself. -/
 @[simp] theorem map_range_rootSubgroupPoints_frobenius [PerfectRing A p] (γ : Fin t.numRoots) :
     (D.rootSubgroupPoints γ A).range.map (D.frobenius p k A) =
-      (D.rootSubgroupPoints γ A).range :=
-  le_antisymm (fun _ ⟨_, ⟨u, rfl⟩, hu⟩ => ⟨ofAdd (toAdd u ^ p ^ k), by
-      rw [← hu]; conv_rhs => rw [← ofAdd_toAdd u, D.frobenius_rootSubgroupPoints]⟩)
-    (fun _ ⟨u, hu⟩ => by
-      obtain ⟨v, hv⟩ := (bijective_iterateFrobenius A p k).surjective (toAdd u)
-      exact ⟨D.rootSubgroupPoints γ A (ofAdd v), ⟨_, rfl⟩, by
-        rw [D.frobenius_rootSubgroupPoints, ← iterateFrobenius_def, hv, ofAdd_toAdd, hu]⟩)
+      (D.rootSubgroupPoints γ A).range := by
+  have hcomp : (D.frobenius p k A).comp (D.rootSubgroupPoints γ A) =
+      (D.rootSubgroupPoints γ A).comp
+        (AddMonoidHom.toMultiplicative (iterateFrobenius A p k).toAddMonoidHom) :=
+    MonoidHom.ext fun u => by
+      simpa only [MonoidHom.comp_apply, AddMonoidHom.coe_toMultiplicative,
+        RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, Function.comp_apply,
+        iterateFrobenius_def, Equiv.apply_symm_apply, ofAdd_toAdd] using
+        D.frobenius_rootSubgroupPoints p k A γ (toAdd u)
+  rw [MonoidHom.map_range, hcomp, MonoidHom.range_comp,
+    MonoidHom.range_eq_top_of_surjective _ fun y => by
+      obtain ⟨x, hx⟩ := (bijective_iterateFrobenius A p k).surjective (toAdd y)
+      exact ⟨ofAdd x, by simp [hx]⟩,
+    Subgroup.map_top]
 
 /-- The zeroth Frobenius is the identity on the point group. -/
 @[simp]

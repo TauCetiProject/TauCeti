@@ -262,8 +262,7 @@ theorem commute_smulId (f : RootPairingIsogeny P P) (c : ℕ+) : Commute (smulId
 /-- If an endo-isogeny `f` squares to `1`, then `f * smulId P c` squares to `smulId P (c ^ 2)`. -/
 theorem mul_smulId_mul_self {f : RootPairingIsogeny P P} (hf : f * f = 1) (c : ℕ+) :
     (f * smulId P c) * (f * smulId P c) = smulId P (c ^ 2) := by
-  rw [mul_assoc, ← mul_assoc (smulId P c), (commute_smulId P f c).eq, mul_assoc, ← mul_assoc f, hf,
-    one_mul, smulId_mul_smulId, sq]
+  rw [← pow_two, (commute_smulId P f c).symm.mul_pow 2, pow_two f, hf, one_mul, smulId_pow]
 
 /-- Composing a reflection-times-scaling endo-isogeny with itself gives `smulId P (c ^ 2)`. -/
 @[simp] theorem ofEquiv_reflection_mul_smulId_mul_self (i : ι) (c : ℕ+) :

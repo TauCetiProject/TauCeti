@@ -155,7 +155,8 @@ theorem map_weylFrobenius {B : Type v'} [CommRing B] [ExpChar B p] (f : A →+* 
       D.torusPoints A (D.simpleReflectionTorusParameter i A (s ^ p ^ k)) := by
   rw [weylFrobenius_apply, D.frobenius_torusPoints, D.weylElement_conj_torusPoints]
 
-/-- On `γ`-root points, `D.weylFrobenius` raises parameters to `p ^ k` and reflects by `s_i`. -/
+/-- On `γ`-root points, `D.weylFrobenius` reflects the root by `s_i` and sends the parameter `u`
+to the Weyl sign times `u ^ (p ^ k)`. -/
 @[simp] theorem weylFrobenius_rootSubgroupPoints (γ : Fin t.numRoots) (u : A) :
     D.weylFrobenius i p k A (D.rootSubgroupPoints γ A (ofAdd u)) = D.rootSubgroupPoints
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A
@@ -193,48 +194,53 @@ variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
 `(p ^ k : ℕ) • D.simpleReflectionCharacterMap i`. -/
 @[simp] theorem IsStandard.characterMap_weylFrobenius :
     (D.isStandard_weylFrobenius i p k K).characterMap =
-      (p ^ k : ℕ) • D.simpleReflectionCharacterMap i :=
-  (D.isStandard_weylFrobenius i p k K).characterMap_eq_of_isCharacterMap
-    (D.isCharacterMap_weylFrobenius i p k K)
+      (p ^ k : ℕ) • D.simpleReflectionCharacterMap i := by
+  change ((D.isStandard_conj_weylElement i K).comp
+    (D.isStandard_frobenius p k)).characterMap = _
+  rw [IsStandard.characterMap_comp (D.isStandard_conj_weylElement i K)
+      (D.isStandard_frobenius p k),
+    IsStandard.characterMap_conj_weylElement, IsStandard.characterMap_frobenius,
+    smul_mul_assoc, one_mul]
 
 /-- The root permutation of `D.weylFrobenius i p k K` is the simple reflection `s_i`. -/
 @[simp] theorem IsStandard.rootPerm_weylFrobenius :
     (D.isStandard_weylFrobenius i p k K).rootPerm =
-      (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) :=
-  Equiv.ext fun γ => (D.isStandard_weylFrobenius i p k K).rootPerm_eq_of_map_range
-    (D.map_range_rootSubgroupPoints_weylFrobenius i p k K γ)
+      (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) := by
+  change ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)).rootPerm = _
+  rw [IsStandard.rootPerm_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+    IsStandard.rootPerm_conj_weylElement, IsStandard.rootPerm_frobenius, mul_one]
 
 /-- The additive root-parameter map of `D.weylFrobenius i p k K` composes
 `iterateFrobenius K p k` with scaling by the Weyl sign. -/
 @[simp] theorem IsStandard.rootParamHom_weylFrobenius (γ : Fin t.numRoots) :
     (D.isStandard_weylFrobenius i p k K).rootParamHom γ =
       (AddMonoidHom.mulLeft ((t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) : K)).comp
-        (iterateFrobenius K p k).toAddMonoidHom :=
-  (D.isStandard_weylFrobenius i p k K).rootParamHom_eq_of_map_rootSubgroupPoints fun u => by
-    simp [iterateFrobenius_def]
-
-private theorem IsStandard.weylFrobenius_invariants [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
-    Units.map (Int.castRingHom K).toMonoidHom
-        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) =
-      (D.isStandard_weylFrobenius i p k K).rootUnit γ ∧
-      iterateFrobenius K p k = (D.isStandard_weylFrobenius i p k K).fieldEnd γ :=
-  ((D.isStandard_weylFrobenius i p k K).eq_of_map_rootSubgroupPoints
-    (β := (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ)
-    (c := Units.map (Int.castRingHom K).toMonoidHom
-      (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ))
-    (g := iterateFrobenius K p k) fun u => by simp [iterateFrobenius_def]).2
+        (iterateFrobenius K p k).toAddMonoidHom := by
+  change ((D.isStandard_conj_weylElement i K).comp
+    (D.isStandard_frobenius p k)).rootParamHom γ = _
+  rw [IsStandard.rootParamHom_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+    IsStandard.rootPerm_frobenius, Equiv.Perm.one_apply,
+    IsStandard.rootParamHom_conj_weylElement, IsStandard.rootParamHom_frobenius]
 
 /-- The scaling unit of `D.weylFrobenius i p k K` on the `γ`-root subgroup is the Weyl sign. -/
 @[simp] theorem IsStandard.rootUnit_weylFrobenius [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
     (D.isStandard_weylFrobenius i p k K).rootUnit γ =
       Units.map (Int.castRingHom K).toMonoidHom
-        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) :=
-  (IsStandard.weylFrobenius_invariants i p k γ).1.symm
+        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) := by
+  change ((D.isStandard_conj_weylElement i K).comp
+    (D.isStandard_frobenius p k)).rootUnit γ = _
+  rw [IsStandard.rootUnit_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+    IsStandard.rootPerm_frobenius, Equiv.Perm.one_apply,
+    IsStandard.rootUnit_conj_weylElement, IsStandard.rootUnit_frobenius, map_one, mul_one]
 
 /-- The field endomorphism of `D.weylFrobenius i p k K` is `iterateFrobenius K p k`. -/
 @[simp] theorem IsStandard.fieldEnd_weylFrobenius [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
-    (D.isStandard_weylFrobenius i p k K).fieldEnd γ = iterateFrobenius K p k :=
-  (IsStandard.weylFrobenius_invariants i p k γ).2.symm
+    (D.isStandard_weylFrobenius i p k K).fieldEnd γ = iterateFrobenius K p k := by
+  change ((D.isStandard_conj_weylElement i K).comp
+    (D.isStandard_frobenius p k)).fieldEnd γ = _
+  rw [IsStandard.fieldEnd_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+    IsStandard.rootPerm_frobenius, Equiv.Perm.one_apply,
+    IsStandard.fieldEnd_conj_weylElement, IsStandard.fieldEnd_frobenius, RingHom.id_comp]
 
 end Field
 
@@ -270,23 +276,11 @@ theorem weylFrobenius_comp_weylFrobenius_of_forall_even
     rw [D.weylFrobenius_comp_weylFrobenius, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
       MulAut.conj_apply]; exact D.simpleCorootPoints_neg_one_conj_eq_self i heven A _
 
-/-- Pointwise form of `weylFrobenius_comp_weylFrobenius_of_forall_even`. -/
-theorem weylFrobenius_weylFrobenius_eq_frobenius_of_forall_even
-    (heven : ∀ m : Fin t.rank, Even ((t.simplyConnectedRootDatum ht).root (t.simpleIndex ht m) i))
-    (g : D.points A) : D.weylFrobenius i p k A (D.weylFrobenius i p k A g) =
-      D.frobenius p (k + k) A g :=
-  DFunLike.congr_fun (D.weylFrobenius_comp_weylFrobenius_of_forall_even i p k A heven) g
-
 /-- **In rank one, `(D.weylFrobenius i p k A)² = D.frobenius p (k + k) A` on `D.points A`.** -/
 theorem weylFrobenius_comp_weylFrobenius_of_rank_eq_one (hr : t.rank = 1) :
     (D.weylFrobenius i p k A).comp (D.weylFrobenius i p k A) = D.frobenius p (k + k) A :=
   D.weylFrobenius_comp_weylFrobenius_of_forall_even i p k A fun m => by
     obtain rfl : m = i := Fin.ext (by omega); simp
-
-/-- Pointwise form of `weylFrobenius_comp_weylFrobenius_of_rank_eq_one`. -/
-theorem weylFrobenius_weylFrobenius_eq_frobenius_of_rank_eq_one (hr : t.rank = 1) (g : D.points A) :
-    D.weylFrobenius i p k A (D.weylFrobenius i p k A g) = D.frobenius p (k + k) A g :=
-  DFunLike.congr_fun (D.weylFrobenius_comp_weylFrobenius_of_rank_eq_one i p k A hr) g
 
 end WeylFrobenius
 end

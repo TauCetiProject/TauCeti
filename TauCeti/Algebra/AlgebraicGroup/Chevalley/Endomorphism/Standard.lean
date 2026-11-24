@@ -311,6 +311,12 @@ private theorem IsStandard.paramHomOf_torusCharacter_mul (hF : D.IsStandard F)
     D.torusPoints_conj_rootSubgroupPoints, torusCharacter_torusPointMap] at hconj
   simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective K _ hconj.symm)
 
+private theorem nsmul_eq_nsmul_of_nsmul_eq {M : Type*} [AddCommMonoid M]
+    {d₁ m₁ d₂ m₂ : ℕ} {x y₁ y₂ : M}
+    (h₁ : d₁ • x = m₁ • y₁) (h₂ : d₂ • x = m₂ • y₂) :
+    (d₂ * m₁) • y₁ = (d₁ * m₂) • y₂ := by
+  rw [mul_smul, ← h₁, smul_comm, h₂, ← mul_smul]
+
 private theorem IsStandard.rawRootMap_injective (hF : D.IsStandard F) :
     Function.Injective hF.rawRootMap := fun α₁ α₂ hβ => by
   have hrel (α) := AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul
@@ -319,8 +325,8 @@ private theorem IsStandard.rawRootMap_injective (hF : D.IsStandard F) :
     (hF.paramHomOf_torusCharacter_mul (hF.map_range_rootSubgroupPoints_rawRootMap α))
   obtain ⟨d₁, m₁, _, hm₁, hrel₁⟩ := hrel α₁; obtain ⟨d₂, m₂, hd₂, _, hrel₂⟩ := hrel α₂
   rw [hβ] at hrel₁
-  refine D.eq_of_nsmul_coordinateRoot_eq (d := d₁ * m₂) (Nat.mul_pos hd₂ hm₁) ?_
-  rw [mul_smul, ← hrel₁, smul_comm, hrel₂, ← mul_smul]
+  exact D.eq_of_nsmul_coordinateRoot_eq (Nat.mul_pos hd₂ hm₁)
+    (nsmul_eq_nsmul_of_nsmul_eq hrel₁ hrel₂)
 
 /-- **The root permutation `σ : Equiv.Perm (Fin t.numRoots)` of a standard endomorphism.** -/
 noncomputable def IsStandard.rootPerm (hF : D.IsStandard F) : Equiv.Perm (Fin t.numRoots) :=
@@ -394,12 +400,17 @@ theorem IsStandard.exists_pos_nsmul_characterMap_coordinateRoot (hF : D.IsStanda
   obtain ⟨d₁, m₁, _, hm₁, hrel₁⟩ := hF.exists_pos_nsmul_characterMap_coordinateRoot α
   obtain ⟨d₂, m₂, hd₂, _, hrel₂⟩ := hF.exists_pos_nsmul_characterMap_coordinateRoot
     ((t.simplyConnectedRootDatum ht).reflectionPerm α α)
-  rw [D.coordinateRoot_reflectionPerm_self, smul_neg] at hrel₂
-  refine D.eq_of_nsmul_coordinateRoot_eq (d := m₂ * d₁) (Nat.mul_pos hm₁ hd₂) ?_
-  rw [D.coordinateRoot_reflectionPerm_self, smul_neg]
-  refine eq_neg_of_add_eq_zero_right (hF.characterMap_injective ?_)
-  simp only [map_add, mul_smul, map_nsmul, hrel₁, hrel₂, smul_neg, map_zero]
-  simp_rw [← mul_smul]; rw [mul_comm m₁ m₂, add_neg_cancel]
+  have hrel₁' : m₁ • (-D.coordinateRoot α) =
+      d₁ • hF.characterMap (D.coordinateRoot
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (hF.rootPerm α) (hF.rootPerm α))) := by
+    rw [D.coordinateRoot_reflectionPerm_self, map_neg, smul_neg, smul_neg, hrel₁]
+  have hrel₂' : m₂ • (-D.coordinateRoot α) =
+      d₂ • hF.characterMap (D.coordinateRoot
+        (hF.rootPerm ((t.simplyConnectedRootDatum ht).reflectionPerm α α))) := by
+    rw [← D.coordinateRoot_reflectionPerm_self, hrel₂.symm]
+  have hcross := nsmul_eq_nsmul_of_nsmul_eq hrel₂' hrel₁'
+  rw [← map_nsmul, ← map_nsmul] at hcross
+  exact D.eq_of_nsmul_coordinateRoot_eq (Nat.mul_pos hm₁ hd₂) (hF.characterMap_injective hcross)
 
 /-- **Two standard endomorphisms with equal character maps induce the same root permutation.** -/
 theorem IsStandard.rootPerm_eq_of_characterMap_eq (hF : D.IsStandard F) (hF' : D.IsStandard F')
@@ -407,9 +418,9 @@ theorem IsStandard.rootPerm_eq_of_characterMap_eq (hF : D.IsStandard F) (hF' : D
   obtain ⟨d, m, hd, _, hrel⟩ := hF.exists_pos_nsmul_characterMap_coordinateRoot α
   obtain ⟨d', m', _, hm', hrel'⟩ := hF'.exists_pos_nsmul_characterMap_coordinateRoot α
   rw [hφ] at hrel
-  refine D.eq_of_nsmul_coordinateRoot_eq (d := m * d') (Nat.mul_pos hm' hd)
-    (hF'.characterMap_injective ?_)
-  simp only [mul_smul, map_nsmul, hrel, hrel']; simp_rw [← mul_smul]; rw [mul_comm m' m]
+  have hcross := nsmul_eq_nsmul_of_nsmul_eq hrel.symm hrel'.symm
+  rw [← map_nsmul, ← map_nsmul] at hcross
+  exact D.eq_of_nsmul_coordinateRoot_eq (Nat.mul_pos hm' hd) (hF'.characterMap_injective hcross)
 
 /-- **Two standard endomorphisms sharing a character map `φ` induce the same root permutation.** -/
 theorem IsStandard.rootPerm_eq_of_isCharacterMap (hF : D.IsStandard F) (hF' : D.IsStandard F')
