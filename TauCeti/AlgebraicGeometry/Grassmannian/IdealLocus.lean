@@ -251,11 +251,7 @@ theorem comap_baseChangeHom_schemeIdealLocus
   have key (B : CommRingCat.{u}) (a : Spec B ⟶ scheme R' (R' ⊗[R] M) k) :
       ((schemeIdealLocus I hI).comap (baseChangeHom R R' M k)).comap a =
         (schemeIdealLocus I' hI').comap a := by
-    obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R' (R' ⊗[R] M) k)
-    let _ : Algebra R' B := φ.hom.toAlgebra
-    let _ : Algebra R B := (φ.hom.comp (algebraMap R R')).toAlgebra
-    have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
-    obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a hφ.symm
+    refine affinePoint_induction (R₀ := R) (fun A _ _ _ _ N ↦ ?_) a
     rw [← comap_comp, toSchemeHom_comp_baseChangeHom, comap_toSchemeHom_schemeIdealLocus,
       comap_toSchemeHom_schemeIdealLocus, h]
   exact ext_of_comap_openCover (scheme R' (R' ⊗[R] M) k).affineCover fun i ↦ key _ _

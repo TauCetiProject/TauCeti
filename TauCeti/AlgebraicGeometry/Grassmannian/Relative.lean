@@ -105,14 +105,18 @@ noncomputable def grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.va
   haveI := isScalarTower_restriction E h
   (isBaseChange_restriction h).grassmannianSchemeHom k
 
--- `grassmannianChartMap` is the morphism of Grassmannians of the restriction base change.
-private lemma grassmannianChartMap_eq {U V : X.affineOpens} (h : V.val ≤ U.val) :
+/-- `grassmannianChartMap` is `IsBaseChange.grassmannianSchemeHom` for the base change of sections
+along restriction of functions
+(`AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestrictionLinearMap`), so
+`IsBaseChange.toSchemeHom_comp_grassmannianSchemeHom` computes it on points. -/
+theorem grassmannianChartMap_eq {U V : X.affineOpens} (h : V.val ≤ U.val) :
     letI := restrictionAlgebra h
     letI := restrictionModule E h
     haveI := isScalarTower_restriction E h
     grassmannianChartMap E k h =
-      (isBaseChange_restriction h).grassmannianSchemeHom k :=
-  rfl
+      (E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h
+        fun _ ↦ rfl).grassmannianSchemeHom k :=
+  (rfl)
 
 /-- `grassmannianChartMap` lies over the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
 @[reassoc (attr := simp)]

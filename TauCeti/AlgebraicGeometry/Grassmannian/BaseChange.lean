@@ -77,26 +77,6 @@ section Scheme
 
 variable (k : ℕ)
 
-omit [Module R M'] [IsScalarTower R R' M'] in
-variable {k} in
-/-- Every morphism `a : Spec B ⟶ G(k, M')` classifies a point over `B`, for the algebra structure
-of `B` over `R'` read off from the composite `Spec B ⟶ G(k, M') ⟶ Spec R'` and the induced one over
-`R`. So a property of such morphisms holds as soon as it holds for every morphism `toSchemeHom N`
-classifying a point `N` over an `R'`-algebra `A` with a compatible `R`-algebra structure. -/
-@[elab_as_elim]
-private lemma affinePoint_induction
-    {motive : ∀ {B : CommRingCat.{u}}, (Spec B ⟶ scheme R' M' k) → Prop}
-    (toSchemeHom : ∀ (A : Type u) [CommRing A] [Algebra R' A] [Algebra R A]
-      [IsScalarTower R R' A] (N : G(k, A ⊗[R'] M'; A)), motive (toSchemeHom N))
-    {B : CommRingCat.{u}} (a : Spec B ⟶ scheme R' M' k) : motive a := by
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R' M' k)
-  let _ : Algebra R' B := φ.hom.toAlgebra
-  let _ : Algebra R B := (φ.hom.comp (algebraMap R R')).toAlgebra
-  have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
-  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a
-    (hφ.symm.trans (by rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]))
-  exact toSchemeHom B N
-
 /-- The morphism `Spec A ⟶ G(k, M)` over `Spec R` classifying the point of `G(k, A ⊗[R] M; A)`
 which corresponds to a morphism `Spec A ⟶ G(k, M')` over `Spec R'`. The algebra structures on `A`
 are explicit arguments, so that `grassmannianAux_congr` can compare different choices. -/
@@ -154,7 +134,7 @@ private lemma grassmannianPoint_comp {B C : CommRingCat.{u}} (ψ : Spec C ⟶ Sp
     (a : Spec B ⟶ scheme R' M' k) :
     grassmannianPoint hf k (ψ ≫ a) = ψ ≫ grassmannianPoint hf k a := by
   revert ψ
-  refine affinePoint_induction (R := R) (fun A _ _ _ _ N ψ ↦ ?_) a
+  refine affinePoint_induction (R₀ := R) (fun A _ _ _ _ N ψ ↦ ?_) a
   -- give `C` the algebra structures over `R'` and `R` through `χ`, which becomes an `R'`-algebra
   -- map `χ'`
   obtain ⟨χ, rfl⟩ := Spec.map_surjective ψ
@@ -198,7 +178,7 @@ variable (k) in
 theorem grassmannianSchemeHom_toSpec :
     grassmannianSchemeHom hf k ≫ toSpec R M k =
       toSpec R' M' k ≫ Spec.map (CommRingCat.ofHom (algebraMap R R')) := by
-  refine Scheme.hom_ext_of_forall_spec fun B a ↦ affinePoint_induction (R := R)
+  refine Scheme.hom_ext_of_forall_spec fun B a ↦ affinePoint_induction (R₀ := R)
     (fun A _ _ _ _ N ↦ ?_) a
   rw [toSchemeHom_comp_grassmannianSchemeHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec_assoc,
     ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
@@ -240,7 +220,7 @@ variable {R'' M'' : Type u} [CommRing R''] [Algebra R' R''] [Algebra R R'']
 `G(k, M') ⟶ G(k, M)` is the morphism of the composite base change `g ∘ f` along `R → R''`. -/
 theorem grassmannianSchemeHom_comp (hgf : IsBaseChange R'' (g.restrictScalars R ∘ₗ f)) :
     grassmannianSchemeHom hg k ≫ grassmannianSchemeHom hf k = grassmannianSchemeHom hgf k := by
-  refine Scheme.hom_ext_of_forall_spec fun B a ↦ affinePoint_induction (R := R')
+  refine Scheme.hom_ext_of_forall_spec fun B a ↦ affinePoint_induction (R₀ := R')
     (fun A _ _ _ _ N ↦ ?_) a
   -- make `A` an `R`-algebra through `R'`
   let _ : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
@@ -248,7 +228,7 @@ theorem grassmannianSchemeHom_comp (hgf : IsBaseChange R'' (g.restrictScalars R 
   have : IsScalarTower R R'' A := .of_algebraMap_eq' <| by
     rw [IsScalarTower.algebraMap_eq R R' R'', ← RingHom.comp_assoc,
       ← IsScalarTower.algebraMap_eq R' R'' A]
-    rfl
+    exact RingHom.algebraMap_toAlgebra _
   rw [toSchemeHom_comp_grassmannianSchemeHom_assoc, toSchemeHom_comp_grassmannianSchemeHom,
     toSchemeHom_comp_grassmannianSchemeHom]
   congr 1
