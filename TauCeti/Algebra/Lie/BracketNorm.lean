@@ -52,7 +52,7 @@ algebras in question, such as Lie subalgebras of matrices, already carry their o
 * `LinearMap.BilinForm.exists_lieBracketOpNorm_eq`: the supremum over the unit balls is attained.
 * `LinearMap.BilinForm.sqrt_apply_self_lie_le`: `|⁅X, Y⁆| ≤ γ₀ |X| |Y|`.
 * `LinearMap.BilinForm.isLeast_lieBracketOpNorm`: `γ₀` is the least such nonnegative constant.
-* `LinearMap.BilinForm.lieBracketOpNorm_smul`: `γ₀(L, c B) = (√c)⁻¹ γ₀(L, B)` for `c > 0`.
+* `LinearMap.BilinForm.lieBracketOpNorm_smul`: `γ₀(L, c B) = (√c)⁻¹ γ₀(L, B)` for `c ≥ 0`.
 * `LinearMap.BilinForm.lieBracketOpNorm_eq_zero_iff`: `γ₀ = 0` exactly when `L` is abelian.
 
 ## References
@@ -105,9 +105,14 @@ private theorem sqrt_apply_smul_smul (c : ℝ) (X : L) : √(B (c • X) (c • 
   simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← mul_assoc, Real.sqrt_mul (mul_self_nonneg c), Real.sqrt_mul_self_eq_abs]
 
-/-- **Scaling the form**: for `c > 0`, `γ₀(L, c B) = (√c)⁻¹ γ₀(L, B)`. -/
-theorem lieBracketOpNorm_smul {c : ℝ} (hc : 0 < c) :
+/-- **Scaling the form**: for `c ≥ 0`, `γ₀(L, c B) = (√c)⁻¹ γ₀(L, B)`. For `c = 0` both sides
+vanish. -/
+theorem lieBracketOpNorm_smul {c : ℝ} (hc : 0 ≤ c) :
     (c • B).lieBracketOpNorm = (√c)⁻¹ * B.lieBracketOpNorm := by
+  rcases hc.eq_or_lt with rfl | hc
+  · rw [Real.sqrt_zero, inv_zero, zero_mul]
+    exact le_antisymm ((0 • B).lieBracketOpNorm_le fun _ _ _ _ ↦ by simp)
+      (0 • B).lieBracketOpNorm_nonneg
   have hs : 0 < √c := Real.sqrt_pos.2 hc
   have hss : √c * √c = c := Real.mul_self_sqrt hc.le
   -- `X ↦ √c • X` maps the unit ball of `c B` onto that of `B`, and multiplies `|⁅X, Y⁆|` by `√c`
