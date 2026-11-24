@@ -31,8 +31,8 @@ variable {I K : Type*} [DecidableEq I] [DecidableEq K]
 
 private theorem biUnion_support_matrixMutationWord_subset (row : K ↪ I) (B : Matrix I K ℤ)
     (s : Set K) (w : List K) (hw : ∀ k ∈ w, k ∈ s) :
-    (⋃ k ∈ s, Function.support fun i ↦ matrixMutationWord row B w i k) ⊆
-      ⋃ k ∈ s, Function.support fun i ↦ B i k := by
+    (⋃ k ∈ s, Function.support ((matrixMutationWord row B w).col k)) ⊆
+      ⋃ k ∈ s, Function.support (B.col k) := by
   induction w generalizing B with
   | nil => simp
   | cons k w ih =>
@@ -47,10 +47,11 @@ private theorem biUnion_support_matrixMutationWord_subset (row : K ↪ I) (B : M
 
 /-- Mutations in a set of directions preserve exactly the union of the supports of those
 columns. The selected set itself need not be finite. -/
+@[simp]
 theorem biUnion_support_matrixMutationWord (row : K ↪ I) (B : Matrix I K ℤ)
     (s : Set K) (w : List K) (hw : ∀ k ∈ w, k ∈ s) :
-    (⋃ k ∈ s, Function.support fun i ↦ matrixMutationWord row B w i k) =
-      ⋃ k ∈ s, Function.support fun i ↦ B i k := by
+    (⋃ k ∈ s, Function.support ((matrixMutationWord row B w).col k)) =
+      ⋃ k ∈ s, Function.support (B.col k) := by
   apply Set.Subset.antisymm (biUnion_support_matrixMutationWord_subset row B s w hw)
   have h := biUnion_support_matrixMutationWord_subset row (matrixMutationWord row B w)
     s w.reverse (fun k hk ↦ hw k (List.mem_reverse.mp hk))
@@ -59,11 +60,11 @@ theorem biUnion_support_matrixMutationWord (row : K ↪ I) (B : Matrix I K ℤ)
 /-- Finitely many initially finite columns admit one finite row window for every mutation
 word using those directions. The window contains the selected mutable rows as well. -/
 theorem exists_finite_row_window (row : K ↪ I) (B : Matrix I K ℤ) (s : Set K)
-    (hs : s.Finite) (hB : ∀ k ∈ s, (Function.support fun i ↦ B i k).Finite) :
+    (hs : s.Finite) (hB : ∀ k ∈ s, (Function.support (B.col k)).Finite) :
     ∃ t : Set I, t.Finite ∧ row '' s ⊆ t ∧
       ∀ w : List K, (∀ k ∈ w, k ∈ s) →
-        (⋃ k ∈ s, Function.support fun i ↦ matrixMutationWord row B w i k) ⊆ t := by
-  refine ⟨row '' s ∪ ⋃ k ∈ s, Function.support fun i ↦ B i k,
+        (⋃ k ∈ s, Function.support ((matrixMutationWord row B w).col k)) ⊆ t := by
+  refine ⟨row '' s ∪ ⋃ k ∈ s, Function.support (B.col k),
     (hs.image row).union (hs.biUnion hB), Set.subset_union_left, ?_⟩
   intro w hw
   rw [biUnion_support_matrixMutationWord row B s w hw]
@@ -71,13 +72,14 @@ theorem exists_finite_row_window (row : K ↪ I) (B : Matrix I K ℤ) (s : Set K
 
 /-- Columnwise finite support is preserved and reflected by every finite mutation word,
 even with infinitely many mutable directions and rows. -/
+@[simp]
 theorem finite_column_support_matrixMutationWord_iff (row : K ↪ I) (B : Matrix I K ℤ)
     (w : List K) :
-    (∀ k, (Function.support fun i ↦ matrixMutationWord row B w i k).Finite) ↔
-      ∀ k, (Function.support fun i ↦ B i k).Finite := by
+    (∀ k, (Function.support ((matrixMutationWord row B w).col k)).Finite) ↔
+      ∀ k, (Function.support (B.col k)).Finite := by
   have preserve (C : Matrix I K ℤ) (v : List K)
-      (hC : ∀ k, (Function.support fun i ↦ C i k).Finite) :
-      ∀ k, (Function.support fun i ↦ matrixMutationWord row C v i k).Finite := by
+      (hC : ∀ k, (Function.support (C.col k)).Finite) :
+      ∀ k, (Function.support ((matrixMutationWord row C v).col k)).Finite := by
     induction v generalizing C with
     | nil => simpa only [matrixMutationWord_nil] using hC
     | cons k v ih =>
@@ -94,7 +96,7 @@ theorem finite_column_support_matrixMutationWord_iff (row : K ↪ I) (B : Matrix
 columns after two words in those directions. No finite or minimal-window hypothesis is needed. -/
 theorem matrixMutationWord_submatrix_eq_iff (row : K ↪ I) (B : Matrix I K ℤ)
     (s : Set K) (t : Set I)
-    (hB : (⋃ k ∈ s, Function.support fun i ↦ B i k) ⊆ t)
+    (hB : (⋃ k ∈ s, Function.support (B.col k)) ⊆ t)
     (u v : List K) (hu : ∀ k ∈ u, k ∈ s) (hv : ∀ k ∈ v, k ∈ s) :
     (matrixMutationWord row B u).submatrix (Subtype.val : t → I) (Subtype.val : s → K) =
         (matrixMutationWord row B v).submatrix Subtype.val Subtype.val ↔
@@ -103,7 +105,7 @@ theorem matrixMutationWord_submatrix_eq_iff (row : K ↪ I) (B : Matrix I K ℤ)
   have hz (w : List K) (hw : ∀ k ∈ w, k ∈ s) (i : I) (hi : i ∉ t) (k : s) :
       matrixMutationWord row B w i k = 0 := by
     by_contra hne
-    have hmem : i ∈ ⋃ l ∈ s, Function.support fun j ↦ matrixMutationWord row B w j l :=
+    have hmem : i ∈ ⋃ l ∈ s, Function.support ((matrixMutationWord row B w).col l) :=
       Set.mem_iUnion.mpr ⟨k, Set.mem_iUnion.mpr ⟨k.property, hne⟩⟩
     rw [biUnion_support_matrixMutationWord row B s w hw] at hmem
     exact hi (hB hmem)
@@ -111,10 +113,10 @@ theorem matrixMutationWord_submatrix_eq_iff (row : K ↪ I) (B : Matrix I K ℤ)
   · intro h
     ext i k
     by_cases hi : i ∈ t
-    · exact congrFun (congrFun h ⟨i, hi⟩) k
+    · simpa only [Matrix.submatrix_apply, id_eq] using congrFun (congrFun h ⟨i, hi⟩) k
     · simp only [Matrix.submatrix_apply, id_eq, hz u hu i hi k, hz v hv i hi k]
   · intro h
     ext i k
-    exact congrFun (congrFun h i.val) k
+    simpa only [Matrix.submatrix_apply, id_eq] using congrFun (congrFun h i.val) k
 
 end TauCeti
