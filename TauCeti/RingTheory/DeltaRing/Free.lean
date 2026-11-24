@@ -20,9 +20,10 @@ endomorphism lifts the `p`-th power map modulo `p`, it determines the `δ`-struc
 
 The ring is free on `S` among `δ`-rings: for every `δ`-ring `B`, `δ`-maps
 `FreeDeltaRing p S → B` correspond to functions `S → B`, by restriction to the generators
-`x_{s,0}`. The `δ`-map attached to `f : S → B` sends `x_{s,n}` to `δ^[n] (f s)`. The polynomial
-ring `ℤ[x_{s,0} | s ∈ S]` is strictly smaller, since `x_{s,1} = δ x_{s,0}`. No hypothesis on
-`B` is needed: it may have `p`-torsion or be the zero ring.
+`x_{s,0}`. The `δ`-map attached to `f : S → B` sends `x_{s,n}` to `δ^[n] (f s)`. For nonempty
+`S`, the polynomial ring `ℤ[x_{s,0} | s ∈ S]` is strictly smaller: `x_{s,1} = δ x_{s,0}` is not
+a polynomial in the `x_{t,0}`. No hypothesis on `B` is needed: it may have `p`-torsion or be the
+zero ring.
 
 The free `δ`-ring is a type synonym for `MvPolynomial (S × ℕ) ℤ` rather than an instance on that
 ring, which carries other natural `δ`-structures, such as the one with `δ x = 0` on every
