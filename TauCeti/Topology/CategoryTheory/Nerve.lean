@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
-public import TauCeti.AlgebraicTopology.FatRealization
+public import TauCeti.AlgebraicTopology.FatRealization.Skeleton
 
 /-!
 # The topological nerve of a category and its fat classifying space
@@ -32,6 +32,13 @@ are given by `TauCeti.ActionGroupoid.nerveHomeomorph`.
 The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realization
 (`TauCeti.fatRealization`) of the underlying semi-simplicial space, obtained by forgetting
 degeneracies along `SemiSimplexCategory.toSimplexCategory`.
+
+When the total arrows form a regular, `T1`, second-countable space, so do the strings of
+composable arrows (the `T1Space`, `RegularSpace` and `SecondCountableTopology` instances on
+`ComposableArrows C n`). The levels of the topological nerve are then regular, `T1` and Lindelöf,
+so the fat classifying space is paracompact and `T4`
+(`TauCeti.fatClassifyingSpace.paracompactSpace`, `TauCeti.fatClassifyingSpace.t4Space`), by
+paracompactness of fat realizations (`TauCeti.fatRealization.paracompactSpace`).
 
 A functor `Φ : C ⥤ D` whose action on total arrows (`Prefunctor.mapTotal`) is continuous induces
 maps `TauCeti.topologicalNerveMap Φ` of topological nerves and `TauCeti.fatClassifyingSpaceMap Φ`
@@ -79,6 +86,31 @@ theorem continuous_iff {Y : Type*} [TopologicalSpace Y] {f : Y → ComposableArr
 theorem continuous_totalArrow (i j : Fin (n + 1)) (hij : i ≤ j) :
     Continuous fun F : ComposableArrows C n ↦ F.totalArrow i j hij :=
   continuous_iff.1 continuous_id i j hij
+
+/-- Strings of composable arrows form a `T1` space when the total arrows do. -/
+instance [T1Space (Quiver.Total C)] : T1Space (ComposableArrows C n) where
+  t1 F := by
+    have : ({F} : Set (ComposableArrows C n)) =
+        ⋂ (i) (j) (hij : i ≤ j), (fun G ↦ G.totalArrow i j hij) ⁻¹' {F.totalArrow i j hij} := by
+      ext G
+      simp only [Set.mem_singleton_iff, Set.mem_iInter, Set.mem_preimage]
+      exact ⟨by rintro rfl _ _ _; rfl, fun h ↦ ext_of_totalArrow h⟩
+    rw [this]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun hij ↦
+      isClosed_singleton.preimage (continuous_totalArrow i j hij)
+
+/-- Strings of composable arrows form a regular space when the total arrows do. -/
+instance [RegularSpace (Quiver.Total C)] : RegularSpace (ComposableArrows C n) :=
+  regularSpace_iInf fun _ ↦ regularSpace_iInf fun _ ↦ regularSpace_iInf fun _ ↦
+    regularSpace_induced _
+
+/-- Strings of composable arrows form a second-countable space when the total arrows do. -/
+instance [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (ComposableArrows C n) :=
+  TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+    TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+      TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+        TopologicalSpace.secondCountableTopology_induced _ _ _
 
 /-- Reindexing strings of composable arrows along a functor of the indexing posets is
 continuous. -/
@@ -214,6 +246,37 @@ realization of its topological nerve, with degeneracies forgotten. -/
   fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C)
 
 variable {C}
+
+section Paracompact
+
+variable [RegularSpace (Quiver.Total C)] [T1Space (Quiver.Total C)]
+  [SecondCountableTopology (Quiver.Total C)]
+
+-- The levels of the topological nerve are spaces of strings of composable arrows.
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    RegularSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (RegularSpace (ComposableArrows C _))
+
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    T1Space ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (T1Space (ComposableArrows C _))
+
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    LindelofSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (LindelofSpace (ComposableArrows C _))
+
+/-- **Paracompactness of fat classifying spaces.** The fat classifying space of a category whose
+total arrows form a regular, `T1`, second-countable space, such as a groupoid whose arrows form a
+second-countable Hausdorff manifold, is paracompact. -/
+instance fatClassifyingSpace.paracompactSpace : ParacompactSpace (fatClassifyingSpace C) :=
+  fatRealization.paracompactSpace
+
+/-- The fat classifying space of a category whose total arrows form a regular, `T1`,
+second-countable space is normal and `T1`, in particular Hausdorff. -/
+instance fatClassifyingSpace.t4Space : T4Space (fatClassifyingSpace C) :=
+  fatRealization.t4Space
+
+end Paracompact
 
 /-- Two maps out of the fat classifying space agree once they agree on every simplex. -/
 @[ext]

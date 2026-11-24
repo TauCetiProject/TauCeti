@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.InnerConjugation
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 
 /-!
 # Conjugation of `GLₙ` by a constant matrix, in coordinates
@@ -33,6 +34,12 @@ automorphism carries it there, and on points that is conjugation by the change-o
 
 ## Main results
 
+* `TauCeti.GeneralLinear.conjCoordinateIso_hom_toAlgHom`: the coordinate automorphism is the
+  point-conjugation algebra map at the point of `P`.
+* `TauCeti.GeneralLinear.comapOfSurjective_conjCoordinateIso_eq_conjugate`: pulling a Hopf ideal
+  back along the coordinate automorphism is conjugating it by the point of `P`.
+* `TauCeti.GeneralLinear.conjCoordinateIso_eq_innerConjugationIso`: the coordinate automorphism
+  is inner conjugation by the rational point of `P`.
 * `TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso` and
   `TauCeti.GeneralLinear.pointsMulEquiv_toConv_comp_conjCoordinateIso`: on algebra-valued points
   the coordinate automorphism is conjugation by the base-changed matrix.
@@ -63,6 +70,34 @@ noncomputable def conjCoordinateIso (P : Matrix.GeneralLinearGroup (Fin n) R) :
     coordinateHopfAlgebra R n ≅ coordinateHopfAlgebra R n :=
   (coordinateHopfAlgebra R n).innerConjugationIso
     ((pointsMulEquiv (R := R) (A := R) n).symm P)
+
+/-- The coordinate algebra map of conjugation by `P` is the point-conjugation algebra map at the
+`R`-valued point of `P`. -/
+@[simp]
+theorem conjCoordinateIso_hom_toAlgHom (P : Matrix.GeneralLinearGroup (Fin n) R) :
+    (conjCoordinateIso P).hom.hom.toAlgHom =
+      HopfAlgebra.pointConjugationAlgHom ((pointsMulEquiv (R := R) (A := R) n).symm P) := by
+  rw [conjCoordinateIso, _root_.CommHopfAlgCat.innerConjugationIso_hom_toAlgHom]
+
+/-- **Pulling back along conjugation by `P` is conjugating by the point of `P`.** The inverse
+image of a Hopf ideal of `O(GLₙ)` under the coordinate automorphism of conjugation by `P` is its
+conjugate `TauCeti.HopfIdeal.conjugate` by the `R`-valued point of `P`. -/
+theorem comapOfSurjective_conjCoordinateIso_eq_conjugate (P : Matrix.GeneralLinearGroup (Fin n) R)
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
+    I.comapOfSurjective (conjCoordinateIso P).hom.hom
+        (ConcreteCategory.bijective_of_isIso (conjCoordinateIso P).hom).2 =
+      I.conjugate ((pointsMulEquiv (R := R) (A := R) n).symm P) := by
+  ext x
+  rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_comapOfSurjective,
+    ← conjCoordinateIso_hom_toAlgHom, BialgHom.coe_toAlgHom]
+
+/-- The coordinate automorphism of conjugation by `P` is inner conjugation by the `R`-valued
+point of `GLₙ` given by `P`. -/
+theorem conjCoordinateIso_eq_innerConjugationIso (P : Matrix.GeneralLinearGroup (Fin n) R) :
+    conjCoordinateIso P =
+      (coordinateHopfAlgebra R n).innerConjugationIso
+        ((pointsMulEquiv (R := R) (A := R) n).symm P) := by
+  rw [conjCoordinateIso]
 
 /-- The `R`-valued point underlying a constant matrix, extended to an `R`-algebra `A`, is the
 image of that matrix over `A`. -/

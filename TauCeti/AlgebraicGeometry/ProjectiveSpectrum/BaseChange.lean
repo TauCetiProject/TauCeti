@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.BaseChange
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Pullbacks
 
 /-!
@@ -33,6 +35,10 @@ compared over a localization of the base.
   `Proj A` along `Spec S ⟶ Spec R`.
 * `AlgebraicGeometry.Proj.isPullback_map_of_isBaseChange`: the same for a graded ring homomorphism
   exhibiting `B` as the base change of `A`.
+* `AlgebraicGeometry.Proj.isAffineHom_baseChangeProjection`: the projection
+  `Proj (S ⊗[R] A) ⟶ Proj A` is affine.
+* `AlgebraicGeometry.Proj.isClosedImmersion_baseChangeProjection`: for a surjective `R → S`, the
+  projection `Proj (S ⊗[R] A) ⟶ Proj A` is a closed immersion.
 
 ## References
 
@@ -205,6 +211,19 @@ theorem baseChangeIso_hom_snd :
     (baseChangeIso 𝒜 S).hom ≫ pullback.snd _ _ =
       toSpecCoeff (fun n ↦ (𝒜 n).baseChange S) :=
   (isPullback_baseChange 𝒜 S).isoPullback_hom_snd
+
+/-- The coefficient projection `Proj (S ⊗[R] A) ⟶ Proj A` is affine, as the base change of
+`Spec S ⟶ Spec R`. -/
+instance isAffineHom_baseChangeProjection : IsAffineHom (baseChangeProjection 𝒜 S) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (isPullback_baseChange 𝒜 S).flip
+    (inferInstanceAs (IsAffineHom (Spec.map (CommRingCat.ofHom (algebraMap R S)))))
+
+/-- If `R → S` is surjective, the coefficient projection `Proj (S ⊗[R] A) ⟶ Proj A`, the base
+change of the closed immersion `Spec S ⟶ Spec R`, is a closed immersion. -/
+theorem isClosedImmersion_baseChangeProjection (h : Function.Surjective (algebraMap R S)) :
+    IsClosedImmersion (baseChangeProjection 𝒜 S) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (isPullback_baseChange 𝒜 S).flip
+    (IsClosedImmersion.spec_of_surjective (CommRingCat.ofHom (algebraMap R S)) h)
 
 section IsBaseChange
 

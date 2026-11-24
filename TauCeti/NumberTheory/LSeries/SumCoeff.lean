@@ -78,7 +78,8 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
       {s | r < s.re} :=
-  differentiableOn_id.mul <| differentiableOn_integral_mul_cpow_of_isBigO hO.comp_natFloor_rpow
+  differentiableOn_id.mul <|
+    differentiableOn_integral_mul_cpow_of_isBigO one_pos hO.comp_natFloor_rpow
 
 /-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the partial-summation integral
 converges absolutely on the half-plane `r < Re s`. -/
@@ -86,7 +87,7 @@ theorem integrableOn_sum_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
     IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) :=
-  integrableOn_mul_cpow_of_isBigO
+  integrableOn_mul_cpow_of_isBigO one_pos
     ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
     hO.comp_natFloor_rpow hs
 
@@ -97,7 +98,7 @@ theorem integrableOn_sum_mul_log_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     IntegrableOn
       (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (Real.log t : ℂ) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) :=
-  integrableOn_mul_log_mul_cpow_of_isBigO
+  integrableOn_mul_log_mul_cpow_of_isBigO one_pos
     ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
     hO.comp_natFloor_rpow hs
 
@@ -125,7 +126,7 @@ theorem hasDerivAt_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
       (fun z : ℂ ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(z + 1)))
       (∫ t in Set.Ioi (1 : ℝ),
         (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))) s := by
-  have hd := (hasDerivAt_id s).mul <| hasDerivAt_integral_mul_cpow_of_isBigO
+  have hd := (hasDerivAt_id s).mul <| hasDerivAt_integral_mul_cpow_of_isBigO one_pos
     ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
     hO.comp_natFloor_rpow hs
   refine hd.congr_deriv ?_
@@ -140,9 +141,11 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
     (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
     ‖s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
       (t : ℂ) ^ (-(s + 1))‖ ≤ C * ‖s‖ / s.re := by
+  have h := norm_integral_mul_cpow_le_of_bound (g := fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) one_pos
+    (fun _ _ ↦ hf _) hs
+  rw [Real.one_rpow, mul_one] at h
   rw [norm_mul, mul_comm C, mul_div_assoc]
-  exact mul_le_mul_of_nonneg_left (norm_integral_mul_cpow_le_of_bound (fun _ _ ↦ hf _) hs)
-    (norm_nonneg _)
+  exact mul_le_mul_of_nonneg_left h (norm_nonneg _)
 
 /-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` and `LSeries f` converges absolutely on

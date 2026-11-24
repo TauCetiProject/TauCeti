@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Elementary bounds for the real exponential
 
-Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`. For `0 < x`
-the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers, lies between
-`exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled mean of the geometric
-weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
+Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and
+`(A x + B) exp (-(a x))` tends to `0`; for `0 < a`, `e^{t a} b` stays bounded as `t → +∞` only for
+`b = 0`. For `0 < x` the function `x / (exp x - 1)`, the generating function of the Bernoulli
+numbers, lies between `exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled
+mean of the geometric weights `(1 - q) q ^ k`, so these bounds control geometric averages as
+`q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
 with the rescaled level `exp (-(t / ε))`. Similarly, a two-sided logarithmic approximation
@@ -23,7 +26,13 @@ is bounded on `x ≥ 0`.
 
 ## Main results
 
+* `TauCeti.mul_exp_one_sub_lt_one`: `x exp (1 - x) < 1` for `x ≠ 1`.
+* `Real.one_add_le_exp_sub_sq_div_four`: `1 + v ≤ exp (v - v² / 4)` for `0 ≤ v ≤ 1 / 8`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
+* `TauCeti.tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero`: `(A x + B) exp (-(a x)) → 0` as
+  `x → ∞`, for `0 < a`.
+* `TauCeti.eq_zero_of_eventually_abs_exp_mul_le`: if `|e^{t a} b|` is eventually bounded as
+  `t → +∞` and `0 < a`, then `b = 0`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
 * `TauCeti.not_exists_ofReal_mul_exp_le_mul_exp`: for `K > 0` and `k < μ`, `K exp (-k t)` is not
@@ -33,6 +42,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
+* `TauCeti.exp_neg_le_factorial_div_pow`: `exp (-y) ≤ n! / yⁿ` for `0 < y`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
@@ -51,14 +61,40 @@ is bounded on `x ≥ 0`.
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
+* `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
+  `δ ≤ t`.
+* `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
 -/
 
 public section
 
 open Filter Real
-open scoped Nat
+open scoped Nat Topology
 
 namespace TauCeti
+
+/-- `x exp (1 - x) < 1` for `x ≠ 1`, a rescaling of `x + 1 < exp x` for `x ≠ 0`. -/
+theorem mul_exp_one_sub_lt_one {x : ℝ} (hx : x ≠ 1) : x * exp (1 - x) < 1 := by
+  have h := add_one_lt_exp (sub_ne_zero.2 hx)
+  rw [sub_add_cancel] at h
+  calc x * exp (1 - x) < exp (x - 1) * exp (1 - x) := by gcongr
+    _ = 1 := by rw [← exp_add, sub_add_sub_cancel, sub_self, exp_zero]
+
+/-- For `0 ≤ v ≤ 1 / 8`, `1 + v ≤ exp (v - v² / 4)`, from the alternating series of
+`log (1 + v)` (`Real.abs_log_sub_add_sum_range_le`). -/
+theorem _root_.Real.one_add_le_exp_sub_sq_div_four {v : ℝ} (hv0 : 0 ≤ v) (hv : v ≤ 1 / 8) :
+    1 + v ≤ Real.exp (v - v ^ 2 / 4) := by
+  have h := Real.abs_log_sub_add_sum_range_le (x := -v)
+    (by rw [abs_neg, abs_of_nonneg hv0]; linarith) 2
+  rw [abs_neg, abs_of_nonneg hv0, sub_neg_eq_add] at h
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
+  norm_num at h
+  have h' := (abs_le.1 h).2
+  have h3 : v ^ 3 / (1 - v) ≤ v ^ 2 / 4 := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [mul_nonneg (sq_nonneg v) (show 0 ≤ 1 - 5 * v by linarith)]
+  rw [← Real.exp_log (by linarith : (0 : ℝ) < 1 + v)]
+  exact Real.exp_le_exp.2 (by nlinarith)
 
 /-- An affine function of `x` is eventually smaller than `exp (a x)` when `0 < a`. -/
 theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
@@ -68,6 +104,24 @@ theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
   rw [rpow_one, lt_div_iff₀ (by linarith)] at hx
   nlinarith [mul_nonneg (sub_nonneg.2 (le_abs_self A)) (by linarith : (0 : ℝ) ≤ x),
     mul_nonneg (abs_nonneg B) (by linarith : (0 : ℝ) ≤ x - 1), le_abs_self B]
+
+/-- An affine function of `x` times `exp (-(a x))` tends to `0` as `x → ∞`, for `0 < a`. -/
+theorem tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero {a : ℝ} (ha : 0 < a) (A B : ℝ) :
+    Tendsto (fun x ↦ (A * x + B) * exp (-(a * x))) atTop (𝓝 0) := by
+  have h₁ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 a ha).const_mul A
+  have h₀ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 0 a ha).const_mul B
+  simpa [rpow_one, rpow_zero, add_mul, mul_assoc] using h₁.add h₀
+
+/-- A product `e^{t a} b` with `0 < a` that is eventually bounded in absolute value as `t → +∞`
+has `b = 0`, since otherwise it is unbounded. -/
+theorem eq_zero_of_eventually_abs_exp_mul_le {a b C : ℝ} (ha : 0 < a)
+    (h : ∀ᶠ t in atTop, |exp (t * a) * b| ≤ C) : b = 0 := by
+  by_contra hb
+  have hT : Tendsto (fun t ↦ |exp (t * a) * b|) atTop atTop := by
+    simp only [abs_mul, abs_exp]
+    exact (tendsto_exp_atTop.comp (tendsto_id.atTop_mul_const ha)).atTop_mul_const (abs_pos.2 hb)
+  obtain ⟨t, h1, h2⟩ := (h.and (hT.eventually_gt_atTop C)).exists
+  exact (h2.trans_le h1).false
 
 /-- Eventual exponential bounds `f i s t ≤ A_i exp (-κ_i s)` with rates `κ_i > 0`, for finitely
 many indices `i`, combine into one bound `f i s t ≤ A exp (-κ s)` for all `i`, with the slowest
@@ -139,6 +193,12 @@ theorem abs_log_sub_le_iff {x y C : ℝ} (hx : 0 < x) :
     |log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y := by
   rw [abs_le, sub_le_iff_le_add, le_sub_iff_add_le, ← exp_add, ← exp_add,
     le_log_iff_exp_le hx, log_le_iff_le_exp hx]
+
+/-- For `0 < y`, `exp (-y) ≤ n! / yⁿ`: the exponential decays faster than every power. -/
+theorem exp_neg_le_factorial_div_pow {y : ℝ} (hy : 0 < y) (n : ℕ) :
+    exp (-y) ≤ n ! / y ^ n := by
+  rw [exp_neg, ← inv_div]
+  exact inv_anti₀ (by positivity) (pow_div_factorial_le_exp y hy.le n)
 
 /-- For `0 ≤ σ` and `0 < c`, the function `x ↦ x ^ σ exp (-c x)` is bounded on `x ≥ 0`: it tends
 to `0` at infinity, and on a bounded interval `x ^ σ` is bounded. -/
@@ -308,5 +368,17 @@ theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ)
     nlinarith
   calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
     _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
+
+/-- Raising the damping rate from `σ` to `x ≥ σ` multiplies by `e^{-(x-σ)t}`, which is at most
+`e^{-(x-σ)δ}` for `t ≥ δ`. -/
+theorem exp_neg_sub_mul_le_of_le {σ x δ t : ℝ} (hx : σ ≤ x) (ht : δ ≤ t) :
+    exp (-(x - σ) * t) ≤ exp (-(x - σ) * δ) :=
+  exp_le_exp.mpr (mul_le_mul_of_nonpos_left ht (by linarith))
+
+/-- A natural power of a nonnegative real number is at most the exponential of the exponent
+times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp x`. -/
+theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
+  rw [exp_natCast_mul]
+  exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
 end TauCeti
