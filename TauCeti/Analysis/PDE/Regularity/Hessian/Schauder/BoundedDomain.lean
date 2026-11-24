@@ -86,13 +86,13 @@ section Graph
 
 variable {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))} {x : EuclideanSpace ℝ (Fin (n + 1))}
 
-/-- **The Schauder estimate on a boundary patch.** At a point `x` of the closure of an open set
+/-- **The Schauder estimate on a boundary patch.** At a point `x` of the closure of a set
 `Ω` with a boundary patch `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}`, `γ` of class `C^{2,α}`
 and invariant along the unit vector `ν`, there are a radius `ρ > 0` and a constant `C`, depending
 only on the patch, `α`, `λ`, `Λ`, `L` and `M`, such that the Hölder constant of `D²u` on
 `ball x ρ ∩ closure Ω` is at most `C (K + N)` under the hypotheses of the global estimate. -/
 private theorem exists_holderOnWith_iteratedFDeriv_two_ball_inter_closure {α : ℝ≥0} (hα : 0 < α)
-    (hα1 : α < 1) (hΩo : IsOpen Ω)
+    (hα1 : α < 1)
     (hpatch : ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧ ContDiff ℝ 2 γ ∧
       (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
       (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
@@ -137,7 +137,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_ball_inter_closure {α : 
   have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero)
   have hcl := Set.ext_iff.1 (inter_closure_eq_inter_setOf_le_inner isOpen_ball hν0
     hγ.continuous.continuousOn hγν hΩ)
-  have hfr := Set.ext_iff.1 (inter_frontier_eq_inter_setOf_inner_eq hΩo isOpen_ball hν0
+  have hfr := Set.ext_iff.1 (inter_frontier_eq_inter_setOf_inner_eq isOpen_ball hν0
     hγ.continuous.continuousOn hγν hΩ)
   have hsub : ball x R ∩ {z | γ z ≤ ⟪z, ν⟫_ℝ} ⊆ closure Ω := fun z hz =>
     ((hcl z).2 ⟨ball_subset_ball hRr.le hz.1, hz.2⟩).2
@@ -244,7 +244,7 @@ private theorem exists_dist_iteratedFDeriv_two_le_of_dist_lt {α : ℝ≥0}
   have hcl : IsCompact (closure Ω) := hΩ.isCompact_closure
   -- Boundary patches: a radius and a constant at each frontier point.
   have hloc := fun x (hx : x ∈ frontier Ω) =>
-    exists_holderOnWith_iteratedFDeriv_two_ball_inter_closure hα hα1 hΩo (hbdry x hx)
+    exists_holderOnWith_iteratedFDeriv_two_ball_inter_closure hα hα1 (hbdry x hx)
       (frontier_subset_closure hx) Lam L M hlam
   choose! ρ hρ C hC using hloc
   -- Finitely many patch balls cover the compact frontier.

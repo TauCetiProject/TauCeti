@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Continuous
-public import TauCeti.Topology.Order.ClosureSetOfLt
+public import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # The closure and frontier of a domain inside a graph patch
@@ -23,8 +23,9 @@ which is how a domain with `C^k` boundary is described near a boundary point. In
   (`TauCeti.inter_setOf_le_inner_subset_closure`); no regularity of `γ` is needed, since such a
   point `y` is the limit of the points `y + t ν`, `t > 0`, which lie strictly above it;
 * if `γ` is continuous on `U`, the closure of `Ω` is the closed region `{z | γ z ≤ ⟪z, ν⟫}`
-  (`TauCeti.inter_closure_eq_inter_setOf_le_inner`), and, for an open `Ω`, the frontier of `Ω` is
-  the graph `{z | ⟪z, ν⟫ = γ z}` (`TauCeti.inter_frontier_eq_inter_setOf_inner_eq`).
+  (`TauCeti.inter_closure_eq_inter_setOf_le_inner`), and the frontier of `Ω` is the graph
+  `{z | ⟪z, ν⟫ = γ z}` (`TauCeti.inter_frontier_eq_inter_setOf_inner_eq`); `Ω` need not be open,
+  since the patch makes `U ∩ Ω` open.
 -/
 
 public section
@@ -73,24 +74,31 @@ theorem inter_closure_eq_inter_setOf_le_inner (hU : IsOpen U) (hν : ν ≠ 0)
       (continuous_id.inner continuous_const).continuousOn hΩ hy⟩)
     (fun _ hy => ⟨hy.1, inter_setOf_le_inner_subset_closure hU hν hγν hΩ hy⟩)
 
-/-- Inside a graph patch `U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫}` of an open set `Ω` on an open set `U`,
-with `γ` continuous on `U` and invariant along `ν ≠ 0`, the frontier of `Ω` is the graph of `γ`. -/
-theorem inter_frontier_eq_inter_setOf_inner_eq (hΩo : IsOpen Ω) (hU : IsOpen U) (hν : ν ≠ 0)
+/-- Inside a graph patch `U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫}` on an open set `U`, with `γ` continuous
+on `U` and invariant along `ν ≠ 0`, the frontier of `Ω` is the graph of `γ`. -/
+theorem inter_frontier_eq_inter_setOf_inner_eq (hU : IsOpen U) (hν : ν ≠ 0)
     (hγ : ContinuousOn γ U) (hγν : ∀ z (t : ℝ), γ (z + t • ν) = γ z)
     (hΩ : U ∩ Ω = U ∩ {z | γ z < ⟪z, ν⟫_ℝ}) :
     U ∩ frontier Ω = U ∩ {z | ⟪z, ν⟫_ℝ = γ z} := by
   have hcl := Set.ext_iff.1 (inter_closure_eq_inter_setOf_le_inner hU hν hγ hγν hΩ)
+  -- The patch makes `U ∩ Ω` open, so its points are interior points of `Ω`.
+  have hUΩ : IsOpen (U ∩ Ω) := by
+    have hf : ContinuousOn (fun z => ⟪z, ν⟫_ℝ - γ z) U :=
+      (continuous_id.inner continuous_const).continuousOn.sub hγ
+    have := hf.isOpen_inter_preimage hU (isOpen_Ioi (a := (0 : ℝ)))
+    rwa [hΩ, show {z | γ z < ⟪z, ν⟫_ℝ} = (fun z => ⟪z, ν⟫_ℝ - γ z) ⁻¹' Ioi 0 by
+      ext; simp [sub_pos]]
   ext y
-  rw [hΩo.frontier_eq]
   constructor
   · rintro ⟨hy, hycl, hynΩ⟩
     have hle : γ y ≤ ⟪y, ν⟫_ℝ := ((hcl y).1 ⟨hy, hycl⟩).2
-    -- A point of `U` strictly above the graph lies in `Ω`.
+    -- A point of `U` strictly above the graph lies in the interior of `Ω`.
     refine ⟨hy, le_antisymm (not_lt.1 fun hlt => hynΩ ?_) hle⟩
-    exact ((Set.ext_iff.1 hΩ y).2 ⟨hy, hlt⟩).2
+    have hyΩ : y ∈ U ∩ Ω := hΩ ▸ ⟨hy, hlt⟩
+    exact interior_maximal inter_subset_right hUΩ hyΩ
   · rintro ⟨hy, heq⟩
     refine ⟨hy, ((hcl y).2 ⟨hy, heq.ge⟩).2, fun hyΩ => ?_⟩
     -- A point of `U ∩ Ω` lies strictly above the graph.
-    exact (((Set.ext_iff.1 hΩ y).1 ⟨hy, hyΩ⟩).2 : γ y < ⟪y, ν⟫_ℝ).ne heq.symm
+    exact (((Set.ext_iff.1 hΩ y).1 ⟨hy, interior_subset hyΩ⟩).2 : γ y < ⟪y, ν⟫_ℝ).ne heq.symm
 
 end TauCeti
