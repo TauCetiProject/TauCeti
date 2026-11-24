@@ -42,6 +42,9 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
   of `a`, over any commutative ring. Mathlib states this only over a field.
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
+* `AdjoinRoot.basisXPowSubC`: for `n ≠ 0`, the basis `1, root, …, root ^ (n - 1)` of
+  `R[X]/(X ^ n - C a)` indexed by `Fin n`, over any nontrivial commutative ring. It is Mathlib's
+  `AdjoinRoot.powerBasis'` reindexed along `natDegree (X ^ n - C a) = n`.
 * `AdjoinRoot.twistXPowSubC`: for `ζ ^ n = 1`, the `R`-algebra endomorphism of
   `R[X]/(X ^ n - C a)` sending that root to `ζ` times it, over any commutative ring, with
   `AdjoinRoot.twistXPowSubC_pow_eq_one`. Over a field this is the action of `ζ` in Mathlib's
@@ -199,6 +202,20 @@ theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0)
     IsUnit (root (X ^ n - C a)) :=
   (isUnit_pow_iff hn).mp (by rw [AdjoinRoot.root_X_pow_sub_C_pow]; exact ha.map _)
 
+/-- The basis `1, root, …, root ^ (n - 1)` of `R[X]/(X ^ n - C a)` over a nontrivial commutative
+ring, indexed by `Fin n`: Mathlib's power basis `AdjoinRoot.powerBasis'`, reindexed along
+`natDegree (X ^ n - C a) = n`. -/
+noncomputable def basisXPowSubC [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    Module.Basis (Fin n) R (AdjoinRoot (X ^ n - C a)) :=
+  (powerBasis' (monic_X_pow_sub_C a (NeZero.ne n))).basis.reindex
+    (finCongr ((powerBasis'_dim _).trans (natDegree_X_pow_sub_C a)))
+
+/-- The `i`-th vector of `AdjoinRoot.basisXPowSubC` is the `i`-th power of the root. -/
+@[simp]
+theorem basisXPowSubC_apply [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (i : Fin n) :
+    basisXPowSubC n a i = root (X ^ n - C a) ^ (i : ℕ) := by
+  simp [basisXPowSubC]
+
 section Twist
 
 variable (n : ℕ) {ζ : R} (a : R) (hζ : ζ ^ n = 1)
@@ -209,8 +226,7 @@ endomorphism sending the class of `X` to `ζ` times it, which is well defined be
 automorphism `autAdjoinRootXPowSubC n a η` of Mathlib for the root of unity `η` with value `ζ`. -/
 noncomputable def twistXPowSubC : AdjoinRoot (X ^ n - C a) →ₐ[R] AdjoinRoot (X ^ n - C a) :=
   liftAlgHom _ (Algebra.ofId R _) (ζ • root _) <| by
-    rw [eval₂_sub, eval₂_X_pow, eval₂_C, smul_pow, hζ, one_smul, AdjoinRoot.root_X_pow_sub_C_pow,
-      sub_eq_zero, AlgHom.coe_toRingHom, Algebra.ofId_apply, algebraMap_eq]
+    simp [smul_pow, hζ, algebraMap_eq]
 
 /-- The twist sends the class of `X` to `ζ` times it. -/
 @[simp]

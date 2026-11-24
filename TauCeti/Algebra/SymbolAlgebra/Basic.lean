@@ -361,9 +361,8 @@ private theorem repX_pow : LinearMap.mulLeft R (AdjoinRoot.root _ ⊗ₜ 1 : Rep
 
 private theorem repY_pow (hζ : ζ ^ n = 1) : repY a b hζ ^ n = algebraMap R _ b := by
   refine TensorProduct.ext' fun p q => ?_
-  rw [repY_pow_tmul, AdjoinRoot.twistXPowSubC_pow_eq_one, AlgHom.one_apply,
-    AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
-    ← Algebra.smul_def, TensorProduct.tmul_smul, Module.algebraMap_end_apply]
+  simp [repY_pow_tmul, AdjoinRoot.twistXPowSubC_pow_eq_one, ← AdjoinRoot.algebraMap_eq,
+    ← Algebra.smul_def]
 
 private theorem repY_mul_repX (hζ : ζ ^ n = 1) :
     repY a b hζ * LinearMap.mulLeft R (AdjoinRoot.root _ ⊗ₜ 1 : Rep n a b) =
@@ -394,18 +393,9 @@ private theorem linearIndependent_root_pow_tmul [NeZero n] :
       (AdjoinRoot.root (X ^ n - C a) ^ (p.1 : ℕ)) ⊗ₜ[R]
         (AdjoinRoot.root (X ^ n - C b) ^ (p.2 : ℕ)) := by
   nontriviality R
-  have hb : ∀ c : R, ∃ B : Module.Basis (Fin n) R (AdjoinRoot (X ^ n - C c)),
-      ∀ i, B i = AdjoinRoot.root _ ^ (i : ℕ) := fun c => by
-    let pb := AdjoinRoot.powerBasis' (monic_X_pow_sub_C c (NeZero.ne n))
-    refine ⟨pb.basis.reindex
-      (finCongr ((AdjoinRoot.powerBasis'_dim _).trans (natDegree_X_pow_sub_C (n := n) c))),
-      fun i => ?_⟩
-    rw [Module.Basis.reindex_apply, PowerBasis.basis_eq_pow, AdjoinRoot.powerBasis'_gen]
-    simp
-  obtain ⟨Ba, hBa⟩ := hb a
-  obtain ⟨Bb, hBb⟩ := hb b
-  convert (Ba.tensorProduct Bb).linearIndependent with p
-  rw [Module.Basis.tensorProduct_apply', hBa, hBb]
+  convert ((AdjoinRoot.basisXPowSubC n a).tensorProduct
+    (AdjoinRoot.basisXPowSubC n b)).linearIndependent with p
+  simp [Module.Basis.tensorProduct_apply']
 
 /-- The reduced monomials are linearly independent. -/
 private theorem linearIndependent_monomial [NeZero n] (hζ : ζ ^ n = 1) :
@@ -426,8 +416,7 @@ noncomputable def toEndAdjoinRoot (hζ : ζ ^ n = 1) :
     SymbolAlgebra n ζ a 1 →ₐ[R] Module.End R (AdjoinRoot (X ^ n - C a)) :=
   lift (LinearMap.mulLeft R (AdjoinRoot.root _)) (AdjoinRoot.twistXPowSubC n a hζ).toLinearMap
     (LinearMap.ext fun q => by
-      rw [LinearMap.pow_mulLeft, LinearMap.mulLeft_apply, AdjoinRoot.root_X_pow_sub_C_pow,
-        ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def, Module.algebraMap_end_apply])
+      simp [LinearMap.pow_mulLeft, ← AdjoinRoot.algebraMap_eq, ← Algebra.smul_def])
     (by
       -- `AlgHom.toEnd` is `AlgHom.toLinearMap` as a monoid homomorphism.
       rw [← AlgHom.toEnd_apply, ← map_pow, AdjoinRoot.twistXPowSubC_pow_eq_one, map_one, map_one])
@@ -445,11 +434,6 @@ theorem toEndAdjoinRoot_x (hζ : ζ ^ n = 1) :
 theorem toEndAdjoinRoot_y (hζ : ζ ^ n = 1) :
     toEndAdjoinRoot a hζ y = (AdjoinRoot.twistXPowSubC n a hζ).toLinearMap :=
   lift_y ..
-
-/-- In the split representation, `y` sends the class of `X` to `ζ` times it. -/
-theorem toEndAdjoinRoot_y_root (hζ : ζ ^ n = 1) :
-    toEndAdjoinRoot a hζ y (AdjoinRoot.root (X ^ n - C a)) = ζ • AdjoinRoot.root _ := by
-  simp
 
 /-! ### The monomial basis -/
 
