@@ -35,7 +35,7 @@ proves the two steps.
   `TauCeti.TopCat.isClosedEmbedding_of_isPushout`, so `X` is a closed subspace of `P`.
 * Sequential colimits. If `F : ℕ ⥤ TopCat` has closed embeddings as transition maps and every
   `F.obj n` is normal, its colimit is normal (`TauCeti.TopCat.normalSpace_of_isColimit`). With
-  `TauCeti.TopCat.t1Space_of_isColimit`, a sequential colimit of `T4` spaces along closed
+  `CategoryTheory.Limits.IsColimit.t1Space`, a sequential colimit of `T4` spaces along closed
   embeddings is `T4` (`TauCeti.TopCat.t4Space_of_isColimit`).
 
 Both normality proofs separate two disjoint closed sets by a continuous real function, built from
@@ -193,8 +193,7 @@ embeddings is `T4`. -/
 theorem t4Space_of_isColimit
     (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE (Nat.le_succ n)))) (hc : IsColimit c)
     [∀ n, T4Space (F.obj n)] : T4Space c.pt :=
-  have := t1Space_of_isColimit hc fun k ↦
-    (isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).injective
+  have := hc.t1Space fun k ↦ (isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).injective
   have := normalSpace_of_isColimit hF hc
   {}
 

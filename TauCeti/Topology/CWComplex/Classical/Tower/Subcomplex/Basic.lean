@@ -267,7 +267,7 @@ theorem isClosedEmbedding_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ)
 
 /-- Any colimit `c.pt` of `T.diagram` is a `T₁` space. -/
 theorem t1Space_of_isColimit {c : Cocone T.diagram} (hc : IsColimit c) : T1Space c.pt :=
-  TauCeti.TopCat.t1Space_of_isColimit hc fun k ↦ (T.isClosedEmbedding_ι hc k).injective
+  hc.t1Space fun k ↦ (T.isClosedEmbedding_ι hc k).injective
 
 end StageMachinery
 
