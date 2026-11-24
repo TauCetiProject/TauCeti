@@ -216,12 +216,17 @@ theorem relativePicardToFppfSheaf_eq :
         eqToHom (relativePicardFppfSheaf_obj f).symm :=
   (rfl)
 
+/-- The canonical map to the relative Picard fppf sheaf at `T`, as an additive group
+homomorphism out of `T ↦ Pic(X_T) / Pic(T)` written additively. -/
+private def relativePicardToFppfSheafOfMulAddHom (T : (Over S)ᵒᵖ) :
+    Additive ((relativePicardPresheaf f).obj T) →+ (relativePicardFppfSheaf f).obj.obj T :=
+  ((eqToHom (relativePicardAddPresheaf_eq f).symm ≫ relativePicardToFppfSheaf f).app T).hom
+
 /-- The image in the relative Picard fppf sheaf of a section of `T ↦ Pic(X_T) / Pic(T)` written
 multiplicatively. -/
 private def relativePicardToFppfSheafOfMulApp (T : (Over S)ᵒᵖ)
     (c : (relativePicardPresheaf f).obj T) : (relativePicardFppfSheaf f).obj.obj T :=
-  (relativePicardToFppfSheaf f).app T
-    ((eqToHom (relativePicardAddPresheaf_eq f).symm).app T (Additive.ofMul c))
+  relativePicardToFppfSheafOfMulAddHom f T (Additive.ofMul c)
 
 private lemma relativePicardToFppfSheafOfMulApp_mk (T : (Over S)ᵒᵖ)
     (a : LineBundleClass (pullback T.unop.hom f)) :
@@ -264,10 +269,9 @@ zero. -/
 lemma relativePicardToFppfSheafOfMul_app_one {T : (Over S)ᵒᵖ} :
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
-        ((relativePicardToFppfSheafOfMul f).app T) 1 = 0 := by
-  rw [← map_zero ((relativePicardToFppfSheaf f).app T).hom, ← relativePicardAddPresheafMk_one,
-    ← relativePicardToFppfSheafOfMul_app_mk]
-  exact congrArg _ (QuotientGroup.mk_one _).symm
+        ((relativePicardToFppfSheafOfMul f).app T) 1 = 0 :=
+  -- `Additive.ofMul` is the identity, so this is `map_zero` of the bundled additive map.
+  map_zero (relativePicardToFppfSheafOfMulAddHom f T)
 
 /-- The canonical map from the multiplicative relative Picard presheaf turns products into
 sums. -/
@@ -277,12 +281,9 @@ lemma relativePicardToFppfSheafOfMul_app_mul {T : (Over S)ᵒᵖ}
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
         ((relativePicardToFppfSheafOfMul f).app T) (c * d) =
-      (relativePicardToFppfSheafOfMul f).app T c + (relativePicardToFppfSheafOfMul f).app T d := by
-  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
-  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
-  rw [relativePicardToFppfSheafOfMul_app_mk, relativePicardToFppfSheafOfMul_app_mk, ← map_add,
-    ← relativePicardAddPresheafMk_mul, ← relativePicardToFppfSheafOfMul_app_mk]
-  exact congrArg _ (QuotientGroup.mk_mul _ a b)
+      (relativePicardToFppfSheafOfMul f).app T c + (relativePicardToFppfSheafOfMul f).app T d :=
+  -- `Additive.ofMul` is the identity, so this is `map_add` of the bundled additive map.
+  map_add (relativePicardToFppfSheafOfMulAddHom f T) (Additive.ofMul c) (Additive.ofMul d)
 
 /-- The canonical map from the multiplicative relative Picard presheaf turns inverses into
 negatives. -/
@@ -292,11 +293,9 @@ lemma relativePicardToFppfSheafOfMul_app_inv {T : (Over S)ᵒᵖ}
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
         ((relativePicardToFppfSheafOfMul f).app T) c⁻¹ =
-      -(relativePicardToFppfSheafOfMul f).app T c := by
-  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
-  rw [relativePicardToFppfSheafOfMul_app_mk, ← map_neg, ← relativePicardAddPresheafMk_inv,
-    ← relativePicardToFppfSheafOfMul_app_mk]
-  exact congrArg _ (QuotientGroup.mk_inv _ a)
+      -(relativePicardToFppfSheafOfMul f).app T c :=
+  -- `Additive.ofMul` is the identity, so this is `map_neg` of the bundled additive map.
+  map_neg (relativePicardToFppfSheafOfMulAddHom f T) (Additive.ofMul c)
 
 /-- The canonical map from the multiplicative relative Picard presheaf turns quotients into
 differences. -/
@@ -306,12 +305,9 @@ lemma relativePicardToFppfSheafOfMul_app_div {T : (Over S)ᵒᵖ}
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
         ((relativePicardToFppfSheafOfMul f).app T) (c / d) =
-      (relativePicardToFppfSheafOfMul f).app T c - (relativePicardToFppfSheafOfMul f).app T d := by
-  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
-  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
-  rw [relativePicardToFppfSheafOfMul_app_mk, relativePicardToFppfSheafOfMul_app_mk, ← map_sub,
-    ← relativePicardAddPresheafMk_div, ← relativePicardToFppfSheafOfMul_app_mk]
-  exact congrArg _ (QuotientGroup.mk_div _ a b)
+      (relativePicardToFppfSheafOfMul f).app T c - (relativePicardToFppfSheafOfMul f).app T d :=
+  -- `Additive.ofMul` is the identity, so this is `map_sub` of the bundled additive map.
+  map_sub (relativePicardToFppfSheafOfMulAddHom f T) (Additive.ofMul c) (Additive.ofMul d)
 
 /-- Two sections of `T ↦ Pic(X_T) / Pic(T)` with the same image in the relative Picard fppf sheaf
 agree fppf-locally. -/
