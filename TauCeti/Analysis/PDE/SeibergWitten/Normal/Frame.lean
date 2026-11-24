@@ -277,6 +277,32 @@ theorem normalFrameNegSpinor_zero (e : OrthonormalBasis (Fin 4) ℝ V)
     normalFrameNegSpinor o ρ e u₀ 0 0 = 0 := by
   simp [normalFrameNegSpinor]
 
+private theorem inner_sub_smul_re_im_of_orthonormal {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] {a b : H} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) (hab : ⟪a, b⟫_ℂ = 0)
+    (x₂ x₃ y₂ y₃ : ℝ) :
+    let s : H := ((2 : ℂ) * (x₂ + x₃ * I)) • a - ((2 : ℂ) * (y₂ + y₃ * I)) • b
+    (⟪a, s⟫_ℂ).re / 2 = x₂ ∧ (⟪a, s⟫_ℂ).im / 2 = x₃ ∧
+      -(⟪b, s⟫_ℂ).re / 2 = y₂ ∧ -(⟪b, s⟫_ℂ).im / 2 = y₃ := by
+  intro s
+  have h₁ := inner_smul_add_smul_of_inner_eq_zero_left ha hab
+    ((2 : ℂ) * (x₂ + x₃ * I)) (-((2 : ℂ) * (y₂ + y₃ * I)))
+  have h₂ := inner_smul_add_smul_of_inner_eq_zero_right hb hab
+    ((2 : ℂ) * (x₂ + x₃ * I)) (-((2 : ℂ) * (y₂ + y₃ * I)))
+  rw [neg_smul, ← sub_eq_add_neg] at h₁ h₂
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · exact (congrArg (fun z : ℂ ↦ z.re / 2) h₁).trans (by simp)
+  · exact (congrArg (fun z : ℂ ↦ z.im / 2) h₁).trans (by simp)
+  · exact (congrArg (fun z : ℂ ↦ -z.re / 2) h₂).trans (by simp)
+  · exact (congrArg (fun z : ℂ ↦ -z.im / 2) h₂).trans (by simp)
+
+private theorem two_mul_re_im_smul_sub_eq {H : Type*} [AddCommGroup H] [Module ℂ H]
+    (a b : H) (z₁ z₂ : ℂ) :
+    ((2 : ℂ) * (((z₁.re / 2 : ℝ) : ℂ) + ((z₁.im / 2 : ℝ) : ℂ) * I)) • a -
+        ((2 : ℂ) * (((-z₂.re / 2 : ℝ) : ℂ) + ((-z₂.im / 2 : ℝ) : ℂ) * I)) • b =
+      z₁ • a + z₂ • b := by
+  rw [sub_eq_add_neg, ← neg_smul]
+  congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring)
+
 section Equivs
 
 variable (o ρ) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
@@ -299,15 +325,15 @@ private theorem normalDomainEquiv_left_inv
   have horth :=
     inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
   have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
-  have huu := inner_smul_add_smul_of_inner_eq_zero_left hu₀₁ horth
-    ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I)))
-  have hvv := inner_smul_add_smul_of_inner_eq_zero_right hβ₀₁ horth
-    ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I)))
-  rw [neg_smul, ← sub_eq_add_neg] at huu hvv
+  obtain ⟨hure, huim, hvre, hvim⟩ :=
+    inner_sub_smul_re_im_of_orthonormal hu₀₁ hβ₀₁ horth
+      (p.fst 2) (p.fst 3) (p.snd 2) (p.snd 3)
   have he_ite := orthonormal_iff_ite.1 e.orthonormal
   exact Prod.ext
-    (by ext i; fin_cases i <;> simp [normalFrameForm_apply, normalFrameSpinor, he_ite, huu])
-    (by ext i; fin_cases i <;> simp [normalFrameForm_apply, normalFrameSpinor, he_ite, hvv])
+    (by ext i; fin_cases i <;>
+      first | exact hure | exact huim | simp [normalFrameForm_apply, he_ite])
+    (by ext i; fin_cases i <;>
+      first | exact hvre | exact hvim | simp [normalFrameForm_apply, he_ite])
 
 private theorem normalDomainEquiv_right_inv
     (q : (V [⋀^Fin 1]→L[ℝ] ℝ) × positiveHalfSpinors o ρ) :
@@ -325,9 +351,8 @@ private theorem normalDomainEquiv_right_inv
       conv_rhs =>
         rw [eq_inner_smul_add_inner_pairedSpinor_smul hQ hkl he h₀ h₂₃ h₂ hρ
           hu₀ hu₀₁ q.snd]
-      simp only [normalFrameSpinor, Matrix.cons_val_two, Matrix.cons_val_three,
-        Matrix.head_cons, Matrix.tail_cons, sub_eq_add_neg, ← neg_smul]
-      congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring))
+      simpa [normalFrameSpinor] using
+        two_mul_re_im_smul_sub_eq u₀ (pairedSpinor e u₀) ⟪u₀, q.snd⟫_ℂ ⟪pairedSpinor e u₀, q.snd⟫_ℂ)
 
 /-- **The eight-component domain frame intertwiner** `(y, η) ≃ (b, ζ) ∈ Ω¹(V) × W⁺`. -/
 def normalDomainEquiv :
@@ -436,25 +461,21 @@ private theorem normalTargetEquiv_left_inv
       ‖halfSpinCliffordMul o ρ 1 (e i) (positiveHalfSpinorsEquiv o ρ u₀)‖ = 1 :=
     norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 i) hu₀₁
   have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ hkl he h₀ h₂₃ hρ hu₀
-  have hsp2 := inner_smul_add_smul_of_inner_eq_zero_left (hn 2) hw₂₀
-    ((2 : ℂ) * (p.fst.ofLp 2 + p.fst.ofLp 3 * I))
-    (-((2 : ℂ) * (p.snd.ofLp 2 + p.snd.ofLp 3 * I)))
-  have hsp0 := inner_smul_add_smul_of_inner_eq_zero_right (hn 0) hw₂₀
-    ((2 : ℂ) * (p.fst.ofLp 2 + p.fst.ofLp 3 * I))
-    (-((2 : ℂ) * (p.snd.ofLp 2 + p.snd.ofLp 3 * I)))
-  rw [neg_smul, ← sub_eq_add_neg] at hsp2 hsp0
+  obtain ⟨h2re, h2im, h0re, h0im⟩ :=
+    inner_sub_smul_re_im_of_orthonormal (hn 2) (hn 0) hw₂₀
+      (p.fst 2) (p.fst 3) (p.snd 2) (p.snd 3)
   simp only [normalTargetInv]
   refine Prod.ext ?_ ?_
   · ext i; fin_cases i
-    · rfl
+    · simp
     · exact hsd0
-    · exact (congrArg (fun z : ℂ ↦ z.re / 2) hsp2).trans (by simp)
-    · exact (congrArg (fun z : ℂ ↦ z.im / 2) hsp2).trans (by simp)
+    · simpa [normalFrameNegSpinor] using h2re
+    · simpa [normalFrameNegSpinor] using h2im
   · ext i; fin_cases i
     · exact hsd1
     · exact hsd2
-    · exact (congrArg (fun z : ℂ ↦ -z.re / 2) hsp0).trans (by simp)
-    · exact (congrArg (fun z : ℂ ↦ -z.im / 2) hsp0).trans (by simp)
+    · simpa [normalFrameNegSpinor] using h0re
+    · simpa [normalFrameNegSpinor] using h0im
 
 private theorem normalTargetEquiv_right_inv
     (q : ℝ × Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 ×
@@ -471,9 +492,10 @@ private theorem normalTargetEquiv_right_inv
     (by
       conv_rhs =>
         rw [eq_inner_halfSpinCliffordMul hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ q.snd.snd]
-      simp only [normalTargetInv, normalFrameNegSpinor, Matrix.cons_val_two, Matrix.cons_val_three,
-        Matrix.head_cons, Matrix.tail_cons, sub_eq_add_neg, ← neg_smul]
-      congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring))
+      simpa [normalTargetInv, normalFrameNegSpinor] using
+        two_mul_re_im_smul_sub_eq
+          (halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀))
+          (halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀)) _ _)
 
 /-- **The eight-component target frame intertwiner** `(L, A) ≃ (f, τ, ν) ∈ ℝ × Λ⁺ V × W⁻`. -/
 def normalTargetEquiv :

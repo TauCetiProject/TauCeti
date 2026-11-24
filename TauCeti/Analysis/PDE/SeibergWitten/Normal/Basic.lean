@@ -232,7 +232,7 @@ variable (e) in
 /-- The **spinor of the normal model** of a pair of plane fields `(ξ, η)`: the section
 `α_ξ = 2 (ξ₂ + i ξ₃)` of `ξ` on the canonical spinor `u₀` plus the section `α_η` of `η` on the
 paired spinor `β₀ = c(e₂) c(e₀) u₀` (`pairedSpinor`), pulled back along the normal coordinate. For
-`η = 0` this is the pullback `α_ξ u₀` of `TauCeti.SeibergWitten.FlatLimit`. -/
+`η = 0` this is the pullback `α_ξ u₀` of `TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`. -/
 def normalModelSpinor (u₀ : positiveHalfSpinors o ρ) (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
     (y : V) : positiveHalfSpinors o ρ :=
   Vortex.sectionValue ξ (normalCoord e y) • u₀ +

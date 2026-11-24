@@ -731,19 +731,21 @@ private theorem inner_selfDualWedge_orthonormalBasis {i j : Fin 4} (hi : i ≠ 0
     one_mul] at h
   exact h
 
-/-- `antiInvariantSelfDual₁` has unit norm in `Λ⁺ V`. -/
-theorem norm_antiInvariantSelfDual₁ : ‖antiInvariantSelfDual₁ o e hkl he‖ = 1 :=
+private theorem norm_selfDualWedge_orthonormalBasis {i : Fin 4} (hi : i ≠ 0) :
+    ‖o.selfDualWedge hkl (e 0) (e i)‖ = 1 :=
   (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
-    rw [← real_inner_self_eq_norm_sq, antiInvariantSelfDual₁_eq_selfDualWedge,
-      inner_selfDualWedge_orthonormalBasis (by decide), real_inner_self_eq_norm_sq,
-      e.orthonormal.1 2, one_pow]
+    rw [← real_inner_self_eq_norm_sq, inner_selfDualWedge_orthonormalBasis hi,
+      real_inner_self_eq_norm_sq, e.orthonormal.1 i, one_pow]
+
+/-- `antiInvariantSelfDual₁` has unit norm in `Λ⁺ V`. -/
+theorem norm_antiInvariantSelfDual₁ : ‖antiInvariantSelfDual₁ o e hkl he‖ = 1 := by
+  rw [antiInvariantSelfDual₁_eq_selfDualWedge]
+  exact norm_selfDualWedge_orthonormalBasis (by decide)
 
 /-- `antiInvariantSelfDual₂` has unit norm in `Λ⁺ V`. -/
-theorem norm_antiInvariantSelfDual₂ : ‖antiInvariantSelfDual₂ o e hkl he‖ = 1 :=
-  (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
-    rw [← real_inner_self_eq_norm_sq, antiInvariantSelfDual₂_eq_selfDualWedge,
-      inner_selfDualWedge_orthonormalBasis (by decide), real_inner_self_eq_norm_sq,
-      e.orthonormal.1 3, one_pow]
+theorem norm_antiInvariantSelfDual₂ : ‖antiInvariantSelfDual₂ o e hkl he‖ = 1 := by
+  rw [antiInvariantSelfDual₂_eq_selfDualWedge]
+  exact norm_selfDualWedge_orthonormalBasis (by decide)
 
 /-- `antiInvariantSelfDual₁` and `antiInvariantSelfDual₂` are orthogonal in `Λ⁺ V`. -/
 theorem inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂ :
@@ -781,9 +783,7 @@ private theorem orthonormal_selfDualTuple (J : AlmostComplexStructure V)
     · exact antiInvariantSelfDual₁_eq_selfDualWedge (he := he)
     · exact antiInvariantSelfDual₂_eq_selfDualWedge (he := he)
   rw [hmap]
-  refine ⟨fun i ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
-    rw [← real_inner_self_eq_norm_sq, inner_selfDualWedge_orthonormalBasis (Fin.succ_ne_zero i),
-      real_inner_self_eq_norm_sq, e.orthonormal.1 i.succ, one_pow],
+  refine ⟨fun i ↦ norm_selfDualWedge_orthonormalBasis (Fin.succ_ne_zero i),
     fun {i j} hij ↦ by
       dsimp only
       rw [inner_selfDualWedge_orthonormalBasis (Fin.succ_ne_zero i),

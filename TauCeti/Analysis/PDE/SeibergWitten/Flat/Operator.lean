@@ -360,15 +360,24 @@ theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
     module
   have hF : HasFDerivAt (quadraticTwoForm o ρ hkl) (quadraticTwoFormPolar o ρ hkl (χ p))
       (χ p + (0 : ℝ) • ζ p) := by simpa using hasFDerivAt_quadraticTwoForm o ρ hkl (χ p)
-  exact ((((((hasDerivAt_id (0 : ℝ)).smul_const (L (-extDeriv δb p))).const_add
-      (L (-extDeriv b p))).sub_const ((8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω)).fun_add
-    ((hF.comp_hasDerivAt (0 : ℝ) (((hasDerivAt_id (0 : ℝ)).smul_const (ζ p)).const_add (χ p)))
-      |>.const_smul (√2 / 4 : ℝ))).congr_deriv <| Subtype.ext <| by
-        simp only [Submodule.coe_add, Submodule.coe_smul, one_smul, hL, flatDeformationCurvature]
-        module).congr_of_eventuallyEq <|
-    Filter.Eventually.of_forall fun t ↦ by
-      simp only [flatCurvatureDefect, Pi.add_apply, Pi.smul_apply, hcurv t, id_eq,
-        Function.comp_apply]
+  have hcurvDeriv : HasDerivAt
+      (fun t : ℝ ↦
+        L (-extDeriv b p) + t • L (-extDeriv δb p) - (8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω)
+      (L (-extDeriv δb p)) 0 := by
+    simpa using (((hasDerivAt_id (0 : ℝ)).smul_const (L (-extDeriv δb p))).const_add
+      (L (-extDeriv b p))).sub_const ((8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω)
+  have hquadDeriv : HasDerivAt
+      (fun t : ℝ ↦ (√2 / 4 : ℝ) • quadraticTwoForm o ρ hkl (χ p + t • ζ p))
+      ((√2 / 4 : ℝ) • quadraticTwoFormPolar o ρ hkl (χ p) (ζ p)) 0 := by
+    have hspin : HasDerivAt (fun t : ℝ ↦ χ p + t • ζ p) (ζ p) 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (ζ p)).const_add (χ p)
+    exact (hF.comp_hasDerivAt (0 : ℝ) hspin).const_smul (√2 / 4 : ℝ)
+  refine ((hcurvDeriv.fun_add hquadDeriv).congr_deriv ?_).congr_of_eventuallyEq ?_
+  · refine Subtype.ext ?_
+    simp only [Submodule.coe_add, Submodule.coe_smul, hL, flatDeformationCurvature]
+    module
+  · exact Filter.Eventually.of_forall fun t ↦ by
+      simp only [flatCurvatureDefect, Pi.add_apply, Pi.smul_apply, hcurv t]
 
 section
 
@@ -499,13 +508,19 @@ theorem hasDerivAt_flatChiralDirac (b δb : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     simp only [d₁, d₂, covariantDeriv_apply, add_apply, smul_apply, Pi.add_apply,
       Pi.smul_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
       smul_eq_mul, ← Complex.coe_smul]; push_cast; module
+  have hcovDeriv (k : Fin 4) : HasDerivAt
+      (fun t : ℝ ↦ covariantDeriv b χ p (e k) + t • d₁ k + (t * t) • d₂ k) (d₁ k) 0 := by
+    have hlin : HasDerivAt (fun t : ℝ ↦ covariantDeriv b χ p (e k) + t • d₁ k) (d₁ k) 0 := by
+      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (d₁ k)).const_add (covariantDeriv b χ p (e k))
+    have hquad : HasDerivAt (fun t : ℝ ↦ (t * t) • d₂ k) (0 : positiveHalfSpinors o ρ) 0 := by
+      have hsq : HasDerivAt (fun t : ℝ ↦ t * t) 0 0 := by
+        simpa using (hasDerivAt_id (0 : ℝ)).fun_mul (hasDerivAt_id (0 : ℝ))
+      simpa using hsq.smul_const (d₂ k)
+    simpa using hlin.fun_add hquad
   have hterm (k : Fin 4) : HasDerivAt
       (fun t : ℝ ↦ C k (covariantDeriv (b + t • δb) (χ + t • ζ) p (e k))) (C k (d₁ k)) 0 :=
-    ((C k).hasFDerivAt.comp_hasDerivAt (0 : ℝ) (((((hasDerivAt_id (0 : ℝ)).smul_const
-        (d₁ k)).const_add (covariantDeriv b χ p (e k))).fun_add
-      (((hasDerivAt_id (0 : ℝ)).mul (hasDerivAt_id (0 : ℝ))).smul_const (d₂ k))).congr_deriv
-        (by simp))).congr_of_eventuallyEq <| Filter.Eventually.of_forall fun t ↦
-          congrArg (C k) (hcov t k)
+    ((C k).hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hcovDeriv k)).congr_of_eventuallyEq <|
+      Filter.Eventually.of_forall fun t ↦ congrArg (C k) (hcov t k)
   have hlin : (⟨flatDeformationDirac e b δb χ ζ p,
       mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ :
       Module.End.eigenspace (ρ (chirality Q o)) (-1)) = ∑ k : Fin 4, C k (d₁ k) := by

@@ -301,12 +301,6 @@ theorem MemLp.integral_inner_toLp_left {p : ℝ≥0∞} {f : α → E} (hf : Mem
   filter_upwards [hf.coeFn_toLp] with x hx
   rw [hx]
 
-/-- The `L²` inner product of the class of a square-integrable function `f` with an `L²` function
-`g` is the integral of their pointwise inner product. -/
-theorem L2.inner_toLp_left {f : α → E} (hf : MemLp f 2 μ) (g : Lp E 2 μ) :
-    ⟪hf.toLp f, g⟫_𝕜 = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ :=
-  (L2.inner_def (hf.toLp f) g).trans (hf.integral_inner_toLp_left g)
-
 /-- The L² inner product of the class of a square-integrable function `g` with an L² function `f`
 that is almost everywhere equal to `w` is the integral of `⟪g x, w x⟫`. -/
 theorem L2.toLp_inner_of_ae_eq {g : α → E} (hg : MemLp g 2 μ) {f : Lp E 2 μ} {w : α → E}

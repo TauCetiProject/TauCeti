@@ -117,14 +117,8 @@ local instance finiteDimensional_of_finrank_eq_four : FiniteDimensional ℝ V :=
 /-- **The principal symbol of `δ₀ = (-d*, √2 d⁺)`** at `ξ`:
 `σ_ξ(a) = (⟪ξ, a⟫, √2 (ξ ∧ a)⁺)`, where `(ξ ∧ a)⁺ = (ξ ∧ a + ⋆(ξ ∧ a)) / 2` is the self-dual part,
 so that the second component is `(√2 / 2) (ξ ∧ a + ⋆(ξ ∧ a))`. -/
-def deformationSymbol (ξ : V) : V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V where
-  toFun a := (⟪ξ, a⟫, (√2 / 2) • (ιMulti ℝ 2 ![ξ, a] + o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a])))
-  map_add' a b := by
-    simp only [inner_add_right, ιMulti_two_add_right, map_add, Prod.mk_add_mk, smul_add]
-    abel_nf
-  map_smul' c a := by
-    simp only [real_inner_smul_right, ιMulti_two_smul_right, map_smul, ← smul_add, smul_comm c,
-      RingHom.id_apply, Prod.smul_mk, smul_eq_mul]
+def deformationSymbol (ξ : V) : V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V :=
+  (innerₛₗ ℝ ξ).prod ((Submodule.subtype _).comp (o.selfDualWedge hkl ξ))
 
 @[simp]
 theorem deformationSymbol_apply_fst (ξ a : V) : (deformationSymbol o hkl ξ a).1 = ⟪ξ, a⟫ :=
@@ -134,13 +128,12 @@ theorem deformationSymbol_apply_fst (ξ a : V) : (deformationSymbol o hkl ξ a).
 theorem deformationSymbol_apply_snd (ξ a : V) :
     (deformationSymbol o hkl ξ a).2 =
       (√2 / 2) • (ιMulti ℝ 2 ![ξ, a] + o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a])) :=
-  (rfl)
+  o.coe_selfDualWedge_apply hkl ξ a
 
 /-- The symbol takes values in `ℝ ⊕ Λ⁺`: its two-form component is self-dual. -/
 theorem hodgeStar_deformationSymbol_snd (ξ a : V) :
-    o.hodgeStar hkl (deformationSymbol o hkl ξ a).2 = (deformationSymbol o hkl ξ a).2 := by
-  rw [deformationSymbol_apply_snd, map_smul, map_add,
-    o.hodgeStar_hodgeStar_of_even even_two hkl, add_comm]
+    o.hodgeStar hkl (deformationSymbol o hkl ξ a).2 = (deformationSymbol o hkl ξ a).2 :=
+  (Module.End.mem_eigenspace_iff.1 (o.selfDualWedge hkl ξ a).property).trans (one_smul _ _)
 
 /-- **Polarized ellipticity of `δ₀`**: `⟪ξ, a⟫ ⟪ξ, b⟫ + ⟪√2 (ξ ∧ a)⁺, √2 (ξ ∧ b)⁺⟫ = ‖ξ‖² ⟪a, b⟫`.
 For a unit `ξ` the symbol is therefore an isometry into `ℝ ⊕ Λ⁺` with its Euclidean inner
@@ -148,10 +141,8 @@ product, and it carries orthonormal frames to orthonormal frames. -/
 theorem deformationSymbol_fst_mul_add_inner_snd (ξ a b : V) :
     (deformationSymbol o hkl ξ a).1 * (deformationSymbol o hkl ξ b).1 +
       ⟪(deformationSymbol o hkl ξ a).2, (deformationSymbol o hkl ξ b).2⟫ =
-      ‖ξ‖ ^ 2 * ⟪a, b⟫ := by
-  simp only [deformationSymbol_apply_fst, deformationSymbol_apply_snd,
-    ← o.coe_selfDualWedge_apply hkl, ← Submodule.coe_inner]
-  exact o.inner_mul_add_inner_selfDualWedge hkl ξ a b
+      ‖ξ‖ ^ 2 * ⟪a, b⟫ :=
+  o.inner_mul_add_inner_selfDualWedge hkl ξ a b
 
 /-- **Ellipticity of `δ₀`**: `⟪ξ, a⟫² + ‖√2 (ξ ∧ a)⁺‖² = ‖ξ‖² ‖a‖²`. Thus `σ_ξ` is `‖ξ‖` times an
 isometry into `ℝ ⊕ Λ⁺` with its Euclidean norm. -/
@@ -174,21 +165,16 @@ theorem deformationSymbol_injective {ξ : V} (hξ : ξ ≠ 0) :
 
 /-- At `ξ` itself the symbol is `σ_ξ(ξ) = (‖ξ‖², 0)`. -/
 @[simp]
-theorem deformationSymbol_self (ξ : V) : deformationSymbol o hkl ξ ξ = (‖ξ‖ ^ 2, 0) := by
-  have h : ιMulti ℝ 2 ![ξ, ξ] = 0 :=
-    (ιMulti ℝ 2).map_eq_zero_of_eq ![ξ, ξ] (i := 0) (j := 1) rfl zero_ne_one
-  refine Prod.ext ?_ ?_
-  · simp
-  · simp [h]
+theorem deformationSymbol_self (ξ : V) : deformationSymbol o hkl ξ ξ = (‖ξ‖ ^ 2, 0) :=
+  Prod.ext (by simp) (by
+    change ((o.selfDualWedge hkl ξ ξ : _) : ⋀[ℝ]^2 V) = 0
+    simp)
 
 /-- **The principal symbol of `δ₀` valued in `ℝ × Λ⁺`**: restricting the two-form component of
 `deformationSymbol` to the `+1` eigenspace of the Hodge star. -/
 def deformationSymbolSelfDual (ξ : V) :
     V →ₗ[ℝ] ℝ × Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
-  (LinearMap.fst ℝ ℝ (⋀[ℝ]^2 V) ∘ₗ deformationSymbol o hkl ξ).prod
-    ((LinearMap.snd ℝ ℝ (⋀[ℝ]^2 V) ∘ₗ deformationSymbol o hkl ξ).codRestrict _ fun a ↦ by
-      rw [Module.End.mem_eigenspace_iff, one_smul]
-      exact hodgeStar_deformationSymbol_snd o hkl ξ a)
+  (innerₛₗ ℝ ξ).prod (o.selfDualWedge hkl ξ)
 
 @[simp]
 theorem deformationSymbolSelfDual_apply_fst (ξ a : V) :
@@ -346,18 +332,20 @@ include he
 theorem deformationSymbol_apply_two :
     deformationSymbol o hkl (e 0) (e 2) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) := by
-  refine Prod.ext ?_ ?_
-  · simp
-  · rw [deformationSymbol_apply_snd, o.hodgeStar_ιMulti_zero_two hkl he, sub_eq_add_neg]
+  refine Prod.ext (by simp) ?_
+  change (o.selfDualWedge hkl (e 0) (e 2) : ⋀[ℝ]^2 V) = _
+  rw [← AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge (he := he),
+    AlmostComplexStructure.coe_antiInvariantSelfDual₁]
 
 /-- At `ξ = e₀` the symbol sends `e₃` to `(0, ρ₂)`, `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, since
 `⋆(e₀ ∧ e₃) = e₁ ∧ e₂` in a positively oriented orthonormal basis. -/
 theorem deformationSymbol_apply_three :
     deformationSymbol o hkl (e 0) (e 3) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
-  refine Prod.ext ?_ ?_
-  · simp
-  · rw [deformationSymbol_apply_snd, o.hodgeStar_ιMulti_zero_three hkl he]
+  refine Prod.ext (by simp) ?_
+  change (o.selfDualWedge hkl (e 0) (e 3) : ⋀[ℝ]^2 V) = _
+  rw [← AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge (he := he),
+    AlmostComplexStructure.coe_antiInvariantSelfDual₂]
 
 end Coframe
 
