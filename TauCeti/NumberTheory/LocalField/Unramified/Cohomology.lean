@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Inflation
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants
