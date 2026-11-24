@@ -9,8 +9,8 @@ public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Analytic.Within
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
-import Mathlib.Tactic.Positivity
 import TauCeti.Basic.Complex.OfRealSub
+import Mathlib.Tactic.Positivity
 
 /-!
 # The resolvent transform on the real line
@@ -21,8 +21,9 @@ This kernel is positive in the upper half-plane, so the imaginary part of the tr
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
 away from the real axis, the continuity of the kernel there, the Lipschitz bound
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, the
-analyticity of the transform off the real axis with the analogous bounds for its derivative, and
-prove affine covariance under pushforward. No moment assumptions are needed.
+continuity (`MeasureTheory.continuousAt_resolventTransform_of_im_ne_zero`) and analyticity of the
+transform off the real axis with the analogous bounds for its derivative, and prove affine
+covariance under pushforward. No moment assumptions are needed.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -107,6 +108,12 @@ theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
       simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
+
+/-- The resolvent transform of a finite measure on `ℝ` is continuous off the real axis, by
+Mathlib's `hasDerivAt_resolventTransform`. -/
+theorem continuousAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
+    ContinuousAt (resolventTransform μ) z :=
+  (hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)).continuousAt
 
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :

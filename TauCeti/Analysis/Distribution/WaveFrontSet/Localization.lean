@@ -23,8 +23,9 @@ around `ξ`. This file shows that the choice of cutoff does not matter near `x`:
 a smooth function keeps rapid decay, at the price of shrinking the cone (Hörmander I,
 Lemma 8.1.1). Consequently the wave front set of a sum lies in the union of the wave front sets,
 multiplication by a smooth function `g` does not enlarge the wave front set and leaves it unchanged
-where `g ≠ 0`, and the wave front set of the restriction of a distribution to an open subset is
-the part of its wave front set lying over that subset. In particular the wave front set over an
+where `g ≠ 0` (for the inclusion, `g` need only be smooth on `Ω`), and the wave front set of the
+restriction of a distribution to an open subset is the part of its wave front set lying over that
+subset. In particular the wave front set over an
 open set depends only on the restriction to it.
 
 The proof expands the multiplier in a Fourier series. If `ψ = φ g` with `g` smooth, choose a compact
@@ -56,6 +57,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   `Distribution.hasSum_localFourier_ofSupportedIn` is the same formula for a cutoff `φ` supported
   in a compact set `K` and a fixed cutoff `χ` equal to one on its support, with the explicit
   Fourier coefficients of `φ`.
+* `Distribution.hasSum_fourier_mul_localFourier`,
+  `Distribution.hasSum_fourier_ofReal_mul_localFourier`: at the frequency `0`, the pairing of `T`
+  with a test function `φ` as the lattice series
+  `T φ = ∑ m, (covolume L)⁻¹ 𝓕 φ (m) T.localFourier χ (-m)`.
 * `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
   of the localized Fourier transform on a set `Γ` survives multiplication of the cutoff by a smooth
   function, on any set `Γ'` whose conic neighbourhoods `closedBall η (c ‖η‖)` lie in `Γ`.
@@ -85,6 +90,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   equality at the points where `g ≠ 0`, and everywhere when `g` vanishes nowhere over `WF(T)`
   (`Distribution.waveFrontSet_smulLeftCLM_of_forall_mem_ne_zero`), for instance nowhere on `Ω`
   (`Distribution.waveFrontSet_smulLeftCLM_of_ne_zero`).
+* `Distribution.IsMicrolocallySmoothAt.smulLeftCLMOfContDiffOn`,
+  `Distribution.waveFrontSet_smulLeftCLMOfContDiffOn_subset`: the same inclusion for a multiplier
+  `g` that is smooth on `Ω` only.
 * `Distribution.isMicrolocallySmoothAt_restrictCLM_iff`, `Distribution.waveFrontSet_restrictCLM`:
   for an open subset `Ω' ≤ Ω`, `WF(T|_{Ω'}) = WF(T) ∩ (Ω' × E)`.
 * `Distribution.waveFrontSet_inter_eq_of_restrictCLM_eq`: distributions with the same restriction
@@ -423,6 +431,51 @@ theorem hasSum_localFourier_ofSupportedIn [MeasurableSpace E] [BorelSpace E] (T 
   rw [h1] at hsum
   simpa only [Function.comp_def, h2] using hsum
 
+/-- **The pairing with a test function as a lattice Fourier series.** Let `L` be a full lattice
+none of whose nonzero vectors translates `tsupport χ` into a set meeting it. If `χ = 1` on the
+support of a test function `φ`, then
+
+`T φ = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T.localFourier χ (-m)`.
+
+This is the frequency `η = 0` of `Distribution.hasSum_localFourier_ofSupportedIn`. -/
+theorem hasSum_fourier_mul_localFourier [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ))
+    (χ : 𝓓(Ω, ℂ)) (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℂ)}
+    (hφ : EqOn (χ : E → ℂ) 1 (support φ)) :
+    HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (φ : E → ℂ) m *
+      T.localFourier χ (-m)) (T.complexPairing φ) := by
+  let K : Compacts E := ⟨tsupport χ, χ.hasCompactSupport⟩
+  have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
+  have hφK : support (φ : E → ℂ) ⊆ K := fun y hy ↦ subset_tsupport _ (by simp [hφ hy])
+  let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
+  let φK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset φ.contDiff hφK
+  have hχK : ofSupportedIn hKΩ χK = χ := by
+    ext y
+    simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hφK' : ofSupportedIn hKΩ φK = φ := by
+    ext y
+    simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hφK'' : (φK : E → ℂ) = φ := funext (ContDiffMapSupportedIn.coe_of_support_subset _ _)
+  have h := hasSum_localFourier_ofSupportedIn T hKΩ L
+    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.property h)) (φ := φK) (χ := χK) (fun y hy ↦ by
+      rw [hφK''] at hy
+      simpa [χK, ContDiffMapSupportedIn.coe_of_support_subset] using hφ hy) 0
+  rw [hχK, hφK', localFourier_at_zero, hφK''] at h
+  simpa only [zero_sub, smul_eq_mul] using h
+
+/-- `Distribution.hasSum_fourier_mul_localFourier` for a real test function `φ`:
+`T φ = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T.localFourier χ (-m)`. -/
+theorem hasSum_fourier_ofReal_mul_localFourier [MeasurableSpace E] [BorelSpace E]
+    (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)) (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℝ)}
+    (hφ : EqOn (χ : E → ℂ) 1 (support φ)) :
+    HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ *
+      𝓕 (fun y ↦ (φ y : ℂ)) m * T.localFourier χ (-m)) (T φ) := by
+  have h := hasSum_fourier_mul_localFourier T χ L hL (φ := postcompCLM (𝕜 := ℝ) ofRealCLM φ)
+    fun y hy ↦ hφ (by simpa using hy)
+  simpa only [complexPairing_postcompCLM_ofRealCLM, postcompCLM_apply, Function.comp_def,
+    ofRealCLM_apply] using h
+
 /-- **Uniform independence of the cutoff.** If `T` is microlocally smooth at `(x, ξ)`, then there
 are a neighbourhood `U` of `x` and an open cone `Γ` containing `ξ` on which the decay of every order
 `N` holds uniformly over the cutoffs supported in `U` with bounded derivatives: for some `r` and
@@ -685,19 +738,38 @@ section SmulLeft
 
 variable {g : E → ℝ}
 
+/-- A multiple `g T` of a distribution microlocally smooth at `(x, ξ)`, by a function `g` smooth on
+`Ω` only, is microlocally smooth there. -/
+theorem IsMicrolocallySmoothAt.smulLeftCLMOfContDiffOn {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySmoothAt x ξ) (hg : ContDiffOn ℝ ∞ g Ω) :
+    (smulLeftCLMOfContDiffOn hg T).IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
+  obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
+  -- The same cutoff `φ` works for `g T` on the smaller cone `Γ'`, since `g T` with cutoff `φ`
+  -- is `T` with cutoff `g φ`, and Lemma 8.1.1 only needs `g` smooth on `Ω`.
+  refine isMicrolocallySmoothAt_iff.2 ⟨φ, hφx, Γ', hΓ'o, hξ', hcone', fun N ↦ ?_⟩
+  simp only [localFourier_smulLeftCLMOfContDiffOn]
+  exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul
+    (ofRealCLM.contDiff.comp_contDiffOn hg) (fun y ↦ by simp [mul_comm]) hc hΓ' (hdecay N)
+
+/-- **Multiplication by a function smooth on `Ω`** (Hörmander I, §8.1). The wave front set of
+`g T`, for `g` smooth on `Ω` with no condition off `Ω`, lies in the wave front set of `T`, over the
+support of `g`. -/
+theorem waveFrontSet_smulLeftCLMOfContDiffOn_subset (T : 𝓓'(Ω, ℂ)) (hg : ContDiffOn ℝ ∞ g Ω) :
+    (smulLeftCLMOfContDiffOn hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ := by
+  rintro ⟨x, ξ⟩ hp
+  obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
+  exact ⟨mem_waveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hT (h.smulLeftCLMOfContDiffOn hg)⟩,
+    (dsupport_smulLeftCLMOfContDiffOn_subset_inter hg T
+      (waveFrontSet_subset_dsupport _ hp).1).1, trivial⟩
+
 /-- A smooth multiple `g T` of a distribution microlocally smooth at `(x, ξ)` is microlocally
 smooth there. -/
 theorem IsMicrolocallySmoothAt.smulLeftCLM {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (h : T.IsMicrolocallySmoothAt x ξ) (hg : ContDiff ℝ ∞ g) :
-    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ := by
-  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
-  obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
-  -- The same cutoff `φ` works for `g T` on the smaller cone `Γ'`, since `g T` with cutoff `φ`
-  -- is `T` with cutoff `g φ`.
-  refine isMicrolocallySmoothAt_iff.2 ⟨φ, hφx, Γ', hΓ'o, hξ', hcone', fun N ↦ ?_⟩
-  simp only [localFourier_smulLeftCLM]
-  exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul
-    (ofRealCLM.contDiff.comp hg).contDiffOn (fun y ↦ by simp [mul_comm]) hc hΓ' (hdecay N)
+    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ :=
+  smulLeftCLMOfContDiffOn_eq_smulLeftCLM (Ω := Ω) (F := ℂ) hg ▸
+    h.smulLeftCLMOfContDiffOn hg.contDiffOn
 
 /-- Where `g` does not vanish, a smooth multiple `g T` is microlocally smooth exactly where `T`
 is. -/
@@ -714,13 +786,9 @@ theorem isMicrolocallySmoothAt_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (
 /-- **Smooth multiplication** (Hörmander I, §8.1). The wave front set of a smooth multiple
 `g T` lies in the wave front set of `T`, over the support of `g`. -/
 theorem waveFrontSet_smulLeftCLM_subset (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g) :
-    (smulLeftCLM hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ := by
-  rintro ⟨x, ξ⟩ hp
-  obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
-  have hxg : x ∈ dsupport (smulLeftCLM hg T) := (waveFrontSet_subset_dsupport _ hp).1
-  rw [coe_smulLeftCLM] at hxg
-  exact ⟨mem_waveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hT (h.smulLeftCLM hg)⟩,
-    (dsupport_comp_smulLeftCLM_subset T hg hxg).1, trivial⟩
+    (smulLeftCLM hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ :=
+  smulLeftCLMOfContDiffOn_eq_smulLeftCLM (Ω := Ω) (F := ℂ) hg ▸
+    waveFrontSet_smulLeftCLMOfContDiffOn_subset T hg.contDiffOn
 
 /-- Over the points where `g` does not vanish, a smooth multiple `g T` has the same wave front set
 as `T`. -/
