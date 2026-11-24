@@ -70,6 +70,10 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
   `projectiveCharpolyRev f` itself, with no reflection
   (`LinearMap.aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one`).
 
+Both Cayley–Hamilton statements reduce to free modules: a polynomial kills an endomorphism once
+its image kills the base change to the localization at every maximal ideal
+(`LinearMap.aeval_eq_zero_of_forall_baseChange_localization`).
+
 The scaling, transpose and inverse statements are the linear algebra of Euler factors. For a
 Frobenius `φ` acting on a lattice `T` and the cyclotomic character value `N`, the Euler polynomial
 `det (1 - φ⁻¹ X | T^*)` on the Tate dual `T^* = Hom(T, O(1))` is
@@ -269,7 +273,7 @@ private theorem aeval_projectiveCharpolyRev_eq_zero_of_mul_eq_one_of_free [Modul
 open scoped TensorProduct in
 /-- **Local-to-global for polynomial identities.** A polynomial `p` kills `f` once its image kills
 the base change of `f` to the localization `A` at every maximal ideal, where `A ⊗[R] M` is free. -/
-private theorem aeval_eq_zero_of_forall_baseChange_localization (f : Module.End R M) (p : R[X])
+theorem aeval_eq_zero_of_forall_baseChange_localization (f : Module.End R M) (p : R[X])
     (h : ∀ (P : Ideal R) [P.IsMaximal]
       [Module.Free (Localization.AtPrime P) (Localization.AtPrime P ⊗[R] M)],
       aeval (f.baseChange (Localization.AtPrime P))
