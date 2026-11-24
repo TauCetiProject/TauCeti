@@ -127,7 +127,8 @@ theorem exists_isSequenceForm (hρ : ∀ j j' a, parent j = some ⟨j', a⟩ →
     | some s => ih s.1 (hρ j s.1 s.2 h) * b s.1 s.2
   let y : J → ℝ := (InvImage.wf ρ wellFounded_lt).fix F
   have hy (j : J) : y j = (parent j).elim 1 fun s ↦ y s.1 * b s.1 s.2 := by
-    rw [show y j = F j fun j' _ ↦ y j' from (InvImage.wf ρ wellFounded_lt).fix_eq F j]
+    simp only [y]
+    rw [WellFounded.fix_eq]
     simp only [F]
     split <;> simp_all
   refine ⟨fun s ↦ s.elim 1 fun s ↦ y s.1 * b s.1 s.2, rfl, fun j a ↦ ?_⟩
@@ -279,9 +280,8 @@ theorem exists_isBestResponseValue (hρ : ∀ j j' a, parent j = some ⟨j', a�
       ∑ j', if h : parent j' = some ⟨j, a⟩ then ⨆ a', ih j' (hlt h) a' else 0
   let V := (InvImage.wf (fun j ↦ N - ρ j) wellFounded_lt).fix F
   refine ⟨fun s ↦ V s.1 s.2, fun ⟨j, a⟩ ↦ ?_⟩
-  dsimp only
-  rw [show V j = F j fun j' _ ↦ V j' from
-    (InvImage.wf (fun j ↦ N - ρ j) wellFounded_lt).fix_eq F j]
+  simp only [V]
+  rw [WellFounded.fix_eq]
   simp [F, sum_filter]
 
 variable [∀ j, Fintype (A j)]
