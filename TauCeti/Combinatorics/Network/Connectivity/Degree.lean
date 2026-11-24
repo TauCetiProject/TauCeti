@@ -18,6 +18,13 @@ only the corresponding nonloop arrows to be finite; the family may have infinite
 These are the directed analogues of the bound of multigraph edge connectivity by the number of
 nonloop edges incident to a vertex.
 
+## Main results
+
+* `TauCeti.arcConnectivity_le_card_nonloop_out` and
+  `TauCeti.arcConnectivity_le_card_nonloop_in`: the loop-free degree bounds.
+* `TauCeti.arcConnectivity_le_card_out` and `TauCeti.arcConnectivity_le_card_in`: the bounds by
+  the full out-degree and in-degree, derived from the loop-free bounds.
+
 ## References
 
 * J. Bang-Jensen, G. Gutin, *Digraphs: Theory, Algorithms and Applications*, 2nd ed., Springer,
@@ -77,5 +84,27 @@ theorem arcConnectivity_le_card_nonloop_in [Nontrivial V] (v : V)
       subst y
       exact mem_map.2 ⟨⟨⟨x, by simpa using hx⟩, e⟩, mem_univ _, rfl⟩
   simpa [Nat.card_eq_fintype_card] using hcard
+
+/-- On at least two vertices, the arc connectivity is at most the number of arrows leaving any
+vertex, loops included. -/
+theorem arcConnectivity_le_card_out [Nontrivial V] (v : V) [Fintype (Σ w, Q v w)] :
+    arcConnectivity Q ≤ Fintype.card (Σ w, Q v w) := by
+  let ι : (Σ w : {w : V // w ≠ v}, Q v w) ↪ (Σ w, Q v w) :=
+    Function.Embedding.sigmaMap (Function.Embedding.subtype _) fun _ ↦
+      Function.Embedding.refl _
+  let _ : Finite (Σ w : {w : V // w ≠ v}, Q v w) := Finite.of_injective ι ι.injective
+  refine (arcConnectivity_le_card_nonloop_out v).trans (Nat.cast_le.2 ?_)
+  exact (Nat.card_le_card_of_injective ι ι.injective).trans_eq Nat.card_eq_fintype_card
+
+/-- On at least two vertices, the arc connectivity is at most the number of arrows entering any
+vertex, loops included. -/
+theorem arcConnectivity_le_card_in [Nontrivial V] (v : V) [Fintype (Σ w, Q w v)] :
+    arcConnectivity Q ≤ Fintype.card (Σ w, Q w v) := by
+  let ι : (Σ w : {w : V // w ≠ v}, Q w v) ↪ (Σ w, Q w v) :=
+    Function.Embedding.sigmaMap (Function.Embedding.subtype _) fun _ ↦
+      Function.Embedding.refl _
+  let _ : Finite (Σ w : {w : V // w ≠ v}, Q w v) := Finite.of_injective ι ι.injective
+  refine (arcConnectivity_le_card_nonloop_in v).trans (Nat.cast_le.2 ?_)
+  exact (Nat.card_le_card_of_injective ι ι.injective).trans_eq Nat.card_eq_fintype_card
 
 end TauCeti
