@@ -183,6 +183,62 @@ private theorem pow_mul_mul_pow (T : E →L[𝕜] E) (k : ℕ) :
   congr 1
   ring
 
+/-- Conjugating a positive operator by a symmetric one gives a positive operator. -/
+private theorem isPositive_mul_mul_of_isSymmetric {S A : E →L[𝕜] E}
+    (hS : (S : E →ₗ[𝕜] E).IsSymmetric) (hA : A.IsPositive) : (S * A * S).IsPositive := by
+  refine ⟨fun x y => ?_, fun x => ?_⟩
+  · calc ⟪S (A (S x)), y⟫_𝕜 = ⟪A (S x), S y⟫_𝕜 := hS _ _
+      _ = ⟪S x, A (S y)⟫_𝕜 := hA.isSymmetric _ _
+      _ = ⟪x, S (A (S y))⟫_𝕜 := hS _ _
+  · change 0 ≤ RCLike.re ⟪S (A (S x)), x⟫_𝕜
+    rw [show ⟪S (A (S x)), x⟫_𝕜 = ⟪A (S x), S x⟫_𝕜 from hS _ _]
+    exact hA.re_inner_nonneg_left (S x)
+
+/-- The powers of a positive operator are symmetric. -/
+private theorem isSymmetric_pow {T : E →L[𝕜] E} (hT : T.IsPositive) (k : ℕ) :
+    ((T ^ k : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric :=
+  toLinearMap_pow T k ▸ hT.isSymmetric.pow k
+
+/-- The powers of a positive contraction decrease in the Loewner order, one step at a time. -/
+private theorem pow_succ_le_pow {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) (n : ℕ) :
+    T ^ (n + 1) ≤ T ^ n := by
+  have hT := nonneg_iff_isPositive.mp h0
+  have hsa : (T : E →ₗ[𝕜] E).IsSymmetric := hT.isSymmetric
+  have h1' : (1 - T).IsPositive := le_def.mp h1
+  rw [le_def]
+  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
+  · have h : T ^ (2 * k) - T ^ (2 * k + 1) = T ^ k * (1 - T) * T ^ k := by
+      rw [mul_sub, sub_mul, mul_one, ← pow_add, pow_mul_mul_pow, two_mul]
+    rw [h]
+    exact isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) h1'
+  · -- `T - T² = (1 - T) T (1 - T) + T (1 - T) T` is positive.
+    have hTT : (T - T * T).IsPositive := by
+      have h : T - T * T = (1 - T) * T * (1 - T) + T * (1 - T) * T := by noncomm_ring
+      rw [h]
+      exact (isPositive_mul_mul_of_isSymmetric h1'.isSymmetric hT).add
+        (isPositive_mul_mul_of_isSymmetric hsa h1')
+    have h : T ^ (2 * k + 1) - T ^ (2 * k + 1 + 1) = T ^ k * (T - T * T) * T ^ k := by
+      have h2 : T ^ k * (T * T) * T ^ k = T ^ (2 * k + 1 + 1) := by
+        rw [← mul_assoc, ← pow_succ, ← pow_succ, ← pow_add]
+        congr 1
+        ring
+      rw [mul_sub, sub_mul, pow_mul_mul_pow, h2]
+    rw [h]
+    exact isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) hTT
+
+/-- The powers of a positive operator are positive. -/
+theorem IsPositive.pow {T : E →L[𝕜] E} (hT : T.IsPositive) (n : ℕ) : (T ^ n).IsPositive := by
+  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
+  · rw [two_mul, pow_add, ← mul_one (T ^ k)]
+    simpa using isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) isPositive_one
+  · rw [← pow_mul_mul_pow]
+    exact isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) hT
+
+/-- The powers of a positive contraction `0 ≤ T ≤ 1` decrease in the Loewner order. -/
+theorem pow_le_pow_of_le_one {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) {m n : ℕ}
+    (hmn : m ≤ n) : T ^ n ≤ T ^ m :=
+  antitone_nat_of_succ_le (pow_succ_le_pow h0 h1) hmn
+
 variable [CompleteSpace E]
 
 /-- On a complete space, `1 + T` is invertible for every positive operator `T`, since
@@ -195,52 +251,6 @@ theorem IsPositive.isUnit_one_add {T : E →L[𝕜] E} (hT : T.IsPositive) : IsU
         rw [add_apply, one_apply_eq_self, inner_add_left, map_add, inner_self_eq_norm_sq]
         exact le_add_of_nonneg_right (hT.re_inner_nonneg_left x)
     _ ≤ ‖⟪(1 + T) x, x⟫_𝕜‖ := RCLike.re_le_norm _
-
-/-- Conjugating a positive operator by a self-adjoint one gives a positive operator. -/
-private theorem isPositive_mul_mul_of_isSelfAdjoint {S A : E →L[𝕜] E} (hS : IsSelfAdjoint S)
-    (hA : A.IsPositive) : (S * A * S).IsPositive := by
-  simpa [hS.adjoint_eq, mul_def, comp_assoc] using hA.conj_adjoint S
-
-/-- The powers of a positive contraction decrease in the Loewner order, one step at a time. -/
-private theorem pow_succ_le_pow {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) (n : ℕ) :
-    T ^ (n + 1) ≤ T ^ n := by
-  have hT := nonneg_iff_isPositive.mp h0
-  have hsa : IsSelfAdjoint T := hT.isSelfAdjoint
-  have h1' : (1 - T).IsPositive := le_def.mp h1
-  rw [le_def]
-  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
-  · have h : T ^ (2 * k) - T ^ (2 * k + 1) = T ^ k * (1 - T) * T ^ k := by
-      rw [mul_sub, sub_mul, mul_one, ← pow_add, pow_mul_mul_pow, two_mul]
-    rw [h]
-    exact isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) h1'
-  · -- `T - T² = (1 - T) T (1 - T) + T (1 - T) T` is positive.
-    have hTT : (T - T * T).IsPositive := by
-      have h : T - T * T = (1 - T) * T * (1 - T) + T * (1 - T) * T := by noncomm_ring
-      rw [h]
-      exact (isPositive_mul_mul_of_isSelfAdjoint ((IsSelfAdjoint.one _).sub hsa) hT).add
-        (isPositive_mul_mul_of_isSelfAdjoint hsa h1')
-    have h : T ^ (2 * k + 1) - T ^ (2 * k + 1 + 1) = T ^ k * (T - T * T) * T ^ k := by
-      have h2 : T ^ k * (T * T) * T ^ k = T ^ (2 * k + 1 + 1) := by
-        rw [← mul_assoc, ← pow_succ, ← pow_succ, ← pow_add]
-        congr 1
-        ring
-      rw [mul_sub, sub_mul, pow_mul_mul_pow, h2]
-    rw [h]
-    exact isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) hTT
-
-/-- The powers of a positive operator are positive. -/
-theorem IsPositive.pow {T : E →L[𝕜] E} (hT : T.IsPositive) (n : ℕ) : (T ^ n).IsPositive := by
-  have hsa : IsSelfAdjoint T := hT.isSelfAdjoint
-  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
-  · rw [two_mul, pow_add, ← mul_one (T ^ k)]
-    simpa using isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) isPositive_one
-  · rw [← pow_mul_mul_pow]
-    exact isPositive_mul_mul_of_isSelfAdjoint (hsa.pow k) hT
-
-/-- The powers of a positive contraction `0 ≤ T ≤ 1` decrease in the Loewner order. -/
-theorem pow_le_pow_of_le_one {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) {m n : ℕ}
-    (hmn : m ≤ n) : T ^ n ≤ T ^ m :=
-  antitone_nat_of_succ_le (pow_succ_le_pow h0 h1) hmn
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Positive.Monotone
+public import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # Von Neumann's alternating projection theorem
@@ -63,13 +64,9 @@ private theorem tendsto_pow_of_forall_mem_iff {T : E →L[𝕜] E} (h0 : 0 ≤ T
     · refine (hK _).mpr (tendsto_nhds_unique ((T.continuous.tendsto _).comp (hlim x)) ?_)
       exact ((hlim x).comp (tendsto_add_atTop_nat 1)).congr fun n => by
         simp [pow_succ']
-    · have hfix : ∀ n, (T ^ n) w = w := fun n => by
-        induction n with
-        | zero => simp
-        | succ n ih => simp [pow_succ', ih, (hK w).mp hw]
-      have hpow : ∀ n, ⟪(T ^ n) x, w⟫_𝕜 = ⟪x, w⟫_𝕜 := fun n => by
+    · have hpow : ∀ n, ⟪(T ^ n) x, w⟫_𝕜 = ⟪x, w⟫_𝕜 := fun n => by
         calc ⟪(T ^ n) x, w⟫_𝕜 = ⟪x, (T ^ n) w⟫_𝕜 := (hsa.pow n).isSymmetric x w
-          _ = ⟪x, w⟫_𝕜 := by rw [hfix n]
+          _ = ⟪x, w⟫_𝕜 := by rw [pow_apply_eq_iterate, Function.iterate_fixed ((hK w).mp hw)]
       rw [inner_sub_left, sub_eq_zero]
       exact (tendsto_nhds_unique ((hlim x).inner tendsto_const_nhds)
         (by simp [hpow])).symm
@@ -92,7 +89,6 @@ open ContinuousLinearMap
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [CompleteSpace E] (K L : Submodule 𝕜 E) [K.HasOrthogonalProjection] [L.HasOrthogonalProjection]
-  [(K ⊓ L).HasOrthogonalProjection]
 
 /-- **Von Neumann's alternating projection theorem**, symmetric form: if `p` and `q` are the
 orthogonal projections onto closed subspaces `K` and `L`, then `(p q p)ⁿ` converges in the strong
@@ -104,9 +100,8 @@ theorem tendsto_toPointwiseConvergenceCLM_starProjection_mul_mul_pow :
   have hp : IsStarProjection K.starProjection := isStarProjection_starProjection
   have hq : IsStarProjection L.starProjection := isStarProjection_starProjection
   have hconj {A : E →L[𝕜] E} (hA : A.IsPositive) :
-      (K.starProjection * A * K.starProjection).IsPositive := by
-    simpa [hp.isSelfAdjoint.adjoint_eq, ContinuousLinearMap.mul_def, comp_assoc] using
-      hA.conj_adjoint K.starProjection
+      (K.starProjection * A * K.starProjection).IsPositive :=
+    hA.conj_starProjection K
   -- `0 ≤ p q p ≤ 1`, since `1 - p q p = (1 - p) + p (1 - q) p`.
   have h0 : 0 ≤ K.starProjection * L.starProjection * K.starProjection :=
     nonneg_iff_isPositive.mpr (hconj (IsPositive.of_isStarProjection hq))
@@ -143,13 +138,7 @@ theorem tendsto_toPointwiseConvergenceCLM_starProjection_mul_pow :
   have hpow : ∀ n, (K.starProjection * L.starProjection) ^ (n + 1) =
       (K.starProjection * L.starProjection * K.starProjection) ^ n *
         (K.starProjection * L.starProjection) := fun n => by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [pow_succ, ih, pow_succ, mul_assoc _ (K.starProjection * L.starProjection),
-        mul_assoc _ (K.starProjection * L.starProjection * K.starProjection),
-        mul_assoc (K.starProjection * L.starProjection) K.starProjection,
-        ← mul_assoc K.starProjection K.starProjection, hpp]
+    rw [mul_pow_mul, ← mul_assoc K.starProjection K.starProjection, hpp, ← pow_succ']
   -- The projection onto `K ⊓ L` absorbs `p` and `q` on the right.
   have hR : ∀ x, (K ⊓ L).starProjection (K.starProjection (L.starProjection x)) =
       (K ⊓ L).starProjection x := fun x => by
