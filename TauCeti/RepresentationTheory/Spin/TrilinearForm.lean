@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 public import TauCeti.RepresentationTheory.Spin.ReversalPairing
 import Mathlib.Algebra.Lie.OfAssociative
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.RepresentationTheory.Spin.HalfSpin.Weight
 
 /-!
 # The Clifford-multiplication trilinear form on vectors and spinors
@@ -38,9 +39,9 @@ Without a line summand, Clifford multiplication by a vector exchanges the two ha
 group acting on all three factors. For the top-degree coefficient of a basis `w₁, …, wₙ` of `W`
 the form is normalized by `T (w₁, 1, w₂ ∧ ⋯ ∧ wₙ) = 1`, and it vanishes on `(wᵢ, 1, x)` whenever
 `x` already contains `wᵢ`. Over a nontrivial ring, when `n` is positive and even it is a nonzero
-form on `V × S⁺ × S⁻`. In dimension
-eight (`n = 4`) this is the invariant triality form of `Spin₈`, pairing the vector representation
-with its two half-spin representations.
+form on `V × S⁺ × S⁻`. When `n = 4` and the polarization has no line summand (`dim V = 8`), this
+gives a nonzero `Spin₈`-invariant form on `V × S⁺ × S⁻`, the candidate triality form; its rank-four
+normalization is in `TauCeti.RepresentationTheory.Spin.Triality.CliffordForm`.
 
 ## Main definitions
 
@@ -56,8 +57,8 @@ with its two half-spin representations.
   `x v - v x = w` a vector, and
   `TauCeti.SpinPolarizationData.spinTrilinearForm_bivector_add_add_eq_zero`: infinitesimal
   invariance under bivectors.
-* `TauCeti.SpinPolarizationData.halfSpinTrilinearForm_spinAction`: Spin-invariance of the
-  restricted form, through the actions on the two half-spin summands.
+* `TauCeti.SpinPolarizationData.halfSpinTrilinearForm_spinPlusAction_spinMinusAction`:
+  Spin-invariance of the restricted form, through the actions on the two half-spin summands.
 * `TauCeti.SpinPolarizationData.spinTrilinearForm_coord_univ_basis_erase`: the normalization
   `T (wᵢ, 1, w_{univ ∖ {i}}) = ±1`, and
   `TauCeti.SpinPolarizationData.halfSpinTrilinearForm_coord_univ_ne_zero`: over a nontrivial ring
@@ -188,7 +189,7 @@ theorem halfSpinTrilinearForm_apply (v : V) (s : spinPlus Q P) (t : spinMinus Q 
 /-- **The half-spin trilinear form is Spin-invariant**, for a polarization without a line summand
 and a functional killing every contraction: a Spin element `g` acts on `V` through the special
 orthogonal group and on `S⁺` and `S⁻` through the even Clifford algebra. -/
-theorem halfSpinTrilinearForm_spinAction [Invertible (2 : K)]
+theorem halfSpinTrilinearForm_spinPlusAction_spinMinusAction [Invertible (2 : K)]
     (hφ : ∀ (d : Module.Dual K P.W) (x : ExteriorAlgebra K P.W), φ (contractLeft d x) = 0)
     (hline : P.line = ⊥) (g : spinGroup Q) (v : V) (s : spinPlus Q P) (t : spinMinus Q P) :
     P.halfSpinTrilinearForm φ
@@ -215,9 +216,8 @@ theorem spinTrilinearForm_coord_univ_basis_erase [Fintype I] (i : I) :
   classical
   rw [spinTrilinearForm_apply, spinAction_ι_wedge, mul_one, ExteriorAlgebra.reversalPairing_apply,
     reverse_ι, ExteriorAlgebra.ι_mul_basis, ite_eq_right (Finset.notMem_erase i _),
-    Finset.insert_erase (Finset.mem_univ i), Units.smul_def,
-    map_zsmul, Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same,
-    zsmul_one]
+    Finset.insert_erase (Finset.mem_univ i), Units.smul_def, map_zsmul]
+  simp
 
 /-- **The trilinear form vanishes on a repeated basis vector**: `T (wᵢ, 1, w_s) = 0` when
 `i ∈ s`, since `wᵢ ∧ w_s = 0`. -/
@@ -227,15 +227,21 @@ theorem spinTrilinearForm_basis_one_basis_of_mem (φ : Module.Dual K (ExteriorAl
   rw [spinTrilinearForm_apply, spinAction_ι_wedge, mul_one, ExteriorAlgebra.reversalPairing_apply,
     reverse_ι, ExteriorAlgebra.ι_mul_basis, ite_eq_left hi, map_zero]
 
+/-- **The trilinear form of the top-degree coefficient pairs `wᵢ`, `1` and `w_{univ ∖ {i}}` to a
+nonzero scalar** over a nontrivial ring, namely the sign `±1`. -/
+theorem spinTrilinearForm_coord_univ_basis_erase_ne_zero [Fintype I] [Nontrivial K] (i : I) :
+    P.spinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) (b i : V) 1
+        (b.ExteriorAlgebra (Finset.univ.erase i)) ≠ 0 := by
+  rw [spinTrilinearForm_coord_univ_basis_erase]
+  exact ((ExteriorAlgebra.basisEraseSign i Finset.univ).isUnit.map (Int.castRingHom K)).ne_zero
+
 /-- **The trilinear form of the top-degree coefficient is nonzero** over a nontrivial ring, for
 a nonzero isotropic summand `W`. -/
 theorem spinTrilinearForm_coord_univ_ne_zero [Fintype I] [Nontrivial K] [Nonempty I] :
     P.spinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) ≠ 0 := by
   obtain ⟨i⟩ := ‹Nonempty I›
   intro h
-  refine ((ExteriorAlgebra.basisEraseSign i Finset.univ).isUnit.map (Int.castRingHom K)).ne_zero ?_
-  rw [eq_intCast, ← P.spinTrilinearForm_coord_univ_basis_erase b i, h]
-  simp
+  exact P.spinTrilinearForm_coord_univ_basis_erase_ne_zero b i (by simp [h])
 
 /-- **The half-spin trilinear form of the top-degree coefficient is nonzero** over a nontrivial
 ring in positive even rank: it pairs the vacuum `1 ∈ S⁺`, the odd spinor
@@ -245,56 +251,16 @@ theorem halfSpinTrilinearForm_coord_univ_ne_zero [Fintype I] [Nontrivial K] [Non
     P.halfSpinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) ≠ 0 := by
   classical
   obtain ⟨i⟩ := ‹Nonempty I›
-  have h1 : (1 : ExteriorAlgebra K P.W) ∈ spinPlus Q P := by
-    rw [spinPlus_def]
-    exact SetLike.one_mem_graded _
-  have ht : b.ExteriorAlgebra (Finset.univ.erase i) ∈ spinMinus Q P := by
-    have hcard : ((Finset.univ.erase i).card : ZMod 2) = 1 := by
-      rw [Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ,
-        ZMod.natCast_eq_one_iff_odd]
-      exact Nat.Even.sub_odd Fintype.card_pos hI odd_one
-    rw [spinMinus_def, ← hcard, ExteriorAlgebra.basis_apply]
-    exact Submodule.mem_iSup_of_mem ⟨_, rfl⟩ (ExteriorAlgebra.ιMulti_range K _ ⟨_, rfl⟩)
+  have ht : b.ExteriorAlgebra (Finset.univ.erase i) ∈ spinMinus Q P :=
+    (basis_mem_spinMinus_iff P b _).2 (by
+      rw [Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ]
+      exact Nat.Even.sub_odd Fintype.card_pos hI odd_one)
   intro h
-  refine ((ExteriorAlgebra.basisEraseSign i Finset.univ).isUnit.map (Int.castRingHom K)).ne_zero ?_
-  rw [eq_intCast, ← P.spinTrilinearForm_coord_univ_basis_erase b i,
-    ← P.halfSpinTrilinearForm_apply (s := ⟨1, h1⟩) (t := ⟨_, ht⟩), h]
+  refine P.spinTrilinearForm_coord_univ_basis_erase_ne_zero b i ?_
+  rw [← P.halfSpinTrilinearForm_apply (s := ⟨1, (mem_spinPlus P).2 (SetLike.one_mem_graded _)⟩)
+    (t := ⟨_, ht⟩), h]
   simp
 
 end Basis
-
-/-! ### The normalization in dimension eight -/
-
-/-- In rank four, `w₂ w₃ w₄` is the exterior-basis vector of the index set `univ ∖ {0}`. -/
-private theorem ι_mul_ι_mul_ι_eq_basis_erase_zero (b : Module.Basis (Fin 4) K P.W) :
-    ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2) * ExteriorAlgebra.ι K (b 3) =
-      b.ExteriorAlgebra (Finset.univ.erase 0) := by
-  rw [mul_assoc, ← ExteriorAlgebra.basis_singleton b 3, ExteriorAlgebra.ι_mul_basis,
-    ite_eq_right (by decide), mul_smul_comm, ExteriorAlgebra.ι_mul_basis,
-    ite_eq_right (by decide), smul_smul]
-  -- Both shuffle signs are `+1`, and the index set `{1, 2, 3}` is `univ ∖ {0}`.
-  convert one_smul ℤˣ (b.ExteriorAlgebra (Finset.univ.erase (0 : Fin 4))) using 2
-  · simp only [ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt]
-    decide
-  · congr 1
-
-/-- **The triality form in dimension eight is normalized by `T (w₁, 1, w₂ w₃ w₄) = 1`**, for a
-basis `w₁, …, w₄` of the isotropic summand and its top-degree coefficient. -/
-theorem spinTrilinearForm_coord_univ_zero_one_ι_mul_ι_mul_ι (b : Module.Basis (Fin 4) K P.W) :
-    P.spinTrilinearForm (b.ExteriorAlgebra.coord Finset.univ) (b 0 : V) 1
-        (ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2) * ExteriorAlgebra.ι K (b 3)) =
-      1 := by
-  rw [ι_mul_ι_mul_ι_eq_basis_erase_zero, spinTrilinearForm_coord_univ_basis_erase,
-    ExteriorAlgebra.basisEraseSign_eq_neg_one_pow_card_filter_lt]
-  simp
-
-/-- **The triality form in dimension eight vanishes on `(w₂, 1, w₂ w₃ w₄)`**, since
-`w₂ ∧ w₂ w₃ w₄ = 0`. -/
-theorem spinTrilinearForm_one_one_ι_mul_ι_mul_ι (b : Module.Basis (Fin 4) K P.W) :
-    P.spinTrilinearForm φ (b 1 : V) 1
-        (ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2) * ExteriorAlgebra.ι K (b 3)) =
-      0 := by
-  rw [ι_mul_ι_mul_ι_eq_basis_erase_zero]
-  exact P.spinTrilinearForm_basis_one_basis_of_mem b φ (by decide)
 
 end TauCeti.SpinPolarizationData
