@@ -5,17 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplexCategory.SemiSimplexCategory
-public import Mathlib.Basic.Countable.Defs
+public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 
 /-!
-# Basic properties and cardinality instances for the simplex category
-
-`SimplexCategory` has countably many objects, indexed by their length `SimplexCategory.len`
-(`SimplexCategory.countable`), and its `n`-truncated full subcategory `SimplexCategory.Truncated n`
-has finitely many objects, indexed by `Fin (n + 1)` (`SimplexCategory.Truncated.finite`).
-Between any two objects of `SemiSimplexCategory`, there are finitely many face inclusions
-(`SemiSimplexCategory.instFiniteHom`).
+# Basic properties of epimorphisms in the simplex category
 
 Every epimorphism `f : x ⟶ y` in `SimplexCategory` is surjective on vertices and monotone, so it
 fixes the initial vertex `0` (`SimplexCategory.toOrderHom_zero_of_epi`). This ensures that
@@ -29,17 +22,6 @@ open CategoryTheory
 
 namespace SimplexCategory
 
-/-- `SimplexCategory` has countably many objects, indexed by their length. -/
-instance countable : Countable SimplexCategory :=
-  Function.Injective.countable (f := SimplexCategory.len) fun _ _ ↦ SimplexCategory.ext
-
-/-- The `n`-truncated simplex category `SimplexCategory.Truncated n` has finitely many objects,
-indexed by their length in `Fin (n + 1)`. -/
-instance Truncated.finite (n : ℕ) : Finite (Truncated n) :=
-  Finite.of_injective
-    (fun a : Truncated n ↦ (⟨a.obj.len, Nat.lt_succ_of_le a.property⟩ : Fin (n + 1)))
-    fun _ _ h ↦ ObjectProperty.FullSubcategory.ext (SimplexCategory.ext (Fin.mk.inj h))
-
 /-- Every epimorphism in `SimplexCategory` fixes the initial vertex `0`. -/
 @[simp]
 theorem toOrderHom_zero_of_epi {x y : SimplexCategory} (f : x ⟶ y) [Epi f] :
@@ -48,11 +30,3 @@ theorem toOrderHom_zero_of_epi {x y : SimplexCategory} (f : x ⟶ y) [Epi f] :
   exact le_antisymm (hk ▸ f.toOrderHom.monotone (Fin.zero_le k)) (Fin.zero_le _)
 
 end SimplexCategory
-
-namespace SemiSimplexCategory
-
-/-- There are finitely many face inclusions between two objects of the semi-simplex category. -/
-instance instFiniteHom (m n : SemiSimplexCategory) : Finite (m ⟶ n) :=
-  Finite.of_injective (fun f ↦ ⇑(homEquiv f)) fun _ _ h ↦ hom_ext (DFunLike.coe_injective h)
-
-end SemiSimplexCategory

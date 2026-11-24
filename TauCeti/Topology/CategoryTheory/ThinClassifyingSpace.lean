@@ -12,6 +12,7 @@ public import TauCeti.Topology.CategoryTheory.Latching
 import Mathlib.Topology.GDelta.MetrizableSpace
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.Topology.CategoryTheory.Nerve.FullSubcategory
+import TauCeti.Topology.Compactness.Lindelof
 
 /-!
 # Thin classifying spaces of topological categories and groupoids
@@ -112,8 +113,7 @@ variable {C}
 @[simp↓] theorem fatToThinClassifyingSpace_ι (m : SemiSimplexCategory)
     (F : ComposableArrows C (toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.{max u v}.obj m) :
-    fatToThinClassifyingSpace C
-        (functorTensor.ι SemiSimplexCategory.toTop.{max u v} _ m (F, t)) =
+    fatToThinClassifyingSpace C (fatRealization.ι _ m (F, t)) =
       geometricRealization.ι (topologicalNerve C) (toSimplexCategory.obj m).len (F, t) :=
   fatToGeometricRealization_ι (topologicalNerve C) m F t
 
@@ -122,10 +122,10 @@ variable {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
 /-- The morphism of thin classifying spaces induced by a functor continuous on total arrows. -/
 def thinClassifyingSpaceMap (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
     thinClassifyingSpace C ⟶ thinClassifyingSpace D :=
-  functorTensor.map toTop (topologicalNerveMap Φ hΦ)
+  geometricRealization.map (topologicalNerveMap Φ hΦ)
 
 theorem thinClassifyingSpaceMap_eq (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal) :
-    thinClassifyingSpaceMap Φ hΦ = functorTensor.map toTop (topologicalNerveMap Φ hΦ) := (rfl)
+    thinClassifyingSpaceMap Φ hΦ = geometricRealization.map (topologicalNerveMap Φ hΦ) := (rfl)
 
 /-- `thinClassifyingSpaceMap Φ hΦ` applies `Φ` to the composable arrows of each simplex. -/
 @[simp] theorem thinClassifyingSpaceMap_ι (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal)
@@ -149,20 +149,16 @@ variable (C) in
 @[simp] theorem thinClassifyingSpaceMap_id :
     thinClassifyingSpaceMap (𝟭 C) (Prefunctor.mapTotal_id (Q := C) ▸ continuous_id) =
       𝟙 (thinClassifyingSpace C) :=
-  by change functorTensor.map toTop.{max u v} (topologicalNerveMap (𝟭 C) _) =
-       𝟙 (functorTensor toTop.{max u v} (topologicalNerve C))
-     rw [topologicalNerveMap_id, functorTensor.map_id]
+  (congrArg geometricRealization.map (topologicalNerveMap_id C)).trans geometricRealization.map_id
 
 theorem thinClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     [TopologicalSpace (Quiver.Total E)] (Φ : C ⥤ D) (Ψ : D ⥤ E)
     (hΦ : Continuous Φ.toPrefunctor.mapTotal) (hΨ : Continuous Ψ.toPrefunctor.mapTotal) :
     thinClassifyingSpaceMap (Φ ⋙ Ψ)
         (Prefunctor.mapTotal_comp Φ.toPrefunctor Ψ.toPrefunctor ▸ hΨ.comp hΦ) =
-      thinClassifyingSpaceMap Φ hΦ ≫ thinClassifyingSpaceMap Ψ hΨ := by
-  change functorTensor.map toTop.{max u v} (topologicalNerveMap (Φ ⋙ Ψ) _) =
-    functorTensor.map toTop.{max u v} (topologicalNerveMap Φ hΦ) ≫
-      functorTensor.map toTop.{max u v} (topologicalNerveMap Ψ hΨ)
-  rw [topologicalNerveMap_comp, functorTensor.map_comp]
+      thinClassifyingSpaceMap Φ hΦ ≫ thinClassifyingSpaceMap Ψ hΨ :=
+  (congrArg geometricRealization.map (topologicalNerveMap_comp Φ Ψ hΦ hΨ)).trans
+    (geometricRealization.map_comp _ _)
 
 /-- The comparison `fatClassifyingSpace ⟶ thinClassifyingSpace` is natural in `C`. -/
 @[reassoc (attr := simp)] theorem fatClassifyingSpaceMap_comp_fatToThinClassifyingSpace
@@ -178,17 +174,9 @@ def thinClassifyingSpaceHomotopy (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2) :
     ContinuousMap.Homotopy (thinClassifyingSpaceMap (Φ 0) (hΦ.comp (.prodMk_right 0))).hom
       (thinClassifyingSpaceMap (Φ 1) (hΦ.comp (.prodMk_right 1))).hom :=
-  functorTensor.homotopy toTop (fun s ↦ topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s)))
+  geometricRealization.homotopy (fun s ↦ topologicalNerveMap (Φ s) (hΦ.comp (.prodMk_right s)))
     fun _ ↦ (ComposableArrows.continuous_uncurry_mapComposableArrows_obj hΦ).congr fun _ ↦
       (topologicalNerveMap_app_apply _ _ _ _).symm
-
-/-- At time `s`, `thinClassifyingSpaceHomotopy Φ hΦ` acts as `thinClassifyingSpaceMap (Φ s)`. -/
-theorem thinClassifyingSpaceHomotopy_apply (Φ : unitInterval → C ⥤ D)
-    (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
-    (s : unitInterval) (p : thinClassifyingSpace C) :
-    thinClassifyingSpaceHomotopy Φ hΦ (s, p) =
-      thinClassifyingSpaceMap (Φ s) (hΦ.comp (.prodMk_right s)) p :=
-  functorTensor.homotopy_apply toTop _ _ s p
 
 @[simp] theorem thinClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)

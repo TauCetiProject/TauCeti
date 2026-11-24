@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplexCategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
@@ -18,7 +17,6 @@ public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSi
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Topology.Category.TopCat.Action
 
-import TauCeti.Geometry.Convex.ConvexSpace.Defs
 import TauCeti.Topology.Homotopy.Contractible
 
 /-!
@@ -28,13 +26,10 @@ The topological `n`-simplex is a standard simplex on a finite nonempty type, up 
 lift, hence compact, Hausdorff, second-countable, metrizable, contractible and locally path
 connected. Every monomorphism in `SimplexCategory` induces a closed embedding of topological
 simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and every point of `Δⁿ` lies in
-the open interior (`SimplexCategory.toTopInterior`) of a unique face. For the semi-simplex category
-`SemiSimplexCategory`, `SemiSimplexCategory.toTop` equips each `⦋n⦌ₛ` with the topological
-`n`-simplex and order embeddings with closed face inclusions, with unique carrier faces
-(`SemiSimplexCategory.exists_toTop_map_eq`, `SemiSimplexCategory.eq_and_eq_of_toTop_map_eq`). The
-geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the
-topological simplex, is contractible as well. This file also names its initial vertex, and the
-continuous map on the topological `n`-simplex that underlies a singular `n`-simplex of a space.
+the open interior (`SimplexCategory.toTopInterior`) of a unique face. The geometric realization
+`|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the topological simplex, is
+contractible as well. This file also names its initial vertex, and the continuous map on the
+topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
@@ -42,10 +37,6 @@ continuous map on the topological `n`-simplex that underlies a singular `n`-simp
   instances on `SimplexCategory.toTop.obj n` (hence Hausdorffness and second-countability).
 * `SimplexCategory.isClosedEmbedding_toTop_map_of_mono`, `SimplexCategory.toTopInterior`,
   `SimplexCategory.toTopBoundary`: closed face embeddings and unique open-face decomposition.
-* `SemiSimplexCategory.toTop`, `SemiSimplexCategory.isClosedEmbedding_toTop_map`,
-  `SemiSimplexCategory.exists_toTop_map_eq`, `SemiSimplexCategory.eq_and_eq_of_toTop_map_eq`:
-  topological simplices on `SemiSimplexCategory`, closed face inclusions, and unique carrier-face
-  decomposition.
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
   `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
@@ -101,13 +92,6 @@ theorem support_toTop_map {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.o
     (toTop.{u}.map f t).down.weights.support = t.down.weights.support.image f.toOrderHom := by
   rw [toTop_map_down, StdSimplex.weights_map]
   exact Finsupp.support_mapDomain_of_nonneg (fun i ↦ t.down.nonneg i) f.toOrderHom
-
-/-- Every monomorphism in `SimplexCategory` preserves the number of nonzero barycentric
-coordinates. -/
-theorem card_support_toTop_map {m n : SimplexCategory} (f : m ⟶ n) [Mono f]
-    (t : toTop.{u}.obj m) :
-    (toTop.{u}.map f t).down.weights.support.card = t.down.weights.support.card := by
-  rw [support_toTop_map, Finset.card_image_of_injective _ (mono_iff_injective.mp ‹Mono f›)]
 
 /-- Every monomorphism in `SimplexCategory` induces an injective map of topological simplices. -/
 theorem toTop_map_injective_of_mono {m n : SimplexCategory} (f : m ⟶ n) [Mono f] :
@@ -168,24 +152,6 @@ def toTopBoundary (n : SimplexCategory) : Set (toTop.{u}.obj n) := (toTopInterio
     t ∈ toTopBoundary n ↔ ∃ i, t.down.weights i = 0 := by
   simp only [toTopBoundary, mem_toTopInterior_iff, Set.mem_compl_iff, not_forall, not_lt]
   exact exists_congr fun i ↦ ⟨fun h ↦ le_antisymm h (t.down.nonneg i), fun h ↦ h.le⟩
-
-/-- A point of `Δⁿ` lies off `∂Δⁿ` iff all `n + 1` of its barycentric coordinates are nonzero. -/
-theorem notMem_toTopBoundary_iff {n : SimplexCategory} {t : toTop.{u}.obj n} :
-    t ∉ toTopBoundary n ↔ t.down.weights.support.card = n.len + 1 := by
-  rw [← Set.mem_compl_iff, compl_toTopBoundary, mem_toTopInterior_iff_support_eq_univ,
-    ← Finset.card_eq_iff_eq_univ, Fintype.card_fin]
-
-/-- A point of `Δⁿ` has at most `n + 1` nonzero barycentric coordinates. -/
-theorem card_support_weights_le {n : SimplexCategory} (t : toTop.{u}.obj n) :
-    t.down.weights.support.card ≤ n.len + 1 :=
-  (Finset.card_le_univ _).trans (Fintype.card_fin _).le
-
-/-- A point of `Δⁿ` lies on `∂Δⁿ` iff fewer than `n + 1` of its barycentric coordinates are
-nonzero. -/
-theorem mem_toTopBoundary_iff_card_lt {n : SimplexCategory} {t : toTop.{u}.obj n} :
-    t ∈ toTopBoundary n ↔ t.down.weights.support.card < n.len + 1 := by
-  rw [← not_iff_not, notMem_toTopBoundary_iff, not_lt]
-  exact ⟨fun h ↦ h.ge, fun h ↦ (card_support_weights_le t).antisymm h⟩
 
 /-- The relative boundary of `Δⁿ⁺¹` is the union of the images of its faces `δ i`. -/
 theorem toTopBoundary_eq_iUnion_range_δ (n : ℕ) :
@@ -337,114 +303,6 @@ lemma toTop_map_mkOfLe_toTop_map_δ_zero (k : ℕ) :
   rfl
 
 end SimplexCategory
-
-namespace SemiSimplexCategory
-
-open Set
-
-noncomputable section
-
-/-- The functor sending `⦋n⦌ₛ` to the topological `n`-simplex and an order embedding to the
-induced face inclusion of topological simplices. -/
-@[expose] def toTop : SemiSimplexCategory ⥤ TopCat.{u} :=
-  toSimplexCategory ⋙ SimplexCategory.toTop
-
-/-- The topological simplex of `⦋n⦌ₛ` is that of `⦋n⦌`. -/
-theorem toTop_obj (n : SemiSimplexCategory) :
-    toTop.{u}.obj n = SimplexCategory.toTop.obj (toSimplexCategory.obj n) :=
-  (rfl)
-
-/-- The face inclusion along an order embedding is the map of topological simplices induced by
-the underlying morphism of the simplex category. -/
-theorem toTop_map {m n : SemiSimplexCategory} (f : m ⟶ n) :
-    toTop.{u}.map f = SimplexCategory.toTop.map (toSimplexCategory.map f) :=
-  (rfl)
-
-/-- Every topological simplex of `SemiSimplexCategory` is nonempty. -/
-instance nonempty_toTop_obj (n : SemiSimplexCategory) : Nonempty (toTop.{u}.obj n) :=
-  inferInstanceAs (Nonempty (SimplexCategory.toTop.{u}.obj (toSimplexCategory.obj n)))
-
-section TopologicalSimplex
-
-variable {m n : SemiSimplexCategory}
-
-/-- Topological simplices are compact. -/
-instance (n : SemiSimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
-  inferInstanceAs (CompactSpace (SimplexCategory.toTop.obj _))
-
-/-- Topological simplices are Hausdorff. -/
-instance (n : SemiSimplexCategory) : T2Space (toTop.{u}.obj n) :=
-  inferInstanceAs (T2Space (SimplexCategory.toTop.obj _))
-
-/-- A face inclusion of topological simplices pushes a point of the standard simplex forward
-along the order embedding. -/
-@[simp]
-theorem toTop_map_down (f : m ⟶ n) (t : toTop.{u}.obj m) :
-    (toTop.map f t).down = t.down.map (homEquiv f) :=
-  -- `toTop` is `SimplexCategory.toTop`, the universe lift of `StdSimplex.map`.
-  (rfl)
-
-/-- A face inclusion preserves the number of nonzero barycentric coordinates. -/
-theorem card_support_toTop_map (f : m ⟶ n) (t : toTop.{u}.obj m) :
-    (toTop.map f t).down.weights.support.card = t.down.weights.support.card :=
-  SimplexCategory.card_support_toTop_map (toSimplexCategory.map f) t
-
-/-- Face inclusions of topological simplices are injective. -/
-theorem toTop_map_injective (f : m ⟶ n) : Function.Injective (toTop.{u}.map f) :=
-  SimplexCategory.toTop_map_injective_of_mono (toSimplexCategory.map f)
-
-/-- Face inclusions of topological simplices are closed embeddings. -/
-theorem isClosedEmbedding_toTop_map (f : m ⟶ n) : IsClosedEmbedding (toTop.{u}.map f) :=
-  SimplexCategory.isClosedEmbedding_toTop_map_of_mono (toSimplexCategory.map f)
-
-/-- **Carrier faces.** Every point of a topological simplex is the image, under a face inclusion,
-of a point off the boundary of that face: the face spanned by its nonzero barycentric
-coordinates. -/
-theorem exists_toTop_map_eq (t : toTop.{u}.obj n) :
-    ∃ (a : SemiSimplexCategory) (f : a ⟶ n) (s : toTop.{u}.obj a),
-      s ∉ SimplexCategory.toTopBoundary (toSimplexCategory.obj a) ∧ toTop.map f s = t := by
-  obtain ⟨k, μ, hμ, s, hs, hst⟩ :=
-    SimplexCategory.exists_mono_toTop_map_mem_toTopInterior (n := n.len) t
-  let μ' : toSimplexCategory.obj ⦋k⦌ₛ ⟶ toSimplexCategory.obj n := μ
-  have : Mono μ' := hμ
-  exact ⟨⦋k⦌ₛ, homOfMono μ', s, not_not.2 hs,
-    (ConcreteCategory.congr_hom (congrArg SimplexCategory.toTop.{u}.map
-      (toSimplexCategory_map_homOfMono μ')) s).trans hst⟩
-
-/-- **Uniqueness of carrier faces, dimension.** If a point of `Δⁿ` is the image of points off the
-boundaries of two faces, the two faces have the same dimension. -/
-theorem eq_of_toTop_map_eq {a b : SemiSimplexCategory} {f : a ⟶ n} {g : b ⟶ n}
-    {s : toTop.{u}.obj a} {s' : toTop.{u}.obj b}
-    (hs : s ∉ SimplexCategory.toTopBoundary (toSimplexCategory.obj a))
-    (hs' : s' ∉ SimplexCategory.toTopBoundary (toSimplexCategory.obj b))
-    (h : toTop.map f s = toTop.map g s') : a = b := by
-  let μ₁ : ⦋a.len⦌ ⟶ ⦋n.len⦌ := toSimplexCategory.map f
-  let μ₂ : ⦋b.len⦌ ⟶ ⦋n.len⦌ := toSimplexCategory.map g
-  have : Mono μ₁ := inferInstanceAs (Mono (toSimplexCategory.map f))
-  have : Mono μ₂ := inferInstanceAs (Mono (toSimplexCategory.map g))
-  exact SemiSimplexCategory.ext <|
-    SimplexCategory.unique_mono_toTop_map_dim (μ₁ := μ₁) (μ₂ := μ₂)
-      (not_not.1 hs) (not_not.1 hs') h
-
-/-- **Uniqueness of carrier faces.** If a point of `Δⁿ` is the image of a point `s` off the
-boundary of `Δᵐ` under a face inclusion `f`, and also the image of a point `s'` of `Δᵐ` under a
-face inclusion `g`, then the face inclusions and the points coincide. -/
-theorem eq_and_eq_of_toTop_map_eq {f g : m ⟶ n} {s s' : toTop.{u}.obj m}
-    (hs : s ∉ SimplexCategory.toTopBoundary (toSimplexCategory.obj m))
-    (h : toTop.map f s = toTop.map g s') :
-    f = g ∧ s = s' := by
-  let μ₁ : ⦋m.len⦌ ⟶ ⦋n.len⦌ := toSimplexCategory.map f
-  let μ₂ : ⦋m.len⦌ ⟶ ⦋n.len⦌ := toSimplexCategory.map g
-  have : Mono μ₁ := inferInstanceAs (Mono (toSimplexCategory.map f))
-  obtain rfl : f = g := toSimplexCategory.map_injective <|
-    SimplexCategory.unique_mono_toTop_map_hom (μ₁ := μ₁) (μ₂ := μ₂) (not_not.1 hs) h
-  exact ⟨rfl, toTop_map_injective f h⟩
-
-end TopologicalSimplex
-
-end
-
-end SemiSimplexCategory
 
 namespace TauCeti.TopCat
 

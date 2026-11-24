@@ -64,10 +64,10 @@ variable {C : Type u} [Category.{u} C] [IsGroupoid C] [TopologicalSpace C]
 
 /-- The coarse projection from `thinClassifyingSpace C` to `Quotient (isIsomorphicSetoid C)`. -/
 def coarseMap : thinClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
-  functorTensor.augment toTop (topologicalNerve.coarseAugmentation hs)
+  geometricRealization.augment (topologicalNerve.coarseAugmentation hs)
 
 theorem coarseMap_eq_augment :
-    coarseMap hs = functorTensor.augment toTop (topologicalNerve.coarseAugmentation hs) := (rfl)
+    coarseMap hs = geometricRealization.augment (topologicalNerve.coarseAugmentation hs) := (rfl)
 
 @[simp↓] theorem coarseMap_ι (n : ℕ) (F : ComposableArrows C n) (t : toTop.{u}.obj ⦋n⦌) :
     coarseMap hs (geometricRealization.ι (topologicalNerve C) n (F, t)) =
@@ -78,9 +78,8 @@ theorem coarseMap_eq_augment :
 /-- The coarse projection of `fatClassifyingSpace C` descends along `fatToThinClassifyingSpace`. -/
 @[reassoc (attr := simp)] theorem fatToThinClassifyingSpace_comp_coarseMap :
     fatToThinClassifyingSpace C ≫ coarseMap hs = fatClassifyingSpace.coarseMap hs := by
-  rw [fatToThinClassifyingSpace_eq, fatToGeometricRealization_eq, coarseMap_eq_augment,
-    fatClassifyingSpace.coarseMap_eq_augment]
-  exact functorTensor.reindex_comp_augment SemiSimplexCategory.toSimplexCategory toTop.{u} _
+  rw [fatToThinClassifyingSpace_eq, coarseMap_eq_augment, fatClassifyingSpace.coarseMap_eq_augment]
+  exact geometricRealization.fatToGeometricRealization_comp_augment _
 
 /-- The coarse projection from `thinClassifyingSpace C` is surjective. -/
 theorem coarseMap_surjective : Function.Surjective (coarseMap hs) :=
@@ -174,18 +173,17 @@ theorem isOpenEmbedding_thinClassifyingSpaceMap_ι {C : Type u} [Category.{v} C]
     (hs : Continuous (Quiver.Total.left : Quiver.Total C → C)) (hP : IsOpen {x | P x}) :
     IsOpenEmbedding (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [thinClassifyingSpaceMap_eq]
-  refine functorTensor.isOpenEmbedding_map (φ := topologicalNerveMap P.ι P.continuous_mapTotal_ι)
-    (fun Δ ↦ by
+  exact geometricRealization.isOpenEmbedding_map
+    (fun n ↦ by
+      rw [coe_topologicalNerveMap_app]; exact P.isOpenEmbedding_mapComposableArrows_ι hs hP n)
+    fun m n f (F : ComposableArrows C n) hF ↦ by
+      rw [topologicalNerve_map_apply, coe_topologicalNerveMap_app] at hF
+      have h0 : P (F.obj (f.toOrderHom 0)) := by
+        rw [← nerve.map_obj f F 0]
+        exact (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms m).subset hF
       rw [coe_topologicalNerveMap_app]
-      exact P.isOpenEmbedding_mapComposableArrows_ι hs hP _)
-    fun Δ Δ' f (F : ComposableArrows C Δ.unop.len) hF ↦ ?_
-  rw [topologicalNerve_map_apply, coe_topologicalNerveMap_app] at hF
-  have h0 : P (F.obj (f.unop.toOrderHom 0)) := by
-    rw [← nerve.map_obj f.unop F 0]
-    exact (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms Δ'.unop.len).subset hF
-  rw [coe_topologicalNerveMap_app]
-  exact (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms Δ.unop.len).superset
-    (P.prop_of_iso (asIso (F.map (homOfLE (Fin.zero_le _)))).symm h0)
+      exact (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms n).superset
+        (P.prop_of_iso (asIso (F.map (homOfLE (Fin.zero_le _)))).symm h0)
 
 section SaturatedGroupoid
 
@@ -200,8 +198,9 @@ theorem preimage_coarseMap_eq_range_thinClassifyingSpaceMap_ι :
         (_root_.Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
       range (thinClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [thinClassifyingSpace.coarseMap_eq_augment, thinClassifyingSpaceMap_eq]
-  exact functorTensor.preimage_augment_eq_range_map (topologicalNerve.coarseAugmentation hs)
-    (P.range_topologicalNerveMap_ι hs)
+  exact geometricRealization.preimage_augment_eq_range_map
+    (ε := topologicalNerve.coarseAugmentation hs)
+    (fun n ↦ P.range_topologicalNerveMap_ι hs (op ⦋n⦌))
 
 /-- Whenever the inclusion of a saturated full subgroupoid induces a topological embedding on thin
 classifying spaces (for instance via `isOpenEmbedding_thinClassifyingSpaceMap_ι` or
