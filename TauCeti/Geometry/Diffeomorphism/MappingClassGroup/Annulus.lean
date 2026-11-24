@@ -114,40 +114,19 @@ theorem mem_boundary_annulus_iff {p : Annulus} :
 
 /-! ### Twists of the annulus -/
 
-section Rotation
-
-variable {E H B : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {J : ModelWithCorners ℝ E H} [TopologicalSpace B] [ChartedSpace H B]
-
-/-- The level-preserving diffeomorphism `(b, θ) ↦ (b, θ + ρ b)` of `B × ℝ/ℤ` for a smooth
-`ρ : B → ℝ`, the common construction behind the twists and the twist diffeotopy. -/
-private def prodRotation (ρ : B → ℝ) (hρ : ContMDiff J 𝓘(ℝ) ∞ ρ) :
-    (B × AddCircle (1 : ℝ)) ≃ₘ^∞⟮J.prod 𝓘(ℝ), J.prod 𝓘(ℝ)⟯ B × AddCircle (1 : ℝ) :=
-  AddCircle.prodDiffeomorphOfLift (L := fun p : ℝ × ℝ ↦ p.2 + p.1) (by fun_prop) (by simp)
-    (fun _ _ ↦ by ring) (fun _ _ ↦ by simp) ρ hρ
-
-private theorem prodRotation_apply {ρ : B → ℝ} (hρ : ContMDiff J 𝓘(ℝ) ∞ ρ)
-    (p : B × AddCircle (1 : ℝ)) :
-    prodRotation ρ hρ p = (p.1, p.2 + (ρ p.1 : AddCircle (1 : ℝ))) := by
-  obtain ⟨b, θ⟩ := p
-  induction θ using QuotientAddGroup.induction_on with
-  | H x => exact AddCircle.prodDiffeomorphOfLift_apply_coe _ _ _ _ _ _ b x
-
-end Rotation
-
 variable {κ κ' : I → ℝ}
 
 /-- The **twist** of the annulus by a smooth function `κ` on `[0, 1]`: the diffeomorphism
 `(t, θ) ↦ (t, θ + κ t)`, which rotates the circle at radius `t` by `κ t`. -/
 def annulusTwist (κ : I → ℝ) (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) :
     Diff ((𝓡∂ 1).prod 𝓘(ℝ)) Annulus ∞ :=
-  prodRotation κ hκ
+  AddCircle.prodRotation κ hκ
 
 /-- The twist by `κ` rotates the circle at radius `t` by `κ t`. -/
 @[simp]
 theorem annulusTwist_apply (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) (p : Annulus) :
     annulusTwist κ hκ p = (p.1, p.2 + (κ p.1 : AddCircle (1 : ℝ))) :=
-  prodRotation_apply hκ p
+  AddCircle.prodRotation_apply hκ p
 
 /-- Twists compose by adding their profiles. -/
 @[simp]
@@ -230,18 +209,18 @@ def annulusTwistDiffeotopy (κ : I → ℝ) (hκ : ContMDiff (𝓡∂ 1) 𝓘(�
     Diffeotopy ((𝓡∂ 1).prod 𝓘(ℝ)) ∞ Annulus where
   toDiffeomorph :=
     (Diffeomorph.prodAssocOfModels (𝓡∂ 1) (𝓡∂ 1) 𝓘(ℝ) I I (AddCircle (1 : ℝ)) ∞).symm.trans
-      ((prodRotation (fun p : I × I ↦ (p.1 : ℝ) * κ p.2)
+      ((AddCircle.prodRotation (fun p : I × I ↦ (p.1 : ℝ) * κ p.2)
         ((contMDiff_subtypeVal_Icc.comp contMDiff_fst).mul (hκ.comp contMDiff_snd))).trans
         (Diffeomorph.prodAssocOfModels (𝓡∂ 1) (𝓡∂ 1) 𝓘(ℝ) I I (AddCircle (1 : ℝ)) ∞))
-  fst_apply p := by simp [prodRotation_apply]
-  snd_apply_zero' p := by simp [prodRotation_apply]
+  fst_apply p := by simp
+  snd_apply_zero' p := by simp
 
 /-- At time `s` the twist diffeotopy rotates the circle at radius `t` by `s κ t`. -/
 @[simp]
 theorem annulusTwistDiffeotopy_apply (hκ : ContMDiff (𝓡∂ 1) 𝓘(ℝ) ∞ κ) (s : I) (p : Annulus) :
     annulusTwistDiffeotopy κ hκ (s, p) =
       (p.1, p.2 + ((s * κ p.1 : ℝ) : AddCircle (1 : ℝ))) := by
-  simp [annulusTwistDiffeotopy, prodRotation_apply]
+  simp [annulusTwistDiffeotopy]
 
 /-- The twist diffeotopy ends at the twist. -/
 @[simp]
