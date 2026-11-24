@@ -97,12 +97,8 @@ theorem transcendental_and_finrank_kaehlerDifferential_eq_one_of_formallyUnramif
   have : Algebra.Transcendental K L := by
     -- The image of the variable is transcendental, since `K[X] → L` is injective.
     have hind : AlgebraicIndependent K
-        fun i : Fin 1 ↦ algebraMap (MvPolynomial (Fin 1) K) L (.X i) := by
-      rw [algebraicIndependent_iff_injective_aeval]
-      convert h
-      exact congrArg DFunLike.coe (MvPolynomial.algHom_ext (f := MvPolynomial.aeval _)
-        (g := IsScalarTower.toAlgHom K _ L) fun i ↦ by
-          rw [MvPolynomial.aeval_X, IsScalarTower.toAlgHom_apply])
+        fun i : Fin 1 ↦ algebraMap (MvPolynomial (Fin 1) K) L (.X i) :=
+      (MvPolynomial.algebraicIndependent_X (Fin 1) K).map' (f := IsScalarTower.toAlgHom K _ L) h
     exact Algebra.transcendental_def.mpr ⟨_, hind.transcendental 0⟩
   refine ⟨this, le_antisymm ?_ (finrank_kaehlerDifferential_pos (k := K))⟩
   simpa using finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial

@@ -15,7 +15,9 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Normalization.Finite
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
 import TauCeti.RingTheory.Smooth.MinimalPrime
 
@@ -132,42 +134,17 @@ open _root_.IsLocalRing
 
 variable {M} {U : M.total.Opens}
 
-/-- The ring of sections of the total space of a model over an open `U`, as an algebra over the
-discrete valuation ring through the structure morphism. -/
-private abbrev sectionsAlgebra (U : M.total.Opens) : Algebra R Γ(M.total, U) :=
-  ((Scheme.ΓSpecIso (.of R)).inv ≫
-    M.toBase.appLE ⊤ U (le_top.trans M.toBase.preimage_top.ge)).hom.toAlgebra
-
-/-- The ring of sections of the generic fibre over an open `V`, as an algebra over the fraction
-field through the structure morphism. -/
-private abbrev genericSectionsAlgebra (V : C.Opens) : Algebra K Γ(C, V) :=
-  ((Scheme.ΓSpecIso (.of K)).inv ≫ toK.appLE ⊤ V (le_top.trans toK.preimage_top.ge)).hom.toAlgebra
-
-/-- Over an affine open `U` of the total space, the sections over `U` are of finite type over `R`.
--/
-private lemma finiteType_sections (hU : IsAffineOpen U) :
-    letI := sectionsAlgebra U
-    Algebra.FiniteType R Γ(M.total, U) :=
-  (HasRingHomProperty.appLE @LocallyOfFiniteType M.toBase inferInstance
-    ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ _).comp (.of_surjective _
-      (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv.symm.surjective)
-
 /-- Over an affine open `U` of the total space of a model of relative dimension at most one, the
 special fibre `Γ(U) ⧸ π Γ(U)` has Krull dimension at most one. -/
 private lemma krullDimLE_sections_quotient [AlgebraicGeometry.RelativeDimensionLE 1 M.toBase]
     (hU : IsAffineOpen U) {π : R} (hπ : Irreducible π) :
-    letI := sectionsAlgebra U
+    letI := M.toBase.sectionsAlgebra U
     Ring.KrullDimLE 1 (Γ(M.total, U) ⧸ Ideal.span {algebraMap R Γ(M.total, U) π}) := by
-  let := sectionsAlgebra U
-  -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`; the last step
-  -- identifies `CommRingCat.ofHom (algebraMap R Γ(U))` with the morphism it is built from.
-  have hSpec : hU.fromSpec ≫ M.toBase =
-      Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U))) := by
-    rw [← IsAffineOpen.SpecMap_appLE_fromSpec M.toBase (isAffineOpen_top _) hU,
-      IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
-    rfl
+  let := M.toBase.sectionsAlgebra U
+  -- `Spec Γ(U) ⟶ Spec R` is the restriction of the structure morphism to `U`.
   have : AlgebraicGeometry.RelativeDimensionLE 1
-      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) := hSpec ▸ inferInstance
+      (Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))) :=
+    M.toBase.fromSpec_toSpec hU ▸ inferInstance
   have hdim :=
     (AlgebraicGeometry.relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mp this (maximalIdeal R)
   -- The fibre over the closed point is `Γ(U) ⧸ 𝔪 Γ(U)`, and `𝔪 = (π)`.
@@ -201,9 +178,10 @@ private lemma appLE_comp_app_genericι (U : M.total.Opens) :
 a `K`-algebra which is locally standard smooth of relative dimension one. -/
 private lemma locally_isStandardSmoothOfRelativeDimension_sections
     [SmoothOfRelativeDimension 1 toK] (hU : IsAffineOpen U) :
-    letI := genericSectionsAlgebra (toK := toK) (M.genericι ⁻¹ᵁ U)
+    letI := toK.sectionsAlgebra (M.genericι ⁻¹ᵁ U)
     RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
       (algebraMap K Γ(C, M.genericι ⁻¹ᵁ U)) :=
+  toK.algebraMap_sections _ ▸
   (RingHom.locally_respectsIso RingHom.isStandardSmoothOfRelativeDimension_respectsIso).right _
     (Scheme.ΓSpecIso (.of K)).commRingCatIsoToRingEquiv.symm
     (HasRingHomProperty.appLE (@SmoothOfRelativeDimension 1) toK inferInstance
@@ -224,14 +202,18 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
   -- Over the affine open `U`, set `A = Γ(U)` and `B = Γ(U ∩ C)` with their algebra structures
   -- over `R` and `K`; then `B = A[1/π]`, and the ring-level theorem applies.
   let := (M.genericι.app U).hom.toAlgebra
-  let := sectionsAlgebra U
+  let := M.toBase.sectionsAlgebra U
   let : Algebra R Γ(C, M.genericι ⁻¹ᵁ U) :=
     ((algebraMap Γ(M.total, U) _).comp (algebraMap R Γ(M.total, U))).toAlgebra
   have : IsScalarTower R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  let := genericSectionsAlgebra (toK := toK) (M.genericι ⁻¹ᵁ U)
+  let := toK.sectionsAlgebra (M.genericι ⁻¹ᵁ U)
   have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    .of_algebraMap_eq' congr(($(appLE_comp_app_genericι U)).hom)
-  have := finiteType_sections (M := M) hU
+    .of_algebraMap_eq' <| by
+      change (M.genericι.app U).hom.comp (algebraMap R Γ(M.total, U)) = _
+      rw [M.toBase.algebraMap_sections, toK.algebraMap_sections]
+      exact congr(($(appLE_comp_app_genericι U)).hom)
+  have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
+    M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
   have := krullDimLE_sections_quotient (M := M) hU hπ
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
     refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
@@ -241,7 +223,7 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK]
       ext1
       rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
         M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
-    rw [hrange]
+    rw [hrange, M.toBase.algebraMap_sections]
     exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
   have hB := locally_isStandardSmoothOfRelativeDimension_sections (M := M) hU
   have := SmoothOfRelativeDimension.smooth 1 toK
