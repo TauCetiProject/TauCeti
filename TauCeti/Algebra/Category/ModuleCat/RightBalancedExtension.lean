@@ -94,24 +94,40 @@ noncomputable def adjunction :
     functor.{u₁, u₂, max v u₂} f ⊣ ModuleCat.restrictScalars.{max v u₂} (RingHom.op f) :=
   (BalancedExtension.adjunction (RingHom.op f)).ofNatIsoLeft (balancedExtensionFunctorIso f).symm
 
+@[simp]
+theorem adjunction_homEquiv_apply {M : ModuleCat.{max v u₂} Rᵐᵒᵖ}
+    {N : ModuleCat.{max v u₂} Sᵐᵒᵖ} (φ : (functor f).obj M ⟶ N) (m : M) :
+    (adjunction f).homEquiv M N φ m = φ (tmul f m 1) := by
+  rw [adjunction, Adjunction.homEquiv_ofNatIsoLeft_apply,
+    BalancedExtension.adjunction_homEquiv_apply, Iso.symm_hom]
+  exact (ConcreteCategory.comp_apply _ _ _).trans
+    (congrArg φ ((balancedExtensionFunctorIso_inv_app_tmul f M 1 m).trans (by rw [unop_one])))
+
+@[simp]
+theorem adjunction_homEquiv_symm_apply_tmul {M : ModuleCat.{max v u₂} Rᵐᵒᵖ}
+    {N : ModuleCat.{max v u₂} Sᵐᵒᵖ} (ψ : M ⟶ (ModuleCat.restrictScalars (RingHom.op f)).obj N)
+    (m : M) (s : S) :
+    ((adjunction f).homEquiv M N).symm ψ (tmul f m s) = op s • (show N from ψ m) := by
+  rw [adjunction, Adjunction.homEquiv_ofNatIsoLeft_symm_apply, Iso.symm_inv]
+  exact (ConcreteCategory.comp_apply _ _ _).trans
+    ((congrArg _ (balancedExtensionFunctorIso_hom_app_tmul f M m s)).trans
+      (BalancedExtension.adjunction_homEquiv_symm_apply_tmul (RingHom.op f) ψ (op s) m))
+
 /-- The unit of the adjunction is `m ↦ m ⊗ 1`. Not `@[simp]`: its left-hand side mentions the
 composite functor, which `simp` unfolds. -/
 theorem adjunction_unit_app_apply (M : ModuleCat.{max v u₂} Rᵐᵒᵖ) (m : M) :
     (adjunction f).unit.app M m = tmul f m 1 := by
-  simp only [adjunction, Adjunction.ofNatIsoLeft, Iso.symm_hom, NatTrans.comp_app,
-    Functor.whiskerRight_app, ModuleCat.hom_comp, LinearMap.comp_apply]
-  rw [BalancedExtension.adjunction_unit_app_apply]
-  exact balancedExtensionFunctorIso_inv_app_tmul f M 1 m
+  have h := adjunction_homEquiv_apply f (𝟙 ((functor f).obj M)) m
+  rw [Adjunction.homEquiv_id] at h
+  exact h.trans (ModuleCat.id_apply _ _)
 
 /-- The counit of the adjunction is `n ⊗ s ↦ n · s`. Not `@[simp]`: its left-hand side mentions
 the composite functor, which `simp` unfolds. The carrier of `restrictScalars fᵐᵒᵖ N` is `N` itself,
 but only `Rᵐᵒᵖ` acts on it, so `n` is read back in `N` to apply the action of `Sᵐᵒᵖ`. -/
 theorem adjunction_counit_app_tmul (N : ModuleCat.{max v u₂} Sᵐᵒᵖ)
     (n : (ModuleCat.restrictScalars (RingHom.op f)).obj N) (s : S) :
-    (adjunction f).counit.app N (tmul f n s) = op s • (show N from n) :=
-  -- The counit applies `balancedExtensionFunctorIso`, then the left-module counit.
-  (congrArg ((BalancedExtension.adjunction (RingHom.op f)).counit.app N)
-    (balancedExtensionFunctorIso_hom_app_tmul f _ n s)).trans
-    (BalancedExtension.adjunction_counit_app_tmul (RingHom.op f) N (op s) n)
+    (adjunction f).counit.app N (tmul f n s) = op s • (show N from n) := by
+  have h := adjunction_homEquiv_symm_apply_tmul f (𝟙 ((ModuleCat.restrictScalars _).obj N)) n s
+  rwa [Adjunction.homEquiv_symm_id, ModuleCat.id_apply] at h
 
 end TauCeti.RightBalancedExtension

@@ -25,7 +25,7 @@ while here the scalar `f r` is multiplied into `S` from the left.
 The extension of scalars along a composite is the iterated extension
 (`TauCeti.RightBalancedExtension.cancelBaseChange`), and extension along the identity is the
 identity (`TauCeti.RightBalancedExtension.rid`). These identifications satisfy the pentagon and
-both triangle identities, so `P ↦ P ⊗_R S` is coherently functorial in the ring homomorphism.
+both triangle identities.
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.RightBalancedExtension` is an `abbrev`.
 
