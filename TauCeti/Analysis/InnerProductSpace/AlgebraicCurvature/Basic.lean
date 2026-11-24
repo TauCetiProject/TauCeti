@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.LinearAlgebra.Multilinear.Basis
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # Algebraic curvature tensors
@@ -43,12 +45,18 @@ of the inner product with itself is the constant-curvature tensor
 `r(u, v, z, w) = ⟪u, z⟫ ⟪v, w⟫ - ⟪u, w⟫ ⟪v, z⟫`, the curvature four-tensor of the unit sphere.
 It is positive on `(u, v, u, v)`, where it is the Gram determinant, exactly for linearly
 independent `u, v`, and it is invariant under linear isometries.
-Its Ricci contraction is `(n - 1) g`, its scalar contraction is `n (n - 1)`, contracting an
-algebraic curvature tensor against it in an orthonormal basis recovers the tensor and its Ricci
-contraction (`TauCeti.FourTensor.sum_mul_constantCurvature_last`,
-`TauCeti.FourTensor.sum_mul_constantCurvature_second_fourth`), and `κ` times it is the four-tensor
-of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the identity recorded
-by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
+Its Ricci contraction is `(n - 1) g`, its scalar contraction is `n (n - 1)`, and `κ` times it is
+the four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, the
+identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
+
+A four-tensor `r` acts on bilinear forms by contracting its first and third slots,
+`TauCeti.FourTensor.curvatureAction`: `r(h)(u, v) = ∑_pq h(eₚ, e_q) r(eₚ, u, e_q, v)` in any
+orthonormal basis, with `r(g) = Ric(r)`. Contracting an algebraic curvature tensor against a
+Kulkarni–Nomizu product `h ⊙ g` with the inner product in an orthonormal basis evaluates `r`, its
+Ricci contraction and `r(h)` at arguments moved by `h♯ = bilinFormToEnd h`
+(`TauCeti.FourTensor.sum_mul_kulkarniNomizu_innerₗ_last`,
+`TauCeti.FourTensor.sum_mul_kulkarniNomizu_innerₗ_second_fourth`), and
+`(h ⊙ g)(k) = tr(h♯ k♯) g + (tr k) h - ⟪h♯ k♯ ·, ·⟫ - ⟪k♯ h♯ ·, ·⟫` for symmetric `h` and `k`.
 
 Given a family `b : ι → V` in a real inner product space, the rank-one coordinate four-tensors
 `TauCeti.FourTensor.coordFourTensor b i j k l` evaluate `(u, v, z, w)` to
@@ -78,6 +86,7 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
 * `TauCeti.FourTensor.constantCurvature`: the constant-curvature tensor of curvature `1`.
+* `TauCeti.FourTensor.curvatureAction`: the action of a four-tensor on bilinear forms.
 * `TauCeti.FourTensor.coordFourTensor`: the rank-one coordinate four-tensor
   `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`.
 * `TauCeti.FourTensor.planeCurvature`: the rank-one algebraic curvature four-tensor of a pair of
@@ -109,9 +118,12 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   and positivity of `r(u, v, u, v)` on linearly independent pairs.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
-* `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
-  `TauCeti.FourTensor.sum_mul_constantCurvature_last`, and
-  `TauCeti.FourTensor.sum_mul_constantCurvature_second_fourth`.
+* `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
+* `TauCeti.FourTensor.curvatureAction_apply_orthonormalBasis` and
+  `TauCeti.FourTensor.curvatureAction_innerₗ`: basis independence of the action and `r(g) = Ric(r)`.
+* `TauCeti.FourTensor.sum_mul_kulkarniNomizu_innerₗ_last`,
+  `TauCeti.FourTensor.sum_mul_kulkarniNomizu_innerₗ_second_fourth`, and
+  `TauCeti.FourTensor.curvatureAction_kulkarniNomizu_innerₗ`: contractions against `h ⊙ g`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
   `κ` has four-tensor `κ` times the constant-curvature tensor.
 * `TauCeti.FourTensor.norm_coordFourTensor` and `TauCeti.FourTensor.sum_coordFourTensor_eq`:
@@ -761,69 +773,178 @@ theorem inner_eq_mul_constantCurvature {R : V → V → V → V} {κ : ℝ}
     real_inner_smul_left]
   ring
 
-/-- Contracting the last two slots of an algebraic curvature tensor `r` against
-`constantCurvature V` in an orthonormal basis `b` evaluates `2 * r ![a, c, x, y]`. -/
-theorem sum_mul_constantCurvature_last {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (a c x y : V) :
-    (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
-      2 * r ![a, c, x, y] := by
-  have heval (u v : V) :
-      (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, c, u, v] := by
-    calc (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
-        = ∑ p, ∑ q, toLinearMap₄ r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
-          Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-            rw [toLinearMap₄_apply, real_inner_comm u, real_inner_comm v]
-            ring
-      _ = r ![a, c, u, v] := by
-          rw [b.sum_apply_mul_inner_mul_inner b, toLinearMap₄_apply]
-  have hsub : (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
-      (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b p⟫_ℝ * ⟪y, b q⟫_ℝ)) -
-        ∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ) := by
-    simp_rw [constantCurvature_apply, mul_sub, Finset.sum_sub_distrib]
-  have h2 : (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ)) = r ![a, c, y, x] := by
-    rw [← heval y x]
-    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by ring
-  rw [hsub, heval, h2, hr.antisymm_last a c y x]
+/-! ### The action of a four-tensor on bilinear forms -/
+
+private def curvatureActionFun (r : FourTensor V) (h : BilinForm ℝ V) : BilinForm ℝ V :=
+  LinearMap.mk₂ ℝ (fun u v ↦ ∑ p, ∑ q, h (stdOrthonormalBasis ℝ V p)
+      (stdOrthonormalBasis ℝ V q) *
+        r ![stdOrthonormalBasis ℝ V p, u, stdOrthonormalBasis ℝ V q, v])
+    (fun _ _ _ ↦ by simp only [apply_add_second, mul_add, Finset.sum_add_distrib])
+    (fun _ _ _ ↦ by
+      simp only [apply_smul_second, smul_eq_mul, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring)
+    (fun _ _ _ ↦ by simp only [apply_add_fourth, mul_add, Finset.sum_add_distrib])
+    (fun _ _ _ ↦ by
+      simp only [apply_smul_fourth, smul_eq_mul, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring)
+
+/-- The action `h ↦ r(h)` of a four-tensor `r` on bilinear forms, contracting the first and
+third slots of `r` against `h`: in an orthonormal basis `(eₚ)`,
+`r(h)(u, v) = ∑_pq h(eₚ, e_q) r(eₚ, u, e_q, v)`
+(`TauCeti.FourTensor.curvatureAction_apply_orthonormalBasis`). Contracting against the inner
+product gives the Ricci contraction, `r(g) = Ric(r)`. -/
+def curvatureAction : FourTensor V →ₗ[ℝ] BilinForm ℝ V →ₗ[ℝ] BilinForm ℝ V :=
+  LinearMap.mk₂ ℝ curvatureActionFun
+    (fun _ _ _ ↦ by
+      ext; simp [curvatureActionFun, mul_add, Finset.sum_add_distrib])
+    (fun _ _ _ ↦ by
+      ext; simp only [curvatureActionFun, LinearMap.mk₂_apply, smul_apply, smul_eq_mul,
+        LinearMap.smul_apply, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring)
+    (fun _ _ _ ↦ by
+      ext; simp [curvatureActionFun, add_mul, Finset.sum_add_distrib])
+    (fun _ _ _ ↦ by
+      ext; simp only [curvatureActionFun, LinearMap.mk₂_apply, smul_eq_mul,
+        LinearMap.smul_apply, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring)
+
+/-- **Basis independence** of `curvatureAction`: in every orthonormal basis `b`,
+`r(h)(u, v) = ∑_pq h(b p, b q) r(b p, u, b q, v)`. -/
+theorem curvatureAction_apply_orthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) (r : FourTensor V) (h : BilinForm ℝ V) (u v : V) :
+    curvatureAction r h u v = ∑ p, ∑ q, h (b p) (b q) * r ![b p, u, b q, v] := by
+  have hid : ∀ x y : V, ⟪(id : V → V) x, y⟫_ℝ = ⟪x, (id : V → V) y⟫_ℝ := fun _ _ ↦ rfl
+  have key := (stdOrthonormalBasis ℝ V).sum_sum_inner_comp_eq_of_inner_eq b hid hid h
+    (ricciSlice r u v)
+  simp only [Real.inner_apply, ricciSlice_apply, id_eq] at key
+  simp only [curvatureAction, curvatureActionFun, LinearMap.mk₂_apply]
+  simpa only [mul_comm] using key
+
+/-- Contracting a four-tensor against the inner product gives its Ricci contraction:
+`r(g) = Ric(r)`. -/
+@[simp]
+theorem curvatureAction_innerₗ (r : FourTensor V) :
+    curvatureAction r (innerₗ V) = ricci r := by
+  classical
+  let b := stdOrthonormalBasis ℝ V
+  ext u v
+  simp only [curvatureAction_apply_orthonormalBasis b, ricci_apply_orthonormalBasis b,
+    innerₗ_apply_apply, orthonormal_iff_ite.mp b.orthonormal, ite_mul, one_mul, zero_mul,
+    Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+
+/-! ### Contractions against Kulkarni–Nomizu products with the inner product -/
+
+/-- Contracting the last two slots of an algebraic curvature tensor `r` against the
+Kulkarni–Nomizu product `h ⊙ g` in an orthonormal basis `b`, where `h♯ = bilinFormToEnd h`:
+`∑_pq r(a, c, b p, b q) (h ⊙ g)(x, y, b p, b q) = 2 (r(a, c, h♯ x, y) + r(a, c, x, h♯ y))`. -/
+theorem sum_mul_kulkarniNomizu_innerₗ_last {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    {r : FourTensor V} (hr : IsAlgebraicCurvature r) (h : BilinForm ℝ V) (a c x y : V) :
+    (∑ p, ∑ q, r ![a, c, b p, b q] * kulkarniNomizu h (innerₗ V) ![x, y, b p, b q]) =
+      2 * (r ![a, c, bilinFormToEnd h x, y] + r ![a, c, x, bilinFormToEnd h y]) := by
+  set H := bilinFormToEnd h
+  set B := toLinearMap₄ r a c
+  have hexp : (∑ p, ∑ q, r ![a, c, b p, b q] * kulkarniNomizu h (innerₗ V) ![x, y, b p, b q]) =
+      (∑ p, ∑ q, B (b p) (b q) * ⟪b p, H x⟫_ℝ * ⟪b q, y⟫_ℝ) +
+        (∑ p, ∑ q, B (b p) (b q) * ⟪b p, x⟫_ℝ * ⟪b q, H y⟫_ℝ) -
+        (∑ p, ∑ q, B (b p) (b q) * ⟪b p, y⟫_ℝ * ⟪b q, H x⟫_ℝ) -
+        (∑ p, ∑ q, B (b p) (b q) * ⟪b p, H y⟫_ℝ * ⟪b q, x⟫_ℝ) := by
+    simp only [← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
+    simp only [B, H, toLinearMap₄_apply, kulkarniNomizu_apply, innerₗ_apply_apply,
+      LinearMap.BilinForm.inner_bilinFormToEnd_right, real_inner_comm (b p) x,
+      real_inner_comm (b p) y, real_inner_comm (b q) x, real_inner_comm (b q) y]
+    ring
+  simp only [hexp, b.sum_apply_mul_inner_mul_inner b]
+  simp only [B, toLinearMap₄_apply]
+  rw [hr.antisymm_last a c y, hr.antisymm_last a c (H y) x]
   ring
 
-/-- Contracting the second and fourth slots of an algebraic curvature tensor `r` against
-`constantCurvature V` in an orthonormal basis `b` yields
-`ricci r a c * ⟪x, y⟫ - r ![a, y, c, x]`. -/
-theorem sum_mul_constantCurvature_second_fourth {ι : Type*} [Fintype ι]
+/-- Contracting the second and fourth slots of an algebraic curvature tensor `r` against the
+Kulkarni–Nomizu product `h ⊙ g` of a symmetric form `h` in an orthonormal basis `b`:
+`∑_pq r(a, b p, c, b q) (h ⊙ g)(x, b p, y, b q) =
+  h(x, y) Ric(a, c) + ⟪x, y⟫ r(h)(a, c) - r(a, y, c, h♯ x) - r(a, h♯ y, c, x)`. -/
+theorem sum_mul_kulkarniNomizu_innerₗ_second_fourth {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {r : FourTensor V} (hr : IsAlgebraicCurvature r)
-    (a c x y : V) :
-    (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
-      ricci r a c * ⟪x, y⟫_ℝ - r ![a, y, c, x] := by
-  have hslot (u v : V) : r ![a, u, c, v] = ricciSlice r a c u v := by
-    rw [ricciSlice_apply, hr.swap_first_last]
-  have heval (u v : V) :
-      (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, u, c, v] := by
-    calc (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
-        = ∑ p, ∑ q, ricciSlice r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
-          Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-            rw [hslot, real_inner_comm u, real_inner_comm v]
-            ring
-      _ = r ![a, u, c, v] := by
-          rw [b.sum_apply_mul_inner_mul_inner b, ← hslot]
-  have hsub : (∑ p, ∑ q, r ![a, b p, c, b q] * constantCurvature V ![x, b p, y, b q]) =
-      (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) -
-        ∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ) := by
-    simp_rw [constantCurvature_apply, mul_sub, Finset.sum_sub_distrib]
-  have h1 : (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ)) =
-      ricci r a c * ⟪x, y⟫_ℝ := by
-    calc (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, y⟫_ℝ * ⟪b p, b q⟫_ℝ))
-        = ∑ p, ∑ q, (r ![a, b p, c, b q] * ⟪x, y⟫_ℝ) • ⟪b q, b p⟫_ℝ :=
-          Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-            rw [smul_eq_mul, real_inner_comm (b q) (b p), mul_assoc]
-      _ = ∑ p, r ![a, b p, c, b p] * ⟪x, y⟫_ℝ := b.orthonormal.inner_left_right_finset
-      _ = ricci r a c * ⟪x, y⟫_ℝ := by
-          simp_rw [hslot, ricciSlice_apply, ← Finset.sum_mul, ricci_apply_orthonormalBasis b]
-  have h2 : (∑ p, ∑ q, r ![a, b p, c, b q] * (⟪x, b q⟫_ℝ * ⟪b p, y⟫_ℝ)) = r ![a, y, c, x] := by
-    rw [← heval y x]
-    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-      rw [real_inner_comm y (b p)]
-      ring
-  rw [hsub, h1, h2]
+    {h : BilinForm ℝ V} (hh : h.IsSymm) (a c x y : V) :
+    (∑ p, ∑ q, r ![a, b p, c, b q] * kulkarniNomizu h (innerₗ V) ![x, b p, y, b q]) =
+      h x y * ricci r a c + ⟪x, y⟫_ℝ * curvatureAction r h a c -
+        r ![a, y, c, bilinFormToEnd h x] - r ![a, bilinFormToEnd h y, c, x] := by
+  classical
+  set H := bilinFormToEnd h
+  set B := (toLinearMap₄ r a).flip c
+  have hB (p q : V) : B p q = r ![a, p, c, q] := by simp [B]
+  have hexp : (∑ p, ∑ q, r ![a, b p, c, b q] * kulkarniNomizu h (innerₗ V) ![x, b p, y, b q]) =
+      h x y * (∑ p, ∑ q, B (b p) (b q) * ⟪b p, b q⟫_ℝ) +
+        ⟪x, y⟫_ℝ * (∑ p, ∑ q, h (b p) (b q) * r ![b p, a, b q, c]) -
+        (∑ p, ∑ q, B (b p) (b q) * ⟪b p, y⟫_ℝ * ⟪b q, H x⟫_ℝ) -
+        (∑ p, ∑ q, B (b p) (b q) * ⟪b p, H y⟫_ℝ * ⟪b q, x⟫_ℝ) := by
+    simp only [Finset.mul_sum, ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
+    simp only [hB, H, kulkarniNomizu_apply, innerₗ_apply_apply,
+      LinearMap.BilinForm.inner_bilinFormToEnd_right, real_inner_comm (b q) x]
+    rw [hr.swap_first_last (b p), hh.eq (b p) y]
+    ring
+  have hdiag : (∑ p, ∑ q, B (b p) (b q) * ⟪b p, b q⟫_ℝ) = ricci r a c := by
+    simp only [orthonormal_iff_ite.mp b.orthonormal, mul_ite, mul_one, mul_zero,
+      Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, hB, ricci_apply_orthonormalBasis b]
+    exact Finset.sum_congr rfl fun p _ ↦ hr.swap_first_last _ _ _ _
+  rw [hexp, hdiag, ← curvatureAction_apply_orthonormalBasis, b.sum_apply_mul_inner_mul_inner b,
+    b.sum_apply_mul_inner_mul_inner b, hB, hB]
+
+/-- The action of a Kulkarni–Nomizu product with the inner product on a symmetric form: for
+symmetric `h` and `k`, with `h♯ = bilinFormToEnd h` and `k♯ = bilinFormToEnd k`,
+`(h ⊙ g)(k) = tr(h♯ k♯) g + (tr k) h - ⟪h♯ k♯ ·, ·⟫ - ⟪k♯ h♯ ·, ·⟫`. -/
+theorem curvatureAction_kulkarniNomizu_innerₗ {h k : BilinForm ℝ V} (hh : h.IsSymm)
+    (hk : k.IsSymm) :
+    curvatureAction (kulkarniNomizu h (innerₗ V)) k =
+      LinearMap.trace ℝ V (bilinFormToEnd h ∘ₗ bilinFormToEnd k) • innerₗ V +
+        LinearMap.BilinMap.metricTrace k • h -
+        (innerₗ V).comp (bilinFormToEnd h ∘ₗ bilinFormToEnd k) -
+        (innerₗ V).comp (bilinFormToEnd k ∘ₗ bilinFormToEnd h) := by
+  classical
+  set b := stdOrthonormalBasis ℝ V
+  set H := bilinFormToEnd h
+  set K := bilinFormToEnd k
+  ext u v
+  have hexp : curvatureAction (kulkarniNomizu h (innerₗ V)) k u v =
+      ⟪u, v⟫_ℝ * (∑ p, ∑ q, h (b p) (b q) * k (b p) (b q)) +
+        h u v * (∑ p, ∑ q, k (b p) (b q) * ⟪b p, b q⟫_ℝ) -
+        (∑ p, h (b p) v * ∑ q, k (b p) (b q) * ⟪b q, u⟫_ℝ) -
+        (∑ p, ∑ q, h u (b q) * (k (b p) (b q) * ⟪b p, v⟫_ℝ)) := by
+    rw [curvatureAction_apply_orthonormalBasis b]
+    simp only [Finset.mul_sum, ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
+    simp only [kulkarniNomizu_apply, innerₗ_apply_apply]
+    rw [real_inner_comm u (b q)]
+    ring
+  have h3 : (∑ p, h (b p) v * ∑ q, k (b p) (b q) * ⟪b q, u⟫_ℝ) = ⟪H (K u), v⟫_ℝ := by
+    calc (∑ p, h (b p) v * ∑ q, k (b p) (b q) * ⟪b q, u⟫_ℝ)
+        = ∑ p, h.flip v (b p) * ⟪b p, K u⟫_ℝ := Finset.sum_congr rfl fun p _ ↦ by
+          rw [b.sum_apply_mul_inner, LinearMap.BilinForm.flip_apply, hk.eq (b p) u,
+            LinearMap.BilinForm.inner_bilinFormToEnd_right]
+      _ = ⟪H (K u), v⟫_ℝ := by
+          rw [b.sum_apply_mul_inner, LinearMap.BilinForm.flip_apply,
+            LinearMap.BilinForm.inner_bilinFormToEnd_left]
+  have h4 : (∑ p, ∑ q, h u (b q) * (k (b p) (b q) * ⟪b p, v⟫_ℝ)) = ⟪K (H u), v⟫_ℝ := by
+    have hq (q : Fin (Module.finrank ℝ V)) :
+        (∑ p, k (b p) (b q) * ⟪b p, v⟫_ℝ) = ⟪b q, K v⟫_ℝ := by
+      calc (∑ p, k (b p) (b q) * ⟪b p, v⟫_ℝ) = ∑ p, k.flip (b q) (b p) * ⟪b p, v⟫_ℝ :=
+            Finset.sum_congr rfl fun p _ ↦ by rw [LinearMap.BilinForm.flip_apply]
+        _ = ⟪b q, K v⟫_ℝ := by
+            rw [b.sum_apply_mul_inner, LinearMap.BilinForm.flip_apply,
+              LinearMap.BilinForm.inner_bilinFormToEnd_right]
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, hq, b.sum_apply_mul_inner]
+    rw [LinearMap.BilinForm.inner_bilinFormToEnd_left, hk.eq _ v,
+      ← LinearMap.BilinForm.inner_bilinFormToEnd_right k v,
+      LinearMap.BilinForm.inner_bilinFormToEnd_left]
+  have h2 : (∑ p, ∑ q, k (b p) (b q) * ⟪b p, b q⟫_ℝ) = LinearMap.BilinMap.metricTrace k := by
+    simp only [orthonormal_iff_ite.mp b.orthonormal, mul_ite, mul_one, mul_zero,
+      Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, LinearMap.BilinMap.metricTrace_eq_sum k b]
+  rw [hexp, h2, h3, h4, ← LinearMap.BilinForm.trace_bilinFormToEnd_comp_bilinFormToEnd b hh]
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+    innerₗ_apply_apply, smul_eq_mul, H, K]
+  ring
 
 end InnerProductSpace
 

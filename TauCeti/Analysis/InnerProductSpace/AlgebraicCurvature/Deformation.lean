@@ -146,31 +146,24 @@ theorem boehmWilkingDeformation_apply_eq_add_kulkarniNomizu (hn : Module.finrank
     (a b : ℝ) (r : FourTensor V) :
     boehmWilkingDeformation a b r = r + kulkarniNomizu (b • tracelessRicci r +
       (a * scalar r / Module.finrank ℝ V) • innerₗ V) (innerₗ V) := by
-  have hcc : constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
-    ext_vec fun u v z w ↦ by simp only [constantCurvature_apply, smul_apply, kulkarniNomizu_apply,
-      innerₗ_apply_apply, smul_eq_mul]; ring
   rcases Nat.lt_or_gt_of_ne hn with hlt | hgt
   · -- In dimension at most one, both `Ric₀` and the constant-curvature tensor vanish.
     have h1 : Module.finrank ℝ V ≤ 1 := by omega
     have hgg : kulkarniNomizu (innerₗ V) (innerₗ V) = 0 := by
       have h0 := isAlgebraicCurvature_constantCurvature.eq_zero_of_finrank_le_one h1
-      rw [hcc] at h0
+      rw [constantCurvature_eq_half_smul_kulkarniNomizu] at h0
       exact (smul_eq_zero.mp h0).resolve_left (by norm_num)
-    simp [boehmWilkingDeformation_apply, scalarPart_apply, tracelessRicciPart_apply, hcc, hgg,
+    simp [boehmWilkingDeformation_apply, scalarPart_apply, tracelessRicciPart_apply,
+      constantCurvature_eq_half_smul_kulkarniNomizu, hgg,
       tracelessRicci_eq_zero_of_finrank_le_one r h1]
   have hn0 : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
   have hn1 : (Module.finrank ℝ V : ℝ) - 1 ≠ 0 := sub_ne_zero.mpr (by norm_cast; omega)
   have hn2 : (Module.finrank ℝ V : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn)
-  have e1 : 2 * ((Module.finrank ℝ V : ℝ) - 1) * a *
-      (scalar r / (Module.finrank ℝ V * ((Module.finrank ℝ V : ℝ) - 1))) * (1 / 2) =
-      a * scalar r / Module.finrank ℝ V := by
-    field_simp
-  have e2 : ((Module.finrank ℝ V : ℝ) - 2) * b * ((Module.finrank ℝ V : ℝ) - 2)⁻¹ = b := by
-    field_simp
-  rw [boehmWilkingDeformation_apply, scalarPart_apply, tracelessRicciPart_apply, hcc,
-    map_add, map_smul, map_smul, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply,
-    smul_smul, smul_smul, smul_smul, e1, e2]
-  rw [add_assoc, add_comm (_ • kulkarniNomizu (innerₗ V) (innerₗ V))]
+  simp only [boehmWilkingDeformation_apply, scalarPart_apply, tracelessRicciPart_apply,
+    constantCurvature_eq_half_smul_kulkarniNomizu, map_add, map_smul, LinearMap.add_apply,
+    LinearMap.smul_apply, smul_smul]
+  -- Compare the coefficients of `r`, `Ric₀ ⊙ g` and `g ⊙ g`.
+  match_scalars <;> field_simp
 
 /-- `ℓ_(a,b)` fixes every four-tensor with vanishing Ricci contraction, in particular every Weyl
 curvature tensor. -/

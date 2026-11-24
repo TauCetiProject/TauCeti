@@ -32,7 +32,8 @@ with the inverse of `g` regarded as a map to the dual.
 
 ## Main results
 
-* `LinearMap.BilinForm.inner_bilinFormToEnd_left`, `LinearMap.bilinFormToEnd_symm_apply`,
+* `LinearMap.BilinForm.inner_bilinFormToEnd_left`, `LinearMap.BilinForm.inner_bilinFormToEnd_right`,
+  `LinearMap.bilinFormToEnd_symm_apply`,
   `LinearMap.BilinForm.innerₗ_comp_bilinFormToEnd`, `LinearMap.bilinFormToEnd_innerₗ_comp`, and
   `TauCeti.bilinFormToEnd_innerₗ`: pairing and inverse laws.
 * `TauCeti.isSymmetric_bilinFormToEnd_iff`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
@@ -89,6 +90,11 @@ open TauCeti
     ⟪bilinFormToEnd B u, v⟫ = B u v := by
   simp [bilinFormToEnd, InnerProductSpace.toDual_symm_apply]
 
+/-- Pairing `v` with `bilinFormToEnd B u` recovers `B u v`. -/
+@[simp] theorem inner_bilinFormToEnd_right (B : BilinForm ℝ E) (u v : E) :
+    ⟪v, bilinFormToEnd B u⟫ = B u v := by
+  rw [real_inner_comm, inner_bilinFormToEnd_left]
+
 /-- Lowering `bilinFormToEnd B` with `innerₗ E` recovers `B`. -/
 @[simp] theorem innerₗ_comp_bilinFormToEnd (B : BilinForm ℝ E) :
     (innerₗ E).comp (bilinFormToEnd B) = B := by
@@ -110,10 +116,10 @@ theorem trace_bilinFormToEnd_comp_bilinFormToEnd {ι : Type*} [Fintype ι]
       ∑ i, ∑ j, h (b i) (b j) * k (b i) (b j) := by
   rw [LinearMap.trace_eq_sum_inner _ b]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.comp_apply, real_inner_comm, inner_bilinFormToEnd_left, hh.eq,
+  rw [LinearMap.comp_apply, inner_bilinFormToEnd_right, hh.eq,
     ← b.sum_repr' (bilinFormToEnd k (b i)), map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [map_smul, smul_eq_mul, real_inner_comm, inner_bilinFormToEnd_left, mul_comm]
+  rw [map_smul, smul_eq_mul, inner_bilinFormToEnd_right, mul_comm]
 
 /-- Metric index raising pulls back `B.compl₁₂ f g` via `LinearMap.adjoint g`. -/
 theorem bilinFormToEnd_compl₁₂ {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
