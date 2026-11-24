@@ -240,6 +240,31 @@ theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c �
   rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), hid]
   linarith
 
+/-- **Folding across a hyperplane is `1`-Lipschitz.** The map that fixes the closed half-space
+`{y | c ≤ ⟪y, ν⟫}` and reflects the other side onto it in the hyperplane `{y | ⟪y, ν⟫ = c}` does
+not increase distances. Composing with it extends a function given on the closed half-space to
+the whole space, keeping Hölder and Lipschitz constants. -/
+theorem lipschitzWith_one_ite_hyperplaneReflection (ν : F) (c : ℝ) :
+    LipschitzWith 1 fun x => if c ≤ ⟪x, ν⟫_ℝ then x else hyperplaneReflection ν c x := by
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
+  rw [NNReal.coe_one, one_mul]
+  rcases eq_or_ne ν 0 with rfl | hν
+  · by_cases hc : c ≤ 0 <;> simp [hc]
+  -- A point and the mirror image of a point on the other side.
+  have hmix {x y : F} (hx : c ≤ ⟪x, ν⟫_ℝ) (hy : ¬c ≤ ⟪y, ν⟫_ℝ) :
+      dist x (hyperplaneReflection ν c y) ≤ dist x y := by
+    have hρy : c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ := by
+      rw [inner_hyperplaneReflection hν]
+      linarith [not_le.1 hy]
+    simpa [hyperplaneReflection_hyperplaneReflection] using
+      dist_le_dist_hyperplaneReflection hx hρy
+  split_ifs with hx hy hy
+  · exact le_rfl
+  · exact hmix hx hy
+  · rw [dist_comm, dist_comm x]
+    exact hmix hy hx
+  · exact ((hyperplaneReflection ν c).dist_map x y).le
+
 /-- **Reflection does not bring a point closer to a set on its side.** If `S` lies in the closed
 half-space `{y | c ≤ ⟪y, ν⟫}` and `x` lies in that half-space with its mirror image in the open
 `r`-thickening of `S`, then `x` lies in the `r`-thickening of `S` too. -/
