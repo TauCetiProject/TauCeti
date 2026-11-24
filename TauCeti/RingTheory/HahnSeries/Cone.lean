@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Submonoid.Finsupp
 public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.Algebra.Order.Group.Cone
+public import Mathlib.Algebra.Order.Monoid.OrderDual
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.RingTheory.HahnSeries.Multiplication
 public import TauCeti.Order.WellFounded.Set
@@ -207,14 +208,14 @@ theorem isPWO_Ici [IsAddFG C] (x : ConeExponent hC) : (Set.Ici x).IsPWO := by
   classical
   obtain ⟨S, rfl⟩ := AddSubmonoid.exists_of_isAddFG C
   -- The elements of `λ - C` are `λ - ∑ₛ aₛ • s`, monotonically in the coefficients `a : S → ℕ`.
-  let f : (S → ℕ) → ConeExponent hC := fun a ↦ x - toConeExponent (∑ s : S, a s • s.1)
+  let f : (S → ℕ) → ConeExponent hC := fun a ↦ x - toConeExponent (∑ s : S, a s • (s : M))
   have hf : Monotone f := by
     intro a b hab
     rw [le_def]
     simp only [f, ofConeExponent_sub, sub_sub_sub_cancel_left, ← Finset.sum_sub_distrib]
     refine AddSubmonoid.sum_mem _ fun s _ ↦ ?_
     rw [← Nat.sub_add_cancel (hab s), add_nsmul, add_sub_cancel_right]
-    exact AddSubmonoid.nsmul_mem _ (AddSubmonoid.subset_closure s.2) _
+    exact AddSubmonoid.nsmul_mem _ (AddSubmonoid.subset_closure s.prop) _
   refine ((Set.isPWO_univ_iff.mpr inferInstance).image_of_monotone hf).mono fun y hy ↦ ?_
   rw [mem_Ici_iff, AddSubmonoid.mem_closure_finset'] at hy
   obtain ⟨a, ha⟩ := hy

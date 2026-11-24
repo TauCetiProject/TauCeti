@@ -201,8 +201,8 @@ theorem finite_support_of_isEmpty [IsEmpty I] {S : Type*} [Zero S] (f : R.Charac
   refine (t.finite_toSet.image toConeExponent).subset fun x hx ↦ ?_
   obtain ⟨b, hb, hbx⟩ := ht x.ofConeExponent hx
   refine ⟨b, hb, ConeExponent.ext ?_⟩
-  rw [Submodule.mem_toAddSubmonoid, posRootCone_eq_bot, Submodule.mem_bot, sub_eq_zero] at hbx
-  simpa using hbx
+  exact sub_eq_zero.mp ((Submodule.eq_bot_iff _).mp R.posRootCone_eq_bot _
+    ((Submodule.mem_toAddSubmonoid _ _).mp hbx))
 
 end CharZero
 
@@ -299,7 +299,7 @@ theorem coeff_toCharacterRing_of_notMem (f : L.CharacterRing S) {μ : Dual ℚ H
   rintro ⟨x, hx⟩
   have hx' : (x.ofConeExponent : Dual ℚ H) = μ := by
     simpa using congrArg ofConeExponent hx
-  exact hμ (hx' ▸ x.ofConeExponent.2)
+  exact hμ (hx' ▸ x.ofConeExponent.property)
 
 /-- Extension by zero is injective. -/
 theorem toCharacterRing_injective : Function.Injective (L.toCharacterRing S) :=
@@ -314,7 +314,7 @@ theorem mem_range_toCharacterRing_iff (g : R.CharacterRing S) :
   · obtain ⟨y, hy⟩ := h hμ
     have hy' : (y.ofConeExponent : Dual ℚ H) = μ := by
       simpa using congrArg ofConeExponent hy
-    exact hy' ▸ y.ofConeExponent.2
+    exact hy' ▸ y.ofConeExponent.property
   · refine ⟨toConeExponent ⟨x.ofConeExponent, h _ hx⟩, ?_⟩
     exact (L.toCharacterExponent_toConeExponent _).trans (toConeExponent_ofConeExponent x)
 
