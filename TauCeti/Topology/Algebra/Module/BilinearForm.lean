@@ -532,6 +532,17 @@ theorem _root_.ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos
   rw [inv_eq_one_div, le_div_iff₀ hc]
   linarith [hbound () rfl v, show b v v < 1 from hv]
 
+/-- A real-bilinear complex form whose real part is positive at every nonzero vector on a
+finite-dimensional real normed space satisfies a uniform coercivity bound `m * ‖v‖ ^ 2 ≤ (B v v).re`
+for some `m > 0`. -/
+theorem exists_pos_mul_norm_sq_le_re_bilinear {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) (hB : ∀ v : E, v ≠ 0 → 0 < (B v v).re) :
+    ∃ m : ℝ, 0 < m ∧ ∀ v : E, m * ‖v‖ ^ 2 ≤ (B v v).re := by
+  let bRe : E →ₗ[ℝ] E →ₗ[ℝ] ℝ := B.compr₂ Complex.reCLM.toLinearMap
+  obtain ⟨m, hm, hle⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le
+    (b := fun _ ↦ bRe.toContinuousBilinearMap) continuousOn_const fun _ _ v hv ↦ hB v hv
+  exact ⟨m, hm, fun v ↦ by simpa [bRe] using hle () rfl v⟩
+
 end TauCeti
 
 end

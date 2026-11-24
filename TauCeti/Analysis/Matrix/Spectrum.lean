@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.Matrix.LDL
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 
 /-!
@@ -471,3 +472,54 @@ theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
   simpa [e, IsHermitian.eigenvalues] using hi _ hk'
 
 end Matrix.IsHermitian
+
+namespace Matrix.PosDef
+
+/-- Congruence normalization of a real positive-definite matrix: for `A` positive definite on a
+finite linearly ordered index type `ι`, there exist inverse matrices `P, Q` with
+`Pᵀ * A * P = 1`. -/
+theorem exists_congruence_one {ι : Type*} [Fintype ι] [LinearOrder ι] {A : Matrix ι ι ℝ}
+    (hA : A.PosDef) :
+    ∃ P Q : Matrix ι ι ℝ, P * Q = 1 ∧ Q * P = 1 ∧ Pᵀ * A * P = 1 := by
+  obtain ⟨P, -, hP⟩ := hA.exists_isUpperTriangular_conjTranspose_mul_mul_eq_one
+  rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hP
+  exact ⟨P, Pᵀ * A, mul_eq_one_comm.mp hP, hP, hP⟩
+
+/-- Simultaneous diagonalization of a real positive-definite matrix `A` and a real Hermitian
+(symmetric) matrix `C`: there exist inverse matrices `P, Q` and eigenvalues `lam` such that
+`Pᵀ * A * P = 1` and `Pᵀ * C * P = Matrix.diagonal lam`. -/
+theorem exists_simultaneous_diagonal_real {ι : Type*} [Fintype ι] [LinearOrder ι]
+    {A C : Matrix ι ι ℝ} (hA : A.PosDef) (hC : C.IsHermitian) :
+    ∃ (P Q : Matrix ι ι ℝ) (lam : ι → ℝ),
+      P * Q = 1 ∧ Q * P = 1 ∧ Pᵀ * A * P = 1 ∧ Pᵀ * C * P = Matrix.diagonal lam := by
+  obtain ⟨P₁, Q₁, hP₁Q₁, hQ₁P₁, hP₁A⟩ := hA.exists_congruence_one
+  set M := P₁ᵀ * C * P₁
+  have hM : M.IsHermitian := by
+    simpa [M, Matrix.conjTranspose_eq_transpose_of_trivial] using
+      Matrix.isHermitian_conjTranspose_mul_mul P₁ hC
+  have hMS : M.IsSymm := by
+    rw [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] at hM
+    exact hM
+  obtain ⟨O, lam, hO_inv, hM_diag⟩ := hMS.exists_orthogonal_diagonal
+  let Om : Matrix ι ι ℝ := O
+  have hOL : Omᵀ * Om = 1 := by
+    rw [← hO_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+  have hOR : Om * Omᵀ = 1 := by
+    rw [← hO_inv, ← Units.val_mul, mul_inv_cancel, Units.val_one]
+  refine ⟨P₁ * Om, Omᵀ * Q₁, lam, ?_, ?_, ?_, ?_⟩
+  · calc (P₁ * Om) * (Omᵀ * Q₁) = P₁ * ((Om * Omᵀ) * Q₁) := by simp [Matrix.mul_assoc]
+      _ = 1 := by rw [hOR, Matrix.one_mul, hP₁Q₁]
+  · calc (Omᵀ * Q₁) * (P₁ * Om) = Omᵀ * ((Q₁ * P₁) * Om) := by simp [Matrix.mul_assoc]
+      _ = 1 := by rw [hQ₁P₁, Matrix.one_mul, hOL]
+  · calc (P₁ * Om)ᵀ * A * (P₁ * Om)
+        = Omᵀ * (P₁ᵀ * A * P₁) * Om := by simp [Matrix.transpose_mul, Matrix.mul_assoc]
+      _ = 1 := by rw [hP₁A, Matrix.mul_one, hOL]
+  · calc (P₁ * Om)ᵀ * C * (P₁ * Om) = Omᵀ * M * Om := by
+          simp [M, Matrix.transpose_mul, Matrix.mul_assoc]
+      _ = Matrix.diagonal lam := by
+          rw [hM_diag, hO_inv]
+          calc Omᵀ * (Om * diagonal lam * Omᵀ) * Om
+              = (Omᵀ * Om) * diagonal lam * (Omᵀ * Om) := by simp [Matrix.mul_assoc]
+            _ = Matrix.diagonal lam := by rw [hOL, Matrix.one_mul, Matrix.mul_one]
+
+end Matrix.PosDef
