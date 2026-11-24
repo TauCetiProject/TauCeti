@@ -32,7 +32,7 @@ scheme morphisms. Being an isomorphism is such a local property: a morphism of m
 isomorphism exactly when its pullbacks to the members of an open cover are.
 
 Along an isomorphism of schemes, pullback is direct image along the inverse, both being left
-adjoint to direct image.
+adjoint to direct image, and it is an equivalence of categories of modules.
 
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
@@ -55,7 +55,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
 * `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
-  pullback is direct image along the inverse;
+  pullback is direct image along the inverse, and
+  `AlgebraicGeometry.Scheme.Modules.isEquivalence_pullback` shows it is an equivalence;
 * `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app`: the unit of
   `(f ≫ g)^* ⊣ (f ≫ g)_*` through the units of `g` and `f`, and
   `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app` the
@@ -240,6 +241,14 @@ def _root_.AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv (g : X ⟶ Y) 
         (pushforwardComp (inv g) g).symm)
       (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
         pushforwardId X)).toAdjunction
+
+/-- Along an isomorphism of schemes `g`, pullback of modules is an equivalence of categories, being
+restriction along the open immersion `g` (`restrictEquivalence`). -/
+instance isEquivalence_pullback (g : X ⟶ Y) [IsIso g] : (pullback g).IsEquivalence := by
+  have := (restrictEquivalence (asIso g)).isEquivalence_functor
+  rw [restrictEquivalence_functor] at this
+  have := Functor.isEquivalence_of_iso (restrictFunctorIsoPullback (asIso g).hom)
+  rwa [asIso_hom] at this
 
 end IsIso
 

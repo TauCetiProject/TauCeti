@@ -41,13 +41,14 @@ presentation is the condition preserved by pullback along arbitrary morphisms of
 why the levels are required to be finitely presented rather than merely coherent.
 
 Coherent formal modules pull back along morphisms `g : 𝔛 ⟶ 𝔜` of adic thickening systems, level by
-level. Pulling back along the morphism of formal completions induced by the inclusion of an open
-subscheme `U ⊆ X` restricts a coherent formal module on `X/V(I)` to `U/V(I|_U)`, and being an
-isomorphism is a local property: a morphism of coherent formal modules on `X/V(I)` is an
-isomorphism as soon as its restrictions to the members of an open cover of `X` are. This is how
-statements about the category of coherent formal modules on the formal completion of a Noetherian
-scheme reduce to affine opens, where it is described by finite modules over the completed ring
-(Stacks, Lemmas 30.23.1 and 30.23.2).
+level; along an isomorphism `g` this is an equivalence of categories, so isomorphic adic thickening
+systems carry equivalent categories of coherent formal modules. Pulling back along the morphism of
+formal completions induced by the inclusion of an open subscheme `U ⊆ X` restricts a coherent
+formal module on `X/V(I)` to `U/V(I|_U)`, and being an isomorphism is a local property: a morphism
+of coherent formal modules on `X/V(I)` is an isomorphism as soon as its restrictions to the
+members of an open cover of `X` are. This is how statements about the category of coherent formal
+modules on the formal completion of a Noetherian scheme reduce to affine opens, where it is
+described by finite modules over the completed ring (Stacks, Lemmas 30.23.1 and 30.23.2).
 
 ## Main definitions
 
@@ -64,7 +65,8 @@ scheme reduce to affine opens, where it is described by finite modules over the 
   every level (`CoherentFormalModule.epi_iff_forall_epi_app`).
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.pullback`: the pullback of
   coherent formal modules along a morphism of adic thickening systems, an additive functor
-  preserving epimorphisms.
+  preserving epimorphisms, and an equivalence along an isomorphism
+  (`CoherentFormalModule.pullback_isEquivalence`).
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
 * `AlgebraicGeometry.Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor`: its restriction
@@ -450,6 +452,135 @@ theorem isIso_iff_of_isOpenCover_opensRange {ι : Type*} {𝔘 : ι → AdicThic
   refine (Scheme.Modules.isIso_iff_of_isOpenCover_opensRange _ (hg n) _).mpr fun i ↦ ?_
   rw [← pullback_map_app]
   exact (isIso_iff_forall_isIso_app _).mp (h i) n
+
+section IsIso
+
+variable (g : 𝔛 ⟶ 𝔜)
+
+/-- The comparison `ι n ^* (g.app (n + 1)) ^* ≅ (g.app n) ^* ι n ^*` of pullbacks of modules, from
+which the reduction isomorphisms of `(pullback g).obj M` are built. -/
+private def transitionComparison (n : ℕ) :
+    Scheme.Modules.pullback (g.app (n + 1)) ⋙ Scheme.Modules.pullback (𝔛.ι n) ≅
+      Scheme.Modules.pullback (𝔜.ι n) ⋙ Scheme.Modules.pullback (g.app n) :=
+  Scheme.Modules.pullbackComp _ _ ≪≫ Scheme.Modules.pullbackCongr (g.naturality n) ≪≫
+    (Scheme.Modules.pullbackComp _ _).symm
+
+@[reassoc]
+private lemma pullback_obj_transitionIso_hom_eq_comparison (M : CoherentFormalModule 𝔜)
+    (n : ℕ) :
+    (((pullback g).obj M).transitionIso n).hom =
+      (transitionComparison g n).hom.app (M.obj (n + 1)) ≫
+        (Scheme.Modules.pullback (g.app n)).map (M.transitionIso n).hom :=
+  (rfl)
+
+/-- The compatibility of a morphism between pullbacks with the reduction isomorphisms, with the
+reduction isomorphisms of the pullbacks written out. -/
+private lemma naturality_pullback {M N : CoherentFormalModule 𝔜}
+    (ψ : (pullback g).obj M ⟶ (pullback g).obj N) (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).map (ψ.app (n + 1)) ≫
+        (transitionComparison g n).hom.app (N.obj (n + 1)) ≫
+          (Scheme.Modules.pullback (g.app n)).map (N.transitionIso n).hom =
+      (transitionComparison g n).hom.app (M.obj (n + 1)) ≫
+        (Scheme.Modules.pullback (g.app n)).map (M.transitionIso n).hom ≫ ψ.app n := by
+  have h := ψ.naturality n
+  rw [pullback_obj_transitionIso_hom_eq_comparison_assoc,
+    pullback_obj_transitionIso_hom_eq_comparison] at h
+  -- The endpoints of `h` are the levels of `(pullback g).obj N`, which are the pullbacks of the
+  -- levels of `N` only up to unfolding `pullback`, so `h` is used up to definitional equality.
+  exact h
+
+variable [IsIso g]
+
+/-- Pullback along an isomorphism is faithful, since it is so at every level. -/
+instance pullback_faithful : (pullback g).Faithful where
+  map_injective {M N} φ ψ h := hom_ext fun n ↦
+    (Scheme.Modules.pullback (g.app n)).map_injective (by
+      rw [← pullback_map_app, ← pullback_map_app, h])
+
+/-- The levelwise preimage of a morphism between pullbacks along an isomorphism. -/
+private def appPreimage {M N : CoherentFormalModule 𝔜} (ψ : (pullback g).obj M ⟶ (pullback g).obj N)
+    (n : ℕ) : M.obj n ⟶ N.obj n :=
+  (Scheme.Modules.pullback (g.app n)).preimage (ψ.app n)
+
+private lemma map_appPreimage {M N : CoherentFormalModule 𝔜}
+    (ψ : (pullback g).obj M ⟶ (pullback g).obj N) (n : ℕ) :
+    (Scheme.Modules.pullback (g.app n)).map (appPreimage g ψ n) = ψ.app n :=
+  Functor.map_preimage _ _
+
+/-- Pullback along an isomorphism is full: the levelwise preimages of a morphism between pullbacks
+are compatible with the reduction isomorphisms, since pullback along `g.app n` is faithful. -/
+instance pullback_full : (pullback g).Full where
+  map_surjective {M N} ψ := by
+    refine ⟨{ app := appPreimage g ψ
+              naturality n := ?_ }, hom_ext fun n ↦ map_appPreimage g ψ n⟩
+    apply (Scheme.Modules.pullback (g.app n)).map_injective
+    have h := naturality_pullback g ψ n
+    rw [← map_appPreimage g ψ (n + 1), ← map_appPreimage g ψ n] at h
+    rw [Functor.map_comp, Functor.map_comp,
+      ← cancel_epi ((transitionComparison g n).hom.app (M.obj (n + 1)))]
+    -- `Functor.comp_map` unfolds the naturality square of `transitionComparison` definitionally.
+    exact ((transitionComparison g n).hom.naturality_assoc _ _).symm.trans h
+
+section EssSurj
+
+variable (M : CoherentFormalModule 𝔛)
+
+/-- The identification `g n ^* (g n)⁻¹ ^* M n ≅ M n`. -/
+private def counitApp (n : ℕ) :
+    (Scheme.Modules.pullback (g.app n)).obj
+        ((Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)) ≅ M.obj n :=
+  (Scheme.Modules.pullbackComp _ _).app _ ≪≫
+    (Scheme.Modules.pullbackCongr (IsIso.hom_inv_id (g.app n))).app _ ≪≫
+      (Scheme.Modules.pullbackId _).app _
+
+/-- The isomorphism `g n ^* ι n ^* N (n + 1) ≅ g n ^* N n` whose preimage is the reduction
+isomorphism of the descended module `N n = (g n)⁻¹ ^* M n`. -/
+private def descentTransitionIso (n : ℕ) :
+    (Scheme.Modules.pullback (g.app n)).obj ((Scheme.Modules.pullback (𝔜.ι n)).obj
+        ((Scheme.Modules.pullback (inv (g.app (n + 1)))).obj (M.obj (n + 1)))) ≅
+      (Scheme.Modules.pullback (g.app n)).obj
+        ((Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)) :=
+  (transitionComparison g n).symm.app _ ≪≫
+    (Scheme.Modules.pullback (𝔛.ι n)).mapIso (counitApp g M (n + 1)) ≪≫ M.transitionIso n ≪≫
+      (counitApp g M n).symm
+
+/-- The coherent formal module on `𝔜` whose pullback along the isomorphism `g` is `M`. -/
+private abbrev descent : CoherentFormalModule 𝔜 where
+  obj n := (Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)
+  isFinitePresentation _ := inferInstance
+  transitionIso n := (Scheme.Modules.pullback (g.app n)).preimageIso (descentTransitionIso g M n)
+
+private lemma map_descent_transitionIso_hom (n : ℕ) :
+    (Scheme.Modules.pullback (g.app n)).map ((descent g M).transitionIso n).hom =
+      (descentTransitionIso g M n).hom :=
+  Functor.map_preimage _ _
+
+private lemma counitApp_naturality (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).map (counitApp g M (n + 1)).hom ≫ (M.transitionIso n).hom =
+      ((transitionComparison g n).hom.app _ ≫ (descentTransitionIso g M n).hom) ≫
+        (counitApp g M n).hom := by
+  simp [descentTransitionIso]
+
+/-- The pullback of `descent g M` along `g` is `M`. -/
+private def pullbackDescentIso : (pullback g).obj (descent g M) ≅ M :=
+  isoMk (counitApp g M) fun n ↦ by
+    rw [pullback_obj_transitionIso_hom_eq_comparison, map_descent_transitionIso_hom]
+    -- As in `naturality_pullback`, the goal and `counitApp_naturality` differ only in how the
+    -- levels of `(pullback g).obj (descent g M)` are written.
+    exact counitApp_naturality g M n
+
+/-- Pullback along an isomorphism is essentially surjective: `M` is the pullback of the system
+`(g.app n)⁻¹ ^* M n`. -/
+instance pullback_essSurj : (pullback g).EssSurj where
+  mem_essImage M := ⟨descent g M, ⟨pullbackDescentIso g M⟩⟩
+
+end EssSurj
+
+/-- **Pullback along an isomorphism of adic thickening systems is an equivalence** of categories of
+coherent formal modules. -/
+instance pullback_isEquivalence : (pullback g).IsEquivalence where
+
+end IsIso
 
 end
 
