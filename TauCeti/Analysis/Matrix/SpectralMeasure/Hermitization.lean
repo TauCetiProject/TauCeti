@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.SpectralMeasure.LogarithmicPotential
 public import TauCeti.Analysis.Matrix.SpectralMeasure.SingularValues
 
-import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 
 /-!
@@ -17,10 +16,11 @@ import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 For a complex square matrix `A` of size `n` and a point `z` that is not an eigenvalue of `A`,
 the logarithmic potential of the eigenvalue measure of `A` is
 `U(z) = n⁻¹ log |det (A - z)| = ∫ log s dν(s)`, where `ν` is the singular-value measure of
-`A - z`. For any matrix, `∫ log s dν(s) = ½ ∫ log x dL(x)` for the spectral measure `L` of the
-Hermitian matrix `(A - z)ᴴ (A - z)`. The spectrum is finite, so the potential identity holds for
-Lebesgue-almost every `z`; for random matrices it holds, for almost every `z`, almost surely and
-simultaneously for a whole sequence of matrices.
+`A - z`. By `Matrix.integral_log_spectralMeasure_conjTranspose_mul_self`, this also equals
+`½ ∫ log x dL(x)` for the spectral measure `L` of the Hermitian matrix `(A - z)ᴴ (A - z)`. The
+spectrum is finite, so the potential identity holds for Lebesgue-almost every `z`; for random
+matrices it holds, for almost every `z`, almost surely and simultaneously for a whole sequence of
+matrices.
 
 This is how the eigenvalues of a non-Hermitian matrix are controlled through the singular values
 of its shifts: together with the potential continuity theorem
@@ -31,10 +31,6 @@ eigenvalue measures follow from limits of `∫ log s dν(s)` for almost every sh
 
 * `Matrix.logarithmicPotential_eigenvalueMeasure_eq_log_norm_det`: off the spectrum,
   `U(z) = n⁻¹ log ‖det (A - z • 1)‖`.
-* `Matrix.integral_log_singularValueMeasure_eq_log_norm_det`: for an invertible square matrix,
-  the mean logarithm of its singular values is `n⁻¹ log ‖det B‖`.
-* `Matrix.integral_log_spectralMeasure_conjTranspose_mul_self`: the mean logarithm of the
-  eigenvalues of `Aᴴ A` is twice the mean logarithm of the singular values of `A`.
 * `Matrix.logarithmicPotential_eigenvalueMeasure_eq_integral_log_singularValueMeasure`: Girko's
   hermitization identity off the spectrum, with its almost-everywhere and random-matrix forms
   `Matrix.ae_logarithmicPotential_eigenvalueMeasure_eq_integral_log_singularValueMeasure` and
@@ -52,39 +48,6 @@ public section
 namespace Matrix
 
 open MeasureTheory Polynomial
-
-section SingularValues
-
-variable {m n 𝕜 : Type*} [Fintype m] [Fintype n] [DecidableEq n] [Nonempty n] [RCLike 𝕜]
-
-/-- For an invertible square matrix, the mean logarithm of its singular values, with multiplicity,
-is the normalized logarithm of the absolute value of its determinant. -/
-theorem integral_log_singularValueMeasure_eq_log_norm_det {B : Matrix n n 𝕜} (hB : B.det ≠ 0) :
-    ∫ s, Real.log s ∂(B.singularValueMeasure : Measure ℝ) =
-      (Fintype.card n : ℝ)⁻¹ * Real.log ‖B.det‖ := by
-  -- `|det B|` is the product of the first `card n` singular values of `B`.
-  have hprod : ‖B.det‖ = ∏ i : Fin (Fintype.card n), (toEuclideanLin B).singularValues i := by
-    rw [← LinearMap.det_toLpLin 2 B, ← LinearMap.normDet_eq_norm_det,
-      LinearMap.normDet_eq_prod_singularValues, finrank_euclideanSpace,
-      Fin.prod_univ_eq_prod_range]
-  have hne : ∀ i ∈ (Finset.univ : Finset (Fin (Fintype.card n))),
-      (toEuclideanLin B).singularValues i ≠ 0 := by
-    intro i _ hi
-    exact hB (norm_eq_zero.mp (hprod.trans (Finset.prod_eq_zero (Finset.mem_univ i) hi)))
-  rw [integral_singularValueMeasure, hprod, Real.log_prod hne, smul_eq_mul]
-
-/-- The mean logarithm of the eigenvalues of the Gram matrix `Aᴴ * A` is twice the mean logarithm
-of the singular values of `A`. Zero singular values contribute `Real.log 0 = 0` on both sides. -/
-theorem integral_log_spectralMeasure_conjTranspose_mul_self (A : Matrix m n 𝕜) :
-    ∫ x, Real.log x ∂((Aᴴ * A).spectralMeasure (isHermitian_conjTranspose_mul_self A) :
-        Measure ℝ) =
-      2 * ∫ s, Real.log s ∂(A.singularValueMeasure : Measure ℝ) := by
-  rw [← map_singularValueMeasure_sq, ProbabilityMeasure.toMeasure_map,
-    integral_map (by fun_prop) Real.measurable_log.aestronglyMeasurable]
-  simp_rw [Real.log_pow, Nat.cast_ofNat]
-  exact integral_const_mul _ _
-
-end SingularValues
 
 section Eigenvalues
 
