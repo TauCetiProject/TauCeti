@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.IsoClassModel
 public import TauCeti.CategoryTheory.GrothendieckGroup.ObjectCodeMonoid
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
@@ -74,7 +74,8 @@ isomorphism classes, so that it does not depend on the skeleton used to build it
 * `TauCeti.SplitK0.grothendieckAddGroupEquiv`: split `K₀` is the group completion of the additive
   monoid of isomorphism classes of objects.
 * `TauCeti.SplitK0.of_eq_of_iff`: two objects have the same class exactly when `X ⊞ T ≅ Y ⊞ T`
-  for some object `T`.
+  for some object `T`, and `TauCeti.SplitK0.of_sub_of_eq_of_sub_of_iff` the same criterion for
+  formal differences `[X] - [Y]`.
 
 ## References
 
@@ -630,6 +631,15 @@ theorem of_eq_of_iff {X Y : C} :
     exact ⟨T, h⟩
   · have h := objectCode_eq_objectCode_iff.2 h
     rwa [objectCode_biprod, objectCode_biprod, add_comm, add_comm (objectCode Y)] at h
+
+/-- Two formal differences of object classes agree exactly when the cross sums become isomorphic
+after adding a common object: `[X] - [Y] = [X'] - [Y']` if and only if
+`(X ⊞ Y') ⊞ T ≅ (X' ⊞ Y) ⊞ T` for some `T`. This is the presentation of split `K₀` by pairs of
+objects. -/
+theorem of_sub_of_eq_of_sub_of_iff {X Y X' Y' : C} :
+    (of X - of Y : SplitK0 C) = of X' - of Y' ↔
+      ∃ T : C, Nonempty ((X ⊞ Y') ⊞ T ≅ (X' ⊞ Y) ⊞ T) := by
+  rw [sub_eq_sub_iff_add_eq_add, ← of_biprod, ← of_biprod, of_eq_of_iff]
 
 end SplitK0
 

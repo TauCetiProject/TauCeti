@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Algebra.MonoidAlgebra.Ideal
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
+public import TauCeti.Algebra.MonoidAlgebra.Ideal
 
 /-!
 # Monomial ideals of semigroup faces
@@ -130,16 +129,8 @@ include hF in
 /-- Membership in the face ideal means that every coefficient on the face vanishes. -/
 theorem mem_faceIdeal_iff (p : AddMonoidAlgebra R M) :
     p ∈ F.faceIdeal R ↔ ∀ a : F, p.coeff (a : M) = 0 := by
-  classical
-  rw [faceIdeal_def, mem_ideal_span_of'_image]
-  constructor
-  · intro hp a
-    by_contra ha
-    obtain ⟨b, hb, d, hd⟩ := hp a (Finsupp.mem_support_iff.mpr ha)
-    exact hb ((hF.add_mem_iff.mp (hd ▸ a.property)).2)
-  · intro hp a ha
-    refine ⟨a, ?_, 0, (zero_add a).symm⟩
-    exact fun h ↦ (Finsupp.mem_support_iff.mp ha) (hp ⟨a, h⟩)
+  rw [faceIdeal_def, mem_ideal_span_of'_image_iff fun d m (hm : m ∉ F) h ↦ hm (hF h).2]
+  simp
 
 /-- The monomial face ideal is exactly the kernel of restriction. -/
 theorem ker_faceRestriction : RingHom.ker (F.faceRestriction hF R) = F.faceIdeal R := by
@@ -200,10 +191,8 @@ theorem faceRestriction_comp_mapRingHom :
 /-- Changing the coefficients extends the monomial ideal of a submonoid over `R` to the monomial
 ideal of the same submonoid over `S`. -/
 @[simp]
-theorem faceIdeal_map : (F.faceIdeal R).map (mapRingHom M φ) = F.faceIdeal S := by
-  rw [faceIdeal_def, faceIdeal_def, Ideal.map_span, ← Set.image_comp]
-  congr 1
-  exact Set.image_congr fun a _ ↦ by simp [of'_apply]
+theorem faceIdeal_map : (F.faceIdeal R).map (mapRingHom M φ) = F.faceIdeal S :=
+  map_mapRingHom_ideal_span_of'_image φ _
 
 /-- Changing the coefficients maps the monomial ideal of a submonoid into the monomial ideal
 over the new coefficients. -/

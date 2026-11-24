@@ -210,7 +210,6 @@ coefficient monomorphism stays injective on chains, without any flatness assumpt
 instance : PreservesFiniteLimits (twistedChainComplexFunctor.{u, v, w} R X) where
   preservesFiniteLimits J _ _ :=
     HomologicalComplex.preservesLimitsOfShape_of_eval _ fun n ↦ by
-      have : AB4OfSize.{v} (ModuleCat.{max v w} R) := AB4OfSize_shrink.{v, w} _
       have : PreservesFiniteLimits (twistedChainComplexFunctor R X ⋙
           HomologicalComplex.eval (ModuleCat.{max v w} R) (.down ℕ) n) :=
         preservesFiniteLimits_of_natIso (twistedChainComplexFunctorEvalIso.{u, v, w} n).symm
