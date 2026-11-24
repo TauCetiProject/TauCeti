@@ -164,9 +164,10 @@ omit [ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) M] [TopologicalSpace N]
 private theorem inclusion_sdiff_symm_apply (hCo : IsOpen (C \ range f)) [Nonempty ↥(C \ range f)]
     {c : C} (hc : (c : M) ∉ range f) :
     ((isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph _).symm c =
-      ⟨c, c.property, hc⟩ :=
-  (isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph_left_inv
-    (x := (⟨c, c.property, hc⟩ : ↥(C \ range f)))
+      ⟨c, c.property, hc⟩ := by
+  simpa only [inclusion_right] using
+    (isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph_left_inv
+      (x := (⟨c, c.property, hc⟩ : ↥(C \ range f)))
 
 /-- The chart of a side of a bicollar at a point `x` off the image of `f`: a chart of `M` at `x`,
 followed by a homeomorphism of `ℝⁿ⁺¹` onto the open half-space. -/
@@ -603,7 +604,7 @@ theorem isManifold_sideChartedSpace [IsManifold (𝓡 (n + 1)) k M] [IsManifold 
     rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
   have hrefl : OpenPartialHomeomorph.refl (EuclideanHalfSpace (n + 1)) ∈
       IsManifold.maximalAtlas (𝓡∂ (n + 1)) k (EuclideanHalfSpace (n + 1)) :=
-    IsManifold.chart_mem_maximalAtlas (0 : EuclideanHalfSpace (n + 1))
+    (contDiffGroupoid k (𝓡∂ (n + 1))).id_mem_maximalAtlas
   simpa using symm_trans_trans_mem_contDiffGroupoid_of_contMDiffOn hrefl hrefl (key x x')
     (by rw [← OpenPartialHomeomorph.symm_source, hsymm]; exact key x' x)
 
