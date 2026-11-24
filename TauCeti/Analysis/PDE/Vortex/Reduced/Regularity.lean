@@ -119,7 +119,7 @@ theorem reducedSource_eq_exp_mul_sub_one_div_eight_add (P : Polynomial ℂ) (w :
 theorem memLp_backgroundWeight_mul_exp_two_mul_sub_one {f : ℂ → ℂ} (hf : Continuous f)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (fun z ↦ backgroundWeight f z * (Real.exp (2 * W1p.value u z) - 1)) 2 volume := by
-  have hexp := W1p.memLp_exp_two_mul_value_sub_one volume Complex.finrank_real_complex u
+  have hexp := W1p.memLp_exp_mul_value_sub_one volume Complex.finrank_real_complex 2 u
   have htop : MemLp (backgroundWeight f) ⊤ volume :=
     memLp_top_of_bound (continuous_backgroundWeight hf).aestronglyMeasurable 1
       (Eventually.of_forall fun z ↦ by

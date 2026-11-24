@@ -49,6 +49,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_mul_abs_sub_le_abs_exp_sub_exp`: `exp (-M) |a - b| ≤ |exp a - exp b|` for
   `a, b ≥ -M`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp`: `|exp t - 1| ≤ a exp b` when `|t| ≤ a` and `|t| ≤ b`.
+* `Real.exp_sub_one_sub_le_sq_add_sq`: `exp t - 1 - t ≤ t² + (exp t - 1)²` for every real `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
@@ -243,6 +244,16 @@ theorem abs_exp_sub_one_le_mul_exp {t a b : ℝ} (hta : |t| ≤ a) (htb : |t| �
     |exp t - 1| ≤ a * exp b :=
   (abs_exp_sub_one_le_mul_exp_abs t).trans <|
     mul_le_mul hta (exp_le_exp.mpr htb) (exp_nonneg _) ((abs_nonneg t).trans hta)
+
+/-- `exp t - 1 - t ≤ t² + (exp t - 1)²` for every real `t`. The left-hand side is nonnegative, so
+this bounds it by square integrable quantities whenever `t` and `exp t - 1` are. -/
+theorem _root_.Real.exp_sub_one_sub_le_sq_add_sq (t : ℝ) :
+    exp t - 1 - t ≤ t ^ 2 + (exp t - 1) ^ 2 := by
+  -- Convexity of `exp` at `t` gives `exp t - 1 - t ≤ t (exp t - 1)`.
+  have h1 := add_one_le_exp (-t)
+  have h2 : exp (-t) * exp t = 1 := by rw [← exp_add, neg_add_cancel, exp_zero]
+  have h3 := exp_pos t
+  nlinarith [sq_nonneg (t - (exp t - 1))]
 
 /-- `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real `t`. The right-hand side is the power series
 `∑ 2 · 4ⁿ t ^ (2n + 2) / (2n)!`, so this bounds `(exp t - 1)²` by a series of even powers. -/

@@ -48,7 +48,7 @@ The direct method minimizes `I` on `H¹(ℂ) = W^{1,2}(ℂ)`. There `I` is
 `TauCeti.Vortex.sobolevReducedFunctional`, with values in `EReal`: the Dirichlet energy
 `‖∇u‖₂² / 2` and the linear term are finite, and the potential is an extended nonnegative integral,
 so a priori `I(u)` could be `⊤`. Since `exp (2u) - 1 ∈ L²(ℂ)` for `u ∈ H¹(ℂ)`
-(`TauCeti.W1p.memLp_exp_two_mul_value_sub_one`), the potential is always integrable
+(`TauCeti.W1p.memLp_exp_mul_value_sub_one`), the potential is always integrable
 (`TauCeti.Vortex.integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul`) and `I` is
 finite on `H¹(ℂ)` (`TauCeti.Vortex.sobolevReducedFunctional_eq_coe`,
 `TauCeti.Vortex.sobolevReducedFunctional_ne_top`). On compactly supported `C¹` functions the two
@@ -211,12 +211,12 @@ theorem norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (w : ℂ →
 
 /-- **The potential of Taubes's functional is integrable on `H¹(ℂ)`.** For every `u ∈ H¹(ℂ)` the
 potential `h (exp (2u) - 1 - 2u)`, where `h = ‖P‖² / (1 + ‖P‖²)`, is integrable, by
-`TauCeti.W1p.integrable_exp_two_mul_value_sub_one_sub` and `0 ≤ h ≤ 1`. -/
+`TauCeti.W1p.integrable_exp_mul_value_sub_one_sub` and `0 ≤ h ≤ 1`. -/
 theorem integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul (P : Polynomial ℂ)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
-  refine (W1p.integrable_exp_two_mul_value_sub_one_sub volume Complex.finrank_real_complex u).mono'
+  refine (W1p.integrable_exp_mul_value_sub_one_sub volume Complex.finrank_real_complex 2 u).mono'
     (aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u)
     (ae_of_all _ fun z ↦ ?_)
   have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
