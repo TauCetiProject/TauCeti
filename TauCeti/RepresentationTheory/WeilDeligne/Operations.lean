@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.RepresentationTheory.WeilDeligne.Basic
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RepresentationTheory.Dual
@@ -36,10 +37,11 @@ and over a field the dual has the same kernel as the parameter. For the twist an
 product the kernel only contains an open subgroup, so these need multiplication on `W` to be
 separately continuous. Each operation is functorial on morphisms and isomorphisms of parameters
 (the dual contravariantly), compatibly with inverses of isomorphisms, and the sum and the twist
-commute with transport. The direct sum comes with its inclusions, projections and the pairing of
-two morphisms, and twisting by characters is an action of the character group. For
-finite-dimensional `V` the double dual is isomorphic to the parameter through the canonical
-evaluation map (`TauCeti.WeilDeligneParameter.dualDualIso`), so double duality recovers `N`.
+commute with transport. The direct sum comes with its inclusions, projections, the pairing of
+two morphisms into it and the copairing of two morphisms out of it, and twisting by characters
+is an action of the character group. For finite-dimensional `V` the double dual is isomorphic
+to the parameter through the canonical evaluation map
+(`TauCeti.WeilDeligneParameter.dualDualIso`), so double duality recovers `N`.
 
 ## References
 
@@ -116,6 +118,7 @@ theorem Hom.prodMap_apply (f : Hom D₁ D₂) (g : Hom D₁' D₂') (x : V₁ ×
 theorem Hom.prodMap_id : (Hom.id D₁).prodMap (Hom.id D₁') = Hom.id (D₁.prod D₁') :=
   Hom.ext (LinearMap.ext fun x ↦ by simp)
 
+@[simp]
 theorem Hom.prodMap_comp (f : Hom D₂ D₃) (g : Hom D₂' D₃') (f' : Hom D₁ D₂)
     (g' : Hom D₁' D₂') : (f.comp f').prodMap (g.comp g') = (f.prodMap g).comp (f'.prodMap g') :=
   Hom.ext (LinearMap.ext fun x ↦ by simp)
@@ -179,6 +182,42 @@ theorem Hom.snd_comp_prod (f : Hom D₃ D₁) (g : Hom D₃ D₁') :
     (Hom.snd D₁ D₁').comp (f.prod g) = g :=
   Hom.ext (LinearMap.ext fun x ↦ by simp)
 
+/-- A morphism into a direct sum of parameters is the pairing of its two components. -/
+@[simp]
+theorem Hom.prod_unique (h : Hom D₃ (D₁.prod D₁')) :
+    ((Hom.fst D₁ D₁').comp h).prod ((Hom.snd D₁ D₁').comp h) = h :=
+  Hom.ext (LinearMap.ext fun x ↦ by simp)
+
+/-- The morphism out of a direct sum of parameters given by a pair of morphisms. -/
+def Hom.coprod (f : Hom D₁ D₃) (g : Hom D₁' D₃) : Hom (D₁.prod D₁') D₃ where
+  toLinearMap := f.toLinearMap.coprod g.toLinearMap
+  isIntertwining' w := LinearMap.ext fun x ↦ by
+    simp [f.map_r_apply, g.map_r_apply]
+  comp_N := LinearMap.ext fun x ↦ by
+    simp [f.map_N_apply, g.map_N_apply]
+
+@[simp]
+theorem Hom.coprod_apply (f : Hom D₁ D₃) (g : Hom D₁' D₃) (x : V₁ × V₁') :
+    f.coprod g x = f x.1 + g x.2 :=
+  (rfl)
+
+@[simp]
+theorem Hom.coprod_comp_inl (f : Hom D₁ D₃) (g : Hom D₁' D₃) :
+    (f.coprod g).comp (Hom.inl D₁ D₁') = f :=
+  Hom.ext (LinearMap.ext fun x ↦ by simp)
+
+@[simp]
+theorem Hom.coprod_comp_inr (f : Hom D₁ D₃) (g : Hom D₁' D₃) :
+    (f.coprod g).comp (Hom.inr D₁ D₁') = g :=
+  Hom.ext (LinearMap.ext fun x ↦ by simp)
+
+/-- A morphism out of a direct sum of parameters is the copairing of its restrictions to the two
+summands. -/
+@[simp]
+theorem Hom.coprod_unique (h : Hom (D₁.prod D₁') D₃) :
+    (h.comp (Hom.inl D₁ D₁')).coprod (h.comp (Hom.inr D₁ D₁')) = h :=
+  Hom.ext (LinearMap.ext fun x ↦ by simp [← map_add])
+
 /-- The direct sum of two isomorphisms of parameters. -/
 def Iso.prodCongr (f : Iso D₁ D₂) (g : Iso D₁' D₂') : Iso (D₁.prod D₁') (D₂.prod D₂') :=
   Iso.ofBijective (f.toHom.prodMap g.toHom) (by
@@ -203,7 +242,7 @@ theorem Iso.prodCongr_refl : (Iso.refl D₁).prodCongr (Iso.refl D₁') = Iso.re
 @[simp]
 theorem Iso.prodCongr_trans (f : Iso D₁ D₂) (g : Iso D₁' D₂') (f' : Iso D₂ D₃)
     (g' : Iso D₂' D₃') :
-    (f.prodCongr g).trans (f'.prodCongr g') = (f.trans f').prodCongr (g.trans g') :=
+    (f.trans f').prodCongr (g.trans g') = (f.prodCongr g).trans (f'.prodCongr g') :=
   Iso.ext (LinearEquiv.ext fun x ↦ by simp)
 
 @[simp]
@@ -260,6 +299,7 @@ theorem Hom.dual_apply (f : Hom D₁ D₂) (φ : Module.Dual E V₂) : f.dual φ
 theorem Hom.dual_id : (Hom.id D₁).dual = Hom.id D₁.dual :=
   Hom.ext (LinearMap.ext fun φ ↦ by simp)
 
+@[simp]
 theorem Hom.dual_comp (f : Hom D₂ D₃) (g : Hom D₁ D₂) : (f.comp g).dual = g.dual.comp f.dual :=
   Hom.ext (LinearMap.ext fun φ ↦ by simp [LinearMap.comp_assoc])
 
@@ -343,9 +383,8 @@ theorem twist_one (h : IsOpen ((1 : W →* Eˣ).ker : Set W)) : D.twist 1 h = D 
 /-- Twisting twice multiplies the characters. -/
 @[simp]
 theorem twist_twist (ψ : W →* Eˣ) (hψ : IsOpen (ψ.ker : Set W)) :
-    (D.twist χ hχ).twist ψ hψ = D.twist (ψ * χ) (Subgroup.isOpen_mono (H₁ := ψ.ker ⊓ χ.ker)
-      (fun w hw ↦ by simp [MonoidHom.mem_ker.mp hw.1, MonoidHom.mem_ker.mp hw.2])
-      (hψ.inter hχ)) := by
+    (D.twist χ hχ).twist ψ hψ =
+      D.twist (ψ * χ) (Subgroup.isOpen_mono (ψ.inf_ker_le_ker_mul χ) (hψ.inter hχ)) := by
   ext w v <;> simp [Representation.charTwist_charTwist]
 
 /-- The twist of a morphism of parameters by a common character. -/
@@ -363,6 +402,7 @@ theorem Hom.twist_apply (f : Hom D₁ D₂) (v : V₁) : f.twist χ hχ v = f v 
 theorem Hom.twist_id : (Hom.id D₁).twist χ hχ = Hom.id (D₁.twist χ hχ) :=
   Hom.ext (LinearMap.ext fun v ↦ by simp)
 
+@[simp]
 theorem Hom.twist_comp (f : Hom D₂ D₃) (g : Hom D₁ D₂) :
     (f.comp g).twist χ hχ = (f.twist χ hχ).comp (g.twist χ hχ) :=
   Hom.ext (LinearMap.ext fun v ↦ by simp)
@@ -387,7 +427,7 @@ theorem Iso.twist_refl : (Iso.refl D₁).twist χ hχ = Iso.refl (D₁.twist χ 
 
 @[simp]
 theorem Iso.twist_trans (f : Iso D₁ D₂) (g : Iso D₂ D₃) :
-    (f.twist χ hχ).trans (g.twist χ hχ) = (f.trans g).twist χ hχ :=
+    (f.trans g).twist χ hχ = (f.twist χ hχ).trans (g.twist χ hχ) :=
   Iso.ext (LinearEquiv.ext fun v ↦ by simp)
 
 @[simp]
@@ -447,6 +487,7 @@ theorem Hom.tensor_tmul (f : Hom D₁ D₂) (g : Hom D₁' D₂') (v : V₁) (v'
 theorem Hom.tensor_id : (Hom.id D₁).tensor (Hom.id D₁') = Hom.id (D₁.tensor D₁') :=
   Hom.ext (TensorProduct.ext' fun v v' ↦ by simp)
 
+@[simp]
 theorem Hom.tensor_comp (f : Hom D₂ D₃) (g : Hom D₂' D₃') (f' : Hom D₁ D₂) (g' : Hom D₁' D₂') :
     (f.comp f').tensor (g.comp g') = (f.tensor g).comp (f'.tensor g') :=
   Hom.ext (TensorProduct.ext' fun v v' ↦ by simp)
@@ -454,8 +495,11 @@ theorem Hom.tensor_comp (f : Hom D₂ D₃) (g : Hom D₂' D₃') (f' : Hom D₁
 /-- The tensor product of two isomorphisms of parameters. -/
 def Iso.tensor (f : Iso D₁ D₂) (g : Iso D₁' D₂') : Iso (D₁.tensor D₁') (D₂.tensor D₂') :=
   Iso.ofBijective (f.toHom.tensor g.toHom) (by
-    rw [show ⇑(f.toHom.tensor g.toHom) = TensorProduct.congr f.toLinearEquiv g.toLinearEquiv from
-      congrArg DFunLike.coe (TensorProduct.ext' fun v v' ↦ by simp)]
+    rw [show ⇑(f.toHom.tensor g.toHom) = TensorProduct.congr f.toLinearEquiv g.toLinearEquiv by
+      ext x
+      induction x using TensorProduct.inductionOn with
+      | tmul v v' => simp
+      | add x y hx hy => simp [hx, hy]]
     exact (TensorProduct.congr f.toLinearEquiv g.toLinearEquiv).bijective)
 
 @[simp]
@@ -475,7 +519,7 @@ theorem Iso.tensor_refl : (Iso.refl D₁).tensor (Iso.refl D₁') = Iso.refl (D�
 @[simp]
 theorem Iso.tensor_trans (f : Iso D₁ D₂) (g : Iso D₁' D₂') (f' : Iso D₂ D₃)
     (g' : Iso D₂' D₃') :
-    (f.tensor g).trans (f'.tensor g') = (f.trans f').tensor (g.trans g') :=
+    (f.trans f').tensor (g.trans g') = (f.tensor g).trans (f'.tensor g') :=
   Iso.ext (LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun v v' ↦ by simp))
 
 @[simp]
