@@ -39,8 +39,9 @@ compact topological groups, `G₁` and `G₁^ι` are the groups whose completed 
 
 ## Main results
 
-* `TauCeti.ker_map_toZMod`, `TauCeti.mem_firstCongruenceSubgroup_iff_map_eq_one`: `G₁` is the
-  kernel of reduction modulo `p`.
+* `TauCeti.ker_specialLinearGroupMap_toZMod`,
+  `TauCeti.mem_firstCongruenceSubgroup_iff_map_eq_one`: `G₁` is the kernel of reduction modulo
+  `p`.
 * `TauCeti.mem_firstCongruenceSubgroup_iff`: `g ∈ G₁` exactly when `p` divides every entry of
   `g - 1`; `TauCeti.mk_upperRight_mem_firstCongruenceSubgroup_iff`: so `!![1, a; 0, 1] ∈ G₁`
   exactly when `p ∣ a`.
@@ -49,8 +50,8 @@ compact topological groups, `G₁` and `G₁^ι` are the groups whose completed 
   `(firstCongruenceSubgroup n p).Normal`: `G₁` is a compact open normal subgroup.
 * `TauCeti.index_firstCongruenceSubgroup`: `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`;
   `TauCeti.index_firstCongruenceSubgroup_fin_two`: `[SL₂(ℤ_p) : G₁] = p(p² - 1)`.
-* `TauCeti.ker_compLeft_map_toZMod`: `G₁^ι` is the kernel of reduction modulo `p` on
-  `SL_n(ℤ_p)^ι`; `TauCeti.isOpen_firstCongruenceProduct` (for finite `ι`),
+* `TauCeti.ker_compLeft_specialLinearGroupMap_toZMod`: `G₁^ι` is the kernel of reduction
+  modulo `p` on `SL_n(ℤ_p)^ι`; `TauCeti.isOpen_firstCongruenceProduct` (for finite `ι`),
   `TauCeti.isClosed_firstCongruenceProduct`, `TauCeti.index_firstCongruenceProduct` and the
   compactness and normality instances.
 * `TauCeti.neg_one_mem_firstCongruenceSubgroup_iff`: `-1 ∈ G₁ ≤ SL₂(ℤ_p)` exactly when `p = 2`;
@@ -83,7 +84,7 @@ noncomputable def firstCongruenceSubgroup : Subgroup (SpecialLinearGroup n ℤ_[
   (SpecialLinearGroup.map (toZMod (p := p))).ker
 
 /-- The first congruence subgroup is the kernel of reduction modulo `p`. -/
-theorem ker_map_toZMod :
+theorem ker_specialLinearGroupMap_toZMod :
     (SpecialLinearGroup.map (n := n) (toZMod (p := p))).ker = firstCongruenceSubgroup n p :=
   (rfl)
 
@@ -93,7 +94,7 @@ variable {n p}
 identity modulo `p`. -/
 theorem mem_firstCongruenceSubgroup_iff_map_eq_one {g : SpecialLinearGroup n ℤ_[p]} :
     g ∈ firstCongruenceSubgroup n p ↔ SpecialLinearGroup.map toZMod g = 1 := by
-  rw [← ker_map_toZMod, MonoidHom.mem_ker]
+  rw [← ker_specialLinearGroupMap_toZMod, MonoidHom.mem_ker]
 
 /-- A determinant-one matrix `g` lies in the first congruence subgroup exactly when `p` divides
 every entry of `g - 1`. -/
@@ -107,13 +108,13 @@ theorem mem_firstCongruenceSubgroup_iff {g : SpecialLinearGroup n ℤ_[p]} :
 variable (n p)
 
 instance : (firstCongruenceSubgroup n p).Normal :=
-  ker_map_toZMod n p ▸ MonoidHom.normal_ker _
+  ker_specialLinearGroupMap_toZMod n p ▸ MonoidHom.normal_ker _
 
 /-- The first congruence subgroup is open: it is the preimage of `1` under the continuous
 reduction to the discrete group `SL_n(𝔽_p)`. -/
 theorem isOpen_firstCongruenceSubgroup :
     IsOpen (firstCongruenceSubgroup n p : Set (SpecialLinearGroup n ℤ_[p])) := by
-  rw [← ker_map_toZMod, MonoidHom.coe_ker]
+  rw [← ker_specialLinearGroupMap_toZMod, MonoidHom.coe_ker]
   exact (isOpen_discrete {1}).preimage continuous_toZMod.specialLinearGroup_map
 
 /-- The first congruence subgroup is closed. -/
@@ -125,7 +126,7 @@ instance isClosed_firstCongruenceSubgroup :
 reduction modulo `p` maps `SL_n(ℤ_p)` onto `SL_n(𝔽_p)`, since `ℤ_p` is local. -/
 theorem index_firstCongruenceSubgroup :
     (firstCongruenceSubgroup n p).index = Nat.card (SpecialLinearGroup n (ZMod p)) := by
-  rw [← ker_map_toZMod, Subgroup.index_ker, MonoidHom.range_eq_top.mpr
+  rw [← ker_specialLinearGroupMap_toZMod, Subgroup.index_ker, MonoidHom.range_eq_top.mpr
     (SpecialLinearGroup.map_surjective _ (ZMod.ringHom_surjective _)), Subgroup.card_top]
 
 /-- The first congruence subgroup of `SL₂(ℤ_p)` has index `|SL₂(𝔽_p)| = p(p² - 1)`. -/
@@ -157,14 +158,14 @@ theorem mem_firstCongruenceProduct_iff {g : ι → SpecialLinearGroup n ℤ_[p]}
 
 /-- The product `G₁^ι` is the kernel of reduction modulo `p`, coordinatewise, from
 `SL_n(ℤ_p)^ι` to `SL_n(𝔽_p)^ι`. -/
-theorem ker_compLeft_map_toZMod :
+theorem ker_compLeft_specialLinearGroupMap_toZMod :
     (MonoidHom.compLeft (SpecialLinearGroup.map (n := n) (toZMod (p := p))) ι).ker =
       firstCongruenceProduct n p ι := by
   ext g
   simp [funext_iff, mem_firstCongruenceSubgroup_iff_map_eq_one]
 
 instance : (firstCongruenceProduct n p ι).Normal :=
-  ker_compLeft_map_toZMod n p ι ▸ MonoidHom.normal_ker _
+  ker_compLeft_specialLinearGroupMap_toZMod n p ι ▸ MonoidHom.normal_ker _
 
 /-- A product of finitely many copies of the first congruence subgroup is open. -/
 theorem isOpen_firstCongruenceProduct [Finite ι] :
