@@ -40,8 +40,8 @@ the `C¹` maximal atlas.
   pushforward formula for `OpenPartialHomeomorph.localChartMeasure`.
 * `MeasureTheory.Measure.setLIntegral_extendCoordChange`: change of variables between two charts
   of the `C¹` maximal atlas for a weighted Haar integral.
-* `TauCeti.eqOn_abs_det_mul_of_map_restrict_eq`: Jacobian transformation law for two continuous
-  nonnegative chart weights presenting the same measure on their chart overlap.
+* `ModelWithCorners.eqOn_abs_det_mul_of_map_restrict_eq`: Jacobian transformation law for two
+  continuous nonnegative chart weights presenting the same measure on their chart overlap.
 -/
 
 public section
@@ -230,7 +230,7 @@ theorem OpenPartialHomeomorph.map_restrict_localChartMeasure_apply
               f ((e₀.extend I).symm y)
           else 0) ∂ν := by
   set Φ := I.extendCoordChange e₀ e₁
-  have hΦ_meas := e₀.measurableSet_extendCoordChange_source e₁ I
+  have hΦ_meas := I.measurableSet_extendCoordChange_source e₀ e₁
   have hT₀ : MeasurableSet (e₀.extend I).target := e₀.measurableSet_extend_target I
   have hs_meas : MeasurableSet (e₀.extend I ⁻¹' A ∩ e₀.source) :=
     e₀.measurableSet_preimage_extend_inter I hA
@@ -252,7 +252,7 @@ theorem OpenPartialHomeomorph.map_restrict_localChartMeasure_apply
     · rw [indicator_of_mem hy', ite_eq_right fun h ↦ hy ⟨hy'.1, h⟩, ENNReal.ofReal_zero]
     · rw [indicator_of_notMem hy']
 
-namespace TauCeti
+namespace ModelWithCorners
 
 section OverlapJacobian
 
@@ -325,7 +325,7 @@ theorem eqOn_abs_det_mul_of_map_restrict_eq
   set Φ := I.extendCoordChange e e'
   have hΦ_src : Φ.source = I.symm ⁻¹' (e.symm ≫ₕ e').source ∩ range I := by
     rw [I.extendCoordChange_source, I.image_eq]
-  have hΦ_meas : MeasurableSet Φ.source := e.measurableSet_extendCoordChange_source e' I
+  have hΦ_meas : MeasurableSet Φ.source := I.measurableSet_extendCoordChange_source e e'
   have hsubT : Φ.source ⊆ (e.extend I).target := fun _ hy ↦ hy.1
   have hmeq :
       (ν.restrict Φ.source).withDensity (fun y ↦ ENNReal.ofReal (w y)) =
@@ -336,7 +336,7 @@ theorem eqOn_abs_det_mul_of_map_restrict_eq
     exact setLIntegral_overlap_eq he he' hw hw' hmap hmap' (hA.inter hΦ_meas) inter_subset_right
   have hcont_rhs : ContinuousOn
       (fun y ↦ |(fderivWithin ℝ Φ (range I) y).det| * w' (Φ y)) Φ.source :=
-    (continuousOn_abs_det_fderivWithin_extendCoordChange (I := I) he he').mul
+    (I.continuousOn_abs_det_fderivWithin_extendCoordChange he he').mul
       (hw'.comp (I.contDiffOn_extendCoordChange he he').continuousOn fun _ hy ↦
         (Φ.map_source hy).1)
   rw [hΦ_src] at hmeq hcont_rhs ⊢
@@ -347,6 +347,6 @@ theorem eqOn_abs_det_mul_of_map_restrict_eq
 
 end OverlapJacobian
 
-end TauCeti
+end ModelWithCorners
 
 end

@@ -19,11 +19,12 @@ the Jacobian determinant with a continuous function supported in the target char
 
 * `ModelWithCorners.fderivWithin_extendCoordChange_eq_source`: `fderivWithin` over `Set.range I`
   agrees with `fderivWithin` over the overlap source.
-* `TauCeti.continuousOn_abs_det_fderivWithin_extendCoordChange`: continuity of the absolute
+* `ModelWithCorners.continuousOn_abs_det_fderivWithin_extendCoordChange`: continuity of the
+  absolute Jacobian determinant on the overlap source.
+* `ModelWithCorners.abs_det_fderivWithin_extendCoordChange_pos`: strict positivity of the absolute
   Jacobian determinant on the overlap source.
-* `TauCeti.abs_det_fderivWithin_extendCoordChange_pos`: strict positivity of the absolute Jacobian
-  determinant on the overlap source.
-* `TauCeti.abs_det_fderivWithin_extendCoordChange_comp`: chain rule on triple chart overlaps.
+* `ModelWithCorners.abs_det_fderivWithin_extendCoordChange_comp`: chain rule on triple chart
+  overlaps.
 * `OpenPartialHomeomorph.continuousOn_ite_abs_det_fderivWithin_extendCoordChange_mul`: continuity
   of the extension-by-zero product with a continuous function supported in the target chart.
 -/
@@ -56,7 +57,7 @@ section ExtendCoordChangeDet
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-namespace TauCeti
+namespace ModelWithCorners
 
 /-- The absolute Jacobian determinant of a `C¹` extended coordinate change is continuous on
 its source. -/
@@ -137,7 +138,7 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
   simp only [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
     abs_mul]
 
-end TauCeti
+end ModelWithCorners
 
 open Classical in
 /-- Multiplying the absolute Jacobian determinant of a `C¹` extended coordinate change by a
@@ -162,7 +163,7 @@ theorem OpenPartialHomeomorph.continuousOn_ite_abs_det_fderivWithin_extendCoordC
         (I.extendCoordChange_source_mem_nhdsWithin hyΦ)
     have hcont : ContinuousOn
         (fun z ↦ |(fderivWithin ℝ Φ (range I) z).det| * f ((e₀.extend I).symm z)) Φ.source :=
-      (TauCeti.continuousOn_abs_det_fderivWithin_extendCoordChange (I := I) he₀ he₁).mul
+      (I.continuousOn_abs_det_fderivWithin_extendCoordChange he₀ he₁).mul
         (hf.comp_continuousOn (e₀.continuousOn_extend_symm.mono fun _ hz ↦ hz.1))
     refine ((hcont y hyΦ).mono_of_mem_nhdsWithin hmem).congr_of_eventuallyEq
       (Filter.eventuallyEq_of_mem hmem fun z hz ↦ by simp only [hz, ↓reduceIte])

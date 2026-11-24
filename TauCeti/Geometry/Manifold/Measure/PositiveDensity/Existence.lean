@@ -126,7 +126,7 @@ private theorem finsum_partitionSummand_pos (ρ : PartitionOfUnity M M univ)
       (extChartAt I x₀).right_inv hy⟩
   have hhi_pos : 0 < partitionSummand (I := I) ρ x₀ i y := by
     simp only [partitionSummand, hyΦ, ↓reduceIte]
-    exact mul_pos (abs_det_fderivWithin_extendCoordChange_pos (I := I)
+    exact mul_pos (I.abs_det_fderivWithin_extendCoordChange_pos
       (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i) hyΦ) hi_pos
   calc (0 : ℝ) < partitionSummand (I := I) ρ x₀ i y := hhi_pos
     _ ≤ ∑ j ∈ hfin.toFinset, partitionSummand (I := I) ρ x₀ j y :=
