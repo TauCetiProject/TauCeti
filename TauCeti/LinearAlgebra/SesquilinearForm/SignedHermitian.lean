@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 
 /-!
@@ -158,8 +157,8 @@ theorem signedHermitianAdjoint_eq_iff {a b : Module.End K V} :
   ⟨fun h v w ↦ by rw [← h, signedHermitianAdjoint_form_right],
     signedHermitianAdjoint_unique H⟩
 
-/-- The adjoint of `a` is its right adjoint for the flipped form, in the sense of Mathlib's
-`LinearMap.IsAdjointPair`. -/
+/-- The adjoint `a*` is the left adjoint of `a` for the flipped form, in the sense of Mathlib's
+`LinearMap.IsAdjointPair` (`h.flip (a* v) w = h.flip v (a w)`). -/
 theorem isAdjointPair_signedHermitianAdjoint (a : Module.End K V) :
     LinearMap.IsAdjointPair H.form.flip H.form.flip (signedHermitianAdjoint H a) a :=
   fun v w ↦ signedHermitianAdjoint_form_right H a w v
@@ -175,6 +174,17 @@ theorem signedHermitianAdjoint_comp (a b : Module.End K V) :
     signedHermitianAdjoint H (a ∘ₗ b) =
       signedHermitianAdjoint H b ∘ₗ signedHermitianAdjoint H a :=
   signedHermitianAdjoint_unique H fun v w ↦ by simp
+
+/-- The adjoint of the identity is the identity, stated with the unit of `Module.End K V`. -/
+@[simp]
+theorem signedHermitianAdjoint_one : signedHermitianAdjoint H 1 = 1 :=
+  signedHermitianAdjoint_id H
+
+/-- The adjoint reverses multiplication in `Module.End K V`: `(a * b)* = b* * a*`. -/
+@[simp]
+theorem signedHermitianAdjoint_mul (a b : Module.End K V) :
+    signedHermitianAdjoint H (a * b) = signedHermitianAdjoint H b * signedHermitianAdjoint H a :=
+  signedHermitianAdjoint_comp H a b
 
 /-- The adjoint of the adjoint is the original endomorphism. -/
 @[simp]
@@ -198,22 +208,20 @@ variable (σ) [RingHomInvPair σ σ] (n : Type*) [Fintype n] [DecidableEq n]
 `h v w = ∑ i, σ (v i) * w i` on `n → K`, with Gram matrix the identity. For `σ = id` it is the
 dot product. -/
 noncomputable def standard : SignedHermitianSpace K (n → K) σ 1 where
-  form := LinearMap.mk₂'ₛₗ σ (RingHom.id K) (fun v w ↦ ∑ i, σ (v i) * w i)
-    (fun _ _ _ ↦ by simp [add_mul, Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [Finset.mul_sum, mul_assoc])
-    (fun _ _ _ ↦ by simp [mul_add, Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [Finset.mul_sum, mul_left_comm])
+  form := Matrix.toLinearMapₛₗ₂' K σ (RingHom.id K) 1
   form_swap v w := by
-    simp [map_sum, mul_comm]
+    simp [Matrix.toLinearMapₛₗ₂'_apply, Matrix.one_apply, map_sum, mul_comm]
   separatingLeft v hv := funext fun i ↦ by
-    simpa [Pi.single_apply] using hv (Pi.single i 1)
+    simpa [Matrix.toLinearMapₛₗ₂'_apply, Matrix.one_apply, Pi.single_apply] using
+      hv (Pi.single i 1)
 
 variable {σ n}
 
 /-- The standard hermitian form is `h v w = ∑ i, σ (v i) * w i`. -/
 @[simp]
 theorem standard_form_apply (v w : n → K) :
-    (standard σ n).form v w = ∑ i, σ (v i) * w i := (rfl)
+    (standard σ n).form v w = ∑ i, σ (v i) * w i := by
+  simp [standard, Matrix.toLinearMapₛₗ₂'_apply, Matrix.one_apply, mul_comm]
 
 end SignedHermitianSpace
 
