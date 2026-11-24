@@ -287,8 +287,11 @@ noncomputable def formalPointsTorusTruncationMulEquiv (I : Ideal A) {n m : ℕ} 
     (hI : I ^ (m + 1) = ⊥) :
     formalPoints R (Multiplicative (ι → ZMod (n ^ m))) I ≃*
       formalPoints R (Multiplicative (ι → ℤ)) I :=
-  formalPointsMulEquivOfKerLe R I hn hI (ZMod.piReduction ι (n ^ m))
-    (ZMod.piReduction_surjective ι _) (ZMod.ker_piReduction ι _).le
+  formalPointsMulEquivOfKerLe R I hn hI (ZMod.piReduction ι (n ^ m)).toMultiplicative
+    (ZMod.piReduction_surjective ι _) fun x hx ↦ by
+      obtain ⟨y, hy⟩ := (ZMod.mem_ker_piReduction_iff ι _ x.toAdd).mp hx
+      refine ⟨.ofAdd y, Multiplicative.toAdd.injective (funext fun i ↦ ?_)⟩
+      simp [hy, mul_comm]
 
 /-- The truncation isomorphism for the formal torus is precomposition with the map of group
 algebras induced by the reduction `ℤ ^ ι → (ℤ / n ^ m) ^ ι`. -/
@@ -297,7 +300,7 @@ theorem coe_formalPointsTorusTruncationMulEquiv_apply (I : Ideal A) {n m : ℕ} 
     (hI : I ^ (m + 1) = ⊥) (f : formalPoints R (Multiplicative (ι → ZMod (n ^ m))) I) :
     (formalPointsTorusTruncationMulEquiv R ι I hn hI f :
         WithConv (MonoidAlgebra R (Multiplicative (ι → ℤ)) →ₐ[R] A)) =
-      pointsMap (ZMod.piReduction ι (n ^ m)) f :=
+      pointsMap (ZMod.piReduction ι (n ^ m)).toMultiplicative f :=
   (rfl)
 
 /-- **Prime-to-`n` torsion has no formal points.** If the integer `n` lies in `I`,

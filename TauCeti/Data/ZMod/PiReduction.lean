@@ -10,9 +10,8 @@ public import Mathlib.Data.ZMod.Basic
 /-!
 # Coordinatewise reduction modulo `k`
 
-The reduction `ℤ ^ ι → (ℤ / k) ^ ι` of every coordinate modulo `k`, written multiplicatively so
-that it is a homomorphism of commutative groups `Multiplicative (ι → ℤ) →* Multiplicative
-(ι → ZMod k)`. It is surjective, and its kernel is the subgroup of `k`-th powers.
+The reduction `ℤ ^ ι → (ℤ / k) ^ ι` of every coordinate modulo `k`, as a homomorphism of
+additive groups. It is surjective, and its kernel consists of the multiples of `k`.
 
 ## Main definitions
 
@@ -21,7 +20,7 @@ that it is a homomorphism of commutative groups `Multiplicative (ι → ℤ) →
 ## Main results
 
 * `TauCeti.ZMod.piReduction_surjective`: the reduction is surjective.
-* `TauCeti.ZMod.ker_piReduction`: its kernel is the subgroup of `k`-th powers.
+* `TauCeti.ZMod.mem_ker_piReduction_iff`: its kernel consists of the multiples of `k`.
 -/
 
 public section
@@ -32,39 +31,31 @@ namespace ZMod
 
 variable (ι : Type*) (k : ℕ)
 
-/-- The coordinatewise reduction `ℤ ^ ι → (ℤ / k) ^ ι`, written multiplicatively. -/
-def piReduction : Multiplicative (ι → ℤ) →* Multiplicative (ι → ZMod k) :=
-  AddMonoidHom.toMultiplicative ((Int.castAddHom (ZMod k)).compLeft ι)
+/-- The coordinatewise reduction `ℤ ^ ι → (ℤ / k) ^ ι`. -/
+def piReduction : (ι → ℤ) →+ (ι → ZMod k) :=
+  (Int.castAddHom (ZMod k)).compLeft ι
 
 /-- The reduction `ℤ ^ ι → (ℤ / k) ^ ι` reduces each coordinate modulo `k`. -/
 @[simp]
-theorem piReduction_apply (x : Multiplicative (ι → ℤ)) (i : ι) :
-    (piReduction ι k x).toAdd i = (x.toAdd i : ZMod k) :=
+theorem piReduction_apply (x : ι → ℤ) (i : ι) : piReduction ι k x i = (x i : ZMod k) :=
   (rfl)
 
 /-- The reduction `ℤ ^ ι → (ℤ / k) ^ ι` is surjective. -/
 theorem piReduction_surjective : Function.Surjective (piReduction ι k) :=
   Function.Surjective.piMap fun _ ↦ _root_.ZMod.intCast_surjective
 
-/-- The kernel of the reduction `ℤ ^ ι → (ℤ / k) ^ ι` is the subgroup of `k`-th powers. -/
-theorem ker_piReduction :
-    (piReduction ι k).ker = (powMonoidHom k : Multiplicative (ι → ℤ) →* _).range := by
-  ext x
-  rw [MonoidHom.mem_ker, MonoidHom.mem_range]
+/-- The kernel of the reduction `ℤ ^ ι → (ℤ / k) ^ ι` consists exactly of the multiples
+of `k`. -/
+theorem mem_ker_piReduction_iff (x : ι → ℤ) :
+    x ∈ (piReduction ι k).ker ↔ ∃ y : ι → ℤ, x = (k : ℤ) • y := by
+  rw [AddMonoidHom.mem_ker, funext_iff]
+  simp only [piReduction_apply, Pi.zero_apply, _root_.ZMod.intCast_zmod_eq_zero_iff_dvd]
   constructor
-  · intro hx
-    have hdvd (i : ι) : (k : ℤ) ∣ x.toAdd i := by
-      rw [← _root_.ZMod.intCast_zmod_eq_zero_iff_dvd, ← piReduction_apply]
-      exact congrFun (congrArg Multiplicative.toAdd hx) i
-    choose y hy using hdvd
-    refine ⟨Multiplicative.ofAdd y, ?_⟩
-    apply Multiplicative.toAdd.injective
-    funext i
-    simp [hy i]
-  · rintro ⟨y, rfl⟩
-    apply Multiplicative.toAdd.injective
-    funext i
-    simp
+  · intro h
+    choose y hy using h
+    exact ⟨y, funext fun i ↦ by simpa using hy i⟩
+  · rintro ⟨y, rfl⟩ i
+    exact ⟨y i, by simp⟩
 
 end ZMod
 
