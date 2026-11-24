@@ -170,8 +170,7 @@ theorem one_sub_div_re_pos {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) :
     0 < (1 - z₀ / z).re := by
   have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h
   have hzz₀ : z - z₀ ≠ 0 := norm_pos_iff.mp hzz₀_pos
-  have hz : z ≠ 0 :=
-    ne_of_apply_ne (fun x => dist x z₀) (by simpa [dist_eq_norm] using h.ne.symm)
+  have hz : z ≠ 0 := fun h0 => h.ne (by simp [h0])
   have hinv_re : 0 < ((1 - z₀ / z)⁻¹).re := by
     have hinv : (1 - z₀ / z)⁻¹ = 1 + z₀ / (z - z₀) := by field_simp; ring
     rw [hinv]

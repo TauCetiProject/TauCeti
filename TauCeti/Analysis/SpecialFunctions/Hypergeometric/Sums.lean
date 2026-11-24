@@ -84,6 +84,15 @@ namespace Complex
 
 /-! ### DLMF 15.15.1 on the Euler integral range -/
 
+private theorem ne_zero_of_norm_lt_norm_sub {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) : z ≠ 0 :=
+  fun h0 => h.ne (by simp [h0])
+
+private theorem ne_of_norm_lt_norm_sub {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) : z ≠ z₀ :=
+  sub_ne_zero.mp (norm_pos_iff.mp ((norm_nonneg z₀).trans_lt h))
+
+private theorem max_norm_pos_of_ne_zero {z₀ : ℂ} (hz₀ : z₀ ≠ 0) : 0 < max ‖z₀‖ ‖z₀ - 1‖ :=
+  (norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)
+
 /-- Pointwise binomial series expansion of the factored Euler kernel on `[0, 1]`. -/
 private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
     (hz : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
@@ -92,9 +101,8 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
       ((1 - z₀ / z) ^ a * (1 - z⁻¹ * (t : ℂ)) ^ (-a)) := by
   have h_ext : ‖z₀‖ < ‖z - z₀‖ := (le_max_left _ _).trans_lt hz
   have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h_ext
-  have hz_ne : z ≠ 0 :=
-    ne_of_apply_ne (fun x => dist x z₀) (by simpa [dist_eq_norm] using h_ext.ne.symm)
-  have hzz₀ : z ≠ z₀ := dist_pos.mp (by simpa [dist_eq_norm] using hzz₀_pos)
+  have hz_ne : z ≠ 0 := ne_zero_of_norm_lt_norm_sub h_ext
+  have hzz₀ : z ≠ z₀ := ne_of_norm_lt_norm_sub h_ext
   let vt : ℂ := (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹
   have hvt_lt : ‖vt‖ < 1 :=
     (TauCeti.norm_one_sub_inv_mul_ofReal_mul_inv_one_sub_div_le_of_mem_Icc hz₀ ht).trans_lt
@@ -146,7 +154,7 @@ theorem hasSum_eulerIntegral_inv (a : ℂ) {b c z z₀ : ℂ} (hb : 0 < b.re) (h
     HasSum (fun s : ℕ => (ascPochhammer ℂ s).eval a / s ! *
         regularizedGaussHGFun (-s) b c z₀⁻¹ * ((1 - z / z₀)⁻¹) ^ s)
       ((1 - z₀ / z) ^ a * eulerIntegral a b c z⁻¹) := by
-  have hM0 : 0 < max ‖z₀‖ ‖z₀ - 1‖ := (norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)
+  have hM0 : 0 < max ‖z₀‖ ‖z₀ - 1‖ := max_norm_pos_of_ne_zero hz₀
   have hzz₀_pos : 0 < ‖z - z₀‖ := hM0.trans hz
   let ρ : ℝ := max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖
   have hρ_abs : |ρ| < 1 := by
@@ -189,13 +197,18 @@ theorem hasSum_eulerIntegral_inv (a : ℂ) {b c z z₀ : ℂ} (hb : 0 < b.re) (h
 private def invExpansionSeries (a b c z₀ : ℂ) : FormalMultilinearSeries ℂ ℂ ℂ :=
   .ofScalars ℂ fun s => (ascPochhammer ℂ s).eval a / s ! * regularizedGaussHGFun (-s) b c z₀⁻¹
 
+private theorem invExpansionSeries_apply (a b c z₀ u : ℂ) (s : ℕ) :
+    invExpansionSeries a b c z₀ s (fun _ => u) =
+      (ascPochhammer ℂ s).eval a / s ! * regularizedGaussHGFun (-s) b c z₀⁻¹ * u ^ s := by
+  rw [invExpansionSeries, FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm]
+
 /-- Weighted summability of `regularizedGaussHGFun (-s) b c z₀⁻¹` in the Euler integral range. -/
 private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_euler {b c z₀ : ℂ}
     (hb : 0 < b.re) (hbc : b.re < c.re) (hz₀ : z₀ ≠ 0) {r : ℝ} (hr0 : 0 ≤ r)
     (hr : r < ‖z₀‖ / max ‖z₀‖ ‖z₀ - 1‖) :
     Summable fun s : ℕ => ‖regularizedGaussHGFun (-s) b c z₀⁻¹‖ * r ^ s := by
   let M : ℝ := max ‖z₀‖ ‖z₀ - 1‖
-  have hM0 : 0 < M := (norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)
+  have hM0 : 0 < M := max_norm_pos_of_ne_zero hz₀
   have hz0_pos : 0 < ‖z₀‖ := norm_pos_iff.mpr hz₀
   let W : ℝ → ℂ := fun t => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)
   have hW_int : IntervalIntegrable W volume 0 1 :=
@@ -370,7 +383,7 @@ convergence ball of `invExpansionSeries a b c z₀`. -/
 private theorem mem_eball_invExpansionSeries (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
     (hz : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) :
     (1 - z / z₀)⁻¹ ∈ Metric.eball (0 : ℂ) (invExpansionSeries a b c z₀).radius := by
-  have hM0 : 0 < max ‖z₀‖ ‖z₀ - 1‖ := (norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)
+  have hM0 : 0 < max ‖z₀‖ ‖z₀ - 1‖ := max_norm_pos_of_ne_zero hz₀
   have hu_norm : ‖(1 - z / z₀)⁻¹‖ < ‖z₀‖ / max ‖z₀‖ ‖z₀ - 1‖ := by
     rw [one_sub_div hz₀, inv_div, norm_div, norm_sub_rev z₀ z]
     exact div_lt_div_of_pos_left (norm_pos_iff.mpr hz₀) hM0 hz
@@ -386,9 +399,9 @@ theorem summable_norm_regularizedGaussHGFun_neg_natCast_mul_inv_pow (a b c : ℂ
     Summable fun s : ℕ =>
       ‖(ascPochhammer ℂ s).eval a / s ! * regularizedGaussHGFun (-s) b c z₀⁻¹ *
         ((1 - z / z₀)⁻¹) ^ s‖ := by
-  simpa [invExpansionSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm, mul_left_comm,
-    mul_assoc] using
-    (invExpansionSeries a b c z₀).summable_norm_apply (mem_eball_invExpansionSeries a b c hz₀ hz)
+  exact ((invExpansionSeries a b c z₀).summable_norm_apply
+    (mem_eball_invExpansionSeries a b c hz₀ hz)).congr fun s => by
+    rw [invExpansionSeries_apply]
 
 /-- For arbitrary complex parameters `a`, `b`, `c` and any `z₀ ≠ 0`, the sum of the
 inverse-argument hypergeometric polynomial series (DLMF 15.15.1) is holomorphic on the open
@@ -402,11 +415,11 @@ theorem analyticOnNhd_tsum_regularizedGaussHGFun_neg_natCast_mul_inv_pow (a b c 
         regularizedGaussHGFun (-s) b c z₀⁻¹ * ((1 - z / z₀)⁻¹) ^ s) =
       ((invExpansionSeries a b c z₀).sum ∘ fun z : ℂ => (1 - z / z₀)⁻¹) := by
     ext z
-    simp [FormalMultilinearSeries.sum, invExpansionSeries, mul_comm]
+    rw [Function.comp_apply, FormalMultilinearSeries.sum]
+    exact tsum_congr fun s => (invExpansionSeries_apply a b c z₀ _ s).symm
   rw [heq]
   intro z hz
-  have hzz₀ : z ≠ z₀ := dist_pos.mp (by
-    rw [dist_eq_norm]; exact (norm_nonneg z₀).trans_lt ((le_max_left _ _).trans_lt hz))
+  have hzz₀ : z ≠ z₀ := ne_of_norm_lt_norm_sub ((le_max_left _ _).trans_lt hz)
   have h1zz₀ : 1 - z / z₀ ≠ 0 := fun h0 =>
     hzz₀ ((div_eq_one_iff_eq hz₀).mp (sub_eq_zero.mp h0).symm)
   have hφ : AnalyticAt ℂ (fun w : ℂ => (1 - w / z₀)⁻¹) z :=
@@ -529,7 +542,7 @@ private theorem hasSum_doubleSeriesTerm (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z�
       ((1 - z₀ / z) ^ a * regularizedGaussHGFun a b c z⁻¹) := by
   have h_ext : ‖z₀‖ < ‖z - z₀‖ := by linarith
   have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h_ext
-  have hzz₀ : z ≠ z₀ := dist_pos.mp (by simpa [dist_eq_norm] using hzz₀_pos)
+  have hzz₀ : z ≠ z₀ := ne_of_norm_lt_norm_sub h_ext
   have hz1 : 1 < ‖z‖ := by linarith [norm_sub_le z z₀]
   have hz_ne : z ≠ 0 := norm_pos_iff.mp (zero_lt_one.trans hz1)
   let u : ℂ := (1 - z / z₀)⁻¹

@@ -124,21 +124,8 @@ theorem summable_nat_mul_of_forall_lt {f : ℕ → ℝ} {R : ℝ}
   have hrad : ENNReal.ofReal R ≤ (FormalMultilinearSeries.ofScalars ℝ f).radius := by
     refine FormalMultilinearSeries.le_radius_ofScalars_of_summable f fun z _ hz => ?_
     rw [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff hR_pos] at hz
-    let w : ℝ := (‖z‖ + R) / 2
-    have hzw : ‖z‖ < w := left_lt_add_div_two.mpr hz
-    have hwR : w < R := add_div_two_lt_right.mpr hz
-    have hw0 : 0 < w := (norm_nonneg z).trans_lt hzw
-    obtain ⟨C, hC⟩ := bddAbove_def.mp
-      (hf w hw0.le hwR).tendsto_atTop_zero.norm.bddAbove_range
-    refine Summable.of_norm_bounded ((summable_geometric_of_lt_one (by positivity)
-      ((div_lt_one hw0).mpr hzw)).mul_left C) fun s => ?_
-    have hsw : ‖f s‖ * w ^ s ≤ C := by
-      have hs : ‖f s * w ^ s‖ ≤ C := hC _ ⟨s, rfl⟩
-      rwa [norm_mul, norm_pow, Real.norm_of_nonneg hw0.le] at hs
-    calc ‖f s * z ^ s‖ = ‖f s‖ * ‖z‖ ^ s := by rw [norm_mul, norm_pow]
-      _ = (‖f s‖ * w ^ s) * (‖z‖ / w) ^ s := by
-        rw [div_pow ‖z‖ w, mul_assoc, mul_div_cancel₀ _ (pow_ne_zero s hw0.ne')]
-      _ ≤ C * (‖z‖ / w) ^ s := mul_le_mul_of_nonneg_right hsw (by positivity)
+    exact ((hf ‖z‖ (norm_nonneg z) hz).abs.congr fun s => by
+      simp only [abs_mul, abs_pow, Real.norm_eq_abs, abs_abs]).of_abs
   have hnorm : ‖r‖ₑ < (FormalMultilinearSeries.ofScalars ℝ f).radius := by
     refine lt_of_lt_of_le ?_ hrad
     rwa [← ofReal_norm, Real.norm_of_nonneg hr0, ENNReal.ofReal_lt_ofReal_iff hR_pos]

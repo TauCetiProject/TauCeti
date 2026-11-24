@@ -255,20 +255,14 @@ substitution `u = (1 - z / z₀)⁻¹`. -/
 theorem one_sub_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜} (hz₀ : z₀ ≠ 0)
     (hzz₀ : z ≠ z₀) :
     1 - (1 - z / z₀)⁻¹ = -z / (z₀ - z) := by
-  rw [one_sub_div hz₀, inv_div]
-  have : z₀ - z ≠ 0 := sub_ne_zero.mpr hzz₀.symm
-  field_simp
-  ring
+  rw [one_sub_div hz₀, inv_div, one_sub_div (sub_ne_zero.mpr hzz₀.symm), sub_sub_cancel_left]
 
 /-- Inversion identity `1 - z₀ / z = (1 - (1 - z / z₀)⁻¹)⁻¹` for the linear fractional
 substitution `u = (1 - z / z₀)⁻¹`. -/
 theorem one_sub_div_eq_inv_one_sub_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜} (hz : z ≠ 0)
     (hz₀ : z₀ ≠ 0) (hzz₀ : z ≠ z₀) :
     1 - z₀ / z = (1 - (1 - z / z₀)⁻¹)⁻¹ := by
-  rw [one_sub_inv_one_sub_div hz₀ hzz₀]
-  have : z₀ - z ≠ 0 := sub_ne_zero.mpr hzz₀.symm
-  field_simp
-  ring
+  rw [one_sub_inv_one_sub_div hz₀ hzz₀, inv_div, one_sub_div hz, div_neg, ← neg_div, neg_sub]
 
 /-- Factorization of `z⁻¹` in terms of `u = (1 - z / z₀)⁻¹`:
 `z⁻¹ = -z₀⁻¹ * (1 - z / z₀)⁻¹ * (1 - (1 - z / z₀)⁻¹)⁻¹`. -/
@@ -277,17 +271,15 @@ theorem inv_eq_neg_inv_mul_inv_one_sub_div_mul {𝕜 : Type*} [Field 𝕜] {z z�
     z⁻¹ = -z₀⁻¹ * (1 - z / z₀)⁻¹ * (1 - (1 - z / z₀)⁻¹)⁻¹ := by
   by_cases hz : z = 0
   · simp [hz]
-  rw [one_sub_inv_one_sub_div hz₀ hzz₀, one_sub_div hz₀, inv_div]
-  have : z₀ - z ≠ 0 := sub_ne_zero.mpr hzz₀.symm
-  field_simp
+  rw [one_sub_inv_one_sub_div hz₀ hzz₀, one_sub_div hz₀, inv_div, inv_div]
+  field_simp [sub_ne_zero.mpr hzz₀.symm]
 
 /-- Factorization `(1 - z₀ / z) * (1 - (1 - z₀⁻¹ * t) * (1 - z / z₀)⁻¹) = 1 - z⁻¹ * t`. -/
 theorem one_sub_div_mul_one_sub_mul_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜}
     (hz : z ≠ 0) (hz₀ : z₀ ≠ 0) (hzz₀ : z ≠ z₀) (t : 𝕜) :
     (1 - z₀ / z) * (1 - (1 - z₀⁻¹ * t) * (1 - z / z₀)⁻¹) = 1 - z⁻¹ * t := by
   rw [inv_mul_eq_div, one_sub_div hz₀, one_sub_div hz₀, inv_div, div_mul_div_cancel₀ hz₀]
-  have : z₀ - z ≠ 0 := sub_ne_zero.mpr hzz₀.symm
-  field_simp
+  field_simp [sub_ne_zero.mpr hzz₀.symm]
   ring
 
 end TauCeti
