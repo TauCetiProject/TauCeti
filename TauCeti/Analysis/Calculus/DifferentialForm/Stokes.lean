@@ -19,6 +19,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Stokes' formula for one-forms on rectangles and annuli
@@ -424,19 +425,14 @@ theorem integral_extDeriv_ball
     exact integral_extDeriv_closedBall hs.1.le fun z hz ↦
       hω z (Metric.closedBall_subset_ball hs.2 hz)
   -- The boundary integrals depend continuously on the radius, up to the boundary circle.
-  have hcm : Continuous fun p : ℝ × ℝ ↦ circleMap z₀ p.1 p.2 := by
-    unfold circleMap
-    fun_prop
-  have hcm0 : Continuous fun p : ℝ × ℝ ↦ circleMap 0 p.1 p.2 := by
-    unfold circleMap
-    fun_prop
   have hcont : ContinuousOn
       (fun s ↦ ∫ θ in -π..π, ω (circleMap z₀ s θ) (fun _ ↦ circleMap 0 s θ * I)) (Icc 0 r) :=
     continuousOn_parametric_intervalIntegral_of_continuousOn <|
-      (hωc.comp hcm.continuousOn fun (p : ℝ × ℝ) (hp : p ∈ Icc 0 r ×ˢ uIcc (-π) π) ↦
+      (hωc.comp (continuous_circleMap_uncurry z₀).continuousOn
+        fun (p : ℝ × ℝ) (hp : p ∈ Icc 0 r ×ˢ uIcc (-π) π) ↦
         Metric.closedBall_subset_closedBall hp.1.2
         (circleMap_mem_closedBall z₀ hp.1.1 p.2)).eval
-        (continuous_pi fun _ ↦ hcm0.mul continuous_const).continuousOn
+        (continuous_pi fun _ ↦ (continuous_circleMap_uncurry 0).mul continuous_const).continuousOn
   exact tendsto_nhds_unique_of_eventuallyEq hint.tendsto_integral_ball_nhdsLT
     ((hcont r ⟨hr.le, le_rfl⟩).tendsto.mono_left
       (nhdsWithin_le_of_mem (Filter.mem_of_superset (Ioo_mem_nhdsLT hr) Ioo_subset_Icc_self)))

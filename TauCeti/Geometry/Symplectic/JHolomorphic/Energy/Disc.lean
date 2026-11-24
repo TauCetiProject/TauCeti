@@ -106,10 +106,7 @@ theorem pathIntegral_radialPrimitive_circleMap_nonneg (hb : 0 ≤ b)
     0 ≤ pathIntegral ω.radialPrimitive.val (fun θ ↦ u (circleMap z₀ b θ)) (-π) π := by
   rw [← ω.integral_fderiv_apply_ball_eq_pathIntegral_radialPrimitive z₀ hb hu hu₁]
   refine setIntegral_nonneg measurableSet_ball fun z hz ↦ ?_
-  have hCR : fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1) := by
-    simpa [AlmostComplexStructure.ofComplexModule_apply] using
-      (hhol z hz).fderiv_apply_commute (v := 1)
-  rw [hCR]
+  rw [(hhol z hz).fderiv_I_eq]
   exact (htame z hz).symplecticForm_apply_apply_self_nonneg (fderiv ℝ u z 1)
 
 /-- A holomorphic disc whose target structure is tamed by `ω` along its image has zero boundary
