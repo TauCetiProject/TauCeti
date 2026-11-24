@@ -501,17 +501,13 @@ theorem hasSum_ordinaryHypergeometric_mul_ordinaryHypergeometric (a b : ℂ) {c 
   refine hmul.congr_fun fun s ↦ ?_
   have hc2s : ∀ k : ℕ, c + 2 * (s : ℂ) ≠ -k := fun k h ↦
     hc (2 * s + k) (by push_cast; linear_combination h)
-  have hΓm (m : ℕ) : Gamma (c + m) = (ascPochhammer ℂ m).eval c * Gamma c := by
-    rw [← Gamma_add_nat_div_Gamma_eq c hc, div_mul_cancel₀ _ hΓc]
-  have hΓc2s : Gamma (c + 2 * (s : ℂ)) = (ascPochhammer ℂ (2 * s)).eval c * Gamma c := by
-    simpa [Nat.cast_mul] using hΓm (2 * s)
-  have hp (m : ℕ) : (ascPochhammer ℂ m).eval c ≠ 0 := by
-    rw [ne_eq, ascPochhammer_eval_eq_zero_iff]
-    rintro ⟨k, -, hk⟩; exact hc k (by linear_combination hk)
-  have hps := hp s
-  have hp2s := hp (2 * s)
+  have hΓc2s := Gamma_add_natCast_eq_ascPochhammer_eval_mul hc (2 * s)
+  push_cast at hΓc2s
+  have hps := TauCeti.ascPochhammer_eval_ne_zero hc s
+  have hp2s := TauCeti.ascPochhammer_eval_ne_zero hc (2 * s)
   have hfs : (s ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero s)
-  rw [← ordinaryHypergeometric_div_Gamma_eq hc2s, hΓm s, hΓc2s]
+  rw [← ordinaryHypergeometric_div_Gamma_eq hc2s,
+    Gamma_add_natCast_eq_ascPochhammer_eval_mul hc s, hΓc2s]
   field_simp
 
 end Complex
