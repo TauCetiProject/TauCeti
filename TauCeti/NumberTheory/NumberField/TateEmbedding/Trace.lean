@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.TateEmbedding.Basic
-import TauCeti.Analysis.SpecialFunctions.Complex.TwoPiI
 import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Extension
 
 /-!
@@ -97,8 +96,9 @@ variable (k) in
 /-- Restriction along the identity is the identity. -/
 @[simp]
 theorem tateEmbeddingRestrict_id :
-    tateEmbeddingRestrict (RingHom.id F) k = LinearMap.id :=
-  (rfl)
+    tateEmbeddingRestrict (RingHom.id F) k = LinearMap.id := by
+  ext v τ
+  simp
 
 @[simp]
 theorem tateEmbeddingRestrict_tateEmbeddingRestrict (v : tateEmbeddingSpace F k) :
