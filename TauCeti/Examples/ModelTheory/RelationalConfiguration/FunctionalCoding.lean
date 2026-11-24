@@ -20,20 +20,20 @@ open FirstOrder FirstOrder.Language TauCeti RelationalConfiguration FunctionalCo
 
 -- In the language of one constant symbol, the graph relation of the constant symbol in the
 -- graph code of the table with value `3` holds exactly at `3`.
-example (y : ℕ) :
+example (a : (constantsOn Unit).Constants) (y : ℕ) :
     (graphCode (FunctionalConfiguration.mk (fun _ => 3)
         (RelationalConfiguration.mk fun _ => false) :
           FunctionalConfiguration (constantsOn Unit) ℕ)).eval
       (atom (L := (constantsOn Unit).graphLanguage)
-        (GraphRelation.graph (show (constantsOn Unit).Functions 0 from ())) ![y]) = true ↔
+        (GraphRelation.graph a) ![y]) = true ↔
       y = 3 := by
-  rw [eval_graphCode_graph_eq_true]
   simp [eq_comm]
 
 -- With a function symbol on an infinite carrier, the graph codes are not closed.
 example : ¬IsClosed {c : RelationalConfiguration (constantsOn Unit).graphLanguage ℕ |
     IsGraphCode c} :=
-  not_isClosed_setOf_isGraphCode (show (constantsOn Unit).Functions 0 from ())
+  -- The constant symbol is `()`, transported along `constantsOn_constants`.
+  not_isClosed_setOf_isGraphCode (cast constantsOn_constants.symm () : (constantsOn Unit).Constants)
 
 -- In the relational language of graphs, every code is a graph code.
 example : Set.range (graphCode (L := Language.graph) (V := ℕ)) = Set.univ :=

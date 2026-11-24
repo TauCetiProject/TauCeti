@@ -28,24 +28,25 @@ structures.
 The *graph code* of a functional configuration is the relational configuration, in the graph
 language `L.graphLanguage`, of the graph expansion of its decoded structure: it keeps the relations,
 and records the graph of each function symbol. The graph code is injective and equivariant,
-continuous for discrete `V`, and two functional configurations decode to isomorphic structures
-exactly when their graph codes are isomorphic. Its range is the set of codes in which the graph
-relation of every function symbol is the graph of a total function (`IsGraphCode`), and it is a
-homeomorphism onto this range when `V` is discrete. With countably many symbols on a countable
-carrier the range is a Gδ set. It is not closed when `L` has a function symbol and `V` is infinite:
-the graph codes of the configurations with constant table value `y` and empty base relations
-converge, as `y` leaves every finite set, to the all-false code. For a relational language it is the
-whole coding space.
+continuous when `V` is discrete or `L` is relational, and two functional configurations decode to
+isomorphic structures exactly when their graph codes are isomorphic. Its range is the set of codes
+in which the graph relation of every function symbol is the graph of a total function
+(`IsGraphCode`), and it is a homeomorphism onto this range whenever it is continuous. With
+countably many symbols on a countable carrier the range is a Gδ set. It is not closed when `L`
+has a function symbol and `V` is infinite: the graph codes of the configurations with constant
+table value `y` and empty base relations converge, as `y` leaves every finite set, to the
+all-false code. For a relational language it is the whole coding space.
 
-Thus the graph code preserves and reflects isomorphism (`isoSetoid_graphCode_iff`), and is an
-equivariant embedding onto the set of graph codes, which is invariant under permutations and, with
-countably many symbols on a countable carrier, Gδ.
+Thus the graph code preserves and reflects isomorphism (`isoSetoid_graphCode_iff`) and is
+equivariant. On a discrete carrier it is a topological embedding onto the set of graph codes, which
+is invariant under permutations and, with countably many symbols on a countable carrier, Gδ.
 
 ## Main definitions
 
 * `TauCeti.FunctionalConfiguration L V`: the functional coding space, pairs of a function table
   and a relational configuration.
-* `TauCeti.FunctionalConfiguration.toStructure`: the decoded `L`-structure.
+* `TauCeti.FunctionalConfiguration.toStructure`: the decoded `L`-structure, and
+  `TauCeti.FunctionalConfiguration.ofStructure`: the configuration of an `L`-structure.
 * `TauCeti.FunctionalConfiguration.isoSetoid`: isomorphism of decoded structures.
 * `TauCeti.FunctionalConfiguration.graphCode`: the graph code.
 * `TauCeti.FunctionalConfiguration.IsGraphCode`: every graph relation is the graph of a total
@@ -79,7 +80,7 @@ countably many symbols on a countable carrier, Gδ.
 * A. S. Kechris, *Classical Descriptive Set Theory*, Springer, 1995, §16.C (the space of countable
   structures, with function symbols coded by their graphs).
 * R. Camerlo and S. Gao, *The completeness of the isomorphism relation for countable Boolean
-  algebras*, Trans. Amer. Math. Soc. 353 (2001), §1 (function symbols reduce to relations).
+  algebras*, Trans. Amer. Math. Soc. 353 (2001), §1.
 -/
 
 public section
@@ -118,6 +119,21 @@ theorem Arg.induction_arg {motive : Arg L V → Prop}
     motive p := by
   obtain ⟨⟨k, f⟩, v⟩ := p
   exact h f v
+
+/-- Define a function on arguments by its value at `arg f v` for each function symbol `f` and
+tuple `v`. -/
+@[elab_as_elim]
+def Arg.recArg {motive : Arg L V → Sort*}
+    (h : ∀ {k : ℕ} (f : L.Functions k) (v : Fin k → V), motive (arg f v)) (p : Arg L V) :
+    motive p :=
+  h p.1.2 p.2
+
+@[simp]
+theorem Arg.recArg_arg {motive : Arg L V → Sort*}
+    (h : ∀ {k : ℕ} (f : L.Functions k) (v : Fin k → V), motive (arg f v)) {k : ℕ}
+    (f : L.Functions k) (v : Fin k → V) :
+    Arg.recArg (motive := motive) h (arg f v) = h f v :=
+  (rfl)
 
 /-- Relabel the entries of an argument along a map of carriers. -/
 def Arg.map {W : Type*} (g : V → W) (p : Arg L V) : Arg L W := ⟨p.1, g ∘ p.2⟩
@@ -180,6 +196,43 @@ theorem toStructure_relMap (F : FunctionalConfiguration L V) {k : ℕ} (R : L.Re
     (v : Fin k → V) : F.toStructure.RelMap R v ↔ F.rel.eval (atom R v) :=
   Iff.rfl
 
+variable (L V) in
+/-- The functional configuration of an `L`-structure: the table records its function values and
+the relational configuration its relations. -/
+noncomputable def ofStructure [L.Structure V] : FunctionalConfiguration L V :=
+  mk (fun p => Structure.funMap p.1.2 p.2) (RelationalConfiguration.ofStructure L V)
+
+@[simp]
+theorem table_ofStructure [L.Structure V] {k : ℕ} (f : L.Functions k) (v : Fin k → V) :
+    (ofStructure L V).table (arg f v) = Structure.funMap f v :=
+  (rfl)
+
+@[simp]
+theorem rel_ofStructure [L.Structure V] :
+    (ofStructure L V).rel = RelationalConfiguration.ofStructure L V :=
+  (rfl)
+
+/-- Decoding after encoding recovers the structure. -/
+@[simp]
+theorem toStructure_ofStructure (S : L.Structure V) : (@ofStructure L V S).toStructure = S := by
+  classical
+  apply Structure.ext
+  · funext n f v
+    rfl
+  · funext n R v
+    exact propext (by simp)
+
+/-- Encoding after decoding recovers the functional configuration. -/
+@[simp]
+theorem ofStructure_toStructure (F : FunctionalConfiguration L V) :
+    @ofStructure L V F.toStructure = F := by
+  classical
+  refine ext (funext fun p => ?_) (RelationalConfiguration.ext fun a => ?_)
+  · induction p using Arg.induction_arg with
+    | h f v => rfl
+  · induction a using Atom.induction_atom with
+    | h R v => simp
+
 /-! ### The action of permutations -/
 
 /-- Permutations of `V` act on functional configurations by transporting the decoded structure:
@@ -208,6 +261,16 @@ instance instMulActionPerm : MulAction (Equiv.Perm V) (FunctionalConfiguration L
     (by rw [rel_perm_smul, one_smul])
   mul_smul σ τ F := ext (funext fun p => by simp [table_perm_smul])
     (by rw [rel_perm_smul, rel_perm_smul, rel_perm_smul, mul_smul])
+
+/-- Relabelling by `σ` decodes to the structure transported along `σ`. -/
+@[simp]
+theorem toStructure_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V) :
+    (σ • F).toStructure = @Equiv.inducedStructure L V V F.toStructure σ := by
+  apply Structure.ext
+  · funext k f v
+    rfl
+  · funext k R v
+    exact propext (by simp [Function.comp_def])
 
 variable (L V) in
 /-- Isomorphism of decoded structures, as a setoid on functional configurations. -/
@@ -273,11 +336,19 @@ theorem isoSetoid_eq_orbitRel :
 /-! ### The graph code -/
 
 /-- The **graph code** of a functional configuration: the relational configuration, in the graph
-language, of the graph expansion of the decoded structure. -/
+language, of the graph expansion of the decoded structure (function symbols coded by their graphs,
+as in Kechris, §16.C). -/
 noncomputable def graphCode (F : FunctionalConfiguration L V) :
     RelationalConfiguration L.graphLanguage V :=
-  @ofStructure L.graphLanguage V (@graphExpansion L V F.toStructure)
+  @RelationalConfiguration.ofStructure L.graphLanguage V (@graphExpansion L V F.toStructure)
 
+/-- The graph code is the configuration of the graph expansion of the decoded structure. -/
+theorem graphCode_def (F : FunctionalConfiguration L V) :
+    graphCode F =
+      @RelationalConfiguration.ofStructure L.graphLanguage V (@graphExpansion L V F.toStructure) :=
+  (rfl)
+
+/-- The base coordinates of the graph code are the relation values of the configuration. -/
 @[simp]
 theorem eval_graphCode_base (F : FunctionalConfiguration L V) {n : ℕ} (R : L.Relations n)
     (v : Fin n → V) :
@@ -285,6 +356,8 @@ theorem eval_graphCode_base (F : FunctionalConfiguration L V) {n : ℕ} (R : L.R
       F.rel.eval (atom R v) := by
   simp [graphCode]
 
+/-- The graph coordinate of `f` at `w` tests whether the table value at `f` and the first `k`
+entries of `w` is the last entry of `w`. -/
 @[simp]
 theorem eval_graphCode_graph (F : FunctionalConfiguration L V) {k : ℕ} (f : L.Functions k)
     (w : Fin (k + 1) → V) [Decidable (F.table (arg f (Fin.init w)) = w (Fin.last k))] :
@@ -292,6 +365,9 @@ theorem eval_graphCode_graph (F : FunctionalConfiguration L V) {k : ℕ} (f : L.
       decide (F.table (arg f (Fin.init w)) = w (Fin.last k)) := by
   simp [graphCode]
 
+/-- The graph coordinate of `f` at `w` holds exactly when the table value at `f` and the first `k`
+entries of `w` is the last entry of `w`. -/
+@[simp]
 theorem eval_graphCode_graph_eq_true (F : FunctionalConfiguration L V) {k : ℕ}
     (f : L.Functions k) (w : Fin (k + 1) → V) :
     (graphCode F).eval (atom (L := L.graphLanguage) (GraphRelation.graph f) w) = true ↔
@@ -299,19 +375,28 @@ theorem eval_graphCode_graph_eq_true (F : FunctionalConfiguration L V) {k : ℕ}
   classical
   simp
 
+/-- The graph coordinate of `f` at `Fin.snoc v y` holds exactly when the table value at `(f, v)`
+is `y`. -/
+theorem eval_graphCode_graph_snoc_eq_true (F : FunctionalConfiguration L V) {k : ℕ}
+    (f : L.Functions k) (v : Fin k → V) (y : V) :
+    (graphCode F).eval (atom (L := L.graphLanguage) (GraphRelation.graph f) (Fin.snoc v y)) =
+        true ↔ F.table (arg f v) = y := by
+  rw [eval_graphCode_graph_eq_true, Fin.init_snoc, Fin.snoc_last]
+
 /-- **The graph code is injective.** -/
 theorem graphCode_injective : Function.Injective (graphCode (L := L) (V := V)) := by
   intro F G h
   refine ext (funext fun p => ?_) (RelationalConfiguration.ext fun a => ?_)
   · induction p using Arg.induction_arg with
     | h f v =>
-      have hF := (eval_graphCode_graph_eq_true F f (Fin.snoc v (F.table (arg f v)))).2 (by simp)
-      rw [h, eval_graphCode_graph_eq_true] at hF
-      simpa using hF.symm
+      have hF := (eval_graphCode_graph_snoc_eq_true F f v _).2 rfl
+      rw [h, eval_graphCode_graph_snoc_eq_true] at hF
+      exact hF.symm
   · induction a using Atom.induction_atom with
     | h R v => rw [← eval_graphCode_base, h, eval_graphCode_base]
 
 /-- **The graph code is equivariant.** -/
+@[simp]
 theorem graphCode_perm_smul (σ : Equiv.Perm V) (F : FunctionalConfiguration L V) :
     graphCode (σ • F) = σ • graphCode F := by
   ext a
@@ -345,10 +430,8 @@ theorem isGraphCode_iff {c : RelationalConfiguration L.graphLanguage V} :
 
 @[simp]
 theorem isGraphCode_graphCode (F : FunctionalConfiguration L V) : IsGraphCode (graphCode F) :=
-  fun k f v => ⟨F.table (arg f v), by classical simp, fun y hy => by
-    have := (eval_graphCode_graph_eq_true F f _).1 hy
-    rw [Fin.init_snoc, Fin.snoc_last] at this
-    exact this.symm⟩
+  fun _ f v => ⟨F.table (arg f v), (eval_graphCode_graph_snoc_eq_true F f v _).2 rfl,
+    fun y hy => ((eval_graphCode_graph_snoc_eq_true F f v y).1 hy).symm⟩
 
 /-- In a relational language every code is a graph code. -/
 @[simp]
@@ -362,10 +445,11 @@ noncomputable def ofGraphCode
     (c : {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}) :
     FunctionalConfiguration L V :=
   mk (fun p => (c.property p.1.2 p.2).exists.choose)
-    (@ofStructure L V
+    (@RelationalConfiguration.ofStructure L V
       { funMap f v := (c.property f v).exists.choose
         RelMap R v := c.val.eval (atom (L := L.graphLanguage) (GraphRelation.base R) v) })
 
+/-- The relations of `ofGraphCode c` are the base coordinates of `c`. -/
 @[simp]
 theorem eval_rel_ofGraphCode
     (c : {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}) {n : ℕ}
@@ -374,6 +458,9 @@ theorem eval_rel_ofGraphCode
       c.val.eval (atom (L := L.graphLanguage) (GraphRelation.base R) v) := by
   simp [ofGraphCode]
 
+/-- The table of `ofGraphCode c` takes the value `y` at `(f, v)` exactly when the graph relation of
+`f` in `c` holds at `Fin.snoc v y`. -/
+@[simp]
 theorem table_ofGraphCode_eq_iff
     (c : {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}) {k : ℕ}
     (f : L.Functions k) (v : Fin k → V) (y : V) :
@@ -392,6 +479,7 @@ theorem eval_graph_snoc_table_ofGraphCode
       (Fin.snoc v ((ofGraphCode c).table (arg f v)))) = true :=
   (table_ofGraphCode_eq_iff c f v _).1 rfl
 
+/-- The graph code of `ofGraphCode c` is `c`. -/
 @[simp]
 theorem graphCode_ofGraphCode
     (c : {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}) :
@@ -405,6 +493,7 @@ theorem graphCode_ofGraphCode
       rw [Bool.eq_iff_iff, eval_graphCode_graph_eq_true, table_ofGraphCode_eq_iff,
         Fin.snoc_init_self]
 
+/-- Reading back the graph code of `F` recovers `F`. -/
 @[simp]
 theorem ofGraphCode_graphCode (F : FunctionalConfiguration L V) :
     ofGraphCode ⟨graphCode F, isGraphCode_graphCode F⟩ = F :=
@@ -414,6 +503,11 @@ theorem ofGraphCode_graphCode (F : FunctionalConfiguration L V) :
 theorem range_graphCode : range (graphCode (L := L) (V := V)) = {c | IsGraphCode c} :=
   Subset.antisymm (range_subset_iff.2 isGraphCode_graphCode)
     fun c hc => ⟨ofGraphCode ⟨c, hc⟩, graphCode_ofGraphCode _⟩
+
+/-- A code is in the range of the graph code exactly when it is a graph code. -/
+theorem mem_range_graphCode_iff {c : RelationalConfiguration L.graphLanguage V} :
+    c ∈ range graphCode ↔ IsGraphCode c := by
+  rw [range_graphCode, mem_ofPred_eq]
 
 /-- In a relational language the graph code is onto. -/
 theorem range_graphCode_of_isRelational [L.IsRelational] :
@@ -555,6 +649,48 @@ theorem continuous_ofGraphCode : Continuous (ofGraphCode (L := L) (V := V)) := b
       simp only [eval_rel_ofGraphCode]
       exact (continuous_eval _).comp continuous_subtypeVal
 
+/-- In a relational language the graph code is continuous, for every topology on the carrier. -/
+theorem continuous_graphCode_of_isRelational [L.IsRelational] :
+    Continuous (graphCode (L := L) (V := V)) := by
+  refine RelationalConfiguration.continuous_iff.2 fun a => ?_
+  induction a using Atom.induction_atom with
+  | h R w =>
+    cases R with
+    | base R =>
+      simp only [eval_graphCode_base]
+      exact (continuous_eval (atom R w)).comp continuous_rel
+    | graph f => exact isEmptyElim f
+
+/-- A continuous graph code is a homeomorphism onto its range, the graph codes. -/
+noncomputable def graphCodeHomeomorphOfContinuous (h : Continuous (graphCode (L := L) (V := V))) :
+    FunctionalConfiguration L V ≃ₜ {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}
+    where
+  toFun F := ⟨graphCode F, isGraphCode_graphCode F⟩
+  invFun := ofGraphCode
+  left_inv := ofGraphCode_graphCode
+  right_inv c := Subtype.ext (graphCode_ofGraphCode c)
+  continuous_toFun := h.subtype_mk _
+  continuous_invFun := continuous_ofGraphCode
+
+@[simp]
+theorem coe_graphCodeHomeomorphOfContinuous_apply (h : Continuous (graphCode (L := L) (V := V)))
+    (F : FunctionalConfiguration L V) :
+    (graphCodeHomeomorphOfContinuous h F : RelationalConfiguration L.graphLanguage V) =
+      graphCode F :=
+  (rfl)
+
+@[simp]
+theorem graphCodeHomeomorphOfContinuous_symm_apply
+    (h : Continuous (graphCode (L := L) (V := V)))
+    (c : {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}) :
+    (graphCodeHomeomorphOfContinuous h).symm c = ofGraphCode c :=
+  (rfl)
+
+/-- A continuous graph code is a topological embedding. -/
+theorem isEmbedding_graphCode_of_continuous (h : Continuous (graphCode (L := L) (V := V))) :
+    IsEmbedding (graphCode (L := L) (V := V)) :=
+  IsEmbedding.subtypeVal.comp (graphCodeHomeomorphOfContinuous h).isEmbedding
+
 variable [DiscreteTopology V]
 
 /-- **The action is jointly continuous** on a discrete carrier. -/
@@ -576,7 +712,7 @@ instance instContinuousSMulPerm :
         (hread.comp ((continuous_table.comp continuous_snd).prodMk hinv)))
     · exact continuous_smul.comp (continuous_fst.prodMk (continuous_rel.comp continuous_snd))
 
-/-- **The graph code is continuous.** -/
+/-- **The graph code is continuous** on a discrete carrier. -/
 @[fun_prop]
 theorem continuous_graphCode : Continuous (graphCode (L := L) (V := V)) := by
   classical
@@ -593,16 +729,12 @@ theorem continuous_graphCode : Continuous (graphCode (L := L) (V := V)) := by
         continuous_of_discreteTopology
         ((continuous_apply (arg f (Fin.init w))).comp continuous_table)
 
-/-- **The graph code is a homeomorphism onto its range**, the graph codes. -/
+/-- **The graph code is a homeomorphism onto its range**, the graph codes, on a discrete
+carrier. -/
 noncomputable def graphCodeHomeomorph :
-    FunctionalConfiguration L V ≃ₜ {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c}
-    where
-  toFun F := ⟨graphCode F, isGraphCode_graphCode F⟩
-  invFun := ofGraphCode
-  left_inv := ofGraphCode_graphCode
-  right_inv c := Subtype.ext (graphCode_ofGraphCode c)
-  continuous_toFun := continuous_graphCode.subtype_mk _
-  continuous_invFun := continuous_ofGraphCode
+    FunctionalConfiguration L V ≃ₜ
+      {c : RelationalConfiguration L.graphLanguage V // IsGraphCode c} :=
+  graphCodeHomeomorphOfContinuous continuous_graphCode
 
 @[simp]
 theorem coe_graphCodeHomeomorph_apply (F : FunctionalConfiguration L V) :
@@ -615,9 +747,9 @@ theorem graphCodeHomeomorph_symm_apply
     graphCodeHomeomorph.symm c = ofGraphCode c :=
   (rfl)
 
-/-- The graph code is a topological embedding. -/
+/-- The graph code is a topological embedding on a discrete carrier. -/
 theorem isEmbedding_graphCode : IsEmbedding (graphCode (L := L) (V := V)) :=
-  IsEmbedding.subtypeVal.comp graphCodeHomeomorph.isEmbedding
+  isEmbedding_graphCode_of_continuous continuous_graphCode
 
 end FunctionalConfiguration
 
