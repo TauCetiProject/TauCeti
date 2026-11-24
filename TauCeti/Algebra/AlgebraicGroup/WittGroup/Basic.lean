@@ -52,7 +52,11 @@ is the bundled object.
   `TauCeti.WittGroup.algHomEquiv_counit` and `TauCeti.WittGroup.algHomEquiv_antipode`.
 * `TauCeti.WittGroup.hopfAlgebra`: the selected Hopf-algebra dictionary.
 * `TauCeti.WittGroup.coordinateHopfAlgebra`: the bundled commutative Hopf algebra, which is
-  cocommutative and finitely presented.
+  cocommutative and finitely presented; its structure maps on the coordinates are
+  `TauCeti.WittGroup.coordinateHopfAlgebra_comul_X`,
+  `TauCeti.WittGroup.coordinateHopfAlgebra_counit_X` and
+  `TauCeti.WittGroup.coordinateHopfAlgebra_antipode_X`, and algebra maps out of it are
+  determined by these coordinates (`TauCeti.WittGroup.coordinateHopfAlgebra_algHom_ext`).
 * `TauCeti.WittGroup.pointsMulEquiv`: its convolution group of `A`-valued points is the additive
   group of `W_n(A)`, naturally in `A` (`TauCeti.WittGroup.pointsMulEquiv_mapValue`).
 
@@ -119,6 +123,7 @@ theorem algHomEquiv_antipode :
 
 /-- The comultiplication sends the variable `X_i` to the `i`-th coordinate of the sum of the
 two generic Witt vectors of the tensor square. -/
+@[simp]
 theorem comul_X (i : Fin n) :
     comul p n R (X i) =
       (algHomEquiv p n R includeLeft +
@@ -132,6 +137,7 @@ theorem counit_X (i : Fin n) : counit p n R (X i) = 0 := by
 
 /-- The antipode sends the variable `X_i` to the `i`-th coordinate of the negative of the
 generic Witt vector. -/
+@[simp]
 theorem antipode_X (i : Fin n) :
     antipode p n R (X i) = (-algHomEquiv p n R (AlgHom.id R _)).coeff i :=
   TruncatedWittVector.algHomEquiv_symm_apply_X _ _ _ _ _
@@ -262,6 +268,74 @@ theorem comulAlgHom_comp_coordinateAlgEquiv :
   -- comultiplication stored by `CommHopfAlgCat.of`, so the two wrappers are crossed by `change`.
   change comul p n R = (Algebra.TensorProduct.map (AlgHom.id R _) (AlgHom.id R _)).comp _
   rw [Algebra.TensorProduct.map_id, AlgHom.id_comp]
+
+/-- The comultiplication of the bundled coordinate Hopf algebra is `comul`, transported along
+`coordinateAlgEquiv`. -/
+@[simp low]
+theorem coordinateHopfAlgebra_comul_apply (x : MvPolynomial (Fin n) R) :
+    Coalgebra.comul (R := R) (A := coordinateHopfAlgebra p n R) (coordinateAlgEquiv p n R x) =
+      Algebra.TensorProduct.map (coordinateAlgEquiv p n R).toAlgHom
+        (coordinateAlgEquiv p n R).toAlgHom (comul p n R x) :=
+  DFunLike.congr_fun (comulAlgHom_comp_coordinateAlgEquiv p n R) x
+
+/-- The counit of the bundled coordinate Hopf algebra is `counit`, transported along
+`coordinateAlgEquiv`. -/
+@[simp low]
+theorem coordinateHopfAlgebra_counit_apply (x : MvPolynomial (Fin n) R) :
+    Coalgebra.counit (R := R) (A := coordinateHopfAlgebra p n R) (coordinateAlgEquiv p n R x) =
+      counit p n R x :=
+  -- `coordinateHopfAlgebra` stores `counit` on the polynomial ring itself and
+  -- `coordinateAlgEquiv` is the identity of that carrier.
+  (rfl)
+
+/-- The antipode of the bundled coordinate Hopf algebra is `antipode`, transported along
+`coordinateAlgEquiv`. -/
+@[simp low]
+theorem coordinateHopfAlgebra_antipode_apply (x : MvPolynomial (Fin n) R) :
+    HopfAlgebra.antipode R (A := coordinateHopfAlgebra p n R) (coordinateAlgEquiv p n R x) =
+      coordinateAlgEquiv p n R (antipode p n R x) :=
+  -- As for the counit, both wrappers are the identity on the stored antipode.
+  (rfl)
+
+/-- Two algebra maps out of the bundled coordinate Hopf algebra of `W_n` are equal as soon as
+they agree on the coordinates `X₀, …, X_{n-1}`. -/
+theorem coordinateHopfAlgebra_algHom_ext {T : Type v} [Semiring T] [Algebra R T]
+    {f g : coordinateHopfAlgebra p n R →ₐ[R] T}
+    (h : ∀ i, f (coordinateAlgEquiv p n R (X i)) = g (coordinateAlgEquiv p n R (X i))) :
+    f = g :=
+  (AlgHom.cancel_right (coordinateAlgEquiv p n R).surjective).mp <|
+    MvPolynomial.algHom_ext (f := f.comp (coordinateAlgEquiv p n R).toAlgHom) h
+
+/-- The comultiplication of the bundled coordinate Hopf algebra sends the coordinate `X_i` to the
+`i`-th coordinate of the sum of the two generic Witt vectors `(X_j ⊗ 1)_j` and `(1 ⊗ X_j)_j`. -/
+@[simp]
+theorem coordinateHopfAlgebra_comul_X (i : Fin n) :
+    Coalgebra.comul (R := R) (A := coordinateHopfAlgebra p n R) (coordinateAlgEquiv p n R (X i)) =
+      (TruncatedWittVector.mk p (fun j ↦ coordinateAlgEquiv p n R (X j) ⊗ₜ[R] 1) +
+        TruncatedWittVector.mk p (fun j ↦ 1 ⊗ₜ[R] coordinateAlgEquiv p n R (X j))).coeff i := by
+  rw [coordinateHopfAlgebra_comul_apply, ← AlgHom.comp_apply,
+    ← TruncatedWittVector.coeff_algHomEquiv p n R, algHomEquiv_comp_comul]
+  congr 2 <;> ext j <;> simp
+
+/-- The counit of the bundled coordinate Hopf algebra sends every coordinate to zero. -/
+@[simp]
+theorem coordinateHopfAlgebra_counit_X (i : Fin n) :
+    Coalgebra.counit (R := R) (A := coordinateHopfAlgebra p n R)
+      (coordinateAlgEquiv p n R (X i)) = 0 := by
+  rw [coordinateHopfAlgebra_counit_apply, counit_X]
+
+/-- The antipode of the bundled coordinate Hopf algebra sends the coordinate `X_i` to the `i`-th
+coordinate of the negative of the generic Witt vector `(X_j)_j`. -/
+@[simp]
+theorem coordinateHopfAlgebra_antipode_X (i : Fin n) :
+    HopfAlgebra.antipode R (A := coordinateHopfAlgebra p n R) (coordinateAlgEquiv p n R (X i)) =
+      (-TruncatedWittVector.mk p (fun j ↦ coordinateAlgEquiv p n R (X j))).coeff i := by
+  rw [coordinateHopfAlgebra_antipode_apply, ← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply,
+    ← TruncatedWittVector.coeff_algHomEquiv p n R, algHomEquiv_comp, algHomEquiv_antipode,
+    map_neg, ← algHomEquiv_comp, AlgHom.comp_id]
+  congr 2
+  ext j
+  simp
 
 /-- The bundled coordinate Hopf algebra of `W_n` is cocommutative. -/
 instance : Coalgebra.IsCocomm R (coordinateHopfAlgebra p n R) where
