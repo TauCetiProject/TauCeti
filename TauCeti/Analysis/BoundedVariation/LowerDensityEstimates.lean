@@ -289,13 +289,6 @@ theorem eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one (hn : fi
   filter_upwards [eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary
     hx, Ioo_mem_nhdsGT hε] with r hr hrε
   refine le_trans ?_ hr
-  -- Replace `s` by a measurable set agreeing with it on `Ω`.
-  have hts : toMeasurable (volume.restrict (Ω : Set E)) s =ᵐ[volume.restrict (Ω : Set E)] s :=
-    (nullMeasurableSet_restrict_of_mem_reducedBoundary hx).toMeasurable_ae_eq
-  set t := toMeasurable (volume.restrict (Ω : Set E)) s
-  have hxt : x ∈ reducedBoundary volume Ω t := by rwa [reducedBoundary_congr_ae hts]
-  rw [← perimeter_congr_ae (ae_restrict_of_ae_restrict_of_subset
-    ((ball_subset_ball hrε.2.le).trans hεΩ) hts)]
   -- Transport to the real line along a linear isometry equivalence.
   let e : ℝ ≃ₗᵢ[ℝ] E :=
     (OrthonormalBasis.singleton (Fin 1) ℝ).equiv (stdOrthonormalBasis ℝ E) (finCongr hn.symm)
@@ -305,14 +298,17 @@ theorem eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one (hn : fi
       e ⁻¹' ball x r := Opens.coe_comap _ _
   have hmeas (u : Set E) : volume (e ⁻¹' u ∩ e ⁻¹' ball x r) = volume (u ∩ ball x r) := by
     rw [← preimage_inter, he.measure_preimage_emb e.toMeasurableEquiv.measurableEmbedding]
-  refine Real.one_le_perimeter_of_ordConnected ((measurableSet_toMeasurable _ _).preimage
-    e.continuous.measurable) ?_ ?_ ?_
+  refine Real.one_le_perimeter_of_ordConnected ?_ ?_ ?_ ?_
+  · rw [hV]
+    exact ((nullMeasurableSet_restrict_of_mem_reducedBoundary hx).mono
+      (Measure.restrict_mono ((ball_subset_ball hrε.2.le).trans hεΩ) le_rfl)).preimage
+      (he.restrict_preimage measurableSet_ball).quasiMeasurePreserving
   · rw [hV]
     exact convex_iff_ordConnected.1 ((convex_ball x r).linear_preimage e.toLinearMap)
   · rw [hV, hmeas]
-    exact (measure_inter_ball_pos hxt hrε.1).ne'
+    exact (measure_inter_ball_pos hx hrε.1).ne'
   · rw [hV, ← preimage_compl, hmeas]
-    exact (measure_inter_ball_pos (s := tᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
+    exact (measure_inter_ball_pos (s := sᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
 
 /-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and
 let `μ` be an additive Haar measure. At a point of the reduced boundary of `s` in an open set `Ω`,

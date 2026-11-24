@@ -38,8 +38,8 @@ For the indicator of a set `s`, almost every point is a Lebesgue point with valu
 Counting alternations between points of `s` and of its complement gives a local perimeter bound,
 the sharp one-dimensional isoperimetric inequality and its rigidity:
 
-* a measurable set that charges both itself and its complement in an open interval `V` has
-  perimeter at least `1` in `V` (`TauCeti.Real.one_le_perimeter_of_ordConnected`);
+* a set, null-measurable in an open interval `V`, that charges both itself and its complement in
+  `V` has perimeter at least `1` in `V` (`TauCeti.Real.one_le_perimeter_of_ordConnected`);
 * a null-measurable `s ⊆ ℝ` of positive finite measure has perimeter at least `2`
   (`TauCeti.Real.two_le_perimeter`);
 * if `s` has finite measure and does not agree almost everywhere with any interval, then it has
@@ -258,11 +258,11 @@ private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {V 
   rw [perimeter_def]
   exact ofReal_sum_abs_sub_le_totalVariationOn (v := fun i => s.indicator 1 (x i)) hu hx hV hxs
 
-/-- **A local lower bound for the perimeter on the line.** A measurable set `s ⊆ ℝ` that charges
-both itself and its complement in an open interval `V` has perimeter at least one in `V`. -/
-theorem one_le_perimeter_of_ordConnected {s : Set ℝ} (hs : MeasurableSet s) {V : Opens ℝ}
-    (hV : (V : Set ℝ).OrdConnected) (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) :
-    1 ≤ perimeter volume V s := by
+/-- A measurable set `s ⊆ ℝ` that charges both itself and its complement in an open interval `V`
+has perimeter at least one in `V`. -/
+private theorem one_le_perimeter_of_ordConnected_of_measurableSet {s : Set ℝ}
+    (hs : MeasurableSet s) {V : Opens ℝ} (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
   set P : ℝ → Prop := fun x => Tendsto (fun r => ⨍ y in closedBall x r,
     ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) x‖) (𝓝[>] 0) (𝓝 0)
   have hae : ∀ᵐ x, P x := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
@@ -281,6 +281,21 @@ theorem one_le_perimeter_of_ordConnected {s : Set ℝ} (hs : MeasurableSet s) {V
   rcases le_total a b with h | h
   · simpa [has, notMem_of_mem_compl hbs] using key h haV hbV ha hb
   · simpa [has, notMem_of_mem_compl hbs] using key h hbV haV hb ha
+
+/-- **A local lower bound for the perimeter on the line.** A set `s ⊆ ℝ`, null-measurable in an
+open interval `V`, that charges both itself and its complement in `V` has perimeter at least one
+in `V`. -/
+theorem one_le_perimeter_of_ordConnected {s : Set ℝ} {V : Opens ℝ}
+    (hs : NullMeasurableSet s (volume.restrict V)) (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
+  have hts := hs.toMeasurable_ae_eq
+  have hvol {u u' : Set ℝ} (h : u =ᵐ[volume.restrict V] u') :
+      volume (u ∩ V) = volume (u' ∩ V) := by
+    rw [← Measure.restrict_apply' V.isOpen.measurableSet,
+      ← Measure.restrict_apply' V.isOpen.measurableSet, measure_congr h]
+  rw [← perimeter_congr_ae hts]
+  exact one_le_perimeter_of_ordConnected_of_measurableSet (measurableSet_toMeasurable _ _) hV
+    (by rwa [hvol hts]) (by rwa [hvol hts.compl])
 
 /-- A null-measurable set agrees almost everywhere with a measurable set of the same perimeter
 and measure. -/
