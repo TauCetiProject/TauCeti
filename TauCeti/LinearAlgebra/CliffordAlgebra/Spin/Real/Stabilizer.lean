@@ -244,7 +244,7 @@ private def realCliffordSpinLastStabilizerProjection (n : ℕ)
     specialOrthogonalGroupProdLastStabilizer (realCliffordForm n 0) := by
   let e := realCliffordPositiveSplitIsometry n 0
   let g : specialOrthogonalGroup (realCliffordForm (n + 1) 0) :=
-    spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1
+    spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.val
   let ge : specialOrthogonalGroup
       ((realCliffordForm n 0).prod (QuadraticMap.sq (R := ℝ) (A := ℝ))) :=
     e.specialOrthogonalGroupCongr g
@@ -254,7 +254,7 @@ private def realCliffordSpinLastStabilizerProjection (n : ℕ)
   have hlast : e.symm (0, 1) = Pi.single (Fin.last n) 1 := by
     simpa [e, realCliffordSpinLastIsometry] using realCliffordSpinLastIsometry_one n
   rw [hlast]
-  have hx := mem_realCliffordSpinLastStabilizer_iff.mp x.2
+  have hx := mem_realCliffordSpinLastStabilizer_iff.mp x.property
   rw [← coe_spinToSpecialOrthogonal_apply] at hx
   rw [hx]
   exact (congrArg e hlast).symm.trans (e.apply_symm_apply (0, 1))
@@ -270,7 +270,7 @@ theorem realCliffordSpinStabilizerInclusion_surjective (n : ℕ) [NeZero n] :
       (isUnit_of_invertible (2 : ℝ)).isRegular).symm gx
   obtain ⟨y, hy⟩ := spinToSpecialOrthogonal_surjective_of_posDef
     (realCliffordForm n 0) (posDef_realCliffordForm_zero n) f
-  have hproj : spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1 =
+  have hproj : spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.val =
       spinToSpecialOrthogonal (realCliffordForm (n + 1) 0)
         (realCliffordSpinInclusion n y) := by
     apply Subtype.ext
@@ -280,34 +280,34 @@ theorem realCliffordSpinStabilizerInclusion_surjective (n : ℕ) [NeZero n] :
     obtain ⟨m, rfl⟩ := e.symm.surjective v
     simp only [coe_spinToSpecialOrthogonal_apply]
     -- Restate coercions through the named split isometry so its action theorem applies.
-    change spinVectorAction (realCliffordForm (n + 1) 0) x.1 (e.symm m) =
+    change spinVectorAction (realCliffordForm (n + 1) 0) x.val (e.symm m) =
       spinVectorAction (realCliffordForm (n + 1) 0)
         (realCliffordSpinInclusion n y) (e.symm m)
     rw [realCliffordSpinInclusion_spinVectorAction_split]
     have hge := e.coe_specialOrthogonalGroupCongr_apply
-      (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.1) m
+      (spinToSpecialOrthogonal (realCliffordForm (n + 1) 0) x.val) m
     have hgx := coe_specialOrthogonalGroupEquivProdLastStabilizer_apply
       (realCliffordForm n 0) (isUnit_of_invertible (2 : ℝ)).isRegular f m
     rw [MulEquiv.apply_symm_apply] at hgx
     have hleft :
-        e (spinVectorAction (realCliffordForm (n + 1) 0) x.1 (e.symm m)) = gx.1.1 m := by
+        e (spinVectorAction (realCliffordForm (n + 1) 0) x.val (e.symm m)) = gx.val.val m := by
       rw [← coe_spinToSpecialOrthogonal_apply]
       exact hge.symm
-    have hright : gx.1.1 m =
+    have hright : gx.val.val m =
         (spinVectorAction (realCliffordForm n 0) y m.1, m.2) := by
       rw [← coe_spinToSpecialOrthogonal_apply, hy]
       exact hgx
     apply e.toLinearEquiv.injective
     calc
       e.toLinearEquiv
-          (spinVectorAction (realCliffordForm (n + 1) 0) x.1 (e.symm m)) =
-          gx.1.1 m := hleft
+          (spinVectorAction (realCliffordForm (n + 1) 0) x.val (e.symm m)) =
+          gx.val.val m := hleft
       _ = (spinVectorAction (realCliffordForm n 0) y m.1, m.2) := hright
       _ = e.toLinearEquiv (e.symm
           (spinVectorAction (realCliffordForm n 0) y m.1, m.2)) :=
         (e.apply_symm_apply _).symm
   rcases eq_or_eq_realCliffordSpinInclusion_negOne_mul_of_spinToSpecialOrthogonal_eq
-      n x.1 y hproj with h | h
+      n x.val y hproj with h | h
   · exact ⟨y, Subtype.ext h.symm⟩
   · refine ⟨spinGroup.negOne (realCliffordForm n 0)
       (nondegenerate_realCliffordForm n 0).ne_zero * y, ?_⟩

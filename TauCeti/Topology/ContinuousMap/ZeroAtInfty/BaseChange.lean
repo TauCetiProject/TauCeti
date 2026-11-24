@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
@@ -13,7 +14,8 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 A bounded unital ring homomorphism `f : R →+* S` extends the matrix of an operator
 `C₀(J, R) →L[R] C₀(I, R)` coefficientwise to an operator over `S`. Null columns and a
 uniform entry bound ensure that the extended matrix defines a continuous linear map.
-The construction respects identities, addition, scalar multiplication and composition,
+The construction respects identities, addition, scalar multiplication, composition and polynomial
+evaluation (`ContinuousLinearMap.aeval_mapCoeffs`),
 including composition of coefficient homomorphisms. Its matrix characterizes it uniquely.
 Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm sums
 and sends the closure of the polynomials in an endomorphism `u` into the closure of the
@@ -163,13 +165,34 @@ theorem mapCoeffs_mul (u v : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (u * v).mapCoeffs f hf = u.mapCoeffs f hf * v.mapCoeffs f hf :=
   mapCoeffs_comp u v f hf
 
+/-- Coefficientwise extension of endomorphisms on `C₀(J, R)` packaged as a ring homomorphism. -/
+noncomputable def mapCoeffsRingHom (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (C₀(J, R) →L[R] C₀(J, R)) →+* (C₀(J, S) →L[S] C₀(J, S)) :=
+  ⟨⟨⟨(·.mapCoeffs f hf), mapCoeffs_one f hf⟩, fun u v ↦ mapCoeffs_mul u v f hf⟩,
+    mapCoeffs_zero f hf, fun u v ↦ mapCoeffs_add u v f hf⟩
+
+/-- Applying `mapCoeffsRingHom` acts by `ContinuousLinearMap.mapCoeffs`. -/
+@[simp]
+theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (u : C₀(J, R) →L[R] C₀(J, R)) :
+    mapCoeffsRingHom f hf u = u.mapCoeffs f hf := (rfl)
+
 @[simp]
 theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (n : ℕ) :
     (u ^ n).mapCoeffs f hf = u.mapCoeffs f hf ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+  simpa only [mapCoeffsRingHom_apply] using RingHom.map_pow (mapCoeffsRingHom f hf) u n
+
+/-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
+extension. -/
+@[simp]
+theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
+    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by
+  simpa only [mapCoeffsRingHom_apply] using
+    (Polynomial.map_aeval_eq_aeval_map (ψ := mapCoeffsRingHom f hf)
+      (RingHom.ext fun r ↦ by simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 section Topology
 
@@ -234,6 +257,14 @@ theorem mapCoeffs_id (u : C₀(J, R) →L[R] C₀(I, R))
   ext i j
   simp
 
+/-- Coefficientwise extension along the identity homomorphism is the identity ring homomorphism. -/
+@[simp]
+theorem mapCoeffsRingHom_id
+    (hf : ∃ C : ℝ≥0, ∀ r : R, ‖(RingHom.id R) r‖ ≤ C * ‖r‖) :
+    mapCoeffsRingHom (J := J) (RingHom.id R) hf = RingHom.id (C₀(J, R) →L[R] C₀(J, R)) :=
+  RingHom.ext fun u ↦ by
+    simpa only [mapCoeffsRingHom_apply, RingHom.id_apply] using mapCoeffs_id u hf
+
 end Identity
 
 /-- Successive coefficient extensions agree with extension along the composite homomorphism. -/
@@ -247,5 +278,18 @@ theorem mapCoeffs_mapCoeffs [TauCeti.NormedRing.IsTate S]
   apply matrixCoeff_injective
   ext i j
   simp
+
+/-- Coefficientwise extension respects composition of bounded ring homomorphisms. -/
+theorem mapCoeffsRingHom_comp [TauCeti.NormedRing.IsTate S]
+    {T : Type*} [NormedCommRing T] [IsUltrametricDist T] [CompleteSpace T]
+    (f : R →+* S) (g : S →+* T)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (hg : ∃ D : ℝ≥0, ∀ s, ‖g s‖ ≤ D * ‖s‖)
+    (hgf : ∃ E : ℝ≥0, ∀ r, ‖(g.comp f) r‖ ≤ E * ‖r‖) :
+    mapCoeffsRingHom (J := J) (g.comp f) hgf =
+      (mapCoeffsRingHom g hg).comp (mapCoeffsRingHom f hf) :=
+  RingHom.ext fun u ↦ by
+    simpa only [mapCoeffsRingHom_apply, RingHom.comp_apply] using
+      (mapCoeffs_mapCoeffs u f g hf hg hgf).symm
 
 end ContinuousLinearMap

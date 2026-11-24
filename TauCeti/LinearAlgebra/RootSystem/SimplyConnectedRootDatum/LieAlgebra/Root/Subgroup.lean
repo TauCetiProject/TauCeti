@@ -66,8 +66,9 @@ nilpotently.
   nilpotently, with divided powers of its integer multiples preserving the lattice.
 * `TauCeti.DynkinType.kostantForm_chevalleySystem_smul_mem`: the all-root Kostant
   form preserves the lattice.
-* `TauCeti.DynkinType.kostantRootSubgroupParam_chevalleySystem`: comparison with the
-  generic Kostant root subgroup for the all-root system.
+* `TauCeti.DynkinType.kostantRootSubgroupParam_chevalleySystem` and
+  `TauCeti.DynkinType.chevalleyRootSubgroup_eq_kostantRootSubgroupPoints`: comparisons with the
+  generic Kostant root subgroup and its points for the all-root system.
 * `TauCeti.DynkinType.chevalleyRootSubgroup_simpleIndex` and
   `TauCeti.DynkinType.chevalleyRootSubgroup_reflectionPerm_simpleIndex`: at `±αᵢ` these are the
   simple root subgroups of the Kostant data.
@@ -229,6 +230,18 @@ theorem kostantRootSubgroupParam_chevalleySystem
   refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_
   rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
 
+/-- The Chevalley root subgroup at a parameter agrees with the points of the all-root
+Kostant subgroup on the same lattice. -/
+theorem chevalleyRootSubgroup_eq_kostantRootSubgroupPoints
+    (i : Fin t.numRoots) (A : CommAlgCat ℤ) (u : Multiplicative A) :
+    chevalleyRootSubgroup ρ M hM hnil i A u =
+      kostantRootSubgroupPoints (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+        (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) i
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil i)
+        ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) := by
+  rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
+    kostantRootSubgroupParam_apply]
+
 /-- Root-subgroup points commute when their Chevalley root vectors have zero bracket. -/
 theorem commute_chevalleyRootSubgroup_of_lie_eq_zero {α β : Fin t.numRoots}
     (hαβ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht β⁆ = 0)
@@ -257,8 +270,6 @@ theorem chevalleyRootSubgroup_mul_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ
   apply Units.ext
   simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
   exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hαβ hαγ hβγ
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)

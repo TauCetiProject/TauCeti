@@ -10,7 +10,6 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.CoordinateDeriv.ParametricIntegral
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.Decay
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -179,11 +178,26 @@ private theorem exists_norm_iteratedFDeriv_spatialWeight_le (k : ℕ) :
     (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖z‖])
       (by linarith [Nat.cast_nonneg (α := ℝ) k])) (by positivity) (le_max_right _ _))⟩
 
-private theorem exists_norm_fourier_spatialWeight_smul_le (r : ℝ) :
-    ∃ (M : ℕ) (K : ℝ), 0 ≤ K ∧ ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-      {g : CoordinateSpace n → F}, ContDiff ℝ M g → ∀ {B : ℝ}, 0 ≤ B →
-      (∀ k ≤ M, ∀ z, ‖iteratedFDeriv ℝ k g z‖ ≤ B) → ∀ (η : CoordinateSpace n),
-      ‖𝓕 (fun z ↦ spatialWeight n z • g z) η‖ ≤ K * B * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+/-- Uniform symbols have spatial Fréchet derivatives bounded uniformly in `x` at each order `k`. -/
+theorem IsUniform.exists_norm_iteratedFDeriv_slice_le {b : Symbol n V W m} (hb : b.IsUniform)
+    (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ξ,
+      ‖iteratedFDeriv ℝ k (fun y ↦ b.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose A hA0 hA using isUniform_iff.1 hb
+  refine ⟨∑ r : Fin k → Fin n, A (List.ofFn r) [], Finset.sum_nonneg fun _ _ ↦ hA0 _ _,
+    fun x ξ ↦ (norm_iteratedFDeriv_le_sum_coordinateDeriv
+      (contDiff_infty.1 (b.contDiff_coefficient_slice ξ) k) x).trans ?_⟩
+  exact (Finset.sum_le_sum fun r _ ↦ by
+    simpa [mixedDeriv_def, coordinateDeriv_nil] using hA (List.ofFn r) [] x ξ).trans_eq
+    (Finset.sum_mul _ _ _).symm
+
+private def weightedSlice (b : Symbol n V W m) (x ξ η : CoordinateSpace n) : V →L[ℂ] W :=
+  𝓕 (fun z ↦ spatialWeight n z • b.coefficient (x + z, ξ)) η
+
+private theorem exists_norm_weightedSlice_le_of_bound (r : ℝ) :
+    ∃ (M : ℕ) (K : ℝ), 0 ≤ K ∧ ∀ {s : ℝ} {c : Symbol n V W s} {x ξ : CoordinateSpace n} {B : ℝ},
+      0 ≤ B → (∀ k ≤ M, ∀ y, ‖iteratedFDeriv ℝ k (fun y ↦ c.coefficient (y, ξ)) y‖ ≤ B) →
+      ∀ (η : CoordinateSpace n), ‖weightedSlice c x ξ η‖ ≤ K * B * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   set M : ℕ := ⌈max r 0⌉₊
   choose Cw hCw0 hCw using fun i : ℕ ↦ exists_norm_iteratedFDeriv_spatialWeight_le (n := n) i
   set S : ℕ → ℝ := fun k ↦ ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * Cw i
@@ -192,21 +206,24 @@ private theorem exists_norm_fourier_spatialWeight_smul_le (r : ℝ) :
   have hA0 : 0 ≤ A := Finset.sum_nonneg fun k _ ↦ hS0 k
   have hI0 : 0 ≤ ∫ z, spatialWeight n z := integral_nonneg fun z ↦ spatialWeight_nonneg z
   refine ⟨M, 2 ^ M * (A * ∫ z, spatialWeight n z), by positivity,
-    fun {F} _ _ {g} hg {B} hB0 hB η ↦ ?_⟩
-  set f : CoordinateSpace n → F := fun z ↦ spatialWeight n z • g z
+    fun {s} {c} {x ξ} {B} hB0 hB η ↦ ?_⟩
+  have hg : ContDiff ℝ M fun z ↦ c.coefficient (x + z, ξ) :=
+    ((c.contDiff_coefficient_slice ξ).comp (contDiff_const.add contDiff_id)).of_le (mod_cast le_top)
+  set f : CoordinateSpace n → V →L[ℂ] W := fun z ↦ spatialWeight n z • c.coefficient (x + z, ξ)
   have hf : ContDiff ℝ M f := (contDiff_spatialWeight.of_le (mod_cast le_top)).smul hg
   have hf_le (k : ℕ) (hk : k ≤ M) (z : CoordinateSpace n) :
       ‖iteratedFDeriv ℝ k f z‖ ≤ (A * B) * spatialWeight n z := by
     have hSk : S k ≤ A :=
       Finset.single_le_sum (fun q _ ↦ hS0 q) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
     refine ((norm_iteratedFDeriv_smul_le (contDiff_spatialWeight.of_le (mod_cast le_top)) hg z
-      (mod_cast hk)).trans ((Finset.sum_le_sum fun i _ ↦
-        mul_le_mul (mul_le_mul_of_nonneg_left (hCw i z) (Nat.cast_nonneg _))
-          (hB (k - i) ((Nat.sub_le k i).trans hk) z) (norm_nonneg _)
-          (mul_nonneg (Nat.cast_nonneg _) (mul_nonneg (hCw0 i)
-            (spatialWeight_nonneg z)))).trans_eq ?_)).trans
+      (mod_cast hk)).trans ((Finset.sum_le_sum (g := fun i ↦
+        (k.choose i : ℝ) * (Cw i * spatialWeight n z) * B) fun i _ ↦ ?_).trans_eq ?_)).trans
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hSk hB0) (spatialWeight_nonneg z))
-    simp only [S, Finset.sum_mul]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    · rw [iteratedFDeriv_comp_add_left (f := fun y ↦ c.coefficient (y, ξ))]
+      exact mul_le_mul (mul_le_mul_of_nonneg_left (hCw i z) (Nat.cast_nonneg _))
+        (hB (k - i) ((Nat.sub_le k i).trans hk) (x + z)) (norm_nonneg _)
+        (mul_nonneg (Nat.cast_nonneg _) (mul_nonneg (hCw0 i) (spatialWeight_nonneg z)))
+    · simp only [S, Finset.sum_mul]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
   have hint (k : ℕ) (hk : k ≤ M) : Integrable (iteratedFDeriv ℝ k f) :=
     (integrable_spatialWeight.const_mul (A * B)).mono'
       (hf.continuous_iteratedFDeriv (mod_cast hk)).aestronglyMeasurable (.of_forall (hf_le k hk))
@@ -232,23 +249,8 @@ private theorem exists_norm_fourier_spatialWeight_smul_le (r : ℝ) :
       (by linarith [(le_max_left r 0).trans (Nat.le_ceil _)])).trans
       (one_add_norm_sq_rpow_le_one_add_norm_pow η M)
   rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
-  exact (mul_comm ‖𝓕 f η‖ _ ▸ mul_le_mul_of_nonneg_right hw (norm_nonneg _)).trans hpow
-
-/-- Uniform symbols have spatial Fréchet derivatives bounded uniformly in `x` at each order `k`. -/
-theorem IsUniform.exists_norm_iteratedFDeriv_slice_le {b : Symbol n V W m} (hb : b.IsUniform)
-    (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ξ,
-      ‖iteratedFDeriv ℝ k (fun y ↦ b.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  choose A hA0 hA using isUniform_iff.1 hb
-  refine ⟨∑ r : Fin k → Fin n, A (List.ofFn r) [], Finset.sum_nonneg fun _ _ ↦ hA0 _ _,
-    fun x ξ ↦ (norm_iteratedFDeriv_le_sum_coordinateDeriv
-      (contDiff_infty.1 (b.contDiff_coefficient_slice ξ) k) x).trans ?_⟩
-  exact (Finset.sum_le_sum fun r _ ↦ by
-    simpa [mixedDeriv_def, coordinateDeriv_nil] using hA (List.ofFn r) [] x ξ).trans_eq
-    (Finset.sum_mul _ _ _).symm
-
-private def weightedSlice (b : Symbol n V W m) (x ξ η : CoordinateSpace n) : V →L[ℂ] W :=
-  𝓕 (fun z ↦ spatialWeight n z • b.coefficient (x + z, ξ)) η
+  exact (mul_comm ‖weightedSlice c x ξ η‖ _ ▸ mul_le_mul_of_nonneg_right hw (norm_nonneg _)).trans
+    hpow
 
 private theorem integrable_spatialWeight_smul_slice {b : Symbol n V W m} (hb : b.IsUniform)
     (x ξ : CoordinateSpace n) :
@@ -275,19 +277,15 @@ private theorem exists_norm_fourierChar_spatialWeight_smul_le_of_dist_lt_one {s 
 private theorem exists_norm_weightedSlice_le {b : Symbol n V W m} (hb : b.IsUniform) (r : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ x ξ η, ‖weightedSlice b x ξ η‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨M, K, hK0, hK⟩ := exists_norm_fourier_spatialWeight_smul_le (n := n) r
+  obtain ⟨M, K, hK0, hK⟩ := exists_norm_weightedSlice_le_of_bound (n := n) (V := V) (W := W) r
   choose Cd hCd0 hCd using hb.exists_norm_iteratedFDeriv_slice_le
   set Cb : ℝ := ∑ k ∈ Finset.range (M + 1), Cd k
   have hCb0 : 0 ≤ Cb := Finset.sum_nonneg fun k _ ↦ hCd0 k
-  refine ⟨K * Cb, mul_nonneg hK0 hCb0, fun x ξ η ↦ ?_⟩
-  have hg : ContDiff ℝ M fun z ↦ b.coefficient (x + z, ξ) :=
-    ((b.contDiff_coefficient_slice ξ).comp (contDiff_const.add contDiff_id)).of_le (mod_cast le_top)
-  refine (hK hg (B := Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (mul_nonneg hCb0 (by positivity))
-    (fun k hk z ↦ ?_) η).trans_eq (by ring)
-  rw [iteratedFDeriv_comp_add_left (f := fun y ↦ b.coefficient (y, ξ))]
-  exact (hCd k (x + z) ξ).trans (mul_le_mul_of_nonneg_right
-    (Finset.single_le_sum (fun q _ ↦ hCd0 q) (Finset.mem_range.2 (Nat.lt_succ_of_le hk)))
-    (by positivity))
+  refine ⟨K * Cb, mul_nonneg hK0 hCb0, fun x ξ η ↦
+    (hK (B := Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (mul_nonneg hCb0 (by positivity))
+      (fun k hk y ↦ (hCd k y ξ).trans (mul_le_mul_of_nonneg_right
+        (Finset.single_le_sum (fun q _ ↦ hCd0 q) (Finset.mem_range.2 (Nat.lt_succ_of_le hk)))
+        (by positivity))) η).trans_eq (by ring)⟩
 
 private theorem integrable_weightedSlice {b : Symbol n V W m} (hb : b.IsUniform)
     (x ξ : CoordinateSpace n) : Integrable (weightedSlice b x ξ) := by
@@ -308,7 +306,7 @@ private theorem continuous_weightedSlice {b : Symbol n V W m} (hb : b.IsUniform)
         (𝐞 (-⟪r.2, r.1.2⟫) : ℂ) • (spatialWeight n r.2 • b.coefficient (r.1.1.1 + r.2, r.1.1.2)) :=
     (Real.continuous_fourierChar.comp
       (((innerSL ℝ).continuous₂.comp₂ continuous_snd
-        (continuous_snd.comp continuous_fst)).neg)).subtype_val.smul
+        (continuous_snd.comp continuous_fst)).neg)).subtypeVal.smul
       ((contDiff_spatialWeight.continuous.comp continuous_snd).smul
         (b.contDiff_coefficient.continuous.comp
           (((continuous_fst.comp (continuous_fst.comp continuous_fst)).add continuous_snd).prodMk
@@ -326,62 +324,70 @@ private theorem continuous_weightedSlice {b : Symbol n V W m} (hb : b.IsUniform)
     (.of_forall fun z ↦ (hjoint.comp (continuous_id.prodMk continuous_const)).continuousAt)).congr
     (.of_forall fun q ↦ by simp [weightedSlice, Real.fourier_eq, Circle.smul_def])
 
+private def fourierCharSpatialWeightSlice {s : ℝ} (c : Symbol n V W s) (η : CoordinateSpace n)
+    (p : CoordinateSpace n × CoordinateSpace n) (z : CoordinateSpace n) : V →L[ℂ] W :=
+  (𝐞 (-⟪z, η⟫) : ℂ) • (spatialWeight n z • c.coefficient (p.1 + z, p.2))
+
+private theorem differentiableAt_fourierCharSpatialWeightSlice_and_fderiv_apply
+    (b : Symbol n V W m) (η z : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
+    DifferentiableAt ℝ (fourierCharSpatialWeightSlice b η · z) p ∧
+      ∀ v, fderiv ℝ (fourierCharSpatialWeightSlice b η · z) p v =
+        ∑ j, v.1 j • fourierCharSpatialWeightSlice (Symbol.spatialDeriv j b) η p z +
+          ∑ j, v.2 j • fourierCharSpatialWeightSlice (Symbol.frequencyDeriv j b) η p z := by
+  set c : ℂ := (𝐞 (-⟪z, η⟫) : ℂ)
+  have hdiff : DifferentiableAt ℝ (fourierCharSpatialWeightSlice b η · z) p :=
+    (((b.contDiff_coefficient.differentiable (by simp) _).comp p
+      ((differentiableAt_fst.add_const z).prodMk differentiableAt_snd)).const_smul
+        (spatialWeight n z)).const_smul c
+  refine ⟨hdiff, fun v ↦ ?_⟩
+  rw [fderiv_apply_eq_sum_coordinateDeriv hdiff]; congr 1
+  · refine Finset.sum_congr rfl fun j _ ↦ congrArg (v.1 j • ·) ?_
+    have h1 : HasFDerivAt (fun x ↦ b.coefficient (x + z, p.2))
+        ((fderiv ℝ (fun y ↦ b.coefficient (y, p.2)) (p.1 + z)).comp
+          (ContinuousLinearMap.id ℝ _)) p.1 :=
+      HasFDerivAt.comp (g := fun y ↦ b.coefficient (y, p.2)) (f := fun x ↦ x + z) p.1
+        (((b.contDiff_coefficient_slice p.2).differentiable (by simp) (p.1 + z)).hasFDerivAt)
+        ((hasFDerivAt_id p.1).add_const z)
+    have hfun : (fun x ↦ fourierCharSpatialWeightSlice b η (x, p.2) z) =
+        fun x ↦ c • (spatialWeight n z • b.coefficient (x + z, p.2)) := rfl
+    rw [coordinateDeriv_cons, coordinateDeriv_nil, hfun,
+      ((h1.fun_const_smul (spatialWeight n z)).fun_const_smul c).fderiv]
+    simp [fourierCharSpatialWeightSlice, c, fderiv_coefficient_single]
+  · refine Finset.sum_congr rfl fun j _ ↦ congrArg (v.2 j • ·) ?_
+    have h1 : HasFDerivAt (fun ξ ↦ b.coefficient (p.1 + z, ξ))
+        (fderiv ℝ (fun ξ ↦ b.coefficient (p.1 + z, ξ)) p.2) p.2 :=
+      ((b.contDiff_coefficient.comp (contDiff_prodMk_right (p.1 + z))).differentiable
+        (by simp) p.2).hasFDerivAt
+    have hfun : (fun ξ ↦ fourierCharSpatialWeightSlice b η (p.1, ξ) z) =
+        fun ξ ↦ c • (spatialWeight n z • b.coefficient (p.1 + z, ξ)) := rfl
+    rw [coordinateDeriv_cons, coordinateDeriv_nil, hfun,
+      ((h1.fun_const_smul (spatialWeight n z)).fun_const_smul c).fderiv]
+    simp [fourierCharSpatialWeightSlice, c, fderiv_coefficient_slice_single]
+
 private theorem differentiableAt_weightedSlice_and_fderiv_apply {b : Symbol n V W m}
     (hb : b.IsUniform) (η : CoordinateSpace n) (p₀ : CoordinateSpace n × CoordinateSpace n) :
     DifferentiableAt ℝ (fun p ↦ weightedSlice b p.1 p.2 η) p₀ ∧
       ∀ v, fderiv ℝ (fun p ↦ weightedSlice b p.1 p.2 η) p₀ v =
         ∑ j, v.1 j • weightedSlice (Symbol.spatialDeriv j b) p₀.1 p₀.2 η +
         ∑ j, v.2 j • weightedSlice (Symbol.frequencyDeriv j b) p₀.1 p₀.2 η := by
-  set F : ∀ {s : ℝ}, Symbol n V W s → CoordinateSpace n × CoordinateSpace n → CoordinateSpace n →
-      V →L[ℂ] W :=
-    fun c p z ↦ (𝐞 (-⟪z, η⟫) : ℂ) • (spatialWeight n z • c.coefficient (p.1 + z, p.2))
   have hFeq {s : ℝ} (c : Symbol n V W s) (p : CoordinateSpace n × CoordinateSpace n) :
-      (∫ z, F c p z) = weightedSlice c p.1 p.2 η := by
-    simp [F, weightedSlice, Real.fourier_eq, Circle.smul_def]
+      (∫ z, fourierCharSpatialWeightSlice c η p z) = weightedSlice c p.1 p.2 η := by
+    simp [fourierCharSpatialWeightSlice, weightedSlice, Real.fourier_eq, Circle.smul_def]
   have hFc {s : ℝ} (c : Symbol n V W s) (p : CoordinateSpace n × CoordinateSpace n) :
-      Continuous (F c p) :=
-    (Real.continuous_fourierChar.comp (((innerSL ℝ).flip η).continuous.neg)).subtype_val.smul
+      Continuous (fourierCharSpatialWeightSlice c η p) :=
+    (Real.continuous_fourierChar.comp (((innerSL ℝ).flip η).continuous.neg)).subtypeVal.smul
       (contDiff_spatialWeight.continuous.smul
         ((c.contDiff_coefficient_slice p.2).continuous.comp (continuous_const.add continuous_id)))
-  have hdf (z : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
-      DifferentiableAt ℝ (F b · z) p ∧ ∀ v, fderiv ℝ (F b · z) p v =
-        ∑ j, v.1 j • F (Symbol.spatialDeriv j b) p z +
-          ∑ j, v.2 j • F (Symbol.frequencyDeriv j b) p z := by
-    set c : ℂ := (𝐞 (-⟪z, η⟫) : ℂ)
-    have hdiff : DifferentiableAt ℝ (F b · z) p :=
-      (((b.contDiff_coefficient.differentiable (by simp) _).comp p
-        ((differentiableAt_fst.add_const z).prodMk differentiableAt_snd)).const_smul
-          (spatialWeight n z)).const_smul c
-    refine ⟨hdiff, fun v ↦ ?_⟩
-    rw [fderiv_apply_eq_sum_coordinateDeriv hdiff]; congr 1
-    · refine Finset.sum_congr rfl fun j _ ↦ congrArg (v.1 j • ·) ?_
-      have h1 : HasFDerivAt (fun x ↦ b.coefficient (x + z, p.2))
-          ((fderiv ℝ (fun y ↦ b.coefficient (y, p.2)) (p.1 + z)).comp
-            (ContinuousLinearMap.id ℝ _)) p.1 :=
-        HasFDerivAt.comp (g := fun y ↦ b.coefficient (y, p.2)) (f := fun x ↦ x + z) p.1
-          (((b.contDiff_coefficient_slice p.2).differentiable (by simp) (p.1 + z)).hasFDerivAt)
-          ((hasFDerivAt_id p.1).add_const z)
-      rw [coordinateDeriv_cons, coordinateDeriv_nil]
-      change fderiv ℝ (fun x ↦ c • (spatialWeight n z • b.coefficient (x + z, p.2))) p.1 _ = _
-      rw [((h1.fun_const_smul (spatialWeight n z)).fun_const_smul c).fderiv]
-      simp [F, c, fderiv_coefficient_single]
-    · refine Finset.sum_congr rfl fun j _ ↦ congrArg (v.2 j • ·) ?_
-      have h1 : HasFDerivAt (fun ξ ↦ b.coefficient (p.1 + z, ξ))
-          (fderiv ℝ (fun ξ ↦ b.coefficient (p.1 + z, ξ)) p.2) p.2 :=
-        ((b.contDiff_coefficient.comp (contDiff_prodMk_right (p.1 + z))).differentiable
-          (by simp) p.2).hasFDerivAt
-      rw [coordinateDeriv_cons, coordinateDeriv_nil]
-      change fderiv ℝ (fun ξ ↦ c • (spatialWeight n z • b.coefficient (p.1 + z, ξ))) p.2 _ = _
-      rw [((h1.fun_const_smul (spatialWeight n z)).fun_const_smul c).fderiv]
-      simp [F, c, fderiv_coefficient_slice_single]
   choose Cx _ hCx using fun j ↦
     exists_norm_fourierChar_spatialWeight_smul_le_of_dist_lt_one (hb.spatialDeriv j) p₀.2
   choose Cξ _ hCξ using fun j ↦
     exists_norm_fourierChar_spatialWeight_smul_le_of_dist_lt_one (hb.frequencyDeriv j) p₀.2
   have key := differentiableAt_integral_and_fderiv_apply_eq_sum
-    (F := F b) (A := fun j ↦ F (Symbol.spatialDeriv j b))
-    (B := fun j ↦ F (Symbol.frequencyDeriv j b))
-    (fun z p ↦ (hdf z p).1) (fun z p ↦ (hdf z p).2)
+    (F := fourierCharSpatialWeightSlice b η)
+    (A := fun j ↦ fourierCharSpatialWeightSlice (Symbol.spatialDeriv j b) η)
+    (B := fun j ↦ fourierCharSpatialWeightSlice (Symbol.frequencyDeriv j b) η)
+    (fun z p ↦ (differentiableAt_fourierCharSpatialWeightSlice_and_fderiv_apply b η z p).1)
+    (fun z p ↦ (differentiableAt_fourierCharSpatialWeightSlice_and_fderiv_apply b η z p).2)
     (fun p ↦ ((Real.fourierIntegral_convergent_iff η).2
       (integrable_spatialWeight_smul_slice hb p.1 p.2)).congr
         (.of_forall fun _ ↦ Circle.smul_def _ _))
@@ -528,10 +534,10 @@ private theorem differentiableAt_uniformIntegrand_and_fderiv_apply (a : Symbol n
       simp [fderiv_coefficient_slice_single]
   have hB := differentiableAt_weightedSlice_and_fderiv_apply hb η p
   have h := Φ.hasFDerivAt_of_bilinear hAd.hasFDerivAt hB.1.hasFDerivAt
-  change DifferentiableAt ℝ (fun q ↦ Φ (a'.coefficient (q.1, q.2 + c))
-    (weightedSlice b q.1 q.2 η)) p ∧ _
+  have hΦ : (fun q ↦ uniformIntegrand a b q η) =
+      fun q ↦ Φ (a'.coefficient (q.1, q.2 + c)) (weightedSlice b q.1 q.2 η) := rfl
+  rw [hΦ]
   refine ⟨h.differentiableAt, fun v ↦ ?_⟩
-  change fderiv ℝ (fun q ↦ Φ (a'.coefficient (q.1, q.2 + c)) (weightedSlice b q.1 q.2 η)) p v = _
   rw [h.fderiv, add_apply, ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
     ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_apply, hAf v, hB.2 v]
   simp only [Φ, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
@@ -626,21 +632,22 @@ private theorem exists_bound_uniformCompCoeff (P : ∀ {m' : ℝ}, Symbol n W U 
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (uniformCompCoeff a b) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
-  simpa only [sub_zero] using exists_norm_mixedDeriv_le_of_leibniz 0 P hPspatial hPfrequency
-    IsUniform (fun hb j ↦ hb.spatialDeriv j) (fun hb j ↦ hb.frequencyDeriv j)
-    (fun a b _ ↦ uniformCompCoeff a b) (fun a _ hb ↦ contDiff_uniformCompCoeff a hb)
-    (fun a _ hb ↦ coordinateDeriv_fst_uniformCompCoeff a hb)
-    (fun a _ hb ↦ coordinateDeriv_snd_uniformCompCoeff a hb)
+  obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_le_of_leibniz (ι := Unit) 0 P hPspatial hPfrequency
+    (fun b ↦ (b ()).IsUniform) (fun hb j ↦ hb.spatialDeriv j) (fun hb j ↦ hb.frequencyDeriv j)
+    (fun a b _ _ ↦ uniformCompCoeff a (b ())) (fun a _ hb _ ↦ contDiff_uniformCompCoeff a hb)
+    (fun a _ hb j _ ↦ coordinateDeriv_fst_uniformCompCoeff a hb j)
+    (fun a _ hb j _ ↦ coordinateDeriv_snd_uniformCompCoeff a hb j)
     (fun {m₂ m₁} a' ha' {b'} hb' ↦ by
       obtain ⟨Ca, hCa0, hCa⟩ := hP ha'
       obtain ⟨C, hC0, hC⟩ := exists_norm_uniformIntegrand_le_of_bound hCa0 hCa hb' ((n : ℝ) + 1)
       set I : ℝ := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
-      refine ⟨C * I, mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity), fun x hx ξ ↦ ?_⟩
+      refine ⟨C * I, mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity), fun _ x hx ξ ↦ ?_⟩
       simpa only [sub_zero, uniformCompCoeff] using (norm_integral_le_of_norm_le
         (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
           (C * (1 + ‖ξ‖ ^ 2) ^ ((m₁ + m₂) / 2)))
         (.of_forall fun η ↦ hC x hx ξ η)).trans_eq (by rw [integral_const_mul]; ring))
-    a ha hb α β
+    a ha (b := fun _ ↦ b) hb α β
+  exact ⟨C, hC0, by simpa only [sub_zero] using hC ()⟩
 
 end Integrand
 
@@ -899,9 +906,10 @@ theorem coefficient_uniformSharp_eq_sharp {a : Symbol n W U m'} {b : Symbol n V 
     have hchar : (𝐞 ⟪η, x⟫ : ℂ) * (𝐞 (-⟪x + z, η⟫) : ℂ) = (𝐞 (-⟪z, η⟫) : ℂ) := by
       rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul, inner_add_left, real_inner_comm x η]
       congr 2; ring
+    have hnorm : ‖x - (x + z)‖ = ‖z‖ := by simp
     dsimp only
     rw [SchwartzMap.smulLeftCLM_apply_apply htg_neg f (x + z), hb.coe_sliceSchwartz,
-      show ‖x - (x + z)‖ = ‖z‖ by simp, smul_smul, hchar]; rfl
+      hnorm, smul_smul, hchar]; rfl
   rw [hsharp, ← iterate_smulLeftCLM_one_add_norm_sub_sq_cancel x f,
     quantizeSchwartzValue_iterate_smulLeftCLM_one_add_norm_sub_sq, quantizeSchwartzValue_def]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
@@ -915,6 +923,25 @@ theorem uniformSharp_eq_sharp {a : Symbol n W U m'} {b : Symbol n V W m}
     (hb : b.HasCompactSpatialSupport) :
     a.uniformSharp b hb.isUniform = a.sharp b hb :=
   Symbol.ext (coefficient_uniformSharp_eq_sharp hb)
+
+private theorem tendsto_weightedSlice {b : Symbol n V W m} {bseq : ℕ → Symbol n V W m} {C₀ : ℝ}
+    (hC₀ : ∀ N y ξ, ‖(bseq N).coefficient (y, ξ)‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (htend : ∀ y ξ,
+      Tendsto (fun N ↦ (bseq N).coefficient (y, ξ)) atTop (𝓝 (b.coefficient (y, ξ))))
+    (x ξ η : CoordinateSpace n) :
+    Tendsto (fun N ↦ weightedSlice (bseq N) x ξ η) atTop (𝓝 (weightedSlice b x ξ η)) := by
+  simp only [weightedSlice, Real.fourier_eq]
+  refine tendsto_integral_of_dominated_convergence
+    (fun z ↦ (C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) * spatialWeight n z)
+    (fun N ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
+      (contDiff_spatialWeight.continuous.smul
+        (((bseq N).contDiff_coefficient_slice ξ).continuous.comp
+          (continuous_const.add continuous_id)))).aestronglyMeasurable)
+    (integrable_spatialWeight.const_mul _) (fun N ↦ .of_forall fun z ↦ ?_)
+    (.of_forall fun z ↦ ((htend (x + z) ξ).const_smul (spatialWeight n z)).const_smul _)
+  rw [Circle.smul_def, norm_smul, Circle.norm_coe, one_mul, norm_smul,
+    Real.norm_of_nonneg (spatialWeight_nonneg z), mul_comm]
+  exact mul_le_mul_of_nonneg_right (hC₀ N (x + z) ξ) (spatialWeight_nonneg z)
 
 /-- **Bounded pointwise convergence of `uniformSharp` in the right factor.** -/
 theorem exists_bound_and_tendsto_coefficient_uniformSharp (a : Symbol n W U m')
@@ -934,20 +961,15 @@ theorem exists_bound_and_tendsto_coefficient_uniformSharp (a : Symbol n W U m')
   choose Cd hCd0 hCd using hderiv
   obtain ⟨Ca, -, hCa⟩ := (oneSubFreqLaplacian^[n + 1] a).exists_bound_coefficient_slice x
   obtain ⟨M, Kw, hKw0, hKw⟩ :=
-    exists_norm_fourier_spatialWeight_smul_le (n := n) (|m'| + ((n : ℝ) + 1))
+    exists_norm_weightedSlice_le_of_bound (n := n) (V := V) (W := W) (|m'| + ((n : ℝ) + 1))
   set Cb : ℝ := ∑ k ∈ Finset.range (M + 1), Cd k
   have hCb0 : 0 ≤ Cb := Finset.sum_nonneg fun k _ ↦ hCd0 k
   have hw_le (N : ℕ) (ξ η : CoordinateSpace n) : ‖weightedSlice (bseq N) x ξ η‖ ≤
-      (Kw * Cb) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(|m'| + ((n : ℝ) + 1)) / 2) := by
-    have hg : ContDiff ℝ M fun z ↦ (bseq N).coefficient (x + z, ξ) :=
-      (((bseq N).contDiff_coefficient_slice ξ).comp (contDiff_const.add contDiff_id)).of_le
-        (mod_cast le_top)
-    refine (hKw hg (B := Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (mul_nonneg hCb0 (by positivity))
-      (fun k hk z ↦ ?_) η).trans_eq (by ring)
-    rw [iteratedFDeriv_comp_add_left (f := fun y ↦ (bseq N).coefficient (y, ξ))]
-    exact (hCd k N (x + z) ξ).trans (mul_le_mul_of_nonneg_right
-      (Finset.single_le_sum (fun q _ ↦ hCd0 q) (Finset.mem_range.2 (Nat.lt_succ_of_le hk)))
-      (by positivity))
+      (Kw * Cb) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(|m'| + ((n : ℝ) + 1)) / 2) :=
+    (hKw (B := Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (mul_nonneg hCb0 (by positivity))
+      (fun k hk y ↦ (hCd k N y ξ).trans (mul_le_mul_of_nonneg_right
+        (Finset.single_le_sum (fun q _ ↦ hCd0 q) (Finset.mem_range.2 (Nat.lt_succ_of_le hk)))
+        (by positivity))) η).trans_eq (by ring)
   have hCa0 : 0 ≤ Ca := (norm_nonneg _).trans (by simpa using hCa 0)
   set C : ℝ := Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * (Kw * Cb)
   have hInt (N : ℕ) (ξ η : CoordinateSpace n) : ‖uniformIntegrand a (bseq N) (x, ξ) η‖ ≤
@@ -960,27 +982,15 @@ theorem exists_bound_and_tendsto_coefficient_uniformSharp (a : Symbol n W U m')
         (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2)))
       (.of_forall (hInt N ξ))).trans_eq (by rw [integral_const_mul]; ring)⟩, fun ξ ↦ ?_⟩
   simp only [uniformSharp, uniformCompCoeff]
-  refine tendsto_integral_of_dominated_convergence
+  exact tendsto_integral_of_dominated_convergence
     (fun η ↦ (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2)) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2))
     (fun N ↦ (integrable_uniformIntegrand a (hbseq N) (x, ξ)).aestronglyMeasurable)
     (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul _)
-    (fun N ↦ .of_forall (hInt N ξ)) (.of_forall fun η ↦ ?_)
-  refine (((ContinuousLinearMap.compL ℂ V W U)
-    ((oneSubFreqLaplacian^[n + 1] a).coefficient (x, ξ + (2 * π) • η))).continuous.tendsto
-      _).comp ?_
-  simp only [weightedSlice, Real.fourier_eq]
-  refine tendsto_integral_of_dominated_convergence
-    (fun z ↦ (Cd 0 * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) * spatialWeight n z)
-    (fun N ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-      (contDiff_spatialWeight.continuous.smul
-        (((bseq N).contDiff_coefficient_slice ξ).continuous.comp
-          (continuous_const.add continuous_id)))).aestronglyMeasurable)
-    (integrable_spatialWeight.const_mul _) (fun N ↦ .of_forall fun z ↦ ?_)
-    (.of_forall fun z ↦ ((htend (x + z) ξ).const_smul (spatialWeight n z)).const_smul _)
-  rw [Circle.smul_def, norm_smul, Circle.norm_coe, one_mul, norm_smul,
-    Real.norm_of_nonneg (spatialWeight_nonneg z), mul_comm]
-  exact mul_le_mul_of_nonneg_right
-    (by simpa [norm_iteratedFDeriv_zero] using hCd 0 N (x + z) ξ) (spatialWeight_nonneg z)
+    (fun N ↦ .of_forall (hInt N ξ)) (.of_forall fun η ↦
+      (((ContinuousLinearMap.compL ℂ V W U)
+        ((oneSubFreqLaplacian^[n + 1] a).coefficient (x, ξ + (2 * π) • η))).continuous.tendsto
+          _).comp (tendsto_weightedSlice
+            (fun N y ζ ↦ by simpa [norm_iteratedFDeriv_zero] using hCd 0 N y ζ) htend x ξ η))
 
 end Agreement
 

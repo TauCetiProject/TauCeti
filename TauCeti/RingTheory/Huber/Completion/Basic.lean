@@ -174,7 +174,7 @@ theorem completionIdealImage_le (P : PairOfDefinition A) (n : ℕ) :
   refine closure_mono (Set.image_mono ?_)
   rw [P.coe_idealImage]
   rintro _ ⟨z, -, rfl⟩
-  exact z.2
+  exact z.property
 
 /-- Wedhorn Remark 6.8: the closures of the images of the powers of the ideal of definition are a
 neighbourhood basis of zero in the completion. -/
@@ -239,7 +239,7 @@ noncomputable def completionIdealImageIdeal (P : PairOfDefinition A) (n : ℕ) :
   carrier := {y | (y : Completion A) ∈ P.completionIdealImage n}
   add_mem' hx hy := by simpa using AddSubgroup.add_mem _ hx hy
   zero_mem' := (P.completionIdealImage n).zero_mem
-  smul_mem' c x hx := by simpa [smul_eq_mul] using P.mul_mem_completionIdealImage c.2 hx
+  smul_mem' c x hx := by simpa [smul_eq_mul] using P.mul_mem_completionIdealImage c.property hx
 
 /-- Membership in the ideal cut out by the closure of the image of `Iⁿ`. -/
 @[simp]
@@ -252,7 +252,7 @@ definition of the completion. -/
 noncomputable def toCompletionRingOfDefinition (P : PairOfDefinition A) :
     P.ringOfDefinition →+* P.completionRingOfDefinition :=
   (Completion.coeRingHom.comp P.ringOfDefinition.subtype).codRestrict _ fun x ↦
-    Subring.le_topologicalClosure _ ⟨x, x.2, rfl⟩
+    Subring.le_topologicalClosure _ ⟨x, x.property, rfl⟩
 
 /-- The corestricted completion map agrees with the completion map on `A₀`. -/
 @[simp] theorem toCompletionRingOfDefinition_apply (P : PairOfDefinition A)
@@ -410,7 +410,7 @@ private theorem completionIdealImageIdeal_le (P : PairOfDefinition A) (n : ℕ) 
   have hLmem : ∀ z, L z ∈ P.completionRingOfDefinition := fun z ↦
     (Subring.isClosed_topologicalClosure _).mem_of_tendsto (hL z) (.of_forall fun m ↦
       Subring.sum_mem _ fun k _ ↦ Subring.le_topologicalClosure _
-        ⟨((d k z : P.ringOfDefinition) : A), (d k z).2, rfl⟩)
+        ⟨((d k z : P.ringOfDefinition) : A), (d k z).property, rfl⟩)
   have hulim : Tendsto u atTop (𝓝 0) := by
     refine P.hasBasis_nhds_zero_completion.tendsto_right_iff.mpr fun j _ ↦ ?_
     filter_upwards [eventually_ge_atTop j] with k hk
@@ -443,7 +443,7 @@ theorem exists_sub_toCompletionRingOfDefinition_mem_completionIdeal_pow (P : Pai
     ∃ b : P.ringOfDefinition, y - P.toCompletionRingOfDefinition b ∈ P.completionIdeal ^ n := by
   obtain ⟨a, ha⟩ := P.exists_coe_sub_mem_completionIdealImage n y
   have hmem : (a : Completion A) ∈ P.completionRingOfDefinition := by
-    simpa using add_mem (P.completionIdealImage_le n ha) y.2
+    simpa using add_mem (P.completionIdealImage_le n ha) y.property
   refine ⟨⟨a, P.coe_mem_completionRingOfDefinition_iff.mp hmem⟩, ?_⟩
   rw [P.completionIdeal_pow, mem_completionIdealImageIdeal_iff]
   simpa using (P.completionIdealImage n).neg_mem ha
@@ -453,7 +453,7 @@ adic topology of the ideal of definition of the completion. -/
 theorem isAdic_completionIdeal (P : PairOfDefinition A) : IsAdic P.completionIdeal := by
   refine isAdic_iff.mpr ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
   · rw [P.completionIdeal_pow]
-    exact (P.isOpen_completionIdealImage n).preimage continuous_subtype_val
+    exact (P.isOpen_completionIdealImage n).preimage continuous_subtypeVal
   · rw [mem_nhds_subtype] at hs
     obtain ⟨V, hV, hVs⟩ := hs
     obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero_completion.mem_iff.mp hV
@@ -484,7 +484,7 @@ expose. -/
 theorem mem_completion_idealOfDefinition (P : PairOfDefinition A)
     {x : P.completion.ringOfDefinition} :
     x ∈ P.completion.idealOfDefinition ↔
-      (⟨x, by rw [← completion_ringOfDefinition P]; exact x.2⟩ :
+      (⟨x, by rw [← completion_ringOfDefinition P]; exact x.property⟩ :
         P.completionRingOfDefinition) ∈ P.completionIdeal := (Iff.rfl)
 
 /-- **`Â₀` is `Î`-adically complete** (Wedhorn, Remark 6.8). This is the completeness of the ring of
@@ -509,7 +509,7 @@ instance finiteType_completion (P : PairOfDefinition A)
     Algebra.adjoin_toSubsemiring_le_comap
       (fun r ↦ S.algebraMap_mem ⟨((r : A) : Completion A), by
         rw [completion_ringOfDefinition, coe_mem_completionRingOfDefinition_iff]
-        exact r.2⟩)
+        exact r.property⟩)
       fun _ hx ↦ Algebra.subset_adjoin (Finset.mem_coe.mpr (Finset.mem_image_of_mem φ hx))
   have hopen : IsOpen (S.toSubring : Set (Completion A)) :=
     S.toSubring.toAddSubgroup.isOpen_of_mem_nhds <| Filter.mem_of_superset

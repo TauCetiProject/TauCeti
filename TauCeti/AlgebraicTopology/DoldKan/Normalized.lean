@@ -46,17 +46,17 @@ noncomputable def normalizedMooreComplexHomEquiv (X : SimplicialObject A)
     rwa [← HomologicalComplex.comp_f,
       (Category.assoc _ _ _).symm.trans (PInfty_comp_PInftyToNormalizedMooreComplex X =≫ φ)]
       at this⟩
-  invFun f := inclusionOfMooreComplexMap X ≫ f.1
+  invFun f := inclusionOfMooreComplexMap X ≫ f.val
   -- Mathlib states these identities with `N[X]`, which is not reducibly the source of `φ`, so
   -- they are composed as terms rather than rewritten.
   left_inv φ :=
     (Category.assoc _ _ _).symm.trans
       (((splitMonoInclusionOfMooreComplexMap X).id =≫ φ).trans (Category.id_comp φ))
   right_inv f := Subtype.ext <| (Category.assoc _ _ _).symm.trans <|
-    (PInftyToNormalizedMooreComplex_comp_inclusionOfMooreComplexMap X =≫ f.1).trans <| by
+    (PInftyToNormalizedMooreComplex_comp_inclusionOfMooreComplexMap X =≫ f.val).trans <| by
       ext n
-      have h := PInfty_f_add_QInfty_f (X := X) n =≫ f.1.f n
-      rw [Preadditive.add_comp, (degeneraciesVanish_iff_QInfty_f_comp _).1 (f.2 n), add_zero,
+      have h := PInfty_f_add_QInfty_f (X := X) n =≫ f.val.f n
+      rw [Preadditive.add_comp, (degeneraciesVanish_iff_QInfty_f_comp _).1 (f.property n), add_zero,
         Category.id_comp] at h
       exact h
 
@@ -65,7 +65,7 @@ projection `PInftyToNormalizedMooreComplex X`. -/
 @[simp]
 lemma normalizedMooreComplexHomEquiv_apply_coe (X : SimplicialObject A) (L : ChainComplex A ℕ)
     (φ : (normalizedMooreComplex A).obj X ⟶ L) :
-    (normalizedMooreComplexHomEquiv X L φ).1 = PInftyToNormalizedMooreComplex X ≫ φ :=
+    (normalizedMooreComplexHomEquiv X L φ).val = PInftyToNormalizedMooreComplex X ≫ φ :=
   (rfl)
 
 /-- A chain map vanishing on degeneracies corresponds to its restriction to the normalized Moore
@@ -74,15 +74,15 @@ complex. -/
 lemma normalizedMooreComplexHomEquiv_symm_apply (X : SimplicialObject A) (L : ChainComplex A ℕ)
     (f : {f : (alternatingFaceMapComplex A).obj X ⟶ L //
       ∀ n, DegeneraciesVanish (X := X) (f.f n)}) :
-    (normalizedMooreComplexHomEquiv X L).symm f = inclusionOfMooreComplexMap X ≫ f.1 :=
+    (normalizedMooreComplexHomEquiv X L).symm f = inclusionOfMooreComplexMap X ≫ f.val :=
   (rfl)
 
 /-- `AlgebraicTopology.DoldKan.normalizedMooreComplexHomEquiv` is natural in the simplicial
 object. -/
 lemma normalizedMooreComplexHomEquiv_naturality {X Y : SimplicialObject A} (g : X ⟶ Y)
     {L : ChainComplex A ℕ} (φ : (normalizedMooreComplex A).obj Y ⟶ L) :
-    (normalizedMooreComplexHomEquiv X L ((normalizedMooreComplex A).map g ≫ φ)).1 =
-      (alternatingFaceMapComplex A).map g ≫ (normalizedMooreComplexHomEquiv Y L φ).1 :=
+    (normalizedMooreComplexHomEquiv X L ((normalizedMooreComplex A).map g ≫ φ)).val =
+      (alternatingFaceMapComplex A).map g ≫ (normalizedMooreComplexHomEquiv Y L φ).val :=
   ((Category.assoc _ _ _).symm.trans (PInftyToNormalizedMooreComplex_naturality g =≫ φ).symm).trans
     (Category.assoc _ _ _)
 

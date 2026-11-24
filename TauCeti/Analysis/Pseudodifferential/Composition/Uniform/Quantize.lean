@@ -9,11 +9,12 @@ public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Basic
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperateGrowth
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 
 /-!
 # Operator composition, associativity, and frequency multipliers for uniform symbols
@@ -29,6 +30,11 @@ associativity (`TauCeti.Symbol.uniformSharp_assoc`), the right identity law
 (`TauCeti.Symbol.uniformSharp_const_id`), and exact composition with frequency multipliers and
 Mathlib's Bessel potentials (`TauCeti.Symbol.uniformSharp_ofFrequency`,
 `TauCeti.Symbol.uniformSharp_besselPotential`).
+
+## References
+
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Theorem 18.1.8.
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §2.
 -/
 
 public section
@@ -138,10 +144,8 @@ section Operator
 
 private def spatialTrunc (φ : ContDiffBump (0 : CoordinateSpace n)) (N : ℕ)
     (b : Symbol n V W m) : Symbol n V W m :=
-  Symbol.inclusion (zero_add m).le
-    ((ofSpatial (fun y ↦ (φ (((2 : ℝ) ^ N)⁻¹ • y) : ℂ) • ContinuousLinearMap.id ℂ W)
-      ((Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp
-        (contDiff_id.const_smul ((2 : ℝ) ^ N)⁻¹))).smul contDiff_const)).comp b)
+  smulLeft (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp
+    (contDiff_id.const_smul ((2 : ℝ) ^ N)⁻¹))) b
 
 private theorem coefficient_spatialTrunc (φ : ContDiffBump (0 : CoordinateSpace n)) (N : ℕ)
     (b : Symbol n V W m) (y ξ : CoordinateSpace n) :
@@ -150,32 +154,20 @@ private theorem coefficient_spatialTrunc (φ : ContDiffBump (0 : CoordinateSpace
   simp [spatialTrunc]
 
 private theorem hasCompactSpatialSupport_spatialTrunc (φ : ContDiffBump (0 : CoordinateSpace n))
-    (N : ℕ) (b : Symbol n V W m) : (spatialTrunc φ N b).HasCompactSpatialSupport := by
-  have hφ : HasCompactSupport fun y : CoordinateSpace n ↦ φ (((2 : ℝ) ^ N)⁻¹ • y) :=
-    φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero N two_ne_zero))
-  refine (((hasCompactSpatialSupport_ofSpatial_iff _).2 ?_).comp_right b).inclusion (zero_add m).le
-  exact HasCompactSupport.intro hφ.isCompact fun y hy ↦ by
-    simp [image_eq_zero_of_notMem_tsupport hy]
-
-private theorem exists_norm_iteratedFDeriv_bump_le (φ : ContDiffBump (0 : CoordinateSpace n))
-    (k : ℕ) : ∃ B : ℝ, 0 ≤ B ∧ ∀ y, ‖iteratedFDeriv ℝ k (fun y ↦ (φ y : ℝ)) y‖ ≤ B := by
-  obtain ⟨B, hB⟩ := φ.hasCompactSupport.isCompact.exists_bound_of_continuousOn
-    ((φ.contDiff.of_le (mod_cast le_top)).continuous_iteratedFDeriv le_rfl).continuousOn
-  refine ⟨max B 0, le_max_right _ _, fun y ↦ ?_⟩
-  by_cases hy : y ∈ tsupport φ
-  · exact (hB y hy).trans (le_max_left _ _)
-  · rw [Function.notMem_support.1 fun h ↦ hy (support_iteratedFDeriv_subset k h), norm_zero]
-    exact le_max_right _ _
+    (N : ℕ) (b : Symbol n V W m) : (spatialTrunc φ N b).HasCompactSpatialSupport :=
+  hasCompactSpatialSupport_smulLeft _
+    ((φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero N two_ne_zero))).comp_left
+      Complex.ofReal_zero) b
 
 private theorem exists_norm_iteratedFDeriv_spatialTrunc_le
     (φ : ContDiffBump (0 : CoordinateSpace n)) {b : Symbol n V W m} (hb : b.IsUniform) (k : ℕ) :
     ∃ C, 0 ≤ C ∧ ∀ N y ξ,
       ‖iteratedFDeriv ℝ k (fun y ↦ (spatialTrunc φ N b).coefficient (y, ξ)) y‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  choose Bφ hBφ0 hBφ using exists_norm_iteratedFDeriv_bump_le φ
+  obtain ⟨Bφ, hBφ0, hBφ⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff k
   choose Sb hSb0 hSb using hb.exists_norm_iteratedFDeriv_slice_le
-  refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * Bφ i * Sb (k - i),
-    Finset.sum_nonneg fun i _ ↦ mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (hBφ0 i)) (hSb0 _),
+  refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * Bφ * Sb (k - i),
+    Finset.sum_nonneg fun i _ ↦ mul_nonneg (mul_nonneg (Nat.cast_nonneg _) hBφ0) (hSb0 _),
     fun N y ξ ↦ ?_⟩
   set s : ℝ := ((2 : ℝ) ^ N)⁻¹
   have hs0 : 0 ≤ s := by positivity
@@ -188,13 +180,14 @@ private theorem exists_norm_iteratedFDeriv_spatialTrunc_le
     ((φ.contDiff.of_le (mod_cast le_top)).comp (contDiff_id.const_smul s))
     ((b.contDiff_coefficient_slice ξ).of_le (mod_cast le_top)) y le_rfl).trans ?_
   rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
-  have hf_le : ‖iteratedFDeriv ℝ i (fun z ↦ φ (s • z)) y‖ ≤ Bφ i := by
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hf_le : ‖iteratedFDeriv ℝ i (fun z ↦ φ (s • z)) y‖ ≤ Bφ := by
     rw [norm_iteratedFDeriv_comp_const_smul (fun z ↦ (φ z : ℝ)) s y i, Real.norm_of_nonneg hs0]
-    exact (mul_le_mul (pow_le_pow_left₀ hs0 hs1 i) (hBφ i _) (norm_nonneg _)
+    exact (mul_le_mul (pow_le_pow_left₀ hs0 hs1 i)
+      (hBφ i (Finset.mem_range_succ_iff.1 hi) _) (norm_nonneg _)
       (by positivity)).trans_eq (by rw [one_pow, one_mul])
   exact (mul_le_mul (mul_le_mul_of_nonneg_left hf_le (Nat.cast_nonneg _)) (hSb (k - i) y ξ)
-    (norm_nonneg _) (mul_nonneg (Nat.cast_nonneg _) (hBφ0 i))).trans_eq (by ring)
+    (norm_nonneg _) (mul_nonneg (Nat.cast_nonneg _) hBφ0)).trans_eq (by ring)
 
 private theorem tendsto_spatialTrunc (φ : ContDiffBump (0 : CoordinateSpace n))
     (b : Symbol n V W m) (y ξ : CoordinateSpace n) :
@@ -225,10 +218,8 @@ private theorem quantizeSchwartzValue_sharp_spatialTrunc_eq [CompleteSpace W] [C
     Complex.ofRealCLM.hasTemperateGrowth.comp
       ((φ.hasCompactSupport.comp_smul h0).hasTemperateGrowth
         (φ.contDiff.comp (contDiff_id.const_smul ((2 : ℝ) ^ N)⁻¹)))
-  rw [HasCompactSupport.toSchwartzMap_toFun, SchwartzMap.smulLeftCLM_apply_apply htgC,
-    quantizeUniformCLM_apply, quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← integral_smul]
-  exact integral_congr_ae (.of_forall fun ζ ↦ by
-    dsimp only; rw [coefficient_spatialTrunc, smul_apply, smul_comm (𝐞 ⟪ζ, y⟫)])
+  simp [spatialTrunc, quantizeSchwartzValue_smulLeft, SchwartzMap.smulLeftCLM_apply_apply htgC,
+    quantizeUniformCLM_apply]
 
 /-- **Composition of quantizations for uniform symbols.** For any symbol `a` of order `m'` and any
 uniform symbol `b` of order `m`, the quantization of `a.uniformSharp b hb` on a Schwartz function
@@ -247,8 +238,8 @@ theorem quantizeSchwartzValue_uniformSharp [CompleteSpace W] [CompleteSpace U]
         (𝓝 (quantizeSchwartzValue a.coefficient (quantizeUniformCLM b hb u) x)) := by
     simp only [cN, quantizeSchwartzValue_sharp_spatialTrunc_eq φ _ a hb u x]
     exact ((continuous_quantizeSchwartzValue_input (a.continuous_coefficient_slice x)
-      hCa_x).tendsto _).comp (SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow φ
-        (quantizeUniformCLM b hb u))
+      hCa_x).tendsto _).comp (SchwartzMap.tendsto_smulLeftCLM_contDiffBump
+        (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))) φ (quantizeUniformCLM b hb u))
   obtain ⟨⟨K_x, -, hcN_bound⟩, hcN_tendsto⟩ := exists_bound_and_tendsto_coefficient_uniformSharp a
     hb (fun N ↦ (hasCompactSpatialSupport_spatialTrunc φ N b).isUniform)
     (exists_norm_iteratedFDeriv_spatialTrunc_le φ hb) (tendsto_spatialTrunc φ b) x
@@ -345,41 +336,31 @@ theorem uniformSharp_besselPotential [CompleteSpace V] [CompleteSpace W]
     (a : Symbol n V W m') (s : ℝ)
     (hs : (besselPotential s : Symbol n V V s).IsUniform := isUniform_besselPotential s) :
     a.uniformSharp (besselPotential s) hs = a.comp (besselPotential s) := by
-  ext1
-  refine (coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq a hs fun u _ x ↦ ?_).symm
-  have hg : (fun ζ : CoordinateSpace n ↦
-      (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
-    Complex.ofRealCLM.hasTemperateGrowth.comp
-      (Function.hasTemperateGrowth_one_add_norm_sq_rpow (CoordinateSpace n) (s / 2))
-  have hbu : quantizeUniformCLM (besselPotential s : Symbol n V V s) hs u =
-      SchwartzMap.fourierMultiplierCLM V
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u := by
-    ext y; rw [quantizeUniformCLM_apply]; exact quantizeSchwartzValue_besselPotential s u y
-  rw [hbu, quantizeSchwartzValue_fourierMultiplierCLM hg]
-  exact quantizeSchwartzValue_congr_left (fun ξ ↦ by
-    simp only [coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
-      ContinuousLinearMap.comp_id]) u
+  simp only [besselPotential_eq_ofFrequency] at hs ⊢
+  exact uniformSharp_ofFrequency a _ _ hs
 
 /-- Composing any symbol `a` on the right with `const T` gives `a.comp (const T)`. -/
 theorem uniformSharp_const [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
-    (a : Symbol n W U m') (T : V →L[ℂ] W) :
-    a.uniformSharp (const T) (isUniform_const T) = a.comp (const T) := by
-  ext1
-  refine (coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq a (isUniform_const T)
-    fun u _ x ↦ ?_).symm
-  have hf (ζ : CoordinateSpace n) : 𝓕 (u.postcompCLM T) ζ = T (𝓕 u ζ) := by
-    simp only [SchwartzMap.fourier_coe, Real.fourier_eq, SchwartzMap.postcompCLM_apply,
-      Circle.smul_def, ← map_smul]
-    exact T.integral_comp_comm (((Real.fourierIntegral_convergent_iff ζ).2 u.integrable).congr
-      (.of_forall fun _ ↦ Circle.smul_def _ _))
-  rw [quantizeUniformCLM_const T, quantizeSchwartzValue_def, quantizeSchwartzValue_def]
-  exact integral_congr_ae (.of_forall fun ζ ↦ by
-    dsimp only; rw [hf ζ, coefficient_comp, coefficient_const, ContinuousLinearMap.comp_apply])
+    (a : Symbol n W U m') (T : V →L[ℂ] W)
+    (hT : (const T : Symbol n V W 0).IsUniform := isUniform_const T) :
+    a.uniformSharp (const T) hT = a.comp (const T) := by
+  have hb : ∀ k : ℕ, ∃ C, ∀ ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ k (fun _ : CoordinateSpace n ↦ T) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2) :=
+    fun k ↦ ⟨‖T‖, fun ξ ↦ by
+      rcases k with _ | k
+      · simp
+      · rw [iteratedFDeriv_succ_const, Pi.zero_apply, norm_zero]; positivity⟩
+  have hc : (const T : Symbol n V W 0) = ofFrequency (fun _ ↦ T) contDiff_const hb := by
+    ext p : 2; simp
+  rw [hc] at hT
+  simpa only [hc] using uniformSharp_ofFrequency a contDiff_const hb hT
 
 /-- The constant identity symbol `1` is a right identity for `uniformSharp` up to `m' + 0 = m'`. -/
 @[simp]
-theorem uniformSharp_const_id [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m') :
-    a.uniformSharp (const (ContinuousLinearMap.id ℂ V)) (isUniform_const _) =
+theorem uniformSharp_const_id [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m')
+    (h : (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).IsUniform := isUniform_const _) :
+    a.uniformSharp (const (ContinuousLinearMap.id ℂ V)) h =
       Symbol.inclusion (add_zero m').ge a := by
   rw [uniformSharp_const, comp_const_id]
 

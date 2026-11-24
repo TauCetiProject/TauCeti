@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
@@ -49,6 +49,9 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends;
   `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
+* `TauCeti.Floer.forall_update_zero`: switching off the Hamiltonian of one end, by replacing it
+  with `0`, keeps every property shared by the end Hamiltonians and `0`, such as periodicity and
+  smoothness.
 
 The angular coordinate `t` of an end is defined only modulo `1`, which is why the Hamiltonians are
 required to have period one: smoothness across the ray where the angular coordinate jumps is
@@ -157,6 +160,12 @@ theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w
   rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
 
+/-- Replacing the Hamiltonian `H_p` of one end by `0` keeps every property `P` shared by the end
+Hamiltonians `H q` and by `0`, such as periodicity and smoothness. -/
+theorem forall_update_zero {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
+    (p q : Puncture) : P (Function.update H p 0 q) :=
+  (Function.forall_update_iff H fun _ => P).2 ⟨h₀, fun q _ => hH q⟩ q
+
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
 theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
@@ -184,12 +193,8 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
     pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
       v.im * (smoothTransition (q.endSign * z.re - 1) * H q z.im x) := by
   rw [pairOfPantsPerturbation, Finset.sum_eq_single q]
-  · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-    have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
-    have hp : H q (z.im + k) x = H q z.im x := by
-      simpa using congrFun (hH.int_mul k z.im) x
-    rw [smul_apply, endAngularForm_cylindricalEndLift, re_endCoord_cylindricalEndLift, him, hp,
-      smul_eq_mul, mul_comm]
+  · rw [smul_apply, endAngularForm_cylindricalEndLift, re_endCoord_cylindricalEndLift,
+      apply_im_endCoord_cylindricalEndLift hH, smul_eq_mul, mul_comm]
   · intro r _ hr
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp
@@ -219,7 +224,7 @@ theorem pairOfPantsPerturbation_eq_smul_endAngularForm {r : Puncture} {w : ℂ}
       by_contra hc
       obtain ⟨h₁, hs'⟩ := one_lt_endSign_mul_re_endCoord hc
       have hr : w ≠ r.endCenter :=
-        r.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at hw; linarith
+        r.ne_endCenter_of_endSign_mul_re_endCoord_pos (two_pos.trans_le hw)
       exact cylindricalEndLift_ne_cylindricalEndLift hs.symm (by linarith) (by linarith)
         ((r.cylindricalEndLift_endCoord hr).trans (s.cylindricalEndLift_endCoord hs').symm)
     simp [hc]
@@ -293,20 +298,54 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
   refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
   exacts [pairOfPantsEndComponent_one_of_pos hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
+/-! ### The supports of the end weights -/
+
+/-- The weight `β(s₀(w) - 1)` of the end at `0` vanishes off the disc `‖w‖ < exp (-2π) / 2`. -/
+theorem smoothTransition_endCoord_zero_eq_zero_of_le_norm {w : ℂ}
+    (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :
+    smoothTransition ((zero.endCoord w).re - 1) = 0 :=
+  smoothTransition.zero_of_nonpos (by linarith [re_endCoord_zero_le_one hw])
+
+/-- At the center `0` of the end at `0`, where the end coordinate takes the junk longitudinal value
+`0` (from `Complex.log 0 = 0`), the weight `β(s₀ - 1)` of the end vanishes. -/
+@[simp]
+theorem smoothTransition_endCoord_zero_zero : smoothTransition ((zero.endCoord 0).re - 1) = 0 := by
+  have h0 : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
+  rw [h0, zero_sub, smoothTransition.zero_of_nonpos (by norm_num)]
+
+/-- The weight `β(s₀((w - c) / a) - 1)` of the input end with center `c` and scale `a` vanishes off
+the disc `‖w - c‖ < ‖a‖ exp (-2π) / 2`. -/
+theorem smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub {c a w : ℂ}
+    (h : ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c‖) :
+    smoothTransition ((zero.endCoord ((w - c) / a)).re - 1) = 0 := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [div_zero, smoothTransition_endCoord_zero_zero]
+  · refine smoothTransition_endCoord_zero_eq_zero_of_le_norm ?_
+    rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
+    linarith
+
+/-- The weight `β(-s_∞(w) - 1)` of the end at `∞` vanishes on the disc `‖w‖ ≤ 2 exp (2π)`. -/
+theorem smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le {w : ℂ}
+    (h : ‖w‖ ≤ 2 * Real.exp (2 * π)) :
+    smoothTransition (-(inf.endCoord w).re - 1) = 0 :=
+  smoothTransition.zero_of_nonpos
+    (by linarith [neg_re_endCoord_inf_le zero_le_one (w := w) (by rwa [mul_one])])
+
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
-family `f` of points of `ℂ`. -/
+family `f` of points of `ℂ` and a `C^n` family `c` of shifts. -/
 theorem contMDiffAt_smoothTransition_endCoord_comp {F G' N : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [TopologicalSpace G'] {I' : ModelWithCorners ℝ F G'} [TopologicalSpace N]
-    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) (c : ℝ) {f : N → ℂ}
-    {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hq : f y₀ ≠ q.endCenter) :
-    ContMDiffAt I' 𝓘(ℝ) n (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c))
-      y₀ :=
-  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀)
-    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).sub contDiffAt_const)).contMDiffAt.comp
-    y₀ hf
+    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) {f : N → ℂ}
+    {c : N → ℝ} {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hc : ContMDiffAt I' 𝓘(ℝ) n c y₀)
+    (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n
+      (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c y)) y₀ :=
+  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀, c y₀)
+    (((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).comp (f y₀, c y₀) contDiffAt_fst).sub
+      contDiffAt_snd)).contMDiffAt.comp y₀ (hf.prodMk_space hc)
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
 on `ℂ × M` which ignores the point of `M`. -/
@@ -314,7 +353,7 @@ theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) (c : �
     (hw : w ≠ q.endCenter) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
       (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - c)) (w, x) :=
-  contMDiffAt_smoothTransition_endCoord_comp q c contMDiffAt_fst hw
+  contMDiffAt_smoothTransition_endCoord_comp q contMDiffAt_fst contMDiffAt_const hw
 
 /-- **The perturbation is smooth.** For Hamiltonians of period one which are `C^n` on `ℝ × M`,
 the perturbation is `C^n` on `S × M`, where `S = ℂ ∖ {0, 1}` is the thrice-punctured sphere. -/
@@ -325,7 +364,7 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (fun p : ℂ × M => pairOfPantsPerturbation H p.1 p.2) ((w : ℂ), x) := by
   simp only [pairOfPantsPerturbation]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hf : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × M => q.endAngularForm p.1) ((w : ℂ), x) :=
     ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := q.endAngularForm) _

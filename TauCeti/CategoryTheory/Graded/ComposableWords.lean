@@ -198,7 +198,7 @@ theorem iSup_composableWords_sup_nonComposableWords :
   refine iSup_le fun n ↦ ?_
   rintro _ ⟨y, rfl⟩
   induction y using PiTensorProduct.induction_on with
-  | smul_tprod r x => rw [map_smul]; exact Submodule.smul_mem _ r (of_tprod_mem_sup n.2 x)
+  | smul_tprod r x => rw [map_smul]; exact Submodule.smul_mem _ r (of_tprod_mem_sup n.property x)
   | add x y hx hy => rw [map_add]; exact add_mem hx hy
 
 /-- Two linear maps out of the bar construction which agree on composable and on non-composable

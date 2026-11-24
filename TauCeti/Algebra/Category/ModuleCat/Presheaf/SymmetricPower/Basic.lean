@@ -71,7 +71,7 @@ lemma coe_symmetricPowerObjMap_apply (M : PresheafOfModulesOfCommRing.{u} R) (n 
     {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : (M.obj X).symmetricPower n) :
     Subtype.val (symmetricPowerObjMap M n f x) =
       SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv (R.map f).hom _ _).symm
-        (M.map f)) x.1 :=
+        (M.map f)) x.val :=
   TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply _ n x
 
 /-- Auxiliary definition for `symmetricPower`: the symmetric power of a presheaf of modules. -/
@@ -121,7 +121,7 @@ lemma symmetricPowerObjMap_naturality {M N : PresheafOfModulesOfCommRing.{u} R} 
   -- restriction-of-scalars map is the identity on elements
   exact ((ModuleCat.symmetricPower.coe_map_apply _ n _).trans
     (congrArg _ (coe_symmetricPowerObjMap_apply M n f x))).trans
-      ((RingHom.congr_fun key x.1).trans
+      ((RingHom.congr_fun key x.val).trans
         ((congrArg _ (ModuleCat.symmetricPower.coe_map_apply _ n x).symm).trans
           (coe_symmetricPowerObjMap_apply N n f _).symm))
 
@@ -155,7 +155,7 @@ lemma coe_symmetricPower_obj_map_apply (n : ℕ) (M : PresheafOfModulesOfCommRin
     {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : (M.obj X).symmetricPower n) :
     Subtype.val (((symmetricPower n).obj M).map f x) =
       SymmetricAlgebra.mapₛₗ ((ModuleCat.semilinearMapAddEquiv (R.map f).hom _ _).symm
-        (M.map f)) x.1 :=
+        (M.map f)) x.val :=
   coe_symmetricPowerObjMap_apply M n f x
 
 /-- The symmetric power of a morphism is computed sectionwise. -/

@@ -33,6 +33,10 @@ a fundamental representation.
 * `TauCeti.DynkinType.scToralDiagramAutHom`: the action bundled as a group homomorphism.
 * `TauCeti.DynkinType.scToralDiagramAut_pow_eq_one`: every order relation of the node permutation
   holds on the group scheme.
+* `TauCeti.DynkinType.map_kostantToralPointsSubgroup_conj_scModuleDiagramEquiv`: the lattice
+  symmetry matrix of a diagram symmetry normalizes the algebra-valued points.
+* `TauCeti.DynkinType.kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one`: the lattice
+  symmetry matrix satisfies every order relation of the node permutation.
 * `TauCeti.DynkinType.scToralDiagramAutPoints`: conjugation on all algebra-valued points,
   with matrix formulas, value-ring naturality, composition, inverse and order laws, and
   root-subgroup and weight-torus action formulas. These point-level constructions do not require
@@ -63,6 +67,35 @@ attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} (ht : t.Valid) {σ τ : Equiv.Perm (Fin t.rank)}
 
+/-- **The lattice symmetry matrix of a diagram symmetry normalizes the full-weight toral
+closure**: conjugation by the matrix of `scModuleDiagramEquiv` maps the algebra-valued points of
+the full-weight Kostant toral closure onto themselves. -/
+theorem map_kostantToralPointsSubgroup_conj_scModuleDiagramEquiv (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] :
+    (kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+      (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+      (t.kostantForm_apply_mem_scLattice ht)
+      (t.isNilpotent_representation_scModule_rootGenerator ht)
+      (t.scWeightBasis ht) (t.scWeight ht) A).map
+        (MulAut.conj (kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup
+          (t.scWeightBasis ht) (t.scModuleDiagramEquiv ht hσ)
+          (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ) A)).toMonoidHom =
+      kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+        (t.kostantForm_apply_mem_scLattice ht)
+        (t.isNilpotent_representation_scModule_rootGenerator ht)
+        (t.scWeightBasis ht) (t.scWeight ht) A :=
+  map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
+    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+    (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+    (t.kostantForm_apply_mem_scLattice ht)
+    (t.isNilpotent_representation_scModule_rootGenerator ht)
+    (t.scWeightBasis ht) (t.scWeight ht) (diagramRootGeneratorPerm σ)
+    (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
+    (t.scModuleDiagramEquiv_representation_rootGenerator ht hσ)
+    (diagramRootGeneratorPerm σ).surjective σ
+    (fun _ _ hxy => t.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero ht hσ hxy) A
+
 /-- The diagram automorphism on all points of the full-weight Kostant toral closure, given by
 conjugation by the scalar extension of `scModuleDiagramEquiv` on the lattice. -/
 noncomputable def scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
@@ -74,17 +107,7 @@ noncomputable def scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
       (t.scWeightBasis ht) (t.scWeight ht) A) :=
   kostantNumberedSymmetryPoints (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
     (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
-    A _ (map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-      (t.kostantForm_apply_mem_scLattice ht)
-      (t.isNilpotent_representation_scModule_rootGenerator ht)
-      (t.scWeightBasis ht) (t.scWeight ht) (diagramRootGeneratorPerm σ)
-      (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
-      (t.scModuleDiagramEquiv_representation_rootGenerator ht hσ)
-      (diagramRootGeneratorPerm σ).surjective σ
-      (fun _ _ hxy => t.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero ht hσ hxy)
-      A)
+    A _ (t.map_kostantToralPointsSubgroup_conj_scModuleDiagramEquiv ht hσ A)
 
 /-- On matrices, the full-weight diagram action is conjugation by its lattice symmetry matrix. -/
 @[simp]
@@ -154,11 +177,13 @@ theorem map_comp_scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
   comp_kostantNumberedSymmetryPoints _ _ _ _ _ _ _ _ f _
     (GeneralLinear.IntegralPointsPresentation.coe_map _ _ f)
 
-/-- The order of the full-weight diagram action divides the order of its diagram symmetry. -/
-@[simp]
-theorem scToralDiagramAutPoints_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
-    (A : Type v) [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
-    t.scToralDiagramAutPoints ht hσ A ^ m = 1 := by
+/-- The lattice symmetry matrix of a diagram symmetry satisfies every order relation of the node
+permutation. -/
+theorem kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one
+    (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
+    kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+      (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
+      A ^ m = 1 := by
   -- Package the module composition law to transport the diagram's order relation.
   let θ : t.diagramSymmetry →* (t.scModule ht ≃ₗ[ℚ] t.scModule ht) :=
     { toFun := fun s => t.scModuleDiagramEquiv ht s.property
@@ -169,9 +194,15 @@ theorem scToralDiagramAutPoints_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
     -- Unfold only the local hom's application: rewriting the full module term times out.
     change θ ⟨σ, hσ⟩ ^ m = 1
     exact (θ.map_pow ⟨σ, hσ⟩ m).symm.trans ((congrArg θ hm').trans θ.map_one)
-  exact kostantNumberedSymmetryPoints_pow_eq_one _ _ _ _ A _ _
-    (kostantNumberedSymmetryMatrix_pow_eq_one _ _ _ _ A
-      (fun x => by rw [hθ]; rfl))
+  exact kostantNumberedSymmetryMatrix_pow_eq_one _ _ _ _ A (fun x => by rw [hθ]; rfl)
+
+/-- The order of the full-weight diagram action divides the order of its diagram symmetry. -/
+@[simp]
+theorem scToralDiagramAutPoints_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A] {m : ℕ} (hm : σ ^ m = 1) :
+    t.scToralDiagramAutPoints ht hσ A ^ m = 1 :=
+  kostantNumberedSymmetryPoints_pow_eq_one _ _ _ _ A _ _
+    (t.kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one ht hσ A hm)
 
 /-- The identity diagram symmetry acts identically on full-weight toral-closure points. -/
 @[simp]
@@ -367,13 +398,13 @@ def scToralDiagramAutHom :
       (t.kostantForm_apply_mem_scLattice ht)
       (t.isNilpotent_representation_scModule_rootGenerator ht)
       (t.scWeightBasis ht) (t.scWeight ht)) where
-  toFun g := t.scToralDiagramAut ht g.2
+  toFun g := t.scToralDiagramAut ht g.property
   map_one' := t.scToralDiagramAut_one ht
-  map_mul' g₁ g₂ := t.scToralDiagramAut_mul ht g₁.2 g₂.2
+  map_mul' g₁ g₂ := t.scToralDiagramAut_mul ht g₁.property g₂.property
 
 /-- Evaluation of the bundled diagram action is the descended diagram automorphism. -/
 theorem scToralDiagramAutHom_apply (g : t.diagramSymmetry) :
-    t.scToralDiagramAutHom ht g = t.scToralDiagramAut ht g.2 :=
+    t.scToralDiagramAutHom ht g = t.scToralDiagramAut ht g.property :=
   (rfl)
 
 /-- Inverting a diagram symmetry inverts its descended automorphism. -/

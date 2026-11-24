@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Round
 public import Mathlib.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
@@ -19,6 +20,10 @@ as used for functions of a space variable and a time variable restricted to an i
 A map of `X × F` preserving the first coordinate, injective on each product `V i ×ˢ ball c (r i)`
 of a set with a ball about a common centre, is injective on their union, since over each point of
 `X` these balls are nested (`TauCeti.injOn_biUnion_prod_ball`).
+
+In `ℝ × ℝ` with the sup distance, every point is within `1 / 2` of the integer point obtained by
+rounding its coordinates (`Prod.dist_round_le`), so the open unit balls about the integer points
+cover the plane.
 -/
 
 public section
@@ -41,6 +46,12 @@ theorem eventually_nhds_prod_nhdsWithin_iff {P : X × Y → Prop} {x : X} {s : S
     fun h y τ hyτ hτ ↦ h y hyτ.1 τ hτ hyτ.2⟩
 
 end Metric
+
+/-- Every point `y` of `ℝ × ℝ` is within `1 / 2` of the integer point `(round y.1, round y.2)`,
+for the sup distance. -/
+theorem Prod.dist_round_le (y : ℝ × ℝ) : dist y ((round y.1 : ℝ), (round y.2 : ℝ)) ≤ 1 / 2 := by
+  rw [Prod.dist_eq, Real.dist_eq, Real.dist_eq]
+  exact max_le (abs_sub_round _) (abs_sub_round _)
 
 namespace TauCeti
 
