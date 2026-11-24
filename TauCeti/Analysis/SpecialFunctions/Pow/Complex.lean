@@ -12,6 +12,7 @@ import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
@@ -73,6 +74,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   extends to a `k`-th root function complex differentiable at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
+* `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
+  the quotient lies in the slit plane.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   real `r` along the positive real axis; only the last allows `r > 0`.
@@ -82,6 +85,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `z ∈ slitPlane`, `t ≥ 0`, and arbitrary `s : ℂ`.
 * `TauCeti.exists_ball_slitPlane_cpow_le` -- locally uniform bounds on `w ^ (σ + i y)` and its
   `w`-derivative in `|y|` with exponential rate strictly below `π` around `w₀ ∈ slitPlane`.
+* `TauCeti.exists_norm_cpow_strip_le` -- for `u ≠ 0` and `x` in a compact interval,
+  `‖u ^ (x + i T)‖ ≤ C exp (|arg u| |T|)`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
@@ -117,6 +122,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
   for `|θ| < π` and `0 ≤ r`.
+
+The derivative `TauCeti.hasDerivAt_sub_div_sub_cpow` is adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Hypergeometric/Riemann.lean`.
 -/
 
 public section
@@ -357,6 +365,28 @@ theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^
   · rw [zero_cpow hs, mul_zero]
   · rw [cpow_add _ _ hw, cpow_one]
 
+/-- The derivative of the power `w ↦ ((w - α) / (w - γ)) ^ a` at a point `z` where the quotient
+lies in the slit plane is the power times its logarithmic derivative
+`a ((z - α)⁻¹ - (z - γ)⁻¹)`. -/
+theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) ∈ slitPlane) :
+    HasDerivAt (fun w ↦ ((w - α) / (w - γ)) ^ a)
+      (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
+  have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
+  obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp hq
+  -- The quotient is the fractional-linear map with `k = m = 1`, `l = -α`, `n = -γ`.
+  have hfun : (fun w : ℂ ↦ (1 * w + -α) / (1 * w + -γ)) = fun w ↦ (w - α) / (w - γ) := by
+    funext w
+    ring
+  have hd := hasDerivAt_mul_add_div_mul_add (k := 1) (l := -α) (m := 1) (n := -γ) (z := z)
+    (by rwa [one_mul, ← sub_eq_add_neg])
+  rw [hfun] at hd
+  have hd' : HasDerivAt (fun w ↦ (w - α) / (w - γ)) ((α - γ) / (z - γ) ^ 2) z :=
+    hd.congr_deriv (by ring)
+  refine (hd'.cpow_const h).congr_deriv ?_
+  rw [cpow_sub _ _ hq, cpow_one]
+  field_simp
+  ring
+
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/
 theorem exists_norm_ofReal_add_cpow_le_mul_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {r : ℝ}
@@ -533,6 +563,24 @@ theorem exists_ball_slitPlane_cpow_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) 
       _ = (max 1 |σ| * B (σ - 1)) * (1 + |y|) * Real.exp (θ * |y|) := by ring
       _ ≤ M * (1 + |y|) * Real.exp (θ * |y|) := by
           gcongr; dsimp [M]; linarith [le_max_right (B σ) (max 1 |σ| * B (σ - 1))]
+
+/-- On a vertical strip, the principal power of a nonzero base grows at most exponentially in the
+imaginary part of the exponent: `‖u ^ (x + i T)‖ ≤ C exp (|arg u| |T|)` for `x ∈ [A, B]`. -/
+theorem exists_norm_cpow_strip_le {u : ℂ} (hu : u ≠ 0) (A B : ℝ) :
+    ∃ C : ℝ, ∀ x ∈ Set.Icc A B, ∀ T : ℝ,
+      ‖u ^ ((x : ℂ) + T * I)‖ ≤ C * Real.exp (|arg u| * |T|) := by
+  refine ⟨max (‖u‖ ^ A) (‖u‖ ^ B), fun x hx T ↦ ?_⟩
+  have hpos : 0 < ‖u‖ := norm_pos_iff.mpr hu
+  rw [norm_cpow_of_ne_zero hu]
+  simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, mul_zero, I_im, mul_one, sub_self,
+    add_zero, add_im, mul_im, zero_add]
+  rw [div_eq_mul_inv, ← Real.exp_neg]
+  refine mul_le_mul ?_ (Real.exp_le_exp.mpr ?_) (by positivity) (by positivity)
+  · rcases le_total 1 ‖u‖ with h | h
+    · exact le_max_of_le_right (Real.rpow_le_rpow_of_exponent_le h hx.2)
+    · exact le_max_of_le_left (Real.rpow_le_rpow_of_exponent_ge hpos h hx.1)
+  · rw [← abs_mul]
+    exact neg_le_abs _
 
 /-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
 continuous in the real variable `t > 0`. -/

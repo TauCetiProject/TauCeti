@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Fourier.AddCircle
-public import TauCeti.Analysis.Complex.Laurent.Basic
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 
@@ -22,9 +21,7 @@ For a function `f : ℂ → E` and a circle `C(c, R)` with `R ≠ 0`, write
 * the circle integral of `(z - c) ^ (m - 1) • f z` is `I • bₘ`
   (`TauCeti.circleIntegral_sub_zpow_sub_one_smul`);
 * the coefficients of the Cauchy power series `cauchyPowerSeries f c R` are
-  `(2π)⁻¹ • b₋ₙ` (`TauCeti.coeff_cauchyPowerSeries`), and the Laurent coefficient of every integer
-  degree `n` is `R⁻ⁿ` times the `n`-th Fourier coefficient of `θ ↦ f (c + R e^{iθ})` on `[0, 2π]`
-  (`TauCeti.circleLaurentCoeff_eq_zpow_smul_fourierCoeffOn`);
+  `(2π)⁻¹ • b₋ₙ` (`TauCeti.coeff_cauchyPowerSeries`);
 * for `f` holomorphic on the open disc and continuous on its closure, the integrals `bₘ`
   with `m > 0`, that is the negative-degree Fourier coefficients, vanish by Cauchy's theorem
   (`DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero`); on the unit circle, read as a
@@ -65,23 +62,6 @@ theorem circleIntegral_sub_zpow_sub_one_smul (f : ℂ → E) (c : ℂ) {R : ℝ}
   have hz : circleMap 0 R θ ≠ 0 := circleMap_ne_center hR
   simp only [deriv_circleMap, circleMap_sub_center, smul_smul, zpow_sub_one₀ hz]
   congr 1
-  field_simp
-
-/-- The Laurent coefficient of degree `n` extracted by the circle `C(c, R)` is `R⁻ⁿ` times the
-`n`-th Fourier coefficient of `θ ↦ f (c + R e^{iθ})` on `[0, 2π]`. -/
-theorem circleLaurentCoeff_eq_zpow_smul_fourierCoeffOn (f : ℂ → E) (c : ℂ) {R : ℝ} (hR : R ≠ 0)
-    (n : ℤ) :
-    circleLaurentCoeff f c R n =
-      (R : ℂ) ^ (-n) • fourierCoeffOn Real.two_pi_pos (fun θ ↦ f (circleMap c R θ)) n := by
-  rw [circleLaurentCoeff_def, circleIntegral_sub_zpow_sub_one_smul f c hR (-n),
-    fourierCoeffOn_eq_integral, sub_zero]
-  simp only [← intervalIntegral.integral_smul]
-  refine intervalIntegral.integral_congr fun θ _ ↦ ?_
-  simp only [← Complex.coe_smul, smul_smul, fourier_coe_apply, circleMap_zero, mul_zpow,
-    ← Complex.exp_intCast_mul]
-  congr 1
-  have hpi : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
-  push_cast
   field_simp
 
 /-- The coefficients of the Cauchy power series of `f` on the circle `C(c, R)` are the Fourier

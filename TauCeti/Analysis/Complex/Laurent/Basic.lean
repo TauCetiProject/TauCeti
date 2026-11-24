@@ -50,6 +50,11 @@ theorem circleLaurentCoeff_def (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℤ) :
     circleLaurentCoeff f c R n =
       (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - c) ^ (-n - 1) • f z := (rfl)
 
+/-- On the degenerate circle of radius zero every coefficient vanishes. -/
+@[simp] theorem circleLaurentCoeff_radius_zero (f : ℂ → E) (c : ℂ) (n : ℤ) :
+    circleLaurentCoeff f c 0 n = 0 := by
+  simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero]
+
 /-- The nonnegative Laurent coefficients are exactly the coefficients of Mathlib's
 Cauchy power series, even for the degenerate circle of radius zero. -/
 theorem circleLaurentCoeff_natCast (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℕ) :
@@ -84,7 +89,7 @@ degree `n` of `(z - c) ^ m • f z` is the coefficient of degree `n - m` of `f`.
 theorem circleLaurentCoeff_sub_zpow_smul_apply (f : ℂ → E) (c : ℂ) (R : ℝ) (m n : ℤ) :
     circleLaurentCoeff (fun z => (z - c) ^ m • f z) c R n = circleLaurentCoeff f c R (n - m) := by
   rcases eq_or_ne R 0 with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero]
+  · simp only [circleLaurentCoeff_radius_zero]
   simp only [circleLaurentCoeff_def, circleIntegral]
   congr 1
   refine intervalIntegral.integral_congr fun θ _ => ?_
@@ -99,23 +104,19 @@ theorem circleLaurentCoeff_add {f g : ℂ → E} {c : ℂ} {R : ℝ}
     circleLaurentCoeff (fun z => f z + g z) c R n =
       circleLaurentCoeff f c R n + circleLaurentCoeff g c R n := by
   rcases eq_or_ne R 0 with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero, add_zero]
+  · simp only [circleLaurentCoeff_radius_zero, add_zero]
   have hc : c ∉ sphere c |R| := by simpa [eq_comm] using hR
   simp only [circleLaurentCoeff_def, smul_add]
   rw [circleIntegral.integral_add (hf.sub_zpow_smul (-n - 1) hc)
     (hg.sub_zpow_smul (-n - 1) hc), smul_add]
 
-/-- Extracting coefficients is subtractive for functions integrable on the circle. -/
+/-- Extracting coefficients commutes with subtraction of functions integrable on the circle. -/
 theorem circleLaurentCoeff_sub {f g : ℂ → E} {c : ℂ} {R : ℝ}
     (hf : CircleIntegrable f c R) (hg : CircleIntegrable g c R) (n : ℤ) :
     circleLaurentCoeff (fun z => f z - g z) c R n =
       circleLaurentCoeff f c R n - circleLaurentCoeff g c R n := by
-  rcases eq_or_ne R 0 with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero, sub_zero]
-  have hc : c ∉ sphere c |R| := by simpa [eq_comm] using hR
-  simp only [circleLaurentCoeff_def, smul_sub]
-  rw [circleIntegral.integral_sub (hf.sub_zpow_smul (-n - 1) hc)
-    (hg.sub_zpow_smul (-n - 1) hc), smul_sub]
+  rw [eq_sub_iff_add_eq, ← circleLaurentCoeff_add (f := fun z => f z - g z) (hf.sub hg) hg n]
+  simp only [sub_add_cancel]
 
 /-- The Cauchy estimate for any integer Laurent coefficient, including negative degrees
 and the degenerate circle of radius zero. -/
@@ -123,8 +124,7 @@ theorem norm_circleLaurentCoeff_le {f : ℂ → E} {c : ℂ} {R M : ℝ} (hR : 0
     (hf : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (n : ℤ) :
     ‖circleLaurentCoeff f c R n‖ ≤ M * R ^ (-n) := by
   rcases hR.eq_or_lt with (rfl | hR)
-  · simp only [circleLaurentCoeff_def, circleIntegral.integral_radius_zero, smul_zero,
-      norm_zero]
+  · simp only [circleLaurentCoeff_radius_zero, norm_zero]
     exact mul_nonneg ((norm_nonneg _).trans (hf c (by simp))) (zpow_nonneg le_rfl _)
   have hp : R * R ^ (-n - 1) = R ^ (-n) := by
     calc
