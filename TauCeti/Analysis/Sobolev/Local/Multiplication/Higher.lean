@@ -28,6 +28,9 @@ weak derivative `z ↦ Dg(u z) ∘L Du z` of `g ∘ u`.
 * `TauCeti.MemWkpLoc.clm_apply_succ`: the field form `z ↦ A z (u z)` for a matrix-valued
   coefficient `A`.
 * `TauCeti.MemWkpLoc.compL_succ`: the composition form `z ↦ A z ∘L C z`.
+* `TauCeti.MemWkpLoc.bilin_of_memWkpLoc_succ`: the product of `f ∈ W^{i,p}_loc` with a
+  `g ∈ W^{i+1,q}_loc` one order smoother is in `W^{i,q}_loc`, for every `i ≥ 0`; at `i = 0` this
+  is the order-zero product `TauCeti.MemLpLoc.bilin_of_memWkpLoc`.
 
 ## References
 
@@ -74,6 +77,21 @@ theorem MemWkpLoc.bilin_succ [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H) (
       hg.memLpLoc hDgk.memLpLoc
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨h1.memLpLoc, _, hD, ?_⟩
     exact (ih (B.precompL ℂ) hDfk hg.of_succ).add (ih (B.precompR ℂ) hf.of_succ hDgk)
+
+/-- **Mixed-exponent products losing one order.** For `p > 2` and `1 < q ≤ p`, the product of a
+`W^{k,p}_loc` map with a `W^{k+1,q}_loc` map, both with finite-dimensional values, is in
+`W^{k,q}_loc`, for every `k ≥ 0`. At `k = 0` this is the order-zero product
+`TauCeti.MemLpLoc.bilin_of_memWkpLoc`; for `k ≥ 1` it follows from
+`TauCeti.MemWkpLoc.bilin_succ`. -/
+theorem MemWkpLoc.bilin_of_memWkpLoc_succ [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+    (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {k : ℕ} {f : ℂ → F} {g : ℂ → G}
+    (hf : MemWkpLoc p Ω k f) (hg : MemWkpLoc q Ω (k + 1) g) :
+    MemWkpLoc q Ω k (fun z => B (f z) (g z)) := by
+  cases k with
+  | zero =>
+    let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le⟩
+    exact memWkpLoc_zero_iff.2 (hf.memLpLoc.bilin_of_memWkpLoc B hp hqp hg)
+  | succ k => exact hf.bilin_succ B hp hq hqp hg.of_succ
 
 /-- **Coefficient fields acting on local Sobolev maps.** For `p > 2` and `1 < q ≤ p`, a
 coefficient field `A ∈ W^{k+1,p}_loc(Ω; F →L[ℝ] G)` applied to a map `u ∈ W^{k+1,q}_loc(Ω; F)`
