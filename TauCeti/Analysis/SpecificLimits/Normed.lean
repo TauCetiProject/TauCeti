@@ -22,6 +22,9 @@ hypothesis `‖r‖ < 1`, in any normed ring with summable geometric series, the
 `∑ (n + c) ^ k * r ^ n` is summable.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
+Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n` by `2 B w (K + 1)`
+when the partial sums of `a` are at most `B` and the weights `w` are nonnegative and antitone, so
+a convergent series of this shape has tail at most `2 B w (K + 1)` after `K` terms.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -159,6 +162,81 @@ theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : 
       fun i ↦ ?_
     rw [mul_comm]
     exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hzb _) (norm_nonneg _))
+
+section SummationByParts
+
+open Finset
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Abel's inequality** for a block of a series. If every partial sum `∑ k ∈ Icc 1 n, a k`
+has norm at most `B`, and the real weights `w` are nonnegative and antitone beyond `K`, then
+`‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1)` for every `M`. Mathlib's
+`Finset.abs_sum_mul_le_mul_of_abs_sum_range_le` is the corresponding inequality in a linearly
+ordered ring. -/
+theorem norm_sum_Ioc_smul_le {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {K : ℕ}
+    (hw : AntitoneOn w (Set.Ioi K)) (hw₀ : ∀ n, K < n → 0 ≤ w n)
+    (ha : ∀ n, ‖∑ k ∈ Icc 1 n, a k‖ ≤ B) (M : ℕ) :
+    ‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1) := by
+  have hB : 0 ≤ B := (norm_nonneg _).trans (ha 0)
+  have hK : 0 ≤ w (K + 1) := hw₀ _ K.lt_succ_self
+  rcases le_or_gt M K with hMK | hKM
+  · rw [Ioc_eq_empty_of_le hMK, sum_empty, norm_zero]
+    positivity
+  -- Summation by parts against `a'`, which agrees with `a` off `0` and vanishes at `0`, so that
+  -- its partial sums over `range (n + 1)` are the partial sums `∑ k ∈ Icc 1 n, a k`.
+  set a' : ℕ → E := fun n ↦ if n = 0 then 0 else a n with ha'
+  have hS (n : ℕ) : ∑ i ∈ range (n + 1), a' i = ∑ k ∈ Icc 1 n, a k := by
+    induction n with
+    | zero => simp [ha']
+    | succ n ih => rw [sum_range_succ, ih, sum_Icc_succ_top (by omega)]; simp [ha']
+  have hsum : ∑ n ∈ Ioc K M, w n • a n = ∑ n ∈ Ioc K M, w n • a' n :=
+    sum_congr rfl fun n hn ↦ by
+      have hn0 : n ≠ 0 := by simp only [mem_Ioc] at hn; omega
+      simp [ha', hn0]
+  rw [hsum, sum_Ioc_by_parts w a' hKM, hS, hS]
+  -- The remaining terms are bounded by `B` times the telescoping variation of `w`.
+  have hvar : ‖∑ i ∈ Ioc K (M - 1), (w (i + 1) - w i) • ∑ j ∈ range (i + 1), a' j‖ ≤
+      B * (w (K + 1) - w M) := by
+    have htel : ∑ i ∈ Ico (K + 1) M, (w i - w (i + 1)) = w (K + 1) - w M := by
+      have := sum_Ico_sub w (show K + 1 ≤ M by omega)
+      rw [sum_sub_distrib] at this ⊢
+      linarith
+    calc _ ≤ ∑ i ∈ Ioc K (M - 1), (w i - w (i + 1)) * B := by
+          refine (norm_sum_le _ _).trans (sum_le_sum fun i hi ↦ ?_)
+          have hi' := mem_Ioc.mp hi
+          have hmono : w (i + 1) ≤ w i :=
+            hw (show K < i by omega) (show K < i + 1 by omega) (by omega)
+          rw [norm_smul, hS, Real.norm_of_nonpos (sub_nonpos.mpr hmono), neg_sub]
+          exact mul_le_mul_of_nonneg_left (ha i) (sub_nonneg.mpr hmono)
+      _ = B * (w (K + 1) - w M) := by
+          rw [← sum_mul, ← Ico_add_one_add_one_eq_Ioc, Nat.sub_add_cancel (by omega : 1 ≤ M),
+            htel, mul_comm]
+  have hM : 0 ≤ w M := hw₀ _ hKM
+  calc _ ≤ w M * B + w (K + 1) * B + B * (w (K + 1) - w M) := by
+        refine norm_sub_le_of_le (norm_sub_le_of_le ?_ ?_) hvar
+        · rw [norm_smul, Real.norm_of_nonneg hM]
+          exact mul_le_mul_of_nonneg_left (ha M) hM
+        · rw [norm_smul, Real.norm_of_nonneg hK]
+          exact mul_le_mul_of_nonneg_left (ha K) hK
+    _ = 2 * B * w (K + 1) := by ring
+
+/-- **The tail of a series with bounded partial sums.** If every partial sum
+`∑ k ∈ Icc 1 n, a k` has norm at most `B`, the real weights `w` are nonnegative and antitone
+beyond `K`, and the partial sums of `∑ w n • a n` converge to `L`, then the partial sum up to `K`
+is within `2 * B * w (K + 1)` of `L`. -/
+theorem norm_sub_sum_Icc_smul_le_of_tendsto {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {K : ℕ}
+    (hw : AntitoneOn w (Set.Ioi K)) (hw₀ : ∀ n, K < n → 0 ≤ w n)
+    (ha : ∀ n, ‖∑ k ∈ Icc 1 n, a k‖ ≤ B) {L : E}
+    (hL : Filter.Tendsto (fun M ↦ ∑ n ∈ Icc 1 M, w n • a n) Filter.atTop (nhds L)) :
+    ‖L - ∑ n ∈ Icc 1 K, w n • a n‖ ≤ 2 * B * w (K + 1) := by
+  refine le_of_tendsto ((hL.sub_const _).norm)
+    (Filter.eventually_atTop.mpr ⟨K, fun M hKM ↦ ?_⟩)
+  have hIcc (n : ℕ) : Icc 1 n = Ioc 0 n := Icc_add_one_left_eq_Ioc 0 n
+  rw [hIcc, hIcc, ← sum_Ioc_consecutive _ (Nat.zero_le K) hKM, add_sub_cancel_left]
+  exact norm_sum_Ioc_smul_le hw hw₀ ha M
+
+end SummationByParts
 
 variable {K : Type*} [NormedField K]
 
