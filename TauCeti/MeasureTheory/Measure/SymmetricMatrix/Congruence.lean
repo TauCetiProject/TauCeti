@@ -140,7 +140,7 @@ theorem det_coe_symmetricCongruenceLinearMap_apply_eq_zero {M : Matrix (Fin q) (
     (symmetricCongruenceLinearMap M A : Matrix (Fin q) (Fin q) ℝ).det = 0 := by
   rw [coe_symmetricCongruenceLinearMap_apply]
   by_contra h
-  have hrank := rank_of_isUnit _ ((isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 h))
+  have hrank := rank_of_det_ne_zero h
   have hle := (rank_mul_le_left (M * (A : Matrix (Fin p) (Fin p) ℝ)) Mᵀ).trans
     (rank_mul_le_left M (A : Matrix (Fin p) (Fin p) ℝ))
   rw [hrank, Fintype.card_fin] at hle
@@ -646,16 +646,11 @@ symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
 theorem mutuallySingular_map_symmetricCongruenceLinearMap_symmetricLebesgue
     (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
     {M : Matrix (Fin q) (Fin p) ℝ} (hM : M.rank < q) :
-    (μ.map (Matrix.symmetricCongruenceLinearMap M)).MutuallySingular (symmetricLebesgue q) := by
-  have hmeas :=
-    (LinearMap.continuous_of_finiteDimensional (Matrix.symmetricCongruenceLinearMap M)).measurable
-  refine ⟨{A : selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ) |
-      (A : Matrix (Fin q) (Fin q) ℝ).det = 0}ᶜ, (measurableSet_setOfPred_det_eq_zero q).compl,
-    ?_, ?_⟩
-  · rw [map_apply hmeas (measurableSet_setOfPred_det_eq_zero q).compl]
-    exact measure_mono_null
-      (fun A hA ↦ (hA (Matrix.det_coe_symmetricCongruenceLinearMap_apply_eq_zero hM A)).elim)
-      measure_empty
-  · rw [compl_compl, symmetricLebesgue_setOf_det_eq_zero]
+    (μ.map (Matrix.symmetricCongruenceLinearMap M)).MutuallySingular (symmetricLebesgue q) :=
+  mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero <|
+    (ae_map_iff (LinearMap.continuous_of_finiteDimensional
+        (Matrix.symmetricCongruenceLinearMap M)).aemeasurable
+      (measurableSet_setOfPred_det_eq_zero q)).2
+      (ae_of_all _ (Matrix.det_coe_symmetricCongruenceLinearMap_apply_eq_zero hM))
 
 end MeasureTheory.Measure
