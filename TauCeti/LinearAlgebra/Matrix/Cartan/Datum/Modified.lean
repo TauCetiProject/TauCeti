@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Data.Nat.GCD
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Constructions
 
 /-!
@@ -20,25 +19,30 @@ Lusztig's quantum Frobenius map at `ζ` lands in the quantum group of a new datu
 these orders, the *modified datum* `TauCeti.CartanDatum.modified`:
 
 * its weight lattice is `X* = {λ ∈ X : ℓᵢ ∣ ⟨λ, hᵢ⟩ for all i}`
-  (`TauCeti.CartanDatum.modifiedWeight`), and its coweight lattice is `Y* = Hom(X*, ℤ)`;
+  (`TauCeti.CartanDatum.modifiedWeightLattice`), and its coweight lattice is `Y* = Hom(X*, ℤ)`;
 * its simple roots are `αᵢ* = ℓᵢ αᵢ` and its simple coroots are `hᵢ* = ⟨-, hᵢ⟩ / ℓᵢ`
   (`TauCeti.CartanDatum.modifiedCoroot`);
 * its Cartan matrix is `aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ` and its symmetrizer is `dᵢ* = ℓᵢ² dᵢ`.
 
-The lattice `X*` contains `L • X`, and restricting coweights to it gives a map `Y → Y*` sending
-`hᵢ` to `ℓᵢ hᵢ*` (`TauCeti.CartanDatum.restrictCoweight`). The integrality of `aᵢⱼ*`, that is
-`ℓᵢ ∣ ℓⱼ aᵢⱼ`, uses the symmetrizer (`TauCeti.CartanDatum.frobeniusOrder_dvd_mul_cartan`). The
-parameters `ζ ^ (dᵢ ℓᵢ²)` of the new datum square to `1`, so they are `±1` in a domain.
+The lattice `X*` contains `L • X`, and restricting coweights to it gives a map `Y → Y*`,
+injective for `L ≠ 0`, sending `hᵢ` to `ℓᵢ hᵢ*` (`TauCeti.CartanDatum.restrictCoweight`). As `X`
+is reflexive (its pairing with `Y` is perfect) and `X*` contains `L • X`, the lattice `X*` is
+reflexive too, with no finiteness assumption, so the evaluation pairing on `(X*, Y*)` is perfect.
+The integrality of `aᵢⱼ*`, that is `ℓᵢ ∣ ℓⱼ aᵢⱼ`, uses the symmetrizer
+(`TauCeti.CartanDatum.frobeniusOrder_dvd_frobeniusOrder_mul_cartan`). The parameters
+`ζ ^ (ℓᵢ² dᵢ)` of the new datum square to `1`, so they are `±1` in a domain. The modified datum
+has the same Cartan products `aᵢⱼ aⱼᵢ`, hence the same braid lengths, and its simple reflections
+are the restrictions of those of `D`.
 
-The orders only see the symmetrizer up to a common factor: if `d = c d'` then the orders of `d`
-at `L` are those of `d'` at `L / gcd(L, c)`, the order of `(ζ ^ c) ^ 2`
+The orders only see the symmetrizer up to a common factor: if `dᵢ = c d'ᵢ` then the order of `d`
+at `L` and `i` is that of `d'` at `L / gcd(L, c)`, the order of `(ζ ^ c) ^ 2`
 (`TauCeti.CartanDatum.frobeniusOrder_eq_of_symmetrizer_eq_mul`). This reduces Frobenius maps for
 an arbitrary symmetrizer to the normalized one.
 
 ## Main definitions
 
 * `TauCeti.CartanDatum.frobeniusOrder D L i`: the order `ℓᵢ = L / gcd(L, dᵢ)`.
-* `TauCeti.CartanDatum.modifiedWeight D L`: the weight lattice `X*`.
+* `TauCeti.CartanDatum.modifiedWeightLattice D L`: the weight lattice `X*`.
 * `TauCeti.CartanDatum.modifiedRoot D L i`: the root `αᵢ* = ℓᵢ αᵢ ∈ X*`.
 * `TauCeti.CartanDatum.modifiedCoroot D L i`: the coroot `hᵢ* ∈ Hom(X*, ℤ)`.
 * `TauCeti.CartanDatum.restrictCoweight D L`: the restriction map `Y → Hom(X*, ℤ)`.
@@ -49,13 +53,20 @@ an arbitrary symmetrizer to the normalized one.
 * `TauCeti.CartanDatum.isPrimitiveRoot_pow_two_mul_symmetrizer`: if `ζ ^ 2` is a primitive
   `L`-th root of unity, then `ζ ^ (2 dᵢ)` is a primitive `ℓᵢ`-th root of unity.
 * `TauCeti.CartanDatum.frobeniusOrder_eq_self_iff`: `ℓᵢ = L` exactly when `L` is coprime to `dᵢ`.
-* `TauCeti.CartanDatum.frobeniusOrder_dvd_mul_cartan`: `ℓᵢ ∣ ℓⱼ aᵢⱼ`.
+* `TauCeti.CartanDatum.frobeniusOrder_dvd_frobeniusOrder_mul_cartan`: `ℓᵢ ∣ ℓⱼ aᵢⱼ`.
 * `TauCeti.CartanDatum.frobeniusOrder_mul_cartan_modified`: `ℓᵢ aᵢⱼ* = ℓⱼ aᵢⱼ`, and
   `TauCeti.CartanDatum.cartan_modified_of_coprime`: `A* = A` when `L` is coprime to every `dᵢ`.
 * `TauCeti.CartanDatum.frobeniusOrder_eq_of_symmetrizer_eq_mul`: reduction of the symmetrizer.
 * `TauCeti.CartanDatum.modified_symmetrizer`: `dᵢ* = ℓᵢ² dᵢ`.
-* `TauCeti.CartanDatum.pow_symmetrizer_mul_frobeniusOrder_sq_eq_one_or_eq_neg_one`: the new
-  parameters `ζ ^ (dᵢ ℓᵢ²)` are `±1` in a domain.
+* `TauCeti.CartanDatum.isReflexive_modifiedWeightLattice`: `X*` is reflexive for `L ≠ 0`.
+* `TauCeti.CartanDatum.restrictCoweight_injective`: `Y → Hom(X*, ℤ)` is injective for `L ≠ 0`.
+* `TauCeti.CartanDatum.coxeterMatrixOfGeneralizedCartanMatrix_cartan_modified`: the modified datum
+  has the braid lengths of `D`.
+* `TauCeti.CartanDatum.coe_modified_reflection` and
+  `TauCeti.CartanDatum.restrictCoweight_coreflection`: the simple reflections of the modified
+  datum are those of `D`.
+* `TauCeti.CartanDatum.pow_frobeniusOrder_sq_mul_symmetrizer_eq_one_or_eq_neg_one`: the new
+  parameters `ζ ^ (ℓᵢ² dᵢ)` are `±1` in a domain.
 
 ## References
 
@@ -100,6 +111,15 @@ lemma frobeniusOrder_pos {L : ℕ} (hL : L ≠ 0) (i : ι) : 0 < D.frobeniusOrde
     (D.symmetrizer_pos i))
 
 @[simp]
+lemma frobeniusOrder_eq_zero_iff {L : ℕ} {i : ι} : D.frobeniusOrder L i = 0 ↔ L = 0 := by
+  refine ⟨fun h ↦ by_contra fun hL ↦ (D.frobeniusOrder_pos hL i).ne' h, ?_⟩
+  rintro rfl
+  simp [frobeniusOrder]
+
+instance neZero_frobeniusOrder (L : ℕ) [NeZero L] (i : ι) : NeZero (D.frobeniusOrder L i) :=
+  ⟨(D.frobeniusOrder_pos (NeZero.ne L) i).ne'⟩
+
+@[simp]
 lemma frobeniusOrder_zero (i : ι) : D.frobeniusOrder 0 i = 0 := by
   simp [frobeniusOrder]
 
@@ -132,26 +152,26 @@ lemma isPrimitiveRoot_pow_two_mul_symmetrizer {M : Type*} [CommMonoid M] {ζ : M
   rw [pow_mul]
   exact hζ.pow_div_gcd _ (Nat.gcd_pos_of_pos_right _ (D.symmetrizer_pos i)).ne'
 
-/-- The parameter `ζ ^ (dᵢ ℓᵢ²)` of the modified datum squares to `1` when `(ζ ^ 2) ^ L = 1`. -/
-lemma pow_symmetrizer_mul_frobeniusOrder_sq_sq_eq_one {M : Type*} [Monoid M] {ζ : M} {L : ℕ}
+/-- The parameter `ζ ^ (ℓᵢ² dᵢ)` of the modified datum squares to `1` when `(ζ ^ 2) ^ L = 1`. -/
+lemma pow_frobeniusOrder_sq_mul_symmetrizer_sq_eq_one {M : Type*} [Monoid M] {ζ : M} {L : ℕ}
     (hζ : (ζ ^ 2) ^ L = 1) (i : ι) :
-    (ζ ^ (D.symmetrizer i * D.frobeniusOrder L i ^ 2)) ^ 2 = 1 := by
-  have h : D.symmetrizer i * D.frobeniusOrder L i ^ 2 * 2 =
+    (ζ ^ (D.frobeniusOrder L i ^ 2 * D.symmetrizer i)) ^ 2 = 1 := by
+  have h : D.frobeniusOrder L i ^ 2 * D.symmetrizer i * 2 =
       2 * L * ((D.symmetrizer i / L.gcd (D.symmetrizer i)) * D.frobeniusOrder L i) := by
-    rw [sq, ← mul_assoc, mul_comm (D.symmetrizer i), D.frobeniusOrder_mul_symmetrizer]
+    rw [sq, mul_assoc (D.frobeniusOrder L i), D.frobeniusOrder_mul_symmetrizer]
     ring
   rw [← pow_mul, h, pow_mul, pow_mul ζ 2 L, hζ, one_pow]
 
-/-- In a domain, the parameter `ζ ^ (dᵢ ℓᵢ²)` of the modified datum is `1` or `-1` when
+/-- In a domain, the parameter `ζ ^ (ℓᵢ² dᵢ)` of the modified datum is `1` or `-1` when
 `(ζ ^ 2) ^ L = 1`. -/
-lemma pow_symmetrizer_mul_frobeniusOrder_sq_eq_one_or_eq_neg_one {R : Type*} [Ring R]
+lemma pow_frobeniusOrder_sq_mul_symmetrizer_eq_one_or_eq_neg_one {R : Type*} [Ring R]
     [NoZeroDivisors R] {ζ : R} {L : ℕ} (hζ : (ζ ^ 2) ^ L = 1) (i : ι) :
-    ζ ^ (D.symmetrizer i * D.frobeniusOrder L i ^ 2) = 1 ∨
-      ζ ^ (D.symmetrizer i * D.frobeniusOrder L i ^ 2) = -1 :=
-  sq_eq_one_iff.mp (D.pow_symmetrizer_mul_frobeniusOrder_sq_sq_eq_one hζ i)
+    ζ ^ (D.frobeniusOrder L i ^ 2 * D.symmetrizer i) = 1 ∨
+      ζ ^ (D.frobeniusOrder L i ^ 2 * D.symmetrizer i) = -1 :=
+  sq_eq_one_iff.mp (D.pow_frobeniusOrder_sq_mul_symmetrizer_sq_eq_one hζ i)
 
 /-- `ℓᵢ ∣ ℓⱼ aᵢⱼ`: the modified Cartan entry `ℓⱼ aᵢⱼ / ℓᵢ` is an integer. -/
-lemma frobeniusOrder_dvd_mul_cartan (L : ℕ) (i j : ι) :
+lemma frobeniusOrder_dvd_frobeniusOrder_mul_cartan (L : ℕ) (i j : ι) :
     (D.frobeniusOrder L i : ℤ) ∣ D.frobeniusOrder L j * D.cartan i j := by
   set gi := L.gcd (D.symmetrizer i)
   set gj := L.gcd (D.symmetrizer j)
@@ -169,37 +189,20 @@ lemma frobeniusOrder_dvd_mul_cartan (L : ℕ) (i j : ι) :
   have hj : (D.frobeniusOrder L j : ℤ) * gj = L := by exact_mod_cast D.frobeniusOrder_mul_gcd L j
   linear_combination (D.frobeniusOrder L j : ℤ) * hk + k * hj - k * hi
 
-/-- **Reduction of the symmetrizer.** If `dᵢ = c d'ᵢ` for every `i`, the Frobenius orders of `d`
-at `L` are those of `d'` at `L / gcd(L, c)`; when `ζ ^ 2` has order `L`, the latter is the order
+/-- **Reduction of the symmetrizer.** If `dᵢ = c d'ᵢ`, the Frobenius order of `d` at `L` and `i`
+is that of `d'` at `L / gcd(L, c)`; when `ζ ^ 2` has order `L`, the latter is the order
 of `(ζ ^ c) ^ 2`. -/
 lemma frobeniusOrder_eq_of_symmetrizer_eq_mul {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
-    {D' : CartanDatum ι X' Y'} {c : ℕ} (h : ∀ i, D.symmetrizer i = c * D'.symmetrizer i)
-    (L : ℕ) (i : ι) :
+    {D' : CartanDatum ι X' Y'} {c : ℕ} {i : ι} (h : D.symmetrizer i = c * D'.symmetrizer i)
+    (L : ℕ) :
     D.frobeniusOrder L i = D'.frobeniusOrder (L / L.gcd c) i := by
-  rw [frobeniusOrder, frobeniusOrder, h, Nat.div_div_eq_div_mul]
-  congr 1
-  -- `gcd(L, c d') = gcd(L, c) gcd(L', d')` with `L = gcd(L, c) L'`, since `L'` is coprime to
-  -- `c / gcd(L, c)`.
-  rcases Nat.eq_zero_or_pos (L.gcd c) with hg | hg
-  · obtain ⟨rfl, rfl⟩ := Nat.gcd_eq_zero_iff.mp hg
-    simp
-  obtain ⟨L', hL'⟩ := L.gcd_dvd_left c
-  obtain ⟨c', hc'⟩ := L.gcd_dvd_right c
-  have hL'' : L / L.gcd c = L' := Nat.div_eq_of_eq_mul_right hg hL'
-  have hcop : L'.Coprime c' := by
-    simpa [hL'', Nat.div_eq_of_eq_mul_right hg hc'] using Nat.coprime_div_gcd_div_gcd hg
-  rw [hL'']
-  calc L.gcd (c * D'.symmetrizer i)
-      = (L.gcd c * L').gcd (L.gcd c * (c' * D'.symmetrizer i)) := by
-        rw [← hL', ← mul_assoc, ← hc']
-    _ = L.gcd c * L'.gcd (D'.symmetrizer i) := by
-        rw [Nat.gcd_mul_left, hcop.symm.gcd_mul_left_cancel_right]
+  rw [frobeniusOrder, frobeniusOrder, h, Nat.div_div_eq_div_mul, Nat.gcd_mul_right_div_gcd]
 
 /-! ### The modified weight lattice -/
 
 /-- The **modified weight lattice** `X* = {λ ∈ X : ℓᵢ ∣ ⟨λ, hᵢ⟩ for all i}`, the kernel of
 `X → ∏ᵢ ℤ/ℓᵢ`, `λ ↦ (⟨λ, hᵢ⟩ mod ℓᵢ)ᵢ`. -/
-def modifiedWeight (L : ℕ) : Submodule ℤ X where
+def modifiedWeightLattice (L : ℕ) : Submodule ℤ X where
   carrier := {x | ∀ i, (D.frobeniusOrder L i : ℤ) ∣ D.pairing x (D.coroot i)}
   add_mem' hx hy i := by
     rw [map_add, LinearMap.add_apply]
@@ -210,48 +213,63 @@ def modifiedWeight (L : ℕ) : Submodule ℤ X where
     exact dvd_mul_of_dvd_right (hx i) c
 
 @[simp]
-lemma mem_modifiedWeight {L : ℕ} {x : X} :
-    x ∈ D.modifiedWeight L ↔ ∀ i, (D.frobeniusOrder L i : ℤ) ∣ D.pairing x (D.coroot i) :=
+lemma mem_modifiedWeightLattice {L : ℕ} {x : X} :
+    x ∈ D.modifiedWeightLattice L ↔ ∀ i, (D.frobeniusOrder L i : ℤ) ∣ D.pairing x (D.coroot i) :=
   Iff.rfl
 
+@[simp]
+lemma modifiedWeightLattice_one : D.modifiedWeightLattice 1 = ⊤ :=
+  eq_top_iff.mpr fun x _ i ↦ by simp
+
 /-- `X*` contains `L • X`. -/
-lemma smul_mem_modifiedWeight (L : ℕ) (x : X) : L • x ∈ D.modifiedWeight L := fun i ↦ by
+lemma smul_mem_modifiedWeightLattice (L : ℕ) (x : X) :
+    L • x ∈ D.modifiedWeightLattice L := fun i ↦ by
   rw [map_nsmul, LinearMap.smul_apply, nsmul_eq_mul]
   exact dvd_mul_of_dvd_left (Int.natCast_dvd_natCast.mpr (D.frobeniusOrder_dvd L i)) _
 
 /-- The modified root `αⱼ* = ℓⱼ αⱼ` lies in `X*`, by `ℓᵢ ∣ ℓⱼ aᵢⱼ`. -/
-lemma frobeniusOrder_smul_root_mem_modifiedWeight (L : ℕ) (j : ι) :
-    D.frobeniusOrder L j • D.root j ∈ D.modifiedWeight L := fun i ↦ by
+lemma frobeniusOrder_smul_root_mem_modifiedWeightLattice (L : ℕ) (j : ι) :
+    D.frobeniusOrder L j • D.root j ∈ D.modifiedWeightLattice L := fun i ↦ by
   rw [map_nsmul, LinearMap.smul_apply, pairing_root_coroot, nsmul_eq_mul]
-  exact D.frobeniusOrder_dvd_mul_cartan L i j
+  exact D.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j
+
+/-- The simple reflections preserve `X*`: `sᵢ λ = λ − ⟨λ, hᵢ⟩ αᵢ`, and `ℓⱼ ∣ ℓᵢ aⱼᵢ`. -/
+lemma reflection_mem_modifiedWeightLattice {L : ℕ} {x : X} (hx : x ∈ D.modifiedWeightLattice L)
+    (i : ι) : D.reflection i x ∈ D.modifiedWeightLattice L := fun j ↦ by
+  obtain ⟨m, hm⟩ := hx i
+  rw [reflection_apply, map_sub, map_zsmul, LinearMap.sub_apply, LinearMap.smul_apply,
+    pairing_root_coroot, hm, smul_eq_mul, mul_right_comm]
+  exact dvd_sub (hx j)
+    (dvd_mul_of_dvd_left (D.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L j i) _)
 
 /-! ### Modified coroots and the restriction of coweights -/
 
 /-- The **modified coroot** `hᵢ* = ⟨-, hᵢ⟩ / ℓᵢ`, a linear form on `X*`. -/
-def modifiedCoroot (L : ℕ) (i : ι) : Dual ℤ (D.modifiedWeight L) where
+def modifiedCoroot (L : ℕ) (i : ι) : Dual ℤ (D.modifiedWeightLattice L) where
   toFun x := D.pairing x (D.coroot i) / D.frobeniusOrder L i
   map_add' x y := by
     simp only [Submodule.coe_add, map_add, LinearMap.add_apply]
-    exact Int.add_ediv_of_dvd_right (y.2 i)
+    exact Int.add_ediv_of_dvd_right (y.property i)
   map_smul' c x := by
     simp only [SetLike.val_smul, map_smul, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply]
-    exact Int.mul_ediv_assoc _ (x.2 i)
+    exact Int.mul_ediv_assoc _ (x.property i)
 
-lemma modifiedCoroot_apply (L : ℕ) (i : ι) (x : D.modifiedWeight L) :
+lemma modifiedCoroot_apply (L : ℕ) (i : ι) (x : D.modifiedWeightLattice L) :
     D.modifiedCoroot L i x = D.pairing x (D.coroot i) / D.frobeniusOrder L i := (rfl)
 
 /-- `ℓᵢ ⟨λ, hᵢ*⟩ = ⟨λ, hᵢ⟩` for `λ ∈ X*`. -/
-lemma frobeniusOrder_mul_modifiedCoroot (L : ℕ) (i : ι) (x : D.modifiedWeight L) :
+lemma frobeniusOrder_mul_modifiedCoroot (L : ℕ) (i : ι) (x : D.modifiedWeightLattice L) :
     D.frobeniusOrder L i * D.modifiedCoroot L i x = D.pairing x (D.coroot i) :=
-  Int.mul_ediv_cancel' (x.2 i)
+  Int.mul_ediv_cancel' (x.property i)
 
 /-- The restriction `Y → Hom(X*, ℤ)` of coweights to the modified weight lattice. -/
-def restrictCoweight (L : ℕ) : Y →ₗ[ℤ] Dual ℤ (D.modifiedWeight L) :=
-  (D.modifiedWeight L).dualRestrict ∘ₗ D.pairing.flip
+def restrictCoweight (L : ℕ) : Y →ₗ[ℤ] Dual ℤ (D.modifiedWeightLattice L) :=
+  (D.modifiedWeightLattice L).dualRestrict ∘ₗ D.pairing.flip
 
 @[simp]
-lemma restrictCoweight_apply (L : ℕ) (y : Y) (x : D.modifiedWeight L) :
-    D.restrictCoweight L y x = D.pairing x y := (rfl)
+lemma restrictCoweight_apply (L : ℕ) (y : Y) (x : D.modifiedWeightLattice L) :
+    D.restrictCoweight L y x = D.pairing x y := by
+  simp [restrictCoweight]
 
 /-- The restriction of `hᵢ` to `X*` is `ℓᵢ hᵢ*`. -/
 lemma restrictCoweight_coroot (L : ℕ) (i : ι) :
@@ -263,8 +281,8 @@ lemma restrictCoweight_coroot (L : ℕ) (i : ι) :
 /-! ### The modified datum -/
 
 /-- The **modified root** `αⱼ* = ℓⱼ αⱼ`, an element of `X*`. -/
-def modifiedRoot (L : ℕ) (j : ι) : D.modifiedWeight L :=
-  ⟨D.frobeniusOrder L j • D.root j, D.frobeniusOrder_smul_root_mem_modifiedWeight L j⟩
+def modifiedRoot (L : ℕ) (j : ι) : D.modifiedWeightLattice L :=
+  ⟨D.frobeniusOrder L j • D.root j, D.frobeniusOrder_smul_root_mem_modifiedWeightLattice L j⟩
 
 @[simp]
 lemma coe_modifiedRoot (L : ℕ) (j : ι) :
@@ -281,8 +299,8 @@ variable (L : ℕ) [NeZero L]
 
 /-- The modified roots `αᵢ* = ℓᵢ αᵢ` are linearly independent. -/
 lemma linearIndependent_modifiedRoot : LinearIndependent ℤ (D.modifiedRoot L) := by
-  refine LinearIndependent.of_comp (D.modifiedWeight L).subtype ?_
-  have : (D.modifiedWeight L).subtype ∘ D.modifiedRoot L =
+  refine LinearIndependent.of_comp (D.modifiedWeightLattice L).subtype ?_
+  have : (D.modifiedWeightLattice L).subtype ∘ D.modifiedRoot L =
       (fun j ↦ (D.frobeniusOrder L j : ℤ)) • D.root := by
     ext j
     simp
@@ -294,9 +312,9 @@ lemma linearIndependent_modifiedRoot : LinearIndependent ℤ (D.modifiedRoot L) 
 lemma linearIndependent_modifiedCoroot : LinearIndependent ℤ (D.modifiedCoroot L) := by
   -- Precomposing with `φ : x ↦ L • x` sends `hᵢ*` to `gcd(L, dᵢ) ⟨-, hᵢ⟩`, and the forms
   -- `⟨-, hᵢ⟩` on `X` are independent because the pairing is perfect.
-  let φ : X →ₗ[ℤ] D.modifiedWeight L :=
+  let φ : X →ₗ[ℤ] D.modifiedWeightLattice L :=
     ((L : ℤ) • LinearMap.id).codRestrict _ fun x ↦ by
-      simpa [natCast_zsmul] using D.smul_mem_modifiedWeight L x
+      simpa [natCast_zsmul] using D.smul_mem_modifiedWeightLattice L x
   have hcomp : φ.dualMap ∘ D.modifiedCoroot L =
       (fun i ↦ (L.gcd (D.symmetrizer i) : ℤ)) • (D.pairing.flip ∘ D.coroot) := by
     ext i x
@@ -304,10 +322,7 @@ lemma linearIndependent_modifiedCoroot : LinearIndependent ℤ (D.modifiedCoroot
       exact_mod_cast (D.frobeniusOrder_pos (NeZero.ne L) i).ne'
     have hL : (L : ℤ) = D.frobeniusOrder L i * L.gcd (D.symmetrizer i) := by
       exact_mod_cast (D.frobeniusOrder_mul_gcd L i).symm
-    have hφ : (φ x : X) = (L : ℤ) • x := (rfl)
-    rw [Function.comp_apply, LinearMap.dualMap_apply, modifiedCoroot_apply, hφ, map_zsmul,
-      LinearMap.smul_apply, smul_eq_mul, hL, mul_assoc, Int.mul_ediv_cancel_left _ hi]
-    simp
+    simp [φ, modifiedCoroot_apply, hL, mul_assoc, Int.mul_ediv_cancel_left _ hi]
   refine LinearIndependent.of_comp φ.dualMap ?_
   rw [hcomp]
   refine (D.linearIndependent_coroot.map' D.pairing.flip ?_).smul_of_isRightRegular fun i ↦ ?_
@@ -315,29 +330,68 @@ lemma linearIndependent_modifiedCoroot : LinearIndependent ℤ (D.modifiedCoroot
   · exact (IsRegular.of_ne_zero (by exact_mod_cast
       (Nat.gcd_pos_of_pos_right _ (D.symmetrizer_pos i)).ne')).right
 
-variable [Module.Finite ℤ X]
+/-- The restriction `Y → Hom(X*, ℤ)` is injective for `L ≠ 0`, since `X*` contains `L • X`. -/
+lemma restrictCoweight_injective : Function.Injective (D.restrictCoweight L) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro y hy
+  refine (LinearMap.IsPerfPair.bijective_right D.pairing).injective (LinearMap.ext fun x ↦ ?_)
+  have h := congr($hy ⟨L • x, D.smul_mem_modifiedWeightLattice L x⟩)
+  rw [restrictCoweight_apply, map_nsmul, LinearMap.smul_apply, nsmul_eq_mul] at h
+  simpa [NeZero.ne L] using h
+
+/-- `X*` is reflexive for `L ≠ 0`. A form `Φ` on `Hom(X*, ℤ)` is evaluation at the weight `x ∈ X`
+representing `Φ` composed with restriction: `x` lies in `X*` because `hᵢ` restricts to `ℓᵢ hᵢ*`,
+and testing against `f (L • -)` identifies `Φ f` with `f x` after cancelling `L`. -/
+instance isReflexive_modifiedWeightLattice : IsReflexive ℤ (D.modifiedWeightLattice L) where
+  bijective_dual_eval' := by
+    have := IsReflexive.of_isPerfPair D.pairing
+    set W := D.modifiedWeightLattice L
+    refine ⟨fun x y hxy ↦ Subtype.ext <| (bijective_dual_eval ℤ X).injective <|
+      LinearMap.ext fun g ↦ by simpa using congr($hxy (W.dualRestrict g)), fun Φ ↦ ?_⟩
+    obtain ⟨x, hx⟩ := (bijective_dual_eval ℤ X).surjective (Φ ∘ₗ W.dualRestrict)
+    have hmem : x ∈ W := fun i ↦ ⟨Φ (D.modifiedCoroot L i), by
+      have hres :
+          W.dualRestrict (D.pairing.flip (D.coroot i)) = D.restrictCoweight L (D.coroot i) :=
+        LinearMap.ext fun y ↦ (D.restrictCoweight_apply L _ y).symm
+      have := congr($hx (D.pairing.flip (D.coroot i)))
+      rw [Dual.eval_apply, LinearMap.flip_apply, LinearMap.comp_apply, hres,
+        restrictCoweight_coroot, map_nsmul, nsmul_eq_mul] at this
+      exact this⟩
+    refine ⟨⟨x, hmem⟩, LinearMap.ext fun f ↦ ?_⟩
+    -- Test `Φ` against `f ∘ φ`, where `φ : X → X*` is `x ↦ L • x`.
+    let φ : X →ₗ[ℤ] W := (L • LinearMap.id).codRestrict W (D.smul_mem_modifiedWeightLattice L)
+    have hφ (y : X) (hy : y ∈ W) : φ y = L • ⟨y, hy⟩ := Subtype.ext (by simp [φ])
+    have hres : W.dualRestrict (f ∘ₗ φ) = L • f := LinearMap.ext fun y ↦ by
+      rw [Submodule.dualRestrict_apply, LinearMap.comp_apply, hφ _ y.property, map_nsmul,
+        LinearMap.smul_apply]
+    have := congr($hx (f ∘ₗ φ))
+    rw [Dual.eval_apply, LinearMap.comp_apply, LinearMap.comp_apply, hres, map_nsmul, hφ _ hmem,
+      map_nsmul, nsmul_eq_mul, nsmul_eq_mul] at this
+    rw [Dual.eval_apply]
+    exact mul_left_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne L)) this
+
+/-- `⟨αᵢ*, hᵢ*⟩ = 2`. For `simp`, `TauCeti.CartanDatum.modifiedCoroot_modifiedRoot` and
+`TauCeti.CartanDatum.cartan_apply_self` already give this. -/
+lemma modifiedCoroot_modifiedRoot_self (i : ι) :
+    D.modifiedCoroot L i (D.modifiedRoot L i) = 2 := by
+  have := D.frobeniusOrder_mul_modifiedCoroot_modifiedRoot L i i
+  rw [cartan_apply_self] at this
+  exact mul_left_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne _)) this
 
 /-- The **modified Cartan datum** at `L ≠ 0`: weight lattice `X*`, coweight lattice
 `Y* = Hom(X*, ℤ)` with the evaluation pairing, simple roots `αᵢ* = ℓᵢ αᵢ`, simple coroots
 `hᵢ* = ⟨-, hᵢ⟩ / ℓᵢ` and symmetrizer `dᵢ* = ℓᵢ² dᵢ`. Its Cartan matrix is `aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ`
 (`TauCeti.CartanDatum.frobeniusOrder_mul_cartan_modified`). -/
-noncomputable def modified : CartanDatum ι (D.modifiedWeight L) (Dual ℤ (D.modifiedWeight L)) :=
-  -- `X` embeds in `Hom(Y, ℤ)`, so it is torsion-free; being finite, its sublattice `X*` is then
-  -- free of finite rank, hence reflexive, which makes the evaluation pairing perfect.
-  haveI : IsTorsionFree ℤ X := Function.Injective.moduleIsTorsionFree D.pairing
-    (LinearMap.IsPerfPair.bijective_left D.pairing).injective (map_smul D.pairing)
+noncomputable def modified :
+    CartanDatum ι (D.modifiedWeightLattice L) (Dual ℤ (D.modifiedWeightLattice L)) :=
+  -- `X*` is reflexive (`isReflexive_modifiedWeightLattice`), so the evaluation pairing is perfect.
   { pairing := Dual.eval ℤ _
     root := D.modifiedRoot L
     coroot := D.modifiedCoroot L
     linearIndependent_root := D.linearIndependent_modifiedRoot L
     linearIndependent_coroot := D.linearIndependent_modifiedCoroot L
     pairing_root_coroot_self i := by
-      have hi : (D.frobeniusOrder L i : ℤ) ≠ 0 := by
-        exact_mod_cast (D.frobeniusOrder_pos (NeZero.ne L) i).ne'
-      have := D.frobeniusOrder_mul_modifiedCoroot_modifiedRoot L i i
-      rw [cartan_apply_self] at this
-      rw [Dual.eval_apply]
-      exact mul_left_cancel₀ hi this
+      rw [Dual.eval_apply, modifiedCoroot_modifiedRoot_self]
     pairing_root_coroot_nonpos {i j} hij := by
       have hi : (0 : ℤ) < D.frobeniusOrder L i := by
         exact_mod_cast D.frobeniusOrder_pos (NeZero.ne L) i
@@ -360,8 +414,10 @@ noncomputable def modified : CartanDatum ι (D.modifiedWeight L) (Dual ℤ (D.mo
         (D.frobeniusOrder L i * D.frobeniusOrder L j : ℤ) * hs }
 
 @[simp]
-lemma modified_pairing (x : D.modifiedWeight L) (f : Dual ℤ (D.modifiedWeight L)) :
-    (D.modified L).pairing x f = f x := (rfl)
+lemma modified_pairing_apply (x : D.modifiedWeightLattice L)
+    (f : Dual ℤ (D.modifiedWeightLattice L)) :
+    (D.modified L).pairing x f = f x :=
+  Dual.eval_apply ℤ _ x f
 
 @[simp]
 lemma modified_root : (D.modified L).root = D.modifiedRoot L := (rfl)
@@ -376,7 +432,7 @@ lemma modified_symmetrizer (i : ι) :
 /-- The Cartan matrix of the modified datum: `ℓᵢ aᵢⱼ* = ℓⱼ aᵢⱼ`. -/
 lemma frobeniusOrder_mul_cartan_modified (i j : ι) :
     D.frobeniusOrder L i * (D.modified L).cartan i j = D.frobeniusOrder L j * D.cartan i j := by
-  rw [cartan_apply, modified_pairing, modified_root, modified_coroot,
+  rw [cartan_apply, modified_pairing_apply, modified_root, modified_coroot,
     frobeniusOrder_mul_modifiedCoroot_modifiedRoot]
 
 /-- The Cartan matrix of the modified datum: `aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ`. -/
@@ -384,6 +440,59 @@ lemma cartan_modified (i j : ι) :
     (D.modified L).cartan i j = D.frobeniusOrder L j * D.cartan i j / D.frobeniusOrder L i := by
   rw [← frobeniusOrder_mul_cartan_modified, Int.mul_ediv_cancel_left]
   exact_mod_cast (D.frobeniusOrder_pos (NeZero.ne L) i).ne'
+
+/-- `⟨αⱼ*, hᵢ*⟩ = aᵢⱼ*`, so that `simp` reaches the Cartan matrix of the modified datum whether or
+not it first unfolds its roots and coroots. -/
+@[simp]
+lemma modifiedCoroot_modifiedRoot (i j : ι) :
+    D.modifiedCoroot L i (D.modifiedRoot L j) = (D.modified L).cartan i j := by
+  rw [cartan_apply, modified_pairing_apply, modified_root, modified_coroot]
+
+/-- The Cartan products agree: `aᵢⱼ* aⱼᵢ* = aᵢⱼ aⱼᵢ`. -/
+lemma cartan_mul_cartan_modified (i j : ι) :
+    (D.modified L).cartan i j * (D.modified L).cartan j i = D.cartan i j * D.cartan j i := by
+  have hi := D.frobeniusOrder_mul_cartan_modified L i j
+  have hj := D.frobeniusOrder_mul_cartan_modified L j i
+  refine mul_left_cancel₀ (mul_ne_zero (Nat.cast_ne_zero.mpr (NeZero.ne (D.frobeniusOrder L i)))
+    (Nat.cast_ne_zero.mpr (NeZero.ne (D.frobeniusOrder L j)))) ?_
+  linear_combination (D.frobeniusOrder L j * (D.modified L).cartan j i : ℤ) * hi +
+    (D.frobeniusOrder L j * D.cartan i j : ℤ) * hj
+
+/-- The braid lengths of the modified datum are those of `D`: both Coxeter matrices only see the
+Cartan products `aᵢⱼ aⱼᵢ`. -/
+@[simp]
+lemma coxeterMatrixOfGeneralizedCartanMatrix_cartan_modified [DecidableEq ι] :
+    coxeterMatrixOfGeneralizedCartanMatrix (D.modified L).cartan =
+      coxeterMatrixOfGeneralizedCartanMatrix D.cartan := by
+  ext i j
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ hij,
+      coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ hij, cartan_mul_cartan_modified]
+
+/-- The reflections of the modified datum are the restrictions of those of `D`. -/
+@[simp]
+lemma coe_modified_reflection (i : ι) (x : D.modifiedWeightLattice L) :
+    ((D.modified L).reflection i x : X) = D.reflection i x := by
+  rw [reflection_apply, reflection_apply, Submodule.coe_sub, Submodule.coe_smul,
+    modified_pairing_apply, modified_root, modified_coroot, coe_modifiedRoot, smul_comm,
+    ← Nat.cast_smul_eq_nsmul ℤ, smul_smul, frobeniusOrder_mul_modifiedCoroot]
+
+/-- Restricting coweights intertwines the reflections of `D` and of the modified datum. -/
+lemma restrictCoweight_coreflection (i : ι) (y : Y) :
+    D.restrictCoweight L (D.coreflection i y) =
+      (D.modified L).coreflection i (D.restrictCoweight L y) := by
+  rw [coreflection_apply, coreflection_apply, map_sub, map_zsmul, restrictCoweight_coroot,
+    modified_pairing_apply, modified_root, modified_coroot, restrictCoweight_apply,
+    coe_modifiedRoot, map_nsmul, LinearMap.smul_apply, smul_comm, ← Nat.cast_smul_eq_nsmul ℤ,
+    smul_smul, nsmul_eq_mul, mul_comm]
+
+/-- The toral directions of the modified datum: `ℓᵢ² dᵢ hᵢ* = ℓᵢ (dᵢ hᵢ)|_{X*}`. -/
+lemma modified_simpleTorus (i : ι) :
+    (D.modified L).simpleTorus i =
+      D.frobeniusOrder L i • D.restrictCoweight L (D.simpleTorus i) := by
+  rw [simpleTorus_def, simpleTorus_def, modified_symmetrizer, modified_coroot, map_nsmul,
+    restrictCoweight_coroot, smul_smul, smul_smul, sq, mul_right_comm _ (D.symmetrizer i)]
 
 /-- If `L` is coprime to every `dᵢ`, then every `ℓᵢ` is `L` and the modified datum has the same
 Cartan matrix as `D`. -/
