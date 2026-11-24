@@ -23,6 +23,9 @@ import TauCeti.Analysis.Matrix.Ultra
 -- Non-public: injectivity of `Matrix.GeneralLinearGroup.map` along an injective ring hom, used only
 -- to build `TauCeti.GLPadicInt.mulEquiv`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+-- Non-public: `PadicInt.toZModPow_eq_iff_dvd_sub`, used only in the proof of
+-- `PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`.
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The integral subgroup `GLₙ(ℤ_p)` of `GLₙ(ℚ_p)`
@@ -190,11 +193,11 @@ theorem exists_eq_one_add_pow_smul_of_mem_ker {n : Type*} [Fintype n] [Decidable
     ∃ C : Matrix n n ℤ_[p], (γ : Matrix n n ℤ_[p]) = 1 + (p : ℤ_[p]) ^ m • C := by
   have hentry (i j : n) :
       (p : ℤ_[p]) ^ m ∣ (γ : Matrix n n ℤ_[p]) i j - (1 : Matrix n n ℤ_[p]) i j := by
-    rw [← Ideal.mem_span_singleton, ← ker_toZModPow, RingHom.mem_ker, map_sub]
     have h := congrArg (fun x : GL n (ZMod (p ^ m)) ↦ (x : Matrix n n (ZMod (p ^ m))) i j)
       (MonoidHom.mem_ker.mp hγ)
     simp only [Matrix.GeneralLinearGroup.map_apply, Units.val_one] at h
-    rw [h, sub_eq_zero, Matrix.one_apply, Matrix.one_apply]
+    refine (toZModPow_eq_iff_dvd_sub m).mp ?_
+    rw [h, Matrix.one_apply, Matrix.one_apply]
     split_ifs <;> simp
   choose C hC using hentry
   refine ⟨Matrix.of C, ?_⟩
