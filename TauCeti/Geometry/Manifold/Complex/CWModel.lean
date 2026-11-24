@@ -380,7 +380,8 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
       ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
     have hWempty (k m : ℕ) : IsEmpty (cell (W k : Set PEmpty.{u + 1}) m) :=
       ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    have (k : ℕ) : IsEmpty {x : M | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.val⟩
+    have hEmptySet (s : Set M) : IsEmpty s := ⟨fun x ↦ hM.elim x.val⟩
+    have (k : ℕ) : IsEmpty {x : M | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} := hEmptySet _
     refine ⟨0, Nat.cast, PEmpty.{u + 1}, inferInstance, inferInstance, inferInstance, W,
       Homeomorph.empty.toHomotopyEquiv, fun _ ↦ Homeomorph.empty.toHomotopyEquiv, ?_,
       Nat.strictMono_cast, tendsto_natCast_atTop_atTop,
@@ -390,19 +391,12 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
           ⟨fun ⟨n, j⟩ ↦ (hWempty k n).elim j⟩
         inferInstance),
       RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun m _ ↦ hempty m,
-      fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x, fun m ↦ ⟨?_⟩, fun k m ↦ ⟨?_⟩,
+      fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x,
+      fun m ↦ ⟨@Equiv.equivOfIsEmpty _ _ (hempty m) (hEmptySet _)⟩,
+      fun k m ↦ ⟨@Equiv.equivOfIsEmpty _ _ (hWempty k m) (hEmptySet _)⟩,
       fun m _ ↦ hempty m, fun k m _ ↦ hWempty k m⟩
     · rw [← isMorseOn_univ, univ_eq_empty_iff.2 hM]
       exact isMorseOn_empty
-    · have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) |
-          manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) x = m} := ⟨fun x ↦ hM.elim x.val⟩
-      exact Equiv.equivOfIsEmpty _ _
-    · have := hWempty k m
-      have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) ∩
-          {x | ‖i x - 0‖ ^ 2 ≤ (k : ℝ)} |
-          manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - 0‖ ^ 2) x = m} :=
-        ⟨fun x ↦ hM.elim x.val⟩
-      exact Equiv.equivOfIsEmpty _ _
   · have : FiniteDimensional ℂ F := .of_locallyCompactSpace ℂ
     have : FiniteDimensional ℂ E :=
       Module.Finite.of_injective (mvfderiv 𝓘(ℂ, E) i x₀).toLinearMap (hinj x₀)
@@ -412,11 +406,9 @@ theorem exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp
     obtain ⟨z₀, hmorse, hprop, hbdd, hidx⟩ :=
       exists_isMorse_isProperMap_bddBelow_and_manifoldMorseIndex_norm_sq_sub_comp_le
         hi.contMDiff hinj hip
-    obtain ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, -, hreg, hWmono, hW0, hWuniv,
-        hWfin, hfd, hhW, hsymm, hcell, hWcell, hempty, hWempty⟩ :=
+    obtain ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, -, hrest⟩ :=
       hmorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_le hprop hbdd hidx
-    exact ⟨z₀, a, X, instTop, instT2, instCW, W, h, hW, hmorse, hmono, htop, hreg, hWmono, hW0,
-      hWuniv, hWfin, hfd, hhW, hsymm, hcell, hWcell, hempty, hWempty⟩
+    exact ⟨z₀, a, X, instTop, instT2, instCW, W, h, hW, hmorse, hmono, htop, hrest⟩
 
 /-- **CW homotopy model along a proper holomorphic immersion** (Andreotti–Frankel; Milnor, Theorem
 7.2). Let `i : M → F` be a proper holomorphic immersion from a Hausdorff complex manifold `M` into a
@@ -444,10 +436,9 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_holomorphic_immersion
         L.toContinuousLinearMap.mvfderiv_comp_apply (hi x)] at hvw
       exact hvw))
   have hipL : IsProperMap (L.toContinuousLinearMap ∘ i) := L.toHomeomorph.isProperMap.comp hip
-  obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, -, hfd, -, -, -, -,
-      hempty, -⟩ :=
+  obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, hrest⟩ :=
     exists_cwComplex_subcomplex_homotopyEquiv_norm_sq_sub_comp hiL hinjL hipL
-  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
+  exact ⟨X, instTop, instT2, instCW, by tauto, ⟨h.symm⟩, by tauto⟩
 
 /-- **The closed holomorphic embedding CW theorem** (Andreotti–Frankel; Milnor, *Morse Theory*,
 Theorem 7.2). Let `i : M → F` be a holomorphic immersion of a complex manifold `M` into a
@@ -538,10 +529,9 @@ theorem exists_cwComplex_homotopyEquiv_affineZeroLocus {σ : Type u} {ι : Type*
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (affineZeroLocus p ≃ₕ X) ∧
       ∀ m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set X) m) := by
-  obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, -, hfd, -, -, -, -,
-      hempty, -⟩ :=
+  obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, hrest⟩ :=
     exists_cwComplex_subcomplex_homotopyEquiv_affineZeroLocus hp
-  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
+  exact ⟨X, instTop, instT2, instCW, by tauto, ⟨h.symm⟩, by tauto⟩
 
 end AffineZeroLocus
 
