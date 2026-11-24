@@ -65,7 +65,7 @@ so consumers can normalize degree arithmetic without transporting cochains. -/
 def d (p q : ℤ) (h : p + 1 = q) : cochains 𝒜 p →ₗ[R] cochains 𝒜 q where
   toFun F := ⟨𝒜.hochschildDifferential p F, by
     simpa only [mem_cochains, ← h, add_comm 1 p] using
-      𝒜.isHomogeneous_hochschildDifferential ((mem_cochains 𝒜).mp F.2)⟩
+      𝒜.isHomogeneous_hochschildDifferential ((mem_cochains 𝒜).mp F.property)⟩
   map_add' F G := Subtype.ext (𝒜.hochschildDifferential_add p F G)
   map_smul' r F := Subtype.ext (𝒜.hochschildDifferential_smul p r F)
 
@@ -80,7 +80,7 @@ theorem d_d (p q r : ℤ) (hpq : p + 1 = q) (hqr : q + 1 = r) (F : cochains 𝒜
     d 𝒜 q r hqr (d 𝒜 p q hpq F) = 0 := by
   apply Subtype.ext
   simp only [coe_d, ZeroMemClass.coe_zero, ← hpq, add_comm p 1]
-  exact 𝒜.hochschildDifferential_hochschildDifferential ((mem_cochains 𝒜).mp F.2)
+  exact 𝒜.hochschildDifferential_hochschildDifferential ((mem_cochains 𝒜).mp F.property)
 
 /-- The positive-arity suspended Hochschild cochain complex, with differential `[m, -]`.
 The abbreviation retains the degreewise cochain carriers. -/
@@ -105,8 +105,8 @@ def bracket {p q n : ℤ} (h : p + q = n) :
   LinearMap.mk₂ R
     (fun F G ↦ ⟨gerstenhaberBracket (𝒜.grading.shift 1) p q F G, by
       rw [mem_cochains, ← h]
-      exact isHomogeneous_gerstenhaberBracket ((mem_cochains 𝒜).mp F.2)
-        ((mem_cochains 𝒜).mp G.2)⟩)
+      exact isHomogeneous_gerstenhaberBracket ((mem_cochains 𝒜).mp F.property)
+        ((mem_cochains 𝒜).mp G.property)⟩)
     (fun _ _ _ ↦ Subtype.ext (gerstenhaberBracket_add_left ..))
     (fun _ _ _ ↦ Subtype.ext (gerstenhaberBracket_smul_left ..))
     (fun _ _ _ ↦ Subtype.ext (gerstenhaberBracket_add_right ..))
@@ -136,7 +136,7 @@ theorem leibniz_bracket {p q r n : ℤ} (h : p + q + r = n)
           bracket 𝒜 (show q + (p + r) = n by omega) G (bracket 𝒜 rfl F H) := by
   apply Subtype.ext
   simp only [coe_bracket, Submodule.coe_add, Submodule.coe_smul]
-  exact leibniz_gerstenhaberBracket ((mem_cochains 𝒜).mp F.2)
-    ((mem_cochains 𝒜).mp G.2) ((mem_cochains 𝒜).mp H.2)
+  exact leibniz_gerstenhaberBracket ((mem_cochains 𝒜).mp F.property)
+    ((mem_cochains 𝒜).mp G.property) ((mem_cochains 𝒜).mp H.property)
 
 end TauCeti.AInfinityAlgebra.PositiveHochschild

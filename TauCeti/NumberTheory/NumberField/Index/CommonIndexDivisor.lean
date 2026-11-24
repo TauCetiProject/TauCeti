@@ -149,7 +149,7 @@ private theorem mem_filter_monicFactorsMod_of_mem_primesOverOfInertiaDeg {θ : �
     ((primesOverSpanEquivMonicFactorsMod hp Q : (ZMod p)[X])) ∈
       (NumberField.RingOfIntegers.monicFactorsMod θ p).filter fun R => R.natDegree = d := by
   classical
-  refine Finset.mem_filter.mpr ⟨(primesOverSpanEquivMonicFactorsMod hp Q).2, ?_⟩
+  refine Finset.mem_filter.mpr ⟨(primesOverSpanEquivMonicFactorsMod hp Q).property, ?_⟩
   exact (inertiaDeg_primesOverSpanEquivMonicFactorsMod_apply hp Q) ▸ hQ
 
 /-- **The Kummer–Dedekind counting bound.** For a `θ` whose conductor exponent is prime to `p`,

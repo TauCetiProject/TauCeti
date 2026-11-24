@@ -13,7 +13,7 @@ public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
 /-!
-# A projective representation is a linear representation of the central extension of its factor set
+# A projective representation lifts to a linear representation of a central extension
 
 A projective representation `ρ : G → (V ≃ₗ[k] V)` with factor set `α` is multiplicative only up to
 the scalars `α`, so it is not a homomorphism. Enlarging `G` by those scalars repairs this: the
@@ -34,15 +34,17 @@ spell a factor set differently. `TauCeti.FactorSet` is the uncurried, bundled `G
 of a general `G`-module `M`,
 which is what the group extension is built from, while `TauCeti.IsFactorSet` is a curried
 `Prop`-valued class on `G → G → kˣ`, which is what a projective representation carries. The two
-agree when `G` acts **trivially** on `kˣ`, the case in which the extension is central
-(`TauCeti.FactorSet.inl_range_le_center`), and `TauCeti.FactorSet.isFactorSet_curry` and
-`TauCeti.IsFactorSet.toFactorSet` translate in the two directions. Triviality of the action is
-carried as an explicit hypothesis `∀ (g : G) (a : kˣ), g • a = a` rather than as a chosen instance,
-matching `TauCeti.FactorSet.inl_range_le_center`: the *type* `TauCeti.FactorSet G kˣ` already
-depends on an ambient `MulDistribMulAction G kˣ`, so leaving that action free lets a factor set for
-any action be fed to the statements, and only the results that genuinely need centrality pay for
-it. A projective representation itself carries no action, so the closing existence statement
-supplies the trivial one, `TauCeti.trivialMulDistribMulAction`, and asks for nothing of its caller.
+agree when `G` acts **trivially** on `kˣ`, exactly the case in which the extension is central
+(`TauCeti.FactorSet.range_inl_le_center_iff`), and `TauCeti.FactorSet.isFactorSet_curry` and
+`TauCeti.IsFactorSet.toFactorSet` translate in the two directions. The conversion and
+linearization declarations take triviality of the action as an explicit hypothesis
+`∀ (g : G) (a : kˣ), g • a = a` rather than as a chosen instance, and the reverse implication of
+`TauCeti.FactorSet.range_inl_le_center_iff` turns that hypothesis into centrality. The *type*
+`TauCeti.FactorSet G kˣ` already depends on an ambient `MulDistribMulAction G kˣ`, so leaving that
+action free lets a factor set for any action be fed to the statements, and only the results that
+genuinely need a trivial action pay for it. A projective representation itself carries no action, so
+the closing existence statement supplies the trivial one, `TauCeti.trivialMulDistribMulAction`, and
+asks for nothing of its caller.
 
 For a factor set whose values have exponent dividing `n`,
 `TauCeti.IsFactorSet.toRootsOfUnityFactorSet` also restricts the values to `rootsOfUnity n k`.
@@ -81,8 +83,11 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
   representation have the same invariant submodules, which is why irreducibility transfers between
   them.
 * `TauCeti.IsProjectiveRep.exists_factorSet_linearization`: **every projective representation of
-  `G` is a linear representation of a central extension of `G` by `kˣ`**, for the extension built
-  from the factor set the projective representation carries.
+  `G` lifts to a linear representation of a central extension of `G` by `kˣ`**: for some factor set
+  `β` of the trivial action, a homomorphism from its extension sends each element of the central
+  copy of `kˣ` to multiplication by that scalar and restricts to the projective representation
+  along the canonical section. Since `β` is existentially quantified, the statement does not
+  identify it with the factor set the projective representation carries.
 
 ## References
 
@@ -341,14 +346,14 @@ def isProjectiveRepEquivExtensionHom (α : FactorSet G kˣ)
     {ρ : G → V ≃ₗ[k] V // IsProjectiveRep ρ (Function.curry ⇑α)} ≃
       {π : α.Extension →* (V ≃ₗ[k] V) //
         ∀ a : kˣ, π (FactorSet.inl α a) = LinearEquiv.smulOfUnit a} where
-  toFun ρ := ⟨ρ.2.linearization htriv, fun a ↦ ρ.2.linearization_inl htriv a⟩
-  invFun π := ⟨fun g ↦ π.1 (α.canonicalSection g),
-    isProjectiveRep_comp_canonicalSection htriv π.1 π.2⟩
+  toFun ρ := ⟨ρ.property.linearization htriv, fun a ↦ ρ.property.linearization_inl htriv a⟩
+  invFun π := ⟨fun g ↦ π.val (α.canonicalSection g),
+    isProjectiveRep_comp_canonicalSection htriv π.val π.property⟩
   left_inv ρ := Subtype.ext (funext fun g ↦ by simp)
   right_inv π := Subtype.ext (MonoidHom.ext fun x ↦ LinearEquiv.ext fun v ↦ by
-    have h : π.1 (FactorSet.inl α x.left * α.canonicalSection x.right) v = π.1 x v := by
+    have h : π.val (FactorSet.inl α x.left * α.canonicalSection x.right) v = π.val x v := by
       rw [FactorSet.inl_mul_canonicalSection]
-    rw [map_mul, π.2 x.left] at h
+    rw [map_mul, π.property x.left] at h
     simpa only [IsProjectiveRep.linearization_apply, mul_apply_eq_comp,
       LinearEquiv.smulOfUnit_apply] using h)
 
@@ -358,7 +363,7 @@ theorem isProjectiveRepEquivExtensionHom_apply (α : FactorSet G kˣ)
     (htriv : ∀ (g : G) (a : kˣ), g • a = a)
     (ρ : {ρ : G → V ≃ₗ[k] V // IsProjectiveRep ρ (Function.curry ⇑α)}) :
     (isProjectiveRepEquivExtensionHom k V α htriv ρ : α.Extension →* (V ≃ₗ[k] V))
-      = ρ.2.linearization htriv :=
+      = ρ.property.linearization htriv :=
   (rfl)
 
 /-- The inverse bijection restricts a linear representation along the canonical section. -/
@@ -368,7 +373,7 @@ theorem isProjectiveRepEquivExtensionHom_symm_apply (α : FactorSet G kˣ)
     (π : {π : α.Extension →* (V ≃ₗ[k] V) //
       ∀ a : kˣ, π (FactorSet.inl α a) = LinearEquiv.smulOfUnit a}) :
     ((isProjectiveRepEquivExtensionHom k V α htriv).symm π : G → V ≃ₗ[k] V)
-      = fun g ↦ π.1 (α.canonicalSection g) :=
+      = fun g ↦ π.val (α.canonicalSection g) :=
   (rfl)
 
 end Linearization
@@ -389,10 +394,11 @@ attribute [local instance] trivialMulDistribMulAction
 variable {ρ : G → V ≃ₗ[k] V}
 
 /-- **Every projective representation of `G` linearizes over a central extension of `G` by `kˣ`.**
-The extension is the one built from the factor set the projective representation carries, over the
-trivial action `TauCeti.trivialMulDistribMulAction` of `G` on `kˣ`: its copy of `kˣ` is central, it
-acts by its own scalars, and restricting along the canonical section returns the projective
-representation. -/
+The statement provides a factor set `β` for the trivial action `TauCeti.trivialMulDistribMulAction`
+of `G` on `kˣ` and a homomorphism `π` from its extension: the copy of `kˣ` in that extension is
+central and acts through `π` by its own scalars, and restricting `π` along the canonical section
+returns the projective representation. Since `β` is existentially quantified, the statement does
+not identify it with the factor set `α` that `ρ` carries. -/
 theorem IsProjectiveRep.exists_factorSet_linearization {α : G → G → kˣ}
     (hρ : IsProjectiveRep ρ α) :
     ∃ β : FactorSet G kˣ, ∃ π : β.Extension →* (V ≃ₗ[k] V),
@@ -404,7 +410,7 @@ theorem IsProjectiveRep.exists_factorSet_linearization {α : G → G → kˣ}
   have hρ' : IsProjectiveRep ρ (Function.curry ⇑(IsFactorSet.toFactorSet α htriv)) := by
     rwa [IsFactorSet.curry_coe_toFactorSet]
   exact ⟨IsFactorSet.toFactorSet α htriv, hρ'.linearization htriv,
-    FactorSet.inl_range_le_center _ htriv, fun a ↦ hρ'.linearization_inl htriv a,
+    (FactorSet.range_inl_le_center_iff _).2 htriv, fun a ↦ hρ'.linearization_inl htriv a,
     fun g ↦ by simp⟩
 
 end TrivialAction
