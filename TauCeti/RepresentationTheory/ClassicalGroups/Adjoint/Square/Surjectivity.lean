@@ -39,32 +39,6 @@ private theorem exists_third (i j : Fin n) (hn : 3 ≤ n) : ∃ k, i ≠ k ∧ k
   obtain ⟨k, hik, hkj⟩ := Fin.exists_ne_and_ne_of_two_lt i j hn
   exact ⟨k, hik.symm, hkj⟩
 
-/-- The matrix-unit spanning lemma reduces surjectivity to finding preimages of two families. -/
-private theorem surjective_of_units (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K)
-    (off : ∀ i j : Fin n, i ≠ j → ∀ c : K, ∃ t, (f t).val = Matrix.single i j c)
-    (diag : ∀ i j : Fin n, i ≠ j → ∀ c : K, ∃ t,
-      (f t).val = Matrix.single i i c - Matrix.single j j c) :
-    Function.Surjective f := by
-  intro X
-  let N := LinearMap.range ((𝔰 K).toSubmodule.subtype.comp f)
-  have hx : X.val ∈ N := by
-    apply TauCeti.mem_of_trace_eq_zero_of_single_mem (N := N)
-    · intro i j hij c
-      obtain ⟨t, ht⟩ := off i j hij c
-      exact LinearMap.mem_range.mpr ⟨t, by
-        simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht⟩
-    · intro i j c
-      by_cases h : i = j
-      · subst j
-        simpa only [sub_self] using N.zero_mem
-      · obtain ⟨t, ht⟩ := diag i j h c
-        exact LinearMap.mem_range.mpr ⟨t, by
-          simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht⟩
-    · exact LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
-  obtain ⟨t, ht⟩ := LinearMap.mem_range.mp hx
-  refine ⟨t, Subtype.ext ?_⟩
-  simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht
-
 private theorem alternating_chain (i k j : Fin n) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j)
     (c : K) : (alternatingProductMap K n (pair i k k j hik hkj c)).val = Matrix.single i j c := by
   simp [pair, hij.symm]
@@ -78,7 +52,7 @@ private theorem alternating_cycle (i j : Fin n) (h : i ≠ j) (c : K) :
 ring when the matrix size is at least three. -/
 theorem alternatingProductMap_surjective (K : Type*) [CommRing K] (n : ℕ) (hn : 3 ≤ n) :
     Function.Surjective (alternatingProductMap K n) := by
-  apply surjective_of_units (alternatingProductMap K n).toLinearMap
+  apply TauCeti.surjective_to_sl_of_matrix_units (alternatingProductMap K n).toLinearMap
   · intro i j hij c
     obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact ⟨_, alternating_chain i k j hik hkj hij c⟩
@@ -102,7 +76,7 @@ at least three that are nonzero in the scalar field. -/
 theorem symmetricProductMap_surjective (K : Type*) [Field K] (n : ℕ) [NeZero (n : K)]
     (hn : 3 ≤ n) :
     Function.Surjective (symmetricProductMap K n) := by
-  apply surjective_of_units (symmetricProductMap K n).toLinearMap
+  apply TauCeti.surjective_to_sl_of_matrix_units (symmetricProductMap K n).toLinearMap
   · intro i j hij c
     obtain ⟨k, hik, hkj⟩ := exists_third i j hn
     exact ⟨_, symmetric_chain i k j hik hkj hij c⟩
