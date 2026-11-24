@@ -435,43 +435,12 @@ theorem coe_closedNextCollisionHomeomorph_symm (hχ : ContDiff ℝ 2 χ) :
 
 /-! ### The closed cylinder -/
 
-/-- The class in `AddCircle L × [-1, 1]` of the extended next collision of `(s, v)` depends only on
-the class of `s`. -/
-theorem periodic_closedNextCollisionEquiv (v : Icc (-1 : ℝ) 1) :
-    Periodic (fun s : ℝ ↦ Prod.map ((↑) : ℝ → AddCircle χ.period) id
-      (χ.closedNextCollisionEquiv (s, v))) χ.period := by
-  intro s
-  simp
-
-/-- The class in `AddCircle L × [-1, 1]` of the image of `(s, v)` under the inverse of the extended
-next-collision map depends only on the class of `s`. -/
-theorem periodic_closedNextCollisionEquiv_symm (v : Icc (-1 : ℝ) 1) :
-    Periodic (fun s : ℝ ↦ Prod.map ((↑) : ℝ → AddCircle χ.period) id
-      (χ.closedNextCollisionEquiv.symm (s, v))) χ.period := by
-  intro s
-  ext
-  · simp [AddCircle.coe_period]
-  · simp
-
 /-- The billiard map extended to the closed cylinder `AddCircle L × [-1, 1]`, induced by the
 extended next-collision map of the closed strip. It fixes both boundary circles pointwise and
 restricts to the billiard map on the open cylinder. -/
-def closedBilliardMap : AddCircle χ.period × Icc (-1 : ℝ) 1 ≃ AddCircle χ.period × Icc (-1 : ℝ) 1
-    where
-  toFun x := (χ.periodic_closedNextCollisionEquiv x.2).lift x.1
-  invFun x := (χ.periodic_closedNextCollisionEquiv_symm x.2).lift x.1
-  left_inv := by
-    rintro ⟨θ, v⟩
-    induction θ using QuotientAddGroup.induction_on with | H s => ?_
-    simp only [Periodic.lift_coe, Prod.map_fst, Prod.map_snd, id]
-    exact congrArg (Prod.map ((↑) : ℝ → AddCircle χ.period) id)
-      (χ.closedNextCollisionEquiv.symm_apply_apply (s, v))
-  right_inv := by
-    rintro ⟨θ, v⟩
-    induction θ using QuotientAddGroup.induction_on with | H s => ?_
-    simp only [Periodic.lift_coe, Prod.map_fst, Prod.map_snd, id]
-    exact congrArg (Prod.map ((↑) : ℝ → AddCircle χ.period) id)
-      (χ.closedNextCollisionEquiv.apply_symm_apply (s, v))
+def closedBilliardMap :
+    AddCircle χ.period × Icc (-1 : ℝ) 1 ≃ AddCircle χ.period × Icc (-1 : ℝ) 1 :=
+  AddCircle.prodEquivOfLift χ.closedNextCollisionEquiv fun s v ↦ by simp
 
 /-- The extended billiard map sends the class of a state `(s, v)` of the closed strip to the class
 of its extended next collision. -/
@@ -489,8 +458,8 @@ theorem closedBilliardMap_symm_coe (s : ℝ) (v : Icc (-1 : ℝ) 1) :
     χ.closedBilliardMap.symm ((s : AddCircle χ.period), v) =
       ((χ.closedNextParam s (-v) : AddCircle χ.period),
         ⟨-χ.closedNextTangential s (-v), χ.neg_closedNextTangential_neg_mem_Icc s v⟩) := by
-  simp only [closedBilliardMap, Equiv.coe_fn_symm_mk, Periodic.lift_coe,
-    closedNextCollisionEquiv_symm_apply, Prod.map_apply, id]
+  simp only [closedBilliardMap, AddCircle.prodEquivOfLift_symm_coe,
+    closedNextCollisionEquiv_symm_apply]
   rw [← AddCircle.coe_add_period, sub_add_cancel]
 
 /-- The extended billiard map fixes the boundary circle `v = 1` pointwise. -/

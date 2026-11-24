@@ -23,10 +23,12 @@ A map `φ : AddCircle T → AddCircle T` of degree one is described by a lift `F
 of such maps used to work with diffeomorphisms of the circle through their lifts.
 
 A continuous lift makes `φ` continuous, and so does a continuous lift `ℝ × Y → ℝ × Y'` of a map
-`AddCircle T × Y → AddCircle T × Y'` (`AddCircle.continuous_prod_of_lift`). A continuous strictly
-monotone lift makes `φ` a homeomorphism, `AddCircle.homeomorphOfLift`: such a lift maps each
-fundamental interval `(t, t + T]` onto the fundamental interval `(F t, F t + T]`. Derivatives of
-lifts are treated in `TauCeti.Analysis.Calculus.Deriv.AddCircle`.
+`AddCircle T × Y → AddCircle T × Y'` (`AddCircle.continuous_prod_of_lift`). A bijection of
+`ℝ × Y` commuting with the translation by `T` in the first coordinate descends to a bijection of
+`AddCircle T × Y` (`AddCircle.prodEquivOfLift`). A continuous strictly monotone lift makes `φ` a
+homeomorphism, `AddCircle.homeomorphOfLift`: such a lift maps each fundamental interval
+`(t, t + T]` onto the fundamental interval `(F t, F t + T]`. Derivatives of lifts are treated in
+`TauCeti.Analysis.Calculus.Deriv.AddCircle`.
 
 Conversely, every continuous circle map has a continuous lift, by the lifting property of the
 universal covering `ℝ → AddCircle T`, and two continuous lifts of the same map differ by a
@@ -40,6 +42,8 @@ the circle is either strictly monotone of degree one or strictly antitone of deg
 
 * `AddCircle.bijective_of_lift`: a circle map with a continuous strictly monotone lift is
   bijective, and `AddCircle.homeomorphOfLift` is the resulting homeomorphism.
+* `AddCircle.prodEquivOfLift`: the bijection of `AddCircle T × Y` induced by a bijection of
+  `ℝ × Y` that commutes with the translation by `T`.
 * `AddCircle.exists_continuous_lift`: every continuous circle map has a continuous lift.
 * `AddCircle.exists_forall_eq_add_of_lift`: two continuous lifts of the same circle map differ
   by a constant.
@@ -121,6 +125,52 @@ theorem continuous_prod_of_lift {Y Y' : Type*} [TopologicalSpace Y] [Topological
   convert (continuous_quotient_mk'.prodMap continuous_id).comp hG using 1
   funext ⟨x, y⟩
   exact hψ x y
+
+/-- The inverse of a bijection `e` of `ℝ × Y` that commutes with the translation by `T` in the
+first coordinate commutes with it as well. -/
+private theorem symm_add_period_of_lift {Y : Type*} (e : ℝ × Y ≃ ℝ × Y)
+    (he : ∀ (x : ℝ) y, e (x + T, y) = ((e (x, y)).1 + T, (e (x, y)).2)) (x : ℝ) (y : Y) :
+    e.symm (x + T, y) = ((e.symm (x, y)).1 + T, (e.symm (x, y)).2) :=
+  e.symm_apply_eq.2 (by rw [he, Prod.mk.eta, e.apply_symm_apply])
+
+/-- If a map `g` of `ℝ × Y` commutes with the translation by `T` in the first coordinate, then for
+each `y` the class of `g (x, y)` in `AddCircle T × Y` is `T`-periodic in `x`. -/
+private theorem periodic_prod_of_lift {Y : Type*} {g : ℝ × Y → ℝ × Y}
+    (hg : ∀ (x : ℝ) y, g (x + T, y) = ((g (x, y)).1 + T, (g (x, y)).2)) (y : Y) :
+    Function.Periodic (fun x : ℝ ↦ (((g (x, y)).1 : AddCircle T), (g (x, y)).2)) T := fun x ↦ by
+  simp [hg]
+
+/-- A bijection `e` of `ℝ × Y` that commutes with the translation by `T` in the first coordinate
+descends to a bijection of `AddCircle T × Y` (`AddCircle.prodEquivOfLift_coe`). -/
+def prodEquivOfLift {Y : Type*} (e : ℝ × Y ≃ ℝ × Y)
+    (he : ∀ (x : ℝ) y, e (x + T, y) = ((e (x, y)).1 + T, (e (x, y)).2)) :
+    AddCircle T × Y ≃ AddCircle T × Y where
+  toFun x := (periodic_prod_of_lift he x.2).lift x.1
+  invFun x := (periodic_prod_of_lift (symm_add_period_of_lift e he) x.2).lift x.1
+  left_inv := by
+    rintro ⟨θ, y⟩
+    induction θ using QuotientAddGroup.induction_on with | H s => ?_
+    simp
+  right_inv := by
+    rintro ⟨θ, y⟩
+    induction θ using QuotientAddGroup.induction_on with | H s => ?_
+    simp
+
+/-- The bijection `prodEquivOfLift e` sends the class of `(x, y)` to the class of `e (x, y)`. -/
+@[simp]
+theorem prodEquivOfLift_coe {Y : Type*} (e : ℝ × Y ≃ ℝ × Y)
+    (he : ∀ (x : ℝ) y, e (x + T, y) = ((e (x, y)).1 + T, (e (x, y)).2)) (x : ℝ) (y : Y) :
+    prodEquivOfLift e he ((x : AddCircle T), y) = (((e (x, y)).1 : AddCircle T), (e (x, y)).2) := by
+  simp [prodEquivOfLift]
+
+/-- The inverse of `prodEquivOfLift e` sends the class of `(x, y)` to the class of
+`e.symm (x, y)`. -/
+@[simp]
+theorem prodEquivOfLift_symm_coe {Y : Type*} (e : ℝ × Y ≃ ℝ × Y)
+    (he : ∀ (x : ℝ) y, e (x + T, y) = ((e (x, y)).1 + T, (e (x, y)).2)) (x : ℝ) (y : Y) :
+    (prodEquivOfLift e he).symm ((x : AddCircle T), y) =
+      (((e.symm (x, y)).1 : AddCircle T), (e.symm (x, y)).2) := by
+  simp [prodEquivOfLift]
 
 /-- **Lifting circle maps.** Every continuous map `φ` of the circle `AddCircle T` has a continuous
 lift: a continuous `F : ℝ → ℝ` with `φ x = F x` for every real `x`. This is the lifting property
