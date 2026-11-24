@@ -156,11 +156,6 @@ private theorem christoffelDeriv_inr_inl_inr_inl (i l : ι) :
   simp [christoffelDerivOfJet_def, inv_fromBlocks_one hA, Fintype.sum_sum_type, hd₂, hdd₁, hdd₂,
     christoffel_inl_inr_inl hA hd₁ hd₂ hds]
 
-/-- The curvature coefficients of a jet vanish when the two differentiation indices agree. -/
-private theorem riemannOfJet_self (g : Matrix (ι ⊕ Unit) (ι ⊕ Unit) ℝ) (a b c : ι ⊕ Unit) :
-    riemannOfJet g dg ddg a a b c = 0 := by
-  simp [riemannOfJet_def]
-
 include hA hd₁ hd₂ hds in
 private theorem riemann_inl_inl_inl_inl (i j k l : ι) :
     riemannOfJet (fromBlocks A 0 0 1) dg ddg (.inl i) (.inl j) (.inl k) (.inl l) =

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Conco
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.CylinderJet
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.CompTime
 import Mathlib.Analysis.Calculus.IteratedDeriv.FaaDiBruno
+import TauCeti.Analysis.Calculus.FDeriv.Const
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
@@ -109,19 +110,11 @@ theorem chartMetric_apply_of_forall_inner_eq_cylinder
   simp only [toNondegenerateMetric_apply, hG, cylinder_inner]
   simp only [← Trivialization.symmL_apply (R := ℝ) _ hbase,
     ← Trivialization.symmL_apply (R := ℝ) _ hbase₁, tangentSpaceProdEquiv_symmL_trivializationAt hq,
-    TangentBundle.symmL_model_space]
+    TangentBundle.symmL_model_space, NormedSpace.fromTangentSpace_apply]
+  -- `TangentBundle.symmL_model_space` leaves each `ℝ`-component as `1 : ℝ →L[ℝ] ℝ` applied to a
+  -- tangent vector of `ℝ`. Simp cannot rewrite across the `TangentSpace` type synonym, so `rfl`
+  -- identifies `1 v.2 * 1 w.2` with `v.2 * w.2`.
   rfl
-
-/-- At the centre of its chart, the chart metric of a Riemannian metric is the metric itself. -/
-private theorem chartMetric_extChartAt_self_apply
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x : M) (v w : E) :
-    g.toNondegenerateMetric.chartMetric x (extChartAt I x x) v w = g.inner x v w := by
-  have hbase : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt' x
-  rw [ContMDiffNondegenerateMetric.chartMetric_extChartAt_apply _ (mem_extChartAt_source x),
-    ← Trivialization.symmL_apply (R := ℝ) _ hbase, ← Trivialization.symmL_apply (R := ℝ) _ hbase,
-    symmL_trivializationAt_self, symmL_trivializationAt_self]
-  exact g.toNondegenerateMetric_apply x v w
 
 /-- In the product chart at `(x, t)`, a metric which is the cylinder metric `g τ + dτ²` at every
 point `(y, τ)` reads at `(extChartAt I x x, s)` as `g s` at `x` on `E`-vectors. -/
@@ -130,7 +123,8 @@ private theorem chartMetric_extChartAt_self_apply_of_forall_inner_eq_cylinder
     G.toNondegenerateMetric.chartMetric (x, t) (extChartAt I x x, s) (v, 0) (w, 0) =
       (g s).inner x v w := by
   rw [chartMetric_apply_of_forall_inner_eq_cylinder hG x t (mem_extChartAt_target x),
-    chartMetric_extChartAt_self_apply, mul_zero, add_zero]
+    ContMDiffNondegenerateMetric.chartMetric_extChartAt_self_apply, mul_zero, add_zero]
+  exact (g s).toNondegenerateMetric_apply x v w
 
 /-- A metric on `M × ℝ` which is the cylinder metric `g τ + dτ²` at every point `(y, τ)` records a
 smooth path of metrics: the inner product of two fixed tangent vectors at `x` under `g s` is a
@@ -152,20 +146,6 @@ theorem contDiff_inner_of_forall_inner_eq_cylinder
   exact contDiffOn_univ.1 this
 
 /-! ### The coordinate jet of a cylinder over a path of metrics -/
-
-/-- A function which is constant on an open set has vanishing first and second derivatives
-there. -/
-private theorem fderiv_eq_zero_of_eqOn_const {φ : E × ℝ → ℝ} {U : Set (E × ℝ)} (hU : IsOpen U)
-    {c : ℝ} (h : EqOn φ (fun _ ↦ c) U) {w : E × ℝ} (hw : w ∈ U) (u v : E × ℝ) :
-    fderiv ℝ φ w u = 0 ∧ fderiv ℝ (fun w' ↦ fderiv ℝ φ w' u) w v = 0 := by
-  have h₁ {w' : E × ℝ} (hw' : w' ∈ U) : fderiv ℝ φ w' = 0 := by
-    rw [Filter.EventuallyEq.fderiv_eq (Filter.eventuallyEq_of_mem (hU.mem_nhds hw') h),
-      fderiv_const_apply]
-  refine ⟨by simp [h₁ hw], ?_⟩
-  have h₂ : (fun w' ↦ fderiv ℝ φ w' u) =ᶠ[𝓝 w] fun _ ↦ 0 := by
-    filter_upwards [hU.mem_nhds hw] with w' hw'
-    simp [h₁ hw']
-  simp [h₂.fderiv_eq]
 
 section Jet
 
@@ -263,16 +243,6 @@ private theorem deriv_chartMetric_apply_of_forall_inner_eq_cylinder (v w : E) (s
 
 end Jet
 
-/-- The Gram matrix of the chart metric at the centre of the chart is that of the metric. -/
-private theorem toMatrix₂_chartMetric_extChartAt_self
-    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x : M) {ι : Type*}
-    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ E) :
-    LinearMap.toMatrix₂ b b (g.toNondegenerateMetric.chartMetric x (extChartAt I x x)).toBilinForm =
-      of fun i j ↦ g.inner x (b i) (b j) := by
-  ext i j
-  rw [LinearMap.toMatrix₂_apply, ContinuousLinearMap.toBilinForm_apply, of_apply,
-    chartMetric_extChartAt_self_apply]
-
 /-- In the product chart at `(x, t)`, the Gram matrix of a cylinder metric at
 `(extChartAt I x x, t)` in the basis `b.prod (Module.Basis.singleton Unit ℝ)` is block diagonal,
 with the Gram matrix of the chart metric of `g t` and the `1 × 1` identity on the diagonal. -/
@@ -325,7 +295,9 @@ theorem scalarCurvature_eq_of_forall_inner_eq_cylinder [I.Boundaryless] [FiniteD
     trivial
   rw [G.scalarCurvature_eq_scalarCurvatureOfJet bb (mem_extChartAt_source (x, t)) hint₁,
     (g t).scalarCurvature_eq_scalarCurvatureOfJet b (mem_extChartAt_source x) hint₂, hw₀]
-  have hAeq := toMatrix₂_chartMetric_extChartAt_self (g t) x b
+  have hAeq : _ = of fun i j ↦ (g t).inner x (b i) (b j) :=
+    ((g t).toNondegenerateMetric.toMatrix₂_chartMetric_extChartAt_self b x).trans <|
+      congrArg of <| funext₂ fun i j ↦ (g t).toNondegenerateMetric_apply x (b i) (b j)
   have hgram := toMatrix₂_chartMetric_of_forall_inner_eq_cylinder hG x t b
   generalize hA' : LinearMap.toMatrix₂ b b
     ((g t).toNondegenerateMetric.chartMetric x (extChartAt I x x)).toBilinForm = A at hAeq hgram ⊢
@@ -337,10 +309,12 @@ theorem scalarCurvature_eq_of_forall_inner_eq_cylinder [I.Boundaryless] [FiniteD
     rw [hAeq]
     exact IsSymm.ext fun i j ↦ by simp [(g t).symm x (b i) (b j)]
   -- The coefficients involving the `ℝ`-direction are constant near the centre of the chart.
+  have hw₁ : (extChartAt I x x, t) ∈ (extChartAt I x).target ×ˢ (univ : Set ℝ) := ⟨hz₀, trivial⟩
   have hz (a a' : ι ⊕ Unit) (h : (bb a).1 = 0 ∨ (bb a').1 = 0) (u v : E × ℝ) :=
-    fderiv_eq_zero_of_eqOn_const hU
-      (eqOn_chartMetric_apply_of_forall_inner_eq_cylinder hG x t (bb a) (bb a') h)
-      (⟨hz₀, trivial⟩ : (extChartAt I x x, t) ∈ (extChartAt I x).target ×ˢ (univ : Set ℝ)) u v
+    And.intro (DFunLike.congr_fun (TauCeti.fderiv_eq_zero_of_eqOn_const ℝ hU
+        (eqOn_chartMetric_apply_of_forall_inner_eq_cylinder hG x t (bb a) (bb a') h) hw₁) u)
+      (DFunLike.congr_fun (TauCeti.fderiv_fderiv_apply_eq_zero_of_eqOn_const ℝ hU
+        (eqOn_chartMetric_apply_of_forall_inner_eq_cylinder hG x t (bb a) (bb a') h) hw₁ u) v)
   have e₁ (u v w : E) := (fderiv_chartMetric_apply_of_forall_inner_eq_cylinder hG x t hz₀ u 0 v w).1
   have e₂ (u u' v w : E) :=
     (fderiv_chartMetric_apply_of_forall_inner_eq_cylinder hG x t hz₀ u u' v w).2
