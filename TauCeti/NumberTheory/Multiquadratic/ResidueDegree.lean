@@ -87,9 +87,9 @@ No squarefreeness of the radicands is assumed: unramifiedness is proved directly
   independence.
 * `TauCeti.Multiquadratic.inertiaDeg_dvd_two`: at every rational prime, ramified or not, the
   residue degree divides `2`.
-* `NumberField.mem_frobeniusPrimeSet_iff_signPattern`: away from `2 d₁ ⋯ dₙ`, a prime lies in
-  the Frobenius fibre of an automorphism `σ` of the multiquadratic field exactly when its Legendre
-  symbols at the `dᵢ` give the sign pattern of `σ`.
+* `NumberField.Chebotarev.mem_frobeniusPrimeSet_mk_iff_signPattern_eq`: away from `2 d₁ ⋯ dₙ`, a
+  prime lies in the Frobenius fibre of an automorphism `σ` of the multiquadratic field exactly when
+  its Legendre symbols at the `dᵢ` give the sign pattern of `σ`.
 
 ## References
 
@@ -528,7 +528,7 @@ An odd prime dividing no radicand is unramified (`isUnramifiedAt_of_forall_not_d
 Frobenius class is defined, and `NumberField.signPattern_frobenius` reads it off from the Legendre
 symbols. -/
 
-namespace NumberField
+namespace NumberField.Chebotarev
 
 open IsDedekindDomain TauCeti.Multiquadratic
 
@@ -538,7 +538,7 @@ variable {ι : Type*} {L : Type*} [Field L] [CharZero L] {root : ι → L} {d : 
 prime `𝔭` of `𝓞 ℚ` lies in the Frobenius fibre of the automorphism `σ` of
 `M = ℚ(√d₁, …, √dₙ)` exactly when its Legendre symbols at the `dᵢ` give the sign pattern of `σ`.
 No independence of the `dᵢ` is needed. -/
-theorem mem_frobeniusPrimeSet_iff_signPattern
+theorem mem_frobeniusPrimeSet_mk_iff_signPattern_eq
     [NumberField (IntermediateField.adjoin ℚ (Set.range root))]
     [IsGalois ℚ (IntermediateField.adjoin ℚ (Set.range root))]
     (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
@@ -546,7 +546,7 @@ theorem mem_frobeniusPrimeSet_iff_signPattern
       IntermediateField.adjoin ℚ (Set.range root))
     {𝔭 : HeightOneSpectrum (𝓞 ℚ)} (h2 : ((2 : ℤ) : 𝓞 ℚ) ∉ 𝔭.asIdeal)
     (hd : ∀ i, ((d i : ℤ) : 𝓞 ℚ) ∉ 𝔭.asIdeal) :
-    𝔭 ∈ Chebotarev.frobeniusPrimeSet ℚ (IntermediateField.adjoin ℚ (Set.range root))
+    𝔭 ∈ frobeniusPrimeSet ℚ (IntermediateField.adjoin ℚ (Set.range root))
         (ConjClasses.mk σ) ↔
       ∀ i, signPattern root σ i =
         if jacobiSym (d i) (Ideal.absNorm 𝔭.asIdeal) = 1 then 0 else 1 := by
@@ -564,7 +564,7 @@ theorem mem_frobeniusPrimeSet_iff_signPattern
     have : Q.LiesOver (Ideal.span {(p : ℤ)}) := Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 Q
     exact isUnramifiedAt_of_forall_not_dvd (gen_sq_algebraMap_int hroot') adjoin_gen_eq_top hodd
       hcop Q
-  rw [Chebotarev.mem_frobeniusPrimeSet_iff_artinSymbol_eq hur]
+  rw [mem_frobeniusPrimeSet_iff_artinSymbol_eq hur]
   -- A Frobenius `τ` at a prime `Q` over `𝔭` represents the Artin symbol.
   obtain ⟨Q, hQp, hQo⟩ :=
     (inferInstance : Nonempty (𝔭.asIdeal.primesOver
@@ -588,4 +588,4 @@ theorem mem_frobeniusPrimeSet_iff_signPattern
     funext i
     rw [hsign, h, jacobiSym.legendreSym.to_jacobiSym]
 
-end NumberField
+end NumberField.Chebotarev

@@ -26,8 +26,8 @@ The route is Chebotarev for the multiquadratic field `M = ℚ(√d₁, …, √d
 `σ`, whose conjugacy class is `{σ}`. An odd prime `p ∤ d₁ ⋯ dₙ` is unramified in `M`, and the
 arithmetic Frobenius at `p` sends `√dᵢ` to `(dᵢ/p) √dᵢ` (`NumberField.signPattern_frobenius`), so
 `p` lies in the Frobenius fibre of `σ` exactly when `(dᵢ/p) = εᵢ` for all `i`
-(`NumberField.mem_frobeniusPrimeSet_iff_signPattern`). The two sets of primes therefore differ
-in finitely many primes, and the fibre has density `1 / [M : ℚ] = 2^{-n}`
+(`NumberField.Chebotarev.mem_frobeniusPrimeSet_mk_iff_signPattern_eq`). The two sets of primes
+therefore differ in finitely many primes, and the fibre has density `1 / [M : ℚ] = 2^{-n}`
 (`NumberField.Chebotarev.hasDirichletDensity_frobeniusPrimeSet`).
 
 Primes are height-one primes `𝔭` of `𝓞 ℚ`, with rational prime `p = Ideal.absNorm 𝔭`, and the
@@ -118,7 +118,7 @@ theorem hasDirichletDensity_setOf_jacobiSym_eq (d : ι → ℤ)
     exact Ideal.mul_mem_left _ _ (Ideal.mul_mem_right _ _ h))
   have hiff : 𝔭 ∈ NumberField.Chebotarev.frobeniusPrimeSet ℚ (adjoin ℚ (Set.range root))
       (ConjClasses.mk σ) ↔ ∀ i, jacobiSym (d i) (Ideal.absNorm 𝔭.asIdeal) = ε i :=
-    (NumberField.mem_frobeniusPrimeSet_iff_signPattern hroot σ h2 hd).trans
+    (NumberField.Chebotarev.mem_frobeniusPrimeSet_mk_iff_signPattern_eq hroot σ h2 hd).trans
       (forall_congr' fun i ↦ by rw [hσ]; exact (jacobiSym_eq_iff 𝔭 (hd i) (ε i)).symm)
   rw [Set.mem_symmDiff] at h𝔭
   rcases h𝔭 with ⟨hmem, hnot⟩ | ⟨hmem, hnot⟩
