@@ -58,7 +58,7 @@ theorem HarmonicAt.laplacian_comp_nonpos (hh : HarmonicAt h x) (hF : ContDiffAt 
   rw [hh.laplacian_comp hF]
   exact mul_nonpos_of_nonpos_of_nonneg hF₂ (sq_nonneg _)
 
-/-- If `h` is harmonic on a segment `[p, q]`, `F` is twice continuously differentiable (`C²`)
+/-- If `h` is harmonic near a segment `[p, q]`, `F` is twice continuously differentiable (`C²`)
 near each value of `h` on the segment, and the derivative of `F` takes different values at `h p`
 and `h q`, then the Laplacian of `F ∘ h` is nonzero at some point of the open segment `(p, q)`. -/
 theorem HarmonicOnNhd.exists_mem_openSegment_laplacian_comp_ne_zero {p q : E}

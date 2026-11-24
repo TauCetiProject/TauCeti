@@ -35,10 +35,19 @@ metrics of positive scalar curvature on a torus. The harmonic side of that argum
   identity on `(-∞, a]` and constant on `[b, ∞)`.
 * `TauCeti.deriv_concaveTruncation_of_le_left`, `TauCeti.deriv_concaveTruncation_of_right_le`: its
   derivative is `1` on `(-∞, a]` and `0` on `[b, ∞)`.
+* `TauCeti.deriv_concaveTruncation_nonneg`, `TauCeti.deriv_concaveTruncation_le_one`: its
+  derivative lies in `[0, 1]`.
 * `TauCeti.deriv_deriv_concaveTruncation_nonpos`: its second derivative is nonpositive.
 * `TauCeti.concaveTruncation_le_self`, `TauCeti.min_le_concaveTruncation`,
   `TauCeti.concaveTruncation_pos`: it lies between `min s a` and `s`, so it is positive on `(0, ∞)`
   when `a > 0`.
+
+## Implementation notes
+
+Defining a smooth function with prescribed derivative as the primitive of a
+`Real.smoothTransition` cutoff follows the private `capRamp` construction in
+`TauCeti/Geometry/RicciFlow/StandardCap/Profile.lean`, which proves smoothness in the same way via
+`contDiff_infty_iff_deriv`; the two functions themselves differ.
 
 ## References
 
@@ -98,29 +107,32 @@ theorem contDiff_concaveTruncation (a b : ℝ) : ContDiff ℝ ∞ (concaveTrunca
   exact contDiff_const.sub (smoothTransition.contDiff.comp
     ((contDiff_id.sub contDiff_const).div_const _))
 
+/-- The derivative of the concave truncation is nonnegative. -/
+theorem deriv_concaveTruncation_nonneg (a b s : ℝ) : 0 ≤ deriv (concaveTruncation a b) s := by
+  rw [deriv_concaveTruncation]
+  exact sub_nonneg.2 (smoothTransition.le_one _)
+
+/-- The derivative of the concave truncation is at most `1`. -/
+theorem deriv_concaveTruncation_le_one (a b s : ℝ) : deriv (concaveTruncation a b) s ≤ 1 := by
+  rw [deriv_concaveTruncation]
+  exact sub_le_self 1 (smoothTransition.nonneg _)
+
 /-- The concave truncation is nondecreasing. -/
 theorem monotone_concaveTruncation (a b : ℝ) : Monotone (concaveTruncation a b) :=
-  monotone_of_deriv_nonneg (differentiable_concaveTruncation a b) fun s ↦ by
-    rw [deriv_concaveTruncation]
-    exact sub_nonneg.2 (smoothTransition.le_one _)
+  monotone_of_deriv_nonneg (differentiable_concaveTruncation a b)
+    (deriv_concaveTruncation_nonneg a b)
 
-/-- Below `a`, the argument `(t - a) / (b - a)` of the smooth transition is nonpositive. -/
-private theorem div_nonpos_of_le (hab : a ≤ b) {t : ℝ} (ht : t ≤ a) : (t - a) / (b - a) ≤ 0 :=
-  div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 ht) (sub_nonneg.2 hab)
-
-/-- Above `b`, the argument `(t - a) / (b - a)` of the smooth transition is at least `1`. -/
-private theorem one_le_div_of_le (hab : a < b) {t : ℝ} (ht : b ≤ t) : 1 ≤ (t - a) / (b - a) :=
-  (one_le_div (sub_pos.2 hab)).2 (by linarith)
-
-/-- The derivative of the concave truncation is `1` on `(-∞, a]`. -/
+/-- For `a ≤ b`, the derivative of the concave truncation is `1` on `(-∞, a]`. -/
 theorem deriv_concaveTruncation_of_le_left (hab : a ≤ b) (hs : s ≤ a) :
     deriv (concaveTruncation a b) s = 1 := by
-  rw [deriv_concaveTruncation, smoothTransition.zero_of_nonpos (div_nonpos_of_le hab hs), sub_zero]
+  rw [deriv_concaveTruncation, smoothTransition.zero_of_nonpos
+    (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 hs) (sub_nonneg.2 hab)), sub_zero]
 
-/-- The derivative of the concave truncation is `0` on `[b, ∞)`. -/
+/-- For `a < b`, the derivative of the concave truncation is `0` on `[b, ∞)`. -/
 theorem deriv_concaveTruncation_of_right_le (hab : a < b) (hs : b ≤ s) :
     deriv (concaveTruncation a b) s = 0 := by
-  rw [deriv_concaveTruncation, smoothTransition.one_of_one_le (one_le_div_of_le hab hs), sub_self]
+  rw [deriv_concaveTruncation, smoothTransition.one_of_one_le
+    ((one_le_div (sub_pos.2 hab)).2 (sub_le_sub_right hs a)), sub_self]
 
 /-- For `a ≤ b`, the derivative of the concave truncation is nonincreasing. -/
 theorem antitone_deriv_concaveTruncation (hab : a ≤ b) :
@@ -137,9 +149,8 @@ theorem deriv_deriv_concaveTruncation_nonpos (hab : a ≤ b) (s : ℝ) :
 
 /-- For `a ≤ b`, the concave truncation is concave. -/
 theorem concaveOn_concaveTruncation (hab : a ≤ b) : ConcaveOn ℝ univ (concaveTruncation a b) :=
-  (antitone_deriv_concaveTruncation hab).antitoneOn _ |>.concaveOn_of_deriv convex_univ
-    (differentiable_concaveTruncation a b).continuous.continuousOn
-    (differentiable_concaveTruncation a b).differentiableOn
+  (antitone_deriv_concaveTruncation hab).concaveOn_univ_of_deriv
+    (differentiable_concaveTruncation a b)
 
 /-- The concave truncation takes the value `a` at `a`. -/
 @[simp]
@@ -147,15 +158,18 @@ theorem concaveTruncation_left (a b : ℝ) : concaveTruncation a b a = a := by
   simp [concaveTruncation_def]
 
 /-- For `a ≤ b`, the concave truncation is the identity on `(-∞, a]`. -/
+@[simp]
 theorem concaveTruncation_of_le_left (hab : a ≤ b) (hs : s ≤ a) : concaveTruncation a b s = s := by
   rw [concaveTruncation_def, intervalIntegral.integral_congr (g := fun _ ↦ (1 : ℝ)),
     intervalIntegral.integral_const, smul_eq_mul, mul_one, add_sub_cancel]
   intro t ht
   rw [uIcc_of_ge hs] at ht
   dsimp only
-  rw [smoothTransition.zero_of_nonpos (div_nonpos_of_le hab ht.2), sub_zero]
+  rw [smoothTransition.zero_of_nonpos
+    (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 ht.2) (sub_nonneg.2 hab)), sub_zero]
 
 /-- For `a < b`, the concave truncation is constant on `[b, ∞)`. -/
+@[simp]
 theorem concaveTruncation_of_right_le (hab : a < b) (hs : b ≤ s) :
     concaveTruncation a b s = concaveTruncation a b b := by
   have hi (u v : ℝ) := (continuous_one_sub_smoothTransition a b).intervalIntegrable
@@ -167,30 +181,24 @@ theorem concaveTruncation_of_right_le (hab : a < b) (hs : b ≤ s) :
   intro t ht
   rw [uIcc_of_le hs] at ht
   dsimp only
-  rw [smoothTransition.one_of_one_le (one_le_div_of_le hab ht.1), sub_self]
-
-/-- The difference `s - concaveTruncation a b s` is nondecreasing: the derivative of the
-truncation is at most `1`. -/
-private theorem monotone_sub_concaveTruncation (a b : ℝ) :
-    Monotone fun t ↦ t - concaveTruncation a b t :=
-  monotone_of_deriv_nonneg (fun t ↦ ((hasDerivAt_id' t).fun_sub
-    (hasDerivAt_concaveTruncation a b t)).differentiableAt) fun t ↦ by
-      rw [((hasDerivAt_id' t).fun_sub (hasDerivAt_concaveTruncation a b t)).deriv]
-      linarith [smoothTransition.nonneg ((t - a) / (b - a))]
+  rw [smoothTransition.one_of_one_le ((one_le_div (sub_pos.2 hab)).2 (sub_le_sub_right ht.1 a)),
+    sub_self]
 
 /-- For `a ≤ b`, the concave truncation lies below the identity. -/
 theorem concaveTruncation_le_self (hab : a ≤ b) (s : ℝ) : concaveTruncation a b s ≤ s := by
   rcases le_total s a with hs | hs
   · exact (concaveTruncation_of_le_left hab hs).le
-  · have := monotone_sub_concaveTruncation a b hs
-    simp only [concaveTruncation_left, sub_self] at this
+  · have := image_sub_le_mul_sub_of_deriv_le (differentiable_concaveTruncation a b)
+      (deriv_concaveTruncation_le_one a b) hs
+    rw [concaveTruncation_left] at this
     linarith
 
 /-- The concave truncation is at least `min s a`. -/
 theorem min_le_concaveTruncation (a b s : ℝ) : min s a ≤ concaveTruncation a b s := by
   rcases le_total s a with hs | hs
-  · have := monotone_sub_concaveTruncation a b hs
-    simp only [concaveTruncation_left, sub_self] at this
+  · have := image_sub_le_mul_sub_of_deriv_le (differentiable_concaveTruncation a b)
+      (deriv_concaveTruncation_le_one a b) hs
+    rw [concaveTruncation_left] at this
     rw [min_eq_left hs]
     linarith
   · rw [min_eq_right hs]
