@@ -32,7 +32,7 @@ of non-wandering points and proves its basic properties.
   `MeasureTheory.MeasurePreserving.nonwanderingSet_eq_univ`: if `f` is conservative for a measure
   that is positive on nonempty open sets, for instance if it preserves a finite measure of full
   support, every point is non-wandering (topological Poincaré recurrence).
-* `TauCeti.nonwanderingSet_eq_univ_of_dense`: if every point of a dense set is non-wandering, so
+* `Dense.nonwanderingSet_eq_univ`: if every point of a dense set is non-wandering, so
   is every point.
 
 ## References
@@ -61,7 +61,7 @@ theorem mem_nonwanderingSet_iff :
   Iff.rfl
 
 /-- It suffices to test the open neighbourhoods. -/
-theorem mem_nonwanderingSet_iff_isOpen :
+theorem mem_nonwanderingSet_iff_forall_isOpen :
     x ∈ nonwanderingSet f ↔
       ∀ U : Set X, IsOpen U → x ∈ U → ∃ n : ℕ, 0 < n ∧ (f^[n] '' U ∩ U).Nonempty := by
   refine ⟨fun h U hU hx ↦ h U (hU.mem_nhds hx), fun h U hU ↦ ?_⟩
@@ -93,14 +93,14 @@ theorem closure_subset_nonwanderingSet (h : s ⊆ nonwanderingSet f) :
     closure s ⊆ nonwanderingSet f :=
   (isClosed_nonwanderingSet f).closure_subset_iff.2 h
 
-/-- If every point of a dense set is non-wandering, then every point is non-wandering. -/
-theorem nonwanderingSet_eq_univ_of_dense (hs : Dense s) (h : s ⊆ nonwanderingSet f) :
-    nonwanderingSet f = univ :=
-  univ_subset_iff.1 (hs.closure_eq ▸ closure_subset_nonwanderingSet h)
-
 end TauCeti
 
 open TauCeti
+
+/-- If every point of a dense set is non-wandering, then every point is non-wandering. -/
+theorem Dense.nonwanderingSet_eq_univ (hs : Dense s) (h : s ⊆ nonwanderingSet f) :
+    nonwanderingSet f = univ :=
+  univ_subset_iff.1 (hs.closure_eq ▸ closure_subset_nonwanderingSet h)
 
 /-- Every periodic point is non-wandering. -/
 theorem Function.IsPeriodicPt.mem_nonwanderingSet {n : ℕ} (hx : IsPeriodicPt f n x)
@@ -178,7 +178,7 @@ variable [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpe
 nonempty open sets, every point is non-wandering. -/
 theorem Conservative.nonwanderingSet_eq_univ (hf : Conservative f μ) :
     nonwanderingSet f = univ := by
-  refine eq_univ_of_forall fun x ↦ mem_nonwanderingSet_iff_isOpen.2 fun U hU hxU ↦ ?_
+  refine eq_univ_of_forall fun x ↦ mem_nonwanderingSet_iff_forall_isOpen.2 fun U hU hxU ↦ ?_
   obtain ⟨y, hy, m, hm, hmy⟩ :=
     hf.exists_mem_iterate_mem hU.measurableSet.nullMeasurableSet (hU.measure_ne_zero μ ⟨x, hxU⟩)
   exact ⟨m, Nat.pos_of_ne_zero hm, f^[m] y, mem_image_of_mem _ hy, hmy⟩
