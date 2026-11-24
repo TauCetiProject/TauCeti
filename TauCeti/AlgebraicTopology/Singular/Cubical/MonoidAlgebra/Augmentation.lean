@@ -24,7 +24,7 @@ through its augmentation.
 
 The point chain `[y]` of a point `y` (`TauCeti.cubicalChainModulePoint`) is a cycle of augmentation
 `1` in degree `0`, and for a left action the point chain of `g` takes it to `[g • y]`
-(`TauCeti.point_smul_cubicalChainModulePoint`).
+(`TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`).
 
 A homotopy `H` from a constant map at `v` to the identity of `Y` gives, through the cone on cubical
 chains (`TauCeti.NormalizedCubicalChain.cone`), an `R`-linear contracting homotopy `K` of the
@@ -57,7 +57,8 @@ so it also applies to the chains of a space with a left action alone.
   chains of positive dimension.
 * `TauCeti.cubicalChainModuleAugmentation_smul`: `ε (a · m) = ε(a) ε(m)` for a left action.
 * `TauCeti.cubicalChainModuleAugmentation_surjective`: `ε` is onto when `Y` has a point.
-* `TauCeti.point_smul_cubicalChainModulePoint`: for a left action, `[g] · [y] = [g • y]`.
+* `TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`: for a left action,
+  `[g] · [y] = [g • y]`.
 * `TauCeti.cubicalChainModuleDifferential_cone_add_cone_differential`:
   `d (K m) + K (d m) = ε(m) • [v] - m`.
 * `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`: `d (K [y]) = [v] - [y]`.
@@ -212,15 +213,11 @@ theorem cubicalChainModuleAugmentation_smul (a : normalizedCubicalChainAlgebra G
 /-- **Points act on point chains through the action**: the point chain of `g` takes the point chain
 `[y]` to `[g • y]`. -/
 @[simp]
-theorem point_smul_cubicalChainModulePoint (g : G) (y : Y) :
-    cubicalChainLof G R 0 (ofCube G R (SingularCube.point g)) • cubicalChainModulePoint Y H R y =
+theorem cubicalChainPoint_smul_cubicalChainModulePoint (g : G) (y : Y) :
+    cubicalChainPoint G R g • cubicalChainModulePoint Y H R y =
       cubicalChainModulePoint Y H R (g • y) := by
-  rw [cubicalChainModulePoint_def, cubicalChainModulePoint_def, lof_smul_cubicalChainModuleLof,
-    leftAct_ofCube]
-  congr 2
-  ext x
-  rw [ContinuousMap.comp_apply, SingularCube.crossProduct_apply]
-  simp [SingularCube.point_apply]
+  rw [cubicalChainPoint_def, cubicalChainModulePoint_def, cubicalChainModulePoint_def,
+    lof_smul_cubicalChainModuleLof, leftAct_ofCube_point]
 
 end LeftAction
 
