@@ -177,9 +177,14 @@ instance (priority := 100) _root_.SheafOfModules.pullbackIdBraided
     {A : Type u} [TopologicalSpace A]
     (R : Sheaf (Opens.grothendieckTopology A) CommRingCat.{u}) :
     (pullback.{u} (F := 𝟭 (Opens A)) (S := ringCatSheaf R) (R := ringCatSheaf R)
-      (𝟙 (ringCatSheaf R))).Braided :=
-  @pullbackBraided (TopCat.of A) (TopCat.of A) R R (𝟙 _) (𝟙 (ringCatSheaf R))
-    (Functor.isRightAdjoint_of_iso (pushforwardId (ringCatSheaf R)).symm)
+      (𝟙 (ringCatSheaf R))).Braided := by
+  haveI : (Opens.map (𝟙 (TopCat.of A))).IsContinuous
+      (Opens.grothendieckTopology A) (Opens.grothendieckTopology A) :=
+    inferInstanceAs ((𝟭 (Opens A)).IsContinuous _ _)
+  haveI : (pushforward.{u} (F := Opens.map (𝟙 (TopCat.of A)))
+      (S := ringCatSheaf R) (R := ringCatSheaf R) (𝟙 (ringCatSheaf R))).IsRightAdjoint :=
+    Functor.isRightAdjoint_of_iso (pushforwardId (ringCatSheaf R)).symm
+  exact pullbackBraided (𝒪X := R) (𝒪Y := R) (f := 𝟙 (TopCat.of A)) (𝟙 (ringCatSheaf R))
 
 /-- The canonical comparison from identity pullback to the identity functor is monoidal. -/
 instance isMonoidal_pullbackId_hom

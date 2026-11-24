@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
 
-import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
-
 /-!
 # Strong symmetric monoidal pullback
 
@@ -18,8 +16,8 @@ For an arbitrary morphism of ringed spaces, the canonical oplax tensor compariso
 of sheaves of modules is an isomorphism. On stalks this is the standard equivalence distributing
 extension of scalars over tensor products (Stacks Project, Tag 01CD).
 
-The inverse tensor and unit comparisons make pullback strong symmetric monoidal. The canonical
-composition isomorphisms of pullback are monoidal for these structures.
+The inverse tensor and unit comparisons make pullback strong symmetric monoidal. Composition
+coherence for these structures is developed in `Pullback/Composition.lean`.
 
 * `SheafOfModules.pullback_δ_stalk` computes the linear stalk map of the tensor comparison.
 * `SheafOfModules.isIso_pullback_δ` and `SheafOfModules.pullbackBraided` give invertibility
@@ -246,46 +244,6 @@ theorem _root_.SheafOfModules.pullback_ε :
     Functor.LaxMonoidal.ε (_root_.SheafOfModules.pullback.{u} φ) =
       inv (_root_.SheafOfModules.pullbackObjUnitToUnit φ) := by
   simp only [← Functor.Monoidal.inv_η, _root_.SheafOfModules.pullback_η]
-
-section Coherence
-
-open _root_.SheafOfModules
-open Functor.OplaxMonoidal Functor.LaxMonoidal
-
-variable {Z : TopCat.{u}} {𝒪Z : Sheaf (Opens.grothendieckTopology Z) CommRingCat.{u}}
-  {g : Z ⟶ Y}
-  (ψ : ringCatSheaf 𝒪Y ⟶
-    ((Opens.map g).sheafPushforwardContinuous RingCat.{u} _ _).obj (ringCatSheaf 𝒪Z))
-  [(pushforward.{u} ψ).IsRightAdjoint]
-
-/-- Pullback along the composite site functor has the braided structure of pullback
-along the composite map of spaces. -/
-instance (priority := 100) _root_.SheafOfModules.pullbackCompBraided :
-    (pullback.{u} (F := Opens.map f ⋙ Opens.map g) (R := ringCatSheaf 𝒪Z)
-      (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)).Braided :=
-  @pullbackBraided X Z 𝒪X 𝒪Z (g ≫ f)
-    (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)
-    (Functor.isRightAdjoint_of_iso (pushforwardComp.{u} φ ψ))
-
-/-- The canonical comparison from iterated pullback to pullback along the composite is
-monoidal. -/
-instance isMonoidal_pullbackComp_hom :
-    NatTrans.IsMonoidal (pullbackComp.{u} φ ψ).hom := by
-  let G := pullback.{u} (F := Opens.map f ⋙ Opens.map g) (R := ringCatSheaf 𝒪Z)
-    (φ ≫ ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).map ψ)
-  let e := pullbackComp.{u} φ ψ
-  have hη : e.hom.app (𝟙_ _) ≫ η G = η (pullback.{u} φ ⋙ pullback.{u} ψ) := by
-    dsimp only [G]
-    rw [pullback_comp_η φ ψ]
-    simp only [e, Iso.hom_inv_id_app_assoc, Functor.OplaxMonoidal.comp_η]
-  have hδ (M N) : e.hom.app (M ⊗ N) ≫ δ G M N =
-      δ (pullback.{u} φ ⋙ pullback.{u} ψ) M N ≫ (e.hom.app M ⊗ₘ e.hom.app N) := by
-    dsimp only [G]
-    rw [pullback_comp_δ φ ψ M N]
-    simp only [e, Iso.hom_inv_id_app_assoc, Functor.OplaxMonoidal.comp_δ, Category.assoc]
-  exact NatTrans.IsMonoidal.of_oplax e.hom hη hδ
-
-end Coherence
 
 end
 

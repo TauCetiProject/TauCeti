@@ -143,9 +143,10 @@ theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleShea
 
 /-- **Pullback commutes with tensor products of line bundles**: `f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`. On
 underlying sheaves it is the oplax tensor comparison `δ` of module pullback, which is invertible
-because line bundles are quasicoherent, preceded by the transport along `pullback_obj_obj` and the
-pullback of `tensorProductObjIso L K`, and followed by the transports along `pullback_obj_obj` on
-both factors and the inverse of `tensorProductObjIso` of the pulled-back line bundles. -/
+for arbitrary module sheaves (`Scheme.Modules.isIso_pullback_δ`), preceded by the transport along
+`pullback_obj_obj` and the pullback of `tensorProductObjIso L K`, and followed by the transports
+along `pullback_obj_obj` on both factors and the inverse of `tensorProductObjIso` of the
+pulled-back line bundles. -/
 def pullbackTensorProductIso (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
     (pullback f).obj (tensorProduct L K) ≅
       tensorProduct ((pullback f).obj L) ((pullback f).obj K) :=

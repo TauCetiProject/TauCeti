@@ -57,12 +57,12 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 monoidal inclusion and module pullback. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
     ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided := by
-  -- Explicit module carriers let typeclass search match Mathlib's composite instance.
-  let F : QuasicoherentSheaf Y ⥤ Y.Modules := ObjectProperty.ι _
-  let G : Y.Modules ⥤ X.Modules := pullback f
-  letI : F.Braided := ObjectProperty.instBraidedFullSubcategoryι (C := Y.Modules) _
-  letI : G.Braided := Scheme.Modules.pullbackBraided f
-  exact Functor.Braided.instComp F G
+  -- Synthesize with abstract carriers before specializing to the scheme-module aliases.
+  let braidedComp {C D : Type (u + 1)} [Category.{u} C] [Category.{u} D]
+      [MonoidalCategory C] [MonoidalCategory D] [BraidedCategory C] [BraidedCategory D]
+      (P : ObjectProperty C) [P.IsMonoidal] (G : C ⥤ D) [G.Braided] :
+      (P.ι ⋙ G).Braided := inferInstance
+  exact braidedComp (C := Y.Modules) (D := X.Modules) _ (pullback f)
 
 /-- The inverse tensor comparison is the canonical module-pullback tensor comparison. -/
 @[simp]
