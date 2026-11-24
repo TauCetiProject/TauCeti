@@ -35,7 +35,8 @@ both defined through Tricomi's entire function `γ*` of
 * `Complex.lowerIncompleteGamma_neg_natCast`: `γ(−n, ·)` is identically `0`, Mathlib's junk value;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
-  `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12).
+  `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12);
+* `Complex.regularizedGamma_ofReal_im`: `P(a, x)` is real for every real `a` and `0 ≤ x`.
 
 ## Implementation notes
 
@@ -86,6 +87,13 @@ theorem lowerIncompleteGamma_def (a z : ℂ) :
 /-- DLMF 8.2.5: `Q(a, z) = 1 − P(a, z)`. -/
 theorem regularizedGammaQ_def (a z : ℂ) :
     regularizedGammaQ a z = 1 - regularizedGamma a z := (rfl)
+
+/-- `P(a, x) = x^a γ*(a, x)` is real for every real `a` and `0 ≤ x`. -/
+@[simp]
+theorem regularizedGamma_ofReal_im (a : ℝ) {x : ℝ} (hx : 0 ≤ x) :
+    (regularizedGamma a x).im = 0 := by
+  rw [regularizedGamma_def, ← ofReal_cpow hx, ← ofReal_tricomiIncompleteGamma_ofReal_re,
+    ← ofReal_mul, ofReal_im]
 
 /-- DLMF 8.2.5: `P(a, z) + Q(a, z) = 1`. -/
 theorem regularizedGamma_add_regularizedGammaQ (a z : ℂ) :
