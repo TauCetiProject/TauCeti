@@ -19,6 +19,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Dilation
 -- pushforward bounds are used only inside proofs and private helpers.
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.Algebra.Module.Determinant
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -47,8 +48,9 @@ product spaces carrying additive Haar measures `μ` and `ν`, let `b : E'`, and 
 * `TauCeti.Wkp.compAffineL`, `TauCeti.Wkp.compAffineEquiv`: affine pullback and Banach-space
   isomorphism on `W^{k,p}` for `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.value_compAffineL_eq`, `TauCeti.Wkp.iteratedGradient_compAffineL_eq`,
-  `TauCeti.Wkp.value_compAffineL_ae`, `TauCeti.Wkp.iteratedGradient_compAffineL_ae`: bundled and
-  a.e. value and all-order weak-derivative formulas.
+  `TauCeti.Wkp.value_compAffineL_ae`, `TauCeti.Wkp.iteratedGradient_compAffineL_ae`,
+  `TauCeti.Wkp.iteratedGradient_one_compAffineEquiv_ae`: bundled and a.e. value and
+  weak-derivative formulas.
 * `TauCeti.Wkp.toOrderL_compAffineL`, `TauCeti.Wkp.restrictL_compAffineL`: order truncation and
   restriction compatibility.
 * `TauCeti.Wkp.compAffineL_ofTestFunctionₗ`, `TauCeti.Wkp.compAffineEquiv_ofTestFunctionₗ`,
@@ -458,6 +460,17 @@ theorem iteratedGradient_compAffineEquiv_ae (μ : Measure E) [μ.IsAddHaarMeasur
   (compAffineEquiv_apply μ B b hUW (k + 1) u).symm ▸
     iteratedGradient_compAffineL_ae μ B b (hUW ▸ mapsTo_preimage _ _) k u
 
+/-- **Order-two chain rule for `compAffineEquiv`.** The weak Hessian of `u ∘ (B · + b)` is
+`B† ∘L D²u(B · + b) ∘L B` almost everywhere on `U`. -/
+theorem iteratedGradient_one_compAffineEquiv_ae (μ : Measure E) [μ.IsAddHaarMeasure]
+    (B : E ≃L[ℝ] E') (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W)
+    (u : Wkp ν W p 2) :
+    iteratedGradient 1 (compAffineEquiv μ B b hUW 2 u) =ᵐ[μ.restrict U]
+      fun x ↦ (B : E →L[ℝ] E').adjoint.comp
+        ((iteratedGradient 1 u (B x + b)).comp (B : E →L[ℝ] E')) := by
+  filter_upwards [iteratedGradient_compAffineEquiv_ae μ B b hUW 1 u] with x hx
+  rw [hx, ContinuousLinearMap.iteratedGradientPullback_one_apply]
+
 /-- `compAffineEquiv` commutes with forgetting the highest derivative. -/
 theorem lowerOrder_compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
@@ -519,20 +532,17 @@ theorem compAffineL_ofTestFunctionₗ (μ : Measure E) [μ.IsAddHaarMeasure] (B 
       ofTestFunctionₗ k (translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
         (B.symm.transportTestFunction
           (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ)) := by
+  let ψ : 𝓓(U, ℝ) := translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
+    (B.symm.transportTestFunction
+      (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ)
   refine (compAffineL_eq_iff μ B b hUW k _ _).2 ?_
   have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ ν B b hUW
-  filter_upwards [value_ofTestFunctionₗ (mu := μ) (p := p) k _ ▸ testFunctionLp_apply_ae p _,
+  filter_upwards [value_ofTestFunctionₗ (mu := μ) (p := p) k ψ ▸ testFunctionLp_apply_ae p ψ,
     hqmp.ae (value_ofTestFunctionₗ (mu := ν) (p := p) k φ ▸ testFunctionLp_apply_ae p φ)]
     with x hx hy
-  have h1 := translateTestFunction_apply (h := -B.symm b)
-    (mapsTo_preimage (· + -B.symm b) (U : Set E))
-    (B.symm.transportTestFunction
-      (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ) x
-  have h2 := ContinuousLinearEquiv.transportTestFunction_apply B.symm
-    (V := W) (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩)
-    hWU φ (x - -B.symm b)
-  rw [hx, hy, h1, h2]
-  simp
+  simp only [ψ] at hx
+  rw [hx, hy, translateTestFunction_apply]
+  exact (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ _).trans (congrArg φ (by simp))
 
 /-- Pulling back an embedded test function `φ` on `W` by `compAffineEquiv` gives the translated
 and linearly transported test function on `U`. -/
@@ -690,56 +700,31 @@ theorem seminorm_compAffineL_le (B : E ≃L[ℝ] E) (b : E)
 /-- **Full Sobolev norm bound under `MapsTo` (`1 ≤ p ≤ ∞`).** For `x ↦ B x + b` mapping `U` into
 `W`, `‖compAffineL μ B b hUW k u‖ ≤ |det B|⁻¹ ^ (1 / p).toReal * (max 1 ‖B‖) ^ k * ‖u‖`. -/
 theorem norm_compAffineL_le (B : E ≃L[ℝ] E) (b : E)
-    (hUW : MapsTo (fun x ↦ B x + b) U W) :
-    ∀ (k : ℕ) (u : Wkp μ W p k),
-      ‖compAffineL μ B b hUW k u‖ ≤
-        |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * max 1 ‖(B : E →L[ℝ] E)‖ ^ k * ‖u‖
-  -- Order `0`: immediate from `norm_value_compAffineL_le`.
-  | 0, u => by
-      simpa only [value_zero, pow_zero, mul_one] using norm_value_compAffineL_le B b hUW 0 u
-  -- Order `1`: apply the pointwise `W1p` jet-norm bound and affine `Lᵖ` scaling.
-  | 1, u => by
-      have hM : 0 ≤ max 1 ‖(B : E →L[ℝ] E)‖ := zero_le_one.trans (le_max_left _ _)
-      have hpt := W1p.ae_norm_coe_le_mul_of_ae_le
-        (Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ μ B b hUW)
-        (v := firstOrder 0 (compAffineL μ B b hUW 1 u)) (u := firstOrder 0 u) hM
-        (by
-          filter_upwards [value_compAffineL_ae μ B b hUW 1 u] with x hx
-          rw [value_firstOrder, value_firstOrder, hx]
-          exact le_mul_of_one_le_left (norm_nonneg _) (le_max_left _ _))
-        (by
-          filter_upwards [iteratedGradient_compAffineL_ae μ B b hUW 0 u] with x hx
-          rw [firstOrder_zero, firstOrder_zero, ← iteratedGradient_zero, ← iteratedGradient_zero,
-            hx, ContinuousLinearMap.iteratedGradientPullback_zero]
-          refine ((B : E →L[ℝ] E).adjoint.le_opNorm _).trans ?_
-          rw [LinearIsometryEquiv.norm_map]
-          exact mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
-      have h1 := Lp.norm_le_mul_det_inv_of_ae_le B b hUW hM hpt
-      rw [Submodule.norm_coe, Submodule.norm_coe, firstOrder_zero, firstOrder_zero,
-        mul_comm (max 1 ‖(B : E →L[ℝ] E)‖)] at h1
-      rwa [pow_one]
-  -- Order `k + 2`: combine the inductive lower-order bound with the highest-derivative bound.
-  | k + 2, u => by
-      have hlow : ‖lowerOrder (k + 1) (compAffineL μ B b hUW (k + 2) u)‖ ≤
-          |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * max 1 ‖(B : E →L[ℝ] E)‖ ^ (k + 2) *
-            ‖lowerOrder (k + 1) u‖ := by
-        rw [lowerOrder_compAffineL]
-        exact (norm_compAffineL_le B b hUW (k + 1) (lowerOrder (k + 1) u)).trans <|
-          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-            (pow_le_pow_right₀ (le_max_left _ _) (Nat.le_succ _)) (by positivity)) (norm_nonneg _)
-      have hgrad : ‖iteratedGradient (k + 1) (compAffineL μ B b hUW (k + 2) u)‖ ≤
-          |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * max 1 ‖(B : E →L[ℝ] E)‖ ^ (k + 2) *
-            ‖iteratedGradient (k + 1) u‖ := by
-        refine (norm_iteratedGradient_compAffineL_le B b hUW (k + 1) u).trans ?_
-        rw [mul_comm (‖(B : E →L[ℝ] E)‖ ^ (k + 2)) _]
-        gcongr; exact le_max_right _ _
-      refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
-      rw [norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
-          (compAffineL μ B b hUW (k + 2) u),
-        mul_pow, norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u, mul_add,
-        ← mul_pow, ← mul_pow]
-      exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) hlow 2)
-        (pow_le_pow_left₀ (norm_nonneg _) hgrad 2)
+    (hUW : MapsTo (fun x ↦ B x + b) U W) (k : ℕ) (u : Wkp μ W p k) :
+    ‖compAffineL μ B b hUW k u‖ ≤
+      |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * max 1 ‖(B : E →L[ℝ] E)‖ ^ k * ‖u‖ :=
+  norm_le_mul_pow_of_ae_le
+    (Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ μ B b hUW)
+    (fun j w ↦ compAffineL μ B b hUW j w)
+    (fun j w ↦ lowerOrder_compAffineL μ B b hUW j w)
+    (by positivity) (le_max_left 1 ‖(B : E →L[ℝ] E)‖)
+    (fun w ↦ by simpa only [value_zero] using norm_value_compAffineL_le B b hUW 0 w)
+    (fun f g hpt ↦ by
+      rw [mul_comm (_ ^ _) (max _ _)]
+      exact Lp.norm_le_mul_det_inv_of_ae_le B b hUW (zero_le_one.trans (le_max_left _ _)) hpt)
+    (fun w ↦ (value_compAffineL_ae μ B b hUW 1 w).mono fun _ hx ↦ by
+      rw [hx]
+      exact le_mul_of_one_le_left (norm_nonneg _) (le_max_left _ _))
+    (fun w ↦ (iteratedGradient_compAffineL_ae μ B b hUW 0 w).mono fun _ hx ↦ by
+      rw [hx, ContinuousLinearMap.iteratedGradientPullback_zero]
+      refine ((B : E →L[ℝ] E).adjoint.le_opNorm _).trans ?_
+      rw [LinearIsometryEquiv.norm_map]
+      exact mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
+    (fun j w ↦ (norm_iteratedGradient_compAffineL_le B b hUW (j + 1) w).trans <| by
+      rw [mul_comm (‖(B : E →L[ℝ] E)‖ ^ (j + 2)) _]
+      gcongr
+      exact le_max_right _ _)
+    k u
 
 /-- **Operator-norm bound for `compAffineL` (`1 ≤ p ≤ ∞`).** For `x ↦ B x + b` mapping `U` into
 `W`, `‖compAffineL (ν := μ) (p := p) μ B b hUW k‖ ≤ |det B|⁻¹ ^ (1 / p).toReal * (max 1 ‖B‖) ^ k`.
@@ -875,18 +860,13 @@ theorem seminorm_le_mul_seminorm_compAffineEquiv_of_ball_subset (B : E ≃L[ℝ]
 
 /-! ### Exact scaling for homotheties `x ↦ r • x + b` -/
 
-private theorem abs_inv_det_smulLeft_rpow (F : Type*) [AddCommGroup F] [Module ℝ F]
-    [TopologicalSpace F] [ContinuousConstSMul ℝ F]
-    (q : ℝ≥0∞) {r : ℝ} (hr : r ≠ 0) :
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Fact (1 ≤ p)] in
+private theorem abs_inv_det_smulLeft_rpow {r : ℝ} (hr : r ≠ 0) :
     |LinearMap.det
-        ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F)|⁻¹ ^
-        (1 / q).toReal =
-      |r|⁻¹ ^ ((Module.finrank ℝ F : ℝ) / q.toReal) := by
-  have hlin : ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : F ≃L[ℝ] F) : F →ₗ[ℝ] F) =
-      r • LinearMap.id := by
-    ext v
-    simp [Units.smul_def]
-  rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_pow, ← inv_pow,
+        ((ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) : E ≃L[ℝ] E) : E →ₗ[ℝ] E)|⁻¹ ^
+        (1 / p).toReal =
+      |r|⁻¹ ^ ((Module.finrank ℝ E : ℝ) / p.toReal) := by
+  rw [ContinuousLinearEquiv.det_smulLeft, Units.val_mk0, abs_pow, ← inv_pow,
     ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), one_div, ENNReal.toReal_inv,
     div_eq_mul_inv]
 
@@ -896,7 +876,7 @@ theorem norm_value_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) (b : E)
     (k : ℕ) (u : Wkp μ W p k) :
     ‖value k (compAffineEquiv μ (ContinuousLinearEquiv.smulLeft (Units.mk0 r hr)) b hUW k u)‖ =
       |r|⁻¹ ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖value k u‖ := by
-  rw [norm_value_compAffineEquiv, abs_inv_det_smulLeft_rpow E p hr]
+  rw [norm_value_compAffineEquiv, abs_inv_det_smulLeft_rpow hr]
 
 /-- **Exact order-`k + 1` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 order `k` and every exponent `1 ≤ p ≤ ∞`. -/
@@ -917,7 +897,7 @@ theorem norm_iteratedGradient_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) 
       ContinuousLinearMap.iteratedGradientPullback_id, smul_apply,
       ContinuousLinearMap.id_apply]
   rw [Lp.norm_eq_mul_det_inv_of_ae_eq B b hUW (r ^ (k + 1)) hae,
-    abs_inv_det_smulLeft_rpow E p hr, Real.norm_eq_abs, abs_pow]
+    abs_inv_det_smulLeft_rpow hr, Real.norm_eq_abs, abs_pow]
 
 /-- **Exact `Wkp.seminorm` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 derivative order `j ≤ k` and every exponent `1 ≤ p ≤ ∞`. -/

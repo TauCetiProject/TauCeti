@@ -24,10 +24,8 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part on images
 (`MeasureTheory.Measure.addHaar_image_affineMap`,
 `MeasureTheory.Measure.addHaar_image_affineEquiv`) and by the reciprocal factor on preimages when
-its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`,
-`MeasureTheory.Measure.addHaar_eq_abs_det_mul_addHaar_preimage_affineMap`,
-`MeasureTheory.Measure.abs_det_eq_toReal_addHaar_div_preimage_affineMap`), the affine forms of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
+its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`),
+the affine forms of Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
 `MeasureTheory.Measure.addHaar_preimage_linearMap`. Between possibly distinct real normed spaces,
 an invertible affine map `x ↦ B x + b` pushes forward a restricted additive Haar measure with
 scalar factor `addHaarScalarFactor (μ.map B) ν`
@@ -148,28 +146,6 @@ theorem addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F) (hf : LinearMap.det f.l
     ext x
     simpa [mem_preimage] using congrArg (· ∈ s) (f.map_vadd 0 x)
   rw [hpre, addHaar_preimage_linearMap μ hf, measure_preimage_add_right]
-
-/-- For every set `s` (including `∅` and sets of infinite measure) and affine map `f` whose linear
-part has nonzero determinant, the Haar measure of `s` equals `|det f.linear|` times the Haar
-measure of its preimage `f ⁻¹' s`. -/
-theorem addHaar_eq_abs_det_mul_addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F)
-    (hf : LinearMap.det f.linear ≠ 0) (s : Set F) :
-    μ s = ENNReal.ofReal |LinearMap.det f.linear| * μ (f ⁻¹' s) := by
-  rw [addHaar_preimage_affineMap μ f hf, ← mul_assoc, ← ENNReal.ofReal_mul (abs_nonneg _),
-    ← abs_mul, mul_inv_cancel₀ hf, abs_one, ENNReal.ofReal_one, one_mul]
-
-/-- When the preimage `f ⁻¹' s` under an affine map `f` whose linear part has nonzero determinant
-has positive finite Haar measure, `|det f.linear|` equals the volume ratio
-`(μ s).toReal / (μ (f ⁻¹' s)).toReal`. -/
-theorem abs_det_eq_toReal_addHaar_div_preimage_affineMap (f : F →ᵃ[ℝ] F)
-    (hf : LinearMap.det f.linear ≠ 0) {s : Set F}
-    (hs₀ : μ (f ⁻¹' s) ≠ 0) (hstop : μ (f ⁻¹' s) ≠ ∞) :
-    |LinearMap.det f.linear| = (μ s).toReal / (μ (f ⁻¹' s)).toReal := by
-  have hpos : 0 < (μ (f ⁻¹' s)).toReal := ENNReal.toReal_pos hs₀ hstop
-  have hmul : (μ s).toReal = |LinearMap.det f.linear| * (μ (f ⁻¹' s)).toReal := by
-    conv_lhs => rw [addHaar_eq_abs_det_mul_addHaar_preimage_affineMap μ f hf s]
-    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
-  rw [hmul, mul_div_cancel_right₀ _ hpos.ne']
 
 /-- **Linear change of variables.** Substituting `x = N y` for an invertible linear map `N`
 multiplies an integral against an additive Haar measure by `|det N|`. -/

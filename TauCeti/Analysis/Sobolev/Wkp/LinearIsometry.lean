@@ -73,65 +73,23 @@ private theorem measurePreserving_restrict (he : MeasurePreserving e μ ν)
     MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
   hUW ▸ he.restrict_preimage W.isOpen.measurableSet
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
-  [FiniteDimensional ℝ E'] [BorelSpace E'] [ν.IsAddHaarMeasure] [Fact (1 ≤ p)] in
-private theorem lp_norm_eq_of_ae_norm_eq {G₁ G₂ : Type*}
-    [NormedAddCommGroup G₁] [NormedAddCommGroup G₂]
-    (hres : MeasurePreserving e (μ.restrict U) (ν.restrict W))
-    {f : Lp G₁ p (μ.restrict U)} {g : Lp G₂ p (ν.restrict W)}
-    (hpt : ∀ᵐ x ∂μ.restrict U, ‖f x‖ = ‖g (e x)‖) : ‖f‖ = ‖g‖ := by
-  have hm : AEStronglyMeasurable g (ν.restrict W) := Lp.aestronglyMeasurable _
-  rw [Lp.norm_def, Lp.norm_def]
-  exact congrArg ENNReal.toReal <|
-    (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-      (hm.comp_quasiMeasurePreserving hres.quasiMeasurePreserving) hpt).trans
-      (eLpNorm_comp_measurePreserving hm hres)
-
 private theorem norm_compAffineEquiv_zero (he : MeasurePreserving e μ ν)
-    (hUW : (U : Set E) = e ⁻¹' W) :
-    ∀ (k : ℕ) (u : Wkp ν W p k),
-      ‖compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u‖ = ‖u‖
-  | 0, u => by
-    rw [← value_zero (compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 0 u)]
-    conv_rhs => rw [← value_zero u]
-    exact lp_norm_eq_of_ae_norm_eq (measurePreserving_restrict he hUW) <| by
-      filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (by simpa using hUW)
-        0 u] with x hx
-      rw [hx, add_zero]
-      rfl
-  | 1, u => by
-    have hpt := W1p.ae_norm_coe_eq_of_ae_eq
-      (measurePreserving_restrict he hUW).quasiMeasurePreserving
-      (v := firstOrder 0 (compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 1 u))
-      (u := firstOrder 0 u)
-      (by
-        filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
-          (by simpa using hUW) 1 u] with x hx
-        rw [value_firstOrder 0, value_firstOrder 0, hx, add_zero]
-        rfl)
-      (by
-        filter_upwards [iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
-          (by simpa using hUW) 0 u] with x hx
-        rw [firstOrder_zero, firstOrder_zero, ← iteratedGradient_zero, ← iteratedGradient_zero, hx,
-          add_zero, LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm]
-        exact (e.iteratedGradientCongr 0).symm.norm_map _)
-    have h1 := lp_norm_eq_of_ae_norm_eq (measurePreserving_restrict he hUW) hpt
-    rwa [Submodule.norm_coe, Submodule.norm_coe, firstOrder_zero, firstOrder_zero] at h1
-  | k + 2, u => by
-    let w := compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) (k + 2) u
-    have hlow : ‖lowerOrder (k + 1) w‖ = ‖lowerOrder (k + 1) u‖ := by
-      dsimp only [w]
-      rw [lowerOrder_compAffineEquiv]
-      exact norm_compAffineEquiv_zero he hUW (k + 1) (lowerOrder (k + 1) u)
-    have hgrad : ‖iteratedGradient (k + 1) w‖ = ‖iteratedGradient (k + 1) u‖ := by
-      refine lp_norm_eq_of_ae_norm_eq (measurePreserving_restrict he hUW) ?_
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
+    ‖compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u‖ = ‖u‖ :=
+  norm_eq_of_measurePreserving (measurePreserving_restrict he hUW)
+    (fun j w ↦ compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) j w)
+    (fun j w ↦ lowerOrder_compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) j w)
+    (fun j w ↦ by
+      filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
+        (by simpa using hUW) j w] with x hx
+      rw [hx, add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv])
+    (fun j w ↦ by
       filter_upwards [iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
-        (by simpa using hUW) (k + 1) u] with x hx
-      rw [hx, add_zero, LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm]
-      exact (e.iteratedGradientCongr (k + 1)).symm.norm_map _
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-    rw [norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k w,
-      norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u, hlow, hgrad]
+        (by simpa using hUW) j w] with x hx
+      rw [hx, add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+        LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm]
+      exact (e.iteratedGradientCongr j).symm.norm_map _)
+    k u
 
 /-- **Transport of `W^{k,p}` along a linear isometry.** If the linear isometry `e` carries `μ`
 to `ν` and `U = e⁻¹(W)`, precomposition with `e` is a linear isometric equivalence
@@ -144,6 +102,13 @@ def compLinearIsometryEquiv (he : MeasurePreserving e μ ν) (hUW : (U : Set E) 
     (compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k).toLinearEquiv
   norm_map' := norm_compAffineEquiv_zero he hUW k
 
+/-- Evaluating `compLinearIsometryEquiv` applies `compAffineEquiv` with zero translation. -/
+theorem compLinearIsometryEquiv_apply (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
+    compLinearIsometryEquiv he hUW k u =
+      compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u := by
+  simp [compLinearIsometryEquiv]
+
 /-- For a measure-preserving linear isometry `e`, `compAffineL` with zero translation agrees with
 `TauCeti.Wkp.compLinearIsometryEquiv`. -/
 theorem compAffineL_eq_compLinearIsometryEquiv {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -151,8 +116,8 @@ theorem compAffineL_eq_compLinearIsometryEquiv {μ : Measure E} [μ.IsAddHaarMea
     (u : Wkp ν W p k) :
     compAffineL μ e.toContinuousLinearEquiv 0
         (fun x hx ↦ by simpa [hUW] using hx) k u =
-      compLinearIsometryEquiv he hUW k u :=
-  (compAffineEquiv_apply μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u).symm
+      compLinearIsometryEquiv he hUW k u := by
+  rw [compLinearIsometryEquiv_apply, compAffineEquiv_apply]
 
 /-- The inverse of the transport along `e` is the transport along `e⁻¹`. -/
 theorem compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν)
@@ -160,18 +125,20 @@ theorem compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν)
     (hWU : (W : Set E') = e.symm ⁻¹' U) (k : ℕ) :
     (compLinearIsometryEquiv (p := p) he hUW k).symm = compLinearIsometryEquiv he' hWU k := by
   refine LinearIsometryEquiv.ext fun u ↦ (compLinearIsometryEquiv he hUW k).injective ?_
-  rw [LinearIsometryEquiv.apply_symm_apply]
+  rw [LinearIsometryEquiv.apply_symm_apply, compLinearIsometryEquiv_apply]
   refine Eq.symm <| (compAffineEquiv_eq_iff μ _ 0 (by simpa using hUW) k _ _).2 ?_
   filter_upwards [(measurePreserving_restrict he hUW).quasiMeasurePreserving.ae
     (value_compAffineEquiv_ae ν e.symm.toContinuousLinearEquiv 0 (by simpa using hWU) k u)]
     with x hx
-  simpa [compLinearIsometryEquiv] using hx.symm
+  rw [compLinearIsometryEquiv_apply]
+  simpa using hx.symm
 
 /-- The value of `u ∘ e` is the value of `u` composed with `e`. -/
 theorem value_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
     value k (compLinearIsometryEquiv he hUW k u) =ᵐ[μ.restrict U] fun x => value k u (e x) := by
-  simpa [compLinearIsometryEquiv] using
+  rw [compLinearIsometryEquiv_apply]
+  simpa only [add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
     value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u
 
 /-- **The chain rule for the highest derivative.** The weak derivative of order `k + 1` of `u ∘ e`
@@ -181,57 +148,50 @@ theorem iteratedGradient_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u) =ᵐ[μ.restrict U]
       fun x => (e.iteratedGradientCongr k).symm (iteratedGradient k u (e x)) := by
+  rw [compLinearIsometryEquiv_apply]
   filter_upwards [iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
     (by simpa using hUW) k u] with x hx
-  simpa [compLinearIsometryEquiv,
-    LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm] using hx
+  simpa only [add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm,
+    LinearIsometryEquiv.toContinuousLinearEquiv_symm, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv] using hx
 
 /-- The transport commutes with forgetting the highest derivative. -/
 theorem lowerOrder_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     lowerOrder k (compLinearIsometryEquiv he hUW (k + 1) u) =
-      compLinearIsometryEquiv he hUW k (lowerOrder k u) :=
-  lowerOrder_compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u
+      compLinearIsometryEquiv he hUW k (lowerOrder k u) := by
+  rw [compLinearIsometryEquiv_apply, compLinearIsometryEquiv_apply, lowerOrder_compAffineEquiv]
 
 /-- The transport of a test function `φ` on `W` is the test function `φ ∘ e` on `U`. -/
 theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (hWU : MapsTo e.symm W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compLinearIsometryEquiv he hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
       ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction hWU φ) := by
-  have h := compAffineEquiv_ofTestFunctionₗ (ν := ν) (p := p) μ e.toContinuousLinearEquiv 0
-    (by simpa using hUW) k φ
-  refine h.trans (congrArg (ofTestFunctionₗ k) ?_)
+  rw [compLinearIsometryEquiv_apply]
+  refine (compAffineEquiv_ofTestFunctionₗ (ν := ν) (p := p) μ e.toContinuousLinearEquiv 0
+    (by simpa using hUW) k φ).trans (congrArg (ofTestFunctionₗ k) ?_)
   ext x
-  have h1 := translateTestFunction_apply (h := -e.toContinuousLinearEquiv.symm 0)
-    (mapsTo_preimage _ (U : Set E))
-    (e.toContinuousLinearEquiv.symm.transportTestFunction (V := W)
-      (Ω := ⟨(· + -e.toContinuousLinearEquiv.symm 0) ⁻¹' U,
-        U.isOpen.preimage (continuous_add_const _)⟩)
-      (e.toContinuousLinearEquiv.toLinearEquiv.mapsTo_symm_add_neg 0 (by simpa using hUW)) φ) x
-  have h2 := ContinuousLinearEquiv.transportTestFunction_apply
-    e.toContinuousLinearEquiv.symm (V := W)
-    (Ω := ⟨(· + -e.toContinuousLinearEquiv.symm 0) ⁻¹' U,
-      U.isOpen.preimage (continuous_add_const _)⟩)
-    (e.toContinuousLinearEquiv.toLinearEquiv.mapsTo_symm_add_neg 0 (by simpa using hUW)) φ
-    (x - -e.toContinuousLinearEquiv.symm 0)
-  have h3 := ContinuousLinearEquiv.transportTestFunction_apply
-    e.symm.toContinuousLinearEquiv hWU φ x
-  rw [h1, h2, h3]
-  simp
+  rw [translateTestFunction_apply]
+  refine (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ _).trans ?_
+  refine Eq.trans ?_ (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ _).symm
+  simp [← LinearIsometryEquiv.toContinuousLinearEquiv_symm]
 
 /-- The transport maps `W^{k,p}_0(W)` into `W^{k,p}_0(U)`. -/
 theorem compLinearIsometryEquiv_mem_wkp0Submodule (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) {u : Wkp ν W p k} (hu : u ∈ wkp0Submodule ν W p k) :
-    compLinearIsometryEquiv he hUW k u ∈ wkp0Submodule μ U p k :=
-  compAffineEquiv_mem_wkp0Submodule μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k hu
+    compLinearIsometryEquiv he hUW k u ∈ wkp0Submodule μ U p k := by
+  rw [compLinearIsometryEquiv_apply]
+  exact compAffineEquiv_mem_wkp0Submodule μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k hu
 
 /-- **Zero boundary values are invariant under linear isometries.** The transport `u ∘ e` lies in
 `W^{k,p}_0(U)` exactly when `u` lies in `W^{k,p}_0(W)`. -/
 @[simp]
 theorem compLinearIsometryEquiv_mem_wkp0Submodule_iff (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) {u : Wkp ν W p k} :
-    compLinearIsometryEquiv he hUW k u ∈ wkp0Submodule μ U p k ↔ u ∈ wkp0Submodule ν W p k :=
-  compAffineEquiv_mem_wkp0Submodule_iff μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k
+    compLinearIsometryEquiv he hUW k u ∈ wkp0Submodule μ U p k ↔ u ∈ wkp0Submodule ν W p k := by
+  rw [compLinearIsometryEquiv_apply]
+  exact compAffineEquiv_mem_wkp0Submodule_iff μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k
 
 end Wkp
 

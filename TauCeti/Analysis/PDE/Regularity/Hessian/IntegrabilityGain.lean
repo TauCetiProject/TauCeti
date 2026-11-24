@@ -405,11 +405,8 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
       Wkp.value_compAffineEquiv_ae (U := ⊤) volume e 0 (by simp) 2 u
   have hwD : Wkp.iteratedGradient 1 w =ᵐ[volume] fun x ↦
       (e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : E →L[ℝ] E) := by
-    have hD := Wkp.iteratedGradient_compAffineEquiv_ae (U := ⊤) volume e 0 (by simp) 1 u
-    rw [Measure.ae_restrict_coe_opens_top] at hD
-    filter_upwards [hD] with x hx
-    rw [hx, add_zero, ContinuousLinearMap.iteratedGradientPullback_succ_apply,
-      ContinuousLinearMap.iteratedGradientPullback_zero]
+    simpa [Measure.ae_restrict_coe_opens_top] using
+      Wkp.iteratedGradient_one_compAffineEquiv_ae (U := ⊤) volume e 0 (by simp) u
   have hadj := hqe.ae ((Measure.ae_restrict_coe_opens_top (volume : Measure E)) ▸
     Wkp.adjoint_iteratedGradient_one_ae_eq u)
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` close to `1`.

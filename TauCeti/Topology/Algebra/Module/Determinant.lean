@@ -43,8 +43,9 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 * `ContinuousLinearMap.det_one_sub_comp_comm`: Sylvester's identity
   `det (1 - X ∘L Y) = det (1 - Y ∘L X)` for continuous linear maps between free modules of finite
   rank, read from `LinearMap.det_one_sub_comp_comm`.
-* `ContinuousLinearEquiv.det_piCongrRight`, `ContinuousLinearEquiv.det_negCoord`: the determinants
-  of a coordinatewise continuous linear equivalence and of a single-coordinate negation.
+* `ContinuousLinearEquiv.det_piCongrRight`, `ContinuousLinearEquiv.det_negCoord`,
+  `ContinuousLinearEquiv.det_smulLeft`: the determinants of a coordinatewise continuous linear
+  equivalence, of a single-coordinate negation, and of left multiplication by a unit.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
   bound `1 - δ re (trace H) - P δ² ≤ ‖det (1 - δ H)‖` for `0 ≤ δ ≤ 1`.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
@@ -255,5 +256,15 @@ theorem det_negCoord_ring [Finite ι] [DecidableEq ι] [TopologicalSpace R] [Con
   rw [det_negCoord, CommSemiring.finrank_self, pow_one]
 
 end PiDet
+
+/-- Left multiplication by a unit `r : Rˣ` on a free module has determinant
+`(r : R) ^ finrank R M`. -/
+theorem det_smulLeft {R M : Type*} [CommRing R] [TopologicalSpace M] [AddCommGroup M]
+    [Module R M] [ContinuousConstSMul R M] [Module.Free R M] (r : Rˣ) :
+    LinearMap.det ((smulLeft r : M ≃L[R] M) : M →ₗ[R] M) = (r : R) ^ Module.finrank R M := by
+  have hlin : ((smulLeft r : M ≃L[R] M) : M →ₗ[R] M) = (r : R) • LinearMap.id := by
+    ext v
+    simp [Units.smul_def]
+  rw [hlin, LinearMap.det_smul, LinearMap.det_id, mul_one]
 
 end ContinuousLinearEquiv

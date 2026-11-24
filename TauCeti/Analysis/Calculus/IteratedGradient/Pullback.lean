@@ -88,6 +88,12 @@ theorem iteratedGradientPullback_succ_apply (B : E →L[ℝ] E') (j : ℕ)
       ((B.iteratedGradientPullback j).comp (G.comp B) : E →L[ℝ] TauCeti.IteratedGradient E j) :=
   (rfl)
 
+/-- At index `1` (second derivatives), the pullback of `G : E' →L[ℝ] E'` along `B : E →L[ℝ] E'`
+is the adjoint sandwich `B† ∘L G ∘L B`. -/
+theorem iteratedGradientPullback_one_apply (B : E →L[ℝ] E') (G : TauCeti.IteratedGradient E' 1) :
+    B.iteratedGradientPullback 1 G = B.adjoint.comp (G.comp B) :=
+  (rfl)
+
 /-- Evaluating a pulled-back iterated gradient of index `j + 1` at a direction `v` evaluates at
 `B v` and pulls back the resulting index-`j` field. -/
 theorem iteratedGradientPullback_succ_apply_apply (B : E →L[ℝ] E') (j : ℕ)

@@ -344,10 +344,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   have hD : Wkp.iteratedGradient 1 v =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict
       (normalHalfSpace (E := E) (a / c))] fun x =>
       (e : _ →L[ℝ] _).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : _ →L[ℝ] _) := by
-    filter_upwards [Wkp.iteratedGradient_compAffineEquiv_ae volume e 0 (by simpa using hH a) 1 u]
-      with x hx
-    rw [hx, add_zero, ContinuousLinearMap.iteratedGradientPullback_succ_apply,
-      ContinuousLinearMap.iteratedGradientPullback_zero]
+    simpa using Wkp.iteratedGradient_one_compAffineEquiv_ae volume e 0 (by simpa using hH a) u
   have h0 : Wkp.firstOrder 1 v ∈ w1p0Submodule volume (normalHalfSpace (a / c)) p := by
     rw [Wkp.firstOrder_compAffineEquiv, ← wkp0Submodule_one]
     rw [← wkp0Submodule_one] at hu
