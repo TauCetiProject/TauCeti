@@ -137,6 +137,7 @@ theorem IntertwiningMap.smoothDualMap_id :
     (IntertwiningMap.id ρ).smoothDualMap = IntertwiningMap.id ρ.smoothDual :=
   IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
 
+@[simp]
 theorem IntertwiningMap.smoothDualMap_comp (f : IntertwiningMap ρ σ) (f' : IntertwiningMap σ τ) :
     (f'.comp f).smoothDualMap = f.smoothDualMap.comp f'.smoothDualMap :=
   IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
