@@ -37,10 +37,12 @@ If `0 ≤ D ≤ C` in the Loewner order then `‖D x‖² ≤ ‖C‖ re ⟪D x,
 (`ContinuousLinearMap.norm_apply_sq_le_of_nonneg_of_le`), obtained without square roots by
 expanding `re ⟪D (c x - D x), c x - D x⟫ ≥ 0` with `c = ‖C‖`. Hence the operator norm is monotone
 on positive operators (`ContinuousLinearMap.norm_le_norm_of_nonneg_of_le`), for real as well as
-complex scalars. Powers of a positive operator are positive
-(`ContinuousLinearMap.IsPositive.pow`), and the powers of a positive contraction `0 ≤ T ≤ 1`
-decrease (`ContinuousLinearMap.pow_le_pow_of_le_one`), because `T - T²` is the positive sum
-`(1 - T) T (1 - T) + T (1 - T) T`. These inequalities drive Vigier's monotone convergence theorem.
+complex scalars. Conjugating a positive operator by a symmetric one keeps it positive
+(`ContinuousLinearMap.IsPositive.conj_of_isSymmetric`), with no completeness assumption. Powers
+of a positive operator are positive (`ContinuousLinearMap.IsPositive.pow`), and the powers of a
+positive contraction `0 ≤ T ≤ 1` decrease (`ContinuousLinearMap.pow_le_pow_of_le_one`), because
+`T - T²` is the positive sum `(1 - T) T (1 - T) + T (1 - T) T`. These inequalities drive Vigier's
+monotone convergence theorem.
 
 A vector on which the quadratic form of a positive endomorphism vanishes lies in its kernel
 (`LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero`).
@@ -210,14 +212,16 @@ private theorem pow_mul_mul_pow (T : E →L[𝕜] E) (k : ℕ) :
   congr 1
   ring
 
-/-- Conjugating a positive operator by a symmetric one gives a positive operator. -/
-private theorem isPositive_mul_mul_of_isSymmetric {S A : E →L[𝕜] E}
-    (hS : (S : E →ₗ[𝕜] E).IsSymmetric) (hA : A.IsPositive) : (S * A * S).IsPositive := by
+/-- Conjugating a positive operator by a symmetric one gives a positive operator. Unlike
+Mathlib's `ContinuousLinearMap.IsPositive.conj_adjoint`, this needs no completeness of `E`. -/
+@[aesop safe apply]
+theorem IsPositive.conj_of_isSymmetric {S A : E →L[𝕜] E} (hA : A.IsPositive)
+    (hS : (S : E →ₗ[𝕜] E).IsSymmetric) : (S * A * S).IsPositive := by
   refine ⟨fun x y => ?_, fun x => ?_⟩
   · calc ⟪S (A (S x)), y⟫_𝕜 = ⟪A (S x), S y⟫_𝕜 := hS _ _
       _ = ⟪S x, A (S y)⟫_𝕜 := hA.isSymmetric _ _
       _ = ⟪x, S (A (S y))⟫_𝕜 := hS _ _
-  · change 0 ≤ RCLike.re ⟪S (A (S x)), x⟫_𝕜
+  · rw [reApplyInnerSelf_apply, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp]
     rw [show ⟪S (A (S x)), x⟫_𝕜 = ⟪A (S x), S x⟫_𝕜 from hS _ _]
     exact hA.re_inner_nonneg_left (S x)
 
@@ -237,13 +241,12 @@ private theorem pow_succ_le_pow {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 
   · have h : T ^ (2 * k) - T ^ (2 * k + 1) = T ^ k * (1 - T) * T ^ k := by
       rw [mul_sub, sub_mul, mul_one, ← pow_add, pow_mul_mul_pow, two_mul]
     rw [h]
-    exact isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) h1'
+    exact h1'.conj_of_isSymmetric (isSymmetric_pow hT k)
   · -- `T - T² = (1 - T) T (1 - T) + T (1 - T) T` is positive.
     have hTT : (T - T * T).IsPositive := by
       have h : T - T * T = (1 - T) * T * (1 - T) + T * (1 - T) * T := by noncomm_ring
       rw [h]
-      exact (isPositive_mul_mul_of_isSymmetric h1'.isSymmetric hT).add
-        (isPositive_mul_mul_of_isSymmetric hsa h1')
+      exact (hT.conj_of_isSymmetric h1'.isSymmetric).add (h1'.conj_of_isSymmetric hsa)
     have h : T ^ (2 * k + 1) - T ^ (2 * k + 1 + 1) = T ^ k * (T - T * T) * T ^ k := by
       have h2 : T ^ k * (T * T) * T ^ k = T ^ (2 * k + 1 + 1) := by
         rw [← mul_assoc, ← pow_succ, ← pow_succ, ← pow_add]
@@ -251,15 +254,14 @@ private theorem pow_succ_le_pow {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 
         ring
       rw [mul_sub, sub_mul, pow_mul_mul_pow, h2]
     rw [h]
-    exact isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) hTT
+    exact hTT.conj_of_isSymmetric (isSymmetric_pow hT k)
 
 /-- The powers of a positive operator are positive. -/
 theorem IsPositive.pow {T : E →L[𝕜] E} (hT : T.IsPositive) (n : ℕ) : (T ^ n).IsPositive := by
   obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
-  · rw [two_mul, pow_add, ← mul_one (T ^ k)]
-    simpa using isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) isPositive_one
+  · simpa [← pow_add, ← two_mul] using isPositive_one.conj_of_isSymmetric (isSymmetric_pow hT k)
   · rw [← pow_mul_mul_pow]
-    exact isPositive_mul_mul_of_isSymmetric (isSymmetric_pow hT k) hT
+    exact hT.conj_of_isSymmetric (isSymmetric_pow hT k)
 
 /-- The powers of a positive contraction `0 ≤ T ≤ 1` decrease in the Loewner order. -/
 theorem pow_le_pow_of_le_one {T : E →L[𝕜] E} (h0 : 0 ≤ T) (h1 : T ≤ 1) {m n : ℕ}

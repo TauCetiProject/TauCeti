@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
+public import TauCeti.Analysis.LocallyConvex.StrongOperatorTopology
 public import Mathlib.Analysis.Normed.Operator.Completeness
 public import Mathlib.Order.ConditionallyCompletePartialOrder.Indexed
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
@@ -29,8 +30,9 @@ projection lattices and normal functionals on von Neumann algebras are built on.
 The convergence rests on the inequality `‖D x‖² ≤ ‖C‖ re ⟪D x, x⟫` for `0 ≤ D ≤ C`
 (`ContinuousLinearMap.norm_apply_sq_le_of_nonneg_of_le`): applied to the increments of the net,
 it makes the net pointwise Cauchy, since the increasing quadratic forms `re ⟪f i x, x⟫` converge.
-Positivity passes to strong limits (`ContinuousLinearMap.IsPositive.of_tendsto_pointwise`), which
-identifies the limit as the least upper bound.
+Positivity passes to strong limits (`ContinuousLinearMap.IsPositive.of_tendsto_pointwise`, in
+`TauCeti.Analysis.LocallyConvex.StrongOperatorTopology`), which identifies the limit as the least
+upper bound.
 
 ## References
 
@@ -45,18 +47,6 @@ open scoped InnerProductSpace
 namespace ContinuousLinearMap
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- A strong limit of positive operators is positive. -/
-theorem IsPositive.of_tendsto_pointwise {ι : Type*} {l : Filter ι} [l.NeBot]
-    {T : ι → E →L[𝕜] E} {T₀ : E →L[𝕜] E} (hT : ∀ᶠ i in l, (T i).IsPositive)
-    (hlim : ∀ x, Tendsto (fun i => T i x) l (𝓝 (T₀ x))) : T₀.IsPositive := by
-  refine ⟨fun x y => ?_, fun x => ?_⟩
-  · exact tendsto_nhds_unique
-      (((hlim x).inner tendsto_const_nhds).congr' (hT.mono fun i hi => hi.isSymmetric x y))
-      (tendsto_const_nhds.inner (hlim y))
-  · rw [reApplyInnerSelf_apply]
-    exact ge_of_tendsto ((RCLike.continuous_re.tendsto _).comp
-      ((hlim x).inner tendsto_const_nhds)) (hT.mono fun i hi => hi.re_inner_nonneg_left x)
 
 /-- A monotone net of operators converging strongly to `T` has `T` as its least upper bound in
 the Loewner order. -/

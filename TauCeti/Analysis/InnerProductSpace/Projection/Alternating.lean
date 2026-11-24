@@ -148,13 +148,13 @@ theorem tendsto_toPointwiseConvergenceCLM_starProjection_mul_pow :
       (fun n => ((K.starProjection * L.starProjection * K.starProjection) ^ n) y) atTop
       (𝓝 ((K ⊓ L).starProjection y)) := PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp
     (tendsto_toPointwiseConvergenceCLM_starProjection_mul_mul_pow K L)
-  refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr fun x => ?_
-  have h := hlim (K.starProjection (L.starProjection x))
-  rw [hR] at h
-  refine (tendsto_add_atTop_iff_nat 1).mp (h.congr fun n => ?_)
-  -- Both sides agree by definition: evaluation through `toPointwiseConvergenceCLM` is evaluation
-  -- of the operator, and `((p q p)ⁿ (p q)) x` is `(p q p)ⁿ (p (q x))`.
-  rw [hpow]
-  rfl
+  have key : ∀ x, Tendsto (fun n => ((K.starProjection * L.starProjection) ^ n) x) atTop
+      (𝓝 ((K ⊓ L).starProjection x)) := fun x => by
+    have h := hlim (K.starProjection (L.starProjection x))
+    rw [hR] at h
+    refine (tendsto_add_atTop_iff_nat 1).mp (h.congr fun n => ?_)
+    rw [hpow, _root_.mul_apply_eq_comp, _root_.mul_apply_eq_comp]
+  -- As for `hlim`, evaluating `toPointwiseConvergenceCLM … A` at `x` is `A x` by definition.
+  exact PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr key
 
 end Submodule
