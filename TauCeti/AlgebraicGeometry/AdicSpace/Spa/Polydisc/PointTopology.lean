@@ -239,7 +239,7 @@ theorem classicalPointPowerBoundedHomeomorph_symm_apply_normClassicalPoint
 
 /-- **The subspace `classicalPoints k K` of a closed polydisc is completely metrizable**, being
 homeomorphic to the closed unit ball `(K°)ᵏ` of the complete metric space `Kᵏ`. -/
-theorem isCompletelyMetrizableSpace_classicalPoints :
+instance isCompletelyMetrizableSpace_classicalPoints :
     TopologicalSpace.IsCompletelyMetrizableSpace (classicalPoints k K) := by
   have hclosed : IsClosed {a : Fin k → K | ∀ i, IsPowerBounded (a i)} := by
     have heq : {a : Fin k → K | ∀ i, IsPowerBounded (a i)} =
@@ -255,9 +255,8 @@ theorem isCompletelyMetrizableSpace_classicalPoints :
 
 /-- **The subspace `classicalPoints k K` of a closed polydisc is a Baire space**, by the Baire
 category theorem for completely metrizable spaces. -/
-theorem baireSpace_classicalPoints : BaireSpace (classicalPoints k K) := by
-  have := isCompletelyMetrizableSpace_classicalPoints (k := k) (K := K)
-  exact BaireSpace.of_completelyPseudoMetrizable
+instance baireSpace_classicalPoints : BaireSpace (classicalPoints k K) :=
+  BaireSpace.of_completelyPseudoMetrizable
 
 end Embedding
 

@@ -38,6 +38,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
 * `TauCeti.Huber.powerBoundedSubringEquivInteger`: the canonical ring isomorphism `K° ≃+* 𝒪[K]`
   for an ultrametric normed field `K`.
+* `TauCeti.Huber.powerBoundedSubringQuotientEquivResidueField`: the canonical ring isomorphism
+  `K° ⧸ K°° ≃+* IsLocalRing.ResidueField K°` for an ultrametric normed field `K`.
 * `TauCeti.Huber.integerToPowerBounded`: the homomorphism `𝒪[K] →+* A°` for a nonarchimedean
   topological `K`-algebra `A` with continuous scalar multiplication over a nontrivially normed
   ultrametric field `K`.
@@ -313,6 +315,31 @@ theorem maximalIdeal_powerBoundedSubring :
     mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
     tendsto_pow_atTop_nhds_zero_iff_norm_lt_one,
     (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)).lt_iff_ne]
+
+/-- The canonical ring isomorphism `K° ⧸ K°° ≃+* IsLocalRing.ResidueField K°` for an ultrametric
+normed field `K`. -/
+noncomputable def powerBoundedSubringQuotientEquivResidueField :
+    powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K ≃+*
+      IsLocalRing.ResidueField (powerBoundedSubring K) :=
+  Ideal.quotEquivOfEq (maximalIdeal_powerBoundedSubring (K := K)).symm
+
+/-- `powerBoundedSubringQuotientEquivResidueField` sends the class of `x` to its residue. -/
+@[simp]
+theorem powerBoundedSubringQuotientEquivResidueField_mk (x : powerBoundedSubring K) :
+    powerBoundedSubringQuotientEquivResidueField
+        (Ideal.Quotient.mk (topologicallyNilpotentIdeal K) x) =
+      IsLocalRing.residue (powerBoundedSubring K) x :=
+  Ideal.quotEquivOfEq_mk (maximalIdeal_powerBoundedSubring (K := K)).symm x
+
+/-- The inverse of `powerBoundedSubringQuotientEquivResidueField` sends `residue K° x` to its
+class modulo `K°°`. -/
+@[simp]
+theorem powerBoundedSubringQuotientEquivResidueField_symm_residue (x : powerBoundedSubring K) :
+    (powerBoundedSubringQuotientEquivResidueField (K := K)).symm
+        (IsLocalRing.residue (powerBoundedSubring K) x) =
+      Ideal.Quotient.mk (topologicallyNilpotentIdeal K) x :=
+  (powerBoundedSubringQuotientEquivResidueField (K := K)).symm_apply_eq.mpr
+    (powerBoundedSubringQuotientEquivResidueField_mk x).symm
 
 /-- For an ultrametric normed field `K`, `K°°` is a maximal ideal of `K°`. -/
 instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=

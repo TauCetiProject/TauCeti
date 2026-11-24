@@ -97,4 +97,9 @@ theorem eq_normSpaPoint (x : spa (powerBoundedSubring K)) : x = normSpaPoint K :
       NormedField.valuation_apply, NormedField.valuation_apply, ← NNReal.coe_le_coe, coe_nnNorm,
       coe_nnNorm]
 
+/-- `Spa (K, K°)` has a unique point, namely `normSpaPoint K`. -/
+noncomputable instance : Unique (spa (powerBoundedSubring K)) where
+  default := normSpaPoint K
+  uniq := eq_normSpaPoint
+
 end TauCeti.ValuationSpectrum

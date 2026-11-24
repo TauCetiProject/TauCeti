@@ -27,6 +27,8 @@ monomials).
 
 * `TauCeti.Huber.unitGaussValuation_def`: unfolding to `weightedGaussValuation`.
 * `TauCeti.Huber.unitGaussValuation_eq_zero_iff`: `unitGaussValuation n K f = 0 ↔ f = 0`.
+* `TauCeti.Huber.unitGaussValuation_weightedC` and `TauCeti.Huber.unitGaussValuation_weightedX`:
+  values on constants and coordinate variables.
 * `TauCeti.Huber.coe_unitGaussValuation`: coercion to Mathlib's `MvPowerSeries.gaussNorm`.
 * `TauCeti.Huber.unitGaussValuation_le_one_iff_mem_weightedSubring` and
   `TauCeti.Huber.unitGaussValuation_le_one_of_mem_powerBoundedSubring`: unit Gauss valuation at
@@ -62,6 +64,20 @@ theorem unitGaussValuation_eq_zero_iff
   rw [unitGaussValuation_def, weightedGaussValuation_eq_zero_iff]
   simp only [NormedField.valuation_apply, nnNorm_eq_zero]
   exact ⟨fun h ↦ Subtype.ext (MvPowerSeries.ext fun ν ↦ by simp [h ν]), fun h ν ↦ by simp [h]⟩
+
+/-- On constants, `unitGaussValuation` restricts to `‖·‖₊`. -/
+@[simp]
+theorem unitGaussValuation_weightedC (c : K) :
+    unitGaussValuation n K
+        (weightedC (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight c) = ‖c‖₊ := by
+  rw [unitGaussValuation_def, weightedGaussValuation_weightedC, NormedField.valuation_apply]
+
+/-- Every coordinate variable `Tᵢ` has unit Gauss valuation `1`. -/
+@[simp]
+theorem unitGaussValuation_weightedX (i : Fin n) :
+    unitGaussValuation n K
+        (weightedX (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight i) = 1 := by
+  rw [unitGaussValuation_def, weightedGaussValuation_weightedX]
 
 /-- The unit Gauss valuation coerces to Mathlib's unit-radius `MvPowerSeries.gaussNorm`. -/
 theorem coe_unitGaussValuation

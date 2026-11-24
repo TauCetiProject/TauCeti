@@ -165,7 +165,7 @@ theorem unitGaussPoint_zero_eq_classicalPoint {K : Type*} [NormedField K] [IsUlt
     [CompleteSpace K] (x : spa (powerBoundedSubring K)) (a : Fin 0 → K)
     (ha : ∀ i, IsPowerBounded (a i)) :
     unitGaussPoint 0 K = classicalPoint x a ha :=
-  @Subsingleton.elim _ subsingleton_closedPolydisc_zero _ _
+  Subsingleton.elim _ _
 
 /-- **In dimension `0`, the unit Gauss point lies in `classicalPoints 0 K`**, over every complete
 ultrametric normed field. -/

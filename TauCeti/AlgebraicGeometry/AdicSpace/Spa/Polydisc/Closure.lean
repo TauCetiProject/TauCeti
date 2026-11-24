@@ -112,8 +112,7 @@ private theorem exists_unit_mul_unitGaussValuation_eq_one
   have hc0 : c ≠ 0 := nnNorm_ne_zero_iff.mp (hν₀.trans_ne hgv0)
   set u := weightedC (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight c⁻¹
   have hu_val : unitGaussValuation n K u = (unitGaussValuation n K g)⁻¹ := by
-    rw [← hν₀, unitGaussValuation_def, weightedGaussValuation_weightedC,
-      NormedField.valuation_apply, nnNorm_inv]
+    rw [← hν₀, unitGaussValuation_weightedC, nnNorm_inv]
   refine ⟨u, (IsUnit.mk0 c⁻¹ (inv_ne_zero hc0)).map _,
     by rw [map_mul, hu_val, mul_inv_cancel₀ hgv0], fun f hf ↦ ?_⟩
   obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hf

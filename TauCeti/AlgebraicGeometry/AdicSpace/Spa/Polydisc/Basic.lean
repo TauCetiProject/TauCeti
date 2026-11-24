@@ -660,7 +660,7 @@ theorem norm_sub_le_of_valuation_eq {k : ℕ} {v : closedPolydisc k K} {i : Fin 
 /-- **The zero-dimensional closed polydisc over an ultrametric normed field is a subsingleton**:
 every restricted power series in zero variables is constant, and every point of the polydisc
 compares constants by their norms. -/
-theorem subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) := by
+instance subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) := by
   refine ⟨fun v w ↦ Subtype.ext <| ext' fun f g ↦ ?_⟩
   have hconst : ∀ h : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set K))
       isWeightFamily_one_weight,
@@ -689,7 +689,7 @@ theorem normClassicalPoint_def (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a 
 theorem classicalPoint_eq_normClassicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k → K)
     (ha : ∀ i, IsPowerBounded (a i)) :
     classicalPoint x a ha = normClassicalPoint a ha := by
-  rw [eq_normSpaPoint x, normClassicalPoint_def]
+  rw [Subsingleton.elim x (normSpaPoint K), normClassicalPoint_def]
 
 /-- `normClassicalPoint a ha` compares series by the norms of their evaluations at `a`. -/
 @[simp]
