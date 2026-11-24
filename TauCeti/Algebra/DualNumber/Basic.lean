@@ -25,7 +25,8 @@ The dual numbers are a finite module over their coefficient ring, so dual number
 Artinian ring are also Artinian, and dual numbers over a finite or free module are again finite
 or free.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
-`1 + inr c` is a unit with inverse `1 - inr c`, and its `n`th power is `1 + inr (n • c)`.
+`1 + inr c` is a unit with inverse `1 - inr c`; these units multiply by adding the
+infinitesimal parts, so the `n`th power of `1 + inr c` is `1 + inr (n • c)`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
 their value on `ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
 are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
@@ -54,12 +55,24 @@ theorem coe_dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
     (((dualNumberUnit c)⁻¹ : (DualNumber R)ˣ) : DualNumber R) =
       1 - TrivSqZeroExt.inr c := (rfl)
 
+/-- `dualNumberUnit 0` is the identity unit. -/
+@[simp]
+theorem dualNumberUnit_zero {R : Type*} [Ring R] : dualNumberUnit (0 : R) = 1 := by
+  ext <;> simp
+
+/-- The product of `dualNumberUnit c` and `dualNumberUnit d` is `dualNumberUnit (c + d)`. -/
+@[simp]
+theorem dualNumberUnit_mul {R : Type*} [Ring R] (c d : R) :
+    dualNumberUnit c * dualNumberUnit d = dualNumberUnit (c + d) := by
+  ext <;> simp [TrivSqZeroExt.snd_mul, add_comm]
+
 /-- The `n`th power of `dualNumberUnit c` is `dualNumberUnit (n • c)`. -/
+@[simp]
 theorem dualNumberUnit_pow {R : Type*} [Ring R] (c : R) (n : ℕ) :
     dualNumberUnit c ^ n = dualNumberUnit (n • c) := by
   induction n with
-  | zero => ext <;> simp
-  | succ n ih => ext <;> simp [pow_succ, ih, TrivSqZeroExt.snd_mul, add_mul, add_comm]
+  | zero => simp
+  | succ n ih => rw [pow_succ, ih, dualNumberUnit_mul, succ_nsmul]
 
 /-- The scalar projection sends `dualNumberUnit c` to the identity unit. -/
 @[simp]
