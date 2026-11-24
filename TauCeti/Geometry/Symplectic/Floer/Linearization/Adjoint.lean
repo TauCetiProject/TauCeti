@@ -26,8 +26,8 @@ of `TauCeti.Geometry.Symplectic.Floer.Perturbation.Basic` and
 `TauCeti.Geometry.Symplectic.Floer.Transversality.AlmostComplexVariation` take them: Hamiltonian
 variations of the perturbation, and variations of the almost complex structure at injective
 points, force such an `η` to vanish on an open set. The pairing uses no metric on `V`, so no
-compatibility of `J` with `ω` is needed in this file beyond the `ω`-form below, and `J` need not
-square to `-1`.
+compatibility of `J` with `ω` is needed in this file (the `ω`-form below only asks that `J`
+preserve `ω`), and `J` need not square to `-1`.
 
 Integrating by parts against this pairing gives the **formal adjoint**
 
