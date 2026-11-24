@@ -100,12 +100,6 @@ theorem homMultiplicity_of_isEmpty [IsEmpty n] [FunLike F (Matrix n n K) (Matrix
     homMultiplicity f = 0 := by
   simp [homMultiplicity]
 
-omit [Fintype n] in
-/-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
-private theorem single_eq_smul_single_one {R : Type*} [MulZeroOneClass R] (i j : n) (c : R) :
-    single i j c = c • single i j (1 : R) := by
-  rw [smul_single, smul_eq_mul, mul_one]
-
 section NonUnitalAlgHomClass
 
 variable [Fintype m] [FunLike F (Matrix n n K) (Matrix m m K)]

@@ -26,9 +26,11 @@ associativity.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
 
-For a homomorphism `f` out of `Mₙ(R)`, `Matrix.map_single_mul_map_single` says that the images of
-the matrix units multiply like matrix units, and `Matrix.star_map_single` that a `⋆`-homomorphism
-maps the adjoint `Eⱼᵢ` of `Eᵢⱼ` to the adjoint of its image.
+`Matrix.single_eq_smul_single_one` writes a matrix with one nonzero entry `c` as `c` times the
+corresponding matrix unit. For a homomorphism `f` out of `Mₙ(R)`,
+`Matrix.map_single_mul_map_single` says that the images of the matrix units multiply like matrix
+units, and `Matrix.star_map_single` that a `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of `Eᵢⱼ` to the
+adjoint of its image.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -157,6 +159,11 @@ theorem sum_single_mul_single {l m n o p q A : Type*} [NonUnitalNonAssocSemiring
     (Y : Matrix m n A) (i : l) (j : n) (r : o) (s : p) (t : q) :
     ∑ u : m, single r s (X i u) * single s t (Y u j) = single r t ((X * Y) i j) := by
   simp_rw [single_mul_single_same]; ext u v; simp [Matrix.sum_apply, Matrix.mul_apply, single]
+
+/-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
+theorem single_eq_smul_single_one {m n R : Type*} [DecidableEq m] [DecidableEq n]
+    [MulZeroOneClass R] (i : m) (j : n) (c : R) : single i j c = c • single i j (1 : R) := by
+  rw [smul_single, smul_eq_mul, mul_one]
 
 section MapSingle
 variable {n R B F : Type*} [Fintype n] [DecidableEq n] [Semiring R] [FunLike F (Matrix n n R) B]
