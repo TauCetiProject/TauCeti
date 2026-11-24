@@ -44,10 +44,11 @@ closed in `M`. That is where compactness of `N` and the Hausdorff property of `M
 
 * `TauCeti.IsCollar.coe_complHomotopyEquiv`: the homotopy equivalence `M \ f(N) ≃ₕ M` is the
   inclusion.
-* `TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply_of_le`: its homotopy inverse fixes the
-  points of the collar of depth at least `1 / 2`, and
-  `TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply_of_notMem_range` the points outside the
-  collar.
+* `TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply`: its homotopy inverse sends `c (x, t)` to
+  `c (x, max t (1/2 - t))`, so it fixes the points of the collar of depth at least `1 / 2`
+  (`TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply_of_le`), and
+  `TauCeti.IsCollar.coe_complHomotopyEquiv_symm_apply_of_notMem_range`: it fixes the points outside
+  the collar.
 -/
 
 public section
@@ -307,20 +308,32 @@ theorem coe_complHomotopyEquiv : ⇑hc.complHomotopyEquiv = Subtype.val :=
   (rfl)
 
 /-- The homotopy inverse of the inclusion `M \ f(N) → M` is the push at time `1`. -/
-private theorem coe_complHomotopyEquiv_symm_apply (x : M) :
+private theorem coe_complHomotopyEquiv_symm_eq_push (x : M) :
     (hc.complHomotopyEquiv.symm x : M) = push c (1, x) :=
   rfl
+
+/-- The homotopy inverse of the inclusion `M \ f(N) → M` sends the point `c (x, t)` of the collar
+to `c (x, max t (1/2 - t))`. -/
+@[simp]
+theorem coe_complHomotopyEquiv_symm_apply (p : N × Ico (0 : ℝ) 1) :
+    (hc.complHomotopyEquiv.symm (c p) : M) =
+      c (p.1, ⟨max (p.2 : ℝ) (1 / 2 - p.2), le_max_of_le_left p.2.property.1,
+        max_lt p.2.property.2 (by linarith [p.2.property.1])⟩) := by
+  rw [hc.coe_complHomotopyEquiv_symm_eq_push, hc.push_apply]
+  exact congrArg c (Prod.ext rfl (Subtype.ext (by simp [coe_pushCoord_snd])))
 
 /-- The homotopy inverse of the inclusion `M \ f(N) → M` fixes the points of the collar of depth at
 least `1 / 2`. -/
 theorem coe_complHomotopyEquiv_symm_apply_of_le {p : N × Ico (0 : ℝ) 1}
     (hp : 1 / 2 ≤ (p.2 : ℝ)) : (hc.complHomotopyEquiv.symm (c p) : M) = c p := by
-  rw [hc.coe_complHomotopyEquiv_symm_apply, hc.push_apply, pushCoord_of_le 1 hp]
+  rw [hc.coe_complHomotopyEquiv_symm_apply]
+  exact congrArg c (Prod.ext rfl (Subtype.ext (max_eq_left (by linarith))))
 
 /-- The homotopy inverse of the inclusion `M \ f(N) → M` fixes the points outside the collar. -/
+@[simp]
 theorem coe_complHomotopyEquiv_symm_apply_of_notMem_range {x : M} (hx : x ∉ range c) :
     (hc.complHomotopyEquiv.symm x : M) = x := by
-  rw [hc.coe_complHomotopyEquiv_symm_apply, push_of_notMem_range 1 hx]
+  rw [hc.coe_complHomotopyEquiv_symm_eq_push, push_of_notMem_range 1 hx]
 
 
 end IsCollar
