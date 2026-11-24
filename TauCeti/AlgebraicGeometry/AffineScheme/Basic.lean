@@ -535,6 +535,33 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
   obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
   exact Subtype.ext hzw.symm
 
+/-- Let `j : Y ⟶ X` be an open immersion and `U` a quasi-compact and quasi-separated open of `X`,
+for instance an affine open, whose intersection with the image of `j` is the basic open of
+`s ∈ Γ(X, U)`. Then the sections of `Y` over `j⁻¹ U` are the localization `Γ(X, U)_s`, as a
+`Γ(X, U)`-algebra through `j`. -/
+theorem Scheme.Hom.isLocalization_app_of_inf_opensRange_eq {X Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] {U : X.Opens} (hU : IsCompact (U : Set X))
+    (hU' : IsQuasiSeparated (U : Set X)) {s : Γ(X, U)} (h : U ⊓ j.opensRange = X.basicOpen s) :
+    letI := (j.app U).hom.toAlgebra
+    IsLocalization.Away s Γ(Y, j ⁻¹ᵁ U) := by
+  let := (j.app U).hom.toAlgebra
+  have := isLocalization_basicOpen_of_qcqs hU hU' s
+  -- The image `j (j⁻¹ U) = U ∩ j(Y)` is the basic open `D(s)`.
+  have e : j ''ᵁ j ⁻¹ᵁ U = X.basicOpen s := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm, h]
+  -- Transport along `Γ(X, D(s)) = Γ(X, j (j⁻¹ U)) ≅ Γ(Y, j⁻¹ U)`, which is compatible with the
+  -- maps from `Γ(X, U)` by `Scheme.Hom.app_appIso_inv`.
+  have key : X.presheaf.map (homOfLE (X.basicOpen_le s)).op ≫ X.presheaf.map (eqToHom e).op =
+      j.app U ≫ (j.appIso (j ⁻¹ᵁ U)).inv := by
+    rw [j.app_appIso_inv, ← Functor.map_comp]
+    rfl
+  refine IsLocalization.isLocalization_of_algEquiv (.powers s) (AlgEquiv.ofRingEquiv
+    (f := (X.presheaf.mapIso (eqToIso e).op ≪≫ j.appIso (j ⁻¹ᵁ U)).commRingCatIsoToRingEquiv)
+    fun x ↦ ?_)
+  calc _ = (j.appIso (j ⁻¹ᵁ U)).hom ((j.appIso (j ⁻¹ᵁ U)).inv (j.app U x)) :=
+        congrArg (j.appIso (j ⁻¹ᵁ U)).hom congr($(key).hom x)
+    _ = _ := (j.appIso (j ⁻¹ᵁ U)).inv_hom_id_apply _
+
 end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
