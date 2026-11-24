@@ -28,11 +28,11 @@ neither fact is proved here. In Iwasawa's simplicity criterion for that quotient
 singular points, the abelian subgroups are the root subgroups `{E_{u,w}}` of the singular
 vectors `u`, and the action has to be transitive. This file proves that transitivity.
 
-**Transitivity.** Over a field, let `B` be nondegenerate on a finite-dimensional space and
-suppose that `Q` vanishes on some plane, that is, the Witt index of `Q` (the largest dimension of
-a subspace on which `Q` vanishes) is at least two. Then `EO(Q)` acts transitively on the nonzero
-singular vectors (`QuadraticMap.exists_mem_elementaryOrthogonalGroup_apply_eq`). No assumption
-is made on the characteristic: the hypothesis is the nondegeneracy of the polar form `B` itself.
+**Transitivity.** Over a field, let `B` be nondegenerate and suppose that `Q` vanishes on some
+plane, that is, the Witt index of `Q` (the largest dimension of a subspace on which `Q` vanishes)
+is at least two. Then `EO(Q)` acts transitively on the nonzero singular vectors
+(`QuadraticMap.exists_mem_elementaryOrthogonalGroup_apply_eq`). Neither the dimension nor the
+characteristic is restricted: the hypothesis is the nondegeneracy of the polar form `B` itself.
 In odd characteristic this is the nondegeneracy of `Q`; in characteristic two it holds for the
 even-dimensional orthogonal geometries of types `Dₙ` and `²Dₙ`, but not in odd dimension, where
 `B` always has a radical.
@@ -98,6 +98,24 @@ theorem transvection_mem_elementaryOrthogonalGroup {u w : M} (hu : Q u = 0)
     (huw : polar Q u w = 0) : transvection Q hu huw ∈ elementaryOrthogonalGroup Q :=
   Subgroup.subset_closure ⟨u, w, hu, huw, rfl⟩
 
+/-- A subgroup contains the elementary orthogonal group if and only if it contains every Eichler
+transvection. -/
+theorem elementaryOrthogonalGroup_le_iff {H : Subgroup (M ≃ₗ[R] M)} :
+    elementaryOrthogonalGroup Q ≤ H ↔
+      ∀ (u w : M) (hu : Q u = 0) (huw : polar Q u w = 0), transvection Q hu huw ∈ H := by
+  rw [elementaryOrthogonalGroup_def, Subgroup.closure_le]
+  exact ⟨fun h u w hu huw => h ⟨u, w, hu, huw, rfl⟩,
+    fun h _ ⟨u, w, hu, huw, hg⟩ => hg ▸ h u w hu huw⟩
+
+/-- An element lies in the elementary orthogonal group if and only if it lies in every subgroup
+containing all Eichler transvections. -/
+theorem mem_elementaryOrthogonalGroup_iff {g : M ≃ₗ[R] M} :
+    g ∈ elementaryOrthogonalGroup Q ↔ ∀ H : Subgroup (M ≃ₗ[R] M),
+      (∀ (u w : M) (hu : Q u = 0) (huw : polar Q u w = 0), transvection Q hu huw ∈ H) →
+        g ∈ H :=
+  ⟨fun hg _ hH => elementaryOrthogonalGroup_le_iff.mpr hH hg,
+    fun h => h _ fun _ _ => transvection_mem_elementaryOrthogonalGroup⟩
+
 /-- The image of the Eichler root-subgroup homomorphism of a singular vector lies in the elementary
 orthogonal group. -/
 theorem coe_toMul_transvectionHom_mem_elementaryOrthogonalGroup {u : M} (hu : Q u = 0)
@@ -114,8 +132,7 @@ theorem coe_toMul_transvectionHom_mem_elementaryOrthogonalGroup {u : M} (hu : Q 
 /-- The elementary orthogonal group consists of proper isometries. -/
 theorem elementaryOrthogonalGroup_le_specialOrthogonalGroup :
     elementaryOrthogonalGroup Q ≤ specialOrthogonalGroup Q :=
-  (Subgroup.closure_le _).mpr fun _ ⟨_, _, hu, huw, hg⟩ =>
-    hg ▸ transvection_mem_specialOrthogonalGroup hu huw
+  elementaryOrthogonalGroup_le_iff.mpr fun _ _ => transvection_mem_specialOrthogonalGroup
 
 /-- The elementary orthogonal group consists of isometries. -/
 theorem elementaryOrthogonalGroup_le_orthogonalGroup :
@@ -123,29 +140,18 @@ theorem elementaryOrthogonalGroup_le_orthogonalGroup :
   elementaryOrthogonalGroup_le_specialOrthogonalGroup.trans
     (specialOrthogonalGroup_le_orthogonalGroup Q)
 
-/-- Conjugating an element of the elementary orthogonal group by an isometry stays in it. -/
-theorem mul_mul_inv_mem_elementaryOrthogonalGroup {g x : M ≃ₗ[R] M}
-    (hg : g ∈ orthogonalGroup Q) (hx : x ∈ elementaryOrthogonalGroup Q) :
-    g * x * g⁻¹ ∈ elementaryOrthogonalGroup Q := by
-  induction hx using Subgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨u, w, hu, huw, rfl⟩ := hx
-    rw [transvection_conj hu huw hg]
-    exact transvection_mem_elementaryOrthogonalGroup _ _
-  | one => simp
-  | mul x y _ _ hx hy =>
-    simpa only [mul_assoc, inv_mul_cancel_left] using mul_mem hx hy
-  | inv x _ hx =>
-    simpa only [mul_inv_rev, inv_inv, mul_assoc] using inv_mem hx
-
 /-- **The orthogonal group normalizes the elementary orthogonal group**, since an isometry `g`
 conjugates `E_{u,w}` to `E_{g u, g w}`. -/
 theorem orthogonalGroup_le_normalizer_elementaryOrthogonalGroup :
     orthogonalGroup Q ≤ Subgroup.normalizer (elementaryOrthogonalGroup Q : Set (M ≃ₗ[R] M)) :=
-  fun g hg => Subgroup.mem_normalizer_iff.mpr fun x =>
-    ⟨mul_mul_inv_mem_elementaryOrthogonalGroup hg, fun hx => by
-      simpa only [mul_assoc, inv_mul_cancel_left, inv_inv, inv_mul_cancel, mul_one] using
-        mul_mul_inv_mem_elementaryOrthogonalGroup (inv_mem hg) hx⟩
+  Subgroup.le_normalizer_closure_iff.mpr fun _ hg _ ⟨_, _, hu, huw, hx⟩ =>
+    hx ▸ (transvection_conj hu huw hg).symm ▸ transvection_mem_elementaryOrthogonalGroup _ _
+
+/-- Conjugating an element of the elementary orthogonal group by an isometry stays in it. -/
+theorem mul_mul_inv_mem_elementaryOrthogonalGroup {g x : M ≃ₗ[R] M}
+    (hg : g ∈ orthogonalGroup Q) (hx : x ∈ elementaryOrthogonalGroup Q) :
+    g * x * g⁻¹ ∈ elementaryOrthogonalGroup Q :=
+  Subgroup.le_normalizer_iff.mp orthogonalGroup_le_normalizer_elementaryOrthogonalGroup g hg x hx
 
 /-- The elementary orthogonal group is a normal subgroup of the orthogonal group. -/
 instance normal_elementaryOrthogonalGroup_subgroupOf_orthogonalGroup :
@@ -177,26 +183,37 @@ section Field
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 
-/-- Over a field, if the polar form is nondegenerate on a finite-dimensional space, one Eichler
-transvection joins any two linearly independent orthogonal singular vectors. -/
+/-- Over a field, if the polar form is nondegenerate, one Eichler transvection joins any two
+linearly independent orthogonal singular vectors. -/
 theorem exists_mem_elementaryOrthogonalGroup_apply_eq_of_linearIndependent
-    [FiniteDimensional K V] (hQ : (polarBilin Q).Nondegenerate) {u v : V} (hu : Q u = 0)
+    (hQ : (polarBilin Q).Nondegenerate) {u v : V} (hu : Q u = 0)
     (hv : Q v = 0) (huv : polar Q u v = 0) (hli : LinearIndependent K ![u, v]) :
     ∃ g ∈ elementaryOrthogonalGroup Q, g u = v := by
-  -- A linear form equal to `1` at `u` and `v` is `B(w, -)` for some `w`.
-  obtain ⟨f, hf⟩ := Module.exists_dual_forall_apply_eq_one hli.linearIndepOn_univ
-  set w := (LinearMap.BilinForm.toDual (polarBilin Q) hQ).symm f
-  have hw (x : V) : polar Q x w = f x := by
-    rw [polar_comm, ← polarBilin_apply_apply,
-      LinearMap.BilinForm.apply_toDual_symm_apply]
+  -- The map `x ↦ (B u x, B v x)` is onto `K × K`: a linear form vanishing on its range is
+  -- `(s, t) ↦ a * s + b * t` with `B (a • u + b • v) = 0`, so `a = b = 0`.
+  set φ := (polarBilin Q u).prod (polarBilin Q v)
+  have hφ : LinearMap.range φ = ⊤ := by
+    by_contra h
+    obtain ⟨f, hf₀, hf⟩ := (LinearMap.range φ).exists_le_ker_of_lt_top (lt_top_iff_ne_top.mpr h)
+    have hfx (x : V) : polarBilin Q (f (1, 0) • u + f (0, 1) • v) x = 0 := by
+      have hφx : φ x = polar Q u x • ((1 : K), (0 : K)) + polar Q v x • ((0 : K), (1 : K)) := by
+        ext <;> simp [φ]
+      have := LinearMap.mem_ker.mp (hf ⟨x, rfl⟩)
+      rw [hφx, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul] at this
+      rw [polarBilin_apply_apply, polar_add_left, polar_smul_left, polar_smul_left, smul_eq_mul,
+        smul_eq_mul]
+      linear_combination this
+    obtain ⟨ha, hb⟩ := LinearIndependent.pair_iff.mp hli _ _ (hQ.left _ hfx)
+    exact hf₀ (LinearMap.prod_ext (LinearMap.ext_ring ha) (LinearMap.ext_ring hb))
+  obtain ⟨w, hw⟩ := LinearMap.range_eq_top.mp hφ (1, 1)
   exact exists_mem_elementaryOrthogonalGroup_apply_eq_of_polar_eq_zero hu hv huv
-    ((hw u).trans (hf 0 (Set.mem_univ _))) ((hw v).trans (hf 1 (Set.mem_univ _)))
+    (congrArg Prod.fst hw) (congrArg Prod.snd hw)
 
 /-- Under the hypotheses of `exists_mem_elementaryOrthogonalGroup_apply_eq_of_linearIndependent`,
 every nonzero singular vector `u` is the image of `e` under the elementary orthogonal group, for a
 fixed vector `e` of a plane `⟨e, e'⟩` on which `Q` vanishes. -/
 private theorem exists_mem_elementaryOrthogonalGroup_apply_eq_of_mem
-    [FiniteDimensional K V] (hQ : (polarBilin Q).Nondegenerate) {W : Submodule K V}
+    (hQ : (polarBilin Q).Nondegenerate) {W : Submodule K V}
     (hW : Q.IsTotallyIsotropic W) {e e' : V} (he : e ∈ W) (he' : e' ∈ W)
     (hee' : LinearIndependent K ![e, e']) {u : V} (hu : Q u = 0) (hu₀ : u ≠ 0) :
     ∃ g ∈ elementaryOrthogonalGroup Q, g e = u := by
@@ -242,15 +259,16 @@ private theorem exists_mem_elementaryOrthogonalGroup_apply_eq_of_mem
   exact heu (by rw [← hau, polar_smul_right, hW.polar_eq_zero he hxW, smul_zero])
 
 /-- **Transitivity of the elementary orthogonal group on singular vectors.** Over a field, let the
-polar form of `Q` be nondegenerate on a finite-dimensional space, and let `Q` vanish on a subspace
-of dimension at least two (that is, `Q` has Witt index at least two). Then the elementary
-orthogonal group acts transitively on the nonzero singular vectors: any nonzero `u` and `v` with
-`Q u = Q v = 0` satisfy `g u = v` for some `g ∈ EO(Q)`. -/
-theorem exists_mem_elementaryOrthogonalGroup_apply_eq [FiniteDimensional K V]
+polar form of `Q` be nondegenerate, and let `Q` vanish on a subspace of dimension at least two
+(that is, `Q` has Witt index at least two). Then the elementary orthogonal group acts transitively
+on the nonzero singular vectors: any nonzero `u` and `v` with `Q u = Q v = 0` satisfy `g u = v`
+for some `g ∈ EO(Q)`. -/
+theorem exists_mem_elementaryOrthogonalGroup_apply_eq
     (hQ : (polarBilin Q).Nondegenerate) {W : Submodule K V} (hW : Q.IsTotallyIsotropic W)
     (hW₂ : 2 ≤ finrank K W) {u v : V} (hu : Q u = 0) (hv : Q v = 0) (hu₀ : u ≠ 0)
     (hv₀ : v ≠ 0) : ∃ g ∈ elementaryOrthogonalGroup Q, g u = v := by
   -- Choose two linearly independent vectors `e`, `e'` of `W`.
+  have : FiniteDimensional K W := Module.finite_of_finrank_pos (by omega)
   obtain ⟨e, he₀⟩ : ∃ e : W, e ≠ 0 :=
     (Module.finrank_pos_iff_exists_ne_zero (R := K)).mp (by omega)
   obtain ⟨e', hee'⟩ := exists_linearIndependent_pair_of_one_lt_finrank (R := K) (by omega) he₀
@@ -259,9 +277,9 @@ theorem exists_mem_elementaryOrthogonalGroup_apply_eq [FiniteDimensional K V]
     ext i
     fin_cases i <;> rfl
   obtain ⟨g, hg, rfl⟩ :=
-    exists_mem_elementaryOrthogonalGroup_apply_eq_of_mem hQ hW e.2 e'.2 hli hu hu₀
+    exists_mem_elementaryOrthogonalGroup_apply_eq_of_mem hQ hW e.property e'.property hli hu hu₀
   obtain ⟨h, hh, rfl⟩ :=
-    exists_mem_elementaryOrthogonalGroup_apply_eq_of_mem hQ hW e.2 e'.2 hli hv hv₀
+    exists_mem_elementaryOrthogonalGroup_apply_eq_of_mem hQ hW e.property e'.property hli hv hv₀
   exact ⟨h * g⁻¹, mul_mem hh (inv_mem hg), by simp⟩
 
 end Field
