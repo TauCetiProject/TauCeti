@@ -169,6 +169,11 @@ private def lowerClaspHalf (N : ℕ) : Fin (4 * (N + 2)) ≃ Fin (4 * (N + 2)) :
       crossingSlotEquiv (N + 2) (1, s + 2) :=
   claspHalfWith_second N _ _ s
 
+private def readClaspWith {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4) (k₀ k₁ : ℕ)
+    (D : OrientedPDCode (N + 2)) : OrientedPDCode (N + 2) :=
+  (fun C => C.rotateCrossing 1)^[k₁]
+    ((fun C => C.rotateCrossing 0)^[k₀] (D.relabel (claspHalfWith N f₀ f₁) (claspCross N)))
+
 private def readClasp {N : ℕ} (D : OrientedPDCode (N + 2)) : OrientedPDCode (N + 2) :=
   ((D.relabel (claspHalf N) (claspCross N)).rotateCrossing 0).rotateCrossing 1
 
@@ -198,27 +203,45 @@ private theorem readLowerClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N +
       lowerClaspHalf N (D.edgePair.val x) := by
   simp [readLowerClasp]
 
-private theorem readClasp_halfEdge {N : ℕ} {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1) :
-    (readClasp D).halfEdge = 1 := by
-  ext x
+private theorem iterate_rotateCrossing_halfEdge {M : ℕ} (C : OrientedPDCode M) (c : Fin M)
+    (k : ℕ) (j : Fin M) (s : Fin 4) :
+    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).halfEdge
+        (crossingSlotEquiv M (j, s)) =
+      C.halfEdge (crossingSlotEquiv M (j, if j = c then s + k • 1 else s)) := by
+  induction k generalizing s with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    by_cases hj : j = c
+    · subst hj
+      simp [ih, succ_nsmul, add_assoc, add_comm]
+    · simp [ih, hj]
+
+private theorem readClaspWith_halfEdge {N : ℕ} {f₀ f₁ : Fin 4 ≃ Fin 4} {k₀ k₁ : ℕ}
+    {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1)
+    (hf₀ : ∀ s : Fin 4, f₀ (s + k₀ • 1) = s)
+    (hf₁ : ∀ s : Fin 4, f₁ (s + k₁ • 1) = s) :
+    (readClaspWith f₀ f₁ k₀ k₁ D).halfEdge = 1 := by
+  apply Equiv.ext
+  intro x
   obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (N + 2)).surjective x
+  rw [readClaspWith, iterate_rotateCrossing_halfEdge, iterate_rotateCrossing_halfEdge]
   rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · simp [readClasp, h, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last]
+  · simp [h, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last, hf₀]
   · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · simp [readClasp, h, crossingSlotEquiv_succ_last, Fin.succ_zero_eq_one, one_ne_zero]
-    · simp [readClasp, h, crossingSlotEquiv_succ_castSucc, Fin.ext_iff]
+    · simp [h, crossingSlotEquiv_succ_last, Fin.succ_zero_eq_one, one_ne_zero, hf₁]
+    · simp [h, crossingSlotEquiv_succ_castSucc, Fin.ext_iff]
+
+private theorem readClasp_halfEdge {N : ℕ} {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1) :
+    (readClasp D).halfEdge = 1 :=
+  readClaspWith_halfEdge (f₀ := (finRotate 4).symm) (f₁ := (finRotate 4).symm) (k₀ := 1) (k₁ := 1)
+    h (fun s => by simp) (fun s => by simp)
 
 private theorem readLowerClasp_halfEdge {N : ℕ} {D : OrientedPDCode (N + 2)}
     (h : D.halfEdge = 1) :
-    (readLowerClasp D).halfEdge = 1 := by
-  ext x
-  obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (N + 2)).surjective x
-  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · simp [readLowerClasp, h, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last]
-  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · fin_cases s <;>
-        simp [readLowerClasp, h, crossingSlotEquiv_succ_last, Fin.succ_zero_eq_one]
-    · simp [readLowerClasp, h, crossingSlotEquiv_succ_castSucc, Fin.ext_iff]
+    (readLowerClasp D).halfEdge = 1 :=
+  readClaspWith_halfEdge (f₀ := Equiv.refl (Fin 4)) (f₁ := Equiv.addRight 2) (k₀ := 0) (k₁ := 2)
+    h (fun s => by simp) (fun s => by fin_cases s <;> decide)
 
 private theorem halfEdge_eq_one_of_succ {N : ℕ} {D : OrientedPDCode (N + 2)}
     (hold : ∀ (j : Fin N) (s : Fin 4), D.halfEdge (halfEdgeSuccEquiv (N + 1)
@@ -337,6 +360,16 @@ private theorem eq_closure_cons_cons_of_fields {v : BraidWord n} {i : Fin (n - 1
     · exact hover
   · exact hori
   · exact hc
+
+private theorem fields_eq_of_adjoinCircle {N : ℕ} {core D : OrientedPDCode N} {o : Bool}
+    (h : core.adjoinCircle o = D) :
+    core.halfEdge = D.halfEdge ∧ core.edgePair = D.edgePair ∧
+      core.overPair = D.overPair ∧ core.orientation = D.orientation := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simpa using congrArg (fun C => C.halfEdge) h
+  · simpa using congrArg (fun C => C.edgePair) h
+  · simpa using congrArg (fun C => C.overPair) h
+  · simpa using congrArg OrientedPDCode.orientation h
 
 private theorem exists_adjoinCircle_core {N : ℕ} {D : OrientedPDCode N} {m : Multiset Bool}
     (hm : D.crossinglessComponents = true ::ₘ m) :
@@ -577,14 +610,13 @@ private theorem readTwoCircleDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {ε 
     {core : OrientedPDCode v.length}
     (hcore : (core.adjoinCircle true).adjoinCircle true = v.closure) :
     readClasp (twoCircleDiagram ε core) = closure ((i, ε) :: (i, -ε) :: v) := by
-  have hhalf : core.halfEdge = 1 := by
-    simpa [halfEdge_closure] using congrArg (fun C => C.halfEdge) hcore
-  have hedge : core.edgePair = v.closure.edgePair := by
-    simpa using congrArg (fun C => C.edgePair) hcore
-  have hover : core.overPair = v.closure.overPair := by
-    simpa using congrArg (fun C => C.overPair) hcore
-  have hori : core.orientation = v.closure.orientation := by
-    simpa using congrArg OrientedPDCode.orientation hcore
+  obtain ⟨hhalf₁, hedge₁, hover₁, hori₁⟩ :=
+    fields_eq_of_adjoinCircle (rfl : core.adjoinCircle true = _)
+  obtain ⟨hhalf₂, hedge₂, hover₂, hori₂⟩ := fields_eq_of_adjoinCircle hcore
+  have hhalf : core.halfEdge = 1 := by rw [hhalf₁, hhalf₂, halfEdge_closure]
+  have hedge : core.edgePair = v.closure.edgePair := hedge₁.trans hedge₂
+  have hover : core.overPair = v.closure.overPair := hover₁.trans hover₂
+  have hori : core.orientation = v.closure.orientation := hori₁.trans hori₂
   have hc : core.crossinglessComponents =
       (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
     have h := congrArg OrientedPDCode.crossinglessComponents hcore
@@ -713,14 +745,8 @@ private theorem readCircleArcDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {ε 
     (hp : v.crossingsAt (strand i) ≠ []) (hq : v.crossingsAt (strandSucc i) = [])
     {core : OrientedPDCode v.length} (hcore : core.adjoinCircle true = v.closure) :
     readClasp (circleArcDiagram v i ε hp core) = closure ((i, ε) :: (i, -ε) :: v) := by
-  have hhalf : core.halfEdge = 1 := by
-    simpa [halfEdge_closure] using congrArg (fun C => C.halfEdge) hcore
-  have hedge : core.edgePair = v.closure.edgePair := by
-    simpa using congrArg (fun C => C.edgePair) hcore
-  have hover : core.overPair = v.closure.overPair := by
-    simpa using congrArg (fun C => C.overPair) hcore
-  have hori : core.orientation = v.closure.orientation := by
-    simpa using congrArg OrientedPDCode.orientation hcore
+  obtain ⟨hhalf, hedge, hover, hori⟩ := fields_eq_of_adjoinCircle hcore
+  rw [halfEdge_closure] at hhalf
   have hc : core.crossinglessComponents =
       (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
     have h := congrArg OrientedPDCode.crossinglessComponents hcore
@@ -786,14 +812,8 @@ private theorem readLowerCircleDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {�
     (hp : v.crossingsAt (strand i) = []) (hq : v.crossingsAt (strandSucc i) ≠ [])
     {core : OrientedPDCode v.length} (hcore : core.adjoinCircle true = v.closure) :
     readLowerClasp (lowerCircleDiagram v i ε hq core) = closure ((i, ε) :: (i, -ε) :: v) := by
-  have hhalf : core.halfEdge = 1 := by
-    simpa [halfEdge_closure] using congrArg (fun C => C.halfEdge) hcore
-  have hedge : core.edgePair = v.closure.edgePair := by
-    simpa using congrArg (fun C => C.edgePair) hcore
-  have hover : core.overPair = v.closure.overPair := by
-    simpa using congrArg (fun C => C.overPair) hcore
-  have hori : core.orientation = v.closure.orientation := by
-    simpa using congrArg OrientedPDCode.orientation hcore
+  obtain ⟨hhalf, hedge, hover, hori⟩ := fields_eq_of_adjoinCircle hcore
+  rw [halfEdge_closure] at hhalf
   have hc : core.crossinglessComponents =
       (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
     have h := congrArg OrientedPDCode.crossinglessComponents hcore
