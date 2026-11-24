@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
-public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Decomposition
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 

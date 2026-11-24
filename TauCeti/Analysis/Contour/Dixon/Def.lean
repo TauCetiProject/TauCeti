@@ -119,4 +119,15 @@ theorem dixonFunction_eq_dixonH2 {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → �
     (hw : w ∉ U) : dixonFunction f U γ a b w = dixonH2 f γ a b w := by
   rw [dixonFunction_def, ite_eq_right hw]
 
+/-- The weight `f (γ ·) * deriv γ` of Dixon's `h₂` is interval integrable whenever a function `g`
+with `(γ t - w) ^ n * g t = f (γ t) * deriv γ t` on `Ι a b` is, for a curve `γ` continuous on
+`uIcc a b`: multiplying by the continuous factor `(γ t - w) ^ n` preserves interval integrability.
+Off the curve this recovers the weight from the Cauchy integrand and its powers. -/
+theorem intervalIntegrable_mul_deriv_of_pow_sub_mul_eq {f : ℂ → ℂ} {γ : ℝ → ℂ} {a b : ℝ}
+    {g : ℝ → ℂ} {w : ℂ} {n : ℕ} (hγ : ContinuousOn γ (uIcc a b))
+    (hg : IntervalIntegrable g volume a b)
+    (hgf : ∀ t ∈ Ι a b, (γ t - w) ^ n * g t = f (γ t) * deriv γ t) :
+    IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
+  (intervalIntegrable_congr hgf).mp (hg.continuousOn_mul ((hγ.sub continuousOn_const).pow n))
+
 end TauCeti.Contour
