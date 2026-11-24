@@ -36,8 +36,8 @@ All statements concern the real cast of the law, which is its analytic interface
   `memLp_two_id_map_cast_zipfMeasure_iff` giving their thresholds `s > 2` and `s > 3`;
 * `integrableExpSet_id_map_cast_zipfMeasure`: the exponential-integrability domain is
   `(-∞, 0]`.
-* the corresponding `of_hasLaw_zipfMeasure` theorems expose these moments and sharp integrability
-  thresholds for the real cast of a Zipf random variable.
+* the corresponding theorems in `ProbabilityTheory.HasLaw` expose these moments and sharp
+  integrability thresholds for the real cast of a Zipf random variable.
 
 ## References
 
@@ -160,13 +160,19 @@ theorem integrableExpSet_id_map_cast_zipfMeasure (hs : 1 < s) :
 
 /-! ### Random variables -/
 
-section HasLaw
+end Probability
+
+end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℕ}
 
 /-- The real cast of a Zipf random variable has a finite natural moment exactly below the exponent
 threshold. -/
-theorem integrable_pow_of_hasLaw_zipfMeasure_iff
+theorem integrable_pow_zipfMeasure_iff
     (hX : HasLaw X (zipfMeasure s) P) (hs : 1 < s) (m : ℕ) :
     Integrable (fun ω ↦ (X ω : ℝ) ^ m) P ↔ (m : ℝ) < s - 1 := by
   have hcast : HasLaw (fun ω ↦ (X ω : ℝ))
@@ -177,7 +183,7 @@ theorem integrable_pow_of_hasLaw_zipfMeasure_iff
   rfl
 
 /-- The natural moments of the real cast of a Zipf random variable. -/
-theorem integral_pow_of_hasLaw_zipfMeasure
+theorem integral_pow_zipfMeasure
     (hX : HasLaw X (zipfMeasure s) P) {m : ℕ}
     (hm : (m : ℝ) < s - 1) :
     ∫ ω, (X ω : ℝ) ^ m ∂P = (riemannZeta (s - m : ℝ)).re / (riemannZeta s).re := by
@@ -190,7 +196,7 @@ theorem integral_pow_of_hasLaw_zipfMeasure
     _ = _ := integral_pow_map_cast_zipfMeasure hm
 
 /-- The expectation of the real cast of a Zipf random variable above exponent two. -/
-theorem integral_of_hasLaw_zipfMeasure
+theorem integral_zipfMeasure
     (hX : HasLaw X (zipfMeasure s) P) (hs : 2 < s) :
     ∫ ω, (X ω : ℝ) ∂P = (riemannZeta (s - 1 : ℝ)).re / (riemannZeta s).re := by
   have hcast : HasLaw (fun ω ↦ (X ω : ℝ))
@@ -199,7 +205,7 @@ theorem integral_of_hasLaw_zipfMeasure
   rw [hcast.integral_eq, integral_id_map_cast_zipfMeasure hs]
 
 /-- The variance of the real cast of a Zipf random variable above exponent three. -/
-theorem variance_of_hasLaw_zipfMeasure
+theorem variance_zipfMeasure
     (hX : HasLaw X (zipfMeasure s) P) (hs : 3 < s) :
     variance (fun ω ↦ (X ω : ℝ)) P =
       (riemannZeta (s - 2 : ℝ)).re / (riemannZeta s).re -
@@ -211,7 +217,7 @@ theorem variance_of_hasLaw_zipfMeasure
 
 /-- The real cast of a Zipf random variable has a finite exponential moment exactly at nonpositive
 arguments. -/
-theorem integrable_exp_mul_of_hasLaw_zipfMeasure_iff
+theorem integrable_exp_mul_zipfMeasure_iff
     (hX : HasLaw X (zipfMeasure s) P) (hs : 1 < s) (t : ℝ) :
     Integrable (fun ω ↦ exp (t * (X ω : ℝ))) P ↔ t ≤ 0 := by
   have hcast : HasLaw (fun ω ↦ (X ω : ℝ))
@@ -222,8 +228,4 @@ theorem integrable_exp_mul_of_hasLaw_zipfMeasure_iff
   rw [← h, ← hcast.map_eq, integrable_map_measure (by fun_prop) hcast.aemeasurable]
   rfl
 
-end HasLaw
-
-end Probability
-
-end TauCeti
+end ProbabilityTheory.HasLaw
