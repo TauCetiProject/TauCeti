@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Minpoly.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Quaternion.NormForm
 import Mathlib.FieldTheory.Minpoly.Field
@@ -31,6 +32,8 @@ the involution `star x = trd(x) - x`.
 
 * `QuaternionAlgebra.aeval_X_sq_sub_C_mul_X_add_C_eq_zero`: every quaternion is a root of
   `X² - trd(x) X + nrd(x)`.
+* `TauCeti.QuaternionAlgebra.minpoly_eq_of_notMem_range`: the minimal polynomial of a non-scalar
+  quaternion over a field is `X² - trd(x) X + nrd(x)`.
 * `TauCeti.QuaternionAlgebra.isIntegral_iff`: a quaternion over a field is integral over `R`
   exactly when its reduced trace and reduced norm are.
 * `TauCeti.QuaternionAlgebra.isIntegral_iff_mem_range`: over an integrally closed domain with
@@ -60,8 +63,8 @@ variable {S : Type*} [CommRing S] {c₁ c₂ c₃ : S}
 theorem aeval_X_sq_sub_C_mul_X_add_C_eq_zero (x : ℍ[S,c₁,c₂,c₃]) :
     aeval x (X ^ 2 - C (2 * x.re + c₂ * x.imI) * X + C (normForm c₁ c₂ c₃ x)) = 0 := by
   -- `x² - (x + star x) x + nrd(x) = nrd(x) - star x * x`, and `star x * x = nrd(x)`
-  rw [map_add, map_sub, map_mul, aeval_X_pow, aeval_C, aeval_C, aeval_X, coe_algebraMap,
-    ← self_add_star', add_mul, star_mul_self]
+  simp only [map_add, map_sub, map_mul, aeval_X_pow, aeval_C, aeval_X, coe_algebraMap, coe_ofNat]
+  rw [← self_add_star, add_mul, star_mul_self]
   noncomm_ring
 
 end CommRing
@@ -86,6 +89,18 @@ private theorem isIntegral_of_mem_range {x : ℍ[F,c₁,c₂,c₃]} (hint : IsIn
   rw [coe_algebraMap, re_coe, imI_coe, mul_zero, add_zero, normForm_coe]
   exact ⟨two_mul r ▸ hr.add hr, hr.pow 2⟩
 
+/-- **The minimal polynomial of a quaternion.** If a quaternion `x` over a field `F` is not a
+scalar, its minimal polynomial over `F` is its reduced characteristic polynomial
+`X² - trd(x) X + nrd(x)`. -/
+theorem minpoly_eq_of_notMem_range {x : ℍ[F,c₁,c₂,c₃]}
+    (hx : x ∉ (algebraMap F ℍ[F,c₁,c₂,c₃]).range) :
+    minpoly F x = X ^ 2 - C (2 * x.re + c₂ * x.imI) * X + C (normForm c₁ c₂ c₃ x) := by
+  have hxF : IsIntegral F x := .of_finite F x
+  refine (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hxF) (by monicity!)
+    (minpoly.dvd F x (aeval_X_sq_sub_C_mul_X_add_C_eq_zero x)) ?_).symm
+  calc _ = 2 := by compute_degree!
+    _ ≤ _ := (minpoly.two_le_natDegree_iff hxF).2 hx
+
 /-- **Integral quaternions.** A quaternion `x` over a field `F` is integral over a ring `R` exactly
 when its reduced trace `2 x.re + c₂ x.imI` and its reduced norm `normForm c₁ c₂ c₃ x` are. -/
 theorem isIntegral_iff {x : ℍ[F,c₁,c₂,c₃]} :
@@ -94,9 +109,6 @@ theorem isIntegral_iff {x : ℍ[F,c₁,c₂,c₃]} :
   have hq : q.Monic := by
     unfold q
     monicity!
-  have hq2 : q.natDegree = 2 := by
-    unfold q
-    compute_degree!
   have hqx : aeval x q = 0 := aeval_X_sq_sub_C_mul_X_add_C_eq_zero x
   refine ⟨fun hint => ?_, fun ⟨ht, hn⟩ => ?_⟩
   · by_cases hx : x ∈ (algebraMap F ℍ[F,c₁,c₂,c₃]).range
@@ -104,14 +116,8 @@ theorem isIntegral_iff {x : ℍ[F,c₁,c₂,c₃]} :
     -- otherwise `q` is the minimal polynomial of `x` over `F`, so it divides a monic polynomial
     -- over `R` killing `x`, and its coefficients are integral over `R`
     obtain ⟨p, hp, hpx⟩ := hint
-    have hmin : minpoly F x = q := by
-      have hxF : IsIntegral F x := .of_finite F x
-      refine (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hxF) hq (minpoly.dvd F x hqx)
-        ?_).symm
-      rw [hq2, minpoly.two_le_natDegree_iff hxF]
-      exact hx
     have hdvd : q ∣ p.map (algebraMap R F) := by
-      rw [← hmin]
+      rw [show q = minpoly F x from (minpoly_eq_of_notMem_range hx).symm]
       refine minpoly.dvd F x ?_
       rwa [aeval_map_algebraMap, aeval_def]
     have hcoeff := Polynomial.isIntegral_coeff_of_dvd p q hp hq hdvd

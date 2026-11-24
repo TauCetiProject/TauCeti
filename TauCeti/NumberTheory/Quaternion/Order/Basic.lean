@@ -172,15 +172,10 @@ theorem mem_standardOrder_iff (h₁ : c₁ ∈ (algebraMap R F).range) (h₂ : c
         x.imK ∈ (algebraMap R F).range := by
   set A := (algebraMap R F).range
   -- the quaternions with coordinates in `A` are the image of `ℍ[A,c₁,c₂,c₃]`, hence a subring
-  let f := map (⟨c₁, h₁⟩ : A) ⟨c₂, h₂⟩ ⟨c₃, h₃⟩ A.subtype rfl rfl rfl
+  let f : ℍ[A,⟨c₁, h₁⟩,⟨c₂, h₂⟩,⟨c₃, h₃⟩] →+* ℍ[F,c₁,c₂,c₃] := map _ _ _ A.subtype rfl rfl rfl
   have hf {y : ℍ[F,c₁,c₂,c₃]} :
-      y ∈ f.range ↔ y.re ∈ A ∧ y.imI ∈ A ∧ y.imJ ∈ A ∧ y.imK ∈ A := by
-    refine ⟨?_, fun ⟨h0, h1, h2, h3⟩ => ⟨⟨⟨_, h0⟩, ⟨_, h1⟩, ⟨_, h2⟩, ⟨_, h3⟩⟩, by
-      rw [map_mk]
-      simp only [Subring.coe_subtype, mk.eta]⟩⟩
-    rintro ⟨y, rfl⟩
-    simp only [f, re_map, imI_map, imJ_map, imK_map]
-    exact ⟨y.re.property, y.imI.property, y.imJ.property, y.imK.property⟩
+      y ∈ f.range ↔ y.re ∈ A ∧ y.imI ∈ A ∧ y.imJ ∈ A ∧ y.imK ∈ A :=
+    (mem_range_map ..).trans (by simp only [Subring.range_subtype])
   rw [← hf]
   refine ⟨fun hx => ?_, fun hx => ?_⟩
   · induction hx using Algebra.adjoin_induction with
@@ -235,8 +230,9 @@ theorem isOrder_standardOrder (h₁ : c₁ ∈ (algebraMap R F).range)
   have h := toSubmodule_standardOrder (R := R) h₁ h₂ h₃
   refine isOrder_iff.2 ⟨Module.Finite.iff_fg.2 (h ▸ fg_span (Set.finite_range _)), eq_top_iff.2 ?_⟩
   rw [← (basisOneIJK c₁ c₂ c₃).span_eq]
-  exact span_le.2 fun y hy => subset_span (h ▸ subset_span hy :
-    y ∈ Subalgebra.toSubmodule (standardOrder R c₁ c₂ c₃))
+  refine span_le.2 fun y hy => subset_span ?_
+  rw [SetLike.mem_coe, ← Subalgebra.mem_toSubmodule, h]
+  exact subset_span hy
 
 end StandardOrder
 
