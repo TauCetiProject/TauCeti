@@ -15,27 +15,29 @@ Let `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` and `0 ⟶ N₁ ⟶ N₂ ⟶ N₃ ⟶ 0
 with Bockstein homomorphisms `β` (`TopCat.singularCohomologyBockstein`), and let
 `μ : M₂ ⊗ N₂ ⟶ L` be a pairing and `g : L ⟶ L'` a morphism such that, after `g`, `μ` restricted to
 `M₁ ⊗ N₂` factors through a pairing `μ₁₃ : M₁ ⊗ N₃ ⟶ L'` and `μ` restricted to `M₂ ⊗ N₁` factors
-through a pairing `μ₃₁ : M₃ ⊗ N₁ ⟶ L'`. Then for every space `X`, `u ∈ Hᵖ(X; M₃)` and
-`v ∈ H^q(X; N₃)`,
+through a pairing `μ₃₁ : M₃ ⊗ N₁ ⟶ L'`. Let `R`, `S`, `T` be projective objects with a map
+`u : T ⟶ R ⊗ S`. Then for every space `X`, `a ∈ Hᵖ(X; R, M₃)` and `b ∈ H^q(X; S, N₃)`,
 
-`β u ⌣ v = (-1)^(p + 1) • u ⌣ β v`   in `H^(p + q + 1)(X; L')`,
+`β a ⌣ b = (-1)^(p + 1) • a ⌣ β b`   in `H^(p + q + 1)(X; T, L')`,
 
-the left cup product being taken with `μ₁₃` and the right one with `μ₃₁`
+both cup products being taken along the Alexander–Whitney diagonal `X.alexanderWhitneyDiagonal u`,
+the left one with `μ₁₃` and the right one with `μ₃₁`
 (`TopCat.singularCup_singularCohomologyBockstein_eq_zsmul`). This holds on every space: lifting
-`u` and `v` to cochains `u'` and `v'` with values in `M₂` and `N₂`, the cochain `g ∘ (u' ⌣ v')` has
-coboundary a cocycle representing `β u ⌣ v + (-1)ᵖ u ⌣ β v`, by the Leibniz rule. The algebraic
+`a` and `b` to cochains `φ` and `ψ` with values in `M₂` and `N₂`, the cochain `g ∘ (φ ⌣ ψ)` has
+coboundary a cocycle representing `β a ⌣ b + (-1)ᵖ a ⌣ β b`, by the Leibniz rule. The algebraic
 statement, for the cup product of the cochains of chain complexes along any diagonal, is
-`TauCeti.ChainComplex.cup_δ_eq_zsmul_cup_δ`.
+`TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ`.
 
-For the sequence `0 ⟶ ℤ ⟶ ℚ ⟶ ℚ/ℤ ⟶ 0` taken twice, with `μ` the multiplication of `ℚ`, `g` the
-projection to `ℚ/ℤ` and `μ₁₃`, `μ₃₁` the actions of `ℤ` on `ℚ/ℤ`, this is the mixed-coefficient
-Bockstein identity `u ∪ β v = (-1)^(p + 1) β u ∪ v` of Conway–Friedl–Herrmann. Together with the
-graded commutativity of the cup product, it determines the symmetry sign of the torsion linking
-form of a closed oriented manifold, which is defined through Bockstein lifts to `ℚ/ℤ`.
+For the sequence `0 ⟶ ℤ ⟶ ℚ ⟶ ℚ/ℤ ⟶ 0` taken twice, with `R = S = T = 𝟙_` the unit object,
+`u = (λ_ (𝟙_)).inv` the inverse unitor, `μ` the multiplication of `ℚ`, `g` the projection to `ℚ/ℤ`
+and `μ₁₃`, `μ₃₁` the actions of `ℤ` on `ℚ/ℤ`, this is the mixed-coefficient Bockstein identity
+`a ∪ β b = (-1)^(p + 1) β a ∪ b` of Conway–Friedl–Herrmann. Together with the graded
+commutativity of the cup product, it determines the symmetry sign of the torsion linking form of a
+closed oriented manifold, which is defined through Bockstein lifts to `ℚ/ℤ`.
 
 ## Main results
 
-* `TopCat.singularCup_singularCohomologyBockstein_eq_zsmul`: `β u ⌣ v = (-1)^(p + 1) • u ⌣ β v`.
+* `TopCat.singularCup_singularCohomologyBockstein_eq_zsmul`: `β a ⌣ b = (-1)^(p + 1) • a ⌣ β b`.
 
 ## References
 
@@ -61,12 +63,13 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
 
 /-- **The Bockstein homomorphisms and the cup product.** For short exact sequences of coefficients
 `M` and `N` and pairings `μ : M₂ ⊗ N₂ ⟶ L`, `μ₁₃ : M₁ ⊗ N₃ ⟶ L'` and `μ₃₁ : M₃ ⊗ N₁ ⟶ L'`
-compatible through `g : L ⟶ L'`, the Bockstein homomorphisms satisfy, for `u ∈ Hᵖ(X; M₃)` and
-`v ∈ H^q(X; N₃)`,
+compatible through `g : L ⟶ L'`, the Bockstein homomorphisms satisfy, for `a ∈ Hᵖ(X; R, M₃)` and
+`b ∈ H^q(X; S, N₃)`,
 
-`β u ⌣ v = (-1)^(p + 1) • u ⌣ β v`   in `H^(p + q + 1)(X; L')`,
+`β a ⌣ b = (-1)^(p + 1) • a ⌣ β b`   in `H^(p + q + 1)(X; T, L')`,
 
-the left cup product being taken with `μ₁₃` and the right one with `μ₃₁`. -/
+both cup products being taken along the Alexander–Whitney diagonal `X.alexanderWhitneyDiagonal u`
+of `u : T ⟶ R ⊗ S`, the left one with `μ₁₃` and the right one with `μ₃₁`. -/
 theorem singularCup_singularCohomologyBockstein_eq_zsmul (X : TopCat.{w}) (k : Type*) [CommRing k]
     [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) {M N : ShortComplex C} (hM : M.ShortExact)
     (hN : N.ShortExact) {L L' : C} (g : L ⟶ L') (μ : M.X₂ ⊗ N.X₂ ⟶ L) (μ₁₃ : M.X₁ ⊗ N.X₃ ⟶ L')
@@ -80,7 +83,7 @@ theorem singularCup_singularCohomologyBockstein_eq_zsmul (X : TopCat.{w}) (k : T
   rw [TauCeti.singularCup_def, TauCeti.singularCup_def,
     singularCohomologyBockstein_eq_δ R k X hM p p' hp,
     singularCohomologyBockstein_eq_δ S k X hN q q' hq]
-  exact TauCeti.ChainComplex.cup_δ_eq_zsmul_cup_δ (X.alexanderWhitneyDiagonal u) hM hN g μ μ₁₃ μ₃₁
+  exact TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ (X.alexanderWhitneyDiagonal u) hM hN g μ μ₁₃ μ₃₁
     hμ₁₃ hμ₃₁ p q p' q' n hp hq h₁ h₂ a b
 
 end TopCat

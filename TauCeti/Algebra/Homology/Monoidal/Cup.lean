@@ -36,7 +36,7 @@ connecting morphism `δ`, which for singular cochains is the Bockstein homomorph
 sequences and pairings `μ₁₃ : M₁ ⊗ N₃ ⟶ P'` and `μ₃₁ : M₃ ⊗ N₁ ⟶ P'` which both come from one
 pairing `μ : M₂ ⊗ N₂ ⟶ P` followed by `g : P ⟶ P'`, the Leibniz rule applied to lifts of two
 cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
-(`TauCeti.ChainComplex.cup_δ_eq_zsmul_cup_δ`).
+(`TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ`).
 
 ## Main definitions and results
 
@@ -50,9 +50,7 @@ cocycles to `M₂` and `N₂` gives `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`
 * `TauCeti.ChainComplex.cup`: the cup product on cohomology, with
   `TauCeti.ChainComplex.cup_homologyπ` computing it on classes of cocycles and
   `TauCeti.ChainComplex.cup_naturality` its naturality.
-* `TauCeti.ChainComplex.exists_d_comp_eq_of_δ_eq`: cochain representatives of the connecting
-  morphism of a coefficient sequence.
-* `TauCeti.ChainComplex.cup_δ_eq_zsmul_cup_δ`: the cup product of a connecting morphism with a
+* `TauCeti.ChainComplex.δ_cup_eq_zsmul_cup_δ`: the cup product of a connecting morphism with a
   class, `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`.
 
 ## References
@@ -121,6 +119,7 @@ lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
 
 /-- Postcomposing the cup product of cochains with `g : P ⟶ P'` is the cup product of the same
 cochains along the pairing `μ ≫ g`. -/
+@[reassoc]
 lemma cupCochain_comp {P' : C} (g : P ⟶ P') (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M)
     (ψ : B.X q ⟶ N) :
     cupCochain k D μ p q n h φ ψ ≫ g = cupCochain k D (μ ≫ g) p q n h φ ψ := by
@@ -255,34 +254,6 @@ end Cohomology
 
 section Connecting
 
-section Lift
-
-variable [Abelian C] {X : ChainComplex C ℕ} [∀ i, Projective (X.X i)] {k : Type*} [Ring k]
-  [Linear k C] {S : ShortComplex C} (hS : S.ShortExact)
-
-/-- **Cochain representatives of the connecting morphism of a coefficient sequence.** Let
-`0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` be a short exact sequence of coefficients and `X` a chain complex with
-projective terms. If the cocycle `α` of `Hom(X, M₁)` represents the image of `x ∈ Hᵖ(Hom(X, M₃))`
-under the connecting morphism, then `x` is represented by a cocycle `a` which lifts to a cochain
-`φ : X_p ⟶ M₂` whose coboundary is `α` followed by `M₁ ⟶ M₂`, on the nose. -/
-lemma exists_d_comp_eq_of_δ_eq (p : ℕ) (x : (X.linearYonedaObj k S.X₃).homology p)
-    (α : (X.linearYonedaObj k S.X₁).cycles (p + 1))
-    (hα : (X.linearYonedaObj k S.X₁).homologyπ (p + 1) α =
-      (X.shortExact_map_linearYonedaObjFunctor k hS).δ p (p + 1) rfl x) :
-    ∃ (φ : X.X p ⟶ S.X₂) (a : (X.linearYonedaObj k S.X₃).cycles p),
-      X.d (p + 1) p ≫ φ = (X.linearYonedaObj k S.X₁).iCycles (p + 1) α ≫ S.f ∧
-        φ ≫ S.g = (X.linearYonedaObj k S.X₃).iCycles p a ∧
-          (X.linearYonedaObj k S.X₃).homologyπ p a = x := by
-  obtain ⟨φ, a, hφ, ha, hx⟩ :=
-    (X.shortExact_map_linearYonedaObjFunctor k hS).moduleCat_exists_d_eq_of_δ_eq p (p + 1) rfl x α
-      hα.symm
-  -- The maps of the coefficient sequence of cochain complexes are postcomposition.
-  refine ⟨φ, a, ?_, ?_, hx⟩
-  · exact hφ.trans (X.linearYonedaObjMap_f_hom_apply k S.f (p + 1) _)
-  · exact (X.linearYonedaObjMap_f_hom_apply k S.g p φ).symm.trans ha
-
-end Lift
-
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B E : ChainComplex C ℕ}
   [A.HasTensor B] [∀ i, Projective (A.X i)] [∀ i, Projective (B.X i)] {k : Type*} [CommRing k]
   [Linear k C] [MonoidalLinear k C] (D : E ⟶ HomologicalComplex.tensorObj A B)
@@ -299,7 +270,7 @@ factors through `μ₃₁ : M₃ ⊗ N₁ ⟶ P'`. Then for `x ∈ Hᵖ(Hom(A, M
 `δ x ⌣ y = (-1)^(p + 1) • x ⌣ δ y`   in `H^(p + q + 1)(Hom(E, P'))`,
 
 the cup products being taken along `D` with the pairings `μ₁₃` and `μ₃₁`. -/
-theorem cup_δ_eq_zsmul_cup_δ (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ ◁ S'.g) ≫ μ₁₃)
+theorem δ_cup_eq_zsmul_cup_δ (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.X₁ ◁ S'.g) ≫ μ₁₃)
     (hμ₃₁ : (S.X₂ ◁ S'.f) ≫ μ ≫ g = (S.g ▷ S'.X₁) ≫ μ₃₁) (p q p' q' n : ℕ) (hp : p + 1 = p')
     (hq : q + 1 = q') (h₁ : p' + q = n) (h₂ : p + q' = n)
     (x : (A.linearYonedaObj k S.X₃).homology p) (y : (B.linearYonedaObj k S'.X₃).homology q) :
@@ -312,10 +283,10 @@ theorem cup_δ_eq_zsmul_cup_δ (hμ₁₃ : (S.f ▷ S'.X₂) ≫ μ ≫ g = (S.
   -- nose; likewise `δ y`, `β` and `ψ`.
   obtain ⟨α, hα⟩ := (A.linearYonedaObj k S.X₁).moduleCat_homologyπ_surjective (p + 1)
     ((A.shortExact_map_linearYonedaObjFunctor k hS).δ p (p + 1) rfl x)
-  obtain ⟨φ, a, hφ, ha, rfl⟩ := exists_d_comp_eq_of_δ_eq hS p x α hα
+  obtain ⟨φ, a, hφ, ha, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS p x α hα
   obtain ⟨β, hβ⟩ := (B.linearYonedaObj k S'.X₁).moduleCat_homologyπ_surjective (q + 1)
     ((B.shortExact_map_linearYonedaObjFunctor k hS').δ q (q + 1) rfl y)
-  obtain ⟨ψ, b, hψ, hb, rfl⟩ := exists_d_comp_eq_of_δ_eq hS' q y β hβ
+  obtain ⟨ψ, b, hψ, hb, rfl⟩ := exists_d_comp_eq_of_δ_eq k hS' q y β hβ
   -- The coboundary of `(φ ⌣ ψ) ≫ g` is `α ⌣ b + (-1)ᵖ a ⌣ β`, by the Leibniz rule.
   have key : cupCycles k D μ₁₃ (p + 1) q (p + q + 1) h₁ α b +
       ((-1 : ℤ) ^ p) • cupCycles k D μ₃₁ p (q + 1) (p + q + 1) h₂ a β =
