@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
+public import Mathlib.Topology.Instances.ZMod
 import TauCeti.Topology.Algebra.InfiniteSum.Group
 
 /-!
@@ -124,29 +125,19 @@ namespace TauCeti.ConvergentHaarProductExamples
 
 /-! ### Counting measure on `C₄ = ZMod 4` -/
 
-/-- The discrete topology on `ZMod 4`. -/
-local instance instTopologicalSpaceZModFour : TopologicalSpace (ZMod 4) := ⊥
-
-local instance instDiscreteTopologyZModFour : DiscreteTopology (ZMod 4) := ⟨rfl⟩
-
 /-- Counting measure is a Haar measure on the finite discrete group `ZMod 4`. -/
 local instance isAddHaarMeasure_count_zmodFour : IsAddHaarMeasure (count : Measure (ZMod 4)) where
   lt_top_of_isCompact _ _ := measure_lt_top _ _
   open_pos _ _ hU := count_ne_zero_iff.2 hU
 
-/-- The subgroup `{0, 2}` of `ZMod 4`. -/
-def zmodFourEven : AddSubgroup (ZMod 4) where
-  carrier := {0, 2}
-  add_mem' {a b} ha hb := by
-    rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> decide
-  zero_mem' := Or.inl rfl
-  neg_mem' {a} ha := by rcases ha with rfl | rfl <;> decide
+/-- The subgroup `2ℤ/4 = {0, 2}` of `ZMod 4`. -/
+local notation "twoZMod4" => AddSubgroup.zmultiples (2 : ZMod 4)
 
-/-- `{0, 2}` has counting measure `2`. -/
-lemma count_zmodFourEven : count (zmodFourEven : Set (ZMod 4)) = 2 := by
-  rw [count_apply (MeasurableSet.of_discrete),
-    show (zmodFourEven : Set (ZMod 4)) = {0, 2} from rfl,
-    Set.encard_pair (show (0 : ZMod 4) ≠ 2 by decide)]
+/-- `2ℤ/4 = {0, 2}` has counting measure `2`. -/
+lemma count_zmultiples_two : count (twoZMod4 : Set (ZMod 4)) = 2 := by
+  rw [count_apply (MeasurableSet.of_discrete), ← Set.Finite.cast_ncard_eq (Set.toFinite _),
+    ← Nat.card_coe_set_eq, SetLike.coe_sort_coe, Nat.card_zmultiples,
+    show (2 : ZMod 4) = ((2 : ℕ) : ZMod 4) from rfl, ZMod.addOrderOf_coe _ (by norm_num)]
   rfl
 
 /-- Every subset of `ZMod 4` is open. -/
@@ -154,20 +145,13 @@ local instance factIsOpenZModFour {ι : Type} (U : ι → AddSubgroup (ZMod 4)) 
     Fact (∀ i, IsOpen (U i : Set (ZMod 4))) :=
   ⟨fun _ ↦ isOpen_discrete _⟩
 
-/-- With the whole finite index set as exceptional set, the tail is empty, so every family over
-it is summable. -/
-lemma summable_notMem_univ {ι : Type*} [Fintype ι]
-    (f : {i // i ∉ (Finset.univ : Finset ι)} → ℝ) : Summable f :=
-  have : IsEmpty {i // i ∉ (Finset.univ : Finset ι)} := ⟨fun i ↦ i.property (Finset.mem_univ _)⟩
-  .of_finite
-
 /-- With the whole finite index set as exceptional set, the convergent product of counting
 measures on copies of `ZMod 4` gives the restricted product total mass `4 ^ card ι`, for any
 family of restricting subgroups. -/
 lemma convergentAddHaarProduct_count_univ {ι : Type} [Fintype ι]
     (U : ι → AddSubgroup (ZMod 4)) :
     convergentAddHaarProduct U Finset.univ (fun i hi ↦ absurd (Finset.mem_univ i) hi)
-      (fun _ ↦ count) (summable_notMem_univ _) univ = 4 ^ Fintype.card ι := by
+      (fun _ ↦ count) (.of_finite) univ = 4 ^ Fintype.card ι := by
   have : IsEmpty {i // i ∉ (Finset.univ : Finset ι)} := ⟨fun i ↦ i.property (Finset.mem_univ _)⟩
   have hbox : (univ : Set (Πʳ i, [ZMod 4, (U i : Set (ZMod 4))])) =
       box fun _ ↦ (univ : Set (ZMod 4)) := by
@@ -179,18 +163,18 @@ lemma convergentAddHaarProduct_count_univ {ι : Type} [Fintype ι]
 
 -- One copy of `C₄` with counting measure, `B = {0, 2}` and the whole index set exceptional: the
 -- tail is empty and the integral box has mass `2`.
-example : convergentAddHaarProduct (fun _ : Unit ↦ zmodFourEven) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (summable_notMem_univ _)
-      (box fun _ ↦ (zmodFourEven : Set (ZMod 4))) = 2 := by
+example : convergentAddHaarProduct (fun _ : Unit ↦ twoZMod4) Finset.univ
+      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)
+      (box fun _ ↦ (twoZMod4 : Set (ZMod 4))) = 2 := by
   have : IsEmpty {i // i ∉ (Finset.univ : Finset Unit)} := ⟨fun i ↦ i.property (Finset.mem_univ _)⟩
   rw [convergentAddHaarProduct_box _ _ _ _ _ subset_rfl fun i hi ↦
     absurd (Finset.mem_univ i) hi]
-  simp [count_zmodFourEven]
+  simp [count_zmultiples_two]
 
 /-- `{0, 2}` has mass `1` for half counting measure. -/
-lemma half_count_zmodFourEven :
-    ((2 : ℝ≥0)⁻¹ • (count : Measure (ZMod 4))) (zmodFourEven : Set (ZMod 4)) = 1 := by
-  rw [coe_nnreal_smul_apply, count_zmodFourEven, ENNReal.coe_inv two_ne_zero]
+lemma half_count_zmultiples_two :
+    ((2 : ℝ≥0)⁻¹ • (count : Measure (ZMod 4))) (twoZMod4 : Set (ZMod 4)) = 1 := by
+  rw [coe_nnreal_smul_apply, count_zmultiples_two, ENNReal.coe_inv two_ne_zero]
   exact ENNReal.inv_mul_cancel (by norm_num) (by norm_num)
 
 /-- Half counting measure is a Haar measure on `ZMod 4`. -/
@@ -201,42 +185,42 @@ local instance isAddHaarMeasure_half_count_zmodFour :
 -- A tail factor of mass `2`: for one copy of `C₄` with counting measure, `B = {0, 2}` and empty
 -- exceptional set, the normalized local factor is `2⁻¹ • count`, while the convergent product keeps
 -- the compensating global factor `2`.
-example : convergentAddHaarProduct (fun _ : Unit ↦ zmodFourEven) ∅
+example : convergentAddHaarProduct (fun _ : Unit ↦ twoZMod4) ∅
       (fun _ _ ↦ (Set.toFinite _).isCompact) (fun _ ↦ count) (.of_finite) =
-      (2 : ℝ≥0) • restrictedAddHaar (fun _ : Unit ↦ zmodFourEven) (fun _ ↦ (2 : ℝ≥0)⁻¹ • count)
-        (.of_forall fun _ ↦ half_count_zmodFourEven) := by
+      (2 : ℝ≥0) • restrictedAddHaar (fun _ : Unit ↦ twoZMod4) (fun _ ↦ (2 : ℝ≥0)⁻¹ • count)
+        (.of_forall fun _ ↦ half_count_zmultiples_two) := by
   rw [convergentAddHaarProduct_eq_smul_restrictedAddHaar _ _ _ _ _ (fun _ ↦ (2 : ℝ≥0)⁻¹ • count)
     (fun _ h ↦ absurd h (Finset.notMem_empty _))
-    (fun _ _ ↦ by rw [count_zmodFourEven]; rfl) (.of_forall fun _ ↦ half_count_zmodFourEven)]
+    (fun _ _ ↦ by rw [count_zmultiples_two]; rfl) (.of_forall fun _ ↦ half_count_zmultiples_two)]
   congr
   rw [tprod_eq_mulSingle ⟨(), Finset.notMem_empty _⟩ fun b hb ↦ absurd (Subsingleton.elim _ _) hb,
-    count_zmodFourEven]
+    count_zmultiples_two]
   norm_num
 
 -- On one copy of `C₄`, the identity change of restricting subgroup preserves total mass `4`.
 example : convergentAddHaarProduct (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 4))) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (summable_notMem_univ _)
+      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)
       univ = 4 := by
   simpa using convergentAddHaarProduct_count_univ (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 4)))
 
 -- On one copy of `C₄`, changing the restricting subgroup from `C₄` to `{0}` transports counting
 -- measure of total mass `4` to a measure of total mass `4`.
 example : ((convergentAddHaarProduct (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 4))) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (summable_notMem_univ _)).map
+      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)).map
       (addRestrictedProductCongr _ (fun _ ↦ ⊥) (by
         rw [Filter.cofinite_eq_bot]; exact Filter.eventually_bot))) univ = 4 := by
   rw [map_addRestrictedProductCongr_convergentAddHaarProduct _ _ Finset.univ Finset.univ _ _
-    (fun i hi ↦ absurd (Finset.mem_univ i) hi) _ _ (summable_notMem_univ _)]
+    (fun i hi ↦ absurd (Finset.mem_univ i) hi) _ _ (.of_finite)]
   simpa using convergentAddHaarProduct_count_univ (fun _ : Unit ↦ (⊥ : AddSubgroup (ZMod 4)))
 
 -- On two copies of `C₄`, changing both restricting subgroups from `C₄` to `{0}` preserves total
 -- mass `16`.
 example : ((convergentAddHaarProduct (fun _ : Fin 2 ↦ (⊤ : AddSubgroup (ZMod 4))) Finset.univ
-      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (summable_notMem_univ _)).map
+      (fun i hi ↦ absurd (Finset.mem_univ i) hi) (fun _ ↦ count) (.of_finite)).map
       (addRestrictedProductCongr _ (fun _ ↦ ⊥) (by
         rw [Filter.cofinite_eq_bot]; exact Filter.eventually_bot))) univ = 16 := by
   rw [map_addRestrictedProductCongr_convergentAddHaarProduct _ _ Finset.univ Finset.univ _ _
-    (fun i hi ↦ absurd (Finset.mem_univ i) hi) _ _ (summable_notMem_univ _)]
+    (fun i hi ↦ absurd (Finset.mem_univ i) hi) _ _ (.of_finite)]
   rw [convergentAddHaarProduct_count_univ]
   norm_num
 
