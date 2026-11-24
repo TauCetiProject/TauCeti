@@ -39,6 +39,8 @@ mechanism behind the left-right symmetry of the radical, proved in
   radical is nontrivial.
 * `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
   ideal in the Jacobson radical is.
+* `Ideal.isUnit_one_sub_mul_of_le_jacobson`: `1 - r * s` is a unit when `r` or `s` lies in an
+  ideal contained in the Jacobson radical.
 
 ## References
 
@@ -148,6 +150,14 @@ end Ring
 end TauCeti
 
 namespace Ideal
+
+/-- If an ideal `I` lies in the Jacobson radical and `r ∈ I` or `s ∈ I`, then `1 - r * s` is a
+unit: `r * s` lies in the radical, which is two-sided. -/
+theorem isUnit_one_sub_mul_of_le_jacobson {R : Type*} [Ring R] {I : Ideal R}
+    (hI : I ≤ Ring.jacobson R) {r s : R} (h : r ∈ I ∨ s ∈ I) : IsUnit (1 - r * s) := by
+  have hrs : r * s ∈ Ring.jacobson R :=
+    h.elim (fun hr ↦ mul_mem_right s _ (hI hr)) (fun hs ↦ mul_mem_left _ r (hI hs))
+  simpa [sub_eq_add_neg] using TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left.1 hrs (-1)
 
 /-- If `I` lies in the Jacobson radical of `R` and `R ⧸ I` is trivial, then `R` is trivial: the
 ideal `I = ⊤` can only lie in the Jacobson radical of the zero ring. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Coordinates
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.GramSchmidt
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -20,7 +21,10 @@ the orthonormalized fields parallel there as well.
 
 These frames allow tensor and curvature calculations in an orthonormal frame whose connection
 coefficients vanish at the point of calculation. They are orthonormal throughout the normal
-neighbourhood; they need not be coordinate fields or be parallel away from its centre.
+neighbourhood; they need not be coordinate fields or be parallel away from its centre. Extended
+from a neighbourhood of the centre, they become globally smooth vector fields with the same
+properties near the centre (`exists_contMDiff_geodesicFrame`), to which the connection API on
+global sections applies.
 
 `OrthonormalBasis.normalFrameExpansion` reconstructs an initial tangent vector at another point
 from its orthonormal components in the frame; on the normal neighbourhood this preserves
@@ -35,7 +39,7 @@ components and inner products, and it is the identity at the centre.
 public noncomputable section
 
 open Bundle CovariantDerivative InnerProductSpace Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
 
@@ -186,5 +190,43 @@ theorem normalFrameExpansion_self (h : IsNormalDomain I M p U)
   simp [OrthonormalBasis.normalFrameExpansion_apply, h.normalOrthonormalFrame_self, b.sum_repr']
 
 end IsNormalDomain
+
+variable [I.Boundaryless] [T2Space M]
+
+omit [LinearOrder ι] [LocallyFiniteOrderBot ι] in
+/-- **Geodesic frames.** Every orthonormal basis `b` of the tangent space at `p` extends to smooth
+vector fields `eᵢ` on `M` which form an orthonormal basis of the tangent space at every point
+near `p`, have vanishing Levi-Civita covariant derivative at `p`, and equal `b` at `p`. They are
+the normal orthonormal frame of a normal ball at `p`, extended from a neighbourhood of `p` to
+global smooth sections. -/
+theorem exists_contMDiff_geodesicFrame (b : OrthonormalBasis ι ℝ (TangentSpace I p)) :
+    ∃ e : ι → Π q : M, TangentSpace I q, (∀ i, CMDiff ∞ (T% (e i))) ∧
+      (∀ᶠ q in 𝓝 p, ∃ b' : OrthonormalBasis ι ℝ (TangentSpace I q), ∀ i, b' i = e i q) ∧
+      (∀ i, leviCivitaConnection I M (e i) p = 0) ∧ ∀ i, e i p = b i := by
+  -- Gram–Schmidt needs an ordered index type, so build the frame for `b` reindexed by `Fin n`.
+  set eq := Fintype.equivFin ι
+  set b₀ := b.reindex eq
+  obtain ⟨r, -, h⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
+  set f := normalOrthonormalFrame I M p (Metric.ball 0 r) b₀
+  have hext (i : Fin (Fintype.card ι)) :=
+    ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset isCompact_singleton
+      (by rw [nhdsSet_singleton]; exact h.image_mem_nhds)
+      (h.contMDiffOn_normalOrthonormalFrame b₀ i)
+  choose s hs _ using hext
+  simp only [nhdsSet_singleton] at hs
+  have hfdiff (i : Fin (Fintype.card ι)) : MDiffAt (T% (f i)) p :=
+    ((h.contMDiffOn_normalOrthonormalFrame b₀ i).contMDiffAt h.image_mem_nhds).mdifferentiableAt
+      (by simp)
+  refine ⟨fun i ↦ s (eq i), fun i ↦ (s (eq i)).contMDiff, ?_, fun i ↦ ?_, fun i ↦ ?_⟩
+  · filter_upwards [Filter.eventually_all.2 hs, h.image_mem_nhds] with q hq hqW
+    refine ⟨(OrthonormalBasis.mk (h.orthonormal_normalOrthonormalFrame b₀ hqW)
+      ((h.isLocalFrameOn_normalOrthonormalFrame b₀).generating hqW)).reindex eq.symm,
+      fun i ↦ ?_⟩
+    simp [hq]
+  · rw [(leviCivitaConnection I M).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
+      ((s (eq i)).contMDiff.mdifferentiableAt (by simp)) (hfdiff (eq i)) Filter.univ_mem
+      (hs (eq i))]
+    exact h.leviCivitaConnection_normalOrthonormalFrame_self b₀ (eq i)
+  · simp [(hs (eq i)).self_of_nhds, h.normalOrthonormalFrame_self b₀ (eq i), b₀]
 
 end TauCeti.Manifold

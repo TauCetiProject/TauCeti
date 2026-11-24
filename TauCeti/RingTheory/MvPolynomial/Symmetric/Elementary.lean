@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import Mathlib.Algebra.Order.Ring.Defs
+import Mathlib.Algebra.Order.BigOperators.Group.Multiset
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 public import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
@@ -28,6 +31,10 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
   `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
+* `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
+* `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
+  of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
+  higher degree.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
@@ -89,6 +96,45 @@ theorem Multiset.esymm_cons_zero_eq_snoc {R : Type*} [CommSemiring R] {n : ℕ} 
 is the multiset counterpart of `MvPolynomial.esymm_one`. -/
 theorem Multiset.esymm_one {R : Type*} [CommSemiring R] (s : Multiset R) : s.esymm 1 = s.sum := by
   simp [Multiset.esymm, Multiset.powersetCard_one]
+
+/-- Elementary symmetric functions commute with ring homomorphisms:
+`e_n(f(s)) = f(e_n(s))`. This is the multiset counterpart of `MvPolynomial.map_esymm`. -/
+theorem Multiset.esymm_map {R S F : Type*} [CommSemiring R] [CommSemiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (s : Multiset R) (n : ℕ) :
+    (s.map f).esymm n = f (s.esymm n) := by
+  simp only [Multiset.esymm, Multiset.powersetCard_map, Multiset.map_map, map_multiset_sum,
+    Function.comp_def, map_multiset_prod]
+
+/-- The elementary symmetric functions of a multiset of nonnegative elements of an ordered
+semiring are nonnegative. -/
+theorem Multiset.esymm_nonneg {R : Type*} [CommSemiring R] [PartialOrder R] [IsOrderedRing R]
+    {s : Multiset R} (hs : ∀ a ∈ s, 0 ≤ a) (n : ℕ) : 0 ≤ s.esymm n :=
+  Multiset.sum_nonneg fun x hx ↦ by
+    obtain ⟨t, ht, rfl⟩ := Multiset.mem_map.mp hx
+    exact Multiset.prod_nonneg fun a ha ↦
+      hs a (Multiset.mem_of_le (Multiset.mem_powersetCard.mp ht).1 ha)
+
+/-- For a multiset of nonnegative elements of an ordered semiring, once an elementary symmetric
+function vanishes, so do all those of higher degree: `e_j(s) = 0` and `j ≤ l` give `e_l(s) = 0`.
+For nonnegative reals, `e_j(s) = 0` means that fewer than `j` elements of `s` are nonzero. -/
+theorem Multiset.esymm_eq_zero_of_le {R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] {s : Multiset R} (hs : ∀ a ∈ s, 0 ≤ a) {j l : ℕ} (hj : s.esymm j = 0)
+    (hjl : j ≤ l) : s.esymm l = 0 := by
+  induction l, hjl using Nat.le_induction with
+  | base => exact hj
+  | succ l _ ih =>
+    rcases l with _ | l
+    · have : (1 : R) = 0 := by simpa using ih
+      simpa using congrArg (s.esymm 1 * ·) this
+    clear hj
+    induction s using Multiset.induction_on with
+    | empty => exact Multiset.esymm_of_card_lt (by simp)
+    | cons a s ihs =>
+      have hs' : ∀ b ∈ s, 0 ≤ b := fun b hb ↦ hs b (Multiset.mem_cons_of_mem hb)
+      have ha : 0 ≤ a := hs a (Multiset.mem_cons_self a s)
+      rw [Multiset.esymm_cons, add_eq_zero_iff_of_nonneg (Multiset.esymm_nonneg hs' _)
+        (mul_nonneg ha (Multiset.esymm_nonneg hs' _))] at ih
+      rw [Multiset.esymm_cons, ihs hs' ih.1, ih.1, mul_zero, add_zero]
 
 /-- Removing an element `a` of a multiset `s` from it:
 `e_n(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`. This is the coefficient form of
