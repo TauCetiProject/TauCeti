@@ -25,8 +25,9 @@ linear combination of matrices whose entries it contains: each such entry is a c
 entries of the original matrices.
 
 Nothing here needs invertibility or a square shape outside the statements about powers — only
-that the products are conformable — so the other statements are rectangular. Everything holds
-over any `Semiring`; the two-sided product statement asks the ideal to be two-sided
+that the products are conformable — so the other statements are rectangular. Everything except
+the quotient comparison `Matrix.map_mk_eq_map_mk_iff`, which needs a `CommRing`, holds over any
+`Semiring`; the two-sided product statement asks the ideal to be two-sided
 (`Ideal.IsTwoSided`), which is automatic over a commutative semiring. These are the membership
 computations a defining-ideal closure proof performs when it propagates a relation through a
 matrix identity.
