@@ -33,6 +33,7 @@ about divisors of a function field, such as Weil reciprocity, to the rational fu
 ## Main results
 
 * `TauCeti.Divisor.norm_ofPoint`: the norm of a place is `f(P' ∣ P) · P`.
+* `TauCeti.Divisor.norm_eq_sum_support`: `N(D) = ∑_{P' ∈ supp D} D(P') f(P' ∣ P) · P`.
 * `TauCeti.Divisor.coeff_norm`: the coefficient of `N(D)` at `P` is `∑_{P' ∣ P} f(P' ∣ P) D(P')`.
 * `TauCeti.Divisor.support_norm_subset`, `TauCeti.Divisor.norm_nonneg` and
   `TauCeti.Divisor.norm_mono`: `N(D)` is supported below the support of `D`, and `N` preserves
@@ -97,8 +98,7 @@ theorem coeff_norm (D : Divisor k' F') (P : Place k F) {s : Finset (Place k' F')
   | add D E hD hE =>
     simp only [map_add, WeilDivisor.coeff_add, hD, hE, mul_add, Finset.sum_add_distrib]
   | single P' n =>
-    rw [WeilDivisor.single_eq_zsmul_ofPoint, map_zsmul, norm_ofPoint, WeilDivisor.coeff_zsmul,
-      WeilDivisor.coeff_zsmul]
+    rw [WeilDivisor.single_eq_zsmul_ofPoint, map_zsmul, norm_ofPoint]
     simp_rw [WeilDivisor.coeff_zsmul]
     by_cases h : P'.restrict k F = P
     · rw [Finset.sum_eq_single P' (fun Q _ hQ ↦ by simp [WeilDivisor.coeff_ofPoint_of_ne hQ])
@@ -110,28 +110,36 @@ theorem coeff_norm (D : Divisor k' F') (P : Place k F) {s : Finset (Place k' F')
       rw [WeilDivisor.coeff_ofPoint_of_ne fun hQP ↦ h (by rw [← hQP]; exact (hs Q).mp hQ)]
       simp
 
+/-- The norm of a divisor as a sum over its support:
+`N(D) = ∑_{P' ∈ supp D} D(P') f(P' ∣ P) · P`, for `P` the place below `P'`. -/
+theorem norm_eq_sum_support (D : Divisor k' F') :
+    norm k F D = ∑ P' ∈ D.support,
+      (D.coeff P' * Place.relativeDegree k F P') • WeilDivisor.ofPoint (P'.restrict k F) := by
+  rw [norm, Finsupp.liftAddHom_apply]
+  refine Finset.sum_congr rfl fun P' _ ↦ ?_
+  dsimp only
+  rw [zmultiplesHom_apply, mul_smul]
+  -- `D.coeff P'` is by definition the value `D P'` of the underlying finsupp.
+  rfl
+
 /-- The norm of a divisor is supported below its support: a place `P` with nonzero coefficient
 in `N(D)` lies under a place `P'` with nonzero coefficient in `D`. -/
 theorem support_norm_subset (D : Divisor k' F') :
     ((norm k F D).support : Set (Place k F)) ⊆
       (fun P' : Place k' F' ↦ P'.restrict k F) '' D.support := by
+  classical
   intro P hP
-  by_contra h
-  refine WeilDivisor.mem_support_iff.1 hP ?_
-  rw [norm, Finsupp.liftAddHom_apply, Finsupp.sum, WeilDivisor.coeff, Finsupp.finsetSum_apply]
-  refine Finset.sum_eq_zero fun P' hP' ↦ ?_
-  rw [zmultiplesHom_apply, ← WeilDivisor.coeff, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_zsmul,
-    WeilDivisor.coeff_ofPoint_of_ne fun hP ↦ h ⟨P', hP', hP.symm⟩, mul_zero, mul_zero]
+  rw [Finset.mem_coe, norm_eq_sum_support] at hP
+  obtain ⟨P', hP', hPP'⟩ := Finset.mem_biUnion.1 (Finsupp.support_finsetSum hP)
+  have hPP'' := Finsupp.support_smul hPP'
+  rw [WeilDivisor.support_ofPoint, Finset.mem_singleton] at hPP''
+  exact ⟨P', hP', hPP''.symm⟩
 
 /-- The norm of an effective divisor is effective. -/
 theorem norm_nonneg {D : Divisor k' F'} (hD : 0 ≤ D) : 0 ≤ norm k F D := by
-  rw [norm, Finsupp.liftAddHom_apply]
-  refine Finset.sum_nonneg fun P' _ ↦ ?_
-  dsimp only
-  rw [zmultiplesHom_apply]
-  refine zsmul_nonneg (zsmul_nonneg (WeilDivisor.ofPoint_nonneg _) (by positivity)) ?_
-  rw [← WeilDivisor.coeff, ← WeilDivisor.coeff_zero P']
-  exact WeilDivisor.coeff_le_coeff hD P'
+  rw [norm_eq_sum_support]
+  exact Finset.sum_nonneg fun P' _ ↦ zsmul_nonneg (WeilDivisor.ofPoint_nonneg _)
+    (mul_nonneg (WeilDivisor.coeff_nonneg hD P') (by positivity))
 
 /-- The norm of divisors is monotone. -/
 theorem norm_mono : Monotone (norm k F : Divisor k' F' → Divisor k F) := fun D E h ↦ by
