@@ -85,8 +85,9 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
-* `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` says a weight killed by the simple coroots is
-  fixed by the whole Weyl group.
+* `RootPairing.mul_coroot'_eq_of_forall_mem_support` extends scalar proportionality of simple coroot
+  pairings to all coroots, and `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` says a weight killed
+  by the simple coroots is fixed by the whole Weyl group.
 * `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
   at a point of the coweight space where every simple root is nonnegative.
   `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
@@ -498,6 +499,22 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
   | smul z n _ hn =>
     obtain ⟨m, hm⟩ := hn
     exact ⟨z * m, by simp [hm]⟩
+
+omit [CharZero R] in
+/-- **Scalar proportionality of simple coroot pairings extends to all coroots**, since every
+coroot is an integer combination of the simple coroots. -/
+theorem _root_.RootPairing.mul_coroot'_eq_of_forall_mem_support {𝕜 : Type*} [Ring 𝕜] [Algebra R 𝕜]
+    {r₁ r₂ : 𝕜} {x₁ x₂ : M}
+    (hsimple : ∀ i ∈ b.support,
+      r₁ * algebraMap R 𝕜 (P.coroot' i x₁) = r₂ * algebraMap R 𝕜 (P.coroot' i x₂))
+    (j : ι) :
+    r₁ * algebraMap R 𝕜 (P.coroot' j x₁) = r₂ * algebraMap R 𝕜 (P.coroot' j x₂) :=
+  LinearMap.eqOn_span (R := ℤ)
+    (f := ((AddMonoidHom.mulLeft r₁).comp
+      ((algebraMap R 𝕜).toAddMonoidHom.comp (P.toLinearMap x₁).toAddMonoidHom)).toIntLinearMap)
+    (g := ((AddMonoidHom.mulLeft r₂).comp
+      ((algebraMap R 𝕜).toAddMonoidHom.comp (P.toLinearMap x₂).toAddMonoidHom)).toIntLinearMap)
+    (by rintro _ ⟨i, hi, rfl⟩; exact hsimple i hi) (b.coroot_mem_span_int j)
 
 omit [CharZero R] in
 variable {P} in

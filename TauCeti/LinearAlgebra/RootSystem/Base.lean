@@ -42,17 +42,9 @@ theorem Base.ext {P : RootPairing ι R M N} {b b' : P.Base} (h : b.support = b'.
 /-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
 integer combination of the simple coroots. -/
 theorem coroot'_eq_zero_of_forall_mem_support (P : RootPairing ι R M N) (b : P.Base) {x : M}
-    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 := by
-  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), P.toLinearMap.flip n x = 0
-    from this _ (b.coroot_mem_span_int j)
-  intro n hn
-  induction hn using Submodule.span_induction with
-  | mem n hn =>
-    obtain ⟨i, hi, rfl⟩ := hn
-    exact hx i hi
-  | zero => simp
-  | add n n' _ _ hn hn' => simp [hn, hn']
-  | smul z n _ hn => simp [hn]
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 :=
+  LinearMap.eqOn_span (R := ℤ) (f := (P.toLinearMap x).toAddMonoidHom.toIntLinearMap) (g := 0)
+    (by rintro _ ⟨i, hi, rfl⟩; exact hx i hi) (b.coroot_mem_span_int j)
 
 /-- For any base `b`, the common kernel of the *simple* coroot functionals equals `P.corootKer`. -/
 theorem Base.iInf_ker_coroot'_support_eq_corootKer {P : RootPairing ι R M N} (b : P.Base) :

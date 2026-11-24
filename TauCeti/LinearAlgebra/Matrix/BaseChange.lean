@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # Scalar extension of matrix cokernels
@@ -19,6 +20,11 @@ used to descend module presentations to smaller coefficient rings.
 
 The construction uses Mathlib's finite-product tensor equivalence and the cokernel
 base-change equivalence in `TauCeti.LinearAlgebra.TensorProduct.Quotient`.
+
+In the other direction, the `R`-rational solutions of a system `A x = 0` over `S`, that is the
+vectors `x : n → R` with `A *ᵥ (algebraMap R S ∘ x) = 0`, form the kernel of the `R`-linear map
+`A.mulVecLin.restrictScalars R ∘ₗ Pi.algebraMap n R S`
+(`Matrix.mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff`).
 -/
 
 public section
@@ -44,6 +50,23 @@ theorem piScalarRight_comp_baseChange_mulVecLin (A : Matrix m n R) :
     Algebra.smul_def, Finset.sum_mul, mul_assoc]
 
 end Semiring
+
+section RationalSolutions
+
+variable {R S m n : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [Fintype n]
+
+/-- A vector `x : n → R` lies in the kernel of
+`A.mulVecLin.restrictScalars R ∘ₗ Pi.algebraMap n R S` exactly when its coordinatewise image in
+`n → S` solves `A x = 0`. -/
+theorem mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff (A : Matrix m n S) (x : n → R) :
+    x ∈ LinearMap.ker (A.mulVecLin.restrictScalars R ∘ₗ Pi.algebraMap n R S) ↔
+      A *ᵥ (fun i ↦ algebraMap R S (x i)) = 0 := by
+  have hx : Pi.algebraMap n R S x = fun i ↦ algebraMap R S (x i) :=
+    funext (TauCeti.piAlgebraMap_apply S x)
+  rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.restrictScalars_apply, mulVecLin_apply,
+    hx]
+
+end RationalSolutions
 
 variable {R S m n : Type*} [CommRing R] [CommRing S] [Algebra R S]
   [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]

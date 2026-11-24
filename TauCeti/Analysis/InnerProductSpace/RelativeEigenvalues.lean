@@ -39,6 +39,8 @@ orthonormal basis that diagonalizes it. In a basis with Gram matrix `g` and coef
 * `LinearMap.IsSymm.sum_relEigenvalues`, `LinearMap.IsSymm.prod_relEigenvalues` and
   `LinearMap.IsSymm.det_id_add_smul`: `Σ λ_i[a] = tr A_a`, `∏ λ_i[a] = det A_a` and
   `det(Id + t·A_a) = Σ_k σ_k(λ[a])·t^k`.
+* `LinearMap.IsSymm.sum_relEigenvalues_eq_sum_re_apply`: `Σ λ_i[a] = Σ_j Re a(b_j, b_j)` in any
+  orthonormal basis `b`.
 * `LinearMap.IsSymm.relEigenvalues_compl₂`: invariance under linear isometries,
   `λ[a(U·, U·)] = λ[a]`.
 * `LinearMap.IsSymm.det_toMatrix₂_sub_smul_gram`: in a basis with Gram matrix `g`,
@@ -149,6 +151,15 @@ theorem sum_relEigenvalues (ha : a.IsSymm) (hn : finrank 𝕜 E = n) :
     ∑ i, (ha.relEigenvalues hn i : 𝕜) = LinearMap.trace 𝕜 E ((toSesqForm 𝕜 E E).symm a) :=
   by simp [relEigenvalues_def,
     LinearMap.IsSymmetric.trace_eq_sum_eigenvalues hn ha.isSymmetric_toSesqForm_symm]
+
+/-- The relative eigenvalues of a Hermitian form sum to the sum of the real parts of its diagonal
+entries in any orthonormal basis. -/
+theorem sum_relEigenvalues_eq_sum_re_apply {ι : Type*} [Fintype ι] (ha : a.IsSymm)
+    (hn : finrank 𝕜 E = n) (b : OrthonormalBasis ι 𝕜 E) :
+    ∑ i, ha.relEigenvalues hn i = ∑ j, RCLike.re (a (b j) (b j)) := by
+  have hsum := congrArg RCLike.re (ha.sum_relEigenvalues hn)
+  rw [LinearMap.trace_eq_sum_inner _ b, map_sum, map_sum] at hsum
+  simpa only [RCLike.ofReal_re, LinearMap.inner_toSesqForm_symm_apply] using hsum
 
 /-- The relative eigenvalues multiply to the determinant of the operator of the form. -/
 theorem prod_relEigenvalues (ha : a.IsSymm) (hn : finrank 𝕜 E = n) :

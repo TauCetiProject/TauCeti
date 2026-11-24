@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Wkp
 public import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
 public import TauCeti.MeasureTheory.Function.Gluing
-public import TauCeti.Topology.MetricSpace.ProperSpace
+public import TauCeti.Topology.Compactness.SigmaCompact
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 

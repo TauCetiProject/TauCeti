@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
-public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Rank
 
 /-!
 # Approximation numbers of bounded operators
@@ -84,15 +84,11 @@ theorem singularValue_def (T : E →L[𝕜] F) (n : ℕ) :
     T.singularValue n = ⨅ R : {R : E →L[𝕜] F // R.rank ≤ n}, ‖T - R.val‖₊ := by
   rw [singularValue]
 
-private instance (n : ℕ) : Nonempty {R : E →L[𝕜] F // R.rank ≤ n} :=
-  ⟨⟨0, by simp⟩⟩
-
 /-- **Approximation upper bound.** Every bounded map of rank at most `n` bounds `aₙ(T)`. -/
 theorem singularValue_le_nnnorm_sub (T : E →L[𝕜] F) {n : ℕ} {R : E →L[𝕜] F} (hR : R.rank ≤ n) :
     T.singularValue n ≤ ‖T - R‖₊ := by
-  unfold singularValue
-  exact ciInf_le (f := fun R : {R : E →L[𝕜] F // R.rank ≤ n} ↦ ‖T - R.val‖₊)
-    (OrderBot.bddBelow _) ⟨R, hR⟩
+  rw [singularValue_def]
+  exact ciInf_le (OrderBot.bddBelow _) (⟨R, hR⟩ : {R : E →L[𝕜] F // R.rank ≤ n})
 
 /-- **Lower-bound characterization.** `c ≤ aₙ(T)` exactly when `c ≤ ‖T - R‖` for every bounded
 map `R` of rank at most `n`. -/
@@ -118,12 +114,14 @@ theorem exists_rank_le_nnnorm_sub_lt {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0
   obtain ⟨⟨R, hR⟩, hlt⟩ := exists_lt_of_ciInf_lt h
   exact ⟨R, hR, hlt⟩
 
-/-- **Best approximants.** A bounded map of rank at most `n` that is at least as close to `T` as
-every other such map attains the infimum: its distance to `T` is `aₙ(T)`. -/
-theorem singularValue_eq_nnnorm_sub {T R : E →L[𝕜] F} {n : ℕ} (hR : R.rank ≤ n)
-    (hmin : ∀ R' : E →L[𝕜] F, R'.rank ≤ n → ‖T - R‖₊ ≤ ‖T - R'‖₊) :
-    T.singularValue n = ‖T - R‖₊ :=
-  (T.singularValue_le_nnnorm_sub hR).antisymm (le_singularValue_iff.mpr hmin)
+/-- **Best approximants.** A bounded map `R` of rank at most `n` attains the infimum, that is its
+distance to `T` is `aₙ(T)`, exactly when it is at least as close to `T` as every other bounded map
+of rank at most `n`. -/
+theorem singularValue_eq_nnnorm_sub_iff {T R : E →L[𝕜] F} {n : ℕ} (hR : R.rank ≤ n) :
+    T.singularValue n = ‖T - R‖₊ ↔
+      ∀ R' : E →L[𝕜] F, R'.rank ≤ n → ‖T - R‖₊ ≤ ‖T - R'‖₊ :=
+  ⟨fun h _ hR' ↦ h ▸ T.singularValue_le_nnnorm_sub hR',
+    fun hmin ↦ (T.singularValue_le_nnnorm_sub hR).antisymm (le_singularValue_iff.mpr hmin)⟩
 
 /-- The approximation numbers are bounded by the operator norm. -/
 theorem singularValue_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.singularValue n ≤ ‖T‖₊ := by
@@ -136,18 +134,16 @@ theorem singularValue_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.
 
 /-- **Dimension cutoff.** If the source has rank at most `n`, then `aₙ(T) = 0`. -/
 theorem singularValue_eq_zero_of_rank_domain_le (T : E →L[𝕜] F) {n : ℕ}
-    (hE : Module.rank 𝕜 E ≤ n) : T.singularValue n = 0 := by
-  refine singularValue_eq_zero_of_rank_le ?_
-  have hle := (lift_rank_range_le (T : E →ₗ[𝕜] F)).trans (Cardinal.lift_le.mpr hE)
-  rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+    (hE : Module.rank 𝕜 E ≤ n) : T.singularValue n = 0 :=
+  singularValue_eq_zero_of_rank_le <| Cardinal.lift_le_nat_iff.mp <|
+    (lift_rank_range_le (T : E →ₗ[𝕜] F)).trans (by simpa using hE)
 
 /-- **Zeroth approximation number.** `a₀(T) = ‖T‖`, since only the zero map has rank `0`. -/
 @[simp]
 theorem singularValue_zero (T : E →L[𝕜] F) : T.singularValue 0 = ‖T‖₊ := by
   refine (T.singularValue_le_nnnorm 0).antisymm (le_singularValue_iff.mpr fun R hR ↦ ?_)
-  have hR0 : (R : E →ₗ[𝕜] F) = 0 := LinearMap.range_eq_bot.mp <|
-    Submodule.rank_eq_zero.mp (le_antisymm (by exact_mod_cast hR) bot_le)
-  simp [coe_injective (hR0.trans toLinearMap_zero.symm)]
+  obtain rfl : R = 0 := rank_eq_zero_iff.mp (by simpa using hR)
+  simp
 
 /-- The approximation numbers form an antitone sequence. -/
 theorem antitone_singularValue (T : E →L[𝕜] F) : Antitone T.singularValue :=
@@ -167,17 +163,17 @@ theorem iSup_singularValue (T : E →L[𝕜] F) : ⨆ n, T.singularValue n = ‖
 /-- The approximation numbers of the zero map vanish. -/
 @[simp]
 theorem zero_singularValue (n : ℕ) : (0 : E →L[𝕜] F).singularValue n = 0 :=
-  le_antisymm (by simpa using (0 : E →L[𝕜] F).singularValue_le_nnnorm n) bot_le
+  singularValue_eq_zero_of_rank_le (by simp)
 
 /-- **Mixed-index additive inequality.** `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`. -/
 theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
-    (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n :=
-  NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
-    ((S + T).singularValue_le_nnnorm_sub (R := R₁.val + R₂.val) <| by
-      rw [Nat.cast_add]
-      exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.property R₂.property)).trans <| by
-      rw [add_sub_add_comm]
-      exact nnNorm_add_le _ _
+    (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n := by
+  rw [S.singularValue_def m, T.singularValue_def n]
+  refine NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
+    ((S + T).singularValue_le_nnnorm_sub (R := R₁.val + R₂.val) <|
+      (rank_add_le_of_le R₁.property R₂.property).trans_eq (Nat.cast_add m n).symm).trans ?_
+  rw [add_sub_add_comm]
+  exact nnNorm_add_le _ _
 
 /-- **Perturbative triangle bound.** `aₙ(S + T) ≤ aₙ(S) + ‖T‖`. -/
 theorem singularValue_add_le (S T : E →L[𝕜] F) (n : ℕ) :
@@ -205,28 +201,35 @@ theorem lipschitzWith_singularValue (n : ℕ) :
 theorem continuous_singularValue (n : ℕ) : Continuous fun T : E →L[𝕜] F ↦ T.singularValue n :=
   (lipschitzWith_singularValue n).continuous
 
+/-- **Mixed-index product inequality.** `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`. -/
+theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
+    (S.comp T).singularValue (m + n) ≤ S.singularValue m * T.singularValue n := by
+  rw [S.singularValue_def m, T.singularValue_def n]
+  refine NNReal.le_iInf_mul fun R₁ ↦ NNReal.le_mul_iInf fun R₂ ↦ ?_
+  -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
+  have h₁ : (R₁.val.comp T).rank ≤ m := by
+    rw [toLinearMap_comp]
+    exact (LinearMap.rank_comp_le_left _ _).trans R₁.property
+  have hrank : (R₁.val.comp T + (S - R₁.val).comp R₂.val).rank ≤ ↑(m + n) :=
+    (rank_add_le_of_le h₁ ((S - R₁.val).rank_comp_le_of_rank_le R₂.property)).trans_eq
+      (Nat.cast_add m n).symm
+  refine ((S.comp T).singularValue_le_nnnorm_sub hrank).trans ?_
+  have : S.comp T - (R₁.val.comp T + (S - R₁.val).comp R₂.val) = (S - R₁.val).comp (T - R₂.val)
+      := by
+    simp only [comp_sub, sub_comp]
+    abel
+  rw [this]
+  exact opNNNorm_comp_le _ _
+
 /-- Postcomposition with a bounded map scales approximation numbers by at most its norm. -/
 theorem singularValue_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
     (A.comp T).singularValue n ≤ ‖A‖₊ * T.singularValue n := by
-  unfold singularValue
-  rw [NNReal.mul_iInf]
-  refine le_ciInf fun R ↦ ?_
-  have hR := (LinearMap.lift_rank_comp_le_right (R.val : E →ₗ[𝕜] F) (A : F →ₗ[𝕜] G)).trans
-    (Cardinal.lift_le.mpr R.property)
-  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hR
-  refine ((A.comp T).singularValue_le_nnnorm_sub (R := A.comp R.val) hR).trans ?_
-  rw [← comp_sub]
-  exact opNNNorm_comp_le _ _
+  simpa using A.singularValue_comp_add_le_mul T 0 n
 
 /-- Precomposition with a bounded map scales approximation numbers by at most its norm. -/
 theorem singularValue_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜] F) (n : ℕ) :
     (T.comp B).singularValue n ≤ T.singularValue n * ‖B‖₊ := by
-  unfold singularValue
-  rw [NNReal.iInf_mul]
-  refine le_ciInf fun R ↦ ((T.comp B).singularValue_le_nnnorm_sub (R := R.val.comp B)
-    ((LinearMap.rank_comp_le_left _ _).trans R.property)).trans ?_
-  rw [← sub_comp]
-  exact opNNNorm_comp_le _ _
+  simpa using T.singularValue_comp_add_le_mul B n 0
 
 /-- **Two-sided ideal inequality.** `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`. -/
 theorem singularValue_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E →L[𝕜] F) (n : ℕ) :
@@ -246,30 +249,6 @@ theorem singularValue_comp_comp_le_of_norm_le_one {A : G →L[𝕜] H} {B : E �
         A.singularValue_comp_comp_le T B n
     _ ≤ 1 * T.singularValue n * 1 := by gcongr
     _ = T.singularValue n := by simp
-
-/-- **Mixed-index product inequality.** `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`. -/
-theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
-    (S.comp T).singularValue (m + n) ≤ S.singularValue m * T.singularValue n := by
-  unfold singularValue
-  rw [NNReal.iInf_mul]
-  refine le_ciInf fun R₁ ↦ ?_
-  rw [NNReal.mul_iInf]
-  refine le_ciInf fun R₂ ↦ ?_
-  -- `S T - (R₁ T + (S - R₁) R₂) = (S - R₁)(T - R₂)`, and the subtracted map has rank `≤ m + n`.
-  have h₂ := (LinearMap.lift_rank_comp_le_right (R₂.val : E →ₗ[𝕜] F)
-    ((S - R₁.val : F →L[𝕜] G) : F →ₗ[𝕜] G)).trans (Cardinal.lift_le.mpr R₂.property)
-  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at h₂
-  have hrank : (R₁.val.comp T + (S - R₁.val).comp R₂.val).rank ≤ ↑(m + n) := by
-    rw [Nat.cast_add]
-    exact (LinearMap.rank_add_le _ _).trans
-      (add_le_add ((LinearMap.rank_comp_le_left _ _).trans R₁.property) h₂)
-  refine ((S.comp T).singularValue_le_nnnorm_sub hrank).trans ?_
-  have : S.comp T - (R₁.val.comp T + (S - R₁.val).comp R₂.val) = (S - R₁.val).comp (T - R₂.val)
-      := by
-    simp only [comp_sub, sub_comp]
-    abel
-  rw [this]
-  exact opNNNorm_comp_le _ _
 
 /-- **Scalar homogeneity.** `aₙ(c T) = ‖c‖ aₙ(T)`. -/
 @[simp]
