@@ -189,11 +189,9 @@ theorem Equiv.conjAlgEquiv_asAlgebraHom {W : Type*} [AddCommMonoid W] [Module k 
 augmentation. -/
 @[simp]
 theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
-    (trivial k G k).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy, add_smul]
-  | single g r => ext; simp [asAlgebraHom_single, trivial_apply]
+    (trivial k G V).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
+  have h : trivial k G V = 1 := MonoidHom.ext fun g ↦ LinearMap.ext (trivial_apply k g)
+  rw [asAlgebraHom_def, h, MonoidAlgebra.lift_one_apply, Algebra.algebraMap_eq_smul_one]
 
 end Representation
 
