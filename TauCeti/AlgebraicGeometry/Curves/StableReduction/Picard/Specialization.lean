@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.NumericalType
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.DegreeZero
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Specialization
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # Specialization of line bundles to the Picard group of a numerical type
@@ -198,6 +199,7 @@ theorem specialFiberPicSpecialization_eq_comp :
       hC.finiteDimensional_one a.toMul)
 
 /-- Pulling a line-bundle class on `X_s` back to `(X_s)_red` preserves its class in `T.Pic`. -/
+@[simp]
 theorem reducedSpecialFiberPicSpecialization_pullback
     (a : LineBundleClass (specialFiber R toBase).left) :
     toBase.reducedSpecialFiberPicSpecialization hX hη hC hπ hreg hconn (Additive.ofMul
@@ -244,7 +246,8 @@ theorem totalSpecialFiberPicSpecialization_eq_comp :
       toBase.specialFiberCohomologyFiniteDimensional_zero
       hC.finiteDimensional_one a.toMul)
 
-/-- Pulling a line-bundle class on `X` back to `X_s` preserves its class in `T.Pic`. -/
+/-- Pulling a line-bundle class on `X` back to `X_s` preserves its class in `T.Pic` (not `@[simp]`
+because `specialFiber` is an `Over.pullback` abbreviation, so `simp` unfolds the LHS). -/
 theorem specialFiberPicSpecialization_pullback (a : LineBundleClass X) :
     toBase.specialFiberPicSpecialization hX hη hC hπ hreg hconn
         (Additive.ofMul (LineBundleClass.pullback (specialFiberι R toBase) a)) =
@@ -253,6 +256,7 @@ theorem specialFiberPicSpecialization_pullback (a : LineBundleClass X) :
     MonoidHom.toAdditive_apply_apply, toMul_ofMul, LineBundleClass.pullbackHom_apply]
 
 /-- Pulling a line-bundle class on `X` back to `(X_s)_red` preserves its class in `T.Pic`. -/
+@[simp]
 theorem reducedSpecialFiberPicSpecialization_pullback_subschemeι (a : LineBundleClass X) :
     toBase.reducedSpecialFiberPicSpecialization hX hη hC hπ hreg hconn
         (Additive.ofMul
@@ -311,7 +315,7 @@ theorem mem_ker_reducedSpecialFiberPicSpecialization_iff
   exact Submodule.Quotient.mk_eq_zero _
 
 /-- A class in `Pic(X)` lies in `ker totalSpecialFiberPicSpecialization` iff its multidegree matches
-a `ℤ`-linear combination of the vertical component bundles `𝒪_X(Cⱼ)`. -/
+a vertical component product `∏ j, 𝒪_X(Cⱼ) ^ v j`. -/
 theorem mem_ker_totalSpecialFiberPicSpecialization_iff {a : Additive (LineBundleClass X)} :
     a ∈ AddMonoidHom.ker (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn) ↔
       ∃ v : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component → ℤ,
@@ -321,16 +325,15 @@ theorem mem_ker_totalSpecialFiberPicSpecialization_iff {a : Additive (LineBundle
           toBase.specialFiberMultidegree hX hη
             toBase.specialFiberCohomologyFiniteDimensional_zero
             hC.finiteDimensional_one
-            (∑ j, v j • Additive.ofMul (LineBundleClass.mk
+            (Additive.ofMul (∏ j, (LineBundleClass.mk
               (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-                hX j.val.property).toInvertibleSheaf)⁻¹) := by
+                hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) := by
   rw [AddMonoidHom.mem_ker, totalSpecialFiberPicSpecialization_apply]
   refine (Submodule.Quotient.mk_eq_zero _).trans
     ((NumericalType.mem_principalDivisors_iff _).trans (exists_congr fun v ↦ ?_))
   rw [toBase.specialFiberNumericalType_weightedIntersection hX hη hC hπ hreg hconn]
-  have hmul := (toBase.specialFiberMultidegree_sum_smul_eq_vecMul hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero
-    hC.finiteDimensional_one v).symm
+  have hmul := (toBase.specialFiberMultidegree_prod_zpow hX hη
+    toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one v).symm
   exact ⟨fun h ↦ h.symm.trans hmul, fun h ↦ hmul.trans h.symm⟩
 
 /-- Under `T.picToCoker : T.Pic →ₗ[ℤ] T.Coker`
@@ -461,7 +464,8 @@ def genericFiberPicSpecialization :
       hC.finiteDimensional_one)
 
 /-- `genericFiberPicSpecialization` sends the generic-fibre restriction of `a : LineBundleClass X`
-to `totalSpecialFiberPicSpecialization a`. -/
+to `totalSpecialFiberPicSpecialization a` (not `@[simp]` because `genericFiber` is an
+`Over.pullback` abbreviation, so `simp` unfolds the LHS). -/
 theorem genericFiberPicSpecialization_pullback (a : LineBundleClass X) :
     toBase.genericFiberPicSpecialization K hX hη hC hπ hreg hconn
         (Additive.ofMul (LineBundleClass.pullback (genericFiberι R K toBase) a)) =
@@ -525,15 +529,18 @@ def numericalTypePicEquiv :
         LinearMap.range (M.toBase.specialFiberWeightedIntersectionMatrix hX
           (M.toBase.base_genericPoint_ne_closedPoint
             (IsDiscreteValuationRing.not_a_field R))).vecMulLinear) :=
-  M.toBase.specialFiberNumericalTypePicEquiv hX _ hC Model.maximalIdeal_eq_span_choose_irreducible
-    Model.isSMulRegular_choose_irreducible M.isPreconnected_preimage_closedPoint
+  M.toBase.specialFiberNumericalTypePicEquiv hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint
 
 /-- `M.numericalTypePicEquiv` acts as the identity on quotient classes. -/
 @[simp]
 theorem numericalTypePicEquiv_mk (d : (M.numericalType hX hC).Component → ℤ) :
     M.numericalTypePicEquiv hX hC (Submodule.Quotient.mk d) = Submodule.Quotient.mk d :=
   M.toBase.specialFiberNumericalTypePicEquiv_mk hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint d
 
 /-- `(M.numericalTypePicEquiv hX hC).symm` acts as the identity on quotient classes. -/
@@ -545,7 +552,8 @@ theorem numericalTypePicEquiv_symm_mk
     (M.numericalTypePicEquiv hX hC).symm (Submodule.Quotient.mk d) =
       Submodule.Quotient.mk d :=
   M.toBase.specialFiberNumericalTypePicEquiv_symm_mk hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint d
 
 /-- Uniformizer-free specialization from the reduced special fibre of `M` to
@@ -554,7 +562,8 @@ def reducedSpecialFiberPicSpecialization :
     Additive (LineBundleClass (specialFiberι R M.toBase).ker.radical.subscheme) →+
       (M.numericalType hX hC).Pic :=
   M.toBase.reducedSpecialFiberPicSpecialization hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
 /-- `M.reducedSpecialFiberPicSpecialization` sends `a` to the quotient class of its
@@ -574,8 +583,10 @@ theorem reducedSpecialFiberPicSpecialization_apply
 ([Stacks, Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y)). -/
 def specialFiberPicSpecialization :
     Additive (LineBundleClass (specialFiber R M.toBase).left) →+ (M.numericalType hX hC).Pic :=
-  M.toBase.specialFiberPicSpecialization hX _ hC Model.maximalIdeal_eq_span_choose_irreducible
-    Model.isSMulRegular_choose_irreducible M.isPreconnected_preimage_closedPoint
+  M.toBase.specialFiberPicSpecialization hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint
 
 /-- `M.specialFiberPicSpecialization` sends `a` to the quotient class of its multidegree. -/
 theorem specialFiberPicSpecialization_apply
@@ -594,18 +605,21 @@ theorem specialFiberPicSpecialization_eq_comp :
         (LineBundleClass.pullbackHom
           (subschemeToSpecialFiber (specialFiberι R M.toBase).ker.le_radical))) :=
   M.toBase.specialFiberPicSpecialization_eq_comp hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
 /-- Pulling a class on `(specialFiber R M.toBase).left` back to `(X_s)_red` preserves its class in
 `(M.numericalType hX hC).Pic`. -/
+@[simp]
 theorem reducedSpecialFiberPicSpecialization_pullback
     (a : LineBundleClass (specialFiber R M.toBase).left) :
     M.reducedSpecialFiberPicSpecialization hX hC (Additive.ofMul (LineBundleClass.pullback
         (subschemeToSpecialFiber (specialFiberι R M.toBase).ker.le_radical) a)) =
       M.specialFiberPicSpecialization hX hC (Additive.ofMul a) :=
   M.toBase.reducedSpecialFiberPicSpecialization_pullback hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint a
 
 /-- Uniformizer-free specialization from `M.total` to `(M.numericalType hX hC).Pic`
@@ -613,7 +627,8 @@ theorem reducedSpecialFiberPicSpecialization_pullback
 def totalPicSpecialization :
     Additive (LineBundleClass M.total) →+ (M.numericalType hX hC).Pic :=
   M.toBase.totalSpecialFiberPicSpecialization hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
 /-- `M.totalPicSpecialization` sends `a` to the quotient class of its multidegree. -/
@@ -631,17 +646,32 @@ theorem totalPicSpecialization_eq_comp :
       (M.specialFiberPicSpecialization hX hC).comp
         (MonoidHom.toAdditive (LineBundleClass.pullbackHom (specialFiberι R M.toBase))) :=
   M.toBase.totalSpecialFiberPicSpecialization_eq_comp hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
 /-- Pulling a class on `M.total` back to the special fibre preserves its class in
-`(M.numericalType hX hC).Pic`. -/
+`(M.numericalType hX hC).Pic` (not `@[simp]` because `specialFiber` is an `Over.pullback`
+abbreviation, so `simp` unfolds the LHS). -/
 theorem specialFiberPicSpecialization_pullback (a : LineBundleClass M.total) :
     M.specialFiberPicSpecialization hX hC
         (Additive.ofMul (LineBundleClass.pullback (specialFiberι R M.toBase) a)) =
       M.totalPicSpecialization hX hC (Additive.ofMul a) :=
   M.toBase.specialFiberPicSpecialization_pullback hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint a
+
+/-- Pulling a class on `M.total` back to `(X_s)_red` preserves its class in
+`(M.numericalType hX hC).Pic`. -/
+@[simp]
+theorem reducedSpecialFiberPicSpecialization_pullback_subschemeι (a : LineBundleClass M.total) :
+    M.reducedSpecialFiberPicSpecialization hX hC (Additive.ofMul
+        (LineBundleClass.pullback (specialFiberι R M.toBase).ker.radical.subschemeι a)) =
+      M.totalPicSpecialization hX hC (Additive.ofMul a) :=
+  M.toBase.reducedSpecialFiberPicSpecialization_pullback_subschemeι hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint a
 
 /-- Uniformizer-free specialization from the prescribed generic fibre `C` of `M` to
@@ -650,35 +680,46 @@ theorem specialFiberPicSpecialization_pullback (a : LineBundleClass M.total) :
 def genericFiberPicSpecialization :
     Additive (LineBundleClass C) →+ (M.numericalType hX hC).Pic :=
   (M.toBase.genericFiberPicSpecialization K hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint).comp
     (MonoidHom.toAdditive (LineBundleClass.pullbackHom M.genericFiberIso.hom.left))
 
+/-- `M.genericFiberPicSpecialization` sends `Additive.ofMul b` to
+`M.toBase.genericFiberPicSpecialization` applied to the pullback of `b` along
+`M.genericFiberIso.hom.left` (not `@[simp]` so `genericFiberPicSpecialization_pullback` stays in
+simp normal form). -/
+theorem genericFiberPicSpecialization_apply (b : LineBundleClass C) :
+    M.genericFiberPicSpecialization hX hC (Additive.ofMul b) =
+      M.toBase.genericFiberPicSpecialization K hX
+        (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) hC
+        TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+        TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+        M.isPreconnected_preimage_closedPoint
+        (Additive.ofMul (LineBundleClass.pullback M.genericFiberIso.hom.left b)) := by
+  rw [genericFiberPicSpecialization]
+  have h : (MonoidHom.toAdditive (LineBundleClass.pullbackHom M.genericFiberIso.hom.left))
+      (Additive.ofMul b) =
+      Additive.ofMul (LineBundleClass.pullback M.genericFiberIso.hom.left b) := by
+    rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, LineBundleClass.pullbackHom_apply]
+  exact congrArg (M.toBase.genericFiberPicSpecialization K hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint) h
+
 /-- `M.genericFiberPicSpecialization` sends the generic-fibre restriction of
 `a : LineBundleClass M.total` to `M.totalPicSpecialization a`. -/
+@[simp]
 theorem genericFiberPicSpecialization_pullback (a : LineBundleClass M.total) :
     M.genericFiberPicSpecialization hX hC
         (Additive.ofMul (LineBundleClass.pullback M.genericι a)) =
       M.totalPicSpecialization hX hC (Additive.ofMul a) := by
-  have hpb :
-      LineBundleClass.pullback M.genericFiberIso.hom.left
-          (LineBundleClass.pullback M.genericι a) =
-        LineBundleClass.pullback (genericFiberι R K M.toBase) a := by
-    rw [LineBundleClass.pullback_comp, Model.genericFiberIso_hom_left_genericι]
-  have h1 :
-      M.genericFiberPicSpecialization hX hC
-          (Additive.ofMul (LineBundleClass.pullback M.genericι a)) =
-        M.toBase.genericFiberPicSpecialization K hX _ hC
-          Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-          M.isPreconnected_preimage_closedPoint
-          (Additive.ofMul (LineBundleClass.pullback (genericFiberι R K M.toBase) a)) :=
-    (congrArg (fun x ↦ M.toBase.genericFiberPicSpecialization K hX _ hC
-        Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-        M.isPreconnected_preimage_closedPoint (Additive.ofMul x))
-      ((LineBundleClass.pullbackHom_apply M.genericFiberIso.hom.left _).trans hpb))
-  exact h1.trans (M.toBase.genericFiberPicSpecialization_pullback K hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-    M.isPreconnected_preimage_closedPoint a)
+  rw [genericFiberPicSpecialization_apply, LineBundleClass.pullback_comp,
+    Model.genericFiberIso_hom_left_genericι, M.toBase.genericFiberPicSpecialization_pullback K,
+    totalPicSpecialization]
+  -- `rw` checks syntactic equality at reducible transparency; `rfl` closes `M.numericalType`
+  -- against `specialFiberNumericalType`.
+  rfl
 
 /-- `M.totalPicSpecialization` factors through restriction to the prescribed generic fibre `C`. -/
 theorem totalPicSpecialization_eq_comp_genericFiber :
@@ -700,28 +741,15 @@ theorem mem_ker_genericFiberPicSpecialization_iff {b : LineBundleClass C} :
             (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
             M.toBase.specialFiberCohomologyFiniteDimensional_zero
             hC.finiteDimensional_one (Additive.ofMul a) = 0 := by
-  have hcomp :
-      M.genericFiberPicSpecialization hX hC (Additive.ofMul b) =
-        M.toBase.genericFiberPicSpecialization K hX _ hC
-          Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-          M.isPreconnected_preimage_closedPoint
-          (Additive.ofMul (LineBundleClass.pullback M.genericFiberIso.hom.left b)) :=
-    congrArg (fun x ↦ M.toBase.genericFiberPicSpecialization K hX _ hC
-        Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-        M.isPreconnected_preimage_closedPoint (Additive.ofMul x))
-      (LineBundleClass.pullbackHom_apply M.genericFiberIso.hom.left b)
-  have hmem :
-      Additive.ofMul b ∈ AddMonoidHom.ker (M.genericFiberPicSpecialization hX hC) ↔
-        Additive.ofMul (LineBundleClass.pullback M.genericFiberIso.hom.left b) ∈
-          AddMonoidHom.ker (M.toBase.genericFiberPicSpecialization K hX
-            (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-            hC Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-            M.isPreconnected_preimage_closedPoint) := by
-    rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker]
-    exact ⟨fun h ↦ hcomp.symm.trans h, fun h ↦ hcomp.trans h⟩
-  refine hmem.trans ((M.toBase.mem_ker_genericFiberPicSpecialization_iff K hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
-    M.isPreconnected_preimage_closedPoint).trans ?_)
+  refine (Iff.trans (by
+      rw [AddMonoidHom.mem_ker, genericFiberPicSpecialization_apply, AddMonoidHom.mem_ker]
+      -- `(M.numericalType hX hC).Pic` unifies with `(specialFiberNumericalType ...).Pic` at
+      -- default transparency.
+      rfl)
+    (M.toBase.mem_ker_genericFiberPicSpecialization_iff K hX _ hC
+      TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+      TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+      M.isPreconnected_preimage_closedPoint)).trans ?_
   refine exists_congr fun a ↦ and_congr_left fun _ ↦ ?_
   rw [← (LineBundleClass.pullbackEquiv ((Over.forget _).mapIso M.genericFiberIso)).injective.eq_iff]
   simp only [LineBundleClass.pullbackEquiv_apply, Functor.mapIso_hom, Over.forget_map,
@@ -734,7 +762,9 @@ theorem totalPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)⁻¹) = 0 :=
   M.toBase.totalSpecialFiberPicSpecialization_ofMul_inv_mk_toInvertibleSheaf
-    hX _ hC Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint j
 
 /-- Simp normal form of `totalPicSpecialization_ofMul_inv_mk_toInvertibleSheaf` after
@@ -746,7 +776,9 @@ theorem totalPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf.dual)) = 0 :=
   M.toBase.totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf_dual
-    hX _ hC Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint j
 
 /-- On `M.total`, `𝒪_{M.total}(-Cⱼ)` maps to `0` in `(M.numericalType hX hC).Pic`. -/
@@ -757,7 +789,9 @@ theorem totalPicSpecialization_ofMul_mk_toInvertibleSheaf
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.val.property).toInvertibleSheaf)) = 0 :=
   M.toBase.totalSpecialFiberPicSpecialization_ofMul_mk_toInvertibleSheaf
-    hX _ hC Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint j
 
 /-- `a ∈ ker (M.reducedSpecialFiberPicSpecialization hX hC)` iff its multidegree is principal. -/
@@ -770,11 +804,12 @@ theorem mem_ker_reducedSpecialFiberPicSpecialization_iff
           hC.finiteDimensional_one a ∈
             (M.numericalType hX hC).principalDivisors :=
   M.toBase.mem_ker_reducedSpecialFiberPicSpecialization_iff hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
-/-- `a ∈ ker (M.totalPicSpecialization hX hC)` iff its multidegree matches a `ℤ`-linear combination
-of `𝒪_{M.total}(Cⱼ)`. -/
+/-- `a ∈ ker (M.totalPicSpecialization hX hC)` iff its multidegree matches a vertical component
+product `∏ j, 𝒪_{M.total}(Cⱼ) ^ v j`. -/
 theorem mem_ker_totalPicSpecialization_iff {a : Additive (LineBundleClass M.total)} :
     a ∈ AddMonoidHom.ker (M.totalPicSpecialization hX hC) ↔
       ∃ v : (M.numericalType hX hC).Component → ℤ,
@@ -786,11 +821,12 @@ theorem mem_ker_totalPicSpecialization_iff {a : Additive (LineBundleClass M.tota
             (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
             M.toBase.specialFiberCohomologyFiniteDimensional_zero
             hC.finiteDimensional_one
-            (∑ j, v j • Additive.ofMul (LineBundleClass.mk
+            (Additive.ofMul (∏ j, (LineBundleClass.mk
               (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-                hX j.val.property).toInvertibleSheaf)⁻¹) :=
+                hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) :=
   M.toBase.mem_ker_totalSpecialFiberPicSpecialization_iff hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
 /-- Under `(M.numericalType hX hC).picToCoker`
@@ -805,7 +841,8 @@ theorem picToCoker_totalPicSpecialization (a : Additive (LineBundleClass M.total
         LineBundleClass.intersectionNumber (ResidueField R)
           (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι a.toMul :=
   M.toBase.picToCoker_totalSpecialFiberPicSpecialization hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint a
 
 /-- The numerical total degree of `M.reducedSpecialFiberPicSpecialization hX hC a` is
@@ -822,7 +859,8 @@ theorem degree_reducedSpecialFiberPicSpecialization
             (inclusion (M.toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
               (M.base_eq_closedPoint_of_numericalType hX hC i))) a.toMul :=
   M.toBase.degree_reducedSpecialFiberPicSpecialization hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint a
 
 /-- The numerical total degree of `M.specialFiberPicSpecialization hX hC a` is
@@ -839,7 +877,8 @@ theorem degree_specialFiberPicSpecialization
             (subschemeToSpecialFiber (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
               (M.base_eq_closedPoint_of_numericalType hX hC i))) a.toMul :=
   M.toBase.degree_specialFiberPicSpecialization hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint a
 
 /-- The numerical total degree of `M.totalPicSpecialization hX hC a` is `∑ᵢ mᵢ (a · Cᵢ)_k`. -/
@@ -853,7 +892,8 @@ theorem degree_totalPicSpecialization (a : Additive (LineBundleClass M.total)) :
           LineBundleClass.intersectionNumber (ResidueField R)
             (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι a.toMul :=
   M.toBase.degree_totalSpecialFiberPicSpecialization hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint a
 
 /-- `M.totalPicSpecialization hX hC a ∈ (M.numericalType hX hC).degreeZeroSubgroup` iff
@@ -870,7 +910,8 @@ theorem totalPicSpecialization_mem_degreeZeroSubgroup_iff
             (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι a.toMul) =
         0 :=
   M.toBase.totalSpecialFiberPicSpecialization_mem_degreeZeroSubgroup_iff hX _ hC
-    Model.maximalIdeal_eq_span_choose_irreducible Model.isSMulRegular_choose_irreducible
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
 end TauCeti.Model

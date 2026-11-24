@@ -451,24 +451,6 @@ theorem specialFiberMultidegree_prod_zpow
   rw [ofMul_zpow, map_zsmul, Pi.smul_apply, smul_eq_mul,
     specialFiberMultidegree_inv_mk_toInvertibleSheaf]
 
-/-- **Multidegree of an additive vertical sum.** For any integer vector `v` on the special-fibre
-components, the multidegree of `∑ i, v i • Additive.ofMul [𝒪_X(C_i)]` is `v ᵥ* A'`. -/
-theorem specialFiberMultidegree_sum_smul_eq_vecMul
-    (v : (toBase.finite_setOf_base_eq_closedPoint
-        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) :
-    toBase.specialFiberMultidegree hX hη h₀ h₁ (∑ i, v i • Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-          i.val.property).toInvertibleSheaf)⁻¹) =
-      v ᵥ* toBase.specialFiberWeightedIntersectionMatrix hX hη := by
-  have hsum : (∑ i, v i • Additive.ofMul (LineBundleClass.mk
-      (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-        i.val.property).toInvertibleSheaf)⁻¹) =
-      Additive.ofMul (∏ i, (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
-          i.val.property).toInvertibleSheaf)⁻¹ ^ v i) := by
-    simp [ofMul_prod, ofMul_zpow]
-  rw [hsum, toBase.specialFiberMultidegree_prod_zpow hX hη h₀ h₁ v]
-
 end RegularMatrix
 
 end Multidegree
