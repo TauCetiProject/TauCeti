@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Entropy
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Finite.Codimension
 import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 /-!
@@ -95,20 +95,12 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 theorem kolmogorovNumber_le_nnnorm_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε : ℝ≥0}
     {N : Finset F} (hcard : N.card ≤ k) (hN : IsCover ε ((T : E → F) '' closedBall 0 1) N)
     {c : 𝕜} (hc : 1 < ‖c‖) : T.kolmogorovNumber k ≤ ‖c‖₊ * ε := by
-  -- Quotient by the span of the centres, and compare norms on the shell `1 / ‖c‖ ≤ ‖x‖ < 1`.
-  set V := Submodule.span 𝕜 (N : Set F)
-  have hV : Module.rank 𝕜 V ≤ k := (rank_span_finset_le N).trans (by exact_mod_cast hcard)
+  -- Quotient by the span of the centres.
+  have hV : Module.rank 𝕜 (Submodule.span 𝕜 (N : Set F)) ≤ k :=
+    (rank_span_finset_le N).trans (by exact_mod_cast hcard)
   refine (T.kolmogorovNumber_le hV).trans ?_
   rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm]
-  refine opNorm_le_of_shell one_pos (by positivity) hc fun x hx₁ hx₂ ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 <| hN.subset_iUnion_closedBall <|
-    mem_image_of_mem T (mem_closedBall_zero_iff.2 hx₂.le)
-  have hqy : V.mkQL y = 0 := (Submodule.Quotient.mk_eq_zero V).2 (Submodule.subset_span hy)
-  calc ‖(V.mkQL ∘L T) x‖ = ‖V.mkQL (T x - y)‖ := by rw [map_sub, hqy, sub_zero, comp_apply]
-    _ ≤ ‖T x - y‖ := Submodule.Quotient.norm_mk_le _ _
-    _ ≤ ε := by rw [← dist_eq_norm]; exact mem_closedBall.1 hxy
-    _ = ‖c‖ * ε * (1 / ‖c‖) := by field_simp
-    _ ≤ ‖c‖ * ε * ‖x‖ := by gcongr
+  exact T.norm_mkQL_span_comp_le_of_isCover hN hc
 
 /-- If `T(B_E)` is totally bounded, the Kolmogorov numbers of `T` tend to zero. -/
 theorem tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
@@ -235,33 +227,10 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 theorem gelfandNumber_le_two_mul_of_isCover (T : E →L[𝕜] F) {k : ℕ} {ε : ℝ≥0} {N : Finset F}
     (hcard : N.card ≤ k) (hN : IsCover ε ((T : E → F) '' closedBall 0 1) N) :
     T.gelfandNumber k ≤ 2 * ε := by
-  choose φ hφ hφy using fun y : F ↦ exists_dual_vector'' 𝕜 y
-  -- The subspace `M = ⋂_{y ∈ N} ker (φ y ∘ T)` has codimension at most `k`.
-  let L : E →ₗ[𝕜] (N → 𝕜) := LinearMap.pi fun y ↦ ((φ y).comp T).toLinearMap
-  have hM : Module.rank 𝕜 (E ⧸ LinearMap.ker L) ≤ k := by
-    have hrange : Module.rank 𝕜 (LinearMap.range L) ≤ k :=
-      (Submodule.rank_le _).trans (by simpa [rank_fun'] using hcard)
-    have h := (LinearMap.quotKerEquivRange L).lift_rank_eq
-    exact Cardinal.lift_le_nat_iff.mp (h.trans_le (Cardinal.lift_le_nat_iff.mpr hrange))
-  refine (T.gelfandNumber_le hM).trans ?_
+  obtain ⟨M, -, hM, hTM⟩ := T.exists_norm_comp_subtypeL_le_two_mul_of_isCover hN
+  refine (T.gelfandNumber_le (hM.trans (by exact_mod_cast hcard))).trans ?_
   rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, NNReal.coe_two]
-  refine opNorm_le_of_unit_norm (by positivity) fun x hx ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 <| hN.subset_iUnion_closedBall <|
-    mem_image_of_mem T (mem_closedBall_zero_iff.2 hx.le)
-  have hxy' : ‖y - T x‖ ≤ ε := by rw [← dist_eq_norm, dist_comm]; exact mem_closedBall.1 hxy
-  -- The centre `y` has norm `φ y (y - T x) ≤ ε`, since `φ y` vanishes at `T x`.
-  have hφx : φ y (T x) = 0 := by
-    simpa [L] using congr_fun (LinearMap.mem_ker.1 x.property) ⟨y, hy⟩
-  have hy' : ‖y‖ ≤ ε := by
-    have h : φ y (y - T x) = ‖y‖ := by rw [map_sub, hφx, sub_zero, hφy]
-    calc ‖y‖ = ‖φ y (y - T x)‖ := by rw [h, RCLike.norm_ofReal, abs_norm]
-      _ ≤ ‖φ y‖ * ‖y - T x‖ := le_opNorm _ _
-      _ ≤ 1 * ε := by gcongr; exact hφ y
-      _ = ε := one_mul _
-  calc ‖(T ∘L (LinearMap.ker L).subtypeL) x‖ = ‖T x‖ := rfl
-    _ ≤ ‖y‖ + ‖T x - y‖ := norm_le_norm_add_norm_sub' _ _
-    _ ≤ ε + ε := by rw [norm_sub_rev]; gcongr
-    _ = 2 * ε := by ring
+  exact hTM
 
 /-- **Gelfand numbers below entropy numbers.** `c_{2^n}(T) ≤ 2 eₙ(T)`. -/
 theorem gelfandNumber_two_pow_le_two_mul_entropyNumber (T : E →L[𝕜] F) (n : ℕ) :
