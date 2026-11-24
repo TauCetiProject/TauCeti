@@ -276,7 +276,8 @@ theorem torus_le_borel : torus K σ ≤ borel K σ := fun t ht ↦ by
 
 /-- The Weyl representative moves the point at infinity. -/
 theorem weyl_notMem_borel : weyl K σ ∉ borel K σ := fun h ↦
-  point_ne_infinity _ ((weyl_smul_infinity K σ).symm.trans (mem_borel_iff_smul_infinity.mp h))
+  point_ne_infinity _ ((origin_eq_point K σ).symm.trans
+    ((weyl_smul_infinity K σ).symm.trans (mem_borel_iff_smul_infinity.mp h)))
 
 variable {K σ}
 
