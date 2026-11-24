@@ -158,6 +158,11 @@ noncomputable def picGenusChar (hχ : IsGenusChar (-n) χ) :
     fun q₁ q₂ ↦ by
       obtain ⟨a, a', B, C, f, g, h, h₁, h₂, h₃, h₄, h₅, h₆⟩ :=
         exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq n hn q₁ q₂
+      -- Unlike the narrow case, `simp`/`rw` with `posDefProperClassEquivPic_apply` cannot match
+      -- here: the codomain of `posDefProperClassToPic` carries `-((n : ℤ) : ℚ)` rather than
+      -- `((-n : ℤ) : ℚ)`, so the two `Pic` groups agree only up to unfolding `Int.cast_neg`. The
+      -- identification therefore goes through this explicit chain, checked by definitional
+      -- unfolding.
       exact ⟨a, a', B, C, f, g, h, h₁, h₂, h₃, h₄, h₅,
         (congrArg₂ (· * ·) (posDefProperClassEquivPic_apply n hn q₁)
           (posDefProperClassEquivPic_apply n hn q₂)).trans
