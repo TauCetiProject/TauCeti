@@ -9,7 +9,7 @@ public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # The modulus of `Γ` on vertical lines
@@ -103,9 +103,8 @@ DLMF 5.8.3. -/
 theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y : ℝ) :
     ‖Gamma ((x : ℂ) + y * I)‖ ≤ Real.Gamma x / Real.Gamma x' * ‖Gamma ((x' : ℂ) + y * I)‖ := by
   have hx' : 0 < x' := hx.trans_le hxx'
-  have hnot : ∀ {u : ℝ}, 0 < u → ∀ n : ℕ, u ≠ -(n : ℝ) := fun hu n h => by
-    have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
-    linarith
+  have hnot : ∀ {u : ℝ}, 0 < u → ∀ n : ℕ, u ≠ -(n : ℝ) := fun hu =>
+    Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero (neg_one_lt_zero.trans hu) hu.ne'
   have hne : ∀ {u : ℝ}, 0 < u → Gamma ((u : ℂ) + y * I) ≠ 0 := fun hu =>
     Gamma_ne_zero_of_re_pos (by simpa using hu)
   have hG' := Real.Gamma_pos_of_pos hx'
