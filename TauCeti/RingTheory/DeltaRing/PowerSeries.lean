@@ -40,6 +40,8 @@ variable {p : ℕ} [hp : Fact p.Prime] {A : Type*} [CommRing A]
 theorem IsFrobeniusLift.powerSeries {σ : A →+* A} (hσ : IsFrobeniusLift p σ) :
     IsFrobeniusLift p
       ((PowerSeries.map σ).comp (PowerSeries.expand p hp.out.ne_zero : A⟦X⟧ →ₐ[A] A⟦X⟧)) := by
+  set φ : A⟦X⟧ →+* A⟦X⟧ :=
+    (PowerSeries.map σ).comp (PowerSeries.expand p hp.out.ne_zero : A⟦X⟧ →ₐ[A] A⟦X⟧)
   refine ⟨fun f ↦ ?_⟩
   by_cases hu : IsUnit (p : A)
   · exact (map_natCast (PowerSeries.C (R := A)) p ▸ hu.map PowerSeries.C).dvd
@@ -47,17 +49,18 @@ theorem IsFrobeniusLift.powerSeries {σ : A →+* A} (hσ : IsFrobeniusLift p σ
   set q := Ideal.Quotient.mk (Ideal.span {(p : A)})
   have hq : q.comp σ = (_root_.frobenius _ p).comp q :=
     RingHom.ext fun a ↦ by simpa [q, frobenius_def] using hσ.mk_eq a
-  have hmap : PowerSeries.map q
-      ((PowerSeries.map σ).comp (PowerSeries.expand p hp.out.ne_zero : A⟦X⟧ →ₐ[A] A⟦X⟧) f -
-        f ^ p) = 0 := by
-    rw [map_sub, map_pow, RingHom.comp_apply, ← RingHom.comp_apply (PowerSeries.map q),
-      ← PowerSeries.map_comp, hq, PowerSeries.map_comp, RingHom.comp_apply, RingHom.coe_coe,
-      PowerSeries.map_expand, PowerSeries.map_frobenius_expand, sub_self]
-  have hcoeff (n : ℕ) : (p : A) ∣ PowerSeries.coeff n
-      ((PowerSeries.map σ).comp (PowerSeries.expand p hp.out.ne_zero : A⟦X⟧ →ₐ[A] A⟦X⟧) f -
-        f ^ p) := by
+  -- Modulo `p`, `φ f` is `(f mod p) ^ p` by Mathlib's `PowerSeries.map_frobenius_expand`.
+  have hp₀ : p ≠ 0 := hp.out.ne_zero
+  have hmap : PowerSeries.map q (φ f) = PowerSeries.map q f ^ p := calc
+    PowerSeries.map q (φ f) = PowerSeries.map (q.comp σ) (PowerSeries.expand p hp₀ f) := (rfl)
+    _ = PowerSeries.map (_root_.frobenius _ p)
+        (PowerSeries.map q (PowerSeries.expand p hp₀ f)) := by
+      rw [hq, PowerSeries.map_comp, RingHom.comp_apply]
+    _ = PowerSeries.map q f ^ p := by
+      rw [PowerSeries.map_expand, PowerSeries.map_frobenius_expand]
+  have hcoeff (n : ℕ) : (p : A) ∣ PowerSeries.coeff n (φ f - f ^ p) := by
     rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem, ← PowerSeries.coeff_map,
-      hmap, map_zero]
+      map_sub, map_pow, hmap, sub_self, map_zero]
   choose c hc using hcoeff
   refine ⟨PowerSeries.mk c, PowerSeries.ext fun n ↦ ?_⟩
   rw [hc, ← map_natCast (PowerSeries.C (R := A)), PowerSeries.coeff_C_mul, PowerSeries.coeff_mk]

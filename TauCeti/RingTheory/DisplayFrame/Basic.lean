@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.RingTheory.DeltaRing.Basic
+public import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Frames
@@ -119,11 +120,8 @@ theorem natCast_mem_jacobson (F : DisplayFrame p I) : (p : S) ∈ Ring.jacobson 
 
 /-- An element of `S` is determined by its products with the values of `φ₁`. -/
 theorem eq_of_forall_mul_divFrobenius_eq {s t : S}
-    (h : ∀ a, s * F.divFrobenius a = t * F.divFrobenius a) : s = t := by
-  rw [← sub_eq_zero, ← Submodule.mem_bot S]
-  refine Submodule.mem_of_span_eq_top_of_smul_pow_mem _ _ F.span_range_divFrobenius _ ?_
-  rintro ⟨_, a, rfl⟩
-  exact ⟨1, by simp [mul_sub, mul_comm _ s, mul_comm _ t, h a]⟩
+    (h : ∀ a, s * F.divFrobenius a = t * F.divFrobenius a) : s = t :=
+  Ideal.eq_of_forall_mul_eq_of_span_eq_top F.span_range_divFrobenius (Set.forall_mem_range.mpr h)
 
 /-- There is a unique `θ` with `φ a = θ * φ₁ a` for every `a ∈ I`: writing `1 = ∑ sᵢ φ₁ aᵢ`, it is
 `θ = ∑ sᵢ φ aᵢ`. -/
@@ -146,6 +144,7 @@ theorem exists_unique_constant : ∃! θ : S, ∀ a : I, F.frobenius a = θ * F.
 noncomputable def constant : S :=
   F.exists_unique_constant.exists.choose
 
+/-- The frame constant satisfies `φ a = θ * φ₁ a` for every `a ∈ I`. -/
 theorem frobenius_eq_constant_mul (a : I) : F.frobenius a = F.constant * F.divFrobenius a :=
   F.exists_unique_constant.exists.choose_spec a
 
@@ -159,9 +158,11 @@ theorem eq_constant_iff {θ : S} :
 def IsPFrame : Prop :=
   F.constant = p
 
+/-- A frame is a `p`-frame iff its frame constant is `p`. -/
 theorem isPFrame_iff_constant_eq : F.IsPFrame ↔ F.constant = p :=
   Iff.rfl
 
+/-- A frame is a `p`-frame iff `φ a = p * φ₁ a` for every `a ∈ I`. -/
 theorem isPFrame_iff : F.IsPFrame ↔ ∀ a : I, F.frobenius a = p * F.divFrobenius a := by
   rw [IsPFrame, eq_comm, eq_constant_iff]
 
@@ -218,6 +219,7 @@ theorem map_divFrobenius (f : Hom F F') (a : I) :
   f.map_divFrobenius' a
 
 /-- A strict homomorphism carries the frame constant to the frame constant. -/
+@[simp]
 theorem map_constant (f : Hom F F') : f F.constant = F'.constant := by
   have hspan :
       Ideal.span (Set.range fun a : I ↦ F'.divFrobenius ⟨f a, f.map_mem a.property⟩) = ⊤ := by
@@ -225,14 +227,10 @@ theorem map_constant (f : Hom F F') : f F.constant = F'.constant := by
     rw [Ideal.map_span, Ideal.map_top, ← Set.range_comp] at this
     rwa [show (fun a : I ↦ F'.divFrobenius ⟨f a, f.map_mem a.property⟩) = f ∘ F.divFrobenius from
       funext f.map_divFrobenius]
-  rw [← sub_eq_zero, ← Submodule.mem_bot S']
-  refine Submodule.mem_of_span_eq_top_of_smul_pow_mem _ _ hspan _ ?_
-  rintro ⟨_, a, rfl⟩
+  refine Ideal.eq_of_forall_mul_eq_of_span_eq_top hspan (Set.forall_mem_range.mpr fun a ↦ ?_)
   have h₁ := F'.frobenius_eq_constant_mul ⟨f a, f.map_mem a.property⟩
   have h₂ := congrArg f (F.frobenius_eq_constant_mul a)
   rw [map_mul, map_frobenius, ← map_divFrobenius] at h₂
-  refine ⟨1, ?_⟩
-  rw [pow_one, smul_eq_mul, Submodule.mem_bot]
   linear_combination h₁ - h₂
 
 variable (F) in
@@ -286,6 +284,7 @@ variable (F) in
 theorem residueMap_id : (Hom.id F).residueMap = RingHom.id (S ⧸ I) :=
   Ideal.Quotient.ringHom_ext rfl
 
+@[simp]
 theorem residueMap_comp (g : Hom F' F'') (f : Hom F F') :
     (g.comp f).residueMap = g.residueMap.comp f.residueMap :=
   Ideal.Quotient.ringHom_ext rfl
@@ -363,7 +362,7 @@ noncomputable def residueFunctor : DisplayFrameCat.{u} p ⥤ CommRingCat.{u} whe
     simp
   map_comp f g := by
     ext : 1
-    simp [DisplayFrame.Hom.residueMap_comp]
+    simp
 
 end DisplayFrameCat
 

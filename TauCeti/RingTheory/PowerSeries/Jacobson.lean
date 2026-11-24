@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import TauCeti.RingTheory.MvPowerSeries.Jacobson
 
 /-!
 # The Jacobson radical of a power series ring
 
-A power series over a commutative ring is a unit exactly when its constant coefficient is
-(`PowerSeries.isUnit_iff_constantCoeff`). Consequently a power series lies in the Jacobson radical
-of `R⟦X⟧` exactly when its constant coefficient lies in the Jacobson radical of `R`
-(`PowerSeries.mem_jacobson_iff`). In particular a constant lies in the Jacobson radical of `R⟦X⟧`
-exactly when it lies in that of `R` (`PowerSeries.C_mem_jacobson_iff`); for instance `p` lies in
-the Jacobson radical of `W(k)⟦X⟧` for a perfect ring `k` of characteristic `p`.
+A power series over a commutative ring lies in the Jacobson radical of `R⟦X⟧` exactly when its
+constant coefficient lies in the Jacobson radical of `R` (`PowerSeries.mem_jacobson_iff`), the
+one-variable case of `MvPowerSeries.mem_jacobson_iff`. In particular a constant lies in the
+Jacobson radical of `R⟦X⟧` exactly when it lies in that of `R` (`PowerSeries.C_mem_jacobson_iff`);
+for instance `p` lies in the Jacobson radical of `W(k)⟦X⟧` for a perfect ring `k` of
+characteristic `p`.
 -/
 
 public section
@@ -28,9 +28,8 @@ variable {R : Type*} [CommRing R]
 /-- A power series lies in the Jacobson radical of `R⟦X⟧` exactly when its constant coefficient
 lies in the Jacobson radical of `R`. -/
 theorem mem_jacobson_iff {f : R⟦X⟧} :
-    f ∈ Ring.jacobson R⟦X⟧ ↔ constantCoeff f ∈ Ring.jacobson R := by
-  simp only [Ring.mem_jacobson_iff, isUnit_iff_constantCoeff, map_add, map_mul, map_one]
-  exact ⟨fun h r ↦ by simpa using h (C r), fun h g ↦ h _⟩
+    f ∈ Ring.jacobson R⟦X⟧ ↔ constantCoeff f ∈ Ring.jacobson R :=
+  MvPowerSeries.mem_jacobson_iff
 
 /-- A constant power series lies in the Jacobson radical of `R⟦X⟧` exactly when its coefficient
 lies in the Jacobson radical of `R`. -/

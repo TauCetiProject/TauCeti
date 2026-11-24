@@ -22,8 +22,7 @@ Over a ring of characteristic `p`, `x` is a unit exactly when its zeroth Witt co
 unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib's
 `WittVector.mkUnit`. Mathlib states the criterion only over a field
 (`WittVector.isUnit_of_coeff_zero_ne_zero`). Consequently the Jacobson radical of `𝕎 R` consists
-of the Witt vectors whose zeroth coordinate lies in the Jacobson radical of `R`, and contains `p`;
-if `R` is perfect, `p` is moreover a non-zero-divisor of `𝕎 R`, so `p 𝕎 R ≅ 𝕎 R`.
+of the Witt vectors whose zeroth coordinate lies in the Jacobson radical of `R`, and contains `p`.
 In characteristic `p` the Verschiebung of `F u` is `p u`, so a sum `[a] + p u` has Witt
 coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
 (`WittVector.teichmuller_add_p_mul_coeff_succ`).
@@ -42,7 +41,6 @@ coordinates `a` in degree `0` and `u_n ^ p` in degree `n + 1`
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
 * `WittVector.mem_jacobson_iff`: in characteristic `p`, `x` lies in the Jacobson radical of
   `𝕎 R` iff `x₀` lies in that of `R`; in particular `p` does (`WittVector.natCast_mem_jacobson`).
-* `WittVector.isRegular_natCast`: for perfect `R`, `p` is a non-zero-divisor of `𝕎 R`.
 
 ## References
 
@@ -157,11 +155,5 @@ theorem natCast_mem_jacobson : (p : 𝕎 R) ∈ Ring.jacobson (𝕎 R) := by
   exact zero_mem _
 
 end CharP
-
-/-- For a perfect ring `R` of characteristic `p`, `p` is a non-zero-divisor of `𝕎 R`. -/
-theorem isRegular_natCast [CharP R p] [PerfectRing R p] : IsRegular (p : 𝕎 R) :=
-  isRegular_iff_eq_zero_of_mul.mpr
-    ⟨fun x h ↦ eq_zero_of_p_mul_eq_zero x (by rwa [mul_comm]),
-      fun x h ↦ eq_zero_of_p_mul_eq_zero x h⟩
 
 end WittVector
