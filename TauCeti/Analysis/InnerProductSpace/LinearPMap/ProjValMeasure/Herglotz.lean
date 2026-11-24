@@ -59,11 +59,8 @@ theorem _root_.IsSelfAdjoint.eq_spectralPVM_diag_of_eq_subtractedResolventKernel
     filter_upwards [eventually_gt_atTop 0] with y hy
     rw [hF _ (by simpa using hy)]
     exact mul_norm_resolventTransform_ofReal_mul_I_le hy
-  have him : ∀ᶠ y : ℝ in atTop,
-      y * |(-⟪v, A.resolvent (y * I) v⟫_ℂ).im| ≤ μ.real Set.univ := by
-    filter_upwards [hbound, eventually_gt_atTop 0] with y hy hy0
-    exact (mul_le_mul_of_nonneg_left (abs_im_le_norm _) hy0.le).trans hy
-  have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep him
+  have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep
+    (eventually_mul_abs_im_le_of_mul_norm_le hbound)
   have hm := eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound hrep hbound
   exact Measure.ext_of_resolventTransform fun z hz ↦ (hm z hz).symm.trans (hF z hz)
 

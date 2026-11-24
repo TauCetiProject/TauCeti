@@ -51,7 +51,7 @@ theorem im_resolvent_real (z : ℂ) (x : ℝ) :
 /-- The real resolvent kernel is bounded by the reciprocal distance to the real axis. -/
 theorem norm_resolvent_real_le (z : ℂ) (x : ℝ) (hz : z.im ≠ 0) :
     ‖resolvent z x‖ ≤ |z.im|⁻¹ := by
-  rw [resolvent, Ring.inverse_eq_inv', norm_inv]
+  rw [resolvent_real_eq_inv, norm_inv]
   apply inv_anti₀ (abs_pos.mpr hz)
   simpa using abs_im_le_norm ((x : ℂ) - z)
 

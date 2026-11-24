@@ -146,8 +146,8 @@ theorem norm_integral_pow_mul_resolvent_le {r : ℕ} (hr : Integrable (fun x : �
   have habs : Integrable (fun x : ℝ ↦ |x| ^ r) μ := by
     simpa only [Real.norm_eq_abs, abs_pow] using hr.norm
   refine norm_integral_le_of_norm_le (habs.div_const _) (ae_of_all _ fun x ↦ ?_)
-  rw [norm_mul, norm_pow, norm_real, Real.norm_eq_abs, div_eq_mul_inv, resolvent,
-    Ring.inverse_eq_inv', norm_inv]
+  rw [norm_mul, norm_pow, norm_real, Real.norm_eq_abs, div_eq_mul_inv, resolvent_real_eq_inv,
+    norm_inv]
   gcongr
   simpa using abs_im_le_norm ((x : ℂ) - z)
 
@@ -195,8 +195,8 @@ theorem tendsto_mul_I_pow_mul_resolventTransform_add_sum [IsFiniteMeasure μ] {r
       (ae_of_all _ fun x ↦ tendsto_const_nhds.mul (tendsto_mul_I_mul_resolvent x))
     filter_upwards [eventually_ne_atTop 0] with y _
     refine ae_of_all _ fun x ↦ ?_
-    rw [norm_mul, norm_pow, norm_real, Real.norm_eq_abs, resolvent, Ring.inverse_eq_inv',
-      norm_mul, norm_inv, ← div_eq_mul_inv]
+    rw [norm_mul, norm_pow, norm_real, Real.norm_eq_abs, resolvent_real_eq_inv, norm_mul,
+      norm_inv, ← div_eq_mul_inv]
     refine mul_le_of_le_one_right (by positivity) (div_le_one_of_le₀ ?_ (norm_nonneg _))
     simpa using abs_im_le_norm ((x : ℂ) - y * I)
   have hval : ∫ x, (x : ℂ) ^ r * (-1) ∂μ = -((∫ x, x ^ r ∂μ : ℝ) : ℂ) := by

@@ -377,9 +377,8 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
 value `0`, since the subtracted resolvent kernel is not integrable there. -/
 theorem upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
     (hν : ¬IsPoissonFinite ν) {z : ℂ} (hz : z.im ≠ 0) : upperHalfPlaneSchwarzIntegral ν z = 0 := by
-  rw [upperHalfPlaneSchwarzIntegral_def, integral_undef fun h ↦ hν
-    ((isPoissonFinite_iff_lintegral_lt_top ν).2
-      ((integrable_subtractedResolventKernel_iff hz).1 h)), mul_zero]
+  rw [upperHalfPlaneSchwarzIntegral_def, integral_subtractedResolventKernel_eq_zero
+    (mt (isPoissonFinite_iff_lintegral_lt_top ν).2 hν) hz, mul_zero]
 
 /-- At `z = i` the Schwarz integral is real: `S[ν](i) = (1 / π) ∫ dν / (1 + x ^ 2)`. -/
 @[simp]
