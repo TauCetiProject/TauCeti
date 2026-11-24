@@ -912,6 +912,108 @@ theorem index_floerSobolevOperator_eq_of_cylindrical_data (ω : SymplecticForm V
 
 end Invariance
 
+section Compatible
+
+/-! ### Every compatible almost complex structure -/
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The linearized Floer operator on the cylinder is Fredholm for every compatible almost complex
+structure.** Let `F` be a finite-dimensional complex inner product space whose symplectic form `ω`
+is `Im ⟪·, ·⟫`, and let the Floer data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) on the
+whole cylinder, compatible with `ω`, and cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
+`s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`. Let `H±` be one-periodic, jointly `C³`
+time-dependent Hamiltonians whose suspended vector fields are globally Lipschitz, and let `x±` be
+one-periodic orbits of `H±` with `x±(0)` a nondegenerate fixed point of the time-one map. If `u` is
+a `C¹` map whose loops converge uniformly to `x₋` at `-∞` and to `x₊` at `+∞`, with slice defects
+`∂t u - X_{H±_t}(u)` tending uniformly to zero at the corresponding end, then the realization
+`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator is Fredholm. By
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`, its index is that of
+the data `(i, K_s, K_t)` with the complex structure `i` of `F`. -/
+theorem isFredholm_floerSobolevOperator_of_cylindrical_of_compatible (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {J : ℝ × ℝ → F → AlmostComplexStructure F}
+    {Ks Kt : ℝ × ℝ → F → ℝ} {Hm Hp : ℝ → F → ℝ} {Jm Jp : ℝ → F → AlmostComplexStructure F}
+    {R : ℝ} {u : ℝ × ℝ → F} (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHm : ContDiff ℝ 3 (uncurry Hm)) (hHmper : Periodic Hm 1) {xm : ℝ → F}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t) (hxmper : Periodic xm 1)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHp : ContDiff ℝ 3 (uncurry Hp)) (hHpper : Periodic Hp 1) {xp : ℝ → F}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).IsFredholm := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  -- The data `(i, K_s, K_t)` have the same end Hamiltonians, and their operator is Fredholm by
+  -- the parametrix built from the invertible stationary end operators.
+  have hcyl₀ : Floer.IsCylindricalNearEnds (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      Ks Kt (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) Hm Hp R u :=
+    { almostComplex_eq_of_le_neg := fun _ _ ↦ rfl
+      almostComplex_eq_of_le := fun _ _ ↦ rfl
+      hamiltonianS_eq_zero := hcyl.hamiltonianS_eq_zero
+      hamiltonianT_eq_of_le_neg := hcyl.hamiltonianT_eq_of_le_neg
+      hamiltonianT_eq_of_le := hcyl.hamiltonianT_eq_of_le
+      contDiffAt_almostComplex := fun _ ↦ contDiffAt_const
+      contDiffAt_hamiltonianS := hcyl.contDiffAt_hamiltonianS
+      contDiffAt_hamiltonianT := hcyl.contDiffAt_hamiltonianT }
+  have h₀ := ω.isFredholm_floerSobolevOperator_of_cylindrical hω hcyl₀ hu.continuous hXm hHm
+    hHmper hxm hxmper hndm huxm hXp hHp hHpper hxp hxpper hndp huxp
+  -- Deforming the almost complex structures from `i` to `J` keeps the operator Fredholm.
+  exact (isFredholm_floerSobolevOperator_iff_of_cylindrical_data ω hcyl₀ hcyl contDiff_const hKs
+    hKt hJ hKs hKt (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hXm
+    hxm hndm huxm hδm hXp hxp hndp huxp hδp).1 h₀
+
+/-- **The linearized Floer operator along a Floer trajectory is Fredholm for every compatible
+almost complex structure.** Let `F` be a finite-dimensional complex inner product space whose
+symplectic form `ω` is `Im ⟪·, ·⟫`, let `J_t(y)` be a `C¹` family of `ω`-compatible almost complex
+structures, and let `H` be a one-periodic, jointly `C³` time-dependent Hamiltonian whose suspended
+vector field is globally Lipschitz, with one-periodic orbits `x₋` and `x₊` whose initial points are
+nondegenerate fixed points of the time-one map. For the `s`-independent Floer data `(J_t, 0, H_t)`
+and a `C¹` map `u` whose loops converge uniformly to `x₋` at `-∞` and to `x₊` at `+∞`, with slice
+defect `∂t u - X_{H_t}(u)` tending uniformly to zero at both ends, the realization
+`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator is Fredholm. -/
+theorem isFredholm_floerSobolevOperator_of_compatible (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {J : ℝ → F → AlmostComplexStructure F}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJc : ∀ t y, ω.Compatible (J t y)) {H : ℝ → F → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1) {xm xp : ℝ → F}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t) (hxmper : Periodic xm 1)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (xm 0))
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (H t) (xp t)) t) (hxpper : Periodic xp 1)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (xp 0))
+    {u : ℝ × ℝ → F} (hu : ContDiff ℝ 1 u)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ H w.2) u).IsFredholm := by
+  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
+  exact ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω
+    (Floer.isCylindricalNearEnds_comp_snd hJ hH₂ (R := 0) u)
+    (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)) contDiff_const
+    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) (fun z ↦ hJc z.2) hu hX hH hHper hxm hxmper
+    hndm huxm hδm hX hH hHper hxp hxpper hndp huxp hδp
+
+end Compatible
+
 section Unitary
 
 /-! ### Maps from a nondegenerate orbit to itself in a unitary trivialization -/
@@ -1054,8 +1156,8 @@ theorem isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
     (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm :=
-  (isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical ω hX hH hHp hx hxp hu hum hδm
-    hup hδp hcyl hJ hKs hKt hJc hω hnd).1
+  ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl hJ hKs hKt hJc hu hX hH
+    hHp hx hxp hnd hum hδm hX hH hHp hx hxp hnd hup hδp
 
 include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
 /-- **The linearized Floer operator for data with equal ends has index zero.** Under the
@@ -1074,107 +1176,5 @@ theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindri
 end EqualEnds
 
 end Unitary
-
-section Compatible
-
-/-! ### Every compatible almost complex structure -/
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
-
-/-- **The linearized Floer operator on the cylinder is Fredholm for every compatible almost complex
-structure.** Let `F` be a finite-dimensional complex inner product space whose symplectic form `ω`
-is `Im ⟪·, ·⟫`, and let the Floer data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) on the
-whole cylinder, compatible with `ω`, and cylindrical near the ends: equal to `(J₋_t, 0, H₋_t)` for
-`s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`. Let `H±` be one-periodic, jointly `C³`
-time-dependent Hamiltonians whose suspended vector fields are globally Lipschitz, and let `x±` be
-one-periodic orbits of `H±` with `x±(0)` a nondegenerate fixed point of the time-one map. If `u` is
-a `C¹` map whose loops converge uniformly to `x₋` at `-∞` and to `x₊` at `+∞`, with slice defects
-`∂t u - X_{H±_t}(u)` tending uniformly to zero at the corresponding end, then the realization
-`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator is Fredholm. By
-`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`, its index is that of
-the data `(i, K_s, K_t)` with the complex structure `i` of `F`. -/
-theorem isFredholm_floerSobolevOperator_of_cylindrical_of_compatible (ω : SymplecticForm F)
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {J : ℝ × ℝ → F → AlmostComplexStructure F}
-    {Ks Kt : ℝ × ℝ → F → ℝ} {Hm Hp : ℝ → F → ℝ} {Jm Jp : ℝ → F → AlmostComplexStructure F}
-    {R : ℝ} {u : ℝ × ℝ → F} (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
-    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
-    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u)
-    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
-    (hHm : ContDiff ℝ 3 (uncurry Hm)) (hHmper : Periodic Hm 1) {xm : ℝ → F}
-    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t) (hxmper : Periodic xm 1)
-    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
-    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (hδm : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
-        (Icc 0 1))
-    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
-    (hHp : ContDiff ℝ 3 (uncurry Hp)) (hHpper : Periodic Hp 1) {xp : ℝ → F}
-    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
-    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
-    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδp : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
-        (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-      u).IsFredholm := by
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  -- The data `(i, K_s, K_t)` have the same end Hamiltonians, and their operator is Fredholm by
-  -- the parametrix built from the invertible stationary end operators.
-  have hcyl₀ : Floer.IsCylindricalNearEnds (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
-      Ks Kt (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
-      (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) Hm Hp R u :=
-    { almostComplex_eq_of_le_neg := fun _ _ ↦ rfl
-      almostComplex_eq_of_le := fun _ _ ↦ rfl
-      hamiltonianS_eq_zero := hcyl.hamiltonianS_eq_zero
-      hamiltonianT_eq_of_le_neg := hcyl.hamiltonianT_eq_of_le_neg
-      hamiltonianT_eq_of_le := hcyl.hamiltonianT_eq_of_le
-      contDiffAt_almostComplex := fun _ ↦ contDiffAt_const
-      contDiffAt_hamiltonianS := hcyl.contDiffAt_hamiltonianS
-      contDiffAt_hamiltonianT := hcyl.contDiffAt_hamiltonianT }
-  have h₀ := ω.isFredholm_floerSobolevOperator_of_cylindrical hω hcyl₀ hu.continuous hXm hHm
-    hHmper hxm hxmper hndm huxm hXp hHp hHpper hxp hxpper hndp huxp
-  -- Deforming the almost complex structures from `i` to `J` keeps the operator Fredholm.
-  exact (isFredholm_floerSobolevOperator_iff_of_cylindrical_data ω hcyl₀ hcyl contDiff_const hKs
-    hKt hJ hKs hKt (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hXm
-    hxm hndm huxm hδm hXp hxp hndp huxp hδp).1 h₀
-
-/-- **The linearized Floer operator along a Floer trajectory is Fredholm for every compatible
-almost complex structure.** Let `F` be a finite-dimensional complex inner product space whose
-symplectic form `ω` is `Im ⟪·, ·⟫`, let `J_t(y)` be a `C¹` family of `ω`-compatible almost complex
-structures, and let `H` be a one-periodic, jointly `C³` time-dependent Hamiltonian whose suspended
-vector field is globally Lipschitz, with one-periodic orbits `x₋` and `x₊` whose initial points are
-nondegenerate fixed points of the time-one map. For the `s`-independent Floer data `(J_t, 0, H_t)`
-and a `C¹` map `u` whose loops converge uniformly to `x₋` at `-∞` and to `x₊` at `+∞`, with slice
-defect `∂t u - X_{H_t}(u)` tending uniformly to zero at both ends, the realization
-`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator is Fredholm. -/
-theorem isFredholm_floerSobolevOperator_of_compatible (ω : SymplecticForm F)
-    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {J : ℝ → F → AlmostComplexStructure F}
-    (hJ : ContDiff ℝ 1 fun p : ℝ × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJc : ∀ t y, ω.Compatible (J t y)) {H : ℝ → F → ℝ} {K : ℝ≥0}
-    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1) {xm xp : ℝ → F}
-    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t) (hxmper : Periodic xm 1)
-    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (xm 0))
-    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (H t) (xp t)) t) (hxpper : Periodic xp 1)
-    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (xp 0))
-    {u : ℝ × ℝ → F} (hu : ContDiff ℝ 1 u)
-    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (hδm : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
-    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδp : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
-        (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun w ↦ H w.2) u).IsFredholm := by
-  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
-  exact ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω
-    (Floer.isCylindricalNearEnds_comp_snd hJ hH₂ (R := 0) u)
-    (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)) contDiff_const
-    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) (fun z ↦ hJc z.2) hu hX hH hHper hxm hxmper
-    hndm huxm hδm hX hH hHper hxp hxpper hndp huxp hδp
-
-end Compatible
 
 end TauCeti.SymplecticForm
