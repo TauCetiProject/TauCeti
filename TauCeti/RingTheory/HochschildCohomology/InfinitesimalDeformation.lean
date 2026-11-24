@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.HochschildCohomology.Bimodule
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NoncommRing
+import TauCeti.LinearAlgebra.Multilinear.VecCons
 
 /-!
 # Infinitesimal deformations of an algebra and `HH²(A, A)`
@@ -58,6 +60,9 @@ cohomology `HH²(A, A)` (`InfinitesimalDeformation.equivHochschildBimoduleCohomo
 * `TauCeti.zero_infinitesimalDeformationMul`, `TauCeti.add_infinitesimalDeformationMul`,
   `TauCeti.smul_infinitesimalDeformationMul` and their right-hand versions: the deformed
   multiplication is `R`-bilinear.
+* `TauCeti.IsInfinitesimalEquivalence.apply_eq`: infinitesimal equivalences are shears
+  `a + εb ↦ a + ε(b + g a)`, and `TauCeti.IsInfinitesimalEquivalence.exists_inverse`: they are
+  invertible, over any additive group `A` with a multiplication.
 * `TauCeti.InfinitesimallyEquivalent.refl`, `.symm` and `.trans`: infinitesimal equivalence is an
   equivalence relation.
 * `TauCeti.isInfinitesimalEquivalence_iff`: the equivalences are the maps `id + ε g` for which
@@ -175,65 +180,85 @@ theorem InfinitesimallyEquivalent.trans {φ ψ χ : (Fin 2 → A) →ₘₗ[R] A
   let ⟨_, hG⟩ := h₂
   ⟨_, hF.comp hG⟩
 
+/-- **Infinitesimal equivalences are shears**: an infinitesimal equivalence `F` is
+`a + εb ↦ a + ε(b + g a)` for `g = snd ∘ F ∘ inl`. -/
+theorem IsInfinitesimalEquivalence.apply_eq {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
+    {F : A × A →ₗ[R] A × A} (hF : IsInfinitesimalEquivalence φ ψ F) (x : A × A) :
+    F x = (x.1, x.2 + (LinearMap.snd R A A ∘ₗ F ∘ₗ LinearMap.inl R A A) x.1) := by
+  have hx : F x = F (x.1, 0) + F (0, x.2) := by
+    rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
+  refine Prod.ext (hF.fst_apply x) ?_
+  rw [hx, Prod.snd_add, hF.apply_zero_prod, add_comm]
+  rfl
+
 end Deformation
+
+section Inverse
+
+variable {R A : Type*} [Semiring R] [AddCommGroup A] [Mul A] [Module R A]
+
+/-- **Inverse of an infinitesimal equivalence.** An infinitesimal equivalence `F` from `μ + εφ`
+to `μ + εψ` has a two-sided inverse which is an infinitesimal equivalence from `μ + εψ` to
+`μ + εφ`: if `F` is the shear `a + εb ↦ a + ε(b + g a)`, its inverse is the shear for `-g`. -/
+theorem IsInfinitesimalEquivalence.exists_inverse {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
+    {F : A × A →ₗ[R] A × A} (hF : IsInfinitesimalEquivalence φ ψ F) :
+    ∃ G : A × A →ₗ[R] A × A, IsInfinitesimalEquivalence ψ φ G ∧ G ∘ₗ F = LinearMap.id ∧
+      F ∘ₗ G = LinearMap.id := by
+  set g := LinearMap.snd R A A ∘ₗ F ∘ₗ LinearMap.inl R A A
+  set G := LinearMap.id - LinearMap.inr R A A ∘ₗ g ∘ₗ LinearMap.fst R A A
+  have hG (x : A × A) : G x = (x.1, x.2 - g x.1) := by
+    simp [G, Prod.ext_iff]
+  have hGF (x : A × A) : G (F x) = x := by
+    rw [hG, hF.apply_eq x, add_sub_cancel_right]
+  have hFG (x : A × A) : F (G x) = x := by
+    rw [hF.apply_eq, hG, sub_add_cancel]
+  refine ⟨G, ⟨fun x ↦ by rw [hG], fun a ↦ by rw [hG, map_zero, sub_zero], fun x y ↦ ?_⟩,
+    LinearMap.ext hGF, LinearMap.ext hFG⟩
+  rw [← hFG x, ← hFG y, ← hF.map_mul, hGF, hGF, hGF]
+
+/-- Infinitesimal equivalence is symmetric. -/
+@[symm]
+theorem InfinitesimallyEquivalent.symm {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
+    (h : InfinitesimallyEquivalent φ ψ) : InfinitesimallyEquivalent ψ φ :=
+  let ⟨_, hF⟩ := h
+  let ⟨G, hG, _⟩ := hF.exists_inverse
+  ⟨G, hG⟩
+
+namespace InfinitesimalDeformation
+
+variable (R A) in
+/-- Infinitesimal equivalence, as an equivalence relation on infinitesimal deformations. -/
+def setoid : Setoid (InfinitesimalDeformation R A) where
+  r φ ψ := InfinitesimallyEquivalent φ.val ψ.val
+  iseqv := ⟨fun φ ↦ .refl φ.val, .symm, .trans⟩
+
+/-- Two infinitesimal deformations are related by `TauCeti.InfinitesimalDeformation.setoid`
+exactly when they are infinitesimally equivalent. -/
+theorem setoid_r_iff {φ ψ : InfinitesimalDeformation R A} :
+    (setoid R A) φ ψ ↔ InfinitesimallyEquivalent φ.val ψ.val :=
+  Iff.rfl
+
+end InfinitesimalDeformation
+
+end Inverse
 
 section Bilinear
 
 variable {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
-
-/-- A `2`-cochain vanishes when its first argument is `0`. -/
-private theorem apply_vecCons_zero_left (φ : (Fin 2 → A) →ₘₗ[R] A) (b : A) : φ ![0, b] = 0 :=
-  φ.map_coord_zero 0 (by simp)
-
-/-- A `2`-cochain vanishes when its second argument is `0`. -/
-private theorem apply_vecCons_zero_right (φ : (Fin 2 → A) →ₘₗ[R] A) (a : A) : φ ![a, 0] = 0 :=
-  φ.map_coord_zero 1 (by simp)
-
-/-- A `2`-cochain is additive in its first argument. -/
-private theorem apply_vecCons_add_left (φ : (Fin 2 → A) →ₘₗ[R] A) (a a' b : A) :
-    φ ![a + a', b] = φ ![a, b] + φ ![a', b] := by
-  have h := φ.map_update_add ![a, b] 0 a a'
-  have e (c : A) : Function.update ![a, b] 0 c = ![c, b] := by
-    ext i; fin_cases i <;> rfl
-  simpa only [e] using h
-
-/-- A `2`-cochain is additive in its second argument. -/
-private theorem apply_vecCons_add_right (φ : (Fin 2 → A) →ₘₗ[R] A) (a b b' : A) :
-    φ ![a, b + b'] = φ ![a, b] + φ ![a, b'] := by
-  have h := φ.map_update_add ![a, b] 1 b b'
-  have e (c : A) : Function.update ![a, b] 1 c = ![a, c] := by
-    ext i; fin_cases i <;> rfl
-  simpa only [e] using h
-
-/-- A `2`-cochain is `R`-linear in its first argument. -/
-private theorem apply_vecCons_smul_left (φ : (Fin 2 → A) →ₘₗ[R] A) (c : R) (a b : A) :
-    φ ![c • a, b] = c • φ ![a, b] := by
-  have h := φ.map_update_smul ![a, b] 0 c a
-  have e (d : A) : Function.update ![a, b] 0 d = ![d, b] := by
-    ext i; fin_cases i <;> rfl
-  simpa only [e, RingHom.id_apply] using h
-
-/-- A `2`-cochain is `R`-linear in its second argument. -/
-private theorem apply_vecCons_smul_right (φ : (Fin 2 → A) →ₘₗ[R] A) (c : R) (a b : A) :
-    φ ![a, c • b] = c • φ ![a, b] := by
-  have h := φ.map_update_smul ![a, b] 1 c b
-  have e (d : A) : Function.update ![a, b] 1 d = ![a, d] := by
-    ext i; fin_cases i <;> rfl
-  simpa only [e, RingHom.id_apply] using h
 
 /-- `0` is absorbing on the left for the deformed multiplication. -/
 @[simp]
 theorem zero_infinitesimalDeformationMul {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
     (φ : (Fin 2 → A) →ₘₗ[R] A) (y : A × A) :
     infinitesimalDeformationMul φ 0 y = 0 :=
-  Prod.ext (by simp) (by simp [apply_vecCons_zero_left])
+  Prod.ext (by simp) (by simp [φ.map_coord_zero (m := ![0, y.1]) 0 rfl])
 
 /-- `0` is absorbing on the right for the deformed multiplication. -/
 @[simp]
 theorem infinitesimalDeformationMul_zero {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
     (φ : (Fin 2 → A) →ₘₗ[R] A) (x : A × A) :
     infinitesimalDeformationMul φ x 0 = 0 :=
-  Prod.ext (by simp) (by simp [apply_vecCons_zero_right])
+  Prod.ext (by simp) (by simp [φ.map_coord_zero (m := ![x.1, 0]) 1 rfl])
 
 /-- The deformed multiplication is additive in its first argument. -/
 theorem add_infinitesimalDeformationMul [Mul A] [RightDistribClass A] (φ : (Fin 2 → A) →ₘₗ[R] A)
@@ -242,7 +267,7 @@ theorem add_infinitesimalDeformationMul [Mul A] [RightDistribClass A] (φ : (Fin
       infinitesimalDeformationMul φ x y + infinitesimalDeformationMul φ x' y := by
   refine Prod.ext (by simp [add_mul]) ?_
   simp only [infinitesimalDeformationMul_snd, Prod.fst_add, Prod.snd_add, Prod.snd_add, add_mul,
-    apply_vecCons_add_left]
+    φ.apply_vecCons_add_left]
   abel
 
 /-- The deformed multiplication is additive in its second argument. -/
@@ -252,7 +277,7 @@ theorem infinitesimalDeformationMul_add [Mul A] [LeftDistribClass A] (φ : (Fin 
       infinitesimalDeformationMul φ x y + infinitesimalDeformationMul φ x y' := by
   refine Prod.ext (by simp [mul_add]) ?_
   simp only [infinitesimalDeformationMul_snd, Prod.fst_add, Prod.snd_add, mul_add,
-    apply_vecCons_add_right]
+    φ.apply_vecCons_add_right]
   abel
 
 /-- The deformed multiplication is `R`-linear in its first argument. -/
@@ -260,14 +285,14 @@ theorem smul_infinitesimalDeformationMul [Mul A] [IsScalarTower R A A] (φ : (Fi
     (c : R) (x y : A × A) :
     infinitesimalDeformationMul φ (c • x) y = c • infinitesimalDeformationMul φ x y :=
   Prod.ext (by simp [smul_mul_assoc])
-    (by simp [smul_mul_assoc, apply_vecCons_smul_left, smul_add])
+    (by simp [smul_mul_assoc, φ.apply_vecCons_smul_left, smul_add])
 
 /-- The deformed multiplication is `R`-linear in its second argument. -/
 theorem infinitesimalDeformationMul_smul [Mul A] [SMulCommClass R A A] (φ : (Fin 2 → A) →ₘₗ[R] A)
     (c : R) (x y : A × A) :
     infinitesimalDeformationMul φ x (c • y) = c • infinitesimalDeformationMul φ x y :=
   Prod.ext (by simp [mul_smul_comm])
-    (by simp [mul_smul_comm, apply_vecCons_smul_right, smul_add])
+    (by simp [mul_smul_comm, φ.apply_vecCons_smul_right, smul_add])
 
 end Bilinear
 
@@ -318,13 +343,6 @@ end Unit
 section Cocycle
 
 variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
-
-/-- A `2`-cochain is determined by its values on the tuples `![a, b]`. -/
-private theorem apply_eq_apply_vecCons (φ : (Fin 2 → A) →ₘₗ[R] A) (a : Fin 2 → A) :
-    φ a = φ ![a 0, a 1] := by
-  congr 1
-  ext i
-  fin_cases i <;> rfl
 
 /-- With coefficients in `A`, the degree-two cocycle condition reads
 `a φ(b, c) - φ(ab, c) + φ(a, bc) - φ(a, b) c = 0`. -/
@@ -378,9 +396,10 @@ private theorem map_mul_iff (φ ψ : (Fin 2 → A) →ₘₗ[R] A) (g : A →ₗ
         (MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 g) := by
   refine ⟨fun h ↦ ?_, fun h x y ↦ ?_⟩
   · ext v
-    rw [apply_eq_apply_vecCons, apply_eq_apply_vecCons (hochschildBimoduleCoboundary R A A 1
-      (MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 g)),
-      hochschildBimoduleCoboundary_ofSubsingleton_vecCons, sub_apply]
+    have hv : v = ![v 0, v 1] := by
+      ext i
+      fin_cases i <;> rfl
+    rw [hv, hochschildBimoduleCoboundary_ofSubsingleton_vecCons, sub_apply]
     have h₂ := congrArg Prod.snd (h (v 0, 0) (v 1, 0))
     simp only [infinitesimalDeformationMul_snd, infinitesimalDeformationMul_fst, mul_zero,
       zero_mul, add_zero, zero_add] at h₂
@@ -407,38 +426,14 @@ theorem isInfinitesimalEquivalence_iff {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
         φ - ψ = hochschildBimoduleCoboundary R A A 1
           (MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 g) := by
   refine ⟨fun hF ↦ ?_, fun ⟨g, hFg, hg⟩ ↦ ?_⟩
-  · obtain ⟨g, hg⟩ : ∃ g : A →ₗ[R] A, ∀ x : A × A, F x = (x.1, x.2 + g x.1) := by
-      refine ⟨LinearMap.snd R A A ∘ₗ F ∘ₗ LinearMap.inl R A A, fun x ↦ ?_⟩
-      have hx : F x = F (x.1, 0) + F (0, x.2) := by
-        rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
-      refine Prod.ext (hF.fst_apply x) ?_
-      rw [hx, Prod.snd_add, hF.apply_zero_prod, add_comm]
-      rfl
+  · obtain ⟨g, hg⟩ : ∃ g : A →ₗ[R] A, ∀ x : A × A, F x = (x.1, x.2 + g x.1) :=
+      ⟨_, hF.apply_eq⟩
     refine ⟨g, hg, (map_mul_iff φ ψ g).1 fun x y ↦ ?_⟩
     have h := hF.map_mul x y
     rwa [hg x, hg y, hg] at h
   · refine ⟨fun x ↦ by rw [hFg], fun a ↦ by rw [hFg, map_zero, add_zero], fun x y ↦ ?_⟩
     simp only [hFg]
     exact (map_mul_iff φ ψ g).2 hg x y
-
-/-- **Inverse of an infinitesimal equivalence.** An infinitesimal equivalence `F` from `μ + εφ`
-to `μ + εψ` has a two-sided inverse which is an infinitesimal equivalence from `μ + εψ` to
-`μ + εφ`: if `F` is the shear `a + εb ↦ a + ε(b + g a)`, its inverse is the shear for `-g`. -/
-theorem IsInfinitesimalEquivalence.exists_inverse {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
-    {F : A × A →ₗ[R] A × A} (hF : IsInfinitesimalEquivalence φ ψ F) :
-    ∃ G : A × A →ₗ[R] A × A, IsInfinitesimalEquivalence ψ φ G ∧ G ∘ₗ F = LinearMap.id ∧
-      F ∘ₗ G = LinearMap.id := by
-  obtain ⟨g, hFg, hg⟩ := isInfinitesimalEquivalence_iff.1 hF
-  refine ⟨LinearMap.id - LinearMap.inr R A A ∘ₗ g ∘ₗ LinearMap.fst R A A,
-    isInfinitesimalEquivalence_iff.2 ⟨-g, fun x ↦ by simp [Prod.ext_iff, sub_eq_add_neg], ?_⟩,
-    LinearMap.ext fun x ↦ ?_, LinearMap.ext fun x ↦ ?_⟩
-  · have hneg : MultilinearMap.ofSubsingleton (RingHom.id R) A A (0 : Fin 1) (-g) =
-        -MultilinearMap.ofSubsingleton (RingHom.id R) A A (0 : Fin 1) g := by
-      ext
-      simp
-    rw [hneg, map_neg, ← hg, neg_sub]
-  · simp [hFg]
-  · simp [hFg]
 
 /-- **Equivalent infinitesimal deformations differ by a coboundary**: two Hochschild
 `2`-cochains are infinitesimally equivalent exactly when their difference is a Hochschild
@@ -455,16 +450,6 @@ theorem infinitesimallyEquivalent_iff_sub_mem_hochschildBimoduleCoboundaries
     obtain ⟨g, rfl⟩ := (MultilinearMap.ofSubsingleton (RingHom.id R) A A (0 : Fin 1)).surjective χ
     exact ⟨LinearMap.id + LinearMap.inr R A A ∘ₗ g ∘ₗ LinearMap.fst R A A,
       isInfinitesimalEquivalence_iff.2 ⟨g, fun x ↦ by simp [Prod.ext_iff], hχ.symm⟩⟩
-
-/-- Infinitesimal equivalence is symmetric: if `φ - ψ` is the coboundary of `g`, then `ψ - φ` is
-the coboundary of `-g`. -/
-@[symm]
-theorem InfinitesimallyEquivalent.symm {φ ψ : (Fin 2 → A) →ₘₗ[R] A}
-    (h : InfinitesimallyEquivalent φ ψ) : InfinitesimallyEquivalent ψ φ := by
-  rw [infinitesimallyEquivalent_iff_sub_mem_hochschildBimoduleCoboundaries,
-    mem_hochschildBimoduleCoboundaries_succ_iff] at h ⊢
-  obtain ⟨χ, hχ⟩ := h
-  exact ⟨-χ, by rw [map_neg, hχ, neg_sub]⟩
 
 namespace InfinitesimalDeformation
 
@@ -496,18 +481,6 @@ theorem toCocycle_ofCocycle (ψ : hochschildBimoduleCocycles R A A 2) :
 @[simp]
 theorem ofCocycle_toCocycle (φ : InfinitesimalDeformation R A) : ofCocycle (toCocycle φ) = φ :=
   Subtype.ext (by simp)
-
-variable (R A) in
-/-- Infinitesimal equivalence, as an equivalence relation on infinitesimal deformations. -/
-def setoid : Setoid (InfinitesimalDeformation R A) where
-  r φ ψ := InfinitesimallyEquivalent φ.val ψ.val
-  iseqv := ⟨fun φ ↦ .refl φ.val, .symm, .trans⟩
-
-/-- Two infinitesimal deformations are related by `TauCeti.InfinitesimalDeformation.setoid`
-exactly when they are infinitesimally equivalent. -/
-theorem setoid_r_iff {φ ψ : InfinitesimalDeformation R A} :
-    (setoid R A) φ ψ ↔ InfinitesimallyEquivalent φ.val ψ.val :=
-  Iff.rfl
 
 end InfinitesimalDeformation
 
