@@ -96,8 +96,8 @@ equal in general.
 * D. Zywina, *On the possible images of the mod `ℓ` representations associated to elliptic curves
   over `ℚ`*, arXiv:1508.07660, §3.2.
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, GTM 228, §1.2 and §3.1.
-* F. Calegari and D. Geraghty, arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`;
-  the attribution is that of the Tau Ceti roadmap ModularCurvesPartII, §3.8.
+* F. Calegari and D. Geraghty, *Modularity lifting beyond the Taylor–Wiles method*, Invent. Math.
+  211 (2018), arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`.
 -/
 
 public section

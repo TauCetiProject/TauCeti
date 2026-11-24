@@ -105,8 +105,8 @@ general upper-triangular predicate.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
-* F. Calegari and D. Geraghty, arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`;
-  the attribution is that of the Tau Ceti roadmap ModularCurvesPartII, §3.8.
+* F. Calegari and D. Geraghty, *Modularity lifting beyond the Taylor–Wiles method*, Invent. Math.
+  211 (2018), arXiv:1207.4224, for the `Γ₁^μ` level structures `μ_N ↪ E[N]`.
 -/
 
 public section

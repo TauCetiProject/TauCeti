@@ -79,8 +79,8 @@ element (`TauCeti.diagGL_const`).
   centralizes a family of diagonal elements exactly when its entries vanish between the
   coordinates the family separates; for a family separating all coordinates, exactly when it is
   diagonal.
-* `TauCeti.centralizer_diagonalTorus_eq_top`, `TauCeti.normalizer_diagonalTorus_eq_top`: over a
-  semiring with a single unit the centralizer and the normalizer are instead the whole group.
+* `TauCeti.centralizer_diagonalTorus_eq_top`: over a semiring with a single unit the centralizer
+  is instead the whole group.
 * `TauCeti.neg_one_mem_diagonalTorus`, `TauCeti.map_det_diagonalTorus`: the torus contains `-1`
   and, for `n ≥ 1`, maps onto the units under the determinant.
 * `TauCeti.scalar_mem_center` and `TauCeti.centralizer_scalar`: a scalar matrix is central, so its
@@ -248,13 +248,6 @@ subgroups differ as soon as `GL n k` is nontrivial, as it is over `𝔽₂` for 
 theorem centralizer_diagonalTorus_eq_top :
     Subgroup.centralizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
   simp [diagonalTorus_eq_bot, Subgroup.centralizer_eq_top_iff_subset]
-
-/-- Over a semiring with only one unit, such as `𝔽₂`, the diagonal torus is trivial, so its
-normalizer is the whole group. -/
-theorem normalizer_diagonalTorus_eq_top :
-    Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
-  rw [diagonalTorus_eq_bot, Subgroup.normalizer_eq_top_iff]
-  infer_instance
 
 end Subsingleton
 

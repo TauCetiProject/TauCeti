@@ -16,6 +16,8 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- `TauCeti.FiniteField.ne_zero_or_two_ne_zero_of_forall_sq_ne`: over a finite field an
 -- irreducible quadratic is separable.
 import TauCeti.FieldTheory.Finite.Card
+-- `TauCeti.sq_add_mul_mul_sub_mul_sq_eq_zero_iff`: the norm form of `F[α]` has no nontrivial zero.
+import TauCeti.Algebra.Field.Basic
 
 /-!
 # The nonsplit Cartan subgroup of `GL₂` and its normalizer
@@ -51,6 +53,8 @@ are those of the standard level `C_ns(ℓ)`, and they also make sense over `ℤ 
 
 ## Main results
 
+* `TauCeti.GL2NonSplitCartan.mem_iff_exists_mk`: when `X² - t X - n` has no root in `F`, the
+  elements of `C_ns` are exactly the matrices `!![a, n b; b, a + t b]` with `(a, b) ≠ (0, 0)`.
 * `TauCeti.GL2NonSplitCartan.natCard`, `TauCeti.GL2NonSplitCartan.index_eq`: `|C_ns| = q² - 1` and
   `[GL₂(𝔽_q) : C_ns] = q (q - 1)` when `X² - t X - n` has no root in `𝔽_q`.
 * `TauCeti.GL2NonSplitCartan.relIndex_normalizer`: `[C_ns⁺ : C_ns] = 2` when `X² - t X - n` is
@@ -154,24 +158,14 @@ variable {F : Type u} [Field F] {t n : F}
 
 namespace GL2NonSplitCartan
 
-/-- If `X² - t X - n` has no root in `F`, then the norm form `a² + t a b - n b²` of `F[α]` has no
-nontrivial zero. -/
-theorem eq_zero_of_norm_eq_zero (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {a b : F}
-    (h : a ^ 2 + t * a * b - n * b ^ 2 = 0) : a = 0 ∧ b = 0 := by
-  by_cases hb : b = 0
-  · subst hb
-    exact ⟨by simpa using h, rfl⟩
-  · refine absurd ?_ (hirr (-a / b))
-    field_simp
-    linear_combination h
-
 /-- The determinant `a (a + t b) - n b²` of `!![a, n b; b, a + t b]` is nonzero for
 `(a, b) ≠ (0, 0)` when `X² - t X - n` has no root in `F`. -/
 theorem det_ne_zero (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {a b : F} (hab : a ≠ 0 ∨ b ≠ 0) :
     (!![a, n * b; b, a + t * b] : Matrix (Fin 2) (Fin 2) F).det ≠ 0 := by
   rw [det_fin_two_of]
   intro h
-  have := eq_zero_of_norm_eq_zero hirr (a := a) (b := b) (by linear_combination h)
+  have := (sq_add_mul_mul_sub_mul_sq_eq_zero_iff hirr (a := a) (b := b)).mp
+    (by linear_combination h)
   tauto
 
 /-- The element `!![a, n b; b, a + t b]` of the nonsplit Cartan subgroup, for `(a, b) ≠ (0, 0)`. -/
@@ -185,6 +179,19 @@ theorem coe_mk (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) (a b : F) (hab : a ≠ 0 
     (((mk hirr a b hab : GL2NonSplitCartan t n) : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) =
       !![a, n * b; b, a + t * b] :=
   GeneralLinearGroup.val_mkOfDetNeZero _ _
+
+/-- **Every element of the nonsplit Cartan subgroup is some `!![a, n b; b, a + t b]`**, built by
+`TauCeti.GL2NonSplitCartan.mk`, when `X² - t X - n` has no root in `F`. -/
+theorem mem_iff_exists_mk (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) {g : GL (Fin 2) F} :
+    g ∈ GL2NonSplitCartan t n ↔
+      ∃ a b hab, ((mk hirr a b hab : GL2NonSplitCartan t n) : GL (Fin 2) F) = g := by
+  refine ⟨fun hg ↦ ⟨(g : Matrix (Fin 2) (Fin 2) F) 0 0, (g : Matrix (Fin 2) (Fin 2) F) 1 0, ?_,
+    Units.ext ?_⟩, fun ⟨a, b, hab, h⟩ ↦ h ▸ (mk hirr a b hab).property⟩
+  · by_contra! h
+    have := g.isUnit.map Matrix.detMonoidHom
+    simp_all [det_fin_two]
+  · ext i j
+    fin_cases i <;> fin_cases j <;> simp [hg.1, hg.2]
 
 /-- Over an infinite field the nonsplit Cartan subgroup is infinite. -/
 private theorem infinite [Infinite F] (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
@@ -204,22 +211,24 @@ theorem natCard (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
     rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite]
     rfl
   let := Fintype.ofFinite F
-  let e : GL2NonSplitCartan t n ≃ {p : F × F // p ≠ 0} :=
-    { toFun g := ⟨(((g : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) 0 0,
-          ((g : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) 1 0),
-        fun h ↦ by
-          have := (g : GL (Fin 2) F).isUnit.map Matrix.detMonoidHom
-          simp_all [Prod.ext_iff, det_fin_two]⟩
-      invFun p := mk hirr p.val.1 p.val.2 (by
-        by_contra h
-        exact p.property (Prod.ext (by tauto) (by tauto)))
-      left_inv g := by
-        obtain ⟨h₁, h₂⟩ := g.property
-        ext i j
-        fin_cases i <;> fin_cases j <;> simp [h₁, h₂]
-      right_inv p := by ext <;> simp }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype_compl,
-    Fintype.card_subtype_eq, Fintype.card_prod, ← Nat.card_eq_fintype_card, sq]
+  let f (p : {p : F × F // p ≠ 0}) : GL2NonSplitCartan t n :=
+    mk hirr p.val.1 p.val.2 (by
+      by_contra h
+      exact p.property (Prod.ext (by tauto) (by tauto)))
+  have hf : Function.Bijective f := by
+    refine ⟨fun p q h ↦ ?_, fun g ↦ ?_⟩
+    · have h' := congrArg
+        (fun g : GL2NonSplitCartan t n ↦ ((g : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F)) h
+      simp only [f, coe_mk] at h'
+      exact Subtype.ext (Prod.ext (by simpa using congrFun (congrFun h' 0) 0)
+        (by simpa using congrFun (congrFun h' 1) 0))
+    · obtain ⟨a, b, hab, h⟩ := (mem_iff_exists_mk hirr).mp g.property
+      refine ⟨⟨(a, b), fun h ↦ ?_⟩, Subtype.ext h⟩
+      simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at h
+      tauto
+  rw [← Nat.card_congr (Equiv.ofBijective f hf), Nat.card_eq_fintype_card,
+    Fintype.card_subtype_compl, Fintype.card_subtype_eq, Fintype.card_prod,
+    ← Nat.card_eq_fintype_card, sq]
 
 /-- **`[GL₂(𝔽_q) : C_ns] = q (q - 1)`**, the degree of `X_ns(ℓ)` over the `j`-line for `q = ℓ`. -/
 theorem index_eq [Finite F] (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) :
@@ -312,13 +321,13 @@ private theorem conj_alpha_eq (hirr : ∀ x : F, x ^ 2 ≠ t * x + n) (hn : n �
         n * (2 * a * b - b * t + t * b ^ 2) * b) * htr -
       (a ^ 2 - t * a + n * b ^ 2 - n + t * (2 * a * b - b * t + t * b ^ 2)) * hdet
   rcases mul_eq_zero.mp key with h | h
-  · obtain ⟨ha, hb⟩ := eq_zero_of_norm_eq_zero hirr h
+  · obtain ⟨ha, hb⟩ := (sq_add_mul_mul_sub_mul_sq_eq_zero_iff hirr).mp h
     have hb' : b = 1 := sub_eq_zero.mp hb
     refine Or.inl (Units.ext ?_)
     ext i j
     fin_cases i <;> fin_cases j <;>
       simp [h₁, h₂, a, b, ha, hb']
-  · obtain ⟨ha, hb⟩ := eq_zero_of_norm_eq_zero hirr h
+  · obtain ⟨ha, hb⟩ := (sq_add_mul_mul_sub_mul_sq_eq_zero_iff hirr).mp h
     have ha' : a = t := sub_eq_zero.mp ha
     have hb' : b = -1 := eq_neg_of_add_eq_zero_left hb
     refine Or.inr (Units.ext ?_)

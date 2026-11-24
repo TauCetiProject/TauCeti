@@ -38,6 +38,8 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
   conjugation keeps a coordinate-separating family of diagonal matrices diagonal is monomial.
 * `TauCeti.mem_normalizer_diagonalTorus_iff_exists`: normalizing matrices are precisely products
   of a diagonal matrix and a permutation matrix.
+* `TauCeti.normalizer_diagonalTorus_eq_top`: over a semiring with a single unit the normalizer is
+  instead the whole group.
 * `TauCeti.diagonalNormalizerPerm`: the permutation homomorphism from the normalizer.
 * `TauCeti.diagonalNormalizer_mul_diagGL_mul_inv`: conjugation by a normalizer element relabels
   diagonal coordinates by its coordinate permutation.
@@ -153,6 +155,14 @@ theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :
     group at hback'
     rw [mem_diagonalTorus_iff_exists_diagGL]
     exact ⟨fun i ↦ t (σ i), hback'.symm⟩
+
+/-- Over a semiring with only one unit, such as `𝔽₂`, the diagonal torus is trivial, so its
+normalizer is the whole group. The hypothesis `Nontrivial kˣ` of
+`TauCeti.mem_normalizer_diagonalTorus_iff_exists` therefore cannot simply be dropped. -/
+theorem normalizer_diagonalTorus_eq_top [Subsingleton kˣ] :
+    Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)) = ⊤ := by
+  rw [diagonalTorus_eq_bot, Subgroup.normalizer_eq_top_iff]
+  infer_instance
 
 end Permutation
 
