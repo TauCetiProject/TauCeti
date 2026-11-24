@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.RingTheory.AdicCompletion.Pi
 public import TauCeti.RingTheory.Pullback
 
@@ -24,19 +23,19 @@ The point is the comparison of the `π`-adic filtration of `C` with the filtrati
 `x = π ^ k (a, b)` lies in `C`, the defect `f a - g b` is only known to be killed by `π_T ^ k`.
 When `π_T`-power torsion is killed by `π_T ^ N`, the defect is killed by `π_T ^ N`, so
 `(π₁ ^ N a, π₂ ^ N b)` lies in `C` and `x ∈ π ^ (k - N) C`:
-`π ^ (n + N) (R × S) ∩ C ⊆ π ^ n C` (`RingHom.pullback_pow_dvd_of_pow_add_dvd`). Hence the
+`π ^ (n + N) (R × S) ∩ C ⊆ π ^ n C` (`RingHom.pullback_pow_dvd_of_prod_pow_add_dvd`). Hence the
 `π`-adic topology of `C` is the topology induced from `R × S`, and `C` is closed in `R × S`
 because `T` is separated.
 
 For `π = p` and `N = 1` this is the completeness step of the computation of the tilt of a fibre
 product of `p`-adically complete rings along a ring `A'` with `A'[p ^ ∞] = A'[p]`, a condition
-satisfied by every integral perfectoid ring. Without a torsion bound the comparison fails: for
-`T = ℤ ⧸ p ^ 2`, the class of `1` is killed by `p ^ 2` but not by `p`.
+satisfied by every integral perfectoid ring. The comparison fails with `N = 1` when `T` has
+`π_T`-power torsion not killed by `π_T`: for `C = ℤ ×_{ℤ ⧸ p ^ 2} ℤ`, with both maps reduction
+modulo `p ^ 2`, and `π = (p, p)`, the element `(p ^ 2, 0) = π ^ 2 (1, 0)` of `C` is not in `π C`,
+because `(p, 0) ∉ C`.
 
 ## Main results
 
-* `RingHom.pullback_pow_dvd_of_pow_add_dvd`: if `π ^ (n + N)` divides `x ∈ C` in `R × S` and
-  the `π_T ^ (n + N)`-torsion of `T` is killed by `π_T ^ N`, then `π ^ n` divides `x` in `C`.
 * `RingHom.isHausdorff_pullback`: `C` is `π`-adically separated when `R` and `S` are.
 * `RingHom.isPrecomplete_pullback`: `C` is `π`-adically precomplete when `R` and `S` are,
   `T` is `π_T`-adically separated and its `π_T`-power torsion is bounded.
@@ -54,40 +53,6 @@ public section
 open Ideal
 
 namespace RingHom
-
-section Ring
-
-variable {R S T : Type*} [Ring R] [Ring S] [Ring T] (f : R →+* T) (g : S →+* T)
-
-/-- **Divisibility in a fibre product.** Let `x, π ∈ R ×_T S` with `π ^ (n + N)` dividing `x`
-in `R × S`. If the `π_T ^ (n + N)`-torsion of `T` is killed by `π_T ^ N`, where
-`π_T = f (pullbackFst π)`, then `π ^ n` divides `x` in `R ×_T S`. -/
-theorem pullback_pow_dvd_of_pow_add_dvd {π x : f.pullback g} {n N : ℕ}
-    (hT : ∀ y : T, f (f.pullbackFst g π) ^ (n + N) * y = 0 →
-      f (f.pullbackFst g π) ^ N * y = 0)
-    (hx : (π : R × S) ^ (n + N) ∣ (x : R × S)) : π ^ n ∣ x := by
-  obtain ⟨⟨a, b⟩, hab⟩ := hx
-  have hπ := f.pullback_comm_sq_apply g π
-  have hx₁ : (x : R × S).1 = (π : R × S).1 ^ (n + N) * a := congr($hab.1)
-  have hx₂ : (x : R × S).2 = (π : R × S).2 ^ (n + N) * b := congr($hab.2)
-  -- the defect `f a - g b` is killed by `π_T ^ (n + N)`, hence by `π_T ^ N`
-  have hdef : f (π : R × S).1 ^ N * (f a - g b) = 0 := by
-    refine hT _ ?_
-    have hfx := f.pullback_comm_sq_apply g x
-    rw [hx₁, hx₂, map_mul, map_mul, map_pow, map_pow, ← hπ] at hfx
-    simp only [pullbackFst, coe_comp, Subring.coe_subtype, Function.comp_apply, coe_fst]
-    rw [mul_sub, hfx, sub_self]
-  -- so `(π₁ ^ N a, π₂ ^ N b)` lies in the fibre product, and `x` is `π ^ n` times it
-  refine ⟨⟨((π : R × S).1 ^ N * a, (π : R × S).2 ^ N * b), ?_⟩, ?_⟩
-  · rw [mem_eqLocus, comp_apply, comp_apply, coe_fst, coe_snd, map_mul, map_mul, map_pow,
-      map_pow, ← hπ, ← sub_eq_zero, ← mul_sub, hdef]
-  · refine Subtype.ext (Prod.ext ?_ ?_)
-    · simp only [Subring.coe_mul, Subring.coe_pow, Prod.fst_mul, Prod.pow_fst, hx₁, pow_add,
-        mul_assoc]
-    · simp only [Subring.coe_mul, Subring.coe_pow, Prod.snd_mul, Prod.pow_snd, hx₂, pow_add,
-        mul_assoc]
-
-end Ring
 
 variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] (f : R →+* T) (g : S →+* T)
 
@@ -140,7 +105,8 @@ theorem isPrecomplete_pullback (π : f.pullback g) (N : ℕ)
       rw [map_pow, map_sub] at h₁ h₂
       rw [← hπ] at h₂
       have : f a - g b = g (f.pullbackSnd g (x n)) - g b - (f (f.pullbackFst g (x n)) - f a) := by
-        rw [hxn]; ring
+        rw [hxn]
+        exact (sub_sub_sub_cancel_left _ _ _).symm
       rw [this]
       exact dvd_sub h₂ h₁
     let L : f.pullback g := ⟨(a, b), hab⟩
@@ -148,10 +114,11 @@ theorem isPrecomplete_pullback (π : f.pullback g) (N : ℕ)
     -- `x (n + N) - L` is divisible by `π ^ (n + N)` in `R × S`, hence by `π ^ n` in the fibre
     -- product, and `x n - x (n + N)` is divisible by `π ^ n` by the Cauchy condition
     have hL : π ^ n ∣ x (n + N) - L := by
-      refine f.pullback_pow_dvd_of_pow_add_dvd g (hT (n + N)) ?_
-      refine prod_dvd_iff.mpr ⟨?_, ?_⟩
-      · exact ha (n + N)
-      · exact hb (n + N)
+      refine f.pullback_pow_dvd_of_prod_pow_add_dvd g (hT (n + N)) (prod_dvd_iff.mpr ⟨?_, ?_⟩)
+      · rw [Prod.pow_fst, AddSubgroupClass.coe_sub, Prod.fst_sub]
+        exact ha (n + N)
+      · rw [Prod.pow_snd, AddSubgroupClass.coe_sub, Prod.snd_sub]
+        exact hb (n + N)
     rw [← sub_add_sub_cancel _ (x (n + N))]
     exact dvd_add (hx (Nat.le_add_right n N)) hL
 

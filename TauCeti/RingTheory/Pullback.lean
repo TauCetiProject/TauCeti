@@ -14,7 +14,8 @@ For ring homomorphisms `f : R →+* T` and `g : S →+* T`, Mathlib's `RingHom.p
 fibre product `R ×_T S`, the subring of pairs `(r, s)` of `R × S` with `f r = g s`, with
 projections `RingHom.pullbackFst f g` and `RingHom.pullbackSnd f g`. The rings need not be
 commutative. This file develops its universal property, its functoriality in commuting maps of
-cospans, its canonical isomorphisms and its kernels.
+cospans, its canonical isomorphisms, its kernels and the comparison of divisibility in `R ×_T S`
+with divisibility in `R × S`.
 
 A square of rings that is a fibre product, one of whose legs `f`, `g` is surjective, is a
 *Milnor square*. Milnor's patching theorem for projective modules and the Mayer–Vietoris
@@ -49,6 +50,9 @@ ideal of `A₁`. When `f` is surjective, so is `pullbackSnd f g` (Mathlib's
 * `RingHom.map_pullbackFst_ker_pullbackSnd_eq`: the first projection maps `ker (pullbackSnd)`
   onto `ker f`; this is the counterpart of Mathlib's `RingHom.map_pullbackSnd_ker_pullbackFst_eq`.
 * `RingHom.ker_pullbackFst_inf_ker_pullbackSnd`: the two projections are jointly injective.
+* `RingHom.pullback_pow_dvd_of_prod_pow_add_dvd`: if `π ^ (n + N)` divides `x ∈ R ×_T S` in
+  `R × S` and the `π_T ^ (n + N)`-torsion of `T` is killed by `π_T ^ N`, then `π ^ n` divides `x`
+  in `R ×_T S`.
 
 ## References
 
@@ -66,6 +70,27 @@ variable {R S T : Type*} [Ring R] [Ring S] [Semiring T] (f : R →+* T) (g : S �
 Mathlib's `RingHom.pullback_comm_sq`. -/
 theorem pullback_comm_sq_apply (x : f.pullback g) : f (x : R × S).1 = g (x : R × S).2 :=
   x.property
+
+variable {f g} in
+/-- A pair `(r, s)` lies in the fibre product `R ×_T S` exactly when `f r = g s`. -/
+theorem mem_pullback_iff {x : R × S} : x ∈ f.pullback g ↔ f x.1 = g x.2 :=
+  Iff.rfl
+
+variable {f g} in
+/-- The first projection of the fibre product takes the first component. -/
+theorem pullbackFst_apply (x : f.pullback g) : f.pullbackFst g x = (x : R × S).1 :=
+  (rfl)
+
+variable {f g} in
+/-- The second projection of the fibre product takes the second component. -/
+theorem pullbackSnd_apply (x : f.pullback g) : f.pullbackSnd g x = (x : R × S).2 :=
+  (rfl)
+
+/-- A fibre product `R ×_T S` is a ring in which `p` is not a unit as soon as `p` is not a unit
+in `R`. -/
+instance fact_not_isUnit_natCast_pullback (p : ℕ) [Fact ¬IsUnit (p : R)] :
+    Fact ¬IsUnit (p : f.pullback g) :=
+  ⟨fun h ↦ Fact.out (p := ¬IsUnit (p : R)) <| by simpa using h.map (f.pullbackFst g)⟩
 
 /-! ## The universal property -/
 
@@ -375,5 +400,41 @@ theorem coe_kerPullbackFstEquiv_apply (x : ker (f.pullbackFst g)) :
 theorem coe_coe_kerPullbackFstEquiv_symm_apply (s : ker g) :
     (((kerPullbackFstEquiv f g).symm s : f.pullback g) : R × S) = (0, (s : S)) :=
   (rfl)
+
+end RingHom
+
+/-! ## Divisibility in the fibre product -/
+
+namespace RingHom
+
+variable {R S T : Type*} [Ring R] [Ring S] [Ring T] (f : R →+* T) (g : S →+* T)
+
+/-- **Divisibility in a fibre product.** Let `x, π ∈ R ×_T S` with `π ^ (n + N)` dividing `x`
+in `R × S`. If the `π_T ^ (n + N)`-torsion of `T` is killed by `π_T ^ N`, where
+`π_T = f (pullbackFst π)`, then `π ^ n` divides `x` in `R ×_T S`. -/
+theorem pullback_pow_dvd_of_prod_pow_add_dvd {π x : f.pullback g} {n N : ℕ}
+    (hT : ∀ y : T, f (f.pullbackFst g π) ^ (n + N) * y = 0 →
+      f (f.pullbackFst g π) ^ N * y = 0)
+    (hx : (π : R × S) ^ (n + N) ∣ (x : R × S)) : π ^ n ∣ x := by
+  obtain ⟨⟨a, b⟩, hab⟩ := hx
+  rw [pullbackFst_apply] at hT
+  have hπ := f.pullback_comm_sq_apply g π
+  have hx₁ : (x : R × S).1 = (π : R × S).1 ^ (n + N) * a := congr($hab.1)
+  have hx₂ : (x : R × S).2 = (π : R × S).2 ^ (n + N) * b := congr($hab.2)
+  -- the defect `f a - g b` is killed by `π_T ^ (n + N)`, hence by `π_T ^ N`
+  have hdef : f (π : R × S).1 ^ N * (f a - g b) = 0 := by
+    refine hT _ ?_
+    have hfx := f.pullback_comm_sq_apply g x
+    rw [hx₁, hx₂, map_mul, map_mul, map_pow, map_pow, ← hπ] at hfx
+    rw [mul_sub, hfx, sub_self]
+  -- so `(π₁ ^ N a, π₂ ^ N b)` lies in the fibre product, and `x` is `π ^ n` times it
+  refine ⟨⟨((π : R × S).1 ^ N * a, (π : R × S).2 ^ N * b), ?_⟩, ?_⟩
+  · rw [mem_pullback_iff, map_mul, map_mul, map_pow, map_pow, ← hπ, ← sub_eq_zero, ← mul_sub,
+      hdef]
+  · refine Subtype.ext (Prod.ext ?_ ?_)
+    · simp only [Subring.coe_mul, Subring.coe_pow, Prod.fst_mul, Prod.pow_fst, hx₁, pow_add,
+        mul_assoc]
+    · simp only [Subring.coe_mul, Subring.coe_pow, Prod.snd_mul, Prod.pow_snd, hx₂, pow_add,
+        mul_assoc]
 
 end RingHom
