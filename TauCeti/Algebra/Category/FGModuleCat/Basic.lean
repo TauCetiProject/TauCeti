@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.RingTheory.Finiteness.Prod
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
+
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Finitely generated modules
@@ -130,11 +132,8 @@ theorem _root_.FGModuleCat.biprodIsoProd_inv_comp_fst {R : Type u} [Ring R]
   have : PreservesBinaryBiproduct X Y (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) :=
     preservesBinaryBiproduct_of_preservesBinaryCoproduct _
   apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_injective
-  have h : ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapBiprod X Y).inv ≫
-      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map biprod.fst = biprod.fst := by
-    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_fst]
   rw [Functor.map_comp, FGModuleCat.biprodIsoProd, Functor.preimageIso_inv, Functor.map_preimage,
-    Iso.trans_inv, Category.assoc, h]
+    Iso.trans_inv, Category.assoc, Functor.mapBiprod_inv_map_fst]
   -- The forgetful functor sends `X` to `X.obj` and `FGModuleCat.ofHom f` to `ModuleCat.ofHom f`
   -- definitionally, so Mathlib's projection lemma closes the goal up to that unfolding.
   exact ModuleCat.biprodIsoProd_inv_comp_fst _ _
@@ -148,11 +147,8 @@ theorem _root_.FGModuleCat.biprodIsoProd_inv_comp_snd {R : Type u} [Ring R]
   have : PreservesBinaryBiproduct X Y (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) :=
     preservesBinaryBiproduct_of_preservesBinaryCoproduct _
   apply (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_injective
-  have h : ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapBiprod X Y).inv ≫
-      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map biprod.snd = biprod.snd := by
-    rw [Iso.inv_comp_eq, Functor.mapBiprod_hom, biprod.lift_snd]
   rw [Functor.map_comp, FGModuleCat.biprodIsoProd, Functor.preimageIso_inv, Functor.map_preimage,
-    Iso.trans_inv, Category.assoc, h]
+    Iso.trans_inv, Category.assoc, Functor.mapBiprod_inv_map_snd]
   -- As for `biprodIsoProd_inv_comp_fst`.
   exact ModuleCat.biprodIsoProd_inv_comp_snd _ _
 
@@ -231,28 +227,44 @@ instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
     refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
     simp [← ModuleCat.comp_apply]
 
+variable {R} in
+/-- **Testing on a cyclic submodule**: a morphism out of `X` composes to zero with the inclusion of
+the cyclic submodule `R ∙ x` exactly when it kills `x`. -/
+@[simp]
+theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff (X : FGModuleCat.{v} R)
+    {Y : FGModuleCat.{v} R} (x : X.obj) (f : X ⟶ Y) :
+    (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) ≫ f =
+      0 ↔ f.hom.hom x = 0 := by
+  -- The inclusion into `ModuleCat R` is faithful, which reduces this to linear maps.
+  rw [← Functor.map_injective_iff (ObjectProperty.ι _), Functor.map_comp, Functor.map_zero,
+    ModuleCat.hom_ext_iff]
+  simp only [ObjectProperty.ι_map, ObjectProperty.homMk_hom, ModuleCat.hom_comp,
+    ModuleCat.hom_ofHom, ModuleCat.hom_zero]
+  rw [← LinearMap.le_ker_iff_comp_subtype_eq_zero, Submodule.span_singleton_le_iff_mem,
+    LinearMap.mem_ker]
+
+variable {R} in
+/-- The inclusion of the cyclic submodule `R ∙ x` into `X` is zero exactly when `x` is. -/
+theorem _root_.FGModuleCat.span_singleton_subtype_eq_zero_iff (X : FGModuleCat.{v} R)
+    (x : X.obj) :
+    (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) =
+      0 ↔ x = 0 := by
+  simpa using X.span_singleton_subtype_comp_eq_zero_iff x (𝟙 X)
+
+variable {R} in
+/-- **A monomorphism of finitely generated modules is an injective linear map**: an element killed
+by the monomorphism generates a cyclic submodule whose inclusion it kills. -/
+theorem _root_.FGModuleCat.injective_of_mono {X Y : FGModuleCat.{v} R} (f : X ⟶ Y) [Mono f] :
+    Function.Injective f.hom.hom :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ (X.span_singleton_subtype_eq_zero_iff x).1 <|
+    (cancel_mono f).1 (((X.span_singleton_subtype_comp_eq_zero_iff x f).2 hx).trans
+      zero_comp.symm)
+
 /-- **A monomorphism of finitely generated modules is injective**: the inclusion
 `FGModuleCat R ⥤ ModuleCat R` preserves monomorphisms, over any ring `R`. -/
 instance _root_.FGModuleCat.preservesMonomorphisms_ι :
     (ModuleCat.isFG.{v} R).ι.PreservesMonomorphisms where
-  preserves {X Y} f _ := by
-    refine (ModuleCat.mono_iff_injective _).2 ((injective_iff_map_eq_zero _).2 fun x hx ↦ ?_)
-    let N := Submodule.span R {x}
-    let Z : FGModuleCat.{v} R :=
-      ⟨ModuleCat.of R N, Module.Finite.iff_fg.2 (Submodule.fg_span_singleton x)⟩
-    have h : (ObjectProperty.homMk (ModuleCat.ofHom N.subtype) : Z ⟶ X) =
-        ObjectProperty.homMk 0 := by
-      refine (cancel_mono f).1 (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext ?_)))
-      intro y
-      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-        ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
-        ObjectProperty.homMk_zero, Limits.zero_comp, ObjectProperty.zero_hom, ModuleCat.hom_zero,
-        LinearMap.zero_apply]
-      -- `N.subtype y` is `y`, and `ConcreteCategory.hom` of a morphism of modules is its
-      -- underlying linear map, both definitionally.
-      exact LinearMap.mem_ker.1
-        ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hx) y.property)
-    simpa [Z] using congr_arg (fun g ↦ g.hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩) h
+  preserves f _ := (ModuleCat.mono_iff_injective _).2 (FGModuleCat.injective_of_mono f)
 
 /-- **Over a left Noetherian ring, finitely generated modules are closed under subobjects**: a
 submodule of a finitely generated module is finitely generated. -/

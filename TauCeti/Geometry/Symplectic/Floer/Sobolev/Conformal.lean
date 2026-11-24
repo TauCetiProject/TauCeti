@@ -95,6 +95,15 @@ theorem floerConformalJetCoeff_apply (ω : SymplecticForm V) (ρ : ℝ × ℝ �
       v.2.1 + J z (u z) v.2.2 + (√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z v.1 :=
   firstOrderJetCoeff_apply _ _ v
 
+/-- The coefficient field on conformal jets at `z` depends on the Floer data `J`, `Ks`, `Kt` only
+through their values at `z`, as functions of the target point. -/
+theorem floerConformalJetCoeff_congr_data (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerConformalJetCoeff ρ J Ks Kt u z = ω.floerConformalJetCoeff ρ J' Ks' Kt' u z := by
+  rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_congr_data u hJ hKs hKt, hJ]
+
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
 @[simp]

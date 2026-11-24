@@ -5,41 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.PartitionOfUnity.CechSplitting
-import TauCeti.Logic.Function.Extend
 
 /-!
-# The additive Cousin problem on open subsets of `ℂ`
+# The additive Cousin problem on open subsets of the plane
 
-Given an arbitrary family of open subsets `U : ι → Set ℂ` and holomorphic functions `c i j` on
-each overlap `U i ∩ U j` with values in a complex Banach space `W` satisfying the additive
-cocycle condition `c i j + c j k + c k i = 0` on triple overlaps `U i ∩ U j ∩ U k`, there exist
-holomorphic functions `b i` on `U i` solving `b i - b j = c i j` on `U i ∩ U j`
-(`TauCeti.exists_differentiableOn_sub_eq`). Neither connectedness of `⋃ i, U i` nor local
-finiteness or countability of the cover is required.
+Let `U i` be open subsets of `ℂ`, indexed by an arbitrary type, and let `c i j` be holomorphic on
+`U i ∩ U j` with values in a complex Banach space, satisfying the additive cocycle relation
+`c i j + c j k + c k i = 0` on `U i ∩ U j ∩ U k`. Then there are functions `b i`, holomorphic on
+`U i`, with `b i - b j = c i j` on `U i ∩ U j`
+(`TauCeti.exists_differentiableOn_sub_eq_of_cocycle`). Any two such families differ by one
+function holomorphic on the union of the `U i`
+(`TauCeti.exists_differentiableOn_eqOn_sub_of_sub_eq`). Neither local finiteness nor
+countability of the cover is assumed, and the union may be empty or disconnected.
 
-The proof resolves the cocycle smoothly on the open submanifold `Ω = ⋃ i, U i` using
-`TauCeti.exists_contMDiffOn_eq_smul_sub_of_cocycle`: this produces smooth functions `g i` on
-`U i` satisfying `g i - g j = c i j` on `U i ∩ U j`. Because `c i j` is holomorphic, the
-differences `g i - g j` are holomorphic on overlaps, so global Dolbeault gluing on open sets
-(`IsOpen.exists_contDiffOn_differentiableOn_sub`) gives one smooth `f` on `Ω` with every
-`f - g i` holomorphic on `U i`; setting `b i = g i - f` yields holomorphic functions with the
-same differences.
+In the language of sheaf cohomology, the first Čech cohomology of the sheaf of holomorphic
+functions vanishes for every open cover of every open subset of the plane.
 
-Any two solutions `b₁` and `b₂` of the same additive Cousin problem differ by a single global
-holomorphic function on `⋃ i, U i` (`TauCeti.exists_differentiableOn_iUnion_sub_eq`).
+The proof has two steps. First the cocycle splits smoothly: on the open subset `Ω = ⋃ i, U i`,
+viewed as a smooth manifold, a smooth partition of unity `ρ` subordinate to the cover gives
+smooth `g i` on `U i` with `c i j = g j - g i`
+(`TauCeti.exists_contMDiffOn_eq_smul_sub_of_cocycle`). The differences `g i - g j` are
+holomorphic, so the `\bar∂ (g i)` agree on overlaps, and the Dolbeault lemma on `Ω` produces one
+smooth `f` with every `f - g i` holomorphic on `U i`
+(`IsOpen.exists_contDiffOn_differentiableOn_sub`). Then `b i = f - g i` solves the problem.
 
 ## Main results
 
-* `TauCeti.exists_differentiableOn_sub_eq`: every holomorphic additive cocycle on an arbitrary
-  open cover of an open subset of `ℂ` is a coboundary (Cousin I).
-* `TauCeti.exists_differentiableOn_iUnion_sub_eq`: two holomorphic coboundaries with the same
-  overlap differences differ by a global holomorphic function on the union of the cover.
+* `TauCeti.exists_differentiableOn_sub_eq_of_cocycle`: the additive Cousin problem is solvable for
+  every open cover of an open subset of `ℂ`.
+* `TauCeti.exists_differentiableOn_eqOn_sub_of_sub_eq`: two solutions differ by a function
+  holomorphic on the union of the cover.
 
 ## References
 
@@ -50,90 +52,84 @@ holomorphic function on `⋃ i, U i` (`TauCeti.exists_differentiableOn_iUnion_su
 
 public section
 
-open Filter Set TopologicalSpace Topology
+open Set TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {ι W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+variable {ι : Type*} {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] {U : ι → Set ℂ}
 
-/-- **Additive Cousin problem (Cousin I).** For an arbitrary family of open subsets
-`U : ι → Set ℂ` and a Banach-valued holomorphic cocycle `c i j` on `U i ∩ U j` satisfying
-`c i j z + c j k z + c k i z = 0` on triple overlaps, there exist holomorphic functions `b i` on
-`U i` with `b i z - b j z = c i j z` on `U i ∩ U j`. Neither local finiteness of the cover nor
-connectedness of `⋃ i, U i` is assumed. -/
-theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
-    (hU : ∀ i, IsOpen (U i)) {c : ι → ι → ℂ → W}
+/-- **Uniqueness in the additive Cousin problem.** Let `b i` and `b' i` be holomorphic on open
+sets `U i ⊆ ℂ` with `b i - b j = b' i - b' j` on every `U i ∩ U j`. Then there is one function
+`h`, holomorphic on `⋃ i, U i`, with `b i - b' i = h` on each `U i`. -/
+theorem exists_differentiableOn_eqOn_sub_of_sub_eq (hU : ∀ i, IsOpen (U i)) {b b' : ι → ℂ → W}
+    (hb : ∀ i, DifferentiableOn ℂ (b i) (U i)) (hb' : ∀ i, DifferentiableOn ℂ (b' i) (U i))
+    (hbb' : ∀ i j, ∀ z ∈ U i ∩ U j, b i z - b j z = b' i z - b' j z) :
+    ∃ h : ℂ → W, DifferentiableOn ℂ h (⋃ i, U i) ∧ ∀ i, EqOn (b i - b' i) h (U i) := by
+  classical
+  let h : ℂ → W := fun z ↦ if hz : ∃ i, z ∈ U i then (b hz.choose - b' hz.choose) z else 0
+  have hh (i : ι) : EqOn (b i - b' i) h (U i) := fun z hz ↦ by
+    have hz' : ∃ i, z ∈ U i := ⟨i, hz⟩
+    simp only [h, hz', ↓reduceDIte, Pi.sub_apply]
+    rw [sub_eq_sub_iff_sub_eq_sub]
+    exact hbb' _ _ z ⟨hz, hz'.choose_spec⟩
+  exact ⟨h, DifferentiableOn.iUnion_of_isOpen
+    (fun i ↦ ((hb i).sub (hb' i)).congr fun z hz ↦ (hh i hz).symm) hU, hh⟩
+
+variable [CompleteSpace W]
+
+/-- **The additive Cousin problem on an open subset of the plane.** Let `U i` be open subsets of
+`ℂ`, indexed by an arbitrary type, and let `c i j` be holomorphic on `U i ∩ U j`, with
+`c i j + c j k + c k i = 0` on `U i ∩ U j ∩ U k`. Then there are functions `b i`, holomorphic on
+`U i`, with `b i - b j = c i j` on `U i ∩ U j`. The cover need not be locally finite or
+countable. -/
+theorem exists_differentiableOn_sub_eq_of_cocycle (hU : ∀ i, IsOpen (U i)) {c : ι → ι → ℂ → W}
     (hc : ∀ i j, DifferentiableOn ℂ (c i j) (U i ∩ U j))
-    (hcycle : ∀ i j k, ∀ z ∈ U i ∩ U j ∩ U k, c i j z + c j k z + c k i z = 0) :
+    (hcocycle : ∀ i j k, ∀ z ∈ U i ∩ U j ∩ U k, c i j z + c j k z + c k i z = 0) :
     ∃ b : ι → ℂ → W, (∀ i, DifferentiableOn ℂ (b i) (U i)) ∧
       ∀ i j, ∀ z ∈ U i ∩ U j, b i z - b j z = c i j z := by
-  -- Work on the open submanifold `Ω = ⋃ i, U i`, which is Hausdorff and σ-compact.
-  let Ω : Opens ℂ := ⟨⋃ i, U i, isOpen_iUnion hU⟩
-  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  classical
+  -- The union `Ω` of the cover, as an open submanifold of `ℂ`.
+  have hΩ : IsOpen (⋃ i, U i) := isOpen_iUnion hU
+  let Ω : Opens ℂ := ⟨⋃ i, U i, hΩ⟩
+  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
+  have hmem {i : ι} {z : ℂ} (hz : z ∈ U i) : z ∈ Ω := mem_iUnion.2 ⟨i, hz⟩
+  -- The cocycle relation in the form `c i j + c j k = c i k`.
+  have hadd (i j k : ι) {z : ℂ} (hz : z ∈ U i ∩ U j ∩ U k) : c i j z + c j k z = c i k z := by
+    linear_combination (norm := module) hcocycle i j k z hz -
+      hcocycle i k i z ⟨⟨hz.1.1, hz.2⟩, hz.1.1⟩ +
+      (1 / 3 : ℂ) • hcocycle i i i z ⟨⟨hz.1.1, hz.1.1⟩, hz.1.1⟩
+  -- Split the cocycle smoothly on `Ω`: `c i j = g j - g i` with `g i` smooth on `U i`.
   let V : ι → Set Ω := fun i ↦ Subtype.val ⁻¹' U i
-  have hVo : ∀ i, IsOpen (V i) := fun i ↦ (hU i).preimage continuous_subtypeVal
-  have hV : ⋃ i, V i = univ := eq_univ_iff_forall.2 fun x ↦ by
-    obtain ⟨i, hi⟩ := mem_iUnion.1 x.property
+  have hV (i : ι) : IsOpen (V i) := (hU i).preimage continuous_subtypeVal
+  have hVcov : ⋃ i, V i = univ := eq_univ_of_forall fun z ↦ by
+    obtain ⟨i, hi⟩ := mem_iUnion.1 ((Opens.mem_mk (h := hΩ)).1 z.property)
     exact mem_iUnion.2 ⟨i, hi⟩
-  -- Antisymmetry and cocycle identity `c i j + c j k = c i k` on triple overlaps.
-  have hcoc : ∀ i j k, ∀ x ∈ V i ∩ V j ∩ V k,
-      c i j (x : ℂ) + (1 : ℝ) • c j k (x : ℂ) = c i k (x : ℂ) := fun i j k x hx ↦ by
-    have hii := hcycle i i i x ⟨⟨hx.1.1, hx.1.1⟩, hx.1.1⟩
-    have hki := hcycle i k i x ⟨⟨hx.1.1, hx.2⟩, hx.1.1⟩
-    have hijk := hcycle i j k x hx
-    have hci : c i i (x : ℂ) = 0 := by
-      have : (3 : ℂ) • c i i (x : ℂ) = 0 := by
-        calc (3 : ℂ) • c i i (x : ℂ) = c i i (x : ℂ) + c i i (x : ℂ) + c i i (x : ℂ) := by module
-          _ = 0 := hii
-      simpa [smul_eq_zero] using this
-    rw [one_smul]
-    grind
-  -- Smoothness of the cocycle on `V i ∩ V j` and smooth Čech splitting on `Ω`.
   have hξ (i j : ι) :
-      ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (fun x : Ω ↦ c i j (x : ℂ)) (V i ∩ V j) :=
-    (contMDiffOn_iff_contDiffOn.2
-      ((((hc i j).contDiffOn ((hU i).inter (hU j))).of_le le_top).restrict_scalars ℝ)).comp
-      contMDiff_subtypeVal.contMDiffOn fun _ hx ↦ hx
-  obtain ⟨gΩ, hgΩ, hgΩ_eq, -⟩ :=
-    exists_contMDiffOn_eq_smul_sub_of_cocycle (I := 𝓘(ℝ, ℂ)) (n := (⊤ : ℕ∞))
-      (ψ := fun _ _ _ ↦ (1 : ℝ)) hVo hV hξ hcoc
-  let g : ι → ℂ → W := fun i ↦ Subtype.val.extend (-gΩ i) 0
-  have hg_sub {i j : ι} {z : ℂ} (hz : z ∈ U i ∩ U j) : g i z - g j z = c i j z := by
-    set x : Ω := ⟨z, mem_iUnion.2 ⟨i, hz.1⟩⟩
-    have hgi : g i z = -gΩ i x := Subtype.val_injective.extend_apply (-gΩ i) 0 x
-    have hgj : g j z = -gΩ j x := Subtype.val_injective.extend_apply (-gΩ j) 0 x
-    rw [hgi, hgj, neg_sub_neg, hgΩ_eq i j x hz, one_smul]
-  have hg_smooth (i : ι) : ContDiffOn ℝ ∞ (g i) (U i) := fun z₀ hz₀ ↦ by
-    set x₀ : Ω := ⟨z₀, mem_iUnion.2 ⟨i, hz₀⟩⟩
-    have hAt : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (-gΩ i) x₀ :=
-      ((hgΩ i).neg.contMDiffAt ((hVo i).mem_nhds hz₀))
-    exact (contMDiffAt_iff_contDiffAt.1 (hAt.extend_subtypeVal 0)).contDiffWithinAt
-  -- Holomorphic pairwise differences allow global Dolbeault gluing on `Ω = ⋃ i, U i`.
-  have hg_diff (k l : ι) : DifferentiableOn ℂ (g k - g l) (U k ∩ U l) :=
-    (hc k l).congr fun _ hz ↦ hg_sub hz
-  obtain ⟨f, -, hfg⟩ :=
-    (isOpen_iUnion hU).exists_contDiffOn_differentiableOn_sub hU hg_smooth hg_diff Subset.rfl
-  refine ⟨fun i ↦ g i - f, fun i ↦ ?_, fun i j z hz ↦ ?_⟩
-  · simpa only [inter_eq_self_of_subset_right (subset_iUnion U i), neg_sub] using (hfg i).neg
-  · simp only [Pi.sub_apply, sub_sub_sub_cancel_right]
-    exact hg_sub hz
-
-/-- **Uniqueness of Cousin I solutions modulo global holomorphic functions.** If two families of
-holomorphic functions on an open cover `U : ι → Set ℂ` have the same overlap differences, their
-termwise difference glues to a single holomorphic function on `⋃ i, U i`. -/
-theorem exists_differentiableOn_iUnion_sub_eq {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i))
-    {b₁ b₂ : ι → ℂ → W} (hb₁ : ∀ i, DifferentiableOn ℂ (b₁ i) (U i))
-    (hb₂ : ∀ i, DifferentiableOn ℂ (b₂ i) (U i))
-    (hdiff : ∀ i j, ∀ z ∈ U i ∩ U j, b₁ i z - b₁ j z = b₂ i z - b₂ j z) :
-    ∃ h : ℂ → W, DifferentiableOn ℂ h (⋃ i, U i) ∧
-      ∀ i, ∀ z ∈ U i, b₁ i z - b₂ i z = h z := by
-  have hagree (i j : ι) (z : ℂ) (hzi : z ∈ U i) (hzj : z ∈ U j) :
-      b₁ i z - b₂ i z = b₁ j z - b₂ j z :=
-    sub_eq_sub_iff_sub_eq_sub.mp (hdiff i j z ⟨hzi, hzj⟩)
-  obtain ⟨h, heq, -⟩ :=
-    Function.exists_eqOn_of_agree (U := U) (f := fun i z ↦ b₁ i z - b₂ i z) hagree 0
-  refine ⟨h, (differentiableOn_iUnion_iff_of_isOpen hU).2 fun i ↦ ?_, fun i z hz ↦ (heq i hz).symm⟩
-  exact ((hb₁ i).sub (hb₂ i)).congr fun z hz ↦ heq i hz
+      ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (fun z : Ω ↦ c i j z) (V i ∩ V j) := fun z hz ↦ by
+    have hcd : ContDiffAt ℝ ∞ (c i j) z :=
+      (((hc i j).contDiffOn ((hU i).inter (hU j))).contDiffAt
+        (((hU i).inter (hU j)).mem_nhds hz)).restrict_scalars ℝ
+    exact (contMDiffAt_subtype_iff.2 hcd.contMDiffAt).contMDiffWithinAt
+  obtain ⟨g, hg, hgξ, -⟩ := exists_contMDiffOn_eq_smul_sub_of_cocycle (ψ := fun _ _ _ ↦ (1 : ℝ))
+    hV hVcov hξ fun i j k z hz ↦ by rw [one_smul]; exact hadd i j k hz
+  -- Extend each `g i` by zero to a function on `ℂ`, smooth on `U i`.
+  let G : ι → ℂ → W := fun i ↦ Subtype.val.extend (g i) 0
+  have hG (i : ι) {z : ℂ} (hz : z ∈ Ω) : G i z = g i ⟨z, hz⟩ :=
+    Subtype.val_injective.extend_apply (g i) 0 ⟨z, hz⟩
+  have hGs (i : ι) : ContDiffOn ℝ (⊤ : ℕ∞) (G i) (U i) := fun z hz ↦ by
+    have hgz : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (g i) ⟨z, hmem hz⟩ :=
+      (hg i).contMDiffAt ((hV i).mem_nhds hz)
+    exact (contMDiffAt_iff_contDiffAt.1 (hgz.extend_subtypeVal 0)).contDiffWithinAt
+  have hGc (i j : ι) : EqOn (G i - G j) (-c i j) (U i ∩ U j) := fun z hz ↦ by
+    simp only [Pi.sub_apply, Pi.neg_apply, hG i (hmem hz.1), hG j (hmem hz.1),
+      hgξ i j ⟨z, hmem hz.1⟩ hz, one_smul, neg_sub]
+  -- The Dolbeault lemma corrects the `G i` to holomorphic functions.
+  obtain ⟨f, -, hf⟩ := hΩ.exists_contDiffOn_differentiableOn_sub hU hGs
+    (fun i j ↦ (hc i j).neg.congr (hGc i j)) fun z hz ↦ hz
+  refine ⟨fun i ↦ f - G i, fun i ↦ (hf i).mono fun z hz ↦ ⟨hmem hz, hz⟩, fun i j z hz ↦ ?_⟩
+  have := hGc i j hz
+  simp only [Pi.sub_apply, Pi.neg_apply] at this ⊢
+  linear_combination (norm := module) -this
 
 end TauCeti
