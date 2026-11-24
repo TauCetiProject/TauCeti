@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.BesselPotential
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 
@@ -155,19 +156,11 @@ theorem norm_sobolevInclusion_le (h : r ≤ s) : ‖A.sobolevInclusion h‖ ≤ 
 inclusion `H^s ⊆ H^r` is a compact operator. -/
 theorem isCompactOperator_sobolevInclusion (h : r < s) :
     IsCompactOperator (A.sobolevInclusion h.le) := by
-  -- A Schwartz function `φ` equal to `1` on the supports of all the cutoffs read in the charts:
-  -- a bump function equal to `1` on a ball containing the finitely many chart supports.
-  obtain ⟨R, hR⟩ := (isCompact_iUnion fun i ↦ (A.chartSupport i).isCompact).isBounded
-    |>.subset_closedBall 0
-  let b : ContDiffBump (0 : E) := ⟨max R 1, max R 1 + 1, by positivity, by linarith⟩
-  let φ : 𝓢(E, ℂ) := (b.hasCompactSupport.comp_left Complex.ofReal_zero).toSchwartzMap
-    (Complex.ofRealCLM.contDiff.comp b.contDiff)
-  have hφ (i : ι) (x : E) (hx : x ∈ tsupport (A.chartCutoff i)) : φ x = 1 := by
-    have hxR : x ∈ closedBall (0 : E) (max R 1) :=
-      closedBall_subset_closedBall (le_max_left R 1)
-        (hR (mem_iUnion.2 ⟨i, A.tsupport_chartCutoff_subset i hx⟩))
-    change ((b x : ℝ) : ℂ) = 1
-    rw [b.one_of_mem_closedBall hxR, Complex.ofReal_one]
+  -- A Schwartz function `φ` equal to `1` on the supports of all the cutoffs read in the charts.
+  obtain ⟨φ, -, -, hφ1⟩ := (isCompact_iUnion fun i ↦ (A.chartSupport i).isCompact)
+    |>.exists_schwartzMap_cutoff isOpen_univ (subset_univ _)
+  have hφ (i : ι) (x : E) (hx : x ∈ tsupport (A.chartCutoff i)) : φ x = 1 :=
+    hφ1.self_of_nhdsSet x (mem_iUnion.2 ⟨i, A.tsupport_chartCutoff_subset i hx⟩)
   -- Every component of an element of `H^s` is fixed by multiplication by `φ`.
   have hfix (u : A.sobolevSpace s) (k : ι × Fin (Module.finrank ℝ F)) :
       BesselPotentialSpace.smulLeftCLM s φ (u.val k) = u.val k := by
@@ -176,11 +169,17 @@ theorem isCompactOperator_sobolevInclusion (h : r < s) :
       localization_apply]
     exact Distribution.smulLeftCLM_cutoffTempered_of_eq_one _ φ.hasTemperateGrowth (hφ k.1)
   -- The components of the images of the unit ball lie in one compact set `K`.
-  let K : Set H^{r}(E, ℂ) := closure ((BesselPotentialSpace.inclusion h.le ∘L
-    BesselPotentialSpace.smulLeftCLM s φ : H^{s}(E, ℂ) →L[ℂ] H^{r}(E, ℂ)) '' closedBall 0 1)
+  let S₀ : Set H^{s}(E, ℂ) := ⋃ k, (fun u : A.sobolevSpace s ↦ u.val k) '' closedBall 0 1
+  have hS₀ : Bornology.IsBounded S₀ := by
+    refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨1, ?_⟩
+    rintro _ ⟨_, ⟨k, rfl⟩, u, hu, rfl⟩
+    rw [mem_closedBall_zero_iff] at hu ⊢
+    exact (PiLp.norm_apply_le u.val k).trans hu
+  let K : Set H^{r}(E, ℂ) := closure (BesselPotentialSpace.inclusion h.le '' S₀)
   have hK : IsCompact K :=
-    (BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM φ h)
-      |>.isCompact_closure_image_closedBall 1
+    BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq h hS₀ <| by
+      rintro _ ⟨_, ⟨k, rfl⟩, u, -, rfl⟩
+      exact hfix u k
   let S : Set (A.sobolevSpace r) := Subtype.val ⁻¹' (WithLp.toLp 2 '' univ.pi fun _ ↦ K)
   have hS : IsCompact S :=
     (A.isClosed_sobolevSpace r).isClosedEmbedding_subtypeVal.isCompact_preimage
@@ -189,10 +188,8 @@ theorem isCompactOperator_sobolevInclusion (h : r < s) :
     isCompactOperator_iff_isCompact_closure_image_closedBall _ one_pos]
   refine hS.of_isClosed_subset isClosed_closure (closure_minimal ?_ hS.isClosed)
   rintro _ ⟨u, hu, rfl⟩
-  refine ⟨_, fun k _ ↦ subset_closure ⟨u.val k, ?_, ?_⟩, (A.coe_sobolevInclusion_apply h.le u).symm⟩
-  · rw [mem_closedBall_zero_iff] at hu ⊢
-    exact (PiLp.norm_apply_le u.val k).trans hu
-  · simp [hfix u k]
+  exact ⟨_, fun k _ ↦ subset_closure ⟨u.val k, mem_iUnion.2 ⟨k, u, hu, rfl⟩, rfl⟩,
+    (A.coe_sobolevInclusion_apply h.le u).symm⟩
 
 /-- **Ehrling's inequality for the Sobolev spaces of a square chart partition.** For `t ≤ r < s`
 and `ε > 0` there is `C ≥ 0` with `‖u‖_{H^r} ≤ ε ‖u‖_{H^s} + C ‖u‖_{H^t}` for every `u ∈ H^s`. -/
