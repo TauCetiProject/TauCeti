@@ -269,7 +269,7 @@ variable {Γ A U : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup �
   [TopologicalSpace U] [IsTopologicalAddGroup U] [ContinuousSMul A U] {H : Subgroup Γ}
 
 /-- A `Γ`-invariant element of the induced module is a constant function: `f x = f 1`. -/
-theorem apply_eq_apply_one_of_mem_invariants {σ : ContinuousRep H A U}
+theorem ind_apply_eq_apply_one_of_mem_invariants {σ : ContinuousRep H A U}
     (f : (ind H σ).toRepresentation.invariants) (x : Γ) :
     (f.val : C(Γ, U)) x = (f.val : C(Γ, U)) 1 := by
   have hc := congr_arg (fun F : indV H σ => (F : C(Γ, U)) 1) (f.property x)
@@ -284,14 +284,14 @@ noncomputable def indInvariantsEquiv (σ : ContinuousRep H A U) :
   toFun f := ⟨(f.val : C(Γ, U)) 1, fun h => by
     have h1 := (mem_indV _).1 f.val.property h 1
     rw [mul_one] at h1
-    exact h1.symm.trans (apply_eq_apply_one_of_mem_invariants f h)⟩
+    exact h1.symm.trans (ind_apply_eq_apply_one_of_mem_invariants f h)⟩
   invFun u := ⟨⟨ContinuousMap.const Γ u.val,
       (mem_indV _).2 fun h x => by simpa using (u.property h).symm⟩,
     fun _ => Subtype.ext (ContinuousMap.ext fun _ => (rfl))⟩
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
   left_inv f := Subtype.ext (Subtype.ext (ContinuousMap.ext fun x =>
-    (apply_eq_apply_one_of_mem_invariants f x).symm))
+    (ind_apply_eq_apply_one_of_mem_invariants f x).symm))
   right_inv _ := (rfl)
 
 @[simp]
