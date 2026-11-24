@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.RegionAboveGraph
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 import Mathlib.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.InnerProductSpace.RegionAboveGraph
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.Frontier
 import TauCeti.Topology.MetricSpace.Holder
@@ -20,9 +20,10 @@ Let `0 < α < 1`, and let `Ω ⊆ ℝ^{n+1}` be a bounded open set whose boundar
 point `z ∈ ∂Ω`, in a ball `B(z, r)`, the set `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the graph
 of a `C^{2,α}` function over the hyperplane `ν^⊥`, for a unit vector `ν` and a `C²` function `γ`
 invariant along `ν` whose first and second derivatives are bounded and whose second derivative is
-`α`-Hölder. Let the operator `P u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, with no lower-order terms, have coefficients
-that are `α`-Hölder with constant `L` and bounded by `M` on `closure Ω`, and uniformly elliptic
-there with constants `0 < λ ≤ Λ`. This file proves the global form of the Schauder estimate
+`α`-Hölder (`Set.HasC2HolderBoundary Ω α`). Let the operator `P u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, with no
+lower-order terms, have coefficients that are `α`-Hölder with constant `L` and bounded by `M` on
+`closure Ω`, and uniformly elliptic there with constants `0 < λ ≤ Λ`. This file proves the global
+form of the Schauder estimate
 (`exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`): there is `C`,
 depending on `Ω`, `α`, `λ`, `Λ`, `L` and `M` but not on the coefficients beyond these bounds or on
 the solution, such that every `u` that is `C²` near `closure Ω`, vanishes on `∂Ω` and has an
@@ -205,10 +206,7 @@ within `ε` of `∂Ω`. The boundary is compact, so finitely many chart balls `B
 and `ε` is taken below every `r_z / 4` and every radius `ρ_z` of the chart estimates. -/
 private theorem exists_holderOnWith_closedBall_inter_closure_of_dist_lt {α : ℝ≥0}
     (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩb : Bornology.IsBounded Ω)
-    (hchart : ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ x (t : ℝ), γ (x + t • ν) = γ x) ∧ (∀ x, ‖fderiv ℝ γ x‖ ≤ G) ∧
-      (∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r)
+    (hchart : Ω.HasC2HolderBoundary α)
     {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ ε : ℝ, 0 < ε ∧ ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ x ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ) →
@@ -225,7 +223,7 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_dist_lt {α : �
         ∀ x ∈ closure Ω, ∀ w ∈ frontier Ω, dist x w < ε →
           HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closedBall x ε ∩ closure Ω) := by
   -- The boundary estimate in the chart of each boundary point.
-  choose! ν γ G r hν hγ hγν hG1 hG2 hG3 hr hΩz using hchart
+  choose! ν γ G r hν hγ hγν hG1 hG2 hG3 hr hΩz using hasC2HolderBoundary_iff.1 hchart
   choose! ρ hρ C hC using fun z (hz : z ∈ frontier Ω) =>
     exists_holderOnWith_closedBall_inter_closure_of_chart hα hα1 (hν z hz) (hγ z hz)
       (hγν z hz) (hG1 z hz) (hG2 z hz) (hG3 z hz) (hr z hz) (hΩz z hz) Lam L M hlam
@@ -257,15 +255,16 @@ private theorem exists_holderOnWith_closedBall_inter_closure_of_dist_lt {α : �
 /-! ### The global estimate -/
 
 /-- **The global Schauder estimate on a bounded domain with `C^{2,α}` boundary.** Let `0 < α < 1`
-and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary: every `z ∈ ∂Ω` has a ball
-`B(z, r)` in which `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the graph of a `C^{2,α}` function,
-for a unit vector `ν` and a `C²` function `γ` invariant along `ν` with `‖Dγ‖ ≤ G`, `‖D²γ‖ ≤ G` and
-`D²γ` `α`-Hölder with constant `G`. Let `0 < λ`, `Λ`, `L` and `M` be given. Then there is `C` with
-the following property. Let `a` be `α`-Hölder entrywise with constant `L`, bounded entrywise by `M`
-and elliptic with constants `λ, Λ` on `closure Ω`, and put `P u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on
-an open set containing `closure Ω`, vanishing on `∂Ω`, with `|u|`, `‖Du‖` and `‖D²u‖` bounded by `N`
-on `closure Ω` and with `D²u` `α`-Hölder there (with any constant). If `P u` is `α`-Hölder on `Ω`
-with constant `K`, then `D²u` is `α`-Hölder on `closure Ω` with constant `C (K + N)`.
+and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary`):
+every `z ∈ ∂Ω` has a ball `B(z, r)` in which `Ω` is the region `{x | γ x < ⟪x, ν⟫}` above the graph
+of a `C^{2,α}` function, for a unit vector `ν` and a `C²` function `γ` invariant along `ν` with
+`‖Dγ‖ ≤ G`, `‖D²γ‖ ≤ G` and `D²γ` `α`-Hölder with constant `G`. Let `0 < λ`, `Λ`, `L` and `M` be
+given. Then there is `C` with the following property. Let `a` be `α`-Hölder entrywise with constant
+`L`, bounded entrywise by `M` and elliptic with constants `λ, Λ` on `closure Ω`, and put
+`P u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on an open set containing `closure Ω`, vanishing on `∂Ω`, with
+`|u|`, `‖Du‖` and `‖D²u‖` bounded by `N` on `closure Ω` and with `D²u` `α`-Hölder there (with any
+constant). If `P u` is `α`-Hölder on `Ω` with constant `K`, then `D²u` is `α`-Hölder on `closure Ω`
+with constant `C (K + N)`.
 
 The constant depends only on `Ω`, `α`, `λ`, `Λ`, `L` and `M`: not on the coefficients beyond the
 stated bounds, or on `u`. This is the covering step of Gilbarg–Trudinger, Theorem 6.6, in the
@@ -274,10 +273,7 @@ Hölder seminorm of the Hessian, with the lower-order norms of `u` kept on the r
 being absorbed by interpolation. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv {α : ℝ≥0}
     (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : IsOpen Ω) (hΩb : Bornology.IsBounded Ω)
-    (hchart : ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ x (t : ℝ), γ (x + t • ν) = γ x) ∧ (∀ x, ‖fderiv ℝ γ x‖ ≤ G) ∧
-      (∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r)
+    (hchart : Ω.HasC2HolderBoundary α)
     {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ x ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ) →
