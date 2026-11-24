@@ -92,6 +92,8 @@ built.
   `TauCeti.PositiveCohomologyAssignment.charge_eq_zero_iff`: for a `J`-holomorphic disc that is
   nowhere locally constant on a finite `σ⁻¹(Z)`, `I(σ)` is at least the number of its points, and
   is zero exactly when `σ` misses `Z`.
+* `TauCeti.PositiveCohomologyAssignment.localCharge_pos_of_finite`: a `J`-holomorphic disc meeting
+  `Z` in a finite set has positive local charge at each point of `σ⁻¹(Z)`.
 * `TauCeti.PositiveCohomologyAssignment.charge_restrictOpen`,
   `TauCeti.PositiveCohomologyAssignment.localCharge_restrictOpen`: a disc in an open subset `U` has
   the same integer and the same local charges for the restricted assignment as in `Y`.
@@ -423,6 +425,36 @@ theorem charge_eq_zero_iff {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)) (u : 
   have := A.card_le_charge h u hu hhol s hs hnc
   rw [h0, Nat.cast_nonpos, Finset.card_eq_zero] at this
   simpa [this] using (hs z).1 hz
+
+/-- **Positivity of local charges on a finite intersection.** Let `σ` be the restriction to `𝔻` of
+a map `u` that is `J`-holomorphic on the unit disc, meeting `Z` in a finite set `s`. Then the local
+charge of `σ` at every point of `s` is positive. -/
+theorem localCharge_pos_of_finite {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : ∀ z, σ z ∈ Z ↔ z ∈ s)
+    (u : ℂ → Y) (hu : ∀ z : 𝔻, u z = σ z)
+    (hhol : IsPseudoholomorphicOn (AlmostComplexStructure.ofComplexModule ℂ).constSmooth J u
+      (ball 0 1))
+    {z : 𝔻} (hz : σ z ∈ Z) : 0 < A.localCharge σ z := by
+  have h : IsCompact (σ ⁻¹' Z) := (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact
+  obtain ⟨R, hR, hiso⟩ := z.exists_pos_forall_mem_ball_eq s
+  refine A.localCharge_pos h u hu hhol hz hR (fun w hw ↦ hiso w ((hs w).1 hw)) fun ε hε ↦ ?_
+  -- Near `z` there are points of the disc outside the finite set `s`; there `σ` misses `Z`, so it
+  -- differs from `σ z ∈ Z`.
+  have hnhds : ball (z : ℂ) ε ∩ ball 0 1 ∈ 𝓝 (z : ℂ) :=
+    inter_mem (ball_mem_nhds _ hε) (isOpen_ball.mem_nhds (mem_ball_zero_iff.2 z.norm_lt_one))
+  obtain ⟨a, ⟨haε, ha1⟩, has⟩ :=
+    (infinite_of_mem_nhds (z : ℂ) hnhds).exists_notMem_finset (s.image (↑))
+  refine ⟨Complex.UnitDisc.mk a (mem_ball_zero_iff.1 ha1), haε, fun hσ ↦ has ?_⟩
+  exact Finset.mem_image.2 ⟨_, (hs _).1 (hσ ▸ hz), rfl⟩
+
+/-- The local charges of a `J`-holomorphic disc meeting `Z` in a finite set are nonnegative. -/
+theorem localCharge_nonneg_of_finite {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : ∀ z, σ z ∈ Z ↔ z ∈ s)
+    (u : ℂ → Y) (hu : ∀ z : 𝔻, u z = σ z)
+    (hhol : IsPseudoholomorphicOn (AlmostComplexStructure.ofComplexModule ℂ).constSmooth J u
+      (ball 0 1))
+    (z : 𝔻) : 0 ≤ A.localCharge σ z := by
+  by_cases hz : σ z ∈ Z
+  · exact (A.localCharge_pos_of_finite s hs u hu hhol hz).le
+  · exact (A.localCharge_eq_zero (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact hz).ge
 
 /-! ### Naturality -/
 
