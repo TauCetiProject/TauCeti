@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.CyclicSubgroup
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.CyclicSubgroup.Basic
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.One
 
 /-!

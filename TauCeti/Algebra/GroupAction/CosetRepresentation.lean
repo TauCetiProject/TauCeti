@@ -38,8 +38,10 @@ representations, without assuming `H` normal or of finite index:
   `Equiv.permutationRepresentation_congrOfMapEq`, `Subgroup.rightCosetPerm`,
   `Equiv.permCongr_rightCosetPerm`, and `Subgroup.quotientEquivOp`.
 * **Normal core, centralizer, and conjugate count.** The kernel of the coset representation is
-  `H.normalCore` (`Equiv.ker_permutationRepresentation_quotient`,
-  `Equiv.rangePermutationRepresentationQuotientMulEquiv`), its centralizer in `Equiv.Perm β` is
+  `H.normalCore`, so its image is `G ⧸ H.normalCore`, of order `[G : H.normalCore]`
+  (`Equiv.ker_permutationRepresentation_quotient`,
+  `Equiv.rangePermutationRepresentationQuotientMulEquiv`,
+  `Equiv.natCard_range_permutationRepresentation_quotient`); its centralizer in `Equiv.Perm β` is
   canonically `(H.normalizerQuotient)ᵐᵒᵖ` (`Subgroup.centralizerToPermHomQuotientMulEquiv`,
   `Equiv.centralizerPermutationRepresentationQuotientMulEquiv`) of order `[N_G(H) : H]`, and the
   number of conjugates of `H` times that centralizer order equals `H.index`
@@ -339,6 +341,12 @@ noncomputable def rangePermutationRepresentationQuotientMulEquiv {H : Subgroup G
     (e.permutationRepresentation (G := G)).range ≃* G ⧸ H.normalCore :=
   (QuotientGroup.quotientKerEquivRange (e.permutationRepresentation (G := G))).symm.trans <|
     QuotientGroup.quotientMulEquivOfEq e.ker_permutationRepresentation_quotient
+
+/-- The image of the coset permutation representation of `H` has order `[G : H.normalCore]`. -/
+theorem natCard_range_permutationRepresentation_quotient {H : Subgroup G} (e : G ⧸ H ≃ β) :
+    Nat.card (e.permutationRepresentation (G := G)).range = H.normalCore.index := by
+  rw [Subgroup.index_eq_card]
+  exact Nat.card_congr e.rangePermutationRepresentationQuotientMulEquiv.toEquiv
 
 /-- **Abstract Millington criterion.** For any two subgroups `H₁, H₂` of `G` and bijections
 `e₁ : G ⧸ H₁ ≃ β` and `e₂ : G ⧸ H₂ ≃ β`, the coset permutation representations read through `e₁`

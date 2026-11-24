@@ -6,16 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import TauCeti.Analysis.Sobolev.Mollification.Interior
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.Sobolev.Mollification.TestField
 
 /-!
 # Order-zero regularity for real Cauchy–Riemann equations with Sobolev coefficients
@@ -54,7 +51,8 @@ derivative in `Lˢ`, `1/s + 1/q ≤ 1`
 (`TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`). The proof mollifies the test
 field: the mollifications are smooth test functions, their derivatives are the mollifications of
 the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
-convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`).
+convergence of mollifications (`TauCeti.tendsto_integral_inner_mollify`,
+`TauCeti.tendsto_integral_inner_fderiv_mollify`).
 
 ## Main results
 
@@ -88,70 +86,6 @@ section Mollify
 
 variable {ψ : ℂ → V} {Dψ : ℂ → ℂ →L[ℝ] V}
 
-/-- Pairings of the derivatives of mollifications with a fixed field converge. -/
-private theorem tendsto_integral_inner_fderiv_mollify {K' : Set ℂ} (hK'm : MeasurableSet K')
-    (hK'Ω : K' ⊆ Ω) [Fact (1 ≤ s)] {ρ : ℕ → ContDiffBump (0 : ℂ)}
-    (hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0)) {φ : ℕ → 𝓓(Ω, V)}
-    (hφs : ∀ n, tsupport (φ n : ℂ → V) ⊆ K')
-    (hderiv : ∀ n, ∀ z ∈ K', fderiv ℝ (φ n : ℂ → V) z =
-      ((ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (Ω : Set ℂ).indicator Dψ) z)
-    (hDψ : MemLp Dψ s (volume.restrict Ω)) (c : ℂ) {a : ℂ → V}
-    (ha : MemLp a s.conjExponent (volume.restrict K')) :
-    Tendsto (fun n => ∫ z, ⟪fderiv ℝ (φ n : ℂ → V) z c, a z⟫_ℝ) atTop
-      (𝓝 (∫ z in K', ⟪Dψ z c, a z⟫_ℝ)) := by
-  let B : V →L[ℝ] (ℂ →L[ℝ] V) →L[ℝ] ℝ := (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).bilinearComp
-    (ContinuousLinearMap.id ℝ V) (ContinuousLinearMap.apply ℝ V c)
-  have hB : ∀ w M, B w M = ⟪w, M c⟫_ℝ := fun w M => by simp [B]
-  have := B.tendsto_integral_bilin_normed_convolution hρ
-    ((memLp_indicator_iff_restrict hK'm.nullMeasurableSet).2 ha)
-    ((memLp_indicator_iff_restrict Ω.isOpen.measurableSet.nullMeasurableSet).2 hDψ)
-  convert this using 1
-  · funext n
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    dsimp only
-    by_cases hz : z ∈ K'
-    · rw [indicator_of_mem hz, hB, hderiv n z hz, real_inner_comm]
-    · rw [indicator_of_notMem hz, map_zero, zero_apply,
-        fderiv_of_notMem_tsupport ℝ fun h' => hz (hφs n h'), zero_apply, inner_zero_left]
-  · rw [← integral_indicator hK'm]
-    congr 1
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    dsimp only
-    by_cases hz : z ∈ K'
-    · rw [indicator_of_mem hz, indicator_of_mem hz, indicator_of_mem (hK'Ω hz), hB,
-        real_inner_comm]
-    · rw [indicator_of_notMem hz, indicator_of_notMem hz, map_zero, zero_apply]
-
-/-- Pairings of mollifications of a bounded field with a fixed integrable field converge. -/
-private theorem tendsto_integral_inner_mollify {K' : Set ℂ} (hK'm : MeasurableSet K')
-    {ρ : ℕ → ContDiffBump (0 : ℂ)} (hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0))
-    {φ : ℕ → 𝓓(Ω, V)}
-    (hφ : ∀ n, ⇑(φ n) = (ρ n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] ψ)
-    (hφs : ∀ n, tsupport (φ n : ℂ → V) ⊆ K') (hψb : MemLp ψ ⊤) {a : ℂ → V}
-    (ha : IntegrableOn a K') :
-    Tendsto (fun n => ∫ z, ⟪(φ n : ℂ → V) z, a z⟫_ℝ) atTop (𝓝 (∫ z in K', ⟪ψ z, a z⟫_ℝ)) := by
-  have : ENNReal.HolderConjugate ∞ 1 := ENNReal.HolderConjugate.top_one
-  have := (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).tendsto_integral_bilin_normed_convolution
-    (p := ∞) (q := 1) hρ
-    (memLp_one_iff_integrable.2 ((integrable_indicator_iff hK'm).2 ha)) hψb
-  convert this using 1
-  · funext n
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    dsimp only
-    rw [innerSL_apply_apply, ← hφ n]
-    by_cases hz : z ∈ K'
-    · rw [indicator_of_mem hz, real_inner_comm]
-    · rw [indicator_of_notMem hz, image_eq_zero_of_notMem_tsupport fun h' => hz (hφs n h'),
-        inner_zero_left, inner_zero_left]
-  · rw [← integral_indicator hK'm]
-    congr 1
-    refine integral_congr_ae (.of_forall fun z => ?_)
-    dsimp only
-    rw [innerSL_apply_apply]
-    by_cases hz : z ∈ K'
-    · rw [indicator_of_mem hz, indicator_of_mem hz, real_inner_comm]
-    · rw [indicator_of_notMem hz, indicator_of_notMem hz, inner_zero_left]
-
 omit [CompleteSpace V] in
 /-- The weak equation tested against `ψ` localizes: since `Dψ` vanishes almost everywhere on `Ω`
 where `ψ` does, an identity between integrals over a set `K' ⊆ Ω` containing the support of `ψ`
@@ -169,9 +103,7 @@ private theorem integral_inner_eq_of_setIntegral_eq (hψ : HasWeakFDerivOn volum
         ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ) Ω ∧
       ∫ z in Ω, (-⟪Dψ z 1, ξ z⟫_ℝ - ⟪Dψ z I, J z (ξ z)⟫_ℝ -
         ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ) = ∫ z in Ω, ⟪ψ z, η z⟫_ℝ := by
-  have hDψ0 : ∀ c : ℂ, ∀ᵐ z ∂volume.restrict Ω, z ∈ (tsupport ψ)ᶜ → Dψ z c = 0 := fun c =>
-    (hψ.hasWeakLineDerivOn c).ae_eq_zero_of_isOpen (isClosed_tsupport ψ).isOpen_compl
-      (.of_forall fun z hz => image_eq_zero_of_notMem_tsupport hz)
+  have hDψ0 := hψ.ae_apply_eq_zero_of_notMem_tsupport
   have hP0 : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) \ K' → -⟪Dψ z 1, ξ z⟫_ℝ -
       ⟪Dψ z I, J z (ξ z)⟫_ℝ - ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ = 0 := by
     filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 ((hDψ0 1).and (hDψ0 I))]
@@ -206,14 +138,11 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
         ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ) Ω ∧
       ∫ z in Ω, (-⟪Dψ z 1, ξ z⟫_ℝ - ⟪Dψ z I, J z (ξ z)⟫_ℝ -
         ⟪ψ z, DJ z I (ξ z)⟫_ℝ + ⟪ψ z, S z (ξ z)⟫_ℝ) = ∫ z in Ω, ⟪ψ z, η z⟫_ℝ := by
-  -- A compact neighbourhood `K'` of the support of `ψ` whose `δ`-balls stay in `Ω`.
-  obtain ⟨δ, hδ, hball⟩ := hψc.isCompact.exists_forall_closedBall_subset_of_isOpen Ω.isOpen hψΩ
-  set K' := cthickening δ (tsupport ψ)
-  have hK'c : IsCompact K' := hψc.isCompact.cthickening
-  have hK'm : MeasurableSet K' := isClosed_cthickening.measurableSet
-  have hK'Ω : K' ⊆ Ω := fun z hz => hball z hz (mem_closedBall_self hδ.le)
   have hs1 : 1 ≤ s := ENNReal.inv_le_one.1 (le_self_add.trans hsq)
   have : Fact (1 ≤ s) := ⟨hs1⟩
+  -- Mollifications `φ n` of `ψ`, supported in a compact set `K' ⊆ Ω` containing its support.
+  obtain ⟨K', hK'c, hK'm, hK'Ω, hψK', ρ, φ, hρ, hφ, hφs, hderiv⟩ :=
+    hψ.exists_seq_testFunction_convolution_normed hψc hψΩ hψb le_top hDψ hs1
   have hs'q : s.conjExponent ≤ q := ENNReal.inv_le_inv.1 <|
     (ENNReal.add_le_add_iff_left (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hs1).ne')).1 <|
       hsq.trans (ENNReal.HolderConjugate.inv_add_inv_eq_one s s.conjExponent).ge
@@ -238,10 +167,6 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
     fun ha => memLp_one_iff_integrable.1 ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).memLp_of_bilin 1
       (hψb.restrict K') (memLp_one_iff_integrable.2 ha))
   -- Test the weak equation against the mollifications of `ψ` and pass to the limit.
-  choose φ hφ hφs hderiv using fun n => hψ.exists_testFunction_convolution_normed hψc hψb hDψ
-    le_top hs1 hball (ContDiffBump.shrinking hδ n) ((ContDiffBump.rOut_shrinking hδ n).trans_le
-      (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
-  have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : ℂ)) hδ
   have hlimD : ∀ (c : ℂ) {a : ℂ → V}, MemLp a q (volume.restrict K') →
       Tendsto (fun n => ∫ z, ⟪fderiv ℝ (φ n : ℂ → V) z c, a z⟫_ℝ) atTop
         (𝓝 (∫ z in K', ⟪Dψ z c, a z⟫_ℝ)) := fun c _ ha =>
@@ -253,7 +178,7 @@ theorem IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn
   have hlhs := (((hlimD 1 hξK).neg.sub (hlimD I hJξK)).sub (hlim0 hDJξ)).add (hlim0 hSξ)
   have heq := fun n => (hc.integral_inner_crFormalAdjoint_eq_terms hpq h.memLpLoc (φ n)).symm.trans
     (h.integral_inner_crFormalAdjoint (φ n))
-  exact integral_inner_eq_of_setIntegral_eq hψ hK'Ω (self_subset_cthickening _) (hintD 1 hξK)
+  exact integral_inner_eq_of_setIntegral_eq hψ hK'Ω hψK' (hintD 1 hξK)
     (hintD I hJξK) (hint0 hDJξ) (hint0 hSξ) (tendsto_nhds_unique (hlhs.congr heq)
       (hlim0 (h.locallyIntegrableOn.integrableOn_compact_subset hK'Ω hK'c)))
 

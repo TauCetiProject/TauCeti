@@ -39,7 +39,9 @@ on `I ∩ Ioi x` with integral `Ψ x ^ (k + 1) / (k + 1)`
 a nonnegative function is antitone (`MeasureTheory.antitoneOn_integral_inter_Ioi`), and a locally
 integrable function on an order-connected set `I` dominated towards the right endpoint by a
 tail-integrable function is integrable on every right tail
-(`MeasureTheory.LocallyIntegrableOn.integrableOn_inter_Ioi_of_isBigO`).
+(`MeasureTheory.LocallyIntegrableOn.integrableOn_inter_Ioi_of_isBigO`). If `f` is continuous from
+the right at `a` and `f` and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
+`∫ x in Ioi a, f' x = -f a` (`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
@@ -336,6 +338,17 @@ theorem LocallyIntegrableOn.integrableOn_inter_Ioi_of_isBigO
       · exact Or.inl ⟨hv.2.le, h⟩
       · exact Or.inr ⟨hv.1, h⟩
     exact (hcomp.union htail).mono_set hsub
+
+/-- **Fundamental theorem of calculus on a half-line, with integrable primitive.** If `f` is
+continuous from the right at `a`, has derivative `f'` on `(a, ∞)`, and both `f` and `f'` are
+integrable on `(a, ∞)`, then `∫ x in Ioi a, f' x = -f a`. -/
+theorem integral_Ioi_of_hasDerivAt_of_integrableOn {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f f' : ℝ → E} {a : ℝ}
+    (hcont : ContinuousWithinAt f (Ici a) a) (hderiv : ∀ x ∈ Ioi a, HasDerivAt f (f' x) x)
+    (f'int : IntegrableOn f' (Ioi a)) (fint : IntegrableOn f (Ioi a)) :
+    ∫ x in Ioi a, f' x = -f a := by
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto hcont hderiv f'int
+    (tendsto_zero_of_hasDerivAt_of_integrableOn_Ioi hderiv f'int fint), zero_sub]
 
 end MeasureTheory
 

@@ -299,7 +299,9 @@ private lemma summable_picardTermOn {x : ℝ} (hx : x ∈ I) :
 private lemma continuousOn_tsum_picardTermOn :
     ContinuousOn (fun x ↦ ∑' k, picardTermOn I K J ψ k x) I := by
   intro x₀ hx₀
-  obtain ⟨c, hcI, d, _, hcx₀, hx₀d, hcdI, hcdN⟩ := hI.exists_Icc_mem_nhdsWithin hx₀
+  obtain ⟨c, d, hcdI, _, hx₀cd, hcdN⟩ := hI.exists_Icc_mem_nhdsWithin hx₀ hx₀
+  obtain ⟨hcx₀, hx₀d⟩ := hx₀cd
+  have hcI : c ∈ I := hcdI ⟨le_rfl, hcx₀.trans hx₀d⟩
   obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn (hP.mono hcdI)
   refine ((continuousOn_tsum
     (fun k ↦ (picardTermOn_spec hI hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ k).1.mono hcdI)

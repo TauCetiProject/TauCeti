@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.ProductBase
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 
 /-!
 # Products of manifolds abundant with two-spheres
@@ -161,25 +162,22 @@ private theorem homologyMap_prodClass {k : ℕ}
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom constProdSphereMap))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k) :=
     homologyMap_toSSet_ofHom_comp_comm _ _ constProdSphereMap_comp_prodMap.symm
-  have h₂ := congrArg (fun g ↦ HomologicalComplex.homologyMap g (n + k))
-    (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      (ModuleCat.uliftTensorSelfIso ℤ).hom).naturality
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.prodMap (ContinuousMap.id N)
-        ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp (mappingSpaceEval Sphere2.north))))))
-  simp only [HomologicalComplex.homologyMap_comp] at h₂
-  have h₃ := ConcreteCategory.congr_hom (TopCat.singularHomologyCross_naturality
-    (𝟙 (TopCat.of N)) (TopCat.ofHom ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp
-      (mappingSpaceEval Sphere2.north))) (ModuleCat.of ℤ (ULift.{0} ℤ))
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl) (o.fundamentalClass hn ⊗ₜ α)
-  rw [CategoryTheory.Functor.map_id] at h₃
+  have h₂ := homologyMap_chainComplexFunctor_map_apply (m := n + k)
+    (ModuleCat.uliftTensorSelfIso ℤ).hom (ContinuousMap.prodMap (ContinuousMap.id N)
+      ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp (mappingSpaceEval Sphere2.north)))
+  have h₃ := homologyMap_prodMap_singularHomologyCross_tmul _ _ (ContinuousMap.id N)
+    ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp (mappingSpaceEval Sphere2.north)) rfl
+    (o.fundamentalClass hn) α
+  simp only [TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
+    ModuleCat.id_apply] at h₃
   -- `prodClass` is the composite of the linear maps it is built from, so the composite of the
   -- naturality squares `h₃`, `h₂`, `h₁` proves the claim definitionally.
   exact (ConcreteCategory.congr_hom h₁ _).trans (congrArg (SSet.homologyMap (TopCat.toSSet.map
     (TopCat.ofHom constProdSphereMap)) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom
-    ((ConcreteCategory.congr_hom h₂ _).symm.trans (congrArg (HomologicalComplex.homologyMap
+    ((h₂ _).symm.trans (congrArg (HomologicalComplex.homologyMap
       (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
         (ModuleCat.uliftTensorSelfIso ℤ).hom).app
-          (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom h₃.symm)))
+          (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom h₃)))
 
 include o hn in
 /-- **Products with a manifold abundant with 2-spheres**, with the oriented factor on the left

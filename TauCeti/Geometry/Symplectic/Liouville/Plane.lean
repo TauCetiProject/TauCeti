@@ -9,12 +9,16 @@ public import Mathlib.LinearAlgebra.Basis.Fin
 public import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
-# The one-form `x dy` on the real plane
+# The one-forms `x dy` and `y dx` on the real plane
 
-This file defines the linear-coefficient form `realPlaneXDy = x dy` and proves its exterior
-derivative identity. The constant coordinate forms and their identities are in
+This file defines the linear-coefficient forms `realPlaneXDy = x dy` and `realPlaneYDx = y dx`
+and proves their exterior derivative identities `d(x dy) = dx ∧ dy` and `d(y dx) = -(dx ∧ dy)`.
+So `-y dx` and `x dy` are both primitives of the standard area form. The form `y dx` is the
+Liouville form `p dq` of the plane read as the cotangent bundle of the line, with position `x` and
+momentum `y`. The constant coordinate forms and their identities are in
 `TauCeti.Analysis.Calculus.DifferentialForm.Plane`.
 
 Contracting `d(x dy)` with the vector field `Z = x ∂_x + ∂_y` gives `x dy - dx`
@@ -39,10 +43,7 @@ pullback by a linear map evaluates there to the determinant. -/
 @[simp]
 theorem realPlaneDx_wedge_realPlaneDy_finTwoProd (q : ℝ × ℝ) :
     ((realPlaneDx q).wedge (realPlaneDy q)) (Module.Basis.finTwoProd ℝ) = 1 := by
-  have hbasis : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  rw [hbasis, ContinuousAlternatingMap.wedge_apply_one_one]
+  rw [Module.Basis.coe_finTwoProd, ContinuousAlternatingMap.wedge_apply_one_one]
   simp [realPlaneDx_apply, realPlaneDy_apply]
 
 /-- The coordinate one-form `x dy` on `ℝ × ℝ`. -/
@@ -97,5 +98,33 @@ theorem curryLeft_extDeriv_realPlaneXDy_ne (p : ℝ × ℝ) :
   rw [curryLeft_extDeriv_realPlaneXDy, Ne, sub_eq_self]
   intro h
   simpa using congrArg (fun f ↦ f ![(1, 0)]) h
+
+/-- The coordinate one-form `y dx` on `ℝ × ℝ`. -/
+def realPlaneYDx (p : ℝ × ℝ) : (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] ℝ :=
+  p.2 • realPlaneDx p
+
+/-- The coordinate one-form `y dx` evaluates to the second coordinate of the base point times the
+first component of its argument. -/
+@[simp]
+theorem realPlaneYDx_apply (p : ℝ × ℝ) (v : Fin 1 → ℝ × ℝ) :
+    realPlaneYDx p v = p.2 * (v 0).1 := by
+  simp [realPlaneYDx]
+
+/-- The coordinate one-form `y dx` is smooth. -/
+theorem contDiff_realPlaneYDx {n : WithTop ℕ∞} : ContDiff ℝ n realPlaneYDx :=
+  contDiff_snd.smul contDiff_realPlaneDx
+
+/-- The exterior derivative of `y dx` is minus the standard area form, `d(y dx) = -(dx ∧ dy)`. -/
+@[simp]
+theorem extDeriv_realPlaneYDx (p : ℝ × ℝ) :
+    extDeriv realPlaneYDx p = -(realPlaneDx p).wedge (realPlaneDy p) := by
+  ext v
+  -- Normalize the two arguments as a tuple so the pair formula for `d` applies.
+  rw [show v = ![v 0, v 1] by funext i; fin_cases i <;> rfl,
+    TauCeti.extDeriv_apply_pair_of_differentiableAt
+      (contDiff_realPlaneYDx (n := 1)).differentiable_one.differentiableAt]
+  simp only [realPlaneYDx_apply]
+  rw [(hasFDerivAt_snd.mul_const _).fderiv, (hasFDerivAt_snd.mul_const _).fderiv]
+  simp
 
 end Prod

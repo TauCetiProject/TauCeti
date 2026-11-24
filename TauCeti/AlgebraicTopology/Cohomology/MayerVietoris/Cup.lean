@@ -228,7 +228,7 @@ private lemma cupLift_component_d {W : Set X} {i : Fin 2} (hWi : W ⊆ ![U, V] i
   refine ((ModuleCat.comp_apply _ _ _).symm.trans
     (ConcreteCategory.congr_hom (congrArg (fun f ↦ f.f (p + 1)) hπ) _)).trans ?_
   exact (SSet.cochainComplexMap_f_apply _ _ _).trans
-    (chainComplexMap_f_toSmallSingularSubcomplex_comp _ _ _ _)
+    (by rw [← Category.assoc, chainComplexMap_f_toSmallSingularSubcomplex_ι])
 
 /-- For a relative cocycle, the coboundary of the cupped lift component is the restriction of
 `ζ ⌣ β`; the formula is uniform over the two cover members. -/

@@ -146,7 +146,9 @@ theorem continuousOn_integral_kernel_smul_inter_Ioi (hI : I.OrdConnected)
     (hFint : ∀ x ∈ I, IntegrableOn (fun v ↦ Q v * ‖F v‖) (I ∩ Ioi x)) :
     ContinuousOn (fun x ↦ ∫ v in I ∩ Ioi x, K x v • F v) I := by
   intro x₀ hx₀
-  obtain ⟨c, hcI, d, _, hcx₀, hx₀d, hcdI, hcdN⟩ := hI.exists_Icc_mem_nhdsWithin hx₀
+  obtain ⟨c, d, hcdI, _, hx₀cd, hcdN⟩ := hI.exists_Icc_mem_nhdsWithin hx₀ hx₀
+  obtain ⟨hcx₀, hx₀d⟩ := hx₀cd
+  have hcI : c ∈ I := hcdI ⟨le_rfl, hcx₀.trans hx₀d⟩
   obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn (hP.mono hcdI)
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x₀ ⟨hcx₀, hx₀d⟩)
   have hSmeas : MeasurableSet (I ∩ Ioi c) := hI.measurableSet.inter measurableSet_Ioi

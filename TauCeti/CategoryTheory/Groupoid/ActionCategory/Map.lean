@@ -16,9 +16,13 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 A map `f : X → Y` that is equivariant along a monoid homomorphism `φ : M →* N`, that is
 `f (m • x) = φ m • f x`, induces a functor `ActionCategory.map φ f` from the action category
 `M ⋉ X` to `N ⋉ Y`: it sends the point `x` to `f x` and the arrow labelled `m` to the arrow
-labelled `φ m`. It is faithful when `φ` is injective, and it is full exactly when every arrow
-between two image points lifts: whenever `n • f x = f x'`, some `m` with `φ m = n` carries `x` to
-`x'` (`CategoryTheory.ActionCategory.full_map_iff`).
+labelled `φ m`. It is faithful exactly when two labels carrying a point to the same point and
+having the same image under `φ` are equal (`CategoryTheory.ActionCategory.faithful_map_iff`), in
+particular when `φ` is injective. It is full exactly when every arrow between two image points
+lifts: whenever `n • f x = f x'`, some `m` with `φ m = n` carries `x` to `x'`
+(`CategoryTheory.ActionCategory.full_map_iff`). When `N` is a group, it is essentially surjective
+exactly when every point of `Y` lies in the orbit of an image point
+(`CategoryTheory.ActionCategory.essSurj_map_iff`).
 
 The main instance is the restriction of an action groupoid to a subset. Let `H` be a subgroup of a
 group `G` acting on `X`, and let `S` be a subset of `X` preserved by `H`, as a `SubMulAction H X`.
@@ -41,9 +45,13 @@ topological action groupoid to a saturated open set of objects.
 * `CategoryTheory.ActionCategory.map`: the functor induced by an equivariant map.
 * `CategoryTheory.ActionCategory.map_id`, `CategoryTheory.ActionCategory.map_comp`: it preserves
   identities and composites.
-* `CategoryTheory.ActionCategory.faithful_map`: it is faithful along an injective homomorphism.
+* `CategoryTheory.ActionCategory.faithful_map_iff`, `CategoryTheory.ActionCategory.faithful_map`:
+  it is faithful exactly when labels are determined by their images and their effect on a point,
+  in particular along an injective homomorphism.
 * `CategoryTheory.ActionCategory.full_map_iff`: it is full exactly when arrows between image
   points lift.
+* `CategoryTheory.ActionCategory.essSurj_map_iff`: for a group action on the target, it is
+  essentially surjective exactly when every point lies in the orbit of an image point.
 * `CategoryTheory.ActionCategory.restrict`: the full inclusion of the action category on an
   invariant subset.
 * `CategoryTheory.ActionCategory.restrictLift`: a functor whose objects lie in the invariant subset
@@ -122,6 +130,19 @@ theorem map_comp {P Z : Type*} [Monoid P] [MulAction P Z] {ψ : N →* P} (g : Y
   Functor.hext (fun _ ↦ rfl) fun _ _ h ↦
     heq_of_eq <| Functor.Elements.hom_ext (MonoidHom.CompTriple.comp_apply ‹_› h.hom)
 
+/-- The functor induced by an equivariant map is faithful exactly when two labels that carry a
+point `x` to the same point and have the same image under the homomorphism are equal. -/
+theorem faithful_map_iff : (map φ f).Faithful ↔
+    ∀ (x : X) (m m' : M), m • x = m' • x → φ m = φ m' → m = m' := by
+  constructor
+  · intro _ x m m' hm hφ
+    exact congrArg Functor.Elements.Hom.hom <| (map φ f).map_injective
+      (X := objEquiv M X x) (Y := objEquiv M X (m' • x)) (a₁ := Functor.Elements.homMk m hm)
+      (a₂ := Functor.Elements.homMk m' rfl) (Functor.Elements.hom_ext hφ)
+  · intro h
+    exact ⟨fun {a _} g g' hg => Functor.Elements.hom_ext <| h a.back g.hom g'.hom
+      (g.map_val.trans g'.map_val.symm) (congrArg Functor.Elements.Hom.hom hg)⟩
+
 /-- The functor induced by an equivariant map along an injective homomorphism is faithful. -/
 theorem faithful_map (hφ : Function.Injective φ) : (map φ f).Faithful where
   map_injective h := Functor.Elements.hom_ext (hφ (congrArg Functor.Elements.Hom.hom h))
@@ -145,6 +166,22 @@ arrow label. -/
 theorem full_map_of_injective [MulAction M Y] (f : X →[M] Y)
     (hf : Function.Injective f) : (map (MonoidHom.id M) f).Full :=
   (full_map_iff _ _).2 fun x _ m h ↦ ⟨m, rfl, hf ((map_smul f m x).trans h)⟩
+
+/-- The functor induced by an equivariant map to an action of a group is essentially surjective
+exactly when every point of the target lies in the orbit of the image of some point. -/
+theorem essSurj_map_iff {H : Type*} [Group H] [MulAction H Y] (ψ : M →* H) (g : X →ₑ[ψ] Y) :
+    (map ψ g).EssSurj ↔ ∀ y : Y, ∃ x : X, orbitRel H Y (g x) y := by
+  constructor
+  · intro _ y
+    obtain ⟨a, e⟩ := Functor.EssSurj.mem_essImage (F := map ψ g) (objEquiv H Y y)
+    obtain ⟨x, rfl⟩ := (objEquiv M X).surjective a
+    rw [map_obj] at e
+    exact ⟨x, isIsomorphic_iff_orbitRel.mp e⟩
+  · intro h
+    refine ⟨fun b => ?_⟩
+    obtain ⟨y, rfl⟩ := (objEquiv H Y).surjective b
+    obtain ⟨x, hx⟩ := h y
+    exact ⟨objEquiv M X x, by rw [map_obj]; exact isIsomorphic_iff_orbitRel.mpr hx⟩
 
 section SingleObj
 
