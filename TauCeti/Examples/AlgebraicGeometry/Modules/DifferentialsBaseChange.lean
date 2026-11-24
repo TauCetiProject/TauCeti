@@ -10,17 +10,18 @@ public import Mathlib.RingTheory.Kaehler.Polynomial
 public import Mathlib.RingTheory.PolynomialAlgebra
 public import TauCeti.RingTheory.Kaehler.BaseChange
 import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+import TauCeti.RingTheory.Kaehler.UnramifiedBase
 
 /-!
 # Examples of the base-change map of relative differentials
 
 Let `R → R'` be a ring map, `X` a scheme over `R` and `X' = X ×_R R'`, with projection `g'`. Over
 an affine chart `X = Spec A`, `X' = Spec B` with `B = R' ⊗_R A`, the comparison map
-`c_{g'} : g'^* Ω_{X/R} → Ω_{X'/R}` is `KaehlerDifferential.mapBaseChange R A B` (main's
-`TauCeti.AlgebraicGeometry.cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv`), the map
+`c_{g'} : g'^* Ω_{X/R} → Ω_{X'/R}` is `KaehlerDifferential.mapBaseChange R A B`
+(`TauCeti.AlgebraicGeometry.cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv`), the map
 `e : Ω_{X'/R} → Ω_{X'/R'}` is `KaehlerDifferential.map R R' B B`, and the base-change map
 `b_{g'} = e ∘ c_{g'}` is Mathlib's isomorphism `KaehlerDifferential.tensorKaehlerEquiv`
-(`TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`); on schemes it is main's
+(`TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`); on schemes it is
 `TauCeti.AlgebraicGeometry.relativeDifferentialsBaseChangeIso`. These examples check the ring
 forms of two of these maps:
 
@@ -59,7 +60,7 @@ theorem not_surjective_mapBaseChange_ratFunc :
   exact RatFunc.D_X_ne_zero k hx.symm
 
 /-- The map `e : Ω_{k(s)/k} → Ω_{k(s)/k(s)}` kills `ds`, as `Ω_{k(s)/k(s)} = 0`. -/
-theorem map_D_X_ratFunc :
+theorem map_D_X_ratFunc_eq_zero :
     map k (RatFunc k) (RatFunc k) (RatFunc k) (D k (RatFunc k) RatFunc.X) = 0 :=
   have : Subsingleton Ω[RatFunc k⁄RatFunc k] :=
     subsingleton_of_surjective (RatFunc k) (RatFunc k) fun x ↦ ⟨x, rfl⟩
@@ -91,12 +92,9 @@ theorem tensorKaehlerEquiv_one_tmul_D_X_zmod_two :
 since `Ω_{𝔽₂/ℤ} = 0`. -/
 theorem bijective_map_zmod_two :
     Function.Bijective (map ℤ (ZMod 2) (ZMod 2)[X] (ZMod 2)[X]) := by
-  have : Subsingleton Ω[ZMod 2⁄ℤ] := subsingleton_of_surjective ℤ (ZMod 2) ZMod.intCast_surjective
-  refine ⟨?_, map_surjective ℤ (ZMod 2) (ZMod 2)[X]⟩
-  rw [injective_iff_map_eq_zero]
-  intro ω hω
-  obtain ⟨x, rfl⟩ := (exact_mapBaseChange_map ℤ (ZMod 2) (ZMod 2)[X] ω).mp hω
-  rw [Subsingleton.elim x 0, map_zero]
+  have : Algebra.FormallyUnramified ℤ (ZMod 2) :=
+    ⟨subsingleton_of_surjective ℤ (ZMod 2) ZMod.intCast_surjective⟩
+  exact map_bijective_of_formallyUnramified_base ℤ (ZMod 2) (ZMod 2)[X]
 
 end IntegersModTwo
 
