@@ -51,7 +51,6 @@ continuous.
 * `TauCeti.FiniteBundleAtlas.MemHolderSection.of_atlas` and
   `TauCeti.FiniteBundleAtlas.memHolderSection_iff_of_atlas`: having `C^{k,α}` readings does not
   depend on the atlas.
-* `TauCeti.HolderSection.continuous_coord_toSection`: readings depend continuously on the element.
 * `TauCeti.HolderSection.atlasLinearEquiv` and `TauCeti.HolderSection.atlasEquiv`: the identity on
   underlying sections, as a linear equivalence and as an isomorphism of Banach spaces, compatible
   with inversion and composition (`TauCeti.HolderSection.atlasEquiv_symm`,
@@ -178,18 +177,8 @@ end FiniteBundleAtlas
 
 namespace HolderSection
 
-variable {A} {k : ℕ} {α : ℝ≥0}
-
-/-- The reading of the underlying section of an element of `C^{k,α}(V)` at a point of the image of
-a chart depends continuously on the element. -/
-theorem continuous_coord_toSection {i : Fin A.n} {y : E} (hy : y ∈ A.image i) :
-    Continuous fun w : HolderSection A k α ↦ A.coord i (toSection w) y := by
-  refine ((CkHolderSpaceOn.continuous_extend_apply hy).comp
-    ((continuous_apply i).comp continuous_subtypeVal)).congr fun w ↦ ?_
-  rw [Function.comp_apply, Function.comp_apply, coord_toSection w i ⟨y, hy⟩,
-    ← CkHolderSpaceOn.extend_apply]
-
-variable {B} {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
+variable {A B} {k : ℕ} {α : ℝ≥0} {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M]
+  [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
 
 variable (A B k α) in
 /-- For `k + 1 ≤ n` and `α ≤ 1`, the Hölder spaces `C^{k,α}(V)` of two finite bundle atlases of a
