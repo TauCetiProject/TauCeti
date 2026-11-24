@@ -192,6 +192,11 @@ theorem IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     PartialEquiv.refl_symm, modelWithCornersSelf_coe, Function.comp_def, id_eq, range_id,
     preimage_id, inter_univ]
+  -- The manifold derivative is read between the model spaces through `tangentSpaceCastModel` on
+  -- both sides, which identifies `TangentSpace 𝓘(ℝ, ℝ) t` with `ℝ` and `TangentSpace I _` with `E`
+  -- by the identity map; Mathlib has no rewrite lemma for this cast, so it is unfolded
+  -- definitionally here, leaving the Fréchet form `smulRight 1 _` of the coordinate derivative.
+  change HasFDerivWithinAt _ ((1 : ℝ →L[ℝ] ℝ).smulRight (v ((extChartAt I x₀).symm (f t)))) s t
   exact hcomp.hasFDerivWithinAt
 
 /-- A coordinate curve whose values stay in an extended-chart target and whose derivative is the
@@ -265,39 +270,6 @@ private theorem IsMIntegralCurveOn.eventuallyEq_of_contDiffOn_extChartAt
       (hγderiv.and hγz) (hδderiv.and hδz) (congrArg φ hteq)
   filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
   exact φ.injOn (hγsrc r hrJ) hrδsrc hr
-
-namespace TauCeti
-
-/-- A curve in the model space which stays in the interior of the chart target and solves the
-coordinate equation of a vector field on an open set of times gives an integral curve of the
-field on the manifold, after applying the inverse extended chart. -/
-theorem isMIntegralCurveOn_extChartAt_symm_comp {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 1 M] (v : (x : M) → TangentSpace I x) (a : M) {f : ℝ → E}
-    {s : Set ℝ} (hs : IsOpen s)
-    (hmem : ∀ t ∈ s, f t ∈ interior (extChartAt I a).target)
-    (hderiv : ∀ t ∈ s, HasDerivAt f (trivializationAt E (TangentSpace I) a
-      (⟨(extChartAt I a).symm (f t), v ((extChartAt I a).symm (f t))⟩ :
-        TangentBundle I M)).2 t) :
-    IsMIntegralCurveOn ((extChartAt I a).symm ∘ f) v s := by
-  refine IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_
-  apply IsMIntegralCurveAt.of_extChartAt_symm
-  · filter_upwards [hs.mem_nhds ht] with r hr
-    exact hmem r hr
-  · filter_upwards [hs.mem_nhds ht] with r hr
-    have hw_eq (z : E) : (trivializationAt E (TangentSpace I) a
-        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2 =
-        tangentCoordChange I ((extChartAt I a).symm z) a ((extChartAt I a).symm z)
-          (v ((extChartAt I a).symm z)) := by
-      -- The fibre coordinate of the preferred trivialization is the second coordinate of the
-      -- tangent-bundle chart, whose conversion to `tangentCoordChange` is recorded explicitly.
-      change (chartAt (ModelProd H E)
-        (⟨a, 0⟩ : TangentBundle I M)
-        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
-          TangentBundle I M)).2 = _
-      exact TangentBundle.coe_chartAt_snd
-    simpa only [hw_eq] using hderiv r hr
-
-end TauCeti
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a
