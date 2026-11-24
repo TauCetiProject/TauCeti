@@ -189,6 +189,10 @@ theorem neg_apply (s : BundleTest I F V) (x : M) : (-s) x = -s x :=
 theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
   rfl
 
+theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
+    (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x :=
+  map_sum (AddMonoidHom.mk' (fun t : BundleTest I F V ↦ t x) fun a b ↦ add_apply a b x) s u
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames

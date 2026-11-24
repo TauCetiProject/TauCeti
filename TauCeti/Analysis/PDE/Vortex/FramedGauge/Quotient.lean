@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.EquationMap
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Topology
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The continuous gauge action on the framed vortex fields and its Hausdorff quotient
