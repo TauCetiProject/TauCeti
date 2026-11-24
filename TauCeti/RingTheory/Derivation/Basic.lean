@@ -225,4 +225,17 @@ theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
 
 end ConjAlgEquiv
 
+section CompDer
+
+variable {R A M N : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
+  [AddCommMonoid N] [Algebra R A] [Module A M] [Module R M] [IsScalarTower R A M]
+  [Module A N] [Module R N] [IsScalarTower R A N]
+
+/-- Pushing a derivation forward along an `A`-linear map evaluates pointwise as composition. -/
+theorem _root_.LinearMap.compDer_apply (f : M →ₗ[A] N) (D : Derivation R A M) (a : A) :
+    (f.compDer D) a = f (D a) :=
+  (rfl)
+
+end CompDer
+
 end Derivation
