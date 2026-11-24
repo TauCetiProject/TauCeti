@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Distance
 public import TauCeti.Geometry.RicciFlow.StandardCap.Metric
+import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
 import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Curve
 
 /-!
@@ -82,7 +83,7 @@ private theorem edist_sqrt_le_riemannianEDist {ε : ℝ} (hε : 0 < ε) (x y : V
       · simp
       · exact ((hf.metric V).pos z w hw).le
     have h1 := hf.sq_inner_le_sq_norm_mul_metric_inner z w
-    rw [(hφ z).fderiv, smul_apply, smul_apply, innerSL_apply_apply, nsmul_eq_mul, smul_eq_mul,
+    simp only [(hφ z).fderiv, smul_apply, innerSL_apply_apply, nsmul_eq_mul, smul_eq_mul,
       Nat.cast_ofNat]
     set c := ⟪z, NormedSpace.fromTangentSpace z w⟫_ℝ
     have hφsq : φ z ^ 2 = ε ^ 2 + ‖z‖ ^ 2 := Real.sq_sqrt (hpos z).le
@@ -93,19 +94,16 @@ private theorem edist_sqrt_le_riemannianEDist {ε : ℝ} (hε : 0 < ε) (x y : V
       rw [sq_abs, mul_pow, Real.sq_sqrt hg, hφsq]
       nlinarith [mul_nonneg (sq_nonneg ε) hg]
     exact (pow_le_pow_iff_left₀ (abs_nonneg c) (by positivity) two_ne_zero).1 hsq
-  have hle := riemannianEDist_le_mul (I := 𝓘(ℝ, V)) (J := 𝓘(ℝ, ℝ))
-    (f := φ ∘ ofWithMetric) (hφd.contMDiff.comp contMDiff_ofWithMetric) one_ne_zero
+  have hle := edist_le_mul_riemannianEDist (I := 𝓘(ℝ, V)) (f := φ ∘ ofWithMetric)
+    (hφd.contMDiff.comp contMDiff_ofWithMetric) one_ne_zero
     (fun z v ↦ by
-      rw [mfderiv_comp_ofWithMetric, ContinuousLinearMap.comp_apply,
-        norm_tangentSpace_vectorSpace, mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply, Real.norm_eq_abs,
-        NNReal.coe_one, one_mul, norm_eq_sqrt_real_inner, inner_def]
-      exact hbound _ _)
+      rw [ENNReal.coe_one, one_mul, ← ofReal_norm, ← ofReal_norm]
+      refine ENNReal.ofReal_le_ofReal ?_
+      simpa only [mvfderiv_comp_ofWithMetric_apply, mvfderiv_eq_fderiv,
+        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, Real.norm_eq_abs,
+        norm_eq_sqrt_real_inner v, inner_def] using hbound _ _)
     (toWithMetric (hf.metric V) x) (toWithMetric (hf.metric V) y)
-  rw [ENNReal.coe_one, one_mul] at hle
-  rw [IsRiemannianManifold.out (I := 𝓘(ℝ, ℝ))]
-  simpa only [Function.comp_apply, ofWithMetric_toWithMetric] using hle
+  simpa only [Function.comp_apply, ofWithMetric_toWithMetric, ENNReal.coe_one, one_mul] using hle
 
 /-- **The norm is `1`-Lipschitz for the cap distance**: the norms of two points of the standard
 cap differ by at most their Riemannian distance. -/
@@ -156,11 +154,8 @@ theorem riemannianEDist_zero_left (x : V) :
         ‖curveVelocityWithin 𝓘(ℝ, V) (toWithMetric (hf.metric V) ∘ γ) univ t‖ = ‖x‖ := by
       have hd : deriv γ t = x := by
         rw [deriv_smul_const differentiableAt_id, deriv_id'', one_smul]
-      -- `curveVelocity_eq_deriv` reads the velocity in `V`; `fromTangentSpace` is the identity
-      -- identification of the tangent space with `V` (`NormedSpace.fromTangentSpace_symm_apply`),
-      -- and `γ t` unfolds to `t • x`.
       have hv : curveVelocity 𝓘(ℝ, V) γ t = (NormedSpace.fromTangentSpace (γ t)).symm x := by
-        rw [curveVelocity_eq_deriv]
+        rw [curveVelocity_eq_deriv, NormedSpace.fromTangentSpace_symm_apply]
         exact hd
       rw [curveVelocityWithin_univ, ContMDiffRiemannianMetric.norm_curveVelocity_toWithMetric, hv]
       exact (congrArg Real.sqrt (hf.metric_inner_smul_self t x)).trans
