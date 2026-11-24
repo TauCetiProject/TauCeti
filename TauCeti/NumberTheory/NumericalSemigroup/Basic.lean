@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.FrobeniusNumber
 public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Lattice.Nat
 public import Mathlib.Order.Filter.Cofinite
+import Mathlib.Order.Interval.Set.Nat
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum
 
@@ -21,6 +22,10 @@ integer-valued Frobenius number, and multiplicity. The conductor is the least `c
 that every natural number `n ≥ c` belongs to the semigroup; subtracting one gives
 Frobenius number `-1` for `⊤`, without excluding this case from the API.
 
+The reflection `x ↦ C - 1 - x` of `{0, …, C - 1}`, where `C` is the conductor, sends every
+element of the semigroup below `C` to a gap, since otherwise `C - 1` would be a sum of two
+elements of the semigroup. Counting gives the inequality `C ≤ 2 g`, where `g` is the genus.
+
 These invariants provide the basic interface for counting gaps using Apéry sets.
 The comparison with Mathlib's `FrobeniusNumber` allows results about generators,
 including the two-generator formula, to be used without constructing a new carrier.
@@ -28,7 +33,8 @@ including the two-generator formula, to be used without constructing a new carri
 ## References
 
 * A. Assi and P. A. García-Sánchez, *Numerical semigroups and applications* (2014),
-  §1, Proposition 1 and the definitions of gaps, genus, Frobenius number and conductor.
+  §1, Proposition 1, Lemma 14 and the definitions of gaps, genus, Frobenius number and
+  conductor.
 -/
 
 public section
@@ -146,6 +152,16 @@ theorem mem_of_numericalFrobenius_lt (h : S.IsNumericalSemigroup) {n : ℕ}
   unfold numericalFrobenius at hn
   omega
 
+/-- Every gap of a numerical semigroup lies below its conductor. -/
+theorem IsNumericalSemigroup.lt_numericalConductor_of_notMem (h : S.IsNumericalSemigroup)
+    {n : ℕ} (hn : n ∉ S) : n < S.numericalConductor :=
+  lt_of_not_ge fun hle ↦ hn (mem_of_numericalConductor_le h hle)
+
+/-- A submonoid with nonzero conductor is a numerical semigroup. -/
+theorem isNumericalSemigroup_of_numericalConductor_ne_zero (hS : S.numericalConductor ≠ 0) :
+    S.IsNumericalSemigroup :=
+  (isNumericalSemigroup_iff_exists_bound S).mpr (Nat.nonempty_of_pos_sInf (Nat.pos_of_ne_zero hS))
+
 /-- A proper numerical semigroup has nonnegative Frobenius number. -/
 theorem numericalFrobenius_nonneg (h : S.IsNumericalSemigroup) (hS : S ≠ ⊤) :
     0 ≤ S.numericalFrobenius := by
@@ -171,6 +187,53 @@ theorem numericalFrobenius_eq_natCast_iff (S : AddSubmonoid ℕ) (n : ℕ) :
     · exact htail k (by omega)
   · rintro ⟨hnot, htail⟩
     exact ⟨fun k hk ↦ htail k (by omega), fun hc ↦ hnot (hc n le_rfl)⟩
+
+/-- One less than a nonzero conductor is a gap: it is the Frobenius number. -/
+theorem numericalConductor_sub_one_notMem (hS : S.numericalConductor ≠ 0) :
+    S.numericalConductor - 1 ∉ S :=
+  ((numericalFrobenius_eq_natCast_iff S _).mp (by unfold numericalFrobenius; omega)).1
+
+/-- The reflection `s ↦ C - 1 - s` sends an element of `S` below the conductor `C` to a gap. -/
+theorem numericalConductor_sub_one_sub_notMem {s : ℕ} (hs : s ∈ S)
+    (hlt : s < S.numericalConductor) : S.numericalConductor - 1 - s ∉ S := fun h ↦
+  numericalConductor_sub_one_notMem (S := S) (by omega) <| by
+    simpa [Nat.sub_add_cancel (show s ≤ S.numericalConductor - 1 by omega)] using S.add_mem h hs
+
+/-- The natural numbers below the conductor are the elements of `S` below the conductor
+together with the gaps. -/
+theorem ncard_inter_Iio_add_numericalGenus (S : AddSubmonoid ℕ) :
+    ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).ncard + S.numericalGenus =
+      S.numericalConductor := by
+  by_cases h : S.IsNumericalSemigroup
+  · have hgaps : Set.Iio S.numericalConductor \ S = S.numericalGaps := by
+      ext x
+      simp only [Set.mem_sdiff, Set.mem_Iio, SetLike.mem_coe, mem_numericalGaps]
+      exact ⟨And.right, fun hx ↦ ⟨h.lt_numericalConductor_of_notMem hx, hx⟩⟩
+    rw [numericalGenus_def, ← hgaps, Set.inter_comm,
+      Set.ncard_inter_add_ncard_sdiff_eq_ncard _ _ (Set.finite_Iio _), Set.ncard_Iio_nat]
+  · have hC : S.numericalConductor = 0 :=
+      not_not.mp (mt isNumericalSemigroup_of_numericalConductor_ne_zero h)
+    rw [hC, numericalGenus_def, Set.Infinite.ncard (s := S.numericalGaps) h]
+    simp
+
+/-- A submonoid of `ℕ` has at most as many elements below its conductor as it has gaps. -/
+theorem ncard_inter_Iio_le_numericalGenus (S : AddSubmonoid ℕ) :
+    ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).ncard ≤ S.numericalGenus := by
+  by_cases h : S.IsNumericalSemigroup
+  · rw [numericalGenus_def]
+    exact Set.ncard_le_ncard_of_injOn (S.numericalConductor - 1 - ·)
+      (fun _ hs ↦ (mem_numericalGaps S).mpr (numericalConductor_sub_one_sub_notMem hs.1 hs.2))
+      (fun a ha b hb ↦ tsub_inj_right (Nat.le_sub_one_of_lt ha.2) (Nat.le_sub_one_of_lt hb.2))
+      h.finite_numericalGaps
+  · simp [not_not.mp (mt isNumericalSemigroup_of_numericalConductor_ne_zero h)]
+
+/-- **The genus is at least half the conductor**: `C(S) ≤ 2 g(S)` for every submonoid `S` of
+`ℕ`; for a numerical semigroup this is `F(S) + 1 ≤ 2 g(S)`. -/
+theorem numericalConductor_le_two_mul_numericalGenus (S : AddSubmonoid ℕ) :
+    S.numericalConductor ≤ 2 * S.numericalGenus := by
+  have := S.ncard_inter_Iio_add_numericalGenus
+  have := S.ncard_inter_Iio_le_numericalGenus
+  omega
 
 /-- The Frobenius number of a proper numerical semigroup is itself a gap. -/
 theorem numericalFrobenius_toNat_notMem (h : S.IsNumericalSemigroup) (hS : S ≠ ⊤) :

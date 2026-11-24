@@ -57,7 +57,7 @@ theorem not_isLinearlyReductive (k : Type u) [Field k] :
       obtain ⟨w, hwN, hw0⟩ := Subcomodule.ne_bot_iff.mp hN
       obtain ⟨v, hv, hvc⟩ := exists_ne_zero_coact_eq_tmul_one (R := k) (V := N)
         (v := ⟨w, hwN⟩) fun hc ↦ hw0 (congrArg Subtype.val hc)
-      exact ⟨v, v.2, fun hc ↦ hv (Subtype.ext hc), Subcomodule.coact_coe_eq_tmul_one N hvc⟩)
+      exact ⟨v, v.property, fun hc ↦ hv (Subtype.ext hc), Subcomodule.coact_coe_eq_tmul_one N hvc⟩)
     (monomialBasis k 1)
   have hx := Coalgebra.eq_counit_smul_of_comul_eq_tmul hcomul
   have hcounit :

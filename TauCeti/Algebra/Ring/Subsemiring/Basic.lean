@@ -8,10 +8,12 @@ module
 public import Mathlib.Algebra.Ring.Subsemiring.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 
-/-! # Subsemirings containing the kernel of a ring map
+/-! # Subsemiring pullbacks and subring closure joins
 
 For a subsemiring containing the kernel of a ring homomorphism, membership can be
 tested in its image, and pulling back that image recovers the original subsemiring.
+Joining a subring `S` with `Subring.closure s` agrees on underlying subsemirings with joining
+`S.toSubsemiring` and `Subsemiring.closure s` (`Subring.toSubsemiring_sup_closure`).
 -/
 
 public section
@@ -35,3 +37,22 @@ theorem mem_map_iff_mem_of_ker_subset {f : A →+* B} {P : Subsemiring A}
   exact mem_map_iff_mem_of_ker_subset hker
 
 end Subsemiring
+
+namespace Subring
+
+/-- Joining a subring `S` with `Subring.closure s` agrees as a subsemiring with joining
+`S.toSubsemiring` and `Subsemiring.closure s`. -/
+@[simp] theorem toSubsemiring_sup_closure {B : Type*} [Ring B] (S : Subring B) (s : Set B) :
+    (S ⊔ Subring.closure s).toSubsemiring = S.toSubsemiring ⊔ Subsemiring.closure s := by
+  refine le_antisymm ?_ (sup_le (fun _ hb ↦ (le_sup_left : S ≤ S ⊔ Subring.closure s) hb) <|
+    Subsemiring.closure_le.mpr fun _ hb ↦
+      (le_sup_right : Subring.closure s ≤ S ⊔ Subring.closure s) (Subring.subset_closure hb))
+  let T : Subsemiring B := S.toSubsemiring ⊔ Subsemiring.closure s
+  have hST : S.toSubsemiring ≤ T := le_sup_left
+  have hclT : Subsemiring.closure s ≤ T := le_sup_right
+  let T' : Subring B :=
+    { T with neg_mem' {a} ha := by simpa using T.mul_mem (hST (S.neg_mem S.one_mem)) ha }
+  exact (sup_le (fun _ hb ↦ hST hb)
+    (Subring.closure_le.mpr fun _ hb ↦ hclT (Subsemiring.subset_closure hb)) : _ ≤ T')
+
+end Subring

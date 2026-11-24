@@ -60,7 +60,7 @@ variable [HasZeroMorphisms C] [HasCokernels C] {G : C ⥤ C} (ι : 𝟭 C ⟶ G)
 @[expose, simps, implicit_reducible]
 noncomputable def cokernelFunctor : C ⥤ C where
   obj X := cokernel (ι.app X)
-  map f := cokernel.map (ι.app _) (ι.app _) f (G.map f) (ι.naturality f).symm
+  map f := cokernel.map (ι.app _) (ι.app _) f (G.map f) (ι.naturality f)
 
 /-- The cokernel projections `G X ⟶ coker (ι_X)`, as a natural transformation. -/
 noncomputable def toCokernelFunctor : G ⟶ ι.cokernelFunctor where
@@ -210,7 +210,7 @@ instance quasiIso_toResolution_app (X : C) : QuasiIso (ι.toResolution.app X) wh
       · -- The kernel of `G X ⟶ G (Z¹ X)` is the image of `ι_X`, because `ι` is a monomorphism.
         let α : ShortComplex.mk (ι.app X) (cokernel.π (ι.app X)) (cokernel.condition _) ⟶
             ShortComplex.mk ((ι.toResolution.app X).f 0) ((ι.resolution.obj X).d 0 1)
-              (CochainComplex.fromSingle₀Equiv _ _ (ι.toResolution.app X)).2 :=
+              (CochainComplex.fromSingle₀Equiv _ _ (ι.toResolution.app X)).property :=
           { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := ι.app (cokernel (ι.app X))
             comm₁₂ := (Category.id_comp _).trans
               ((ι.toResolution_app_f_zero X).trans (Category.comp_id _).symm)

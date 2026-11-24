@@ -305,13 +305,14 @@ def updateSkew : Matrix n n S :=
 /-- The `(k, k)` diagonal entry of `M.updateSkew k ℓ` vanishes. -/
 @[simp] theorem updateSkew_apply_same : M.updateSkew k ℓ k k = 0 := by simp [updateSkew]
 /-- Off-diagonal entries in row `k` of `M.updateSkew k ℓ` equal `ℓ j`. -/
-theorem updateSkew_apply_left_of_ne {j : n} (hj : j ≠ k) : M.updateSkew k ℓ k j = ℓ j := by
+@[simp] theorem updateSkew_apply_left_of_ne {j : n} (hj : j ≠ k) : M.updateSkew k ℓ k j = ℓ j := by
   simp [updateSkew, hj]
 /-- Off-diagonal entries in column `k` of `M.updateSkew k ℓ` equal `-ℓ i`. -/
-theorem updateSkew_apply_right_of_ne {i : n} (hi : i ≠ k) : M.updateSkew k ℓ i k = -ℓ i := by
+@[simp] theorem updateSkew_apply_right_of_ne {i : n} (hi : i ≠ k) :
+    M.updateSkew k ℓ i k = -ℓ i := by
   simp [updateSkew, hi]
 /-- Entries away from row and column `k` are unchanged by `M.updateSkew k ℓ`. -/
-theorem updateSkew_apply_of_ne {i j : n} (hi : i ≠ k) (hj : j ≠ k) :
+@[simp] theorem updateSkew_apply_of_ne {i j : n} (hi : i ≠ k) (hj : j ≠ k) :
     M.updateSkew k ℓ i j = M i j := by simp [updateSkew, hi, hj]
 end UpdateSkew
 end Matrix

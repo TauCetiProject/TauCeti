@@ -73,8 +73,8 @@ variable {R : Type*} {A : Type u} {M : Type*} [CommRing R] [NonUnitalSemiring A]
 differential relates `S₀ φ` in column zero to `((n + 1) * (n + 2)) • φ` in column two. -/
 private def cyclicTotalPeriodicityHomotopy (φ : cyclicCocycles R A M n) :
     cyclicTotalCochains R A M (n + 1) :=
-  ⟨Pi.single (n + 1) (cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n φ.1.1)) +
-      Pi.single n ((n + 2 : R) • φ.1.1),
+  ⟨Pi.single (n + 1) (cyclicRowHomotopySum R A M (n + 1) (barCoboundary R A M n φ.val.val)) +
+      Pi.single n ((n + 2 : R) • φ.val.val),
     add_mem (single_mem_cyclicTotalCochains le_rfl _)
       (single_mem_cyclicTotalCochains (Nat.le_succ n) _)⟩
 
@@ -85,9 +85,9 @@ theorem exists_cyclicTotalDifferential_eq_cyclicCocyclesPeriodicity_add
     (φ : cyclicCocycles R A M n) :
     ∃ z : cyclicTotalCochains R A M (n + 1),
       cyclicTotalDifferential R A M (n + 1) z =
-        cyclicCochainsToTotal R A M (n + 2) (cyclicCocyclesPeriodicity R A M n φ).1 +
+        cyclicCochainsToTotal R A M (n + 2) (cyclicCocyclesPeriodicity R A M n φ).val +
           ((n + 1 : R) * (n + 2 : R)) •
-            cyclicTotalPeriodicity R A M n (cyclicCochainsToTotal R A M n φ.1) := by
+            cyclicTotalPeriodicity R A M n (cyclicCochainsToTotal R A M n φ.val) := by
   refine ⟨cyclicTotalPeriodicityHomotopy φ, Subtype.ext (funext fun q ↦ ?_)⟩
   simp only [Submodule.coe_add, Submodule.coe_smul_of_tower, Pi.add_apply, Pi.smul_apply,
     coe_cyclicCochainsToTotal_apply, coe_cyclicTotalPeriodicity_apply,
@@ -111,7 +111,7 @@ theorem exists_cyclicTotalDifferential_eq_cyclicCocyclesPeriodicity_add
         cyclicBicomplexHorizontal_of_odd (show Odd (0 + 1) from odd_one)]
       simp only [cyclicTotalPeriodicityHomotopy, Pi.add_apply,
         Pi.single_eq_of_ne (show 0 ≠ 0 + 1 by omega), Pi.single_eq_same, zero_add]
-      rw [map_smul, cyclicNorm_apply_of_mem_cyclicCochains φ.1.2, smul_smul, mul_comm]
+      rw [map_smul, cyclicNorm_apply_of_mem_cyclicCochains φ.val.property, smul_smul, mul_comm]
     | succ k =>
       have hcol : k + 1 + 1 - (k + 1) = 1 := by omega
       rw [cyclicTotalDifferential_apply_succ, hcol, cyclicBicomplexHorizontal_of_odd odd_one]
@@ -120,7 +120,7 @@ theorem exists_cyclicTotalDifferential_eq_cyclicCocyclesPeriodicity_add
         Pi.single_eq_of_ne (show k ≠ k + 1 by omega),
         Pi.single_eq_of_ne (show k + 1 ≠ k + 1 + 1 by omega),
         Pi.single_eq_same, add_zero, zero_add, map_zero]
-      rw [map_smul, cyclicNorm_apply_of_mem_cyclicCochains φ.1.2, smul_smul, mul_comm]
+      rw [map_smul, cyclicNorm_apply_of_mem_cyclicCochains φ.val.property, smul_smul, mul_comm]
   · rw [Pi.single_eq_of_ne (by omega), Pi.single_eq_of_ne (by omega), smul_zero, add_zero,
       cyclicTotalDifferential_apply_succ]
     have h₁ : n + 1 - n = 1 := by omega
@@ -132,8 +132,8 @@ theorem exists_cyclicTotalDifferential_eq_cyclicCocyclesPeriodicity_add
       Pi.single_eq_same, zero_add, add_zero, LinearMap.neg_apply, map_smul]
     rw [one_sub_cyclicOperator_apply_cyclicRowHomotopySum,
       ← LinearMap.comp_apply (cyclicNorm R A M (n + 1)), ← hochschildCoboundary_comp_cyclicNorm,
-      LinearMap.comp_apply, cyclicNorm_apply_of_mem_cyclicCochains φ.1.2, map_smul,
-      (mem_cyclicCocycles_iff R A M).1 φ.2, smul_zero, sub_zero,
+      LinearMap.comp_apply, cyclicNorm_apply_of_mem_cyclicCochains φ.val.property, map_smul,
+      (mem_cyclicCocycles_iff R A M).1 φ.property, smul_zero, sub_zero,
       show ((n + 1 : ℕ) + 1 : R) = (n + 2 : R) by push_cast; ring, smul_neg, neg_add_cancel]
   · rw [Pi.single_eq_same, Pi.single_eq_of_ne (by omega), smul_zero, add_zero,
       cyclicTotalDifferential_apply_succ, Nat.sub_self, cyclicBicomplexVertical_of_even Even.zero]
@@ -142,7 +142,7 @@ theorem exists_cyclicTotalDifferential_eq_cyclicCocyclesPeriodicity_add
       Pi.single_eq_of_ne (show n + 1 + 1 ≠ n + 1 by omega),
       Pi.single_eq_of_ne (show n + 1 + 1 ≠ n by omega),
       Pi.single_eq_same, add_zero, map_zero]
-    exact hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCocycles φ.2
+    exact hochschildCoboundary_cyclicRowHomotopySum_barCoboundary_of_mem_cyclicCocycles φ.property
   · rw [Pi.single_eq_of_ne hq.ne', Pi.single_eq_of_ne (by omega), smul_zero, add_zero]
     exact coe_cyclicTotalCochains_apply_of_lt _ hq
 
@@ -221,8 +221,8 @@ theorem exact_periodicity_toHochschild (m : ℕ) :
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
   have hbij₂ := bijective_homologyMap_cyclicCochainComplexToTotal R A M (m + 2)
   have hu : IsUnit (-((m + 1 : R) * (m + 2 : R))) := by
-    simpa using ((isUnit_natCast_add_one (K := R) m).mul
-      (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
+    simpa using ((isUnit_natCast_add_one ℚ (A := R) m).mul
+      (isUnit_natCast_add_of_ne_zero ℚ (A := R) m two_ne_zero)).neg
   intro x
   refine ⟨fun hx ↦ ?_, ?_⟩
   · have hx' : HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 2)

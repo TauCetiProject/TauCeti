@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.MeasureTheory.Integral.Circle.Reciprocal
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # The Cauchy integral of a disc indicator
@@ -144,9 +145,8 @@ theorem _root_.Complex.pi_inv_mul_integral_sub_inv_unit_ball (w : ℂ) :
 /-- The normalized mass of a disc indicator is the coefficient of its exact reciprocal tail. -/
 theorem pi_inv_mul_integral_indicator_ball {r : ℝ} (hr : 0 ≤ r) (c : ℂ) :
     (π : ℂ)⁻¹ * ∫ z : ℂ, (ball c r).indicator (fun _ => (1 : ℂ)) z = (r : ℂ)^2 := by
-  rw [integral_indicator_const _ measurableSet_ball, measureReal_def, Complex.volume_ball]
-  simp only [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hr,
-    ENNReal.coe_toReal, NNReal.coe_real_pi, real_smul, mul_one]
+  rw [integral_indicator_const _ measurableSet_ball, Complex.volume_real_ball c hr, real_smul,
+    mul_one]
   push_cast
   field_simp
 
