@@ -172,7 +172,7 @@ theorem exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSh
     {x : X} (hx : x ∈ W) :
     ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧
       (F.supportedModuleHPresheaf S n).map (homOfLE hVW).op c = 0 :=
-  (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff_moduleCat _).1 h x W c hx
+  (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).1 h x W c hx
 
 /-- If the local cohomology sheaf `𝓗_S⁰(F)` vanishes, so does the presheaf of sections of `F`
 supported in `S`. -/
