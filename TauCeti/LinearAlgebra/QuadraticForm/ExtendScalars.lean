@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.MvPolynomial
+public import TauCeti.LinearAlgebra.TensorProduct.Pi
 
 /-!
 # Coordinate scalar extension of quadratic forms
@@ -48,8 +49,10 @@ unique quadratic form with `a ⊗ v ↦ a² Q(v)`, and when `2` is invertible it
 * `QuadraticMap.extendScalars_prod_comp_sumArrowLequivProdArrow`: extension commutes with
   orthogonal sums.
 * `QuadraticMap.extendScalars_comp_piScalarRight`: agreement with `QuadraticForm.baseChange`.
-* `QuadraticMap.extendScalars_comp_basis_eq`: for a quadratic form on a free module, the
-  extension along a basis, read on `A ⊗[R] V`, does not depend on the basis.
+* `QuadraticMap.extendScalarsOfBasis`: for a quadratic form on a free module `V`, the extension
+  along a basis, read on `A ⊗[R] V`; it sends `a ⊗ v` to `a² Q(v)`
+  (`QuadraticMap.extendScalarsOfBasis_tmul`) and does not depend on the basis
+  (`QuadraticMap.extendScalarsOfBasis_eq`).
 * `TauCeti.extendScalars_binaryQuadraticForm`: the extension of the binary block `[a, b]` is the
   block with the mapped coefficients; in particular the hyperbolic plane `[0, 0]` extends to the
   hyperbolic plane.
@@ -104,13 +107,6 @@ private theorem pi_single_one_eq_algebraMap [DecidableEq ι] (i : ι) :
   funext fun k ↦ by rw [Pi.apply_single (fun _ ↦ algebraMap R A) (fun _ ↦ map_zero _), map_one]
 
 variable [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-
-/-- Read on `ι → A`, the pure tensor `a ⊗ v` is `a` times the vector `v` with coordinates mapped
-into `A`. -/
-private theorem piScalarRight_tmul_eq_smul (a : A) (v : ι → R) :
-    piScalarRight R A A ι (a ⊗ₜ v) = a • fun i ↦ algebraMap R A (v i) := by
-  ext i
-  simp [Algebra.smul_def, mul_comm]
 
 /-- A vector of `ι → A` with coordinates in `R` corresponds to the pure tensor `1 ⊗ v`. -/
 private theorem piScalarRight_symm_algebraMap_apply (v : ι → R) :
@@ -282,18 +278,34 @@ section Basis
 
 variable {V : Type*} [AddCommGroup V] [Module R V]
 
-/-- **Independence of the basis.** For a quadratic form `Q` on a free module `V`, the scalar
-extension of `Q` read in a basis `b`, transported to `A ⊗[R] V` along `b`, does not depend on `b`:
-it is the unique quadratic form with `a ⊗ v ↦ a² Q(v)`. -/
-theorem extendScalars_comp_basis_eq (Q : QuadraticForm R V) (b : Module.Basis ι R V)
-    (b' : Module.Basis κ R V) :
-    ((Q.comp b.equivFun.symm.toLinearMap).extendScalars A).comp
-        ((piScalarRight R A A ι).toLinearMap ∘ₗ b.equivFun.toLinearMap.baseChange A) =
-      ((Q.comp b'.equivFun.symm.toLinearMap).extendScalars A).comp
-        ((piScalarRight R A A κ).toLinearMap ∘ₗ b'.equivFun.toLinearMap.baseChange A) :=
+/-- The scalar extension of a quadratic form `Q` on a free module `V` to `A ⊗[R] V`, through a
+basis `b`: the coordinate extension of `Q` read in `b`, transported to `A ⊗[R] V` along the base
+change of the coordinates of `b`. It does not depend on `b` (`extendScalarsOfBasis_eq`). -/
+def extendScalarsOfBasis (Q : QuadraticForm R V) (b : Module.Basis ι R V) (A : Type*) [CommRing A]
+    [Algebra R A] : QuadraticForm A (A ⊗[R] V) :=
+  ((Q.comp b.equivFun.symm.toLinearMap).extendScalars A).comp
+    ((piScalarRight R A A ι).toLinearMap ∘ₗ b.equivFun.toLinearMap.baseChange A)
+
+/-- The scalar extension through a basis sends `a ⊗ v` to `a² Q(v)`. -/
+@[simp]
+theorem extendScalarsOfBasis_tmul (Q : QuadraticForm R V) (b : Module.Basis ι R V) (a : A)
+    (v : V) : Q.extendScalarsOfBasis b A (a ⊗ₜ v) = Q v • (a * a) := by
+  simp only [extendScalarsOfBasis, comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.baseChange_tmul, extendScalars_piScalarRight_tmul, LinearEquiv.symm_apply_apply]
+
+/-- **Independence of the basis.** The scalar extension of a quadratic form on a free module
+through a basis does not depend on the basis: it is the unique quadratic form on `A ⊗[R] V` with
+`a ⊗ v ↦ a² Q(v)`. -/
+theorem extendScalarsOfBasis_eq (Q : QuadraticForm R V) (b : Module.Basis ι R V)
+    (b' : Module.Basis κ R V) : Q.extendScalarsOfBasis b A = Q.extendScalarsOfBasis b' A :=
+  _root_.baseChange_ext fun v ↦ by rw [extendScalarsOfBasis_tmul, extendScalarsOfBasis_tmul]
+
+/-- When `2` is invertible, the scalar extension through a basis is Mathlib's
+`QuadraticForm.baseChange`. -/
+theorem extendScalarsOfBasis_eq_baseChange [Invertible (2 : R)] (Q : QuadraticForm R V)
+    (b : Module.Basis ι R V) : Q.extendScalarsOfBasis b A = Q.baseChange A :=
   _root_.baseChange_ext fun v ↦ by
-    simp only [comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.baseChange_tmul,
-      extendScalars_piScalarRight_tmul, LinearEquiv.symm_apply_apply]
+    rw [extendScalarsOfBasis_tmul, QuadraticForm.baseChange_tmul]
 
 end Basis
 
@@ -330,16 +342,17 @@ theorem extendScalars_apply_algebraMap (f : Q₁.IsometryEquiv Q₂) (v : ι →
     f.extendScalars A (fun i ↦ algebraMap R A (v i)) = fun i ↦ algebraMap R A (f v i) := by
   rw [← coe_toLinearEquiv, extendScalars_toLinearEquiv, LinearEquiv.trans_apply,
     LinearEquiv.trans_apply, piScalarRight_symm_algebraMap_apply, LinearEquiv.baseChange_tmul,
-    piScalarRight_tmul_eq_smul, one_smul]
-  rfl
+    piScalarRight_tmul_eq_smul, one_smul, coe_toLinearEquiv]
 
 /-- Extending scalars sends the identity isometric equivalence to the identity. -/
 @[simp]
 theorem extendScalars_refl (Q : QuadraticForm R (ι → R)) :
     (IsometryEquiv.refl Q).extendScalars A = IsometryEquiv.refl (Q.extendScalars A) := by
   refine DFunLike.ext _ _ fun x ↦ ?_
-  change ((piScalarRight R A A ι).symm ≪≫ₗ
-    (LinearEquiv.refl R (ι → R)).baseChange R A _ _ ≪≫ₗ piScalarRight R A A ι) x = x
+  rw [← coe_toLinearEquiv, ← coe_toLinearEquiv (refl _), extendScalars_toLinearEquiv]
+  -- Mathlib has no `toLinearEquiv` lemma for `IsometryEquiv.refl`; unfolding it exposes
+  -- `LinearEquiv.refl`.
+  dsimp only [IsometryEquiv.refl]
   rw [← LinearEquiv.one_eq_refl, LinearEquiv.baseChange_one]
   simp
 
@@ -349,8 +362,10 @@ theorem extendScalars_trans {μ : Type*} [Fintype μ] [DecidableEq μ]
     {Q₃ : QuadraticForm R (μ → R)} (f : Q₁.IsometryEquiv Q₂) (g : Q₂.IsometryEquiv Q₃) :
     (f.trans g).extendScalars A = (f.extendScalars A).trans (g.extendScalars A) := by
   refine DFunLike.ext _ _ fun x ↦ ?_
-  change ((piScalarRight R A A ι).symm ≪≫ₗ
-    (f.toLinearEquiv ≪≫ₗ g.toLinearEquiv).baseChange R A _ _ ≪≫ₗ piScalarRight R A A μ) x = _
+  rw [← coe_toLinearEquiv, extendScalars_toLinearEquiv]
+  -- Mathlib has no `toLinearEquiv` lemma for `IsometryEquiv.trans`; unfolding it exposes the
+  -- composite of the underlying linear equivalences.
+  dsimp only [IsometryEquiv.trans]
   rw [LinearEquiv.baseChange_trans]
   simp [← coe_toLinearEquiv, extendScalars_toLinearEquiv, -piScalarRight_apply]
 
@@ -359,10 +374,10 @@ theorem extendScalars_trans {μ : Type*} [Fintype μ] [DecidableEq μ]
 theorem extendScalars_symm (f : Q₁.IsometryEquiv Q₂) :
     f.symm.extendScalars A = (f.extendScalars A).symm := by
   refine DFunLike.ext _ _ fun x ↦ ?_
-  change ((piScalarRight R A A κ).symm ≪≫ₗ
-    f.toLinearEquiv.symm.baseChange R A _ _ ≪≫ₗ piScalarRight R A A ι) x = _
-  rw [LinearEquiv.baseChange_symm]
-  rfl
+  rw [← coe_toLinearEquiv, extendScalars_toLinearEquiv, ← coe_symm_toLinearEquiv,
+    LinearEquiv.baseChange_symm, ← coe_toLinearEquiv, ← coe_symm_toLinearEquiv,
+    extendScalars_toLinearEquiv]
+  simp [LinearEquiv.trans_symm, -piScalarRight_apply]
 
 end QuadraticMap.IsometryEquiv
 

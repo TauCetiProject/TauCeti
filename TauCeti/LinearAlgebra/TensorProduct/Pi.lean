@@ -35,6 +35,9 @@ finitely presented.
   left factor.
 * `TensorProduct.piRightHom_bijective_of_finitePresentation`: tensoring with a finitely presented
   module commutes with arbitrary products.
+* `TensorProduct.piScalarRight_tmul_eq_smul`: for a commutative `R`-algebra `A`, the
+  identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a` times `v` with coordinates
+  mapped into `A`.
 
 ## References
 
@@ -61,6 +64,19 @@ theorem piRightHom_comp_rTensor (f : N →ₗ[R] N') :
   TensorProduct.ext' fun _ _ ↦ rfl
 
 end CommSemiring
+
+section PiScalarRight
+
+variable {A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Fintype ι] [DecidableEq ι]
+
+/-- Read on `ι → A`, the pure tensor `a ⊗ v` is `a` times the vector `v` with coordinates mapped
+into `A`. -/
+theorem piScalarRight_tmul_eq_smul (a : A) (v : ι → R) :
+    piScalarRight R A A ι (a ⊗ₜ v) = a • fun i ↦ algebraMap R A (v i) := by
+  ext i
+  simp [_root_.Algebra.smul_def, mul_comm]
+
+end PiScalarRight
 
 section CommRing
 
