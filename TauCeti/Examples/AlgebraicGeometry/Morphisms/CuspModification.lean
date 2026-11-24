@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Centre
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.Examples.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import TauCeti.RingTheory.Conductor
 
 /-!
 # The normalization of the cuspidal cubic is a finite modification
@@ -54,8 +55,11 @@ private theorem X_pow_mem {n : ℕ} (hn : 2 ≤ n) : (X : k[X]) ^ n ∈ coordina
       rw [show n = (n - 2) + 2 by lia, pow_add]
       exact mul_mem this (Algebra.subset_adjoin (by simp))
 
-/-- Every multiple of `t²` lies in `k[t², t³]`. -/
-private theorem mul_X_sq_mem (p : k[X]) : p * X ^ 2 ∈ coordinateRing k := by
+/-- `t²` lies in the conductor of `k[t², t³]` in `k[t]`: every multiple of `t²` lies in
+`k[t², t³]`. -/
+private theorem X_sq_mem_conductor : (X : k[X]) ^ 2 ∈ (coordinateRing k).toSubring.conductor := by
+  refine Subring.mem_conductor_iff.mpr fun p ↦ ?_
+  rw [mul_comm]
   induction p using Polynomial.induction_on with
   | C a => exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k le_rfl)
   | add p q hp hq => simpa [add_mul] using add_mem hp hq
@@ -63,36 +67,10 @@ private theorem mul_X_sq_mem (p : k[X]) : p * X ^ 2 ∈ coordinateRing k := by
     rw [mul_assoc, ← pow_add]
     exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k (by lia))
 
-/-- `k[t]` embeds in its localization away from `t²`, `k[t]` being a domain. -/
-private theorem injective_algebraMap_away :
-    Function.Injective (algebraMap k[X] (Localization.Away ((X : k[X]) ^ 2))) :=
-  IsLocalization.injective _
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (pow_ne_zero 2 X_ne_zero))
-
 /-- The normalization of the cusp is finite. -/
 instance : IsFinite (normalization k) := by
   rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom]
   exact RingHom.finite_algebraMap.mpr inferInstance
-
-/-- `k[t]` localized away from `t²` is also the localization of `k[t², t³]` away from `t²`. -/
-instance : IsLocalization.Away (tSq k) (Localization.Away ((X : k[X]) ^ 2)) where
-  map_units := by
-    rintro ⟨_, n, rfl⟩
-    have h : algebraMap (coordinateRing k) k[X] (tSq k ^ n) = ((X : k[X]) ^ 2) ^ n := by simp
-    rw [IsScalarTower.algebraMap_apply (coordinateRing k) k[X], h, map_pow]
-    exact (IsLocalization.Away.algebraMap_isUnit ((X : k[X]) ^ 2)).pow n
-  surj z := by
-    obtain ⟨⟨p, _, n, rfl⟩, hz⟩ := IsLocalization.surj (Submonoid.powers ((X : k[X]) ^ 2)) z
-    refine ⟨⟨⟨p * X ^ 2, mul_X_sq_mem k p⟩, ⟨_, n + 1, rfl⟩⟩, ?_⟩
-    simp only [IsScalarTower.algebraMap_apply (coordinateRing k) k[X] (Localization.Away _)] at hz ⊢
-    have h : algebraMap (coordinateRing k) k[X] (tSq k ^ (n + 1)) =
-        ((X : k[X]) ^ 2) ^ n * X ^ 2 := by
-      simp [pow_succ]
-    simp only [h, map_mul, ← mul_assoc, hz, Subalgebra.algebraMap_apply]
-  exists_of_eq {a b} h := by
-    rw [IsScalarTower.algebraMap_apply (coordinateRing k) k[X],
-      IsScalarTower.algebraMap_apply (coordinateRing k) k[X] _ b] at h
-    exact ⟨1, by rw [Subtype.ext (injective_algebraMap_away k h)]⟩
 
 /-- `D(t²)` is a modification witness for the normalization of the cusp. -/
 theorem witness_basicOpen :
@@ -100,11 +78,18 @@ theorem witness_basicOpen :
   dense := (PrimeSpectrum.basicOpen (tSq k)).isOpen.dense
     ⟨⟨⊥, Ideal.isPrime_bot⟩, by simpa using tSq_ne_zero k⟩
   dense_preimage := by
-    rw [show normalization k ⁻¹ᵁ PrimeSpectrum.basicOpen (tSq k) =
-      PrimeSpectrum.basicOpen (algebraMap _ k[X] (tSq k)) from PrimeSpectrum.comap_basicOpen _ _]
+    rw [SpecMap_preimage_basicOpen]
     exact (PrimeSpectrum.basicOpen _).isOpen.dense ⟨⟨⊥, Ideal.isPrime_bot⟩, by simp⟩
-  isIso := isIso_SpecMap_morphismRestrict_basicOpen_of_injective
-    (S := Localization.Away ((X : k[X]) ^ 2)) (tSq k) (injective_algebraMap_away k)
+  isIso := by
+    refine (isIso_SpecMap_morphismRestrict_basicOpen_iff
+      (CommRingCat.ofHom (algebraMap (coordinateRing k) k[X])) (tSq k)).mpr ?_
+    -- Instance search does not see that the two images of `t²` in `k[t]` agree.
+    let : IsLocalization.Away ((coordinateRing k).toSubring.subtype (tSq k))
+        (Localization.Away ((CommRingCat.ofHom (algebraMap (coordinateRing k) k[X])).hom
+          (tSq k))) :=
+      Localization.isLocalization
+    exact Subring.awayMap_subtype_bijective_of_mem_conductor (A := (coordinateRing k).toSubring)
+      _ _ (by simpa using X_sq_mem_conductor k)
 
 /-- **The normalization of the cuspidal cubic is a finite modification.** -/
 instance : IsModification (normalization k) :=
