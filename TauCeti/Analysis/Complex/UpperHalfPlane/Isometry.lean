@@ -192,16 +192,18 @@ theorem _root_.Isometry.existsUnique_pgl_smul_eq {f : ℍ → ℍ} (hf : Isometr
 `PGL(2, ℝ)` acting by `UpperHalfPlane.glAction`: Möbius transformations for positive determinant
 and their compositions with `z ↦ -conj z` for negative determinant. -/
 def pglEquivIsometryEquiv : PGL(2, ℝ) ≃* (ℍ ≃ᵢ ℍ) :=
-  MulEquiv.ofBijective
-    (IsometryEquiv.constSMulHom PGL(2, ℝ) ℍ)
-    ⟨fun _ _ h ↦ eq_of_smul_eq_smul (DFunLike.congr_fun h),
-      fun f ↦ f.isometry.exists_pgl_smul_eq.imp fun _ hc ↦ IsometryEquiv.ext hc⟩
+  MulEquiv.ofBijective (IsometryEquiv.constSMulHom PGL(2, ℝ) ℍ)
+    -- stated as `Function.Bijective` so that `MulEquiv.ofBijective_apply` applies by `simp`
+    (show Function.Bijective (IsometryEquiv.constSMulHom PGL(2, ℝ) ℍ) from
+      ⟨fun _ _ h ↦ eq_of_smul_eq_smul fun z ↦ by simpa using DFunLike.congr_fun h z,
+        fun f ↦ f.isometry.exists_pgl_smul_eq.imp fun _ hc ↦ IsometryEquiv.ext fun z ↦ by
+          simpa using hc z⟩)
 
 /-- `pglEquivIsometryEquiv c` is the action of `c` on `ℍ`. -/
 @[simp]
 theorem pglEquivIsometryEquiv_apply (c : PGL(2, ℝ)) (z : ℍ) :
-    pglEquivIsometryEquiv c z = c • z :=
-  (rfl)
+    pglEquivIsometryEquiv c z = c • z := by
+  simp [pglEquivIsometryEquiv]
 
 /-- The element of `PGL(2, ℝ)` attached to an isometry acts on `ℍ` as that isometry. -/
 @[simp]

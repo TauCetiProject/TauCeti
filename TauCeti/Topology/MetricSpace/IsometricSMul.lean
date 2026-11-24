@@ -97,7 +97,7 @@ variable (G Y : Type*) [PseudoEMetricSpace Y] [Group G] [MulAction G Y] [IsIsome
 
 /-- A group acting on `Y` by isometries acts through the monoid homomorphism `G →* (Y ≃ᵢ Y)`
 sending `c` to the isometry `IsometryEquiv.constSMul c : y ↦ c • y`. -/
-@[expose] def constSMulHom : G →* (Y ≃ᵢ Y) where
+def constSMulHom : G →* (Y ≃ᵢ Y) where
   toFun := constSMul
   map_one' := ext (one_smul G)
   map_mul' c c' := ext (mul_smul c c')
