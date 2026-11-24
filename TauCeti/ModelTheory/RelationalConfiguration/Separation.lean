@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
+public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.SetTheory.Descriptive.Tree
 
@@ -57,6 +58,9 @@ Two consequences follow directly from uniform separation:
 
 * `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation`: an analytic set of non-isomorphic
   pairs on a countable carrier is uniformly separated at a single countable back-and-forth level.
+* `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_modelsOf`: on a countable carrier in
+  a vocabulary with countably many relation symbols of each arity, every sentence with countable
+  branching is constant on all sufficiently high countable back-and-forth levels.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_of_analyticSet`,
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`, and
   `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`: asymptotic saturation
@@ -413,6 +417,20 @@ theorem exists_bfLevel_mem_iff_of_measurableSet [Countable V] [∀ n, Countable 
       ∀ β ≥ α, ∀ c ∈ C, ∀ d ∈ C, bfEquivSetoid L V β c d → (c ∈ B ↔ d ∈ B) :=
   exists_bfLevel_mem_iff_of_analyticSet (hC.inter_measurableSet hB)
     (@Set.sdiff_eq _ C B ▸ hC.inter_measurableSet hB.compl) hinv
+
+/-- On a countable carrier in a vocabulary with countably many relation symbols of each arity,
+every infinitary sentence with countable branching is constant on back-and-forth classes from
+some countable level onward. No bound on its syntactic quantifier rank is required. -/
+theorem exists_bfLevel_saturated_modelsOf [Countable V] [∀ n, Countable (L.Relations n)]
+    {ι : Type*} [Countable ι] (θ : L.SentenceInf ι) :
+    ∃ α : Ordinal.{o}, α < ω₁ ∧ ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,
+      bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) := by
+  obtain ⟨α, hα, hsat⟩ := exists_bfLevel_mem_iff_of_measurableSet.{u, v, w, o} (V := V)
+    MeasurableSet.univ.analyticSet (measurableSet_modelsOf θ)
+    (fun c _ d _ hcd hc => by
+      obtain ⟨e⟩ := isoSetoid_apply.mp hcd
+      exact (e.mem_modelsOf_iff θ).mp hc)
+  exact ⟨α, hα, fun β hβ c d hcd => hsat β hβ c (Set.mem_univ c) d (Set.mem_univ d) hcd⟩
 
 /-! ### Cantor antichains and thinness from countable level quotients -/
 
