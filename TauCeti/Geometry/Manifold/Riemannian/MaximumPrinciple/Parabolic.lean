@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.QuadraticReaction
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Tactic
 
 /-!
@@ -146,7 +147,8 @@ theorem le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_le_parabolicBound
   -- ... and its differential vanishes, so the drift terms agree.
   have hd : mvfderiv I (u s) y = mvfderiv I (v s) y := by
     have h :=
-      mem_criticalPoints.mp (IsLocalMax.mem_criticalPoints (I := I) (f := u s - v s) hmax)
+      mem_criticalPoints.mp (IsLocalMax.mem_criticalPoints (I := I) (f := u s - v s) hmax
+        BoundarylessManifold.isInteriorPoint)
     rwa [mvfderiv_sub ((hucd hs hy).mdifferentiableAt (by norm_num))
       ((hvcd hs hy).mdifferentiableAt (by norm_num)), sub_eq_zero] at h
   simp only [Pi.zero_apply, sub_pos, sub_zero] at hpos ⊢
@@ -336,7 +338,9 @@ theorem div_one_sub_mul_le_of_laplaceBeltrami_add_mvfderiv_add_mul_sq_le_deriv (
       -- At a spatial minimum the Laplacian is nonnegative and the differential vanishes.
       have hΔ := laplaceBeltrami_nonneg_of_isLocalMin (hucd ht).contMDiffAt
         BoundarylessManifold.isInteriorPoint hmin
-      have hd : mvfderiv I (u t) x = 0 := mem_criticalPoints.mp (hmin.mem_criticalPoints (I := I))
+      have hd : mvfderiv I (u t) x = 0 :=
+        mem_criticalPoints.mp
+          (hmin.mem_criticalPoints (I := I) BoundarylessManifold.isInteriorPoint)
       have h := hsuper ht x
       rw [hd, zero_apply] at h
       linarith)
