@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 
@@ -18,7 +19,8 @@ the half-line `[0, ∞)` (`TauCeti.map_volume_half_sq_add_sq`): in polar coordin
 area element is `r dr dθ = ds dθ` for `s = r² / 2`, and the angle ranges over an interval of
 length `2π`. Taking products, the map `(q, p) ↦ ((q_i² + p_i²) / 2)_i` on `ℝ^ι × ℝ^ι` sends
 Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive orthant
-(`TauCeti.map_volume_pi_half_sq_add_sq`).
+(`TauCeti.map_volume_pi_half_sq_add_sq`), and so does the same map on
+`EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` (`TauCeti.map_volume_euclideanSpace_half_sq_add_sq`).
 
 Read on `ℂ^ι` with `z_i = q_i + i p_i`, these maps are the moment maps `|z_i|² / 2` of the reversed
 rotation actions `z_i ↦ exp(-i θ_i) z_i` of the circle and of the torus, and the statements
@@ -121,5 +123,24 @@ theorem map_volume_pi_half_sq_add_sq :
   simp only [smul_apply, smul_eq_mul, Measure.restrict_apply (hs _)]
   rw [Measure.restrict_apply (MeasurableSet.univ_pi hs), ← pi_inter_distrib, volume_pi_pi,
     Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ]
+
+/-- **Half the squared radii push Lebesgue measure on `ℂ^ι` to `(2π)^|ι|` times Lebesgue measure
+on the closed positive orthant of `ℝ^ι`**, with `ℂ^ι` read as
+`EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`. -/
+theorem map_volume_euclideanSpace_half_sq_add_sq :
+    (volume : Measure (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)).map
+        (fun x i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι • volume.restrict (univ.pi fun _ ↦ Ici 0) := by
+  have hp := PiLp.volume_preserving_ofLp ι
+  have hP : MeasurePreserving (Prod.map WithLp.ofLp WithLp.ofLp)
+      (volume : Measure (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)) volume :=
+    hp.prod hp
+  have hfun : (fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
+      fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) =
+      (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ∘
+        Prod.map WithLp.ofLp WithLp.ofLp :=
+    (rfl)
+  rw [hfun, ← Measure.map_map (by fun_prop) hP.measurable, hP.map_eq,
+    map_volume_pi_half_sq_add_sq]
 
 end TauCeti

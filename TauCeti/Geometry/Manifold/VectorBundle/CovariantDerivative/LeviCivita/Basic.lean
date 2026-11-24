@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 
 /-!
 # The Koszul formula for Levi-Civita connections
@@ -455,8 +455,8 @@ variable [IsManifold I 1 M]
 
 /-- The pointwise inner product of two sections of the tangent bundle that are differentiable at
 `x` is differentiable at `x`. This is the tangent-bundle specialisation of
-`MDifferentiableAt.inner_bundle`, whose bundle argument Lean cannot infer from hypotheses phrased
-through `TangentSpace`. -/
+`MDifferentiableAt.inner_bundle`. Unlike Mathlib's `MDifferentiableAt.inner_bundle'`, it needs
+only `IsManifold I 1 M`. -/
 theorem mdifferentiableAt_inner (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     MDiffAt (fun y ↦ inner ℝ (Y y) (Z y)) x :=
   MDifferentiableAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)

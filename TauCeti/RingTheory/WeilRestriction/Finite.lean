@@ -11,10 +11,10 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 /-!
 # Finiteness of Weil restriction along a split finite algebra
 
-If `B` is a finite product of copies of `A`, Weil restriction along `B/A` takes a finite,
-finitely presented `B`-algebra to a finite `A`-algebra. In particular, the scheme of maps from
+If `B` is a finite product of copies of `A`, Weil restriction along `B/A` takes a finite
+`B`-algebra to a finite `A`-algebra. In particular, the scheme of maps from
 a finite constant scheme to a finite affine scheme is finite. This gives finiteness of the
-schemes of homomorphisms from finite constant monoid schemes to finite, finitely presented
+schemes of homomorphisms from finite constant monoid schemes to finite
 affine monoid schemes, and of Katz–Mazur generator schemes for finite free affine monoid schemes.
 
 The splitting hypothesis matters: restriction along a nonreduced finite free algebra need
@@ -35,7 +35,6 @@ public noncomputable section
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [Algebra.FinitePresentation B C]
 
 /-- A coefficient of the universal point is integral when the source algebra is integral
 over the base and the coefficient algebra is split. -/
@@ -68,9 +67,10 @@ theorem isIntegral_universalCoefficient_of_split [Algebra A C] [IsScalarTower A 
   rw [hcoeff]
   exact IsIntegral.sum _ fun i _ ↦ ((Algebra.IsIntegral.isIntegral c).map (p i)).smul _
 
-/-- Weil restriction along a split finite algebra preserves finite, finitely presented
+/-- Weil restriction along a split finite algebra preserves finite
 algebras. No noetherianity assumption on the base is required. -/
-theorem moduleFinite_of_split [Module.Finite B C] {ι : Type*} [Finite ι]
+theorem moduleFinite_of_split [Module.Finite B C]
+    {ι : Type*} [Finite ι]
     (e : B ≃ₐ[A] (ι → A)) : Module.Finite A (WeilRestriction A B C) := by
   let : Algebra A C := ((algebraMap B C).comp (algebraMap A B)).toAlgebra
   have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl

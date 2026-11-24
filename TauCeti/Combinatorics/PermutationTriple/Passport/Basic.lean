@@ -118,19 +118,19 @@ theorem IsAdmissible.pos_of_mem_laminf {P : PassportSpec n} (hP : P.IsAdmissible
 its ordered full cycle partitions are those specified by `P`. -/
 def HasPassport (t : ConnectedTriple n) (P : PassportSpec n) : Prop :=
   (∃ τ : Perm (Fin n),
-      (t.1.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
-    t.1.cycleData.1 = P.lam0 ∧
-    t.1.cycleData.2.1 = P.lam1 ∧
-    t.1.cycleData.2.2 = P.laminf
+      (t.val.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
+    t.val.cycleData.1 = P.lam0 ∧
+    t.val.cycleData.2.1 = P.lam1 ∧
+    t.val.cycleData.2.2 = P.laminf
 
 /-- The defining characterization of passport membership. -/
 theorem hasPassport_iff (t : ConnectedTriple n) (P : PassportSpec n) :
     HasPassport t P ↔
       (∃ τ : Perm (Fin n),
-        (t.1.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
-      t.1.cycleData.1 = P.lam0 ∧
-      t.1.cycleData.2.1 = P.lam1 ∧
-      t.1.cycleData.2.2 = P.laminf :=
+        (t.val.monodromyGroup).map (MulAut.conj τ).toMonoidHom = P.G) ∧
+      t.val.cycleData.1 = P.lam0 ∧
+      t.val.cycleData.2.1 = P.lam1 ∧
+      t.val.cycleData.2.2 = P.laminf :=
   Iff.rfl
 
 /-- Relabeling a connected triple does not change its passport membership. -/
@@ -214,8 +214,8 @@ theorem hasPassport_conjugate_iff (t : ConnectedTriple n) (P : PassportSpec n)
   · rintro ⟨⟨ρ, hρ⟩, h0, h1, hinf⟩
     refine ⟨⟨τ * ρ, ?_⟩, h0, h1, hinf⟩
     calc
-      t.1.monodromyGroup.map (MulAut.conj (τ * ρ)).toMonoidHom =
-          (t.1.monodromyGroup.map (MulAut.conj ρ).toMonoidHom).map
+      t.val.monodromyGroup.map (MulAut.conj (τ * ρ)).toMonoidHom =
+          (t.val.monodromyGroup.map (MulAut.conj ρ).toMonoidHom).map
             (MulAut.conj τ).toMonoidHom := by
         rw [Subgroup.map_conj_map_conj]
       _ = P.G.map (MulAut.conj τ).toMonoidHom := congrArg _ hρ
@@ -225,24 +225,24 @@ theorem hasPassport_conjugate_iff (t : ConnectedTriple n) (P : PassportSpec n)
 theorem isAdmissible_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
     (htP : HasPassport t P) : P.IsAdmissible := by
   rcases htP with ⟨⟨τ, hG⟩, h0, h1, hinf⟩
-  refine ⟨t.2.ne_zero, ?_, ?_, ?_, ?_⟩
+  refine ⟨t.property.ne_zero, ?_, ?_, ?_, ?_⟩
   · rw [← hG, Equiv.conj_eq_permCongrHom, Equiv.isPretransitive_map_permCongrHom_iff]
-    exact t.2.isPretransitive
+    exact t.property.isPretransitive
   · refine ⟨?_, fun _ hi ↦ ?_⟩
     · rw [← h0]
-      simpa using congrArg (fun data ↦ data.1) t.1.sum_cycleData
+      simpa using congrArg (fun data ↦ data.1) t.val.sum_cycleData
     · rw [← h0, PermutationTriple.cycleData_σ0] at hi
-      exact t.1.σ0.partition.parts_pos hi
+      exact t.val.σ0.partition.parts_pos hi
   · refine ⟨?_, fun _ hi ↦ ?_⟩
     · rw [← h1]
-      simpa using congrArg (fun data ↦ data.2.1) t.1.sum_cycleData
+      simpa using congrArg (fun data ↦ data.2.1) t.val.sum_cycleData
     · rw [← h1, PermutationTriple.cycleData_σ1] at hi
-      exact t.1.σ1.partition.parts_pos hi
+      exact t.val.σ1.partition.parts_pos hi
   · refine ⟨?_, fun _ hi ↦ ?_⟩
     · rw [← hinf]
-      simpa using congrArg (fun data ↦ data.2.2) t.1.sum_cycleData
+      simpa using congrArg (fun data ↦ data.2.2) t.val.sum_cycleData
     · rw [← hinf, PermutationTriple.cycleData_σinf] at hi
-      exact t.1.σinf.partition.parts_pos hi
+      exact t.val.σinf.partition.parts_pos hi
 
 end PassportSpec
 

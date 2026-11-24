@@ -101,10 +101,10 @@ theorem exists_strictMono_range_eq {B Y : Type*} [TopologicalSpace B] [Preconnec
   obtain ⟨k, e, he⟩ := exists_eventually_strictMono_range_eq (f := fun g : G ↦ (g : B → Y))
     (fun g ↦ tendsto_pure_nhds _ x₀) fun _ _ h ↦ eventually_pure.2 h
   obtain ⟨hmono, hrange⟩ := eventually_pure.1 he
-  refine ⟨k, fun i ↦ e i, Subset.antisymm (range_subset_iff.2 fun i ↦ (e i).2) fun g hg ↦ ?_,
-    fun x i j hij ↦ hlt (e i).2 (e j).2 (hmono hij) x⟩
+  refine ⟨k, fun i ↦ e i, Subset.antisymm (range_subset_iff.2 fun i ↦ (e i).property) fun g hg ↦ ?_,
+    fun x i j hij ↦ hlt (e i).property (e j).property (hmono hij) x⟩
   obtain ⟨i, hi⟩ : g x₀ ∈ range fun i ↦ (e i : B → Y) x₀ := hrange ▸ mem_range_self (⟨g, hg⟩ : G)
   by_contra hgi
-  exact hne (e i).2 hg (fun h ↦ hgi ⟨i, h⟩) x₀ hi
+  exact hne (e i).property hg (fun h ↦ hgi ⟨i, h⟩) x₀ hi
 
 end TauCeti

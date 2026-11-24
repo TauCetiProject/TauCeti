@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import TauCeti.Analysis.InnerProductSpace.Isometry
 
 /-!
 # The standard compatible triple on `V × V`
@@ -29,6 +30,8 @@ the standard conventions require.
 * `TauCeti.stdSymplecticForm_compatible_product`: `ω₀` is compatible with `J`.
 * `TauCeti.stdSymplecticForm_associatedBilinForm_product`: the metric `g = ω₀(·, J ·)` is the
   sum of the inner products pulled back from the two factors.
+* `TauCeti.stdSymplecticForm_smul`: acting on both factors by the same isometry of `V` fixing
+  the origin, such as a rotation of a complex inner product space, preserves `ω₀`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where `(ℝ^{2n}, ω₀, J₀)` is the standard compatible model.
@@ -120,5 +123,15 @@ lemma stdSymplecticForm_associatedBilinForm_product :
   apply LinearMap.ext₂
   intro u w
   simp
+
+/-- **Isometries are symplectic.** Acting on both factors of `V × V` by the same isometry of `V`
+fixing the origin preserves the standard symplectic form. For instance, when `V` is a complex
+inner product space, the circle acts on `V` by such isometries. -/
+theorem stdSymplecticForm_smul {M : Type*} [SMulZeroClass M V] [IsIsometricSMul M V] (g : M)
+    (x y : V × V) : stdSymplecticForm (g • x) (g • y) = stdSymplecticForm x y := by
+  have h (a b : V) : ⟪g • a, g • b⟫_ℝ = ⟪a, b⟫_ℝ :=
+    real_inner_map_map_of_dist_map_eq (s := Set.univ) (g := (g • ·)) trivial (smul_zero g)
+      (fun z _ w _ ↦ dist_smul g z w) trivial trivial
+  simp only [stdSymplecticForm_apply, Prod.smul_fst, Prod.smul_snd, h]
 
 end TauCeti

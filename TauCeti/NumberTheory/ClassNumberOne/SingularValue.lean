@@ -156,7 +156,7 @@ private theorem exp_neg_le_of_le {x c : ℝ} (k : ℕ) (hc : 0 ≤ c) (hx : k + 
     positivity
   calc Real.exp (-x) ≤ Real.exp (-(k + c)) := Real.exp_le_exp.2 (by linarith)
     _ = (Real.exp 1 ^ k * Real.exp c)⁻¹ := by
-      rw [Real.exp_neg, Real.exp_add, ← Real.exp_nat_mul, mul_one]
+      rw [Real.exp_neg, Real.exp_add, ← Real.exp_natCast_mul, mul_one]
     _ ≤ _ := inv_anti₀ (by positivity) (mul_le_mul (pow_le_pow_left₀ (by norm_num)
       Real.exp_one_gt_d9.le k) (Real.sum_le_exp_of_nonneg hc 6) hS.le (by positivity))
 
@@ -169,7 +169,7 @@ private theorem le_exp_neg_of_le {x d : ℝ} (k : ℕ) (hd : 0 ≤ d) (hx : x �
         · exact Real.sum_le_exp_of_nonneg hd 6
         · exact Real.exp_one_lt_d9.le
     _ = Real.exp (-(k - d)) := by
-      rw [← Real.exp_nat_mul, mul_one, ← Real.exp_sub]
+      rw [← Real.exp_natCast_mul, mul_one, ← Real.exp_sub]
       ring_nf
     _ ≤ Real.exp (-x) := Real.exp_le_exp.2 (by linarith)
 

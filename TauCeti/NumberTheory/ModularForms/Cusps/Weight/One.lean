@@ -198,8 +198,8 @@ theorem two_mul_finrank_le_natCard_of_disjoint {ι : Type*} [Finite ι] (r : ι 
     2 * Module.finrank ℂ V ≤ Nat.card ι := by
   -- Keep one representative of each cusp met by the family.
   let S := Set.range fun i ↦ H.cuspOrbitOfSL2Z (r i)
-  have hspec (s : S) : H.cuspOrbitOfSL2Z (r s.2.choose) = s := s.2.choose_spec
-  refine (two_mul_finrank_le_natCard_of_disjoint_of_injective H (fun s : S ↦ r s.2.choose)
+  have hspec (s : S) : H.cuspOrbitOfSL2Z (r s.property.choose) = s := s.property.choose_spec
+  refine (two_mul_finrank_le_natCard_of_disjoint_of_injective H (fun s : S ↦ r s.property.choose)
     (fun γ ↦ ?_) (fun s t hst ↦ Subtype.ext ?_) hV).trans (Finite.card_range_le _)
   · obtain ⟨i, hi⟩ | h0 := hr γ
     · exact .inl ⟨⟨_, i, rfl⟩, (hspec _).trans hi⟩

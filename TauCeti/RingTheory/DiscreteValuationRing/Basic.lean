@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
+import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
@@ -24,7 +25,8 @@ it needs them; this file states them once. Since the powers of a uniformizer are
 distinct, a discrete valuation ring is also infinite. Writing elements as a unit times a power of a
 uniformizer `x` also shows that a ring map to a reduced semiring is injective as soon as it does
 not kill `x`, and that a ring map to a cancellative commutative semiring reflects divisibility when
-it sends `x` to a nonzero nonunit.
+it sends `x` to a nonzero nonunit. Since a discrete valuation ring is not a field, an integral
+extension of a ring of dimension at most one in it is injective.
 
 ## Main results
 
@@ -56,6 +58,8 @@ it sends `x` to a nonzero nonunit.
   that sends a uniformizer `x` to a nonzero element is injective.
 * `TauCeti.IsDiscreteValuationRing.map_dvd_iff`: a ring map to a cancellative commutative
   semiring that sends a uniformizer `x` to a nonzero nonunit reflects divisibility.
+* `TauCeti.IsDiscreteValuationRing.faithfulSMul_of_isIntegral`: an integral extension of a ring
+  of dimension at most one in a discrete valuation ring is injective.
 -/
 
 public section
@@ -177,10 +181,11 @@ theorem _root_.Irreducible.smodEq_maximalIdeal_pow_iff_dvd {ϖ : S} (hϖ : Irred
     x ≡ y [SMOD maximalIdeal S ^ n] ↔ ϖ ^ n ∣ x - y := by
   rw [SModEq.sub_mem, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
 
-/-- A discrete valuation ring is infinite: the powers of a uniformizer are pairwise distinct. -/
-instance infinite : Infinite S := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  exact .of_injective _ (pow_injective_of_not_isUnit hϖ.not_isUnit hϖ.ne_zero)
+/-- A discrete valuation ring is infinite: a finite domain is a field, and a discrete valuation
+ring is not. -/
+instance infinite : Infinite S :=
+  not_finite_iff_infinite.mp fun _ ↦
+    _root_.IsDiscreteValuationRing.not_isField S (Finite.isField_of_domain S)
 
 section Map
 
@@ -214,5 +219,14 @@ theorem map_dvd_iff [CommSemiring T] [IsCancelMulZero T] [RingHomClass F S T] (f
   exact pow_dvd_pow x ((pow_dvd_pow_iff hfx₀ hfx).mp h)
 
 end Map
+
+/-- An integral extension of a ring of dimension at most one in a discrete valuation ring is
+injective: its kernel is a prime strictly below the contraction of the maximal ideal. -/
+theorem faithfulSMul_of_isIntegral {R : Type*} [CommRing R] [Ring.DimensionLEOne R]
+    [Algebra R S] [Algebra.IsIntegral R S] : FaithfulSMul R S := by
+  rw [faithfulSMul_iff_algebraMap_injective, RingHom.injective_iff_ker_eq_bot,
+    RingHom.ker_eq_comap_bot]
+  exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := R) <|
+    bot_lt_iff_ne_bot.2 (_root_.IsDiscreteValuationRing.not_a_field S)
 
 end TauCeti.IsDiscreteValuationRing

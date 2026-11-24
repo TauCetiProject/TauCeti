@@ -214,7 +214,7 @@ private theorem ad_pow_root_eq_zero (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     refine Set.eq_empty_of_forall_notMem fun x hx ↦ ?_
     rw [Set.mem_ofPred_eq, hn] at hx
     exact hx.notMem_normTwoShell hB.isHermitian.isSymm hoff hj (hdiag j) hcd hc hrow hcol
-      (smul_mem_normTwoShell hζ x.2)
+      (smul_mem_normTwoShell hζ x.property)
   rwa [hempty, Set.image_empty, Submodule.span_empty, Submodule.mem_bot] at h
 
 /-- The higher Serre relation between distinct orbits `O ≠ P`, for the folded sums of the roots

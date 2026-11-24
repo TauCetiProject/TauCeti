@@ -17,7 +17,9 @@ import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 A continuous function on an open domain with a continuous weak Fréchet derivative is `C¹`,
 and its classical derivative is the given weak derivative at every point of the domain.
-More generally, a `Cᵏ` weak derivative makes the function `Cᵏ⁺¹`. These results turn continuous
+More generally, a `Cᵏ` weak derivative makes the function `Cᵏ⁺¹`; for weak derivatives along an
+orthonormal basis, the `(i + 1)`-th derivative of the function is then bounded by the `i`-th
+derivatives of its directional weak derivatives. These results turn continuous
 representatives of Sobolev derivative fields into classical regularity, without imposing any
 boundary regularity or global integrability assumption.
 
@@ -133,5 +135,49 @@ theorem HasWeakFDerivOn.contDiffOn_succ
   refine ⟨fun x hx => (h.hasFDerivAt_of_continuousOn hu hU.continuousOn hx).differentiableAt
     |>.differentiableWithinAt, by simp, ?_⟩
   exact hU.congr fun x hx => h.fderiv_eq_of_continuousOn hu hU.continuousOn hx
+
+section LineDeriv
+
+/-! ### Weak derivatives along an orthonormal basis
+
+Weak derivatives along an orthonormal basis assemble into a weak Fréchet derivative, so `Cⁿ`
+directional weak derivatives give `Cⁿ⁺¹` regularity and control the iterated derivatives. -/
+
+variable {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [FiniteDimensional ℝ H]
+  [MeasurableSpace H] [BorelSpace H] {μ : Measure H} [μ.IsAddHaarMeasure] {Ω : Opens H}
+  [Fintype ι] {b : OrthonormalBasis ι ℝ H} {v : H → ℝ} {G : ι → H → ℝ}
+
+/-- A continuous function whose weak derivatives along an orthonormal basis are `Cⁿ` on an open
+domain is `Cⁿ⁺¹` there. -/
+theorem contDiffOn_succ_of_forall_hasWeakLineDerivOn (hv : ContinuousOn v Ω) {n : ℕ∞}
+    (hG : ∀ l, ContDiffOn ℝ n (G l) Ω) (hdG : ∀ l, HasWeakLineDerivOn μ Ω v (G l) (b l)) :
+    ContDiffOn ℝ ((n : ℕ∞ω) + 1) v Ω := by
+  obtain ⟨hD, hvD⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn hG
+    (hv.locallyIntegrableOn Ω.isOpen.measurableSet) hdG
+  exact hvD.contDiffOn_succ hv hD
+
+/-- If a continuous function `v` has `Cⁿ` weak derivatives `G l` along an orthonormal basis `b`
+on an open domain, then for `i ≤ n` its `(i + 1)`-th derivative is bounded there by the `i`-th
+derivatives of the `G l`: `‖D^{i+1} v x‖ ≤ ∑ₗ ‖D^i G_l x‖`. -/
+theorem norm_iteratedFDeriv_succ_le_sum_of_forall_hasWeakLineDerivOn (hv : ContinuousOn v Ω)
+    {n : ℕ∞} (hG : ∀ l, ContDiffOn ℝ n (G l) Ω) (hdG : ∀ l, HasWeakLineDerivOn μ Ω v (G l) (b l))
+    {i : ℕ} (hi : (i : ℕ∞) ≤ n) {x : H} (hx : x ∈ Ω) :
+    ‖iteratedFDeriv ℝ (i + 1) v x‖ ≤ ∑ l, ‖iteratedFDeriv ℝ i (G l) x‖ := by
+  obtain ⟨hD, hvD⟩ := contDiffOn_sum_innerSL_and_hasWeakFDerivOn hG
+    (hv.locallyIntegrableOn Ω.isOpen.measurableSet) hdG
+  -- Near `x` the derivative of `v` is `∑ₗ G l • ⟪b l, ·⟫`.
+  have hfd : fderiv ℝ v =ᶠ[𝓝 x] fun y => ∑ l, G l y • innerSL ℝ (b l) :=
+    eventually_of_mem (Ω.isOpen.mem_nhds hx) fun y hy =>
+      hvD.fderiv_eq_of_continuousOn hv hD.continuousOn hy
+  have hGx : ∀ l, ContDiffAt ℝ i (G l) x := fun l =>
+    ((hG l).contDiffAt (Ω.isOpen.mem_nhds hx)).of_le (by exact_mod_cast hi)
+  rw [← norm_iteratedFDeriv_fderiv, (hfd.iteratedFDeriv ℝ i).eq_of_nhds,
+    iteratedFDeriv_fun_sum_apply fun l _ => (hGx l).smul_const _]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun l _ => ?_)
+  rw [iteratedFDeriv_smul_const_apply (hGx l)]
+  refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans_eq ?_
+  simp [ContinuousLinearMap.norm_smulRight_apply, b.orthonormal.1 l]
+
+end LineDeriv
 
 end TauCeti

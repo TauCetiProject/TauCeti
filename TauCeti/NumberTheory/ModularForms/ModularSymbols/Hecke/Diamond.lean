@@ -59,7 +59,7 @@ operator attached to `Γ₁(N) g Γ₁(N)` is the class of `g • x`. The normal
 theorem heckeSymbol_diamondCosetGamma1_mk (g : ↥(Gamma0 N))
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
     heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N g)
-        (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.2) (Coinvariants.mk _ x) =
+        (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.property) (Coinvariants.mk _ x) =
       Coinvariants.mk _
         (symbolIntRep R w ⟨mapGL ℚ (g : SL(2, ℤ)), mapGL_mem_intEntries 2 g⟩ x) := by
   rw [heckeSymbol_mk_eq_sum_of_rightCosets (Gamma1 N) (Gamma1 N)
@@ -75,21 +75,21 @@ noncomputable def diamondSymbol (R : Type*) [CommRing R] (w N : ℕ) [NeZero N]
     (d : (ZMod N)ˣ) : Module.End R (ModularSymbols R (Gamma1 N) w) :=
   let g := (Gamma0Map_toHomUnits_surjective d).choose
   heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N g)
-    (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.2)
+    (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.property)
 
 /-- Compute `diamondSymbol` using any lift in `Γ₀(N)` with the prescribed lower-right entry. -/
 theorem diamondSymbol_eq_heckeSymbol {d : (ZMod N)ˣ} (g : ↥(Gamma0 N))
     (hg : (Gamma0Map N).toHomUnits g = d) :
     diamondSymbol R w N d =
       heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N g)
-        (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.2) := by
+        (Delta0_le_intEntries N (diamondCosetGamma1 N g).out.property) := by
   let g' := (Gamma0Map_toHomUnits_surjective d).choose
   have hD : diamondCosetGamma1 N g' = diamondCosetGamma1 N g :=
     diamondCosetGamma1_eq_iff.mpr
       ((Gamma0Map_toHomUnits_surjective d).choose_spec.trans hg.symm)
   exact congrArg
     (fun D ↦ heckeSymbol (Gamma1 N) (Gamma1 N) D
-      (Delta0_le_intEntries N D.out.2)) hD
+      (Delta0_le_intEntries N D.out.property)) hD
 
 /-- On a class, `diamondSymbol` is translation by any lift of the diamond label. -/
 theorem diamondSymbol_mk {d : (ZMod N)ˣ} (g : ↥(Gamma0 N))

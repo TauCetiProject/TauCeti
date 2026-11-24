@@ -131,7 +131,7 @@ isomorphism followed by the inclusion of the product-cone chart. -/
 @[reassoc]
 theorem affineToricChartProdMap_comp_algebraicProdComparison_inv (σ : Φ.cones) (τ : Ψ.cones) :
     Φ.affineToricChartProdMap Ψ σ τ ≫ inv (Φ.algebraicProdComparison Ψ) =
-      (affineToricSchemeProdIso Φ.lattice Ψ.lattice σ.1 τ.1).inv ≫
+      (affineToricSchemeProdIso Φ.lattice Ψ.lattice σ.val τ.val).inv ≫
         (Φ.prod Ψ).affineToricChartι (Φ.prodCone Ψ σ τ) := by
   apply (cancel_mono (Φ.algebraicProdComparison Ψ)).mp
   rw [Category.assoc, IsIso.inv_hom_id, Category.comp_id]

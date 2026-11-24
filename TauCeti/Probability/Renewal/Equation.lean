@@ -58,14 +58,18 @@ renewal-limit coefficients. For `u ≤ t`, the window is `(t - u, t]`; for `t < 
 * `TauCeti.Probability.apply_zero_of_eq_add_renewalConv` — the initial value
   `g 0 = h 0 / (1 - F.real {0})`.
 * `TauCeti.Probability.renewalConv_renewalMeasure_eq_add` — `h ∗ U` solves `g = h + g ∗ F`.
-* `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv` — the equivalent formula
-  `h ∗ U = h + h ∗ (F ∗ U)`.
+* `TauCeti.Probability.renewalConv_eq_add_sub_dirac`,
+  `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_conv`,
+  `TauCeti.Probability.renewalConv_renewalMeasure_eq_add_sub_dirac` — splitting off the initial
+  point mass `δ₀` as `h ∗ ν = h + h ∗ (ν - δ₀)`, and for renewal measures
+  `h ∗ U = h + h ∗ (F ∗ U) = h + h ∗ (U - δ₀)`.
 * `MeasureTheory.Measure.renewalConv_measureReal_Iic_renewalMeasure` — the convolution of
   `F [0, ·]` with `U` is the real-valued renewal function.
 * `TauCeti.Probability.eq_zero_of_renewalConv_eq_self` — the homogeneous equation `d = d ∗ F`
   has no nonzero locally bounded measurable solution.
-* `TauCeti.Probability.eq_renewalConv_renewalMeasure` — uniqueness of locally bounded measurable
-  solutions.
+* `TauCeti.Probability.eq_renewalConv_renewalMeasure`,
+  `TauCeti.Probability.eq_add_renewalConv_sub_dirac` — uniqueness of locally bounded measurable
+  solutions, in both `h ∗ U` and `h + h ∗ (U - δ₀)` forms.
 * `TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`: the tail identity
   `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`.
 * `MeasureTheory.Measure.lintegral_tail_renewalMeasure`: its extended nonnegative form.
@@ -258,6 +262,16 @@ theorem renewalConv_add_measure (hμ : IntegrableOn (fun s ↦ h (t - s)) (Iic t
   simp only [renewalConv_def, Measure.restrict_add]
   exact integral_add_measure hμ hν
 
+/-- If `ν` dominates `δ₀` and the shifted forcing is integrable on `[0, t]` under `ν`, then
+`(h ∗ ν) t = h t + (h ∗ (ν - δ₀)) t`. -/
+theorem renewalConv_eq_add_sub_dirac (hν : Measure.dirac 0 ≤ ν)
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Iic t) ν) :
+    renewalConv h ν t = h t + renewalConv h (ν - Measure.dirac 0) t := by
+  have hdirac : IntegrableOn (fun s ↦ h (t - s)) (Iic t) (Measure.dirac 0) :=
+    (integrable_dirac (by simp)).integrableOn
+  conv_lhs => rw [← Measure.sub_add_cancel_of_le hν, add_comm]
+  rw [renewalConv_add_measure hdirac (hint.mono_measure Measure.sub_le), renewalConv_dirac_zero]
+
 /-! ### Associativity -/
 
 /-- The inner integral of the iterated convolution: integrating the integrand of
@@ -331,6 +345,16 @@ theorem renewalConv_renewalMeasure (hh : Measurable h) (hC : ∀ s ≤ t, |h s| 
   exact integral_sum_measure hint
 
 end Series
+
+/-- The convolution `h ∗ U` equals the forcing plus its convolution with `U - δ₀`, the renewal
+measure with the artificial initial point mass removed, whenever `s ↦ h (t - s)` is integrable
+on `[0, t]` under `U`. -/
+theorem renewalConv_renewalMeasure_eq_add_sub_dirac
+    (hint : IntegrableOn (fun s ↦ h (t - s)) (Iic t) μ.renewalMeasure) :
+    renewalConv h μ.renewalMeasure t =
+      h t + renewalConv h (μ.renewalMeasure - Measure.dirac 0) t :=
+  renewalConv_eq_add_sub_dirac
+    (Measure.convolutionPower_zero μ ▸ μ.convolutionPower_le_renewalMeasure 0) hint
 
 /-! ### The renewal equation -/
 
@@ -422,6 +446,18 @@ theorem eq_renewalConv_renewalMeasure [SFinite μ] (hh : Measurable h)
         (abs_renewalConv_renewalMeasure_le hC₂) measure_Iic_lt_top.ne),
       Pi.sub_apply, renewalConv_renewalMeasure_eq_add hh hC₂, congrFun hgeq t, Pi.add_apply]
     ring
+
+/-- Any measurable, locally bounded solution of `g = h + g ∗ F` equals `h + h ∗ (U - δ₀)`, where
+`U` is the locally finite renewal measure of `F`. -/
+theorem eq_add_renewalConv_sub_dirac [SFinite μ] (hh : Measurable h)
+    (hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C) (hg : Measurable g)
+    (hgb : ∀ t, ∃ C, ∀ s ≤ t, |g s| ≤ C) (hgeq : g = h + renewalConv g μ) :
+    g = h + renewalConv h (μ.renewalMeasure - Measure.dirac 0) := by
+  rw [eq_renewalConv_renewalMeasure hh hhb hg hgb hgeq]
+  ext t
+  obtain ⟨_, hC⟩ := hhb t
+  exact renewalConv_renewalMeasure_eq_add_sub_dirac
+    (integrableOn_Iic_sub hh hC measure_Iic_lt_top.ne)
 
 end RenewalEquation
 

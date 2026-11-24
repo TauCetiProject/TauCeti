@@ -44,7 +44,7 @@ def castLE {q p : ℕ} (h : q ≤ p) : strictLowerTriangle q ↪ strictLowerTria
 /-- The position embedding casts each of its two indices. -/
 @[simp]
 theorem castLE_apply {q p : ℕ} (h : q ≤ p) (ij : strictLowerTriangle q) :
-    castLE h ij = ⟨(ij.1.1.castLE h, ij.1.2.castLE h), ij.2⟩ := (rfl)
+    castLE h ij = ⟨(ij.val.1.castLE h, ij.val.2.castLE h), ij.property⟩ := (rfl)
 
 end strictLowerTriangle
 

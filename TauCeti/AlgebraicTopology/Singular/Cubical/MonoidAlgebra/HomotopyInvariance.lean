@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Action
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInvariance
 public import TauCeti.Algebra.Homology.DG.Module.Right.QuasiIso
+public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Functor
 
 /-!
 # Homotopy invariance of the DG modules of chains on spaces with a monoid action
@@ -30,6 +31,8 @@ sum; they are linear over the ground ring and need not be equivariant.
 * `TauCeti.cubicalChainModuleHomotopy_spec`: `g (f x) = x + d (K x) + K (d x)`.
 * `TauCeti.isQuasiIso_cubicalChainModuleMap`: an equivariant homotopy equivalence induces a
   quasi-isomorphism.
+* `TauCeti.isQuasiIso_restrictScalars_of_apply_eq`: the same for a morphism into a restriction of
+  scalars, such as a map intertwining the actions through a map of the acting monoids.
 
 ## References
 
@@ -122,7 +125,8 @@ omit [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ Y]
   [ContinuousSMul Gᵐᵒᵖ Y] [MulAction Gᵐᵒᵖ Y'] [ContinuousSMul Gᵐᵒᵖ Y'] in
 /-- The chain homotopy `g ∘ f ≃ 1` on the module: `g (f x) = x + d (K x) + K (d x)`. -/
 theorem cubicalChainModuleHomotopy_spec (e : Y ≃ₕ Y') (x : cubicalChainModule Y G R) :
-    cubicalChainModuleLinearMap R e.invFun (cubicalChainModuleLinearMap R e.toFun x) =
+    cubicalChainModuleLinearMap (G' := G) R e.invFun
+        (cubicalChainModuleLinearMap (G' := G) R e.toFun x) =
       x + cubicalChainModuleDifferential Y G R (cubicalChainModuleHomotopy R e x) +
         cubicalChainModuleHomotopy R e (cubicalChainModuleDifferential Y G R x) := by
   induction x using cubicalChainModule.induction_on with
@@ -165,6 +169,49 @@ theorem isQuasiIso_cubicalChainModuleMap (f : C(Y, Y'))
   exact isQuasiIso_of_apply_eq (G' := G) R _ e fun x ↦ cubicalChainModuleMap_apply _ hf x
 
 end Module
+
+section Restriction
+
+variable {Y Y' : Type u} {G G' : Type*} [TopologicalSpace Y] [TopologicalSpace Y']
+  [Monoid G] [TopologicalSpace G] [ContinuousMul G] [Monoid G'] [TopologicalSpace G']
+  [ContinuousMul G'] [MulAction Gᵐᵒᵖ Y] [ContinuousSMul Gᵐᵒᵖ Y] [MulAction G'ᵐᵒᵖ Y']
+  [ContinuousSMul G'ᵐᵒᵖ Y'] (R : Type u) [CommRing R]
+
+/-- **A morphism into a restriction of scalars which pushes chains forward along a homotopy
+equivalence is a quasi-isomorphism.**  Restriction of scalars along a morphism
+`f : C_*(G) → C_*(G')` does not change the underlying complex of `C_*(Y')`, and the homotopy
+inverse and the homotopies need not be equivariant. -/
+theorem isQuasiIso_restrictScalars_of_apply_eq
+    (f : DGAlgHom (cubicalChain_isDGAlgebra G R) (cubicalChain_isDGAlgebra G' R))
+    (φ : cubicalChainModuleDG Y G R ⟶
+      (DGRightModuleCat.restrictScalars f).obj (cubicalChainModuleDG Y' G' R))
+    (e : Y ≃ₕ Y')
+    (hφ : ∀ x, DGRightModuleCat.restrictScalarsEquiv f _ (φ x) =
+      cubicalChainModuleLinearMap R e.toFun x) :
+    DGRightModuleCat.IsQuasiIso φ := by
+  set ε := DGRightModuleCat.restrictScalarsEquiv f (cubicalChainModuleDG Y' G' R)
+  have hd (y) : ε (((DGRightModuleCat.restrictScalars f).obj _).differential y) =
+      cubicalChainModuleDifferential Y' G' R (ε y) :=
+    DGRightModuleCat.restrictScalarsEquiv_differential f _ y
+  refine DGRightModuleCat.isQuasiIso_of_homotopyInverse φ
+    (cubicalChainModuleLinearMap R e.invFun ∘ₗ ε.toLinearMap) (cubicalChainModuleHomotopy R e)
+    (ε.symm.toLinearMap ∘ₗ cubicalChainModuleHomotopy (G := G') R e.symm ∘ₗ ε.toLinearMap)
+    (fun y ↦ ?_) (fun x ↦ ?_) (fun y ↦ ?_)
+  · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hd]
+    exact cubicalChainModuleDifferential_linearMap e.invFun (ε y)
+  -- The chains pushed forward along `e` are read with the phantom monoid `G'`, those in
+  -- `cubicalChainModuleHomotopy_spec` with `G`; both composites are the push-forward along
+  -- `e.invFun ∘ e.toFun` (and similarly for `e.symm`).
+  · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hφ]
+    rw [cubicalChainModuleLinearMap_linearMap, ← cubicalChainModuleLinearMap_linearMap (G' := G)]
+    exact cubicalChainModuleHomotopy_spec R e x
+  · apply ε.injective
+    simp only [map_add, hφ, LinearMap.comp_apply, LinearEquiv.coe_coe, hd,
+      LinearEquiv.apply_symm_apply]
+    rw [cubicalChainModuleLinearMap_linearMap, ← cubicalChainModuleLinearMap_linearMap (G' := G')]
+    exact cubicalChainModuleHomotopy_spec R e.symm (ε y)
+
+end Restriction
 
 end TauCeti
 

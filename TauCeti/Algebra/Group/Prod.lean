@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Group.Submonoid.Operations
 
 /-!
 # Homomorphisms out of a product of monoids, and products of isomorphisms
@@ -20,7 +21,8 @@ corresponding equivalence.
 For a homomorphism `f : M × N →* P` into a group, the triangular map
 `(m, n) ↦ (m, f (m, n))` is surjective exactly when its second component on `{1} × N` is
 surjective. The additive version gives the same criterion for additive homomorphisms, without
-any scalar or topological assumptions.
+any scalar or topological assumptions. For a homomorphism `f : M →* P` into a commutative group,
+the kernel of `(m, p) ↦ f m * p` is the graph of `m ↦ (f m)⁻¹`, so it is isomorphic to `M`.
 
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
 multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, the
@@ -32,6 +34,8 @@ identities as the product of the two factors.
 
 * `MonoidHom.coprodEquiv`: the multiplicative equivalence `((M →* P) × (N →* P)) ≃* (M × N →* P)`
   for `P` a commutative monoid.
+* `MonoidHom.mkerCoprodIdEquiv`: for `f : M →* P` into a commutative group, the isomorphism
+  `m ↦ (m, (f m)⁻¹)` from `M` onto the kernel of `(m, p) ↦ f m * p`.
 * `MulEquiv.ofProdCoprod`: the multiplicative equivalence `P ≃* A × B` determined by
   projections `P →* A`, `P →* B` and inclusions `A →* P`, `B →* P` satisfying the biproduct
   identities.
@@ -96,6 +100,32 @@ theorem surjective_fst_prod_iff (f : M × N →* P) :
     exact ⟨n, by simp⟩
   · obtain ⟨n, hn⟩ := h ((f (m, 1))⁻¹ * p)
     exact ⟨(m, n), by simpa [eq_inv_mul_iff_mul_eq, ← map_mul] using hn⟩
+
+section MkerCoprodId
+
+variable {M P : Type*} [MulOneClass M] [CommGroup P]
+
+/-- For a homomorphism `f : M →* P` into a commutative group, `m ↦ (m, (f m)⁻¹)` is an
+isomorphism from `M` onto the kernel of `(m, p) ↦ f m * p`, with inverse the first projection. -/
+@[to_additive /-- For an additive homomorphism `f : M →+ P` into an additive commutative group,
+`m ↦ (m, -f m)` is an isomorphism from `M` onto the kernel of `(m, p) ↦ f m + p`, with inverse
+the first projection. -/]
+def mkerCoprodIdEquiv (f : M →* P) : M ≃* mker (f.coprod (MonoidHom.id P)) where
+  toFun m := ⟨(m, (f m)⁻¹), by simp⟩
+  invFun x := (x : M × P).1
+  left_inv _ := rfl
+  right_inv x := Subtype.ext (Prod.ext rfl (inv_eq_of_mul_eq_one_right (mem_mker.1 x.property)))
+  map_mul' m m' := Subtype.ext (Prod.ext rfl (by simp [mul_comm]))
+
+@[to_additive (attr := simp)]
+theorem coe_mkerCoprodIdEquiv_apply (f : M →* P) (m : M) :
+    (mkerCoprodIdEquiv f m : M × P) = (m, (f m)⁻¹) := (rfl)
+
+@[to_additive (attr := simp)]
+theorem mkerCoprodIdEquiv_symm_apply (f : M →* P) (x : mker (f.coprod (MonoidHom.id P))) :
+    (mkerCoprodIdEquiv f).symm x = (x : M × P).1 := (rfl)
+
+end MkerCoprodId
 
 end MonoidHom
 

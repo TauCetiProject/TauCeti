@@ -216,7 +216,7 @@ theorem exists_finset_forall_fst_eq_and_exists_flowOf_eq_snd :
       exact eventually_fst_eq_and_exists_flowOf_eq_snd hv (hSD hy.1) hy.2 hg hgv hndy
   refine ⟨F.map (Embedding.subtype _), fun y hy ↦ ?_, fun x hxS hx ↦ ?_⟩
   · obtain ⟨y, -, rfl⟩ := Finset.mem_map.1 hy
-    exact y.2
+    exact y.property
   · obtain ⟨y, hyF, hxy⟩ := mem_iUnion₂.1 (hF ⟨hxS, hx⟩)
     exact ⟨y, Finset.mem_map_of_mem _ hyF, hxy (hSD hxS) hx⟩
 

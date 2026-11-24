@@ -91,7 +91,7 @@ theorem IsRegular.isCancelSMul (ht : t.IsRegular) : IsCancelSMul t.monodromyGrou
   have hgi : (g : Perm (Fin n)) i = i := hg
   obtain ⟨τ, hτ⟩ := ht.isPretransitive.exists_smul_eq i j
   have hτi : (τ : Perm (Fin n)) i = j := hτ
-  rw [← hτi, ← Perm.mul_apply, commute_of_mem τ.2 g.2, Perm.mul_apply, hgi]
+  rw [← hτi, ← Perm.mul_apply, commute_of_mem τ.property g.property, Perm.mul_apply, hgi]
   rfl
 
 /-- In a regular triple, an element of the monodromy group other than the identity moves every
@@ -167,7 +167,7 @@ private theorem card_automorphismGroup_eq_ncard_orbit (ht : t.IsConnected) (i : 
     Nat.card t.automorphismGroup = (MulAction.orbit t.automorphismGroup i).ncard := by
   have hbot : MulAction.stabilizer t.automorphismGroup i = ⊥ :=
     (Subgroup.eq_bot_iff_forall _).mpr fun τ hτ => Subtype.ext <|
-      eq_one_of_mem_automorphismGroup_of_apply_eq ht.isPretransitive τ.2 hτ
+      eq_one_of_mem_automorphismGroup_of_apply_eq ht.isPretransitive τ.property hτ
   rw [← (MulAction.stabilizer t.automorphismGroup i).card_mul_index,
     MulAction.index_stabilizer, Subgroup.card_eq_one.mpr hbot, one_mul]
 
@@ -210,7 +210,7 @@ private noncomputable def automorphismGroupEvalEquiv
         rw [Subgroup.coe_mul, Subgroup.coe_inv, Perm.mul_apply, h, Perm.inv_def, symm_apply_apply]
       have hone : (σ⁻¹ * τ : t.automorphismGroup) = 1 := Subtype.ext <|
         eq_one_of_mem_automorphismGroup_of_apply_eq ht.isConnected.isPretransitive
-          (σ⁻¹ * τ).2 hfix
+          (σ⁻¹ * τ).property hfix
       exact congrArg Subtype.val <| calc
         τ = σ * (σ⁻¹ * τ) := by simp
         _ = σ := by rw [hone, mul_one],
@@ -266,10 +266,10 @@ noncomputable def automorphismGroupMulEquivMonodromyGroupMulOpposite
     have hτ : (τ : Perm (Fin n)) ∈
         Subgroup.centralizer (t.monodromyGroup : Set (Perm (Fin n))) := by
       rw [← automorphismGroup_eq_centralizer_monodromyGroup]
-      exact τ.2
+      exact τ.property
     simpa only [Perm.mul_apply] using DFunLike.congr_fun (Subgroup.mem_centralizer_iff.mp hτ
       (automorphismGroupEquivMonodromyGroup ht i σ)
-      (automorphismGroupEquivMonodromyGroup ht i σ).2).symm i
+      (automorphismGroupEquivMonodromyGroup ht i σ).property).symm i
 
 /-- The characteristic property of
 `TauCeti.PermutationTriple.automorphismGroupMulEquivMonodromyGroupMulOpposite`: the element of the
