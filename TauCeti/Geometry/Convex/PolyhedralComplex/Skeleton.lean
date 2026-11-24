@@ -111,6 +111,18 @@ theorem cellsOfCodimension_subset_cells_codimensionGE
   obtain ⟨hPC, hdim⟩ := mem_cellsOfCodimension.mp hP
   exact mem_cells_codimensionGE.mpr ⟨hPC, hdim.le⟩
 
+/-- A cell in the codimension skeleton belongs to some exact stratum at or above its cutoff. -/
+theorem mem_cells_codimensionGE_iff_exists {C : FinitePolyhedralComplex h}
+    {k : ℕ} {P : Set V} :
+    P ∈ (C.codimensionGE k).cells ↔ ∃ l ≥ k, P ∈ C.cellsOfCodimension l := by
+  simp only [mem_cells_codimensionGE, mem_cellsOfCodimension]
+  constructor
+  · rintro ⟨hP, hcod⟩
+    exact ⟨Module.finrank ℝ V - Module.finrank ℝ (affineSpan ℝ P).direction,
+      by omega, hP, by omega⟩
+  · rintro ⟨l, hkl, hP, hcod⟩
+    exact ⟨hP, by omega⟩
+
 /-- Increasing the codimension bound decreases the set of cells. -/
 theorem cells_codimensionGE_antitone (C : FinitePolyhedralComplex h) :
     Antitone (fun k => (C.codimensionGE k).cells) := by

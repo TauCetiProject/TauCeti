@@ -137,17 +137,6 @@ theorem mem_cellsOfCodimension_image (C : FinitePolyhedralComplex h)
   · rintro ⟨P, ⟨hP, hdim⟩, rfl⟩
     exact ⟨⟨P, hP, rfl⟩, by rw [hd, ← hv]; exact hdim⟩
 
-private theorem mem_cells_codimensionGE_iff_exists {C : FinitePolyhedralComplex h}
-    {k : ℕ} {P : Set V} :
-    P ∈ (C.codimensionGE k).cells ↔ ∃ l ≥ k, P ∈ C.cellsOfCodimension l := by
-  simp only [mem_cells_codimensionGE, mem_cellsOfCodimension]
-  constructor
-  · rintro ⟨hP, hcod⟩
-    exact ⟨Module.finrank ℝ V - Module.finrank ℝ (affineSpan ℝ P).direction,
-      by omega, hP, by omega⟩
-  · rintro ⟨l, hkl, hP, hcod⟩
-    exact ⟨hP, by omega⟩
-
 /-- Taking a codimension skeleton commutes with integral affine transport. -/
 theorem codimensionGE_image (C : FinitePolyhedralComplex h)
     (e : Toric.IntegralAffineEquiv h h') (k : ℕ) :
