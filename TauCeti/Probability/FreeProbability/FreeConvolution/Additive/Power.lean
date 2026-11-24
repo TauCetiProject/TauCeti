@@ -15,12 +15,12 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 This file develops finite-family free additive convolution via `Finset.fold`, C⋆- and von Neumann
 transport for finite sums of freely independent selfadjoint families, and the `n`-fold free additive
-convolution power `MeasureTheory.Measure.freeConvolutionPower`.
+convolution power `MeasureTheory.Measure.freeConvPow`.
 
 ## Main definitions
 
-* `MeasureTheory.Measure.freeConvolutionPower`: the `n`-fold free additive convolution power
-  `μ.freeConvolutionPower n`, with `μ.freeConvolutionPower 0 = Measure.dirac 0`.
+* `MeasureTheory.Measure.freeConvPow`: the `n`-fold free additive convolution power
+  `μ.freeConvPow n`, with `μ.freeConvPow 0 = Measure.dirac 0`.
 
 ## Main results
 
@@ -38,15 +38,15 @@ convolution power `MeasureTheory.Measure.freeConvolutionPower`.
   `freeConv`.
 * `TauCeti.IsFreelyIndependentElements.law_sum`, `TauCeti.IsFreelyIndependent.law_sum`:
   C⋆- and von Neumann finite-sum transport.
-* `MeasureTheory.Measure.freeConvolutionPower_add`,
-  `MeasureTheory.Measure.freeConvolutionPower_mul`,
-  `MeasureTheory.Measure.freeConvolutionPower_map_affine`,
-  `MeasureTheory.Measure.rSeries_integral_freeConvolutionPower`,
-  `MeasureTheory.Measure.freeCumulant_integral_freeConvolutionPower`,
-  `MeasureTheory.Measure.eq_freeConvolutionPower_iff_rSeries_integral_eq`,
-  `MeasureTheory.Measure.eq_freeConvolutionPower_iff_forall_freeCumulant_integral_eq`: algebraic,
+* `MeasureTheory.Measure.freeConvPow_add`,
+  `MeasureTheory.Measure.freeConvPow_mul`,
+  `MeasureTheory.Measure.freeConvPow_map_affine`,
+  `MeasureTheory.Measure.rSeries_integral_freeConvPow`,
+  `MeasureTheory.Measure.freeCumulant_integral_freeConvPow`,
+  `MeasureTheory.Measure.eq_freeConvPow_iff_rSeries_integral_eq`,
+  `MeasureTheory.Measure.eq_freeConvPow_iff_forall_freeCumulant_integral_eq`: algebraic,
   affine, support, series, cumulant, determinacy, mean, and variance laws for
-  `freeConvolutionPower`.
+  `freeConvPow`.
 
 ## References
 
@@ -107,12 +107,8 @@ not a compactly supported probability measure. -/
 @[simp] theorem fold_freeConv_eq_zero_iff :
     s.fold freeConv (Measure.dirac 0) μ = 0 ↔
       ∃ i ∈ s, ¬(μ i).IsCompactProbabilityMeasure := by
-  have h : s.fold freeConv (Measure.dirac 0) μ = 0 ↔
-      ¬IsProbabilityMeasure (s.fold freeConv (Measure.dirac 0) μ) :=
-    ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
-      fun hnp => (eq_zero_or_isProbabilityMeasure _).resolve_right hnp⟩
-  rw [isProbabilityMeasure_fold_freeConv_iff, not_forall] at h
-  simpa only [not_imp, exists_prop] using h
+  rw [eq_zero_iff_not_isProbabilityMeasure, isProbabilityMeasure_fold_freeConv_iff, not_forall]
+  simp only [not_imp]
 
 /-- Folding `freeConv` with base `Measure.dirac 0` over compactly supported probability measures
 yields a probability measure (including when `s = ∅`). -/
@@ -303,216 +299,213 @@ end TauCeti
 
 namespace MeasureTheory.Measure
 
-/-- The `n`-fold free additive convolution power `μ.freeConvolutionPower n` of a measure on `ℝ`,
+/-- The `n`-fold free additive convolution power `μ.freeConvPow n` of a measure on `ℝ`,
 with zeroth power `Measure.dirac 0`. -/
-def freeConvolutionPower (μ : Measure ℝ) : ℕ → Measure ℝ
+def freeConvPow (μ : Measure ℝ) : ℕ → Measure ℝ
   | 0 => Measure.dirac 0
-  | n + 1 => (freeConvolutionPower μ n).freeConv μ
+  | n + 1 => (freeConvPow μ n).freeConv μ
 
 /-- The zeroth free convolution power of any measure on `ℝ` is `Measure.dirac 0`. -/
-@[simp] theorem freeConvolutionPower_zero (μ : Measure ℝ) :
-    μ.freeConvolutionPower 0 = Measure.dirac 0 := by rfl
+@[simp] theorem freeConvPow_zero (μ : Measure ℝ) :
+    μ.freeConvPow 0 = Measure.dirac 0 := by rfl
 
-/-- Right recursion `μ.freeConvolutionPower (n + 1) = (μ.freeConvolutionPower n).freeConv μ` for
+/-- Right recursion `μ.freeConvPow (n + 1) = (μ.freeConvPow n).freeConv μ` for
 free convolution powers. -/
-theorem freeConvolutionPower_succ (μ : Measure ℝ) (n : ℕ) :
-    μ.freeConvolutionPower (n + 1) = (μ.freeConvolutionPower n).freeConv μ := by rfl
+theorem freeConvPow_succ (μ : Measure ℝ) (n : ℕ) :
+    μ.freeConvPow (n + 1) = (μ.freeConvPow n).freeConv μ := by rfl
 
 /-- Every free convolution power is either `0` or a probability measure (hence finite). -/
-instance isZeroOrProbabilityMeasure_freeConvolutionPower (μ : Measure ℝ) :
-    ∀ n : ℕ, IsZeroOrProbabilityMeasure (μ.freeConvolutionPower n)
-  | 0 => by rw [freeConvolutionPower_zero]; infer_instance
-  | _ + 1 => by rw [freeConvolutionPower_succ]; infer_instance
+instance isZeroOrProbabilityMeasure_freeConvPow (μ : Measure ℝ) :
+    ∀ n : ℕ, IsZeroOrProbabilityMeasure (μ.freeConvPow n)
+  | 0 => by rw [freeConvPow_zero]; infer_instance
+  | _ + 1 => by rw [freeConvPow_succ]; infer_instance
 
-/-- For `n ≠ 0`, outside compactly supported probability measures `freeConvolutionPower` is `0`. -/
-theorem freeConvolutionPower_eq_zero_of_not {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
-    (h : ¬μ.IsCompactProbabilityMeasure) : μ.freeConvolutionPower n = 0 := by
+/-- For `n ≠ 0`, outside compactly supported probability measures `freeConvPow` is `0`. -/
+theorem freeConvPow_eq_zero_of_not {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
+    (h : ¬μ.IsCompactProbabilityMeasure) : μ.freeConvPow n = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   exact freeConv_eq_zero_of_not fun h' => h h'.2
 
 /-- Every free convolution power of any measure on `ℝ` has compact topological support. -/
-theorem isCompact_support_freeConvolutionPower (μ : Measure ℝ) :
-    ∀ n : ℕ, IsCompact (μ.freeConvolutionPower n).support
+theorem isCompact_support_freeConvPow (μ : Measure ℝ) :
+    ∀ n : ℕ, IsCompact (μ.freeConvPow n).support
   | 0 => by simp [Measure.support_dirac]
   | _ + 1 => isCompact_support_freeConv _ _
 
 /-- Every free convolution power of a compactly supported probability measure is a probability
 measure. -/
-theorem isProbabilityMeasure_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
-    (hμ : IsCompact μ.support) : ∀ n : ℕ, IsProbabilityMeasure (μ.freeConvolutionPower n)
-  | 0 => by rw [freeConvolutionPower_zero]; infer_instance
+theorem isProbabilityMeasure_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : IsCompact μ.support) : ∀ n : ℕ, IsProbabilityMeasure (μ.freeConvPow n)
+  | 0 => by rw [freeConvPow_zero]; infer_instance
   | n + 1 => by
-      have := isProbabilityMeasure_freeConvolutionPower hμ n
-      exact isProbabilityMeasure_freeConv (isCompact_support_freeConvolutionPower μ n) hμ
+      have := isProbabilityMeasure_freeConvPow hμ n
+      exact isProbabilityMeasure_freeConv (isCompact_support_freeConvPow μ n) hμ
 
-/-- `μ.freeConvolutionPower n` is a probability measure iff `n = 0` or `μ` is a compactly supported
+/-- `μ.freeConvPow n` is a probability measure iff `n = 0` or `μ` is a compactly supported
 probability measure. -/
-@[simp] theorem isProbabilityMeasure_freeConvolutionPower_iff {μ : Measure ℝ} {n : ℕ} :
-    IsProbabilityMeasure (μ.freeConvolutionPower n) ↔
+@[simp] theorem isProbabilityMeasure_freeConvPow_iff {μ : Measure ℝ} {n : ℕ} :
+    IsProbabilityMeasure (μ.freeConvPow n) ↔
       n = 0 ∨ μ.IsCompactProbabilityMeasure := by
   rcases eq_or_ne n 0 with rfl | hn
-  · simp only [freeConvolutionPower_zero, true_or, iff_true]; infer_instance
+  · simp only [freeConvPow_zero, true_or, iff_true]; infer_instance
   · simp only [hn, false_or]
     exact ⟨fun hp => by
       by_contra h
-      exact not_isProbabilityMeasure_zero (freeConvolutionPower_eq_zero_of_not hn h ▸ hp),
-      fun ⟨_, hμ⟩ => isProbabilityMeasure_freeConvolutionPower hμ n⟩
+      exact not_isProbabilityMeasure_zero (freeConvPow_eq_zero_of_not hn h ▸ hp),
+      fun ⟨_, hμ⟩ => isProbabilityMeasure_freeConvPow hμ n⟩
 
-/-- `μ.freeConvolutionPower n` equals `0` iff `n ≠ 0` and `μ` is not a compactly supported
+/-- `μ.freeConvPow n` equals `0` iff `n ≠ 0` and `μ` is not a compactly supported
 probability measure. -/
-@[simp] theorem freeConvolutionPower_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
-    μ.freeConvolutionPower n = 0 ↔ n ≠ 0 ∧ ¬μ.IsCompactProbabilityMeasure := by
-  have h : μ.freeConvolutionPower n = 0 ↔ ¬IsProbabilityMeasure (μ.freeConvolutionPower n) :=
-    ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
-      fun hnp => (eq_zero_or_isProbabilityMeasure _).resolve_right hnp⟩
-  rwa [isProbabilityMeasure_freeConvolutionPower_iff, not_or] at h
+@[simp] theorem freeConvPow_eq_zero_iff {μ : Measure ℝ} {n : ℕ} :
+    μ.freeConvPow n = 0 ↔ n ≠ 0 ∧ ¬μ.IsCompactProbabilityMeasure := by
+  rw [eq_zero_iff_not_isProbabilityMeasure, isProbabilityMeasure_freeConvPow_iff, not_or]
 
 /-- The first free convolution power of a compactly supported probability measure is itself. -/
-@[simp] theorem freeConvolutionPower_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
-    (hμ : IsCompact μ.support) : μ.freeConvolutionPower 1 = μ := dirac_zero_freeConv hμ
+@[simp] theorem freeConvPow_one {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : IsCompact μ.support) : μ.freeConvPow 1 = μ := dirac_zero_freeConv hμ
 
 /-- Free convolution powers turn addition of exponents into `freeConv`, unconditionally for all
 measures on `ℝ`. -/
-theorem freeConvolutionPower_add (μ : Measure ℝ) (m n : ℕ) :
-    μ.freeConvolutionPower (m + n) =
-      (μ.freeConvolutionPower m).freeConv (μ.freeConvolutionPower n) := by
+theorem freeConvPow_add (μ : Measure ℝ) (m n : ℕ) :
+    μ.freeConvPow (m + n) =
+      (μ.freeConvPow m).freeConv (μ.freeConvPow n) := by
   induction n with
   | zero =>
       by_cases h : μ.IsCompactProbabilityMeasure
-      · have := h.1; have := isProbabilityMeasure_freeConvolutionPower h.2 m
-        exact (freeConv_dirac_zero (isCompact_support_freeConvolutionPower μ m)).symm
+      · have := h.1; have := isProbabilityMeasure_freeConvPow h.2 m
+        exact (freeConv_dirac_zero (isCompact_support_freeConvPow μ m)).symm
       · rcases eq_or_ne m 0 with rfl | hm
         · simp
-        · simp [freeConvolutionPower_eq_zero_of_not hm h]
+        · simp [freeConvPow_eq_zero_of_not hm h]
   | succ n ih =>
-      rw [Nat.add_succ, freeConvolutionPower_succ, freeConvolutionPower_succ, ih, freeConv_assoc]
+      rw [Nat.add_succ, freeConvPow_succ, freeConvPow_succ, ih, freeConv_assoc]
 
-/-- Left recursion `μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n)`,
+/-- Left recursion `μ.freeConvPow (n + 1) = μ.freeConv (μ.freeConvPow n)`,
 unconditionally for all measures on `ℝ`. -/
-theorem freeConvolutionPower_succ' (μ : Measure ℝ) (n : ℕ) :
-    μ.freeConvolutionPower (n + 1) = μ.freeConv (μ.freeConvolutionPower n) := freeConv_comm _ _
+theorem freeConvPow_succ' (μ : Measure ℝ) (n : ℕ) :
+    μ.freeConvPow (n + 1) = μ.freeConv (μ.freeConvPow n) := freeConv_comm _ _
 
-/-- Folding `freeConv` over a constant measure on `s` gives `μ.freeConvolutionPower #s`. -/
+/-- Folding `freeConv` over a constant measure on `s` gives `μ.freeConvPow #s`. -/
 theorem fold_freeConv_const {ι : Type*} (s : Finset ι) (μ : Measure ℝ) :
-    s.fold freeConv (Measure.dirac 0) (fun _ => μ) = μ.freeConvolutionPower #s := by
+    s.fold freeConv (Measure.dirac 0) (fun _ => μ) = μ.freeConvPow #s := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
   | @insert i s hi ih =>
-      rw [Finset.fold_insert hi, card_insert_of_notMem hi, ih, freeConvolutionPower_succ']
+      rw [Finset.fold_insert hi, card_insert_of_notMem hi, ih, freeConvPow_succ']
 
 /-- Free convolution powers of a Dirac mass add its atom `n` times. -/
-@[simp] theorem freeConvolutionPower_dirac (a : ℝ) (n : ℕ) :
-    (Measure.dirac a).freeConvolutionPower n = Measure.dirac (n • a) := by
+@[simp] theorem freeConvPow_dirac (a : ℝ) (n : ℕ) :
+    (Measure.dirac a).freeConvPow n = Measure.dirac (n • a) := by
   induction n with
   | zero => simp
-  | succ n ih => rw [freeConvolutionPower_succ, ih, dirac_freeConv_dirac, succ_nsmul]
+  | succ n ih => rw [freeConvPow_succ, ih, dirac_freeConv_dirac, succ_nsmul]
 
 /-- Iterated free convolution powers multiply exponents, unconditionally for all measures on `ℝ`. -/
-theorem freeConvolutionPower_mul (μ : Measure ℝ) (m n : ℕ) :
-    μ.freeConvolutionPower (m * n) = (μ.freeConvolutionPower m).freeConvolutionPower n := by
+theorem freeConvPow_mul (μ : Measure ℝ) (m n : ℕ) :
+    μ.freeConvPow (m * n) = (μ.freeConvPow m).freeConvPow n := by
   induction n with
   | zero => simp
-  | succ n ih => rw [Nat.mul_succ, freeConvolutionPower_add, ih, freeConvolutionPower_succ]
+  | succ n ih => rw [Nat.mul_succ, freeConvPow_add, ih, freeConvPow_succ]
 
 /-- **Affine equivariance of free convolution powers.** For a compactly supported probability
 measure `μ`, pushing `μ` forward by `x ↦ a + b * x` and taking the `n`-th free convolution power
-equals pushing `μ.freeConvolutionPower n` forward by `x ↦ (n : ℝ) * a + b * x`. -/
-theorem freeConvolutionPower_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
+equals pushing `μ.freeConvPow n` forward by `x ↦ (n : ℝ) * a + b * x`. -/
+theorem freeConvPow_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (a b : ℝ) (n : ℕ) :
-    (μ.map fun x => a + b * x).freeConvolutionPower n =
-      (μ.freeConvolutionPower n).map fun x => (n : ℝ) * a + b * x := by
+    (μ.map fun x => a + b * x).freeConvPow n =
+      (μ.freeConvPow n).map fun x => (n : ℝ) * a + b * x := by
   simpa [fold_freeConv_const, nsmul_eq_mul] using fold_freeConv_map_affine
     (univ : Finset (Fin n)) (μ := fun _ => μ) (fun _ _ => inferInstance)
     (fun _ _ => hμ) (fun _ => a) b
 
-/-- Translating `μ` by `a` translates `μ.freeConvolutionPower n` by `n • a`, unconditionally for
+/-- Translating `μ` by `a` translates `μ.freeConvPow n` by `n • a`, unconditionally for
 all measures on `ℝ`. -/
-theorem freeConvolutionPower_map_add (μ : Measure ℝ) (a : ℝ) (n : ℕ) :
-    (μ.map (a + ·)).freeConvolutionPower n = (μ.freeConvolutionPower n).map (n • a + ·) := by
+theorem freeConvPow_map_add (μ : Measure ℝ) (a : ℝ) (n : ℕ) :
+    (μ.map (a + ·)).freeConvPow n = (μ.freeConvPow n).map (n • a + ·) := by
   simpa [fold_freeConv_const] using
     fold_freeConv_map_add (univ : Finset (Fin n)) (fun _ => μ) (fun _ => a)
 
-/-- Scaling `μ` by `b` scales `μ.freeConvolutionPower n` by `b` (including `n = 0` and `b = 0`). -/
-theorem freeConvolutionPower_map_mul {μ : Measure ℝ} [IsProbabilityMeasure μ]
+/-- Scaling `μ` by `b` scales `μ.freeConvPow n` by `b` (including `n = 0` and `b = 0`). -/
+theorem freeConvPow_map_mul {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (b : ℝ) (n : ℕ) :
-    (μ.map (b * ·)).freeConvolutionPower n = (μ.freeConvolutionPower n).map (b * ·) := by
-  simpa using freeConvolutionPower_map_affine hμ 0 b n
+    (μ.map (b * ·)).freeConvPow n = (μ.freeConvPow n).map (b * ·) := by
+  simpa using freeConvPow_map_affine hμ 0 b n
 
 /-- Reflection `Measure.neg` commutes with free convolution powers unconditionally. -/
-theorem freeConvolutionPower_neg (μ : Measure ℝ) (n : ℕ) :
-    μ.neg.freeConvolutionPower n = (μ.freeConvolutionPower n).neg := by
+theorem freeConvPow_neg (μ : Measure ℝ) (n : ℕ) :
+    μ.neg.freeConvPow n = (μ.freeConvPow n).neg := by
   simpa [fold_freeConv_const] using fold_freeConv_neg (univ : Finset (Fin n)) (fun _ => μ)
 
-/-- Interval support bounds scale by `n` under `freeConvolutionPower`, unconditionally for all
+/-- Interval support bounds scale by `n` under `freeConvPow`, unconditionally for all
 measures on `ℝ` and including `n = 0`. -/
-theorem support_freeConvolutionPower_subset_Icc {μ : Measure ℝ} {m M : ℝ}
+theorem support_freeConvPow_subset_Icc {μ : Measure ℝ} {m M : ℝ}
     (hI : μ.support ⊆ Set.Icc m M) (n : ℕ) :
-    (μ.freeConvolutionPower n).support ⊆ Set.Icc ((n : ℝ) * m) ((n : ℝ) * M) := by
+    (μ.freeConvPow n).support ⊆ Set.Icc ((n : ℝ) * m) ((n : ℝ) * M) := by
   simpa [fold_freeConv_const _ μ, nsmul_eq_mul] using
     support_fold_freeConv_subset_Icc (univ : Finset (Fin n)) (μ := fun _ => μ) fun _ _ => hI
 
-/-- The formal R-series of `μ.freeConvolutionPower n` is `n` times the formal R-series of `μ`. -/
-theorem rSeries_integral_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
+/-- The formal R-series of `μ.freeConvPow n` is `n` times the formal R-series of `μ`. -/
+theorem rSeries_integral_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
-    TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConvolutionPower n)) id =
+    TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConvPow n)) id =
       n • TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id := by
   simpa [fold_freeConv_const _ μ] using rSeries_integral_fold_freeConv (univ : Finset (Fin n))
     (μ := fun _ => μ) (fun _ _ => inferInstance) (fun _ _ => hμ)
 
-/-- Every nonempty free cumulant of `μ.freeConvolutionPower n` is `n` times that of `μ`. -/
-theorem freeCumulant_integral_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
+/-- Every nonempty free cumulant of `μ.freeConvPow n` is `n` times that of `μ`. -/
+theorem freeCumulant_integral_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) {α : Type*} [LinearOrder α] {s : Finset α}
     (hs : s.Nonempty) :
-    TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConvolutionPower n))
+    TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConvPow n))
         (fun _ : α => (id : ℝ → ℝ)) s =
       n • TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ) (fun _ : α => (id : ℝ → ℝ)) s := by
   simpa [fold_freeConv_const _ μ] using freeCumulant_integral_fold_freeConv (univ : Finset (Fin n))
     (μ := fun _ => μ) (fun _ _ => inferInstance) (fun _ _ => hμ) hs
 
-/-- A compactly supported probability measure `ρ` equals `μ.freeConvolutionPower n` iff its formal
+/-- A compactly supported probability measure `ρ` equals `μ.freeConvPow n` iff its formal
 R-series equals `n` times that of `μ`. -/
-theorem eq_freeConvolutionPower_iff_rSeries_integral_eq {ρ μ : Measure ℝ}
+theorem eq_freeConvPow_iff_rSeries_integral_eq {ρ μ : Measure ℝ}
     [IsProbabilityMeasure ρ] [IsProbabilityMeasure μ] (hρ : IsCompact ρ.support)
     (hμ : IsCompact μ.support) (n : ℕ) :
-    ρ = μ.freeConvolutionPower n ↔
+    ρ = μ.freeConvPow n ↔
       TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) id =
         n • TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id := by
-  have := isProbabilityMeasure_freeConvolutionPower hμ n
-  rw [eq_iff_rSeries_integral_eq hρ (isCompact_support_freeConvolutionPower μ n),
-    rSeries_integral_freeConvolutionPower hμ n]
+  have := isProbabilityMeasure_freeConvPow hμ n
+  rw [eq_iff_rSeries_integral_eq hρ (isCompact_support_freeConvPow μ n),
+    rSeries_integral_freeConvPow hμ n]
 
-/-- A compactly supported probability measure `ρ` equals `μ.freeConvolutionPower n` iff all
+/-- A compactly supported probability measure `ρ` equals `μ.freeConvPow n` iff all
 positive-order free cumulants of `ρ` equal `n` times those of `μ`. -/
-theorem eq_freeConvolutionPower_iff_forall_freeCumulant_integral_eq {ρ μ : Measure ℝ}
+theorem eq_freeConvPow_iff_forall_freeCumulant_integral_eq {ρ μ : Measure ℝ}
     [IsProbabilityMeasure ρ] [IsProbabilityMeasure μ] (hρ : IsCompact ρ.support)
     (hμ : IsCompact μ.support) (n : ℕ) :
-    ρ = μ.freeConvolutionPower n ↔ ∀ k : ℕ, k ≠ 0 →
+    ρ = μ.freeConvPow n ↔ ∀ k : ℕ, k ≠ 0 →
       TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂ρ) (fun _ : Fin k => (id : ℝ → ℝ)) univ =
         n • TauCeti.freeCumulant (fun f : ℝ → ℝ => ∫ x, f x ∂μ)
           (fun _ : Fin k => (id : ℝ → ℝ)) univ := by
-  have := isProbabilityMeasure_freeConvolutionPower hμ n
-  rw [eq_iff_forall_freeCumulant_integral_eq hρ (isCompact_support_freeConvolutionPower μ n)]
+  have := isProbabilityMeasure_freeConvPow hμ n
+  rw [eq_iff_forall_freeCumulant_integral_eq hρ (isCompact_support_freeConvPow μ n)]
   exact forall₂_congr fun k hk => by
-    rw [freeCumulant_integral_freeConvolutionPower hμ n ⟨⟨0, Nat.pos_of_ne_zero hk⟩, mem_univ _⟩]
+    rw [freeCumulant_integral_freeConvPow hμ n ⟨⟨0, Nat.pos_of_ne_zero hk⟩, mem_univ _⟩]
 
-/-- The mean of `μ.freeConvolutionPower n` is `n` times the mean of `μ`. -/
-theorem integral_id_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
+/-- The mean of `μ.freeConvPow n` is `n` times the mean of `μ`. -/
+theorem integral_id_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
-    ∫ x, x ∂(μ.freeConvolutionPower n) = n * ∫ x, x ∂μ := by
+    ∫ x, x ∂(μ.freeConvPow n) = n * ∫ x, x ∂μ := by
   simpa [PowerSeries.coeff_zero_eq_constantCoeff_apply, TauCeti.constantCoeff_rSeries, nsmul_eq_mul]
-    using congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConvolutionPower hμ n)
+    using congrArg (PowerSeries.coeff 0) (rSeries_integral_freeConvPow hμ n)
 
-/-- The variance of `μ.freeConvolutionPower n` is `n` times the variance of `μ`. -/
-theorem variance_id_freeConvolutionPower {μ : Measure ℝ} [IsProbabilityMeasure μ]
+/-- The variance of `μ.freeConvPow n` is `n` times the variance of `μ`. -/
+theorem variance_id_freeConvPow {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) (n : ℕ) :
-    variance id (μ.freeConvolutionPower n) = n * variance id μ := by
-  have := isProbabilityMeasure_freeConvolutionPower hμ n
+    variance id (μ.freeConvPow n) = n * variance id μ := by
+  have := isProbabilityMeasure_freeConvPow hμ n
   simpa [coeff_one_rSeries_integral_eq_variance (continuousOn_id.memLp_of_isCompact_support
-        (isCompact_support_freeConvolutionPower μ n) support_mem_ae),
+        (isCompact_support_freeConvPow μ n) support_mem_ae),
     coeff_one_rSeries_integral_eq_variance
       (continuousOn_id.memLp_of_isCompact_support hμ support_mem_ae), nsmul_eq_mul] using
-    congrArg (PowerSeries.coeff 1) (rSeries_integral_freeConvolutionPower hμ n)
+    congrArg (PowerSeries.coeff 1) (rSeries_integral_freeConvPow hμ n)
 
 end MeasureTheory.Measure
 
@@ -521,20 +514,20 @@ namespace TauCeti
 variable {A ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-- If `a` is a freely independent family of selfadjoint elements with common law `μ` under a state
-`φ`, then `∑ i ∈ s, a i` has law `μ.freeConvolutionPower #s`. -/
-theorem IsFreelyIndependentElements.law_sum_eq_freeConvolutionPower {φ : A →ₚ[ℂ] ℂ} {a : ι → A}
+`φ`, then `∑ i ∈ s, a i` has law `μ.freeConvPow #s`. -/
+theorem IsFreelyIndependentElements.law_sum_eq_freeConvPow {φ : A →ₚ[ℂ] ℂ} {a : ι → A}
     (ha : IsFreelyIndependentElements φ.toLinearMap a) (hφ : φ 1 = 1) (s : Finset ι)
     {μ : Measure ℝ} (hasa : ∀ i ∈ s, IsSelfAdjoint (a i)) (hlaw : ∀ i ∈ s, φ.law (a i) = μ) :
-    φ.law (∑ i ∈ s, a i) = μ.freeConvolutionPower #s := by
+    φ.law (∑ i ∈ s, a i) = μ.freeConvPow #s := by
   rw [ha.law_sum hφ s hasa, Finset.fold_congr (g := fun _ => μ) fun i hi => hlaw i hi,
     Measure.fold_freeConv_const s μ]
 
-/-- Subalgebra version of `IsFreelyIndependentElements.law_sum_eq_freeConvolutionPower`. -/
-theorem IsFreelyIndependent.law_sum_eq_freeConvolutionPower {φ : A →ₚ[ℂ] ℂ}
+/-- Subalgebra version of `IsFreelyIndependentElements.law_sum_eq_freeConvPow`. -/
+theorem IsFreelyIndependent.law_sum_eq_freeConvPow {φ : A →ₚ[ℂ] ℂ}
     {B : ι → Subalgebra ℂ A} (hB : IsFreelyIndependent φ.toLinearMap B) (hφ : φ 1 = 1)
     (s : Finset ι) {a : ι → A} {μ : Measure ℝ} (haB : ∀ i ∈ s, a i ∈ B i)
     (hasa : ∀ i ∈ s, IsSelfAdjoint (a i)) (hlaw : ∀ i ∈ s, φ.law (a i) = μ) :
-    φ.law (∑ i ∈ s, a i) = μ.freeConvolutionPower #s := by
+    φ.law (∑ i ∈ s, a i) = μ.freeConvPow #s := by
   rw [hB.law_sum hφ s haB hasa, Finset.fold_congr (g := fun _ => μ) fun i hi => hlaw i hi,
     Measure.fold_freeConv_const s μ]
 

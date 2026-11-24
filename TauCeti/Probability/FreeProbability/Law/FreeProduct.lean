@@ -281,6 +281,16 @@ theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) :=
   rintro _ ⟨x, rfl⟩
   exact x.property
 
+private theorem restrict_comp_factorHomeomorph_symm (i : ι) :
+    (ContinuousMap.restrict (spectrum ℂ (generator μ i)) (ContinuousMap.id ℂ)).comp
+      ((((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
+          (f := (Complex.reCLM : C(ℂ, ℝ)))).trans
+        (Homeomorph.setCongr (spectrum_generator μ i))).symm :
+        C((μ i).support, spectrum ℂ (generator μ i))) = factorCoordinate μ i := by
+  ext x
+  simp [factorCoordinate, SpectrumRestricts.homeomorph, Set.MapsTo.restrict, Subtype.map,
+    Homeomorph.setCongr]
+
 /-- Under the spectrum–support identification for `generator μ i`, `factor μ i` is the complex
 continuous functional calculus `cfcHom` of `generator μ i`. -/
 theorem factor_eq_cfcHom (i : ι) :
@@ -301,16 +311,15 @@ theorem factor_eq_cfcHom (i : ι) :
     open scoped CStarAlgebra in
     exact (map_continuous (factor μ i)).comp (ContinuousMap.continuous_precomp _)
   have hφ_id : φ (.restrict (spectrum ℂ (generator μ i)) (.id ℂ)) = generator μ i := by
-    change factor μ i ((ContinuousMap.restrict (spectrum ℂ (generator μ i))
-      (ContinuousMap.id ℂ)).comp (e.symm : C(_, _))) = factor μ i (factorCoordinate μ i)
-    rfl
+    rw [StarAlgHom.comp_apply, ContinuousMap.compStarAlgHom'_apply,
+      restrict_comp_factorHomeomorph_symm, generator]
   have hcfc : cfcHom (isSelfAdjoint_generator μ i).isStarNormal = φ :=
     cfcHom_eq_of_continuous_of_map_id (isSelfAdjoint_generator μ i).isStarNormal φ hφ hφ_id
   refine StarAlgHom.ext fun f => ?_
   simp only [StarAlgHom.comp_apply, ContinuousMap.compStarAlgHom'_apply]
-  change factor μ i f = cfcHom (isSelfAdjoint_generator μ i).isStarNormal (f.comp (e : C(_, _)))
   rw [hcfc]
-  rfl
+  simp only [φ, StarAlgHom.comp_apply, ContinuousMap.compStarAlgHom'_apply]
+  exact congrArg (factor μ i) (ContinuousMap.ext fun x => by simp [e])
 
 /-- Applying `factor μ i` to any continuous function `f : C((μ i).support, ℂ)` computes the
 continuous functional calculus of `generator μ i` transported along the spectrum–support
@@ -334,7 +343,10 @@ theorem factor_realToRCLike_eq_cfcHom (i : ι) (f : C((μ i).support, ℝ)) :
         (f.comp (Homeomorph.setCongr (spectrum_generator μ i) :
           C(spectrum ℝ (generator μ i), (μ i).support))) := by
   rw [factor_apply_eq_cfcHom, cfcHom_real_eq_restrict (isSelfAdjoint_generator μ i)]
-  rfl
+  simp only [SpectrumRestricts.starAlgHom_apply]
+  refine congrArg (cfcHom (isSelfAdjoint_generator μ i).isStarNormal)
+    (ContinuousMap.ext fun x => ?_)
+  simp [SpectrumRestricts.homeomorph, Set.MapsTo.restrict]; rfl
 
 /-- The canonical generators in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependentElements_generator :
@@ -404,8 +416,8 @@ theorem starAlgHom_ext {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
   let E : StarSubalgebra ℂ (algebra μ) :=
     { toSubalgebra := AlgHom.equalizer f.toAlgHom g.toAlgHom
       star_mem' := fun {a} (ha : f a = g a) => by
-        change f (star a) = g (star a)
-        rw [map_star, map_star, ha] }
+        simp only [Subalgebra.mem_carrier, AlgHom.mem_equalizer, StarAlgHom.coe_toAlgHom,
+          map_star, ha] }
   have hle : (StarAlgebra.adjoin ℂ (Set.range (generator μ))).topologicalClosure ≤ E :=
     StarSubalgebra.topologicalClosure_minimal
       (StarAlgebra.adjoin_le <| by rintro _ ⟨i, rfl⟩; exact h i) (isClosed_eq hf hg)
@@ -497,8 +509,7 @@ theorem vonNeumannAlgebra_eq_adjoin_range_vonNeumannGenerator :
   let s : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ) :=
     Set.range fun i => (vonNeumannGenerator μ i : HilbertSpace μ →L[ℂ] HilbertSpace μ)
   refine le_antisymm ?_ (VonNeumannAlgebra.adjoin_le_iff.mpr ?_)
-  · change VonNeumannAlgebra.adjoin (algebra μ : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ)) ≤
-      VonNeumannAlgebra.adjoin s
+  · nth_rw 1 [vonNeumannAlgebra_eq_adjoin]
     rw [VonNeumannAlgebra.adjoin_le_iff]
     intro T hT
     have hnorm :

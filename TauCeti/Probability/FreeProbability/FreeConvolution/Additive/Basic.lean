@@ -140,10 +140,7 @@ measures. -/
 probability measure. -/
 @[simp] theorem freeConv_eq_zero_iff {μ ν : Measure ℝ} :
     μ.freeConv ν = 0 ↔ ¬μ.IsCompactProbabilityMeasure ∨ ¬ν.IsCompactProbabilityMeasure := by
-  have h : μ.freeConv ν = 0 ↔ ¬IsProbabilityMeasure (μ.freeConv ν) :=
-    ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
-      fun hnp => (eq_zero_or_isProbabilityMeasure (μ.freeConv ν)).resolve_right hnp⟩
-  rwa [isProbabilityMeasure_freeConv_iff, not_and_or] at h
+  rw [eq_zero_iff_not_isProbabilityMeasure, isProbabilityMeasure_freeConv_iff, not_and_or]
 
 /-- **Binary C⋆-probability realization of `μ`, `ν`, and `μ.freeConv ν`.** -/
 theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure ℝ}

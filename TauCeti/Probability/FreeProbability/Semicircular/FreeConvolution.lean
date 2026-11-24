@@ -21,8 +21,8 @@ additive convolution power scales both the centre and the variance by `n`, inclu
 
 * `TauCeti.Probability.semicircleReal_freeConv_semicircleReal`:
   `(semicircleReal m₁ v₁).freeConv (semicircleReal m₂ v₂) = semicircleReal (m₁ + m₂) (v₁ + v₂)`.
-* `TauCeti.Probability.semicircleReal_freeConvolutionPower`:
-  `(semicircleReal m v).freeConvolutionPower n = semicircleReal (n * m) (n • v)`.
+* `TauCeti.Probability.semicircleReal_freeConvPow`:
+  `(semicircleReal m v).freeConvPow n = semicircleReal (n * m) (n • v)`.
 
 ## References
 
@@ -64,12 +64,12 @@ namespace TauCeti.Probability
     hcentred, ← hshift (m₁ + m₂) (v₁ + v₂)]
 
 /-- **Free convolution powers of Wigner semicircle laws.** -/
-@[simp] theorem semicircleReal_freeConvolutionPower (m : ℝ) (v : ℝ≥0) (n : ℕ) :
-    (semicircleReal m v).freeConvolutionPower n = semicircleReal (n * m) (n • v) := by
+@[simp] theorem semicircleReal_freeConvPow (m : ℝ) (v : ℝ≥0) (n : ℕ) :
+    (semicircleReal m v).freeConvPow n = semicircleReal (n * m) (n • v) := by
   induction n with
   | zero => simp
   | succ n ih =>
-      rw [Measure.freeConvolutionPower_succ, ih, semicircleReal_freeConv_semicircleReal, succ_nsmul]
+      rw [Measure.freeConvPow_succ, ih, semicircleReal_freeConv_semicircleReal, succ_nsmul]
       congr 1; push_cast; ring
 
 end TauCeti.Probability
