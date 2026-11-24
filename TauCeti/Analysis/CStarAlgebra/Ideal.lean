@@ -281,7 +281,8 @@ instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedR
   let _ : StarOrderedRing I.toNonUnitalStarSubalgebra :=
     Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
   exact StarOrderedRing.of_equiv (R := I) (S := I.toNonUnitalStarSubalgebra)
-    I.toNonUnitalStarSubalgebraEquiv fun _ _ => Iff.rfl
+    I.toNonUnitalStarSubalgebraEquiv fun _ _ => by
+      simp only [← Subtype.coe_le_coe, coe_toNonUnitalStarSubalgebraEquiv_apply]
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/

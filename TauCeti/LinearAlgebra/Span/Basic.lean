@@ -231,8 +231,7 @@ theorem span_eq_addSubgroupClosure_of_smul_mem {R M : Type*} [Ring R] [AddCommGr
   let p : Submodule R M :=
     { toAddSubmonoid := (AddSubgroup.closure s).toAddSubmonoid
       smul_mem' := fun r x hx => by
-        change x ∈ AddSubgroup.closure s at hx
-        change r • x ∈ AddSubgroup.closure s
+        rw [AddSubmonoid.mem_carrier, AddSubgroup.mem_toAddSubmonoid] at hx ⊢
         induction hx using AddSubgroup.closure_induction with
         | mem y hy => exact AddSubgroup.subset_closure (hs r y hy)
         | zero => simp

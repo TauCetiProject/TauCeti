@@ -345,8 +345,10 @@ theorem coe_rightInnerIdeal :
       (Submodule.span ℂ (Set.range fun p : E × E => unop (inner Aᵐᵒᵖ p.1 p.2)) : Set A) =
       (innerSubmodule Aᵐᵒᵖ E : Set Aᵐᵒᵖ) := by
     rw [← himg, Set.preimage_image_eq _ unop_injective]
-  rw [rightInnerIdeal, TwoSidedIdeal.coe_unop, coe_innerIdeal, ← hpre]
-  exact (opHomeomorph.preimage_closure _).trans rfl
+  have hop : (op : A → Aᵐᵒᵖ) = opHomeomorph := (funext opHomeomorph_apply).symm
+  rw [rightInnerIdeal, TwoSidedIdeal.coe_unop, coe_innerIdeal, hop,
+    opHomeomorph.preimage_closure, ← hop, ← hpre, Set.preimage_preimage]
+  simp [unop_op]
 
 /-- A right Hilbert `A`-module is full if and only if the complex linear span of `{⟨x, y⟩_A}` is
 dense in `A`. -/
@@ -554,6 +556,30 @@ theorem idealSubmodule_eq_top_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :
 theorem idealSubmodule_innerIdeal : idealSubmodule (innerIdeal A E) E = ⊤ :=
   idealSubmodule_eq_top_iff.mpr le_rfl
 
+omit [StarOrderedRing A] in
+/-- Two-sided ideal products `b * a * c` with `b, c ∈ J` and `a ∈ innerIdeal A E` belong to
+`innerIdeal A (idealSubmodule J E)`. -/
+private theorem mul_mem_innerIdeal_idealSubmodule {J : TwoSidedIdeal A} [IsClosed (J : Set A)]
+    {a b c : A} (ha : a ∈ innerIdeal A E) (hb : b ∈ J) (hc : c ∈ J) :
+    b * a * c ∈ innerIdeal A (idealSubmodule J E) := by
+  let φ : A →L[ℂ] A :=
+    (ContinuousLinearMap.mul ℂ A).flip c |>.comp (ContinuousLinearMap.mul ℂ A b)
+  let M : Submodule ℂ A := (innerIdeal A (idealSubmodule J E)).toSubmodule.comap φ.toLinearMap
+  have hM : IsClosed (M : Set A) :=
+    (isClosed_innerIdeal (A := A) (E := idealSubmodule J E)).preimage φ.continuous
+  have hle : innerSubmodule A E ≤ M := by
+    rw [innerSubmodule_le_iff]
+    intro x y
+    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
+      ContinuousLinearMap.mul_apply', TwoSidedIdeal.mem_toSubmodule]
+    have hEq : b * inner A x y * c =
+        inner A (⟨star c • x, smul_mem_idealSubmodule (J.star_mem_of_isClosed hc) x⟩ :
+          idealSubmodule J E) ⟨b • y, smul_mem_idealSubmodule hb y⟩ := by
+      rw [coe_inner_idealSubmodule, inner_op_smul_right, inner_op_smul_left, star_star, mul_assoc]
+    exact hEq ▸ inner_mem_innerIdeal _ _
+  exact closure_minimal hle hM (mem_innerIdeal_iff.mp ha)
+
 /-- The inner-product ideal of the Hilbert `A`-submodule `idealSubmodule J E` is
 `innerIdeal A E ⊓ J`. -/
 @[simp]
@@ -569,42 +595,10 @@ theorem innerIdeal_idealSubmodule (J : TwoSidedIdeal A) [IsClosed (J : Set A)] :
     let l : Filter J := CStarAlgebra.approximateUnit J
     have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit J
     have := hl.neBot
-    have hmul (e : J) : (e : A) * a * (e : A) ∈ innerIdeal A (idealSubmodule J E) := by
-      let φ : A →L[ℂ] A :=
-        (ContinuousLinearMap.mul ℂ A).flip (e : A) |>.comp (ContinuousLinearMap.mul ℂ A (e : A))
-      let M : Submodule ℂ A := (innerIdeal A (idealSubmodule J E)).toSubmodule.comap φ.toLinearMap
-      have hM : IsClosed (M : Set A) :=
-        (isClosed_innerIdeal (A := A) (E := idealSubmodule J E)).preimage φ.continuous
-      have hle : innerSubmodule A E ≤ M := by
-        rw [innerSubmodule_le_iff]
-        intro x y
-        rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-          ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
-          ContinuousLinearMap.mul_apply', TwoSidedIdeal.mem_toSubmodule]
-        have hEq : (e : A) * inner A x y * (e : A) =
-            inner A (⟨star (e : A) • x,
-              smul_mem_idealSubmodule (J.star_mem_of_isClosed e.property) x⟩ :
-              idealSubmodule J E) ⟨(e : A) • y, smul_mem_idealSubmodule e.property y⟩ := by
-          rw [coe_inner_idealSubmodule, inner_op_smul_right, inner_op_smul_left, star_star,
-            mul_assoc]
-        exact hEq ▸ inner_mem_innerIdeal _ _
-      exact closure_minimal hle hM (mem_innerIdeal_iff.mp haI)
-    let a' : J := ⟨a, haJ⟩
-    have hlim : Tendsto (fun e : J => (e : A) * a * (e : A)) l (𝓝 a) := by
-      rw [tendsto_iff_norm_sub_tendsto_zero]
-      have h0 : Tendsto (fun e : J => ‖e * a' - a'‖ + ‖a' * e - a'‖) l (𝓝 (0 + 0)) :=
-        (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right a')).add
-          (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left a'))
-      rw [add_zero] at h0
-      refine squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _) ?_ h0
-      filter_upwards [hl.eventually_norm] with e he₁
-      have hsub : (e : A) * a * (e : A) - a = (((e * a' - a') * e + (a' * e - a') : J) : A) := by
-        simp [a', sub_mul]
-      rw [hsub, AddSubgroupClass.coe_norm]
-      refine (norm_add_le _ _).trans (add_le_add ?_ le_rfl)
-      exact (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) he₁)
+    have hlim : Tendsto (fun e : J => (e : A) * a * (e : A)) l (𝓝 a) :=
+      (continuous_subtypeVal.tendsto ⟨a, haJ⟩).comp (hl.tendsto_mul_self ⟨a, haJ⟩)
     exact (isClosed_innerIdeal (A := A) (E := idealSubmodule J E)).mem_of_tendsto hlim
-      (Eventually.of_forall hmul)
+      (Eventually.of_forall fun e => mul_mem_innerIdeal_idealSubmodule haI e.property e.property)
 
 /-- For a closed ideal `J`, `E J = ⊥` if and only if `innerIdeal A E ⊓ J = ⊥`. -/
 theorem idealSubmodule_eq_bot_iff {J : TwoSidedIdeal A} [IsClosed (J : Set A)] :

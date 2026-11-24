@@ -388,7 +388,10 @@ instance instSMulQuotient (J : TwoSidedIdeal A) : SMul (A ⧸ J) (E ⧸ idealSub
 theorem mk_smul_mk (J : TwoSidedIdeal A) (a : A) (x : E) :
     TwoSidedIdeal.Quotient.mk J a • (Submodule.Quotient.mk x : E ⧸ idealSubmodule J E) =
       Submodule.Quotient.mk (a • x) := by
-  rw [← TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk]; rfl
+  rw [← TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk]
+  -- Unfold `instSMulQuotient.smul` to `Quotient.liftOn₂'`; this lemma is the defining
+  -- computation rule, so no rewrite lemma can unfold `•` here.
+  exact Quotient.liftOn₂'_mk _ _ _ _
 
 /-- For any positive contractive element `e ∈ J`, adjusting the representative `x` to `x - e • x`
 yields the squared quotient-norm estimate `‖mk x‖ ^ 2 ≤ ‖⟪x, x⟫_A + z‖ + ‖z - z * e‖` via
@@ -741,14 +744,6 @@ theorem quotientFactorCLM_surjective {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤
     Function.Surjective (quotientFactorCLM (E := E) h) := fun u =>
   let ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ u; ⟨Submodule.Quotient.mk x, hx⟩
 
-/-- An element `x : E` vanishes in the factored quotient `E ⧸ idealSubmodule J₂ E` if and only if
-`x ∈ idealSubmodule J₂ E`. (`simp` also derives this from `quotientFactorCLM_mk` and
-`Submodule.Quotient.mk_eq_zero`.) -/
-theorem quotientFactorCLM_mk_eq_zero_iff {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) (x : E) :
-    quotientFactorCLM h (Submodule.Quotient.mk x : E ⧸ idealSubmodule J₁ E) = 0 ↔
-      x ∈ idealSubmodule J₂ E := by
-  rw [quotientFactorCLM_mk, Submodule.Quotient.mk_eq_zero]
-
 /-- The kernel of `quotientFactorCLM h` is the image of `idealSubmodule J₂ E` under
 `(idealSubmodule J₁ E).mkQ`. -/
 theorem ker_quotientFactorCLM {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
@@ -1070,14 +1065,6 @@ theorem inner_quotientMapCLM_op_of_inner_eq (J : TwoSidedIdeal A) [IsClosed (J :
   obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
   exact unop_injective (by
     rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner])
-
-/-- Right-module form: a right `A`-linear map preserving `Aᵐᵒᵖ`-valued inner products descends to
-an isometry on quotients. -/
-theorem isometry_quotientMapCLM_op (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
-    (T : E →L[ℂ] F) (hT : ∀ (u : Aᵐᵒᵖ) (x : E), T (u • x) = u • T x)
-    (hinner : ∀ x y : E, inner Aᵐᵒᵖ (T x) (T y) = inner Aᵐᵒᵖ x y) :
-    Isometry (quotientMapCLM J.op T hT) :=
-  isometry_quotientMapCLM J.op T hT hinner
 
 /-- Pointwise adjoint identity on right quotients, without requiring an order on `A ⧸ J`. -/
 theorem inner_quotientMapCLM_op_adjoint (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
