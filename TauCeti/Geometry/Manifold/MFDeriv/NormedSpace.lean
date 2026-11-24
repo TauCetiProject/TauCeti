@@ -156,6 +156,16 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
   -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
   rfl
 
+/-- The support of the derivative of a vector-valued function along a vector field lies in the
+support of the function: the manifold version of `tsupport_fderiv_apply_subset`. -/
+theorem tsupport_mvfderiv_apply_subset (f : M → F) (V : ∀ x, TangentSpace I x) :
+    tsupport (fun x ↦ mvfderiv I f x (V x)) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  by_contra h
+  have hf : f =ᶠ[𝓝 x] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 h
+  rw [Function.mem_support, hf.mvfderiv_eq, mvfderiv_const, zero_apply] at hx
+  exact hx rfl
+
 /-- A map into the model space with the germ of the extended chart at `x` has the identity as
 derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
 theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}

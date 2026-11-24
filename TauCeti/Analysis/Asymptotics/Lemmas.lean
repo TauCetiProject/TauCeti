@@ -70,6 +70,11 @@ In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1
 is the limit at infinity of antiderivatives built from such ratios, for example in elementary
 evaluations of elliptic integrals.
 
+A function `g` with `f x ‖g x‖` eventually bounded along a filter on which `f → ∞` tends to `0`.
+For `f y = y` on the real line, a bound on `y ‖g y‖` for large `y` also bounds `y |Im g y|` when
+`g` is complex-valued. These are the decay estimates read off along the imaginary axis from
+resolvent-type functions, which are `O(1 / y)` there.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
@@ -104,6 +109,10 @@ evaluations of elliptic integrals.
 * `TauCeti.continuousAt_of_isBigO_dist`: `dist (u y) (u x) = O(dist y x)` as `y → x` implies
   continuity of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
+* `TauCeti.tendsto_zero_of_eventually_mul_norm_le`: `f x ‖g x‖ ≤ K` eventually along a filter on
+  which `f → ∞` implies `g → 0`.
+* `TauCeti.eventually_mul_abs_im_le_of_mul_norm_le`: an eventual bound on `y ‖f y‖` bounds
+  `y |Im f y|`.
 
 ## Related results
 
@@ -379,5 +388,21 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   simp only [id]
   field_simp
   ring
+
+/-- If `f x ‖g x‖` is eventually bounded along a filter on which `f` tends to infinity, then `g`
+tends to `0`. -/
+theorem tendsto_zero_of_eventually_mul_norm_le {α E : Type*} [SeminormedAddCommGroup E]
+    {l : Filter α} {f : α → ℝ} {g : α → E} {K : ℝ} (hf : Tendsto f l atTop)
+    (h : ∀ᶠ x in l, f x * ‖g x‖ ≤ K) : Tendsto g l (𝓝 0) := by
+  refine squeeze_zero_norm' (a := fun x ↦ K / f x) ?_ (tendsto_const_nhds.div_atTop hf)
+  filter_upwards [h, hf.eventually_gt_atTop 0] with x hx hx0
+  rw [le_div_iff₀ hx0, mul_comm]
+  exact hx
+
+/-- A bound on `y ‖f y‖` for large `y` bounds `y |Im f y|`. -/
+theorem eventually_mul_abs_im_le_of_mul_norm_le {f : ℝ → ℂ} {C : ℝ}
+    (h : ∀ᶠ y : ℝ in atTop, y * ‖f y‖ ≤ C) : ∀ᶠ y : ℝ in atTop, y * |(f y).im| ≤ C := by
+  filter_upwards [h, eventually_gt_atTop 0] with y hy hy0
+  exact (mul_le_mul_of_nonneg_left (Complex.abs_im_le_norm _) hy0.le).trans hy
 
 end TauCeti
