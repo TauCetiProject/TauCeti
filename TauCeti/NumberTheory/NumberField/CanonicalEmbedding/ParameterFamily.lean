@@ -53,6 +53,12 @@ at most `[K : ℚ] * D * c`.
   parameter tuple.
 * `TauCeti.NumberField.linearIndependent_canonicalEmbedding_comp_iff`: the conjugate vectors of
   a family are `ℂ`-linearly independent if and only if the family is `ℚ`-linearly independent.
+* `TauCeti.NumberField.span_canonicalEmbedding_image_span`: the conjugate vectors of the `ℚ`-span
+  of a set have the same complex span as the conjugate vectors of the set.
+* `TauCeti.NumberField.finrank_span_canonicalEmbedding_image` and
+  `TauCeti.NumberField.span_canonicalEmbedding_image_eq_top_iff`: the conjugate vectors of a
+  `ℚ`-subspace `W` of `K` span a complex subspace of dimension `finrank ℚ W`, which is everything
+  if and only if `W = ⊤`.
 * `TauCeti.NumberField.conjugateConfiguration_injective_iff` and
   `TauCeti.NumberField.conjugateConfiguration_bijective`: the configuration map is injective
   for a `ℚ`-linearly independent family, and for nonempty `σ` only then, and bijective for a
@@ -188,6 +194,42 @@ theorem linearIndependent_canonicalEmbedding_comp_iff {α : ι → K} :
     ext i τ
     simp [e, canonicalEmbedding.apply_at]
   rw [← e.toLinearMap.linearIndependent_iff (LinearEquiv.ker e), LinearEquiv.coe_coe, he]
+
+/-- The vectors of conjugates of the elements of the `ℚ`-span of a set `s` in a number field have
+the same complex span as the vectors of conjugates of the elements of `s`. -/
+theorem span_canonicalEmbedding_image_span (s : Set K) :
+    Submodule.span ℂ (canonicalEmbedding K '' Submodule.span ℚ s) =
+      Submodule.span ℂ (canonicalEmbedding K '' s) := by
+  let ψ := (canonicalEmbedding K).toRatAlgHom.toLinearMap
+  have hψ : ⇑ψ = canonicalEmbedding K := funext fun x ↦ by simp [ψ]
+  rw [← hψ, ← Submodule.map_coe, Submodule.map_span, Submodule.span_span_of_tower]
+
+/-- The vectors of conjugates `(τ x)_τ` of the elements `x` of a `ℚ`-subspace `W` of a number
+field span a complex subspace of dimension `finrank ℚ W`. -/
+theorem finrank_span_canonicalEmbedding_image {W : Submodule ℚ K} :
+    finrank ℂ (Submodule.span ℂ (canonicalEmbedding K '' W)) = finrank ℚ W := by
+  let b := Module.finBasis ℚ W
+  have hW : (W : Set K) = Submodule.span ℚ (Set.range (W.subtype ∘ b)) := by
+    rw [Set.range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      Submodule.range_subtype]
+  -- The conjugate vectors of `W` and of its basis `b` have the same complex span.
+  have hspan : Submodule.span ℂ (canonicalEmbedding K '' W) =
+      Submodule.span ℂ (Set.range (canonicalEmbedding K ∘ W.subtype ∘ b)) := by
+    rw [hW, span_canonicalEmbedding_image_span, ← Set.range_comp]
+  have hli : LinearIndependent ℂ (canonicalEmbedding K ∘ W.subtype ∘ b) :=
+    linearIndependent_canonicalEmbedding_comp_iff.mpr
+      (b.linearIndependent.map' W.subtype (Submodule.ker_subtype W))
+  rw [hspan, finrank_span_eq_card hli, Fintype.card_fin, finrank_eq_card_basis b]
+
+/-- The conjugate vectors of the elements of a `ℚ`-subspace `W` of a number field span the
+complex space of embedding-indexed families if and only if `W` is the whole field. -/
+theorem span_canonicalEmbedding_image_eq_top_iff {W : Submodule ℚ K} :
+    Submodule.span ℂ (canonicalEmbedding K '' W) = ⊤ ↔ W = ⊤ := by
+  have hK : finrank ℂ ((K →+* ℂ) → ℂ) = finrank ℚ K := by
+    rw [finrank_fintype_fun_eq_card, Embeddings.card]
+  refine ⟨fun h ↦ Submodule.eq_top_of_finrank_eq ?_, fun h ↦ Submodule.eq_top_of_finrank_eq ?_⟩
+  · rw [← finrank_span_canonicalEmbedding_image, h, finrank_top, hK]
+  · rw [finrank_span_canonicalEmbedding_image, h, finrank_top, hK]
 
 /-- The conjugate configuration map of a `ℚ`-linearly independent family is injective. -/
 theorem conjugateConfiguration_injective {α : ι → K} (hα : LinearIndependent ℚ α) :
