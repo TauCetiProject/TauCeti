@@ -36,7 +36,8 @@ matrices.
 
 Vector curves obey the product rules `(x ⬝ᵥ y)' = x' ⬝ᵥ y + x ⬝ᵥ y'` (`HasDerivAt.dotProduct`)
 and `(A *ᵥ y)' = A' *ᵥ y + A *ᵥ y'` (`Matrix.hasDerivAt_mulVec_of_entries`), with the matrix
-again differentiated entrywise. Combining them differentiates the real quadratic form
+again differentiated entrywise. Their entries may lie in any normed algebra over the parameter
+field, not necessarily commutative. Combining them differentiates the real quadratic form
 `Re ⟪w, C w⟫` along real curves over `RCLike 𝕜`
 (`Matrix.hasDerivAt_re_star_dotProduct_mulVec_of_entries`).
 -/
@@ -79,9 +80,9 @@ theorem HasDerivAt.matrix_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [
     (Matrix.hasFDerivAt_inv hdet).comp_hasDerivAt a hA
 
 /-- **Product rule for the dot product** of two vector curves. -/
-theorem HasDerivAt.dotProduct {𝕜 𝕜' ι : Type*} [NontriviallyNormedField 𝕜]
-    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Fintype ι] {x y : 𝕜 → ι → 𝕜'}
-    {x' y' : ι → 𝕜'} {t : 𝕜} (hx : HasDerivAt x x' t) (hy : HasDerivAt y y' t) :
+theorem HasDerivAt.dotProduct {𝕜 𝔸 ι : Type*} [NontriviallyNormedField 𝕜] [NormedRing 𝔸]
+    [NormedAlgebra 𝕜 𝔸] [Fintype ι] {x y : 𝕜 → ι → 𝔸} {x' y' : ι → 𝔸} {t : 𝕜}
+    (hx : HasDerivAt x x' t) (hy : HasDerivAt y y' t) :
     HasDerivAt (fun τ ↦ x τ ⬝ᵥ y τ) (x' ⬝ᵥ y t + x t ⬝ᵥ y') t := by
   unfold _root_.dotProduct
   rw [← Finset.sum_add_distrib]
@@ -92,9 +93,9 @@ namespace Matrix
 /-- **Product rule for `mulVec`.** If every entry of a matrix curve `A` has derivative given by
 the corresponding entry of `A'` at `t`, and the vector curve `y` has derivative `y'` there, then
 `A *ᵥ y` has derivative `A' *ᵥ y t + A t *ᵥ y'` at `t`. -/
-theorem hasDerivAt_mulVec_of_entries {𝕜 𝕜' ι κ : Type*} [NontriviallyNormedField 𝕜]
-    [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Fintype ι] {A : 𝕜 → Matrix κ ι 𝕜'}
-    {A' : Matrix κ ι 𝕜'} {y : 𝕜 → ι → 𝕜'} {y' : ι → 𝕜'} {t : 𝕜}
+theorem hasDerivAt_mulVec_of_entries {𝕜 𝔸 ι κ : Type*} [NontriviallyNormedField 𝕜]
+    [NormedRing 𝔸] [NormedAlgebra 𝕜 𝔸] [Fintype ι] {A : 𝕜 → Matrix κ ι 𝔸}
+    {A' : Matrix κ ι 𝔸} {y : 𝕜 → ι → 𝔸} {y' : ι → 𝔸} {t : 𝕜}
     (hA : ∀ i j, HasDerivAt (fun τ ↦ A τ i j) (A' i j) t) (hy : HasDerivAt y y' t) :
     HasDerivAt (fun τ ↦ A τ *ᵥ y τ) (A' *ᵥ y t + A t *ᵥ y') t :=
   hasDerivAt_pi.2 fun i ↦ by
