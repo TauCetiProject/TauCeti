@@ -27,6 +27,8 @@ the diagonal it is the square of the Frobenius seminorm
 
 * `ContinuousLinearMap.hilbertSchmidtInner_eq_sum`: `⟪A, B⟫_HS = ∑ᵢ ⟪A eᵢ, B eᵢ⟫` in any
   orthonormal basis.
+* `ContinuousLinearMap.hilbertSchmidtInner_eq_sum_sum_inner_mul_inner`: the sum of products of
+  matrix coefficients in independently chosen source and target orthonormal bases.
 * `ContinuousLinearMap.hilbertSchmidtInner_comm`: symmetry.
 * `ContinuousLinearMap.hilbertSchmidtInner_add_left`,
   `ContinuousLinearMap.hilbertSchmidtInner_smul_left` and their right-hand versions: bilinearity.
@@ -64,6 +66,18 @@ theorem hilbertSchmidtInner_eq_sum (A B : W →L[ℝ] V) {ι : Type*} [Fintype �
     (b : OrthonormalBasis ι ℝ W) : A.hilbertSchmidtInner B = ∑ i, ⟪A (b i), B (b i)⟫_ℝ := by
   simp only [hilbertSchmidtInner_def, LinearMap.BilinMap.metricTrace_eq_sum _ b,
     LinearMap.compl₁₂_apply, innerₗ_apply_apply, coe_coe]
+
+/-- The Hilbert–Schmidt inner product is the sum of products of matrix coefficients. -/
+theorem hilbertSchmidtInner_eq_sum_sum_inner_mul_inner (A B : W →L[ℝ] V)
+    {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (b : OrthonormalBasis ι ℝ W) (c : OrthonormalBasis κ ℝ V) :
+    A.hilbertSchmidtInner B =
+      ∑ i, ∑ j, inner ℝ (A (b i)) (c j) * inner ℝ (B (b i)) (c j) := by
+  rw [hilbertSchmidtInner_eq_sum A B b]
+  apply Finset.sum_congr rfl
+  intro i _
+  simpa only [real_inner_comm (B (b i))] using
+    (c.sum_inner_mul_inner (A (b i)) (B (b i))).symm
 
 /-- The Hilbert–Schmidt inner product is symmetric. -/
 theorem hilbertSchmidtInner_comm (A B : W →L[ℝ] V) :

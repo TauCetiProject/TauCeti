@@ -96,6 +96,12 @@ theorem toComplex_algebraMap (a : 𝓞 K) :
     toComplex σ (algebraMap (𝓞 K) (ComplexAlong σ) a) = σ (algebraMap (𝓞 K) K a) :=
   (rfl)
 
+/-- The image of an integer `a` of `K` in `ComplexAlong σ` is that of the complex number `σ(a)`. -/
+theorem algebraMap_ringOfIntegers_eq (a : 𝓞 K) :
+    algebraMap (𝓞 K) (ComplexAlong σ) a =
+      algebraMap ℂ (ComplexAlong σ) (σ (algebraMap (𝓞 K) K a)) :=
+  (rfl)
+
 end ComplexAlong
 
 /-- The complex fibre `E_σ = ℂ ⊗[𝓞 K, σ] E` of an `𝓞 K`-module at a field embedding `σ`. -/
@@ -229,6 +235,23 @@ theorem norm_pos (σ : K →+* ℂ) {x : E} (hx : x ≠ 0) : 0 < E.norm σ x := 
   let := E.metric.core σ
   refine Real.sqrt_pos.2 (lt_of_le_of_ne InnerProductSpace.Core.inner_self_nonneg (Ne.symm ?_))
   exact fun h => E.one_tmul_ne_zero σ hx (InnerProductSpace.Core.normSq_eq_zero.1 h)
+
+variable (E) in
+/-- An integer `a` of `K` scales the norm at `σ` by `|σ(a)|`: `‖a • x‖_σ = |σ(a)| ‖x‖_σ`. -/
+theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
+    E.norm σ (a • x) = ‖σ (algebraMap (𝓞 K) K a)‖ * E.norm σ x := by
+  set z := σ (algebraMap (𝓞 K) K a)
+  -- In the fibre, `a` acts on `1 ⊗ x` as the complex number `z = σ(a)`.
+  have h : (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] (a • x) = z • ((1 : ComplexAlong σ) ⊗ₜ x) := by
+    simp [z, smul_tmul', Algebra.smul_def, ComplexAlong.algebraMap_ringOfIntegers_eq]
+  -- Scaling by `z` multiplies `h_σ(v, v)` by `conj z * z = ‖z‖ ^ 2`.
+  have hz (v : ComplexFiber σ E) :
+      (E.metric.core σ).inner (z • v) (z • v) = (‖z‖ ^ 2 : ℝ) * (E.metric.core σ).inner v v := by
+    rw [(E.metric.core σ).smul_left,
+      InnerProductSpace.Core.inner_smul_right (c := (E.metric.core σ).toCore), ← mul_assoc,
+      Complex.conj_mul', Complex.ofReal_pow]
+  simp only [norm_def, inner_def, h, hz, RCLike.re_to_complex, Complex.re_ofReal_mul,
+    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
 
 section Trivial
 

@@ -104,8 +104,9 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   `TauCeti.FourTensor.scalar_compContinuousLinearMap_linearIsometryEquiv`: the contractions are
   equivariant under linear isometric equivalences.
 * `TauCeti.FourTensor.ricci_kulkarniNomizu_innerₗ`: `Ric(h ⊙ g) = (n - 2) h + (tr h) g`.
-* `TauCeti.FourTensor.constantCurvature_apply_self_pos_iff`: `r(u, v, u, v) > 0` for the
-  constant-curvature tensor exactly on a linearly independent pair.
+* `TauCeti.FourTensor.constantCurvature_eq_half_smul_kulkarniNomizu`,
+  `TauCeti.FourTensor.constantCurvature_apply_self_pos_iff`: the Kulkarni–Nomizu square formula
+  and positivity of `r(u, v, u, v)` on linearly independent pairs.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
 * `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
@@ -679,6 +680,11 @@ product with itself. It is the curvature four-tensor of the unit sphere, and `κ
 curvature four-tensor of a space of constant sectional curvature `κ`. -/
 def constantCurvature : FourTensor V :=
   (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V)
+
+/-- The constant-curvature tensor is half the Kulkarni–Nomizu square of the inner product. -/
+theorem constantCurvature_eq_half_smul_kulkarniNomizu :
+    constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
+  (rfl)
 
 /-- Evaluation of the constant-curvature tensor. -/
 @[simp]
