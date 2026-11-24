@@ -33,6 +33,11 @@ evaluated at the zeroth coordinates.
 The coordinate identities hold over arbitrary commutative rings, including rings with
 `p`-torsion. Cancellation by `p` is used only over a universal polynomial ring over `ℤ`.
 
+The sum formula is first proved for full Witt vectors (`WittVector.add_coeff_one`), from
+Mathlib's universal Witt addition polynomial `WittVector.wittAdd p 1`. Truncation then gives the
+coordinate formulas for sums and products of truncated Witt vectors of every length at least
+two.
+
 These are the length-two arithmetic and unit criterion used in Bhatt and Scholze,
 *Prisms and prismatic cohomology*, Remark 2.4 and Lemma 2.15.
 -/
@@ -40,6 +45,35 @@ These are the length-two arithmetic and unit criterion used in Bhatt and Scholze
 public section
 
 noncomputable section
+
+namespace WittVector
+
+variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R]
+
+open MvPolynomial in
+/-- The Witt polynomial computing the second coordinate of a sum:
+`(x + y)₁ = x₁ + y₁ + C_p(x₀, y₀)`. -/
+theorem wittAdd_one :
+    wittAdd p 1 =
+      X (0, 1) + X (1, 1) + TauCeti.DeltaRing.addCorrection p (X (0, 0)) (X (1, 0)) := by
+  have h := wittStructureInt_prop p (X 0 + X 1 : MvPolynomial (Fin 2) ℤ) 1
+  simp only [wittPolynomial_one, map_add, map_mul, map_pow, aeval_X, algHom_C,
+    rename_X, ← wittAdd.eq_1] at h
+  have hc := TauCeti.DeltaRing.natCast_mul_addCorrection (p := p)
+    (X (0, 0) : MvPolynomial (Fin 2 × ℕ) ℤ) (X (1, 0))
+  rw [wittAdd_zero] at h
+  apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero : (p : MvPolynomial _ ℤ) ≠ 0)
+  simp only [eq_intCast, Int.cast_natCast] at h
+  linear_combination h - hc
+
+/-- The second coordinate of a sum of Witt vectors is `x₁ + y₁ + C_p(x₀, y₀)`, where
+`C_p = TauCeti.DeltaRing.addCorrection p` is the polynomial `(X ^ p + Y ^ p - (X + Y) ^ p) / p`. -/
+theorem add_coeff_one (x y : WittVector p R) :
+    (x + y).coeff 1 =
+      x.coeff 1 + y.coeff 1 + TauCeti.DeltaRing.addCorrection p (x.coeff 0) (y.coeff 0) := by
+  simp [add_coeff, wittAdd_one, peval, TauCeti.DeltaRing.map_addCorrection]
+
+end WittVector
 
 namespace TruncatedWittVector
 
@@ -231,69 +265,56 @@ Kept as a named equation so generic ring-homomorphism laws retain their bundled 
 theorem ghostComponentOne_apply (x : TruncatedWittVector p 2 A) :
     ghostComponentOne x = x.coeff 0 ^ p + p * x.coeff 1 := by
   obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) 2 A x
-  rw [ghostComponentOne_wittVector_truncate, WittVector.ghostComponent_apply,
-    wittPolynomial_one]
-  simp only [map_add, map_mul, map_pow, MvPolynomial.aeval_X,
-    map_natCast, WittVector.coeff_truncate]
-  exact add_comm _ _
+  rw [ghostComponentOne_wittVector_truncate, WittVector.ghostComponent_one]
+  simp only [WittVector.coeff_truncate, Fin.val_zero, Fin.val_one]
 
-/-- The zeroth coordinate of a sum in length two. -/
+/-- The zeroth coordinate of a sum of truncated Witt vectors. -/
 @[simp]
-theorem add_coeff_zero (x y : TruncatedWittVector p 2 A) :
+theorem add_coeff_zero {n : ℕ} (x y : TruncatedWittVector p (n + 1) A) :
     (x + y).coeff 0 = x.coeff 0 + y.coeff 0 := by
-  simpa only [constantCoeff_apply] using (map_add (constantCoeff (p := p)) x y)
+  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 1) A x
+  obtain ⟨y, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 1) A y
+  simp only [← map_add, WittVector.coeff_truncate, Fin.val_zero, WittVector.add_coeff_zero]
 
-/-- The zeroth coordinate of a product in length two. -/
+/-- The zeroth coordinate of a product of truncated Witt vectors. -/
 @[simp]
-theorem mul_coeff_zero (x y : TruncatedWittVector p 2 A) :
+theorem mul_coeff_zero {n : ℕ} (x y : TruncatedWittVector p (n + 1) A) :
     (x * y).coeff 0 = x.coeff 0 * y.coeff 0 := by
-  simpa only [constantCoeff_apply] using (map_mul (constantCoeff (p := p)) x y)
+  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 1) A x
+  obtain ⟨y, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 1) A y
+  simp only [← map_mul, WittVector.coeff_truncate, Fin.val_zero, WittVector.mul_coeff_zero]
 
-/-- The zeroth coordinate of the unit Witt vector is one. -/
+/-- The zeroth coordinate of the unit truncated Witt vector is one. -/
 @[simp]
-theorem one_coeff_zero : (1 : TruncatedWittVector p 2 A).coeff 0 = 1 := by
-  simpa only [constantCoeff_apply] using (map_one (constantCoeff (p := p) (n := 2) (A := A)))
+theorem one_coeff_zero {n : ℕ} : (1 : TruncatedWittVector p (n + 1) A).coeff 0 = 1 := by
+  rw [← map_one (WittVector.truncate (p := p) (R := A) (n + 1)), WittVector.coeff_truncate]
+  exact WittVector.one_coeff_zero p A
 
-/-- The second coordinate of the unit Witt vector is zero. -/
+/-- The second coordinate of the unit truncated Witt vector is zero. -/
 @[simp]
-theorem one_coeff_one : (1 : TruncatedWittVector p 2 A).coeff 1 = 0 := by
-  rw [← map_one (WittVector.truncate (p := p) (R := A) 2), WittVector.coeff_truncate]
-  exact WittVector.one_coeff_eq_of_pos p A 1 (by decide)
+theorem one_coeff_one {n : ℕ} : (1 : TruncatedWittVector p (n + 2) A).coeff 1 = 0 := by
+  rw [← map_one (WittVector.truncate (p := p) (R := A) (n + 2)), WittVector.coeff_truncate]
+  exact WittVector.one_coeff_eq_of_pos p A _ (by simp)
 
-/-- The second coordinate of `x + y` is `x₁ + y₁ + TauCeti.DeltaRing.addCorrection p x₀ y₀`. -/
-theorem add_coeff_one (x y : TruncatedWittVector p 2 A) :
+/-- The second coordinate of `x + y` is `x₁ + y₁ + TauCeti.DeltaRing.addCorrection p x₀ y₀`,
+for truncated Witt vectors of every length at least two. -/
+theorem add_coeff_one {n : ℕ} (x y : TruncatedWittVector p (n + 2) A) :
     (x + y).coeff 1 = x.coeff 1 + y.coeff 1 +
       TauCeti.DeltaRing.addCorrection p (x.coeff 0) (y.coeff 0) := by
-  let X : TruncatedWittVector p 2 (MvPolynomial (Bool × Fin 2) ℤ) :=
-    mk p fun i => MvPolynomial.X (false, i)
-  let Y : TruncatedWittVector p 2 (MvPolynomial (Bool × Fin 2) ℤ) :=
-    mk p fun i => MvPolynomial.X (true, i)
-  have h : (X + Y).coeff 1 = X.coeff 1 + Y.coeff 1 +
-      TauCeti.DeltaRing.addCorrection p (X.coeff 0) (Y.coeff 0) := by
-    have hp_ne : (p : MvPolynomial (Bool × Fin 2) ℤ) ≠ 0 :=
-      Nat.cast_ne_zero.mpr hp.out.ne_zero
-    apply mul_left_cancel₀ hp_ne
-    have hg := (ghostComponentOne (p := p)).map_add X Y
-    simp only [ghostComponentOne_apply, add_coeff_zero] at hg
-    have hc := TauCeti.DeltaRing.natCast_mul_addCorrection (p := p) (X.coeff 0) (Y.coeff 0)
-    linear_combination hg - hc
-  let f : MvPolynomial (Bool × Fin 2) ℤ →+* A :=
-    MvPolynomial.eval₂Hom (Int.castRingHom A) fun i => if i.1 then y.coeff i.2 else x.coeff i.2
-  have hX : map 2 f X = x := by ext i; simp [f, X]
-  have hY : map 2 f Y = y := by ext i; simp [f, Y]
-  have hf := congrArg f h
-  simpa only [← map_coeff, map_add, hX, hY,
-    TauCeti.DeltaRing.map_addCorrection] using hf
+  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 2) A x
+  obtain ⟨y, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 2) A y
+  simp only [← map_add, WittVector.coeff_truncate, Fin.val_zero, Fin.val_one,
+    WittVector.add_coeff_one]
 
-/-- The second multiplication coordinate over any commutative ring. -/
-theorem mul_coeff_one (x y : TruncatedWittVector p 2 A) :
+/-- The second multiplication coordinate over any commutative ring, for truncated Witt vectors of
+every length at least two. -/
+theorem mul_coeff_one {n : ℕ} (x y : TruncatedWittVector p (n + 2) A) :
     (x * y).coeff 1 = x.coeff 0 ^ p * y.coeff 1 + y.coeff 0 ^ p * x.coeff 1 +
       p * x.coeff 1 * y.coeff 1 := by
-  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) 2 A x
-  obtain ⟨y, rfl⟩ := WittVector.truncate_surjective (p := p) 2 A y
-  rw [← map_mul]
-  simpa only [WittVector.coeff_truncate, Fin.val_zero, Fin.val_one] using
-    WittVector.mul_coeff_one x y
+  obtain ⟨x, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 2) A x
+  obtain ⟨y, rfl⟩ := WittVector.truncate_surjective (p := p) (n + 2) A y
+  simp only [← map_mul, WittVector.coeff_truncate, Fin.val_zero, Fin.val_one,
+    WittVector.mul_coeff_one]
 
 /-- Over any commutative ring, a length-two Witt vector is invertible precisely when both ghost
 components are units. -/

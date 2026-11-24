@@ -7,19 +7,25 @@ module
 
 import TauCeti.RingTheory.Flat.CompletelyFlat
 import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
+import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Checks for complete flatness
 
 For a prime `p`, `ℤ` is `p`-completely faithfully flat over itself, being faithfully flat, but it
 is not derived `p`-complete: the series `∑ (-p)ʲ`, whose sum would be `1 / (1 + p)`, has no sum
-in `ℤ`. So complete flatness does not imply completeness. On the other hand `F_p = ℤ/(p)` is not
-`p`-completely flat over `ℤ`, as `Tor_1^ℤ(F_p, F_p) ≠ 0`.
+in `ℤ`. So complete flatness does not imply completeness. The `p`-adic integers `ℤ_p` are
+`p`-completely faithfully flat over `ℤ`: they are torsion-free, hence flat, and `ℤ_p / p = F_p` is
+a nonzero vector space over `F_p`, although `ℤ_p` is not faithfully flat over `ℤ`, as
+`ℤ_p / q = 0` for primes `q ≠ p`. On the other hand `F_p = ℤ/(p)` is not `p`-completely flat
+over `ℤ`, as `Tor_1^ℤ(F_p, F_p) ≠ 0`.
 -/
 
 namespace TauCeti.Examples
 
-open DerivedDeRham
+open DerivedDeRham TensorProduct
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
@@ -60,6 +66,18 @@ example : ¬ IsDerivedComplete (Ideal.span {(p : ℤ)}) ℤ := by
     linear_combination hw0
   have := hp.out.two_le
   rcases Int.eq_one_or_neg_one_of_mul_eq_one h1 with h2 | h2 <;> omega
+
+-- `ℤ_p` is `p`-completely faithfully flat over `ℤ`: it is flat, being torsion-free, and the
+-- reduction `F_p ⊗ ℤ_p` is a nonzero `F_p`-vector space, as it maps onto `ZMod p`.
+example : IsCompletelyFaithfullyFlatModule ℤ (Ideal.span {(p : ℤ)}) (ModuleCat.of ℤ ℤ_[p]) := by
+  have : (Ideal.span {(p : ℤ)}).IsMaximal :=
+    PrincipalIdealRing.isMaximal_of_irreducible (Nat.prime_iff_prime_int.mp hp.out).irreducible
+  have : Nontrivial ((ℤ ⧸ Ideal.span {(p : ℤ)}) ⊗[ℤ] ℤ_[p]) :=
+    (Algebra.TensorProduct.lift (Int.quotientSpanNatEquivZMod p).toRingHom.toIntAlgHom
+      PadicInt.toZMod.toIntAlgHom fun _ _ ↦ Commute.all _ _).toRingHom.domain_nontrivial
+  let := Ideal.Quotient.field (Ideal.span {(p : ℤ)})
+  exact isCompletelyFaithfullyFlatModule_iff.mpr
+    ⟨isCompletelyFlatModule_of_flat _, inferInstanceAs (Module.FaithfullyFlat _ (_ ⊗[ℤ] ℤ_[p]))⟩
 
 -- `F_p` is not `p`-completely flat over `ℤ`.
 example : ¬ IsCompletelyFlatModule ℤ (Ideal.span {(p : ℤ)})
