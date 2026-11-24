@@ -29,6 +29,8 @@ localizations of affine source charts as `R`-algebras.
 * `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_iff_isSmoothAt`: the affine-base chart criterion.
 * `AlgebraicGeometry.Scheme.Hom.smooth_smoothLocus_ι_comp`: the restriction of `f` to its smooth
   locus is smooth.
+* `TauCeti.AlgebraicGeometry.smooth_smoothLocus_over`: the same for the smooth locus of a
+  scheme over `S`, regarded as a scheme over `S`.
 * `AlgebraicGeometry.Scheme.Hom.preimage_smoothLocus_le_smoothLocus_pullback_snd`: the preimage
   of the smooth locus of `f` in `X ×_S T` lies in the smooth locus of `X ×_S T ⟶ T`.
 * `AlgebraicGeometry.Scheme.Hom.smooth_of_transitive_on_closedPoints`: a reduced scheme
@@ -119,3 +121,17 @@ theorem mem_smoothLocus_iff_isSmoothAt {R : Type u} [CommRing R] {X : Scheme.{u}
   exact h.symm
 
 end AlgebraicGeometry.Scheme.Hom
+
+open AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
+/-- A morphism locally of finite presentation over `S` is smooth over `S` on its smooth locus,
+with the smooth locus regarded as a scheme over `S`. -/
+instance smooth_smoothLocus_over {X S : Scheme.{u}} [X.Over S]
+    [LocallyOfFinitePresentation (X ↘ S)] : Smooth ((X ↘ S).smoothLocus.toScheme ↘ S) :=
+  (X ↘ S).smooth_smoothLocus_ι_comp
+
+end TauCeti.AlgebraicGeometry
