@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
@@ -89,7 +88,7 @@ end TauCeti
 
 namespace CompactlySupportedContinuousMap
 
-variable [TopologicalSpace X] [OpensMeasurableSpace X] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+variable [TopologicalSpace X] [OpensMeasurableSpace X] [NormedSpace ℝ F]
 
 /-- The pairing of a compactly supported continuous field with a density of dual norm at most one
 is integrable against a measure finite on compact sets. -/
@@ -98,7 +97,8 @@ theorem integrable_dual_apply (f : C_c(X, F)) {μ : Measure X} [IsFiniteMeasureO
     Integrable (fun x => τ x (f x)) μ :=
   (f.continuous.integrable_of_hasCompactSupport f.hasCompactSupport).norm.mono'
     (Continuous.comp_aestronglyMeasurable₂ (g := fun (ℓ : StrongDual ℝ F) v => ℓ v) (by fun_prop)
-      hτm f.continuous.aestronglyMeasurable)
+      hτm (f.continuous.stronglyMeasurable_of_hasCompactSupport
+        f.hasCompactSupport).aestronglyMeasurable)
     (hτ.mono fun x hx => ((τ x).le_opNorm (f x)).trans (mul_le_of_le_one_left (norm_nonneg _) hx))
 
 end CompactlySupportedContinuousMap
