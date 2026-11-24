@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.TestFunction.Basic
 public import Mathlib.Geometry.Manifold.ContMDiff.Basic
 public import Mathlib.Topology.Sets.Opens
+public import TauCeti.Topology.Algebra.Support
 
 /-!
 # Extension by zero of test functions from an open subset
@@ -22,7 +23,7 @@ closure lies in `U` restricts to a test function on `U`, and the two operations 
 
 * `TauCeti.LieTestFunction.extendByZero U`: the `ℂ`-linear extension by zero
   `LieTestFunction I U → LieTestFunction I G`.
-* `TauCeti.LieTestFunction.restrict U a h`: the restriction to `U` of a test function `a` with
+* `TauCeti.LieTestFunction.restrict a h`: the restriction to `U` of a test function `a` with
   `tsupport a ⊆ U`.
 
 ## Main results
@@ -46,14 +47,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] (U : Opens G)
 
-private theorem extend_zero_apply_coe (f : U → ℂ) (x : U) :
-    Subtype.val.extend f 0 (x : G) = f x :=
-  Subtype.val_injective.extend_apply f 0 x
-
-private theorem extend_zero_apply_of_notMem (f : U → ℂ) {x : G} (hx : x ∉ U) :
-    Subtype.val.extend f 0 x = 0 :=
-  extend_apply' _ _ _ (by rintro ⟨y, rfl⟩; exact hx y.property)
-
 section ExtendByZero
 
 variable [T2Space G]
@@ -67,12 +60,12 @@ noncomputable def extendByZero : LieTestFunction I U →ₗ[ℂ] LieTestFunction
     by_cases h : x ∈ U
     · lift x to U using h
       simp
-    · simp [extend_zero_apply_of_notMem U _ h]
+    · simp [Function.extend_val_apply' h]
   map_smul' c a := ext fun x ↦ by
     by_cases h : x ∈ U
     · lift x to U using h
       simp
-    · simp [extend_zero_apply_of_notMem U _ h]
+    · simp [Function.extend_val_apply' h]
 
 theorem coe_extendByZero (a : LieTestFunction I U) :
     ⇑(extendByZero U a) = Subtype.val.extend a 0 :=
@@ -80,11 +73,11 @@ theorem coe_extendByZero (a : LieTestFunction I U) :
 
 @[simp]
 theorem extendByZero_apply_coe (a : LieTestFunction I U) (x : U) : extendByZero U a x = a x :=
-  extend_zero_apply_coe U a x
+  Function.extend_val_apply x.property
 
 theorem extendByZero_apply_of_notMem (a : LieTestFunction I U) {x : G} (hx : x ∉ U) :
     extendByZero U a x = 0 :=
-  extend_zero_apply_of_notMem U a hx
+  Function.extend_val_apply' hx
 
 @[simp]
 theorem support_extendByZero (a : LieTestFunction I U) :
@@ -111,17 +104,6 @@ section Restrict
 
 variable {U}
 
-/-- The restriction of a function to a set `U` containing its support closure has compact support
-if the function does. -/
-theorem _root_.HasCompactSupport.comp_subtypeVal {X M : Type*} [TopologicalSpace X] [Zero M]
-    {f : X → M} {U : Set X} (hf : HasCompactSupport f) (h : tsupport f ⊆ U) :
-    HasCompactSupport (fun x : U ↦ f x) := by
-  refine HasCompactSupport.intro' (K := ((↑) : U → X) ⁻¹' tsupport f) ?_
-    ((isClosed_tsupport f).preimage continuous_subtypeVal) fun x hx ↦
-      image_eq_zero_of_notMem_tsupport (x := (x : X)) hx
-  rwa [Subtype.isCompact_iff, image_preimage_eq_inter_range, Subtype.range_coe,
-    inter_eq_left.2 h]
-
 /-- The restriction to an open subset `U` of a test function `a` with `tsupport a ⊆ U`. -/
 def restrict (a : LieTestFunction I G) (h : tsupport a ⊆ U) : LieTestFunction I U :=
   ⟨fun x ↦ a x, a.contMDiff.comp contMDiff_subtypeVal, a.hasCompactSupport.comp_subtypeVal h⟩
@@ -130,6 +112,19 @@ def restrict (a : LieTestFunction I G) (h : tsupport a ⊆ U) : LieTestFunction 
 theorem restrict_apply (a : LieTestFunction I G) (h : tsupport a ⊆ U) (x : U) :
     restrict a h x = a x :=
   (rfl)
+
+@[simp]
+theorem support_restrict (a : LieTestFunction I G) (h : tsupport a ⊆ U) :
+    support (restrict a h) = (↑) ⁻¹' support a := by
+  ext
+  simp
+
+@[simp]
+theorem tsupport_restrict (a : LieTestFunction I G) (h : tsupport a ⊆ U) :
+    tsupport (restrict a h) = (↑) ⁻¹' tsupport a := by
+  rw [tsupport, support_restrict]
+  exact (U.isOpen.isOpenMap_subtypeVal.preimage_closure_eq_closure_preimage
+    continuous_subtypeVal _).symm
 
 theorem restrict_add (a b : LieTestFunction I G) (ha : tsupport a ⊆ U) (hb : tsupport b ⊆ U) :
     restrict (a + b) ((tsupport_add a b).trans (union_subset ha hb)) =

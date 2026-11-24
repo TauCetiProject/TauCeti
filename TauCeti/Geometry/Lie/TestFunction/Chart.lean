@@ -79,6 +79,26 @@ theorem compDiffeomorph_symm_apply (Φ : M ≃ₘ⟮I, J⟯ N) (a : LieTestFunct
     (compDiffeomorph Φ).symm a y = a (Φ.symm y) :=
   (rfl)
 
+@[simp]
+theorem support_compDiffeomorph (Φ : M ≃ₘ⟮I, J⟯ N) (a : LieTestFunction J N) :
+    support (compDiffeomorph Φ a) = Φ ⁻¹' support a :=
+  support_comp_eq_preimage a Φ
+
+@[simp]
+theorem tsupport_compDiffeomorph (Φ : M ≃ₘ⟮I, J⟯ N) (a : LieTestFunction J N) :
+    tsupport (compDiffeomorph Φ a) = Φ ⁻¹' tsupport a :=
+  tsupport_comp_eq_preimage a Φ.toHomeomorph
+
+@[simp]
+theorem support_compDiffeomorph_symm (Φ : M ≃ₘ⟮I, J⟯ N) (a : LieTestFunction I M) :
+    support ((compDiffeomorph Φ).symm a) = Φ.symm ⁻¹' support a :=
+  support_comp_eq_preimage a Φ.symm
+
+@[simp]
+theorem tsupport_compDiffeomorph_symm (Φ : M ≃ₘ⟮I, J⟯ N) (a : LieTestFunction I M) :
+    tsupport ((compDiffeomorph Φ).symm a) = Φ.symm ⁻¹' tsupport a :=
+  tsupport_comp_eq_preimage a Φ.symm.toHomeomorph
+
 end Diffeomorph
 
 section Euclidean
@@ -88,6 +108,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Ω : Opens E)
 /-- A Euclidean test function, as a test function on the normed space `E` as a manifold. -/
 private def ofTestFunction (φ : 𝓓(Ω, ℂ)) : LieTestFunction 𝓘(ℝ, E) E :=
   ⟨φ, φ.contDiff.contMDiff, φ.hasCompactSupport⟩
+
+@[simp]
+private theorem ofTestFunction_apply (φ : 𝓓(Ω, ℂ)) (y : E) : ofTestFunction Ω φ y = φ y :=
+  (rfl)
 
 /-- Test functions on an open subset `Ω` of a normed space `E`, with its manifold structure
 modelled on `𝓘(ℝ, E)`, are Mathlib's test functions `𝓓(Ω, ℂ)`: a test function on `Ω` is sent to
@@ -114,7 +138,7 @@ theorem equivTestFunction_apply_of_notMem (a : LieTestFunction 𝓘(ℝ, E) Ω) 
 @[simp]
 theorem equivTestFunction_symm_apply (φ : 𝓓(Ω, ℂ)) (y : Ω) :
     (equivTestFunction Ω).symm φ y = φ y :=
-  (restrict_apply _ _ y).trans rfl
+  (restrict_apply _ _ y).trans (ofTestFunction_apply Ω φ y)
 
 end Euclidean
 
@@ -134,6 +158,14 @@ the chart. A test function `a` on `G` with `tsupport a ⊆ (chartAt H x).source`
 def chartEquiv (x : G) :
     LieTestFunction I (chartSourceOpens H x) ≃ₗ[ℂ] 𝓓(extChartTargetOpens I x, ℂ) :=
   (compDiffeomorph (extChartAtDiffeomorph (I := I) ∞ x)).symm.trans (equivTestFunction _)
+
+@[simp]
+theorem tsupport_chartEquiv (x : G) (a : LieTestFunction I (chartSourceOpens H x)) :
+    tsupport (chartEquiv I x a) = extChartAt I x '' ((↑) '' tsupport a) := by
+  change tsupport (extendByZero _ ((compDiffeomorph _).symm a)) = _
+  rw [tsupport_extendByZero, tsupport_compDiffeomorph_symm, ← Diffeomorph.image_eq_preimage_symm,
+    image_image, image_image]
+  simp
 
 theorem chartEquiv_apply_of_mem (x : G) (a : LieTestFunction I (chartSourceOpens H x)) {y : E}
     (hy : y ∈ (extChartAt I x).target) :

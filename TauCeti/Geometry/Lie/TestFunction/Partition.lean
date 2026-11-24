@@ -61,8 +61,11 @@ theorem exists_sum_eq_one_of_isCompact {K : Set G} (hK : IsCompact K) (U : ι �
       ((hsupp i).trans (inter_subset_right.trans subset_closure))⟩,
     fun i x ↦ Complex.zero_le_real.2 (f.nonneg i x),
     fun i ↦ (hsupp i).trans inter_subset_left, fun x hx ↦ ?_⟩
-  change ∑ i, (f i x : ℂ) = 1
-  rw [← Complex.ofReal_sum, ← finsum_eq_sum_of_fintype, f.sum_eq_one hx, Complex.ofReal_one]
+  -- `χ i x` is `(f i x : ℂ)` by `coe_mk`; `simp only [coe_mk]` cannot rewrite under `∑ i`, as
+  -- the proof fields of `χ i` depend on the summation index.
+  have hsum : ∑ i, (f i x : ℂ) = 1 := by
+    rw [← Complex.ofReal_sum, ← finsum_eq_sum_of_fintype, f.sum_eq_one hx, Complex.ofReal_one]
+  exact hsum
 
 /-- A test function `a` whose support closure is covered by finitely many open sets `U i` is a sum
 of test functions `b i` with `tsupport (b i) ⊆ U i`. -/
@@ -74,8 +77,7 @@ theorem exists_sum_eq_of_tsupport_subset_iUnion (a : LieTestFunction I G) (U : �
     contDiff_mul.contMDiff.comp ((χ i).contMDiff.prodMk_space a.contMDiff),
     a.hasCompactSupport.mul_left⟩, fun i ↦ (tsupport_mul_subset_left).trans (hχU i), ?_⟩
   ext x
-  rw [← toFunction_apply, map_sum, Finset.sum_apply]
-  simp only [toFunction_apply, coe_mk, ← Finset.sum_mul]
+  simp only [finset_sum_apply, coe_mk, ← Finset.sum_mul]
   by_cases hx : x ∈ tsupport a
   · rw [hχ x hx, one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hx, mul_zero]
