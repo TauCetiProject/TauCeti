@@ -524,7 +524,9 @@ theorem contMDiff_loopwiseTrans {n : ℕ∞} {u₁ u₂ : ℝ × ℝ → M}
       simp only [Function.comp_apply, Prod.map_apply', id]
       congr 3
       ring
-  refine hG.comp_fract_snd (ε := 1 / 6) (by norm_num) fun s t ht₀ ht₁ ↦ ?_
+  refine contMDiff_prod_modelWithCornersSelf_iff.1 <|
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hG).comp_fract_snd (ε := 1 / 6) (by norm_num)
+      fun s t ht₀ ht₁ ↦ ?_
   -- Just below `t = 0` the concatenation rests where `u₂` ends and `u₁` starts.
   simp only [G]
   rw [curveConcat_of_lt (by linarith), curveConcat_of_le (by linarith),

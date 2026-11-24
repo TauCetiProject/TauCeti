@@ -30,7 +30,7 @@ of loops by the relative Whitney approximation theorem, in
   loops is homotopic to the path of loops of a `C^n` cylinder.
 * `TauCeti.exists_isLoopCylinder_of_homotopic`: homotopic `C^n` loops are joined by a `C^n`
   cylinder.
-* `TauCeti.exists_isCap_of_homotopic`: a null-homotopic `C^n` loop has a `C^n` cap.
+* `TauCeti.exists_isCap_of_homotopic_const`: a null-homotopic `C^n` loop has a `C^n` cap.
 -/
 
 public section
@@ -73,7 +73,7 @@ theorem exists_isLoopCylinder_of_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I n
 /-- **A smooth null-homotopic loop has a smooth cap.** For `n ≥ 2`, if the loop `γ` at `x` is the
 restriction of a `C^n` `1`-periodic map `g : ℝ → M` and is null-homotopic, then `g` has a `C^n` cap
 in the sense of `TauCeti.IsCap`. -/
-theorem exists_isCap_of_homotopic {γ : Path x x} {g : ℝ → M} (hg : ContMDiff 𝓘(ℝ, ℝ) I n g)
+theorem exists_isCap_of_homotopic_const {γ : Path x x} {g : ℝ → M} (hg : ContMDiff 𝓘(ℝ, ℝ) I n g)
     (hgp : Periodic g 1) (hγ : ∀ t : unitInterval, γ t = g t) (hn : 2 ≤ n)
     (h : γ.Homotopic (Path.refl x)) : ∃ u, ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u ∧ IsCap I u g := by
   obtain ⟨u, hu, hcyl⟩ := exists_isLoopCylinder_of_homotopic (γ₁ := Path.refl x)

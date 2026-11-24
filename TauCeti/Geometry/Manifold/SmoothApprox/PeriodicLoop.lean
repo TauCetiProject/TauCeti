@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothApprox.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Fract
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.Instances.Icc.CollaredSmoothTransition
 import TauCeti.Topology.Homotopy.Path
 
@@ -103,8 +104,7 @@ precomposed with `collaredSmoothTransition` in the loop direction, run three tim
 smooth near the edges `s = 0` and `s = 1`, and equal to `x` near the seam in between. -/
 private def loopModel (g₀ g₁ : ℝ → M) (P : Path γ₀ γ₁) (z : ℝ × ℝ) : M :=
   if z.1 ≤ 1 / 3 then g₀ (collaredSmoothTransitionLineMap (loopRamp z.1) z.2)
-  else if z.1 ≤ 2 / 3 then
-    P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2)
+  else if z.1 ≤ 2 / 3 then P.extend (3 * z.1 - 1) (collaredSmoothTransitionUnit z.2)
   else g₁ (collaredSmoothTransitionLineMap (loopRamp (1 - z.1)) z.2)
 
 variable {g₀ g₁ : ℝ → M} {P : Path γ₀ γ₁}
@@ -114,8 +114,7 @@ private theorem loopModel_of_le {z : ℝ × ℝ} (hz : z.1 ≤ 1 / 3) :
   simp only [loopModel, hz, ↓reduceIte]
 
 private theorem loopModel_of_mem {z : ℝ × ℝ} (hz₁ : 1 / 3 < z.1) (hz₂ : z.1 ≤ 2 / 3) :
-    loopModel g₀ g₁ P z =
-      P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2) := by
+    loopModel g₀ g₁ P z = P.extend (3 * z.1 - 1) (collaredSmoothTransitionUnit z.2) := by
   simp only [loopModel, hz₁.not_ge, hz₂, ↓reduceIte]
 
 private theorem loopModel_of_gt {z : ℝ × ℝ} (hz : 2 / 3 < z.1) :
@@ -159,14 +158,14 @@ private theorem apply_one_eq_base : g₀ 1 = x ∧ g₁ 1 = x :=
   ⟨by rw [← Icc.coe_one, ← hγ₀, γ₀.target], by rw [← Icc.coe_one, ← hγ₁, γ₁.target]⟩
 
 private theorem loopModel_eq_of_mem (s t : unitInterval) :
-    loopModel g₀ g₁ P (s, t) = P (projIcc 0 1 zero_le_one (3 * s - 1))
+    loopModel g₀ g₁ P (s, t) = P.extend (3 * s - 1)
       (collaredSmoothTransitionLineMapUnit
         (projIcc 0 1 zero_le_one (min (loopRamp s) (loopRamp (1 - s)))) t) := by
   rcases le_or_gt (s : ℝ) (1 / 3) with hs | hs
   · have h : loopRamp s ≤ loopRamp (1 - s) :=
       (loopRamp_mem _).2.trans (loopRamp_of_ge (by linarith)).ge
     simp [loopModel_of_le (z := ((s : ℝ), (t : ℝ))) hs, min_eq_left h,
-      projIcc_of_mem _ (loopRamp_mem s), projIcc_eq_zero.2 (by linarith : 3 * (s : ℝ) - 1 ≤ 0),
+      projIcc_of_mem _ (loopRamp_mem s), P.extend_of_le_zero (by linarith : 3 * (s : ℝ) - 1 ≤ 0),
       hγ₀, coe_collaredSmoothTransitionLineMapUnit]
   rcases le_or_gt (s : ℝ) (2 / 3) with hs' | hs'
   · rw [loopRamp_of_ge (by linarith), loopRamp_of_ge (by linarith), min_self,
@@ -176,7 +175,7 @@ private theorem loopModel_eq_of_mem (s t : unitInterval) :
       (loopRamp_mem _).2.trans (loopRamp_of_ge (by linarith)).ge
     simp [loopModel_of_gt (z := ((s : ℝ), (t : ℝ))) hs', min_eq_right h,
       projIcc_of_mem _ (loopRamp_mem (1 - s)),
-      projIcc_eq_one.2 (by linarith : 1 ≤ 3 * (s : ℝ) - 1), hγ₁,
+      P.extend_of_one_le (by linarith : 1 ≤ 3 * (s : ℝ) - 1), hγ₁,
       coe_collaredSmoothTransitionLineMapUnit]
 
 private theorem continuous_loopModel (hg₀ : Continuous g₀) (hg₁ : Continuous g₁) :
@@ -186,20 +185,18 @@ private theorem continuous_loopModel (hg₀ : Continuous g₀) (hg₁ : Continuo
   have hr₁ : Continuous fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (loopRamp (1 - z.1)) z.2 :=
     (contDiff_lineMap_comp (n := 0)
       (contDiff_loopRamp.comp (contDiff_const.sub contDiff_id))).continuous
-  have hs : Continuous fun z : ℝ × ℝ ↦ projIcc (0 : ℝ) 1 zero_le_one (3 * z.1 - 1) :=
-    continuous_projIcc.comp ((continuous_const.mul continuous_fst).sub continuous_const)
-  have hP : Continuous fun z : ℝ × ℝ ↦
-      P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2) :=
-    (Path.continuous_uncurry_iff.2 P.continuous).comp
-      (hs.prodMk (continuous_collaredSmoothTransitionUnit.comp continuous_snd))
+  have hP : Continuous fun z : ℝ × ℝ ↦ P.extend (3 * z.1 - 1) (collaredSmoothTransitionUnit z.2) :=
+    (Path.continuous_uncurry_iff.2 P.continuous_extend).comp
+      (((continuous_const.mul continuous_fst).sub continuous_const).prodMk
+        (continuous_collaredSmoothTransitionUnit.comp continuous_snd))
   refine Continuous.if_le (hg₀.comp hr₀)
     (Continuous.if_le hP (hg₁.comp hr₁) continuous_fst continuous_const fun z hz ↦ ?_)
     continuous_fst continuous_const fun z hz ↦ ?_
-  · rw [hz, projIcc_eq_one.2 (by norm_num), P.target, hγ₁, loopRamp_of_ge (by norm_num),
+  · rw [hz, P.extend_of_one_le (by norm_num), hγ₁, loopRamp_of_ge (by norm_num),
       collaredSmoothTransitionLineMap_one_left, coe_collaredSmoothTransitionUnit_eq]
   · simp only [hz, (by norm_num : (1 : ℝ) / 3 ≤ 2 / 3), ↓reduceIte]
-    rw [loopRamp_of_ge (by norm_num), projIcc_eq_zero.2 (by norm_num),
-      P.source, hγ₀, collaredSmoothTransitionLineMap_one_left, coe_collaredSmoothTransitionUnit_eq]
+    rw [loopRamp_of_ge (by norm_num), P.extend_of_le_zero (by norm_num), hγ₀,
+      collaredSmoothTransitionLineMap_one_left, coe_collaredSmoothTransitionUnit_eq]
 
 /-- The model is `x` near the seam for `1/4 < s < 3/4`. -/
 private theorem loopModel_eq_base {z : ℝ × ℝ} (hz₁ : 1 / 4 < z.1) (hz₂ : z.1 < 3 / 4)
@@ -300,11 +297,10 @@ private theorem homotopic_loopModelPath (hg₀ : Continuous g₀) (hg₁ : Conti
     P.Homotopic (loopModelPath (P := P) hγ₀ hγ₁ hg₀ hg₁) := by
   -- The square `(a, s) ↦ P (σ_a s) ∘ τ_{ρ_a s}`, with `(ρ_a, σ_a)` interpolating linearly between
   -- `(0, s)` and the parameters `(min (loopRamp s) (loopRamp (1 - s)), 3 s - 1)` of the model.
-  set σ : unitInterval × unitInterval → unitInterval := fun q ↦
-    projIcc 0 1 zero_le_one ((1 - q.1) * q.2 + q.1 * (3 * q.2 - 1))
+  set σ : unitInterval × unitInterval → ℝ := fun q ↦ (1 - q.1) * q.2 + q.1 * (3 * q.2 - 1)
   set ρ : unitInterval × unitInterval → unitInterval := fun q ↦
     projIcc 0 1 zero_le_one (q.1 * min (loopRamp q.2) (loopRamp (1 - q.2)))
-  have hσ : Continuous σ := continuous_projIcc.comp (by fun_prop)
+  have hσ : Continuous σ := by fun_prop
   have hρ : Continuous ρ := continuous_projIcc.comp
     ((continuous_subtypeVal.comp continuous_fst).mul
       ((contDiff_loopRamp (n := 0)).continuous.comp (continuous_subtypeVal.comp continuous_snd)
@@ -312,8 +308,8 @@ private theorem homotopic_loopModelPath (hg₀ : Continuous g₀) (hg₁ : Conti
           (continuous_const.sub (continuous_subtypeVal.comp continuous_snd)))))
   let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦
-      P (σ q) (collaredSmoothTransitionLineMapUnit (ρ q) t))
-    ((Path.continuous_uncurry_iff.2 P.continuous).comp ((hσ.comp continuous_fst).prodMk
+      P.extend (σ q) (collaredSmoothTransitionLineMapUnit (ρ q) t))
+    ((Path.continuous_uncurry_iff.2 P.continuous_extend).comp ((hσ.comp continuous_fst).prodMk
       (continuous_collaredSmoothTransitionLineMapUnit.comp
         ((hρ.comp continuous_fst).prodMk continuous_snd))))
     (fun q ↦ by simp only [collaredSmoothTransitionLineMapUnit_zero_right, Path.source])
@@ -323,25 +319,25 @@ private theorem homotopic_loopModelPath (hg₀ : Continuous g₀) (hg₁ : Conti
     rw [Path.continuousFamily_apply]
   · have h₁ : σ (0, s) = s := by simp [σ]
     have h₂ : ρ (0, s) = 0 := by simp [ρ]
-    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left]
-  · have h₁ : σ (1, s) = projIcc 0 1 zero_le_one (3 * (s : ℝ) - 1) := by simp [σ]
+    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left, P.extend_extends']
+  · have h₁ : σ (1, s) = 3 * (s : ℝ) - 1 := by simp [σ]
     have h₂ : ρ (1, s) =
         projIcc 0 1 zero_le_one (min (loopRamp s) (loopRamp (1 - s))) := by simp [ρ]
     rw [h₁, h₂, loopModelPath_apply, loopModel_eq_of_mem hγ₀ hγ₁]
-  · have h₁ : σ (a, 0) = 0 := by
+  · have h₁ : σ (a, 0) ≤ 0 := by
       simp only [σ, Icc.coe_zero, mul_zero, zero_add, zero_sub]
-      rw [projIcc_of_le_left _ (by nlinarith [a.property.1]), Icc.mk_zero]
+      nlinarith [a.property.1]
     have h₂ : ρ (a, 0) = 0 := by
       simp [ρ, loopRamp_of_le (by norm_num : (0 : ℝ) ≤ 1 / 6),
         loopRamp_of_ge (by norm_num : (1 / 4 : ℝ) ≤ 1)]
-    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left, P.source]
-  · have h₁ : σ (a, 1) = 1 := by
+    rw [P.extend_of_le_zero h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left]
+  · have h₁ : 1 ≤ σ (a, 1) := by
       simp only [σ, Icc.coe_one]
-      rw [projIcc_of_right_le _ (by nlinarith [a.property.1]), Icc.mk_one]
+      nlinarith [a.property.1]
     have h₂ : ρ (a, 1) = 0 := by
       simp [ρ, loopRamp_of_le (by norm_num : (0 : ℝ) ≤ 1 / 6),
         loopRamp_of_ge (by norm_num : (1 / 4 : ℝ) ≤ 1)]
-    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left, P.target]
+    rw [P.extend_of_one_le h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left]
 
 end Model
 
@@ -388,10 +384,12 @@ private theorem contMDiff_periodize (hgp₀ : Periodic g₀ 1) (hgp₁ : Periodi
     {P : Path γ₀ γ₁} {G : ℝ × ℝ → M} (hG : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n G)
     (hGf : ∀ z ∈ loopFixedSet, G z = loopModel g₀ g₁ P z) :
     ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ G (z.1, Int.fract z.2) :=
-  hG.comp_fract_snd (ε := 1 / 5) (by norm_num) fun s t ht₀ ht₁ ↦ by
-    rw [hGf _ (mem_loopFixedSet_of_snd (Or.inr (by linarith))),
-      hGf _ (mem_loopFixedSet_of_snd (Or.inl (by linarith))),
-      loopModel_add_one hgp₀ hgp₁ s (by linarith) (by linarith)]
+  contMDiff_prod_modelWithCornersSelf_iff.1 <|
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hG).comp_fract_snd (ε := 1 / 5) (by norm_num)
+      fun s t ht₀ ht₁ ↦ by
+        rw [hGf _ (mem_loopFixedSet_of_snd (Or.inr (by linarith))),
+          hGf _ (mem_loopFixedSet_of_snd (Or.inl (by linarith))),
+          loopModel_add_one hgp₀ hgp₁ s (by linarith) (by linarith)]
 
 /-- A homotopy, relative to the complement of a rectangle inside the unit square, from the model
 to a map `G` gives a homotopy of paths in the loop space from the model path to every path of
@@ -465,7 +463,7 @@ theorem exists_contMDiff_periodic_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I 
     rcases le_or_gt z.1 (1 / 3) with h | h
     · exact Or.inl (Or.inl ⟨_, (loopModel_of_le h).symm⟩)
     rcases le_or_gt z.1 (2 / 3) with h' | h'
-    · exact Or.inr ⟨(_, _), (loopModel_of_mem h h').symm⟩
+    · exact Or.inr ⟨(projIcc 0 1 zero_le_one (3 * z.1 - 1), _), (loopModel_of_mem h h').symm⟩
     · exact Or.inl (Or.inr ⟨_, (loopModel_of_gt h').symm⟩)
   -- Smooth the model relative to the complement of a rectangle inside the unit square.
   obtain ⟨G, hG, ⟨R⟩⟩ := f.exists_contMDiff_homotopicRel_of_isCompact_closure_range
