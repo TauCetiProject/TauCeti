@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
@@ -50,8 +51,14 @@ keeps it under restriction to opens.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.ker_homOfLE_comp_opensGraph`: for `X` reduced, the graph restricted
+  to a dense open `V ⊆ U` has the same scheme-theoretic image.
 * `TauCeti.AlgebraicGeometry.isIso_graphClosureFst_restrict`: for `q` separated and `U ⟶ X`
   quasi-compact, the projection to `X` is an isomorphism over `U`.
+* `TauCeti.AlgebraicGeometry.isOpenImmersion_toGraphClosure`: for `q` separated and `U ⟶ X`
+  quasi-compact, the inclusion of `U` into the graph closure is an open immersion.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_graphClosure`: over a field, for `X` irreducible,
+  `U` nonempty and `f`, `q` locally of finite type, the graph closure has the dimension of `X`.
 * `TauCeti.AlgebraicGeometry.isModification_graphClosureFst`: for `q` proper, `U ⟶ X`
   quasi-compact and `U` dense, the projection to `X` is a modification.
 * `TauCeti.AlgebraicGeometry.isImmersion_graphClosureSnd`: for `f` separated, `q`
@@ -191,6 +198,16 @@ variable [QuasiCompact U.ι] [QuasiSeparated q]
 
 variable {f q U g hg}
 
+omit [QuasiCompact U.ι] [QuasiSeparated q] in
+/-- For `X` reduced, restricting the graph of `g` to a dense open `V ⊆ U` does not change its
+scheme-theoretic image: the two morphisms have the same kernel. -/
+theorem ker_homOfLE_comp_opensGraph [IsReduced X] {V : X.Opens} (hV : Dense (V : Set X))
+    (hVU : V ≤ U) :
+    (X.homOfLE hVU ≫ opensGraph f q U g hg).ker = (opensGraph f q U g hg).ker := by
+  have := Opens.isDominant_homOfLE hV hVU
+  have := IsSchemeTheoreticallyDominant.of_isDominant (X.homOfLE hVU)
+  exact Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant _ _
+
 /-- For `U ⟶ X` quasi-compact and `q` quasi-separated, two morphisms `a` and `b` from an open of
 the graph closure containing `U` to a scheme `T` separated over a base `B` by `s : T ⟶ B` are
 equal if `a ≫ s = b ≫ s` and `a` and `b` agree on `U`. -/
@@ -251,6 +268,23 @@ instance isIso_graphClosureFst_restrict [IsSeparated q] :
       morphismRestrict_ι, graphClosureFst_def]
   · simp only [Category.assoc, Scheme.Hom.toImage_imageι, opensGraph_snd,
       graphClosureFst_restrict_comp, graphClosureSnd_def]
+
+omit [QuasiSeparated q] in
+/-- For `q` separated and `U ⟶ X` quasi-compact, the inclusion of `U` into the graph closure is an
+open immersion, onto the preimage of `U` under the projection to `X`. -/
+instance isOpenImmersion_toGraphClosure [IsSeparated q] :
+    IsOpenImmersion (toGraphClosure f q U g hg) := by
+  have hO : Set.range (toGraphClosure f q U g hg) ⊆
+      Set.range (graphClosureFst f q U g hg ⁻¹ᵁ U).ι := by
+    simpa using range_toGraphClosure_subset_preimage (hg := hg) (le_refl U)
+  have h : IsOpenImmersion.lift _ _ hO ≫ (graphClosureFst f q U g hg ∣_ U) = 𝟙 _ := by
+    simpa using lift_graphClosureFst_restrict (hg := hg) le_rfl
+  have : IsIso (IsOpenImmersion.lift _ _ hO ≫ (graphClosureFst f q U g hg ∣_ U)) :=
+    h ▸ inferInstance
+  have : IsIso (IsOpenImmersion.lift _ _ hO) :=
+    IsIso.of_isIso_comp_right _ (graphClosureFst f q U g hg ∣_ U)
+  rw [← IsOpenImmersion.lift_fac _ _ hO]
+  infer_instance
 
 omit [QuasiSeparated q] in
 /-- **The graph closure is a modification.** When `q` is proper, `U ⟶ X` is quasi-compact and
@@ -359,5 +393,28 @@ theorem isImmersion_graphClosureSnd [IsSeparated f] {ι : Type*} {V : ι → X.O
     (hV.symm ▸ trivial : graphClosureFst f q U g hg x ∈ iSup V)
   exact TopologicalSpace.Opens.mem_iSup.mpr
     ⟨i, graphClosureFst_preimage_le (hUV i) (hh i) (hj i) (hgj i) hi⟩
+
+end TauCeti.AlgebraicGeometry
+
+/-! ### Dimension of the graph closure over a field -/
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
+/-- **The dimension of the graph closure.** Over a field `K`, for `X` irreducible, `U` nonempty
+with quasi-compact inclusion, `f` and `q` locally of finite type and `q` separated, the graph
+closure has the topological Krull dimension of `X`. -/
+theorem topologicalKrullDim_graphClosure {K : Type u} [Field K] {X P : Scheme.{u}}
+    {f : X ⟶ Spec (.of K)} {q : P ⟶ Spec (.of K)} {U : X.Opens} {g : U.toScheme ⟶ P}
+    (hg : g ≫ q = U.ι ≫ f) [QuasiCompact U.ι] [IsSeparated q] [LocallyOfFiniteType f]
+    [LocallyOfFiniteType q] [IrreducibleSpace X] [Nonempty U] :
+    topologicalKrullDim (graphClosure f q U g hg) = topologicalKrullDim X := by
+  have : IrreducibleSpace U := Subtype.irreducibleSpace ⟨Set.nonempty_coe_sort.mp ‹_›,
+    (IrreducibleSpace.isIrreducible_univ X).isPreirreducible.open_subset U.isOpen
+      (Set.subset_univ _)⟩
+  rw [← topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
+      (graphClosureFst f q U g hg ≫ f) (toGraphClosure f q U g hg).isOpenEmbedding,
+    topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType f U.ι.isOpenEmbedding]
 
 end TauCeti.AlgebraicGeometry

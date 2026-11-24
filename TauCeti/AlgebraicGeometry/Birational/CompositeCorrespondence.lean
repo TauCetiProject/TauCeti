@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Birational.Composition
-public import Mathlib.AlgebraicGeometry.Noetherian
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
-public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # The correspondence of a composite of rational maps
@@ -23,13 +23,14 @@ with `X ×_S Y ×_S Z` written as `X ×_S (Y ×_S Z)`. It is Tau Ceti's graph cl
 closure API applies to it.
 
 For `X` Noetherian and integral, `W_{f,g}` is integral (no integrality of `Y ×_S Z` is used), and
-replacing `U` by a smaller dense open does not change it. Over a field `K`, for `X`, `Y`, `Z`
-locally of finite type, `W_{f,g}` has the dimension of `X`: the first projection is an isomorphism
-over `U`, so `U` is a nonempty open of the irreducible `W_{f,g}`.
+replacing `U` by a smaller dense open does not change it. Over a field `K`, for `X` Noetherian and
+integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the dimension of `X`.
 
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.RationalMap.compositeDomain`: the open `U`.
+* `AlgebraicGeometry.Scheme.RationalMap.compositeToY`,
+  `AlgebraicGeometry.Scheme.RationalMap.compositeToZ`: the morphisms `f_U` and `(g ∘ f)_U`.
 * `AlgebraicGeometry.Scheme.RationalMap.compositeLift`: the morphism `(f_U, (g ∘ f)_U)`.
 * `AlgebraicGeometry.Scheme.RationalMap.compositeCorrespondence`: the correspondence `W_{f,g}`,
   with its closed immersion `compositeCorrespondenceι` into `X ×_S (Y ×_S Z)`, its projections
@@ -38,12 +39,19 @@ over `U`, so `U` is a nonempty open of the irreducible `W_{f,g}`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.RationalMap.isIntegral_compositeCorrespondence`: `W_{f,g}` is
-  integral.
+* `AlgebraicGeometry.Scheme.RationalMap.isIntegral_compositeCorrespondence`: for `X` Noetherian
+  and integral, `W_{f,g}` is integral.
 * `AlgebraicGeometry.Scheme.RationalMap.ker_homOfLE_comp_opensGraph_compositeLift`: the image of
   the restriction to a smaller dense open is `W_{f,g}`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_compositeCorrespondence`: over a
-  field, `W_{f,g}` has the dimension of `X`.
+  field, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has
+  the dimension of `X`.
+
+## References
+
+* N.-B. Dang, *Degrees of iterates of rational maps on normal projective varieties*, Proc. London
+  Math. Soc. 121 (2020), [arXiv:1701.07760](https://arxiv.org/abs/1701.07760), §5 and
+  diagram (5.1).
 -/
 
 public section
@@ -66,19 +74,48 @@ def compositeDomain : X.Opens :=
   f.domain ⊓ (f.comp g).domain
 
 omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] in
+/-- The open `U` is the intersection of the domains of definition of `f` and of `g ∘ f`. -/
+theorem compositeDomain_def : compositeDomain f g = f.domain ⊓ (f.comp g).domain := (rfl)
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] in
+/-- The open `U` lies in the domain of definition of `f`. -/
+theorem compositeDomain_le_domain : compositeDomain f g ≤ f.domain :=
+  inf_le_left
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] in
+/-- The open `U` lies in the domain of definition of `g ∘ f`. -/
+theorem compositeDomain_le_domain_comp : compositeDomain f g ≤ (f.comp g).domain :=
+  inf_le_right
+
+omit [IsReduced X] [Y.IsSeparated] [Z.IsSeparated] in
 /-- The open `U` is dense in `X`. -/
 theorem dense_compositeDomain : Dense (compositeDomain f g : Set X) :=
   f.dense_domain.inter_of_isOpen_left (f.comp g).dense_domain f.domain.isOpen
 
 /-- The restriction `f_U` of the representative of `f` on its domain to `U`. -/
-def compositeFst : (compositeDomain f g).toScheme ⟶ Y :=
-  X.homOfLE (show compositeDomain f g ≤ f.toPartialMap.domain from inf_le_left) ≫
+def compositeToY : (compositeDomain f g).toScheme ⟶ Y :=
+  X.homOfLE ((compositeDomain_le_domain f g).trans_eq f.toPartialMap_domain.symm) ≫
     f.toPartialMap.hom
 
+omit [Z.IsSeparated] in
+/-- `f_U` is the inclusion of `U` into the domain of `f` followed by the representative of `f`. -/
+theorem compositeToY_def :
+    compositeToY f g =
+      X.homOfLE ((compositeDomain_le_domain f g).trans_eq f.toPartialMap_domain.symm) ≫
+        f.toPartialMap.hom := (rfl)
+
 /-- The restriction `(g ∘ f)_U` of the representative of `g ∘ f` on its domain to `U`. -/
-def compositeSnd : (compositeDomain f g).toScheme ⟶ Z :=
-  X.homOfLE (show compositeDomain f g ≤ (f.comp g).toPartialMap.domain from inf_le_right) ≫
+def compositeToZ : (compositeDomain f g).toScheme ⟶ Z :=
+  X.homOfLE ((compositeDomain_le_domain_comp f g).trans_eq (f.comp g).toPartialMap_domain.symm) ≫
     (f.comp g).toPartialMap.hom
+
+omit [Y.IsSeparated] in
+/-- `(g ∘ f)_U` is the inclusion of `U` into the domain of `g ∘ f` followed by the representative
+of `g ∘ f`. -/
+theorem compositeToZ_def :
+    compositeToZ f g =
+      X.homOfLE ((compositeDomain_le_domain_comp f g).trans_eq
+        (f.comp g).toPartialMap_domain.symm) ≫ (f.comp g).toPartialMap.hom := (rfl)
 
 section Over
 
@@ -86,32 +123,32 @@ variable [S.IsSeparated] [f.IsOver sX sY] [(f.comp g).IsOver sX sZ]
 
 omit [Z.IsSeparated] in
 /-- `f_U` is a morphism over `S`. -/
-theorem compositeFst_comp : compositeFst f g ≫ sY = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeFst, Category.assoc, f.toPartialMap.over sX sY, Scheme.homOfLE_ι_assoc]
+theorem compositeToY_comp : compositeToY f g ≫ sY = (compositeDomain f g).ι ≫ sX := by
+  rw [compositeToY_def, Category.assoc, f.toPartialMap.over sX sY, Scheme.homOfLE_ι_assoc]
 
 omit [Y.IsSeparated] in
 /-- `(g ∘ f)_U` is a morphism over `S`. -/
-theorem compositeSnd_comp : compositeSnd f g ≫ sZ = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeSnd, Category.assoc, (f.comp g).toPartialMap.over sX sZ,
+theorem compositeToZ_comp : compositeToZ f g ≫ sZ = (compositeDomain f g).ι ≫ sX := by
+  rw [compositeToZ_def, Category.assoc, (f.comp g).toPartialMap.over sX sZ,
     Scheme.homOfLE_ι_assoc]
 
 /-- The morphism `(f_U, (g ∘ f)_U) : U → Y ×_S Z`. -/
 def compositeLift : (compositeDomain f g).toScheme ⟶ pullback sY sZ :=
-  pullback.lift (compositeFst f g) (compositeSnd f g)
-    ((compositeFst_comp sX sY f g).trans (compositeSnd_comp sX sZ f g).symm)
+  pullback.lift (compositeToY f g) (compositeToZ f g)
+    ((compositeToY_comp sX sY f g).trans (compositeToZ_comp sX sZ f g).symm)
 
 @[reassoc (attr := simp)]
-theorem compositeLift_fst : compositeLift sX sY sZ f g ≫ pullback.fst sY sZ = compositeFst f g :=
+theorem compositeLift_fst : compositeLift sX sY sZ f g ≫ pullback.fst sY sZ = compositeToY f g :=
   pullback.lift_fst _ _ _
 
 @[reassoc (attr := simp)]
-theorem compositeLift_snd : compositeLift sX sY sZ f g ≫ pullback.snd sY sZ = compositeSnd f g :=
+theorem compositeLift_snd : compositeLift sX sY sZ f g ≫ pullback.snd sY sZ = compositeToZ f g :=
   pullback.lift_snd _ _ _
 
 /-- `(f_U, (g ∘ f)_U)` is a morphism over `S`. -/
 theorem compositeLift_comp :
     compositeLift sX sY sZ f g ≫ pullback.fst sY sZ ≫ sY = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeLift_fst_assoc, compositeFst_comp sX]
+  rw [compositeLift_fst_assoc, compositeToY_comp sX]
 
 /-- The *correspondence of the composite* `W_{f,g}`: the scheme-theoretic image of
 `(ι_U, f_U, (g ∘ f)_U) : U → X ×_S (Y ×_S Z)`, the graph closure of `compositeLift`. -/
@@ -150,52 +187,40 @@ abbrev toCompositeCorrespondence :
 @[reassoc]
 theorem toCompositeCorrespondence_sndY :
     toCompositeCorrespondence sX sY sZ f g ≫ compositeCorrespondenceSndY sX sY sZ f g =
-      compositeFst f g := by
+      compositeToY f g := by
   simp
 
 /-- `q_Z` restricts to `(g ∘ f)_U` on `U`. -/
 @[reassoc]
 theorem toCompositeCorrespondence_sndZ :
     toCompositeCorrespondence sX sY sZ f g ≫ compositeCorrespondenceSndZ sX sY sZ f g =
-      compositeSnd f g := by
+      compositeToZ f g := by
   simp
 
 section Noetherian
 
 variable [NoetherianSpace X]
 
-instance quasiCompact_compositeDomain_ι : QuasiCompact (compositeDomain f g).ι :=
-  have : NoetherianSpace (compositeDomain f g) :=
-    NoetherianSpace.set (compositeDomain f g : Set X)
-  quasiCompact_of_noetherianSpace_source _
-
 /-- The open `U` is nonempty when `X` is: it is dense. -/
 instance nonempty_compositeDomain [Nonempty X] : Nonempty (compositeDomain f g) :=
   (dense_compositeDomain f g).nonempty.to_subtype
 
-/-- The correspondence of the composite is integral when `X` is a Noetherian integral scheme:
-it is the scheme-theoretic image of the quasi-compact morphism `(ι_U, f_U, (g ∘ f)_U)` from the
-integral scheme `U`. No integrality of `Y ×_S Z` is used. -/
+/-- For `X` Noetherian and integral, the correspondence `W_{f,g}` is integral. -/
 theorem isIntegral_compositeCorrespondence [IsIntegral X] :
     IsIntegral (compositeCorrespondence sX sY sZ f g) :=
   inferInstance
 
 omit [NoetherianSpace X] in
-/-- **Independence of the open.** For a dense open `V ⊆ U`, the scheme-theoretic image of the
-restriction of `(ι_U, f_U, (g ∘ f)_U)` to `V` is `W_{f,g}`: the two morphisms have the same
-kernel. -/
+/-- **Independence of the open.** For a dense open `V ⊆ U`, the restriction of
+`(ι_U, f_U, (g ∘ f)_U)` to `V` has the same kernel, hence the same scheme-theoretic image
+`W_{f,g}`. -/
 theorem ker_homOfLE_comp_opensGraph_compositeLift {V : X.Opens} (hV : Dense (V : Set X))
     (hVU : V ≤ compositeDomain f g) :
     (X.homOfLE hVU ≫ opensGraph sX (pullback.fst sY sZ ≫ sY) (compositeDomain f g)
         (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g)).ker =
       (opensGraph sX (pullback.fst sY sZ ≫ sY) (compositeDomain f g)
-        (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g)).ker := by
-  have : IsDominant (X.homOfLE hVU) := by
-    refine ⟨?_⟩
-    rw [DenseRange, ← Scheme.Hom.coe_opensRange, Scheme.opensRange_homOfLE]
-    exact hV.preimage (compositeDomain f g).ι.isOpenEmbedding.isOpenMap
-  have := IsSchemeTheoreticallyDominant.of_isDominant (X.homOfLE hVU)
-  exact Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant _ _
+        (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g)).ker :=
+  ker_homOfLE_comp_opensGraph hV hVU
 
 end Noetherian
 
@@ -208,31 +233,12 @@ variable {K : Type u} [Field K] (sX : X ⟶ Spec (.of K)) (sY : Y ⟶ Spec (.of 
   [NoetherianSpace X] [IsIntegral X]
   [LocallyOfFiniteType sX] [LocallyOfFiniteType sY] [LocallyOfFiniteType sZ]
 
-/-- **The dimension of the correspondence.** Over a field, for `X`, `Y`, `Z` locally of finite
-type, `W_{f,g}` has the dimension of `X`. The first projection is an isomorphism over `U`, so `U`
-is a nonempty open of the irreducible `W_{f,g}`. -/
+/-- **The dimension of the correspondence.** Over a field `K`, for `X` Noetherian and integral and
+`X`, `Y`, `Z` locally of finite type over `K`, `W_{f,g}` has the same topological Krull dimension
+as `X`. -/
 theorem topologicalKrullDim_compositeCorrespondence :
-    topologicalKrullDim (compositeCorrespondence sX sY sZ f g) = topologicalKrullDim X := by
-  have H := range_toGraphClosure_subset_preimage (hg := compositeLift_comp sX sY sZ f g)
-    (le_refl (compositeDomain f g))
-  let l := IsOpenImmersion.lift
-    (compositeCorrespondenceFst sX sY sZ f g ⁻¹ᵁ compositeDomain f g).ι
-    (toCompositeCorrespondence sX sY sZ f g) (by rwa [Scheme.Opens.range_ι])
-  have hl : l ≫ (compositeCorrespondenceFst sX sY sZ f g ∣_ compositeDomain f g) = 𝟙 _ := by
-    rw [lift_graphClosureFst_restrict le_rfl, Scheme.homOfLE_rfl]
-  have : IsIso (l ≫ (compositeCorrespondenceFst sX sY sZ f g ∣_ compositeDomain f g)) :=
-    hl ▸ inferInstance
-  have : IsIso l := IsIso.of_isIso_comp_right l
-    (compositeCorrespondenceFst sX sY sZ f g ∣_ compositeDomain f g)
-  have hU : Topology.IsOpenEmbedding (toCompositeCorrespondence sX sY sZ f g) := by
-    rw [← IsOpenImmersion.lift_fac
-      (compositeCorrespondenceFst sX sY sZ f g ⁻¹ᵁ compositeDomain f g).ι
-      (toCompositeCorrespondence sX sY sZ f g) (by rwa [Scheme.Opens.range_ι])]
-    exact (l ≫ (compositeCorrespondenceFst sX sY sZ f g ⁻¹ᵁ compositeDomain f g).ι).isOpenEmbedding
-  rw [(topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
-      (compositeCorrespondenceFst sX sY sZ f g ≫ sX) hU).symm,
-    topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType sX
-      (compositeDomain f g).ι.isOpenEmbedding]
+    topologicalKrullDim (compositeCorrespondence sX sY sZ f g) = topologicalKrullDim X :=
+  topologicalKrullDim_graphClosure (compositeLift_comp sX sY sZ f g)
 
 end Field
 
