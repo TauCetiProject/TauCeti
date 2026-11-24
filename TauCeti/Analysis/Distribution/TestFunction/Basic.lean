@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Basic facts about test functions
@@ -38,8 +39,9 @@ infinite-dimensional space every test function is zero (Riesz).
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
   to `ψ • v`.
 * `TestFunction.compOfIsClosedEmbedding`: the pullback of a test function along a smooth closed
-  embedding, and `TestFunction.lineTestFunction`: its restriction `t ↦ ψ (y + t • e)` to an affine
-  line, with its support bound and linearity.
+  embedding, with its support bound and linearity, and `TestFunction.lineTestFunction`: its
+  restriction `t ↦ ψ (y + t • e)` to an affine line, the pullback along the closed embedding
+  `isClosedEmbedding_add_smul_left`.
 -/
 
 public section
@@ -128,19 +130,46 @@ theorem compOfIsClosedEmbedding_apply {D : Type*} [NormedAddCommGroup D] [Normed
     ψ.compOfIsClosedEmbedding hf hfe x = ψ (f x) :=
   (rfl)
 
-/-- The affine line `t ↦ y + t • e` through `y` in a nonzero direction `e` is a closed
-embedding of `ℝ`. -/
-theorem isClosedEmbedding_line (y : E) {e : E} (he : e ≠ 0) :
-    IsClosedEmbedding fun t : ℝ => y + t • e :=
-  (Homeomorph.addLeft y).isClosedEmbedding.comp (isClosedEmbedding_smul_left he)
+/-- The support of the pullback of `ψ` along `f` lies in the preimage of the support of `ψ`. -/
+theorem tsupport_compOfIsClosedEmbedding_subset {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f)
+    (hfe : IsClosedEmbedding f) :
+    tsupport (ψ.compOfIsClosedEmbedding hf hfe) ⊆ f ⁻¹' tsupport ψ :=
+  tsupport_comp_subset_preimage (ψ : E → F) hfe.continuous
+
+/-- The pullback of the zero test function is zero. -/
+@[simp]
+theorem compOfIsClosedEmbedding_zero {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
+    (0 : 𝓓^{n}(Ω, F)).compOfIsClosedEmbedding hf hfe = 0 := by
+  ext x
+  simp
+
+/-- The pullback along a closed embedding is additive. -/
+@[simp]
+theorem compOfIsClosedEmbedding_add {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    (ψ ψ' : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
+    (ψ + ψ').compOfIsClosedEmbedding hf hfe =
+      ψ.compOfIsClosedEmbedding hf hfe + ψ'.compOfIsClosedEmbedding hf hfe := by
+  ext x
+  simp
+
+/-- The pullback along a closed embedding commutes with real scalar multiplication. -/
+@[simp]
+theorem compOfIsClosedEmbedding_smul {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    (c : ℝ) (ψ : 𝓓^{n}(Ω, F)) {f : D → E} (hf : ContDiff ℝ n f) (hfe : IsClosedEmbedding f) :
+    (c • ψ).compOfIsClosedEmbedding hf hfe = c • ψ.compOfIsClosedEmbedding hf hfe := by
+  ext x
+  simp
 
 /-- The restriction `t ↦ ψ (y + t • e)` of a test function on `Ω` to the line through `y` in a
 nonzero direction `e`, as a test function on the open set of parameters of the line lying in
 `Ω`: the pullback along the closed embedding `t ↦ y + t • e`. -/
 noncomputable def lineTestFunction (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) :
-    𝓓^{n}(Opens.comap ⟨fun t : ℝ => y + t • e, (isClosedEmbedding_line y he).continuous⟩ Ω, F) :=
+    𝓓^{n}(Opens.comap ⟨fun t : ℝ => y + t • e,
+      (isClosedEmbedding_add_smul_left y he).continuous⟩ Ω, F) :=
   ψ.compOfIsClosedEmbedding (contDiff_const.add (contDiff_id.smul contDiff_const))
-    (isClosedEmbedding_line y he)
+    (isClosedEmbedding_add_smul_left y he)
 
 /-- Evaluating the restriction of a test function to a line. -/
 @[simp]
@@ -152,27 +181,24 @@ theorem lineTestFunction_apply (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) (
 `y + t • e ∈ tsupport ψ`. -/
 theorem tsupport_lineTestFunction_subset (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) :
     tsupport (ψ.lineTestFunction y e he) ⊆ (fun t : ℝ => y + t • e) ⁻¹' tsupport ψ :=
-  tsupport_comp_subset_preimage (ψ : E → F) (isClosedEmbedding_line y he).continuous
+  ψ.tsupport_compOfIsClosedEmbedding_subset _ _
 
 /-- Restricting the zero test function to a line gives zero. -/
 @[simp]
 theorem lineTestFunction_zero (y e : E) (he : e ≠ 0) :
-    (0 : 𝓓^{n}(Ω, F)).lineTestFunction y e he = 0 := by
-  ext t
-  simp
+    (0 : 𝓓^{n}(Ω, F)).lineTestFunction y e he = 0 :=
+  compOfIsClosedEmbedding_zero _ _
 
 /-- Restriction to a line is additive. -/
 @[simp]
 theorem lineTestFunction_add (ψ ψ' : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) :
-    (ψ + ψ').lineTestFunction y e he = ψ.lineTestFunction y e he + ψ'.lineTestFunction y e he := by
-  ext t
-  simp
+    (ψ + ψ').lineTestFunction y e he = ψ.lineTestFunction y e he + ψ'.lineTestFunction y e he :=
+  compOfIsClosedEmbedding_add _ _ _ _
 
 /-- Restriction to a line commutes with real scalar multiplication. -/
 @[simp]
 theorem lineTestFunction_smul (c : ℝ) (ψ : 𝓓^{n}(Ω, F)) (y e : E) (he : e ≠ 0) :
-    (c • ψ).lineTestFunction y e he = c • ψ.lineTestFunction y e he := by
-  ext t
-  simp
+    (c • ψ).lineTestFunction y e he = c • ψ.lineTestFunction y e he :=
+  compOfIsClosedEmbedding_smul _ _ _ _
 
 end TestFunction

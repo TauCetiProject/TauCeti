@@ -154,10 +154,7 @@ theorem perimeter_le_sum_lintegral_perimeter_lineSection {ι : Type*} [Fintype �
     perimeter volume Ω s ≤ ∑ i, ∫⁻ y : (ℝ ∙ b i)ᗮ, perimeter volume
       (Opens.comap ⟨fun t : ℝ => (y : E) + t • b i, by fun_prop⟩ Ω)
       {t : ℝ | (y : E) + t • b i ∈ s} := by
-  have hline (y e : E) : (fun t : ℝ => s.indicator (1 : E → ℝ) (y + t • e)) =
-      {t : ℝ | y + t • e ∈ s}.indicator 1 :=
-    funext fun _ => (indicator_comp_right (fun t : ℝ => y + t • e)).symm
-  simp_rw [perimeter_def, ← hline]
+  simp_rw [perimeter_def, ← indicator_one_line]
   exact totalVariationOn_le_sum_lintegral_totalVariationOn_line b
     (locallyIntegrableOn_indicator_const hs 1)
 

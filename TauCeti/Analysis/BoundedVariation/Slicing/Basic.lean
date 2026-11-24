@@ -309,13 +309,6 @@ theorem ae_totalVariationOn_line_lt_top {u : E → ℝ} (hu : Integrable u)
   filter_upwards [hG, ae_lt_top' hGm (ne_top_of_le_ne_top hV hGint)] with y h₁ h₂
   exact h₁.trans_lt h₂
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The restriction of an indicator to a line is the indicator of the line section. -/
-private theorem indicator_one_line (s : Set E) (y e : E) :
-    (fun t : ℝ => s.indicator (1 : E → ℝ) (y + t • e)) =
-      {t : ℝ | y + t • e ∈ s}.indicator 1 :=
-  funext fun _ => (indicator_comp_right (fun t : ℝ => y + t • e)).symm
-
 private theorem integrable_indicator_one {s : Set E} (hs : NullMeasurableSet s)
     (hfin : volume s ≠ ∞) : Integrable (s.indicator (1 : E → ℝ)) :=
   (integrableOn_const hfin).integrable_indicator₀ hs

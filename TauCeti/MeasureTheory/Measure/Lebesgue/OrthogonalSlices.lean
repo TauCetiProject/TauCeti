@@ -23,7 +23,9 @@ of a Lebesgue-measurable set is the integral of the lengths of its parallel line
 Replacing a set by a volume-a.e. equal representative changes almost every section only
 on a one-dimensional null set. This permits line-section arguments for measurable sets
 without choosing a Borel representative permanently.
-The length of a line section is independent of its base point along the line, in any real module.
+The length of a line section is independent of its base point along the line, in any real module,
+and the restriction of an indicator to a line is the indicator of the line section
+(`TauCeti.indicator_one_line`).
 
 Dually, the volume is the integral over heights `t` of the volumes of the hyperplane sections
 `{y ∈ (ℝ ∙ e)ᗮ | y + t • e ∈ s}`, and restricting the heights to a Borel set gives the volume
@@ -66,6 +68,12 @@ theorem volume_lineSection_add_smul {E : Type*} [AddCommMonoid E] [Module ℝ E]
     ext t
     simp [add_smul, add_assoc, add_comm (t • e)]
   rw [h, measure_preimage_add_right]
+
+/-- The restriction of the indicator of a set to the line `t ↦ y + t • e` is the indicator of the
+line section. -/
+theorem indicator_one_line {E : Type*} [AddCommMonoid E] [Module ℝ E] (s : Set E) (y e : E) :
+    (fun t : ℝ ↦ s.indicator (1 : E → ℝ) (y + t • e)) = {t : ℝ | y + t • e ∈ s}.indicator 1 :=
+  funext fun _ ↦ (indicator_comp_right (fun t : ℝ ↦ y + t • e)).symm
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
