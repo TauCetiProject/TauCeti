@@ -303,14 +303,15 @@ chain map of `f`. -/
 @[reassoc]
 theorem cubicalChainComplexProdComparison_comp_cubicalToSingularRel {Z : Type u}
     [TopologicalSpace Z] {C : Set Z} (f : C(↑(X ⊗ Y), Z))
-    (hf : Set.MapsTo (TopCat.ofHom (X := ↑((ofSubset A).fst ⊗ (ofSubset B).fst)) f)
-      ((ofSubset A).prodSubspace (ofSubset B)) C)
-    (hf' : Set.MapsTo (TopCat.ofHom (X := ↑(X ⊗ Y)) f) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) C) :
+    (hf : Set.MapsTo (TopCat.ofHom (X := ↑(X ⊗ Y)) f) (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) C) :
     (ofSubset A).cubicalChainComplexProdComparison k (ofSubset B) ≫
-        cubicalChainComplexMap k (ofSubsetMap _ hf) ≫
+        cubicalChainComplexMap k
+          (ofSubsetMap (TopCat.ofHom (X := ↑((ofSubset A).fst ⊗ (ofSubset B).fst)) f)
+            (hf.mono_left (Set.union_subset_union (Set.preimage_mono range_ofSubset_map.subset)
+              (Set.preimage_mono range_ofSubset_map.subset)))) ≫
           cubicalToSingularRel k (ofSubset (X := TopCat.of Z) C) =
       cubicalChainComplexProdToSingular k A B ≫
-        TopPair.singularChainComplexMap (ofSubsetMap (X := X ⊗ Y) _ hf') (ModuleCat.of k k) := by
+        TopPair.singularChainComplexMap (ofSubsetMap (X := X ⊗ Y) _ hf) (ModuleCat.of k k) := by
   refine coequalizer.hom_ext ?_
   rw [π_cubicalChainComplexProdComparison_assoc, ← Category.assoc, ← cubicalChainComplexMap_comp,
     cubicalToSingularRel_naturality, π_cubicalChainComplexProdToSingular_assoc,
@@ -319,8 +320,9 @@ theorem cubicalChainComplexProdComparison_comp_cubicalToSingularRel {Z : Type u}
   simp only [Hom.fst_comp, prodLeftToProdSubspace_fst, prodLeftToPreimageUnion_fst, ofSubsetMap_fst]
   -- Both sides are `𝟙 _ ≫ TopCat.ofHom f`, with the identity typed on the ambient space of the
   -- product subspace on the left and on `X ⊗ Y` on the right; these agree only up to unfolding,
-  -- so `rw [Category.id_comp]` cannot see the left composite.
-  exact (Category.id_comp _).trans (Category.id_comp _).symm
+  -- so neither `rw [Category.id_comp]` nor `simp only [ofSubsetMap_fst]` can see the left
+  -- composite.
+  exact (Category.id_comp _).trans ((ofSubsetMap_fst _ _).trans (Category.id_comp _).symm)
 
 end Naturality
 

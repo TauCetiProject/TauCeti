@@ -171,8 +171,9 @@ lemma localHomologyIsoOfIsOpenEmbedding_trans [T1Space N] [T1Space P] {j : M →
 /-- **A map that is an open embedding near a point induces an isomorphism of local homology.**
 Let `j : M → N` be an open embedding and `g : N → P` a map such that `g ∘ j` is an open embedding
 and `j x` is the only point of `N` sent to `g (j x)`. Then `g` induces an isomorphism
-`Hₖ(N, N ∖ {j x}) ≅ Hₖ(P, P ∖ {g (j x)})`. Nothing is assumed of `g` outside the image of `j`;
-for the face map of a manifold with corners, `j` is the inclusion of the interior of a face. -/
+`Hₖ(N, N ∖ {j x}) ≅ Hₖ(P, P ∖ {g (j x)})`. Outside the image of `j`, `g` is only required to
+miss `g (j x)`; for the face map of a manifold with corners, `j` is the inclusion of the interior
+of the product of the two factors. -/
 theorem isIso_localHomologyMap_singleton_of_isOpenEmbedding_comp [T1Space N] [T1Space P]
     (hj : IsOpenEmbedding j) (g : C(N, P)) (hgj : IsOpenEmbedding (g ∘ j)) (x : M)
     (h : g ⁻¹' {g (j x)} ⊆ {j x}) (k : ℕ) : IsIso (localHomologyMap R g h k) := by

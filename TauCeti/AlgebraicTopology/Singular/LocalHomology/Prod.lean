@@ -87,8 +87,11 @@ along `S ⊆ X` and `S' ⊆ X'` restricts at a point of `S × S'` to the Künnet
 restrictions
 (`TauCeti.tensorHom_ι_cubicalHomologyKunnethPair_comp_cubicalChainComplexProdToSingular`), so it
 restricts to a generator wherever both factors do
-(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`). The integral relative
-fundamental classes have coefficients `ULift ℤ`, read in `ℤ` through
+(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`). When the first factor is
+the image of an open embedding of a manifold, the vanishing and projectivity of its local homology
+come from a chart, so the cross product of classes generating at interior points generates
+(`TauCeti.span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding`). The integral
+relative fundamental classes have coefficients `ULift ℤ`, read in `ℤ` through
 `TopPair.uliftIntSingularHomologyIso`.
 
 A face map `g : X × X' → Y` into a `T₁` space that is an open embedding on the interior of the
@@ -385,10 +388,13 @@ private theorem isIso_singularHomologyMap_ofSubsetMap_preimage_union [T1Space X�
   exact key _ hS h
 
 omit [TopologicalSpace N₂] in
-/-- The Künneth class of two relative classes generating the local homology at interior points
-`j₁ r₁` and `j₂ r₂`, the first a point of a manifold, generates the local homology of the product
-at `(j₁ r₁, j₂ r₂)`. -/
-private theorem span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding
+/-- **The cross product of classes generating at interior points generates.** Let
+`j₁ : N₁ → X₁` be an open embedding of a manifold `N₁` of dimension `p` into a `T₁` space, let
+`j₂ : N₂ → X₂` be any map into a `T₁` space, and let `μ₁ ∈ Hₚ(X₁, X₁ ∖ j₁(N₁); k)` and
+`μ₂ ∈ H_q(X₂, X₂ ∖ j₂(N₂); k)` be relative cubical classes whose singular images restrict to
+generators of the local homology at `j₁ r₁` and at `j₂ r₂`. Then their cubical cross product
+restricts to a generator of the local homology of `X₁ × X₂` at `(j₁ r₁, j₂ r₂)`. -/
+theorem span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding
     [T1Space X₁] [T1Space X₂] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [FiniteDimensional ℝ F] [ChartedSpace F N₁] (hj₁ : IsOpenEmbedding j₁) {q : ℕ}
     (μ₁ : ((TopPair.ofSubset (range j₁)ᶜ).cubicalChainComplex k).homology (finrank ℝ F))
@@ -479,7 +485,7 @@ theorem span_homologyMap_cubicalChainComplexMap_cubicalHomologyKunnethPair_eq_to
     have h'' : MapsTo gt (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' (range j₁)ᶜ ∪
         CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' (range j₂)ᶜ) {g (x, y)}ᶜ :=
       h'.mono_left (union_subset_union (preimage_mono hx) (preimage_mono hy))
-    rw [cubicalChainComplexProdComparison_comp_cubicalToSingularRel k g h h'',
+    rw [cubicalChainComplexProdComparison_comp_cubicalToSingularRel k g h'',
       cubicalChainComplexProdToSingular_naturality_assoc k (𝟙 X₁) (𝟙 X₂) hx hy,
       ← TopPair.singularChainComplexMap_comp,
       ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ h''
@@ -548,23 +554,15 @@ theorem span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top
             ((uliftIntSingularHomologyIso _ n).hom
               (o'.fundamentalClassRel hn hι' hιf' hf')))) = ⊤ := by
   subst hm hn
-  -- At the interior point `ι x`, the local homology of `X` is that of `M`, computed by a chart.
-  have hX (p : ℕ) (hp : p ≠ finrank ℝ E) :
-      IsZero (localHomology (ModuleCat.of ℤ ℤ) ({ι x} : Set X) p) :=
-    (isZero_singularHomology_complSingleton_of_ne (ModuleCat.of ℤ ℤ) (chartAt E x)
-      (mem_chart_source E x) rfl hp).of_iso (localHomologyIsoOfIsOpenEmbedding _ hι x p).symm
-  have : Projective (localHomology (ModuleCat.of ℤ ℤ) ({ι x} : Set X) (finrank ℝ E)) :=
-    Projective.of_iso ((localHomologyIsoOfIsOpenEmbedding _ hι x _).symm ≪≫
-      singularHomologyComplSingletonFinrankIso (ModuleCat.of ℤ ℤ) (chartAt E x)
-        (mem_chart_source E x)).symm inferInstance
-  exact span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (mem_range_self x)
-    (mem_range_self x') hX _ _
-    ((o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
-      (mem_range_self x)).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
-        (mem_range_self x))
-    ((o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
-      (mem_range_self x')).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
-        (mem_range_self x'))
+  refine span_homologyMap_cubicalHomologyKunnethPair_eq_top_of_isOpenEmbedding hι _ _ x x' ?_ ?_
+  · simpa only [Iso.hom_inv_id_apply] using
+      (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
+        (mem_range_self x)).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+          (mem_range_self x)
+  · simpa only [Iso.hom_inv_id_apply] using
+      (o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
+        (mem_range_self x')).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+          (mem_range_self x')
 
 end HomologicalOrientation
 
