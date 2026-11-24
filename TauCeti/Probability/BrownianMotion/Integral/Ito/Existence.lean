@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Localization
+import all TauCeti.Probability.BrownianMotion.Integral.Ito.Localization
 import TauCeti.Probability.Martingale.Local.Version
 import TauCeti.Probability.Process.TimeAverage
 
@@ -24,10 +25,10 @@ local congruence belong to `TauCeti.Probability.BrownianMotion.Integral.Ito.Stop
 deterministic-time measurable multiplier laws belong to
 `TauCeti.Probability.BrownianMotion.Integral.Ito.Locality`.
 
-Existence (`exists_isItoIntegral`) uses `exists_patched_energyLocalizer_process` to localize `H`
-along closed-level hits of `TauCeti.nnvolume.energyLocalizer` and patch continuous martingale
-stages without enlarging the filtration, then upgrades the patched local martingale to an
-indistinguishable strongly predictable version. For strongly progressive integrands with finite
+Existence (`exists_isItoIntegral`) localizes `H` along closed-level hits of
+`TauCeti.nnvolume.energyLocalizer`, patches continuous martingale stages without enlarging the
+filtration, then upgrades the patched local martingale to an indistinguishable strongly predictable
+version. For strongly progressive integrands with finite
 pathwise square energy on every finite horizon, `exists_isItoIntegral_of_isStronglyProgressive`
 extracts a predictable representative agreeing `(timeMeasure T).prod P`-almost everywhere and an
 Itô integral unique up to indistinguishability among all predictable representatives. Every strongly

@@ -8,11 +8,8 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Simple
 public import TauCeti.Probability.BrownianMotion.Martingale
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Probability.BrownianMotion.Integral.Restriction
-import TauCeti.Probability.BrownianMotion.Integral.Square
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Process.ElementaryDensity
@@ -43,8 +40,9 @@ predictable rectangle restriction, and optional stopping at raw stopping times a
 `TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral`.
 
 Finally, when `W` has almost surely continuous paths, `exists_continuous_l2Integral` selects a
-strongly predictable, almost surely continuous martingale modification, unique up to
-indistinguishability. Neither right continuity nor completeness of the filtration is assumed.
+strongly predictable, almost surely continuous martingale modification (uniqueness up to
+indistinguishability follows from `TauCeti.indist_of_ae_continuous`). Neither right continuity nor
+completeness of the filtration is assumed.
 
 ## References
 
@@ -144,9 +142,7 @@ theorem martingale_of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : BrownianIntegrable ℱ P H) (hI_adapt : StronglyAdapted ℱ I)
     (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) : Martingale I ℱ P := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  obtain ⟨n, τ, a, C, _, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P := MemLp.of_bound
-    ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m) (Eventually.of_forall (hb m j hj))
+  obtain ⟨n, τ, a, C, _, hτ, ha, hb, ha₂, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   refine martingale_of_tendsto_eLpNorm_one (fun m ↦ hW.martingale.simpleGains_of_bdd
     (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, Eventually.of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩)
@@ -174,20 +170,9 @@ theorem tendsto_measure_exists_le_norm_simpleGains_sub_lt
     Tendsto (fun k ↦ P {ω | ∃ t ≤ T, (ε : ℝ) < ‖Finance.simpleGains (τ k) (n k) (a k) W t ω -
       I t ω‖}) l (𝓝 0) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hM (k : ι) : Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P := by
-    have hstep : ∀ m ≤ n k, Martingale (fun t ω ↦
-        ∑ i ∈ range m, a k i ω * (W (min (τ k (i + 1)) t) ω - W (min (τ k i) t) ω)) ℱ P := by
-      intro m hm
-      induction m with
-      | zero => simpa only [sum_range_zero, Pi.zero_def] using martingale_zero ℝ ℱ P
-      | succ m ih =>
-        have hlt : m < n k := hm
-        have hle : τ k m ≤ τ k (m + 1) := hτ k (mem_Iic.mpr hlt.le) (mem_Iic.mpr hlt) m.le_succ
-        convert (ih hlt.le).add (hW.martingale_mul_sub_min hle
-          (ha k m hlt) ((ha₂ k m hlt).integrable one_le_two)) using 1
-        ext t ω; simp only [Pi.add_apply, sum_range_succ]
-    convert hstep (n k) le_rfl using 1
-    ext t ω; rw [Finance.simpleGains_def]
+  have hM (k : ι) : Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P :=
+    hW.martingale_simpleGains_of_integrable (hτ k) (ha k) fun i hi ↦
+      (ha₂ k i hi).integrable one_le_two
   exact (hW.martingale_of_ae_eq_l2Integral hH hI_adapt hI).tendsto_measure_exists_le_norm_sub_lt
     hM hI_rc (fun k ↦ hcont.mono fun _ hω _ _ ↦
       (Finance.continuous_simpleGains hω).continuousWithinAt)
@@ -208,13 +193,11 @@ theorem exists_continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       (∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω)) ∧
       ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  obtain ⟨n, τ, a, C, _, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
+  obtain ⟨n, τ, a, C, _, hτ, ha, hb, ha₂, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   let M (m : ℕ) := Finance.simpleGains (τ m) (n m) (a m) W
-  have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P := MemLp.of_bound
-    ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m) (Eventually.of_forall (hb m j hj))
   have hmem (m : ℕ) (t : ℝ≥0) : MemLp (M m t) 2 P :=
     (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ m).monotoneOn (ha m) t
-      ((BrownianIntegrable.simpleHolding (ha m) (ha₂ m)).memLp_predictableMeasure t))
+      ((TauCeti.brownianIntegrable_simpleHolding (ha m) (ha₂ m)).memLp_predictableMeasure t))
   have htend (t : ℝ≥0) : Tendsto (fun m ↦ (hmem m t).toLp (M m t)) atTop
       (𝓝 (hW.l2Integral t (hH.toPredictableLp t))) := by
     rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
@@ -225,11 +208,7 @@ theorem exists_continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     exists_continuous_martingale_of_cauchySeq_Lp (p := 2)
       (fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
         ⟨C m, Eventually.of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩)
-      (fun m ↦ hcont.mono fun ω hω ↦ by
-        simp only [Finance.simpleGains_def]
-        exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
-          ((hω.comp (continuous_const.min continuous_id)).sub
-            (hω.comp (continuous_const.min continuous_id))))
+      (fun m ↦ hcont.mono fun _ hω ↦ Finance.continuous_simpleGains hω)
       hmem (fun t ↦ (htend t).cauchySeq)
   refine ⟨I, hIp, hIm, hIpath.mono fun _ hω ↦ hω.1, fun t ↦ ?_⟩
   have heq_lp : (hIlim t).1.toLp (I t) = hW.l2Integral t (hH.toPredictableLp t) :=

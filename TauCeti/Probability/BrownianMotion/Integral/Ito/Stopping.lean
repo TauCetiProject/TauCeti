@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Localization
+import all TauCeti.Probability.BrownianMotion.Integral.Ito.Localization
 import TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral
 import TauCeti.Probability.Process.Indistinguishable
 
@@ -14,12 +16,12 @@ import TauCeti.Probability.Process.Indistinguishable
 
 For a filtration-relative Brownian motion `W` with almost surely continuous paths, stopping a
 Brownian Itô integral `I` at any raw stopping time `σ` yields an Itô integral of `H` cut off to
-the closed stochastic interval `⟦0, σ⟧` (`itoIntegral_stoppedProcess`). Consequently:
+the closed stochastic interval `⟦0, σ⟧` (`isItoIntegral_stoppedProcess`). Consequently:
 
 * Restricting an integrand to `(σ, τ]` yields `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`
-  (`itoIntegral_ite_Ioc`, `itoIntegral_ite_Ioc_indist`), simplifying to
+  (`isItoIntegral_ite_Ioc`, `itoIntegral_ite_Ioc_indist`), simplifying to
   `stoppedProcess I τ - stoppedProcess I σ` when `σ ≤ τ`
-  (`itoIntegral_ite_Ioc_of_le`, `itoIntegral_ite_Ioc_indist_of_le`).
+  (`isItoIntegral_ite_Ioc_of_le`, `itoIntegral_ite_Ioc_indist_of_le`).
 * Integrands agreeing product-almost-everywhere on `⟦0, σ⟧` over every finite horizon have
   indistinguishable stopped Itô integrals (`itoIntegral_local_congr`).
 * Stopping an Itô integral at `TauCeti.nnvolume.energyLocalizer H C` recovers the completed `L²`
@@ -46,7 +48,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 
 /-- **Optional stopping of the Brownian Itô integral.** Stopping an Itô integral at any raw
 stopping time `σ` yields an Itô integral of `H` cut off to `⟦0, σ⟧`. -/
-theorem itoIntegral_stoppedProcess
+theorem isItoIntegral_stoppedProcess
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
     (hI : IsItoIntegral ℱ P W H I)
@@ -88,7 +90,7 @@ theorem itoIntegral_stoppedProcess
 /-- **Difference law on `(σ, τ]` for the Brownian Itô integral.** Restricting an integrand
 to the half-open stochastic interval `(σ, τ]` corresponds to
 `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, without requiring `σ ≤ τ`. -/
-theorem itoIntegral_ite_Ioc
+theorem isItoIntegral_ite_Ioc
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
     (hI : IsItoIntegral ℱ P W H I)
@@ -96,8 +98,8 @@ theorem itoIntegral_ite_Ioc
     IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I (σ ⊓ τ) t ω) := by
-  convert (hW.itoIntegral_stoppedProcess hcont hI hτ).sub
-    (hW.itoIntegral_stoppedProcess hcont hI (hσ.min hτ)) using 1
+  convert (hW.isItoIntegral_stoppedProcess hcont hI hτ).sub
+    (hW.isItoIntegral_stoppedProcess hcont hI (hσ.min hτ)) using 1
   ext t ω
   by_cases h1 : (t : WithTop ℝ≥0) ≤ σ ω <;> by_cases h2 : (t : WithTop ℝ≥0) ≤ τ ω
   · have hlt : ¬ (σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω) := fun h ↦ not_le_of_gt h.1 h1
@@ -115,7 +117,7 @@ theorem itoIntegral_ite_Ioc
 
 /-- **Ordered difference law on `(σ, τ]` for the Brownian Itô integral.** When `σ ≤ τ`,
 restricting an integrand to `(σ, τ]` corresponds to `stoppedProcess I τ - stoppedProcess I σ`. -/
-theorem itoIntegral_ite_Ioc_of_le
+theorem isItoIntegral_ite_Ioc_of_le
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
     (hI : IsItoIntegral ℱ P W H I)
@@ -124,9 +126,9 @@ theorem itoIntegral_ite_Ioc_of_le
     IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω) := by
-  simpa only [inf_of_le_left hστ] using hW.itoIntegral_ite_Ioc hcont hI hσ hτ
+  simpa only [inf_of_le_left hστ] using hW.isItoIntegral_ite_Ioc hcont hI hσ hτ
 
-/-- Indistinguishability form of `itoIntegral_ite_Ioc`. -/
+/-- Indistinguishability form of `isItoIntegral_ite_Ioc`. -/
 theorem itoIntegral_ite_Ioc_indist
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
@@ -135,9 +137,9 @@ theorem itoIntegral_ite_Ioc_indist
     (hJ : IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J) :
     J ≡ᵐ[P] fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I (σ ⊓ τ) t ω :=
-  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_Ioc hcont hI hσ hτ)
+  isItoIntegral_unique hW hJ (hW.isItoIntegral_ite_Ioc hcont hI hσ hτ)
 
-/-- Indistinguishability form of `itoIntegral_ite_Ioc_of_le`. -/
+/-- Indistinguishability form of `isItoIntegral_ite_Ioc_of_le`. -/
 theorem itoIntegral_ite_Ioc_indist_of_le
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
@@ -147,7 +149,7 @@ theorem itoIntegral_ite_Ioc_indist_of_le
     (hJ : IsItoIntegral ℱ P W
       (fun t : ℝ≥0 ↦ fun ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) J) :
     J ≡ᵐ[P] fun t ω ↦ stoppedProcess I τ t ω - stoppedProcess I σ t ω :=
-  isItoIntegral_unique hW hJ (hW.itoIntegral_ite_Ioc_of_le hcont hI hσ hτ hστ)
+  isItoIntegral_unique hW hJ (hW.isItoIntegral_ite_Ioc_of_le hcont hI hσ hτ hστ)
 
 /-- **Local congruence of the Brownian Itô integral.** If two integrands agree
 product-almost-everywhere on `⟦0, σ⟧` over every finite horizon for a raw stopping time `σ`,
@@ -163,9 +165,9 @@ theorem itoIntegral_local_congr
       Function.uncurry (fun s : ℝ≥0 ↦ fun ω ↦ if (s : WithTop ℝ≥0) ≤ σ ω then K s ω else 0)) :
     stoppedProcess I σ ≡ᵐ[P] stoppedProcess J σ := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hIσ := (hW.itoIntegral_stoppedProcess hcont hI hσ).congr_integrand
+  have hIσ := (hW.isItoIntegral_stoppedProcess hcont hI hσ).congr_integrand
     (hJ.isStronglyPredictable.ite_le hσ) hHK
-  exact isItoIntegral_unique hW hIσ (hW.itoIntegral_stoppedProcess hcont hJ hσ)
+  exact isItoIntegral_unique hW hIσ (hW.isItoIntegral_stoppedProcess hcont hJ hσ)
 
 /-- **Closed-level energy-stage identification for any Brownian Itô integral.** Stopping an Itô
 integral at `TauCeti.nnvolume.energyLocalizer H C` identifies at each time `t` almost everywhere
@@ -187,7 +189,7 @@ theorem stoppedProcess_energyLocalizer_ae_eq_l2Integral
   have hstop : IsItoIntegral ℱ P W
       (fun s ω ↦ if (s : WithTop ℝ≥0) ≤ τ ω then TauCeti.nnvolume.finiteEnergyCutoff H s ω else 0)
       (stoppedProcess I τ) := by
-    refine (hW.itoIntegral_stoppedProcess hcont hI hτ).congr_integrand
+    refine (hW.isItoIntegral_stoppedProcess hcont hI hτ).congr_integrand
       hHcut.isStronglyPredictable fun u ↦ ?_
     filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure u) (ν := P)).ae
         (ae_mem_Ioc_timeMeasure u),

@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
@@ -21,10 +22,11 @@ predictable time-product integrand, so they also cover empty intervals and inter
 the horizon without moment assumptions on their unused heights.
 
 These identities connect completion in predictable L² with elementary stochastic integrals
-(using `TauCeti.BrownianIntegrable.simpleHolding`), and translate ambient time-product `L²` errors
-against simple holdings into sample-space `L²` errors against `l2Integral` or any
-almost-everywhere representative (`eLpNorm_simpleGains_sub_l2Integral`,
-`eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`,
+(using `TauCeti.brownianIntegrable_simpleHolding`), establish that elementary Brownian gains
+with integrable left-endpoint heights are true martingales (`martingale_simpleGains_of_integrable`),
+and translate ambient time-product `L²` errors against simple holdings into sample-space `L²`
+errors against `l2Integral` or any almost-everywhere representative
+(`eLpNorm_simpleGains_sub_l2Integral`, `eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`,
 `tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral`).
 They concern terminal L² values and almost-everywhere equality at each fixed observation time,
 not simultaneous equality of arbitrarily chosen representatives.
@@ -44,7 +46,7 @@ open scoped NNReal ENNReal Topology
 
 /-- A finite-grid elementary holding with square-integrable left-measurable heights belongs to
 `TauCeti.BrownianIntegrable`. -/
-theorem TauCeti.BrownianIntegrable.simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω}
+theorem TauCeti.brownianIntegrable_simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω}
     {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω} [SFinite P] {τ : ℕ → ℝ≥0} {n : ℕ}
     {a : ℕ → Ω → ℝ} (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
     (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
@@ -59,6 +61,18 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+
+/-- Elementary Brownian gains with integrable positions chosen at left endpoints form a true
+martingale. Brownian independence gives product integrability without boundedness or an `L²`
+assumption on the positions. -/
+theorem martingale_simpleGains_of_integrable (hW : IsFilteredPreBrownianReal ℱ W P)
+    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hai : ∀ j < n, Integrable (a j) P) :
+    Martingale (Finance.simpleGains τ n a W) ℱ P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  exact hW.martingale.simpleGains hτ ha fun j hj t ↦
+    (hW.martingale_mul_sub_min (hτ hj.le hj (Nat.le_succ j)) (ha j hj) (hai j hj)).integrable t
 
 private theorem coeFn_l2Integral_simpleFunc_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     (T s t : ℝ≥0) (g : @SimpleFunc Ω (ℱ s) ℝ)
@@ -210,11 +224,12 @@ theorem eLpNorm_simpleGains_sub_l2Integral (hW : IsFilteredPreBrownianReal ℱ W
       eLpNorm (fun p ↦ Finance.simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
         ((timeMeasure T).prod P) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hS := hW.eLpNorm_l2Integral_sub_l2Integral (BrownianIntegrable.simpleHolding ha ha₂) hH T
-  rw [(BrownianIntegrable.simpleHolding ha ha₂).toPredictableLp_def T] at hS
+  have hS := hW.eLpNorm_l2Integral_sub_l2Integral
+    (TauCeti.brownianIntegrable_simpleHolding ha ha₂) hH T
+  rw [(TauCeti.brownianIntegrable_simpleHolding ha ha₂).toPredictableLp_def T] at hS
   exact (eLpNorm_congr_ae
     ((hW.coeFn_l2Integral_simpleHolding hτ ha T
-      ((BrownianIntegrable.simpleHolding ha ha₂).memLp_predictableMeasure T)).symm.sub
+      ((TauCeti.brownianIntegrable_simpleHolding ha ha₂).memLp_predictableMeasure T)).symm.sub
       .rfl)).trans hS
 
 /-- For any almost-everywhere representative `X` of `hW.l2Integral T (hH.toPredictableLp T)` and any

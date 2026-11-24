@@ -14,7 +14,6 @@ import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Integral.Simple
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.LpLimit
 import TauCeti.Probability.Process.TimeIntegral
 
@@ -29,7 +28,6 @@ and passing to the `L²` limit yields the square-compensation martingale propert
 `martingale_sq_sub_integral_of_ae_eq_l2Integral` for any strongly adapted modification of the
 completed `L²` integral of a `BrownianIntegrable` integrand.
 
-The one-interval results also allow an integrable height for the first-order integral.
 Only filtration-relative pre-Brownian laws are needed, not path continuity or usual
 conditions on the filtration. Empty grids and repeated dates are allowed.
 
@@ -48,26 +46,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ} {ξ : Ω → ℝ} {s v : ℝ≥0}
-
-/-- A position known at `s` and integrable, held until `v`, gives a true Brownian
-martingale. Independence supplies product integrability without boundedness or an
-`L²` assumption on the position. -/
-theorem martingale_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P) (hsv : s ≤ v)
-    (hξ : StronglyMeasurable[ℱ s] ξ) (hξi : Integrable ξ P) :
-    Martingale (fun t ω ↦ ξ ω * (W (min v t) ω - W (min s t) ω)) ℱ P := by
-  have := hW.isGaussianProcess.isProbabilityMeasure
-  refine ((hW.martingale.const_min v).sub (hW.martingale.const_min s)).mul_left_of_eq_zero
-    (r := s) (fun t ht ↦ ?_) hξ (fun t ↦ ?_)
-  · ext ω
-    simp [min_eq_right ht, min_eq_right (ht.trans hsv)]
-  · by_cases hst : s ≤ t
-    · simpa only [min_eq_left hst, Pi.mul_def, Pi.sub_def] using
-        (hW.indepFun_sub (le_min hsv hst) hξ.measurable).integrable_mul hξi
-          ((hW.integrable_eval _).sub (hW.integrable_eval _))
-    · have hts : t ≤ s := (not_le.mp hst).le
-      convert integrable_zero Ω ℝ P using 1
-      ext ω
-      simp [min_eq_right hts, min_eq_right (hts.trans hsv)]
 
 /-- The square of a Brownian position held on `(s,v]`, compensated by its elapsed
 square energy, is a true martingale. Only the second moment of the position is needed. -/
@@ -171,9 +149,7 @@ theorem martingale_sq_sub_integral_of_ae_eq_l2Integral (hW : IsFilteredPreBrowni
     (hI : ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t)) :
     Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  obtain ⟨n, τ, a, C, _, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P := MemLp.of_bound
-    ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m) (Eventually.of_forall (hb m j hj))
+  obtain ⟨n, τ, a, _, _, hτ, ha, _, ha₂, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   let M (m : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
     Finance.simpleGains (τ m) (n m) (a m) W t ω ^ 2 -
       ∫ s, Finance.simpleHolding (τ m) (n m) (a m) s ω ^ 2 ∂timeMeasure t
@@ -197,7 +173,7 @@ theorem martingale_sq_sub_integral_of_ae_eq_l2Integral (hW : IsFilteredPreBrowni
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hH.memLp_timeMeasure t).eLpNorm_ne_top (herr t))
       (fun _ ↦ bot_le) fun m ↦ ?_
-    have hS := BrownianIntegrable.simpleHolding (ha m) (ha₂ m)
+    have hS := TauCeti.brownianIntegrable_simpleHolding (ha m) (ha₂ m)
     have hdiff_sm : StronglyMeasurable (fun p : ℝ≥0 × Ω ↦
         Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 ^ 2 - Function.uncurry H p ^ 2) :=
       ((hS.isStronglyPredictable.pow 2).sub (hH.isStronglyPredictable.pow 2)).mono

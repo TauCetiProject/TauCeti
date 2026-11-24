@@ -132,10 +132,7 @@ theorem l2Integral_indicator_Ioc_prod_univ_eq_sub
       hW.l2Integral t (hH.toPredictableLp t) - hW.l2Integral s (hH.toPredictableLp s) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have hmem : ∀ᵐ p ∂ℱ.predictableMeasure P t, p ∈ Ioc 0 t ×ˢ univ := by
-    have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P t)
-      (measurableSet_predictable_Ioc_prod 0 t (𝓕 := ℱ) MeasurableSet.univ)
-    simpa only [ℱ.predictableMeasure_restrict, min_self] using hb
+  have hmem := ℱ.ae_mem_Ioc_prod_predictableMeasure P t
   have hind : (hH.indicator_Ioc_prod s t (@MeasurableSet.univ Ω (ℱ s))).toPredictableLp t =
       hH.toPredictableLp t - ℱ.predictableMeasureExtendLp P ℝ hst (hH.toPredictableLp s) := by
     apply Lp.ext

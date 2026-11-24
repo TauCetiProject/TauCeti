@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.Process.LocalProperty
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
-public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 import TauCeti.Probability.BrownianMotion.Integral.Stopping.Integral
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
@@ -24,19 +24,15 @@ event locality of the continuous-time Brownian Itô integral on the original raw
 * `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_of_localized_stages`: if an almost
   surely continuous process stopped along a localizing sequence matches `L²`-integral stages that
   agree with `H` before the stopping times, then it satisfies `IsItoIntegral`.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.exists_patched_energyLocalizer_process`: for any
-  `LocallyBrownianIntegrable` integrand `H` and almost surely continuous filtration-relative
-  Brownian motion `W`, patches continuous `L²`-integral stages along closed-level hits of
-  `TauCeti.nnvolume.energyLocalizer` into a strongly progressive continuous local martingale
-  satisfying `IsItoIntegral` together with its witnessing stage processes.
+
+It also houses the internal `TauCeti.nnvolume.energyLocalizer` stage-patching construction shared
+across the `Ito` submodules via `import all`.
 
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
   Springer, 1991, §3.2.D, §3.3.
 -/
-
-public section
 
 noncomputable section
 
@@ -54,7 +50,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 `U k` representing `hW.l2Integral t ((hHstage k).toPredictableLp t)`, and each `Hstage k` agrees
 with `H` on `[0, t]` whenever `t < τ k ω`, then `IsItoIntegral ℱ P W H X`. Combining this
 criterion with `isItoIntegral_unique` establishes independence of the chosen localizer. -/
-theorem isItoIntegral_of_localized_stages
+public theorem isItoIntegral_of_localized_stages
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : IsStronglyPredictable ℱ H)
     {X : ℝ≥0 → Ω → ℝ} (hX_cont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
     {τ : ℕ → Ω → WithTop ℝ≥0} (hloc : IsLocalizingSequence ℱ τ P)
@@ -69,7 +65,7 @@ theorem isItoIntegral_of_localized_stages
   ae_continuous := hX_cont
   exists_approx t := by
     let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    choose n grid a C _ hgrid ha hb herr using fun k : ℕ ↦
+    choose n grid a _ _ hgrid ha _ ha₂ herr using fun k : ℕ ↦
       ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t (hHstage k).isStronglyPredictable
         ((hHstage k).memLp_timeMeasure t) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
     have herr_lim : Tendsto (fun k ↦ eLpNorm
@@ -78,9 +74,6 @@ theorem isItoIntegral_of_localized_stages
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
         (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
         (fun _ ↦ bot_le) fun k ↦ (herr k).le
-    have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
-      MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
-        (Eventually.of_forall (hb k j hj))
     refine ⟨n, grid, a, fun k ↦ (hgrid k).monotoneOn, ha, fun _ hε ↦
       hloc.tendsto_measure_of_ae_imp_of_lt t
         (MeasureTheory.tendsto_measure_le_lintegral_enorm_pow_of_tendsto_eLpNorm (n := 2)

@@ -156,6 +156,7 @@ theorem exists_simpleHolding_eLpNorm_sub_lt_timeMeasure
       τ 0 = 0 ∧ StrictMonoOn τ (Iic n) ∧
       (∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) ∧
       (∀ j < n, ∀ ω, ‖a j ω‖ ≤ C) ∧
+      (∀ j < n, MemLp (a j) 2 P) ∧
       eLpNorm (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
         ((Probability.timeMeasure T).prod P) < ε := by
   have hH₂' := (ℱ.memLp_predictableMeasure_iff P hH T 2).mpr hH₂
@@ -163,7 +164,8 @@ theorem exists_simpleHolding_eLpNorm_sub_lt_timeMeasure
     exists_simpleHolding_eLpNorm_sub_lt ℱ (ℱ.predictableMeasure P T)
       (fun _ _ _ _ ↦ measure_ne_top _ _)
       (ℱ.predictableMeasure_singleton_zero_prod P T MeasurableSet.univ) hH₂' hε
-  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, ?_⟩
+  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, fun j hj ↦ MemLp.of_bound
+    ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (Eventually.of_forall (hb j hj)), ?_⟩
   have hp := isStronglyPredictable_simpleHolding (ℱ := ℱ) ha
   have hs : StronglyMeasurable[ℱ.predictable]
       (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) := by
@@ -205,7 +207,7 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
   -- Approximate each bounded truncation with a summable sequence of expected errors.
   have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P T (hK m) (hK₂ m)
     (ε := ((1 / 2 : ℝ≥0) ^ m : ℝ≥0∞)) (by positivity)
-  choose n τ a C hτ₀ hτ ha hb herr using hex
+  choose n τ a C hτ₀ hτ ha hb _ herr using hex
   let L (m : ℕ) := simpleHolding (τ m) (n m) (a m)
   let E (m : ℕ) (ω : Ω) := ∫⁻ t, ‖L m t ω - K m t ω‖ₑ ^ 2 ∂ν
   have hpred (m : ℕ) : IsStronglyPredictable ℱ (fun t ω ↦ L m t ω - K m t ω) :=
@@ -261,6 +263,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm
       (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
       (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
       (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m) ∧
+      (∀ m j, j < n m → MemLp (a m j) 2 P) ∧
       ∀ T : ℝ≥0, Tendsto (fun m ↦ eLpNorm
         (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
           ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) := by
@@ -268,8 +271,8 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm
     hH.isStronglyPredictable
     (hH.memLp_timeMeasure m)
     (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
-  choose n τ a C hτ₀ hτ ha hb herr using hex
-  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, fun T ↦ ?_⟩
+  choose n τ a C hτ₀ hτ ha hb ha₂ herr using hex
+  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, ha₂, fun T ↦ ?_⟩
   have hbound : ∀ᶠ m : ℕ in atTop, eLpNorm
       (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
         ((Probability.timeMeasure T).prod P) ≤ (m : ℝ≥0∞)⁻¹ := by

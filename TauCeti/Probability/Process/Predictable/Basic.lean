@@ -84,7 +84,7 @@ theorem MeasureTheory.Filtration.isStronglyPredictable_ite_lt
     refine ⟨Ioi s ×ˢ A, measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := s) hA, ?_⟩
     ext p
     simp [S, p.property.1]
-  change StronglyMeasurable (fun p : ι × Ω ↦ if s < p.1 then ξ p.2 else 0)
+  unfold IsStronglyPredictable
   have hd : StronglyMeasurable (fun p : ι × Ω ↦ if p ∈ S then ξ p.2 else 0) :=
     (hξ.comp_measurable hproj).dite stronglyMeasurable_const hS
   convert hd using 1

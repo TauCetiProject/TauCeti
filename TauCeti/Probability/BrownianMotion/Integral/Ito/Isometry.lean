@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.Process
-import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Probability.BrownianMotion.Integral.ConditionalIsometry
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
@@ -29,9 +28,11 @@ martingale properties.
 
 * `TauCeti.BrownianIntegrable.exists_isItoIntegral`: when `W` has almost surely continuous paths,
   `H` has an Itô integral which is a predictable martingale.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_of_ae_eq_l2Integral` and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_ae_eq_l2Integral`: two-way
-  comparison between `IsItoIntegral` and modifications of `hW.l2Integral t (hH.toPredictableLp t)`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_of_ae_eq_l2Integral`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_ae_eq_l2Integral`, and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_iff_ae_eq_l2Integral`:
+  characterization comparing `IsItoIntegral` with continuous modifications of
+  `hW.l2Integral t (hH.toPredictableLp t)`.
 * `TauCeti.Probability.IsItoIntegral.ae_eq_wienerIntegral`: an Itô integral of a deterministic
   integrand agrees almost surely at each finite horizon with its Wiener integral.
 * `TauCeti.Probability.IsItoIntegral.martingale`,
@@ -131,10 +132,7 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
         eLpNorm (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k))) 2
           ((timeMeasure t).prod P) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, -, hτ, ha, haC, hKH⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
-    MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
-      (ae_of_all _ (haC k j hj))
+  obtain ⟨n, τ, a, C, -, hτ, ha, haC, ha₂, hKH⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   have hmem (k : ℕ) (t : ℝ≥0) : MemLp (Finance.simpleGains (τ k) (n k) (a k) W t) 2 P :=
     hW.memLp_simpleGains (hτ k).monotoneOn (ha k) (ha₂ k) t
   have hK (k : ℕ) (t : ℝ≥0) : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)))
@@ -273,10 +271,7 @@ theorem isItoIntegral_of_ae_eq_l2Integral
   ae_continuous := hI_cont
   exists_approx t := by
     let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-    obtain ⟨n, τ, a, C, _, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-    have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
-      MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
-        (Eventually.of_forall (hb k j hj))
+    obtain ⟨n, τ, a, _, _, hτ, ha, _, ha₂, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
     refine ⟨n, τ, a, fun k ↦ (hτ k).monotoneOn, ha, fun _ hε ↦
       MeasureTheory.tendsto_measure_le_lintegral_enorm_pow_of_tendsto_eLpNorm (n := 2) two_ne_zero
         (g := fun k p ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2)
@@ -296,10 +291,7 @@ theorem itoIntegral_ae_eq_l2Integral
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (t : ℝ≥0) :
     I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  obtain ⟨m, σ, b, C, _, hσ, hb, hbd, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have hbd₂ (k j : ℕ) (hj : j < m k) : MemLp (b k j) 2 P :=
-    MemLp.of_bound ((hb k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
-      (Eventually.of_forall (hbd k j hj))
+  obtain ⟨m, σ, b, _, _, hσ, hb, _, hbd₂, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   refine hI.ae_eq_of_tendstoInMeasure hW (fun k ↦ (hσ k).monotoneOn) hb (fun _ hε ↦ ?_) ?_
   · exact MeasureTheory.tendsto_measure_le_lintegral_enorm_pow_of_tendsto_eLpNorm (n := 2)
       two_ne_zero (g := fun k p ↦ Finance.simpleHolding (σ k) (m k) (b k) p.1 p.2 - H p.1 p.2)
@@ -310,6 +302,17 @@ theorem itoIntegral_ae_eq_l2Integral
     simpa only [Pi.sub_def] using
       hW.tendsto_eLpNorm_simpleGains_sub_of_ae_eq_l2Integral
         (fun _ ↦ hH) (fun _ ↦ .rfl) (fun k ↦ (hσ k).monotoneOn) hb hbd₂ (herr t)
+
+/-- Characterization of `IsItoIntegral` on `BrownianIntegrable` integrands: a process `I` is an
+Itô integral of `H` against `W` if and only if it has almost surely continuous paths and agrees
+almost everywhere at every time `t` with `hW.l2Integral t (hH.toPredictableLp t)`. -/
+theorem isItoIntegral_iff_ae_eq_l2Integral
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) :
+    IsItoIntegral ℱ P W H I ↔
+      (∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω)) ∧
+        ∀ t, I t =ᵐ[P] hW.l2Integral t (hH.toPredictableLp t) :=
+  ⟨fun hI ↦ ⟨hI.ae_continuous, hW.itoIntegral_ae_eq_l2Integral hH hI⟩,
+    fun ⟨hI_cont, hI⟩ ↦ hW.isItoIntegral_of_ae_eq_l2Integral hH hI_cont hI⟩
 
 /-- **Cross-isometry of the Brownian Itô integral** on `BrownianIntegrable` integrands. -/
 theorem itoIntegral_mul_isometry

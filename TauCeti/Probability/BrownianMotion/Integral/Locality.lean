@@ -155,10 +155,7 @@ theorem coeFn_l2Integral_ae_eq_indicator_of_ae_eq
     hW.l2Integral T g =ᵐ[P] A.indicator (hW.l2Integral T f) := by
   let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
-  have htime : ∀ᵐ p ∂ℱ.predictableMeasure P T, p ∈ Ioc 0 T ×ˢ (univ : Set Ω) := by
-    have h := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
-      (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
-    simpa only [ℱ.predictableMeasure_restrict P T T, min_self] using h
+  have htime := ℱ.ae_mem_Ioc_prod_predictableMeasure P T
   have hD : ((Lp.memLp f).indicator
       (measurableSet_predictable_Ioc_prod s T (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).toLp
         ((Ioc s T ×ˢ univ).indicator f) = f := by
@@ -285,11 +282,8 @@ private theorem coeFn_l2Integral_ite_lt_simpleFunc_mul_eq_mul_sub
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   let R (c : ℝ) : Lp ℝ 2 (ℱ.predictableMeasure P T) :=
     (hH.indicator_Ioc_prod s T (g.measurableSet_fiber c)).toPredictableLp T
-  have hmem_T : ∀ᵐ p ∂ℱ.predictableMeasure P T, p.1 ∈ Ioc 0 T := by
-    have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
-      (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
-    rw [ℱ.predictableMeasure_restrict, min_self] at hb
-    exact hb.mono fun _ hp ↦ hp.1
+  have hmem_T : ∀ᵐ p ∂ℱ.predictableMeasure P T, p.1 ∈ Ioc 0 T :=
+    (ℱ.ae_mem_Ioc_prod_predictableMeasure P T).mono fun _ hp ↦ hp.1
   have hin : (hH.ite_lt_mul s g.stronglyMeasurable hg_bd).toPredictableLp T =
       ∑ c ∈ g.range, c • R c := by
     apply Lp.ext
@@ -399,11 +393,9 @@ theorem coeFn_l2Integral_ite_lt_mul_eq_mul_sub
         (BrownianIntegrable.zero : BrownianIntegrable ℱ P 0).toPredictableLp T := by
       let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
       apply Lp.ext
-      have hb := ae_restrict_mem (μ := ℱ.predictableMeasure P T)
-        (measurableSet_predictable_Ioc_prod 0 T (𝓕 := ℱ) MeasurableSet.univ)
-      rw [ℱ.predictableMeasure_restrict, min_self] at hb
       filter_upwards [(hH.ite_lt_mul s hξ hξ_bd).coeFn_toPredictableLp T,
-        (BrownianIntegrable.zero : BrownianIntegrable ℱ P 0).coeFn_toPredictableLp T, hb]
+        (BrownianIntegrable.zero : BrownianIntegrable ℱ P 0).coeFn_toPredictableLp T,
+        ℱ.ae_mem_Ioc_prod_predictableMeasure P T]
         with ⟨t, ω⟩ h1 h2 ht
       have hnot : ¬ s < t := not_lt.mpr (ht.1.2.trans hTs)
       rw [h1, h2]
