@@ -14,8 +14,10 @@ public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 Let `E` be a subcomplex of a finite relative CW complex `(C, D)`. The cells of `C` split into the
 cells of `E` and the cells of `C` relative to `E`
 (`Topology.RelCWComplex.Subcomplex.relCWComplex`), so the alternating cell counts add up. By
-relative Euler--Poincaré, applied to the three pairs `(C, D)`, `(E, D)` and `(C, E)`, the
-alternating sums of the dimensions of relative singular homology add up in the same way:
+relative Euler--Poincaré, applied to the three pairs `(C, D)`, `(E, D)` and `(C, E)` over a
+ring `k` satisfying the strong rank condition and rank--nullity with finitely generated
+coefficients `M`, the alternating sums of the finranks of relative singular homology add up in the
+same way:
 
 ```text
 χ(C, D) = χ(E, D) + χ(C, E).

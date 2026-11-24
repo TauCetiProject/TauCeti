@@ -190,7 +190,7 @@ theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
       have : IsEmpty (cell C n) := hn
       isZero_twistedCellularChainComplex_X C L n
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
-      (Filter.eventually_cofinite.1 (Nat.cofinite_eq_atTop.symm ▸ hzero)),
+      (Filter.eventually_cofinite.1 (by rwa [Nat.cofinite_eq_atTop])),
     ChainComplex.eulerChar_eq_finsum_finrank, cwEulerChar_def, mul_finsum]
   refine finsum_congr fun i ↦ ?_
   have := FiniteType.finite_cell (C := C) (D := D) i

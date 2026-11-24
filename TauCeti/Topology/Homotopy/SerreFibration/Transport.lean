@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.MorphismProperty.IsInvertedBy
 public import TauCeti.Topology.Category.TopCat.Pullback
 public import TauCeti.Topology.Category.TopCat.WeakEquivalence
+public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 public import TauCeti.Topology.Homotopy.TopCat.Path
 
@@ -40,11 +41,12 @@ Specializing `pullbackFiberIso` to the interval morphism `(TopCat.pathEquiv.symm
 `γ : Path b₀ b₁` produces path transport `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)`
 (`TauCeti.TopCat.fiberIsoOfPath`). It commutes with the fibre inclusions into `E`
 (`fiberIsoOfPath_hom_comp_map_fiberι`), reduces to the zig-zag of fibre inclusions over a
-contractible base (`fiberIsoOfPath_eq_of_contractibleSpace`), is natural in maps of Serre
-fibrations (`fiberIsoOfPath_naturality`), base change (`fiberIsoOfPath_pullbackFst`), and natural
-transformations `F ⟶ G` (`fiberIsoOfPath_hom_comp_app`), and depends only on the endpoint-fixing
-homotopy class of `γ` (`fiberIsoOfPath_refl`, `fiberIsoOfPath_symm`, `fiberIsoOfPath_trans`,
-`fiberIsoOfPath_congr`).
+contractible base (`fiberIsoOfPath_eq_of_contractibleSpace`), agrees with the transport of a
+lifting function when `p` is a Hurewicz fibration (`fiberIsoOfPath_hom_eq_map_transport`), is
+natural in maps of Serre fibrations (`fiberIsoOfPath_naturality`), base change
+(`fiberIsoOfPath_pullbackFst`), and natural transformations `F ⟶ G`
+(`fiberIsoOfPath_hom_comp_app`), and depends only on the endpoint-fixing homotopy class of `γ`
+(`fiberIsoOfPath_refl`, `fiberIsoOfPath_symm`, `fiberIsoOfPath_trans`, `fiberIsoOfPath_congr`).
 
 ## Main declarations
 
@@ -58,9 +60,10 @@ homotopy class of `γ` (`fiberIsoOfPath_refl`, `fiberIsoOfPath_symm`, `fiberIsoO
 * `TauCeti.TopCat.fiberIsoOfPath`: path transport isomorphism
   `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)` induced by a path `γ : Path b₀ b₁`.
 * `TauCeti.TopCat.fiberIsoOfPath_eq_of_contractibleSpace`,
+  `TauCeti.TopCat.fiberIsoOfPath_hom_eq_map_transport`,
   `TauCeti.TopCat.fiberIsoOfPath_pullbackFst`, `TauCeti.TopCat.fiberIsoOfPath_naturality`, and
-  `TauCeti.TopCat.fiberIsoOfPath_hom_comp_app`: characterization over contractible bases, base
-  change compatibility, and naturality.
+  `TauCeti.TopCat.fiberIsoOfPath_hom_comp_app`: characterization over contractible bases, agreement
+  with lifting-function transport, base change compatibility, and naturality.
 * `TauCeti.TopCat.fiberIsoOfPath_refl`, `TauCeti.TopCat.fiberIsoOfPath_symm`,
   `TauCeti.TopCat.fiberIsoOfPath_trans`, and `TauCeti.TopCat.fiberIsoOfPath_congr`: groupoid
   functoriality and homotopy invariance in the path `γ`.
@@ -155,11 +158,12 @@ theorem pullbackFiberIso_self (g : K ⟶ B) {k : K} {b : B} (h : g k = b) :
   Iso.ext ((eq_pullbackFiberIso_hom_iff hF hp g h h _).2 (Category.id_comp _)).symm
 
 /-- Swapping the two points of a contractible parameter space inverts `pullbackFiberIso`. -/
+@[simp]
 theorem pullbackFiberIso_symm (g : K ⟶ B) {k₀ k₁ : K} {b₀ b₁ : B}
     (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) :
-    pullbackFiberIso hF hp g h₁ h₀ = (pullbackFiberIso hF hp g h₀ h₁).symm :=
+    (pullbackFiberIso hF hp g h₀ h₁).symm = pullbackFiberIso hF hp g h₁ h₀ :=
   Iso.ext ((eq_pullbackFiberIso_hom_iff hF hp g h₁ h₀ _).2
-    (pullbackFiberIso_inv_comp_map_pullbackFiberι hF hp g h₀ h₁)).symm
+    (pullbackFiberIso_inv_comp_map_pullbackFiberι hF hp g h₀ h₁))
 
 /-- **Transitivity of transport over a contractible parameter space.** -/
 @[simp]
@@ -222,8 +226,11 @@ theorem pullbackFiberIso_comp_left {K' : _root_.TopCat.{u}} [ContractibleSpace K
     pullbackFiberIso hF hp g' h₀ h₁ = pullbackFiberIso hF hp g h₀' h₁' := by
   subst hφ hk₀ hk₁
   exact Iso.ext <| by
-    simpa using pullbackFiberIso_naturality hF hp (CommSq.mk (by simp : 𝟙 E ≫ p = p ≫ 𝟙 B))
-      hp (φ ≫ g) g φ (Category.comp_id _).symm h₀ h₁ h₀' h₁'
+    -- This is naturality for the identity map of `p`.
+    simpa only [CommSq.fiberMap_id, _root_.TopCat.hom_id, ContinuousMap.id_apply,
+      CategoryTheory.Functor.map_id, Category.comp_id, Category.id_comp] using
+      pullbackFiberIso_naturality hF hp (CommSq.mk (by simp : 𝟙 E ≫ p = p ≫ 𝟙 B))
+        hp (φ ≫ g) g φ (Category.comp_id _).symm h₀ h₁ h₀' h₁'
 
 /-- **Naturality of `pullbackFiberIso` in natural transformations** between functors inverting weak
 homotopy equivalences. -/
@@ -418,7 +425,7 @@ theorem fiberIsoOfPath_symm {b₀ b₁ : B} (γ : Path b₀ b₁) :
     pullbackFiberIso_comp_left hF hp (_root_.TopCat.pathEquiv.symm γ).hom _ rev hrev h0 h1
       (_root_.TopCat.pathEquiv.symm γ.symm).hom₀ (_root_.TopCat.pathEquiv.symm γ.symm).hom₁
       (_root_.TopCat.pathEquiv.symm γ).hom₁ (_root_.TopCat.pathEquiv.symm γ).hom₀,
-    pullbackFiberIso_symm]
+    ← pullbackFiberIso_symm]
 
 /-- Path transport along a concatenation `γ.trans δ` is the composition of the path transport
 isomorphisms along `γ` and `δ`. -/
@@ -474,6 +481,38 @@ theorem fiberIsoOfPath_congr {b₀ b₁ : B} {γ₀ γ₁ : Path b₀ b₁} (h :
   rw [hl, hr, ← Iso.trans_refl (pullbackFiberIso hF hp g _ (H.target 0)), ← ht,
     pullbackFiberIso_trans,
     ← pullbackFiberIso_trans hF hp g _ (H.source 1), hb, Iso.refl_trans]
+
+/-- **Path transport agrees with the transport of a lifting function.** If the Serre fibration `p`
+has a lifting function `Λ`, then for any functor `F` inverting weak homotopy equivalences, path
+transport along `γ` equals `F.map` of the fibre transport map `Λ.transport γ`: the lifts of `γ`
+from the points of the fibre over `b₀` form a homotopy, in `γ*E`, from the inclusion of that fibre
+to the transport followed by the inclusion of the fibre over `b₁`. -/
+theorem fiberIsoOfPath_hom_eq_map_transport (Λ : LiftingFunction p.hom) {b₀ b₁ : B}
+    (γ : Path b₀ b₁) :
+    (fiberIsoOfPath hF hp γ).hom = F.map (_root_.TopCat.ofHom (Λ.transport γ)) := by
+  refine ((eq_fiberIsoOfPath_hom_iff hF hp γ _).2 ?_).symm
+  let H : ContinuousMap.Homotopy
+      (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 0)
+        (_root_.TopCat.pathEquiv.symm γ).hom₀).hom
+      (_root_.TopCat.ofHom (Λ.transport γ) ≫
+        p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 1)
+          (_root_.TopCat.pathEquiv.symm γ).hom₁).hom :=
+    { toFun x := ⟨(_root_.TopCat.I.homeomorph.symm x.1, Λ.lift x.2.val γ.toContinuousMap
+          (γ.source.trans (x.2.property : p x.2.val = b₀).symm) x.1),
+        (Λ.apply_lift _ _ _ x.1).symm⟩
+      continuous_toFun := by
+        refine Continuous.subtype_mk (Continuous.prodMk (by fun_prop) ?_) _
+        exact continuous_eval.comp
+          ((Λ.continuous_lift (by fun_prop) continuous_const _).prodMk continuous_fst)
+      map_zero_left x := Subtype.ext <| by
+        rw [_root_.TopCat.Hom.coe_pullbackFiberι_apply]
+        exact Prod.ext rfl (Λ.lift_zero _ _ _)
+      map_one_left x := Subtype.ext <| by
+        rw [_root_.TopCat.hom_comp, ContinuousMap.comp_apply, _root_.TopCat.hom_ofHom,
+          _root_.TopCat.Hom.coe_pullbackFiberι_apply]
+        exact Prod.ext rfl (Λ.transport_apply_coe γ x).symm }
+  rw [← F.map_comp]
+  exact (map_eq_of_homotopy hF H).symm
 
 end Path
 

@@ -311,7 +311,7 @@ objects at `(-n - q, q)`, the positions of total degree `-n`. These pages are th
 this is the numerical form of the strong convergence
 `TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`. -/
 theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X {a b : ℤ}
-    (_hab : a ≤ b) (ha : X a = ∅) (hb : X b = Set.univ) (n : ℕ)
+    (ha : X a = ∅) (hb : X b = Set.univ) (n : ℕ)
     [Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) n).obj V).obj
       Y)]
     {r : ℤ} (hr : 2 ≤ r) (hrab : b - a + 1 ≤ r) :
