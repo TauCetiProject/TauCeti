@@ -48,14 +48,12 @@ theorem dualMap_hom_apply {V W : Rep.{w} R G} (f : V ⟶ W)
 /-- Transposing the identity representation morphism gives the identity. -/
 @[simp]
 theorem dualMap_id (V : Rep.{w} R G) : dualMap (𝟙 V) = 𝟙 V.dual := by
-  ext
   simp [dualMap]
 
 /-- Transposing a composite reverses the order of its factors. -/
 @[simp]
 theorem dualMap_comp {U V W : Rep.{w} R G} (f : U ⟶ V) (g : V ⟶ W) :
     dualMap (f ≫ g) = dualMap g ≫ dualMap f := by
-  ext
   simp [dualMap]
 
 /-- Transposing a transport morphism reverses the transport on dual representations. -/

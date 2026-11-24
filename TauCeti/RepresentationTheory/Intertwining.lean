@@ -48,7 +48,8 @@ taking invariants under it.
 * `Representation.Equiv.prodCongr`: the product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
 * `Representation.IntertwiningMap.dualMap`: the transpose of an intertwining map, as an
-  intertwining map of the dual representations.
+  intertwining map of the dual representations, with its laws `IntertwiningMap.dualMap_id` and
+  `IntertwiningMap.dualMap_comp`.
 * `Representation.dualHomEquiv`: `Hom_G(V, W^*) ≃ Hom_G(W, V^*)` by swapping arguments.
 * `Representation.Equiv.intertwiningMapCongr`: transport of intertwining maps along equivalences
   of the source and of the target.
@@ -483,6 +484,18 @@ def IntertwiningMap.dualMap (f : IntertwiningMap ρ σ) : IntertwiningMap σ.dua
 @[simp]
 theorem IntertwiningMap.dualMap_apply_apply (f : IntertwiningMap ρ σ) (φ : Module.Dual A W)
     (v : V) : f.dualMap φ v = φ (f v) :=
+  (rfl)
+
+/-- Transposing the identity intertwining map gives the identity. -/
+@[simp]
+theorem IntertwiningMap.dualMap_id : (IntertwiningMap.id ρ).dualMap = IntertwiningMap.id ρ.dual :=
+  (rfl)
+
+/-- Transposing a composite reverses the order of its factors. -/
+@[simp]
+theorem IntertwiningMap.dualMap_comp {U : Type*} [AddCommMonoid U] [Module A U]
+    {τ : Representation A G U} (f : IntertwiningMap ρ σ) (f' : IntertwiningMap σ τ) :
+    (f'.comp f).dualMap = f.dualMap.comp f'.dualMap :=
   (rfl)
 
 /-- Swapping the arguments of an intertwining map `V → W^*` gives an intertwining map `W → V^*`:
