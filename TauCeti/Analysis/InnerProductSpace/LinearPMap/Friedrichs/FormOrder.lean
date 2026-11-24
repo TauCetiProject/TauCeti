@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Friedrichs.Basic
 public import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
-# The Friedrichs extension is minimal in form order
+# The Friedrichs extension is maximal in form order
 
 Let `S ≤ T` be partial linear operators on a Hilbert space `E`, both symmetric with the same lower
 bound `γ`. The form completion `LinearPMap.FriedrichsSpace` of `S` embeds isometrically into that
@@ -34,6 +34,14 @@ property of the Friedrichs extension (Krein's theorem).
 * `LinearPMap.friedrichsForm_friedrichsSpaceMap`: it carries the closed form of `S` to that of
   `T`.
 * `LinearPMap.range_friedrichsInclusion_subset`: the form domain of `S` lies in that of `T`.
+
+## References
+
+* M. G. Krein, *The theory of self-adjoint extensions of semi-bounded Hermitian transformations
+  and its applications. I*, Mat. Sb. 20(62) (1947), 431-495.
+* K. Schmüdgen, *Unbounded Self-adjoint Operators on Hilbert Space*, Springer GTM 265 (2012),
+  Chapter 10, §10.3 (form order) and §10.4 (the Friedrichs extension).
+* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), Chapter VI, §2.3.
 -/
 
 public section
