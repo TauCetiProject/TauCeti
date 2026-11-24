@@ -125,6 +125,21 @@ theorem cutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_target⟩,
     e.cutoffPullback he ψ f x = 0 :=
   indicator_of_notMem hx _
 
+/-- On the chart source, the pullback of the constant function `1` is the cutoff read through the
+chart. -/
+@[simp]
+theorem cutoffPullback_one_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : M}
+    (hx : x ∈ e.source) : e.cutoffPullback he ψ 1 x = ψ (e x) := by
+  rw [cutoffPullback_apply_of_mem he _ _ hx, ContMDiffMap.coe_one, Pi.one_apply, mul_one]
+
+/-- The pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the inverse of
+the chart. -/
+theorem tsupport_cutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : tsupport (e.cutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
+  e.tsupport_subset_symm_image_tsupport ψ
+    (fun x hx h ↦ by rw [cutoffPullback_apply_of_mem he _ _ hx, h, zero_mul])
+    fun _ hx ↦ cutoffPullback_apply_of_notMem he _ _ hx
+
 /-- **Pushing a function on the manifold forward to a chart.** For a cutoff `φ` with compact
 support in the target of the chart `e`, the smooth function `φ · (h ∘ e⁻¹)` on `E`, which vanishes
 outside the chart target, as a linear map `C^∞(M) → C^∞(E)` in `h`. -/
@@ -383,6 +398,15 @@ theorem complexCutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_tar
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∉ e.source) :
     e.complexCutoffPullback he ψ f x = 0 := by
   simp [complexCutoffPullback, cutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- The complex pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the
+inverse of the chart. -/
+theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
+    tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
+  e.tsupport_subset_symm_image_tsupport ψ
+    (fun x hx h ↦ by rw [complexCutoffPullback_apply_of_mem he _ _ hx, h, zero_smul])
+    fun _ hx ↦ complexCutoffPullback_apply_of_notMem he _ _ hx
 
 /-- **Pushing a complex-valued function on the manifold forward to a chart.** For a cutoff `φ`
 with compact support in the target of the chart `e`, the smooth complex-valued function
