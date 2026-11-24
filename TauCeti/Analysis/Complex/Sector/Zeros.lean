@@ -238,24 +238,18 @@ theorem polarLt_sectorZero_of_lt_of_le_encard
     (sectorZero θ₁ θ₂ f j).polarLt (sectorZero θ₁ θ₂ f k) := by
   have hspec_j := sectorZero_spec_of_le_encard hfin hj ((Nat.cast_le.mpr hjk.le).trans hle)
   have hspec_k := sectorZero_spec_of_le_encard hfin (hj.trans hjk.le) hle
-  let key : sectorZeros θ₁ θ₂ f → ℝ ×ₗ ℝ := fun z => toLex (‖z.val‖, z.val.arg)
-  have hkey : Function.Injective key := fun _ _ h =>
-    Subtype.ext (Complex.toLex_norm_arg_injective h)
-  let : LinearOrder (sectorZeros θ₁ θ₂ f) := LinearOrder.lift' key hkey
-  let r := ncardIioOrderEmbedding fun z : sectorZeros θ₁ θ₂ f =>
-    ((finite_sectorZeroInit hfin z.val).preimage Subtype.val_injective.injOn).subset
-      fun w hw => ⟨w.property, hw⟩
-  have hr_eq (z : sectorZeros θ₁ θ₂ f) :
-      r z = {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z.val}.ncard := by
-    rw [ncardIioOrderEmbedding_apply,
-      ← Set.ncard_image_of_injective (Set.Iio z) Subtype.val_injective]
-    congr 1
-    ext w
-    exact ⟨fun ⟨⟨_, hwS⟩, hlt, rfl⟩ => ⟨hwS, hlt⟩, fun ⟨hwS, hlt⟩ => ⟨⟨w, hwS⟩, hlt, rfl⟩⟩
-  change (⟨sectorZero θ₁ θ₂ f j, hspec_j.1⟩ : sectorZeros θ₁ θ₂ f) <
-    ⟨sectorZero θ₁ θ₂ f k, hspec_k.1⟩
-  rw [← r.lt_iff_lt, hr_eq, hr_eq, hspec_j.2, hspec_k.2]
-  omega
+  change toLex (‖sectorZero θ₁ θ₂ f j‖, (sectorZero θ₁ θ₂ f j).arg) <
+    toLex (‖sectorZero θ₁ θ₂ f k‖, (sectorZero θ₁ θ₂ f k).arg)
+  by_contra! hle'
+  rcases hle'.lt_or_eq with hlt | heq
+  · have hcard := Set.ncard_sep_lt_lt_ncard_sep_lt (f := fun w : ℂ => toLex (‖w‖, w.arg))
+      hspec_k.1 hlt (finite_sectorZeroInit hfin _)
+    change {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (sectorZero θ₁ θ₂ f k)}.ncard <
+      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (sectorZero θ₁ θ₂ f j)}.ncard at hcard
+    omega
+  · have hcard := hspec_k.2
+    rw [Complex.toLex_norm_arg_injective heq, hspec_j.2] at hcard
+    omega
 
 /-- Under local norm-finiteness, `sectorZero θ₁ θ₂ f` is injective on positive indices at most the
 extended cardinality of the sector zero set. -/
