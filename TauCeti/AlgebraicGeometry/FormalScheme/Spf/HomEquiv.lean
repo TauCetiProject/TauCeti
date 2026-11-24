@@ -105,7 +105,10 @@ theorem base_eq_comap_sectionsHom (g : Spf B ⟶ Spf A) :
   ConcreteCategory.hom_ext _ _ fun q ↦ Subtype.ext <| PrimeSpectrum.ext <| SetLike.ext fun a ↦
     (mem_base_asIdeal_iff g q a).trans <| by
       rw [← Ideal.mem_comap (f := sectionsHom g), ← PrimeSpectrum.comap_asIdeal,
-        ← coe_comap_apply (sectionsHom g) (continuous_sectionsHom g) q]; rfl
+        ← coe_comap_apply (sectionsHom g) (continuous_sectionsHom g) q]
+      -- `(Spf B).toTopCat` is definitionally `TopCat.of (carrier B)` and `TopCat.ofHom` applies
+      -- definitionally as `comap _ _ q`, preventing `TopCat.ofHom_apply` from rewriting directly.
+      rfl
 
 private theorem base_eq_map_sectionsHom (g : Spf B ⟶ Spf A) :
     g.base = (map (sectionsHom g) (continuous_sectionsHom g)).base :=
@@ -246,7 +249,9 @@ private theorem algebraMap_comp_basicOpenSectionsIso_inv_comp_quotientProjection
       (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv ≫
         k.toHom.appLE (basicOpen a : Opens (Spf A)) W hWk =
       (topSectionsIso A).inv ≫ m.toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) := by
-    rw [algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE, appLE_top, appLE_top, htop]; rfl
+    rw [algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE, appLE_top, appLE_top]
+    exact congrArg (fun f : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤) ↦
+      (topSectionsIso A).inv ≫ f ≫ (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op) htop
   rw [← CommRingCat.hom_ofHom (algebraMap A (AdicRing.CompletedAway A a)), ← CommRingCat.hom_comp]
   refine congrArg CommRingCat.Hom.hom ?_
   have h2 := congrArg (· ≫ πn) h1

@@ -293,7 +293,12 @@ private theorem forgetToLocallyRingedSpace_map_isoSpf_hom (hU : X.IsAffineOpen U
         ((Spf.map φ.toRingHom hφcont).c.app (op ⊤) :
           (Spf hU.Sections).presheaf.obj (op ⊤) ⟶ (Spf (chosenChart hU).B).presheaf.obj (op ⊤)) =
       (chartSectionsIso X U e).hom ≫ (Spf.topSectionsIso (chosenChart hU).B).inv := by
-    rw [Spf.topSectionsIso_inv_comp_c_app_top, Spf.sectionsHom_map]; rfl
+    rw [Spf.topSectionsIso_inv_comp_c_app_top, Spf.sectionsHom_map]
+    -- `hU.Sections` is definitionally `X.presheaf.obj (op U)`, so `CommRingCat.ofHom φ.toRingHom`
+    -- agrees definitionally with `(chartSectionsIso X U e).hom`
+    -- (`Iso.commRingCatIsoToRingEquiv_toRingHom`, `CommRingCat.ofHom_hom`), preventing `rw` at
+    -- `implicit` transparency.
+    rfl
   have h2 : ((chartSectionsIso X U e).hom ≫ (Spf.topSectionsIso (chosenChart hU).B).inv) ≫
         (e.hom.c.app (op ⊤) : (Spf (chosenChart hU).B).presheaf.obj (op ⊤) ⟶ _) =
       (X.toPresheafedSpace.restrictTopSectionsIso U).hom :=
@@ -949,7 +954,6 @@ theorem isEmbedding_pi_restrict_openSectionsTopology {ι : Type*} (X : FormalSch
         (X.presheaf.map (homOfLE hUpV).op) s).symm.trans <| ConcreteCategory.congr_hom
         (TopCat.Presheaf.map_comp_map_eq X.presheaf (homOfLE (hV i)).op (homOfLE hUpV).op
           (homOfLE (hUpV.trans (hV i))).op) s⟩
-  show (forgetToLocallyRingedSpace.map (𝟙 X)).base x ∈ Up
   rw [forgetToLocallyRingedSpace.map_id]; exact hxUp
 end SpecialCasesAndOpenTopology
 end TauCeti.FormalScheme
