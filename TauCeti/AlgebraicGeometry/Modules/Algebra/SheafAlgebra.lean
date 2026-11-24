@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
+public import TauCeti.CategoryTheory.Monoidal.Subcategory
 
 /-!
 # Quasi-coherent sheaves of algebras
@@ -131,100 +132,22 @@ variable (X : Scheme.{u})
 
 attribute [local instance] monoidalCategorySheafOfModules
 
-private def toMon : SheafAlgebra X ⥤ Mon (QuasicoherentSheaf X) where
-  obj A := by
-    let E : QuasicoherentSheaf X := ⟨A.obj.X, A.property⟩
-    letI : MonObj E := {
-      one := ObjectProperty.homMk η[A.obj.X]
-      mul := ObjectProperty.homMk μ[A.obj.X]
-      one_mul := by
-        apply ObjectProperty.hom_ext
-        exact MonObj.one_mul A.obj.X
-      mul_one := by
-        apply ObjectProperty.hom_ext
-        exact MonObj.mul_one A.obj.X
-      mul_assoc := by
-        apply ObjectProperty.hom_ext
-        exact MonObj.mul_assoc A.obj.X
-    }
-    exact Mon.mk E
-  map {A B} f := by
-    refine Mon.Hom.mk' (ObjectProperty.homMk f.hom.hom) ?_ ?_
-    · apply ObjectProperty.hom_ext
-      exact IsMonHom.one_hom f.hom.hom
-    · apply ObjectProperty.hom_ext
-      exact IsMonHom.mul_hom f.hom.hom
-  map_id A := by
-    apply Mon.Hom.ext
-    apply ObjectProperty.hom_ext
-    exact Mon.id_hom A.obj
-  map_comp f g := by
-    apply Mon.Hom.ext
-    apply ObjectProperty.hom_ext
-    exact Mon.comp_hom f.hom g.hom
-
-private def ofMon : Mon (QuasicoherentSheaf X) ⥤ SheafAlgebra X where
-  obj A := by
-    let E : X.Modules := A.X.obj
-    letI : MonObj E := {
-      one := η[A.X].hom
-      mul := μ[A.X].hom
-      one_mul := congrArg (fun f ↦ f.hom) (MonObj.one_mul A.X)
-      mul_one := congrArg (fun f ↦ f.hom) (MonObj.mul_one A.X)
-      mul_assoc := congrArg (fun f ↦ f.hom) (MonObj.mul_assoc A.X)
-    }
-    exact ⟨Mon.mk E, A.X.property⟩
-  map f := by
-    refine ObjectProperty.homMk (Mon.Hom.mk' f.hom.hom ?_ ?_)
-    · exact congrArg (fun g ↦ g.hom) (IsMonHom.one_hom f.hom)
-    · exact congrArg (fun g ↦ g.hom) (IsMonHom.mul_hom f.hom)
-  map_id A := by
-    apply ObjectProperty.hom_ext
-    apply Mon.Hom.ext
-    exact congrArg (fun f ↦ f.hom) (Mon.id_hom A)
-  map_comp f g := by
-    apply ObjectProperty.hom_ext
-    apply Mon.Hom.ext
-    exact congrArg (fun h ↦ h.hom) (Mon.comp_hom f g)
-
-/-- Converting a monoid in quasi-coherent sheaves to a sheaf of algebras and back is the
-identity. -/
-private def ofMonCompToMonIso : ofMon X ⋙ toMon X ≅ 𝟭 (Mon (QuasicoherentSheaf X)) :=
-  NatIso.ofComponents (fun A ↦ Mon.mkIso (Iso.refl _) (Category.comp_id _)
-    ((Category.comp_id _).trans ((congrArg (· ≫ μ[A.X]) (id_tensorHom_id _ _)).trans
-      (Category.id_comp _)).symm)) (by
-    intro A B f
-    apply Mon.Hom.ext
-    rfl)
-
-/-- The components of `ofMonCompToMonIso` are identities. -/
-@[simp]
-private lemma ofMonCompToMonIso_hom_app (A : Mon (QuasicoherentSheaf X)) :
-    (ofMonCompToMonIso X).hom.app A = 𝟙 _ :=
-  Mon.Hom.ext rfl
-
-/-- Converting a sheaf of algebras to a monoid in quasi-coherent sheaves and back is the
-identity. -/
-private def toMonCompOfMonIso : toMon X ⋙ ofMon X ≅ 𝟭 (SheafAlgebra X) :=
-  NatIso.ofComponents (fun A ↦ ObjectProperty.isoMk _ (Mon.mkIso (Iso.refl _)
-    (Category.comp_id _) ((Category.comp_id _).trans ((congrArg (· ≫ μ[A.obj.X])
-      (id_tensorHom_id _ _)).trans (Category.id_comp _)).symm))) (by
-    intro A B f
-    apply ObjectProperty.hom_ext
-    apply Mon.Hom.ext
-    rfl)
+/-- Sheaves of algebras are the monoid objects in quasi-coherent sheaves. -/
+private abbrev monEquivalence : Mon (QuasicoherentSheaf X) ≌ SheafAlgebra X :=
+  ObjectProperty.monFullSubcategoryEquivalence _
 
 variable {X} {Y Z : Scheme.{u}}
 
 /-- Pullback of quasi-coherent sheaves of algebras along a morphism of schemes. -/
 def pullback (f : Y ⟶ X) : SheafAlgebra X ⥤ SheafAlgebra Y :=
-  toMon X ⋙ (QuasicoherentSheaf.pullback f).mapMon ⋙ ofMon Y
+  (monEquivalence X).inverse ⋙ (QuasicoherentSheaf.pullback f).mapMon ⋙
+    (monEquivalence Y).functor
 
 /-- The carrier of a pulled-back algebra is the pullback of its underlying module. -/
 @[simp]
 theorem pullback_obj_X (f : Y ⟶ X) (A : SheafAlgebra X) :
     ((pullback f).obj A).obj.X = (Scheme.Modules.pullback f).obj A.obj.X := by
-  unfold pullback ofMon toMon
+  unfold pullback
   exact QuasicoherentSheaf.pullback_obj_obj f _
 
 /-- The unit of a pulled-back algebra is the pullback of its unit, preceded by the
@@ -234,10 +157,11 @@ theorem pullback_obj_one (f : Y ⟶ X) (A : SheafAlgebra X) :
     η[((pullback f).obj A).obj.X] =
       (Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map η[A.obj.X] ≫
         eqToHom (pullback_obj_X f A).symm := by
-  unfold pullback ofMon toMon
-  -- `ofMon` takes the unit to the underlying sheaf morphism of the `Mon` unit, which
-  -- `mapMon` defines as `ε ≫ F.map η` (Mathlib's `comp_mapMon_one`), and `toMon` wraps `η`
-  -- by `ObjectProperty.homMk`; composition in the full subcategory is that of sheaves.
+  unfold pullback
+  -- The functor of `monEquivalence` takes the unit to the underlying sheaf morphism of the
+  -- `Mon` unit, which `mapMon` defines as `ε ≫ F.map η` (Mathlib's `comp_mapMon_one`), and its
+  -- inverse wraps `η` by `ObjectProperty.homMk`; composition in the full subcategory is that of
+  -- sheaves.
   change (Functor.LaxMonoidal.ε (QuasicoherentSheaf.pullback f)).hom ≫
     ((QuasicoherentSheaf.pullback f).map _).hom = _
   rw [QuasicoherentSheaf.pullback_ε_hom, QuasicoherentSheaf.pullback_map_hom]
@@ -255,7 +179,7 @@ theorem pullback_obj_mul (f : Y ⟶ X) (A : SheafAlgebra X) :
       (eqToHom (pullback_obj_X f A) ⊗ₘ eqToHom (pullback_obj_X f A)) ≫
         inv (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) A.obj.X A.obj.X) ≫
           (Scheme.Modules.pullback f).map μ[A.obj.X] ≫ eqToHom (pullback_obj_X f A).symm := by
-  unfold pullback ofMon toMon
+  unfold pullback
   -- As in `pullback_obj_one`, with `comp_mapMon_mul` in place of `comp_mapMon_one`.
   change (Functor.LaxMonoidal.μ (QuasicoherentSheaf.pullback f) _ _).hom ≫
     ((QuasicoherentSheaf.pullback f).map _).hom = _
@@ -277,24 +201,24 @@ theorem pullback_map_hom_hom (f : Y ⟶ X) {A B : SheafAlgebra X} (g : A ⟶ B) 
     ((pullback f).map g).hom.hom =
       eqToHom (pullback_obj_X f A) ≫ (Scheme.Modules.pullback f).map g.hom.hom ≫
         eqToHom (pullback_obj_X f B).symm := by
-  unfold pullback ofMon toMon
+  unfold pullback
   exact QuasicoherentSheaf.pullback_map_hom f _
 
 variable (X) in
 /-- Pullback of sheaves of algebras along the identity is naturally the identity. -/
 def pullbackId : pullback (𝟙 X) ≅ 𝟭 (SheafAlgebra X) :=
-  Functor.isoWhiskerLeft (toMon X) (Functor.isoWhiskerRight
+  Functor.isoWhiskerLeft (monEquivalence X).inverse (Functor.isoWhiskerRight
     (Functor.mapMonNatIso (QuasicoherentSheaf.pullbackId X) ≪≫ Functor.mapMonIdIso)
-      (ofMon X)) ≪≫ toMonCompOfMonIso X
+      (monEquivalence X).functor) ≪≫ (monEquivalence X).counitIso
 
 /-- Pullback of sheaves of algebras respects composition. -/
 def pullbackComp (f : X ⟶ Y) (g : Y ⟶ Z) : pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=
-  Functor.isoWhiskerLeft (toMon Z ⋙ (QuasicoherentSheaf.pullback g).mapMon)
-      (Functor.isoWhiskerRight (ofMonCompToMonIso Y)
-        ((QuasicoherentSheaf.pullback f).mapMon ⋙ ofMon X)) ≪≫
-    Functor.isoWhiskerLeft (toMon Z) (Functor.isoWhiskerRight
+  Functor.isoWhiskerLeft ((monEquivalence Z).inverse ⋙ (QuasicoherentSheaf.pullback g).mapMon)
+      (Functor.isoWhiskerRight (monEquivalence Y).unitIso.symm
+        ((QuasicoherentSheaf.pullback f).mapMon ⋙ (monEquivalence X).functor)) ≪≫
+    Functor.isoWhiskerLeft (monEquivalence Z).inverse (Functor.isoWhiskerRight
       (Functor.mapMonCompIso.symm ≪≫
-        Functor.mapMonNatIso (QuasicoherentSheaf.pullbackComp f g)) (ofMon X))
+        Functor.mapMonNatIso (QuasicoherentSheaf.pullbackComp f g)) (monEquivalence X).functor)
 
 /-- The identity comparison of algebra pullback is Mathlib's identity comparison of module
 pullback on underlying modules. -/
@@ -303,7 +227,7 @@ theorem pullbackId_hom_app_hom_hom (A : SheafAlgebra X) :
     ((pullbackId X).hom.app A).hom.hom =
       eqToHom (pullback_obj_X (𝟙 X) A) ≫ (Scheme.Modules.pullbackId X).hom.app A.obj.X := by
   refine Eq.trans ?_ (QuasicoherentSheaf.pullbackId_hom_app_hom X ⟨A.obj.X, A.property⟩)
-  -- Composites with the identity components of the conversions reduce definitionally.
+  -- Composites with the identity components of `monEquivalence` reduce definitionally.
   rfl
 
 /-- The inverse identity comparison of algebra pullback is Mathlib's inverse identity comparison
@@ -313,7 +237,7 @@ theorem pullbackId_inv_app_hom_hom (A : SheafAlgebra X) :
     ((pullbackId X).inv.app A).hom.hom =
       (Scheme.Modules.pullbackId X).inv.app A.obj.X ≫ eqToHom (pullback_obj_X (𝟙 X) A).symm := by
   refine Eq.trans ?_ (QuasicoherentSheaf.pullbackId_inv_app_hom X ⟨A.obj.X, A.property⟩)
-  -- Composites with the identity components of the conversions reduce definitionally.
+  -- Composites with the identity components of `monEquivalence` reduce definitionally.
   rfl
 
 /-- The composition comparison of algebra pullback is Mathlib's composition comparison of module
@@ -328,10 +252,11 @@ theorem pullbackComp_hom_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : SheafAlgeb
   dsimp only [pullbackComp]
   -- The intermediate functors of `pullbackComp` agree with those of `Iso.trans` only up to
   -- unfolding `Functor.comp`, so the composite is split with `erw`. After the identity component
-  -- of `ofMonCompToMonIso` is removed, the composite with the identity components of the
-  -- conversions reduces definitionally.
+  -- of the unit of `monEquivalence` is removed, the composite with the identity components of
+  -- `monEquivalence` reduces definitionally.
   erw [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
-    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, ofMonCompToMonIso_hom_app,
+    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Iso.symm_hom,
+    ObjectProperty.monFullSubcategoryEquivalence_unitIso_inv_app,
     CategoryTheory.Functor.map_id, Category.id_comp]
   rfl
 
