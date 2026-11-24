@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 import TauCeti.Geometry.Manifold.Riemannian.Restriction.Distance
+import TauCeti.Topology.MetricSpace.Isometry.Restrict
 
 /-!
 # Smoothness of distance-preserving maps of Riemannian manifolds

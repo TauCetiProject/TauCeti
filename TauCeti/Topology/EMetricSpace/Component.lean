@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
-public import Mathlib.Topology.MetricSpace.Isometry
 public import Mathlib.Topology.Sets.Opens
 
 /-!
@@ -27,9 +26,7 @@ extended distance. Anchors at finite distance define the same component.
 
 The component is open, and `TauCeti.eballTopOpens x` is the same component as an element of
 `TopologicalSpace.Opens`, the form used for open submanifolds. The canonical instances above are
-also registered on this open-set view. A distance-preserving map restricts to finite-distance
-components (`Isometry.mapsTo_eball`), and the restriction to subtypes still preserves distances
-(`Isometry.mapsToRestrict`).
+also registered on this open-set view.
 -/
 
 public section
@@ -104,10 +101,3 @@ instance instCompleteSpaceEBallTopOpens [PseudoEMetricSpace X] [CompleteSpace X]
   instCompleteSpaceEBallTop x
 
 end TauCeti
-
-/-- The restriction of a distance-preserving map to subtypes it maps between preserves
-distances. -/
-theorem Isometry.mapsToRestrict {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
-    {f : X → Y} (hf : Isometry f) {s : Set X} {t : Set Y} (h : Set.MapsTo f s t) :
-    Isometry (h.restrict f s t) :=
-  fun x y ↦ hf.edist_eq x y
