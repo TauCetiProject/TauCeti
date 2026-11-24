@@ -30,6 +30,8 @@ intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank 
   trace.
 * `Matrix.trace_eq_of_mul_eq_mul`: if `A * P = P * B` and `det P` is a non-zero-divisor, then
   `trace A = trace B`.
+* `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
+  homomorphism commutes with taking the trace of its product.
 -/
 
 public section
@@ -73,5 +75,12 @@ theorem trace_eq_of_mul_eq_mul {R : Type*} [CommRing R] [DecidableEq n] {A B P :
     _ = P.det * B.trace := by
         rw [← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul, Matrix.one_mul, trace_smul,
           smul_eq_mul]
+
+/-- Mapping a list of square matrices along a ring homomorphism commutes with taking the trace of
+its product. -/
+theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R] [Semiring S]
+    (f : R →+* S) (l : List (Matrix n n R)) :
+    trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
+  rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
 
 end Matrix

@@ -1,0 +1,41 @@
+name: main-integration
+run-name: main-integration pr=${{ github.event.client_payload.pr }} head=${{ github.event.client_payload.head_sha }} main=${{ github.event.client_payload.main_sha }}
+
+# The queue's idle-capacity test of an accepted head on current main (decision 175 B). The build is
+# TauCetiTools' pr-build.yml at main (docs/main-integration.md there): H merged onto the main the
+# queue names, on idle Fleet PR capacity only, reported as the `main-integration` status on H and
+# nothing else. A separate workflow, so nothing that matches `pr-build` runs or titles sees it.
+
+on:
+  repository_dispatch:
+    types: [tauceti-main-integration]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+  actions: read
+  id-token: write  # telemetry-only OIDC audience, outside the candidate sandbox
+
+jobs:
+  main-integration:
+    # Deployment is a separate, explicit operation. Unset is inert.
+    if: ${{ vars.TAUCETI_MAIN_INTEGRATION_ENABLED == 'true' }}
+    uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@main
+    with:
+      tools_repository: TauCetiProject/TauCetiTools
+      project_ref: ${{ github.workflow_sha }}
+      lean_root: TauCeti
+      roadmap_dir: TauCetiRoadmap
+      fleet_routing: true
+      fleet_pr_runner: '{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}'
+      control_runner: '["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]'
+      staging_runner: '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]'
+      staging_pools: '["tauchonki2"]'
+    secrets:
+      FLEET_INVENTORY_APP_PRIVATE_KEY: ${{ secrets.FLEET_INVENTORY_APP_PRIVATE_KEY }}
+      TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
+      CI_READ_APP_ID: ${{ secrets.CI_READ_APP_ID }}
+      CI_READ_APP_PRIVATE_KEY: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+      CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
+      CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}

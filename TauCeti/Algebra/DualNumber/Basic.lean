@@ -9,7 +9,9 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
+import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.RingTheory.DualNumber
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Basic properties of dual numbers
@@ -20,7 +22,8 @@ the coefficients does; the two laws lift separately. When the coordinatewise act
 structure over a commutative semiring, together they make multiplication bilinear, which makes
 bilinear multiplication and convolution available with that module structure.
 The dual numbers are a finite module over their coefficient ring, so dual numbers over an
-Artinian ring are also Artinian.
+Artinian ring are also Artinian, and dual numbers over a finite or free module are again finite
+or free.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
 `1 + inr c` is a unit with inverse `1 - inr c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
@@ -150,15 +153,6 @@ theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 :=
 theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
   Module.Basis.finTwoProd_one R
 
-/-- The dual numbers are a finite module over their coefficient ring, with basis `1, ε`. -/
-instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
-  Module.Finite.of_basis (dualNumberBasis R)
-
-/-- The dual numbers are a free module of rank two over their coefficient ring, with basis
-`1, ε`. -/
-instance dualNumberModuleFree : Module.Free R (DualNumber R) :=
-  Module.Free.of_basis (dualNumberBasis R)
-
 variable {R}
 
 /-- The coordinate of `x` along `1` is its scalar part. -/
@@ -179,6 +173,16 @@ theorem dualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
   (dualNumberBasis R).ext fun i => by fin_cases i <;> simpa
 
 end DualNumberBasis
+
+/-- Dual numbers over a finite `R`-module form a finite `R`-module. -/
+instance dualNumberModuleFinite {R B : Type*} [Semiring R] [AddCommMonoid B] [Module R B]
+    [Module.Finite R B] : Module.Finite R (DualNumber B) :=
+  inferInstanceAs (Module.Finite R (B × B))
+
+/-- Dual numbers over a free `R`-module form a free `R`-module. -/
+instance dualNumberModuleFree {R B : Type*} [Semiring R] [AddCommMonoid B] [Module R B]
+    [Module.Free R B] : Module.Free R (DualNumber B) :=
+  inferInstanceAs (Module.Free R (B × B))
 
 /-- Dual numbers over an Artinian ring form an Artinian ring. -/
 instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
