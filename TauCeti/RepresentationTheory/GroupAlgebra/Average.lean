@@ -70,19 +70,17 @@ theorem average_mul (x : MonoidAlgebra k G) :
 theorem average_mem_center : average k G ∈ Subalgebra.center k (MonoidAlgebra k G) :=
   Subalgebra.mem_center_iff.mpr fun x ↦ by rw [mul_average, average_mul]
 
+/-- The coefficient-sum augmentation sends `average k G` to `1`. -/
+@[simp]
+theorem augmentation_average : augmentation k G (average k G) = 1 := by
+  simp only [average, augmentation_smul, map_sum, of_apply, augmentation_single,
+    Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one, invOf_mul_self]
+
 /-- The augmentation sends `average k G` to `1`. -/
 @[simp]
 theorem lift_one_average {A : Type*} [Semiring A] [Algebra k A] :
     lift k A G 1 (average k G) = 1 := by
-  rw [average, map_smul, map_sum]
-  simp only [of_apply, lift_single, one_smul, MonoidHom.one_apply, Finset.sum_const,
-    Finset.card_univ]
-  rw [← Nat.cast_smul_eq_nsmul k, smul_smul, invOf_mul_self, one_smul]
-
-/-- The coefficient-sum augmentation sends `average k G` to `1`. -/
-@[simp]
-theorem augmentation_average : augmentation k G (average k G) = 1 := by
-  simpa [lift_one_apply] using lift_one_average (k := k) (G := G) (A := k)
+  rw [lift_one_apply, augmentation_average, map_one]
 
 /-- A nontrivial character with values in a domain sends `average k G` to `0`. -/
 theorem lift_average_of_ne_one {A : Type*} [CommRing A] [IsDomain A] [Algebra k A] {χ : G →* A}

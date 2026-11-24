@@ -184,7 +184,10 @@ augmentation. -/
 @[simp]
 theorem asAlgebraHom_trivial (x : MonoidAlgebra k G) :
     (trivial k G k).asAlgebraHom x = MonoidAlgebra.augmentation k G x • 1 := by
-  rw [asAlgebraHom_def, trivial, MonoidAlgebra.lift_one_apply, Algebra.algebraMap_eq_smul_one]
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy, add_smul]
+  | single g r => ext; simp [asAlgebraHom_single, trivial_apply]
 
 end Representation
 
