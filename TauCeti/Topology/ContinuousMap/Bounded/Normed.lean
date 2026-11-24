@@ -41,9 +41,15 @@ isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous`,
 `ContinuousLinearMap.norm_compLeftContinuousBounded_apply_le`, and
 `ContinuousLinearMap.norm_compLeftContinuousBounded_le` record naturality and operator-norm bounds
-for postcomposition with a continuous linear map, and
+for postcomposition with a continuous linear map.
+`ContinuousLinearMap.compLeftContinuousBounded₂` is the pointwise action
+`(f, g) ↦ (t ↦ B (f t) (g t))` of a continuous bilinear map `B` on bounded continuous functions,
+of operator norm at most `‖B‖` (`ContinuousLinearMap.norm_compLeftContinuousBounded₂_le`), and
 `LinearIsometry.norm_compLeftContinuousBounded` says that postcomposition with a linear isometry
 preserves the norm.
+
+`BoundedContinuousFunction.ofContinuousOn` is the bounded continuous function on a set given by
+a function continuous and bounded on that set.
 
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
 real function is a uniform limit of finite-valued bounded functions.
@@ -52,6 +58,9 @@ real function is a uniform limit of finite-valued bounded functions.
 
 `BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
 bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
+
+`BoundedContinuousFunction.ringInverse_apply` says that the inverse of a unit of the algebra of
+bounded continuous functions with values in a normed division ring is computed pointwise.
 
 `BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
 natural-number division; dilations compose multiplicatively and commute with the pointwise
@@ -169,6 +178,29 @@ theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 
 
 end PseudoMetricSpace
 
+section OfContinuousOn
+
+variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {s : Set α}
+
+/-- The bounded continuous function on a set `s` given by a function continuous on `s` with bounded
+image of `s`. -/
+noncomputable def ofContinuousOn (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) : s →ᵇ β :=
+  ⟨⟨s.domRestrict f, continuousOn_iff_continuous_domRestrict.mp hf⟩,
+    (Metric.isBounded_iff.1 hb).imp fun _ hC x y ↦
+      hC (Set.mem_image_of_mem f x.property) (Set.mem_image_of_mem f y.property)⟩
+
+@[simp]
+theorem coe_ofContinuousOn (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) : ⇑(ofContinuousOn f hf hb) = s.domRestrict f :=
+  (rfl)
+
+theorem ofContinuousOn_apply (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) (x : s) : ofContinuousOn f hf hb x = f x :=
+  (rfl)
+
+end OfContinuousOn
+
 end BoundedContinuousFunction
 
 namespace ContinuousLinearMap
@@ -195,6 +227,35 @@ theorem norm_compLeftContinuousBounded_le (g : β →L[𝕜] γ) (α : Type*) [T
     ‖g.compLeftContinuousBounded α‖ ≤ ‖g‖ :=
   (g.compLeftContinuousBounded α).opNorm_le_bound (norm_nonneg g)
     (g.norm_compLeftContinuousBounded_apply_le)
+
+section Bilinear
+
+variable {ζ : Type*} [SeminormedAddCommGroup ζ] [NormedSpace 𝕜 ζ]
+
+/-- The pointwise action `(f, g) ↦ (t ↦ B (f t) (g t))` of a continuous bilinear map
+`B : β × γ → ζ` on bounded continuous functions, as a continuous bilinear map. -/
+noncomputable def compLeftContinuousBounded₂ (B : β →L[𝕜] γ →L[𝕜] ζ) (α : Type*)
+    [TopologicalSpace α] : (α →ᵇ β) →L[𝕜] (α →ᵇ γ) →L[𝕜] α →ᵇ ζ :=
+  BoundedContinuousFunction.applyCLM ∘L B.compLeftContinuousBounded α
+
+@[simp]
+theorem compLeftContinuousBounded₂_apply_apply (B : β →L[𝕜] γ →L[𝕜] ζ) (f : α →ᵇ β)
+    (g : α →ᵇ γ) (t : α) : B.compLeftContinuousBounded₂ α f g t = B (f t) (g t) :=
+  (rfl)
+
+/-- The pointwise action of `B` on `f` and `g` has sup norm at most `‖B‖ * ‖f‖ * ‖g‖`. -/
+theorem norm_compLeftContinuousBounded₂_apply_apply_le (B : β →L[𝕜] γ →L[𝕜] ζ) (f : α →ᵇ β)
+    (g : α →ᵇ γ) : ‖B.compLeftContinuousBounded₂ α f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
+  (BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦
+    B.le_of_opNorm₂_le_of_le le_rfl (f.norm_coe_le_norm t) (g.norm_coe_le_norm t)
+
+/-- The pointwise action of `B` on bounded continuous functions has operator norm at most
+`‖B‖`. -/
+theorem norm_compLeftContinuousBounded₂_le (B : β →L[𝕜] γ →L[𝕜] ζ) (α : Type*)
+    [TopologicalSpace α] : ‖B.compLeftContinuousBounded₂ α‖ ≤ ‖B‖ :=
+  opNorm_le_bound₂ _ (norm_nonneg B) B.norm_compLeftContinuousBounded₂_apply_apply_le
+
+end Bilinear
 
 end ContinuousLinearMap
 
@@ -284,6 +345,13 @@ theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f 
       Real.norm_eq_abs]
     rw [abs_of_nonneg (by linarith)]
     linarith
+
+/-- The inverse of a unit of the algebra of bounded continuous functions with values in a normed
+division ring is computed pointwise. -/
+theorem ringInverse_apply {α 𝕜 : Type*} [TopologicalSpace α] [NormedDivisionRing 𝕜]
+    {F : α →ᵇ 𝕜} (hF : IsUnit F) (x : α) : Ring.inverse F x = (F x)⁻¹ := by
+  simpa using
+    hF.map_ringInverse ((Pi.evalMonoidHom (fun _ ↦ 𝕜) x).comp (FunLike.coeMonoidHom (α →ᵇ 𝕜) α 𝕜))
 
 section Dilate
 

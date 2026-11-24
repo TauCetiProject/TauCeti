@@ -53,6 +53,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
+* `IsConj.orderOf_eq`, and its additive counterpart: conjugate elements of a monoid have the same
+  order.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
 * `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
@@ -128,6 +130,15 @@ theorem dvd_orderOf_pow_iff {g : G} (hg : IsOfFinOrder g) {f : ℕ}
     (Nat.dvd_of_mem_primeFactors hp).trans hf]
 
 end IsOfFinOrder
+
+/-- Conjugate elements of a monoid have the same order. -/
+@[to_additive /-- Additively conjugate elements of an additive monoid have the same additive
+order. -/]
+theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
+    orderOf a = orderOf b :=
+  orderOf_eq_orderOf_iff.2 fun n ↦ by
+    rw [← isConj_one_right, ← isConj_one_right (a := b ^ n)]
+    exact ⟨fun h' ↦ h'.trans (h.pow n), fun h' ↦ h'.trans (h.pow n).symm⟩
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive

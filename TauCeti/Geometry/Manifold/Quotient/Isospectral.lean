@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType
+public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
 public import TauCeti.Geometry.Manifold.Quotient.Sunada
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
 

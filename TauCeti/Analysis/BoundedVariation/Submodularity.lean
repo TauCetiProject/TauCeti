@@ -10,6 +10,7 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Normed.Module.RCLike.Real
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
@@ -122,15 +123,17 @@ private theorem totalVariationOn_mul_add_le_liminf_normed_convolution {Ω' : Ope
       (.of_forall fun n => ((hsmooth hu n).continuous.aestronglyMeasurable.sub
         hu.aestronglyMeasurable).restrict.eNorm) (hlim hu hK) (hlim hv hK)
   have hmem := ContDiffBump.normed_convolution_mem_Icc (μ := μ) (G := E)
+  -- Functions with values in `[0, 1]` take values in the closed unit ball.
+  have hnorm {w : E → ℝ} (hw : ∀ x, w x ∈ Icc (0 : ℝ) 1) (x : E) : ‖w x‖ ≤ 1 := by
+    rw [Real.norm_of_nonneg (hw x).1]; exact (hw x).2
   have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
     hw.continuous.locallyIntegrable.locallyIntegrableOn _
   have huv : LocallyIntegrable (u * v) μ :=
-    hu.mul_bdd hv.aestronglyMeasurable (C := 1) (ae_of_all _ fun x => by
-      rw [Real.norm_eq_abs, abs_of_nonneg (hv01 x).1]; exact (hv01 x).2)
+    hu.mul_bdd hv.aestronglyMeasurable (C := 1) (ae_of_all _ (hnorm hv01))
   have hlsc₁ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
     (.of_forall fun n => hli ((hsmooth hu n).mul (hsmooth hv n))) (huv.locallyIntegrableOn _)
-    fun K hK _ => hlim₂ (fun n x => enorm_mul_sub_mul_le_of_mem_Icc (hu01 x)
-      (hmem (φ n) hv hv01 x)) hK
+    fun K hK _ => hlim₂ (fun n x => enorm_mul_sub_mul_le (hnorm hu01 x)
+      (hnorm (hmem (φ n) hv hv01) x)) hK
   have hlsc₂ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
     (.of_forall fun n => hli (((hsmooth hu n).add (hsmooth hv n)).sub
       ((hsmooth hu n).mul (hsmooth hv n))))

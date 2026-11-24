@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Pullback
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 
 /-!
 # Invariance of weak pseudoholomorphic maps under diffeomorphisms of the target
@@ -17,7 +16,7 @@ Let `X` be a Riemann surface and `g : M → N` a smooth diffeomorphism between m
 on the same boundaryless model `I`. A map `g ∘ u : X → N` is weakly pseudoholomorphic for a
 domain-dependent structure `J` on `N` and an inhomogeneous term `ν` exactly when `u : X → M` is
 weakly pseudoholomorphic for the pulled-back structure `g^* J` and term `g^* ν`
-(`TauCeti.isWeakPseudoholomorphicOn_diffeomorph_comp_iff` on open sets,
+(`TauCeti.isWeakPseudoholomorphicOn_diffeomorph_comp_iff` on a set,
 `TauCeti.isWeakPseudoholomorphic_diffeomorph_comp_iff` on the whole surface). This is the
 invariance of the weak equation under diffeomorphisms of the target, with `J` and `ν`
 transported along. As a Check, `z ↦ 2 z` solves the equation on `ℂ` for the structure `i`, since
@@ -29,8 +28,10 @@ The predicate tests every chart `ψ` of the maximal atlas of `M` and every chart
 charts the two coordinate equations are the same: the coordinate expressions `ψ ∘ u ∘ φ⁻¹` and
 `χ ∘ (g ∘ u) ∘ φ⁻¹` are equal, and `g^* J` and `g^* ν` read in `ψ` are `J` and `ν` read in `χ`
 (`TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback`,
-`TauCeti.InhomogeneousTerm.chartTerm_pullback`). The Sobolev class is preserved by composition
-with `g` (`Diffeomorph.memWkpLocMapOnGroupoid_diffeomorph_comp_iff`). No comparison of the
+`TauCeti.InhomogeneousTerm.chartTerm_pullback`). The Sobolev class follows from continuity and
+the coordinate equations
+(`TauCeti.isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn`), and composition
+with the homeomorphism `g` preserves continuity, so `s` need not be open. No comparison of the
 equation in two charts of the same manifold is needed.
 
 ## Implementation notes
@@ -87,13 +88,13 @@ private theorem isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff (g : M ≃ₘ�
   rfl
 
 /-- **Invariance under diffeomorphisms of the target.** For a diffeomorphism `g : M → N`, the
-map `g ∘ u` is weakly pseudoholomorphic on an open set `s` for `J` and `ν` exactly when `u` is
-weakly pseudoholomorphic on `s` for the pulled-back structure `g^* J` and term `g^* ν`. -/
-theorem isWeakPseudoholomorphicOn_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) (hs : IsOpen s) :
+map `g ∘ u` is weakly pseudoholomorphic on `s` for `J` and `ν` exactly when `u` is weakly
+pseudoholomorphic on `s` for the pulled-back structure `g^* J` and term `g^* ν`. -/
+theorem isWeakPseudoholomorphicOn_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) :
     IsWeakPseudoholomorphicOn J ν p (g ∘ u) s ↔
       IsWeakPseudoholomorphicOn (J.pullback g le_top) (ν.pullback g le_top) p u s := by
-  rw [isWeakPseudoholomorphicOn_iff, isWeakPseudoholomorphicOn_iff]
-  refine and_congr (g.memWkpLocMapOnGroupoid_diffeomorph_comp_iff le_rfl (by simp) hs)
+  simp only [isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn]
+  refine and_congr (g.toHomeomorph.comp_continuousOn_iff u s)
     ⟨fun h φ hφ ψ hψ ↦ ?_, fun h φ hφ χ hχ ↦ ?_⟩
   · -- Test `g ∘ u` in the chart `g⁻¹ ≫ ψ` of `N`.
     refine (isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff g ?_ (fun x ↦ ?_) (fun w ↦ ?_)
@@ -118,7 +119,7 @@ theorem isWeakPseudoholomorphic_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N) 
     IsWeakPseudoholomorphic J ν p (g ∘ u) ↔
       IsWeakPseudoholomorphic (J.pullback g le_top) (ν.pullback g le_top) p u := by
   simp only [← isWeakPseudoholomorphicOn_univ,
-    isWeakPseudoholomorphicOn_diffeomorph_comp_iff g isOpen_univ]
+    isWeakPseudoholomorphicOn_diffeomorph_comp_iff g]
 
 /-! ### Checks -/
 

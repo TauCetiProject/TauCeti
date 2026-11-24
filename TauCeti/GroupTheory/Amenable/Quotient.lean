@@ -1,0 +1,97 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.Amenable.Discrete
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+
+/-!
+# Quotients and images of amenable groups
+
+The target of a continuous homomorphism `φ : G →ₜ* H` with dense range out of an amenable
+topological group is amenable (`TauCeti.Amenable.of_denseRange`): the pushforward
+`f ↦ m (f ∘ φ)` of a left-invariant mean `m` on `UCB G` is a left-invariant mean on `UCB H`. This
+file applies that principle to quotients and to ranges.
+
+The quotient `G ⧸ N` of an amenable topological group by a normal subgroup `N`, with the quotient
+topology, is amenable. The subgroup `N` need not be closed, so `G ⧸ N` need not be Hausdorff. The
+range of a continuous homomorphism out of an amenable topological group, with the subspace
+topology, is amenable. Every homomorphism out of a discrete group is continuous, so the range of
+any homomorphism out of an amenable discrete group is amenable.
+
+For a homomorphism `φ : G →* H` of discrete groups, the first isomorphism theorem
+`QuotientGroup.quotientKerEquivRange` is an isomorphism of discrete groups. Hence `G ⧸ φ.ker` is
+amenable exactly when the image `φ.range` is, and, for surjective `φ`, exactly when `H` is. These
+statements make no amenability assumption on `G`.
+
+## Main results
+
+* `TauCeti.Amenable.quotient`: a quotient of an amenable topological group is amenable.
+* `TauCeti.Amenable.range`: the range of a continuous homomorphism out of an amenable topological
+  group is amenable.
+* `TauCeti.Amenable.range_of_discreteTopology`: the range of a homomorphism out of an amenable
+  discrete group is amenable, for every group topology on the target.
+* `TauCeti.amenable_quotient_ker_iff_range` and
+  `TauCeti.amenable_quotient_ker_iff_of_surjective`: for homomorphisms of discrete groups,
+  amenability of the quotient by the kernel is amenability of the image.
+
+## References
+
+* B. Bekka, P. de la Harpe, A. Valette, *Kazhdan's Property (T)*, Proposition G.2.2.
+* A. Garrido, *An introduction to amenable groups*, Proposition 2.2.
+-/
+
+public section
+
+namespace TauCeti
+
+variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- The quotient of an amenable topological group by a normal subgroup, with the quotient
+topology, is amenable. -/
+instance Amenable.quotient [Amenable G] (N : Subgroup G) [N.Normal] : Amenable (G ⧸ N) :=
+  .of_denseRange (Subgroup.quotientMkContinuousMonoidHom N) <| Function.Surjective.denseRange
+    fun q => QuotientGroup.induction_on q fun g => ⟨g, N.quotientMkContinuousMonoidHom_apply g⟩
+
+/-- The range of a continuous homomorphism out of an amenable topological group, with the subspace
+topology, is amenable. -/
+theorem Amenable.range [Amenable G] (φ : G →ₜ* H) : Amenable φ.range :=
+  .of_denseRange ⟨φ.rangeRestrict, φ.continuous.subtype_mk _⟩
+    φ.rangeRestrict_surjective.denseRange
+
+section DiscreteTopology
+
+variable [DiscreteTopology G]
+
+/-- The range of a homomorphism out of an amenable discrete group is amenable, for every group
+topology on the target. -/
+instance Amenable.range_of_discreteTopology [Amenable G] (φ : G →* H) : Amenable φ.range :=
+  .of_surjective φ.rangeRestrict φ.rangeRestrict_surjective
+
+/-- For a homomorphism `φ` of discrete groups, the quotient `G ⧸ φ.ker` is amenable exactly when
+the image `φ.range` is. -/
+theorem amenable_quotient_ker_iff_range [DiscreteTopology H] (φ : G →* H) :
+    Amenable (G ⧸ φ.ker) ↔ Amenable φ.range := by
+  have := QuotientGroup.discreteTopology (isOpen_discrete (φ.ker : Set G))
+  exact ContinuousMulEquiv.amenable_iff
+    { QuotientGroup.quotientKerEquivRange φ with
+      continuous_toFun := continuous_of_discreteTopology
+      continuous_invFun := continuous_of_discreteTopology }
+
+/-- For a surjective homomorphism `φ : G →* H` of discrete groups, the quotient `G ⧸ φ.ker` is
+amenable exactly when `H` is. -/
+theorem amenable_quotient_ker_iff_of_surjective [DiscreteTopology H] {φ : G →* H}
+    (hφ : Function.Surjective φ) : Amenable (G ⧸ φ.ker) ↔ Amenable H := by
+  have := QuotientGroup.discreteTopology (isOpen_discrete (φ.ker : Set G))
+  exact ContinuousMulEquiv.amenable_iff
+    { QuotientGroup.quotientKerEquivOfSurjective φ hφ with
+      continuous_toFun := continuous_of_discreteTopology
+      continuous_invFun := continuous_of_discreteTopology }
+
+end DiscreteTopology
+
+end TauCeti
