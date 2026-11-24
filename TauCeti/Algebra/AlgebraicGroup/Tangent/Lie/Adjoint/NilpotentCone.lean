@@ -321,26 +321,12 @@ variable (k H)
 local notation "P" => SymmetricAlgebra k (Module.Dual k 𝔤)
 local notation "I" => nilpotentConeIdeal k H
 
-/-- The polynomial coaction descends to the full coordinate ring of the nilpotent cone. -/
-@[implicit_reducible]
+/-- The polynomial coaction descends to the full coordinate ring of the nilpotent cone.
+Its computation and intertwining laws are `ComoduleAlgebra.quotient_coact_mk` and
+`ComoduleAlgebra.quotient_coactAlgHom_comp_mk`. -/
+@[expose, implicit_reducible]
 noncomputable def nilpotentConeComoduleAlgebra : ComoduleAlgebra k H (P ⧸ I) :=
   ComoduleAlgebra.quotient I fun _ hp ↦ coact_mem_map_includeLeft_nilpotentConeIdeal hp
-
-attribute [local instance] nilpotentConeComoduleAlgebra
-
-/-- The descended coaction is computed by applying the quotient map to polynomial functions. -/
-theorem nilpotentConeComoduleAlgebra_coact_mk (p : P) :
-    Comodule.coact (R := k) (C := H) (Ideal.Quotient.mk I p) =
-      Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)
-        (Comodule.coact (R := k) (C := H) p) :=
-  ComoduleAlgebra.quotient_coact_mk I _ p
-
-/-- The quotient coordinate map intertwines the polynomial and nilpotent-cone coactions. -/
-theorem nilpotentConeComoduleAlgebra_coactAlgHom_comp_mk :
-    (ComoduleAlgebra.coactAlgHom k H (P ⧸ I)).comp (Ideal.Quotient.mkₐ k I) =
-      (Algebra.TensorProduct.map (Ideal.Quotient.mkₐ k I) (AlgHom.id k H)).comp
-        (ComoduleAlgebra.coactAlgHom k H P) :=
-  ComoduleAlgebra.quotient_coactAlgHom_comp_mk I _
 
 end Quotient
 
