@@ -16,8 +16,8 @@ public import TauCeti.CategoryTheory.Pi.InsertNth
 For a functor `F : C ⥤ D` into a monoidal category, `F.tensorPow n : (Fin n → C) ⥤ D` is the
 `n`-fold tensor functor of `F`. It sends `(X₀, …, X_{n-1})` to
 `F X₀ ⊗ (F X₁ ⊗ (⋯ ⊗ F X_{n-1}))`, nested to the right, and the empty tuple to `𝟙_ D`. The
-identification `F.tensorPow (n + 1) ≅ F ⊗ F.tensorPow n`, pointwise in Mathlib's monoidal structure
-on functor categories, is `Functor.tensorPowSuccIso`, and holds by definition.
+identification `F ⊗ F.tensorPow n ≅ F.tensorPow (n + 1)`, pointwise in Mathlib's monoidal structure
+on functor categories, is `Functor.tensorPowSuccIso'`, and holds by definition.
 
 When `C` is monoidal and `F` is a monoidal functor, the tensor powers are compatible with the
 two operations on tuples that the Davydov–Yetter cochain complex is built from:
@@ -79,6 +79,72 @@ theorem piMerge_succ_obj {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
   funext j
   cases j using Fin.cases <;> rfl
 
+/-- Before the merged position, merging keeps the entries of the tuple. -/
+@[simp]
+theorem piMerge_obj_of_lt {n : ℕ} {i j : Fin n} (h : j < i) (X : Fin (n + 1) → C) :
+    (piMerge C i).obj X j = X j.castSucc := by
+  induction n with
+  | zero => exact j.elim0
+  | succ n ih =>
+    cases i using Fin.cases with
+    | zero => exact absurd h (Fin.not_lt_zero j)
+    | succ i =>
+      cases j using Fin.cases with
+      | zero => rfl
+      | succ j => exact ih (Fin.succ_lt_succ_iff.mp h) _
+
+/-- At the merged position, merging tensors the two entries `i` and `i + 1` together. -/
+@[simp]
+theorem piMerge_obj_self {n : ℕ} (i : Fin n) (X : Fin (n + 1) → C) :
+    (piMerge C i).obj X i = X i.castSucc ⊗ X i.succ := by
+  induction n with
+  | zero => exact i.elim0
+  | succ n ih =>
+    cases i using Fin.cases with
+    | zero => rfl
+    | succ i => exact ih i _
+
+/-- After the merged position, merging shifts the entries of the tuple down by one. -/
+@[simp]
+theorem piMerge_obj_of_gt {n : ℕ} {i j : Fin n} (h : i < j) (X : Fin (n + 1) → C) :
+    (piMerge C i).obj X j = X j.succ := by
+  induction n with
+  | zero => exact j.elim0
+  | succ n ih =>
+    cases j using Fin.cases with
+    | zero => exact absurd h (Fin.not_lt_zero i)
+    | succ j =>
+      cases i using Fin.cases with
+      | zero => rfl
+      | succ i => exact ih (Fin.succ_lt_succ_iff.mp h) _
+
+/-- Merging at position `0`, the first entry of the morphism is the tensor product of the first
+two. -/
+@[simp]
+theorem piMerge_zero_map_zero {n : ℕ} {X Y : Fin (n + 2) → C} (f : X ⟶ Y) :
+    (piMerge C 0).map f 0 = f 0 ⊗ₘ f 1 :=
+  (rfl)
+
+/-- Merging at position `0`, the later entries of the morphism are shifted down by one. -/
+@[simp]
+theorem piMerge_zero_map_succ {n : ℕ} {X Y : Fin (n + 2) → C} (f : X ⟶ Y) (j : Fin n) :
+    (piMerge C 0).map f j.succ = f j.succ.succ :=
+  (rfl)
+
+/-- Merging at position `i.succ`, the first entry of the morphism is kept. -/
+@[simp]
+theorem piMerge_succ_map_zero {n : ℕ} (i : Fin (n + 1)) {X Y : Fin (n + 3) → C} (f : X ⟶ Y) :
+    (piMerge C i.succ).map f 0 = f 0 :=
+  (rfl)
+
+/-- Merging at position `i.succ`, the later entries of the morphism are those of the merge at
+position `i` of the remaining entries. -/
+@[simp]
+theorem piMerge_succ_map_succ {n : ℕ} (i : Fin (n + 1)) {X Y : Fin (n + 3) → C} (f : X ⟶ Y)
+    (j : Fin (n + 1)) :
+    (piMerge C i.succ).map f j.succ = (piMerge C i).map (fun k ↦ f k.succ) j :=
+  (rfl)
+
 end TauCeti
 
 namespace CategoryTheory.Functor
@@ -123,21 +189,22 @@ theorem tensorPow_succ_map {n : ℕ} {X Y : Fin (n + 1) → C} (f : X ⟶ Y) :
     (F.tensorPow (n + 1)).map f = F.map (f 0) ⊗ₘ (F.tensorPow n).map fun j ↦ f j.succ :=
   (rfl)
 
-/-- The `(n + 1)`-fold tensor functor is the pointwise tensor product of `F`, applied to the
-first entry, with the `n`-fold tensor functor, applied to the others. -/
-def tensorPowSuccIso (n : ℕ) :
-    F.tensorPow (n + 1) ≅
-      (Pi.eval (fun _ ↦ C) 0 ⋙ F) ⊗ (Pi.comap (fun _ ↦ C) Fin.succ ⋙ F.tensorPow n) :=
+/-- The pointwise tensor product of `F`, applied to the first entry, with the `n`-fold tensor
+functor, applied to the others, is the `(n + 1)`-fold tensor functor. The new factor is on the
+left, unlike in the object-level `TauCeti.tensorPowSuccIso`, as in `pow_succ'`. -/
+def tensorPowSuccIso' (n : ℕ) :
+    (Pi.eval (fun _ ↦ C) 0 ⋙ F) ⊗ (Pi.comap (fun _ ↦ C) Fin.succ ⋙ F.tensorPow n) ≅
+      F.tensorPow (n + 1) :=
   Iso.refl _
 
 @[simp]
-theorem tensorPowSuccIso_hom_app (n : ℕ) (X : Fin (n + 1) → C) :
-    (F.tensorPowSuccIso n).hom.app X = 𝟙 _ :=
+theorem tensorPowSuccIso'_hom_app (n : ℕ) (X : Fin (n + 1) → C) :
+    (F.tensorPowSuccIso' n).hom.app X = 𝟙 _ :=
   (rfl)
 
 @[simp]
-theorem tensorPowSuccIso_inv_app (n : ℕ) (X : Fin (n + 1) → C) :
-    (F.tensorPowSuccIso n).inv.app X = 𝟙 _ :=
+theorem tensorPowSuccIso'_inv_app (n : ℕ) (X : Fin (n + 1) → C) :
+    (F.tensorPowSuccIso' n).inv.app X = 𝟙 _ :=
   (rfl)
 
 /-- On a constant tuple, the tensor functor gives the tensor powers of `F.obj X`. -/
@@ -153,7 +220,9 @@ theorem prod'_comp_piInsertNth_zero_comp_tensorPow_map {n : ℕ} (y : Fin n → 
     ((𝟭 C).prod' ((Functor.const C).obj y) ⋙ piInsertNth C 0 ⋙ F.tensorPow (n + 1)).map f =
       F.map f ▷ (F.tensorPow n).obj y := by
   -- The composite computes definitionally on `f`, through the recursions defining
-  -- `piInsertNth` and `tensorPow`; `change` exposes the computed form, which `rw` cannot reach.
+  -- `piInsertNth` and `tensorPow`; `change` exposes the computed form. Rewriting with the map
+  -- lemmas of `piInsertNth` instead leaves morphisms whose endpoints, such as
+  -- `(piInsertNth C 0).obj p 0`, are only definitionally the expected objects, which `rw` rejects.
   change F.map f ⊗ₘ (F.tensorPow n).map (𝟙 y) = _
   rw [Functor.map_id, tensorHom_id]
 
@@ -167,25 +236,33 @@ theorem prod'_comp_piInsertNth_succ_comp_tensorPow_map {n : ℕ} (i : Fin (n + 1
   -- As above, `change` exposes the definitional computation of the composite on `f`.
   change F.map (𝟙 (y 0)) ⊗ₘ _ = _
   rw [Functor.map_id, id_tensorHom]
+  -- Both sides are now `F.obj (y 0) ◁ _` of the same morphism, whose tuple is written once
+  -- through the slot functor and once through its unfolding.
   rfl
+
+/-- Varying the first entry of the tuple, the tensor functor is `F` followed by tensoring on the
+right with the tensor power of the fixed entries. -/
+private def tensorPowSlotZeroIso {n : ℕ} (y : Fin n → C) :
+    F ⋙ tensorRight ((F.tensorPow n).obj y) ≅
+      (𝟭 C).prod' ((Functor.const C).obj y) ⋙ piInsertNth C 0 ⋙ F.tensorPow (n + 1) :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
+    rw [prod'_comp_piInsertNth_zero_comp_tensorPow_map]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+/-- Varying the entry in slot `i.succ`, the tensor functor is the slot-`i` functor of the remaining
+entries followed by tensoring on the left with `F` applied to the first entry. -/
+private def tensorPowSlotSuccIso {n : ℕ} (i : Fin (n + 1))
+    (y : Fin (n + 1) → C) :
+    ((𝟭 C).prod' ((Functor.const C).obj fun j ↦ y j.succ) ⋙ piInsertNth C i ⋙
+        F.tensorPow (n + 1)) ⋙ tensorLeft (F.obj (y 0)) ≅
+      (𝟭 C).prod' ((Functor.const C).obj y) ⋙ piInsertNth C i.succ ⋙ F.tensorPow (n + 2) :=
+  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
+    rw [prod'_comp_piInsertNth_succ_comp_tensorPow_map]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 section Linear
 
-/-! In the proofs below, after rewriting with the two lemmas above, the two sides agree up to
-the definitional unfolding of the slot functor in the implicit endpoints of the morphisms, which
-`rw` leaves behind; `rfl` closes the remaining goal. -/
-
 variable [Preadditive C] [Preadditive D] [MonoidalPreadditive D]
-
-private theorem additive_prod'_comp_piInsertNth_zero_comp_tensorPow [F.Additive] {n : ℕ}
-    (y : Fin n → C) :
-    ((𝟭 C).prod' ((Functor.const C).obj y) ⋙ piInsertNth C 0 ⋙ F.tensorPow (n + 1)).Additive where
-  map_add {_ _ f g} := by
-    rw [prod'_comp_piInsertNth_zero_comp_tensorPow_map,
-      prod'_comp_piInsertNth_zero_comp_tensorPow_map,
-      prod'_comp_piInsertNth_zero_comp_tensorPow_map, F.map_add,
-      MonoidalPreadditive.add_whiskerRight]
-    rfl
 
 /-- The tensor functor of an additive functor is additive in each slot. -/
 instance additive_prod'_comp_piInsertNth_comp_tensorPow [F.Additive] {n : ℕ}
@@ -194,30 +271,16 @@ instance additive_prod'_comp_piInsertNth_comp_tensorPow [F.Additive] {n : ℕ}
   induction n with
   | zero =>
     obtain rfl : i = 0 := Fin.fin_one_eq_zero i
-    exact additive_prod'_comp_piInsertNth_zero_comp_tensorPow F y
+    exact Functor.additive_of_iso (tensorPowSlotZeroIso F y)
   | succ n ih =>
     cases i using Fin.cases with
-    | zero => exact additive_prod'_comp_piInsertNth_zero_comp_tensorPow F y
+    | zero => exact Functor.additive_of_iso (tensorPowSlotZeroIso F y)
     | succ k =>
       have := ih k fun j ↦ y j.succ
-      refine ⟨fun {X X'} {f g} ↦ ?_⟩
-      rw [prod'_comp_piInsertNth_succ_comp_tensorPow_map,
-        prod'_comp_piInsertNth_succ_comp_tensorPow_map,
-        prod'_comp_piInsertNth_succ_comp_tensorPow_map, Functor.map_add,
-        MonoidalPreadditive.whiskerLeft_add]
-      rfl
+      exact Functor.additive_of_iso (tensorPowSlotSuccIso F k y)
 
 variable {R : Type*} [Semiring R] [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
   [MonoidalLinear R D]
-
-private theorem linear_prod'_comp_piInsertNth_zero_comp_tensorPow [F.Linear R] {n : ℕ}
-    (y : Fin n → C) :
-    ((𝟭 C).prod' ((Functor.const C).obj y) ⋙ piInsertNth C 0 ⋙ F.tensorPow (n + 1)).Linear R where
-  map_smul {_ _} f r := by
-    rw [prod'_comp_piInsertNth_zero_comp_tensorPow_map,
-      prod'_comp_piInsertNth_zero_comp_tensorPow_map, F.map_smul,
-      MonoidalLinear.smul_whiskerRight]
-    rfl
 
 /-- The tensor functor of an `R`-linear functor is `R`-linear in each slot. -/
 instance linear_prod'_comp_piInsertNth_comp_tensorPow [F.Linear R] {n : ℕ}
@@ -226,17 +289,13 @@ instance linear_prod'_comp_piInsertNth_comp_tensorPow [F.Linear R] {n : ℕ}
   induction n with
   | zero =>
     obtain rfl : i = 0 := Fin.fin_one_eq_zero i
-    exact linear_prod'_comp_piInsertNth_zero_comp_tensorPow F y
+    exact Functor.linear_of_iso R (tensorPowSlotZeroIso F y)
   | succ n ih =>
     cases i using Fin.cases with
-    | zero => exact linear_prod'_comp_piInsertNth_zero_comp_tensorPow F y
+    | zero => exact Functor.linear_of_iso R (tensorPowSlotZeroIso F y)
     | succ k =>
       have := ih k fun j ↦ y j.succ
-      refine ⟨fun {X X'} f r ↦ ?_⟩
-      rw [prod'_comp_piInsertNth_succ_comp_tensorPow_map,
-        prod'_comp_piInsertNth_succ_comp_tensorPow_map, Functor.map_smul,
-        MonoidalLinear.whiskerLeft_smul]
-      rfl
+      exact Functor.linear_of_iso R (tensorPowSlotSuccIso F k y)
 
 end Linear
 
@@ -260,11 +319,12 @@ def tensorPowMergeIso : {n : ℕ} → (i : Fin n) → piMerge C i ⋙ F.tensorPo
               (Monoidal.μIso F (Y 0) (Y 1)).inv ▷ _ ≫ (α_ _ _ _).hom =
             ((Monoidal.μIso F (X 0) (X 1)).inv ▷ _ ≫ (α_ _ _ _).hom) ≫
               (F.map (f 0) ⊗ₘ F.map (f 1) ⊗ₘ (F.tensorPow m).map fun j ↦ f j.succ.succ)
+          -- Move the associator to the right; what remains is the naturality of `δ` tensored
+          -- with `(F.tensorPow m).map _`.
           rw [Category.assoc, ← associator_naturality, ← Category.assoc, ← Category.assoc]
           congr 1
-          rw [Monoidal.μIso_inv, Monoidal.μIso_inv, ← tensorHom_id, ← tensorHom_id,
-            tensorHom_comp_tensorHom, tensorHom_comp_tensorHom, OplaxMonoidal.δ_natural,
-            Category.comp_id, Category.id_comp])
+          simp only [Monoidal.μIso_inv, ← tensorHom_id, tensorHom_comp_tensorHom,
+            OplaxMonoidal.δ_natural, Category.comp_id, Category.id_comp])
       (fun k ↦ NatIso.ofComponents
         (fun X ↦ whiskerLeftIso (F.obj (X 0)) ((tensorPowMergeIso k).app fun j ↦ X j.succ))
         fun {X Y} f ↦ by
@@ -274,8 +334,7 @@ def tensorPowMergeIso : {n : ℕ} → (i : Fin n) → piMerge C i ⋙ F.tensorPo
               F.obj (Y 0) ◁ (tensorPowMergeIso k).hom.app (fun j ↦ Y j.succ) =
             F.obj (X 0) ◁ (tensorPowMergeIso k).hom.app (fun j ↦ X j.succ) ≫
               (F.map (f 0) ⊗ₘ (F.tensorPow (m + 1)).map fun j ↦ f j.succ)
-          rw [← id_tensorHom, ← id_tensorHom, tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-            Category.comp_id, Category.id_comp]
+          rw [tensorHom_comp_whiskerLeft, whiskerLeft_comp_tensorHom]
           exact congrArg (F.map (f 0) ⊗ₘ ·) h) i
 
 /-- Merging the first two entries is the inverse tensorator of `F` followed by an associator. -/
@@ -335,8 +394,7 @@ def tensorPowInsertUnitIso : {n : ℕ} → (i : Fin (n + 1)) →
                 F.obj (y' 0) ◁ (tensorPowInsertUnitIso k).hom.app (fun j ↦ y' j.succ) =
               F.obj (y 0) ◁ (tensorPowInsertUnitIso k).hom.app (fun j ↦ y j.succ) ≫
                 (F.map (g 0) ⊗ₘ (F.tensorPow m).map fun j ↦ g j.succ)
-            rw [← id_tensorHom, ← id_tensorHom, tensorHom_comp_tensorHom,
-              tensorHom_comp_tensorHom, Category.comp_id, Category.id_comp]
+            rw [tensorHom_comp_whiskerLeft, whiskerLeft_comp_tensorHom]
             exact congrArg (F.map (g 0) ⊗ₘ ·) h) i
 
 /-- Removing a unit inserted in front is the inverse unit isomorphism of `F` followed by the left
@@ -345,12 +403,15 @@ unitor. -/
 theorem tensorPowInsertUnitIso_zero_hom_app {n : ℕ} (y : Fin n → C) :
     (F.tensorPowInsertUnitIso 0).hom.app y =
       OplaxMonoidal.η F ▷ (F.tensorPow n).obj y ≫ (λ_ ((F.tensorPow n).obj y)).hom := by
+  -- The definition matches on `n` to rule out positions in `Fin 0`; splitting `n` lets that match
+  -- reduce, after which both sides agree by definition.
   cases n <;> rfl
 
 @[simp]
 theorem tensorPowInsertUnitIso_zero_inv_app {n : ℕ} (y : Fin n → C) :
     (F.tensorPowInsertUnitIso 0).inv.app y =
       (λ_ ((F.tensorPow n).obj y)).inv ≫ LaxMonoidal.ε F ▷ (F.tensorPow n).obj y := by
+  -- As above, splitting `n` lets the match in the definition reduce.
   cases n <;> rfl
 
 /-- Removing a unit inserted at position `i.succ` whiskers the removal at position `i` from the

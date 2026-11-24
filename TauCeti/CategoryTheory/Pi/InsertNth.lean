@@ -66,6 +66,34 @@ theorem piInsertNth_succ_obj {n : ℕ} (i : Fin (n + 1)) (p : C × (Fin (n + 1) 
   funext j
   cases j using Fin.cases <;> rfl
 
+/-- Inserting at position `0`, the new first entry of the morphism is the inserted morphism. -/
+@[simp]
+theorem piInsertNth_zero_map_zero {n : ℕ} {p q : C × (Fin n → C)} (f : p ⟶ q) :
+    (piInsertNth C 0).map f 0 = f.1 :=
+  (rfl)
+
+/-- Inserting at position `0`, the later entries of the morphism are those of the tuple. -/
+@[simp]
+theorem piInsertNth_zero_map_succ {n : ℕ} {p q : C × (Fin n → C)} (f : p ⟶ q) (j : Fin n) :
+    (piInsertNth C 0).map f j.succ = f.2 j :=
+  (rfl)
+
+/-- Inserting at position `i.succ`, the first entry of the morphism is that of the tuple. -/
+@[simp]
+theorem piInsertNth_succ_map_zero {n : ℕ} (i : Fin (n + 1)) {p q : C × (Fin (n + 1) → C)}
+    (f : p ⟶ q) :
+    (piInsertNth C i.succ).map f 0 = f.2 0 :=
+  (rfl)
+
+/-- Inserting at position `i.succ`, the later entries of the morphism are those of the insertion
+at position `i` into the remaining entries. -/
+@[simp]
+theorem piInsertNth_succ_map_succ {n : ℕ} (i : Fin (n + 1)) {p q : C × (Fin (n + 1) → C)}
+    (f : p ⟶ q) (j : Fin (n + 1)) :
+    (piInsertNth C i.succ).map f j.succ =
+      (piInsertNth C i).map (Prod.mkHom f.1 fun k ↦ f.2 k.succ) j :=
+  (rfl)
+
 /-- On objects, `piInsertNth C i` is `Fin.insertNth i`. -/
 @[simp]
 theorem piInsertNth_obj {n : ℕ} (i : Fin (n + 1)) (p : C × (Fin n → C)) :
