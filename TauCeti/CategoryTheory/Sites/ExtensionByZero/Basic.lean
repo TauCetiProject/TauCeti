@@ -14,6 +14,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.Over
 public import Mathlib.CategoryTheory.Sites.Pullback
+import TauCeti.CategoryTheory.Sites.ExtensionByZero.FullyFaithful
 
 /-!
 # Extension by zero on a lower interval
@@ -34,7 +35,8 @@ of the restricted sheaf in `TauCeti.CategoryTheory.Sites.SheafCohomology.Over`.
   left adjoint to restriction is the sheafification of the presheaf extension by zero.
 * `TauCeti.CategoryTheory.SheafExtensionByZero.preservesFiniteLimits_sheafPullback`: left
   exactness of Mathlib's canonical extension functor for sheaves with values in a category with
-  a zero object and finite limits.
+  a zero object and finite limits, the case `Over.forget U` of
+  `CategoryTheory.Functor.preservesFiniteLimits_sheafPullback_of_fullyFaithful`.
 
 ## References
 
@@ -279,10 +281,15 @@ def sheafPullbackIsoSheafify :
 variable [HasFiniteLimits D]
 
 /-- On a preorder site, the left adjoint to restriction to a lower interval is exact.
-In particular, this applies to extension by zero along an open inclusion. -/
+In particular, this applies to extension by zero along an open inclusion. This is the case
+`Over.forget U` of `CategoryTheory.Functor.preservesFiniteLimits_sheafPullback_of_fullyFaithful`:
+the lower interval of `U` is closed downward. -/
 instance preservesFiniteLimits_sheafPullback :
     PreservesFiniteLimits ((Over.forget U).sheafPullback D (J.over U) J) :=
-  preservesFiniteLimits_of_natIso (sheafPullbackIsoSheafify U J).symm
+  _root_.CategoryTheory.Functor.preservesFiniteLimits_sheafPullback_of_fullyFaithful
+    { preimage f := Over.homMk f (Subsingleton.elim _ _) }
+    (fun _ c f ↦ ⟨Over.mk (homOfLE ((leOfHom f).trans (leOfHom c.hom))), ⟨Iso.refl _⟩⟩)
+    (J.over U) J
 
 end SheafExtensionByZero
 

@@ -24,16 +24,15 @@ an initial object exists pointwise: at an object `G.obj c` it is `F.obj (op c)`,
 admitting no morphism to the image of `G` it is the initial object. When the values form a
 category with a zero object, this extension by zero preserves finite limits. Consequently, for
 continuous `G` between sites, the left adjoint `G.sheafPullback` of restriction of sheaves is
-exact on the left.
+exact on the left. The extension by zero on a lower interval of a preorder,
+`TauCeti.CategoryTheory.SheafExtensionByZero`, is the case `G = Over.forget U`.
 
 ## Main declarations
 
-* `CategoryTheory.Functor.FullyFaithful.isTerminalCostructuredArrowMk`: the terminal object of the
-  category of costructured arrows over an object of the essential image.
 * `CategoryTheory.Functor.hasPointwiseLeftKanExtension_op_of_fullyFaithful`: existence of the
   pointwise extension by zero.
 * `CategoryTheory.Functor.lanCompEvaluationIsoOfIso` and
-  `CategoryTheory.Functor.isZero_lan_obj_obj_of_isEmpty`: its values.
+  `CategoryTheory.Functor.isZero_lan_obj_obj_of_not_essImage`: its values.
 * `CategoryTheory.Functor.preservesFiniteLimits_lan_op_of_fullyFaithful` and
   `CategoryTheory.Functor.preservesFiniteLimits_sheafPullback_of_fullyFaithful`: exactness.
 
@@ -50,22 +49,6 @@ namespace CategoryTheory.Functor
 
 variable {C D : Type*} [Category* C] [Category* D] {G : C ⥤ D}
 
-/-- For a fully faithful functor `G` and an isomorphism `e : G.obj c ≅ d`, the costructured arrow
-`e.inv.op` from `G.op.obj (op c)` to `op d` is terminal. -/
-noncomputable def FullyFaithful.isTerminalCostructuredArrowMk (hG : G.FullyFaithful) {c : C}
-    {d : D} (e : G.obj c ≅ d) :
-    IsTerminal (CostructuredArrow.mk (S := G.op) (Y := op c) (T := op d) e.inv.op) :=
-  IsTerminal.ofUniqueHom
-    (fun f ↦ CostructuredArrow.homMk (hG.preimage (e.hom ≫ f.hom.unop)).op
-      (Quiver.Hom.unop_inj (by simp)))
-    (fun f g ↦ by
-      ext
-      apply hG.map_injective
-      have := congrArg Quiver.Hom.unop (CostructuredArrow.w g)
-      simp only [CostructuredArrow.mk_left, CostructuredArrow.mk_hom_eq_self, op_obj,
-        Functor.op_map, unop_comp, Quiver.Hom.unop_op] at this
-      simp [← this])
-
 variable (hG : G.FullyFaithful) (hG' : ∀ ⦃d : D⦄ ⦃c : C⦄, (d ⟶ G.obj c) → G.essImage d)
   {A : Type*} [Category* A]
 
@@ -77,7 +60,11 @@ lemma hasPointwiseLeftKanExtension_op_of_fullyFaithful [HasInitial A] (F : Cᵒ�
   intro d
   by_cases hd : G.essImage d.unop
   · obtain ⟨c, ⟨e⟩⟩ := hd
-    exact HasColimit.mk ⟨_, colimitOfDiagramTerminal (hG.isTerminalCostructuredArrowMk e) _⟩
+    have := hG.full
+    have := hG.faithful
+    exact (hasPointwiseLeftKanExtensionAt_iff_of_iso G.op F e.op.symm).mp
+      (HasColimit.mk ⟨_, colimitOfDiagramTerminal
+        (CostructuredArrow.mkIdTerminal (S := G.op) (Y := op c)) _⟩)
   · have : IsEmpty (CostructuredArrow G.op d) := ⟨fun f ↦ hd (hG' f.hom.unop)⟩
     let c : Cocone (CostructuredArrow.proj G.op d ⋙ F) :=
       ⟨⊥_ A, { app := fun f ↦ isEmptyElim f, naturality := fun f ↦ isEmptyElim f }⟩
@@ -104,7 +91,7 @@ noncomputable def lanCompEvaluationIsoOfIso [G.Full] [G.Faithful]
 include hG' in
 /-- The left Kan extension along `G.op` vanishes at an object admitting no morphism to an object
 of the essential image of `G`, when it is computed pointwise. -/
-lemma isZero_lan_obj_obj_of_isEmpty [HasZeroObject A]
+lemma isZero_lan_obj_obj_of_not_essImage [HasZeroObject A]
     (F : Cᵒᵖ ⥤ A) [G.op.HasPointwiseLeftKanExtension F] {d : D} (hd : ¬ G.essImage d) :
     IsZero ((G.op.lan.obj F).obj (op d)) := by
   have : IsEmpty (CostructuredArrow G.op (op d)) := ⟨fun f ↦ hd (hG' f.hom.unop)⟩
@@ -128,15 +115,17 @@ lemma preservesFiniteLimits_lan_op_of_fullyFaithful [HasZeroObject A] [HasFinite
     exact preservesFiniteLimits_of_natIso (lanCompEvaluationIsoOfIso e).symm
   · let := HasZeroObject.zeroMorphismsOfZeroObject (C := A)
     refine ⟨fun J _ _ ↦ preservesLimitsOfShape_of_isZero _ ?_ J⟩
-    exact Functor.isZero _ fun F ↦ isZero_lan_obj_obj_of_isEmpty hG' F hd
+    exact Functor.isZero _ fun F ↦ isZero_lan_obj_obj_of_not_essImage hG' F hd
 
 include hG hG' in
+omit [∀ F : Cᵒᵖ ⥤ A, G.op.HasLeftKanExtension F] in
 /-- For a continuous fully faithful functor `G` with downward closed essential image, the left
 adjoint `G.sheafPullback` of restriction of sheaves (extension by zero) preserves finite limits. -/
 lemma preservesFiniteLimits_sheafPullback_of_fullyFaithful [HasZeroObject A] [HasFiniteLimits A]
     (J : GrothendieckTopology C) (K : GrothendieckTopology D) [G.IsContinuous J K]
     [HasSheafify K A] [(G.sheafPushforwardContinuous A J K).IsRightAdjoint] :
     PreservesFiniteLimits (G.sheafPullback A J K) := by
+  have := hasLeftKanExtension_op_of_fullyFaithful hG hG' (A := A)
   have := preservesFiniteLimits_lan_op_of_fullyFaithful hG hG' (A := A)
   have : PreservesFiniteLimits (sheafPullbackConstruction.sheafPullback G A J K) :=
     comp_preservesFiniteLimits _ _

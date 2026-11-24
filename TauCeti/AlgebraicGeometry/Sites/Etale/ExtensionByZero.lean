@@ -114,7 +114,7 @@ variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
 /-- For an étale monomorphism `j` and a geometric point `s : Spec Ω ⟶ X`, lifts of `s ≫ j` to an
 étale `X`-scheme regarded over `Y` are the lifts of `s`. -/
-noncomputable def pointSmallEtaleFiberSmallEtaleMapIso (s : Spec (.of Ω) ⟶ X) :
+noncomputable def smallEtaleMapCompFiberIso (s : Spec (.of Ω) ⟶ X) :
     j.smallEtaleMap ⋙ (pointSmallEtale (s ≫ j)).fiber ≅ (pointSmallEtale s).fiber :=
   NatIso.ofComponents
     (fun _ ↦ Equiv.toIso
@@ -126,6 +126,27 @@ noncomputable def pointSmallEtaleFiberSmallEtaleMapIso (s : Spec (.of Ω) ⟶ X)
         right_inv _ := rfl })
     (fun _ ↦ rfl)
 
+/-- The isomorphism `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
+@[simp]
+lemma smallEtaleMapCompFiberIso_hom_app_left (s : Spec (.of Ω) ⟶ X) (V : X.Etale)
+    (t : (pointSmallEtale (s ≫ j)).fiber.obj (j.smallEtaleMap.obj V)) :
+    Over.Hom.left (f := Over.mk s) (g := (Etale.forget X).obj V)
+      (ConcreteCategory.hom (X := (pointSmallEtale (s ≫ j)).fiber.obj (j.smallEtaleMap.obj V))
+        (Y := (pointSmallEtale s).fiber.obj V) ((j.smallEtaleMapCompFiberIso s).hom.app V) t) =
+      t.left :=
+  (rfl)
+
+/-- The inverse of `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
+@[simp]
+lemma smallEtaleMapCompFiberIso_inv_app_left (s : Spec (.of Ω) ⟶ X) (V : X.Etale)
+    (t : (pointSmallEtale s).fiber.obj V) :
+    Over.Hom.left (f := Over.mk (s ≫ j)) (g := (Etale.forget Y).obj (j.smallEtaleMap.obj V))
+      (ConcreteCategory.hom (X := (pointSmallEtale s).fiber.obj V)
+        (Y := (pointSmallEtale (s ≫ j)).fiber.obj (j.smallEtaleMap.obj V))
+        ((j.smallEtaleMapCompFiberIso s).inv.app V) t) =
+      t.left :=
+  (rfl)
+
 variable (A : Type*) [Category* A] [HasProducts.{u} A] [HasColimitsOfSize.{u, u} A]
   [(j.smallEtaleMap.sheafPushforwardContinuous A (smallEtaleTopology X)
     (smallEtaleTopology Y)).IsRightAdjoint]
@@ -136,7 +157,7 @@ noncomputable abbrev smallEtaleExtensionByZeroCompSheafFiberIso (s : Spec (.of �
     j.smallEtaleExtensionByZero A ⋙ (pointSmallEtale (s ≫ j)).sheafFiber ≅
       (pointSmallEtale s).sheafFiber :=
   (pointSmallEtale (s ≫ j)).sheafPullbackCompSheafFiberIso j.smallEtaleMap
-    (j.pointSmallEtaleFiberSmallEtaleMapIso s) A
+    (j.smallEtaleMapCompFiberIso s) A
 
 omit [Mono j] in
 /-- **Stalks of an extension by zero off the image.** When the coefficient category has zero
