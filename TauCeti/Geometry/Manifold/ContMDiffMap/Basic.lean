@@ -15,7 +15,8 @@ This file evaluates Mathlib's basic bundled `C^n` maps (`ContMDiffMap.id`, `Cont
 `ContMDiffMap.fst`, `ContMDiffMap.snd`, and `ContMDiffMap.prodMk`) pointwise, and defines the
 `C^n` function `e^{t f}` of a real `C^n` function `f` (`ContMDiffMap.expMul`), with inverse
 `e^{-t f}` (`ContMDiffMap.expMul_mul_expMul_neg`). A continuous map is a `C⁰` map
-(`ContMDiffMap.ofContinuous`), with the order written as the cast of the natural number `0`.
+(`ContMDiffMap.ofContinuous`), with the order written as the cast of the natural number `0`, and a
+`C^n` map between normed spaces is a bundled `C^n` map (`ContMDiffMap.ofContDiff`).
 -/
 
 public section
@@ -69,6 +70,14 @@ def ofContinuous (f : M → M') (hf : Continuous f) : C^(0 : ℕ)⟮I, M; I', M'
 @[simp]
 theorem coe_ofContinuous (f : M → M') (hf : Continuous f) :
     ⇑(ofContinuous (I := I) (I' := I') f hf) = f :=
+  (rfl)
+
+/-- A `C^n` map between normed spaces, as a `C^n` map for their model structures. -/
+def ofContDiff (f : E → E') (hf : ContDiff 𝕜 n f) : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, E'), E'⟯ :=
+  ⟨f, hf.contMDiff⟩
+
+@[simp]
+theorem coe_ofContDiff (f : E → E') (hf : ContDiff 𝕜 n f) : ⇑(ofContDiff f hf) = f :=
   (rfl)
 
 section Exp
