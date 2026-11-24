@@ -88,23 +88,23 @@ theorem map_prodMk_left_zero_eq_map_prodMk_left_one (k : ℕ) :
     -- A closed `0`-form is locally constant, hence constant along `{x} × [0, 1]`.
     congr 1
     refine Subtype.ext (Subtype.ext (funext fun x ↦ ?_))
-    have hφ := ((mem_closedForms_zero_iff _ φ.1).mp φ.2).comp_continuous
+    have hφ := ((mem_closedForms_zero_iff _ φ.val).mp φ.property).comp_continuous
       (Continuous.prodMk_right x : Continuous fun t : Icc (0 : ℝ) 1 ↦ (x, t))
     ext v
     simp only [closedForms.coe_mpullback, SmoothForm.mpullback_apply]
-    calc _ = φ.1.1 (x, 0) 0 := congrArg _ (Subsingleton.elim _ _)
-      _ = φ.1.1 (x, 1) 0 := hφ.apply_eq_of_preconnectedSpace 0 1
+    calc _ = φ.val.val (x, 0) 0 := congrArg _ (Subsingleton.elim _ _)
+      _ = φ.val.val (x, 1) 0 := hφ.apply_eq_of_preconnectedSpace 0 1
       _ = _ := congrArg _ (Subsingleton.elim _ _)
   | succ k =>
     -- `ι₁^* φ - ι₀^* φ` is the exterior derivative of the smooth form `h φ`. Smoothness of
     -- `h φ` is `IsSmoothForm.homotopyOperator` at `r = ⊤`, stated for a `C^(⊤ + 1)` manifold.
     have : IsManifold I ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
     rw [eq_comm, ← sub_eq_zero, ← map_sub, mk_eq_zero_iff, exactForms_succ]
-    refine ⟨⟨homotopyOperator φ.1.1,
-      (IsSmoothForm.homotopyOperator φ.1.isSmoothForm).mem_smoothBundleForms⟩, ?_⟩
+    refine ⟨⟨homotopyOperator φ.val.val,
+      (IsSmoothForm.homotopyOperator φ.val.isSmoothForm).mem_smoothBundleForms⟩, ?_⟩
     refine Subtype.ext (funext fun x ↦ ?_)
-    rw [mextDerivₗ_apply, mextDeriv_homotopyOperator (φ.1.isSmoothForm.of_le (by simp))
-      ((mem_closedForms _ φ.1).mp φ.2)]
+    rw [mextDerivₗ_apply, mextDeriv_homotopyOperator (φ.val.isSmoothForm.of_le (by simp))
+      ((mem_closedForms _ φ.val).mp φ.property)]
     simp
 
 /-- **Homotopy invariance of de Rham cohomology.** If `F : M × [0, 1] → M'` is a smooth

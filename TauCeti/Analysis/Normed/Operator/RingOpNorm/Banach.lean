@@ -297,6 +297,15 @@ theorem apply_comp_apply_of_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N
     (Subalgebra.topologicalClosure_adjoin_le_centralizer_centralizer R _ hX) _ he
   exact congr($hX' y)
 
+end Retract
+
+section RetractSeminormed
+
+variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+  {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
+
 /-- For a retract `r ∘ i = id` of `M` through `N`, compression `X ↦ r ∘ X ∘ i` sends the
 operator-norm closure of the polynomials in the extension `i ∘ u ∘ r` of an endomorphism `u` of
 `M` into the closure of the polynomials in `u`. On the polynomials it is multiplicative, since
@@ -332,7 +341,7 @@ theorem comp_comp_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N →L[R] N
     ext z
     simp [hy.1, hri']
 
-end Retract
+end RetractSeminormed
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]

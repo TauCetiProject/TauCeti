@@ -101,7 +101,7 @@ theorem finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one
   obtain ⟨y, -⟩ : (Finsupp.support D).Nonempty :=
     Finsupp.support_nonempty_iff.mpr fun h ↦ by simp [h] at hD
   have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out y.2
+    k hX.out y.property
   have hdeg := InvertibleSheaf.eulerDegree_eq_relativeDegree k hX.out
     (eqToIso (toInvertibleSheaf_obj hX.out D))
   rw [Scheme.genus_def] at hg
@@ -128,7 +128,7 @@ theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
   -- A codimension-one point of a curve is closed, hence of finite degree over `k`.
   have hx : (X ↘ Spec (.of k)).residueDegree x ≠ 0 :=
     Scheme.Hom.residueDegree_ne_zero_of_isClosed _
-      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out x.2)
+      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out x.property)
   have h := finrank_cohomology_zero_sheaf_eq_relativeDegree_of_genus_eq_one k hk hg
     (D := (n : ℤ) • WeilDivisor.ofPoint x)
     (by rw [hdeg]; exact_mod_cast Nat.mul_pos hn (Nat.pos_of_ne_zero hx))
@@ -157,7 +157,7 @@ theorem exists_linearlyEquivalent_ofPoint_of_genus_eq_one
     (UniversallyClosed.eq_valuativeCriterion ▸
       (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
   have hF := isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_one
-    k hX.out y.2
+    k hX.out y.property
   have hgF : genus k X.functionField = 1 :=
     (genus_eq_genus_functionField hex hX.out hF hk).symm.trans hg
   obtain ⟨P, hP, hlin⟩ := Divisor.exists_linearlyEquivalent_ofPoint_of_genus_eq_one hF hk hgF
@@ -214,11 +214,11 @@ private lemma abelJacobiClass_add_eq_iff_linearlyEquivalent
       (X ↘ Spec (.of k)).residueDegree x = 1}) :
     abelJacobiClass k hx₀ x + abelJacobiClass k hx₀ y = abelJacobiClass k hx₀ z ↔
       (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent
-        (WeilDivisor.pointDifference x.1 x₀ + WeilDivisor.pointDifference y.1 x₀)
-        (WeilDivisor.pointDifference z.1 x₀) := by
+        (WeilDivisor.pointDifference x.val x₀ + WeilDivisor.pointDifference y.val x₀)
+        (WeilDivisor.pointDifference z.val x₀) := by
   exact picZero_eq_iff_linearlyEquivalent k (by
-    rw [AddMemClass.coe_add, coe_abelJacobiClass k hx₀ x.2,
-      coe_abelJacobiClass k hx₀ y.2, map_add]) (coe_abelJacobiClass k hx₀ z.2)
+    rw [AddMemClass.coe_add, coe_abelJacobiClass k hx₀ x.property,
+      coe_abelJacobiClass k hx₀ y.property, map_add]) (coe_abelJacobiClass k hx₀ z.property)
 
 variable (hk : IsIntegrallyClosedIn k X.functionField) (hg : X.genus k = 1)
 include hk hg
@@ -229,14 +229,14 @@ private lemma injective_abelJacobiClass :
       (X ↘ Spec (.of k)).residueDegree x = 1} ↦ abelJacobiClass k hx₀ x := by
   intro x y hxy
   have hlin := (picZero_eq_iff_linearlyEquivalent k
-    (coe_abelJacobiClass k hx₀ x.2) (coe_abelJacobiClass k hx₀ y.2)).mp hxy
-  have hdiff : WeilDivisor.pointDifference x.1 x₀ - WeilDivisor.pointDifference y.1 x₀ =
-      WeilDivisor.ofPoint x.1 - WeilDivisor.ofPoint y.1 := by
+    (coe_abelJacobiClass k hx₀ x.property) (coe_abelJacobiClass k hx₀ y.property)).mp hxy
+  have hdiff : WeilDivisor.pointDifference x.val x₀ - WeilDivisor.pointDifference y.val x₀ =
+      WeilDivisor.ofPoint x.val - WeilDivisor.ofPoint y.val := by
     simp only [WeilDivisor.pointDifference]
     abel
   rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff, hdiff,
     ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
-  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_pos k hk (by omega) x.2 hlin)
+  exact Subtype.ext (eq_of_linearlyEquivalent_ofPoint_of_genus_pos k hk (by omega) x.property hlin)
 
 /-- In genus one, every degree-zero divisor class is the Abel–Jacobi class of a point of residue
 degree one: if `D` has degree zero, then `D + x₀` is linearly equivalent to a point `x`, so that
@@ -248,7 +248,7 @@ private lemma surjective_abelJacobiClass :
   obtain ⟨D, hD⟩ := (WeilDivisor.OrderSystem.ofScheme X).divisorClass_surjective
     (d : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup)
   have hdeg : relativeDegree (X ↘ Spec (.of k)) D = 0 := by
-    have := d.2
+    have := d.property
     rwa [← hD, WeilDivisor.OrderSystem.divisorClass_mem_picZero,
       WeilDivisor.weightedDegree_apply, ← relativeDegree_apply] at this
   obtain ⟨x, hx, hlin⟩ := exists_linearlyEquivalent_ofPoint_of_genus_eq_one k hk hg
@@ -290,10 +290,10 @@ the line bundle `𝒪_X(x - x₀)`. -/
 theorem coe_degreeOneEquivPicZero_apply
     (x : {x : CodimensionOnePoint X // (X ↘ Spec (.of k)).residueDegree x = 1}) :
     (degreeOneEquivPicZero k hx₀ hk hg x : Additive (LineBundleClass X)) =
-      Additive.ofMul (toLineBundleClass hX.out (WeilDivisor.pointDifference x.1 x₀)) := by
+      Additive.ofMul (toLineBundleClass hX.out (WeilDivisor.pointDifference x.val x₀)) := by
   simp only [degreeOneEquivPicZero, Equiv.ofBijective_apply]
   rw [coe_classGroupPicZeroAddEquivPicZero_apply,
-    coe_abelJacobiClass k hx₀ x.2, classGroupAddEquivLineBundleClass_apply,
+    coe_abelJacobiClass k hx₀ x.property, classGroupAddEquivLineBundleClass_apply,
     classGroupToLineBundleClass_divisorClass]
 
 /-- The base point goes to zero in `Pic⁰ X`. -/
@@ -310,17 +310,17 @@ theorem degreeOneEquivPicZero_add_eq_iff
     degreeOneEquivPicZero k hx₀ hk hg x + degreeOneEquivPicZero k hx₀ hk hg y =
         degreeOneEquivPicZero k hx₀ hk hg z ↔
       (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent
-        (WeilDivisor.ofPoint x.1 + WeilDivisor.ofPoint y.1)
-        (WeilDivisor.ofPoint z.1 + WeilDivisor.ofPoint x₀) := by
+        (WeilDivisor.ofPoint x.val + WeilDivisor.ofPoint y.val)
+        (WeilDivisor.ofPoint z.val + WeilDivisor.ofPoint x₀) := by
   simp only [degreeOneEquivPicZero, Equiv.ofBijective_apply]
   rw [← map_add, (classGroupPicZeroAddEquivPicZero k X).injective.eq_iff,
     abelJacobiClass_add_eq_iff_linearlyEquivalent k hx₀ x y z,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff,
     WeilDivisor.OrderSystem.linearlyEquivalent_iff]
-  have hdiff : WeilDivisor.pointDifference x.1 x₀ + WeilDivisor.pointDifference y.1 x₀ -
-      WeilDivisor.pointDifference z.1 x₀ =
-      WeilDivisor.ofPoint x.1 + WeilDivisor.ofPoint y.1 -
-        (WeilDivisor.ofPoint z.1 + WeilDivisor.ofPoint x₀) := by
+  have hdiff : WeilDivisor.pointDifference x.val x₀ + WeilDivisor.pointDifference y.val x₀ -
+      WeilDivisor.pointDifference z.val x₀ =
+      WeilDivisor.ofPoint x.val + WeilDivisor.ofPoint y.val -
+        (WeilDivisor.ofPoint z.val + WeilDivisor.ofPoint x₀) := by
     rw [WeilDivisor.pointDifference, WeilDivisor.pointDifference, WeilDivisor.pointDifference]
     abel
   rw [hdiff]

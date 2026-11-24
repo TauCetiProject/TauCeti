@@ -519,22 +519,23 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (C : GridDiagram.ColumnTurn n
 /-- The diagram obtained from a grid diagram with an odd number of components by exchanging the
 two columns of a column turn: relabeling columns does not change the number of components. -/
 abbrev swapColumns : OddComponentGridDiagram n :=
-  ⟨G.1.swapColumns C.column (finRotate n C.column), by
+  ⟨G.val.swapColumns C.column (finRotate n C.column), by
     rw [GridDiagram.swapColumns, GridDiagram.componentCount_relabelColumns]
-    exact G.2⟩
+    exact G.property⟩
 
 /-- The underlying grid diagram of `G.swapColumns C` exchanges the two columns of `C`. -/
-theorem val_swapColumns : (G.swapColumns C).1 = G.1.swapColumns C.column (finRotate n C.column) :=
+theorem val_swapColumns : (G.swapColumns C).val = G.val.swapColumns C.column (finRotate n C.column)
+    :=
   (rfl)
 
 /-- **The Alexander grading across a counted pentagon**: a pentagon counted by the pentagon map
 from `x` to `y` raises the Alexander grading by the number of `O`-markings it carries, shifted by
 the Alexander component of `G.commutationBidegree C`. -/
 theorem alexanderℤ_swapColumns_of_mem_pentagons
-    {P : GridPentagonBetween C.column C.turnRow x y} (hP : P ∈ G.1.pentagons C x y) :
+    {P : GridPentagonBetween C.column C.turnRow x y} (hP : P ∈ G.val.pentagons C x y) :
     (G.swapColumns C).alexanderℤ y =
-      G.alexanderℤ x + (G.1.pentagonOColumns C P).card + (G.1.commutationBidegree C).2 := by
-  have h := G.1.alexanderTwoℤ_swapColumns_of_mem_pentagons C hP
+      G.alexanderℤ x + (G.val.pentagonOColumns C P).card + (G.val.commutationBidegree C).2 := by
+  have h := G.val.alexanderTwoℤ_swapColumns_of_mem_pentagons C hP
   rw [← val_swapColumns, ← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at h
   omega
 
@@ -542,11 +543,11 @@ theorem alexanderℤ_swapColumns_of_mem_pentagons
 covered `O`-markings, shifted by the Alexander component of `G.commutationBidegree C`. -/
 theorem alexanderℤ_swapColumns_of_mem_initialPentagons
     {P : GridInitialPentagonBetween C.column C.turnRow x y}
-    (hP : P ∈ G.1.initialPentagons C x y) :
+    (hP : P ∈ G.val.initialPentagons C x y) :
     (G.swapColumns C).alexanderℤ y =
-      G.alexanderℤ x + (G.1.OColumnsOfSquares P.coveredSquares).card +
-        (G.1.commutationBidegree C).2 := by
-  have h := G.1.alexanderTwoℤ_swapColumns_of_mem_initialPentagons C hP
+      G.alexanderℤ x + (G.val.OColumnsOfSquares P.coveredSquares).card +
+        (G.val.commutationBidegree C).2 := by
+  have h := G.val.alexanderTwoℤ_swapColumns_of_mem_initialPentagons C hP
   rw [← val_swapColumns, ← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at h
   omega
 

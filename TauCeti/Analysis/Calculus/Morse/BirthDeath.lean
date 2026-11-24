@@ -131,6 +131,13 @@ theorem deriv_birthDeathPotential (s : ℝ) :
     deriv (birthDeathPotential s) = fun x ↦ x ^ 2 - s :=
   funext fun x ↦ (hasDerivAt_birthDeathPotential s x).deriv
 
+/-- The differential of the birth–death potential at `x` is multiplication by `x² - s`. -/
+@[simp]
+theorem fderiv_birthDeathPotential (s x : ℝ) :
+    fderiv ℝ (birthDeathPotential s) x = (x ^ 2 - s) • ContinuousLinearMap.id ℝ ℝ := by
+  ext
+  simp [← toSpanSingleton_deriv]
+
 /-- The gradient of the birth–death potential is `x² - s`, so its negative gradient field is
 `s - x²`. -/
 @[simp]
@@ -165,7 +172,7 @@ theorem hasDerivAt_deriv_birthDeathPotential_param (s x : ℝ) :
 /-- **The critical points of the birth–death potential** are the solutions of `x² = s`. -/
 theorem fderiv_birthDeathPotential_eq_zero_iff {x : ℝ} :
     fderiv ℝ (birthDeathPotential s) x = 0 ↔ x ^ 2 = s := by
-  rw [← toSpanSingleton_deriv, deriv_birthDeathPotential]
+  rw [fderiv_birthDeathPotential]
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   simpa [sub_eq_zero] using congrArg (· 1) h
 

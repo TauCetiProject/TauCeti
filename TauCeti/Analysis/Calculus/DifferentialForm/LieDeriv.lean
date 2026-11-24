@@ -212,7 +212,7 @@ theorem lieDerivFormWithin_eq_curryLeft_extDerivWithin_add {ω : E → E [⋀^Fi
   let L := (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := k)).toContinuousLinearMap
   -- Product rule for the bilinear insertion `(ω, v) ↦ ι_v ω`.
   have hd : fderivWithin 𝕜 (fun y ↦ (ω y).curryLeft (V y)) s x =
-      (ω x).curryLeft ∘L fderivWithin 𝕜 V s x + L.flip (V x) ∘L fderivWithin 𝕜 ω s x := by
+      (ω x).curryLeft ∘L fderivWithin 𝕜 V s x + curryLeftFlipL (V x) ∘L fderivWithin 𝕜 ω s x := by
     have hL : HasFDerivWithinAt (fun y ↦ L (ω y)) (L ∘L fderivWithin 𝕜 ω s x) s x :=
       L.hasFDerivAt.comp_hasFDerivWithinAt x hω.hasFDerivWithinAt
     refine ((hL.clm_apply hV.hasFDerivWithinAt).fderivWithin hs).trans ?_

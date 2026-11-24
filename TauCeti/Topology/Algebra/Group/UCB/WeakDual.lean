@@ -78,10 +78,12 @@ private theorem leftTranslationWeakDualCLM_comp (g h : G) (φ : WeakDual ℝ (UC
 /-- Contragredient left action of `G` on `WeakDual ℝ (UCB G)`, sending `g` to the weak-* continuous
 linear equivalence `φ ↦ (f ↦ φ (L_{g⁻¹} f))`. -/
 def leftTranslationWeakDual : G →* (WeakDual ℝ (UCB G) ≃L[ℝ] WeakDual ℝ (UCB G)) where
-  toFun g := ContinuousLinearEquiv.equivOfInverse
+  toFun g := ContinuousLinearEquiv.ofContinuousLinearMap
     (leftTranslationWeakDualCLM g) (leftTranslationWeakDualCLM g⁻¹)
-    (fun φ => by simp [leftTranslationWeakDualCLM_comp, leftTranslationWeakDualCLM_one])
-    (fun φ => by simp [leftTranslationWeakDualCLM_comp, leftTranslationWeakDualCLM_one])
+    (ContinuousLinearMap.ext fun φ => by
+      simp [leftTranslationWeakDualCLM_comp, leftTranslationWeakDualCLM_one])
+    (ContinuousLinearMap.ext fun φ => by
+      simp [leftTranslationWeakDualCLM_comp, leftTranslationWeakDualCLM_one])
   map_one' := by
     ext φ
     exact leftTranslationWeakDualCLM_one φ

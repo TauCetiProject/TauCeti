@@ -8,27 +8,29 @@ module
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 
 /-!
-# Coercion and idempotence lemmas for `PositiveLinearMap.ofClass`
+# Coercion and idempotence of `PositiveLinearMap.ofClass`
 
-`PositiveLinearMap.ofClass` reinterprets any map carrying `LinearMapClass` and `OrderHomClass`
-instances as a bundled `PositiveLinearMap`. This module supplies the `@[simp]` function-coercion and
-self-reinterpretation lemmas (`PositiveLinearMap.coe_ofClass` and `PositiveLinearMap.ofClass_self`)
-so declarations returning `PositiveLinearMap.ofClass` simplify without unfolding its definition.
+Mathlib's `PositiveLinearMap.ofClass` reinterprets an element of a type of positive linear maps as
+a bundled positive linear map, but has no lemma computing its coercion to a function. This file
+supplies the simp lemma `PositiveLinearMap.coe_ofClass`, matching `LinearMap.coe_ofClass` and
+`PositiveContinuousLinearMap.coe_ofClass`, together with the self-reinterpretation lemma
+`PositiveLinearMap.ofClass_self`.
 -/
 
 public section
 
 namespace PositiveLinearMap
 
-variable {F R E₁ E₂ : Type*} [Semiring R] [AddCommMonoid E₁] [PartialOrder E₁]
-  [AddCommMonoid E₂] [PartialOrder E₂] [Module R E₁] [Module R E₂]
+variable {F R E₁ E₂ : Type*} [Semiring R]
+  [AddCommMonoid E₁] [PartialOrder E₁] [AddCommMonoid E₂] [PartialOrder E₂]
+  [Module R E₁] [Module R E₂]
 
-/-- Coercing `PositiveLinearMap.ofClass f` to a function recovers `f`. -/
+/-- The positive linear map `PositiveLinearMap.ofClass f` has the same underlying function as
+`f`. -/
 @[simp]
 theorem coe_ofClass [FunLike F E₁ E₂] [LinearMapClass F R E₁ E₂] [OrderHomClass F E₁ E₂]
-    (f : F) : ⇑(ofClass f) = f := by
-  rw [← coe_toLinearMap]
-  simp [ofClass]
+    (f : F) : ⇑(ofClass f : E₁ →ₚ[R] E₂) = f :=
+  rfl
 
 /-- Reinterpreting a bundled `PositiveLinearMap` via `PositiveLinearMap.ofClass` is the identity. -/
 @[simp]

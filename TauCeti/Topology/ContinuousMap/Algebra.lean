@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
 public import Mathlib.Topology.ContinuousMap.Algebra
+public import Mathlib.Topology.Sets.Opens
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 
 /-!
-# Algebraic lemmas on spaces of continuous maps
+# Algebraic operations on continuous maps
 
 When a bundled continuous map `f : C(X, M₀)` into a topological monoid with zero is a unit,
 evaluating `f⁻¹ʳ` at `x : X` agrees with `(f x)⁻¹ʳ` (`ContinuousMap.ringInverse_apply`). Without
@@ -20,10 +21,15 @@ In addition, if a zero-preserving functional on `C(α, A)` does not vanish at `1
 must be nonempty (`ContinuousMap.nonempty_of_map_one_ne_zero`), and on scalar-valued continuous
 maps `C(α, R)` every linear map sends `const α c = c • 1` to `c • φ 1`
 (`ContinuousMap.map_const_eq_smul_map_one`).
+
+For a continuous map `f : s → X` on a subset `s` of a topological additive group, the
+*displacement* `ContinuousMap.displacement f` is the continuous map `z ↦ z - f z`, whose zeros are
+the fixed points of `f` (`ContinuousMap.preimage_displacement_zero`).
 -/
 
 public section
 
+open Set TopologicalSpace
 open scoped Ring
 
 namespace ContinuousMap
@@ -49,5 +55,37 @@ theorem map_const_eq_smul_map_one {α R B Φ : Type*} [TopologicalSpace α] [Sem
     φ (const α c) = c • φ 1 := by
   have hc : const α c = c • (1 : C(α, R)) := by ext; simp
   rw [hc, map_smul]
+
+section Displacement
+
+variable {X S : Type*} [TopologicalSpace X] [AddGroup X] [IsTopologicalAddGroup X] [SetLike S X]
+  {s : S}
+
+/-- The **displacement** of a continuous map `f : s → X` on a subset `s` of a topological additive
+group: the map `z ↦ z - f z`, whose zeros are the fixed points of `f`
+(`ContinuousMap.preimage_displacement_zero`). -/
+def displacement (f : C(s, X)) : C(s, X) :=
+  subtypeVal (s : Set X) - f
+
+/-- The displacement of `f` sends `z` to `z - f z`. -/
+@[simp]
+theorem displacement_apply (f : C(s, X)) (z : s) : f.displacement z = z - f z :=
+  (rfl)
+
+/-- The zeros of the displacement `z ↦ z - f z` are the fixed points of `f`. -/
+theorem preimage_displacement_zero (f : C(s, X)) : f.displacement ⁻¹' {0} = {z | f z = z} := by
+  ext z
+  rw [mem_preimage, mem_singleton_iff, displacement_apply, sub_eq_zero, mem_ofPred_eq]
+  exact eq_comm
+
+/-- The displacement of the restriction of `f : U → X` to an open subset `V ⊆ U` is the
+restriction of the displacement of `f`. -/
+@[simp]
+theorem displacement_comp_inclusion {U V : Opens X} (hVU : V ≤ U) (f : C(U, X)) :
+    (f.comp (inclusion hVU)).displacement = f.displacement.comp (inclusion hVU) := by
+  ext z
+  simp [inclusion]
+
+end Displacement
 
 end ContinuousMap

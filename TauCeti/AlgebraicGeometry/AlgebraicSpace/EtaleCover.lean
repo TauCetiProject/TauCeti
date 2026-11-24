@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.Basic
-public import TauCeti.AlgebraicGeometry.Sites.ZariskiCoproduct
+public import TauCeti.AlgebraicGeometry.Sites.Zariski.Coproduct
 
 /-!
 # Algebraic spaces from étale covers

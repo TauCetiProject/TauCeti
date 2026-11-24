@@ -11,6 +11,8 @@ public import TauCeti.GroupTheory.Amenable.WeakStar
 public import TauCeti.Topology.Algebra.Group.UCB.Orbit
 
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
+import TauCeti.LinearAlgebra.AffineSpace.AffineEquiv
+import TauCeti.Topology.Algebra.GroupAction.Convex
 
 /-!
 # The Day–Rickert affine fixed-point characterization of amenable topological groups
@@ -195,7 +197,7 @@ Hausdorff locally convex real space `E` preserves binary convex combinations in 
 theorem smul_orbitBarycenter (m : Mean G) {K : Set E} [MulAction G K] [ContinuousSMul G K]
     (hK : IsCompact K) (hKc : Convex ℝ K)
     (hcomb : ∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
+      ((g • (⟨a • (y : E) + b • (z : E), hKc y.property z.property ha hb hab⟩ : K) : K) : E) =
         a • ((g • y : K) : E) + b • ((g • z : K) : E))
     (g : G) (x : K) :
     ((g • (⟨m.orbitBarycenter K hK x, m.orbitBarycenter_mem hK hKc x⟩ : K) : K) : E) =
@@ -211,7 +213,7 @@ in `E`, then `m.orbitBarycenter K hK x` is fixed by every `g : G`. -/
 theorem IsLeftInvariant.smul_orbitBarycenter {m : Mean G} (hm : m.IsLeftInvariant) {K : Set E}
     [MulAction G K] [ContinuousSMul G K] (hK : IsCompact K) (hKc : Convex ℝ K)
     (hcomb : ∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
+      ((g • (⟨a • (y : E) + b • (z : E), hKc y.property z.property ha hb hab⟩ : K) : K) : E) =
         a • ((g • y : K) : E) + b • ((g • z : K) : E))
     (g : G) (x : K) :
     ((g • (⟨m.orbitBarycenter K hK x, m.orbitBarycenter_mem hK hKc x⟩ : K) : K) : E) =
@@ -228,61 +230,6 @@ end Mean
 
 section FixedPoint
 
-/-- Equip an invariant subset `K ⊆ E` with the `MulAction G K` and `ContinuousSMul G K` induced by
-`ρ : G →* Function.End E`, and deduce a `ρ`-fixed point in `K` from a subtype fixed-point
-principle. -/
-private theorem exists_fixedPoint_of_subtype {G : Type u} [Monoid G] [TopologicalSpace G]
-    {E : Type v} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {K : Set E} (hKc : Convex ℝ K)
-    (ρ : G →* Function.End E) (hmaps : ∀ g : G, MapsTo (ρ g) K K)
-    (hcont : Continuous fun p : G × K => ρ p.1 (p.2 : E))
-    (hcomb : ∀ (g : G) {y : E}, y ∈ K → ∀ {z : E}, z ∈ K → ∀ {a b : ℝ},
-      0 ≤ a → 0 ≤ b → a + b = 1 → ρ g (a • y + b • z) = a • ρ g y + b • ρ g z)
-    (hfp : ∀ [MulAction G K] [ContinuousSMul G K],
-      (∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-        ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
-          a • ((g • y : K) : E) + b • ((g • z : K) : E)) →
-      ∃ x : K, ∀ g : G, g • x = x) :
-    ∃ x ∈ K, ∀ g : G, ρ g x = x := by
-  let _ : SMul G K := ⟨fun g x => ⟨ρ g x, hmaps g x.2⟩⟩
-  have hcoe (g : G) (x : K) : ((g • x : K) : E) = ρ g x := rfl
-  let _ : MulAction G K :=
-    { one_smul x := Subtype.ext (congrFun (map_one ρ) x)
-      mul_smul g h x := Subtype.ext (congrFun (map_mul ρ g h) x) }
-  have : ContinuousSMul G K := ⟨hcont.subtype_mk fun p => hmaps p.1 p.2.2⟩
-  obtain ⟨x, hx⟩ := hfp fun g y z a b ha hb hab => by
-    rw [hcoe, hcoe, hcoe]
-    exact hcomb g y.2 z.2 ha hb hab
-  exact ⟨x, x.2, fun g => congrArg Subtype.val (hx g)⟩
-
-/-- Deduce a fixed point of `π : G →* (E →ᵃ[ℝ] E)` on an invariant convex subset `K ⊆ E` from a
-subtype fixed-point principle. -/
-private theorem exists_fixedPoint_affineMap_of_subtype {G : Type u} [Monoid G] [TopologicalSpace G]
-    {E : Type v} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {K : Set E} (hKc : Convex ℝ K)
-    (π : G →* (E →ᵃ[ℝ] E)) (hmaps : ∀ g : G, MapsTo (π g) K K)
-    (hcont : Continuous fun p : G × K => π p.1 (p.2 : E))
-    (hfp : ∀ [MulAction G K] [ContinuousSMul G K],
-      (∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-        ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
-          a • ((g • y : K) : E) + b • ((g • z : K) : E)) →
-      ∃ x : K, ∀ g : G, g • x = x) :
-    ∃ x ∈ K, ∀ g : G, π g x = x :=
-  exists_fixedPoint_of_subtype hKc
-    { toFun := fun g => (π g : E → E)
-      map_one' := funext fun x => DFunLike.congr_fun (map_one π) x
-      map_mul' := fun g h => funext fun x => DFunLike.congr_fun (map_mul π g h) x }
-    hmaps hcont (fun _ _ _ _ _ _ _ _ _ hab => Convex.combo_affine_apply hab) hfp
-
-/-- View a monoid homomorphism `G →* (E ≃ᵃ[ℝ] E)` as a homomorphism `G →* (E →ᵃ[ℝ] E)`. -/
-private def toAffineMapHom {G : Type u} [Monoid G] {E : Type v} [AddCommGroup E] [Module ℝ E]
-    (π : G →* (E ≃ᵃ[ℝ] E)) : G →* (E →ᵃ[ℝ] E) :=
-  ((Units.coeHom (E →ᵃ[ℝ] E)).comp AffineEquiv.equivUnitsAffineMap.toMonoidHom).comp π
-
-@[simp]
-private theorem toAffineMapHom_apply {G : Type u} [Monoid G] {E : Type v} [AddCommGroup E]
-    [Module ℝ E] (π : G →* (E ≃ᵃ[ℝ] E)) (g : G) (x : E) :
-    toAffineMapHom π g x = π g x := by
-  simp [toAffineMapHom, AffineEquiv.val_equivUnitsAffineMap_apply]
-
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- **Day–Rickert fixed-point theorem** (intrinsic action on `K`). If an amenable topological group
@@ -293,7 +240,7 @@ theorem Amenable.exists_fixedPoint_subtype [Amenable G] {E : Type v} [AddCommGro
     [T2Space E] {K : Set E} [MulAction G K] [ContinuousSMul G K] (hKne : K.Nonempty)
     (hK : IsCompact K) (hKc : Convex ℝ K)
     (hcomb : ∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
+      ((g • (⟨a • (y : E) + b • (z : E), hKc y.property z.property ha hb hab⟩ : K) : K) : E) =
         a • ((g • y : K) : E) + b • ((g • z : K) : E)) :
     ∃ x : K, ∀ g : G, g • x = x := by
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
@@ -309,11 +256,11 @@ theorem Amenable.exists_fixedPoint_of_mapsTo [Amenable G] {E : Type v} [AddCommG
     [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
     [LocallyConvexSpace ℝ E] [T2Space E] [MulAction G E] {K : Set E} (hKne : K.Nonempty)
     (hK : IsCompact K) (hKc : Convex ℝ K) (hmaps : ∀ g : G, MapsTo (g • ·) K K)
-    (hcont : Continuous fun p : G × K => p.1 • (p.2 : E))
+    (hcont : Continuous fun p : G × K => p.fst • (p.snd : E))
     (hcomb : ∀ (g : G) {y : E}, y ∈ K → ∀ {z : E}, z ∈ K → ∀ {a b : ℝ},
       0 ≤ a → 0 ≤ b → a + b = 1 → g • (a • y + b • z) = a • (g • y) + b • (g • z)) :
     ∃ x ∈ K, ∀ g : G, g • x = x :=
-  exists_fixedPoint_of_subtype hKc MulAction.toEndHom hmaps hcont hcomb fun hcomb' =>
+  hKc.exists_fixedPoint_of_subtype MulAction.toEndHom hmaps hcont hcomb fun hcomb' =>
     Amenable.exists_fixedPoint_subtype hKne hK hKc hcomb'
 
 /-- **Day–Rickert fixed-point theorem** (monoid homomorphism into `E →ᵃ[ℝ] E`). Every jointly
@@ -323,9 +270,9 @@ theorem Amenable.exists_fixedPoint_affineMap [Amenable G] {E : Type v} [AddCommG
     [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
     [LocallyConvexSpace ℝ E] [T2Space E] {K : Set E} (hKne : K.Nonempty) (hK : IsCompact K)
     (hKc : Convex ℝ K) (π : G →* (E →ᵃ[ℝ] E)) (hmaps : ∀ g : G, MapsTo (π g) K K)
-    (hcont : Continuous fun p : G × K => π p.1 (p.2 : E)) :
+    (hcont : Continuous fun p : G × K => π p.fst (p.snd : E)) :
     ∃ x ∈ K, ∀ g : G, π g x = x :=
-  exists_fixedPoint_affineMap_of_subtype hKc π hmaps hcont fun hcomb =>
+  hKc.exists_fixedPoint_affineMap_of_subtype π hmaps hcont fun hcomb =>
     Amenable.exists_fixedPoint_subtype hKne hK hKc hcomb
 
 /-- **Day–Rickert fixed-point theorem** (group homomorphism into `E ≃ᵃ[ℝ] E`). Every jointly
@@ -335,9 +282,10 @@ theorem Amenable.exists_fixedPoint_affineEquiv [Amenable G] {E : Type v} [AddCom
     [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
     [LocallyConvexSpace ℝ E] [T2Space E] {K : Set E} (hKne : K.Nonempty) (hK : IsCompact K)
     (hKc : Convex ℝ K) (π : G →* (E ≃ᵃ[ℝ] E)) (hmaps : ∀ g : G, MapsTo (π g) K K)
-    (hcont : Continuous fun p : G × K => π p.1 (p.2 : E)) :
+    (hcont : Continuous fun p : G × K => π p.fst (p.snd : E)) :
     ∃ x ∈ K, ∀ g : G, π g x = x := by
-  simpa using Amenable.exists_fixedPoint_affineMap hKne hK hKc (toAffineMapHom π)
+  simpa using Amenable.exists_fixedPoint_affineMap hKne hK hKc
+    (AffineEquiv.toAffineMapHom.comp π)
     (fun g x hx => by simpa using hmaps g hx) (by simpa using hcont)
 
 /-- Pointwise action of `UCB.leftTranslationWeakDual` on functions from an index type `ι` into
@@ -368,7 +316,7 @@ theorem Amenable.of_forall_exists_fixedPoint_affineEquiv
       [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E] [T2Space E]
       (K : Set E), K.Nonempty → IsCompact K → Convex ℝ K →
       ∀ (π : G →* (E ≃ᵃ[ℝ] E)), (∀ g : G, MapsTo (π g) K K) →
-        (Continuous fun p : G × K => π p.1 (p.2 : E)) → ∃ x ∈ K, ∀ g : G, π g x = x) :
+        (Continuous fun p : G × K => π p.fst (p.snd : E)) → ∃ x ∈ K, ∀ g : G, π g x = x) :
     Amenable G := by
   -- Embed `Mean G` as constant functions `PUnit.{v + 1} → WeakDual ℝ (UCB G)` so the ambient
   -- Hausdorff locally convex real space lives in `Type (max u v)`.
@@ -385,12 +333,12 @@ theorem Amenable.of_forall_exists_fixedPoint_affineEquiv
     refine ⟨g • m, funext fun _ => ?_⟩
     simp [lift]
   have hcont : Continuous fun p : G × K₀ =>
-      piLeftTranslationAffineEquiv (G := G) PUnit.{v + 1} p.1 p.2.1 := by
+      piLeftTranslationAffineEquiv (G := G) PUnit.{v + 1} p.fst p.snd.val := by
     refine continuous_pi fun i => ?_
     have heval : Continuous
-        (fun x : K₀ => (⟨x.1 i, by obtain ⟨m, hm⟩ := x.2; exact ⟨m, congr_fun hm i⟩⟩ :
+        (fun x : K₀ => (⟨x.val i, by obtain ⟨m, hm⟩ := x.property; exact ⟨m, congr_fun hm i⟩⟩ :
           Set.range (Mean.toWeakDual : Mean G → WeakDual ℝ (UCB G)))) :=
-      ((continuous_apply i).comp continuous_subtype_val).subtype_mk _
+      ((continuous_apply i).comp continuous_subtypeVal).subtype_mk _
     exact Mean.continuous_leftTranslationWeakDual_range_toWeakDual.comp
       (continuous_fst.prodMk (heval.comp continuous_snd))
   obtain ⟨_, ⟨m, rfl⟩, hx⟩ := hfp (PUnit.{v + 1} → WeakDual ℝ (UCB G)) K₀
@@ -408,11 +356,11 @@ theorem Amenable.of_forall_exists_fixedPoint_affineMap
       [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E] [T2Space E]
       (K : Set E), K.Nonempty → IsCompact K → Convex ℝ K →
       ∀ (π : G →* (E →ᵃ[ℝ] E)), (∀ g : G, MapsTo (π g) K K) →
-        (Continuous fun p : G × K => π p.1 (p.2 : E)) → ∃ x ∈ K, ∀ g : G, π g x = x) :
+        (Continuous fun p : G × K => π p.fst (p.snd : E)) → ∃ x ∈ K, ∀ g : G, π g x = x) :
     Amenable G :=
   Amenable.of_forall_exists_fixedPoint_affineEquiv.{u, v} fun E _ _ _ _ _ _ _ K hKne hK hKc π
     hmaps hcont => by
-    simpa using hfp E K hKne hK hKc (toAffineMapHom π)
+    simpa using hfp E K hKne hK hKc (AffineEquiv.toAffineMapHom.comp π)
       (fun g x hx => by simpa using hmaps g hx) (by simpa using hcont)
 
 /-- If every jointly continuous action of `G` on a nonempty compact convex subset `K` of a Hausdorff
@@ -424,13 +372,13 @@ theorem Amenable.of_forall_exists_fixedPoint_subtype
       (K : Set E) [MulAction G K] [ContinuousSMul G K],
       K.Nonempty → IsCompact K → (hKc : Convex ℝ K) →
       (∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-        ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
+        ((g • (⟨a • (y : E) + b • (z : E), hKc y.property z.property ha hb hab⟩ : K) : K) : E) =
           a • ((g • y : K) : E) + b • ((g • z : K) : E)) →
       ∃ x : K, ∀ g : G, g • x = x) :
     Amenable G :=
   Amenable.of_forall_exists_fixedPoint_affineMap.{u, v}
     fun E _ _ _ _ _ _ _ K hKne hK hKc π hmaps hcont =>
-      exists_fixedPoint_affineMap_of_subtype hKc π hmaps hcont (hfp E K hKne hK hKc)
+      hKc.exists_fixedPoint_affineMap_of_subtype π hmaps hcont (hfp E K hKne hK hKc)
 
 /-- **Day–Rickert fixed-point characterization of amenability** (`AffineMap` form, universe
 polymorphic in `v`). A topological group `G : Type u` is amenable if and only if every jointly
@@ -442,7 +390,7 @@ theorem amenable_iff_forall_exists_fixedPoint_affineMap :
         [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E] [T2Space E]
         (K : Set E), K.Nonempty → IsCompact K → Convex ℝ K →
         ∀ (π : G →* (E →ᵃ[ℝ] E)), (∀ g : G, MapsTo (π g) K K) →
-          (Continuous fun p : G × K => π p.1 (p.2 : E)) → ∃ x ∈ K, ∀ g : G, π g x = x :=
+          (Continuous fun p : G × K => π p.fst (p.snd : E)) → ∃ x ∈ K, ∀ g : G, π g x = x :=
   ⟨fun _ _ _ _ _ _ _ _ _ _ hKne hK hKc π hmaps hcont =>
       Amenable.exists_fixedPoint_affineMap hKne hK hKc π hmaps hcont,
     Amenable.of_forall_exists_fixedPoint_affineMap.{u, v}⟩
@@ -457,7 +405,7 @@ theorem amenable_iff_forall_exists_fixedPoint_affineEquiv :
         [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E] [T2Space E]
         (K : Set E), K.Nonempty → IsCompact K → Convex ℝ K →
         ∀ (π : G →* (E ≃ᵃ[ℝ] E)), (∀ g : G, MapsTo (π g) K K) →
-          (Continuous fun p : G × K => π p.1 (p.2 : E)) → ∃ x ∈ K, ∀ g : G, π g x = x :=
+          (Continuous fun p : G × K => π p.fst (p.snd : E)) → ∃ x ∈ K, ∀ g : G, π g x = x :=
   ⟨fun _ _ _ _ _ _ _ _ _ _ hKne hK hKc π hmaps hcont =>
       Amenable.exists_fixedPoint_affineEquiv hKne hK hKc π hmaps hcont,
     Amenable.of_forall_exists_fixedPoint_affineEquiv.{u, v}⟩
@@ -474,7 +422,7 @@ theorem amenable_iff_forall_exists_fixedPoint_subtype :
         (K : Set E) [MulAction G K] [ContinuousSMul G K],
         K.Nonempty → IsCompact K → (hKc : Convex ℝ K) →
         (∀ (g : G) (y z : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-          ((g • (⟨a • (y : E) + b • (z : E), hKc y.2 z.2 ha hb hab⟩ : K) : K) : E) =
+          ((g • (⟨a • (y : E) + b • (z : E), hKc y.property z.property ha hb hab⟩ : K) : K) : E) =
             a • ((g • y : K) : E) + b • ((g • z : K) : E)) →
         ∃ x : K, ∀ g : G, g • x = x :=
   ⟨fun _ _ _ _ _ _ _ _ _ _ _ _ hKne hK hKc hcomb =>

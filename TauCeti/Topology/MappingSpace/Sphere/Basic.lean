@@ -66,14 +66,14 @@ def basedMapSphereHomeomorph :
 @[simp]
 theorem basedMapSphereHomeomorph_apply
     (f : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) (z : Fin k → I) :
-    basedMapSphereHomeomorph k x s₀ f z = f.1 (sphereCollapse k s₀ z) :=
+    basedMapSphereHomeomorph k x s₀ f z = f.val (sphereCollapse k s₀ z) :=
   BasedMap.homeomorphGenLoop_apply _ _ _ _ _ _ _
 
 /-- The inverse of `basedMapSphereHomeomorph` evaluates at `sphereCollapse z` to the value of the
 generalized loop at `z`. -/
 @[simp]
 theorem basedMapSphereHomeomorph_symm_apply (p : Ω^ (Fin k) X x) (z : Fin k → I) :
-    ((basedMapSphereHomeomorph k x s₀).symm p).1 (sphereCollapse k s₀ z) = p z :=
+    ((basedMapSphereHomeomorph k x s₀).symm p).val (sphereCollapse k s₀ z) = p z :=
   BasedMap.homeomorphGenLoop_symm_apply_comp _ _ _ _ _ _ _
 
 /-- The homeomorphism `basedMapSphereHomeomorph` is natural in `X`: it commutes with

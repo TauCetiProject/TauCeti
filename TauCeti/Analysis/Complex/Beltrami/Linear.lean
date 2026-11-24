@@ -14,6 +14,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.LinearAlgebra.Complex.Determinant
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
 /-!
 # Scalar Beltrami coordinates and the affine normalizer
@@ -28,7 +29,25 @@ A real-linear map `A` intertwines a tame structure `J` with multiplication by `i
 is a complex multiple of the affine normalizer. For the differential of `f` at `z` this is the
 pointwise Beltrami equation `\bar∂f(z) = μ_J ∂f(z)`
 (`TauCeti.Beltrami.isComplexLinear_iff_conjWirtingerDeriv_eq`). The coefficient vanishes exactly
-at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`).
+at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`). A real-linear `K`
+with `K² = -1` and `K 1 ≠ -i`, tame or not, is likewise intertwined with `i` by the affine
+normalizer of `(i - K 1) / (conj (K 1) - i)` (`TauCeti.Beltrami.linearMap_apply_eq_I_mul`).
+
+The coefficient is read off from the single value `J 1`: `μ_J (conj (J 1) - i) = i - J 1`, so
+`|μ_J| = |J 1 - i| / |J 1 + i| ≤ |J 1 - i|` (`TauCeti.Beltrami.norm_coefficientEquiv`,
+`TauCeti.Beltrami.norm_coefficientEquiv_le`). When the structure sits on the target instead, a
+differential is complex linear from `i` to `J` exactly when `\bar∂f(z) = -μ_J conj (∂f(z))`
+(`TauCeti.Beltrami.isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq`). This is the
+equation satisfied by a map into a plane carrying a varying complex structure, such as the
+projection of a pseudoholomorphic curve to the base of normal coordinates. Since the standard area
+form pulls back to `|∂f|² - |\bar∂f|²` on the coordinate frame
+(`TauCeti.Beltrami.stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I`), such a map preserves
+orientation, with area factor `(1 - |μ_J|²) |∂f|²`
+(`TauCeti.Beltrami.stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I_of_isComplexLinear`).
+In terms of `J 1` alone it satisfies `|\bar∂f| ≤ |J 1 - i| |∂f|`
+(`TauCeti.Beltrami.norm_conjWirtingerDeriv_le_of_isComplexLinear`), and its area factor is at
+least `(1 - |J 1 - i|²) |∂f|²`
+(`TauCeti.Beltrami.mul_normSq_le_stdComplexSymplecticForm_fderiv_of_isComplexLinear`).
 
 This is the pointwise normalization used before solving the variable-coefficient Beltrami
 equation. It does not construct isothermal charts or assume a solution of that equation.
@@ -207,7 +226,7 @@ theorem antilinearMap_mem_cayleyBall_iff (μ : ℂ) :
     rw [Complex.normSq_eq_norm_sq] at h1
     nlinarith [norm_nonneg μ]
   · intro h
-    refine ⟨isComplexAntilinear_antilinearMap μ, fun z hz => ?_⟩
+    refine ⟨isComplexAntilinear_iff.mp (isComplexAntilinear_antilinearMap μ), fun z hz => ?_⟩
     simp only [stdComplexSymplecticForm_apply_ofComplexModule,
       ContinuousLinearMap.coe_coe, antilinearMap_apply,
       Complex.normSq_mul, Complex.normSq_conj]
@@ -223,14 +242,16 @@ def cayleyBallEquiv :
   toFun C := ⟨C.val 1, by
     have he : (antilinearMap (C.val 1)).toLinearMap = C.val := by
       ext z
-      exact (antilinear_apply (SymplecticForm.mem_cayleyBall.mp C.property).1 z).symm
+      exact (antilinear_apply
+        (isComplexAntilinear_iff.mpr (SymplecticForm.mem_cayleyBall.mp C.property).1) z).symm
     exact (antilinearMap_mem_cayleyBall_iff _).mp (he.symm ▸ C.property)⟩
   invFun μ := ⟨(antilinearMap μ.val).toLinearMap,
     (antilinearMap_mem_cayleyBall_iff _).mpr μ.property⟩
   left_inv C := by
     apply Subtype.ext
     ext z
-    exact (antilinear_apply (SymplecticForm.mem_cayleyBall.mp C.property).1 z).symm
+    exact (antilinear_apply
+      (isComplexAntilinear_iff.mpr (SymplecticForm.mem_cayleyBall.mp C.property).1) z).symm
   right_inv μ := by
     apply Subtype.ext
     simp
@@ -269,7 +290,7 @@ theorem linearMap_intertwines (J : AlmostComplexStructure ℂ)
   let C := J₀.cayley J
   have hC := stdComplexSymplecticForm_compatible.cayley_mem_cayleyBall hJ
   have ha : IsComplexAntilinear J₀.toLinearMap J₀.toLinearMap C :=
-    (SymplecticForm.mem_cayleyBall.mp hC).1
+    isComplexAntilinear_iff.mpr (SymplecticForm.mem_cayleyBall.mp hC).1
   have hrel := LinearMap.congr_fun
     (stdComplexSymplecticForm_tames.cayley_mul_one_sub_mul hJ) z
   simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.add_apply,
@@ -285,6 +306,52 @@ theorem linearMap_intertwines (J : AlmostComplexStructure ℂ)
   rw [← hstd]
   apply J₀.injective
   simpa only [map_add, J₀.apply_apply, neg_add_rev, add_comm] using hh
+
+/-- **The affine normalizer of a complex structure of either orientation.** If a real-linear
+endomorphism `K` of the plane squares to `-1` and `K 1 ≠ -i`, then the affine normalizer of the
+coefficient `(i - K 1) / (conj (K 1) - i)` intertwines `K` with multiplication by `i`. Unlike
+`linearMap_intertwines`, `K` need not be tamed by the standard symplectic form. -/
+theorem linearMap_apply_eq_I_mul {K : ℂ →L[ℝ] ℂ} (hK : ∀ v, K (K v) = -v) (hK1 : K 1 ≠ -I)
+    (v : ℂ) :
+    linearMap ((I - K 1) / (conj (K 1) - I)) (K v) =
+      I * linearMap ((I - K 1) / (conj (K 1) - I)) v := by
+  set μ := (I - K 1) / (conj (K 1) - I)
+  have hμ : μ * (conj (K 1) - I) = I - K 1 := by
+    refine div_mul_cancel₀ _ fun h0 ↦ hK1 ?_
+    have := congrArg conj (sub_eq_zero.mp h0)
+    rwa [conj_conj, conj_I] at this
+  -- `K 1` is off the real line, since `K (r • 1) = r • K 1` cannot square to `-1`.
+  have ha : (K 1).im ≠ 0 := by
+    intro h
+    have hre : K 1 = (K 1).re • (1 : ℂ) := by
+      apply Complex.ext <;> simp [h]
+    have h1 := hK 1
+    rw [hre, map_smul, hre, smul_smul] at h1
+    have := congrArg Complex.re h1
+    simp only [Complex.real_smul, Complex.re_ofReal_mul, Complex.one_re, Complex.neg_re,
+      Complex.ofReal_mul, mul_one] at this
+    nlinarith [mul_self_nonneg (K 1).re]
+  -- Both sides are real-linear in `v`, and agree at `1` and at `K 1`, which span the plane.
+  have hv : v = (v.re - v.im * (K 1).re / (K 1).im) • (1 : ℂ) + (v.im / (K 1).im) • K 1 := by
+    apply Complex.ext
+    · simp only [Complex.add_re, Complex.real_smul, mul_one, Complex.ofReal_re,
+        Complex.re_ofReal_mul]
+      field_simp
+      ring
+    · simp only [Complex.add_im, Complex.real_smul, mul_one, Complex.ofReal_im,
+        Complex.im_ofReal_mul, zero_add]
+      field_simp
+  have h1 : linearMap μ (K 1) = I * linearMap μ 1 := by
+    simp only [linearMap_apply, map_one]
+    linear_combination hμ
+  have h2 : linearMap μ (K (K 1)) = I * linearMap μ (K 1) := by
+    simp only [hK 1, linearMap_apply, map_neg, map_one]
+    linear_combination (-I) * hμ - (1 + μ) * I_sq
+  rw [hv]
+  simp only [map_add, map_smul]
+  rw [h2, h1]
+  simp only [Complex.real_smul]
+  ring
 
 /-- The real-linear coordinate change given by the coefficient makes `J` exactly standard.
 Applied to the value of a field at a chosen point, this is the normalization `μ(0) = 0`. -/
@@ -389,6 +456,12 @@ private theorem isComplexLinear_iff_exists_eq_mul_linearMap (J : AlmostComplexSt
     rw [h]
     ring
 
+/-- A real-linear map of the plane is determined by its values at `1` and `i`. -/
+private theorem apply_eq_re_mul_apply_one_add_im_mul_apply_I (A : ℂ →L[ℝ] ℂ) (z : ℂ) :
+    A z = z.re * A 1 + z.im * A I := by
+  simpa only [ContinuousLinearMap.coe_coe, Complex.real_smul] using
+    A.toLinearMap.apply_eq_re_smul_one_add_im_smul_I z
+
 /-- **Pointwise Beltrami equation.** A real-linear map of the plane is complex linear from a tame
 structure `J` to `i` iff its antiholomorphic part is `μ_J` times its holomorphic part, in terms of
 the values `A 1` and `A i`: `A 1 + i A i = μ_J (A 1 - i A i)`. -/
@@ -409,10 +482,7 @@ theorem isComplexLinear_iff_apply_one_add_I_mul_apply_I (J : AlmostComplexStruct
     refine ⟨(2 : ℂ)⁻¹ * (A 1 - I * A I), fun v => ?_⟩
     have hc : conj v = v.re - v.im * I := by
       apply Complex.ext <;> simp
-    have hAv : A v = v.re * A 1 + v.im * A I := by
-      simpa only [ContinuousLinearMap.coe_coe, Complex.real_smul] using
-        A.toLinearMap.apply_eq_re_smul_one_add_im_smul_I v
-    rw [hAv, linearMap_apply, hc]
+    rw [apply_eq_re_mul_apply_one_add_im_mul_apply_I, linearMap_apply, hc]
     linear_combination (norm := (ring_nf; simp only [I_sq]; ring_nf))
       ((2 : ℂ)⁻¹ * (↑v.re - ↑v.im * I)) * h + ((2 : ℂ)⁻¹ * (A 1 - I * A I)) * Complex.re_add_im v
 
@@ -433,6 +503,55 @@ theorem isComplexLinear_iff_conjWirtingerDeriv_eq (J : AlmostComplexStructure �
     ring
   · intro h
     linear_combination 2 * h
+
+/-- The Wirtinger parts `A 1 + i A i` and `A 1 - i A i` of `A ∘ (z ↦ z + a conj z)`, in terms
+of those of `A`. -/
+private theorem comp_linearMap_apply_one_add_sub_I_mul_apply_I (A : ℂ →L[ℝ] ℂ) (a : ℂ) :
+    A (linearMap a 1) + I * A (linearMap a I) =
+        (A 1 + I * A I) + a * (A 1 - I * A I) ∧
+      A (linearMap a 1) - I * A (linearMap a I) =
+        (A 1 - I * A I) + conj a * (A 1 + I * A I) := by
+  obtain ⟨s, t, rfl⟩ : ∃ s t : ℝ, a = s + t * I := ⟨a.re, a.im, (re_add_im a).symm⟩
+  rw [apply_eq_re_mul_apply_one_add_im_mul_apply_I A (linearMap _ 1),
+    apply_eq_re_mul_apply_one_add_im_mul_apply_I A (linearMap _ I)]
+  simp only [linearMap_apply, map_one, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
+    add_re, add_im, one_re, one_im, mul_re, mul_im, neg_re, neg_im, ofReal_re, ofReal_im, I_re,
+    I_im]
+  push_cast
+  constructor <;> ring_nf <;> simp only [I_sq] <;> ring
+
+/-- **The coefficient after an affine change of coordinates.** Let `J` and `J'` be tame
+structures with Beltrami coefficients `μ` and `ν` related by `ν (1 - conj a μ) = μ - a`, that is,
+`ν = (μ - a) / (1 - conj a μ)`. Then a real-linear map `A` intertwines `J'` with `i` exactly
+when `A ∘ (z ↦ z + a conj z)` intertwines `J` with `i`. For `a = μ` the structure `J'` is the
+standard one, which is the normalization `μ(0) = 0` of `transport_linearEquiv_eq_std`. -/
+theorem isComplexLinear_comp_linearMap_iff (J J' : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) (hJ' : stdComplexSymplecticForm.Tames J') {a : ℂ}
+    (h : (coefficientEquiv ⟨J', hJ'⟩).val * (1 - conj a * (coefficientEquiv ⟨J, hJ⟩).val) =
+      (coefficientEquiv ⟨J, hJ⟩).val - a) (A : ℂ →L[ℝ] ℂ) :
+    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        (A.comp (linearMap a)).toLinearMap ↔
+      IsComplexLinear J'.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        A.toLinearMap := by
+  rw [isComplexLinear_iff_apply_one_add_I_mul_apply_I J hJ,
+    isComplexLinear_iff_apply_one_add_I_mul_apply_I J' hJ']
+  set μ := (coefficientEquiv ⟨J, hJ⟩).val
+  set ν := (coefficientEquiv ⟨J', hJ'⟩).val
+  obtain ⟨h₁, h₂⟩ := comp_linearMap_apply_one_add_sub_I_mul_apply_I A a
+  simp only [ContinuousLinearMap.comp_apply, h₁, h₂]
+  -- The denominator `1 - conj a μ` does not vanish: otherwise `μ = a` and `‖μ‖ = 1`.
+  have hne : 1 - conj a * μ ≠ 0 := by
+    intro h0
+    have hμa : μ = a := by linear_combination -h + ν * h0
+    have hμ : ‖μ‖ < 1 := (coefficientEquiv ⟨J, hJ⟩).property
+    rw [← hμa] at h0
+    exact one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hμ.le hμ h0
+  constructor
+  · intro hA
+    apply mul_left_cancel₀ hne
+    linear_combination hA - (A 1 - I * A I) * h
+  · intro hA
+    linear_combination (1 - μ * conj a) * hA + (A 1 - I * A I) * h
 
 /-- The scalar coefficient of a tame structure vanishes exactly at the standard structure. -/
 theorem coefficientEquiv_eq_zero_iff (J : AlmostComplexStructure ℂ)
@@ -460,6 +579,159 @@ theorem not_isLocalDiffeomorphAt_linearMap_one (z : ℂ) {n : WithTop ℕ∞} (h
     simp [mfderiv_eq_fderiv, (linearMap 1).fderiv, e]
   have he := congrArg e (hd.bijective.injective hk)
   simp at he
+
+/-! ### The coefficient from the value at one, and the equation on the target -/
+
+/-- The coefficient of a tame structure is determined by the value `J 1`:
+`μ_J (conj (J 1) - i) = i - J 1`. -/
+theorem coefficientEquiv_mul_conj_sub_I (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) :
+    (coefficientEquiv ⟨J, hJ⟩).val * (conj (J 1) - I) = I - J 1 := by
+  have h := linearMap_intertwines J hJ 1
+  simp only [linearMap_apply, map_one, mul_one] at h
+  linear_combination h
+
+/-- The value `J 1` of a tame structure lies in the upper half plane, so it is at distance at
+least one from `-i`. -/
+theorem one_le_norm_apply_one_add_I (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) : 1 ≤ ‖J 1 + I‖ := by
+  have him := (stdComplexSymplecticForm_tames_iff_im_pos J).1 hJ
+  have h := Complex.abs_im_le_norm (J 1 + I)
+  rw [Complex.add_im, Complex.I_im, abs_of_pos (by linarith)] at h
+  linarith
+
+/-- The modulus of the coefficient of a tame structure: `|μ_J| = |J 1 - i| / |J 1 + i|`. -/
+theorem norm_coefficientEquiv (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) :
+    ‖(coefficientEquiv ⟨J, hJ⟩).val‖ = ‖J 1 - I‖ / ‖J 1 + I‖ := by
+  have hpos := zero_lt_one.trans_le (one_le_norm_apply_one_add_I J hJ)
+  have hc : ‖conj (J 1) - I‖ = ‖J 1 + I‖ := by
+    rw [← Complex.norm_conj (J 1 + I), map_add, Complex.conj_I, sub_eq_add_neg]
+  have h := congrArg norm (coefficientEquiv_mul_conj_sub_I J hJ)
+  rw [norm_mul, hc, ← norm_neg (I - J 1), neg_sub] at h
+  rw [eq_div_iff hpos.ne', h]
+
+/-- The coefficient of a tame structure is at most the distance from `J 1` to `i`:
+`|μ_J| ≤ |J 1 - i|`. -/
+theorem norm_coefficientEquiv_le (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) :
+    ‖(coefficientEquiv ⟨J, hJ⟩).val‖ ≤ ‖J 1 - I‖ := by
+  rw [norm_coefficientEquiv]
+  exact div_le_self (norm_nonneg _) (one_le_norm_apply_one_add_I J hJ)
+
+/-- **Pointwise Beltrami equation on the target.** A real-linear map of the plane is complex linear
+from `i` to a tame structure `J` iff `A 1 + i A i = -μ_J conj (A 1 - i A i)`: composing with the
+affine normalizer of `J` must give a complex-linear map. -/
+theorem isComplexLinear_ofComplexModule_iff_apply_one_add_I_mul_apply_I
+    (J : AlmostComplexStructure ℂ) (hJ : stdComplexSymplecticForm.Tames J) (A : ℂ →L[ℝ] ℂ) :
+    IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+        A.toLinearMap ↔
+      A 1 + I * A I = -(coefficientEquiv ⟨J, hJ⟩).val * conj (A 1 - I * A I) := by
+  set e := linearEquiv (coefficientEquiv ⟨J, hJ⟩).val (normSq_coefficient_ne_one J hJ) with he_def
+  -- The normalizer `e` carries `J` to the standard structure, so `J` is its transport back.
+  have hJe : J = (AlmostComplexStructure.ofComplexModule ℂ).transport e.toLinearEquiv.symm :=
+    transport_linearEquiv_eq_std J hJ ▸ (J.transport_symm_transport e.toLinearEquiv).symm
+  -- `A` is complex linear into `J` iff its composite with the normalizer `e` is complex linear.
+  have hiff : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+      J.toLinearMap A.toLinearMap ↔
+      IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        ((e : ℂ →L[ℝ] ℂ).comp A).toLinearMap := by
+    rw [← isComplexLinearMap_iff_isComplexLinear, ← isComplexLinearMap_iff_isComplexLinear, hJe,
+      e.toLinearEquiv.isComplexLinearMap_transport_symm_iff, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  rw [hiff, isComplexLinear_iff_apply_one_add_I_mul_apply_I _ stdComplexSymplecticForm_tames,
+    coefficientEquiv_std]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, he_def,
+    linearEquiv_apply, zero_mul, map_sub, map_mul, Complex.conj_I]
+  constructor <;> intro h <;> linear_combination h
+
+/-- **Pointwise Beltrami equation for a differential on the target.** The real differential of `f`
+at `z` is complex linear from `i` to a tame structure `J` iff `\bar∂f(z) = -μ_J conj (∂f(z))`. No
+differentiability is needed: both sides use the totalized derivative. -/
+theorem isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) (f : ℂ → ℂ) (z : ℂ) :
+    IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+        (fderiv ℝ f z).toLinearMap ↔
+      conjWirtingerDeriv f z 1 =
+        -(coefficientEquiv ⟨J, hJ⟩).val * conj (wirtingerDeriv f z 1) := by
+  rw [isComplexLinear_ofComplexModule_iff_apply_one_add_I_mul_apply_I J hJ, wirtingerDeriv_apply,
+    conjWirtingerDeriv_apply]
+  simp only [smul_eq_mul, mul_one, map_mul, map_sub, map_inv₀, map_ofNat, Complex.conj_I]
+  constructor
+  · intro h
+    linear_combination (2 : ℂ)⁻¹ * h
+  · intro h
+    linear_combination (2 : ℂ) * h
+
+/-- The standard area form on the image of the coordinate frame under the differential of `f` is
+`|∂f|² - |\bar∂f|²`. -/
+theorem stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I (f : ℂ → ℂ) (z : ℂ) :
+    stdComplexSymplecticForm (fderiv ℝ f z 1) (fderiv ℝ f z I) =
+      Complex.normSq (wirtingerDeriv f z 1) - Complex.normSq (conjWirtingerDeriv f z 1) := by
+  have h1 : fderiv ℝ f z 1 = wirtingerDeriv f z 1 + conjWirtingerDeriv f z 1 :=
+    (wirtingerDeriv_add_conjWirtingerDeriv f z 1).symm
+  have hI : fderiv ℝ f z I = I * (wirtingerDeriv f z 1 - conjWirtingerDeriv f z 1) := by
+    rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply]
+    simp only [smul_eq_mul, mul_one]
+    linear_combination fderiv ℝ f z I * Complex.I_sq
+  rw [h1, hI, stdComplexSymplecticForm_apply, Complex.normSq_apply, Complex.normSq_apply]
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
+    Complex.I_im, Complex.sub_re, Complex.sub_im]
+  ring
+
+/-- **The projected area of a solution of the target Beltrami equation.** If the differential of
+`f` at `z` is complex linear from `i` to a tame structure `J`, then `f` preserves orientation
+there: the standard area form pulls back to `(1 - |μ_J|²) |∂f|² ≥ 0` on the coordinate frame. -/
+theorem stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I_of_isComplexLinear
+    (J : AlmostComplexStructure ℂ) (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    stdComplexSymplecticForm (fderiv ℝ f z 1) (fderiv ℝ f z I) =
+      (1 - Complex.normSq (coefficientEquiv ⟨J, hJ⟩).val) *
+        Complex.normSq (wirtingerDeriv f z 1) := by
+  rw [stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I,
+    (isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq J hJ f z).1 hf]
+  simp only [Complex.normSq_mul, Complex.normSq_neg, Complex.normSq_conj]
+  ring
+
+/-- **Distortion of a solution of the target Beltrami equation.** If the differential of `f` at `z`
+is complex linear from `i` to a tame structure `J`, then
+`|\bar∂f(z)| |J 1 + i| = |J 1 - i| |∂f(z)|`. -/
+theorem norm_conjWirtingerDeriv_mul_norm_apply_one_add_I_eq_of_isComplexLinear
+    (J : AlmostComplexStructure ℂ) (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    ‖conjWirtingerDeriv f z 1‖ * ‖J 1 + I‖ = ‖J 1 - I‖ * ‖wirtingerDeriv f z 1‖ := by
+  have hpos := zero_lt_one.trans_le (one_le_norm_apply_one_add_I J hJ)
+  rw [(isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq J hJ f z).1 hf, norm_mul,
+    norm_neg, Complex.norm_conj, norm_coefficientEquiv]
+  field_simp
+
+/-- **Pointwise distortion bound for the target Beltrami equation.** If the differential of `f` at
+`z` is complex linear from `i` to a tame structure `J`, then `|\bar∂f(z)| ≤ |J 1 - i| |∂f(z)|`. -/
+theorem norm_conjWirtingerDeriv_le_of_isComplexLinear (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    ‖conjWirtingerDeriv f z 1‖ ≤ ‖J 1 - I‖ * ‖wirtingerDeriv f z 1‖ := by
+  rw [(isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq J hJ f z).1 hf, norm_mul,
+    norm_neg, Complex.norm_conj]
+  exact mul_le_mul_of_nonneg_right (norm_coefficientEquiv_le J hJ) (norm_nonneg _)
+
+/-- **Lower bound for the projected area of a solution of the target Beltrami equation.** If the
+differential of `f` at `z` is complex linear from `i` to a tame structure `J`, the standard area
+form pulls back to at least `(1 - |J 1 - i|²) |∂f(z)|²` on the coordinate frame. -/
+theorem mul_normSq_le_stdComplexSymplecticForm_fderiv_of_isComplexLinear
+    (J : AlmostComplexStructure ℂ) (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    (1 - ‖J 1 - I‖ ^ 2) * Complex.normSq (wirtingerDeriv f z 1) ≤
+      stdComplexSymplecticForm (fderiv ℝ f z 1) (fderiv ℝ f z I) := by
+  rw [stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I_of_isComplexLinear J hJ hf,
+    Complex.normSq_eq_norm_sq (coefficientEquiv ⟨J, hJ⟩).val]
+  have h := pow_le_pow_left₀ (norm_nonneg _) (norm_coefficientEquiv_le J hJ) 2
+  exact mul_le_mul_of_nonneg_right (by linarith) (Complex.normSq_nonneg _)
 
 section Families
 

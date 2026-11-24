@@ -190,38 +190,16 @@ theorem tendsto_iff_forall_apply_tendsto {ι : Type*} {l : Filter ι} {ms : ι �
 instance instContinuousSMul : ContinuousSMul G (Mean G) where
   continuous_smul := by
     -- Every mean is `1`-Lipschitz and `g ↦ L_{g⁻¹} f` is norm-continuous for each `f : UCB G`.
-    refine continuous_iff_continuousAt.2 fun ⟨g₀, m₀⟩ => ?_
-    rw [ContinuousAt, tendsto_iff_forall_apply_tendsto]
-    intro f
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    have hbound (p : G × Mean G) :
-        ‖(p.1 • p.2) f - (g₀ • m₀) f‖ ≤
-          ‖UCB.leftTranslation p.1⁻¹ f - UCB.leftTranslation g₀⁻¹ f‖ +
-            ‖p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)‖ := by
-      simp only [Real.norm_eq_abs, smul_apply]
-      calc |p.2 (UCB.leftTranslation p.1⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)|
-          = |(p.2 (UCB.leftTranslation p.1⁻¹ f) - p.2 (UCB.leftTranslation g₀⁻¹ f)) +
-              (p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f))| := by ring_nf
-        _ ≤ |p.2 (UCB.leftTranslation p.1⁻¹ f) - p.2 (UCB.leftTranslation g₀⁻¹ f)| +
-              |p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)| :=
-            abs_add_le _ _
-        _ ≤ ‖UCB.leftTranslation p.1⁻¹ f - UCB.leftTranslation g₀⁻¹ f‖ +
-              |p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)| := by
-            gcongr
-            exact p.2.abs_apply_sub_apply_le _ _
-    have h₁ : Tendsto
-        (fun p : G × Mean G => ‖UCB.leftTranslation p.1⁻¹ f - UCB.leftTranslation g₀⁻¹ f‖)
-        (𝓝 (g₀, m₀)) (𝓝 0) := by
-      have hc : Continuous fun p : G × Mean G => UCB.leftTranslation p.1⁻¹ f :=
-        (UCB.continuous_leftTranslation_apply f).comp (continuous_inv.comp continuous_fst)
-      exact tendsto_iff_norm_sub_tendsto_zero.1 hc.continuousAt
-    have h₂ : Tendsto
-        (fun p : G × Mean G => ‖p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)‖)
-        (𝓝 (g₀, m₀)) (𝓝 0) := by
-      have hc : Continuous fun p : G × Mean G => p.2 (UCB.leftTranslation g₀⁻¹ f) :=
-        (continuous_eval_const _).comp continuous_snd
-      exact tendsto_iff_norm_sub_tendsto_zero.1 hc.continuousAt
-    exact squeeze_zero (fun _ => norm_nonneg _) hbound (by simpa using h₁.add h₂)
+    have heval : Continuous fun q : UCB G × Mean G => q.snd q.fst :=
+      continuous_prod_of_continuous_lipschitzWith _ 1
+        (fun f => continuous_eval_const f) (fun m => m.lipschitzWith)
+    refine continuous_iff_continuousAt.2 fun ⟨g₀, m₀⟩ =>
+      tendsto_iff_forall_apply_tendsto.2 fun f => ?_
+    have hc : Continuous fun p : G × Mean G => (p.fst • p.snd) f := by
+      simpa only [Function.comp_def, smul_apply] using
+        heval.comp (((UCB.continuous_leftTranslation_apply f).comp
+          (continuous_inv.comp continuous_fst)).prodMk continuous_snd)
+    exact hc.continuousAt
 
 /-- `Mean.toWeakDual` intertwines the left `G`-action on `Mean G` with
 `UCB.leftTranslationWeakDual`. -/
@@ -244,15 +222,15 @@ theorem mapsTo_leftTranslationWeakDual_range_toWeakDual (g : G) :
 `G × Set.range Mean.toWeakDual`. -/
 theorem continuous_leftTranslationWeakDual_range_toWeakDual :
     Continuous fun p : G × Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) =>
-      UCB.leftTranslationWeakDual p.1 (p.2 : WeakDual ℝ (UCB G)) := by
+      UCB.leftTranslationWeakDual p.fst (p.snd : WeakDual ℝ (UCB G)) := by
   let e : Mean G ≃ₜ Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) :=
     isEmbedding_toWeakDual.toHomeomorph
   have heq : (fun p : G × Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) =>
-      UCB.leftTranslationWeakDual p.1 (p.2 : WeakDual ℝ (UCB G))) =
-      fun p => (p.1 • e.symm p.2).toWeakDual := by
+      UCB.leftTranslationWeakDual p.fst (p.snd : WeakDual ℝ (UCB G))) =
+      fun p => (p.fst • e.symm p.snd).toWeakDual := by
     ext p
-    have hp : (e.symm p.2).toWeakDual = (p.2 : WeakDual ℝ (UCB G)) :=
-      congrArg Subtype.val (e.apply_symm_apply p.2)
+    have hp : (e.symm p.snd).toWeakDual = (p.snd : WeakDual ℝ (UCB G)) :=
+      congrArg Subtype.val (e.apply_symm_apply p.snd)
     rw [toWeakDual_smul, hp]
   rw [heq]
   exact continuous_toWeakDual.comp (continuous_fst.smul (e.symm.continuous.comp continuous_snd))
@@ -310,11 +288,11 @@ theorem Amenable.of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {ms : ι → 
 family of invariance equations `m (L_g f) = m f` is satisfied by some mean. -/
 theorem amenable_iff_forall_finset_exists :
     Amenable G ↔ ∀ s : Finset (G × UCB G),
-      ∃ m : Mean G, ∀ p ∈ s, m (UCB.leftTranslation p.1 p.2) = m p.2 := by
-  refine ⟨fun ⟨m, hm⟩ s => ⟨m, fun p _ => hm.apply_leftTranslation p.1 p.2⟩, fun h => ?_⟩
+      ∃ m : Mean G, ∀ p ∈ s, m (UCB.leftTranslation p.fst p.snd) = m p.snd := by
+  refine ⟨fun ⟨m, hm⟩ s => ⟨m, fun p _ => hm.apply_leftTranslation p.fst p.snd⟩, fun h => ?_⟩
   obtain ⟨m, -, hm⟩ := isCompact_univ.inter_iInter_nonempty
-    (fun p : G × UCB G => {m : Mean G | m (UCB.leftTranslation p.1 p.2) = m p.2})
-    (fun p => Mean.isClosed_setOf_apply_leftTranslation_eq p.1 p.2)
+    (fun p : G × UCB G => {m : Mean G | m (UCB.leftTranslation p.fst p.snd) = m p.snd})
+    (fun p => Mean.isClosed_setOf_apply_leftTranslation_eq p.fst p.snd)
     (fun s => have ⟨m, hm⟩ := h s; ⟨m, trivial, Set.mem_iInter₂.2 hm⟩)
   exact ⟨⟨m, Mean.isLeftInvariant_iff.2 fun g f => Set.mem_iInter.1 hm (g, f)⟩⟩
 

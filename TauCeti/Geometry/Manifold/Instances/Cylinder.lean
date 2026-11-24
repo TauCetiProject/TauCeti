@@ -100,7 +100,7 @@ def sphereProdRealDiffeomorph :
   toFun p := ⟨Real.exp p.2 • (p.1 : V), by
     simp [ne_zero_of_mem_unit_sphere p.1, (Real.exp_pos p.2).ne']⟩
   invFun v := (⟨‖(v : V)‖⁻¹ • (v : V), by
-      simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 v.2))]⟩,
+      simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 v.property))]⟩,
     Real.log ‖(v : V)‖)
   left_inv p := by
     obtain ⟨u, t⟩ := p
@@ -109,7 +109,7 @@ def sphereProdRealDiffeomorph :
     · simp [norm_smul, hu, smul_smul, (Real.exp_pos t).ne']
     · simp [norm_smul, hu]
   right_inv v := by
-    have hv : ‖(v : V)‖ ≠ 0 := norm_ne_zero_iff.2 (mem_puncturedSpace.1 v.2)
+    have hv : ‖(v : V)‖ ≠ 0 := norm_ne_zero_iff.2 (mem_puncturedSpace.1 v.property)
     refine Subtype.ext ?_
     simp [Real.exp_log (lt_of_le_of_ne (norm_nonneg _) hv.symm), smul_smul, mul_inv_cancel₀ hv]
   contMDiff_toFun :=
@@ -118,10 +118,10 @@ def sphereProdRealDiffeomorph :
     refine ContMDiff.prodMk ?_ ?_
     · refine ContMDiff.codRestrict_sphere (f := fun v : puncturedSpace V => ‖(v : V)‖⁻¹ • (v : V))
         (fun v => (contMDiffAt_subtype_iff (f := fun x : V => ‖x‖⁻¹ • x)).2 ?_) _
-      have hv : (v : V) ≠ 0 := v.2
+      have hv : (v : V) ≠ 0 := v.property
       exact (((contDiffAt_norm ℝ hv).inv (norm_ne_zero_iff.2 hv)).smul contDiffAt_id).contMDiffAt
     · refine fun v => (contMDiffAt_subtype_iff (f := fun x : V => Real.log ‖x‖)).2 ?_
-      have hv : (v : V) ≠ 0 := v.2
+      have hv : (v : V) ≠ 0 := v.property
       exact ((contDiffAt_norm ℝ hv).log (norm_ne_zero_iff.2 hv)).contMDiffAt
 
 @[simp]
@@ -251,7 +251,7 @@ instance orientable_sphere_prod_real :
   -- The constant orientation of `V`, restricted to the punctured space.
   let o : Manifold.Orientation 𝓘(ℝ, V) (puncturedSpace V) _ :=
     (Manifold.Orientation.model (I := 𝓘(ℝ, V)) (finBasisOfFinrankEq ℝ V hk).orientation hι).pullback
-      contMDiff_subtype_val (fun x => ⟨_, (Manifold.mfderiv_subtype_val x).symm⟩) hι
+      contMDiff_subtypeVal (fun x => ⟨_, (Manifold.mfderiv_subtype_val x).symm⟩) hι
   exact ⟨⟨o.pullback (sphereProdRealDiffeomorph.contMDiff.of_le (by simp))
     (fun x => sphereProdRealDiffeomorph.isInvertible_mfderiv (x := x) (by simp))
     (Fintype.card_fin _)⟩⟩

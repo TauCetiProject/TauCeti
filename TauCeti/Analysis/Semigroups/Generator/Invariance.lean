@@ -25,17 +25,14 @@ limit.
 
 public section
 
-noncomputable section
-
 open scoped NNReal Topology
 
 namespace TauCeti.Semigroups
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 namespace StronglyContinuousSemigroup
 
-omit [CompleteSpace X] in
 /-- A bounded operator commuting with the semigroup pushes the generator difference quotient
 through: the quotient based at `T x` is `T` applied to the quotient based at `x`. -/
 theorem tendsto_genQuot_map_of_commute (S : StronglyContinuousSemigroup X) (T : X →L[ℝ] X)
@@ -50,7 +47,6 @@ theorem tendsto_genQuot_map_of_commute (S : StronglyContinuousSemigroup X) (T : 
   dsimp only
   rw [Function.comp_apply, S.realOperator_def, hT, map_smul, map_sub]
 
-omit [CompleteSpace X] in
 /-- The difference quotient based at `S s x` is `S s` applied to the difference quotient
 based at `x`. -/
 private theorem tendsto_genQuot_apply (S : StronglyContinuousSemigroup X) (s : ℝ≥0) {x y : X}
@@ -61,7 +57,6 @@ private theorem tendsto_genQuot_apply (S : StronglyContinuousSemigroup X) (s : �
   S.tendsto_genQuot_map_of_commute (S s)
     (fun r x => by rw [← S.map_add_apply, add_comm, S.map_add_apply]) h
 
-omit [CompleteSpace X] in
 /-- Every semigroup operator preserves the domain of the infinitesimal generator. -/
 theorem map_mem_domain (S : StronglyContinuousSemigroup X) (s : ℝ≥0) {x : X} (hx : x ∈ S.domain) :
     S s x ∈ S.domain := by
@@ -69,7 +64,6 @@ theorem map_mem_domain (S : StronglyContinuousSemigroup X) (s : ℝ≥0) {x : X}
   obtain ⟨y, hy⟩ := hx
   exact ⟨S s y, S.tendsto_genQuot_apply s hy⟩
 
-omit [CompleteSpace X] in
 /-- The infinitesimal generator commutes with every semigroup operator on its domain. -/
 theorem generator_map (S : StronglyContinuousSemigroup X) (s : ℝ≥0) (x : S.domain) :
     S.generator ⟨S s x, by
@@ -79,7 +73,6 @@ theorem generator_map (S : StronglyContinuousSemigroup X) (s : ℝ≥0) (x : S.d
   apply S.generator_eq_of_tendsto (S.map_mem_domain s x.property)
   exact S.tendsto_genQuot_apply s (S.generator_tendsto x)
 
-omit [CompleteSpace X] in
 /-- Real-time form of domain invariance. At negative times the real-time operator is the
 identity. -/
 theorem realOperator_mem_domain (S : StronglyContinuousSemigroup X) {s : ℝ}
@@ -88,7 +81,6 @@ theorem realOperator_mem_domain (S : StronglyContinuousSemigroup X) {s : ℝ}
   rw [S.realOperator_def]
   exact S.map_mem_domain s.toNNReal hx
 
-omit [CompleteSpace X] in
 /-- Real-time form of generator commutation. At negative times the real-time operator is the
 identity. -/
 theorem realOperator_generator_map (S : StronglyContinuousSemigroup X) {s : ℝ}
@@ -110,7 +102,6 @@ theorem realOperator_generator_map (S : StronglyContinuousSemigroup X) {s : ℝ}
         exact x.property⟩) := S.generator_map s.toNNReal x
     _ = _ := by rw [← hop]
 
-omit [CompleteSpace X] in
 /-- A bounded operator commuting with a strongly continuous semigroup preserves the generator
 domain and intertwines the generator there. -/
 theorem generator_commute_of_commute (S : StronglyContinuousSemigroup X) (T : X →L[ℝ] X)

@@ -71,7 +71,7 @@ structure RegularProperCurveCat (k : Type u) [Field k] where
   [over : toScheme.Over (Spec (.of k))]
   [isCurveOver : toScheme.IsCurveOver k]
   [isDiscreteValuationRing_stalk :
-    ∀ y : CodimensionOnePoint toScheme, IsDiscreteValuationRing (toScheme.presheaf.stalk y.1)]
+    ∀ y : CodimensionOnePoint toScheme, IsDiscreteValuationRing (toScheme.presheaf.stalk y.val)]
 
 attribute [instance] RegularProperCurveCat.over RegularProperCurveCat.isCurveOver
   RegularProperCurveCat.isDiscreteValuationRing_stalk
@@ -83,7 +83,7 @@ variable {k : Type u} [Field k]
 /-- The object of `RegularProperCurveCat k` given by a curve over `k` whose local rings at the
 codimension-one points are discrete valuation rings. -/
 abbrev of (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCurveOver k]
-    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk y.1)] :
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk y.val)] :
     RegularProperCurveCat k :=
   ⟨X⟩
 
@@ -170,7 +170,7 @@ structure RegularProjectiveCurveCat (k : Type u) [Field k] where
   /-- The curve has dimension one. -/
   topologicalKrullDim_eq_one : topologicalKrullDim toScheme = 1
   [isDiscreteValuationRing_stalk :
-    ∀ y : CodimensionOnePoint toScheme, IsDiscreteValuationRing (toScheme.presheaf.stalk y.1)]
+    ∀ y : CodimensionOnePoint toScheme, IsDiscreteValuationRing (toScheme.presheaf.stalk y.val)]
 
 attribute [instance] RegularProjectiveCurveCat.over RegularProjectiveCurveCat.isIntegral
   RegularProjectiveCurveCat.isProjectiveOver RegularProjectiveCurveCat.isDiscreteValuationRing_stalk

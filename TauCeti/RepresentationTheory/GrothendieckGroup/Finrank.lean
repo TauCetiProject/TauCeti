@@ -178,9 +178,9 @@ theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
       ∑ i, jordanHolderCoordinate A (S i) x * (Module.finrank k (S i).obj : ℤ) := by
   classical
   let S' : {i // IsSimpleModule A (S i)} → FGModuleCat.{u} A := fun j ↦ S j
-  have : ∀ j, IsSimpleModule A (S' j) := fun j ↦ j.2
+  have : ∀ j, IsSimpleModule A (S' j) := fun j ↦ j.property
   have hnoniso' : Pairwise fun i j ↦ IsEmpty ((S' i : Type u) ≃ₗ[A] S' j) :=
-    fun i j hij ↦ hnoniso (fun h ↦ hij (Subtype.ext h)) i.2 j.2
+    fun i j hij ↦ hnoniso (fun h ↦ hij (Subtype.ext h)) i.property j.property
   have hexhaustive' : IsExhaustiveSimpleFamily S' := by
     rw [isExhaustiveSimpleFamily_iff] at hexhaustive ⊢
     intro M hM

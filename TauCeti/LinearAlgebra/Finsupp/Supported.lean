@@ -39,8 +39,16 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
   function supported on a prescribed set.
 * `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
   over `s` into `supported N R t` maps `supported M R s` into it.
+* `Finsupp.map_mem_supported_of_map_single_eq_smul_single`: an operator
+  `single j 1 ↦ c j • single (σ j) 1` maps `supported R R s` into `supported R R t` when `c j`
+  vanishes whenever `σ` moves `j ∈ s` out of `t`.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
+* `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
+  finitely generated module `M` sends sequences supported in `Finset.range n` into some
+  `Finset.range m`.
+* `Finsupp.exists_mem_supported_lt`: a finitely supported function is supported on the points
+  of rank below some bound, for any rank function to `ℕ`.
 -/
 
 public section
@@ -58,13 +66,13 @@ supported on `t`, where every point of `s` satisfying `p` lies in `t`. -/
 def filterSupported {s t : Set α} (p : α → Prop) [DecidablePred p] (h : ∀ a ∈ s, p a → a ∈ t) :
     supported M R s →ₗ[R] supported M R t :=
   LinearMap.codRestrict _
-    { toFun := fun f ↦ filter p f.1
+    { toFun := fun f ↦ filter p f.val
       map_add' := fun _ _ ↦ filter_add
       map_smul' := fun _ _ ↦ filter_smul }
     fun f ↦ (mem_supported R _).2 fun a ha ↦ by
-      have ha : a ∈ (filter p f.1).support := ha
+      have ha : a ∈ (filter p f.val).support := ha
       rw [support_filter, Finset.mem_filter] at ha
-      exact h a ((mem_supported R f.1).1 f.2 ha.1) ha.2
+      exact h a ((mem_supported R f.val).1 f.property ha.1) ha.2
 
 /-- `TauCeti.Finsupp.filterSupported p h` filters the underlying finitely supported function. -/
 @[simp]
@@ -145,5 +153,41 @@ theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [A
     (hv : v ∈ supported M R s) : f v ∈ supported N R t := by
   rw [← sum_single v, map_finsuppSum]
   exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+
+/-- A linear map sending each `single j 1` to a multiple `c j • single (σ j) 1` maps
+`supported R R s` into `supported R R t`, if `c j = 0` whenever `j ∈ s` and `σ j ∉ t`. -/
+theorem map_mem_supported_of_map_single_eq_smul_single {s : Set α} {t : Set β}
+    (f : (α →₀ R) →ₗ[R] (β →₀ R)) (c : α → R) (σ : α → β)
+    (hf : ∀ j, f (single j 1) = c j • single (σ j) 1) (hc : ∀ j ∈ s, σ j ∉ t → c j = 0)
+    {v : α →₀ R} (hv : v ∈ supported R R s) : f v ∈ supported R R t := by
+  refine map_mem_supported_of_forall_single_mem R f (fun j hj x ↦ ?_) hv
+  rw [← smul_single_one, map_smul, hf]
+  by_cases h : σ j ∈ t
+  · exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (single_mem_supported R _ h))
+  · rw [hc j hj h, zero_smul, smul_zero]
+    exact zero_mem _
+
+end Finsupp
+
+namespace Finsupp
+
+/-- A linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a finitely generated module `M` sends sequences
+supported in `Finset.range n` into some `Finset.range m`. -/
+theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Module.Finite R M] [AddCommMonoid N] [Module R N] (φ : (ℕ →₀ M) →ₗ[R] (ℕ →₀ N)) (n : ℕ) :
+    ∃ m, ∀ u : ℕ →₀ M, u.support ⊆ Finset.range n → (φ u).support ⊆ Finset.range m := by
+  choose T hT using fun j : ℕ ↦ (φ.comp (lsingle j)).exists_finset_support_subset
+  refine ⟨((Finset.range n).biUnion T).sup id + 1, fun u hu ↦ Finset.coe_subset.1 <|
+    (mem_supported R (φ u)).1 <| map_mem_supported_of_forall_single_mem R φ
+      (fun j hj x ↦ (mem_supported R _).2 fun k hk ↦ ?_) ((mem_supported R u).2
+        (Finset.coe_subset.2 hu))⟩
+  exact Finset.mem_coe.2 <| Finset.mem_range.2 <| Nat.lt_succ_of_le <|
+    Finset.le_sup (f := id) (Finset.mem_biUnion.2 ⟨j, Finset.mem_coe.1 hj, hT j x hk⟩)
+
+/-- A finitely supported function is supported on the points of rank below some bound, for any
+rank function to `ℕ`. -/
+theorem exists_mem_supported_lt {α M R : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (r : α → ℕ) (f : α →₀ M) : ∃ k, f ∈ supported M R {y | r y < k} :=
+  ⟨f.support.sup (r · + 1), fun _ hy ↦ Nat.lt_of_succ_le (Finset.le_sup (f := (r · + 1)) hy)⟩
 
 end Finsupp

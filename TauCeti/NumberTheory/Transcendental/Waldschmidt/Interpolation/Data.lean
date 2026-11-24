@@ -86,6 +86,9 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   `TauCeti.intCast_mul_waldschmidtNormalize_intCast_mem_range_intCast`: the products `cₘ βᵢ`
   lie in every subring containing `c₀, …, c_{m-1}`; for integer coefficients they are integers.
 * `TauCeti.snoc_waldschmidtNormalize_neg_one`: `(β₀, …, β_{m-1}, -1) = (-cₘ)⁻¹ (c₀, …, cₘ)`.
+* `TauCeti.mul_waldschmidtPoint_waldschmidtNormalize_zero`,
+  `TauCeti.mul_waldschmidtPoint_waldschmidtNormalize_succ`: the coordinates of the grid points
+  of the normalized coefficients, times the denominator `cₘ`.
 * `TauCeti.iteratedDeriv_waldschmidtFunction`: the entry identity
   `∂^σ/∂z₀^σ (F(z) exp(t ⟨λ, z⟩))|_{z = s · y} = γ exp(t sₘ Λ)`.
 * `TauCeti.waldschmidtOperatorEntry_eq_sum_hasseDeriv`: the Leibniz formula
@@ -288,6 +291,33 @@ theorem waldschmidtPoint_map {S : Type*} [CommRing S] (f : R →+* S) (s : Fin (
 
 end Point
 
+section NormalizePoint
+
+variable {K : Type*} [Field K] {c : Fin (n + 1) → K}
+
+/-- The grid points of the normalized coefficients, cleared of the denominator `cₘ`: the
+`z₀`-coordinate of `cₘ (s · y)` is `-sₘ c₀`. In the homogeneous rational case `c₀ = 0` and
+the `cᵢ` integral, it is `0`. -/
+theorem mul_waldschmidtPoint_waldschmidtNormalize_zero (hc : c (Fin.last n) ≠ 0) (c₀ : K)
+    (s : Fin (n + 1) → ℤ) :
+    c (Fin.last n) * waldschmidtPoint (waldschmidtNormalize c₀ c) s 0 = -(s (Fin.last n) * c₀) := by
+  rw [waldschmidtPoint_apply_zero, waldschmidtNormalize_zero]
+  field_simp
+
+/-- The grid points of the normalized coefficients, cleared of the denominator `cₘ`: the
+`z_{k+1}`-coordinate of `cₘ (s · y)` is `cₘ s_{k+1} - sₘ c_{k+1}`. In the homogeneous rational
+case with integral `cᵢ`, it is an integer of absolute value at most
+`|cₘ| |s_{k+1}| + |c_{k+1}| |sₘ|`. -/
+theorem mul_waldschmidtPoint_waldschmidtNormalize_succ (hc : c (Fin.last n) ≠ 0) (c₀ : K)
+    (s : Fin (n + 1) → ℤ) (k : Fin n) :
+    c (Fin.last n) * waldschmidtPoint (waldschmidtNormalize c₀ c) s k.succ =
+      c (Fin.last n) * s k.castSucc - s (Fin.last n) * c k.castSucc := by
+  rw [waldschmidtPoint_apply_succ, waldschmidtNormalize_succ]
+  field_simp
+  ring
+
+end NormalizePoint
+
 section PointMap
 
 variable {R : Type*} [CommRing R]
@@ -403,11 +433,6 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
       fun w ↦ eval (update x 0 w) (F.map ι) * cexp (t * w + t * c) := by
     funext w
     simp [waldschmidtFunction_def, c, mul_add]
-  -- Partial derivatives commute with the coefficient map `ι`.
-  have hpderiv (k : ℕ) : (pderiv 0)^[k] (F.map ι) = ((pderiv 0)^[k] F).map ι := by
-    induction k with
-    | zero => rfl
-    | succ k ih => rw [iterate_succ_apply', ih, pderiv_map, iterate_succ_apply']
   -- The exponential factor on the grid.
   have hexp : cexp (t * x 0 + t * c) =
       ι (∏ j, α j ^ (t * s j)) * cexp (t * s (Fin.last n) * waldschmidtLinearForm l
@@ -415,7 +440,7 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
     rw [← mul_add, waldschmidtPoint_zero_add_sum, mul_add, exp_add, map_prod, mul_sum, exp_sum]
     congr 1
     · refine prod_congr rfl fun j _ ↦ ?_
-      rw [map_zpow₀, hα, ← exp_int_mul]
+      rw [map_zpow₀, hα, ← exp_intCast_mul]
       congr 1
       push_cast
       ring
@@ -424,8 +449,8 @@ theorem iteratedDeriv_waldschmidtFunction {K : Type*} [Field K] (ι : K →+* �
   beta_reduce
   rw [update_eq_self, hexp, waldschmidtEntry_def, map_mul, ← mul_assoc]
   congr 1
-  simp only [hpderiv, eval_map, x, waldschmidtPoint_map, eval₂_comp, comp_def, map_sum, map_mul,
-    map_natCast, map_pow, map_intCast]
+  simp only [iterate_pderiv_map, eval_map, x, waldschmidtPoint_map, eval₂_comp, comp_def, map_sum,
+    map_mul, map_natCast, map_pow, map_intCast]
 
 /-- The coefficient-field factor `γ_P` of the differential operator `P(∂/∂z₀)` applied to
 Waldschmidt's auxiliary function `F(z) exp(t (z₀ + λ₁ z₁ + ⋯))` at the grid point `s · y`

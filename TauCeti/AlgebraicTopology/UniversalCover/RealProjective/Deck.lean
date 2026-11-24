@@ -69,13 +69,13 @@ def antipode : deck (mk n) :=
 /-- On points, the antipodal deck transformation negates. -/
 @[simp]
 theorem antipode_apply (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    (antipode n).1 x = -x := by
+    (antipode n).val x = -x := by
   simp [antipode]
 
 /-- On points, the inverse of the antipodal deck transformation also negates. -/
 @[simp]
 theorem antipode_symm_apply (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    (antipode n).1.symm x = -x := by
+    (antipode n).val.symm x = -x := by
   simp [antipode]
 
 /-- The antipodal deck transformation is an involution. -/
@@ -100,15 +100,15 @@ theorem antipode_ne_one : antipode n ≠ 1 := by
 /-- **The deck group of the antipodal cover `Sⁿ → RPⁿ` is the two-element group `ℤˣ`**, for
 `1 ≤ n`. The isomorphism sends an integer unit to the corresponding antipodal translation. -/
 def deckMulEquiv (hn : 1 ≤ n) : ℤˣ ≃* deck (mk n) :=
-  letI := connectedSpace_euclideanSphere (m := n + 1) (by omega)
+  letI := connectedSpace_euclideanSphere (ι := Fin (n + 1)) (by rw [Fintype.card_fin]; omega)
   (isQuotientCoveringMap_mk n).deckMulEquiv
 
 /-- On points, the deck-group isomorphism is the antipodal action. -/
 @[simp]
 theorem deckMulEquiv_apply (hn : 1 ≤ n) (u : ℤˣ)
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    (deckMulEquiv n hn u).1 x = u • x := by
-  let := connectedSpace_euclideanSphere (m := n + 1) (by omega)
+    (deckMulEquiv n hn u).val x = u • x := by
+  let := connectedSpace_euclideanSphere (ι := Fin (n + 1)) (by rw [Fintype.card_fin]; omega)
   rw [deckMulEquiv, IsQuotientCoveringMap.deckMulEquiv_apply]
 
 /-- On points, the inverse of the deck-group isomorphism recovers the given deck
@@ -116,8 +116,8 @@ transformation. -/
 @[simp]
 theorem deckMulEquiv_symm_apply (hn : 1 ≤ n) (φ : deck (mk n))
     (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    (deckMulEquiv n hn).symm φ • x = φ.1 x := by
-  let := connectedSpace_euclideanSphere (m := n + 1) (by omega)
+    (deckMulEquiv n hn).symm φ • x = φ.val x := by
+  let := connectedSpace_euclideanSphere (ι := Fin (n + 1)) (by rw [Fintype.card_fin]; omega)
   rw [deckMulEquiv, IsQuotientCoveringMap.deckMulEquiv_symm_apply]
 
 /-- The deck-group isomorphism sends the nontrivial integer unit to the antipodal map. -/

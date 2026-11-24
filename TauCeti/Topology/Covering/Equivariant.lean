@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Recovering an equivariant space by pulling back its orbit space
@@ -43,7 +43,7 @@ def orbitRelQuotientPullback : X → β.Pullback f :=
 
 /-- The two coordinates of the canonical comparison are the projection and the orbit class. -/
 @[simp] theorem orbitRelQuotientPullback_val (x : X) :
-    (p.orbitRelQuotientPullback β f hf x).1 = (p x, Quotient.mk _ x) := (rfl)
+    (p.orbitRelQuotientPullback β f hf x).val = (p x, Quotient.mk _ x) := (rfl)
 
 /-- A quotient covering of the base makes the canonical comparison bijective. -/
 theorem bijective_orbitRelQuotientPullback [TopologicalSpace Y] [TopologicalSpace Z]
@@ -51,8 +51,8 @@ theorem bijective_orbitRelQuotientPullback [TopologicalSpace Y] [TopologicalSpac
   have := hβ.isCancelSMul
   constructor
   · intro a b hab
-    have hp : p a = p b := congrArg (fun w ↦ w.1.1) hab
-    obtain ⟨g, hg⟩ := Quotient.exact (congrArg (fun w ↦ w.1.2) hab)
+    have hp : p a = p b := congrArg (fun w ↦ w.val.1) hab
+    obtain ⟨g, hg⟩ := Quotient.exact (congrArg (fun w ↦ w.val.2) hab)
     have hg1 : g = 1 := by
       apply isCancelSMul_iff_eq_one_of_smul_eq.mp ‹IsCancelSMul G Y› g (p b)
       exact (p.map_smul g b).symm.trans ((congrArg p hg).trans hp)
@@ -117,7 +117,7 @@ noncomputable def orbitRelQuotientPullbackHomeomorph (hp : Continuous p)
 @[simp] theorem map_orbitRelQuotientPullbackHomeomorph_symm (hp : Continuous p)
     (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) (w : β.Pullback f) :
     p ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).symm w) = w.fst := by
-  exact congrArg (fun v ↦ v.1.1)
+  exact congrArg (fun v ↦ v.val.1)
     ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).apply_symm_apply w)
 
 /-- The inverse belongs to the prescribed orbit. -/
@@ -125,7 +125,7 @@ noncomputable def orbitRelQuotientPullbackHomeomorph (hp : Continuous p)
     (hβ : IsQuotientCoveringMap β G) (hfc : Continuous f) (w : β.Pullback f) :
     Quotient.mk (MulAction.orbitRel G X)
       ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).symm w) = w.snd := by
-  exact congrArg (fun v ↦ v.1.2)
+  exact congrArg (fun v ↦ v.val.2)
     ((p.orbitRelQuotientPullbackHomeomorph β f hf hp hβ hfc).apply_symm_apply w)
 
 end MulActionHom

@@ -62,6 +62,9 @@ uniqueness of the step and the discrete energy estimates.
 * `TauCeti.hasFiniteMoment_generalizedGeodesic` and `TauCeti.exists_coe_eq_generalizedGeodesic`:
   generalized geodesics between laws of finite `q`-th moment stay in laws of finite `q`-th moment,
   so those between laws of `P₂(E)` run in `P₂(E)`.
+* `TauCeti.dist_sq_le_of_eq_generalizedGeodesic`: the squared `W₂` distance between two points
+  along a generalized geodesic at times `s` and `r` is at most `(r - s) ^ 2` times the quadratic
+  cost of the endpoint coupling.
 * `TauCeti.wassersteinEDist_generalizedGeodesic_sq_add_le`: the convexity inequality for an
   arbitrary three-plan with first marginal `μ`, against the three transport integrals of the plan.
 * `TauCeti.IsGeneralizedGeodesicPlan.wassersteinEDist_sq_add_le` and
@@ -338,6 +341,39 @@ theorem exists_coe_eq_generalizedGeodesic {γ : Measure (E × E × E)}
   let P : ProbabilityMeasure E := ⟨generalizedGeodesic γ t, inferInstance⟩
   have hP : (P : Measure E) = generalizedGeodesic γ t := ProbabilityMeasure.coe_mk _ _
   exact ⟨WassersteinSpace.mk P (hP ▸ hm), by rw [WassersteinSpace.coe_mk, hP]⟩
+
+variable [CompleteSpace E]
+
+/-- **Distance between two points along a generalized geodesic.** For a measure `γ` on `E × E × E`
+and laws `νs`, `νr` in `P₂(E)` equal to `generalizedGeodesic γ s` and `generalizedGeodesic γ r`,
+`W₂ (νs, νr) ^ 2 ≤ (r - s) ^ 2 ∫ ‖y₀ - y₁‖ ^ 2 dγ`. -/
+theorem dist_sq_le_of_eq_generalizedGeodesic {γ : Measure (E × E × E)} {s r : ℝ}
+    {νs νr : WassersteinSpace 2 E}
+    (hνs : ((νs : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ s)
+    (hνr : ((νr : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ r) :
+    dist νs νr ^ 2 ≤ (r - s) ^ 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd := by
+  set f : E × E → E × E := fun z ↦ ((1 - s) • z.1 + s • z.2, (1 - r) • z.1 + r • z.2)
+  have hf_meas : Measurable f := by fun_prop
+  have hcoupl : IsCoupling (γ.snd.map f) ((νs : ProbabilityMeasure E) : Measure E)
+      ((νr : ProbabilityMeasure E) : Measure E) := by
+    constructor
+    · rw [hνs, generalizedGeodesic_def, Measure.fst, Measure.map_map measurable_fst hf_meas,
+        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
+      rfl
+    · rw [hνr, generalizedGeodesic_def, Measure.snd, Measure.map_map measurable_snd hf_meas,
+        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
+      rfl
+  refine (WassersteinSpace.dist_sq_le_integral hcoupl).trans ?_
+  rw [integral_map (f := fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) hf_meas.aemeasurable (by fun_prop)]
+  have hpoint : ∀ z : E × E, ‖(f z).1 - (f z).2‖ ^ 2 = (r - s) ^ 2 * ‖z.1 - z.2‖ ^ 2 := fun z ↦ by
+    have hsub : ((1 - s) • z.1 + s • z.2) - ((1 - r) • z.1 + r • z.2) =
+        (r - s) • (z.1 - z.2) := by
+      simp only [sub_smul, one_smul, smul_sub]
+      abel
+    dsimp [f]
+    rw [hsub, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  simp_rw [hpoint, integral_const_mul]
+  exact le_rfl
 
 end Moment
 

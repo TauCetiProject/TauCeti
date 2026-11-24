@@ -13,6 +13,11 @@ public import Mathlib.RingTheory.Teichmuller
 The inverse of `Perfection.quotientMulEquiv` commutes with shifting compatible root sequences.
 Its `n`-th coordinate is therefore the Teichmüller map applied after `n` shifts. These formulas
 extend Mathlib's zeroth-coordinate formula `Perfection.coeff_zero_symm_quotientMulEquiv`.
+
+The Teichmüller map is natural (`Perfection.teichmuller₀_map`): a ring homomorphism `f : R →+* S`
+carrying `I` into `J`, between `I`-adically and `J`-adically complete rings, intertwines
+`teichmuller₀ p I` and `teichmuller₀ p J` with the induced map of perfections, because `f`
+preserves the congruences characterising the Teichmüller lifts.
 -/
 
 public section
@@ -53,5 +58,22 @@ theorem coeffMonoidHom_symm_quotientMulEquiv (x : Perfection (R ⧸ I) p) (n : �
     ← semiconj_symm_quotientMulEquiv_pthRootMonoidHom.iterate_right n x,
     coeff_zero_symm_quotientMulEquiv] at hc
   exact hc.symm
+
+variable {S : Type*} [CommRing S] {J : Ideal S} [CharP (S ⧸ J) p] [IsAdicComplete J S]
+
+/-- **Naturality of the Teichmüller map**: a ring homomorphism `f : R →+* S` carrying `I` into `J`
+satisfies `teichmuller₀ p J (Perfection.map p (Ideal.quotientMap J f h) x) =
+f (teichmuller₀ p I x)`. -/
+theorem teichmuller₀_map (f : R →+* S) (h : I ≤ J.comap f) (x : Perfection (R ⧸ I) p) :
+    teichmuller₀ p J (map p (Ideal.quotientMap J f h) x) = f (teichmuller₀ p I x) := by
+  refine teichmuller₀_spec fun n ↦ ⟨f (coeff _ p n x).out, ?_, ?_⟩
+  · rw [coeff_map, ← Ideal.Quotient.mk_out (coeff _ p n x), Ideal.quotientMap_mk,
+      Ideal.Quotient.mk_out]
+  · have hI := SModEq.sub_mem.mp
+      (teichmuller₀_sModEq (x := x) (n := n) (Ideal.Quotient.mk_out _)).symm
+    rw [SModEq.sub_mem, ← map_pow, ← map_sub]
+    -- `f` carries `I ^ (n + 1)` into `(I.map f) ^ (n + 1) ≤ J ^ (n + 1)`
+    exact Ideal.pow_right_mono (Ideal.map_le_iff_le_comap.mpr h) _ <|
+      Ideal.map_pow f I _ ▸ Ideal.mem_map_of_mem f hI
 
 end Perfection

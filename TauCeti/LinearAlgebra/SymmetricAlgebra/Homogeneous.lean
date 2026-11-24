@@ -60,6 +60,12 @@ theorem ι_mem_homogeneousSubmodule (x : M) :
     SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M 1 := by
   simpa only [pow_one] using LinearMap.mem_range_self (SymmetricAlgebra.ι R M) x
 
+/-- A symmetric-algebra generator is homogeneous of degree `1 • 1`, the degree in which
+`HomogeneousLocalization.Away.mk` takes numerators over a degree-one denominator. -/
+theorem ι_mem_homogeneousSubmodule_one_smul (x : M) :
+    SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M (1 • 1) := by
+  simp
+
 variable {R M} in
 /-- Algebra maps whose values on generators differ by a scalar in the target algebra
 have degree-`n` values differing by its `n`th power. -/

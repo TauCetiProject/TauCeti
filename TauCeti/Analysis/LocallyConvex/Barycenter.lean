@@ -103,7 +103,7 @@ barycenter. -/
 theorem barycenter_congr {K : Set E} {Φ Ψ : Type*} [FunLike Φ C(K, ℝ) ℝ] [FunLike Ψ C(K, ℝ) ℝ]
     {φ : Φ} {ψ : Ψ} (h : ∀ f, φ f = ψ f) : barycenter K φ = barycenter K ψ := by
   unfold barycenter
-  rw [show (⇑φ : C(K, ℝ) → ℝ) = ⇑ψ from funext h]
+  rw [funext h]
 
 /-- **Existence of the Choquet–Rudin barycenter.** If `K` is a compact convex subset of a
 topological real vector space `E` and `φ` is a positive linear functional on `C(K, ℝ)` with
@@ -137,7 +137,7 @@ theorem exists_mem_forall_strongDual_eq {K : Set E} (hK : IsCompact K) (hKc : Co
         have hx : ℓ₀ x = ψ (L x) := by
           rw [hψ_eq]
           simp [ℓ₀, L, mul_comm]
-        simpa using (hx.trans_lt (hψK (L x) (mem_image_of_mem L x.2))).le
+        simpa using (hx.trans_lt (hψK (L x) (mem_image_of_mem L x.property))).le
       have hφ_le : φ ((ℓ₀ : C(E, ℝ)).restrict K) ≤ u := by
         simpa [hφ₁] using ContinuousMap.apply_le_smul_map_one_of_forall_le φ hℓ₀_le
       have hℓ₀_res : (ℓ₀ : C(E, ℝ)).restrict K =
@@ -157,7 +157,7 @@ theorem barycenter_mem {K : Set E} (hK : IsCompact K) (hKc : Convex ℝ K) {Φ :
     (hφ₁ : φ 1 = 1) : barycenter K φ ∈ K := by
   have hex := exists_mem_forall_strongDual_eq hK hKc φ hφ₁
   simp only [barycenter, hex, ↓reduceDIte]
-  exact hex.choose_spec.1
+  exact hex.choose_spec.left
 
 /-- Every continuous linear functional `ℓ : StrongDual ℝ E` evaluates at `barycenter K φ` to
 `φ (ℓ|_K)`. -/
@@ -167,7 +167,7 @@ theorem strongDual_barycenter {K : Set E} (hK : IsCompact K) (hKc : Convex ℝ K
     ℓ (barycenter K φ) = φ ((ℓ : C(E, ℝ)).restrict K) := by
   have hex := exists_mem_forall_strongDual_eq hK hKc φ hφ₁
   simp only [barycenter, hex, ↓reduceDIte]
-  exact hex.choose_spec.2 ℓ
+  exact hex.choose_spec.right ℓ
 
 end Defs
 
@@ -183,25 +183,25 @@ theorem barycenter_eq_of_mem_of_forall_strongDual_eq {K : Set E} {Φ : Type*} [F
   have hex : ∃ b ∈ K, ∀ ℓ : StrongDual ℝ E, ℓ b = φ ((ℓ : C(E, ℝ)).restrict K) := ⟨x, hxK, hx⟩
   simp only [barycenter, hex, ↓reduceDIte]
   exact (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ =>
-    (hex.choose_spec.2 ℓ).trans (hx ℓ).symm
+    (hex.choose_spec.right ℓ).trans (hx ℓ).symm
 
 /-- The barycenter of point evaluation (as an algebra homomorphism) at `x : K` is `x`. -/
 @[simp]
 theorem barycenter_evalAlgHom (K : Set E) (x : K) :
     barycenter K (ContinuousMap.evalAlgHom ℝ ℝ x) = x :=
-  barycenter_eq_of_mem_of_forall_strongDual_eq x.2 fun _ => by simp
+  barycenter_eq_of_mem_of_forall_strongDual_eq x.property fun _ => by simp
 
 /-- The barycenter of point evaluation (as a positive linear map) at `x : K` is `x`. -/
 @[simp]
 theorem barycenter_evalPositiveLinearMap (K : Set E) (x : K) :
     barycenter K (ContinuousMap.evalPositiveLinearMap ℝ ℝ x) = x :=
-  barycenter_eq_of_mem_of_forall_strongDual_eq x.2 fun _ => by simp
+  barycenter_eq_of_mem_of_forall_strongDual_eq x.property fun _ => by simp
 
 /-- The barycenter of point evaluation (as a continuous linear map) at `x : K` is `x`. -/
 @[simp]
 theorem barycenter_evalCLM (K : Set E) (x : K) :
     barycenter K (ContinuousMap.evalCLM ℝ (M := ℝ) x) = x :=
-  barycenter_eq_of_mem_of_forall_strongDual_eq x.2 fun _ => by simp
+  barycenter_eq_of_mem_of_forall_strongDual_eq x.property fun _ => by simp
 
 /-- **Existence and uniqueness of the Choquet–Rudin barycenter.** If `K` is a compact convex subset
 of a topological real vector space `E` with separating continuous dual and `φ` is a positive linear
@@ -258,13 +258,14 @@ theorem apply_barycenter_le_of_map_smul_add_smul_le {K : Set E} (hK : IsCompact 
     (hKc : Convex ℝ K) {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ] [LinearMapClass Φ ℝ C(K, ℝ) ℝ]
     [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ) (hφ₁ : φ 1 = 1) {f : C(K, ℝ)}
     (hf : ∀ (x y : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      f ⟨a • (x : E) + b • (y : E), hKc x.2 y.2 ha hb hab⟩ ≤ a * f x + b * f y) :
+      f ⟨a • (x : E) + b • (y : E), hKc x.property y.property ha hb hab⟩ ≤ a * f x + b * f y) :
     f ⟨barycenter K φ, barycenter_mem hK hKc φ hφ₁⟩ ≤ φ f := by
   classical
   -- Extend `f` outside `K` by `0` to apply `ConvexOn.exists_affine_le_of_lt` on the closed set `K`.
   have hb : barycenter K φ ∈ K := barycenter_mem hK hKc φ hφ₁
   let g : E → ℝ := fun x => if hx : x ∈ K then f ⟨x, hx⟩ else 0
-  have hg_dom : K.domRestrict g = f := funext fun x => dite_eq_left_of_eq_true (eq_true x.2)
+  have hg_dom : K.domRestrict g = f :=
+    funext fun x => dite_eq_left_of_eq_true (eq_true x.property)
   have hgc : ContinuousOn g K :=
     continuousOn_iff_continuous_domRestrict.2 (hg_dom ▸ f.continuous)
   have hg_cvx : ConvexOn ℝ K g := ⟨hKc, fun x hx y hy a b ha hb hab => by
@@ -275,7 +276,7 @@ theorem apply_barycenter_le_of_map_smul_add_smul_le {K : Set E} (hK : IsCompact 
   obtain ⟨ℓ, c, hle, heq⟩ :=
     hg_cvx.exists_affine_le_of_lt (𝕜 := ℝ) hb hrb hK.isClosed hgc.lowerSemicontinuousOn
   have hminor : (ℓ : C(E, ℝ)).restrict K + ContinuousMap.const K c ≤ f := fun x => by
-    simpa [g, x.2] using hle x
+    simpa [g, x.property] using hle x
   have hφ_minor := OrderHomClass.mono φ hminor
   rw [map_add, ContinuousMap.map_const_eq_smul_map_one, hφ₁, smul_eq_mul, mul_one,
     ← strongDual_barycenter hK hKc φ hφ₁ ℓ] at hφ_minor
@@ -288,7 +289,7 @@ theorem le_apply_barycenter_of_le_map_smul_add_smul {K : Set E} (hK : IsCompact 
     (hKc : Convex ℝ K) {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ] [LinearMapClass Φ ℝ C(K, ℝ) ℝ]
     [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ) (hφ₁ : φ 1 = 1) {f : C(K, ℝ)}
     (hf : ∀ (x y : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      a * f x + b * f y ≤ f ⟨a • (x : E) + b • (y : E), hKc x.2 y.2 ha hb hab⟩) :
+      a * f x + b * f y ≤ f ⟨a • (x : E) + b • (y : E), hKc x.property y.property ha hb hab⟩) :
     φ f ≤ f ⟨barycenter K φ, barycenter_mem hK hKc φ hφ₁⟩ := by
   have hneg := apply_barycenter_le_of_map_smul_add_smul_le hK hKc φ hφ₁ (f := -f)
     fun x y a b ha hb hab => by
@@ -302,7 +303,7 @@ theorem apply_barycenter_of_map_smul_add_smul {K : Set E} (hK : IsCompact K) (hK
     {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ] [LinearMapClass Φ ℝ C(K, ℝ) ℝ] [OrderHomClass Φ C(K, ℝ) ℝ]
     (φ : Φ) (hφ₁ : φ 1 = 1) {f : C(K, ℝ)}
     (hf : ∀ (x y : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      f ⟨a • (x : E) + b • (y : E), hKc x.2 y.2 ha hb hab⟩ = a * f x + b * f y) :
+      f ⟨a • (x : E) + b • (y : E), hKc x.property y.property ha hb hab⟩ = a * f x + b * f y) :
     f ⟨barycenter K φ, barycenter_mem hK hKc φ hφ₁⟩ = φ f :=
   le_antisymm
     (apply_barycenter_le_of_map_smul_add_smul_le hK hKc φ hφ₁
@@ -316,9 +317,9 @@ theorem apply_barycenter_le_of_convexOn {K : Set E} (hK : IsCompact K) {g : E �
     (hg : ConvexOn ℝ K g) (hgc : ContinuousOn g K) {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ]
     [LinearMapClass Φ ℝ C(K, ℝ) ℝ] [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ) (hφ₁ : φ 1 = 1) :
     g (barycenter K φ) ≤ φ ⟨K.domRestrict g, hgc.domRestrict⟩ :=
-  apply_barycenter_le_of_map_smul_add_smul_le hK hg.1 φ hφ₁
+  apply_barycenter_le_of_map_smul_add_smul_le hK hg.left φ hφ₁
     (f := ⟨K.domRestrict g, hgc.domRestrict⟩)
-    fun x y a b ha hb hab => by simpa [smul_eq_mul] using hg.2 x.2 y.2 ha hb hab
+    fun x y a b ha hb hab => by simpa [smul_eq_mul] using hg.right x.property y.property ha hb hab
 
 /-- **Choquet–Jensen inequality** for a function `g : E → ℝ` that is concave and continuous on `K`.
 -/
@@ -326,9 +327,9 @@ theorem le_apply_barycenter_of_concaveOn {K : Set E} (hK : IsCompact K) {g : E �
     (hg : ConcaveOn ℝ K g) (hgc : ContinuousOn g K) {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ]
     [LinearMapClass Φ ℝ C(K, ℝ) ℝ] [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ) (hφ₁ : φ 1 = 1) :
     φ ⟨K.domRestrict g, hgc.domRestrict⟩ ≤ g (barycenter K φ) :=
-  le_apply_barycenter_of_le_map_smul_add_smul hK hg.1 φ hφ₁
+  le_apply_barycenter_of_le_map_smul_add_smul hK hg.left φ hφ₁
     (f := ⟨K.domRestrict g, hgc.domRestrict⟩)
-    fun x y a b ha hb hab => by simpa [smul_eq_mul] using hg.2 x.2 y.2 ha hb hab
+    fun x y a b ha hb hab => by simpa [smul_eq_mul] using hg.right x.property y.property ha hb hab
 
 /-- A function `g : E → ℝ` that is both convex and concave and continuous on `K` evaluates at
 `barycenter K φ` to `φ (g|_K)`. -/
@@ -337,10 +338,11 @@ theorem apply_barycenter_of_convexOn_and_concaveOn {K : Set E} (hK : IsCompact K
     [FunLike Φ C(K, ℝ) ℝ] [LinearMapClass Φ ℝ C(K, ℝ) ℝ] [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ)
     (hφ₁ : φ 1 = 1) :
     g (barycenter K φ) = φ ⟨K.domRestrict g, hgc.domRestrict⟩ := by
-  have hcomb := (hg.1.convexOn_and_concaveOn_iff (f := g)).1 ⟨hg, hgc'⟩
-  exact apply_barycenter_of_map_smul_add_smul hK hg.1 φ hφ₁
+  have hcomb := (hg.left.convexOn_and_concaveOn_iff (f := g)).1 ⟨hg, hgc'⟩
+  exact apply_barycenter_of_map_smul_add_smul hK hg.left φ hφ₁
     (f := ⟨K.domRestrict g, hgc.domRestrict⟩)
-    fun x y a b ha hb hab => by simpa [smul_eq_mul] using hcomb x x.2 y y.2 a b ha hb hab
+    fun x y a b ha hb hab => by
+      simpa [smul_eq_mul] using hcomb x x.property y y.property a b ha hb hab
 
 /-- If `T : C(K, F)` preserves binary convex combinations, every continuous linear functional
 `ℓ : StrongDual ℝ F` evaluates at `T (barycenter K φ)` to `φ (ℓ ∘ T)`. -/
@@ -349,7 +351,7 @@ theorem strongDual_map_barycenter_of_map_smul_add_smul {F : Type*} [AddCommGroup
     [FunLike Φ C(K, ℝ) ℝ] [LinearMapClass Φ ℝ C(K, ℝ) ℝ] [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ)
     (hφ₁ : φ 1 = 1) {T : C(K, F)}
     (hT : ∀ (x y : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      T ⟨a • (x : E) + b • (y : E), hKc x.2 y.2 ha hb hab⟩ = a • T x + b • T y)
+      T ⟨a • (x : E) + b • (y : E), hKc x.property y.property ha hb hab⟩ = a • T x + b • T y)
     (ℓ : StrongDual ℝ F) :
     ℓ (T ⟨barycenter K φ, barycenter_mem hK hKc φ hφ₁⟩) = φ ((ℓ : C(F, ℝ)).comp T) :=
   apply_barycenter_of_map_smul_add_smul hK hKc φ hφ₁ (f := (ℓ : C(F, ℝ)).comp T)
@@ -365,14 +367,15 @@ theorem map_barycenter_of_map_smul_add_smul {F : Type*} [AddCommGroup F] [Module
     {L : Set F} {Φ : Type*} [FunLike Φ C(K, ℝ) ℝ] [LinearMapClass Φ ℝ C(K, ℝ) ℝ]
     [OrderHomClass Φ C(K, ℝ) ℝ] (φ : Φ) (hφ₁ : φ 1 = 1) {T : C(K, L)}
     (hT : ∀ (x y : K) (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : a + b = 1),
-      (T ⟨a • (x : E) + b • (y : E), hKc x.2 y.2 ha hb hab⟩ : F) = a • (T x : F) + b • (T y : F)) :
+      (T ⟨a • (x : E) + b • (y : E), hKc x.property y.property ha hb hab⟩ : F) =
+        a • (T x : F) + b • (T y : F)) :
     (T ⟨barycenter K φ, barycenter_mem hK hKc φ hφ₁⟩ : F) =
       barycenter L ((PositiveLinearMap.ofClass φ).comp
         (ContinuousMap.compPositiveLinearMap ℝ ℝ T)) := by
   let bK : K := ⟨barycenter K φ, barycenter_mem hK hKc φ hφ₁⟩
-  let Tf : C(K, F) := ⟨fun x => (T x : F), continuous_subtype_val.comp T.continuous⟩
+  let Tf : C(K, F) := ⟨fun x => (T x : F), continuous_subtypeVal.comp T.continuous⟩
   symm
-  refine barycenter_eq_of_mem_of_forall_strongDual_eq (T bK).2 fun ℓ => ?_
+  refine barycenter_eq_of_mem_of_forall_strongDual_eq (T bK).property fun ℓ => ?_
   have hcomp : ((ℓ : C(F, ℝ)).restrict L).comp T = (ℓ : C(F, ℝ)).comp Tf := by
     ext
     simp [Tf]

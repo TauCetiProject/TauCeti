@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.SurfaceMeasure
-public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Kernel
+import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The boundary trace of a bounded Lipschitz domain
@@ -40,6 +42,14 @@ characterization of `W^{1,p}_0(Ω)`
 (`TauCeti.W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero`) identifies the kernel
 of the trace with `W^{1,p}_0(Ω)`.
 
+For functions continuous up to the boundary the trace condition is the classical one. Surface
+measure charges every relatively open piece of the frontier
+(`Set.IsLipschitzDomainAtWith.euclideanHausdorffMeasure_frontier_inter_ne_zero`), so two
+continuous functions with the same trace agree at every frontier point. Hence `u - v ∈ W^{1,p}_0(Ω)`
+says exactly that the continuous representatives of `u` and `v` coincide on the frontier. This
+identifies the boundary values of a weak solution of the Dirichlet problem, once it is known to
+be continuous up to the boundary, with its boundary datum.
+
 ## Main declarations
 
 * `TauCeti.W1p.lipschitzChartFrontierTrace`: a local chart trace as an `Lᵖ` function on the
@@ -48,6 +58,8 @@ of the trace with `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.frontierTrace_ae_eq_of_continuousOn`: the trace of a function continuous up to
   the boundary is its restriction to the frontier.
 * `TauCeti.W1p.eq_frontierTrace`: any bounded operator with these boundary values is the trace.
+* `TauCeti.W1p.frontierTrace_eq_of_isLipschitzDomainWith`: the trace does not depend on the
+  Lipschitz constant used to construct it.
 * `TauCeti.W1p.w1p0Submodule_le_ker_frontierTrace`: functions in `W^{1,p}_0(Ω)` have zero trace.
 * `TauCeti.W1p.frontierTrace_contDiffSMul_ae`: the trace of `ψ u` is `ψ` times the trace of `u`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero` and `TauCeti.W1p.ker_frontierTrace`:
@@ -55,6 +67,12 @@ of the trace with `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero` and
   `TauCeti.W1p.sub_mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq`: the same for
   an open set of another inner product space that a rigid motion carries onto `Ω`.
+* `TauCeti.W1p.sub_mem_w1p0Submodule_iff_eqOn_frontier` and
+  `TauCeti.W1p.mem_w1p0Submodule_iff_eqOn_frontier`: for functions continuous up to the boundary,
+  `u - v ∈ W^{1,p}_0(Ω)` exactly when their continuous representatives agree at every frontier
+  point, and `u ∈ W^{1,p}_0(Ω)` exactly when its continuous representative vanishes there;
+  `TauCeti.W1p.sub_mem_w1p0Submodule_iff_eqOn_frontier_of_affineIsometryEquiv` is the first in
+  rigid coordinates.
 
 ## References
 
@@ -92,7 +110,7 @@ def W1p.lipschitzChartFrontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
     W1p volume Ω p →L[ℝ] Lp ℝ p ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
       (frontier (Ω : Set (WithLp 2 (ℝ × E))))) :=
   (extendByZeroLpₗᵢ ℝ (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E)))
-      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)
+      (measurableSet_frontier_inter_preimage_normalCylinder _ e a b).nullMeasurableSet
       inter_subset_left).toContinuousLinearMap.comp <|
     ((Lp.compMeasurePreservingₗᵢ ℝ (fun x => (e x).snd)
         (e.measurable_snd_apply.measurePreserving _)).toContinuousLinearMap.comp
@@ -128,7 +146,7 @@ theorem W1p.lipschitzChartFrontierTrace_ae_eq (hp : p ≠ (∞ : ℝ≥0∞))
         h.map_snd_euclideanHausdorffMeasure_frontier_inter_le g)] with x hx hx'
     rw [Lp.compMeasurePreservingₗᵢ_apply]
     exact hx.trans hx'
-  refine (coeFn_extendByZeroLpₗᵢ ℝ hpatch inter_subset_left _).trans ?_
+  refine (coeFn_extendByZeroLpₗᵢ ℝ hpatch.nullMeasurableSet inter_subset_left _).trans ?_
   exact ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq hpatch).1 hcomp)
 
 /-- **A local chart trace on the frontier of a function continuous up to the boundary.** If
@@ -257,6 +275,17 @@ theorem W1p.eq_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
   exact Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
     φ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)).symm)
 
+/-- **The trace does not depend on the Lipschitz constant** used to construct it: the trace
+operators built from two Lipschitz bounds of the same bounded domain agree. -/
+theorem W1p.frontierTrace_eq_of_isLipschitzDomainWith (hp : p ≠ (∞ : ℝ≥0∞)) {L' : ℝ≥0}
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hΩ' : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L')
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
+    W1p.frontierTrace hp hΩ hb = W1p.frontierTrace hp hΩ' hb :=
+  W1p.eq_frontierTrace hp hΩ' hb _ fun φ =>
+    W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn
+      (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)
+
 /-- **Functions in `W^{1,p}_0(Ω)` have zero trace.** -/
 theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
@@ -379,8 +408,7 @@ theorem W1p.lipschitzChartTrace_ae_eq_zero_of_notMem (hp : p ≠ (∞ : ℝ≥0�
   -- `R v` is zero exactly when the local trace of `v` vanishes almost everywhere on `S`.
   have hR (v : W1p volume Ω p) :
       R v = 0 ↔ W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs v =ᵐ[volume.restrict S] 0 :=
-    Lp.eq_zero_iff_ae_eq_zero.trans ⟨(LpToLpRestrictCLM_coeFn ℝ S _).symm.trans,
-      (LpToLpRestrictCLM_coeFn ℝ S _).trans⟩
+    LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) S _
   -- On restrictions of test functions, the local trace is the cutoff product at the graph point,
   -- which vanishes on `S`; the general case follows by density.
   have hu : R u = 0 := (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u
@@ -457,6 +485,44 @@ theorem W1p.ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
     W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero hp hΩ hb]
 
+/-! ### Boundary values of functions continuous up to the boundary -/
+
+/-- **Equal boundary values, pointwise.** Let `Ω` be a bounded Lipschitz domain and `1 ≤ p < ∞`.
+If `u, v ∈ W^{1,p}(Ω)` agree almost everywhere on `Ω` with functions `f` and `g` continuous on
+`closure Ω`, then `u - v` lies in `W^{1,p}_0(Ω)` exactly when `f = g` at every point of the
+frontier. So for functions continuous up to the boundary the Sobolev boundary condition is the
+classical one. -/
+theorem W1p.sub_mem_w1p0Submodule_iff_eqOn_frontier (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u v : W1p volume Ω p}
+    {f g : WithLp 2 (ℝ × E) → ℝ} (hf : ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))))
+    (hg : ContinuousOn g (closure (Ω : Set (WithLp 2 (ℝ × E)))))
+    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f)
+    (hv : W1p.value v =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] g) :
+    u - v ∈ w1p0Submodule volume Ω p ↔ EqOn f g (frontier (Ω : Set (WithLp 2 (ℝ × E)))) := by
+  have htu := W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb hf hu
+  have htv := W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb hg hv
+  rw [W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero hp hΩ hb, map_sub, sub_eq_zero]
+  refine ⟨fun h => hΩ.eqOn_frontier_of_ae_eq (hf.mono frontier_subset_closure)
+      (hg.mono frontier_subset_closure) (htu.symm.trans (h ▸ htv)), fun h => Lp.ext ?_⟩
+  have hfg : f =ᵐ[(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))] g :=
+    ae_restrict_of_forall_mem isClosed_frontier.measurableSet h
+  exact htu.trans (hfg.trans htv.symm)
+
+/-- **Zero boundary values, pointwise.** Let `Ω` be a bounded Lipschitz domain and `1 ≤ p < ∞`.
+If `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `f` continuous on
+`closure Ω`, then `u` lies in `W^{1,p}_0(Ω)` exactly when `f` vanishes at every point of the
+frontier. -/
+theorem W1p.mem_w1p0Submodule_iff_eqOn_frontier (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {u : W1p volume Ω p}
+    {f : WithLp 2 (ℝ × E) → ℝ} (hf : ContinuousOn f (closure (Ω : Set (WithLp 2 (ℝ × E)))))
+    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f) :
+    u ∈ w1p0Submodule volume Ω p ↔ EqOn f 0 (frontier (Ω : Set (WithLp 2 (ℝ × E)))) := by
+  simpa using W1p.sub_mem_w1p0Submodule_iff_eqOn_frontier hp hΩ hb (v := 0) (g := 0) hf
+    continuous_zero.continuousOn hu (by rw [W1p.value_zero]; exact Lp.coeFn_zero _ _ _)
+
 /-! ### Domains carried onto a Lipschitz domain by a rigid motion -/
 
 section AffineIsometry
@@ -492,6 +558,39 @@ theorem W1p.sub_mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq
         W1p.frontierTrace hp hΩ hb (W1p.compAffineIsometryEquivL g.symm hΩU v) := by
   rw [W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero hp hΩ hb g hΩU,
     map_sub, map_sub, sub_eq_zero]
+
+/-- **Equal boundary values in rigid coordinates, pointwise.** Let an affine isometry `g` carry the
+open set `U ⊆ F` onto a bounded Lipschitz domain `Ω`, and let `1 ≤ p < ∞`. If `u, v ∈ W^{1,p}(U)`
+agree almost everywhere on `U` with functions `f₁` and `f₂` continuous on `closure U`, then
+`u - v` lies in `W^{1,p}_0(U)` exactly when `f₁ = f₂` at every point of `frontier U`. -/
+theorem W1p.sub_mem_w1p0Submodule_iff_eqOn_frontier_of_affineIsometryEquiv
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (hΩU : (Ω : Set (WithLp 2 (ℝ × E))) = g.symm ⁻¹' U)
+    {u v : W1p volume U p} {f₁ f₂ : F → ℝ} (hf₁ : ContinuousOn f₁ (closure (U : Set F)))
+    (hf₂ : ContinuousOn f₂ (closure (U : Set F)))
+    (hu : W1p.value u =ᵐ[volume.restrict (U : Set F)] f₁)
+    (hv : W1p.value v =ᵐ[volume.restrict (U : Set F)] f₂) :
+    u - v ∈ w1p0Submodule volume U p ↔ EqOn f₁ f₂ (frontier (U : Set F)) := by
+  -- Transport the representatives, their continuity and the frontier to `Ω` through `g.symm`.
+  have hmp : MeasurePreserving g.symm (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))
+      (volume.restrict (U : Set F)) := by
+    rw [hΩU]
+    exact g.symm.measurePreserving.restrict_preimage U.isOpen.measurableSet
+  have hae (w : W1p volume U p) (f : F → ℝ) (hw : W1p.value w =ᵐ[volume.restrict (U : Set F)] f) :
+      W1p.value (W1p.compAffineIsometryEquivL g.symm hΩU w) =ᵐ[volume.restrict
+        (Ω : Set (WithLp 2 (ℝ × E)))] f ∘ g.symm :=
+    (W1p.value_compAffineIsometryEquivL_ae g.symm hΩU w).trans
+      (hmp.quasiMeasurePreserving.ae_eq_comp hw)
+  have hcont (f : F → ℝ) (hf : ContinuousOn f (closure (U : Set F))) :
+      ContinuousOn (f ∘ g.symm) (closure (Ω : Set (WithLp 2 (ℝ × E)))) := by
+    rw [hΩU, ← g.symm.coe_toHomeomorph, ← Homeomorph.preimage_closure]
+    exact hf.comp g.symm.continuous.continuousOn (mapsTo_preimage _ _)
+  rw [← W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff g.symm hΩU, map_sub,
+    W1p.sub_mem_w1p0Submodule_iff_eqOn_frontier hp hΩ hb (hcont f₁ hf₁) (hcont f₂ hf₂)
+      (hae u f₁ hu) (hae v f₂ hv), hΩU, ← g.symm.coe_toHomeomorph,
+    ← Homeomorph.preimage_frontier, eqOn_comp_right_iff,
+    image_preimage_eq _ g.symm.toHomeomorph.surjective]
 
 end AffineIsometry
 

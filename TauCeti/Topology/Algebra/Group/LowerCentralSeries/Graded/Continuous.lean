@@ -50,7 +50,7 @@ theorem continuous_gradedBracket (j k : ℕ) :
     fun_prop
   have hraw : Continuous (fun xy : pLowerCentralSeries p G j × pLowerCentralSeries p G k ↦
       gradedMk p G (j + k + 1) ⟨⁅(xy.1 : G), (xy.2 : G)⁆,
-        commutator_mem_pLowerCentralSeries xy.1.2 xy.2.2⟩) :=
+        commutator_mem_pLowerCentralSeries xy.1.property xy.2.property⟩) :=
     (continuous_gradedMk (p := p) (G := G) (j + k + 1)).comp (hcomm.subtype_mk _)
   convert hraw using 1
   ext xy

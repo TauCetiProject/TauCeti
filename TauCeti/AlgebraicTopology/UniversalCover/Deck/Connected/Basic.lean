@@ -39,11 +39,11 @@ variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 /-- Two deck transformations of a covering map with preconnected total space are equal if they
 agree at one point of the total space. -/
 theorem eq_of_apply_eq [PreconnectedSpace E] (hp : IsCoveringMap p) (φ ψ : deck p) {e : E}
-    (h : φ.1 e = ψ.1 e) : φ = ψ := by
+    (h : φ.val e = ψ.val e) : φ = ψ := by
   apply Subtype.ext
   apply Homeomorph.ext
   exact congr_fun
-    (hp.eq_of_comp_eq φ.1.continuous ψ.1.continuous
+    (hp.eq_of_comp_eq φ.val.continuous ψ.val.continuous
       ((deck.comp_eq φ).trans (deck.comp_eq ψ).symm)
       e h)
 
@@ -142,7 +142,7 @@ lemma deckEquivFiberOfSurjective_apply [PreconnectedSpace E] (hp : IsCoveringMap
 underlying homeomorphism. -/
 lemma deckEquivFiberOfSurjective_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : deck p => φ • e) (φ : deck p) :
-    (deckEquivFiberOfSurjective hp e hsurj φ : E) = φ.1 e.1 := by
+    (deckEquivFiberOfSurjective hp e hsurj φ : E) = φ.val e.val := by
   rw [deckEquivFiberOfSurjective_apply]
   exact deck.fiber_smul_coe φ e
 
@@ -160,7 +160,7 @@ the requested point. -/
 lemma deckEquivFiberOfSurjective_symm_apply_coe [PreconnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {b})
     (hsurj : Function.Surjective fun φ : deck p => φ • e) (e' : p ⁻¹' {b}) :
-    (((deckEquivFiberOfSurjective hp e hsurj).symm e').1 e.1 : E) = e'.1 := by
+    (((deckEquivFiberOfSurjective hp e hsurj).symm e').val e.val : E) = e'.val := by
   simpa only [deck.fiber_smul_eq_fiberHomeomorph, deck.fiberHomeomorph_apply] using
     congrArg Subtype.val (deckEquivFiberOfSurjective_symm_smul hp e hsurj e')
 

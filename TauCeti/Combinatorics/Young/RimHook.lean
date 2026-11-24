@@ -182,9 +182,7 @@ def rimHookRows (μ ν : YoungDiagram) : Finset ℕ :=
 @[simp]
 theorem mem_rimHookRows : i ∈ μ.rimHookRows ν ↔ ν.rowLen i < μ.rowLen i := by
   simp only [rimHookRows, Finset.mem_filter, Finset.mem_range]
-  refine ⟨fun h => h.2, fun h => ⟨?_, h⟩⟩
-  by_contra hi
-  exact absurd (rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp hi)) (by omega)
+  exact ⟨fun h => h.2, fun h => ⟨rowLen_pos_iff.mp (by omega), h⟩⟩
 
 /-- Outside the rows it meets, the skew shape `μ / ν` is empty, so `ν` and `μ` agree there. -/
 theorem rowLen_eq_of_notMem_rimHookRows (hle : ν ≤ μ) (hi : i ∉ μ.rimHookRows ν) :
@@ -275,9 +273,7 @@ theorem card_add_rowLen (h : IsRimHook μ ν) (hab : μ.rimHookRows ν = Finset.
     μ.card + ν.rowLen b + a = ν.card + μ.rowLen a + b := by
   have hle := h.le_of_rimHookRows_eq_Icc hab
   have hb := rowLen_lt_of_rimHookRows_eq_Icc hab hle le_rfl
-  have hbcol : b < μ.colLen 0 := by
-    by_contra hb'
-    exact absurd (rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp hb')) (by omega)
+  have hbcol : b < μ.colLen 0 := rowLen_pos_iff.mp (by omega)
   obtain ⟨N, hμN, hνN⟩ : ∃ N, μ.colLen 0 ≤ N ∧ ν.colLen 0 ≤ N :=
     ⟨_, le_max_left _ _, le_max_right _ _⟩
   have hsub : Finset.Icc a b ⊆ Finset.range N := fun i hi =>
@@ -485,9 +481,7 @@ theorem update_betaNumber_eq_comp_cycleIcc (h : IsRimHook μ ν)
 theorem lt_colLen_of_rimHookRows_eq_Icc (h : IsRimHook μ ν)
     (hab : μ.rimHookRows ν = Finset.Icc a b) : b < μ.colLen 0 := by
   have hb := rowLen_lt_of_rimHookRows_eq_Icc hab (h.le_of_rimHookRows_eq_Icc hab) le_rfl
-  by_contra hb'
-  rw [rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp hb')] at hb
-  omega
+  exact rowLen_pos_iff.mp (by omega)
 
 /-- **A rim hook is determined by its size and its bottom row.**  Two rim hooks `μ₁ / ν` and
 `μ₂ / ν` with the same number of cells and the same bottom row have the same larger diagram: by
@@ -622,7 +616,7 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
     · have hzero : μ.rowLen i = 0 :=
         rowLen_ofRowLensFin_eq_zero_of_le _ _ (Nat.not_lt.mp hi)
       rw [hzero, hg_gt i (by omega)]
-      exact (rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))).symm
+      exact (rowLen_eq_zero_iff.mpr (hν.trans (Nat.not_lt.mp hi))).symm
   have hμrows : μ.rimHookRows ν = Finset.Icc a j := by
     ext i
     rw [mem_rimHookRows, hμ, (hrows i).1, Finset.mem_Icc]

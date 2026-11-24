@@ -36,6 +36,8 @@ operations that need them.
   continuous linear equivalence preserves the index.
 * `ContinuousLinearMap.index_prodMap`: the index is additive under products with finite free
   kernels and cokernels.
+* `ContinuousLinearMap.finiteDimensional_ker_prodMap`: a product of operators with
+  finite-dimensional kernels has finite-dimensional kernel.
 * `ContinuousLinearMap.index_of_surjective` and `index_of_injective`: the index in the one-sided
   cases.
 * `ContinuousLinearMap.index_restrictScalars`: restricting scalars along a tower of division rings
@@ -179,6 +181,15 @@ variable {𝕜 : Type*} [DivisionRing 𝕜]
 variable {E F : Type*}
 variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
 variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- The kernel of a direct sum of operators with finite-dimensional kernels is
+finite-dimensional. -/
+instance finiteDimensional_ker_prodMap {E' F' : Type*} [AddCommGroup E'] [Module 𝕜 E']
+    [TopologicalSpace E'] [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F']
+    {T : E →L[𝕜] F} {T' : E' →L[𝕜] F'} [FiniteDimensional 𝕜 T.ker] [FiniteDimensional 𝕜 T'.ker] :
+    FiniteDimensional 𝕜 (T.prodMap T').ker :=
+  ((LinearEquiv.ofEq _ _ (LinearMap.ker_prodMap (T : E →ₗ[𝕜] F) (T' : E' →ₗ[𝕜] F'))).trans
+    (Submodule.prodEquiv _ _)).symm.finiteDimensional
 
 /-- Between finite-dimensional spaces the index is `dim E − dim F`, for any operator. -/
 lemma index_eq_of_finiteDimensional [FiniteDimensional 𝕜 E]

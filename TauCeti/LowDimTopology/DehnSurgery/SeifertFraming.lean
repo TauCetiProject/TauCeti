@@ -105,7 +105,7 @@ variable {X : Type} [TopologicalSpace X] {f : Circle → X} {Φ : SolidTorus →
 
 /-- The open solid torus `B² × S¹`, mapped by `Φ`. -/
 private def openSolidTorusMap (Φ : SolidTorus → X) (x : ↥(ball (0 : ℂ) 1) × Circle) : X :=
-  Φ (⟨x.1, ball_subset_closedBall x.1.2⟩, x.2)
+  Φ (⟨x.1, ball_subset_closedBall x.1.property⟩, x.2)
 
 omit [TopologicalSpace X] in
 private theorem range_openSolidTorusMap :
@@ -113,22 +113,22 @@ private theorem range_openSolidTorusMap :
   ext x
   constructor
   · rintro ⟨y, rfl⟩
-    exact ⟨_, mem_ball_zero_iff.mp y.1.2, rfl⟩
+    exact ⟨_, mem_ball_zero_iff.mp y.1.property, rfl⟩
   · rintro ⟨p, hp, rfl⟩
     exact ⟨(⟨p.1, by simpa using hp⟩, p.2), rfl⟩
 
 /-- The punctured open solid torus `(B² ∖ {0}) × S¹`, mapped by `Φ`. -/
 private def puncturedMap (Φ : SolidTorus → X) (x : ↥(ball (0 : ℂ) 1 \ {0}) × Circle) : X :=
-  Φ (⟨x.1, ball_subset_closedBall x.1.2.1⟩, x.2)
+  Φ (⟨x.1, ball_subset_closedBall x.1.property.1⟩, x.2)
 
 private theorem range_puncturedMap (h : IsSolidTorusNeighborhood f Φ) :
     range (puncturedMap Φ) = Φ '' {p | ‖(p.1 : ℂ)‖ < 1} ∩ (range f)ᶜ := by
   ext x
   constructor
   · rintro ⟨y, rfl⟩
-    refine ⟨⟨_, mem_ball_zero_iff.mp y.1.2.1, rfl⟩, ?_⟩
+    refine ⟨⟨_, mem_ball_zero_iff.mp y.1.property.1, rfl⟩, ?_⟩
     rw [mem_compl_iff, puncturedMap, h.apply_mem_range_iff]
-    exact y.1.2.2
+    exact y.1.property.2
   · rintro ⟨⟨p, hp, rfl⟩, hpf⟩
     rw [mem_compl_iff, h.apply_mem_range_iff] at hpf
     exact ⟨(⟨p.1, by simpa using hp, hpf⟩, p.2), rfl⟩

@@ -186,14 +186,15 @@ variable (A l) in
 /-- The unique `A[X]`-point extending the conjugate of a point of the dynamic parabolic. -/
 noncomputable def extend : parabolic A l →* WithConv (H →ₐ[R] Polynomial A) :=
   (MonoidHom.ofInjective (ofPolyPoint_injective (R := R) (H := H) A)).symm.toMonoidHom.comp
-    (MonoidHom.codRestrict ((conjugate A l).comp (parabolic A l).subtype) _ fun g => g.2)
+    (MonoidHom.codRestrict ((conjugate A l).comp (parabolic A l).subtype) _ fun g => g.property)
 
 /-- The chosen extension does induce the conjugate it extends. -/
 @[simp]
 theorem ofPolyPoint_extend (g : parabolic A l) :
     ofPolyPoint A (extend A l g) = conjugate A l (g : WithConv (H →ₐ[R] A)) := by
   have := (MonoidHom.ofInjective (ofPolyPoint_injective (R := R) (H := H) A)).apply_symm_apply
-    (⟨conjugate A l (g : WithConv (H →ₐ[R] A)), g.2⟩ : (ofPolyPoint (R := R) (H := H) A).range)
+    (⟨conjugate A l (g : WithConv (H →ₐ[R] A)), g.property⟩ : (ofPolyPoint (R := R) (H
+        := H) A).range)
   exact congrArg Subtype.val this
 
 /-- The extension over the origin is unique. -/
@@ -214,7 +215,7 @@ theorem limit_apply (g : parabolic A l) : limit A l g = evalZeroPoint A (extend 
 
 /-- The dynamic limit evaluates the constant coefficient of the conjugation family. -/
 theorem limit_apply_eq_coeff_conjugate (g : parabolic A l) (h : H) :
-    (limit A l g).ofConv h = ((conjugate A l g.1).ofConv h).coeff 0 := by
+    (limit A l g).ofConv h = ((conjugate A l g.val).ofConv h).coeff 0 := by
   rw [← ofPolyPoint_extend g, ofPolyPoint_apply, limit_apply, evalZeroPoint_apply]
   simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
     Polynomial.coe_toLaurentAlg, Polynomial.coe_aeval_eq_eval,
@@ -226,7 +227,7 @@ theorem limit_apply_eq_coeff_conjugate (g : parabolic A l) (h : H) :
 @[simp]
 theorem toConv_aeval_one_comp_extend (g : parabolic A l) :
     toConv (((Polynomial.aeval (1 : A)).restrictScalars R).comp (extend A l g).ofConv) =
-      g.1 := by
+      g.val := by
   rw [← AlgHom.mapValue_apply]
   let e : LaurentPolynomial A →ₐ[R] A := (laurentEval (R := A) (1 : Aˣ)).restrictScalars R
   have he : e.comp (Polynomial.toLaurentAlg.restrictScalars R) =
@@ -235,7 +236,7 @@ theorem toConv_aeval_one_comp_extend (g : parabolic A l) :
   rw [← he, AlgHom.mapValue_comp, MonoidHom.comp_apply,
     AlgHom.mapValue_apply (Polynomial.toLaurentAlg.restrictScalars R),
     ← ofPolyPoint_apply, ofPolyPoint_extend]
-  exact mapValue_laurentEval_one_conjugate l g.1
+  exact mapValue_laurentEval_one_conjugate l g.val
 
 /-! ### The Levi and unipotent parts -/
 
@@ -283,7 +284,7 @@ theorem mem_unipotent_iff {g : WithConv (H →ₐ[R] A)} :
     g ∈ unipotent A l ↔ ∃ hg : g ∈ parabolic A l, limit A l ⟨g, hg⟩ = 1 := by
   constructor
   · rintro ⟨x, hx, rfl⟩
-    exact ⟨x.2, hx⟩
+    exact ⟨x.property, hx⟩
   · rintro ⟨hg, h⟩
     exact ⟨⟨g, hg⟩, h, rfl⟩
 
@@ -363,7 +364,7 @@ theorem levi_le_comap : levi A l ≤ (levi B l).comap (AlgHom.mapValue φ) := fu
 
 /-- The extension over the origin is natural in the value algebra. -/
 theorem extend_mapValue (g : parabolic A l) :
-    extend B l ⟨AlgHom.mapValue φ (g : WithConv (H →ₐ[R] A)), parabolic_le_comap φ g.2⟩ =
+    extend B l ⟨AlgHom.mapValue φ (g : WithConv (H →ₐ[R] A)), parabolic_le_comap φ g.property⟩ =
       AlgHom.mapValue (Polynomial.mapAlgHom φ) (extend A l g) :=
   extend_unique (by
     rw [← mapValue_ofPolyPoint, ofPolyPoint_extend, mapValue_conjugate_mapAlgHom])
@@ -371,7 +372,8 @@ theorem extend_mapValue (g : parabolic A l) :
 /-- The limit homomorphism is natural in the value algebra. -/
 theorem mapValue_limit (g : parabolic A l) :
     AlgHom.mapValue φ (limit A l g) =
-      limit B l ⟨AlgHom.mapValue φ (g : WithConv (H →ₐ[R] A)), parabolic_le_comap φ g.2⟩ := by
+      limit B l ⟨AlgHom.mapValue φ (g : WithConv (H →ₐ[R] A)), parabolic_le_comap φ g.property⟩
+          := by
   rw [limit_apply, limit_apply, extend_mapValue, mapValue_evalZeroPoint]
 
 /-- The unipotent subgroup is preserved by change of value algebra. -/

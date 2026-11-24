@@ -78,7 +78,7 @@ private lemma measurable_expNegUnitInterval : Measurable expNegUnitInterval :=
 /-- The logarithmic change of variables is measurable. It is not continuous at `0`, which is
 harmless: `0` is outside the range of `TauCeti.expNegUnitInterval`. -/
 private lemma measurable_negLogNNReal : Measurable negLogNNReal :=
-  measurable_real_toNNReal.comp ((Real.measurable_log.comp measurable_subtype_coe).neg)
+  measurable_real_toNNReal.comp ((Real.measurable_log.comp measurable_subtypeVal).neg)
 
 /-- The logarithmic change of variables is a left inverse of the exponential one. -/
 @[simp]
@@ -101,7 +101,7 @@ private lemma integral_pow_map_expNegUnitInterval (μ : Measure ℝ≥0) (n : �
       (μ.map expNegUnitInterval) := Continuous.aestronglyMeasurable (by fun_prop)
   rw [integral_map measurable_expNegUnitInterval.aemeasurable hsm, laplaceTransform_apply]
   refine integral_congr_ae (Filter.Eventually.of_forall fun p => ?_)
-  simp only [coe_expNegUnitInterval, ← Real.exp_nat_mul]
+  simp only [coe_expNegUnitInterval, ← Real.exp_natCast_mul]
   congr 1
   ring
 

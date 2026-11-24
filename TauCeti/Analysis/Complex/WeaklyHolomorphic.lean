@@ -35,11 +35,13 @@ Completeness of `E` is used only in the last step, where the vector-valued integ
 
 ## Main results
 
-* `TauCeti.continuousWithinAt_of_forall_dual`: weak differentiability within a set at a point
-  implies continuity within the set at that point.
-* `TauCeti.continuousOn_of_forall_dual`: weak differentiability on any set implies continuity,
-  even when `E` is not complete.
+* `TauCeti.continuousWithinAt_of_forall_dual_differentiableWithinAt`: weak differentiability
+  within a set at a point implies continuity within the set at that point.
+* `TauCeti.continuousOn_of_forall_dual_differentiableOn`: weak differentiability on any set
+  implies continuity, even when `E` is not complete.
 * `TauCeti.differentiableOn_of_forall_dual`: weak holomorphy on an open set implies holomorphy.
+* `TauCeti.differentiableOn_of_continuousOn_of_forall_comp`: a continuous function is holomorphic
+  as soon as its composites with a jointly injective family of continuous linear maps are.
 * `TauCeti.differentiableOn_iff_forall_dual`, `TauCeti.differentiable_iff_forall_dual`: the
   equivalence of holomorphy and weak holomorphy.
 
@@ -62,7 +64,7 @@ variable {f : ℂ → E} {U : Set ℂ}
 
 /-- A function that is weakly differentiable within `U` at `c` is continuous within `U` at `c`.
 This needs neither openness of `U` nor completeness of `E`. -/
-theorem continuousWithinAt_of_forall_dual {c : ℂ}
+theorem continuousWithinAt_of_forall_dual_differentiableWithinAt {c : ℂ}
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableWithinAt ℂ (fun z ↦ ℓ (f z)) U c) :
     ContinuousWithinAt f U c := by
   rw [ContinuousWithinAt, tendsto_iff_seq_tendsto]
@@ -101,25 +103,32 @@ theorem continuousWithinAt_of_forall_dual {c : ℂ}
 
 /-- A function that is weakly differentiable on a set `U` is continuous on `U`. This needs neither
 openness of `U` nor completeness of `E`. -/
-theorem continuousOn_of_forall_dual
+theorem continuousOn_of_forall_dual_differentiableOn
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) :
-    ContinuousOn f U := fun c hc ↦ continuousWithinAt_of_forall_dual fun ℓ ↦ hf ℓ c hc
+    ContinuousOn f U := fun c hc ↦
+  continuousWithinAt_of_forall_dual_differentiableWithinAt fun ℓ ↦ hf ℓ c hc
 
-/-- **Weak holomorphy implies holomorphy.** If `E` is a complex Banach space and
-`z ↦ ℓ (f z)` is complex differentiable on the open set `U` for every continuous linear
-functional `ℓ` on `E`, then `f` is complex differentiable on `U`. -/
-theorem differentiableOn_of_forall_dual [CompleteSpace E]
-    (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) (hU : IsOpen U) :
+/-- **Holomorphy can be tested along a jointly injective family of continuous linear maps.** Let
+`f` be continuous on the open set `U` with values in a complex Banach space `E`, and let
+`L i : E →L[ℂ] G` be continuous linear maps into a complex Banach space `G` whose kernels meet
+only in `0`. If every composite `z ↦ L i (f z)` is complex differentiable on `U`, then so is `f`.
+
+Unlike `TauCeti.differentiableOn_of_forall_dual`, the family need not consist of all continuous
+linear functionals, for instance the pairings of a space of distributions with test functions;
+continuity of `f` is then assumed rather than deduced. -/
+theorem differentiableOn_of_continuousOn_of_forall_comp [CompleteSpace E] {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] {ι : Type*} (L : ι → E →L[ℂ] G)
+    (hL : ∀ x, (∀ i, L i x = 0) → x = 0) (hcont : ContinuousOn f U)
+    (hf : ∀ i, DifferentiableOn ℂ (fun z ↦ L i (f z)) U) (hU : IsOpen U) :
     DifferentiableOn ℂ f U := by
-  have hcont := continuousOn_of_forall_dual hf
   intro c hc
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU c hc
   obtain ⟨R, hR, hRε⟩ : ∃ R : ℝ≥0, 0 < R ∧ (R : ℝ) < ε :=
     ⟨(ε / 2).toNNReal, by simpa using hε, by rw [Real.coe_toNNReal _ (by positivity)]; linarith⟩
   have hRU : closedBall c R ⊆ U := (closedBall_subset_ball hRε).trans hεU
   have hsphere : sphere c R ⊆ U := sphere_subset_closedBall.trans hRU
-  -- On `ball c R`, `f` agrees with its Banach-valued Cauchy integral, because every continuous
-  -- linear functional does by the scalar Cauchy integral formula.
+  -- On `ball c R`, `f` agrees with its Banach-valued Cauchy integral, because every `L i` does by
+  -- the Cauchy integral formula in `G`.
   have heq : ∀ z ∈ ball c R,
       (2 * π * I : ℂ)⁻¹ • ∮ w in C(c, R), (w - z)⁻¹ • f w = f z := by
     intro z hz
@@ -128,16 +137,26 @@ theorem differentiableOn_of_forall_dual [CompleteSpace E]
     have hint : CircleIntegrable (fun w ↦ (w - z)⁻¹ • f w) c R :=
       (((continuousOn_id.sub continuousOn_const).inv₀ hne).smul
         (hcont.mono hsphere)).circleIntegrable R.coe_nonneg
-    refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
-    rw [map_smul, ← ℓ.circleIntegral_comp_comm hint]
+    refine sub_eq_zero.1 (hL _ fun i ↦ ?_)
+    rw [map_sub, map_smul, ← (L i).circleIntegral_comp_comm hint, sub_eq_zero]
     simp only [map_smul]
-    exact ((hf ℓ).mono (closure_ball c (NNReal.coe_ne_zero.2 hR.ne') ▸ hRU)).diffContOnCl
+    exact ((hf i).mono (closure_ball c (NNReal.coe_ne_zero.2 hR.ne') ▸ hRU)).diffContOnCl
       |>.two_pi_i_inv_smul_circleIntegral_sub_inv_smul hz
   have hps := hasFPowerSeriesOn_cauchy_integral
     ((hcont.mono hsphere).circleIntegrable R.coe_nonneg) hR
   refine (hps.analyticAt.differentiableAt.congr_of_eventuallyEq ?_).differentiableWithinAt
   filter_upwards [isOpen_ball.mem_nhds (mem_ball_self (NNReal.coe_pos.2 hR))] with z hz
   exact (heq z hz).symm
+
+/-- **Weak holomorphy implies holomorphy.** If `E` is a complex Banach space and
+`z ↦ ℓ (f z)` is complex differentiable on the open set `U` for every continuous linear
+functional `ℓ` on `E`, then `f` is complex differentiable on `U`. -/
+theorem differentiableOn_of_forall_dual [CompleteSpace E]
+    (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) (hU : IsOpen U) :
+    DifferentiableOn ℂ f U :=
+  differentiableOn_of_continuousOn_of_forall_comp (fun ℓ : StrongDual ℂ E ↦ ℓ)
+    (fun x hx ↦ (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ by simpa using hx ℓ)
+    (continuousOn_of_forall_dual_differentiableOn hf) hf hU
 
 /-- A function into a complex Banach space is complex differentiable on an open set if and only if
 it is weakly so: its composite with every continuous linear functional is complex

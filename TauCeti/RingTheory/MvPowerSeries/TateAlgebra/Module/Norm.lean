@@ -75,7 +75,7 @@ theorem ofAddSubgroup_toAddSubgroup (a : Gauss c E) :
 
 @[simp]
 theorem ofAddSubgroup_apply (a : IsRestrictedFamily.addSubgroup E c)
-    (t : σ →₀ ℕ) : ofAddSubgroup a t = a.1 t := (rfl)
+    (t : σ →₀ ℕ) : ofAddSubgroup a t = a.val t := (rfl)
 
 instance : AddCommGroup (Gauss c E) :=
   Equiv.addCommGroup
@@ -145,7 +145,7 @@ theorem toAddSubgroupLinearEquiv_symm_apply
 theorem smul_apply (r : R) (a : Gauss c E) (t : σ →₀ ℕ) :
     (r • a) t = r • a t := by
   simpa only [toAddSubgroupLinearEquiv_apply, coe_smul, Pi.smul_apply] using
-    congrArg (fun b : IsRestrictedFamily.addSubgroup E c ↦ b.1 t)
+    congrArg (fun b : IsRestrictedFamily.addSubgroup E c ↦ b.val t)
       ((toAddSubgroupLinearEquiv R).map_smul r a)
 
 /-- Include finite-support coefficient families in the Gauss-topological carrier. -/
@@ -205,10 +205,10 @@ instance instSeminormedAddCommGroup : SeminormedAddCommGroup (Gauss c E) :=
             exact add_le_add
               (le_ciSup
                 (isRestrictedFamily_iff.mp
-                  (mem_addSubgroup.mp a.toAddSubgroup.2)).bddAbove_range_of_cofinite t)
+                  (mem_addSubgroup.mp a.toAddSubgroup.property)).bddAbove_range_of_cofinite t)
               (le_ciSup
                 (isRestrictedFamily_iff.mp
-                  (mem_addSubgroup.mp b.toAddSubgroup.2)).bddAbove_range_of_cofinite t)
+                  (mem_addSubgroup.mp b.toAddSubgroup.property)).bddAbove_range_of_cofinite t)
       neg' a := by simp }
 
 /-- The norm is the supremum of the weighted coefficient norms. Restrictedness ensures that
@@ -220,7 +220,7 @@ theorem norm_eq_iSup (a : Gauss c E) :
 theorem norm_coeff_mul_prod_le (a : Gauss c E) (t : σ →₀ ℕ) :
     ‖(a : (σ →₀ ℕ) → E) t‖ * t.prod (c · ^ ·) ≤ ‖a‖ :=
   le_ciSup (isRestrictedFamily_iff.mp
-    (mem_addSubgroup.mp a.toAddSubgroup.2)).bddAbove_range_of_cofinite t
+    (mem_addSubgroup.mp a.toAddSubgroup.property)).bddAbove_range_of_cofinite t
 
 /-- The Gauss seminorm is a norm when the coefficient seminorm is a norm. -/
 instance instNormedAddCommGroup {F : Type*} [NormedAddCommGroup F] :
@@ -276,7 +276,7 @@ instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
   obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
     (fun i ↦ (Fact.out : 0 < c i).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
-    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.2)) (by
+    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.property)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
       refine ⟨N, fun k hk l hl t ↦ ?_⟩
@@ -526,9 +526,10 @@ Gauss families over the scalar restricted series. -/
 def mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖)
     (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
     Gauss c E ≃L[IsRestricted.subring (R := R) c] Gauss c F :=
-  .equivOfInverse (mapContinuousLinearMap e.toLinearMap he)
+  .ofContinuousLinearMap (mapContinuousLinearMap e.toLinearMap he)
     (mapContinuousLinearMap e.symm.toLinearMap he')
-    (fun a ↦ ext fun t ↦ by simp) (fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun a ↦ ext fun t ↦ by simp)
 
 /-- The induced isomorphism applies the coefficient equivalence coefficientwise. -/
 @[simp]

@@ -57,7 +57,7 @@ private theorem exists_openNormalSubgroup_descent_data (z : Z2 G M) :
         n • (z : G × G → M) (g, h) = (z : G × G → M) (g, h) := by
   let W := rightTranslationStabilizer (z : G × G → M)
   have hzloc : IsLocallyConstant (z : G × G → M) :=
-    (IsLocallyConstant.iff_continuous _).2 (mem_Z2_iff.1 z.2).1
+    (IsLocallyConstant.iff_continuous _).2 (mem_Z2_iff.1 z.property).1
   have hWopen : IsOpen (W : Set (G × G)) := isOpen_rightTranslationStabilizer hzloc
   have hopen₁ : IsOpen {g : G | (g, 1) ∈ W} :=
     hWopen.preimage (continuous_id.prodMk continuous_const)
@@ -77,13 +77,13 @@ private theorem exists_openNormalSubgroup_descent_data (z : Z2 G M) :
       (show ((n : G), (n' : G)) ∈ W from ?_) (g, h)
     have hn₁ : (n : G) ∈ U₁ :=
       (inf_le_left : U₁ ⊓ U₂ ≤ U₁) <|
-        (inf_le_left : U ≤ U₁ ⊓ U₂) n.2
+        (inf_le_left : U ≤ U₁ ⊓ U₂) n.property
     have hn₂ : (n' : G) ∈ U₂ :=
       (inf_le_right : U₁ ⊓ U₂ ≤ U₂) <|
-        (inf_le_left : U ≤ U₁ ⊓ U₂) n'.2
+        (inf_le_left : U ≤ U₁ ⊓ U₂) n'.property
     simpa using W.mul_mem (hU₁ hn₁) (hU₂ hn₂)
   · intro n g h
-    have hnV : (n : G) ∈ V := (inf_le_right : U ≤ V) n.2
+    have hnV : (n : G) ∈ V := (inf_le_right : U ≤ V) n.property
     exact hV (n : G) hnV ((z : G × G → M) (g, h)) ⟨(g, h), rfl⟩
 
 /-- **Strict finite-level descent in degree two.** Every continuous `2`-cocycle on a profinite
