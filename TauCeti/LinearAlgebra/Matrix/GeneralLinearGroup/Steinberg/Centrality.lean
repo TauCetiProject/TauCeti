@@ -95,6 +95,20 @@ private theorem commute_stabilize_col {n : ℕ} {u : IndexedSteinbergGroup (Fin 
   exact (Subgroup.mem_centralizer_iff.mp hmem _
     (IndexedSteinbergGroup.x_mem_range_colHom ⟨p.castSucc, (Fin.castSucc_lt_last p).ne⟩ b)).symm
 
+/-- Any element of `Stₙ(R)` in the kernel of `toGL` commutes, after stabilizing to `St_{n + 1}(R)`,
+with every row generator `x_{n, q}(b)` (`q < n`). -/
+private theorem commute_stabilize_row {n : ℕ} {u : IndexedSteinbergGroup (Fin n) R}
+    (hu : IndexedSteinbergGroup.toGL u = 1) (q : Fin n) (b : R) :
+    Commute (stabilize (Nat.le_succ n) u)
+      (IndexedSteinbergGroup.x (Fin.castSucc_lt_last q).ne.symm b) := by
+  have hu_op : IndexedSteinbergGroup.toGL (IndexedSteinbergGroup.transposeOp u) = 1 := by
+    apply Units.ext
+    simp [IndexedSteinbergGroup.coe_toGL_transposeOp, hu]
+  have h := (commute_stabilize_col hu_op q (MulOpposite.op (-b))).map
+    (IndexedSteinbergGroup.transposeOp (ι := Fin (n + 1)) (R := R)).symm
+  rwa [← IndexedSteinbergGroup.transposeOp_mapIndex, MulEquiv.symm_apply_apply,
+    IndexedSteinbergGroup.transposeOp_symm_x, MulOpposite.unop_op, neg_neg] at h
+
 /-- **Milnor's centrality theorem (`K₂(R) ≤ Z(St(R))`).** The kernel of `toStableGL R` lies in the
 center of `SteinbergGroup R`. -/
 theorem ker_toStableGL_le_center :
@@ -113,21 +127,8 @@ theorem ker_toStableGL_le_center :
       apply StableGeneralLinearGroup.of_injective n
       rw [← toStableGL_ofFin, ofFin_stabilize, map_one]
       exact hz
-    have hu'_op : IndexedSteinbergGroup.toGL (IndexedSteinbergGroup.transposeOp u') = 1 := by
-      apply Units.ext
-      simp [IndexedSteinbergGroup.coe_toGL_transposeOp, hu']
-    have hcp : Commute (stabilize (Nat.le_succ n) u')
-        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨p, hp⟩).ne b) :=
-      commute_stabilize_col hu' ⟨p, hp⟩ b
-    have hcq_op : Commute (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.transposeOp u'))
-        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne (MulOpposite.op (-1 : R))) :=
-      commute_stabilize_col hu'_op ⟨q, hq⟩ (MulOpposite.op (-1))
-    have hcq : Commute (stabilize (Nat.le_succ n) u')
-        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne.symm (1 : R)) := by
-      have h := hcq_op.map (IndexedSteinbergGroup.transposeOp (ι := Fin (n + 1)) (R := R)).symm
-      rw [← IndexedSteinbergGroup.transposeOp_mapIndex, MulEquiv.symm_apply_apply,
-        IndexedSteinbergGroup.transposeOp_symm_x, MulOpposite.unop_op, neg_neg] at h
-      exact h
+    have hcp := commute_stabilize_col hu' ⟨p, hp⟩ b
+    have hcq := commute_stabilize_row hu' ⟨q, hq⟩ (1 : R)
     have hcomm_fin : Commute (stabilize (Nat.le_succ n) u')
         ⁅IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨p, hp⟩).ne b,
           IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne.symm (1 : R)⁆ := by

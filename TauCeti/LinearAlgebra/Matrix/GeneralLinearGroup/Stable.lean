@@ -714,7 +714,8 @@ theorem elementarySubgroupMap_surjective (f : A →+* B) (hf : Function.Surjecti
   obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hy
   obtain ⟨v, hv⟩ := f.elementarySubgroupMap_surjective hf ⟨u, hu⟩
   refine ⟨⟨of A n v, of_mem_elementarySubgroup v.property⟩, Subtype.ext ?_⟩
-  rw [coe_elementarySubgroupMap, map_of, ← f.coe_elementarySubgroupMap, congrArg Subtype.val hv]
+  simpa only [coe_elementarySubgroupMap, map_of, f.coe_elementarySubgroupMap] using
+    congrArg (fun w : TauCeti.elementarySubgroup (Fin n) B ↦ of B n w) hv
 
 /-- Ring homomorphisms send stable transvections to stable transvections. -/
 @[simp]

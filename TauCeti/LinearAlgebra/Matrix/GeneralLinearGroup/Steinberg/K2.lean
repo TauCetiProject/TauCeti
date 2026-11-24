@@ -89,20 +89,30 @@ theorem mulExact_subtype_toStableGL :
 
 variable {R} {S T : Type*} [Ring S] [Ring T]
 
+/-- Ring homomorphisms preserve the kernel of `SteinbergGroup.toStableGL`. -/
+theorem map_mem_ker (f : R →+* S) {z : SteinbergGroup R}
+    (hz : z ∈ (SteinbergGroup.toStableGL R).ker) :
+    IndexedSteinbergGroup.map f z ∈ (SteinbergGroup.toStableGL S).ker := by
+  rw [MonoidHom.mem_ker, SteinbergGroup.toStableGL_map, MonoidHom.mem_ker.mp hz, map_one]
+
 /-- The homomorphism `K₂(R) →* K₂(S)` induced by a ring homomorphism `f : R →+* S`, restricting
 `IndexedSteinbergGroup.map f` to the kernels. -/
 def map (f : R →+* S) : AlgebraicK2 R →* AlgebraicK2 S :=
   ((IndexedSteinbergGroup.map f).comp (SteinbergGroup.toStableGL R).ker.subtype).codRestrict _
-    fun x ↦ by
-      rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype,
-        SteinbergGroup.toStableGL_map, toStableGL_coe, map_one]
+    fun x ↦ map_mem_ker f x.property
+
+/-- The kernel inclusion intertwines `AlgebraicK2.map f` with `IndexedSteinbergGroup.map f`. -/
+theorem subtype_comp_map (f : R →+* S) :
+    (SteinbergGroup.toStableGL S).ker.subtype.comp (map f) =
+      (IndexedSteinbergGroup.map f).comp (SteinbergGroup.toStableGL R).ker.subtype :=
+  (rfl)
 
 /-- The underlying element in `St(S)` of `AlgebraicK2.map f x` is
 `IndexedSteinbergGroup.map f x`. -/
 @[simp]
 theorem coe_map_apply (f : R →+* S) (x : AlgebraicK2 R) :
     (map f x : SteinbergGroup S) = IndexedSteinbergGroup.map f x :=
-  (rfl)
+  DFunLike.congr_fun (subtype_comp_map f) x
 
 /-- Applying `AlgebraicK2.map f` to an explicitly constructed element `⟨z, hz⟩ : AlgebraicK2 R`
 yields `⟨IndexedSteinbergGroup.map f z, _⟩`. -/
@@ -110,10 +120,8 @@ yields `⟨IndexedSteinbergGroup.map f z, _⟩`. -/
 theorem map_mk (f : R →+* S) (z : SteinbergGroup R)
     (hz : z ∈ (SteinbergGroup.toStableGL R).ker) :
     map f (⟨z, hz⟩ : AlgebraicK2 R) =
-      ⟨IndexedSteinbergGroup.map f z, by
-        rw [MonoidHom.mem_ker, SteinbergGroup.toStableGL_map,
-          MonoidHom.mem_ker.mp hz, map_one]⟩ :=
-  (rfl)
+      ⟨IndexedSteinbergGroup.map f z, map_mem_ker f hz⟩ :=
+  Subtype.ext (coe_map_apply f ⟨z, hz⟩)
 
 /-- The identity ring homomorphism induces the identity of algebraic `K₂`. -/
 @[simp]
