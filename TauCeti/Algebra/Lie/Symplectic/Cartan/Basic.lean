@@ -9,17 +9,23 @@ public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 
 /-!
-# Negative transpose on the symplectic Lie algebra
+# Negative transpose involution on the symplectic Lie algebra
 
 The symplectic Lie algebra is stable under transpose. Restricting the matrix Lie
-automorphism `TauCeti.negTransposeLieEquiv` gives its involution `X ↦ -Xᵀ`.
-On symplectic Lie matrices it is conjugation by `J`, just as inverse transpose is
-conjugation by `J` on the symplectic group. The fixed and negated vectors are
-respectively the skew-symmetric and symmetric symplectic Lie matrices.
+automorphism `TauCeti.negTransposeLieEquiv` gives its involution `X ↦ -Xᵀ`
+(`LieAlgebra.Symplectic.cartanInvolution`). On symplectic Lie matrices it is conjugation by `J`,
+just as inverse transpose is conjugation by `J` on the symplectic group. The fixed and negated
+vectors are respectively the skew-symmetric and symmetric symplectic Lie matrices.
+
+## Main results
+
+* `LieAlgebra.Symplectic.cartanInvolution`: the involution `X ↦ -Xᵀ` of `sp l R`.
 
 ## References
 
 * B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition.
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics
+  140, Birkhäuser, 2002, Chapter VI, Section 1 (Cartan involutions).
 -/
 
 public section

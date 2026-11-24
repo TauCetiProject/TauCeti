@@ -38,6 +38,11 @@ algebraic closedness, and the answer names the basis vectors involved.
 
 * `Module.Basis.repr_apply_of_apply_basis`: the coordinates of `f w` are those of `w` scaled by
   the eigenvalues.
+* `Module.Basis.apply_eq_smul_of_apply_basis`: if `f` and `g` are both diagonal in `b`, any
+  `μ`-eigenvector of `f` is a `ν`-eigenvector of `g` whenever every basis index with
+  `f`-eigenvalue `μ` has `g`-eigenvalue `ν`.
+* `Module.Basis.comp_eq_comp_of_apply_basis`: intertwining two diagonal endomorphisms across a map
+  sending each basis vector to a shifted eigenvector.
 * `Module.Basis.repr_eq_zero_of_weight_ne`: a joint eigenvector has zero coordinate at a basis
   vector of a different joint weight.
 * `Module.Basis.self_mem_of_repr_ne_zero`, `Module.Basis.eq_span_self_mem`,
@@ -96,6 +101,38 @@ theorem _root_.Module.Basis.repr_eq_zero_of_weight_ne (b : Module.Basis ι K V)
   rw [hw j, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
   by_contra hne
   exact hj (mul_right_cancel₀ hne hcoord).symm
+
+/-- If `f` and `g` are diagonal in the basis `b` with eigenvalues `a` and `c`, then any
+`μ`-eigenvector of `f` is a `ν`-eigenvector of `g` provided `c i = ν` whenever `a i = μ`. -/
+theorem _root_.Module.Basis.apply_eq_smul_of_apply_basis (b : Module.Basis ι K V)
+    {f g : V →ₗ[K] V} {a c : ι → K}
+    (hf : ∀ i, f (b i) = a i • b i) (hg : ∀ i, g (b i) = c i • b i)
+    {w : V} {μ ν : K} (hw : f w = μ • w) (h : ∀ i, a i = μ → c i = ν) :
+    g w = ν • w := by
+  apply b.repr.injective
+  ext i
+  rw [b.repr_apply_of_apply_basis hg, map_smul, Finsupp.smul_apply, smul_eq_mul]
+  by_cases hai : a i = μ
+  · rw [h i hai]
+  · have h0 : b.repr w i = 0 := b.repr_eq_zero_of_weight_ne (κ := Unit) (f := fun _ => f)
+      (a := fun k _ => a k) (fun k _ => hf k) (fun _ => hw) (c := fun _ => μ)
+      (fun hfn => hai (congr_fun hfn ()))
+    simp [h0]
+
+/-- If `f` is diagonal in `b` with eigenvalues `a`, `φ` sends each `b i` to a
+`ψ (a i)`-eigenvector of `f`, and `g₁`, `g₂` are diagonal in `b` with eigenvalues `c₁`, `c₂`
+satisfying `c₁ j = c₂ i` whenever `a j = ψ (a i)`, then `g₁ ∘ φ = φ ∘ g₂`. -/
+theorem _root_.Module.Basis.comp_eq_comp_of_apply_basis (b : Module.Basis ι K V)
+    {f g₁ g₂ φ : Module.End K V} {a c₁ c₂ : ι → K}
+    (hf : ∀ i, f (b i) = a i • b i)
+    (hg₁ : ∀ i, g₁ (b i) = c₁ i • b i)
+    (hg₂ : ∀ i, g₂ (b i) = c₂ i • b i)
+    (ψ : K → K) (hφ : ∀ i, f (φ (b i)) = ψ (a i) • φ (b i))
+    (hc : ∀ i j, a j = ψ (a i) → c₁ j = c₂ i) :
+    g₁.comp φ = φ.comp g₂ := by
+  refine b.ext fun i => ?_
+  simp only [LinearMap.comp_apply]
+  rw [b.apply_eq_smul_of_apply_basis hf hg₁ (hφ i) (hc i), hg₂ i, map_smul]
 
 end IsCancelMulZero
 

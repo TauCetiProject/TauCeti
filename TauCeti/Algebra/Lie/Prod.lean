@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Products of Lie modules
@@ -38,6 +39,8 @@ product.
   A nonzero coordinate guarantees surjectivity onto an irreducible factor.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
+* `TauCeti.idealProdEquivOfIsCompl`: addition identifies a Lie algebra with the direct product of
+  two complementary ideals.
 * `LieHom.prodRepresentation`: the product of two explicit Lie representations.
 * `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
 -/
@@ -236,6 +239,29 @@ theorem comap_lieSpan_diagonal_inl_eq_top_of_mem [LieModule.IsIrreducible R L M]
     simpa only [LieSubmodule.mem_comap, LieModuleHom.inl_apply] using hv'
   rw [hbot] at hmem
   simpa using hmem
+
+/-- Addition identifies `L` with the direct product `I × J` of two complementary Lie ideals. -/
+noncomputable def idealProdEquivOfIsCompl {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I J : LieIdeal R L} (hc : IsCompl I J) :
+    (↥I × ↥J) ≃ₗ⁅R⁆ L where
+  __ := Submodule.prodEquivOfIsCompl I.toSubmodule J.toSubmodule
+    (LieSubmodule.isCompl_toSubmodule.mpr hc)
+  map_lie' {x y} := by
+    have hij (a : I) (b : J) : ⁅(a : L), (b : L)⁆ = 0 :=
+      (LieSubmodule.mem_bot _).mp <| hc.disjoint.le_bot ⟨by
+        rw [← neg_neg ⁅(a : L), (b : L)⁆, lie_skew]
+        exact neg_mem (I.lie_mem a.property), J.lie_mem b.property⟩
+    have hji (b : J) (a : I) : ⁅(b : L), (a : L)⁆ = 0 := by
+      rw [← lie_skew, hij a b, neg_zero]
+    simp [lie_add, add_lie, hij, hji]
+
+/-- Evaluating `idealProdEquivOfIsCompl` adds the two components in `L`. -/
+@[simp]
+theorem idealProdEquivOfIsCompl_apply {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I J : LieIdeal R L} (hc : IsCompl I J) (p : ↥I × ↥J) :
+    idealProdEquivOfIsCompl hc p = (p.1 : L) + p.2 :=
+  Submodule.coe_prodEquivOfIsCompl' I.toSubmodule J.toSubmodule
+    (LieSubmodule.isCompl_toSubmodule.mpr hc) p
 
 end TauCeti
 

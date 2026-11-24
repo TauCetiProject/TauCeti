@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Solvable
 public import Mathlib.Algebra.Lie.Subalgebra
 
 /-!
@@ -13,7 +14,9 @@ public import Mathlib.Algebra.Lie.Subalgebra
 A Lie algebra equivalence `e : L₁ ≃ₗ⁅R⁆ L₂` maps a Lie subalgebra `H` of `L₁` onto a Lie
 subalgebra `K` of `L₂` when `H.map e = K`. This file records that the inverse then maps `K` onto
 `H`, and identifies the inverse of Mathlib's `LieEquiv.ofSubalgebras` restriction with the
-corresponding restriction of the inverse equivalence.
+corresponding restriction of the inverse equivalence. In particular, every Lie algebra equivalence
+restricts to an equivalence `LieEquiv.restrictDerivedSeries` between the `k`-th terms of the
+derived series.
 
 An automorphism `σ` of a Lie algebra `L` *normalises* a Lie subalgebra `H` when `H.map σ = H`.
 The file gives criteria for this: an involutive automorphism mapping `H` into itself, or one acting
@@ -31,6 +34,9 @@ commutativity. What a normalising automorphism does to the root spaces of `H` is
   the equivalence maps `H` onto `K`.
 * `LieEquiv.ofSubalgebras_symm`: restricting the inverse gives the inverse of Mathlib's
   restriction.
+* `LieEquiv.restrictDerivedSeries`: the restriction of a Lie algebra equivalence to the `k`-th term
+  of the derived series, with `LieEquiv.coe_restrictDerivedSeries` and
+  `LieEquiv.coe_restrictDerivedSeries_symm`.
 * `LieSubalgebra.map_eq_self_of_involutive`: an involutive automorphism mapping a subalgebra into
   itself normalises it.
 * `LieSubalgebra.map_eq_self_of_forall_mem_apply_eq_neg`: an automorphism acting by `-1` on a
@@ -70,6 +76,35 @@ theorem ofSubalgebras_symm (h : H.map e = K) :
     (e.ofSubalgebras H K h).symm =
       e.symm.ofSubalgebras K H ((LieSubalgebra.map_symm_eq_iff e).2 h) :=
   LieEquiv.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- The restriction of a Lie algebra equivalence to the `k`-th term of the derived series. -/
+def restrictDerivedSeries (k : ℕ) :
+    LieAlgebra.derivedSeries R L₁ k ≃ₗ⁅R⁆ LieAlgebra.derivedSeries R L₂ k :=
+  e.ofSubalgebras
+    (LieAlgebra.derivedSeries R L₁ k).toLieSubalgebra
+    (LieAlgebra.derivedSeries R L₂ k).toLieSubalgebra
+    (by
+      rw [← LieSubalgebra.toSubmodule_inj, ← LieIdeal.derivedSeries_map_eq k e.surjective,
+        LieIdeal.toLieSubalgebra_toSubmodule, LieIdeal.coe_map_of_surjective e.surjective]
+      -- `(H.map f).toSubmodule` and `((I : LieIdeal R L).toLieSubalgebra : Submodule R L)` are
+      -- definitionally `H.toSubmodule.map f` and `I.toSubmodule`.
+      rfl)
+
+/-- Evaluating `LieEquiv.restrictDerivedSeries` agrees with evaluating the ambient equivalence. -/
+@[simp]
+theorem coe_restrictDerivedSeries (k : ℕ) (x : LieAlgebra.derivedSeries R L₁ k) :
+    (e.restrictDerivedSeries k x : L₂) = e x :=
+  e.ofSubalgebras_apply
+    (LieAlgebra.derivedSeries R L₁ k).toLieSubalgebra
+    (LieAlgebra.derivedSeries R L₂ k).toLieSubalgebra _ x
+
+/-- Evaluating the inverse of `LieEquiv.restrictDerivedSeries` agrees with the ambient inverse. -/
+@[simp]
+theorem coe_restrictDerivedSeries_symm (k : ℕ) (y : LieAlgebra.derivedSeries R L₂ k) :
+    ((e.restrictDerivedSeries k).symm y : L₁) = e.symm y :=
+  e.ofSubalgebras_symm_apply
+    (LieAlgebra.derivedSeries R L₁ k).toLieSubalgebra
+    (LieAlgebra.derivedSeries R L₂ k).toLieSubalgebra _ y
 
 end LieEquiv
 
