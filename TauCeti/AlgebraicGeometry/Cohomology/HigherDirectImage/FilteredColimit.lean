@@ -58,6 +58,12 @@ section FilteredColimit
 variable {J : Type w} [Category.{w'} J] [EssentiallySmall.{u} J] [IsFiltered J]
   {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj j).IsQuasicoherent) {c : Cocone K} (hc : IsColimit c)
 
+/-- The sections over `V`, as a functor to abelian groups, send a morphism to its component
+over `V`: `Scheme.Modules.Hom.app` is defined as this composite. -/
+private lemma forget₂_map_sectionsFunctor_map {M N : Y.Modules} (φ : M ⟶ N) (V : Y.Opens) :
+    (forget₂ _ AddCommGrpCat).map ((sectionsFunctor V).map φ) = φ.app V :=
+  rfl
+
 include hK hc in
 /-- Over an affine open `V`, the sections of the higher direct images of a filtered colimit
 cocone of quasi-coherent modules form a colimit cocone of abelian groups. -/
@@ -74,6 +80,11 @@ private def isColimitMapCoconeSectionsHigherDirectImage (n : ℕ) {V : Y.Opens}
       (K ⋙ f.higherDirectImage n) ⋙ sectionsFunctor V ⋙ forget₂ _ AddCommGrpCat :=
     NatIso.ofComponents (fun j ↦ e (K.obj j)) fun {i j} ψ ↦ by
       ext x
+      rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, Functor.comp_map,
+        Functor.comp_map, Functor.comp_map, forget₂_map_sectionsFunctor_map]
+      -- The components of `e` are the bundled `higherDirectImageSectionsAddEquiv`, and the
+      -- cohomology functor acts on morphisms by the abbreviation `cohomologyOnMap`, so this is
+      -- the naturality square of `higherDirectImageSectionsAddEquiv`.
       exact f.higherDirectImageSectionsAddEquiv_naturality n (K.map ψ) hV x
   refine IsColimit.equivOfNatIsoOfIso α ((cohomologyOnFunctor X n (f ⁻¹ᵁ V)).mapCocone c)
     ((sectionsFunctor V ⋙ forget₂ _ AddCommGrpCat).mapCocone ((f.higherDirectImage n).mapCocone c))
@@ -125,7 +136,7 @@ def isColimitMapCoconeHigherDirectImage (n : ℕ) :
           Functor.mapCocone_ι_app, ← E.map_comp, hc'.fac]
     rw [this]
     infer_instance
-  exact this
+  rwa [Functor.comp_map, forget₂_map_sectionsFunctor_map] at this
 
 end FilteredColimit
 
