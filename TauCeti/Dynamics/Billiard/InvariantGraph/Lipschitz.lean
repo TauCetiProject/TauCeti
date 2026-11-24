@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.RotationNumber
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.Instances.Real.Lemmas
@@ -20,7 +19,7 @@ Let `χ` be a `C²` strictly convex billiard table with period `L` and next-coll
 (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph`). This file proves that `ψ` is Lipschitz,
 with Lipschitz constant at most the largest of the ratios `|∂_v w / ∂_v t|` of `B` at the points
 `(s, ψ(s))` of the graph and the same ratios at the points `(s, -ψ(s))` of the reversed graph; the
-latter are, up to sign, the ratios `∂_w s / ∂_w v` of `B⁻¹` at the points of the graph, since
+latter are, up to sign, the ratios `∂_w v / ∂_w s` of `B⁻¹` at the points of the graph, since
 `B⁻¹ = ι ∘ B ∘ ι` up to a period for the time reversal `ι(s, v) = (s, -v)`. More precisely, `ψ`
 is `K`-Lipschitz as soon as all these ratios `∂_v w / ∂_v t`, without absolute values, are at least
 `-K` (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.lipschitzWith_of_forall_le`). The ratios
