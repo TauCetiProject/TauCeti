@@ -16,10 +16,11 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
 The coefficients `u_k` and `v_k` of the asymptotic expansions of the Airy functions for large
 argument, and the Gamma-function multiplier `χ` of their error bounds (DLMF 9.7.2–9.7.4):
 
-* `TauCeti.airyU`: `u_k = (2k + 1)(2k + 3)⋯(6k − 1) / (216^k k!)`, with `u₀ = 1` and the
-  recurrence `u_{k+1} = (6k + 1)(6k + 3)(6k + 5) / ((2k + 1) · 216 · (k + 1)) · u_k`
-  (`Nat.airyU_succ`);
-* `TauCeti.airyV`: `v_k = −(6k + 1)/(6k − 1) · u_k`, with `v₀ = 1` and `v_k < 0` for `k ≥ 1`;
+* `TauCeti.airyU`: `u_k = (2k + 1)(2k + 3)⋯(6k − 1) / (216^k k!)`, with `u₀ = 1`,
+  `u₁ = 5/72` and the recurrence
+  `u_{k+1} = (6k + 1)(6k + 3)(6k + 5) / ((2k + 1) · 216 · (k + 1)) · u_k` (`Nat.airyU_succ`);
+* `TauCeti.airyV`: `v_k = −(6k + 1)/(6k − 1) · u_k`, with `v₀ = 1`, `v₁ = −7/72` and `v_k < 0`
+  for `k ≥ 1`;
 * `Real.airyChi`: `χ(x) = π^{1/2} Γ(x/2 + 1) / Γ(x/2 + ½)`, with `χ(0) = 1`,
   `χ(1) = π/2`, `χ(2) = 2`, strictly increasing on `(-1, ∞)`
   (`Real.strictMonoOn_airyChi`) and `χ(x) ∼ (πx/2)^{1/2}` as `x → ∞`
@@ -63,6 +64,11 @@ theorem _root_.Nat.airyU_def (k : ℕ) :
 @[simp]
 theorem airyU_zero : airyU 0 = 1 := by
   simp [Nat.airyU_def]
+
+/-- `u₁ = 5/72`. -/
+@[simp]
+theorem airyU_one : airyU 1 = 5 / 72 := by
+  norm_num [Nat.airyU_def, prod_range_succ]
 
 /-- The coefficients `u_k` are positive. -/
 theorem _root_.Nat.airyU_pos (k : ℕ) : 0 < airyU k := by
@@ -117,6 +123,11 @@ theorem _root_.Nat.airyV_def (k : ℕ) : airyV k = -((6 * k + 1 : ℝ) / (6 * k 
 @[simp]
 theorem airyV_zero : airyV 0 = 1 := by
   simp [Nat.airyV_def]
+
+/-- `v₁ = −7/72`. -/
+@[simp]
+theorem airyV_one : airyV 1 = -7 / 72 := by
+  norm_num [Nat.airyV_def]
 
 /-- For `k ≥ 1`, `v_k` is negative: its sign is opposite to that of `u_k`. -/
 theorem airyV_neg {k : ℕ} (hk : 1 ≤ k) : airyV k < 0 := by
