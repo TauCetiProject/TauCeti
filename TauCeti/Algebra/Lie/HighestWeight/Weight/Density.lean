@@ -64,11 +64,12 @@ theorem polynomial_eq_zero_of_dominantIntegral {p : SymmetricAlgebra K H}
     (hp : ∀ lam : Dual K H, IsDominantIntegral b lam → SymmetricAlgebra.lift lam p = 0) :
     p = 0 :=
   -- in the simple coroot basis, the dominant integral weights are the box of natural coordinates
-  SymmetricAlgebra.eq_zero_of_forall_lift_eq_zero b.toCoweightBasis
-    (fun _ ↦ Set.infinite_range_of_injective Nat.cast_injective) fun lam hlam ↦
-      hp lam <| isDominantIntegral_iff.mpr fun i hi ↦ by
-        obtain ⟨n, hn⟩ := hlam ⟨i, hi⟩
-        exact ⟨n, by simpa using hn.symm⟩
+  b.toCoweightBasis.symmetricAlgebra_funext_set (q := 0)
+    (fun _ ↦ Set.infinite_range_of_injective Nat.cast_injective) fun lam hlam ↦ by
+      rw [map_zero]
+      refine hp lam <| isDominantIntegral_iff.mpr fun i hi ↦ ?_
+      obtain ⟨n, hn⟩ := hlam ⟨i, hi⟩
+      exact ⟨n, by simpa using hn.symm⟩
 
 /-- **The powers of the dominant integral weights span each symmetric power of `H*`.** The
 `n`-th powers of the dominant integral weights span the degree-`n` component of the symmetric

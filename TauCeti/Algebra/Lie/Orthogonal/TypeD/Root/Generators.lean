@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.LinearAlgebra.Matrix.Alternating
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -141,6 +141,12 @@ theorem forkLeft_ne_forkRight : forkLeft n hn ≠ forkRight n hn := by
   simp [forkLeft, forkRight] at this
   omega
 
+/-- A coordinate is the terminal one exactly when it has no successor in the chain. -/
+theorem not_add_one_lt_iff_eq_forkRight (i : Fin n) :
+    ¬(i : ℕ) + 1 < n ↔ i = forkRight n hn := by
+  rw [Fin.ext_iff, forkRight_val]
+  omega
+
 /-- The penultimate fork coordinate precedes the terminal one. -/
 theorem forkLeft_lt_forkRight : forkLeft n hn < forkRight n hn := by
   simp only [Fin.lt_def, forkLeft_val, forkRight_val]
@@ -166,11 +172,11 @@ theorem graphPermD_forkRight (h : 2 ≤ n) :
     graphPermD n h (forkRight n hn) = forkLeft n hn := by
   simpa only [forkLeft, forkRight] using graphPermD_apply_right n h
 
-private def forkBlock {K : Type*} [Ring K] : Matrix (Fin n) (Fin n) K :=
+private def forkBlock {K : Type*} [AddGroupWithOne K] : Matrix (Fin n) (Fin n) K :=
   Matrix.single (forkLeft n hn) (forkRight n hn) 1 -
     Matrix.single (forkRight n hn) (forkLeft n hn) 1
 
-private theorem forkBlock_transpose {K : Type*} [Ring K] :
+private theorem forkBlock_transpose {K : Type*} [AddGroupWithOne K] :
     (forkBlock (K := K) n hn).transpose = -forkBlock n hn := by
   simpa only [forkBlock] using Matrix.transpose_single_sub_single (K := K)
     (forkLeft n hn) (forkRight n hn) (a := 1)
@@ -180,7 +186,7 @@ private theorem forkBlock_transpose {K : Type*} [Ring K] :
 
 For a chain node this is `E_{i,i+1} - E_{\bar{i+1},\bar i}`; at the fork node it is
 `E_{n-2,\bar{n-1}} - E_{n-1,\bar{n-2}}`. -/
-def raisingMatrix {K : Type*} [Ring K] (i : Fin n) :
+def raisingMatrix {K : Type*} [AddGroupWithOne K] (i : Fin n) :
     Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K :=
   if hi : (i : ℕ) + 1 < n then
     let A : Matrix (Fin n) (Fin n) K := Matrix.single i (chainNext n i hi) 1
@@ -189,17 +195,17 @@ def raisingMatrix {K : Type*} [Ring K] (i : Fin n) :
     Matrix.fromBlocks 0 (forkBlock n hn) 0 0
 
 /-- The lowering matrix is the transpose of the corresponding raising matrix. -/
-def loweringMatrix {K : Type*} [Ring K] (i : Fin n) :
+def loweringMatrix {K : Type*} [AddGroupWithOne K] (i : Fin n) :
     Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K :=
   (raisingMatrix n hn i).transpose
 
 /-- The lowering matrix equals the transpose of the corresponding raising matrix. -/
-theorem loweringMatrix_eq_transpose {K : Type*} [Ring K] (i : Fin n) :
+theorem loweringMatrix_eq_transpose {K : Type*} [AddGroupWithOne K] (i : Fin n) :
     loweringMatrix (K := K) n hn i = (raisingMatrix n hn i).transpose := (rfl)
 
 /-- The raising matrix at a chain node: the block `E_{i,i+1}` and its negative transpose. -/
 @[simp]
-theorem raisingMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_of_chain {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       let A : Matrix (Fin n) (Fin n) K := Matrix.single i (chainNext n i hi) 1
@@ -209,7 +215,7 @@ theorem raisingMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
 /-- The raising matrix at the fork node: the skew block `E_{n-2,n-1} - E_{n-1,n-2}` in the upper
 right. -/
 @[simp]
-theorem raisingMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_of_fork {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : ¬(i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       let B : Matrix (Fin n) (Fin n) K :=
@@ -219,7 +225,7 @@ theorem raisingMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
   simp [raisingMatrix, hi, forkBlock]
 
 /-- A chain raising matrix is a difference of two matrix units. -/
-theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       Matrix.single (.inl i) (.inl (chainNext n i hi)) 1 -
@@ -228,7 +234,7 @@ theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [Ring K] {i : Fi
   ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
 
 /-- A non-chain raising matrix is the alternating pair of matrix units at the fork. -/
-theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [Ring K] {i : Fin n}
+theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : ¬(i : ℕ) + 1 < n) :
     raisingMatrix (K := K) n hn i =
       Matrix.single (.inl (forkLeft n hn)) (.inr (forkRight n hn)) 1 -
@@ -239,7 +245,7 @@ theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [Ring K] {i : Fin
 /-- The lowering matrix at a chain node: the block `E_{i+1,i}` in the upper left and its negative
 transpose `-E_{i,i+1}` in the lower right. -/
 @[simp]
-theorem loweringMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
+theorem loweringMatrix_of_chain {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
     loweringMatrix (K := K) n hn i =
       let A : Matrix (Fin n) (Fin n) K := Matrix.single i (chainNext n i hi) 1
@@ -250,7 +256,7 @@ theorem loweringMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
 /-- The lowering matrix at the fork node: the negated skew block `E_{n-2,n-1} - E_{n-1,n-2}` in the
 lower left. -/
 @[simp]
-theorem loweringMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
+theorem loweringMatrix_of_fork {K : Type*} [AddGroupWithOne K] {i : Fin n}
     (hi : ¬(i : ℕ) + 1 < n) :
     loweringMatrix (K := K) n hn i =
       let B : Matrix (Fin n) (Fin n) K :=
@@ -387,7 +393,7 @@ variable {K : Type*} [CommRing K]
 
 /-- A diagonal Cartan generator is the image of its simple-root coordinate vector under the
 coordinate equivalence for the standard diagonal Cartan. -/
-theorem cartanGenerator_eq_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+theorem cartanGenerator_eq_typeDDiagonalEquiv (i : Fin n) :
     cartanGenerator (K := K) n hn i =
       (typeDDiagonalEquiv (K := K) (ι := Fin n)
         (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :
@@ -396,16 +402,15 @@ theorem cartanGenerator_eq_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin 
   rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
 
 /-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
-theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+theorem cartanGenerator_mem_typeDDiagonalCartan (i : Fin n) :
     cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
   rw [cartanGenerator_eq_typeDDiagonalEquiv]
   exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
-    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
+    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).property
 
 /-- The ambient diagonal coordinates of a lifted simple-root Cartan generator are the pinned
 type-D simple root. -/
-theorem typeDDiagonalCartanBasis_repr_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
-    (i j : Fin n) :
+theorem typeDDiagonalCartanBasis_repr_cartanGenerator (i j : Fin n) :
     (typeDDiagonalCartanBasis (K := K) (ι := Fin n)).repr
         (⟨cartanGenerator (K := K) n hn i,
           cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) j =
@@ -560,30 +565,12 @@ private theorem lie_typeDDiagonalMatrix_loweringMatrix {K : Type*} [CommRing K]
     ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
         loweringMatrix (K := K) n hn i⁆ =
       (-CartanMatrix.D n i j : K) • loweringMatrix n hn i := by
-  rw [loweringMatrix]
-  apply Matrix.transpose_injective
-  calc
-    (⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
-        (raisingMatrix n hn i).transpose⁆).transpose =
-        ⁅raisingMatrix n hn i,
-          (typeDDiagonalMatrix
-            (fun a => (DynkinType.typeDSimpleRoot n hn j a : K))).transpose⁆ :=
-      Matrix.lie_transpose _ _
-    _ = ⁅raisingMatrix n hn i,
-        typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K))⁆ := by
-      congr 1
-      ext a b
-      by_cases hab : a = b
-      · subst b
-        simp [typeDDiagonalMatrix_apply]
-      · have hba : b ≠ a := Ne.symm hab
-        simp [typeDDiagonalMatrix_apply, hab, hba]
-    _ = -⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
-        raisingMatrix n hn i⁆ := by rw [← lie_skew]
-    _ = -((CartanMatrix.D n i j : K) • raisingMatrix n hn i) := by
-      rw [lie_typeDDiagonalMatrix_raisingMatrix n hn i j]
-    _ = ((-CartanMatrix.D n i j : K) •
-        (raisingMatrix n hn i).transpose).transpose := by simp
+  ext a b
+  have h := congrFun (congrFun (lie_typeDDiagonalMatrix_raisingMatrix (K := K) n hn i j) b) a
+  rw [typeDDiagonalMatrix_lie_apply, Matrix.smul_apply, smul_eq_mul] at h
+  rw [typeDDiagonalMatrix_lie_apply, loweringMatrix, Matrix.transpose_apply, Matrix.smul_apply,
+    Matrix.transpose_apply, smul_eq_mul]
+  linear_combination -h
 
 /-- The numbered Cartan generators act on the numbered root generators through the type-`D`
 Cartan matrix, with the opposite weight on lowering generators. -/
@@ -616,15 +603,11 @@ theorem lie_cartanGenerator_rootGenerator {K : Type*} [CommRing K]
 /-- The numbered Cartan generators commute. -/
 @[simp]
 theorem lie_cartanGenerator_cartanGenerator {K : Type*} [CommRing K] (i j : Fin n) :
-    ⁅cartanGenerator (K := K) n hn i, cartanGenerator (K := K) n hn j⁆ = 0 := by
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, val_cartanGenerator, val_cartanGenerator]
-  have hdiag (k : Fin n) :
-      (typeDDiagonalMatrix
-        (fun a => (DynkinType.typeDSimpleRoot n hn k a : K))).IsDiag := by
-    intro a b hab
-    rw [typeDDiagonalMatrix_apply, ite_eq_right hab]
-  exact lie_eq_zero_of_isDiag (hdiag i) (hdiag j)
+    ⁅cartanGenerator (K := K) n hn i, cartanGenerator (K := K) n hn j⁆ = 0 :=
+  congrArg Subtype.val (trivial_lie_zero (typeDDiagonalCartan K (Fin n))
+    (typeDDiagonalCartan K (Fin n))
+    ⟨_, cartanGenerator_mem_typeDDiagonalCartan n hn i⟩
+    ⟨_, cartanGenerator_mem_typeDDiagonalCartan n hn j⟩)
 
 private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (i : Fin n) :
     ⁅raisingMatrix (K := K) n hn i, loweringMatrix (K := K) n hn i⁆ =
@@ -643,10 +626,7 @@ private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
       Matrix.fromBlocks_multiply, Matrix.sub_mul, Matrix.mul_sub,
       DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hi]
-    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := by
-      intro h
-      simp [Fin.ext_iff] at h
-      omega
+    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := forkLeft_ne_forkRight n hn
     ext (a | a) (b | b) <;>
       by_cases hab : a = b
     all_goals simp_all [Matrix.fromBlocks, typeDDiagonalMatrix_apply, Matrix.sub_mul,
@@ -657,10 +637,7 @@ private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (
 private theorem lie_raisingMatrix_loweringMatrix_chain_fork {K : Type*} [CommRing K]
     (i j : Fin n) (hi : (i : ℕ) + 1 < n) (hj : ¬(j : ℕ) + 1 < n) :
     ⁅raisingMatrix (K := K) n hn i, loweringMatrix (K := K) n hn j⁆ = 0 := by
-  have hir : i ≠ forkRight n hn := by
-    intro h
-    simp [forkRight, Fin.ext_iff] at h
-    omega
+  have hir : i ≠ forkRight n hn := fun h => (not_add_one_lt_iff_eq_forkRight n hn i).2 h hi
   by_cases hil : i = forkLeft n hn
   · subst i
     have hne := forkLeft_ne_forkRight n hn
@@ -699,10 +676,8 @@ private theorem lie_raisingMatrix_loweringMatrix_of_ne {K : Type*} [CommRing K]
       rw [Matrix.lie_transpose]
       simpa [loweringMatrix] using
         lie_raisingMatrix_loweringMatrix_chain_fork (K := K) n hn j i hj hi
-    · exfalso
-      apply hij
-      apply Fin.ext
-      omega
+    · exact absurd ((not_add_one_lt_iff_eq_forkRight n hn i).1 hi |>.trans
+        ((not_add_one_lt_iff_eq_forkRight n hn j).1 hj).symm) hij
 
 private theorem lie_raisingMatrix_raisingMatrix_chain_chain_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
@@ -731,10 +706,7 @@ private theorem lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero
     (hj : ¬(j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
   have hne := forkLeft_ne_forkRight n hn
-  have hjfork : j = forkRight n hn := by
-    apply Fin.ext
-    simp [forkRight]
-    omega
+  have hjfork : j = forkRight n hn := (not_add_one_lt_iff_eq_forkRight n hn j).1 hj
   by_cases hil : i = forkLeft n hn
   · subst i
     rw [raisingMatrix_of_chain n hn hi, raisingMatrix_of_fork n hn hj,
@@ -775,9 +747,8 @@ private theorem lie_raisingMatrix_raisingMatrix_of_cartan_eq_zero
         exact ((CartanMatrix.D_isSymm n).apply j i).symm.trans hij
       rw [lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero n hn j i hj hi hji,
         neg_zero]
-    · have heq : i = j := by
-        apply Fin.ext
-        omega
+    · have heq : i = j := (not_add_one_lt_iff_eq_forkRight n hn i).1 hi |>.trans
+        ((not_add_one_lt_iff_eq_forkRight n hn j).1 hj).symm
       subst j
       simp [CartanMatrix.D] at hij
 
@@ -949,7 +920,7 @@ theorem lie_rootGenerator_inr_inl {K : Type*} [CommRing K] (i j : Fin n) :
 
 /-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
 theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
-    (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    (i : Fin n) :
     _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
       (rootGenerator (K := K) n hn (.inl i))
       (rootGenerator (K := K) n hn (.inr i)) where
@@ -967,10 +938,7 @@ theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
     · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi] at hentry
       have hne : i ≠ ⟨(i : ℕ) + 1, hi⟩ := by simp [Fin.ext_iff]
       simp [hne] at hentry
-    · have hi_last : i = ⟨n - 1, by omega⟩ := by
-        apply Fin.ext
-        simp
-        omega
+    · have hi_last : i = ⟨n - 1, by omega⟩ := (not_add_one_lt_iff_eq_forkRight n hn i).1 hi
       rw [hi_last, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn] at hentry
       · have hne : n - 1 ≠ n - 2 := by omega
         simp [Fin.ext_iff, hne] at hentry

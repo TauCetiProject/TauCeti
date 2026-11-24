@@ -134,7 +134,7 @@ attribute [local instance] endModule
 private noncomputable def reconstructionTensorMap (p : implementers A) : E →ₗ[k] E :=
   BalancedTensorProduct.lift
     (((BalancedTensorProduct.mk k (End A)).comp (ρ (QuotientGroup.mk p : Carrier A))).compl₂
-      (p.1.2.toLinearMap : V →ₗ[k] V))
+      (p.val.2.toLinearMap : V →ₗ[k] V))
     (fun (d : End A) (m : M) (x : V) => by
       -- The balanced tensor uses the forgotten representation carrier, while implementers
       -- act on the original FDRep carrier. `erw` applies the named equations across this view.
@@ -143,14 +143,14 @@ private noncomputable def reconstructionTensorMap (p : implementers A) : E →�
         hsmul, commutantAction_mk, BalancedTensorProduct.balance,
         (F).endModule_smul A, (F).endModule_smul A]
       congr 1
-      exact (implementerConj_apply p d (p.1.2 x)).trans
-        (congrArg (fun y : A => p.1.2 (d.asHom.hom.hom.hom y))
-          (p.1.2.symm_apply_apply x)))
+      exact (implementerConj_apply p d (p.val.2 x)).trans
+        (congrArg (fun y : A => p.val.2 (d.asHom.hom.hom.hom y))
+          (p.val.2.symm_apply_apply x)))
 
 private theorem reconstructionTensorMap_tmul (p : implementers A) (m : M) (x : V) :
     reconstructionTensorMap A ρ hsmul p (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
       BalancedTensorProduct.tmul k (End A) (N := V) (ρ (QuotientGroup.mk p : Carrier A) m)
-        (p.1.2 x) := by
+        (p.val.2 x) := by
   simp only [reconstructionTensorMap, BalancedTensorProduct.lift_tmul]
   erw [LinearMap.compl₂_apply, LinearMap.comp_apply, BalancedTensorProduct.mk_apply]
   rfl
@@ -204,7 +204,7 @@ theorem cliffordBalancedTensorRepresentation_projection_tmul (p : implementers A
     cliffordBalancedTensorRepresentation A ρ hsmul hinl (projection A p)
         (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
       BalancedTensorProduct.tmul k (End A) (N := V) (ρ (QuotientGroup.mk p : Carrier A) m)
-        (p.1.2 x) := by
+        (p.val.2 x) := by
   have h := MonoidHom.liftOfRightInverse_comp_apply (projection A)
     (Function.surjInv (projection_surjective A)) (Function.rightInverse_surjInv _)
     ⟨(reconstructionTensorRepresentation A ρ hsmul).toHomUnits,
@@ -234,7 +234,7 @@ theorem cliffordReconstructionRepresentation_projection_tmul
         (BalancedTensorProduct.tmul k (End A) (N := V) m x) =
       BalancedTensorProduct.tmul k (End A) (N := V)
         (cliffordReconstructionMultiplicityRepresentation A s hs U
-          (QuotientGroup.mk p : Carrier A) m) (p.1.2 x) :=
+          (QuotientGroup.mk p : Carrier A) m) (p.val.2 x) :=
   cliffordBalancedTensorRepresentation_projection_tmul A _ _ _ p m x
 
 /-- On the normal subgroup the reconstructed action fixes the multiplicity factor and

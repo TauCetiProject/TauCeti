@@ -19,18 +19,64 @@ A compact exhaustion also gives a countable criterion for local finiteness and f
 on compact sets. This criterion is useful when checking these properties simultaneously
 almost surely for a random measure.
 
+Finiteness on compact sets is closed under addition, and multiplication by a nonzero
+nonnegative real both preserves and reflects it.
+
 ## Main results
 
 * `MeasureTheory.measure_Iic_lt_top`
 * `MeasureTheory.measure_Ici_lt_top`
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top`
+* `MeasureTheory.isFiniteMeasureOnCompacts_smul_nnreal_iff`: scaling by a nonzero scalar
+  preserves and reflects finiteness on compact sets.
 -/
 
 public section
 
 open Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory
+
+/-- A measure on a linearly ordered space is locally finite if every closed initial interval
+has finite mass and strict lower rays are open. -/
+theorem Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] [MeasurableSpace α] (μ : Measure α)
+    (hfin : ∀ t : α, μ (Iic t) < ∞) : IsLocallyFiniteMeasure μ := by
+  refine ⟨fun t ↦ ?_⟩
+  by_cases ht : ∃ u, t < u
+  · obtain ⟨u, hu⟩ := ht
+    exact ⟨Iic u, Iic_mem_nhds hu, hfin u⟩
+  · exact ⟨Iic t, Filter.mem_of_superset Filter.univ_mem
+      (fun u _ ↦ le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)), hfin t⟩
+
+/-- A measure on a linearly ordered space is locally finite if every closed final interval
+has finite mass and strict upper rays are open. -/
+theorem Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIicTopology α] [MeasurableSpace α] (μ : Measure α)
+    (hfin : ∀ t : α, μ (Ici t) < ∞) : IsLocallyFiniteMeasure μ :=
+  μ.isLocallyFiniteMeasure_of_measure_Iic_lt_top (α := αᵒᵈ) hfin
+
+/-- Scaling a locally finite measure by a finite extended nonnegative scalar preserves
+local finiteness. -/
+instance isLocallyFiniteMeasureSMulCoeNNReal {α : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] (μ : Measure α) [IsLocallyFiniteMeasure μ] (c : ℝ≥0) :
+    IsLocallyFiniteMeasure ((c : ℝ≥0∞) • μ) :=
+  μ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
+
+/-- The sum of two measures that are finite on compact sets is finite on compact sets. -/
+instance IsFiniteMeasureOnCompacts.add {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    (μ ν : Measure α) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
+    IsFiniteMeasureOnCompacts (μ + ν) :=
+  ⟨fun _ hK ↦ by simp [hK.measure_lt_top]⟩
+
+/-- Scaling by a nonzero nonnegative real preserves and reflects finiteness on compact sets. -/
+theorem isFiniteMeasureOnCompacts_smul_nnreal_iff {α : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] {μ : Measure α} {c : ℝ≥0} (hc : c ≠ 0) :
+    IsFiniteMeasureOnCompacts (c • μ) ↔ IsFiniteMeasureOnCompacts μ := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  simpa [smul_smul, inv_mul_cancel₀ hc] using IsFiniteMeasureOnCompacts.smul_nnreal (c • μ) c⁻¹
 
 variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
   {m : MeasurableSpace α} {μ : Measure α} [IsLocallyFiniteMeasure μ] {a : α}

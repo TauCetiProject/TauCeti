@@ -7,19 +7,23 @@ module
 
 public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Minimal polynomials in torsion-free algebras
 
 Over an integrally closed domain `R`, the minimal polynomial of an integral element of a
-torsion-free commutative `R`-algebra divides every polynomial annihilating that element.
-The algebra may have zero divisors or nilpotents. This permits minimal equations to be used
-for finite torsion-free algebras without passing to their domain quotients.
+torsion-free `R`-algebra divides every polynomial annihilating that element.
+The algebra need not be commutative and may have zero divisors or nilpotents. This permits
+minimal equations to be used for finite torsion-free algebras without passing to their domain
+quotients.
 
 The argument extends the fraction-field comparison in
 `minpoly.isIntegrallyClosed_eq_field_fractions`: Gauss's lemma descends the monic minimal
 polynomial from a fraction-field algebra, and torsion-freeness makes the localization injective.
-No irreducibility of the minimal polynomial is asserted.
+In particular, scaling an integral element by a nonzero scalar in `R` scales the roots of its
+minimal polynomial (`TauCeti.minpoly.isIntegrallyClosed_smul_of_isTorsionFree`). No irreducibility
+of the minimal polynomial is asserted.
 -/
 
 public section
@@ -31,14 +35,14 @@ open scoped TensorProduct
 namespace TauCeti.minpoly
 
 variable {R S : Type*} [CommRing R] [IsIntegrallyClosed R]
-  [CommRing S] [Algebra R S]
+  [Ring S] [Algebra R S]
 
 /-- The minimal polynomial over an integrally closed domain of an integral element commutes
-with an injection into an algebra over its fraction field. The target algebra need not be a
-domain or reduced. -/
+with an injection into an algebra over its fraction field. The target algebra need not be
+commutative, a domain, or reduced. -/
 theorem isIntegrallyClosed_eq_field_fractions_of_injective
     (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
-    {L : Type*} [CommRing L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
+    {L : Type*} [Ring L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
     (φ : S →ₐ[R] L) (hφ : Function.Injective φ) {s : S} (hs : IsIntegral R s) :
     minpoly K (φ s) = (minpoly R s).map (algebraMap R K) := by
   have hs' : IsIntegral R (φ s) := hs.map φ
@@ -65,9 +69,9 @@ theorem isIntegrallyClosed_eq_field_fractions_of_injective
     exact hq.not_ge hle
   rw [← hp, heq]
 
-/-- In a torsion-free commutative algebra over an integrally closed domain, the minimal
-polynomial of an integral element divides every polynomial annihilating it. This includes
-algebras with zero divisors and nilpotents. -/
+/-- In a torsion-free algebra over an integrally closed domain, the minimal polynomial of an
+integral element divides every polynomial annihilating it. The algebra need not be commutative
+and may have zero divisors or nilpotents. -/
 theorem isIntegrallyClosed_dvd_of_isTorsionFree [IsDomain R] [Module.IsTorsionFree R S]
     {s : S} (hs : IsIntegral R s) {p : R[X]} (hp : Polynomial.aeval s p = 0) : minpoly R s ∣ p := by
   let K := FractionRing R
@@ -75,10 +79,32 @@ theorem isIntegrallyClosed_dvd_of_isTorsionFree [IsDomain R] [Module.IsTorsionFr
   let φ : S →ₐ[R] L := Algebra.TensorProduct.includeRight
   have hφ : Function.Injective φ :=
     (IsLocalizedModule.injective_iff_isRegular (nonZeroDivisors R) (TensorProduct.mk R K S 1)).mpr
-      fun c ↦ (isRegular_iff_mem_nonZeroDivisors.mpr c.2).isSMulRegular
+      fun c ↦ (isRegular_iff_mem_nonZeroDivisors.mpr c.property).isSMulRegular
   rw [← map_dvd_map (algebraMap R K) (IsFractionRing.injective R K) (monic hs),
     ← isIntegrallyClosed_eq_field_fractions_of_injective K φ hφ hs]
   exact minpoly.dvd K (φ s) (by
     rw [aeval_map_algebraMap, aeval_algHom_apply, hp, map_zero])
+
+/-- In a torsion-free algebra over an integrally closed domain, scaling an integral element by a
+nonzero scalar `r` scales the roots of its minimal polynomial by `r`. The target algebra need not
+be commutative and may have zero divisors or nilpotents. -/
+theorem isIntegrallyClosed_smul_of_isTorsionFree [IsDomain R] [Module.IsTorsionFree R S]
+    {r : R} (hr : r ≠ 0) {s : S} (hs : IsIntegral R s) :
+    minpoly R (r • s) = (minpoly R s).scaleRoots r := by
+  have hdvd : minpoly R (r • s) ∣ (minpoly R s).scaleRoots r :=
+    isIntegrallyClosed_dvd_of_isTorsionFree (hs.smul r)
+      (by rw [Algebra.smul_def]; exact scaleRoots_aeval_eq_zero (minpoly.aeval R s))
+  set p := (minpoly R (r • s)).comp (C r * X)
+  have hp0 : p ≠ 0 :=
+    mt (comp_C_mul_X_eq_zero_iff (mem_nonZeroDivisors_of_ne_zero hr)).mp
+      (monic (hs.smul r)).ne_zero
+  have hp : Polynomial.aeval s p = 0 := by
+    rw [aeval_comp, map_mul, aeval_C, aeval_X, ← Algebra.smul_def, minpoly.aeval]
+  have hdeg : ((minpoly R s).scaleRoots r).natDegree ≤ (minpoly R (r • s)).natDegree := by
+    rw [natDegree_scaleRoots]
+    exact (natDegree_le_of_dvd (isIntegrallyClosed_dvd_of_isTorsionFree hs hp) hp0).trans
+      (natDegree_comp_C_mul_X_le r _)
+  exact (eq_of_monic_of_dvd_of_natDegree_le (monic (hs.smul r))
+    ((monic_scaleRoots_iff r).mpr (monic hs)) hdvd hdeg).symm
 
 end TauCeti.minpoly

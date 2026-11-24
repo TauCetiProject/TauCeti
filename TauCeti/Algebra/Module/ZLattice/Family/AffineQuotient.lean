@@ -123,7 +123,7 @@ section Topology
 
 variable {Y : Type*} [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y]
   {H : Type*} [TopologicalSpace H] [ChartedSpace H Y]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
@@ -137,7 +137,6 @@ variable {Y : Type*} [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y]
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **Charts of the quotient read the induced map on the base coordinate.** For a `Γ`-invariant
 map `f : Y → Z`, every chart `e` of the quotient atlas of `X/Γ` reads the induced map
 `X/Γ → Z` through the first coordinate and the inverse of a chart of `Y`: there is a point `y`
@@ -184,7 +183,7 @@ section Regularity
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCommGroup EY]
   [NormedSpace 𝕜 EY] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y] [LocallyCompactSpace Y]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace 𝕜 E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
@@ -210,7 +209,6 @@ variable {EZ : Type*} [NormedAddCommGroup EZ] [NormedSpace 𝕜 EZ] {HZ : Type*}
   [TopologicalSpace HZ] {J : ModelWithCorners 𝕜 EZ HZ} {Z : Type*} [TopologicalSpace Z]
   [ChartedSpace HZ Z] (f : Y → Z) (hf : ∀ (g : Γ) y, f (g • y) = f y)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The induced map of a quotient of a family of tori is `C^n`.** For a `C^n` map `f : Y → Z`
 invariant under `Γ`, the map `X/Γ → Z` sending the class of a point to `f` of its base point is
 `C^n`; over `ℂ` with holomorphic data and holomorphic `f`, it is holomorphic. -/
@@ -238,7 +236,6 @@ theorem contMDiff_torusFamilyAffineQuotientLift (hfn : ContMDiff I J n f) :
     hbmul hR hbc hfree).contMDiff_comp_iff Quotient.mk_surjective le_rfl).1 ?_
   exact hfn.comp (contMDiff_torusFamilyProjection P hinj hP)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The induced map of a quotient of a family of tori is a submersion.** Let `f : Y → Z` be
 invariant under `Γ`, with `Z` modelled like `Y`. At the class of a point `x` of the family whose
 base point `y` is a point at which `f` is a `C^n` local diffeomorphism, the map `X/Γ → Z` sending

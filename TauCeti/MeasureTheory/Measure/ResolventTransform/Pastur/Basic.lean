@@ -38,7 +38,8 @@ mean inequality without assuming `ν` has unit mass.
 That same bound implies `‖t m_ν'(ζ)‖ < 1`, so `1 - t m_ν'(ζ) ≠ 0` and the fixed point is complex
 differentiable on `{z : ℂ | 0 < z.im}` with derivative `m_ν'(ζ) / (1 - t m_ν'(ζ))`. Along the
 positive imaginary axis it satisfies `iy w(iy) → -ν(ℝ)` as `y → ∞`. By the Pick–Nevanlinna
-characterization (`MeasureTheory.exists_isFiniteMeasure_resolventTransform_eq_of_tendsto`), there is
+characterization
+(`MeasureTheory.exists_isFiniteMeasure_measureReal_univ_eq_and_resolventTransform_eq`), there is
 a unique finite measure `ν.pastur t` on `ℝ` of total mass `ν(ℝ)` whose resolvent transform solves
 the Pastur equation off the real axis. When `ν` is a probability measure, `ν.pastur t` is a
 probability measure; by Biane (1997), this corresponds to the additive free convolution with the
@@ -99,6 +100,39 @@ private lemma im_add_nnreal_mul_pos (t : ℝ≥0) {z w : ℂ} (hz : 0 < z.im) (h
     0 < (z + t * w).im :=
   hz.trans_le (le_im_add_nnreal_mul t z hw)
 
+private lemma sq_im_le_im_mul_im_add_nnreal_mul (t : ℝ≥0) {z w : ℂ} (hzw : 0 ≤ z.im * w.im) :
+    z.im ^ 2 ≤ z.im * (z + t * w).im := by
+  have him : (z + t * w).im = z.im + (t : ℝ) * w.im := by simp
+  rw [him]
+  nlinarith [mul_nonneg t.coe_nonneg hzw]
+
+private lemma im_mul_im_add_nnreal_mul_pos (t : ℝ≥0) {z w : ℂ} (hz : z.im ≠ 0)
+    (hzw : 0 ≤ z.im * w.im) : 0 < z.im * (z + t * w).im :=
+  (sq_pos_of_ne_zero hz).trans_le (sq_im_le_im_mul_im_add_nnreal_mul t hzw)
+
+private lemma abs_im_le_abs_im_add_nnreal_mul (t : ℝ≥0) {z w : ℂ} (hzw : 0 ≤ z.im * w.im) :
+    |z.im| ≤ |(z + t * w).im| := by
+  by_cases hz : z.im = 0
+  · simpa [hz] using abs_nonneg (z + t * w).im
+  · have hle : |z.im| * |z.im| ≤ |z.im| * |(z + t * w).im| := calc
+      |z.im| * |z.im| = z.im ^ 2 := by rw [abs_mul_abs_self, sq]
+      _ ≤ z.im * (z + t * w).im := sq_im_le_im_mul_im_add_nnreal_mul t hzw
+      _ ≤ |z.im * (z + t * w).im| := le_abs_self _
+      _ = |z.im| * |(z + t * w).im| := abs_mul _ _
+    exact le_of_mul_le_mul_left hle (abs_pos.2 hz)
+
+private lemma isCompact_halfDisc (R : ℝ) :
+    IsCompact ({w : ℂ | 0 ≤ w.im} ∩ closedBall 0 R) :=
+  (isCompact_closedBall 0 R).inter_left (isClosed_le continuous_const continuous_im)
+
+/-- Bound on the shift increment `‖m_ν(z + t w) - m_ν(z)‖` off the real axis. -/
+theorem norm_resolventTransform_add_nnreal_mul_sub_le {ν : Measure ℝ} [IsFiniteMeasure ν]
+    {t : ℝ≥0} {z w : ℂ} (hζ : (z + t * w).im ≠ 0) (hz : z.im ≠ 0) :
+    ‖resolventTransform ν (z + t * w) - resolventTransform ν z‖ ≤
+      (t : ℝ) * ‖w‖ / (|(z + t * w).im| * |z.im|) * ν.real univ := by
+  simpa [add_sub_cancel_left, norm_mul, norm_real, Real.norm_of_nonneg t.coe_nonneg] using
+    norm_resolventTransform_sub_le (μ := ν) hζ hz
+
 section PasturFixedPoint
 
 variable {ν : Measure ℝ} [IsFiniteMeasure ν]
@@ -111,19 +145,14 @@ private lemma mul_integral_norm_resolvent_sq_eq (t : ℝ≥0) {z w : ℂ} (hz : 
       0 < z.im / (z + t * w).im := by
   set ζ := z + t * w
   have hζim : ζ.im = z.im + (t : ℝ) * w.im := by simp [ζ]
-  have hprod : 0 < z.im * ζ.im := by
-    rw [hζim]
-    have hsq : 0 < z.im * z.im := mul_self_pos.2 hz
-    nlinarith [t.coe_nonneg, mul_nonneg t.coe_nonneg hzw]
-  have hζ0 : ζ.im ≠ 0 := fun h ↦ by simp [h] at hprod
-  have hquot : 0 < z.im / ζ.im := div_pos_iff.2 <|
-    (mul_pos_iff.1 hprod).imp (fun h ↦ ⟨h.1, h.2⟩) (fun h ↦ ⟨h.1, h.2⟩)
+  have hprod : 0 < z.im * ζ.im := im_mul_im_add_nnreal_mul_pos t hz hzw
+  have hζ0 : ζ.im ≠ 0 := right_ne_zero_of_mul hprod.ne'
+  have hquot : 0 < z.im / ζ.im := div_pos_iff.2 (mul_pos_iff.1 hprod)
   have hint_im : w.im = ζ.im * ∫ x, ‖resolvent ζ x‖ ^ 2 ∂ν := by
     rw [congrArg im hw, im_resolventTransform, ← integral_const_mul]
     refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
     dsimp only
-    rw [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap, norm_inv, inv_pow,
-      ← normSq_eq_norm_sq, normSq_apply]
+    rw [Complex.resolvent_real_eq_inv, norm_inv, inv_pow, ← normSq_eq_norm_sq, normSq_apply]
     simp [sq, div_eq_mul_inv]
   refine ⟨?_, hquot⟩
   apply mul_right_cancel₀ hζ0
@@ -149,8 +178,6 @@ private lemma exists_eq_resolventTransform_add_mul (t : ℝ≥0) {z : ℂ} (hz :
   let R : ℝ := (z.im)⁻¹ * ν.real univ
   have hR0 : 0 ≤ R := by positivity
   let K : Set ℂ := {w : ℂ | 0 ≤ w.im} ∩ closedBall 0 R
-  have hKcpt : IsCompact K :=
-    (isCompact_closedBall 0 R).inter_left (isClosed_le continuous_const continuous_im)
   have hKconv : Convex ℝ K := (convex_halfSpace_im_ge 0).inter (convex_closedBall 0 R)
   have hKne : K.Nonempty := ⟨0, by simp, mem_closedBall_self hR0⟩
   have hmaps : MapsTo (fun w : ℂ ↦ resolventTransform ν (z + t * w)) K K := by
@@ -163,8 +190,8 @@ private lemma exists_eq_resolventTransform_add_mul (t : ℝ≥0) {z : ℂ} (hz :
     exact (ContinuousAt.comp (g := resolventTransform ν) (f := fun u : ℂ ↦ z + t * u)
       (hasDerivAt_resolventTransform_of_im_ne_zero hζpos.ne').continuousAt
       (by fun_prop : Continuous fun u : ℂ ↦ z + t * u).continuousAt).continuousWithinAt
-  obtain ⟨⟨w₀, hw₀K⟩, hfix⟩ := TauCeti.schauderFixedPoint_compactConvex hKcpt hKconv hKne
-    ⟨hmaps.restrict _ K K, hcont.mapsToRestrict hmaps⟩
+  obtain ⟨⟨w₀, hw₀K⟩, hfix⟩ := TauCeti.schauderFixedPoint_compactConvex (isCompact_halfDisc R)
+    hKconv hKne ⟨hmaps.restrict _ K K, hcont.mapsToRestrict hmaps⟩
   exact ⟨w₀, hw₀K.1, (congrArg Subtype.val hfix).symm⟩
 
 /-- Uniqueness in the closed upper half-plane via Biane's contraction estimate and AM-GM. -/
@@ -182,39 +209,34 @@ private lemma eq_of_eq_resolventTransform_add_mul (t : ℝ≥0) {z w₁ w₀ : �
     (mul_nonneg hz.le hw₀im) hw₀eq
   rw [← hζ₁] at hb₁ hq₁
   rw [← hζ₀] at hb₀ hq₀
-  have hint_sq (ζ : ℂ) (hζ : ζ.im ≠ 0) := integrable_norm_resolvent_sq (μ := ν) hζ
   have hsub : w₁ - w₀ = ((t : ℂ) * (w₁ - w₀)) * ∫ x, resolvent ζ₁ x * resolvent ζ₀ x ∂ν := by
-    have hdiff : ζ₁ - ζ₀ = (t : ℂ) * (w₁ - w₀) := by simp [ζ₁, ζ₀]; ring
     nth_rw 1 [hw₁eq, hw₀eq]
-    rw [resolventTransform_apply, resolventTransform_apply,
-      ← integral_sub (integrable_resolvent_of_im_ne_zero hζ₁pos.ne')
-        (integrable_resolvent_of_im_ne_zero hζ₀pos.ne'), ← integral_const_mul]
-    refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-    dsimp only; rw [spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hζ₁pos.ne' x)
-      (Complex.mem_resolventSet_real hζ₀pos.ne' x), hdiff]; ring
+    rw [resolventTransform_sub_resolventTransform hζ₁pos.ne' hζ₀pos.ne']
+    simp only [hζ₁, hζ₀]; ring
+  have hamgm (x : ℝ) : ‖resolvent ζ₁ x * resolvent ζ₀ x‖ ≤
+      (‖resolvent ζ₁ x‖ ^ 2 + ‖resolvent ζ₀ x‖ ^ 2) / 2 := by
+    rw [norm_mul]
+    nlinarith [sq_nonneg (‖resolvent ζ₁ x‖ - ‖resolvent ζ₀ x‖)]
   let r : ℝ := (t : ℝ) * ∫ x, ‖resolvent ζ₁ x * resolvent ζ₀ x‖ ∂ν
   have hr_lt : r < 1 := by
-    have hsum_int := ((hint_sq ζ₁ hζ₁pos.ne').add (hint_sq ζ₀ hζ₀pos.ne')).div_const 2
+    have h₁ := integrable_norm_resolvent_sq (μ := ν) hζ₁pos.ne'
+    have h₀ := integrable_norm_resolvent_sq (μ := ν) hζ₀pos.ne'
+    have hsum_int := (h₁.add h₀).div_const 2
     have hprod_int : Integrable (fun x : ℝ ↦ ‖resolvent ζ₁ x * resolvent ζ₀ x‖) ν :=
       hsum_int.mono' (by fun_prop) (ae_of_all _ fun x ↦ by
-        dsimp only [Pi.add_apply]; rw [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg _), norm_mul]
-        nlinarith [sq_nonneg (‖resolvent ζ₁ x‖ - ‖resolvent ζ₀ x‖)])
+        simpa only [Pi.add_apply, Real.norm_of_nonneg (norm_nonneg _)] using hamgm x)
     have hle : ∫ x, ‖resolvent ζ₁ x * resolvent ζ₀ x‖ ∂ν ≤
         (∫ x, ‖resolvent ζ₁ x‖ ^ 2 ∂ν + ∫ x, ‖resolvent ζ₀ x‖ ^ 2 ∂ν) / 2 := by
-      rw [← integral_add (hint_sq ζ₁ hζ₁pos.ne') (hint_sq ζ₀ hζ₀pos.ne'), ← integral_div]
-      refine integral_mono hprod_int hsum_int fun x ↦ ?_
-      dsimp only [Pi.add_apply]; rw [norm_mul]
-      nlinarith [sq_nonneg (‖resolvent ζ₁ x‖ - ‖resolvent ζ₀ x‖)]
-    have hr_le : r ≤ ((1 - z.im / ζ₁.im) + (1 - z.im / ζ₀.im)) / 2 := by
-      calc r ≤ (t : ℝ) * ((∫ x, ‖resolvent ζ₁ x‖ ^ 2 ∂ν + ∫ x, ‖resolvent ζ₀ x‖ ^ 2 ∂ν) / 2) :=
-            mul_le_mul_of_nonneg_left hle t.coe_nonneg
-        _ = ((1 - z.im / ζ₁.im) + (1 - z.im / ζ₀.im)) / 2 := by rw [← hb₁, ← hb₀]; ring
+      rw [← integral_add h₁ h₀, ← integral_div]
+      exact integral_mono hprod_int hsum_int hamgm
+    have hr_le : r ≤ ((1 - z.im / ζ₁.im) + (1 - z.im / ζ₀.im)) / 2 :=
+      (mul_le_mul_of_nonneg_left hle t.coe_nonneg).trans_eq (by rw [← hb₁, ← hb₀]; ring)
     linarith
   have hnorm_le : ‖w₁ - w₀‖ ≤ ‖w₁ - w₀‖ * r := by
     calc ‖w₁ - w₀‖ = ‖((t : ℂ) * (w₁ - w₀)) * ∫ x, resolvent ζ₁ x * resolvent ζ₀ x ∂ν‖ :=
           congrArg norm hsub
       _ = ‖w₁ - w₀‖ * ((t : ℝ) * ‖∫ x, resolvent ζ₁ x * resolvent ζ₀ x ∂ν‖) := by
-          rw [norm_mul, norm_mul, norm_real, Real.norm_eq_abs, abs_of_nonneg t.coe_nonneg]; ring
+          rw [norm_mul, norm_mul, norm_real, Real.norm_of_nonneg t.coe_nonneg]; ring
       _ ≤ ‖w₁ - w₀‖ * r := by dsimp only [r]; gcongr; exact norm_integral_le_integral_norm _
   exact sub_eq_zero.1 (norm_eq_zero.1 (by nlinarith [norm_nonneg (w₁ - w₀)]))
 
@@ -261,9 +283,7 @@ private lemma tendsto_pasturAux_of_ultrafilter {α : Type*} {l : Filter α} {f :
     (hlim : ∀ (U : Ultrafilter α), ↑U ≤ l → ∀ w : ℂ, 0 ≤ w.im → Tendsto f U (𝓝 w) →
       w = resolventTransform ν (z + t * w)) :
     Tendsto f l (𝓝 (pasturAux ν t z)) := by
-  have hKcpt : IsCompact ({w : ℂ | 0 ≤ w.im} ∩ closedBall 0 R) :=
-    (isCompact_closedBall 0 R).inter_left (isClosed_le continuous_const continuous_im)
-  refine hKcpt.tendsto_nhds_of_unique_mapClusterPt
+  refine (isCompact_halfDisc R).tendsto_nhds_of_unique_mapClusterPt
     (hmem.mono fun a ha ↦ ⟨ha.1, mem_closedBall_zero_iff.2 ha.2⟩) fun w hwK hcl ↦ ?_
   obtain ⟨U, hU, hwlim⟩ := mapClusterPt_iff_ultrafilter.1 hcl
   exact (eq_pasturAux_iff t hz).2 ⟨hwK.1, hlim U hU w hwK.1 hwlim⟩
@@ -364,19 +384,15 @@ private lemma tendsto_mul_I_mul_pasturAux (t : ℝ≥0) :
     set w := pasturAux ν t (y * I)
     have hζ : y ≤ (y * I + t * w).im := by simpa using le_im_add_nnreal_mul t (y * I) hwim
     have hζpos : 0 < (y * I + t * w).im := hy.trans_le hζ
-    have hsub := norm_resolventTransform_sub_le (μ := ν) hζpos.ne' hz.ne'
+    have hsub := norm_resolventTransform_add_nnreal_mul_sub_le (ν := ν) hζpos.ne' hz.ne'
     have hnorm_w : ‖w‖ ≤ y⁻¹ * ν.real univ := by simpa using norm_pasturAux_le (ν := ν) t hz
-    rw [hweq, norm_mul, norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos hy, norm_I, mul_one]
+    rw [hweq, norm_mul, norm_mul, norm_real, Real.norm_of_nonneg hy.le, norm_I, mul_one]
     calc y * ‖resolventTransform ν (y * I + t * w) - resolventTransform ν (y * I)‖
-        ≤ y * (‖(y * I + t * w) - y * I‖ / (|(y * I + t * w).im| * |(y * I : ℂ).im|) *
-            ν.real univ) := mul_le_mul_of_nonneg_left hsub hy.le
-      _ ≤ y * (((t : ℝ) * (y⁻¹ * ν.real univ)) / (y * y) * ν.real univ) := by
+        ≤ y * ((t : ℝ) * ‖w‖ / (|(y * I + t * w).im| * |(y * I : ℂ).im|) * ν.real univ) :=
+          mul_le_mul_of_nonneg_left hsub hy.le
+      _ ≤ y * ((t : ℝ) * (y⁻¹ * ν.real univ) / (y * y) * ν.real univ) := by
           have him1 : |(y * I + t * w).im| = (y * I + t * w).im := abs_of_pos hζpos
           have him2 : |(y * I : ℂ).im| = y := by simp [abs_of_pos hy]
-          have hnum : ‖(y * I + t * w) - y * I‖ ≤ (t : ℝ) * (y⁻¹ * ν.real univ) := by
-            rw [add_sub_cancel_left, norm_mul, norm_real, Real.norm_eq_abs,
-              abs_of_nonneg t.coe_nonneg]
-            exact mul_le_mul_of_nonneg_left hnorm_w t.coe_nonneg
           rw [him1, him2]
           gcongr
       _ = C * (y ^ 2)⁻¹ := by
@@ -389,7 +405,7 @@ private lemma tendsto_mul_I_mul_pasturAux (t : ℝ≥0) :
 private lemma exists_pasturMeasure (ν : Measure ℝ) [IsFiniteMeasure ν] (t : ℝ≥0) :
     ∃ μ : Measure ℝ, IsFiniteMeasure μ ∧ μ.real univ = ν.real univ ∧
       ∀ z : ℂ, 0 < z.im → pasturAux ν t z = resolventTransform μ z :=
-  exists_isFiniteMeasure_resolventTransform_eq_of_tendsto
+  exists_isFiniteMeasure_measureReal_univ_eq_and_resolventTransform_eq
     (differentiableOn_pasturAux t) (fun _ hz ↦ (pasturAux_spec t hz).1)
     (tendsto_mul_I_mul_pasturAux t)
 
@@ -397,6 +413,7 @@ end PasturFixedPoint
 
 namespace Measure
 
+open Classical in
 /-- **The Pastur measure** `ν.pastur t` of a Borel measure `ν` on `ℝ` at variance parameter
 `t : ℝ≥0`. When `ν` is finite, it is the unique finite measure on `ℝ` whose resolvent transform
 solves Pastur's self-consistent equation `m(z) = m_ν(z + t m(z))` off the real axis (by Biane
@@ -404,35 +421,34 @@ solves Pastur's self-consistent equation `m(z) = m_ν(z + t m(z))` off the real 
 centred semicircle law of variance `t`; that identification is not formalized here). When `ν` is
 not finite, `ν.pastur t` is `0`. -/
 def pastur (ν : Measure ℝ) (t : ℝ≥0) : Measure ℝ :=
-  by
-    classical
-    exact if h : IsFiniteMeasure ν then (exists_pasturMeasure ν t).choose else 0
+  if _ : IsFiniteMeasure ν then (exists_pasturMeasure ν t).choose else 0
 
+open Classical in
+private lemma pastur_spec (ν : Measure ℝ) [h : IsFiniteMeasure ν] (t : ℝ≥0) :
+    IsFiniteMeasure (ν.pastur t) ∧ (ν.pastur t).real univ = ν.real univ ∧
+      ∀ z : ℂ, 0 < z.im → pasturAux ν t z = resolventTransform (ν.pastur t) z := by
+  simpa only [pastur, dite_eq_left h] using (exists_pasturMeasure ν t).choose_spec
+
+open Classical in
 /-- When `ν` is not a finite measure, `ν.pastur t` is `0`. -/
 theorem pastur_of_not_isFiniteMeasure {ν : Measure ℝ} (hν : ¬ IsFiniteMeasure ν) (t : ℝ≥0) :
-    ν.pastur t = 0 := by
-  classical
-  exact dite_eq_right hν
+    ν.pastur t = 0 :=
+  dite_eq_right hν
 
 /-- `ν.pastur t` is always a finite measure. -/
 instance isFiniteMeasure_pastur (ν : Measure ℝ) (t : ℝ≥0) : IsFiniteMeasure (ν.pastur t) := by
-  classical
-  dsimp only [pastur]
-  split_ifs with h
-  · exact (exists_pasturMeasure ν t).choose_spec.1
-  · infer_instance
+  by_cases h : IsFiniteMeasure ν
+  · exact (pastur_spec ν t).1
+  · rw [pastur_of_not_isFiniteMeasure h]
+    infer_instance
 
 /-- The real total mass of `ν.pastur t` agrees with that of `ν` for every measure `ν`. -/
 @[simp]
 theorem pastur_real_univ (ν : Measure ℝ) (t : ℝ≥0) :
     (ν.pastur t).real univ = ν.real univ := by
-  classical
   by_cases h : IsFiniteMeasure ν
-  · simpa only [pastur, dite_eq_left h] using (exists_pasturMeasure ν t).choose_spec.2.1
-  · have htop : ν univ = ⊤ := by
-      by_contra hne
-      exact h ⟨lt_top_iff_ne_top.2 hne⟩
-    simp [pastur_of_not_isFiniteMeasure h, measureReal_def, htop]
+  · exact (pastur_spec ν t).2.1
+  · simp [pastur_of_not_isFiniteMeasure h, measureReal_def, not_isFiniteMeasure_iff.mp h]
 
 /-- `ν.pastur t` preserves total mass for finite measures. -/
 @[simp]
@@ -452,11 +468,8 @@ section PasturAPI
 variable {ν : Measure ℝ} [IsFiniteMeasure ν]
 
 private lemma resolventTransform_pastur_eq_pasturAux (t : ℝ≥0) {z : ℂ} (hz : 0 < z.im) :
-    resolventTransform (ν.pastur t) z = pasturAux ν t z := by
-  classical
-  have h : IsFiniteMeasure ν := inferInstance
-  simpa only [Measure.pastur, dite_eq_left h] using
-    ((exists_pasturMeasure ν t).choose_spec.2.2 z hz).symm
+    resolventTransform (ν.pastur t) z = pasturAux ν t z :=
+  ((Measure.pastur_spec ν t).2.2 z hz).symm
 
 /-- **Uniqueness in the Stieltjes class for the Pastur equation.** In the upper half-plane,
 `resolventTransform (ν.pastur t) z` is the unique complex number `w` with `0 ≤ w.im` solving
@@ -484,13 +497,8 @@ omit [IsFiniteMeasure ν] in
 /-- Off the real axis, the shifted spectral parameter `z + t m_{ν.pastur t}(z)` stays in the same
 open half-plane as `z`. -/
 theorem im_mul_im_add_mul_resolventTransform_pastur_pos (t : ℝ≥0) {z : ℂ} (hz : z.im ≠ 0) :
-    0 < z.im * (z + t * resolventTransform (ν.pastur t) z).im := by
-  have hzw := im_mul_im_resolventTransform_nonneg (ν.pastur t) z
-  have him : (z + t * resolventTransform (ν.pastur t) z).im =
-      z.im + t * (resolventTransform (ν.pastur t) z).im := by simp
-  have hsq : 0 < z.im * z.im := mul_self_pos.2 hz
-  rw [him]
-  nlinarith [t.coe_nonneg, mul_nonneg t.coe_nonneg hzw]
+    0 < z.im * (z + t * resolventTransform (ν.pastur t) z).im :=
+  im_mul_im_add_nnreal_mul_pos t hz (im_mul_im_resolventTransform_nonneg (ν.pastur t) z)
 
 omit [IsFiniteMeasure ν] in
 /-- Off the real axis, the shifted spectral parameter `z + t m_{ν.pastur t}(z)` stays off the real
@@ -503,13 +511,8 @@ omit [IsFiniteMeasure ν] in
 /-- The shifted spectral parameter `z + t m_{ν.pastur t}(z)` has imaginary part of magnitude at
 least `|z.im|`. -/
 theorem abs_im_le_abs_im_add_mul_resolventTransform_pastur (t : ℝ≥0) (z : ℂ) :
-    |z.im| ≤ |(z + t * resolventTransform (ν.pastur t) z).im| := by
-  have hzw := im_mul_im_resolventTransform_nonneg (ν.pastur t) z
-  have him : (z + t * resolventTransform (ν.pastur t) z).im =
-      z.im + t * (resolventTransform (ν.pastur t) z).im := by simp
-  rw [← sq_le_sq, him]
-  nlinarith [t.coe_nonneg, sq_nonneg ((t : ℝ) * (resolventTransform (ν.pastur t) z).im),
-    mul_nonneg t.coe_nonneg hzw]
+    |z.im| ≤ |(z + t * resolventTransform (ν.pastur t) z).im| :=
+  abs_im_le_abs_im_add_nnreal_mul t (im_mul_im_resolventTransform_nonneg (ν.pastur t) z)
 
 /-- **Strict contraction of the Pastur fixed-point derivative.** Off the real axis, at
 `ζ = z + t m_{ν.pastur t}(z)`, the complex derivative satisfies `‖t m_ν'(ζ)‖ < 1`. -/
@@ -629,10 +632,10 @@ theorem map_affine_pastur (ν : Measure ℝ) (a b : ℝ) (t : ℝ≥0) :
         _ = resolventTransform (ν.map (fun x : ℝ ↦ a + b * x))
               (z + (Real.toNNReal (b ^ 2) * t : ℝ≥0) * w) :=
             (resolventTransform_map_affine a b hb _).symm
-  · have hf : Measurable fun x : ℝ ↦ a + b * x := by fun_prop
-    have hmap : ¬ IsFiniteMeasure (ν.map (fun x : ℝ ↦ a + b * x)) := fun h ↦ hν ⟨by
-      have hlt := h.measure_univ_lt_top
-      rwa [Measure.map_apply hf MeasurableSet.univ, preimage_univ] at hlt⟩
+  · have hmap : ¬ IsFiniteMeasure (ν.map (fun x : ℝ ↦ a + b * x)) := by
+      rw [not_isFiniteMeasure_iff, Measure.map_apply (by fun_prop) MeasurableSet.univ,
+        preimage_univ]
+      exact not_isFiniteMeasure_iff.mp hν
     simp [pastur_of_not_isFiniteMeasure hν, pastur_of_not_isFiniteMeasure hmap]
 
 end Measure

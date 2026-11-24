@@ -84,7 +84,7 @@ basis of simple roots. -/
   injective_representation_ι := t.geckRepresentation_ι_injective ht
   lattice := (t.geckCoordinateLattice ht).toAddSubgroup
   representation_mem_lattice := t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht
-  span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
+  span_lattice_eq_top := Submodule.IsFullLattice.span_eq_top (R := ℤ) (A := ℚ)
   dim := t.geckDim ht
   basis := t.geckCoordinateBasisFin ht
   weight := t.geckWeightFin ht

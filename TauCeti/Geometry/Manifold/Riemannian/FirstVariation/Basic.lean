@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ParametricIntegral
+public import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -54,6 +54,9 @@ this derivative vanishes for every `C^n` variation with fixed endpoints
   fixed endpoints, which are `C^n` curves by definition; for `2 ≤ n`, criticality is characterized
   through the first variation formula by
   `TauCeti.Manifold.isEnergyCritical_iff_integral_inner_eq_zero`.
+* `TauCeti.Manifold.exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity`: the squared speed of a
+  `C^n` family is jointly `C^(n-1)` near `{0} × [a, b]`, the input to differentiating the energy
+  and the length under the integral sign.
 
 ## References
 
@@ -104,6 +107,28 @@ private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t :
 
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+omit [FiniteDimensional ℝ E]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- **The squared speed is jointly smooth near `{0} × [a, b]`.** If the family is `C^n` at every
+point of `{0} × [a, b]`, for a finite `n` with `m + 1 ≤ n`, and the metric is `C^m`, then there are
+open sets `U ∋ 0` and `V ⊇ [a, b]` such that the family is `C^n` on `U ×ˢ V` and the squared
+speed `(s, t) ↦ ‖∂_t F (s, t)‖²` is `C^m` there. -/
+theorem exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity {m n : ℕ∞ω} [IsManifold I n M]
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    (hmn : m + 1 ≤ n) (hn : n ≠ ∞) {a b : ℝ}
+    (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
+    ∃ U V, IsOpen U ∧ IsOpen V ∧ (0 : ℝ) ∈ U ∧ uIcc a b ⊆ V ∧
+      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (U ×ˢ V) ∧
+      ContDiffOn ℝ m (fun z : ℝ × ℝ ↦ ‖curveVelocity I (F z.1) z.2‖ ^ 2) (U ×ˢ V) := by
+  obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
+    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc hn hF
+  have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
+  refine ⟨U, V, hUo, hVo, h0U, hV, hfUV,
+    (hfUV.contDiffOn_inner_mfderiv hmn hUVo (0, 1) (0, 1)).congr fun z hz ↦ ?_⟩
+  exact (inner_mfderiv_snd_self_eq_norm_sq_curveVelocity
+    ((hfUV.contMDiffAt (hUVo.mem_nhds hz)).mdifferentiableAt
+      (ne_of_gt (lt_of_lt_of_le (by simp) hmn)))).symm
 
 /-- **The integrand of the first variation.** At a parameter `t` where the family is `C²`, half
 the `s`-derivative at `s = 0` of the squared speed `‖∂_t F (s, t)‖²` is the `t`-derivative of

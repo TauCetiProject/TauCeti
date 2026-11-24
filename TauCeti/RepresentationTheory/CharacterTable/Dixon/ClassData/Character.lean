@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Fusion
 
 /-!
 # Characters at the class representatives
@@ -19,6 +19,8 @@ numbered class.
 
 * `TauCeti.ClassData.character_rep_index`: a character takes at each element its value at the
   representative of the class of that element.
+* `TauCeti.ClassData.character_rep_fusion`: a restricted character takes at each representative of
+  `dH` the value of the original character at the fused representative in `dG`.
 * `TauCeti.ClassData.character_eq_of_rep`: two characters agreeing at the class representatives
   of `d` are equal.
 * `TauCeti.ClassData.finrank_intertwiningMap_of_character_rep`: in characteristic zero, the
@@ -41,6 +43,15 @@ theorem character_rep_index [DecidableRel (IsConj : G → G → Prop)] (d : Clas
   obtain ⟨τ, hτ⟩ := isConj_iff.mp (d.isConj_rep_index g)
   conv_rhs => rw [← hτ]
   rw [Representation.char_conj]
+
+/-- **Character restriction along a fusion map**: the character of `ρ.comp φ` at the `i`-th
+representative of `dH` equals the character of `ρ` at the fused representative in `dG`. -/
+theorem character_rep_fusion {H : Type*} [Group H] (dH : ClassData H) (dG : ClassData G)
+    [DecidableRel (IsConj : G → G → Prop)] (φ : H →* G) (ρ : Representation k G V)
+    (i : Fin dH.numClasses) :
+    Representation.character (ρ.comp φ) (dH.rep i) =
+      ρ.character (dG.rep (dH.fusion dG φ i)) :=
+  (dG.character_rep_index ρ (φ (dH.rep i))).symm
 
 /-- **Characters are determined at the class representatives** of class data `d`: characters are
 class functions and every element is conjugate to some `d.rep i`. -/

@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -62,17 +65,32 @@ the low-lying spectrum of `Δ_t` with the harmonic-oscillator models at the crit
 are computed in `TauCeti.Analysis.Calculus.WittenLaplacian.Quadratic`. That spectral comparison
 itself is not carried out here.
 
+**Forms with disjoint supports.** As `Δ_t` is a local operator, it does not mix forms with disjoint
+supports: the pointwise energy of a combination `∑ⱼ cⱼ vⱼ` of such forms is `∑ⱼ cⱼ²` times the
+pointwise energies of the `vⱼ`
+(`TauCeti.sum_euclideanWittenLaplacian_sum_smul_mul_of_notMem_tsupport`). So if the quadratic form
+of `Δ_t` is at most `ε` times the squared norm on each of finitely many linearly independent such
+forms, it is so on their span
+(`TauCeti.exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le`). This is how
+quasimodes at different critical points combine into a low-energy space.
+
 ## Main results
 
 * `TauCeti.euclideanWittenLaplacian_smul_apply`: the Leibniz rule for `Δ_t (J φ)`.
 * `TauCeti.sum_smul_euclideanWittenLaplacian_smul_apply`: the pointwise IMS localization formula.
 * `TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`: the IMS localization formula for the
   quadratic form of `Δ_t`.
+* `TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for
+  the localized pieces give a lower bound for the quadratic form of `Δ_t`.
 * `TauCeti.sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`: the
   pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
   `TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for the
   quadratic form of `Δ_t` by the potential `t² |df|² - |t| |Hess f|`.
+* `TauCeti.sum_euclideanWittenLaplacian_sum_smul_mul_of_notMem_tsupport`: `Δ_t` does not mix forms
+  with disjoint supports.
+* `TauCeti.exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le`: an upper bound
+  for the quadratic form of `Δ_t` on forms with disjoint supports extends to their span.
 
 ## References
 
@@ -87,6 +105,7 @@ itself is not carried out here.
 public section
 
 open Filter MeasureTheory Topology
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -246,6 +265,32 @@ theorem integral_sum_euclideanWittenLaplacian_mul_eq {α : Type*} {A : Finset α
   rw [← integral_finsetSum A hint, integral_congr_ae (Eventually.of_forall hpt), integral_add hP hQ,
     add_sub_cancel_right]
 
+/-- **The lower bound of IMS localization.** Under the hypotheses of
+`TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`, suppose that `∑ₐ |∇Jₐ|² ≤ K` wherever `φ`
+does not vanish, and that the quadratic form of `Δ_t` at each localized piece `Jₐ φ` is at least
+`Bₐ`. Then `∑ₐ Bₐ - K ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`. -/
+theorem sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : Type*}
+    {A : Finset α} {J : α → (ι → ℝ) → ℝ} {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
+    (hJ : ∀ a ∈ A, ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 (J a) x) (hφ : ContDiff ℝ 2 φ)
+    (hφc : HasCompactSupport φ) (hJA : ∀ x, φ x ≠ 0 → ∑ a ∈ A, J a x ^ 2 = 1) {K : ℝ}
+    (hK : ∀ x, φ x ≠ 0 → ∑ a ∈ A, ∑ i, fderiv ℝ (J a) x (Pi.single i 1) ^ 2 ≤ K) {t : ℝ}
+    {B : α → ℝ}
+    (hB : ∀ a ∈ A, B a ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t (J a • φ) x s * (J a • φ) x s) :
+    ∑ a ∈ A, B a - K * ∫ x, ∑ s, φ x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  rw [integral_sum_euclideanWittenLaplacian_mul_eq hf hJ hφ hφc hJA t]
+  refine sub_le_sub (Finset.sum_le_sum hB) ?_
+  -- The localization error is at most `K ∫ |φ|²`.
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun x ↦ ?_)
+    (hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl continuousOn_const)
+    (Eventually.of_forall fun x ↦ ?_)
+  · positivity
+  · by_cases hx : φ x = 0
+    · simp [hx]
+    exact mul_le_mul_of_nonneg_right (hK x hx) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
+
 /-! ### The lower bound away from the critical points -/
 
 omit [LinearOrder ι] in
@@ -277,22 +322,10 @@ theorem sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLapla
           |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|) *
             ∑ s, φ x s ^ 2 ≤
       ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  rw [sum_euclideanWittenLaplacian_apply_mul hf hφ]
   set HT := ∑ s, (∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
     ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆ (φ x)) s *
       φ x s
-  have hdecomp : ∑ s, euclideanWittenLaplacian f t φ x s * φ x s =
-      ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s +
-        (t ^ 2 * ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 + t * HT := by
-    rw [euclideanWittenLaplacian_apply hf hφ]
-    simp only [HT, Pi.add_apply, Pi.smul_apply, Finset.sum_apply, Pi.neg_apply,
-      smul_eq_mul, add_mul, Finset.sum_add_distrib, Finset.sum_mul, Finset.mul_sum, neg_mul]
-    rw [Finset.sum_comm (s := (Finset.univ : Finset (Finset ι)))
-      (t := (Finset.univ : Finset ι))]
-    congr 1
-    · congr 1
-      exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun s _ ↦ by ring
-    · exact Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦
-        Finset.sum_congr rfl fun j _ ↦ by ring
   have hHT :=
     (Pi.basisFun ℝ ι).abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
       (fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)) (φ x)
@@ -301,7 +334,6 @@ theorem sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLapla
     calc -(t * HT) ≤ |t * HT| := neg_le_abs _
       _ = |t| * |HT| := abs_mul t HT
       _ ≤ _ := mul_le_mul_of_nonneg_left hHT (abs_nonneg t)
-  rw [hdecomp]
   linarith
 
 /-- **A lower bound for the quadratic form of the Witten Laplacian.** For a compactly supported
@@ -319,8 +351,6 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
         |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|) *
           ∑ s, φ x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  have hφ₂ : Continuous (fderiv ℝ (fderiv ℝ φ)) :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).continuous_fderiv one_ne_zero
   -- The second-order part of the pairing, `K = ∑ᵢ ⟨-∂ᵢ²φ, φ⟩`, and the potential `V`.
   set K : (ι → ℝ) → ℝ := fun x ↦
     ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s
@@ -330,7 +360,7 @@ theorem integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
   have hKint : ∀ i ∈ (Finset.univ : Finset ι), Integrable fun x ↦
       ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s := fun i _ ↦
     hφ.continuous.integrable_sum_mul_of_continuousOn hφc (Set.subset_univ _)
-      ((hφ₂.clm_apply continuous_const).clm_apply continuous_const).neg.continuousOn
+      (hφ.continuous_fderiv_fderiv_apply le_rfl _ _).neg.continuousOn
   have hKi : Integrable K := integrable_finsetSum _ hKint
   have hK : 0 ≤ ∫ x, K x := by
     rw [integral_finsetSum _ hKint]
@@ -386,5 +416,77 @@ theorem mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul {f : (�
   have := hc x hx
   have := hh x hx
   gcongr
+
+
+/-! ### Forms with disjoint supports -/
+
+section Disjoint
+
+variable {κ : Type*} [Fintype κ] {v : κ → (ι → ℝ) → Finset ι → ℝ}
+
+/-- **The Witten Laplacian does not mix forms with disjoint supports.** If `x` lies in the
+topological support of at most one of the forms `v j`, the pointwise energy of `∑ⱼ cⱼ vⱼ` at `x`
+is `∑ⱼ cⱼ²` times the pointwise energies of the `v j`, since `Δ_t` is a local operator. -/
+theorem sum_euclideanWittenLaplacian_sum_smul_mul_of_notMem_tsupport (f : (ι → ℝ) → ℝ) (t : ℝ)
+    (c : κ → ℝ) {x : ι → ℝ} (hv : ∀ i j, i ≠ j → x ∈ tsupport (v i) → x ∉ tsupport (v j)) :
+    ∑ s, euclideanWittenLaplacian f t (∑ j, c j • v j) x s * (∑ j, c j • v j) x s =
+      ∑ j, c j ^ 2 * ∑ s, euclideanWittenLaplacian f t (v j) x s * v j x s :=
+  apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport
+    (fun φ ↦ ∑ s, euclideanWittenLaplacian f t φ x s * φ x s) (fun a φ ↦ by
+      simp only [euclideanWittenLaplacian_const_smul, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun s _ ↦ by ring)
+    (fun φ ψ h ↦ by
+      rw [((EventuallyEq.refl _ f).euclideanWittenLaplacian h t).eq_of_nhds, h.eq_of_nhds])
+    c hv
+
+/-- **The span of forms with disjoint supports.** Let `v j` be linearly independent smooth
+compactly supported forms of degree `m` with pairwise disjoint supports, on each of which the
+quadratic form of `Δ_t` is at most `ε` times the squared norm. Then their span has dimension the
+number of the `v j`, and on every element of it the quadratic form is at most `ε` times the
+squared norm. -/
+theorem exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le
+    {f : (ι → ℝ) → ℝ} {t ε : ℝ} {m : ℕ}
+    (hli : LinearIndependent ℝ v) (hvC : ∀ j, ContDiff ℝ ∞ (v j))
+    (hvc : ∀ j, HasCompactSupport (v j)) (hvm : ∀ j x s, v j x s ≠ 0 → s.card = m)
+    (hdisj : ∀ x i j, i ≠ j → x ∈ tsupport (v i) → x ∉ tsupport (v j))
+    (hE : ∀ j, Integrable fun x ↦ ∑ s, euclideanWittenLaplacian f t (v j) x s * v j x s)
+    (hq : ∀ j, ∫ x, ∑ s, euclideanWittenLaplacian f t (v j) x s * v j x s ≤
+      ε * ∫ x, ∑ s, v j x s ^ 2) :
+    ∃ V : Submodule ℝ ((ι → ℝ) → Finset ι → ℝ), Module.finrank ℝ V = Fintype.card κ ∧
+      ∀ φ ∈ V, ContDiff ℝ ∞ φ ∧ HasCompactSupport φ ∧ (∀ x s, φ x s ≠ 0 → s.card = m) ∧
+        ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s ≤ ε * ∫ x, ∑ s, φ x s ^ 2 := by
+  refine ⟨Submodule.span ℝ (Set.range v), finrank_span_eq_card hli, fun φ hφ ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1 hφ
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · have h : (∑ j, c j • v j) = fun x ↦ ∑ j, c j • v j x := by
+      ext x
+      simp [Finset.sum_apply]
+    rw [h]
+    exact ContDiff.sum fun j _ ↦ (hvC j).const_smul (c j)
+  · exact Finset.sum_induction _ HasCompactSupport (fun _ _ h₁ h₂ ↦ h₁.add h₂)
+      HasCompactSupport.zero fun j _ ↦ (hvc j).mono (Function.support_const_smul_subset _ _)
+  · intro x s hxs
+    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul] at hxs
+    obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero hxs
+    exact hvm j x s (right_ne_zero_of_mul hj)
+  -- At each point at most one `v j` is nonzero, so the squared norm splits like the energy.
+  have hsq : ∀ x, ∑ s, (∑ j, c j • v j) x s ^ 2 = ∑ j, c j ^ 2 * ∑ s, v j x s ^ 2 := fun x ↦
+    apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport
+      (fun φ : (ι → ℝ) → Finset ι → ℝ ↦ ∑ s, φ x s ^ 2)
+      (fun a φ ↦ by simp only [Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum])
+      (fun φ ψ h ↦ by rw [h.eq_of_nhds]) c (hdisj x)
+  have hN : ∀ j, Integrable fun x ↦ c j ^ 2 * ∑ s, v j x s ^ 2 := fun j ↦
+    (hvC j).continuous.integrable_mul_sum_sq_of_continuousOn (hvc j) subset_rfl
+      continuousOn_const
+  rw [integral_congr_ae (Eventually.of_forall fun x ↦
+      sum_euclideanWittenLaplacian_sum_smul_mul_of_notMem_tsupport f t c (hdisj x)),
+    integral_congr_ae (Eventually.of_forall hsq),
+    integral_finsetSum _ fun j _ ↦ (hE j).const_mul _, integral_finsetSum _ fun j _ ↦ hN j,
+    Finset.mul_sum]
+  refine Finset.sum_le_sum fun j _ ↦ ?_
+  rw [integral_const_mul, integral_const_mul, mul_left_comm]
+  exact mul_le_mul_of_nonneg_left (hq j) (sq_nonneg _)
+
+end Disjoint
 
 end TauCeti

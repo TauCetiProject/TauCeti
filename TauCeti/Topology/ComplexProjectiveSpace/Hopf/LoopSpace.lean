@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
@@ -116,27 +116,9 @@ theorem isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0)
   have : PathConnectedSpace
       (MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v) :=
     (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 v).2 (hS 1 (by omega))
-  have : PathConnectedSpace (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) :=
-    (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 _).2
-      (HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton_congr.2 inferInstance)
-  rw [ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective (1, 1)]
-  intro k
-  -- The product sends the base point to the unit; the homotopy groups are compared there.
-  have h1 : hopfProduct v j (1, 1) = 1 := by simp [hj]
-  have key : ∀ {y} (h : hopfProduct v j (1, 1) = y),
-      Function.Bijective (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) h) →
-        Function.Bijective
-          (HomotopyGroup.map (N := Fin k) (x := (1, 1)) (hopfProduct v j) rfl) := by
-    rintro y rfl hb
-    exact hb
-  refine key h1 ?_
-  rcases k with _ | _ | k
-  · -- Degree zero: both spaces are path connected.
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero ((1, 1) :
-      Circle × MooreLoopSpace (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v)).1 inferInstance
-    have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero
-      (1 : MooreLoopSpace (ComplexProjectiveSpace n) (mk n v))).1 inferInstance
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
+  refine ContinuousMap.isWeakHomotopyEquivalence_of_forall_bijective_succ
+    (x := (1, 1)) (by simp [hj] : hopfProduct v j (1, 1) = 1) fun k ↦ ?_
+  rcases k with _ | k
   · -- Degree one: `π₁(ΩS²ⁿ⁺¹) = π₂(S²ⁿ⁺¹)` vanishes and `j` is bijective.
     have := (MooreLoopSpace.subsingleton_homotopyGroup_iff v 1).2 (hS 2 (by omega))
     exact HomotopyGroup.bijective_map_mul_of_bijective_of_subsingleton hj
@@ -157,11 +139,7 @@ def mooreLoopSpaceFundamentalGroupMulEquiv (hn : n ≠ 0) :
     FundamentalGroup (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) 1 ≃*
       Multiplicative ℤ :=
   HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans <|
-    (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0).trans <|
-    (HomotopyGroup.congrMulEquiv (finSuccEquiv 1)).trans <|
-    (hopfBoundaryMulEquiv v (N := Fin 1) (by simp; omega)).trans <|
-    (HomotopyGroup.homeomorphMulEquivOfEq Circle.homeomorphSphere.symm (by ext; simp)).trans <|
-    HomotopyGroup.pi1MulEquivFundamentalGroup.trans (Circle.fundamentalGroupMulEquiv 1)
+    (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0).trans (pi2MulEquivInt v hn)
 
 /-- The isomorphism `π₁(ΩCPⁿ) ≃* ℤ` evaluated on a class `a`: shift `a` to `π₂(CPⁿ)` by the Moore
 loop-space shift, apply the boundary map of the Hopf fibration to land in `π₁(S¹)`, and take the
@@ -175,7 +153,7 @@ theorem mooreLoopSpaceFundamentalGroupMulEquiv_apply (hn : n ≠ 0)
           (hopfBoundary v (Fin 1) (HomotopyGroup.congrEquiv (finSuccEquiv 1)
             (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0
               (HomotopyGroup.pi1MulEquivFundamentalGroup.symm a)))))) := by
-  simp [mooreLoopSpaceFundamentalGroupMulEquiv]
+  simp [mooreLoopSpaceFundamentalGroupMulEquiv, pi2MulEquivInt_apply]
 
 variable (v) in
 /-- **The based Hopf product realizes the splitting.** For `n ≥ 1` there is a based map
@@ -185,7 +163,8 @@ theorem exists_isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0) :
     ∃ j : C(Circle, MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)),
       j 1 = 1 ∧ (hopfProduct v j).IsWeakHomotopyEquivalence :=
   ⟨_, Path.toCircle_one _, isWeakHomotopyEquivalence_hopfProduct hn _
-    (Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one
-      (mooreLoopSpaceFundamentalGroupMulEquiv v hn))⟩
+    (Circle.bijective_mapOfEq_toCircle_of_apply_eq_ofAdd_one
+      (mooreLoopSpaceFundamentalGroupMulEquiv v hn) _
+      (by rw [FundamentalGroup.fromPath_mk_out, MulEquiv.apply_symm_apply]))⟩
 
 end TauCeti.ComplexProjectiveSpace

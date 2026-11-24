@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Pastur.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Basic.Complex.OfRealSub
 import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -89,17 +88,13 @@ theorem norm_resolventTransform_pastur_sub_le (s t : ℝ≥0) {z : ℂ} (hz : z.
     im_add_mul_resolventTransform_pastur_ne_zero (ν := ν.pastur s) d hz
   have hwt_norm : ‖wt‖ ≤ |z.im|⁻¹ * ν.real univ := by
     simpa [wt] using norm_resolventTransform_le (μ := (ν.pastur s).pastur d) hz
-  have hsub := norm_resolventTransform_sub_le (μ := ν.pastur s) hζ0 hz
+  have hsub := norm_resolventTransform_add_nnreal_mul_sub_le (ν := ν.pastur s) hζ0 hz
   rw [Measure.pastur_real_univ] at hsub
   calc ‖wt - resolventTransform (ν.pastur s) z‖
       = ‖resolventTransform (ν.pastur s) (z + d * wt) - resolventTransform (ν.pastur s) z‖ := by
         rw [← hwt_eq]
-    _ ≤ ‖(z + d * wt) - z‖ / (|(z + d * wt).im| * |z.im|) * ν.real univ := hsub
-    _ ≤ ((d : ℝ) * (|z.im|⁻¹ * ν.real univ)) / (|z.im| * |z.im|) * ν.real univ := by
-        have hnum : ‖(z + d * wt) - z‖ ≤ (d : ℝ) * (|z.im|⁻¹ * ν.real univ) := by
-          rw [add_sub_cancel_left, norm_mul, norm_real, Real.norm_eq_abs,
-            abs_of_nonneg d.coe_nonneg]
-          exact mul_le_mul_of_nonneg_left hwt_norm d.coe_nonneg
+    _ ≤ (d : ℝ) * ‖wt‖ / (|(z + d * wt).im| * |z.im|) * ν.real univ := hsub
+    _ ≤ (d : ℝ) * (|z.im|⁻¹ * ν.real univ) / (|z.im| * |z.im|) * ν.real univ := by
         have : 0 < |z.im| := abs_pos.2 hz
         gcongr
     _ = |(t : ℝ) - s| * |z.im|⁻¹ ^ 3 * ν.real univ ^ 2 := by
@@ -216,15 +211,11 @@ theorem continuous_deriv_resolventTransform_pastur {z : ℂ} (hz : z.im ≠ 0) :
     have hζ_cont : Continuous ζ :=
       continuous_const.add ((continuous_ofReal.comp NNReal.continuous_coe).mul
         (continuous_resolventTransform_pastur hz))
-    have hH_open : IsOpen {w : ℂ | w.im ≠ 0} := isOpen_compl_singleton.preimage continuous_im
-    have hH_sub : {w : ℂ | w.im ≠ 0} ⊆ (algebraMap ℝ ℂ '' ν.support)ᶜ :=
-      fun w (hw : w.im ≠ 0) ↦ by simpa using Complex.notMem_image_ofReal_of_im_ne_zero hw
-    have han : AnalyticOnNhd ℂ (resolventTransform ν) {w : ℂ | w.im ≠ 0} :=
-      hH_open.analyticOn_iff_analyticOnNhd.1 (analyticOn_resolventTransform.mono hH_sub)
     have hd_cont : Continuous fun t : ℝ≥0 ↦ deriv (resolventTransform ν) (ζ t) := by
       rw [continuous_iff_continuousAt]
       intro t
-      exact (han (ζ t) (im_add_mul_resolventTransform_pastur_ne_zero t hz)).deriv.continuousAt.comp
+      exact (analyticOnNhd_resolventTransform (ζ t)
+        (im_add_mul_resolventTransform_pastur_ne_zero t hz)).deriv.continuousAt.comp
         hζ_cont.continuousAt
     have hden_cont : Continuous fun t : ℝ≥0 ↦
         1 - (t : ℂ) * deriv (resolventTransform ν) (ζ t) :=

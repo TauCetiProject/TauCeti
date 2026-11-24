@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.BetaNegativeBinomial.Basic
 public import TauCeti.Probability.Distributions.YuleSimon.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Yule–Simon as a beta-negative-binomial law
@@ -49,7 +49,7 @@ theorem map_succ_betaNegativeBinomialMeasure {ρ : ℝ} (hρ : 0 < ρ) :
     have hgamma : Real.Gamma (1 + (k : ℝ)) / (Real.Gamma 1 * k.factorial) = 1 := by
       rw [add_comm (1 : ℝ) (k : ℝ), Real.Gamma_nat_eq_factorial]
       simp [Nat.factorial_ne_zero]
-    rw [betaNegativeBinomialWeightReal_of_ne_zero one_ne_zero, hgamma, beta_one_right hρ]
+    rw [betaNegativeBinomialWeightReal_of_ne_zero one_ne_zero, hgamma, beta_one_right hρ.le]
     simp [yuleSimonWeightReal_def, Nat.cast_succ, add_comm (1 : ℝ) (k : ℝ),
       beta_comm (ρ + 1), mul_comm]
 

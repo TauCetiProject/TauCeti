@@ -28,7 +28,7 @@ Under the deterministic Ornstein–Uhlenbeck space-time change `x ↦ e^(-t/2) x
 `Real.toNNReal (e^t - 1)`, affine equivariance of the Pastur evolution yields
 `((ν.pastur (Real.toNNReal (e^t - 1))).map (e^(-t/2) · ·)) =
   (ν.map (e^(-t/2) · ·)).pastur (Real.toNNReal (1 - e^(-t)))`
-(`TauCeti.Probability.map_exp_neg_half_pastur`). Consequently:
+(`MeasureTheory.Measure.map_exp_neg_half_pastur`). Consequently:
 
 * On any semicircle law `semicircleReal a v`, the Ornstein–Uhlenbeck action transports the centre
   to `e^(-t/2) a` and the variance to `e^(-t) v + Real.toNNReal (1 - e^(-t))`
@@ -40,7 +40,7 @@ Under the deterministic Ornstein–Uhlenbeck space-time change `x ↦ e^(-t/2) x
   for `0 ≤ t` (`TauCeti.Probability.map_exp_neg_half_pastur_semicircleReal_zero_one`).
 * For **every** initial probability measure `ν` on `ℝ` (with no moment assumptions), the
   Ornstein–Uhlenbeck flow converges weakly as `t → ∞` to `semicircleReal 0 1`
-  (`TauCeti.Probability.tendsto_map_exp_neg_half_pastur`), by joint weak continuity of
+  (`MeasureTheory.ProbabilityMeasure.tendsto_map_exp_neg_half_pastur`), by joint weak continuity of
   `ProbabilityMeasure.pastur`.
 
 ## Main results
@@ -48,11 +48,11 @@ Under the deterministic Ornstein–Uhlenbeck space-time change `x ↦ e^(-t/2) x
 * `TauCeti.Probability.pastur_dirac`: `(Measure.dirac a).pastur t = semicircleReal a t`.
 * `TauCeti.Probability.pastur_semicircleReal`:
   `(semicircleReal a s).pastur t = semicircleReal a (s + t)`.
-* `TauCeti.Probability.map_exp_neg_half_pastur`: Ornstein–Uhlenbeck scaling of the Pastur flow.
+* `MeasureTheory.Measure.map_exp_neg_half_pastur`: Ornstein–Uhlenbeck scaling of the Pastur flow.
 * `TauCeti.Probability.map_exp_neg_half_pastur_semicircleReal` and
   `TauCeti.Probability.map_exp_neg_half_pastur_semicircleReal_zero_one`: Ornstein–Uhlenbeck action
   on semicircle laws and stationarity of `semicircleReal 0 1`.
-* `TauCeti.Probability.tendsto_map_exp_neg_half_pastur`: weak convergence of the
+* `MeasureTheory.ProbabilityMeasure.tendsto_map_exp_neg_half_pastur`: weak convergence of the
   Ornstein–Uhlenbeck flow to `semicircleReal 0 1` from an arbitrary initial probability measure.
 
 ## References
@@ -69,6 +69,43 @@ noncomputable section
 
 open Complex Filter MeasureTheory Set
 open scoped NNReal Topology
+
+private lemma exp_neg_half_sq (t : ℝ) : Real.exp (-t / 2) ^ 2 = Real.exp (-t) := by
+  rw [sq, ← Real.exp_add]
+  congr 1
+  ring
+
+private lemma map_exp_neg_half_eq_affine (μ : Measure ℝ) (t : ℝ) :
+    μ.map (fun x : ℝ ↦ Real.exp (-t / 2) * x) =
+      μ.map (fun x : ℝ ↦ 0 + Real.exp (-t / 2) * x) := by
+  congr 1 with x
+  ring
+
+private lemma one_sub_exp_neg_nonneg {t : ℝ} (ht : 0 ≤ t) : 0 ≤ 1 - Real.exp (-t) :=
+  sub_nonneg.2 (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
+
+/-- **Ornstein–Uhlenbeck scaling of the Pastur evolution.** Rescaling
+`ν.pastur (Real.toNNReal (e^t - 1))` by `x ↦ e^(-t/2) x` equals the Pastur evolution at variance
+`Real.toNNReal (1 - e^(-t))` started from the scaled initial measure `ν.map (x ↦ e^(-t/2) x)`. -/
+theorem MeasureTheory.Measure.map_exp_neg_half_pastur (ν : Measure ℝ) (t : ℝ) :
+    (ν.pastur (Real.toNNReal (Real.exp t - 1))).map (fun x : ℝ ↦ Real.exp (-t / 2) * x) =
+      (ν.map (fun x : ℝ ↦ Real.exp (-t / 2) * x)).pastur (Real.toNNReal (1 - Real.exp (-t))) := by
+  have htime : Real.toNNReal (Real.exp (-t / 2) ^ 2) * Real.toNNReal (Real.exp t - 1) =
+      Real.toNNReal (1 - Real.exp (-t)) := by
+    by_cases ht : 0 ≤ t
+    · ext
+      have ht1 : 0 ≤ Real.exp t - 1 := sub_nonneg.2 (Real.one_le_exp ht)
+      rw [NNReal.coe_mul, Real.coe_toNNReal _ (sq_nonneg _), Real.coe_toNNReal _ ht1,
+        Real.coe_toNNReal _ (one_sub_exp_neg_nonneg ht), exp_neg_half_sq]
+      have hexp : Real.exp (-t) * Real.exp t = 1 := by
+        rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+      linear_combination hexp
+    · have ht' : t ≤ 0 := le_of_not_ge ht
+      have ht1 : Real.exp t - 1 ≤ 0 := sub_nonpos.2 (Real.exp_le_one_iff.2 ht')
+      have ht2 : 1 - Real.exp (-t) ≤ 0 :=
+        sub_nonpos.2 (Real.one_le_exp (neg_nonneg.2 ht'))
+      rw [Real.toNNReal_eq_zero.2 ht1, Real.toNNReal_eq_zero.2 ht2, mul_zero]
+  rw [map_exp_neg_half_eq_affine, map_exp_neg_half_eq_affine ν, Measure.map_affine_pastur, htime]
 
 namespace TauCeti.Probability
 
@@ -92,38 +129,6 @@ theorem pastur_semicircleReal (a : ℝ) (s t : ℝ≥0) :
     (semicircleReal a s).pastur t = semicircleReal a (s + t) := by
   rw [← pastur_dirac, Measure.pastur_pastur, pastur_dirac]
 
-private lemma exp_neg_half_sq (t : ℝ) : Real.exp (-t / 2) ^ 2 = Real.exp (-t) := by
-  rw [sq, ← Real.exp_add]
-  congr 1
-  ring
-
-/-- **Ornstein–Uhlenbeck scaling of the Pastur evolution.** Rescaling
-`ν.pastur (Real.toNNReal (e^t - 1))` by `x ↦ e^(-t/2) x` equals the Pastur evolution at variance
-`Real.toNNReal (1 - e^(-t))` started from the scaled initial measure `ν.map (x ↦ e^(-t/2) x)`. -/
-theorem map_exp_neg_half_pastur (ν : Measure ℝ) (t : ℝ) :
-    (ν.pastur (Real.toNNReal (Real.exp t - 1))).map (fun x : ℝ ↦ Real.exp (-t / 2) * x) =
-      (ν.map (fun x : ℝ ↦ Real.exp (-t / 2) * x)).pastur (Real.toNNReal (1 - Real.exp (-t))) := by
-  have hfun : (fun x : ℝ ↦ Real.exp (-t / 2) * x) = fun x : ℝ ↦ 0 + Real.exp (-t / 2) * x := by
-    ext x; ring
-  have htime : Real.toNNReal (Real.exp (-t / 2) ^ 2) * Real.toNNReal (Real.exp t - 1) =
-      Real.toNNReal (1 - Real.exp (-t)) := by
-    by_cases ht : 0 ≤ t
-    · ext
-      have ht1 : 0 ≤ Real.exp t - 1 := sub_nonneg.2 (Real.one_le_exp ht)
-      have ht2 : 0 ≤ 1 - Real.exp (-t) :=
-        sub_nonneg.2 (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
-      rw [NNReal.coe_mul, Real.coe_toNNReal _ (sq_nonneg _), Real.coe_toNNReal _ ht1,
-        Real.coe_toNNReal _ ht2, exp_neg_half_sq]
-      have hexp : Real.exp (-t) * Real.exp t = 1 := by
-        rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
-      linear_combination hexp
-    · have ht' : t ≤ 0 := le_of_not_ge ht
-      have ht1 : Real.exp t - 1 ≤ 0 := sub_nonpos.2 (Real.exp_le_one_iff.2 ht')
-      have ht2 : 1 - Real.exp (-t) ≤ 0 :=
-        sub_nonpos.2 (Real.one_le_exp (neg_nonneg.2 ht'))
-      rw [Real.toNNReal_eq_zero.2 ht1, Real.toNNReal_eq_zero.2 ht2, mul_zero]
-  rw [hfun, Measure.map_affine_pastur, htime]
-
 /-- **Ornstein–Uhlenbeck action on semicircle laws.** Evolving `semicircleReal a v` for variance
 time `Real.toNNReal (e^t - 1)` and scaling by `x ↦ e^(-t/2) x` yields a semicircle law with centre
 `e^(-t/2) a` and variance `e^(-t) v + Real.toNNReal (1 - e^(-t))`. -/
@@ -132,10 +137,8 @@ theorem map_exp_neg_half_pastur_semicircleReal (a : ℝ) (v : ℝ≥0) (t : ℝ)
         (fun x : ℝ ↦ Real.exp (-t / 2) * x) =
       semicircleReal (Real.exp (-t / 2) * a)
         (Real.toNNReal (Real.exp (-t)) * v + Real.toNNReal (1 - Real.exp (-t))) := by
-  have hfun : (fun x : ℝ ↦ Real.exp (-t / 2) * x) = fun x : ℝ ↦ 0 + Real.exp (-t / 2) * x := by
-    ext x; ring
-  rw [map_exp_neg_half_pastur, hfun, map_affine_semicircleReal, zero_add, exp_neg_half_sq,
-    pastur_semicircleReal]
+  rw [Measure.map_exp_neg_half_pastur, map_exp_neg_half_eq_affine, map_affine_semicircleReal,
+    zero_add, exp_neg_half_sq, pastur_semicircleReal]
 
 /-- Starting from `δ_0`, the Ornstein–Uhlenbeck measure at time `t` is the centred semicircle law
 of variance `Real.toNNReal (1 - e^(-t))`. -/
@@ -153,18 +156,20 @@ theorem map_exp_neg_half_pastur_semicircleReal_zero_one {t : ℝ} (ht : 0 ≤ t)
   rw [map_exp_neg_half_pastur_semicircleReal, mul_zero, mul_one]
   congr 1
   ext
-  have ht2 : 0 ≤ 1 - Real.exp (-t) :=
-    sub_nonneg.2 (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
   rw [NNReal.coe_add, NNReal.coe_one, Real.coe_toNNReal _ (Real.exp_nonneg _),
-    Real.coe_toNNReal _ ht2, add_sub_cancel]
+    Real.coe_toNNReal _ (one_sub_exp_neg_nonneg ht), add_sub_cancel]
+
+end TauCeti.Probability
 
 /-- **Ergodicity of the macroscopic Ornstein–Uhlenbeck flow.** For every initial probability
 measure `ν` on `ℝ`, the rescaled Pastur evolution `(ν.pastur (e^t - 1)).map (x ↦ e^(-t/2) x)`
 converges weakly as `t → ∞` to the standard semicircle law `semicircleReal 0 1`. -/
-theorem tendsto_map_exp_neg_half_pastur (ν : ProbabilityMeasure ℝ) :
+theorem MeasureTheory.ProbabilityMeasure.tendsto_map_exp_neg_half_pastur
+    (ν : ProbabilityMeasure ℝ) :
     Tendsto (fun t : ℝ ↦ (ν.pastur (Real.toNNReal (Real.exp t - 1))).map
         (fun x : ℝ ↦ Real.exp (-t / 2) * x))
-      atTop (𝓝 (semicircleReal 0 1).toProbabilityMeasure) := by
+      atTop (𝓝 (TauCeti.Probability.semicircleReal 0 1).toProbabilityMeasure) := by
+  open TauCeti.Probability in
   have hexp_half : Tendsto (fun t : ℝ ↦ Real.exp (-t / 2)) atTop (𝓝 0) :=
     (Real.tendsto_exp_neg_atTop_nhds_zero.comp
       (tendsto_id.atTop_div_const zero_lt_two)).congr fun t ↦ by simp [neg_div]
@@ -185,7 +190,8 @@ theorem tendsto_map_exp_neg_half_pastur (ν : ProbabilityMeasure ℝ) :
       atTop (𝓝 ((diracProba 0).pastur 1)) :=
     (ProbabilityMeasure.continuous_pastur.tendsto (diracProba 0, 1)).comp
       (hmap_lim.prodMk_nhds htime_lim)
-  have htarget : (diracProba 0).pastur 1 = (semicircleReal 0 1).toProbabilityMeasure := by
+  have htarget : (diracProba 0).pastur 1 =
+      (TauCeti.Probability.semicircleReal 0 1).toProbabilityMeasure := by
     apply ProbabilityMeasure.toMeasure_injective
     rw [ProbabilityMeasure.toMeasure_pastur]
     simp [diracProba]
@@ -193,8 +199,6 @@ theorem tendsto_map_exp_neg_half_pastur (ν : ProbabilityMeasure ℝ) :
   refine hlim.congr fun t ↦ ProbabilityMeasure.toMeasure_injective ?_
   rw [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.toMeasure_pastur,
     ProbabilityMeasure.toMeasure_pastur, ProbabilityMeasure.toMeasure_map]
-  exact (map_exp_neg_half_pastur (ν : Measure ℝ) t).symm
-
-end TauCeti.Probability
+  exact (Measure.map_exp_neg_half_pastur (ν : Measure ℝ) t).symm
 
 end

@@ -45,6 +45,8 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
   injective maps `M~(U) ⟶ N~(U)` on sections;
 * `TauCeti.AlgebraicGeometry.preservesFiniteLimits_tildeFunctor`: the functor `M ↦ M~` preserves
   finite limits, hence (with its preservation of colimits) short exact sequences;
+* `TauCeti.AlgebraicGeometry.subsingleton_tilde_basicOpen_of_smul_eq_zero`: the sections of
+  `M~` over `D(f)` vanish when `f` annihilates `M`;
 * `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
   between quasicoherent sheaves, with `tildeKernelIso_hom_comp_ι` identifying the kernel inclusion;
 * `TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`: the isomorphism
@@ -80,19 +82,19 @@ noncomputable section
 
 /-- A mapped associated-sheaf morphism sends the section of an element to the
 section of its image. -/
-@[simp]
 theorem tilde_map_val_app_toOpen {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
     (f : M ⟶ N) (U : (Spec R).Opens) (m : M) :
-    (tilde.map f).val.app (.op U) (tilde.toOpen M U m) = tilde.toOpen N U (f m) :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((tilde.map f).val.app (.op U) (tilde.toOpen M U m) = tilde.toOpen N U (f m)) :=
   ConcreteCategory.congr_hom (tilde.toOpen_map_app f U) m
 
 /-- The associated-sheaf counit recovers a global section from its associated section. -/
-@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.fromTildeΓ_val_app_toOpen_top
     {R : CommRingCat.{u}} (N : (Spec R).Modules)
     (m : (moduleSpecΓFunctor (R := R)).obj N) :
-    N.fromTildeΓ.val.app (.op ⊤)
-        (tilde.toOpen ((moduleSpecΓFunctor (R := R)).obj N) ⊤ m) = m := by
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    (N.fromTildeΓ.val.app (.op ⊤)
+        (tilde.toOpen ((moduleSpecΓFunctor (R := R)).obj N) ⊤ m) = m) := by
   have h := ConcreteCategory.congr_hom (Scheme.Modules.toOpen_fromTildeΓ_app N ⊤) m
   -- The sheaf-level equation uses the underlying sheaf of `N`; `erw` unfolds the
   -- scheme-module section wrappers to apply composition and match the counit's source.
@@ -120,11 +122,11 @@ theorem tilde_map_app_injective {M N : ModuleCat.{u} R} (f : M ⟶ N)
     simp only [StructureSheaf.Localizations.comapFun_mk, LocalizedModule.mk_eq,
       Submonoid.smul_def] at hab ⊢
     obtain ⟨c, hc⟩ := hab
-    refine ⟨⟨c.1, c.2⟩, hf ?_⟩
+    refine ⟨⟨c.val, c.property⟩, hf ?_⟩
     rw [map_smul, map_smul, map_smul, map_smul]
     exact hc
   intro s t hst
-  exact Subtype.ext (funext fun p ↦ hloc p.1 (congr_arg (fun x ↦ x.1 p) hst))
+  exact Subtype.ext (funext fun p ↦ hloc p.val (congr_arg (fun x ↦ x.val p) hst))
 
 /-- The functor `M ↦ M~` sends monomorphisms of `R`-modules to monomorphisms of
 `𝒪_{Spec R}`-modules. -/
@@ -170,6 +172,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.tildeKernelIso_hom_comp_ι
   simp only [kernel.lift_ι, PreservesKernel.iso_hom]
   exact kernelComparison_comp_ι_assoc _ _ _
 
+/-- If `f` annihilates the `R`-module `M`, the sections of `M~` over the basic open `D(f)`
+vanish: they form the localization `M_f`, which is zero. -/
+theorem subsingleton_tilde_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : R)
+    (hf : ∀ m : M, f • m = 0) :
+    Subsingleton Γ(tilde M, (PrimeSpectrum.basicOpen f : (Spec R).Opens)) :=
+  (IsLocalizedModule.subsingleton_iff (Submonoid.powers f)
+    (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom).2
+    fun m ↦ ⟨f, Submonoid.mem_powers f, hf m⟩
+
 end Exactness
 
 section BaseChange
@@ -190,12 +201,12 @@ private lemma pushforwardCompModulesSpecToSheafIso_hom_app_top_apply
     (N : (Spec S).Modules)
     (x : (modulesSpecToSheaf.obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N)).obj.obj
       (.op ⊤)) :
-    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).1.app (.op ⊤) x = x := rfl
+    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).hom.app (.op ⊤) x = x := rfl
 
 private lemma pushforwardCompModulesSpecToSheafIso_inv_app_top_apply
     (N : (Spec S).Modules)
     (x : ((modulesSpecToSheaf.obj N).obj.obj (.op ⊤))) :
-    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).1.app (.op ⊤) x = x := rfl
+    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).hom.app (.op ⊤) x = x := rfl
 
 /-- `pushforwardCompModuleSpecΓFunctorIso` is the identity on global sections. -/
 @[simp]
@@ -249,15 +260,54 @@ theorem unit_tildeFunctorCompPullbackIso_hom_app (M : ModuleCat.{u} R) :
 
 /-- On associated global sections, the affine pullback comparison sends the image of `m`
 under the pullback adjunction unit to the associated section of `1 ⊗ m`. -/
-@[simp]
 theorem tildeFunctorCompPullbackIso_hom_app_unit_toOpen (M : ModuleCat.{u} R) (m : M) :
-    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj,
+      CategoryTheory.sheafCompose_obj_obj, CommRingCat.forgetToRingCat_obj]
     (((tildeFunctorCompPullbackIso φ).hom.app M).val.app (.op ⊤)
         (((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M)).val.app
           (.op ⊤) (tilde.toOpen M ⊤ m)) =
       tilde.toOpen ((ModuleCat.extendScalars φ.hom).obj M) ⊤ ((1 : S) ⊗ₜ[R,φ.hom] m)) := by
   -- The global-section functors and restriction of scalars retain the underlying functions.
   exact ConcreteCategory.congr_hom (unit_tildeFunctorCompPullbackIso_hom_app φ M) m
+
+/-- Global sections of an associated-sheaf morphism send the section of `m` to that of its
+image. -/
+@[simp]
+theorem moduleSpecΓFunctor_map_tilde_map {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
+    (ψ : M ⟶ N) (m : M) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    moduleSpecΓFunctor.map (tilde.map ψ) (tilde.toTildeΓNatIso.hom.app M m) =
+      tilde.toTildeΓNatIso.hom.app N (ψ m) :=
+  (ConcreteCategory.congr_hom (tilde.toTildeΓNatIso.hom.naturality ψ) m).symm
+
+/-- On global sections, the affine pullback comparison takes the pulled-back associated
+section of `m` to that of `1 ⊗ m`. -/
+@[simp]
+theorem moduleSpecΓFunctor_map_tildeFunctorCompPullbackIso_hom_app
+    (M : ModuleCat.{u} R) (m : M) :
+    dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
+    moduleSpecΓFunctor.map ((tildeFunctorCompPullbackIso φ).hom.app M)
+      (moduleSpecΓFunctor.map
+        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M))
+        (tilde.toTildeΓNatIso.hom.app M m)) =
+      tilde.toTildeΓNatIso.hom.app ((ModuleCat.extendScalars φ.hom).obj M)
+        ((1 : S) ⊗ₜ[R, φ.hom] m) :=
+  tildeFunctorCompPullbackIso_hom_app_unit_toOpen φ M m
+
+/-- On associated global sections, affine pullback followed by a tilde morphism sends
+`m` to the associated section of the image of `1 ⊗ m`. -/
+theorem moduleSpecΓFunctor_map_comp_tilde_map {R' S' : CommRingCat.{u}} (φ : R' ⟶ S')
+    {M : ModuleCat.{u} R'} {N : ModuleCat.{u} S'} (ψ : (ModuleCat.extendScalars φ.hom).obj M ⟶ N)
+    (m : M) :
+    moduleSpecΓFunctor.map ((tildeFunctorCompPullbackIso φ).hom.app M ≫ tilde.map ψ)
+        (moduleSpecΓFunctor.map
+          ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M))
+          (tilde.toTildeΓNatIso.hom.app M m)) =
+      tilde.toTildeΓNatIso.hom.app N (ψ ((1 : S') ⊗ₜ[R', φ.hom] m)) :=
+  (ConcreteCategory.congr_hom (Functor.map_comp moduleSpecΓFunctor _ _) _).trans <|
+    (congrArg (moduleSpecΓFunctor.map (tilde.map ψ)).hom
+      (moduleSpecΓFunctor_map_tildeFunctorCompPullbackIso_hom_app φ M m)).trans
+        (moduleSpecΓFunctor_map_tilde_map ψ _)
 
 end BaseChange
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Projection
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
@@ -16,7 +17,8 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 A countable Hilbert basis identifies the first `n + 1` coordinates with the genuine
 Euclidean space on `Fin (n + 1)`. Compression to these coordinates is contractive,
 commutes with adjoints, and its zero extension converges strongly to the original
-operator, together with its adjoint. This provides the common finite-section
+operator, together with its adjoint. The finite-coordinate projection is the coordinate
+projection `b.projection (Set.Iio (n + 1))`. This provides the common finite-section
 construction for native square-summable sequences and Hardy space via its Hilbert basis.
 
 ## References
@@ -133,6 +135,15 @@ theorem finiteProjection_basis (b : HilbertBasis ℕ 𝕜 H) (n i : ℕ) :
     Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ b.repr (b i) j • b j)]
   simp [HilbertBasis.repr_apply_apply, orthonormal_iff_ite.mp b.orthonormal,
     ite_smul, Finset.mem_range]
+
+/-- The finite-section projection onto the first `n + 1` basis vectors is the coordinate
+projection onto the indices `i < n + 1`. -/
+theorem finiteProjection_eq_projection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    b.finiteProjection n = b.projection (Set.Iio (n + 1)) := by
+  ext1 x
+  apply b.repr.injective
+  ext i
+  by_cases hi : i < n + 1 <;> simp [hi]
 
 /-- Finite-coordinate projection is idempotent. -/
 @[simp]
