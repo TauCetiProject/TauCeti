@@ -22,9 +22,10 @@ open Metric
 
 /-- A ball has arbitrarily small tangent subballs at each point of its sphere. The smaller
 center is obtained by moving from the contact point toward the original center. -/
-theorem exists_tangent_subball {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {x₀ y : E} {R ε : ℝ} (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R) (hε : 0 < ε) :
-    ∃ r > 0, let p := AffineMap.lineMap x₀ y (r / R)
+theorem exists_tangent_subball {V P : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    [PseudoMetricSpace P] [NormedAddTorsor V P]
+    {x₀ y : P} {R ε : ℝ} (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R) (hε : 0 < ε) :
+    ∃ r > 0, ∃ p, p = AffineMap.lineMap x₀ y (r / R) ∧
       x₀ ∈ sphere p r ∧ ball p r ⊆ ball y R ∧ ball p r ⊆ ball x₀ ε := by
   let r := min R (ε / 2)
   have hr : 0 < r := lt_min hR (half_pos hε)
@@ -38,7 +39,7 @@ theorem exists_tangent_subball {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     simp only [p, dist_lineMap_right, Real.norm_eq_abs,
       abs_of_nonneg (sub_nonneg.mpr ht), mem_sphere.mp hx₀]
     field_simp
-  refine ⟨r, hr, mem_sphere.mpr hx, ball_subset_ball' ?_, ball_subset_ball' ?_⟩
+  refine ⟨r, hr, p, rfl, mem_sphere.mpr hx, ball_subset_ball' ?_, ball_subset_ball' ?_⟩
   · rw [hy]
     linarith
   · rw [dist_comm, hx]
