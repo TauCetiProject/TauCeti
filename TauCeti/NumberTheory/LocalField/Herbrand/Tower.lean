@@ -94,7 +94,7 @@ theorem lowerRamificationGroupReal_eq_of_forall_eq_of_herbrand_lt_of_le_herbrand
     lowerRamificationGroupReal K L t = lowerRamificationGroupReal K L (herbrand L M b) := by
   have : Module.Finite K M := Module.Finite.trans L M
   intro h
-  set s : RamificationIndexDomain := ⟨t, Set.mem_Ici.2 ((herbrand L M a).2.trans ht₁.le)⟩
+  set s : RamificationIndexDomain := ⟨t, Set.mem_Ici.2 ((herbrand L M a).property.trans ht₁.le)⟩
   -- `t = φ_{M/L}(ψ_{M/L}(t))` with `a < ψ_{M/L}(t) ≤ b`.
   have hs₁ : a < inverseHerbrand L M s := by
     rw [← inverseHerbrand_herbrand L M a]

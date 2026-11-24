@@ -91,13 +91,14 @@ theorem card_le_card_neighborsIn [Finite E(G)] (hLR : G.IsBipartition L R) (hk :
   have := Fintype.ofFinite E(G)
   -- Count, for each set of vertices, the pairs of a vertex of the set and an edge at it.
   have hcount (T : Finset V(G)) :
-      ∑ e : E(G), #{x ∈ T | G.Inc e.1 x.1} = #T * k := by
+      ∑ e : E(G), #{x ∈ T | G.Inc e.val x.val} = #T * k := by
     have := G.sum_sum_incidentEdges_eq_sum_sum_filter_inc T fun _ ↦ 1
     simp only [sum_const, smul_eq_mul, mul_one, card_incidentEdges_singleton] at this
-    rw [← this, sum_congr rfl fun x _ ↦ hreg.incidenceCount_eq x.2, sum_const, smul_eq_mul]
+    rw [← this, sum_congr rfl fun x _ ↦ hreg.incidenceCount_eq x.property, sum_const, smul_eq_mul]
   -- An edge at `S` has a single end in `S`, and its other end is a neighbour of `S`.
-  have hle (e : E(G)) : #{x ∈ S | G.Inc e.1 x.1} ≤ #{y ∈ G.neighborsIn S R | G.Inc e.1 y.1} := by
-    obtain hS' | ⟨x, hx⟩ := eq_empty_or_nonempty {x ∈ S | G.Inc e.1 x.1}
+  have hle (e : E(G)) : #{x ∈ S | G.Inc e.val x.val} ≤ #{y ∈ G.neighborsIn S R | G.Inc e.val y.val}
+      := by
+    obtain hS' | ⟨x, hx⟩ := eq_empty_or_nonempty {x ∈ S | G.Inc e.val x.val}
     · simp [hS']
     obtain ⟨hxS, hex⟩ := mem_filter.1 hx
     have hlink := hex.isLink_other
@@ -146,7 +147,7 @@ theorem exists_perfectMatching_decomposition [Finite E(G)] (hLR : G.IsBipartitio
     refine ⟨Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, ?_⟩
     rw [Set.iUnion_of_empty, eq_comm, Set.univ_eq_empty_iff]
     refine ⟨fun e ↦ ?_⟩
-    obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+    obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
     have := hreg.incidenceCount_eq hxy.left_mem
     rw [incidenceCount_def, Set.ncard_eq_zero (G.finite_incidenceSet x)] at this
     exact Set.eq_empty_iff_forall_notMem.1 this e hxy.inc_left
@@ -162,7 +163,7 @@ theorem exists_perfectMatching_decomposition [Finite E(G)] (hLR : G.IsBipartitio
       ih (hLR.deleteEdges (Subtype.val '' M₀)) (hM₀.isRegularOfDegree_deleteEdges hreg)
     have hdisj₀ (i : Fin k) : Disjoint M₀ (Set.inclusion hspan.le.edgeSet_mono '' M i) := by
       refine Set.disjoint_left.2 fun e he₀ ⟨f, _, hfe⟩ ↦ ?_
-      exact (hE ▸ f.2 : (f : β) ∈ E(G) \ Subtype.val '' M₀).2
+      exact (hE ▸ f.property : (f : β) ∈ E(G) \ Subtype.val '' M₀).2
         ⟨e, he₀, (congrArg Subtype.val hfe).symm⟩
     refine ⟨Fin.cons M₀ fun i ↦ Set.inclusion hspan.le.edgeSet_mono '' M i,
       Fin.forall_fin_succ.2 ⟨by simpa using hM₀, fun i ↦ ?_⟩, pairwise_fin_succ_iff.2 ?_, ?_⟩
@@ -175,7 +176,7 @@ theorem exists_perfectMatching_decomposition [Finite E(G)] (hLR : G.IsBipartitio
       by_cases he : e ∈ M₀
       · exact Set.mem_iUnion.2 ⟨0, by simpa using he⟩
       have hf : (e : β) ∈ E(G.deleteEdges (Subtype.val '' M₀)) :=
-        hE ▸ ⟨e.2, fun ⟨f, hf, hfe⟩ ↦ he (Subtype.ext hfe ▸ hf)⟩
+        hE ▸ ⟨e.property, fun ⟨f, hf, hfe⟩ ↦ he (Subtype.ext hfe ▸ hf)⟩
       have : (⟨e, hf⟩ : E(G.deleteEdges (Subtype.val '' M₀))) ∈ ⋃ i, M i :=
         hunion ▸ Set.mem_univ _
       obtain ⟨i, hi⟩ := Set.mem_iUnion.1 this

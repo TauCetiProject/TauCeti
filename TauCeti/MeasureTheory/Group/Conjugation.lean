@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Group.Measure
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
 # Conjugation-invariance in `Lp`, and the class functions

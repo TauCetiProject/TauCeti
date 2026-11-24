@@ -385,11 +385,11 @@ def cornerAtEquiv (v : C.graph.V) :
 
 @[simp] theorem cornerAtEquiv_apply_val {v : C.graph.V}
     (c : {c : C.Corner // C.cornerVertex c = v}) :
-    (φ.cornerAtEquiv v c).1 = φ.cornerEquiv c.1 := (rfl)
+    (φ.cornerAtEquiv v c).val = φ.cornerEquiv c.val := (rfl)
 
 @[simp] theorem cornerAtEquiv_symm_apply_val {v : C.graph.V}
     (d : {d : D.Corner // D.cornerVertex d = φ.graph.equivV v}) :
-    ((φ.cornerAtEquiv v).symm d).1 = φ.cornerEquiv.symm d.1 := (rfl)
+    ((φ.cornerAtEquiv v).symm d).val = φ.cornerEquiv.symm d.val := (rfl)
 
 /-- The germs at a vertex correspond to the germs at the corresponding vertex. -/
 private def germEquiv (v : C.graph.V) :
@@ -397,7 +397,7 @@ private def germEquiv (v : C.graph.V) :
   φ.graph.equivE.subtypeEquiv fun e => by rw [φ.graph.map_src, Equiv.apply_eq_iff_eq]
 
 private theorem germEquiv_apply_val {v : C.graph.V} (e : (C.vertexLink v).V) :
-    (φ.germEquiv v e).1 = φ.graph.equivE e.1 := rfl
+    (φ.germEquiv v e).val = φ.graph.equivE e.val := rfl
 
 /-- The darts of the link of a vertex correspond to the darts of the link of the corresponding
 vertex: the link edge of a corner to that of the corresponding corner, with its two directions
@@ -405,10 +405,10 @@ exchanged on a reversed face. -/
 private def linkDartEquiv (v : C.graph.V) :
     (C.vertexLink v).E ≃ (D.vertexLink (φ.graph.equivV v)).E :=
   (φ.cornerAtEquiv v).prodShear fun c =>
-    Function.Involutive.toPerm (· ^^ φ.flip c.1.1) fun _ => by simp
+    Function.Involutive.toPerm (· ^^ φ.flip c.val.1) fun _ => by simp
 
 private theorem linkDartEquiv_apply {v : C.graph.V} (c : {c : C.Corner // C.cornerVertex c = v})
-    (b : Bool) : φ.linkDartEquiv v (c, b) = (φ.cornerAtEquiv v c, b ^^ φ.flip c.1.1) := rfl
+    (b : Bool) : φ.linkDartEquiv v (c, b) = (φ.cornerAtEquiv v c, b ^^ φ.flip c.val.1) := rfl
 
 /-- An isomorphism of polygonal complexes induces an isomorphism from the link of a vertex to the
 link of the corresponding vertex. It maps a germ to its image and the link edge of a corner to the
@@ -420,22 +420,22 @@ def vertexLinkIso (v : C.graph.V) : (C.vertexLink v).Iso (D.vertexLink (φ.graph
     obtain ⟨c, b⟩ := d
     apply Subtype.ext
     rw [linkDartEquiv_apply, germEquiv_apply_val]
-    cases b <;> cases hf : φ.flip c.1.1 <;> simp [hf]
+    cases b <;> cases hf : φ.flip c.val.1 <;> simp [hf]
   map_rev d := Prod.ext rfl (Bool.not_xor _ _)
 
 @[simp] theorem vertexLinkIso_equivV_apply_val {v : C.graph.V} (e : (C.vertexLink v).V) :
-    ((φ.vertexLinkIso v).equivV e).1 = φ.graph.equivE e.1 := (rfl)
+    ((φ.vertexLinkIso v).equivV e).val = φ.graph.equivE e.val := (rfl)
 
 @[simp] theorem vertexLinkIso_equivE_apply {v : C.graph.V} (d : (C.vertexLink v).E) :
-    (φ.vertexLinkIso v).equivE d = (φ.cornerAtEquiv v d.1, d.2 ^^ φ.flip d.1.1.1) := (rfl)
+    (φ.vertexLinkIso v).equivE d = (φ.cornerAtEquiv v d.1, d.2 ^^ φ.flip d.1.val.1) := (rfl)
 
 @[simp] theorem vertexLinkIso_equivV_symm_apply_val {v : C.graph.V}
     (e : (D.vertexLink (φ.graph.equivV v)).V) :
-    ((φ.vertexLinkIso v).equivV.symm e).1 = φ.graph.equivE.symm e.1 := (rfl)
+    ((φ.vertexLinkIso v).equivV.symm e).val = φ.graph.equivE.symm e.val := (rfl)
 
 @[simp] theorem vertexLinkIso_equivE_symm_apply {v : C.graph.V}
     (d : (D.vertexLink (φ.graph.equivV v)).E) : (φ.vertexLinkIso v).equivE.symm d =
-      ((φ.cornerAtEquiv v).symm d.1, d.2 ^^ φ.flip (φ.faceEquiv.symm d.1.1.1)) :=
+      ((φ.cornerAtEquiv v).symm d.1, d.2 ^^ φ.flip (φ.faceEquiv.symm d.1.val.1)) :=
   Prod.ext rfl (congrArg (d.2 ^^ φ.flip ·) (by simp))
 
 /-- Corresponding germs have the same degree in their links. -/

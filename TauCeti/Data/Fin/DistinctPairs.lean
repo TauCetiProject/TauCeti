@@ -38,7 +38,7 @@ namespace TauCeti
 /-- The ordered pairs of distinct elements of `Fin n`, by their nonzero cyclic difference `b - a`
 shifted down to `Fin (n - 1)`, and their source `a`. -/
 def finDistinctPairsEquiv (n : ℕ) : {p : Fin n × Fin n // p.1 ≠ p.2} ≃ Fin (n - 1) × Fin n where
-  toFun p := (⟨((p.1.2 - p.1.1 : Fin n) : ℕ) - 1, by grind⟩, p.1.1)
+  toFun p := (⟨((p.val.2 - p.val.1 : Fin n) : ℕ) - 1, by grind⟩, p.val.1)
   invFun q := ⟨(q.2, q.2 + (⟨(q.1 : ℕ) + 1, by omega⟩ : Fin n)), by
     have : NeZero n := ⟨Nat.ne_zero_of_lt q.2.isLt⟩
     simp [Fin.ext_iff]⟩
@@ -53,13 +53,13 @@ def finDistinctPairsEquiv (n : ℕ) : {p : Fin n × Fin n // p.1 ≠ p.2} ≃ Fi
 /-- The first coordinate of `finDistinctPairsEquiv` is the cyclic difference minus one. -/
 @[simp]
 theorem finDistinctPairsEquiv_apply_fst_val {n : ℕ} (p : {p : Fin n × Fin n // p.1 ≠ p.2}) :
-    ((finDistinctPairsEquiv n p).1 : ℕ) = ((p.1.2 - p.1.1 : Fin n) : ℕ) - 1 :=
+    ((finDistinctPairsEquiv n p).1 : ℕ) = ((p.val.2 - p.val.1 : Fin n) : ℕ) - 1 :=
   (rfl)
 
 /-- The second coordinate of `finDistinctPairsEquiv` is the source. -/
 @[simp]
 theorem finDistinctPairsEquiv_apply_snd {n : ℕ} (p : {p : Fin n × Fin n // p.1 ≠ p.2}) :
-    (finDistinctPairsEquiv n p).2 = p.1.1 :=
+    (finDistinctPairsEquiv n p).2 = p.val.1 :=
   (rfl)
 
 /-- The inverse of `finDistinctPairsEquiv` sends a difference index `i` and a source `a` to the

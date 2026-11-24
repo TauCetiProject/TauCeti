@@ -11,10 +11,11 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Complete
 /-!
 # Completeness of the compact derivative topology on bundle sections
 
-For a smooth bundle over a boundaryless manifold with locally compact model and complete
-model fibre, the native finite-order and smooth section spaces are complete in the compact
-derivative frame topology. Use `ContMDiffSection.frameUniformSpace` for its compatible
-additive uniformity. No compactness or countability assumption is needed for completeness.
+For a smooth bundle over a manifold, possibly with boundary or corners, with locally compact
+model and complete model fibre, the native finite-order and smooth section spaces are complete
+in the compact derivative frame topology. Use `ContMDiffSection.frameUniformSpace` for its
+compatible additive uniformity. No compactness or countability assumption is needed for
+completeness.
 
 The coefficient map into the product of native weak Whitney map spaces has closed image,
 characterized by the actual bundle transition equations. Completeness of those coefficient
@@ -50,8 +51,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless]
-  [CompleteSpace F] [hn : ENat.LEInfty n]
+variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [CompleteSpace F] [hn : ENat.LEInfty n]
 
 /-- Finite-order and smooth sections of a bundle with complete model fibre form a complete
 space for the compact derivative topology of any covering smooth frame system. -/

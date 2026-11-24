@@ -43,41 +43,41 @@ variable {P Y : Type*} [TopologicalSpace P] [TopologicalSpace Y] {k : ℕ} {d : 
 /-- The radial parameter `s ∈ [0, 1]` of a point `w = (d + (1 - d) s) • θ` of the annulus
 `d ≤ ‖w‖ ≤ 1` of the disk. -/
 def annulusParam (d : ℝ) (w : TopCat.disk.{u} k) : I :=
-  projIcc 0 1 zero_le_one ((‖w.down.1‖ - d) / (1 - d))
+  projIcc 0 1 zero_le_one ((‖w.down.val‖ - d) / (1 - d))
 
 @[continuity, fun_prop]
 theorem continuous_annulusParam : Continuous (annulusParam.{u} (k := k) d) :=
   continuous_projIcc.comp (((continuous_norm.comp
-    (continuous_subtype_val.comp continuous_uliftDown)).sub continuous_const).div_const _)
+    (continuous_subtypeVal.comp continuous_uliftDown)).sub continuous_const).div_const _)
 
 /-- The direction `w / ‖w‖` of a point `w` of the annulus `d ≤ ‖w‖` of the disk, for `0 < d`: the
 end of the radial push `TauCeti.TopCat.diskRadialPush` with radius `d`. -/
-def annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
+def annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
     TopCat.diskBoundary.{u} k :=
-  ULift.up ⟨(diskRadialPush k hd.le (1, w.1)).down.1,
-    mem_sphere_zero_iff_norm.2 (norm_diskRadialPush_one hd w.2)⟩
+  ULift.up ⟨(diskRadialPush k hd.le (1, w.val)).down.val,
+    mem_sphere_zero_iff_norm.2 (norm_diskRadialPush_one hd w.property)⟩
 
 @[continuity, fun_prop]
 theorem continuous_annulusDir (hd : 0 < d) : Continuous (annulusDir.{u} (k := k) hd) :=
-  continuous_uliftUp.comp ((continuous_subtype_val.comp (continuous_uliftDown.comp
+  continuous_uliftUp.comp ((continuous_subtypeVal.comp (continuous_uliftDown.comp
     ((diskRadialPush k hd.le).continuous.comp
-      (continuous_const.prodMk continuous_subtype_val)))).subtype_mk _)
+      (continuous_const.prodMk continuous_subtypeVal)))).subtype_mk _)
 
 /-- The direction of `w` is `w / ‖w‖`. -/
-theorem coe_annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
-    ((annulusDir hd w).down : EuclideanSpace ℝ (Fin k)) = ‖w.1.down.1‖⁻¹ • w.1.down.1 :=
-  coe_diskRadialPush_one_of_le_norm hd w.2
+theorem coe_annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
+    ((annulusDir hd w).down : EuclideanSpace ℝ (Fin k)) = ‖w.val.down.val‖⁻¹ • w.val.down.val :=
+  coe_diskRadialPush_one_of_le_norm hd w.property
 
 /-- Viewed in the disk, the direction of `w` is the end of the radial push with radius `d`. -/
 theorem diskBoundaryInclusion_annulusDir (hd : 0 < d)
-    (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
-    TopCat.diskBoundaryInclusion k (annulusDir hd w) = diskRadialPush k hd.le (1, w.1) :=
+    (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
+    TopCat.diskBoundaryInclusion k (annulusDir hd w) = diskRadialPush k hd.le (1, w.val) :=
   ULift.ext (Subtype.ext (TopCat.coe_diskBoundaryInclusion_apply_down k _))
 
 /-- The direction of a point of the boundary sphere is the point itself. -/
 @[simp]
 theorem annulusDir_diskBoundaryInclusion (hd : 0 < d) (s : TopCat.diskBoundary.{u} k)
-    (hs : d ≤ ‖(TopCat.diskBoundaryInclusion k s).down.1‖) :
+    (hs : d ≤ ‖(TopCat.diskBoundaryInclusion k s).down.val‖) :
     annulusDir hd ⟨TopCat.diskBoundaryInclusion k s, hs⟩ = s := by
   refine ULift.ext (Subtype.ext ?_)
   rw [coe_annulusDir, norm_diskBoundaryInclusion, inv_one, one_smul]
@@ -85,11 +85,11 @@ theorem annulusDir_diskBoundaryInclusion (hd : 0 < d) (s : TopCat.diskBoundary.{
 
 /-- The radius `d + (1 - d) s` of the annulus coordinates of `w` is the norm of `w`. -/
 theorem add_one_sub_mul_annulusParam (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k}
-    (hw : d ≤ ‖w.down.1‖) : d + (1 - d) * (annulusParam d w : ℝ) = ‖w.down.1‖ := by
-  have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
+    (hw : d ≤ ‖w.down.val‖) : d + (1 - d) * (annulusParam d w : ℝ) = ‖w.down.val‖ := by
+  have hw₁ : ‖w.down.val‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.property
   rcases hd₁.lt_or_eq with hd₁ | rfl
-  · have h₀ : 0 ≤ (‖w.down.1‖ - d) / (1 - d) := div_nonneg (by linarith) (by linarith)
-    have h₁ : (‖w.down.1‖ - d) / (1 - d) ≤ 1 := (div_le_one (by linarith)).2 (by linarith)
+  · have h₀ : 0 ≤ (‖w.down.val‖ - d) / (1 - d) := div_nonneg (by linarith) (by linarith)
+    have h₁ : (‖w.down.val‖ - d) / (1 - d) ≤ 1 := (div_le_one (by linarith)).2 (by linarith)
     rw [annulusParam, coe_projIcc, min_eq_right h₁, max_eq_right h₀]
     field_simp
     ring
@@ -98,40 +98,41 @@ theorem add_one_sub_mul_annulusParam (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k}
 
 /-- A point of the annulus is recovered from its annulus coordinates. -/
 theorem add_one_sub_mul_annulusParam_smul_annulusDir (hd : 0 < d) (hd₁ : d ≤ 1)
-    (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.1‖}) :
-    (d + (1 - d) * (annulusParam d w.1 : ℝ)) • ((annulusDir hd w).down : EuclideanSpace ℝ (Fin k)) =
-      w.1.down.1 := by
-  rw [add_one_sub_mul_annulusParam hd₁ w.2, coe_annulusDir, smul_smul,
-    mul_inv_cancel₀ (hd.trans_le w.2).ne', one_smul]
+    (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
+    (d + (1 - d) * (annulusParam d w.val : ℝ)) • ((annulusDir hd w).down : EuclideanSpace ℝ
+        (Fin k)) =
+      w.val.down.val := by
+  rw [add_one_sub_mul_annulusParam hd₁ w.property, coe_annulusDir, smul_smul,
+    mul_inv_cancel₀ (hd.trans_le w.property).ne', one_smul]
 
 /-- On the seam `‖w‖ = d` the radial parameter vanishes. -/
-theorem annulusParam_of_norm_eq {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ = d) :
+theorem annulusParam_of_norm_eq {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ = d) :
     annulusParam d w = 0 :=
   projIcc_of_le_left _ (by rw [hw, sub_self, zero_div])
 
 /-- Inside the ball of radius `d` the radial parameter vanishes, for `d ≤ 1`. -/
-theorem annulusParam_of_norm_le (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ d) :
+theorem annulusParam_of_norm_le (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ ≤ d) :
     annulusParam d w = 0 :=
   projIcc_of_le_left _ (div_nonpos_of_nonpos_of_nonneg (by linarith) (by linarith))
 
 /-- On the boundary sphere the radial parameter is `1`, for `d < 1`. -/
 theorem annulusParam_of_norm_eq_one (hd₁ : d < 1) {w : TopCat.disk.{u} k}
-    (hw : ‖w.down.1‖ = 1) : annulusParam d w = 1 :=
+    (hw : ‖w.down.val‖ = 1) : annulusParam d w = 1 :=
   projIcc_of_right_le _ (by rw [hw, div_self (by linarith)])
 
 /-- The point `(d + (1 - d) s) • θ` of the annulus `d ≤ ‖w‖ ≤ 1` of the disk with annulus
 coordinates `s` and `θ`, for `0 ≤ d ≤ 1`. -/
 def annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
     TopCat.disk.{u} k :=
-  ULift.up ⟨(d + (1 - d) * s) • θ.down.1, by
-    have h₀ : 0 ≤ d + (1 - d) * s := by nlinarith [s.2.1]
-    rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2, mul_one,
+  ULift.up ⟨(d + (1 - d) * s) • θ.down.val, by
+    have h₀ : 0 ≤ d + (1 - d) * s := by nlinarith [s.property.1]
+    rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.property, mul_one,
       Real.norm_of_nonneg h₀]
-    nlinarith [s.2.2]⟩
+    nlinarith [s.property.2]⟩
 
 @[simp]
 theorem coe_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
-    (annulusPoint hd hd₁ s θ).down.1 = (d + (1 - d) * s) • (θ.down : EuclideanSpace ℝ (Fin k)) :=
+    (annulusPoint hd hd₁ s θ).down.val = (d + (1 - d) * s) • (θ.down : EuclideanSpace ℝ (Fin k)) :=
   (rfl)
 
 @[continuity, fun_prop]
@@ -141,22 +142,22 @@ theorem continuous_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) :
 
 /-- The norm of the point with annulus coordinates `s` and `θ` is `d + (1 - d) s`. -/
 theorem norm_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
-    ‖(annulusPoint hd hd₁ s θ).down.1‖ = d + (1 - d) * s := by
-  have h₀ : 0 ≤ d + (1 - d) * s := by nlinarith [s.2.1]
-  rw [coe_annulusPoint, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2, mul_one,
+    ‖(annulusPoint hd hd₁ s θ).down.val‖ = d + (1 - d) * s := by
+  have h₀ : 0 ≤ d + (1 - d) * s := by nlinarith [s.property.1]
+  rw [coe_annulusPoint, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.property, mul_one,
     Real.norm_of_nonneg h₀]
 
 /-- The point with annulus coordinates `s` and `θ` lies in the annulus `d ≤ ‖w‖`. -/
 theorem le_norm_annulusPoint (hd : 0 ≤ d) (hd₁ : d ≤ 1) (s : I) (θ : TopCat.diskBoundary.{u} k) :
-    d ≤ ‖(annulusPoint hd hd₁ s θ).down.1‖ := by
+    d ≤ ‖(annulusPoint hd hd₁ s θ).down.val‖ := by
   rw [norm_annulusPoint]
-  nlinarith [s.2.1]
+  nlinarith [s.property.1]
 
 /-- The radial parameter of the point with annulus coordinates `s` and `θ` is `s`, for `d < 1`. -/
 @[simp]
 theorem annulusParam_annulusPoint (hd : 0 ≤ d) (hd₁ : d < 1) (s : I)
     (θ : TopCat.diskBoundary.{u} k) : annulusParam d (annulusPoint hd hd₁.le s θ) = s := by
-  have h : (‖(annulusPoint hd hd₁.le s θ).down.1‖ - d) / (1 - d) = s := by
+  have h : (‖(annulusPoint hd hd₁.le s θ).down.val‖ - d) / (1 - d) = s := by
     rw [norm_annulusPoint, div_eq_iff (by linarith)]
     ring
   rw [annulusParam, h, projIcc_val]
@@ -166,7 +167,7 @@ theorem annulusParam_annulusPoint (hd : 0 ≤ d) (hd₁ : d < 1) (s : I)
 theorem annulusDir_annulusPoint (hd : 0 < d) (hd₁ : d ≤ 1) (s : I)
     (θ : TopCat.diskBoundary.{u} k) :
     annulusDir hd ⟨annulusPoint hd.le hd₁ s θ, le_norm_annulusPoint hd.le hd₁ s θ⟩ = θ := by
-  have h₀ : 0 < d + (1 - d) * s := by nlinarith [s.2.1]
+  have h₀ : 0 < d + (1 - d) * s := by nlinarith [s.property.1]
   refine ULift.ext (Subtype.ext ?_)
   rw [coe_annulusDir, norm_annulusPoint, coe_annulusPoint, smul_smul, inv_mul_cancel₀ h₀.ne',
     one_smul]
@@ -174,32 +175,32 @@ theorem annulusDir_annulusPoint (hd : 0 < d) (hd₁ : d ≤ 1) (s : I)
 /-- The point `d • θ` of a point `θ` of the boundary sphere lies in the ball of radius `d`. -/
 theorem smul_diskBoundary_mem_closedBall (hd : 0 ≤ d) (θ : TopCat.diskBoundary.{u} k) :
     d • (θ.down : EuclideanSpace ℝ (Fin k)) ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) d := by
-  rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2,
+  rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.property,
     Real.norm_of_nonneg hd, mul_one]
 
 /-- The function underlying `TauCeti.TopCat.discGlue`. -/
 private def discGlueFun (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y)) (q : P × TopCat.disk.{u} k) :
     Y :=
-  if h : ‖q.2.down.1‖ ≤ d then A (q.1, ⟨q.2.down.1, mem_closedBall_zero_iff.2 h⟩)
+  if h : ‖q.2.down.val‖ ≤ d then A (q.1, ⟨q.2.down.val, mem_closedBall_zero_iff.2 h⟩)
   else B (q.1, annulusParam d q.2, annulusDir hd ⟨q.2, (not_le.1 h).le⟩)
 
 private theorem discGlueFun_of_norm_le (hd : 0 < d)
     (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y)) (p : P)
-    {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ d) :
-    discGlueFun hd A B (p, w) = A (p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) :=
+    {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ ≤ d) :
+    discGlueFun hd A B (p, w) = A (p, ⟨w.down.val, mem_closedBall_zero_iff.2 hw⟩) :=
   dite_eq_left hw
 
 private theorem discGlueFun_of_le_norm (hd : 0 < d)
     (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y))
-    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd.le θ⟩))
-    (p : P) {w : TopCat.disk.{u} k} (hw : d ≤ ‖w.down.1‖) :
+    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.val, smul_diskBoundary_mem_closedBall hd.le θ⟩))
+    (p : P) {w : TopCat.disk.{u} k} (hw : d ≤ ‖w.down.val‖) :
     discGlueFun hd A B (p, w) = B (p, annulusParam d w, annulusDir hd ⟨w, hw⟩) := by
-  by_cases h : ‖w.down.1‖ ≤ d
+  by_cases h : ‖w.down.val‖ ≤ d
   · -- On the seam both pieces are given by `A`.
-    have hwd : ‖w.down.1‖ = d := le_antisymm h hw
+    have hwd : ‖w.down.val‖ = d := le_antisymm h hw
     rw [discGlueFun_of_norm_le hd A B p h, annulusParam_of_norm_eq hwd, hAB]
     congr 2
     refine Subtype.ext ?_
@@ -211,24 +212,24 @@ in the coordinates `(s, θ)` of the point `(d + (1 - d) s) • θ`, when the two
 Both maps may depend continuously on a parameter in `P`. -/
 def discGlue (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y))
-    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd.le θ⟩)) :
+    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.val, smul_diskBoundary_mem_closedBall hd.le θ⟩)) :
     C(P × TopCat.disk.{u} k, Y) where
   toFun := discGlueFun hd A B
   continuous_toFun := by
-    have hn : Continuous fun q : P × TopCat.disk.{u} k ↦ ‖q.2.down.1‖ :=
-      continuous_norm.comp (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))
-    have hs : ContinuousOn (discGlueFun hd A B) {q | ‖q.2.down.1‖ ≤ d} := by
+    have hn : Continuous fun q : P × TopCat.disk.{u} k ↦ ‖q.2.down.val‖ :=
+      continuous_norm.comp (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))
+    have hs : ContinuousOn (discGlueFun hd A B) {q | ‖q.2.down.val‖ ≤ d} := by
       rw [continuousOn_iff_continuous_domRestrict]
-      have he : domRestrict {q | ‖q.2.down.1‖ ≤ d} (discGlueFun hd A B) =
-          fun q ↦ A (q.1.1, ⟨q.1.2.down.1, mem_closedBall_zero_iff.2 q.2⟩) :=
-        funext fun q ↦ discGlueFun_of_norm_le hd A B _ q.2
+      have he : domRestrict {q | ‖q.2.down.val‖ ≤ d} (discGlueFun hd A B) =
+          fun q ↦ A (q.val.1, ⟨q.val.2.down.val, mem_closedBall_zero_iff.2 q.property⟩) :=
+        funext fun q ↦ discGlueFun_of_norm_le hd A B _ q.property
       rw [he]
       exact A.continuous.comp (by fun_prop)
-    have ht : ContinuousOn (discGlueFun hd A B) {q | d ≤ ‖q.2.down.1‖} := by
+    have ht : ContinuousOn (discGlueFun hd A B) {q | d ≤ ‖q.2.down.val‖} := by
       rw [continuousOn_iff_continuous_domRestrict]
-      have he : domRestrict {q | d ≤ ‖q.2.down.1‖} (discGlueFun hd A B) =
-          fun q ↦ B (q.1.1, annulusParam d q.1.2, annulusDir hd ⟨q.1.2, q.2⟩) :=
-        funext fun q ↦ discGlueFun_of_le_norm hd A B hAB _ q.2
+      have he : domRestrict {q | d ≤ ‖q.2.down.val‖} (discGlueFun hd A B) =
+          fun q ↦ B (q.val.1, annulusParam d q.val.2, annulusDir hd ⟨q.val.2, q.property⟩) :=
+        funext fun q ↦ discGlueFun_of_le_norm hd A B hAB _ q.property
       rw [he]
       exact B.continuous.comp (by fun_prop)
     rw [← continuousOn_univ]
@@ -241,17 +242,17 @@ def discGlue (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)
 theorem discGlue_apply_of_norm_le (hd : 0 < d)
     (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y))
-    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd.le θ⟩))
-    (p : P) {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ d) :
-    discGlue hd A B hAB (p, w) = A (p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) :=
+    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.val, smul_diskBoundary_mem_closedBall hd.le θ⟩))
+    (p : P) {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ ≤ d) :
+    discGlue hd A B hAB (p, w) = A (p, ⟨w.down.val, mem_closedBall_zero_iff.2 hw⟩) :=
   discGlueFun_of_norm_le hd A B p hw
 
 /-- On the annulus `d ≤ ‖w‖` a glued map is its outer piece, read in annulus coordinates. -/
 theorem discGlue_apply_of_le_norm (hd : 0 < d)
     (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y))
-    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd.le θ⟩))
-    (p : P) {w : TopCat.disk.{u} k} (hw : d ≤ ‖w.down.1‖) :
+    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.val, smul_diskBoundary_mem_closedBall hd.le θ⟩))
+    (p : P) {w : TopCat.disk.{u} k} (hw : d ≤ ‖w.down.val‖) :
     discGlue hd A B hAB (p, w) = B (p, annulusParam d w, annulusDir hd ⟨w, hw⟩) :=
   discGlueFun_of_le_norm hd A B hAB p hw
 
@@ -259,10 +260,10 @@ theorem discGlue_apply_of_le_norm (hd : 0 < d)
 theorem discGlue_mem (hd : 0 < d)
     (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y))
-    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd.le θ⟩))
+    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.val, smul_diskBoundary_mem_closedBall hd.le θ⟩))
     {S : Set Y} (hA : ∀ q, A q ∈ S) (hB : ∀ q, B q ∈ S) (q : P × TopCat.disk.{u} k) :
     discGlue hd A B hAB q ∈ S := by
-  rcases le_total ‖q.2.down.1‖ d with hw | hw
+  rcases le_total ‖q.2.down.val‖ d with hw | hw
   · rw [discGlue_apply_of_norm_le hd A B hAB q.1 hw]
     exact hA _
   · rw [discGlue_apply_of_le_norm hd A B hAB q.1 hw]
@@ -273,12 +274,12 @@ piece on the unit sphere and of the outer piece on the outer circle `s = 1`. -/
 theorem discGlue_mem_of_norm_eq_one (hd : 0 < d)
     (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, Y))
     (B : C(P × (I × TopCat.diskBoundary.{u} k), Y))
-    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd.le θ⟩))
+    (hAB : ∀ p θ, B (p, 0, θ) = A (p, ⟨d • θ.down.val, smul_diskBoundary_mem_closedBall hd.le θ⟩))
     {S : Set Y} (hA : ∀ p (v : closedBall (0 : EuclideanSpace ℝ (Fin k)) d),
       ‖(v : EuclideanSpace ℝ (Fin k))‖ = 1 → A (p, v) ∈ S)
-    (hB : ∀ p θ, B (p, 1, θ) ∈ S) (p : P) {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ = 1) :
+    (hB : ∀ p θ, B (p, 1, θ) ∈ S) (p : P) {w : TopCat.disk.{u} k} (hw : ‖w.down.val‖ = 1) :
     discGlue hd A B hAB (p, w) ∈ S := by
-  by_cases h : ‖w.down.1‖ ≤ d
+  by_cases h : ‖w.down.val‖ ≤ d
   · rw [discGlue_apply_of_norm_le hd A B hAB p h]
     exact hA _ _ hw
   · have hd₁ : d < 1 := hw ▸ not_le.1 h

@@ -45,7 +45,7 @@ variable {k A P₀ P₁ Q₀ Q₁ N : Type*} [CommRing k] [Ring A] [Algebra k A]
 precomposition on Hom cocycle classes. -/
 theorem auslanderReitenCocyclePairing_presentation_naturality
     (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁) (hf : f₀.comp p = q.comp f₁)
-    (g : N →ₗ[A] AuslanderReitenTranslate k p) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k p) :
     auslanderReitenCocyclePairing q ((auslanderReitenTranslateMap f₀ f₁ hf).comp g) =
       (homCocycleQuotientPrecomp f₀ f₁ hf).dualMap (auslanderReitenCocyclePairing p g) := by
   have hnat :

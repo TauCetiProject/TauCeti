@@ -130,16 +130,16 @@ substitution. -/
     (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
     map φ (polynomialReparametrize R P j) =
       polynomialReparametrize (map φ ∘ R) (map φ ∘ P) j := by
-  simp only [polynomialReparametrize_apply, map_bind₁, Function.comp_apply]
-  refine congrArg (fun F => bind₁ F _) (funext fun i => ?_)
+  simp only [polynomialReparametrize_apply, map_aeval_eq_aeval_map_map, Function.comp_apply]
+  refine congrArg (fun F => aeval F _) (funext fun i => ?_)
   cases i <;> simp [map_rename]
 
 /-- Transporting a composite model composes the transported models. -/
 @[simp] theorem map_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
     (Q : M → MvPolynomial (V ⊕ J) K) (l : M) :
     map φ (polynomialCompose P Q l) = polynomialCompose (map φ ∘ P) (map φ ∘ Q) l := by
-  simp only [polynomialCompose_apply, map_bind₁, Function.comp_apply]
-  refine congrArg (fun F => bind₁ F _) (funext fun i => ?_)
+  simp only [polynomialCompose_apply, map_aeval_eq_aeval_map_map, Function.comp_apply]
+  refine congrArg (fun F => aeval F _) (funext fun i => ?_)
   cases i <;> simp [map_rename]
 
 section Layers

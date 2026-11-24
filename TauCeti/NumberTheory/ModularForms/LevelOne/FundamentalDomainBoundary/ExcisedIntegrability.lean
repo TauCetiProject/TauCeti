@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.LogDeriv
+public import TauCeti.Analysis.Calculus.LogDeriv
 public import TauCeti.Analysis.Contour.Curve.ExcisedIntegrability
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Basic
-
-import TauCeti.Analysis.Contour.LogDerivFTC
 
 /-!
 # The excised boundary integrand is integrable
@@ -21,7 +19,7 @@ for any subinterval of `[0, 5]` at once.
 Both inputs the general criterion needs are available for the boundary contour: it is piecewise
 `C¹` (`isPiecewiseC1On_fdBoundary`), which makes its derivative interval-integrable, and off the
 excision the form is analytic and nonvanishing *at the contour points themselves*, so its
-logarithmic derivative is analytic there (`analyticAt_logDeriv_of_analyticAt`) and in particular
+logarithmic derivative is analytic there (`AnalyticAt.logDeriv`) and in particular
 continuous.
 
 The analyticity hypothesis is stated **along the contour** rather than on an open set containing
@@ -67,7 +65,7 @@ theorem intervalIntegrable_excised_deriv_smul_logDeriv_comp_ofComplex_fdBoundary
       have := hfar _ hs
       rw [sub_self, norm_zero] at this
       exact absurd this (not_le.mpr hε)
-    exact (Contour.analyticAt_logDeriv_of_analyticAt (hoff t ht hnotS).1
+    exact ((hoff t ht hnotS).1.logDeriv
       (hoff t ht hnotS).2).continuousAt.continuousWithinAt
   simpa only [smul_eq_mul, mul_comm] using
     Contour.intervalIntegrable_excised_of_continuousOn (continuous_fdBoundary H).continuousOn

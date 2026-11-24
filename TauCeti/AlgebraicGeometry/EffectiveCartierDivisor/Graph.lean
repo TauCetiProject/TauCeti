@@ -111,7 +111,7 @@ def graphDivisor : yoneda.obj (Over.mk f) ⟶ (relativeEffectiveCartierSubfuncto
 @[simp]
 lemma graphDivisor_app_apply_val {T : (Over S)ᵒᵖ} (x : T.unop ⟶ Over.mk f) :
     (ConcreteCategory.hom (C := Type u) (X := T.unop ⟶ Over.mk f)
-      (Y := (relativeEffectiveCartierSubfunctor f).obj T) ((graphDivisor f).app T) x).1 =
+      (Y := (relativeEffectiveCartierSubfunctor f).obj T) ((graphDivisor f).app T) x).val =
       (graphSection x).ker :=
   (rfl)
 

@@ -37,6 +37,9 @@ domain* hold for every such model `R`, not only for `𝓞 K` itself.
   `I.map (mapRingEquiv e)`.
 * `RingEquiv.classGroupEquiv_refl`, `RingEquiv.classGroupEquiv_symm`,
   `RingEquiv.classGroupEquiv_trans`: functoriality, including inverses.
+* `TauCeti.classGroupAction G K`: for a group `G` acting on `K` by ring automorphisms, such as a
+  Galois group `K ≃ₐ[F] K`, the induced action `G →* MulAut (ClassGroup (𝓞 K))`, with
+  `TauCeti.classGroupAction_mk0`: `g` sends the class of `I` to the class of its image under `g`.
 * `RingEquiv.classNumber_eq`: isomorphic number fields have equal class numbers.
 * `RingEquiv.natCard_classGroup_eq_classNumber`: a ring isomorphic to `𝓞 K` has `classNumber K`
   ideal classes.
@@ -83,10 +86,10 @@ class of its image `I.map (mapRingEquiv e)` in `𝓞 L`. -/
 theorem classGroupEquiv_mk0 [IsDedekindDomain (𝓞 K)] [IsDedekindDomain (𝓞 L)] (e : K ≃+* L)
     (I : (Ideal (𝓞 K))⁰) :
     e.classGroupEquiv (ClassGroup.mk0 I) =
-      ClassGroup.mk0 ⟨I.1.map (RingOfIntegers.mapRingEquiv e),
+      ClassGroup.mk0 ⟨I.val.map (RingOfIntegers.mapRingEquiv e),
         mem_nonZeroDivisors_iff_ne_zero.mpr <|
           (Ideal.map_eq_bot_iff_of_injective (RingOfIntegers.mapRingEquiv e).injective).not.mpr
-            (mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ := by
+            (mem_nonZeroDivisors_iff_ne_zero.mp I.property)⟩ := by
   rw [classGroupEquiv_def]
   exact ClassGroup.mulEquiv_mk0 _ I
 
@@ -109,6 +112,46 @@ theorem classGroupEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) :
     (e.trans e').classGroupEquiv = e.classGroupEquiv.trans e'.classGroupEquiv := by
   rw [classGroupEquiv_def, classGroupEquiv_def, classGroupEquiv_def,
     RingOfIntegers.mapRingEquiv_trans, ClassGroup.mulEquiv_trans]
+
+end RingEquiv
+
+namespace TauCeti
+
+variable (G : Type*) [Group G] (K : Type*) [Field K] [MulSemiringAction G K]
+
+/-- The action on the ideal class group of `𝓞 K` of a group `G` acting on the field `K` by ring
+automorphisms: `g` acts by the class-group automorphism induced by the restriction of `g` to
+`𝓞 K`, so that `g [I] = [g I]`. For a Galois group `G = K ≃ₐ[F] K` this is the Galois action on
+ideal classes. -/
+noncomputable def classGroupAction : G →* MulAut (ClassGroup (𝓞 K)) :=
+  ClassGroup.mulEquivHom.comp (MulSemiringAction.toRingAut G (𝓞 K))
+
+variable {G K} in
+/-- The element `g` acts on ideal classes through the class-group isomorphism of the ring
+automorphism of `K` by which it acts. -/
+theorem classGroupAction_apply (g : G) :
+    classGroupAction G K g = (MulSemiringAction.toRingEquiv G K g).classGroupEquiv := by
+  rw [RingEquiv.classGroupEquiv_def, classGroupAction, MonoidHom.comp_apply,
+    ClassGroup.mulEquivHom_apply]
+  exact congrArg _ <| RingEquiv.ext fun _ ↦ RingOfIntegers.ext rfl
+
+variable {G K} in
+/-- The element `g` sends the class of a nonzero ideal `I` of `𝓞 K` to the class of its image
+under `g`. -/
+@[simp]
+theorem classGroupAction_mk0 [NumberField K] (g : G) (I : (Ideal (𝓞 K))⁰) :
+    classGroupAction G K g (ClassGroup.mk0 I) =
+      ClassGroup.mk0 ⟨I.val.map (RingOfIntegers.mapRingEquiv (MulSemiringAction.toRingEquiv G K g)),
+        mem_nonZeroDivisors_iff_ne_zero.mpr <|
+          (Ideal.map_eq_bot_iff_of_injective (RingEquiv.injective _)).not.mpr
+            (mem_nonZeroDivisors_iff_ne_zero.mp I.property)⟩ := by
+  rw [classGroupAction_apply, RingEquiv.classGroupEquiv_mk0]
+
+end TauCeti
+
+namespace RingEquiv
+
+variable {K L M : Type*} [Field K] [Field L] [Field M]
 
 /-- **The class number is an isomorphism invariant.** Isomorphic number fields have equal class
 numbers. -/

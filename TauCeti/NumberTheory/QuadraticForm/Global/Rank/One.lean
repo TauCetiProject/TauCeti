@@ -61,7 +61,7 @@ theorem exists_rankOne_form_equivalent_at_places (d : SquareClassGroup K)
         (algebraMap K (v.adicCompletion K)).squareClassMap d)
     (hRd : ∀ (w : {w : InfinitePlace K // w.IsReal}),
       RegularFormClass.discr (formClass (R w) (hR w)) =
-      (embedding_of_isReal w.2).squareClassMap d) :
+      (embedding_of_isReal w.property).squareClassMap d) :
     ∃ Q : _root_.QuadraticForm K (Fin 1 → K), ∃ hQ : Q.Nondegenerate,
       (letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero;
         RegularFormClass.discr (formClass Q hQ) = d) ∧

@@ -52,12 +52,12 @@ def graphFrame (A : Matrix (Fin r) (Fin q) 𝕜) : finiteFullRankFrame 𝕜 r (r
 
 @[simp]
 theorem graphFrame_castAdd (A : Matrix (Fin r) (Fin q) 𝕜) (i j : Fin r) :
-    (graphFrame A).1 i (Fin.castAdd q j) = (Pi.single i 1 : Fin r → 𝕜) j := by
+    (graphFrame A).val i (Fin.castAdd q j) = (Pi.single i 1 : Fin r → 𝕜) j := by
   simp [graphFrame]
 
 @[simp]
 theorem graphFrame_natAdd (A : Matrix (Fin r) (Fin q) 𝕜) (i : Fin r) (j : Fin q) :
-    (graphFrame A).1 i (Fin.natAdd r j) = A i j := by
+    (graphFrame A).val i (Fin.natAdd r j) = A i j := by
   simp [graphFrame]
 
 /-- The graph of `x ↦ x ᵥ* A`, as an `r`-plane in the existing finite Grassmannian. -/
@@ -72,7 +72,7 @@ theorem frameSpan_graphFrame (A : Matrix (Fin r) (Fin q) 𝕜) :
 /-- Membership in the graph is the equation relating its two coordinate blocks. -/
 @[simp]
 theorem mem_graph_iff (A : Matrix (Fin r) (Fin q) 𝕜) (v : Fin (r + q) → 𝕜) :
-    v ∈ (graph A).1 ↔
+    v ∈ (graph A).val ↔
       (fun j ↦ v (Fin.natAdd r j)) = (fun i ↦ v (Fin.castAdd q i)) ᵥ* A := by
   rw [graph, coe_frameSpan, Submodule.mem_span_range_iff_exists_fun]
   constructor
@@ -90,17 +90,17 @@ theorem mem_graph_iff (A : Matrix (Fin r) (Fin q) 𝕜) (v : Fin (r + q) → �
 theorem graph_injective : Function.Injective (graph : Matrix (Fin r) (Fin q) 𝕜 → _) := by
   intro A B h
   ext i j
-  have hm : (graphFrame A).1 i ∈ (graph B).1 := by
+  have hm : (graphFrame A).val i ∈ (graph B).val := by
     rw [← h, graph, coe_frameSpan]
     exact Submodule.subset_span (mem_range_self i)
   have he := congrFun ((mem_graph_iff B _).1 hm) j
   simpa [vecMul, dotProduct, Pi.single_apply] using he
 
 private def firstBlock (f : finiteFullRankFrame 𝕜 r (r + q)) : Matrix (Fin r) (Fin r) 𝕜 :=
-  fun i j ↦ f.1 i (Fin.castAdd q j)
+  fun i j ↦ f.val i (Fin.castAdd q j)
 
 private def lastBlock (f : finiteFullRankFrame 𝕜 r (r + q)) : Matrix (Fin r) (Fin q) 𝕜 :=
-  fun i j ↦ f.1 i (Fin.natAdd r j)
+  fun i j ↦ f.val i (Fin.natAdd r j)
 
 private theorem firstBlock_graphFrame (A : Matrix (Fin r) (Fin q) 𝕜) :
     firstBlock (graphFrame A) = 1 := by
@@ -145,9 +145,9 @@ coordinate is obtained by normalizing that block to the identity. -/
 theorem frameSpan_eq_graph_iff (f : finiteFullRankFrame 𝕜 r (r + q))
     (A : Matrix (Fin r) (Fin q) 𝕜) :
     frameSpan f = graph A ↔
-      IsUnit (Matrix.submatrix f.1 id (Fin.castAdd q)) ∧
-        (Matrix.submatrix f.1 id (Fin.castAdd q))⁻¹ *
-          Matrix.submatrix f.1 id (Fin.natAdd r) = A := by
+      IsUnit (Matrix.submatrix f.val id (Fin.castAdd q)) ∧
+        (Matrix.submatrix f.val id (Fin.castAdd q))⁻¹ *
+          Matrix.submatrix f.val id (Fin.natAdd r) = A := by
   constructor
   · intro h
     obtain ⟨M, hM⟩ := frameSpan_eq_frameSpan_iff.1
@@ -186,12 +186,12 @@ theorem continuous_graph :
 private theorem continuous_firstBlock :
     Continuous (firstBlock : finiteFullRankFrame 𝕜 r (r + q) → _) :=
   continuous_pi fun i ↦ continuous_pi fun j ↦
-    (continuous_apply (Fin.castAdd q j)).comp ((continuous_apply i).comp continuous_subtype_val)
+    (continuous_apply (Fin.castAdd q j)).comp ((continuous_apply i).comp continuous_subtypeVal)
 
 private theorem continuous_lastBlock :
     Continuous (lastBlock : finiteFullRankFrame 𝕜 r (r + q) → _) :=
   continuous_pi fun i ↦ continuous_pi fun j ↦
-    (continuous_apply (Fin.natAdd r j)).comp ((continuous_apply i).comp continuous_subtype_val)
+    (continuous_apply (Fin.natAdd r j)).comp ((continuous_apply i).comp continuous_subtypeVal)
 
 variable [IsTopologicalDivisionRing 𝕜] [T1Space 𝕜]
 
@@ -265,7 +265,7 @@ theorem graphChart_graph (A : Matrix (Fin r) (Fin q) 𝕜) :
 /-- The graph chart domain is detected by the initial square block of any representing frame. -/
 theorem frameSpan_mem_graphChart_source_iff (f : finiteFullRankFrame 𝕜 r (r + q)) :
     frameSpan f ∈ (graphChart (𝕜 := 𝕜)).source ↔
-      IsUnit (Matrix.submatrix f.1 id (Fin.castAdd q)) := by
+      IsUnit (Matrix.submatrix f.val id (Fin.castAdd q)) := by
   rw [graphChart_source]
   exact ⟨fun ⟨A, hA⟩ ↦ ((frameSpan_eq_graph_iff f A).1 hA.symm).1,
     fun hf ↦ ⟨_, (frameSpan_eq_graph f hf).symm⟩⟩
@@ -273,9 +273,9 @@ theorem frameSpan_mem_graphChart_source_iff (f : finiteFullRankFrame 𝕜 r (r +
 /-- In graph coordinates a frame is normalized by left-multiplying its last block by the inverse
 of its first block. -/
 theorem graphChart_frameSpan (f : finiteFullRankFrame 𝕜 r (r + q))
-    (hf : IsUnit (Matrix.submatrix f.1 id (Fin.castAdd q))) :
-    graphChart (frameSpan f) = (Matrix.submatrix f.1 id (Fin.castAdd q))⁻¹ *
-      Matrix.submatrix f.1 id (Fin.natAdd r) := by
+    (hf : IsUnit (Matrix.submatrix f.val id (Fin.castAdd q))) :
+    graphChart (frameSpan f) = (Matrix.submatrix f.val id (Fin.castAdd q))⁻¹ *
+      Matrix.submatrix f.val id (Fin.natAdd r) := by
   rw [frameSpan_eq_graph f hf, graphChart_graph]
   rfl
 

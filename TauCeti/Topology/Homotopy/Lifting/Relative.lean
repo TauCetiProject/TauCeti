@@ -47,7 +47,7 @@ theorem HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion {Y : Type w}
     (hr : (ContinuousMap.id Y).HomotopicRel ((ContinuousMap.subtypeVal A).comp r) A)
     (f : C(A, E)) (g : C(Y, B)) (hfg : ∀ a, p (f a) = g a) :
     ∃ ℓ : C(Y, E), p ∘ ℓ = g ∧ ∀ a : A, ℓ a = f a := by
-  have hr' (a : A) : r a = a := Subtype.ext (hr.fst_eq_snd a.2).symm
+  have hr' (a : A) : r a = a := Subtype.ext (hr.fst_eq_snd a.property).symm
   obtain ⟨F⟩ := hr
   -- the homotopy `Φ (t, y) = F (1 - min 1 (t / u y), y)` from `r` to the point `y` at time `u y`
   let φ : I × Y → I := fun z ↦ σ (projIcc 0 1 zero_le_one ((z.1 : ℝ) / u z.2))
@@ -70,7 +70,7 @@ theorem HasHomotopyLiftingProperty.zeroSetSDR_liftingInclusion {Y : Type w}
     simp [hΦ₀, hfg]
   refine ⟨⟨fun y ↦ L (u y, y), by fun_prop⟩, funext fun y ↦ ?_, fun a ↦ ?_⟩
   · simpa [hΦu] using congrFun hL (u y, y)
-  · have hua : u a = 0 := (hu a).2 a.2
+  · have hua : u a = 0 := (hu a).2 a.property
     simp [hua, hL₀, hr']
 
 end TauCeti

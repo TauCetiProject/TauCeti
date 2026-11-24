@@ -163,7 +163,7 @@ theorem pathMap_nil (a : Q) :
     pathMap k M (_root_.Quiver.Path.nil : _root_.Quiver.Path a a) = LinearMap.id := by
   ext x
   rw [coe_pathMap_apply, ← vertexIdempotent_eq_ofPath,
-    vertexIdempotent_smul_eq_self_of_mem_vertexComponent x.2]
+    vertexIdempotent_smul_eq_self_of_mem_vertexComponent x.property]
   simp
 
 /-- **Concatenation of paths is composition of the maps they act by.** Together with

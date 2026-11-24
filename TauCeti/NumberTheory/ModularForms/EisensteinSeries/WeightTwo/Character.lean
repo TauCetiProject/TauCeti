@@ -201,7 +201,9 @@ theorem charG2MFRaise_eq_zero (htuv : t * (u * v) ∣ N) (h : ψ (-1) * φ (-1) 
     charG2MFRaise ψ φ t htuv = 0 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-  rw [charG2MFRaise, charG2MF_eq_zero ψ φ dvd_rfl h, ← ModularForm.levelRaiseₗ_apply, map_zero]
+  rw [charG2MFRaise]
+  dsimp only
+  rw [charG2MF_eq_zero ψ φ dvd_rfl h, ← ModularForm.levelRaiseₗ_apply, map_zero]
 
 /-- The `q`-expansion of `G₂^{ψ,φ,t}` is that of `G₂^{ψ,φ}` with `q ↦ q^t`. -/
 @[simp]

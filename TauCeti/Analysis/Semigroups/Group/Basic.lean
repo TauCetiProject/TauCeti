@@ -47,6 +47,8 @@ The growth bound is obtained by applying semigroup results to both halves. The g
   contracts in both time directions is a group of isometries.
 * `TauCeti.Semigroups.StronglyContinuousGroup.tendsto_apply`: joint strong continuity
   `U (f i) (g i) → U r z`, at every real time and without a sign restriction.
+* `TauCeti.Semigroups.StronglyContinuousGroup.continuous_uncurry`: joint strong continuity as
+  continuity of `(t, x) ↦ U t x` on `ℝ × X`.
 
 ## References
 
@@ -140,8 +142,9 @@ theorem map_apply_map_neg_apply (U : StronglyContinuousGroup X) (t : ℝ) (x : X
 /-- The group operator at time `t`, packaged as a continuous linear equivalence whose inverse is
 the operator at time `-t`. -/
 def toContinuousLinearEquiv (U : StronglyContinuousGroup X) (t : ℝ) : X ≃L[ℝ] X :=
-  ContinuousLinearEquiv.equivOfInverse (U t) (U (-t)) (U.map_neg_apply_map_apply t)
-    (U.map_apply_map_neg_apply t)
+  ContinuousLinearEquiv.ofContinuousLinearMap (U t) (U (-t))
+    (ContinuousLinearMap.ext (U.map_apply_map_neg_apply t))
+    (ContinuousLinearMap.ext (U.map_neg_apply_map_apply t))
 
 @[simp]
 theorem toContinuousLinearEquiv_apply (U : StronglyContinuousGroup X) (t : ℝ) (x : X) :
@@ -357,6 +360,15 @@ theorem tendsto_apply {ι : Type*} {l : Filter ι} (U : StronglyContinuousGroup 
   have h2 : Tendsto (fun i => U (f i) z) l (𝓝 (U r z)) :=
     ((U.continuous_orbit z).tendsto r).comp hf
   exact ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
+
+/-- Joint strong continuity of a C₀-group as continuity of the map `(t, x) ↦ U t x` on `ℝ × X`.
+
+This is the two-sided counterpart of
+`TauCeti.Semigroups.StronglyContinuousSemigroup.continuous_realOperator_uncurry`. -/
+theorem continuous_uncurry (U : StronglyContinuousGroup X) :
+    Continuous fun p : ℝ × X => U p.1 p.2 :=
+  continuous_iff_continuousAt.2 fun _ =>
+    U.tendsto_apply continuous_fst.continuousAt continuous_snd.continuousAt
 
 end StronglyContinuousGroup
 

@@ -23,10 +23,12 @@ with their compatibility with homogeneous multiplication.
 * `CliffordAlgebra.associatedGradedEquivExterior`: the algebra equivalence from
   the associated graded of the Clifford filtration to the exterior algebra.
 
-## Main result
+## Main results
 
 * `CliffordAlgebra.prod_map_ι_ofFn_ne_zero`: a linearly independent finite family has a nonzero
   ordered product of Clifford generators.
+* `CliffordAlgebra.gradedPieceEquivExteriorPower_symm_apply_ιMulti`: the inverse piece equivalence
+  sends an exterior product of `n` vectors to the class of the product of their `n` generators.
 
 ## References
 
@@ -147,8 +149,11 @@ private def exteriorPowerGradedMul (i j : ℕ) (x : ⋀[R]^i M) (y : ⋀[R]^j M)
     ⋀[R]^(i + j) M :=
   @GradedMonoid.GMul.mul ℕ (fun n : ℕ => ⋀[R]^n M) _ inferInstance i j x y
 
-private theorem filtrationLeadingTermAll_apply_ιMulti (n : ℕ) (v : Fin n → M) :
-    filtrationLeadingTermAll Q n (exteriorPower.ιMulti R n v) =
+/-- The inverse piece equivalence sends an exterior product of `n` vectors to the class of the
+corresponding ordered product of `n` Clifford generators. -/
+@[simp]
+theorem gradedPieceEquivExteriorPower_symm_apply_ιMulti (n : ℕ) (v : Fin n → M) :
+    (gradedPieceEquivExteriorPower Q n).symm (exteriorPower.ιMulti R n v) =
       Submodule.Quotient.mk
         ⟨(List.ofFn ((ι Q) ∘ v)).prod, by
           rw [← List.map_ofFn]
@@ -156,12 +161,7 @@ private theorem filtrationLeadingTermAll_apply_ιMulti (n : ℕ) (v : Fin n → 
   cases n with
   | zero =>
       apply (gradedPieceEquivExteriorPower Q 0).injective
-      have hleft :
-          gradedPieceEquivExteriorPower Q 0
-              (filtrationLeadingTermAll Q 0 (exteriorPower.ιMulti R 0 v)) =
-            exteriorPower.ιMulti R 0 v :=
-        LinearEquiv.apply_symm_apply _ _
-      rw [hleft]
+      rw [LinearEquiv.apply_symm_apply]
       have hrep :
           (Submodule.Quotient.mk
             ⟨(List.ofFn ((ι Q) ∘ v)).prod, by
@@ -178,7 +178,7 @@ private theorem filtrationLeadingTermAll_apply_ιMulti (n : ℕ) (v : Fin n → 
       apply (exteriorPower.zeroEquiv R M).injective
       rw [LinearEquiv.apply_symm_apply, exteriorPower.zeroEquiv_ιMulti]
   | succ n =>
-      simpa only [filtrationLeadingTermAll, gradedPieceEquivExteriorPower,
+      simpa only [gradedPieceEquivExteriorPower, LinearEquiv.coe_coe,
         filtrationLeadingTerm_eq_filtrationGradedEquiv_symm Q n] using
         filtrationLeadingTerm_apply_ιMulti Q n v
 
@@ -207,9 +207,9 @@ private theorem filtrationLeadingTermAll_mul (i j : ℕ)
     intro b
     -- Extensionality leaves the two composed bilinear maps; expose their graded products.
     change gradedMul (ι Q) i j
-        (filtrationLeadingTermAll Q i (exteriorPower.ιMulti R i a))
-        (filtrationLeadingTermAll Q j (exteriorPower.ιMulti R j b)) =
-      filtrationLeadingTermAll Q (i + j)
+        ((gradedPieceEquivExteriorPower Q i).symm (exteriorPower.ιMulti R i a))
+        ((gradedPieceEquivExteriorPower Q j).symm (exteriorPower.ιMulti R j b)) =
+      (gradedPieceEquivExteriorPower Q (i + j)).symm
         (exteriorPowerGradedMul i j
           (exteriorPower.ιMulti R i a) (exteriorPower.ιMulti R j b))
     have hmul :
@@ -218,9 +218,9 @@ private theorem filtrationLeadingTermAll_mul (i j : ℕ)
           exteriorPower.ιMulti R (i + j) (Fin.append a b) := by
       apply Subtype.ext
       exact ExteriorAlgebra.ιMulti_mul_ιMulti a b
-    rw [filtrationLeadingTermAll_apply_ιMulti,
-      filtrationLeadingTermAll_apply_ιMulti, hmul,
-      filtrationLeadingTermAll_apply_ιMulti, gradedMul_apply_mk]
+    rw [gradedPieceEquivExteriorPower_symm_apply_ιMulti,
+      gradedPieceEquivExteriorPower_symm_apply_ιMulti, hmul,
+      gradedPieceEquivExteriorPower_symm_apply_ιMulti, gradedMul_apply_mk]
     apply congrArg Submodule.Quotient.mk
     apply Subtype.ext
     -- Quotient and subtype extensionality leave the ambient Clifford products.

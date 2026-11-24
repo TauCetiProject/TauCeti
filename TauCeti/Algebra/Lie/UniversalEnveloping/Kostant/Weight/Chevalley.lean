@@ -107,7 +107,7 @@ theorem isCartanWeightVector_cartan (y : H) :
       (UniversalEnvelopingAlgebra.representation ℚ L L) 0 (y : L) :=
   (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).2 fun α => by
     rw [corootFamily_apply, UniversalEnvelopingAlgebra.representation_ι_ad,
-      LieAlgebra.ad_apply, LieSubalgebra.lie_eq_zero_of_mem (coroot _).2 y.2]
+      LieAlgebra.ad_apply, LieSubalgebra.lie_eq_zero_of_mem (coroot _).property y.property]
     simp
 
 omit [LieModule.IsTriangularizable ℚ H L] in
@@ -152,7 +152,7 @@ theorem mem_iSup_jointWeightSpace (y : (rootCorootSpan x).toAddSubgroup) :
     · exact (Submodule.restrictScalars_mem ℤ _ _).2 (Submodule.mem_iSup_of_mem 0
         ((UniversalEnvelopingAlgebra.mem_jointWeightSpace_iff _ _).2
           (isCartanWeightVector_coroot β)))
-  exact (Submodule.restrictScalars_mem ℤ _ _).1 (hle ((Submodule.mem_toAddSubgroup _).1 y.2))
+  exact (Submodule.restrictScalars_mem ℤ _ _).1 (hle ((Submodule.mem_toAddSubgroup _).1 y.property))
 
 end IsSl2System
 

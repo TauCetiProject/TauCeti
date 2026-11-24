@@ -32,7 +32,8 @@ shared edge of two rectangles would be counted twice.
   integral computes, is the sum of the multiplicities.
 * `TauCeti.HasZerosInRects.of_rectangle_subset`, `TauCeti.HasZerosInRects.of_forall₂_subset`:
   the outer rectangle may be shrunk, and each certified rectangle replaced by a smaller one with
-  the same count.
+  the same count; `TauCeti.HasZerosInRects.meromorphicOrderAt_frontier_of_rectangle_subset`: `f`
+  has order `0` on the frontier of a shrunken outer rectangle.
 * `TauCeti.not_hasZerosInRects_of_meromorphicOrderAt_ne_zero`: no certificate exists for a
   rectangle with a zero or a pole on its frontier.
 -/
@@ -125,18 +126,48 @@ computes, is the sum of the certified multiplicities. -/
 theorem divisorCount_eq_sum : divisorCount f U (Rectangle z w) = ms.sum := by
   rw [divisorCount_eq_zeroCount h.divisor_nonneg, h.zeroCount_eq_sum]
 
+/-- **Order on the frontier of a smaller rectangle.** If a smaller rectangle contains all
+certified rectangles, then `f` has order `0` on its frontier. -/
+theorem meromorphicOrderAt_frontier_of_rectangle_subset (hsub : Rectangle z' w' ⊆ Rectangle z w)
+    (hBs : ∀ B ∈ Bs, Rectangle B.1 B.2 ⊆ Rectangle z' w') :
+    ∀ s ∈ frontier (Rectangle z' w'), meromorphicOrderAt f s = 0 := by
+  intro s hs
+  have hsR : s ∈ Rectangle z w := hsub ((isClosed_rectangle z' w').frontier_subset hs)
+  have hzR : z ∈ Rectangle z w := by simp [Rectangle, mem_reProdIm]
+  have hzfr : z ∈ frontier (Rectangle z w) := by
+    rw [frontier_rectangle]; simp [mem_reProdIm]
+  by_contra hne
+  -- The order at `s` is not `⊤`: by the identity theorem on the convex rectangle, where `f` has
+  -- order `0` at the corner `z`.
+  have htop : meromorphicOrderAt f s ≠ ⊤ :=
+    (h.meromorphicOn.mono_set h.rectangle_subset).meromorphicOrderAt_ne_top_of_isPreconnected
+      (convex_rectangle z w).isPreconnected hzR hsR
+      (by simp [h.meromorphicOrderAt_frontier z hzfr])
+  -- Hence `s` is not a zero: otherwise it would lie in the interior of a certified rectangle.
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 htop
+  have hdiv : MeromorphicOn.divisor f U s = n := by
+    rw [h.meromorphicOn.divisor_apply (h.rectangle_subset hsR), ← hn, WithTop.untop₀_coe]
+  have hnn := h.divisor_nonneg s hsR
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    exact hne (by simpa using hn.symm)
+  have hpos : 0 < MeromorphicOn.divisor f U s := by
+    rw [hdiv] at hnn ⊢
+    omega
+  obtain ⟨B, hB, hsB⟩ := h.exists_mem_interior hsR hpos
+  exact hs.2 (interior_mono (hBs B hB) hsB)
+
 /-- **Stability under shrinking the rectangle.** The certificate remains valid on a smaller
-rectangle containing all certified rectangles, provided `f` has order `0` on its frontier. -/
+rectangle containing all certified rectangles. -/
 theorem of_rectangle_subset (hsub : Rectangle z' w' ⊆ Rectangle z w)
-    (hBs : ∀ B ∈ Bs, Rectangle B.1 B.2 ⊆ Rectangle z' w')
-    (hfr : ∀ s ∈ frontier (Rectangle z' w'), meromorphicOrderAt f s = 0) :
+    (hBs : ∀ B ∈ Bs, Rectangle B.1 B.2 ⊆ Rectangle z' w') :
     HasZerosInRects f U z' w' Bs ms where
   meromorphicOn := h.meromorphicOn
   rectangle_subset := hsub.trans h.rectangle_subset
   divisor_nonneg s hs := h.divisor_nonneg s (hsub hs)
   subset_rectangle := hBs
   pairwise_disjoint_interior := h.pairwise_disjoint_interior
-  meromorphicOrderAt_frontier := hfr
+  meromorphicOrderAt_frontier := h.meromorphicOrderAt_frontier_of_rectangle_subset hsub hBs
   meromorphicOrderAt_frontier_of_mem := h.meromorphicOrderAt_frontier_of_mem
   map_zeroCount := h.map_zeroCount
   zeroCount_eq_sum := by

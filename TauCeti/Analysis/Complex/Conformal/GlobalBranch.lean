@@ -157,7 +157,7 @@ private lemma exists_continuous_path_dist_lt {w : ℂ} {r : ℝ} (hδ : Continuo
     (hw : dist w (δ 1) < r) :
     ∃ δ' : I → ℂ, Continuous δ' ∧ (∀ x, dist (δ' x) (δ x) < r) ∧ δ' 0 = δ 0 ∧ δ' 1 = w := by
   refine ⟨fun x => δ x + (x : ℝ) • (w - δ 1), by fun_prop, fun x => ?_, by simp, by simp⟩
-  have hx : |(x : ℝ)| ≤ 1 := abs_le.2 ⟨by linarith [x.2.1], x.2.2⟩
+  have hx : |(x : ℝ)| ≤ 1 := abs_le.2 ⟨by linarith [x.property.1], x.property.2⟩
   have hd : dist (δ x + (x : ℝ) • (w - δ 1)) (δ x) = |(x : ℝ)| * dist w (δ 1) := by
     rw [dist_eq_norm, dist_eq_norm]
     simp

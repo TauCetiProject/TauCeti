@@ -66,41 +66,41 @@ theorem contMDiff_analyticProdHomeomorph (n : ℕ∞ω) :
 /-- The inverse product comparison followed by the product-cone inclusion is holomorphic
 on the pair of affine charts, for arbitrary extending bases of the factors. -/
 private theorem contMDiff_productChart (σ : Φ.cones) (τ : Ψ.cones) {k l k' l' : ℕ}
-    {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
-    {C : Module.Basis (ToricRay τ.1 ⊕ Fin l') ℤ N'}
+    {B : Module.Basis (ToricRay σ.val ⊕ Fin l) ℤ N}
+    {C : Module.Basis (ToricRay τ.val ⊕ Fin l') ℤ N'}
     (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
     (hC : ∀ ρ, IsPrimitiveGenerator i' ρ (C (Sum.inl ρ)))
-    (κ : ToricRay σ.1 ≃ Fin k) (κ' : ToricRay τ.1 ≃ Fin k') (n : ℕ∞ω) :
+    (κ : ToricRay σ.val ≃ Fin k) (κ' : ToricRay τ.val ≃ Fin k') (n : ℕ∞ω) :
     letI := affinePointTopology (Φ.analyticChartGenerators σ).2
-    letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone
+    letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone
       hB κ (Φ.analyticChartGenerators σ).2
     letI := affinePointTopology (Ψ.analyticChartGenerators τ).2
-    letI := coneChartedSpace Ψ.lattice ((isRegular_iff.mp hΨ) τ.1 τ.2).toIsToricCone
+    letI := coneChartedSpace Ψ.lattice ((isRegular_iff.mp hΨ) τ.val τ.property).toIsToricCone
       hC κ' (Ψ.analyticChartGenerators τ).2
     letI := (Φ.prod Ψ).analyticChartedSpace (IsRegular.prod Φ Ψ hΦ hΨ)
     ContMDiff
       (𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)).prod
         𝓘(ℂ, (Fin k' → ℂ) × (Fin l' → ℂ)))
       𝓘(ℂ, Fin (Module.finrank ℤ (N × N')) → ℂ) n
-      (fun p : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) ×
-          AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.1) ↦
+      (fun p : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) ×
+          AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.val) ↦
         (Φ.prod Ψ).analyticAffineChartι (IsRegular.prod Φ Ψ hΦ hΨ) (Φ.prodCone Ψ σ τ)
           ((AffineSemigroupComplexPoint.prodEquiv
-            (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.1 τ.1)).symm p)) := by
+            (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.val τ.val)).symm p)) := by
   let _ := affinePointTopology (Φ.analyticChartGenerators σ).2
-  let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone
+  let _ := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.val σ.property).toIsToricCone
     hB κ (Φ.analyticChartGenerators σ).2
   let _ := affinePointTopology (Ψ.analyticChartGenerators τ).2
-  let _ := coneChartedSpace Ψ.lattice ((isRegular_iff.mp hΨ) τ.1 τ.2).toIsToricCone
+  let _ := coneChartedSpace Ψ.lattice ((isRegular_iff.mp hΨ) τ.val τ.property).toIsToricCone
     hC κ' (Ψ.analyticChartGenerators τ).2
   let _ := (Φ.prod Ψ).analyticChartedSpace (IsRegular.prod Φ Ψ hΦ hΨ)
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
-  have hτ := (isRegular_iff.mp hΨ) τ.1 τ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
+  have hτ := (isRegular_iff.mp hΨ) τ.val τ.property
   have hστ := (isRegular_iff.mp (IsRegular.prod Φ Ψ hΦ hΨ))
-    (Φ.prodCone Ψ σ τ).1 (Φ.prodCone Ψ σ τ).2
+    (Φ.prodCone Ψ σ τ).val (Φ.prodCone Ψ σ τ).property
   obtain ⟨l'', D, hD⟩ := hστ.exists_basis_sum
-  have : Finite (ToricRay (σ.1.prod τ.1)) := ToricRay.finite_of_fg hστ.fg
-  let κ'' := Finite.equivFin (ToricRay (σ.1.prod τ.1))
+  have : Finite (ToricRay (σ.val.prod τ.val)) := ToricRay.finite_of_fg hστ.fg
+  let κ'' := Finite.equivFin (ToricRay (σ.val.prod τ.val))
   let g'' := ((Φ.prod Ψ).analyticChartGenerators (Φ.prodCone Ψ σ τ)).2
   let _ := affinePointTopology g''
   let _ := coneChartedSpace (Φ.lattice.prod Ψ.lattice) (hσ.toIsToricCone.prod hτ.toIsToricCone)
@@ -130,14 +130,14 @@ theorem contMDiff_analyticProdHomeomorph_symm (n : ℕ∞ω) :
   -- Choose factor charts and arbitrary extending bases near the two components of `p`.
   obtain ⟨σ, a, ha⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ p.1
   obtain ⟨τ, b, hb⟩ := Ψ.exists_analyticAffineChartι_apply_eq hΨ p.2
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
-  have hτ := (isRegular_iff.mp hΨ) τ.1 τ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
+  have hτ := (isRegular_iff.mp hΨ) τ.val τ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
   obtain ⟨l', C, hC⟩ := hτ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  have : Finite (ToricRay τ.1) := ToricRay.finite_of_fg hτ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
-  let κ' := Finite.equivFin (ToricRay τ.1)
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  have : Finite (ToricRay τ.val) := ToricRay.finite_of_fg hτ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
+  let κ' := Finite.equivFin (ToricRay τ.val)
   let g := (Φ.analyticChartGenerators σ).2
   let g' := (Ψ.analyticChartGenerators τ).2
   let _ := affinePointTopology g

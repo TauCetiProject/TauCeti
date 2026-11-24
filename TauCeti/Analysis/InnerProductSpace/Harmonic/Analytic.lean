@@ -82,7 +82,7 @@ private theorem HarmonicAt.analyticAt_real {f : E → ℝ} (hf : HarmonicAt f x)
       fun y hy ↦ (hv y (closedBall_subset_ball one_lt_two hy)).1.continuousAt
     have hvS : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin d)) 1 ↦ v y :=
       continuous_iff_continuousAt.2 fun y ↦
-        (hvc y (sphere_subset_closedBall y.2)).comp continuous_subtype_val.continuousAt
+        (hvc y (sphere_subset_closedBall y.property)).comp continuous_subtypeVal.continuousAt
     have hrep := eqOn_ballPoissonIntegral_of_harmonicOnNhd hd
       (fun y hy ↦ (hvc y hy).continuousWithinAt) (hv.mono (ball_subset_ball one_le_two))
     refine (analyticOnNhd_ballPoissonIntegral (hvS.integrable_of_hasCompactSupport
