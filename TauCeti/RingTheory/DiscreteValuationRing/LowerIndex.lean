@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
@@ -99,6 +98,108 @@ end Monogenic
 
 section
 
+private theorem fixedPointsSubalgebra_le {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    [Group G] [MulSemiringAction G B] [SMulCommClass G A B] (H : Subgroup G) :
+    FixedPoints.subalgebra A B G ≤ FixedPoints.subalgebra A B H :=
+  fun _ hx h ↦ hx h.val
+
+@[instance_reducible]
+private def instAlgebraFixedPointsSubalgebra (A B : Type*) {G : Type*} [CommRing A] [CommRing B]
+    [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B] (H : Subgroup G) :
+    Algebra (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
+  (Subalgebra.inclusion (fixedPointsSubalgebra_le H)).toAlgebra
+
+private theorem instIsScalarTowerFixedPointsSubalgebra (A B G : Type*) [CommRing A] [CommRing B]
+    [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B] :
+    IsScalarTower A (FixedPoints.subalgebra A B G) B :=
+  IsScalarTower.subalgebra' A B B (FixedPoints.subalgebra A B G)
+
+private theorem instIsScalarTowerFixedPointsSubalgebraH (A B : Type*) {G : Type*} [CommRing A]
+    [CommRing B] [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
+    (H : Subgroup G) :
+    letI := instAlgebraFixedPointsSubalgebra A B H
+    IsScalarTower (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) B :=
+  let _ := instAlgebraFixedPointsSubalgebra A B H
+  Subalgebra.inclusion.isScalarTower_right (fixedPointsSubalgebra_le H) B
+
+private theorem instFaithfulSMulFixedPointsSubalgebra (A B G : Type*) [CommRing A] [CommRing B]
+    [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B] :
+    FaithfulSMul (FixedPoints.subalgebra A B G) B :=
+  (faithfulSMul_iff_algebraMap_injective (FixedPoints.subalgebra A B G) B).2 Subtype.val_injective
+
+private theorem instFaithfulSMulFixedPointsSubalgebraH (A B : Type*) {G : Type*} [CommRing A]
+    [CommRing B] [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
+    (H : Subgroup G) :
+    letI := instAlgebraFixedPointsSubalgebra A B H
+    FaithfulSMul (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
+  let _ := instAlgebraFixedPointsSubalgebra A B H
+  Subalgebra.inclusion.faithfulSMul (fixedPointsSubalgebra_le H)
+
+private theorem instIsLocalHomFixedPointsSubalgebraH (A B : Type*) {G : Type*} [CommRing A]
+    [CommRing B] [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
+    (H : Subgroup G) :
+    letI := instAlgebraFixedPointsSubalgebra A B H
+    IsLocalHom (algebraMap (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H)) := by
+  let _ := instAlgebraFixedPointsSubalgebra A B H
+  let _ := instIsScalarTowerFixedPointsSubalgebraH A B H
+  have : IsLocalHom ((algebraMap (FixedPoints.subalgebra A B H) B).comp
+      (algebraMap (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H))) :=
+    IsScalarTower.algebraMap_eq (FixedPoints.subalgebra A B G)
+      (FixedPoints.subalgebra A B H) B ▸ inferInstance
+  exact isLocalHom_of_comp _ (algebraMap (FixedPoints.subalgebra A B H) B)
+
+private theorem instModuleFiniteFixedPointsSubalgebra (A B G : Type*) [CommRing A] [CommRing B]
+    [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B] [Group G] [Finite G]
+    [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B] :
+    Module.Finite (FixedPoints.subalgebra A B G) B :=
+  let _ := instIsScalarTowerFixedPointsSubalgebra A B G
+  let _ := instFaithfulSMulFixedPointsSubalgebra A B G
+  let _ : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
+    ⟨inferInstance, inferInstance, inferInstance⟩
+  IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G (FixedPoints.subalgebra A B G) B
+
+private theorem instModuleFiniteFixedPointsSubalgebraH (A B : Type*) {G : Type*} [CommRing A]
+    [CommRing B] [IsDomain B] [_root_.IsDiscreteValuationRing B] [Algebra A B] [Group G] [Finite G]
+    [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B] (H : Subgroup G) :
+    letI := instAlgebraFixedPointsSubalgebra A B H
+    Module.Finite (FixedPoints.subalgebra A B G) (FixedPoints.subalgebra A B H) :=
+  let _ := instAlgebraFixedPointsSubalgebra A B H
+  let _ := instIsScalarTowerFixedPointsSubalgebraH A B H
+  let _ := instModuleFiniteFixedPointsSubalgebra A B G
+  Module.Finite.of_injective (IsScalarTower.toAlgHom (FixedPoints.subalgebra A B G)
+    (FixedPoints.subalgebra A B H) B).toLinearMap Subtype.val_injective
+
+private theorem instIsSeparableResidueFieldFixedPointsSubalgebra (A B G : Type*) [CommRing A]
+    [IsLocalRing A] [CommRing B] [IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)]
+    [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    letI := instIsScalarTowerFixedPointsSubalgebra A B G
+    Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B) :=
+  let _ := instIsScalarTowerFixedPointsSubalgebra A B G
+  Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A)
+    (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B)
+
+private theorem instIsSeparableResidueFieldFixedPointsSubalgebraH (A B : Type*) {G : Type*}
+    [CommRing A] [IsLocalRing A] [CommRing B] [IsLocalRing B] [Algebra A B]
+    [IsLocalHom (algebraMap A B)] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (H : Subgroup G) :
+    letI := instAlgebraFixedPointsSubalgebra A B H
+    letI := instIsLocalHomFixedPointsSubalgebraH A B H
+    Algebra.IsSeparable (ResidueField (FixedPoints.subalgebra A B G))
+      (ResidueField (FixedPoints.subalgebra A B H)) :=
+  let _ := instAlgebraFixedPointsSubalgebra A B H
+  let _ := instIsScalarTowerFixedPointsSubalgebraH A B H
+  let _ := instIsLocalHomFixedPointsSubalgebraH A B H
+  let _ := instIsSeparableResidueFieldFixedPointsSubalgebra A B G
+  Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField (FixedPoints.subalgebra A B G))
+    (ResidueField (FixedPoints.subalgebra A B H)) (ResidueField B)
+
+attribute [local instance] instAlgebraFixedPointsSubalgebra instIsScalarTowerFixedPointsSubalgebra
+  instIsScalarTowerFixedPointsSubalgebraH instFaithfulSMulFixedPointsSubalgebra
+  instFaithfulSMulFixedPointsSubalgebraH instIsLocalHomFixedPointsSubalgebraH
+  instModuleFiniteFixedPointsSubalgebra instModuleFiniteFixedPointsSubalgebraH
+  instIsSeparableResidueFieldFixedPointsSubalgebra instIsSeparableResidueFieldFixedPointsSubalgebraH
+
 variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
   [_root_.IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G]
   [Finite G] [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
@@ -110,32 +211,13 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) =
       ∑ᶠ h : H, lowerIndex B (g * h) := by
-  set R₀ := FixedPoints.subalgebra A B G; set C := FixedPoints.subalgebra A B H
-  have hle : R₀ ≤ C := fun _ hx h ↦ hx h.val
-  let _ : Algebra R₀ C := (Subalgebra.inclusion hle).toAlgebra
-  have _ : IsScalarTower A R₀ B := IsScalarTower.subalgebra' A B B R₀
-  have _ : IsScalarTower R₀ C B := Subalgebra.inclusion.isScalarTower_right hle B
-  have _ : FaithfulSMul R₀ B := (faithfulSMul_iff_algebraMap_injective R₀ B).2 Subtype.val_injective
-  have _ : FaithfulSMul R₀ C := Subalgebra.inclusion.faithfulSMul hle
-  have _ : IsLocalHom ((algebraMap C B).comp (algebraMap R₀ C)) :=
-    IsScalarTower.algebraMap_eq R₀ C B ▸ inferInstance
-  have _ : IsLocalHom (algebraMap R₀ C) := isLocalHom_of_comp _ (algebraMap C B)
-  let _ : IsGaloisGroup G R₀ B := ⟨inferInstance, inferInstance, inferInstance⟩
-  have _ : Module.Finite R₀ B := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G R₀ B
-  have _ : Module.Finite R₀ C :=
-    Module.Finite.of_injective (IsScalarTower.toAlgHom R₀ C B).toLinearMap Subtype.val_injective
-  have _ : Algebra.IsSeparable (ResidueField R₀) (ResidueField B) :=
-    Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField R₀) (ResidueField B)
-  have _ : Algebra.IsSeparable (ResidueField R₀) (ResidueField C) :=
-    Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField R₀) (ResidueField C) (ResidueField B)
-  let _ : SMulCommClass G R₀ B := ⟨fun k r b ↦ by
-    rw [Subalgebra.smul_def, smul_eq_mul, Subalgebra.smul_def, smul_eq_mul, smul_mul',
-      r.property k]⟩
-  let _ : SMulCommClass (G ⧸ H) R₀ C := instSMulCommClassQuotientFixedPointsSubalgebra
-  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := R₀) (S := B)
-  obtain ⟨y, hy⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := R₀) (S := C)
+  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
+    (R := FixedPoints.subalgebra A B G) (S := B)
+  obtain ⟨y, hy⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
+    (R := FixedPoints.subalgebra A B G) (S := FixedPoints.subalgebra A B H)
   exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top (G := G)
-    (G' := G ⧸ H) (H := H) (A := R₀) (C := C) (B := B) hx hy
+    (G' := G ⧸ H) (H := H) (A := FixedPoints.subalgebra A B G)
+    (C := FixedPoints.subalgebra A B H) (B := B) hx hy
     (fun c ↦ (H.coe_mk_smul g c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
 
 /-- If `g` maximizes `lowerIndex` in `g H` with `i_G(g) = j`, then

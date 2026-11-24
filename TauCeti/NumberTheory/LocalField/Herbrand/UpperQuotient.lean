@@ -92,33 +92,7 @@ variable (K L M : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Algebra K M] [ValuativeExtension K M]
   [IsScalarTower K L M] [IsGalois K L] [IsGalois K M]
 
-open TauCeti.IsLocalRing in
-private theorem tower_integralClosure_bridge (v : RamificationIndexDomain) :
-    haveI : Module.Finite K M := Module.Finite.trans L M
-    haveI := IsGalois.tower_top_of_isGalois K L M
-    ((upperRamificationGroup K M v).map (AlgEquiv.restrictNormalHom L) =
-      upperRamificationGroup K L v) ∧
-    ((upperRamificationGroup K M v).comap (AlgEquiv.restrictScalarsHom (S := L) K) =
-      upperRamificationGroup L M (inverseHerbrand K L v)) ∧
-    (UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v)) := by
-  have : Module.Finite K M := Module.Finite.trans L M
-  have := IsGalois.tower_top_of_isGalois K L M
-  let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
-  let _ := isDiscreteValuationRing_integralClosure K M
-  let _ := isLocalHom_algebraMap_integralClosure K M
-  let _ := finite_residueField_integralClosure K M
-  let _ := TauCeti.isLocalRing_integralClosure_of_tower 𝒪[K] L M
-  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K M,
-    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K L M,
-    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K L,
-    coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure K K L,
-    upperJump_iff_isLocalRingUpperJump_integralClosure K K M,
-    upperJump_iff_isLocalRingUpperJump_integralClosure K L M,
-    upperJump_iff_isLocalRingUpperJump_integralClosure K K L]
-  exact ⟨map_restrictNormalHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
-    comap_restrictScalarsHom_upperRamificationGroup_integralClosure 𝒪[K] L v,
-    upperJump_integralClosure_tower_iff 𝒪[K] L v⟩
-
+omit [ValuativeExtension L M] in
 /-- **Herbrand's theorem in the upper numbering.** For a tower `M/L/K` of Galois extensions, the
 image of the upper ramification group `G^v` of `M/K` under restriction to `L` is the upper
 ramification group of `L/K` at the same index: `(G/H)^v = G^v H / H` for `H = Gal(M/L)`. -/
@@ -126,23 +100,12 @@ ramification group of `L/K` at the same index: `(G/H)^v = G^v H / H` for `H = Ga
 theorem map_restrictNormalHom_upperRamificationGroup (v : RamificationIndexDomain) :
     haveI : Module.Finite K M := Module.Finite.trans L M
     (upperRamificationGroup K M v).map (AlgEquiv.restrictNormalHom L) =
-      upperRamificationGroup K L v :=
-  (tower_integralClosure_bridge K L M v).1
-
-variable {K L M} in
-omit [ValuativeExtension L M] in
-/-- In a tower `M/L/K` of Galois extensions, every upper break of `L/K` is an upper break of
-`M/K`. The valuative relation of `M` over `L` is not assumed: it is the unique one extending that
-of `K`. -/
-theorem UpperJump.of_tower {v : RamificationIndexDomain} (h : UpperJump K L v) :
-    haveI : Module.Finite K M := Module.Finite.trans L M
-    UpperJump K M v := by
+      upperRamificationGroup K L v := by
   have : Module.Finite K M := Module.Finite.trans L M
-  have : ValuativeExtension L M := by
-    have h := algebraicExtension_valuativeExtension_tower K L M
-    rw [algebraicExtensionValuativeRel_eq K M] at h
-    exact h
-  exact (tower_integralClosure_bridge K L M v).2.2.2 (Or.inl h)
+  let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
+  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K M,
+    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K L]
+  exact TauCeti.IsLocalRing.map_restrictNormalHom_upperRamificationGroup_integralClosure 𝒪[K] L v
 
 /-- **The upper numbering of a normal subgroup.** For a tower `M/L/K` of Galois extensions, the
 upper filtration of `H = Gal(M/L)` is the trace of that of `G = Gal(M/K)`, reindexed by the
@@ -152,8 +115,15 @@ theorem comap_restrictScalarsHom_upperRamificationGroup (v : RamificationIndexDo
     haveI : Module.Finite K M := Module.Finite.trans L M
     haveI := IsGalois.tower_top_of_isGalois K L M
     (upperRamificationGroup K M v).comap (AlgEquiv.restrictScalarsHom (S := L) K) =
-      upperRamificationGroup L M (inverseHerbrand K L v) :=
-  (tower_integralClosure_bridge K L M v).2.1
+      upperRamificationGroup L M (inverseHerbrand K L v) := by
+  have : Module.Finite K M := Module.Finite.trans L M
+  have := IsGalois.tower_top_of_isGalois K L M
+  let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
+  simp only [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K K M,
+    upperRamificationGroup_eq_isLocalRingUpperRamificationGroup_integralClosure K L M,
+    coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure K K L]
+  exact TauCeti.IsLocalRing.comap_restrictScalarsHom_upperRamificationGroup_integralClosure
+    𝒪[K] L v
 
 /-- The image of `Gal(M/L)^{ψ_{L/K}(v)}` in `Gal(M/K)` is the trace `H ∩ G^v` of the upper
 filtration of `M/K` on the image `H` of `Gal(M/L)`. -/
@@ -172,8 +142,31 @@ the upper breaks of `M/K` are those of `L/K` together with the images under `φ_
 theorem upperJump_iff_upperJump_or_upperJump_inverseHerbrand (v : RamificationIndexDomain) :
     haveI : Module.Finite K M := Module.Finite.trans L M
     haveI := IsGalois.tower_top_of_isGalois K L M
-    UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v) :=
-  (tower_integralClosure_bridge K L M v).2.2
+    UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v) := by
+  have : Module.Finite K M := Module.Finite.trans L M
+  have := IsGalois.tower_top_of_isGalois K L M
+  let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
+  simp only [upperJump_iff_isLocalRingUpperJump_integralClosure K K M,
+    upperJump_iff_isLocalRingUpperJump_integralClosure K K L,
+    upperJump_iff_isLocalRingUpperJump_integralClosure K L M,
+    coe_inverseHerbrand_eq_inverseHerbrandFun_integralClosure K K L]
+  exact TauCeti.IsLocalRing.upperJump_integralClosure_tower_iff 𝒪[K] L v
+
+variable {K L M} in
+omit [ValuativeExtension L M] in
+/-- In a tower `M/L/K` of Galois extensions, every upper break of `L/K` is an upper break of
+`M/K`. The valuative relation of `M` over `L` is not assumed: it is the unique one extending that
+of `K`. -/
+theorem UpperJump.of_tower {v : RamificationIndexDomain} (h : UpperJump K L v) :
+    haveI : Module.Finite K M := Module.Finite.trans L M
+    UpperJump K M v := by
+  have : Module.Finite K M := Module.Finite.trans L M
+  have := IsGalois.tower_top_of_isGalois K L M
+  have : ValuativeExtension L M := by
+    have h := algebraicExtension_valuativeExtension_tower K L M
+    rw [algebraicExtensionValuativeRel_eq K M] at h
+    exact h
+  exact (upperJump_iff_upperJump_or_upperJump_inverseHerbrand K L M v).2 (Or.inl h)
 
 end Tower
 

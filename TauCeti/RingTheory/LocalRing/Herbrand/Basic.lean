@@ -324,6 +324,7 @@ def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) :=
     (Set.orderIsoOfEq _ _ (congrArg Ici (herbrandFun_neg_one G S)))
 @[simp] theorem coe_herbrandOrderIso_apply (u : Ici (-1 : ℝ)) :
     (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := by
+  -- `OrderIso.Ici` is defined by `toFun y := ⟨e y, _⟩`, so its coercion is definitionally `e y`.
   have hIci : (((herbrandRealOrderIso G S).Ici (-1) u : Ici _) : ℝ) =
       herbrandRealOrderIso G S u := rfl
   rw [herbrandOrderIso, OrderIso.trans_apply, Set.orderIsoOfEq_apply, hIci,
@@ -486,7 +487,8 @@ include hφ he
 theorem herbrandFun_eq_of_ramificationGroup_eq_comap (u : ℝ) :
     herbrandFun G S u = herbrandFun H T u := by
   have hcard (i : ℤ) : Nat.card (ramificationGroup G S i) = Nat.card (ramificationGroup H T i) :=
-    Nat.card_congr ((Equiv.ofBijective φ hφ).subtypeEquiv fun _ ↦ by rw [he i]; rfl)
+    Nat.card_congr ((Equiv.ofBijective φ hφ).subtypeEquiv fun _ ↦ by
+      simp only [he i, Subgroup.mem_comap, Equiv.ofBijective_apply])
   simp only [herbrandFun_def, ramificationGroupReal_def, hcard]
 /-- A bijective `φ : G →* H` pulling back lower groups preserves `inverseHerbrandFun`. -/
 theorem inverseHerbrandFun_eq_of_ramificationGroup_eq_comap [Finite G] [Finite H] (v : ℝ) :

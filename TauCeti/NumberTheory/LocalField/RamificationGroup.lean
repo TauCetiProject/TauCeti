@@ -568,40 +568,6 @@ theorem ramificationGroup_integerRing_eq_integralClosure (K₀ K L : Type*)
     (e := (TauCeti.integerRingEquivIntegralClosure K₀ L).toRingEquiv)
     (fun _ _ ↦ Subtype.ext (by simp)) i
 
-/-- The integral closure of `𝒪[K]` in a compatible algebraic local field extension `L/K` is a
-discrete valuation ring. -/
-theorem isDiscreteValuationRing_integralClosure (K L : Type*) [Field K] [ValuativeRel K]
-    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] :
-    IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
-  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
-  IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
-    (TauCeti.integerRingEquivIntegralClosure K L)
-
-/-- The structure map `𝒪[K] → integralClosure 𝒪[K] L` for a compatible algebraic local field
-extension `L/K` is a local homomorphism. -/
-theorem isLocalHom_algebraMap_integralClosure (K L : Type*) [Field K] [ValuativeRel K]
-    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] :
-    IsLocalHom (algebraMap 𝒪[K] (integralClosure 𝒪[K] L)) := by
-  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
-  let e := TauCeti.integerRingEquivIntegralClosure K L
-  have := IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
-  rw [← e.toAlgHom.comp_algebraMap]
-  infer_instance
-
-/-- The residue field of `integralClosure 𝒪[K] L` for a compatible algebraic local field
-extension `L/K` is finite. -/
-theorem finite_residueField_integralClosure (K L : Type*) [Field K] [ValuativeRel K]
-    [TopologicalSpace K] [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-    [IsLocalRing (integralClosure 𝒪[K] L)] :
-    Finite (IsLocalRing.ResidueField (integralClosure 𝒪[K] L)) :=
-  have : Module.Finite K L := TauCeti.finite_of_valuativeExtension K L
-  Finite.of_equiv (IsLocalRing.ResidueField 𝒪[L])
-    (IsLocalRing.ResidueField.mapEquiv
-      (TauCeti.integerRingEquivIntegralClosure K L).toRingEquiv).toEquiv
-
 end IntegralClosure
 
 end TauCeti.LocalFieldsRamification

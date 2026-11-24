@@ -101,10 +101,22 @@ theorem isSeparable_quotient_of_residueField
     Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field (maximalIdeal B)
-  -- `ResidueField R` is `def ResidueField := R ⧸ maximalIdeal R` with `Algebra` instance
-  -- `Ideal.Quotient.algebraOfLiesOver`.
-  dsimp only [ResidueField] at hsep
-  exact hsep
+  have hA : Function.Surjective (Ideal.Quotient.mkₐ A (maximalIdeal A)) :=
+    Ideal.Quotient.mk_surjective
+  have hB : Function.Surjective (Ideal.Quotient.mkₐ A (maximalIdeal B)) :=
+    Ideal.Quotient.mk_surjective
+  refine Algebra.IsSeparable.of_equiv_equiv (residueFieldAlgEquivOfSurjective hA).toRingEquiv
+    (residueFieldAlgEquivOfSurjective hB).toRingEquiv (RingHom.ext fun x ↦ ?_)
+  obtain ⟨a, rfl⟩ := residue_surjective x
+  change algebraMap (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B)
+      (residueFieldAlgEquivOfSurjective hA (residue A a)) =
+    residueFieldAlgEquivOfSurjective hB (algebraMap (ResidueField A) (ResidueField B) (residue A a))
+  rw [ResidueField.algebraMap_residue, residueFieldAlgEquivOfSurjective_residue hA,
+    residueFieldAlgEquivOfSurjective_residue hB]
+  -- `Ideal.Quotient.mkₐ A (maximalIdeal B) (algebraMap A B a)` and `algebraMap (A ⧸ maximalIdeal A)
+  -- (B ⧸ maximalIdeal B) (Ideal.Quotient.mkₐ A _ a)` are both `Ideal.Quotient.mk (maximalIdeal B)
+  -- (algebraMap A B a)` by `Ideal.Quotient.algebraQuotientOfLEComap`.
+  rfl
 
 /-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
 of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as

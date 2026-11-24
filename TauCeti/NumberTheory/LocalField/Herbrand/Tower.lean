@@ -71,10 +71,6 @@ theorem herbrand_tower :
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
   let _ := IsScalarTower.to₁₃₄ 𝒪[K] K L M
-  let _ := isDiscreteValuationRing_integralClosure K M
-  let _ := isLocalHom_algebraMap_integralClosure K M
-  let _ := finite_residueField_integralClosure K M
-  let _ := TauCeti.isLocalRing_integralClosure_of_tower 𝒪[K] L M
   refine OrderIso.ext <| funext fun u ↦ Subtype.ext ?_
   simp only [OrderIso.trans_apply, herbrandOrderIso_apply,
     coe_herbrand_eq_herbrandFun_integralClosure K K M,

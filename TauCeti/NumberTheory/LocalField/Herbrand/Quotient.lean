@@ -104,16 +104,31 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum_card (σ : M ≃�
   exact TauCeti.IsLocalRing.sum_min_lowerIndex_natCast (G := M ≃ₐ[L] M) (S := 𝒪[M]) j
 
 omit [ValuativeExtension L M] [Module.Finite L M] [IsGalois L M] in
+private theorem lowerIndex_restrictNormalHom_ne_top (σ : M ≃ₐ[K] M)
+    (hσ : ∀ h ∈ (AlgEquiv.restrictNormalHom L : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)).ker,
+      lowerIndex 𝒪[M] (σ * h) ≤ lowerIndex 𝒪[M] σ)
+    (hj : lowerIndex 𝒪[M] σ ≠ ⊤) :
+    lowerIndex 𝒪[L] (AlgEquiv.restrictNormalHom L σ) ≠ ⊤ :=
+  TauCeti.IsLocalRing.lowerIndex_ne_top_of_forall_mem_ker_le hj hσ
+
+omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
+  [Module.Finite K L] [ValuativeExtension L M] [Module.Finite L M] [IsGalois L M] in
+private theorem forall_mem_ker_restrictNormalHom {σ : M ≃ₐ[K] M}
+    (hσ : ∀ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) ≤ lowerIndex 𝒪[M] σ) :
+    ∀ h ∈ (AlgEquiv.restrictNormalHom L : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)).ker,
+      lowerIndex 𝒪[M] (σ * h) ≤ lowerIndex 𝒪[M] σ := by
+  intro h hh
+  obtain ⟨τ, rfl⟩ := (AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).ge hh
+  exact hσ τ
+
+omit [ValuativeExtension L M] [Module.Finite L M] [IsGalois L M] in
 /-- If `σ` has the largest lower index in its coset `σ H` and `i_G(σ)` is finite, then so is
 `i_{G/H}(σ|_L)`: a restriction of largest lower index among its lifts is trivial only when the
 lift is. -/
 theorem lowerIndex_restrictNormal_ne_top (σ : M ≃ₐ[K] M) (hj : lowerIndex 𝒪[M] σ ≠ ⊤)
     (hσ : ∀ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) ≤ lowerIndex 𝒪[M] σ) :
-    lowerIndex 𝒪[L] (σ.restrictNormal L) ≠ ⊤ := by
-  rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M]
-  refine TauCeti.IsLocalRing.lowerIndex_ne_top_of_forall_mem_ker_le hj fun γ hγ ↦ ?_
-  obtain ⟨τ, rfl⟩ := (AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).ge hγ
-  exact hσ τ
+    lowerIndex 𝒪[L] (σ.restrictNormal L) ≠ ⊤ :=
+  lowerIndex_restrictNormalHom_ne_top σ (forall_mem_ker_restrictNormalHom hσ) hj
 
 /-- **Serre's lemma on the lower index of a quotient.** If `σ` has the largest lower index in its
 coset `σ H`, and `i_G(σ) = j` is finite, then `φ_{M/L}(j - 1) = i_{G/H}(σ|_L) - 1`. -/
@@ -129,6 +144,17 @@ theorem coe_herbrand_lowerIndex_sub_one (σ : M ≃ₐ[K] M) {j : ℕ}
   exact TauCeti.IsLocalRing.herbrandFun_sub_one_of_card_mul_eq_sum (M ≃ₐ[L] M) 𝒪[M]
     (lowerIndex_restrictNormal_ne_top σ (hj ▸ ENat.natCast_ne_top j) hσ) hsum
 
+private theorem herbrandFun_lowerIndex_sub_one_restrictNormalHom (σ : M ≃ₐ[K] M) {j : ℕ}
+    (hj : lowerIndex 𝒪[M] σ = j)
+    (hσ : ∀ h ∈ (AlgEquiv.restrictNormalHom L : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)).ker,
+      lowerIndex 𝒪[M] (σ * h) ≤ lowerIndex 𝒪[M] σ) :
+    TauCeti.IsLocalRing.herbrandFun (M ≃ₐ[L] M) 𝒪[M] ((j : ℝ) - 1) =
+      ((lowerIndex 𝒪[L] (AlgEquiv.restrictNormalHom L σ)).toNat : ℝ) - 1 := by
+  rw [← coe_herbrand_eq_herbrandFun L M ⟨(j : ℝ) - 1, by simp⟩,
+    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal]
+  exact coe_herbrand_lowerIndex_sub_one σ hj fun τ ↦
+    hσ _ ((AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).le ⟨τ, rfl⟩)
+
 /-- For `σ` of largest lower index in its coset `σ H`, the restriction `σ|_L` lies in the lower
 ramification group of `L/K` at `φ_{M/L}(u)` exactly when `σ` lies in that of `M/K` at `u`. -/
 theorem restrictNormal_mem_lowerRamificationGroupReal_herbrand_iff (σ : M ≃ₐ[K] M)
@@ -136,16 +162,14 @@ theorem restrictNormal_mem_lowerRamificationGroupReal_herbrand_iff (σ : M ≃�
     (u : RamificationIndexDomain) :
     σ.restrictNormal L ∈ lowerRamificationGroupReal K L (herbrand L M u) ↔
       σ ∈ lowerRamificationGroupReal K M u := by
+  have hσ' := forall_mem_ker_restrictNormalHom hσ
   rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M,
     lowerRamificationGroupReal_eq_ramificationGroupReal,
     lowerRamificationGroupReal_eq_ramificationGroupReal, coe_herbrand_eq_herbrandFun]
   exact TauCeti.IsLocalRing.apply_mem_ramificationGroupReal_iff
     (TauCeti.IsLocalRing.herbrandFun_strictMono (M ≃ₐ[L] M) 𝒪[M])
-    (lowerIndex_restrictNormal_ne_top σ · hσ)
-    (fun hj ↦ by
-      simpa [coe_herbrand_eq_herbrandFun, AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M]
-        using coe_herbrand_lowerIndex_sub_one σ hj hσ)
-    u
+    (lowerIndex_restrictNormalHom_ne_top σ hσ')
+    (fun hj ↦ herbrandFun_lowerIndex_sub_one_restrictNormalHom σ hj hσ') u
 
 /-- **Herbrand's theorem.** For `M/K` finite normal, `L/K` a normal subextension and
 `H = Gal(M/L)`, the image of the lower ramification group `G_u` of `M/K` under restriction to
@@ -161,13 +185,8 @@ theorem map_restrictNormalHom_lowerRamificationGroupReal [Normal K M]
   exact TauCeti.IsLocalRing.map_ramificationGroupReal_eq_of_surjective
     (AlgEquiv.restrictNormalHom_surjective (F := K) (K₁ := L) (E := M))
     (TauCeti.IsLocalRing.herbrandFun_strictMono (M ≃ₐ[L] M) 𝒪[M])
-    (fun σ hσ htop ↦ lowerIndex_restrictNormal_ne_top σ htop fun τ ↦
-      hσ _ ((AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).le ⟨τ, rfl⟩))
-    (fun σ hσ {j} hj ↦ by
-      simpa [coe_herbrand_eq_herbrandFun, AlgEquiv.restrictNormalHom_apply_eq_restrictNormal K L M]
-        using coe_herbrand_lowerIndex_sub_one σ hj fun τ ↦
-          hσ _ ((AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M).le ⟨τ, rfl⟩))
-    u
+    lowerIndex_restrictNormalHom_ne_top
+    (fun σ hσ _ hj ↦ herbrandFun_lowerIndex_sub_one_restrictNormalHom σ hj hσ) u
 
 /-- Herbrand's theorem read at `v = φ_{M/L}(u)`: `(G/H)_v = G_{ψ_{M/L}(v)} H / H`. -/
 theorem lowerRamificationGroupReal_eq_map_inverseHerbrand [Normal K M]
