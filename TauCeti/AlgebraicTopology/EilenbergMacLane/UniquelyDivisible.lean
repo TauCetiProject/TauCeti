@@ -36,8 +36,8 @@ every Eilenberg--Mac Lane space `X` of type `K(A, n)` (with no hypothesis of CW 
   multiplicative `[CommGroup G]` form
   `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zpow`);
 * for `m = 2`: every `K(A, n)` space of a uniquely two-divisible group has the mod-two homology of
-  a point (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`
-  and `TauCeti.IsEilenbergMacLaneSpace.isZero_reducedSingularHomology_of_isUniquelyTwoDivisible`).
+  a point
+  (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`).
 
 The proof proceeds in three stages. First, for a commutative semisimple ring `k` with `m = 0`, the
 base case `n = 1` is the computation of the group homology of `A`
@@ -66,8 +66,7 @@ This is the input on Eilenberg--Mac Lane spaces for Serre's mod-`m` and mod-two 
   `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zpow`: a `K(A, n)`
   (or multiplicatively `K(G, n)`) space of a uniquely `m`-divisible abelian group is acyclic modulo
   `m` over any ring `k` with `(m : k) = 0`.
-* `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`,
-  `TauCeti.IsEilenbergMacLaneSpace.isZero_reducedSingularHomology_of_isUniquelyTwoDivisible`: a
+* `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`: a
   `K(A, n)` space of a uniquely two-divisible abelian group has the mod-two homology of a point.
 
 ## References
@@ -211,18 +210,6 @@ theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible (k : Type u) [Ri
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
   subsingleton_singularHomology_of_bijective_zsmul k (m := 2) (mod_cast hk)
-    ((isUniquelyTwoDivisible_iff A).1 hA) hX i
-
-/-- **Reduced mod-two acyclicity of `K(A, n)` spaces.** For a uniquely two-divisible abelian group
-`A` and every `n ≥ 1`, the reduced singular homology of every `K(A, n)` space with coefficients in
-a ring `k` with `2 = 0` vanishes in every degree. -/
-theorem isZero_reducedSingularHomology_of_isUniquelyTwoDivisible (k : Type u) [Ring k]
-    (hk : (2 : k) = 0) {A : Type u} [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) {n : ℕ}
-    [NeZero n] {X : Type u} [TopologicalSpace X] {x : X}
-    (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
-    Limits.IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) i).obj (TopCat.of X)) :=
-  isZero_reducedSingularHomology_of_bijective_zsmul (ModuleCat.of k k) (m := 2)
-    (fun a ↦ by rw [zsmul_eq_mul, Int.cast_ofNat, hk, zero_mul])
     ((isUniquelyTwoDivisible_iff A).1 hA) hX i
 
 end IsEilenbergMacLaneSpace

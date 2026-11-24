@@ -11,16 +11,15 @@ public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
 public import TauCeti.AlgebraicTopology.Homotopy.ZModVanishing
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
-import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
 # Mod-two vanishing for the contractible loops of a space
 
 Serre's mod-two vanishing theorem says that the higher homotopy groups at a base point with
-trivial fundamental group and mod-two acyclic ambient space are uniquely two-divisible
-(`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod`). This file
-applies it to the component `Ω₀X` of the constant loop in the loop space of a pointed space
-`(X, x)`, the space of contractible loops at `x`.
+trivial fundamental group and mod-two acyclic path component are uniquely two-divisible
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`).
+This file applies it to the component `Ω₀X` of the constant loop in the loop space of a pointed
+space `(X, x)`, the space of contractible loops at `x`.
 
 Since a path component has the homotopy groups of the ambient space in positive degrees
 (`HomotopyGroup.subtypeValMulEquivOfPathComponentSubset`), applying the mod-two vanishing theorem
@@ -94,18 +93,12 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_lo
     (hX : ∀ i, Subsingleton
       (((singularChains (ZMod 2)).obj (TopCat.of (pathComponent (Path.refl x)))).homology (i + 1)))
     (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 3) X x)) :=
-  -- The fundamental group of the path component of `Path.refl x` is `π₂(X, x)`.
-  let c₀ : pathComponent (Path.refl x) := ⟨Path.refl x, mem_pathComponent_self _⟩
-  have : Subsingleton (π_ 1 (pathComponent (Path.refl x)) c₀) :=
-    ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
-      (HomotopyGroup.pathLoopSpaceMulEquiv 0)).toEquiv.subsingleton_congr.2 ‹_›
-  ((isUniquelyTwoDivisible_iff _).2
-    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv
-      (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦
-        ModuleCat.isZero_iff_subsingleton.2
-          (subsingleton_singularChains_homology_of_forall_succ (ZMod 2) hX (by omega)))).of_addEquiv
-    ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
-      (HomotopyGroup.pathLoopSpaceMulEquiv (n + 1))).toAdditive
+  -- The fundamental group of `Ω X x` is `π₂(X, x)`.
+  have : Subsingleton (π_ 1 (Ω X x) (Path.refl x)) :=
+    (HomotopyGroup.pathLoopSpaceMulEquiv 0).toEquiv.subsingleton_congr.2 ‹_›
+  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
+    (RingEquiv.refl (ZMod 2)) (Path.refl x) hX n).of_addEquiv
+    (HomotopyGroup.pathLoopSpaceMulEquiv (n + 1)).toAdditive
 
 /-- **Mod-two vanishing for the contractible Moore loops.** If `π₂(X, x)` is trivial and the path
 component of the constant loop `1` in the Moore loop space has the mod-two homology of a point,
@@ -115,18 +108,12 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_mo
     (hX : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj
       (TopCat.of (pathComponent (1 : MooreLoopSpace X x)))).homology (i + 1)))
     (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 3) X x)) :=
-  -- The fundamental group of the path component of `1` is `π₂(X, x)`.
-  let c₀ : pathComponent (1 : MooreLoopSpace X x) := ⟨1, mem_pathComponent_self _⟩
-  have : Subsingleton (π_ 1 (pathComponent (1 : MooreLoopSpace X x)) c₀) :=
-    ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
-      (MooreLoopSpace.homotopyGroupMulEquiv x 0)).toEquiv.subsingleton_congr.2 ‹_›
-  ((isUniquelyTwoDivisible_iff _).2
-    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv
-      (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦
-        ModuleCat.isZero_iff_subsingleton.2
-          (subsingleton_singularChains_homology_of_forall_succ (ZMod 2) hX (by omega)))).of_addEquiv
-    ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
-      (MooreLoopSpace.homotopyGroupMulEquiv x (n + 1))).toAdditive
+  -- The fundamental group of the Moore loop space is `π₂(X, x)`.
+  have : Subsingleton (π_ 1 (MooreLoopSpace X x) 1) :=
+    (MooreLoopSpace.homotopyGroupMulEquiv x 0).toEquiv.subsingleton_congr.2 ‹_›
+  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
+    (RingEquiv.refl (ZMod 2)) (1 : MooreLoopSpace X x) hX n).of_addEquiv
+    (MooreLoopSpace.homotopyGroupMulEquiv x (n + 1)).toAdditive
 
 /-! ### The double loop space -/
 

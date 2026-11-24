@@ -600,21 +600,6 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
     isoModSerre_singularHomologyMap_of_fiber_to_point IsZero IsZero le_rfl hp k
       fun b q hq ↦ (ObjectProperty.isoModSerre_isZero_iff _).2 (hfib b q hq)
 
-/-- A path-connected space whose positive-degree `R`-homology vanishes in degree `q` has the
-`R`-homology of a point in degree `q`. -/
-private lemma isIso_singularHomologyMap_to_point_of_isZero {X : _root_.TopCat.{u}}
-    [PathConnectedSpace X] (R : Type u) [Ring R] (q : ℕ)
-    (hX : q ≠ 0 → IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-      (ModuleCat.of R R)).obj X)) :
-    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-      (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from X)) := by
-  rcases eq_or_ne q 0 with rfl | hq0
-  · -- In degree zero both augmentations are isomorphisms, and the map commutes with them.
-    exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _)
-  · -- In positive degrees both groups vanish; the point is contractible.
-    exact (hX hq0).isIso
-      (isZero_singularHomologyFunctor_of_contractibleSpace _ (_root_.TopCat.of PUnit) hq0) _
-
 /-- **A Serre fibration with acyclic fibres is a homology isomorphism.** Let `p : E ⟶ B` be a Serre
 fibration whose fibres are path-connected and have no `R`-homology in the positive degrees
 `q ≤ k`. Then `p` induces an isomorphism `Hₖ(E; R) ≅ Hₖ(B; R)`. -/
@@ -626,7 +611,8 @@ theorem isIso_singularHomologyMap_of_isZero_fiber (hp : serreFibrations p) (R : 
       (ModuleCat.of R R)).map p) := by
   refine isIso_singularHomologyMap_of_isIso_fiber_to_point hp R k fun b q hq ↦ ?_
   have := hconn b
-  exact isIso_singularHomologyMap_to_point_of_isZero R q fun hq0 ↦ hfib b q hq0 hq
+  exact TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_of_isZero (ModuleCat.of R R)
+    (p.fiber b) q fun hq0 ↦ hfib b q hq0 hq
 
 /-- **Fibre homology comparison along a path.** For a Serre fibration `p : E ⟶ B`, points `b₀, b₁`
 in the same path component of `B`, and a ring `R`, the map from `p⁻¹(b₀)` to a point induces an
@@ -667,7 +653,8 @@ theorem isIso_singularHomologyMap_of_isZero_fiber_of_pathConnectedSpace
     IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
       (ModuleCat.of R R)).map p) := by
   refine isIso_singularHomologyMap_of_isIso_fiber_to_point_of_pathConnectedSpace hp b₀ R k
-    fun q hq ↦ isIso_singularHomologyMap_to_point_of_isZero R q fun hq0 ↦ ?_
+    fun q hq ↦ TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_of_isZero (ModuleCat.of R R)
+      (p.fiber b₀) q fun hq0 ↦ ?_
   obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
   exact hfib q' hq
 

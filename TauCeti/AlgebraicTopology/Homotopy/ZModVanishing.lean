@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.Topology.PathComponent
 import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.ZMod
 import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
+import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
 # Mod-`m` and mod-two vanishing theorems for higher homotopy groups
@@ -29,6 +32,13 @@ and the reduced mod-two singular homology of `Y` vanishes in every degree, then 
 (`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod`), so
 `π_{n + 2}(Y, y)` is uniquely two-divisible, becomes a `ℤ[1/2]`-module, and satisfies
 `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`.
+
+Since a path component has the homotopy groups of the ambient space in positive degrees, the theorem
+also applies to a single path component (`pathComponent y`) with no assumption on the other
+components
+(`TauCeti.bijective_zsmul_homotopyGroup_of_subsingleton_singularHomology_pathComponent`, and for
+`m = 2`,
+`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`).
 
 The class of groups `G` with `G ⊗ ℤ/2 = 0` is not a Serre class (it contains `ℚ` but not `ℤ`), so
 this is not a case of the Hurewicz theorem modulo a Serre class; it is proved directly, one
@@ -55,6 +65,10 @@ homotopy group at a time, along the Whitehead tower
   `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEquiv`,
   `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod`: sharp
   finite-range and reduced-homology mod-`m` vanishing theorems in any universe `u`.
+* `TauCeti.bijective_zsmul_homotopyGroup_of_subsingleton_singularHomology_pathComponent`,
+  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
+  mod-`m` and mod-two vanishing when only the path component of `y` has vanishing positive-degree
+  homology.
 
 ## References
 
@@ -142,5 +156,37 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod {Y 
   bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod fun q hq _ ↦
     (isZero_singularHomologyFunctor_iff_isZero_reducedSingularHomologyFunctor
       (ModuleCat.of ℤ (ULift.{u} (ZMod m))) (TopCat.of Y) (by omega)).2 (hY q)
+
+/-- **Mod-`m` vanishing for a path component.** If `π₁(Y, y)` is trivial and the path component of
+`y` has vanishing positive-degree homology with coefficients in a ring `k ≃+* ZMod m` in the
+universe of `Y`, then multiplication by `m` is a bijection on every higher homotopy group
+`π_{n + 2}(Y, y)`. -/
+theorem bijective_zsmul_homotopyGroup_of_subsingleton_singularHomology_pathComponent
+    {k : Type u} [CommRing k] {m : ℕ} (e : k ≃+* ZMod m) {Y : Type u} [TopologicalSpace Y]
+    (y : Y) [Subsingleton (π_ 1 Y y)]
+    (hY : ∀ i, Subsingleton
+      (((singularChains k).obj (TopCat.of (pathComponent y))).homology (i + 1)))
+    (n : ℕ) : Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
+  have : Subsingleton (π_ 1 (pathComponent y) (pathComponentSelf y)) :=
+    (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl
+      rfl).toEquiv.subsingleton_congr.2 ‹_›
+  ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl
+    rfl).toAdditive.bijective_zsmul_iff (m : ℤ)).1
+    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv e
+      (y := pathComponentSelf y) (n := n) fun q hq _ ↦
+        ModuleCat.isZero_iff_subsingleton.2
+          (subsingleton_singularChains_homology_of_forall_succ k hY (by omega)))
+
+/-- **Mod-two vanishing for a path component.** If `π₁(Y, y)` is trivial and the path component of
+`y` has the mod-two homology of a point, with coefficients in a ring `k ≃+* ZMod 2` in the
+universe of `Y`, then every higher homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible. -/
+theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
+    {k : Type u} [CommRing k] (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] (y : Y)
+    [Subsingleton (π_ 1 Y y)]
+    (hY : ∀ i, Subsingleton
+      (((singularChains k).obj (TopCat.of (pathComponent y))).homology (i + 1)))
+    (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
+  (isUniquelyTwoDivisible_iff _).2
+    (bijective_zsmul_homotopyGroup_of_subsingleton_singularHomology_pathComponent e y hY n)
 
 end TauCeti
