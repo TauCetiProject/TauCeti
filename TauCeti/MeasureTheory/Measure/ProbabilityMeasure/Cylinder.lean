@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Dirac
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
 # The weak topology on a closed set of configurations
@@ -37,7 +39,10 @@ the trace σ-algebra (`TauCeti.measurableSpace_eq_generateFrom_cylinder_true`), 
 `TauCeti.tendsto_iff_forall_tendsto_correlationFunction`. The set of configurations that are `1`
 on `A` and `0` on `B` is the set `{x = 1 on A}` minus the finite union of the sets
 `{x = 1 on A ∪ {b}}`, `b ∈ B`, so its mass is a difference of masses of finite unions of elements
-of the π-system of the sets `{x = 1 on F}`.
+of the π-system of the sets `{x = 1 on F}`. Correlation functions are affine in the measure
+(`MeasureTheory.ProbabilityMeasure.correlationFunction_convexComb`), and the correlation function
+of the point mass at `x` is `1` or `0` according as `x = 1` on `F` or not
+(`MeasureTheory.ProbabilityMeasure.correlationFunction_diracProba`).
 
 ## References
 
@@ -48,7 +53,7 @@ of the π-system of the sets `{x = 1 on F}`.
 public section
 
 open MeasureTheory Filter Topology Set
-open scoped NNReal
+open scoped ENNReal NNReal
 
 open SymbolicDynamics
 
@@ -146,6 +151,25 @@ theorem correlationFunction_empty (μ : ProbabilityMeasure X) : μ.correlationFu
 theorem antitone_correlationFunction (μ : ProbabilityMeasure X) :
     Antitone μ.correlationFunction :=
   fun _ _ hFG => μ.apply_mono fun _ hx j hj => hx j (hFG hj)
+
+/-- The correlation function of the point mass at `x` is `1` if `x = 1` on `F`, and `0`
+otherwise. -/
+@[simp]
+theorem correlationFunction_diracProba (x : X) (F : Finset I) :
+    (diracProba x).correlationFunction F = if ∀ i ∈ F, (x : I → Bool) i = true then 1 else 0 := by
+  rw [correlationFunction_def,
+    diracProba_apply' _ (TauCeti.measurableSet_preimage_fullShift_cylinder _ _)]
+  split_ifs with h <;> simpa [Set.indicator, FullShift.mem_cylinder] using h
+
+/-- **Correlation functions are affine.** The correlation function of a convex combination of
+probability measures is the convex combination of their correlation functions. -/
+@[simp]
+theorem correlationFunction_convexComb {a b : ℝ≥0∞} (hab : a + b = 1)
+    (P Q : ProbabilityMeasure X) (F : Finset I) :
+    (convexComb hab P Q).correlationFunction F =
+      a.toNNReal * P.correlationFunction F + b.toNNReal * Q.correlationFunction F := by
+  simp only [correlationFunction_def]
+  exact convexComb_apply hab P Q _
 
 end MeasureTheory.ProbabilityMeasure
 
