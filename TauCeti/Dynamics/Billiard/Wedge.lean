@@ -255,7 +255,7 @@ theorem continuous_foldAngle_floor_div (α : ℝ) : Continuous fun θ ↦ foldAn
   · -- reflect `θ ↦ -θ` to reduce to the step `-α > 0`
     refine ((continuous_foldAngle_floor_div_of_pos (neg_pos.2 hα)).comp continuous_neg).neg.congr
       fun θ ↦ ?_
-    change -foldAngle (-α) ⌊-θ / -α⌋ (-θ) = foldAngle α ⌊θ / α⌋ θ
+    simp only [Pi.neg_apply, Function.comp_apply]
     rw [neg_div_neg_eq]
     rcases Int.even_or_odd ⌊θ / α⌋ with hk | hk
     · rw [foldAngle_of_even _ hk, foldAngle_of_even _ hk]
@@ -279,19 +279,6 @@ theorem unfoldedAngle_def (ψ : ℝ) (p : ℂ) (u : Circle) (t : ℝ) :
     unfoldedAngle ψ p u t = ψ + arg (conj (u : ℂ) * p + t) - arg (conj (u : ℂ) * p) :=
   (rfl)
 
-/-- The line `t ↦ p + t · u` avoids the vertex `0` exactly when `conj u · p` is not real. -/
-theorem im_conj_mul_ne_zero_iff (p : ℂ) (u : Circle) :
-    (conj (u : ℂ) * p).im ≠ 0 ↔ ∀ t : ℝ, p + t * u ≠ 0 := by
-  simp only [Circle.add_mul_coe_eq_coe_mul_conj_mul_add, ne_eq, mul_eq_zero, Circle.coe_ne_zero,
-    false_or]
-  constructor
-  · intro h t ht
-    apply h
-    simpa using congrArg Complex.im ht
-  · intro h him
-    apply h (-(conj (u : ℂ) * p).re)
-    apply Complex.ext <;> simp [him]
-
 /-- **Polar form of the unfolded line.** If `p ≠ 0` has polar angle `ψ`, then
 `p + t · u = ‖p + t · u‖ · exp(i · unfoldedAngle ψ p u t)`. -/
 theorem add_mul_eq_norm_mul_exp {ψ : ℝ} {p : ℂ} (u : Circle) (hp0 : p ≠ 0)
@@ -299,7 +286,7 @@ theorem add_mul_eq_norm_mul_exp {ψ : ℝ} {p : ℂ} (u : Circle) (hp0 : p ≠ 0
     p + t * u = ‖p + t * u‖ * exp (unfoldedAngle ψ p u t * I) := by
   set w := conj (u : ℂ) * p with hw
   have hpw : p = u * w := by
-    rw [hw, ← mul_assoc, u.coe_mul_conj_coe, one_mul]
+    rw [hw, ← mul_assoc, u.coe_mul_conj_self, one_mul]
   have hnorm : ‖w‖ = ‖p‖ := by simp [hw]
   have hr : (‖p‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 hp0
   have hu : (u : ℂ) = exp ((ψ - arg w : ℝ) * I) := by
@@ -433,14 +420,13 @@ theorem wedgeSector_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 
   · simpa using div_nonneg hψ.1 hα.le
   · simpa using (div_lt_one hα).2 hψ.2
 
-/-- The trajectory of a state `(p, u)` with `p` in the wedge, off the side through `exp(iα)`,
-starts at `p`. -/
+/-- For `ψ ∈ [0, α)` the unfolding starts in the sector `0`, so the trajectory starts at `p`. -/
 theorem wedgeTrajectory_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 0 α) :
     wedgeTrajectory α ψ p u 0 = p := by
   simp [wedgeTrajectory, wedgeSector_zero p u hψ]
 
-/-- The trajectory of a state `(p, u)` with `p` in the wedge, off the side through `exp(iα)`,
-starts with direction `u`. -/
+/-- For `ψ ∈ [0, α)` the unfolding starts in the sector `0`, so the trajectory starts with
+direction `u`. -/
 theorem wedgeDirection_zero {α ψ : ℝ} (p : ℂ) (u : Circle) (hψ : ψ ∈ Ico 0 α) :
     wedgeDirection α ψ p u 0 = u := by
   ext

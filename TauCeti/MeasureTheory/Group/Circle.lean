@@ -18,6 +18,8 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 This file defines the measure on `Circle` obtained from a nonnegative density on the unit circle
 with respect to normalized arc length. For a circle-integrable density it is finite, and for a
 measurable nonnegative density its integral is identified with Mathlib's `Real.circleAverage`.
+The file also defines the unnormalized arclength measure `circleArcLength`, the image of `volume`
+on `AddCircle (2π)` under `AddCircle.homeomorphCircle'`, of total mass `2π`.
 
 ## Main definitions and results
 

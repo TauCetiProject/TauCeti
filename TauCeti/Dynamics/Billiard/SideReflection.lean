@@ -75,7 +75,7 @@ theorem sideReflection_eq_reflection (d : Circle) :
   push_cast
   rw [re_eq_add_conj]
   simp only [map_mul, Complex.conj_conj]
-  linear_combination (-z) * d.coe_mul_conj_coe
+  linear_combination (-z) * d.coe_mul_conj_self
 
 /-- The reflection fixes its own direction. -/
 theorem sideReflection_self (d : Circle) : sideReflection d d = d := by
@@ -85,7 +85,7 @@ theorem sideReflection_self (d : Circle) : sideReflection d d = d := by
 /-- The reflection negates the normal direction `i · d`. -/
 theorem sideReflection_I_mul (d : Circle) : sideReflection d (I * d) = -(I * d) := by
   rw [sideReflection_apply, map_mul, conj_I]
-  linear_combination (-I * d) * d.coe_mul_conj_coe
+  linear_combination (-I * d) * d.coe_mul_conj_self
 
 /-- The reflection depends on the direction only up to sign. -/
 @[simp]
