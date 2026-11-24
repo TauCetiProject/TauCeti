@@ -373,39 +373,35 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
         exact le_add_self
     _ = (A + 2 * δ ^ (-(α : ℝ))) * (K + N) := by ring
 
-/-- **Interpolation up to the boundary of a bounded domain with `C^{2,α}` boundary.** Let `Ω` be
-a bounded set described at each frontier point by a patch as in
-`exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv`. There are a scale
-`ε₀ > 0` and a constant `0 < c ≤ 1`, depending only on `Ω`, such that at every scale
-`0 < ε ≤ ε₀`, every `u` that is `C²` on an open set containing `closure Ω`, with `|u| ≤ N` and
-`D²u` `α`-Hölder with constant `H` on `closure Ω`, has `‖Du‖` and `‖D²u‖` at most
+/-- **Interpolation up to the boundary of a bounded domain with Lipschitz boundary.** Let `Ω` be
+a bounded set that near each frontier point `x` is the region above a Lipschitz graph:
+`ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius `r > 0` and a
+function `γ` invariant along `ν` and Lipschitz on `ball x r`, as in
+`TauCeti.exists_forall_closedBall_add_smul_subset`. There are a scale `ε₀ > 0` and a constant
+`0 < c ≤ 1`, depending only on `Ω`, such that at every scale `0 < ε ≤ ε₀` and for every exponent
+`α`, every `u` that is `C²` on an open set containing `closure Ω`, with `|u| ≤ N` and `D²u`
+`α`-Hölder with constant `H` on `closure Ω`, has `‖Du‖` and `‖D²u‖` at most
 `9 (c ε)⁻² N + 5 H ε^α` on `closure Ω` (Gilbarg–Trudinger, Section 6.8). -/
-theorem exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded {α : ℝ≥0}
-    {Ω : Set E}
+theorem exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded {Ω : Set E}
     (hΩ : Bornology.IsBounded Ω)
     (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
+      LipschitzOnWith G γ (ball x r) ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
       ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) :
-    ∃ ε₀ > 0, ∃ c > 0, c ≤ 1 ∧ ∀ ε, 0 < ε → ε ≤ ε₀ → ∀ {U : Set E} {u : E → ℝ} {N H : ℝ≥0},
-      IsOpen U → closure Ω ⊆ U → ContDiffOn ℝ 2 u U → (∀ z ∈ closure Ω, |u z| ≤ N) →
+    ∃ ε₀ > 0, ∃ c > 0, c ≤ 1 ∧ ∀ ε, 0 < ε → ε ≤ ε₀ →
+      ∀ {α : ℝ≥0} {U : Set E} {u : E → ℝ} {N H : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
+      ContDiffOn ℝ 2 u U → (∀ z ∈ closure Ω, |u z| ≤ N) →
       HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω) → ∀ z ∈ closure Ω,
         ‖fderiv ℝ u z‖ ≤ 9 / (c * ε) ^ 2 * N + 5 * H * ε ^ (α : ℝ) ∧
         ‖iteratedFDeriv ℝ 2 u z‖ ≤ 9 / (c * ε) ^ 2 * N + 5 * H * ε ^ (α : ℝ) := by
   -- The closure of `Ω` satisfies a uniform interior cone condition.
   obtain ⟨h₀, hh₀, c, hc, hc1, hcone⟩ :=
-    TauCeti.exists_forall_closedBall_add_smul_subset hΩ.isCompact_closure fun x hx => by
-      obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hΩr⟩ := hbdry x hx
-      refine ⟨ν, γ, G, r, hν, (lipschitzWith_of_nnNorm_fderiv_le
-        (hγ.differentiable two_ne_zero) fun z => ?_).lipschitzOnWith, hγν, hr, hΩr⟩
-      rw [← NNReal.coe_le_coe, coe_nnNorm]
-      exact hG1 z
+    TauCeti.exists_forall_closedBall_add_smul_subset hΩ.isCompact_closure hbdry
   have hcone' : ∀ z ∈ closure Ω, ∃ v : E, ‖v‖ = 1 ∧
       ∀ t, 0 < t → t ≤ h₀ → closedBall (z + t • v) (c * t) ⊆ closure Ω := fun z hz => by
     obtain ⟨v, hv, hb⟩ := hcone z hz
     exact ⟨v, hv, fun t ht hth => (hb t ht hth).trans subset_closure⟩
   refine ⟨min h₀ 1, lt_min hh₀ one_pos, c, hc, hc1,
-    fun ε hε hεε₀ {U u N H} hU hΩU hu hN hH z hz => ?_⟩
+    fun ε hε hεε₀ {α U u N H} hU hΩU hu hN hH z hz => ?_⟩
   have hε1 : ε ≤ 1 := hεε₀.trans (min_le_right _ _)
   obtain ⟨h1, h2⟩ :=
     hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_forall_closedBall_add_smul_subset hU hu
@@ -462,7 +458,10 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
   obtain ⟨C₀, hC₀⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv
     hα hα1 hΩo hΩ hbdry Lam L M hlam
   obtain ⟨ε₀, hε₀, c, hc, hc1, hint⟩ :=
-    exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded hΩ hbdry
+    exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded hΩ fun x hx => by
+      obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hΩr⟩ := hbdry x hx
+      exact ⟨ν, γ, G, r, hν, (lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable two_ne_zero)
+        fun z => by exact_mod_cast hG1 z).lipschitzOnWith, hγν, hr, hΩr⟩
   -- The interpolation scale `ε`, small enough to absorb the Hölder constant of `D²u`.
   obtain ⟨ρ, hρ, hρ1, hρC⟩ := Real.exists_pos_le_one_mul_rpow_le (5 * C₀)
     (NNReal.coe_pos.2 hα) (by norm_num : (0 : ℝ) < 1 / 2)
@@ -493,18 +492,15 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
       (fun z hz => (hb z hz).1.trans (Real.le_coe_toNNReal _))
       (fun z hz => (hb z hz).2.trans (Real.le_coe_toNNReal _)) hV hK).holderWith.nnholderNorm_le
     rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_add, Real.coe_toNNReal _ hN₁] at h
-    have habs : 5 * C₀ * ε ^ (α : ℝ) * H ≤ 1 / 2 * H :=
-      mul_le_mul_of_nonneg_right hεC H.coe_nonneg
     simp only [A, N₁] at h ⊢
-    nlinarith [(by positivity : (0 : ℝ) ≤ C₀ * N), (by positivity : (0 : ℝ) ≤ C₀ * κ * K)]
+    nlinarith [(by positivity : (0 : ℝ) ≤ C₀ * N), (by positivity : (0 : ℝ) ≤ C₀ * κ * K),
+      mul_le_mul_of_nonneg_right hεC H.coe_nonneg]
   -- Collect the bounds: `H` and `N₁` are at most `(5 A + κ) (K + N)`.
   have hC : (5 * A + κ) * (K + N) ≤ ((5 * A + κ).toNNReal : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity)
   have hκK : 0 ≤ κ * K := by positivity
   have hN₁A : N₁ ≤ (5 * A + κ) * (K + N) := by
-    have hHε : (H : ℝ) * ε ^ (α : ℝ) ≤ H := mul_le_of_le_one_right H.coe_nonneg hεα
-    simp only [N₁]
-    nlinarith
+    nlinarith [mul_le_of_le_one_right H.coe_nonneg hεα]
   refine ⟨hH.mono_const ?_, fun z hz => (hb z hz).1.trans (hN₁A.trans hC),
     fun z hz => (hb z hz).2.trans (hN₁A.trans hC)⟩
   rw [← NNReal.coe_le_coe, NNReal.coe_mul]
