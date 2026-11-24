@@ -72,10 +72,13 @@ proved in `TauCeti.ContCohomology.cup11_mem_B2_left` and `cup11_mem_B2_right`.
 The `(1,1)` cocycle and coboundary proofs use `change` only to beta-reduce the cup cochain
 inside `groupCohomology.IsCocycle₂` and `mem_B2_iff'`.
 
-Continuity of the cup cochains is where joint continuity of `μ` is used. It is automatic when `M`
-and `N` are discrete, which is the case in every arithmetic application, but it is carried as a
-hypothesis rather than derived so that the shapes are available at the general topological
-coefficients the explicit complex is built for.
+Continuity of the cup cochains is where continuity of `μ` is used: the degree-zero slice cocycle
+lemmas `cup01_mem_Z1`, `cup10_mem_Z1`, `cup02_mem_Z2`, `cup20_mem_Z2` and `cup11_mem_B2_left`
+require only continuity in the varying variable, while `cup11_mem_Z2`, `cup11_mem_B2_right`, and
+the bundled cup products carry joint continuity of `μ`. Continuity is automatic when `M` and `N`
+are discrete, which is the case in every arithmetic application, but it is carried as a hypothesis
+rather than derived so that the shapes are available at the general topological coefficients the
+explicit complex is built for.
 
 ## References
 
@@ -207,14 +210,14 @@ section CupZeroOne
 /-- **The `(0,1)` cup of an invariant element with a continuous `1`-cocycle is a continuous
 `1`-cocycle.** -/
 theorem cup01_mem_Z1 (G : Type uG) [Monoid G] [TopologicalSpace G]
-    (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
+    (M : Type uM) [AddCommGroup M] [DistribMulAction G M]
     (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
       [DistribSMul G N]
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
       [DistribSMul G P]
-    (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+    (μ : M →+ N →+ P)
     (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
-    (m : H0 G M) {b : G → N} (hb : b ∈ Z1 G N) :
+    (m : H0 G M) (hm : Continuous (μ (m : M))) {b : G → N} (hb : b ∈ Z1 G N) :
     (fun g => μ (m : M) (b g)) ∈ Z1 G P := by
   have h : (fun g => μ (m : M) (b g)) =
       cochainsMap1 (ContinuousMonoidHom.id G : G →* G) (μ (m : M)) b := by
@@ -222,7 +225,7 @@ theorem cup01_mem_Z1 (G : Type uG) [Monoid G] [TopologicalSpace G]
     simp
   rw [h]
   exact cochainsMap1_mem_Z1 G N G P (ContinuousMonoidHom.id G) (μ (m : M))
-    (hμ.comp (continuous_const.prodMk continuous_id)) (pairingLeft_smul μ hequiv m) hb
+    hm (pairingLeft_smul μ hequiv m) hb
 
 variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
@@ -256,8 +259,9 @@ theorem explicitCup01_apply (m : H0 G M) :
 @[simp]
 theorem explicitCup01_mk (m : H0 G M) (b : Z1 G N) :
     explicitCup01 G M N P μ hμ hequiv m (b : H1 G N) =
-      ((⟨fun g => μ (m : M) ((b : G → N) g), cup01_mem_Z1 G M N P μ hμ hequiv m b.property⟩ :
-        Z1 G P) : H1 G P) := by
+      ((⟨fun g => μ (m : M) ((b : G → N) g),
+        cup01_mem_Z1 G M N P μ hequiv m (hμ.comp (continuous_const.prodMk continuous_id))
+          b.property⟩ : Z1 G P) : H1 G P) := by
   rw [explicitCup01_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
     (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
@@ -272,12 +276,12 @@ it disappears only because `n` is invariant. -/
 theorem cup10_mem_Z1 (G : Type uG) [Monoid G] [TopologicalSpace G]
     (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
       [DistribSMul G M]
-    (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
+    (N : Type uN) [AddCommGroup N] [DistribMulAction G N]
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
       [DistribSMul G P]
-    (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+    (μ : M →+ N →+ P)
     (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
-    {a : G → M} (ha : a ∈ Z1 G M) (n : H0 G N) :
+    {a : G → M} (ha : a ∈ Z1 G M) (n : H0 G N) (hn : Continuous (μ.flip (n : N))) :
     (fun g => μ (a g) (g • (n : N))) ∈ Z1 G P := by
   have h : (fun g => μ (a g) (g • (n : N))) =
       cochainsMap1 (ContinuousMonoidHom.id G : G →* G) (μ.flip (n : N)) a := by
@@ -285,7 +289,7 @@ theorem cup10_mem_Z1 (G : Type uG) [Monoid G] [TopologicalSpace G]
     simp [n.property g]
   rw [h]
   exact cochainsMap1_mem_Z1 G M G P (ContinuousMonoidHom.id G) (μ.flip (n : N))
-    (hμ.comp (continuous_id.prodMk continuous_const)) (pairingRight_smul μ hequiv n) ha
+    hn (pairingRight_smul μ hequiv n) ha
 
 variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -319,8 +323,9 @@ theorem explicitCup10_apply (a : H1 G M) (n : H0 G N) :
 @[simp]
 theorem explicitCup10_mk (a : Z1 G M) (n : H0 G N) :
     explicitCup10 G M N P μ hμ hequiv (a : H1 G M) n =
-      ((⟨fun g => μ ((a : G → M) g) (g • (n : N)), cup10_mem_Z1 G M N P μ hμ hequiv a.property n⟩ :
-        Z1 G P) : H1 G P) := by
+      ((⟨fun g => μ ((a : G → M) g) (g • (n : N)),
+        cup10_mem_Z1 G M N P μ hequiv a.property n
+          (hμ.comp (continuous_id.prodMk continuous_const))⟩ : Z1 G P) : H1 G P) := by
   rw [explicitCup10_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
     (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1, n.property g]))
@@ -332,14 +337,14 @@ section CupZeroTwo
 /-- **The `(0,2)` cup of an invariant element with a continuous `2`-cocycle is a continuous
 `2`-cocycle.** -/
 theorem cup02_mem_Z2 (G : Type uG) [Monoid G] [TopologicalSpace G]
-    (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
+    (M : Type uM) [AddCommGroup M] [DistribMulAction G M]
     (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
       [DistribSMul G N]
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
       [DistribSMul G P]
-    (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+    (μ : M →+ N →+ P)
     (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
-    (m : H0 G M) {b : G × G → N} (hb : b ∈ Z2 G N) :
+    (m : H0 G M) (hm : Continuous (μ (m : M))) {b : G × G → N} (hb : b ∈ Z2 G N) :
     (fun q : G × G => μ (m : M) (b q)) ∈ Z2 G P := by
   have h : (fun q : G × G => μ (m : M) (b q)) =
       cochainsMap2 (ContinuousMonoidHom.id G : G →* G) (μ (m : M)) b := by
@@ -347,7 +352,7 @@ theorem cup02_mem_Z2 (G : Type uG) [Monoid G] [TopologicalSpace G]
     simp
   rw [h]
   exact cochainsMap2_mem_Z2 G N G P (ContinuousMonoidHom.id G) (μ (m : M))
-    (hμ.comp (continuous_const.prodMk continuous_id)) (pairingLeft_smul μ hequiv m) hb
+    hm (pairingLeft_smul μ hequiv m) hb
 
 variable (G : Type uG) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
@@ -381,7 +386,8 @@ theorem explicitCup02_apply (m : H0 G M) :
 theorem explicitCup02_mk (m : H0 G M) (b : Z2 G N) :
     explicitCup02 G M N P μ hμ hequiv m (b : H2 G N) =
       ((⟨fun q : G × G => μ (m : M) ((b : G × G → N) q),
-        cup02_mem_Z2 G M N P μ hμ hequiv m b.property⟩ : Z2 G P) : H2 G P) := by
+        cup02_mem_Z2 G M N P μ hequiv m (hμ.comp (continuous_const.prodMk continuous_id))
+          b.property⟩ : Z2 G P) : H2 G P) := by
   rw [explicitCup02_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
     (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
@@ -395,12 +401,12 @@ section CupTwoZero
 theorem cup20_mem_Z2 (G : Type uG) [Monoid G] [TopologicalSpace G]
     (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
       [DistribSMul G M]
-    (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
+    (N : Type uN) [AddCommGroup N] [DistribMulAction G N]
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
       [DistribSMul G P]
-    (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+    (μ : M →+ N →+ P)
     (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
-    {a : G × G → M} (ha : a ∈ Z2 G M) (n : H0 G N) :
+    {a : G × G → M} (ha : a ∈ Z2 G M) (n : H0 G N) (hn : Continuous (μ.flip (n : N))) :
     (fun q : G × G => μ (a q) ((q.1 * q.2) • (n : N))) ∈ Z2 G P := by
   have h : (fun q : G × G => μ (a q) ((q.1 * q.2) • (n : N))) =
       cochainsMap2 (ContinuousMonoidHom.id G : G →* G) (μ.flip (n : N)) a := by
@@ -408,7 +414,7 @@ theorem cup20_mem_Z2 (G : Type uG) [Monoid G] [TopologicalSpace G]
     simp [n.property (g * h)]
   rw [h]
   exact cochainsMap2_mem_Z2 G M G P (ContinuousMonoidHom.id G) (μ.flip (n : N))
-    (hμ.comp (continuous_id.prodMk continuous_const)) (pairingRight_smul μ hequiv n) ha
+    hn (pairingRight_smul μ hequiv n) ha
 
 variable (G : Type uG) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -443,7 +449,8 @@ theorem explicitCup20_apply (a : H2 G M) (n : H0 G N) :
 theorem explicitCup20_mk (a : Z2 G M) (n : H0 G N) :
     explicitCup20 G M N P μ hμ hequiv (a : H2 G M) n =
       ((⟨fun q : G × G => μ ((a : G × G → M) q) ((q.1 * q.2) • (n : N)),
-        cup20_mem_Z2 G M N P μ hμ hequiv a.property n⟩ : Z2 G P) : H2 G P) := by
+        cup20_mem_Z2 G M N P μ hequiv a.property n
+          (hμ.comp (continuous_id.prodMk continuous_const))⟩ : Z2 G P) : H2 G P) := by
   rw [explicitCup20_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
     (Subtype.ext (funext fun q => by
@@ -485,19 +492,18 @@ theorem cup11_mem_Z2 (G : Type uG) [Semigroup G] [TopologicalSpace G]
 /-- **The `(1,1)` cup descends through coboundaries in the first variable**: if `a = d⁰ m` then
 `a ⌣ b = d¹ (x ↦ μ m (b x))`. -/
 theorem cup11_mem_B2_left (G : Type uG) [Mul G] [TopologicalSpace G]
-    (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribSMul G M]
+    (M : Type uM) [AddCommGroup M] [DistribSMul G M]
     (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
       [DistribSMul G N]
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
       [DistribSMul G P]
-    (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+    (μ : M →+ N →+ P) (hμ : ∀ m : M, Continuous (μ m))
     (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
     {a : G → M} (ha : a ∈ B1 G M) {b : G → N} (hb : b ∈ Z1 G N) :
     (fun q : G × G => μ (a q.1) (q.1 • b q.2)) ∈ B2 G P := by
   obtain ⟨m, hm⟩ := mem_B1_iff.1 ha
   obtain ⟨hbc, hb1⟩ := mem_Z1_iff.1 hb
-  refine mem_B2_iff'.2 ⟨fun x => μ m (b x), hμ.comp (continuous_const.prodMk hbc),
-    fun g h => ?_⟩
+  refine mem_B2_iff'.2 ⟨fun x => μ m (b x), (hμ m).comp hbc, fun g h => ?_⟩
   -- beta-reduce the cup cochain; see the implementation notes.
   change g • μ m (b h) - μ m (b (g * h)) + μ m (b g) = μ (a g) (g • b h)
   rw [← hm g, hb1 g h]
@@ -578,7 +584,8 @@ noncomputable def explicitCup11 : H1 G M →+ H1 G N →+ H2 G P :=
       induction x using QuotientAddGroup.induction_on with
       | _ b =>
         exact (QuotientAddGroup.eq_zero_iff _).2 <| AddSubgroup.mem_addSubgroupOf.2 <|
-          cup11_mem_B2_left G M N P μ hμ hequiv (AddSubgroup.mem_addSubgroupOf.1 ha) b.property
+          cup11_mem_B2_left G M N P μ (fun _ => hμ.comp (continuous_const.prodMk continuous_id))
+            hequiv (AddSubgroup.mem_addSubgroupOf.1 ha) b.property
 
 /-- The cochain formula for the `(1,1)` cup on the classes of two continuous `1`-cocycles. -/
 @[simp]
