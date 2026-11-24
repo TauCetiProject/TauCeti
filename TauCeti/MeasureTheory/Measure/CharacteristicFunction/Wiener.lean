@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Measure.Decomposition.Atomic
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Wiener's lemma on the line
@@ -20,9 +21,12 @@ the time averages of `|charFun σ t|²` converge to the sum of the squared masse
 
 `T⁻¹ ∫₀ᵀ |charFun σ t|² dt → ∑' ξ, σ({ξ})²` as `T → ∞`.
 
-In particular `σ` has no atoms exactly when these averages tend to `0`. This is the criterion
-through which weak mixing of a measure-preserving flow is read off the spectral measures of its
-Koopman group.
+More generally, for two finite measures `μ` and `ν` the averages of
+`charFun μ t * conj (charFun ν t)` converge to the common-atom sum `∑' ξ, μ({ξ}) ν({ξ})`
+(`TauCeti.tendsto_average_charFun_mul_conj`). In particular `σ` has no atoms exactly when the
+averages of `|charFun σ t|²` tend to `0` (`TauCeti.tendsto_average_norm_charFun_sq_zero_iff`).
+This is the criterion through which weak mixing of a measure-preserving flow is read off the
+spectral measures of its Koopman group.
 
 Two ingredients are of independent use.
 
@@ -36,6 +40,9 @@ Two ingredients are of independent use.
   mass `∑' ξ, σ({ξ})²` of the diagonal.
 
 ## References
+
+* N. Wiener, *The Fourier Integral and Certain of Its Applications*, Cambridge University Press
+  (1933).
 
 * M. Hochman, *Notes on ergodic theory* (2012), Proposition 6.6.3, for the analogue on the circle.
 * Y. Katznelson, *An Introduction to Harmonic Analysis*, 3rd ed., Cambridge University Press
@@ -107,6 +114,26 @@ theorem charFun_map_sub_prod {E : Type*} [SeminormedAddCommGroup E] [InnerProduc
   push_cast
   ring_nf
 
+/-- **Bilinear Wiener lemma** on the line: for finite measures `μ` and `ν` on `ℝ`, the time
+averages `T⁻¹ ∫₀ᵀ charFun μ t * conj (charFun ν t) dt` converge, as `T → ∞`, to the common-atom
+sum `∑' ξ, μ({ξ}) ν({ξ})`. -/
+theorem tendsto_average_charFun_mul_conj (μ ν : Measure ℝ) [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] :
+    Tendsto (fun T : ℝ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, charFun μ t * conj (charFun ν t))
+      atTop (𝓝 ((∑' ξ : ℝ, μ.real {ξ} * ν.real {ξ} : ℝ) : ℂ)) := by
+  set ρ := (μ.prod ν).map fun p : ℝ × ℝ ↦ p.1 - p.2
+  -- `ρ` gives the point `0`, that is the diagonal of `μ ⊗ ν`, the mass `∑' ξ, μ({ξ}) ν({ξ})`.
+  have hρ : ρ.real {0} = ∑' ξ : ℝ, μ.real {ξ} * ν.real {ξ} := by
+    rw [map_measureReal_apply measurable_sub (measurableSet_singleton 0)]
+    have hpre : (fun p : ℝ × ℝ ↦ p.1 - p.2) ⁻¹' {0} = diagonal ℝ := by
+      ext ⟨x, y⟩
+      simp [sub_eq_zero]
+    rw [hpre, Measure.prod_real_diagonal]
+  rw [← hρ]
+  refine (tendsto_average_cexp_mul_charFun ρ 0).congr fun T ↦ ?_
+  simp only [ofReal_zero, zero_mul, neg_zero, exp_zero, one_mul]
+  simp_rw [ρ, charFun_map_sub_prod]
+
 /-- **Wiener's lemma** on the line: for a finite measure `σ` on `ℝ`, the time averages
 `T⁻¹ ∫₀ᵀ |charFun σ t|² dt` of the squared modulus of its characteristic function converge, as
 `T → ∞`, to the sum `∑' ξ, σ({ξ})²` of the squared masses of its atoms. All but countably many
@@ -114,24 +141,30 @@ terms of the sum vanish. -/
 theorem tendsto_average_norm_charFun_sq (σ : Measure ℝ) [IsFiniteMeasure σ] :
     Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ t in (0 : ℝ)..T, ‖charFun σ t‖ ^ 2)
       atTop (𝓝 (∑' ξ : ℝ, σ.real {ξ} ^ 2)) := by
-  set ρ := (σ.prod σ).map fun p : ℝ × ℝ ↦ p.1 - p.2
-  -- `ρ` gives the point `0`, that is the diagonal of `σ ⊗ σ`, the mass `∑' ξ, σ({ξ})²`.
-  have hρ : ρ.real {0} = ∑' ξ : ℝ, σ.real {ξ} ^ 2 := by
-    have hS : MeasurableSet ((fun p : ℝ × ℝ ↦ p.1 - p.2) ⁻¹' {0}) :=
-      measurable_sub (measurableSet_singleton 0)
-    have h0 : ρ {0} = ∑' ξ, σ {ξ} ^ 2 := by
-      rw [Measure.map_apply measurable_sub (measurableSet_singleton 0), Measure.prod_apply hS]
-      simp_rw [sq, ← Measure.lintegral_measure_singleton]
-      congr 1 with x
-      congr 1 with y
-      simp [sub_eq_zero, eq_comm]
-    rw [measureReal_def, h0, ENNReal.tsum_toReal_eq fun ξ ↦ by finiteness]
-    simp [measureReal_def]
-  have h := (continuous_re.tendsto _).comp (tendsto_average_cexp_mul_charFun ρ 0)
-  rw [← hρ]
+  have h := (continuous_re.tendsto _).comp (tendsto_average_charFun_mul_conj σ σ)
+  simp_rw [ofReal_re, ← sq] at h
   refine h.congr fun T ↦ ?_
-  simp only [Function.comp_apply, ofReal_zero, zero_mul, neg_zero, exp_zero, one_mul]
-  simp_rw [ρ, charFun_map_sub_prod, mul_conj', ← ofReal_pow, intervalIntegral.integral_ofReal,
+  simp_rw [Function.comp_apply, mul_conj', ← ofReal_pow, intervalIntegral.integral_ofReal,
     ← ofReal_inv, ← ofReal_mul, ofReal_re]
+
+/-- For a finite measure `σ` on `ℝ`, the time averages `T⁻¹ ∫₀ᵀ |charFun σ t|² dt` tend to `0` as
+`T → ∞` if and only if `σ` has no atoms. -/
+theorem tendsto_average_norm_charFun_sq_zero_iff (σ : Measure ℝ) [IsFiniteMeasure σ] :
+    Tendsto (fun T : ℝ ↦ T⁻¹ * ∫ t in (0 : ℝ)..T, ‖charFun σ t‖ ^ 2) atTop (𝓝 0) ↔
+      ∀ ξ : ℝ, σ {ξ} = 0 := by
+  constructor
+  · intro h0 ξ
+    have htsum : ∑' x : ℝ, σ.real {x} ^ 2 = 0 :=
+      tendsto_nhds_unique (tendsto_average_norm_charFun_sq σ) h0
+    have hsum : Summable fun x : ℝ ↦ σ.real {x} ^ 2 := by
+      simpa only [sq] using (Measure.hasSum_prod_real_diagonal σ σ).summable
+    have hzero : σ.real {ξ} ^ 2 = 0 :=
+      le_antisymm (htsum ▸ hsum.le_tsum ξ fun _ _ ↦ sq_nonneg _) (sq_nonneg _)
+    exact (measureReal_eq_zero_iff (measure_ne_top _ _)).mp
+      ((pow_eq_zero_iff (by norm_num)).mp hzero)
+  · intro hnull
+    have htsum : ∑' ξ : ℝ, σ.real {ξ} ^ 2 = 0 := by
+      simp [measureReal_def, hnull]
+    simpa only [htsum] using tendsto_average_norm_charFun_sq σ
 
 end TauCeti
