@@ -81,9 +81,30 @@ variable {L : Language} {V W X : Type*}
 
 /-! ### Atoms -/
 
-/-- The atom with relation symbol `R` and argument tuple `x`. Its body is exposed so that the
-arity and relation symbol of `atom R x` are `n` and `R` by definition. -/
-@[expose] def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
+/-- The atom with relation symbol `R` and argument tuple `x`. -/
+def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
+
+/-- Two atoms are equal exactly when they have the same relation symbol, together with its arity,
+and the same argument tuple. -/
+@[simp]
+theorem atom_eq_atom_iff {n m : ℕ} {R : L.Relations n} {S : L.Relations m} {x : Fin n → V}
+    {y : Fin m → V} :
+    atom R x = atom S y ↔ (⟨n, R⟩ : Σ n, L.Relations n) = ⟨m, S⟩ ∧ x ≍ y := by
+  constructor
+  · intro h
+    cases h
+    exact ⟨rfl, .rfl⟩
+  · rintro ⟨h, hxy⟩
+    cases h
+    cases hxy
+    rfl
+
+/-- The relation symbol of an atom, together with its arity. -/
+def Atom.symbol (a : Atom L V) : Σ n, L.Relations n := ⟨a.1, a.2.1⟩
+
+@[simp]
+theorem Atom.symbol_atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
+    (atom R x).symbol = ⟨n, R⟩ := (rfl)
 
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
@@ -105,6 +126,10 @@ theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
+
+/-- Relabelling the arguments of an atom keeps its relation symbol. -/
+@[simp]
+theorem Atom.symbol_map (f : V → W) (a : Atom L V) : (a.map f).symbol = a.symbol := (rfl)
 
 /-- Rename the relation symbol of an atom along a language map, keeping its arguments. -/
 def _root_.FirstOrder.Language.LHom.onAtom {L' : Language} (g : L →ᴸ L') (a : Atom L V) :

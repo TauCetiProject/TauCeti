@@ -97,7 +97,7 @@ def color (ι : (Σ n, L.Relations n) → ℕ) : IncidenceVertex L V → ℕ
   | point _ => 0
   | truth _ => 1
   | position _ _ j => 2 * j + 2
-  | tuple q => 2 * ι ⟨q.1, q.2.1⟩ + 3
+  | tuple q => 2 * ι q.symbol + 3
 
 variable {ι : (Σ n, L.Relations n) → ℕ}
 
@@ -114,12 +114,13 @@ theorem color_position (ι : (Σ n, L.Relations n) → ℕ) (R : L.Relations n) 
     (j : Fin n) : color ι (position R x j) = 2 * j + 2 := (rfl)
 
 theorem color_tuple (ι : (Σ n, L.Relations n) → ℕ) (q : Atom L V) :
-    color ι (tuple q) = 2 * ι ⟨q.1, q.2.1⟩ + 3 := (rfl)
+    color ι (tuple q) = 2 * ι q.symbol + 3 := (rfl)
 
 @[simp]
 theorem color_tuple_atom (ι : (Σ n, L.Relations n) → ℕ) (R : L.Relations n)
     (x : Fin n → V) :
-    color ι (tuple (atom R x)) = 2 * ι ⟨n, R⟩ + 3 := (rfl)
+    color ι (tuple (atom R x)) = 2 * ι ⟨n, R⟩ + 3 := by
+  rw [color_tuple, Atom.symbol_atom]
 
 /-- The vertices of colour `0` are the points. -/
 private theorem color_eq_zero_iff {v : IncidenceVertex L V} :
@@ -149,7 +150,7 @@ with relation symbol `s`. -/
 private theorem color_eq_two_mul_add_three_iff (hι : Function.Injective ι)
     {v : IncidenceVertex L V} {s : Σ n, L.Relations n} :
     color ι v = 2 * ι s + 3 ↔
-      ∃ q : Atom L V, v = tuple q ∧ (⟨q.1, q.2.1⟩ : Σ n, L.Relations n) = s := by
+      ∃ q : Atom L V, v = tuple q ∧ q.symbol = s := by
   cases v with
   | tuple q => simp [color_tuple, hι.eq_iff]
   | position S y j => simp; omega
@@ -192,9 +193,7 @@ theorem map_comp (g : W → X) (f : V → W) (v : IncidenceVertex L V) :
 @[simp]
 theorem color_map (ι : (Σ n, L.Relations n) → ℕ) (f : V → W) (v : IncidenceVertex L V) :
     color ι (map f v) = color ι v := by
-  cases v with
-  | tuple q => induction q using Atom.induction_atom with | h R x => simp
-  | _ => simp
+  cases v <;> simp [color_tuple]
 
 /-! ### Cardinality -/
 
@@ -412,6 +411,7 @@ private theorem apply_tuple_eq (hι : Function.Injective ι) {σ : Equiv.Perm V}
     ((hf (tuple q)).trans (color_tuple ι q))
   induction q using Atom.induction_atom with | h R x =>
   induction r using Atom.induction_atom with | h S y =>
+  rw [Atom.symbol_atom, Atom.symbol_atom] at hs
   cases hs
   rw [hr, Atom.map_atom]
   refine congrArg (fun z => tuple (atom R z)) (funext fun j => ?_)
@@ -421,8 +421,9 @@ private theorem apply_tuple_eq (hι : Function.Injective ι) {σ : Equiv.Perm V}
     ((hf (position R x j)).trans (color_position ι R x j))
   have hadj : d.incidenceGraph.Adj (tuple (atom R y)) (position S z j') := by
     rw [← hr, ← hj, f.map_adj_iff, incidenceGraph_adj_tuple_position]
-  rw [incidenceGraph_adj_tuple_position] at hadj
-  cases hadj
+  obtain ⟨hRS, hyz⟩ := atom_eq_atom_iff.1 (incidenceGraph_adj_tuple_position.1 hadj)
+  cases hRS
+  cases hyz
   obtain rfl : j = j' := (Fin.ext hjj).symm
   -- The point in position `j` is adjacent to it, so goes to the point in that position.
   have hpt : d.incidenceGraph.Adj (position R y j) (point (σ (x j))) := by
