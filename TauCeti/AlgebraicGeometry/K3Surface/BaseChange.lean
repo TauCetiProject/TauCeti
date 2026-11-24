@@ -77,9 +77,7 @@ theorem IsK3.of_isPullback
     MorphismProperty.of_isPullback H h.geometricallyIntegral,
     ⟨(differentialFormsBaseChangeIso H' 2).symm ≪≫ (Scheme.Modules.pullback g).mapIso e ≪≫
       pullbackObjUnitIso g⟩, ?_⟩
-  refine (cohomologyBaseLinearEquivOfIso K (pullbackObjUnitIso g) 1).toEquiv.subsingleton_congr.1
-    ((subsingleton_cohomology_pullback_iff_of_isPullback H' _ 1).2 ?_)
-  exact h.subsingleton_cohomology_one
+  exact (subsingleton_cohomology_unit_iff_of_isPullback H' 1).2 h.subsingleton_cohomology_one
 
 /-- **A K3 surface stays a K3 surface after extension of the base field**, for the fibre product
 `X ×_{Spec k} Spec K` with its second projection to `Spec K`. -/
