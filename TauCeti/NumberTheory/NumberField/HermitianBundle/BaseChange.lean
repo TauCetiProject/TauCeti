@@ -27,6 +27,7 @@ condition holds because the conjugate of `τ|K` is the restriction of the conjug
 * `TauCeti.HermitianMetric.baseChangeFiberEquiv`: the fibre identification above.
 * `TauCeti.HermitianMetric.baseChange`: the base-changed metric `(h_{τ|K})_τ` on
   `𝓞 L ⊗_{𝓞 K} E`.
+* `TauCeti.HermitianMetric.IsometryEquiv.baseChange`: base change is functorial on isometries.
 * `TauCeti.HermitianMetric.baseChangeSelf`: base change along the identity of `K` is isometric to
   the original metric, through `𝓞 K ⊗_{𝓞 K} E ≅ E`.
 * `TauCeti.HermitianMetric.baseChangeBaseChange`: base change along `K → L → M` is isometric to
@@ -65,12 +66,20 @@ def baseChangeFiberEquiv (τ : L →+* ℂ) :
     E).restrictScalars ℂ
 
 /-- The fibre identification sends `1 ⊗ (a ⊗ x)` to `τ(a) (1 ⊗ x)`. -/
-@[simp]
 theorem baseChangeFiberEquiv_one_tmul_tmul (τ : L →+* ℂ) (a : 𝓞 L) (x : E) :
     baseChangeFiberEquiv K E τ (1 ⊗ₜ (a ⊗ₜ x)) = τ a • (1 ⊗ₜ x) := by
-  -- `cancelBaseChange` sends `1 ⊗ (a ⊗ x)` to `(a • 1) ⊗ x`, and `a • 1 = τ(a) • 1` in `ℂ`.
+  -- `cancelBaseChange` sends `1 ⊗ (a ⊗ x)` to `(a • 1) ⊗ x`, and `a • 1 = τ(a) • 1` in `ℂ`. This
+  -- needs `change` rather than `rw [cancelBaseChange_tmul]`: unfolded, the definition lands in
+  -- `Codomain τ ⊗[𝓞 K] E`, which is the stated codomain only up to unfolding `Codomain`, so the
+  -- unfolded goal is not type-correct at the transparency `rw` uses.
   change ((τ a : ℂ) • (1 : Codomain (τ.comp (algebraMap K L)))) ⊗ₜ[𝓞 K] x = _
   exact (TensorProduct.smul_tmul' _ _ _).symm
+
+/-- The fibre identification sends `c ⊗ (a ⊗ x)` to `c τ(a) (1 ⊗ x)`. -/
+@[simp]
+theorem baseChangeFiberEquiv_tmul_tmul (τ : L →+* ℂ) (c : Codomain τ) (a : 𝓞 L) (x : E) :
+    baseChangeFiberEquiv K E τ (c ⊗ₜ (a ⊗ₜ x)) = (Codomain.equiv τ c * τ a) • (1 ⊗ₜ x) := by
+  rw [Codomain.tmul_eq_smul, map_smul, baseChangeFiberEquiv_one_tmul_tmul, smul_smul]
 
 variable (h : HermitianMetric K E)
 
@@ -95,8 +104,7 @@ def baseChange : HermitianMetric L (𝓞 L ⊗[𝓞 K] E) where
       | tmul b y =>
         simp only [baseChangeFiberEquiv_one_tmul_tmul, LinearMap.map_smulₛₗ₂, map_smul,
           smul_eq_mul, conjugate_coe_eq, map_mul, Complex.conj_conj]
-        rw [show (conjugate τ).comp (algebraMap K L) = conjugate (τ.comp (algebraMap K L)) from
-          rfl, h.form_conjugate_tmul]
+        rw [conjugate_comp, h.form_conjugate_tmul]
 
 @[simp]
 theorem baseChange_form_apply (τ : L →+* ℂ) (u v : Codomain τ ⊗[𝓞 L] (𝓞 L ⊗[𝓞 K] E)) :
@@ -121,41 +129,12 @@ theorem norm_baseChange_tmul_tmul (τ : L →+* ℂ) (a : 𝓞 L) (x : E) :
   rw [norm_def, baseChange_form_apply, baseChangeFiberEquiv_one_tmul_tmul, ← norm_def,
     norm_smul]
 
-/-- `1 ⊗ (a • x) = σ(a) (1 ⊗ x)` in the complex fibre at `σ`. -/
-theorem one_tmul_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
-    (1 : Codomain σ) ⊗ₜ[𝓞 K] (a • x) = σ a • (1 ⊗ₜ[𝓞 K] x) := by
-  rw [← TensorProduct.smul_tmul, Codomain.tmul_eq_smul, Algebra.smul_def, mul_one,
-    Codomain.equiv_algebraMap_ringOfIntegers]
-
-/-- Along the identity of `K`, the fibre identification sends `1 ⊗ z` to `1 ⊗ z'`, where `z'` is
-the image of `z` under `𝓞 K ⊗_{𝓞 K} E ≅ E`. -/
-private theorem baseChangeFiberEquiv_self_one_tmul (σ : K →+* ℂ) :
-    ∀ z, baseChangeFiberEquiv K E (L := K) σ (1 ⊗ₜ z) = 1 ⊗ₜ TensorProduct.lid (𝓞 K) E z := by
-  intro z
-  induction z using TensorProduct.inductionOn with
-  | add z₁ z₂ h₁ h₂ =>
-    erw [TensorProduct.tmul_add, map_add, h₁, h₂, map_add, TensorProduct.tmul_add]
-  | tmul a x =>
-    erw [baseChangeFiberEquiv_one_tmul_tmul, TensorProduct.lid_tmul, one_tmul_smul]
-    rfl
-
-/-- Base change along the identity of `K` is isometric to the original metric, through
-`𝓞 K ⊗_{𝓞 K} E ≅ E`. -/
-def baseChangeSelf : IsometryEquiv (h.baseChange (L := K)) h where
-  toLinearEquiv := TensorProduct.lid (𝓞 K) E
-  form_tmul σ x y := by
-    rw [baseChange_form_apply, baseChangeFiberEquiv_self_one_tmul,
-      baseChangeFiberEquiv_self_one_tmul]
-    rfl
-
+/-- Base change commutes with rescaling: `Ē(c)_{𝓞 L} = Ē_{𝓞 L}(c)`. -/
 @[simp]
-theorem baseChangeSelf_apply (x : 𝓞 K ⊗[𝓞 K] E) :
-    h.baseChangeSelf x = TensorProduct.lid (𝓞 K) E x :=
-  (rfl)
-
-section Composite
-
-variable {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+theorem baseChange_rescale (c : ℝ) :
+    (h.rescale c).baseChange (L := L) = h.baseChange.rescale c := by
+  ext τ u v
+  simp only [baseChange_form_apply, rescale_form_apply]
 
 /-- The identification of the complex fibres of `E` at two equal embeddings. -/
 private def fiberCongr {σ σ' : K →+* ℂ} (hσ : σ = σ') :
@@ -171,6 +150,87 @@ private theorem form_fiberCongr {σ σ' : K →+* ℂ} (hσ : σ = σ') (u v : C
     h.form σ' (fiberCongr hσ u) (fiberCongr hσ v) = h.form σ u v := by
   subst hσ
   rfl
+
+private theorem comp_algebraMap_self (σ : K →+* ℂ) : σ.comp (algebraMap K K) = σ := by
+  rw [Algebra.algebraMap_self, RingHom.comp_id]
+
+/-- Along the identity of `K`, the fibre identification sends `1 ⊗ z` to `1 ⊗ z'`, where `z'` is
+the image of `z` under `𝓞 K ⊗_{𝓞 K} E ≅ E`.
+
+The `𝓞 K`-module `𝓞 K ⊗_{𝓞 K} E` appears here with two instances: the one of `TensorProduct.lid`
+comes from `Algebra.id (𝓞 K)`, and the one of the base change from
+`NumberField.inst_ringOfIntegersAlgebra K K`. They agree only after unfolding, not at the
+transparency `rw` and `simp` use, so the proof crosses between them with `congrArg`. -/
+private theorem baseChangeFiberEquiv_self_one_tmul (σ : K →+* ℂ) (z : 𝓞 K ⊗[𝓞 K] E) :
+    fiberCongr (comp_algebraMap_self σ) (baseChangeFiberEquiv K E (L := K) σ (1 ⊗ₜ z)) =
+      1 ⊗ₜ TensorProduct.lid (𝓞 K) E z := by
+  induction z using TensorProduct.inductionOn with
+  | add z₁ z₂ h₁ h₂ =>
+    refine (congrArg (fiberCongr _) ((congrArg (baseChangeFiberEquiv K E σ)
+      (TensorProduct.tmul_add (1 : Codomain σ) z₁ z₂)).trans (map_add _ _ _))).trans ?_
+    rw [map_add]
+    exact (congrArg₂ (· + ·) h₁ h₂).trans (by rw [map_add, TensorProduct.tmul_add])
+  | tmul a x =>
+    refine (congrArg (fiberCongr _) (baseChangeFiberEquiv_one_tmul_tmul σ a x)).trans ?_
+    rw [fiberCongr_smul_one_tmul, TensorProduct.lid_tmul, Codomain.one_tmul_smul]
+
+/-- Base change along the identity of `K` is isometric to the original metric, through
+`𝓞 K ⊗_{𝓞 K} E ≅ E`. -/
+def baseChangeSelf : IsometryEquiv (h.baseChange (L := K)) h where
+  toLinearEquiv := TensorProduct.lid (𝓞 K) E
+  form_tmul σ x y := by
+    rw [baseChange_form_apply, ← form_fiberCongr h (comp_algebraMap_self σ)]
+    exact (congrArg₂ (fun u v ↦ h.form σ u v) (baseChangeFiberEquiv_self_one_tmul σ x)
+      (baseChangeFiberEquiv_self_one_tmul σ y)).symm
+
+@[simp]
+theorem baseChangeSelf_apply (x : 𝓞 K ⊗[𝓞 K] E) :
+    h.baseChangeSelf x = TensorProduct.lid (𝓞 K) E x :=
+  (rfl)
+
+section Functoriality
+
+variable {F : Type*} [AddCommGroup F] [Module (𝓞 K) F]
+
+/-- The fibre identifications are natural in the module: base change of a linear isomorphism
+`e : E ≃ F` along `K → L` corresponds to the complexification of `e` at `τ|K`. -/
+private theorem baseChangeFiberEquiv_one_tmul_baseChange (e : E ≃ₗ[𝓞 K] F) (τ : L →+* ℂ)
+    (z : 𝓞 L ⊗[𝓞 K] E) :
+    baseChangeFiberEquiv K F τ (1 ⊗ₜ e.baseChange (𝓞 K) (𝓞 L) E F z) =
+      e.toLinearMap.baseChange (Codomain (τ.comp (algebraMap K L)))
+        (baseChangeFiberEquiv K E τ (1 ⊗ₜ z)) := by
+  induction z using TensorProduct.inductionOn with
+  | add z₁ z₂ h₁ h₂ => simp only [map_add, TensorProduct.tmul_add, h₁, h₂]
+  | tmul a x =>
+    rw [LinearEquiv.baseChange_tmul, baseChangeFiberEquiv_one_tmul_tmul,
+      baseChangeFiberEquiv_one_tmul_tmul, LinearMap.map_smul_of_tower, LinearMap.baseChange_tmul,
+      LinearEquiv.coe_coe]
+
+namespace IsometryEquiv
+
+variable {h} {h' : HermitianMetric K F}
+
+/-- Base change is functorial on isometries: an isometry `e` from `h` to `h'` gives an isometry
+between their base changes along `K → L`, through `𝓞 L ⊗_{𝓞 K} E ≅ 𝓞 L ⊗_{𝓞 K} F`. -/
+def baseChange (e : IsometryEquiv h h') :
+    IsometryEquiv (h.baseChange (L := L)) (h'.baseChange (L := L)) where
+  toLinearEquiv := e.toLinearEquiv.baseChange (𝓞 K) (𝓞 L) E F
+  form_tmul τ z w := by
+    rw [baseChange_form_apply, baseChange_form_apply, baseChangeFiberEquiv_one_tmul_baseChange,
+      baseChangeFiberEquiv_one_tmul_baseChange, e.form_baseChange]
+
+@[simp]
+theorem baseChange_tmul (e : IsometryEquiv h h') (a : 𝓞 L) (x : E) :
+    e.baseChange (L := L) (a ⊗ₜ x) = a ⊗ₜ e x :=
+  LinearEquiv.baseChange_tmul _ _ _ _ a x
+
+end IsometryEquiv
+
+end Functoriality
+
+section Composite
+
+variable {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
 
 private theorem comp_algebraMap_comp_algebraMap (μ : M →+* ℂ) :
     (μ.comp (algebraMap L M)).comp (algebraMap K L) = μ.comp (algebraMap K M) := by
