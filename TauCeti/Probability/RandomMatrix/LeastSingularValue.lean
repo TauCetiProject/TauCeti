@@ -41,8 +41,8 @@ private theorem leastSingularValue_event_subset
       {ω | ∃ x, TauCeti.IsCompressibleVector k ρ x ∧ ‖toEuclideanLin (A ω) x‖ < u} ∪
       {ω | ∃ x, TauCeti.IsIncompressibleVector k ρ x ∧ ‖toEuclideanLin (A ω) x‖ < t} := by
   intro ω hω
-  have hmin := (toEuclideanLin (A ω)).isLeast_norm_image_sphere
-  rw [finrank_euclideanSpace] at hmin
+  have hmin := (toEuclideanLin (A ω)).isLeast_minimalStretch
+  rw [LinearMap.minimalStretch_def, finrank_euclideanSpace] at hmin
   obtain ⟨x, hx, heq⟩ := hmin.1
   have hnorm : ‖x‖ = 1 := mem_sphere_zero_iff_norm.mp hx
   have hsmall : ‖toEuclideanLin (A ω) x‖ < t := by
