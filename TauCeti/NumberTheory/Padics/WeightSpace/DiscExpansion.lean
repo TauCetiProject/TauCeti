@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.Padics.WeightSpace.AnalyticLevel
 public import TauCeti.NumberTheory.Padics.WeightSpace.ZeroExtend
 import TauCeti.Analysis.Normed.Ring.CompactMonoid
 import TauCeti.NumberTheory.Padics.Distribution.Polynomial
-import TauCeti.RingTheory.PowerSeries.Exp
 import TauCeti.RingTheory.PowerSeries.Restricted
 import TauCeti.RingTheory.PowerSeries.Restricted.CompNullSeq
 
@@ -176,7 +175,7 @@ private theorem zeroExtend_one_add_pow_mul {R : Type*} [MonoidWithZero R] [Topol
   let h := k + j
   have hh := padicUnitsDepth_add_ne_zero p j
   let u₁ : unitsPrincipal p h := unitsPrincipalMk hh ⟨z, add_sub_cancel_left _ _⟩
-  let u₀ : unitsPrincipal p k := ⟨u₁, unitsPrincipal_antitone p (Nat.le_add_right k j) u₁.2⟩
+  let u₀ : unitsPrincipal p k := ⟨u₁, unitsPrincipal_antitone p (Nat.le_add_right k j) u₁.property⟩
   have hu₀_val : ((u₀ : ℤ_[p]ˣ) : ℤ_[p]) = 1 + (p : ℤ_[p]) ^ h * z := coe_unitsPrincipalMk hh _
   have hlog : (unitsPrincipalLogEquiv p u₀).toAdd =
       (p : ℤ_[p]) ^ j * (deepLogSeries (p := p) hh).evalAt z := by
@@ -347,7 +346,9 @@ theorem discExpansion_apply_zero_of_isUnit (κ : WeightSpace p R) (j : ℕ)
       κ ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit := by
   have hg0 : ∀ z : ℤ_[p], PowerSeries.constantCoeff
       (PowerSeries.rescale z (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j))) = 0 :=
-    fun _ ↦ by rw [PowerSeries.constantCoeff_rescale, constantCoeff_deepLogSeries]
+    fun _ ↦ by
+      rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_rescale, pow_zero,
+        one_mul, PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_deepLogSeries]
   have hval0 : (0 : ZMod (p ^ 0)).val = 0 := by rw [pow_zero]; simp
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha 0,
     PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero ℤ_[p] _ _ (hg0 _),

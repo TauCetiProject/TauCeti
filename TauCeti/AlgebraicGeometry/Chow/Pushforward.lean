@@ -65,7 +65,7 @@ pushforward of cycles with height weights, `[V] ↦ [κ(V) : κ(f(V))] [f(V)]`. 
 noncomputable def cyclesMap (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f] {n : ℤ} :
     cyclesOfDimension X n →+ cyclesOfDimension Y n :=
   AddMonoidHom.mk' (fun α ↦ ⟨AlgebraicCycle.map f height height (α : AlgebraicCycle X ℤ),
-      map_height_mem_cyclesOfDimension k f α.2⟩)
+      map_height_mem_cyclesOfDimension k f α.property⟩)
     fun _ _ ↦ Subtype.ext (AlgebraicCycle.map_add _ _ _ _ _)
 
 variable {k}

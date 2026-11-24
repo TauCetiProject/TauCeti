@@ -99,20 +99,6 @@ theorem eventually_norm_coord_lt_amiceRadius {K : Type*} [NormedDivisionRing K]
     ∀ᶠ j in atTop, ‖κ.coord‖ < amiceRadius p j :=
   tendsto_amiceRadius.eventually (lt_mem_nhds (norm_coord_lt_one_of_normedAlgebra κ))
 
-/-- The modulus `q = p ^ k` lies in the disc of convergence of the exponential:
-`p ^ (-k) < r_0 = p ^ (-1 / (p - 1))`. -/
-private theorem zpow_neg_padicUnitsDepth_lt_amiceRadius_zero :
-    (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) < amiceRadius p 0 := by
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.out.one_lt
-  have hsub : (0 : ℝ) < (p : ℝ) - 1 := sub_pos.mpr hp1
-  have hk : (1 : ℝ) < ((p : ℝ) - 1) * padicUnitsDepth p := by
-    have := (Nat.one_lt_cast (α := ℝ)).mpr (one_lt_sub_one_mul_padicUnitsDepth (p := p))
-    rwa [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_one] at this
-  rw [amiceRadius_def, ← Real.rpow_intCast]
-  refine Real.rpow_lt_rpow_of_exponent_lt hp1 ?_
-  rw [pow_zero, mul_one, Int.cast_neg, Int.cast_natCast, neg_lt_neg_iff, div_lt_iff₀ hsub]
-  linarith
-
 section LocallyAlgebraic
 
 variable {K : Type*} [SeminormedCommRing K] [NormOneClass K] [NormedAlgebra ℚ_[p] K]
@@ -132,7 +118,7 @@ theorem norm_apply_inclusion_zpow_mul_padicUnitsGenerator_pow_sub_one_lt (m : �
   rw [ContinuousMonoidHom.mul_apply, hψu, mul_one, ContinuousMonoidHom.zpow_apply, ← map_zpow,
     norm_coe_inclusion_apply_sub_one]
   refine (mem_unitsPrincipal_iff_norm.mp hum).trans_lt
-    (lt_of_le_of_lt ?_ zpow_neg_padicUnitsDepth_lt_amiceRadius_zero)
+    (lt_of_le_of_lt ?_ (zpow_neg_lt_amiceRadius_zero one_lt_sub_one_mul_padicUnitsDepth))
   exact zpow_le_zpow_right₀ (by exact_mod_cast hp.out.one_le) (by omega)
 
 /-- Over any commutative seminormed `ℚ_p`-algebra with `‖1‖ = 1`, every integer-power weight

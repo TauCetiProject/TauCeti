@@ -13,27 +13,29 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 import Mathlib.RingTheory.PowerSeries.Log
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
-import TauCeti.NumberTheory.LocalField.Exponential
 import TauCeti.NumberTheory.LocalField.Logarithm
+import TauCeti.NumberTheory.Padics.ExponentialDisc
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.NumberTheory.Padics.PowerSeries
 
 /-!
-# The `p`-adic exponential and logarithm in terms of the norm
+# The `p`-adic logarithm on deep discs in terms of the norm
 
-Mathlib's `NormedSpace.exp` and `NormedSpace.log` on `ℚ_[p]` are mutually inverse between the
-closed disc `‖x‖ ≤ p ^ (-i)` and the closed disc `‖u - 1‖ ≤ p ^ (-i)` about `1`, whenever the
-depth `i` satisfies `1 < (p - 1) * i`, that is, `i ≥ 1` for odd `p` and `i ≥ 2` for `p = 2`. On
-these discs both maps preserve the distance to the centre, and the logarithm turns products into
-sums.
+Mathlib's `NormedSpace.log` on `ℚ_[p]` turns products into sums on the closed disc
+`‖u - 1‖ ≤ p ^ (-i)` about `1`, whenever the depth `i` satisfies `1 < (p - 1) * i`, that is,
+`i ≥ 1` for odd `p` and `i ≥ 2` for `p = 2`.
 
-These are the results of `TauCeti.NumberTheory.LocalField.ExpLog` and
-`TauCeti.NumberTheory.LocalField.DeepUnits.Basic` for the local field `ℚ_[p]`, whose absolute
-ramification index is one, restated with Mathlib's `p`-adic norm instead of the valuation of the
-valuative relation and the unit filtration. They are the analytic input for the logarithm on the
+This is the homomorphism property of `TauCeti.NumberTheory.LocalField.DeepUnits.Basic` for the
+local field `ℚ_[p]`, whose absolute ramification index is one, restated with Mathlib's `p`-adic
+norm instead of the unit filtration. Together with the results of
+`TauCeti.NumberTheory.Padics.ExponentialDisc`, it is the analytic input for the logarithm on the
 principal units `1 + qℤ_p`, with `q = p` for odd `p` and `q = 4` for `p = 2`, in
-`TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm`.
+`TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm`. The norm and inverse identities of
+the exponential and logarithm on these discs are the cases of
+`TauCeti.norm_exp_sub_one_of_norm_lt`, `TauCeti.norm_log_of_norm_sub_one_lt`,
+`TauCeti.log_exp_of_norm_lt` and `TauCeti.exp_log_of_norm_sub_one_lt` given by
+`TauCeti.zpow_neg_lt_amiceRadius_zero`.
 
 Reading the two maps in the normalized disc coordinate `x ∈ ℤ_p` on `p^i ℤ_p` and `1 + p^i ℤ_p`
 gives two formal power series over `ℤ_p` without constant term,
@@ -59,9 +61,6 @@ formally under `PowerSeries.subst` and analytically under `PowerSeries.evalAt` o
 
 * `Padic.mem_unitFiltration_iff_norm_sub_one_le`: the unit filtration `U(ℚ_p,i)` is the disc
   `‖x - 1‖ ≤ p ^ (-i)`.
-* `Padic.norm_exp_sub_one`: `‖exp x - 1‖ = ‖x‖`.
-* `Padic.norm_log`: `‖log u‖ = ‖u - 1‖`.
-* `Padic.log_exp`, `Padic.exp_log`: the exponential and the logarithm are inverse.
 * `Padic.log_mul`: `log (u * w) = log u + log w`.
 * `TauCeti.isRestricted_deepLogSeries`, `TauCeti.coe_evalAt_deepLogSeries`,
   `TauCeti.pow_mul_coe_evalAt_deepLogSeries`: restrictedness at radius `1` and evaluation of
@@ -82,6 +81,7 @@ formally under `PowerSeries.subst` and analytically under `PowerSeries.evalAt` o
 public section
 
 open Filter Topology ValuativeRel NormedSpace
+open scoped PowerSeries
 
 namespace Padic
 
@@ -95,16 +95,6 @@ omit hp in
 private theorem ne_zero_of_one_lt_mul {i : ℕ} (hi : 1 < (p - 1) * i) : i ≠ 0 := by
   rintro rfl
   simp at hi
-
-/-- An element of `ℚ_[p]` of norm at most `p ^ (-i)`, as an element of the ideal `𝓂 ^ i` of the
-ring of integers. -/
-private noncomputable def toMaximalIdealPow {i : ℕ} {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : (𝓂[ℚ_[p]] ^ i : Ideal 𝒪[ℚ_[p]]) :=
-  ⟨⟨x, by
-    rw [Valuation.mem_integer_iff, ← map_one (ValuativeRel.valuation ℚ_[p]),
-      valuation_le_valuation_iff_norm_le, norm_one]
-    exact hx.trans (zpow_le_one_of_nonpos₀ (by exact_mod_cast hp.out.one_lt.le) (by simp))⟩,
-    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr hx⟩
 
 /-- A unit of `ℚ_[p]` lies in the unit filtration `U(ℚ_p,i)`, `i ≥ 1`, exactly when
 `‖x - 1‖ ≤ p ^ (-i)`. -/
@@ -128,33 +118,6 @@ private theorem mk0_mem_unitFiltration {i : ℕ} (hi : 1 < (p - 1) * i) {x : ℚ
       TauCeti.unitFiltration ℚ_[p] i :=
   (mem_unitFiltration_iff_norm_sub_one_le (ne_zero_of_one_lt_mul hi)).mpr hx
 
-/-- **The exponential preserves the norm on deep discs.** For `1 < (p - 1) * i` and
-`‖x‖ ≤ p ^ (-i)`, `‖exp x - 1‖ = ‖x‖`. -/
-theorem norm_exp_sub_one {i : ℕ} (hi : 1 < (p - 1) * i) {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : ‖exp x - 1‖ = ‖x‖ :=
-  valuation_eq_valuation_iff_norm_eq.mp
-    (TauCeti.valuation_exp_sub_one (absoluteRamificationIndex_lt hi) (toMaximalIdealPow hx))
-
-/-- **The logarithm preserves the norm on deep discs.** For `1 < (p - 1) * i` and
-`‖u - 1‖ ≤ p ^ (-i)`, `‖log u‖ = ‖u - 1‖`. -/
-theorem norm_log {i : ℕ} (hi : 1 < (p - 1) * i) {u : ℚ_[p]}
-    (hu : ‖u - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : ‖log u‖ = ‖u - 1‖ :=
-  valuation_eq_valuation_iff_norm_eq.mp
-    (TauCeti.valuation_log (absoluteRamificationIndex_lt hi) (mk0_mem_unitFiltration hi hu))
-
-/-- **The logarithm inverts the exponential on deep discs.** For `1 < (p - 1) * i` and
-`‖x‖ ≤ p ^ (-i)`, `log (exp x) = x`. -/
-theorem log_exp {i : ℕ} (hi : 1 < (p - 1) * i) {x : ℚ_[p]}
-    (hx : ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : log (exp x) = x :=
-  TauCeti.log_exp_of_mem_maximalIdeal_pow (absoluteRamificationIndex_lt hi) (toMaximalIdealPow hx)
-
-/-- **The exponential inverts the logarithm on deep discs.** For `1 < (p - 1) * i` and
-`‖u - 1‖ ≤ p ^ (-i)`, `exp (log u) = u`. -/
-theorem exp_log {i : ℕ} (hi : 1 < (p - 1) * i) {u : ℚ_[p]}
-    (hu : ‖u - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ))) : exp (log u) = u :=
-  TauCeti.exp_log_of_mem_unitFiltration (absoluteRamificationIndex_lt hi)
-    (mk0_mem_unitFiltration hi hu)
-
 /-- **The logarithm is a homomorphism on deep discs.** For `1 < (p - 1) * i`,
 `‖u - 1‖ ≤ p ^ (-i)` and `‖w - 1‖ ≤ p ^ (-i)`, `log (u * w) = log u + log w`. -/
 theorem log_mul {i : ℕ} (hi : 1 < (p - 1) * i) {u w : ℚ_[p]}
@@ -168,8 +131,6 @@ end Padic
 /-! ### Integral power-series expansions on deep discs -/
 
 namespace TauCeti
-
-open scoped PowerSeries
 
 variable {p : ℕ} [hp : Fact p.Prime] {i : ℕ}
 
@@ -289,11 +250,10 @@ theorem coe_coeff_deepExpSeries_of_ne_zero (hi : 1 < (p - 1) * i) {n : ℕ} (hn 
 theorem hasSum_coeff_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
     HasSum (fun n ↦ ((PowerSeries.coeff n (deepExpSeries hi) : ℤ_[p]) : ℚ_[p]) * (x : ℚ_[p]) ^ n)
       ((exp ((p : ℚ_[p]) ^ i * x) - 1) / (p : ℚ_[p]) ^ i) := by
-  have hexp := (TauCeti.hasSum_exp_of_mem_maximalIdeal_pow
-    (Padic.toMaximalIdealPow (norm_pow_mul_coe_le i x))
-    (Padic.absoluteRamificationIndex_lt hi)).update 0 0
-  simp only [Padic.toMaximalIdealPow, pow_zero, Nat.factorial_zero, Nat.cast_one, div_one,
-    zero_sub, neg_add_eq_sub] at hexp
+  have hexp := (expSeries_div_hasSum_exp_of_norm_lt
+    ((norm_pow_mul_coe_le i x).trans_lt (zpow_neg_lt_amiceRadius_zero hi))).update 0 0
+  simp only [pow_zero, Nat.factorial_zero, Nat.cast_one, div_one, zero_sub,
+    neg_add_eq_sub] at hexp
   refine (hexp.div_const ((p : ℚ_[p]) ^ i)).congr_fun fun n ↦ ?_
   rcases eq_or_ne n 0 with rfl | hn
   · simp [constantCoeff_deepExpSeries]
@@ -328,7 +288,8 @@ inverts `deepExpSeries` under evaluation on `ℤ_p`. -/
     (x : ℤ_[p]) : (deepLogSeries (p := p) hi').evalAt ((deepExpSeries hi).evalAt x) = x := by
   apply PadicInt.ext
   rw [coe_evalAt_deepLogSeries, one_add_pow_mul_coe_evalAt_deepExpSeries,
-    Padic.log_exp hi (norm_pow_mul_coe_le i x), mul_div_cancel_left₀ _ (pow_prime_ne_zero i)]
+    log_exp_of_norm_lt ((norm_pow_mul_coe_le i x).trans_lt (zpow_neg_lt_amiceRadius_zero hi)),
+    mul_div_cancel_left₀ _ (pow_prime_ne_zero i)]
 
 /-- **Analytic right inverse.** In the deep convergence range `1 < (p - 1) * i`, `deepExpSeries`
 inverts `deepLogSeries` under evaluation on `ℤ_p`. -/
@@ -338,7 +299,8 @@ inverts `deepLogSeries` under evaluation on `ℤ_p`. -/
   have hu : ‖1 + (p : ℚ_[p]) ^ i * x - 1‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
     rw [add_sub_cancel_left]; exact norm_pow_mul_coe_le i x
   rw [coe_evalAt_deepExpSeries, pow_mul_coe_evalAt_deepLogSeries,
-    Padic.exp_log hi hu, add_sub_cancel_left, mul_div_cancel_left₀ _ (pow_prime_ne_zero i)]
+    exp_log_of_norm_sub_one_lt (hu.trans_lt (zpow_neg_lt_amiceRadius_zero hi)),
+    add_sub_cancel_left, mul_div_cancel_left₀ _ (pow_prime_ne_zero i)]
 
 /-- **Formal left inverse.** In `ℤ_p⟦X⟧`, substituting `deepExpSeries hi` into `deepLogSeries hi'`
 gives `X`. -/
