@@ -138,26 +138,6 @@ theorem frobenius_weylElement (γ : Fin t.numRoots) (u : Aˣ) :
     Units.ext (by simp)
   rw [D.map_weylElement (iterateFrobenius A p k) γ u, hu]
 
-/-- For every Chevalley datum and every ring `A` of exponential characteristic `p`, squaring
-`Int(nᵢ) ∘ Frob_{p^k}` equals `Int(nᵢ²) ∘ Frob_{p^(2k)}` on all of `D.points A`. -/
-theorem conj_weylElement_comp_frobenius_comp_self (i : Fin t.rank) (p k : ℕ) [ExpChar A p] :
-    let F := (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1)).toMonoidHom.comp
-      (D.frobenius p k A)
-    F.comp F =
-      (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1 *
-        D.weylElement (t.simpleIndex ht i) A 1)).toMonoidHom.comp
-        (D.frobenius p (2 * k) A) := by
-  intro F
-  ext1 y
-  have hadd : D.frobenius p (2 * k) A y = D.frobenius p k A (D.frobenius p k A y) := by
-    have h := D.frobenius_add p k A k
-    rw [← two_mul] at h
-    exact DFunLike.congr_fun h y
-  dsimp only [F, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-  rw [MulAut.conj_apply, MulAut.conj_apply, MulAut.conj_apply, map_mul, map_mul, map_inv,
-    D.frobenius_weylElement, one_pow, ← hadd, mul_inv_rev]
-  simp only [mul_assoc]
-
 /-- Frobenius preserves the root–torus subgroup `D.rootTorusSubgroup A`. -/
 theorem map_frobenius_rootTorusSubgroup_le :
     (D.rootTorusSubgroup A).map (D.frobenius p k A) ≤ D.rootTorusSubgroup A := by

@@ -110,7 +110,7 @@ theorem eq_zero_of_opposite_mul_torus_mul_mem_normalizer
       x = 0 := by
     by_contra hx0
     have hxe : x = ((torusCharacter s (D.coordinateRoot β))⁻¹ : Kˣ) * x :=
-      ofAdd.injective (D.rootSubgroupPoints_injective γ K heq)
+      ofAdd.injective ((D.rootSubgroupPoints_inj γ K).mp heq)
     have h1 : ((1 : K) - ((torusCharacter s (D.coordinateRoot β))⁻¹ : Kˣ)) * x = 0 := by
       rw [sub_mul, one_mul, ← hxe, sub_self]
     exact hs <| inv_eq_one.mp <| Units.ext

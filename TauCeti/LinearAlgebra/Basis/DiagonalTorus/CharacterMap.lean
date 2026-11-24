@@ -351,6 +351,30 @@ theorem IsCharacterMap.symm {F : G ≃* G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ �
   have hF := congrArg F.symm (h.map_apply (torusPointMap φ.symm.toLinearMap s))
   simpa [hmap] using hF.symm
 
+/-- Conjugating by a product `g₁ * g₂` has character map `ψ * φ` when conjugation by `g₁` has
+character map `φ` and conjugation by `g₂` has character map `ψ`. -/
+theorem IsCharacterMap.conj_mul {g₁ g₂ : G}
+    (h₁ : IsCharacterMap T (MulAut.conj g₁).toMonoidHom φ)
+    (h₂ : IsCharacterMap T (MulAut.conj g₂).toMonoidHom ψ) :
+    IsCharacterMap T (MulAut.conj (g₁ * g₂)).toMonoidHom (ψ * φ) := by
+  have hcomp := h₁.comp h₂
+  have hconj : (MulAut.conj (g₁ * g₂)).toMonoidHom =
+      (MulAut.conj g₁).toMonoidHom.comp (MulAut.conj g₂).toMonoidHom := by
+    rw [map_mul]
+    rfl
+  rwa [hconj]
+
+/-- Conjugating by `g⁻¹` has character map `φ.symm` when conjugation by `g` has character map
+`φ`. -/
+theorem IsCharacterMap.conj_inv {g : G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ → ℤ)}
+    (h : IsCharacterMap T (MulAut.conj g).toMonoidHom φ.toLinearMap) :
+    IsCharacterMap T (MulAut.conj g⁻¹).toMonoidHom φ.symm.toLinearMap := by
+  have hsymm := h.symm
+  have hconj : (MulAut.conj g).symm.toMonoidHom = (MulAut.conj g⁻¹).toMonoidHom := by
+    ext z
+    simp
+  rwa [hconj] at hsymm
+
 /-- **Lang's equation on the torus.** If the units of `R` are divisible and `1 - φ` is injective,
 then every torus point is `T u * (F (T u))⁻¹` for some torus point `T u`: the homomorphism
 `t ↦ t * F(t)⁻¹` of the torus is surjective. Its character map is `1 - φ`, whose dual is

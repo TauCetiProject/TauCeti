@@ -204,20 +204,10 @@ theorem exists_torusPoints_conjugate_on_rootTorusSubgroup_of_pow_eq_smul_one {K 
     {n : ℕ} {m : ℤ} (hm0 : m ≠ 0) (hm1 : m ≠ 1) (hpow : φ ^ n = m • 1) :
     ∃ u : Fin t.rank → Kˣ, ∀ x ∈ D.rootTorusSubgroup K,
       F x = D.torusPoints K u * F' ((D.torusPoints K u)⁻¹ * x * D.torusPoints K u) *
-        (D.torusPoints K u)⁻¹ := by
-  refine D.exists_torusPoints_conjugate_on_rootTorusSubgroup hF hF' hFφ hF'φ ?_
+        (D.torusPoints K u)⁻¹ :=
+  D.exists_torusPoints_conjugate_on_rootTorusSubgroup hF hF' hFφ hF'φ
+    (injective_of_pow_eq_smul_one hpow hm0 fun _ => hm1)
     (injective_one_sub_of_pow_eq_smul_one hpow hm1)
-  by_cases hn : n = 0
-  · subst hn
-    rw [pow_zero] at hpow
-    intro x y _
-    have hsub : (m - 1) • (x - y) = 0 := by
-      have hmx : m • (x - y) = x - y := by
-        simpa only [LinearMap.smul_apply, one_apply_eq_self] using
-          (DFunLike.congr_fun hpow (x - y)).symm
-      rw [sub_smul, one_smul, hmx, sub_self]
-    exact sub_eq_zero.mp ((smul_eq_zero.mp hsub).resolve_left (sub_ne_zero.mpr hm1))
-  · exact injective_of_pow_eq_smul_one hpow hn hm0
 
 /-- **Torus conjugacy in positive characteristic `p` when `φ ^ n = (p ^ r) • 1` with `r > 0`.**
 Applies to Frobenius-type and twisted Steinberg endomorphisms over algebraically closed fields of

@@ -187,23 +187,6 @@ instance normal_torusPoints_subgroupOf_weylSubgroup :
 
 /-! ## The Weyl action on the actual character lattice -/
 
-/-- In type `A₁`, the unique simple reflection acts as negation on the actual character lattice
-of every Chevalley datum. -/
-theorem weylCharacterAut_simpleIndex_typeA1 {h1 : (DynkinType.A 1).Valid}
-    (D : ChevalleyDatum (DynkinType.A 1) h1) (i : Fin (DynkinType.A 1).rank) :
-    (D.weylCharacterAut
-      (RootPairing.weylGroup.ofIdx ((DynkinType.A 1).simplyConnectedRootDatum h1)
-        ((DynkinType.A 1).simpleIndex h1 i))).toLinearMap = -1 := by
-  refine LinearMap.ext fun χ => D.weightLatticeEmbedding_injective ?_
-  rw [LinearEquiv.coe_coe, D.weightLatticeEmbedding_weylCharacterAut,
-    RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
-    RootPairing.reflection_apply, (DynkinType.A 1).coroot'_simpleIndex_apply h1]
-  ext j
-  obtain rfl : j = i := (Fin.eq_zero j).trans (Fin.eq_zero i).symm
-  simp only [LinearMap.neg_apply, one_apply_eq_self, map_neg, Pi.sub_apply, Pi.smul_apply,
-    Pi.neg_apply, smul_eq_mul, DynkinType.root_simpleIndex, DynkinType.cartanMatrix_apply_same]
-  ring
-
 /-- The simple reflection on actual torus parameters is dual to the corresponding simple
 reflection on the actual character lattice. -/
 theorem simpleReflectionTorusParameter_eq_torusPointMap :
@@ -247,26 +230,19 @@ theorem isCharacterMap_conj_weylSubgroup (K : Type*) [Field K] (g : D.weylSubgro
         (D.weylCharacterAut (D.weylProjection K x)⁻¹).toLinearMap}
       one_mem' := by simp [isCharacterMap_iff]
       mul_mem' := fun {x y} hx hy => by
-        have hcomp := hx.comp hy
+        have h := hx.conj_mul hy
         have hmul : (D.weylCharacterAut (D.weylProjection K y)⁻¹).toLinearMap *
             (D.weylCharacterAut (D.weylProjection K x)⁻¹).toLinearMap =
             (D.weylCharacterAut (D.weylProjection K (x * y))⁻¹).toLinearMap := by
           rw [map_mul, mul_inv_rev, map_mul, LinearEquiv.coe_toLinearMap_mul]
-        have hconj : (MulAut.conj ((x * y : D.weylSubgroup K) : D.points K)).toMonoidHom =
-            (MulAut.conj (x : D.points K)).toMonoidHom.comp
-              (MulAut.conj (y : D.points K)).toMonoidHom := by
-          ext z; simp [MulAut.conj_apply, mul_assoc]
-        rwa [← hconj, hmul] at hcomp
+        rwa [← Subgroup.coe_mul, hmul] at h
       inv_mem' := fun {x} hx => by
-        have hsymm := hx.symm
-        have hconj : (MulAut.conj (x : D.points K)).symm.toMonoidHom =
-            (MulAut.conj ((x⁻¹ : D.weylSubgroup K) : D.points K)).toMonoidHom := by
-          ext z; simp
+        have h := hx.conj_inv
         have hchar : (D.weylCharacterAut (D.weylProjection K x)⁻¹).symm.toLinearMap =
             (D.weylCharacterAut (D.weylProjection K x⁻¹)⁻¹).toLinearMap := by
           rw [map_inv (D.weylProjection K), inv_inv, map_inv D.weylCharacterAut]
           exact LinearMap.ext fun χ => (congrFun (LinearEquiv.coe_inv _) χ).symm
-        rwa [hconj, hchar] at hsymm }
+        rwa [← Subgroup.coe_inv, hchar] at h }
   have htop : H = ⊤ := D.subgroup_eq_top_of_torusPoints_mem_of_weylElement_mem H
     (fun r => isCharacterMap_iff.mpr fun s => by
       simpa only [D.weylProjection_torusPoints, inv_one, map_one, LinearEquiv.coe_toLinearMap_one,

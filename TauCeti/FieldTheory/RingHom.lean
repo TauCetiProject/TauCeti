@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Basic.Finite.Defs
 import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
-import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.Algebra.Group.Hom.Finite
 
 /-!
 # Rigidity of field endomorphisms with equal pointwise powers
@@ -19,7 +20,7 @@ import TauCeti.Algebra.Group.Hom.Defs
 Over an infinite field `K`, two field endomorphisms `g₁, g₂ : K →+* K` whose pointwise `N`-th
 powers `(g₁ x) ^ N` and `(g₂ x) ^ N` agree on all nonzero `x : K` for some `N ≠ 0` are equal
 (`RingHom.eq_of_forall_apply_pow_eq`), and the product `(g₁ x * g₂ x) ^ N` cannot equal `1` on
-all nonzero `x` (`RingHom.false_of_forall_mul_apply_pow_eq_one`).
+all nonzero `x` (`RingHom.not_forall_mul_apply_pow_eq_one`).
 
 Both arguments restrict attention to the disagreement set `{x | g₁ x ≠ g₂ x}` (respectively
 `Set.univ \ {0, -1}`): evaluating on `x` and `1 + x` forces `g₁ x` or `g₂ x` into a finite union
@@ -29,7 +30,7 @@ disagreement set `{x | g₁ x ≠ g₂ x}` is finite, and additivity on an infin
 
 ## Main results
 
-* `RingHom.false_of_forall_mul_apply_pow_eq_one`: over an infinite field, `(g₁ x * g₂ x) ^ N = 1`
+* `RingHom.not_forall_mul_apply_pow_eq_one`: over an infinite field, `(g₁ x * g₂ x) ^ N = 1`
   cannot hold for all nonzero `x` and a nonzero `N`.
 * `RingHom.eq_of_forall_apply_pow_eq`: over an infinite field, `(g₁ x) ^ N = (g₂ x) ^ N` for all
   nonzero `x` and some `N ≠ 0` implies `g₁ = g₂`.
@@ -39,25 +40,24 @@ public section
 
 namespace RingHom
 
+private theorem finite_setOf_pow_eq_one (K : Type*) [Field K] {N : ℕ} (hN : N ≠ 0) :
+    {ζ : K | ζ ^ N = 1}.Finite :=
+  (Polynomial.nthRootsFinset N (1 : K)).finite_toSet.subset fun ζ hζ => by
+    simpa [Polynomial.mem_nthRootsFinset (Nat.pos_of_ne_zero hN)] using hζ
+
 /-- Over an infinite field, two field endomorphisms `g₁, g₂` cannot satisfy pointwise relations
 `(g₁ x * g₂ x) ^ N = 1` for all nonzero `x` and a nonzero natural number `N`. -/
-theorem false_of_forall_mul_apply_pow_eq_one {K : Type*} [Field K] [Infinite K]
-    (g₁ g₂ : K →+* K) {N : ℕ} (hN : N ≠ 0)
-    (h : ∀ x : K, x ≠ 0 → (g₁ x * g₂ x) ^ N = 1) : False := by
+theorem not_forall_mul_apply_pow_eq_one {K : Type*} [Field K] [Infinite K]
+    (g₁ g₂ : K →+* K) {N : ℕ} (hN : N ≠ 0) :
+    ¬ ∀ x : K, x ≠ 0 → (g₁ x * g₂ x) ^ N = 1 := by
   classical
-  let R : Set K := ↑(Polynomial.nthRootsFinset N (1 : K))
-  have hR : R.Finite := (Polynomial.nthRootsFinset N (1 : K)).finite_toSet
-  have hR_iff (ζ : K) : ζ ∈ R ↔ ζ ^ N = 1 := by
-    simp [R, Polynomial.nthRootsFinset_toSet (Nat.pos_of_ne_zero hN)]
+  intro h
+  let R : Set K := {ζ : K | ζ ^ N = 1}
+  have hR : R.Finite := finite_setOf_pow_eq_one K hN
   let qPoly : K × K → Polynomial K := fun p =>
     Polynomial.X ^ 2 - Polynomial.C (p.2 - 1 - p.1) * Polynomial.X + Polynomial.C p.1
-  have hqPoly_ne (p : K × K) : qPoly p ≠ 0 := by
-    intro h0
-    have hc := congrArg (fun f : Polynomial K => f.coeff 2) h0
-    rw [Polynomial.coeff_add, Polynomial.coeff_sub, Polynomial.coeff_X_pow, Polynomial.coeff_mul_X,
-      Polynomial.coeff_C_of_ne_zero (by decide), Polynomial.coeff_C_of_ne_zero (by decide),
-      Polynomial.coeff_zero] at hc
-    simp at hc
+  have hqPoly_ne (p : K × K) : qPoly p ≠ 0 :=
+    Polynomial.Monic.ne_zero (by dsimp only [qPoly]; monicity!)
   let Q : K × K → Set K := fun p => ↑(qPoly p).roots.toFinset
   have hQ (p : K × K) : (Q p).Finite := (qPoly p).roots.toFinset.finite_toSet
   have hU : (⋃ p ∈ R ×ˢ R, Q p).Finite := (hR.prod hR).biUnion fun p _ => hQ p
@@ -66,8 +66,7 @@ theorem false_of_forall_mul_apply_pow_eq_one {K : Type*} [Field K] [Infinite K]
     rintro _ ⟨x, ⟨_, hx⟩, rfl⟩
     have hx0 : x ≠ 0 := fun h0 => hx (Or.inl h0)
     have hx1 : 1 + x ≠ 0 := fun h1 => hx (Or.inr (eq_of_sub_eq_zero (by linear_combination h1)))
-    refine Set.mem_biUnion (Set.mk_mem_prod ((hR_iff _).mpr (h x hx0))
-      ((hR_iff _).mpr (h (1 + x) hx1))) ?_
+    refine Set.mem_biUnion (Set.mk_mem_prod (h x hx0) (h (1 + x) hx1)) ?_
     rw [Finset.mem_coe, Multiset.mem_toFinset, Polynomial.mem_roots (hqPoly_ne _),
       Polynomial.IsRoot.def]
     simp only [qPoly, Polynomial.eval_add, Polynomial.eval_sub, Polynomial.eval_pow,
@@ -80,10 +79,8 @@ nonzero elements (`(g₁ x) ^ N = (g₂ x) ^ N`) for some `N ≠ 0` are equal. -
 theorem eq_of_forall_apply_pow_eq {K : Type*} [Field K] [Infinite K]
     (g₁ g₂ : K →+* K) {N : ℕ} (hN : N ≠ 0)
     (h : ∀ x : K, x ≠ 0 → (g₁ x) ^ N = (g₂ x) ^ N) : g₁ = g₂ := by
-  let R : Set K := ↑(Polynomial.nthRootsFinset N (1 : K))
-  have hR : R.Finite := (Polynomial.nthRootsFinset N (1 : K)).finite_toSet
-  have hR_iff (ζ : K) : ζ ∈ R ↔ ζ ^ N = 1 := by
-    simp [R, Polynomial.nthRootsFinset_toSet (Nat.pos_of_ne_zero hN)]
+  let R : Set K := {ζ : K | ζ ^ N = 1}
+  have hR : R.Finite := finite_setOf_pow_eq_one K hN
   let E : K × K → Set K := fun p => {y : K | p.1 ≠ p.2 ∧ (p.1 - p.2) * y = p.2 - 1}
   have hE (p : K × K) : (E p).Finite := Set.Subsingleton.finite fun y₁ hy₁ y₂ hy₂ => by
     have hdiff : (p.1 - p.2) * (y₁ - y₂) = 0 := by
@@ -96,9 +93,8 @@ theorem eq_of_forall_apply_pow_eq {K : Type*} [Field K] [Infinite K]
   have hratio (z : K) (hz : z ≠ 0) :
       g₁ z * (g₂ z)⁻¹ ∈ R ∧ g₁ z = (g₁ z * (g₂ z)⁻¹) * g₂ z := by
     have hg2z : g₂ z ≠ 0 := fun h0 => hz (g₂.injective (h0.trans (map_zero g₂).symm))
-    exact ⟨(hR_iff _).mpr <| by
-        rw [mul_pow, inv_pow, h z hz, mul_inv_cancel₀ (pow_ne_zero N hg2z)],
-      (inv_mul_cancel_right₀ hg2z (g₁ z)).symm⟩
+    refine ⟨Set.mem_ofPred.mpr ?_, (inv_mul_cancel_right₀ hg2z (g₁ z)).symm⟩
+    rw [mul_pow, inv_pow, h z hz, mul_inv_cancel₀ (pow_ne_zero N hg2z)]
   -- Every disagreement outside `{0, -1}` forces `g₂ x` into `B` via the `N`-th roots `ζ₁, ζ₂`.
   have hbad_sub : {x : K | g₁ x ≠ g₂ x} ⊆ ({0, -1} : Set K) ∪ g₂ ⁻¹' B := by
     intro x hx

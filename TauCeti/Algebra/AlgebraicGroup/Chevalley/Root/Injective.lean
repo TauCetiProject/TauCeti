@@ -103,6 +103,22 @@ theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRin
     (D.rootSubgroupPoints_injective_of_rootable γ _ (hmap.trans (map_one _).symm))
   exact ofAdd_toAdd u ▸ congrArg ofAdd (hf (h0.trans (map_zero f).symm))
 
+/-- Two root-subgroup elements over an integral domain are equal iff their parameters are equal. -/
+@[simp]
+theorem rootSubgroupPoints_inj (γ : Fin t.numRoots) (A : Type v) [CommRing A] [IsDomain A]
+    {u v : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
+  (D.rootSubgroupPoints_injective γ A).eq_iff
+
+/-- A root-subgroup element over an integral domain is the identity iff its additive parameter is
+zero. -/
+@[simp]
+theorem rootSubgroupPoints_ofAdd_eq_one_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    [IsDomain A] {a : A} :
+    D.rootSubgroupPoints γ A (ofAdd a) = 1 ↔ a = 0 := by
+  rw [← map_one (D.rootSubgroupPoints γ A), D.rootSubgroupPoints_inj, ← ofAdd_zero,
+    ofAdd.injective.eq_iff]
+
 private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K] [Infinite K]
     {α β : Fin t.numRoots} (hαβ : α ≠ β) {a b : K}
     (h : D.rootSubgroupPoints α K (ofAdd a) = D.rootSubgroupPoints β K (ofAdd b)) :
@@ -110,23 +126,22 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
   suffices ha : a = 0 by
     refine ⟨ha, ?_⟩
     rw [ha, ofAdd_zero, map_one] at h
-    simpa using congrArg toAdd (D.rootSubgroupPoints_injective β K (h.symm.trans (map_one _).symm))
+    exact (D.rootSubgroupPoints_ofAdd_eq_one_iff β K).mp h.symm
   by_contra ha
   have hb : b ≠ 0 := by
     rintro rfl
     rw [ofAdd_zero, map_one] at h
-    exact ha <| by
-      simpa using congrArg toAdd (D.rootSubgroupPoints_injective α K (h.trans (map_one _).symm))
+    exact ha ((D.rootSubgroupPoints_ofAdd_eq_one_iff α K).mp h)
   have hker : ∀ s : Fin t.rank → Kˣ,
       torusCharacter s (D.coordinateRoot α) = 1 → torusCharacter s (D.coordinateRoot β) = 1 := by
     intro s hsα
     have hconj := congrArg (fun g => D.torusPoints K s * g * (D.torusPoints K s)⁻¹) h
     rw [D.torusPoints_conj_rootSubgroupPoints, D.torusPoints_conj_rootSubgroupPoints,
       hsα, Units.val_one, one_mul, h] at hconj
-    have heq : b = (torusCharacter s (D.coordinateRoot β) : K) * b := by
-      simpa using congrArg toAdd (D.rootSubgroupPoints_injective β K hconj)
+    have heq : b = (torusCharacter s (D.coordinateRoot β) : K) * b :=
+      ofAdd.injective ((D.rootSubgroupPoints_inj β K).mp hconj)
     exact Units.ext ((mul_right_cancel₀ hb (by simpa using heq.symm)).trans rfl)
-  obtain ⟨i, hi⟩ : ∃ i, D.coordinateRoot α i ≠ 0 := Function.ne_iff.mp (D.coordinateRoot_ne_zero α)
+  obtain ⟨i, hi⟩ := D.exists_coordinateRoot_ne_zero α
   rcases D.eq_or_eq_reflectionPerm_of_smul_coordinateRoot_eq hi
       (smul_eq_smul_of_torusCharacter_ker_le hker i) with heq | hα
   · exact hαβ heq
@@ -138,8 +153,7 @@ private theorem eq_zero_of_rootSubgroupPoints_eq_infinite {K : Type v} [Field K]
       have hmem : D.rootSubgroupPoints δ K (ofAdd y) ∈ D.borelSubgroup K :=
         heq' ▸ D.positivePoints_le_borelSubgroup K (D.rootSubgroupPoints_mem_positivePoints K hγ _)
       have h1 := (D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots K hδ _).mp hmem
-      exact hy <| by
-        simpa using congrArg toAdd (D.rootSubgroupPoints_injective δ K (h1.trans (map_one _).symm))
+      exact hy ((D.rootSubgroupPoints_ofAdd_eq_one_iff δ K).mp h1)
     rcases mem_posRoots_or_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) β with
         hpos | hneg'
     · exact hcontra ha hpos

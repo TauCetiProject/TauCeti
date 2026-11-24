@@ -329,6 +329,11 @@ theorem coordinateRoot_ne_zero (γ : Fin t.numRoots) : D.coordinateRoot γ ≠ 0
   apply (t.simplyConnectedRootDatum ht).ne_zero γ
   rw [← D.weightLatticeEmbedding_coordinateRoot γ, h0, map_zero]
 
+/-- Every root has at least one nonzero coordinate in the chosen basis of the weight lattice. -/
+theorem exists_coordinateRoot_ne_zero (γ : Fin t.numRoots) :
+    ∃ i : Fin t.rank, D.coordinateRoot γ i ≠ 0 :=
+  Function.ne_iff.mp (D.coordinateRoot_ne_zero γ)
+
 /-- Proportional coordinate roots (with a nonzero coefficient on `β`) come from equal or
 opposite roots, by reducedness of the pinned simply-connected root datum. -/
 theorem eq_or_eq_neg_of_smul_coordinateRoot_eq {α β : Fin t.numRoots} {a b : ℤ} (ha : a ≠ 0)
