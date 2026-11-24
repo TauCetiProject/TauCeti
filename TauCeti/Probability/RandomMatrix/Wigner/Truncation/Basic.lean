@@ -190,6 +190,8 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le [IsProba
       have hc : (n : ℝ) / (n + 1) ≤ 1 := (div_le_one (by positivity)).mpr (by linarith)
       simpa only [div_eq_inv_mul, mul_assoc, Function.comp_def] using
         mul_le_of_le_one_left he hc
-    _ ≤ _ := hX.integral_norm_sub_centeredTruncation_sq_le hmean R
+    _ ≤ _ := by
+      simpa only [hmean, sub_zero] using
+        hX.aestronglyMeasurable.integral_norm_sub_integral_sub_centeredTruncation_sq_le R
 
 end TauCeti.Probability
