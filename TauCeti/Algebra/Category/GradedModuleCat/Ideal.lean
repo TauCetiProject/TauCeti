@@ -115,7 +115,7 @@ theorem isGeneratedInDegree_ofIdeal_span_singleton {f : A} {d : ℤ} (hf : f ∈
     (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) :
     (ofIdeal 𝒜 (Ideal.span {f}) hI).grading.IsGeneratedInDegree A d := by
   refine ((ofIdeal 𝒜 (Ideal.span {f}) hI).grading.isGeneratedInDegree_iff d).2 fun x => ?_
-  obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.1 x.2
+  obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.1 x.property
   have hmem : spanSingletonGenerator f ∈ (ofIdeal 𝒜 (Ideal.span {f}) hI).grading.piece d :=
     (mem_ofIdeal_piece_iff hI).2 (by simpa [coe_spanSingletonGenerator] using hf)
   have hx : x = a • spanSingletonGenerator f := Subtype.ext <| by
@@ -147,7 +147,7 @@ private def ofIdealSpanSingletonLift {f : A} (hf₀ : f ∈ 𝒜 0)
       simpa only [LinearMap.comp_apply, Submodule.subtype_apply,
         LinearMap.toSpanSingleton_apply, vadd_eq_add, add_zero] using
         SetLike.GradedSMul.smul_mem (B := M.grading.piece)
-          ((mem_ofIdeal_piece_iff hI).1 ha) (smul_grading_piece_le hf₀ M 0 m.2)
+          ((mem_ofIdeal_piece_iff hI).1 ha) (smul_grading_piece_le hf₀ M 0 m.property)
 
 private theorem hom_ofIdealSpanSingletonLift_apply {f : A} (hf₀ : f ∈ 𝒜 0)
     (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) {M : GradedModuleCat.{uA} 𝒜}
@@ -167,7 +167,7 @@ def ofIdealSpanSingletonHomEquiv {f : A} (hf : IsIdempotentElem f) (hf₀ : f �
   left_inv φ := hom_ext <| LinearMap.ext fun a => by
     rw [hom_ofIdealSpanSingletonLift_apply, ← map_smul, smul_spanSingletonGenerator hf]
   right_inv m := Subtype.ext <| by
-    obtain ⟨n, -, hn⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 m.2
+    obtain ⟨n, -, hn⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 m.property
     dsimp only
     rw [hom_ofIdealSpanSingletonLift_apply, coe_spanSingletonGenerator, ← hn, smul_smul,
       hf.eq]
@@ -200,7 +200,7 @@ theorem map_subtype_smul_ofIdeal_span_singleton_piece {e f : A} (he₀ : e ∈ �
   constructor
   · rintro ⟨_, hz, rfl⟩
     obtain ⟨x, hx, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hz
-    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.1 x.2
+    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.1 x.property
     rw [LinearMap.restrictScalars_apply, Submodule.subtype_apply, Submodule.coe_smul,
       smul_eq_mul]
     refine ⟨by rw [← ha, ← mul_assoc]; exact mul_mul_mem_cornerSubmodule k e f a, ?_⟩

@@ -37,6 +37,8 @@ locus of a section of an invertible sheaf.
   when `e` is a basis of `L` over `U`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_smul_tensorPowSection`: if `e` is a basis of `L`
   over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`.
+* `AlgebraicGeometry.Scheme.Modules.tmulRight_tensorPowSection_add`: tensoring `t ⊗ eᵐ` with `eⁿ`
+  gives `t ⊗ eⁿ⁺ᵐ` under the associator and the block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ`.
 -/
 
 public section
@@ -102,6 +104,8 @@ theorem whiskerLeft_app_tmulRight {L' : X.Modules} (g : L ⟶ L') {U : X.Opens} 
   have h := congrArg (fun φ ↦ φ.hom (t ⊗ₜ e))
     (Functor.LaxMonoidal.μ_natural_right (sectionsFunctor U) F g)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The associator and whiskerings of `ModuleCat` act on pure tensors as expected, and the
+  -- sections functor applies `Hom.app`, so `h` is the claim with `tmulRight` unfolded.
   exact h.symm
 
 /-- The right unitor `F ⊗ 𝒪_X ≅ F` sends `t ⊗ r` to `r • t`. -/
@@ -110,6 +114,8 @@ theorem rightUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)
   have h := congrArg (fun φ ↦ φ.hom (t ⊗ₜ r))
     (Functor.LaxMonoidal.right_unitality (sectionsFunctor U) F)
   simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The left unitor of `ModuleCat` is `TensorProduct.lid`, so `h` reads `r • e` on the right, and
+  -- the sections functor applies `Hom.app`.
   exact h.symm
 
 /-- The inverse right unitor `F ≅ F ⊗ 𝒪_X` sends `t` to `t ⊗ 1`. -/
@@ -122,6 +128,30 @@ theorem rightUnitor_inv_app_eq_tmulRight {U : X.Opens} (t : Γ(F, U)) :
   -- The identity of `Γ(F, U)` in `AddCommGrpCat` acts as the identity function.
   rfl
 
+/-- The left unitor `𝒪_X ⊗ L ≅ L` sends `r ⊗ e` to `r • e`. -/
+@[simp]
+theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U)) :
+    (λ_ L).hom.app U (tmulRight (𝟙_ X.Modules) e r) = r • e := by
+  have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ e))
+    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) L)
+  simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The left unitor of `ModuleCat` is `TensorProduct.lid`, so `h` reads `r • e` on the right, and
+  -- the sections functor applies `Hom.app`.
+  exact h.symm
+
+/-- The associator `(F ⊗ L) ⊗ G ≅ F ⊗ (L ⊗ G)` sends `(t ⊗ e) ⊗ e'` to `t ⊗ (e ⊗ e')`. -/
+@[simp]
+theorem associator_hom_app_tmulRight {G : X.Modules} {U : X.Opens} (e' : Γ(G, U))
+    (e : Γ(L, U)) (t : Γ(F, U)) :
+    (α_ F L G).hom.app U (tmulRight (F ⊗ L) e' (tmulRight F e t)) =
+      tmulRight F (tmulRight L e' e) t := by
+  have h := congrArg (fun φ ↦ φ.hom ((t ⊗ₜ e) ⊗ₜ e'))
+    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F L G)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  -- The associator and whiskerings of `ModuleCat` act on pure tensors as expected, and the
+  -- sections functor applies `Hom.app`, so `h` is the claim with `tmulRight` unfolded.
+  exact h
+
 /-- Restriction to an open subscheme commutes with tensoring sections: the tensor map
 `F|_Y ⊗ L|_Y ⟶ (F ⊗ L)|_Y` of the restriction along an open immersion `j : Y ⟶ X` sends `t ⊗ e`
 to `t ⊗ e`. -/
@@ -129,7 +159,7 @@ theorem restrictFunctor_μ_app_tmulRight {Y : Scheme.{u}} (j : Y ⟶ X) [IsOpenI
     {W : Y.Opens} (e : Γ(L.restrict j, W)) (t : Γ(F.restrict j, W)) :
     (Functor.LaxMonoidal.μ (restrictFunctor j) F L).app W (tmulRight (F.restrict j) e t) =
       tmulRight F (L := L) (U := j ''ᵁ W) e t :=
-  TauCeti.SheafOfModules.pushforward_μ_app_tmul (restrictRingCatSheafHom j) F L (op W) t e
+  SheafOfModules.pushforward_μ_app_tmul (restrictRingCatSheafHom j) F L (op W) t e
 
 /-! ### Bijectivity over a basis section -/
 
@@ -255,6 +285,35 @@ theorem tmulRight_tensorPowSection_smul {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, 
     tmulRight F (tensorPowSection (r • e) n) t =
       tmulRight F (tensorPowSection e n) (r ^ n • t) := by
   rw [tensorPowSection_smul, tmulRight_smul, LinearMap.map_smul]
+
+/-- The block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ` sends `eᵐ ⊗ eⁿ` to `eⁿ⁺ᵐ`. -/
+@[simp]
+theorem tensorPowAddIso_hom_app_tmulRight_tensorPowSection {U : X.Opens} (e : Γ(L, U))
+    (m n : ℕ) :
+    (tensorPowAddIso L m n).hom.app U
+        (tmulRight (tensorPow L m) (tensorPowSection e n) (tensorPowSection e m)) =
+      tensorPowSection e (n + m) := by
+  induction m with
+  | zero =>
+    rw [tensorPowAddIso_zero]
+    exact (leftUnitor_hom_app_tmulRight (1 : Γ(X, U)) (tensorPowSection e n)).trans
+      (one_smul _ _)
+  | succ m ih =>
+    rw [tensorPowAddIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
+      tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
+    -- `n + (m + 1)` is definitionally `n + m + 1`, the index of the recursive step.
+    rfl
+
+/-- **Tensoring with powers of a section is multiplicative.** Tensoring `t ⊗ eᵐ` further with
+`eⁿ` gives `t ⊗ eⁿ⁺ᵐ`, after the identification `(F ⊗ Lᵐ) ⊗ Lⁿ ≅ F ⊗ Lⁿ⁺ᵐ` given by the
+associator and the block decomposition of tensor powers. -/
+theorem tmulRight_tensorPowSection_add {U : X.Opens} (e : Γ(L, U)) (m n : ℕ) (t : Γ(F, U)) :
+    tmulRight F (tensorPowSection e (n + m)) t =
+      ((α_ F (tensorPow L m) (tensorPow L n)).hom ≫ F ◁ (tensorPowAddIso L m n).hom).app U
+        (tmulRight (F ⊗ tensorPow L m) (tensorPowSection e n)
+          (tmulRight F (tensorPowSection e m) t)) := by
+  rw [Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
+    whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tmulRight_tensorPowSection]
 
 /-- If `e` is a basis of `L` over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`. -/
 theorem bijective_smul_tensorPowSection {U : X.Opens} (e : Γ(L, U))

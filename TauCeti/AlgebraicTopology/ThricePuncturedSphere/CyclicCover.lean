@@ -128,7 +128,7 @@ theorem snd_mk (t : ThricePuncturedSphere) (y : ℂ)
 /-- The equation of the cyclic cover. -/
 theorem snd_pow (z : CyclicCover m a b) :
     z.snd ^ m = (z.fst : ℂ) ^ a * ((z.fst : ℂ) - 1) ^ b :=
-  z.2.symm
+  z.property.symm
 
 /-- The function `t ↦ tᵃ (t − 1)ᵇ` has no zeros on `ℂ ∖ {0, 1}`. -/
 private theorem rhs_ne_zero (t : ThricePuncturedSphere) : (t : ℂ) ^ a * ((t : ℂ) - 1) ^ b ≠ 0 :=
@@ -158,12 +158,12 @@ private theorem isPrimitiveRoot_ζ : IsPrimitiveRoot ζ m :=
 private theorem ζ_pow_mul_exp_div_pow {t : ThricePuncturedSphere} {w : ℂ}
     (hw : cexp w = (t : ℂ) ^ a * ((t : ℂ) - 1) ^ b) (k : ℕ) :
     (ζ ^ k * cexp (w / m)) ^ m = (t : ℂ) ^ a * ((t : ℂ) - 1) ^ b := by
-  rw [mul_pow, pow_right_comm, isPrimitiveRoot_ζ.pow_eq_one, one_pow, one_mul, ← exp_nat_mul,
+  rw [mul_pow, pow_right_comm, isPrimitiveRoot_ζ.pow_eq_one, one_pow, one_mul, ← exp_natCast_mul,
     mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)), hw]
 
 /-- `exp (a log (1/2) + b log (−1/2)) = (1/2)ᵃ (1/2 − 1)ᵇ`. -/
 private theorem exp_w₀ : cexp w₀ = (1 / 2 : ℂ) ^ a * (1 / 2 - 1) ^ b := by
-  simp only [exp_add, exp_nat_mul, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0), exp_pi_mul_I]
+  simp only [exp_add, exp_natCast_mul, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0), exp_pi_mul_I]
   norm_num
 
 /-- The point `ζ ^ k · y₀` of the fibre of the cyclic cover over `1/2`, where
@@ -197,17 +197,17 @@ private theorem fiberPoint_injective :
   dsimp only at hij
   have h := congrArg (fun z ↦ Function.Pullback.snd (Subtype.val z)) hij
   simp only [snd_fiberPoint] at h
-  exact Fin.ext (isPrimitiveRoot_ζ.pow_inj i.2 j.2 (mul_right_cancel₀ (exp_ne_zero _) h))
+  exact Fin.ext (isPrimitiveRoot_ζ.pow_inj i.isLt j.isLt (mul_right_cancel₀ (exp_ne_zero _) h))
 
 /-- Every point of the fibre over `1/2` is one of the points `ζ ^ i · y₀`, `i < m`. -/
 private theorem fiberPoint_surjective :
     Surjective fun i : Fin m ↦ fiberPoint (m := m) (a := a) (b := b) i := by
   intro z
-  have hz : (z : CyclicCover m a b).fst = basePt := z.2
+  have hz : (z : CyclicCover m a b).fst = basePt := z.property
   have hy₀ : cexp (w₀ / m) ≠ 0 := exp_ne_zero _
   have hpow : ((z : CyclicCover m a b).snd / cexp (w₀ / m)) ^ m = 1 := by
-    rw [div_pow, snd_pow, hz, ← exp_nat_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)),
-      exp_w₀, coe_basePt]
+    rw [div_pow, snd_pow, hz, ← exp_natCast_mul,
+      mul_div_cancel₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)), exp_w₀, coe_basePt]
     exact div_self (by norm_num)
   obtain ⟨i, hi, hζ⟩ := isPrimitiveRoot_ζ.eq_pow_of_pow_eq_one hpow
   refine ⟨⟨i, hi⟩, Subtype.ext (Pullback.ext hz.symm ?_)⟩
@@ -249,13 +249,13 @@ private def liftγ0 (k : ℕ) : C(unitInterval, CyclicCover m a b) where
   toFun s := mk (γ0 s) (ζ ^ k * cexp ((a * (log (1 / 2) + 2 * π * I * s) +
       b * (log (1 - γ0 s) + π * I)) / m)) (by
     refine ζ_pow_mul_exp_div_pow ?_ k
-    simp only [exp_add, exp_nat_mul, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0),
+    simp only [exp_add, exp_natCast_mul, exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0),
       exp_log (slitPlane_ne_zero (one_sub_γ0_mem_slitPlane s)), exp_pi_mul_I]
     rw [coe_γ0_eq_exp]
     ring)
   continuous_toFun := by
     have hlog : Continuous fun s : unitInterval ↦ log (1 - (γ0 s : ℂ)) :=
-      (continuous_const.sub (continuous_subtype_val.comp γ0.continuous)).clog
+      (continuous_const.sub (continuous_subtypeVal.comp γ0.continuous)).clog
         one_sub_γ0_mem_slitPlane
     exact Continuous.subtype_mk (γ0.continuous.prodMk (by fun_prop)) _
 
@@ -272,11 +272,11 @@ private def liftγ1 (k : ℕ) : C(unitInterval, CyclicCover m a b) where
       b * (log (1 / 2) + π * I + 2 * π * I * s)) / m)) (by
     refine ζ_pow_mul_exp_div_pow ?_ k
     rw [show (γ1 s : ℂ) - 1 = 1 / 2 * -1 * cexp (2 * π * I * s) by rw [coe_γ1_eq_exp]; ring]
-    simp only [exp_add, exp_nat_mul, exp_log (slitPlane_ne_zero (γ1_mem_slitPlane s)),
+    simp only [exp_add, exp_natCast_mul, exp_log (slitPlane_ne_zero (γ1_mem_slitPlane s)),
       exp_log (by norm_num : (1 / 2 : ℂ) ≠ 0), exp_pi_mul_I])
   continuous_toFun := by
     have hlog : Continuous fun s : unitInterval ↦ log (γ1 s : ℂ) :=
-      (continuous_subtype_val.comp γ1.continuous).clog γ1_mem_slitPlane
+      (continuous_subtypeVal.comp γ1.continuous).clog γ1_mem_slitPlane
     exact Continuous.subtype_mk (γ1.continuous.prodMk (by fun_prop)) _
 
 private theorem snd_liftγ1 (k : ℕ) (s : unitInterval) :
@@ -296,7 +296,7 @@ private theorem liftγ0_one (k : ℕ) :
       (fiberPoint (m := m) (a := a) (b := b) (k + a) : CyclicCover m a b) := by
   refine Pullback.ext γ0.target ?_
   rw [snd_liftγ0, snd_fiberPoint, γ0.target, coe_basePt, show (1 : ℂ) - 1 / 2 = 1 / 2 by norm_num]
-  simp only [← exp_nat_mul, ← exp_add]
+  simp only [← exp_natCast_mul, ← exp_add]
   congr 1
   push_cast
   field_simp
@@ -314,7 +314,7 @@ private theorem liftγ1_one (k : ℕ) :
       (fiberPoint (m := m) (a := a) (b := b) (k + b) : CyclicCover m a b) := by
   refine Pullback.ext γ1.target ?_
   rw [snd_liftγ1, snd_fiberPoint, γ1.target, coe_basePt]
-  simp only [← exp_nat_mul, ← exp_add]
+  simp only [← exp_natCast_mul, ← exp_add]
   congr 1
   push_cast
   field_simp
@@ -411,7 +411,7 @@ private theorem snd_rotate_pow_smul (k : ℕ) (z : CyclicCover m a b) :
 theorem orderOf_rotate : orderOf (rotate (m := m) (a := a) (b := b)) = m := by
   refine (orderOf_eq_orderOf_iff.2 ?_).trans (isPrimitiveRoot_ζ (m := m)).eq_orderOf.symm
   refine fun n ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hz := snd_rotate_pow_smul n (fiberPoint (m := m) (a := a) (b := b) 0).1
+  · have hz := snd_rotate_pow_smul n (fiberPoint (m := m) (a := a) (b := b) 0).val
     rw [h, one_smul] at hz
     exact (mul_eq_right₀ (mul_ne_zero (pow_ne_zero _ (exp_ne_zero _)) (exp_ne_zero _))).1 hz.symm
   · exact Subtype.ext (Homeomorph.ext fun z ↦

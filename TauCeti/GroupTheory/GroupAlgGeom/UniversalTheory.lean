@@ -41,10 +41,9 @@ homomorphism `K →* H` that keeps every `k_j` nontrivial.
 Taking `H = G`, a group discriminated by `G` over `G` contains `G`, so it satisfies the same
 universal sentences with coefficient names as `G`. Conversely, a finitely generated group `K` over
 an equationally Noetherian group `G` that satisfies the same universal sentences as `G` is
-discriminated by `G` over `G`. This applies to free groups of finite or countable rank, with their
-bases as names: a finitely generated group over such a free group `F` is discriminated by `F`
-over `F` if and only if it is universally equivalent to `F` in the language with constants for a
-basis.
+discriminated by `G` over `G`. This applies to free groups of any rank, with their bases as
+names: a finitely generated group over such a free group `F` is discriminated by `F` over `F` if
+and only if it is universally equivalent to `F` in the language with constants for a basis.
 
 Every nontrivial torsion-free abelian group has the universal theory of the infinite cyclic group
 `ℤ`, in the group language without coefficients. It contains `ℤ`, and universal sentences pass to
@@ -70,7 +69,7 @@ in its finitely generated subgroups.
   satisfies the same universal sentences as `G`.
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis` and
   `TauCeti.GroupAlgGeom.isDiscriminatedBy_freeGroup_iff_forall_realize_iff`: the same for a group
-  with a countable free basis, with constants for the basis, and for `FreeGroup α`.
+  with a free basis, with constants for the basis, and for `FreeGroup α`.
 * `realize_iff_multiplicative_int_of_isMulCommutative_of_isMulTorsionFree_of_isUniversal`, in
   `TauCeti.GroupAlgGeom`: a nontrivial torsion-free abelian group has the universal theory of
   `ℤ`.
@@ -151,9 +150,6 @@ private theorem exists_finset_realize_comp_iff (c : A → G)
       h₁ f fun k hk => hf k (Finset.mem_union_left _ hk),
       h₂ f fun k hk => hf k (Finset.mem_union_right _ hk)]
 
--- The reduction `FirstOrder.Language.group.universal_iff_no_solution` to word systems fixes one
--- universe for the groups it describes, while `K` and `H` may live in different universes, so
--- the transfer is proved by induction on the formula instead.
 /-- If `K` is discriminated by `H` over `G`, a universal formula holds at an assignment in `K`
 as soon as it holds at its image under every coefficient-preserving homomorphism to `H`. -/
 private theorem realize_of_forall_realize_comp (h : IsDiscriminatedBy ιK ιH) (c : A → G)
@@ -310,12 +306,12 @@ theorem isDiscriminatedBy_id_iff_forall_realize_iff [Finite X]
   ⟨fun h _ hσ => h.realize_coeff_iff_of_isUniversal c hσ,
     fun h => isDiscriminatedBy_of_forall_isUniversal hG π hπ hc fun σ hσ => (h σ hσ).2⟩
 
-/-- **Remeslennikov's theorem.** Let `F` be a group with a countable free basis `b : α → F`, such
-as a free group of finite rank, and let `K` be generated over `F` by the images of finitely many
-variables. Then `K` is discriminated by `F` over `F` if and only if `K` and `F` satisfy the same
-universal sentences of the group language with constants for the basis `b`. -/
+/-- **Remeslennikov's theorem.** Let `F` be a group with a free basis `b : α → F`, of any rank,
+and let `K` be generated over `F` by the images of finitely many variables. Then `K` is
+discriminated by `F` over `F` if and only if `K` and `F` satisfy the same universal sentences of
+the group language with constants for the basis `b`. -/
 theorem isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis {F : Type*} [Group F]
-    [Countable α] (b : FreeGroupBasis α F) {ιK : F →* K} [Finite X]
+    (b : FreeGroupBasis α F) {ιK : F →* K} [Finite X]
     (π : GHom (inl : F →* GX F X) ιK) (hπ : Function.Surjective π) :
     IsDiscriminatedBy ιK (MonoidHom.id F) ↔
       letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
@@ -323,14 +319,15 @@ theorem isDiscriminatedBy_id_iff_forall_realize_iff_of_freeGroupBasis {F : Type*
       letI : Language.group.Structure F := TauCeti.Group.structureOfGroup F
       letI : (Language.constantsOn α).Structure F := Language.constantsOn.structure b
       ∀ σ : Language.group[[α]].Sentence, σ.IsUniversal → (K ⊨ σ ↔ F ⊨ σ) :=
-  isDiscriminatedBy_id_iff_forall_realize_iff (isEquationallyNoetherian_of_freeGroupBasis _ b) π hπ
+  have := b.isFreeGroup
+  isDiscriminatedBy_id_iff_forall_realize_iff (isEquationallyNoetherian_of_isFreeGroup _) π hπ
     b.closure_range_eq_top
 
-/-- **Remeslennikov's theorem** for the free group on a countable set `α`, with constants for
-its basis: a group `K` generated over `F(α)` by the images of finitely many variables is
-discriminated by `F(α)` over `F(α)` if and only if `K` and `F(α)` satisfy the same universal
-sentences of the group language with constants for `α`. -/
-theorem isDiscriminatedBy_freeGroup_iff_forall_realize_iff [Countable α]
+/-- **Remeslennikov's theorem** for the free group on a type `α`, with constants for its basis: a
+group `K` generated over `F(α)` by the images of finitely many variables is discriminated by `F(α)`
+over `F(α)` if and only if `K` and `F(α)` satisfy the same universal sentences of the group
+language with constants for `α`. -/
+theorem isDiscriminatedBy_freeGroup_iff_forall_realize_iff
     {ιK : FreeGroup α →* K} [Finite X] (π : GHom (inl : FreeGroup α →* GX (FreeGroup α) X) ιK)
     (hπ : Function.Surjective π) : IsDiscriminatedBy ιK (MonoidHom.id (FreeGroup α)) ↔
       letI : Language.group.Structure K := TauCeti.Group.structureOfGroup K
