@@ -228,6 +228,16 @@ theorem coeffInChartAt_eq_zero_of_apply_eq_zero {μ : RoughDensity I M m} (b : B
   · rw [μ.coeffInChartAt_apply_of_mem_target b α hy, inChartAt_apply, h, Density.zero_apply]
   · exact μ.coeffInChartAt_apply_of_notMem_target b α hy
 
+/-- If `x ∈ (extChartAt I α).source` lies outside `tsupport μ`, then
+`μ.coeffInChartAt b α (extChartAt I α x) = 0`. -/
+theorem coeffInChartAt_eq_zero_of_notMem_tsupport (μ : RoughDensity I M m)
+    (b : Basis (Fin m) ℝ E) (α : M) {x : M} (hx : x ∈ (extChartAt I α).source)
+    (hn : x ∉ _root_.tsupport (α := Density E m) μ) :
+    μ.coeffInChartAt b α (extChartAt I α x) = 0 :=
+  coeffInChartAt_eq_zero_of_apply_eq_zero b α <| by
+    rw [(extChartAt I α).left_inv hx]
+    exact _root_.image_eq_zero_of_notMem_tsupport (α := Density E m) hn
+
 /-- The zero rough density has zero chart coefficient everywhere. -/
 @[simp] theorem coeffInChartAt_zero (b : Basis (Fin m) ℝ E) (α : M) :
     (0 : RoughDensity I M m).coeffInChartAt b α = 0 := by funext y; simp [coeffInChartAt]
@@ -288,6 +298,18 @@ theorem eqOn_coeffInChartAt_image {μ ν : RoughDensity I M m} {s : Set M} (h : 
   rw [coeffInChartAt_apply_of_mem_source _ _ _ (hs hx),
     coeffInChartAt_apply_of_mem_source _ _ _ (hs hx), inChartAt_apply, inChartAt_apply,
     (extChartAt I α).left_inv (hs hx), h x hx]
+
+/-- If `μ` is nonnegative on every tangent basis, then its chart coefficient `μ.coeffInChartAt b α`
+is nonnegative everywhere. -/
+theorem coeffInChartAt_nonneg {μ : RoughDensity I M m}
+    (hμ : ∀ x (c : Basis (Fin m) ℝ (TangentSpace I x)), 0 ≤ μ x c)
+    (b : Basis (Fin m) ℝ E) (α : M) (y : E) : 0 ≤ μ.coeffInChartAt b α y := by
+  by_cases hy : y ∈ (extChartAt I α).target
+  · rw [μ.coeffInChartAt_apply_of_mem_target b α hy, inChartAt_apply]
+    let c := b.map (tangentSpaceCastModel I ((extChartAt I α).symm y)).symm.toLinearEquiv
+    rw [(μ ((extChartAt I α).symm y)).apply_eq_abs_det_mul c]
+    exact mul_nonneg (abs_nonneg _) (hμ _ c)
+  · rw [μ.coeffInChartAt_apply_of_notMem_target b α hy]
 
 /-- Chart coefficients vanish outside the coordinate target. -/
 theorem support_coeffInChartAt_subset_target (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)

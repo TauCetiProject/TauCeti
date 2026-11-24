@@ -216,16 +216,6 @@ private theorem signed_changeChart [FiniteDimensional ℝ E] [IsManifold I 1 M]
   simpa only [Manifold.OrientationLift.signAt_of_mem _ hα,
     Manifold.OrientationLift.signAt_of_mem _ hβ] using l.sign_mul_det α β x hα hβ
 
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem signedInChartAt_eq_zero_of_notMem_tsupport (φ : RoughForm I M ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) (α : M) (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
-    {x : M} (hx : x ∈ (extChartAt I α).source)
-    (hn : x ∉ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) :
-    φ.signedInChartAt b α σ (extChartAt I α x) = 0 := by
-  have hφ : φ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hn
-  rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx,
-    RoughForm.inChartAt_apply, (extChartAt I α).left_inv hx, hφ]; simp
-
 private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
     (l : Manifold.OrientationLift I M (Fin k)) (φ : RoughForm I M ℝ k)
     (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E) {s t : Set M}
@@ -237,9 +227,9 @@ private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
     c.integral_eq d (fun α ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x.val)) b.addHaar
       (fun i ↦ (signed_coefficient_integrable l hi b (c.center i)).integrableOn)
       (fun j ↦ (signed_coefficient_integrable l hi b (d.center j)).integrableOn)
-      (fun i _ hx hxt ↦ signedInChartAt_eq_zero_of_notMem_tsupport φ b (c.center i) _
+      (fun i _ hx hxt ↦ φ.signedInChartAt_eq_zero_of_notMem_tsupport b (c.center i) _
         (c.piece_subset i hx) fun h ↦ hxt (hd h))
-      (fun j _ hx hxs ↦ signedInChartAt_eq_zero_of_notMem_tsupport φ b (d.center j) _
+      (fun j _ hx hxs ↦ φ.signedInChartAt_eq_zero_of_notMem_tsupport b (d.center j) _
         (d.piece_subset j hx) fun h ↦ hxs (hc h))
       fun i j ↦ signed_changeChart l φ b (c.center i) (d.center j)
         (fun _ hx ↦ ⟨c.piece_subset i hx.1, d.piece_subset j hx.2⟩)
@@ -529,7 +519,7 @@ public theorem integralTopForm_eq_chartIntegral_of_ae_support [IsManifold I 1 M]
   refine c.integral_eq_integral_of_ae_support
     (fun γ ↦ φ.signedInChartAt b γ (fun x ↦ l.signAt γ x.val)) b.addHaar α
     (signed_coefficient_integrable l hi b α).integrableOn
-    (fun _ hx hxs ↦ signedInChartAt_eq_zero_of_notMem_tsupport φ b α _ hx hxs)
+    (fun _ hx hxs ↦ φ.signedInChartAt_eq_zero_of_notMem_tsupport b α _ hx hxs)
     (fun _ hy ↦ Function.notMem_support.mp fun hn ↦
       hy (φ.support_signedInChartAt_subset_target b α (fun x ↦ l.signAt α x) hn))
     (fun i ↦ ?_) fun i ↦ signed_changeChart l φ b (c.center i) α

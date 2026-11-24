@@ -96,6 +96,18 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx),
     signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
+/-- If `x ∈ (extChartAt I α).source` lies outside `tsupport φ`, then
+`φ.signedInChartAt b α σ (extChartAt I α x) = 0`. -/
+theorem signedInChartAt_eq_zero_of_notMem_tsupport (φ : RoughForm I M ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) (α : M) (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
+    {x : M} (hx : x ∈ (extChartAt I α).source)
+    (hn : x ∉ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) :
+    φ.signedInChartAt b α σ (extChartAt I α x) = 0 := by
+  have hφ : φ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hn
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ hx, inChartAt_apply,
+    (extChartAt I α).left_inv hx, hφ]
+  simp
+
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The

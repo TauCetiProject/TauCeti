@@ -234,14 +234,6 @@ section CoverConstruction
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
 
-private theorem coeffInChartAt_eq_zero_of_notMem_tsupport (μ : RoughDensity I M m)
-    (b : Basis (Fin m) ℝ E) (α : M) {x : M} (hx : x ∈ (extChartAt I α).source)
-    (hn : x ∉ _root_.tsupport (α := Density E m) μ) :
-    μ.coeffInChartAt b α (extChartAt I α x) = 0 :=
-  RoughDensity.coeffInChartAt_eq_zero_of_apply_eq_zero b α <| by
-    rw [(extChartAt I α).left_inv hx]
-    exact _root_.image_eq_zero_of_notMem_tsupport (α := Density E m) hn
-
 section WithMeasure
 
 variable [MeasurableSpace E] [BorelSpace E]
@@ -263,9 +255,9 @@ private theorem densityCoverIntegral_eq [IsManifold I 1 M] (μ : RoughDensity I 
   c.integral_eq d (μ.coeffInChartAt b) b.addHaar
     (fun i ↦ (hi.integrable_coeffInChartAt b (c.center i)).integrableOn)
     (fun j ↦ (hi.integrable_coeffInChartAt b (d.center j)).integrableOn)
-    (fun i _ hx hxt ↦ coeffInChartAt_eq_zero_of_notMem_tsupport μ b (c.center i)
+    (fun i _ hx hxt ↦ μ.coeffInChartAt_eq_zero_of_notMem_tsupport b (c.center i)
       (c.piece_subset i hx) (mt (fun h ↦ hd h) hxt))
-    (fun j _ hx hxs ↦ coeffInChartAt_eq_zero_of_notMem_tsupport μ b (d.center j)
+    (fun j _ hx hxs ↦ μ.coeffInChartAt_eq_zero_of_notMem_tsupport b (d.center j)
       (d.piece_subset j hx) (mt (fun h ↦ hc h) hxs))
     fun i j ↦ (μ.coeffInChartAt_changeChart b (c.center i) (d.center j)
       (s := c.piece i ∩ d.piece j) (fun _ hx ↦ ⟨c.piece_subset i hx.1, d.piece_subset j hx.2⟩)
@@ -441,7 +433,7 @@ public theorem integralDensity_eq_chartIntegral_of_ae_support [IsManifold I 1 M]
   let c := ChartCover.choose I hi.isCompact; rw [integralDensity_eq_choose μ hi b]
   refine c.integral_eq_integral_of_ae_support (μ.coeffInChartAt b) b.addHaar α
     (hi.integrable_coeffInChartAt b α).integrableOn
-    (fun _ hx hxs ↦ coeffInChartAt_eq_zero_of_notMem_tsupport μ b α hx hxs)
+    (fun _ hx hxs ↦ μ.coeffInChartAt_eq_zero_of_notMem_tsupport b α hx hxs)
     (fun _ hy ↦ μ.coeffInChartAt_apply_of_notMem_target b α hy) (fun i ↦ ?_) fun i ↦
     (μ.coeffInChartAt_changeChart b (c.center i) α (s := c.piece i ∩ (extChartAt I α).source)
       (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩)
@@ -624,16 +616,6 @@ section Positivity
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
 
-private theorem coeffInChartAt_nonneg_of_basis_nonneg {μ : RoughDensity I M m}
-    (hμ : ∀ x (c : Basis (Fin m) ℝ (TangentSpace I x)), 0 ≤ μ x c)
-    (b : Basis (Fin m) ℝ E) (α : M) (y : E) : 0 ≤ μ.coeffInChartAt b α y := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [μ.coeffInChartAt_apply_of_mem_target b α hy, RoughDensity.inChartAt_apply]
-    let c := b.map (tangentSpaceCastModel I ((extChartAt I α).symm y)).symm.toLinearEquiv
-    rw [(μ ((extChartAt I α).symm y)).apply_eq_abs_det_mul c]
-    exact mul_nonneg (abs_nonneg _) (hμ _ c)
-  · rw [μ.coeffInChartAt_apply_of_notMem_target b α hy]
-
 /-- **Nonnegativity of density integration.** A rough density nonnegative on every tangent basis
 has nonnegative integral, in every dimension `m : ℕ` (no regularity, support, or orientation). -/
 public theorem integralDensity_nonneg {μ : RoughDensity I M m}
@@ -645,7 +627,7 @@ public theorem integralDensity_nonneg {μ : RoughDensity I M m}
   let : LocallyCompactSpace H := I.locallyCompactSpace
   rw [integralDensity_eq_choose μ hi b, ChartCover.integral_eq_sum]
   exact Finset.sum_nonneg fun _ _ ↦
-    integral_nonneg fun y ↦ coeffInChartAt_nonneg_of_basis_nonneg hμ b _ y
+    integral_nonneg fun y ↦ RoughDensity.coeffInChartAt_nonneg hμ b _ y
 
 /-- Pointwise dominance on tangent bases implies monotonicity of `integralDensity` in all dims. -/
 public theorem integralDensity_mono [IsManifold I 1 M] {μ ν : RoughDensity I M m}
@@ -668,12 +650,12 @@ public theorem integralDensity_pos_of_continuousOn_inChartAt [IsManifold I 1 M]
   let : LocallyCompactSpace H := I.locallyCompactSpace; let c := ChartCover.choose I hi.isCompact
   rw [integralDensity_eq_chartCover_integral μ hi b (c.cons x₀) Subset.rfl, c.integral_cons x₀]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦
-    integral_nonneg fun y ↦ coeffInChartAt_nonneg_of_basis_nonneg hnn b (c.center i) y)
+    integral_nonneg fun y ↦ RoughDensity.coeffInChartAt_nonneg hnn b (c.center i) y)
   have hg₀ : 0 < μ.coeffInChartAt b x₀ (extChartAt I x₀ x₀) := by
     rw [μ.coeffInChartAt_extChartAt_self b x₀, (μ x₀).apply_eq_abs_det_mul c₀ b]
     exact mul_pos (abs_pos.mpr (c₀.isUnit_det b).ne_zero) hpos
   exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) x₀
-    (coeffInChartAt_nonneg_of_basis_nonneg hnn b x₀)
+    (RoughDensity.coeffInChartAt_nonneg hnn b x₀)
     (hi.integrable_coeffInChartAt b x₀).integrableOn
     (μ.continuousOn_coeffInChartAt b x₀ hcont) (mem_extChartAt_target x₀) hg₀
 
