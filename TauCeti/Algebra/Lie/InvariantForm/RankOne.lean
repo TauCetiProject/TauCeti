@@ -41,6 +41,8 @@ the Lie algebra of `SO(3)` and of `SU(2)`:
   homomorphism `so(3) → L` is injective
   (`LinearMap.BilinForm.exists_injective_lieHom_soThree_of_lie_eq_smul`).
 
+Only the first step uses the maximality of `t`, so the construction assumes just `Z ∈ t`.
+
 The image of `ê₂` is the element `Z / μ` of `t` on which `α` takes the value `1`, so `2ê₂` goes to
 the coroot of `α`. The isomorphism `TauCeti.suTwoLieEquivSoThree` sends `-iσ₃/2 ∈ 𝔰𝔲(2)` to `ê₂`,
 so these homomorphisms are the rank-one homomorphisms `𝔰𝔲(2) → L` of the roots. For a root plane
@@ -84,32 +86,31 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 open TauCeti
 
 /-- **The rank-one subalgebra of a root pair.** Let `B` be a symmetric positive definite invariant
-form on a real Lie algebra `L`, let `t` be a subspace containing every element that commutes with
-it, and let `x ≠ 0, y` be a root pair of `t` with nonzero root `α`: `⁅H, x⁆ = α(H) y` and
-`⁅H, y⁆ = -α(H) x` for `H ∈ t`. Then there is an injective Lie algebra homomorphism
+form on a real Lie algebra `L`, let `t` be a subspace, and let `x ≠ 0, y` be a root pair of `t`
+with nonzero root `α`, `⁅H, x⁆ = α(H) y` and `⁅H, y⁆ = -α(H) x` for `H ∈ t`, whose bracket
+`⁅x, y⁆` lies in `t` (automatic when `t` contains every element that commutes with it, by
+`TauCeti.lie_mem_of_lie_eq_smul`). Then there is an injective Lie algebra homomorphism
 `f : so(3) → L` sending the basis elements `ê₀, ê₁` to the same positive multiple of `x` and `y`,
 and `ê₂ = ⁅ê₀, ê₁⁆`, hence a positive multiple of `⁅x, y⁆`, to the element of `t` on which `α`
 takes the value `1`. -/
 theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm ℝ L)
     (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L) {t : Submodule ℝ L}
-    (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t) {α : Dual ℝ t} (hα : α ≠ 0) {x y : L}
-    (hx0 : x ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
-    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) :
+    {α : Dual ℝ t} (hα : α ≠ 0) {x y : L} (hx0 : x ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
+    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) (hxy : ⁅x, y⁆ ∈ t) :
     ∃ f : so (Fin 3) ℝ →ₗ⁅ℝ⁆ L, Function.Injective f ∧
       (∃ c : ℝ, 0 < c ∧ f (soThreeEquiv ℝ (Pi.single 0 1)) = c • x ∧
         f (soThreeEquiv ℝ (Pi.single 1 1)) = c • y) ∧
       ∃ h : f (soThreeEquiv ℝ (Pi.single 2 1)) ∈ t, α ⟨_, h⟩ = 1 := by
-  have hZt : ⁅x, y⁆ ∈ t := lie_mem_of_lie_eq_smul ht hx hy
-  have hμpos := hB.root_apply_lie_pos_of_lie_eq_smul hBp hα hx0 hx hy hZt
+  have hμpos := hB.root_apply_lie_pos_of_lie_eq_smul hBp hα hx0 hx hy hxy
   have hZ0 : ⁅x, y⁆ ≠ 0 := fun h ↦ hμpos.ne' <| by
-    rw [show (⟨⁅x, y⁆, hZt⟩ : t) = 0 from Subtype.ext h, map_zero]
+    rw [show (⟨⁅x, y⁆, hxy⟩ : t) = 0 from Subtype.ext h, map_zero]
   have hy0 : y ≠ 0 := fun h ↦ hZ0 <| by rw [h, lie_zero]
   set Z := ⁅x, y⁆ with hZ
-  set μ := α ⟨Z, hZt⟩ with hμ
+  set μ := α ⟨Z, hxy⟩ with hμ
   obtain ⟨s, hs0, hs⟩ : ∃ s : ℝ, 0 < s ∧ s * s = μ :=
     ⟨√μ, Real.sqrt_pos.mpr hμpos, Real.mul_self_sqrt hμpos.le⟩
-  have hZx : ⁅Z, x⁆ = μ • y := hx ⟨Z, hZt⟩
-  have hyZ : ⁅y, Z⁆ = μ • x := by rw [← lie_skew, hy ⟨Z, hZt⟩, neg_neg]
+  have hZx : ⁅Z, x⁆ = μ • y := hx ⟨Z, hxy⟩
+  have hyZ : ⁅y, Z⁆ = μ • x := by rw [← lie_skew, hy ⟨Z, hxy⟩, neg_neg]
   -- The normalized triple satisfies the cyclic relations of `so(3)`.
   set a : Fin 3 → L := ![s⁻¹ • x, s⁻¹ • y, μ⁻¹ • Z] with ha
   obtain ⟨ha₀, ha₁, ha₂⟩ : a 0 = s⁻¹ • x ∧ a 1 = s⁻¹ • y ∧ a 2 = μ⁻¹ • Z := by simp [ha]
@@ -135,9 +136,9 @@ theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm 
     have hi : a i ≠ 0 := by fin_cases i <;> simp [ha, hx0, hy0, hZ0, hs0.ne', hμpos.ne']
     simpa using (hBp _ hi).ne'
   · rw [soThreeLieHom_soThreeEquiv_single, ha₂]
-    have hsmul : (⟨μ⁻¹ • Z, t.smul_mem _ hZt⟩ : t) = μ⁻¹ • ⟨Z, hZt⟩ :=
+    have hsmul : (⟨μ⁻¹ • Z, t.smul_mem _ hxy⟩ : t) = μ⁻¹ • ⟨Z, hxy⟩ :=
       Subtype.ext (by simp)
-    refine ⟨t.smul_mem _ hZt, ?_⟩
+    refine ⟨t.smul_mem _ hxy, ?_⟩
     rw [hsmul, map_smul, smul_eq_mul, ← hμ, inv_mul_cancel₀ hμpos.ne']
 
 /-- A maximal commutative subspace `t` of a non-abelian finite-dimensional real Lie algebra with a
@@ -187,7 +188,8 @@ theorem exists_injective_lieHom_soThree [FiniteDimensional ℝ L] (B : LinearMap
   obtain ⟨t, htc, ht⟩ := exists_maximal_commuting_submodule (R := ℝ) (L := L)
   obtain ⟨α, hα, x, y, hx0, hx, hy⟩ :=
     B.exists_lie_eq_smul_of_not_isLieAbelian hBs hBp hB htc ht hL
-  obtain ⟨f, hf, -⟩ := B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB ht hα hx0 hx hy
+  obtain ⟨f, hf, -⟩ := B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB hα hx0 hx hy
+    (lie_mem_of_lie_eq_smul ht hx hy)
   exact ⟨f, hf⟩
 
 end LinearMap.BilinForm
@@ -198,20 +200,20 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {B : LinearMap.BilinForm ℝ
   {t : Submodule ℝ L} {α : Dual ℝ t} {E : Submodule ℝ L} {J : Module.End ℝ E}
 
 /-- **The rank-one subalgebra of a root plane.** For a symmetric positive definite invariant form
-`B` and a subspace `t` containing every element that commutes with it, a root plane `E` of `t`
-with nonzero root `α` and rotation `J` spans, with its brackets, a copy of `so(3)`: for every
-`v ≠ 0` in `E` there is an injective Lie algebra homomorphism `f : so(3) → L` sending `ê₀, ê₁` to
-the same positive multiple of `v` and `J v`, and `ê₂` to the element of `t` on which `α` takes the
-value `1`. -/
+`B` and a subspace `t`, a root plane `E` of `t` with nonzero root `α` and rotation `J` spans, with
+its brackets, a copy of `so(3)`: for every `v ≠ 0` in `E` with `⁅v, J v⁆ ∈ t` (automatic when `t`
+contains every element that commutes with it, by `TauCeti.lie_mem_of_lie_eq_smul`) there is an
+injective Lie algebra homomorphism `f : so(3) → L` sending `ê₀, ê₁` to the same positive multiple
+of `v` and `J v`, and `ê₂` to the element of `t` on which `α` takes the value `1`. -/
 theorem exists_injective_lieHom_soThree (h : IsRootPlane B t α E J) (hBs : B.IsSymm)
-    (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L)
-    (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t) (hα : α ≠ 0) {v : E} (hv : v ≠ 0) :
+    (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L) (hα : α ≠ 0) {v : E} (hv : v ≠ 0)
+    (hvt : ⁅(v : L), (J v : L)⁆ ∈ t) :
     ∃ f : so (Fin 3) ℝ →ₗ⁅ℝ⁆ L, Function.Injective f ∧
       (∃ c : ℝ, 0 < c ∧ f (soThreeEquiv ℝ (Pi.single 0 1)) = c • (v : L) ∧
         f (soThreeEquiv ℝ (Pi.single 1 1)) = c • (J v : L)) ∧
       ∃ h : f (soThreeEquiv ℝ (Pi.single 2 1)) ∈ t, α ⟨_, h⟩ = 1 :=
-  B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB ht hα (fun h' ↦ hv (Subtype.ext h'))
-    (fun H ↦ h.lie_apply H v) fun H ↦ by
-      rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]
+  B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB hα (fun h' ↦ hv (Subtype.ext h'))
+    (fun H ↦ h.lie_apply H v) (fun H ↦ by
+      rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]) hvt
 
 end TauCeti.IsRootPlane
