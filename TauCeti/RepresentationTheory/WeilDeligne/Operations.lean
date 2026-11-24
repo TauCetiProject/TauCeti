@@ -357,7 +357,7 @@ with open kernel. -/
 def twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) : WeilDeligneParameter E W V deg q where
   r := Representation.charTwist χ D.r
   isOpen_ker :=
-    Subgroup.isOpen_mono (Representation.inf_ker_le_ker_charTwist χ D.r) (hχ.inter D.isOpen_ker)
+    Subgroup.isOpen_mono (Representation.ker_inf_ker_le_ker_charTwist χ D.r) (hχ.inter D.isOpen_ker)
   N := D.N
   isNilpotent_N := D.isNilpotent_N
   conj_N w := by
@@ -384,7 +384,7 @@ theorem twist_one (h : IsOpen ((1 : W →* Eˣ).ker : Set W)) : D.twist 1 h = D 
 @[simp]
 theorem twist_twist (ψ : W →* Eˣ) (hψ : IsOpen (ψ.ker : Set W)) :
     (D.twist χ hχ).twist ψ hψ =
-      D.twist (ψ * χ) (Subgroup.isOpen_mono (ψ.inf_ker_le_ker_mul χ) (hψ.inter hχ)) := by
+      D.twist (ψ * χ) (Subgroup.isOpen_mono (ψ.ker_inf_ker_le_ker_mul χ) (hψ.inter hχ)) := by
   ext w v <;> simp [Representation.charTwist_charTwist]
 
 /-- The twist of a morphism of parameters by a common character. -/
@@ -446,7 +446,7 @@ parameters. -/
 def tensor : WeilDeligneParameter E W (V ⊗[E] V') deg q where
   r := D.r.tprod D'.r
   isOpen_ker :=
-    Subgroup.isOpen_mono (Representation.inf_ker_le_ker_tprod D.r D'.r)
+    Subgroup.isOpen_mono (Representation.ker_inf_ker_le_ker_tprod D.r D'.r)
       (D.isOpen_ker.inter D'.isOpen_ker)
   N := D.N.rTensor V' + D'.N.lTensor V
   isNilpotent_N := by

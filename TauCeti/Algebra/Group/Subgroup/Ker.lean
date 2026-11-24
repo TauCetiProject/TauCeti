@@ -26,7 +26,7 @@ product of homomorphisms.
   carried into the kernel of the opposite side.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
-* `MonoidHom.inf_ker_le_ker_mul`: the kernel of `f * g` contains the kernels' intersection.
+* `MonoidHom.ker_inf_ker_le_ker_mul`: the kernel of `f * g` contains the kernels' intersection.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -90,7 +90,7 @@ theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker :=
 /-- An element in the kernels of both `f` and `g` is in the kernel of their pointwise product. -/
 @[to_additive /-- An element in the kernels of both `f` and `g` is in the kernel of their
 pointwise sum. -/]
-theorem inf_ker_le_ker_mul {H : Type*} [CommMonoid H] (f g : G →* H) :
+theorem ker_inf_ker_le_ker_mul {H : Type*} [CommMonoid H] (f g : G →* H) :
     f.ker ⊓ g.ker ≤ (f * g).ker :=
   fun x hx ↦ by simp [mem_ker.mp hx.1, mem_ker.mp hx.2]
 

@@ -35,7 +35,7 @@ and subset stabilizers across standard constructions on representations:
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
   `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`), the kernel of a binary
   product (`Representation.ker_prod`), and kernels of tensor products
-  (`Representation.inf_ker_le_ker_tprod`);
+  (`Representation.ker_inf_ker_le_ker_tprod`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
   (`Representation.isTrivial_comp_subtype_iff` and
@@ -270,7 +270,7 @@ theorem le_stabilizer_dual {U : Subgroup G} (h : ∀ v, U ≤ ρ.stabilizer v)
       mem_stabilizer.1 (h v (inv_mem hg))]
 
 /-- An element acting trivially on both factors acts trivially on their tensor product. -/
-theorem inf_ker_le_ker_tprod {W : Type*} [AddCommMonoid W] [Module A W]
+theorem ker_inf_ker_le_ker_tprod {W : Type*} [AddCommMonoid W] [Module A W]
     (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.tprod σ).ker :=
   fun g hg ↦ by simp [MonoidHom.mem_ker.mp hg.1, MonoidHom.mem_ker.mp hg.2]
 
