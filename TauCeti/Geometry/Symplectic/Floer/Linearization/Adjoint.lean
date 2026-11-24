@@ -43,7 +43,10 @@ Integrating by parts against this pairing gives the **formal adjoint**
   on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`, with `A = ∂t J - C`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
-* **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
+* **Weights.** Multiplying `η` by a function `f` gives `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`
+  (`floerLinearizationAdjoint_fun_smul`, with the pointwise bounds
+  `norm_floerLinearizationAdjoint_fun_smul_le` and
+  `norm_floerLinearizationAdjoint_fun_smul_sq_le`), by a function `β(s)` it gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`), and in particular the weight `e^{δ s}` shifts the adjoint
   by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
@@ -261,6 +264,64 @@ theorem floerLinearizationAdjoint_smul_fst {β : ℝ → ℝ} {β' : ℝ} (hβ :
   simp only [add_apply, smul_apply, smulRight_apply, comp_apply, ContinuousLinearMap.coe_fst',
     toSpanSingleton_apply, stdComplexLineReal_fst, stdComplexLineImag_fst, smul_comp, smul_eq_mul]
   module
+
+/-- **Multiplying by a function.** If `f` is differentiable at `z`, the formal adjoint sends `f η`
+to `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`: the factor is differentiated by the two leading terms
+`-∂s η` and `-∂t (η ∘ J)` of the adjoint. -/
+theorem floerLinearizationAdjoint_fun_smul {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z)
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z =
+      f z • ω.floerLinearizationAdjoint J Ks Kt u η z - fderiv ℝ f z stdComplexLineReal • η z -
+        fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)) := by
+  have hd : HasFDerivAt (fun w ↦ f w • η w) _ z := hf.hasFDerivAt.smul hη.hasFDerivAt
+  have hc : (fun w ↦ (f w • η w).comp (J w (u w))) = fun w ↦ f w • (η w).comp (J w (u w)) := by
+    ext w
+    simp
+  have hdc : HasFDerivAt (fun w ↦ f w • (η w).comp (J w (u w))) _ z :=
+    hf.hasFDerivAt.smul (hη.clm_comp hJu).hasFDerivAt
+  rw [floerLinearizationAdjoint_def, hd.fderiv, hc, hdc.fderiv, floerLinearizationAdjoint_def]
+  simp only [add_apply, smul_apply, smulRight_apply, smul_comp]
+  module
+
+/-- **The adjoint on a cut-off covector field, pointwise.** At a point where `f` and `η` are
+differentiable, `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`. -/
+theorem norm_floerLinearizationAdjoint_fun_smul_le {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z)
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ≤
+      |f z| * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ +
+        ‖fderiv ℝ f z‖ * (1 + ‖J z (u z)‖) * ‖η z‖ := by
+  have hre : ‖fderiv ℝ f z stdComplexLineReal‖ ≤ ‖fderiv ℝ f z‖ :=
+    (le_opNorm _ _).trans (by simp [stdComplexLineReal])
+  have him : ‖fderiv ℝ f z stdComplexLineImag‖ ≤ ‖fderiv ℝ f z‖ :=
+    (le_opNorm _ _).trans (by simp [stdComplexLineImag])
+  have hJ : ‖(η z).comp (J z (u z))‖ ≤ ‖J z (u z)‖ * ‖η z‖ :=
+    (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
+  rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_sub]
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_smul, Real.norm_eq_abs]
+  have h := norm_add_le (fderiv ℝ f z stdComplexLineReal • η z)
+    (fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)))
+  rw [norm_smul, norm_smul] at h
+  have h₁ := mul_le_mul_of_nonneg_right hre (norm_nonneg (η z))
+  have h₂ := mul_le_mul hJ him (norm_nonneg _) (by positivity)
+  nlinarith [norm_nonneg (fderiv ℝ f z), norm_nonneg (η z), norm_nonneg (J z (u z))]
+
+/-- **The adjoint on a cut-off covector field, squared.** At a point where `f` and `η` are
+differentiable, `‖D^* (f η)‖² ≤ 2 f² ‖D^* η‖² + 2 ‖df‖² (1 + ‖J‖)² ‖η‖²`. -/
+theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
+    (hf : DifferentiableAt ℝ f z) (hη : DifferentiableAt ℝ η z)
+    (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
+      2 * (f z ^ 2 * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
+        2 * (‖fderiv ℝ f z‖ ^ 2 * (1 + ‖J z (u z)‖) ^ 2 * ‖η z‖ ^ 2) := by
+  calc _ ≤ (|f z| * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ +
+        ‖fderiv ℝ f z‖ * (1 + ‖J z (u z)‖) * ‖η z‖) ^ 2 := by
+        gcongr
+        exact norm_floerLinearizationAdjoint_fun_smul_le hf hη hJu
+    _ ≤ _ := by
+        refine add_sq_le.trans_eq ?_
+        rw [mul_pow, sq_abs, mul_pow, mul_pow]
+        ring
 
 /-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
 `e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
