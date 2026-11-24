@@ -90,7 +90,7 @@ def hopfLinHom (ρ : H →ₐ[R] Module.End R V) (σ : H →ₐ[R] Module.End R 
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
     H →ₐ[R] Module.End R (V →ₗ[R] W) :=
   (Algebra.TensorProduct.lift (hopfLinHomPre ρ hS) (hopfLinHomPost σ)
-    (fun _ _ => LinearMap.ext fun _ => rfl)).comp (Bialgebra.comulAlgHom R H)
+    (fun _ _ => by ext; simp [hopfLinHomPre, hopfLinHomPost])).comp (Bialgebra.comulAlgHom R H)
 
 /-- The action on linear maps, in any finite representation of the coproduct. -/
 theorem hopfLinHom_apply_eq_sum (ρ : H →ₐ[R] Module.End R V) (σ : H →ₐ[R] Module.End R W)
@@ -244,35 +244,13 @@ private theorem linHomEvalAux_tmul (m : M) (f : LinHom R H M N hS) :
 private theorem linHomEvalAux_smul_tmul (h : H) (m : M) (f : LinHom R H M N hS) :
     linHomEvalAux R H M N hS (h • tmul R H m f) = h • linHomEquiv R H M N hS f m := by
   let 𝓡 := Repr.arbitrary R h
-  -- `Θ (a ⊗ b ⊗ c) = c • f(S⁻¹(b) • a • m)`. Applied to the two sides of coassociativity, it
-  -- gives the evaluation of `h • (m ⊗ f)` and, after cancelling `∑ S⁻¹(a₂) a₁ = ε(a)`, `h • f m`.
-  let F : H →ₗ[R] N :=
-    linHomEquiv R H M N hS f ∘ₗ (LinearMap.toSpanSingleton H M m).restrictScalars R
-  let G : H ⊗[R] H →ₗ[R] H := LinearMap.mul' R H ∘ₗ (inverseAntipode hS).rTensor H ∘ₗ
-    (TensorProduct.comm R H H).toLinearMap
-  let Θ : H ⊗[R] (H ⊗[R] H) →ₗ[R] N :=
-    TensorProduct.lift ((Algebra.lsmul R R N).toLinearMap.flip ∘ₗ F) ∘ₗ
-      TensorProduct.map G LinearMap.id ∘ₗ (TensorProduct.assoc R H H H).symm.toLinearMap
-  have hΘ (a b c : H) :
-      Θ (a ⊗ₜ (b ⊗ₜ c)) = c • linHomEquiv R H M N hS f (inverseAntipode hS b • a • m) := by
-    simp [Θ, G, F, mul_smul]
-  have key := congrArg Θ (sum_tmul_tmul_eq 𝓡 (fun i => Repr.arbitrary R (𝓡.left i))
-    (fun i => Repr.arbitrary R (𝓡.right i)))
-  simp only [map_sum, hΘ] at key
-  have hl : ∀ x ∈ 𝓡.index, ∑ j ∈ (Repr.arbitrary R (𝓡.left x)).index, 𝓡.right x •
-      linHomEquiv R H M N hS f (inverseAntipode hS ((Repr.arbitrary R (𝓡.left x)).right j) •
-        (Repr.arbitrary R (𝓡.left x)).left j • m) =
-      counit (R := R) (𝓡.left x) • 𝓡.right x • linHomEquiv R H M N hS f m := by
-    intro x _
-    simp_rw [← Finset.smul_sum, smul_smul, ← map_sum, ← Finset.sum_smul,
-      sum_inverseAntipode_mul_eq_algebraMap_counit, algebraMap_smul, map_smul,
-      smul_comm (𝓡.right x)]
-  rw [Finset.sum_congr rfl hl] at key
-  simp_rw [← smul_assoc, ← Finset.sum_smul, sum_counit_smul] at key
-  rw [key, smul_tmul_eq_sum 𝓡, map_sum]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  rw [linHomEvalAux_tmul, linHomEquiv_smul_apply_eq_sum (Repr.arbitrary R (𝓡.right x))]
-  simp only [smul_assoc]
+  let 𝓡₂ := fun i => Repr.arbitrary R (𝓡.right i)
+  -- `h • (m ⊗ f)` evaluates to `∑ h₂₂ • f(S⁻¹(h₂₁) h₁ • m)`, the image of
+  -- `∑ S⁻¹(h₂₁) h₁ ⊗ h₂₂ = 1 ⊗ h` under `a ⊗ c ↦ c • f(a • m)`.
+  let Φ : H ⊗[R] H →ₗ[R] N := TensorProduct.lift ((Algebra.lsmul R R N).toLinearMap.flip ∘ₗ
+    linHomEquiv R H M N hS f ∘ₗ (LinearMap.toSpanSingleton H M m).restrictScalars R)
+  simpa [Φ, smul_tmul_eq_sum 𝓡, linHomEvalAux_tmul, linHomEquiv_smul_apply_eq_sum (𝓡₂ _),
+    mul_smul] using congrArg Φ (sum_inverseAntipode_mul_tmul_eq hS 𝓡 𝓡₂)
 
 private theorem linHomEvalAux_smul (h : H) (x : Tensor R H M (LinHom R H M N hS)) :
     linHomEvalAux R H M N hS (h • x) = h • linHomEvalAux R H M N hS x := by
@@ -310,28 +288,14 @@ private theorem linHomCoevalAux_smul (h : H) (x : X) :
     linHomCoevalAux R H M X hS (h • x) = h • linHomCoevalAux R H M X hS x := by
   ext m
   let 𝓡 := Repr.arbitrary R h
-  -- `Θ (a ⊗ b ⊗ c) = (b • S⁻¹(a) • m) ⊗ (c • x)`. Applied to the two sides of coassociativity,
-  -- it gives, after cancelling `∑ a₂ S⁻¹(a₁) = ε(a)`, `m ⊗ h • x` and `(h • coeval x)(m)`.
-  let G : H ⊗[R] H →ₗ[R] H :=
-    LinearMap.mul' R H ∘ₗ (TensorProduct.comm R H H).toLinearMap ∘ₗ (inverseAntipode hS).rTensor H
-  let Θ : H ⊗[R] (H ⊗[R] H) →ₗ[R] M ⊗[R] X :=
-    TensorProduct.map ((LinearMap.toSpanSingleton H M m).restrictScalars R ∘ₗ G)
-      ((LinearMap.toSpanSingleton H X x).restrictScalars R) ∘ₗ
-      (TensorProduct.assoc R H H H).symm.toLinearMap
-  have hΘ (a b c : H) : Θ (a ⊗ₜ (b ⊗ₜ c)) = (b • inverseAntipode hS a • m) ⊗ₜ (c • x) := by
-    simp [Θ, G, mul_smul]
-  have key := congrArg Θ (sum_tmul_tmul_eq 𝓡 (fun i => Repr.arbitrary R (𝓡.left i))
-    (fun i => Repr.arbitrary R (𝓡.right i)))
-  simp only [map_sum, hΘ] at key
-  simp_rw [smul_smul, ← TensorProduct.sum_tmul, ← Finset.sum_smul,
-    sum_mul_inverseAntipode_eq_algebraMap_counit, algebraMap_smul, TensorProduct.smul_tmul,
-    ← TensorProduct.tmul_sum, ← smul_assoc, ← Finset.sum_smul, sum_counit_smul] at key
-  rw [linHomCoevalAux_apply, linHomEquiv_smul_apply_eq_sum 𝓡]
-  apply (tensorEquiv R H M X).injective
-  rw [tensorEquiv_tmul, key, map_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [linHomCoevalAux_apply, smul_tmul_eq_sum (Repr.arbitrary R (𝓡.right i)), map_sum]
-  simp only [tensorEquiv_tmul, smul_smul]
+  let 𝓡₂ := fun i => Repr.arbitrary R (𝓡.right i)
+  -- `(h • coeval x)(m)` is `∑ (h₂₁ S⁻¹(h₁) • m) ⊗ (h₂₂ • x)`, the image of
+  -- `∑ h₂₁ S⁻¹(h₁) ⊗ h₂₂ = 1 ⊗ h` under `b ⊗ c ↦ (b • m) ⊗ (c • x)`.
+  let Φ : H ⊗[R] H →ₗ[R] Tensor R H M X := (tensorEquiv R H M X).symm.toLinearMap ∘ₗ
+    TensorProduct.map ((LinearMap.toSpanSingleton H M m).restrictScalars R)
+      ((LinearMap.toSpanSingleton H X x).restrictScalars R)
+  simpa [Φ, linHomCoevalAux_apply, linHomEquiv_smul_apply_eq_sum 𝓡, smul_tmul_eq_sum (𝓡₂ _),
+    mul_smul] using (congrArg Φ (sum_mul_inverseAntipode_tmul_eq hS 𝓡 𝓡₂)).symm
 
 variable (R H M X hS) in
 /-- Coevaluation `X → Hom_R(M, M ⊗ X)`, `x ↦ (m ↦ m ⊗ x)`. It is `H`-linear for Qi's action on
@@ -491,8 +455,13 @@ theorem LinHom.forall_smul_eq_counit_smul_iff (f : LinHom R H M N hS) :
           simp [smul_assoc]
   · intro hf h
     ext m
-    rw [linHomEquiv_smul_apply_eq_sum (Repr.arbitrary R h), map_smul, LinearMap.smul_apply]
-    simp_rw [← hf, smul_smul, ← map_sum, ← Finset.sum_smul,
-      sum_mul_inverseAntipode_eq_algebraMap_counit, algebraMap_smul, map_smul]
+    let 𝓡 := Repr.arbitrary R h
+    -- `(h • f)(m) = ∑ h₂ • f(S⁻¹(h₁) • m) = f((∑ h₂ S⁻¹(h₁)) • m) = f(ε(h) • m)`.
+    calc linHomEquiv R H M N hS (h • f) m
+        = linHomEquiv R H M N hS f
+            ((∑ i ∈ 𝓡.index, 𝓡.right i * inverseAntipode hS (𝓡.left i)) • m) := by
+          simp [linHomEquiv_smul_apply_eq_sum 𝓡, Finset.sum_smul, mul_smul, hf]
+      _ = linHomEquiv R H M N hS (counit (R := R) h • f) m := by
+          simp [sum_mul_inverseAntipode_eq_algebraMap_counit]
 
 end TauCeti.BialgebraModule
