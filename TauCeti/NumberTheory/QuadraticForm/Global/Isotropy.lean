@@ -119,20 +119,9 @@ theorem represents_iff_locallyRepresentsScalar (Q : _root_.QuadraticForm K V) (a
   obtain ⟨W, hW⟩ := Submodule.exists_isCompl Q.radical
   let Q' : _root_.QuadraticForm K W := Q.restrict W
   let e := IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW
-  rw [← QuadraticMap.Equivalent.locallyRepresentsScalar_iff ⟨e⟩, locallyRepresentsScalar_iff] at h
   -- The zero summand contributes nothing to local representation, so `Q'` represents `a` locally.
-  have hloc : Q'.LocallyRepresentsScalar a := by
-    refine (locallyRepresentsScalar_iff _ _).mpr ⟨fun v ↦ ?_, fun w ↦ ?_⟩
-    · obtain ⟨x, hx⟩ := (represents_iff _ _).mp <|
-        ((atFinitePlaceProd Q' 0 v).represents_iff _).mp (h.1 v)
-      refine (represents_iff _ _).mpr ⟨x.1, ?_⟩
-      rw [← hx, QuadraticMap.prod_apply, ← smul_zero (0 : K), atFinitePlace_smul]
-      simp
-    · obtain ⟨x, hx⟩ := (represents_iff _ _).mp <|
-        ((atRealPlaceProd Q' 0 w).represents_iff _).mp (h.2 w)
-      refine (represents_iff _ _).mpr ⟨x.1, ?_⟩
-      rw [← hx, QuadraticMap.prod_apply, ← smul_zero (0 : K), atRealPlace_smul]
-      simp
+  have hloc : Q'.LocallyRepresentsScalar a :=
+    ((QuadraticMap.Equivalent.locallyRepresentsScalar_iff ⟨e⟩ a).mpr h).of_prod_zero
   -- Local representation of `a` makes `⟨-a⟩ ⊥ Q'` locally isotropic, hence isotropic.
   have hiso := not_anisotropic_of_isLocallyIsotropic hloc.isLocallyIsotropic_smul_sq_prod
   rw [Equivalent.anisotropic_iff ⟨IsometryEquiv.prodComm _ Q'⟩] at hiso
