@@ -55,26 +55,6 @@ theorem Iso.isRegular_iff {Γ : BipartiteRibbonGraph.{u}} {Δ : BipartiteRibbonG
   and_congr φ.isConnected_iff
     (MulAction.isPretransitive_congr (f := ψ) φ.autMulEquiv.surjective φ.edge.bijective)
 
-/-- `Γ` is regular iff it is connected and `Nat.card Γ.Aut = Fintype.card Γ.E`. -/
-theorem isRegular_iff_natCard_aut {Γ : BipartiteRibbonGraph.{u}} :
-    Γ.IsRegular ↔ Γ.IsConnected ∧ Nat.card Γ.Aut = Fintype.card Γ.E := by
-  refine and_congr_right fun hΓ ↦ ?_; obtain ⟨⟨e₀⟩, htr⟩ := Γ.isConnected_def.mp hΓ
-  have hcomm : ∀ g ∈ Γ.rotationGroup, ∀ (f : Γ.Aut) e, f.edge (g e) = g (f.edge e) :=
-    fun g hg f ↦ Subgroup.closure_induction (p := fun g _ ↦ ∀ e, f.edge (g e) = g (f.edge e))
-      (by rintro g (rfl | rfl) e; exacts [f.map_rotB e, f.map_rotW e]) (fun _ ↦ rfl)
-      (fun x y _ _ hx hy e ↦ by simp [hx, hy]) (fun x _ hx e ↦ x.injective (by simp [← hx]))
-      (Γ.closure_pair_eq_rotationGroup.ge hg)
-  have hinj : Function.Injective (fun f : Γ.Aut ↦ f • e₀) := fun f g h ↦ Iso.ext <| Equiv.ext
-    fun e ↦ by obtain ⟨⟨r, hr⟩, rfl⟩ := htr.exists_smul_eq e₀ e
-               exact (hcomm r hr f e₀).trans <| (congrArg r h).trans (hcomm r hr g e₀).symm
-  refine ⟨fun hreg ↦ (Nat.card_congr (Equiv.ofBijective _ ⟨hinj, fun e ↦
-      hreg.exists_smul_eq e₀ e⟩)).trans Nat.card_eq_fintype_card, fun hcard ↦ ⟨fun e₁ e₂ ↦ ?_⟩⟩
-  let _ := Fintype.ofFinite Γ.Aut
-  have hsurj := (Fintype.bijective_iff_injective_and_card (fun f : Γ.Aut ↦ f • e₀)).2
-    ⟨hinj, by rw [← Nat.card_eq_fintype_card, hcard]⟩ |>.2
-  obtain ⟨f₁, rfl⟩ := hsurj e₁; obtain ⟨f₂, rfl⟩ := hsurj e₂
-  exact ⟨f₂ * f₁⁻¹, by rw [mul_smul, inv_smul_smul]⟩
-
 /-- Numbering the edges of a bipartite ribbon graph preserves regularity. -/
 @[simp] theorem isRegular_toPermutationTriple {n : ℕ} (Γ : BipartiteRibbonGraph.{u})
     (ν : Γ.E ≃ Fin n) : (Γ.toPermutationTriple ν).IsRegular ↔ Γ.IsRegular := by
@@ -83,6 +63,13 @@ theorem isRegular_iff_natCard_aut {Γ : BipartiteRibbonGraph.{u}} :
   exact (PermutationTriple.isRegular_iff.trans <| and_congr (Γ.isConnected_toPermutationTriple ν)
     (MulAction.isPretransitive_congr (f := φ) (Γ.autEquivAutomorphismGroup ν).surjective
       ν.bijective).symm).trans isRegular_iff.symm
+
+/-- `Γ` is regular iff it is connected and `Nat.card Γ.Aut = Fintype.card Γ.E`. -/
+theorem isRegular_iff_natCard_aut {Γ : BipartiteRibbonGraph.{u}} :
+    Γ.IsRegular ↔ Γ.IsConnected ∧ Nat.card Γ.Aut = Fintype.card Γ.E := by
+  let ν := Fintype.equivFin Γ.E
+  rw [← Γ.isRegular_toPermutationTriple ν, PermutationTriple.isRegular_iff_card_automorphismGroup,
+    Γ.isConnected_toPermutationTriple ν, natCard_automorphismGroup_toPermutationTriple]
 
 /-- Passing from a permutation triple to its ribbon graph preserves regularity. -/
 @[simp] theorem _root_.TauCeti.PermutationTriple.isRegular_ribbonGraph {n : ℕ}
