@@ -90,6 +90,7 @@ section AddCommGroup
 
 variable {G : Type*} [AddCommGroup G] [LE G]
 
+/-- The quotient abelian group structure on `G ⧸ I`, inherited from `G ⧸ I.toAddSubgroup`. -/
 instance addCommGroup (I : OrderIdeal G) : AddCommGroup (G ⧸ I) :=
   inferInstanceAs <| AddCommGroup (G ⧸ I.toAddSubgroup)
 
@@ -99,6 +100,7 @@ section Order
 
 variable {G : Type*} [AddCommGroup G] [Preorder G] [IsOrderedAddMonoid G]
 
+/-- The quotient order relation on `G ⧸ I`, defined by `[x] ≤ [y] ↔ ∃ h ∈ I, x ≤ y + h`. -/
 instance le (I : OrderIdeal G) : LE (G ⧸ I) where
   le := Quotient.lift₂ (fun x y ↦ ∃ h ∈ I, x ≤ y + h) fun x₁ y₁ x₂ y₂ hx hy ↦
       propext <| by
@@ -112,6 +114,8 @@ instance le (I : OrderIdeal G) : LE (G ⧸ I) where
         add_mem (add_mem (neg_sub y₁ y₂ ▸ neg_mem hy') hhI) hx', ?_⟩
       exact le_of_eq_of_le (by abel) ((add_le_add_right hle (x₁ - x₂)).trans_eq (by abel))
 
+/-- The quotient partial order on `G ⧸ I`; antisymmetry follows from order-connectedness of
+`I`. -/
 instance partialOrder (I : OrderIdeal G) : PartialOrder (G ⧸ I) where
   le := (· ≤ ·)
   le_refl a := by
@@ -134,9 +138,10 @@ instance partialOrder (I : OrderIdeal G) : PartialOrder (G ⧸ I) where
       rw [neg_le_sub_iff_le_add', add_comm]
       exact hyx
     have hhi : x - y ≤ h₁ := sub_le_iff_le_add'.2 hxy
-    have hsub : x - y ∈ I := I.convex (neg_mem hh₂) hh₁ hlo hhi
+    have hsub : x - y ∈ I := I.mem_of_le_of_le (neg_mem hh₂) hh₁ hlo hhi
     exact Quotient.sound (quotientRel_iff.2 hsub)
 
+/-- Translation invariance of the quotient partial order on `G ⧸ I`. -/
 instance isOrderedAddMonoid (I : OrderIdeal G) : IsOrderedAddMonoid (G ⧸ I) where
   add_le_add_left a b hab c := by
     induction a using Quotient.inductionOn with | _ x =>
@@ -172,6 +177,11 @@ theorem mk_eq_mk_iff {I : OrderIdeal G} {x y : G} : mk I x = mk I y ↔ x - y �
 theorem mk_eq_zero_iff {I : OrderIdeal G} {x : G} : mk I x = 0 ↔ x ∈ I := by
   simpa [map_zero] using (mk_eq_mk_iff (I := I) (x := x) (y := 0))
 
+/-- Adding an element of `I` does not change the quotient class `mk I x`. -/
+@[simp]
+theorem mk_add_of_mem {I : OrderIdeal G} {x h : G} (hh : h ∈ I) : mk I (x + h) = mk I x := by
+  rw [map_add, mk_eq_zero_iff.2 hh, add_zero]
+
 theorem ker_mk (I : OrderIdeal G) : (mk I).toAddMonoidHom.ker = I.toAddSubgroup := by
   exact QuotientAddGroup.ker_mk' I.toAddSubgroup
 
@@ -190,8 +200,7 @@ theorem exists_nonneg_mk_eq (I : OrderIdeal G) {q : G ⧸ I} (hq : 0 ≤ q) :
     ∃ g : G, 0 ≤ g ∧ mk I g = q := by
   induction q using induction_on with | _ x =>
   obtain ⟨h, hhI, hx⟩ := mk_nonneg_iff.1 hq
-  refine ⟨x + h, hx, ?_⟩
-  rw [map_add, mk_eq_zero_iff.2 hhI, add_zero]
+  exact ⟨x + h, hx, mk_add_of_mem hhI⟩
 
 /-- Using directedness of `I`, an inequality `mk I x ≤ mk I y` is witnessed by a *nonnegative*
 element `h ∈ I` with `x ≤ y + h`. -/
@@ -211,15 +220,19 @@ variable {G H : Type*} [AddCommGroup G] [Preorder G] [IsOrderedAddMonoid G]
 /-- Universal property of `G ⧸ I`: a monotone homomorphism `f : G →+o H` vanishing on `I`
 factors uniquely through `mk I` as a monotone homomorphism `(G ⧸ I) →+o H`. -/
 def lift (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) :
-    (G ⧸ I) →+o H where
-  toAddMonoidHom := QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf
-  monotone' a b hab := by
-    induction a using induction_on with | _ x =>
-    induction b using induction_on with | _ y =>
-    obtain ⟨h, hhI, hxy⟩ := mk_le_mk_iff.1 hab
-    have hle : f x ≤ f y :=
-      (OrderHomClass.mono f hxy).trans_eq (by rw [map_add, hf h hhI, add_zero])
-    exact hle
+    (G ⧸ I) →+o H :=
+  have hf' : I.toAddSubgroup ≤ f.toAddMonoidHom.ker := hf
+  { toAddMonoidHom := QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf'
+    monotone' a b hab := by
+      induction a using induction_on with | _ x =>
+      induction b using induction_on with | _ y =>
+      obtain ⟨h, hhI, hxy⟩ := mk_le_mk_iff.1 hab
+      change QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf' (mk I x) ≤
+        QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf' (mk I y)
+      rw [mk_apply, mk_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply,
+        QuotientAddGroup.lift_mk, QuotientAddGroup.lift_mk]
+      simp only [OrderAddMonoidHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
+      exact (OrderHomClass.mono f hxy).trans_eq (by rw [map_add, hf h hhI, add_zero]) }
 
 @[simp]
 theorem lift_mk (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) (x : G) :
@@ -273,18 +286,22 @@ noncomputable def liftOrderAddMonoidIso (I : OrderIdeal G) (f : G →+o H)
     have hxhi : x ≤ h₂ := by
       have := add_le_add_right hneg x
       simpa using this
-    exact mk_eq_zero_iff.2 (I.convex (neg_mem hh₁) hh₂ hxlo hxhi)
+    exact mk_eq_zero_iff.2 (I.mem_of_le_of_le (neg_mem hh₁) hh₂ hxlo hxhi)
   have hsurj' : Function.Surjective (lift I f hf) := by
     intro y
     obtain ⟨x, rfl⟩ := hsurj y
     exact ⟨mk I x, lift_mk I f hf x⟩
-  { AddEquiv.ofBijective (lift I f hf).toAddMonoidHom ⟨hinj, hsurj'⟩ with
+  let e := AddEquiv.ofBijective (lift I f hf).toAddMonoidHom ⟨hinj, hsurj'⟩
+  have he_mk (z : G) : e (mk I z) = f z :=
+    (AddEquiv.ofBijective_apply _ _ _).trans (lift_mk I f hf z)
+  { e with
     map_le_map_iff' {a b} := by
       induction a using induction_on with | _ x =>
       induction b using induction_on with | _ y =>
       refine ⟨fun hle ↦ ?_, fun hle ↦ OrderHomClass.mono (lift I f hf) hle⟩
-      have hle' : f x ≤ f y := hle
-      obtain ⟨h, hhI, hpos⟩ := hlift (y - x) (map_sub f y x ▸ sub_nonneg.2 hle')
+      change e (mk I x) ≤ e (mk I y) at hle
+      rw [he_mk, he_mk] at hle
+      obtain ⟨h, hhI, hpos⟩ := hlift (y - x) (map_sub f y x ▸ sub_nonneg.2 hle)
       exact mk_le_mk_iff.2 ⟨h, hhI, by
         rw [← sub_nonneg]
         exact hpos.trans_eq (by abel)⟩ }
@@ -339,10 +356,8 @@ theorem hasRieszInterpolation (I : OrderIdeal G) (h : HasRieszInterpolation G) :
   obtain ⟨c, hx₁c, hx₂c, hcy₁, hcy₂⟩ :=
     h.exists_ge_ge_le_le leH₁₁ leH₁₂ leH₂₁ leH₂₂
   refine ⟨mk I c, OrderHomClass.mono (mk I) hx₁c, OrderHomClass.mono (mk I) hx₂c, ?_, ?_⟩
-  · exact (OrderHomClass.mono (mk I) hcy₁).trans_eq (by
-      rw [map_add, mk_eq_zero_iff.2 hH, add_zero])
-  · exact (OrderHomClass.mono (mk I) hcy₂).trans_eq (by
-      rw [map_add, mk_eq_zero_iff.2 hH, add_zero])
+  · exact (OrderHomClass.mono (mk I) hcy₁).trans_eq (mk_add_of_mem hH)
+  · exact (OrderHomClass.mono (mk I) hcy₂).trans_eq (mk_add_of_mem hH)
 
 /-- Taking the quotient by an order ideal preserves unperforation. -/
 theorem isUnperforated (I : OrderIdeal G) (h : IsUnperforated G) : IsUnperforated (G ⧸ I) := by
@@ -365,7 +380,9 @@ section DimensionGroup
 theorem isDimensionGroup {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
     (I : OrderIdeal G) (h : IsDimensionGroup G) :
     IsDimensionGroup (G ⧸ I) where
-  isDirectedOrder := @isDirectedOrder G _ _ _ I h.isDirectedOrder
+  isDirectedOrder := by
+    have := h.isDirectedOrder
+    infer_instance
   isUnperforated := isUnperforated I h.isUnperforated
   hasRieszInterpolation := hasRieszInterpolation I h.hasRieszInterpolation
 
@@ -385,10 +402,11 @@ def Quotient.comapIdeal (I : OrderIdeal G) (K : OrderIdeal (G ⧸ I)) : OrderIde
       obtain ⟨z, hz0, rfl⟩ := Quotient.exists_nonneg_mk_eq I h0q
       obtain ⟨h, hhI, hh0, hxz⟩ := Quotient.exists_nonneg_le_of_mk_le_mk hxq
       refine ⟨z + h, ?_, add_nonneg hz0 hh0, hxz⟩
-      rw [AddSubgroup.mem_comap]
-      simpa [map_add, Quotient.mk_eq_zero_iff.2 hhI] using hqK)
+      simp only [AddSubgroup.mem_comap, OrderAddMonoidHom.toAddMonoidHom_eq_coe,
+        AddMonoidHom.coe_ofClass, mem_toAddSubgroup, Quotient.mk_add_of_mem hhI]
+      exact hqK)
     (isHereditary_def.2 fun _ _ ha hab hb ↦
-      K.mem_of_nonneg_of_le ((map_zero (Quotient.mk I)).symm.trans_le
+      K.isHereditary.mem_of_le ((map_zero (Quotient.mk I)).symm.trans_le
         (OrderHomClass.mono (Quotient.mk I) ha)) (OrderHomClass.mono (Quotient.mk I) hab) hb)
 
 @[simp]
@@ -414,7 +432,7 @@ def Quotient.mapIdeal {I J : OrderIdeal G} (hIJ : I ≤ J) : OrderIdeal (G ⧸ I
     obtain ⟨a, ha0, rfl⟩ := Quotient.exists_nonneg_mk_eq I hq0
     obtain ⟨c, hcJ, rfl⟩ := hb
     obtain ⟨h, hhI, _, hac⟩ := Quotient.exists_nonneg_le_of_mk_le_mk hqb
-    exact ⟨a, J.mem_of_nonneg_of_le ha0 hac (add_mem hcJ (hIJ hhI)), rfl⟩
+    exact ⟨a, J.isHereditary.mem_of_le ha0 hac (add_mem hcJ (hIJ hhI)), rfl⟩
 
 @[simp]
 theorem Quotient.mem_mapIdeal {I J : OrderIdeal G} (hIJ : I ≤ J) {q : G ⧸ I} :
@@ -456,10 +474,10 @@ theorem orderIdealQuotientOrderIso_symm_apply (I : OrderIdeal G) (J : Set.Ici I)
     (orderIdealQuotientOrderIso I).symm J = Quotient.mapIdeal J.property := by
   rfl
 
-/-- In a directed ordered abelian group, the quotient `G ⧸ I` has `OrderIdeal (G ⧸ I)` simple
-(i.e., exactly two distinct order ideals `⊥` and `⊤`) iff `I` is maximal among proper order ideals
+/-- In a preordered abelian group, the quotient `G ⧸ I` has `OrderIdeal (G ⧸ I)` simple (i.e.,
+exactly two distinct order ideals `⊥` and `⊤`) iff `I` is maximal among proper order ideals
 (`IsCoatom I`). -/
-theorem isSimpleOrder_quotient_iff (I : OrderIdeal G) [IsDirectedOrder G] :
+theorem isSimpleOrder_quotient_iff (I : OrderIdeal G) :
     IsSimpleOrder (OrderIdeal (G ⧸ I)) ↔ IsCoatom I :=
   (orderIdealQuotientOrderIso I).isSimpleOrder_iff.trans Set.isSimpleOrder_Ici_iff_isCoatom
 

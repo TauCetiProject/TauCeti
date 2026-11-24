@@ -223,7 +223,7 @@ theorem isAddOrderUnit_int_iff {u : ℤ} : IsAddOrderUnit u ↔ 0 < u := by
     have h1 : (1 : ℤ) ≤ u := by omega
     have hgu : g.natAbs • (1 : ℤ) ≤ g.natAbs • u := nsmul_le_nsmul_right h1 g.natAbs
     have hle : g ≤ g.natAbs • (1 : ℤ) := by
-      simp
+      simp only [Int.nsmul_eq_mul, mul_one]
       omega
     exact hle.trans hgu
 
