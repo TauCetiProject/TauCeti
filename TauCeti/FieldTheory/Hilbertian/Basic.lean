@@ -26,9 +26,9 @@ proves the elementary consequences of the definition. A nonzero polynomial `g âˆ
 adjoined to any family through the linear polynomial `Y - 1/g`, whose Hilbert set is exactly the
 set where `g` does not vanish. Hence over a Hilbertian field the Hilbert set of a family meets
 the complement of the zeros of any nonzero `g` and of any finite set, so it is infinite, and a
-Hilbertian field is infinite. The Hilbert set of `Y ^ n - T` is contained in the set of
-parameters that are not `n`-th powers (and equals it for prime `n`), so a separably closed field is
-not Hilbertian.
+Hilbertian field is infinite. For `n â‰  1`, the Hilbert set of `Y ^ n - T` is contained in the set
+of parameters that are not `n`-th powers (and equals it for prime `n`), so a separably closed field
+is not Hilbertian.
 
 ## Main definitions
 
