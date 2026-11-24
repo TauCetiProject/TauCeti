@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.LinearAlgebra.Span.Basic
-import Mathlib.Algebra.Module.Torsion.Field
+public import Mathlib.Algebra.Module.Torsion.Free
 
 /-!
 # Faithful actions on invariant subsets
@@ -25,8 +25,9 @@ An additive action commuting with scalar multiplication is determined on the spa
 invariant subset. Consequently, restricting a faithful action to a spanning invariant subset
 remains faithful. The acting type needs no monoid structure.
 
-The units of a division ring act freely on the nonzero vectors of a module, Mathlib's
-`Units.nonZeroSubMul`: `a • v = b • v` with `v ≠ 0` forces `a = b`.
+The units of a ring without zero divisors act freely on the nonzero vectors of a torsion-free
+module, Mathlib's `Units.nonZeroSubMul`: `a • v = b • v` with `v ≠ 0` forces `a = b`. This covers
+the units of a division ring acting on the nonzero vectors of any module.
 -/
 
 public section
@@ -62,12 +63,14 @@ end SubMulAction
 
 namespace Units
 
-variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+variable {R V : Type*} [Ring R] [IsCancelMulZero R] [AddCommGroup V] [Module R V]
+  [Module.IsTorsionFree R V]
 
-/-- The units of a division ring act freely on the nonzero vectors of a module. -/
-instance isCancelSMul_nonZero : IsCancelSMul Kˣ {v : V // v ≠ 0} where
+/-- The units of a ring without zero divisors act freely on the nonzero vectors of a torsion-free
+module, for instance the units of a division ring on the nonzero vectors of any module. -/
+instance isCancelSMul_nonZero : IsCancelSMul Rˣ {v : V // v ≠ 0} where
   left_cancel' a v w h := by simpa using h
-  right_cancel' a b v h := Units.ext <| smul_left_injective K v.property <| by
+  right_cancel' a b v h := Units.ext <| smul_left_injective R v.property <| by
     simpa [Units.smul_def] using congrArg Subtype.val h
 
 end Units
