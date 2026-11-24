@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Continuous functionals for the topology of pointwise convergence
@@ -17,6 +18,9 @@ convergence (the strong operator topology) is a finite sum `T ↦ ∑ x ∈ s, g
 functionals of values (`PointwiseConvergenceCLM.exists_finset_sum_eq`). On a Hilbert space,
 writing each `g x` as an inner product gives the usual finite sums of matrix coefficients.
 
+The file also makes the evaluation of post-composition by a fixed continuous linear map at a
+vector (`PointwiseConvergenceCLM.postcomp_apply_apply`) a pre-simp lemma.
+
 ## References
 
 Kadison–Ringrose, *Fundamentals of the Theory of Operator Algebras I*, Theorem 5.1.2.
@@ -25,6 +29,13 @@ Kadison–Ringrose, *Fundamentals of the Theory of Operator Algebras I*, Theorem
 public section
 
 namespace PointwiseConvergenceCLM
+
+/- Mathlib's simps lemma `PointwiseConvergenceCLM.postcomp_apply` states
+`postcomp E L u = L.comp u`, which reads `u` as a plain continuous linear map, so
+`ContinuousLinearMap.comp_apply` cannot evaluate the result. The evaluation lemma
+`postcomp_apply_apply` is therefore a pre-simp lemma here, so that it fires before simp rewrites
+the inner `postcomp E L u`. -/
+attribute [simp↓] postcomp_apply_apply
 
 variable {𝕜₁ 𝕜 E F : Type*} [NormedField 𝕜₁] [RCLike 𝕜] {σ : 𝕜₁ →+* 𝕜} [AddCommGroup E]
     [TopologicalSpace E] [Module 𝕜₁ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]

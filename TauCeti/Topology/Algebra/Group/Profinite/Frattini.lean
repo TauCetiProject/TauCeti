@@ -175,6 +175,7 @@ theorem eq_top_of_sup_profiniteFrattini_eq_top {H : Subgroup G} (hH : IsClosed (
     exact hHtop (by
       rw [H.eq_iInf_sup_openNormalSubgroup hH]
       exact top_unique (le_iInf fun U ↦ (hall U).ge))
+  have : (H ⊔ U.toSubgroup).FiniteIndex := Subgroup.finiteIndex_of_le le_sup_right
   obtain ⟨M, hMo, hM, hHM⟩ :=
     Subgroup.exists_isOpen_isCoatom_le_of_isOpen (Subgroup.isOpen_mono le_sup_right U.isOpen) hU
   exact hM.1 (top_unique (hsup ▸ sup_le (le_sup_left.trans hHM) (profiniteFrattini_le hMo hM)))

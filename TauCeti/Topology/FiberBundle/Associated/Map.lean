@@ -15,7 +15,10 @@ An equivariant map `f : F →[G] F'` induces the fibrewise map `[p, v] ↦ [p, f
 between bundles associated to the same principal bundle. This construction is functorial,
 continuous when `f` is continuous, and a homeomorphism when `f` is an equivariant homeomorphism.
 It applies to nonlinear fibre maps as well as to linear and conjugate-linear representation
-intertwiners. No choice of a global principal section is required.
+intertwiners. No choice of a global principal section is required. An equivariant embedding of
+fibres induces an embedding of associated total spaces
+(`TauCeti.AssociatedBundle.isEmbedding_totalSpaceMap`), so the bundle associated with an
+invariant subspace of the fibre is a subspace of the associated bundle.
 
 The fibre maps use the existing glued carriers. Their formula in every preferred chart is
 `(b, v) ↦ (b, f v)`, so they preserve the original topologies and trivializations.
@@ -30,7 +33,7 @@ public section
 
 noncomputable section
 
-open Bundle MulOpposite
+open Bundle MulOpposite Topology
 
 namespace TauCeti.AssociatedBundle
 
@@ -65,7 +68,7 @@ theorem map_mk (f : F →[G] F') {b : B} (p : P b) (v : F) :
 /-- The map induced on total spaces by an equivariant fibre map. -/
 def totalSpaceMap (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) :
     TotalSpace F' (AssociatedBundle G P F') :=
-  ⟨v.proj, map f v.2⟩
+  ⟨v.proj, map f v.snd⟩
 
 @[simp]
 theorem totalSpaceMap_proj (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) :
@@ -118,6 +121,40 @@ theorem continuous_totalSpaceMap (f : F →[G] F') (hf : Continuous f) :
   simpa only [Function.comp_def, totalSpaceMap_mk] using
     (Continuous.totalSpaceMk_associatedBundleMk
       (f := fun x : TotalSpace G P × F ↦ x.1.proj) continuous_fst (hf.comp continuous_snd))
+
+/-- An injective equivariant fibre map induces injective maps of the associated fibres. -/
+theorem map_injective (f : F →[G] F') (hf : Function.Injective f) (b : B) :
+    Function.Injective (map f : AssociatedBundle G P F b → AssociatedBundle G P F' b) := by
+  intro v w h
+  obtain ⟨p, v, rfl⟩ := exists_mk v
+  obtain ⟨q, w, rfl⟩ := exists_mk w
+  rw [map_mk, map_mk, mk_eq_mk_iff, ← map_smul] at h
+  rw [mk_eq_mk_iff, hf h]
+
+/-- An injective equivariant fibre map induces an injective map of associated total spaces. -/
+theorem totalSpaceMap_injective (f : F →[G] F') (hf : Function.Injective f) :
+    Function.Injective (totalSpaceMap (P := P) f) := by
+  rintro ⟨b, v⟩ ⟨b', w⟩ h
+  obtain rfl : b = b' := congrArg TotalSpace.proj h
+  simp only [totalSpaceMap, TotalSpace.mk_inj] at h
+  rw [map_injective f hf b h]
+
+/-- An equivariant embedding of fibres induces an embedding of associated total spaces. -/
+theorem isEmbedding_totalSpaceMap (f : F →[G] F') (hf : IsEmbedding f) :
+    IsEmbedding (totalSpaceMap (P := P) f) := by
+  -- Both total spaces are open quotients of `P × F` and `P × F'`, and the image of `P × F` is
+  -- saturated, since the orbit of `(p, f v)` is the image of the orbit of `(p, v)`.
+  refine isEmbedding_of_isOpenQuotientMap_of_isInducing (Prod.map id f) (totalSpaceMap f)
+    (fun x : TotalSpace G P × F ↦
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F (AssociatedBundle G P F)))
+    (fun x : TotalSpace G P × F' ↦
+      (⟨x.1.proj, mk G x.1.snd x.2⟩ : TotalSpace F' (AssociatedBundle G P F')))
+    (funext fun x ↦ totalSpaceMap_mk f x.1.snd x.2) (IsInducing.id.prodMap hf.isInducing)
+    (isOpenQuotientMap_totalSpaceMk_mk G P F).isQuotientMap
+    (isOpenQuotientMap_totalSpaceMk_mk G P F') (totalSpaceMap_injective f hf.injective) ?_
+  rintro y ⟨_, ⟨⟨p, v⟩, rfl⟩, hy⟩
+  obtain ⟨g, rfl⟩ := totalSpaceMk_mk_eq_iff.1 hy
+  exact ⟨(⟨p.proj, op g • p.snd⟩, g⁻¹ • v), by simp only [Prod.map_apply, id_eq, map_smul]⟩
 
 /-- An equivariant homeomorphism induces a homeomorphism of associated total spaces. -/
 def homeomorph (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g • f v) :

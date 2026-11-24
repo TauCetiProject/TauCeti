@@ -62,13 +62,15 @@ identity theorem (`TauCeti.RiemannSurface.not_eventuallyConst_of_ne` in
   and `TauCeti.RiemannSurface.degree_comp_of_forall_not_eventuallyConst`, for maps carrying the
   pointwise nonconstancy hypothesis.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap`: the bundled finite holomorphic maps, with
-  `TauCeti.RiemannSurface.FiniteHolomorphicMap.ofMDifferentiable` and
+  `TauCeti.RiemannSurface.FiniteHolomorphicMap.ofMDifferentiable`,
+  `TauCeti.RiemannSurface.FiniteHolomorphicMap.compactSpace_codomain` and
   `TauCeti.RiemannSurface.FiniteHolomorphicMap.comp`, and the degree API on them with no side
   hypotheses: `TauCeti.RiemannSurface.localMultiplicity_pos`,
   `TauCeti.RiemannSurface.degree_eq_fiber_sum`, `TauCeti.RiemannSurface.degree_pos`,
   `TauCeti.RiemannSurface.localMultiplicity_comp`, `TauCeti.RiemannSurface.degree_comp` and
   `TauCeti.RiemannSurface.biholomorphOfDegreeEqOne`, the biholomorphism constructed from a
-  degree-one map.
+  degree-one map, and `TauCeti.RiemannSurface.degree_eq_one_of_injOn`: a map injective near a
+  point which is alone in its fibre has degree one.
 
 ## References
 
@@ -468,6 +470,13 @@ theorem FiniteHolomorphicMap.surjective : Surjective f :=
   have : Nonempty X := f.nonconstant.nonempty
   surjective_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst
 
+omit [T2Space X] in
+/-- The preconnected codomain of a finite holomorphic map from a compact Riemann surface is
+compact, by surjectivity. -/
+theorem FiniteHolomorphicMap.compactSpace_codomain (f : FiniteHolomorphicMap X Y) :
+    CompactSpace Y :=
+  Function.Surjective.compactSpace f.holomorphic.continuous f.surjective
+
 /-- **Fibre independence of the degree**, for a finite holomorphic map from a compact Riemann
 surface to a connected Riemann surface: the degree is the sum of the local multiplicities
 over any fibre. -/
@@ -487,6 +496,18 @@ omit [PreconnectedSpace Y] in
 theorem degree_pos : 0 < degree f :=
   have : Nonempty X := f.nonconstant.nonempty
   degree_pos_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst
+
+/-- **A finite holomorphic map with an injective point has degree one.** If a finite holomorphic map
+from a compact Riemann surface to a connected one is injective on a neighbourhood of `x`, and no
+other point has the image of `x`, then its degree is the local multiplicity at `x`, which is `1`. -/
+theorem degree_eq_one_of_injOn {x : X} {t : Set X} (ht : t ∈ 𝓝 x) (hinj : InjOn f t)
+    (hfib : ∀ x', f x' = f x → x' = x) : degree f = 1 := by
+  classical
+  have hs : (f.finite_fiber (f x)).toFinset = {x} := by
+    ext x'
+    simpa using ⟨hfib x', fun h ↦ h ▸ rfl⟩
+  rw [degree_eq_fiber_sum f (f x), hs, Finset.sum_singleton]
+  exact (localMultiplicity_eq_one_iff (.of_forall fun y ↦ f.holomorphic y)).2 ⟨t, ht, hinj⟩
 
 omit [T2Space X] in
 /-- The composite of finite holomorphic maps, for a compact source and a connected

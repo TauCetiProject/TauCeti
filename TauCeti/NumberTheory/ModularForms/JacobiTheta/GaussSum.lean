@@ -253,7 +253,7 @@ theorem sum_range_cexp_two_pi_I_sq_div (N : ℕ) :
   have : NeZero N := ⟨hN⟩
   set ω : ℂ := cexp (-π * I * N / 2) with hω
   have hω' : ω = (-I) ^ N := by
-    rw [hω, ← exp_neg_pi_div_two_mul_I, ← Complex.exp_nat_mul]
+    rw [hω, ← exp_neg_pi_div_two_mul_I, ← Complex.exp_natCast_mul]
     ring_nf
   -- Let `Y → 0⁺` in the exact identity `sum_mul_jacobiTheta₂_eq`.
   have hθ (c : ℝ) (hc : 0 < c) :

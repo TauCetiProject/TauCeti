@@ -43,8 +43,8 @@ private noncomputable def glueUnlabeledEquiv (A B : LabeledGraph k) :
   · intro s t h
     exact Sum.inr_injective ((A.glueEquiv B).injective (congrArg Subtype.val h))
   · intro x
-    obtain ⟨i | s, hs⟩ := (A.glueEquiv B).surjective x.1
-    · exact False.elim (x.2 i ((A.glueEquiv_inl B i).symm.trans hs))
+    obtain ⟨i | s, hs⟩ := (A.glueEquiv B).surjective x.val
+    · exact False.elim (x.property i ((A.glueEquiv_inl B i).symm.trans hs))
     · exact ⟨s, Subtype.ext hs⟩
 
 @[simp]

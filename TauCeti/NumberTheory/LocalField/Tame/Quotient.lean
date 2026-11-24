@@ -201,7 +201,7 @@ theorem exists_topologicalClosure_zpowers_inertiaTameCharacter_eq_top :
   obtain ⟨τ, hτ⟩ := PrimeToPTateModule.exists_forall_isPrimitiveRoot_proj
     (inertiaTameCharacter K).continuous (proj_inertiaTameCharacter_surjective K) fun m ↦ by
       have : NeZero ((m : ℕ) : K) := ⟨natCast_ne_zero_of_isUnit
-        (IsLocalRing.isUnit_natCast_iff_not_dvd.2 (hp.coprime_iff_not_dvd.1 m.2.2.symm))⟩
+        (IsLocalRing.isUnit_natCast_iff_not_dvd.2 (hp.coprime_iff_not_dvd.1 m.property.2.symm))⟩
       exact HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) m
   exact ⟨τ, PrimeToPTateModule.topologicalClosure_zpowers_eq_top hτ⟩
 
@@ -216,7 +216,7 @@ theorem topologicalClosure_zpowers_sup_wildInertiaSubgroup {τ : inertiaSubgroup
   have : CompactSpace (inertiaSubgroup K) :=
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
   refine le_antisymm (Subgroup.topologicalClosure_minimal _
-    (sup_le (Subgroup.zpowers_le.2 τ.2) (wildInertiaSubgroup_le_inertiaSubgroup K))
+    (sup_le (Subgroup.zpowers_le.2 τ.property) (wildInertiaSubgroup_le_inertiaSubgroup K))
     (isClosed_inertiaSubgroup K)) fun σ hσ ↦ ?_
   -- The tame character maps the compact closure `S` of the powers of `τ` in `I_K` onto
   -- `ℤ̂^{(p')}(1)`, so `σ` agrees with some `c ∈ S` modulo the kernel `P_K`.
@@ -232,7 +232,7 @@ theorem topologicalClosure_zpowers_sup_wildInertiaSubgroup {τ : inertiaSubgroup
     exact inv_mul_eq_one.2 hc
   have hcσ : (c : Field.absoluteGaloisGroup K) ∈ (Subgroup.zpowers
       (τ : Field.absoluteGaloisGroup K)).topologicalClosure := by
-    have := (inertiaSubgroup K).subtype.map_topologicalClosure_le continuous_subtype_val _
+    have := (inertiaSubgroup K).subtype.map_topologicalClosure_le continuous_subtypeVal _
       ⟨c, hcS, rfl⟩
     rwa [MonoidHom.map_zpowers] at this
   rw [← mul_inv_cancel_left (c : Field.absoluteGaloisGroup K) σ]
@@ -414,7 +414,7 @@ def tameInertiaHom :
     QuotientGroup.map _ _ (inertiaSubgroup K).subtype le_rfl
   have hf : Continuous f :=
     (QuotientGroup.isQuotientMap_mk _).continuous_iff.2
-      (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+      (QuotientGroup.continuous_mk.comp continuous_subtypeVal)
   (ContinuousMonoidHom.mk f hf).comp ((quotientWildInertiaSubgroupEquiv K).symm : _ →ₜ* _)
 
 variable {K} in
@@ -445,7 +445,7 @@ theorem range_tameInertiaHom : (tameInertiaHom K).toMonoidHom.range = tameInerti
   constructor
   · rintro ⟨y, rfl⟩
     obtain ⟨τ, rfl⟩ := inertiaTameCharacter_surjective K y
-    exact ⟨τ, τ.2, (tameInertiaHom_inertiaTameCharacter τ).symm⟩
+    exact ⟨τ, τ.property, (tameInertiaHom_inertiaTameCharacter τ).symm⟩
   · rintro ⟨τ, hτ, rfl⟩
     exact ⟨inertiaTameCharacter K ⟨τ, hτ⟩, tameInertiaHom_inertiaTameCharacter ⟨τ, hτ⟩⟩
 
@@ -530,8 +530,8 @@ theorem smul_eq_pow {σ : Gal(AlgebraicClosure K/K)} (hσ : IsArithFrobeniusLift
   refine PrimeToPTateModule.ext fun m ↦ Subtype.ext (Units.ext ?_)
   have h : ((PrimeToPTateModule.proj m x : (AlgebraicClosure K)ˣ) : AlgebraicClosure K) ^
       (m : ℕ) = 1 := by
-    simpa using congrArg Units.val ((mem_rootsOfUnity _ _).1 (PrimeToPTateModule.proj m x).2)
-  rw [PrimeToPTateModule.coe_proj_smul, AlgEquiv.smul_def, hσ.apply_of_pow_eq_one m.2.2 h]
+    simpa using congrArg Units.val ((mem_rootsOfUnity _ _).1 (PrimeToPTateModule.proj m x).property)
+  rw [PrimeToPTateModule.coe_proj_smul, AlgEquiv.smul_def, hσ.apply_of_pow_eq_one m.property.2 h]
   simp
 
 variable {σ : Field.absoluteGaloisGroup K}
@@ -604,7 +604,7 @@ theorem not_dvd_orderOf_mk_of_mem_inertiaSubgroup
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
   -- The image of `I_K` in `G_K / U` is a quotient of `I_K` by the open subgroup `V = I_K ∩ U`,
   -- which contains the Sylow pro-`p` subgroup `P_K`, so `[I_K : V]` is prime to `p`.
-  set V := U.comap (inertiaSubgroup K).subtype continuous_subtype_val
+  set V := U.comap (inertiaSubgroup K).subtype continuous_subtypeVal
   have hV := (isProPSylow_wildInertiaSubgroup K p).not_dvd_index_of_le V.toOpenSubgroup
     fun σ hσ ↦ OpenNormalSubgroup.mem_comap.2 (hU (Subgroup.mem_subgroupOf.1 hσ))
   -- `τ ^ [I_K : V]` lies in `V`, so the order of the image of `τ` divides `[I_K : V]`.
@@ -626,7 +626,8 @@ theorem exists_tameFrame_quotient :
           ¬ p ∣ orderOf (τ : Field.absoluteGaloisGroup K ⧸ U.toSubgroup) := by
   obtain ⟨σ, hσ⟩ := exists_isArithFrobeniusLift K
   obtain ⟨τ, hτ⟩ := exists_topologicalClosure_zpowers_inertiaTameCharacter_eq_top K
-  refine ⟨σ, τ, hσ, τ.2, fun U hU ↦ ⟨?_, not_dvd_orderOf_mk_of_mem_inertiaSubgroup p U hU τ.2⟩⟩
+  refine ⟨σ, τ, hσ, τ.property, fun U hU ↦ ⟨?_, not_dvd_orderOf_mk_of_mem_inertiaSubgroup p U hU
+      τ.property⟩⟩
   -- The frame generates `G_K` modulo `P_K ≤ U`, hence topologically generates the discrete
   -- quotient `G_K / U`, where every subgroup is closed.
   have : DiscreteTopology (Field.absoluteGaloisGroup K ⧸ U.toSubgroup) :=
@@ -689,7 +690,7 @@ theorem exists_topologicalClosure_zpowers_eq_tameInertia :
     ∃ τ ∈ inertiaSubgroup K,
       (Subgroup.zpowers (toTameQuotient K τ)).topologicalClosure = tameInertia K := by
   obtain ⟨τ, hτ⟩ := exists_topologicalClosure_zpowers_inertiaTameCharacter_eq_top K
-  exact ⟨τ, τ.2, topologicalClosure_zpowers_toTameQuotient hτ⟩
+  exact ⟨τ, τ.property, topologicalClosure_zpowers_toTameQuotient hτ⟩
 
 /-- **A tame inertia generator generates the finite tame inertia groups.** If the tame character
 of `τ ∈ I_K` topologically generates `ℤ̂^{(p')}(1)`, then in every finite quotient `G_K / U`

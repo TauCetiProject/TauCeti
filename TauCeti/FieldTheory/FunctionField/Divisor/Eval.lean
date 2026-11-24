@@ -198,19 +198,19 @@ product rather than of the classical one. -/
 -- membership in the support as an argument.
 theorem eval_eq_prod_normResidue {D : Divisor k F} {f : Fˣ} (h : IsUnitAtSupport D f) :
     eval D f
-      = ∏ P : D.support, P.1.normResidue f (isUnitAtSupport_iff.1 h P.1 P.2)
-          ^ WeilDivisor.coeff D P.1 := by
+      = ∏ P : D.support, P.val.normResidue f (isUnitAtSupport_iff.1 h P.val P.property)
+          ^ WeilDivisor.coeff D P.val := by
   -- the right-hand side depends on the membership proof, so it cannot be matched against a
   -- `Finset` product directly; convert the left-hand side to the subtype product instead.
   calc eval D f = D.prod fun P n ↦ P.normResidueOrOne f ^ n := eval_eq_finsuppProd D f
     _ = ∏ P ∈ D.support, P.normResidueOrOne f ^ WeilDivisor.coeff D P := by
         simp only [Finsupp.prod, WeilDivisor.coeff]
-    _ = ∏ P : D.support, P.1.normResidueOrOne f ^ WeilDivisor.coeff D P.1 :=
+    _ = ∏ P : D.support, P.val.normResidueOrOne f ^ WeilDivisor.coeff D P.val :=
         (Finset.prod_coe_sort _ _).symm
-    _ = ∏ P : D.support, P.1.normResidue f (isUnitAtSupport_iff.1 h P.1 P.2)
-          ^ WeilDivisor.coeff D P.1 :=
+    _ = ∏ P : D.support, P.val.normResidue f (isUnitAtSupport_iff.1 h P.val P.property)
+          ^ WeilDivisor.coeff D P.val :=
         Finset.prod_congr rfl fun P _ ↦ by
-          rw [Place.normResidueOrOne_of_ord_eq_zero (isUnitAtSupport_iff.1 h P.1 P.2)]
+          rw [Place.normResidueOrOne_of_ord_eq_zero (isUnitAtSupport_iff.1 h P.val P.property)]
 
 /-- Every function is admissible for the zero divisor, which has empty support. -/
 theorem isUnitAtSupport_zero (f : Fˣ) : IsUnitAtSupport (0 : Divisor k F) f := by

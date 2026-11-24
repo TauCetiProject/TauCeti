@@ -129,7 +129,7 @@ by increasing index. -/
 theorem strictMono_fst_vertexEmbedding_universalGSpace {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     StrictMono fun k => (c.vertexEmbedding k).1 := fun _ _ hkl =>
-  (universalGSpaceVertexOrder_lt_iff c.1.2 (c.vertexEmbedding_mem _)
+  (universalGSpaceVertexOrder_lt_iff c.val.property (c.vertexEmbedding_mem _)
     (c.vertexEmbedding_mem _)).mp (c.strictMono_vertexEmbedding hkl)
 
 /-- The CW structure on Milnor's countable join: its `n`-cells are the simplices of the join
@@ -162,12 +162,12 @@ the labels of their vertices. -/
 instance instSMulRealizationCellUniversalGSpace :
     SMul G ((indexedJoin fun _ : ℕ => G).RealizationCell n) where
   smul g c :=
-    ⟨⟨c.1.1.map (MulAction.toPerm g).toEmbedding, map_toPerm_mem_indexedJoin g c.1.2⟩,
-      (Finset.card_map _).trans c.2⟩
+    ⟨⟨c.val.val.map (MulAction.toPerm g).toEmbedding, map_toPerm_mem_indexedJoin g c.val.property⟩,
+      (Finset.card_map _).trans c.property⟩
 
 /-- The face of a translated simplex is the translated face. -/
 theorem smul_realizationCell_face (g : G) (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
-    ((g • c).1.1 : Finset (Σ _ : ℕ, G)) = c.1.1.map (MulAction.toPerm g).toEmbedding :=
+    ((g • c).val.val : Finset (Σ _ : ℕ, G)) = c.val.val.map (MulAction.toPerm g).toEmbedding :=
   (rfl)
 
 /-- A vertex lies in the face of a translated simplex exactly when its translate back lies in the
@@ -175,7 +175,7 @@ face of the original simplex. -/
 @[simp]
 theorem mem_smul_realizationCell_face_iff (g : G)
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (v : Σ _ : ℕ, G) :
-    v ∈ (g • c).1.1 ↔ g⁻¹ • v ∈ c.1.1 := by
+    v ∈ (g • c).val.val ↔ g⁻¹ • v ∈ c.val.val := by
   rw [smul_realizationCell_face, Finset.mem_map_equiv, MulAction.toPerm_symm_apply]
 
 /-- The translation of simplices is an action of the group. -/
@@ -194,11 +194,11 @@ has a vertex `v`, and `g • v` is a vertex of the same simplex over the same in
 instance instIsCancelSMulRealizationCellUniversalGSpace :
     IsCancelSMul G ((indexedJoin fun _ : ℕ => G).RealizationCell n) :=
   isCancelSMul_iff_eq_one_of_smul_eq.mpr fun g c hgc => by
-    obtain ⟨v, hv⟩ := (mem_indexedJoin_iff.mp c.1.2).1
-    have hgv : g • v ∈ c.1.1 := by
+    obtain ⟨v, hv⟩ := (mem_indexedJoin_iff.mp c.val.property).1
+    have hgv : g • v ∈ c.val.val := by
       rw [← hgc, mem_smul_realizationCell_face_iff, inv_smul_smul]
       exact hv
-    have := eq_of_mem_indexedJoin c.1.2 hgv hv rfl
+    have := eq_of_mem_indexedJoin c.val.property hgv hv rfl
     exact mul_eq_right.mp (eq_of_heq (Sigma.ext_iff.mp this).2)
 
 /-- The simplicial automorphism of the countable join relabelling the vertices by `g`, typed
@@ -215,10 +215,10 @@ private def smulSimplicialMap (g : G) :
 /-- Translation preserves the vertex order on each simplex of the countable join. -/
 private theorem smulSimplicialMap_strictMonoOn (g : G)
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
-    StrictMonoOn (smulSimplicialMap g) (↑c.1.1 : Set (Σ _ : ℕ, G)) := by
+    StrictMonoOn (smulSimplicialMap g) (↑c.val.val : Set (Σ _ : ℕ, G)) := by
   intro v hv w hw hvw
   exact universalGSpaceVertexOrder_lt_of_fst_lt
-    ((universalGSpaceVertexOrder_lt_iff c.1.2 hv hw).mp hvw)
+    ((universalGSpaceVertexOrder_lt_iff c.val.property hv hw).mp hvw)
 
 /-- Translation of a cell agrees with its image under the translating simplicial map. -/
 private theorem smul_realizationCell_eq_map (g : G)
@@ -417,7 +417,7 @@ whose support is that simplex. -/
 theorem openCell_classifyingSpaceCellEquiv_symm_mk
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     openCell n ((classifyingSpaceCellEquiv G n).symm (Quotient.mk'' c)) =
-      classifyingSpaceProj G '' {x : universalGSpace G | x.1.support = c.1.1} := by
+      classifyingSpaceProj G '' {x : universalGSpace G | x.val.support = c.val.val} := by
   rw [← c.image_characteristicMap_ball, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
 
@@ -427,7 +427,7 @@ simplex. -/
 theorem closedCell_classifyingSpaceCellEquiv_symm_mk
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     closedCell n ((classifyingSpaceCellEquiv G n).symm (Quotient.mk'' c)) =
-      classifyingSpaceProj G '' {x : universalGSpace G | x.1.support ⊆ c.1.1} := by
+      classifyingSpaceProj G '' {x : universalGSpace G | x.val.support ⊆ c.val.val} := by
   rw [← c.image_characteristicMap_closedBall, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
 
@@ -437,7 +437,7 @@ supported on its proper faces. -/
 theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     cellFrontier n ((classifyingSpaceCellEquiv G n).symm (Quotient.mk'' c)) =
-      classifyingSpaceProj G '' {x : universalGSpace G | x.1.support ⊂ c.1.1} := by
+      classifyingSpaceProj G '' {x : universalGSpace G | x.val.support ⊂ c.val.val} := by
   rw [← c.image_characteristicMap_sphere, image_image]
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
 

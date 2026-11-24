@@ -68,12 +68,12 @@ noncomputable def evenUnitsToSpecialOrthogonal (Q : QuadraticForm K V)
   exact (((QuadraticMap.orthogonalGroup Q).subtype.comp (lipschitzToOrthogonal Q)).comp
     (evenUnitsToLipschitz Q hQ hV)).codRestrict (QuadraticMap.specialOrthogonalGroup Q)
       (fun x => QuadraticMap.mem_specialOrthogonalGroup_iff.mpr
-        ⟨(lipschitzToOrthogonal Q (evenUnitsToLipschitz Q hQ hV x)).2,
+        ⟨(lipschitzToOrthogonal Q (evenUnitsToLipschitz Q hQ hV x)).property,
           by
             simpa only [QuadraticMap.orthogonalDet_apply, MonoidHom.comp_apply,
               Subgroup.coe_subtype] using
               det_lipschitzToOrthogonal_eq_one_of_mem_even Q
-                (evenUnitsToLipschitz Q hQ hV x) (x : even Q).2⟩)
+                (evenUnitsToLipschitz Q hQ hV x) (x : even Q).property⟩)
 
 /-- The even-unit action is conjugation on the embedded quadratic space. -/
 @[simp]
@@ -88,7 +88,7 @@ theorem ι_evenUnitsToSpecialOrthogonal_apply (Q : QuadraticForm K V)
   -- Expose the codomain restriction and unit-map projections before the grading identity.
   change involute ((x : even Q) : CliffordAlgebra Q) * ι Q v *
     (((x⁻¹ : (even Q)ˣ) : even Q) : CliffordAlgebra Q) = _
-  rw [involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact (x : even Q).2)]
+  rw [involute_eq_of_mem_even (by rw [← even_toSubmodule Q]; exact (x : even Q).property)]
 
 /-- Every proper ternary isometry is conjugation by an even Clifford unit. -/
 theorem evenUnitsToSpecialOrthogonal_surjective (Q : QuadraticForm K V)

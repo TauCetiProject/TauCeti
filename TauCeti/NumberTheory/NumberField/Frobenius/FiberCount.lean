@@ -146,17 +146,17 @@ noncomputable def frobeniusFiberEquiv
           Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} ≃
         {Q : {Q : HeightOneSpectrum (𝓞 L) //
             Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
-          IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} :=
+          IsArithFrobAt (𝓞 K) sigma Q.val.asIdeal} :=
     (Equiv.subtypeEquivRight fun Q ↦ and_congr (hdiv Q) Iff.rfl).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
   let coreEquiv :
       {Q : {Q : HeightOneSpectrum (𝓞 L) //
           Q.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 L)) p.asIdeal} //
-        IsArithFrobAt (𝓞 K) sigma Q.1.asIdeal} ≃
-        {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} :=
+        IsArithFrobAt (𝓞 K) sigma Q.val.asIdeal} ≃
+        {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.val} :=
     (HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot).subtypeEquiv fun _ ↦ Iff.rfl
   let codomainEquiv :
-      {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.1} ≃
+      {Q : p.asIdeal.primesOver (𝓞 L) // IsArithFrobAt (𝓞 K) sigma Q.val} ≃
         {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
           IsArithFrobAt (𝓞 K) sigma Q} :=
     (Equiv.subtypeSubtypeEquivSubtypeInter
@@ -175,13 +175,13 @@ theorem frobeniusFiberEquiv_apply
     (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
     (Q : {Q : HeightOneSpectrum (𝓞 L) //
       Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal}) :
-    (p.frobeniusFiberEquiv sigma Q : Ideal (𝓞 L)) = Q.1.asIdeal := by
+    (p.frobeniusFiberEquiv sigma Q : Ideal (𝓞 L)) = Q.val.asIdeal := by
   -- `subtypeEquivRight` and `subtypeSubtypeEquivSubtypeInter` only reassociate predicates and
   -- proof fields, so they have no value-level application lemma. Reducing those identity-on-values
   -- wrappers is stable; the sole data-changing component is `equivPrimesOver`, whose public
   -- application lemma completes the proof below.
   change ((HeightOneSpectrum.equivPrimesOver (𝓞 L) p.ne_bot) _ : Ideal (𝓞 L)) =
-    Q.1.asIdeal
+    Q.val.asIdeal
   rw [HeightOneSpectrum.equivPrimesOver_apply]
   rfl
 
@@ -190,13 +190,13 @@ theorem frobeniusFiberEquiv_symm_apply_asIdeal
     (p : HeightOneSpectrum (𝓞 K)) (sigma : L ≃ₐ[K] L)
     (Q : {Q : Ideal (𝓞 L) // ∃ (_ : Q.IsPrime) (_ : Q.LiesOver p.asIdeal) (_ : Q ≠ ⊥),
       IsArithFrobAt (𝓞 K) sigma Q}) :
-    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal = Q.1 := by
+    ((p.frobeniusFiberEquiv sigma).symm Q).val.asIdeal = Q.val := by
   calc
-    ((p.frobeniusFiberEquiv sigma).symm Q).1.asIdeal =
+    ((p.frobeniusFiberEquiv sigma).symm Q).val.asIdeal =
         (p.frobeniusFiberEquiv sigma
           ((p.frobeniusFiberEquiv sigma).symm Q) : Ideal (𝓞 L)) :=
       (p.frobeniusFiberEquiv_apply sigma _).symm
-    _ = Q.1 := congrArg Subtype.val
+    _ = Q.val := congrArg Subtype.val
       ((p.frobeniusFiberEquiv sigma).apply_symm_apply Q)
 
 /-- **The absolute Frobenius fibre, counted.** The primes of `L` over `p` at which `σ` is an

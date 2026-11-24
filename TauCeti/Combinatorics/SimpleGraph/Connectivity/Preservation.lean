@@ -73,8 +73,8 @@ theorem IsVertexReachable.induce_compl (hs : s.Finite) {u v : V} (hu : u ∉ s) 
     exact (ENat.add_lt_add_iff_left hs.encard_lt_top.ne).2 ht
   have hreach := h hst (by simp [hu, htu]) (by simp [hv, htv])
   let φ : G.induce (s ∪ Subtype.val '' t)ᶜ →g (G.induce sᶜ).induce tᶜ :=
-    { toFun y := ⟨⟨y, by simpa using fun hy ↦ y.2 (.inl hy)⟩,
-        by simpa using fun hy ↦ y.2 (.inr ⟨_, hy, rfl⟩)⟩
+    { toFun y := ⟨⟨y, by simpa using fun hy ↦ y.property (.inl hy)⟩,
+        by simpa using fun hy ↦ y.property (.inr ⟨_, hy, rfl⟩)⟩
       map_rel' h := by simpa using h }
   exact hreach.map φ
 
@@ -83,7 +83,7 @@ an `l`-vertex-connected graph. -/
 theorem IsVertexConnected.induce_compl (hs : s.Finite)
     (h : G.IsVertexConnected (s.encard + l)) : (G.induce sᶜ).IsVertexConnected l := by
   refine isVertexConnected_def.2
-    ⟨?_, fun u v ↦ (h.isVertexReachable u v).induce_compl hs u.2 v.2⟩
+    ⟨?_, fun u v ↦ (h.isVertexReachable u v).induce_compl hs u.property v.property⟩
   have hcard := h.add_one_le_card
   rw [← Set.encard_add_encard_compl s, add_assoc] at hcard
   rw [ENat.card_coe_set_eq]
@@ -109,16 +109,16 @@ theorem isVertexConnected_of_induce_compl_singleton (h : (G.induce {x}ᶜ).IsVer
     exact Set.encard_le_card
   -- After deleting `s`, any two remaining vertices other than `x` are reachable, through the
   -- graph with `x` deleted.
-  have key (a b : ↥sᶜ) (ha : a.1 ≠ x) (hb : b.1 ≠ x) : (G.induce sᶜ).Reachable a b := by
+  have key (a b : ↥sᶜ) (ha : a.val ≠ x) (hb : b.val ≠ x) : (G.induce sᶜ).Reachable a b := by
     have hs' : ({x}ᶜ ↓∩ s).encard < k := (Set.encard_preimage_val_le_encard_right _ _).trans_lt hs
     have hreach := isVertexReachable_def.1 (h.isVertexReachable ⟨a, ha⟩ ⟨b, hb⟩) hs'
-      (by exact a.2) (by exact b.2)
+      (by exact a.property) (by exact b.property)
     let φ : (G.induce {x}ᶜ).induce ({x}ᶜ ↓∩ s)ᶜ →g G.induce sᶜ :=
       induceHom (Embedding.induce {x}ᶜ).toHom fun _ hy ↦ by simpa using hy
     exact hreach.map φ
   -- If `x` remains, it has a remaining neighbour, since fewer than `k` vertices were deleted.
-  have hx' (a : ↥sᶜ) : ∃ c : ↥sᶜ, c.1 ≠ x ∧ (G.induce sᶜ).Reachable a c := by
-    by_cases hax : a.1 = x
+  have hx' (a : ↥sᶜ) : ∃ c : ↥sᶜ, c.val ≠ x ∧ (G.induce sᶜ).Reachable a c := by
+    by_cases hax : a.val = x
     · obtain ⟨w, hw, hws⟩ : ∃ w ∈ G.neighborSet x, w ∉ s := by
         by_contra! hN
         exact (hx.trans (Set.encard_le_encard hN)).not_gt hs

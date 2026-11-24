@@ -330,7 +330,7 @@ theorem isExtensionClosed_gradedFiniteProjectiveModules :
     let _ : Module.Projective A S.X₃ := h₃.2
     obtain ⟨l, hl⟩ := Module.projective_lifting_property S.g.hom LinearMap.id
       ((GradedModuleCat.epi_iff_surjective S.g).1 hS.epi_g)
-    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).1.symm
+    exact Module.Projective.of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).val.symm
 
 instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts

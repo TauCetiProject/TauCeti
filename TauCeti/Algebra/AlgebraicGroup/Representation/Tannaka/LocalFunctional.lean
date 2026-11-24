@@ -59,7 +59,7 @@ category. -/
 noncomputable abbrev finiteRegularObject
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) :
     FGComoduleCat.{u, u, u} k H :=
-  ⟨ComoduleCat.of k H N.1, Subcomodule.mem_finiteSubcomodules.mp N.2⟩
+  ⟨ComoduleCat.of k H N.val, Subcomodule.mem_finiteSubcomodules.mp N.property⟩
 
 end FiniteRegularObject
 
@@ -104,42 +104,42 @@ variable (k H A : Type u) [CommSemiring k] [Semiring H] [Bialgebra k H]
 /-- Inclusion of finite regular subcomodules as a morphism in the finite comodule category. -/
 noncomputable def regularInclusion
     {N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)}
-    (hNQ : N.1 ≤ Q.1) :
+    (hNQ : N.val ≤ Q.val) :
     finiteRegularObject k H N ⟶ finiteRegularObject k H Q := by
-  letI : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
-  letI : Module.Finite k Q.1 := Subcomodule.mem_finiteSubcomodules.mp Q.2
+  letI : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
+  letI : Module.Finite k Q.val := Subcomodule.mem_finiteSubcomodules.mp Q.property
   refine FGComoduleCat.ofHom (R := k) (C := H)
     { toLinearMap := Submodule.inclusion hNQ
       map_coact := ?_ }
   apply LinearMap.ext
   intro n
   apply Module.Flat.rTensor_preserves_injective_linearMap
-    (SMulMemClass.subtype Q.1) Subtype.val_injective
-  have hcomp : (SMulMemClass.subtype Q.1).comp (Submodule.inclusion hNQ) =
-      SMulMemClass.subtype N.1 := by
+    (SMulMemClass.subtype Q.val) Subtype.val_injective
+  have hcomp : (SMulMemClass.subtype Q.val).comp (Submodule.inclusion hNQ) =
+      SMulMemClass.subtype N.val := by
     ext
     rfl
   calc
-    (SMulMemClass.subtype Q.1).rTensor H
+    (SMulMemClass.subtype Q.val).rTensor H
         (TensorProduct.map (Submodule.inclusion hNQ) LinearMap.id
-          (Comodule.coact (R := k) (C := H) (M := N.1) n)) =
-        (SMulMemClass.subtype N.1).rTensor H
-          (Comodule.coact (R := k) (C := H) (M := N.1) n) := by
+          (Comodule.coact (R := k) (C := H) (M := N.val) n)) =
+        (SMulMemClass.subtype N.val).rTensor H
+          (Comodule.coact (R := k) (C := H) (M := N.val) n) := by
       rw [LinearMap.rTensor_def, LinearMap.rTensor_def, TensorProduct.map_map,
         LinearMap.comp_id, hcomp]
     _ = Comodule.coact (R := k) (C := H) (M := H) n :=
-      Subcomodule.subtype_rTensor_coact N.1 n
-    _ = (SMulMemClass.subtype Q.1).rTensor H
-        (Comodule.coact (R := k) (C := H) (M := Q.1)
+      Subcomodule.subtype_rTensor_coact N.val n
+    _ = (SMulMemClass.subtype Q.val).rTensor H
+        (Comodule.coact (R := k) (C := H) (M := Q.val)
           (Submodule.inclusion hNQ n)) :=
-      (Subcomodule.subtype_rTensor_coact Q.1 (Submodule.inclusion hNQ n)).symm
+      (Subcomodule.subtype_rTensor_coact Q.val (Submodule.inclusion hNQ n)).symm
 
 /-- The inclusion of finite regular subcomodules is the ordinary subtype inclusion. -/
 @[simp]
 theorem regularInclusion_apply
     {N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)}
-    (hNQ : N.1 ≤ Q.1) (n : N.1) :
-    regularInclusion k H hNQ n = ⟨n, hNQ n.2⟩ :=
+    (hNQ : N.val ≤ Q.val) (n : N.val) :
+    regularInclusion k H hNQ n = ⟨n, hNQ n.property⟩ :=
   by
     unfold regularInclusion
     rfl
@@ -149,7 +149,7 @@ inclusion. -/
 @[simp]
 theorem regularInclusion_toLinearMap
     {N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)}
-    (hNQ : N.1 ≤ Q.1) :
+    (hNQ : N.val ≤ Q.val) :
     (regularInclusion k H hNQ).hom.toLinearMap = Submodule.inclusion hNQ := by
   unfold regularInclusion
   rfl
@@ -160,19 +160,19 @@ coordinate by the counit. -/
 noncomputable def localFunctional
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) :
-    N.1 →ₗ[k] A := by
-  let _ : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
-  exact ((counitEvaluation k H A N.1).restrictScalars k).comp <|
+    N.val →ₗ[k] A := by
+  let _ : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
+  exact ((counitEvaluation k H A N.val).restrictScalars k).comp <|
     ((scalarExtensionComponent k H A η
       (finiteRegularObject k H N)).restrictScalars k).comp
-      (TensorProduct.mk k A N.1 (1 : A))
+      (TensorProduct.mk k A N.val (1 : A))
 
 /-- Evaluation formula for the functional extracted from a finite regular subcomodule. -/
 theorem localFunctional_apply
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
-    (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.1) :
+    (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.val) :
     localFunctional k H A η N n =
-      counitEvaluation k H A N.1
+      counitEvaluation k H A N.val
         (scalarExtensionComponent k H A η (finiteRegularObject k H N) (1 ⊗ₜ[k] n)) :=
   by
     unfold localFunctional
@@ -183,7 +183,7 @@ subcomodules. -/
 theorem localFunctional_eq_comp_inclusion
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (hNQ : N.1 ≤ Q.1) :
+    (hNQ : N.val ≤ Q.val) :
     localFunctional k H A η N =
       (localFunctional k H A η Q).comp (Submodule.inclusion hNQ) := by
   apply LinearMap.ext
@@ -194,15 +194,15 @@ theorem localFunctional_eq_comp_inclusion
   simp only [regularInclusion_toLinearMap, LinearMap.comp_apply,
     LinearMap.baseChange_tmul] at happ
   rw [← happ]
-  have hcounit (x : A ⊗[k] N.1) :
-      counitEvaluation k H A Q.1 ((Submodule.inclusion hNQ).baseChange A x) =
-        counitEvaluation k H A N.1 x := by
+  have hcounit (x : A ⊗[k] N.val) :
+      counitEvaluation k H A Q.val ((Submodule.inclusion hNQ).baseChange A x) =
+        counitEvaluation k H A N.val x := by
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp [hx, hy]
     | tmul a m =>
         rw [LinearMap.baseChange_tmul,
-          counitEvaluation_tmul k H A Q.1 a (Submodule.inclusion hNQ m),
-          counitEvaluation_tmul k H A N.1 a m]
+          counitEvaluation_tmul k H A Q.val a (Submodule.inclusion hNQ m),
+          counitEvaluation_tmul k H A N.val a m]
         rfl
   exact (hcounit _).symm
 
@@ -218,18 +218,18 @@ the restriction of `g` to the chosen finite subcomodule of the regular comodule.
 @[simp]
 theorem localFunctional_fgPointTensorIso
     (g : WithConv (H →ₐ[k] A))
-    (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.1) :
+    (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)) (n : N.val) :
     localFunctional k H A (fgPointTensorIso k H A g) N n = g.ofConv n := by
   rw [← fgPointTensorIsoHom_apply]
   rw [localFunctional_apply, fgPointTensorIsoHom_apply,
     scalarExtensionComponent_fgPointTensorIso]
   rw [Comodule.pointsAction_toLinearMap]
   unfold counitEvaluation
-  let φ : Module.Dual k N.1 :=
-    (Coalgebra.counit (R := k) (A := H)).comp (SMulMemClass.subtype N.1)
+  let φ : Module.Dual k N.val :=
+    (Coalgebra.counit (R := k) (A := H)).comp (SMulMemClass.subtype N.val)
   have hcoeff : Comodule.matrixCoefficient (R := k) (C := H) φ n = (n : H) := by
     simpa only [φ] using Comodule.matrixCoefficient_counit_comp_subtype
-      (R := k) (C := H) N.1 n
+      (R := k) (C := H) N.val n
   simpa only [φ, one_mul, hcoeff] using
     Comodule.baseChangeEvaluation_endOfPoint_tmul g.ofConv (1 : A) (1 : A) φ n
 

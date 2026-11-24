@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
+import Mathlib.Data.Fintype.Card
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Finite and extended cardinalities
@@ -29,9 +31,16 @@ including when both types are infinite.
 
 Finally, the cardinality `Nat.card` of an infinite type is `0`, and `0` is coprime only to `1`, so a
 type whose cardinality is coprime to that of an infinite type has `Nat.card` equal to `1`, and in
-particular is a subsingleton.
+particular is a subsingleton. For the same reason a type whose `Nat.card` is a power `q ^ k` of a
+nonzero `q` is finite, with no finiteness assumed; this is how a field given by `Nat.card K = q ^ 2`
+is shown finite.
 
 ## Main results
+
+* `Finite.eq_or_eq_of_card_le_two`: two distinct elements exhaust a finite type of
+  cardinality at most two.
+* `Fintype.sum_eq_add_of_natCard_le_two`: so a sum over such a type is the sum of the values at
+  the two elements.
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
@@ -44,6 +53,9 @@ particular is a subsingleton.
   when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
 * `TauCeti.finite_of_natCast_card_ne_zero`: a type whose cardinality has a nonzero cast in an
   additive monoid with one is finite, since `Nat.card` vanishes on infinite types.
+* `TauCeti.finite_of_natCard_eq_pow` and `TauCeti.one_lt_of_natCard_eq_pow`: a type `α` with
+  `Nat.card α = q ^ k` for some `q ≠ 0` is finite, and if it is nontrivial then `1 < q`. Neither
+  assumes `[Finite α]`.
 * `Nat.Coprime.subsingleton_of_infinite`: if `Nat.card α` and `Nat.card β` are coprime and `α` is
   infinite, then `β` is a subsingleton.
 -/
@@ -59,7 +71,7 @@ theorem card_pi_eq_prod_of_card_eq_one {ι : Type*} {X : ι → Type*} (s : Fins
     (hX : ∀ i ∉ s, Nat.card (X i) = 1) :
     Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i) := by
   classical
-  have h (i : {i // i ∉ s}) := Nat.card_eq_one_iff_unique.mp (hX i.1 i.2)
+  have h (i : {i // i ∉ s}) := Nat.card_eq_one_iff_unique.mp (hX i.val i.property)
   have (i : {i // i ∉ s}) : Subsingleton (X i) := (h i).1
   have (i : {i // i ∉ s}) : Nonempty (X i) := (h i).2
   rw [Nat.card_congr (Equiv.piEquivPiSubtypeProd (· ∈ s) X), Nat.card_prod,
@@ -79,7 +91,7 @@ theorem card_sigma_eq_finsum {ι : Type*} (β : ι → Type*) [∀ i, Finite (β
     rw [Nat.card_sigma, ← finsum_mem_support, ← finsum_set_coe_eq_finsum_mem,
       finsum_eq_sum_of_fintype]
   · have : Infinite s := Set.infinite_coe_iff.mpr hs
-    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.2).1
+    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.property).1
     rw [Nat.card_eq_zero_of_infinite, finsum_of_infinite_support hs]
 
 /-- **A sigma type with constant fibre cardinality.** If every fibre `β a` has `Nat.card` equal to
@@ -151,4 +163,47 @@ theorem finite_of_natCast_card_ne_zero {α R : Type*} [AddMonoidWithOne R]
     (h : (Nat.card α : R) ≠ 0) : Finite α :=
   Nat.finite_of_card_ne_zero fun hcard ↦ h (by simp [hcard])
 
+/-- A type `α` with `Nat.card α = q ^ k` for some `q ≠ 0` is finite, since `Nat.card` of an
+infinite type is `0`. No `[Finite α]` is assumed: the `Nat.card` equation and `q ≠ 0` together
+give it. -/
+theorem finite_of_natCard_eq_pow {α : Type*} {q k : ℕ} (hq : q ≠ 0) (h : Nat.card α = q ^ k) :
+    Finite α :=
+  Nat.finite_of_card_ne_zero (h ▸ pow_ne_zero k hq)
+
+/-- A nontrivial type `α` with `Nat.card α = q ^ k` for some `q ≠ 0` has `1 < q`. No `[Finite α]`
+is assumed: `finite_of_natCard_eq_pow` gives it, and then `1 < Nat.card α = q ^ k`. -/
+theorem one_lt_of_natCard_eq_pow {α : Type*} [Nontrivial α] {q k : ℕ} (hq : q ≠ 0)
+    (h : Nat.card α = q ^ k) : 1 < q := by
+  have := finite_of_natCard_eq_pow hq h
+  exact lt_of_pow_lt_pow_left₀ k q.zero_le (by rw [one_pow, ← h]; exact Finite.one_lt_card)
+
 end TauCeti
+
+namespace Finite
+
+/-- Two distinct elements exhaust a finite type with at most two elements. -/
+theorem eq_or_eq_of_card_le_two {K : Type*} [Finite K] (hK : Nat.card K ≤ 2)
+    {i j : K} (hij : i ≠ j) (k : K) : k = i ∨ k = j := by
+  classical
+  let := Fintype.ofFinite K
+  by_contra hk
+  push Not at hk
+  have hlt := Fintype.two_lt_card_iff.mpr ⟨k, i, j, hk.1, hk.2, hij⟩
+  rw [← Nat.card_eq_fintype_card] at hlt
+  omega
+
+end Finite
+
+namespace Fintype
+
+/-- Over a finite type of cardinality at most two, a product is the product of the values at any
+two distinct elements `i` and `j`. -/
+@[to_additive /-- Over a finite type of cardinality at most two, a sum is the sum of the values at
+any two distinct elements `i` and `j`. -/]
+theorem prod_eq_mul_of_natCard_le_two {K M : Type*} [Fintype K] [CommMonoid M]
+    (hK : Nat.card K ≤ 2) {i j : K} (hij : i ≠ j) (f : K → M) :
+    ∏ k, f k = f i * f j :=
+  prod_eq_mul i j hij fun k hk ↦
+    ((Finite.eq_or_eq_of_card_le_two hK hij k).elim hk.1 hk.2).elim
+
+end Fintype

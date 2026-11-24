@@ -222,11 +222,10 @@ theorem isLagrangian_leechShiftSubgroup :
     (constructionBLattice.isNondegenerate_discriminantQuadraticModule
       isEven_constructionBLattice)
     (by
-      have hcard : Nat.card leechShiftSubgroup ^ 2 =
-          Nat.card constructionBLattice.DiscriminantGroup := by
-        rw [natCard_leechShiftSubgroup, natCard_discriminantGroup_constructionBLattice]
-        norm_num
-      exact hcard)
+      -- The carrier of the discriminant quadratic module is the discriminant group by definition.
+      change Nat.card leechShiftSubgroup ^ 2 = Nat.card constructionBLattice.DiscriminantGroup
+      rw [natCard_leechShiftSubgroup, natCard_discriminantGroup_constructionBLattice]
+      norm_num)
 
 /-! ### The Leech lattice -/
 

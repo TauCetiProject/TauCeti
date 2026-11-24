@@ -147,10 +147,10 @@ omit [FiniteDimensional ℝ E] in
 the line integral of `α` is the change of the primitive. -/
 private theorem pathIntegral_side_eq_sub {t : ℝ} (hi : MDifferentiable I₀ I i₀)
     (hf : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) {a b : ℝ} (hab : a ≤ b)
     (hu : ∀ s ∈ Icc a b, u (s, t) = i₀ (c₀ s)) :
-    pathIntegral α.1 (fun s ↦ u (s, t)) a b = f₀ (c₀ b) - f₀ (c₀ a) := by
+    pathIntegral α.val (fun s ↦ u (s, t)) a b = f₀ (c₀ b) - f₀ (c₀ a) := by
   rw [pathIntegral_congr_of_eqOn_uIoo (γ' := i₀ ∘ c₀) fun s hs ↦
       hu s (Ioo_subset_Icc_self (by rwa [uIoo_of_le hab] at hs)),
     pathIntegral_comp_eq_sub_of_mpullback_eq hi hf hL hc]
@@ -163,23 +163,23 @@ perturbation `K = H_{(s, t)} dt`, the Floer energy of `u` over `[a, b] × [0, 1]
 the path at `s = a` for `H(a, ·)`, minus the action of the path at `s = b` for `H(b, ·)`, minus
 the integral of `∂_s H` along `u`. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_lagrangianPathAction_sub_sub_integral
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) {H : ℝ × ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) {H : ℝ × ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) {a b : ℝ} (hab : a ≤ b)
     (hu₀ : ∀ s ∈ Icc a b, u (s, 0) = i₀ (c₀ s)) (hu₁ : ∀ s ∈ Icc a b, u (s, 1) = i₁ (c₁ s)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) H u z =
-      lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
-        lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) (c₀ b) (c₁ b) -
+      lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
+        lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) (c₀ b) (c₁ b) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
   have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
   have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
   have hu₁' : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u := hu.of_le one_le_two
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- The manifold energy identity: area, plus the vertical Hamiltonian terms, minus `∂_s H`.
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := H) isOpen_univ
     hu₁'.contMDiffOn contMDiffOn_const hH.contMDiffOn hab' (subset_univ _)
@@ -194,7 +194,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_lagrangianPathAction_sub_
   have harea : ∫ z in Icc a b ×ˢ Icc 0 1, SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) =
-      (pathIntegral α.1 (fun t ↦ u (b, t)) 0 1 - pathIntegral α.1 (fun t ↦ u (a, t)) 0 1) -
+      (pathIntegral α.val (fun t ↦ u (b, t)) 0 1 - pathIntegral α.val (fun t ↦ u (a, t)) 0 1) -
         ((f₁ (c₁ b) - f₁ (c₁ a)) - (f₀ (c₀ b) - f₀ (c₀ a))) := by
     have hS := hω₀.setIntegral_eq_rectangleIntegral hu₁' hab'
     rw [← hα, rectangleIntegral_mextDeriv (α.isSmoothForm.of_le (by simp)) hu,
@@ -212,18 +212,18 @@ finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian, and `u` a `
 Floer energy of `u` over `[a, b] × [0, 1]` is `A_H(γ_a) - A_H(γ_b)`, for the paths
 `γ_s = u(s, ·)` and their action `TauCeti.lagrangianPathAction`. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_lagrangianPathAction_sub
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) {H : ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) {H : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) {a b : ℝ} (hab : a ≤ b)
     (hu₀ : ∀ s ∈ Icc a b, u (s, 0) = i₀ (c₀ s)) (hu₁ : ∀ s ∈ Icc a b, u (s, 1) = i₁ (c₁ s)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
-        lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) := by
+      lagrangianPathAction α.val f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
+        lagrangianPathAction α.val f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) := by
   have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   -- A Hamiltonian independent of `s` has no `s`-derivative.
@@ -238,13 +238,13 @@ almost complex structures `J_z` on `T_{u z} M` tamed by `ω`, then the action of
 `s = b` for `H(b, ·)` is at most the action of the path at `s = a` for `H(a, ·)` minus the
 integral of `∂_s H` along `u`. -/
 theorem IsNondegenerate.lagrangianPathAction_le_lagrangianPathAction_sub_integral
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) {H : ℝ × ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) {H : ℝ × ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) {a b : ℝ} (hab : a ≤ b)
     (hu₀ : ∀ s ∈ Icc a b, u (s, 0) = i₀ (c₀ s)) (hu₁ : ∀ s ∈ Icc a b, u (s, 1) = i₁ (c₁ s))
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
@@ -252,8 +252,8 @@ theorem IsNondegenerate.lagrangianPathAction_le_lagrangianPathAction_sub_integra
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z) (u z)) = 0) :
-    lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) (c₀ b) (c₁ b) ≤
-      lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
+    lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) (c₀ b) (c₁ b) ≤
+      lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
   have h := hω.integral_floerEnergyDensity_eq_lagrangianPathAction_sub_sub_integral hα hH hu hi₀
     hf₀ hL₀ hc₀ hi₁ hf₁ hL₁ hc₁ hab hu₀ hu₁
@@ -267,13 +267,13 @@ Floer equation `∂_s u + J_z (∂_t u - X_{H_t}(u)) = 0` on `[a, b] × [0, 1]` 
 structures `J_z` on `T_{u z} M` tamed by `ω`, then the action of the path at `s = b` is at most
 that of the path at `s = a`. -/
 theorem IsNondegenerate.lagrangianPathAction_le_lagrangianPathAction
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) {H : ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) {H : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) {a b : ℝ} (hab : a ≤ b)
     (hu₀ : ∀ s ∈ Icc a b, u (s, 0) = i₀ (c₀ s)) (hu₁ : ∀ s ∈ Icc a b, u (s, 1) = i₁ (c₁ s))
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
@@ -281,8 +281,8 @@ theorem IsNondegenerate.lagrangianPathAction_le_lagrangianPathAction
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) ≤
-      lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) := by
+    lagrangianPathAction α.val f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) ≤
+      lagrangianPathAction α.val f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) := by
   have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   -- A Hamiltonian independent of `s` has no `s`-derivative.
@@ -299,13 +299,13 @@ whose sides `s ↦ u(s, 0)` and `s ↦ u(s, 1)` are `i₀ ∘ c₀` and `i₁ �
 as `s → -∞` and to `A₂` as `s → ∞`. Then the energy of `u` is `A₁ - A₂` minus the integral of
 `∂_s H` along `u`. -/
 theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPathAction_sub_integral
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) {H : ℝ × ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) {H : ℝ × ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) (hu₀ : ∀ s, u (s, 0) = i₀ (c₀ s))
     (hu₁ : ∀ s, u (s, 1) = i₁ (c₁ s)) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
     (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
@@ -315,16 +315,16 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPat
     (hint : IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal)
       ((univ : Set ℝ) ×ˢ Icc 0 1))
     {A₁ A₂ : ℝ}
-    (hbot : Tendsto (fun s ↦ lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (s, t))
+    (hbot : Tendsto (fun s ↦ lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (s, t))
       (fun t ↦ u (s, t)) (c₀ s) (c₁ s)) atBot (𝓝 A₁))
-    (htop : Tendsto (fun s ↦ lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (s, t))
+    (htop : Tendsto (fun s ↦ lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (s, t))
       (fun t ↦ u (s, t)) (c₀ s) (c₁ s)) atTop (𝓝 A₂)) :
     ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) H u z) =
       ENNReal.ofReal (A₁ - A₂ -
         ∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal) := by
   set f : ℝ × ℝ → ℝ := fun z ↦ fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal
-  set A : ℝ → ℝ := fun s ↦ lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (s, t)) (fun t ↦ u (s, t))
+  set A : ℝ → ℝ := fun s ↦ lagrangianPathAction α.val f₀ f₁ (fun t ↦ H (s, t)) (fun t ↦ u (s, t))
     (c₀ s) (c₁ s)
   have hRsub (n : ℕ) : Icc (-(n : ℝ)) n ×ˢ Icc (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
     prod_mono (subset_univ _) le_rfl
@@ -353,13 +353,13 @@ where `i₀^* α = d f₀` and `i₁^* α = d f₁`. Suppose that `u` solves the
 `ω`. If the actions `A_H(u(s, ·))` tend to `A₁` as `s → -∞` and to `A₂` as `s → ∞`, then the
 energy of `u` is `A₁ - A₂`. -/
 theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPathAction
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) {H : ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) {H : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hi₀ : MDifferentiable I₀ I i₀) (hf₀ : ContMDiff I₀ 𝓘(ℝ) 1 f₀)
-    (hL₀ : mpullback I₀ I i₀ α.1 = mextDeriv (RoughForm.ofFunction I₀ f₀))
+    (hL₀ : mpullback I₀ I i₀ α.val = mextDeriv (RoughForm.ofFunction I₀ f₀))
     (hc₀ : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c₀) (hi₁ : MDifferentiable I₁ I i₁)
     (hf₁ : ContMDiff I₁ 𝓘(ℝ) 1 f₁)
-    (hL₁ : mpullback I₁ I i₁ α.1 = mextDeriv (RoughForm.ofFunction I₁ f₁))
+    (hL₁ : mpullback I₁ I i₁ α.val = mextDeriv (RoughForm.ofFunction I₁ f₁))
     (hc₁ : ContMDiff 𝓘(ℝ, ℝ) I₁ 1 c₁) (hu₀ : ∀ s, u (s, 0) = i₀ (c₀ s))
     (hu₁ : ∀ s, u (s, 1) = i₁ (c₁ s)) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
     (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
@@ -367,9 +367,9 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPat
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0)
     {A₁ A₂ : ℝ}
-    (hbot : Tendsto (fun s ↦ lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (s, t)) (c₀ s) (c₁ s))
+    (hbot : Tendsto (fun s ↦ lagrangianPathAction α.val f₀ f₁ H (fun t ↦ u (s, t)) (c₀ s) (c₁ s))
       atBot (𝓝 A₁))
-    (htop : Tendsto (fun s ↦ lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (s, t)) (c₀ s) (c₁ s))
+    (htop : Tendsto (fun s ↦ lagrangianPathAction α.val f₀ f₁ H (fun t ↦ u (s, t)) (c₀ s) (c₁ s))
       atTop (𝓝 A₂)) :
     ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =

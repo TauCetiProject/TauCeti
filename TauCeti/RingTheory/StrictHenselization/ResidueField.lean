@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
-public import TauCeti.RingTheory.StrictHenselization.Local
+public import TauCeti.RingTheory.StrictHenselization.Henselian
+public import TauCeti.RingTheory.Henselian.Strict
 public import TauCeti.FieldTheory.IsSepClosed
 public import TauCeti.RingTheory.StrictHenselization.Etale
 
@@ -20,14 +21,19 @@ separable algebraic extension `Ω` of its residue field, `toTarget` is surjectiv
 `toTarget` identifies the residue field of `algebra R Ω` with `Ω` (`residueFieldEquiv`). This is
 property (3) of Stacks, Tag 04GP: the residue field of the strict henselization of `R` with
 respect to a separable closure `Ω` of its residue field is `Ω`. In particular the strict
-henselization is strictly henselian (`isSepClosed_residueField`): it is a henselian local ring
-(`henselianLocalRing`) with separably closed residue field.
+henselization is strictly henselian (`isSepClosed_residueField`,
+`isStrictlyHenselianLocalRing_algebra`): it is a henselian local ring (`henselianLocalRing`) with
+separably closed residue field.
 
 ## Main results
 
 * `TauCeti.StrictHenselization.residueFieldEquiv`: the residue field of `algebra R Ω` is `Ω`.
-* `TauCeti.StrictHenselization.isSepClosed_residueField`: if `Ω` is moreover separably closed,
-  then so is the residue field of `algebra R Ω`.
+* `TauCeti.StrictHenselization.isSepClosed_residueField` and
+  `TauCeti.StrictHenselization.isSepClosed_residueField_strictHenselization`: if `Ω` is moreover
+  separably closed (in particular a separable closure of `ResidueField R`), then so is the residue
+  field of `algebra R Ω`.
+* `TauCeti.StrictHenselization.isStrictlyHenselianLocalRing_algebra`: when `Ω` is a separable
+  closure of `ResidueField R`, `algebra R Ω` is strictly henselian.
 
 ## References
 
@@ -36,7 +42,7 @@ henselization is strictly henselian (`isSepClosed_residueField`): it is a hensel
 
 public section
 
-open IsLocalRing
+open _root_.IsLocalRing
 
 universe u
 
@@ -44,7 +50,7 @@ namespace TauCeti.StrictHenselization
 
 section ResidueField
 
-variable (R Ω : Type u) [CommRing R] [IsLocalRing R] [Field Ω] [Algebra R Ω]
+variable (R Ω : Type u) [CommRing R] [_root_.IsLocalRing R] [Field Ω] [Algebra R Ω]
   [Algebra (ResidueField R) Ω] [IsScalarTower R (ResidueField R) Ω]
   [Algebra.IsSeparable (ResidueField R) Ω]
 
@@ -82,5 +88,30 @@ instance isSepClosed_residueField [IsSepClosed Ω] :
   .of_ringEquiv (residueFieldEquiv R Ω).symm.toRingEquiv
 
 end ResidueField
+
+section SepClosure
+
+variable (R Ω : Type u) [CommRing R] [_root_.IsLocalRing R] [Field Ω] [Algebra R Ω]
+  [Algebra (ResidueField R) Ω] [IsScalarTower R (ResidueField R) Ω]
+  [IsSepClosure (ResidueField R) Ω]
+
+/-- The residue field of the strict henselization of a local ring `R` with respect to a separable
+closure `Ω` of `ResidueField R` is separably closed. Because Mathlib's `IsSepClosure.sep_closed` is
+not an instance, this supplies `IsSepClosed (ResidueField (algebra R Ω))` directly from
+`[IsSepClosure (ResidueField R) Ω]`. -/
+@[stacks 04GP "(3)"]
+instance isSepClosed_residueField_strictHenselization :
+    IsSepClosed (ResidueField (algebra R Ω)) :=
+  have : IsSepClosed Ω := IsSepClosure.sep_closed (ResidueField R)
+  inferInstance
+
+/-- The strict henselization of a local ring with respect to a separable closure `Ω` of its residue
+field is strictly henselian. -/
+@[stacks 04GP "(2)"]
+instance isStrictlyHenselianLocalRing_algebra :
+    IsStrictlyHenselianLocalRing (algebra R Ω) :=
+  inferInstance
+
+end SepClosure
 
 end TauCeti.StrictHenselization
