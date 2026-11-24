@@ -7,7 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation.MeasurePreserving
-public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Completion
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 
 /-!
 # Conditional expectations across completion
@@ -18,14 +19,20 @@ conditional expectation unchanged almost everywhere. These identities allow mart
 identities to be transported to a completed stochastic basis without identifying its
 measurable space with the original one.
 
-Only sigma-finiteness on the original conditioning σ-algebra is required. Observables are
-assumed almost everywhere strongly measurable for the original measure; integrability is
-not required, consistently with the zero convention for nonintegrable conditional expectations.
+For the conditional-expectation identities, null-set augmentation requires sigma-finiteness
+on the original conditioning σ-algebra; ambient completion alone does not. In the two
+completion-invariance identities
+`condExp_completion` and `condExp_eventuallyMeasurableSpace_completion`, observables are assumed
+almost everywhere strongly measurable for the original measure; integrability is not required,
+consistently with the zero convention for nonintegrable conditional expectations. Null augmentation
+also preserves `lpMeas` for complete normed spaces at every exponent, without finiteness assumptions
+on the measure.
 -/
 
 public section
 
 open MeasureTheory Filter
+open scoped Topology ENNReal
 
 /- Carrier convention for the completion proofs below: Mathlib defines
 NullMeasurableSpace Ω μ to be the type synonym Ω, and its instMeasurableSpace is
@@ -37,6 +44,11 @@ they do not identify the original measurable space m₀ with its completion. -/
 namespace MeasureTheory.Measure
 
 variable {Ω : Type*} {m m₀ : MeasurableSpace Ω}
+
+/-- The completion of a finite measure is finite. -/
+instance completion.isFiniteMeasure (μ : Measure Ω) [IsFiniteMeasure μ] :
+    @IsFiniteMeasure (NullMeasurableSpace Ω μ) _ μ.completion :=
+  ⟨lt_of_eq_of_lt (μ.completion_apply Set.univ) (measure_lt_top μ Set.univ)⟩
 
 /-- Trimming the completed measure to an original sub-σ-algebra recovers the original trim. -/
 theorem trim_completion (μ : Measure Ω) (hm : m ≤ m₀) :
@@ -68,16 +80,21 @@ variable {Ω E : Type*} {m m₀ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- Completion of the ambient measure preserves conditional expectation onto an original
 sub-σ-algebra. -/
-theorem condExp_completion (hm : m ≤ m₀) [SigmaFinite (μ.trim hm)]
-    (hf : AEStronglyMeasurable f μ) :
+theorem condExp_completion (hm : m ≤ m₀) (hf : AEStronglyMeasurable f μ) :
     @condExp Ω E m (eventuallyMeasurableSpace m₀ (ae μ)) _ _ μ.completion f
       =ᵐ[μ] μ[f | m] := by
-  have h := MeasurePreserving.condExp_comap (mα := eventuallyMeasurableSpace m₀ (ae μ))
-    (mβ := m₀) μ.measurePreserving_id_completion hm hf
-  convert h using 1
-  · exact μ.ae_completion.symm
-  · simp only [Function.comp_id, MeasurableSpace.comap_id]
-  · simp only [Function.comp_id]
+  by_cases hσ : SigmaFinite (μ.trim hm)
+  · have h := MeasurePreserving.condExp_comap (mα := eventuallyMeasurableSpace m₀ (ae μ))
+      (mβ := m₀) μ.measurePreserving_id_completion hm hf
+    convert h using 1
+    · exact μ.ae_completion.symm
+    · simp only [Function.comp_id, MeasurableSpace.comap_id]
+    · simp only [Function.comp_id]
+  · have hσ' : ¬SigmaFinite (@Measure.trim Ω m (eventuallyMeasurableSpace m₀ (ae μ))
+        μ.completion (hm.trans le_eventuallyMeasurableSpace)) := by
+      rwa [μ.trim_completion hm]
+    rw [condExp_of_not_sigmaFinite (hm.trans le_eventuallyMeasurableSpace) hσ',
+      condExp_of_not_sigmaFinite hm hσ]
 
 /-- Completing the ambient space and adjoining its null sets to the conditioning σ-algebra
 preserves conditional expectation. The augmentation uses ambient null sets, not merely null
@@ -98,5 +115,15 @@ theorem condExp_eventuallyMeasurableSpace_completion (hm : m ≤ m₀)
     (m₁ := m) (m₂ := eventuallyMeasurableSpace m (ae μ))
     le_eventuallyMeasurableSpace hle (fun _ hs => hs)
   exact hce.trans (condExp_completion hm hf)
+
+/-- Adjoining ambient null sets does not change the almost everywhere measurable `Lᵖ` classes
+with values in a complete normed space. This holds at every exponent and needs no finiteness
+assumption or inclusion between the two original σ-algebras. -/
+theorem lpMeas_eventuallyMeasurableSpace {F 𝕜 : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] (p : ℝ≥0∞) :
+    lpMeas F 𝕜 (eventuallyMeasurableSpace m (ae μ)) p μ = lpMeas F 𝕜 m p μ := by
+  ext ξ
+  simp only [mem_lpMeas_iff_aestronglyMeasurable,
+    aestronglyMeasurable_eventuallyMeasurableSpace_iff]
 
 end TauCeti.MeasureTheory

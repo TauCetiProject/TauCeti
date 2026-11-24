@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!
@@ -31,16 +31,18 @@ factor is the polar partial isometry of `T`.
 For complete inner product spaces in this isometric case, the factor is a partial isometry with
 initial space the closure of the range of `A` and final space the closure of the range of `T`;
 its initial and final projections are the orthogonal projections onto these spaces. When `A` is
-a normal endomorphism, for instance self-adjoint, the initial space is `(ker T)ᗮ`, and the
-factor is the unique `V` with `V ∘L A = T` vanishing on `ker T`. When `A` has dense range the
-factor is an isometry. Independently of the isometric case, the factor is `T A⁻¹` when `A` is
-invertible, and for an endomorphism `A` with `‖T x‖ ≤ ‖A x‖` the factor `U` satisfies `‖T - U‖ ≤
-‖A - 1‖`.
+a normal endomorphism, for instance self-adjoint, the initial space is `(ker T)ᗮ`. When `A` has
+dense range the factor is an isometry. Independently of the isometric case, the factor is `T A⁻¹`
+when `A` is invertible, for a normal endomorphism `A`, any `V` with `V ∘L A = T` vanishing on
+`ker T` equals the factor, and for an endomorphism `A` with `‖T x‖ ≤ ‖A x‖` the factor `U`
+satisfies `‖T - U‖ ≤ ‖A - 1‖`.
 
 ## Main declarations
 
 * `ContinuousLinearMap.factorThru`: the canonical factor of `T` through `A`.
 * `ContinuousLinearMap.factorThru_comp`: `T.factorThru A ∘L A = T` under a norm bound.
+* `ContinuousLinearMap.factorThru_compLeftInverse_apply`: the factor of `f.compLeftInverse g`
+  through the inclusion of the range of `g` sends `g x` to `f x`.
 * `ContinuousLinearMap.eq_factorThru`: uniqueness of the factor vanishing on `(range A)ᗮ`.
 * `ContinuousLinearMap.adjoint_factorThru_comp`: `(T.factorThru A)† ∘L T = A` when
   `‖T x‖ = ‖A x‖` for every `x`.
@@ -129,6 +131,18 @@ theorem factorThru_apply_apply (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) (
 theorem factorThru_comp (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) : T.factorThru A ∘L A = T := by
   ext x
   exact factorThru_apply_apply h x
+
+/-- Under a bound `‖f x‖ ≤ C * ‖g x‖` for linear maps on a space without topology, the factor of
+`f.compLeftInverse g` through the inclusion of the range of `g` sends `g x` to `f x`. -/
+theorem factorThru_compLeftInverse_apply {Φ : Type*} [AddCommGroup Φ] [Module 𝕜 Φ]
+    {f : Φ →ₗ[𝕜] F} {g : Φ →ₗ[𝕜] G}
+    [(LinearMap.range g).subtypeL.range.topologicalClosure.HasOrthogonalProjection]
+    (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖g x‖) (x : Φ) :
+    (f.compLeftInverse g).factorThru (LinearMap.range g).subtypeL (g x) = f x := by
+  obtain ⟨C, hC⟩ := h
+  have := factorThru_apply_apply (T := f.compLeftInverse g) (A := (LinearMap.range g).subtypeL)
+    ⟨C, LinearMap.norm_compLeftInverse_apply_le hC⟩ ⟨g x, LinearMap.mem_range_self g x⟩
+  rwa [LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hC⟩ x _ rfl] at this
 
 /-- The factor vanishes on the orthogonal complement of the range of `A`. -/
 @[simp]
@@ -330,13 +344,13 @@ theorem ker_factorThru_of_isStarNormal (h : ∀ x, ‖T x‖ = ‖A x‖) (hA : 
   ext x
   rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe, ← norm_eq_zero, ← h x, norm_eq_zero]
 
-/-- If `A` is normal, for instance self-adjoint, and `‖T x‖ = ‖A x‖` for every `x`, a bounded
-operator `V` with `V ∘L A = T` that vanishes on `ker T` is the canonical factor of `T`
-through `A`. -/
-theorem eq_factorThru_of_isStarNormal (h : ∀ x, ‖T x‖ = ‖A x‖) (hA : IsStarNormal A)
+/-- If `A` is normal, for instance self-adjoint, a bounded operator `V` with `V ∘L A = T` that
+vanishes on `ker T` is the canonical factor of `T` through `A`. -/
+theorem eq_factorThru_of_isStarNormal (hA : IsStarNormal A)
     {V : E →L[𝕜] F} (hV : V ∘L A = T) (hV₀ : ∀ y ∈ T.ker, V y = 0) : V = T.factorThru A :=
-  eq_factorThru hV fun y hy ↦ hV₀ y <| ker_factorThru_of_isStarNormal h hA ▸
-    (ker_factorThru h).ge hy
+  eq_factorThru hV fun y hy ↦ hV₀ y <| by
+    rw [IsStarNormal.orthogonal_range hA, LinearMap.mem_ker, coe_coe] at hy
+    rw [LinearMap.mem_ker, coe_coe, ← hV, comp_apply, hy, map_zero]
 
 end Normed
 

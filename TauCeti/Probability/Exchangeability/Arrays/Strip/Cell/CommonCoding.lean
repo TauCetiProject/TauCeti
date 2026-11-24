@@ -96,9 +96,9 @@ two hidden enumerations. -/
 private def cellStripsOfContext (z : ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) :
     ((insert i (Set.range e) ×ˢ insert j (Set.range f) \ {(i, j)} : Set (ℕ × ℕ))) → α :=
   fun q =>
-    if q.1.1 = i then z.1.2 (Function.invFun f q.1.2)
-    else if q.1.2 = j then z.2 (Function.invFun e q.1.1)
-    else z.1.1 (Function.invFun e q.1.1, Function.invFun f q.1.2)
+    if q.val.1 = i then z.1.2 (Function.invFun f q.val.2)
+    else if q.val.2 = j then z.2 (Function.invFun e q.val.1)
+    else z.1.1 (Function.invFun e q.val.1, Function.invFun f q.val.2)
 
 private theorem measurable_cellStripsOfContext :
     Measurable (cellStripsOfContext (α := α) e f i j) := by
@@ -284,46 +284,31 @@ theorem SeparatelyExchangeable.exists_common_visibleCells_coding
       ∀ F : Finset V,
         (ρ.prod (Measure.pi fun _ : F => (volume : Measure I))).map
             (fun q => (H.domRestrict q.1,
-              fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p))) =
-          ρ.map fun x => (H.domRestrict x, fun p : F => x p.1.1) := by
+              fun p : F => g (cellContext e f p.val.val.1 p.val.val.2 q.1) (q.2 p))) =
+          ρ.map fun x => (H.domRestrict x, fun p : F => x p.val.val) := by
   intro H V
-  rcases Set.eq_empty_or_nonempty V with hV | ⟨⟨i₀, j₀⟩, hi₀, hj₀⟩
-  · -- If the hidden rows or the hidden columns exhaust their index set, there is no visible cell:
-    -- every finite family is then empty and the claim only compares the law of the crossing
-    -- strips with itself, so any measurable constant coding serves.
-    have : IsEmpty V := Set.isEmpty_coe_sort.2 hV
-    refine ⟨fun _ _ => Classical.arbitrary α, measurable_const, fun F => ?_⟩
-    have : IsEmpty F := ⟨fun p => isEmptyElim p.1⟩
-    have hstrips : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => x p.1.1) :=
-      (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p => measurable_pi_apply p.1.1)
-    have hfactor : (fun q : (ℕ × ℕ → α) × (F → I) =>
-          (H.domRestrict q.1, fun _ : F => Classical.arbitrary α)) =
-        (fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : F => x p.1.1)) ∘ Prod.fst :=
-      funext fun q => Prod.ext rfl (Subsingleton.elim _ _)
-    rw [hfactor, ← Measure.map_map hstrips measurable_fst, Measure.map_fst_prod]
-    simp
-  obtain ⟨g, hg, hgmap⟩ := hρ.exists_common_cell_coding e f hi₀ hj₀
+  obtain ⟨g, hg, hgmap⟩ := hρ.exists_common_cell_coding e f
   refine ⟨g, hg, fun F => ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   -- Distinct visible cells are conditionally independent given the crossing strips.
   have hall := hρ.iCondIndepFun_visibleCells he hf
   have hF : iCondIndepFun (MeasurableSpace.comap H.domRestrict inferInstance)
       (Set.measurable_restrict H).comap_le
-      (fun p : F => fun x : ℕ × ℕ → α => x p.1.1) ρ :=
+      (fun p : F => fun x : ℕ × ℕ → α => x p.val.val) ρ :=
     Kernel.iIndepFun.precomp Subtype.val_injective hall
   -- Each of them is coded from its own context by the common coding function.
   have hglue := hF.map_prod_pi_eq_of_map_prod_eq hZ
-    (fun p : F => measurable_pi_apply p.1.1)
+    (fun p : F => measurable_pi_apply p.val.val)
     (ρ := fun _ : F => (volume : Measure I))
-    (f := fun p : F => fun y u => g (cellContextOfStrips e f p.1.1.1 p.1.1.2 y) u)
-    (fun p => hg.comp ((measurable_cellContextOfStrips e f p.1.1.1 p.1.1.2).comp
+    (f := fun p : F => fun y u => g (cellContextOfStrips e f p.val.val.1 p.val.val.2 y) u)
+    (fun p => hg.comp ((measurable_cellContextOfStrips e f p.val.val.1 p.val.val.2).comp
       measurable_fst |>.prodMk measurable_snd))
-    fun p => map_prod_cellCoding_eq hρ he hf p.1.2.1 p.1.2.2 hg
-      (fun z => hgmap p.1.1.1 p.1.1.2 p.1.2.1 p.1.2.2 z)
+    fun p => map_prod_cellCoding_eq hρ he hf p.val.property.1 p.val.property.2 hg
+      (fun z => hgmap p.val.val.1 p.val.val.2 p.val.property.1 p.val.property.2 z)
   have hcoded : Measurable fun p : (H → α) × (F → I) =>
-      (p.1, fun r : F => g (cellContextOfStrips e f r.1.1.1 r.1.1.2 p.1) (p.2 r)) :=
+      (p.1, fun r : F => g (cellContextOfStrips e f r.val.val.1 r.val.val.2 p.1) (p.2 r)) :=
     measurable_fst.prodMk (Measurable.of_eval fun r => hg.comp
-      (((measurable_cellContextOfStrips e f r.1.1.1 r.1.1.2).comp measurable_fst).prodMk
+      (((measurable_cellContextOfStrips e f r.val.val.1 r.val.val.2).comp measurable_fst).prodMk
         ((measurable_pi_apply r).comp measurable_snd)))
   -- The strips are read off `ρ` itself, so the law of the strips paired with the uniform family
   -- is the image of `ρ` paired with that family: the restriction only acts on the first factor.
@@ -336,7 +321,7 @@ theorem SeparatelyExchangeable.exists_common_visibleCells_coding
   funext q
   refine Prod.ext rfl (funext fun p => ?_)
   exact congrArg (g · (q.2 p))
-    (congrFun (cellContextOfStrips_comp (α := α) e f p.1.1.1 p.1.1.2) q.1).symm
+    (congrFun (cellContextOfStrips_comp (α := α) e f p.val.val.1 p.val.val.2) q.1).symm
 
 /-- **One common cell coding generates the whole visible array.** Let `e` and `f` enumerate
 infinitely many hidden rows and hidden columns. There is a single measurable `g` such that feeding
@@ -355,16 +340,16 @@ theorem SeparatelyExchangeable.exists_common_visibleArray_coding
     ∃ g : ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) → I → α, Measurable (Function.uncurry g) ∧
       (ρ.prod (Measure.infinitePi fun _ : V => (volume : Measure I))).map
           (fun q => (H.domRestrict q.1,
-            fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p))) =
+            fun p : V => g (cellContext e f p.val.1 p.val.2 q.1) (q.2 p))) =
         ρ.map fun x => (H.domRestrict x, V.domRestrict x) := by
   intro H V
   obtain ⟨g, hg, hF⟩ := hρ.exists_common_visibleCells_coding he hf
   refine ⟨g, hg, ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
   have hcode : Measurable fun q : (ℕ × ℕ → α) × (V → I) =>
-      (H.domRestrict q.1, fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p)) :=
+      (H.domRestrict q.1, fun p : V => g (cellContext e f p.val.1 p.val.2 q.1) (q.2 p)) :=
     (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
-      (((measurable_cellContext e f p.1.1 p.1.2).comp measurable_fst).prodMk
+      (((measurable_cellContext e f p.val.1 p.val.2).comp measurable_fst).prodMk
         ((measurable_pi_apply p).comp measurable_snd)))
   have hread : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, V.domRestrict x) :=
     hZ.prodMk (Set.measurable_restrict V)
@@ -378,16 +363,16 @@ theorem SeparatelyExchangeable.exists_common_visibleArray_coding
       (F.restrict (π := fun _ => I))) :=
     measurable_id.prodMap (Finset.measurable_restrict F)
   have hcodeF : Measurable fun q : (ℕ × ℕ → α) × (F → I) =>
-      (H.domRestrict q.1, fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p)) :=
+      (H.domRestrict q.1, fun p : F => g (cellContext e f p.val.val.1 p.val.val.2 q.1) (q.2 p)) :=
     (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
-      (((measurable_cellContext e f p.1.1.1 p.1.1.2).comp measurable_fst).prodMk
+      (((measurable_cellContext e f p.val.val.1 p.val.val.2).comp measurable_fst).prodMk
         ((measurable_pi_apply p).comp measurable_snd)))
   rw [Measure.map_map hFr hcode, Measure.map_map hFr hread]
   -- Restricting the coded cells to `F` only reads the uniform variables indexed by `F`.
   have hcomm : Prod.map id F.restrict ∘ (fun q : (ℕ × ℕ → α) × (V → I) =>
-        (H.domRestrict q.1, fun p : V => g (cellContext e f p.1.1 p.1.2 q.1) (q.2 p))) =
+        (H.domRestrict q.1, fun p : V => g (cellContext e f p.val.1 p.val.2 q.1) (q.2 p))) =
       (fun q : (ℕ × ℕ → α) × (F → I) =>
-        (H.domRestrict q.1, fun p : F => g (cellContext e f p.1.1.1 p.1.1.2 q.1) (q.2 p))) ∘
+        (H.domRestrict q.1, fun p : F => g (cellContext e f p.val.val.1 p.val.val.2 q.1) (q.2 p))) ∘
         Prod.map id F.restrict :=
     rfl
   rw [hcomm, ← Measure.map_map hcodeF hIr, ← Measure.map_prod_map _ _ measurable_id

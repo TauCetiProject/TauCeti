@@ -12,7 +12,7 @@ public import TauCeti.Topology.PunctureFilling
 
 import TauCeti.AlgebraicTopology.ThricePuncturedSphere.ComponentCharts
 import TauCeti.Topology.Covering.Clopen
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.SeparatedMap
 
 import TauCeti.Analysis.Normed.Module.Connected
@@ -220,7 +220,7 @@ theorem exists_coe_coord_chart_eq_pow (i : FilledPoint p) (w : 𝔻*) :
         ((sigmaEquiv p i).1.coord ⟨p (chart p i w), hw⟩ : ℂ) = (w : ℂ) ^ degree p i := by
   obtain ⟨h, hh, hchart⟩ := exists_homeomorph_chart_eq hp hfin i
   rw [hchart]
-  refine ⟨(h.symm w : p ⁻¹' (sigmaEquiv p i).1.neighborhood).2, (h.symm w).2, ?_⟩
+  refine ⟨(h.symm w : p ⁻¹' (sigmaEquiv p i).1.neighborhood).property, (h.symm w).property, ?_⟩
   have := congrArg Subtype.val (congr_fun hh (h.symm w))
   rw [comp_apply, Homeomorph.apply_symm_apply, coe_puncturedDiscPow_apply] at this
   exact this.symm
@@ -236,7 +236,7 @@ theorem range_chart (i : FilledPoint p) :
   rw [hchart]
   constructor
   · rintro ⟨w, rfl⟩
-    exact ⟨(h.symm w : p ⁻¹' (sigmaEquiv p i).1.neighborhood).2, (h.symm w).2⟩
+    exact ⟨(h.symm w : p ⁻¹' (sigmaEquiv p i).1.neighborhood).property, (h.symm w).property⟩
   · rintro ⟨hy, hc⟩
     exact ⟨h ⟨⟨y, hy⟩, hc⟩, by simp⟩
 
@@ -259,7 +259,8 @@ private theorem tendsto_comp_chart_cocompact (i : FilledPoint p) :
   rw [hcoord, norm_pow] at h2ρ
   rw [mem_preimage, mem_ball_zero_iff] at hw
   have hle : ‖(w : ℂ)‖ ^ degree p i ≤ ‖(w : ℂ)‖ :=
-    pow_le_of_le_one (norm_nonneg _) (mem_ball_zero_iff.1 w.2.1).le (degree_ne_zero hp hfin i)
+    pow_le_of_le_one (norm_nonneg _) (mem_ball_zero_iff.1 w.property.1).le
+        (degree_ne_zero hp hfin i)
   linarith
 
 /-- **The end of a filling chart.** Approaching the puncture of `𝔻*` along the filling chart of
@@ -307,7 +308,8 @@ private theorem disjoint_range_chart {i j : FilledPoint p} (hij : i ≠ j) :
 theorem t2Space : T2Space (FilledCover p) := by
   have : T2Space E := hp.t2Space
   have : LocallyCompactSpace ThricePuncturedSphere := isOpenEmbedding_coe.locallyCompactSpace
-  refine PunctureFilling.t2Space (isOpenEmbedding_chart hp hfin) (fun i x ↦ ?_) fun i j hij ↦ ?_
+  refine PunctureFilling.t2Space (fun i ↦ (isOpenEmbedding_chart hp hfin i).continuous)
+    (fun i ↦ (isOpenEmbedding_chart hp hfin i).isOpenMap) (fun i x ↦ ?_) fun i j hij ↦ ?_
   · -- A point of `E` lies over a point of `ℂ ∖ {0, 1}`, while the ends of the charts go to
     -- infinity there.
     refine disjoint_of_map (f := p) ?_
@@ -385,7 +387,7 @@ theorem compactSpace : CompactSpace (FilledCover p) := by
     (hp.isCompact_preimage_compactCore hfin _).union
       (isCompact_iUnion fun _ ↦ hp.isCompact_preimage_compactCore hfin _)
   refine hK.of_isClosed_subset (isOpen_iUnion fun i ↦ (isOpenEmbedding_chart hp hfin i).isOpenMap _
-    (isOpen_lt continuous_subtype_val.norm continuous_const)).isClosed_compl fun y hy ↦ ?_
+    (isOpen_lt continuous_subtypeVal.norm continuous_const)).isClosed_compl fun y hy ↦ ?_
   by_cases hD : ∃ q : Puncture, p y ∈ q.neighborhood
   · -- A point over the punctured neighbourhood of `q` is in the range of the chart of its
     -- component, at a point of norm at least `1 / 2`.

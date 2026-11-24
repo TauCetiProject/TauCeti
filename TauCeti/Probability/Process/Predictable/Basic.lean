@@ -23,7 +23,8 @@ left endpoint step approximations on countable regular partitions, including the
 on the predictable time-zero slice. Continuous paths give a corollary. This supplies predictability
 of continuous asset processes and hence of Borel functions of time and those assets.
 
-Predictable sets are measurable in the ambient time-product sigma-algebra.
+Predictable sets are measurable in the ambient time-product sigma-algebra. A sample-space
+map measurable at each time induces a measurable map of predictable sigma-algebras.
 
 An adapted process with almost-surely left-continuous paths has a predictable indistinguishable
 version, even when the filtration is neither complete nor right-continuous. This does not assert
@@ -45,6 +46,26 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+/-- A height known at the left endpoint, extended by zero outside `(s,t]`, is predictable. -/
+theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
+    {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s t : ι) {a : Ω → E}
+    (ha : StronglyMeasurable[ℱ s] a) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) := by
+  classical
+  let : MeasurableSpace Ω := ℱ s
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  let S : Set (ι × Ω) := Ioc s t ×ˢ univ
+  have hS : MeasurableSet S := measurableSet_predictable_Ioc_prod s t MeasurableSet.univ
+  have hproj : Measurable (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨Ioc s t ×ˢ A, measurableSet_predictable_Ioc_prod s t hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  simpa [S, indicator_apply] using
+    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+
 section Arithmetic
 
 variable {ι Ω E : Type*} {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι]
@@ -58,6 +79,22 @@ theorem MeasureTheory.IsStronglyPredictable.add [Add E] [ContinuousAdd E]
   unfold IsStronglyPredictable at *
   exact hH.add hK
 
+/-- The product of two strongly predictable processes is strongly predictable. -/
+theorem MeasureTheory.IsStronglyPredictable.mul [Mul E] [ContinuousMul E]
+    (hH : IsStronglyPredictable ℱ H) (hK : IsStronglyPredictable ℱ K) :
+    IsStronglyPredictable ℱ (fun t ω ↦ H t ω * K t ω) := by
+  -- Uncurrying respects pointwise multiplication; predictability is strong measurability.
+  unfold IsStronglyPredictable at *
+  exact hH.mul hK
+
+/-- Inversion, with zero sent to zero, preserves strong predictability. -/
+theorem MeasureTheory.IsStronglyPredictable.inv₀ [GroupWithZero E] [ContinuousInv₀ E]
+    [MetrizableSpace E] (h : IsStronglyPredictable ℱ H) :
+    IsStronglyPredictable ℱ (fun t ω ↦ (H t ω)⁻¹) := by
+  -- Uncurrying respects pointwise inversion; predictability is strong measurability.
+  unfold IsStronglyPredictable at *
+  exact h.inv₀
+
 /-- Multiplication by a constant preserves strong predictability. -/
 theorem MeasureTheory.IsStronglyPredictable.const_mul [Mul E] [ContinuousMul E]
     (h : IsStronglyPredictable ℱ H) (c : E) :
@@ -69,6 +106,15 @@ theorem MeasureTheory.IsStronglyPredictable.const_mul [Mul E] [ContinuousMul E]
 end Arithmetic
 
 namespace MeasureTheory.Filtration
+
+/-- Enlarging a filtration enlarges its predictable sigma-algebra. -/
+theorem predictable_mono {ι Ω : Type*} [Preorder ι] [OrderBot ι]
+    {m : MeasurableSpace Ω} {ℱ 𝒢 : Filtration ι m} (h : ℱ ≤ 𝒢) :
+    ℱ.predictable ≤ 𝒢.predictable := by
+  apply MeasurableSpace.generateFrom_mono
+  rintro s (⟨A, hA, rfl⟩ | ⟨t, A, hA, rfl⟩)
+  · exact Or.inl ⟨A, h _ _ hA, rfl⟩
+  · exact Or.inr ⟨t, A, h _ _ hA, rfl⟩
 
 variable {ι Ω : Type*} [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω}
     (ℱ : Filtration ι m)
@@ -286,6 +332,22 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
     (hc : ∀ ω, Continuous (fun t => u t ω)) : IsStronglyPredictable ℱ u :=
   hu.isStronglyPredictable_of_isLeftContinuous fun ω => (hc ω).isLeftContinuous
 
+/-- A sample-space map measurable at every time is measurable on predictable
+sigma-algebras when time is left unchanged. -/
+theorem MeasureTheory.Filtration.measurable_prodMap_predictable {ι Ω Ω' : Type*}
+    {m : MeasurableSpace Ω} {m' : MeasurableSpace Ω'} [Preorder ι] [OrderBot ι]
+    (ℱ : Filtration ι m) (𝒢 : Filtration ι m') {f : Ω → Ω'}
+    (hf : ∀ t, Measurable[ℱ t, 𝒢 t] f) :
+    @Measurable (ι × Ω) (ι × Ω') ℱ.predictable 𝒢.predictable (Prod.map id f) := by
+  rw [measurable_iff_comap_le, MeasurableSpace.comap_le_iff_le_map]
+  apply measurableSpace_le_predictable_of_measurableSet
+  · intro A hA
+    rw [MeasurableSpace.map_def]
+    exact MeasurableSpace.measurableSet_generateFrom (Or.inl ⟨f ⁻¹' A, hf ⊥ hA, rfl⟩)
+  · intro t A hA
+    rw [MeasurableSpace.map_def]
+    exact MeasurableSpace.measurableSet_generateFrom (Or.inr ⟨t, f ⁻¹' A, hf t hA, rfl⟩)
+
 /-- Predictable sets are measurable in the ambient time-product sigma-algebra. -/
 theorem MeasureTheory.Filtration.predictable_le_prod {ι Ω : Type*} {m : MeasurableSpace Ω}
     [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderClosedTopology ι]
@@ -301,10 +363,13 @@ indistinguishable version on the same raw filtration. No completeness or right c
 the filtration is required. The selected version need not be left-continuous on exceptional
 paths. -/
 theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
-    [Nonempty E] [IsCompletelyMetrizableSpace E]
+    [IsCompletelyMetrizableSpace E]
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} {P : Measure Ω}
     (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, IsLeftContinuous (fun t => u t ω)) :
     ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧ v ≡ᵐ[P] u := by
+  rcases isEmpty_or_nonempty E with hE | hE
+  · refine ⟨u, ?_, .rfl⟩
+    exact .of_subsingleton_cod
   borelize E
   let v t ω := limUnder atTop (fun n => u (leftSample n t) ω)
   refine ⟨v, ?_, ?_⟩
@@ -315,6 +380,21 @@ theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_
     exact ((continuousWithinAt_Iio_iff_Iic.mp (hω t)).tendsto.comp
       (tendsto_nhdsWithin_iff.mpr
         ⟨tendsto_leftSample t, .of_forall fun n => leftSample_le n t⟩)).limUnder_eq
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- An adapted process with almost-surely continuous paths has an almost-surely continuous
+predictable indistinguishable version on the same raw filtration. -/
+theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_continuous
+    [IsCompletelyMetrizableSpace E]
+    {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} {P : Measure Ω}
+    (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, Continuous (fun t => u t ω)) :
+    ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧
+      (∀ᵐ ω ∂P, Continuous (fun t => v t ω)) ∧ v ≡ᵐ[P] u := by
+  obtain ⟨v, hv, heq⟩ := hu.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
+    (hc.mono fun _ h ↦ h.isLeftContinuous)
+  refine ⟨v, hv, ?_, heq⟩
+  filter_upwards [hc, heq] with ω hω heqω
+  exact hω.congr (fun t ↦ (heqω t).symm)
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}

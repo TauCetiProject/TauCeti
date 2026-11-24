@@ -79,7 +79,7 @@ theorem isSeparable_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0) :
     Algebra.IsSeparable (RatFunc k) (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) := by
   have hn' : (n : RatFunc k) ≠ 0 := by
     rwa [← map_natCast (algebraMap k (RatFunc k)), _root_.map_ne_zero]
-  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn' RatFunc.X_ne_zero
+  exact isSeparable_of_pow_eq_of_adjoin_eq_top hn'
     (by simpa [AdjoinRoot.algebraMap_eq] using root_X_pow_sub_C_pow n (RatFunc.X : RatFunc k))
     (IntermediateField.adjoin_root_eq_top _)
 
@@ -102,8 +102,7 @@ theorem isTotallyRamified_adjoinRoot_X_pow_sub_C_X (hn : (n : k) ≠ 0)
   have := isSeparable_adjoinRoot_X_pow_sub_C_X k n hn
   rw [Place.isTotallyRamified_iff, finrank_adjoinRoot_X_pow_sub_C_X,
     Place.ramificationIdx_eq_of_pow_eq k (RatFunc k) (IntermediateField.adjoin_root_eq_top _)
-      (root_pow_eq k n) hn
-      (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 0)]
+      (root_pow_eq k n) hn]
   rcases hP with hP | hP <;> rw [hP]
   · rw [Place.ord_adicOfIrreducible_X_algebraMap_mul_X_zpow_mul_X_sub_one_zpow one_ne_zero,
       Int.gcd_one_right, Nat.div_one]
@@ -120,8 +119,7 @@ theorem ramificationIdx_adjoinRoot_X_pow_sub_C_X_eq_one (hn : (n : k) ≠ 0)
     Place.ramificationIdx (RatFunc k) P = 1 := by
   have := isSeparable_adjoinRoot_X_pow_sub_C_X k n hn
   refine Place.ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k (RatFunc k)
-    (IntermediateField.adjoin_root_eq_top _) (root_pow_eq k n) hn
-    (RatFunc.algebraMap_mul_X_zpow_mul_X_sub_one_zpow_ne_zero one_ne_zero 1 0) ?_
+    (IntermediateField.adjoin_root_eq_top _) (root_pow_eq k n) hn ?_
   rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow _ one_ne_zero,
     Place.ord_X_eq_zero_of_ne hP0 hPinf]
   simp
@@ -146,7 +144,7 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
     ∃ e : (normalizedFactors (X ^ n - 1 : k[X])).toFinset ≃
         {P : Place k (AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))) //
           P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (1 : k))},
-      ∀ q, Place.relativeDegree k (RatFunc k) (e q).1 = (q : k[X]).natDegree := by
+      ∀ q, Place.relativeDegree k (RatFunc k) (e q).val = (q : k[X]).natDegree := by
   set P := Place.adicOfIrreducible (irreducible_X_sub_C (1 : k))
   have hX : (RatFunc.X : RatFunc k) ∈ P.integers := Place.X_mem_integers_adicOfIrreducible _
   -- The residue field of `t = 1` is `k`.
@@ -171,7 +169,7 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
   have hmonic₁ : (X ^ n - 1 : k[X]).Monic := by
     simpa using monic_X_pow_sub_C (1 : k) (NeZero.ne n)
   have hmonic (q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset) : (q : k[X]).Monic := by
-    have hq := Multiset.mem_toFinset.mp q.2
+    have hq := Multiset.mem_toFinset.mp q.property
     rw [← normalize_normalized_factor _ hq]
     exact monic_normalize (ne_zero_of_mem_normalizedFactors hq)
   have hprod : ∏ q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset,
@@ -183,7 +181,7 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
     (γ := fun q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset ↦
       (q : k[X]).map (σ : k →+* P.ResidueField)) (fun q ↦ (hmonic q).map _)
     (fun q ↦ by simpa using (irreducible_of_normalized_factor _
-      (Multiset.mem_toFinset.mp q.2)).map (mapEquiv σ))
+      (Multiset.mem_toFinset.mp q.property)).map (mapEquiv σ))
     (fun q r h ↦ Subtype.ext (map_injective _ σ.injective h)) hprod
   exact ⟨e, fun q ↦ (he q).trans (natDegree_map _)⟩
 
@@ -226,12 +224,12 @@ theorem exists_setOf_restrict_eq_adicOfIrreducible_X_sub_one_eq_pair
     have h' := congrArg natDegree h
     rw [natDegree_X_sub_C, hdeg₂] at h'
     omega
-  refine ⟨(e ⟨_, h₁⟩).1, (e ⟨_, h₂⟩).1, fun h ↦ hne ?_, ?_, ?_, ?_⟩
+  refine ⟨(e ⟨_, h₁⟩).val, (e ⟨_, h₂⟩).val, fun h ↦ hne ?_, ?_, ?_, ?_⟩
   · simpa using e.injective (Subtype.ext h)
   · ext P
     refine ⟨fun hP ↦ ?_, ?_⟩
-    · have hmem := (e.symm ⟨P, hP⟩).2
-      have hP' : P = (e (e.symm ⟨P, hP⟩)).1 := by simp
+    · have hmem := (e.symm ⟨P, hP⟩).property
+      have hP' : P = (e (e.symm ⟨P, hP⟩)).val := by simp
       simp only [hfac, Multiset.insert_eq_cons, Multiset.toFinset_cons,
         Multiset.toFinset_singleton, Finset.mem_insert, Finset.mem_singleton] at hmem
       rcases hmem with h | h
@@ -244,7 +242,7 @@ theorem exists_setOf_restrict_eq_adicOfIrreducible_X_sub_one_eq_pair
         congr 2
         exact Subtype.ext h
     · rintro (rfl | rfl)
-      exacts [(e _).2, (e _).2]
+      exacts [(e _).property, (e _).property]
   · rw [he]
     exact natDegree_X_sub_C 1
   · rw [he]

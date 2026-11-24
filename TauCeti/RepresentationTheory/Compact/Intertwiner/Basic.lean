@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Compact.MatrixCoefficient
 public import TauCeti.RepresentationTheory.Continuous.LinHom
+import TauCeti.RepresentationTheory.Continuous.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
@@ -71,13 +72,6 @@ open MeasureTheory
 open scoped InnerProductSpace
 
 namespace TauCeti
-
-/-- An action operator composed with the action of the inverse group element is the identity. -/
-private theorem comp_inv_self {𝕜 G W : Type*} [RCLike 𝕜] [Group G]
-    [NormedAddCommGroup W] [NormedSpace 𝕜 W] (ρ : ContRepresentation 𝕜 G W) (g : G) :
-    (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id 𝕜 W := by
-  rw [← ContinuousLinearMap.mul_def, ← map_mul, mul_inv_cancel, map_one]
-  rfl
 
 /-- Conjugation `S ↦ ρ g⁻¹ ∘ S ∘ π g`, packaged as a continuous linear map on operators. It is the
 action operator at `g⁻¹` of the Hom representation of
@@ -225,7 +219,7 @@ theorem averageOperator_comp (T : V →L[𝕜] W) (g : G) : (averageOperator π 
       = (ContinuousLinearMap.id 𝕜 W).comp ((averageOperator π hπ ρ hρ T).comp (π g)) := by
         rw [ContinuousLinearMap.id_comp]
     _ = ((ρ g).comp (ρ g⁻¹)).comp ((averageOperator π hπ ρ hρ T).comp (π g)) := by
-        rw [comp_inv_self ρ g]
+        rw [ContRepresentation.comp_inv_self ρ g]
     _ = (ρ g).comp ((ρ g⁻¹).comp ((averageOperator π hπ ρ hρ T).comp (π g))) :=
         ContinuousLinearMap.comp_assoc _ _ _
     _ = (ρ g).comp (averageOperator π hπ ρ hρ T) := by rw [h]
@@ -327,10 +321,11 @@ variable [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [FiniteDimensional 𝕜 V]
 
 /-- Completeness of `V` is not an extra hypothesis on the trace results below: a finite-dimensional
-normed space over an `RCLike` field is already complete. Mathlib keeps `FiniteDimensional.complete`
+normed space over an `RCLike` field is already complete. Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance instead. -/
 local instance completeSpace_of_finiteDimensional : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **Averaging preserves the trace.** In finite dimensions each conjugate `π g⁻¹ ∘ T ∘ π g` has the
 trace of `T`, and averaging a constant returns that constant. This is what fixes the normalizing
@@ -349,11 +344,11 @@ theorem trace_averageOperator (T : V →L[𝕜] V) :
 
 end Trace
 
-section Orthogonality
+section InnerAverage
 
 variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
   [CompleteSpace W]
 
@@ -382,6 +377,21 @@ theorem inner_averageOperator_of_isUnitary (hunitary : IsUnitary ρ) (T : V →L
   -- `integral_congr_ae` leaves the two integrands applied but unreduced.
   beta_reduce
   rw [hunitary.inner_map_right g⁻¹ w (T (π g v)), inv_inv]
+
+end InnerAverage
+
+section Orthogonality
+
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W]
+  [CompleteSpace W]
+
+variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
+  (ρ : ContRepresentation 𝕜 G W) (hρ : Continuous ρ)
+
+include hπ hρ
 
 /-- **The `L²` inner product of two matrix coefficients is a matrix entry of an averaged rank-one
 operator.** For the rank-one operator `InnerProductSpace.rankOne 𝕜 w' w = ⟪w, ·⟫ • w'` the

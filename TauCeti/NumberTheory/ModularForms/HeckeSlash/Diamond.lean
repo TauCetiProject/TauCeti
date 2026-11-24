@@ -181,10 +181,24 @@ local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap �
 
 variable {n : ℕ} [NeZero n]
 
+omit [NeZero N] [NeZero n] in
 /-- The finite relative index required to trace the main involution of `diag(1, n)`. -/
 lemma isFiniteRelIndex_adjugate_natDiagGL (hn : n.Coprime N) :
     (ConjAct.toConjAct (φ (natDiagGL 2 ![1, n])).adjugate⁻¹ •
       (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ)) := by
+  by_cases hnN : n ≠ 0 ∧ N ≠ 0
+  swap
+  · have h1 : natDiagGL 2 ![1, n] = 1 := by
+      rcases not_and_or.mp hnN with h | h
+      · exact natDiagGL_of_not_pos 2 fun H ↦ by simpa [not_not.mp h] using H 1
+      · obtain rfl : n = 1 := by simpa [not_not.mp h] using hn
+        exact (congrArg (natDiagGL 2) (funext fun i ↦ by fin_cases i <;> rfl)).trans
+          (natDiagGL_one 2)
+    rw [h1]
+    simp only [map_one, Matrix.GeneralLinearGroup.adjugate_one, inv_one, map_one, one_smul]
+    infer_instance
+  have : NeZero n := ⟨hnN.1⟩
+  have : NeZero N := ⟨hnN.2⟩
   obtain ⟨A, hA, -, B, hB, hadj, -⟩ := exists_adjugate_natDiagGL_eq hn
   have := finite_decompQuotient_inv_of_mem_doubleCoset
     (g := natDiagGL 2 ![1, n]) (H := (Gamma1 N).map (mapGL ℚ))

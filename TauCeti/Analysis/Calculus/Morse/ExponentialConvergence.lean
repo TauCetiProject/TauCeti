@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.Morse.Linearization
--- Private: Grönwall's inequality, the fundamental theorem of calculus, reparametrization of an
--- integral curve, and scalar multiplication of the gradient are used only inside proofs; no
--- declaration below exposes their APIs.
+-- Private: Grönwall's inequality, the fundamental theorem of calculus and the regularity of the
+-- gradient are used only inside proofs; no declaration below exposes their APIs.
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.ODE.Gronwall
-import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -202,15 +200,10 @@ private theorem exists_time_of_tendsto
     exact (hγ t hta.le).hasDerivAt (Ici_mem_nhds hta)
   have hdiff : ∀ t ∈ Ici T, DifferentiableAt ℝ f (γ t) := fun t ht ↦
     ((hT t ht).1.2).differentiableAt (by simp)
-  have hgradfun : (∇ f : E → E) = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    exact (toDual ℝ E).eq_symm_apply.2 toDual_gradient
   have hcont : ContinuousOn (fun s ↦ ∇ f (γ s)) (Ici T) := by
     intro s hs
-    have hgs : ContinuousAt (∇ f) (γ s) := by
-      rw [hgradfun]
-      exact ((toDual ℝ E).symm.continuous.continuousAt).comp
-        (((hT s hs).1.2).continuousAt_fderiv (by simp))
+    have hgs : ContinuousAt (∇ f) (γ s) :=
+      ((hT s hs).1.2.gradient_right (m := 0) (by simp)).continuousAt
     exact (hgs.comp (hderiv s hs).continuousAt).continuousWithinAt
   have hcurve : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici T) :=
     fun s hs ↦ (hderiv s hs).hasDerivWithinAt
@@ -248,7 +241,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
     linarith
   set q : ℝ := Real.sqrt G
   have hq0 : 0 < q := Real.sqrt_pos.2 hG
-  have hqne : q ≠ 0 := hq0.ne'
   have hqq : q * q = G := Real.mul_self_sqrt hG.le
   -- the energy is dominated by `G * exp (-lam * (t - T))`
   have hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ q * q * Real.exp (-(lam * (t - T))) := by
@@ -264,7 +256,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   have hr1 : r < 1 := by
     rw [hrdef]
     exact Real.exp_lt_one_iff.2 (by linarith)
-  have hone : (0 : ℝ) < 1 - r := by linarith
   have hlimit : ∀ t ∈ Ici T,
       ‖γ t - p‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) / (1 - r) := by
     intro t ht
@@ -277,7 +268,7 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
         linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
       rw [dist_comm, dist_eq_norm, Nat.cast_succ, ← add_assoc]
       refine (hstep _ hmem).trans_eq ?_
-      rw [hrdef, ← Real.exp_nat_mul, mul_assoc, ← Real.exp_add]
+      rw [hrdef, ← Real.exp_natCast_mul, mul_assoc, ← Real.exp_add]
       congr 2
       ring
   refine ⟨lam / 2, by linarith, q * Real.exp (lam / 2 * T) / (1 - r), by positivity, ?_⟩
@@ -320,31 +311,13 @@ theorem exists_norm_deriv_le_mul_exp_atTop
   rw [hderiv.deriv, norm_neg]
   exact ht
 
-/-- Reversing time turns a negative gradient trajectory for `f` on `Iic a` into a negative
-gradient trajectory for `-f` on `Ici (-a)`. -/
-private theorem comp_neg_isIntegralCurveOn_neg
-    (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a)) :
-    IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
-  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
-  have hdomain : {t : ℝ | t * (-1) ∈ Iic a} = Ici (-a) := by
-    ext t
-    simp only [mem_ofPred_eq, mem_Iic, mem_Ici, mul_neg, mul_one, neg_le]
-  have hfield : ((-1 : ℝ) • (fun _ : ℝ ↦ fun x ↦ -∇ f x)) ∘ (fun t : ℝ ↦ t * (-1)) =
-      (fun _ : ℝ ↦ fun x ↦ -∇ (-f) x) := by
-    funext t y
-    simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, hgrad_neg, neg_neg]
-  have hcomp : γ ∘ (fun t : ℝ ↦ t * (-1)) = fun t ↦ γ (-t) := by
-    funext t
-    simp
-  rw [← hcomp, ← hdomain, ← hfield]
-  exact hγ.comp_mul (-1)
-
 /-- **The energy along a backward trajectory converging to a nondegenerate critical point decays
 exponentially.** -/
 theorem exists_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, f p - f (γ t) ≤ C * Real.exp (μ * t) := by
-  have hrev := comp_neg_isIntegralCurveOn_neg hγ
+  have hrev : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
+    simpa using hγ.comp_neg_neg_gradient
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩
@@ -357,7 +330,8 @@ into a negative gradient trajectory of `-f`, whose critical point at `p` is agai
 theorem exists_norm_sub_le_mul_exp_atBot (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a))
     (hp : IsNondegenerateCriticalPoint f p) (hconv : Tendsto γ atBot (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atBot, ‖γ t - p‖ ≤ C * Real.exp (μ * t) := by
-  have hrev := comp_neg_isIntegralCurveOn_neg hγ
+  have hrev : IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
+    simpa using hγ.comp_neg_neg_gradient
   have hconv' : Tendsto (fun t ↦ γ (-t)) atTop (𝓝 p) := hconv.comp tendsto_neg_atTop_atBot
   obtain ⟨μ, hμ, C, hC, hbound⟩ := exists_norm_sub_le_mul_exp_atTop hrev hp.neg hconv'
   refine ⟨μ, hμ, C, hC, ?_⟩

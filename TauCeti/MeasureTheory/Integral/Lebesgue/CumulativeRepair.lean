@@ -35,8 +35,7 @@ open scoped ENNReal
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
-  [FirstCountableTopology α] [DenselyOrdered α]
-  [MeasurableSpace α] [OpensMeasurableSpace α]
+  [FirstCountableTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
 
 /-- The accumulated lower integral becomes continuous after turning the integrand off
 where its original accumulated integral is infinite. No measurability or finiteness

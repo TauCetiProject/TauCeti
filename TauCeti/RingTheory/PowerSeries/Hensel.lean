@@ -14,6 +14,9 @@ public import TauCeti.RingTheory.PowerSeries.Swap
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Depressed
+import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.RingTheory.PowerSeries.Basic
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
 # Hensel lifting of coprime factorizations over power series
@@ -35,19 +38,39 @@ Write `G = Σ Gₖ tᵏ` and `H = Σ Hₖ tᵏ` with `G₀ = g` and `H₀ = h`. 
 
 and, `G` and `H` being monic of the degrees of `g` and `h`, the corrections satisfy
 `deg Gₖ < deg g` and `deg Hₖ < deg h` for `k ≥ 1`. Writing `u * g + v * h = 1`, Bézout and
-division by `g` give the unique solution of this equation within those degree bounds
-(`IsCoprime.exists_mem_degreeLT_mul_add_mul_eq`, `IsCoprime.eq_zero_of_mul_add_mul_eq_zero`).
-Solving it for `k = 1, 2, ...` produces the factors one power of `t` at a time; uniqueness of
-each step gives uniqueness of the factorization.
+division by `g` give the unique solution of this equation within those degree bounds:
+`Gₖ = (v * c) %ₘ g` and `Hₖ = u * c + h * ((v * c) /ₘ g)`, where `c` is the right-hand side
+(`Polynomial.Monic.mul_add_mul_eq_iff`). Solving it for `k = 1, 2, ...` produces the factors one
+power of `t` at a time, and the limit of these approximations is the factorization. Conversely
+every such factorization satisfies the recursion, so its coefficients up to `tⁿ` depend only on
+those of `P`, and the factorization is unique.
+
+For a linear factor `g = X - a` this specializes to the simple-root form of Hensel's lemma. If
+`a` is a root of the reduction `p` at which `p'` is a unit, then `X - a` is coprime to
+`p /ₘ (X - a)`, so the factor lift splits off `X - α` with `α ≡ a (mod t)`. Uniqueness of the
+factor lift makes `α` the only root of `P` lifting `a`. In particular it is the root produced by
+Mathlib's `HenselianRing.is_henselian` for the pair `(R⟦t⟧, (t))`, which is Henselian by
+`IsAdicComplete.henselianRing`. Its coefficients obey Newton's recursion
+`αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, which holds for every root of `P`.
 
 ## Main results
 
-* `PowerSeries.eq_zero_of_mul_add_mul_eq_zero`: if the constant coefficient of `F₂` is monic and
-  coprime to that of `F₁`, then `F₂ * B + F₁ * A = 0` over `R[X]⟦t⟧`, with the coefficients of `A`
-  of degree below that of the constant coefficient of `F₂`, forces `A = 0` and `B = 0`.
 * `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`: existence of the lifted factorization.
+* `Polynomial.Monic.coeff_swapPowerSeries_eq_and_eq_of_mul_eq`: the coefficient recursion,
+  computing the `tᵏ`-coefficients of the factors by Bézout and division from those of lower order.
+* `Polynomial.Monic.coeff_swapPowerSeries_eq_and_eq_of_coeff_mul_eq`: the factors modulo `tⁿ⁺¹`
+  depend only on the product modulo `tⁿ⁺¹`.
 * `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`: uniqueness of the lifted
   factorization.
+* `Polynomial.Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative`: the degree-one case, which
+  splits off `X - α` with `α` lifting a simple root `a` of the reduction.
+* `Polynomial.Monic.existsUnique_isRoot_constantCoeff_eq`: a simple root of the reduction lifts to
+  exactly one root of `P`.
+* `Polynomial.Monic.existsUnique_isRoot_sub_mem_span_X`: the same statement in the form of
+  Mathlib's simple-root Hensel lemma `HenselianRing.is_henselian` for the ideal `(t)`, with
+  uniqueness added.
+* `Polynomial.IsRoot.coeff_mul_eval_derivative_eq_neg_coeff_eval_trunc`: Newton's recursion for
+  the coefficients of a root.
 * `Polynomial.Monic.exists_monic_mul_eq_of_nextCoeff_map_eq_zero`: over a field `K`, a monic
   polynomial over `K⟦t⟧` whose reduction is depressed, splits, has invertible degree and is not a
   power of `X` factors into two monic factors of positive degree. This is the degree-lowering
@@ -79,35 +102,6 @@ namespace Polynomial
 section Hensel
 
 variable {R : Type*} [CommRing R]
-
-/-- If `F₂ * B + F₁ * A = 0` for power series over `R[X]`, where the constant coefficient `g` of
-`F₂` is monic and coprime to that of `F₁` and every coefficient of `A` has degree `< deg g`, then
-`A = 0` and `B = 0`: the coefficient recursion of Hensel lifting has unique solutions. -/
-theorem _root_.PowerSeries.eq_zero_of_mul_add_mul_eq_zero {g : R[X]} (hg : g.Monic)
-    {A B F₁ F₂ : R[X]⟦X⟧}
-    (hcop : IsCoprime g (PowerSeries.constantCoeff F₁)) (hF₂ : PowerSeries.constantCoeff F₂ = g)
-    (hA : ∀ k, PowerSeries.coeff k A ∈ degreeLT R g.natDegree) (h : F₂ * B + F₁ * A = 0) :
-    A = 0 ∧ B = 0 := by
-  -- By induction, `tᵏ` divides both `A` and `B` for every `k`.
-  have key : ∀ k, PowerSeries.X ^ k ∣ A ∧ PowerSeries.X ^ k ∣ B := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      obtain ⟨⟨A', hA'⟩, ⟨B', hB'⟩⟩ := ih
-      have h' : F₂ * B' + F₁ * A' = 0 :=
-        PowerSeries.X_pow_mul_cancel (k := k) (by rw [mul_zero, ← h, hA', hB']; ring)
-      have hA'₀ : PowerSeries.constantCoeff A' ∈ degreeLT R g.natDegree := by
-        simpa [hA', PowerSeries.coeff_X_pow_mul'] using hA k
-      have h₀ := congrArg PowerSeries.constantCoeff h'
-      rw [map_add, map_mul, map_mul, hF₂, map_zero] at h₀
-      obtain ⟨hA'0, hB'0⟩ := hcop.eq_zero_of_mul_add_mul_eq_zero hg hA'₀ h₀
-      rw [hA', hB', pow_succ]
-      exact ⟨mul_dvd_mul_left _ (PowerSeries.X_dvd_iff.mpr hA'0),
-        mul_dvd_mul_left _ (PowerSeries.X_dvd_iff.mpr hB'0)⟩
-  constructor <;> refine PowerSeries.ext fun k ↦ ?_ <;> rw [map_zero]
-  · exact PowerSeries.X_pow_dvd_iff.mp (key (k + 1)).1 k k.lt_succ_self
-  · exact PowerSeries.X_pow_dvd_iff.mp (key (k + 1)).2 k k.lt_succ_self
 
 /-- The successive approximations to the Hensel lift of `p = g * h (mod t)`: the `k`-th pair
 agrees with the lifted factors modulo `t ^ (k + 1)`. The correction at step `k + 1` is
@@ -242,6 +236,78 @@ theorem Monic.exists_monic_mul_eq_of_isCoprime {P : R⟦X⟧[X]} (hP : P.Monic) 
   refine ⟨G, H, hG, hH, hGg, hHh, swapPowerSeries_injective ?_⟩
   rw [map_mul, hGS, hHS, mk_coeff_approx_mul_mk_coeff_approx _ _ _ _ _ fun n ↦ (inv n).2.2.2]
 
+/-- **The coefficient recursion of Hensel lifting.** Let `G * H = P` over `R⟦t⟧` with `G` monic,
+and let `u * g + v * h = 1` be a Bézout relation between the reductions `g` and `h` of `G` and `H`
+modulo `t`. For `k ≠ 0` write `Gᵢ`, `Hᵢ` and `Pᵢ` for the `tⁱ`-coefficients and put
+`c = Pₖ - Σ_{0 < i < k} Gᵢ * H_{k - i}`. Then `Gₖ` is the remainder of `v * c` on division by
+`g`, and `Hₖ = u * c + h * ((v * c) /ₘ g)`. So the factors are determined one power of `t` at a
+time by `P`, the reductions and the Bézout coefficients. -/
+theorem Monic.coeff_swapPowerSeries_eq_and_eq_of_mul_eq {G H P : R⟦X⟧[X]} (hG : G.Monic)
+    (hGH : G * H = P) {u v : R[X]}
+    (huv : u * G.map PowerSeries.constantCoeff + v * H.map PowerSeries.constantCoeff = 1) {k : ℕ}
+    (hk : k ≠ 0) :
+    let c := PowerSeries.coeff k (swapPowerSeries P) - ∑ i ∈ Finset.Ioo 0 k,
+      PowerSeries.coeff i (swapPowerSeries G) * PowerSeries.coeff (k - i) (swapPowerSeries H)
+    PowerSeries.coeff k (swapPowerSeries G) = (v * c) %ₘ G.map PowerSeries.constantCoeff ∧
+      PowerSeries.coeff k (swapPowerSeries H) =
+        u * c + H.map PowerSeries.constantCoeff * ((v * c) /ₘ G.map PowerSeries.constantCoeff) := by
+  intro c
+  nontriviality R
+  have ha := hG.natDegree_map (PowerSeries.constantCoeff (R := R)) ▸
+    hG.coeff_swapPowerSeries_mem_degreeLT_of_ne_zero hk
+  refine ((hG.map _).mul_add_mul_eq_iff huv ha).mp ?_
+  -- Split the `tᵏ`-coefficient of `G * H` into its two end terms and the terms `0 < i < k`.
+  have hsplit : PowerSeries.coeff k (swapPowerSeries P) =
+      G.map PowerSeries.constantCoeff * PowerSeries.coeff k (swapPowerSeries H) +
+        H.map PowerSeries.constantCoeff * PowerSeries.coeff k (swapPowerSeries G) +
+        ∑ i ∈ Finset.Ioo 0 k, PowerSeries.coeff i (swapPowerSeries G) *
+          PowerSeries.coeff (k - i) (swapPowerSeries H) := by
+    rw [← hGH, map_mul, PowerSeries.coeff_mul_of_ne_zero _ _ hk, constantCoeff_swapPowerSeries,
+      constantCoeff_swapPowerSeries, mul_comm (PowerSeries.coeff k _)]
+  simp only [c, hsplit, add_sub_cancel_right]
+
+/-- **The lifted factors modulo `tⁿ⁺¹` depend only on the product modulo `tⁿ⁺¹`.** Let `G` and
+`G'` be monic over `R⟦t⟧` with the same reduction modulo `t`, coprime to the reduction of `H`.
+If `G * H` and `G' * H'` have the same `tⁱ`-coefficients for `i ≤ n`, then so have `G` and `G'`,
+and `H` and `H'`. Letting `n` grow recovers
+`Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`. -/
+theorem Monic.coeff_swapPowerSeries_eq_and_eq_of_coeff_mul_eq {G G' H H' : R⟦X⟧[X]}
+    (hG : G.Monic) (hG' : G'.Monic)
+    (hGG' : G.map PowerSeries.constantCoeff = G'.map PowerSeries.constantCoeff)
+    (hcop : IsCoprime (G.map PowerSeries.constantCoeff) (H.map PowerSeries.constantCoeff))
+    {n : ℕ} (h : ∀ i ≤ n, PowerSeries.coeff i (swapPowerSeries (G * H)) =
+      PowerSeries.coeff i (swapPowerSeries (G' * H'))) {i : ℕ} (hi : i ≤ n) :
+    PowerSeries.coeff i (swapPowerSeries G) = PowerSeries.coeff i (swapPowerSeries G') ∧
+      PowerSeries.coeff i (swapPowerSeries H) = PowerSeries.coeff i (swapPowerSeries H') := by
+  obtain ⟨u, v, huv⟩ := hcop
+  -- The reductions of `H` and `H'` agree, since `g * h = g * h'` with `g` monic.
+  have hHH' : H.map PowerSeries.constantCoeff = H'.map PowerSeries.constantCoeff := by
+    have h₀ := h 0 (Nat.zero_le n)
+    simp only [PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_swapPowerSeries,
+      Polynomial.map_mul, ← hGG'] at h₀
+    exact (hG.map _).isRegular.left h₀
+  induction i using Nat.strong_induction_on with
+  | _ i ih =>
+    rcases eq_or_ne i 0 with rfl | hi0
+    · simp only [PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_swapPowerSeries]
+      exact ⟨hGG', hHH'⟩
+    obtain ⟨hG₁, hH₁⟩ := hG.coeff_swapPowerSeries_eq_and_eq_of_mul_eq rfl huv hi0
+    obtain ⟨hG₂, hH₂⟩ := hG'.coeff_swapPowerSeries_eq_and_eq_of_mul_eq (H := H') rfl (u := u)
+      (v := v) (by rwa [← hGG', ← hHH']) hi0
+    -- The error terms agree: they involve `P` up to `tⁱ` and the factors below `tⁱ`.
+    have hc : PowerSeries.coeff i (swapPowerSeries (G * H)) - ∑ j ∈ Finset.Ioo 0 i,
+        PowerSeries.coeff j (swapPowerSeries G) * PowerSeries.coeff (i - j) (swapPowerSeries H) =
+        PowerSeries.coeff i (swapPowerSeries (G' * H')) - ∑ j ∈ Finset.Ioo 0 i,
+        PowerSeries.coeff j (swapPowerSeries G') *
+          PowerSeries.coeff (i - j) (swapPowerSeries H') := by
+      rw [h i hi]
+      congr 1
+      refine Finset.sum_congr rfl fun j hj ↦ ?_
+      obtain ⟨hj0, hji⟩ := Finset.mem_Ioo.mp hj
+      rw [(ih j hji (hji.le.trans hi)).1, (ih (i - j) (by omega) (by omega)).2]
+    rw [hG₁, hH₁, hG₂, hH₂, hc, hGG', hHH']
+    exact ⟨rfl, rfl⟩
+
 /-- Uniqueness of Hensel lifting over `R⟦t⟧`: if `G * H = G' * H'` with `G` and `G'` monic and
 reducing modulo `t` to the same polynomial, coprime to the reduction of `H`, then `G = G'` and
 `H = H'`. No monicity of `H` or `H'` is needed. -/
@@ -249,25 +315,125 @@ theorem Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime {G G' H H' : R⟦X⟧[X]} (hG
     (hG' : G'.Monic) (hGG' : G.map PowerSeries.constantCoeff = G'.map PowerSeries.constantCoeff)
     (hcop : IsCoprime (G.map PowerSeries.constantCoeff) (H.map PowerSeries.constantCoeff))
     (h : G * H = G' * H') : G = G' ∧ H = H' := by
-  nontriviality R
-  have hdeg : G.natDegree = G'.natDegree := by
-    rw [← hG.natDegree_map PowerSeries.constantCoeff, hGG', hG'.natDegree_map]
-  have hA (k : ℕ) : PowerSeries.coeff k (swapPowerSeries (G - G')) ∈
-      degreeLT R (G.map PowerSeries.constantCoeff).natDegree := by
-    rw [hG.natDegree_map]
-    exact coeff_swapPowerSeries_mem_degreeLT (hG.sub_mem_degreeLT hG' hdeg) k
-  have hrel : swapPowerSeries G' * swapPowerSeries (H - H') +
-      swapPowerSeries H * swapPowerSeries (G - G') = 0 := by
-    rw [← map_mul, ← map_mul, ← map_add, ← map_zero swapPowerSeries]
-    congr 1
-    linear_combination h
-  obtain ⟨hA0, hB0⟩ := PowerSeries.eq_zero_of_mul_add_mul_eq_zero (hG.map _)
-    (by rwa [constantCoeff_swapPowerSeries]) (by rw [constantCoeff_swapPowerSeries, hGG']) hA hrel
-  rw [← map_zero swapPowerSeries] at hA0 hB0
-  exact ⟨sub_eq_zero.mp (swapPowerSeries_injective hA0),
-    sub_eq_zero.mp (swapPowerSeries_injective hB0)⟩
+  have hcoeff (i : ℕ) := hG.coeff_swapPowerSeries_eq_and_eq_of_coeff_mul_eq hG' hGG' hcop
+    (fun j _ ↦ by rw [h]) le_rfl (i := i)
+  exact ⟨swapPowerSeries_injective (PowerSeries.ext fun i ↦ (hcoeff i).1),
+    swapPowerSeries_injective (PowerSeries.ext fun i ↦ (hcoeff i).2)⟩
 
 end Hensel
+
+section SimpleRoot
+
+variable {R : Type*} [CommRing R]
+
+/-- **The degree-one case of coprime-factor Hensel lifting over `R⟦t⟧`.** Let `P` be monic over
+`R⟦t⟧` and let `a` be a simple root of its reduction `p` modulo `t`: `p (a) = 0` and `p' (a)` is a
+unit. Then `p = (X - a) * (p /ₘ (X - a))` with coprime factors, and lifting this factorization
+gives `P = (X - α) * H` with `α` of constant coefficient `a` and `H` monic reducing to
+`p /ₘ (X - a)`. In particular `α` is a root of `P` lifting `a`. -/
+theorem Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative {P : R⟦X⟧[X]} (hP : P.Monic)
+    {a : R} (hroot : (P.map PowerSeries.constantCoeff).IsRoot a)
+    (hunit : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval a)) :
+    ∃ (α : R⟦X⟧) (H : R⟦X⟧[X]), PowerSeries.constantCoeff α = a ∧ H.Monic ∧
+      H.map PowerSeries.constantCoeff = P.map PowerSeries.constantCoeff /ₘ (X - C a) ∧
+      (X - C α) * H = P := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact ⟨0, 1, Subsingleton.elim _ _, monic_one, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  obtain ⟨G, H, hG, hH, hGa, hHq, hGH⟩ := hP.exists_monic_mul_eq_of_isCoprime (monic_X_sub_C a)
+    (isCoprime_X_sub_C_of_isUnit_eval (by rwa [eval_divByMonic_X_sub_C_self]))
+    (mul_divByMonic_eq_iff_isRoot.mpr hroot).symm
+  -- The monic lift `G` of `X - a` has degree one, so it is `X - α` with `α = -G.coeff 0`.
+  have hGα : G = X - C (-G.coeff 0) := by
+    rw [map_neg, sub_neg_eq_add]
+    exact hG.eq_X_add_C (by rw [← hG.natDegree_map PowerSeries.constantCoeff, hGa,
+      natDegree_X_sub_C])
+  refine ⟨-G.coeff 0, H, ?_, hH, hHq, hGα ▸ hGH⟩
+  have h₀ := congrArg (fun p : R[X] ↦ p.coeff 0) hGa
+  simp only [coeff_map, coeff_sub, coeff_X_zero, coeff_C_zero, zero_sub] at h₀
+  rw [map_neg, h₀, neg_neg]
+
+/-- **Simple roots lift uniquely over `R⟦t⟧`.** If `a` is a simple root of the reduction modulo
+`t` of a monic polynomial `P` over `R⟦t⟧`, then `P` has exactly one root with constant coefficient
+`a`. Existence and uniqueness are the degree-one cases of the existence and uniqueness of
+coprime-factor lifts, `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime` and
+`Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`. -/
+theorem Monic.existsUnique_isRoot_constantCoeff_eq {P : R⟦X⟧[X]} (hP : P.Monic) {a : R}
+    (hroot : (P.map PowerSeries.constantCoeff).IsRoot a)
+    (hunit : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval a)) :
+    ∃! α : R⟦X⟧, P.IsRoot α ∧ PowerSeries.constantCoeff α = a := by
+  obtain ⟨α, H, hα, -, hH, hαH⟩ := hP.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative hroot hunit
+  have hmap {β : R⟦X⟧} (hβ : PowerSeries.constantCoeff β = a) :
+      (X - C β).map PowerSeries.constantCoeff = X - C a := by
+    simp [hβ]
+  refine ⟨α, ⟨by simp [IsRoot, ← hαH], hα⟩, fun β ⟨hβ, hβa⟩ ↦ ?_⟩
+  -- Splitting off `X - β` gives a second lift of `p = (X - a) * (p /ₘ (X - a))`.
+  have h := (monic_X_sub_C α).eq_and_eq_of_mul_eq_mul_of_isCoprime (monic_X_sub_C β)
+    (by rw [hmap hα, hmap hβa])
+    (by
+      rw [hmap hα, hH]
+      exact isCoprime_X_sub_C_of_isUnit_eval (by rwa [eval_divByMonic_X_sub_C_self]))
+    (hαH.trans (mul_divByMonic_eq_iff_isRoot.mpr hβ).symm)
+  exact (C_injective (sub_right_injective h.1)).symm
+
+/-- **Comparison with the simple-root form of Hensel's lemma.** For the Henselian pair
+`(R⟦t⟧, (t))`, Mathlib's `HenselianRing.is_henselian` (through the instance
+`IsAdicComplete.henselianRing`) lifts an approximate simple root `α₀` of a monic `P` to a root
+`α ≡ α₀ (mod t)`. That root is unique, so it coincides with the root split off by the
+degree-one coprime-factor lift
+`Polynomial.Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative`. -/
+theorem Monic.existsUnique_isRoot_sub_mem_span_X {P : R⟦X⟧[X]} (hP : P.Monic) {α₀ : R⟦X⟧}
+    (hroot : P.eval α₀ ∈ Ideal.span {PowerSeries.X})
+    (hunit : IsUnit (Ideal.Quotient.mk (Ideal.span {PowerSeries.X}) (P.derivative.eval α₀))) :
+    ∃! α : R⟦X⟧, P.IsRoot α ∧ α - α₀ ∈ Ideal.span {PowerSeries.X} := by
+  have hmem {φ : R⟦X⟧} : φ ∈ Ideal.span {PowerSeries.X} ↔ PowerSeries.constantCoeff φ = 0 :=
+    Ideal.mem_span_singleton.trans PowerSeries.X_dvd_iff
+  -- The constant coefficient factors through the quotient by `(t)`, so it preserves units.
+  have hunit' : IsUnit ((P.map PowerSeries.constantCoeff).derivative.eval
+      (PowerSeries.constantCoeff α₀)) := by
+    rw [derivative_map, eval_map_apply]
+    simpa only [Ideal.Quotient.lift_mk] using
+      hunit.map (Ideal.Quotient.lift _ PowerSeries.constantCoeff fun _ ↦ hmem.mp)
+  simpa only [hmem, map_sub, sub_eq_zero] using
+    hP.existsUnique_isRoot_constantCoeff_eq (by rwa [IsRoot, eval_map_apply, ← hmem]) hunit'
+
+/-- **Newton's recursion for the coefficients of a root over `R⟦t⟧`.** Let `α` be a root of a
+polynomial `P` over `R⟦t⟧`, and let `p` be the reduction of `P` modulo `t` and `a` the constant
+coefficient of `α`. For `k ≠ 0` the `tᵏ`-coefficient `αₖ` of `α` satisfies
+`αₖ * p'(a) = -[tᵏ] P(α mod tᵏ)`, where `α mod tᵏ` is the truncation `PowerSeries.trunc k α`.
+
+When `p'(a)` is a unit this determines `α` from `a` one coefficient at a time, as in Newton's
+method for the simple-root form of Hensel's lemma. So the root lifting a simple root `a` given by
+the degree-one coprime-factor lift (`Polynomial.Monic.existsUnique_isRoot_constantCoeff_eq`) has
+the coefficients of Newton's recursion. -/
+theorem IsRoot.coeff_mul_eval_derivative_eq_neg_coeff_eval_trunc {P : R⟦X⟧[X]} {α : R⟦X⟧}
+    (hα : P.IsRoot α) {k : ℕ} (hk : k ≠ 0) :
+    PowerSeries.coeff k α *
+        (P.map PowerSeries.constantCoeff).derivative.eval (PowerSeries.constantCoeff α) =
+      -PowerSeries.coeff k (P.eval (PowerSeries.trunc k α : R⟦X⟧)) := by
+  set x : R⟦X⟧ := (PowerSeries.trunc k α : R⟦X⟧)
+  -- The tail `α - x` is `tᵏ * w`, with `w` of constant coefficient `αₖ`.
+  obtain ⟨w, hw⟩ : PowerSeries.X ^ k ∣ α - x := PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by
+    simp [x, Polynomial.coeff_coe, PowerSeries.coeff_trunc, hi]
+  have hw₀ : PowerSeries.constantCoeff w = PowerSeries.coeff k α := by
+    have := congrArg (PowerSeries.coeff k) hw
+    simpa [x, PowerSeries.coeff_X_pow_mul', Polynomial.coeff_coe, PowerSeries.coeff_trunc] using
+      this.symm
+  have hx₀ : PowerSeries.constantCoeff x = PowerSeries.constantCoeff α := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
+      ← PowerSeries.coeff_zero_eq_constantCoeff_apply]
+    simp [x, Polynomial.coeff_coe, PowerSeries.coeff_trunc, Nat.pos_of_ne_zero hk]
+  -- Expand `P (x + tᵏ w)` to first order; the remainder is divisible by `t ^ (2 * k)`.
+  obtain ⟨K, hK⟩ := P.binomExpansion x (α - x)
+  rw [add_sub_cancel, hα.eq_zero, hw] at hK
+  have hK' : P.eval x + PowerSeries.X ^ k * (P.derivative.eval x * w +
+      PowerSeries.X ^ k * (K * w ^ 2)) = 0 := by
+    linear_combination -hK
+  have hcoeff := congrArg (PowerSeries.coeff k) hK'
+  simp [PowerSeries.coeff_X_pow_mul', zero_pow hk, hw₀] at hcoeff
+  rw [derivative_map, ← hx₀, eval_map_apply]
+  linear_combination hcoeff
+
+end SimpleRoot
 
 section Splitting
 

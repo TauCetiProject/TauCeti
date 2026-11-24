@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
+import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
 # Uniform local properties and norm bounds over compact parameter sets
@@ -21,6 +23,12 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
 * `IsCompact.exists_eventually_norm_le`: a function continuous at every point of a compact fiber
   is uniformly bounded on nearby fibers, which remain in any open set containing the original
   fiber.
+* `IsCompact.exists_pos_forall_norm_sub_le`: a function continuous at the points of the graph of a
+  map over a compact set is uniformly continuous there, in the fibre direction.
+* `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
+  `V`, the coordinates of the points of `U` outside `V` are bounded.
+* `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
+  one point of `S` have norms tending to infinity has images of `S` in no fixed compact set.
 -/
 
 public section
@@ -50,3 +58,42 @@ theorem IsCompact.exists_eventually_norm_le {K : Set P} (hK : IsCompact K)
   filter_upwards [hW.eventually_mem (hx₀ y hy),
     (hF y hy).norm.eventually_lt_const ((hC y hy).trans_lt (lt_add_one C))] with z hzW hz
   exact ⟨hzW, hz.le⟩
+
+/-- **Uniform continuity at a compact graph.** Let `x : P → E` be continuous on a compact set `K`,
+and let `Φ : P × E → G` be continuous at the points `(p, x p)`, `p ∈ K`. For every `ε > 0` there is
+`δ > 0` such that `‖Φ (p, y) - Φ (p, x p)‖ ≤ ε` for every `p ∈ K` and every `y` with
+`‖y - x p‖ ≤ δ`. -/
+theorem IsCompact.exists_pos_forall_norm_sub_le {M E G : Type*} [PseudoMetricSpace M]
+    [SeminormedAddCommGroup E] [SeminormedAddCommGroup G] {K : Set M} (hK : IsCompact K)
+    {x : M → E} (hx : ContinuousOn x K) {Φ : M × E → G}
+    (hΦ : ∀ p ∈ K, ContinuousAt Φ (p, x p)) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ p ∈ K, ∀ y : E, ‖y - x p‖ ≤ δ → ‖Φ (p, y) - Φ (p, x p)‖ ≤ ε := by
+  -- `Φ` is uniformly continuous at the compact graph `{(p, x p) | p ∈ K}`.
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_dist_lt hx hΦ hε
+  refine ⟨δ / 2, by positivity, fun p hp y hy ↦ ?_⟩
+  rw [← dist_eq_norm]
+  exact (h p hp y (by rw [dist_eq_norm]; linarith)).le
+
+namespace TauCeti
+
+/-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
+bounded coordinates in any homeomorphism `eU : U ≃ₜ H` with a seminormed group. -/
+theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] {U V : Set X} (hV : IsOpen V)
+    (hUV : U ∪ V = univ) (eU : U ≃ₜ H) : ∃ R, 0 ≤ R ∧ ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R := by
+  have hK : IsCompact ((↑) ⁻¹' Vᶜ : Set U) := by
+    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
+      inter_eq_right.2 fun x hx ↦ (eq_univ_iff_forall.1 hUV x).resolve_right hx]
+    exact hV.isClosed_compl.isCompact
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
+  exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
+
+/-- **Unbounded values violate every image bound.** If the norms of the values `u i z` at one point
+`z ∈ S` tend to infinity, then no compact set contains the images `u i '' S` for every `i`. -/
+theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {ι α E : Type*}
+    [SeminormedAddCommGroup E] {l : Filter ι} [l.NeBot] {u : ι → α → E} {S : Set α} {z : α}
+    (hz : z ∈ S) (hu : Tendsto (fun i ↦ ‖u i z‖) l atTop) :
+    ¬ ∃ K : Set E, IsCompact K ∧ ∀ i, MapsTo (u i) S K :=
+  not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact hz
+    ((tendsto_norm_atTop_iff_cobounded.1 hu).mono_right Metric.cobounded_le_cocompact)
+
+end TauCeti

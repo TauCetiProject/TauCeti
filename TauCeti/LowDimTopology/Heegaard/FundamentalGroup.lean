@@ -79,7 +79,7 @@ private theorem exists_fg_rank_le {A : Set M} (e : A ≃ₜ handlebody s.genus) 
   let φ := e.toHomotopyEquiv.fundamentalGroupMulEquiv x
   have : Group.FG (FundamentalGroup A x) :=
     Group.fg_of_surjective (f := φ.symm.toMonoidHom) φ.symm.surjective
-  exact ⟨this, (Group.rank_congr φ).trans_le (rank_fundamentalGroup_handlebody_le _)⟩
+  exact ⟨this, (Group.rank_congr φ).trans_le (rank_fundamentalGroup_handlebody _).le⟩
 
 /-- **The cover of the van Kampen argument.** If `W` is relatively open in the second handlebody
 and contains the Heegaard surface, then the interiors of the union of the first handlebody with
@@ -120,7 +120,8 @@ private theorem range_map_right_le_range_map_left (hE : finrank ℝ E = 3)
     (FundamentalGroup.map (ContinuousMap.subtypeVal s.right) (e.symm y)).range ≤
       (FundamentalGroup.map (ContinuousMap.subtypeVal s.left) ⟨_, hy⟩).range := by
   let j : C({y : handlebody s.genus | (y : ℂ × ℝ) ∈ frontier (handlebody s.genus)}, s.left) :=
-    ⟨fun p ↦ ⟨e.symm p, by rw [s.coe_mem_left_iff hE e, Homeomorph.apply_symm_apply]; exact p.2⟩,
+    ⟨fun p ↦ ⟨e.symm p, by rw [s.coe_mem_left_iff hE e, Homeomorph.apply_symm_apply]; exact
+        p.property⟩,
       by fun_prop⟩
   have hbij := e.symm.toHomotopyEquiv.fundamentalGroup_map_bijective (y : handlebody s.genus)
   rintro _ ⟨γ, rfl⟩
@@ -164,7 +165,7 @@ private theorem exists_homotopyEquiv_left_union (hE : finrank ℝ E = 3)
     Subtype.val_injective.mem_set_image
   have hLR (p : M) : p ∈ s.left ∪ s.right := s.union_eq_univ ▸ mem_univ p
   have hV (a : ↥(s.left ∪ (↑) '' (e ⁻¹' V))) (ha : (a : M) ∈ s.right) : e ⟨a, ha⟩ ∈ V := by
-    rcases a.2 with haL | haW
+    rcases a.property with haL | haW
     · exact hSV ((hmem ⟨a, ha⟩).1 haL)
     · exact (hmemW ⟨a, ha⟩).1 haW
   let H : unitInterval × ↥(s.left ∪ (↑) '' (e ⁻¹' V)) → M := fun q ↦
@@ -185,12 +186,13 @@ private theorem exists_homotopyEquiv_left_union (hE : finrank ℝ E = 3)
     rw [← continuousOn_univ, hcov]
     refine ContinuousOn.union_of_isClosed ?_ ?_ (s.isClosed_left.preimage (by fun_prop))
       (s.isClosed_right.preimage (by fun_prop))
-    · exact (continuous_subtype_val.comp continuous_snd).continuousOn.congr fun q hq ↦ hHL q hq
+    · exact (continuous_subtypeVal.comp continuous_snd).continuousOn.congr fun q hq ↦ hHL q hq
     · rw [continuousOn_iff_continuous_domRestrict]
       have hres : domRestrict {q | (q.2 : M) ∈ s.right} H = fun q ↦
-          ((e.symm (F (q.1.1, ⟨e ⟨q.1.2, q.2⟩, hV q.1.2 q.2⟩)) : s.right) : M) := by
+          ((e.symm (F (q.val.1, ⟨e ⟨q.val.2, q.property⟩, hV q.val.2 q.property⟩)) : s.right) : M)
+              := by
         funext q
-        have hq : ((q.1.2 : ↥(s.left ∪ (↑) '' (e ⁻¹' V))) : M) ∈ s.right := q.2
+        have hq : ((q.val.2 : ↥(s.left ∪ (↑) '' (e ⁻¹' V))) : M) ∈ s.right := q.property
         simp only [domRestrict_apply, H, hq, ↓reduceDIte]
       rw [hres]
       fun_prop
@@ -200,7 +202,7 @@ private theorem exists_homotopyEquiv_left_union (hE : finrank ℝ E = 3)
       (ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply _ _ _ _ _ _ _ a)⟩
   · simp only [H]
     split_ifs
-    exacts [.inr ⟨_, by simp, rfl⟩, q.2.2]
+    exacts [.inr ⟨_, by simp, rfl⟩, q.2.property]
   · simp only [H]
     split_ifs
     · rw [hF₀, Homeomorph.symm_apply_apply]
@@ -224,7 +226,7 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
   obtain ⟨eN, heN⟩ := s.exists_homotopyEquiv_left_union hE e hSV F hF₀ hF₁ hFfix
   have hWc : IsPathConnected ((↑) '' (e ⁻¹' V) : Set M) := by
     rw [← e.image_symm]
-    exact (hVc.image e.symm.continuous).image continuous_subtype_val
+    exact (hVc.image e.symm.continuous).image continuous_subtypeVal
   let W : Set M := (↑) '' (e ⁻¹' V)
   have hmemW (p : s.right) : (p : M) ∈ W ↔ e p ∈ V := Subtype.val_injective.mem_set_image
   have hLRW {p : M} (hpL : p ∈ s.left) (hpR : p ∈ s.right) : p ∈ W :=
@@ -243,7 +245,7 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
     ⟨⟨y₀, (isClosed_handlebody s.genus).frontier_subset hy₀⟩, hy₀⟩
   have hyL : ((e.symm y : s.right) : M) ∈ s.left := by
     rw [s.coe_mem_left_iff hE e, Homeomorph.apply_symm_apply]
-    exact y.2
+    exact y.property
   refine ⟨⟨_, hyL⟩, MonoidHom.range_eq_top.1 (eq_top_iff.2 ?_)⟩
   have : PathConnectedSpace s.left :=
     s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
@@ -251,7 +253,7 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
   refine (FundamentalGroup.range_map_subtypeVal_sup_eq_top hcover
     (isPathConnected_iff_pathConnectedSpace.2 eN.pathConnectedSpace)
     (isPathConnected_iff_pathConnectedSpace.2 inferInstance) (by rw [hNR]; exact hWc) (.inl hyL)
-    (e.symm y).2).ge.trans (sup_le ?_ (s.range_map_right_le_range_map_left hE e y hyL))
+    (e.symm y).property).ge.trans (sup_le ?_ (s.range_map_right_le_range_map_left hE e y hyL))
   -- Loops in `N` come from the first handlebody.
   have hbij := eN.fundamentalGroup_map_bijective ⟨_, hyL⟩
   rw [heN] at hbij

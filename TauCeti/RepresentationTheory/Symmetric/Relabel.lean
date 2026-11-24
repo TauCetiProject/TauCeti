@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Basic
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.Algebra.MonoidAlgebra.Units
 
 /-!
 # Relabeling a Young tableau conjugates its Young symmetrizer
@@ -41,10 +42,6 @@ character, depend only on the shape of `t`.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layers 2 and 3: the Layer 3 Specht module `spechtModule μ` is indexed by the shape `μ` alone,
-  while the Layer 2 Young symmetrizer and its left ideal are built from a tableau, so the
-  tableau-independence proved here is what makes the Layer 3 indexing legitimate.
 -/
 
 public section
@@ -97,7 +94,9 @@ theorem rowSymmetrizer_relabel :
     rowSymmetrizer (R := R) (relabel σ t) =
       MonoidAlgebra.single σ 1 * rowSymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   ext τ
-  rw [MonoidAlgebra.coeff_single_mul_mul_single_inv, rowSymmetrizer_coeff, rowSymmetrizer_coeff]
+  have hconj := (rowSymmetrizer (R := R) t).coeff_single_mul_mul_single_inv (toUnits σ) τ
+  rw [Units.val_inv_eq_inv_val, val_toUnits_apply] at hconj
+  rw [hconj, rowSymmetrizer_coeff, rowSymmetrizer_coeff]
   by_cases h : σ⁻¹ * τ * σ ∈ rowSubgroup t
   · rw [ite_eq_left h, ite_eq_left ((mem_rowSubgroup_relabel σ t).mpr h)]
   · rw [ite_eq_right h, ite_eq_right fun hτ => h ((mem_rowSubgroup_relabel σ t).mp hτ)]
@@ -109,8 +108,9 @@ theorem columnAntisymmetrizer_relabel :
     columnAntisymmetrizer (R := R) (relabel σ t) =
       MonoidAlgebra.single σ 1 * columnAntisymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   ext τ
-  rw [MonoidAlgebra.coeff_single_mul_mul_single_inv, columnAntisymmetrizer_coeff,
-    columnAntisymmetrizer_coeff]
+  have hconj := (columnAntisymmetrizer (R := R) t).coeff_single_mul_mul_single_inv (toUnits σ) τ
+  rw [Units.val_inv_eq_inv_val, val_toUnits_apply] at hconj
+  rw [hconj, columnAntisymmetrizer_coeff, columnAntisymmetrizer_coeff]
   have hsign : Equiv.Perm.sign (σ⁻¹ * τ * σ) = Equiv.Perm.sign τ := by
     rw [map_mul, map_mul, Equiv.Perm.sign_inv, mul_right_comm, Int.units_mul_self, one_mul]
   by_cases h : σ⁻¹ * τ * σ ∈ colSubgroup t
@@ -123,7 +123,7 @@ theorem youngSymmetrizer_relabel :
     youngSymmetrizer (R := R) (relabel σ t) =
       MonoidAlgebra.single σ 1 * youngSymmetrizer (R := R) t * MonoidAlgebra.single σ⁻¹ 1 := by
   have hσ : MonoidAlgebra.single σ⁻¹ (1 : R) * MonoidAlgebra.single σ 1 = 1 := by
-    simpa using (MonoidAlgebra.singleOneUnit (R := R) σ).inv_mul
+    simp [MonoidAlgebra.one_def]
   rw [youngSymmetrizer_def, youngSymmetrizer_def, rowSymmetrizer_relabel,
     columnAntisymmetrizer_relabel]
   simp only [mul_assoc]
@@ -144,9 +144,9 @@ theorem youngSymmetrizerOver_relabel (k : Type*) [CommSemiring k] [Algebra ℚ k
 theorem mem_spechtIdeal_relabel_iff {x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))} :
     x ∈ spechtIdeal (relabel σ t) ↔ x * MonoidAlgebra.single σ 1 ∈ spechtIdeal t := by
   have hσ : MonoidAlgebra.single σ⁻¹ (1 : ℚ) * MonoidAlgebra.single σ 1 = 1 := by
-    simpa using (MonoidAlgebra.singleOneUnit (R := ℚ) σ).inv_mul
+    simp [MonoidAlgebra.one_def]
   have hσ' : MonoidAlgebra.single σ (1 : ℚ) * MonoidAlgebra.single σ⁻¹ 1 = 1 := by
-    simpa using (MonoidAlgebra.singleOneUnit (R := ℚ) σ).mul_inv
+    simp [MonoidAlgebra.one_def]
   rw [mem_spechtIdeal_iff, mem_spechtIdeal_iff]
   constructor
   · rintro ⟨a, rfl⟩
@@ -168,24 +168,25 @@ two ideals. -/
 def spechtIdealRelabelEquiv :
     spechtIdeal (relabel σ t) ≃ₗ[MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))] spechtIdeal t :=
   (Units.mulRightLinearEquiv (MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
-      (MonoidAlgebra.singleOneUnit (R := ℚ) σ)).ofSubmodules _ _ <| by
+      (MonoidAlgebra.unitsSingle ((1 : ℚˣ), toUnits σ))).ofSubmodules _ _ <| by
     refine Submodule.ext fun x => ?_
+    have hσ : MonoidAlgebra.single σ (1 : ℚ) =
+        ↑(MonoidAlgebra.unitsSingle ((1 : ℚˣ), toUnits σ)) := by
+      simp
     rw [Submodule.mem_map_equiv, Units.symm_mulRightLinearEquiv_apply,
-      mem_spechtIdeal_relabel_iff, ← MonoidAlgebra.coe_singleOneUnit σ, Units.inv_mul_cancel_right]
+      mem_spechtIdeal_relabel_iff, hσ, Units.inv_mul_cancel_right]
 
 @[simp]
 theorem spechtIdealRelabelEquiv_apply_coe (x : spechtIdeal (relabel σ t)) :
     (spechtIdealRelabelEquiv σ t x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) =
       (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) * MonoidAlgebra.single σ 1 := by
-  rw [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_apply,
-    Units.mulRightLinearEquiv_apply, MonoidAlgebra.coe_singleOneUnit]
+  simp [spechtIdealRelabelEquiv]
 
 @[simp]
 theorem spechtIdealRelabelEquiv_symm_apply_coe (y : spechtIdeal t) :
     ((spechtIdealRelabelEquiv σ t).symm y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) =
       (y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) * MonoidAlgebra.single σ⁻¹ 1 := by
-  rw [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_symm_apply,
-    Units.symm_mulRightLinearEquiv_apply, MonoidAlgebra.coe_inv_singleOneUnit]
+  simp [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 /-- Right multiplication by `σ` is an isomorphism of representations from `ℚ[Sₙ] c_{σt}` to
 `ℚ[Sₙ] c_t`: being a map of left modules over the group algebra, it commutes with the action. -/

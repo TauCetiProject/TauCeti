@@ -33,9 +33,16 @@ space to a manifold.
   derivative of the bump.
 * `ContDiffBump.fderiv_mul_comp_extChartAt_symm_eq_zero`: its derivative vanishes outside the
   closed support ball of the bump.
+* `OpenPartialHomeomorph.contMDiff_indicator_comp_extend`: for a chart `e` of the maximal atlas,
+  a `C^n` function on the model space with compact support in the target of the extended chart,
+  read in the chart and extended by zero outside the chart source, is `C^n`.
 * `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`: a `C^n` function on the model
   space with compact support in the chart target is the coordinate expression of a compactly
   supported `C^n` function on the manifold.
+* `TauCeti.Manifold.exists_contMDiff_transplant`: a `C^n` nonnegative function on the model space
+  supported in a compact subset of a coordinate ball transplants to a `C^n` nonnegative compactly
+  supported function on the manifold supported in any prescribed set containing the chart
+  preimage of the ball.
 -/
 
 public section
@@ -97,6 +104,46 @@ theorem fderiv_mul_comp_extChartAt_symm_eq_zero {y : E}
 
 end ContDiffBump
 
+namespace OpenPartialHomeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] {n : WithTop ℕ∞}
+  {e : OpenPartialHomeomorph M H} {w : E → F}
+
+omit [NormedSpace 𝕜 F] [ChartedSpace H M] in
+/-- For a function `w` on the model space whose support is a compact subset of the target of the
+extended chart `e.extend I`, the function equal to `w ∘ e.extend I` on the chart source and to `0`
+elsewhere is supported in the chart preimage of the support of `w`. -/
+theorem tsupport_indicator_comp_extend_subset (hwc : HasCompactSupport w)
+    (hwe : tsupport w ⊆ (e.extend I).target) :
+    tsupport (e.source.indicator (w ∘ e.extend I)) ⊆ (e.extend I).symm '' tsupport w := by
+  refine closure_minimal (fun x hx ↦ ?_)
+    (hwc.isCompact.image_of_continuousOn (e.continuousOn_extend_symm.mono hwe)).isClosed
+  by_cases hxs : x ∈ e.source
+  · rw [mem_support, indicator_of_mem hxs] at hx
+    exact ⟨e.extend I x, subset_tsupport _ hx, e.extend_left_inv hxs⟩
+  · exact absurd (indicator_of_notMem hxs _) hx
+
+/-- **Transplanting a function through an arbitrary chart.** For a chart `e` of the maximal `C^n`
+atlas, and a `C^n` function `w` on the model space whose support is a compact subset of the target
+of the extended chart `e.extend I`, the function equal to `w ∘ e.extend I` on the chart source and
+to `0` elsewhere is `C^n`. -/
+theorem contMDiff_indicator_comp_extend (he : e ∈ IsManifold.maximalAtlas I n M)
+    (hw : ContDiff 𝕜 n w) (hwc : HasCompactSupport w) (hwe : tsupport w ⊆ (e.extend I).target) :
+    ContMDiff I 𝓘(𝕜, F) n (e.source.indicator (w ∘ e.extend I)) := by
+  refine contMDiff_of_tsupport fun x hx ↦ ?_
+  -- On the chart source, the function is the coordinate expression `w ∘ e.extend I`.
+  obtain ⟨y, hy, rfl⟩ := tsupport_indicator_comp_extend_subset hwc hwe hx
+  have hys : (e.extend I).symm y ∈ e.source := by
+    simpa only [e.extend_source] using (e.extend I).map_target (hwe hy)
+  refine ContMDiffAt.congr_of_eventuallyEq (f := w ∘ e.extend I) ?_
+    (Filter.eventually_of_mem (e.open_source.mem_nhds hys) fun z hz ↦ indicator_of_mem hz _)
+  exact hw.contMDiff.contMDiffAt.comp _ (e.contMDiffAt_extend he hys)
+
+end OpenPartialHomeomorph
+
 namespace TauCeti.Manifold
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
@@ -114,25 +161,59 @@ theorem exists_contMDiff_comp_extChartAt_symm_eq {n : WithTop ℕ∞} [IsManifol
     ∃ u : M → F, ContMDiff I 𝓘(𝕜, F) n u ∧ HasCompactSupport u ∧
       tsupport u ⊆ (extChartAt I c).symm '' tsupport w ∧
       ∀ y ∈ (extChartAt I c).target, u ((extChartAt I c).symm y) = w y := by
-  classical
-  set φ := extChartAt I c
-  set u : M → F := fun x ↦ if x ∈ φ.source then w (φ x) else 0
-  have hK : IsCompact (φ.symm '' tsupport w) :=
-    hwc.isCompact.image_of_continuousOn ((continuousOn_extChartAt_symm c).mono hwt)
-  have hsupp : tsupport u ⊆ φ.symm '' tsupport w := by
-    refine closure_minimal (fun x hx ↦ ?_) hK.isClosed
-    by_cases hxs : x ∈ φ.source
-    · have hx' : w (φ x) ≠ 0 := by simpa [u, hxs] using hx
-      exact ⟨φ x, subset_tsupport _ hx', φ.left_inv hxs⟩
-    · exact absurd (by simp [u, hxs]) hx
-  refine ⟨u, contMDiff_of_tsupport fun x hx ↦ ?_, hK.of_isClosed_subset (isClosed_tsupport u) hsupp,
-    hsupp, fun y hy ↦ (ite_eq_left (φ.map_target hy)).trans (congrArg w (φ.right_inv hy))⟩
-  -- On the chart source, `u` is the coordinate expression `w ∘ φ`.
-  obtain ⟨y, hy, rfl⟩ := hsupp hx
-  have hxs : φ.symm y ∈ φ.source := φ.map_target (hwt hy)
-  refine ContMDiffAt.congr_of_eventuallyEq (f := w ∘ φ) ?_ (Filter.eventually_of_mem
-    ((isOpen_extChartAt_source c).mem_nhds hxs) fun z hz ↦ ite_eq_left hz)
-  exact hw.contMDiff.contMDiffAt.comp _
-    (contMDiffAt_extChartAt' (by rwa [extChartAt_source] at hxs))
+  -- `extChartAt I c` is `(chartAt H c).extend I` by definition; unfolding it lets the lemmas
+  -- about `e.extend I` with `e = chartAt H c` match syntactically.
+  unfold extChartAt at hwt ⊢
+  have hsupp := (chartAt H c).tsupport_indicator_comp_extend_subset hwc hwt
+  have hK : IsCompact (((chartAt H c).extend I).symm '' tsupport w) :=
+    hwc.isCompact.image_of_continuousOn ((chartAt H c).continuousOn_extend_symm.mono hwt)
+  refine ⟨_, (chartAt H c).contMDiff_indicator_comp_extend
+    (IsManifold.chart_mem_maximalAtlas c) hw hwc hwt,
+    hK.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp, fun y hy ↦ ?_⟩
+  -- On the chart target, the function is `w` read through the chart and its inverse.
+  rw [indicator_of_mem (by
+    simpa only [(chartAt H c).extend_source] using ((chartAt H c).extend I).map_target hy)]
+  exact congrArg w (((chartAt H c).extend I).right_inv hy)
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {n : WithTop ℕ∞} [IsManifold I n M]
+
+/-- A `C^n` nonnegative function on the model space supported in a compact subset `K` of a
+coordinate ball, transplanted to the manifold: it is a `C^n` nonnegative compactly supported
+function whose support lies in any `U` containing the chart preimage of the ball, and which agrees
+with `w` in the chart. -/
+theorem exists_contMDiff_transplant (p : M) {R : ℝ} {U : Set M}
+    (hballt : ball (extChartAt I p p) R ⊆ (extChartAt I p).target)
+    (hballU : ∀ y ∈ ball (extChartAt I p p) R, (extChartAt I p).symm y ∈ U) {K : Set E}
+    (hK : IsCompact K) (hKR : K ⊆ ball (extChartAt I p p) R) {w : E → ℝ}
+    (hw : ContDiff ℝ n w) (hw0 : ∀ y, 0 ≤ w y) (hwK : tsupport w ⊆ K) :
+    ∃ u : M → ℝ, ContMDiff I 𝓘(ℝ) n u ∧ HasCompactSupport u ∧ tsupport u ⊆ U ∧
+      (∀ x, 0 ≤ u x) ∧
+      (∀ x ∈ tsupport u, x ∈ (extChartAt I p).source ∧
+        extChartAt I p x ∈ ball (extChartAt I p p) R) ∧
+      ∀ y ∈ ball (extChartAt I p p) R, u ((extChartAt I p).symm y) = w y := by
+  set φ := extChartAt I p
+  obtain ⟨u, hu, huc, htsupp, hu_symm⟩ := exists_contMDiff_comp_extChartAt_symm_eq (c := p) hw
+    (HasCompactSupport.intro hK fun y hy ↦ image_eq_zero_of_notMem_tsupport fun h ↦
+      hy (hwK h)) (hwK.trans (hKR.trans hballt))
+  have hsup (x : M) (hx : x ∈ tsupport u) : x ∈ φ.source ∧ φ x ∈ ball (φ p) R := by
+    obtain ⟨y, hy, rfl⟩ := htsupp hx
+    have hyt := hballt (hKR (hwK hy))
+    exact ⟨φ.map_target hyt, by rw [φ.right_inv hyt]; exact hKR (hwK hy)⟩
+  refine ⟨u, hu, huc, fun x hx ↦ ?_, fun x ↦ ?_, hsup, fun y hy ↦ hu_symm y (hballt hy)⟩
+  · obtain ⟨hxs, hxb⟩ := hsup x hx
+    have h := hballU _ hxb
+    rwa [φ.left_inv hxs] at h
+  · by_cases hx : x ∈ tsupport u
+    · obtain ⟨y, hy, rfl⟩ := htsupp hx
+      rw [hu_symm y (hballt (hKR (hwK hy)))]
+      exact hw0 _
+    · rw [image_eq_zero_of_notMem_tsupport hx]
 
 end TauCeti.Manifold

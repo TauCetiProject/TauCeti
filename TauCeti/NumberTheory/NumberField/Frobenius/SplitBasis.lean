@@ -71,6 +71,7 @@ variable {K L M : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Fi
   (hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
     ∀ (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q)
 
+omit [NumberField L] in
 include hp hexp in
 /-- The Frobenius elements `Frob_v` at the places `v ∉ S` that have a place of `L` of residue
 degree one above them generate `Gal(M/L)`, as soon as the Frobenius elements of `M/L` above the
@@ -80,7 +81,7 @@ itself, at residue degree one, or trivial. -/
 private theorem closure_artinElementAway_image_eq_range
     (hgen : Subgroup.closure {τ : M ≃ₐ[L] M | ∃ v ∉ S,
       ∃ Q : {Q : HeightOneSpectrum (𝓞 M) // Q.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 L) τ Q.1.asIdeal} = ⊤) :
+        IsArithFrobAt (𝓞 L) τ Q.val.asIdeal} = ⊤) :
     Subgroup.closure (artinElementAway hab S hur '' {v | v ∉ S ∧ ∃ Q : HeightOneSpectrum (𝓞 M),
       Q.asIdeal.LiesOver v.asIdeal ∧ (Q.asIdeal.under (𝓞 L)).inertiaDeg (𝓞 K) = 1}) =
       (AlgEquiv.restrictScalarsHom K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range := by
@@ -127,13 +128,13 @@ form a basis of `Gal(M/L)` as an `𝔽_p`-vector space. -/
 theorem exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom
     (hgen : Subgroup.closure {τ : M ≃ₐ[L] M | ∃ v ∉ S,
       ∃ Q : {Q : HeightOneSpectrum (𝓞 M) // Q.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 L) τ Q.1.asIdeal} = ⊤) :
+        IsArithFrobAt (𝓞 L) τ Q.val.asIdeal} = ⊤) :
     ∃ T : Finset (HeightOneSpectrum (𝓞 K)), Disjoint S T ∧
       Subgroup.closure (artinElementAway hab S hur '' T) =
         (AlgEquiv.restrictScalarsHom K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range ∧
       p ^ T.card = Module.finrank L M ∧
       ∀ v ∈ T, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1 := by
+        Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1 := by
   classical
   have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
   have : IsMulCommutative (M ≃ₐ[K] M) := IsMulCommutative.of_comm fun σ τ ↦ (hab σ τ).eq

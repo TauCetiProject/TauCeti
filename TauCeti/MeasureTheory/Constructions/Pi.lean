@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
 /-!
 # Coordinate projections of finite product measures
@@ -21,7 +22,9 @@ still independent.
 
 **Splitting off the first coordinate.** `MeasurableEquiv.piFinSuccAbove` at `0` is `Fin.cons` in
 the reverse direction; composing a measurable function with `Fin.cons` is measurable on the product
-of the head and the tail.
+of the head and the tail. Read forwards, `Fin.cons` carries the product of a measure `μ` with
+the product measure `Measure.pi ν` on `Fin n → β` to the product measure `Fin.cons μ ν` on
+`Fin (n + 1) → β`.
 
 **Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
 of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
@@ -65,6 +68,10 @@ with the right-nested products `β × β × β` and `β × β × β × β`; unde
 `finFourArrowPairPair`, groups alternate coordinates as `((x 0, x 2), (x 1, x 3))` and carries
 the product measure to `(μ ⊗ μ) ⊗ (μ ⊗ μ)`.
 
+**Nonzero products.** A finite product of nonzero σ-finite measures is nonzero, since its total
+mass is the product of the nonzero total masses of the factors. Mathlib has no such `NeZero`
+instance for `Measure.pi`.
+
 **Extensionality from boxes.** A finite measure on a finite product space, which need not be a
 product measure, is determined by its values on measurable boxes `Set.univ.pi s`, because boxes
 form a π-system generating the product σ-algebra and contain the whole space. The same holds on
@@ -77,10 +84,17 @@ where one side is a product measure.
 over the coordinates outside `p`, of the product measures of its fibres. This is the
 finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 
+**Sums and multiples of factors.** A product of finite sums of measures expands, as in
+`Finset.prod_univ_sum`, into the sum of the products of one summand from each factor, and scaling
+the factors by `c i` scales the product measure by `∏ i, c i`. Together they expand the `n`-fold
+product of a mixture of laws into products of its components.
+
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
   embedding is measure preserving;
+* `MeasureTheory.Measure.measurePreserving_finCons` — prepending a coordinate with `Fin.cons` is
+  measure preserving;
 * `TauCeti.measurePreserving_piCurry` — currying a product measure over a sigma type is measure
   preserving;
 * `TauCeti.measurePreserving_pi_fiberwise` — applying measure-preserving maps to disjoint fibres
@@ -99,10 +113,15 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 * `TauCeti.finFourArrowPairPair` and `TauCeti.measurePreserving_finFourArrowPairPair` — functions
   on `Fin 4` as two pairs of alternate coordinates, carrying `Measure.pi` to a product of two
   product measures.
+* `MeasureTheory.Measure.instNeZeroPi` — a finite product of nonzero σ-finite measures is
+  nonzero;
 * `MeasureTheory.Measure.ext_pi` — two finite measures on a finite product that agree on
   measurable boxes are equal;
 * `MeasureTheory.Measure.ext_prod_pi` — two finite measures on `γ × (∀ i, α i)` that agree
   on products of a measurable set and a measurable box are equal;
+* `MeasureTheory.Measure.pi_finsetSum` — a product of finite sums of measures is the sum of the
+  products of the summands;
+* `MeasureTheory.Measure.pi_smul` — scaling the factors scales the product measure;
 * `MeasureTheory.Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm` — the product measure
   of a set is the integral of the measures of its fibres over the coordinates satisfying a
   predicate.
@@ -123,7 +142,7 @@ public section
 
 open Function MeasureTheory ProbabilityTheory Set
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -159,6 +178,20 @@ theorem measurePreserving_pi_comp_embedding {ι κ : Type*} [Fintype ι] [Fintyp
   funext i
   exact (measurePreserving_eval μ (e i)).map_eq
 
+/-- **Prepending a coordinate.** `Fin.cons` carries the product of a measure `μ` with the product
+measure `Measure.pi ν` on `Fin n → β` to the product measure `Measure.pi (Fin.cons μ ν)` on
+`Fin (n + 1) → β`, whose first factor is `μ` and whose other factors are the `ν i`. -/
+theorem _root_.MeasureTheory.Measure.measurePreserving_finCons {β : Type*} [MeasurableSpace β]
+    {n : ℕ} (μ : Measure β) (ν : Fin n → Measure β) [SigmaFinite μ] [∀ i, SigmaFinite (ν i)] :
+    MeasurePreserving (fun p : β × (Fin n → β) ↦ (Fin.cons p.1 p.2 : Fin (n + 1) → β))
+      (μ.prod (Measure.pi ν)) (Measure.pi (Fin.cons μ ν)) := by
+  have (i : Fin (n + 1)) : SigmaFinite ((Fin.cons μ ν : Fin (n + 1) → Measure β) i) := by
+    cases i using Fin.cases <;> simp only [Fin.cons_zero, Fin.cons_succ] <;> infer_instance
+  have h := (measurePreserving_piFinSuccAbove (Fin.cons μ ν : Fin (n + 1) → Measure β) 0).symm
+  simp only [Fin.cons_zero, Fin.succAbove_zero, Fin.cons_succ] at h
+  convert h using 1
+  exact funext fun p ↦ (MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons p.1 p.2).symm
+
 /-- **Currying a finite product measure.** A product measure indexed by the pairs `⟨i, j⟩` with
 `j : κ i` is carried by `MeasurableEquiv.piCurry` to the product over `i` of the product measures
 over `j`.
@@ -177,6 +210,21 @@ theorem measurePreserving_piCurry {ι : Type*} {κ : ι → Type*} [Fintype ι] 
   rw [MeasurableEquiv.map_apply, MeasurableEquiv.coe_piCurry_symm, hpre, Measure.pi_pi,
     ← Finset.univ_sigma_univ, Finset.prod_sigma]
   exact Finset.prod_congr rfl fun i _ => Measure.pi_pi _ _
+
+/-- Currying a finite product indexed by pairs preserves the product measure for arbitrary
+sigma-finite coordinate measures. -/
+theorem measurePreserving_curry {ι κ α : Type*} [Fintype ι] [Fintype κ]
+    [MeasurableSpace α] (μ : ι → κ → Measure α) [∀ i j, SigmaFinite (μ i j)] :
+    MeasurePreserving (MeasurableEquiv.curry ι κ α)
+      (Measure.pi fun p : ι × κ ↦ μ p.1 p.2) (Measure.pi fun i ↦ Measure.pi (μ i)) := by
+  convert (measurePreserving_piCurry μ).comp
+    ((measurePreserving_piCongrLeft
+      (fun p : ι × κ ↦ μ p.1 p.2) (Equiv.sigmaEquivProd ι κ)).symm) using 1
+  ext z i j
+  simp only [MeasurableEquiv.coe_curry, MeasurableEquiv.coe_piCurry, Function.comp_apply,
+    Function.curry, Sigma.curry]
+  exact (Equiv.piCongrLeft_symm_apply (fun _ : ι × κ ↦ α)
+    (Equiv.sigmaEquivProd ι κ) z ⟨i, j⟩).symm
 
 /-- Applying a measure-preserving map to each fibre of a finite coordinate map gives the product
 of the fibre laws. The coordinate measures and the fibre laws need only be σ-finite. -/
@@ -233,7 +281,7 @@ This is Mathlib's `MeasureTheory.measurePreserving_piEquivPiSubtypeProd` for the
 theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i₀ : ι) :
     MeasurePreserving (Equiv.piSplitAt i₀ α)
       (Measure.pi μ) ((μ i₀).prod (Measure.pi fun j : {i // i ≠ i₀} => μ j)) := by
-  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.2⟩
+  let _ : Unique {i : ι // i = i₀} := ⟨⟨⟨i₀, rfl⟩⟩, fun x => Subtype.ext x.property⟩
   let _ : Fintype {i : ι // i = i₀} := Subtype.fintype _
   -- Composing the split at `(· = i₀)` with the collapse of its one-element factor evaluates,
   -- coordinate by coordinate, to the pair above.  The application lemmas below reduce both
@@ -296,40 +344,11 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
       ((Measure.pi μ).prod ((μ a).prod (μ b))) (Measure.pi μ) := by
   let s : Finset ι := {a}
   let t : Finset ι := {b}
-  have hdis : Disjoint s t := by simp [s, t, hab]
+  have hdis : Disjoint s t := Finset.disjoint_singleton.2 hab
   let p : ι → Prop := fun i => i ∈ s ∪ t
   let splitEquiv := MeasurableEquiv.piEquivPiSubtypeProd α p
-  let unionEquiv := MeasurableEquiv.piFinsetUnion α hdis
   let singleA := (MeasurableEquiv.piUnique fun i : s => α i).symm
   let singleB := (MeasurableEquiv.piUnique fun i : t => α i).symm
-  have singleA_apply (u : α a) : singleA u ⟨a, by simp [s]⟩ = u := by
-    simp only [singleA, MeasurableEquiv.piUnique_symm_apply]
-    unfold uniqueElim
-    rfl
-  have singleB_apply (v : α b) : singleB v ⟨b, by simp [t]⟩ = v := by
-    simp only [singleB, MeasurableEquiv.piUnique_symm_apply]
-    unfold uniqueElim
-    rfl
-  -- `MeasurableEquiv.piFinsetUnion` is by definition `Equiv.piFinsetUnion` carrying the
-  -- measurability proofs, and Mathlib states the componentwise lemmas
-  -- `Equiv.piFinsetUnion_left`/`_right` only for the bare equivalence. Bridge the two once here,
-  -- so that neither case below unfolds the measurable-equivalence wrapper again.
-  have unionEquiv_coe (w : ((i : s) → α i) × ((i : t) → α i)) :
-      unionEquiv w = Equiv.piFinsetUnion α hdis w := rfl
-  have unionEquiv_a (u : α a) (v : α b) (ha : a ∈ s ∪ t) :
-      unionEquiv (singleA u, singleB v) ⟨a, ha⟩ = u := by
-    rw [unionEquiv_coe, Equiv.piFinsetUnion_left α hdis (by simp [s]) ha]
-    exact singleA_apply u
-  have unionEquiv_b (u : α a) (v : α b) (hb : b ∈ s ∪ t) :
-      unionEquiv (singleA u, singleB v) ⟨b, hb⟩ = v := by
-    rw [unionEquiv_coe, Equiv.piFinsetUnion_right α hdis (by simp [t]) hb]
-    exact singleB_apply v
-  have splitEquiv_symm_apply (x : ∀ i : Subtype p, α i)
-      (y : ∀ i : {i // ¬p i}, α i) (i : ι) :
-      splitEquiv.symm (x, y) i = if hi : p i then x ⟨i, hi⟩ else y ⟨i, hi⟩ :=
-    Equiv.piEquivPiSubtypeProd_symm_apply p α (x, y) i
-  have splitEquiv_snd_apply (z : ∀ i, α i) (i : ι) (hi : ¬p i) :
-      (splitEquiv z).2 ⟨i, hi⟩ = z i := rfl
   have hsplit := measurePreserving_piEquivPiSubtypeProd μ p
   have hsingleA : MeasurePreserving singleA (μ a) (Measure.pi fun i : s => μ i) := by
     simpa [singleA, s] using MeasurePreserving.symm
@@ -365,27 +384,15 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
       (congrArg (fun m => m.prod (Measure.pi fun i : {i // ¬p i} => μ i)) hpi)
   have hrefresh := (MeasurePreserving.symm splitEquiv hsplit).comp hcombine'
   refine hrefresh.congr (by fun_prop) (ae_of_all _ fun w => ?_)
-  funext i
-  -- `MeasurePreserving.comp` stores this composite function definitionally; expose it once, then
-  -- use the application lemmas above for all measurable-equivalence wrappers.
+  -- `MeasurePreserving.comp` stores the composite function definitionally, so the pointwise
+  -- statement of the helper applies as it stands.
   change splitEquiv.symm
-      (unionEquiv (singleA w.2.1, singleB w.2.2), (splitEquiv w.1).2) i =
-    update (update w.1 a w.2.1) b w.2.2 i
-  rw [splitEquiv_symm_apply]
-  by_cases hia : i = a
-  · subst i
-    simp only [p, s, t, Finset.mem_union, Finset.mem_singleton, true_or, dite_true]
-    rw [unionEquiv_a]
-    simp [hab]
-  · by_cases hib : i = b
-    · subst i
-      rw [update_self]
-      simp only [p, s, t, Finset.mem_union, Finset.mem_singleton, or_true, dite_true]
-      rw [unionEquiv_b]
-    · simp only [p, s, t, Finset.mem_union, Finset.mem_singleton, hia, hib, false_or,
-        dite_false]
-      rw [splitEquiv_snd_apply]
-      rw [update_of_ne hib, update_of_ne hia]
+      (MeasurableEquiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2),
+        (splitEquiv w.1).2) = update (update w.1 a w.2.1) b w.2.2
+  rw [Function.update_eq_updateFinset, Function.update_eq_updateFinset,
+    Function.updateFinset_updateFinset hdis]
+  exact Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset (s ∪ t) w.1
+    (Equiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2))
 
 section FinArrow
 
@@ -474,6 +481,13 @@ end TauCeti
 
 namespace MeasureTheory.Measure
 
+/-- A finite product of nonzero σ-finite measures is nonzero: its total mass is the product of the
+total masses of the factors, none of which vanishes. -/
+instance instNeZeroPi {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    {μ : ∀ i, Measure (α i)} [∀ i, SigmaFinite (μ i)] [∀ i, NeZero (μ i)] :
+    NeZero (Measure.pi μ) :=
+  ⟨measure_univ_ne_zero.1 <| by simp [pi_univ, Finset.prod_ne_zero_iff, NeZero.ne]⟩
+
 variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
 /-- **Finite measures on a finite product are determined by boxes.** Two measures on
@@ -504,6 +518,29 @@ theorem ext_prod_pi {γ : Type*} [MeasurableSpace γ] {μ ν : Measure (γ × �
   · rintro _ ⟨S, hS, _, ⟨s, hs, rfl⟩, rfl⟩
     exact h S hS s fun i ↦ hs i (mem_univ i)
   · simpa using h univ .univ (fun _ ↦ univ) fun _ ↦ .univ
+
+/-- **Expanding a product of finite sums of measures.** The product of the finite sums
+`∑ j ∈ t i, μ i j` is the sum, over the choices `x ∈ Fintype.piFinset t` of one summand in each
+coordinate, of the product measures `Measure.pi fun i ↦ μ i (x i)`. This is the measure form of
+`Finset.prod_univ_sum`. -/
+theorem pi_finsetSum {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] {κ : ι → Type*} (t : ∀ i, Finset (κ i))
+    (μ : ∀ i, κ i → Measure (α i)) [∀ i j, SigmaFinite (μ i j)] :
+    Measure.pi (fun i ↦ ∑ j ∈ t i, μ i j) =
+      ∑ x ∈ Fintype.piFinset t, Measure.pi fun i ↦ μ i (x i) := by
+  have (i : ι) : SigmaFinite (∑ j ∈ t i, μ i j) :=
+    Finset.sum_induction _ SigmaFinite (fun _ _ _ _ ↦ inferInstance) inferInstance
+      fun _ _ ↦ inferInstance
+  refine pi_eq fun s _ ↦ ?_
+  simp only [FunLike.coe_sum, Finset.sum_apply, pi_pi, Finset.prod_univ_sum]
+
+/-- **Scaling the factors of a product measure.** Multiplying each factor of a finite product
+measure by a scalar `c i` multiplies the product measure by `∏ i, c i`. -/
+theorem pi_smul {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    (c : ι → ℝ≥0) (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] :
+    Measure.pi (fun i ↦ c i • μ i) = (∏ i, c i) • Measure.pi μ := by
+  refine pi_eq fun s _ ↦ ?_
+  simp only [pi_pi, coe_nnreal_smul_apply, Finset.prod_mul_distrib, ENNReal.ofNNReal_finsetProd]
 
 /-- **Fibres over a set of coordinates.** The measure of a set under a finite product measure is
 the integral, over the coordinates outside `p`, of the product measures of its fibres over the

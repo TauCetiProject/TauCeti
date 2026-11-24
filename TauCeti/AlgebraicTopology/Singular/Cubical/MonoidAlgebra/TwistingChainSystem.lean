@@ -55,6 +55,9 @@ with coefficients in a DG local system.
 * `TauCeti.twistingChainSum_eq_zero_of_le`: the twisting sum of a graded family vanishes when
   `ind x ≤ ind y`, and so does the chain of `(x, y)` in a twisting chain system
   (`TauCeti.TwistingChainSystem.chain_eq_zero_of_le`).
+* `TauCeti.twistingChainSum_eq_sum_subtype`, `TauCeti.twistingChainSum_congr`: only the `z`
+  strictly between `y` and `x` in index contribute to the twisting sum of `(x, y)`, which therefore
+  only depends on the chains of the pairs `(x, z)` and `(z, y)` for those `z`.
 * `TauCeti.cubicalChainDifferential_twistingChainSum`: the twisting sum is a cycle.
 * `TauCeti.cubicalChainSumMap_twistingChainSum`: push-forward along multiplicative evaluation maps.
 
@@ -121,6 +124,37 @@ theorem twistingChainSum_eq_zero_of_le
   · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
       LinearMap.zero_apply, smul_zero]
   · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs z y), map_zero, smul_zero]
+
+/-- Only the `z` whose index lies strictly between those of `y` and `x` contribute to the twisting
+sum of a family of chains of cohomological degrees `ind y - ind x + 1`. -/
+theorem twistingChainSum_eq_sum_subtype
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1)) (x y : P) :
+    twistingChainSum ind ι R s x y = ∑ z : {z // ind y < ind z ∧ ind z < ind x},
+      (ind x - ind z.val).negOnePow •
+        cubicalChainSumPairing R (ι x z.val y) (s x z.val) (s z.val y) := by
+  rw [twistingChainSum_def, ← Finset.sum_filter_of_ne (p := fun z ↦ ind y < ind z ∧ ind z < ind x)
+    fun z _ hz ↦ ?_, Finset.sum_subtype (p := fun z ↦ ind y < ind z ∧ ind z < ind x) _ (by simp)]
+  -- Outside that range one of the two factors has positive cohomological degree, so vanishes.
+  by_contra hz'
+  rcases le_or_gt (ind x) (ind z) with hxz | hxz
+  · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs x z), map_zero,
+      LinearMap.zero_apply, smul_zero] at hz
+    exact hz rfl
+  · rw [eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (hs z y), map_zero,
+      smul_zero] at hz
+    exact hz rfl
+
+/-- The twisting sum of `(x, y)` only depends on the chains of the pairs `(x, z)` and `(z, y)`
+for the `z` whose index lies strictly between those of `y` and `x`: two families of chains of
+cohomological degrees `ind y - ind x + 1` which agree there have the same twisting sum. -/
+theorem twistingChainSum_congr {s' : ∀ x y, normalizedCubicalChainAlgebra (M x y) R}
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1))
+    (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1)) {x y : P}
+    (h : ∀ z, ind y < ind z → ind z < ind x → s x z = s' x z ∧ s z y = s' z y) :
+    twistingChainSum ind ι R s x y = twistingChainSum ind ι R s' x y := by
+  rw [twistingChainSum_eq_sum_subtype hs, twistingChainSum_eq_sum_subtype hs']
+  exact Finset.sum_congr rfl fun z _ ↦ by
+    rw [(h z.val z.prop.1 z.prop.2).1, (h z.val z.prop.1 z.prop.2).2]
 
 end Graded
 
@@ -239,10 +273,7 @@ theorem cubicalChainSumMap_twistingChainSum {x y : P}
         (cubicalChainSumMap R (q x z) (s x z) * cubicalChainSumMap R (q z y) (s z y)) := by
   rw [twistingChainSum_def, map_sum]
   refine Finset.sum_congr rfl fun z _ ↦ ?_
-  have hcomp : (q x y).comp (ι x z y) = (mulMap G).comp ((q x z).prodMap (q z y)) :=
-    ContinuousMap.ext fun ⟨u, v⟩ ↦ by simpa using hq z u v
-  rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hcomp,
-    cubicalChainSumPairing_comp_prodMap, cubicalChainSumPairing_mulMap]
+  rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing_of_mul (hq z)]
 
 namespace TwistingChainSystem
 

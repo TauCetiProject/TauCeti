@@ -72,12 +72,12 @@ private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
   intro x
   -- In chart coordinates the three global valuation hypotheses become the eventual
   -- finite-valuation hypotheses of the local Puiseux construction.
-  obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x x.2
+  obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x x.property
   let a := TauCeti.firstCoords ℝ n d (e x)
   let φ := fun u ↦ e.symm (TauCeti.firstCoords ℝ d n u)
-  have hφ : AnalyticAt ℝ φ a := he.analyticAt_symm_firstCoords hxe x.2
+  have hφ : AnalyticAt ℝ φ a := he.analyticAt_symm_firstCoords hxe x.property
   have hφS : ∀ᶠ u in 𝓝 a, φ u ∈ S :=
-    (he.eventually_symm_firstCoords_mem hxe x.2).mono fun _ hu ↦ hu.2
+    (he.eventually_symm_firstCoords_mem hxe x.property).mono fun _ hu ↦ hu.2
   obtain ⟨k, t, V, hV, haV, _, hexponent, ht, hmono, hroots, hpos, hmult⟩ :=
     p.exists_analyticOnNhd_ordered_lazardEval_roots hφ _ _ _
       (eventually_lazardValuation_eq hlead hφS hlead_eq x)
@@ -89,32 +89,33 @@ private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
   let U : Set (Fin n → ℝ) := e.source ∩ (fun y ↦ c (e y)) ⁻¹' V
   have hU : IsOpen U := e.isOpen_inter_preimage (hV.preimage c.continuous)
   let T : Set (Fin n → ℝ) := S ∩ U
-  let ψ : T → V := fun y ↦ ⟨c (e y), y.2.2.2⟩
+  let ψ : T → V := fun y ↦ ⟨c (e y), y.property.2.2⟩
   have hψ : Continuous ψ := Continuous.subtype_mk (c.continuous.comp
-    (e.continuousOn.comp_continuous continuous_subtype_val fun y ↦ y.2.2.1)) _
-  have hφψ (y : T) : φ (ψ y) = y := he.symm_firstCoords_firstCoords_apply y.2.2.1 y.2.1
+    (e.continuousOn.comp_continuous continuous_subtypeVal fun y ↦ y.property.2.1)) _
+  have hφψ (y : T) : φ (ψ y) = y := he.symm_firstCoords_firstCoords_apply y.property.2.1
+      y.property.1
   -- The ordered chart roots and their common exponent and multiplicity data are exactly the
   -- fields of a local Lazard delineation.
   let D : TauCeti.LazardDelineation (fun _ : Unit ↦ F) T :=
-    { nonempty := ⟨x, x.2, hxe, haV⟩
+    { nonempty := ⟨x, x.property, hxe, haV⟩
       count := k
       root := fun i y ↦ t i (ψ y)
       continuous_root := fun i ↦
-        (ht i).continuousOn.comp_continuous (continuous_subtype_val.comp hψ)
-          fun y ↦ (ψ y).2
-      strictMono_root := fun y ↦ hmono (ψ y) (ψ y).2
+        (ht i).continuousOn.comp_continuous (continuous_subtypeVal.comp hψ)
+          fun y ↦ (ψ y).property
+      strictMono_root := fun y ↦ hmono (ψ y) (ψ y).property
       exponent := fun _ ↦ q.lazardExponent (Polynomial.C ∘ φ a)
       lazardExponent_eq := fun _ y ↦ by
         rw [hswap, ← hφψ y]
-        exact hexponent (ψ y) (ψ y).2
+        exact hexponent (ψ y) (ψ y).property
       multiplicity := fun _ i ↦
         (q.lazardEval (Polynomial.C ∘ φ a)).rootMultiplicity (t i a)
       rootMultiplicity_root := fun _ i y ↦ by
         rw [hswap, ← hφψ y]
-        exact hmult (ψ y) (ψ y).2 i
+        exact hmult (ψ y) (ψ y).property i
       exists_root_eq := fun _ y _ z hz ↦ by
         rw [hswap, ← hφψ y] at hz
-        exact (hroots (ψ y) (ψ y).2 z).1 hz
+        exact (hroots (ψ y) (ψ y).property z).1 hz
       exists_multiplicity_pos := fun i ↦ ⟨(), hpos i⟩ }
   exact ⟨U, hU, ⟨hxe, haV⟩, by simpa only [F] using Nonempty.intro D⟩
 
@@ -172,6 +173,6 @@ theorem nonempty_lazardDelineation_of_lazardValuation_eq
     exact WithTop.add_right_cancel WithTop.coe_ne_top h
   obtain ⟨D⟩ := nonempty_lazardDelineation_of_coeff_zero_ne_zero q hS hconn
     (leadingCoeff_ne_zero.2 hq) hq0 hdq.1 hlead_eq htrail_eq hdq.2
-  exact TauCeti.nonempty_lazardDelineation_X_mul hq D hconn htrail_eq
+  exact TauCeti.nonempty_lazardDelineation_X_mul D hconn htrail_eq
 
 end Polynomial

@@ -8,13 +8,14 @@ module
 public import TauCeti.FieldTheory.FunctionField.Hermitian.Basic
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Group.Pow
+import TauCeti.Algebra.GroupWithZero.Units.Finite
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.Algebraic.Basic
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The translations of the Hermitian function field
@@ -48,9 +49,10 @@ the two generators: `σ_{a,b} ∘ σ_{a',b'} = σ_{a + a', b + b' + a a'^q}` and
 `σ_{a,b}⁻¹ = σ_{-a, b^q}` (`TauCeti.IsHermitianCoordinates.translation_mul` and
 `TauCeti.IsHermitianCoordinates.translation_inv`). The subgroup `TauCeti.hermitianTranslations`
 is defined by this action on `x` and `y`, so it makes sense with no hypothesis on `x` and `y`.
-Over `K = 𝔽_{q²}` every `a` satisfies `a ^ (q ^ 2) = a`, and `c = a ^ (q + 1)` satisfies
-`c ^ q = c`, so `TauCeti.FiniteField.natCard_pow_add_self_eq` gives exactly `q` choices of `b`
-for each of the `q²` choices of `a`.
+Over `K = 𝔽_{q²}` every `a` satisfies `a ^ (q ^ 2) = a`, so the translations correspond to the
+pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`. Swapped, these are the solutions `(b, a)` of the
+affine trace equation `b + b ^ q = a ^ q a`, and `TauCeti.FiniteField.natCard_add_pow_eq_pow_mul`
+counts `q³` of them: `q` choices of `b` for each of the `q²` choices of `a`.
 
 ## Main definitions
 
@@ -76,8 +78,8 @@ for each of the `q²` choices of `a`.
   satisfy the two conditions on `(a, b)`.
 * `TauCeti.IsHermitianCoordinates.finite_hermitianTranslations`: the translation group is
   finite over any finite constant field.
-* `TauCeti.IsHermitianCoordinates.natCard_hermitianTranslations`: over a field with `q²`
-  elements, the group of translations has order `q³`.
+* `TauCeti.IsHermitianCoordinates.natCard_hermitianTranslations`: over a field `K` with
+  `Nat.card K = q ^ 2`, the group of translations has order `q³`.
 
 ## References
 
@@ -182,15 +184,15 @@ variable {x y : F}
 
 section AdjoinRoot
 
-variable {q : ℕ} (h : IsHermitianCoordinates K q x y) (hq : 1 < q)
-include h hq
+variable {q : ℕ} (h : IsHermitianCoordinates K q x y)
+include h
 
 /-- The identification of `F` with `K(x)[T] / (T ^ q + T - x ^ (q + 1))`. -/
 private noncomputable def adjoinRootEquiv : AdjoinRoot (minpoly K⟮x⟯ y) ≃ₐ[K⟮x⟯] F :=
-  (IntermediateField.adjoinRootEquivAdjoin K⟮x⟯ (h.isIntegral_adjoin_x hq)).trans
+  (IntermediateField.adjoinRootEquivAdjoin K⟮x⟯ h.isIntegral_adjoin_x).trans
     ((IntermediateField.equivOfEq h.adjoin_adjoin_eq_top).trans IntermediateField.topEquiv)
 
-private theorem adjoinRootEquiv_root : h.adjoinRootEquiv hq (AdjoinRoot.root _) = y := by
+private theorem adjoinRootEquiv_root : h.adjoinRootEquiv (AdjoinRoot.root _) = y := by
   simp [adjoinRootEquiv, IntermediateField.adjoinRootEquivAdjoin_apply_root]
 
 end AdjoinRoot
@@ -226,13 +228,13 @@ substitution `x ↦ x + a` on `K(x)`, extended to `F = K(x)[T] / (minpoly)` by `
 private noncomputable def translationAlgHom {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) : F →ₐ[K] F :=
   (AdjoinRoot.liftAlgHom _ _ _ (h.eval₂_minpoly hq ha hb)).comp
-    ((h.adjoinRootEquiv hq).symm.restrictScalars K).toAlgHom
+    ((h.adjoinRootEquiv).symm.restrictScalars K).toAlgHom
 
 private theorem translationAlgHom_algebraMap {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) (z : K⟮x⟯) :
     h.translationAlgHom hq ha hb (algebraMap K⟮x⟯ F z) =
       h.transcendental_x.algHomAdjoin (h.transcendental_x.add_algebraMap a) z := by
-  rw [← (h.adjoinRootEquiv hq).commutes z]
+  rw [← (h.adjoinRootEquiv).commutes z]
   simp [translationAlgHom, AdjoinRoot.algebraMap_eq]
 
 private theorem translationAlgHom_apply_x {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
@@ -244,10 +246,10 @@ private theorem translationAlgHom_apply_x {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
 private theorem translationAlgHom_apply_y {a b : K} (ha : a ^ (p ^ n) ^ 2 = a)
     (hb : b ^ p ^ n + b = a ^ (p ^ n + 1)) :
     h.translationAlgHom hq ha hb y = y + algebraMap K F (a ^ p ^ n) * x + algebraMap K F b := by
-  have : h.translationAlgHom hq ha hb (h.adjoinRootEquiv hq (AdjoinRoot.root _)) =
+  have : h.translationAlgHom hq ha hb (h.adjoinRootEquiv (AdjoinRoot.root _)) =
       y + algebraMap K F (a ^ p ^ n) * x + algebraMap K F b := by
     simp [translationAlgHom]
-  rwa [h.adjoinRootEquiv_root hq] at this
+  rwa [h.adjoinRootEquiv_root] at this
 
 /-- **The translation `σ_{a,b}` of the Hermitian function field**: the `K`-automorphism of `F`
 with `x ↦ x + a` and `y ↦ y + a ^ q x + b`, where `q = p ^ n`, for `a ^ (q ^ 2) = a` and
@@ -363,37 +365,29 @@ theorem finite_hermitianTranslations [Finite K] :
   · rw [hy σ, hy τ, ha', hb']
 
 omit hq in
-/-- **The order of the translation group**: over a field with `q²` elements, `q = p ^ n`, the
-translations of the Hermitian function field form a group of order `q³`. -/
-theorem natCard_hermitianTranslations [Finite K] (hK : Nat.card K = (p ^ n) ^ 2) :
+/-- **The order of the translation group**: over a field `K` with `Nat.card K = q ^ 2`,
+`q = p ^ n`, the translations of the Hermitian function field form a group of order `q³`. No
+`[Finite K]` is assumed: the `Nat.card` equation implies it. -/
+theorem natCard_hermitianTranslations (hK : Nat.card K = (p ^ n) ^ 2) :
     Nat.card (hermitianTranslations K p n x y) = (p ^ n) ^ 3 := by
-  classical
-  have := Fintype.ofFinite K
-  -- A field has at least two elements, so `q > 1`.
-  have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
-  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
-    rw [← hK, Nat.card_eq_fintype_card]
-    exact _root_.FiniteField.pow_card a
+  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
+  have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
+  have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by rw [← hK]; exact pow_natCard a
   -- The translations are in bijection with the pairs `(a, b)` with `b ^ q + b = a ^ (q + 1)`.
   let f : {ab : K × K // ab.2 ^ p ^ n + ab.2 = ab.1 ^ (p ^ n + 1)} →
       hermitianTranslations K p n x y := fun ab ↦
-    ⟨h.translation hq (hpow ab.1.1) ab.2, h.translation_mem_hermitianTranslations hq _ _⟩
+    ⟨h.translation hq (hpow ab.val.1) ab.property, h.translation_mem_hermitianTranslations hq _ _⟩
   have hf : Function.Bijective f := by
     refine ⟨fun ab ab' heq ↦ ?_, fun σ ↦ ?_⟩
     · obtain ⟨h1, h2⟩ := (h.translation_inj hq _ _ _ _).mp (congrArg Subtype.val heq)
       exact Subtype.ext (Prod.ext h1 h2)
-    · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.2
+    · obtain ⟨a, b, ha, hb, hσ⟩ := h.exists_translation_eq hq σ.property
       exact ⟨⟨(a, b), hb⟩, Subtype.ext hσ⟩
-  rw [← Nat.card_congr (Equiv.ofBijective f hf),
-    Nat.card_congr (Equiv.subtypeProdEquivSigmaSubtype fun a b ↦ b ^ p ^ n + b = a ^ (p ^ n + 1)),
-    Nat.card_sigma]
-  -- For each `a`, the norm `a ^ (q + 1)` satisfies `c ^ q = c`, so there are `q` choices of `b`.
-  have hfib (a : K) : Nat.card {b : K // b ^ p ^ n + b = a ^ (p ^ n + 1)} = p ^ n := by
-    refine FiniteField.natCard_pow_add_self_eq hK ?_
-    rw [← pow_mul, add_mul, one_mul, pow_add, ← sq, hpow, ← pow_succ']
-  rw [Nat.card_eq_fintype_card] at hK
-  simp only [hfib, Finset.sum_const, Finset.card_univ, hK, smul_eq_mul]
-  ring
+  -- Swapping them, these pairs are the `q³` solutions `(b, a)` of the affine trace equation
+  -- `b + b ^ q = a ^ q * a`.
+  rw [← Nat.card_congr (Equiv.ofBijective f hf), ← FiniteField.natCard_add_pow_eq_pow_mul hK]
+  exact Nat.card_congr <| Equiv.subtypeEquiv (Equiv.prodComm K K) fun ab ↦ by
+    simp [pow_succ, add_comm]
 
 end IsHermitianCoordinates
 

@@ -27,9 +27,9 @@ Chapter 10, for univariate sign determination using roots and complementary inte
 
 public section
 
-namespace TauCeti
+namespace Polynomial
 
-open Polynomial Finset Set
+open Finset Set
 
 section OrderedRing
 
@@ -37,13 +37,13 @@ variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Roots and critical points, augmented by two points beyond all the roots.
 The zero polynomial has a finite sample set too; its infinite zero set is not represented. -/
-noncomputable def _root_.Polynomial.signSamples (p : R[X]) : Finset R :=
+noncomputable def signSamples (p : R[X]) : Finset R :=
   p.roots.toFinset ∪ p.derivative.roots.toFinset ∪
     {-((∑ x ∈ p.roots.toFinset, |x|) + 1), (∑ x ∈ p.roots.toFinset, |x|) + 1}
 
 /-- Membership in the sample set, with the outer points stated explicitly. -/
 @[simp]
-theorem _root_.Polynomial.mem_signSamples (p : R[X]) (x : R) :
+theorem mem_signSamples (p : R[X]) (x : R) :
     x ∈ p.signSamples ↔ x ∈ p.roots.toFinset ∨ x ∈ p.derivative.roots.toFinset ∨
       x = -((∑ y ∈ p.roots.toFinset, |y|) + 1) ∨
       x = (∑ y ∈ p.roots.toFinset, |y|) + 1 := by
@@ -53,19 +53,19 @@ theorem _root_.Polynomial.mem_signSamples (p : R[X]) (x : R) :
 
 /-- Constant polynomials have just the two outer samples. -/
 @[simp]
-theorem _root_.Polynomial.signSamples_of_natDegree_eq_zero (p : R[X])
+theorem signSamples_of_natDegree_eq_zero (p : R[X])
     (hp : p.natDegree = 0) : p.signSamples = {-(1 : R), 1} := by
   rw [eq_C_of_natDegree_eq_zero hp]
   simp [Polynomial.signSamples]
 
 /-- The zero polynomial has the two outer samples, rather than its entire zero set. -/
 @[simp]
-theorem _root_.Polynomial.signSamples_zero :
+theorem signSamples_zero :
     (0 : R[X]).signSamples = {-(1 : R), 1} :=
   Polynomial.signSamples_of_natDegree_eq_zero 0 natDegree_zero
 
 /-- There is always an outer sample, even when the polynomial has no roots. -/
-theorem _root_.Polynomial.signSamples_nonempty (p : R[X]) : p.signSamples.Nonempty := by
+theorem signSamples_nonempty (p : R[X]) : p.signSamples.Nonempty := by
   exact ⟨(∑ x ∈ p.roots.toFinset, |x|) + 1, (p.mem_signSamples _).mpr
     (Or.inr (Or.inr (Or.inr rfl)))⟩
 
@@ -75,7 +75,7 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealCl
 
 /-- Every point is a root sample or shares a root-free closed interval with a sample.
 Thus the samples meet all complementary intervals, without a completeness assumption. -/
-theorem _root_.Polynomial.exists_mem_signSamples (p : R[X]) (hp : p ≠ 0) (x : R) :
+theorem exists_mem_signSamples (p : R[X]) (hp : p ≠ 0) (x : R) :
     ∃ y ∈ p.signSamples, y = x ∨ ∀ z ∈ uIcc x y, p.eval z ≠ 0 := by
   classical
   let S := p.roots.toFinset
@@ -122,4 +122,4 @@ theorem _root_.Polynomial.exists_mem_signSamples (p : R[X]) (hp : p ≠ 0) (x : 
     have hxz : x ≤ z := le_of_not_gt (fun hzx => hleft ⟨z, hzS, hzx⟩)
     rcases mem_uIcc.mp hz with hz | hz <;> grind
 
-end TauCeti
+end Polynomial

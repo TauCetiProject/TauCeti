@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Flat.Equalizer
 
 /-!
@@ -34,8 +35,11 @@ where flatness of the cokernel is its torsion-freeness.
 * `LinearMap.ker_baseChange_of_surjective`: **for a surjective map the kernel of an extended
   linear map is the extension of its kernel**, with no hypothesis on the coefficient algebra.
 * `LinearMap.ker_baseChange_of_flat_quotient_range`: the same for a map with flat cokernel.
-* `LinearMap.finite_tensorProduct_ker`: the scalar extension of the kernel of a surjection
-  is finite if the extended source is finite and the extended target is finitely presented.
+* `Submodule.ker_baseChange_mkQ_prod_mkQ`: the kernel of `A ⊗ M → A ⊗ (M ⧸ M₁ × M ⧸ M₂)` is the
+  intersection of `A ⊗ M₁` and `A ⊗ M₂` inside `A ⊗ M`.
+* `LinearMap.finite_tensorProduct_ker`: over a flat coefficient algebra, the scalar extension of
+  the kernel of a surjection is finite if the extended source is finite and the extended target is
+  finitely presented.
 
 ## References
 
@@ -94,9 +98,27 @@ extended source is finite and the extended target is finitely presented. -/
 theorem finite_tensorProduct_ker {S : Type*} [Ring S] [Algebra R S] [Module.Flat R S]
     [Module.Finite S (S ⊗[R] M)] [Module.FinitePresentation S (S ⊗[R] N)]
     (f : M →ₗ[R] N) (hf : Function.Surjective f) : Module.Finite S (S ⊗[R] ker f) := by
-  have hfg := Module.FinitePresentation.fg_ker (f.baseChange S) (f.lTensor_surjective S hf)
+  have hfg := Module.FinitePresentation.fg_ker (f.baseChange S) (f.baseChange_surjective S hf)
   rw [ker_baseChange_of_flat] at hfg
   have : Module.Finite S ((ker f).baseChange S) := Module.Finite.iff_fg.mpr hfg
   exact Module.Finite.equiv (Submodule.toBaseChange.toLinearEquiv S (ker f)).symm
 
 end LinearMap
+
+namespace Submodule
+
+variable {R : Type*} (A : Type*) {M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Ring A]
+  [Algebra R A] (M₁ M₂ : Submodule R M)
+
+/-- The kernel of the extension of scalars of `M → M ⧸ M₁ × M ⧸ M₂` is the intersection of the
+extensions of `M₁` and `M₂`. -/
+theorem ker_baseChange_mkQ_prod_mkQ :
+    LinearMap.ker ((M₁.mkQ.prod M₂.mkQ).baseChange A) = M₁.baseChange A ⊓ M₂.baseChange A := by
+  have h : (TensorProduct.prodRight R A A (M ⧸ M₁) (M ⧸ M₂)).toLinearMap ∘ₗ
+      (M₁.mkQ.prod M₂.mkQ).baseChange A = (M₁.mkQ.baseChange A).prod (M₂.mkQ.baseChange A) := by
+    ext x <;> simp
+  rw [← LinearEquiv.ker_comp (TensorProduct.prodRight R A A (M ⧸ M₁) (M ⧸ M₂)), h,
+    LinearMap.ker_prod, LinearMap.ker_baseChange_of_surjective A _ M₁.mkQ_surjective,
+    LinearMap.ker_baseChange_of_surjective A _ M₂.mkQ_surjective, ker_mkQ, ker_mkQ]
+
+end Submodule

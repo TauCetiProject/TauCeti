@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
@@ -70,12 +71,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
-noncomputable local instance finiteNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs whose edges join consecutive vertices -/
 
@@ -164,8 +162,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
-  have ha := ((vertexEquiv G).symm a).2
-  have hb := ((vertexEquiv G).symm b).2
+  have ha := ((vertexEquiv G).symm a).isLt
+  have hb := ((vertexEquiv G).symm b).isLt
   -- Heights increasing from the vertex `0`.
   by_cases hlow : ((vertexEquiv G).symm a : ℕ) + (vertexEquiv G).symm b < p.length
   · refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => i)
@@ -201,8 +199,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
         signlessArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0) (by omega)]
       simp
   · intro i j hij
-    have hi := i.2
-    have hj := j.2
+    have hi := i.isLt
+    have hj := j.isLt
     rcases (hG i j).1 hij with h | h
     · exact .inr ⟨by omega, by congr 1 <;> omega⟩
     · exact .inl ⟨by omega, by congr 1 <;> omega⟩
@@ -301,14 +299,8 @@ theorem preprojectiveMk_A_ofPath_eq_zero_of_le
     (hx : n ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o)
       (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `Aₙ` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o⦄, (i ⟶ j) →
-      diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => (diagramGraphAColoring n).valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+  exact SimpleGraph.IsBipartite.preprojectiveMk_ofPath_eq_zero_of_le
+    (diagramGraphAColoring n).colorable k (signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `Aₙ` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `n`. -/

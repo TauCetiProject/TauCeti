@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
 
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
+
 /-!
 # The type-A Hecke algebra on `n` strands
 
@@ -69,7 +71,6 @@ map is injective, so that the finite presentation is isomorphic to the stage, is
   algebra the right block map is the strand shift.
 * `TauCeti.TypeAHeckeAlgebra.algebraMap_injective`: the presentation does not collapse the
   scalars.
-* `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: a generator is not a scalar when `q ≠ -q⁻¹`.
 
 ## References
 
@@ -216,6 +217,11 @@ theorem val_inv_unitT (i : Fin (n - 1)) :
 /-- Each generator of the type-A Hecke algebra is a unit. -/
 theorem isUnit_T (i : Fin (n - 1)) : IsUnit (T q i) := (unitT q i).isUnit
 
+/-- The inverses of two generators on disjoint pairs of strands commute. -/
+theorem commute_inv_unitT {i j : Fin (n - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
+    Commute (↑(unitT q i)⁻¹ : TypeAHeckeAlgebra R q n) ↑(unitT q j)⁻¹ :=
+  (commute_T (q := q) h).units_inv_left (u := unitT q i) |>.units_inv_right (u := unitT q j)
+
 end Units
 
 section Lift
@@ -256,7 +262,7 @@ theorem adjoin_range_T : Algebra.adjoin R (Set.range (T (n := n) q)) = ⊤ := by
   have hrange : Set.range (T (n := n) q) =
       mkAlgHom R q n '' Set.range (FreeAlgebra.ι R (X := Fin (n - 1))) := by
     simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
-  rw [hrange, ← AlgHom.map_adjoin, FreeAlgebra.adjoin_range_ι, Algebra.map_top]
+  rw [hrange, Algebra.adjoin_image_eq_range _ (FreeAlgebra.adjoin_range_ι R _)]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
 
 section Braid
@@ -317,7 +323,7 @@ theorem commute_T_last_strandIncl_strandIncl (n : ℕ)
       (strandIncl R q (n + 2) (strandIncl R q (n + 1) x)) := by
   have hx : strandIncl R q (n + 2) (strandIncl R q (n + 1) x) ∈
       ((strandIncl R q (n + 2)).comp (strandIncl R q (n + 1))).range := ⟨x, rfl⟩
-  rw [← Algebra.map_top, ← adjoin_range_T, AlgHom.map_adjoin, ← Set.range_comp] at hx
+  rw [← Algebra.adjoin_image_eq_range _ adjoin_range_T, ← Set.range_comp] at hx
   apply Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx
   rintro _ ⟨i, rfl⟩
   simp only [Function.comp_apply, AlgHom.comp_apply, strandIncl_T]
@@ -388,7 +394,7 @@ theorem toInfinite_T (i : Fin (n - 1)) :
 the stage of the first `n` strands. -/
 theorem range_toInfinite :
     (toInfinite R q n).range = InfiniteTypeAHeckeAlgebra.stage R q n := by
-  rw [← Algebra.map_top, ← adjoin_range_T, AlgHom.map_adjoin, ← Set.range_comp]
+  rw [← Algebra.adjoin_image_eq_range _ adjoin_range_T, ← Set.range_comp]
   refine le_antisymm ?_ (InfiniteTypeAHeckeAlgebra.stage_le_iff.2 fun i hi ↦ ?_)
   · rw [Algebra.adjoin_le_iff, Set.range_subset_iff]
     exact fun i ↦ by
@@ -433,12 +439,6 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (TypeAHeckeAlgeb
 
 instance [Nontrivial R] : Nontrivial (TypeAHeckeAlgebra R q n) :=
   algebraMap_injective.nontrivial
-
-/-- A generator is not a scalar when the two eigenvalues `q` and `-q⁻¹` are distinct. -/
-theorem T_ne_algebraMap (hq : (q : R) ≠ -↑q⁻¹) (i : Fin (n - 1)) (r : R) :
-    T q i ≠ algebraMap R _ r := fun h ↦
-  InfiniteTypeAHeckeAlgebra.T_ne_algebraMap hq i r <| by
-    simpa using congrArg (toInfinite R q n) h
 
 /-- Over a nontrivial base ring, no generator vanishes. -/
 @[simp]
@@ -487,8 +487,8 @@ theorem commute_castAdd_natAdd (x : TypeAHeckeAlgebra R q a) (y : TypeAHeckeAlge
     Commute (castAdd R q a b x) (natAdd R q a b y) := by
   have hmem {c : ℕ} (f : TypeAHeckeAlgebra R q c →ₐ[R] TypeAHeckeAlgebra R q (a + b))
       (z : TypeAHeckeAlgebra R q c) : f z ∈ Algebra.adjoin R (Set.range (f ∘ T q)) := by
-    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-    exact ⟨z, trivial, rfl⟩
+    rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+    exact f.mem_range_self z
   refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute (hmem _ y) ?_
   rintro _ ⟨j, rfl⟩
   refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (hmem _ x) ?_).symm

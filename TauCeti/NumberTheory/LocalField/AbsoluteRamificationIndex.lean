@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+import TauCeti.NumberTheory.LocalField.InertiaDegree
 
 /-!
 # The absolute ramification index of a mixed-characteristic local field
@@ -38,6 +39,8 @@ The definition is confined to mixed characteristic by requiring an algebra struc
   the normalized valuation of `p` in `K`.
 * `TauCeti.natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat`: the valuation of a
   natural-number cast in a finite extension of `ℚ_[p]`.
+* `TauCeti.natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat`: the quotient of `𝒪[K]`
+  by a nonzero natural number `n` has `p ^ ([K : ℚ_[p]] · v_p(n))` elements.
 * `TauCeti.valuation_natCast_eq_pow_mul_padicValNat`: the same valuation, as a power of the
   valuation of a uniformizer.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
@@ -117,6 +120,14 @@ def absoluteRamificationIndex (K : Type*) [Field K] [ValuativeRel K] [Topologica
 theorem absoluteRamificationIndex_pos : 0 < absoluteRamificationIndex K p := by
   exact ramificationIndex_pos (K := ℚ_[p]) (L := K)
 
+variable {K p} in
+/-- Every depth `j` above the ramification index `e` satisfies `e < (p - 1) * j`. This is the
+bound under which `p`-adic exponential and logarithm converge on the `j`-th power of the maximal
+ideal. -/
+theorem absoluteRamificationIndex_lt_sub_one_mul_of_lt {j : ℕ}
+    (h : absoluteRamificationIndex K p < j) : absoluteRamificationIndex K p < (p - 1) * j :=
+  h.trans_le <| Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt)
+
 /-- In a finite extension `K/ℚ_[p]`, the normalized valuation of a nonzero natural number is the
 absolute ramification index times its `p`-adic valuation. -/
 theorem natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat
@@ -139,6 +150,20 @@ theorem valuation_natCast_eq_pow_mul_padicValNat {π : 𝒪[K]} (hπ : Irreducib
   have := FinitePadicExtension.charZero K p
   rw [valuation_natCast_eq_pow hπ n (Nat.cast_ne_zero.mpr hn),
     natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n hn]
+
+/-- In a finite extension `K/ℚ_[p]`, the quotient of `𝒪[K]` by a nonzero natural number `n` has
+`p ^ ([K : ℚ_[p]] · v_p(n))` elements. With `e` and `f` the ramification index and residue degree
+of `K/ℚ_[p]`, the ideal `n 𝒪[K]` is the `e · v_p(n)`-th power of the maximal ideal and the residue
+field has `p ^ f` elements, and `e · f = [K : ℚ_[p]]`. -/
+theorem natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat (n : ℕ) (hn : n ≠ 0) :
+    Nat.card (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) =
+      p ^ (Module.finrank ℚ_[p] K * padicValNat p n) := by
+  have := FinitePadicExtension.charZero K p
+  rw [natCard_quotient_span_natCast K n (Nat.cast_ne_zero.mpr hn),
+    natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat K p n hn,
+    natCard_residueField ℚ_[p] K, Padic.natCard_residueField, absoluteRamificationIndex,
+    ← ramificationIndex_mul_inertiaDegree ℚ_[p] K, ← pow_mul]
+  ring
 
 /-- The absolute ramification index is the normalized valuation of the residue prime `p` in
 `K`. -/

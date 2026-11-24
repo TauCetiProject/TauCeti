@@ -36,6 +36,9 @@ admissible presentations, when `A⁺` consists of power-bounded elements.
 * `TauCeti.ValuationSpectrum.presentationLimitLocIso_hom_presentationLimitMap_apply` and
   `TauCeti.ValuationSpectrum.bijective_presentationLimitLocIso_hom` : the same, and bijectivity,
   read on sections.
+* `TauCeti.ValuationSpectrum.exists_iso_presentationLimitPresheaf_locOpensComap` : the same
+  isomorphisms, read on `presentationLimitPresheaf` over all rational `V ⊆ R(T/s)` at once, commute
+  with restriction.
 * `TauCeti.ValuationSpectrum.comap_presentationLimitLocIso_rationalLocalizationPoint` : read on
   rational coordinate rings, these isomorphisms match the points determined by `y` and by `j(y)`.
   This is what makes the stalk valuations compatible with Remark 8.4.
@@ -447,11 +450,11 @@ theorem presentationLimitLocIso_hom_presentationLimitMap_apply
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
-    (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' (h.trans hVW)).hom.hom.1
-        ((presentationLimitMap (P := P) h).hom.1 x) =
+    (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' (h.trans hVW)).hom.hom.val
+        ((presentationLimitMap (P := P) h).hom.val x) =
       (presentationLimitMap (P := completionLocalization P T s S hden)
-        (locOpensComap_mono P Aplus T s S hden h)).hom.1
-          ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 x) :=
+        (locOpensComap_mono P Aplus T s S hden h)).hom.val
+          ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.val x) :=
   ConcreteCategory.congr_hom (presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S
     hden hAplus hT hV hV' hVW h) x
 
@@ -463,11 +466,59 @@ theorem bijective_presentationLimitLocIso_hom (hAplus : ∀ ⦃a⦄, a ∈ Aplus
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
-    Function.Bijective (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 :=
+    Function.Bijective (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.val
+        :=
   ⟨Function.LeftInverse.injective
       (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom_inv_id_apply,
     Function.RightInverse.surjective
       (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).inv_hom_id_apply⟩
+
+/-- **Wedhorn's Remark 8.4 as isomorphisms of sections commuting with restriction.** For the
+rational opens `V ⊆ R(T/s)` of `Spa(A, A⁺)`, the presentation-limit sections over `V` are isomorphic
+to those of `Spa(A⟨T/s⟩, A_U⁺)` over `locOpensComap P Aplus T s S hden V`, and these
+isomorphisms commute with the restriction maps. -/
+theorem exists_iso_presentationLimitPresheaf_locOpensComap
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∃ σ : (∀ V : Opens ↥(spa Aplus), V ∈ spaRationalOpens Aplus → V ≤ spaBasicOpen Aplus T s →
+        Iso ((presentationLimitPresheaf P Aplus).obj (Opposite.op V))
+          ((presentationLimitPresheaf (completionLocalization P T s S hden)
+            (completedPlusSubring P Aplus T s S hden)).obj
+              (Opposite.op (locOpensComap P Aplus T s S hden V)))),
+      ∀ {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
+        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V),
+        (presentationLimitPresheaf P Aplus).map (homOfLE h).op ≫ (σ V' hV' (h.trans hVT)).hom =
+          (σ V hV hVT).hom ≫ (presentationLimitPresheaf (completionLocalization P T s S hden)
+            (completedPlusSubring P Aplus T s S hden)).map
+              (homOfLE (locOpensComap_mono P Aplus T s S hden h)).op := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  let Bplus := completedPlusSubring P Aplus T s S hden
+  let Q := completionLocalization P T s S hden
+  let F := presentationLimitPresheaf P Aplus
+  let FB := presentationLimitPresheaf Q Bplus
+  let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
+      (hVW : V ≤ spaBasicOpen Aplus T s) :
+      F.obj (Opposite.op V) ≅ FB.obj (Opposite.op (locOpensComap P Aplus T s S hden V)) :=
+    eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op V)) ≪≫
+      presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW ≪≫
+      eqToIso (presentationLimitPresheaf_obj Q Bplus
+        (Opposite.op (locOpensComap P Aplus T s S hden V))).symm
+  refine ⟨σ, fun {V V'} hV hV' hVT h ↦ ?_⟩
+  dsimp only [σ]
+  rw [presentationLimitPresheaf_map, presentationLimitPresheaf_map]
+  simp only [Iso.trans_hom]
+  simp only [Category.assoc]
+  simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  slice_lhs 2 3 =>
+    rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT
+      hV hV' hVT h]
+  simp only [Category.assoc]
 
 /-! ### The points of the rational coordinate rings -/
 
@@ -513,26 +564,23 @@ private theorem comap_locPresentationIso_rationalLocalizationPoint (hP : P.ringO
   have hwy : spaComapLoc _ _ q.num q.den _ q.hasDenominatorPower w = y :=
     spaComapLoc_spaCompletedLocalizationHomeomorph_symm _ _ hP' q.num q.den _
       q.hasDenominatorPower ⟨y, mem_spaBasicOpen.mp hy⟩
-  have hw := (mem_spa_iff _ _).mp w.2
+  have hw := (mem_spa_iff _ _).mp w.property
   have hjy : spaComapLoc P Aplus T s S hden y ∈ spaBasicOpen Aplus p.num p.den := by
     rwa [← locOpensComap_spaBasicOpen, mem_locOpensComap] at hy
   -- its pullback along `e` lies over `j(y)`
   have hcomap : comap ((e : _ →+* _).comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower))
-      w.1 = (spaComapLoc P Aplus T s S hden y).1 := by
+      w.val = (spaComapLoc P Aplus T s S hden y).val := by
     rw [he, comap_comp, Function.comp_apply, ← spaComapLoc_val, hwy, spaComapLoc_val]
-  have hmem : comap (e : _ →+* _) w.1 ∈
+  have hmem : comap (e : _ →+* _) w.val ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
     refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
-      (continuous_iteratedLocalizationRingEquiv ..) hw.1 (fun a ha ↦ ?_) ?_
-    · rw [← RingHom.comp_apply, he, RingHom.comp_apply]
-      exact hw.2 _ (toCompletionLoc_mem_completedPlusSubring _ _ _ _ _ _
-        (toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha))
-    · rw [hcomap]
-      exact mem_spaBasicOpen.mp hjy
+      (continuous_iteratedLocalizationRingEquiv ..) hw.1 ?_
+    rw [hcomap]
+    exact mem_spaBasicOpen.mp hjy
   -- and the point of `Spa (A⟨p⟩, A_p⁺)` over `j(y)` is unique
   have hpt : (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
       p.hasDenominatorPower).symm ⟨spaComapLoc P Aplus T s S hden y, mem_spaBasicOpen.mp hjy⟩ =
-      ⟨comap (e : _ →+* _) w.1, hmem⟩ := by
+      ⟨comap (e : _ →+* _) w.val, hmem⟩ := by
     rw [Homeomorph.symm_apply_eq]
     refine Subtype.ext (Subtype.ext ?_)
     rw [spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val, ← hcomap,

@@ -44,8 +44,6 @@ below holds.
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Lemma 3.15.
 * B. E. Sagan, *The Symmetric Group*, 2nd edition (2001), Lemma 2.2.4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "Distinctness and completeness".
 -/
 
 public section

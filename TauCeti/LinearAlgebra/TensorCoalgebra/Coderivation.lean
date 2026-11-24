@@ -30,8 +30,8 @@ reindexing: on both sides the summands are indexed by a cut position together wi
 block, and a cut never splits a block nor the letter that replaced one.
 
 This is the encoding in which an `A∞` algebra is a square-zero coderivation of the bar coalgebra of
-a suspended graded module, and its Taylor components are the operations `m_n`; that use is
-downstream, in the `DGAInfinity` roadmap.
+a suspended graded module, and its Taylor components are the operations `m_n`
+(`TauCeti.AInfinityAlgebra`).
 
 ## Main definitions
 
@@ -76,14 +76,14 @@ variable (R : Type uR) {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module 
 the two factors. -/
 private theorem append_eq_dite {α : Type*} {k l : ℕ} (u : Fin k → α) (v : Fin l → α)
     (i : Fin (k + l)) :
-    Fin.append u v i = if hi : i.1 < k then u ⟨i.1, hi⟩ else v ⟨i.1 - k, by omega⟩ := by
+    Fin.append u v i = if hi : i.val < k then u ⟨i.val, hi⟩ else v ⟨i.val - k, by omega⟩ := by
   induction i using Fin.addCases with
   | left j =>
-      have hj : (Fin.castAdd l j).1 < k := j.isLt
+      have hj : (Fin.castAdd l j).val < k := j.isLt
       rw [Fin.append_left, dite_eq_left hj]
       rfl
   | right j =>
-      have hj : ¬(Fin.natAdd k j).1 < k := by
+      have hj : ¬(Fin.natAdd k j).val < k := by
         simp only [Fin.val_natAdd]
         omega
       have hj_sub : (j : ℕ) = k + (j : ℕ) - k := by omega
@@ -123,10 +123,15 @@ theorem coderivSummand_eq_zero (F : ReducedTensorWords R M →ₗ[R] M) {n p d :
 
 /-- On a pure tensor word, a Taylor summand is the splice of the value of `F` on the collapsed
 block. -/
-theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : ℕ} (hd : 0 < d)
-    (hpd : p + d ≤ n) (x : Fin n → M) :
+theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : ℕ}
+    (x : Fin n → M) :
     coderivSummand R F n p d (PiTensorProduct.tprod R x) =
       splice R x 0 n p d (F (subword R x p d)) := by
+  by_cases h : 0 < d ∧ p + d ≤ n
+  swap
+  · rw [coderivSummand_eq_zero R F h, LinearMap.zero_apply,
+      splice_eq_zero_of_not_fits R x _ h]
+  obtain ⟨hd, hpd⟩ := h
   rw [coderivSummand, dite_eq_left ⟨hd, hpd⟩]
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
     TensorPower.splitAt_tprod, LinearMap.lTensor_tmul, LinearMap.rTensor_tmul,
@@ -137,14 +142,14 @@ theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : �
   refine of_tprod_congr R M _ rfl fun i ↦ ?_
   rw [Function.comp_apply, append_eq_dite]
   simp only [Fin.val_cast]
-  by_cases h₁ : i.1 < p
+  by_cases h₁ : i.val < p
   · rw [dite_eq_left h₁, dite_eq_left h₁]
     exact congrArg x (Fin.ext (by simp only [Fin.val_castLE]; omega))
   · rw [dite_eq_right h₁, dite_eq_right h₁, append_eq_dite]
-    by_cases h₂ : i.1 = p
-    · have hi_sub : i.1 - p < 1 := by omega
+    by_cases h₂ : i.val = p
+    · have hi_sub : i.val - p < 1 := by omega
       rw [dite_eq_left hi_sub, dite_eq_left h₂]
-    · have hi_sub : ¬i.1 - p < 1 := by omega
+    · have hi_sub : ¬i.val - p < 1 := by omega
       rw [dite_eq_right hi_sub, dite_eq_right h₂]
       exact congrArg x (by simp only [Fin.mk.injEq]; omega)
 
@@ -155,7 +160,7 @@ from that block, and sums over all blocks. -/
 noncomputable def coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
     ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦
-    ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), coderivSummand R F n.1 p d
+    ∑ p ∈ Finset.range n.val, ∑ d ∈ Finset.range (n.val + 1), coderivSummand R F n.val p d
 
 /-- Evaluation of `coderiv F` on a homogeneous tensor word `of R M n z`: the sum, over a position
 `p` and a block length `d`, of the Taylor summands collapsing the `d` letters at position `p`.
@@ -163,9 +168,9 @@ noncomputable def coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
 The public form of this evaluation rule is `TauCeti.ReducedTensorWords.coderiv_subword`, which
 states the same sum in terms of `TauCeti.ReducedTensorWords.splice`. -/
 private theorem coderiv_of (F : ReducedTensorWords R M →ₗ[R] M) (n : {n : ℕ // 0 < n})
-    (z : TensorPower R n.1 M) :
+    (z : TensorPower R n.val M) :
     coderiv R F (of R M n z) =
-      ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), coderivSummand R F n.1 p d z := by
+      ∑ p ∈ Finset.range n.val, ∑ d ∈ Finset.range (n.val + 1), coderivSummand R F n.val p d z := by
   rw [coderiv, toModule_of]
   simp only [LinearMap.sum_apply]
 
@@ -177,7 +182,7 @@ theorem coderivSummand_tprod_of_eq (F : ReducedTensorWords R M →ₗ[R] M) {n b
     coderivSummand R F b p d (PiTensorProduct.tprod R y) =
       splice R x a b p d (F (subword R x (a + p) d)) := by
   by_cases h : 0 < d ∧ p + d ≤ b
-  · rw [coderivSummand_tprod R F h.1 h.2,
+  · rw [coderivSummand_tprod R F,
       subword_congr R y x (a := p) (a' := a + p) (by omega) (by omega) fun j hj ↦ by
         rw [hy (p + j) (by omega)]
         exact congrArg x (by simp only [Fin.mk.injEq]; omega)]
@@ -226,7 +231,7 @@ theorem coderiv_filtration_add_le (F : ReducedTensorWords R M →ₗ[R] M) {j : 
   simp only [Submodule.mem_comap]
   induction z using PiTensorProduct.induction_on with
   | smul_tprod a x =>
-      rw [map_smul, map_smul, of_tprod_eq_subword R k.2, coderiv_subword R F x le_rfl]
+      rw [map_smul, map_smul, of_tprod_eq_subword R k.property, coderiv_subword R F x le_rfl]
       exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦
         splice_apply_subword_mem_filtration R F hF x hk x _ _ _ _)
   | add x y hx hy =>
@@ -395,18 +400,18 @@ letter. -/
 theorem isCoderivation_coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
     IsCoderivation R (coderiv R F) := by
   refine linearMap_ext R M fun n x ↦ ?_
-  have hn : 0 < n.1 := n.2
+  have hn : 0 < n.val := n.property
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply]
   rw [of_tprod_eq_subword R hn x]
   rw [deconcatenation_coderiv_subword_zero R F x,
     rTensor_add_lTensor_coderiv_deconcatenation_subword_zero R F x, add_comm]
   congr 1
   · exact Eq.trans (Finset.sum_congr rfl fun p _ ↦ Finset.sum_comm) Finset.sum_comm
-  · have hg : ∀ c q : ℕ, n.1 ≤ c + q →
-        (∑ d ∈ Finset.range (n.1 + 1), subword R x 0 c ⊗ₜ[R]
-          splice R x c (n.1 - c) q d (F (subword R x (c + q) d))) = 0 :=
+  · have hg : ∀ c q : ℕ, n.val ≤ c + q →
+        (∑ d ∈ Finset.range (n.val + 1), subword R x 0 c ⊗ₜ[R]
+          splice R x c (n.val - c) q d (F (subword R x (c + q) d))) = 0 :=
       fun c q h ↦ sum_tmul_splice_eq_zero R x (subword R x 0 c) _ h
-    refine Eq.trans ?_ (sum_range_triangle n.1 _ hg)
+    refine Eq.trans ?_ (sum_range_triangle n.val _ hg)
     refine Finset.sum_congr rfl fun p _ ↦ ?_
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun c hc ↦ Finset.sum_congr rfl fun d _ ↦ ?_
@@ -421,16 +426,16 @@ single letter is the one collapsing the whole word. -/
 theorem letter_comp_coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
     letter R M ∘ₗ coderiv R F = F := by
   refine linearMap_ext R M fun n x ↦ ?_
-  have hn : 0 < n.1 := n.2
+  have hn : 0 < n.val := n.property
   simp only [LinearMap.coe_comp, Function.comp_apply]
   rw [of_tprod_eq_subword R hn x,
-    coderiv_subword R F x (a := 0) (b := n.1) (K := n.1) (le_refl n.1), map_sum]
+    coderiv_subword R F x (a := 0) (b := n.val) (K := n.val) (le_refl n.val), map_sum]
   refine (Finset.sum_eq_single_of_mem 0 (Finset.mem_range.2 hn) ?_).trans ?_
   · intro p _ hp
     rw [map_sum]
     exact Finset.sum_eq_zero fun d _ ↦ letter_splice_eq_zero R x _ (by omega)
   · rw [map_sum]
-    refine (Finset.sum_eq_single_of_mem n.1 (Finset.mem_range.2 (by omega)) ?_).trans ?_
+    refine (Finset.sum_eq_single_of_mem n.val (Finset.mem_range.2 (by omega)) ?_).trans ?_
     · exact fun d _ hd ↦ letter_splice_eq_zero R x _ (by omega)
     · rw [letter_splice_self R x _ hn (by omega), Nat.zero_add]
 
@@ -475,17 +480,17 @@ Its body is sealed; reason about it through
 `TauCeti.ReducedTensorWords.coderivEquivTaylor_symm_apply`. -/
 noncomputable def coderivEquivTaylor :
     coderivations R M ≃ₗ[R] (ReducedTensorWords R M →ₗ[R] M) where
-  toFun b := letter R M ∘ₗ b.1
+  toFun b := letter R M ∘ₗ b.val
   map_add' _ _ := LinearMap.comp_add _ _ _
   map_smul' _ _ := LinearMap.comp_smul _ _ _
   invFun F := ⟨coderiv R F, (mem_coderivations R M).2 (isCoderivation_coderiv R F)⟩
   left_inv b := Subtype.ext <| (isCoderivation_coderiv R _).eq_of_letter_comp_eq
-    ((mem_coderivations R M).1 b.2) (letter_comp_coderiv R _)
+    ((mem_coderivations R M).1 b.property) (letter_comp_coderiv R _)
   right_inv F := letter_comp_coderiv R F
 
 @[simp]
 theorem coderivEquivTaylor_apply (b : coderivations R M) :
-    coderivEquivTaylor R M b = letter R M ∘ₗ b.1 := (rfl)
+    coderivEquivTaylor R M b = letter R M ∘ₗ b.val := (rfl)
 
 @[simp]
 theorem coderivEquivTaylor_symm_apply (F : ReducedTensorWords R M →ₗ[R] M) :
@@ -506,7 +511,7 @@ variable {R : Type uR} {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module 
 `n`, apply the endomorphism, and retain its length-one component. -/
 noncomputable def taylorComponent
     (b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) (n : {n : ℕ // 0 < n}) :
-    TensorPower R n.1 M →ₗ[R] M :=
+    TensorPower R n.val M →ₗ[R] M :=
   (letter R M ∘ₗ b) ∘ₗ of R M n
 
 /-- Evaluation of a Taylor arity component is restriction to words of the specified length
@@ -514,7 +519,7 @@ followed by projection to letters. -/
 @[simp]
 theorem taylorComponent_apply
     (b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) (n : {n : ℕ // 0 < n})
-    (x : TensorPower R n.1 M) :
+    (x : TensorPower R n.val M) :
     taylorComponent b n x = letter R M (b (of R M n x)) :=
   (rfl)
 
@@ -574,7 +579,7 @@ theorem IsCoderivation.eq_zero_iff_taylorComponent_eq_zero
 /-- A coderivation vanishes exactly when every arity component vanishes on pure tensors. -/
 theorem IsCoderivation.eq_zero_iff_taylorComponent_tprod_eq_zero
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} (hb : IsCoderivation R b) :
-    b = 0 ↔ ∀ n (x : Fin n.1 → M),
+    b = 0 ↔ ∀ n (x : Fin n.val → M),
       b.taylorComponent n (PiTensorProduct.tprod R x) = 0 := by
   rw [hb.eq_zero_iff_taylorComponent_eq_zero]
   constructor

@@ -75,7 +75,7 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_coeff_mul
   have : NeZero (L * N) := ⟨Nat.mul_ne_zero hL.ne_zero (NeZero.ne N)⟩
   have hpLN : p ∣ L * N := dvd_mul_of_dvd_right hpN L
   obtain ⟨G, hGχ, hGsupp, hGcoeff⟩ :=
-    exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_of_squarefree χ hf hp hL hLN hvan
+    exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_mul χ hf hp hLN hvan
   -- the nebentypus of the filter, factored through `L * N / p`
   have hGχ' : G ∈ cuspFormCharSpace k
       ((χ₀.comp (ZMod.unitsMap (Nat.mul_div_assoc L hpN ▸ dvd_mul_left (N / p) L))).comp

@@ -43,11 +43,9 @@ whose Weyl-group combinatorics is a much later dependency.
 
 ## References
 
-This builds the `weylDenominator` target of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, Layer 6 ("the character,
-dimension, and Kostant formulas"), whose `Suggested.lean` pins it on `Module.Dual K H` for the root
-system of a Cartan subalgebra. As with `TauCeti.weylVector`, the combinatorics lives at the level
-of an abstract root pairing, so the Lie-algebra target is a specialization rather than a rebuild.
+For a semisimple Lie algebra the Weyl denominator lives on `Module.Dual K H`, for the root system
+of a Cartan subalgebra `H`. As with `TauCeti.weylVector`, the combinatorics lives at the level of
+an abstract root pairing, so the Lie-algebra version is a specialization rather than a rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII.
@@ -115,7 +113,7 @@ theorem coeff_weylDenominator_zero : (weylDenominator P b).coeff 0 = 1 := by
   refine (Finset.sum_eq_single_of_mem (∅ : Finset ι) (Finset.empty_mem_powerset _) ?_).trans ?_
   · intro T hT hTne
     have hsum : ∑ i ∈ T, P.root i ≠ 0 :=
-      sum_root_ne_zero_of_mem_posRoots P b (Finset.nonempty_iff_ne_empty.mpr hTne)
+      sum_root_ne_zero_of_mem_posRoots P b (Finset.ne_empty_iff_nonempty.mp hTne)
         fun i hi => (mem_posRootsFinset P b i).mp (Finset.mem_powerset.mp hT hi)
     exact Finsupp.single_eq_of_ne (Ne.symm (neg_ne_zero.mpr hsum))
   · simp

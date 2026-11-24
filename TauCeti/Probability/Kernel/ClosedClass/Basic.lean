@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.Kernel.Composition.Power
 public import Mathlib.Probability.Kernel.Composition.CompMap
-public import Mathlib.Order.Preorder.Finite
+import TauCeti.Probability.Kernel.PMF
 
 /-!
 # Closed sets of states and communicating classes
@@ -64,8 +64,8 @@ theorem isClosedSet_iff_forall_apply_eq_one [IsMarkovKernel κ] (hs : Measurable
 /-- Restrict both arguments of a transition kernel to a measurable set of states.
 The resulting kernel may lose mass unless the set is closed under transitions. -/
 noncomputable def subtype (κ : Kernel S S) (hs : MeasurableSet s) : Kernel s s :=
-  (κ.comap Subtype.val measurable_subtype_coe).comapRight
-    (MeasurableEmbedding.subtype_coe hs)
+  (κ.comap Subtype.val measurable_subtypeVal).comapRight
+    (MeasurableEmbedding.subtypeVal hs)
 
 /-- The transition measure of the subtype kernel is the pullback along subtype inclusion. -/
 theorem subtype_apply (κ : Kernel S S) (hs : MeasurableSet s) (x : s) :
@@ -74,7 +74,7 @@ theorem subtype_apply (κ : Kernel S S) (hs : MeasurableSet s) (x : s) :
 /-- Evaluation of the subtype kernel on a set of subtype states. -/
 theorem subtype_apply' (κ : Kernel S S) (hs : MeasurableSet s) (x : s) (t : Set s) :
     κ.subtype hs x t = κ x (Subtype.val '' t) := by
-  rw [subtype_apply, (MeasurableEmbedding.subtype_coe hs).comap_apply]
+  rw [subtype_apply, (MeasurableEmbedding.subtypeVal hs).comap_apply]
 
 /-- Singleton transition probabilities are unchanged by restriction. -/
 @[simp]
@@ -107,10 +107,10 @@ theorem isMarkovKernel_subtype_iff_isClosedSet [IsMarkovKernel κ] (hs : Measura
 /-- If no mass leaves the set, inclusion recovers the original transition measure. -/
 theorem map_subtype (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) :
-    (κ.subtype hs).map Subtype.val = κ.comap Subtype.val measurable_subtype_coe := by
+    (κ.subtype hs).map Subtype.val = κ.comap Subtype.val measurable_subtypeVal := by
   ext1 x
-  rw [map_apply _ measurable_subtype_coe, subtype_apply,
-    map_comap_subtype_coe hs, comap_apply]
+  rw [map_apply _ measurable_subtypeVal, subtype_apply,
+    map_comap_subtypeVal hs, comap_apply]
   exact Measure.restrict_eq_self_of_ae_mem
     (ae_iff.mpr ((isClosedSet_def κ s).mp hclosed x x.property))
 
@@ -119,8 +119,8 @@ corresponding ambient power. -/
 theorem map_subtype_pow (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) (n : ℕ) :
     ((κ.subtype hs) ^ n).map Subtype.val =
-      (κ ^ n).comap Subtype.val measurable_subtype_coe := by
-  let e : Kernel s S := deterministic Subtype.val measurable_subtype_coe
+      (κ ^ n).comap Subtype.val measurable_subtypeVal := by
+  let e : Kernel s S := deterministic Subtype.val measurable_subtypeVal
   have hstep : e ∘ₖ κ.subtype hs = κ ∘ₖ e := by
     simpa [e, deterministic_comp_eq_map, comp_deterministic_eq_comap] using
       map_subtype κ hs hclosed
@@ -134,8 +134,8 @@ theorem subtype_pow_apply (κ : Kernel S S) (hs : MeasurableSet s)
     ((κ.subtype hs) ^ n) x t = (κ ^ n) x (Subtype.val '' t) := by
   have h := congrArg (fun η : Kernel s S => η x (Subtype.val '' t))
     (map_subtype_pow κ hs hclosed n)
-  rw [map_apply _ measurable_subtype_coe,
-    (MeasurableEmbedding.subtype_coe hs).map_apply, comap_apply'] at h
+  rw [map_apply _ measurable_subtypeVal,
+    (MeasurableEmbedding.subtypeVal hs).map_apply, comap_apply'] at h
   simpa only [Subtype.coe_injective.preimage_image] using h
 
 /-- The probability of leaving a closed set is zero at every finite time. -/
@@ -144,7 +144,15 @@ theorem pow_apply_compl_eq_zero (κ : Kernel S S) (hs : MeasurableSet s)
     (κ ^ n) x sᶜ = 0 := by
   have h := congrArg (fun η : Kernel s S => η ⟨x, hx⟩ sᶜ)
     (map_subtype_pow κ hs hclosed n)
-  simpa [map_apply' _ measurable_subtype_coe _ hs.compl, comap_apply'] using h.symm
+  simpa [map_apply' _ measurable_subtypeVal _ hs.compl, comap_apply'] using h.symm
+
+/-- A measurable closed set contains every state reachable from one of its members. -/
+theorem IsClosedSet.mem_of_reaches (hs : MeasurableSet s) (hclosed : κ.IsClosedSet s) {x y : S}
+    (hx : x ∈ s) (hxy : κ.Reaches x y) : y ∈ s := by
+  obtain ⟨n, hn⟩ := (reaches_def x y).mp hxy
+  by_contra hys
+  have hle := measure_mono (μ := (κ ^ n) x) (singleton_subset_iff.mpr hys : {y} ⊆ sᶜ)
+  exact hn.not_ge (pow_apply_compl_eq_zero κ hs hclosed n hx ▸ hle)
 
 /-- On a countable state space, one-step closure is equivalent to closure under
 reachability at arbitrary finite times. -/
@@ -153,13 +161,7 @@ theorem isClosedSet_iff_forall_reaches_mem [Countable S]
     κ.IsClosedSet s ↔ ∀ x ∈ s, ∀ y, κ.Reaches x y → y ∈ s := by
   constructor
   · intro h x hx y hy
-    rw [reaches_def] at hy
-    obtain ⟨n, hn⟩ := hy
-    by_contra hys
-    have hzero := pow_apply_compl_eq_zero κ (to_countable s).measurableSet h n hx
-    have hle := measure_mono (μ := (κ ^ n) x)
-      (singleton_subset_iff.mpr hys : {y} ⊆ sᶜ)
-    exact hn.not_ge (hzero ▸ hle)
+    exact h.mem_of_reaches (to_countable s).measurableSet hx hy
   · intro h
     rw [isClosedSet_def]
     intro x hx
@@ -184,7 +186,7 @@ theorem communicates_subtype_iff (hs : MeasurableSet s)
 
 /-- A kernel on a closed set is irreducible precisely when its states communicate in
 the ambient chain. -/
-theorem isIrreducible_subtype_iff [MeasurableSingletonClass S] (hs : MeasurableSet s)
+theorem isIrreducible_subtype_iff (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) :
     IsIrreducible Measure.count (κ.subtype hs) ↔
       ∀ x ∈ s, ∀ y ∈ s, κ.Communicates x y := by
@@ -214,39 +216,85 @@ theorem isMarkovKernel_subtype_communicatingClass_iff [Countable S]
       ∀ y, κ.Reaches x y → κ.Reaches y x := by
   rw [isMarkovKernel_subtype_iff_isClosedSet, isClosedSet_communicatingClass_iff]
 
-/-- Restriction to a closed communicating class is irreducible for counting measure. -/
+/-- Reachability between two states of a communicating class is preserved by restriction to
+the class: every state on a positive-probability path between class members is itself in the
+class. -/
+theorem reaches_subtype_communicatingClass [Countable S] [MeasurableSingletonClass S] (x : S)
+    {y z : S} (hy : y ∈ κ.communicatingClass x) (hz : z ∈ κ.communicatingClass x) :
+    (κ.subtype (κ.measurableSet_communicatingClass x)).Reaches ⟨y, hy⟩ ⟨z, hz⟩ := by
+  obtain ⟨n, hn⟩ := (reaches_def y z).mp
+    (((communicates_def y z).mp (((mem_communicatingClass_iff x y).mp hy).symm.trans
+      ((mem_communicatingClass_iff x z).mp hz))).1)
+  suffices key : ∀ (n : ℕ) (a : κ.communicatingClass x), 0 < (κ ^ n) a.val {z} →
+      0 < ((κ.subtype (κ.measurableSet_communicatingClass x)) ^ n) a {⟨z, hz⟩} from
+    (reaches_def _ _).mpr ⟨n, key n ⟨y, hy⟩ hn⟩
+  intro n
+  induction n with
+  | zero =>
+    intro a ha
+    have haz : a = ⟨z, hz⟩ := Subtype.ext (by
+      by_contra hne
+      rw [pow_zero, one_def, Kernel.id_apply,
+        Measure.dirac_apply' _ (measurableSet_singleton z),
+        indicator_of_notMem (by simpa using hne)] at ha
+      exact lt_irrefl _ ha)
+    subst haz
+    rw [pow_zero, one_def, Kernel.id_apply,
+      Measure.dirac_apply_of_mem (Set.mem_singleton_iff.2 rfl)]
+    simp
+  | succ n ih =>
+    intro a ha
+    rw [add_comm n 1, pow_add_apply_singleton κ 1 n, pos_iff_ne_zero, Ne, tsum_eq_zero_iff] at ha
+    push Not at ha
+    obtain ⟨w, hw⟩ := ha
+    have hw1 : 0 < κ a.val {w} := by simpa [pos_iff_ne_zero] using left_ne_zero_of_mul hw
+    have hw2 : 0 < (κ ^ n) w {z} := by simpa [pos_iff_ne_zero] using right_ne_zero_of_mul hw
+    have haw : κ.Reaches a.val w := reaches_of_pos hw1
+    have hwx : κ.Communicates x w := by
+      have hz' := (mem_communicatingClass_iff x z).mp hz
+      have ha' := (mem_communicatingClass_iff x a.val).mp a.property
+      rw [communicates_def] at ha' hz' ⊢
+      exact ⟨ha'.1.trans haw, ((reaches_def w z).mpr ⟨n, hw2⟩).trans hz'.2⟩
+    have hwC : w ∈ κ.communicatingClass x := (mem_communicatingClass_iff x w).mpr hwx
+    have := ih ⟨w, hwC⟩ hw2
+    rw [add_comm]
+    exact pow_add_apply_pos (by simpa using hw1) this
+
+/-- Restriction to a communicating class is irreducible for counting measure. -/
 theorem isIrreducible_subtype_communicatingClass [Countable S]
-    [MeasurableSingletonClass S] (x : S) (hclosed : κ.IsClosedSet (κ.communicatingClass x)) :
+    [MeasurableSingletonClass S] (x : S) :
     IsIrreducible Measure.count (κ.subtype (κ.measurableSet_communicatingClass x)) := by
-  rw [isIrreducible_subtype_iff (κ.measurableSet_communicatingClass x) hclosed]
-  intro y hy z hz
-  exact ((mem_communicatingClass_iff x y).mp hy).symm.trans
-    ((mem_communicatingClass_iff x z).mp hz)
+  rw [isIrreducible_count_iff_forall_reaches]
+  rintro ⟨y, hy⟩ ⟨z, hz⟩
+  exact reaches_subtype_communicatingClass x hy hz
 
 section Finite
 
 variable [Countable S] [MeasurableSingletonClass S]
 
+omit [MeasurableSingletonClass S] in
 /-- A state with finitely many reachable states reaches a closed communicating class.
 The representative of the class is itself reachable from the initial state. -/
 theorem exists_reaches_isClosedSet_communicatingClass_of_finite (κ : Kernel S S) (x : S)
     (hfinite : {y | κ.Reaches x y}.Finite) :
     ∃ y, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) := by
-  -- Choose a minimal reachable set using the finite-order minimal-element theorem.
-  obtain ⟨y, hxy, hmin⟩ := hfinite.exists_minimalFor
-    (fun y => {z | κ.Reaches y z}) _ ⟨x, Reaches.refl x⟩
-  refine ⟨y, hxy, (isClosedSet_communicatingClass_iff y).mpr ?_⟩
-  intro z hyz
-  have hsub : {w | κ.Reaches z w} ⊆ {w | κ.Reaches y w} :=
-    fun w hzw => hyz.trans hzw
-  exact hmin (hxy.trans hyz) hsub (Reaches.refl y)
+  obtain ⟨y, hxy, hret⟩ := exists_reaches_forall_reaches_reaches_of_finite κ hfinite
+  refine ⟨y, hxy, fun w hw => ?_⟩
+  refine (measure_null_iff_singleton (to_countable _)).mpr fun z hz => ?_
+  by_contra hpos
+  have hyz : κ.Reaches y z :=
+    ((communicates_def y w).mp ((mem_communicatingClass_iff y w).mp hw)).1.trans
+      (reaches_of_pos (pos_iff_ne_zero.mpr hpos))
+  exact hz ((mem_communicatingClass_iff y z).mpr ((communicates_def y z).mpr ⟨hyz, hret z hyz⟩))
 
+omit [Countable S] [MeasurableSingletonClass S] in
 /-- Every state of a finite state space reaches a closed communicating class. This does not
 say that the class is entered almost surely, or that the entrance time has finite mean. -/
 theorem exists_reaches_isClosedSet_communicatingClass [Finite S] (κ : Kernel S S) (x : S) :
     ∃ y, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) :=
   exists_reaches_isClosedSet_communicatingClass_of_finite κ x (Set.toFinite _)
 
+omit [Countable S] [MeasurableSingletonClass S] in
 /-- A finite nonempty state space has a closed communicating class. -/
 theorem exists_isClosedSet_communicatingClass [Finite S] [Nonempty S] (κ : Kernel S S) :
     ∃ y, κ.IsClosedSet (κ.communicatingClass y) := by
@@ -254,18 +302,34 @@ theorem exists_isClosedSet_communicatingClass [Finite S] [Nonempty S] (κ : Kern
     (Classical.arbitrary S)
   exact ⟨y, hy⟩
 
+omit [Countable S] in
 /-- From each state of a finite closed set one can reach a closed communicating class
 contained in that set, even when the ambient state space is infinite. -/
 theorem IsClosedSet.exists_reaches_communicatingClass_subset (hclosed : κ.IsClosedSet s)
     (hfinite : s.Finite) {x : S} (hx : x ∈ s) :
     ∃ y ∈ s, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) ∧
       κ.communicatingClass y ⊆ s := by
-  have hstay := isClosedSet_iff_forall_reaches_mem.mp hclosed
-  obtain ⟨y, hxy, hy⟩ := exists_reaches_isClosedSet_communicatingClass_of_finite κ x
-    (hfinite.subset fun z hz => hstay x hx z hz)
+  have hstay : ∀ x ∈ s, ∀ y, κ.Reaches x y → y ∈ s := fun x hx y hy =>
+    hclosed.mem_of_reaches hfinite.measurableSet hx hy
+  have hreach : {y | κ.Reaches x y}.Finite := hfinite.subset fun z hz => hstay x hx z hz
+  obtain ⟨y, hxy, hret⟩ := exists_reaches_forall_reaches_reaches_of_finite κ hreach
   have hys := hstay x hx y hxy
-  exact ⟨y, hys, hxy, hy, fun z hz =>
-    hstay y hys z ((communicates_def y z).mp ((mem_communicatingClass_iff y z).mp hz)).1⟩
+  have hsub : κ.communicatingClass y ⊆ s := fun z hz =>
+    hstay y hys z ((communicates_def y z).mp ((mem_communicatingClass_iff y z).mp hz)).1
+  refine ⟨y, hys, hxy, fun w hw => ?_, hsub⟩
+  have hws := hsub hw
+  have hcompl : (κ.communicatingClass y)ᶜ ⊆ sᶜ ∪ (s \ κ.communicatingClass y) := by
+    intro z hz
+    by_cases hzs : z ∈ s
+    · exact Or.inr ⟨hzs, hz⟩
+    · exact Or.inl hzs
+  refine measure_mono_null hcompl (measure_union_null (hclosed w hws) ?_)
+  refine (measure_null_iff_singleton (hfinite.subset sdiff_subset).countable).mpr fun z hz => ?_
+  by_contra hpos
+  have hyz : κ.Reaches y z :=
+    ((communicates_def y w).mp ((mem_communicatingClass_iff y w).mp hw)).1.trans
+      (reaches_of_pos (pos_iff_ne_zero.mpr hpos))
+  exact hz.2 ((mem_communicatingClass_iff y z).mpr ((communicates_def y z).mpr ⟨hyz, hret z hyz⟩))
 
 end Finite
 

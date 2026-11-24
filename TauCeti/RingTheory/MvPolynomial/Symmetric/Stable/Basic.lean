@@ -100,6 +100,12 @@ theorem stableSymmetricProj_apply (d : ℕ) (f : stableSymmetricSubmodule R n) :
     stableSymmetricProj R n d f = (f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n) d :=
   (rfl)
 
+/-- The projection to `d` variables of a compatible family given by its members. -/
+@[simp]
+theorem stableSymmetricProj_mk (d : ℕ) (f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n)
+    (hf : f ∈ stableSymmetricSubmodule R n) : stableSymmetricProj R n d ⟨f, hf⟩ = f d :=
+  (rfl)
+
 /-- Setting the last variable to zero in the projection to `d + 1` variables gives the projection
 to `d` variables.
 
@@ -109,7 +115,7 @@ theorem aeval_snoc_zero_stableSymmetricProj (d : ℕ) (f : stableSymmetricSubmod
     aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0)
         (stableSymmetricProj R n (d + 1) f : MvPolynomial (Fin (d + 1)) R) =
       stableSymmetricProj R n d f :=
-  f.2 d
+  f.property d
 
 /-- Two symmetric functions are equal when all their projections to finite alphabets are. -/
 theorem stableSymmetricSubmodule_ext {f g : stableSymmetricSubmodule R n}
@@ -172,7 +178,7 @@ theorem stableSymmetricProj_surjective (d : ℕ) :
   rw [← LinearMap.range_eq_top, eq_top_iff, ← (schurPolyBasis (Fin d) R n).span_eq,
     Submodule.span_le]
   rintro _ ⟨μ, rfl⟩
-  exact ⟨stableSchur R μ.1, Subtype.ext (by simp)⟩
+  exact ⟨stableSchur R μ.val, Subtype.ext (by simp)⟩
 
 variable (R) in
 /-- **The symmetric functions of degree `n` are the symmetric polynomials of degree `n` in any
@@ -203,6 +209,12 @@ noncomputable def stableSchurBasis :
 theorem stableSchurBasis_apply (μ : n.Partition) : stableSchurBasis R n μ = stableSchur R μ := by
   refine (stableSymmetricProjEquiv R le_rfl).injective (Subtype.ext ?_)
   simp [stableSchurBasis]
+
+/-- **The Schur coordinates of a Schur function**: `s_μ` is the basis vector of index `μ`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableSchur (μ : n.Partition) :
+    (stableSchurBasis R n).repr (stableSchur R μ) = Finsupp.single μ 1 := by
+  rw [← stableSchurBasis_apply, Module.Basis.repr_self]
 
 /-- **The Schur coordinates of a symmetric function are the Schur coordinates of any of its
 projections to an alphabet with at least `n` letters.** -/

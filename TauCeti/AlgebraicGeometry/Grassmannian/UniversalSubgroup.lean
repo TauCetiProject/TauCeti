@@ -42,8 +42,9 @@ points, the group law of the base change is that of `Spec H`
 
 The scheme-level statements use Mathlib's `hopfSpec`, which requires the base ring and the Hopf
 algebra to lie in the same universe. The construction is over the Grassmannian of `H` over an
-affine base `Spec R`; compatibility of the universal subgroup with base change and the relative
-version over a non-affine base are not treated here.
+affine base `Spec R`. The fibre comparison preserving its closed-subgroup inclusion is proved in
+`TauCeti.AlgebraicGeometry.Grassmannian.Fiber`; the relative construction over a non-affine base
+is not treated here.
 
 ## Main definitions
 
@@ -313,7 +314,7 @@ private theorem inv_left_fst {T : Over (schemeHopfIdealLocus R H k).subscheme}
 private theorem exists_family_point {C : CommRingCat.{u}} [Algebra R C] (N : G(k, C ⊗[R] H; C))
     (hN : N.hopfIdealLocus = ⊥) (g : Spec C ⟶ schemeHopfIdealLocusFamily R H k)
     (hg : g ≫ schemeHopfIdealLocusFamilyHom R H k =
-      (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).1) :
+      (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).val) :
     ∃ y : H →ₐ[R] C, g ≫ familyToPullback R H k ≫ pullback.fst _ _ =
       Spec.map (CommRingCat.ofHom (y : H →+* C)) ∧ N.evalIdeal y = ⊥ := by
   have h₁ : (g ≫ familyToPullback R H k) ≫ pullback.snd _ _ ≫
@@ -342,12 +343,12 @@ private theorem ker_familyToPullback_le_of_forall
     (p : T ⟶ (schemeHopfIdealLocusGrp R H k).X) [QuasiCompact p.left]
     (h : ∀ (C : CommRingCat.{u}) [Algebra R C] (N : G(k, C ⊗[R] H; C))
       (hN : N.hopfIdealLocus = ⊥) (g : Spec C ⟶ T.left),
-      g ≫ T.hom = (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).1 →
+      g ≫ T.hom = (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).val →
       ∃ x : H →ₐ[R] C, g ≫ p.left ≫ pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
         Spec.map (CommRingCat.ofHom (x : H →+* C)) ∧ N.evalIdeal x = ⊥) :
     (familyToPullback R H k).ker ≤ p.left.ker := by
-  refine p.left.le_ker_of_openCover _ T.left.affineCover fun j ↦ ?_
+  refine (p.left.le_ker_iff_of_openCover _ T.left.affineCover).2 fun j ↦ ?_
   suffices ∀ (C : CommRingCat.{u}) (g : Spec C ⟶ T.left),
       (familyToPullback R H k).ker ≤ (g ≫ p.left).ker from this _ _
   intro C g
@@ -359,10 +360,10 @@ private theorem ker_familyToPullback_le_of_forall
     rw [Category.assoc]
     exact (Spec.map_preimage _).symm
   let N := (schemeHopfIdealLocusHomEquiv R H k C).symm ⟨g ≫ T.hom, hgR⟩
-  have hgN : (schemeHopfIdealLocusHomEquiv R H k C ⟨N.1, N.2⟩).1 = g ≫ T.hom := by
+  have hgN : (schemeHopfIdealLocusHomEquiv R H k C ⟨N.val, N.property⟩).val = g ≫ T.hom := by
     rw [Subtype.coe_eta, Equiv.apply_symm_apply]
-  obtain ⟨x, hx, hxN⟩ := h C N.1 N.2 g hgN.symm
-  refine (ker_familyToPullback_le_ker_iff N.1 x (g ≫ p.left) ?_ ?_).2 hxN
+  obtain ⟨x, hx, hxN⟩ := h C N.val N.property g hgN.symm
+  refine (ker_familyToPullback_le_ker_iff N.val x (g ≫ p.left) ?_ ?_).2 hxN
   · -- `rw` cannot see through the type of `p.left`, so reassociate by unification
     refine (Category.assoc _ _ _).trans ((congrArg (g ≫ ·) (Over.w_assoc p _)).trans ?_)
     rw [← Category.assoc, ← hgN, schemeHopfIdealLocusHomEquiv_apply_comp_subschemeι]
@@ -395,10 +396,10 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_one :
     ⟨(Algebra.ofId R C).comp (Bialgebra.counitAlgHom R H), ?_, evalIdeal_counit_eq_bot N hN⟩
   refine (congrArg (g ≫ ·) one_left_fst).trans ?_
   -- the structure morphism of the unit object of `Over L` is the identity of `L`
-  have hg₀ : g = (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).1 := by
+  have hg₀ : g = (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).val := by
     simpa [Over.tensorUnit_hom] using hg
   refine (congrArg (g ≫ ·) (Category.id_comp _)).trans ?_
-  rw [hg₀, reassoc_of% (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).2, ← Spec.map_comp,
+  rw [hg₀, reassoc_of% (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).property, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, AlgHom.comp_toRingHom, Algebra.toRingHom_ofId]
 
 /-- The inverse of the inclusion of the universal family factors through the universal family. -/
@@ -509,7 +510,7 @@ variable (R H k) in
 /-- The universal subgroup is the universal family over the Hopf-ideal locus with its group
 structure. -/
 noncomputable def universalSubgroupIso :
-    ((universalSubgroup R H k).1 : Grp (Over (schemeHopfIdealLocus R H k).subscheme)) ≅
+    ((universalSubgroup R H k).val : Grp (Over (schemeHopfIdealLocus R H k).subscheme)) ≅
       Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)) :=
   TauCeti.ClosedSubgroupScheme.mkIso _
 
@@ -517,20 +518,20 @@ noncomputable def universalSubgroupIso :
 the inclusion of the universal family. -/
 @[reassoc (attr := simp)]
 theorem universalSubgroupIso_inv_arrow :
-    (universalSubgroupIso R H k).inv ≫ (universalSubgroup R H k).1.arrow =
+    (universalSubgroupIso R H k).inv ≫ (universalSubgroup R H k).val.arrow =
       Grp.homMk (schemeHopfIdealLocusFamilyToGrp R H k) :=
   TauCeti.ClosedSubgroupScheme.mkIso_inv_comp_arrow _
 
 /-- The universal subgroup is finite locally free of rank `k`, read off from the universal family
 through the canonical isomorphism `TauCeti.ClosedSubgroupScheme.mkIso`. -/
 private theorem finiteLocallyFree_universalSubgroup :
-    IsFinite ((universalSubgroup R H k).1 :
+    IsFinite ((universalSubgroup R H k).val :
         Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom ∧
-      AlgebraicGeometry.Flat ((universalSubgroup R H k).1 :
+      AlgebraicGeometry.Flat ((universalSubgroup R H k).val :
         Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom ∧
-      LocallyOfFinitePresentation ((universalSubgroup R H k).1 :
+      LocallyOfFinitePresentation ((universalSubgroup R H k).val :
         Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom ∧
-      ∀ s, (((universalSubgroup R H k).1 :
+      ∀ s, (((universalSubgroup R H k).val :
         Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom).finrank s = k :=
   (TauCeti.finiteLocallyFree_iff_of_iso ((Grp.forget _).mapIso (universalSubgroupIso R H k))).2
     ⟨inferInstanceAs (IsFinite (schemeHopfIdealLocusFamilyHom R H k)),
@@ -540,26 +541,26 @@ private theorem finiteLocallyFree_universalSubgroup :
 
 /-- The universal subgroup is finite over the closed subscheme of Hopf ideals. -/
 instance isFinite_universalSubgroup :
-    IsFinite ((universalSubgroup R H k).1 :
+    IsFinite ((universalSubgroup R H k).val :
       Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom :=
   finiteLocallyFree_universalSubgroup.1
 
 /-- The universal subgroup is flat over the closed subscheme of Hopf ideals. -/
 instance flat_universalSubgroup :
-    AlgebraicGeometry.Flat ((universalSubgroup R H k).1 :
+    AlgebraicGeometry.Flat ((universalSubgroup R H k).val :
       Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom :=
   finiteLocallyFree_universalSubgroup.2.1
 
 /-- The universal subgroup is locally of finite presentation over the closed subscheme of Hopf
 ideals. -/
 instance locallyOfFinitePresentation_universalSubgroup :
-    LocallyOfFinitePresentation ((universalSubgroup R H k).1 :
+    LocallyOfFinitePresentation ((universalSubgroup R H k).val :
       Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom :=
   finiteLocallyFree_universalSubgroup.2.2.1
 
 /-- The universal subgroup has constant rank `k` over the closed subscheme of Hopf ideals. -/
 theorem finrank_universalSubgroup (s : (schemeHopfIdealLocus R H k).subscheme) :
-    (((universalSubgroup R H k).1 :
+    (((universalSubgroup R H k).val :
       Grp (Over (schemeHopfIdealLocus R H k).subscheme)).X.hom).finrank s = k :=
   finiteLocallyFree_universalSubgroup.2.2.2 s
 

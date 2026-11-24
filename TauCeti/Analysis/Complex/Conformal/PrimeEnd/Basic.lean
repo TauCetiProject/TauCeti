@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ChordalDist
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Crosscut.Basic
 public import TauCeti.Topology.Path.Separation
 import TauCeti.Topology.ConnectedComponents
-import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
 # Null chains and prime ends
@@ -22,9 +22,9 @@ either one contains a domain of the other. A **prime end** of `U` is an equivale
 
 Here the crosscuts of a chain are recorded as sets, the closed ranges of crosscut paths in the
 sense of `Path.IsCrosscut`, since every condition depends only on these sets. In particular a
-crosscut has two distinct endpoints. Diameters are chordal, measured by
-`‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))`, so crosscuts with finite endpoints may run out to
-infinity, as the semicircles `|z| = R` of the upper half-plane do as `R → ∞`.
+crosscut has two distinct endpoints. Diameters are chordal, measured by `Complex.chordalDist`, so
+crosscuts with finite endpoints may run out to infinity, as the semicircles `|z| = R` of the upper
+half-plane do as `R → ∞`.
 
 Pommerenke requires instead that each crosscut `C n`, `n ≥ 1`, separates `C 0` from `C (n + 1)`,
 and then deduces that the domains are nested from the fact that a crosscut cuts a simply connected
@@ -43,9 +43,6 @@ nested-domain form makes the equivalence of chains visibly an equivalence relati
 * `IsPreconnected.subset_nullChainDomain` -- a preconnected set off a crosscut that meets its
   domain lies in it.
 * `TauCeti.IsNullChain` -- the null-chain predicate.
-* `TauCeti.chordal_le_norm_sub`, `TauCeti.norm_sub_le_mul_chordal`,
-  `TauCeti.norm_sub_lt_of_chordal_lt` -- on a bounded set, chordal and Euclidean distances are
-  comparable.
 * `TauCeti.IsNullChain.nullChainDomain_eq_connectedComponentIn` -- each domain is the component
   of the cut set containing the next crosscut.
 * `TauCeti.IsNullChain.separatesIn` -- Pommerenke's separation condition.
@@ -134,37 +131,8 @@ structure IsNullChain (U : Set ℂ) (C : ℕ → Set ℂ) : Prop where
   /-- The domains cut off by the crosscuts decrease. -/
   nullChainDomain_succ_subset : ∀ n, nullChainDomain U C (n + 1) ⊆ nullChainDomain U C n
   /-- The chordal diameters of the crosscuts tend to zero. -/
-  eventually_chordal_lt : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n,
-    ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) < ε
-
-/-- The chordal distance is at most the Euclidean distance. -/
-theorem chordal_le_norm_sub (z w : ℂ) :
-    ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ ‖z - w‖ :=
-  div_le_self (norm_nonneg _)
-    (Real.one_le_sqrt.mpr (by nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]))
-
-/-- On the closed disc of radius `R` about `0`, the Euclidean distance is at most `1 + R ^ 2`
-times the chordal distance. -/
-theorem norm_sub_le_mul_chordal {R : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R) :
-    ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) := by
-  have hpos : 0 < √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) := Real.sqrt_pos.mpr (by positivity)
-  have hs : √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) ≤ 1 + R ^ 2 := by
-    rw [Real.sqrt_le_left (by positivity)]
-    have hz2 : ‖z‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hz 2
-    have hw2 : ‖w‖ ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hw 2
-    nlinarith [sq_nonneg ‖z‖, sq_nonneg ‖w‖]
-  rw [mul_div_assoc', le_div_iff₀ hpos]
-  nlinarith [norm_nonneg (z - w)]
-
-/-- On the closed disc of radius `R` about `0`, a chordal distance below `ε / (1 + R ^ 2)` forces
-a Euclidean distance below `ε`. -/
-theorem norm_sub_lt_of_chordal_lt {R ε : ℝ} {z w : ℂ} (hz : ‖z‖ ≤ R) (hw : ‖w‖ ≤ R)
-    (h : ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) < ε / (1 + R ^ 2)) : ‖z - w‖ < ε :=
-  calc
-    ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) :=
-      norm_sub_le_mul_chordal hz hw
-    _ < (1 + R ^ 2) * (ε / (1 + R ^ 2)) := mul_lt_mul_of_pos_left h (by positivity)
-    _ = ε := by field_simp
+  eventually_chordalDist_lt :
+    ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, Complex.chordalDist z w < ε
 
 namespace IsNullChain
 
@@ -196,17 +164,18 @@ theorem isOpen_nullChainDomain (hC : IsNullChain U C) (hU : IsOpen U) (n : ℕ) 
 theorem eventually_norm_sub_lt (hC : IsNullChain U C) (hU : IsBounded U) {ε : ℝ}
     (hε : 0 < ε) : ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, ‖z - w‖ < ε := by
   obtain ⟨R, hR, hbound⟩ := hU.closure.exists_pos_norm_le
-  filter_upwards [hC.eventually_chordal_lt (ε / (1 + R ^ 2)) (by positivity)]
+  filter_upwards [hC.eventually_chordalDist_lt (ε / (1 + R ^ 2)) (by positivity)]
     with n hn z hz w hw
   have hsub := hC.subset_closure n
-  exact norm_sub_lt_of_chordal_lt (hbound z (hsub hz)) (hbound w (hsub hw)) (hn z hz w hw)
+  exact Complex.norm_sub_lt_of_chordalDist_lt (hbound z (hsub hz)) (hbound w (hsub hw))
+    (hn z hz w hw)
 
 /-- Crosscuts of a null chain eventually avoid each compact subset of the open domain. -/
 theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) {K : Set ℂ}
     (hK : IsCompact K) (hKU : K ⊆ U) : ∀ᶠ n in atTop, Disjoint (C n) K := by
   obtain ⟨δ, hδ, hδU⟩ := hK.exists_thickening_subset_open hU hKU
   obtain ⟨R, hR, hKR⟩ := hK.isBounded.exists_pos_norm_le
-  filter_upwards [hC.eventually_chordal_lt (δ / 2 / (1 + (R + δ) ^ 2)) (by positivity)]
+  filter_upwards [hC.eventually_chordalDist_lt (δ / 2 / (1 + (R + δ) ^ 2)) (by positivity)]
     with n hn
   refine disjoint_left.mpr fun z hzC hzK => ?_
   obtain ⟨x, y, γ, hγ, hrange⟩ := hC.exists_isCrosscut n
@@ -230,7 +199,7 @@ theorem eventually_disjoint_of_isCompact (hC : IsNullChain U C) (hU : IsOpen U) 
     rw [← hwK, ← dist_eq_norm]
     exact infDist_le_dist_of_mem hzK
   exact hwz.not_gt
-    (norm_sub_lt_of_chordal_lt hw ((hKR z hzK).trans (by linarith)) (hn w hwC z hzC))
+    (Complex.norm_sub_lt_of_chordalDist_lt hw ((hKR z hzK).trans (by linarith)) (hn w hwC z hzC))
 
 /-- The next crosscut lies, inside `U`, in the domain cut off by the previous one. -/
 theorem inter_subset_nullChainDomain (hC : IsNullChain U C) (n : ℕ) :
@@ -302,8 +271,8 @@ a crosscut inside `U` lies in one component of the complement of any crosscut di
 `hsep'` is the separation condition in terms of components. It is private because its hypotheses
 are the local facts established in the proof of that theorem. -/
 private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnected U)
-    (hopen : ∀ k, IsOpen (U \ C k)) (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
-    (hcomp : ∀ {j k : ℕ}, Disjoint (C j) (C k) → ∀ {v : ℂ}, v ∈ C k ∩ U →
+    (hopen : ∀ k, IsOpen (U \ C k)) (hdisj : ∀ n, Disjoint (C n) (C (n + 1) ∩ U))
+    (hcomp : ∀ {j k : ℕ}, Disjoint (C j) (C k ∩ U) → ∀ {v : ℂ}, v ∈ C k ∩ U →
       C k ∩ U ⊆ connectedComponentIn (U \ C j) v)
     (hsep' : ∀ (k : ℕ) {z w : ℂ}, z ∈ C 0 ∩ U → w ∈ C (k + 2) ∩ U →
       z ∈ U \ C (k + 1) ∧ w ∈ U \ C (k + 1) ∧
@@ -323,7 +292,8 @@ private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnect
     obtain ⟨hzm, -, hza⟩ := hsep' m hz ha
     have hCD : C (m + 1) ∩ U ⊆ connectedComponentIn (U \ C (m + 1 + 1)) b := by
       rw [connectedComponentIn_eq hq]
-      exact hcomp (hdisj (m + 1)).symm ⟨hqC, hqU⟩
+      exact hcomp (disjoint_left.2 fun a ha hb => disjoint_left.1 (hdisj (m + 1)) hb.1 ⟨ha, hb.2⟩)
+        ⟨hqC, hqU⟩
     obtain ⟨p, hp, hpF⟩ := hUc.exists_mem_inter_closure_connectedComponentIn_sdiff (hopen (m + 1))
       hzm ha.2 fun h => hza (connectedComponentIn_eq h)
     obtain ⟨y, hyD, hyF⟩ :=
@@ -338,12 +308,11 @@ private theorem connectedComponentIn_sdiff_succ_subset_sdiff (hUc : IsPreconnect
     exact hzb (by rw [connectedComponentIn_eq (hFE hyF), connectedComponentIn_eq hyD])
 
 /-- **Pommerenke's separation condition forces nesting.** Let `U` be a preconnected open set and
-let `C` be a sequence of closed ranges of crosscuts of `U`, each disjoint from the next. If each
+let `C` be a sequence of closed ranges of crosscuts of `U`. If each
 crosscut `C (n + 1)` separates the points of the first crosscut inside `U` from those of the next
 one, then the domains cut off by `C` decrease. -/
 theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
     (hcut : ∀ n, ∃ (x y : ℂ) (γ : Path x y), γ.IsCrosscut U ∧ range γ = C n)
-    (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
     (hsep : ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
       ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w) (n : ℕ) :
     nullChainDomain U C (n + 1) ⊆ nullChainDomain U C n := by
@@ -353,23 +322,32 @@ theorem nullChainDomain_succ_subset_of_separatesIn (hUo : IsOpen U) (hUc : IsPre
   have hopen (k : ℕ) : IsOpen (U \ C k) := by
     obtain ⟨x, y, γ, -, hrange⟩ := hcut k
     exact hUo.sdiff (hrange ▸ (isCompact_range γ.continuous).isClosed)
-  -- Inside `U`, the crosscut `C k` lies in one component of `U \ C j` for any `C j` it misses.
-  have hcomp {j k : ℕ} (hjk : Disjoint (C j) (C k)) {v : ℂ} (hv : v ∈ C k ∩ U) :
-      C k ∩ U ⊆ connectedComponentIn (U \ C j) v :=
-    (hconn k).isPreconnected.subset_connectedComponentIn hv
-      fun w hw => ⟨hw.2, disjoint_right.mp hjk hw.1⟩
   have hsep' (k : ℕ) {z w : ℂ} (hz : z ∈ C 0 ∩ U) (hw : w ∈ C (k + 2) ∩ U) :
       z ∈ U \ C (k + 1) ∧ w ∈ U \ C (k + 1) ∧
         connectedComponentIn (U \ C (k + 1)) z ≠ connectedComponentIn (U \ C (k + 1)) w := by
     obtain ⟨x, y, γ, -, hrange⟩ := hcut (k + 1)
     simpa only [Path.separatesIn_def, hrange] using hsep k γ hrange z hz w hw
+  -- Consecutive crosscuts are disjoint inside `U`, because the later one is separated by the
+  -- earlier one from the first.
+  have hdisj (k : ℕ) : Disjoint (C k) (C (k + 1) ∩ U) := by
+    obtain ⟨z, hz⟩ := (hconn 0).nonempty
+    cases k with
+    | zero =>
+      obtain ⟨w, hw⟩ := (hconn 2).nonempty
+      exact disjoint_left.2 fun a ha hb => (hsep' 0 ⟨ha, hb.2⟩ hw).1.2 hb.1
+    | succ m => exact disjoint_left.2 fun a ha hb => (hsep' m hz hb).2.1.2 ha
+  -- Inside `U`, the crosscut `C k` lies in one component of `U \ C j` for any `C j` it misses.
+  have hcomp {j k : ℕ} (hjk : Disjoint (C j) (C k ∩ U)) {v : ℂ} (hv : v ∈ C k ∩ U) :
+      C k ∩ U ⊆ connectedComponentIn (U \ C j) v :=
+    (hconn k).isPreconnected.subset_connectedComponentIn hv
+      fun w hw => ⟨hw.2, disjoint_right.mp hjk hw⟩
   obtain ⟨a, ha⟩ := (hconn (n + 1)).nonempty
   obtain ⟨b, hb⟩ := (hconn (n + 2)).nonempty
   obtain ⟨z, hz⟩ := (hconn 0).nonempty
   rw [nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 2)).isPreconnected
-      ((hdisj (n + 1)).mono_right inter_subset_left) hb,
+      (hdisj (n + 1)) hb,
     nullChainDomain_eq_connectedComponentIn_of_isPreconnected (hconn (n + 1)).isPreconnected
-      ((hdisj n).mono_right inter_subset_left) ha]
+      (hdisj n) ha]
   obtain ⟨hzU, hbU, hzb⟩ := hsep' n hz hb
   -- First, the domain `D` cut off by `C (n + 1)` misses `C n`.
   have hDC : connectedComponentIn (U \ C (n + 1)) b ⊆ U \ C n :=
@@ -389,12 +367,11 @@ inside `U` from those of the next one. -/
 theorem isNullChain_iff_separatesIn (hUo : IsOpen U) (hUc : IsPreconnected U)
     (hcut : ∀ n, ∃ (x y : ℂ) (γ : Path x y), γ.IsCrosscut U ∧ range γ = C n)
     (hdisj : ∀ n, Disjoint (C n) (C (n + 1)))
-    (hdiam : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n,
-      ‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2)) < ε) :
+    (hdiam : ∀ ε > 0, ∀ᶠ n in atTop, ∀ z ∈ C n, ∀ w ∈ C n, Complex.chordalDist z w < ε) :
     IsNullChain U C ↔ ∀ n {x y : ℂ} (γ : Path x y), range γ = C (n + 1) →
       ∀ z ∈ C 0 ∩ U, ∀ w ∈ C (n + 2) ∩ U, γ.SeparatesIn U z w :=
   ⟨fun hC _ _ _ _ hγ _ hz _ hw => hC.separatesIn hγ hz hw, fun hsep =>
-    ⟨hcut, hdisj, nullChainDomain_succ_subset_of_separatesIn hUo hUc hcut hdisj hsep, hdiam⟩⟩
+    ⟨hcut, hdisj, nullChainDomain_succ_subset_of_separatesIn hUo hUc hcut hsep, hdiam⟩⟩
 
 /-- Two sequences of cuts of `U` are **equivalent** when every domain cut off by either one
 contains a domain cut off by the other. -/
@@ -493,30 +470,29 @@ theorem mk_eq_mk_iff {hC : IsNullChain U C} {hC' : IsNullChain U C'} :
 
 /-- Every prime end is represented by a null chain. -/
 theorem exists_eq_mk (p : PrimeEnd U) : ∃ (C : ℕ → Set ℂ) (hC : IsNullChain U C), p = mk C hC :=
-  Quotient.inductionOn p fun C => ⟨C.1, C.2, rfl⟩
+  Quotient.inductionOn p fun C => ⟨C.val, C.property, rfl⟩
 
 /-- **Induction on prime ends.** To prove a property of every prime end, it suffices to prove it
 for the prime end of each null chain. -/
 @[elab_as_elim]
 theorem ind {motive : PrimeEnd U → Prop} (h : ∀ (C : ℕ → Set ℂ) (hC : IsNullChain U C),
     motive (mk C hC)) (p : PrimeEnd U) : motive p :=
-  Quotient.ind (fun C => h C.1 C.2) p
+  Quotient.ind (fun C => h C.val C.property) p
 
 /-- Lift a function on null chains that respects equivalence of chains to a function on prime
 ends. -/
 def lift {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
     (hf : ∀ (C C' : ℕ → Set ℂ) (hC : IsNullChain U C) (hC' : IsNullChain U C'),
       NullChainEquivalent U C C' → f C hC = f C' hC') : PrimeEnd U → α :=
-  Quotient.lift (fun C => f C.1 C.2) fun C C' h => hf C.1 C'.1 C.2 C'.2 h
+  Quotient.lift (fun C => f C.val C.property) fun C C' h => hf C.val C'.val C.property C'.property h
 
 /-- A lifted function evaluates on the prime end of a null chain as on the chain. -/
 @[simp]
 theorem lift_mk {α : Sort*} (f : ∀ C : ℕ → Set ℂ, IsNullChain U C → α)
     (hf : ∀ (C C' : ℕ → Set ℂ) (hC : IsNullChain U C) (hC' : IsNullChain U C'),
       NullChainEquivalent U C C' → f C hC = f C' hC') (C : ℕ → Set ℂ) (hC : IsNullChain U C) :
-    lift f hf (mk C hC) = f C hC := by
-  unfold lift mk
-  exact Quotient.lift_mk _ _ _
+    lift f hf (mk C hC) = f C hC :=
+  (rfl)
 
 /-- The **filter of a prime end**: the filter of any null chain representing it, whose members
 are the sets containing one of the domains that chain cuts off. -/

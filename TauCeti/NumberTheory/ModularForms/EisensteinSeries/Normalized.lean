@@ -86,9 +86,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
     (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv)).coeff n =
       DirichletCharacter.twistedDivisorSum (k - 1) psi phi n := by
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
-  have hphiInv : (phi⁻¹).IsPrimitive := by
-    rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-    exact hphi
+  have hphiInv : (phi⁻¹).IsPrimitive := hphi.inv
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
   have hgauss := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hphiInv
     (isPrimitive_stdAddChar v)
@@ -163,8 +161,9 @@ theorem normalizedCharEisensteinSeriesMFRaise_eq_smul (hk : 3 ≤ (k : ℤ))
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans
     ((dvd_mul_left (u * v) t).trans htuv))
-  rw [normalizedCharEisensteinSeriesMFRaise, normalizedCharEisensteinSeriesMF,
-    charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [normalizedCharEisensteinSeriesMFRaise]
+  dsimp only
+  rw [normalizedCharEisensteinSeriesMF, charEisensteinSeriesMFRaise_eq_levelRaise]
   simpa only [ModularForm.levelRaiseₗ_apply] using
     (ModularForm.levelRaiseₗ t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)).map_smul
       (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹
@@ -209,7 +208,6 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise (hk : 3 ≤ (k : ℤ))
   rw [normalizedCharEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The `q`-expansion of a raised normalized Eisenstein series is supported on the multiples of
@@ -224,7 +222,6 @@ theorem isSupportedOnDvd_qExpansion_normalizedCharEisensteinSeriesMFRaise
   rw [normalizedCharEisensteinSeriesMFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The Fourier coefficients of a raised normalized Eisenstein series are the twisted divisor
@@ -240,7 +237,6 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff (hk : 3 ≤ (k : 
   rw [normalizedCharEisensteinSeriesMFRaise]
   rw [ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)]
   split_ifs with htn
   · rw [qExpansion_normalizedCharEisensteinSeriesMF_coeff psi phi hk dvd_rfl hpar hphi]

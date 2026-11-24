@@ -58,8 +58,6 @@ embedded submanifold (`TauCeti.Analysis.Calculus.Morse.GlobalChart`).
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -103,14 +101,14 @@ theorem IsNegativeGradient.value_le_of_mem_unstableSet_inter_stableSet
 
 /-- An orbit on which `f` is constant is constant: any two of its points coincide. -/
 private theorem IsNegativeGradient.orbit_eq_of_const_value (hφ : IsNegativeGradient φ f)
-    (hf : ∀ t, DifferentiableAt ℝ f (φ t x)) (hc : ∀ t, f (φ t x) = f x) (t u : ℝ) :
+    (hc : ∀ t, f (φ t x) = f x) (t u : ℝ) :
     φ t x = φ u x := by
   let γ : ℝ → E := fun v ↦ φ v x
   have hγ : IsIntegralCurve γ (fun _ y ↦ -∇ f y) := hφ.isIntegralCurve x
   apply is_const_of_deriv_eq_zero (fun v ↦ (hγ v).differentiableAt) _ t u
   intro v
   have hgrad : ∇ f (γ v) = 0 :=
-    hγ.gradient_eq_zero_of_eventually_const_value (hf v) (Eventually.of_forall hc)
+    hγ.gradient_eq_zero_of_eventually_const_value (Eventually.of_forall hc)
   rw [(hγ v).deriv]
   simp only [hgrad, neg_zero]
 
@@ -128,7 +126,7 @@ private theorem IsNegativeGradient.orbit_eq_self_of_tendsto_const_value
       ((hanti.ge_of_tendsto hbot 0).trans (hanti.le_of_tendsto htop t))
   intro t
   simpa only [_root_.Flow.map_zero_apply] using
-    hφ.orbit_eq_of_const_value hf hvalue t 0
+    hφ.orbit_eq_of_const_value hvalue t 0
 
 /-- A connecting orbit whose two endpoint values agree lies on the constant orbit through the
 shared endpoint: `x = p` and `p = q`. -/
@@ -185,11 +183,9 @@ variable {z : E}
 
 /-- Reversing time turns a negative gradient flow of `f` into a negative gradient flow of `-f`. -/
 theorem IsNegativeGradient.reverse (hφ : IsNegativeGradient φ f) :
-    IsNegativeGradient φ.reverse (-f) := by
-  refine isNegativeGradient_iff.2 fun z t ↦ ?_
-  have hgrad : ∇ (-f) (φ (-t) z) = -∇ f (φ (-t) z) := TauCeti.gradient_neg
-  have hd := (hφ.isIntegralCurve z (-t)).scomp t (hasDerivAt_neg t)
-  simpa [Function.comp_def, hgrad] using hd
+    IsNegativeGradient φ.reverse (-f) :=
+  isNegativeGradient_iff.2 fun z ↦ by
+    simpa only [_root_.Flow.reverse_apply] using (hφ.isIntegralCurve z).comp_neg_neg_gradient
 
 /-- Along a negative gradient trajectory, `f + c * dist (·) x` is antitone on a time interval
 in whose interior the trajectory avoids `x` and `c ≤ ‖∇ f‖`: there the value of `f` drops at

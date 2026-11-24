@@ -36,8 +36,8 @@ of `N` in `G` is contained in `N`.  This is the form the classical examples are 
 `A₃ ◁ S₃` in `TauCeti.RepresentationTheory.Induction.Mackey.SymmetricThree.Basic`, and the rotation
 subgroup of a dihedral group -- where the ambient group is visibly nonabelian on `N`.
 
-The whole file is the normal-subgroup half of the roadmap's dichotomy: nothing induced from the
-*non-normal* point stabilizer of `S₃` is irreducible
+The whole file is the normal-subgroup half of a dichotomy already visible in `S₃`: nothing induced
+from the *non-normal* point stabilizer of `S₃` is irreducible
 (`TauCeti.not_simple_indFDRep_stabilizer_perm_fin_three`), while a faithful character of the
 normal subgroup `A₃` does induce irreducibly.
 
@@ -53,11 +53,6 @@ normal subgroup `A₃` does induce irreducibly.
   `C_G(N) ≤ N`.
 
 ## References
-
-The Layer 4 "normal-subgroup corollary" of
-[the induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-read on a linear character, as its "Mackey on a small group" and "`D₄` dihedral induction" worked
-examples require.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.4, Proposition 23 and its
   corollary for a normal subgroup.
@@ -142,7 +137,7 @@ theorem simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv (hindex : N.index =
     have hconj : MulAut.conjNormal t x = x⁻¹ :=
       Subtype.ext (by
         rw [MulAut.conjNormal_apply]
-        simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv ht x.2)
+        simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv ht x.property)
     rw [hconj, map_inv, ne_eq, ne_eq, inv_eq_iff_mul_eq_one, ← sq]
   refine ⟨fun h => ?_, fun ⟨x, hx⟩ t ht => ⟨x, (key ht x).mpr hx⟩⟩
   obtain ⟨x, hx⟩ := h s hs
@@ -162,7 +157,7 @@ theorem simple_indFDRep_ofLinearCharacter_iff_centralizer_le {χ : N →* kˣ}
     by_contra hsN
     obtain ⟨x, hx⟩ := h s hsN
     refine hx (congrArg χ (Subtype.ext ?_))
-    rw [MulAut.conjNormal_apply, ← Subgroup.mem_centralizer_iff.mp hs (x : G) x.2]
+    rw [MulAut.conjNormal_apply, ← Subgroup.mem_centralizer_iff.mp hs (x : G) x.property]
     group
   · intro h s hs
     by_contra hall

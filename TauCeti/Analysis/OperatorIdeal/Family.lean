@@ -17,7 +17,9 @@ ideal, while the extended value `∞` allows one family to describe both members
 
 A symmetric operator-ideal family additionally identifies the gauges of an operator and its
 adjoint. This requires source and target to live in the same universe, since taking adjoints swaps
-them.
+them. In that setting every operator-ideal family is already adjoint invariant
+(`OperatorIdealFamily.gauge_adjoint`), so the symmetric variant is a bundled form rather than an
+extra condition.
 
 This file provides the common algebraic API of these families: zero and negation laws,
 definiteness, finite-sum subadditivity, one-sided ideal inequalities, contraction bounds, and
@@ -75,7 +77,13 @@ structure OperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜] where
 attribute [simp] OperatorIdealFamily.gauge_smul
 
 /-- A symmetric operator-ideal family is an operator-ideal family whose diagonal-universe gauge
-is invariant under adjoints. -/
+is invariant under adjoints.
+
+Adjoint invariance is automatic here: `OperatorIdealFamily.gauge_adjoint`, proved in
+`TauCeti.Analysis.OperatorIdeal.Family.Modulus`, shows it for every `OperatorIdealFamily.{u, v, v}`
+over any `RCLike` field and every pair of Hilbert spaces in universe `v`. The `gauge_adjoint` field
+therefore adds no condition beyond the underlying family; the structure is kept as the bundled
+form that records adjoint invariance alongside the gauge. -/
 structure SymmetricOperatorIdealFamily (𝕜 : Type u) [RCLike 𝕜]
     extends OperatorIdealFamily.{u, v, v} 𝕜 where
   /-- Taking the adjoint preserves the gauge. -/
@@ -115,7 +123,7 @@ theorem gauge_zero : Φ.gauge (0 : E →L[𝕜] F) = 0 := by
 theorem gauge_eq_zero_iff (A : E →L[𝕜] F) : Φ.gauge A = 0 ↔ A = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ Φ.gauge_zero⟩
   have hzero : ‖A‖ₑ = 0 := le_antisymm (h ▸ Φ.enorm_le_gauge A) bot_le
-  exact (ENormedAddMonoid.enorm_eq_zero A).mp hzero
+  exact (ENormedAddMonoid.eNorm_eq_zero A).mp hzero
 
 /-- Negating an operator does not change its operator-ideal gauge. -/
 @[simp]
@@ -137,7 +145,7 @@ theorem gauge_comp_left_le {G : Type w}
     Φ.gauge (L ∘L A) ≤ ‖L‖ₑ * Φ.gauge A * ‖ContinuousLinearMap.id 𝕜 E‖ₑ := by
       simpa using Φ.gauge_comp_le L A (ContinuousLinearMap.id 𝕜 E)
     _ ≤ ‖L‖ₑ * Φ.gauge A := mul_le_of_le_one_right' <| by
-      rw [enorm_eq_nnnorm]
+      rw [eNorm_eq_nnNorm]
       exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := E)
 
 /-- Composition on the right satisfies the one-sided ideal inequality. -/
@@ -150,7 +158,7 @@ theorem gauge_comp_right_le {H : Type v}
       simpa using Φ.gauge_comp_le (ContinuousLinearMap.id 𝕜 F) A R
     _ ≤ Φ.gauge A * ‖R‖ₑ := by
       have hid : ‖ContinuousLinearMap.id 𝕜 F‖ₑ ≤ 1 := by
-        rw [enorm_eq_nnnorm]
+        rw [eNorm_eq_nnNorm]
         exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := F)
       have hmul : ‖ContinuousLinearMap.id 𝕜 F‖ₑ * Φ.gauge A ≤ Φ.gauge A :=
         mul_le_of_le_one_left' hid
@@ -162,7 +170,7 @@ theorem gauge_comp_left_le_self {G : Type w}
     {L : F →L[𝕜] G} (hL : ‖L‖ ≤ 1) (A : E →L[𝕜] F) :
     Φ.gauge (L ∘L A) ≤ Φ.gauge A := by
   refine (Φ.gauge_comp_left_le L A).trans ?_
-  rw [enorm_eq_nnnorm]
+  rw [eNorm_eq_nnNorm]
   exact mul_le_of_le_one_left' (by exact_mod_cast hL)
 
 /-- Right composition by a contraction does not increase an operator-ideal gauge. -/
@@ -171,7 +179,7 @@ theorem gauge_comp_right_le_self {H : Type v}
     (A : E →L[𝕜] F) {R : H →L[𝕜] E} (hR : ‖R‖ ≤ 1) :
     Φ.gauge (A ∘L R) ≤ Φ.gauge A := by
   refine (Φ.gauge_comp_right_le A R).trans ?_
-  rw [enorm_eq_nnnorm]
+  rw [eNorm_eq_nnNorm]
   exact mul_le_of_le_one_right' (by exact_mod_cast hR)
 
 end OperatorIdealFamily

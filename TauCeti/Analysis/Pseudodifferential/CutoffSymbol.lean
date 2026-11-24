@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Cut-off homogeneous terms are symbols
@@ -21,8 +21,7 @@ symbol of its degree. This file proves this:
 * `TauCeti.HomogeneousSymbol.toSymbol χ`: the cut-off term `χ(ξ) • a(x, ξ)` as a symbol in
   `S^m_{1,0}`, linear in `a`. It vanishes for `‖ξ‖ ≤ 1`, has the same mixed derivatives as `a`
   for `‖ξ‖ > 2`
-  (`TauCeti.HomogeneousSymbol.mixedDeriv_coefficient_toSymbol_of_two_lt_norm`), and commutes
-  with spatial derivatives (`TauCeti.HomogeneousSymbol.spatialDeriv_toSymbol`);
+  (`TauCeti.HomogeneousSymbol.mixedDeriv_coefficient_toSymbol_of_two_lt_norm`);
 * `TauCeti.HomogeneousSymbol.eq_zero_of_coefficient_toSymbol_eq`: uniqueness of homogeneous
   terms. If the cut-off term of a homogeneous symbol of degree `m` is a symbol of some order
   `m' < m`, the homogeneous symbol vanishes. In particular `toSymbol χ` is injective
@@ -51,8 +50,7 @@ namespace TauCeti
 
 namespace HomogeneousSymbol
 
-variable {n : ℕ} {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {E : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
 /-! ### The cut-off term -/
@@ -87,19 +85,23 @@ private theorem exists_bound_smul_coefficient (χ : FrequencyCutoff (CoordinateS
     |>.exists_bound_of_continuousOn
       ((a.contDiff_smul_coefficient χ).mixedDeriv α β).continuous.continuousOn
   refine ⟨C * 2 ^ (|r| / 2) + max B 0 * 5 ^ (|r| / 2), by positivity, fun x hx ξ => ?_⟩
-  have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by positivity
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · have h := hB (x, ξ) (Set.mk_mem_prod hx (mem_closedBall_zero_iff.2 hξ))
     calc _ ≤ max B 0 := h.trans (le_max_left _ _)
-      _ ≤ max B 0 * (5 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
-          le_mul_of_one_le_right (le_max_right _ _)
-            (Real.one_le_five_rpow_mul_one_add_sq_rpow (by rwa [abs_norm]) r)
+      _ ≤ max B 0 * (5 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) := by
+          refine le_mul_of_one_le_right (le_max_right _ _) ?_
+          have hw := Real.one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow ‖ξ‖ (R := 2)
+            (by rwa [abs_norm]) r
+          norm_num at hw
+          exact hw
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_left (by positivity)
   · rw [mixedDeriv_smul_coefficient_of_two_lt_norm χ a α β x hξ]
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
     calc _ ≤ C * ‖ξ‖ ^ r := hCK x hx ξ hξ0
       _ ≤ C * (2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
-          mul_le_mul_of_nonneg_left (Real.rpow_le_two_rpow_mul_one_add_sq_rpow (by linarith) r) hC
+          mul_le_mul_of_nonneg_left (by
+            simpa only [abs_norm] using Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖)
+              (by rw [abs_norm]; linarith) r) hC
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_right (by positivity)
 
 /-- The cut-off term `χ(ξ) • a(x, ξ)` of a homogeneous symbol `a` of degree `m`, a symbol of
@@ -143,22 +145,6 @@ theorem coefficient_toSymbol_of_norm_le_one (x : CoordinateSpace n) {ξ : Coordi
     (hξ : ‖ξ‖ ≤ 1) : (toSymbol χ a).coefficient (x, ξ) = 0 := by
   simp [χ.apply_eq_zero_of_norm_le_one hξ]
 
-/-- A spatial derivative of the cut-off term is the cut-off term of the spatial derivative: the
-cutoff does not depend on the position. -/
-@[simp]
-theorem spatialDeriv_toSymbol (j : Fin n) :
-    Symbol.spatialDeriv j (toSymbol χ a) =
-      toSymbol χ (a.spatialDeriv (EuclideanSpace.single j 1)) := by
-  ext1
-  funext ⟨x, ξ⟩
-  simp only [Symbol.coefficient_spatialDeriv, coefficient_toSymbol, coordinateDeriv_cons,
-    coordinateDeriv_nil]
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · simp [χ.apply_zero]
-  · have hd : DifferentiableAt ℝ (fun y => a.coefficient (y, ξ)) x :=
-      (a.differentiableAt_coefficient (p := (x, ξ)) hξ).comp x (by fun_prop)
-    rw [fderiv_fun_const_smul hd, smul_apply, coefficient_spatialDeriv _ _ hξ]
-
 /-! ### Uniqueness of homogeneous terms -/
 
 /-- **Uniqueness of homogeneous terms.** If the cut-off term `χ(ξ) • a(x, ξ)` of a homogeneous
@@ -183,8 +169,10 @@ theorem eq_zero_of_coefficient_toSymbol_eq {m' : ℝ} (hm : m' < m) (b : Symbol 
       a.homogeneous x ξ t ht0, hnorm, norm_smul, Real.norm_of_nonneg (by positivity),
       List.length_nil, Nat.cast_zero, sub_zero] at h
     have hw : (1 + (t * ‖ξ‖) ^ 2) ^ (m' / 2) ≤ 2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m') := by
+      have htξ' : |t * ‖ξ‖| = t * ‖ξ‖ := abs_of_nonneg (by positivity)
       rw [← Real.mul_rpow ht0.le hn.le]
-      exact Real.one_add_sq_rpow_le_two_rpow_mul_rpow (by linarith) m'
+      simpa only [htξ'] using
+        Real.one_add_sq_rpow_le_two_rpow_mul_abs_rpow (t := t * ‖ξ‖) (by rw [htξ']; linarith) m'
     rw [Real.rpow_sub ht0, ← mul_div_assoc, le_div_iff₀' (by positivity)]
     calc t ^ m * ‖a.coefficient (x, ξ)‖ ≤ C * (1 + (t * ‖ξ‖) ^ 2) ^ (m' / 2) := h
       _ ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) := mul_le_mul_of_nonneg_left hw hC

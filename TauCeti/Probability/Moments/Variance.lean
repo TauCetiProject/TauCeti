@@ -11,7 +11,9 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
+public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
 # The mean squared distance between two independent copies and nonzero-variance bounds
@@ -30,20 +32,17 @@ This identity is what turns the strong-convexity remainder of an interaction ene
 transport plan, an integral over pairs of transported pairs, into the variance of the
 displacement.
 
-The file also records the elementary bound of the mean of a real function by the square root of
-its second moment (the nonnegativity of its variance), together with two consequences of nonzero
-variance `Var[X; μ] ≠ 0`: strict positivity of the expectation of an `ℝ≥0`-valued random variable
-on a finite measure space, and nondegeneracy `μ {ω | X ω = 0} < 1` of a real-valued random
-variable on a probability space.
+The file also records two consequences of nonzero variance `Var[X; μ] ≠ 0`: strict positivity of
+the expectation of an `ℝ≥0`-valued random variable on a finite measure space, and nondegeneracy
+`μ {ω | X ω = 0} < 1` of a real-valued random variable on a probability space, as well as
+Chebyshev convergence in probability from vanishing variances and Borel--Cantelli almost-sure
+convergence to the mean from summable variances.
 
 ## Main statements
 
 * `MeasureTheory.MemLp.integrable_norm_sub_sq_prod`: for `f ∈ L²(μ)` and a finite measure `μ`,
   the function `(x, y) ↦ ‖f x - f y‖²` is integrable for `μ ⊗ μ`.
 * `TauCeti.integral_norm_sub_sq_prod`: the identity above.
-* `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
-  square-integrable function is at most the square root of its second moment, which is the
-  nonnegativity of its variance.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
@@ -53,6 +52,10 @@ variable on a probability space.
 * `TauCeti.Probability.variance_weighted_coordinate_sum` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
   bounds for weighted sums of pairwise independent variables.
+* `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
+  variances imply convergence in measure to the mean, including on varying finite measure spaces.
+* `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: summable variances imply
+  almost-everywhere convergence to the mean on a finite measure space.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
   random variable with nonzero variance has strictly positive expectation.
 * `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
@@ -115,15 +118,31 @@ end MeasureTheory.MemLp
 
 namespace MeasureTheory
 
-/-- On a probability space, the mean of a square-integrable function is at most the square root of
-its second moment. -/
-theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {g : Ω → ℝ} (hg : MemLp g 2 μ) :
-    ∫ x, g x ∂μ ≤ √(∫ x, g x ^ 2 ∂μ) := by
-  apply Real.le_sqrt_of_sq_le
-  have h := ProbabilityTheory.variance_nonneg g μ
-  rw [ProbabilityTheory.variance_eq_sub hg] at h
-  simpa only [Pi.pow_apply, sub_nonneg] using h
+section Centering
+
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- Centering a Hilbert-space-valued square-integrable variable subtracts the squared norm
+of its mean from its second absolute moment. -/
+theorem MemLp.integral_norm_sub_integral_sq [IsProbabilityMeasure μ] {f : α → E}
+    (hf : MemLp f 2 μ) :
+    ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ =
+      (∫ x, ‖f x‖ ^ 2 ∂μ) - ‖∫ x, f x ∂μ‖ ^ 2 := by
+  have hi := hf.integrable one_le_two
+  have hs := (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf
+  have hc : Integrable (fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) μ :=
+    (hi.const_inner _).const_mul 2
+  simp_rw [norm_sub_sq_real, real_inner_comm (∫ y, f y ∂μ)]
+  rw [integral_add (f := fun x ↦ ‖f x‖ ^ 2 - 2 * ⟪(∫ y, f y ∂μ), f x⟫)
+      (g := fun _ ↦ ‖∫ y, f y ∂μ‖ ^ 2) (hs.sub hc) (integrable_const _),
+    integral_sub (f := fun x ↦ ‖f x‖ ^ 2)
+      (g := fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) hs hc,
+    integral_const_mul, integral_inner hi, real_inner_self_eq_norm_sq,
+    integral_const, probReal_univ, one_smul]
+  ring
+
+end Centering
 
 end MeasureTheory
 
@@ -188,13 +207,26 @@ theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → �
 /-- On a probability space, a real-valued random variable with nonzero variance is not almost
 surely zero. -/
 theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ}
-    (hX : AEMeasurable X μ) (hvar : Var[X; μ] ≠ 0) :
+    (hvar : Var[X; μ] ≠ 0) :
     μ {ω | X ω = 0} < 1 := by
   refine lt_of_le_of_ne prob_le_one fun hfull ↦ hvar ?_
-  have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
-    hX.nullMeasurable (measurableSet_singleton (0 : ℝ))
-  have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
-  rw [variance_congr hae, variance_zero]
+  by_cases hX : AEMeasurable X μ
+  · have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
+      hX.nullMeasurable (measurableSet_singleton (0 : ℝ))
+    have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
+    rw [variance_congr hae, variance_zero]
+  · have hint : ∫ ω, X ω ∂μ = 0 := integral_non_aestronglyMeasurable fun h ↦ hX h.aemeasurable
+    -- Without a measurable version of `X` the mean is `0`, so the integrand of the variance
+    -- vanishes on `{X = 0}`, a set of full outer measure; hence the variance is `0`.
+    have hev : evariance X μ = 0 := by
+      rw [evariance]
+      refine lintegral_eq_zero_of_measure_setOf_eq_zero_eq_measure_univ ?_
+      refine le_antisymm (measure_mono (subset_univ _)) ?_
+      rw [measure_univ, ← hfull]
+      refine measure_mono fun ω h0 ↦ ?_
+      simp only [Set.mem_ofPred_eq] at h0 ⊢
+      simp [h0, hint]
+    simp [variance, hev]
 
 end VarianceNeZero
 
@@ -253,13 +285,38 @@ theorem measure_weighted_coordinate_sum_sub_mean_ge
   rw [variance_weighted_coordinate_sum a hX hindep] at h
   exact h
 
+/-- **Chebyshev convergence in measure from vanishing variances.** If square-integrable real-valued
+functions on possibly varying finite measure spaces have variances tending to zero along a filter,
+then their deviations from their expectations converge to zero in measure. -/
+theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l : Filter ι}
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
+    {P : (i : ι) → Measure (Ω i)} [∀ i, IsFiniteMeasure (P i)]
+    {X : (i : ι) → Ω i → ℝ} (hX : ∀ i, MemLp (X i) 2 (P i))
+    (hvar : Tendsto (fun i ↦ Var[X i; P i]) l (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun i ↦ P i {ω | ε ≤ |X i ω - ∫ ω', X i ω' ∂P i|}) l (𝓝 0) := by
+  have hreal : Tendsto (fun i ↦ Var[X i; P i] / ε ^ 2) l (𝓝 0) := by
+    simpa only [zero_div] using hvar.div_const (ε ^ 2)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hreal)
+    (fun _ ↦ bot_le) (fun i ↦ meas_ge_le_variance_div_sq (hX i) hε)
+
+/-- **Borel--Cantelli almost-everywhere convergence from summable variances.** On a finite measure
+space, if a sequence of square-integrable real-valued functions has summable variances, then its
+fluctuations around its expectations converge almost everywhere to zero. -/
+theorem ae_tendsto_sub_integral_of_summable_variance {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : ℕ → Ω → ℝ}
+    (hX : ∀ n, MemLp (X n) 2 P) (hvar : Summable fun n ↦ Var[X n; P]) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ X n ω - ∫ ω', X n ω' ∂P) atTop (𝓝 0) := by
+  refine TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top (g := 0) fun ε hε ↦ ?_
+  refine ne_top_of_le_ne_top (hvar.div_const (ε ^ 2)).tsum_ofReal_ne_top
+    (tsum_le_tsum fun n ↦ ?_)
+  simpa only [Pi.zero_apply, Real.dist_eq, sub_zero] using meas_ge_le_variance_div_sq (hX n) hε
+
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
   [SFinite ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
 
-/-- Jensen's inequality for the variance of an average: the variance of the average over the
-second coordinate is at most the average over the second coordinate of the variances in the first
-coordinate. -/
-theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.prod π)) :
+private theorem evariance_integral_prod_le_of_measurable (hF : Measurable F)
+    (hint : Integrable F (ν.prod π)) :
     evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
@@ -277,27 +334,42 @@ theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.
     calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
         ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
           gcongr
-          exact enorm_integral_le_lintegral_enorm _
+          exact eNorm_integral_le_lintegral_eNorm _
       _ ≤ _ := by
           simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
             (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
-            (((hF.comp measurable_prodMk_left).sub hmm.measurable).enorm.aemeasurable)
             one_le_two
   calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
       ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
     _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
         lintegral_lintegral_swap
-          ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
+          ((hF.sub (hmm.measurable.comp measurable_snd)).eNorm.pow_const 2).aemeasurable
     _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
 
+/-- Jensen's inequality for the variance of an average: the variance of the average over the
+second coordinate is at most the average over the second coordinate of the variances in the first
+coordinate. -/
+theorem evariance_integral_prod_le (hint : Integrable F (ν.prod π)) :
+    evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
+      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+  have hG := hint.1.stronglyMeasurable_mk
+  have hFG : F =ᵐ[ν.prod π] hint.1.mk F := hint.1.ae_eq_mk
+  have h1 : ∀ᵐ a ∂ν, ∀ᵐ w ∂π, F (a, w) = hint.1.mk F (a, w) := Measure.ae_ae_of_ae_prod hFG
+  have h2 : ∀ᵐ w ∂π, ∀ᵐ a ∂ν, F (a, w) = hint.1.mk F (a, w) :=
+    Measure.ae_ae_of_ae_prod
+      ((Measure.measurePreserving_swap (μ := π) (ν := ν)).quasiMeasurePreserving.ae_eq_comp hFG)
+  rw [evariance_congr (h1.mono fun a ha => integral_congr_ae ha),
+    lintegral_congr_ae (h2.mono fun w hw => evariance_congr hw)]
+  exact evariance_integral_prod_le_of_measurable hG.measurable (hint.congr hFG)
+
+omit [SFinite ν] in
 /-- The two-factor Efron--Stein inequality. -/
-theorem evariance_prod_le [IsProbabilityMeasure ν] (hF : Measurable F)
-    (hL : MemLp F 2 (ν.prod π)) :
+theorem evariance_prod_le [IsProbabilityMeasure ν] (hL : MemLp F 2 (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   rw [evariance_prod_eq hL]
   gcongr
-  exact evariance_integral_prod_le hF (hL.integrable one_le_two)
+  exact evariance_integral_prod_le (hL.integrable one_le_two)
 
 /-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
 measurable function of `x`. -/
@@ -312,6 +384,6 @@ theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → T
   exact Measurable.lintegral_prod_right'
     (f := fun p : (∀ i, α i) × α i =>
       ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
-    ((hu.sub (hm.measurable.comp measurable_fst)).enorm.pow_const 2)
+    ((hu.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
 
 end TauCeti.Probability

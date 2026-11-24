@@ -12,14 +12,15 @@ import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Approximation
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
+import TauCeti.MeasureTheory.Function.L1Space.HasFiniteIntegral
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.MeasureTheory.Integral.Bochner.DisjointSequence
-import TauCeti.MeasureTheory.Integral.Lebesgue.DisjointSequence
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
-# The Dunford–Pettis weak compactness criterion in `L¹`
+# The Dunford–Pettis weak compactness criterion and weak sequential completeness of `L¹`
 
 For a finite measure `μ`, a subset `A` of scalar `L¹(μ)` is relatively weakly compact exactly when
 it is norm bounded and uniformly integrable: for every `ε > 0` there is `δ > 0` such that
@@ -40,19 +41,28 @@ would be `fₙ ∈ A` and measurable sets of measure tending to zero on which th
 stay above some `ε > 0`. By Šmulian's theorem a subsequence converges weakly to some `f`, so the
 integrals of `fₙ - f` over each fixed measurable set tend to zero. Shrinking the sets to disjoint
 ones and applying the gliding hump lemma
-`MeasureTheory.tendsto_setIntegral_norm_of_pairwise_disjoint` gives a contradiction.
+`MeasureTheory.tendsto_setLIntegral_enorm_of_tendsto_setIntegral` gives a contradiction.
+
+The same gliding hump argument shows that a sequence whose integrals over every measurable set
+form Cauchy sequences, in particular a weakly Cauchy sequence in `L¹`, is uniformly integrable
+(`MeasureTheory.unifIntegrable_of_forall_cauchySeq_setIntegral`). For a finite measure, a weakly
+Cauchy sequence is moreover bounded, hence relatively weakly compact by the Dunford–Pettis
+theorem; by Šmulian's theorem a subsequence converges weakly, and then so does the whole
+sequence. Thus `L¹(μ)` is weakly sequentially complete.
 
 ## Main statements
 
 * `MeasureTheory.Lp.isCompact_closure_toWeakSpace_of_uniformIntegrable`: uniformly integrable
   bounded subsets of `L¹(μ)` are relatively weakly compact.
 * `MeasureTheory.Lp.uniformIntegrable_of_isCompact_closure_toWeakSpace`: relatively weakly compact
-  subsets of `L¹(μ)` are bounded and uniformly integrable.
+  subsets of `L¹(μ)` are bounded and uniformly integrable, for any measure `μ`.
 * `MeasureTheory.Lp.isCompact_closure_toWeakSpace_iff_uniformIntegrable` and
   `MeasureTheory.Lp.isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable`: the
   **Dunford–Pettis theorem**, with and without the bound bundled into uniform integrability.
 * `MeasureTheory.Lp.isCompact_closure_toWeakSpace_iff_isBounded_and_forall_setIntegral_le`: the
   same with the uniform absolute continuity of the integrals `∫ x in s, ‖f x‖ ∂μ` spelled out.
+* `MeasureTheory.Lp.exists_tendsto_toWeakSpace_of_forall_cauchySeq`: **weak sequential
+  completeness** of `L¹(μ)` for a finite measure `μ`.
 
 ## References
 
@@ -68,7 +78,25 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Lp
 
-variable {α 𝕜 : Type*} [RCLike 𝕜] {m : MeasurableSpace α} {μ : Measure α} [IsFiniteMeasure μ]
+variable {α 𝕜 : Type*} [RCLike 𝕜] {m : MeasurableSpace α} {μ : Measure α}
+
+/-- If `u n` tends weakly to `f` in `L¹`, the integrals of `u n` over every set tend to the
+integral of `f` over that set. -/
+theorem tendsto_setIntegral_of_tendsto_toWeakSpace {ι : Type*} {l : Filter ι}
+    {u : ι → Lp 𝕜 1 μ} {f : Lp 𝕜 1 μ}
+    (hlim : Tendsto (fun n ↦ toWeakSpace 𝕜 (Lp 𝕜 1 μ) (u n)) l
+      (𝓝 (toWeakSpace 𝕜 (Lp 𝕜 1 μ) f)))
+    (S : Set α) :
+    Tendsto (fun k ↦ ∫ x in S, (u k : α → 𝕜) x ∂μ) l (𝓝 (∫ x in S, (f : α → 𝕜) x ∂μ)) := by
+  have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
+    ((L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM α 𝕜 𝕜 μ 1 S))
+  have heval (g : Lp 𝕜 1 μ) :
+      (L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM α 𝕜 𝕜 μ 1 S) g = ∫ x in S, g x ∂μ := by
+    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
+    exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 S g)
+  simpa only [heval] using hS'
+
+variable [IsFiniteMeasure μ]
 
 /-- **Dunford–Pettis theorem**, sufficiency: for a finite measure, a bounded uniformly integrable
 subset of scalar `L¹` has weakly compact closure. -/
@@ -78,7 +106,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   refine TauCeti.isCompact_closure_toWeakSpace_of_forall_exists_isCompact fun ε hε ↦ ?_
   obtain ⟨C, hC⟩ := hA.spec one_ne_zero ENNReal.one_ne_top (ENNReal.ofReal_pos.2 hε)
   set R : ℝ := measureUnivNNReal μ ^ (2 : ℝ≥0∞).toReal⁻¹ * C
-  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Measure.LpToL1CLM μ 2
+  set ι : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 1 μ := Lp.ofExponentLEL 𝕜 𝕜 one_le_two
   refine ⟨ι '' closedBall 0 R, ?_, fun f hf ↦ ?_⟩
   · -- The image of a ball of the reflexive space `L²` is weakly compact.
     have hcomp : toWeakSpace 𝕜 (Lp 𝕜 1 μ) ∘ ι = WeakSpace.map ι ∘ toWeakSpace 𝕜 (Lp 𝕜 2 μ) :=
@@ -90,7 +118,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   · -- The truncation of `f` at level `C` is bounded by `C`, hence lies in this ball.
     set s := {x | C ≤ ‖(f : α → 𝕜) x‖₊}
     have hs : MeasurableSet s :=
-      measurableSet_le measurable_const (Lp.stronglyMeasurable f).measurable.nnnorm
+      measurableSet_le measurable_const (Lp.stronglyMeasurable f).measurable.nnNorm
     set g := sᶜ.indicator (f : α → 𝕜)
     have hgC (x : α) : ‖g x‖ ≤ C := by
       by_cases hx : x ∈ s
@@ -104,15 +132,15 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
     · rw [mem_closedBall_zero_iff]
       exact Lp.norm_le_of_ae_bound C.coe_nonneg (hg.coeFn_toLp.mono fun x hx ↦ hx ▸ hgC x)
     · have hae : ⇑(f - ι (hg.toLp g)) =ᵐ[μ] s.indicator f := by
-        filter_upwards [Lp.coeFn_sub f (ι (hg.toLp g)),
-          Measure.LpToL1CLM_coeFn (𝕜 := 𝕜) μ 2 (hg.toLp g), hg.coeFn_toLp] with x h₁ h₂ h₃
-        rw [h₁, Pi.sub_apply, h₂, h₃]
+        filter_upwards [Lp.coeFn_sub f (ι (hg.toLp g)), hg.coeFn_toLp] with x h₁ h₃
+        simp only [h₁, Pi.sub_apply, ι, Lp.coeFn_ofExponentLEL, h₃]
         simp [g, indicator_compl]
       rw [Lp.norm_def, eLpNorm_congr_ae hae]
       exact ENNReal.toReal_le_of_le_ofReal hε.le (hC ⟨f, hf⟩)
 
-/-- **Dunford–Pettis theorem**, necessity: for a finite measure, a subset of scalar `L¹` with
-weakly compact closure is bounded and uniformly integrable. -/
+omit [IsFiniteMeasure μ] in
+/-- **Dunford–Pettis theorem**, necessity: a subset of scalar `L¹` with weakly compact closure is
+bounded and uniformly integrable. No finiteness of the measure is needed. -/
 theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 μ)}
     (hA : IsCompact (closure (toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A))) :
     UniformIntegrable (fun f : A ↦ (f : α → 𝕜)) 1 μ := by
@@ -120,10 +148,10 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   swap
   · -- Weakly compact sets are bounded.
     obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA.isBounded_toWeakSpace_preimage
-    refine ⟨R.toNNReal, fun f ↦ ?_⟩
-    rw [← Lp.enorm_def, ← ofReal_norm]
+    refine lt_of_le_of_lt (iSup_le fun f ↦ ?_) (ENNReal.ofReal_lt_top (r := R))
+    rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal
-      (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.2)))
+      (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.property)))
   by_contra hne
   rw [unifIntegrable_iff] at hne
   push Not at hne
@@ -140,20 +168,18 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       fun n ↦ ?_
     simpa only [s, measure_toMeasurable] using ht n
   have hbig (n : ℕ) : ε < ∫⁻ x in s n, ‖(i n : α → 𝕜) x‖ₑ ∂μ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict]
+    rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _).restrict]
     exact (hit n).trans_le
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_toMeasurable _ _) le_rfl))
   -- By Šmulian's theorem, a subsequence converges weakly.
   obtain ⟨f, τ, hτ, hlim⟩ := TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hA
-    (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).2
+    (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).property
   set h : ℕ → α → 𝕜 := fun k x ↦ (i (τ k) : α → 𝕜) x - (f : α → 𝕜) x
   have hh (k : ℕ) : Integrable (h k) μ := (L1.integrable_coeFn _).sub (L1.integrable_coeFn f)
-  have hset (S : Set α) (hS : MeasurableSet S) :
+  have hset (S : Set α) (_ : MeasurableSet S) :
       Tendsto (fun k ↦ ∫ x in S, h k x ∂μ) atTop (𝓝 0) := by
-    have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
-      (Set.setIntegralLp (𝕜 := 𝕜) S (measure_lt_top μ S))
-    simp only [Set.setIntegralLp_apply] at hS'
-    refine (tendsto_sub_nhds_zero_iff.2 hS').congr fun k ↦ ?_
+    refine (tendsto_sub_nhds_zero_iff.2 (tendsto_setIntegral_of_tendsto_toWeakSpace
+      (u := fun k ↦ (i (τ k) : Lp 𝕜 1 μ)) hlim S)).congr fun k ↦ ?_
     exact (integral_sub (L1.integrable_coeFn _).integrableOn
       (L1.integrable_coeFn f).integrableOn).symm
   -- Along the subsequence, the integrals of `‖h k‖` over the small sets stay above `ε / 2`.
@@ -163,34 +189,15 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       (ENNReal.half_pos hε.ne'))
   have hbig' (k : ℕ) (hk : K ≤ k) : ε / 2 < ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ := by
     by_contra! hle
-    have hsplit : ∫⁻ x in s (τ k), ‖(i (τ k) : α → 𝕜) x‖ₑ ∂μ ≤
-        ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ + ∫⁻ x in s (τ k), ‖(f : α → 𝕜) x‖ₑ ∂μ := by
-      rw [← lintegral_add_right' _ (L1.integrable_coeFn f).1.enorm.restrict]
-      refine lintegral_mono fun x ↦ ?_
-      calc ‖(i (τ k) : α → 𝕜) x‖ₑ = ‖h k x + (f : α → 𝕜) x‖ₑ := by simp [h]
-        _ ≤ ‖h k x‖ₑ + ‖(f : α → 𝕜) x‖ₑ := enorm_add_le _ _
-    have := (hbig (τ k)).trans_le (hsplit.trans (add_le_add hle (hK k hk)))
+    have := (hbig (τ k)).trans_le ((TauCeti.MeasureTheory.lintegral_enorm_le_lintegral_enorm_sub_add
+      (L1.integrable_coeFn f).1.restrict _).trans (add_le_add hle (hK k hk)))
     rw [ENNReal.add_halves] at this
     exact lt_irrefl _ this
-  -- Shrink the small sets to disjoint ones and apply the gliding hump lemma.
-  obtain ⟨σ, hσ, B, hBm, hB, -, hσB⟩ := exists_strictMono_pairwise_disjoint_lintegral_le
-    (f := fun j x ↦ ‖h (j + K) x‖ₑ) (s := fun j ↦ s (τ (j + K)))
-    (fun j ↦ (hh (j + K)).2.ne) (fun j ↦ hsm _)
-    (hμsτ.comp (tendsto_add_atTop_nat K)) (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne').ne'
-  have hlow (j : ℕ) : ε / 2 / 2 < ∫⁻ x in B j, ‖h (σ j + K) x‖ₑ ∂μ := by
-    by_contra! hle
-    have := (hbig' (σ j + K) (by omega)).trans_le ((hσB j).trans (add_le_add_left hle _))
-    rw [ENNReal.add_halves] at this
-    exact lt_irrefl _ this
-  have hzero := tendsto_setIntegral_norm_of_pairwise_disjoint (fun j ↦ hh (σ j + K))
-    (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
-  have hzero' : Tendsto (fun j ↦ ∫⁻ x in B j, ‖h (σ j + K) x‖ₑ ∂μ) atTop (𝓝 0) := by
-    refine (ENNReal.tendsto_ofReal hzero).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
-    · exact ofReal_integral_norm_eq_lintegral_enorm (hh _).integrableOn
-    · rw [ENNReal.ofReal_zero]
-  obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hzero' (ε / 2 / 2)
-    (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')).exists
-  exact (hlow j).not_ge hj
+  -- But these integrals tend to zero by the gliding hump lemma.
+  have hzero := tendsto_setLIntegral_enorm_of_tendsto_setIntegral hh hset (fun k ↦ hsm _) hμsτ
+  obtain ⟨k, hk, hKk⟩ := ((ENNReal.tendsto_nhds_zero.1 hzero (ε / 2)
+    (ENNReal.half_pos hε.ne')).and (eventually_ge_atTop K)).exists
+  exact (hbig' k hKk).not_ge hk
 
 /-- **Dunford–Pettis theorem.** For a finite measure, a subset of scalar `L¹` has weakly compact
 closure exactly when it is uniformly integrable together with a uniform norm bound. -/
@@ -205,15 +212,17 @@ closure exactly when it is norm bounded and uniformly integrable. -/
 theorem isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable {A : Set (Lp 𝕜 1 μ)} :
     IsCompact (closure (toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A)) ↔
       IsBounded A ∧ UnifIntegrable (fun f : A ↦ (f : α → 𝕜)) 1 μ := by
-  rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable, UniformIntegrable, and_comm]
-  refine and_congr_left' ⟨fun ⟨C, hC⟩ ↦ ?_, fun hA ↦ ?_⟩
-  · refine isBounded_iff_forall_norm_le.2 ⟨C, fun f hf ↦ ?_⟩
-    rw [Lp.norm_def]
-    exact ENNReal.toReal_le_of_le_ofReal C.coe_nonneg (by simpa using hC ⟨f, hf⟩)
+  rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable]
+  refine ⟨fun h ↦ ⟨isBounded_iff_forall_norm_le.2
+    ⟨(⨆ f : A, eLpNorm (f : α → 𝕜) 1 μ).toReal, fun f hf ↦ ?_⟩, h.unifIntegrable⟩, fun ⟨hA,
+        hui⟩ ↦ ?_⟩
+  · rw [Lp.norm_def]
+    exact ENNReal.toReal_mono h.iSup_eLpNorm_lt.ne (le_iSup (fun f : A ↦ eLpNorm (f : α → 𝕜) 1 μ)
+        ⟨f, hf⟩)
   · obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA
-    refine ⟨R.toNNReal, fun f ↦ ?_⟩
-    rw [← Lp.enorm_def, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hR f f.2)
+    refine ⟨hui, lt_of_le_of_lt (iSup_le fun f ↦ ?_) (ENNReal.ofReal_lt_top (r := R))⟩
+    rw [← Lp.eNorm_def, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal (hR f f.property)
 
 /-- **Dunford–Pettis theorem**, classical form. For a finite measure, a subset `A` of scalar `L¹`
 has weakly compact closure exactly when it is norm bounded and the integrals of `‖f‖` are
@@ -229,8 +238,8 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_forall_setIntegral_le
   -- On a measurable set, the restricted `L¹` seminorm is the integral of the norm.
   have heq (f : Lp 𝕜 1 μ) (s : Set α) :
       eLpNorm (f : α → 𝕜) 1 (μ.restrict s) = ENNReal.ofReal (∫ x in s, ‖(f : α → 𝕜) x‖ ∂μ) := by
-    rw [eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f).restrict,
-      ofReal_integral_norm_eq_lintegral_enorm (L1.integrable_coeFn f).integrableOn]
+    rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f).restrict,
+      ofReal_integral_norm_eq_lintegral_eNorm (L1.integrable_coeFn f).integrableOn]
   rw [unifIntegrable_iff']
   constructor
   · intro hA ε hε
@@ -251,6 +260,34 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_forall_setIntegral_le
     obtain ⟨δ, hδ, hδA⟩ := hA ε' hε'pos
     refine ⟨ENNReal.ofReal δ, ENNReal.ofReal_pos.2 hδ, fun f s hs hμs ↦ ?_⟩
     rw [heq]
-    exact (ENNReal.ofReal_le_ofReal (hδA f f.2 s hs hμs)).trans hε'
+    exact (ENNReal.ofReal_le_ofReal (hδA f f.property s hs hμs)).trans hε'
+
+/-- **Weak sequential completeness of `L¹`.** For a finite measure, every weakly Cauchy sequence
+in scalar `L¹(μ)`, one whose values under every continuous linear functional form a Cauchy
+sequence, converges weakly. -/
+theorem exists_tendsto_toWeakSpace_of_forall_cauchySeq {u : ℕ → Lp 𝕜 1 μ}
+    (hu : ∀ φ : StrongDual 𝕜 (Lp 𝕜 1 μ), CauchySeq fun n ↦ φ (u n)) :
+    ∃ f : Lp 𝕜 1 μ, Tendsto (fun n ↦ toWeakSpace 𝕜 (Lp 𝕜 1 μ) (u n)) atTop
+      (𝓝 (toWeakSpace 𝕜 (Lp 𝕜 1 μ) f)) := by
+  -- Integration over a fixed set is a continuous linear functional.
+  have hset (S : Set α) (_ : MeasurableSet S) :
+      CauchySeq fun n ↦ ∫ x in S, (u n : α → 𝕜) x ∂μ := by
+    simpa only [Set.setIntegralLp_apply] using
+      hu (Set.setIntegralLp (𝕜 := 𝕜) (F := 𝕜) (p := 1) S (measure_lt_top μ S))
+  -- The sequence is bounded and uniformly integrable, hence relatively weakly compact.
+  have hui : UnifIntegrable (fun f : range u ↦ (f : α → 𝕜)) 1 μ := by
+    have hui := unifIntegrable_of_forall_cauchySeq_setIntegral
+      (fun n ↦ L1.integrable_coeFn (u n)) hset
+    rw [unifIntegrable_iff'] at hui ⊢
+    intro ε hε
+    obtain ⟨δ, hδ, hδu⟩ := hui ε hε
+    exact ⟨δ, hδ, fun ⟨_, n, hn⟩ s hs hμs ↦ hn ▸ hδu n s hs hμs⟩
+  have hK := isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable.2
+    ⟨TauCeti.isBounded_range_of_forall_cauchySeq hu, hui⟩
+  -- By Šmulian's theorem a subsequence converges weakly, and then so does the whole sequence.
+  obtain ⟨f, φ, hφ, hlim⟩ := TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure hK
+    (u := u) mem_range_self
+  exact ⟨f, TauCeti.tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq hu
+    hφ.tendsto_atTop hlim⟩
 
 end MeasureTheory.Lp

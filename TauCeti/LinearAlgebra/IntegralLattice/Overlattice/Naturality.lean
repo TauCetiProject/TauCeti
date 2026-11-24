@@ -72,7 +72,6 @@ even, exactly when both components are.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
 -/
 
 public section
@@ -109,7 +108,7 @@ def intermediateCarrierEquiv (e : Isometry L M) :
 
 /-- The carrier transported along an isometry is the image of the original carrier. -/
 theorem intermediateCarrierEquiv_apply_coe (e : Isometry L M) (P : L.IntermediateCarrier) :
-    (e.intermediateCarrierEquiv P).1 = P.1.map e.ambientEquiv.toLinearMap :=
+    (e.intermediateCarrierEquiv P).val = P.val.map e.ambientEquiv.toLinearMap :=
   -- Mathlib's `OrderIso.Icc` and `Set.orderIsoOfEq` both act by the underlying map on the
   -- coerced element, and `⇑e.ambientEquiv` is `⇑e.ambientEquiv.toLinearMap`, so both sides are
   -- definitionally the same submodule. The parentheses keep `intermediateCarrierEquiv` sealed.
@@ -118,14 +117,14 @@ theorem intermediateCarrierEquiv_apply_coe (e : Isometry L M) (P : L.Intermediat
 /-- Membership in a transported carrier is membership of the preimage in the original carrier. -/
 @[simp]
 theorem mem_intermediateCarrierEquiv_iff (e : Isometry L M) (P : L.IntermediateCarrier) (y : W) :
-    y ∈ (e.intermediateCarrierEquiv P).1 ↔ e.symm y ∈ P.1 := by
+    y ∈ (e.intermediateCarrierEquiv P).val ↔ e.symm y ∈ P.val := by
   rw [intermediateCarrierEquiv_apply_coe, Submodule.mem_map_equiv]
   simp
 
 /-- The image of a vector lies in the transported carrier exactly when the vector lies in the
 original carrier. -/
 theorem apply_mem_intermediateCarrierEquiv_iff (e : Isometry L M) (P : L.IntermediateCarrier)
-    (x : V) : e x ∈ (e.intermediateCarrierEquiv P).1 ↔ x ∈ P.1 := by
+    (x : V) : e x ∈ (e.intermediateCarrierEquiv P).val ↔ x ∈ P.val := by
   rw [mem_intermediateCarrierEquiv_iff, symm_apply_apply]
 
 /-- The identity isometry transports every intermediate carrier to itself. -/
@@ -151,7 +150,7 @@ theorem intermediateCarrierEquiv_symm (e : Isometry L M) :
 carrier. -/
 @[simp]
 theorem mem_intermediateCarrierEquiv_symm_iff (e : Isometry L M) (Q : M.IntermediateCarrier)
-    (x : V) : x ∈ (e.intermediateCarrierEquiv.symm Q).1 ↔ e x ∈ Q.1 := by
+    (x : V) : x ∈ (e.intermediateCarrierEquiv.symm Q).val ↔ e x ∈ Q.val := by
   rw [← intermediateCarrierEquiv_symm, mem_intermediateCarrierEquiv_iff, symm_symm]
 
 /-- The transport along a composite isometry is the composite transport. -/
@@ -299,7 +298,7 @@ private theorem intermediateCarrierEquivSubtype_apply_coe (e : Isometry L M)
     {p : L.IntermediateCarrier → Prop} {q : M.IntermediateCarrier → Prop}
     (h : ∀ P, p P ↔ q (e.intermediateCarrierEquiv P)) (P : {P : L.IntermediateCarrier // p P}) :
     (e.intermediateCarrierEquivSubtype h P : M.IntermediateCarrier) =
-      e.intermediateCarrierEquiv P.1 :=
+      e.intermediateCarrierEquiv P.val :=
   (rfl)
 
 /-- The inverse of a restricted transport acts through the inverse intermediate-carrier
@@ -309,7 +308,7 @@ private theorem intermediateCarrierEquivSubtype_symm_apply_coe (e : Isometry L M
     {p : L.IntermediateCarrier → Prop} {q : M.IntermediateCarrier → Prop}
     (h : ∀ P, p P ↔ q (e.intermediateCarrierEquiv P)) (Q : {Q : M.IntermediateCarrier // q Q}) :
     ((e.intermediateCarrierEquivSubtype h).symm Q : L.IntermediateCarrier) =
-      e.intermediateCarrierEquiv.symm Q.1 :=
+      e.intermediateCarrierEquiv.symm Q.val :=
   (rfl)
 
 /-- **An isometry transports integral intermediate carriers.** This is the restriction of
@@ -325,7 +324,7 @@ intermediate carriers. -/
 theorem integralIntermediateCarrierEquiv_apply_coe (e : Isometry L M)
     (P : {P : L.IntermediateCarrier // IntermediateCarrier.IsIntegral P}) :
     (e.integralIntermediateCarrierEquiv P : M.IntermediateCarrier) =
-      e.intermediateCarrierEquiv P.1 :=
+      e.intermediateCarrierEquiv P.val :=
   e.intermediateCarrierEquivSubtype_apply_coe _ P
 
 /-- The inverse integral-carrier transport acts through the inverse intermediate-carrier
@@ -334,7 +333,7 @@ transport. -/
 theorem integralIntermediateCarrierEquiv_symm_apply_coe (e : Isometry L M)
     (Q : {Q : M.IntermediateCarrier // IntermediateCarrier.IsIntegral Q}) :
     (e.integralIntermediateCarrierEquiv.symm Q : L.IntermediateCarrier) =
-      e.intermediateCarrierEquiv.symm Q.1 :=
+      e.intermediateCarrierEquiv.symm Q.val :=
   e.intermediateCarrierEquivSubtype_symm_apply_coe _ Q
 
 /-- The identity isometry acts identically on integral intermediate carriers. -/
@@ -370,7 +369,7 @@ carriers. -/
 theorem evenIntermediateCarrierEquiv_apply_coe (e : Isometry L M)
     (P : {P : L.IntermediateCarrier // IntermediateCarrier.IsEven P}) :
     (e.evenIntermediateCarrierEquiv P : M.IntermediateCarrier) =
-      e.intermediateCarrierEquiv P.1 :=
+      e.intermediateCarrierEquiv P.val :=
   e.intermediateCarrierEquivSubtype_apply_coe _ P
 
 /-- The inverse even-carrier transport acts through the inverse intermediate-carrier transport. -/
@@ -378,7 +377,7 @@ theorem evenIntermediateCarrierEquiv_apply_coe (e : Isometry L M)
 theorem evenIntermediateCarrierEquiv_symm_apply_coe (e : Isometry L M)
     (Q : {Q : M.IntermediateCarrier // IntermediateCarrier.IsEven Q}) :
     (e.evenIntermediateCarrierEquiv.symm Q : L.IntermediateCarrier) =
-      e.intermediateCarrierEquiv.symm Q.1 :=
+      e.intermediateCarrierEquiv.symm Q.val :=
   e.intermediateCarrierEquivSubtype_symm_apply_coe _ Q
 
 /-- The identity isometry acts identically on even intermediate carriers. -/
@@ -498,12 +497,12 @@ variable (L : IntegralLattice V) (M : IntegralLattice W)
 carriers. -/
 def orthogonalSumIntermediateCarrier (P : L.IntermediateCarrier) (Q : M.IntermediateCarrier) :
     (L.orthogonalSum M).IntermediateCarrier :=
-  ⟨P.1.prod Q.1, by
+  ⟨P.val.prod Q.val, by
     constructor
     · rw [orthogonalSum_carrier]
-      exact Submodule.prod_mono P.2.1 Q.2.1
+      exact Submodule.prod_mono P.property.1 Q.property.1
     · rw [L.dualCarrier_orthogonalSum M]
-      exact Submodule.prod_mono P.2.2 Q.2.2⟩
+      exact Submodule.prod_mono P.property.2 Q.property.2⟩
 
 variable {L M}
 
@@ -511,7 +510,7 @@ variable {L M}
 @[simp]
 theorem mem_orthogonalSumIntermediateCarrier_iff (P : L.IntermediateCarrier)
     (Q : M.IntermediateCarrier) (p : V × W) :
-    p ∈ (orthogonalSumIntermediateCarrier L M P Q).1 ↔ p.1 ∈ P.1 ∧ p.2 ∈ Q.1 :=
+    p ∈ (orthogonalSumIntermediateCarrier L M P Q).val ↔ p.1 ∈ P.val ∧ p.2 ∈ Q.val :=
   Submodule.mem_prod
 
 /-- Assembling the two carriers gives the carrier of the orthogonal sum. -/

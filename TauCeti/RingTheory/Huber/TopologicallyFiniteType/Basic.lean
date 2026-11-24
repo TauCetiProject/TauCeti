@@ -30,10 +30,10 @@ power-series ring `A⟨X₁, …, Xₖ⟩_T` on finitely many variables, each we
 that the presenting algebra is `TauCeti.Huber.restrictedMvPowerSeriesCompletion`, the object this
 library writes `A⟨X₁, …, Xₖ⟩`.
 
-The notion is what three results the adic-spaces roadmap needs are stated in terms of: the second
-half of Proposition and Definition 6.36 (a Tate ring is strongly noetherian exactly when every
-Tate ring topologically of finite type over it is noetherian), Remark 6.37(1), and Example 6.38,
-which Proposition 8.30 cites by name.
+Three results of the theory are stated in terms of this notion: the second half of Proposition and
+Definition 6.36 (a Tate ring is strongly noetherian exactly when every Tate ring topologically of
+finite type over it is noetherian), Remark 6.37(1), and Example 6.38, which Proposition 8.30 cites
+by name.
 
 ## What is and is not assumed
 
@@ -47,7 +47,7 @@ of `B` should assume it alongside, not read it out of these definitions.
 ## Notation, and one thing it is easy to get backwards
 
 `A⟨X₁, …, Xₖ⟩_T` names the **uncompleted** weighted ring `TauCeti.Huber.weightedRestrictedSubring`
-of Wedhorn's Remark and Definition 5.48, as it does in the roadmap (`AdicSpaces/README.md`, §0.4).
+of Wedhorn's Remark and Definition 5.48.
 Wedhorn's presenting algebra in 6.28/6.29 is its **completion**, which he writes `Â⟨…⟩`; at the
 trivial weight family that completion is `restrictedMvPowerSeriesCompletion`, which this library
 writes `A⟨X₁, …, Xₖ⟩` without a subscript. So the domain of `π` below is a completion throughout,
@@ -55,12 +55,11 @@ never the subring itself.
 
 ## The weighted algebra, and why not the Tate-only one
 
-The presenting algebra is the **weighted** one. That is Wedhorn's own 6.29(i), and it is what the
-roadmap asks for (`AdicSpaces/README.md`, §5.2): the Tate-only algebra is too narrow downstream,
-since `A_inf` is Huber and not Tate. Definition 6.28, the strict variant, is the Tate-only case;
-the implication between them is `IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType`, and
-over a Tate ring the converse `IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` holds
-as well.
+The presenting algebra is the **weighted** one. That is Wedhorn's own 6.29(i), and the Tate-only
+algebra would be too narrow, since `A_inf` is Huber and not Tate. Definition 6.28, the strict
+variant, is the Tate-only case; the implication between them is
+`IsStrictlyTopologicallyFiniteType.isTopologicallyFiniteType`, and over a Tate ring the converse
+`IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType` holds as well.
 
 Two conditions on the weight family are in play and they are not the same. Wedhorn's standing
 hypothesis on `T` — needed even to *form* `A⟨X⟩_T` — is `TauCeti.Huber.IsWeightFamily`, that
@@ -165,6 +164,8 @@ theorem finite_append_append_weights {A : Type*} [One A] {k m n : ℕ} {T : Fin 
   Fin.addCases (fun j ↦ by simpa using hT j)
     (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
 
+section Basic
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   {B : Type*} [CommRing B] [TopologicalSpace B]
 
@@ -224,6 +225,25 @@ theorem IsTopologicallyFiniteType.continuous {φ : A →+* B} (h : IsTopological
   obtain ⟨k, T, _, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
   rw [← hcomm]
   exact hπ.continuous.comp (continuous_algebraMap_completion_weightedRestrictedSubring k A hT)
+
+/-- **Topological generators.** If `A → B` is topologically of finite type, then a finite subset
+of `B` generates a dense `A`-subalgebra: the images of the variables of a presentation. -/
+theorem IsTopologicallyFiniteType.exists_finite_dense_adjoin [Algebra A B]
+    (h : IsTopologicallyFiniteType (algebraMap A B)) :
+    ∃ s : Set B, s.Finite ∧ Dense (Algebra.adjoin A s : Set B) := by
+  obtain ⟨k, T, -, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
+  let s : Set B := Set.range fun i ↦
+    π ((weightedX T hT i : weightedRestrictedSubring T hT) : Completion _)
+  refine ⟨s, Set.finite_range _, ?_⟩
+  -- the elements of the presenting algebra mapping into the subalgebra form a dense subring
+  have hR := dense_of_forall_weightedX_mem hT (R := (Algebra.adjoin A s).toSubring.comap π)
+    (fun a ↦ by
+      rw [Subring.mem_comap, ← RingHom.comp_apply, hcomm]
+      exact Subalgebra.algebraMap_mem _ a)
+    fun i ↦ Algebra.subset_adjoin ⟨i, rfl⟩
+  refine (hπ.surjective.denseRange.dense_image hπ.continuous hR).mono ?_
+  rw [Subring.coe_comap, Subalgebra.coe_toSubring]
+  exact Set.image_preimage_subset _ _
 
 /-! ### Stability under a further open quotient
 
@@ -321,6 +341,8 @@ theorem IsTopologicallyFiniteType.comp_ringEquiv {φ : A →+* B} (h : IsTopolog
 
 end RingEquiv
 
+end Basic
+
 /-! ### The identity of a complete ring -/
 
 section Identity
@@ -381,10 +403,8 @@ section StronglyNoetherian
 
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   [IsStronglyNoetherian A]
-  [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
-  [T0Space B]
+  [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [T0Space B]
 
-omit [CompleteSpace B] in
 /-- **Strong noetherianness passes to an algebra strictly topologically of finite type.** Over a
 strongly noetherian Huber ring `A`, a Hausdorff nonarchimedean ring `B` admitting a map
 `φ : A →+* B` strictly topologically of finite type is again strongly noetherian.
@@ -656,7 +676,7 @@ private theorem coe_mem_closure_image_weightSubst
   obtain ⟨V, -, hV⟩ := (hasBasis_nhds_zero_weightedTopology hT).mem_iff.mp
     (hc.continuousAt.preimage_mem_nhds (by simpa using hN))
   obtain ⟨p, hp⟩ := exists_mvPolynomial_forall_coeff_sub_mem
-    (mem_weightedRestrictedSubring.mp h.2) (V ⊓ U)
+    (mem_weightedRestrictedSubring.mp h.property) (V ⊓ U)
   have hx : h - weightedPolynomialHom T hT p ∈ weightedNhd T hT (V ⊓ U).toAddSubgroup :=
     mem_weightedNhd.mpr fun ν ↦ by simpa using hp ν
   have hpU : ∀ ν, p.coeff ν ∈ weightMul T ν U.toAddSubgroup := fun ν ↦ by
@@ -751,6 +771,8 @@ private noncomputable def appendIncl (hV : IsWeightFamily V) :
         (isPowerBounded_weightedX (hV.append isWeightFamily_one_weight) (i := Fin.natAdd k j)
           (by simp)))
 
+section AppendSubst
+
 variable {htT : ∀ j, t j ∈ T (idx j)} {hV : IsWeightFamily V} {hVX : IsWeightedVarPowerBounded
     (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
     fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
@@ -832,6 +854,8 @@ private theorem surjective_appendSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j 
     (fun a ↦ RingHom.mem_range.mpr ⟨_, appendSubst_algebraMap a⟩)
     fun i ↦ RingHom.mem_range.mpr ⟨_, appendSubst_weightedX_castAdd i⟩
 
+end AppendSubst
+
 variable (hT) in
 /-- **Over a Huber ring the completed weighted algebra is an open quotient of a partly unweighted
 one.** Let `T` be a finite weight family and `V` a weight family such that each weighted variable
@@ -878,12 +902,12 @@ section Tate
 open Filter Topology
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
-  {k m : ℕ} {T : Fin k → Set A} {hT : IsWeightFamily T} {idx : Fin m → Fin k} {t : Fin m → A}
-  (htT : ∀ j, t j ∈ T (idx j))
+  {k : ℕ} {T : Fin k → Set A} (hT : IsWeightFamily T)
 
 /-- `weightSubst` is surjective once every element of every `Tᵢ` is some `tⱼ` with
 `idx j = i`. -/
-private theorem surjective_weightSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
+private theorem surjective_weightSubst {m : ℕ} {idx : Fin m → Fin k} {t : Fin m → A}
+    (htT : ∀ j, t j ∈ T (idx j)) (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j = i ∧ t j = a) :
     Function.Surjective (weightSubst hT htT) := by
   -- the range `R` is an open subring; it contains every `Xᵢ`, because some `ϖⁿ Xᵢ` is small and
   -- the pseudouniformiser `ϖ` is a unit
@@ -911,7 +935,6 @@ private theorem surjective_weightSubst (ht : ∀ i, ∀ a ∈ T i, ∃ j, idx j 
   rw [hXi]
   exact R.mul_mem ⟨_, weightSubst_algebraMap hT htT _⟩ hn
 
-variable (hT) in
 /-- **Over a Tate ring the completed weighted algebra is an open quotient of an unweighted one.**
 For a finite weight family `T` there is an enumeration `j ↦ (idx j, t j)` of the pairs `(i, t)`
 with `t ∈ Tᵢ`, and an open quotient map `θ : A⟨Y₁, …, Yₘ⟩ → A⟨X₁, …, Xₖ⟩_T` (completed) over `A`
@@ -932,12 +955,11 @@ theorem exists_isOpenQuotientMap_restrictedMvPowerSeriesCompletion
   let θ : restrictedMvPowerSeriesCompletion m A →ₐ[A] Completion (weightedRestrictedSubring T hT) :=
     { weightSubst hT htT with commutes' := weightSubst_algebraMap hT htT }
   refine ⟨m, idx, t, htT, ht, θ.toRingHom,
-    ⟨surjective_weightSubst htT ht, continuous_weightSubst hT htT, isOpenMap_weightSubst htT ht⟩,
+    ⟨surjective_weightSubst hT htT ht, continuous_weightSubst hT htT, isOpenMap_weightSubst htT ht⟩,
     RingHom.ext (weightSubst_algebraMap hT htT), fun j ↦ ?_⟩
   simp only [θ]
   rw [weightSubst, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
 
-variable (hT) in
 /-- **Over a Tate ring the completed weighted algebra is strictly topologically of finite type.**
 For a finite weight family `T`, the completion of `A⟨X₁, …, Xₖ⟩_T` is an open quotient of an
 unweighted `A⟨Y₁, …, Yₘ⟩` with one variable for each pair `(i, t)` with `t ∈ Tᵢ`, mapped to

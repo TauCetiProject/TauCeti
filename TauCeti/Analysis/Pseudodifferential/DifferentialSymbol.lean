@@ -67,7 +67,7 @@ theorem differentialSymbol_eq_sum_pow_mul (s : Finset ι) (v : ∀ i, Fin (k i) 
 @[simp]
 theorem differentialSymbol_empty (v : ∀ i, Fin (k i) → E)
     (b : ι → E → V →L[ℂ] W) : differentialSymbol ∅ v b = 0 := by
-  funext p
+  funext _
   simp [differentialSymbol]
 
 @[simp]
@@ -104,6 +104,50 @@ theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
     differentialSymbol s v (z • b) = z • differentialSymbol s v b := by
   funext p
   simp [differentialSymbol, smul_comm _ z, Finset.smul_sum]
+
+/-- The norm of a polynomial differential symbol is at most the sum over its summands of
+`‖ξ‖ ^ order` times the norms of the derivative directions and of the coefficient. -/
+theorem norm_differentialSymbol_le (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → V →L[ℂ] W) (x ξ : E) :
+    ‖differentialSymbol s v b (x, ξ)‖ ≤ ∑ i ∈ s, ‖ξ‖ ^ k i * (∏ j, ‖v i j‖) * ‖b i x‖ := by
+  rw [differentialSymbol_def]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [norm_smul, Complex.norm_prod]
+  gcongr
+  calc ∏ j, ‖Complex.I * (⟪ξ, v i j⟫ : ℂ)‖ ≤ ∏ j, ‖ξ‖ * ‖v i j‖ :=
+        Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ by
+          rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real]
+          exact norm_inner_le_norm ξ (v i j)
+    _ = ‖ξ‖ ^ k i * ∏ j, ‖v i j‖ := by
+      rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
+/-- Coefficients of class `C^r` give a polynomial differential symbol of class `C^r` jointly in
+the position and the frequency. -/
+theorem contDiff_differentialSymbol {r : ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    {b : ι → E → V →L[ℂ] W} (hb : ∀ i ∈ s, ContDiff ℝ r (b i)) :
+    ContDiff ℝ r (differentialSymbol s v b) := by
+  refine ContDiff.sum fun i hi ↦ ?_
+  have hprod : ContDiff ℝ r fun p : E × E ↦ ∏ j, (Complex.I * (⟪p.2, v i j⟫ : ℂ)) :=
+    contDiff_prod fun j _ ↦ contDiff_const.mul
+      (Complex.ofRealCLM.contDiff.comp (contDiff_snd.inner ℝ contDiff_const))
+  exact hprod.smul ((hb i hi).comp contDiff_fst)
+
+/-- If every summand has order `d`, the polynomial differential symbol is homogeneous of
+degree `d` in the frequency. -/
+theorem differentialSymbol_smul_snd (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → V →L[ℂ] W) {d : ℕ} (hk : ∀ i ∈ s, k i = d) (x ξ : E) (t : ℝ) :
+    differentialSymbol s v b (x, t • ξ) = t ^ d • differentialSymbol s v b (x, ξ) := by
+  simp only [differentialSymbol_def, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have h : ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ)) =
+      (t : ℂ) ^ d * ∏ j, (Complex.I * (⟪ξ, v i j⟫ : ℂ)) :=
+    calc ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ))
+        _ = ∏ j, ((t : ℂ) * (Complex.I * (⟪ξ, v i j⟫ : ℂ))) :=
+          Finset.prod_congr rfl fun j _ ↦ by rw [real_inner_smul_left, Complex.ofReal_mul]; ring
+        _ = _ := by
+          rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+            ← hk i hi]
+  rw [h, mul_smul, ← Complex.ofReal_pow, Complex.coe_smul]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 

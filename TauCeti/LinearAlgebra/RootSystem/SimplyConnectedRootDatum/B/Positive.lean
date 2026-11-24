@@ -67,7 +67,7 @@ theorem typeBSpin_raisingPath_iff_mem_posRootCone (s t : Finset (Fin n)) :
   · intro h
     induction h with
     | refl => simp
-    | @tail t u h htu ih =>
+    | @tail t u _ htu ih =>
       obtain ⟨i, hi, rfl⟩ := (typeBSpinRaisingStep_iff _ _).mp htu
       have hroot : (P).root (typeBSimpleIndex n i) ∈
           posRootCone P (typeBSimplyConnectedBase n) :=

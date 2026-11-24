@@ -123,7 +123,7 @@ private def IsChainFin {n : ℕ} (p : Fin n → InducedQuiver C F × InducedQuiv
 quiver, the component between its endpoints of the operation of `𝒞` on the same morphisms; on
 any other string, zero. -/
 private noncomputable def inducedOperation : (n : ℕ) →
-    MultilinearMap R (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R (InducedQuiver C F))
       (TotalHom R (InducedQuiver C F))
   | 0 => 0
   | n + 1 => by
@@ -273,7 +273,7 @@ private theorem stasheffTerm_eq_zero
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
     (hab : ¬ IsComposableString a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
     stasheffTerm (𝒞.inducedOperation F) d x p s (n - p - s) = 0 := by
-  rcases not_isComposableString_block_or_replaceBlock hab hps with h | h
+  rcases not_isComposableString_block_or_replaceBlock hab with h | h
   · rw [stasheffTerm_def,
       evalNat_inducedOperation_eq_zero (fun i hi ↦ hx (p + i) (by omega)) h, evalNat_def,
       (MultilinearMap.map_coord_zero _ (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp)),
@@ -490,7 +490,7 @@ theorem totalHomMap_taylor_induced {X Y : InducedQuiver C F}
     {w : ReducedTensorWords R (TotalHom R (InducedQuiver C F))} (hw : w ∈ composableWords R X Y) :
     totalHomMap R F ((𝒞.induced F).taylor w) =
       𝒞.taylor (ReducedTensorWords.map (R := R) (totalHomMap R F) w) := by
-  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_)
     (fun x y hx hy ↦ by simp only [map_add, hx, hy]) (fun r x hx ↦ by simp only [map_smul, hx]) hw
   · rw [ReducedTensorWords.map_of_tprod, AInfinityAlgebra.taylor_of_tprod,
       AInfinityAlgebra.taylor_of_tprod, (𝒞.induced F).grading_eq, 𝒞.grading_eq]

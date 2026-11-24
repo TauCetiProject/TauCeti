@@ -57,6 +57,8 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
 * `CoxeterSystem.parabolic`: the standard parabolic subgroup attached to a set of indices.
 * `CoxeterSystem.IsMinimalCosetRep`: having minimal length in one's own left coset of a standard
   parabolic subgroup.
+* `CoxeterSystem.minimalCosetRep`: the minimal coset representative of the left coset of an
+  element.
 
 ## Main results
 
@@ -74,12 +76,15 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
 * `CoxeterSystem.minimalCosetRepProdParabolicEquiv`: the same factorization, as an equivalence
   `{u // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W`.
 * `CoxeterSystem.IsMinimalCosetRep.eq_of_inv_mul_mem`: each left coset has only one minimal
-  coset representative.
+  coset representative; `CoxeterSystem.minimalCosetRep` picks it out, and
+  `CoxeterSystem.eq_minimalCosetRep_iff` characterizes it.
 * `CoxeterSystem.IsMinimalCosetRep.simple_mul_of_isLeftDescent` and
   `CoxeterSystem.IsMinimalCosetRep.simple_mul_or_exists_eq_mul_simple` (Deodhar's lemma): left
   multiplication by a simple reflection keeps a minimal coset representative minimal when it
   shortens it, and in general either keeps it minimal or stays in the same coset.
 * `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
+* `CoxeterSystem.parabolic_hom_ext`: homomorphisms out of a standard parabolic subgroup are
+  determined by the simple reflections it contains.
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
   factorization, on the other side, with the left-descent form of the minimality condition;
@@ -182,6 +187,14 @@ theorem mem_parabolic_iff_exists_wordProd_eq {J : Set B} {w : W} :
     w ∈ cs.parabolic J ↔ ∃ ω : List B, (∀ i ∈ ω, i ∈ J) ∧ π ω = w :=
   ⟨cs.exists_wordProd_eq_of_mem_parabolic,
     fun ⟨_, hω, hp⟩ => hp ▸ cs.wordProd_mem_parabolic hω⟩
+
+/-- **Homomorphisms out of a standard parabolic subgroup are determined by the simple reflections
+it contains.** -/
+theorem parabolic_hom_ext {G : Type*} [Monoid G] {J : Set B} {φ ψ : cs.parabolic J →* G}
+    (h : ∀ i (hi : i ∈ J), φ ⟨s i, cs.simple_mem_parabolic hi⟩ =
+      ψ ⟨s i, cs.simple_mem_parabolic hi⟩) : φ = ψ :=
+  MonoidHom.eq_of_eqOn_dense Subgroup.closure_closure_coe_preimage
+    (by rintro ⟨_, _⟩ ⟨i, hi, rfl⟩; exact h i hi)
 
 /-- The word of `CoxeterSystem.mem_parabolic_iff_exists_wordProd_eq` may be taken reduced: every
 element of a standard parabolic subgroup is spelled by a reduced word with letters in the defining
@@ -382,11 +395,11 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
 `cs.parabolic J` with `W`, by `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`. -/
 noncomputable def minimalCosetRepProdParabolicEquiv (J : Set B) :
     {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W :=
-  Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
+  Equiv.ofBijective (fun p ↦ p.1.val * p.2.val) <| by
     refine ⟨fun ⟨u, v⟩ ⟨u', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
-    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J (u.1 * v.1)
-      have h₁ := huniq (u.1, v.1) ⟨u.2, v.2, rfl⟩
-      have h₂ := huniq (u'.1, v'.1) ⟨u'.2, v'.2, h⟩
+    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J (u.val * v.val)
+      have h₁ := huniq (u.val, v.val) ⟨u.property, v.property, rfl⟩
+      have h₂ := huniq (u'.val, v'.val) ⟨u'.property, v'.property, h⟩
       rw [← h₂, Prod.mk.injEq] at h₁
       exact Prod.ext (Subtype.ext h₁.1) (Subtype.ext h₁.2)
     · obtain ⟨⟨u, v⟩, ⟨hu, hv, hw⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul J w
@@ -396,7 +409,7 @@ noncomputable def minimalCosetRepProdParabolicEquiv (J : Set B) :
 @[simp]
 theorem minimalCosetRepProdParabolicEquiv_apply (J : Set B)
     (p : {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J) :
-    cs.minimalCosetRepProdParabolicEquiv J p = p.1.1 * p.2.1 :=
+    cs.minimalCosetRepProdParabolicEquiv J p = p.1.val * p.2.val :=
   (rfl)
 
 /-- **Minimal coset representatives are unique.** Two minimal representatives of the same left
@@ -407,6 +420,63 @@ theorem IsMinimalCosetRep.eq_of_inv_mul_mem {J : Set B} {u v : W} (hu : cs.IsMin
   have h₁ := huniq (u, u⁻¹ * v) ⟨hu, h, (mul_inv_cancel_left u v).symm⟩
   have h₂ := huniq (v, 1) ⟨hv, one_mem _, (mul_one v).symm⟩
   exact congrArg Prod.fst (h₁.trans h₂.symm)
+
+/-- The **minimal coset representative** of the left coset `w · cs.parabolic J`: its unique element
+of minimal length (`CoxeterSystem.eq_minimalCosetRep_iff`). This is the projection of `W` onto the
+parabolic quotient `W / W_J`, modelled on the minimal coset representatives. -/
+noncomputable def minimalCosetRep (J : Set B) (w : W) : W :=
+  w * (cs.exists_isMinimalCosetRep J w).choose
+
+/-- The minimal coset representative of `w` is a minimal coset representative. -/
+theorem isMinimalCosetRep_minimalCosetRep (J : Set B) (w : W) :
+    cs.IsMinimalCosetRep J (cs.minimalCosetRep J w) :=
+  (cs.exists_isMinimalCosetRep J w).choose_spec.2
+
+/-- The minimal coset representative of `w` lies in the left coset of `w`. -/
+@[simp]
+theorem inv_mul_minimalCosetRep_mem (J : Set B) (w : W) :
+    w⁻¹ * cs.minimalCosetRep J w ∈ cs.parabolic J := by
+  rw [minimalCosetRep, inv_mul_cancel_left]
+  exact (cs.exists_isMinimalCosetRep J w).choose_spec.1
+
+/-- **The minimal coset representative of `w` is the only minimal coset representative in the left
+coset of `w`.** -/
+theorem eq_minimalCosetRep_iff {J : Set B} {u w : W} :
+    u = cs.minimalCosetRep J w ↔ cs.IsMinimalCosetRep J u ∧ w⁻¹ * u ∈ cs.parabolic J := by
+  refine ⟨?_, fun ⟨hu, hw⟩ ↦
+    hu.eq_of_inv_mul_mem cs (cs.isMinimalCosetRep_minimalCosetRep J w) ?_⟩
+  · rintro rfl
+    exact ⟨cs.isMinimalCosetRep_minimalCosetRep J w, cs.inv_mul_minimalCosetRep_mem J w⟩
+  · simpa [mul_assoc] using mul_mem (inv_mem hw) (cs.inv_mul_minimalCosetRep_mem J w)
+
+/-- A minimal coset representative is its own minimal coset representative. -/
+theorem IsMinimalCosetRep.minimalCosetRep_eq {J : Set B} {u : W} (hu : cs.IsMinimalCosetRep J u) :
+    cs.minimalCosetRep J u = u :=
+  ((cs.eq_minimalCosetRep_iff).mpr ⟨hu, by simp⟩).symm
+
+/-- An element is its own minimal coset representative exactly when it is a minimal coset
+representative. -/
+@[simp]
+theorem minimalCosetRep_eq_self_iff {J : Set B} {w : W} :
+    cs.minimalCosetRep J w = w ↔ cs.IsMinimalCosetRep J w :=
+  ⟨fun h ↦ h ▸ cs.isMinimalCosetRep_minimalCosetRep J w, fun h ↦ h.minimalCosetRep_eq cs⟩
+
+/-- Taking the minimal coset representative is idempotent. -/
+@[simp]
+theorem minimalCosetRep_minimalCosetRep (J : Set B) (w : W) :
+    cs.minimalCosetRep J (cs.minimalCosetRep J w) = cs.minimalCosetRep J w :=
+  (cs.isMinimalCosetRep_minimalCosetRep J w).minimalCosetRep_eq cs
+
+/-- **Two elements have the same minimal coset representative exactly when they lie in the same
+left coset.** -/
+theorem minimalCosetRep_eq_minimalCosetRep_iff {J : Set B} {v w : W} :
+    cs.minimalCosetRep J v = cs.minimalCosetRep J w ↔ v⁻¹ * w ∈ cs.parabolic J := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (cs.eq_minimalCosetRep_iff).mpr
+    ⟨cs.isMinimalCosetRep_minimalCosetRep J v, ?_⟩⟩
+  · have := mul_mem (cs.inv_mul_minimalCosetRep_mem J v)
+      (inv_mem (cs.inv_mul_minimalCosetRep_mem J w))
+    rwa [h, mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left] at this
+  · simpa [mul_assoc] using mul_mem (inv_mem h) (cs.inv_mul_minimalCosetRep_mem J v)
 
 /-- **Removing a left descent keeps a minimal coset representative minimal.** If `u` is a minimal
 coset representative for `cs.parabolic J` and `s i * u` is shorter than `u`, then `s i * u` is a
@@ -477,11 +547,11 @@ identifies pairs of an element `x` of `cs.parabolic J` and an element `v` with n
 `J` with `W`, by `CoxeterSystem.existsUnique_mem_parabolic_mul`. -/
 noncomputable def parabolicProdEquiv (J : Set B) :
     cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i} ≃ W :=
-  Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
+  Equiv.ofBijective (fun p ↦ p.1.val * p.2.val) <| by
     refine ⟨fun ⟨x, v⟩ ⟨x', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
-    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_mem_parabolic_mul J (x.1 * v.1)
-      have h₁ := huniq (x.1, v.1) ⟨x.2, v.2, rfl⟩
-      have h₂ := huniq (x'.1, v'.1) ⟨x'.2, v'.2, h⟩
+    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_mem_parabolic_mul J (x.val * v.val)
+      have h₁ := huniq (x.val, v.val) ⟨x.property, v.property, rfl⟩
+      have h₂ := huniq (x'.val, v'.val) ⟨x'.property, v'.property, h⟩
       rw [← h₂, Prod.mk.injEq] at h₁
       exact Prod.ext (Subtype.ext h₁.1) (Subtype.ext h₁.2)
     · obtain ⟨⟨x, v⟩, ⟨hx, hv, hw⟩, -⟩ := cs.existsUnique_mem_parabolic_mul J w
@@ -491,7 +561,7 @@ noncomputable def parabolicProdEquiv (J : Set B) :
 @[simp]
 theorem parabolicProdEquiv_apply (J : Set B)
     (p : cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i}) :
-    cs.parabolicProdEquiv J p = p.1.1 * p.2.1 :=
+    cs.parabolicProdEquiv J p = p.1.val * p.2.val :=
   (rfl)
 
 end CoxeterSystem

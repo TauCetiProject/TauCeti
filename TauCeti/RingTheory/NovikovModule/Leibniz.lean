@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
+public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
 public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -35,10 +36,21 @@ kernel has raw Floer degree minus the half-dimension, the product preserves degr
 regraded by the half-dimension minus the raw degree
 (`TauCeti.Floer.kernelProduct_mem_cochain_gradeBy`).
 
+On finite unions of torsors with invariant kernels, products and maps are given by matrices of
+Novikov series relative to reference generators (`NovikovModule.novikovProductOfMatrix`,
+`NovikovModule.novikovMapOfMatrix`). For matrices `Q`, `D₁`, `D₂`, `D₀` the Leibniz identity
+becomes the identity `∑ₖ Qᵢⱼₖ D₀ₖₗ = ∑ₖ D₁ᵢₖ Qₖⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₖ D₂ⱼₖ Qᵢₖₗ` between finite
+sums of Novikov series, and it implies the Leibniz rule for the product and maps of the matrices
+(`NovikovModule.novikovMapOfMatrix_novikovProductOfMatrix_eq_add`), provided degrees change by
+even amounts within each orbit, so that the sign only depends on the orbit. This is the form in
+which counts indexed by classes of a period group enter.
+
 ## Main results
 
 * `TauCeti.NovikovModule.kernelMap_kernelProduct_eq_add`: the Leibniz rule on completed
   combinations, from the Leibniz identity between kernels.
+* `TauCeti.NovikovModule.novikovMapOfMatrix_novikovProductOfMatrix_eq_add`: the Leibniz rule for
+  matrices of Novikov series, from the Leibniz identity between matrices.
 
 ## References
 
@@ -125,6 +137,57 @@ theorem kernelMap_kernelProduct_eq_add
       (fun p₁ hp₁ => funext₂ fun p₂ p₀ => by simp [k₁, k₂, hL, hp₁]) ha b,
     kernelProduct_add h₁ h₁fin hk₂ hk₂fin hk hkfin, kernelProduct_smul h₂ h₂fin _ hk₂ hk₂fin,
     LinearMap.add_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply]
+
+section Matrix
+
+variable {R H ι₁ ι₂ ι₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+
+variable [Fintype ι₁] [Fintype ι₂] [Fintype ι₀]
+
+/-- **The Leibniz rule for matrices of Novikov series.** Let `Q` be the matrix of a product and
+`D₁`, `D₂`, `D₀` the matrices of maps on the two inputs and the output, relative to reference
+generators. Grade the first input by `d₁`, with even changes of degree within each orbit. If the
+matrices obey the Leibniz identity
+
+`∑ₖ Qᵢⱼₖ D₀ₖₗ = ∑ₖ D₁ᵢₖ Qₖⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₖ D₂ⱼₖ Qᵢₖₗ`,
+
+which in Floer theory is the count of the ends of one-dimensional product moduli spaces between
+reference generators, class by class, then for a completed combination `a` of degree `e` and any
+completed combination `b`, `D₀ (a ⋆ b) = D₁ a ⋆ b + (-1)^e a ⋆ D₂ b`. -/
+theorem novikovMapOfMatrix_novikovProductOfMatrix_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N))
+    (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N)) (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+    {d₁ : (Σ i, P₁ i) → ℤ} (hd₁ : ∀ i (h : H) (p : P₁ i), Even (d₁ ⟨i, h +ᵥ p⟩ - d₁ ⟨i, p⟩))
+    (hL : ∀ i j l, ∑ k, Q i j k * D₀ k l =
+      ∑ k, D₁ i k * Q k j l + negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * Q i k l)
+    {e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e) (b : NovikovModule R F₂) :
+    novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b) =
+      novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) b +
+        negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [map_add, map_smul, Pi.add_apply, Pi.smul_apply,
+    coordinates_novikovMapOfMatrix_novikovProductOfMatrix,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_left,
+    coordinates_novikovProductOfMatrix_novikovMapOfMatrix_right]
+  have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
+  -- Termwise, this is the Leibniz identity, with the sign of the orbit of `i` replaced by the
+  -- sign of the degree of `a` on its nonzero coordinates.
+  rw [Finset.smul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.smul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [hL, mul_add, mul_smul_comm, ← smul_mul_assoc, ← smul_mul_assoc, hs, smul_mul_assoc,
+    smul_mul_assoc]
+
+end Matrix
 
 end NovikovModule
 

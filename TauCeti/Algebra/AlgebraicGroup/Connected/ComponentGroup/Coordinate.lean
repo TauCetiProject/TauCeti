@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Convolution
 public import TauCeti.RingTheory.Idempotents.Connected.Components
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 import Mathlib.Algebra.BigOperators.Pi
+import TauCeti.RingTheory.Idempotents.LinearIndependent
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
@@ -189,14 +190,18 @@ theorem counit_componentFunctionAlgHom (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     eval_componentFunctionAlgHom H
       (1 : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) f
 
+omit [IsAlgClosed k] in
 /-- The component function algebra embeds in the coordinate ring. -/
 theorem componentFunctionAlgHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentFunctionAlgHom H) := by
-  intro f g hfg
-  funext C
-  obtain ⟨x, hx⟩ := rationalComponentMap_surjective H C
-  rw [← hx, ← eval_componentFunctionAlgHom H x f,
-    ← eval_componentFunctionAlgHom H x g, hfg]
+  classical
+  rw [injective_iff_map_eq_zero]
+  intro f hf
+  have hli := (PrimeSpectrum.orthogonalIdempotents_connectedComponentsIdempotent (R := H)
+    ).linearIndependent (k := k) PrimeSpectrum.connectedComponentsIdempotent_ne_zero
+  funext D
+  exact Fintype.linearIndependent_iff.mp hli f
+    (by simpa only [componentFunctionAlgHom_apply, Algebra.smul_def] using hf) D
 
 /-- The coordinate algebra map representing projection to the finite constant group of connected
 components. -/
@@ -255,6 +260,7 @@ theorem componentCoordinateMap_indicator (H : FiniteTypeCommHopfAlgCat.{u, u} k)
         simp
       · simp
 
+omit [IsAlgClosed k] in
 /-- The component coordinate map is injective. -/
 theorem componentCoordinateMap_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     Function.Injective (componentCoordinateMap H) :=

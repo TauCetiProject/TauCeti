@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.Algebra.FiveLemma
+import Mathlib.Algebra.Module.FinitePresentation
 import Mathlib.RingTheory.Flat.Equalizer
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Injectivity of base-change maps along flat ring maps
@@ -36,9 +40,30 @@ Flatness of `S` can also be traded for flatness of `M₃`: if the top row is a s
 is a base change for every `R`-algebra `S`. This is the form in which the kernel of a surjective
 Čech differential onto flat modules commutes with arbitrary base change.
 
+For compatible pairs `ker (f.coprod (-g))`, projection to the second factor also has an
+injective scalar-extension comparison if the comparisons for `f` and for multiplication on
+`ker g` are injective. Dually, that comparison is surjective if the comparison for `f` is
+surjective and multiplication on the cokernel of `g` is injective. These are the linear-algebra
+steps in formal gluing
+([Stacks, Proposition 15.91.16](https://stacks.math.columbia.edu/tag/05ER)).
+
+For a finitely generated `R`-module `M`, the first criterion compares `Hom_R(M, N)` with
+`Hom_R(Rⁿ, N)` along a surjection `Rⁿ → M`, and shows that the comparison map
+`S ⊗[R] Hom_R(M, N) → Hom_S(S ⊗[R] M, S ⊗[R] N)` is injective. Mathlib's
+`Module.FinitePresentation.isBaseChange_map` shows that it is bijective when `M` is finitely
+presented; injectivity needs only finite generation
+([Stacks, Lemma 10.10.2](https://stacks.math.columbia.edu/tag/087R)). Applied to endomorphisms,
+it shows that an algebra acting faithfully on a finitely generated module still acts faithfully
+after flat base change.
+
 ## Main results
 
 * `LinearMap.liftBaseChange_injective_of_isBaseChange`: injectivity of `S ⊗[R] M₁ → N₁`.
+* `LinearMap.injective_liftBaseChange_snd_ker_coprod`: injectivity of the comparison from
+  compatible pairs to the second factor.
+* `LinearMap.surjective_liftBaseChange_snd_ker_coprod`: surjectivity of that comparison.
+* `LinearMap.tensorProduct_injective`: for flat `S` and finitely generated `M`, the comparison
+  map `S ⊗[R] Hom_R(M, N) → Hom_S(S ⊗[R] M, S ⊗[R] N)` is injective.
 * `IsBaseChange.of_left_exact_of_lTensor`: the five-lemma criterion for an arbitrary `R`-algebra
   `S`, assuming that tensoring the top row with `S` keeps it left exact.
 * `IsBaseChange.of_left_exact_of_injective`: the variant of `IsBaseChange.of_left_exact` with an
@@ -131,3 +156,148 @@ theorem IsBaseChange.of_left_exact_of_surjective [Module.Flat R M₃]
     (LinearMap.lTensor_injective_of_exact_of_flat g surj₁ f inj₁ exact₁ S) exact₂ inj₂
 
 end LeftExact
+
+namespace LinearMap
+
+open Function
+
+variable {S} {M N P : Type*} [Module.Flat R S] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+  [AddCommGroup P] [Module R P] [Module S P] [IsScalarTower R S P]
+
+/-- Scalar extension of the projection from compatible pairs to the second factor is
+injective if the comparison for the first map and multiplication on the kernel of the
+second map are injective. No finiteness or faithful flatness is required. -/
+theorem injective_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P)
+    (hf : Injective (f.liftBaseChange S))
+    (hg : Injective (((LinearMap.id : g.ker →ₗ[S] g.ker).restrictScalars R).liftBaseChange S)) :
+    Injective (((LinearMap.snd R M N).domRestrict
+      (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S) := by
+  let K := (f.coprod (-g.restrictScalars R)).ker
+  let a : g.ker →ₗ[R] K :=
+    ((LinearMap.inr R M N).comp (g.ker.subtype.restrictScalars R)).codRestrict K
+      (fun n ↦ by simp [K, LinearMap.mem_ker])
+  let b : K →ₗ[R] M := (LinearMap.fst R M N).domRestrict K
+  let c : K →ₗ[R] N := (LinearMap.snd R M N).domRestrict K
+  have hK (k : K) : f k.val.1 = g k.val.2 := by
+    simpa only [K, LinearMap.mem_ker, LinearMap.coprod_apply,
+      LinearMap.neg_apply, LinearMap.coe_restrictScalars, sub_eq_zero, ← sub_eq_add_neg]
+      using k.property
+  have ha : Injective a := by
+    intro n n' h
+    exact Subtype.ext (congrArg (fun k : K ↦ k.val.2) h)
+  have hab : Exact a b := by
+    intro k
+    constructor
+    · intro hk
+      refine ⟨⟨k.val.2, ?_⟩, ?_⟩
+      · have hk0 : k.val.1 = 0 := by simpa [b] using hk
+        simpa [hk0] using (hK k).symm
+      · apply Subtype.ext
+        exact Prod.ext hk.symm rfl
+    · rintro ⟨n, rfl⟩
+      simp [a, b, LinearMap.codRestrict]
+  have hfc : (f.liftBaseChange S).restrictScalars R ∘ₗ b.lTensor S =
+      (g.restrictScalars R) ∘ₗ (c.liftBaseChange S).restrictScalars R := by
+    ext s k
+    simp [b, c, hK k]
+  let μ := ((LinearMap.id : g.ker →ₗ[S] g.ker).restrictScalars R).liftBaseChange S
+  have hca : (c.liftBaseChange S).restrictScalars R ∘ₗ a.lTensor S =
+      (g.ker.subtype.restrictScalars R) ∘ₗ μ.restrictScalars R := by
+    ext s n
+    simp [a, c, μ, LinearMap.codRestrict]
+  -- Apply the four lemma to the exact rows starting in zero, with vertical maps
+  -- multiplication, the compatible-pairs comparison, and the comparison for `f`.
+  exact LinearMap.injective_of_surjective_of_injective_of_injective
+    (0 : Unit →ₗ[R] S ⊗[R] g.ker) (a.lTensor S) (b.lTensor S)
+    (0 : Unit →ₗ[R] g.ker) (g.ker.subtype.restrictScalars R) (g.restrictScalars R)
+    (0 : Unit →ₗ[R] Unit) (μ.restrictScalars R) ((c.liftBaseChange S).restrictScalars R)
+    ((f.liftBaseChange S).restrictScalars R) (by simp) hca.symm hfc.symm
+    ((LinearMap.exact_zero_iff_injective Unit _).mpr
+      (Module.Flat.lTensor_preserves_injective_linearMap a ha))
+    (Module.Flat.lTensor_exact S hab)
+    ((LinearMap.exact_zero_iff_injective Unit _).mpr g.ker.subtype_injective)
+    (fun _ ↦ ⟨(), rfl⟩) hg hf
+
+/-- Scalar extension of the projection from compatible pairs to the second factor is
+surjective if the comparison for the first map is surjective and multiplication on the
+cokernel of the second map is injective. No finiteness or faithful flatness is required. -/
+theorem surjective_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P)
+    (hf : Surjective (f.liftBaseChange S))
+    (hg : Injective (((LinearMap.id : (P ⧸ g.range) →ₗ[S] (P ⧸ g.range)).restrictScalars
+      R).liftBaseChange S)) :
+    Surjective (((LinearMap.snd R M N).domRestrict
+      (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S) := by
+  let K := (f.coprod (-g.restrictScalars R)).ker
+  let c : K →ₗ[R] N := (LinearMap.snd R M N).domRestrict K
+  have hK (k : K) : f k.val.1 = g k.val.2 := by
+    simpa only [K, LinearMap.mem_ker, LinearMap.coprod_apply,
+      LinearMap.neg_apply, LinearMap.coe_restrictScalars, sub_eq_zero, ← sub_eq_add_neg]
+      using k.property
+  -- The first factor modulo the image of `g`, and the elements of `M` it kills.
+  let ψ : M →ₗ[R] P ⧸ g.range := (g.range.mkQ.restrictScalars R) ∘ₗ f
+  let μ := ((LinearMap.id : (P ⧸ g.range) →ₗ[S] (P ⧸ g.range)).restrictScalars R).liftBaseChange S
+  have hμ (t : S ⊗[R] M) : μ (ψ.lTensor S t) = g.range.mkQ (f.liftBaseChange S t) := by
+    induction t with
+    | tmul s m => simp [μ, ψ]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  -- Projection to the first factor maps the compatible pairs onto `ker ψ`.
+  let b : K →ₗ[R] ψ.ker := ((LinearMap.fst R M N).domRestrict K).codRestrict ψ.ker
+    fun k ↦ by simp [ψ, hK k]
+  have hb : Surjective b := by
+    rintro ⟨m, hm⟩
+    obtain ⟨n, hn⟩ : f m ∈ g.range := by
+      simpa [ψ, Submodule.Quotient.mk_eq_zero] using hm
+    refine ⟨⟨(m, n), ?_⟩, rfl⟩
+    simp [K, hn]
+  have hbk (k : K) : (b k : M) = k.val.1 := rfl
+  have hcb (v : S ⊗[R] K) :
+      g (c.liftBaseChange S v) =
+        f.liftBaseChange S ((ψ.ker.subtype.lTensor S) (b.lTensor S v)) := by
+    induction v with
+    | tmul s k => simp [c, hbk, hK k]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  intro n
+  -- Lift `g n` to `S ⊗[R] ker ψ` by flatness, then to `S ⊗[R] K`; the error lies in `ker g`.
+  obtain ⟨t, ht⟩ := hf (g n)
+  have hψt : ψ.lTensor S t = 0 :=
+    hg (((hμ t).trans (by simp [ht])).trans (map_zero μ).symm)
+  obtain ⟨u, hu⟩ := (Module.Flat.lTensor_exact S ψ.exact_subtype_ker_map t).mp hψt
+  obtain ⟨v, rfl⟩ := LinearMap.lTensor_surjective S hb u
+  have hk : (0, n - c.liftBaseChange S v) ∈ K := by
+    simp [K, hcb, hu, ht]
+  refine ⟨v + (1 : S) ⊗ₜ[R] ⟨_, hk⟩, ?_⟩
+  simpa only [map_add, LinearMap.liftBaseChange_tmul, one_smul, LinearMap.domRestrict_apply,
+    LinearMap.snd_apply] using add_sub_cancel (c.liftBaseChange S v) n
+
+end LinearMap
+
+section Hom
+
+variable (R) (M N : Type*) [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- **Flat base change of `Hom` out of a finitely generated module.** For a flat `R`-algebra `S`
+and a finitely generated `R`-module `M`, the comparison map
+`S ⊗[R] Hom_R(M, N) → Hom_S(S ⊗[R] M, S ⊗[R] N)`, `s ⊗ φ ↦ s • φ.baseChange S`, is injective.
+When `M` is finitely presented it is bijective (`Module.FinitePresentation.isBaseChange_map`). -/
+theorem LinearMap.tensorProduct_injective [Module.Flat R S] [Module.Finite R M] :
+    Function.Injective (LinearMap.tensorProduct R S M N) := by
+  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
+  -- Precomposition with the surjection `g : Rⁿ → M` embeds `Hom_R(M, N)` into `Hom_R(Rⁿ, N)`,
+  -- and the comparison map for the free module `Rⁿ` is bijective.
+  have hc : (LinearMap.baseChangeHom R S (Fin n → R) N).comp (g.lcomp R N) =
+      (((g.baseChange S).lcomp S (S ⊗[R] N)).restrictScalars R).comp
+        (LinearMap.baseChangeHom R S M N) :=
+    LinearMap.ext fun φ ↦ LinearMap.baseChange_comp g φ
+  have he : LinearMap.tensorProduct R S M N =
+      (LinearMap.baseChangeHom R S M N).liftBaseChange S := by
+    ext φ m
+    simp
+  rw [he]
+  -- The targets are named: inferring them from the comparison maps is very slow.
+  exact LinearMap.liftBaseChange_injective_of_isBaseChange S
+    (N₁ := S ⊗[R] M →ₗ[S] S ⊗[R] N) (N₂ := S ⊗[R] (Fin n → R) →ₗ[S] S ⊗[R] N) hc
+    (Module.isBaseChange_map_of_finite_free N S (Fin n))
+    (LinearMap.lcomp_injective_of_surjective g hg)
+
+end Hom

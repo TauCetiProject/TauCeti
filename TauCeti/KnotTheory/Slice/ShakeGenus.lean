@@ -11,6 +11,7 @@ public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 import TauCeti.AlgebraicTopology.Singular.Contractible
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Sphere
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Geometry.Manifold.Instances.ClosedBall.Boundary
 import TauCeti.LowDimTopology.DehnSurgery.Unknot
 
@@ -212,7 +213,7 @@ variable {K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1)}
 
 /-- The first singular homology `H₁(S; ℚ)` of a `0`-shake surface, with rational coefficients. -/
 abbrev firstHomology (S : ZeroShakeSurface K) : Type :=
-  ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
+  ((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
 
 /-- The **genus** of a `0`-shake surface: `(dim H₁(S; ℚ) + 1 - b) / 2`, `b` the number of parallel
 copies of the knot bounding it. A compact, connected, orientable surface of genus `g` with `b`
@@ -363,11 +364,11 @@ def mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
     -- The isometry maps the complement of `K` into the complement of `K'`.
     have hmaps (x : ↥(range K)ᶜ) : e.unitSphereIsometryEquiv x ∈ (range K')ᶜ := by
       rintro ⟨z, hz⟩
-      refine x.2 ⟨z, e.unitSphereIsometryEquiv.injective (Subtype.ext ?_)⟩
+      refine x.property ⟨z, e.unitSphereIsometryEquiv.injective (Subtype.ext ?_)⟩
       rw [e.coe_unitSphereIsometryEquiv_apply, ← hK', hz]
     exact S.isSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map _
       (ContinuousMap.id Circle) ⟨fun x ↦ ⟨_, hmaps x⟩,
-        (e.unitSphereIsometryEquiv.continuous.comp continuous_subtype_val).subtype_mk _⟩
+        (e.unitSphereIsometryEquiv.continuous.comp continuous_subtypeVal).subtype_mk _⟩
       (fun _ _ hx ↦ congrArg e.unitSphereIsometryEquiv hx) S.boundaryHomologyMap_longitude
   parallels := S.parallels
   norm_lt_one_of_mem_parallels := S.norm_lt_one_of_mem_parallels
@@ -515,14 +516,13 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     ext ⟨c, z⟩
     simp only [mem_range, ContinuousMap.prod_eval, ContinuousMap.const_apply, Prod.mk.injEq,
       Finset.coe_singleton, mem_prod, mem_singleton_iff, mem_univ, and_true]
-    refine ⟨fun ⟨x, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
+    refine ⟨fun ⟨_, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
     exact circleHomeomorphBoundaryClosedBall.symm_apply_apply z
   map_ker_eq_top := by
-    have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
     -- `singularHomologyFunctor` unfolds to the homology of the singular chain complex, so the
     -- vanishing of the first homology of the contractible disc is the chain-level statement.
     have : Subsingleton (((singularChains ℤ).obj (TopCat.of (closedBall (0 : ℂ) 1))).homology 1) :=
-      inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat ℤ) 1).obj
+      inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (closedBall (0 : ℂ) 1))))
     rw [LinearMap.ker_eq_top.2 (Subsingleton.elim _ _), Submodule.map_top, LinearMap.range_eq_top]
     -- The projection of the boundary circle to the core circle is a homeomorphism.
@@ -567,10 +567,9 @@ theorem IsSmoothSliceDisc.genus_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     (hΨ : IsSolidTorusNeighborhood K Ψ)
     (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
     (h.toZeroShakeSurface hΨ hl).genus = 0 := by
-  have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
   -- The carrier of `h.toZeroShakeSurface hΨ hl` is the closed unit disc by definition.
   have : Subsingleton (h.toZeroShakeSurface hΨ hl).firstHomology :=
-    inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat ℚ) 1).obj
+    inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj
       (ModuleCat.of ℚ ℚ)).obj (TopCat.of (closedBall (0 : ℂ) 1))))
   rw [ZeroShakeSurface.genus_def, finrank_zero_of_subsingleton]
   simp

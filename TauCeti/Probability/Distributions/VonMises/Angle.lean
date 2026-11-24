@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.VonMises.Basic
 public import TauCeti.Probability.Quantile
 import TauCeti.MeasureTheory.Measure.AddCircle
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The von Mises law in the fixed angle chart
@@ -69,7 +69,7 @@ theorem vonMisesAngleMeasure_eq_withDensity (hκ : 0 ≤ κ) :
     vonMisesAngleMeasure m κ = (volume.restrict (Ico (-π) π)).withDensity
       (fun t : ℝ ↦ ENNReal.ofReal (vonMisesPDFReal m κ t / (2 * π))) := by
   rw [vonMisesAngleMeasure_def, vonMisesMeasure_of_nonneg hκ,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π) (measurable_vonMisesPDF m κ)]
+    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
   congr 1
@@ -83,7 +83,7 @@ theorem ae_mem_Ico_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
   rw [vonMisesAngleMeasure_def]
   have hm : Measurable (fun θ : AddCircle (2 * π) ↦
       (AddCircle.equivIco (2 * π) (-π) θ : ℝ)) :=
-    measurable_subtype_coe.comp (AddCircle.measurableEquivIco (2 * π) (-π)).measurable
+    measurable_subtypeVal.comp (AddCircle.measurableEquivIco (2 * π) (-π)).measurable
   apply (ae_map_iff hm.aemeasurable measurableSet_Ico).2
   exact ae_of_all _ fun θ ↦ by
     have hπ : -π + 2 * π = π := by ring
@@ -136,9 +136,9 @@ theorem cdf_vonMisesAngleMeasure_eq_integral (hκ : 0 ≤ κ) (hx : x ∈ Icc (-
     ((continuous_vonMisesPDFReal m κ).comp (AddCircle.continuous_mk' _)).div_const _
   rw [cdf_eq_real, vonMisesAngleMeasure_eq_withDensity hκ,
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
-    measureReal_withDensity_ofReal
+    MeasureTheory.measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (vonMisesPDFReal_pos _ _ _) two_pi_pos).le)
-      measurableSet_Iic ((hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self).integrableOn),
+      nullMeasurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 
@@ -262,7 +262,7 @@ theorem tendsto_quantile_vonMisesAngleMeasure_nhdsLT_one (hκ : 0 ≤ κ) :
 theorem measurable_vonMisesAngleMeasure :
     Measurable fun p : AddCircle (2 * π) × ℝ ↦ vonMisesAngleMeasure p.1 p.2 := by
   simp only [vonMisesAngleMeasure_def]
-  exact (Measure.measurable_map _ (measurable_subtype_coe.comp
+  exact (Measure.measurable_map _ (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco (2 * π) (-π)).measurable)).comp measurable_vonMisesMeasure
 
 end TauCeti.Probability
@@ -280,7 +280,7 @@ theorem HasLaw.angle_vonMisesMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Meas
     HasLaw (fun ω ↦ (AddCircle.equivIco (2 * π) (-π) (X ω) : ℝ))
       (vonMisesAngleMeasure m κ) P := by
   rw [vonMisesAngleMeasure_def]
-  exact (hasLaw_map (measurable_subtype_coe.comp
+  exact (hasLaw_map (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco (2 * π) (-π)).measurable).aemeasurable).comp hX
 
 end ProbabilityTheory

@@ -7,7 +7,8 @@ module
 
 public import TauCeti.RingTheory.LaurentSeries.Level.Topology
 public import TauCeti.RingTheory.LaurentSeries.Level.Transition
-public import TauCeti.RingTheory.LaurentSeries.Puiseux.KaehlerDifferential
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Residue
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.KaehlerDifferential.Basic
 
 /-!
 # Pullback of continuous one-forms between ramified levels
@@ -97,7 +98,9 @@ theorem coeff_neg_one_transition (h : n ∣ m)
     (ringEquivLaurentSeries K m (equivLevel K m (transition K h ω))).coeff (-1) =
       ((m : ℕ) / n) • (ringEquivLaurentSeries K n (equivLevel K n ω)).coeff (-1) := by
   rw [ringEquivLaurentSeries_equivLevel, addEquivContinuousKaehlerDifferential_transition,
-    TauCeti.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_subst]
+    ← TauCeti.ContinuousKaehlerDifferential.residue_apply,
+    TauCeti.ContinuousKaehlerDifferential.residue_subst,
+    TauCeti.ContinuousKaehlerDifferential.residue_apply]
   simp [PowerSeries.order_X_pow, PNat.coe_divExact h]
 
 /-- Pullback along an identity transition is the identity. -/

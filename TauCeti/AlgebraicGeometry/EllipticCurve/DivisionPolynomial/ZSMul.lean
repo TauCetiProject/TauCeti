@@ -32,8 +32,8 @@ The middle of the file turns that calculus on the pair `(smulX 1, smulY 1)`, whi
 distinguished point `(X, Y)` itself. For `n ≠ 0` the vertical gap
 `smulY n - negY (smulX n) (smulY n)` is `ψ₂ₙ/ψₙ⁴`, hence nonzero, so `smulY n` never equals the
 `negY` of its own pair. The quotient formula genuinely needs `n ≠ 0`, since `ψ₀ = 0` leaves it
-meaningless; `smulY_ne_negY` carries the same hypothesis because it is *derived* from that formula,
-not because it fails at `n = 0` — there it reads `0 ≠ -a₃`, which holds. At `n = 1` the gap
+meaningless; `smulY_ne_negY` carries no such hypothesis, since at `n = 0` it reads `0 ≠ -a₃`,
+which holds. At `n = 1` the gap
 is `ψ₂`, which selects the tangent branch of Mathlib's `Affine.slope` and gives the tangent slope
 `slopeOne` the closed form `-Wₓ/ψ₂`. Feeding that slope to Mathlib's affine addition formula sends
 `(smulX 1, smulY 1)` to `(smulX 2, smulY 2)`: `addX … = smulX 2` and `addY … = smulY 2`. Those two
@@ -85,7 +85,7 @@ is the statement the Nagell–Lutz layer consumes.
   coordinates at `n` — the long-Weierstrass correction that `ω_neg` carries, in the universal
   field.
 * `WeierstrassCurve.Universal.Affine.smulY_sub_negY`: the gap `smulY n - negY (smulX n) (smulY n)`
-  is `ψ₂ₙ/ψₙ⁴`, whence `smulY_ne_negY` — the gap never vanishes for `n ≠ 0`.
+  is `ψ₂ₙ/ψₙ⁴`, whence `smulY_ne_negY` — the gap never vanishes.
 * `WeierstrassCurve.Universal.Affine.slopeOne_eq_neg_div`: the tangent slope at `(X, Y)` is
   `-Wₓ/ψ₂`, the ratio of the two partial derivatives of the Weierstrass polynomial.
 * `WeierstrassCurve.Universal.Affine.addX_smul_one_smul_one`,
@@ -121,10 +121,17 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.zsmul_eq_zero_of_evalEval_ψ_eq_zero`: **the converse** — a vanishing `ψₙ` at
   a nonsingular point forces `n • P = 0`. Unrestricted in `n`, and so an annihilation statement
   rather than a torsion one: at `n = 0` both sides hold of every point.
+* `WeierstrassCurve.eval_preΨ_eq_zero_of_zsmul_eq_zero` and
+  `WeierstrassCurve.eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd`: the same criterion on `preΨₙ`,
+  the univariate factor of `ψₙ`. A point killed by `n` but not by `2` has `preΨₙ` vanishing at its
+  abscissa; at odd `n` this is an equivalence and the `2`-torsion exclusion is not needed.
 * `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: the characterisation of
   two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`, read off from the doubling formula through
   `Affine.Point.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the
   `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
+* `WeierstrassCurve.evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero`,
+  `WeierstrassCurve.eval_Ψ₃_eq_zero_iff_nsmul_eq_zero`: `ψ₂` and `Ψ₃` vanish at a nonsingular
+  affine point exactly when `2 • P = 0`, respectively `3 • P = 0`.
 
 ## Provenance
 
@@ -159,9 +166,9 @@ The tangent-and-doubling block below adds, at the same revision, `smulY_sub_negY
 
 One statement is generalised rather than transcribed, and the source's two `n = 1` wrappers go
 with it. The source proves only `smulY_one_ne_negY` (`:237`); here `smulY_ne_negY` states it for
-every `n ≠ 0`, which `smulY_sub_negY` already gives — the gap `ψ₂ₙ/ψₙ⁴` is a quotient of nonzero
-elements. Given the general form, both of the source's specialisations are **dropped rather than
-ported**: `smulY_one_ne_negY` (`:237`) is `smulY_ne_negY one_ne_zero` and is written that way at
+every `n`, which for `n ≠ 0` `smulY_sub_negY` already gives — the gap `ψ₂ₙ/ψₙ⁴` is a quotient of
+nonzero elements. Given the general form, both of the source's specialisations are **dropped
+rather than ported**: `smulY_one_ne_negY` (`:237`) is `smulY_ne_negY` and is written that way at
 its two call sites, and `smulY_one_sub_negY` (`:233`) is `smulY_sub_negY one_ne_zero` followed by
 the collapse of `ψ₂ₙ` to `ψ₂` and `ψₙ⁴` to `1`, which its one consumer `slopeOne_eq_neg_div`
 carries as a local `have`.
@@ -459,10 +466,12 @@ lemma smulY_sub_negY (h0 : n ≠ 0) :
   field_simp
   linear_combination hF
 
-/-- **`smulY n` never equals the `negY` of its own pair, for `n ≠ 0`.** The gap computed above is
-`ψ₂ₙ/ψₙ⁴`, a quotient of nonzero elements. -/
-lemma smulY_ne_negY (h0 : n ≠ 0) :
+/-- **`smulY n` never equals the `negY` of its own pair.** For `n ≠ 0` the gap computed above is
+`ψ₂ₙ/ψₙ⁴`, a quotient of nonzero elements; for `n = 0` the statement reads `0 ≠ -a₃`. -/
+lemma smulY_ne_negY :
     smulY n ≠ pointedCurve.toAffine.negY (smulX n) (smulY n) := by
+  rcases eq_or_ne n 0 with rfl | h0
+  · simp [Affine.negY]
   rw [← sub_ne_zero, smulY_sub_negY h0]
   exact div_ne_zero (polyToField_ψ_ne_zero (by omega))
     (pow_ne_zero _ (polyToField_ψ_ne_zero h0))
@@ -490,7 +499,7 @@ lemma slopeOne_eq_neg_div :
   have hgap : smulY 1 - pointedCurve.toAffine.negY (smulX 1) (smulY 1) =
       polyToField (curve.ψ 2) := by
     rw [smulY_sub_negY one_ne_zero, mul_one, ψ_one, map_one, one_pow, div_one]
-  rw [slopeOne_def, Affine.slope_of_Y_ne rfl (smulY_ne_negY one_ne_zero), hgap, h,
+  rw [slopeOne_def, Affine.slope_of_Y_ne rfl smulY_ne_negY, hgap, h,
     smulX_one, smulY_one, pointedCurve_a₁, pointedCurve_a₂, pointedCurve_a₄]
   simp only [map_add polyToField, map_sub polyToField, map_mul polyToField,
     map_pow polyToField, map_ofNat]
@@ -631,8 +640,8 @@ theorem zsmul_point_eq_smulX_smulY : n ≠ 0 →
           (1 : ℤ) • point = .some _ _ h := ih 1 (by omega) one_ne_zero
     · rw [show ((0 + 1 + 1 : ℕ) : ℤ) = 2 by norm_num, ← addX_smul_one_smul_one,
         ← addY_smul_one_smul_one, show (2 : ℤ) = 1 + 1 by norm_num, add_zsmul, eq]
-      exact ⟨Affine.nonsingular_add ns ns fun h ↦ smulY_ne_negY one_ne_zero h.2,
-        Affine.Point.add_self_of_Y_ne (smulY_ne_negY one_ne_zero)⟩
+      exact ⟨Affine.nonsingular_add ns ns fun h ↦ smulY_ne_negY h.2,
+        Affine.Point.add_self_of_Y_ne smulY_ne_negY⟩
     set n2 := n + 1 + 1
     obtain ⟨ns2, eq2⟩ := ih n2 (by omega) (by omega)
     have ne : smulX n2 ≠ smulX 1 := smulX_ne_smulX (by omega) (by omega)
@@ -1113,6 +1122,31 @@ theorem eval_ΨSq_eq_zero_iff_zsmul_eq_zero {x y : F} (hns : W.toAffine.Nonsingu
   exact ⟨zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns n,
     evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n⟩
 
+/-- **At odd `n`, a point is `n`-torsion exactly when `preΨₙ` vanishes at its abscissa.** At odd
+`n` the factor `Ψ₂Sq` is absent from `ΨSqₙ = preΨₙ ² * Ψ₂Sq`, so `preΨₙ` carries the whole
+criterion `eval_ΨSq_eq_zero_iff_zsmul_eq_zero`. -/
+-- Not `@[simp]`, for the same reason as `eval_ΨSq_eq_zero_iff_zsmul_eq_zero`.
+theorem eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd {n : ℤ} (hodd : ¬Even n) {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    (W.preΨ n).eval x = 0 ↔ n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0 := by
+  rw [← eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns n, ΨSq, ite_eq_right hodd, mul_one, eval_pow,
+    pow_eq_zero_iff two_ne_zero]
+
+/-- **A point killed by `n` but not by `2` has `preΨₙ` vanishing at its abscissa.** At odd `n` this
+is `eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd`; at even `n`, `ψₙ = preΨₙ * ψ₂` on the curve, and
+`ψ₂` vanishes only on the `2`-torsion. -/
+theorem eval_preΨ_eq_zero_of_zsmul_eq_zero {n : ℤ} {x y : F} (hns : W.toAffine.Nonsingular x y)
+    (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
+    (h2ne : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) ≠ 0) :
+    (W.preΨ n).eval x = 0 := by
+  by_cases heven : Even n
+  · have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n htors
+    rw [evalEval_ψ_eq_evalEval_Ψ W hns.left n, _root_.WeierstrassCurve.Ψ,
+      ite_eq_left heven, evalEval_mul, evalEval_C] at hψ
+    exact (mul_eq_zero.mp hψ).resolve_right fun hψ₂ ↦
+      h2ne (zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns 2 (by rwa [ψ_two]))
+  · exact (eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd W heven hns).mpr htors
+
 /-- **Torsion transports between the affine and Jacobian point groups.** `n • P = 0` affinely,
 with `n : ℕ`, is the same statement as `(n : ℤ) • P = 0` on the Jacobian side.
 
@@ -1161,5 +1195,20 @@ theorem addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
   exact ⟨fun h ↦ h ▸ addOrderOf_nsmul_eq_zero _,
     fun h ↦ addOrderOf_eq_prime h (Affine.Point.some_ne_zero hns)⟩
 
+/-- **`ψ₂` vanishes exactly at the points killed by `2`.** This is
+`Affine.Point.some_add_self_eq_zero_iff` with `P + P` read as `2 • P`. -/
+theorem evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    W.ψ₂.evalEval x y = 0 ↔ 2 • Affine.Point.some _ _ hns = 0 := by
+  rw [ψ₂, ← Affine.Point.some_add_self_eq_zero_iff hns, two_nsmul]
+
+/-- **`Ψ₃` vanishes exactly at the abscissae of the points killed by `3`.** This is
+`eval_ΨSq_eq_zero_iff_zsmul_eq_zero` at `n = 3`, where `ΨSq₃ = Ψ₃²`. -/
+theorem eval_Ψ₃_eq_zero_iff_nsmul_eq_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    W.Ψ₃.eval x = 0 ↔ 3 • Affine.Point.some _ _ hns = 0 := by
+  rw [← pow_eq_zero_iff two_ne_zero, ← Polynomial.eval_pow, ← ΨSq_three,
+    eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns, zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero,
+    ofNat_zsmul]
 
 end WeierstrassCurve

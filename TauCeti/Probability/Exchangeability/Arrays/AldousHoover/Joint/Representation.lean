@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
 import TauCeti.Probability.Process.Array.AldousHoover.NoiseSplit
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.OffDiagonalCoding
 import TauCeti.Probability.Exchangeability.Arrays.Strip.VertexCoding
@@ -109,7 +110,7 @@ and the visible vertex data. -/
 private def visibleSquareContext (t : {t : ℕ × ℕ // t.1 < t.2})
     (r : ((ℕ × ℕ → α) × (ℕ → (ℕ → α × α) × α)) × (ℕ → (ℕ → α × α) × α)) :
     ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) × (α × α) :=
-  squareContextOfVertexData r.1.1 (r.2 t.1.1) (r.2 t.1.2)
+  squareContextOfVertexData r.1.1 (r.2 t.val.1) (r.2 t.val.2)
 
 private theorem measurable_visibleSquareContext (t : {t : ℕ × ℕ // t.1 < t.2}) :
     Measurable (visibleSquareContext (α := α) t) := by
@@ -147,13 +148,13 @@ omit [MeasurableSpace α] in
 private theorem visibleSquareContext_vertexLayerData (e d g : ℕ → ℕ)
     (t : {t : ℕ × ℕ // t.1 < t.2}) (x : ℕ × ℕ → α) :
     visibleSquareContext t (vertexLayerData e d g x) =
-      offDiagonalPairSquareContext e (g t.1.1) (g t.1.2) x :=
+      offDiagonalPairSquareContext e (g t.val.1) (g t.val.2) x :=
   squareContextOfVertexData_vertexDatum e x _ _
 
 /-- The visible off-diagonal pairs `(x (g i, g j), x (g j, g i))` at the increasing pairs
 `(i, j)`. -/
 private def visiblePairs (g : ℕ → ℕ) (x : ℕ × ℕ → α) (t : {t : ℕ × ℕ // t.1 < t.2}) : α × α :=
-  (x (g t.1.1, g t.1.2), x (g t.1.2, g t.1.1))
+  (x (g t.val.1, g t.val.2), x (g t.val.2, g t.val.1))
 
 private theorem measurable_visiblePairs (g : ℕ → ℕ) : Measurable (visiblePairs (α := α) g) :=
   Measurable.of_eval fun _ => (measurable_pi_apply _).prodMk (measurable_pi_apply _)
@@ -277,10 +278,10 @@ private theorem jointArray_jointCoding (φ : I → (ℕ × ℕ → α) × (ℕ �
       (α × α) → I → α × α) (u : NoiseIndex Unit (Sym2 ℕ) → I) :
     (fun p => jointArray (jointCoding φ v g) p u) =
       assembleArray (fun k => v (φ (u .global)) (u (.vertex () k))) fun t =>
-        (jointCoding φ v g (u .global, u (.vertex () t.1.1), u (.vertex () t.1.2),
-            u (.cell s(t.1.1, t.1.2))),
-          jointCoding φ v g (u .global, u (.vertex () t.1.2), u (.vertex () t.1.1),
-            u (.cell s(t.1.1, t.1.2)))) := by
+        (jointCoding φ v g (u .global, u (.vertex () t.val.1), u (.vertex () t.val.2),
+            u (.cell s(t.val.1, t.val.2))),
+          jointCoding φ v g (u .global, u (.vertex () t.val.2), u (.vertex () t.val.1),
+            u (.cell s(t.val.1, t.val.2)))) := by
   funext ⟨i, j⟩
   simp only [jointArray_apply, assembleArray]
   split_ifs with h h'
@@ -340,19 +341,9 @@ private theorem ae_map_swap_pairCoding_eq [IsFiniteMeasure ρ]
     measurable_swap.comp (hg.comp (hsw.prodMap measurable_id))
   have hcode' : (L.prod (volume : Measure I)).map (fun p => (p.1, (g (sw p.1) p.2).swap)) =
       (L.prod (volume : Measure I)).map (fun p => (p.1, g p.1 p.2)) := by
-    -- Swapping the square context twice restores it.
-    have hsw₂ (z) : sw (sw z) = z := by simp [sw]
-    have hfun : (fun p : _ × I => (p.1, (g (sw p.1) p.2).swap)) ∘ Prod.map sw id =
-        Prod.map sw Prod.swap ∘ fun p => (p.1, g p.1 p.2) := by
-      funext p
-      simp [hsw₂]
-    have hF : Measurable fun p : _ × I => (p.1, g p.1 p.2) := measurable_fst.prodMk hg
-    have hF' : Measurable fun p : _ × I => (p.1, (g (sw p.1) p.2).swap) :=
-      measurable_fst.prodMk hg'
-    conv_lhs => rw [← hL, ← Measure.map_id (μ := (volume : Measure I)),
-      Measure.map_prod_map _ _ hsw measurable_id,
-      Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
-      ← Measure.map_map (hsw.prodMap measurable_swap) hF, hcode, hsym, ← hcode]
+    refine Measure.map_prod_swap_apply_eq hsw (fun z => by simp [sw]) hL hg ?_
+    rw [hcode]
+    exact hsym
   -- Equal joint laws with the square context have almost everywhere equal fibre laws.
   exact ae_map_eq_of_map_prod_eq _ hg' hg hcode'
 
@@ -455,7 +446,8 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
     ((Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
       (Measurable.of_eval fun k => hdatum (d k))).prodMk (Measurable.of_eval fun i => hdatum (g i))
   -- The visible increasing pairs, as visible off-diagonal pairs of the array.
-  set ι : {t : ℕ × ℕ // t.1 < t.2} → V₂ := fun t => ⟨(g t.1.1, g t.1.2), hge _, hge _, hg t.2⟩
+  set ι : {t : ℕ × ℕ // t.1 < t.2} → V₂ := fun t => ⟨(g t.val.1, g t.val.2), hge _, hge _,
+      hg t.property⟩
   have hι : Function.Injective ι := fun _ _ h =>
     Subtype.ext ((hg.injective.prodMap hg.injective) (congrArg Subtype.val h))
   set M : (H → α) × (V₂ → α × α) → _ := fun r => (read r.1, fun t => r.2 (ι t))
@@ -472,7 +464,7 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
     Measurable.of_eval fun _ => measurable_pi_apply _
   -- Reading the vertex data and the visible pairs off the pair coding.
   have hfac : M ∘ (fun q : (ℕ × ℕ → α) × (V₂ → I) => (H.domRestrict q.1,
-        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p))) =
+        fun p : V₂ => G (offDiagonalPairSquareContext e p.val.1 p.val.2 q.1) (q.2 p))) =
       Λ ∘ Prod.map (fun x => read (H.domRestrict x)) (fun c t => c (ι t)) := by
     funext q
     refine Prod.ext rfl (funext fun t => ?_)
@@ -499,14 +491,14 @@ private theorem map_pairCoding_visiblePair_eq {e d g : ℕ → ℕ}
         (fun q => (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) =
       ρ.map fun x => (vertexLayerData e d g x, visiblePairs g x))
     (t : {t : ℕ × ℕ // t.1 < t.2}) :
-    ((ρ.map (offDiagonalPairSquareContext e (g t.1.1) (g t.1.2))).prod (volume : Measure I)).map
+    ((ρ.map (offDiagonalPairSquareContext e (g t.val.1) (g t.val.2))).prod (volume : Measure I)).map
         (fun p => (p.1, G p.1 p.2)) =
-      ρ.map fun x => (offDiagonalPairSquareContext e (g t.1.1) (g t.1.2) x,
-        (x (g t.1.1, g t.1.2), x (g t.1.2, g t.1.1))) := by
+      ρ.map fun x => (offDiagonalPairSquareContext e (g t.val.1) (g t.val.2) x,
+        (x (g t.val.1, g t.val.2), x (g t.val.2, g t.val.1))) := by
   have hR := measurable_vertexLayerData (α := α) e d g
   have hvsc := measurable_visibleSquareContext (α := α) t
   have hctx : visibleSquareContext (α := α) t ∘ vertexLayerData e d g =
-      offDiagonalPairSquareContext e (g t.1.1) (g t.1.2) :=
+      offDiagonalPairSquareContext e (g t.val.1) (g t.val.2) :=
     funext (visibleSquareContext_vertexLayerData e d g t)
   have heval : Measurable fun c : {t : ℕ × ℕ // t.1 < t.2} → I => c t := measurable_pi_apply _
   have hGp : Measurable fun p : _ × I => (p.1, G p.1 p.2) := measurable_fst.prodMk hG
@@ -671,12 +663,12 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   set Gt : {t : ℕ × ℕ // t.1 < t.2} → I × (ℕ → I) → I → α × α :=
     fun t q s => G (visibleSquareContext t (Θ q)) s
   set Φt : {t : ℕ × ℕ // t.1 < t.2} → I × (ℕ → I) → I → α × α := fun t q s =>
-    (jointCoding φ v G (q.1, q.2 t.1.1, q.2 t.1.2, s),
-      jointCoding φ v G (q.1, q.2 t.1.2, q.2 t.1.1, s))
+    (jointCoding φ v G (q.1, q.2 t.val.1, q.2 t.val.2, s),
+      jointCoding φ v G (q.1, q.2 t.val.2, q.2 t.val.1, s))
   have hGt (t) : Measurable (Function.uncurry (Gt t)) := hG.comp
     (((measurable_visibleSquareContext t).comp (hΘ.comp measurable_fst)).prodMk measurable_snd)
   have hΦt (t) : Measurable (Function.uncurry (Φt t)) :=
-    measurable_orientedPair (measurable_jointCoding hφ hv hG) t.1.1 t.1.2
+    measurable_orientedPair (measurable_jointCoding hφ hv hG) t.val.1 t.val.2
   set A : (I × (ℕ → I)) × ({t : ℕ × ℕ // t.1 < t.2} → α × α) → ℕ × ℕ → α :=
     fun r => assembleArray (Θ r.1).2 r.2
   have hA : Measurable A := measurable_assembleArray.comp
@@ -691,12 +683,12 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   have hae (t : {t : ℕ × ℕ // t.1 < t.2}) :
       ∀ᵐ q ∂μ₀, (volume : Measure I).map (Gt t q) = (volume : Measure I).map (Φt t q) := by
     have hlaw : μ₀.map (visibleSquareContext t ∘ Θ) =
-        ρ.map (offDiagonalPairSquareContext e (g t.1.1) (g t.1.2)) := by
+        ρ.map (offDiagonalPairSquareContext e (g t.val.1) (g t.val.2)) := by
       rw [← Measure.map_map (measurable_visibleSquareContext t) hΘ, hΘlaw,
         Measure.map_map (measurable_visibleSquareContext t) (measurable_vertexLayerData e d g)]
       exact congrArg (ρ.map ·) (funext (visibleSquareContext_vertexLayerData e d g t))
-    exact ae_map_jointCoding_eq hρ (hg.injective.ne t.2.ne) (hge _) (hge _) hφ hv hG
-      (map_pairCoding_visiblePair_eq hG hGcode t) t.2.ne hlaw
+    exact ae_map_jointCoding_eq hρ (hg.injective.ne t.property.ne) (hge _) (hge _) hφ hv hG
+      (map_pairCoding_visiblePair_eq hG hGcode t) t.property.ne hlaw
   -- The joint coding is the coding oriented by the vertex variables, read off the split noise.
   have hnoise : (fun (u : NoiseIndex Unit (Sym2 ℕ) → I) p => jointArray (jointCoding φ v G) p u) =
       (A ∘ fun r => (r.1, fun t => Φt t r.1 (r.2 t))) ∘ splitJointNoise := by
@@ -724,7 +716,7 @@ theorem jointlyExchangeable_iff_exists_map_jointArray_eq
   rw [← jointlyExchangeable_map_iff hX, ← hcode]
   exact (jointlyExchangeable_map_iff fun p =>
     ((measurable_pi_apply p).comp (measurable_jointArray F hF)).aemeasurable).2
-      (jointlyExchangeable_jointArray F hF)
+      (jointlyExchangeable_jointArray F)
 
 end TauCeti.Probability
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -24,6 +25,10 @@ with a prescribed differential without requiring a global coordinate chart.
 
 * `TauCeti.exists_contMDiff_hasCompactSupport_mvfderiv_eq`: a compactly supported smooth function
   with prescribed value and derivative at a point.
+* `TauCeti.exists_contMDiffMap_mvfderiv_eq`: the same realization by a bundled smooth map
+  `C^∞⟮I, M; 𝓘(ℝ, F), F⟯`.
+* `TauCeti.exists_contMDiff_mvfderiv_apply_ne_zero`: a smooth real function whose derivative does
+  not vanish on a prescribed nonzero tangent vector.
 -/
 
 public noncomputable section
@@ -70,5 +75,25 @@ theorem exists_contMDiff_hasCompactSupport_mvfderiv_eq (x : M) (c : F)
     rw [mvfderiv_apply_eq_mfderiv_apply, hd.mfderiv]
     -- `hd` reads `L v` in the target tangent synonym; its underlying vector is still `L v`.
     rfl
+
+/-- Any prescribed value and derivative at a point of a finite-dimensional Hausdorff real
+manifold are realized by a bundled smooth map. -/
+theorem exists_contMDiffMap_mvfderiv_eq (x : M) (c : F) (L : E →L[ℝ] F) :
+    ∃ f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯, f x = c ∧ mvfderiv I f x = L := by
+  obtain ⟨f, hf, -, -, hfx, hL⟩ :=
+    exists_contMDiff_hasCompactSupport_mvfderiv_eq (I := I) x c L Filter.univ_mem
+  exact ⟨⟨f, hf⟩, hfx, hL⟩
+
+/-- **Every nonzero tangent vector is detected by a smooth function.** For a nonzero tangent
+vector `w` at a point `x` of a finite-dimensional Hausdorff real manifold, some smooth real
+function has nonzero derivative along `w` at `x`. When `w = v x` for a vector field `v`, the level
+set of such a function through `x` is a local section transverse to `v`. -/
+theorem exists_contMDiff_mvfderiv_apply_ne_zero (x : M) {w : TangentSpace I x} (hw : w ≠ 0) :
+    ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ mvfderiv I f x w ≠ 0 := by
+  -- The tangent space is the model space `E`, whose continuous linear forms separate points.
+  obtain ⟨L, hL⟩ : ∃ L : StrongDual ℝ E, L w ≠ 0 := SeparatingDual.exists_ne_zero hw
+  obtain ⟨f, hf, -, -, -, hfL⟩ :=
+    exists_contMDiff_hasCompactSupport_mvfderiv_eq (I := I) x (0 : ℝ) L Filter.univ_mem
+  exact ⟨f, hf, by rwa [hfL]⟩
 
 end TauCeti

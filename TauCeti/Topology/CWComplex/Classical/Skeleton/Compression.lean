@@ -34,7 +34,8 @@ greater than `dim E`, by homotopies of maps into the complex:
   the compression property behind Hatcher's Corollary 4.12, that the pair `(C, Xⁿ)` is
   `n`-connected.
 * In dimensions zero and one, this says that every point of `C` is joined to `Xⁿ`, and that
-  paths in `C` between points of `Xⁿ` compress into `Xⁿ` (`TauCeti.exists_joined_skeletonLT`,
+  paths in `C` between points of `Xⁿ` compress into `Xⁿ`, relative to their endpoints
+  (`TauCeti.exists_joined_skeletonLT`, `TauCeti.exists_path_homotopic_skeletonLT`,
   `TauCeti.joined_skeletonLT_iff`).
 
 These are the steps of the cellular approximation theorem that concern a single cell of the
@@ -82,7 +83,7 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     ∃ g : C(K, C), f.HomotopicRel g {x | (f x : X) ∈ openCell k j}ᶜ ∧
       ∀ x, (f x : X) ∈ openCell k j → (g x : X) ∈ cellFrontier k j := by
   let f' : C(K, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
-    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtype_val.comp f.continuous).subtype_mk hf⟩
+    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtypeVal.comp f.continuous).subtype_mk hf⟩
   let φ := openCellChart k j
   have hφs : φ.source = Subtype.val ⁻¹' openCell k j := openCellChart_source k j
   have hφt : φ.target = ball 0 1 := openCellChart_target k j
@@ -107,7 +108,7 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     (fun t y hy ↦ mem_closedBall_zero_iff.1 (hΨs t y (mem_closedBall_zero_iff.2 hy))) g₁
     (S := {x | (f x : X) ∈ openCell k j}ᶜ) fun x hx ↦ (H₁.fst_eq_snd hx) ▸ hx
   let incl : C((skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X), C) :=
-    ⟨fun y ↦ ⟨y, (skeletonLT C _).subset_complex y.2⟩, by fun_prop⟩
+    ⟨fun y ↦ ⟨y, (skeletonLT C _).subset_complex y.property⟩, by fun_prop⟩
   have h := (ContinuousMap.HomotopicRel.trans ⟨H₁⟩ hg₂).comp_continuousMap incl
   -- Composing `f'` with the inclusion of the skeleton into the complex recovers `f`.
   have hvf : incl.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
@@ -135,7 +136,7 @@ theorem exists_homotopicRel_skeletonLT {K : Set E} (hK : IsCompact K) (hk : finr
   -- The compact image of `f` meets only finitely many open `k`-cells.
   have hA : {j : cell C k | (range (fun x ↦ (f x : X)) ∩ openCell k j).Nonempty}.Finite :=
     (finite_setOf_nonempty_inter_openCell_of_isCompact (C := C)
-      (isCompact_range (continuous_subtype_val.comp f.continuous))).preimage (f := Sigma.mk k)
+      (isCompact_range (continuous_subtypeVal.comp f.continuous))).preimage (f := Sigma.mk k)
       sigma_mk_injective.injOn
   -- Push `f` off these cells one at a time, never entering an open `k`-cell that `f` misses.
   have key (T : Finset (cell C k)) : ∃ g : C(K, C),
@@ -189,8 +190,8 @@ theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   -- The compact image of `f` lies in a finite skeleton; compress it one dimension at a time.
   obtain ⟨m, hm⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-    (isCompact_range (continuous_subtype_val.comp f.continuous))
-    (range_subset_iff.2 fun x ↦ (f x).2)
+    (isCompact_range (continuous_subtypeVal.comp f.continuous))
+    (range_subset_iff.2 fun x ↦ (f x).property)
   induction m generalizing f with
   | zero =>
     exact ⟨f, .refl f, fun x ↦ skeletonLT_mono (by exact_mod_cast Nat.zero_le _) (hm ⟨x, rfl⟩)⟩
@@ -219,28 +220,41 @@ theorem exists_joined_skeletonLT {n : ℕ} {A : Set X}
   let z : (univ : Set (Fin 0 → ℝ)) := ⟨0, mem_univ _⟩
   exact ⟨⟨_, hA ▸ hg z⟩, ⟨(H.evalAt z).symm.cast (by simp) (by simp)⟩⟩
 
+/-- **Paths in `C` between points of the `n`-skeleton compress into it up to homotopy**, for
+`n ≥ 1`. If `A` is the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then every
+path in `C` between two points of `A` is homotopic in `C`, relative to its endpoints, to a path in
+`A`. For `n = 1` this says that the inclusion of the `1`-skeleton is surjective on fundamental
+groups. -/
+theorem exists_path_homotopic_skeletonLT {n : ℕ} {A : Set X} (hn : 0 < n)
+    (hA : (skeletonLT C (n + 1) : Set X) = A) (hAC : A ⊆ C) {a b : A}
+    (γ : Path (inclusion hAC a) (inclusion hAC b)) :
+    ∃ γ' : Path a b, (γ'.map (continuous_inclusion hAC)).Homotopic γ := by
+  -- Compress the path, a map out of `I ⊆ ℝ`, into the skeleton relative to its endpoints.
+  obtain ⟨g, hγg, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C) (K := I)
+    isCompact_Icc (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne') γ.toContinuousMap
+  have hend : ({0, 1} : Set I) ⊆ {t | ((γ t : C) : X) ∈ skeletonLT C (n + 1)} := by
+    rintro t (rfl | rfl)
+    · rw [mem_ofPred_eq, γ.source, ← SetLike.mem_coe, hA]
+      exact a.property
+    · rw [mem_ofPred_eq, γ.target, ← SetLike.mem_coe, hA]
+      exact b.property
+  have h₀ : g 0 = inclusion hAC a := (hγg.fst_eq_snd (hend (by simp))).symm.trans γ.source
+  have h₁ : g 1 = inclusion hAC b := (hγg.fst_eq_snd (hend (by simp))).symm.trans γ.target
+  let γ' : Path a b :=
+    { toFun t := ⟨g t, hA ▸ hg t⟩
+      continuous_toFun := by fun_prop
+      source' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₀
+      target' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₁ }
+  have hγ' : (γ'.map (continuous_inclusion hAC)).toContinuousMap = g := by ext; rfl
+  exact ⟨γ', ⟨((hγg.mono hend).some.symm).cast hγ'.symm rfl⟩⟩
+
 /-- **Paths in `C` between points of the `n`-skeleton compress into it**, for `n ≥ 1`. If `A` is
 the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then two points of `A` are
 joined by a path in `A` exactly when they are joined by a path in `C`. -/
 theorem joined_skeletonLT_iff {n : ℕ} {A : Set X} (hn : 0 < n)
     (hA : (skeletonLT C (n + 1) : Set X) = A) (hAC : A ⊆ C) {a b : A} :
-    Joined (inclusion hAC a) (inclusion hAC b) ↔ Joined a b := by
-  refine ⟨fun ⟨γ⟩ ↦ ?_, fun h ↦ h.map (continuous_inclusion hAC)⟩
-  -- Compress the path, a map out of `I ⊆ ℝ`, into the skeleton relative to its endpoints.
-  obtain ⟨g, hγg, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C) (K := I)
-    isCompact_Icc (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne') γ.toContinuousMap
-  have hend (t : I) (ht : t = 0 ∨ t = 1) :
-      ((γ t : C) : X) ∈ skeletonLT C (n + 1) := by
-    rcases ht with rfl | rfl
-    · rw [γ.source, ← SetLike.mem_coe, hA]
-      exact a.2
-    · rw [γ.target, ← SetLike.mem_coe, hA]
-      exact b.2
-  have h₀ : g 0 = inclusion hAC a := (hγg.fst_eq_snd (hend 0 (.inl rfl))).symm.trans γ.source
-  have h₁ : g 1 = inclusion hAC b := (hγg.fst_eq_snd (hend 1 (.inr rfl))).symm.trans γ.target
-  exact ⟨{ toFun t := ⟨g t, hA ▸ hg t⟩
-           continuous_toFun := by fun_prop
-           source' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₀
-           target' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₁ }⟩
+    Joined (inclusion hAC a) (inclusion hAC b) ↔ Joined a b :=
+  ⟨fun ⟨γ⟩ ↦ (exists_path_homotopic_skeletonLT hn hA hAC γ).elim fun γ' _ ↦ ⟨γ'⟩,
+    fun h ↦ h.map (continuous_inclusion hAC)⟩
 
 end TauCeti

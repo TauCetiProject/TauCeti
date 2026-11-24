@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Real.Cardinality
 public import Mathlib.MeasureTheory.Measure.Portmanteau
+public import Mathlib.MeasureTheory.Measure.Support
+
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Continuity sets, null-boundary thickenings and finite partitions
@@ -32,12 +36,20 @@ portmanteau API and is useful when localizing locally finite measures.
 * `MeasureTheory.Measure.exists_partition_null_frontier_small_last` — a finite measure on a
   separable pseudometric space admits a finite measurable partition into null-boundary sets, all but
   the last lying in balls of a prescribed radius and the last having arbitrarily small measure.
+* `MeasureTheory.Measure.tendsto_measure_nndist_ge_atTop` — the mass of the region at distance at
+  least `n` from a basepoint tends to `0` for a finite measure.
+* `MeasureTheory.ProbabilityMeasure.exists_measure_nndist_ge_le_of_tendsto` — along a weakly
+  convergent family of probability measures, the mass outside some ball about a basepoint is
+  eventually at most any prescribed `ε > 0`.
+* `MeasureTheory.ProbabilityMeasure.eventually_measure_pos_of_tendsto_of_mem_support` — along a
+  weakly convergent family of probability measures, every neighbourhood of a point of the support
+  of the limit eventually has positive mass.
 -/
 
 public section
 
 open Filter Function MeasureTheory Set
-open scoped ENNReal NNReal Topology
+open scoped ContDiff ENNReal NNReal Topology
 
 namespace MeasureTheory.Measure
 
@@ -168,3 +180,96 @@ theorem tendsto_measure_of_null_frontier_of_tendsto
       (ENNReal.continuous_coe.tendsto _).comp hprod
 
 end MeasureTheory.FiniteMeasure
+
+namespace MeasureTheory.Measure
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+
+/-- The mass of the closed region at distance at least `n` from a basepoint tends to `0` as `n`
+tends to infinity. -/
+theorem tendsto_measure_nndist_ge_atTop (μ : Measure X) [IsFiniteMeasure μ] (x : X) :
+    Tendsto (fun n : ℕ ↦ μ {y | (n : ℝ≥0) ≤ nndist x y}) atTop (𝓝 0) := by
+  have := tendsto_measure_iInter_atTop (μ := μ)
+    (s := fun n : ℕ ↦ {y | (n : ℝ≥0) ≤ nndist x y})
+    (fun n ↦ (isClosed_le continuous_const
+      (continuous_const.nndist continuous_id)).measurableSet.nullMeasurableSet)
+    (fun m n hmn y hy ↦ (Nat.cast_le.2 hmn).trans hy) ⟨0, measure_ne_top _ _⟩
+  have hempty : (⋂ n : ℕ, {y | (n : ℝ≥0) ≤ nndist x y}) = ∅ := by
+    refine eq_empty_iff_forall_notMem.2 fun y hy ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_gt (nndist x y)
+    exact (not_le.2 hn) (mem_iInter.1 hy n)
+  simpa [hempty, Function.comp_def] using this
+
+end MeasureTheory.Measure
+
+namespace MeasureTheory.ProbabilityMeasure
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
+
+/-- **Mass outside a large ball for a weakly convergent family.** Along a weakly convergent family
+of probability measures, for every `ε > 0` there is a radius `R` such that eventually the mass
+outside the ball of radius `R` about a basepoint is at most `ε`. -/
+theorem exists_measure_nndist_ge_le_of_tendsto (h : Tendsto μs L (𝓝 μ)) (x : X) {ε : ℝ≥0∞}
+    (hε : 0 < ε) :
+    ∃ R : ℝ≥0, ∀ᶠ i in L, (μs i : Measure X) {y | R ≤ nndist x y} ≤ ε := by
+  have hS (r : ℝ≥0) : IsClosed {y | r ≤ nndist x y} :=
+    isClosed_le continuous_const (continuous_const.nndist continuous_id)
+  obtain ⟨n, hn⟩ := ((Measure.tendsto_measure_nndist_ge_atTop (μ : Measure X) x).eventually
+    (gt_mem_nhds hε)).exists
+  refine ⟨n, ?_⟩
+  have hlt := lt_of_le_of_lt
+    (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto h (hS n)) hn
+  filter_upwards [Filter.eventually_lt_of_limsup_lt hlt] with i hi using hi.le
+
+/-- Smooth compactly supported test functions determine weak convergence of probability measures
+on a finite-dimensional real normed space. -/
+theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {μs : ι → ProbabilityMeasure E} {μ : ProbabilityMeasure E}
+    (h : ∀ f : E → ℝ, ContDiff ℝ ∞ f → HasCompactSupport f →
+      Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure E)) l (𝓝 (∫ x, f x ∂(μ : Measure E)))) :
+    Tendsto μs l (𝓝 μ) := by
+  rcases eq_or_neBot l with rfl | hl
+  · simp
+  apply tendsto_of_forall_isOpen_le_liminf'
+  intro U hU
+  rw [hU.measure_eq_iSup_isCompact (μ : Measure E)]
+  refine iSup₂_le fun K hKU ↦ iSup_le fun hK ↦ ?_
+  obtain ⟨f, hf, h01, h1, hc, hsub⟩ := hK.exists_contDiff_cutoff hU hKU
+  have htest := ENNReal.tendsto_ofReal (h f hf hc)
+  have hl : ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) =
+      l.liminf (fun i ↦ ENNReal.ofReal (∫ x, f x ∂(μs i : Measure E))) :=
+    htest.liminf_eq.symm
+  calc
+    (μ : Measure E) K ≤ ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) :=
+      (hf.continuous.integrable_of_hasCompactSupport hc).measure_le_integral
+        (ae_of_all _ fun x ↦ (h01 (mem_range_self x)).1) fun x hx ↦ by
+          have hfx : f x = 1 := interior_subset (h1 hx)
+          exact hfx.ge
+    _ = _ := hl
+    _ ≤ _ := liminf_le_liminf (Eventually.of_forall fun i ↦
+      integral_le_measure (fun x _ ↦ (h01 (mem_range_self x)).2) fun x hx ↦
+        (Function.notMem_support.mp (fun hs ↦ hx (hsub (subset_tsupport f hs)))).le)
+
+section Support
+
+variable {Ω ι : Type*} [MeasurableSpace Ω] [TopologicalSpace Ω] [OpensMeasurableSpace Ω]
+  [HasOuterApproxClosed Ω] {L : Filter ι} {μs : ι → ProbabilityMeasure Ω}
+  {μ : ProbabilityMeasure Ω}
+
+/-- Along a weakly convergent family of probability measures, every neighbourhood of a point of
+the support of the limit eventually has positive mass. -/
+theorem eventually_measure_pos_of_tendsto_of_mem_support (h : Tendsto μs L (𝓝 μ)) {x : Ω}
+    (hx : x ∈ (μ : Measure Ω).support) {U : Set Ω} (hU : U ∈ 𝓝 x) :
+    ∀ᶠ i in L, 0 < (μs i : Measure Ω) U := by
+  obtain ⟨V, hVU, hV, hxV⟩ := mem_nhds_iff.1 hU
+  have hpos := (Measure.mem_support_iff_forall x).1 hx V (hV.mem_nhds hxV)
+  filter_upwards [eventually_lt_of_lt_liminf
+    (hpos.trans_le (le_liminf_measure_open_of_tendsto h hV))] with i hi
+  exact hi.trans_le (measure_mono hVU)
+
+end Support
+
+end MeasureTheory.ProbabilityMeasure

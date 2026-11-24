@@ -11,7 +11,7 @@ public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
@@ -94,7 +94,7 @@ private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq 
     have h_g_eq : ∀ z : ℝ, 0 < z → |2 * z / ν| • g (z ^ 2 / ν) =
         studentTPDFReal ν z * z ^ q := by
       intro z hz
-      simpa [g] using abs_deriv_smul_studentTPDFReal hν q hz
+      simpa [g] using abs_deriv_smul_studentTPDFReal (ν := ν) q hz
     have h_g_eq' : EqOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν))
         (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
       intro z hz
@@ -211,8 +211,7 @@ private lemma beta_sub_beta_add_one (hν : 2 < ν) :
     linarith
   have hright : beta (1 / 2) (b + 1) =
       b / (b + 1 / 2) * beta (1 / 2) b := by
-    rw [beta_comm (1 / 2) (b + 1), beta_add_one_left hb hsum,
-      beta_comm b (1 / 2)]
+    rw [beta_add_one_right hb (by simpa [add_comm] using hsum), add_comm (1 / 2 : ℝ) b]
   have hleft : beta (1 / 2 + 1) b =
       (1 / 2) / (1 / 2 + b) * beta (1 / 2) b :=
     beta_add_one_left (by norm_num) (by simpa [add_comm] using hsum)

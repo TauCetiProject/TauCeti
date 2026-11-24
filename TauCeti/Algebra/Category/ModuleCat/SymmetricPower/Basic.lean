@@ -54,7 +54,7 @@ theorem hom_ext {M : ModuleCat.{v} R} {N : ModuleCat.{max u v} R} {n : ℕ}
     f = g := by
   ext ⟨x, hx⟩
   have hspan := TauCeti.SymmetricAlgebra.homogeneousSubmodule_eq_span R M n
-  suffices ∀ y (hy : y ∈ Submodule.span R {p | ∃ l : List M, l.length = n ∧
+  suffices ∀ y (_ : y ∈ Submodule.span R {p | ∃ l : List M, l.length = n ∧
       (l.map (SymmetricAlgebra.ι R M)).prod = p})
       (hy' : y ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n),
       f ⟨y, hy'⟩ = g ⟨y, hy'⟩ from this x (hspan ▸ hx) hx
@@ -86,15 +86,15 @@ noncomputable def map {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) :
 /-- The morphism induced on symmetric powers is the induced map of symmetric algebras. -/
 @[simp]
 lemma coe_map_apply {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) (x : M.symmetricPower n) :
-    Subtype.val (map f n x) = SymmetricAlgebra.map R f.hom x.1 :=
+    Subtype.val (map f n x) = SymmetricAlgebra.map R f.hom x.val :=
   (rfl)
 
 /-- The morphism induced on symmetric powers is the ring homomorphism of symmetric algebras
 induced by the underlying linear map, regarded as a semilinear map. -/
 lemma coe_map_apply_eq_mapₛₗ {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ)
     (x : M.symmetricPower n) :
-    Subtype.val (map f n x) = SymmetricAlgebra.mapₛₗ f.hom x.1 :=
-  (coe_map_apply f n x).trans (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map f.hom) x.1).symm
+    Subtype.val (map f n x) = SymmetricAlgebra.mapₛₗ f.hom x.val :=
+  (coe_map_apply f n x).trans (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map f.hom) x.val).symm
 
 variable (R) in
 /-- The functor `ModuleCat R ⥤ ModuleCat R` which sends a module to its `n`-th symmetric
@@ -105,11 +105,11 @@ noncomputable def functor (n : ℕ) : ModuleCat.{v} R ⥤ ModuleCat.{max u v} R 
   map f := map f n
   map_id M := by
     ext x
-    exact (coe_map_apply (𝟙 M) n x).trans (DFunLike.congr_fun (SymmetricAlgebra.map_id R) x.1)
+    exact (coe_map_apply (𝟙 M) n x).trans (DFunLike.congr_fun (SymmetricAlgebra.map_id R) x.val)
   map_comp f g := by
     ext x
     exact (coe_map_apply (f ≫ g) n x).trans
-      (DFunLike.congr_fun (SymmetricAlgebra.map_comp_map R f.hom g.hom) x.1).symm
+      (DFunLike.congr_fun (SymmetricAlgebra.map_comp_map R f.hom g.hom) x.val).symm
 
 @[simp]
 lemma functor_obj (n : ℕ) (M : ModuleCat.{v} R) : (functor R n).obj M = M.symmetricPower n :=
@@ -133,7 +133,7 @@ lemma coe_iso₀_inv_apply (M : ModuleCat.{u} R) (r : R) :
 /-- A degree-zero element is the image of the scalar `iso₀` assigns to it. -/
 @[simp]
 lemma algebraMap_iso₀_hom_apply (M : ModuleCat.{u} R) (x : M.symmetricPower 0) :
-    algebraMap R (SymmetricAlgebra R M) ((iso₀ M).hom x) = x.1 :=
+    algebraMap R (SymmetricAlgebra R M) ((iso₀ M).hom x) = x.val :=
   TauCeti.SymmetricAlgebra.algebraMap_homogeneousSubmoduleZeroEquiv_apply R M x
 
 @[reassoc (attr := simp)]
@@ -160,7 +160,7 @@ lemma coe_iso₁_inv_apply (M : ModuleCat.{u} R) (m : M) :
 /-- A degree-one element is the generator of the element `iso₁` assigns to it. -/
 @[simp]
 lemma ι_iso₁_hom_apply (M : ModuleCat.{u} R) (x : M.symmetricPower 1) :
-    SymmetricAlgebra.ι R M ((iso₁ M).hom x) = x.1 :=
+    SymmetricAlgebra.ι R M ((iso₁ M).hom x) = x.val :=
   TauCeti.SymmetricAlgebra.ι_homogeneousSubmoduleOneEquiv_apply R M x
 
 @[reassoc (attr := simp)]

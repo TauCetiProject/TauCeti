@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Reflection
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
@@ -122,36 +122,13 @@ private theorem setAverage_ball_eq_toLp_fst {K : WithLp 2 (ℝ × E) → WithLp 
     (hodd : ∀ x ∈ ball x₀ r, K (normalReflection E a x) = -normalLinearReflection E (K x))
     (htr : t ≤ r) :
     ⨍ x in ball x₀ t, K x = WithLp.toLp 2 ((⨍ x in ball x₀ t, K x).fst, 0) := by
-  -- Changing variables by `ρ`, which maps the ball onto itself, the integral `m` of `K` over the
-  -- ball satisfies `m = -R m`.
-  have hpre : normalReflection E a ⁻¹' ball x₀ t = ball x₀ t :=
-    Subset.antisymm (fun x hx =>
-      normalReflection_normalReflection a x ▸ mapsTo_normalReflection_ball hx₀ t hx)
-      (mapsTo_normalReflection_ball hx₀ t)
-  have hcv : ∫ x in ball x₀ t, K (normalReflection E a x) = ∫ x in ball x₀ t, K x := by
-    conv_lhs => rw [← hpre]
-    exact (measurePreserving_normalReflection a).setIntegral_preimage_emb
-      (normalReflection E a).toHomeomorph.measurableEmbedding K (ball x₀ t)
-  have hneg : ∫ x in ball x₀ t, K (normalReflection E a x) =
-      -normalLinearReflection E (∫ x in ball x₀ t, K x) := by
-    rw [setIntegral_congr_fun measurableSet_ball fun x hx => hodd x (ball_subset_ball htr hx),
-      integral_neg, neg_inj]
-    exact (normalLinearReflection E).toLinearIsometry.integral_comp_comm K
-  have hsnd : (∫ x in ball x₀ t, K x).snd = 0 := by
-    have h := congrArg WithLp.snd (hcv.symm.trans hneg)
-    simp only [WithLp.neg_snd, normalLinearReflection_apply, WithLp.toLp_snd] at h
-    generalize (∫ x in ball x₀ t, K x).snd = v at h ⊢
-    have h2 : (2 : ℝ) • v = 0 := by
-      rw [two_smul]
-      nth_rewrite 2 [h]
-      exact add_neg_cancel v
-    exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
-  have havg : (⨍ x in ball x₀ t, K x).snd = 0 := by
-    rw [setAverage_eq, WithLp.smul_snd, hsnd, smul_zero]
-  apply WithLp.ofLp_injective
-  ext
-  · simp
-  · simpa using havg
+  rw [normalReflection_eq_hyperplaneReflection, normalLinearReflection_eq_reflection] at hodd
+  have h := setAverage_eq_inner_div_smul_of_ae_comp_hyperplaneReflection (μ := volume)
+    (normalReflection_eq_hyperplaneReflection (E := E) a ▸ mapsTo_normalReflection_ball hx₀ t)
+    measurableSet_ball (ae_restrict_of_forall_mem measurableSet_ball fun x hx =>
+      hodd x (ball_subset_ball htr hx))
+  conv_lhs => rw [h]
+  simp [WithLp.prod_inner_apply, ← WithLp.toLp_smul]
 
 end HalfBall
 
@@ -336,9 +313,7 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ball_ae_eq
   obtain ⟨h, hh, hodd, -, hgrad⟩ :=
     hharm.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace hU hw hG0 hw0
   refine ⟨∇ h, (hh.mono hball).gradient, fun x hx => ?_, ?_⟩
-  · have hρx : normalReflection E a x ∈ U := hU (hball hx)
-    exact gradient_normalReflection_of_forall_eq_neg U.isOpen hodd (hball hx)
-      ((hh _ hρx).1.differentiableAt (by norm_num))
+  · exact gradient_normalReflection_of_forall_eq_neg U.isOpen hodd (hball hx)
   · refine ae_restrict_of_ae_restrict_of_subset ?_ hgrad
     rw [Opens.coe_inf]
     exact inter_subset_inter_left _ hball

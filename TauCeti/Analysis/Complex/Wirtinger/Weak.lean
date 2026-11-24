@@ -29,7 +29,8 @@ is the distributional equation; for a general measure it is the corresponding ad
 The relation is local, complex-linear, invariant under almost-everywhere replacement and
 compatible with continuous complex-linear maps. Its value is unique almost everywhere.
 `hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn` and
-`HasWeakFDerivOn.hasWeakConjWirtingerDerivOn` compare it with the native real weak derivatives.
+`HasWeakFDerivOn.hasWeakConjWirtingerDerivOn` compare it with the native real weak derivatives,
+and `HasWeakConjWirtingerDerivOn.weakLineDeriv` differentiates the equation in a real direction.
 `hasWeakConjWirtingerDerivOn_of_contDiffOn` compares it with the classical normalized operator;
 for real `C¹` maps, its vanishing is equivalent to holomorphy.
 Every holomorphic map solves the distributional equation.
@@ -329,5 +330,29 @@ theorem not_exists_differentiableOn_ae_eq_conj [μ.IsAddHaarMeasure]
   have hμ : μ (Ω : Set ℂ) = 0 := by
     simpa [Filter.EventuallyEq, ae_iff] using he
   exact (Ω.isOpen.measure_pos (μ := μ) hΩ).ne' hμ
+
+open LineDeriv in
+/-- A weak directional derivative of a solution of `\bar∂u = f` solves the differentiated
+equation `\bar∂(∂ᵥu) = ∂ᵥf`. No other derivative of `u` or `f` is assumed. -/
+theorem HasWeakConjWirtingerDerivOn.weakLineDeriv {f u' f' : ℂ → F} {v : ℂ}
+    (h : HasWeakConjWirtingerDerivOn μ Ω u f)
+    (hu : HasWeakLineDerivOn μ Ω u u' v) (hf : HasWeakLineDerivOn μ Ω f f' v) :
+    HasWeakConjWirtingerDerivOn μ Ω u' f' := by
+  refine hasWeakConjWirtingerDerivOn_iff.2
+    ⟨h.completeSpace, hu.locallyIntegrableOn_deriv, hf.locallyIntegrableOn_deriv, fun φ => ?_⟩
+  have hw (w : ℂ) : ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z w • u' z ∂μ =
+      -∫ z, lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, ℝ)) z w • u z ∂μ := by
+    calc ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z w • u' z ∂μ
+        = ∫ z, (∂_{w} φ : 𝓓(Ω, ℝ)) z • u' z ∂μ := by
+          simp only [TestFunction.lineDerivOp_apply]
+      _ = -∫ z, lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, ℝ)) z v • u z ∂μ := by
+          rw [hu.integral_lineDeriv_smul_eq_neg_integral_smul, neg_neg]
+      _ = _ := by simp only [TestFunction.lineDeriv_lineDerivOp_comm φ w v]
+  have hfv : ∫ z, (∂_{v} φ : 𝓓(Ω, ℝ)) z • f z ∂μ = -∫ z, (φ : ℂ → ℝ) z • f' z ∂μ := by
+    simpa only [TestFunction.lineDerivOp_apply] using
+      hf.integral_lineDeriv_smul_eq_neg_integral_smul φ
+  have hφ := h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul (∂_{v} φ)
+  rw [hw 1, hw I, smul_neg, ← neg_add, hφ, hfv]
+  module
 
 end TauCeti

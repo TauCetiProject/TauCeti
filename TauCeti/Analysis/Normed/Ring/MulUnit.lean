@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Multiplicative units of normed rings
@@ -16,10 +17,12 @@ import TauCeti.Analysis.Normed.Group.Ultra
 This file develops the ring-specific properties of `TauCeti.IsNormMulUnit`, whose definition
 and multiplicative closure properties live in `TauCeti.Analysis.Normed.Monoid.MulUnit`.
 
-A nontrivial normed ring with a multiplicative unit has `‖1‖ = 1`. In a norm-one seminormed ring,
+A nontrivial normed ring with a multiplicative unit has `‖1‖ = 1`. In a seminormed ring,
 a unit is multiplicative precisely when its inverse has reciprocal norm. Norm-preserving
-monoid homomorphisms between seminormed rings preserve multiplicative units from a norm-one
-source ring, even when they are not onto. In a complete ultrametric norm-one ring, small
+monoid homomorphisms between seminormed rings preserve multiplicative units, even when they are
+not onto, and along a contractive homomorphism scaling by the image of a multiplicative unit with
+`‖u‖ * c = 1` puts the product in the closed unit ball precisely when the cofactor has norm at
+most `c`. In a complete ultrametric norm-one ring, small
 perturbations of one are multiplicative units. More generally, an element `f` within less than
 `‖u‖` of a multiplicative unit `u` is again a multiplicative unit: it factors as
 `f = u * (1 - x)` with `x = u⁻¹ * (u - f)` of norm less than one, so its inverse is the Neumann
@@ -45,46 +48,88 @@ theorem norm_one {A : Type*} [NormedRing A] [Nontrivial A] {u : A} (hu : IsNormM
 
 end IsNormMulUnit
 
-section NormOneRing
+section Units
 
-variable {R S : Type*} [SeminormedRing R] [SeminormedRing S] [NormOneClass R]
+variable {R S : Type*} [SeminormedRing R] [SeminormedRing S]
 
-/-- In a norm-one ring, a unit is multiplicative precisely when its inverse has reciprocal norm. -/
+/-- In a seminormed ring, a unit is multiplicative precisely when its inverse has reciprocal norm.
+If `‖u‖ = 0` every norm vanishes and both sides hold. -/
 theorem _root_.Units.isNormMulUnit_iff_norm_inv (u : Rˣ) :
     IsNormMulUnit (u : R) ↔ ‖((u⁻¹ : Rˣ) : R)‖ = ‖(u : R)‖⁻¹ := by
-  have hu0 : 0 < ‖(u : R)‖ := by
-    have h := norm_mul_le (u : R) ((u⁻¹ : Rˣ) : R)
-    rw [Units.mul_inv, norm_one] at h
-    nlinarith [norm_nonneg (u : R), norm_nonneg ((u⁻¹ : Rˣ) : R)]
+  rcases eq_or_ne ‖(u : R)‖ 0 with hu0 | hu0
+  · have h1 : ‖(1 : R)‖ = 0 := by
+      have h := norm_mul_le ((u⁻¹ : Rˣ) : R) (u : R)
+      rw [Units.inv_mul, hu0, mul_zero] at h
+      exact le_antisymm h (norm_nonneg _)
+    have hall (x : R) : ‖x‖ = 0 := by
+      have h := norm_mul_le x (1 : R)
+      rw [mul_one, h1, mul_zero] at h
+      exact le_antisymm h (norm_nonneg _)
+    simp only [hall, inv_zero, iff_true]
+    exact (isNormMulUnit_iff _).mpr ⟨u.isUnit, fun x ↦ by simp [hall]⟩
+  have hu0' : 0 < ‖(u : R)‖ := lt_of_le_of_ne (norm_nonneg _) hu0.symm
   constructor
   · intro hu
-    exact NormedRing.norm_units_inv_of_norm_mul hu0.ne' hu.norm_mul
+    exact NormedRing.norm_units_inv_of_norm_mul hu.norm_mul
   · intro h
     refine (isNormMulUnit_iff _).mpr ⟨u.isUnit, fun x ↦ le_antisymm (norm_mul_le _ _) ?_⟩
     have hx : ‖x‖ ≤ ‖(u : R)‖⁻¹ * ‖(u : R) * x‖ := by
       simpa [← h, ← mul_assoc] using norm_mul_le ((u⁻¹ : Rˣ) : R) ((u : R) * x)
-    exact (le_inv_mul_iff₀ hu0).mp hx
+    exact (le_inv_mul_iff₀ hu0').mp hx
 
 namespace IsNormMulUnit
 
-/-- Norm-preserving monoid homomorphisms from a norm-one ring preserve multiplicative units,
+/-- Norm-preserving monoid homomorphisms between seminormed rings preserve multiplicative units,
 even when they are not onto. -/
 theorem map {u : R} (hu : IsNormMulUnit u) (φ : R →* S)
     (hφ : ∀ x, ‖φ x‖ = ‖x‖) : IsNormMulUnit (φ u) := by
   obtain ⟨v, rfl⟩ := hu.isUnit
-  let : NormOneClass S := ⟨by rw [← φ.map_one, hφ, NormOneClass.norm_one]⟩
   have hv := (Units.isNormMulUnit_iff_norm_inv v).mp hu
   apply (Units.isNormMulUnit_iff_norm_inv (Units.map φ v)).mpr
   exact (hφ _).trans (hv.trans (congrArg (·⁻¹) (hφ _).symm))
 
+/-- If `u : Rˣ` is a multiplicative unit with `‖(u : R)‖ * S₀ = R₀` and `‖a‖ < R₀`, then
+`‖((u⁻¹ : Rˣ) : R) * a‖ < S₀`. -/
+theorem norm_units_inv_mul_lt {u : Rˣ} (hu : IsNormMulUnit (u : R)) {a : R} {S₀ R₀ : ℝ}
+    (ha : ‖a‖ < R₀) (huS : ‖(u : R)‖ * S₀ = R₀) :
+    ‖((u⁻¹ : Rˣ) : R) * a‖ < S₀ := by
+  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
+  have hS₀ : 0 < S₀ := pos_of_mul_pos_right (hR₀.trans_eq huS.symm) (norm_nonneg _)
+  have hinv : 0 < ‖((u⁻¹ : Rˣ) : R)‖ :=
+    pos_of_mul_pos_left (hS₀.trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS).symm) hR₀.le
+  exact (norm_mul_le _ _).trans_lt <|
+    (mul_lt_mul_of_pos_left ha hinv).trans_eq (hu.norm_units_inv_mul_eq hR₀.ne' huS)
+
 end IsNormMulUnit
 
-end NormOneRing
+/-- Along a contractive monoid homomorphism `φ`, scaling `b` by the image of a multiplicative unit
+`u` with `‖u‖ * c = 1` puts `φ u * b` in the closed unit ball precisely when `‖b‖ ≤ c`. -/
+theorem _root_.Units.norm_map_unit_mul_le_one_iff {F : Type*} [FunLike F R S]
+    [MonoidHomClass F R S] (u : Rˣ) (hu : IsNormMulUnit (u : R)) {c : ℝ} (hc : ‖(u : R)‖ * c = 1)
+    {φ : F} (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (b : S) :
+    ‖φ (u : R) * b‖ ≤ 1 ↔ ‖b‖ ≤ c := by
+  have hc_eq : c = ‖(u : R)‖⁻¹ := eq_inv_of_mul_eq_one_right hc
+  constructor
+  · intro h
+    have hb : b = φ (((u⁻¹ : Rˣ) : R)) * (φ (u : R) * b) := by
+      rw [← mul_assoc, ← map_mul, Units.inv_mul, map_one, one_mul]
+    calc ‖b‖ = ‖φ (((u⁻¹ : Rˣ) : R)) * (φ (u : R) * b)‖ := congrArg norm hb
+      _ ≤ ‖φ (((u⁻¹ : Rˣ) : R))‖ * ‖φ (u : R) * b‖ := norm_mul_le _ _
+      _ ≤ ‖((u⁻¹ : Rˣ) : R)‖ * 1 :=
+          mul_le_mul (hφ _) h (norm_nonneg _) (norm_nonneg _)
+      _ = c := by rw [mul_one, (Units.isNormMulUnit_iff_norm_inv u).mp hu, hc_eq]
+  · intro h
+    calc ‖φ (u : R) * b‖ ≤ ‖φ (u : R)‖ * ‖b‖ := norm_mul_le _ _
+      _ ≤ ‖(u : R)‖ * c := mul_le_mul (hφ _) h (norm_nonneg _) (norm_nonneg _)
+      _ = 1 := hc
+
+end Units
 
 section Perturbation
 
-variable {A : Type*} [NormedRing A] [NormOneClass A]
+variable {A : Type*} [NormedRing A]
 
+variable [NormOneClass A] in
 /-- In an ultrametric norm-one ring with summable geometric series, a perturbation of one by an
 element of norm less than one is a multiplicative unit. -/
 theorem isNormMulUnit_one_add [HasSummableGeomSeries A] [IsUltrametricDist A] {a : A}
@@ -95,14 +140,9 @@ theorem isNormMulUnit_one_add [HasSummableGeomSeries A] [IsUltrametricDist A] {a
     rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by simpa using ha.ne'),
       norm_one, max_eq_left ha.le]
   intro x
-  rw [hnorm, one_mul, add_mul, one_mul]
-  by_cases hx : x = 0
-  · simp [hx]
-  have hax : ‖a * x‖ < ‖x‖ :=
-    (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right ha (norm_pos_iff.mpr hx))
-  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hax.ne', max_eq_left hax.le]
+  rw [hnorm, one_mul]
+  exact norm_one_add_mul_of_norm_lt_one ha x
 
-omit [NormOneClass A] in
 /-- The factorization `f = u * (1 - u⁻¹ * (u - f))` behind the Neumann series criterion. -/
 private theorem eq_units_mul_one_sub (u : Aˣ) (f : A) :
     f = u * (1 - ((u⁻¹ : Aˣ) : A) * (u - f)) := by
@@ -116,11 +156,15 @@ private theorem norm_units_inv_mul_sub_lt_one {u : Aˣ} (hu : IsNormMulUnit (u :
     inv_mul_lt_one₀ ((norm_nonneg _).trans_lt hf)]
   exact hf
 
-/-- **Neumann series criterion.** In an ultrametric norm-one ring with summable geometric series,
+/-- **Neumann series criterion.** In an ultrametric ring with summable geometric series,
 an element whose distance from a multiplicative unit `u` is less than `‖u‖` is a multiplicative
 unit. -/
 theorem IsNormMulUnit.of_norm_sub_lt [HasSummableGeomSeries A] [IsUltrametricDist A] {u f : A}
     (hu : IsNormMulUnit u) (hf : ‖f - u‖ < ‖u‖) : IsNormMulUnit f := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · exact (isNormMulUnit_iff _).mpr ⟨isUnit_of_subsingleton f, fun x ↦ by
+      simp [Subsingleton.elim x 0]⟩
+  have : NormOneClass A := ⟨hu.norm_one⟩
   obtain ⟨u, rfl⟩ := hu.isUnit
   rw [eq_units_mul_one_sub u f, sub_eq_add_neg]
   exact hu.mul (isNormMulUnit_one_add (by rw [norm_neg]; exact norm_units_inv_mul_sub_lt_one hu hf))

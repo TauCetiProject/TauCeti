@@ -156,22 +156,22 @@ theorem continuousOn_levelCrossingTime :
     ContinuousOn (levelCrossingTime φ f c) (unstableSet φ p ∩ stableSet φ q) := by
   rw [continuousOn_iff_continuous_domRestrict, continuous_iff_continuousAt]
   intro x
-  have hvalue (u : ℝ) : Continuous fun y : ↥(unstableSet φ p ∩ stableSet φ q) ↦ f (φ u y.1) :=
-    hf.comp_continuous (φ.continuous continuous_const continuous_subtype_val)
-      fun y ↦ isInvariant_unstableSet_inter_stableSet φ p q u y.2
+  have hvalue (u : ℝ) : Continuous fun y : ↥(unstableSet φ p ∩ stableSet φ q) ↦ f (φ u y.val) :=
+    hf.comp_continuous (φ.continuous continuous_const continuous_subtypeVal)
+      fun y ↦ isInvariant_unstableSet_inter_stableSet φ p q u y.property
   have ht (y : ↥(unstableSet φ p ∩ stableSet φ q)) :
-      f (φ (levelCrossingTime φ f c y) y.1) = c :=
-    apply_flow_levelCrossingTime (hex y y.2)
+      f (φ (levelCrossingTime φ f c y) y.val) = c :=
+    apply_flow_levelCrossingTime (hex y y.property)
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · -- Before the crossing time of `x` the orbit is above the level, and so are nearby orbits.
-    have hval : c < f (φ a x.1) := ht x ▸ hanti x x.2 ha
+    have hval : c < f (φ a x.val) := ht x ▸ hanti x x.property ha
     filter_upwards [(hvalue a).continuousAt.eventually (eventually_gt_nhds hval)] with y hy
     by_contra hle
-    exact (hanti y y.2).antitone (not_lt.1 hle) |>.trans_eq (ht y) |>.not_gt hy
-  · have hval : f (φ b x.1) < c := ht x ▸ hanti x x.2 hb
+    exact (hanti y y.property).antitone (not_lt.1 hle) |>.trans_eq (ht y) |>.not_gt hy
+  · have hval : f (φ b x.val) < c := ht x ▸ hanti x x.property hb
     filter_upwards [(hvalue b).continuousAt.eventually (eventually_lt_nhds hval)] with y hy
     by_contra hle
-    exact (ht y).symm.trans_le ((hanti y y.2).antitone (not_lt.1 hle)) |>.not_gt hy
+    exact (ht y).symm.trans_le ((hanti y y.property).antitone (not_lt.1 hle)) |>.not_gt hy
 
 /-- The negative crossing time, a time coordinate on the connecting set. -/
 private def connectingTimeCoord (φ : _root_.Flow ℝ X) (f : X → ℝ) (p q : X) (c : ℝ)
@@ -194,25 +194,27 @@ private theorem connectingTimeCoord_flow (t : ℝ) (x : ↥(unstableSet φ p ∩
         ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t x) =
       t + connectingTimeCoord φ f p q c x := by
   simp only [connectingTimeCoord, coe_restrict_apply,
-    levelCrossingTime_flow (hanti _ x.2) (hex _ x.2)]
+    levelCrossingTime_flow (hanti _ x.property) (hex _ x.property)]
   ring
 
 /-- Identify the zero fibre of the negative crossing time with the level slice. -/
 private def zeroCrossingTimeHomeomorphLevelSlice :
     {x : ↥(unstableSet φ p ∩ stableSet φ q) | connectingTimeCoord φ f p q c x = 0} ≃ₜ
       ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}) where
-  toFun x := ⟨x.1.1, x.1.2,
-    (levelCrossingTime_eq_zero_iff (hanti _ x.1.2) (hex _ x.1.2)).1 (neg_eq_zero.1 x.2)⟩
-  invFun x := ⟨⟨x.1, x.2.1⟩,
-    neg_eq_zero.2 ((levelCrossingTime_eq_zero_iff (hanti _ x.2.1) (hex _ x.2.1)).2 x.2.2)⟩
+  toFun x := ⟨x.val.val, x.val.property,
+    (levelCrossingTime_eq_zero_iff (hanti _ x.val.property) (hex _ x.val.property)).1
+        (neg_eq_zero.1 x.property)⟩
+  invFun x := ⟨⟨x.val, x.property.1⟩,
+    neg_eq_zero.2 ((levelCrossingTime_eq_zero_iff (hanti _ x.property.1)
+        (hex _ x.property.1)).2 x.property.2)⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 private theorem coe_zeroCrossingTimeHomeomorphLevelSlice
     (x : {x : ↥(unstableSet φ p ∩ stableSet φ q) | connectingTimeCoord φ f p q c x = 0}) :
-    (zeroCrossingTimeHomeomorphLevelSlice hanti hex x : X) = x.1.1 :=
+    (zeroCrossingTimeHomeomorphLevelSlice hanti hex x : X) = x.val.val :=
   rfl
 
 /-- **The connecting set is the product of time with a level slice.** The first coordinate is the
@@ -241,7 +243,7 @@ theorem connectingHomeomorphProdLevelSlice_snd_coe (x : ↥(unstableSet φ p ∩
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_symm_apply
     (tx : ℝ × ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
-    ((connectingHomeomorphProdLevelSlice hf hanti hex).symm tx : X) = φ tx.1 tx.2.1 := by
+    ((connectingHomeomorphProdLevelSlice hf hanti hex).symm tx : X) = φ tx.1 tx.2.val := by
   simp [connectingHomeomorphProdLevelSlice, zeroCrossingTimeHomeomorphLevelSlice]
 
 /-- In product coordinates time translation changes only the real coordinate. -/
@@ -252,7 +254,7 @@ theorem connectingHomeomorphProdLevelSlice_flow (t : ℝ)
         ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t x) =
       (t + (connectingHomeomorphProdLevelSlice hf hanti hex x).1,
         (connectingHomeomorphProdLevelSlice hf hanti hex x).2) := by
-  have h := levelCrossingTime_flow (hanti _ x.2) (hex _ x.2) t
+  have h := levelCrossingTime_flow (hanti _ x.property) (hex _ x.property) t
   refine Prod.ext ?_ (Subtype.ext ?_)
   · simp only [connectingHomeomorphProdLevelSlice_fst, coe_restrict_apply, h]
     ring
@@ -273,10 +275,10 @@ include hf hanti hex in
 private theorem exists_homeomorph_levelSlice :
     ∃ e : Quotient (connectingOrbitSetoid φ p q) ≃ₜ
         ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}),
-      ∀ x, e.symm x = Quotient.mk _ ⟨x.1, x.2.1⟩ := by
+      ∀ x, e.symm x = Quotient.mk _ ⟨x.val, x.property.1⟩ := by
   let i : C(↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}),
       ↥(unstableSet φ p ∩ stableSet φ q)) :=
-    ⟨fun x ↦ ⟨x.1, x.2.1⟩, continuous_subtype_val.subtype_mk _⟩
+    ⟨fun x ↦ ⟨x.val, x.property.1⟩, continuous_subtypeVal.subtype_mk _⟩
   -- The retraction onto the slice is the second coordinate of the product homeomorphism.
   let s : C(↥(unstableSet φ p ∩ stableSet φ q),
       ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :=
@@ -287,7 +289,7 @@ private theorem exists_homeomorph_levelSlice :
     connectingHomeomorphProdLevelSlice_snd_coe hf hanti hex x
   have hzero (x : ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
       levelCrossingTime φ f c (i x) = 0 :=
-    (levelCrossingTime_eq_zero_iff (hanti _ x.2.1) (hex _ x.2.1)).2 x.2.2
+    (levelCrossingTime_eq_zero_iff (hanti _ x.property.1) (hex _ x.property.1)).2 x.property.2
   have hright : Function.RightInverse i s := fun x ↦ Subtype.ext <| by
     rw [hs, hzero, φ.map_zero_apply]
     rfl
@@ -298,7 +300,8 @@ private theorem exists_homeomorph_levelSlice :
     · rintro ⟨t, ht⟩
       have hxy : x = (φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t y :=
         Subtype.ext ht.symm
-      rw [hxy, coe_restrict_apply, levelCrossingTime_flow (hanti _ y.2) (hex _ y.2), ← φ.map_add,
+      rw [hxy, coe_restrict_apply, levelCrossingTime_flow (hanti _ y.property) (hex _ y.property),
+          ← φ.map_add,
         sub_add_cancel]
     · intro h
       refine ⟨levelCrossingTime φ f c y - levelCrossingTime φ f c x, ?_⟩
@@ -320,14 +323,14 @@ def orbitQuotientHomeomorphLevelSlice :
 @[simp]
 theorem orbitQuotientHomeomorphLevelSlice_symm_apply
     (x : ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
-    (orbitQuotientHomeomorphLevelSlice hf hanti hex).symm x = Quotient.mk _ ⟨x.1, x.2.1⟩ :=
+    (orbitQuotientHomeomorphLevelSlice hf hanti hex).symm x = Quotient.mk _ ⟨x.val, x.property.1⟩ :=
   Classical.choose_spec (exists_homeomorph_levelSlice hf hanti hex) x
 
 /-- The image of a connecting orbit class is the point of that orbit on the slice. -/
 theorem orbitQuotientHomeomorphLevelSlice_mk_eq_iff (x : ↥(unstableSet φ p ∩ stableSet φ q))
     (y : ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
     orbitQuotientHomeomorphLevelSlice hf hanti hex (Quotient.mk _ x) = y ↔
-      ∃ t : ℝ, φ t y.1 = x.1 := by
+      ∃ t : ℝ, φ t y.val = x.val := by
   rw [← Homeomorph.eq_symm_apply, orbitQuotientHomeomorphLevelSlice_symm_apply, Quotient.eq]
   exact connectingOrbitSetoid_apply _ _
 
@@ -336,8 +339,10 @@ theorem orbitQuotientHomeomorphLevelSlice_mk_eq_iff (x : ↥(unstableSet φ p �
 theorem coe_orbitQuotientHomeomorphLevelSlice_mk (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
     (orbitQuotientHomeomorphLevelSlice hf hanti hex (Quotient.mk _ x) : X) =
       φ (levelCrossingTime φ f c x) x := by
-  have hy : φ (levelCrossingTime φ f c x) x.1 ∈ (unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c} :=
-    ⟨isInvariant_unstableSet_inter_stableSet φ p q _ x.2, apply_flow_levelCrossingTime (hex x x.2)⟩
+  have hy : φ (levelCrossingTime φ f c x) x.val ∈ (unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}
+      :=
+    ⟨isInvariant_unstableSet_inter_stableSet φ p q _ x.property, apply_flow_levelCrossingTime
+        (hex x x.property)⟩
   rw [(orbitQuotientHomeomorphLevelSlice_mk_eq_iff hf hanti hex x ⟨_, hy⟩).2
     ⟨-levelCrossingTime φ f c x, by rw [← φ.map_add, neg_add_cancel, φ.map_zero_apply]⟩]
 
@@ -367,23 +372,27 @@ theorem levelSliceHomeomorph_symm
   simp only [levelSliceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     Homeomorph.trans_apply]
 
-include hf hanti hex in
+include hanti hex in
 /-- **Following the flow is a bijection between level slices.** Sending a point of the slice
 `C ∩ {f = c}` to the point of its orbit on the level `c'` is a bijection onto `C ∩ {f = c'}`;
-this is `Flow.levelSliceHomeomorph` read on the underlying sets. -/
+no continuity of `f` is needed. -/
 theorem bijOn_flow_levelCrossingTime
     (hex' : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, ∃ t, f (φ t x) = c') :
     BijOn (fun x ↦ φ (levelCrossingTime φ f c' x) x)
       ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})
       ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c'}) := by
-  set e := levelSliceHomeomorph hf hanti hex hex'
-  have he (x) : (e x : X) = φ (levelCrossingTime φ f c' x) x := coe_levelSliceHomeomorph ..
-  refine ⟨fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_, fun y hy ↦ ?_⟩
-  · simpa only [he] using (e ⟨x, hx⟩).2
-  · exact congrArg Subtype.val (e.injective (a₁ := ⟨x, hx⟩) (a₂ := ⟨x', hx'⟩)
-      (Subtype.ext (by simpa only [he] using h)))
-  · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).2,
-      by simpa only [he] using congrArg Subtype.val (e.apply_symm_apply ⟨y, hy⟩)⟩
+  refine ⟨fun x hx ↦ ⟨isInvariant_unstableSet_inter_stableSet φ p q _ hx.1,
+      apply_flow_levelCrossingTime (hex' x hx.1)⟩, fun x hx x' hx' h ↦ ?_, fun y hy ↦ ?_⟩
+  · have h' := congrArg (φ (-levelCrossingTime φ f c' x')) h
+    simp only [← φ.map_add, neg_add_cancel, φ.map_zero_apply] at h'
+    have hs : -levelCrossingTime φ f c' x' + levelCrossingTime φ f c' x = 0 :=
+      (hanti x hx.1).injective (by rw [h', φ.map_zero_apply]; exact hx'.2.trans hx.2.symm)
+    rw [hs, φ.map_zero_apply] at h'
+    exact h'
+  · obtain ⟨t, ht⟩ := hex y hy.1
+    refine ⟨φ t y, ⟨isInvariant_unstableSet_inter_stableSet φ p q _ hy.1, ht⟩, ?_⟩
+    exact (flow_levelCrossingTime_flow (hanti y hy.1) (s := 0)
+      (by rw [φ.map_zero_apply]; exact hy.2) t).trans (φ.map_zero_apply y)
 
 end Connecting
 

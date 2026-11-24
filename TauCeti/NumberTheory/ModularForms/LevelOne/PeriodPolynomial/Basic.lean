@@ -268,8 +268,9 @@ theorem disjoint_evenPeriodPolynomials_oddPeriodPolynomials
 private lemma binaryFormRep_S_sq_of_odd (hw : Odd w) (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ))
       (binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) P) = -P := by
-  rw [← binaryFormRep_op_mul_apply, S_mul_S_eq, binaryFormRep_op_neg, hw.neg_one_pow, op_one,
-    map_one, LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
+  rw [← binaryFormRep_op_mul_apply, ← SpecialLinearGroup.coe_mul, S_mul_S_eq,
+    SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one, binaryFormRep_op_neg, hw.neg_one_pow,
+    op_one, map_one, LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
 
 /-- For odd `w` there are no nonzero period polynomials when multiplication by `2` is injective:
 the central element `S² = -1` acts by `-1` but fixes every `P` with `P ∣ S = -P`. -/
@@ -304,14 +305,14 @@ theorem evenPeriodPolynomials_sup_oddPeriodPolynomials [Invertible (2 : R)] :
 theorem isCompl_evenPeriodPolynomials_oddPeriodPolynomials [Invertible (2 : R)] (w : ℕ) :
     IsCompl ((evenPeriodPolynomials R w).comap (periodPolynomials R w).subtype)
       ((oddPeriodPolynomials R w).comap (periodPolynomials R w).subtype) :=
-  Submodule.isCompl_comap_subtype
-    (disjoint_evenPeriodPolynomials_oddPeriodPolynomials
-      (isUnit_of_invertible (2 : R)).mul_right_injective)
-    (le_of_eq <| by
+  Submodule.isCompl_comap_subtype_iff.2
+    ⟨(disjoint_evenPeriodPolynomials_oddPeriodPolynomials
+      (isUnit_of_invertible (2 : R)).mul_right_injective).mono inf_le_right inf_le_right,
+    le_of_eq <| by
       have heven : evenPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
       have hodd : oddPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
       rw [inf_of_le_right heven, inf_of_le_right hodd,
-        evenPeriodPolynomials_sup_oddPeriodPolynomials])
+        evenPeriodPolynomials_sup_oddPeriodPolynomials]⟩
 
 /-! ### The Eisenstein polynomial -/
 
@@ -370,7 +371,9 @@ private lemma U_mul_S_eq_neg_T :
 /-- For even `w`, `S` acts on `V_w` as an involution, since `S² = -1` acts trivially. -/
 theorem binaryFormRep_S_sq_of_even (hw : Even w) :
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) ^ 2 = 1 := by
-  rw [← map_pow, ← op_pow, sq, S_mul_S_eq, binaryFormRep_op_neg_of_even hw, op_one, map_one]
+  rw [← map_pow, ← op_pow, sq, ← SpecialLinearGroup.coe_mul, S_mul_S_eq,
+    SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one, binaryFormRep_op_neg_of_even hw, op_one,
+    map_one]
 
 /-- For even `w`, `U = T S` acts on `V_w` with cube `1`, since `U³ = -1` acts trivially. -/
 theorem binaryFormRep_U_pow_three_of_even (hw : Even w) :
@@ -487,7 +490,7 @@ private lemma eq_top_of_sub_binaryFormRep_mem [CharZero K] (hw₀ : w ≠ 0)
     Submodule.subtype_apply, coe_homogeneousMonomialBasis, monomial_eq,
     Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two, C_1, one_mul]
   exact X_pow_mul_X_pow_mem hw₀ hT hS <| by
-    simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using s.2
+    simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using s.property
 
 /-- **The kernels of `1 + S` and `1 + U + U²` span `V_w`** (Popa–Zagier, §2, proof of
 Proposition 3): over a field of characteristic zero and for even `w ≠ 0`, every binary form of

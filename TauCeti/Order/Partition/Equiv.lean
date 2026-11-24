@@ -53,17 +53,17 @@ noncomputable def partsComapEquiv (P : Finpartition (univ : Finset W)) (σ : V �
   (Equiv.finsetCongr σ.symm).subtypeEquiv (fun A ↦ by
     rw [parts_comap_copy_equiv]
     simp only [Equiv.finsetCongr_apply, mem_image, map_inj]
-    exact ⟨fun hA ↦ ⟨A, hA, rfl⟩, fun ⟨B, hB, hBA⟩ ↦ hBA ▸ hB⟩)
+    exact ⟨fun hA ↦ ⟨A, hA, rfl⟩, fun ⟨_, hB, hBA⟩ ↦ hBA ▸ hB⟩)
 
 @[simp]
 theorem partsComapEquiv_apply_coe (P : Finpartition (univ : Finset W)) (σ : V ≃ W)
-    (A : P.parts) : (P.partsComapEquiv σ A).1 = A.1.map σ.symm.toEmbedding := (rfl)
+    (A : P.parts) : (P.partsComapEquiv σ A).val = A.val.map σ.symm.toEmbedding := (rfl)
 
 @[simp]
 theorem partsComapEquiv_symm_apply_coe (P : Finpartition (univ : Finset W)) (σ : V ≃ W)
     (B : ((P.copy (image_univ_equiv σ).symm).comap σ).parts) :
-    ((P.partsComapEquiv σ).symm B).1 = B.1.map σ.toEmbedding := by
-  have h := congrArg (fun A ↦ A.1.map σ.toEmbedding)
+    ((P.partsComapEquiv σ).symm B).val = B.val.map σ.toEmbedding := by
+  have h := congrArg (fun A ↦ A.val.map σ.toEmbedding)
     ((P.partsComapEquiv σ).apply_symm_apply B)
   rw [partsComapEquiv_apply_coe, map_map] at h
   simpa using h

@@ -8,6 +8,7 @@ module
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+import TauCeti.Algebra.MonoidAlgebra.Frobenius
 public import TauCeti.Algebra.MonoidAlgebra.NotReduced
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
@@ -47,9 +48,6 @@ not reduced, and with a character of order `p`.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This is the character-group calculation used in Layer 4, "Tori: split and non-split", of the
-ReductiveGroups roadmap.
 -/
 
 public section
@@ -76,11 +74,13 @@ theorem single_mul_groupAlgebraSubgroupAverage (P : Subgroup G) [Fintype P] (x :
   rw [groupAlgebraSubgroupAverage, mul_smul_comm, single_mul_subgroupCharSum]
   simp
 
-/-- The normalized sum of a finite subgroup is idempotent when its cardinality is nonzero in the
-base field. -/
-theorem isIdempotentElem_groupAlgebraSubgroupAverage (P : Subgroup G) [Fintype P]
-    (hP : (Fintype.card P : k) ≠ 0) :
+/-- The normalized sum of a finite subgroup is idempotent. When its cardinality vanishes in the
+base field the average is `0`, since `0⁻¹ = 0`. -/
+theorem isIdempotentElem_groupAlgebraSubgroupAverage (P : Subgroup G) [Fintype P] :
     IsIdempotentElem (groupAlgebraSubgroupAverage k P) := by
+  by_cases hP : (Fintype.card P : k) = 0
+  · rw [groupAlgebraSubgroupAverage, hP, inv_zero, zero_smul]
+    exact IsIdempotentElem.zero
   rw [IsIdempotentElem, groupAlgebraSubgroupAverage, smul_mul_smul,
     subgroupCharSum_mul_self, Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul k, smul_smul]
   simp [hP]
@@ -125,7 +125,8 @@ theorem isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
   by_cases hchar : (p : k) = 0
   · have _ : Fact p.Prime := ⟨hp⟩
     have _ : CharP k p := (CharP.charP_iff_prime_eq_zero hp).mpr hchar
-    exact not_isReduced_monoidAlgebra (R := k) (G := G) p hy_ne_one hy_pow inferInstance
+    exact not_isReduced_monoidAlgebra (R := k) (G := G) p (n := 1) hy_ne_one
+      (by rw [pow_one]; exact hy_pow) inferInstance
   · let P := Subgroup.zpowers y
     have hyfinite : IsOfFinOrder y := orderOf_ne_zero_iff.mp (hy_order ▸ hp.ne_zero)
     let _ : Fintype P := Fintype.ofEquiv (Fin (orderOf y)) (finEquivZPowers hyfinite)
@@ -134,7 +135,6 @@ theorem isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
         simpa using (Fintype.card_congr (finEquivZPowers hyfinite)).symm
       exact hcard'.trans hy_order
     have havg := isIdempotentElem_groupAlgebraSubgroupAverage k P
-      (by simpa only [hcard] using hchar)
     rcases havg.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
     · exact groupAlgebraSubgroupAverage_ne_zero k P
         (by simpa only [hcard] using hchar) hzero
@@ -159,17 +159,15 @@ commutative monoid killed by `p`, the `p`-th power map is the `p`-th power of th
 @[simp]
 theorem pow_expChar_monoidAlgebra_eq_algebraMap (hM : ∀ m : M, m ^ p = 1) (x : k[M]) :
     x ^ p = algebraMap k k[M] (Coalgebra.counit (R := k) x ^ p) := by
-  have hinj : Function.Injective (algebraMap k k[M]) :=
-    Bialgebra.algebraMap_injective k[M]
-  have _ : ExpChar k[M] p :=
-    expChar_of_injective_algebraMap hinj p
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp [(expChar_pos k p).ne']
-  | add x y hx hy =>
-      rw [add_pow_expChar, hx, hy, map_add, add_pow_expChar, map_add]
-  | single m a =>
-      rw [MonoidAlgebra.single_pow, hM m, MonoidAlgebra.counit_single]
-      simp [MonoidAlgebra.coe_algebraMap]
+  -- The `p`-th power map of `M` is trivial, and pushing forward along the trivial map is the
+  -- counit followed by the inclusion of scalars.
+  have hpow : (powMonoidHom p : M →* M) = 1 := MonoidHom.ext hM
+  have hcounit : MonoidAlgebra.mapDomainRingHom k (1 : M →* M) =
+      (algebraMap k k[M]).comp (Bialgebra.counitAlgHom k k[M]) :=
+    MonoidAlgebra.ringHom_ext (by simp [MonoidAlgebra.coe_algebraMap])
+      (by simp [MonoidAlgebra.coe_algebraMap])
+  rw [← MonoidAlgebra.mapRingHom_frobenius_mapDomainRingHom_powMonoidHom p x, hpow, hcounit]
+  simp [MonoidAlgebra.coe_algebraMap, frobenius_def]
 
 end Power
 
@@ -184,10 +182,6 @@ counit by a `p`-nilpotent element, so the only idempotents are the two trivial o
 theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M, m ^ p = 1) :
     ConnectedSpace (PrimeSpectrum k[M]) := by
   let : Nontrivial k := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-  have hinj : Function.Injective (algebraMap k k[M]) :=
-    Bialgebra.algebraMap_injective k[M]
-  have _ : ExpChar k[M] p :=
-    expChar_of_injective_algebraMap hinj p
   -- Every element differs from the image of its counit by an element killed by the `p`-th power.
   have hnil : ∀ x : k[M], (x - algebraMap k k[M] (Coalgebra.counit (R := k) x)) ^ p = 0 := by
     intro x

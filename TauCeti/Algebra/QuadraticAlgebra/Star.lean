@@ -7,13 +7,26 @@ module
 
 public import Mathlib.Algebra.QuadraticAlgebra.Basic
 
+import Mathlib.Tactic.LinearCombination
+
 /-!
 # The quadratic involution as an algebra automorphism
 
 The quadratic involution `star` of `QuadraticAlgebra R a b`, sending `x + yω` to
 `(x + by) - yω`, fixes `R`. Mathlib bundles it as the `R`-algebra automorphism
-`QuadraticAlgebra.starAlgEquiv`. This file records that the bundled automorphism is its own
-inverse.
+`QuadraticAlgebra.starAlgEquiv`. This file records that it sends `ω` to `b - ω`, that the bundled
+automorphism is its own inverse, and that two `R`-algebra maps from `QuadraticAlgebra R a b` into a
+commutative `R`-algebra without zero divisors agree up to conjugation.
+
+## Main results
+
+* `QuadraticAlgebra.star_omega`: `star ω = b - ω`.
+* `AlgHom.eq_or_eq_comp_starAlgEquiv`: two `R`-algebra maps from `QuadraticAlgebra R a b` into a
+  commutative `R`-algebra without zero divisors agree, or agree after precomposing one of them
+  with conjugation.
+* `AlgHom.eq_id_or_eq_starAlgEquiv`: when `QuadraticAlgebra R a b` has no zero divisors (for
+  instance the quadratic field `K(√r)` over a field `K`, for `r` not a square), the identity and
+  conjugation are its only `R`-algebra endomorphisms.
 -/
 
 public section
@@ -22,11 +35,47 @@ namespace QuadraticAlgebra
 
 variable {R : Type*} [CommRing R] {a b : R}
 
+/-- Conjugation sends the generator `ω` to the conjugate root `b - ω` of `X ^ 2 - b X - a`, which
+may coincide with `ω`. -/
+@[simp] theorem star_omega : star (ω : QuadraticAlgebra R a b) = algebraMap R _ b - ω := by
+  rw [star_eq, trace_omega]
+
 /-- The quadratic involution as an algebra automorphism is its own inverse. -/
 @[simp] theorem starAlgEquiv_symm :
-    (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).symm = starAlgEquiv := by
-  apply AlgEquiv.ext
-  intro z
-  rw [starAlgEquiv_symm_apply, starAlgEquiv_apply]
+    (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).symm = starAlgEquiv :=
+  AlgEquiv.ext fun _ ↦ by simp
 
 end QuadraticAlgebra
+
+namespace AlgHom
+
+open QuadraticAlgebra
+
+variable {R : Type*} [CommRing R] {a b : R}
+
+/-- Two `R`-algebra maps from `QuadraticAlgebra R a b` into a commutative `R`-algebra without
+zero divisors are equal, or equal after precomposing one of them with conjugation. -/
+theorem eq_or_eq_comp_starAlgEquiv {B : Type*} [CommRing B]
+    [Algebra R B] [NoZeroDivisors B] (f g : QuadraticAlgebra R a b →ₐ[R] B) :
+    f = g ∨ f = g.comp (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).toAlgHom := by
+  -- `f ω` and `g ω` are both roots of `X ^ 2 - b X - a`.
+  have root (k : QuadraticAlgebra R a b →ₐ[R] B) :
+      k ω * k ω = algebraMap R B a + algebraMap R B b * k ω := by
+    rw [← map_mul, omega_mul_omega_eq_algebraMap, map_add, map_mul, AlgHom.commutes,
+      AlgHom.commutes]
+  have h : (f ω - g ω) * (f ω - g (star ω)) = 0 := by
+    rw [star_omega, map_sub, AlgHom.commutes]
+    linear_combination root f - root g
+  rcases mul_eq_zero.mp h with h | h
+  · exact .inl (algHom_ext (sub_eq_zero.mp h))
+  · exact .inr (algHom_ext (by simpa using sub_eq_zero.mp h))
+
+/-- If `QuadraticAlgebra R a b` has no zero divisors, an `R`-algebra endomorphism of it is the
+identity or conjugation. -/
+theorem eq_id_or_eq_starAlgEquiv [NoZeroDivisors (QuadraticAlgebra R a b)]
+    (f : QuadraticAlgebra R a b →ₐ[R] QuadraticAlgebra R a b) :
+    f = AlgHom.id R _ ∨ f = (starAlgEquiv : QuadraticAlgebra R a b ≃ₐ[R] _).toAlgHom := by
+  simpa only [AlgHom.id_comp] using
+    f.eq_or_eq_comp_starAlgEquiv (AlgHom.id R _)
+
+end AlgHom

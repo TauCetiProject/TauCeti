@@ -9,10 +9,11 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Baire.Lemmas
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
-import TauCeti.Analysis.Fredholm.NormalForm
+import TauCeti.Analysis.Fredholm.NormalForm.Basic
 import TauCeti.Analysis.Fredholm.Proper
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -47,7 +48,7 @@ The two halves of the local statement are proved from the two halves of the subs
 place over the linear Fredholm theory.
 
 *Empty interior* comes from the Lyapunov--Schmidt normal form of
-`TauCeti.Analysis.Fredholm.NormalForm`. In the normal-form chart `Φ` at a point `a`, the map
+`TauCeti.Analysis.Fredholm.NormalForm.Basic`. In the normal-form chart `Φ` at a point `a`, the map
 reads `y ↦ y.1 + q y` where the **obstruction** `q` takes values in the finite-dimensional
 complement `pkg.decCodom.X₀` of the range; the first coordinate is therefore free, and the
 derivative at `Φ.symm y` is surjective exactly when the derivative of the *slice*
@@ -73,26 +74,19 @@ regular values is then the Baire category theorem. The `CompleteSpace F` assumpt
 both the Baire instance and the local properness used above to prove closedness.
 
 The regularity threshold is inherited from the finite-dimensional theorem applied to the slices,
-maps from a space of dimension `dim ker` to one of dimension `dim coker`. In general this is `C^k`
-with `k ≥ (dim ker)² + 1`, the bound of `TauCeti.interior_image_criticalPoints_eq_empty`. When the
-index `dim ker - dim coker` is at most two, the slices satisfy the hypotheses of the Morse--Sard
-theorem at the sharp regularity,
-`TauCeti.interior_image_criticalPoints_eq_empty_of_finrank_le_add_two`, and the threshold
-becomes Smale's `k > max (index, 0)`. The proof is written once, with the finite-dimensional input
-as a hypothesis on the slices, and specialized to the two bounds.
+maps from a space of dimension `dim ker` to one of dimension `dim coker`. The Morse--Sard theorem
+`TauCeti.interior_image_criticalPoints_eq_empty` holds for them at Sard's regularity
+`k > max (dim ker - dim coker, 0)`, which is Smale's threshold `k > max (index, 0)`.
 
 ## Main results
 
 * `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`: the local form -- inside
   any neighbourhood of a point with Fredholm derivative there is a neighbourhood whose critical
   values are closed and nowhere dense.
-* `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`: **the Sard--Smale theorem**.
+* `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`: **the Sard--Smale theorem**, at Smale's
+  regularity `k > max (index, 0)`.
 * `TauCeti.dense_compl_image_criticalPoints_of_isFredholm`: the regular values of a Fredholm map
   are dense, the form transversality arguments consume.
-* `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two`,
-  `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two` and
-  `TauCeti.dense_compl_image_criticalPoints_of_isFredholm_of_index_le_two`: the same at Smale's
-  sharp regularity `k > max (index, 0)`, for Fredholm maps of index at most two.
 
 ## References
 
@@ -150,17 +144,8 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
       fun w : pkg.decCodom.X₁ × pkg.decDom.X₀ ↦ ((w.1 : F) + ((fderiv ℝ q y) w : F)) := by
     funext w
     simp [hudef]
-  have h2 : HasFDerivAt (fun y' ↦ f (Φ.symm y')) u y := by
-    have hfst : HasFDerivAt
-        (fun y' : pkg.decCodom.X₁ × pkg.decDom.X₀ ↦ ((y'.1 : F)))
-        (pkg.decCodom.X₁.subtypeL.comp (ContinuousLinearMap.fst ℝ _ _)) y :=
-      pkg.decCodom.X₁.subtypeL.hasFDerivAt.comp y hasFDerivAt_fst
-    have hsnd : HasFDerivAt (fun y' ↦ ((q y' : F)))
-        (pkg.decCodom.X₀.subtypeL.comp (fderiv ℝ q y)) y :=
-      pkg.decCodom.X₀.subtypeL.hasFDerivAt.comp y hq.hasFDerivAt
-    refine (hfst.add hsnd).congr_of_eventuallyEq ?_
-    filter_upwards [Φ.open_target.mem_nhds hy] with y' hy'
-    exact pkg.apply_normalFormOpenPartialHomeomorph_symm hT hy'
+  have h2 : HasFDerivAt (fun y' ↦ f (Φ.symm y')) u y :=
+    pkg.hasFDerivAt_comp_normalFormOpenPartialHomeomorph_symm hT hy hq
   have heq := h1.unique h2
   -- Precomposition with an equivalence does not change surjectivity.
   have hstep₁ : Surjective (fderiv ℝ f (Φ.symm y)) ↔ Surjective ⇑u := by
@@ -184,67 +169,13 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
       D.surjective_fst_prod_iff
 
 omit [CompleteSpace F] in
-/-- **Normal-form regularity near the base point.** Near the base coordinate of the normal-form
-chart of a `C^k` map with Fredholm derivative, the chart, the obstruction and the map itself are
-all `C^k` and the chart has invertible derivative. -/
-private theorem eventually_mem_target_contDiffAt_normalForm
-    (pkg : ContinuousLinearMap.FredholmPackage T) (hT : HasStrictFDerivAt f T a) {k : ℕ}
-    (hk : 1 ≤ k) (hf : ContDiffAt ℝ (k : ℕ∞ω) f a) :
-    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
-      y ∈ (pkg.normalFormOpenPartialHomeomorph hT).target ∧
-      ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionMap hT) y ∧
-      ContDiffAt ℝ (k : ℕ∞ω) (pkg.normalFormOpenPartialHomeomorph hT).symm y ∧
-      (∃ e : (pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E,
-        (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) =
-          fderiv ℝ (pkg.normalFormOpenPartialHomeomorph hT).symm y) ∧
-      ContDiffAt ℝ (k : ℕ∞ω) f ((pkg.normalFormOpenPartialHomeomorph hT).symm y) := by
-  have hk1 : (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by exact_mod_cast hk
-  have hk0 : ((k : ℕ∞ω)) ≠ 0 := by
-    intro h
-    exact absurd (h ▸ hk1) (by simp)
-  have hkω : ((k : ℕ∞ω)) ≠ ∞ := by simp
-  have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
-  have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
-  have : CompleteSpace pkg.decCodom.X₁ :=
-    ContinuousLinearMap.completeSpace_of_isInvertible
-      (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
-  set q := pkg.obstructionMap hT with hqdef
-  set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0) with hy₀def
-  have hy₀ : y₀ ∈ Φ.target := pkg.normalFormOpenPartialHomeomorph_self_mem_target hT
-  have hsymy₀ : Φ.symm y₀ = a := by
-    rw [hy₀def, hΦdef]
-    simpa only [Submodule.coe_projectionOntoL] using
-      pkg.normalFormOpenPartialHomeomorph_symm_self hT
-  have hqC : ContDiffAt ℝ (k : ℕ∞ω) q y₀ := pkg.contDiffAt_obstructionMap_self hT hf
-  have hsymC : ContDiffAt ℝ (k : ℕ∞ω) Φ.symm y₀ :=
-    pkg.contDiffAt_normalFormOpenPartialHomeomorph_symm_self hT hf
-  have h₄ : ∀ᶠ y in 𝓝 y₀, ∃ e : (pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E,
-      (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) = fderiv ℝ Φ.symm y := by
-    have hcont : ContinuousAt (fderiv ℝ Φ.symm) y₀ := hsymC.continuousAt_fderiv hk0
-    have hmem : Set.range ((↑) : ((pkg.decCodom.X₁ × pkg.decDom.X₀) ≃L[ℝ] E) →
-        ((pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E)) ∈ 𝓝 (fderiv ℝ Φ.symm y₀) := by
-      rw [(pkg.hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self hT).hasFDerivAt.fderiv]
-      exact ContinuousLinearEquiv.nhds _
-    exact hcont hmem
-  have h₅ : ∀ᶠ y in 𝓝 y₀, ContDiffAt ℝ (k : ℕ∞ω) f (Φ.symm y) := by
-    have hev := hf.eventually hkω
-    rw [← hsymy₀] at hev
-    exact hsymC.continuousAt hev
-  filter_upwards [Φ.open_target.mem_nhds hy₀, hqC.eventually hkω, hsymC.eventually hkω, h₄, h₅]
-    with y c₁ c₂ c₃ c₄ c₅ using ⟨c₁, c₂, c₃, c₄, c₅⟩
-
-omit [CompleteSpace F] in
-/-- On a set `V` of normal-form coordinates on which the obstruction is `C^k`, the image under `f`
-of the critical points whose chart image lies in `V` has empty interior. This is the fibrewise
-Morse--Sard step (the hypothesis `hslice`) applied to the obstruction slices. -/
+/-- On a set `V` of normal-form coordinates on which the obstruction is `C^k`, with
+`k > dim ker - dim coker`, the image under `f` of the critical points whose chart image lies in
+`V` has empty interior. This is the finite-dimensional Morse--Sard theorem
+`TauCeti.interior_image_criticalPoints_eq_empty` applied fibrewise to the obstruction slices. -/
 private theorem interior_image_inter_not_surjective_eq_empty
     (pkg : ContinuousLinearMap.FredholmPackage T) (hT : HasStrictFDerivAt f T a) {k : ℕ}
-    (hslice : ∀ (X : Submodule ℝ E) (Y : Submodule ℝ F) [FiniteDimensional ℝ X]
-      [FiniteDimensional ℝ Y], finrank ℝ X = finrank ℝ T.ker →
-      finrank ℝ Y = finrank ℝ (F ⧸ T.range) → ∀ (g : X → Y) (V : Set X),
-      (∀ z ∈ V, ContDiffAt ℝ (k : ℕ∞ω) g z) →
-        interior (g '' (V ∩ {z | ¬ Surjective (fderiv ℝ g z)})) = ∅)
+    (hk : finrank ℝ T.ker - finrank ℝ (F ⧸ T.range) + 1 ≤ k)
     {V : Set (pkg.decCodom.X₁ × pkg.decDom.X₀)}
     (hVt : ∀ y ∈ V, y ∈ (pkg.normalFormOpenPartialHomeomorph hT).target)
     (hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionMap hT) y)
@@ -267,7 +198,7 @@ private theorem interior_image_inter_not_surjective_eq_empty
   have hcoker : finrank ℝ pkg.decCodom.X₀ = finrank ℝ (F ⧸ T.range) := by
     rw [pkg.range_eq]
     exact (Submodule.quotientEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).finrank_eq.symm
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT
   set q := pkg.obstructionMap hT with hqdef
   set N : Set E := Φ.source ∩ Φ ⁻¹' V
   have hNsymm : ∀ x ∈ N, Φ.symm (Φ x) = x := fun x hx ↦ Φ.left_inv hx.1
@@ -291,7 +222,7 @@ private theorem interior_image_inter_not_surjective_eq_empty
       intro z hz
       rw [funext (pkg.obstructionSlice_apply hT p₁), ← hqdef]
       exact (hVq _ hz).comp z (contDiffAt_const.prodMk contDiffAt_id)
-    exact hslice _ _ hker hcoker _ _ hUC
+    exact interior_image_criticalPoints_eq_empty hUC (by rw [hker, hcoker]; exact_mod_cast hk)
   have himg : f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆ Λ '' A := by
     rintro _ ⟨x, ⟨hxN, hxc⟩, rfl⟩
     have c₁ := hVt (Φ x) hxN.2
@@ -332,7 +263,7 @@ private theorem isOpen_inter_setOf_surjective_fderiv
       (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
   have : FiniteDimensional ℝ pkg.decDom.X₀ := pkg.decDom.finite_X₀
   have : FiniteDimensional ℝ pkg.decCodom.X₀ := pkg.decCodom.finite_X₀
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT
   set q := pkg.obstructionMap hT with hqdef
   set ι := ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀ with hιdef
   set N : Set E := Φ.source ∩ Φ ⁻¹' V
@@ -412,22 +343,31 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen
   exact interior_mono (Set.image_mono
     (Set.inter_subset_inter (fun z hz ↦ (hN'ball hz).1) (subset_refl _)))
 
-/-- **Sard--Smale, locally**, with the finite-dimensional input left as a hypothesis `hslice`: a
-Morse--Sard statement at regularity `C^k` for maps from a subspace of dimension `dim ker` of `E`
-to a subspace of dimension `dim coker` of `F`. The fibrewise step applies it to the obstruction
-slices of the Lyapunov--Schmidt normal form. Both public local forms below are instances: one
-with the quadratic Morse--Sard bound, one with the sharp bound in codimension at most two. -/
-private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice
-    {f : E → F} {a : E} {U : Set E} {k : ℕ} (hk : 1 ≤ k) (hf : ContDiffAt ℝ (k : ℕ∞ω) f a)
+/-- **Sard--Smale, locally.** Near a point where the derivative of `f` is a Fredholm operator of
+index `i`, and `f` is `C^k` with `k > max (i, 0)`, there is a neighbourhood, inside any
+prescribed neighbourhood `U` of the point, on which the critical values form a closed nowhere
+dense set. The neighbourhood can be confined to `U`, a region on which `f` is known to be the map
+of interest.
+
+Completeness of the target enters through Smale's local properness lemma, which supplies the
+compactness used to prove that the local critical-value image is closed.
+
+This is Smale's regularity threshold. The obstruction slices of the normal form are maps from a
+space of dimension `dim ker` to one of dimension `dim coker`, whose difference is `i`, so the
+finite-dimensional Morse--Sard theorem `TauCeti.interior_image_criticalPoints_eq_empty` applies to
+them at this regularity. -/
+theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
+    {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
     (hFred : (fderiv ℝ f a).IsFredholm)
-    (hslice : ∀ (X : Submodule ℝ E) (Y : Submodule ℝ F) [FiniteDimensional ℝ X]
-      [FiniteDimensional ℝ Y], finrank ℝ X = finrank ℝ (fderiv ℝ f a).ker →
-      finrank ℝ Y = finrank ℝ (F ⧸ (fderiv ℝ f a).range) → ∀ (g : X → Y) (V : Set X),
-      (∀ z ∈ V, ContDiffAt ℝ (k : ℕ∞ω) g z) →
-        interior (g '' (V ∩ {z | ¬ Surjective (fderiv ℝ g z)})) = ∅)
-    (hU : U ∈ 𝓝 a) :
+    (hn : (((fderiv ℝ f a).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) (hU : U ∈ 𝓝 a) :
     ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
+  have hi := (fderiv ℝ f a).index_eq_finrank_sub
+  obtain ⟨k, hkn⟩ : ∃ k : ℕ, k = (fderiv ℝ f a).index.toNat + 1 := ⟨_, rfl⟩
+  have hk : 1 ≤ k := by omega
+  have hdim : finrank ℝ (fderiv ℝ f a).ker - finrank ℝ (F ⧸ (fderiv ℝ f a).range) + 1 ≤ k := by
+    omega
+  replace hf : ContDiffAt ℝ (k : ℕ∞ω) f a := hf.of_le (hkn ▸ hn)
   set T := fderiv ℝ f a
   have hk1 : (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by exact_mod_cast hk
   have hk0 : ((k : ℕ∞ω)) ≠ 0 := by
@@ -436,14 +376,14 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_
   have hT : HasStrictFDerivAt f T a := hf.hasStrictFDerivAt_fderiv hk0
   obtain ⟨pkg⟩ := hFred.nonempty_fredholmPackage
   set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
-  set q := pkg.obstructionMap hT with hqdef
+  set q := pkg.obstructionMap hT
   have ha : a ∈ Φ.source := pkg.mem_normalFormOpenPartialHomeomorph_source hT
   have hΦa : Φ a = (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)) := by
     rw [hΦdef, pkg.normalFormOpenPartialHomeomorph_apply hT, pkg.normalFormMap_self]
   -- A neighbourhood of the base coordinate on which the chart, the obstruction and the map are
   -- all as smooth as `f` and the chart has invertible derivative.
   obtain ⟨V₀, hV₀, hV₀P⟩ := Filter.eventually_iff_exists_mem.1
-    (eventually_mem_target_contDiffAt_normalForm pkg hT hk hf)
+    (pkg.eventually_mem_target_contDiffAt_normalForm hT hk hf)
   obtain ⟨V, hVV₀, hVopen, hy₀V⟩ := mem_nhds_iff.1 hV₀
   have hVP := fun y (hy : y ∈ V) ↦ hV₀P y (hVV₀ hy)
   set N : Set E := Φ.source ∩ Φ ⁻¹' V
@@ -464,56 +404,12 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_
     rwa [hNsymm x hx] at hiff
   have hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) q y := fun y hy ↦ (hVP y hy).2.1
   -- The image of the critical set of `N` has empty interior, fibrewise by Morse--Sard.
-  have hNint := interior_image_inter_not_surjective_eq_empty pkg hT hslice
+  have hNint := interior_image_inter_not_surjective_eq_empty pkg hT hdim
     (fun y hy ↦ (hVP y hy).1) hVq hcrit
   -- The critical locus is relatively closed in `N`, again read off the finite-dimensional slice.
   have hregopen := isOpen_inter_setOf_surjective_fderiv pkg hT hk hVopen hVq hcrit
   exact exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen hT hFred hNopen haN hU
     (fun x hx ↦ (hfN x hx).continuousAt) hregopen hNint
-
-/-- **Sard--Smale, locally.** Near a point where a sufficiently smooth map has Fredholm
-derivative there is a neighbourhood on which the critical values form a closed nowhere dense set.
-The neighbourhood can be taken inside any prescribed neighbourhood `U` of the point, so the
-conclusion can be confined to a region on which `f` is known to be the map of interest.
-
-Completeness of the target enters through Smale's local properness lemma, which supplies the
-compactness used to prove that the local critical-value image is closed.
-
-The regularity threshold `(dim ker)² + 1` is the one inherited from the finite-dimensional
-Morse--Sard theorem `TauCeti.interior_image_criticalPoints_eq_empty`, which the fibrewise step
-applies to the obstruction slice, a map out of `ker (fderiv ℝ f a)`. For index at most two,
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two` lowers it
-to Smale's sharp threshold. -/
-theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
-    {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
-    (hFred : (fderiv ℝ f a).IsFredholm)
-    (hn : ((finrank ℝ (fderiv ℝ f a).ker * finrank ℝ (fderiv ℝ f a).ker + 1 : ℕ) : ℕ∞ω) ≤ n)
-    (hU : U ∈ 𝓝 a) :
-    ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
-      IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) :=
-  exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice (by omega) (hf.of_le hn)
-    hFred (fun _ _ _ _ hX _ _ _ hg ↦ interior_image_criticalPoints_eq_empty hg (by rw [hX])) hU
-
-/-- **Sard--Smale at the sharp regularity, locally, in index at most two.** Near a point where the
-derivative of `f` is a Fredholm operator of index `i ≤ 2`, and `f` is `C^k` with
-`k > max (i, 0)`, there is a neighbourhood, inside any prescribed neighbourhood `U` of the point,
-on which the critical values form a closed nowhere dense set.
-
-This is Smale's regularity threshold. The obstruction slices of the normal form are maps from a
-space of dimension `dim ker` to one of dimension `dim coker`, whose difference is `i`, so the
-finite-dimensional Morse--Sard theorem at the sharp regularity in codimension at most two,
-`TauCeti.interior_image_criticalPoints_eq_empty_of_finrank_le_add_two`, applies to them. -/
-theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two
-    {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
-    (hFred : (fderiv ℝ f a).IsFredholm) (hindex : (fderiv ℝ f a).index ≤ 2)
-    (hn : (((fderiv ℝ f a).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) (hU : U ∈ 𝓝 a) :
-    ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
-      IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  have hi := (fderiv ℝ f a).index_eq_finrank_sub
-  refine exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice (by omega)
-    (hf.of_le hn) hFred (fun X Y _ _ hX hY _ _ hg ↦ ?_) hU
-  refine interior_image_criticalPoints_eq_empty_of_finrank_le_add_two hg (by omega) ?_
-  exact_mod_cast (show finrank ℝ X - finrank ℝ Y + 1 ≤ (fderiv ℝ f a).index.toNat + 1 by omega)
 
 end Local
 
@@ -521,24 +417,20 @@ section Global
 
 variable [CompleteSpace E] [CompleteSpace F] {U : Set E} [LindelofSpace U] {f : E → F}
 
-/-- **The Sard--Smale theorem.** The critical values of a sufficiently smooth Fredholm map on a
-Lindelöf subset of a Banach space form a meagre set. The subset need not be open; smoothness
-is assumed at each of its points in the ambient space. Every subset of a separable Banach space
-is Lindelöf.
+/-- **The Sard--Smale theorem.** Let `f` be a Fredholm map on a Lindelöf subset `U` of a Banach
+space, which at each point `x` of `U` has derivative of index `i x` and is `C^k` with
+`k > max (i x, 0)`. Then the critical values taken on `U` form a meagre set. The subset need not
+be open; smoothness is assumed at each of its points in the ambient space. Every subset of a
+separable Banach space is Lindelöf.
 
 Sard's theorem itself is false in infinite dimensions, and "measure zero" has no meaning there;
 what survives is that the Fredholm condition confines the failure of regularity to a
-finite-dimensional direction, in which the finite-dimensional theorem applies fibrewise.
-
-The regularity threshold is the pointwise one of
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`: at each point `C^k` with
-`k ≥ (dim ker)² + 1`. In particular `n = ∞` needs no side condition. For maps of index at most
-two, `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two` only needs Smale's
-sharp threshold. -/
+finite-dimensional direction, in which the finite-dimensional theorem applies fibrewise. The
+regularity threshold is Smale's; in negative index, where the regular fibres are empty, `C¹`
+suffices, and `n = ∞` needs no side condition. -/
 theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
-      ≤ n) :
+    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
     IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
   refine (IsLindelof.of_coe (s := U)).isMeagre_image_inter_of_forall_exists_mem_nhds
     fun x hx ↦ ?_
@@ -547,48 +439,13 @@ theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
   exact ⟨N, hN, hNnd.isMeagre⟩
 
 /-- **Sard--Smale**, in the form transversality arguments consume: the regular values of a
-sufficiently smooth Fredholm map restricted to a Lindelöf subset are dense, being the complement
-of a meagre set in a Baire space. The regularity threshold is that of
-`TauCeti.isMeagre_image_criticalPoints_of_isFredholm`. -/
+Fredholm map restricted to a Lindelöf subset are dense, being the complement of a meagre set in a
+Baire space. The hypotheses are those of `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`. -/
 theorem dense_compl_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
-      ≤ n) :
+    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
     Dense (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}))ᶜ :=
   dense_of_mem_residual (isMeagre_image_criticalPoints_of_isFredholm hf hFred hn)
-
-/-- **The Sard--Smale theorem at Smale's sharp regularity, in index at most two.** Let `f` be a
-Fredholm map on a Lindelöf subset `U` of a Banach space whose derivative at each point `x` of `U`
-has index `i x ≤ 2`, and which is `C^k` at `x` with `k > max (i x, 0)`. Then the critical values
-taken on `U` form a meagre set.
-
-This is Smale's threshold `k > max (index, 0)`, sharper than the quadratic threshold of
-`TauCeti.isMeagre_image_criticalPoints_of_isFredholm` whenever the kernel has dimension at
-least two. Index at most two covers the trajectory and strip moduli of index one and two, and
-negative index, where the regular fibres are empty and `C¹` suffices. -/
-theorem isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hindex : ∀ x ∈ U, (fderiv ℝ f x).index ≤ 2)
-    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  refine (IsLindelof.of_coe (s := U)).isMeagre_image_inter_of_forall_exists_mem_nhds
-    fun x hx ↦ ?_
-  obtain ⟨N, hN, -, -, hNnd⟩ :=
-    exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two
-      (hf x hx) (hFred x hx) (hindex x hx) (hn x hx) (U := univ) Filter.univ_mem
-  exact ⟨N, hN, hNnd.isMeagre⟩
-
-/-- **Sard--Smale at the sharp regularity, in index at most two**, in the form transversality
-arguments consume: the regular values of such a map restricted to a Lindelöf subset are dense.
-The hypotheses are those of `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two`.
--/
-theorem dense_compl_image_criticalPoints_of_isFredholm_of_index_le_two {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
-    (hindex : ∀ x ∈ U, (fderiv ℝ f x).index ≤ 2)
-    (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    Dense (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}))ᶜ :=
-  dense_of_mem_residual (isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two hf hFred
-    hindex hn)
 
 end Global
 

@@ -46,10 +46,6 @@ theorem hasSum_herglotzRieszKernel {c w z : ℂ} (h : ‖w - c‖ < ‖z - c‖)
   have hz : z - c ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt h)
   have hq1 : ‖q‖ < 1 := by
     rwa [hq, norm_div, div_lt_one (norm_pos_iff.mpr hz)]
-  have hzw : z - c - (w - c) ≠ 0 := by
-    intro h0
-    rw [sub_eq_zero] at h0
-    exact h.ne (congrArg norm h0).symm
   have h1q : 1 - q ≠ 0 := by
     intro h0
     rw [sub_eq_zero] at h0

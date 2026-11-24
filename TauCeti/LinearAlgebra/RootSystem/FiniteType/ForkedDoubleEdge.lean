@@ -65,13 +65,12 @@ so it is the fork, and not the double edge, that these diagrams die of.
 
 ## References
 
-This file continues the "chain/fork length constraints" step of the classification of finite-type
-Cartan matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The
-diagram is the affine type `B⁽¹⁾ₗ` of V. G. Kac, *Infinite Dimensional Lie Algebras*, 3rd ed.,
-Ch. 4 and Table Aff 1. Kac writes `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩`, the transpose of the convention
-`cartanMatrix i j = ⟨αᵢ, αⱼ^∨⟩` used here, so the null vector below is his vector of comarks. See
-also J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, where the
-same configuration is excluded.
+This file continues the chain and fork length constraints of the classification of finite-type
+Cartan matrices. The diagram is the affine type `B⁽¹⁾ₗ` of V. G. Kac, *Infinite Dimensional Lie
+Algebras*, 3rd ed., Ch. 4 and Table Aff 1. Kac writes `aᵢⱼ = ⟨αⱼ, αᵢ^∨⟩`, the transpose of the
+convention `cartanMatrix i j = ⟨αᵢ, αⱼ^∨⟩` used here, so the null vector below is his vector of
+comarks. See also J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4,
+where the same configuration is excluded.
 -/
 
 public section

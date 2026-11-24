@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Basis.Submodule
 public import Mathlib.LinearAlgebra.StdBasis
@@ -27,9 +27,6 @@ module instead of rebuilding the same restricted-scalars basis in each construct
   coordinate vectors and basis over `ℤ`.
 * `TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec`: an endomorphism
   represented by an integer matrix has that matrix in the coordinate-lattice basis.
-
-This is a reusable prerequisite for the Chevalley--Demazure carriers in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -111,10 +108,10 @@ coordinate. -/
 
 /-- The standard coordinate lattice is finitely generated and spans its rational coordinate
 space. -/
-instance instIsLatticeCoordinateLattice : Submodule.IsLattice ℚ (coordinateLattice ι) where
-  fg := by
+instance instIsFullLatticeCoordinateLattice : Submodule.IsFullLattice ℚ (coordinateLattice ι) where
+  __ := Submodule.IsLattice.of_fg ℚ (by
     rw [coordinateLattice]
-    exact Submodule.fg_span (Set.finite_range _)
+    exact Submodule.fg_span (Set.finite_range _))
   span_eq_top := by
     rw [coordinateLattice, Submodule.span_span_of_tower, (Pi.basisFun ℚ ι).span_eq]
 

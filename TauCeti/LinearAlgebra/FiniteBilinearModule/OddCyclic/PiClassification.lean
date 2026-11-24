@@ -209,7 +209,7 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin (hp : 
           (oddCyclic (p ^ k 0) hp.pow (η 0))) := by
         rcases h0 with h0 | h0
         · exact nonempty_isometry_oddCyclic_of_eq_zero hp h0 _ _
-        · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) (hη 0) h0
+        · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) h0
       obtain ⟨g'⟩ := ih (fun i ↦ k i.succ) (fun i ↦ hθ' i.succ) (fun i ↦ hη i.succ)
         fun m hm ↦ Fin.prod_filter_succ_eq_of_prod_filter_eq (k · = m) (h' m hm)
           (fun _ h ↦ ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (hθ' 0)).ne_zero
@@ -344,7 +344,7 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
     -- summands, its exponents agree up to reindexing.
     obtain ⟨σ, hσ⟩ := ZMod.exists_equiv_exponents_of_pi_pow_addEquiv (Fact.out : p.Prime).one_lt
       (fun i : {i // k i ≠ 0} ↦ k i) (fun j : {j // l j ≠ 0} ↦ l j)
-      (fun i ↦ Nat.pos_of_ne_zero i.2) (fun j ↦ Nat.pos_of_ne_zero j.2)
+      (fun i ↦ Nat.pos_of_ne_zero i.property) (fun j ↦ Nat.pos_of_ne_zero j.property)
       ((isometryPiOddCyclicNeZero hp k θ).symm.trans
         (hf.some.trans (isometryPiOddCyclicNeZero hp l η))).toLinearEquiv.toAddEquiv
     have hcard (m : ℕ) (hm : 0 < m) : #{i | k i = m} = #{j | l j = m} := by

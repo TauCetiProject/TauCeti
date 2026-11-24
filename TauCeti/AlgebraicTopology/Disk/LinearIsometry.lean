@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Disk
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.Algebra.OrthogonalGroup
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Determinant
 import TauCeti.Topology.Homotopy.LinearIsometryEquiv
 
 /-!
@@ -39,6 +39,8 @@ its disk map is the identity (`TauCeti.TopCat.diskMap_eq_id_of_det_eq_one`); if 
 * `LinearIsometryEquiv.diskMap`, `LinearIsometryEquiv.diskBoundaryMap`: the maps of the disk and of
   its boundary sphere induced by a linear isometry of `ℝⁿ`; the boundary map of `-1` is the
   antipodal map `TauCeti.diskBoundaryNeg` (`LinearIsometryEquiv.diskBoundaryMap_neg`).
+* `TauCeti.diskMapFamily`: the disk maps of a continuous family `g` of linear isometries of `ℝⁿ`
+  over a parameter space `P`, as a single continuous map `P × D^n → D^n`.
 * `TauCeti.TopCat.exists_homotopy_diskMap_id_of_det_eq_one`: for `det g = 1`, the disk map is
   homotopic to the identity through maps of pairs.
 * `TauCeti.TopCat.homotopic_diskBoundaryMap_id_of_det_eq_one`: for `det g = 1`, the boundary map
@@ -71,18 +73,18 @@ variable {n : ℕ} (g g' : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSp
 def diskMap : TopCat.disk.{u} n ⟶ TopCat.disk.{u} n :=
   TopCat.ofHom
     { toFun w := ULift.up ⟨g w.down, mem_closedBall_zero_iff.2 <| (g.norm_map _).trans_le <|
-        mem_closedBall_zero_iff.1 w.down.2⟩
+        mem_closedBall_zero_iff.1 w.down.property⟩
       continuous_toFun := continuous_uliftUp.comp ((g.continuous.comp
-        (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _) }
+        (continuous_subtypeVal.comp continuous_uliftDown)).subtype_mk _) }
 
 /-- The self-map `s ↦ g s` of the boundary sphere `TopCat.diskBoundary n` induced by a linear
 isometry `g` of `ℝⁿ`. -/
 def diskBoundaryMap : TopCat.diskBoundary.{u} n ⟶ TopCat.diskBoundary.{u} n :=
   TopCat.ofHom
     { toFun s := ULift.up ⟨g s.down, mem_sphere_zero_iff_norm.2 <| (g.norm_map _).trans <|
-        mem_sphere_zero_iff_norm.1 s.down.2⟩
+        mem_sphere_zero_iff_norm.1 s.down.property⟩
       continuous_toFun := continuous_uliftUp.comp ((g.continuous.comp
-        (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _) }
+        (continuous_subtypeVal.comp continuous_uliftDown)).subtype_mk _) }
 
 @[simp]
 theorem coe_diskMap_apply_down (w : TopCat.disk.{u} n) :
@@ -142,6 +144,42 @@ theorem diskBoundaryMap_neg :
 
 end LinearIsometryEquiv
 
+namespace TauCeti
+
+section Family
+
+variable {n : ℕ} {P : Type*} [TopologicalSpace P]
+  (g : P → EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+  (hg : Continuous fun p ↦ (g p : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)))
+
+/-- The disk maps `(p, w) ↦ g p w` of a family `g` of linear isometries of `ℝⁿ` depending
+continuously on a parameter `p : P`, as a single continuous map `P × D^n → D^n`. Over each `p` it
+is `LinearIsometryEquiv.diskMap (g p)`. -/
+def diskMapFamily : C(P × TopCat.disk.{u} n, TopCat.disk.{u} n) where
+  toFun q := (g q.1).diskMap q.2
+  continuous_toFun := continuous_uliftUp.comp (((hg.comp continuous_fst).clm_apply
+    (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
+
+@[simp]
+theorem diskMapFamily_apply (q : P × TopCat.disk.{u} n) :
+    diskMapFamily g hg q = (g q.1).diskMap q.2 :=
+  (rfl)
+
+/-- The disk maps of the family are `(p, w) ↦ g p w` on the underlying points of `ℝⁿ`. -/
+theorem coe_diskMapFamily_apply_down (q : P × TopCat.disk.{u} n) :
+    ((diskMapFamily g hg q).down : EuclideanSpace ℝ (Fin n)) = g q.1 q.2.down :=
+  (rfl)
+
+/-- Each disk map of the family is a map of pairs `(D^n, ∂D^n) → (D^n, ∂D^n)`. -/
+theorem mapsTo_diskMapFamily_range_diskBoundaryInclusion (p : P) :
+    MapsTo (fun w ↦ diskMapFamily.{u} g hg (p, w)) (range (TopCat.diskBoundaryInclusion n))
+      (range (TopCat.diskBoundaryInclusion n)) :=
+  (g p).mapsTo_diskMap_range_diskBoundaryInclusion
+
+end Family
+
+end TauCeti
+
 namespace TauCeti.TopCat
 
 variable {n : ℕ}
@@ -168,7 +206,7 @@ theorem exists_homotopy_diskMap_id_of_det_eq_one (hg : LinearMap.det g.toLinearM
   rw [mem_range_diskBoundaryInclusion_iff]
   refine (congrArg norm (coe_linearIsometryEquivPathHomotopy_apply_down _ _ _ _ (t, _))).trans ?_
   rw [LinearIsometryEquiv.norm_map, coe_diskBoundaryInclusion_apply_down]
-  exact mem_sphere_zero_iff_norm.1 s.down.2
+  exact mem_sphere_zero_iff_norm.1 s.down.property
 
 /-- **An orientation-preserving orthogonal map of a sphere is homotopic to the identity.** If
 `det g = 1`, the boundary map of `g` is homotopic to the identity of `TopCat.diskBoundary n`. -/

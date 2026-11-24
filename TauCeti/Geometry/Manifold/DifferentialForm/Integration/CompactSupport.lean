@@ -169,8 +169,6 @@ theorem integrable_signedInChartAt (φ : RoughForm I M ℝ k)
     (φ.support_signedInChartAt_subset b α σ)).mp
       ((φ.continuousOn_signedInChartAt b α σ hσ hφ).mono htarget |>.integrableOn_compact hK)
 
-variable [FiniteDimensional ℝ E]
-
 /-- Chart-supported top forms have the same actual signed coefficient integral in
 any two charts containing their support. Only the model is equipped with a measurable structure. -/
 theorem integral_signedInChartAt_eq_of_tsupport_subset [IsManifold I 1 M]
@@ -187,6 +185,7 @@ theorem integral_signedInChartAt_eq_of_tsupport_subset [IsManifold I 1 M]
           (extChartAt I α x)).toLinearMap.det| * (σβ ⟨x, hx.2⟩ : ℝ))
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     (∫ y, φ.signedInChartAt b α σα y ∂μ) = ∫ y, φ.signedInChartAt b β σβ y ∂μ := by
+  have := b.finiteDimensional_of_finite
   let U := (extChartAt I α).source ∩ (extChartAt I β).source
   have hm : MeasurableSet ((extChartAt I α) '' U) :=
     IsOpen.measurableSet_image_extChartAt_source_inter
@@ -222,6 +221,7 @@ theorem integrable_signedInChartAt_iff_of_tsupport_subset [IsManifold I 1 M]
           (extChartAt I α x)).toLinearMap.det| * (σβ ⟨x, hx.2⟩ : ℝ))
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     Integrable (φ.signedInChartAt b α σα) μ ↔ Integrable (φ.signedInChartAt b β σβ) μ := by
+  have := b.finiteDimensional_of_finite
   let U := (extChartAt I α).source ∩ (extChartAt I β).source
   have hm : MeasurableSet ((extChartAt I α) '' U) :=
     IsOpen.measurableSet_image_extChartAt_source_inter

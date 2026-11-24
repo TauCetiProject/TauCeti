@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Topology.MetricSpace.Holder
-import Mathlib.Algebra.Order.Chebyshev
+import TauCeti.Analysis.Normed.Module.Multilinear.Basis
 
 /-!
 # The norm of a multilinear map on an orthonormal basis
@@ -17,14 +17,19 @@ import Mathlib.Algebra.Order.Chebyshev
 A continuous multilinear map `M` on finite-dimensional inner product spaces is determined by its
 values on tuples of vectors of orthonormal bases `b j`, and its operator norm is controlled by
 them: `‖M‖ ≤ ∑_r ‖M (fun j => b j (r j))‖`, the sum running over all tuples `r` of basis indices
-(`ContinuousMultilinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`). For a second derivative,
-this bounds the norm of the Hessian by the sum of the absolute values of its matrix entries.
+(`ContinuousMultilinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`). This is the case of the
+bound `ContinuousMultilinearMap.opNorm_le_prod_mul_sum_norm_apply_basis` for arbitrary bases in
+which the coordinate isomorphisms have norm at most one. For a second derivative, this bounds the
+norm of the Hessian by the sum of the absolute values of its matrix entries.
 The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 `ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
 the norm of the gradient by the sum of the absolute values of the partial derivatives. Its square
-form `‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
-(`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`) bounds the norm
-of a matrix by its columns in square mean.
+form `‖L‖² ≤ ∑ i, ‖L (b i)‖²`
+(`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`) bounds the squared operator
+norm by the sum of the squared norms of the values on the basis (the squared Hilbert–Schmidt norm
+when `G` is an inner product space), and hence the norm of a matrix by its columns in square mean,
+`‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
+(`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`).
 
 Conversely, the entries `H ![b i, b j]` of a bilinear map on an orthonormal basis are bounded by
 the operator norm (`ContinuousMultilinearMap.norm_apply_orthonormalBasis_le`). For a bilinear map
@@ -57,14 +62,34 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis (L : E →L[𝕜] G) (b : Orth
   exact (PiLp.norm_apply_le (b.repr x) i).trans_eq (b.repr.norm_map x)
 
 /-- The squared operator norm of a continuous linear map on an inner product space is at most the
+sum of the squared norms of its values on the vectors of an orthonormal basis. When the codomain
+is an inner product space, this sum is the squared Hilbert–Schmidt norm. -/
+theorem opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
+    (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ ∑ i, ‖L (b i)‖ ^ 2 := by
+  have hS : 0 ≤ ∑ i, ‖L (b i)‖ ^ 2 := Finset.sum_nonneg fun _ _ => sq_nonneg _
+  have h : ‖L‖ ≤ √(∑ i, ‖L (b i)‖ ^ 2) := by
+    refine L.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
+    -- Expand the argument in the basis and apply the Cauchy–Schwarz inequality to the sum.
+    conv_lhs => rw [← b.sum_repr x]
+    rw [map_sum]
+    refine (norm_sum_le _ _).trans ?_
+    simp only [map_smul, norm_smul]
+    refine (Real.sum_mul_le_sqrt_mul_sqrt _ _ _).trans_eq ?_
+    rw [mul_comm, ← b.repr.norm_map x, EuclideanSpace.norm_eq]
+  calc ‖L‖ ^ 2 ≤ √(∑ i, ‖L (b i)‖ ^ 2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
+    _ = _ := Real.sq_sqrt hS
+
+/-- The squared operator norm of a continuous linear map on an inner product space is at most the
 number of vectors of an orthonormal basis times the sum of the squared norms of its values on
-them. -/
+them. It is a weakening of
+`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`. -/
 theorem opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
     (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ Fintype.card ι * ∑ i, ‖L (b i)‖ ^ 2 := by
-  refine (pow_le_pow_left₀ (norm_nonneg _) (L.opNorm_le_sum_norm_apply_orthonormalBasis b) 2).trans
-    ?_
-  simpa only [Finset.card_univ] using
-    sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i => ‖L (b i)‖)
+  refine (L.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis b).trans ?_
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp
+  · exact le_mul_of_one_le_left (Finset.sum_nonneg fun _ _ => sq_nonneg _)
+      (by exact_mod_cast Fintype.card_pos)
 
 end ContinuousLinearMap
 
@@ -80,18 +105,15 @@ of the norms of its values on tuples of vectors of orthonormal bases, one for ea
 theorem opNorm_le_sum_norm_apply_orthonormalBasis
     (M : ContinuousMultilinearMap 𝕜 E G) (b : ∀ j, OrthonormalBasis (ι j) 𝕜 (E j)) :
     ‖M‖ ≤ ∑ r : ∀ j, ι j, ‖M fun j => b j (r j)‖ := by
-  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun m => ?_
-  -- Expand each argument in the basis and use multilinearity.
-  have hM : M m = ∑ r : ∀ j, ι j, (∏ j, (b j).repr (m j) (r j)) •
-      M fun j => b j (r j) := by
-    conv_lhs => rw [← funext fun j => (b j).sum_repr (m j)]
-    rw [M.map_sum]
-    exact Finset.sum_congr rfl fun r _ => M.map_smul_univ _ _
-  rw [hM, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
-  rw [norm_smul, norm_prod, mul_comm]
-  gcongr with j
-  exact (PiLp.norm_apply_le ((b j).repr (m j)) (r j)).trans_eq ((b j).repr.norm_map (m j))
+  -- The coordinate isomorphisms of orthonormal bases have norm at most one.
+  refine (M.opNorm_le_prod_mul_sum_norm_apply_basis fun j => (b j).toBasis).trans ?_
+  simp only [OrthonormalBasis.coe_toBasis]
+  refine mul_le_of_le_one_left (Finset.sum_nonneg fun _ _ => norm_nonneg _)
+    (Finset.prod_le_one₀ (fun _ _ => norm_nonneg _) fun j _ => ?_)
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
+  rw [one_mul]
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg x)).2 fun i => ?_
+  simpa using (PiLp.norm_apply_le ((b j).repr x) i).trans_eq ((b j).repr.norm_map x)
 
 end ContinuousMultilinearMap
 

@@ -30,9 +30,9 @@ Chapter 4, Proposition 4.25 and Corollary 4.26 (subresultants and the gcd).
 
 public section
 
-namespace TauCeti
+namespace Polynomial
 
-open Polynomial
+open TauCeti
 
 section Domain
 
@@ -40,7 +40,7 @@ variable {R : Type*} [CommRing R]
 
 /-- Subresultant polynomials vanish below the degree of any common divisor, even when their
 formal degree bounds exceed the input degrees. -/
-theorem _root_.Polynomial.subresultant_eq_zero_of_lt_natDegree_commonDivisor
+theorem subresultant_eq_zero_of_lt_natDegree_commonDivisor
     [IsDomain R] {p q g : R[X]} {m n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hgp : g ∣ p) (hgq : g ∣ q) (hj : j < g.natDegree) :
     subresultant p q m n j = 0 := by
@@ -55,7 +55,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_lt_natDegree_commonDivisor
 /-- At the degree of a monic common divisor, a strict-index subresultant polynomial is exactly
 that divisor scaled by the principal subresultant coefficient. The scalar is allowed to vanish.
 No field hypothesis or actual-degree equality is required. -/
-theorem _root_.Polynomial.subresultant_eq_C_mul_of_monic_commonDivisor
+theorem subresultant_eq_C_mul_of_monic_commonDivisor
     {p q g : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hg : g.Monic) (hgp : g ∣ p) (hgq : g ∣ q) (hj : g.natDegree < min m n) :
     subresultant p q m n g.natDegree = C (psc p q m n g.natDegree) * g := by
@@ -80,7 +80,7 @@ variable {K : Type*} [Field K] [DecidableEq K]
 /-- At the gcd degree, a strict-index subresultant is the monic normalization of the Euclidean
 gcd scaled by its principal coefficient. This formula also permits oversized formal bounds,
 where that coefficient can vanish. -/
-theorem _root_.Polynomial.subresultant_natDegree_gcd {p q : K[X]} {m n : ℕ}
+theorem subresultant_natDegree_gcd {p q : K[X]} {m n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hj : (EuclideanDomain.gcd p q).natDegree < min m n) :
     subresultant p q m n (EuclideanDomain.gcd p q).natDegree =
@@ -100,7 +100,7 @@ theorem _root_.Polynomial.subresultant_natDegree_gcd {p q : K[X]} {m n : ℕ}
 /-- With an actual left degree, the subresultant at a strict gcd index is associated to the gcd.
 Together with vanishing below that index, this identifies the first nonzero subresultant
 polynomial. A right degree bound suffices; neither squarefreeness nor monicity is assumed. -/
-theorem _root_.Polynomial.subresultant_natDegree_gcd_associated {p q : K[X]} {m n : ℕ}
+theorem subresultant_natDegree_gcd_associated {p q : K[X]} {m n : ℕ}
     (hm : p.natDegree = m) (hn : q.natDegree ≤ n)
     (hj : (EuclideanDomain.gcd p q).natDegree < min m n) :
     Associated (subresultant p q m n (EuclideanDomain.gcd p q).natDegree)
@@ -116,4 +116,4 @@ theorem _root_.Polynomial.subresultant_natDegree_gcd_associated {p q : K[X]} {m 
 
 end Field
 
-end TauCeti
+end Polynomial

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Algebra.Order.Star.Rat
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Positive definiteness over the rationals
@@ -26,13 +27,18 @@ it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One gener
 `Matrix.PosDef` over any ring is recorded alongside, since Mathlib does not state it: a matrix on
 an empty index type is positive definite, which is what the rank-zero members of the classical
 Cartan families need. So is the `1 × 1` criterion: such a matrix over a nontrivial star-ordered
-ring without zero divisors is positive definite exactly when its single entry is positive.
+ring without zero divisors is positive definite exactly when its single entry is positive. So is
+the positive definiteness of `1 + A Aᴴ` over a star-ordered ring with a proper star, such as `ℝ`.
 
 ## Main results
 
 * `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
 * `Matrix.posDef_fin_one_iff`: a `1 × 1` matrix is positive definite exactly when its single
   entry is positive.
+* `Matrix.posDef_one_add_mul_conjTranspose`: `1 + A Aᴴ` is positive definite over a star-ordered
+  ring with a proper star.
+* `Matrix.IsHermitian.posDef_one_add_mul_self`: `1 + A²` is positive definite for Hermitian `A`
+  over such a ring.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
@@ -40,8 +46,12 @@ ring without zero divisors is positive definite exactly when its single entry is
   more generally over any linearly ordered field with the star order.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
+* `Matrix.PosDef.trivialStar`: over a linearly ordered field, a positive definite matrix on a
+  nonempty index type forces the star to be trivial.
 * `Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le`: for a positive definite matrix `S`, the
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
+* `Matrix.PosDef.eq_of_eq_smul_of_trace_eq_trace_inv`: two positive definite scalar multiples
+  with `Tr M = Tr M⁻¹` are equal.
 -/
 
 public section
@@ -80,6 +90,20 @@ theorem _root_.Matrix.PosDef.of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [S
     [IsEmpty n] (A : _root_.Matrix n n R) : A.PosDef :=
   ⟨_root_.Matrix.ext fun i _ ↦ isEmptyElim i,
     fun _ hx ↦ (hx (Finsupp.ext fun i ↦ isEmptyElim i)).elim⟩
+
+/-- **`1 + A Aᴴ` is positive definite** for every matrix `A` over a star-ordered ring with a
+proper star, such as `ℝ` or `ℂ`: it is the identity plus the positive semidefinite `A Aᴴ`. -/
+theorem _root_.Matrix.posDef_one_add_mul_conjTranspose {m R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [StarOrderedRing R] [IsProperStar R] [Fintype m] [DecidableEq n]
+    (A : _root_.Matrix n m R) : (1 + A * Aᴴ).PosDef :=
+  _root_.Matrix.PosDef.one.add_posSemidef (_root_.Matrix.posSemidef_self_mul_conjTranspose A)
+
+/-- **`1 + A²` is positive definite** for every Hermitian matrix `A` over a star-ordered ring with
+a proper star, such as a real symmetric matrix: it is `1 + A Aᴴ`. -/
+theorem _root_.Matrix.IsHermitian.posDef_one_add_mul_self {R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [StarOrderedRing R] [IsProperStar R] [Fintype n] [DecidableEq n]
+    {A : _root_.Matrix n n R} (hA : A.IsHermitian) : (1 + A * A).PosDef := by
+  simpa only [hA.eq] using _root_.Matrix.posDef_one_add_mul_conjTranspose A
 
 /-- A `1 × 1` matrix over a nontrivial star-ordered ring without zero divisors, such as `ℝ` or
 `ℂ`, is positive definite exactly when its single entry is positive. -/
@@ -161,7 +185,7 @@ theorem posDef_map_intCast_iff {A : Matrix n n ℤ} :
 
 /-- **A rational matrix is positive definite exactly when its cast to `ℝ` is**, and more generally
 its cast to any linearly ordered field `K` whose order is the star order of the trivial star. -/
-theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K] [TrivialStar K]
+theorem posDef_map_ratCast_iff {K : Type*} [Field K] [LinearOrder K] [StarRing K]
     [StarOrderedRing K] [Finite n] {A : Matrix n n ℚ} :
     (A.map (Rat.cast : ℚ → K)).PosDef ↔ A.PosDef := by
   classical
@@ -207,8 +231,32 @@ end TauCeti
 
 namespace Matrix.PosDef
 
+section TrivialStar
+
+variable {B K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [StarRing K]
+
+/-- **A positive definite matrix on a nonempty index type forces the star of `K` to be trivial.**
+This supplies the `TrivialStar K` instance, so that the ordinary quadratic-form results over a
+linearly ordered commutative ring apply to such a matrix. -/
+theorem trivialStar [Nonempty B] {S : Matrix B B K} (hS : S.PosDef) : TrivialStar K := by
+  classical
+  -- If `s ≠ star s`, the vector supported at one index with entry `s - star s` has a
+  -- nonpositive quadratic form, contradicting positive definiteness.
+  obtain ⟨k₀⟩ := ‹Nonempty B›
+  exact ⟨fun s ↦ by
+    by_contra hne
+    have ht : s - star s ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
+    have h := hS.2 (x := Finsupp.single k₀ (s - star s)) (Finsupp.single_ne_zero.mpr ht)
+    have hpos : 0 < S k₀ k₀ := hS.diag_pos
+    have htt : 0 < (s - star s) * (s - star s) := mul_self_pos.mpr ht
+    rw [Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp)] at h
+    simp only [star_sub, star_star] at h
+    nlinarith [mul_pos htt hpos]⟩
+
+end TrivialStar
+
 variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [StarRing K] [TrivialStar K]
+  [StarRing K]
 
 /-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
 matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
@@ -216,7 +264,10 @@ coordinates bounded independently of `c`. -/
 theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) (w : B → K) :
     ∃ M : K, ∀ c : B → K, c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w → ∀ k, c k ^ 2 ≤ M := by
   classical
-  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S with hFdef
+  rcases isEmpty_or_nonempty B with hB | hB
+  · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
+  have := hS.trivialStar
+  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S
   have hFapply : ∀ u v : B → K, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
   have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
     simpa [hFapply] using hS.posSemidef.dotProduct_mulVec_nonneg u
@@ -231,5 +282,38 @@ theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) 
     _ ≤ F z z * F (u k) (u k) := F.apply_sq_le_mul_of_apply_le_apply hnonneg hsymm hle _
     _ ≤ F z z * ∑ k, F (u k) (u k) := mul_le_mul_of_nonneg_left
         (Finset.single_le_sum (fun j _ ↦ hnonneg (u j)) (Finset.mem_univ k)) (hnonneg z)
+
+/-- If two positive definite matrices satisfy `F = c • G` and both are normalized by
+`Tr M = Tr M⁻¹`, then `F = G`. -/
+theorem eq_of_eq_smul_of_trace_eq_trace_inv {n K : Type*} [Fintype n] [DecidableEq n]
+    [Field K] [PartialOrder K] [StarRing K] [IsOrderedCancelAddMonoid K]
+    {F G : Matrix n n K} {c : K} (hF : F.PosDef) (hG : G.PosDef) (hFG : F = c • G)
+    (htrF : F.trace = F⁻¹.trace) (htrG : G.trace = G⁻¹.trace) :
+    F = G := by
+  rcases isEmpty_or_nonempty n with _ | _
+  · exact Subsingleton.elim F G
+  · have hFtr : 0 < F.trace := hF.trace_pos
+    have hGtr : 0 < G.trace := hG.trace_pos
+    have hc : c = c⁻¹ := by
+      apply mul_right_cancel₀ hGtr.ne'
+      calc
+        c * G.trace = F.trace := by rw [hFG, Matrix.trace_smul, smul_eq_mul]
+        _ = F⁻¹.trace := htrF
+        _ = c⁻¹ * G⁻¹.trace := by
+          rw [hFG, Matrix.nonsing_inv_smul, Matrix.trace_smul, smul_eq_mul]
+        _ = c⁻¹ * G.trace := by rw [htrG]
+    have hc0 : c ≠ 0 := by
+      rintro rfl
+      rw [hFG, zero_smul, Matrix.trace_zero] at hFtr
+      exact lt_irrefl 0 hFtr
+    have hcsq : c * c = 1 := by
+      conv_rhs => rw [← mul_inv_cancel₀ hc0]
+      rw [← hc]
+    rcases mul_self_eq_one_iff.mp hcsq with rfl | rfl
+    · rw [hFG, one_smul]
+    · exfalso
+      have hsum : F.trace + G.trace = 0 := by
+        rw [hFG, neg_one_smul, Matrix.trace_neg, neg_add_cancel]
+      exact (add_pos hFtr hGtr).ne' hsum
 
 end Matrix.PosDef

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Floer
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 import TauCeti.LinearAlgebra.Complex.Module
+import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # The weak Cauchy–Riemann equation: comparisons
@@ -26,7 +27,13 @@ This file compares the planar weak equation `TauCeti.IsWeakCauchyRiemannOn` of
   algebra.
 * `TauCeti.IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn`: for the constant structure `i` on
   a complex space, a weak solution has weak conjugate Wirtinger derivative `η(z, u)/2`; in
-  particular the homogeneous equation is `\bar∂u = 0` weakly.
+  particular the homogeneous equation is `\bar∂u = 0` weakly. Conversely
+  (`TauCeti.isWeakCauchyRiemannOn_I_smul_id_iff`), on an open set a continuous `W^{1,p}_loc` map
+  with this weak conjugate Wirtinger derivative is a weak solution, so for the constant structure
+  the weak equation is exactly `\bar∂u = η(z, u)/2` weakly
+  (`TauCeti.isWeakCauchyRiemannOn_I_smul_id_zero_iff` for `η = 0`).
+  In particular a holomorphic map on an open set is a weak solution of the homogeneous equation
+  with every exponent (`DifferentiableOn.isWeakCauchyRiemannOn`).
 * `TauCeti.isWeakCauchyRiemannOn_floer_iff`: Floer's equation
   `∂ₛu + J(u)(∂ₜu - X(u)) = 0` is the inhomogeneous equation whose term is twice the value on
   `∂ₛ` of the normalized Floer forcing term `TauCeti.InhomogeneousTerm.floer`, namely `J X`.
@@ -113,6 +120,45 @@ theorem IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn_zero
   have h' := h.hasWeakConjWirtingerDerivOn
   simp only [smul_zero] at h'
   exact h'
+
+/-- **The constant structure `i`, characterized.** For multiplication by `i` on a complex space
+and an open set `Ω`, a map is a weak solution with inhomogeneous term `η` exactly when it is
+continuous, of class `W^{1,p}_loc` on `Ω`, and has weak conjugate Wirtinger derivative
+`η(z, w(z))/2`. The converse direction uses that a weak Fréchet derivative determines the weak
+conjugate Wirtinger derivative, which is unique almost everywhere. -/
+theorem isWeakCauchyRiemannOn_I_smul_id_iff :
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) η w ↔
+      ContinuousOn w Ω ∧ MemWkpLoc p Ω 1 w ∧
+        HasWeakConjWirtingerDerivOn volume Ω w (fun z => (2 : ℂ)⁻¹ • η z (w z)) := by
+  refine ⟨fun h => ⟨h.continuousOn, h.memWkpLoc_one, h.hasWeakConjWirtingerDerivOn⟩, ?_⟩
+  rintro ⟨hc, hW, hη⟩
+  obtain ⟨hw, D, hD, hDp⟩ := memWkpLoc_succ_iff_of_isOpen.1 hW
+  refine isWeakCauchyRiemannOn_iff_of_isOpen.2
+    ⟨hc, hw, D, hD, memWkpLoc_zero_iff.1 hDp, ?_⟩
+  filter_upwards [hD.hasWeakConjWirtingerDerivOn.ae_eq hη] with z hz
+  have h2 : (2 : ℂ)⁻¹ ≠ 0 := by norm_num
+  simpa using smul_right_injective F h2 hz
+
+/-- **`\bar∂w = 0` weakly.** For multiplication by `i` on a complex space and an open set `Ω`,
+the homogeneous weak equation says exactly that `w` is continuous, of class `W^{1,p}_loc` on `Ω`,
+and satisfies `\bar∂w = 0` weakly. -/
+theorem isWeakCauchyRiemannOn_I_smul_id_zero_iff :
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w ↔
+      ContinuousOn w Ω ∧ MemWkpLoc p Ω 1 w ∧ HasWeakConjWirtingerDerivOn volume Ω w 0 := by
+  rw [isWeakCauchyRiemannOn_I_smul_id_iff]
+  simp only [smul_zero]
+  rfl
+
+/-- **Holomorphic maps are weak solutions.** A holomorphic map on an open set `Ω`, with values
+in a complete complex normed space, solves the homogeneous weak equation for the structure
+`J = i` with every exponent: it is `C¹`, hence `W^{1,p}_loc`, and satisfies `\bar∂w = 0`, so
+`TauCeti.isWeakCauchyRiemannOn_I_smul_id_zero_iff` applies. -/
+theorem _root_.DifferentiableOn.isWeakCauchyRiemannOn [CompleteSpace F]
+    (hw : DifferentiableOn ℂ w Ω) :
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w :=
+  isWeakCauchyRiemannOn_I_smul_id_zero_iff.2 ⟨hw.continuousOn,
+    ((hw.contDiffOn (n := 1) Ω.isOpen).restrict_scalars ℝ).memWkpLoc subset_rfl,
+    hw.hasWeakConjWirtingerDerivOn_zero⟩
 
 end Wirtinger
 

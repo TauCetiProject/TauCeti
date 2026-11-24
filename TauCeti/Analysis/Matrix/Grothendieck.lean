@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.InnerProductSup
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Probability.Distributions.Gaussian.L2
 
 /-!
@@ -68,13 +69,17 @@ namespace Matrix
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- A bound `C` on `|∑ i, ∑ j, a i j * s i * t j|` for scalars of absolute value at most one
-rescales to the bound `C * M ^ 2` for scalars of absolute value at most `M > 0`. -/
+rescales to the bound `C * M ^ 2` for scalars of absolute value at most `M`. -/
 theorem abs_sum_sum_mul_mul_le_mul_sq (a : Matrix ι κ ℝ) {C : ℝ}
     (h : ∀ (s : ι → ℝ) (t : κ → ℝ), (∀ i, |s i| ≤ 1) → (∀ j, |t j| ≤ 1) →
       |∑ i, ∑ j, a i j * s i * t j| ≤ C)
-    {M : ℝ} (hM : 0 < M) {s : ι → ℝ} {t : κ → ℝ} (hs : ∀ i, |s i| ≤ M)
+    {M : ℝ} {s : ι → ℝ} {t : κ → ℝ} (hs : ∀ i, |s i| ≤ M)
     (ht : ∀ j, |t j| ≤ M) :
     |∑ i, ∑ j, a i j * s i * t j| ≤ C * M ^ 2 := by
+  rcases le_or_gt M 0 with hM | hM
+  · have hC : 0 ≤ C := by simpa using h 0 0 (by simp) (by simp)
+    have hs0 : ∀ i, s i = 0 := fun i ↦ abs_nonpos_iff.1 ((hs i).trans hM)
+    simpa [hs0] using by positivity
   have hdiv {x : ℝ} (hx : |x| ≤ M) : |x / M| ≤ 1 := by
     rwa [abs_div, abs_of_pos hM, div_le_one hM]
   have key := h (fun i ↦ s i / M) (fun j ↦ t j / M) (fun i ↦ hdiv (hs i)) (fun j ↦ hdiv (ht j))
@@ -121,7 +126,7 @@ private theorem abs_sum_sum_mul_inner_le_mul_sq_add {E : Type*} [NormedAddCommGr
     filter_upwards [ae_all_iff.2 fun i ↦ ae_abs_clippedGaussianL2_le (u i) M hM.le,
       ae_all_iff.2 fun j ↦ ae_abs_clippedGaussianL2_le (v j) M hM.le] with y hfy hgy
     simpa only [Real.norm_eq_abs, Real.inner_apply, mul_assoc] using
-      a.abs_sum_sum_mul_mul_le_mul_sq h hM hfy hgy
+      a.abs_sum_sum_mul_mul_le_mul_sq h hfy hgy
   -- The two error parts are controlled by `Γ(a)` and the clipping error.
   have hδ : 0 ≤ √3 / (4 * M) := by positivity
   have herr₁ := a.abs_sum_sum_mul_inner_le_innerProductSup_mul_mul zero_le_one hδ
@@ -229,10 +234,7 @@ theorem norm_sum_sum_mul_inner_le_sixteen_mul {E : Type*} [NormedAddCommGroup E]
     ring
   have hIv (j : κ) : ‖(RCLike.I : 𝕜) • v j‖ ≤ 1 := by
     rw [norm_smul]
-    have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-      rw [RCLike.norm_I]
-      split_ifs <;> norm_num
-    exact (mul_le_mul hI (hv j) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
+    exact (mul_le_mul RCLike.norm_I_le_one (hv j) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
   have h₁ := abs_sum_sum_mul_inner_le_eight_mul (fun i j ↦ RCLike.re (ω * a i j))
     (fun s t hs ht ↦ by
       simpa using a.abs_sum_sum_map_mul_mul_mul_le h hω RCLike.reCLM RCLike.abs_re_le_norm

@@ -44,32 +44,32 @@ private theorem exists_mono_finiteType_restrict_sup [QuasiSeparatedSpace X]
     {N : X.Modules} [N.IsQuasicoherent] (V : X.Opens) (hV : IsCompact (V : Set X))
     [(N.restrict V.ι).IsFiniteType] (U : X.affineOpens) :
     ∃ (N' : X.Modules) (_ : N'.IsQuasicoherent) (i : N' ⟶ N) (_ : Mono i),
-      IsIso ((restrictFunctor V.ι).map i) ∧ (N'.restrict (V ⊔ U.1).ι).IsFiniteType := by
-  have : IsAffine U.1.toScheme := U.2
-  have : QuasiCompact U.1.ι := inferInstance
-  let W := U.1.ι ⁻¹ᵁ V
-  let f := U.1.ι.resLE V W le_rfl
+      IsIso ((restrictFunctor V.ι).map i) ∧ (N'.restrict (V ⊔ U.val).ι).IsFiniteType := by
+  have : IsAffine U.val.toScheme := U.property
+  have : QuasiCompact U.val.ι := inferInstance
+  let W := U.val.ι ⁻¹ᵁ V
+  let f := U.val.ι.resLE V W le_rfl
   have : IsOpenImmersion f := by dsimp [f, Scheme.Hom.resLE]; infer_instance
-  have : ((N.restrict U.1.ι).restrict W.ι).IsFiniteType :=
+  have : ((N.restrict U.val.ι).restrict W.ι).IsFiniteType :=
     SheafOfModules.IsFiniteType.of_iso (R := W.toScheme.ringCatSheaf)
       (M := (N.restrict V.ι).restrict f)
       (((restrictFunctorComp f V.ι).app N).symm ≪≫
-        (restrictFunctorCongr (U.1.ι.resLE_comp_ι le_rfl)).app N ≪≫
-        (restrictFunctorComp W.ι U.1.ι).app N)
+        (restrictFunctorCongr (U.val.ι.resLE_comp_ι le_rfl)).app N ≪≫
+        (restrictFunctorComp W.ι U.val.ι).app N)
   obtain ⟨F, _, _, a, _, ha⟩ :=
-    exists_isFiniteType_mono_isIso_restrict (N := N.restrict U.1.ι) W
-      (U.1.ι.isCompact_preimage hV)
+    exists_isFiniteType_mono_isIso_restrict (N := N.restrict U.val.ι) W
+      (U.val.ι.isCompact_preimage hV)
   obtain ⟨N', _, i, _, e, -, hkeep⟩ :=
-    exists_mono_restrict_iso_of_isQuasicoherent U.1.ι a
+    exists_mono_restrict_iso_of_isQuasicoherent U.val.ι a
   have hi : IsIso ((restrictFunctor V.ι).map i) := hkeep V ha
   have : (N'.restrict V.ι).IsFiniteType :=
     SheafOfModules.IsFiniteType.of_iso (R := V.toScheme.ringCatSheaf)
       (asIso ((restrictFunctor V.ι).map i)).symm
-  have : (N'.restrict U.1.ι).IsFiniteType :=
-    SheafOfModules.IsFiniteType.of_iso (R := U.1.toScheme.ringCatSheaf) e.symm
+  have : (N'.restrict U.val.ι).IsFiniteType :=
+    SheafOfModules.IsFiniteType.of_iso (R := U.val.toScheme.ringCatSheaf) e.symm
   refine ⟨N', inferInstance, i, inferInstance, hi, ?_⟩
-  rw [sup_eq_iSup V U.1]
-  exact isFiniteType_restrict_iSup N' (fun b : Bool ↦ cond b V U.1)
+  rw [sup_eq_iSup V U.val]
+  exact isFiniteType_restrict_iSup N' (fun b : Bool ↦ cond b V U.val)
     (by intro b; cases b <;> assumption)
 
 /-- On a quasi-compact quasi-separated scheme, a quasi-coherent module that is of finite type on
@@ -85,20 +85,20 @@ theorem exists_isFiniteType_mono_isIso_restrict_of_quasiSeparatedSpace
   have aux (s : Finset X.affineOpens) :
       ∃ (N' : X.Modules) (_ : N'.IsQuasicoherent) (i : N' ⟶ N) (_ : Mono i),
         IsIso ((restrictFunctor V.ι).map i) ∧
-          (N'.restrict (V ⊔ ⨆ U ∈ s, U.1).ι).IsFiniteType := by
+          (N'.restrict (V ⊔ ⨆ U ∈ s, U.val).ι).IsFiniteType := by
     induction s using Finset.induction_on with
     | empty =>
       refine ⟨N, inferInstance, 𝟙 N, inferInstance, ?_, ?_⟩
       · rw [CategoryTheory.Functor.map_id]
         infer_instance
-      · have h : V ⊔ ⨆ U ∈ (∅ : Finset X.affineOpens), U.1 = V := by simp
+      · have h : V ⊔ ⨆ U ∈ (∅ : Finset X.affineOpens), U.val = V := by simp
         rw [h]
         infer_instance
     | insert U s _ ih =>
       obtain ⟨M, _, i, _, hi, hM⟩ := ih
-      let W := V ⊔ ⨆ U ∈ s, U.1
+      let W := V ⊔ ⨆ U ∈ s, U.val
       have hW : IsCompact (W : Set X) :=
-        hV.union (by simpa using s.finite_toSet.isCompact_biUnion (fun U _ ↦ U.2.isCompact))
+        hV.union (by simpa using s.finite_toSet.isCompact_biUnion (fun U _ ↦ U.property.isCompact))
       have : (M.restrict W.ι).IsFiniteType := hM
       obtain ⟨M', _, j, _, hj, hM'⟩ := exists_mono_finiteType_restrict_sup (N := M) W hW U
       -- Restrict the isomorphism on `W` further to `V` using the canonical composition comparison.
@@ -119,14 +119,13 @@ theorem exists_isFiniteType_mono_isIso_restrict_of_quasiSeparatedSpace
   have hX : IsCompact ((⊤ : X.Opens) : Set X) := isCompact_univ
   obtain ⟨s, hs, hcover⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hX
   obtain ⟨N', _, i, _, hi, hN'⟩ := aux hs.toFinset
-  have htop : V ⊔ ⨆ U ∈ hs.toFinset, U.1 = ⊤ := by simpa using congrArg (V ⊔ ·) hcover.symm
+  have htop : V ⊔ ⨆ U ∈ hs.toFinset, U.val = ⊤ := by simpa using congrArg (V ⊔ ·) hcover.symm
   rw [htop] at hN'
   have : ((N'.restrict (⊤ : X.Opens).ι).restrict X.topIso.inv).IsFiniteType := inferInstance
   have : N'.IsFiniteType :=
     SheafOfModules.IsFiniteType.of_iso (R := X.ringCatSheaf)
       (M := (N'.restrict (⊤ : X.Opens).ι).restrict X.topIso.inv)
-      (((restrictFunctorComp X.topIso.inv (⊤ : X.Opens).ι).app N').symm ≪≫
-        (restrictFunctorCongr (X.toIso_inv_ι)).app N' ≪≫ restrictFunctorId.app N')
+      ((restrictFunctorInvCompHomIso X.topIso.symm).app N')
   exact ⟨N', inferInstance, inferInstance, i, inferInstance, hi⟩
 
 /-- A finite-type quasi-coherent submodule of the restriction of a quasi-coherent module along

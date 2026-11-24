@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.AlgebraicGeometry.Modules.Annihilator
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Stalk
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
@@ -31,6 +33,15 @@ open are finitely generated, and let `Ann(M)` be its annihilator ideal sheaf
   pushforward of a module on `Z` exactly when the ideal sheaf of `i` is contained in `Ann(M)`,
   that is, when `Z` contains `V(Ann M)`.
 
+When the support of `M` is finite, `V(Ann M)` is a finite scheme. If `X` is locally of finite
+type over a locally Artinian scheme `S`, for instance over a field, then `V(Ann M)` is finite
+over `S`: it is locally quasi-finite over `S` and quasi-compact, and Mathlib's
+`AlgebraicGeometry.IsFinite.of_locallyQuasiFinite` applies. So a coherent sheaf with finite
+support on a scheme of finite type over a field `k` is the pushforward of a module on a closed
+subscheme finite over `k`. On a Noetherian irreducible scheme of dimension at most one, such as a
+curve, the support is finite as soon as it misses the generic point, that is, as soon as the stalk
+of `M` at the generic point vanishes.
+
 For a closed immersion `i` whose ideal sheaf annihilates `M`, the module on `Z` is the pullback
 `i^* M`: over an affine open `U ⊆ X`, the sections of `i^* M` over `i⁻¹ U` are
 `Γ(Z, i⁻¹ U) ⊗ Γ(M, U)` with `Γ(Z, i⁻¹ U) = Γ(X, U) ⧸ I(U)`, and this is `Γ(M, U)` because
@@ -44,6 +55,9 @@ every pushforward `f_* G`.
   in the support of `Ann(M)` exactly when the stalk of `M` there is nonzero.
 * `AlgebraicGeometry.Scheme.Modules.isClosed_setOf_nontrivial_stalk`: the support of a
   quasi-coherent module of finite type is closed.
+* `Scheme.Modules.finite_setOf_nontrivial_stalk_of_subsingleton_stalk_genericPoint`:
+  on a Noetherian irreducible scheme of dimension at most one, a quasi-coherent module of finite
+  type whose stalk at the generic point vanishes has finite support.
 * `AlgebraicGeometry.Scheme.Modules.isIso_unit_app_of_ker_ideal_le_annihilator`: if the ideal
   sheaf of a closed immersion `i` annihilates the sections of a quasi-coherent `M`, then
   `M ⟶ i_* i^* M` is an isomorphism.
@@ -51,6 +65,9 @@ every pushforward `f_* G`.
   pushforward of a module along a closed immersion `i` exactly when `i.ker ≤ Ann(M)`.
 * `AlgebraicGeometry.Scheme.Modules.exists_iso_pushforward_subschemeι_annihilator`: `M` is the
   pushforward of a module on `V(Ann M)`.
+* `AlgebraicGeometry.Scheme.Modules.isFinite_subschemeι_annihilator_comp`: if the support of `M`
+  is finite and `f : X ⟶ S` is locally of finite type over a locally Artinian scheme, then
+  `V(Ann M) ⟶ X ⟶ S` is finite.
 
 ## References
 
@@ -85,7 +102,7 @@ theorem mem_support_annihilator_iff_nontrivial_stalk {x : X} :
   have := M.isLocalizedModule_germₗ ⟨x, hxU⟩ hU
   have hzero : x ∈ X.zeroLocus (U := U) (Module.annihilator Γ(X, U) Γ(M, U)) ↔
       Module.annihilator Γ(X, U) Γ(M, U) ≤ p.asIdeal := by
-    simp [Scheme.mem_zeroLocus_iff, hU.mem_basicOpen_iff_notMem_primeIdealOf hxU, p,
+    simp [Scheme.mem_zeroLocus_iff, hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hxU⟩, p,
       IsConcreteLE.le_iff]
   -- Over `U`, both conditions say that `p` lies in the support of the finite module `Γ(M, U)`,
   -- whose localization at `p` is the stalk `M_x`.
@@ -101,6 +118,39 @@ theorem isClosed_setOf_nontrivial_stalk : IsClosed {x : X | Nontrivial (M.preshe
   convert (M.annihilator hM).support.isClosed using 1
   ext x
   exact (M.mem_support_annihilator_iff_nontrivial_stalk hM).symm
+
+include hM in
+/-- **Torsion sheaves on a curve have finite support.** On a Noetherian irreducible scheme of
+dimension at most one, a quasi-coherent module of finite type whose stalk at the generic point
+vanishes is supported on finitely many points. -/
+theorem finite_setOf_nontrivial_stalk_of_subsingleton_stalk_genericPoint [IrreducibleSpace X]
+    [TopologicalSpace.NoetherianSpace X] (hX : topologicalKrullDim X ≤ 1)
+    (h : Subsingleton (M.presheaf.stalk (genericPoint X))) :
+    {x : X | Nontrivial (M.presheaf.stalk x)}.Finite :=
+  TauCeti.AlgebraicGeometry.Scheme.finite_of_isClosed_of_genericPoint_notMem hX
+    (M.isClosed_setOf_nontrivial_stalk hM) (not_nontrivial_iff_subsingleton.mpr h)
+
+/-- **Finitely supported modules live on a finite closed subscheme.** If the support of `M` is
+finite and `f : X ⟶ S` is locally of finite type over a locally Artinian scheme `S`, for instance
+the spectrum of a field, then the closed subscheme `V(Ann M)` is finite over `S`. -/
+theorem isFinite_subschemeι_annihilator_comp {S : Scheme.{u}} (f : X ⟶ S) [LocallyOfFiniteType f]
+    [IsLocallyArtinian S] (hfin : {x : X | Nontrivial (M.presheaf.stalk x)}.Finite) :
+    IsFinite ((M.annihilator hM).subschemeι ≫ f) := by
+  -- The underlying set of `V(Ann M)` is the support of `M`, so `V(Ann M)` is a finite scheme.
+  have hrange : Set.range (M.annihilator hM).subschemeι =
+      {x | Nontrivial (M.presheaf.stalk x)} := by
+    rw [IdealSheafData.range_subschemeι]
+    ext x
+    exact M.mem_support_annihilator_iff_nontrivial_stalk hM
+  have : Finite (Set.range (M.annihilator hM).subschemeι) := hrange ▸ hfin.to_subtype
+  have : Finite (M.annihilator hM).subscheme :=
+    Finite.of_injective_finite_range (M.annihilator hM).subschemeι.isEmbedding.injective
+  -- Every subset of a finite space is compact, and every fibre is finite.
+  have : QuasiCompact ((M.annihilator hM).subschemeι ≫ f) :=
+    ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
+  have : LocallyQuasiFinite ((M.annihilator hM).subschemeι ≫ f) :=
+    .of_finite_preimage_singleton _ fun _ ↦ Set.toFinite _
+  exact .of_locallyQuasiFinite _
 
 end Support
 
@@ -135,8 +185,8 @@ theorem isIso_unit_app_of_ker_ideal_le_annihilator (i : Z ⟶ X) [IsClosedImmers
     (h : ∀ U : X.affineOpens, i.ker.ideal U ≤ Module.annihilator Γ(X, U) Γ(M, U)) :
     IsIso ((pullbackPushforwardAdjunction i).unit.app M) := by
   refine Hom.isIso_of_bijective_app (M := M) (N := (pushforward i).obj ((pullback i).obj M)) _
-    (U := fun U : X.affineOpens ↦ U.1) (fun U ↦ U.2) (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  have hU : IsAffineOpen U.1 := U.2
+    (U := fun U : X.affineOpens ↦ U.val) (fun U ↦ U.property) (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  have hU : IsAffineOpen U.val := U.property
   have hV := hU.preimage i
   let := (i.app U).hom.toAlgebra
   -- `Γ(X, U) → Γ(Z, i⁻¹ U)` is surjective with kernel `i.ker(U)`, which annihilates `Γ(M, U)`.

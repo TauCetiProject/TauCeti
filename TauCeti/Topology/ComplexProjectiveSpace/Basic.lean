@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Action
 public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 
 /-!
 # Complex projective space as a quotient of an odd sphere
@@ -32,10 +33,13 @@ connected as a continuous image of the sphere, and the projection is an open quo
 * `TauCeti.ComplexProjectiveSpace.lift`: functions on the sphere invariant under unit complex
   scalars descend to `CPⁿ`.
 * `TauCeti.ComplexProjectiveSpace.mk_eq_mk_iff`: two unit vectors define the same point exactly
-  when they differ by a unit complex scalar.
+  when they differ by a unit complex scalar; `mk_eq_mk_iff_exists_circle_smul` states this for the
+  action of the circle group `Circle`, and `mk_circle_smul` is the resulting invariance of
+  `mk`.
 * `TauCeti.ComplexProjectiveSpace.isOpenQuotientMap_mk`: the projection is an open quotient map.
 * `TauCeti.ComplexProjectiveSpace.instT2Space`, `instCompactSpace`, `instPathConnectedSpace`:
   `CPⁿ` is a compact, path-connected Hausdorff space.
+* `TauCeti.ComplexProjectiveSpace.instSubsingletonZero`: `CP⁰` is a point.
 
 ## References
 
@@ -110,6 +114,21 @@ theorem mk_smul (c : sphere (0 : ℂ) 1) (x : sphere (0 : EuclideanSpace ℂ (Fi
     mk n (c • x) = mk n x :=
   (mk_eq_mk_iff n _ _).2 ⟨c, rfl⟩
 
+/-- Two unit vectors define the same point of complex projective space exactly when one is carried
+to the other by the action of the circle group `Circle`. -/
+theorem mk_eq_mk_iff_exists_circle_smul (x y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    mk n x = mk n y ↔ ∃ c : Circle, c • y = x :=
+  -- `Circle` is Mathlib's type synonym for the unit sphere of `ℂ`, and its action on spheres is
+  -- that of the unit sphere (`Circle.instMulActionSphere`), so this is `mk_eq_mk_iff`.
+  mk_eq_mk_iff n x y
+
+/-- Multiples of a unit vector by elements of the circle group `Circle` define the same point of
+complex projective space. -/
+@[simp]
+theorem mk_circle_smul (c : Circle) (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
+    mk n (c • x) = mk n x :=
+  (mk_eq_mk_iff_exists_circle_smul n _ _).2 ⟨c, rfl⟩
+
 /-- A function on the unit sphere invariant under unit complex scalars descends to complex
 projective space. -/
 protected def lift {α : Sort*} (f : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → α)
@@ -147,6 +166,18 @@ theorem continuousAt_lift {α : Type*} [TopologicalSpace α]
 /-- Complex projective space is nonempty. -/
 instance instNonempty : Nonempty (ComplexProjectiveSpace n) :=
   ⟨mk n ⟨EuclideanSpace.single 0 1, by simp⟩⟩
+
+/-- Complex projective `0`-space is a point: two unit vectors of `ℂ¹` differ by a unit scalar. -/
+instance instSubsingletonZero : Subsingleton (ComplexProjectiveSpace 0) where
+  allEq p q := by
+    induction p using ComplexProjectiveSpace.inductionOn with | h x => ?_
+    induction q using ComplexProjectiveSpace.inductionOn with | h y => ?_
+    have hnorm (z : sphere (0 : EuclideanSpace ℂ (Fin 1)) 1) : ‖z.val 0‖ = 1 := by
+      simpa using (EuclideanSpace.norm_eq z.val).symm.trans (norm_eq_of_mem_sphere z)
+    have hy : y.val 0 ≠ 0 := norm_ne_zero_iff.1 (by rw [hnorm]; exact one_ne_zero)
+    refine (mk_eq_mk_iff 0 x y).2 ⟨⟨x.val 0 / y.val 0, by simp [hnorm]⟩, Subtype.ext ?_⟩
+    ext i
+    simp [Fin.fin_one_eq_zero i, div_mul_cancel₀ _ hy]
 
 /-- Complex projective space is path connected, as a continuous image of the unit sphere of the
 real vector space underlying `ℂⁿ⁺¹`, of real dimension `2n + 2 > 1`. -/

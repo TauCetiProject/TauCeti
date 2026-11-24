@@ -32,7 +32,7 @@ variable {R : Type*} [CommRing R] [HasUniqueDiv R]
 multiplication by its linear coefficient. -/
 theorem toPowerSeries_eq_coeff_one_smul_X (f : FormalGroupHom (𝔾ₐ (R := R)) 𝔾ₐ) :
     f.toPowerSeries = PowerSeries.coeff 1 f.toPowerSeries • PowerSeries.X := by
-  have hadd := (hom_additive_iff f.zero_constantCoeff).mp f.hom
+  have hadd := hom_additive_iff.mp f.hom
   have hc := (PowerSeries.subst_X_add_X_eq_add_iff f.toPowerSeries).mp hadd
   ext n
   rcases n with _ | _ | n

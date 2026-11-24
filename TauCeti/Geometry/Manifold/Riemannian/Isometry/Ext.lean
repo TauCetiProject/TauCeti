@@ -49,7 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [FiniteDimensional ℝ F] [J.Boundaryless] [T2Space N]
+  [FiniteDimensional ℝ F] [J.Boundaryless]
   [RiemannianBundle (fun y : N => TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N => TangentSpace J y)]
 
@@ -68,13 +68,14 @@ theorem eqOn_connectedComponent_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M 
     {p : M} (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) :
     EqOn Φ Ψ (connectedComponent p) := by
   classical
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.symm.isEmbedding.t2Space
   let S : Set M := {x | ∀ v : TangentSpace I x,
     tangentMap I J Φ ⟨x, v⟩ = tangentMap I J Ψ ⟨x, v⟩}
   have hdata : ∀ x ∈ S, Φ x = Ψ x ∧ mfderiv I J Φ x = mfderiv I J Ψ x := by
     intro x hx
     refine ⟨congrArg TotalSpace.proj (hx 0), ?_⟩
     ext v
-    exact congrArg (fun z : TangentBundle J N => (z.2 : F)) (hx v)
+    exact congrArg (fun z : TangentBundle J N => (z.snd : F)) (hx v)
   have hmem : ∀ x, Φ x = Ψ x → mfderiv I J Φ x = mfderiv I J Ψ x → x ∈ S := by
     intro x hx hd v
     exact TotalSpace.ext hx (heq_of_eq (DFunLike.congr_fun hd v))

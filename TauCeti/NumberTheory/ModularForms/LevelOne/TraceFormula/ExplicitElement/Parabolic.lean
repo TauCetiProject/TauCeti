@@ -64,36 +64,36 @@ private theorem eq_one_of_det_one_trace_sq_four_weight_ne_zero
   fin_cases i <;> fin_cases j <;> simp [ea, eb, ec, ed]
 
 private theorem finsum_weight_trace_two_det_one :
-    ∑ᶠ M : traceDetFiber (Fin 2) 2 1, weight M.1 = 2 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) 2 1, weight M.val = 2 := by
   let I : traceDetFiber (Fin 2) (2 : ℤ) 1 := ⟨1, mem_traceDetFiber_fin_two.mpr (by norm_num)⟩
   rw [finsum_eq_single _ I (fun M hM ↦ ?_)]
   · norm_num [I, weight, weight₁, weight₂, weight₃, weight₄, chainWeight₃]
   · by_contra hw
-    obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.2
-    exact hM (Subtype.ext (eq_one_of_det_one_trace_sq_four_weight_ne_zero M.1 hd
+    obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.property
+    exact hM (Subtype.ext (eq_one_of_det_one_trace_sq_four_weight_ne_zero M.val hd
       (by rw [ht]; norm_num) hw))
 
 private theorem finsum_weight_trace_neg_two_det_one :
-    ∑ᶠ M : traceDetFiber (Fin 2) (-2) 1, weight M.1 = 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (-2) 1, weight M.val = 0 := by
   refine finsum_eq_zero_of_forall_eq_zero fun M ↦ ?_
   by_contra hw
-  obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.2
-  have hM := eq_one_of_det_one_trace_sq_four_weight_ne_zero M.1 hd
+  obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.property
+  have hM := eq_one_of_det_one_trace_sq_four_weight_ne_zero M.val hd
     (by rw [ht]; norm_num) hw
   simp [hM] at ht
 
 private theorem finsum_weight_traceDetFiber_two_mul_sq_step {a : ℤ} (ha : a ≠ 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * (a + 1)) ((a + 1) ^ 2), weight M.1 =
-      ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (2 * (a + 1)) ((a + 1) ^ 2), weight M.val =
+      ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val := by
   have ht : 2 * a + 2 = 2 * (a + 1) := by ring
   have hn : a ^ 2 + 2 * a + 1 = (a + 1) ^ 2 := by ring
-  have h := finsum_weight_traceDetFiber_add_two (t := 2 * a) (sq_pos_of_ne_zero ha)
+  have h := finsum_weight_traceDetFiber_add_two (t := 2 * a) (pow_ne_zero 2 ha)
   rw [ht, hn] at h
   exact h
 
 /-- The discriminant-zero fibre with positive trace has total integer weight `2`. -/
 private theorem finsum_weight_traceDetFiber_two_mul_sq_of_pos {a : ℤ} (ha : 0 < a) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 = 2 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val = 2 := by
   have ha' : 1 ≤ a := by omega
   clear ha
   induction a, ha' using Int.leInduction with
@@ -103,7 +103,7 @@ private theorem finsum_weight_traceDetFiber_two_mul_sq_of_pos {a : ℤ} (ha : 0 
 
 /-- The discriminant-zero fibre with negative trace has total integer weight zero. -/
 private theorem finsum_weight_traceDetFiber_two_mul_sq_of_neg {a : ℤ} (ha : a < 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 = 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val = 0 := by
   have ha' : a ≤ -1 := by omega
   clear ha
   induction a, ha' using Int.leInductionDown with
@@ -118,7 +118,7 @@ zero discriminant, the total integer weight is `2` for positive trace and zero f
 trace. The sum includes scalar and nonscalar matrices, not just conjugacy representatives. -/
 theorem finsum_weight_traceDetFiber_of_discrim_eq_zero {t n : ℤ} (hn : 0 < n)
     (hdisc : t ^ 2 - 4 * n = 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = if 0 < t then 2 else 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = if 0 < t then 2 else 0 := by
   have he : Even (t ^ 2) := ⟨2 * n, by linarith⟩
   obtain ⟨a, ha⟩ := (Int.even_pow.mp he).1
   have ht : t = 2 * a := by omega

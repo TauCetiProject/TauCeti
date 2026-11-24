@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.EMetricSpace.CurveLength
 public import TauCeti.Topology.JordanCurve.Interval
 import TauCeti.Topology.JordanCurve.Separation
+import TauCeti.Topology.MetricSpace.Arclength.SimpleClosed
 
 /-!
 # The length of a Jordan curve
@@ -20,7 +21,9 @@ injective on `[a, b)` and of bounded variation on `[a, b]`
 (`TauCeti.isJordanCurve_and_hausdorffMeasure_lt_top_iff`). For every such parametrization the
 total variation `eVariationOn γ (Icc a b)` equals `μH[1] C`
 (`ContinuousOn.eVariationOn_eq_hausdorffMeasure_image`), so the parametric and geometric lengths
-agree. The parametrization need not be absolutely continuous, Lipschitz or differentiable.
+agree. The parametrization need not be absolutely continuous, Lipschitz or differentiable. In a
+metric space, reparametrizing by arclength yields a unit-speed simple closed parametrization on
+`[0, L]` with `0 < L` (`TauCeti.IsJordanCurve.exists_unitSpeed_simpleClosed`).
 
 The length of a Jordan curve is at least twice its diameter
 (`TauCeti.IsJordanCurve.two_mul_ediam_le_hausdorffMeasure`): two distinct points `p` and `q` cut
@@ -37,6 +40,8 @@ normalization.
 
 * `TauCeti.isJordanCurve_and_hausdorffMeasure_lt_top_iff`: rectifiable Jordan curves are the
   traces of simple closed curves of bounded variation.
+* `TauCeti.IsJordanCurve.exists_unitSpeed_simpleClosed`: every rectifiable Jordan curve in a
+  metric space admits a unit-speed simple closed parametrization on `[0, L]` with `0 < L`.
 * `TauCeti.IsJordanCurve.two_mul_ediam_le_hausdorffMeasure`: a Jordan curve has length at least
   twice its diameter.
 * `TauCeti.IsJordanCurve.hausdorffMeasure_pos`: a Jordan curve has positive length.
@@ -75,10 +80,10 @@ theorem IsJordanCurve.two_mul_ediam_le_hausdorffMeasure (h : IsJordanCurve C) :
   have := Measure.nullSingletonClass_hausdorff X (show (0 : ℝ) < 1 by norm_num)
   -- Each pair of points of `C` is at distance at most half the length of `C`.
   have hpair (p : X) (hp : p ∈ C) (q : X) (hq : q ∈ C) : edist p q * 2 ≤ μH[1] C := by
-    rcases eq_or_ne p q with rfl | hpq
+    rcases eq_or_ne p q with rfl | _
     · simp
     obtain ⟨A, B, -, hBc, hA, hB, hAB, hAB'⟩ :=
-      h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq hpq
+      h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq
     have hpA : p ∈ A ∧ p ∈ B := by simpa using hAB'.ge (mem_insert p {q})
     have hqA : q ∈ A ∧ q ∈ B := by simpa using hAB'.ge (mem_insert_of_mem p rfl)
     have hsum : μH[1] C = μH[1] A + μH[1] B := by
@@ -96,5 +101,23 @@ theorem IsJordanCurve.two_mul_ediam_le_hausdorffMeasure (h : IsJordanCurve C) :
 theorem IsJordanCurve.hausdorffMeasure_pos (h : IsJordanCurve C) : 0 < μH[1] C := by
   have hdiam : 0 < ediam C := ediam_pos_iff.2 (not_subsingleton_iff.1 h.not_subsingleton)
   exact (ENNReal.mul_pos two_ne_zero hdiam.ne').trans_le h.two_mul_ediam_le_hausdorffMeasure
+
+/-- **Unit-speed arclength parametrization of a rectifiable Jordan curve.** Every rectifiable
+Jordan curve `C` in a metric space admits a unit-speed simple closed parametrization `α` on
+`[0, L]` with `0 < L`. -/
+theorem IsJordanCurve.exists_unitSpeed_simpleClosed {X : Type*} [MetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] {C : Set X} (hC : IsJordanCurve C)
+    (hfin : μH[1] C < ∞) :
+    ∃ (L : ℝ) (α : ℝ → X), 0 < L ∧ HasUnitSpeedOn α (Icc 0 L) ∧ α 0 = α L ∧
+      InjOn α (Ico 0 L) ∧ α '' Icc 0 L = C := by
+  obtain ⟨γ, hcont, hclosed, hinj, hγ, rfl⟩ :=
+    (isJordanCurve_and_hausdorffMeasure_lt_top_iff zero_lt_one).1 ⟨hC, hfin⟩
+  exact ⟨(eVariationOn γ (Icc 0 1)).toReal, naturalParameterization γ (Icc 0 1) 0,
+    hγ.toReal_eVariationOn_pos_of_injOn_Ioo zero_lt_one (hinj.mono Ioo_subset_Ico_self),
+    hγ.hasUnitSpeedOn_naturalParameterization hcont zero_le_one,
+    hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn zero_le_one
+      hclosed,
+    hγ.injOn_naturalParameterization_Ico hcont hinj zero_le_one,
+    hγ.image_naturalParameterization_Icc hcont zero_le_one⟩
 
 end TauCeti

@@ -22,10 +22,8 @@ count the triples of representatives `(σᵢ, τⱼ, υₖ)` with `σᵢ g₁ τ
 two bookkeepings are matched through the one-sided description of the multiplicity
 (`multiplicity_eq_card_filter`).
 
-Vendored from the in-review mathlib4 PR
-[#41328](https://github.com/leanprover-community/mathlib4/pull/41328) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+Vendored from mathlib4 PR
+[#41328](https://github.com/leanprover-community/mathlib4/pull/41328) (Chris Birkbeck).
 
 ## Main results
 
@@ -74,8 +72,8 @@ private lemma mk_mul_out_mul_eq_iff (Γ₂ Γ₃ : Subgroup G) (h w d : G)
 private lemma subsingleton_fiber (Γ₂ Γ₃ : Subgroup G) (h w d : G) :
     Subsingleton {j : DecompQuotient Γ₂ Γ₃ h | (w * ((j.out : G) * h) : G ⧸ Γ₃) = (d : G ⧸ Γ₃)} :=
   ⟨fun j₁ j₂ ↦ Subtype.ext (mk_out_mul_injective Γ₂ Γ₃ h
-    (((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₁.2).trans
-      ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₂.2).symm))⟩
+    (((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₁.property).trans
+      ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d _).mp j₂.property).symm))⟩
 
 /-- The fibre of the multiplicity over a fixed first representative is nonempty exactly when
 `w⁻¹d ∈ Γ₂hΓ₃`. -/
@@ -85,7 +83,7 @@ private lemma exists_mk_mul_out_mul_eq_iff (Γ₂ Γ₃ : Subgroup G) (h w d : G
   constructor
   · rintro ⟨j, hj⟩
     have hj' := QuotientGroup.eq.mp ((mk_mul_out_mul_eq_iff Γ₂ Γ₃ h w d j).mp hj)
-    exact mem_doubleCoset.mpr ⟨j.out, j.out.2, _, hj', by rw [mul_inv_cancel_left]⟩
+    exact mem_doubleCoset.mpr ⟨j.out, j.out.property, _, hj', by rw [mul_inv_cancel_left]⟩
   · intro hd
     rw [doubleCoset_eq_iUnion_leftCosets, Set.mem_iUnion] at hd
     obtain ⟨j, hj⟩ := hd
@@ -124,7 +122,7 @@ theorem multiplicity_eq_card_filter (g h d : G) :
     exists_mk_mul_out_mul_eq_iff Γ₂ Γ₃ h ((i.out : G) * g) d
   rw [multiplicity_def]
   refine Nat.card_congr (Equiv.ofBijective
-    (fun p ↦ ⟨p.1.1, (key p.1.1).mp ⟨p.1.2, p.2⟩⟩) ⟨?_, ?_⟩)
+    (fun p ↦ ⟨p.val.1, (key p.val.1).mp ⟨p.val.2, p.property⟩⟩) ⟨?_, ?_⟩)
   · rintro ⟨⟨i, j⟩, hp⟩ ⟨⟨i', j'⟩, hp'⟩ heq
     obtain rfl : i = i' := congrArg Subtype.val heq
     have := subsingleton_fiber Γ₂ Γ₃ h ((i.out : G) * g) d
@@ -224,8 +222,8 @@ private lemma sum_ite_mem_multiplicity [IsHeckeTriple Δ H₂ H₃] [IsHeckeTrip
     obtain ⟨w, hw, y, hy, rfl⟩ := mem_doubleCoset.mp (multiplicity_ne_zero_iff.mp hne)
     obtain ⟨β, hβ, c, hc, rfl⟩ := mem_doubleCoset.mp hw
     have hxΔ : β * (g₂ : G) * c * (g₃ : G) * y ∈ Δ :=
-      Δ.mul_mem (Δ.mul_mem (Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₃ hβ) g₂.2)
-        (IsHeckeTriple.mem_of_mem_left H₄ hc)) g₃.2) (IsHeckeTriple.mem_of_mem_right H₃ hy)
+      Δ.mul_mem (Δ.mul_mem (Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₃ hβ) g₂.property)
+        (IsHeckeTriple.mem_of_mem_left H₄ hc)) g₃.property) (IsHeckeTriple.mem_of_mem_right H₃ hy)
     set xΔ : Δ := ⟨β * (g₂ : G) * c * (g₃ : G) * y, hxΔ⟩
     have hrep : ((HeckeCoset.mk H₂ H₄ xΔ).rep : G) ∈ doubleCoset (xΔ : G) H₂ H₄ :=
       HeckeCoset.rep_mk_mem_doubleCoset xΔ
@@ -305,7 +303,7 @@ private lemma multiplicity_mul_multiplicity_eq_sum_indicator [IsHeckeTriple Δ H
   -- undetermined, since it does not occur in the goal before the rewrite
   · rw [show multiplicity H₁ H₂ H₃ (g₁ : G) (g₂ : G) (E.rep : G) =
         multiplicity H₁ H₂ H₃ (g₁ : G) (g₂ : G) ((l.out : G) * E.rep) from
-        (multiplicity_mul_left l.out.2 _ _ _).symm,
+        (multiplicity_mul_left l.out.property _ _ _).symm,
       multiplicity_def, nat_card_setOf_eq_sum]
     refine Finset.sum_congr rfl fun p _ ↦ ?_
     by_cases hm : ((p.1.out : G) * g₁ * ((p.2.out : G) * g₂) : G ⧸ H₃) =
@@ -327,7 +325,7 @@ private lemma sum_ite_eq_zero_of_ne_mk (w : Δ) (E : HeckeCoset Δ H₁ H₃)
   refine Finset.sum_eq_zero fun l _ ↦ ite_eq_right ?_
   rintro ⟨-, hmatch⟩
   have hwE : (w : G) ∈ doubleCoset ((E.rep : Δ) : G) H₁ H₃ :=
-    mem_doubleCoset_of_quotient_eq l.out.2 hmatch
+    mem_doubleCoset_of_quotient_eq l.out.property hmatch
   exact hne ((HeckeCoset.mk_rep E).symm.trans (HeckeCoset.mk_eq_mk_of_mem hwE).symm)
 
 open Classical in
@@ -351,8 +349,8 @@ private lemma sum_image_mulMap_multiplicity_left [IsHeckeTriple Δ H₁ H₂]
   -- product of the representatives of `p`.
   set wG : G := (p.1.out : G) * g₁ * ((p.2.out : G) * g₂)
   have hwΔ : wG ∈ Δ :=
-    Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₂ p.1.out.2) g₁.2)
-      (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₃ p.2.out.2) g₂.2)
+    Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₂ p.1.out.property) g₁.property)
+      (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₃ p.2.out.property) g₂.property)
   set E₀ : HeckeCoset Δ H₁ H₃ := HeckeCoset.mk H₁ H₃ ⟨wG, hwΔ⟩
   have hE₀mem : E₀ ∈ Finset.univ.image (mulMap H₁ H₂ H₃ g₁ g₂) :=
     Finset.mem_image.mpr ⟨p, Finset.mem_univ p, HeckeCoset.mulMap_eq_mk _ _ _ _ _ _⟩

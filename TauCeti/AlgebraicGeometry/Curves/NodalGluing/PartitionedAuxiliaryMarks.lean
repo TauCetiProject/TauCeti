@@ -303,9 +303,9 @@ def blockPerm : partitioned I n m κ →* ∀ c, Equiv.Perm {j // κ j = c} :=
 
 /-- The action of a colour-preserving automorphism on a colour class is its permutation. -/
 @[simp] theorem coe_blockPerm_apply (e : partitioned I n m κ) (c : Cl) (j : {j // κ j = c}) :
-    (blockPerm e c j : R) = e.1.perm j :=
+    (blockPerm e c j : R) = e.val.perm j :=
   (fiberSubgroupMulEquivPiPerm_apply_coe κ (auxiliaryPerm.subgroupComap _ e) c j).trans
-    (DFunLike.congr_fun (auxiliaryPerm_apply e.1) (j : R))
+    (DFunLike.congr_fun (auxiliaryPerm_apply e.val) (j : R))
 
 /-- A colour-preserving automorphism acts trivially on every colour class exactly when it is
 ordered: the kernel of the action on the colour classes is the subgroup of ordered

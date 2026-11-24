@@ -42,28 +42,29 @@ theorem memLp_coe_uniformSphereMeasure (p : ℝ≥0∞) :
     MemLp ((↑) : sphere (0 : E) 1 → E) p (uniformSphereMeasure E) := by
   exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
 
-variable [Nontrivial E]
-
 /-- The covariance of the embedded uniform sphere law is the inner product divided by the
 dimension. -/
 @[simp]
 theorem covarianceBilin_map_coe_uniformSphereMeasure :
     covarianceBilin ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)) =
       (1 / (finrank ℝ E : ℝ)) • innerSL ℝ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    simp [hzero, Module.finrank_zero_of_subsingleton]
   have hinv (f : E ≃ₗᵢ[ℝ] E) :
       ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)).map f =
         (uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E) := by
     let g : sphere (0 : E) 1 → sphere (0 : E) 1 :=
       Subtype.map f (fun x hx ↦ by simpa using hx)
     have hg : Measurable g := f.continuous.measurable.subtype_map _
-    rw [Measure.map_map (by fun_prop) measurable_subtype_coe]
+    rw [Measure.map_map (by fun_prop) measurable_subtypeVal]
     calc
       _ = ((uniformSphereMeasure E).map g).map ((↑) : sphere (0 : E) 1 → E) := by
-        rw [Measure.map_map measurable_subtype_coe hg]
+        rw [Measure.map_map measurable_subtypeVal hg]
         rfl
       _ = _ := by rw [f.map_uniformSphereMeasure]
   rw [covarianceBilin_eq_smul_innerSL hinv,
-    integral_map measurable_subtype_coe.aemeasurable (by fun_prop)]
+    integral_map measurable_subtypeVal.aemeasurable (by fun_prop)]
   simp
 
 /-- The covariance of two linear observables of a uniform unit vector is their inner product
@@ -91,6 +92,9 @@ product divided by the dimension. -/
 theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫ ∂uniformSphereMeasure E =
       ⟪u, v⟫ / (finrank ℝ E : ℝ) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    simp [hzero, Subsingleton.elim u 0]
   have hmean (w : E) : ∫ x : sphere (0 : E) 1, ⟪w, (x : E)⟫ ∂uniformSphereMeasure E = 0 := by
     rw [integral_inner ((memLp_coe_uniformSphereMeasure 1).integrable le_rfl),
       integral_coe_uniformSphereMeasure, inner_zero_right]
@@ -143,8 +147,7 @@ theorem variance_inner_uniformSphereMeasure (u : E) :
 /-- The covariance matrix of an embedded uniform unit vector is the identity matrix divided
 by the number of coordinates. -/
 @[simp]
-theorem covMatrix_map_coe_uniformSphereMeasure {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Nonempty ι] :
+theorem covMatrix_map_coe_uniformSphereMeasure {ι : Type*} [Fintype ι] [DecidableEq ι] :
     covMatrix ((uniformSphereMeasure (EuclideanSpace ℝ ι)).map
       ((↑) : sphere (0 : EuclideanSpace ℝ ι) 1 → EuclideanSpace ℝ ι)) =
       (1 / (Fintype.card ι : ℝ)) • (1 : Matrix ι ι ℝ) := by
@@ -163,7 +166,7 @@ namespace ProbabilityTheory
 open TauCeti.Probability
 
 variable {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → sphere (0 : E) 1}
 
 /-- Linear observables of a uniform random unit vector have covariance equal to their inner

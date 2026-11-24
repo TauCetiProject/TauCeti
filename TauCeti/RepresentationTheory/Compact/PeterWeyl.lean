@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.RepresentationTheory.Compact.Orthonormal
 public import TauCeti.RepresentationTheory.Compact.RepresentativeDensity
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
@@ -364,12 +364,16 @@ theorem convolutionCLM_mem_closure_modelSubmodule (h : IsIrrepSkeleton models) (
   rintro - ⟨y, hy, rfl⟩
   exact h.convolutionCLM_mem_modelSubmodule k hy
 
+omit [MeasurableSpace G] [BorelSpace G] in
 /-- **The models' matrix coefficients are uniformly dense in `C(G, 𝕜)`.** This is the Peter-Weyl
 density theorem sharpened from "all finite-dimensional representations" to "the chosen
 irreducible ones": convolving by an approximate identity moves a continuous function arbitrarily
-little, and every convolution is already a uniform limit of the models' coefficients. -/
+little, and every convolution is already a uniform limit of the models' coefficients. The
+statement does not involve a measurable structure; the proof uses the Borel one. -/
 theorem dense_modelSubmodule (h : IsIrrepSkeleton models) :
     Dense (modelSubmodule models : Set C(G, 𝕜)) := by
+  let : MeasurableSpace G := borel G
+  have : BorelSpace G := ⟨rfl⟩
   intro F
   rw [← closure_closure (s := (modelSubmodule models : Set C(G, 𝕜)))]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
@@ -614,7 +618,7 @@ theorem hasSum_norm_sq_peterWeylCoeff [IsAlgClosed 𝕜]
     (f : Lp 𝕜 2 (haarProb G)) :
     HasSum (fun x ↦ ‖peterWeylCoeff models f x‖ ^ 2) (‖f‖ ^ 2) := by
   simpa only [← (peterWeylBasis h).repr_apply_apply, peterWeylBasis_repr_apply] using
-    (peterWeylBasis h).hasSum_norm_sq_inner f
+    (peterWeylBasis h).hasSum_norm_inner_sq f
 
 /-- **Norm-square Parseval for the Peter-Weyl basis** (`tsum` form). -/
 theorem tsum_norm_sq_peterWeylCoeff [IsAlgClosed 𝕜]

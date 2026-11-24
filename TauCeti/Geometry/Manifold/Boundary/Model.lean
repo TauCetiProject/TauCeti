@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The boundary model of a Euclidean half-space
@@ -16,16 +17,15 @@ coordinate hyperplane where the zeroth coordinate vanishes; deleting that coordi
 continuous linear equivalence with `EuclideanSpace ℝ (Fin n)`.
 
 The construction is the standard-model prerequisite for putting a manifold structure on the
-boundary of a manifold modeled on a Euclidean half-space, as prescribed by Layer 1 of the
-GeometricTopology roadmap.  The parametrization and projection API below is intended to let
-boundary charts use this identification without unfolding its coordinate construction.  The file
-also splits the ambient Euclidean space into boundary and normal coordinates; the boundary
-inclusion and the standard product collar both use this one coordinate equivalence, and
-`TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary coordinates given as a
-function on `Fin k`, reindexed along `k = n`.  Finally,
-`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg` recognises a
-linear functional that is nonnegative near a boundary point within the half-space, and positive off
-the hyperplane, as a positive multiple of the boundary coordinate.
+boundary of a manifold modeled on a Euclidean half-space.  The parametrization and projection API
+below is intended to let boundary charts use this identification without unfolding its coordinate
+construction.  The file also splits the ambient Euclidean space into boundary and normal
+coordinates; the boundary inclusion and the standard product collar both use this one coordinate
+equivalence, and `TauCeti.euclideanFinConsEquiv` is the same equivalence with the boundary
+coordinates given as a function on `Fin k`, reindexed along `k = n`.  Finally,
+`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos` recognises a linear functional
+that is positive off the hyperplane near a boundary point within the half-space as a positive
+multiple of the boundary coordinate.
 -/
 
 public section
@@ -249,6 +249,14 @@ theorem euclideanHalfSpaceBoundary_eq_frontier (n : ℕ) :
   ext x
   simp [eq_comm]
 
+/-- The half-space model `𝓡∂ (n + 1)` sends a point to the frontier of its range exactly when the
+zeroth coordinate of the point vanishes. -/
+theorem modelWithCornersEuclideanHalfSpace_mem_frontier_range_iff {n : ℕ}
+    (z : EuclideanHalfSpace (n + 1)) :
+    (𝓡∂ (n + 1)) z ∈ frontier (range (𝓡∂ (n + 1))) ↔ z.val 0 = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
+  exact eq_comm
+
 namespace EuclideanHalfSpace
 
 variable {n : ℕ}
@@ -262,21 +270,21 @@ noncomputable def boundaryParam (n : ℕ) :
 /-- Delete the zeroth coordinate of a point of the `(n + 1)`-dimensional Euclidean half-space. -/
 noncomputable def boundaryProj (n : ℕ) :
     EuclideanHalfSpace (n + 1) → EuclideanSpace ℝ (Fin n) :=
-  fun y ↦ euclideanHalfSpaceBoundaryProj n y.1
+  fun y ↦ euclideanHalfSpaceBoundaryProj n y.val
 
 /-- The parametrized boundary point, read in the ambient Euclidean space. -/
 @[simp]
 theorem boundaryParam_coe (x : EuclideanSpace ℝ (Fin n)) :
-    (boundaryParam n x).1 = euclideanHalfSpaceBoundaryParam n x := (rfl)
+    (boundaryParam n x).val = euclideanHalfSpaceBoundaryParam n x := (rfl)
 
 /-- The boundary projection agrees with the ambient linear projection. -/
 @[simp]
 theorem boundaryProj_coe (y : EuclideanHalfSpace (n + 1)) :
-    boundaryProj n y = euclideanHalfSpaceBoundaryProj n y.1 := (rfl)
+    boundaryProj n y = euclideanHalfSpaceBoundaryProj n y.val := (rfl)
 
 /-- The coordinates of the boundary projection are the positive-index coordinates. -/
 theorem boundaryProj_apply (y : EuclideanHalfSpace (n + 1)) (i : Fin n) :
-    boundaryProj n y i = y.1 i.succ := by
+    boundaryProj n y i = y.val i.succ := by
   rw [boundaryProj_coe, euclideanHalfSpaceBoundaryProj_apply]
 
 /-- Deleting the zeroth coordinate undoes the boundary parametrization. -/
@@ -287,8 +295,8 @@ theorem boundaryProj_boundaryParam (x : EuclideanSpace ℝ (Fin n)) :
 /-- On the boundary of the half-space, deleting and reinserting the zeroth coordinate is the
 identity. -/
 @[simp]
-theorem boundaryParam_boundaryProj {y : EuclideanHalfSpace (n + 1)} (hy : y.1 0 = 0) :
-    boundaryParam n (euclideanHalfSpaceBoundaryProj n y.1) = y :=
+theorem boundaryParam_boundaryProj {y : EuclideanHalfSpace (n + 1)} (hy : y.val 0 = 0) :
+    boundaryParam n (euclideanHalfSpaceBoundaryProj n y.val) = y :=
   Subtype.ext (euclideanHalfSpaceBoundaryParam_proj (mem_euclideanHalfSpaceBoundary.2 hy))
 
 /-- The boundary parametrization is continuous. -/
@@ -297,7 +305,7 @@ theorem continuous_boundaryParam : Continuous (boundaryParam n) :=
 
 /-- The boundary projection is continuous. -/
 theorem continuous_boundaryProj : Continuous (boundaryProj n) :=
-  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtype_val
+  (euclideanHalfSpaceBoundaryProj n).continuous.comp continuous_subtypeVal
 
 /-- The inverse of the model map `𝓡∂ (n + 1)` sends the parametrized coordinate hyperplane to the
 boundary parametrization. -/
@@ -322,7 +330,7 @@ end EuclideanHalfSpace
 hyperplane where the zeroth coordinate vanishes. -/
 @[simp]
 theorem boundary_euclideanHalfSpace (n : ℕ) :
-    (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1)) = {y | y.1 0 = 0} := by
+    (𝓡∂ (n + 1)).boundary (EuclideanHalfSpace (n + 1)) = {y | y.val 0 = 0} := by
   ext y
   rw [ModelWithCorners.boundary, mem_ofPred_eq, ModelWithCorners.isBoundaryPoint_iff,
     frontier_range_modelWithCornersEuclideanHalfSpace]
@@ -332,39 +340,18 @@ end TauCeti
 
 namespace ContinuousLinearMap
 
-/-- A linear functional nonnegative on the coordinate half-space is determined by its normal
-coefficient. Tangential directions lie in the kernel. -/
-theorem eq_mul_apply_zero_of_nonneg {k : ℕ} [NeZero k]
-    (ν : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ)
-    (hnonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v)
-    (u : EuclideanSpace ℝ (Fin k)) :
-    ν u = ν (EuclideanSpace.single 0 1) * u 0 := by
-  have hker (v : EuclideanSpace ℝ (Fin k)) (hv : v 0 = 0) : ν v = 0 := by
-    refine le_antisymm ?_ (hnonneg v hv.ge)
-    have hn := hnonneg (-v) (by simp [hv])
-    rwa [map_neg, neg_nonneg] at hn
-  let e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
-  have he₀ : e₀ 0 = 1 := by simp [e₀]
-  have hdec : u = u 0 • e₀ + (u - u 0 • e₀) := by abel
-  have hrest : (u - u 0 • e₀) 0 = 0 := by simp [he₀]
-  calc
-    ν u = ν (u 0 • e₀ + (u - u 0 • e₀)) := congrArg ν hdec
-    _ = ν e₀ * u 0 := by
-      rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
-
 open Filter Topology in
 /-- A continuous linear functional on `ℝᵏ` which vanishes at a point `p` of the boundary hyperplane
-of the half-space `{y | y 0 ≥ 0}`, and which near `p` within the half-space is nonnegative and
-positive off the hyperplane, is a positive multiple of the boundary coordinate `u ↦ u 0`. -/
-theorem exists_pos_eq_mul_apply_zero_of_eventually_nonneg {k : ℕ} [NeZero k]
+of the half-space `{y | y 0 ≥ 0}`, and which near `p` within the half-space is positive off the
+hyperplane, is a positive multiple of the boundary coordinate `u ↦ u 0`. -/
+theorem exists_pos_eq_mul_apply_zero_of_eventually_pos {k : ℕ} [NeZero k]
     (ν : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) {p : EuclideanSpace ℝ (Fin k)} (hp : p 0 = 0)
-    (hνp : ν p = 0) (hnonneg : ∀ᶠ u in 𝓝[{y | 0 ≤ y 0}] p, 0 ≤ ν u)
-    (hpos : ∀ᶠ u in 𝓝[{y | 0 ≤ y 0}] p, 0 < u 0 → 0 < ν u) :
+    (hνp : ν p = 0) (hpos : ∀ᶠ u in 𝓝[{y | 0 ≤ y 0}] p, 0 < u 0 → 0 < ν u) :
     ∃ c : ℝ, 0 < c ∧ ∀ u, ν u = c * u 0 := by
-  -- Every direction into the half-space is followed for a short positive time where both
-  -- hypotheses hold.
+  -- Every direction into the half-space is followed for a short positive time where the
+  -- hypothesis holds.
   have key : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 →
-      ∃ t : ℝ, 0 < t ∧ 0 ≤ ν (p + t • v) ∧ (0 < (p + t • v) 0 → 0 < ν (p + t • v)) := by
+      ∃ t : ℝ, 0 < t ∧ (0 < (p + t • v) 0 → 0 < ν (p + t • v)) := by
     intro v hv
     have hlim : Tendsto (fun t : ℝ => p + t • v) (𝓝[>] 0) (𝓝[{y | 0 ≤ y 0}] p) := by
       refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
@@ -373,24 +360,33 @@ theorem exists_pos_eq_mul_apply_zero_of_eventually_nonneg {k : ℕ} [NeZero k]
       · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
         simp only [PiLp.add_apply, PiLp.smul_apply, hp, smul_eq_mul, zero_add]
         positivity
-    obtain ⟨t, ⟨htn, htp⟩, ht⟩ :=
-      ((hlim.eventually (hnonneg.and hpos)).and self_mem_nhdsWithin).exists
-    exact ⟨t, ht, htn, htp⟩
+    obtain ⟨t, ht, ht'⟩ := ((hlim.eventually hpos).and self_mem_nhdsWithin).exists
+    exact ⟨t, ht', ht⟩
   have hshift : ∀ (t : ℝ) (v : EuclideanSpace ℝ (Fin k)), ν (p + t • v) = t * ν v := by
     intro t v
     rw [map_add, map_smul, hνp, zero_add, smul_eq_mul]
-  have hν_nonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v := by
+  -- The functional is positive on the open half-space.
+  have hν_pos : ∀ v : EuclideanSpace ℝ (Fin k), 0 < v 0 → 0 < ν v := by
     intro v hv
-    obtain ⟨t, ht, htn, -⟩ := key v hv
-    rw [hshift] at htn
-    exact (mul_nonneg_iff_of_pos_left ht).1 htn
-  set e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
-  have he₀ : e₀ 0 = 1 := by simp [e₀]
-  refine ⟨ν e₀, ?_, fun u => ?_⟩
-  · obtain ⟨t, ht, -, htp⟩ := key e₀ (by rw [he₀]; exact zero_le_one)
-    have := htp (by simp [hp, he₀, ht])
+    obtain ⟨t, ht, htp⟩ := key v hv.le
+    have := htp (by simp [hp, hv, ht])
     rw [hshift] at this
     exact pos_of_mul_pos_right this ht.le
-  · exact ν.eq_mul_apply_zero_of_nonneg hν_nonneg u
+  set e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
+  have he₀ : e₀ 0 = 1 := by simp [e₀]
+  have hc : 0 < ν e₀ := hν_pos e₀ (by rw [he₀]; exact zero_lt_one)
+  have hν_nonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v := by
+    intro v hv
+    rcases hv.lt_or_eq with hv | hv
+    · exact (hν_pos v hv).le
+    · by_contra hneg
+      push Not at hneg
+      -- Move `v` slightly into the open half-space, to where `ν` would vanish.
+      have hδ : 0 < -ν v / ν e₀ := div_pos (neg_pos.2 hneg) hc
+      have := hν_pos (v + (-ν v / ν e₀) • e₀) (by simp [he₀, ← hv, hδ])
+      rw [map_add, map_smul, smul_eq_mul, div_mul_cancel₀ _ hc.ne'] at this
+      simp at this
+  exact ⟨ν e₀, hc, Module.Dual.apply_eq_mul_apply_of_nonneg
+    (EuclideanSpace.projₗ (𝕜 := ℝ) 0) (ν : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] ℝ) he₀ hν_nonneg⟩
 
 end ContinuousLinearMap

@@ -41,6 +41,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `TauCeti.stabilizer_quotientGroup_mk`: the stabilizer of `sH` in `G` is `sHs⁻¹`.
 * `Subgroup.card_orbit_quotientGroup_mk`: the size of the `K`-orbit of `sH` is the relative
   index of `H` in the conjugate of `K` by `s⁻¹`.
+* `Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf`: the same size as the index of `K ⊓ sHs⁻¹`
+  in `K`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
@@ -67,6 +69,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   two tail products of a word, modulo a normal subgroup.
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
+* `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
 -/
 
 public section
@@ -128,6 +131,13 @@ theorem _root_.Subgroup.card_orbit_quotientGroup_mk (K H : Subgroup G) (s : G) :
     simp [← stabilizer_quotientGroup_mk]
   rw [← Subgroup.relIndex_pointwise_smul (MulAut.conj s), map_inv, smul_inv_smul,
     Subgroup.relIndex, ← hstab, Nat.card_coe_set_eq, index_stabilizer]
+
+/-- **Orbit-stabilizer for the intersection with a conjugate**: the `K`-orbit of the coset `sH` has
+as many elements as `K ⊓ sHs⁻¹` has index in `K`. -/
+theorem _root_.Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf (K H : Subgroup G) (s : G) :
+    Nat.card (orbit K ((s : G) : G ⧸ H)) = (K ⊓ MulAut.conj s • H).relIndex K := by
+  rw [Subgroup.card_orbit_quotientGroup_mk, Subgroup.inf_relIndex_left]
+  simpa using (Subgroup.relIndex_pointwise_smul (MulAut.conj s) H (MulAut.conj s⁻¹ • K)).symm
 
 /-- The elements `x` of `G` with `x⁻¹ g x ∈ H` are the preimage of the `g`-fixed points of `G ⧸ H`,
 a union of `|(G ⧸ H)^g|` cosets of `H`. -/
@@ -298,7 +308,7 @@ representative of a left coset of `H` and an element of `H`. -/
 theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
   have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
-    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
+    rw [QuotientGroup.mk_mul_of_mem _ h.property, QuotientGroup.out_eq']
   have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
     refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
       ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
@@ -321,5 +331,16 @@ theorem _root_.Subgroup.sum_eq_sum_rightCosets (f : G → M) :
     (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
 
 end Finite
+
+/-- `QuotientAddGroup.congr` sends the class of an element to the class of its image. This is the
+additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups. -/
+@[simp]
+theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
+    (G' : AddSubgroup G) (H' : AddSubgroup H) [G'.Normal] [H'.Normal] (e : G ≃+ H)
+    (he : G'.map (e : G →+ H) = H') (x : G) :
+    QuotientAddGroup.congr G' H' e he (x : G ⧸ G') = (e x : H ⧸ H') :=
+  rfl
+
+attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti

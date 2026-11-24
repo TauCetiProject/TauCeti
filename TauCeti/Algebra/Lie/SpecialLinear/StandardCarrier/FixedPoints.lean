@@ -69,13 +69,9 @@ the matrix entries, so its fixed set is not the points over a subfield.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
 
-This advances the target "points over an algebraically closed field as a group, functorially in
-the field, so that a field endomorphism induces a group endomorphism of the points. The `q`-power
-Frobenius is the case a consumer asks for first" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, by saying which points that endomorphism fixes. Its
-consumer is milestone L3 of `TauCetiRoadmap/CFSGStatement/README.md`, which sets `H_d` to be the
-fixed subgroup of the Steinberg map of a valid Lie-type index; on the untwisted type-`A` branch
-the Steinberg map is the Frobenius, and this says what `H_d` is there.
+A finite group of Lie type is read from the fixed subgroup of a Steinberg map. For the untwisted
+type-`A` family the Steinberg map is this Frobenius, and this file says what its fixed subgroup
+is.
 -/
 
 public section
@@ -112,7 +108,7 @@ theorem mapGL_mem_fixedSubgroup_frobenius
       fixedSubgroup (frobenius r p k K) := by
   rw [mem_fixedSubgroup_frobenius_iff]
   intro i j
-  exact (x i j).2
+  exact (x i j).property
 
 /-- **The homomorphism from `SL_{r+1}` over the Frobenius-fixed subfield to the Frobenius-fixed
 points of the full-weight type-`A_r` carrier**, given by including the matrix entries into `K`.
@@ -169,7 +165,7 @@ theorem exists_mapGL_eq_of_mem_fixedSubgroup_frobenius {g : points r K}
     have hdet' : ((g : Matrix.GeneralLinearGroup (Fin (r + 1)) K) :
         Matrix (Fin (r + 1)) (Fin (r + 1)) K).det = 1 := by
       simpa only [Matrix.GeneralLinearGroup.val_det_apply, Units.val_one] using
-        congrArg Units.val ((mem_points_iff_det_eq_one r _).mp g.2)
+        congrArg Units.val ((mem_points_iff_det_eq_one r _).mp g.property)
     apply (frobeniusFixedSubfield K p k).subtype_injective
     rw [RingHom.map_det, RingHom.mapMatrix_apply, hmap, hdet', map_one]
   refine ⟨⟨N, hdet⟩, ?_⟩
@@ -234,7 +230,7 @@ theorem map_subtype_fixedSubgroup_frobenius_eq_range_mapGL :
     exact exists_mapGL_eq_of_mem_fixedSubgroup_frobenius r p k hy
   · rintro ⟨x, rfl⟩
     exact ⟨specialLinearToFixedSubgroupFrobenius r p k x,
-      (specialLinearToFixedSubgroupFrobenius r p k x).2, rfl⟩
+      (specialLinearToFixedSubgroupFrobenius r p k x).property, rfl⟩
 
 /-- **Which matrices the Frobenius-fixed points of the type-`A_r` carrier consist of**: an
 invertible matrix over `K` is one exactly when its determinant is one and its entries lie in the
@@ -247,7 +243,7 @@ theorem mem_map_subtype_fixedSubgroup_frobenius_iff
         ∀ i j, (g : Matrix (Fin (r + 1)) (Fin (r + 1)) K) i j ∈ frobeniusFixedSubfield K p k := by
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨(mem_points_iff_det_eq_one r _).mp y.2,
+    exact ⟨(mem_points_iff_det_eq_one r _).mp y.property,
       (mem_fixedSubgroup_frobenius_iff r p k y).mp hy⟩
   · rintro ⟨hdet, hmem⟩
     exact ⟨⟨g, (mem_points_iff_det_eq_one r g).mpr hdet⟩,

@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
@@ -59,6 +60,8 @@ by approximation, and the *order* of the two limits matters.
 ## Main declarations
 
 * `TauCeti.W1p.hasWeakFDerivOn_comp`: the chain rule, as a weak-derivative statement.
+* `TauCeti.W1p.hasWeakFDerivOn_comp_of_ae_abs_le`: the chain rule for an essentially bounded `u`
+  and a `C¹` function with no bound on its derivative.
 * `TauCeti.W1p.contDiffComp`: `F ∘ u` as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_comp_of_le`: the chain rule for `φ ∘ u` when `u` is
   bounded below by a positive constant `ε` and `φ` is only `C¹` on some `(δ, ∞)` with `δ < ε`,
@@ -70,7 +73,8 @@ by approximation, and the *order* of the two limits matters.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
 * `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`, and
-  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels.
+  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels, and
+  `TauCeti.W1p.value_posPartAbove_nonneg_ae`: the truncation is nonnegative.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
   `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
 * `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
@@ -217,7 +221,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     HasWeakFDerivOn mu V (fun x => F (W1p.value u x))
       fun x => innerSL ℝ (deriv F (W1p.value u x) • W1p.gradient u x) := by
   have hlip : LipschitzWith M F :=
-    lipschitzWith_of_nnnorm_deriv_le (hF.differentiable one_ne_zero) hM
+    lipschitzWith_of_nnNorm_deriv_le (hF.differentiable one_ne_zero) hM
   have hcont : Continuous (deriv F) := (contDiff_one_iff_deriv.mp hF).2
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
   have : IsFiniteMeasure (mu.restrict (V : Set E)) := isFiniteMeasure_restrict.2
@@ -243,7 +247,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
       (fun _ => zero_le) fun i => ?_
     rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
     refine lintegral_mono fun x => ?_
-    rw [← edist_eq_enorm_sub, ← edist_eq_enorm_sub]
+    rw [← eDist_eq_eNorm_sub, ← eDist_eq_eNorm_sub]
     exact hlip _ _
   -- the gradients converge in `L¹(V)`: the coefficient is bounded and continuous
   refine ((hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
@@ -253,7 +257,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     (fun i => hphi (ns i) ▸ hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ hF hVΩ _)
     hconv1 (by simpa only [enorm_innerSL_sub] using (tendsto_lintegral_enorm_smul_sub
       (fun i => hcont.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
-      (fun i => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+      (Lp.aestronglyMeasurable _)
       (fun _ => .of_forall fun _ => hM _)
       (hns_ae.mono fun x hx => (hcont.tendsto _).comp hx)
       ((Lp.memLp (W1p.gradient w)).integrable Fact.out).2.ne
@@ -275,13 +279,30 @@ theorem W1p.hasWeakFDerivOn_comp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
   hasWeakFDerivOn_iff_forall_isCompact_closure.2 fun _ hVc hVO =>
     hasWeakFDerivOn_comp_aux hp hF hM u hVc hVO
 
+/-- **The chain rule for essentially bounded Sobolev functions.** Let `1 ≤ p < ∞` and let
+`u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`, the composition
+`Φ ∘ u` has the weak gradient `Φ'(u) ∇u` on `Ω`.
+
+Unlike `TauCeti.W1p.hasWeakFDerivOn_comp`, no bound on `Φ'` is assumed: only the values of `Φ`
+near the essential range of `u` matter. -/
+theorem W1p.hasWeakFDerivOn_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) {u : W1p mu Omega p} {M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
+    HasWeakFDerivOn mu Omega (fun x => Φ (W1p.value u x))
+      fun x => innerSL ℝ (deriv Φ (W1p.value u x) • W1p.gradient u x) := by
+  obtain ⟨F, K, hF, hK, hFΦ, -⟩ := hΦ.exists_contDiff_bdd_deriv_eventuallyEq M
+  refine ((W1p.hasWeakFDerivOn_comp hp hF hK u).congr_ae ?_).congr_ae_deriv ?_
+  · filter_upwards [hM] with x hx using (hFΦ _ hx).eq_of_nhds
+  · filter_upwards [hM] with x hx
+    rw [(hFΦ _ hx).deriv_eq]
+
 /-- **For `1 ≤ p < ∞`, `W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function
 vanishing at `0`.**  Its value and weak gradient are `F ∘ u` and `F'(u) ∇u`, by
 `TauCeti.W1p.value_contDiffComp_ae` and `TauCeti.W1p.gradient_contDiffComp_ae`. -/
 def W1p.contDiffComp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F) (hM : ∀ t, ‖deriv F t‖₊ ≤ M)
     (hF0 : F 0 = 0) (u : W1p mu Omega p) : W1p mu Omega p :=
   W1p.mk
-    ((memLp_comp_value (lipschitzWith_of_nnnorm_deriv_le (hF.differentiable one_ne_zero) hM)
+    ((memLp_comp_value (lipschitzWith_of_nnNorm_deriv_le (hF.differentiable one_ne_zero) hM)
       hF0 u).toLp _)
     ((memLp_deriv_smul_gradient hF hM u).toLp _)
     (((W1p.hasWeakFDerivOn_comp hp hF hM u).congr_ae
@@ -308,6 +329,27 @@ theorem W1p.gradient_contDiffComp_ae (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
       fun x => deriv F (W1p.value u x) • W1p.gradient u x := by
   rw [W1p.contDiffComp, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
+
+/-- **Composition of an essentially bounded Sobolev function with a `C¹` function.** Let
+`1 ≤ p < ∞` and let `u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`
+with `Φ 0 = 0`, the composition `Φ ∘ u` lies in `W^{1,p}(Ω)`, with weak gradient `Φ'(u) ∇u`.
+
+Unlike `TauCeti.W1p.contDiffComp`, no bound on `Φ'` is assumed: only the values of `Φ` near the
+essential range of `u` matter. The weak gradient alone is
+`TauCeti.W1p.hasWeakFDerivOn_comp_of_ae_abs_le`. -/
+theorem W1p.exists_value_gradient_ae_eq_comp_of_ae_abs_le (hp : p ≠ ∞) {Φ : ℝ → ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) (hΦ0 : Φ 0 = 0) {u : W1p mu Omega p} {M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => Φ (W1p.value u x)) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega]
+          fun x => deriv Φ (W1p.value u x) • W1p.gradient u x := by
+  obtain ⟨F, K, hF, hK, hFΦ, hF0⟩ := hΦ.exists_contDiff_bdd_deriv_eventuallyEq M
+  refine ⟨W1p.contDiffComp hp hF hK (hF0.trans hΦ0) u, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffComp_ae hp hF hK (hF0.trans hΦ0) u, hM] with x hx hxM
+    rw [hx, (hFΦ _ hxM).eq_of_nhds]
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hF hK (hF0.trans hΦ0) u, hM] with x hx hxM
+    rw [hx, (hFΦ _ hxM).deriv_eq]
 
 end ChainRule
 
@@ -362,7 +404,7 @@ private theorem exists_nnnorm_deriv_positiveCutoff_le (hab : a < b) (hδa : δ <
     (hcont.continuousOn (s := Icc a ε))
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ε ⟨by linarith, le_rfl⟩)
   refine ⟨(max C M).toNNReal, fun t => ?_⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (hC0.trans (le_max_left _ _))]
+  rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal _ (hC0.trans (le_max_left _ _))]
   rcases lt_or_ge t a with ht | ht
   · -- The function vanishes near `t`, so its derivative there is `0`.
     have h0 : deriv (positiveCutoff φ a b) t = 0 := by
@@ -422,6 +464,24 @@ theorem W1p.exists_value_gradient_ae_eq_log (hp : p ≠ ∞) (hε : 0 < ε) {u :
       exact inv_anti₀ hε ht) hu
   exact ⟨w, hwv, hwg.mono fun x hx => by simp only [hx, Real.deriv_log]⟩
 
+/-- The logarithm of a Sobolev function bounded below by a positive constant is `p`-integrable on
+every subset of `Ω`. -/
+theorem W1p.memLp_log_value (hp : p ≠ ∞) (hε : 0 < ε) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {S : Set E}
+    (hS : S ⊆ (Omega : Set E)) :
+    MemLp (fun x => Real.log (W1p.value u x)) p (mu.restrict S) := by
+  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_log hp hε hu
+  exact ((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure (Measure.restrict_mono hS le_rfl)
+
+/-- The logarithm of a Sobolev function bounded below by a positive constant is integrable on
+every subset of `Ω` of finite measure. -/
+theorem W1p.integrableOn_log_value (hp : p ≠ ∞) (hε : 0 < ε) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {S : Set E}
+    (hS : S ⊆ (Omega : Set E)) (hSt : mu S ≠ ⊤) :
+    IntegrableOn (fun x => Real.log (W1p.value u x)) S mu := by
+  have : IsFiniteMeasure (mu.restrict S) := isFiniteMeasure_restrict.2 hSt
+  exact (W1p.memLp_log_value hp hε hu hS).integrable Fact.out
+
 /-- A real power `u ^ r`, `r ≤ 1`, of a Sobolev function bounded below by a positive constant is a
 Sobolev function, with weak gradient `r u ^ (r - 1) ∇u`. -/
 theorem W1p.exists_value_gradient_ae_eq_rpow (hp : p ≠ ∞) (hε : 0 < ε) {r : ℝ} (hr : r ≤ 1)
@@ -444,11 +504,10 @@ omit [FiniteDimensional ℝ E] in
 theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 < ε)
     (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
     Integrable (fun x => (‖W1p.gradient u x‖ / W1p.value u x) ^ 2) (mu.restrict Omega) := by
-  refine ((W1p.integrable_norm_gradient_sq u).const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
+  refine ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.const_mul (ε ^ 2)⁻¹).mono' ?_ ?_
   · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
       (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
   · filter_upwards [hu] with x hx
-    have hU : 0 < W1p.value u x := hε.trans_le hx
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_pow, div_eq_inv_mul]
     gcongr
 
@@ -484,7 +543,7 @@ private theorem contDiff_posPartApprox (delta : ℝ) : ContDiff ℝ 1 (posPartAp
 
 private theorem nnnorm_deriv_posPartApprox_le (delta t : ℝ) :
     ‖deriv (posPartApprox delta) t‖₊ ≤ 1 := by
-  rw [deriv_posPartApprox, ← NNReal.coe_le_coe, coe_nnnorm,
+  rw [deriv_posPartApprox, ← NNReal.coe_le_coe, coe_nnNorm,
     Real.norm_of_nonneg (Real.smoothTransition.nonneg _)]
   simpa using Real.smoothTransition.le_one (t / delta)
 
@@ -686,7 +745,6 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
     (g := fun _ => W1p.gradient u) (c₀ := fun x => if k < W1p.value u x then 1 else 0)
     (fun n => (contDiff_one_iff_deriv.mp (contDiff_posPartApprox (d n))).2.comp_aestronglyMeasurable
       (((Lp.aestronglyMeasurable _).mono_measure hres).sub aestronglyMeasurable_const))
-    (fun _ => (Lp.aestronglyMeasurable _).mono_measure hres)
     ((Lp.aestronglyMeasurable _).mono_measure hres)
     (fun n => .of_forall fun x => nnnorm_deriv_posPartApprox_le _ _)
     (.of_forall fun x => by
@@ -761,6 +819,12 @@ theorem W1p.value_posPartAbove_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
     ⇑(W1p.value (W1p.posPartAbove hp hk u)) =ᵐ[mu.restrict Omega]
       fun x => max (W1p.value u x - k) 0 := by
   exact W1p.value_posPartAboveOfMemLp_ae hp k u (W1p.memLp_posPartAbove hk u)
+
+/-- The truncation `(u - k)⁺` is nonnegative almost everywhere. -/
+theorem W1p.value_posPartAbove_nonneg_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
+    (u : W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.posPartAbove hp hk u) x :=
+  (W1p.value_posPartAbove_ae hp hk u).mono fun _ hx ↦ hx ▸ le_max_right _ _
 
 /-- The weak gradient of `(u - k)⁺` is `1_{u > k} ∇u` almost everywhere. -/
 @[simp]

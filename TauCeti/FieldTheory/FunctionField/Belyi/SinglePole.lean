@@ -158,7 +158,7 @@ theorem existsUnique_laurentCoeff_eq_one_and_adjoin_simple_eq_top (h : IsAlgebra
   have hz0 : z ≠ 0 := by
     rintro rfl
     simp at h1
-  obtain ⟨hzP, hreg⟩ := (mem_riemannRochSpace_zsmul_ofPoint_iff hz0).mp hzL
+  obtain ⟨_, hreg⟩ := (mem_riemannRochSpace_zsmul_ofPoint_iff hz0).mp hzL
   -- The coefficient of `(t - a) ^ (-m)` is nonzero, so `z` has a pole of order exactly `m`.
   have hord : P.ord z < 0 :=
     (P.ord_le_of_laurentCoeff_ne_zero hP ht (h1 ▸ one_ne_zero)).trans_lt (by omega)

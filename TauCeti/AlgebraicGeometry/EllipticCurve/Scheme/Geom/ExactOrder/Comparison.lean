@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Naive
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveExactOrder.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.FiniteSubgroup
+import TauCeti.CategoryTheory.Comma.Over.StrictInitial
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.Data.ZMod.FinEquiv
 
@@ -33,13 +34,17 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} {E : EllipticCurveGeom S}
 
-variable {N : ℕ} [NeZero N]
+variable {N : ℕ}
 
 /-- A naive point of exact order is a Drinfeld point of exact order where the level is invertible.
 This implication is valid over arbitrary, possibly nonreduced base schemes. -/
 theorem IsOfNaiveExactOrder.isOfExactOrder
     {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} (hP : E.IsOfNaiveExactOrder P N)
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) : E.IsOfExactOrder P N := by
+  rcases eq_or_ne N 0 with rfl | hN0
+  · have : IsEmpty S := ⟨fun s ↦ hN s (by simp)⟩
+    exact isOfExactOrder_of_isEmpty
+  have : NeZero N := ⟨hN0⟩
   let φ := (zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩
   have hφ1 : φ (.ofAdd 1) = P := zmodMonoidHomEquiv_symm_apply_ofAdd_one _
   have hφ : E.IsFiberwiseInjective φ :=
@@ -77,6 +82,12 @@ theorem isOfExactOrder_iff_isOfNaiveExactOrder
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) :
     E.IsOfExactOrder P N ↔ E.IsOfNaiveExactOrder P N := by
   refine ⟨fun hP ↦ ?_, fun hP ↦ hP.isOfExactOrder hN⟩
+  rcases eq_or_ne N 0 with rfl | hN0
+  · have : IsEmpty S := ⟨fun s ↦ hN s (by simp)⟩
+    refine isOfNaiveExactOrder_iff.mpr
+      ⟨(Over.isTerminalOfIsInitial isInitialOfIsEmpty _).hom_ext _ _, fun d _ _ ↦ ?_⟩
+    exact ⟨fun z ↦ isEmptyElim ((equalizer (P ^ d) 1).hom z)⟩
+  have : NeZero N := ⟨hN0⟩
   let φ := (zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩
   have hφ1 : φ (.ofAdd 1) = P := zmodMonoidHomEquiv_symm_apply_ofAdd_one _
   rw [← hφ1, ← isFiberwiseInjective_iff_isOfNaiveExactOrder]

@@ -347,7 +347,7 @@ theorem _root_.Manifold.IsImmersion.codRestrict [IsManifold J n N] (hf : IsImmer
 inclusion of `U` is. -/
 theorem isImmersion_subtypeVal_comp_iff [IsManifold J n N] {U : TopologicalSpace.Opens N}
     {g : M → U} : IsImmersion I J n (Subtype.val ∘ g) ↔ IsImmersion I J n g :=
-  ⟨fun h ↦ h.codRestrict U fun x ↦ (g x).2,
+  ⟨fun h ↦ h.codRestrict U fun x ↦ (g x).property,
     isImmersion_isLocalDiffeomorphAt_comp fun _ ↦ isLocalDiffeomorph_subtype_val _⟩
 
 /-- A map into an open submanifold `U` is a smooth embedding exactly when its composition with the
@@ -366,7 +366,7 @@ theorem _root_.Manifold.IsSmoothEmbedding.comp_subtypeVal [IsManifold I n M]
 section InverseFunctionTheorem
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
-  [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {K : ModelWithCorners 𝕂 F H}
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] [FiniteDimensional 𝕂 F']
   {K' : ModelWithCorners 𝕂 F' G}
   {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
@@ -378,11 +378,20 @@ finite dimension is a local diffeomorphism. -/
 theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImmersion K K' n g)
     (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
     IsLocalDiffeomorph K K' n g := by
-  have := FiniteDimensional.complete 𝕂 F
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact fun x ↦ isEmptyElim x
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  -- The tangent space of `X` embeds in that of `Y`, so it is finite-dimensional.
+  have : FiniteDimensional 𝕂 F := by
+    have : FiniteDimensional 𝕂 (TangentSpace K' (g x₀)) :=
+      inferInstanceAs (FiniteDimensional 𝕂 F')
+    exact FiniteDimensional.of_injective (mfderiv K K' g x₀).toLinearMap
+      (hg.isDiffImmersionAt hn0 x₀).mfderiv_injective
+  have := FiniteDimensional.completeSpace 𝕂 F
   refine isLocalDiffeomorph_of_mfderiv_eq hg.contMDiff hn fun y ↦ ?_
   let L := (mfderiv K K' g y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (g y))
   have hinj : Function.Injective L :=
-    (hg.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
+    (hg.isDiffImmersionAt hn0 y).mfderiv_injective
   exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hd).toContinuousLinearEquiv,
     ContinuousLinearMap.ext fun v ↦
       LinearMap.congr_fun (LinearEquiv.coe_ofInjectiveOfFinrankEq L hinj hd) v⟩

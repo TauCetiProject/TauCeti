@@ -34,15 +34,15 @@ signed simple root `k`, the ideal divided-square column of the reversed label is
 at the special-isogeny image of that simple root itself. -/
 private theorem f4ShortRootIdealDividedSquareColumn_opposite_of_long
     (k : Fin 4 ⊕ Fin 4) (i j : F4ShortRootIndex)
-    (hi : i.1 = f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)))
-    (hj : j.1 = f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) :
+    (hi : i.val = f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)))
+    (hj : j.val = f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) :
     f4ShortRootIdealDividedSquareColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
       f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl j)) := by
-  have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) = j.1 := by
+  have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) = j.val := by
     rw [hj]
     exact (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
-  have htargetInput : f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) = i.1 := by
+  have htargetInput : f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) = i.val := by
     rw [hi]
     exact (f4SpecialIsogenyIndexEquiv_opposite_f4SignedSimpleRootIndex k).symm
   simp only [f4ShortRootIdealDividedSquareColumn_apply]
@@ -52,7 +52,7 @@ private theorem f4ShortRootIdealDividedSquareColumn_opposite_of_long
           (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) :
             f4ModularChevalleyLieAlgebra) :=
       (f4ModularDividedAdjointSquare_basis (isogenyReverse k) _).symm
-    _ = f4ModularRootVector j.1 := by
+    _ = f4ModularRootVector j.val := by
       rw [coe_f4ShortRootLieIdealBasis_symm_inl i, ← htargetInput,
         f4ModularDividedAdjointSquare_rootVector_opposite, htargetSource]
     _ = _ := (coe_f4ShortRootLieIdealBasis_symm_inl j).symm
@@ -127,9 +127,6 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
       f4ShortRootIdealDividedSquareColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) := by
   let β := f4SpecialIsogenyIndexEquiv i
-  have hβ : f4Length β = 2 := by
-    dsimp only [β]
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
@@ -151,7 +148,7 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_long
-      k β hk hβ hβne
+      k β hk hβne
   have htargetNe : i ≠
       f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
     intro h
@@ -284,39 +281,11 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_of_long
   exact (congrArg P (f4ShortRootWeightIndexEquiv.symm_apply_apply a)).mp
     (h (f4ShortRootWeightIndexEquiv a))
 
-/-- If the special-isogeny images of three roots satisfy `γ' = β' + α'`, with `α'` the image of the
-signed simple root `k`, then the ideal first-order column of the reversed label sends the
-short-root basis vector at `β'` to the one at `γ'`. -/
-private theorem f4ShortRootIdealFirstColumn_eq_basis_of_specialMap_add
-    (k : Fin 4 ⊕ Fin 4) (iβ iγ : F4ShortRootIndex)
-    (hadd : f4SimplyConnectedRootDatum.root iγ.1 =
-      f4SimplyConnectedRootDatum.root iβ.1 +
-        f4SimplyConnectedRootDatum.root
-          (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
-    f4ShortRootIdealFirstColumn (isogenyReverse k)
-        (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) =
-      f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)) := by
-  simp only [f4ShortRootIdealFirstColumn_apply]
-  apply Subtype.ext
-  have hsigned : f4SignedSimpleRootIndex (isogenyReverse k) =
-      f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) :=
-    (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
-  have hedge := f4ShortRootAdjoint_rootVector_of_add_eq_short
-    (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)) iβ.1 iγ.1
-    iβ.property iγ.property hadd
-  have hbracket := (coe_f4ShortRootAdjoint_apply _ _).symm.trans (congrArg Subtype.val hedge)
-  have hsignedBracket := congrArg
-    (fun δ => ⁅f4ModularRootVector δ,
-      (f4ShortRootLieIdealBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)) :
-        f4ModularChevalleyLieAlgebra)⁆) hsigned
-  exact (coe_f4ShortRootSignedSimpleAdjoint_apply _ _).trans (hsignedBracket.trans hbracket)
-
 /-- A surviving short-source quadratic quotient edge is the ordinary first-order edge for the
-reversed long source on the short-root ideal. -/
+reversed long source on the short-root ideal. The target `γ` is necessarily long. -/
 theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialMap_add
     (k : Fin 4 ⊕ Fin 4) (β γ : Fin 48)
-    (hk : f4Length (f4SignedSimpleRootIndex k) = 1)
-    (hβ : f4Length β = 2) (hγ : f4Length γ = 2)
+    (hk : f4Length (f4SignedSimpleRootIndex k) = 1) (hβ : f4Length β = 2)
     (hadd : f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
       f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
         f4SimplyConnectedRootDatum.root
@@ -329,6 +298,14 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
         (f4ShortRootQuotientDividedSquareColumn k a) =
       f4ShortRootIdealFirstColumn (isogenyReverse k) a := by
   dsimp only
+  -- a long transported target would force the long transported source to be short
+  have hγ : f4Length γ = 2 := by
+    refine (f4Length_eq_one_or_eq_two γ).resolve_left fun hγ => ?_
+    have h := f4Length_eq_one_of_root_eq_add_of_length_eq_one_of_length_eq_two _ _ _
+      ((f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ)
+      ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff γ).2 hγ) hadd
+    have h' := (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff _).2 hk
+    omega
   let iβ : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv β, by
       exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ⟩
@@ -350,7 +327,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
-      k β γ hk hβ hγ hadd
+      k β γ hk hadd
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
         f4ShortRootLieIdealBasis b :=
@@ -432,9 +409,6 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_shor
       f4ShortRootIdealFirstColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) := by
   let β := f4SpecialIsogenyIndexEquiv i
-  have hβ : f4Length β = 2 := by
-    dsimp only [β]
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
@@ -454,7 +428,7 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_shor
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
-      k β hk hβ (by
+      k β hk (by
         intro δ hδ hδeq
         apply hedge
         refine ⟨δ, hδ, ?_⟩
@@ -496,11 +470,8 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
         f4SimplyConnectedRootDatum.root i +
           f4SimplyConnectedRootDatum.root
             (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))
-  · obtain ⟨δ, hδ, hadd⟩ := hedge
+  · obtain ⟨δ, -, hadd⟩ := hedge
     let γ := f4SpecialIsogenyIndexEquiv δ
-    have hγ : f4Length γ = 2 := by
-      dsimp only [γ]
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff δ).2 hδ
     have hmap : f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
         f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
           f4SimplyConnectedRootDatum.root
@@ -513,7 +484,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
       exact hadd
     have hcomparison :=
       f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialMap_add
-        k β γ hk hβ hγ hmap
+        k β γ hk hβ hmap
     dsimp only at hcomparison
     have hi : (⟨f4SpecialIsogenyIndexEquiv β, by
         exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ⟩ : F4ShortRootIndex) = i :=

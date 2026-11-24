@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PolygonalComplex.Boundary
 public import TauCeti.Combinatorics.PolygonalComplex.SingleFace
-public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
 
@@ -18,7 +18,8 @@ This file builds the standard surface models from the single-face complexes of
 projective plane `a a`, each a one-vertex polygon `PolygonalComplex.polygon w`. The sphere is the
 digon `a a⁻¹` on the segment, with two vertices. For each model the file checks the surface links
 and the Euler characteristic. It also separates the disc from the closed models by their boundary
-darts, and the torus from the projective plane by orientability.
+darts, and the torus from the projective plane by orientability. Every boundary circuit of the
+disc traverses a single dart.
 
 It also records how the surface-link condition fails at a pinched vertex. On the one-petal rose,
 any family of faces `a a⁻¹` (`PolygonalComplex.digons`) has a disconnected vertex link: every
@@ -43,6 +44,13 @@ For infinitely many faces the link is moreover infinite, and every germ then has
 * `TauCeti.SurfaceModel.boundaryDarts_disc`, `TauCeti.SurfaceModel.boundaryDarts_torus`,
   `TauCeti.SurfaceModel.boundaryDarts_projectivePlane`, `TauCeti.SurfaceModel.boundaryDarts_sphere`:
   both darts of the disc are boundary darts, while the closed models have no boundary.
+* `TauCeti.SurfaceModel.card_boundaryComponent_disc`,
+  `TauCeti.SurfaceModel.isEmpty_boundaryComponent_torus`,
+  `TauCeti.SurfaceModel.isEmpty_boundaryComponent_projectivePlane`,
+  `TauCeti.SurfaceModel.isEmpty_boundaryComponent_sphere`: the disc has one boundary component
+  and the closed models have none.
+* `TauCeti.SurfaceModel.length_path_boundaryCircuit_disc`: every boundary circuit of the disc
+  traverses a single dart.
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -74,7 +82,7 @@ abbrev digons (ι : Type u) : PolygonalComplex.{0, 0, u} where
 /-- The link of the vertex of `digons ι` consists of loops only: every corner has equal germs. -/
 private theorem digons_src_eq_src_rev (ι : Type u) {v : (digons ι).graph.V}
     (d : ((digons ι).vertexLink v).E) :
-    (((digons ι).vertexLink v).src d).1 = (((digons ι).vertexLink v).src (d.1, !d.2)).1 := by
+    (((digons ι).vertexLink v).src d).val = (((digons ι).vertexLink v).src (d.1, !d.2)).val := by
   obtain ⟨⟨⟨f, k⟩, -⟩, b⟩ := d
   fin_cases k <;> cases b <;> simp only [vertexLink_src_true, vertexLink_src_false,
     Bool.not_true, Bool.not_false, outgoing_def, incoming_def] <;> rfl
@@ -97,7 +105,7 @@ theorem not_finite_vertexLink_digons (ι : Type u) [Infinite ι] (v : (digons ι
     ¬Finite ((digons ι).vertexLink v).E := by
   rw [not_finite_iff_infinite]
   exact Infinite.of_injective (fun f : ι => (⟨⟨f, 0⟩, rfl⟩, true))
-    fun f f' h => congrArg (fun d => d.1.1.1) h
+    fun f f' h => congrArg (fun d => d.1.val.1) h
 
 /-- For infinitely many faces, every germ of `digons ι` has infinitely many link darts, so its
 `Nat.card`-degree is zero. -/
@@ -105,14 +113,14 @@ theorem linkDegree_digons (ι : Type u) [Infinite ι] (e : (digons ι).graph.E) 
     (digons ι).linkDegree e = 0 := by
   rw [linkDegree_def]
   have : Infinite {d : ((digons ι).vertexLink ((digons ι).graph.src e)).E //
-      (((digons ι).vertexLink _).src d).1 = e} := by
+      (((digons ι).vertexLink _).src d).val = e} := by
     obtain ⟨⟨⟩, _ | _⟩ := e
     · exact Infinite.of_injective
         (fun f : ι => ⟨(⟨⟨f, 1⟩, rfl⟩, true), (vertexLink_src_true _ _).trans (outgoing_def _ _)⟩)
-        fun f f' h => congrArg (fun d => d.1.1.1.1) h
+        fun f f' h => congrArg (fun d => d.val.1.val.1) h
     · exact Infinite.of_injective
         (fun f : ι => ⟨(⟨⟨f, 0⟩, rfl⟩, true), (vertexLink_src_true _ _).trans (outgoing_def _ _)⟩)
-        fun f f' h => congrArg (fun d => d.1.1.1.1) h
+        fun f f' h => congrArg (fun d => d.val.1.val.1) h
   exact Nat.card_eq_zero_of_infinite
 
 end PolygonalComplex
@@ -124,7 +132,8 @@ namespace SurfaceModel
 /-! The models below are plain definitions. The proofs about their darts apply the `polygon` and
 `singleFace` lemmas directly, unfolding each model to its underlying complex: the dart type
 `S.graph.E` depends on the complex, which blocks rewriting along `disc_toPolygonalComplex` and its
-analogues. -/
+analogues. For the same reason the instances deciding equality of their darts are
+`noncomputable`: code generation cannot see through a model to its dart type. -/
 
 /-! ### The disc -/
 
@@ -139,6 +148,10 @@ def disc : SurfaceModel.{0, 0, 0} where
       · exact ⟨.nil⟩)
     (.inr ⟨((), true), ((), false), by decide, by decide, by decide, by decide⟩)
 
+/-- The darts of the disc have decidable equality. -/
+noncomputable instance : DecidableEq disc.graph.E :=
+  inferInstanceAs (DecidableEq (SerreGraph.rose Unit).E)
+
 theorem disc_toPolygonalComplex :
     disc.toPolygonalComplex = polygon [((), true)] (List.cons_ne_nil _ _) := (rfl)
 
@@ -152,6 +165,26 @@ theorem boundaryDarts_disc : disc.boundaryDarts = Set.univ :=
   Set.eq_univ_of_forall fun e => linkDegree_eq_one_iff_mem_boundaryDarts.1 <|
     (linkDegree_polygon (α := Unit) [((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
+
+/-- The disc has a boundary vertex. -/
+instance : Nonempty disc.boundary.V :=
+  ⟨disc.boundary.src ⟨((), true), boundaryDarts_disc ▸ Set.mem_univ _⟩⟩
+
+/-- The disc has at most one boundary vertex, since it has a single vertex. -/
+instance : Subsingleton disc.boundary.V :=
+  -- The one-skeleton of the disc is the one-petal rose, whose vertex type is `Unique`; it is
+  -- named explicitly because `disc` is a plain definition.
+  ⟨fun x y => Subtype.ext (Subsingleton.elim (α := (SerreGraph.rose Unit).V) x.val y.val)⟩
+
+/-- The disc has a single boundary component: its boundary graph is one loop at its vertex. -/
+theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 :=
+  Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
+
+/-- Every boundary circuit of the disc traverses a single dart. -/
+theorem length_path_boundaryCircuit_disc {b : disc.BoundaryComponent} (c : disc.BoundaryCircuit b) :
+    c.path.length = 1 := by
+  rw [c.length_eq_card, Nat.card_congr (Equiv.subtypeUnivEquiv fun x => Subsingleton.elim _ b)]
+  exact Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
 
 /-! ### The torus -/
 
@@ -173,6 +206,10 @@ def torus : SurfaceModel.{0, 0, 0} where
       · exact nonempty_vertexLink_path_polygon ⟨(1, true), rfl⟩ ⟨0, by decide⟩ rfl rfl ⟨.nil⟩)
     (.inl fun ⟨i, b⟩ => by fin_cases i <;> cases b <;> decide)
 
+/-- The darts of the torus have decidable equality. -/
+noncomputable instance : DecidableEq torus.graph.E :=
+  inferInstanceAs (DecidableEq (SerreGraph.rose (Fin 2)).E)
+
 theorem torus_toPolygonalComplex :
     torus.toPolygonalComplex =
       polygon (α := Fin 2) [(0, true), (1, true), (0, false), (1, false)] (List.cons_ne_nil _ _) :=
@@ -190,6 +227,10 @@ theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
       (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨i, b⟩ := e
       fin_cases i <;> cases b <;> decide
+
+/-- The torus has no boundary component. -/
+instance isEmpty_boundaryComponent_torus : IsEmpty torus.BoundaryComponent :=
+  torus.isEmpty_boundaryComponent_iff.2 boundaryDarts_torus
 
 /-- The torus is orientable: with its face kept as given, the two sides along each edge traverse
 it in opposite directions. -/
@@ -209,6 +250,10 @@ def projectivePlane : SurfaceModel.{0, 0, 0} where
       · exact ⟨.nil⟩)
     (.inl fun ⟨⟨⟩, b⟩ => by cases b <;> decide)
 
+/-- The darts of the projective plane have decidable equality. -/
+noncomputable instance : DecidableEq projectivePlane.graph.E :=
+  inferInstanceAs (DecidableEq (SerreGraph.rose Unit).E)
+
 theorem projectivePlane_toPolygonalComplex :
     projectivePlane.toPolygonalComplex = polygon [((), true), ((), true)] (List.cons_ne_nil _ _) :=
   (rfl)
@@ -223,6 +268,10 @@ theorem boundaryDarts_projectivePlane : projectivePlane.boundaryDarts = ∅ :=
   Set.eq_empty_of_forall_notMem fun e => linkDegree_eq_two_iff_notMem_boundaryDarts.1 <|
     (linkDegree_polygon (α := Unit) [((), true), ((), true)] (List.cons_ne_nil _ _) e).trans <| by
       obtain ⟨⟨⟩, _ | _⟩ := e <;> decide
+
+/-- The projective plane has no boundary component. -/
+instance isEmpty_boundaryComponent_projectivePlane : IsEmpty projectivePlane.BoundaryComponent :=
+  projectivePlane.isEmpty_boundaryComponent_iff.2 boundaryDarts_projectivePlane
 
 /-- The projective plane is not orientable: its two sides traverse the same dart, and orienting
 the single face reverses both of them. -/
@@ -258,6 +307,10 @@ def sphere : SurfaceModel.{0, 0, 0} where
     obtain rfl : b = v := (SerreGraph.segment_src b).symm.trans hb
     exact ⟨.nil⟩
 
+/-- The darts of the sphere have decidable equality. -/
+noncomputable instance : DecidableEq sphere.graph.E :=
+  inferInstanceAs (DecidableEq SerreGraph.segment.E)
+
 theorem sphere_toPolygonalComplex :
     sphere.toPolygonalComplex =
       singleFace SerreGraph.segment [false, true] (List.cons_ne_nil _ _)
@@ -276,6 +329,10 @@ theorem boundaryDarts_sphere : sphere.boundaryDarts = ∅ :=
     refine (linkDegree_singleFace (Γ := SerreGraph.segment) (w := [false, true])
       (hw := List.cons_ne_nil _ _) e).trans ?_
     cases e <;> decide
+
+/-- The sphere has no boundary component. -/
+instance isEmpty_boundaryComponent_sphere : IsEmpty sphere.BoundaryComponent :=
+  sphere.isEmpty_boundaryComponent_iff.2 boundaryDarts_sphere
 
 end SurfaceModel
 

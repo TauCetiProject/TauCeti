@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
+import TauCeti.Data.Set.Card
 
 /-!
 # The square of the mod-two Morse boundary on a compact manifold counts broken trajectories
@@ -21,7 +22,8 @@ This set is finite, and the `r`-coefficient of `∂ (∂ p)` is its cardinality 
 Consequently `∂ ∘ ∂ = 0` holds exactly when every set of broken index-two trajectories has even
 cardinality. This is the algebraic half of `∂² = 0`. The geometric half, that broken trajectories
 are the boundary points of a compact one-dimensional manifold of trajectories and therefore come in
-pairs, needs the compactification and gluing of index-two trajectory spaces and is not proved here.
+pairs, needs the compactification and gluing of index-two trajectory spaces; it is proved in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Differential`.
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Square`.
 
@@ -87,14 +89,8 @@ many broken index-two trajectories between two critical points. -/
 theorem finite_morseBrokenTrajectorySet (p r : criticalPoints 𝓘(ℝ, E) f) :
     (hX.morseBrokenTrajectorySet p r).Finite := by
   have := hf.finite_criticalPoints.to_subtype
-  have hcrit := fun a : criticalPoints 𝓘(ℝ, E) f ↦ mem_criticalPoints_iff_mfderiv_eq_zero.1 a.2
-  -- Sort the broken trajectories by their intermediate critical point `q`.
-  refine ((toFinite {q : criticalPoints 𝓘(ℝ, E) f |
-      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
-        manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1}).biUnion
-    fun q hq ↦ ((h.finite_morseTrajectorySlice hf (hcrit p) (hcrit q) hq.1).prod
-      (h.finite_morseTrajectorySlice hf (hcrit q) (hcrit r) hq.2)).image (Prod.mk q)).subset
-    fun x hx ↦ mem_biUnion ⟨hx.1, hx.2.1⟩ ⟨x.2, ⟨hx.2.2.1, hx.2.2.2⟩, rfl⟩
+  exact finite_setOf_and_and_mem_and_mem (fun _ ↦ h.finite_morseTrajectorySlice hf)
+    fun _ ↦ h.finite_morseTrajectorySlice hf
 
 /-- **`∂ ∘ ∂` counts broken trajectories.** The `r`-coefficient of the boundary of the boundary
 of a critical point `p` is the number of broken index-two trajectories from `p` to `r`, modulo
@@ -102,31 +98,22 @@ two. -/
 theorem morseBoundary_morseBoundary_single_apply (p r : criticalPoints 𝓘(ℝ, E) f) :
     h.morseBoundary hf (h.morseBoundary hf (Finsupp.single p 1)) r =
       ((hX.morseBrokenTrajectorySet p r).ncard : ZMod 2) := by
-  classical
   have := hf.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)
-  have hfin := h.finite_morseBrokenTrajectorySet hf p r
-  -- Sort the broken trajectories by their intermediate critical point `q`.
-  rw [morseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
-    ncard_eq_toFinset_card _ hfin,
-    Finset.card_eq_sum_card_fiberwise fun x _ ↦ Finset.mem_univ x.1, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  -- The fiber over `q` is a copy of the pairs of trajectories through `q`.
-  rw [morseBoundary_single_apply, one_mul, ← ncard_coe_finset, Finset.coe_filter,
-    ← ncard_preimage_of_injective_subset_range (Prod.mk_right_injective q) ?_]
-  swap
-  · rintro ⟨_, z⟩ ⟨-, rfl⟩
-    exact ⟨z, rfl⟩
-  by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
-      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1
-  · rw [h.morseBoundaryCoeff_eq_ncard hf hind.1, h.morseBoundaryCoeff_eq_ncard hf hind.2,
-      ← Nat.cast_mul, ← ncard_prod]
-    congr 2
-    ext
-    simp [hind]
-  · rcases not_and_or.mp hind with hpq | hqr
-    · simp [hpq]
-    · simp [hqr]
+  rw [morseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _, morseBrokenTrajectorySet]
+  -- Sort the broken trajectories by their intermediate critical point `q`. The index conditions
+  -- and slice families are named because unification cannot read them off the finiteness proof.
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun q : criticalPoints 𝓘(ℝ, E) f ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    (Q := fun q ↦ manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (A := (hX.morseTrajectorySlice p ·)) (B := (hX.morseTrajectorySlice · r)) (fun q hind ↦ ?_)
+    (fun q hind ↦ ?_) (fun _ ↦ h.morseBoundaryCoeff_eq_ncard hf)
+    (fun _ ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf)
+    (h.finite_morseBrokenTrajectorySet hf p r)).symm
+  · rw [morseBoundary_single_apply, one_mul, h.morseBoundaryCoeff_eq_ncard hf hind]
+  · rw [morseBoundary_single_apply, one_mul,
+      h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hind]
 
 /-- **`∂² = 0` reduces to counting broken trajectories.** The mod-two Morse boundary squares to
 zero exactly when, between any two critical points, the number of broken index-two trajectories

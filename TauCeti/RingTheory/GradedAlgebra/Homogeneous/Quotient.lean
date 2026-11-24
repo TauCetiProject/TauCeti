@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.RingTheory.GradedAlgebra.Quotient
 
 /-!
@@ -35,9 +36,9 @@ Assem--Simson--Skowroński,
 
 public section
 
-namespace TauCeti.GradedAlgebra
-
 open scoped DirectSum
+
+namespace TauCeti.GradedAlgebra
 
 variable {ι R A : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [Ring A] [Algebra R A]
   (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (I : Ideal A) [I.IsTwoSided]
@@ -78,6 +79,32 @@ theorem isInternal_quotientPiece (hI : I.IsHomogeneous 𝒜) :
     rw [← hleft x i, ← hleft y i, hxy]
   · exact (LinearMap.range_eq_top).mp (DirectSum.range_coeLinearMap.trans
       (iSup_quotientPiece_eq_top 𝒜 I (DirectSum.Decomposition.isInternal 𝒜).submodule_iSup_eq_top))
+
+/-- A surjective algebra map with homogeneous kernel descends the internal grading to the
+images of the graded pieces. -/
+theorem isInternal_map {B : Type*} [Semiring B] [Algebra R B] (f : A →ₐ[R] B)
+    (hf : Function.Surjective f) (hker : (RingHom.ker f).IsHomogeneous 𝒜) :
+    DirectSum.IsInternal (fun i => (𝒜 i).map f.toLinearMap) := by
+  let I := RingHom.ker f
+  let e := Ideal.quotientKerAlgEquivOfSurjective hf
+  have hcomp : e.toLinearEquiv.toLinearMap ∘ₗ (Ideal.Quotient.mkₐ R I).toLinearMap =
+      f.toLinearMap := by
+    ext x
+    -- The linear-map wrappers evaluate to the algebra equivalence and quotient map.
+    exact Ideal.quotientKerAlgEquivOfSurjective_mk hf x
+  have hp : (fun i => (quotientPiece 𝒜 I i).map e.toLinearEquiv.toLinearMap) =
+      fun i => (𝒜 i).map f.toLinearMap := by
+    funext i
+    rw [quotientPiece_def, ← Submodule.map_comp, hcomp]
+  rw [← hp]
+  let : DirectSum.Decomposition (quotientPiece 𝒜 I) :=
+    (isInternal_quotientPiece 𝒜 I hker).chooseDecomposition
+  -- Transport via the inverse equivalence, using the existing restriction theorem.
+  refine TauCeti.DirectSum.isInternal_comap (quotientPiece 𝒜 I) _
+    e.symm.toLinearMap e.symm.injective (fun i x => ?_) (fun i x => ?_)
+  · exact Submodule.mem_map_equiv (quotientPiece 𝒜 I i)
+  · rw [LinearMap.range_eq_top.mpr e.symm.surjective]
+    trivial
 
 /-- The images of the graded pieces are independent modulo a homogeneous ideal. -/
 theorem iSupIndep_quotientPiece (hI : I.IsHomogeneous 𝒜) : iSupIndep (quotientPiece 𝒜 I) :=

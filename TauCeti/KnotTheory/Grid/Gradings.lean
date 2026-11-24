@@ -11,10 +11,10 @@ public import TauCeti.KnotTheory.Grid.JFunction.Center
 /-!
 # Maslov and Alexander gradings for grid states
 
-This file records the rational-valued grading formulas for the grid-combinatorial lane of the
-Heegaard Floer roadmap. The point-set `J`-function of a pair of grid states and the pairing of a
-grid state against a set of marked squares were developed separately; here we use them to define
-the `O`- and `X`-Maslov gradings and the Alexander grading of a grid state.
+This file records the rational-valued grading formulas of grid homology. The point-set `J`-function
+of a pair of grid states and the pairing of a grid state against a set of marked squares were
+developed separately; here we use them to define the `O`- and `X`-Maslov gradings and the Alexander
+grading of a grid state.
 
 The `O`-Maslov grading is
 `M_O(x) = J(x, x) - 2 J_O(x) + J(𝕆, 𝕆) + 1`, and the `X`-Maslov grading is defined analogously.
@@ -44,13 +44,9 @@ rectangle-change theorems can refer to these names without unfolding the point-p
 
 ## References
 
-This supplies the grading-definition part of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane G.2, "Gradings. The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`;
-grading-change formulas across a rectangle." The grading conventions follow
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3.1--3.2 and 4.1 for the
-placement convention, and Chapter 4.3 for the bigrading. In particular,
-`A(x) = (M_O(x) - M_X(x)) / 2 - (n - 1) / 2`.
+The grading conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapters 3.1--3.2 and 4.1 for the placement convention, and Chapter 4.3 for the bigrading. In
+particular, `A(x) = (M_O(x) - M_X(x)) / 2 - (n - 1) / 2`.
 -/
 
 public section

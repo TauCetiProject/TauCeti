@@ -78,7 +78,7 @@ theorem inner_fourierBasis_multiplicationOperator_fourierLp (b : Lp ℂ 2 (haarA
     (m n : ℤ) :
     ⟪fourierBasis (T := T) m, Lp.multiplicationOperator (fourierLp (T := T) ∞ n) b⟫_ℂ =
       fourierCoeff b (m - n) := by
-  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply,
+  rw [inner_fourierBasis_left, Lp.multiplicationOperator_apply,
     fourierCoeff_fourierLp_smul]
 
 /-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`, sends
@@ -87,7 +87,7 @@ theorem apply_fourierBasis_of_commute
     {W : Lp ℂ 2 (haarAddCircle (T := T)) →L[ℂ] Lp ℂ 2 (haarAddCircle (T := T))}
     (hW : Commute W (Lp.multiplicationOperator (fourierLp (T := T) ∞ 1))) (n : ℤ) :
     W (fourierBasis n) = fourierLp (T := T) ∞ n • W (fourierBasis 0) := by
-  set U := Lp.multiplicationOperator (E := ℂ) (fourierLp (T := T) ∞ 1)
+  set U := Lp.multiplicationOperator (E := ℂ) (p := 2) (fourierLp (T := T) ∞ 1)
   have hU (f : Lp ℂ 2 (haarAddCircle (T := T))) : U f = fourierLp (T := T) ∞ 1 • f :=
     Lp.multiplicationOperator_apply _ f
   have hU_inj : Function.Injective U :=
@@ -164,11 +164,11 @@ theorem commute_multiplicationOperator_fourierLp_one_iff
   have hb : eLpNorm (⇑b) ∞ haarAddCircle ≤ ‖W‖ₑ := by
     refine eLpNorm_top_le_of_forall_mem_span_fourier (p := 2) ENNReal.ofNat_ne_top
       (Lp.aestronglyMeasurable b) fun q hq ↦ ?_
-    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.enorm_def,
+    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.eNorm_def,
       ← eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (E := ℂ) (p := 2) (𝕜 := ℂ) haarAddCircle q),
-      ← Lp.enorm_def]
+      ← Lp.eNorm_def]
     exact W.le_opENorm _
-  have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt enorm_lt_top)
+  have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt eNorm_lt_top)
   -- `W` agrees with multiplication by `b` on the Fourier basis, whose span is dense.
   refine ⟨hb_mem.toLp b, ContinuousLinearMap.ext_on
     (dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := T)).dense_span) ?_⟩

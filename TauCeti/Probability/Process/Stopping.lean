@@ -11,15 +11,19 @@ public import Mathlib.Probability.Process.Stopping
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
-arguments and localizing sequences when augmenting a filtration.
+arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
+the stopping-time property.
 
-Stopping preserves right continuity at each time, including when the stopping time is infinite.
-This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
-arguments retain the right continuity of their native stopped stages.
+Stopping preserves path continuity and right continuity at each time, including when the stopping
+time is infinite. These pathwise facts require no measurability or stopping-time hypothesis and let
+local-martingale arguments retain the continuity or right continuity of their native stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
-processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`). No
-stopping-time or measurability assumption is needed.
+processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
+Pathwise set membership up to the random time also passes to the stopped process. Neither
+fact requires a stopping-time or measurability assumption. Under a finite measure, truncating an
+almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
+integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -34,8 +38,35 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
 
 end MeasureTheory.IsStoppingTime
 
+/-- The finite supremum of stopping times is a stopping time.
+The empty supremum is the constant bottom time. -/
+theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
+    [LinearOrder ι] [OrderBot ι] {mΩ : MeasurableSpace Ω} {ℱ : MeasureTheory.Filtration ι mΩ}
+    (s : Finset κ) {τ : κ → Ω → WithTop ι}
+    (hτ : ∀ j ∈ s, MeasureTheory.IsStoppingTime ℱ (τ j)) :
+    MeasureTheory.IsStoppingTime ℱ (fun ω ↦ s.sup (fun j ↦ τ j ω)) := by
+  have h := Finset.sup_induction
+    (p := fun σ : Ω → WithTop ι ↦ MeasureTheory.IsStoppingTime ℱ σ)
+    (MeasureTheory.isStoppingTime_const ℱ ⊥) (fun _ ha _ hb ↦ ha.max hb) hτ
+  have heq : s.sup τ = fun ω ↦ s.sup (fun j ↦ τ j ω) := funext (s.sup_apply τ)
+  exact heq ▸ h
+
 open Filter Set
 open scoped Topology
+
+/-- Stopping preserves continuity of a path, without any measurability or stopping-time
+assumption on the random time. At an infinite stopping time the path is unchanged. -/
+theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : Continuous (X · ω)) :
+    Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
+  | coe u =>
+    simpa only [MeasureTheory.stoppedProcess, hτ, ← WithTop.coe_min,
+      WithTop.untopA, WithTop.untopD_coe, Function.comp_def, id_eq] using
+      hX.comp (continuous_id.min continuous_const)
 
 /-- Stopping preserves right continuity of a path at a given time, without any measurability
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
@@ -60,6 +91,35 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
 
 namespace MeasureTheory
 
+/-- A path that stays in a set up to a random time also stays in that set when stopped.
+No measurability or stopping-time assumption is needed. -/
+theorem stoppedProcess_mem {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} {s : Set E}
+    (hX : ∀ u : ι, (u : WithTop ι) ≤ τ ω → X u ω ∈ s) (t : ι) :
+    stoppedProcess X τ t ω ∈ s := by
+  by_cases ht : (t : WithTop ι) ≤ τ ω
+  · rw [stoppedProcess_eq_of_le ht]
+    exact hX t ht
+  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
+    exact hX _ (by cases τ ω <;> simp)
+
+/-- Evaluate the stopped process restricted to the event that its random time is positive.
+No measurability or stopping-time assumption is needed. -/
+theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] {X : ι → Ω → E} (τ : Ω → WithTop ι) (t : ι) (ω : Ω) :
+    stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ t ω =
+      if ⊥ < τ ω then X (min (t : WithTop ι) (τ ω)).untopA ω else 0 := by
+  rw [stoppedProcess_indicator_comm]
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
+
+/-- At the initial time, stopping leaves any process unchanged. -/
+@[simp]
+theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    (u : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess u τ ⊥ = u ⊥ := by
+  ext ω
+  exact stoppedProcess_eq_of_le (by simp)
+
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}
 
@@ -74,5 +134,20 @@ theorem ae_nonneg_stoppedProcess_indicator
     exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
   · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
     exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
+
+open scoped NNReal
+
+/-- For any almost everywhere measurable `WithTop ℝ≥0`-valued function and deterministic horizon
+`T`, the truncated value `(min T (τ ω)).untopA` is integrable under any finite measure. -/
+theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsFiniteMeasure P] {τ : Ω → WithTop ℝ≥0} (hτ : AEMeasurable τ P) (T : ℝ≥0) :
+    Integrable (fun ω ↦ ((min (T : WithTop ℝ≥0) (τ ω)).untopA : ℝ)) P :=
+  Integrable.of_bound
+    ((measurable_subtypeVal.comp
+      (measurable_const.min hτ.measurable_mk).untopA).aestronglyMeasurable.congr
+      (hτ.ae_eq_mk.symm.fun_comp fun x : WithTop ℝ≥0 ↦ ((min (T : WithTop ℝ≥0) x).untopA : ℝ))) T
+    (.of_forall fun ω ↦ by
+      rw [Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _), NNReal.coe_le_coe]
+      exact WithTop.untopA_le (min_le_left _ _))
 
 end MeasureTheory

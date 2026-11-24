@@ -36,6 +36,8 @@ of a connection on the tangent bundle.
   vector-field arguments.
 * `CovariantDerivative.contMDiff_curvatureOperator`: a smooth connection has smooth
   curvature on smooth fields and sections.
+* `CovariantDerivative.covariantDerivative_curvatureOperator`: for a smooth connection, the
+  covariant derivative of `R(X, Y) σ` is `∇ (∇_X (∇_Y σ)) - ∇ (∇_Y (∇_X σ)) - ∇ (∇_[X, Y] σ)`.
 * `CovariantDerivative.curvatureOperator_smul_first`,
   `CovariantDerivative.curvatureOperator_smul_second`, and
   `CovariantDerivative.curvatureOperator_smul_section`: curvature is linear over smooth
@@ -210,6 +212,41 @@ theorem contMDiff_curvatureOperator
     (cov.contMDiff_apply hY hXσ)).sub_section
       (cov.contMDiff_apply (contMDiff_mlieBracket hX hY) hσ)
 
+/-- For smooth vector fields `B`, `C` and a smooth section `σ`, the covariant derivative of the
+curvature section `R(B, C) σ` at `x` expands, as a continuous linear map on the tangent space, into
+`∇ (∇_B (∇_C σ)) - ∇ (∇_C (∇_B σ)) - ∇ (∇_[B, C] σ)`. -/
+theorem covariantDerivative_curvatureOperator
+    {B C : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
+    (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    cov (curvatureOperator cov B C σ) x =
+      cov (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) x -
+        cov (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) x -
+          cov (fun y ↦ cov σ y (mlieBracket I B C y)) x := by
+  have hCσ := cov.contMDiff_apply hC hσ
+  have hBσ := cov.contMDiff_apply hB hσ
+  have hBC := cov.contMDiff_apply hB hCσ
+  have hCB := cov.contMDiff_apply hC hBσ
+  have hbrσ := cov.contMDiff_apply (contMDiff_mlieBracket hB hC) hσ
+  rw [← cov.isCovariantDerivativeOnUniv.sub (hBC.mdifferentiable (by simp) x)
+      (hCB.mdifferentiable (by simp) x),
+    ← cov.isCovariantDerivativeOnUniv.sub ((hBC.sub_section hCB).mdifferentiable (by simp) x)
+      (hbrσ.mdifferentiable (by simp) x)]
+  -- `R(B, C) σ` is by definition the difference of the three sections.
+  rfl
+
+/-- For smooth vector fields `B`, `C` and a smooth section `σ`, the covariant derivative of the
+curvature section `R(B, C) σ` along a tangent vector `v` at `x` expands as
+`∇_v (R(B, C) σ) = ∇_v (∇_B (∇_C σ)) - ∇_v (∇_C (∇_B σ)) - ∇_v (∇_[B, C] σ)`. -/
+theorem covariantDerivative_curvatureOperator_apply
+    {B C : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
+    (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) (hσ : CMDiff ∞ (T% σ)) (x : M)
+    (v : TangentSpace I x) :
+    cov (curvatureOperator cov B C σ) x v =
+      cov (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) x v -
+        cov (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) x v -
+          cov (fun y ↦ cov σ y (mlieBracket I B C y)) x v := by
+  rw [cov.covariantDerivative_curvatureOperator hB hC hσ x, sub_apply, sub_apply]
+
 variable {cov}
   {X X' Y Y' : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x} {f : M → ℝ}
 
@@ -287,23 +324,30 @@ theorem curvatureOperator_add_section
   simp only [add_apply]
   abel
 
+omit [CompleteSpace E] in
 /-- Curvature changes sign when its first vector-field argument is negated. -/
 @[simp]
 theorem curvatureOperator_neg_first
     (hX : CMDiff ∞ (T% X)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov (-X) Y σ = -curvatureOperator cov X Y σ := by
-  apply eq_neg_of_add_eq_zero_left
-  rw [← curvatureOperator_add_first hX.neg_section hX hσ, neg_add_cancel,
-    curvatureOperator_zero_first]
+  funext x
+  have hXσd : MDiff (T% (fun y ↦ cov σ y (X y))) :=
+    (cov.contMDiff_apply hX hσ).mdifferentiable (by simp)
+  have hinner : (fun y ↦ cov σ y ((-X) y)) = -fun y ↦ cov σ y (X y) :=
+    funext fun y ↦ map_neg (cov σ y) (X y)
+  rw [Pi.neg_apply, curvatureOperator_apply, curvatureOperator_apply, mlieBracket_neg_left, hinner,
+    cov.isCovariantDerivativeOnUniv.neg (hXσd x)]
+  simp only [Pi.neg_apply, map_neg, neg_apply]
+  abel
 
+omit [CompleteSpace E] in
 /-- Curvature changes sign when its second vector-field argument is negated. -/
 @[simp]
 theorem curvatureOperator_neg_second
     (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureOperator cov X (-Y) σ = -curvatureOperator cov X Y σ := by
-  apply eq_neg_of_add_eq_zero_left
-  rw [← curvatureOperator_add_second hY.neg_section hY hσ, neg_add_cancel,
-    curvatureOperator_zero_second]
+  rw [curvatureOperator_antisymm cov X (-Y) σ, curvatureOperator_neg_first hY hσ, neg_neg,
+    curvatureOperator_antisymm cov Y X σ]
 
 omit [CompleteSpace E] in
 /-- Curvature changes sign when its section argument is negated. -/
@@ -472,24 +516,18 @@ theorem curvatureOperator_congr
     curvatureOperator cov X Y σ x = curvatureOperator cov X' Y σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov Z Y σ x) x
-        (fun _ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hZ' hY hσ hZZ' Filter.EventuallyEq.rfl (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_first hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_first hf hZ hσ) x)
         hX hX' hXX'
     _ = curvatureOperator cov X' Y' σ x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
         (fun Z ↦ curvatureOperator cov X' Z σ x) x
-        (fun _ hZ' hZZ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hZ' hσ Filter.EventuallyEq.rfl hZZ' (Filter.Eventually.of_forall fun _ ↦ rfl))
         (fun hZ hZ' ↦ congrFun (curvatureOperator_add_second hZ hZ' hσ) x)
         (fun hf hZ ↦ congrFun (curvatureOperator_smul_second hf hZ hσ) x)
         hY hY' hYY'
     _ = curvatureOperator cov X' Y' σ' x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V)
         (fun τ ↦ curvatureOperator cov X' Y' τ x) x
-        (fun _ hτ' hττ' ↦ curvatureOperator_congr_of_eventuallyEq
-          hX' hY' hτ' Filter.EventuallyEq.rfl Filter.EventuallyEq.rfl hττ')
         (fun hτ hτ' ↦ congrFun (curvatureOperator_add_section hX' hY' hτ hτ') x)
         (fun hf hτ ↦ congrFun (curvatureOperator_smul_section hf hX' hY' hτ) x)
         hσ hσ' hσσ'

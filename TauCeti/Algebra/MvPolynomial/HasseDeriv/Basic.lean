@@ -14,6 +14,7 @@ public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import Mathlib.Data.Nat.Factorial.NatCast
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
 
 /-!
@@ -54,7 +55,11 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
-* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`.
+* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; so evaluating
+  `(∂/∂Xᵢ)^k P` multiplies `(∂^(k eᵢ) P)(x)` by `k!`
+  (`MvPolynomial.eval_iterate_pderiv_eq_factorial_mul`), and when `k!` is a unit (for instance
+  `k < p` in characteristic `p`), an ordinary jet vanishes exactly when the corresponding Hasse jet
+  does (`MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero`).
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
   `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative, and `∂^d` vanishes whenever `d`
@@ -125,7 +130,7 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
       intro h'
       by_cases hdn : d ≤ n
       · exact absurd ((tsub_eq_iff_eq_add_of_le hdn).1 h') h
-      · simp [prod_choose_eq_zero hdn]
+      · simp [prod_choose_eq_zero_iff.2 hdn]
   | add p q hp hq => simp [hp, hq, mul_add]
 
 /-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
@@ -166,14 +171,10 @@ theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrd
 /-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
 most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_isNonarchimedean {S : Type*} [Semiring S] [LinearOrder S]
-    [IsOrderedRing S] [IsDomain S] {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv)
-    (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · simp [Subsingleton.elim ((hasseDeriv d P).coeff m) 0]
-  rw [hasseDeriv_coeff, abv.map_mul]
-  exact mul_le_of_le_one_left (abv.nonneg _)
-    (hv.apply_natCast_le_one (by simp) abv.map_one)
+  rw [hasseDeriv_coeff]
+  exact hv.nmul_le (by simp)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]
@@ -187,7 +188,7 @@ theorem hasseDeriv_zero :
 @[simp]
 theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (C a) = 0 := by
   rw [← monomial_zero', hasseDeriv_monomial,
-    prod_choose_eq_zero (by simpa [nonpos_iff_eq_zero] using hd)]
+    prod_choose_eq_zero_iff.2 (by simpa [nonpos_iff_eq_zero] using hd)]
   simp
 
 /-- Every Hasse derivative of positive order kills the constant polynomial `1`. -/
@@ -264,6 +265,40 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
     rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
       Nat.factorial_succ, mul_comm]
 
+/-- Evaluating `(∂/∂Xᵢ)^k P` at a tuple `x` in an `R`-algebra `S` gives `k!` times the evaluated
+Hasse derivative `∂^(k eᵢ) P`. -/
+theorem aeval_iterate_pderiv_eq_factorial_mul {S : Type*} [CommSemiring S] [Algebra R S]
+    (i : σ) (k : ℕ) (x : σ → S) (P : MvPolynomial σ R) :
+    aeval x ((pderiv i)^[k] P) = (k.factorial : S) * aeval x (hasseDeriv (single i k) P) := by
+  rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
+
+/-- Evaluating `(∂/∂Xᵢ)^k P` at `x` gives `k!` times `(∂^(k eᵢ) P)(x)`. -/
+theorem eval_iterate_pderiv_eq_factorial_mul (i : σ) (k : ℕ) (x : σ → R) (P : MvPolynomial σ R) :
+    eval x ((pderiv i)^[k] P) = (k.factorial : R) * eval x (hasseDeriv (single i k) P) := by
+  rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
+
+/-- If `k!` is a unit, the `k`-th partial derivative in `Xᵢ` vanishes exactly when the Hasse
+derivative along `k • eᵢ` does. -/
+theorem iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero {k : ℕ} (hk : IsUnit (k.factorial : R))
+    (i : σ) (P : MvPolynomial σ R) :
+    (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 := by
+  rw [← factorial_smul_hasseDeriv_single, ← Nat.cast_smul_eq_nsmul R, hk.smul_eq_zero]
+
+/-- If `k!` is a unit, the ordinary jet `(∂ᵢ^k P)(a)` vanishes exactly when the Hasse jet
+`(∂^(k eᵢ) P)(a)` does. -/
+theorem eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero {k : ℕ}
+    (hk : IsUnit (k.factorial : R)) (i : σ) (P : MvPolynomial σ R) (a : σ → R) :
+    eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 := by
+  rw [eval_iterate_pderiv_eq_factorial_mul, hk.mul_right_eq_zero]
+
+/-- In characteristic `p`, for `k < p` the ordinary jet `(∂ᵢ^k P)(a)` vanishes exactly when the
+Hasse jet `(∂^(k eᵢ) P)(a)` does. -/
+theorem eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt {R : Type*} [CommRing R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] {k : ℕ} (hk : k < p) (i : σ) (P : MvPolynomial σ R)
+    (a : σ → R) : eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 :=
+  eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero
+    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) i P a
+
 /-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
 univariate `k`-th Hasse derivative. -/
 @[simp]
@@ -281,7 +316,8 @@ theorem hasseDeriv_toMvPolynomial_eq_zero {d : σ →₀ ℕ} {i j : σ} (hij : 
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | monomial n a =>
-    rw [Polynomial.toMvPolynomial_monomial, hasseDeriv_monomial, prod_choose_eq_zero fun h ↦ hd ?_]
+    rw [Polynomial.toMvPolynomial_monomial, hasseDeriv_monomial,
+      prod_choose_eq_zero_iff.2 fun h ↦ hd ?_]
     · simp
     · simpa [hij, hij.symm] using Finsupp.le_def.1 h j
 
@@ -331,7 +367,7 @@ theorem hasseDeriv_mul_X (d : σ →₀ ℕ) (P : MvPolynomial σ R) (i : σ) :
           monomial e' (((d'.prod fun j k ↦ (n j).choose k : ℕ) : R) * a) := by
       by_cases hd : d' ≤ n
       · rw [h hd]
-      · rw [prod_choose_eq_zero hd, Nat.cast_zero, zero_mul, monomial_zero, monomial_zero]
+      · rw [prod_choose_eq_zero_iff.2 hd, Nat.cast_zero, zero_mul, monomial_zero, monomial_zero]
     rw [← pow_one (X i), ← monomial_add_single, hasseDeriv_monomial, hasseDeriv_monomial,
       hasseDeriv_monomial, ← monomial_add_single, prod_choose_add_single]
     split_ifs with hi

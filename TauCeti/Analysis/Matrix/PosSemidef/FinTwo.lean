@@ -10,7 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
-# The square root of a positive-semidefinite `2 × 2` matrix
+# Positivity and square roots of `2 × 2` matrices
+
+A Hermitian `2 × 2` matrix is positive semidefinite exactly when its trace and
+determinant are nonnegative. For a real symmetric matrix, this is equivalent to
+nonnegativity of both diagonal entries and of the determinant.
 
 The continuous-functional-calculus square root of a positive-semidefinite `2 × 2` matrix `H` has a
 closed form in terms of its trace `t` and determinant `δ`:
@@ -36,6 +40,43 @@ open scoped ComplexOrder MatrixOrder
 namespace Matrix
 
 variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- A Hermitian `2 × 2` matrix is positive semidefinite exactly when its trace and
+determinant are nonnegative. -/
+theorem IsHermitian.posSemidef_iff_trace_nonneg_and_det_nonneg
+    {H : Matrix (Fin 2) (Fin 2) 𝕜} (hH : H.IsHermitian) :
+    H.PosSemidef ↔ 0 ≤ H.trace ∧ 0 ≤ H.det := by
+  refine ⟨fun h ↦ ⟨h.trace_nonneg, h.det_nonneg⟩, fun ⟨ht, hd⟩ ↦ ?_⟩
+  rw [hH.trace_eq_sum_eigenvalues, Fin.sum_univ_two, ← RCLike.ofReal_add,
+    RCLike.ofReal_nonneg] at ht
+  rw [hH.det_eq_prod_eigenvalues, Fin.prod_univ_two, ← RCLike.ofReal_mul,
+    RCLike.ofReal_nonneg] at hd
+  rw [hH.posSemidef_iff_eigenvalues_nonneg]
+  intro i
+  fin_cases i <;> dsimp <;> nlinarith
+
+/-- The diagonal entries and determinant characterize positivity of a real symmetric
+`2 × 2` matrix, also when it is regarded as a complex matrix. -/
+theorem posSemidef_fin_two_ofReal_iff (a b c : ℝ) :
+    (!![(a : 𝕜), (b : 𝕜); (b : 𝕜), (c : 𝕜)]).PosSemidef ↔
+      0 ≤ a ∧ 0 ≤ c ∧ b ^ 2 ≤ a * c := by
+  have hH : (!![(a : 𝕜), (b : 𝕜); (b : 𝕜), (c : 𝕜)]).IsHermitian := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [conjTranspose_apply]
+  refine ⟨fun h ↦ ?_, fun ⟨_, _, _⟩ ↦ ?_⟩
+  · have ha := h.diag_nonneg (i := 0)
+    have hc := h.diag_nonneg (i := 1)
+    have hd := h.det_nonneg
+    simp only [of_apply, cons_val_zero, cons_val_one, cons_val_fin_one,
+      RCLike.ofReal_nonneg] at ha hc
+    rw [det_fin_two] at hd
+    simp only [of_apply, cons_val_zero, cons_val_one, cons_val_fin_one, ← RCLike.ofReal_mul,
+      ← RCLike.ofReal_sub, RCLike.ofReal_nonneg] at hd
+    exact ⟨ha, hc, by nlinarith⟩
+  · rw [hH.posSemidef_iff_trace_nonneg_and_det_nonneg, trace_fin_two, det_fin_two]
+    simp only [of_apply, cons_val_zero, cons_val_one, cons_val_fin_one, ← RCLike.ofReal_add,
+      ← RCLike.ofReal_mul, ← RCLike.ofReal_sub, RCLike.ofReal_nonneg]
+    constructor <;> nlinarith
 
 /-- **The square root of a positive-semidefinite `2 × 2` matrix.** If `H` is positive semidefinite
 with trace `t` and determinant `δ`, then `√H = (t + 2 √δ) ^ (-1 / 2) • (H + √δ • 1)`. For `H = 0`

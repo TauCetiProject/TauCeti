@@ -76,19 +76,19 @@ theorem projectiveLiftingFactorSet_ker_le_center :
     (FactorSet.rightHom (projectiveLiftingFactorSet k G)).ker ≤
       Subgroup.center (projectiveLiftingFactorSet k G).Extension := by
   rw [← FactorSet.range_inl_eq_ker_rightHom]
-  exact FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul
+  exact (FactorSet.range_inl_le_center_iff _).2 trivialMulDistribMulAction_smul
 
 end
 
 section
 
-variable {k G : Type*} [Field k] [Group G] [Finite G]
+variable {k G : Type*} [Field k] [Group G]
   {V : Type*} [AddCommMonoid V] [Module k V]
 
-/-- Every projective representation of a finite group over an algebraically closed field
-lifts to the same finite central extension. On every element of the extension, the lift
-agrees up to a scalar with the original representation at its image in `G`. In particular,
-the kernel acts by scalars. -/
+/-- Every projective representation of a group over an algebraically closed field lifts to the
+same central extension, which is finite when `G` is finite. On every element of the extension,
+the lift agrees up to a scalar with the original representation at its image in `G`. In
+particular, the kernel acts by scalars. -/
 theorem IsProjectiveRep.exists_commonExtension_linearization [IsAlgClosed k]
     {ρ : G → V ≃ₗ[k] V} {α : G → G → kˣ} (hρ : IsProjectiveRep ρ α) :
     ∃ (π : (projectiveLiftingFactorSet k G).Extension →* (V ≃ₗ[k] V))

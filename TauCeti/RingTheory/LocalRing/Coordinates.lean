@@ -104,7 +104,7 @@ theorem residue_apply_eq_zero_of_mem_sq {a : Q} (ha : a ∈ maximalIdeal Q ^ 2) 
 
 /-- If the gradient of `a ∈ 𝔪` is a combination of the gradients of elements `wₖ ∈ 𝔪`, then `a`
 is a combination of the `wₖ` modulo `𝔪²`. -/
-theorem mem_span_range_sup_maximalIdeal_sq [Finite ι] [Finite κ]
+theorem mem_span_range_sup_maximalIdeal_sq [Finite κ]
     (hx : maximalIdeal Q = Ideal.span (Set.range x))
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {w : κ → Q}
     (hw : ∀ k, w k ∈ maximalIdeal Q) {a : Q} (ha : a ∈ maximalIdeal Q)
@@ -224,7 +224,7 @@ theorem card_le_card_of_le_span_sup_sq [Fintype ι] [Fintype κ]
 /-- Let `wₖ ∈ 𝔪` have linearly independent gradients, and let `yⱼ ∈ 𝔪` be linearly independent
 modulo `(wₖ) + 𝔪²`: a combination `∑ cⱼ yⱼ` lies in `(wₖ) + 𝔪²` only if every `cⱼ ∈ 𝔪`. Then the
 gradients of the `wₖ` and the `yⱼ` together are linearly independent. -/
-theorem linearIndependent_residue_apply_sum_elim {κ' : Type*} [Finite ι] [Finite κ]
+theorem linearIndependent_residue_apply_sum_elim {κ' : Type*} [Finite κ]
     [Fintype κ'] (hx : maximalIdeal Q = Ideal.span (Set.range x))
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {w : κ → Q} {y : κ' → Q}
     (hw : ∀ k, w k ∈ maximalIdeal Q) (hy : ∀ j, y j ∈ maximalIdeal Q)
@@ -278,7 +278,7 @@ theorem exists_coordinates [Algebra.FormallyEtale K (ResidueField Q)]
   have hlift (i : ι) : ∃ x ∈ maximalIdeal Q, (1 : ResidueField Q) ⊗ₜ D K Q x = bκ i := by
     obtain ⟨c, hc⟩ := hbij.2 (bκ i)
     obtain ⟨m, rfl⟩ := Ideal.toCotangent_surjective _ c
-    exact ⟨m, hker ▸ m.2, by rwa [kerCotangentToTensor_toCotangent] at hc⟩
+    exact ⟨m, hker ▸ m.property, by rwa [kerCotangentToTensor_toCotangent] at hc⟩
   choose x hx𝔪 hxb using hlift
   have hδ (k i : ι) : residue Q (b.repr (D K Q (x k)) i) = if k = i then 1 else 0 := by
     rw [← hrepr, hxb, bκ.repr_self, Finsupp.single_apply]

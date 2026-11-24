@@ -32,6 +32,8 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
 ## Main declarations
 
 * `TauCeti.Probability.pgf` — the probability-generating function.
+* `TauCeti.Probability.pgf_dirac` — the probability-generating function of a natural-number-valued
+  statistic under a Dirac measure.
 * `TauCeti.Probability.pgf_exp` — evaluation at `exp t` is a moment-generating function, and
   `TauCeti.Probability.mgf_id_map_natCast` restates this for the real cast of a law on `ℕ`.
 * `TauCeti.Probability.integrable_pow_of_abs_le_one` — on `[-1, 1]` the integrand is
@@ -110,6 +112,13 @@ function. -/
 theorem pgf_const (n : ℕ) (t : ℝ) : pgf (fun _ : Ω => n) μ t = μ.real Set.univ * t ^ n := by
   simp [pgf_def]
 
+/-- The probability-generating function of a natural-number-valued statistic under a Dirac
+measure is a monomial. -/
+@[simp]
+theorem pgf_dirac [MeasurableSingletonClass Ω] (X : Ω → ℕ) (ω : Ω) (z : ℝ) :
+    pgf X (Measure.dirac ω) z = z ^ X ω := by
+  simp [pgf_def]
+
 /-- The probability-generating function can be computed on the law of the random variable. -/
 theorem pgf_map {X : Ω → ℕ} (hX : AEMeasurable X μ) (t : ℝ) :
     pgf id (μ.map X) t = pgf X μ t := by
@@ -125,7 +134,7 @@ theorem HasLaw.pgf_eq {X : Ω → ℕ} {ν : Measure ℕ} (hX : HasLaw X ν μ) 
 function of the real-valued cast of the random variable. -/
 theorem pgf_exp (X : Ω → ℕ) (μ : Measure Ω) (t : ℝ) :
     pgf X μ (Real.exp t) = mgf (fun ω => (X ω : ℝ)) μ t := by
-  simp only [pgf_def, mgf, ← Real.exp_nat_mul]
+  simp only [pgf_def, mgf, ← Real.exp_natCast_mul]
   congr 1
   funext ω
   rw [Nat.cast_comm, mul_comm]
@@ -320,7 +329,7 @@ theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_mul_natCast {ν : Measure �
       (ENNReal.ofReal (Real.exp t)) := by
   let p := ofScalars ℝ fun k => ν.real {k}
   have hexp (k : ℕ) : Real.exp (t * (k : ℝ)) = Real.exp t ^ k := by
-    rw [mul_comm t, Real.exp_nat_mul]
+    rw [mul_comm t, Real.exp_natCast_mul]
   have hsum_exp : Summable (fun k : ℕ => ν.real {k} * ‖Real.exp (t * (k : ℝ))‖) :=
     summable_measureReal_mul_norm_of_integrable hExp
   have hp_radius : ENNReal.ofReal (Real.exp t) ≤ p.radius := by
@@ -367,7 +376,7 @@ theorem integrable_descFactorial_of_integrable_pow_natCast {ν : Measure ℕ} {n
 theorem integrable_descFactorial_of_integrable_exp_mul_natCast {ν : Measure ℕ} {t : ℝ}
     (ht : 0 < t) (hExp : Integrable (fun k : ℕ => Real.exp (t * (k : ℝ))) ν) (n : ℕ) :
     Integrable (fun k : ℕ => (k.descFactorial n : ℝ)) ν := by
-  let _ : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_of_one_le hExp <|
+  let _ : IsFiniteMeasure ν := hExp.isFiniteMeasure_of_one_le_norm <|
     Filter.Eventually.of_forall fun k => by
       rw [Real.norm_eq_abs, Real.abs_exp]
       exact Real.one_le_exp (mul_nonneg ht.le (Nat.cast_nonneg k))

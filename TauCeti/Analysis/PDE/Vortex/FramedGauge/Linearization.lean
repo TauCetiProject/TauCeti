@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
-import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # Gauge covariance of the plane-vortex deformation operators

@@ -12,11 +12,17 @@ import TauCeti.LinearAlgebra.Complex.Module
 # Bounds for real-linear maps out of the complex line
 
 The values on `1` and `I` determine a continuous real-linear map on every complex vector
-(`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`), and control its norm there. This
-estimate turns a Cauchy--Riemann equation into a bound on the full differential: if
-`L I = A (L 1)` with `‖A‖ ≤ M`, then `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`
-(`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`); with `‖L 1‖ ≤ B` this bounds the operator norm
-by `(1 + M) * B` (`ContinuousLinearMap.norm_le_of_apply_I_eq`).
+(`ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I`).
+A real-linear map is the sum of its values at `1` and `I` weighted by the real and imaginary
+parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
+`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
+
+Multiplication by `c : ℂ` is a similarity of ratio `‖c‖`, so precomposing a real-linear map with
+it multiplies the operator norm by `‖c‖`
+(`ContinuousLinearMap.norm_comp_restrictScalars_smulRight_one`).
+
+The norm bounds in terms of the values on `1` and `I` hold over any `RCLike` field and live in
+`TauCeti.Analysis.RCLike.OperatorNorm`.
 -/
 
 public section
@@ -29,48 +35,44 @@ theorem apply_eq_re_smul_one_add_im_smul_I {F : Type*} [TopologicalSpace F] [Add
     [Module ℝ F] (L : ℂ →L[ℝ] F) (z : ℂ) : L z = z.re • L 1 + z.im • L Complex.I :=
   L.toLinearMap.apply_eq_re_smul_one_add_im_smul_I z
 
-/-- Bound a real-linear map on a complex vector by its values on the standard real basis. -/
-theorem norm_apply_le_norm_one_add_norm_I {V : Type*} [SeminormedAddCommGroup V]
-    [NormedSpace ℝ V] (L : ℂ →L[ℝ] V) (z : ℂ) :
-    ‖L z‖ ≤ (‖L 1‖ + ‖L Complex.I‖) * ‖z‖ := by
-  have hz : z = z.re • (1 : ℂ) + z.im • Complex.I := by
-    simp [Complex.real_smul]
-  calc
-    ‖L z‖ = ‖z.re • L 1 + z.im • L Complex.I‖ := by
-      conv_lhs => rw [hz, map_add, map_smul, map_smul]
-    _ ≤ ‖z.re‖ * ‖L 1‖ + ‖z.im‖ * ‖L Complex.I‖ := by
-      simpa only [norm_smul] using norm_add_le (z.re • L 1) (z.im • L Complex.I)
-    _ ≤ ‖z‖ * ‖L 1‖ + ‖z‖ * ‖L Complex.I‖ := by
-      gcongr
-      · exact Complex.abs_re_le_norm z
-      · exact Complex.abs_im_le_norm z
-    _ = (‖L 1‖ + ‖L Complex.I‖) * ‖z‖ := by ring
+/-- A real-linear map out of `ℂ` is determined by its values at `1` and `I`:
+`L = re ⬝ L 1 + im ⬝ L I`. -/
+theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (L : ℂ →L[ℝ] V) :
+    L = Complex.reCLM.smulRight (L 1) + Complex.imCLM.smulRight (L Complex.I) := by
+  ext z
+  simp [L.apply_eq_re_smul_one_add_im_smul_I z]
 
-/-- If a real-linear map out of `ℂ` sends `I` to `A (L 1)`, where `‖A‖ ≤ M`, then `L 1` controls
-`L`: `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`. -/
-theorem norm_apply_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-    {L : ℂ →L[ℝ] V} {A : V →L[ℝ] V} {M : ℝ} (hL : L Complex.I = A (L 1)) (hA : ‖A‖ ≤ M)
-    (a : ℂ) : ‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖ := by
-  refine (L.norm_apply_le_norm_one_add_norm_I a).trans
-    (mul_le_mul_of_nonneg_right ?_ (norm_nonneg a))
-  rw [hL]
-  linarith [A.le_of_opNorm_le hA (L 1)]
+/-- A family of real-linear maps out of `ℂ` splits through its values at `1` and `I`, written
+with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/
+theorem fun_eq_smulRightL_reCLM_add_smulRightL_imCLM {X V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (D : X → ℂ →L[ℝ] V) :
+    D = (fun x => smulRightL ℝ ℝ ℝ ℂ V Complex.reCLM (D x 1)) +
+      fun x => smulRightL ℝ ℝ ℝ ℂ V Complex.imCLM (D x Complex.I) := by
+  funext x
+  conv_lhs => rw [(D x).eq_reCLM_smulRight_add_imCLM_smulRight]
+  ext z
+  simp
 
-/-- **Cauchy--Riemann bound.** If a real-linear map `f : ℂ → V` satisfies `f I = L (f 1)` with
-`‖L‖ ≤ M`, and `‖f 1‖ ≤ B`, then `‖f‖ ≤ (1 + M) * B`. -/
-theorem norm_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-    (f : ℂ →L[ℝ] V) {L : V →L[ℝ] V} {M B : ℝ} (hCR : f Complex.I = L (f 1)) (hL : ‖L‖ ≤ M)
-    (hreal : ‖f 1‖ ≤ B) : ‖f‖ ≤ (1 + M) * B := by
-  have hB : 0 ≤ B := (norm_nonneg _).trans hreal
-  have hM : 0 ≤ M := (norm_nonneg _).trans hL
-  have himag : ‖f Complex.I‖ ≤ M * B := by
-    rw [hCR]
-    exact (L.le_opNorm _).trans (by gcongr)
-  refine opNorm_le_bound _ (by positivity) fun w ↦ ?_
-  calc
-    ‖f w‖ ≤ (‖f 1‖ + ‖f Complex.I‖) * ‖w‖ := f.norm_apply_le_norm_one_add_norm_I w
-    _ ≤ (B + M * B) * ‖w‖ := by gcongr
-    _ = (1 + M) * B * ‖w‖ := by ring
+/-- Precomposing a real-linear map out of the complex plane with multiplication by `c`, a
+similarity of ratio `‖c‖`, multiplies its operator norm by `‖c‖`. -/
+theorem norm_comp_restrictScalars_smulRight_one {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (L : ℂ →L[ℝ] V) (c : ℂ) :
+    ‖L.comp ((smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ)‖ = ‖L‖ * ‖c‖ := by
+  have hnorm (a : ℂ) : ‖(smulRight (1 : ℂ →L[ℂ] ℂ) a).restrictScalars ℝ‖ = ‖a‖ := by
+    rw [norm_restrictScalars, norm_smulRight_apply, norm_one, one_mul]
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  refine le_antisymm ((L.opNorm_comp_le _).trans_eq (by rw [hnorm])) ?_
+  -- Multiplying back by `c⁻¹` recovers `L`, which gives the reverse inequality.
+  have hL : L = (L.comp ((smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ)).comp
+      ((smulRight (1 : ℂ →L[ℂ] ℂ) c⁻¹).restrictScalars ℝ) := by
+    ext w
+    simp [hc]
+  rw [← le_div_iff₀ (norm_pos_iff.2 hc), div_eq_mul_inv, ← norm_inv, ← hnorm c⁻¹]
+  calc ‖L‖ = ‖(L.comp ((smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ)).comp
+        ((smulRight (1 : ℂ →L[ℂ] ℂ) c⁻¹).restrictScalars ℝ)‖ := congrArg norm hL
+    _ ≤ _ := opNorm_comp_le _ _
 
 end ContinuousLinearMap
 

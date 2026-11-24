@@ -101,7 +101,6 @@ private theorem exists_contDiff_norm_sub_le_and_norm_fderiv_le_of_dist_lt_one :
     exact closedBall_subset_ball (by norm_num)
   have hψ1 : ContDiff ℝ ∞ (fderiv ℝ ψ) := hψd.fderiv_right le_rfl
   have hψ1c : HasCompactSupport (fderiv ℝ ψ) := hψc.fderiv (𝕜 := ℝ)
-  have hψ2 : ContDiff ℝ ∞ (fderiv ℝ (fderiv ℝ ψ)) := hψ1.fderiv_right le_rfl
   have hψ2c : HasCompactSupport (fderiv ℝ (fderiv ℝ ψ)) := hψ1c.fderiv (𝕜 := ℝ)
   set L₁ := (lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).precompL E
   set L₂ := L₁.precompL E
@@ -161,7 +160,6 @@ theorem exists_contDiff_norm_sub_le_and_norm_fderiv_le :
     fun x y hxy ↦ hw _ _ (by
       rw [dist_smul₀, Real.norm_of_nonneg hε.le]
       nlinarith [dist_nonneg (x := x) (y := y)])
-  have hw0 : 0 ≤ w := by simpa using hw 0 0 (by simpa using hε)
   have hD : fderiv ℝ (fun x ↦ h (ε⁻¹ • x)) = fun x ↦ ε⁻¹ • fderiv ℝ h (ε⁻¹ • x) :=
     funext fun x ↦ fderiv_comp_smul (f := h) ε⁻¹
   -- Rescaling multiplies the second derivative by `ε⁻¹ ^ 2`.

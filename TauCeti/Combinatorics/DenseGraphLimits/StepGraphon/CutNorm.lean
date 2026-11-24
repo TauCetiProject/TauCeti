@@ -51,7 +51,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasu
 
 /-- A block average is a Lipschitz function of the graphon in cut norm, with constant the inverse
 measure of the block.  On a null block both averages are zero and the constant is zero. -/
-theorem abs_blockAverage_sub_blockAverage_le (hP : ∀ p ∈ P.parts, MeasurableSet p)
+theorem abs_blockAverage_sub_blockAverage_le
     (W W' : Graphon Ω μ) (p q : P.parts) :
     |(blockAverage P W p q : ℝ) - blockAverage P W' p q| ≤
       (μ.real (p : Set Ω) * μ.real (q : Set Ω))⁻¹ *
@@ -59,7 +59,7 @@ theorem abs_blockAverage_sub_blockAverage_le (hP : ∀ p ∈ P.parts, Measurable
   rw [coe_blockAverage_eq_inv_mul_rectIntegral, coe_blockAverage_eq_inv_mul_rectIntegral,
     ← mul_sub, ← SymmKernel.rectIntegral_sub, abs_mul, abs_of_nonneg (by positivity)]
   exact mul_le_mul_of_nonneg_left
-    (abs_rectIntegral_le_cutNorm μ _ (hP p p.property) (hP q q.property)) (by positivity)
+    (abs_rectIntegral_le_cutNorm μ _ _ _) (by positivity)
 
 /-- The proportion of the part containing `x` that lies in `S`, as a test function on `Ω`.  It is
 zero on null parts. -/

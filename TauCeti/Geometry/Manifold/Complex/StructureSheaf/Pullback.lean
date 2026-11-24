@@ -55,8 +55,8 @@ theorem toMeromorphicGerms_stalkPrecomp (g : ℂ → ℂ) (hg : ContMDiff 𝓘(�
     toMeromorphicGerms a (stalkPrecomp 𝓘(ℂ) ℂ g hg a s) =
       meromorphicGerms.pullback g (contMDiffAt_iff_contDiffAt.mp hg.contMDiffAt).analyticAt rfl ht
         (toMeromorphicGerms (g a) s) := by
-  obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq (g a) s
-  obtain ⟨k, hk, hkt⟩ := exists_toFilterGerm_eq a (stalkPrecomp 𝓘(ℂ) ℂ g hg a s)
+  obtain ⟨f, _, hfs⟩ := exists_toFilterGerm_eq (g a) s
+  obtain ⟨k, _, hkt⟩ := exists_toFilterGerm_eq a (stalkPrecomp 𝓘(ℂ) ℂ g hg a s)
   have h := toFilterGerm_stalkPrecomp g hg a s
   rw [hkt, hfs, Germ.coe_compTendsto, Germ.coe_eq] at h
   apply Subtype.ext
@@ -81,7 +81,7 @@ theorem meromorphicGermsEquiv_mem_range_iff (e : OpenPartialHomeomorph ℂ ℂ)
   constructor
   · rintro ⟨t, ht⟩
     obtain ⟨s, hs⟩ := exists_toMeromorphicGerms_pullback e.symm he' (e.left_inv ha)
-      (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha)) t
+      (e.tendsto_symm_nhdsNE ha) t
     refine ⟨s, ?_⟩
     rw [hs, ← meromorphicGermsEquiv_symm_apply e ha he he', ht]
     exact (e.meromorphicGermsEquiv ha he he').symm_apply_apply φ

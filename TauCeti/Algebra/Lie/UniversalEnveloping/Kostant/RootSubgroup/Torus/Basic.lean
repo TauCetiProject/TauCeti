@@ -241,7 +241,7 @@ operator. It is the restriction of `ρ(hⱼ)`, which preserves `M` because `hⱼ
 form. -/
 noncomputable def kostantCartanOperator (j : κ) : Module.End ℤ M where
   toFun v := ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) (v : V),
-    hM _ (cartanVector_mem_kostantForm e h j) v v.2⟩
+    hM _ (cartanVector_mem_kostantForm e h j) v v.property⟩
   map_add' v w := Subtype.ext (map_add _ (v : V) (w : V))
   map_smul' z v := Subtype.ext (map_zsmul _ z (v : V))
 
@@ -497,6 +497,17 @@ theorem kostantTorusPoints_injective
           Finsupp.single_eq_of_ne (show y ≠ x from fun hxy => hy (by rw [hxy]))]
         simp [Algebra.smul_def]),
     smul_tmul', smul_eq_mul]
+
+/-- Reindexing a weight basis and its weights together does not change the torus action. -/
+@[simp]
+theorem kostantTorusPoints_reindex {η' : Type*} (f : η ≃ η') :
+    kostantTorusPoints M (b.reindex f) (wt ∘ f.symm) A =
+      kostantTorusPoints M b wt A := by
+  refine MonoidHom.ext fun s => Units.ext <| (b.baseChange A).ext fun x => ?_
+  have hx : b x = b.reindex f (f x) := by simp
+  rw [Module.Basis.baseChange_apply, kostantTorusPoints_tmul_basis M b wt, hx,
+    kostantTorusPoints_tmul_basis]
+  simp
 
 end Pointwise
 

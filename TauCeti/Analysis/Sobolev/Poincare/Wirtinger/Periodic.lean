@@ -71,7 +71,7 @@ private theorem integral_norm_sub_average_sq_le_and_eq_iff
     rw [ht, hm]
   have hp : MemLp u' 2 (volume.restrict (Ioc a b)) := by
     simpa only [restrict_Ioo_eq_restrict_Ioc] using hu'
-  have hder := h.ae_hasDerivAt hint hvc hae hab.le
+  have hder := h.ae_hasDerivAt (hvc.mono Ioo_subset_Icc_self) hae hab.le
   refine ⟨?_, ?_⟩
   · rw [hd]
     exact TauCeti.integral_norm_sub_average_sq_le hab hv hder hvab hp

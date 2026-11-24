@@ -124,7 +124,7 @@ private theorem coordinateRing_baseChangeIso_inv_apply
     (k : Type u) [Field k] (G : FGCommGrpCat.{u})
     (x : AlgebraicClosure k ⊗[k] _root_.MonoidAlgebra k G) :
     (baseChangeCoordinateRingIso k (AlgebraicClosure k) G).symm.inv.hom x =
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) x := by
+      MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) x := by
   simp only [CategoryTheory.Iso.symm_inv, CategoryTheory.ObjectProperty.isoMk_hom,
     CategoryTheory.ObjectProperty.homMk_hom, _root_.CommHopfAlgCat.isoMk_hom,
     _root_.CommHopfAlgCat.hom_ofHom, BialgEquiv.coe_coe]
@@ -136,7 +136,7 @@ theorem geometricCharacterGroupEquiv_apply_eq_iff
     (k : Type u) [Field k] (G : FGCommGrpCat.{u})
     (x : CommHopfAlgCat.geometricCharacterGroup (coordinateRing k G).obj) (g : G) :
     geometricCharacterGroupEquiv k G x = g ↔
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) x.val =
+      MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) x.val =
         _root_.MonoidAlgebra.single g 1 := by
   rw [geometricCharacterGroupEquiv,
     CommHopfAlgCat.geometricCharacterGroupEquivOfIso_apply_eq_iff,
@@ -149,7 +149,7 @@ theorem geometricCharacterGroupEquiv_symm_apply_val
     (k : Type u) [Field k] (G : FGCommGrpCat.{u}) (g : G) :
     ((geometricCharacterGroupEquiv k G).symm g).val =
       1 ⊗ₜ[k] _root_.MonoidAlgebra.single g 1 := by
-  let e := TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) (G := G)
+  let e := MonoidAlgebra.scalarTensorBialgEquiv k (AlgebraicClosure k) (G := G)
   have h := (geometricCharacterGroupEquiv_apply_eq_iff k G
       ((geometricCharacterGroupEquiv k G).symm g) g).mp
     ((geometricCharacterGroupEquiv k G).apply_symm_apply g)
@@ -159,7 +159,7 @@ theorem geometricCharacterGroupEquiv_symm_apply_val
       (e.symm_apply_apply _).symm
     _ = e.symm (_root_.MonoidAlgebra.single g 1) := congrArg e.symm h
     _ = 1 ⊗ₜ[k] _root_.MonoidAlgebra.single g 1 :=
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_symm_single k (AlgebraicClosure k) g 1
+      MonoidAlgebra.scalarTensorBialgEquiv_symm_single k (AlgebraicClosure k) g 1
 
 /-- The absolute Galois action on the geometric character group of a diagonalizable coordinate
 ring is trivial. -/

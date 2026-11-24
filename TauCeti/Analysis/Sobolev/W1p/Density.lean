@@ -33,11 +33,17 @@ mollification is a test function (`TauCeti.W1p.normedBumpL_mem_range_of_ae_eq_ze
 ball of radius `R` and is dominated by a fixed multiple of it, so the truncations converge to `u`
 by dominated convergence.  Closedness of `W^{1,p}_0(ℝⁿ)` then gives the theorem.
 
+As a consequence, a weak equation `∫ ⟪∇u, ∇φ⟫ + ∫ f φ = 0` for `u ∈ W^{1,2}(ℝⁿ)` and `f ∈ L²`,
+tested against smooth compactly supported `φ`, holds against every `v ∈ W^{1,2}(ℝⁿ)`
+(`TauCeti.W1p.inner_gradient_add_integral_mul_value_eq_zero`).
+
 ## Main declarations
 
 * `TauCeti.W1p.mem_w1p0Submodule_top`: every `u ∈ W^{1,p}(ℝⁿ)` lies in `W^{1,p}_0(ℝⁿ)`.
 * `TauCeti.w1p0Submodule_top_eq_top`: `W^{1,p}_0(ℝⁿ) = W^{1,p}(ℝⁿ)` for `p < ∞`.
 * `TauCeti.W1p.denseRange_ofTestFunctionₗ_top`: test functions are dense in `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.inner_gradient_add_integral_mul_value_eq_zero`: weak equations with an `L²` source
+  extend from test functions to `W^{1,2}(ℝⁿ)`.
 
 ## References
 
@@ -54,29 +60,23 @@ open scoped ENNReal Gradient Topology
 
 namespace TauCeti
 
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {p : ENNReal} [Fact (1 ≤ p)]
-
-/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
-local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-  infer_instance
-
 /-! ### Truncation -/
+
+section Cutoff
+
+variable {E : Type*} [NormedAddCommGroup E]
 
 /-- The smooth bump equal to one on the unit ball and supported in the ball of radius two. -/
 private def unitBump : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
 
-omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
 private theorem unitBump_rIn : (unitBump (E := E)).rIn = 1 :=
   rfl
 
-omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
 private theorem unitBump_rOut : (unitBump (E := E)).rOut = 2 :=
   rfl
 
-omit [MeasurableSpace E] [BorelSpace E] in
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
 private theorem exists_norm_fderiv_unitBump_le :
     ∃ C, 0 ≤ C ∧ ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C := by
   obtain ⟨C, hC⟩ := (((unitBump (E := E)).contDiff (n := 1)).continuous_fderiv
@@ -88,24 +88,20 @@ private theorem exists_norm_fderiv_unitBump_le :
 private def truncCutoff (n : ℕ) : E → ℝ :=
   fun x => unitBump (E := E) (((n : ℝ) + 1)⁻¹ • x)
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem contDiff_truncCutoff (n : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (truncCutoff (E := E) n) :=
   (unitBump (E := E)).contDiff.comp (contDiff_const_smul _)
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem truncCutoff_nonneg (n : ℕ) (x : E) : 0 ≤ truncCutoff n x :=
   (unitBump (E := E)).nonneg
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem truncCutoff_le_one (n : ℕ) (x : E) : truncCutoff n x ≤ 1 :=
   (unitBump (E := E)).le_one
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem norm_gradient_truncCutoff_le {C : ℝ}
     (hbound : ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C) (n : ℕ) (x : E) :
     ‖∇ (truncCutoff n) x‖ ≤ C := by
   have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
-  rw [gradient, LinearIsometryEquiv.norm_map]
+  rw [norm_gradient_eq_norm_fderiv]
   unfold truncCutoff
   rw [fderiv_comp_smul, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
   calc ((n : ℝ) + 1)⁻¹ * ‖fderiv ℝ (unitBump (E := E)) (((n : ℝ) + 1)⁻¹ • x)‖
@@ -113,7 +109,6 @@ private theorem norm_gradient_truncCutoff_le {C : ℝ}
         (norm_nonneg _) zero_le_one
     _ = C := one_mul C
 
-omit [MeasurableSpace E] [BorelSpace E] in
 /-- Near a point of norm less than `n + 1`, the cutoff is identically one. -/
 private theorem truncCutoff_eventuallyEq_one {n : ℕ} {x : E} (hx : ‖x‖ < (n : ℝ) + 1) :
     truncCutoff n =ᶠ[𝓝 x] fun _ => 1 := by
@@ -124,7 +119,6 @@ private theorem truncCutoff_eventuallyEq_one {n : ℕ} {x : E} (hx : ‖x‖ < (
     unitBump_rIn, inv_mul_le_iff₀ hn, mul_one]
   exact (mem_ball_zero_iff.1 hy).le
 
-omit [MeasurableSpace E] [BorelSpace E] in
 /-- Near a point of norm greater than `2 (n + 1)`, the cutoff is identically zero. -/
 private theorem truncCutoff_eventuallyEq_zero {n : ℕ} {x : E}
     (hx : 2 * ((n : ℝ) + 1) < ‖x‖) :
@@ -135,6 +129,17 @@ private theorem truncCutoff_eventuallyEq_zero {n : ℕ} {x : E}
   rw [dist_zero_right, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn), unitBump_rOut,
     le_inv_mul_iff₀ hn]
   linarith
+
+end Cutoff
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
+local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+  rw [Opens.coe_top, Measure.restrict_univ]
+  infer_instance
 
 /-- The truncation `ψ(x / (n + 1)) u` of a Sobolev function, with `C` bounding the gradients of
 all the cutoffs. -/
@@ -303,5 +308,41 @@ theorem W1p.denseRange_ofTestFunctionₗ_top (hp : p ≠ ∞) :
     DenseRange (W1p.ofTestFunctionₗ mu ⊤ p) := fun u => by
   rw [← coe_w1p0Submodule]
   exact W1p.mem_w1p0Submodule_top hp u
+
+open scoped ContDiff RealInnerProductSpace in
+/-- **Weak equations extend from test functions to `W^{1,2}(ℝⁿ)`.** Let `u ∈ W^{1,2}(E)` and
+`f ∈ L²(E)` satisfy `∫ ⟪∇u, ∇φ⟫ + ∫ f φ = 0` for every smooth compactly supported `φ`, that is,
+`-Δu + f = 0` weakly. Then `⟪∇u, ∇v⟫ + ∫ f v = 0` for every `v ∈ W^{1,2}(E)`, since both sides are
+continuous in `v` and test functions are dense. -/
+theorem W1p.inner_gradient_add_integral_mul_value_eq_zero {u : W1p mu ⊤ 2} {f : E → ℝ}
+    (hf : MemLp f 2 mu)
+    (hweak : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      (∫ z, ⟪W1p.gradient u z, ∇ φ z⟫ ∂mu) + ∫ z, f z * φ z ∂mu = 0)
+    (v : W1p mu ⊤ 2) :
+    ⟪W1p.gradient u, W1p.gradient v⟫ + ∫ z, f z * W1p.value v z ∂mu = 0 := by
+  have hf' : MemLp f 2 (mu.restrict ((⊤ : Opens E) : Set E)) := hf.restrict _
+  have hval (w : W1p mu ⊤ 2) : ⟪hf'.toLp f, W1p.value w⟫ = ∫ z, f z * W1p.value w z ∂mu := by
+    have hfa := hf'.coeFn_toLp
+    rw [L2.inner_def]
+    simp only [Opens.coe_top, Measure.restrict_univ] at hfa ⊢
+    refine integral_congr_ae (hfa.mono fun z hz ↦ ?_)
+    dsimp only
+    rw [hz, RCLike.inner_apply, conj_trivial, mul_comm]
+  let T : W1p mu ⊤ 2 →L[ℝ] ℝ :=
+    (innerSL ℝ (W1p.gradient u)).comp W1p.gradientL + (innerSL ℝ (hf'.toLp f)).comp W1p.valueL
+  have hT (w : W1p mu ⊤ 2) :
+      T w = ⟪W1p.gradient u, W1p.gradient w⟫ + ∫ z, f z * W1p.value w z ∂mu := by
+    simp only [T, FunLike.coe_add, Pi.add_apply, ContinuousLinearMap.comp_apply,
+      innerSL_apply_apply, W1p.gradientL_apply, W1p.valueL_apply, hval]
+  rw [← hT]
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := mu) (p := 2) (by norm_num)).induction_on
+    v (isClosed_eq T.continuous continuous_const) fun φ ↦ ?_
+  rw [hT, ← hweak φ φ.contDiff φ.hasCompactSupport, L2.inner_def]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  congr 1
+  · exact integral_congr_ae ((W1p.gradient_ofTestFunctionₗ_top_ae (mu := mu) (p := 2) φ).mono
+      fun z hz ↦ by simp only [hz])
+  · exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_top_ae (mu := mu) (p := 2) φ).mono
+      fun z hz ↦ by simp only [hz])
 
 end TauCeti

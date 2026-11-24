@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
 /-!
 # Central splittings of Cartan realizations
 
-Every finite-dimensional realization contains a minimal sub-realization, with a complementary
+Every realization contains a minimal sub-realization, with a complementary
 subspace annihilated by all simple roots. Thus an arbitrary realization differs from a minimal
 one only by central directions. We compute the dimension of these extra central directions.
 
@@ -28,11 +28,32 @@ open Module
 
 namespace TauCeti.CartanRealization
 
+section Complement
+
+variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
+  {A : Matrix I I K} (R : CartanRealization A H) {M Z : Submodule K H}
+
+/-- A subspace with a complement of central vectors spans the space together with the
+center. -/
+theorem sup_cartanCenter_eq_top_of_isCompl (h : IsCompl M Z) (hz : Z ≤ R.cartanCenter) :
+    M ⊔ R.cartanCenter = ⊤ :=
+  top_unique (h.sup_eq_top ▸ sup_le_sup_left hz M)
+
+/-- Projecting along a complement of central vectors does not change the simple roots. -/
+theorem root_projection (h : IsCompl M Z) (hz : Z ≤ R.cartanCenter) (i : I) (x : H) :
+    R.root i (M.projection Z h x) = R.root i x := by
+  have hzero := (R.mem_cartanCenter_iff _).mp (hz (Submodule.projection_apply_mem h.symm x)) i
+  simpa only [map_add, hzero, add_zero] using
+    congrArg (R.root i) (Submodule.projection_add_projection_eq_self h x)
+
+end Complement
+
 variable {I K H : Type*} [Fintype I] [Field K] [AddCommGroup H] [Module K H]
   {A : Matrix I I K} (R : CartanRealization A H)
 
 variable [FiniteDimensional K H]
 
+omit [FiniteDimensional K H] in
 /-- A sub-realization is minimal exactly when its central vectors already lie in the
 original coroot span. -/
 theorem isMinimal_restrict_iff (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -43,7 +64,8 @@ theorem isMinimal_restrict_iff (M : Submodule K H) (hc : R.corootSpan ≤ M)
     corootSpan_restrict_map_subtype, cartanCenter_restrict, Submodule.map_comap_eq,
     Submodule.range_subtype, inf_comm]
 
-/-- Every finite-dimensional realization is a minimal sub-realization plus a central
+omit [FiniteDimensional K H] in
+/-- Every realization is a minimal sub-realization plus a central
 summand. The roots of the sub-realization are restrictions, and its coroots are the original
 coroots, rather than merely abstractly isomorphic families. -/
 theorem exists_isMinimal_restrict_isCompl :
@@ -60,8 +82,7 @@ theorem exists_isMinimal_restrict_isCompl :
         rw [inf_comm R.cartanCenter, inf_assoc, inf_eq_right.mpr hz]
       _ = ⊥ := hd
   obtain ⟨M, hc, hM⟩ := hd'.exists_isCompl
-  have hs : M ⊔ R.cartanCenter = ⊤ :=
-    top_unique (hM.sup_eq_top ▸ sup_le_sup_left hz M)
+  have hs := R.sup_cartanCenter_eq_top_of_isCompl hM hz
   refine ⟨M, Z, hc, hs, (R.isMinimal_restrict_iff M hc hs).mpr ?_, hM, hz⟩
   rw [← hZ, sup_inf_assoc_of_le _ (inf_le_right.trans hc), hM.symm.inf_eq_bot,
     sup_bot_eq]

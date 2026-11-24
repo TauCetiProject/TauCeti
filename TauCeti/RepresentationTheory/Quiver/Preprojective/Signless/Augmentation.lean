@@ -54,10 +54,14 @@ noncomputable local instance fintypeHomOfFiniteStar {R : Type u} [Quiver.{v} R]
 section VertexAugmentation
 
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R]
-  [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
+  [∀ x : R, Fintype (Quiver.Star x)]
 
 local notation "Π" => signlessPreprojectiveAlgebra k R
 local notation "π" => signlessPreprojectiveMk k R
+
+section Finite
+
+variable [Finite R]
 
 /-- The signless relation ideal lies in the square of the arrow ideal, since each relator
 is a sum of length-two backtracks. In particular the vertex coefficients survive the quotient. -/
@@ -152,6 +156,8 @@ theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x :
       (signlessPreprojectiveIdeal_le_arrowIdeal k) v
       (by simpa only [signlessPreprojectiveMk_apply] using hx)
 
+end Finite
+
 /-- Exactness at the augmentation endpoint of the signless vertex Koszul complex:
 `x ∈ e_v Π` has vertex coefficient zero exactly when `x = ∑ b z_b` with `z_b ∈ e_i Π`.
 This holds without a non-backtracking choice or a bipartiteness hypothesis. -/
@@ -167,6 +173,7 @@ theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
       (signlessPreprojectiveIdeal_le_arrowIdeal k) v
       (by simpa only [signlessPreprojectiveMk_apply] using hx)
 
+variable [Finite R] in
 /-- Every scalar is the vertex coefficient of an element of the right vertex projective. -/
 theorem exists_signlessPreprojectiveAugmentation_apply_eq (v : R) (c : k) :
     ∃ x : Π, π (vertexIdempotent k v) * x = x ∧

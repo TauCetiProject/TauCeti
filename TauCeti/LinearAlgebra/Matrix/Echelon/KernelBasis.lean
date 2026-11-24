@@ -56,13 +56,6 @@ mathematical object; they are kept apart because a `Module.Basis` is not computa
 `repr` field being built from the axiom of choice. Each statement about the list has a counterpart
 about the family indexed by the free columns, which is the indexing the proofs are done in, and
 `TauCeti.range_kernelVector_freeColumn_eq_kernelBasis` is the passage between the two.
-
-## References
-
-Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-asks, as its computable finite-field linear algebra, for a `kernelBasis` produced by verified
-Gaussian elimination; `TauCeti.rowReduce` is that elimination and this file reads the basis off it.
 -/
 
 public section
@@ -248,16 +241,16 @@ theorem mulVec_kernelVector (j : Fin n) : A *ᵥ kernelVector (List.ofFn A) j = 
 columns they are the standard basis. -/
 theorem linearIndependent_kernelVector :
     LinearIndependent F fun j : {j : Fin n // IsFreeColumn (List.ofFn A) j} =>
-      kernelVector (List.ofFn A) j.1 := by
+      kernelVector (List.ofFn A) j.val := by
   refine LinearIndependent.of_comp
     (LinearMap.funLeft F F (Subtype.val : {j : Fin n // IsFreeColumn (List.ofFn A) j} → Fin n)) ?_
   have hcomp : (LinearMap.funLeft F F
       (Subtype.val : {j : Fin n // IsFreeColumn (List.ofFn A) j} → Fin n)) ∘
-      (fun j : {j : Fin n // IsFreeColumn (List.ofFn A) j} => kernelVector (List.ofFn A) j.1) =
+      (fun j : {j : Fin n // IsFreeColumn (List.ofFn A) j} => kernelVector (List.ofFn A) j.val) =
       fun j => Pi.single j (1 : F) := by
     funext j c
     simp only [Function.comp_apply, LinearMap.funLeft_apply,
-      kernelVector_apply_of_isFreeColumn c.2, Pi.single_apply, Subtype.ext_iff]
+      kernelVector_apply_of_isFreeColumn c.property, Pi.single_apply, Subtype.ext_iff]
   rw [hcomp]
   refine linearIndependent_iff'.mpr fun s g hg j hj => ?_
   simpa only [Finset.sum_apply, Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one,
@@ -267,7 +260,7 @@ theorem linearIndependent_kernelVector :
 own values in the free columns as coefficients. -/
 theorem eq_sum_smul_kernelVector_of_mulVec_eq_zero {v : Fin n → F} (hv : A *ᵥ v = 0) :
     v = ∑ j : {j : Fin n // IsFreeColumn (List.ofFn A) j},
-      v j.1 • kernelVector (List.ofFn A) j.1 := by
+      v j.val • kernelVector (List.ofFn A) j.val := by
   set L := List.ofFn A
   have hrow : ∀ i, rowReduceMatrix L i ⬝ᵥ v = 0 := (mulVec_eq_zero_iff_rowReduceMatrix A v).mp hv
   funext c
@@ -281,7 +274,7 @@ theorem eq_sum_smul_kernelVector_of_mulVec_eq_zero {v : Fin n → F} (hv : A *�
     rw [Pi.smul_apply, kernelVector_apply_of_isFreeColumn hc, ite_eq_left rfl, smul_eq_mul, mul_one]
   obtain ⟨i, rfl⟩ := (not_isFreeColumn_iff L).mp hc
   have hfree : ∑ c ∈ Finset.univ.filter (IsFreeColumn L), rowReduceMatrix L i c * v c =
-      ∑ j : {j : Fin n // IsFreeColumn L j}, rowReduceMatrix L i j.1 * v j.1 :=
+      ∑ j : {j : Fin n // IsFreeColumn L j}, rowReduceMatrix L i j.val * v j.val :=
     Finset.sum_subtype _ (fun x => by simp) _
   have himg : Finset.univ.filter (fun c => ¬IsFreeColumn L c) =
       Finset.image (pivotColumn L) Finset.univ := by
@@ -291,16 +284,16 @@ theorem eq_sum_smul_kernelVector_of_mulVec_eq_zero {v : Fin n → F} (hv : A *�
       rowReduceMatrix L i c * v c = v (pivotColumn L i) := by
     rw [himg, Finset.sum_image fun x _ y _ h => pivotColumn_injective L h]
     simp
-  have hzero : ∑ j : {j : Fin n // IsFreeColumn L j}, rowReduceMatrix L i j.1 * v j.1 +
+  have hzero : ∑ j : {j : Fin n // IsFreeColumn L j}, rowReduceMatrix L i j.val * v j.val +
       v (pivotColumn L i) = 0 := by
     rw [← hfree, ← hpivot, Finset.sum_filter_add_sum_filter_not]
     simpa only [dotProduct] using hrow i
   have hrhs : ∑ j : {j : Fin n // IsFreeColumn L j},
-      (v j.1 • kernelVector L j.1) (pivotColumn L i) =
-      -∑ j : {j : Fin n // IsFreeColumn L j}, rowReduceMatrix L i j.1 * v j.1 := by
+      (v j.val • kernelVector L j.val) (pivotColumn L i) =
+      -∑ j : {j : Fin n // IsFreeColumn L j}, rowReduceMatrix L i j.val * v j.val := by
     rw [← Finset.sum_neg_distrib]
     exact Finset.sum_congr rfl fun j _ => by
-      rw [Pi.smul_apply, kernelVector_pivotColumn j.2 i, smul_eq_mul, mul_neg, mul_comm]
+      rw [Pi.smul_apply, kernelVector_pivotColumn j.property i, smul_eq_mul, mul_neg, mul_comm]
   rw [hrhs, eq_neg_iff_add_eq_zero, add_comm]
   exact hzero
 
@@ -308,10 +301,10 @@ theorem eq_sum_smul_kernelVector_of_mulVec_eq_zero {v : Fin n → F} (hv : A *�
 combination of them with its own values in the free columns as coefficients. -/
 theorem span_kernelVector :
     Submodule.span F (Set.range fun j : {j : Fin n // IsFreeColumn (List.ofFn A) j} =>
-      kernelVector (List.ofFn A) j.1) = LinearMap.ker A.mulVecLin := by
+      kernelVector (List.ofFn A) j.val) = LinearMap.ker A.mulVecLin := by
   refine le_antisymm (Submodule.span_le.mpr ?_) fun v hv => ?_
   · rintro _ ⟨j, rfl⟩
-    exact LinearMap.mem_ker.mpr (mulVec_kernelVector A j.1)
+    exact LinearMap.mem_ker.mpr (mulVec_kernelVector A j.val)
   rw [LinearMap.mem_ker, Matrix.mulVecLin_apply] at hv
   rw [eq_sum_smul_kernelVector_of_mulVec_eq_zero A hv]
   exact Submodule.sum_mem _ fun j _ =>
@@ -326,7 +319,7 @@ noncomputable def freeColumnBasis :
 
 @[simp]
 theorem coe_freeColumnBasis_apply (j : {j : Fin n // IsFreeColumn (List.ofFn A) j}) :
-    (freeColumnBasis A j : Fin n → F) = kernelVector (List.ofFn A) j.1 := by
+    (freeColumnBasis A j : Fin n → F) = kernelVector (List.ofFn A) j.val := by
   simp [freeColumnBasis]
 
 /-- The number of free columns of a matrix: its number of columns less its rank. -/
@@ -370,7 +363,7 @@ theorem mem_kernelBasis {v : Fin n → F} :
 /-- `TauCeti.kernelBasis` lists exactly the kernel vectors of the free columns. -/
 theorem range_kernelVector_freeColumn_eq_kernelBasis :
     (Set.range fun j : {j : Fin n // IsFreeColumn (List.ofFn A) j} =>
-      kernelVector (List.ofFn A) j.1) = {v : Fin n → F | v ∈ kernelBasis A} := by
+      kernelVector (List.ofFn A) j.val) = {v : Fin n → F | v ∈ kernelBasis A} := by
   ext v
   rw [Set.mem_range, Set.mem_ofPred_eq, mem_kernelBasis]
   constructor

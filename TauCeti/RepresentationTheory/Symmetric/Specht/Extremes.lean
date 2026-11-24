@@ -73,8 +73,6 @@ either; it is not a line and needs the tabloid combinatorics of the two-row shap
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles", and Layer 6, the special values of the Specht character.
 -/
 
 public section
@@ -158,7 +156,7 @@ private theorem spechtSubrepresentation_toRepresentation_apply (t : YoungTableau
   have hx : (x : (permutationModule (R := ℚ) (shapePartition μ)).V) ∈ ℚ ∙ polytabloid (R := ℚ) t
     := by
     rw [← spechtSubrepresentation_toSubmodule_eq_span t h]
-    exact x.2
+    exact x.property
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hx
   refine Subtype.ext ?_
   rw [Subrepresentation.toRepresentation_apply, LinearMap.coe_restrict_apply, Submodule.coe_smul,

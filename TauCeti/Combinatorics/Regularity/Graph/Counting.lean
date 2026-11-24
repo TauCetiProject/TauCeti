@@ -112,10 +112,8 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   have hq₁ : q ≤ 1 := G.patternDensity_le_one _ _ _
   have hpq₀ : 0 ≤ p * q := mul_nonneg hp₀ hq₀
   have hpq₁ : p * q ≤ 1 := (mul_le_of_le_one_left hq₀ hp₁).trans hq₁
-  have ha₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₁
   have hb₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₂
   have hc₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₁₂
-  have ha₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₁
   have hb₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₂
   have hc₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₁₂
   -- Replace the three indicators by their densities one at a time: each difference is a test of
@@ -160,7 +158,7 @@ theorem abs_card_induced_fin_three_sub_le (J : SimpleGraph (Fin 3)) [DecidableRe
     {A : Fin 3 → Finset α} (hA : ∀ i j, i < j → G.IsUniform ε (A i) (A j)) :
     |(#{g ∈ Fintype.piFinset A | ∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)} : 𝕜) -
         (∏ i, (#(A i) : 𝕜)) * ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-          G.patternDensity (J.Adj p.1.1 p.1.2) (A p.1.1) (A p.1.2)| ≤
+          G.patternDensity (J.Adj p.val.1 p.val.2) (A p.val.1) (A p.val.2)| ≤
       3 * ε * ∏ i, (#(A i) : 𝕜) := by
   have hiff (g : Fin 3 → α) : (∀ i j, J.Adj i j ↔ G.Adj (g i) (g j)) ↔
       (J.Adj 0 1 ↔ G.Adj (g 0) (g 1)) ∧ (J.Adj 0 2 ↔ G.Adj (g 0) (g 2)) ∧
@@ -186,7 +184,7 @@ theorem abs_card_induced_fin_three_sub_le (J : SimpleGraph (Fin 3)) [DecidableRe
     · intro q _
       rfl
   have hprod : (∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
-      (G.patternDensity (J.Adj p.1.1 p.1.2) (A p.1.1) (A p.1.2) : 𝕜)) =
+      (G.patternDensity (J.Adj p.val.1 p.val.2) (A p.val.1) (A p.val.2) : 𝕜)) =
       patternDensity G (J.Adj 0 1) (A 0) (A 1) * patternDensity G (J.Adj 0 2) (A 0) (A 2) *
         patternDensity G (J.Adj 1 2) (A 1) (A 2) := by
     rw [← prod_subtype ({(0, 1), (0, 2), (1, 2)} : Finset (Fin 3 × Fin 3)) (by decide)

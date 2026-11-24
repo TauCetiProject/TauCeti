@@ -172,29 +172,35 @@ theorem isBounded_range_bochnerMeasure_timeSlice_real (hFpd : IsSemigroupGroupPD
   (Metric.isBounded_Icc 0 (F (0, 0)).re).subset <| range_subset_iff.2 fun t =>
     ⟨measureReal_nonneg, bochnerMeasure_timeSlice_real_le hFpd hFcont hFbdd B t⟩
 
-/-- **The slab masses lose no more than the total mass.** Between two times the mass of a
-measurable set `B` drops by at most the drop of the total mass, because the mass of `Bᶜ` also
-drops. -/
+/-- **The slab masses lose no more than the total mass.** Between two times the mass of a set `B`
+drops by at most the drop of the total mass: the difference of the two Bochner measures is the
+Bochner measure of a time difference, a measure, so its mass on `B` is at most its total mass. -/
 theorem sub_bochnerMeasure_timeSlice_real_le_sub_timeAxis_re
     (hFpd : IsSemigroupGroupPD F) (hFcont : Continuous F)
-    (hFbdd : Bornology.IsBounded (range F)) {B : Set V}
-    (hB : MeasurableSet B) {t s : ℝ≥0} (hts : t ≤ s) :
+    (hFbdd : Bornology.IsBounded (range F)) {B : Set V} {t s : ℝ≥0} (hts : t ≤ s) :
     (bochnerMeasure fun a => F (t, a)).real B - (bochnerMeasure fun a => F (s, a)).real B
       ≤ (F (t, 0)).re - (F (s, 0)).re := by
-  have ht := measureReal_add_measureReal_compl (μ := bochnerMeasure fun a => F (t, a)) hB
-  have hs := measureReal_add_measureReal_compl (μ := bochnerMeasure fun a => F (s, a)) hB
-  rw [bochnerMeasure_timeSlice_real_univ hFpd hFcont t] at ht
-  rw [bochnerMeasure_timeSlice_real_univ hFpd hFcont s] at hs
-  have hc : (bochnerMeasure fun a => F (s, a)).real Bᶜ
-      ≤ (bochnerMeasure fun a => F (t, a)).real Bᶜ :=
-    bochnerMeasure_timeSlice_real_antitone hFpd hFcont hFbdd Bᶜ hts
+  have hsplit := bochnerMeasure_timeSlice_eq_add hFpd hFcont hFbdd t (s - t)
+  rw [add_tsub_cancel_of_le hts] at hsplit
+  have hB : (bochnerMeasure fun a => F (t, a)).real B =
+      (bochnerMeasure fun a => timeDifference (s - t) F (t, a)).real B +
+        (bochnerMeasure fun a => F (s, a)).real B := by
+    rw [hsplit, measureReal_add_apply]
+  have hU : (bochnerMeasure fun a => F (t, a)).real univ =
+      (bochnerMeasure fun a => timeDifference (s - t) F (t, a)).real univ +
+        (bochnerMeasure fun a => F (s, a)).real univ := by
+    rw [hsplit, measureReal_add_apply]
+  rw [bochnerMeasure_timeSlice_real_univ hFpd hFcont t,
+    bochnerMeasure_timeSlice_real_univ hFpd hFcont s] at hU
+  have hle := measureReal_mono (μ := bochnerMeasure fun a => timeDifference (s - t) F (t, a))
+    (subset_univ B)
   linarith
 
-/-- **The slab masses are continuous in time.** The variation of the mass of `B` is dominated by
-the variation of the total mass `t ↦ (F (t, 0)).re`, which is continuous because `F` is. -/
+/-- **The slab masses are continuous in time.** The variation of the mass of any set `B` is
+dominated by the variation of the total mass `t ↦ (F (t, 0)).re`, which is continuous because `F`
+is. -/
 theorem continuous_bochnerMeasure_timeSlice_real (hFpd : IsSemigroupGroupPD F)
-    (hFcont : Continuous F) (hFbdd : Bornology.IsBounded (range F)) {B : Set V}
-    (hB : MeasurableSet B) :
+    (hFcont : Continuous F) (hFbdd : Bornology.IsBounded (range F)) {B : Set V} :
     Continuous fun t : ℝ≥0 => (bochnerMeasure fun a => F (t, a)).real B := by
   have hmass : Continuous fun t : ℝ≥0 => (F (t, 0)).re :=
     Complex.continuous_re.comp (hFcont.comp (continuous_id.prodMk continuous_const))
@@ -207,7 +213,7 @@ theorem continuous_bochnerMeasure_timeSlice_real (hFpd : IsSemigroupGroupPD F)
       bochnerMeasure_timeSlice_real_antitone hFpd hFcont hFbdd B hts
     have h1 : 0 ≤ (bochnerMeasure fun a => F (t, a)).real B
         - (bochnerMeasure fun a => F (s, a)).real B := sub_nonneg.2 hmono
-    have h2 := sub_bochnerMeasure_timeSlice_real_le_sub_timeAxis_re hFpd hFcont hFbdd hB hts
+    have h2 := sub_bochnerMeasure_timeSlice_real_le_sub_timeAxis_re (B := B) hFpd hFcont hFbdd hts
     rw [abs_of_nonneg h1, abs_of_nonneg (h1.trans h2)]
     exact h2
   have hdist : ∀ t s : ℝ≥0,

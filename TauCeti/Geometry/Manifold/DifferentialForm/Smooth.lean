@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Topology.FiberBundle.Separation
 
@@ -148,7 +149,7 @@ variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 -- The proof uses Mathlib's `ContinuousAlternatingMap.ext` for the underlying alternating maps.
 @[ext]
 theorem ext {φ ψ : SmoothBundleForm I F V k}
-    (h : ∀ x v, φ.1 x v = ψ.1 x v) : φ = ψ := by
+    (h : ∀ x v, φ.val x v = ψ.val x v) : φ = ψ := by
   apply Subtype.ext
   funext x
   apply ContinuousAlternatingMap.ext
@@ -159,10 +160,10 @@ theorem ext {φ ψ : SmoothBundleForm I F V k}
 their sections are continuous maps into the total space of the alternating bundle, which is
 Hausdorff. -/
 theorem eq_of_forall_mem_dense [T2Space M] {s : Set M} (hs : Dense s)
-    {φ ψ : SmoothBundleForm I F V k} (h : ∀ x ∈ s, φ.1 x = ψ.1 x) : φ = ψ := by
+    {φ ψ : SmoothBundleForm I F V k} (h : ∀ x ∈ s, φ.val x = ψ.val x) : φ = ψ := by
   have hcont (φ : SmoothBundleForm I F V k) :
-      Continuous fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :=
-    ((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothBundleForms.mp φ.2)).continuous
+      Continuous fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.val x) :=
+    ((isSmoothBundleForm_def ∞ φ.val).mp (mem_smoothBundleForms.mp φ.property)).continuous
   have heq := (hcont φ).ext_on hs (hcont ψ) fun x hx ↦ by simp only [h x hx]
   exact Subtype.ext (funext fun x ↦ by simpa using congrFun heq x)
 
@@ -170,7 +171,7 @@ theorem eq_of_forall_mem_dense [T2Space M] {s : Set M} (hs : Dense s)
 def toContMDiffSection (φ : SmoothBundleForm I F V k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
       (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) :=
-  ⟨φ.1, φ.2⟩
+  ⟨φ.val, φ.property⟩
 
 /-- Reconstruct a smooth bundle-valued form from its smooth section. -/
 def ofContMDiffSection
@@ -181,7 +182,7 @@ def ofContMDiffSection
 
 @[simp]
 theorem toContMDiffSection_apply (φ : SmoothBundleForm I F V k) (x : M) :
-    φ.toContMDiffSection x = φ.1 x :=
+    φ.toContMDiffSection x = φ.val x :=
   by
     simp only [toContMDiffSection]
     rfl
@@ -263,24 +264,24 @@ algebraic laws use `Mathlib.LinearAlgebra.Alternating.Basic`. -/
 /-- Evaluation of a smooth bundle-valued two-form on an ordered pair of tangent vectors returns
 the value in the fibre over the base point. -/
 def eval₂ (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) : V x :=
-  φ.1 x ![v, w]
+  φ.val x ![v, w]
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 @[simp]
 theorem eval₂_self (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
-  simpa [eval₂] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
+  simpa [eval₂] using (φ.val x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
 
 /-- Swapping the inputs of a bundle-valued two-form negates its value. -/
 theorem eval₂_swap (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
     φ.eval₂ x v w = -φ.eval₂ x w v := by
-  simpa [eval₂] using (φ.1 x).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one
+  simpa [eval₂] using (φ.val x).apply_vecCons_swap w v
 
 @[simp]
 theorem eval₂_apply (φ : SmoothBundleForm I F V 2) (x : M)
     (v w : TangentSpace I x) :
-    φ.eval₂ x v w = φ.1 x ![v, w] :=
+    φ.eval₂ x v w = φ.val x ![v, w] :=
   by simp [eval₂]
 
 /-- Evaluation of a sum of degree-two forms is the sum of the evaluations. -/
@@ -299,47 +300,67 @@ theorem eval₂_add_left (φ : SmoothBundleForm I F V 2) (x : M)
     (v v' w : TangentSpace I x) :
     φ.eval₂ x (v + v') w = φ.eval₂ x v w + φ.eval₂ x v' w := by
   simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero] using
-    (φ.1 x).map_update_add ![v, w] 0 v v'
+    (φ.val x).map_update_add ![v, w] 0 v v'
 
 /-- Ordered-pair evaluation is additive in its second tangent argument. -/
 theorem eval₂_add_right (φ : SmoothBundleForm I F V 2) (x : M)
     (v w w' : TangentSpace I x) :
     φ.eval₂ x v (w + w') = φ.eval₂ x v w + φ.eval₂ x v w' := by
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
-    (φ.1 x).map_update_add ![v, w] (0 : Fin 1).succ w w'
+    (φ.val x).map_update_add ![v, w] (0 : Fin 1).succ w w'
+
+/-- Ordered-pair evaluation vanishes when its first tangent argument is zero. -/
+theorem eval₂_zero_left (φ : SmoothBundleForm I F V 2) (x : M) (w : TangentSpace I x) :
+    φ.eval₂ x 0 w = 0 := by
+  simpa using eval₂_add_left φ x 0 0 w
+
+/-- Ordered-pair evaluation vanishes when its second tangent argument is zero. -/
+theorem eval₂_zero_right (φ : SmoothBundleForm I F V 2) (x : M) (v : TangentSpace I x) :
+    φ.eval₂ x v 0 = 0 := by
+  simpa using eval₂_add_right φ x v 0 0
 
 /-- Real scalar multiplication in the first tangent argument scales the fibre value. -/
 theorem eval₂_smul_left (φ : SmoothBundleForm I F V 2) (x : M)
     (c : ℝ) (v w : TangentSpace I x) :
     φ.eval₂ x (c • v) w = c • φ.eval₂ x v w := by
   simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero] using
-    (φ.1 x).map_update_smul ![v, w] 0 c v
+    (φ.val x).map_update_smul ![v, w] 0 c v
 
 /-- Real scalar multiplication in the second tangent argument scales the fibre value. -/
 theorem eval₂_smul_right (φ : SmoothBundleForm I F V 2) (x : M)
     (c : ℝ) (v w : TangentSpace I x) :
     φ.eval₂ x v (c • w) = c • φ.eval₂ x v w := by
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero] using
-    (φ.1 x).map_update_smul ![v, w] (0 : Fin 1).succ c w
+    (φ.val x).map_update_smul ![v, w] (0 : Fin 1).succ c w
 
 /-- Negating the first tangent vector negates the evaluation of a degree-two form. -/
 theorem eval₂_neg_left (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) :
     φ.eval₂ x (-v) w = -φ.eval₂ x v w := by
   simpa only [eval₂, Matrix.vecCons, Fin.update_cons_zero,
     ContinuousAlternatingMap.coe_toAlternatingMap] using
-    (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 2) v
+    (φ.val x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 2) v
 
 /-- Negating the second tangent vector negates the evaluation of a degree-two form. -/
 theorem eval₂_neg_right (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) :
     φ.eval₂ x v (-w) = -φ.eval₂ x v w := by
   simpa only [eval₂, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero,
     ContinuousAlternatingMap.coe_toAlternatingMap] using
-    (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
+    (φ.val x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
+
+/-- Ordered-pair evaluation is subtractive in its first tangent argument. -/
+theorem eval₂_sub_left (φ : SmoothBundleForm I F V 2) (x : M) (v v' w : TangentSpace I x) :
+    φ.eval₂ x (v - v') w = φ.eval₂ x v w - φ.eval₂ x v' w := by
+  rw [sub_eq_add_neg, eval₂_add_left, eval₂_neg_left, ← sub_eq_add_neg]
+
+/-- Ordered-pair evaluation is subtractive in its second tangent argument. -/
+theorem eval₂_sub_right (φ : SmoothBundleForm I F V 2) (x : M) (v w w' : TangentSpace I x) :
+    φ.eval₂ x v (w - w') = φ.eval₂ x v w - φ.eval₂ x v w' := by
+  rw [sub_eq_add_neg, eval₂_add_right, eval₂_neg_right, ← sub_eq_add_neg]
 
 /-- Two smooth bundle-valued two-forms have the same value at a point when their ordered-pair
 evaluations there agree. -/
 theorem apply_eq_of_eval₂_eq {φ ψ : SmoothBundleForm I F V 2} {x : M}
-    (h : ∀ v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ.1 x = ψ.1 x := by
+    (h : ∀ v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ.val x = ψ.val x := by
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
@@ -360,30 +381,27 @@ section Evaluation
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- Evaluating a smooth bundle-valued two-form on two `C^n` tangent fields along a `C^n` map is
-`C^n`. -/
-theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
+/-- Evaluating a smooth bundle-valued two-form on two tangent fields along a map, both `C^n` at
+`y₀`, is `C^n` at `y₀`. -/
+theorem contMDiffAt_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
     (φ : SmoothBundleForm I F V 2) {b : N → M}
-    {U W : ∀ y : N, TangentSpace I (b y)}
-    (hU : ContMDiff I' I.tangent n
-      (fun y ↦ TotalSpace.mk' E (b y) (U y)))
-    (hW : ContMDiff I' I.tangent n
-      (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
-    ContMDiff I' (I.prod 𝓘(ℝ, F)) n
-      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) := by
-  have hb : ContMDiff I' I n b := fun y ↦ by
-    have hy := hU y
-    rw [← contMDiffWithinAt_univ] at hy ⊢
-    exact (contMDiffWithinAt_totalSpace.mp hy).1
-  have hφ := (φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
-  have hφ' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
+    {U W : ∀ y : N, TangentSpace I (b y)} {y₀ : N}
+    (hU : ContMDiffAt I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (U y)) y₀)
+    (hW : ContMDiffAt I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (W y)) y₀) :
+    ContMDiffAt I' (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) y₀ := by
+  have hb : ContMDiffAt I' I n b y₀ := (contMDiff_proj (TangentSpace I)).contMDiffAt.comp y₀ hU
+  have hφ := ((φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out) (b y₀)).comp y₀ hb
+  have hφ' : ContMDiffAt I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
         (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] V x) (b y)
-        (φ.toContMDiffSection (b y))) := by
+        (φ.toContMDiffSection (b y))) y₀ := by
     convert hφ using 1
     funext y
     rfl
-  have happly := ContMDiff.continuousAlternatingMap_bundle_apply
+  have happly := ContMDiffAt.continuousAlternatingMap_bundle_apply
     (b := b) (v := fun i ↦ ![U, W] i) hφ'
     (fun i ↦ by
       fin_cases i
@@ -396,6 +414,19 @@ theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
   congr 1
   funext i
   fin_cases i <;> rfl
+
+/-- Evaluating a smooth bundle-valued two-form on two `C^n` tangent fields along a `C^n` map is
+`C^n`. -/
+theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
+    (φ : SmoothBundleForm I F V 2) {b : N → M}
+    {U W : ∀ y : N, TangentSpace I (b y)}
+    (hU : ContMDiff I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (U y)))
+    (hW : ContMDiff I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
+    ContMDiff I' (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) :=
+  fun y ↦ φ.contMDiffAt_eval₂ (hU y) (hW y)
 
 end Evaluation
 
@@ -480,7 +511,8 @@ theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [IsManifold I
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
   refine forall_congr' fun x ↦ ?_
-  simp only [contMDiffAt_section, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+  simp only [contMDiffAt_section_iff,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     contMDiffAt_continuousAlternatingMap_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
@@ -502,25 +534,25 @@ variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
 /-- The underlying rough form of a smooth form is a smooth bundle section. -/
 theorem isSmoothBundleForm (φ : SmoothForm I M F k) :
-    IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (n := ∞) φ.1 :=
-  mem_smoothBundleForms.mp φ.2
+    IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (n := ∞) φ.val :=
+  mem_smoothBundleForms.mp φ.property
 
 /-- The section underlying a smooth form is smooth. -/
 theorem contMDiff (φ : SmoothForm I M F k) :
     ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x)) :=
-  (isSmoothBundleForm_def ∞ φ.1).mp φ.isSmoothBundleForm
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.val x)) :=
+  (isSmoothBundleForm_def ∞ φ.val).mp φ.isSmoothBundleForm
 
 /-- The underlying rough form of a smooth form is a smooth fixed-coefficient form. -/
-theorem isSmoothForm (φ : SmoothForm I M F k) : IsSmoothForm I ∞ φ.1 :=
-  (isSmoothForm_def ∞ φ.1).mpr φ.contMDiff
+theorem isSmoothForm (φ : SmoothForm I M F k) : IsSmoothForm I ∞ φ.val :=
+  (isSmoothForm_def ∞ φ.val).mpr φ.contMDiff
 
 /-- Evaluating a smooth form after transporting its degree across an equality. -/
 theorem cast_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
     (v : Fin m → TangentSpace I x) :
     (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α :
-      RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
+      RoughForm I M F m) x v = α.val x (v ∘ Fin.cast h) := by
   cases h
   rfl
 
@@ -528,9 +560,15 @@ theorem cast_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M) :
     (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α : RoughForm I M F m) x =
-      (fun v ↦ α.1 x (v ∘ Fin.cast h)) := by
+      (fun v ↦ α.val x (v ∘ Fin.cast h)) := by
   funext v
   exact cast_apply h α x v
+
+/-- Transporting a smooth form along a trivial degree equality leaves it unchanged. -/
+theorem cast_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : ℕ} (h : n = n) (α : SmoothForm I M F n) :
+    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α = α :=
+  (rfl)
 
 /-- Successive degree transports collapse to the transport along their composite equality. -/
 theorem cast_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -555,7 +593,7 @@ theorem cast_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 /-- The section underlying a smooth form is differentiable. -/
 theorem mdifferentiable (φ : SmoothForm I M F k) :
     MDiff (fun x ↦
-      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :
+      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.val x) :
         TotalSpace (E [⋀^Fin k]→L[ℝ] F)
           (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) :=
   φ.contMDiff.mdifferentiable (by simp)
@@ -563,7 +601,7 @@ theorem mdifferentiable (φ : SmoothForm I M F k) :
 /-- The section underlying a smooth form is differentiable at every point. -/
 theorem mdifferentiableAt (φ : SmoothForm I M F k) (x : M) :
     MDiffAt (fun x ↦
-      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :
+      (TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.val x) :
         TotalSpace (E [⋀^Fin k]→L[ℝ] F)
           (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Bundle.Trivial M F x))) x :=
   φ.contMDiff.mdifferentiableAt (by simp)
@@ -573,7 +611,7 @@ differentiable at that point. -/
 theorem mdifferentiableAt_apply_vectorField (φ : SmoothForm I M F k)
     {V : Fin k → (y : M) → TangentSpace I y} {x : M}
     (hV : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (V i y : TangentBundle I M)) x) :
-    MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ φ.1 y (V · y)) x := by
+    MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ φ.val y (V · y)) x := by
   have h := (φ.mdifferentiableAt x).continuousAlternatingMap_bundle_apply (b := id) hV
   simpa using ((mdifferentiableAt_totalSpace _ _).1 h).2
 
@@ -592,7 +630,7 @@ def ofContMDiffSection {k : ℕ}
 
 @[simp]
 theorem toContMDiffSection_apply {k : ℕ} (φ : SmoothForm I M F k) (x : M) :
-    φ.toContMDiffSection x = φ.1 x :=
+    φ.toContMDiffSection x = φ.val x :=
   by
     exact SmoothBundleForm.toContMDiffSection_apply φ x
 
@@ -645,31 +683,31 @@ theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
 
 /-- The rough form underlying a sum of smooth forms is the sum of their rough forms. -/
 theorem add_toRoughForm {k : ℕ} (φ ψ : SmoothForm I M F k) :
-    (φ + ψ).1 = φ.1 + ψ.1 :=
+    (φ + ψ).val = φ.val + ψ.val :=
   rfl
 
 /-- The rough form underlying the negation of a smooth form is the negation of its rough form. -/
 theorem neg_toRoughForm {k : ℕ} (φ : SmoothForm I M F k) :
-    (-φ).1 = -φ.1 :=
+    (-φ).val = -φ.val :=
   rfl
 
 /-- Multiplication of smooth forms by a smooth real function, as a real-linear map. -/
 def funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) : SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F k where
-  toFun φ := ⟨fun x ↦ g x • φ.1 x, (φ.isSmoothForm.fun_smul g.contMDiff).mem_smoothBundleForms⟩
-  map_add' φ ψ := Subtype.ext <| funext fun x ↦ smul_add (g x) (φ.1 x) (ψ.1 x)
-  map_smul' c φ := Subtype.ext <| funext fun x ↦ smul_comm (g x) c (φ.1 x)
+  toFun φ := ⟨fun x ↦ g x • φ.val x, (φ.isSmoothForm.fun_smul g.contMDiff).mem_smoothBundleForms⟩
+  map_add' φ ψ := Subtype.ext <| funext fun x ↦ smul_add (g x) (φ.val x) (ψ.val x)
+  map_smul' c φ := Subtype.ext <| funext fun x ↦ smul_comm (g x) c (φ.val x)
 
 /-- The rough form underlying the product of a smooth form with a smooth function is the
 pointwise product. -/
 @[simp]
 theorem coe_funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M F k) :
-    (funSMulₗ g φ : RoughForm I M F k) = fun x ↦ g x • φ.1 x :=
+    (funSMulₗ g φ : RoughForm I M F k) = fun x ↦ g x • φ.val x :=
   (rfl)
 
 /-- A smooth form whose degree exceeds the dimension of the model space vanishes. -/
 theorem eq_zero_of_finrank_lt [FiniteDimensional ℝ E] (h : Module.finrank ℝ E < k)
     (φ : SmoothForm I M F k) : φ = 0 :=
-  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.eq_zero_of_finrank_lt (φ.1 x)
+  Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.eq_zero_of_finrank_lt (φ.val x)
     (by rwa [Fintype.card_fin])
 
 /-- The constant smooth form whose value is the alternating map `A` in model-space coordinates. -/
@@ -713,7 +751,7 @@ def const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem const_toRoughForm {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
     (A : V [⋀^Fin k]→L[ℝ] F) :
-    (const A).1 = (fun y : V => A.compContinuousLinearMap
+    (const A).val = (fun y : V => A.compContinuousLinearMap
       (NormedSpace.fromTangentSpace y).toContinuousLinearMap) := by
   rfl
 
@@ -723,7 +761,7 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
     (A : V [⋀^Fin k]→L[ℝ] F) (x : V)
     (v : Fin k → TangentSpace (modelWithCornersSelf ℝ V) x) :
-    (const A).1 x v = A (fun i ↦ NormedSpace.fromTangentSpace x (v i)) := by
+    (const A).val x v = A (fun i ↦ NormedSpace.fromTangentSpace x (v i)) := by
   rw [const_toRoughForm, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   rfl
 
@@ -734,7 +772,7 @@ def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
 /-- The coordinate one-form `dz` of the real line sends a tangent vector to itself. -/
 @[simp]
 theorem realLineCoordForm_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
-    realLineCoordForm.1 z v = v 0 := by
+    realLineCoordForm.val z v = v 0 := by
   rw [realLineCoordForm, const_apply]
   -- Tangent vectors of `ℝ` are real numbers, on which `NormedSpace.fromTangentSpace` is the
   -- identity.
@@ -758,10 +796,19 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
   have h := SmoothBundleForm.contMDiff_eval₂ form hV hW
   intro y₀
   have hy := h y₀
-  have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
+  have hy' := (Bundle.contMDiffAt_totalSpace_iff (IM := I') (IB := I) (n := n)).mp hy
   simpa [Bundle.Trivial.eq_trivialization, SmoothBundleForm.eval₂] using hy'.2
 
 end Evaluation
+
+/-- Evaluating a degree-two form at two equal points agrees after identifying their tangent spaces
+by `tangentSpaceCast`. -/
+theorem eval₂_tangentSpaceCast (φ : SmoothForm I M F 2) {x y : M} (h : x = y)
+    (v w : TangentSpace I x) :
+    φ.eval₂ y (tangentSpaceCast I x y v) (tangentSpaceCast I x y w) = φ.eval₂ x v w := by
+  subst h
+  -- `tangentSpaceCast I x x` is the identity of the model fibre.
+  rfl
 
 /-- The algebraic bilinear form represented by the value of a real degree-two smooth form.
 
@@ -770,7 +817,7 @@ This generalizes `SmoothTwoForm.bilinFormAt` from
 `LinearMap.BilinForm`, including the symplectic constructions. -/
 def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     LinearMap.BilinForm ℝ (TangentSpace I x) :=
-  MultilinearMap.toBilinMap (φ.1 x).toMultilinearMap
+  MultilinearMap.toBilinMap (φ.val x).toMultilinearMap
 
 @[simp]
 theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
@@ -782,13 +829,13 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     (φ.bilinFormAt x).IsAlt := by
   apply MultilinearMap.isAlt_toBilinMap
   intro v
-  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+  exact (φ.val x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- The bilinear form represented by a degree-two smooth form at a point vanishes exactly when the
 form vanishes there. -/
 @[simp]
 theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
-    φ.bilinFormAt x = 0 ↔ φ.1 x = 0 := by
+    φ.bilinFormAt x = 0 ↔ φ.val x = 0 := by
   refine ⟨fun h => ContinuousAlternatingMap.ext fun v => ?_, fun h => ?_⟩
   · have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
     rw [hv]
@@ -796,16 +843,23 @@ theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
   · ext v w
     simp [h]
 
+/-- A tangent vector lies in the kernel of the bilinear form of a degree-two smooth form exactly
+when the form vanishes on every pair with that vector as its first argument. -/
+theorem mem_ker_bilinFormAt_iff {φ : SmoothForm I M ℝ 2} {x : M} {v : TangentSpace I x} :
+    v ∈ LinearMap.ker (φ.bilinFormAt x) ↔ ∀ w, φ.val x ![v, w] = 0 := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff, bilinFormAt_apply,
+    SmoothBundleForm.eval₂_apply, LinearMap.zero_apply]
+
 section SectionView
 
 variable {k : ℕ}
 
 /-- The value of a smooth form as a continuous alternating map on the model fibre. -/
-def altAt (φ : SmoothForm I M F k) (x : M) : E [⋀^Fin k]→L[ℝ] F := φ.1 x
+def altAt (φ : SmoothForm I M F k) (x : M) : E [⋀^Fin k]→L[ℝ] F := φ.val x
 
 @[simp]
 theorem altAt_apply (φ : SmoothForm I M F k) (x : M) (v : Fin k → E) :
-    φ.altAt x v = φ.1 x v :=
+    φ.altAt x v = φ.val x v :=
   by
     simp only [altAt]
     rfl
@@ -816,6 +870,13 @@ theorem altAt_apply_eval₂ (φ : SmoothForm I M F 2) (x : M) (v : Fin 2 → E) 
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   simp only [altAt, SmoothBundleForm.eval₂]
+  rfl
+
+/-- Every tangent space is the model space, so a degree-two form can be evaluated on the same pair
+of vectors at two base points; the values agree when the base points are equal. -/
+theorem eval₂_congr_basePoint (φ : SmoothForm I M F 2) {x y : M} (h : x = y) (v w : E) :
+    φ.eval₂ x v w = φ.eval₂ y v w := by
+  subst h
   rfl
 
 end SectionView

@@ -252,8 +252,8 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   /- The constants: `‖g s - p‖ ≤ C` for `|s| ≤ R`, and `R < L` with `C ≤ L * ‖e‖`. -/
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hgc.continuous.sub continuous_const).continuousOn (s := Icc (-R) R))
-  obtain ⟨L, hL0, hRL, hCL⟩ := exists_radius_lt_and_le_mul (norm_pos_iff.2 he) R C
-  obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id hL0 (lt_add_one L)
+  obtain ⟨L, -, hRL, hCL⟩ := exists_radius_lt_and_le_mul (norm_pos_iff.2 he) R C
+  obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id (lt_add_one L)
   replace hk : ContDiff ℝ n k := hk.of_le hn
   /- The hyperplane component `H` of the motion. -/
   let H : ℝ → ℝ → V := fun u s => (1 - u) • (g s - p) + (u * s) • e
@@ -328,10 +328,9 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
       exact hd0 (zero_smul ℝ e)
     refine htan (|R| + 1) a⁻¹ ?_
     rw [(hasDerivAt_of_eq_line hline' hRs).deriv, smul_smul, inv_mul_cancel₀ ha, one_smul]
-  obtain ⟨f, hfe, hfd⟩ :=
-    Submodule.exists_dual_forall_mem_eq_zero_ne_zero (Submodule.closed_of_finiteDimensional _) hde
-  obtain ⟨φ, hφd, hφe⟩ : ∃ φ : V →L[ℝ] ℝ, φ d = 1 ∧ φ e = 0 :=
-    ⟨(f d)⁻¹ • f, by simp [hfd], by simp [hfe e (Submodule.mem_span_singleton_self e)]⟩
+  obtain ⟨φ, hφe, hφd⟩ :=
+    Submodule.exists_dual_forall_mem_eq_zero_eq_one (Submodule.isClosed_of_finiteDimensional _) hde
+  replace hφe : φ e = 0 := hφe e (Submodule.mem_span_singleton_self e)
   /- The projection `g` of the arc along `d` onto the hyperplane `p + ker φ`. -/
   have hφline : ∀ s, R ≤ |s| → φ (γ s - p) = 0 := by
     intro s hs

@@ -21,11 +21,11 @@ of quasicoherence under tensor products.
 
 public section
 
-open CategoryTheory Limits MonoidalCategory MonoidalClosed
+open CategoryTheory Limits MonoidalCategory MonoidalClosed TauCeti
 
-namespace TauCeti
+namespace SheafOfModules
 
-open _root_.SheafOfModules TauCeti.SheafOfModules
+open TauCeti.SheafOfModules
 
 universe u
 
@@ -43,7 +43,7 @@ variable {C : Type u} [SmallCategory C] [HasPullbacks C]
 
 /-- Internal Hom from a locally free sheaf of finite type into a quasicoherent sheaf is
 quasicoherent. No finiteness hypothesis is required on the target. -/
-instance _root_.SheafOfModules.isQuasicoherent_ihom_of_isLocallyFree
+instance isQuasicoherent_ihom_of_isLocallyFree
     (M N : _root_.SheafOfModules.{u} (ringCatSheaf R))
     [M.IsLocallyFree] [M.IsFiniteType] [N.IsQuasicoherent] :
     ((ihom M).obj N).IsQuasicoherent := by
@@ -54,4 +54,4 @@ instance _root_.SheafOfModules.isQuasicoherent_ihom_of_isLocallyFree
   exact (_root_.SheafOfModules.isQuasicoherent (ringCatSheaf R)).prop_of_iso
     (asIso ((dualTensorIhom M).app N)) h
 
-end TauCeti
+end SheafOfModules

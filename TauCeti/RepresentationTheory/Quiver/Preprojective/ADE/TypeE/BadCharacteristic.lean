@@ -39,7 +39,7 @@ namespace TauCeti
 
 open DoubledQuiver
 
-attribute [local instance] eNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 private def eBranchNodes {n : ℕ} (hn : 5 ≤ n) : Fin 4 ↪ Fin n where
   toFun i := ⟨![1, 3, 2, 4] i, by fin_cases i <;> simp <;> omega⟩
@@ -82,14 +82,9 @@ theorem exists_mem_preprojectiveGrade_E_four_notMem_commutatorSubmodule
     ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o),
       z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o) 4 ∧
         z ∉ commutatorSubmodule k
-          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
-  obtain ⟨z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k hn h2
-  let C := eColoring _ (diagramGraph_E_adj (n := n))
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, ?_⟩
-  intro h
-  apply hz0
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) :=
+  SimpleGraph.Coloring.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k
+    (eColoring _ (diagramGraph_E_adj (n := n))) o
+    (exists_mem_signlessPreprojectiveGrade_E_four_notMem_commutatorSubmodule k hn h2)
 
 end TauCeti

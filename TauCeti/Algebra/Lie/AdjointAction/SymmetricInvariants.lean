@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.AdjointAction.GradingAut
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
+public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.Dual
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Eigenspace
@@ -155,15 +156,12 @@ theorem lift_eval_smul_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K 
     (hp : p ∈ lieInvariants K L (Dual K L)) (x : L) :
     lift (Dual.eval K L (g • x)) p = lift (Dual.eval K L x) p := by
   -- Evaluation at `g x` is evaluation at `x` after the transpose of `g`.
-  have h : lift (Dual.eval K L (g • x)) =
-      (lift (Dual.eval K L x)).comp (map K (g : Module.End K L).dualMap) := by
-    refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
-    simp [Units.smul_def]
-  rw [h, AlgHom.comp_apply, map_dualMap_apply_of_mem_intLieAlgebra hg hp]
+  rw [Units.smul_def, Module.End.smul_def, ← lift_eval_map_dualMap,
+    map_dualMap_apply_of_mem_intLieAlgebra hg hp]
 
 section Grading
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] {h : L}
   (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K))
 
@@ -175,6 +173,18 @@ killed by the coadjoint action of `h`, in particular every Lie invariant. -/
 theorem map_dualMap_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) :
     map K (gradingAut hh s : L →ₗ[K] L).dualMap p = p := by
+  rcases subsingleton_or_nontrivial L with hL | hL
+  · -- A trivial `L` has trivial dual, so the transpose is the identity.
+    have hid : map K (gradingAut hh s : L →ₗ[K] L).dualMap = AlgHom.id K _ := by
+      refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
+      simp [Subsingleton.elim _ φ]
+    simp [hid]
+  -- A nontrivial `L` forces characteristic zero: in positive characteristic it would be trivial.
+  have : CharZero K := by
+    obtain ⟨q, hq⟩ := CharP.exists K
+    rcases q.eq_zero_or_pos with rfl | hq0
+    · exact (CharP.charP_zero_iff_charZero K).mp hq
+    · exact absurd (subsingleton_of_isInternal_eigenspace_of_charP_pos hh hq0) (not_subsingleton L)
   -- A functional of weight `j` for the coadjoint action of `h` vanishes outside `L(-j)`, so the
   -- transpose of the grading automorphism at `s` scales it by `s⁻¹ ^ j`.
   have hg (j : ℤ) (φ : Dual K L)
@@ -212,11 +222,8 @@ theorem lift_eval_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) (x : L) :
     lift (Dual.eval K L (gradingAut hh s x)) p = lift (Dual.eval K L x) p := by
   -- Evaluation at `gradingAut hh s x` is evaluation at `x` after the transpose.
-  have h : lift (Dual.eval K L (gradingAut hh s x)) =
-      (lift (Dual.eval K L x)).comp (map K (gradingAut hh s : L →ₗ[K] L).dualMap) := by
-    refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
-    simp
-  rw [h, AlgHom.comp_apply, map_dualMap_gradingAut_apply hh hp]
+  exact (lift_eval_map_dualMap K (gradingAut hh s : L →ₗ[K] L) x p).symm.trans
+    (congrArg _ (map_dualMap_gradingAut_apply hh hp s))
 
 end Grading
 

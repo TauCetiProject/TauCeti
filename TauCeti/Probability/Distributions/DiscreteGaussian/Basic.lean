@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.GiryMonad
-public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
 import TauCeti.MeasureTheory.Measure.Measurability
 
@@ -18,17 +17,15 @@ For a real center `c` and width `s > 0`, the discrete Gaussian law on `ℤ` has 
 to `exp (-((k : ℝ) - c) ^ 2 / (2 * s ^ 2))` at `k`. Its normalizing constant is the Gaussian
 lattice sum `Real.gaussianLatticeSum c s`. At nonpositive widths the law is the zero measure.
 
-This file supplies the normalized measure, its singleton masses and full support, its translation
-and reflection symmetries, and parameter measurability. Moments, transforms, cumulative masses and
-quantiles are developed separately.
+This file supplies the normalized measure, its singleton masses, translation and reflection
+symmetries, and parameter measurability. Topological support, moments, transforms, cumulative
+masses and quantiles are developed separately.
 
 ## Main results
 
 * `TauCeti.Probability.isProbabilityMeasure_discreteGaussianMeasure_iff` characterizes exactly
   when the totalized law is a probability measure;
 * `TauCeti.Probability.discreteGaussianMeasure_singleton` computes every native mass;
-* `TauCeti.Probability.support_discreteGaussianMeasure` gives full integer support at positive
-  width;
 * `TauCeti.Probability.map_add_const_discreteGaussianMeasure` and
   `TauCeti.Probability.map_neg_discreteGaussianMeasure` give translation and reflection;
 * `TauCeti.Probability.measurable_discreteGaussianMeasure` proves joint parameter measurability.
@@ -136,7 +133,7 @@ theorem isProbabilityMeasure_discreteGaussianMeasure_iff (c s : ℝ) :
   rw [discreteGaussianMeasure_of_nonpos c (not_lt.mp hs)] at h
   exact IsProbabilityMeasure.ne_zero (0 : Measure ℤ) rfl
 
-/-! ### Masses and support -/
+/-! ### Masses -/
 
 /-- The singleton mass of a discrete Gaussian law with positive width. -/
 @[simp]
@@ -157,15 +154,6 @@ theorem discreteGaussianMeasure_singleton_pos (c : ℝ) {s : ℝ} (hs : 0 < s) (
     0 < discreteGaussianMeasure c s {k} := by
   rw [discreteGaussianMeasure_singleton c hs, discreteGaussianWeight, ENNReal.ofReal_pos]
   exact discreteGaussianWeightReal_pos c hs.ne' k
-
-/-- At positive width, the discrete Gaussian law has full topological support on `ℤ`. -/
-theorem support_discreteGaussianMeasure (c : ℝ) {s : ℝ} (hs : 0 < s) :
-    (discreteGaussianMeasure c s).support = univ := by
-  ext k
-  simp only [mem_univ, iff_true, Measure.mem_support_iff_forall]
-  intro U hU
-  exact (discreteGaussianMeasure_singleton_pos c hs k).trans_le
-    (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-! ### Translation and reflection -/
 

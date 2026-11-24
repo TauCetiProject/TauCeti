@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Graph
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
@@ -138,7 +139,7 @@ theorem isLagrangian_range_mfderiv_prodMk_iff (ha : MDifferentiableAt K I a x)
 twisted product (for instance Lagrangian), the differential of `b` is invertible wherever that of
 `a` is: the tangent image is the graph of a linear map preserving the nondegenerate forms, which
 is injective, hence bijective. -/
-theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ F]
     (hEF : finrank ℝ E = finrank ℝ F) (ha : MDifferentiableAt K I a x)
     (hb : MDifferentiableAt K J b x)
     (h : ((hσ.twistedProd hτ).symplecticFormAt (a x, b x)).IsIsotropic
@@ -146,7 +147,6 @@ theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ E] [FiniteDim
     (ha' : (mfderiv K I a x).IsInvertible) : (mfderiv K J b x).IsInvertible := by
   obtain ⟨ea, hea⟩ := ha'
   have hiso := (isIsotropic_range_mfderiv_prodMk_iff hσ hτ ha hb).mp h
-  have : FiniteDimensional ℝ (TangentSpace K x) := ea.symm.toLinearEquiv.finiteDimensional
   -- If `db v = 0`, then `σ(da v, da w) = 0` for every `w`, and `da` is onto, so `da v = 0`.
   have hinj : Function.Injective (mfderiv K J b x) := by
     refine (injective_iff_map_eq_zero (mfderiv K J b x)).2 fun v hv ↦ ?_
@@ -156,28 +156,26 @@ theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ E] [FiniteDim
     obtain ⟨w, rfl⟩ := ea.surjective u
     rw [← ContinuousLinearEquiv.coe_coe ea, hea, hiso v w, ← symplecticFormAt_apply hτ, hv]
     exact LinearMap.map_zero₂ _ _
-  have : FiniteDimensional ℝ (TangentSpace J (b x)) := inferInstanceAs (FiniteDimensional ℝ F)
-  have hdim : finrank ℝ (TangentSpace K x) = finrank ℝ (TangentSpace J (b x)) :=
-    ea.toLinearEquiv.finrank_eq.trans hEF
-  exact ⟨(LinearMap.linearEquivOfInjective _ hinj hdim).toContinuousLinearEquiv, rfl⟩
+  refine (isInvertible_mfderiv_iff_injective ?_).2 hinj
+  exact ea.toLinearEquiv.finrank_eq.trans hEF
 
 /-- **Isotropic relations project to local diffeomorphisms together.** In equal finite
 dimensions, if the tangent image of `y ↦ (a y, b y)` at an interior point `x` is isotropic for the
 twisted product (for instance Lagrangian), `a` is a local diffeomorphism at `x` and `b` is smooth
 on an open neighbourhood of `x`, then `b` is a local diffeomorphism at `x` too. -/
-theorem isLocalDiffeomorphAt_of_isIsotropic [IsManifold K ∞ L] [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ F] (hEF : finrank ℝ E = finrank ℝ F)
+theorem isLocalDiffeomorphAt_of_isIsotropic [IsManifold K ∞ L] [FiniteDimensional ℝ F]
+    (hEF : finrank ℝ E = finrank ℝ F)
     (h : ((hσ.twistedProd hτ).symplecticFormAt (a x, b x)).IsIsotropic
       (LinearMap.range (mfderiv K (I.prod J) (fun y ↦ (a y, b y)) x).toLinearMap))
     (ha : IsLocalDiffeomorphAt K I ∞ a x) {s : Set L} (hb : ContMDiffOn K J ∞ b s)
     (hs : IsOpen s) (hxs : x ∈ s) (hx : K.IsInteriorPoint x) :
     IsLocalDiffeomorphAt K J ∞ b x := by
-  obtain ⟨ea, hea⟩ := ha.isInvertible_mfderiv (by simp)
-  have : FiniteDimensional ℝ EL := ea.symm.toLinearEquiv.finiteDimensional
-  have : CompleteSpace EL := FiniteDimensional.complete ℝ EL
   obtain ⟨eb, heb⟩ := isInvertible_mfderiv_of_isIsotropic hσ hτ hEF
     (ha.mdifferentiableAt (by simp))
-    ((hb.contMDiffAt (hs.mem_nhds hxs)).mdifferentiableAt (by simp)) h ⟨ea, hea⟩
+    ((hb.contMDiffAt (hs.mem_nhds hxs)).mdifferentiableAt (by simp)) h
+    (ha.isInvertible_mfderiv (by simp))
+  have : FiniteDimensional ℝ EL := eb.symm.toLinearEquiv.finiteDimensional
+  have : CompleteSpace EL := FiniteDimensional.completeSpace ℝ EL
   exact isLocalDiffeomorphAt_of_mfderiv_eq hb hs hxs hx (by simp) heb
 
 end Pointwise
@@ -213,7 +211,7 @@ theorem isLagrangianMap_prodMk_iff (ha : ContMDiff K I ∞ a) (hb : ContMDiff K 
 /-- **Lagrangian relations in equal finite dimensions.** If `M` and `N` are finite-dimensional of
 the same dimension and the differential of `a` is invertible everywhere, the relation
 `x ↦ (a x, b x)` is Lagrangian for the twisted product exactly when `a^* σ = b^* τ`. -/
-theorem isLagrangianMap_prodMk_iff_of_finrank_eq [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+theorem isLagrangianMap_prodMk_iff_of_finrank_eq [FiniteDimensional ℝ F]
     (hEF : finrank ℝ E = finrank ℝ F) (ha : ContMDiff K I ∞ a) (hb : ContMDiff K J ∞ b)
     (ha' : ∀ x, (mfderiv K I a x).IsInvertible) :
     (hσ.twistedProd hτ).IsLagrangianMap K (fun x ↦ (a x, b x)) ↔
@@ -268,7 +266,7 @@ theorem IsIsotropicMap.exists_partialDiffeomorph
   obtain ⟨Φa, hxa, hΦa⟩ := ha
   obtain ⟨Φb, hxb, hΦb⟩ := hb
   -- On `U = Φa.source ∩ Φb.source` the projections are `Φa` and `Φb`, and `Φ = Φb ∘ Φa⁻¹`.
-  set U := Φa.source ∩ Φb.source with hU_def
+  set U := Φa.source ∩ Φb.source
   have hU : IsOpen U := Φa.open_source.inter Φb.open_source
   have hcoe (p : M) : Φa.symm.trans Φb p = Φb (Φa.symm p) := rfl
   have hleft {z : L} (hz : z ∈ Φa.source) : Φa.symm (Φa z) = z := Φa.left_inv hz

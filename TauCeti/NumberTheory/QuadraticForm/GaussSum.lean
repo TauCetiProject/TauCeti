@@ -103,9 +103,9 @@ theorem IsSymm.sum_addChar_dotProduct_mulVec_of_card_eq_two_mul (hA : A.IsSymm)
     simp [Matrix.det_isEmpty]
   have hsum : ∑ c, ψ c = 0 := by simpa using AddChar.sum_mulShift 1 hψ
   rw [← Fintype.sum_fiberwise (fun x : ι → F ↦ x ⬝ᵥ A *ᵥ x)]
-  have hfib (c : F) : ∑ x : {x : ι → F // x ⬝ᵥ A *ᵥ x = c}, ψ (x.1 ⬝ᵥ A *ᵥ x.1) =
+  have hfib (c : F) : ∑ x : {x : ι → F // x ⬝ᵥ A *ᵥ x = c}, ψ (x.val ⬝ᵥ A *ᵥ x.val) =
       ((#{x : ι → F | x ⬝ᵥ A *ᵥ x = c} : ℤ) : R) * ψ c := by
-    rw [Finset.sum_congr rfl fun x _ ↦ congrArg ψ x.2, Finset.sum_const, Finset.card_univ,
+    rw [Finset.sum_congr rfl fun x _ ↦ congrArg ψ x.property, Finset.sum_const, Finset.card_univ,
       Fintype.card_subtype, nsmul_eq_mul, Int.cast_natCast]
   simp only [hfib, hA.card_dotProduct_mulVec_eq_of_card_eq_two_mul_add_two hF hdet
     (hι.trans (by ring)), Int.cast_add, Int.cast_mul, Int.cast_pow, Int.cast_natCast]
@@ -206,7 +206,6 @@ theorem IsSymm.sum_stdAddChar_dotProduct_mulVec_of_eq_sq_mul (hA : A.IsSymm) {N 
       rw [hpv, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul]
       ring
     have hp' : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hp
-    have hM' : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne M)
     rw [hsq, hN]
     push_cast
     field_simp

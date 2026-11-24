@@ -48,7 +48,11 @@ public section
 
 namespace TauCeti.SymmetricAlgebra
 
-variable {K V : Type*} [Field K] [CharZero K] [AddCommGroup V] [Module K V]
+variable {K V : Type*} [Field K] [CharZero K]
+
+section FiniteDimensional
+
+variable [AddCommGroup V] [Module K V]
 
 /-- **Polarization.** Over a field of characteristic zero, let `S` be a polynomially dense subset
 of a finite-dimensional space `V`: the only polynomial function `p : S(V*)` vanishing at every
@@ -95,6 +99,10 @@ private theorem span_pow_eq_homogeneousSubmodule_of_finiteDimensional [FiniteDim
   rw [map_zero, ← hF]
   exact hp _ (Set.mem_univ _)
 
+end FiniteDimensional
+
+variable [AddCommMonoid V] [Module K V]
+
 /-- **The `n`-th powers span `Sⁿ(V)`.** Over a field of characteristic zero, the `n`-th powers of
 all vectors of `V` span the degree-`n` component of `S(V)`. A product of `n` vectors lies in the
 symmetric algebra of their finite-dimensional span, where the whole space is polynomially dense. -/
@@ -102,6 +110,7 @@ theorem span_pow_eq_homogeneousSubmodule (n : ℕ) :
     Submodule.span K (Set.range fun v ↦ SymmetricAlgebra.ι K V v ^ n) =
       homogeneousSubmodule K V n := by
   classical
+  let := Module.addCommMonoidToAddCommGroup K (M := V)
   refine le_antisymm (Submodule.span_le.2 ?_) ?_
   · rintro _ ⟨v, rfl⟩
     exact Submodule.pow_mem_pow _ (LinearMap.mem_range_self _ v) n
@@ -110,7 +119,7 @@ theorem span_pow_eq_homogeneousSubmodule (n : ℕ) :
   -- the word lies in the symmetric algebra of the finite-dimensional span `W` of its letters
   let W := Submodule.span K (l.toFinset : Set V)
   let l' : List W :=
-    l.attach.map fun v : {x // x ∈ l} ↦ ⟨v.1, Submodule.subset_span (by simp)⟩
+    l.attach.map fun v : {x // x ∈ l} ↦ ⟨v.val, Submodule.subset_span (by simp)⟩
   have hmem := prod_map_ι_mem_homogeneousSubmodule K W l'
   rw [← span_pow_eq_homogeneousSubmodule_of_finiteDimensional] at hmem
   have himg := Submodule.apply_mem_span_image_of_mem_span

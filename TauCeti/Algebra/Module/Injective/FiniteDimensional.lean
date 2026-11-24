@@ -57,7 +57,9 @@ carrying the action of `a` to precomposition with right multiplication by `a`.
 
 public section
 
-namespace TauCeti
+namespace Module
+
+open TauCeti
 
 universe u v w
 
@@ -67,7 +69,7 @@ variable {k : Type w} [Field k] {A : Type u} [Ring A] [Algebra k A]
 are projective.** Together with `Module.Injective.of_finite_projective`, this shows that over a
 finite-dimensional algebra which is self-injective on both sides the finite-dimensional projective
 and injective modules coincide. -/
-theorem _root_.Module.Projective.of_finiteDimensional_injective [FiniteDimensional k A]
+theorem Projective.of_finiteDimensional_injective [FiniteDimensional k A]
     (hA : Module.Injective Aᵐᵒᵖ A) (M : Type v) [AddCommGroup M] [Module A M] [Module k M]
     [IsScalarTower k A M] [FiniteDimensional k M] [Small.{v} A] [Module.Injective A M] :
     Module.Projective A M := by
@@ -87,7 +89,7 @@ theorem _root_.Module.Projective.of_finiteDimensional_injective [FiniteDimension
 /-- **Over a finite-dimensional right self-injective algebra, every finitely generated module
 embeds into a finite free module.** The module embeds into a finite power of `D(A_A)`, which is
 finitely generated and projective, hence a direct summand of a finite free module. -/
-theorem _root_.Module.Finite.exists_injective_linearMap_pi [FiniteDimensional k A]
+theorem Finite.exists_injective_linearMap_pi [FiniteDimensional k A]
     (hA : Module.Injective Aᵐᵒᵖ A) (M : Type*) [AddCommGroup M] [Module A M]
     [Module.Finite A M] : ∃ (n : ℕ) (f : M →ₗ[A] (Fin n → A)), Function.Injective f := by
   -- `M` is finite-dimensional over `k` through the structure map `k → A`.
@@ -112,4 +114,4 @@ theorem _root_.Module.Finite.exists_injective_linearMap_pi [FiniteDimensional k 
     Module.Finite.exists_comp_eq_id_of_projective A (Fin n → Module.Dual k A)
   exact ⟨m, g ∘ₗ f, hg.comp hf⟩
 
-end TauCeti
+end Module

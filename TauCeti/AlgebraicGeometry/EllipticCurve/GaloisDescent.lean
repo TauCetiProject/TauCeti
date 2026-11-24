@@ -34,12 +34,11 @@ and `WeierstrassCurve.VariableChange.mem_range_baseChange_iff_fixed` say that su
 is the base change of data over `K` exactly when every automorphism of `L/K` fixes its
 coefficients. The quadratic change-of-variables result is derived from this general criterion.
 
-These are the descent steps of the quadratic-twist layer of
-`TauCetiRoadmap/EllipticCurves/README.md` (§Layer 5): the twist point isomorphism and the
+These are the descent steps for quadratic twists: the twist point isomorphism and the
 classification of twists both descend `L`-data fixed by the Galois action to `K`-data.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
-`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean` at the roadmap's pin
+`FLT/Mathlib/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean` at
 `bc2fe8ff7396`, FLT PR #1088, Apache 2.0). That file's own header reads
 `Authors: Kevin Buzzard, Michael Stoll, Claude`; following this repository's convention for
 adapted material, the upstream authorship is credited here rather than in the copyright header.

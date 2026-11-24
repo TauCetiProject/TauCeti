@@ -36,7 +36,7 @@ theorem map_coe_equivIco_haarAddCircle (a : ℝ) :
     (AddCircle.haarAddCircle : Measure (AddCircle T)).map
         (fun θ ↦ (AddCircle.equivIco T a θ : ℝ)) = uniformMeasure a (a + T) := by
   have h := AddCircle.map_coe_equivIco_withDensity_haarAddCircle (T := T) a
-    (f := fun _ ↦ 1) measurable_const
+    (f := fun _ ↦ 1)
   simpa [uniformMeasure_eq_smul, Measure.restrict_congr_set Ico_ae_eq_Ioc,
     withDensity_const] using h
 
@@ -45,7 +45,7 @@ theorem map_coe_uniformMeasure (a : ℝ) :
     (uniformMeasure a (a + T)).map ((↑) : ℝ → AddCircle T) =
       AddCircle.haarAddCircle := by
   have hm : Measurable fun θ : AddCircle T ↦ (AddCircle.equivIco T a θ : ℝ) :=
-    measurable_subtype_coe.comp (AddCircle.measurableEquivIco T a).measurable
+    measurable_subtypeVal.comp (AddCircle.measurableEquivIco T a).measurable
   rw [← map_coe_equivIco_haarAddCircle (T := T) a,
     Measure.map_map AddCircle.measurable_mk' hm]
   simp [Function.comp_def]
@@ -74,7 +74,7 @@ theorem HasLaw.equivIco_haarAddCircle {X : Ω → AddCircle T}
     (hX : HasLaw X AddCircle.haarAddCircle P) (a : ℝ) :
     HasLaw (fun ω ↦ (AddCircle.equivIco T a (X ω) : ℝ)) (uniformMeasure a (a + T)) P := by
   rw [← map_coe_equivIco_haarAddCircle (T := T) a]
-  exact (hasLaw_map (measurable_subtype_coe.comp
+  exact (hasLaw_map (measurable_subtypeVal.comp
     (AddCircle.measurableEquivIco T a).measurable).aemeasurable).comp hX
 
 /-- Reducing an interval-uniform random variable modulo its interval length is Haar-uniform. -/

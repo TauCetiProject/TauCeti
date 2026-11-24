@@ -81,7 +81,7 @@ noncomputable def gradedIdempotentProjectiveForgetK0Equiv :
   have hI (i : I) : (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜 :=
     Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   (LaurentSpecialization.basis 1
-      (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)).repr.trans
+      (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)).repr.trans
     (idempotentProjectiveBasis he hprim hnoniso).repr.symm
 
 /-- The equivalence `TauCeti.gradedIdempotentProjectiveForgetK0Equiv` is the map induced by
@@ -95,7 +95,7 @@ theorem gradedIdempotentProjectiveForgetK0Equiv_toLinearMap :
     Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   let b :=
     LaurentSpecialization.basis 1
-      (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+      (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
   refine b.ext fun i => ?_
   calc
     gradedIdempotentProjectiveForgetK0Equiv he he₀ hprim hnoniso (b i) =

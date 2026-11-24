@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.EMetricSpace.Paracompact
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.Metrizable.Uniformity
 public import Mathlib.Topology.UniformSpace.Compact
 
@@ -29,6 +30,21 @@ positive continuous radius over a normal paracompact parameter space, without co
 of that parameter space. This uses Mathlib's generalized tube lemma, its compact-space
 diagonal/uniformity comparison, and the same convex selection theorem. The radii control
 individual steps of local transports, without averaging invertible operators.
+
+Similarly, an open subset of `X × Y` containing the graph of a continuous map `F : X → Y` into a
+pseudometric space contains `{(x, y) | dist y (F x) < δ x}` for a positive continuous function `δ`
+on a normal paracompact space `X` (`IsOpen.exists_continuous_pos_forall_dist_lt`). This is the
+variable radius of a relative approximation whose straight-line homotopy must stay in a prescribed
+open set. For the zero map into `ℝ` it says that an open subset of `ℝ × X` containing `{0} × X`
+contains a tube `{(t, x) | |t| < ε x}` of positive continuous width
+(`IsOpen.exists_continuous_pos_forall_abs_lt`), the shape of a collar of variable width around a
+noncompact hypersurface.
+
+Along a continuous map `G` into a pseudometric space, an open set `U` has a continuous margin
+`ε ≥ 0`, positive wherever `G z ∈ U`, such that every point within `ε z` of `G z` lies in `U`
+(`IsOpen.exists_continuous_forall_dist_lt`, and `IsOpen.exists_continuousOn_forall_dist_lt` for
+a map continuous on a set). It is the distance to the complement of `U`; for
+the open set of invertible operators it is a margin of invertibility.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Theorem 6.24, the variable-radius shrinking argument.
@@ -121,5 +137,73 @@ theorem exists_continuous_pos_forall_dist_le [NormalSpace X] [ParacompactSpace X
       fun s t hst ↦ hy s t (by linarith [lt_min hε one_pos])⟩⟩
   obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
   exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
+
+/-- **A neighbourhood of positive continuous width around a graph.** Over a normal paracompact
+space `X`, an open subset of `X × Y` containing the graph of a continuous map `F` into a
+pseudometric space `Y` contains `{(x, y) | dist y (F x) < δ x}` for some positive continuous
+function `δ`. No compactness of `X` is needed. -/
+theorem exists_continuous_pos_forall_dist_lt [NormalSpace X] [ParacompactSpace X]
+    {Y : Type*} [PseudoMetricSpace Y] {U : Set (X × Y)} (hU : IsOpen U) {F : X → Y}
+    (hF : Continuous F) (hFU : ∀ x, (x, F x) ∈ U) :
+    ∃ δ : C(X, ℝ), (∀ x, 0 < δ x) ∧ ∀ (x : X) (y : Y), dist y (F x) < δ x → (x, y) ∈ U := by
+  let R (x : X) : Set ℝ := {r | 0 < r ∧ ∀ y : Y, dist y (F x) < r → (x, y) ∈ U}
+  have hconv (x : X) : Convex ℝ (R x) := OrdConnected.convex
+    ⟨fun _ ha _ hb _ hc ↦ ⟨ha.1.trans_le hc.1, fun y hy ↦ hb.2 y (hy.trans_le hc.2)⟩⟩
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ x' in 𝓝 x, c ∈ R x' := by
+    obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.mp (hU.mem_nhds (hFU x))
+    obtain ⟨c, hc, hcv⟩ := Metric.mem_nhds_iff.mp hv
+    refine ⟨c / 2, ?_⟩
+    filter_upwards [hu, (hF.tendsto x).eventually (Metric.ball_mem_nhds (F x) (half_pos hc))]
+      with x' hx' (hFx' : dist (F x') (F x) < c / 2)
+    refine ⟨half_pos hc, fun y hy ↦ huv ⟨hx', hcv ?_⟩⟩
+    rw [Metric.mem_ball]
+    linarith [dist_triangle y (F x') (F x)]
+  obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
+  exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
+
+/-- **A tube of positive continuous width.** Over a normal paracompact space `X`, an open subset
+of `ℝ × X` containing `{0} × X` contains the tube `{(t, x) | |t| < ε x}` of some positive
+continuous function `ε`. No compactness of `X` is needed. -/
+theorem exists_continuous_pos_forall_abs_lt [NormalSpace X] [ParacompactSpace X]
+    {U : Set (ℝ × X)} (hU : IsOpen U) (h0 : ∀ x, (0, x) ∈ U) :
+    ∃ ε : C(X, ℝ), (∀ x, 0 < ε x) ∧ ∀ (x : X) (t : ℝ), |t| < ε x → (t, x) ∈ U := by
+  obtain ⟨ε, hε, hεU⟩ := (hU.preimage continuous_swap).exists_continuous_pos_forall_dist_lt
+    continuous_const h0
+  exact ⟨ε, hε, fun x t ht ↦ hεU x t (by rwa [Real.dist_eq, sub_zero])⟩
+
+/-- **A continuous margin inside an open set.** Along a map `G` into a pseudometric space that is
+continuous on `s`, an open set `U` has a margin `ε ≥ 0`, continuous on `s` and positive wherever
+`G z ∈ U`, such that every point within `ε z` of `G z` lies in `U`. -/
+theorem exists_continuousOn_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {U : Set M}
+    (hU : IsOpen U) {G : X → M} {s : Set X} (hG : ContinuousOn G s) :
+    ∃ ε : X → ℝ, ContinuousOn ε s ∧ (∀ x, 0 ≤ ε x) ∧ (∀ x, G x ∈ U → 0 < ε x) ∧
+      ∀ x y, dist y (G x) < ε x → y ∈ U := by
+  classical
+  -- The distance to the closed complement of `U`, or `1` if `U` is the whole space.
+  refine ⟨fun x ↦ if Uᶜ.Nonempty then infDist (G x) Uᶜ else 1, ?_, fun x ↦ ?_, fun x hx ↦ ?_,
+    fun x y hy ↦ ?_⟩
+  · split_ifs
+    · exact (continuous_infDist_pt _).comp_continuousOn hG
+    · exact continuousOn_const
+  · split_ifs
+    · exact infDist_nonneg
+    · exact zero_le_one
+  · split_ifs with hne
+    · exact (hU.isClosed_compl.notMem_iff_infDist_pos hne).mp fun h ↦ h hx
+    · exact one_pos
+  · split_ifs at hy with hne
+    · exact ball_infDist_compl_subset (mem_ball.2 hy)
+    · by_contra hyU
+      exact hne ⟨y, hyU⟩
+
+/-- **A continuous margin inside an open set.** Along a continuous map `G` into a pseudometric
+space, an open set `U` has a continuous margin `ε ≥ 0`, positive wherever `G z ∈ U`, such that
+every point within `ε z` of `G z` lies in `U`. -/
+theorem exists_continuous_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {U : Set M}
+    (hU : IsOpen U) {G : X → M} (hG : Continuous G) :
+    ∃ ε : X → ℝ, Continuous ε ∧ (∀ x, 0 ≤ ε x) ∧ (∀ x, G x ∈ U → 0 < ε x) ∧
+      ∀ x y, dist y (G x) < ε x → y ∈ U := by
+  obtain ⟨ε, hε, h⟩ := hU.exists_continuousOn_forall_dist_lt hG.continuousOn
+  exact ⟨ε, continuousOn_univ.mp hε, h⟩
 
 end IsOpen

@@ -11,13 +11,15 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Topology.MetricSpace.Holder
--- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
--- only inside the proofs below.
+-- Private: the derivative sum and scalar rules, the symmetry of second derivatives and the local
+-- Lipschitz property of `C¹` maps are used only inside the proofs below.
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # The gradient is an isometric conjugate-linear image of the Fréchet derivative
@@ -35,28 +37,49 @@ norm-preserving image of the corresponding family of derivatives. Over `ℝ` it 
 instance, `φ ↦ ∇ φ` is linear on real-valued test functions, and `‖∇ φ‖` may be estimated by any
 theorem about `‖Dφ‖`.
 
+The file also computes the gradient of the squared distance `y ↦ ‖y - x₀‖ ^ 2` and records the
+chain rule for the gradient of a real profile composed with a real function.
+
 ## Main declarations
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
+* `TauCeti.gradient_add_const` and `TauCeti.gradient_const_add`: adding a constant does not change
+  the gradient.
+* `TauCeti.hasGradientAt_inner_const_left` and `TauCeti.gradient_inner_const_left`: the functional
+  `y ↦ ⟪v, y⟫_𝕜` has gradient `v`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
+* `TauCeti.gradient_fun_mul`: the Leibniz rule `∇ (f g) = conj f ∇ g + conj g ∇ f`.
+* `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for a
+  linear isometry equivalence `l`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `TauCeti.gradient_eq_zero_iff`: `∇ f x = 0 ↔ fderiv 𝕜 f x = 0`.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
   supported; `HasCompactSupport.mono_of_forall_gradient`: so is any function vanishing where both
   the function and its gradient vanish.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
+* `TauCeti.gradient_apply_eq_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the `i`-th coordinate
+  of the gradient `∇ f` is the partial derivative `∂ᵢ f`.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
-  continuous; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
-  `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
+  continuous; `ContDiff.locallyLipschitz_neg_gradient`: the negative gradient field of a `C²`
+  function is locally Lipschitz; `HasCompactSupport.memLp_gradient`: the gradient of a compactly
+  supported `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
   `ContDiffAt.continuousAt_fderiv_gradient` and
   `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
   continuous at `x`, and its gradient is differentiable near `x`.
 * `TauCeti.hasGradientAt_mul_norm_sq_add` and `TauCeti.gradient_mul_norm_sq_add`: over `ℝ`, the
   quadratic `y ↦ (a / 2) ‖y‖² + c` has gradient `a • y` at `y`.
+* `TauCeti.hasGradientAt_norm_sq_sub` and `TauCeti.gradient_norm_sq_sub`: over `ℝ`, the function
+  `y ↦ ‖y - x₀‖ ^ 2` has gradient `2 • (x - x₀)` at `x`.
+* `HasDerivAt.comp_hasGradientAt`: over `ℝ`, the chain rule for the gradient of `f ∘ g`, namely
+  `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
+* `TauCeti.inner_fderiv_gradient`: over `ℝ`,
+  `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
+* `TauCeti.norm_smul_gradient_add_smul_gradient_le`: over `ℝ`, the product-rule gradient
+  `ζ ∇φ + φ ∇ζ` is bounded by `2 N P` when `ζ`, `∇ζ` are bounded by `N` and `φ`, `∇φ` by `P`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -99,6 +122,30 @@ theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt �
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_add, fderiv_add hf hg]
 
+/-- Adding a constant to a function does not change its gradient. -/
+@[simp]
+theorem gradient_add_const (c : 𝕜) : ∇ (fun y => f y + c) x = ∇ f x := by
+  simp only [gradient, fderiv_add_const]
+
+/-- Adding a constant on the left to a function does not change its gradient. -/
+@[simp]
+theorem gradient_const_add (c : 𝕜) : ∇ (fun y => c + f y) x = ∇ f x := by
+  simp only [gradient, fderiv_const_add]
+
+/-- The continuous linear functional `y ↦ inner 𝕜 v y` has gradient `v` at every point `x`. -/
+theorem hasGradientAt_inner_const_left (v x : F) :
+    HasGradientAt (fun y : F => inner 𝕜 v y) v x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (innerSL 𝕜 v).hasFDerivAt.congr_fderiv ?_
+  ext y
+  simp
+
+/-- The continuous linear functional `y ↦ inner 𝕜 v y` has gradient `v` at every point `x`. -/
+@[simp]
+theorem gradient_inner_const_left (v x : F) :
+    ∇ (fun y : F => inner 𝕜 v y) x = v :=
+  (hasGradientAt_inner_const_left v x).gradient
+
 /-- The gradient is conjugate-homogeneous: `toDual` is conjugate-linear, so scaling the function
 by `c` scales the gradient by `conj c`. Over `ℝ` the conjugation is the identity. -/
 theorem gradient_const_smul (c : 𝕜) :
@@ -116,6 +163,25 @@ theorem gradient_neg : ∇ (-f) x = -∇ f x := by
 theorem gradient_sub (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
     ∇ (f - g) x = ∇ f x - ∇ g x := by
   rw [sub_eq_add_neg, gradient_add hf hg.neg, gradient_neg, sub_eq_add_neg]
+
+/-- **The Leibniz rule for the gradient.** The gradient of a product of functions differentiable
+at `x` is `conj (f x) • ∇ g x + conj (g x) • ∇ f x`: `toDual` is conjugate-linear. Over `ℝ` the
+conjugation is the identity. -/
+theorem gradient_fun_mul (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
+    ∇ (fun y => f y * g y) x = conj (f x) • ∇ g x + conj (g x) • ∇ f x := by
+  apply (toDual 𝕜 F).injective
+  simp only [toDual_gradient, fderiv_fun_mul hf hg, map_add, map_smulₛₗ,
+    RingHomCompTriple.comp_apply, RingHom.id_apply]
+
+/-- The gradient transforms under right composition by a linear isometry equivalence `l` as
+`∇ (f ∘ l) x = l⁻¹ (∇ f (l x))`. No differentiability hypothesis is needed. -/
+theorem gradient_comp_linearIsometryEquiv_right {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] (l : E ≃ₗᵢ[𝕜] F) (f : F → 𝕜) (x : E) :
+    ∇ (f ∘ l) x = l.symm (∇ f (l x)) := by
+  refine ext_inner_right 𝕜 fun a => ?_
+  rw [gradient, gradient, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
+    ContinuousLinearEquiv.comp_right_fderiv]
+  simp [LinearIsometryEquiv.inner_map_eq_flip]
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
@@ -140,15 +206,18 @@ theorem _root_.HasCompactSupport.mono_of_forall_gradient {M : Type*} [Zero M] {g
   hf.mono' fun y hy ↦ by_contra fun h ↦
     hy (hg y (image_eq_zero_of_notMem_tsupport h) (gradient_of_notMem_tsupport h))
 
+/-- The gradient is the Riesz representative of the Fréchet derivative, pointwise: `∇ f` is
+`(toDual 𝕜 F).symm ∘ fderiv 𝕜 f`. -/
+theorem gradient_eq_toDual_symm_comp_fderiv (f : F → 𝕜) :
+    ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f :=
+  rfl
+
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
 differentiable. -/
 @[fun_prop]
 theorem measurable_gradient [MeasurableSpace F] [BorelSpace F] (f : F → 𝕜) : Measurable (∇ f) := by
-  have h : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := by
-    ext1 x
-    rw [Function.comp_apply, ← toDual_gradient, LinearIsometryEquiv.symm_apply_apply]
-  rw [h]
+  rw [gradient_eq_toDual_symm_comp_fderiv]
   exact (toDual 𝕜 F).symm.continuous.measurable.comp (measurable_fderiv 𝕜 f)
 
 /-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function
@@ -164,6 +233,13 @@ theorem _root_.ContDiff.continuous_gradient {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
     (hn : n ≠ 0) : Continuous (∇ f) :=
   (toDual ℝ E).symm.continuous.comp (hf.continuous_fderiv hn)
+
+/-- Over `ℝ`, the negative gradient field `-∇f` of a `C²` function is `C¹`, hence locally
+Lipschitz. -/
+theorem _root_.ContDiff.locallyLipschitz_neg_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
+    (hn : 2 ≤ n) : LocallyLipschitz (-∇ f) :=
+  (hf.gradient_right (m := 1) (by rwa [one_add_one_eq_two])).neg.locallyLipschitz
 
 /-- Over `ℝ`, the gradient of a compactly supported `C¹` function is in `Lᵖ(μ)` for every
 measure `μ` finite on compact sets, being continuous with compact support. -/
@@ -315,5 +391,63 @@ theorem _root_.OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient
     _ = _ := by
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
         ring
+
+/-- The gradient of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • (x - x₀)`. -/
+theorem hasGradientAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (x₀ x : E) :
+    HasGradientAt (fun y : E => ‖y - x₀‖ ^ 2) ((2 : ℝ) • (x - x₀)) x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (hasFDerivAt_norm_sq_sub x₀ x).congr_fderiv ?_
+  ext v
+  simp
+
+/-- The gradient of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • (x - x₀)`. -/
+@[simp]
+theorem gradient_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (x₀ x : E) : ∇ (fun y : E => ‖y - x₀‖ ^ 2) x = (2 : ℝ) • (x - x₀) :=
+  (hasGradientAt_norm_sq_sub x₀ x).gradient
+
+/-- The chain rule for the gradient of a real function composed with a real profile. -/
+theorem _root_.HasDerivAt.comp_hasGradientAt {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {f : ℝ → ℝ} {f' : ℝ} {g : E → ℝ} {g' x : E}
+    (hf : HasDerivAt f f' (g x)) (hg : HasGradientAt g g' x) :
+    HasGradientAt (f ∘ g) (f' • g') x := by
+  rw [hasGradientAt_iff_hasFDerivAt] at hg ⊢
+  refine (hf.comp_hasFDerivAt x hg).congr_fderiv ?_
+  ext v
+  simp
+
+/-- Over `ℝ`, the inner product of the derivative of the gradient with a vector equals the second
+Fréchet derivative: `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`. No
+differentiability assumption is needed. -/
+theorem inner_fderiv_gradient {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (f : E → ℝ) (x v w : E) :
+    ⟪fderiv ℝ (∇ f) x v, w⟫_ℝ = iteratedFDeriv ℝ 2 f x ![v, w] := by
+  rw [iteratedFDeriv_two_apply, ← toDual_comp_gradient, LinearIsometryEquiv.comp_fderiv]
+  simpa using (toDual_apply_apply (𝕜 := ℝ)).symm
+
+/-- **The gradient in Euclidean coordinates**: the `i`-th coordinate of the gradient of a real
+function on `ℝⁿ` is its derivative in the `i`-th coordinate direction. No differentiability is
+needed. -/
+theorem gradient_apply_eq_fderiv_apply_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : EuclideanSpace ℝ ι → ℝ) (x : EuclideanSpace ℝ ι) (i : ι) :
+    ∇ f x i = fderiv ℝ f x (EuclideanSpace.single i 1) := by
+  rw [← inner_gradient_left, EuclideanSpace.inner_single_right]
+  simp
+
+/-- The gradient `ζ ∇φ + φ ∇ζ` of a product is bounded by `2 N P` when `|ζ|, ‖∇ζ‖ ≤ N` and
+`|φ|, ‖∇φ‖ ≤ P`. -/
+theorem norm_smul_gradient_add_smul_gradient_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {ζ φ : E → ℝ} {N P : ℝ} (hζN : ∀ x, |ζ x| ≤ N)
+    (hgradN : ∀ x, ‖∇ ζ x‖ ≤ N) (hφP : ∀ x, |φ x| ≤ P) (hgradP : ∀ x, ‖∇ φ x‖ ≤ P) (x : E) :
+    ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ 2 * N * P := by
+  have hN : 0 ≤ N := (abs_nonneg _).trans (hζN x)
+  calc ‖ζ x • ∇ φ x + φ x • ∇ ζ x‖ ≤ |ζ x| * ‖∇ φ x‖ + |φ x| * ‖∇ ζ x‖ := by
+        refine (norm_add_le _ _).trans_eq ?_
+        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+    _ ≤ N * P + P * N := by
+        gcongr
+        exacts [hζN x, hgradP x, (abs_nonneg _).trans (hφP x), hφP x, hgradN x]
+    _ = 2 * N * P := by ring
 
 end TauCeti

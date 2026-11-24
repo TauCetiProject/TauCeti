@@ -26,6 +26,10 @@ a fixed ambient network. It defines reachability through selected arrows, proves
 with walks in the subnetwork's own arrow family, and characterizes strong connectivity in those
 terms. It also defines the subnetwork traced by a directed walk. In particular, isolated selected
 vertices remain visible under every operation that does not delete them.
+
+Finally, walks in a subnetwork include into the ambient network, and an ambient walk between
+selected vertices whose arrows are all selected restricts to the subnetwork. An ambient walk thus
+comes from the subnetwork exactly when its traced subnetwork lies inside it.
 -/
 
 public section
@@ -68,7 +72,7 @@ instance [Finite V] [∀ v w, Finite (N.Hom v w)] : Finite N.Subnetwork :=
 
 /-- The arrow family of a subnetwork, indexed by its selected vertex subtype. -/
 abbrev Hom (S : N.Subnetwork) (x y : ↥S.vertexSet) :=
-  {e : N.Hom x.1 y.1 // (⟨x.1, y.1, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet}
+  {e : N.Hom x.val y.val // (⟨x.val, y.val, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet}
 
 /-! ### Reachability -/
 
@@ -86,11 +90,11 @@ theorem reachable_def (S : N.Subnetwork) (x y : V) :
 
 /-- A directed walk in a subnetwork gives reachability between its ambient endpoints. -/
 theorem reachable_of_nonempty_arrowWalk (S : N.Subnetwork) {x y : ↥S.vertexSet}
-    (h : Nonempty (ArrowWalk S.Hom x y)) : S.Reachable x.1 y.1 := by
+    (h : Nonempty (ArrowWalk S.Hom x y)) : S.Reachable x.val y.val := by
   obtain ⟨p⟩ := h
   induction p with
   | nil => exact ReachableWithout.refl S.arrowSetᶜ _
-  | cons p e ih => exact ih.tail e.1 (by simpa using e.2)
+  | cons _ e ih => exact ih.tail e.val (by simpa using e.property)
 
 /-- Reachability between selected ambient vertices lifts to a directed walk in the subnetwork. -/
 theorem nonempty_arrowWalk_of_reachable (S : N.Subnetwork) {x y : V}
@@ -113,8 +117,8 @@ theorem nonempty_arrowWalk_of_reachable (S : N.Subnetwork) {x y : V}
 /-- Reachability between selected ambient vertices is exactly the existence of a walk in the
 subnetwork's own arrow family. -/
 theorem reachable_iff_nonempty_arrowWalk (S : N.Subnetwork) (x y : ↥S.vertexSet) :
-    S.Reachable x.1 y.1 ↔ Nonempty (ArrowWalk S.Hom x y) :=
-  ⟨nonempty_arrowWalk_of_reachable S x.2 y.2,
+    S.Reachable x.val y.val ↔ Nonempty (ArrowWalk S.Hom x y) :=
+  ⟨nonempty_arrowWalk_of_reachable S x.property y.property,
     reachable_of_nonempty_arrowWalk S⟩
 
 /-- A subnetwork is strongly connected exactly when every ordered pair of its selected ambient
@@ -126,7 +130,7 @@ theorem isStronglyConnected_iff (S : N.Subnetwork) :
   · intro h x hx y hy
     exact (S.reachable_iff_nonempty_arrowWalk ⟨x, hx⟩ ⟨y, hy⟩).2 (h _ _)
   · intro h x y
-    exact (S.reachable_iff_nonempty_arrowWalk x y).1 (h x.1 x.2 y.1 y.2)
+    exact (S.reachable_iff_nonempty_arrowWalk x y).1 (h x.val x.property y.val y.property)
 
 /-- A subnetwork as a bounded network on its selected vertex subtype, with inherited bounds.
 
@@ -157,15 +161,15 @@ def vertexEmbedding (S : N.Subnetwork) : ↥S.vertexSet ↪ V :=
 
 @[simp]
 theorem vertexEmbedding_apply (S : N.Subnetwork) (x : ↥S.vertexSet) :
-    S.vertexEmbedding x = x.1 := (rfl)
+    S.vertexEmbedding x = x.val := (rfl)
 
 /-- The inclusion of a subnetwork arrow into the corresponding ambient arrow type. -/
-def arrowEmbedding (S : N.Subnetwork) (x y : ↥S.vertexSet) : S.Hom x y ↪ N.Hom x.1 y.1 :=
+def arrowEmbedding (S : N.Subnetwork) (x y : ↥S.vertexSet) : S.Hom x y ↪ N.Hom x.val y.val :=
   Function.Embedding.subtype _
 
 @[simp]
 theorem arrowEmbedding_apply (S : N.Subnetwork) {x y : ↥S.vertexSet} (e : S.Hom x y) :
-    S.arrowEmbedding x y e = e.1 := (rfl)
+    S.arrowEmbedding x y e = e.val := (rfl)
 
 /-! ### Order and union -/
 
@@ -192,28 +196,28 @@ theorem Reachable.mono {S T : N.Subnetwork} (hST : S ≤ T) {x y : V}
 This definition is exposed because its values index the codomain of `arrowEmbeddingOfLE`. -/
 @[expose]
 def vertexEmbeddingOfLE {S T : N.Subnetwork} (h : S ≤ T) : ↥S.vertexSet ↪ ↥T.vertexSet where
-  toFun x := ⟨x.1, h.1 x.2⟩
+  toFun x := ⟨x.val, h.1 x.property⟩
   inj' x y hxy := by
     apply Subtype.ext
-    exact congrArg (fun z : ↥T.vertexSet ↦ z.1) hxy
+    exact congrArg (fun z : ↥T.vertexSet ↦ z.val) hxy
 
 @[simp]
 theorem vertexEmbeddingOfLE_apply {S T : N.Subnetwork} (h : S ≤ T) (x : ↥S.vertexSet) :
-    (vertexEmbeddingOfLE h x).1 = x.1 := rfl
+    (vertexEmbeddingOfLE h x).val = x.val := rfl
 
 /-- Inclusion of an arrow type of a smaller subnetwork into the corresponding arrow type of a
 larger one. -/
 def arrowEmbeddingOfLE {S T : N.Subnetwork} (h : S ≤ T) (x y : ↥S.vertexSet) :
     S.Hom x y ↪ T.Hom (vertexEmbeddingOfLE h x) (vertexEmbeddingOfLE h y) where
-  toFun e := ⟨e.1, h.2 e.2⟩
+  toFun e := ⟨e.val, h.2 e.property⟩
   inj' e f hef := by
     apply Subtype.ext
     exact congrArg
-      (fun z : T.Hom (vertexEmbeddingOfLE h x) (vertexEmbeddingOfLE h y) ↦ z.1) hef
+      (fun z : T.Hom (vertexEmbeddingOfLE h x) (vertexEmbeddingOfLE h y) ↦ z.val) hef
 
 @[simp]
 theorem arrowEmbeddingOfLE_apply {S T : N.Subnetwork} (h : S ≤ T) {x y : ↥S.vertexSet}
-    (e : S.Hom x y) : (arrowEmbeddingOfLE h x y e).1 = e.1 := (rfl)
+    (e : S.Hom x y) : (arrowEmbeddingOfLE h x y e).val = e.val := (rfl)
 
 /-- The union of two subnetworks inside the same ambient network. -/
 def union (S T : N.Subnetwork) : N.Subnetwork where
@@ -562,33 +566,57 @@ theorem target_mem_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
     t ∈ p.toSubnetwork.vertexSet :=
   @Quiver.Path.end_mem_vertices V ⟨N.Hom⟩ s t p
 
+@[simp]
+theorem toSubnetwork_nil (s : V) :
+    (nil s : ArrowWalk N.Hom s s).toSubnetwork = N.singletonSubnetwork s := by
+  ext <;> simp
+
+@[simp]
+theorem toSubnetwork_comp {s t u : V} (p : ArrowWalk N.Hom s t) (q : ArrowWalk N.Hom t u) :
+    (p.comp q).toSubnetwork = p.toSubnetwork ⊔ q.toSubnetwork := by
+  refine Network.Subnetwork.ext (Set.ext fun x ↦ ?_) (Set.ext fun a ↦ ?_)
+  · have hcomp : (p.comp q).vertices = p.vertices.dropLast ++ q.vertices :=
+      @Quiver.Path.vertices_comp V ⟨N.Hom⟩ _ _ _ p q
+    have hend : p.vertices.dropLast ++ [t] = p.vertices :=
+      @Quiver.Path.dropLast_append_end_eq V ⟨N.Hom⟩ _ _ p
+    have ht : t ∈ q.vertices := @Quiver.Path.start_mem_vertices V ⟨N.Hom⟩ _ _ q
+    have hp : x ∈ p.vertices ↔ x ∈ p.vertices.dropLast ∨ x = t := by
+      simpa only [List.mem_append, List.mem_singleton] using (congrArg (x ∈ ·) hend.symm).to_iff
+    rw [toSubnetwork_vertexSet, Network.Subnetwork.sup_vertexSet, Set.mem_union,
+      toSubnetwork_vertexSet, toSubnetwork_vertexSet, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
+      Set.mem_ofPred_eq, hcomp, List.mem_append, hp]
+    exact ⟨fun h ↦ h.elim (fun h ↦ .inl (.inl h)) .inr,
+      fun h ↦ h.elim (fun h ↦ h.elim .inl fun h ↦ .inr (h ▸ ht)) .inr⟩
+  · rw [toSubnetwork_arrowSet, Network.Subnetwork.sup_arrowSet, Set.mem_union,
+      toSubnetwork_arrowSet, toSubnetwork_arrowSet, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
+      Set.mem_ofPred_eq, arrows_comp, List.mem_append]
+
 /-- The subnetwork traced by the first factor of a composite walk lies in the subnetwork traced
 by the composite. -/
 theorem toSubnetwork_comp_left_le {s t x : V} (p : ArrowWalk N.Hom s t)
     (q : ArrowWalk N.Hom t x) : p.toSubnetwork ≤ (p.comp q).toSubnetwork := by
-  refine ⟨?_, ?_⟩
-  · intro v hv
-    -- Expose the set-comprehension representation of the traced vertex sets.
-    change v ∈ p.vertices at hv
-    change v ∈ (p.comp q).vertices
-    exact (p.comp q).vertices_subset_of_arrows_subset (by simp) hv
-  · intro a ha
-    simpa using List.mem_append_left q.arrows ha
+  rw [toSubnetwork_comp]
+  exact le_sup_left
 
 /-- The subnetwork traced by the second factor of a composite walk lies in the subnetwork traced
 by the composite. -/
 theorem toSubnetwork_comp_right_le {s t x : V} (p : ArrowWalk N.Hom s t)
     (q : ArrowWalk N.Hom t x) : q.toSubnetwork ≤ (p.comp q).toSubnetwork := by
-  refine ⟨?_, ?_⟩
-  · intro v hv
-    -- Expose the set-comprehension representation of the traced vertex sets.
-    change v ∈ q.vertices at hv
-    change v ∈ (p.comp q).vertices
-    rw [show (p.comp q).vertices = p.vertices.dropLast ++ q.vertices from
-      @Quiver.Path.vertices_comp V ⟨N.Hom⟩ _ _ _ p q]
-    exact List.mem_append_right _ hv
-  · intro a ha
-    simpa using List.mem_append_right p.arrows ha
+  rw [toSubnetwork_comp]
+  exact le_sup_right
+
+/-- The subnetwork traced by a walk lies in `S` precisely when its start vertex and every traversed
+arrow belong to `S`. -/
+theorem toSubnetwork_le_iff {s t : V} {p : ArrowWalk N.Hom s t} {S : N.Subnetwork} :
+    p.toSubnetwork ≤ S ↔ s ∈ S.vertexSet ∧ ∀ a ∈ p.arrows, a ∈ S.arrowSet := by
+  rw [Network.Subnetwork.le_def, toSubnetwork_vertexSet, toSubnetwork_arrowSet]
+  refine ⟨fun ⟨hV, hA⟩ ↦ ⟨hV p.source_mem_toSubnetwork, fun a ha ↦ hA ha⟩, fun ⟨hs, hA⟩ ↦ ⟨?_, hA⟩⟩
+  intro x hx
+  rw [Set.mem_ofPred_eq, vertices_eq_cons_map_target_arrows, List.mem_cons] at hx
+  rcases hx with rfl | hx
+  · exact hs
+  · obtain ⟨a, ha, rfl⟩ := List.mem_map.1 hx
+    exact S.target_mem a (hA a ha)
 
 /-- A walk gives reachability between its endpoints in the subnetwork that it traces. -/
 theorem reachable_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
@@ -615,3 +643,288 @@ theorem reachable_of_mem_vertices {s t x : V} (p : ArrowWalk N.Hom s t)
   exact ⟨q.reachable_toSubnetwork.mono hq, r.reachable_toSubnetwork.mono hr⟩
 
 end TauCeti.ArrowWalk
+
+namespace TauCeti.Network.Subnetwork
+
+variable {K : Type w} {V : Type u} [LE K] {N : Network K V}
+
+/-! ### Walk inclusion and restriction -/
+
+/-- The inclusion of a subnetwork into its ambient network, as a prefunctor on the explicit
+arrow families. -/
+private def inclusionPrefunctor (S : N.Subnetwork) :
+    @Prefunctor ↥S.vertexSet ⟨S.Hom⟩ V ⟨N.Hom⟩ :=
+  @Prefunctor.mk ↥S.vertexSet ⟨S.Hom⟩ V ⟨N.Hom⟩ Subtype.val fun e ↦ e.val
+
+/-- Regard a walk in a subnetwork as a walk in its ambient network. -/
+def mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y) :
+    ArrowWalk N.Hom x.val y.val :=
+  @Prefunctor.mapPath ↥S.vertexSet ⟨S.Hom⟩ V ⟨N.Hom⟩ S.inclusionPrefunctor x y p
+
+@[simp]
+theorem mapPath_nil (S : N.Subnetwork) (x : ↥S.vertexSet) :
+    S.mapPath (ArrowWalk.nil x) = ArrowWalk.nil x.val :=
+  @Prefunctor.mapPath_nil ↥S.vertexSet ⟨S.Hom⟩ V ⟨N.Hom⟩ S.inclusionPrefunctor x
+
+@[simp]
+theorem mapPath_cons (S : N.Subnetwork) {x y z : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) (e : S.Hom y z) :
+    S.mapPath (p.cons e) = (S.mapPath p).cons e.val :=
+  @Prefunctor.mapPath_cons ↥S.vertexSet ⟨S.Hom⟩ V ⟨N.Hom⟩ S.inclusionPrefunctor
+    x y z p e
+
+@[simp]
+theorem mapPath_comp (S : N.Subnetwork) {x y z : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) (q : ArrowWalk S.Hom y z) :
+    S.mapPath (p.comp q) = (S.mapPath p).comp (S.mapPath q) :=
+  @Prefunctor.mapPath_comp ↥S.vertexSet ⟨S.Hom⟩ V ⟨N.Hom⟩ S.inclusionPrefunctor
+    x y p z q
+
+@[simp]
+theorem length_mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y) :
+    (S.mapPath p).length = p.length :=
+  @Prefunctor.length_mapPath ↥S.vertexSet V ⟨S.Hom⟩ ⟨N.Hom⟩ S.inclusionPrefunctor x y p
+
+@[simp]
+theorem vertices_mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) :
+    (S.mapPath p).vertices = p.vertices.map Subtype.val :=
+  @Prefunctor.vertices_mapPath ↥S.vertexSet V ⟨S.Hom⟩ ⟨N.Hom⟩ S.inclusionPrefunctor x y p
+
+@[simp]
+theorem arrows_mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) :
+    (S.mapPath p).arrows =
+      p.arrows.map fun a ↦ ⟨a.1.val, a.2.1.val, a.2.2.val⟩ := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
+@[simp]
+theorem isPath_mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y) :
+    (S.mapPath p).IsPath ↔ p.IsPath := by
+  rw [ArrowWalk.isPath_def, ArrowWalk.isPath_def, vertices_mapPath,
+    List.nodup_map_iff Subtype.val_injective]
+
+@[simp]
+theorem isCycle_mapPath (S : N.Subnetwork) {x : ↥S.vertexSet} (p : ArrowWalk S.Hom x x) :
+    (S.mapPath p).IsCycle ↔ p.IsCycle := by
+  rw [ArrowWalk.isCycle_def, ArrowWalk.isCycle_def, length_mapPath, vertices_mapPath,
+    ← List.map_tail, List.nodup_map_iff Subtype.val_injective]
+
+/-- The ambient trace of a subnetwork walk is contained in that subnetwork. -/
+theorem toSubnetwork_mapPath_le (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) : (S.mapPath p).toSubnetwork ≤ S := by
+  rw [Network.Subnetwork.le_def]
+  constructor
+  · rw [ArrowWalk.toSubnetwork_vertexSet, vertices_mapPath]
+    rintro z hz
+    obtain ⟨z, -, rfl⟩ := List.mem_map.1 hz
+    exact z.property
+  · rw [ArrowWalk.toSubnetwork_arrowSet, arrows_mapPath]
+    rintro a ha
+    obtain ⟨⟨x, y, e⟩, -, rfl⟩ := List.mem_map.1 ha
+    exact e.property
+
+private def restrictPathAux (S : N.Subnetwork) {s : V} (hs : s ∈ S.vertexSet) :
+    ∀ {t : V} (p : ArrowWalk N.Hom s t) (ht : t ∈ S.vertexSet),
+      (∀ a ∈ p.arrows, a ∈ S.arrowSet) → ArrowWalk S.Hom ⟨s, hs⟩ ⟨t, ht⟩
+  | _, @Quiver.Path.nil _ .(_) _, _, _ => ArrowWalk.nil _
+  | _, @Quiver.Path.cons _ .(_) _ z _ p e, _, h =>
+    have he : (⟨z, _, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet := h _ (by simp)
+    (restrictPathAux S hs p (S.source_mem _ he) fun a ha ↦ h a (by simp [ha])).cons ⟨e, he⟩
+
+/-- Restrict an ambient walk to a subnetwork when its endpoints and traversed arrows are
+selected. The endpoint hypotheses are carried by the subtype endpoints `x` and `y`; the
+hypothesis on arrows is the arrow half of `p.toSubnetwork ≤ S`. -/
+def restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk N.Hom x.val y.val) (h : p.toSubnetwork.arrowSet ⊆ S.arrowSet) :
+    ArrowWalk S.Hom x y :=
+  restrictPathAux S x.property p y.property fun _ ha ↦ h (by simpa using ha)
+
+@[simp]
+theorem restrictPath_nil (S : N.Subnetwork) (x : ↥S.vertexSet)
+    (h : (ArrowWalk.nil x.val : ArrowWalk N.Hom x.val x.val).toSubnetwork.arrowSet ⊆ S.arrowSet) :
+    S.restrictPath (ArrowWalk.nil x.val) h = ArrowWalk.nil x :=
+  (rfl)
+
+/-- Restricting a walk ending in an arrow restricts the shorter walk and appends that arrow. -/
+theorem restrictPath_cons (S : N.Subnetwork) {x y : ↥S.vertexSet} {z : V}
+    (p : ArrowWalk N.Hom x.val z) (e : N.Hom z y.val)
+    (h : (p.cons e).toSubnetwork.arrowSet ⊆ S.arrowSet) (hz : z ∈ S.vertexSet)
+    (hp : p.toSubnetwork.arrowSet ⊆ S.arrowSet)
+    (he : (⟨z, y.val, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet) :
+    S.restrictPath (p.cons e) h = (S.restrictPath (y := ⟨z, hz⟩) p hp).cons ⟨e, he⟩ :=
+  (rfl)
+
+/-- Including a restricted ambient walk recovers the original walk. -/
+@[simp]
+theorem mapPath_restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk N.Hom x.val y.val) (h : p.toSubnetwork.arrowSet ⊆ S.arrowSet) :
+    S.mapPath (S.restrictPath p h) = p := by
+  suffices ∀ {t : V} (p : ArrowWalk N.Hom x.val t) (ht : t ∈ S.vertexSet)
+      (h : p.toSubnetwork.arrowSet ⊆ S.arrowSet),
+      S.mapPath (S.restrictPath (y := ⟨t, ht⟩) p h) = p
+    from this p y.property h
+  intro t p
+  induction p with
+  | nil => exact fun _ _ ↦ rfl
+  | @cons z t p e ih =>
+    intro ht h
+    have he : (⟨z, t, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet := h (by simp)
+    have hp : (ArrowWalk.toSubnetwork (N := N) p).arrowSet ⊆ S.arrowSet :=
+      fun a ha ↦ h (by simp_all)
+    rw [restrictPath_cons S (y := ⟨t, ht⟩) p e h (S.source_mem _ he) hp he, mapPath_cons, ih]
+
+/-- Restricting the inclusion of a subnetwork walk recovers that walk. -/
+@[simp]
+theorem restrictPath_mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (q : ArrowWalk S.Hom x y) (h : (S.mapPath q).toSubnetwork.arrowSet ⊆ S.arrowSet) :
+    S.restrictPath (S.mapPath q) h = q := by
+  induction q with
+  | nil => rfl
+  | cons q e ih =>
+    simp only [mapPath_cons] at h ⊢
+    exact (restrictPath_cons S (S.mapPath q) e.val h _ (toSubnetwork_mapPath_le S q).2
+        e.property).trans
+      (congrArg (·.cons e) (ih _))
+
+/-- Distinct subnetwork walks remain distinct in the ambient network. -/
+theorem mapPath_injective (S : N.Subnetwork) (x y : ↥S.vertexSet) :
+    Function.Injective (S.mapPath (x := x) (y := y)) := by
+  intro p q hpq
+  rw [← S.restrictPath_mapPath p (toSubnetwork_mapPath_le S p).2,
+    ← S.restrictPath_mapPath q (toSubnetwork_mapPath_le S q).2]
+  simp only [hpq]
+
+@[simp]
+theorem length_restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk N.Hom x.val y.val) (h : p.toSubnetwork.arrowSet ⊆ S.arrowSet) :
+    (S.restrictPath p h).length = p.length := by
+  rw [← S.length_mapPath, mapPath_restrictPath]
+
+@[simp]
+theorem unattach_vertices_restrictPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk N.Hom x.val y.val) (h : p.toSubnetwork.arrowSet ⊆ S.arrowSet) :
+    (S.restrictPath p h).vertices.unattach = p.vertices := by
+  rw [List.unattach, ← S.vertices_mapPath, mapPath_restrictPath]
+
+/-- An ambient walk between selected vertices comes from the subnetwork exactly when its traced
+subnetwork is contained in the selected subnetwork. -/
+theorem exists_mapPath_eq_iff (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk N.Hom x.val y.val) :
+    (∃ q : ArrowWalk S.Hom x y, S.mapPath q = p) ↔ p.toSubnetwork ≤ S := by
+  constructor
+  · rintro ⟨q, rfl⟩
+    exact toSubnetwork_mapPath_le S q
+  · intro h
+    exact ⟨S.restrictPath p h.2, S.mapPath_restrictPath _ _⟩
+
+/-- Inclusion of the arrow family of a smaller subnetwork into that of a larger one. -/
+private def inclusionPrefunctorOfLE {S T : N.Subnetwork} (h : S ≤ T) :
+    @Prefunctor ↥S.vertexSet ⟨S.Hom⟩ ↥T.vertexSet ⟨T.Hom⟩ :=
+  @Prefunctor.mk ↥S.vertexSet ⟨S.Hom⟩ ↥T.vertexSet ⟨T.Hom⟩ (vertexEmbeddingOfLE h)
+    fun {x y} e ↦ arrowEmbeddingOfLE h x y e
+
+/-- Push a walk forward from a smaller subnetwork to a larger one. -/
+def mapPathOfLE {S T : N.Subnetwork} (h : S ≤ T) {x y : ↥S.vertexSet} (p : ArrowWalk S.Hom x y) :
+    ArrowWalk T.Hom (vertexEmbeddingOfLE h x) (vertexEmbeddingOfLE h y) :=
+  @Prefunctor.mapPath ↥S.vertexSet ⟨S.Hom⟩ ↥T.vertexSet ⟨T.Hom⟩ (inclusionPrefunctorOfLE h) x y p
+
+@[simp]
+theorem mapPathOfLE_nil {S T : N.Subnetwork} (h : S ≤ T) (x : ↥S.vertexSet) :
+    mapPathOfLE h (ArrowWalk.nil x) = ArrowWalk.nil (vertexEmbeddingOfLE h x) :=
+  (rfl)
+
+@[simp]
+theorem mapPathOfLE_cons {S T : N.Subnetwork} (h : S ≤ T) {x y z : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) (e : S.Hom y z) :
+    mapPathOfLE h (p.cons e) = (mapPathOfLE h p).cons (arrowEmbeddingOfLE h y z e) :=
+  (rfl)
+
+@[simp]
+theorem mapPathOfLE_comp {S T : N.Subnetwork} (h : S ≤ T) {x y z : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) (q : ArrowWalk S.Hom y z) :
+    mapPathOfLE h (p.comp q) = (mapPathOfLE h p).comp (mapPathOfLE h q) :=
+  @Prefunctor.mapPath_comp ↥S.vertexSet ⟨S.Hom⟩ ↥T.vertexSet ⟨T.Hom⟩
+    (inclusionPrefunctorOfLE h) x y p z q
+
+@[simp]
+theorem length_mapPathOfLE {S T : N.Subnetwork} (h : S ≤ T) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) : (mapPathOfLE h p).length = p.length :=
+  @Prefunctor.length_mapPath ↥S.vertexSet ↥T.vertexSet ⟨S.Hom⟩ ⟨T.Hom⟩
+    (inclusionPrefunctorOfLE h) x y p
+
+@[simp]
+theorem vertices_mapPathOfLE {S T : N.Subnetwork} (h : S ≤ T) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) :
+    (mapPathOfLE h p).vertices = p.vertices.map (vertexEmbeddingOfLE h) :=
+  @Prefunctor.vertices_mapPath ↥S.vertexSet ↥T.vertexSet ⟨S.Hom⟩ ⟨T.Hom⟩
+    (inclusionPrefunctorOfLE h) x y p
+
+@[simp]
+theorem mapPath_mapPathOfLE {S T : N.Subnetwork} (h : S ≤ T) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) : T.mapPath (mapPathOfLE h p) = S.mapPath p := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
+
+@[simp]
+theorem isPath_mapPathOfLE {S T : N.Subnetwork} (h : S ≤ T) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) : (mapPathOfLE h p).IsPath ↔ p.IsPath := by
+  rw [ArrowWalk.isPath_def, ArrowWalk.isPath_def, vertices_mapPathOfLE,
+    List.nodup_map_iff (vertexEmbeddingOfLE h).injective]
+
+@[simp]
+theorem isCycle_mapPathOfLE {S T : N.Subnetwork} (h : S ≤ T) {x : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x x) : (mapPathOfLE h p).IsCycle ↔ p.IsCycle := by
+  rw [ArrowWalk.isCycle_def, ArrowWalk.isCycle_def, length_mapPathOfLE, vertices_mapPathOfLE,
+    ← List.map_tail, List.nodup_map_iff (vertexEmbeddingOfLE h).injective]
+
+/-- Walk inclusion between ordered subnetworks is injective. -/
+theorem mapPathOfLE_injective {S T : N.Subnetwork} (h : S ≤ T) (x y : ↥S.vertexSet) :
+    Function.Injective (mapPathOfLE h (x := x) (y := y)) := by
+  intro p q hpq
+  apply S.mapPath_injective x y
+  rw [← mapPath_mapPathOfLE h p, ← mapPath_mapPathOfLE h q, hpq]
+
+/-! ### Strong connectivity -/
+
+/-- Every subnetwork with at most one selected vertex is strongly connected. -/
+theorem isStronglyConnected_of_subsingleton {S : N.Subnetwork} (h : S.vertexSet.Subsingleton) :
+    @Quiver.IsStronglyConnected ↥S.vertexSet ⟨S.Hom⟩ :=
+  S.isStronglyConnected_iff.2 fun _ hx _ hy ↦ h hx hy ▸ .refl _ _
+
+theorem isStronglyConnected_empty :
+    @Quiver.IsStronglyConnected ↥N.emptySubnetwork.vertexSet ⟨N.emptySubnetwork.Hom⟩ :=
+  isStronglyConnected_of_subsingleton Set.subsingleton_empty
+
+theorem isStronglyConnected_full_iff :
+    @Quiver.IsStronglyConnected ↥N.fullSubnetwork.vertexSet ⟨N.fullSubnetwork.Hom⟩ ↔
+      @Quiver.IsStronglyConnected V ⟨N.Hom⟩ := by
+  rw [isStronglyConnected_iff, @Quiver.isStronglyConnected_iff V ⟨N.Hom⟩]
+  simp [reachable_def]
+
+/-- Adjoining any directed walk whose endpoints already belong to a strongly connected subnetwork
+preserves strong connectivity. -/
+theorem isStronglyConnected_sup_toSubnetwork {S : N.Subnetwork}
+    (hS : @Quiver.IsStronglyConnected ↥S.vertexSet ⟨S.Hom⟩) {u w : V} (p : ArrowWalk N.Hom u w)
+    (hu : u ∈ S.vertexSet) (hw : w ∈ S.vertexSet) :
+    @Quiver.IsStronglyConnected ↥(S ⊔ p.toSubnetwork).vertexSet ⟨(S ⊔ p.toSubnetwork).Hom⟩ := by
+  rw [isStronglyConnected_iff] at hS ⊢
+  intro x hx y hy
+  have hto : ∀ ⦃z⦄, z ∈ (S ⊔ p.toSubnetwork).vertexSet →
+      ∃ a ∈ S.vertexSet, (S ⊔ p.toSubnetwork).Reachable z a := by
+    rintro z (hz | hz)
+    · exact ⟨z, hz, .refl _ _⟩
+    · exact ⟨w, hw, (p.reachable_of_mem_vertices hz).2.mono le_sup_right⟩
+  have hfrom : ∀ ⦃z⦄, z ∈ (S ⊔ p.toSubnetwork).vertexSet →
+      ∃ b ∈ S.vertexSet, (S ⊔ p.toSubnetwork).Reachable b z := by
+    rintro z (hz | hz)
+    · exact ⟨z, hz, .refl _ _⟩
+    · exact ⟨u, hu, (p.reachable_of_mem_vertices hz).1.mono le_sup_right⟩
+  obtain ⟨a, ha, hxa⟩ := hto hx
+  obtain ⟨b, hb, hby⟩ := hfrom hy
+  exact hxa.trans ((hS a ha b hb).mono le_sup_left) |>.trans hby
+
+end TauCeti.Network.Subnetwork

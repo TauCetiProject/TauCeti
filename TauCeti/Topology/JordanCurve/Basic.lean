@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homeomorph.Lemmas
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.LocallyConnected
 import Mathlib.Analysis.Convex.GaugeRescale
+import TauCeti.Topology.Homeomorph.CompactQuotient
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 /-!
@@ -48,9 +49,9 @@ transporting the property back to a compact set from an image already known to b
   `TauCeti.IsJordanCurve.nonempty` and `TauCeti.IsJordanCurve.not_subsingleton` — a Jordan curve is
   a nonempty compact path-connected set with more than one point.
 * `TauCeti.IsJordanCurve.image` and `TauCeti.IsJordanCurve.of_image` — being a Jordan curve
-  transfers in both directions along a map that is continuous and injective on the set, provided
-  the codomain is Hausdorff (and, in the direction that transports the property back from the
-  image, the source set is known to be compact).
+  transfers in both directions along a map that is continuous and injective on the set. Carrying a
+  Jordan curve forward (`image`) requires a Hausdorff codomain; carrying the property back from the
+  image (`of_image`) requires a compact source set but no separation axiom on the ambient space.
 * `TauCeti.IsJordanCurve.image_homeomorph` and `TauCeti.isJordanCurve_image_homeomorph_iff` — being
   a Jordan curve is invariant under a homeomorphism of the ambient spaces; no separation axiom is
   needed.
@@ -110,15 +111,6 @@ def IsJordanCurve (C : Set X) : Prop := Nonempty (C ≃ₜ Circle)
 to `TauCeti.IsJordanCurve` outside its defining module. -/
 theorem isJordanCurve_iff : IsJordanCurve C ↔ Nonempty (C ≃ₜ Circle) := Iff.rfl
 
-/-- A continuous injection defined on a compact set is a homeomorphism onto its image, the image
-carrying the subspace topology of a Hausdorff space. This is the set-level form of
-`Continuous.homeoOfEquivCompactToT2`, and the engine of both transfer lemmas below. -/
-private noncomputable def imageHomeomorphOfIsCompact [T2Space Y] (hC : IsCompact C) {g : X → Y}
-    (hg : ContinuousOn g C) (hgi : InjOn g C) : C ≃ₜ g '' C :=
-  haveI : CompactSpace C := isCompact_iff_compactSpace.mp hC
-  Continuous.homeoOfEquivCompactToT2 (f := hgi.bijOn_image.equiv g)
-    (hg.mapsToRestrict hgi.bijOn_image.mapsTo)
-
 /-- A Jordan curve is compact: the circle is. -/
 theorem IsJordanCurve.isCompact (h : IsJordanCurve C) : IsCompact C := by
   obtain ⟨e⟩ := h
@@ -148,7 +140,7 @@ theorem IsJordanCurve.not_subsingleton (h : IsJordanCurve C) : ¬ C.Subsingleton
   obtain ⟨e⟩ := h
   intro hsub
   exact Circle.neg_ne_self 1
-    (e.symm.injective (Subtype.ext (hsub (e.symm (-1)).2 (e.symm 1).2)))
+    (e.symm.injective (Subtype.ext (hsub (e.symm (-1)).property (e.symm 1).property)))
 
 /-- **A Jordan curve is carried to a Jordan curve by a continuous injection.** Only continuity and
 injectivity *on the curve* are needed, the curve supplying the compactness that upgrades them to a
@@ -157,7 +149,7 @@ theorem IsJordanCurve.image [T2Space Y] (h : IsJordanCurve C) {g : X → Y} (hg 
     (hgi : InjOn g C) : IsJordanCurve (g '' C) := by
   have hC := h.isCompact
   obtain ⟨e⟩ := h
-  exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).symm.trans e⟩
+  exact ⟨(hC.imageHomeomorph hg hgi).symm.trans e⟩
 
 /-- **A compact set carried onto a Jordan curve by a continuous injection is a Jordan curve.**
 This is the converse of `TauCeti.IsJordanCurve.image`; compactness of the source has to be assumed
@@ -165,10 +157,11 @@ here, since it is no longer inherited from the curve. It is the form in which th
 verified when the curve is the *unknown* rather than the parameter: one exhibits a continuous
 injective map of the set onto a set already known to be a Jordan curve, as the boundary
 correspondence does with the boundary of a disc. -/
-theorem IsJordanCurve.of_image [T2Space Y] (hC : IsCompact C) {g : X → Y} (hg : ContinuousOn g C)
+theorem IsJordanCurve.of_image (hC : IsCompact C) {g : X → Y} (hg : ContinuousOn g C)
     (hgi : InjOn g C) (h : IsJordanCurve (g '' C)) : IsJordanCurve C := by
   obtain ⟨e⟩ := h
-  exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).trans e⟩
+  have : T2Space (g '' C) := e.symm.t2Space
+  exact ⟨(hC.imageHomeomorph hg hgi).trans e⟩
 
 /-- The image of a Jordan curve under a homeomorphism of the ambient spaces is a Jordan curve.
 Unlike `TauCeti.IsJordanCurve.image` this needs no separation axiom on the codomain, because
@@ -202,7 +195,7 @@ noncomputable def jordanParam (e : C ≃ₜ Circle) : Circle → X :=
 
 /-- The parametrization `TauCeti.jordanParam` of a Jordan curve by the circle is continuous. -/
 lemma continuous_jordanParam (e : C ≃ₜ Circle) : Continuous (jordanParam e) :=
-  continuous_subtype_val.comp e.symm.continuous
+  continuous_subtypeVal.comp e.symm.continuous
 
 /-- The parametrization `TauCeti.jordanParam` of a Jordan curve by the circle is injective: this is
 the simplicity of the curve. -/
@@ -220,7 +213,7 @@ curve. -/
 lemma range_jordanParam (e : C ≃ₜ Circle) : range (jordanParam e) = C := by
   refine subset_antisymm ?_ fun x hx => ⟨e ⟨x, hx⟩, by simp [jordanParam]⟩
   rintro _ ⟨u, rfl⟩
-  exact (e.symm u).2
+  exact (e.symm u).property
 
 /-- The defining equation of `TauCeti.jordanParam`: the parameter `u` names the point `e.symm u` of
 the curve, read in the ambient space. This is the general application lemma, so a consumer never has
@@ -302,7 +295,7 @@ instance locallyConnectedSpace_sphere (c : ℂ) (r : ℝ) : LocallyConnectedSpac
       have : (0 : ℝ) ≤ r := h ▸ norm_nonneg (z - c)
       linarith
     rw [hempty]
-    exact ⟨fun x => absurd x.2 (notMem_empty _)⟩
+    exact ⟨fun x => absurd x.property (notMem_empty _)⟩
   · have hparam :
         sphere c r = (fun θ : ℝ => c + r * exp (θ * I)) '' Icc (-Real.pi) Real.pi := by
       ext z

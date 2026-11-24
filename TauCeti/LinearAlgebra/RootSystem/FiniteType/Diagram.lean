@@ -36,8 +36,10 @@ the root-system case is irreducibility, which Mathlib packages as
 
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
-* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A`: the type `Aₙ` diagram is the path graph on
-  `n` nodes.
+* `TauCeti.DynkinType.diagramGraph_cartanMatrix_A` and
+  `TauCeti.DynkinType.diagramGraph_cartanMatrix_of_not_isSimplyLaced`: the type `Aₙ` diagram and
+  the unweighted diagram of every multiply-laced `DynkinType` (`Bₙ`, `Cₙ`, `F₄`, `G₂`) equal the
+  path graph of their rank.
 * `TauCeti.IsFiniteType.isAcyclic_diagramGraph`: **the diagram of a finite-type matrix is a
   forest**. The affine diagrams `Ãₙ` for `n ≥ 2`, the ones whose diagrams are cycles, are excluded
   here in one theorem.
@@ -57,10 +59,9 @@ the root-system case is irreducibility, which Mathlib packages as
 ## References
 
 This file supplies the "no cycles" and "`n - 1` edges" steps of the classification of finite-type
-Cartan matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See
-J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §11.4, where the shape of
-an admissible diagram is deduced from exactly these two facts, and Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, Ch. VI §4.
+Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§11.4, where the shape of an admissible diagram is deduced from exactly these two facts, and
+Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI §4.
 -/
 
 public section
@@ -112,6 +113,55 @@ theorem diagramGraph_cartanMatrix_A (n : ℕ) :
   simp [CartanMatrix.A, Fin.ext_iff]
   omega
 
+/-- **The diagram of type `Bₙ` is the path graph**: forgetting bond multiplicities joins
+consecutive nodes. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_B (n : ℕ) :
+    (diagramGraph (CartanMatrix.B n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.B, Fin.ext_iff]
+  omega
+
+/-- **The diagram of type `Cₙ` is the path graph**: forgetting bond multiplicities joins
+consecutive nodes. -/
+@[simp]
+theorem diagramGraph_cartanMatrix_C (n : ℕ) :
+    (diagramGraph (CartanMatrix.C n) : _root_.SimpleGraph (Fin n)) =
+      _root_.SimpleGraph.pathGraph n := by
+  ext i j
+  rw [diagramGraph_adj, _root_.SimpleGraph.pathGraph_adj]
+  simp [CartanMatrix.C, Fin.ext_iff]
+  omega
+
+/-- **The diagram of type `F₄` is the path graph on `4` nodes.** -/
+@[simp]
+theorem diagramGraph_cartanMatrix_F4 :
+    (diagramGraph CartanMatrix.F₄ : _root_.SimpleGraph (Fin 4)) =
+      _root_.SimpleGraph.pathGraph 4 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> decide
+
+/-- **The diagram of `G₂ᵀ` (the standard `G₂` Cartan matrix) is the path graph on `2` nodes.** -/
+@[simp]
+theorem diagramGraph_cartanMatrix_G2 :
+    (diagramGraph CartanMatrix.G₂.transpose : _root_.SimpleGraph (Fin 2)) =
+      _root_.SimpleGraph.pathGraph 2 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> decide
+
+/-- The unweighted diagram of every multiply-laced `DynkinType` is the path graph of its rank. -/
+theorem diagramGraph_cartanMatrix_of_not_isSimplyLaced {t : DynkinType} (ht : ¬ t.IsSimplyLaced) :
+    (diagramGraph t.cartanMatrix : _root_.SimpleGraph (Fin t.rank)) =
+      _root_.SimpleGraph.pathGraph t.rank := by
+  cases t with
+  | A _ | D _ | E6 | E7 | E8 => simp at ht
+  | B n => rw [cartanMatrix_B]; exact diagramGraph_cartanMatrix_B n
+  | C n => rw [cartanMatrix_C]; exact diagramGraph_cartanMatrix_C n
+  | F4 => rw [cartanMatrix_F4]; exact diagramGraph_cartanMatrix_F4
+  | G2 => rw [cartanMatrix_G2]; exact diagramGraph_cartanMatrix_G2
+
 end DynkinType
 
 /-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
@@ -120,6 +170,26 @@ theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
       (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
   rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
     SimpleGraph.pathGraph_adj]
+
+/-- From rank three on, two nodes of the `Dₙ` diagram are joined exactly when they are consecutive
+on the long arm `0, …, n - 3`, or one is the branch node `n - 3` and the other a leaf. -/
+theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
+    (diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
+      (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ n - 3 ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ n - 3 ∨
+        (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
+  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
+  simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
+  have := i.isLt
+  have := j.isLt
+  split_ifs <;> simp <;> omega
+
+/-- Below rank three the `Dₙ` diagram has no edges. -/
+theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
+    ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
+  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
+  rintro ⟨hij, h, -⟩
+  have hn' : n ≤ 2 := by omega
+  simp [CartanMatrix.D, hn', hij] at h
 
 namespace IsFiniteType
 

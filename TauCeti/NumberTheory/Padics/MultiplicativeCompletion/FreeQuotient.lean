@@ -92,7 +92,7 @@ private theorem normalizedValuation_deepExp (x : (𝓂[L] ^ i : Ideal 𝒪[L])) 
     normalizedValuation L (deepExp p hi x) = 1 := by
   rw [← MonoidHom.mem_ker, ker_normalizedValuation]
   exact unitFiltration_antitone (Nat.zero_le i)
-    ((deepUnitExpLogEquiv L hi).symm (Multiplicative.ofAdd x)).2
+    ((deepUnitExpLogEquiv L hi).symm (Multiplicative.ofAdd x)).property
 
 variable (p) in
 /-- The class in `A(L)` of the exponential of a deep element. -/
@@ -247,7 +247,7 @@ private theorem latticeMap_natCast (N : Fin (Module.finrank ℚ_[p] L + 1) → �
 /-- At level `m`, the image of `c` is the class of a unit built from the approximations
 `(c j).appr m`. -/
 private theorem latticeMap_apply_level (c : Fin (Module.finrank ℚ_[p] L + 1) → ℤ_[p]) (m : ℕ) :
-    (latticeMap p L hi c).toMul.1 m =
+    (latticeMap p L hi c).toMul.val m =
       (QuotientGroup.mk (primeUnit p L ^ (c 0).appr m *
         deepExp p hi (∑ k, (c k.succ).appr m • deepLatticeVector i k)) :
           Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) := by
@@ -420,8 +420,7 @@ private theorem nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension :
         Submodule.torsion ℤ_[p] (Additive ↑(padicCompletionUnits p L))) ≃ₗ[ℤ_[p]]
       (Fin (Module.finrank ℚ_[p] L + 1) → ℤ_[p])) := by
   have hi : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    (Nat.lt_succ_self _).trans_le
-      (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   obtain ⟨M, hM0, hM⟩ := exists_smul_mem_range_latticeMap hi
   exact nonempty_quotient_torsion_linearEquiv_of_injective_of_smul_mem_range
     (latticeMap_injective hi) (Nat.cast_ne_zero.mpr hM0) hM

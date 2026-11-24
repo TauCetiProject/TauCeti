@@ -177,15 +177,15 @@ variable (M : Type*) [AddCommGroup M] [Module R M] {ι : Type*} (f : ι → R)
 
 /-- The localization homomorphism from a face with one vertex deleted to the full face. -/
 noncomputable def cechLocalizationEraseRingHom [DecidableEq ι] (S : Finset ι) (a : S) :
-    Localization.Away (∏ i ∈ S.erase a.1, f i) →+* Localization.Away (∏ i ∈ S, f i) :=
+    Localization.Away (∏ i ∈ S.erase a.val, f i) →+* Localization.Away (∏ i ∈ S, f i) :=
   IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
-    ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
+    ⟨f a.val, (Finset.prod_erase_mul S f a.property).symm⟩)
 
 /-- The deleted-face homomorphism is the canonical lift between the two localizations. -/
 theorem cechLocalizationEraseRingHom_eq_awayLift [DecidableEq ι] (S : Finset ι) (a : S) :
     cechLocalizationEraseRingHom f S a =
       IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
-        ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩) :=
+        ⟨f a.val, (Finset.prod_erase_mul S f a.property).symm⟩) :=
   (rfl)
 
 /-- Restricting the localized module action along `cechLocalizationEraseRingHom` respects the
@@ -194,7 +194,7 @@ theorem isScalarTower_compHom_cechLocalizationEraseRingHom [DecidableEq ι]
     (S : Finset ι) (a : S) :
     letI := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
       (cechLocalizationEraseRingHom f S a)
-    IsScalarTower R (Localization.Away (∏ i ∈ S.erase a.1, f i))
+    IsScalarTower R (Localization.Away (∏ i ∈ S.erase a.val, f i))
       (LocalizedModule (.powers (∏ i ∈ S, f i)) M) := by
   let _ := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
     (cechLocalizationEraseRingHom f S a)
@@ -209,7 +209,7 @@ theorem isScalarTower_compHom_cechLocalizationEraseRingHom [DecidableEq ι]
 /-- The degree `p` term of the Čech complex of localizations: the product of the localizations
 `M_{f_S}`, `f_S = ∏_{i ∈ S} f i`, over the subsets `S` with `p + 1` elements. -/
 abbrev cechLocalizationTerm (p : ℕ) : Type _ :=
-  (S : {S : Finset ι // S.card = p + 1}) → LocalizedModule (.powers (∏ i ∈ S.1, f i)) M
+  (S : {S : Finset ι // S.card = p + 1}) → LocalizedModule (.powers (∏ i ∈ S.val, f i)) M
 
 /-- The restriction `M_{f_T} → M_{f_S}` for `T ⊆ S`: the map out of `M_{f_T}` extending the
 canonical map `M → M_{f_S}`, which exists since `f_T` divides `f_S`. -/
@@ -269,7 +269,7 @@ including `q = 0`, where the only factor is `M_{f_∅} = M_1`. -/
 
 /-- The product of the localizations over the subsets with `q` elements. -/
 private abbrev Term (q : ℕ) : Type _ :=
-  (S : {S : Finset ι // S.card = q}) → LocalizedModule (.powers (∏ i ∈ S.1, f i)) M
+  (S : {S : Finset ι // S.card = q}) → LocalizedModule (.powers (∏ i ∈ S.val, f i)) M
 
 /-- The `T`-component of an element of `Term M f q`, which is zero unless `T` has `q`
 elements. -/
@@ -277,7 +277,7 @@ private noncomputable def proj (q : ℕ) (T : Finset ι) :
     Term M f q →ₗ[R] LocalizedModule (.powers (∏ i ∈ T, f i)) M :=
   if h : T.card = q then
     LinearMap.proj (R := R) (φ := fun S : {S : Finset ι // S.card = q} ↦
-      LocalizedModule (.powers (∏ i ∈ S.1, f i)) M) ⟨T, h⟩
+      LocalizedModule (.powers (∏ i ∈ S.val, f i)) M) ⟨T, h⟩
   else 0
 
 private theorem proj_of_card {q : ℕ} {T : Finset ι} (h : T.card = q) (x : Term M f q) :
@@ -308,9 +308,9 @@ private theorem rc_of_card_ne {q : ℕ} {S T : Finset ι} (hT : T.card ≠ q) (x
   split_ifs <;> simp [proj_of_card_ne M f hT]
 
 private theorem rc_self {q : ℕ} (S : {S : Finset ι // S.card = q}) (x : Term M f q) :
-    rc M f q S.1 S.1 x = x S := by
+    rc M f q S.val S.val x = x S := by
   rw [rc_eq M f (IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _), restr_self,
-    proj_of_card M f S.2]
+    proj_of_card M f S.property]
 
 private theorem restr_rc {q : ℕ} {S T U : Finset ι}
     (h₁ : IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers (∏ i ∈ T, f i)) M))
@@ -333,12 +333,12 @@ variable {M f} in
 /-- The map induced on the products of localizations by a linear map `g : M → N`. -/
 private noncomputable def termMap {N : Type*} [AddCommGroup N] [Module R N] (g : M →ₗ[R] N)
     (q : ℕ) : Term M f q →ₗ[R] Term N f q :=
-  LinearMap.pi fun S ↦ IsLocalizedModule.map (.powers (∏ i ∈ S.1, f i)) (mkLinearMap _ M)
+  LinearMap.pi fun S ↦ IsLocalizedModule.map (.powers (∏ i ∈ S.val, f i)) (mkLinearMap _ M)
     (mkLinearMap _ N) g ∘ₗ LinearMap.proj S
 
 private theorem termMap_apply {N : Type*} [AddCommGroup N] [Module R N] (g : M →ₗ[R] N)
     {q : ℕ} (x : Term M f q) (S : {S : Finset ι // S.card = q}) :
-    termMap g q x S = IsLocalizedModule.map (.powers (∏ i ∈ S.1, f i)) (mkLinearMap _ M)
+    termMap g q x S = IsLocalizedModule.map (.powers (∏ i ∈ S.val, f i)) (mkLinearMap _ M)
       (mkLinearMap _ N) g (x S) :=
   rfl
 
@@ -356,7 +356,7 @@ private noncomputable def incl : M →ₗ[R] Term M f 0 :=
 
 private theorem coe_eq_one_of_mem_powers_prod_empty
     (c : Submonoid.powers (∏ i ∈ (∅ : Finset ι), f i)) : (c : R) = 1 := by
-  obtain ⟨k, hk⟩ := c.2
+  obtain ⟨k, hk⟩ := c.property
   simp [← hk]
 
 private theorem incl_injective : Function.Injective (incl M f) := by
@@ -383,10 +383,10 @@ variable [LinearOrder ι]
 
 /-- The differential `∏_{|T| = q} M_{f_T} → ∏_{|S| = q + 1} M_{f_S}`. -/
 private noncomputable def D (q : ℕ) : Term M f q →ₗ[R] Term M f (q + 1) :=
-  LinearMap.pi fun S ↦ ∑ a ∈ S.1, sgn R S.1 a • rc M f q S.1 (S.1.erase a)
+  LinearMap.pi fun S ↦ ∑ a ∈ S.val, sgn R S.val a • rc M f q S.val (S.val.erase a)
 
 private theorem D_apply (q : ℕ) (x : Term M f q) (S : {S : Finset ι // S.card = q + 1}) :
-    D M f q x S = ∑ a ∈ S.1, sgn R S.1 a • rc M f q S.1 (S.1.erase a) x := by
+    D M f q x S = ∑ a ∈ S.val, sgn R S.val a • rc M f q S.val (S.val.erase a) x := by
   simp [D]
 
 /-- Restricting a component of `D x` to `M_{f_S}`. -/
@@ -402,12 +402,12 @@ private theorem rc_D {q : ℕ} {S T : Finset ι}
 private theorem D_D (q : ℕ) (x : Term M f q) : D M f (q + 1) (D M f q x) = 0 := by
   funext S
   rw [D_apply]
-  have key : ∀ a ∈ S.1, sgn R S.1 a • rc M f (q + 1) S.1 (S.1.erase a) (D M f q x) =
-      ∑ b ∈ S.1.erase a, (sgn R S.1 a * sgn R (S.1.erase a) b) •
-        rc M f q S.1 ((S.1.erase a).erase b) x := by
+  have key : ∀ a ∈ S.val, sgn R S.val a • rc M f (q + 1) S.val (S.val.erase a) (D M f q x) =
+      ∑ b ∈ S.val.erase a, (sgn R S.val a * sgn R (S.val.erase a) b) •
+        rc M f q S.val ((S.val.erase a).erase b) x := by
     intro a ha
-    rw [rc_D M f (isUnit_of_subset M f (S.1.erase_subset a))
-      (by rw [Finset.card_erase_of_mem ha, S.2]; rfl), Finset.smul_sum]
+    rw [rc_D M f (isUnit_of_subset M f (S.val.erase_subset a))
+      (by rw [Finset.card_erase_of_mem ha, S.property]; rfl), Finset.smul_sum]
     simp only [mul_smul]
   rw [Finset.sum_congr rfl key]
   refine Finset.sum_sum_erase_eq_zero _ fun a ha b hb hab ↦ ?_
@@ -418,11 +418,11 @@ private theorem D_D (q : ℕ) (x : Term M f q) : D M f (q + 1) (D M f q x) = 0 :
 /-- Inserting the vertex `j`: the candidate contracting homotopy, which is one when `f j` acts
 invertibly on `M`. -/
 private noncomputable def H (j : ι) (q : ℕ) : Term M f (q + 1) →ₗ[R] Term M f q :=
-  LinearMap.pi fun T ↦ sgn R (insert j T.1) j • rc M f (q + 1) T.1 (insert j T.1)
+  LinearMap.pi fun T ↦ sgn R (insert j T.val) j • rc M f (q + 1) T.val (insert j T.val)
 
 private theorem H_apply (j : ι) (q : ℕ) (y : Term M f (q + 1))
     (T : {T : Finset ι // T.card = q}) :
-    H M f j q y T = sgn R (insert j T.1) j • rc M f (q + 1) T.1 (insert j T.1) y := by
+    H M f j q y T = sgn R (insert j T.val) j • rc M f (q + 1) T.val (insert j T.val) y := by
   simp [H]
 
 variable {M f}
@@ -464,46 +464,47 @@ private theorem rc_H {q : ℕ} {S T : Finset ι}
     (mkLinearMap _ M) hj).mul hTS
 
 private theorem D_H_of_mem {q : ℕ} (y : Term M f (q + 1)) (S : {S : Finset ι // S.card = q + 1})
-    (h : j ∈ S.1) : D M f q (H M f j q y) S = y S := by
+    (h : j ∈ S.val) : D M f q (H M f j q y) S = y S := by
   rw [D_apply, Finset.sum_eq_single j]
-  · rw [rc_H hj (isUnit_of_subset M f (S.1.erase_subset j))
-      (by rw [Finset.card_erase_of_mem h, S.2]; rfl), smul_smul]
-    have hS : insert j (S.1.erase j) = S.1 := Finset.insert_erase h
-    have hsgn : sgn R (insert j (S.1.erase j)) j = sgn R S.1 j := by rw [hS]
-    have hrc : rc M f (q + 1) S.1 (insert j (S.1.erase j)) y = rc M f (q + 1) S.1 S.1 y := by
+  · rw [rc_H hj (isUnit_of_subset M f (S.val.erase_subset j))
+      (by rw [Finset.card_erase_of_mem h, S.property]; rfl), smul_smul]
+    have hS : insert j (S.val.erase j) = S.val := Finset.insert_erase h
+    have hsgn : sgn R (insert j (S.val.erase j)) j = sgn R S.val j := by rw [hS]
+    have hrc : rc M f (q + 1) S.val (insert j (S.val.erase j)) y = rc M f (q + 1) S.val S.val y
+        := by
       rw [hS]
     rw [hsgn, hrc, sgn_mul_self, one_smul, rc_self]
   · intro a ha haj
-    have hT : insert j (S.1.erase a) = S.1.erase a :=
+    have hT : insert j (S.val.erase a) = S.val.erase a :=
       Finset.insert_eq_of_mem (Finset.mem_erase.mpr ⟨Ne.symm haj, h⟩)
-    rw [rc_H hj (isUnit_of_subset M f (S.1.erase_subset a))
-      (by rw [Finset.card_erase_of_mem ha, S.2]; rfl), rc_of_card_ne M f (by
-        rw [hT, Finset.card_erase_of_mem ha, S.2]; simp), smul_zero, smul_zero]
+    rw [rc_H hj (isUnit_of_subset M f (S.val.erase_subset a))
+      (by rw [Finset.card_erase_of_mem ha, S.property]; rfl), rc_of_card_ne M f (by
+        rw [hT, Finset.card_erase_of_mem ha, S.property]; simp), smul_zero, smul_zero]
   · exact fun h' ↦ (h' h).elim
 
 private theorem D_H_apply {q : ℕ} (y : Term M f (q + 1))
     (S : {S : Finset ι // S.card = q + 1}) :
-    D M f q (H M f j q y) S = ∑ a ∈ S.1, (sgn R S.1 a * sgn R (insert j (S.1.erase a)) j) •
-      rc M f (q + 1) S.1 (insert j (S.1.erase a)) y := by
+    D M f q (H M f j q y) S = ∑ a ∈ S.val, (sgn R S.val a * sgn R (insert j (S.val.erase a)) j) •
+      rc M f (q + 1) S.val (insert j (S.val.erase a)) y := by
   rw [D_apply]
   refine Finset.sum_congr rfl fun a ha ↦ ?_
-  rw [rc_H hj (isUnit_of_subset M f (S.1.erase_subset a))
-    (by rw [Finset.card_erase_of_mem ha, S.2]; rfl), smul_smul]
+  rw [rc_H hj (isUnit_of_subset M f (S.val.erase_subset a))
+    (by rw [Finset.card_erase_of_mem ha, S.property]; rfl), smul_smul]
 
 omit hj in
 private theorem H_D_of_mem {q : ℕ} (y : Term M f q) (S : {S : Finset ι // S.card = q})
-    (h : j ∈ S.1) : H M f j q (D M f q y) S = 0 := by
-  rw [H_apply, rc_of_card_ne M f (by rw [Finset.insert_eq_of_mem h, S.2]; simp), smul_zero]
+    (h : j ∈ S.val) : H M f j q (D M f q y) S = 0 := by
+  rw [H_apply, rc_of_card_ne M f (by rw [Finset.insert_eq_of_mem h, S.property]; simp), smul_zero]
 
 private theorem H_D_of_notMem {q : ℕ} (y : Term M f q) (S : {S : Finset ι // S.card = q})
-    (h : j ∉ S.1) : H M f j q (D M f q y) S = y S + ∑ a ∈ S.1,
-      (sgn R (insert j S.1) j * sgn R (insert j S.1) a) •
-        rc M f q S.1 (insert j (S.1.erase a)) y := by
-  rw [H_apply, rc_D M f (isUnit_of_dvd_mul hj (prod_insert_dvd j S.1))
-    (by rw [Finset.card_insert_of_notMem h, S.2]), Finset.sum_insert h, smul_add,
+    (h : j ∉ S.val) : H M f j q (D M f q y) S = y S + ∑ a ∈ S.val,
+      (sgn R (insert j S.val) j * sgn R (insert j S.val) a) •
+        rc M f q S.val (insert j (S.val.erase a)) y := by
+  rw [H_apply, rc_D M f (isUnit_of_dvd_mul hj (prod_insert_dvd j S.val))
+    (by rw [Finset.card_insert_of_notMem h, S.property]), Finset.sum_insert h, smul_add,
     Finset.smul_sum, smul_smul, sgn_mul_self, one_smul]
-  have hS : (insert j S.1).erase j = S.1 := Finset.erase_insert h
-  have hrc : rc M f q S.1 ((insert j S.1).erase j) y = rc M f q S.1 S.1 y := by rw [hS]
+  have hS : (insert j S.val).erase j = S.val := Finset.erase_insert h
+  have hrc : rc M f q S.val ((insert j S.val).erase j) y = rc M f q S.val S.val y := by rw [hS]
   rw [hrc, rc_self]
   congr 1
   refine Finset.sum_congr rfl fun a ha ↦ ?_
@@ -515,7 +516,7 @@ private theorem D_H_add_H_D {q : ℕ} (y : Term M f (q + 1)) :
     D M f q (H M f j q y) + H M f j (q + 1) (D M f (q + 1) y) = y := by
   funext S
   rw [Pi.add_apply]
-  by_cases h : j ∈ S.1
+  by_cases h : j ∈ S.val
   · rw [D_H_of_mem hj y S h, H_D_of_mem y S h, add_zero]
   · rw [D_H_apply hj y S, H_D_of_notMem hj y S h, add_left_comm, ← Finset.sum_add_distrib]
     conv_rhs => rw [← add_zero (y S)]
@@ -526,7 +527,7 @@ private theorem D_H_add_H_D {q : ℕ} (y : Term M f (q + 1)) :
 /-- The homotopy identity `h d = 1` in degree zero. -/
 private theorem H_D_zero (y : Term M f 0) : H M f j 0 (D M f 0 y) = y := by
   funext S
-  have hS : S.1 = ∅ := Finset.card_eq_zero.mp S.2
+  have hS : S.val = ∅ := Finset.card_eq_zero.mp S.property
   rw [H_D_of_notMem hj y S (by simp [hS])]
   simp [hS]
 
@@ -552,9 +553,9 @@ private theorem termMap_D {N : Type*} [AddCommGroup N] [Module R N] (g : M →�
   funext S
   rw [termMap_apply, D_apply, D_apply, map_sum]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
-  rw [map_smul, rc_eq M f (isUnit_of_subset M f (S.1.erase_subset a)),
-    rc_eq N f (isUnit_of_subset N f (S.1.erase_subset a)),
-    restr_map g _ (isUnit_of_subset N f (S.1.erase_subset a)), proj_termMap]
+  rw [map_smul, rc_eq M f (isUnit_of_subset M f (S.val.erase_subset a)),
+    rc_eq N f (isUnit_of_subset N f (S.val.erase_subset a)),
+    restr_map g _ (isUnit_of_subset N f (S.val.erase_subset a)), proj_termMap]
 
 variable (M f)
 
@@ -562,9 +563,9 @@ omit [LinearOrder ι] in
 private theorem isLocalizedModule_termMap [Finite ι] (r : R) (q : ℕ) :
     IsLocalizedModule (.powers r) (termMap (f := f) (mkLinearMap (.powers r) M) q) := by
   have (S : {S : Finset ι // S.card = q}) : IsLocalizedModule (.powers r)
-      (IsLocalizedModule.map (.powers (∏ i ∈ S.1, f i))
-        (mkLinearMap (.powers (∏ i ∈ S.1, f i)) M)
-        (mkLinearMap (.powers (∏ i ∈ S.1, f i)) (LocalizedModule (.powers r) M))
+      (IsLocalizedModule.map (.powers (∏ i ∈ S.val, f i))
+        (mkLinearMap (.powers (∏ i ∈ S.val, f i)) M)
+        (mkLinearMap (.powers (∏ i ∈ S.val, f i)) (LocalizedModule (.powers r) M))
         (mkLinearMap (.powers r) M)) :=
     IsLocalizedModule.isLocalizedModule_map _ _ _ _
   have : Finite (Finset ι) := Finite.of_injective _ Finset.coe_injective
@@ -583,30 +584,30 @@ private theorem map_D [Finite ι] (r : R) (q : ℕ) :
   exact LinearMap.ext fun x ↦ termMap_D _ q x
 
 omit [LinearOrder ι] in
-private theorem isUnit_of_mem_range {r : Set.range f} {j : ι} (hj : f j = r.1) :
-    IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers r.1) M)) (f j)) := by
+private theorem isUnit_of_mem_range {r : Set.range f} {j : ι} (hj : f j = r.val) :
+    IsUnit (algebraMap R (Module.End R (LocalizedModule (.powers r.val) M)) (f j)) := by
   rw [hj]
   exact IsLocalizedModule.Away.isUnit_algebraMap (mkLinearMap _ M) _
 
 private theorem injective_D_zero_of_span [Finite ι] (hf : Ideal.span (Set.range f) = ⊤) :
     Function.Injective (D M f 0) := by
   refine injective_of_isLocalized_span (Set.range f) hf
-    (fun r ↦ Term (LocalizedModule (.powers r.1) M) f 0) (fun r ↦ termMap (mkLinearMap _ M) 0)
-    (fun r ↦ Term (LocalizedModule (.powers r.1) M) f 1) (fun r ↦ termMap (mkLinearMap _ M) 1)
+    (fun r ↦ Term (LocalizedModule (.powers r.val) M) f 0) (fun r ↦ termMap (mkLinearMap _ M) 0)
+    (fun r ↦ Term (LocalizedModule (.powers r.val) M) f 1) (fun r ↦ termMap (mkLinearMap _ M) 1)
     (D M f 0) fun r ↦ ?_
-  obtain ⟨j, hj⟩ := r.2
+  obtain ⟨j, hj⟩ := r.property
   rw [map_D]
   exact injective_D_zero (isUnit_of_mem_range M f hj)
 
 private theorem exact_D [Finite ι] (hf : Ideal.span (Set.range f) = ⊤) (q : ℕ) :
     Function.Exact (D M f q) (D M f (q + 1)) := by
   refine exact_of_isLocalized_span (Set.range f) hf
-    (fun r ↦ Term (LocalizedModule (.powers r.1) M) f q) (fun r ↦ termMap (mkLinearMap _ M) q)
-    (fun r ↦ Term (LocalizedModule (.powers r.1) M) f (q + 1))
+    (fun r ↦ Term (LocalizedModule (.powers r.val) M) f q) (fun r ↦ termMap (mkLinearMap _ M) q)
+    (fun r ↦ Term (LocalizedModule (.powers r.val) M) f (q + 1))
     (fun r ↦ termMap (mkLinearMap _ M) (q + 1))
-    (fun r ↦ Term (LocalizedModule (.powers r.1) M) f (q + 2))
+    (fun r ↦ Term (LocalizedModule (.powers r.val) M) f (q + 2))
     (fun r ↦ termMap (mkLinearMap _ M) (q + 2)) (D M f q) (D M f (q + 1)) fun r ↦ ?_
-  obtain ⟨j, hj⟩ := r.2
+  obtain ⟨j, hj⟩ := r.property
   rw [map_D, map_D]
   exact exact_D_of_isUnit (isUnit_of_mem_range M f hj) q
 
@@ -623,14 +624,15 @@ noncomputable def cechLocalizationDifferential (p : ℕ) :
 `∑_{a ∈ S} (-1)^k x_{S ∖ {a}}`, where `k` is the number of elements of `S` below `a`. -/
 theorem cechLocalizationDifferential_apply (p : ℕ) (x : cechLocalizationTerm M f p)
     (S : {S : Finset ι // S.card = p + 1 + 1}) :
-    cechLocalizationDifferential M f p x S = ∑ a ∈ S.1.attach,
-      ((-1) ^ (S.1.filter (· < a.1)).card : R) •
-        cechLocalizationRestriction M f (S.1.erase_subset a.1)
-          (x ⟨S.1.erase a.1, by rw [Finset.card_erase_of_mem a.2, S.2]; rfl⟩) := by
+    cechLocalizationDifferential M f p x S = ∑ a ∈ S.val.attach,
+      ((-1) ^ (S.val.filter (· < a.val)).card : R) •
+        cechLocalizationRestriction M f (S.val.erase_subset a.val)
+          (x ⟨S.val.erase a.val, by rw [Finset.card_erase_of_mem a.property, S.property]; rfl⟩)
+              := by
   rw [cechLocalizationDifferential, D_apply, ← Finset.sum_attach]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
-  rw [rc_eq M f (isUnit_of_subset M f (S.1.erase_subset a.1)),
-    proj_of_card M f (by rw [Finset.card_erase_of_mem a.2, S.2]; rfl)]
+  rw [rc_eq M f (isUnit_of_subset M f (S.val.erase_subset a.val)),
+    proj_of_card M f (by rw [Finset.card_erase_of_mem a.property, S.property]; rfl)]
   simp only [sgn, cechLocalizationRestriction]
 
 private theorem augmentation_eq : cechLocalizationAugmentation M f = D M f 0 ∘ₗ incl M f := by
@@ -654,12 +656,21 @@ theorem cechLocalizationDifferential_comp_differential (p : ℕ) :
     cechLocalizationDifferential M f (p + 1) ∘ₗ cechLocalizationDifferential M f p = 0 :=
   LinearMap.ext (D_D M f (p + 1))
 
+omit [LinearOrder ι] in
 /-- If the `f i` generate the unit ideal, the augmentation of the Čech complex is injective. -/
-theorem injective_cechLocalizationAugmentation [Finite ι]
+theorem injective_cechLocalizationAugmentation
     (hf : Ideal.span (Set.range f) = ⊤) :
     Function.Injective (cechLocalizationAugmentation M f) := by
-  rw [augmentation_eq, LinearMap.coe_comp]
-  exact (injective_D_zero_of_span M f hf).comp (incl_injective M f)
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro m hm
+  refine Module.eq_zero_of_isLocalized_span (Set.range f) hf
+    (fun r ↦ LocalizedModule (.powers r.val) M) (fun r ↦ mkLinearMap (.powers r.val) M) m ?_
+  rintro ⟨_, a, rfl⟩
+  have h : mk m (1 : Submonoid.powers (∏ i ∈ ({a} : Finset ι), f i)) = 0 :=
+    (cechLocalizationAugmentation_apply M f m ⟨{a}, Finset.card_singleton a⟩).symm.trans
+      (congrFun hm ⟨{a}, Finset.card_singleton a⟩)
+  rw [Finset.prod_singleton] at h
+  exact h
 
 /-- If the `f i` generate the unit ideal, the Čech complex is exact at its degree `0` term. -/
 theorem exact_cechLocalizationAugmentation_differential [Finite ι]

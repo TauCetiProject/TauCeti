@@ -38,11 +38,6 @@ totalized coordinate by coordinate.
 * `TauCeti.covarianceBilin_eq_smul_innerSL` shows that a law invariant under every linear
   isometry has covariance equal to its second moment divided by the dimension, times the inner
   product.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
 -/
 
 public section
@@ -243,7 +238,7 @@ theorem covarianceBilin_eq_smul_innerSL [IsFiniteMeasure μ]
   -- Invariance under `-1` makes the mean vanish, so covariance is the second-moment form.
   have hm : ∫ x, x ∂μ = 0 := by
     have : μ.IsNegInvariant := ⟨hμ (LinearIsometryEquiv.neg ℝ)⟩
-    exact integral_eq_zero_of_odd fun x ↦ rfl
+    exact integral_eq_zero_of_odd (Filter.Eventually.of_forall fun _ ↦ rfl)
   set Q : E → ℝ := fun x ↦ covarianceBilin μ x x
   set d := Module.finrank ℝ E
   have hd : (d : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'

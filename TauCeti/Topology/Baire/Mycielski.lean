@@ -11,6 +11,7 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.SetTheory.Descriptive.Antichain
 import Mathlib.Data.Set.Finite.List
 import Mathlib.Topology.Baire.BaireMeasurable
+import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.CantorScheme
 import TauCeti.Topology.Constructions.Pi
 import TauCeti.Topology.MetricSpace.Perfect
@@ -94,9 +95,9 @@ private theorem mycielski_step [EMetricSpace X] [PerfectSpace X] {k : ℕ → �
   -- shrink the children, indexed by the finitely many words of length `j + 1`
   let I := {l : List Bool // l.length = j + 1}
   have : Finite I := (List.finite_length_eq Bool (j + 1)).to_subtype
-  have hlen (l : I) : l.1.tail.length = j := by simp [l.2]
+  have hlen (l : I) : l.val.tail.length = j := by simp [l.property]
   obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ := exists_forall_univ_pi_subset
-    (V := fun l : I => W l.1.tail l.1.headI) (fun l => hWo _ (hlen l) _)
+    (V := fun l : I => W l.val.tail l.val.headI) (fun l => hWo _ (hlen l) _)
     (fun l => hWne _ (hlen l) _) (κ := fun c : Fin (j + 1) × Fin (j + 1) => Fin (k c.1))
     (U := fun c => D c.1 c.2) (fun _ => hDo _ _) (fun _ => hDd _ _)
   let S' : List Bool → Set X := fun l => if h : l.length = j + 1 then W' ⟨l, h⟩ else ∅
@@ -219,10 +220,20 @@ end Mycielski
 end TauCeti
 
 /-- **A meagre equivalence relation has a Cantor antichain.** If the graph of an equivalence
-relation `E` on a nonempty perfect completely metrizable space is meagre in `X × X`, there is a
+relation `E` on a nonempty completely metrizable space is meagre in `X × X`, there is a
 continuous map of Cantor space into `X` whose distinct points have `E`-inequivalent images. -/
 theorem Setoid.hasCantorAntichainOn_univ_of_isMeagre {X : Type*} [TopologicalSpace X]
-    [TopologicalSpace.IsCompletelyMetrizableSpace X] [PerfectSpace X] [Nonempty X]
+    [TopologicalSpace.IsCompletelyMetrizableSpace X] [Nonempty X]
     (E : Setoid X) (hE : IsMeagre {p : X × X | E p.1 p.2}) : E.HasCantorAntichainOn univ := by
+  -- a meagre reflexive relation leaves no isolated point, as `X × X` is a Baire space
+  have : PerfectSpace X := by
+    refine perfectSpace_iff_forall_not_isolated.2 fun x => ?_
+    by_contra h
+    rw [not_neBot, ← isOpen_singleton_iff_punctured_nhds] at h
+    refine not_isMeagre_of_isOpen (h.prod h) ⟨(x, x), rfl, rfl⟩ (hE.mono ?_)
+    rintro ⟨a, b⟩ ⟨ha, hb⟩
+    simp only [Set.mem_singleton_iff] at ha hb
+    subst ha hb
+    exact E.refl _
   obtain ⟨f, hf, -, hfE⟩ := TauCeti.mycielski_prod hE
   exact Setoid.hasCantorAntichainOn_iff.2 ⟨f, hf, fun _ => mem_univ _, hfE⟩

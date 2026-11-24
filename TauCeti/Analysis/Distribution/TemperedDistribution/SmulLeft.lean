@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
@@ -27,10 +29,16 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
 
 ## Main results
 
+* `TemperedDistribution.smulLeftCLM_eq_zero_of_not_hasTemperateGrowth`: for a symbol without
+  temperate growth, `smulLeftCLM` is the junk value `0`.
+* `TemperedDistribution.dsupport_sub_smulLeftCLM_subset`: multiplication by a function equal to
+  `1` on an open set does not change a tempered distribution there.
 * `TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq`: multiplication by `g` on
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
+  temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
 
 public section
@@ -39,6 +47,39 @@ namespace TemperedDistribution
 
 open MeasureTheory
 open scoped SchwartzMap LineDeriv
+
+section TVS
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [AddCommGroup F] [Module ℂ F]
+  [TopologicalSpace F] [IsTopologicalAddGroup F] [ContinuousConstSMul ℂ F]
+
+/-- Multiplication by a function without temperate growth is the junk value `0`, because
+`SchwartzMap.smulLeftCLM` is `0` for such a function. -/
+@[simp]
+theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
+    (hg : ¬ g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  ext f'
+  simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+
+/-- **Multiplication by a function equal to `1` on an open set.** If `g` has temperate growth
+and `g = 1` on an open set `O`, then `u - g u` vanishes on `O`, for every tempered distribution
+`u`. -/
+theorem dsupport_sub_smulLeftCLM_subset (u : 𝓢'(E, F)) {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    {O : Set E} (hO : IsOpen O) (hgO : ∀ x ∈ O, g x = 1) :
+    Distribution.dsupport (u - smulLeftCLM F g u) ⊆ Oᶜ := by
+  intro x hx hxO
+  refine (Distribution.notMem_dsupport_iff x).2 ⟨O, fun φ hφ ↦ ?_, hO, hxO⟩ hx
+  -- `g φ = φ` for every Schwartz function `φ` supported in `O`.
+  have hgφ : SchwartzMap.smulLeftCLM ℂ g φ = φ := by
+    ext y
+    rw [SchwartzMap.smulLeftCLM_apply_apply hg]
+    by_cases hy : y ∈ O
+    · rw [hgO y hy, one_smul]
+    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hφ h), smul_zero]
+  rw [_root_.sub_apply, smulLeftCLM_apply_apply, hgφ, sub_self]
+
+end TVS
 
 section Deriv
 
@@ -55,18 +96,34 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
 
 end Deriv
 
+section Delta
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Multiplying the Dirac mass at `ξ` by a function `g` of temperate growth multiplies it by the
+value `g ξ`. -/
+@[simp]
+theorem smulLeftCLM_delta {g : E → ℂ} (hg : g.HasTemperateGrowth) (ξ : E) :
+    smulLeftCLM ℂ g (delta ξ) = g ξ • delta ξ := by
+  ext f
+  simp [SchwartzMap.smulLeftCLM_apply_apply hg]
+
+end Delta
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- Multiplication by a function of temperate growth on tempered distributions extends the
-pointwise multiplication of Schwartz functions, for the embedding of Schwartz functions against
-any measure of temperate growth. -/
+/-- Multiplication by a function on tempered distributions extends the pointwise multiplication of
+Schwartz functions, for the embedding of Schwartz functions against any measure of temperate
+growth. (If `g` is not of temperate growth, both multiplications are zero.) -/
 theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTemperateGrowth]
-    {g : E → ℂ} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
+    {g : E → ℂ} (f : 𝓢(E, F)) :
     smulLeftCLM F g (SchwartzMap.toTemperedDistributionCLM E F μ f) =
       SchwartzMap.toTemperedDistributionCLM E F μ (SchwartzMap.smulLeftCLM F g f) := by
   ext u
-  simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
-    SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
+  by_cases hg : g.HasTemperateGrowth
+  · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
+      SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
+  · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
 
 end TemperedDistribution

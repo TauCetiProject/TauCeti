@@ -132,6 +132,35 @@ theorem X_mul_one_sub_X_mul_derivative_belyiPolynomial (m n : ℕ) :
     simp only [derivative_mul, derivative_pow, derivative_C, derivative_sub, derivative_one,
       derivative_X, Nat.add_sub_cancel, map_add, map_natCast] <;> ring
 
+/-- The critical points of the Belyi polynomial lie in `{0, 1, m / (m + n)}`. The containment is
+strict when `m = 1` or `n = 1`. -/
+theorem rootSet_derivative_belyiPolynomial_subset (L : Type*) [Field L] [Algebra K L]
+    (m n : ℕ) :
+    (derivative (belyiPolynomial K m n)).rootSet L ⊆ {0, 1, (m : L) / (m + n)} := by
+  intro x hx
+  rw [← rootSet_map L (T := L), ← derivative_map, map_belyiPolynomial, mem_rootSet] at hx
+  obtain ⟨hne, hx⟩ := hx
+  rw [coe_aeval_eq_eval] at hx
+  -- Evaluate `X (1 - X) B′ = B (m - (m + n) X)` at the critical point `x`.
+  have key := congr_arg (eval x) (X_mul_one_sub_X_mul_derivative_belyiPolynomial (K := L) m n)
+  simp only [eval_mul, eval_sub, eval_X, eval_one, eval_C, hx, mul_zero] at key
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  by_contra! h
+  obtain ⟨h0, h1, hr⟩ := h
+  -- The normalizing constant is nonzero, as otherwise the Belyi polynomial and its derivative
+  -- vanish.
+  have hc : ((m : L) + n) ^ (m + n) / ((m : L) ^ m * (n : L) ^ n) ≠ 0 := fun hc ↦
+    hne (by simp [belyiPolynomial, hc])
+  rcases mul_eq_zero.mp key.symm with h | h
+  · rw [eval_belyiPolynomial] at h
+    exact mul_ne_zero (mul_ne_zero hc (pow_ne_zero _ h0))
+      (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm h1))) h
+  rcases eq_or_ne (m + n) 0 with hmn | hmn
+  · obtain ⟨rfl, rfl⟩ : m = 0 ∧ n = 0 := Nat.add_eq_zero_iff.mp hmn
+    simp [belyiPolynomial] at hne
+  have hmn' : (m : L) + n ≠ 0 := fun h0 ↦ hc (by rw [h0, zero_pow hmn, zero_div])
+  exact hr (by field_simp; linear_combination -h)
+
 variable [CharZero K]
 
 /-- In characteristic zero, the normalizing constant `(m + n) ^ (m + n) / (m ^ m * n ^ n)` of the
@@ -166,31 +195,6 @@ theorem natDegree_belyiPolynomial (m n : ℕ) : (belyiPolynomial K m n).natDegre
     rw [← neg_sub, natDegree_neg, ← C_1, natDegree_X_sub_C]
   rw [belyiPolynomial, mul_assoc, natDegree_C_mul hc, natDegree_mul (pow_ne_zero _ X_ne_zero)
     (pow_ne_zero _ (fun h ↦ by simp [h] at h1)), natDegree_X_pow, natDegree_pow, h1, mul_one]
-
-/-- The critical points of the Belyi polynomial lie in `{0, 1, m / (m + n)}`. The containment is
-strict when `m = 1` or `n = 1`. -/
-theorem rootSet_derivative_belyiPolynomial_subset (L : Type*) [Field L] [Algebra K L]
-    (m n : ℕ) :
-    (derivative (belyiPolynomial K m n)).rootSet L ⊆ {0, 1, (m : L) / (m + n)} := by
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
-  intro x hx
-  rw [← rootSet_map L (T := L), ← derivative_map, map_belyiPolynomial, mem_rootSet] at hx
-  obtain ⟨hne, hx⟩ := hx
-  rw [coe_aeval_eq_eval] at hx
-  -- Evaluate `X (1 - X) B′ = B (m - (m + n) X)` at the critical point `x`.
-  have key := congr_arg (eval x) (X_mul_one_sub_X_mul_derivative_belyiPolynomial (K := L) m n)
-  simp only [eval_mul, eval_sub, eval_X, eval_one, eval_C, hx, mul_zero] at key
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  by_contra! h
-  obtain ⟨h0, h1, hr⟩ := h
-  rcases mul_eq_zero.mp key.symm with h | h
-  · rw [eval_belyiPolynomial] at h
-    exact mul_ne_zero (mul_ne_zero (belyiConstant_ne_zero m n) (pow_ne_zero _ h0))
-      (pow_ne_zero _ (sub_ne_zero.mpr (Ne.symm h1))) h
-  rcases eq_or_ne ((m : L) + n) 0 with hmn | hmn
-  · obtain ⟨rfl, rfl⟩ : m = 0 ∧ n = 0 := Nat.add_eq_zero_iff.mp (by exact_mod_cast hmn)
-    simp [belyiPolynomial] at hne
-  exact hr (by field_simp; linear_combination -h)
 
 /-- The critical values of the Belyi polynomial lie in `{0, 1}`. -/
 theorem criticalValues_belyiPolynomial_subset (L : Type*) [Field L] [Algebra K L] (m n : ℕ) :

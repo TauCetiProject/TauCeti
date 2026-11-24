@@ -48,7 +48,8 @@ acceleration of the curve on this computation.
 * `TauCeti.Manifold.contDiffWithinAt_sectionCoord_curveVelocityWithin`: a `C^(n + 1)` curve has a
   `C^n` coordinate velocity field; its `C²` differentiability specializations are
   `TauCeti.Manifold.differentiableWithinAt_sectionCoord_curveVelocityWithin` and
-  `TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity`.
+  `TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity`, with
+  `ContMDiffAt.differentiableAt_sectionCoord_curveVelocity` for regularity at a single parameter.
 * `TauCeti.Manifold.derivWithin_sectionCoord_pullback`: the derivative of the coordinate reading
   of a pulled-back field is the reading of the flat frame derivative in the direction of the
   velocity.
@@ -67,9 +68,6 @@ acceleration of the curve on this computation.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Covariant derivative along a curve": agreement with the ambient derivative for a
-  pulled-back vector field.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhauser, 1992, Ch. 2, Proposition 2.2(c).
 * The moving-chart operator characterized here was informed by
   `formalized-sources/DoCarmo/DoCarmoLib/Riemannian/Connection/CovariantDerivativeAlong.lean` in
@@ -118,16 +116,20 @@ tangent-bundle trivialization centred at `x` is the derivative within `s` of the
 extended chart at `x`, at every nearby parameter of `s` at which the curve is still in that
 chart. -/
 theorem sectionCoord_curveVelocityWithin_eventuallyEq {x : M} {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffOn 𝕜 s) (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
+    (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    sectionCoord (F := E) γ (curveVelocityWithin I γ s) x =ᶠ[𝓝[s] t]
+    sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x =ᶠ[𝓝[s] t]
       derivWithin (extChartAt I x ∘ γ) s := by
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
     (hγ t ht).continuousWithinAt.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hx)
   filter_upwards [hbase, self_mem_nhdsWithin] with r hr hrs
-  rw [sectionCoord_apply, derivWithin_extChartAt_comp γ hr (hs r hrs)
-    (hasMFDerivWithinAt_curveVelocityWithin (hγ r hrs))]
+  by_cases hu : UniqueDiffWithinAt 𝕜 s r
+  · rw [sectionCoord_apply, derivWithin_extChartAt_comp γ hr hu
+      (hasMFDerivWithinAt_curveVelocityWithin (hγ r hrs))]
+  · -- Without a unique derivative both sides take the junk value `0`.
+    rw [sectionCoord_apply, curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt hu, map_zero,
+      derivWithin_zero_of_not_uniqueDiffWithinAt hu]
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
@@ -139,7 +141,7 @@ theorem contDiffWithinAt_sectionCoord_curveVelocityWithin {n : ℕ∞ω} [IsMani
     {x : M} {s : Set 𝕜}
     {t : 𝕜} (hs : UniqueDiffOn 𝕜 s) (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I (n + 1) γ s)
     (ht : t ∈ s) (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    ContDiffWithinAt 𝕜 n (sectionCoord (F := E) γ (curveVelocityWithin I γ s) x) s t := by
+    ContDiffWithinAt 𝕜 n (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x) s t := by
   have hchart : ContDiffWithinAt 𝕜 (n + 1) (extChartAt I x ∘ γ) s t :=
     ((contMDiffWithinAt_iff_target_of_mem_source
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)).mp (hγ t ht)).2
@@ -147,7 +149,7 @@ theorem contDiffWithinAt_sectionCoord_curveVelocityWithin {n : ℕ∞ω} [IsMani
   have hderiv : ContDiffWithinAt 𝕜 n (derivWithin (extChartAt I x ∘ γ) s) s t :=
     hchart.derivWithin hs le_rfl ht
   exact hderiv.congr_of_eventuallyEq_of_mem
-    (sectionCoord_curveVelocityWithin_eventuallyEq γ hs
+    (sectionCoord_curveVelocityWithin_eventuallyEq γ
       (hγ.mdifferentiableOn (by simp)) ht hx) ht
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
@@ -159,7 +161,7 @@ theorem differentiableWithinAt_sectionCoord_curveVelocityWithin [IsManifold I 2 
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 2 γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     DifferentiableWithinAt 𝕜
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) x) s t := by
+      (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x) s t := by
   let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := IsManifold.of_le (n := 2) (by norm_num)
   have hγ' : ContMDiffOn 𝓘(𝕜, 𝕜) I ((1 : ℕ∞ω) + 1) γ s := by
     simpa only [show (1 : ℕ∞ω) + 1 = 2 by norm_num] using hγ
@@ -173,18 +175,29 @@ curve is differentiable at every parameter in the set. -/
 theorem differentiableAt_sectionCoord_curveVelocity [IsManifold I 2 M]
     {s : Set 𝕜} {t : 𝕜} (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 2 γ s)
     (hs : IsOpen s) (ht : t ∈ s) :
-    DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ t)) t := by
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ t)) t := by
   have hwithin : DifferentiableAt 𝕜
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t)) t :=
+      (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) (γ t)) t :=
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs.uniqueDiffOn hγ ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
       |>.differentiableAt (hs.mem_nhds ht)
-  have heq : sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t) =ᶠ[𝓝 t]
-      sectionCoord (F := E) γ (curveVelocity I γ) (γ t) := by
+  have heq : sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) (γ t) =ᶠ[𝓝 t]
+      sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ t) := by
     filter_upwards [hs.mem_nhds ht] with r hr
     rw [sectionCoord_apply, sectionCoord_apply,
       curveVelocityWithin_of_mem_nhds (hs.mem_nhds hr)]
   exact heq.differentiableAt_iff.mp hwithin
+
+omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
+/-- The coordinate velocity of a curve that is `C²` at a parameter is differentiable there. -/
+theorem _root_.ContMDiffAt.differentiableAt_sectionCoord_curveVelocity [IsManifold I 2 M]
+    {γ : 𝕜 → M} {t : 𝕜} (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I 2 γ t) :
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ t)) t := by
+  obtain ⟨u, hu, hγu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγ
+  exact TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity γ
+    (hγu.mono interior_subset)
+    isOpen_interior (mem_interior_iff_mem_nhds.mpr hu)
 
 omit [FiniteDimensional 𝕜 E]
   [IsManifold I 1 M]
@@ -202,7 +215,7 @@ theorem derivWithin_sectionCoord_pullback
     (hy : γ t ∈ (trivializationAt F V x).baseSet) (hu : UniqueDiffWithinAt 𝕜 s t)
     (hγ : HasMFDerivAt[s] γ t (ContinuousLinearMap.smulRight (1 : 𝕜 →L[𝕜] 𝕜) w))
     (hY : MDiffAt (T% Y) (γ t)) :
-    derivWithin (sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x) s t =
+    derivWithin (sectionCoord 𝕜 (F := F) γ (fun r ↦ Y (γ r)) x) s t =
       (trivializationAt F V x).continuousLinearMapAt 𝕜 (γ t)
         (frameCovariantDerivative I b (trivializationAt F V x) Y (γ t) w) := by
   have : FiniteDimensional 𝕜 F := Module.Finite.of_basis b
@@ -226,10 +239,10 @@ theorem derivWithin_sectionCoord_pullback
     hfun ▸ HasDerivWithinAt.sum fun i (_ : i ∈ Finset.univ) ↦ (hcoeff i).smul_const (b i)
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     hγ.1.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hy)
-  have hEq : sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x =ᶠ[𝓝[s] t]
+  have hEq : sectionCoord 𝕜 (F := F) γ (fun r ↦ Y (γ r)) x =ᶠ[𝓝[s] t]
       fun r ↦ ∑ i, σ i (γ r) • b i :=
     hbase.mono fun r hr ↦ by rw [sectionCoord_apply, hread _ hr]
-  have hpoint : sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x t =
+  have hpoint : sectionCoord 𝕜 (F := F) γ (fun r ↦ Y (γ r)) x t =
       (fun r ↦ ∑ i, σ i (γ r) • b i) t := by
     rw [sectionCoord_apply, hread _ hy]
   rw [(hsum.congr_of_eventuallyEq hEq hpoint).derivWithin hu, frameCovariantDerivative_apply,
@@ -270,7 +283,7 @@ theorem alongCurveInChartWithin_pullback {x : M} {s : Set 𝕜} {t : 𝕜} {w : 
   -- The two summands of the coordinate formula are the readings of the flat frame derivative and
   -- of the Christoffel form, whose sum is the covariant derivative.
   rw [alongCurveInChartWithin_apply, derivWithin_sectionCoord_pullback γ b X hy hu hγ hX,
-    derivWithin_extChartAt_comp γ hy hu hγ, christoffelMap_apply b hcov hy, sectionCoord_apply,
+    derivWithin_extChartAt_comp γ hy hu hγ, christoffelMap_apply b hcov, sectionCoord_apply,
     e.symmL_continuousLinearMapAt (R := 𝕜) hy, e.symmL_continuousLinearMapAt (R := 𝕜) hy,
     ← map_add, covariantDerivative_eq_add_christoffelForm b hcov hy hX,
     add_apply]
@@ -325,7 +338,7 @@ theorem alongCurveWithin_pullback_curveVelocityWithin {s : Set 𝕜} {t : 𝕜}
 second-order expression `u'' + Γ (u', u')`, for `u` the curve read in the extended chart at `x`.
 The chart need not be the one centred at the current point of the curve. -/
 theorem alongCurveInChartWithin_curveVelocityWithin {x : M} {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffOn 𝕜 s) (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
+    (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     alongCurveInChartWithin cov γ (curveVelocityWithin I γ s) s x t =
       derivWithin (derivWithin (extChartAt I x ∘ γ) s) s t +
@@ -333,8 +346,8 @@ theorem alongCurveInChartWithin_curveVelocityWithin {x : M} {s : Set 𝕜} {t : 
           (cov.isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) x).baseSet)) (γ t)
           (derivWithin (extChartAt I x ∘ γ) s t) (derivWithin (extChartAt I x ∘ γ) s t) := by
-  have hEq := sectionCoord_curveVelocityWithin_eventuallyEq γ hs hγ ht hx
-  have hpoint : sectionCoord (F := E) γ (curveVelocityWithin I γ s) x t =
+  have hEq := sectionCoord_curveVelocityWithin_eventuallyEq γ hγ ht hx
+  have hpoint : sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x t =
       derivWithin (extChartAt I x ∘ γ) s t := hEq.self_of_nhdsWithin ht
   rw [alongCurveInChartWithin_apply, hEq.derivWithin_eq hpoint, hpoint]
 

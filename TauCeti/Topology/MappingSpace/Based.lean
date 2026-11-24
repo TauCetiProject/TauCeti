@@ -23,7 +23,8 @@ with the quotient map.
 
 * `TauCeti.BasedMap`: the based mapping space `Map_*(B, X)`.
 * `TauCeti.BasedMap.map`: the map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `X → Y`,
-  continuous by `TauCeti.BasedMap.continuous_map`.
+  continuous by `TauCeti.BasedMap.continuous_map`; `TauCeti.BasedMap.mapContinuousMap` bundles it
+  as a continuous map.
 * `TauCeti.BasedMap.lift`: the universal lift of a family of maps whose value at the basepoint is
   fixed, with `TauCeti.BasedMap.lift_unique` its uniqueness.
 * `TauCeti.BasedMap.homeomorphGenLoop`: `Map_*(B, X) ≃ₜ Ω^ N X x` for a Hausdorff quotient `B` of
@@ -57,12 +58,12 @@ variable {B X Y : Type*} [TopologicalSpace B] [TopologicalSpace X] [TopologicalS
 
 /-- A based map `g : X → Y` induces a map of based mapping spaces by postcomposition. -/
 def map (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) : BasedMap B Y b₀ y :=
-  ⟨g.comp f.1, by rw [ContinuousMap.comp_apply, f.2, hg]⟩
+  ⟨g.comp f.val, by rw [ContinuousMap.comp_apply, f.property, hg]⟩
 
 /-- The map induced on based mapping spaces postcomposes with `g`. -/
 @[simp]
 theorem map_apply (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) (b : B) :
-    (map g hg f).1 b = g (f.1 b) := by
+    (map g hg f).val b = g (f.val b) := by
   rw [map]
   -- the underlying map of the subtype element built in `map` is `g.comp f.1`
   rfl
@@ -82,7 +83,19 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g 
 /-- The map induced on based mapping spaces by a based map is continuous. -/
 theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
     Continuous (map (B := B) (b₀ := b₀) g hg) :=
-  continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
+  continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtypeVal)
+
+/-- The continuous map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `g : X → Y`: the map
+`TauCeti.BasedMap.map` bundled with its continuity. -/
+def mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
+    C(BasedMap B X b₀ x, BasedMap B Y b₀ y) :=
+  ⟨map g hg, continuous_map g hg⟩
+
+/-- The bundled map `TauCeti.BasedMap.mapContinuousMap` is `TauCeti.BasedMap.map`. -/
+@[simp]
+theorem coe_mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
+    ⇑(mapContinuousMap (B := B) (b₀ := b₀) g hg) = map g hg :=
+  (rfl)
 
 end Map
 
@@ -99,7 +112,7 @@ def lift (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) : C(Y, BasedMap B X b₀
 /-- A lifted family has the same underlying map at every parameter. -/
 @[simp]
 theorem lift_apply_val (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) (y : Y) :
-    (lift f hf y).1 = f y :=
+    (lift f hf y).val = f y :=
   (rfl)
 
 /-- The underlying map of a lifted family is the original family. -/
@@ -125,12 +138,12 @@ variable {N B X : Type*} [TopologicalSpace B] [TopologicalSpace X] {x : X}
 /-- Precomposition with a map `q : I^N → B` sending the cube boundary to `b₀` sends based maps
 out of `B` to generalized loops. -/
 def precompGenLoop (f : BasedMap B X b₀ x) : Ω^ N X x :=
-  ⟨f.1.comp q, fun z hz => by simpa [hb z hz] using f.2⟩
+  ⟨f.val.comp q, fun z hz => by simpa [hb z hz] using f.property⟩
 
 /-- The generalized loop of a based map `f` takes the value `f (q z)` at `z`. -/
 @[simp]
 theorem precompGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
-    precompGenLoop q b₀ hb f z = f.1 (q z) := by
+    precompGenLoop q b₀ hb f z = f.val (q z) := by
   rw [precompGenLoop]
   -- the underlying map of the subtype element built in `precompGenLoop` is `f.1.comp q`
   rfl
@@ -146,11 +159,11 @@ a topological embedding of the based mapping space in the generalized loops. -/
 theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := x) q b₀ hb) := by
   have hcont : Continuous (precompGenLoop (X := X) (x := x) q b₀ hb) :=
     continuous_induced_rng.2
-      ((ContinuousMap.continuous_precomp q).comp continuous_subtype_val)
+      ((ContinuousMap.continuous_precomp q).comp continuous_subtypeVal)
   refine ⟨?_, fun f g h => Subtype.ext ((ContinuousMap.cancel_right hq).1
     (congrArg Subtype.val h))⟩
-  exact IsInducing.of_comp hcont continuous_subtype_val
-    ((ContinuousMap.isInducing_precomp_of_surjective q hq).comp ⟨rfl⟩)
+  exact IsInducing.of_comp hcont continuous_subtypeVal
+    ((ContinuousMap.isInducing_precomp_of_surjective q q.continuous.isProperMap hq).comp ⟨rfl⟩)
 
 variable (hb' : ∀ z, q z = b₀ → z ∈ Cube.boundary N)
 
@@ -161,15 +174,15 @@ theorem precompGenLoop_surjective : Surjective (precompGenLoop (X := X) (x := x)
   have hqm : IsQuotientMap q :=
     (q.continuous.isClosedMap).isQuotientMap q.continuous hq
   intro p
-  have hfac : FactorsThrough p.1 q := fun z z' h => by
+  have hfac : FactorsThrough p.val q := fun z z' h => by
     rcases hinj z z' h with rfl | ⟨h1, h2⟩
     · rfl
-    · exact (p.2 z h1).trans (p.2 z' h2).symm
-  refine ⟨⟨hqm.lift p.1 hfac, ?_⟩, Subtype.ext (hqm.lift_comp p.1 hfac)⟩
+    · exact (p.property z h1).trans (p.property z' h2).symm
+  refine ⟨⟨hqm.lift p.val hfac, ?_⟩, Subtype.ext (hqm.lift_comp p.val hfac)⟩
   obtain ⟨z, hz⟩ := hq b₀
-  have := p.2 z (hb' z hz)
+  have := p.property z (hb' z hz)
   rw [← hz]
-  exact (congrFun (congrArg DFunLike.coe (hqm.lift_comp p.1 hfac)) z).trans this
+  exact (congrFun (congrArg DFunLike.coe (hqm.lift_comp p.val hfac)) z).trans this
 
 include hq hbi hinj in
 /-- **Based maps out of a quotient of the cube are generalized loops.** If a continuous surjection
@@ -185,7 +198,7 @@ noncomputable def homeomorphGenLoop : BasedMap B X b₀ x ≃ₜ Ω^ N X x :=
 `z ↦ f (q z)`. -/
 @[simp]
 theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
-    homeomorphGenLoop q b₀ hbi hq hinj f z = f.1 (q z) := by
+    homeomorphGenLoop q b₀ hbi hq hinj f z = f.val (q z) := by
   rw [homeomorphGenLoop, IsEmbedding.toHomeomorphOfSurjective_apply]
   exact precompGenLoop_apply q b₀ (fun z hz => (hbi z).2 hz) f z
 
@@ -194,7 +207,7 @@ include hq hbi hinj in
 at `z`. -/
 @[simp]
 theorem homeomorphGenLoop_symm_apply_comp (p : Ω^ N X x) (z : N → I) :
-    ((homeomorphGenLoop q b₀ hbi hq hinj).symm p).1 (q z) = p z := by
+    ((homeomorphGenLoop q b₀ hbi hq hinj).symm p).val (q z) = p z := by
   have h := congrArg (fun r : Ω^ N X x => r z)
     ((homeomorphGenLoop q b₀ hbi hq hinj).apply_symm_apply p)
   rwa [homeomorphGenLoop_apply] at h

@@ -223,7 +223,7 @@ theorem isTableauRows_robinsonSchenstedKnuth_snd {ws : List (α × β)}
     have hws := (sortedLE_append_singleton.mp (by rwa [map_append] at h)).1
     have hP := isTableauRows_robinsonSchenstedKnuth_fst ws
     rw [robinsonSchenstedKnuth_append_singleton]
-    refine (ih hws).appendToRow (rowInsertIndex_le_length_snd ws w.2)
+    refine (ih hws).appendToRow
       (fun x hx => le_of_mem_flatten_snd h (mem_flatten_of_mem_getD hx)) fun i hi => ?_
     have hlen := length_getD_succ_lt_of_rowInsertIndex_eq_succ hP hi
     rw [← hi, length_getD_robinsonSchenstedKnuth_fst, length_getD_robinsonSchenstedKnuth_fst]
@@ -395,14 +395,15 @@ theorem exists_robinsonSchenstedKnuth_eq_iff {p : List (List β) × List (List �
     rw [← hn, hperm.length_eq, length_append, length_singleton]
     omega
   obtain ⟨ws, hws, hrsk⟩ := ih _ hlen' _ _ (hP.reverseRowInsert hcornerP)
-    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hQ hshape hcornerQ) rfl
+    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hshape hcornerQ) rfl
   refine ⟨ws ++ [(a, b)], sortedLE_map_toLex_append_singleton_of_forall hws
     (fun x hx => hmax x (hperm.symm.subset (mem_append_left [a] (by rwa [hrsk] at hx))))
     fun i hi => ?_, ?_⟩
   · -- The rows above row `k` are unchanged, and none of them ends in `a` by the choice of `k`.
     rw [hrsk] at hi ⊢
     rw [hidx] at hi
-    simp only [getD_dropLastOfRow hQ hcornerQ i, hi.ne, ite_false]
+    simp only [getD_dropLastOfRow (Nat.zero_lt_of_lt hcornerQ)
+      (fun _ j hj ↦ hQ.length_getD_eq_zero_of_le (k := k + 1) (by omega) hj) i, hi.ne, ite_false]
     exact hkmin i hi
   · rw [robinsonSchenstedKnuth_append_singleton, hrsk]
     simp only
@@ -416,10 +417,11 @@ noncomputable def robinsonSchenstedKnuthEquiv :
       {p : List (List β) × List (List α) // p.1.IsTableauRows ∧ p.2.IsTableauRows ∧
         ∀ i, (p.1.getD i []).length = (p.2.getD i []).length} :=
   Equiv.ofBijective
-    (fun ws => ⟨robinsonSchenstedKnuth ws.1,
-      exists_robinsonSchenstedKnuth_eq_iff.mp ⟨ws.1, ws.2, rfl⟩⟩)
-    ⟨fun ws vs h => Subtype.ext (robinsonSchenstedKnuth_injOn ws.2 vs.2 (congrArg Subtype.val h)),
-      fun p => (exists_robinsonSchenstedKnuth_eq_iff.mpr p.2).elim fun ws hws =>
+    (fun ws => ⟨robinsonSchenstedKnuth ws.val,
+      exists_robinsonSchenstedKnuth_eq_iff.mp ⟨ws.val, ws.property, rfl⟩⟩)
+    ⟨fun ws vs h => Subtype.ext (robinsonSchenstedKnuth_injOn ws.property vs.property
+        (congrArg Subtype.val h)),
+      fun p => (exists_robinsonSchenstedKnuth_eq_iff.mpr p.property).elim fun ws hws =>
         ⟨⟨ws, hws.1⟩, Subtype.ext hws.2⟩⟩
 
 /-- `robinsonSchenstedKnuthEquiv` sends a two-line array to its insertion and recording
@@ -428,7 +430,7 @@ tableaux. -/
 theorem robinsonSchenstedKnuthEquiv_apply_coe
     (ws : {ws : List (α × β) // (ws.map toLex).SortedLE}) :
     (robinsonSchenstedKnuthEquiv ws : List (List β) × List (List α)) =
-      robinsonSchenstedKnuth ws.1 := (rfl)
+      robinsonSchenstedKnuth ws.val := (rfl)
 
 end Correspondence
 

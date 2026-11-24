@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 
 /-!
 # Trace-free self-adjoint endomorphisms
@@ -45,6 +48,12 @@ pairing `tr (T* U) = tr (T U)` is real.
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
 * `ContinuousLinearMap.traceCLM_symmPart_comp`: over `ℝ`, only the symmetric part of `A` enters
   the trace pairing `tr (A M)` with a self-adjoint `M`.
+* `ContinuousLinearMap.sum_toMatrix_symmPart_mul_repr`: in an orthonormal basis, the matrix of
+  the symmetric part computes the trace pairing with a self-adjoint endomorphism.
+* `ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id`: if `M N = 1`, then
+  `tr ((N A N†) (M† D M)) = tr (A D)`.
+* `ContinuousLinearMap.traceCLM_comp_eq_sum_inner`: if `H f = (T f)† g`, then
+  `tr (A H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫` for any orthonormal basis `(eᵢ)`.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
   of `T` with a rank-one endomorphism, `tr (x y* T) = tr (T x y*) = ⟪y, T x⟫`.
 * `TauCeti.trace_traceFreePart`, `TauCeti.traceFreePart_of_trace_eq_zero`,
@@ -73,17 +82,19 @@ theorem trace_adjoint (T : E →ₗ[𝕜] E) : trace 𝕜 E T.adjoint = conj (tr
   let b := stdOrthonormalBasis 𝕜 E
   simp [trace_eq_sum_inner _ b, adjoint_inner_right, map_sum]
 
-/-- A skew-adjoint endomorphism of a finite-dimensional real inner product space, one with
+/-- A skew-adjoint endomorphism of a real inner product space, one with
 `⟪A u, w⟫ = -⟪u, A w⟫`, has trace zero. -/
 theorem trace_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {A : V →ₗ[ℝ] V}
+    [InnerProductSpace ℝ V] {A : V →ₗ[ℝ] V}
     (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) : trace ℝ V A = 0 := by
-  let b := stdOrthonormalBasis ℝ V
-  rw [trace_eq_sum_inner A b]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  have h := hA (b i) (b i)
-  rw [real_inner_comm] at h
-  linarith
+  by_cases hV : Module.Finite ℝ V
+  · let b := stdOrthonormalBasis ℝ V
+    rw [trace_eq_sum_inner A b]
+    refine Finset.sum_eq_zero fun i _ ↦ ?_
+    have h := hA (b i) (b i)
+    rw [real_inner_comm] at h
+    linarith
+  · exact DFunLike.congr_fun (TauCeti.LinearMap.trace_eq_zero_of_not_finite hV) A
 
 end LinearMap
 
@@ -123,6 +134,52 @@ theorem traceCLM_symmPart_comp {V : Type*} [NormedAddCommGroup V] [InnerProductS
     rw [traceCLM_apply, trace_adjoint, RCLike.conj_to_real, ← traceCLM_apply, traceCLM_comp_comm]
   rw [smul_comp, add_comp, map_smul, map_add, h, smul_eq_mul]
   ring
+
+open TauCeti in
+/-- In an orthonormal basis `(bᵢ)`, the entries `⟪bᵢ, S bⱼ⟫` of the symmetric part
+`S = (A + A†) / 2` of `A`, paired with those of a self-adjoint `H`, sum to `tr (A ∘ H)`. -/
+theorem sum_toMatrix_symmPart_mul_repr {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] (A H : V →L[ℝ] V) (hH : H.adjoint = H)
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : OrthonormalBasis ι ℝ V) :
+    ∑ i, ∑ j, LinearMap.toMatrix b.toBasis b.toBasis
+        (((2⁻¹ : ℝ) • (A + A.adjoint) : V →L[ℝ] V) : V →ₗ[ℝ] V) i j * b.repr (H (b j)) i =
+      traceCLM ℝ V (A ∘L H) := by
+  rw [← traceCLM_symmPart_comp A H hH, traceCLM_apply, LinearMap.trace_eq_sum_inner _ b,
+    Finset.sum_comm]
+  set S : V →L[ℝ] V := (2⁻¹ : ℝ) • (A + A.adjoint)
+  refine Finset.sum_congr rfl fun j _ => ?_
+  have hS : ∀ x y, ⟪S x, y⟫_ℝ = ⟪x, S y⟫_ℝ := A.isSymmetric_two_inv_smul_add_adjoint
+  simp only [LinearMap.toMatrix_orthonormalBasis_apply, b.repr_apply_apply, coe_coe, coe_comp,
+    Function.comp_apply, ← hS (b j)]
+  simpa only [real_inner_comm (b _) (S (b j))] using b.sum_inner_mul_inner (S (b j)) (H (b j))
+
+open TauCeti in
+/-- Conjugating the trace pairing by a one-sided inverse pair and its adjoint: if `M ∘ N = 1`,
+then `tr ((N A N†) ∘ (M† D M)) = tr (A D)`. -/
+theorem traceCLM_comp_adjoint_comp_comp_of_comp_eq_id [CompleteSpace E] {W : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] [CompleteSpace W]
+    {M : W →L[𝕜] E} {N : E →L[𝕜] W} (h : M ∘L N = ContinuousLinearMap.id 𝕜 E)
+    (A D : E →L[𝕜] E) :
+    traceCLM 𝕜 W ((N ∘L A ∘L N.adjoint) ∘L (M.adjoint ∘L D ∘L M)) =
+      traceCLM 𝕜 E (A ∘L D) := by
+  have hNM (y : E) : N.adjoint (M.adjoint y) = y := by
+    simpa using congrArg (fun T => T y)
+      (show N.adjoint ∘L M.adjoint = ContinuousLinearMap.id 𝕜 E by
+        rw [← adjoint_comp, h, adjoint_id])
+  rw [← traceCLM_comp_comp_of_comp_eq_id h (A ∘L D)]
+  congr 1
+  ext z
+  simp [hNM]
+
+open TauCeti in
+/-- The trace of `A ∘ H` for an endomorphism of the form `H f = (T f)† g`: in any orthonormal
+basis `(eᵢ)`, `tr (A ∘ H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫`. -/
+theorem traceCLM_comp_eq_sum_inner [CompleteSpace E] (A : E →L[𝕜] E) {H : E →L[𝕜] E}
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι 𝕜 E) (T : E →L[𝕜] E →L[𝕜] E) (g : E)
+    (hH : ∀ f, H f = (T f).adjoint g) :
+    traceCLM 𝕜 E (A ∘L H) = ⟪∑ i, T (e i) (A.adjoint (e i)), g⟫_𝕜 := by
+  rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ e, sum_inner]
+  simp only [coe_coe, comp_apply, hH, ← adjoint_inner_left A, adjoint_inner_right]
 
 end ContinuousLinearMap
 
@@ -167,8 +224,11 @@ theorem traceFreePart_apply (T : E →L[𝕜] E) :
 
 /-- The trace-free part of an endomorphism is trace free. -/
 @[simp]
-theorem trace_traceFreePart [FiniteDimensional 𝕜 E] (T : E →L[𝕜] E) :
+theorem trace_traceFreePart (T : E →L[𝕜] E) :
     LinearMap.trace 𝕜 E (traceFreePart 𝕜 E T) = 0 := by
+  by_cases hE : Module.Finite 𝕜 E
+  swap
+  · exact DFunLike.congr_fun (LinearMap.trace_eq_zero_of_not_finite hE) _
   rcases eq_or_ne (finrank 𝕜 E) 0 with h | h
   · have : Subsingleton E := Module.finrank_zero_iff.mp h
     simp [Subsingleton.elim (traceFreePart 𝕜 E T) 0]
@@ -190,7 +250,7 @@ theorem traceFreePart_id [FiniteDimensional 𝕜 E] :
 
 /-- `traceFreePart` is idempotent. -/
 @[simp]
-theorem traceFreePart_traceFreePart [FiniteDimensional 𝕜 E] (T : E →L[𝕜] E) :
+theorem traceFreePart_traceFreePart (T : E →L[𝕜] E) :
     traceFreePart 𝕜 E (traceFreePart 𝕜 E T) = traceFreePart 𝕜 E T :=
   traceFreePart_of_trace_eq_zero (trace_traceFreePart T)
 
@@ -202,8 +262,12 @@ theorem trace_traceFreePart_mul {U : E →L[𝕜] E} (hU : LinearMap.trace 𝕜 
   simp [traceFreePart_apply, sub_mul, hU, Module.End.mul_eq_comp]
 
 /-- The trace-free part of a self-adjoint endomorphism is self-adjoint. -/
-theorem _root_.IsSelfAdjoint.traceFreePart [FiniteDimensional 𝕜 E] [CompleteSpace E]
+theorem _root_.IsSelfAdjoint.traceFreePart [CompleteSpace E]
     {T : E →L[𝕜] E} (hT : IsSelfAdjoint T) : IsSelfAdjoint (traceFreePart 𝕜 E T) := by
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · rwa [traceFreePart_apply, Module.finrank_of_not_finite hE, Nat.cast_zero, div_zero, zero_smul,
+      sub_zero]
   have htr : IsSelfAdjoint (LinearMap.trace 𝕜 E T) := hT.conj_trace
   rw [traceFreePart_apply]
   exact hT.sub ((htr.div (.natCast _)).smul (by
@@ -234,14 +298,47 @@ theorem mem_traceFreeSelfAdjoint {T : E →L[ℂ] E} :
 
 /-- The trace-free part of a self-adjoint endomorphism is a trace-free self-adjoint
 endomorphism. -/
-theorem _root_.IsSelfAdjoint.traceFreePart_mem [FiniteDimensional ℂ E] {T : E →L[ℂ] E}
+theorem _root_.IsSelfAdjoint.traceFreePart_mem {T : E →L[ℂ] E}
     (hT : IsSelfAdjoint T) : traceFreePart ℂ E T ∈ traceFreeSelfAdjoint E :=
   mem_traceFreeSelfAdjoint.2 ⟨hT.traceFreePart, trace_traceFreePart T⟩
 
+/-- If a complex inner product space is not finite-dimensional, the real vector space of its
+trace-free self-adjoint endomorphisms is not finite-dimensional either. -/
+theorem not_finite_traceFreeSelfAdjoint (hE : ¬Module.Finite ℂ E) :
+    ¬Module.Finite ℝ (traceFreeSelfAdjoint E) := by
+  intro hfin
+  have hS : traceFreeSelfAdjoint E = selfAdjoint.submodule ℝ (E →L[ℂ] E) := by
+    ext T
+    exact ⟨fun h ↦ h.1,
+      fun h ↦ ⟨h, DFunLike.congr_fun (LinearMap.trace_eq_zero_of_not_finite hE) _⟩⟩
+  rw [hS] at hfin
+  have : Module.Finite ℝ (selfAdjoint (E →L[ℂ] E)) := hfin
+  have hA : Module.Finite ℝ (E →L[ℂ] E) :=
+    Module.Finite.of_injective
+      ((_root_.realPart : (E →L[ℂ] E) →ₗ[ℝ] selfAdjoint (E →L[ℂ] E)).prod _root_.imaginaryPart)
+      fun _ _ h ↦ ComplexStarModule.ext (congrArg Prod.fst h) (congrArg Prod.snd h)
+  have hA' : Module.Finite ℂ (E →L[ℂ] E) := Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have : Nontrivial E := by
+    by_contra h
+    rw [not_nontrivial_iff_subsingleton] at h
+    exact hE inferInstance
+  obtain ⟨e, he⟩ := exists_ne (0 : E)
+  refine hE (Module.Finite.of_injective
+    (ContinuousLinearMap.smulRightL ℂ ℂ ℂ E E (innerSL ℂ e)).toLinearMap ?_)
+  rw [injective_iff_map_eq_zero]
+  intro x hx
+  have := DFunLike.congr_fun hx e
+  simpa [he] using this
+
 /-- The trace-free self-adjoint endomorphisms of an `n`-dimensional complex inner product space
 form a real vector space of dimension `n² - 1`. -/
-theorem finrank_traceFreeSelfAdjoint [FiniteDimensional ℂ E] :
+theorem finrank_traceFreeSelfAdjoint :
     finrank ℝ (traceFreeSelfAdjoint E) = finrank ℂ E ^ 2 - 1 := by
+  by_cases hE : FiniteDimensional ℂ E
+  swap
+  · rw [Module.finrank_of_not_finite hE, Module.finrank_of_not_finite]
+    · rfl
+    · exact not_finite_traceFreeSelfAdjoint hE
   -- The trace-free self-adjoint endomorphisms are the kernel of the real part of the trace on the
   -- self-adjoint ones, which have real dimension `n²`.
   set S := selfAdjoint.submodule ℝ (E →L[ℂ] E)

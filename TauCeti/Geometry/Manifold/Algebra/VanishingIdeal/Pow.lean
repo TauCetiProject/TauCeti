@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Powers of the vanishing ideal of a point and jets of smooth functions
@@ -27,7 +29,11 @@ Grothendieck's sense of iterated commutators with multiplication operators, maps
 the value `(D f)(x)` depends only on the `m`-jet of `f` at `x`. No continuity of `D` is assumed.
 
 The inclusion of `I_x ^ (m + 1)` in the functions with vanishing `m`-jet holds because orders of
-vanishing add under multiplication. The converse is Hadamard's lemma of order `m`,
+vanishing add under multiplication. It only uses that chart expressions of smooth functions are
+smooth at the image of an interior point, so it needs neither finite dimensionality, the Hausdorff
+property nor a smooth manifold structure on `M`. On a smooth manifold the same argument applies
+in the chart at `x` at every point `y` of its source whose image lies in the interior of the chart
+target, which lets one chart serve all nearby points. The converse is Hadamard's lemma of order `m`,
 `TauCeti.mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero`, proved in
 `TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic`. The case `m = 1` is
 `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`.
@@ -39,12 +45,21 @@ vanishing add under multiplication. The converse is Hadamard's lemma of order `m
   order at most `m` of `f ∘ φ⁻¹` vanish at `φ x`.
 * `TauCeti.mem_smoothVanishingIdeal_pow_succ_iff`: the same at every point of a boundaryless
   manifold.
+* `TauCeti.exists_mem_smoothVanishingIdeal_pow_eventuallyEq_comp_subtype_val`: on an open subset
+  `U ∋ x`, an element of `I_x(U) ^ n` agrees near `x` with the restriction of an element of
+  `I_x(M) ^ n`.
 * `TauCeti.quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff`: two smooth functions have the same
   class modulo `I_x ^ (m + 1)` if and only if their chart expressions have the same derivatives of
   order at most `m` at `φ x`.
+* `TauCeti.differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow`,
+  `TauCeti.differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow`: a differential
+  operator of order at most `m` on `C^∞(M)` vanishes at `x` on `I_x ^ (m + 1)`.
 * `TauCeti.differentialOperators_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order
   at most `m` on `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at
   `x`.
+* `TauCeti.differentialOperators_apply_eq_of_eventuallyEq`,
+  `TauCeti.tsupport_differentialOperators_apply_subset`: in particular differential operators are
+  local and do not enlarge supports.
 
 ## References
 
@@ -61,50 +76,87 @@ noncomputable section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The jet inclusion at the image of `y` in the extended chart at `x`, given that chart
+expressions of smooth functions are smooth there. -/
+private theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_contDiffAt {x y : M}
+    (hy : y ∈ (extChartAt I x).source)
+    (hs : ∀ g : C^∞⟮I, M; ℝ⟯,
+      ContDiffAt ℝ ∞ ((g : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x y))
+    {m : ℕ} {f : C^∞⟮I, M; ℝ⟯} (hf : f ∈ smoothVanishingIdeal I y ^ (m + 1)) {k : ℕ}
+    (hk : k ≤ m) :
+    iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 := by
+  induction m generalizing f k with
+  | zero =>
+    obtain rfl : k = 0 := by omega
+    rw [zero_add, pow_one, mem_smoothVanishingIdeal_iff] at hf
+    rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply,
+      (extChartAt I x).left_inv hy, hf, norm_zero]
+  | succ m ih =>
+    rw [pow_succ] at hf
+    refine Submodule.mul_induction_on
+      (C := fun r : C^∞⟮I, M; ℝ⟯ ↦ ∀ k ≤ m + 1,
+        iteratedFDeriv ℝ k ((r : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x y) = 0)
+      hf (fun u hu v hv k hk ↦ ?_) (fun u v hu hv k hk ↦ ?_) k hk
+    · -- Orders of vanishing add: `u` vanishes to order `m + 1` and `v` to order `1`.
+      rw [ContMDiffMap.coe_mul, Pi.mul_comp]
+      refine iteratedFDeriv_mul_eq_zero_of_lt_add (hs u) (hs v) (m := m + 1) (n := 1)
+        (fun i hi ↦ ih hu (by omega)) (fun i hi ↦ ?_) (by omega) (by exact_mod_cast le_top)
+      obtain rfl : i = 0 := by omega
+      rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply,
+        (extChartAt I x).left_inv hy, mem_smoothVanishingIdeal_iff.1 hv, norm_zero]
+    · rw [ContMDiffMap.coe_add, Pi.add_comp,
+        iteratedFDeriv_add_apply ((hs u).of_le (by simp)) ((hs v).of_le (by simp)), hu k hk,
+        hv k hk, add_zero]
 
 /-- A function in `I_x ^ (m + 1)` has a chart expression whose derivatives of order at most `m`
 vanish at the image of `x`. -/
 theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow {x : M}
     (hx : I.IsInteriorPoint x) {m : ℕ} {f : C^∞⟮I, M; ℝ⟯}
     (hf : f ∈ smoothVanishingIdeal I x ^ (m + 1)) {k : ℕ} (hk : k ≤ m) :
-    iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
-  induction m generalizing f k with
-  | zero =>
-    obtain rfl : k = 0 := by omega
-    rw [zero_add, pow_one, mem_smoothVanishingIdeal_iff] at hf
-    rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply, extChartAt_to_inv, hf,
-      norm_zero]
-  | succ m ih =>
-    rw [pow_succ] at hf
-    refine Submodule.mul_induction_on
-      (C := fun r : C^∞⟮I, M; ℝ⟯ ↦ ∀ k ≤ m + 1,
-        iteratedFDeriv ℝ k ((r : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0)
-      hf (fun u hu v hv k hk ↦ ?_) (fun u v hu hv k hk ↦ ?_) k hk
-    · -- Orders of vanishing add: `u` vanishes to order `m + 1` and `v` to order `1`.
-      obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx u
-      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx v
-      have huv : ((u * v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _]
-          fun y ↦ gu y * gv y := hu'.mul hv'
-      rw [(huv.iteratedFDeriv ℝ k).eq_of_nhds]
-      refine iteratedFDeriv_mul_eq_zero_of_lt_add (a := m + 1) (b := 1) (hgu.of_le (by simp))
-        (hgv.of_le (by simp)) (fun i hi ↦ ?_) (fun i hi ↦ ?_) (by omega)
-      · rw [← (hu'.iteratedFDeriv ℝ i).eq_of_nhds]
-        exact ih hu (by omega)
-      · obtain rfl : i = 0 := by omega
-        rw [← (hv'.iteratedFDeriv ℝ 0).eq_of_nhds, ← norm_eq_zero, norm_iteratedFDeriv_zero,
-          Function.comp_apply, extChartAt_to_inv, mem_smoothVanishingIdeal_iff.1 hv, norm_zero]
-    · obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx u
-      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx v
-      have huv : ((u + v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _] gu + gv :=
-        hu'.add hv'
-      rw [(huv.iteratedFDeriv ℝ k).eq_of_nhds,
-        iteratedFDeriv_add_apply (hgu.contDiffAt.of_le (by simp))
-          (hgv.contDiffAt.of_le (by simp)),
-        ← (hu'.iteratedFDeriv ℝ k).eq_of_nhds, ← (hv'.iteratedFDeriv ℝ k).eq_of_nhds,
-        hu k hk, hv k hk, add_zero]
+    iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 :=
+  iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_contDiffAt (mem_extChartAt_source x)
+    (fun g ↦ g.contMDiff.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx) hf hk
+
+/-- On a smooth manifold, a function in `I_y ^ (m + 1)` has a chart expression whose derivatives
+of order at most `m` vanish at the image of `y`, in the extended chart at any point `x` whose
+source contains `y` and whose target contains the image of `y` in its interior. -/
+theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow_of_mem_source
+    [IsManifold I ∞ M] {x y : M} (hy : y ∈ (extChartAt I x).source)
+    (hy' : extChartAt I x y ∈ interior (extChartAt I x).target) {m : ℕ} {f : C^∞⟮I, M; ℝ⟯}
+    (hf : f ∈ smoothVanishingIdeal I y ^ (m + 1)) {k : ℕ} (hk : k ≤ m) :
+    iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 :=
+  iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_contDiffAt hy
+    (fun g ↦ contMDiffAt_iff_contDiffAt.mp
+      ((g.contMDiff.contMDiffAt.comp_contMDiffWithinAt _
+        (contMDiffWithinAt_extChartAt_symm_target x (interior_subset hy'))).contMDiffAt
+          (mem_interior_iff_mem_nhds.mp hy'))) hf hk
+
+/-- A differential operator of order at most `m` on `C^∞(M)` vanishes at `x` on every function
+in `I_x ^ (m + 1)`. -/
+theorem differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    {f : C^∞⟮I, M; ℝ⟯} (hf : f ∈ smoothVanishingIdeal I x ^ (m + 1)) :
+    D f x = 0 := by
+  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
+    (x := f) (by simpa using hf)
+  rwa [smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff] at h
+
+/-- A differential operator of order at most `m` on `C^∞(M)` takes the same value at `x` on two
+smooth functions whose difference lies in `I_x ^ (m + 1)`. -/
+theorem differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    {f g : C^∞⟮I, M; ℝ⟯} (hfg : f - g ∈ smoothVanishingIdeal I x ^ (m + 1)) :
+    D f x = D g x := by
+  have h := differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow hD hfg
+  rwa [map_sub, ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero] at h
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
 /-- **The powers of the vanishing ideal.** At an interior point `x` of a finite-dimensional
 Hausdorff real manifold, a smooth function is a finite sum of products of `m + 1` smooth functions
@@ -118,6 +170,18 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint {x : M}
     iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow hx hf hk,
     mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero hx⟩
 
+/-- **The powers of the vanishing ideal**, indexed by the order of vanishing. At an interior point
+`x`, a smooth function lies in `I_x ^ m` if and only if its chart expression has vanishing
+derivatives of every order `k < m` at the image of `x`. For `m = 0` both sides always hold. -/
+theorem mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint {x : M}
+    (hx : I.IsInteriorPoint x) (m : ℕ) (f : C^∞⟮I, M; ℝ⟯) :
+    f ∈ smoothVanishingIdeal I x ^ m ↔ ∀ k < m,
+      iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  cases m with
+  | zero => simp
+  | succ m =>
+    simp only [mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hx, Nat.lt_succ_iff]
+
 /-- **The powers of the vanishing ideal.** On a finite-dimensional Hausdorff boundaryless real
 manifold, a smooth function is a finite sum of products of `m + 1` smooth functions vanishing at
 `x` if and only if its chart expression has vanishing derivatives of every order at most `m` at
@@ -128,6 +192,30 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff [BoundarylessManifold I M] (x : M)
       iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 :=
   mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint BoundarylessManifold.isInteriorPoint m f
 
+/-- **Powers of the vanishing ideal on an open subset.** A smooth function on an open subset
+`U ∋ x` in the `n`-th power of the vanishing ideal at `x` agrees near `x` with the restriction of a
+smooth function on `M` in the `n`-th power of the vanishing ideal at `x`. -/
+theorem exists_mem_smoothVanishingIdeal_pow_eventuallyEq_comp_subtype_val
+    {U : TopologicalSpace.Opens M} {x : U} {n : ℕ} {h : C^∞⟮I, U; ℝ⟯}
+    (hh : h ∈ smoothVanishingIdeal I x ^ n) :
+    ∃ g ∈ smoothVanishingIdeal I (x : M) ^ n, (g : M → ℝ) ∘ Subtype.val =ᶠ[𝓝 x] h := by
+  induction n generalizing h with
+  | zero =>
+    obtain ⟨g, hg⟩ := h.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
+    exact ⟨g, by simp, hg⟩
+  | succ n ih =>
+    rw [pow_succ'] at hh
+    refine Submodule.mul_induction_on hh (fun a ha b hb ↦ ?_) fun h₁ h₂ ↦ ?_
+    · obtain ⟨g, hg⟩ := a.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
+      obtain ⟨g', hg', hbg⟩ := ih hb
+      have hgx : g ∈ smoothVanishingIdeal I (x : M) := by
+        rw [mem_smoothVanishingIdeal_iff]
+        exact hg.eq_of_nhds.trans (mem_smoothVanishingIdeal_iff.1 ha)
+      exact ⟨g * g', pow_succ' (smoothVanishingIdeal I (x : M)) n ▸ Ideal.mul_mem_mul hgx hg',
+        hg.mul hbg⟩
+    · rintro ⟨g₁, hg₁, hgh₁⟩ ⟨g₂, hg₂, hgh₂⟩
+      exact ⟨g₁ + g₂, add_mem hg₁ hg₂, hgh₁.add hgh₂⟩
+
 /-- **Jets as quotients.** At an interior point `x`, two smooth functions have the same class in
 `C^∞(M) / I_x ^ (m + 1)`, the space of `m`-jets at `x`, if and only if their chart expressions have
 the same derivatives of every order at most `m` at the image of `x`. -/
@@ -137,8 +225,9 @@ theorem quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff {x : M} (hx : I.IsInter
         Ideal.Quotient.mk (smoothVanishingIdeal I x ^ (m + 1)) g ↔
       ∀ k ≤ m, iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) =
         iteratedFDeriv ℝ k ((g : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  obtain ⟨u, hu, hfu⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx f
-  obtain ⟨v, hv, hgv⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx g
+  have hx' := (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx
+  obtain ⟨u, hu, hfu⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx' f
+  obtain ⟨v, hv, hgv⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx' g
   have hsub : ((f - g : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _] u - v :=
     hfu.sub hgv
   rw [Ideal.Quotient.eq, mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hx]
@@ -159,14 +248,41 @@ theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
     (hfg : ∀ k ≤ m,
       iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) =
         iteratedFDeriv ℝ k ((g : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x)) :
-    D f x = D g x := by
-  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) := by
+    D f x = D g x :=
+  differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow hD <| by
     rw [← Ideal.Quotient.eq]
     exact (quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff hx m f g).mpr hfg
-  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
-    (x := f - g) (by simpa using hmem)
-  rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
-    Pi.sub_apply, sub_eq_zero] at h
-  exact h
+
+/-- **Differential operators are local.** A differential operator of order at most `m` on
+`C^∞(M)` takes the same value at `x` on two smooth functions that agree near `x`: their difference
+vanishes near `x`, so it lies in `I_x ^ (m + 1)`. This holds at boundary points as well. -/
+theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
+    D f x = D g x :=
+  differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow hD <|
+    mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero
+      (by simpa [ContMDiffMap.coe_sub, sub_eq_zero] using hfg.sub_eq) _
+
+/-- A differential operator on `C^∞(M)` does not enlarge supports: `D f` vanishes outside the
+closed support of `f`. -/
+theorem tsupport_differentialOperators_apply_subset {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (f : C^∞⟮I, M; ℝ⟯) : tsupport (D f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)
+  by_contra hf
+  have h := differentialOperators_apply_eq_of_eventuallyEq hD
+    (g := 0) (by simpa using (notMem_tsupport_iff_eventuallyEq.1 hf))
+  exact hx (by simpa using h)
+
+/-- A differential operator on `C^∞(M)` sends compactly supported functions to compactly supported
+functions. -/
+theorem _root_.HasCompactSupport.differentialOperators_apply {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    {f : C^∞⟮I, M; ℝ⟯} (hf : HasCompactSupport f) : HasCompactSupport (D f) :=
+  hf.mono' (subset_tsupport _ |>.trans (tsupport_differentialOperators_apply_subset hD f))
 
 end TauCeti

@@ -28,9 +28,10 @@ As with `spa` itself, the definition is stated for arbitrary data: no hypothesis
 topology of `A` to its ring operations, the subring is arbitrary, and Wedhorn's standing
 condition that the ideal `T · A` be open is not assumed. It is Wedhorn's rational subset of
 `Spa (A, A⁺)` under his hypotheses (a Huber ring, a ring of integral elements, `T · A` open);
-the open-ideal condition enters only in the results that need it — Wedhorn's admissibility
-setting, the basis claims of Definition 7.29, and the quasi-compactness of Theorem 7.35. The
-generalized unit-ideal standard-cover theorem itself requires no openness hypothesis.
+the open-ideal condition enters only in the results that need it — pseudouniformiser
+normalization here, and downstream in Wedhorn's admissibility setting, the basis claims of
+Definition 7.29, and the quasi-compactness of Theorem 7.35. The generalized unit-ideal
+standard-cover theorem itself requires no openness hypothesis.
 
 The exported interface of the definition, the normalizations and the intersection identity
 inherited from `Spv(A)(T/s)`, the whole-space case, containment in `spa A⁺`, and relative
@@ -104,6 +105,10 @@ layer deferred above.
   Corollary 7.53.
 * `TauCeti.ValuationSpectrum.span_eq_top_iff_forall_mem_spa_exists_not_vle_zero` : Corollary 7.53
   in pointwise form — `T` generates the unit ideal exactly when no point vanishes on all of it.
+* `Subring.exists_rationalSubset_eq_insert_pseudoUniformizer_pow` : over a ring with separately
+  continuous multiplication and a pseudouniformiser `ϖ`, every rational subset with open numerator
+  ideal can be presented as `R((insert (ϖ ^ N) T) / s)` with `insert (ϖ ^ N) T ⊆ Aplus` and
+  `s ∈ Aplus` for a given open subring `Aplus`.
 
 ## References
 
@@ -111,8 +116,8 @@ layer deferred above.
   Corollary 7.53.
 * AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
   `2baa76f742bdb4fb8ee323fabba41203bd390e08`,
-  `projects/AdicSpaces/Adic spaces/RationalSubsets.lean`, is the roadmap's designated prior
-  formalisation of this material and was consulted. It develops the same statements around a
+  `projects/AdicSpaces/Adic spaces/RationalSubsets.lean`, is a prior formalisation of this
+  material and was consulted. It develops the same statements around a
   standalone `rationalOpen` and an existential `IsRationalSubset` predicate, with the
   intersection identity conditioned on each denominator lying in its numerator set and the
   same insert-absorption discharging that condition. Here the rational subset is instead the
@@ -298,6 +303,15 @@ theorem mem_rationalSubset_singleton_one_iff {Aplus : Subring A} {v : Spv A} (hv
   exact ⟨And.left, fun h ↦ ⟨h, fun h0 ↦ v.toValuativeRel.not_vle_one_zero
     (v.toValuativeRel.vle_trans h h0)⟩⟩
 
+/-- For `a ∈ A⁺`, the trace of `R({1}/a)` on `spa A⁺` is the locus `{v : v(a) = 1}`. -/
+theorem val_preimage_rationalSubset_singleton_one {Aplus : Subring A} (a : Aplus) :
+    (Subtype.val ⁻¹' rationalSubset Aplus {1} (a : A) : Set (spa Aplus)) =
+      {v : spa Aplus | (v : Spv A).valuation a = 1} := by
+  ext v
+  rw [Set.mem_preimage, mem_rationalSubset_singleton_one_iff v.property, ← valuation_le_iff,
+    map_one, Set.mem_ofPred_eq]
+  exact ⟨(valuation_le_one_of_mem_spa v.property a.property).antisymm, Eq.ge⟩
+
 /-- On the subtype `spa A⁺`, the preimage of `R(T/s)` is the preimage of the ambient basic
 open `Spv(A)(T/s)`: the `spa A⁺` condition is automatic from the subtype. This is the form used
 to compare the rational bases of `Spa(A,A⁺)` and `Spv(A,I)`. -/
@@ -312,7 +326,7 @@ subset is relatively open in the adic spectrum. -/
 theorem isOpen_val_preimage_rationalSubset (Aplus : Subring A) (T : Finset A) (s : A) :
     IsOpen (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)) := by
   rw [val_preimage_rationalSubset]
-  exact (isOpen_basicOpenFinset T s).preimage continuous_subtype_val
+  exact (isOpen_basicOpenFinset T s).preimage continuous_subtypeVal
 
 /-- **The basic open `R(T/s)`, as an `Opens` of `spa A⁺`.** This packages
 `rationalSubset` with its openness; it is a *rational* subset in Wedhorn's sense exactly when
@@ -484,5 +498,78 @@ theorem span_eq_top_iff_forall_mem_spa_exists_not_vle_zero (Aplus : Subring A)
   exact ⟨s, hs, ((mem_rationalSubset_iff Aplus T s v).mp hmem).2.2⟩
 
 end TauCeti.ValuationSpectrum
+
+namespace Subring
+
+open Topology TauCeti TauCeti.Huber TauCeti.ValuationSpectrum
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+
+open scoped Classical in
+/-- Over a ring with separately continuous multiplication and a pseudouniformiser `ϖ`, every
+rational subset with open numerator ideal has a presentation `R((insert (ϖ ^ N) T) / s)` with all
+elements of `insert (ϖ ^ N) T` and `s` in a given open subring `Aplus` and a power of `ϖ` among
+its numerators. -/
+theorem exists_rationalSubset_eq_insert_pseudoUniformizer_pow (Aplus : Subring A)
+    (hAplus : IsOpen (Aplus : Set A)) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    (T₀ : Finset A) (s₀ : A) (hT₀ : IsOpen ((Ideal.span (T₀ : Set A) : Ideal A) : Set A)) :
+    ∃ (N : ℕ) (T : Finset A) (s : A),
+      (∀ f ∈ insert (ϖ ^ N) T, f ∈ Aplus) ∧ s ∈ Aplus ∧
+      rationalSubset Aplus T₀ s₀ = rationalSubset Aplus (insert (ϖ ^ N) T) s := by
+  have hnil := hϖ.isTopologicallyNilpotent
+  obtain ⟨n, hn⟩ :=
+    hnil.exists_pow_mem_of_mem_nhds (hT₀.mem_nhds (Ideal.span (T₀ : Set A)).zero_mem)
+  have htop : Ideal.span (T₀ : Set A) = ⊤ :=
+    Ideal.eq_top_of_isUnit_mem _ hn (hϖ.isUnit.pow n)
+  have h1 : (1 : A) ∈ Ideal.span (T₀ : Set A) := htop ▸ Submodule.mem_top
+  obtain ⟨c, -, hc⟩ := Submodule.mem_span_finset.mp h1
+  have hM₀ : ∃ M₀ : ℕ, ϖ ^ M₀ ∈ Aplus ∧ ∀ t ∈ T₀, c t * ϖ ^ M₀ ∈ Aplus :=
+    ((hnil.eventually_mem (hAplus.mem_nhds Aplus.zero_mem)).and
+      ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
+        eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus (c t))).exists
+  obtain ⟨M₀, hϖ₀, hM₀⟩ := hM₀
+  have hM₁ : ∃ M₁ : ℕ,
+      ϖ ^ M₁ ∈ Aplus ∧ s₀ * ϖ ^ M₁ ∈ Aplus ∧ ∀ t ∈ T₀, t * ϖ ^ M₁ ∈ Aplus :=
+    ((hnil.eventually_mem (hAplus.mem_nhds Aplus.zero_mem)).and
+      ((eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus s₀).and
+        ((Filter.eventually_all_finite T₀.finite_toSet).mpr fun t _ ↦
+          eventually_mul_pow_mem_of_isTopologicallyNilpotent hnil hAplus t))).exists
+  obtain ⟨M₁, hϖ₁, hs₁, hT₁⟩ := hM₁
+  refine ⟨M₀ + M₁, T₀.image (fun t ↦ t * ϖ ^ M₁), s₀ * ϖ ^ M₁, ?_, hs₁, ?_⟩
+  · intro f hf
+    rcases Finset.mem_insert.mp hf with rfl | hf
+    · rw [pow_add]
+      exact mul_mem hϖ₀ hϖ₁
+    · obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hf
+      exact hT₁ t ht
+  have hunit : IsUnit (ϖ ^ M₁) := hϖ.isUnit.pow M₁
+  rw [← rationalSubset_image_mul_right Aplus T₀ s₀ (ϖ ^ M₁) hunit]
+  symm
+  refine rationalSubset_insert_of_forall_vle Aplus _ _ (ϖ ^ (M₀ + M₁)) fun v hv ↦ ?_
+  rw [rationalSubset_image_mul_right Aplus T₀ s₀ (ϖ ^ M₁) hunit] at hv
+  rw [← valuation_le_iff, pow_add, map_mul, map_mul]
+  have hle : v.valuation (ϖ ^ M₀) ≤ v.valuation s₀ := by
+    calc v.valuation (ϖ ^ M₀)
+      = v.valuation (ϖ ^ M₀ * ∑ t ∈ T₀, c t • t) := by rw [hc, mul_one]
+    _ = v.valuation (∑ t ∈ T₀, (c t * ϖ ^ M₀) * t) := by
+        rw [Finset.mul_sum]
+        congr 1
+        refine Finset.sum_congr rfl fun t _ ↦ ?_
+        rw [smul_eq_mul]
+        ring
+    _ ≤ v.valuation s₀ := by
+        refine v.valuation.map_sum_le fun t ht ↦ ?_
+        calc v.valuation ((c t * ϖ ^ M₀) * t)
+            = v.valuation (c t * ϖ ^ M₀) * v.valuation t := map_mul _ _ _
+          _ ≤ 1 * v.valuation s₀ := by
+              gcongr
+              · exact valuation_le_one_of_mem_spa
+                  (rationalSubset_subset_spa Aplus T₀ s₀ hv) (hM₀ t ht)
+              · exact (valuation_le_iff v t s₀).mpr
+                  (((mem_rationalSubset_iff Aplus T₀ s₀ v).mp hv).2.1 t ht)
+          _ = v.valuation s₀ := one_mul _
+  gcongr
+
+end Subring
 
 end

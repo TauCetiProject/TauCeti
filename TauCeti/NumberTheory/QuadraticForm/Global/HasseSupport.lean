@@ -29,14 +29,16 @@ unramified norm-equation calculation for each pair of coefficients.
 
 public section
 
-namespace TauCeti
+namespace QuadraticForm
+
+open TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Almost-all triviality of the finite Hasse sign.** The Hasse sign of a regular quadratic
 form over a number field is one at all but finitely many finite places. -/
 @[fun_prop]
-theorem _root_.QuadraticForm.hasFiniteMulSupport_finiteHasse
+theorem hasFiniteMulSupport_finiteHasse
     {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) :
     Function.HasFiniteMulSupport (Q.finiteHasse hQ) := by
@@ -48,4 +50,4 @@ theorem _root_.QuadraticForm.hasFiniteMulSupport_finiteHasse
   rw [funext (Q.finiteHasse_eq_prod_hilbertSymbol hQ hp')]
   fun_prop
 
-end TauCeti
+end QuadraticForm

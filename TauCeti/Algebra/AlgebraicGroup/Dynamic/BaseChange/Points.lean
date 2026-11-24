@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
-public import TauCeti.Algebra.Bialgebra.AddMonoidAlgebra.BaseChange
+public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.BaseChange
 
 /-!
 # Base change of dynamic subgroups on points
@@ -42,7 +42,7 @@ variable [Semiring H] [Bialgebra R H]
 identification of the scalar-extended Laurent coordinate algebra. -/
 noncomputable def baseChangeCocharacter (l : H →ₐc[R] LaurentPolynomial R) :
     S ⊗[R] H →ₐc[S] LaurentPolynomial S :=
-  (AddMonoidAlgebra.scalarTensorBialgEquiv R S (M := ℤ)).toBialgHom.comp
+  (AddMonoidAlgebra.scalarTensorBialgEquiv R S (G := ℤ)).toBialgHom.comp
     (_root_.Bialgebra.TensorProduct.map (BialgHom.id S S) l)
 
 /-- The base-changed cocharacter on a pure tensor. -/
@@ -161,8 +161,8 @@ theorem baseChangePointsMulEquiv_extend (l : H →ₐc[R] LaurentPolynomial R)
     (g : parabolic A l) :
     AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) (extend A l g) =
       extend A (l.baseChangeCocharacter S)
-        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.1,
-          (baseChangePointsMulEquiv_mem_parabolic_iff l g.1).mpr g.2⟩ := by
+        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.val,
+          (baseChangePointsMulEquiv_mem_parabolic_iff l g.val).mpr g.property⟩ := by
   apply (extend_unique ?_).symm
   rw [← baseChangePointsMulEquiv_ofPolyPoint, ofPolyPoint_extend,
     baseChangePointsMulEquiv_conjugate]
@@ -172,8 +172,8 @@ theorem baseChangePointsMulEquiv_limit (l : H →ₐc[R] LaurentPolynomial R)
     (g : parabolic A l) :
     AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) (limit A l g) =
       limit A (l.baseChangeCocharacter S)
-        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.1,
-          (baseChangePointsMulEquiv_mem_parabolic_iff l g.1).mpr g.2⟩ := by
+        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.val,
+          (baseChangePointsMulEquiv_mem_parabolic_iff l g.val).mpr g.property⟩ := by
   rw [limit_apply, limit_apply, baseChangePointsMulEquiv_evalZeroPoint,
     baseChangePointsMulEquiv_extend]
 

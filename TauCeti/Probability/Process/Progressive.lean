@@ -9,18 +9,24 @@ public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Topology.Order.Cadlag
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Probability.Process.Filtration.Progressive
 
 /-!
-# Progressive measurability of right-continuous adapted processes
+# Progressive measurability of stochastic processes
 
 A strongly adapted process in nonnegative real time with everywhere right-continuous paths is
 strongly progressive, on its original filtration. No completeness or right continuity of the
 filtration is required. In particular, the result applies to adapted càdlàg processes and permits
-use of the progressive stopped-evaluation API.
+use of the progressive stopped-evaluation API. Restricting a strongly progressive process to
+an event measurable at every time also preserves strong progressivity.
 
 On each fixed horizon, right-endpoint samples are capped at that horizon. These approximations
 are measurable for the horizon's product sigma algebra; they need not be adapted at earlier
 times. Almost-sure path regularity alone does not give the literal conclusion for a raw version.
+
+For progressive processes, pathwise time-a.e. agreement lifts to product-a.e. agreement
+under arbitrary s-finite time and sample measures.
 
 ## References
 
@@ -32,6 +38,26 @@ public section
 
 open MeasureTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
+
+/-- Restricting a progressive process to an event measurable at every time preserves
+progressivity. No topology on the time or state space is needed. -/
+theorem MeasureTheory.IsProgressive.indicator
+    {ι Ω E : Type*} [Preorder ι] {m : MeasurableSpace Ω}
+    [MeasurableSpace ι] [MeasurableSpace E] [Zero E]
+    {ℱ : Filtration ι m} {X : ι → Ω → E} {A : Set Ω}
+    (hX : IsProgressive ℱ X) (hA : ∀ t, MeasurableSet[ℱ t] A) :
+    IsProgressive ℱ (fun t ↦ A.indicator (X t)) :=
+  fun T ↦ (hX T).indicator ((hA T).preimage measurable_snd)
+
+/-- Restricting a strongly progressive process to an event measurable at every time preserves
+strong progressivity. No topology on the time index is needed. -/
+theorem MeasureTheory.IsStronglyProgressive.indicator
+    {ι Ω E : Type*} [Preorder ι] {m : MeasurableSpace Ω}
+    [MeasurableSpace ι] [TopologicalSpace E] [Zero E]
+    {ℱ : Filtration ι m} {X : ι → Ω → E} {A : Set Ω}
+    (hX : IsStronglyProgressive ℱ X) (hA : ∀ t, MeasurableSet[ℱ t] A) :
+    IsStronglyProgressive ℱ (fun t ↦ A.indicator (X t)) :=
+  fun T ↦ (hX T).indicator ((hA T).preimage measurable_snd)
 
 private noncomputable def rightSample (n : ℕ) (t : ℝ≥0) : ℝ≥0 :=
   (⌈(t : ℝ) * (n + 1)⌉₊ : ℝ≥0) / (n + 1)
@@ -65,7 +91,7 @@ theorem MeasureTheory.StronglyAdapted.isStronglyProgressive_of_isRightContinuous
     have hmap : Measurable (fun p : Iic T × Ω =>
         (⌈((p.1 : ℝ≥0) : ℝ) * (n + 1)⌉₊, p.2)) :=
       ((NNReal.continuous_coe.measurable.comp
-        (measurable_subtype_coe.comp measurable_fst)).mul_const
+        (measurable_subtypeVal.comp measurable_fst)).mul_const
           (n + 1 : ℝ)).nat_ceil.prodMk measurable_snd
     simpa only [Function.uncurry_def, Function.comp_def, rightSample] using
       hs.comp_measurable hmap
@@ -87,3 +113,16 @@ theorem MeasureTheory.Adapted.isProgressive_of_isRightContinuous
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : Adapted ℱ u)
     (hc : ∀ ω, IsRightContinuous (fun t => u t ω)) : IsProgressive ℱ u :=
   ((stronglyAdapted_iff_adapted.mpr hu).isStronglyProgressive_of_isRightContinuous hc).isProgressive
+
+/-- Progressive processes that agree time-a.e. on almost every path agree product-a.e.
+for s-finite time and sample measures. Neither completeness nor usual conditions on the
+filtration are needed. -/
+theorem MeasureTheory.IsProgressive.ae_eq_prod_of_ae_eq
+    {Ω E : Type*} {m : MeasurableSpace Ω} [MeasurableSpace E] [MeasurableEq E]
+    {ℱ : Filtration ℝ≥0 m} {H K : ℝ≥0 → Ω → E}
+    (hH : IsProgressive ℱ H) (hK : IsProgressive ℱ K)
+    {μ : Measure ℝ≥0} {P : Measure Ω} [SFinite μ] [SFinite P]
+    (heq : ∀ᵐ ω ∂P, (fun t ↦ H t ω) =ᵐ[μ] (fun t ↦ K t ω)) :
+    Function.uncurry H =ᵐ[μ.prod P] Function.uncurry K := by
+  have hm := measurableSet_eq_fun hH.measurable hK.measurable
+  exact (Measure.ae_prod_iff_ae_ae hm).mpr ((Measure.ae_ae_comm hm).mpr heq)

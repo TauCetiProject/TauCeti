@@ -66,7 +66,7 @@ theorem map_sum_sq_pi_gaussianReal_noncentral (m : ι → ℝ) :
   simp_rw [mgf_sq_gaussianReal_one _ ht']
   rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
     ← Real.rpow_mul_natCast hb.le, ← Real.exp_sum]
-  simp only [l, NNReal.coe_sum, NNReal.coe_pow, coe_nnnorm, Real.norm_eq_abs, sq_abs,
+  simp only [l, NNReal.coe_sum, NNReal.coe_pow, coe_nnNorm, Real.norm_eq_abs, sq_abs,
     Finset.sum_div, Finset.sum_mul]
   congr 2
   ring
@@ -93,7 +93,7 @@ theorem map_norm_sq_multivariateGaussian_noncentral [DecidableEq ι]
       noncentralChiSquaredMeasure (Fintype.card ι) (‖m‖₊ ^ 2) := by
   have hnorm : (‖m‖₊ ^ 2 : ℝ≥0) = ∑ i, ‖m i‖₊ ^ 2 := by
     apply NNReal.eq
-    simpa only [NNReal.coe_pow, coe_nnnorm, NNReal.coe_sum, Real.norm_eq_abs, sq_abs] using
+    simpa only [NNReal.coe_pow, coe_nnNorm, NNReal.coe_sum, Real.norm_eq_abs, sq_abs] using
       EuclideanSpace.real_norm_sq_eq m
   rw [multivariateGaussian_one_eq_map_pi,
     Measure.map_map (by fun_prop) (by fun_prop), hnorm,

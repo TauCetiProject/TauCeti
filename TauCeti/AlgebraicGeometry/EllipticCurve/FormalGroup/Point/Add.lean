@@ -83,16 +83,13 @@ variable {K : Type*} [Field K] [Algebra O K]
 /-! ### The points
 
 `formalPoint` needs the base-changed curve to be elliptic and the structure map to be injective.
-The group law on points needs decidable equality on `K`, which the two declarations that add points
+The group law on points needs decidable equality on `K`, which the declarations that add points
 supply locally by classical reasoning rather than asking it of callers. The first below adds
 nothing, so it needs neither.
 
 The argument runs in two steps: the chord construction identifies the sum with the third point of
 the line, and the formal inverse identifies that point's negation with the point of `F(t₁, t₂)`. -/
 
-variable [(W.baseChange K).IsElliptic] [FaithfulSMul O K]
-
-omit [FaithfulSMul O K] [(W.baseChange K).IsElliptic] in
 /-- **The chord's third point, negated, is the point at the sum's parameter.** The formal inverse
 `F(t₁, t₂) = i(T(t₁, t₂))` is what turns the chord construction into the group law; this is that
 step read off on coordinates. Both nonsingularity proofs are taken rather than built, so the
@@ -120,14 +117,14 @@ private theorem some_formalThirdRootEval_eq_some_formalAddEval {I : Ideal O} (hI
   exact ⟨(W.algebraMap_formalInverseEval_div_algebraMap_formalWEval_formalInverseEval hET).symm,
     (W.neg_one_div_algebraMap_formalWEval_formalInverseEval hET).symm⟩
 
-omit [(W.baseChange K).IsElliptic] in
+variable [FaithfulSMul O K] in
 open scoped Classical in
 /-- The group law of `W⁄K` at the two parametrised points, each written as an `Affine.Point.some`
 at the coordinates `x = t / w(t)` and `y = -1 / w(t)`. The three nonsingularity proofs are taken
 rather than built, so the statement says exactly which witnesses the dependent equality is
 between. -/
 private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I) {t₁ t₂ : O}
-    (h₁ : t₁ ∈ I) (h₂ : t₂ ∈ I) (h₁0 : t₁ ≠ 0) (h₂0 : t₂ ≠ 0)
+    (h₁ : t₁ ∈ I) (h₂ : t₂ ∈ I)
     (hx : t₁ * W.formalWEval t₂ ≠ t₂ * W.formalWEval t₁)
     (hn₁ : (W.baseChange K).toAffine.Nonsingular
       (algebraMap O K t₁ / algebraMap O K (W.formalWEval t₁))
@@ -160,7 +157,6 @@ private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I
     map_ofNat] at hq₁ hq₂ hslope hint hrel hwT
   -- the group law of `W⁄K`, applied to the two parametrised points
   -- the chord cubic's leading coefficient is a unit in `O`, so nonzero in `K`
-  have : NonarchimedeanRing O := hI ▸ I.nonarchimedean
   have hA := ((W.isUnit_thirdRootDenom (hI.isTopologicallyNilpotent_of_mem (by
     simpa using W.formalSlopeEval_mem hI (k := 1) (by simpa using h₁)
       (by simpa using h₂)))).map (algebraMap O K)).ne_zero
@@ -169,9 +165,10 @@ private theorem some_add_some_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I
   have hxK := hne (sub_ne_zero.2 hx)
   rw [map_sub, map_mul, map_mul] at hxK
   obtain ⟨h₃, hadd⟩ := chord_point_add (W.baseChange K) hq₁ hq₂ hslope hint hrel hwT hA
-    (W.algebraMap_formalWEval_ne_zero hE₁ (hne h₁0))
-    (W.algebraMap_formalWEval_ne_zero hE₂ (hne h₂0)) hwT0 hxK hn₁ hn₂
+    hwT0 hxK hn₁ hn₂
   exact hadd.trans (W.some_formalThirdRootEval_eq_some_formalAddEval hI h₁ h₂ h₃ hnF)
+
+variable [(W.baseChange K).IsElliptic] [FaithfulSMul O K]
 
 open scoped Classical in
 /-- **The parametrisation carries the group law**, for two nonzero parameters whose points have
@@ -210,7 +207,7 @@ theorem add_eq_formalPoint_formalAddEval_of_X_ne {I : Ideal O} (hI : IsAdic I) {
     W.formalPoint_of_param_ne_zero hI _ hF0]
   -- `Affine.Point.mk` is the `some` constructor at `-(w(t))⁻¹`
   simpa only [Affine.Point.mk, neg_div, one_div] using
-    W.some_add_some_formalAddEval_of_X_ne hI h₁ h₂ h₁0 h₂0 hx (hn h₁ h₁0) (hn h₂ h₂0) (hn hF hF0)
+    W.some_add_some_formalAddEval_of_X_ne hI h₁ h₂ hx (hn h₁ h₁0) (hn h₂ h₂0) (hn hF hF0)
 
 open scoped Classical in
 /-- **The parametrisation carries the group law**, for two parameters that are not equal and not

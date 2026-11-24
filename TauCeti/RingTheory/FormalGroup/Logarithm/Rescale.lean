@@ -155,7 +155,7 @@ over a ring without additive torsion. -/
 noncomputable def rescaleLogHom [HasUniqueDiv R] : TauCeti.FormalGroupHom (F.rescale s) 𝔾ₐ where
   toPowerSeries := F.rescaleLog hs
   zero_constantCoeff := F.constantCoeff_rescaleLog hs
-  hom := (TauCeti.FormalGroupHom.hom_additive_iff (F.constantCoeff_rescaleLog hs)).mpr
+  hom := TauCeti.FormalGroupHom.hom_additive_iff.mpr
     ((F.rescale s).subst_toPowerSeries_eq_add_of_derivative_eq (F.constantCoeff_rescaleLog hs)
       (F.derivative_rescaleLog hs))
 

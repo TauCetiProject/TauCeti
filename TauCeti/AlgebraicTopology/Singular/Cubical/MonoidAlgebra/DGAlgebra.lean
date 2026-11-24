@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Graded
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
+public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -32,6 +33,7 @@ are also those of the DG right modules of chains of a space with a right action 
 
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
+* `TauCeti.cubicalChainSumMap_injective`: the push-forward along an injective map is injective.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
 
@@ -45,6 +47,8 @@ public section
 noncomputable section
 
 open DirectSum
+
+universe u
 
 namespace TauCeti
 
@@ -97,6 +101,16 @@ theorem eq_zero_of_mem_cubicalChainGrading_of_pos {i : ℤ} (hi : 0 < i)
 theorem cubicalChainLof_mem {n : ℕ} (y : NormalizedCubicalChain G R n) :
     cubicalChainLof G R n y ∈ cubicalChainGrading G R (-(n : ℤ)) :=
   (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨n, y, by simp, rfl⟩)
+
+variable {G R} in
+/-- A chain of cohomological degree `-n` is a chain of dimension `n`. -/
+theorem exists_cubicalChainLof_eq {i : ℤ} {x : normalizedCubicalChainAlgebra G R}
+    (hx : x ∈ cubicalChainGrading G R i) (n : ℕ) (hn : (n : ℤ) = -i) :
+    ∃ y, cubicalChainLof G R n y = x := by
+  rcases (mem_cubicalChainGrading_iff G R).1 hx with rfl | ⟨k, y, hk, rfl⟩
+  · exact ⟨0, map_zero _⟩
+  · obtain rfl : k = n := by omega
+    exact ⟨y, rfl⟩
 
 /-- The decomposition of the algebra of cubical chains along its `ℤ`-grading. -/
 def cubicalChainDecompose :
@@ -213,6 +227,12 @@ theorem cubicalChainDifferential_mem {i : ℤ} {x : normalizedCubicalChainAlgebr
   · rw [cubicalChainDifferential_lof_succ]
     exact (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨k, _, by push_cast at hn; omega, rfl⟩)
 
+/-- The differential of a chain of nonnegative cohomological degree vanishes. -/
+theorem cubicalChainDifferential_eq_zero_of_nonneg {i : ℤ} (hi : 0 ≤ i)
+    {x : normalizedCubicalChainAlgebra G R} (hx : x ∈ cubicalChainGrading G R i) :
+    cubicalChainDifferential G R x = 0 :=
+  eq_zero_of_mem_cubicalChainGrading_of_pos G R (by omega) (cubicalChainDifferential_mem G R hx)
+
 /-- The differential squares to zero. -/
 @[simp]
 theorem cubicalChainDifferential_cubicalChainDifferential
@@ -248,6 +268,16 @@ variable {R}
 theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R n) :
     cubicalChainSumMap R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
   DirectSum.lmap_lof _ n c
+
+/-- The dimension `n` component of a push-forward is the push-forward of the component. -/
+theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebra X R) (n : ℕ) :
+    cubicalChainSumMap R f x n = map R f n (x n) :=
+  DirectSum.lmap_apply _ x n
+
+/-- The push-forward along an injective map is injective. -/
+theorem cubicalChainSumMap_injective {f : C(X, Y)} (hf : Function.Injective f) :
+    Function.Injective (cubicalChainSumMap R f) :=
+  (DirectSum.lmap_injective _).2 fun n ↦ NormalizedCubicalChain.map_injective R f hf n
 
 /-- The push-forward along the identity is the identity. -/
 @[simp]
@@ -360,6 +390,26 @@ theorem cubicalChain_isDGAlgebra :
       abel
 
 end Differential
+
+section ChainComplex
+
+variable {G R : Type u} [TopologicalSpace G] [CommRing R]
+
+/-- A chain is a cycle of the normalized cubical chain complex exactly when its image in the
+direct sum has zero differential. -/
+theorem normalizedCubicalChainComplex_d_eq_zero_iff {n : ℕ} (a : NormalizedCubicalChain G R n) :
+    ((normalizedCubicalChainComplex R).obj (TopCat.of G)).d n (n - 1) a = 0 ↔
+      cubicalChainDifferential G R (cubicalChainLof G R n a) = 0 := by
+  rcases n with _ | n
+  · rw [HomologicalComplex.shape _ 0 (0 - 1) (by simp), cubicalChainDifferential_lof_zero]
+    exact ⟨fun _ ↦ rfl, fun _ ↦ rfl⟩
+  · rw [Nat.add_sub_cancel, normalizedCubicalChainComplex_obj_d_apply,
+      cubicalChainDifferential_lof_succ]
+    refine ⟨fun h ↦ by rw [h]; exact map_zero _, fun h ↦ ?_⟩
+    exact DirectSum.of_injective (β := fun n ↦ NormalizedCubicalChain G R n) n
+      (h.trans (map_zero _).symm)
+
+end ChainComplex
 
 end TauCeti
 

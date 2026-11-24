@@ -48,7 +48,11 @@ cumulants into moments. This file develops the operation itself:
   `f₁ g₁`.
 * `PowerSeries.boxedConvolution_comm` — commutativity.
 * `PowerSeries.boxedConvolution_one_add_X` and `PowerSeries.one_add_X_boxedConvolution` — `1 + z`
-  is a two-sided unit.
+  is a two-sided unit, with `PowerSeries.boxedConvolution_X_of_constantCoeff_eq_zero` and
+  `PowerSeries.X_boxedConvolution_of_constantCoeff_eq_zero` showing that `z` is a two-sided unit
+  on series with zero constant coefficient.
+* `PowerSeries.rescale_boxedConvolution` and `PowerSeries.boxedConvolution_rescale` — rescaling
+  either factor rescales the boxed convolution.
 * `PowerSeries.boxedConvolution_mk_one_eq_of_subst_eq` — the zeta series turns `C` into the
   solution `M` of `M(z) = C(z M(z))`.
 * `PowerSeries.boxedConvolution_mk_one_mobius` — the zeta series and the Möbius series are
@@ -80,21 +84,43 @@ of `π`, and its constant coefficient is `f₀ g₀`. -/
 noncomputable def boxedConvolution (f g : R⟦X⟧) : R⟦X⟧ :=
   mk fun n => if n = 0 then constantCoeff f * constantCoeff g else
     ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-      (∏ B ∈ π.1.parts, coeff #B f) * ∏ B ∈ (kreweras π).1.parts, coeff #B g
+      (∏ B ∈ π.val.parts, coeff #B f) * ∏ B ∈ (kreweras π).val.parts, coeff #B g
 
 /-- The coefficient of index `n ≥ 1` of the boxed convolution of `f` and `g` is
 `∑_{π ∈ NC(n)} (∏_{B ∈ π} f_{|B|}) (∏_{B ∈ K(π)} g_{|B|})`. -/
 theorem coeff_boxedConvolution {n : ℕ} (hn : n ≠ 0) (f g : R⟦X⟧) :
     coeff n (boxedConvolution f g) =
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-        (∏ B ∈ π.1.parts, coeff #B f) * ∏ B ∈ (kreweras π).1.parts, coeff #B g := by
+        (∏ B ∈ π.val.parts, coeff #B f) * ∏ B ∈ (kreweras π).val.parts, coeff #B g := by
   rw [boxedConvolution, coeff_mk, ite_eq_right hn]
+
+/-- A positive coefficient of boxed convolution depends only on the positive coefficients
+of its inputs. -/
+theorem coeff_boxedConvolution_congr {n : ℕ} (hn : n ≠ 0) {f g f' g' : R⟦X⟧}
+    (hf : ∀ k, k ≠ 0 → coeff k f = coeff k f')
+    (hg : ∀ k, k ≠ 0 → coeff k g = coeff k g') :
+    coeff n (f.boxedConvolution g) = coeff n (f'.boxedConvolution g') := by
+  rw [coeff_boxedConvolution hn, coeff_boxedConvolution hn]
+  refine sum_congr rfl fun π _ => congrArg₂ (· * ·) ?_ ?_
+  · exact prod_congr rfl fun B hB => hf #B (π.val.nonempty_of_mem_parts hB).card_pos.ne'
+  · exact prod_congr rfl fun B hB => hg #B ((kreweras π).val.nonempty_of_mem_parts hB).card_pos.ne'
 
 /-- The constant coefficient of the boxed convolution of `f` and `g` is `f₀ g₀`. -/
 @[simp]
 theorem constantCoeff_boxedConvolution (f g : R⟦X⟧) :
     constantCoeff (boxedConvolution f g) = constantCoeff f * constantCoeff g := by
   rw [← coeff_zero_eq_constantCoeff_apply, boxedConvolution, coeff_mk, ite_eq_left rfl]
+
+/-- Applying a homomorphism to the coefficients commutes with scalar boxed convolution. -/
+@[simp]
+theorem map_boxedConvolution {S : Type*} [CommSemiring S] (f g : R⟦X⟧) (a : R →+* S) :
+    map a (f.boxedConvolution g) = (map a f).boxedConvolution (map a g) := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [coeff_map, coeff_zero_eq_constantCoeff_apply, constantCoeff_boxedConvolution,
+      map_mul]
+    simp only [← coeff_zero_eq_constantCoeff_apply, coeff_map]
+  · simp only [coeff_map, coeff_boxedConvolution hn, map_sum, map_mul, map_prod]
 
 /-- The linear coefficient of the boxed convolution of `f` and `g` is `f₁ g₁`. -/
 @[simp]
@@ -122,9 +148,9 @@ theorem boxedConvolution_comm (f g : R⟦X⟧) : boxedConvolution f g = boxedCon
 products over the parts of a noncrossing partition detect the partition into singletons. -/
 private theorem prod_parts_coeff_one_add_X {α : Type*} [LinearOrder α] {s : Finset α}
     (σ : NoncrossingPartition s) :
-    ∏ B ∈ σ.1.parts, coeff #B (1 + X : R⟦X⟧) = if σ = ⊥ then 1 else 0 := by
+    ∏ B ∈ σ.val.parts, coeff #B (1 + X : R⟦X⟧) = if σ = ⊥ then 1 else 0 := by
   rw [prod_congr rfl fun B hB => show coeff #B (1 + X : R⟦X⟧) = if #B = 1 then 1 else 0 by
-    simp [coeff_one, coeff_X, (σ.1.nonempty_of_mem_parts hB).card_pos.ne'], prod_boole]
+    simp [coeff_one, coeff_X, (σ.val.nonempty_of_mem_parts hB).card_pos.ne'], prod_boole]
   exact if_congr (by rw [← Finpartition.eq_bot_iff_forall_card_eq_one, ← coe_bot, Subtype.coe_inj])
     rfl rfl
 
@@ -147,6 +173,39 @@ theorem boxedConvolution_one_add_X (f : R⟦X⟧) : boxedConvolution f (1 + X) =
 @[simp]
 theorem one_add_X_boxedConvolution (f : R⟦X⟧) : boxedConvolution (1 + X) f = f := by
   rw [boxedConvolution_comm, boxedConvolution_one_add_X]
+
+/-- Rescaling the first factor of a boxed convolution rescales the result:
+`(rescale c f).boxedConvolution g = rescale c (f.boxedConvolution g)`. -/
+theorem rescale_boxedConvolution (c : R) (f g : R⟦X⟧) :
+    (rescale c f).boxedConvolution g = rescale c (f.boxedConvolution g) := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [← coeff_zero_eq_constantCoeff_apply (rescale _ _), coeff_rescale]
+  -- For every `π ∈ NC(n)`, the sizes of the parts of `π` sum to `n`.
+  rw [coeff_boxedConvolution hn, coeff_rescale, coeff_boxedConvolution hn, mul_sum]
+  refine sum_congr rfl fun π _ => ?_
+  simp only [coeff_rescale, prod_mul_distrib, prod_pow_eq_pow_sum, π.val.sum_card_parts,
+    card_univ, Fintype.card_fin, mul_assoc]
+
+/-- Rescaling the second factor of a boxed convolution rescales the result:
+`f.boxedConvolution (rescale c g) = rescale c (f.boxedConvolution g)`. -/
+theorem boxedConvolution_rescale (c : R) (f g : R⟦X⟧) :
+    f.boxedConvolution (rescale c g) = rescale c (f.boxedConvolution g) := by
+  rw [boxedConvolution_comm, rescale_boxedConvolution, boxedConvolution_comm]
+
+/-- On series with zero constant coefficient, `X` is a right identity for boxed convolution. -/
+theorem boxedConvolution_X_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    f.boxedConvolution X = f := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [hf]
+  rw [coeff_boxedConvolution_congr hn (fun _ _ => rfl)
+    (g' := 1 + X) (fun k hk => by simp [coeff_one, hk]), boxedConvolution_one_add_X]
+
+/-- On series with zero constant coefficient, `X` is a left identity for boxed convolution. -/
+theorem X_boxedConvolution_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    X.boxedConvolution f = f := by
+  rw [boxedConvolution_comm, boxedConvolution_X_of_constantCoeff_eq_zero hf]
 
 end CommSemiring
 

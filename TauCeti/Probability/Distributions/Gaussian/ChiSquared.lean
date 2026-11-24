@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Moments.Pi
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Squares of Gaussian variables
@@ -84,14 +85,8 @@ theorem gaussianReal_map_sq :
     rw [hpreimage, measureReal_empty,
       regularizedGamma_eq_zero_of_nonpos_right (1 / 2) (by linarith)]
   · have hx' : 0 ≤ x := le_of_not_gt hx
-    have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = Icc (-√x) √x := by
-      ext y
-      simp only [mem_preimage, mem_Iic, mem_Icc]
-      constructor
-      · exact fun hy ↦ abs_le.mp (Real.abs_le_sqrt hy)
-      · intro hy
-        rw [← Real.sq_sqrt hx']
-        exact sq_le_sq' hy.1 hy.2
+    have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = Icc (-√x) √x :=
+      Real.setOf_sq_le_eq_Icc hx'
     rw [hpreimage]
     let _ : NullSingletonClass (gaussianReal 0 1) :=
       nullSingletonClass_gaussianReal one_ne_zero
@@ -215,7 +210,7 @@ theorem iIndepFun.hasLaw_sum_sq_gaussian (hindep : iIndepFun X P)
   have hindepSq : iIndepFun (fun i omega ↦ X i omega ^ 2) P := by
     simpa [Function.comp_def] using
       hindep.comp (fun (_ : iota) (x : ℝ) ↦ x ^ 2) (fun _ ↦ by fun_prop)
-  simpa using iIndepFun.hasLaw_sum_chiSquared hindepSq (fun _ ↦ zero_le_one) hlawSq
+  simpa using iIndepFun.hasLaw_sum_chiSquared hindepSq hlawSq
 
 /-- **The law of a sum of squared centred Gaussian coordinates of common variance.** Pushing a
 finite product of `gaussianReal 0 v` laws forward by the sum of the squared coordinates gives the

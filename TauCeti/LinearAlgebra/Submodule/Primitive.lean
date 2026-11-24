@@ -5,20 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.Projection
+public import Mathlib.RingTheory.Flat.EquationalCriterion
+public import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
-# Primitive submodules over principal ideal domains
+# Primitive submodules
 
-A submodule of a torsion-free module over a principal ideal domain is primitive when its
-quotient has no torsion. When the quotient is finitely generated, such a submodule is exactly
-a direct summand. In particular, an injective homomorphism of finite free abelian groups is
-primitive precisely when its image has a complement.
+A submodule is primitive when its quotient has no torsion, that is, when it contains every
+element of which it contains a multiple by a regular scalar (see
+`Submodule.isTorsionFree_quotient_iff`). For a submodule of a torsion-free module over a
+Dedekind domain whose quotient is finitely generated, this is exactly being a direct summand.
+In particular, an injective homomorphism of finite free abelian groups is primitive precisely
+when its image has a complement.
 
 ## Main results
 
-* `Submodule.isTorsionFree_quotient_of_smul_mem`: a saturated submodule has torsion-free quotient.
 * `Submodule.exists_isCompl_iff_isTorsionFree_quotient`: the direct-summand criterion.
 
 ## References
@@ -28,64 +30,33 @@ primitive precisely when its image has a complement.
 
 public section
 
-universe u
-
 namespace Submodule
 
-/-- If a submodule contains every element with a nonzero multiple in it, its quotient is
-torsion-free. -/
-theorem isTorsionFree_quotient_of_smul_mem {R : Type*} [Ring R]
-    {M : Type u} [AddCommGroup M] [Module R M] (S : Submodule R M)
-    (hS : ∀ (c : R) (z : M), c ≠ 0 → c • z ∈ S → z ∈ S) :
-    Module.IsTorsionFree R (M ⧸ S) :=
-  (subsingleton_or_nontrivial R).elim
-    (fun _ ↦ have := Module.subsingleton R (M ⧸ S); inferInstance)
-    fun _ ↦ .of_smul_eq_zero fun c z hz ↦ by
-      obtain ⟨z, rfl⟩ := S.mkQ_surjective z
-      by_cases hc : c = 0
-      · exact .inl hc
-      right
-      rw [← map_smul, ← LinearMap.mem_ker, S.ker_mkQ] at hz
-      rw [← LinearMap.mem_ker, S.ker_mkQ]
-      exact hS c z hc hz
+variable {R M : Type*} [CommRing R] [IsDedekindDomain R]
+  [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
 
-variable {R : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
-  {M : Type u} [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
-
-/-- A submodule of a torsion-free module over a PID with finitely generated quotient has
-torsion-free quotient if and only if it admits a complementary submodule. -/
+/-- A submodule of a torsion-free module over a Dedekind domain with finitely generated quotient
+has torsion-free quotient if and only if it admits a complementary submodule. -/
 theorem exists_isCompl_iff_isTorsionFree_quotient
     (S : Submodule R M) [Module.Finite R (M ⧸ S)] :
     (∃ T : Submodule R M, IsCompl S T) ↔ Module.IsTorsionFree R (M ⧸ S) := by
-  constructor
-  · rintro ⟨T, hT⟩
-    have : Module.IsTorsionFree R T :=
-      T.subtype_injective.moduleIsTorsionFree T.subtype (fun _ _ => map_smul T.subtype _ _)
-    exact ((S.quotientEquivOfIsCompl T hT).injective).moduleIsTorsionFree
-      (S.quotientEquivOfIsCompl T hT).toLinearMap (fun _ _ => map_smul _ _ _)
-  · intro h
-    have : Module.IsTorsionFree R (M ⧸ S) := h
-    have : Module.Free R (M ⧸ S) := Module.free_of_finite_type_torsion_free'
-    obtain ⟨g, hg⟩ := S.mkQ.exists_rightInverse_of_surjective
-      (LinearMap.range_eq_top.mpr S.mkQ_surjective)
-    let e : M →ₗ[R] M := LinearMap.id - g.comp S.mkQ
-    have he : ∀ x, e x ∈ S := by
-      intro x
-      rw [← S.ker_mkQ, LinearMap.mem_ker]
-      have hx : S.mkQ (g (S.mkQ x)) = S.mkQ x := by
-        simpa only [LinearMap.comp_apply, LinearMap.id_apply] using
-          LinearMap.congr_fun hg (S.mkQ x)
-      simp only [e, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
-        map_sub, hx, sub_self]
-    let p : M →ₗ[R] S := e.codRestrict S he
-    have hp : ∀ x : S, p x = x := by
-      intro x
-      apply Subtype.ext
-      have hx : S.mkQ (x : M) = 0 := by
-        apply LinearMap.mem_ker.mp
-        rw [S.ker_mkQ]
-        exact x.2
-      simp [p, e, hx]
-    exact ⟨LinearMap.ker p, LinearMap.isCompl_of_proj hp⟩
+  refine ⟨fun ⟨T, hT⟩ ↦ ?_, fun _ ↦ ?_⟩
+  · -- The quotient is isomorphic to the complement, a submodule of a torsion-free module.
+    exact (S.quotientEquivOfIsCompl T hT).injective.moduleIsTorsionFree _ (map_smul _)
+  · -- Over a Dedekind domain the torsion-free quotient is flat, and being finitely generated
+    -- over a Noetherian ring it is finitely presented, so it is projective by
+    -- `Module.Flat.projective_of_finitePresentation`. Hence the quotient map splits; the
+    -- quotient map followed by the splitting is an idempotent with kernel `S`, and its range
+    -- is a complement.
+    have := Module.finitePresentation_of_finite R (M ⧸ S)
+    have := Module.Flat.projective_of_finitePresentation (R := R) (M := M ⧸ S)
+    obtain ⟨g, hg⟩ := S.mkQ.exists_rightInverse_of_surjective S.range_mkQ
+    have hgx (x : M ⧸ S) : S.mkQ (g x) = x := LinearMap.congr_fun hg x
+    have hidem : IsIdempotentElem (g ∘ₗ S.mkQ) := by
+      ext x
+      simp [hgx]
+    have h := (LinearMap.IsIdempotentElem.isCompl hidem).symm
+    rw [LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot_of_inverse hg), ker_mkQ] at h
+    exact ⟨_, h⟩
 
 end Submodule

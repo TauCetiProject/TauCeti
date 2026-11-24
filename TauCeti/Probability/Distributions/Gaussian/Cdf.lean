@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Erf
+public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
 import TauCeti.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Cdf.Density
 
 /-!
@@ -18,9 +20,6 @@ import TauCeti.Probability.Cdf.Density
 This file computes `ProbabilityTheory.cdf (gaussianReal m v)` in closed form.  For a nonzero
 variance the answer is `(1 + erf ((x - m) / √(2 * v))) / 2`, and at the singular boundary
 `v = 0` the law is a Dirac mass, with the step-function cdf.
-
-These are the Gaussian entries of the closed-form cdf target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2.
 
 The computation goes through the interval integral of `gaussianPDFReal`, which is an affine
 change of variables away from the integral defining `TauCeti.Real.erf`; the improper integral
@@ -59,10 +58,16 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   densities at the bounds (`TauCeti.Probability.gaussianPDFRealEReal`) as derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
   `TauCeti.Real.erfc`.
-* `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` — the upper tail, in terms of the
-  standard Gaussian cdf.
+* `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` and
+  `TauCeti.Probability.measureReal_Ici_gaussianReal_eq_cdf` — the open and closed upper tails in
+  terms of the standard Gaussian cdf, together with closed-ray positivity
+  `TauCeti.Probability.gaussianReal_Iic_pos` and `TauCeti.Probability.gaussianReal_Ici_pos`.
 * `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal` — a lower bound
   for the upper tail to the right of the mean, by the density at a later point.
+* `TauCeti.Probability.gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi` — the corresponding
+  lower bound for the upper tail of the absolute value of a standard Gaussian.
+* `TauCeti.Probability.measureReal_gaussianReal_abs_sub_ge_le` — the two-sided tail bound
+  `P(|X - m| ≥ t) ≤ exp (-t² / (2v))`, without the factor `2` of the sub-Gaussian bound.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -306,6 +311,28 @@ theorem measureReal_Ioi_gaussianReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
     Real.erfc_def]
   ring
 
+/-- At positive variance, the closed upper tail `Ici x` of `gaussianReal m v` equals
+`Φ ((m - x) / √v)` where `Φ = cdf (gaussianReal 0 1)`. -/
+theorem measureReal_Ici_gaussianReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    (gaussianReal m v).real (Ici x) = cdf (gaussianReal 0 1) ((m - x) / √(v : ℝ)) := by
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  rw [← measureReal_congr (Ioi_ae_eq_Ici (μ := gaussianReal m v) (a := x)),
+    measureReal_Ioi_gaussianReal_eq_cdf m hv x]
+
+/-- At positive variance, every closed lower ray `Iic x` has positive Gaussian measure. -/
+theorem gaussianReal_Iic_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    0 < gaussianReal m v (Iic x) := by
+  have hpre : Real.toEReal ⁻¹' Ioo ⊥ (x : EReal) ⊆ Iic x := fun y hy ↦
+    (EReal.coe_lt_coe_iff.1 hy.2).le
+  exact (gaussianReal_preimage_Ioo_pos m hv (EReal.bot_lt_coe x)).trans_le (measure_mono hpre)
+
+/-- At positive variance, every closed upper ray `Ici x` has positive Gaussian measure. -/
+theorem gaussianReal_Ici_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    0 < gaussianReal m v (Ici x) := by
+  have hpre : Real.toEReal ⁻¹' Ioo (x : EReal) ⊤ ⊆ Ici x := fun y hy ↦
+    (EReal.coe_lt_coe_iff.1 hy.1).le
+  exact (gaussianReal_preimage_Ioo_pos m hv (EReal.coe_lt_top x)).trans_le (measure_mono hpre)
+
 /-- Over a right half-line, a Gaussian density of nonzero variance integrates to a value of the
 standard Gaussian cumulative distribution function:
 `∫ t in Ioi x, N(m, v)(t) = Φ ((m - x) / √v)`. -/
@@ -338,6 +365,53 @@ theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v
         rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
           (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
     _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
+
+/-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the
+standard Gaussian density at `s + 1`. -/
+theorem gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi {s : ℝ} (hs : 0 ≤ s) :
+    gaussianPDFReal 0 1 (s + 1) ≤ ((gaussianReal 0 1).map fun x => |x|).real (Ioi s) := by
+  have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs (t := 1)
+  rw [one_mul] at h
+  rw [map_measureReal_apply continuous_abs.measurable measurableSet_Ioi]
+  exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
+
+/-- **Two-sided Gaussian tail bound.** For `t ≥ 0`, `gaussianReal m v` gives mass at most
+`exp (-t² / (2v))` to `{x | t ≤ |x - m|}`. The two tails are each `erfc (t / √(2v)) / 2`, and
+`erfc y ≤ exp (-y²)` for `y ≥ 0`, so unlike the sub-Gaussian bound there is no factor `2`. -/
+theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ} (ht : 0 ≤ t) :
+    (gaussianReal m v).real {x | t ≤ |x - m|} ≤ Real.exp (-t ^ 2 / (2 * v)) := by
+  rcases ht.eq_or_lt with rfl | ht
+  · simp
+  rcases eq_or_ne v 0 with rfl | hv
+  · have : m ∉ {x | t ≤ |x - m|} := by simpa using ht
+    rw [gaussianReal_zero_var, measureReal_def, Measure.dirac_apply, Set.indicator_of_notMem this]
+    positivity
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  -- The tails `{t ≤ x - m}` and `{t ≤ -(x - m)}` of `|x - m|` are `Ici (m + t)` and `Iic (m - t)`.
+  have hup_eq : {x : ℝ | t ≤ x - m} = Ici (m + t) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Ici]
+    constructor <;> intro h <;> linarith
+  have hlow_eq : {x : ℝ | t ≤ -(x - m)} = Iic (m - t) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Iic]
+    constructor <;> intro h <;> linarith
+  have hup : (gaussianReal m v).real (Ici (m + t)) = Real.erfc (t / √(2 * (v : ℝ))) / 2 := by
+    rw [← measureReal_congr (Ioi_ae_eq_Ici (μ := gaussianReal m v)),
+      measureReal_Ioi_gaussianReal m hv, add_sub_cancel_left]
+  -- By symmetry about the mean, both tails are `Φ (-t / √v)`.
+  have hlow : (gaussianReal m v).real (Iic (m - t)) = (gaussianReal m v).real (Ici (m + t)) := by
+    rw [← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv,
+      measureReal_Ici_gaussianReal_eq_cdf m hv, sub_sub_cancel_left, sub_add_cancel_left]
+  calc (gaussianReal m v).real {x | t ≤ |x - m|}
+      ≤ (gaussianReal m v).real {x | t ≤ x - m} + (gaussianReal m v).real {x | t ≤ -(x - m)} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ = Real.erfc (t / √(2 * (v : ℝ))) := by
+      rw [hup_eq, hlow_eq, hlow, hup]
+      ring
+    _ ≤ Real.exp (-t ^ 2 / (2 * v)) := by
+      refine (Real.erfc_le_exp_neg_sq (by positivity)).trans_eq ?_
+      rw [div_pow, Real.sq_sqrt (by positivity), neg_div]
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

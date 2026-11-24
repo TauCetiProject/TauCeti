@@ -10,6 +10,9 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.HomologyZ
 public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
+public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # The augmented DG algebra of chains on the Moore loop space
@@ -43,6 +46,7 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChain_isDGAlgebra`: `C_*(Ω_b B; R)` is a differential graded algebra.
 * `TauCeti.loopChainMap_lof`, `TauCeti.loopChainAugmentation_lof_zero`,
   `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
+* `TauCeti.loopChainMap_apply`: `C_*(Ωf)` is the push-forward of chains along `Ωf`.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
 * `TauCeti.loopChainToGroupAlgebra_differential`,
@@ -51,10 +55,18 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
+* `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
+* `TauCeti.loopChainToGroupAlgebra_koszulTwist`: it is invariant under the Koszul sign twists.
 * `TauCeti.groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom`: the basis element of the
   class of a Moore loop goes to the cohomology class of its point chain.
 * `TauCeti.groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero`: the group ring lands in
   cohomological degree zero.
+* `TauCeti.cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology`: the
+  degree-zero truncation is a left inverse of the inclusion of zeroth homology, on cohomology.
+* `TauCeti.groupAlgebraToLoopChainCohomology_injective`: the inclusion of zeroth homology is
+  injective.
+* `TauCeti.quotientMk_eq_groupAlgebraToLoopChainCohomology`: the class of a chain of degree zero,
+  a cycle, is the class of its truncation in the group ring.
 
 ## References
 
@@ -123,6 +135,12 @@ def loopChainMap (f : C(B, B')) (hf : f b = b') :
     DGAlgHom (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B' b' R) :=
   cubicalChainDGAlgHom R (MooreLoopSpace.map f hf)
 
+/-- `C_*(Ωf)` is the morphism of cubical chain algebras induced by the continuous monoid
+homomorphism `Ωf`. -/
+theorem loopChainMap_def (f : C(B, B')) (hf : f b = b') :
+    loopChainMap R f hf = cubicalChainDGAlgHom R (MooreLoopSpace.map f hf) :=
+  (rfl)
+
 /-- `C_*(Ωf)` on a chain of dimension `n` is the push-forward along `Ωf`. -/
 @[simp]
 theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)
@@ -131,6 +149,11 @@ theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)
       cubicalChainLof (MooreLoopSpace B' b') R n
         (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap n y) := by
   rw [loopChainMap, cubicalChainDGAlgHom_lof]
+
+/-- `C_*(Ωf)` is the push-forward of chains along `Ωf`. -/
+theorem loopChainMap_apply (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
+    loopChainMap R f hf a = cubicalChainSumMap R (MooreLoopSpace.map f hf).toContinuousMap a :=
+  cubicalChainDGAlgHom_apply _ a
 
 /-- The identity map induces the identity. -/
 @[simp]
@@ -241,6 +264,42 @@ theorem loopChainToGroupAlgebra_surjective :
     Function.Surjective (loopChainToGroupAlgebra B b R) := fun y ↦ by
   obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (X := B) (x := b) (R := R) y
   exact ⟨_, loopChainToGroupAlgebra_lof_zero c⟩
+
+/-- The degree-zero ring map is compatible with the augmentations: the coefficient sum of the
+image of a chain in the group ring is its augmentation. -/
+@[simp]
+theorem augmentation_loopChainToGroupAlgebra (a : loopChainAlgebra B b R) :
+    MonoidAlgebra.augmentation R (FundamentalGroup B b) (loopChainToGroupAlgebra B b R a) =
+      loopChainAugmentation B b R a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R]
+    cases n with
+    | zero =>
+      rw [loopChainToGroupAlgebra_lof_zero, loopChainAugmentation_lof_zero,
+        ← _root_.MonoidAlgebra.augmentationLinearMap_apply, ← LinearMap.comp_apply]
+      exact LinearMap.congr_fun (NormalizedCubicalChain.linearMap_ext fun c ↦ by simp) y
+    | succ k => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The degree-zero ring map is invariant under the Koszul sign twists, which only change the
+signs of chains of nonzero dimension. -/
+@[simp]
+theorem loopChainToGroupAlgebra_koszulTwist (q : ℤ) (a : loopChainAlgebra B b R) :
+    loopChainToGroupAlgebra B b R
+        ((InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
+          q a) =
+      loopChainToGroupAlgebra B b R a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    rw [← DirectSum.lof_eq_of R, InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _
+      (cubicalChainLof_mem _ R y), map_smul]
+    cases n with
+    | zero => simp
+    | succ k => rw [loopChainToGroupAlgebra_lof_succ, smul_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The degree-zero ring map kills boundaries. -/
 @[simp]
@@ -427,6 +486,49 @@ theorem groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero
   rw [groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra]
   exact (loopChain_isDGAlgebra B b R).mem_cohomologyGrading.mpr
     ⟨_, by simpa using cubicalChainLof_mem (MooreLoopSpace B b) R c, rfl⟩
+
+/-- **The degree-zero truncation inverts the inclusion of zeroth homology.** On cohomology,
+`C_*(Ω_b B; R) → R[π₁(B, b)]` sends the class of a group-ring element, included as a class of
+zero chains, back to that element. -/
+@[simp]
+theorem cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology
+    (a : MonoidAlgebra R (FundamentalGroup B b)) :
+    (loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap
+        (groupAlgebraToLoopChainCohomology B b R a) =
+      algEquivCohomologyOfZero (trivialGrading R (MonoidAlgebra R (FundamentalGroup B b))) a := by
+  obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (R := R) (x := b) a
+  rw [groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra, DGAlgHom.cohomologyMap_mk,
+    algEquivCohomologyOfZero_apply]
+  congr 1
+  ext
+  simp [DGAlgHom.cyclesMap_apply_coe]
+
+/-- The inclusion `R[π₁(B, b)] → H(C_*(Ω_b B; R))` of zeroth homology is injective, for every
+space: the degree-zero truncation is a left inverse on cohomology. -/
+theorem groupAlgebraToLoopChainCohomology_injective :
+    Function.Injective (groupAlgebraToLoopChainCohomology B b R) := fun a a' h ↦ by
+  have := congrArg (loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap h
+  rw [cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology,
+    cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology] at this
+  exact (algEquivCohomologyOfZero _).injective this
+
+variable {B b R} in
+/-- **The class of a chain of degree zero of the loop chain algebra is the class of its
+truncation**: a chain `a` of degree zero of `C_*(Ω_b B; R)` is a cycle and a zero chain, and its
+class in the cohomology of the chain algebra is the image under `groupAlgebraToLoopChainCohomology`
+of its degree-zero truncation `loopChainToGroupAlgebra a` in the group ring. -/
+theorem quotientMk_eq_groupAlgebraToLoopChainCohomology
+    {a : loopChainAlgebra B b R} (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R 0) :
+    Ideal.Quotient.mk (loopChain_isDGAlgebra B b R).boundaries.asIdeal
+        ⟨a, (loopChain_isDGAlgebra B b R).mem_cycles.mpr
+          (cubicalChainDifferential_eq_zero_of_nonneg (MooreLoopSpace B b) R le_rfl ha)⟩ =
+      groupAlgebraToLoopChainCohomology B b R (loopChainToGroupAlgebra B b R a) := by
+  rcases (mem_cubicalChainGrading_iff _ R).1 ha with rfl | ⟨n, y, hn, rfl⟩
+  · simp only [map_zero]
+    exact map_zero _
+  · obtain rfl : n = 0 := by omega
+    rw [loopChainToGroupAlgebra_lof_zero,
+      groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra]
 
 end GroupAlgebra
 

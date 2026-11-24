@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Polynomial
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
+import Mathlib.Topology.Algebra.Algebra
 
 /-!
 # Analytic derivatives of multivariate polynomial families
@@ -17,10 +19,14 @@ The formal partial derivatives of a multivariate polynomial give its Fréchet de
 finite coordinate space over any nontrivially normed field. For a family of equations, with the
 product topology on its target, this identifies the analytic derivative with the linear map of
 `TauCeti.jacobiMatrixAt`. In particular the derivative is surjective exactly when the Jacobian
-matrix is, and over a complete field the evaluation map of the family is analytic.
+matrix is, and the evaluation map of the family is analytic. For a single polynomial, read as a
+scalar-valued function, the derivative is surjective exactly where some partial derivative does
+not vanish (`MvPolynomial.surjective_fderiv_eval_iff`).
 
 For real or complex Euclidean coordinate spaces, we also give the derivative applied to an
-arbitrary direction and to a standard coordinate direction.
+arbitrary direction and to a standard coordinate direction, and record that evaluating a polynomial
+over any normed commutative `𝕜`-algebra (`[RCLike 𝕜]`) on `EuclideanSpace 𝕜 σ` is `C^k` for every
+`k : ℕ∞ω` (`MvPolynomial.contDiff_eval_euclidean_algebraMap`).
 -/
 
 public section
@@ -55,6 +61,21 @@ theorem MvPolynomial.hasFDerivAt_eval (p : MvPolynomial σ 𝕜) (x : σ → �
       simp [Finset.sum_add_distrib, mul_add, Finset.mul_sum,
         Pi.single_apply, apply_ite, mul_comm, mul_left_comm]
 
+omit [Fintype σ] in
+/-- **The Jacobian criterion for a single polynomial.** The derivative of polynomial evaluation
+at `x` is surjective exactly when some formal partial derivative of the polynomial is nonzero
+at `x`. -/
+theorem MvPolynomial.surjective_fderiv_eval_iff [Finite σ] (p : MvPolynomial σ 𝕜) (x : σ → 𝕜) :
+    Function.Surjective (fderiv 𝕜 (fun y ↦ eval y p) x) ↔ ∃ j, eval x (pderiv j p) ≠ 0 := by
+  classical
+  let := Fintype.ofFinite σ
+  rw [(p.hasFDerivAt_eval x).fderiv]
+  refine ⟨fun h ↦ ?_, fun ⟨j, hj⟩ c ↦ ⟨Pi.single j (c / eval x (pderiv j p)), ?_⟩⟩
+  · by_contra! h0
+    obtain ⟨y, hy⟩ := h 1
+    simp [h0] at hy
+  · simp [Pi.single_apply, mul_div_cancel₀ _ hj]
+
 section
 
 variable {𝕜 : Type*} [RCLike 𝕜]
@@ -83,6 +104,17 @@ theorem fderiv_eval_euclidean_single [Finite σ] [DecidableEq σ] (p : MvPolynom
       (EuclideanSpace.single i 1) = eval x (pderiv i p) := by
   let := Fintype.ofFinite σ
   simp [fderiv_eval_euclidean_apply, PiLp.single_apply]
+
+open scoped ContDiff in
+/-- Evaluating a polynomial over a normed commutative `𝕜`-algebra (`[RCLike 𝕜]`) on
+`EuclideanSpace 𝕜 σ` is `C^k` for every `k : ℕ∞ω` (in particular analytic for `k = ω`). -/
+theorem contDiff_eval_euclidean_algebraMap {R : Type*} [NormedCommRing R] [NormedAlgebra 𝕜 R]
+    {k : ℕ∞ω} (p : MvPolynomial σ R) :
+    ContDiff 𝕜 k fun x : EuclideanSpace 𝕜 σ ↦ eval (fun i ↦ algebraMap 𝕜 R (x i)) p := by
+  have h := (AnalyticOnNhd.eval_continuousLinearMap'
+    (fun i ↦ (algebraMapCLM 𝕜 R).comp (EuclideanSpace.proj i)) p).contDiff (n := k)
+  simpa only [ContinuousLinearMap.comp_apply, EuclideanSpace.coe_proj,
+    algebraMapCLM_apply] using h
 
 end MvPolynomial
 
@@ -117,9 +149,10 @@ theorem surjective_fderiv_eval_family_iff (p : ι → MvPolynomial σ 𝕜) (x :
   simp only [ContinuousLinearMap.coe_coe, Matrix.coe_mulVecLin] at h
   rw [h]
 
-/-- Over a complete field, the evaluation map of a polynomial family is analytic. -/
-theorem analyticOnNhd_eval_family [CompleteSpace 𝕜] [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
+/-- The evaluation map of a polynomial family is analytic. -/
+theorem analyticOnNhd_eval_family [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
     AnalyticOnNhd 𝕜 (fun x : σ → 𝕜 ↦ fun i ↦ eval x (p i)) Set.univ :=
-  AnalyticOnNhd.pi fun i ↦ AnalyticOnNhd.eval_mvPolynomial (p i)
+  AnalyticOnNhd.pi fun i ↦
+    AnalyticOnNhd.eval_continuousLinearMap (ContinuousLinearMap.id 𝕜 (σ → 𝕜)) (p i)
 
 end TauCeti

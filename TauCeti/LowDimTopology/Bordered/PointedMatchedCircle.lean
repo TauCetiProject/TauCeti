@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Sym.Sym2
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import TauCeti.GroupTheory.Perm.SumCongr
 import TauCeti.Data.Fin.Basic
@@ -48,6 +49,7 @@ each point with the opposite one gives the antipodal pointed matched circles
 ## Main definitions
 
 * `TauCeti.PointedMatchedCircle n`: the pointed matched circles with `n` matched points.
+* `TauCeti.PointedMatchedCircle.pair`: the matched pair of a point.
 * `TauCeti.PointedMatchedCircle.reverse`: the orientation reversal `-Z`.
 * `TauCeti.PointedMatchedCircle.connectedSum`: the connected sum `Z₁ # Z₂`.
 * `TauCeti.PointedMatchedCircle.genusOne`, `TauCeti.PointedMatchedCircle.split`,
@@ -106,6 +108,31 @@ theorem matching_matching (i : Fin n) : Z.matching (Z.matching i) = i :=
 @[simp]
 theorem matching_ne (i : Fin n) : Z.matching i ≠ i :=
   Z.isPerfectMatching.apply_ne i
+
+/-- The **pair** of a point: the unordered pair of the point and its partner. Two points have the
+same pair exactly when they are equal or matched (`PointedMatchedCircle.pair_eq_pair_iff`), so
+the fibres of `Z.pair` are the matched pairs. This is the form of the matching taken by the
+matched subalgebra `TauCeti.StrandsAlgebra.matchedSubalgebra` of the strands algebra, which for
+`Z.pair` is the algebra `A(Z)` of Lipshitz, Ozsváth and Thurston. -/
+def pair (i : Fin n) : Sym2 (Fin n) :=
+  s(i, Z.matching i)
+
+theorem pair_def (i : Fin n) : Z.pair i = s(i, Z.matching i) :=
+  (rfl)
+
+/-- Two points have the same pair exactly when they are equal or matched. -/
+theorem pair_eq_pair_iff {i j : Fin n} : Z.pair i = Z.pair j ↔ j = i ∨ j = Z.matching i := by
+  rw [pair_def, pair_def, Sym2.eq_iff]
+  constructor
+  · rintro (⟨rfl, -⟩ | ⟨-, h⟩)
+    exacts [Or.inl rfl, Or.inr h.symm]
+  · rintro (rfl | rfl)
+    exacts [Or.inl ⟨rfl, rfl⟩, Or.inr ⟨(Z.matching_matching i).symm, rfl⟩]
+
+/-- A point and its partner have the same pair. -/
+@[simp]
+theorem pair_matching (i : Fin n) : Z.pair (Z.matching i) = Z.pair i :=
+  Z.pair_eq_pair_iff.2 (Or.inr rfl) |>.symm
 
 /-- **Surgery along the pairs gives one circle**: any two points lie on one cycle of the boundary
 traversal `finRotate n * matching`. -/
@@ -259,6 +286,30 @@ def genusOne : PointedMatchedCircle 4 where
 @[simp]
 theorem genusOne_matching : genusOne.matching = swap 0 2 * swap 1 3 :=
   (rfl)
+
+/-- The pair `{0, 2}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_zero : genusOne.pair 0 = s(0, 2) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
+/-- The pair `{1, 3}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_one : genusOne.pair 1 = s(1, 3) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
+/-- The pair `{0, 2}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_two : genusOne.pair 2 = s(0, 2) := by
+  rw [pair_def, genusOne_matching]
+  decide
+
+/-- The pair `{1, 3}` of the genus-one pointed matched circle. -/
+@[simp]
+theorem genusOne_pair_three : genusOne.pair 3 = s(1, 3) := by
+  rw [pair_def, genusOne_matching]
+  decide
 
 /-- **The genus-one pointed matched circle is the only one with four points.** Of the three
 perfect matchings of four points, `{0, 1}, {2, 3}` and `{0, 3}, {1, 2}` do not interleave, and

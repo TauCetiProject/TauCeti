@@ -16,19 +16,28 @@ so have finite measure under a measure finite on compact sets, the same holds fo
 measure `μ.real`, and likewise for closed balls. For a locally finite measure, closed balls of
 small positive radius around a point have positive finite measure, so proportions of sets in
 shrinking balls are well behaved. Since a property holding almost everywhere holds on a dense
-set, an almost everywhere inequality between continuous functions holds everywhere.
+set, an almost everywhere inequality between continuous functions holds everywhere. On a linear
+order without extremal elements, the same density shows that such a property holds frequently at
+`±∞`.
 
 An almost-everywhere inclusion of an open set in another set implies inclusion in its closure.
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
-then shows that regular open sets are determined by their almost-everywhere classes.
+then shows that regular open sets are determined by their almost-everywhere classes. Likewise a
+continuous function on the closure of an open set is determined by its values almost everywhere on
+the set.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
-almost everywhere means everywhere.
+almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
+hand, it charges every punctured neighbourhood of a point, so a function tending to `∞` at a point
+agrees almost everywhere near it with no function continuous there. The same holds within an open
+set whose closure contains the point, for any measure positive on nonempty open sets.
 
 ## Main results
 
 * `IsOpen.subset_closure_of_ae_le`: an open set lies in the closure of any set containing it a.e.
 * `IsOpen.closure_eq_of_ae_eq`: a.e. equal open sets have equal closures.
+* `IsOpen.ext_closure_of_ae_eq`: a continuous function on the closure of an open set is determined
+  by its values at almost every point of the set.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
@@ -38,8 +47,17 @@ almost everywhere means everywhere.
 * `MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le`: a closed ball of positive radius
   in which a set has positive density charges the restriction of the measure to that set.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
+* `ContinuousOn.le_of_ae_le`: an almost everywhere inequality on an open set `U` between functions
+  continuous on `U` holds at every point of `U`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
+* `MeasureTheory.frequently_atTop_of_ae`, `MeasureTheory.frequently_atBot_of_ae`: on a linear
+  order without a maximum (minimum), a property of almost every point holds frequently at `+∞`
+  (`-∞`).
+* `TauCeti.not_continuousAt_of_tendsto_of_ae_eq`,
+  `TauCeti.not_continuousWithinAt_of_tendsto_of_ae_eq`: a function tending at a point to a filter
+  disjoint from the neighbourhoods of a value, such as `atTop`, has no almost everywhere
+  representative continuous there.
 -/
 
 public section
@@ -62,8 +80,32 @@ theorem subset_closure_of_ae_le (hs : IsOpen s) (hst : s ≤ᵐ[μ] t) : s ⊆ c
 open sets. The open sets themselves need not be equal. -/
 theorem closure_eq_of_ae_eq (hs : IsOpen s) (ht : IsOpen t) (hst : s =ᵐ[μ] t) :
     closure s = closure t :=
-  Subset.antisymm (closure_minimal (hs.subset_closure_of_ae_le hst.le) isClosed_closure)
-    (closure_minimal (ht.subset_closure_of_ae_le hst.symm.le) isClosed_closure)
+  Subset.antisymm
+    (closure_minimal (hs.subset_closure_of_ae_le (hst.mono fun _ h ↦ h.1)) isClosed_closure)
+    (closure_minimal (ht.subset_closure_of_ae_le (hst.mono fun _ h ↦ h.2)) isClosed_closure)
+
+/-- A continuous function on the closure of an open set `U` is determined by its values at almost
+every point of `U`, for a measure which charges every nonempty open set. -/
+theorem ext_closure_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U : Set X}
+    (hU : IsOpen U) {f g : closure U → Y} (hf : Continuous f) (hg : Continuous g)
+    (h : ∀ᵐ x ∂μ, ∀ hx : x ∈ U, f ⟨x, subset_closure hx⟩ = g ⟨x, subset_closure hx⟩) :
+    f = g := by
+  by_contra hne
+  obtain ⟨y, hy⟩ := Function.ne_iff.1 hne
+  obtain ⟨V, hV, hVS⟩ := isOpen_induced_iff.1 (isOpen_ne_fun hf hg)
+  have hyV : (y : X) ∈ V := by
+    have : y ∈ (Subtype.val ⁻¹' V : Set (closure U)) := hVS ▸ hy
+    exact this
+  have hne' : (V ∩ U).Nonempty := mem_closure_iff.1 y.property V hV hyV
+  have hpos : 0 < μ (V ∩ U) := (hV.inter hU).measure_pos μ hne'
+  have hnull : μ (V ∩ U) = 0 := by
+    refine measure_mono_null (fun x hx ↦ ?_) (ae_iff.1 h)
+    simp only [not_forall]
+    refine ⟨hx.2, ?_⟩
+    have : (⟨x, subset_closure hx.2⟩ : closure U) ∈ (Subtype.val ⁻¹' V : Set (closure U)) := hx.1
+    rw [hVS] at this
+    exact this
+  exact hpos.ne' hnull
 
 end IsOpen
 
@@ -116,15 +158,30 @@ theorem _root_.MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le
   exact ((ENNReal.mul_pos (by exact_mod_cast hc.ne')
     (Metric.measure_closedBall_pos μ y hε).ne').trans_le hd).ne'
 
+/-- Under a measure positive on nonempty open sets, an almost everywhere inequality on an open set
+`U` between functions continuous on `U` into an order-closed space holds at every point of `U`. -/
+theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
+    [OrderClosedTopology Y] {f g : X → Y} {U : Set X} (hU : IsOpen U) (hf : ContinuousOn f U)
+    (hg : ContinuousOn g U) (h : f ≤ᵐ[μ.restrict U] g) : ∀ x ∈ U, f x ≤ g x := by
+  -- The points of `U` where `f ≤ g` fails form an open null set, hence an empty one.
+  have hW : IsOpen (U ∩ (fun y ↦ (f y, g y)) ⁻¹' {p : Y × Y | p.1 ≤ p.2}ᶜ) :=
+    (hf.prodMk hg).isOpen_inter_preimage hU OrderClosedTopology.isClosed_le'.isOpen_compl
+  have hnull : μ (U ∩ (fun y ↦ (f y, g y)) ⁻¹' {p : Y × Y | p.1 ≤ p.2}ᶜ) = 0 := by
+    refine measure_mono_null ?_ (ae_iff.1 (ae_imp_of_ae_restrict h))
+    exact fun y hy hle ↦ hy.2 (hle hy.1)
+  intro x hx
+  by_contra hfg
+  exact (hW.eq_empty_of_measure_zero hnull).subset ⟨hx, hfg⟩
+
 /-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
 continuous functions into an order-closed space holds everywhere. -/
 theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
     (μ : Measure X) [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
     [OrderClosedTopology Y] {f g : X → Y} (hf : Continuous f) (hg : Continuous g) :
     f ≤ᵐ[μ] g ↔ f ≤ g :=
-  -- The closed set where `f ≤ g` is dense, hence everything.
-  ⟨fun h x => (μ.dense_of_ae h).induction (fun _ => id) (isClosed_le hf hg) x,
-    Eventually.of_forall⟩
+  ⟨fun h x => ContinuousOn.le_of_ae_le isOpen_univ hf.continuousOn hg.continuousOn
+    (by rwa [Measure.restrict_univ]) x trivial, Eventually.of_forall⟩
 
 /-- On a discrete space, a measure positive on nonempty open sets charges every point, so
 almost everywhere means everywhere. -/
@@ -132,6 +189,68 @@ theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [Topolog
     [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
     ae μ = ⊤ :=
   ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
+
+/-- On a linear order without a maximum, a property of almost every point, for a measure positive
+on nonempty open sets, holds frequently at `+∞`: every ray `(a, ∞)` is a nonempty open set. -/
+theorem _root_.MeasureTheory.frequently_atTop_of_ae {α : Type*} [TopologicalSpace α]
+    [LinearOrder α] [Nonempty α] [ClosedIicTopology α] [NoMaxOrder α] [MeasurableSpace α]
+    {μ : Measure α} [μ.IsOpenPosMeasure] {p : α → Prop} (h : ∀ᵐ x ∂μ, p x) :
+    ∃ᶠ x in atTop, p x :=
+  frequently_atTop.2 fun a ↦ ((Measure.dense_of_ae h).exists_ge a).imp fun _ hx ↦ ⟨hx.2, hx.1⟩
+
+/-- On a linear order without a minimum, a property of almost every point, for a measure positive
+on nonempty open sets, holds frequently at `-∞`: every ray `(-∞, a)` is a nonempty open set. -/
+theorem _root_.MeasureTheory.frequently_atBot_of_ae {α : Type*} [TopologicalSpace α]
+    [LinearOrder α] [Nonempty α] [ClosedIciTopology α] [NoMinOrder α] [MeasurableSpace α]
+    {μ : Measure α} [μ.IsOpenPosMeasure] {p : α → Prop} (h : ∀ᵐ x ∂μ, p x) :
+    ∃ᶠ x in atBot, p x :=
+  frequently_atBot.2 fun a ↦ ((Measure.dense_of_ae h).exists_le a).imp fun _ hx ↦ ⟨hx.2, hx.1⟩
+
+/-- **No continuous representative across a jump to a disjoint filter.** Let `u` be an open set
+with `x` in its closure and `u ⊆ t`. If `f` tends along `𝓝[u] x` to a filter `l` disjoint from the
+neighbourhoods of `g x`, and `g = f` almost everywhere on `u` for a measure positive on nonempty
+open sets, then `g` is not continuous at `x` within `t`: near `x` the open set `u` has positive
+measure on which `g` stays near `g x` while `f` lies in `l`. -/
+theorem not_continuousWithinAt_of_tendsto_of_ae_eq {X Y : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] {f g : X → Y}
+    {x : X} {u t : Set X} {l : Filter Y} (hu : IsOpen u) (hx : x ∈ closure u) (hut : u ⊆ t)
+    (hf : Tendsto f (𝓝[u] x) l) (hl : Disjoint (𝓝 (g x)) l) (hg : g =ᵐ[μ.restrict u] f) :
+    ¬ ContinuousWithinAt g t x := by
+  intro hc
+  obtain ⟨A, hA, B, hB, hAB⟩ := Filter.disjoint_iff.1 hl
+  have hgA : ∀ᶠ y in 𝓝[u] x, g y ∈ A := nhdsWithin_mono x hut (hc hA)
+  obtain ⟨o, ho, hxo, hos⟩ := mem_nhdsWithin.1 (hgA.and (hf hB))
+  -- The open set `o ∩ u` is nonempty, so it has positive measure, but `g ≠ f` on it.
+  have hpos : 0 < μ (o ∩ u) := (ho.inter hu).measure_pos μ (mem_closure_iff.1 hx o ho hxo)
+  have hsub : o ∩ u ⊆ {y | ¬ g y = f y} ∩ u := fun y hy => by
+    obtain ⟨h1, h2⟩ := hos hy
+    exact ⟨fun h => Set.disjoint_left.1 hAB h1 (h ▸ h2), hy.2⟩
+  exact hpos.ne' (le_antisymm ((measure_mono hsub).trans
+    ((Measure.le_restrict_apply _ _).trans (ae_iff.1 hg).le)) zero_le)
+
+/-- **No continuous representative at a jump to a disjoint filter.** If `f` tends along the
+punctured neighbourhoods of `x` to a filter `l` disjoint from the neighbourhoods of `g x`, and
+`g = f` almost everywhere on a neighbourhood `s` of `x`, for a measure positive on nonempty open
+sets that gives every point measure zero, then `g` is not continuous at `x`. For instance `l` is
+`atTop` when `f` tends to `∞` at `x`. -/
+theorem not_continuousAt_of_tendsto_of_ae_eq {X Y : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] [NullSingletonClass μ]
+    [TopologicalSpace Y] {f g : X → Y} {x : X} {s : Set X} {l : Filter Y}
+    (hf : Tendsto f (𝓝[≠] x) l) (hl : Disjoint (𝓝 (g x)) l) (hs : s ∈ 𝓝 x)
+    (hg : g =ᵐ[μ.restrict s] f) : ¬ ContinuousAt g x := by
+  intro hc
+  obtain ⟨A, hA, B, hB, hAB⟩ := Filter.disjoint_iff.1 hl
+  have hgA : ∀ᶠ y in 𝓝[≠] x, g y ∈ A := nhdsWithin_le_nhds (hc hA)
+  obtain ⟨o, ho, hxo, hos⟩ := mem_nhdsWithin.1 ((hgA.and (hf hB)).and (nhdsWithin_le_nhds hs))
+  -- The punctured neighbourhood `o \ {x}` has positive measure and lies in `{g ≠ f} ∩ s`.
+  have hpos : 0 < μ (o \ {x}) := by
+    rw [measure_sdiff_null (measure_singleton _)]
+    exact ho.measure_pos μ ⟨x, hxo⟩
+  have hsub : o \ {x} ⊆ {y | ¬ g y = f y} ∩ s := fun y hy => by
+    obtain ⟨⟨h1, h2⟩, h3⟩ := hos ⟨hy.1, hy.2⟩
+    exact ⟨fun h => Set.disjoint_left.1 hAB h1 (h ▸ h2), h3⟩
+  exact hpos.ne' (le_antisymm ((measure_mono hsub).trans
+    ((Measure.le_restrict_apply _ _).trans (ae_iff.1 hg).le)) zero_le)
 
 end TauCeti
 

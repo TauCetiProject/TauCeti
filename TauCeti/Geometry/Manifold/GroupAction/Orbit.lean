@@ -1,0 +1,207 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import Mathlib.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
+import TauCeti.Algebra.GroupAction.TypeTags
+import TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap
+import TauCeti.Geometry.Manifold.Algebra.TypeTags
+import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Topology.Algebra.ProperAction.Basic
+import TauCeti.Topology.Algebra.ProperAction.Orbit
+
+/-!
+# Orbit maps of smooth Lie group actions
+
+Let a real Lie group `G`, modelled on a Banach space, with Lie algebra `𝔤 = GroupLieAlgebra I G`
+act smoothly on the left on a manifold `M`, and fix `x : M`. This file studies the **orbit map**
+`g ↦ g • x : G → M`.
+
+The derivative of the orbit map is computed in
+`TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap`. At the identity it is `ξ ↦ ξ_M(x)`, by
+definition of the fundamental vector fields, and at `g` it reduces to the identity case
+(`TauCeti.mfderiv_smul_const_apply`). There:
+
+* the image of the derivative at `g` is the orbit tangent space `𝔤 · (g • x)`
+  (`TauCeti.range_mfderiv_smul_const`);
+* the derivative at `g` is injective exactly when the isotropy algebra `𝔤_x` is trivial
+  (`TauCeti.injective_mfderiv_smul_const_iff`).
+
+Hence the orbit map is an **immersion** exactly
+when the action is locally free at `x`, that is, `𝔤_x = 0`
+(`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
+`TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
+is discrete; in particular, where the stabilizer is trivial on a Hausdorff manifold, `𝔤_x = 0`
+(`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`) and the orbit map is an immersion
+(`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
+moreover a closed topological embedding at such a point
+(`ProperSMul.isClosedEmbedding_smul_const`), and `𝔤_x = 0` and `dim G ≤ dim M` hold at such a point
+(and globally on any nonempty manifold for a free proper action, including additive Lie groups)
+without an explicit Hausdorff hypothesis
+(`TauCeti.isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properSMul_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properSMul_of_isCancelSMul`,
+`TauCeti.finrank_le_of_properVAdd_of_stabilizer_eq_bot`,
+`TauCeti.finrank_le_of_properVAdd_of_isCancelVAdd`). Hence **the orbit map of
+a free point of a proper smooth action is a smooth embedding with closed image**
+(`TauCeti.isSmoothEmbedding_smul_const`). This is the first step of the proof of the quotient
+manifold theorem for free proper actions.
+
+At an arbitrary point the orbit map factors through the homogeneous space `G ⧸ G_x`; that map is
+an injective immersion, and for a proper action a smooth embedding with closed image, in
+`TauCeti.Geometry.Manifold.GroupAction.HomogeneousOrbit`.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2013, Proposition 21.7 (orbits
+  of proper actions are closed embedded submanifolds) and the proof of Theorem 21.10.
+* E. Meinrenken, *Group actions on manifolds*, lecture notes, University of Toronto, 2003,
+  Section 1.6 and the proof of Theorem 1.21.
+-/
+
+public section
+
+noncomputable section
+
+open Function Manifold
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+section Immersion
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [CompleteSpace E]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+variable [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless]
+
+/-- **Orbit maps of locally free points are immersions.** The orbit map `g ↦ g • x` of a smooth
+action is an immersion exactly when the isotropy algebra `𝔤_x` is trivial, that is, when the
+action is locally free at `x`. -/
+theorem isImmersion_smul_const_iff {x : M} :
+    IsImmersion I I' ∞ (fun g : G ↦ g • x) ↔
+      (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  constructor
+  · intro h
+    exact (injective_mfderiv_smul_const_iff x 1).1
+      ((h.isImmersionAt 1).mfderiv_injective (by simp))
+  · intro hx
+    exact (ContMDiffSMul.contMDiff_smul_const x).isImmersion_of_injective_mfderiv (by simp)
+      fun g ↦ (injective_mfderiv_smul_const_iff x g).2 hx
+
+variable [FiniteDimensional ℝ E]
+
+omit [CompleteSpace E] [CompleteSpace E'] in
+/-- **Orbit maps of free points are immersions.** Where the stabilizer of `x` is trivial, the
+orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
+theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) :=
+  letI := FiniteDimensional.completeSpace ℝ E
+  letI := FiniteDimensional.completeSpace ℝ E'
+  isImmersion_smul_const_iff.2 (Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx)
+
+omit [CompleteSpace E] [CompleteSpace E'] in
+/-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer
+of `x` is trivial, the orbit map `g ↦ g • x` of a proper smooth action is a smooth embedding. Its
+image, the orbit of `x`, is closed (`ProperSMul.isClosed_orbit`). -/
+theorem isSmoothEmbedding_smul_const [ProperSMul G M] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) : IsSmoothEmbedding I I' ∞ (fun g : G ↦ g • x) := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  exact ⟨isImmersion_smul_const_of_stabilizer_eq_bot hx,
+    (ProperSMul.isClosedEmbedding_smul_const hx).isEmbedding⟩
+
+end Immersion
+
+section Proper
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M] [BoundarylessManifold I' M] [ProperSMul G M]
+
+/-- Where the stabilizer of `x` is trivial, the isotropy Lie algebra `𝔤_x` of a proper smooth Lie
+group action on a boundaryless manifold vanishes (without an explicit Hausdorffness assumption on
+`M`). -/
+theorem isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot [CompleteSpace E'] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  exact Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx
+
+include I I' in
+variable (I I') in
+/-- Where the stabilizer of `x` is trivial, a proper smooth action of a finite-dimensional real Lie
+group `G` on a finite-dimensional boundaryless manifold `M` satisfies `dim G ≤ dim M` (without an
+explicit Hausdorffness assumption on `M`). -/
+theorem finrank_le_of_properSMul_of_stabilizer_eq_bot [FiniteDimensional ℝ E'] {x : M}
+    (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  exact Lie.finrank_le_of_stabilizer_eq_bot I I' hx
+
+include I G I' M in
+variable (I G I' M) in
+/-- When a finite-dimensional real Lie group `G` acts smoothly, freely and properly on a nonempty
+finite-dimensional boundaryless manifold `M`, we have `dim G ≤ dim M` (without an explicit
+Hausdorffness assumption on `M`). -/
+theorem finrank_le_of_properSMul_of_isCancelSMul [FiniteDimensional ℝ E']
+    [IsCancelSMul G M] [Nonempty M] :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' :=
+  let ⟨x⟩ := ‹Nonempty M›
+  finrank_le_of_properSMul_of_stabilizer_eq_bot I I' (IsCancelSMul.stabilizer_eq_bot (G := G) x)
+
+end Proper
+
+section Additive
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {A : Type*} [TopologicalSpace A] [ChartedSpace H A] [AddGroup A] [LieAddGroup I ∞ A]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N] [AddAction A N]
+  [ContMDiffVAdd I I' ∞ A N] [BoundarylessManifold I' N] [ProperVAdd A N]
+
+include I I' in
+variable (I I') in
+/-- Where the additive stabilizer of `x` is trivial, a proper smooth action of a finite-dimensional
+additive real Lie group `A` on a finite-dimensional boundaryless manifold `N` satisfies
+`dim A ≤ dim N` (without an explicit Hausdorffness assumption on `N`). -/
+theorem finrank_le_of_properVAdd_of_stabilizer_eq_bot {x : N}
+    (hx : AddAction.stabilizer A x = ⊥) :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' :=
+  finrank_le_of_properSMul_of_stabilizer_eq_bot (G := Multiplicative A) I I' (x := x)
+    (by simp [hx])
+
+include I A I' N in
+variable (I A I' N) in
+/-- When a finite-dimensional additive real Lie group `A` acts smoothly, freely and properly on a
+nonempty finite-dimensional boundaryless manifold `N`, we have `dim A ≤ dim N` (without an explicit
+Hausdorffness assumption on `N`). -/
+theorem finrank_le_of_properVAdd_of_isCancelVAdd [IsCancelVAdd A N] [Nonempty N] :
+    Module.finrank ℝ E ≤ Module.finrank ℝ E' :=
+  let ⟨x⟩ := ‹Nonempty N›
+  finrank_le_of_properVAdd_of_stabilizer_eq_bot I I' (IsCancelVAdd.stabilizer_eq_bot (G := A) x)
+
+end Additive
+
+end TauCeti

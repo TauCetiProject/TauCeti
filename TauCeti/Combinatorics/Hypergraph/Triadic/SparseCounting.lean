@@ -60,7 +60,7 @@ noncomputable def lowerRouteMaps (φ : PatternPlacement3 C F) (ψ : PairColorPla
   classical
   exact univ.filter fun g ↦ Injective g ∧ (∀ i, g i ∈ φ.vertexCell i) ∧
     ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)
+      C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p)
 
 /-- Membership in the maps realizing a lower route. -/
 @[simp]
@@ -68,7 +68,7 @@ theorem mem_lowerRouteMaps {φ : PatternPlacement3 C F} {ψ : PairColorPlacement
     {g : Fin F.k → V} :
     g ∈ lowerRouteMaps φ ψ ↔ Injective g ∧ (∀ i, g i ∈ φ.vertexCell i) ∧
       ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-        C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p) := by
+        C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p) := by
   classical
   simp [lowerRouteMaps]
 
@@ -87,13 +87,13 @@ noncomputable def expectedLowerRouteCountAt (φ : PatternPlacement3 C F)
   (∏ i, (#(φ.vertexCell i) : ℝ)) *
     ∏ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
       (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-        (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ)
+        (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ)
 
 theorem expectedLowerRouteCountAt_def (φ : PatternPlacement3 C F) (ψ : PairColorPlacement3 φ) :
     expectedLowerRouteCountAt φ ψ = (∏ i, (#(φ.vertexCell i) : ℝ)) *
       ∏ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
         (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-          (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ) :=
+          (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ) :=
   (rfl)
 
 /-- The lower-route prediction is nonnegative. -/
@@ -108,7 +108,7 @@ distinct values. -/
 theorem injective_of_forall_colorOfPair_eq_some {φ : PatternPlacement3 C F}
     {ψ : PairColorPlacement3 φ} {g : Fin F.k → V}
     (h : ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-      C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)) :
+      C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p)) :
     Injective g := by
   intro i j hij
   by_contra hne
@@ -122,7 +122,7 @@ theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
     (ψ : PairColorPlacement3 φ) :
     lowerRouteMaps φ ψ = {g ∈ Fintype.piFinset φ.vertexCell |
       ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-        C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)} := by
+        C.skeleton.pairColors.colorOfPair (g p.val.1) (g p.val.2) = some (ψ.pairColor p)} := by
   ext g
   simp only [mem_lowerRouteMaps, mem_filter, Fintype.mem_piFinset]
   exact ⟨fun ⟨_, hcell, hcolor⟩ ↦ ⟨hcell, hcolor⟩, fun ⟨hcell, hcolor⟩ ↦
@@ -150,20 +150,20 @@ variable {φ : PatternPlacement3 C F} (ψ : PairColorPlacement3 φ) {ρ ρ' : �
 def IsSparseRoute (ρ : ℝ) : Prop :=
   ∃ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
     (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-      (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ) < ρ
+      (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ) < ρ
 
 /-- A sparse route has a pair-color density below the floor. -/
 theorem isSparseRoute_iff : ψ.IsSparseRoute ρ ↔
     ∃ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
       (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-        (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ) < ρ :=
+        (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ) < ρ :=
   Iff.rfl
 
 /-- A route is not sparse exactly when every required pair-color density is at least the floor. -/
 theorem not_isSparseRoute_iff : ¬ψ.IsSparseRoute ρ ↔
     ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
       ρ ≤ (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-        (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ) := by
+        (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ) := by
   simp [isSparseRoute_iff]
 
 /-- A sparse route stays sparse when the floor increases. -/
@@ -179,9 +179,9 @@ theorem lowerRouteCountAt_le_pairColorDensity_mul_prod (φ : PatternPlacement3 C
     (ψ : PairColorPlacement3 φ) (p : {p : Fin F.k × Fin F.k // p.1 < p.2}) :
     (lowerRouteCountAt φ ψ : ℝ) ≤
       (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-        (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ) * ∏ i, (#(φ.vertexCell i) : ℝ) := by
+        (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ) * ∏ i, (#(φ.vertexCell i) : ℝ) := by
   rw [lowerRouteCountAt_def]
-  exact C.skeleton.pairColors.card_le_pairColorDensity_mul_prod _ _ p.2.ne _
+  exact C.skeleton.pairColors.card_le_pairColorDensity_mul_prod _ _ p.property.ne _
     (fun _ hg ↦ (mem_lowerRouteMaps.1 hg).2.1)
     (fun _ hg ↦ (mem_lowerRouteMaps.1 hg).2.2 p)
 
@@ -205,7 +205,7 @@ theorem expectedLowerRouteCountAt_le_of_sparseRoute (φ : PatternPlacement3 C F)
     (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
   simpa using prod_le_prod_of_subset_of_le_one₀ (s := {p}) (t := univ)
     (f := fun q ↦ (pairColorDensity C.skeleton.pairColors (ψ.pairColor q)
-      (φ.vertexCell q.1.1) (φ.vertexCell q.1.2) : ℝ)) (subset_univ _)
+      (φ.vertexCell q.val.1) (φ.vertexCell q.val.2) : ℝ)) (subset_univ _)
     (fun _ _ ↦ by exact_mod_cast pairColorDensity_nonneg _ _ _ _)
     (fun _ _ _ ↦ by exact_mod_cast pairColorDensity_le_one _ _ _ _)
 
@@ -233,7 +233,7 @@ theorem expectedInducedCountAt_le_expectedLowerRouteCountAt (φ : PatternPlaceme
   rw [expectedInducedCountAt_def, expectedLowerRouteCountAt_def]
   have hpair : 0 ≤ ∏ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
       (pairColorDensity C.skeleton.pairColors (ψ.pairColor p)
-        (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ) :=
+        (φ.vertexCell p.val.1) (φ.vertexCell p.val.2) : ℝ) :=
     prod_nonneg fun _ _ ↦ by exact_mod_cast pairColorDensity_nonneg _ _ _ _
   refine (mul_le_of_le_one_right (mul_nonneg (Nat.cast_nonneg _) hpair)
     (prod_le_one₀ (fun _ _ ↦ ?_) fun _ _ ↦ ?_)).trans ?_
@@ -254,7 +254,6 @@ theorem placed_induced_counting3_of_sparseRoute (φ : PatternPlacement3 C F)
   have hb := (H.expectedInducedCountAt_le_expectedLowerRouteCountAt φ ψ).trans
     (expectedLowerRouteCountAt_le_of_sparseRoute φ ψ h)
   have h₀ := H.expectedInducedCountAt_nonneg φ ψ
-  have h₁ : (0 : ℝ) ≤ H.placedInducedCopyCount φ ψ := Nat.cast_nonneg _
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 end Colored3Graph

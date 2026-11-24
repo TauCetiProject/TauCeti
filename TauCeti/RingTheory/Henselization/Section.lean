@@ -12,6 +12,8 @@ import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselian.Idempotent
+import TauCeti.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Idempotents.Nakayama
 import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
 
 /-!
@@ -133,7 +135,7 @@ private theorem mul_sub_algebraMap_mem_map (C' : Subalgebra S C) {x y : C'} {σ 
     (ha : ∀ c, a c ∈ J) (hsum : (a.sum fun c t ↦ t • id c) = (x : C) - algebraMap S C σ)
     (hy : ∀ c ∈ a.support, (y : C) * c ∈ C') :
     y * (x - algebraMap S C' σ) ∈ J.map (algebraMap S C') := by
-  have : y * (x - algebraMap S C' σ) = ∑ c ∈ a.support.attach, a c • ⟨y * c, hy c c.2⟩ := by
+  have : y * (x - algebraMap S C' σ) = ∑ c ∈ a.support.attach, a c • ⟨y * c, hy c c.property⟩ := by
     ext
     simp [← hsum, Finsupp.sum, Finset.mul_sum, Finset.sum_attach a.support fun c ↦ a c • (y * c)]
   rw [this]
@@ -171,10 +173,11 @@ private theorem exists_mul_sub_smul_mem (hC : Function.Surjective (reducedMap J 
     trivial
   obtain ⟨w, hw⟩ := (Fintype.mem_span_image_iff_exists_fun C).mp h1
   choose t ht using fun r : (s : Set C) ↦ hlift (w r)
-  let r' (r : (s : Set C)) : C' := ⟨r, hsC' r.2⟩
+  let r' (r : (s : Set C)) : C' := ⟨r, hsC' r.property⟩
   have hgen (r : (s : Set C)) (l : Fin k) :
       r' r ^ N * (g l - algebraMap S C' (σ l)) ∈ J.map (algebraMap S C') :=
-    mul_sub_algebraMap_mem_map J C' (ha l) (hsum l) fun c hc ↦ by simpa [r'] using hN r r.2 l c hc
+    mul_sub_algebraMap_mem_map J C' (ha l)
+        (hsum l) fun c hc ↦ by simpa [r'] using hN r r.property l c hc
   refine ⟨∑ r, t r • r' r ^ N, ?_, ?_, fun x ↦ ?_⟩
   · have hcoe : ((∑ r, t r • r' r ^ N : C') : C) = ∑ r, algebraMap S C (t r) * (r : C) ^ N := by
       simp [r', Algebra.smul_def]
@@ -183,7 +186,7 @@ private theorem exists_mul_sub_smul_mem (hC : Function.Surjective (reducedMap J 
     rw [smul_eq_mul, ← sub_mul, ← neg_sub]
     exact Ideal.mul_mem_right _ _ (neg_mem (ht r))
   · refine sum_mem fun r _ ↦ Submodule.smul_of_tower_mem _ (t r) ?_
-    exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (s := {x : C' | (x : C) ∈ s}) r.2) N hN1
+    exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (s := {x : C' | (x : C) ∈ s}) r.property) N hN1
   refine exists_sub_mem_and_mul_sub_smul_mem_of_span J C' hg _ (fun l ↦ ⟨σ l, hσ l, ?_⟩) x
   have : (∑ r, t r • r' r ^ N) * g l - σ l • ∑ r, t r • r' r ^ N =
       ∑ r, t r • (r' r ^ N * (g l - algebraMap S C' (σ l))) := by
@@ -216,8 +219,8 @@ private theorem exists_isIdempotentElem_smul_eq_mul [HenselianRing S J]
   obtain ⟨e, he, heγ⟩ := HenselianRing.exists_isIdempotentElem_sub_mem_map J hγ
     fun x ↦ (hP x).imp fun _ h ↦ h.2
   refine ⟨e, he, heγ,
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem (show J ≤ Ideal.jacobson ⊥ by
-      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))) fun x ↦ ?_⟩
+    he.exists_smul_eq_mul_of_mul_sub_smul_mem (HenselianRing.jac (I := J)) (Submodule.fg_range _)
+      fun x ↦ ?_⟩
   obtain ⟨σ, -, h2⟩ := hP x
   refine ⟨σ, ?_⟩
   convert sub_mem (add_mem (Ideal.mul_mem_right x _ heγ) h2)
@@ -235,14 +238,14 @@ private theorem exists_smul_eq_mul_of_subalgebra (hJ : J ≤ Ideal.jacobson ⊥)
     (heγ : e - γ ∈ J.map (algebraMap S C')) (hse : ∀ x : C', ∃ σ : S, σ • e = e * x) (c : C) :
     ∃ σ : S, σ • (e : C) = e * c := by
   classical
-  obtain ⟨m, hm1, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ C' :=
+  obtain ⟨m, _, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ C' :=
     ((eventually_ge_atTop 1).and ((eventually_all_finset s).mpr fun r hr ↦ hZ r hr c)).exists
   -- The `m`-th powers of `s` together with `1 - e` generate the unit ideal of `C'`.
   have h1 : (1 : C') ∈ Ideal.span ((· ^ m) '' {x : C' | (x : C) ∈ s}) ⊔ Ideal.span {1 - e} := by
     by_contra hne
     obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ ((Ideal.ne_top_iff_one _).mpr hne)
     have hJM : J.map (algebraMap S C') ≤ M :=
-      (Ideal.map_le_jacobson_bot_of_isIntegral hJ).trans (sInf_le ⟨bot_le, hM⟩)
+      (Ideal.map_le_jacobson_of_isIntegral bot_le hJ).trans (sInf_le ⟨bot_le, hM⟩)
     have hsM : Ideal.span {x : C' | (x : C) ∈ s} ≤ M := Ideal.span_le.mpr fun x hx ↦
       hM.isPrime.mem_of_pow_mem m (hle (Ideal.mem_sup_left (Ideal.subset_span ⟨x, hx, rfl⟩)))
     have heM : e ∈ M := by simpa using M.add_mem (hJM heγ) (hsM hγ)
@@ -252,7 +255,7 @@ private theorem exists_smul_eq_mul_of_subalgebra (hJ : J ≤ Ideal.jacobson ⊥)
   obtain ⟨u, rfl⟩ := Ideal.mem_span_singleton'.mp hz
   obtain ⟨T, hT, w, hw⟩ := (Submodule.mem_span_image_iff_exists_fun C').mp hy
   -- `e c = e (y c)`, and `y c` lies in `C'`.
-  let x : C' := ∑ i, w i * ⟨(i : C) ^ m * c, hm _ (hT i.2)⟩
+  let x : C' := ∑ i, w i * ⟨(i : C) ^ m * c, hm _ (hT i.property)⟩
   obtain ⟨σ, hσ⟩ := hse x
   refine ⟨σ, ?_⟩
   have hey : e * y = e := by linear_combination e * hyz + u * he.eq
@@ -272,9 +275,8 @@ theorem nonempty_algHom_of_bijective_reducedMap [HenselianRing S J]
     (hC : Function.Bijective (reducedMap J C)) : Nonempty (C →ₐ[S] S) := by
   have hJ : J ≤ Ideal.jacobson ⊥ := by
     simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))
-  obtain ⟨C', s, hfg, hsC', hspan, hZ⟩ :=
+  obtain ⟨C', s, _, hsC', hspan, hZ⟩ :=
     Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top (R := S) (A := C)
-  have : Module.Finite S C' := ⟨(Submodule.fg_top _).mpr hfg⟩
   obtain ⟨γ, hγ1, hγs, hP⟩ := exists_mul_sub_smul_mem J hC.2 C' s hsC' hspan hZ
   obtain ⟨e, he, heγ, hse⟩ := exists_isIdempotentElem_smul_eq_mul J hC.1 C' hγ1 hP
   refine nonempty_algHom_of_isIdempotentElem J hJ hC.1 (he.map C'.val) ?_

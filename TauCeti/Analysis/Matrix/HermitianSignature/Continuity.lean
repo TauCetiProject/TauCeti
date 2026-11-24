@@ -28,9 +28,11 @@ in `TauCeti.exists_congruence_of_symmetric_family`.
 
 This stability result applies in particular to signature functions of Seifert matrices
 away from their singular parameters. Through Gram matrices, it also gives local constancy of the
-negative index of a continuous family of symmetric bilinear forms on a finite-dimensional real
-space at a nondegenerate member, and hence constancy along a preconnected set of nondegenerate
-members. At a degenerate member the negative index can jump, but only
+negative index of a continuous family of bilinear forms on a real topological vector space at a
+symmetric nondegenerate member, and hence constancy along a preconnected set of symmetric
+nondegenerate members. Symmetry is only needed at the member itself, because the negative index
+only sees the symmetric part of a form; on an infinite-dimensional space every negative index is
+`0` by convention. At a degenerate member the negative index can jump, but only
 upwards: a negative-definite subspace stays negative-definite under small perturbations, so the
 negative index of any continuous family of bilinear forms is lower semicontinuous.
 
@@ -50,15 +52,17 @@ namespace Matrix.IsHermitian
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
   {A : Matrix ι ι 𝕜}
 
-/-- Every Hermitian matrix sufficiently close to a nonsingular Hermitian matrix is
-congruent to it by an invertible matrix. -/
-theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
-    (hdet : IsUnit A.det) :
+/-- Every Hermitian matrix sufficiently close to a nonsingular matrix `A` is congruent to it by an
+invertible matrix. When `A` is not Hermitian the statement is vacuous: the Hermitian matrices form
+a closed set, so no matrix near `A` is Hermitian. -/
+theorem _root_.Matrix.eventually_exists_conjTranspose_mul_mul_eq (hdet : IsUnit A.det) :
     ∀ᶠ B in 𝓝 A, B.IsHermitian →
       ∃ R : Matrix ι ι 𝕜, IsUnit R.det ∧ Rᴴ * A * R = B := by
+  by_cases hA : A.IsHermitian
+  swap
+  · filter_upwards [isClosed_setOfPred_isHermitian.compl_mem_nhds hA] with B hB h using
+      absurd h hB
   let adj : Matrix ι ι 𝕜 → Matrix ι ι 𝕜 := fun R => A⁻¹ * Rᴴ * A
-  have hadj_one : adj 1 = 1 := by
-    simp [adj, A.nonsing_inv_mul hdet]
   have hadj_mul (R S : Matrix ι ι 𝕜) : adj (R * S) = adj S * adj R := by
     simp only [adj, conjTranspose_mul]
     simp only [Matrix.mul_assoc, A.mul_nonsing_inv_cancel_left (Rᴴ * A) hdet]
@@ -79,7 +83,7 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
   have hunit : ∀ᶠ B in 𝓝 A, IsUnit (R B) :=
     hR.eventually (Units.isOpen.mem_nhds isUnit_one)
   filter_upwards [hC.eventually TauCeti.eventually_mul_self_sqrtNearOne,
-    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_one hadj_mul),
+    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_mul),
     hunit] with B hs hu hunit
   intro hB
   have hs' : R B * R B = A⁻¹ * B := hs
@@ -94,7 +98,7 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
 when restricted to Hermitian perturbations. -/
 theorem eventually_signature_eq (hA : A.IsHermitian) (hdet : IsUnit A.det) :
     ∀ᶠ B in 𝓝 A, ∀ hB : B.IsHermitian, hB.signature = hA.signature := by
-  filter_upwards [hA.eventually_exists_conjTranspose_mul_mul_eq hdet] with B hB
+  filter_upwards [eventually_exists_conjTranspose_mul_mul_eq hdet] with B hB
   intro hherm
   obtain ⟨R, hR, heq⟩ := hB hherm
   convert hA.signature_congr (P := Rᴴ) (by simpa using hR.star) using 2
@@ -109,81 +113,99 @@ theorem eventually_signature_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
   filter_upwards [hc.eventually ((hB x).eventually_signature_eq hdet)] with y hy
   exact hy (hB y)
 
-/-- The negative index of the quadratic form of a continuous real symmetric matrix family is
-locally constant at a nonsingular member. Only local symmetry of the family is required. -/
+/-- The negative index of the quadratic form of a continuous family of real matrices is locally
+constant at a nonsingular symmetric member. Only symmetry at `x` is required: the quadratic form of
+a matrix only depends on its symmetric part. -/
 theorem eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
-    {B : X → Matrix ι ι ℝ} {x : X}
-    (hB : ∀ᶠ y in nhds x, (B y).IsHermitian) (hc : ContinuousAt B x)
+    {B : X → Matrix ι ι ℝ} {x : X} (hB : (B x).IsHermitian) (hc : ContinuousAt B x)
     (hdet : IsUnit (B x).det) :
     ∀ᶠ y in nhds x,
       sigNeg ((B y).toQuadraticForm') = sigNeg ((B x).toQuadraticForm') := by
-  filter_upwards
-    [hc.eventually (hB.self_of_nhds.eventually_exists_conjTranspose_mul_mul_eq hdet), hB]
-    with y hy hhy
-  obtain ⟨R, hR, hRB⟩ := hy hhy
-  have hRB' : R.transpose * B x * R.transpose.transpose = B y := by
-    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial, Matrix.transpose_transpose] using hRB
+  -- The symmetric part `S y` of `B y` has the same quadratic form, and `S x = B x`.
+  let S : X → Matrix ι ι ℝ := fun y ↦ (2⁻¹ : ℝ) • (B y + (B y)ᵀ)
+  have hS (y : X) : (S y).toQuadraticForm' = (B y).toQuadraticForm' := by
+    rw [toQuadraticForm'_smul, toQuadraticForm'_add_transpose, smul_smul,
+      inv_mul_cancel₀ two_ne_zero, one_smul]
+  have hSx : S x = B x := by
+    dsimp only [S]
+    rw [hB.isSymm.eq, ← two_smul ℝ (B x), smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+  have hSc : ContinuousAt S x :=
+    ((continuous_id.add continuous_id.matrix_transpose).const_smul (2⁻¹ : ℝ)).continuousAt.comp hc
+  have hSherm (y : X) : (S y).IsHermitian :=
+    isHermitian_iff_isSymm.2 ((isSymm_add_transpose_self (B y)).smul (2⁻¹ : ℝ))
+  filter_upwards [hSc.eventually (eventually_exists_conjTranspose_mul_mul_eq (hSx ▸ hdet))]
+    with y hy
+  obtain ⟨R, hR, hRS⟩ := hy (hSherm y)
+  have hRS' : R.transpose * S x * R.transpose.transpose = S y := by
+    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial, Matrix.transpose_transpose] using hRS
+  rw [← hS, ← hS]
   apply QuadraticMap.Equivalent.sigNeg_eq
-  rw [← hRB']
-  exact ⟨Matrix.isometryEquivCongr (by simpa using hR) (B x)⟩
+  rw [← hRS']
+  exact ⟨Matrix.isometryEquivCongr (by simpa using hR) (S x)⟩
 
 end Matrix.IsHermitian
 
 namespace ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousSMul ℝ E]
 
-/-- The negative index of a continuous family of symmetric bilinear forms on a
-finite-dimensional real space is locally constant at a nondegenerate member. Only local
-symmetry of the family is required. -/
+/-- The negative index of a continuous family of bilinear forms on a real topological vector space
+is locally constant at a symmetric nondegenerate member. Only symmetry at `x` is required: the
+negative index only depends on the symmetric part of a form. If `E` is not finite-dimensional,
+both indices are `0` by convention. -/
 theorem eventually_sigNeg_toBilinForm_eq_of_continuousAt {X : Type*} [TopologicalSpace X]
-    {V : X → E →L[ℝ] E →L[ℝ] ℝ} {x : X} (hsymm : ∀ᶠ y in 𝓝 x, (V y).toBilinForm.IsSymm)
+    {V : X → E →L[ℝ] E →L[ℝ] ℝ} {x : X} (hsymm : (V x).toBilinForm.IsSymm)
     (hc : ContinuousAt V x) (hnd : (V x).toBilinForm.Nondegenerate) :
     ∀ᶠ y in 𝓝 x,
       sigNeg (V y).toBilinForm.toQuadraticMap = sigNeg (V x).toBilinForm.toQuadraticMap := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [QuadraticForm.sigNeg_eq_zero_of_not_finite _ hE]
   let b := Module.finBasis ℝ E
   let A : X → Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
     fun y ↦ (V y).toBilinForm.toMatrix b
   have hA : ContinuousAt A x := by
     refine continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
     simpa only [A, LinearMap.BilinForm.toMatrix_apply, toBilinForm_apply] using
-      (hc.clm_apply continuousAt_const).clm_apply continuousAt_const
-  have hHermitian {y : X} (hy : (V y).toBilinForm.IsSymm) : (A y).IsHermitian := by
+      (hc.eval_const (b i)).eval_const (b j)
+  have hHermitian : (A x).IsHermitian := by
     simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial,
-      Matrix.IsSymm] using ((V y).toBilinForm.isSymm_toMatrix_iff_isSymm b).mpr hy
+      Matrix.IsSymm] using ((V x).toBilinForm.isSymm_toMatrix_iff_isSymm b).mpr hsymm
   have hdet : IsUnit (A x).det :=
     isUnit_iff_ne_zero.mpr ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp hnd)
-  have hindex := Matrix.IsHermitian.eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt
-    (hsymm.mono fun _ ↦ hHermitian) hA hdet
-  filter_upwards [hindex] with y hy
+  filter_upwards [hHermitian.eventually_sigNeg_toQuadraticForm'_eq_of_continuousAt hA hdet]
+    with y hy
   simpa only [A, LinearMap.BilinForm.sigNeg_toMatrix] using hy
 
 /-- **The negative index is lower semicontinuous.** Along a family of continuous bilinear forms
-on a finite-dimensional real space, continuous at `x`, the negative index at nearby parameters is
-at least the negative index at `x`. Neither symmetry nor nondegeneracy is required. -/
+on a real topological vector space, continuous at `x`, the negative index at nearby parameters is
+at least the negative index at `x`. Neither symmetry nor nondegeneracy is required. If `E` is not
+finite-dimensional, the negative index is `0` by convention. -/
 theorem eventually_sigNeg_toBilinForm_le_of_continuousAt {X : Type*} [TopologicalSpace X]
     {V : X → E →L[ℝ] E →L[ℝ] ℝ} {x : X} (hc : ContinuousAt V x) :
     ∀ᶠ y in 𝓝 x,
       sigNeg (V x).toBilinForm.toQuadraticMap ≤ sigNeg (V y).toBilinForm.toQuadraticMap := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [QuadraticForm.sigNeg_eq_zero_of_not_finite _ hE]
+    exact Eventually.of_forall fun _ ↦ Nat.zero_le _
   -- A maximal negative-definite subspace `W` for `V x` stays negative-definite for the forms
   -- near `V x`, by openness of strict diagonal positivity of the negated restrictions to `W`.
   obtain ⟨W, hW, hneg⟩ :=
     exists_finrank_eq_sigNeg_and_negDef (V x).toBilinForm.toQuadraticMap
-  let C : X → W →L[ℝ] W →L[ℝ] ℝ := fun y ↦ -(V y).bilinearComp W.subtypeL W.subtypeL
-  have hC : ContinuousAt C x := by
-    refine continuousAt_clm_apply.2 fun v ↦ continuousAt_clm_apply (f := fun y ↦ C y v) |>.2
-      fun w ↦ ?_
-    simpa [C] using ((hc.clm_apply continuousAt_const).clm_apply continuousAt_const).neg
-  have hCx : C x ∈ {b : W →L[ℝ] W →L[ℝ] ℝ | ∀ w, w ≠ 0 → 0 < b w w} := fun w hw ↦ by
+  let C : (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] W →L[ℝ] W →L[ℝ] ℝ :=
+    (-1 : ℝ) • ((W.subtypeL.precomp ℝ).postcomp W).comp (W.subtypeL.precomp (E →L[ℝ] ℝ))
+  have hCx : C (V x) ∈ {b : W →L[ℝ] W →L[ℝ] ℝ | ∀ w, w ≠ 0 → 0 < b w w} := fun w hw ↦ by
     simpa [C] using hneg w (by simpa using hw)
-  filter_upwards [hC.eventually (TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds hCx)]
-    with y hy
+  filter_upwards [(C.continuous.continuousAt.comp hc).eventually
+    (TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds hCx)] with y hy
   rw [← hW]
   exact le_sigNeg_of_negDef _ fun w hw ↦ by simpa [C] using hy w hw
 
-/-- **The negative index is constant between crossings.** Along a family of symmetric continuous
-bilinear forms, continuous and nondegenerate on a preconnected set `s`, the negative index takes
-the same value at any two points of `s`. -/
+/-- **The negative index is constant between crossings.** Along a family of continuous bilinear
+forms, continuous, symmetric and nondegenerate on a preconnected set `s`, the negative index takes
+the same value at any two points of `s`. If `E` is not finite-dimensional, both indices are `0` by
+convention. -/
 theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
     {V : X → E →L[ℝ] E →L[ℝ] ℝ} {s : Set X} (hs : IsPreconnected s) (hc : ContinuousOn V s)
     (hsymm : ∀ t ∈ s, (V t).toBilinForm.IsSymm)
@@ -193,6 +215,6 @@ theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
   rw [continuousWithinAt_iff_continuousAt_domRestrict _ ht]
   exact tendsto_nhds_of_eventually_eq <|
     eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := s.domRestrict V) (x := ⟨t, ht⟩)
-      (Eventually.of_forall fun u ↦ hsymm u u.2) hc.domRestrict.continuousAt (hnd t ht)
+      (hsymm t ht) hc.domRestrict.continuousAt (hnd t ht)
 
 end ContinuousLinearMap

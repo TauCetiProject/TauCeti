@@ -8,11 +8,9 @@ module
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Three.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.Spin.Representation
-public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The three-dimensional Spin group
@@ -48,8 +46,7 @@ private noncomputable def spinThreeExteriorBasis
     Basis (Fin 2) K (ExteriorAlgebra K P.W) :=
   b.ExteriorAlgebra.reindex spinThreeIndexEquiv
 
-private noncomputable def spinThreeEquivMatrix
-    [NeZero (2 : K)] [FiniteDimensional K V]
+private noncomputable def spinThreeEquivMatrix [NeZero (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (hV : finrank K V = 3) :
     ↥(CliffordAlgebra.even Q) ≃ₐ[K] Matrix (Fin 2) (Fin 2) K :=
@@ -95,7 +92,7 @@ private noncomputable def spinThreeHom
     (CliffordAlgebra.star_mul_self_eq_one_iff_det_eq_one_of_finrank_eq_three
       Q hV e (spinGroupToEven Q g)).mp (by
         rw [coe_spinGroupToEven_apply]
-        exact spinGroup.star_mul_self_of_mem g.2)⟩
+        exact spinGroup.star_mul_self_of_mem g.property)⟩
   map_one' := by
     apply Subtype.ext
     simp only [map_one]
@@ -179,8 +176,7 @@ private theorem spinThreeExteriorBasis_occupied
 
 private theorem vacuumIndex_ne_occupiedIndex : vacuumIndex ≠ occupiedIndex := by
   intro h
-  have := spinThreeIndexEquiv.injective h
-  simp at this
+  exact (Finset.singleton_nonempty 0).ne_empty (spinThreeIndexEquiv.injective h).symm
 
 private theorem finTwo_eq_vacuum_or_occupied (i : Fin 2) :
     i = vacuumIndex ∨ i = occupiedIndex := by
@@ -203,7 +199,7 @@ private theorem finTwo_eq_vacuum_or_occupied (i : Fin 2) :
     rfl
 
 private theorem spinThreeEquivMatrix_positiveRoot
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) :
@@ -230,7 +226,7 @@ private theorem spinThreeEquivMatrix_positiveRoot
       spinAction_positiveRoot_singleton P b z hcoord
 
 private theorem spinThreeEquivMatrix_negativeRoot
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) :
@@ -261,7 +257,7 @@ private theorem spinThreeEquivMatrix_negativeRoot
 /-- The matrix model of the Spin group sends the positive root lift to the corresponding
 elementary transvection. -/
 private theorem spinThreeHom_positiveRootLift
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) (c : K) :
@@ -283,7 +279,7 @@ private theorem spinThreeHom_positiveRootLift
 /-- The matrix model of the Spin group sends the negative root lift to the corresponding
 elementary transvection. -/
 private theorem spinThreeHom_negativeRootLift
-    [NeZero (2 : K)] [FiniteDimensional K V] [Invertible (2 : K)]
+    [NeZero (2 : K)] [Invertible (2 : K)]
     (P : SpinPolarizationData Q) (b : Basis (Fin 1) K P.W)
     (z : P.line) (hz : Q (z : V) = 1) (hcoord : P.lineCoordinate z = 1)
     (hV : finrank K V = 3) (c : K) :

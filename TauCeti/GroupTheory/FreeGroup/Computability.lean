@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.Primrec.List
+public import Mathlib.Data.List.ProdSigma
 public import Mathlib.GroupTheory.FreeGroup.Reduce
+public import TauCeti.Computability.Primrec.List
+public import TauCeti.Data.List.Sections
 
 /-!
 # Primitive-recursive operations on free-group words
@@ -22,8 +25,8 @@ In particular, reduced words are exactly the fixed points of reduction; Mathlib'
 `mk_toWord`, `toWord_mk` and `isReduced_iff_reduce_eq` give their correspondence with
 free-group elements.
 
-The computability arguments use Mathlib's primitive-recursion theorems for lists,
-especially `Primrec.list_rec` and `Primrec.list_casesOn`.
+Free reduction is computed as a right fold of Mathlib's one-letter cancellation step
+`FreeGroup.toWord_mk_mul_eq`, using `Primrec.list_foldr`.
 
 Evaluation into a primitively encoded group with primitive-recursive multiplication and
 inversion is primitive recursive under a primitive-recursive family of generator assignments.
@@ -34,6 +37,10 @@ Mathlib's `FreeGroup.lift_mk` and `Primrec.list_foldr`.
 `primrecPred_exists_encode_toWord` recognizes exactly the natural numbers encoding
 reduced representatives. It uses `Encodable.decode₂`, which rejects noncanonical
 codes even if the alphabet's decoder accepts redundant codes.
+
+`wordsOverOfLengthLE` lists the finitely many words of length at most a given bound in the
+letters of a given list, primitive recursively in the list and the bound; it is the search space
+of exhaustive searches over bounded tuples of words.
 -/
 
 public section
@@ -44,33 +51,25 @@ variable {α : Type*} [Primcodable α]
 
 /-- Free reduction is primitive recursive on the standard encoding of signed-letter lists. -/
 theorem primrec_reduce [DecidableEq α] : Primrec (reduce : List (α × Bool) → List (α × Bool)) := by
-  have step : Primrec fun p : (α × Bool) × List (α × Bool) =>
-      List.casesOn (motive := fun _ => List (α × Bool)) p.2 [p.1] fun q l =>
-        if p.1.1 = q.1 ∧ p.1.2 = !q.2 then l else p.1 :: q :: l := by
-    refine Primrec.list_casesOn
-      (f := fun p : (α × Bool) × List (α × Bool) => p.2)
-      (h := fun p q => if p.1.1 = q.1.1 ∧ p.1.2 = !q.1.2
-        then q.2 else p.1 :: q.1 :: q.2) Primrec.snd
-      (Primrec.list_cons.comp Primrec.fst (Primrec.const [])) ?_
-    apply Primrec₂.mk
-    refine Primrec.ite (c := fun p : ((α × Bool) × List (α × Bool)) ×
-        ((α × Bool) × List (α × Bool)) => p.1.1.1 = p.2.1.1 ∧ p.1.1.2 = !p.2.1.2)
-      ?_ (Primrec.snd.comp Primrec.snd) ?_
-    · exact (Primrec.eq.comp (Primrec.fst.comp (Primrec.fst.comp Primrec.fst))
-        (Primrec.fst.comp (Primrec.fst.comp Primrec.snd))).and
-        (Primrec.eq.comp (Primrec.snd.comp (Primrec.fst.comp Primrec.fst))
-          (Primrec.not.comp (Primrec.snd.comp (Primrec.fst.comp Primrec.snd))))
-    · exact Primrec.list_cons.comp (Primrec.fst.comp Primrec.fst)
-        (Primrec.list_cons.comp (Primrec.fst.comp Primrec.snd)
-          (Primrec.snd.comp Primrec.snd))
-  refine (Primrec.list_rec Primrec.id (Primrec.const [])
-    (Primrec.to₂ <| step.comp <| Primrec.pair (Primrec.fst.comp Primrec.snd)
-      (Primrec.snd.comp (Primrec.snd.comp Primrec.snd)))).of_eq fun w => ?_
+  -- Prepending a letter to a reduced word, cancelling it against the head when they are inverse.
+  have step : Primrec₂ fun (a : α × Bool) (l : List (α × Bool)) =>
+      if l.head? = some (a.1, !a.2) then l.tail else a :: l :=
+    Primrec.ite (Primrec.eq.comp (Primrec.list_head?.comp Primrec.snd)
+        (Primrec.option_some.comp (Primrec.pair (Primrec.fst.comp Primrec.fst)
+          (Primrec.not.comp (Primrec.snd.comp Primrec.fst)))))
+      (Primrec.list_tail.comp Primrec.snd) (Primrec.list_cons.comp Primrec.fst Primrec.snd)
+  refine (Primrec.list_foldr Primrec.id (Primrec.const [])
+    (step.comp (Primrec.fst.comp Primrec.snd) (Primrec.snd.comp Primrec.snd)).to₂).of_eq
+    fun w => ?_
+  dsimp only [id_eq]
   induction w with
   | nil => exact reduce_nil.symm
   | cons a w ih =>
-    dsimp only [id_eq, List.recOn] at *
-    rw [reduce.cons, ← ih]
+    obtain ⟨x, b⟩ := a
+    -- Mathlib computes the reduced word of `mk [(x, b)] * mk w` by the same cancellation step.
+    have h := toWord_mk_mul_eq x b (mk w)
+    rw [mul_mk, List.singleton_append, toWord_mk, toWord_mk] at h
+    rw [List.foldr_cons, ih, h]
 
 /-- Reduced-word validity is primitive recursive, rather than merely decidable. -/
 theorem primrecPred_isReduced : PrimrecPred (IsReduced : List (α × Bool) → Prop) := by
@@ -87,13 +86,13 @@ theorem primrecRel_mk_eq_mk :
 
 /-- The trivial-word predicate is primitive recursive, including on unreduced inputs. -/
 theorem primrecPred_mk_eq_one :
-    PrimrecPred fun w : List (α × Bool) => mk w = 1 := by
-  exact (primrecRel_mk_eq_mk.comp Primrec.id (Primrec.const [])).of_eq
+    PrimrecPred fun w : List (α × Bool) => mk w = 1 :=
+  (primrecRel_mk_eq_mk.comp Primrec.id (Primrec.const [])).of_eq
     fun _ => by simp only [one_eq_mk, id_eq]
 
 /-- Reversing a word and inverting every letter is primitive recursive. -/
-theorem primrec_invRev : Primrec (invRev : List (α × Bool) → List (α × Bool)) := by
-  exact (Primrec.list_reverse.comp
+theorem primrec_invRev : Primrec (invRev : List (α × Bool) → List (α × Bool)) :=
+  (Primrec.list_reverse.comp
     (Primrec.list_map (Primrec.id (α := List (α × Bool)))
       (Primrec.to₂ <| Primrec.pair (Primrec.fst.comp Primrec.snd)
         (Primrec.not.comp (Primrec.snd.comp Primrec.snd))))).of_eq fun _ => by
@@ -102,8 +101,8 @@ theorem primrec_invRev : Primrec (invRev : List (α × Bool) → List (α × Boo
 /-- Multiplication of represented group elements, with a reduced word as output, is
 primitive recursive. -/
 theorem primrec_toWord_mk_mul_mk [DecidableEq α] :
-    Primrec₂ fun u v : List (α × Bool) => (mk u * mk v).toWord := by
-  exact (primrec_reduce.comp₂ Primrec.list_append).of_eq fun _ _ => by
+    Primrec₂ fun u v : List (α × Bool) => (mk u * mk v).toWord :=
+  (primrec_reduce.comp₂ Primrec.list_append).of_eq fun _ _ => by
     rw [mul_mk, toWord_mk]
 
 /-- Inversion of represented group elements, with a reduced word as output, is
@@ -116,31 +115,15 @@ theorem primrec_toWord_inv_mk [DecidableEq α] :
 primitive-recursive predicate on natural numbers. Invalid codes are rejected. -/
 theorem primrecPred_exists_encode_toWord [DecidableEq α] :
     PrimrecPred fun n : ℕ => ∃ x : FreeGroup α, Encodable.encode x.toWord = n := by
-  classical
-  have test : Primrec fun n : ℕ =>
-      ((Encodable.decode₂ (List (α × Bool)) n).map
-        (fun w => decide (IsReduced w))).getD false :=
-    Primrec.option_getD.comp
-      (Primrec.option_map Primrec.decode₂
-        (primrecPred_isReduced.decide.comp Primrec.snd).to₂) (Primrec.const false)
-  refine (Primrec.eq.comp test (Primrec.const true)).of_eq fun n => ?_
-  cases hd : Encodable.decode₂ (List (α × Bool)) n with
-  | none =>
-    simp only [Option.map_none, Option.getD_none, Bool.false_eq_true, false_iff]
-    rintro ⟨x, hx⟩
-    have := Encodable.decode₂_eq_some.mpr hx
-    simp [hd] at this
-  | some w =>
-    simp only [Option.map_some, Option.getD_some, decide_eq_true_eq]
-    constructor
-    · intro hw
-      refine ⟨mk w, ?_⟩
-      rw [toWord_mk, hw.reduce_eq]
-      exact Encodable.decode₂_eq_some.mp hd
-    · rintro ⟨x, hx⟩
-      have hw : x.toWord = w := by
-        simpa only [← hx, Encodable.decode₂_encode, Option.some.injEq] using hd
-      exact hw ▸ isReduced_toWord
+  refine ((primrecPred_isReduced (α := α)).exists_mem_list.comp
+    (Primrec.optionToList.comp Primrec.decode₂)).of_eq fun n => ?_
+  -- The valid codes are those decoding to a reduced word.
+  have codes : (∃ x : FreeGroup α, Encodable.encode x.toWord = n) ↔
+      ∃ w ∈ Encodable.decode₂ (List (α × Bool)) n, IsReduced w := by
+    simp_rw [Encodable.mem_decode₂]
+    exact ⟨fun ⟨x, hx⟩ => ⟨_, hx, isReduced_toWord⟩,
+      fun ⟨w, hw, hr⟩ => ⟨mk w, by rw [toWord_mk, hr.reduce_eq, hw]⟩⟩
+  simpa only [Option.mem_toList, Option.mem_def] using codes.symm
 
 variable {P G : Type*} [Primcodable P] [Primcodable G] [Group G]
 
@@ -167,5 +150,31 @@ theorem primrec₂_lift_mk_fin (hmul : Primrec₂ ((· * ·) : G → G → G))
     (hinv : Primrec (Inv.inv : G → G)) (n : ℕ) :
     Primrec₂ fun (f : Fin n → G) (w : List (Fin n × Bool)) => lift f (mk w) :=
   primrec₂_lift_mk hmul hinv Primrec.fin_app
+
+section Words
+
+variable {A : Type*}
+
+/-- The words of length at most `N` in the letters of a list `l` and their inverses; the words
+need not be reduced. -/
+def wordsOverOfLengthLE (l : List A) (N : ℕ) : List (List (A × Bool)) :=
+  (List.range (N + 1)).flatMap fun k => (List.replicate k (l ×ˢ [true, false])).sections
+
+/-- A word is listed among the words of length at most `N` in the letters of `l` exactly when
+its length is at most `N` and all its letters lie in `l`. -/
+@[simp] theorem mem_wordsOverOfLengthLE {l : List A} {N : ℕ} {w : List (A × Bool)} :
+    w ∈ wordsOverOfLengthLE l N ↔ w.length ≤ N ∧ ∀ y ∈ w, y.1 ∈ l := by
+  simp [wordsOverOfLengthLE, List.mem_sections_replicate, Nat.lt_succ_iff]
+
+/-- The list of words of length at most `N` in the letters of `l` is primitive recursive in `l`
+and `N`. -/
+theorem primrec₂_wordsOverOfLengthLE [Primcodable A] :
+    Primrec₂ (wordsOverOfLengthLE : List A → ℕ → List (List (A × Bool))) :=
+  (Primrec.list_flatMap (Primrec.list_range.comp (Primrec.succ.comp Primrec.snd))
+    (Primrec.list_sections.comp (Primrec.list_replicate.comp Primrec.snd
+      (Primrec.list_product.comp (Primrec.fst.comp Primrec.fst)
+        (Primrec.const [true, false])))).to₂).to₂
+
+end Words
 
 end FreeGroup

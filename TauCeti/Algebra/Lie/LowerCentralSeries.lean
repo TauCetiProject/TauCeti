@@ -41,7 +41,7 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 /-- Brackets add lower-central weights. The zero-indexed convention `C 0 = L` accounts for
 the extra `1` in the index on the right. -/
 theorem lie_lowerCentralSeries_le (M : Type*) [AddCommGroup M] [Module R M]
-    [LieRingModule L M] [LieModule R L M] (m n : ℕ) :
+    [LieRingModule L M] (m n : ℕ) :
     ⁅lowerCentralSeries R L L m, lowerCentralSeries R L M n⁆ ≤
       lowerCentralSeries R L M (m + n + 1) := by
   induction m generalizing n with
@@ -51,9 +51,14 @@ theorem lie_lowerCentralSeries_le (M : Type*) [AddCommGroup M] [Module R M]
     intro x hx y hy
     rw [lowerCentralSeries_succ, ← LieSubmodule.mem_toSubmodule,
       LieSubmodule.lieIdeal_oper_eq_linear_span'] at hx
+    -- The scalar is generalized, as `M` is not assumed to be a module over `R` compatible with `L`.
+    suffices ∀ r : R, ⁅r • x, y⁆ ∈ lowerCentralSeries R L M (m + 1 + n + 1) by
+      simpa using this 1
     refine Submodule.span_induction (p := fun x _ ↦
-      ⁅x, y⁆ ∈ lowerCentralSeries R L M (m + 1 + n + 1)) ?_ ?_ ?_ ?_ hx
-    · rintro _ ⟨a, -, b, hb, rfl⟩
+      ∀ r : R, ⁅r • x, y⁆ ∈ lowerCentralSeries R L M (m + 1 + n + 1)) ?_ ?_ ?_ ?_ hx
+    · rintro _ ⟨a₀, -, b, hb, rfl⟩ r
+      rw [← smul_lie]
+      generalize r • a₀ = a
       rw [lie_lie]
       apply (lowerCentralSeries R L M _).sub_mem
       · have hby := ih n (LieSubmodule.lie_mem_lie hb hy)
@@ -68,18 +73,24 @@ theorem lie_lowerCentralSeries_le (M : Type*) [AddCommGroup M] [Module R M]
         simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
           ih (n + 1) (LieSubmodule.lie_mem_lie hb hay)
     · simp
-    · intro a b _ _ ha hb
-      simpa [add_lie] using (lowerCentralSeries R L M _).add_mem ha hb
-    · intro r a _ ha
-      simpa [smul_lie] using (lowerCentralSeries R L M _).smul_mem r ha
+    · intro a b _ _ ha hb r
+      simpa [smul_add, add_lie] using (lowerCentralSeries R L M _).add_mem (ha r) (hb r)
+    · intro s a _ ha r
+      simpa [smul_smul] using ha (r * s)
 
 /-- A bracket has zero coordinates below the sum of the weights of its two inputs in a
 basis adapted to the lower central series. -/
 theorem _root_.Module.Basis.repr_lie_eq_zero_of_weight_lt {ι : Type*}
-    (b : Basis ι R L) (w : ι → ℕ) (hpos : ∀ i, 0 < w i)
+    (b : Basis ι R L) (w : ι → ℕ)
     (hmem : ∀ k x, x ∈ lowerCentralSeries R L L k ↔
       ∀ i, w i ≤ k → b.repr x i = 0) (i j k : ι) (hk : w k < w i + w j) :
     b.repr ⁅b i, b j⁆ k = 0 := by
+  cases subsingleton_or_nontrivial R
+  · exact Subsingleton.elim _ _
+  have hpos (a : ι) : 0 < w a := by
+    refine Nat.pos_of_ne_zero fun h ↦ ?_
+    have := (hmem 0 (b a)).mp (by rw [lowerCentralSeries_zero]; trivial) a h.le
+    simp at this
   have hb (a : ι) : b a ∈ lowerCentralSeries R L L (w a - 1) := by
     rw [hmem]
     intro c hc
@@ -114,7 +125,7 @@ theorem exists_basis_weight_lowerCentralSeries :
     (fun _ _ h ↦ antitone_lowerCentralSeries K L L h)
     (by simp) N (by simp [hN])
   exact ⟨N, b, w, hweight, hmem,
-    b.repr_lie_eq_zero_of_weight_lt w (fun i ↦ (hweight i).1) hmem⟩
+    b.repr_lie_eq_zero_of_weight_lt w hmem⟩
 
 end Basis
 

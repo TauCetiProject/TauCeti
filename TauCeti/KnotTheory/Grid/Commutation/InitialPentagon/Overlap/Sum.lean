@@ -156,10 +156,10 @@ theorem filter_not_hasDisjointSides_rectangleInitialPentagonDecompositions_eq_un
   grind
 
 open scoped Classical in
-/-- Off the diagonal, the six overlap families of rectangle--initial-side-pentagon domains are
-pairwise disjoint: each is disjoint from the union of those listed before it in
+/-- The six overlap families of rectangle--initial-side-pentagon domains are pairwise disjoint,
+including on the diagonal: each is disjoint from the union of those listed before it in
 `filter_not_hasDisjointSides_rectangleInitialPentagonDecompositions_eq_union`. -/
-theorem disjoint_initialPentagon_overlap_families (hzx : z ≠ x) :
+theorem disjoint_initialPentagon_overlap_families :
     Disjoint (G.initialPentagonInitialCrossOverlapSources C x z ∪
         G.initialPentagonTerminalOverlapSources C x z ∪
           G.initialPentagonLeftRightOverlapSources C x z ∪
@@ -181,15 +181,14 @@ theorem disjoint_initialPentagon_overlap_families (hzx : z ≠ x) :
       Disjoint (G.initialPentagonInitialCrossOverlapSources C x z)
         (G.initialPentagonTerminalOverlapSources C x z) := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> refine Finset.disjoint_left.2 fun D h₁ h₂ => ?_ <;>
-  · obtain ⟨-, hone, hsame, hmixed⟩ := initialPentagon_overlap_side_facts C D hzx
-    obtain ⟨-, hexclusive⟩ := initialPentagon_overlap_column_order C D
+  · obtain ⟨-, hexclusive⟩ := initialPentagon_overlap_column_order C D
     have hb := D.second_left_eq
     have hr := D.first.left_ne_right
     have hP := D.second.left_ne_right
     simp only [Finset.mem_union, mem_initialPentagonInitialCrossOverlapSources,
       mem_initialPentagonTerminalOverlapSources, mem_initialPentagonLeftRightOverlapSources,
       mem_initialPentagonRightLeftOverlapSources, mem_rectangleInitialPentagonTurnCuts,
-      mem_initialPentagonInitialSelfPairs_iff_sides, hone] at h₁ h₂
+      mem_initialPentagonInitialSelfPairs_iff_sides] at h₁ h₂
     -- Two families never prescribe the same position of the common column, column order, and
     -- position of the turn row.
     grind
@@ -215,7 +214,7 @@ theorem sum_rectangleInitialPentagonWeight_overlap_eq_sum_partners (hzx : z ≠ 
         ∑ E ∈ G.initialPentagonRightLeftOverlapPartners C x z,
           G.initialPentagonRectangleWeight C R E +
         ∑ E ∈ G.pentagonRectangleTurnCuts C x z, G.pentagonRectangleWeight C R E := by
-  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := G.disjoint_initialPentagon_overlap_families C hzx
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := G.disjoint_initialPentagon_overlap_families C
   rw [G.filter_not_hasDisjointSides_rectangleInitialPentagonDecompositions_eq_union C hzx,
     Finset.sum_union h₁, Finset.sum_union h₂, Finset.sum_union h₃, Finset.sum_union h₄,
     Finset.sum_union h₅, G.sum_rectangleInitialPentagonWeight_initialSelfPairs_eq_zero C R x z,

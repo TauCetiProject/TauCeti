@@ -125,8 +125,7 @@ theorem ThomLT.trans {σ τ υ : Fin d → SignType} (hστ : ThomLT σ τ) (hτ
     · rw [h1] at h2; cases h2
     · rw [h1] at h2; cases h2
     · exact ⟨i, (hlt'.trans hlt).ne', htail, hd, Or.inr ⟨h1, hlt'.trans hlt⟩⟩
-  · have hsucc : k < ⟨i.val + 1, hd⟩ := Fin.lt_def.2 (Nat.lt_succ_of_lt hik)
-    refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
+  · refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
     rwa [← hk' i hik]
 
 private theorem thomLT_cmp_neg (s a b : SignType) :
@@ -267,15 +266,15 @@ from its encoding. -/
 noncomputable def thomEncodingEquiv (hrolle : PolynomialRolle R) (p : R[X]) :
     p.roots.toFinset ≃ p.thomEncodings :=
   Equiv.ofBijective
-    (fun x ↦ ⟨thomEncoding p x, Finset.mem_image_of_mem _ x.2⟩)
+    (fun x ↦ ⟨thomEncoding p x, Finset.mem_image_of_mem _ x.property⟩)
     ⟨fun a b h ↦ by
-      have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp a.2)
-      have ha := a.2
-      have hb := b.2
+      have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp a.property)
+      have ha := a.property
+      have hb := b.property
       simp only [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] at ha hb
       exact Subtype.ext (thomEncoding_injOn p hrolle hp ha hb (congrArg Subtype.val h)),
     fun σ ↦ by
-      obtain ⟨x, hx, h⟩ := Finset.mem_image.1 σ.2
+      obtain ⟨x, hx, h⟩ := Finset.mem_image.1 σ.property
       exact ⟨⟨x, hx⟩, Subtype.ext h⟩⟩
 
 /-- The correspondence sends a root to its Thom encoding. -/
@@ -289,7 +288,7 @@ theorem coe_thomEncodingEquiv_apply (hrolle : PolynomialRolle R) (p : R[X])
 @[simp]
 theorem eval_thomEncodingEquiv_symm (hrolle : PolynomialRolle R) (p : R[X])
     (σ : p.thomEncodings) : p.eval ((thomEncodingEquiv hrolle p).symm σ : R) = 0 := by
-  have h := ((thomEncodingEquiv hrolle p).symm σ).2
+  have h := ((thomEncodingEquiv hrolle p).symm σ).property
   have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp h)
   simpa only [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] using h
 
@@ -406,9 +405,9 @@ theorem thomEncodingEquiv_lt_iff (hrolle : PolynomialRolle R) (p : R[X])
     (x y : p.roots.toFinset) :
     ThomLT (thomEncodingEquiv hrolle p x : Fin p.natDegree → SignType)
         (thomEncodingEquiv hrolle p y) ↔ (x : R) < y := by
-  have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp x.2)
-  have hx := x.2
-  have hy := y.2
+  have hp : p ≠ 0 := ne_zero_of_mem_roots (Multiset.mem_toFinset.mp x.property)
+  have hx := x.property
+  have hy := y.property
   simp only [Multiset.mem_toFinset, mem_roots hp, IsRoot.def] at hx hy
   rw [coe_thomEncodingEquiv_apply, coe_thomEncodingEquiv_apply,
     lt_iff_thomLT_of_eval_eq_zero hrolle hp hx hy]
@@ -449,8 +448,8 @@ theorem card_roots_lt_eq_card_filter_thomLT_of_natDegree_le {p : R[X]} {d : ℕ}
 theorem thomLT_or_thomLT_of_mem_thomEncodings (hrolle : PolynomialRolle R) {p : R[X]}
     {σ τ : Fin p.natDegree → SignType} (hσ : σ ∈ p.thomEncodings) (hτ : τ ∈ p.thomEncodings)
     (hne : σ ≠ τ) : ThomLT σ τ ∨ ThomLT τ σ := by
-  obtain ⟨hp, a, ha, rfl⟩ := mem_thomEncodings.1 hσ
-  obtain ⟨-, b, hb, rfl⟩ := mem_thomEncodings.1 hτ
+  obtain ⟨_, a, _, rfl⟩ := mem_thomEncodings.1 hσ
+  obtain ⟨-, b, _, rfl⟩ := mem_thomEncodings.1 hτ
   rw [← lt_iff_thomLT p hrolle hne, ← lt_iff_thomLT p hrolle hne.symm]
   exact lt_or_gt_of_ne fun h ↦ hne (h ▸ rfl)
 

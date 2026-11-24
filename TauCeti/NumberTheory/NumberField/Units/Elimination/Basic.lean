@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.NumberTheory.NumberField.Units.Candidates
 public import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Units.Normalization
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
+import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # Elimination certificates for fundamental units
@@ -18,10 +20,12 @@ in `(1, B)` or by excluding it as the minimal polynomial of an integral primitiv
 The field test can be discharged by the index–discriminant formula. These are proofs of the tests,
 not Boolean assertions about an unchecked root-finding procedure.
 
-In a number field of prime degree and unit rank one, a certificate excludes every unit in the
-selected real interval. With `B = w u > 1`, normalization then proves that `u` generates the units
-modulo torsion. The certificate does not depend on a choice of real place: the root test excludes
-all real roots in the interval, and soundness can be applied at any real place.
+In a number field of unit rank one with a real place, whose degree is then prime, a certificate
+excludes every unit in the selected real interval, yielding the regulator lower bound
+`log B ≤ regulator K` for `B > 0` (`UnitCandidateEliminationCertificate.log_le_regulator`). With
+`B = w u > 1`, normalization also proves that `u` generates the units modulo torsion. The
+certificate does not depend on a choice of real place: the root test excludes all real roots in the
+interval, and soundness can be applied at any real place.
 
 ## References
 
@@ -43,7 +47,7 @@ polynomial of an integral primitive element of `K`. -/
 def UnitCandidateEliminationCertificate (K : Type*) [Field K] [NumberField K] (B : ℝ) : Prop :=
   ∀ f ∈ unitCandidates K B,
     (∀ x ∈ Set.Ioo (1 : ℝ) B, aeval x f ≠ 0) ∨
-      ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.1 ≠ f
+      ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.val ≠ f
 
 /-- The two possible proofs carried by an elimination certificate for each candidate. -/
 @[simp]
@@ -51,7 +55,7 @@ theorem unitCandidateEliminationCertificate_iff (B : ℝ) :
     UnitCandidateEliminationCertificate K B ↔
       ∀ f ∈ unitCandidates K B,
         (∀ x ∈ Set.Ioo (1 : ℝ) B, aeval x f ≠ 0) ∨
-          ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.1 ≠ f :=
+          ∀ θ : IntegralPrimitiveElement K, minpoly ℤ θ.val ≠ f :=
   (Iff.rfl)
 
 namespace UnitCandidateEliminationCertificate
@@ -73,14 +77,13 @@ theorem of_discr {B : ℝ}
       (heq ▸ θ.discr_minpoly_eq_index_sq_mul_discr)
 
 /-- A certificate excludes all units with real image strictly between `1` and `B`, provided the
-unit rank is one and the field degree is prime. -/
+unit rank is one. -/
 theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate K B)
-    (hr : rank K = 1) (hp : Nat.Prime (Module.finrank ℚ K))
-    {w : InfinitePlace K} (hw : w.IsReal) :
+    (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal) :
     ¬ ∃ v : (𝓞 K)ˣ,
       1 < w.embedding_of_isReal hw (v : K) ∧ w.embedding_of_isReal hw (v : K) < B := by
   intro ⟨v, hlo, hhi⟩
-  have hmem := minpoly_mem_unitCandidates hr hp hw v hlo hhi.le
+  have hmem := minpoly_mem_unitCandidates hr hw v hlo hhi.le
   rcases (unitCandidateEliminationCertificate_iff B).mp h _ hmem with hroot | hfield
   · apply hroot _ ⟨hlo, hhi⟩
     exact minpoly.aeval_algHom ℤ
@@ -92,16 +95,32 @@ theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate 
         rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs,
           abs_of_pos (zero_lt_one.trans hlo)]
       exact (ne_of_gt hlo) (hval ▸ hone)
-    exact hfield ⟨v, adjoin_eq_top_of_finrank_prime hp hnot⟩ rfl
+    exact hfield ⟨v, adjoin_eq_top_of_finrank_prime
+      (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot⟩ rfl
+
+/-- In unit rank one with a real infinite place, an elimination certificate at `B > 0` implies
+`log B ≤ regulator K`. -/
+theorem log_le_regulator {B : ℝ} (h : UnitCandidateEliminationCertificate K B)
+    (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal) (hB : 0 < B) :
+    Real.log B ≤ regulator K := by
+  obtain ⟨u, hu⟩ := exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
+  have hreg := regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w
+  rw [hw.mult_eq_one, Nat.cast_one, one_mul] at hreg
+  rw [hreg]
+  by_contra! hlt
+  have hpos : 0 < |Real.log (w u)| := hreg ▸ regulator_pos K
+  have hne : w u ≠ 1 := fun h1 ↦ by simp [h1] at hpos
+  obtain ⟨ε, δ, -, hlo, hhi⟩ := exists_normalized_unit_between B u w hw hB hne hlt
+  exact h.no_unit_between_real hr hw ⟨ε.val * δ, hlo, hhi⟩
 
 /-- **Soundness of unit-candidate elimination.** A unit expanding at a real place generates
 modulo torsion if every candidate below its absolute value has been eliminated. -/
 theorem sound {u : (𝓞 K)ˣ} {w : InfinitePlace K}
     (h : UnitCandidateEliminationCertificate K (w u))
-    (hr : rank K = 1) (hp : Nat.Prime (Module.finrank ℚ K)) (hw : w.IsReal) (hu : 1 < w u) :
-    Subgroup.closure {u} ⊔ torsion K = ⊤ :=
-  (generates_mod_torsion_iff_no_unit_between_real hr u w hw hu).mpr
-    (h.no_unit_between_real hr hp hw)
+    (hr : rank K = 1) (hw : w.IsReal) (hu : 1 < w u) :
+    Subgroup.closure {u} ⊔ torsion K = ⊤ := by
+  exact (generates_mod_torsion_iff_no_unit_between_real hr u w hw hu).mpr
+    (h.no_unit_between_real hr hw)
 
 end UnitCandidateEliminationCertificate
 

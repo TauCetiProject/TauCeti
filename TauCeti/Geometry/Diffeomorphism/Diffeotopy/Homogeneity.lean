@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Action
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
-public import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
 
 /-!
 # Homogeneity of connected manifolds
 
 For any two points `x` and `y` of a connected open subset `U` of a finite-dimensional
-boundaryless manifold `M`, some diffeotopy of `M` which fixes every point outside a compact subset
-of `U` carries `x` to `y`.
+Hausdorff boundaryless manifold `M`, some diffeotopy of `M` which fixes every point outside a
+compact subset of `U` carries `x` to `y`.
 In particular the diffeomorphisms of a connected manifold isotopic to the identity act
-transitively on it. Without connectedness, the orbits of the diffeomorphism group of a
-finite-dimensional boundaryless manifold are open and closed.
+transitively on it.
 
 Near a point `x`, take a bump function `ρ` in a chart around `x` and, for a nearby point `y`, the
 vector field `ρ • (y - x)` read in that chart (`TauCeti.bumpChartField`). Extended by zero, it is
@@ -38,10 +38,6 @@ theorem): it moves the centre of one ball to the centre of the other.
   compact subset of `U`.
 * `TauCeti.exists_diffeotopy_final_apply_eq`: a point of a connected manifold is carried to any
   other point by a compactly supported diffeotopy.
-* `TauCeti.isClopen_orbit_diffeomorph`: the orbits of the diffeomorphism group are open and
-  closed.
-* `TauCeti.orbit_diffeomorph_eq_univ`: on a connected manifold, the diffeomorphism group acts
-  transitively.
 
 ## References
 
@@ -54,7 +50,7 @@ public section
 
 noncomputable section
 
-open Set Filter Metric Topology VectorField
+open Set Filter Metric Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -101,8 +97,8 @@ theorem eventually_exists_diffeotopy_final_apply_eq (hm : 1 ≤ m)
   exact e.left_inv hys
 
 /-- **Homogeneity lemma.** For two points `x` and `y` of a preconnected open subset `U` of a
-finite-dimensional boundaryless manifold, some diffeotopy fixing everything outside a compact
-subset of `U` has final map sending `x` to `y`. For a `C^n` manifold the diffeotopy is `C^m`
+finite-dimensional Hausdorff boundaryless manifold, some diffeotopy fixing everything outside a
+compact subset of `U` has final map sending `x` to `y`. For a `C^n` manifold the diffeotopy is `C^m`
 for every `m` with `1 ≤ m` and `m + 1 ≤ n`; in particular it is smooth on a smooth manifold. -/
 theorem exists_diffeotopy_final_apply_eq_of_isPreconnected (hm : 1 ≤ m)
     (hmn : (m : ℕ∞ω) + 1 ≤ n) {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U) {x y : M}
@@ -120,7 +116,7 @@ theorem exists_diffeotopy_final_apply_eq_of_isPreconnected (hm : 1 ≤ m)
     refine ⟨Φ.symm, K, hK, hKU, fun t z hz ↦ Φ.symm_apply_eq_self_iff.2 (hΦK t hz), ?_⟩
     rw [Diffeotopy.final_symm, ← hab, Diffeomorph.symm_apply_apply]
 
-/-- **Homogeneity lemma.** For two points `x` and `y` of a connected finite-dimensional
+/-- **Homogeneity lemma.** For two points `x` and `y` of a connected finite-dimensional Hausdorff
 boundaryless manifold, some compactly supported diffeotopy has final map sending `x` to `y`.
 For a `C^n` manifold the diffeotopy is `C^m` for every `m` with `1 ≤ m` and `m + 1 ≤ n`. -/
 theorem exists_diffeotopy_final_apply_eq [PreconnectedSpace M] (hm : 1 ≤ m)
@@ -131,35 +127,5 @@ theorem exists_diffeotopy_final_apply_eq [PreconnectedSpace M] (hm : 1 ≤ m)
     exists_diffeotopy_final_apply_eq_of_isPreconnected (I := I) hm hmn isOpen_univ
       isPreconnected_univ (mem_univ x) (mem_univ y)
   exact ⟨Φ, K, hK, hΦK, hxy⟩
-
-/-! ### Orbits of the diffeomorphism group -/
-
-open MulAction
-
-/-- The orbits of the diffeomorphism group of a finite-dimensional boundaryless manifold are
-open. -/
-theorem isOpen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
-    IsOpen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) := by
-  refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
-  obtain ⟨g, rfl⟩ := hy
-  filter_upwards [eventually_exists_diffeotopy_final_apply_eq (I := I) hm hmn isOpen_univ
-    (mem_univ (g • x₀))] with z hz
-  obtain ⟨Φ, -, -, -, -, hz⟩ := hz
-  refine ⟨Φ.final * g, ?_⟩
-  dsimp only
-  rw [mul_smul, Diffeomorph.smul_def, hz]
-
-/-- The orbits of the diffeomorphism group of a finite-dimensional boundaryless manifold are open
-and closed. -/
-theorem isClopen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
-    IsClopen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :=
-  ⟨isClosed_orbit_of_forall_isOpen_orbit (isOpen_orbit_diffeomorph hm hmn) x₀,
-    isOpen_orbit_diffeomorph hm hmn x₀⟩
-
-/-- **Transitivity.** The diffeomorphism group of a connected finite-dimensional boundaryless
-manifold acts transitively. -/
-theorem orbit_diffeomorph_eq_univ [PreconnectedSpace M] (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (x₀ : M) : orbit (M ≃ₘ^m⟮I, I⟯ M) x₀ = univ :=
-  (isClopen_orbit_diffeomorph (I := I) hm hmn x₀).eq_univ ⟨x₀, mem_orbit_self x₀⟩
 
 end TauCeti

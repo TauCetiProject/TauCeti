@@ -97,7 +97,7 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
   have hh : h = ∑ w : InfinitePlace K, (w.mult : ℝ) * log (⨆ j, w (x j)) +
       ∑ v ∈ S, log (⨆ j, FinitePlace.mk v (x j)) := by
     rw [hh_def, logHeight_eq_log_mulHeight, NumberField.mulHeight_eq_prod_of_isPrimitive S hx,
-      log_prod_iSup_eq S (fun w ↦ iSup_apply_pos w hx0) (fun v _ ↦ iSup_apply_pos _ hx0)]
+      log_prod_iSup_eq S (fun w ↦ iSup_apply_pos_iff.2 hx0) (fun v _ ↦ iSup_apply_pos_iff.2 hx0)]
   -- an `S`-unit whose logarithms are close to the share `mult v / D` of the height at each place
   obtain ⟨u, hu, hu'⟩ := happrox
     (fun w ↦ w.mult / D * h - w.mult * log (⨆ j, w (x j)))
@@ -111,7 +111,6 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
       linarith)
   refine ⟨u, ?_⟩
   set c : K := ((u : Kˣ) : K)
-  have hc : c ≠ 0 := (u : Kˣ).ne_zero
   set y : Option ι → K := fun o ↦ o.elim 1 (c • x)
   have hy0 : y ≠ 0 := fun h ↦ one_ne_zero (congrFun h none)
   have hyS (o : Option ι) : y o ∈ (S : Set (HeightOneSpectrum (𝓞 K))).integer K := by
@@ -120,12 +119,11 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
     | some j => exact (hx.unit_smul u).mem_integer j
   have hinf (w : InfinitePlace K) :
       (w.mult : ℝ) * log (⨆ o, w (y o)) ≤ w.mult / D * h + R :=
-    mul_log_iSup_option_elim_smul_le w hx0 hc (Nat.cast_nonneg _) (by positivity) (by
-      linarith [(abs_le.mp (hu w)).2])
+    mul_log_iSup_option_elim_smul_le w (by positivity) (by linarith [(abs_le.mp (hu w)).2])
   have hfin (v : HeightOneSpectrum (𝓞 K)) (hv : v ∈ S) :
       log (⨆ o, FinitePlace.mk v (y o)) ≤ h / D + R := by
-    simpa using mul_log_iSup_option_elim_smul_le (FinitePlace.mk v) hx0 hc zero_le_one
-      (by positivity) (by linarith [(abs_le.mp (hu' v hv)).2])
+    simpa using mul_log_iSup_option_elim_smul_le (FinitePlace.mk v) (m := 1) (by positivity)
+      (by linarith [(abs_le.mp (hu' v hv)).2])
   rw [logHeightAff_eq_log_mulHeightAff, mulHeightAff_def]
   calc log (mulHeight y)
       ≤ log ((∏ w : InfinitePlace K, (⨆ o, w (y o)) ^ w.mult) *
@@ -135,7 +133,7 @@ theorem exists_forall_logHeightAff_smul_le (S : Finset (HeightOneSpectrum (𝓞 
           ∑ v ∈ S, log (⨆ o, FinitePlace.mk v (y o)) :=
       log_prod_iSup_eq S (fun w ↦ zero_lt_one.trans_le (one_le_iSup_option_elim w _))
         (fun v _ ↦ zero_lt_one.trans_le (one_le_iSup_option_elim (FinitePlace.mk v) _))
-    _ ≤ ∑ w : InfinitePlace K, (w.mult / D * h + R) + ∑ v ∈ S, (h / D + R) :=
+    _ ≤ ∑ w : InfinitePlace K, (w.mult / D * h + R) + ∑ _ ∈ S, (h / D + R) :=
       add_le_add (Finset.sum_le_sum fun w _ ↦ hinf w) (Finset.sum_le_sum hfin)
     _ = h + (Fintype.card (InfinitePlace K) + #S) * R := by
       rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.sum_div]

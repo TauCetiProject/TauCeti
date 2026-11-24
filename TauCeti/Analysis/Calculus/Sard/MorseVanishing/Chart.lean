@@ -11,7 +11,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 import TauCeti.Analysis.Calculus.ContDiff.Pi
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
-import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.LinearAlgebra.Pi.Coordinates
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiUpdate
 
 /-!
 # Graph charts used by the Morse vanishing lemma
@@ -54,21 +55,21 @@ theorem exists_graph {k : ℕ} (hk : 1 ≤ k) {w : (Fin (n + 1) → ℝ) → ℝ
       ∀ᶠ x in 𝓝 x₀, w x = 0 →
         x = Fin.insertNth (α := fun _ => ℝ) i (θ (Fin.removeNth i x)) (Fin.removeNth i x) := by
   classical
-  obtain ⟨i, hi⟩ := (fderiv ℝ w x₀).exists_apply_single_ne_zero hd
+  obtain ⟨i, hi⟩ := (fderiv ℝ w x₀).toLinearMap.exists_apply_single_ne_zero
+    ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hd)
   have hkne : ((k : ℕ) : WithTop ℕ∞) ≠ 0 := by
     simp only [ne_eq, Nat.cast_eq_zero]
     omega
   have hdiff : Differentiable ℝ w := hw.differentiable hkne
-  obtain ⟨Le, hLecoe⟩ := (fderiv ℝ w x₀).exists_pi_update_equiv i hi
+  obtain ⟨Le, hLecoe⟩ := (fderiv ℝ w x₀).exists_pi_update_equiv i hi.isUnit
+    (continuous_mul_const _)
   have hΦc : ContDiffAt ℝ k (fun x => Function.update x i (w x)) x₀ :=
     (hw.update_self i).contDiffAt
   have hΦd : HasFDerivAt (fun x => Function.update x i (w x))
       (Le : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ)) x₀ := by
     rw [hLecoe]
-    convert (hdiff x₀).hasFDerivAt.update_self i using 1
-    ext v m
-    by_cases hm : m = i <;> simp [ContinuousLinearMap.pi_apply, hm]
-  set ψ : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) := hΦc.localInverse hΦd hkne with hψdef
+    exact (hdiff x₀).hasFDerivAt.update_self i
+  set ψ : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) := hΦc.localInverse hΦd hkne
   have hψc : ContDiffAt ℝ k ψ (Function.update x₀ i (w x₀)) := hΦc.to_localInverse hΦd hkne
   have hleft : ∀ᶠ x in 𝓝 x₀, ψ (Function.update x i (w x)) = x :=
     (hΦc.hasStrictFDerivAt hΦd hkne).eventually_left_inverse
@@ -79,7 +80,7 @@ theorem exists_graph {k : ℕ} (hk : 1 ≤ k) {w : (Fin (n + 1) → ℝ) → ℝ
     intro x hx
     simp only [Fin.insertNth_removeNth, hx]
   set emb : (Fin n → ℝ) → (Fin (n + 1) → ℝ) :=
-    fun y => Fin.insertNth (α := fun _ => ℝ) i (0 : ℝ) y with hembdef
+    fun y => Fin.insertNth (α := fun _ => ℝ) i (0 : ℝ) y
   have hembc : ContDiff ℝ k emb := contDiff_const.finInsertNth i contDiff_id
   have hembx₀ : emb (Fin.removeNth i x₀) = Function.update x₀ i (w x₀) := (hkey x₀ hx₀).symm
   have hθ₀ : ContDiffAt ℝ k (fun y : Fin n → ℝ => ψ (emb y) i) (Fin.removeNth i x₀) := by

@@ -77,11 +77,11 @@ variable {K : Type*} [Field K] [NumberField K]
 weights `r` sum to at most `2 r₀` and `m ≤ r₀ + 1`, the height of an `m × m` determinant of
 Hasse derivatives of `P` is at most `m (h(P) + 4 r₀ [K : ℚ])`. -/
 private theorem logHeight_det_hasseDeriv_le_mul {n m : ℕ} {r : Fin (n + 1) → ℕ}
-    {P : MvPolynomial (Fin (n + 1)) K} (hP : P ≠ 0) (hdeg : ∀ j, P.degreeOf j ≤ r j)
+    {P : MvPolynomial (Fin (n + 1)) K} (hdeg : ∀ j, P.degreeOf j ≤ r j)
     (hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0) (hm : m ≤ r 0 + 1) (E : Fin m → Fin m → Fin (n + 1) →₀ ℕ) :
     (Matrix.of fun k l ↦ hasseDeriv (E k l) P).det.logHeight ≤
       m * (P.logHeight + 4 * r 0 * finrank ℚ K) := by
-  have h := logHeight_det_hasseDeriv_le hP hdeg E
+  have h := logHeight_det_hasseDeriv_le hdeg E
   rw [Fintype.card_fin, NumberField.totalWeight_eq_finrank, ← sum_mul] at h
   have hD : (0 : ℝ) ≤ finrank ℚ K := Nat.cast_nonneg _
   have hm' : (m : ℝ) ≤ r 0 + 1 := by exact_mod_cast hm
@@ -98,7 +98,6 @@ private theorem logHeight_det_hasseDeriv_le_mul {n m : ℕ} {r : Fin (n + 1) →
           gcongr
           linarith [Real.log_le_sub_one_of_pos hm0']
   have hlog : Real.log 2 < 0.6931471808 := Real.log_two_lt_d9
-  have hlog0 : 0 < Real.log 2 := Real.log_pos one_lt_two
   have hm0 : (0 : ℝ) ≤ m := Nat.cast_nonneg _
   have hr0 : (0 : ℝ) ≤ r 0 := Nat.cast_nonneg _
   have hkey : Real.log (m ! : ℝ) + 2 * m * ((∑ j, (r j : ℝ)) * Real.log 2) ≤ 4 * m * r 0 := by
@@ -112,10 +111,8 @@ and `t > 2 (n + 2) θ`, then `2 (n + 1) θ ^ 2 + σ < min ((t - σ) / 2) ((t - �
 private theorem lt_min_of_mul_lt {n : ℕ} {θ σ t : ℝ} (hθ : 0 < θ) (hθ' : θ < 1 / 2)
     (hσθ : σ ≤ θ ^ 2) (ht : 2 * (n + 2) * θ < t) :
     2 * (n + 1) * θ ^ 2 + σ < min ((t - σ) / 2) ((t - σ) ^ 2 / 2) := by
-  have hn : (0 : ℝ) ≤ n := Nat.cast_nonneg n
   have hθ2 : θ ^ 2 < θ / 2 := by nlinarith
   have hδ : (2 * n + 7 / 2) * θ < t - σ := by nlinarith
-  have hA : 2 * (n + 1) * θ ^ 2 + σ ≤ (2 * n + 3) * θ ^ 2 := by nlinarith
   refine lt_min ?_ ?_
   · nlinarith
   · have hδ0 : 0 < (2 * n + 7 / 2) * θ := by positivity
@@ -201,7 +198,7 @@ private theorem weightedIndex_le_ofReal_of_half_le {n : ℕ} {r : Fin (n + 1 + 1
 /-- The heights of the two Wronskians in the separation `P = ∑ fₖ gₖ(Xₙ)` are each at most
 `m (h(P) + 4 r₀ [K : ℚ])`, as their product is a determinant of Hasse derivatives of `P`. -/
 private theorem logHeight_wronskians_le {n m : ℕ} {r : Fin (n + 1 + 1) → ℕ}
-    {P : MvPolynomial (Fin (n + 1 + 1)) K} (hP : P ≠ 0) (hdeg : ∀ j, P.degreeOf j ≤ r j)
+    {P : MvPolynomial (Fin (n + 1 + 1)) K} (hdeg : ∀ j, P.degreeOf j ≤ r j)
     (hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0) (hm : m ≤ r 0 + 1)
     {μ : Fin m → Fin (n + 1 + 1) →₀ ℕ} {f : Fin m → MvPolynomial (Fin (n + 1 + 1)) K}
     {g : Fin m → Polynomial K} (hμl : ∀ k, μ k (Fin.last (n + 1)) = 0)
@@ -211,7 +208,7 @@ private theorem logHeight_wronskians_le {n m : ℕ} {r : Fin (n + 1 + 1) → ℕ
     (hWg : Polynomial.hasseWronskian g ≠ 0) :
     (genWronskian μ f).logHeight ≤ m * (P.logHeight + 4 * r 0 * finrank ℚ K) ∧
       (Polynomial.hasseWronskian g).logHeight ≤ m * (P.logHeight + 4 * r 0 * finrank ℚ K) := by
-  have hheight := logHeight_det_hasseDeriv_le_mul hP hdeg hsum hm
+  have hheight := logHeight_det_hasseDeriv_le_mul hdeg hsum hm
     (fun k l ↦ μ k + Finsupp.single (Fin.last (n + 1)) (l : ℕ))
   have hdet : (Matrix.of fun k l : Fin m ↦
       hasseDeriv (μ k + Finsupp.single (Fin.last (n + 1)) (l : ℕ)) P).det =
@@ -328,7 +325,7 @@ private theorem false_of_index_bounds {n m : ℕ} {θ σ t : ℝ} {a b : ℝ≥0
 /-- The inductive step of Roth's lemma. -/
 private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (n + 1) := by
   intro θ hθ hθσ r hr hratio P hP hdeg β hβ
-  set σ := θ ^ 2 ^ (n + 1) with hσ
+  set σ := θ ^ 2 ^ (n + 1)
   have hσ0 : 0 < σ := by positivity
   have hanti : Antitone r := Fin.antitone_iff_succ_le.2 fun i ↦ by
     have h := hratio i
@@ -364,7 +361,7 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
   have hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0 :=
     Fin.sum_le_two_mul_of_two_mul_succ_le (fun _ ↦ Nat.cast_nonneg _) fun i ↦ by
       nlinarith [hratio i, Nat.cast_nonneg (α := ℝ) (r i.castSucc)]
-  obtain ⟨hWfh, hWgh⟩ := logHeight_wronskians_le hP hdeg hsum
+  obtain ⟨hWfh, hWgh⟩ := logHeight_wronskians_le hdeg hsum
     (hm'.trans (by have := hanti (Fin.zero_le (Fin.last (n + 1))); omega)) hμl hfv hPfg hWfl hWf
     hWg
   -- Lower bound: the indices of the two Wronskians add up to at least `m min (δ / 2) (δ² / 2)`,

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 public import Mathlib.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.OpenSimplex
 
 /-!
@@ -28,6 +29,8 @@ in `TauCeti.Analysis.Convex.SimplicialComplex.CommonSubdivision`.
 
 * `Geometry.SimplicialComplex.exists_mem_faces_subset_mem_intrinsicInterior`: a point of a simplex
   lies in the open simplex of one of its faces.
+* `Geometry.SimplicialComplex.intrinsicFrontier_convexHull_subset_iUnion`: the intrinsic frontier
+  of a simplex is covered by the other simplices of the complex it contains.
 * `Geometry.SimplicialComplex.eq_of_mem_intrinsicInterior`: distinct faces have disjoint open
   simplices.
 * `Geometry.SimplicialComplex.existsUnique_mem_intrinsicInterior`: every point of `|K|` lies in
@@ -66,11 +69,24 @@ theorem exists_mem_faces_subset_mem_intrinsicInterior (hs : s ∈ K.faces)
   rw [← Finset.setOfPred_mem, ← Subtype.range_coe_subtype,
     (K.indep ht).mem_intrinsicInterior_convexHull_iff]
   have ht₁' : ∑ y : t, w y = 1 := by rw [Finset.sum_coe_sort t w, ht₁]
-  refine ⟨fun y => w y, fun y => (hw₀ _ (Finset.mem_filter.1 y.2).1).lt_of_ne'
-    (Finset.mem_filter.1 y.2).2, ht₁', ?_⟩
+  refine ⟨fun y => w y, fun y => (hw₀ _ (Finset.mem_filter.1 y.property).1).lt_of_ne'
+    (Finset.mem_filter.1 y.property).2, ht₁', ?_⟩
   rw [Finset.affineCombination_eq_linear_combination _ _ _ ht₁',
     Finset.sum_coe_sort t fun y => w y • y]
   exact Finset.sum_filter_of_ne fun y _ hy => left_ne_zero_of_smul hy
+
+/-- The intrinsic frontier of a simplex `s` of a geometric simplicial complex is covered by the
+simplices of the complex contained in `s` other than `s` itself. -/
+theorem intrinsicFrontier_convexHull_subset_iUnion (hs : s ∈ K.faces) :
+    intrinsicFrontier ℝ (convexHull ℝ (s : Set E)) ⊆
+      ⋃ (t ∈ K.faces) (_ : t ≠ s ∧ convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E)),
+        convexHull ℝ (t : Set E) := by
+  intro x hx
+  have hcl : IsClosed (convexHull ℝ (s : Set E)) := s.finite_toSet.isClosed_convexHull ℝ
+  rw [← hcl.sdiff_intrinsicInterior] at hx
+  obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior hs hx.1
+  exact mem_iUnion₂.2 ⟨t, ht, mem_iUnion.2 ⟨⟨fun h => hx.2 (h ▸ hxt),
+    convexHull_mono (Finset.coe_subset.2 hts)⟩, intrinsicInterior_subset hxt⟩⟩
 
 /-- **The open simplices of a complex are disjoint.** A point lies in the intrinsic interior of
 at most one simplex of a geometric simplicial complex. -/
@@ -98,7 +114,7 @@ theorem pairwise_disjoint_intrinsicInterior (K : SimplicialComplex ℝ E) :
       (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := by
   intro s t hst
   exact Set.disjoint_left.mpr fun x hxs hxt =>
-    hst (Subtype.ext (eq_of_mem_intrinsicInterior s.2 t.2 hxs hxt))
+    hst (Subtype.ext (eq_of_mem_intrinsicInterior s.property t.property hxs hxt))
 
 /-- The open simplex of a face outside a subcomplex misses the subcomplex's underlying space. -/
 theorem disjoint_intrinsicInterior_space_of_not_mem {A : SimplicialComplex ℝ E}

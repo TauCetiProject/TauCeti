@@ -20,8 +20,9 @@ including for an empty index type. The characterization by finite superlevel set
 choosing an enumeration of the original index type.
 
 For a family tending to zero along the cofinite filter, its rearrangement tends to zero
-and bounds every finite product by the product of the same number of initial terms.
-This supplies ordered bounds for determinants with arbitrarily indexed rows.
+and bounds every finite product, and every finite sum, by the product or sum of the same number
+of initial terms. This supplies ordered bounds for determinants with arbitrarily indexed rows, and
+bounds the sum of a family by the sum of its rearrangement.
 -/
 
 public section
@@ -58,10 +59,30 @@ private theorem bddAbove_rearrangementBounds (hr : BddAbove (Set.range r)) (n : 
   · obtain ⟨i, hi⟩ := card_pos.mp (by omega : 0 < s.card)
     exact (ha i hi).trans ((hM (Set.mem_range_self i)).trans (le_max_right _ _))
 
+/-- For an unbounded family the supremum defining the rearrangement is junk, and every term is
+zero. -/
+@[simp]
+theorem decreasingRearrangement_eq_zero_of_not_bddAbove
+    (hr : ¬ BddAbove (Set.range r)) (n : ℕ) : decreasingRearrangement r n = 0 := by
+  apply Real.sSup_of_not_bddAbove
+  rintro ⟨M, hM⟩
+  apply hr
+  have hT : {i | M + 1 ≤ r i}.Finite := by
+    by_contra hinf
+    obtain ⟨s, hsT, hs⟩ := Set.Infinite.exists_subset_card_eq hinf (n + 1)
+    have hmem : M + 1 ∈ rearrangementBounds r n :=
+      Set.mem_insert_of_mem _ ⟨s, hs, fun i hi ↦ hsT hi⟩
+    linarith [hM hmem]
+  obtain ⟨B, hB⟩ := (hT.image r).bddAbove
+  refine ⟨max (M + 1) B, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  by_cases hi : M + 1 ≤ r i
+  · exact (hB ⟨i, hi, rfl⟩).trans (le_max_right _ _)
+  · exact (not_le.1 hi).le.trans (le_max_left _ _)
+
 /-- Rearranged bounds are nonnegative, even when there are no indices. -/
-theorem decreasingRearrangement_nonneg (hr : BddAbove (Set.range r)) (n : ℕ) :
-    0 ≤ decreasingRearrangement r n :=
-  le_csSup (bddAbove_rearrangementBounds hr n) (Set.mem_insert _ _)
+theorem decreasingRearrangement_nonneg (n : ℕ) : 0 ≤ decreasingRearrangement r n :=
+  Real.sSup_nonneg' ⟨0, Set.mem_insert _ _, le_rfl⟩
 
 /-- A lower bound on `n + 1` distinct entries is bounded by the `n`-th rearranged entry. -/
 theorem le_decreasingRearrangement (hr : BddAbove (Set.range r))
@@ -70,14 +91,17 @@ theorem le_decreasingRearrangement (hr : BddAbove (Set.range r))
   le_csSup (bddAbove_rearrangementBounds hr n) (Set.mem_insert_of_mem _ ⟨s, hs, ha⟩)
 
 /-- The rearrangement is antitone. -/
-theorem antitone_decreasingRearrangement (hr : BddAbove (Set.range r)) :
-    Antitone (decreasingRearrangement r) := by
-  intro m n hmn
-  apply csSup_le (nonempty_rearrangementBounds r n)
-  rintro a (rfl | ⟨s, hs, ha⟩)
-  · exact decreasingRearrangement_nonneg hr m
-  · obtain ⟨t, hts, ht⟩ := exists_subset_card_eq (by omega : m + 1 ≤ s.card)
-    exact le_decreasingRearrangement hr ht (fun i hi ↦ ha i (hts hi))
+theorem antitone_decreasingRearrangement : Antitone (decreasingRearrangement r) := by
+  by_cases hr : BddAbove (Set.range r)
+  · intro m n hmn
+    apply csSup_le (nonempty_rearrangementBounds r n)
+    rintro a (rfl | ⟨s, hs, ha⟩)
+    · exact decreasingRearrangement_nonneg m
+    · obtain ⟨t, hts, ht⟩ := exists_subset_card_eq (by omega : m + 1 ≤ s.card)
+      exact le_decreasingRearrangement hr ht (fun i hi ↦ ha i (hts hi))
+  · intro m n _
+    rw [decreasingRearrangement_eq_zero_of_not_bddAbove hr,
+      decreasingRearrangement_eq_zero_of_not_bddAbove hr]
 
 /-- A finite set containing every entry larger than `a` bounds the rearrangement from its
 cardinality onward. In particular finite support gives zero padding. -/
@@ -96,10 +120,7 @@ theorem decreasingRearrangement_zero (n : ℕ) :
     decreasingRearrangement (0 : ι → ℝ) n = 0 := by
   apply le_antisymm
   · exact decreasingRearrangement_le_of_card_le le_rfl (s := ∅) (by simp) (by simp)
-  · apply decreasingRearrangement_nonneg
-    refine ⟨0, ?_⟩
-    rintro _ ⟨i, rfl⟩
-    exact le_rfl
+  · exact decreasingRearrangement_nonneg n
 
 /-- Strict superlevels characterize the rearrangement, retaining repeated values and their
 multiplicities. The threshold may be zero. -/
@@ -124,7 +145,7 @@ theorem card_le_of_forall_decreasingRearrangement_lt (hr : BddAbove (Set.range r
     {s : Finset ι} (hs : ∀ i ∈ s, decreasingRearrangement r n < r i) : s.card ≤ n := by
   by_contra! h
   obtain ⟨u, hu, hu'⟩ := exists_subset_card_eq (Nat.succ_le_of_lt h)
-  exact lt_irrefl _ ((lt_decreasingRearrangement_iff hr (decreasingRearrangement_nonneg hr n)
+  exact lt_irrefl _ ((lt_decreasingRearrangement_iff hr (decreasingRearrangement_nonneg n)
     n).mpr ⟨u, hu', fun i hi ↦ hs i (hu hi)⟩)
 
 /-- Only finitely many entries exceed a given rearranged entry. -/
@@ -160,10 +181,21 @@ theorem setOf_lt_decreasingRearrangement {a : ℝ}
 
 /-- Discarding entries that are not positive does not change the rearrangement: restricting `r`
 to a set of indices containing every positive entry has the same rearrangement. -/
-theorem decreasingRearrangement_comp_subtypeVal (hr : BddAbove (Set.range r)) {S : Set ι}
+theorem decreasingRearrangement_comp_subtypeVal {S : Set ι}
     (hS : ∀ i, 0 < r i → i ∈ S) (n : ℕ) :
     decreasingRearrangement (fun i : S ↦ r i) n = decreasingRearrangement r n := by
   classical
+  by_cases hr : BddAbove (Set.range r)
+  swap
+  · have hr' : ¬ BddAbove (Set.range fun i : S ↦ r i) := by
+      rintro ⟨M, hM⟩
+      refine hr ⟨max M 0, ?_⟩
+      rintro _ ⟨i, rfl⟩
+      by_cases hi : 0 < r i
+      · exact (hM ⟨⟨i, hS i hi⟩, rfl⟩).trans (le_max_left _ _)
+      · exact (not_lt.1 hi).trans (le_max_right _ _)
+    rw [decreasingRearrangement_eq_zero_of_not_bddAbove hr,
+      decreasingRearrangement_eq_zero_of_not_bddAbove hr']
   have hr' : BddAbove (Set.range fun i : S ↦ r i) :=
     hr.mono (Set.range_comp_subset_range _ r)
   -- Both rearrangements have the same strict superlevels at nonnegative thresholds.
@@ -177,8 +209,8 @@ theorem decreasingRearrangement_comp_subtypeVal (hr : BddAbove (Set.range r)) {S
       have htS : ∀ i ∈ t, i ∈ S := fun i hi ↦ hS i (ha.trans_lt (hta i hi))
       refine ⟨t.subtype (· ∈ S), ?_, fun i hi ↦ hta i (mem_subtype.mp hi)⟩
       rw [card_subtype, filter_true_of_mem htS, ht]
-  have h₀ := decreasingRearrangement_nonneg hr' n
-  have h₁ := decreasingRearrangement_nonneg hr n
+  have h₀ := decreasingRearrangement_nonneg (r := fun i : S ↦ r i) n
+  have h₁ := decreasingRearrangement_nonneg (r := r) n
   rcases lt_trichotomy (decreasingRearrangement (fun i : S ↦ r i) n)
     (decreasingRearrangement r n) with h | h | h
   · exact absurd ((key _ h₀).mpr h) (lt_irrefl _)
@@ -224,7 +256,7 @@ theorem tendsto_decreasingRearrangement (hr : Tendsto r cofinite (𝓝 0)) :
     Tendsto (decreasingRearrangement r) atTop (𝓝 0) := by
   classical
   refine tendsto_order.mpr ⟨fun a ha ↦ Eventually.of_forall fun n ↦
-    ha.trans_le (decreasingRearrangement_nonneg hr.bddAbove_range_of_cofinite n), fun ε hε ↦ ?_⟩
+    ha.trans_le (decreasingRearrangement_nonneg n), fun ε hε ↦ ?_⟩
   have hfin : {i | ε / 2 ≤ r i}.Finite := by
     simpa only [Filter.eventually_cofinite, not_lt] using
       hr.eventually_lt_const (half_pos hε)
@@ -232,29 +264,42 @@ theorem tendsto_decreasingRearrangement (hr : Tendsto r cofinite (𝓝 0)) :
   exact (decreasingRearrangement_le_of_card_le (half_pos hε).le hn
     (fun i hi ↦ le_of_lt (lt_of_not_ge (by simpa using hi)))).trans_lt (half_lt_self hε)
 
+/-- The entries of a finite set, listed in nonincreasing order, are bounded termwise by the
+rearrangement. -/
+private theorem exists_equiv_le_decreasingRearrangement (hr : BddAbove (Set.range r))
+    (s : Finset ι) : ∃ g : Fin s.card ≃ s, ∀ k, r (g k) ≤ decreasingRearrangement r k := by
+  classical
+  let e : Fin s.card ≃ s := (Fintype.equivFinOfCardEq (Fintype.card_coe s)).symm
+  let σ := Tuple.sortDesc fun k ↦ r (e k)
+  have hg : Antitone fun k ↦ r (e (σ k)) := Tuple.antitone_sortDesc fun k ↦ r (e k)
+  refine ⟨σ.trans e, fun k ↦ ?_⟩
+  apply le_decreasingRearrangement hr (s := (Iic k).map
+    (σ.toEmbedding.trans (e.toEmbedding.trans (Function.Embedding.subtype _))))
+  · simp
+  · intro i hi
+    obtain ⟨j, hj, rfl⟩ := mem_map.mp hi
+    exact hg (mem_Iic.mp hj)
+
 /-- Every finite product of entries is bounded by the initial product of the rearrangement. -/
 theorem prod_le_prod_decreasingRearrangement (hr₀ : ∀ i, 0 ≤ r i)
     (hr : BddAbove (Set.range r)) (s : Finset ι) :
     ∏ i ∈ s, r i ≤ ∏ k ∈ range s.card, decreasingRearrangement r k := by
-  classical
-  let e : Fin s.card ≃ s := (Fintype.equivFinOfCardEq (Fintype.card_coe s)).symm
-  let f : Fin s.card → ℝ := fun k ↦ r (e k)
-  let σ := Tuple.sortDesc f
-  let g : Fin s.card ↪ ι := σ.toEmbedding.trans (e.toEmbedding.trans (Function.Embedding.subtype _))
-  have hgk (k : Fin s.card) : g k = (e (σ k) : ι) := by simp [g]
-  have hg : Antitone (r ∘ g) := Tuple.antitone_sortDesc f
-  have hle (k : Fin s.card) : r (g k) ≤ decreasingRearrangement r k := by
-    apply le_decreasingRearrangement hr (s := (Iic k).map g)
-    · simp
-    · intro i hi
-      obtain ⟨j, hj, rfl⟩ := mem_map.mp hi
-      exact hg (mem_Iic.mp hj)
+  obtain ⟨g, hg⟩ := exists_equiv_le_decreasingRearrangement hr s
   calc
     ∏ i ∈ s, r i = ∏ k : Fin s.card, r (g k) := by
-      rw [← prod_coe_sort s, ← e.prod_comp, ← Equiv.prod_comp σ]
-      simp only [hgk]
+      rw [← prod_coe_sort s, ← g.prod_comp]
     _ ≤ ∏ k : Fin s.card, decreasingRearrangement r k :=
-      prod_le_prod₀ (fun k _ ↦ hr₀ _) (fun k _ ↦ hle k)
+      prod_le_prod₀ (fun k _ ↦ hr₀ _) (fun k _ ↦ hg k)
     _ = _ := Fin.prod_univ_eq_prod_range _ _
+
+/-- Every finite sum of entries is bounded by the initial sum of the rearrangement. -/
+theorem sum_le_sum_decreasingRearrangement (hr : BddAbove (Set.range r)) (s : Finset ι) :
+    ∑ i ∈ s, r i ≤ ∑ k ∈ range s.card, decreasingRearrangement r k := by
+  obtain ⟨g, hg⟩ := exists_equiv_le_decreasingRearrangement hr s
+  calc
+    ∑ i ∈ s, r i = ∑ k : Fin s.card, r (g k) := by
+      rw [← sum_coe_sort s, ← g.sum_comp]
+    _ ≤ ∑ k : Fin s.card, decreasingRearrangement r k := sum_le_sum fun k _ ↦ hg k
+    _ = _ := Fin.sum_univ_eq_sum_range _ _
 
 end TauCeti

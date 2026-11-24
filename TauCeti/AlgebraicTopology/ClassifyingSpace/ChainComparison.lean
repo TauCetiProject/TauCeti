@@ -119,6 +119,23 @@ theorem universalGSpaceCellularChainComplexIso_hom_f (n : ℕ) :
   ext x
   simp [LinearEquiv.trans_apply]
 
+/-- The scaled cellular comparison intertwines the geometric differential and the ordered
+simplicial boundary, at the level of underlying modules. -/
+@[reassoc]
+theorem universalGSpaceCellularChainLinearEquiv_comp_boundary (n : ℕ) :
+    (universalGSpaceCellularChainLinearEquiv k G (n + 1)).toModuleIso.hom ≫
+        (forget₂ (Rep k G) (ModuleCat k)).map (universalGSpaceBoundary k G n) =
+      cellularDifferential (univ : Set (universalGSpace G)) (ModuleCat.of k k) n ≫
+        (universalGSpaceCellularChainLinearEquiv k G n).toModuleIso.hom := by
+  have h := (universalGSpaceCellularChainComplexIso k G).hom.comm (n + 1) n
+  simp only [universalGSpaceCellularChainComplexIso_hom_f, cellularChainComplex_d,
+    Functor.mapHomologicalComplex_obj_d, universalGSpaceChainComplex_d] at h
+  -- Reduce the exposed ordered-chain terms so the cellular transports compose in ModuleCat.
+  dsimp only [universalGSpaceChainComplex] at h
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at h
+  exact (cancel_epi (eqToHom (cellularChainComplex_X
+    (univ : Set (universalGSpace G)) (ModuleCat.of k k) (n + 1)))).mp h
+
 /-- Evaluating the chain comparison gives the linear comparison after identifying the cellular
 chain group. The target is the underlying permutation module of the ordered-chain complex. -/
 -- Specify the target of `Hom.hom` to keep the implicit codomain in simp normal form.
@@ -171,14 +188,14 @@ variable {G}
 /-- Translation of Milnor's join, restricted to the universal subset used by cellular chains. -/
 def universalGSpaceCellularTranslation (g : G) :
     TopCat.of (univ : Set (universalGSpace G)) ⟶ TopCat.of (univ : Set (universalGSpace G)) :=
-  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, mem_univ _⟩,
-    ((continuous_const_smul g).comp continuous_subtype_val).subtype_mk _⟩
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.val, mem_univ _⟩,
+    ((continuous_const_smul g).comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- Translation on the universal subset is ordinary translation on the underlying point. -/
 @[simp]
 theorem universalGSpaceCellularTranslation_apply (g : G)
     (x : (univ : Set (universalGSpace G))) :
-    (universalGSpaceCellularTranslation g x).1 = g • x.1 := (rfl)
+    (universalGSpaceCellularTranslation g x).val = g • x.val := (rfl)
 
 /-- Translation by the identity is the identity map of the universal subset. -/
 @[simp]
@@ -189,7 +206,7 @@ theorem universalGSpaceCellularTranslation_one :
   apply Subtype.ext
   -- The concrete hom of `TopCat.ofHom` evaluates its stored continuous map; the subtype
   -- projection and the `TopCat` identity reduce to the underlying point and its translation.
-  exact one_smul G x.1
+  exact one_smul G x.val
 
 /-- Translation by a product is successive translation on the universal subset. -/
 theorem universalGSpaceCellularTranslation_mul (g h : G) :
@@ -200,7 +217,7 @@ theorem universalGSpaceCellularTranslation_mul (g h : G) :
   apply Subtype.ext
   -- Concrete `TopCat` composition evaluates the two stored continuous maps successively;
   -- projecting the subtype constructors gives the nested translations of the underlying point.
-  exact mul_smul g h x.1
+  exact mul_smul g h x.val
 
 /-- Translation preserves the skeletal filtration of the simplicial CW structure. -/
 theorem isCellular_universalGSpaceCellularTranslation (g : G) :

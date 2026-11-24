@@ -5,12 +5,13 @@ Authors: Claude, Codex
 -/
 module
 
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Probability.Distributions.Cauchy
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Student's t distribution
@@ -40,6 +41,7 @@ hypothesis.
 * `hasPDF_of_hasLaw_studentTMeasure`, `pdf_eq_studentTPDF_of_hasLaw_studentTMeasure` and
   `rnDeriv_studentTMeasure` — the `HasPDF` bridge, the density, and the Radon–Nikodym derivative;
 * `studentTMeasure_map_neg` — the law is invariant under reflection in the origin;
+* `ProbabilityTheory.HasLaw.neg_studentTMeasure` — the corresponding random-variable reflection;
 * `studentTMeasure_one` — one degree of freedom gives the standard Cauchy law
   `ProbabilityTheory.cauchyMeasure 0 1`;
 * `measurable_studentTMeasure` — the family is measurable in its parameter, so it can be used as a
@@ -263,7 +265,7 @@ theorem integrable_studentTMeasure_iff {F : Type*} [NormedAddCommGroup F] [Norme
     Integrable f (studentTMeasure ν) ↔
       Integrable (fun x : ℝ => studentTPDFReal ν x • f x) := by
   rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν))
 
 /-- An integral against a Student t law is the density-weighted Lebesgue integral. -/
@@ -271,16 +273,17 @@ theorem integral_studentTMeasure_eq {F : Type*} [NormedAddCommGroup F] [NormedSp
     (ν : ℝ) (f : ℝ → F) :
     ∫ x, f x ∂studentTMeasure ν = ∫ x, studentTPDFReal ν x • f x := by
   rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν)) f
 
-/-- The real mass of a measurable set under a Student t law is the integral of its real-valued
-density. -/
-theorem measureReal_studentTMeasure {s : Set ℝ} (hs : MeasurableSet s)
-    : (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
-  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (studentTPDFReal_nonneg ν)) hs
-    (integrable_studentTPDFReal ν).integrableOn
+/-- The real mass of a set under a Student t law is the integral of its real-valued density. -/
+theorem measureReal_studentTMeasure (s : Set ℝ) :
+    (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
+  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν), measureReal_def,
+    withDensity_apply' _ s,
+    ← ofReal_integral_eq_lintegral_ofReal (integrable_studentTPDFReal ν).integrableOn
+      (ae_of_all _ (studentTPDFReal_nonneg ν))]
+  exact ENNReal.toReal_ofReal (integral_nonneg fun z => studentTPDFReal_nonneg ν z)
 
 /-! ### Symmetry -/
 
@@ -336,3 +339,15 @@ theorem measurable_studentTMeasure : Measurable fun ν : ℝ => studentTMeasure 
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+/-- Negating a variable with a Student t law preserves its law. -/
+theorem neg_studentTMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {ν : ℝ} (hX : HasLaw X (studentTMeasure ν) P) :
+    HasLaw (fun ω ↦ -X ω) (studentTMeasure ν) P :=
+  (HasLaw.mk (by fun_prop) (studentTMeasure_map_neg ν)).fun_comp hX
+
+end ProbabilityTheory.HasLaw

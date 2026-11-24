@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.RootSubgroup
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
-import TauCeti.Algebra.Lie.Sl2.Weyl.WeightOne
+import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
 
 /-!
 # The parameter sign at a single bond of the Geck carrier
@@ -60,37 +60,6 @@ local notation "hnil" => t.isNilpotent_geckRepresentation_rootGenerator ht
 local notation "X" => (fun i => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (E (Sum.inl i))))
 local notation "N" => (fun i => weylUnit (hnil (Sum.inl i)) (hnil (Sum.inr i)))
 
-/-- Across a directed Cartan entry minus one, the pinned Weyl unit carries the other raising
-operator to the ordered raising commutator. -/
-theorem weylUnit_conj_geckRepresentation_rootGenerator_of_cartanMatrix_eq_neg_one
-    (i j : Fin t.rank)
-    (hij : t.cartanMatrix j i = -1) :
-    (N i : Module.End ℚ (t.GeckIndex ht → ℚ)) * X j *
-        (((N i)⁻¹ : (Module.End ℚ (t.GeckIndex ht → ℚ))ˣ) :
-          Module.End ℚ (t.GeckIndex ht → ℚ)) = ⁅X i, X j⁆ := by
-  have hne : i ≠ j := by
-    intro h
-    subst j
-    simp at hij
-  let φ := (ρ).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-  have hserre := (t.isSerreSystem_lieBasis ht).map φ
-  have hHY : ⁅φ (H i), X j⁆ = -X j := by
-    simpa only [Function.comp_apply, Matrix.transpose_apply, hij, neg_one_zsmul,
-      φ, LieHom.comp_apply, AlgHom.toLieHom_apply, LieAlgebra.Basis.rootGenerator_inl]
-      using hserre.lie_H_E i j
-  have hFY : ⁅ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (E (.inr i))), X j⁆ = 0 := by
-    rw [← lie_skew]
-    simpa only [Function.comp_apply, φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr,
-      neg_zero] using congrArg Neg.neg (hserre.lie_E_F_of_ne j i hne.symm)
-  have hEEY : ⁅X i, ⁅X i, X j⁆⁆ = 0 := by
-    simpa only [Matrix.transpose_apply, hij, neg_neg, Int.toNat_one, pow_one,
-      ad_apply, Function.comp_apply, φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl] using
-      hserre.ad_pow_lie_E_E i j
-  exact (t.isSl2Triple_geckRepresentation ht i).weylUnit_conj_of_lie_h_eq_neg
-    (hnil (.inl i)) (hnil (.inr i)) hHY hFY hEEY
-
 private theorem kostantWeyl_conj_raising_singleBond (i j : Fin t.rank)
     (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -1)
     (A : Type v) [CommRing A] (u : A) :
@@ -115,14 +84,20 @@ private theorem kostantWeyl_conj_raising_singleBond (i j : Fin t.rank)
   let hC : ∀ i j n, ∀ v ∈ M, Associative.dividedPower n (C i j) • v ∈ M :=
     fun i j n => Associative.dividedPower_conj_smul_mem (X j)
       (M : Set (t.GeckIndex ht → ℚ)) (N i) (hN i) (hNinv i) n (hX j n)
-  have hsign : C i j = -C j i := by
-    dsimp only [C]
-    rw [t.weylUnit_conj_geckRepresentation_rootGenerator_of_cartanMatrix_eq_neg_one ht i j hji,
-      t.weylUnit_conj_geckRepresentation_rootGenerator_of_cartanMatrix_eq_neg_one ht j i hij,
-      lie_skew]
-  have hCnil : IsNilpotent (C j i) := by
-    obtain ⟨k, hk⟩ := hnil (.inl i)
-    exact ⟨k, by dsimp [C]; rw [Units.conj_pow, hk, mul_zero, zero_mul]⟩
+  let φ := (ρ).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
+  have hs := (t.isSerreSystem_lieBasis ht).map φ
+  have hE (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).e k)) := by
+    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+      LieAlgebra.Basis.rootGenerator_inl] using hnil (.inl k)
+  have hF (k : Fin t.rank) : IsNilpotent (φ ((t.lieBasis ht).f k)) := by
+    simpa only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply,
+      LieAlgebra.Basis.rootGenerator_inr] using hnil (.inr k)
+  have hCeq (k l : Fin t.rank) (hkl : t.cartanMatrix l k = -1) :
+      C k l = ⁅X k, X l⁆ := by
+    simpa only [C, φ, Function.comp_apply, LieHom.comp_apply, AlgHom.toLieHom_apply,
+      LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+      hs.weylUnit_conj_E_of_cartan_eq_neg_one (by simp) hkl (hE k) (hF k)
+  have hsign : C i j = -C j i := by rw [hCeq i j hji, hCeq j i hij, lie_skew]
   have hneg : ∀ n, ∀ v ∈ M,
       Associative.dividedPower n (-C j i) • v ∈ M :=
     fun n => Associative.dividedPower_neg_smul_mem _ M (hC j i n)
@@ -135,10 +110,10 @@ private theorem kostantWeyl_conj_raising_singleBond (i j : Fin t.rank)
     rw [kostantWeylPoints_toLinearMap, kostantWeylPoints_symm_toLinearMap,
       kostantWeylRestrict_eq_integralUnitRestrict]
     exact baseChange_integralUnitRestrict_conj_baseChangeExp (X j) M (N i)
-      (hN i) (hNinv i) (hX j) (hnil (.inl j)) u
+      (hN i) (hNinv i) (hX j) u
   have hexp := (hpoint i j u).trans
     ((baseChangeExp_congr hsign M (hC i j) hneg u).trans
-      ((baseChangeExp_neg (C j i) M hneg (hC j i) hCnil u).trans
+      ((baseChangeExp_neg (C j i) M hneg (hC j i) u).trans
         (hpoint j i (-u)).symm))
   -- Read the root parameters before passing to underlying endomorphisms.
   rw [kostantRootSubgroupParam_apply, kostantRootSubgroupParam_apply]

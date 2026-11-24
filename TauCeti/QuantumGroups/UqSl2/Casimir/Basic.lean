@@ -78,7 +78,7 @@ theorem casimir_eq_e_mul_f :
   match_scalars
   · rfl
   all_goals
-    rcases eq_or_ne (q - q⁻¹) 0 with hd | hd
+    rcases eq_or_ne (q - q⁻¹) 0 with hd | _
     · simp [hd]
     · field_simp
       ring
@@ -233,7 +233,7 @@ theorem map_casimirBlock_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module 
 theorem casimirBlock_casimirBlock_eq_top (c : ℂ) :
     casimirBlock q (casimirBlock q V c) c = ⊤ := by
   refine Submodule.eq_top_iff'.mpr fun v => ?_
-  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.2
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.property
   exact mem_casimirBlock_iff.mpr ⟨n, Subtype.ext hn⟩
 
 /-- Casimir blocks for distinct scalars are independent. -/
@@ -269,7 +269,7 @@ the reflection `μ ↦ q⁻² μ⁻¹`. -/
 theorem casimirScalar_eq_casimirScalar_iff (hq : q - q⁻¹ ≠ 0) {μ ν : ℂ} (hμ : μ ≠ 0)
     (hν : ν ≠ 0) : casimirScalar q μ = casimirScalar q ν ↔ μ = ν ∨ q ^ 2 * μ * ν = 1 := by
   have hq0 := ne_zero_of_sub_inv_ne_zero hq
-  rw [casimirScalar_def, casimirScalar_def, div_left_inj' (pow_ne_zero 2 hq)]
+  rw [casimirScalar_def, casimirScalar_def, div_left_inj₀ (pow_ne_zero 2 hq)]
   -- Clearing denominators, the difference of the two sides factors as
   -- `(μ - ν) (q² μ ν - 1) / (q μ ν)`.
   have key : (q * μ + q⁻¹ * μ⁻¹) - (q * ν + q⁻¹ * ν⁻¹) =

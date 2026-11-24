@@ -32,8 +32,8 @@ a representative.
   trivial valuation at all but finitely many primes.
 
 Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, at the `EllipticCurves` roadmap's pin
-`66889eada51a`, Apache 2.0, by Michael Stoll) reaches for a
+(`github.com/MichaelStollBayreuth/EllipticCurves`, at commit `66889eada51a`, Apache 2.0, by
+Michael Stoll) reaches for a
 `HeightOneSpectrum.valuationOfNeZero_eq_iff` in this role; no such lemma exists at our Mathlib
 pin, so it and its `m = 1` case `valuationOfNeZero_eq_one_iff` are supplied in
 `TauCeti/RingTheory/DedekindDomain/ValuationOfNeZero.lean`, which this file imports — they are
@@ -88,7 +88,7 @@ theorem finite_setOfPred_valuation_ne_one {x : K} (hx : x ≠ 0) :
   rcases lt_or_gt_of_ne hv with h | h
   · refine .inr ?_
     rw [Support, Set.mem_ofPred_eq, map_inv₀,
-      one_lt_inv₀ (zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hx))]
+      one_lt_inv₀ (pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hx))]
     exact h
   · exact .inl h
 

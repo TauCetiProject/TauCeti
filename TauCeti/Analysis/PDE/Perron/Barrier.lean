@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.LogNorm
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.PDE.Perron.Basic
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # Perron's method: barriers and boundary values
@@ -40,6 +41,8 @@ condition at each boundary point.
 * `TauCeti.tendsto_perronSolution_of_isBarrier`: at a point with a barrier where the boundary
   data is continuous, the Perron solution tends to the boundary value.
 * `TauCeti.perronSolution_eq_of_isBarrier`: there the Perron solution equals the boundary value.
+* `TauCeti.eqOn_frontier_perronSolution`: if every boundary point admits a barrier, the Perron
+  solution of continuous boundary data equals the data on `frontier Ω`.
 * `TauCeti.continuousOn_perronSolution`: if every boundary point admits a barrier, the Perron
   solution of continuous boundary data is continuous on `closure Ω`.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier`: **the Dirichlet problem**
@@ -192,22 +195,33 @@ theorem perronSolution_eq_of_isBarrier (hΩ : IsOpen Ω) (hb : Bornology.IsBound
     ((tendsto_perronSolution_of_isBarrier hΩ hb hg hw hgξ).mono_left (pure_le_nhdsWithin hξ))
 
 /-- If every boundary point of the bounded open set `Ω` admits a barrier, the Perron solution of
+boundary data `g` continuous on `frontier Ω` equals `g` on `frontier Ω`. -/
+theorem eqOn_frontier_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    (hreg : ∀ ξ ∈ frontier Ω, ∃ w, IsBarrier Ω ξ w) (hg : ContinuousOn g (frontier Ω)) :
+    EqOn (perronSolution Ω g) g (frontier Ω) := fun ξ hξ ↦ by
+  obtain ⟨w, hw⟩ := hreg ξ hξ
+  exact perronSolution_eq_of_isBarrier hΩ hb
+    (hb.isCompact_frontier.image_of_continuousOn hg).isBounded hw (hg ξ hξ)
+    (frontier_subset_closure hξ)
+
+omit [Nontrivial E] in
+/-- If every boundary point of the bounded open set `Ω` admits a barrier, the Perron solution of
 boundary data `g` continuous on `frontier Ω` is continuous on `closure Ω`. -/
 theorem continuousOn_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hreg : ∀ ξ ∈ frontier Ω, ∃ w, IsBarrier Ω ξ w) (hg : ContinuousOn g (frontier Ω)) :
     ContinuousOn (perronSolution Ω g) (closure Ω) := by
-  have hgb : Bornology.IsBounded (g '' frontier Ω) :=
-    ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
-      frontier_subset_closure).image_of_continuousOn hg).isBounded
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the trivial space every function is continuous.
+    exact Set.subsingleton_of_subsingleton.continuousOn _
+  have hgb := (hb.isCompact_frontier.image_of_continuousOn hg).isBounded
   intro x hx
   by_cases hxΩ : x ∈ Ω
   · exact ((harmonicOnNhd_perronSolution hΩ hb hgb.bddAbove (perronFamily_nonempty hgb.bddBelow)
       x hxΩ).1.continuousAt.continuousWithinAt)
   have hxf : x ∈ frontier Ω := hΩ.frontier_eq ▸ ⟨hx, hxΩ⟩
   obtain ⟨w, hw⟩ := hreg x hxf
-  have hgx : ContinuousWithinAt g (frontier Ω) x := hg x hxf
-  rw [ContinuousWithinAt, perronSolution_eq_of_isBarrier hΩ hb hgb hw hgx hx]
-  exact tendsto_perronSolution_of_isBarrier hΩ hb hgb hw hgx
+  rw [ContinuousWithinAt, eqOn_frontier_perronSolution hΩ hb hreg hg hxf]
+  exact tendsto_perronSolution_of_isBarrier hΩ hb hgb hw (hg x hxf)
 
 end Nontrivial
 
@@ -226,14 +240,10 @@ theorem exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier (hΩ : IsOpen Ω
       rw [hconst]
       exact harmonicAt_const _
     · exact (continuous_of_const fun a b ↦ congrArg g (Subsingleton.elim a b)).continuousOn
-  have hgb : Bornology.IsBounded (g '' frontier Ω) :=
-    ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
-      frontier_subset_closure).image_of_continuousOn hg).isBounded
+  have hgb := (hb.isCompact_frontier.image_of_continuousOn hg).isBounded
   refine ⟨perronSolution Ω g, harmonicOnNhd_perronSolution hΩ hb hgb.bddAbove
     (perronFamily_nonempty hgb.bddBelow), continuousOn_perronSolution hΩ hb hreg hg,
-    fun ξ hξ ↦ ?_⟩
-  obtain ⟨w, hw⟩ := hreg ξ hξ
-  exact perronSolution_eq_of_isBarrier hΩ hb hgb hw (hg ξ hξ) (frontier_subset_closure hξ)
+    eqOn_frontier_perronSolution hΩ hb hreg hg⟩
 
 /-! ### The exterior sphere condition -/
 

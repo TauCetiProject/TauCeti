@@ -129,11 +129,11 @@ private theorem dualityMap_zModTwist_one_bijective :
   have he : Function.Bijective e := e₀.bijective
   have hH := explicitCoeff2_bijective G (ZMod p) (f := e) he
   exact ⟨dualityMap0_bijective_of_injective_of_forall_nsmul_eq_zero e hM he.1 (fun y _ ↦ he.2 y)
-      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap0_bijective htriv M hM),
+      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap0_bijective M hM),
     dualityMap1_bijective_of_injective_of_forall_nsmul_eq_zero e hM he.1 (fun y _ ↦ he.2 y)
-      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap1_bijective htriv M hM),
+      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap1_bijective M hM),
     dualityMap2_bijective_of_injective_of_forall_nsmul_eq_zero e hM he.1 (fun y _ ↦ he.2 y)
-      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap2_bijective htriv M hM)⟩
+      hH.1 (fun y _ ↦ hH.2 y) (hG.dualityMap2_bijective M hM)⟩
 
 include hi
 

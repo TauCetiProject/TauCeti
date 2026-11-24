@@ -116,12 +116,18 @@ theorem nonempty_isometry_oddCyclic_of_eq_zero {p : ℕ} (hp : Odd p) {e : ℕ} 
 /-- Odd cyclic generators `q_a^{(p)}(p^e)` and `q_b^{(p)}(p^e)` with the same Legendre symbol are
 isometric: `ab` is then a square modulo `p^e`. -/
 theorem nonempty_isometry_oddCyclic_of_legendreSym_eq {p : ℕ} [Fact p.Prime] (hp : Odd p) (e : ℕ)
-    {a b : ℤ} (ha : IsCoprime (p : ℤ) a) (hb : IsCoprime (p : ℤ) b)
-    (h : legendreSym p a = legendreSym p b) :
+    {a b : ℤ} (ha : IsCoprime (p : ℤ) a) (h : legendreSym p a = legendreSym p b) :
     Nonempty (Isometry (oddCyclic (p ^ e) hp.pow a) (oddCyclic (p ^ e) hp.pow b)) := by
   rcases Nat.eq_zero_or_pos e with rfl | he
   · exact nonempty_isometry_oddCyclic_of_eq_zero hp rfl a b
   have hp2 : p ≠ 2 := by rintro rfl; exact Nat.not_even_iff_odd.2 hp even_two
+  have hb : IsCoprime (p : ℤ) b := by
+    refine (ZMod.isUnit_intCast_iff_isCoprime b p).1 (isUnit_iff_ne_zero.2 fun hb0 => ?_)
+    have := legendreSym.eq_zero_iff p b |>.2 hb0
+    rw [← h] at this
+    rcases legendreSym.eq_one_or_neg_one p
+      ((ZMod.isUnit_intCast_iff_isCoprime a p).2 ha).ne_zero with h1 | h1 <;>
+      simp [h1] at this
   have hab0 : ((a * b : ℤ) : ZMod p) ≠ 0 :=
     ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (ha.mul_right hb)).ne_zero
   -- `ab` has `1 + (ab/p) = 2` square roots modulo `p^e`.

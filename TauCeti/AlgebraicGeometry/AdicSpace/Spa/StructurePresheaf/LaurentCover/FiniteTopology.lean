@@ -68,23 +68,22 @@ namespace TauCeti.ValuationSpectrum
 
 section Induction
 
-variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsHuberRing A]
+variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) {Aplus : Subring A}
 
-omit [IsHuberRing A] in
 /-- Restriction from `W` to its two Laurent pieces, read on the presheaf rather than on the
 presentation limits, is inducing when it is inducing on the presentation limits. -/
 private theorem isInducing_presheafMap_inf_laurentCoverOpen {W : Opens ↥(spa Aplus)} (f : A)
     (hind : IsInducing fun x : presentationLimit (P := P) Aplus W ↦
       ((presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.val x,
         (presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x)) :
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.val x)) :
     IsInducing fun x : (presentationLimitPresheaf P Aplus).obj (op W) ↦
       (((presentationLimitPresheaf P Aplus).map
-          (homOfLE (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).op).hom.1 x,
+          (homOfLE (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).op).hom.val x,
         ((presentationLimitPresheaf P Aplus).map
-          (homOfLE (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).op).hom.1 x) := by
+          (homOfLE (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).op).hom.val x) := by
   let G := TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ _root_.TopCommRingCat TopCat
   let e (V : Opens ↥(spa Aplus)) : (presentationLimitPresheaf P Aplus).obj (op V) ≃ₜ
       presentationLimit (P := P) Aplus V := TopCat.homeoOfIso
@@ -107,19 +106,20 @@ theorem isInducing_presentationLimitPresheafMap_laurentSieve_of_isInducing
     (hind : ∀ {W : Opens ↥(spa Aplus)}, W ∈ spaRationalOpens Aplus → ∀ f : A,
       IsInducing fun x : presentationLimit (P := P) Aplus W ↦
         ((presentationLimitMap (P := P)
-            (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+            (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.val x,
           (presentationLimitMap (P := P)
-            (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x))
+            (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.val x))
     (T : Finset A) {W : Opens ↥(spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) :
     IsInducing fun (x : (presentationLimitPresheaf P Aplus).obj (op W))
       (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // laurentSieve Aplus T W f }) ↦
-        ((presentationLimitPresheaf P Aplus).map g.2.1.op).hom.1 x := by
+        ((presentationLimitPresheaf P Aplus).map g.2.val.op).hom.val x := by
   classical
+  have : IsHuberRing A := ⟨⟨P⟩⟩
   let F := presentationLimitPresheaf P Aplus
   have hc {V : Opens ↥(spa Aplus)} (S : Sieve V) : Continuous
       (fun (x : F.obj (op V)) (g : (U : Opens ↥(spa Aplus)) × { f : U ⟶ V // S f }) ↦
-        (F.map g.2.1.op).hom.1 x) :=
-    continuous_pi fun g ↦ (F.map g.2.1.op).hom.2
+        (F.map g.2.val.op).hom.val x) :=
+    continuous_pi fun g ↦ (F.map g.2.val.op).hom.property
   induction T using Finset.induction_on generalizing W with
   | empty =>
     let g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // laurentSieve Aplus ∅ W f } :=
@@ -137,12 +137,12 @@ theorem isInducing_presentationLimitPresheafMap_laurentSieve_of_isInducing
     let j (b : Bool)
         (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ Y b // laurentSieve Aplus T (Y b) f }) :
         (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // laurentSieve Aplus (insert a T) W f } :=
-      ⟨g.1, g.2.1 ≫ homOfLE inf_le_left, by
+      ⟨g.1, g.2.val ≫ homOfLE inf_le_left, by
         rw [laurentSieve_apply]
         intro t ht
         rcases Finset.mem_insert.mp ht with rfl | ht
-        · exact ⟨b, g.2.1.le.trans inf_le_right⟩
-        · exact (laurentSieve_apply g.2.1).mp g.2.2 t ht⟩
+        · exact ⟨b, g.2.val.le.trans inf_le_right⟩
+        · exact (laurentSieve_apply g.2.val).mp g.2.property t ht⟩
     let q (b : Bool) := fun z :
         (g : (V : Opens ↥(spa Aplus)) ×
           { f : V ⟶ W // laurentSieve Aplus (insert a T) W f }) → F.obj (op g.1) ↦
@@ -190,9 +190,9 @@ structure ContinuousLaurentGluing
     W ∈ spaRationalOpens Aplus → ∀ f : A,
     IsInducing fun x : presentationLimit (P := P) Aplus W ↦
       ((presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.val x,
         (presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x)
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.val x)
 
 section ContinuousLaurentGluing
 

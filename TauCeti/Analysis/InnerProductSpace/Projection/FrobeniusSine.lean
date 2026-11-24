@@ -148,7 +148,7 @@ theorem sq_sinThetaFrobenius_spanIndices_eq_sum_projection (b : OrthonormalBasis
       ∑ j ∈ s, ‖Uᗮ.starProjection (b j)‖ ^ 2 := by
   classical
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis b.toBasis
-  set V := b.spanIndices (↑s : Set ι) with hV
+  set V := b.spanIndices (↑s : Set ι)
   have hb (j : ι) :
       (V.sinThetaMap U) (b j) =
         if j ∈ s then Uᗮ.starProjection (b j) else 0 := by

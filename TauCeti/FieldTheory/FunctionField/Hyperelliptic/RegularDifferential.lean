@@ -166,7 +166,7 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
     weilDifferentialDivisor hF (isIntegrallyClosedIn_of_sq_eq h2 hf hdeg hgen hy)
         (repartitionDualMul_mem_weilDifferentialSpace hF ((y⁻¹ : Fˣ) : F)
           (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-            ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2)
+            ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property)
         (repartitionDualMul_ne_zero hF (Units.ne_zero _)
           (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF)) =
       (genus k F - 1 : ℤ) • Divisor.poles hF (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
@@ -176,7 +176,7 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
   have hex := isIntegrallyClosedIn_of_sq_eq h2 hf hdeg hgen hy
   rw [weilDifferentialDivisor_repartitionDualMul hF hex
       (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property
       (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF),
     weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential,
     genus_eq_of_sq_eq h2 hf hdeg hgen hy]
@@ -189,9 +189,9 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
   rw [Q.ord_pow, Place.ord_algebraMap_restrict k (RatFunc k)] at hord
   have hx := Place.ord_algebraMap_restrict k (RatFunc k) Q RatFunc.X
   have he := Place.ramificationIdx_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+    Nat.prime_two hgen hy (by exact_mod_cast h2)
   have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+    Nat.prime_two hgen hy (by exact_mod_cast h2)
   -- Case on the place below `Q`, and then on the parities deciding `e` and the different
   -- exponent: in each case every term is an explicit multiple of `ord_Q y` or of `deg f`.
   rcases Place.eq_infty_or_exists_eq_adicOfIrreducible (Q.restrict k (RatFunc k)) with
@@ -232,7 +232,7 @@ theorem weilDifferentialFiltration_zero_eq_span_of_sq_eq (h2 : (2 : k) ≠ 0) {f
   have hW := isGreatest_weilDifferentialDivisor hF hex
     (repartitionDualMul_mem_weilDifferentialSpace hF ((y⁻¹ : Fˣ) : F)
       (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2)
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property)
     (repartitionDualMul_ne_zero hF (Units.ne_zero _)
       (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF))
   rw [weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_sq_eq h2 hf hdeg

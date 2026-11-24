@@ -5,33 +5,60 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.OfSequence
+public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
+public import TauCeti.Topology.Category.TopCat.Limits.Homotopy
 public import TauCeti.Topology.Coherent
 public import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
 /-!
 # Homotopy equivalences of towers of cofibrations
 
-Let `X` be the union of an increasing sequence of subsets `A 0 ⊆ A 1 ⊆ ⋯`, each of which has the
-homotopy extension property in the next, and suppose that `X` carries the topology coherent with
-the `A n`; let `Y` be such a union of `B 0 ⊆ B 1 ⊆ ⋯`. The union of the skeleta of a CW complex
-is of this kind, and so is a manifold exhausted by the regular sublevels of a proper function,
-whose inclusions are closed cofibrations thanks to collars of the regular levels.
+A tower of cofibrations is an increasing sequence of spaces `X 0 → X 1 → X 2 → ⋯`, each of which
+has the homotopy extension property in the next. This file shows that a map of towers which is a
+homotopy equivalence at every stage induces a homotopy equivalence of the unions, in two forms,
+and compares the two forms.
+In both, the map commutes strictly with the inclusions, and no homotopy inverse of the stages is
+part of the data.
 
-Let `f : X → Y` restrict, for every `n`, to a homotopy equivalence `A n ≃ₕ B n`. Then `f` is a
-homotopy equivalence, with a homotopy inverse mapping each `B n` into `A n`
-(`TauCeti.exists_homotopyEquiv_of_isCoherentWith`). The maps `f` and `A n → B n` commute
-strictly with the inclusions; no homotopy inverse of the stages is part of the data.
+* **Unions of subsets.** Let `X` be the union of subsets `A 0 ⊆ A 1 ⊆ ⋯`, carrying the topology
+  coherent with the `A n`, and let `Y` be such a union of `B 0 ⊆ B 1 ⊆ ⋯`. The union of the
+  skeleta of a CW complex is of this kind, and so is a manifold exhausted by the regular sublevels
+  of a proper function, whose inclusions are closed cofibrations thanks to collars of the regular
+  levels. If `f : X → Y` restricts, for every `n`, to a homotopy equivalence `A n ≃ₕ B n`, then
+  `f` is a homotopy equivalence, with a homotopy inverse mapping each `B n` into `A n`
+  (`TauCeti.exists_homotopyEquiv_of_isCoherentWith`).
+* **Colimits of sequences.** Let `X, Y : ℕ ⥤ TopCat` be sequences whose bonding maps
+  `X n → X (n + 1)` are embeddings with images having the homotopy extension property. If
+  `f : X ⟶ Y` is a homotopy equivalence at every stage, then the induced map between any colimit
+  cocones of `X` and `Y` is a homotopy equivalence (`TauCeti.cofibrationTowerHomotopyEquiv`).
+* **Colimits against unions.** Let `F : ℕ ⥤ TopCat` be a sequence whose bonding maps are
+  embeddings with images having the homotopy extension property, and let `Y` be a union of subsets
+  as above. Homotopy equivalences `h n : F n ≃ₕ A n` commuting strictly with the inclusions glue
+  to a homotopy equivalence from any colimit of `F` to `Y`
+  (`TauCeti.exists_homotopyEquiv_of_isColimit`). As `Y` carries the topology coherent with the
+  `A n`, it is the colimit of the sequence of the `A n`
+  (`TauCeti.TopCat.isColimitOfIsCoherentWith`), so the second form applies. If the bonding maps
+  are closed embeddings, the stages are also a tower of closed cofibrations inside the colimit
+  (`TauCeti.hasHomotopyExtensionProperty_preimage_range_ι_of_isColimit`).
 
-The proof builds strictly compatible inverses. A homotopy inverse `g n : B n → A n` of the stage
-`n`, together with a homotopy `g n ∘ f ≃ id`, extends to the stage `n + 1` without changing either
-on the stage `n` (`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`).
-Inductively this gives maps and homotopies which agree on overlaps, and they glue
-(`ContinuousMap.liftCoherent`) to a map `g : Y → X` with a homotopy `g ∘ f ≃ id` which preserve
-the stages (`TauCeti.exists_leftInverse_homotopy_of_isCoherentWith`). The homotopy is glued over
-the products `I × A n`, which carry the topology of `I × X` as the unit interval is locally
-compact (`Topology.IsCoherentWith.univ_prod`). The restrictions of `g` are homotopy equivalences
-`B n ≃ₕ A n`, so the same construction gives a left homotopy inverse of `g`. Since `f` is a right
-homotopy inverse of `g`, the map `g` is a two-sided homotopy inverse of `f`.
+The proofs have three steps.
+
+* **Compatible left inverses.** A homotopy inverse of a stage, together with a homotopy
+  `g ∘ f ≃ id`, extends to the next stage without changing either on the earlier one
+  (`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding`).
+  Inductively this gives inverses and homotopies at all stages which are compatible with the
+  inclusions (`TauCeti.exists_natTrans_homotopy_comp_id` for sequences).
+* **Gluing.** The compatible maps and homotopies glue to a left homotopy inverse `g` of `f` on
+  the union. For unions of subsets they glue by `ContinuousMap.liftCoherent`
+  (`TauCeti.exists_leftInverse_homotopy_of_isCoherentWith`): the homotopy is glued over the
+  products `I × A n`, which carry the topology of `I × X` as the unit interval is locally compact
+  (`Topology.IsCoherentWith.univ_prod`). For colimits they glue by
+  `CategoryTheory.Limits.IsColimit.map_comp_map_homotopic_id`, for colimits of any shape.
+* **Two-sided inverse.** The stages of `g` are homotopy equivalences, so `g` in turn has a left
+  homotopy inverse `k`. A map with a left homotopy inverse `k` and a right homotopy inverse `f` is
+  a homotopy equivalence, as `f ≃ k ∘ g ∘ f ≃ k`, so `f ∘ g ≃ id`
+  (`ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id`).
 
 ## Main results
 
@@ -39,22 +66,33 @@ homotopy inverse of `g`, the map `g` is a two-sided homotopy inverse of `f`.
   together with a homotopy `g ∘ f ≃ id`, both preserving the stages.
 * `TauCeti.exists_homotopyEquiv_of_isCoherentWith`: `f` is a homotopy equivalence, with a homotopy
   inverse preserving the stages.
+* `TauCeti.exists_natTrans_homotopy_comp_id`: a levelwise homotopy equivalence of sequences of
+  cofibrations has a left homotopy inverse which is a map of sequences, with compatible homotopies.
+* `TauCeti.cofibrationTowerHomotopyEquiv`: **a levelwise homotopy equivalence of sequences of
+  cofibrations induces a homotopy equivalence of colimits**, whose underlying map is the induced
+  map (`TauCeti.cofibrationTowerHomotopyEquiv_toFun`).
+* `TauCeti.exists_homotopyEquiv_of_isColimit`: a colimit of a sequence of cofibrations is
+  homotopy equivalent to a union of a tower of cofibrations with compatible equivalent stages.
 
 ## References
 
 * T. tom Dieck, *Algebraic Topology*, EMS Textbooks in Mathematics, 2008, Chapter 5, for
-  cofibrations and homotopy equivalences of pairs.
+  cofibrations, homotopy equivalences of pairs and the homotopy invariance of their colimits.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Chapter 0, Proposition 0.19 and its proof, for the extension of inverses over a cofibration.
 -/
 
 public section
 
+noncomputable section
+
 open Set Topology ContinuousMap unitInterval
+
+universe u
 
 namespace TauCeti
 
-universe u
+section Coherent
 
 variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y]
 
@@ -71,33 +109,14 @@ private theorem exists_stage_extension {S S' : Set X} {T T' : Set Y} (hS : S ⊆
     ∃ (g' : C(T', S')) (H' : (g'.comp e'.toFun).Homotopy (ContinuousMap.id S')),
       (∀ b : T, (g' (Set.inclusion hT b) : X) = g b) ∧
         ∀ (t : I) (a : S), (H' (t, Set.inclusion hS a) : X) = H (t, a) := by
-  -- Read the stages `S` and `T` as subsets of `S'` and `T'`.
-  let iS : ((↑) ⁻¹' S : Set S') ≃ₜ S :=
-    IsEmbedding.subtypeVal.homeomorphOfSubsetRange (by rwa [Subtype.range_coe])
-  let iT : ((↑) ⁻¹' T : Set T') ≃ₜ T :=
-    IsEmbedding.subtypeVal.homeomorphOfSubsetRange (by rwa [Subtype.range_coe])
-  have hiS (a : S) : ((iS.symm a : S') : X) = a :=
-    (IsEmbedding.homeomorphOfSubsetRange_apply_coe _ _ _).symm.trans
-      (congrArg Subtype.val (iS.apply_symm_apply a))
-  have hiT (b : T) : ((iT.symm b : T') : Y) = b :=
-    (IsEmbedding.homeomorphOfSubsetRange_apply_coe _ _ _).symm.trans
-      (congrArg Subtype.val (iT.apply_symm_apply b))
-  -- Transport `e`, `g` and `H` to these subsets.
-  let e₀ : ((↑) ⁻¹' S : Set S') ≃ₕ ((↑) ⁻¹' T : Set T') :=
-    iS.toHomotopyEquiv.trans (e.trans iT.symm.toHomotopyEquiv)
-  have he₀ (a : ((↑) ⁻¹' S : Set S')) : (e₀ a : T') = e' a :=
-    Subtype.ext <| by simp [e₀, hiT, he, he', iS, -Homeomorph.symm_toHomotopyEquiv]
-  let g₀ : C(((↑) ⁻¹' T : Set T'), ((↑) ⁻¹' S : Set S')) :=
-    (iS.symm : C(S, _)).comp (g.comp (iT : C(_, T)))
-  let H₀ : (g₀.comp e₀.toFun).Homotopy (ContinuousMap.id _) :=
-    ((Homotopy.refl (iS.symm : C(S, _))).comp (H.compContinuousMap (iS : C(_, S)))).cast
-      (by ext x : 1; simp [g₀, e₀, -Homeomorph.symm_toHomotopyEquiv]) (by ext x : 1; simp)
-  obtain ⟨g', H', hg', hH', -⟩ := hSH.exists_inverse_extending_homotopy hTH e' e₀ he₀ g₀ H₀
-  refine ⟨g', H', fun b => ?_, fun t a => ?_⟩
-  · have hb : (iT.symm b : T') = Set.inclusion hT b := Subtype.ext (hiT b)
-    simpa [hb, g₀, hiS] using congrArg Subtype.val (hg' (iT.symm b))
-  · have ha : (iS.symm a : S') = Set.inclusion hS a := Subtype.ext (hiS a)
-    simpa [ha, H₀, hiS] using congrArg Subtype.val (hH' t (iS.symm a))
+  obtain ⟨g', H', hg', hH', -⟩ :=
+    HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding
+      (i := ⟨Set.inclusion hS, continuous_inclusion hS⟩)
+      (j := ⟨Set.inclusion hT, continuous_inclusion hT⟩) (IsEmbedding.inclusion hS)
+      (IsEmbedding.inclusion hT) (by rw [ContinuousMap.coe_mk, range_inclusion]; exact hSH)
+      (by rw [ContinuousMap.coe_mk, range_inclusion]; exact hTH) e e'
+      (fun a => Subtype.ext <| by simp [he, he']) g H
+  exact ⟨g', H', fun b => congrArg Subtype.val (hg' b), fun t a => congrArg Subtype.val (hH' t a)⟩
 
 variable {A : ℕ → Set X} {B : ℕ → Set Y}
 
@@ -143,12 +162,12 @@ theorem exists_leftInverse_homotopy_of_isCoherentWith (hA : Monotone A) (hB : Mo
   have hIX : ⋃ n, (univ : Set I) ×ˢ A n = univ := by simp [← prod_iUnion, hAX]
   let Hs (n : ℕ) : C((univ : Set I) ×ˢ A n, X) :=
     (subtypeVal (A n)).comp <| (s n).2.toContinuousMap.comp
-      ⟨fun p ↦ (p.1.1, ⟨p.1.2, p.2.2⟩), by fun_prop⟩
+      ⟨fun p ↦ (p.val.1, ⟨p.val.2, p.property.2⟩), by fun_prop⟩
   let HX : C(I × X, X) := liftCoherent (fun n ↦ (univ : Set I) ×ˢ A n) Hs
     (fun i j p hi hj ↦ (hs_H (le_max_left i j) p.1 ⟨p.2, hi.2⟩).symm.trans
       (hs_H (le_max_right i j) p.1 ⟨p.2, hj.2⟩)) (hAc.univ_prod hAX) hIX
   have hHX (n : ℕ) (t : I) (a : A n) : HX (t, a) = (s n).2 (t, a) :=
-    liftCoherent_coe (S := fun n ↦ (univ : Set I) ×ˢ A n) ⟨(t, a), mem_univ t, a.2⟩
+    liftCoherent_coe (S := fun n ↦ (univ : Set I) ×ˢ A n) ⟨(t, a), mem_univ t, a.property⟩
   have hmem (x : X) : ∃ n, x ∈ A n := mem_iUnion.1 (hAX ▸ mem_univ x)
   refine ⟨g, ⟨HX, fun x ↦ ?_, fun x ↦ ?_⟩, fun n y hy ↦ ?_, fun n t x hx ↦ ?_⟩
   · obtain ⟨n, hx⟩ := hmem x
@@ -157,7 +176,7 @@ theorem exists_leftInverse_homotopy_of_isCoherentWith (hA : Monotone A) (hB : Mo
     simp [hHX n 1 ⟨x, hx⟩]
   · simp [hg n ⟨y, hy⟩]
   · -- The glued homotopy is `HX` as a function.
-    have hH := ((s n).2 (t, ⟨x, hx⟩)).2
+    have hH := ((s n).2 (t, ⟨x, hx⟩)).property
     rw [← hHX n t ⟨x, hx⟩] at hH
     exact hH
 
@@ -177,12 +196,13 @@ theorem exists_homotopyEquiv_of_isCoherentWith (hA : Monotone A) (hB : Monotone 
     exists_leftInverse_homotopy_of_isCoherentWith hA hB hAX hBY hAc hBc hAH hBH f e he
   -- On each stage, `g` is a left homotopy inverse of `e n`, hence a homotopy equivalence.
   let e' (n : ℕ) : B n ≃ₕ A n :=
-    have Hn : (ContinuousMap.comp ⟨fun b ↦ ⟨g b, hgB n b.2⟩, by fun_prop⟩ (e n).toFun).Homotopy
+    have Hn : (ContinuousMap.comp ⟨fun b ↦ ⟨g b, hgB n b.property⟩, by fun_prop⟩
+        (e n).toFun).Homotopy
         (ContinuousMap.id (A n)) :=
-      { toFun p := ⟨H (p.1, p.2), hHA n p.1 p.2 p.2.2⟩
+      { toFun p := ⟨H (p.1, p.2), hHA n p.1 p.2 p.2.property⟩
         map_zero_left a := Subtype.ext <| by simp [he]
         map_one_left a := Subtype.ext <| by simp }
-    { toFun := ⟨fun b ↦ ⟨g b, hgB n b.2⟩, by fun_prop⟩
+    { toFun := ⟨fun b ↦ ⟨g b, hgB n b.property⟩, by fun_prop⟩
       invFun := (e n).toFun
       left_inv := (e n).toFun_comp_homotopic_id_of_comp_toFun_homotopic_id ⟨Hn⟩
       right_inv := ⟨Hn⟩ }
@@ -190,7 +210,204 @@ theorem exists_homotopyEquiv_of_isCoherentWith (hA : Monotone A) (hB : Monotone 
   obtain ⟨k, K, -, -⟩ :=
     exists_leftInverse_homotopy_of_isCoherentWith hB hA hBY hAX hBc hAc hBH hAH g e' fun _ _ ↦ rfl
   -- Since `f` is a right homotopy inverse of `g`, so is `k`, and `f ∘ g ≃ k ∘ g ≃ id`.
-  have hkf : k.Homotopic f := Homotopic.homotopic_of_comp_homotopic_id ⟨K⟩ ⟨H⟩
-  exact ⟨⟨f, g, ⟨H⟩, (hkf.symm.comp (.refl g)).trans ⟨K⟩⟩, rfl, hgB⟩
+  exact ⟨⟨f, g, ⟨H⟩, Homotopic.comp_homotopic_id_of_comp_homotopic_id ⟨H⟩ ⟨K⟩⟩, rfl, hgB⟩
+
+end Coherent
+
+section Colimit
+
+open CategoryTheory Limits
+
+variable {X Y : ℕ ⥤ TopCat.{u}}
+
+/-- **Compatible left homotopy inverses of a map of towers.** Let `X` and `Y` be sequences of
+spaces whose bonding maps are embeddings with images having the homotopy extension property, and
+let `f : X ⟶ Y` be a homotopy equivalence at every stage. Then there is a map of sequences
+`g : Y ⟶ X` with homotopies `H n : g.app n ∘ f.app n ≃ id` which are compatible with all maps
+`X.map u` of the sequence. -/
+theorem exists_natTrans_homotopy_comp_id
+    (hX : ∀ n : ℕ, IsEmbedding (X.map (homOfLE n.le_succ)))
+    (hXh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (X.map (homOfLE n.le_succ))))
+    (hY : ∀ n : ℕ, IsEmbedding (Y.map (homOfLE n.le_succ)))
+    (hYh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (Y.map (homOfLE n.le_succ))))
+    (f : X ⟶ Y) (hf : ∀ n, ∃ e : X.obj n ≃ₕ Y.obj n, e.toFun = (f.app n).hom) :
+    ∃ (g : Y ⟶ X) (H : ∀ n,
+        ((g.app n).hom.comp (f.app n).hom).Homotopy (ContinuousMap.id (X.obj n))),
+      ∀ ⦃i j : ℕ⦄ (u : i ⟶ j) (t : I) (x : X.obj i), H j (t, X.map u x) = X.map u (H i (t, x)) := by
+  choose e he using hf
+  -- A left homotopy inverse of `f` at stage `n`, with its homotopy.
+  let S (n : ℕ) := Σ g : C(Y.obj n, X.obj n),
+    (g.comp (f.app n).hom).Homotopy (ContinuousMap.id (X.obj n))
+  have step (n : ℕ) (s : S n) : ∃ s' : S (n + 1),
+      (∀ y, s'.1 (Y.map (homOfLE n.le_succ) y) = X.map (homOfLE n.le_succ) (s.1 y)) ∧
+      ∀ (t : I) (x : X.obj n),
+        s'.2 (t, X.map (homOfLE n.le_succ) x) = X.map (homOfLE n.le_succ) (s.2 (t, x)) := by
+    obtain ⟨g, H, hg, hH, -⟩ :=
+      HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding
+        (i := (X.map (homOfLE n.le_succ)).hom) (j := (Y.map (homOfLE n.le_succ)).hom)
+        (hX n) (hY n) (hXh n) (hYh n) (e n) (e (n + 1))
+        (fun x => by
+          rw [← ContinuousMap.toFun_eq_coe, he, he]
+          exact (ConcreteCategory.congr_hom (f.naturality (homOfLE n.le_succ)) x).symm)
+        s.1 (s.2.cast (by rw [he]) rfl)
+    exact ⟨⟨g, H.cast (by rw [he]) rfl⟩, hg, hH⟩
+  choose next hnext using step
+  let s : ∀ n, S n := fun n => Nat.rec ⟨(e 0).invFun, (e 0).left_inv.some.cast (by rw [he]) rfl⟩
+    next n
+  -- The defining equation of `Nat.rec` at a successor.
+  have hs (n : ℕ) : s (n + 1) = next n (s n) := rfl
+  -- The components of `NatTrans.ofSequence` are by definition the maps `(s n).1`
+  -- (see `NatTrans.ofSequence_app`), so `(s n).2` are homotopies of the required type.
+  refine ⟨NatTrans.ofSequence (fun n => TopCat.ofHom (s n).1) fun n => ?_,
+    fun n => (s n).2, fun i j u t x => ?_⟩
+  · ext y
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs]
+    exact (hnext n (s n)).1 y
+  -- Compatibility along `i ⟶ i + k` follows by induction on `k` from compatibility along the
+  -- bonding maps, which is `(hnext n (s n)).2`, using `hs` by `rfl`: the homotopy types depend
+  -- on `s (n + 1)`, so it cannot be rewritten.
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le (leOfHom u)
+  induction k generalizing x with
+  | zero =>
+    obtain rfl : u = 𝟙 i := Subsingleton.elim _ _
+    simp
+  | succ k ih =>
+    obtain rfl : u = homOfLE (i.le_add_right k) ≫ homOfLE (i + k).le_succ :=
+      Subsingleton.elim _ _
+    rw [Functor.map_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+    exact ((hnext (i + k) (s (i + k))).2 t _).trans (congrArg _ (ih x _))
+
+/-- **Homotopy invariance of colimits of towers of cofibrations.** Let `X` and `Y` be sequences of
+spaces whose bonding maps are embeddings with images having the homotopy extension property, and
+let `f : X ⟶ Y` be a homotopy equivalence at every stage. Then the map induced by `f` from a
+colimit of `X` to a colimit of `Y` is a homotopy equivalence. Its homotopy inverse is induced by
+a left homotopy inverse `g : Y ⟶ X` of `f` chosen by `TauCeti.exists_natTrans_homotopy_comp_id`. -/
+def cofibrationTowerHomotopyEquiv
+    (hX : ∀ n : ℕ, IsEmbedding (X.map (homOfLE n.le_succ)))
+    (hXh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (X.map (homOfLE n.le_succ))))
+    (hY : ∀ n : ℕ, IsEmbedding (Y.map (homOfLE n.le_succ)))
+    (hYh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (Y.map (homOfLE n.le_succ))))
+    (f : X ⟶ Y) (hf : ∀ n, ∃ e : X.obj n ≃ₕ Y.obj n, e.toFun = (f.app n).hom)
+    {cX : Cocone X} (hcX : IsColimit cX) {cY : Cocone Y} (hcY : IsColimit cY) :
+    cX.pt ≃ₕ cY.pt :=
+  have hg := exists_natTrans_homotopy_comp_id hX hXh hY hYh f hf
+  { toFun := (hcX.map cY f).hom
+    invFun := (hcY.map cX hg.choose).hom
+    left_inv := by
+      obtain ⟨H, hH⟩ := hg.choose_spec
+      exact hcX.map_comp_map_homotopic_id hcY H hH
+    right_inv := by
+      -- `g` is a levelwise homotopy equivalence, so it has a left homotopy inverse `k` too.
+      obtain ⟨H, hH⟩ := hg.choose_spec
+      have hg' (n : ℕ) : ∃ e : Y.obj n ≃ₕ X.obj n, e.toFun = (hg.choose.app n).hom := by
+        obtain ⟨e, he⟩ := hf n
+        have := e.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id
+          (g := (hg.choose.app n).hom) (by rw [he]; exact ⟨H n⟩)
+        rw [he] at this
+        exact ⟨⟨(hg.choose.app n).hom, (f.app n).hom, this, ⟨H n⟩⟩, rfl⟩
+      obtain ⟨k, K, hK⟩ := exists_natTrans_homotopy_comp_id hY hYh hX hXh hg.choose hg'
+      exact (hcX.map_comp_map_homotopic_id hcY H hH).comp_homotopic_id_of_comp_homotopic_id
+        (hcY.map_comp_map_homotopic_id hcX K hK) }
+
+/-- The homotopy equivalence of colimits of towers of cofibrations induced by `f` is the map
+induced by `f`. -/
+@[simp]
+theorem cofibrationTowerHomotopyEquiv_toFun
+    (hX : ∀ n : ℕ, IsEmbedding (X.map (homOfLE n.le_succ)))
+    (hXh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (X.map (homOfLE n.le_succ))))
+    (hY : ∀ n : ℕ, IsEmbedding (Y.map (homOfLE n.le_succ)))
+    (hYh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (Y.map (homOfLE n.le_succ))))
+    (f : X ⟶ Y) (hf : ∀ n, ∃ e : X.obj n ≃ₕ Y.obj n, e.toFun = (f.app n).hom)
+    {cX : Cocone X} (hcX : IsColimit cX) {cY : Cocone Y} (hcY : IsColimit cY) :
+    (cofibrationTowerHomotopyEquiv hX hXh hY hYh f hf hcX hcY).toFun = (hcX.map cY f).hom :=
+  (rfl)
+
+/-- The homotopy inverse of `cofibrationTowerHomotopyEquiv` maps the image of each stage `Y k` into
+the image of the corresponding stage `X k`. -/
+theorem mapsTo_cofibrationTowerHomotopyEquiv_symm
+    (hX : ∀ n : ℕ, IsEmbedding (X.map (homOfLE n.le_succ)))
+    (hXh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (X.map (homOfLE n.le_succ))))
+    (hY : ∀ n : ℕ, IsEmbedding (Y.map (homOfLE n.le_succ)))
+    (hYh : ∀ n : ℕ, HasHomotopyExtensionProperty (range (Y.map (homOfLE n.le_succ))))
+    (f : X ⟶ Y) (hf : ∀ n, ∃ e : X.obj n ≃ₕ Y.obj n, e.toFun = (f.app n).hom)
+    {cX : Cocone X} (hcX : IsColimit cX) {cY : Cocone Y} (hcY : IsColimit cY) (k : ℕ) :
+    MapsTo (cofibrationTowerHomotopyEquiv hX hXh hY hYh f hf hcX hcY).symm
+      (range (cY.ι.app k)) (range (cX.ι.app k)) := by
+  rintro _ ⟨y, rfl⟩
+  exact ⟨(exists_natTrans_homotopy_comp_id hX hXh hY hYh f hf).choose.app k y,
+    (ConcreteCategory.congr_hom (hcY.ι_map cX _ k) y).symm⟩
+
+end Colimit
+
+section ColimitUnion
+
+open CategoryTheory Limits
+open scoped ContinuousMap
+
+variable {F : ℕ ⥤ TopCat.{u}} {c : Cocone F} (hc : IsColimit c)
+
+include hc in
+/-- **The stages of a sequential colimit of closed cofibrations are closed cofibrations.** If the
+bonding maps of a sequence are closed embeddings, and the range of the `k`-th one has the homotopy
+extension property, then inside the colimit the range of `F k` has the homotopy extension
+property in the range of `F (k + 1)`. -/
+theorem hasHomotopyExtensionProperty_preimage_range_ι_of_isColimit
+    (hF : ∀ k : ℕ, IsClosedEmbedding (F.map (homOfLE k.le_succ))) (k : ℕ)
+    (hFh : HasHomotopyExtensionProperty (range (F.map (homOfLE k.le_succ)))) :
+    HasHomotopyExtensionProperty
+      ((↑) ⁻¹' (range (c.ι.app k) : Set c.pt) : Set ↥(range (c.ι.app (k + 1)) : Set c.pt)) := by
+  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc (k + 1)
+  have h := hFh.image hemb.isEmbedding.toHomeomorph
+  convert h using 1
+  -- A point of the range of `F (k + 1)` comes from `F k` exactly when its preimage in
+  -- `F (k + 1)` lies in the range of the bonding map.
+  ext ⟨_, w, rfl⟩
+  have hw (x : F.obj k) :
+      (c.ι.app (k + 1) (F.map (homOfLE k.le_succ) x) : c.pt) = (c.ι.app k x : c.pt) := by
+    rw [← ConcreteCategory.comp_apply, c.w]
+  simp only [mem_preimage, mem_range, mem_image, Subtype.ext_iff,
+    IsEmbedding.toHomeomorph_apply_coe]
+  constructor
+  · rintro ⟨x, hx⟩
+    exact ⟨_, ⟨x, rfl⟩, (hw x).trans hx⟩
+  · rintro ⟨_, ⟨x, rfl⟩, hx⟩
+    exact ⟨x, (hw x).symm.trans hx⟩
+
+include hc in
+/-- **A colimit of a tower of cofibrations against a union of a tower of cofibrations.** Let `F` be
+a sequence whose bonding maps are embeddings with images having the homotopy extension property.
+Let `Y` be the union of an increasing sequence of subsets `A k`, each with the homotopy extension
+property in the next, carrying the topology coherent with them, and let `h k : F k ≃ₕ A k` be
+homotopy equivalences commuting with the inclusions. Then the colimit of `F` is homotopy equivalent
+to `Y` by a homotopy equivalence restricting to `h k` on every stage and whose homotopy inverse maps
+each `A k` into the range of `c.ι.app k`. -/
+theorem exists_homotopyEquiv_of_isColimit
+    (hF : ∀ k : ℕ, IsEmbedding (F.map (homOfLE k.le_succ)))
+    (hFh : ∀ k : ℕ, HasHomotopyExtensionProperty (range (F.map (homOfLE k.le_succ))))
+    {Y : Type u} [TopologicalSpace Y] {A : ℕ → Set Y} (hA : Monotone A) (hAY : ⋃ k, A k = univ)
+    (hAc : IsCoherentWith (range A))
+    (hAH : ∀ k, HasHomotopyExtensionProperty ((↑) ⁻¹' A k : Set (A (k + 1))))
+    (h : ∀ k, F.obj k ≃ₕ A k)
+    (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
+    ∃ H : c.pt ≃ₕ Y, (∀ k w, H (c.ι.app k w) = (h k w : Y)) ∧
+      ∀ k, MapsTo H.symm (A k) (range (c.ι.app k)) := by
+  -- `Y` is the colimit of the `A k`, the `h k` form a levelwise homotopy equivalence from `F` to
+  -- the sequence of the `A k`, and the induced map of colimits is a homotopy equivalence.
+  let hcY := TopCat.isColimitOfIsCoherentWith hA hAY hAc
+  let f : F ⟶ TopCat.subspaceDiagram hA :=
+    NatTrans.ofSequence (fun k ↦ TopCat.ofHom (h k).toFun) fun k ↦ by
+      ext w
+      exact Subtype.ext (hh k w)
+  have hYemb (k : ℕ) : IsEmbedding ((TopCat.subspaceDiagram hA).map (homOfLE k.le_succ)) :=
+    .inclusion (hA k.le_succ)
+  have hYh (k : ℕ) :
+      HasHomotopyExtensionProperty (range ((TopCat.subspaceDiagram hA).map (homOfLE k.le_succ))) :=
+    by rw [TopCat.range_subspaceDiagram_map]; exact hAH k
+  refine ⟨cofibrationTowerHomotopyEquiv hF hFh hYemb hYh f (fun k ↦ ⟨h k, rfl⟩) hc hcY,
+    fun k w ↦ ConcreteCategory.congr_hom (hc.ι_map _ f k) w, fun k y hy ↦
+      mapsTo_cofibrationTowerHomotopyEquiv_symm hF hFh hYemb hYh f (fun k ↦ ⟨h k, rfl⟩) hc hcY k
+        ⟨⟨y, hy⟩, rfl⟩⟩
+
+end ColimitUnion
 
 end TauCeti

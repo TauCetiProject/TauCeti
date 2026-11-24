@@ -7,25 +7,35 @@ module
 
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
+import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Invariants
-import TauCeti.Algebra.BigOperators.Finset.Average
+import TauCeti.Topology.MetricSpace.SimultaneousApproximation
+import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # Almost invariant vectors
 
 A representation has almost invariant vectors if every finite set of group elements moves some
-unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition.
-Its failure is characterized by a finite quadratic lower bound on orbit displacements.
-For finite groups it is equivalent to the existence of a nonzero invariant vector, without
-unitarity or completeness assumptions. The quantitative averaging lemma also produces an
-invariant vector close to a vector whose entire orbit is close to it.
+unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition, and
+almost invariant vectors yield a directed net of unit vectors whose displacements tend to `0` at
+every element of the monoid. Its failure is characterized by a finite quadratic lower bound on
+orbit displacements. For finite groups it is equivalent to the existence of a nonzero invariant
+vector, without unitarity or completeness assumptions. Almost invariant vectors also have
+arbitrarily small total squared displacement on any finite set.
 
-These results provide the finite-group averaging step in the theory of property (T).
+The quantitative averaging lemma works for a subgroup `S` of finite index: averaging the translates
+of an `S`-invariant vector over the coset representatives of `S` gives a vector invariant under the
+whole group, and it is close to the original vector when those representatives move it little. This
+is the averaging step in the finite-index transfer of relative property (T); for a finite group,
+taking `S = ⊥`, it produces an invariant vector close to a vector whose entire orbit is close to it.
+
 The definition follows Anantharaman–Popa, *An Introduction to II₁ Factors*, Definition 14.1.1.
-The finite average is Mathlib's `Representation.averageMap`.
+The average over coset representatives is `Representation.relNorm`, divided by the index.
 -/
 
 public section
+
+open Filter Topology
 
 namespace ContRepresentation
 
@@ -70,6 +80,38 @@ theorem HasAlmostInvariantVectors.restrict {K : Type*} [Monoid K]
   refine ⟨v, hv, fun g hg ↦ ?_⟩
   simpa only [restrict_apply_apply] using hF (f g) (Finset.mem_image_of_mem f hg)
 
+/-- Almost invariant vectors have arbitrarily small total squared displacement on any finite
+set. The vector is still required to have norm one. -/
+theorem HasAlmostInvariantVectors.exists_sum_norm_sq_lt
+    (hρ : ρ.HasAlmostInvariantVectors) (F : Finset G) {ε : ℝ} (hε : 0 < ε) :
+    ∃ v : V, ‖v‖ = 1 ∧ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 < ε := by
+  have hd : 0 < (F.card : ℝ) + 1 := by positivity
+  have hq : 0 < ε / (F.card + 1) := div_pos hε hd
+  obtain ⟨v, hv, hF⟩ := hρ F (Real.sqrt (ε / (F.card + 1))) (Real.sqrt_pos.2 hq)
+  refine ⟨v, hv, ?_⟩
+  have hsum : ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 ≤ F.card * (ε / (F.card + 1)) := by
+    calc
+      _ ≤ ∑ _g ∈ F, ε / (F.card + 1) := by
+        apply Finset.sum_le_sum
+        intro g hg
+        exact (sq_lt_sq₀ (norm_nonneg _) (Real.sqrt_nonneg _)).2 (hF g hg) |>.le.trans
+          (Real.sq_sqrt hq.le).le
+      _ = _ := by simp
+  have hmul := (div_mul_cancel₀ ε hd.ne').symm
+  nlinarith
+
+/-- Extract a directed net of unit vectors whose displacements tend to `0` at every monoid element
+from `ContRepresentation.HasAlmostInvariantVectors`. -/
+theorem HasAlmostInvariantVectors.exists_unit_net_tendsto_sub_zero
+    (hρ : ρ.HasAlmostInvariantVectors) :
+    ∃ v : Finset G × ℕ → V, (∀ p, ‖v p‖ = 1) ∧
+      ∀ g : G, Tendsto (fun p ↦ ‖ρ g (v p) - v p‖) atTop (𝓝 0) :=
+  TauCeti.exists_net_tendsto_of_forall_finset_dist_lt
+    (p := fun v : V ↦ ‖v‖ = 1) (F := fun g v ↦ ‖ρ g v - v‖) (x := fun _ ↦ 0)
+    fun s ε hε ↦ by
+      simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using
+        (hasAlmostInvariantVectors_def ρ).mp hρ s ε hε
+
 end Definition
 
 section NormedSpace
@@ -111,25 +153,43 @@ theorem not_hasAlmostInvariantVectors_iff (ρ : ContRepresentation 𝕜 G V) :
       _ ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
         Finset.single_le_sum (fun i _ ↦ sq_nonneg ‖ρ i v - v‖) hg
   · rintro ⟨F, c, hc, hF⟩ hρ
-    have hn : 0 < (F.card : ℝ) + 1 := by positivity
-    have hε : 0 < Real.sqrt (c / (F.card + 1)) := Real.sqrt_pos.mpr (div_pos hc hn)
-    obtain ⟨v, hv, hmove⟩ := hρ F _ hε
-    have hsum : (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤ F.card * (c / (F.card + 1)) := by
-      calc
-        (∑ g ∈ F, ‖ρ g v - v‖ ^ 2) ≤
-            ∑ _g ∈ F, c / (F.card + 1) := by
-          apply Finset.sum_le_sum
-          intro g hg
-          have := pow_le_pow_left₀ (norm_nonneg _) (hmove g hg).le 2
-          simpa only [Real.sq_sqrt (div_nonneg hc.le hn.le)] using this
-        _ = _ := by simp
-    have hmul : c / (F.card + 1) * (F.card + 1) = c := div_mul_cancel₀ _ hn.ne'
-    have hpos : 0 < c / (F.card + 1) := div_pos hc hn
-    have := hF v
-    rw [hv, one_pow, mul_one] at this
-    nlinarith
+    obtain ⟨v, hv, hsmall⟩ := hρ.exists_sum_norm_sq_lt F hc
+    have hbound := hF v
+    rw [hv, one_pow, mul_one] at hbound
+    exact (not_lt_of_ge hbound) hsmall
 
 end NormedSpace
+
+section FiniteIndex
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- Let `v` be fixed by a subgroup `S` of finite index. If each chosen representative of the
+cosets of `S` moves `v` by less than `ε`, then averaging the translates of `v` over these
+representatives produces a vector fixed by the whole group within `ε` of `v`. -/
+theorem exists_invariant_norm_sub_lt_of_finiteIndex (ρ : ContRepresentation 𝕜 G V)
+    {S : Subgroup G} [S.FiniteIndex] {v : V} (hv : v ∈ (ρ.restrict S.subtype).invariants)
+    {ε : ℝ} (hε : ∀ q : G ⧸ S, ‖ρ q.out v - v‖ < ε) :
+    ∃ w : V, w ∈ ρ.invariants ∧ ‖w - v‖ < ε := by
+  classical
+  let := S.fintypeQuotientOfFiniteIndex
+  have hc : 0 < (Fintype.card (G ⧸ S) : ℝ) := Nat.cast_pos.mpr Fintype.card_pos
+  have hc' : (Fintype.card (G ⧸ S) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  refine ⟨(Fintype.card (G ⧸ S) : 𝕜)⁻¹ • Representation.relNorm ρ.toRepresentation S v,
+    fun g ↦ ?_, ?_⟩
+  · rw [map_smul, ← toRepresentation_apply, Representation.relNorm_apply_eq_self
+      ρ.toRepresentation (H := S) (fun s ↦ by simpa using hv s) g]
+  · -- The difference is the average of the displacements `ρ q.out v - v`.
+    have havg : (Fintype.card (G ⧸ S) : 𝕜)⁻¹ • Representation.relNorm ρ.toRepresentation S v - v =
+        (Fintype.card (G ⧸ S) : 𝕜)⁻¹ • ∑ q : G ⧸ S, (ρ q.out v - v) := by
+      rw [Representation.relNorm_apply]
+      simp [Finset.sum_sub_distrib, smul_sub, ← Nat.cast_smul_eq_nsmul 𝕜, hc']
+    rw [havg, norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_lt_iff₀ hc]
+    calc ‖∑ q : G ⧸ S, (ρ q.out v - v)‖ ≤ ∑ q : G ⧸ S, ‖ρ q.out v - v‖ := norm_sum_le _ _
+      _ < ∑ _q : G ⧸ S, ε := Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun q _ ↦ hε q
+      _ = Fintype.card (G ⧸ S) * ε := by simp
+
+end FiniteIndex
 
 section Finite
 
@@ -140,31 +200,10 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [Finite G] [NormedAddCommGro
 vector within `ε` of it. This does not require the representation to be unitary. -/
 theorem exists_invariant_norm_sub_lt (ρ : ContRepresentation 𝕜 G V) {v : V} {ε : ℝ}
     (hv : ∀ g, ‖ρ g v - v‖ < ε) :
-    ∃ w : V, w ∈ ρ.invariants ∧ ‖w - v‖ < ε := by
-  classical
-  let := Fintype.ofFinite G
-  let : Invertible (Fintype.card G : 𝕜) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
-  have hc : 0 < (Fintype.card G : ℝ) := Nat.cast_pos.mpr Fintype.card_pos
-  refine ⟨ρ.toRepresentation.averageMap v, ?_, ?_⟩
-  · exact ρ.toRepresentation.averageMap_invariant v
-  · have havg : ρ.toRepresentation.averageMap v - v =
-        (Fintype.card G : 𝕜)⁻¹ • ∑ g : G, (ρ g v - v) := by
-      rw [Representation.averageMap_apply, Finset.sum_sub_distrib, smul_sub,
-        ← invOf_eq_inv, Fintype.invOf_card_smul_sum_const]
-      -- Forgetting continuity via `toRepresentation` leaves each operator's action unchanged.
-      rfl
-    rw [havg, norm_smul]
-    simp only [norm_inv, RCLike.norm_natCast]
-    calc
-      (Fintype.card G : ℝ)⁻¹ * ‖∑ g : G, (ρ g v - v)‖ ≤
-          (Fintype.card G : ℝ)⁻¹ * ∑ g : G, ‖ρ g v - v‖ :=
-        mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
-      _ < (Fintype.card G : ℝ)⁻¹ * ∑ _g : G, ε :=
-        mul_lt_mul_of_pos_left
-          (Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun g _ ↦ hv g)
-          (by positivity)
-      _ = ε := by simp [hc.ne']
+    ∃ w : V, w ∈ ρ.invariants ∧ ‖w - v‖ < ε :=
+  -- Average over the cosets of the trivial subgroup, which has finite index and fixes `v`.
+  ρ.exists_invariant_norm_sub_lt_of_finiteIndex (S := ⊥)
+    (fun ⟨_, hs⟩ ↦ by simp [Subgroup.mem_bot.mp hs]) fun q ↦ hv q.out
 
 /-- For a finite group, almost invariant vectors give a nonzero invariant vector even in an
 incomplete normed representation. -/

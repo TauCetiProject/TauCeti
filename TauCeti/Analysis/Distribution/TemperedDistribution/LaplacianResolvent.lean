@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LaplacianResolvent
 public import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
-import TauCeti.Analysis.Distribution.Sobolev
 
 /-!
 # The resolvent of the Laplacian on tempered distributions
@@ -19,11 +17,9 @@ This symbol is bounded below by `c`, so the Fourier multiplier with the reciproc
 two-sided inverse `TemperedDistribution.laplacianResolvent c` of `-Δ + c` on all tempered
 distributions. It extends the resolvent `SchwartzMap.laplacianResolvent` on Schwartz space.
 
-On the `L²` Sobolev scale the resolvent gains two derivatives: it maps `H^s` to `H^{s+2}`. With
-Mathlib's mapping property of the Laplacian, this gives elliptic regularity for `-Δ + c`: a
-tempered distribution `f` lies in `H^{s+2}` exactly when `-Δ f + c f` lies in `H^s`. Inverting a
-constant-coefficient first-order operator `L` satisfying a Weitzenböck identity `L* L = L L* =
--Δ + c` on the Sobolev scale reduces to this statement, through `L⁻¹ = L* (-Δ + c)⁻¹`.
+On the `L²` Sobolev scale the resolvent gains two derivatives, and `-Δ + c` is elliptic: these
+are the cases `s = -1` and `s = 1` of the mapping properties of the real powers `(-Δ + c) ^ s`, so
+they are proved with those powers in `TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Power`.
 
 ## Main declarations
 
@@ -33,14 +29,12 @@ constant-coefficient first-order operator `L` satisfying a Weitzenböck identity
   `((2π)² ‖ξ‖² + c)⁻¹` (`TemperedDistribution.laplacianResolvent_eq_fourierMultiplierCLM`),
   characterized for `c > 0` as the two-sided inverse of `-Δ + c` by
   `TemperedDistribution.laplacianResolvent_neg_laplacian_add_smul` and
-  `TemperedDistribution.neg_laplacian_laplacianResolvent_add_smul`.
+  `TemperedDistribution.neg_laplacian_laplacianResolvent_add_smul`; for `c = 1`,
+  `TemperedDistribution.laplacianResolvent_one_sub_laplacian` says `(1 - Δ)⁻¹ (f - Δ f) = f`.
 * `TemperedDistribution.eq_zero_of_neg_laplacian_add_smul_eq_zero`: for `c > 0`, `-Δ + c` has
   trivial kernel on tempered distributions.
 * `TemperedDistribution.laplacianResolvent_toTemperedDistributionCLM_eq`: on Schwartz functions it
   is `SchwartzMap.laplacianResolvent`.
-* `TemperedDistribution.MemSobolev.laplacianResolvent`: the resolvent maps `H^s` to `H^{s+2}`.
-* `TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`: `f ∈ H^{s+2}` if and only
-  if `-Δ f + c f ∈ H^s`.
 
 ## References
 
@@ -114,6 +108,12 @@ theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : �
       (hasTemperateGrowth_resolventSymbol hc), resolventSymbol_mul hc]
   simp
 
+/-- The resolvent `(1 - Δ)⁻¹` is a left inverse of `1 - Δ`. -/
+@[simp]
+theorem laplacianResolvent_one_sub_laplacian (f : 𝓢'(E, F)) :
+    laplacianResolvent F 1 (f - Δ f) = f := by
+  simpa [sub_eq_neg_add] using laplacianResolvent_neg_laplacian_add_smul one_pos f
+
 /-- The resolvent of the Laplacian is a right inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
 theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢'(E, F)) :
@@ -139,58 +139,5 @@ theorem laplacianResolvent_toTemperedDistributionCLM_eq [CompleteSpace F] {c : �
     ← laplacian_toTemperedDistributionCLM_eq, laplacianResolvent_neg_laplacian_add_smul hc]
 
 end normed
-
-section inner
-
-variable [InnerProductSpace ℂ F] [CompleteSpace F]
-
-/-- **The resolvent of the Laplacian gains two derivatives**: it maps the Sobolev space `H^s` to
-`H^{s+2}`, for `c > 0`. -/
-theorem MemSobolev.laplacianResolvent {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)}
-    (hf : MemSobolev s 2 f) :
-    MemSobolev (s + 2) 2 (TemperedDistribution.laplacianResolvent F c f) := by
-  -- Factor the resolvent as the Bessel potential of order `-2` after the bounded multiplier
-  -- `(1 + ‖ξ‖²) / ((2π)² ‖ξ‖² + c)`.
-  set m : E → ℂ := fun ξ ↦ (((1 + ‖ξ‖ ^ 2) * ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹ : ℝ) : ℂ)
-  have hr := TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (E := E) (a := (2 * π) ^ 2)
-    (by positivity) hc
-  have hm : m.HasTemperateGrowth := by fun_prop
-  have hmb : ∃ C, ∀ ξ, ‖m ξ‖ ≤ C := by
-    refine ⟨c⁻¹ + ((2 * π) ^ 2)⁻¹, fun ξ ↦ ?_⟩
-    have ha : 0 < (2 * π) ^ 2 := by positivity
-    have hd : 0 < (2 * π) ^ 2 * ‖ξ‖ ^ 2 + c := by positivity
-    rw [Complex.norm_real, Real.norm_of_nonneg (by positivity), ← div_eq_mul_inv,
-      div_le_iff₀ hd]
-    have hexp : (c⁻¹ + ((2 * π) ^ 2)⁻¹) * ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c) =
-        (2 * π) ^ 2 * ‖ξ‖ ^ 2 / c + 1 + ‖ξ‖ ^ 2 + c / (2 * π) ^ 2 := by
-      field_simp
-      ring
-    have h₁ : 0 ≤ (2 * π) ^ 2 * ‖ξ‖ ^ 2 / c := by positivity
-    have h₂ : 0 ≤ c / (2 * π) ^ 2 := by positivity
-    linarith
-  have heq : TemperedDistribution.laplacianResolvent F c f =
-      besselPotential E F (-2) (fourierMultiplierCLM F m f) := by
-    rw [besselPotential, fourierMultiplierCLM_fourierMultiplierCLM_apply hm (by fun_prop),
-      laplacianResolvent_eq_fourierMultiplierCLM]
-    congr 2
-    ext ξ
-    have h₁ : (1 + ‖ξ‖ ^ 2 : ℂ) ≠ 0 := by exact_mod_cast (by positivity : (1 + ‖ξ‖ ^ 2 : ℝ) ≠ 0)
-    norm_num [m, Real.rpow_neg_one]
-    field_simp
-  rw [heq, memSobolev_besselPotential_iff, show -2 + (s + 2) = s by ring]
-  exact hf.fourierMultiplierCLM_of_bounded hm hmb
-
-/-- **Elliptic regularity for the shifted Laplacian**: for `c > 0`, a tempered distribution `f`
-lies in the Sobolev space `H^{s+2}` if and only if `-Δ f + c f` lies in `H^s`. -/
-theorem memSobolev_add_two_iff_neg_laplacian_add_smul {c s : ℝ} (hc : 0 < c) {f : 𝓢'(E, F)} :
-    MemSobolev (s + 2) 2 f ↔ MemSobolev s 2 (-Δ f + c • f) := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
-  · have hΔ := hf.laplacian
-    rw [add_sub_cancel_right] at hΔ
-    exact hΔ.neg.add ((hf.mono (by linarith)).smul_of_tower c)
-  · have h := hf.laplacianResolvent (F := F) hc
-    rwa [laplacianResolvent_neg_laplacian_add_smul hc] at h
-
-end inner
 
 end TemperedDistribution

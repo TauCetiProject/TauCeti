@@ -13,44 +13,58 @@ public import TauCeti.GroupTheory.OrderOfElement.NegOne
 /-!
 # Orders of residues
 
-Let `ℓ` be a prime and `a > 1` a natural number. The multiplicative order of `a` modulo `ℓ ^ r`
-has unbounded `ℓ`-adic valuation as `r` grows: for every `j`, the power `ℓ ^ j` divides it for all
-large `r` (`ZMod.eventually_pow_dvd_orderOf_natCast`).
+Let `ℓ` and `a ≠ 1` be natural numbers. For every `j`, the power `ℓ ^ j` divides the
+multiplicative order of `a` modulo `ℓ ^ r` for all large `r`
+(`ZMod.eventually_pow_dvd_orderOf_natCast`). For a prime `ℓ` not dividing `a`, this order is
+positive, so its `ℓ`-adic valuation is unbounded as `r` grows; for a prime `ℓ` dividing `a`, the
+order is instead eventually `0`.
 
-When `ℓ ∣ a` the residue of `a` is not a unit and its order is `0` from `r = 1` on. Otherwise the
-order divides `φ(ℓ ^ r) = ℓ ^ (r - 1) (ℓ - 1)`, so if `ℓ ^ j` did not divide it, it would divide
-the number `ℓ ^ (j - 1) (ℓ - 1)`, which does not depend on `r`; then `ℓ ^ r` would divide the
-positive number `a ^ (ℓ ^ (j - 1) (ℓ - 1)) - 1` for every `r`, which is absurd.
+When `a` and `ℓ` are not coprime, the residue of `a` is not a unit and its order is `0` from
+`r = 1` on. Otherwise it suffices to treat the prime factors of `ℓ`, so let `ℓ` be a prime not
+dividing `a`. Then `a > 1`, and the order divides `φ(ℓ ^ r) = ℓ ^ (r - 1) (ℓ - 1)`, so if `ℓ ^ j`
+did not divide it, it would divide the number `ℓ ^ (j - 1) (ℓ - 1)`, which does not depend on `r`;
+then `ℓ ^ r` would divide the positive number `a ^ (ℓ ^ (j - 1) (ℓ - 1)) - 1` for every `r`,
+which is absurd.
 
 For the residue `a = 𝔑𝔭` of a prime `𝔭 ∤ ℓ` of a number field, this order is the residue degree
 of `𝔭` in the cyclotomic extension of level `ℓ ^ r`, so the statement says that these residue
 degrees become divisible by any given power of `ℓ` along the cyclotomic tower.
 
-A residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root modulo `n` is
-one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo `p ²` is one
-modulo every power of `p`.
+Unless `n` is `1` or `2`, the residue `-1` has order `2`, so `2` divides the exponent of `(ℤ/n)ˣ`.
+
+For `n ≠ 0`, a residue whose order is `φ(n)` is a primitive root modulo `n`. A primitive root
+modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primitive root modulo
+`p ²` is one modulo every power of `p`.
 
 The order of `q` modulo `n` decides which of the numbers `q ^ k - 1` are divisible by `n`: those
-with `k` a multiple of the order. Modulo a prime `p`, an element of even order `2 * m` has `m`-th
-power `-1`, so if `a / b` has order `2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd
-multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible by `p`.
+with `k` a multiple of the order. In particular `p > 1` has order `f` modulo `p ^ f - 1`. Modulo
+a prime `p`, an element of even order `2 * m` has `m`-th power `-1`, so if `a / b` has order
+`2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd multiples `k` of `m`; for `b = 1` this
+decides which `q ^ k + 1` are divisible by `p`.
 
 ## Main results
 
+* `ZMod.orderOf_natCast_pos_iff`, `ZMod.orderOf_natCast_pos_of_not_dvd`: `(a : ZMod n)` has
+  positive multiplicative order iff `a.Coprime n`, and in particular whenever `a` is a prime not
+  dividing `n`.
 * `ZMod.orderOf_natCast_dvd_orderOf_natCast`: for `m ∣ n`, the order of `a` modulo `m` divides its
   order modulo `n`.
-* `ZMod.eventually_pow_dvd_orderOf_natCast`: for every `j`, `ℓ ^ j` divides the order of `a`
-  modulo `ℓ ^ r` for all large `r`.
+* `ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd`: for `q > 0`, `n ∣ q ^ k - 1` iff the order of
+  `q` modulo `n` divides `k`.
+* `ZMod.eventually_pow_dvd_orderOf_natCast`: for `a ≠ 1` and every `j`, `ℓ ^ j` divides the
+  order of `a` modulo `ℓ ^ r` for all large `r`.
+* `ZMod.two_dvd_exponent_units`: for `n ≠ 1, 2`, `2` divides the exponent of `(ℤ/n)ˣ`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
-* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number is a
-  primitive root modulo `n`.
+* `ZMod.exists_orderOf_natCast_eq_totient`: if `(ℤ/n)ˣ` is cyclic, some natural number has order
+  `φ(n)` modulo `n`, that is, is a primitive root modulo `n` when `n ≠ 0`; for `n = 0` the
+  witness is the junk value `0`.
 * `ZMod.orderOf_natCast_eq_totient_of_dvd`: a primitive root modulo `n` is a primitive root
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
   primitive root modulo every `p ^ e`.
-* `ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd`: for `q > 0`, `n ∣ q ^ k - 1` iff the order of
-  `q` modulo `n` divides `k`.
+* `TauCeti.ZMod.orderOf_natCast_pow_sub_one`: for `p > 1`, the order of `p` modulo `p ^ f - 1` is
+  `f`.
 * `Nat.Prime.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul`: if `a / b` has order `2 * m ≠ 0` modulo
   a prime `p`, then `p ∣ a ^ k + b ^ k` iff `m ∣ k` and `¬ 2 * m ∣ k`.
 * `Nat.Prime.dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul`: if `q` has order `2 * m ≠ 0`
@@ -66,15 +80,38 @@ public section
 
 namespace ZMod
 
+/-- For any natural numbers `a` and `n` (including `n = 0`), the residue of `a` modulo `n` has
+positive multiplicative order if and only if `a` and `n` are coprime. -/
+theorem orderOf_natCast_pos_iff {n a : ℕ} :
+    0 < orderOf (a : ZMod n) ↔ a.Coprime n := by
+  have : Finite (ZMod n)ˣ := by
+    obtain rfl | _ := eq_zero_or_neZero n
+    · exact inferInstanceAs (Finite ℤˣ)
+    · infer_instance
+  rw [orderOf_pos_iff, isOfFinOrder_iff_isUnit, isUnit_iff_coprime]
+
+/-- If a prime `p` does not divide `m`, then the residue of `p` modulo `m` has positive
+multiplicative order. -/
+theorem orderOf_natCast_pos_of_not_dvd {m p : ℕ} (hp : p.Prime) (hm : ¬ p ∣ m) :
+    0 < orderOf (p : ZMod m) :=
+  orderOf_natCast_pos_iff.mpr (hp.coprime_iff_not_dvd.mpr hm)
+
 /-- For `m ∣ n`, the order of a natural number `a` modulo `m` divides its order modulo `n`, since
 reduction modulo `m` is a ring homomorphism `ZMod n →+* ZMod m`. -/
 theorem orderOf_natCast_dvd_orderOf_natCast {m n : ℕ} (h : m ∣ n) (a : ℕ) :
     orderOf (a : ZMod m) ∣ orderOf (a : ZMod n) := by
   simpa using orderOf_map_dvd (ZMod.castHom h (ZMod m)).toMonoidHom (a : ZMod n)
 
-/-- For a prime `ℓ` and a natural number `a > 1`, every power `ℓ ^ j` divides the multiplicative
-order of `a` modulo `ℓ ^ r` for all large `r`. -/
-theorem eventually_pow_dvd_orderOf_natCast {ℓ : ℕ} (hℓ : ℓ.Prime) {a : ℕ} (ha : 1 < a) (j : ℕ) :
+/-- For a positive natural number `q` and any modulus `n`, `n` divides `q ^ k - 1` if and only if
+the order of `q` modulo `n` divides `k`. -/
+theorem dvd_pow_sub_one_iff_orderOf_natCast_dvd {n q : ℕ} (hq : 0 < q) (k : ℕ) :
+    n ∣ q ^ k - 1 ↔ orderOf (q : ZMod n) ∣ k := by
+  rw [orderOf_dvd_iff_pow_eq_one, ← natCast_eq_zero_iff]
+  simp [Nat.cast_sub (Nat.one_le_pow _ _ hq), sub_eq_zero]
+
+/-- The case of `eventually_pow_dvd_orderOf_natCast` where `ℓ` is a prime not dividing `a`. -/
+private theorem eventually_pow_dvd_orderOf_natCast_of_prime {ℓ : ℕ} (hℓ : ℓ.Prime) {a : ℕ}
+    (ha : a ≠ 1) (hdvd : ¬ ℓ ∣ a) (j : ℕ) :
     ∀ᶠ r in Filter.atTop, ℓ ^ j ∣ orderOf (a : ZMod (ℓ ^ r)) := by
   -- The order modulo `ℓ ^ r` divides the order modulo `ℓ ^ r'` for `r ≤ r'`, so one level
   -- suffices.
@@ -82,53 +119,79 @@ theorem eventually_pow_dvd_orderOf_natCast {ℓ : ℕ} (hℓ : ℓ.Prime) {a : �
     obtain ⟨R, hR⟩ := h
     exact Filter.eventually_atTop.2 ⟨R, fun r hr =>
       hR.trans (orderOf_natCast_dvd_orderOf_natCast (pow_dvd_pow ℓ hr) a)⟩
-  by_cases hdvd : ℓ ∣ a
-  · -- The residue of `a` modulo `ℓ` is `0`, of order `0`.
-    have : Fact (1 < ℓ ^ 1) := ⟨by simpa using hℓ.one_lt⟩
-    refine ⟨1, ?_⟩
-    rw [(ZMod.natCast_eq_zero_iff a (ℓ ^ 1)).2 (by simpa using hdvd), orderOf_zero]
-    exact dvd_zero _
-  -- Otherwise the order modulo `ℓ ^ r` divides `φ (ℓ ^ r)`; the level `r = a ^ B`, with
-  -- `B = ℓ ^ (j - 1) * (ℓ - 1)`, is too large for `a ^ B ≡ 1 (mod ℓ ^ r)`.
-  set B := ℓ ^ (j - 1) * (ℓ - 1) with hB_def
+  -- Here `a > 1` (as `ℓ ∣ 0`), and the order modulo `ℓ ^ r` divides `φ (ℓ ^ r)`; the level
+  -- `r = a ^ B`, with `B = ℓ ^ (j - 1) * (ℓ - 1)`, is too large for `a ^ B ≡ 1 (mod ℓ ^ r)`.
+  have ha : 1 < a := Nat.one_lt_iff_ne_zero_and_ne_one.2 ⟨fun h ↦ hdvd (h ▸ dvd_zero ℓ), ha⟩
+  set B := ℓ ^ (j - 1) * (ℓ - 1)
   have hB : 0 < B := Nat.mul_pos (pow_pos hℓ.pos _) (Nat.sub_pos_of_lt hℓ.one_lt)
   have haB : 0 < a ^ B - 1 := Nat.sub_pos_of_lt (Nat.one_lt_pow hB.ne' ha)
-  set r := a ^ B with hr_def
+  set r := a ^ B
   have hr : 0 < r := pow_pos (by omega) B
   refine ⟨r, ?_⟩
+  by_contra hnot
   have : NeZero (ℓ ^ r) := ⟨pow_ne_zero r hℓ.ne_zero⟩
   have hcop : a.Coprime (ℓ ^ r) :=
     Nat.Coprime.pow_right r (Nat.Coprime.symm ((hℓ.coprime_iff_not_dvd).2 hdvd))
-  set o := orderOf (a : ZMod (ℓ ^ r)) with ho_def
-  have hoφ : o ∣ ℓ ^ (r - 1) * (ℓ - 1) := by
-    rw [ho_def, ← ZMod.coe_unitOfCoprime a hcop, orderOf_units, ← Nat.totient_prime_pow hℓ hr,
+  have hoφ : orderOf (a : ZMod (ℓ ^ r)) ∣ ℓ ^ (r - 1) * (ℓ - 1) := by
+    rw [← ZMod.coe_unitOfCoprime a hcop, orderOf_units, ← Nat.totient_prime_pow hℓ hr,
       ← ZMod.card_units_eq_totient]
     exact orderOf_dvd_card
-  have ho : o ≠ 0 := by
-    rw [ho_def, ← ZMod.coe_unitOfCoprime a hcop, orderOf_units]
-    exact (orderOf_pos _).ne'
-  by_contra hnot
-  -- Write `o = ℓ ^ e * t` with `ℓ ∤ t`; then `e < j` and `t ∣ ℓ - 1`, so `o ∣ B`.
-  obtain ⟨e, t, ht, hot⟩ := Nat.exists_eq_pow_mul_and_not_dvd ho ℓ hℓ.ne_one
+  -- Write the order as `ℓ ^ e * t` with `t ∣ ℓ - 1`; then `e < j`, so the order divides `B`.
+  obtain ⟨_, t, hd, ht, ho⟩ := dvd_mul.1 hoφ
+  obtain ⟨e, -, rfl⟩ := (Nat.dvd_prime_pow hℓ).1 hd
   have he : e < j := by
-    by_contra hje
-    exact hnot (hot ▸ (pow_dvd_pow ℓ (not_lt.1 hje)).trans (dvd_mul_right _ _))
-  have htcop : t.Coprime (ℓ ^ (r - 1)) :=
-    Nat.Coprime.pow_right _ (Nat.Coprime.symm ((hℓ.coprime_iff_not_dvd).2 ht))
-  have hoB : o ∣ B := by
-    rw [hot, hB_def]
-    exact mul_dvd_mul (pow_dvd_pow ℓ (by omega))
-      (htcop.dvd_of_dvd_mul_left ((dvd_mul_left t (ℓ ^ e)).trans (hot ▸ hoφ)))
+    by_contra! hje
+    exact hnot (ho ▸ (pow_dvd_pow ℓ hje).trans (dvd_mul_right _ _))
+  have hoB : orderOf (a : ZMod (ℓ ^ r)) ∣ B := by
+    rw [ho]
+    exact mul_dvd_mul (pow_dvd_pow ℓ (by omega)) ht
   -- Hence `ℓ ^ r ∣ a ^ B - 1`, which is positive and smaller than `r < ℓ ^ r`.
-  have hpow : ((a ^ B : ℕ) : ZMod (ℓ ^ r)) = ((1 : ℕ) : ZMod (ℓ ^ r)) := by
-    rw [Nat.cast_pow, Nat.cast_one]
-    exact orderOf_dvd_iff_pow_eq_one.1 hoB
-  have hdvd' : ℓ ^ r ∣ a ^ B - 1 :=
-    (Nat.modEq_iff_dvd' (Nat.one_le_pow _ _ (by omega))).1
-      ((ZMod.natCast_eq_natCast_iff _ _ _).1 hpow).symm
+  have := Nat.le_of_dvd haB ((dvd_pow_sub_one_iff_orderOf_natCast_dvd (by omega) B).2 hoB)
   have hlt : r < ℓ ^ r := Nat.lt_pow_self hℓ.one_lt
-  have := Nat.le_of_dvd haB hdvd'
   omega
+
+/-- For natural numbers `ℓ` and `a ≠ 1`, every power `ℓ ^ j` divides the multiplicative order of
+`a` modulo `ℓ ^ r` for all large `r`. For a prime `ℓ` not dividing `a`, this order is positive, so
+its `ℓ`-adic valuation is unbounded as `r` grows. When `a` and `ℓ` are not coprime (for a prime `ℓ`:
+when `ℓ ∣ a`), the order is instead `0` from `r = 1` on. The hypothesis `a ≠ 1` is needed, since
+`1` has order `1`. -/
+theorem eventually_pow_dvd_orderOf_natCast (ℓ : ℕ) {a : ℕ} (ha : a ≠ 1) (j : ℕ) :
+    ∀ᶠ r in Filter.atTop, ℓ ^ j ∣ orderOf (a : ZMod (ℓ ^ r)) := by
+  by_cases hcop : a.Coprime ℓ
+  swap
+  · -- From `r = 1` on, the residue of `a` is not a unit, so its order is `0`.
+    filter_upwards [Filter.eventually_ge_atTop 1] with r hr
+    have h0 : orderOf (a : ZMod (ℓ ^ r)) = 0 := Nat.eq_zero_of_not_pos <| by
+      rwa [orderOf_natCast_pos_iff, Nat.coprime_pow_right_iff hr]
+    exact h0 ▸ dvd_zero _
+  -- Otherwise `ℓ ≠ 0`, and it suffices that for each prime `p ∣ ℓ` the part
+  -- `p ^ (ℓ ^ j).factorization p` of `ℓ ^ j` divides the order modulo `p ^ r`, which divides
+  -- the order modulo `ℓ ^ r`.
+  have hℓ : ℓ ≠ 0 := by
+    rintro rfl
+    exact ha (Nat.coprime_zero_right _ |>.1 hcop)
+  have hfac (p : ℕ) (hp : p ∈ ℓ.primeFactors) : ∀ᶠ r in Filter.atTop,
+      p ^ (ℓ ^ j).factorization p ∣ orderOf (a : ZMod (ℓ ^ r)) := by
+    have hpp := Nat.prime_of_mem_primeFactors hp
+    have hpℓ := Nat.dvd_of_mem_primeFactors hp
+    have hpa : ¬ p ∣ a := hpp.coprime_iff_not_dvd.1 (hcop.coprime_dvd_right hpℓ).symm
+    filter_upwards [eventually_pow_dvd_orderOf_natCast_of_prime hpp ha hpa _] with r hr
+    exact hr.trans (orderOf_natCast_dvd_orderOf_natCast (pow_dvd_pow_of_dvd hpℓ r) a)
+  filter_upwards [(Filter.eventually_all_finset _).2 hfac] with r hr
+  have ho : orderOf (a : ZMod (ℓ ^ r)) ≠ 0 := (orderOf_natCast_pos_iff.2 (hcop.pow_right r)).ne'
+  rw [← Nat.factorization_prime_le_iff_dvd (pow_ne_zero j hℓ) ho]
+  intro p hpp
+  by_cases hpℓ : p ∣ ℓ
+  · exact (hpp.pow_dvd_iff_le_factorization ho).1 (hr p (Nat.mem_primeFactors.2 ⟨hpp, hpℓ, hℓ⟩))
+  · -- A prime not dividing `ℓ` does not occur in `ℓ ^ j`.
+    simp [Nat.factorization_eq_zero_of_not_dvd hpℓ]
+
+/-- Unless `n` is `1` or `2`, the residue `-1` has order `2` in `(ℤ/n)ˣ` (for `n = 0` this is
+`ℤˣ = {±1}`), so `2` divides the exponent of the unit group. -/
+theorem two_dvd_exponent_units {n : ℕ} (h1 : n ≠ 1) (h2 : n ≠ 2) :
+    2 ∣ Monoid.exponent (ZMod n)ˣ := by
+  have : Nontrivial (ZMod n) := nontrivial_iff.2 h1
+  simpa [ringChar_zmod_n, h2] using Monoid.order_dvd_exponent (-1 : (ZMod n)ˣ)
 
 /-! ### Primitive roots -/
 
@@ -138,14 +201,25 @@ theorem isUnit_of_orderOf_eq_totient {n : ℕ} [NeZero n] {x : ZMod n}
   (orderOf_pos_iff.mp (h ▸ Nat.totient_pos.mpr (NeZero.pos n))).isUnit
 
 /-- A unit modulo `n` whose order is `φ(n)` generates `(ℤ/n)ˣ`. -/
-theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} [NeZero n] {u : (ZMod n)ˣ}
-    (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ :=
-  (Subgroup.card_eq_iff_eq_top _).mp <| by
-    rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
+theorem zpowers_eq_top_of_orderOf_eq_totient {n : ℕ} {u : (ZMod n)ˣ}
+    (h : orderOf u = n.totient) : Subgroup.zpowers u = ⊤ := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `ℤˣ` is finite, so the order of `u` is positive, while `φ 0 = 0`.
+    have : Finite (ZMod 0)ˣ := inferInstanceAs (Finite ℤˣ)
+    exact absurd (h.trans Nat.totient_zero) (orderOf_pos u).ne'
+  · have : NeZero n := ⟨hn.ne'⟩
+    exact (Subgroup.card_eq_iff_eq_top _).mp <| by
+      rw [Nat.card_zpowers, h, Nat.card_eq_fintype_card, card_units_eq_totient]
 
-/-- If `(ℤ/n)ˣ` is cyclic, some natural number is a primitive root modulo `n`. -/
-theorem exists_orderOf_natCast_eq_totient {n : ℕ} [NeZero n] [IsCyclic (ZMod n)ˣ] :
+/-- If `(ℤ/n)ˣ` is cyclic, some natural number has order `φ(n)` modulo `n`, that is, is a primitive
+root modulo `n` when `n ≠ 0`. For `n = 0` the statement holds with the junk witness `g = 0`, since
+`φ 0 = 0`; it says nothing about generators of `ℤˣ`. -/
+theorem exists_orderOf_natCast_eq_totient {n : ℕ} [IsCyclic (ZMod n)ˣ] :
     ∃ g : ℕ, orderOf (g : ZMod n) = n.totient := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `φ 0 = 0` and `0 : ℤ` has order `0`.
+    exact ⟨0, by simp [Nat.totient_zero]⟩
+  have : NeZero n := ⟨hn.ne'⟩
   obtain ⟨u, hu⟩ := isCyclic_iff_exists_orderOf_eq_natCard.mp ‹IsCyclic (ZMod n)ˣ›
   refine ⟨(u : ZMod n).val, ?_⟩
   rw [natCast_zmod_val, orderOf_units, hu, Nat.card_eq_fintype_card, card_units_eq_totient]
@@ -210,16 +284,24 @@ theorem orderOf_natCast_prime_pow_eq_totient {p g : ℕ} (hp : p.Prime) (hp2 : p
   rw [orderOf_pow_of_dvd hp1 hdvd] at hpow
   rw [Nat.totient_prime_pow_succ hp, ← hpow, Nat.div_mul_cancel hdvd]
 
-/-! ### Divisibility of `q ^ k - 1` and `q ^ k + 1` -/
-
-/-- For a positive natural number `q` and any modulus `n`, `n` divides `q ^ k - 1` if and only if
-the order of `q` modulo `n` divides `k`. -/
-theorem dvd_pow_sub_one_iff_orderOf_natCast_dvd {n q : ℕ} (hq : 0 < q) (k : ℕ) :
-    n ∣ q ^ k - 1 ↔ orderOf (q : ZMod n) ∣ k := by
-  rw [orderOf_dvd_iff_pow_eq_one, ← natCast_eq_zero_iff]
-  simp [Nat.cast_sub (Nat.one_le_pow _ _ hq), sub_eq_zero]
-
 end ZMod
+
+namespace TauCeti.ZMod
+
+/-- For `1 < p`, the order of `p` modulo `p ^ f - 1` is `f`. At `f = 0` the modulus is `0`, and
+the order `0` in `ZMod 0 = ℤ` means that `p` has infinite multiplicative order. -/
+@[simp]
+theorem orderOf_natCast_pow_sub_one {p : ℕ} (hp : 1 < p) (f : ℕ) :
+    orderOf (p : ZMod (p ^ f - 1)) = f := by
+  have hdvd := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (by omega) f).1
+    dvd_rfl
+  have ho := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (q := p) (by omega)
+    (orderOf (p : ZMod (p ^ f - 1)))).2 dvd_rfl
+  exact Nat.dvd_antisymm hdvd ((Nat.pow_sub_one_dvd_pow_sub_one_iff hp).mp ho)
+
+end TauCeti.ZMod
+
+/-! ### Divisibility of `a ^ k + b ^ k` -/
 
 namespace Nat.Prime
 

@@ -67,7 +67,7 @@ theorem intCoord_apply_w₀ (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) : 
 @[simp]
 theorem intCoord_apply (c : {w : InfinitePlace K // w ≠ w₀} → ℤ)
     (w : {w : InfinitePlace K // w ≠ w₀}) : intCoord c w = c w := by
-  simp [intCoord, w.2]
+  simp [intCoord, w.property]
 
 open scoped Classical in
 /-- The integral point `intCoord c` of the coordinates of `expMapBasis` is mapped to the vector of
@@ -75,7 +75,8 @@ absolute values of the unit `∏_i η_i ^ c_i`, where `η_i` runs over the funda
 units. -/
 theorem expMapBasis_intCoord (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) :
     expMapBasis (intCoord c) =
-      fun w ↦ w ((∏ i, fundSystem K (equivFinRank.symm i) ^ c i : (𝓞 K)ˣ) : K) := by
+      fun w ↦ w ((∏ i, fundSystem K ((NumberField.Units.equivFinRank K).symm i) ^ c i :
+        (𝓞 K)ˣ) : K) := by
   -- Mathlib has no `coe_prod` for the coercion `(𝓞 K)ˣ → K`, so we write it as a bundled monoid
   -- hom (by definition, as Mathlib's `NumberField.Units.coe_zpow` does) to use `map_prod`.
   let φ : (𝓞 K)ˣ →* K := (Units.coeHom K).comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)

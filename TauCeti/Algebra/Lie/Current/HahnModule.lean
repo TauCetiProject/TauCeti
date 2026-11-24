@@ -89,7 +89,7 @@ theorem denseRange_tensorProductToHahnModule :
 
 /-- Tensor currents with free coefficients are complete precisely when the coefficient module
 is finitely generated. Over a field this is exactly finite-dimensionality. -/
-theorem completeSpace_iff_moduleFinite [Nontrivial R] [Module.Free R V] :
+theorem completeSpace_iff_moduleFinite [Module.Free R V] :
     CompleteSpace (currentAlgebra R V) ↔ Module.Finite R V := by
   constructor
   · intro h

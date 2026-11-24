@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.DedekindEta
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
@@ -66,7 +66,7 @@ theorem siegelFunction_zero_half_eq_eta {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![0, 1 / 2] τ = 2 * I * (η (2 * τ) / η τ) ^ 2 := by
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have he : cexp (π * I * τ / 6) = cexp (π * I * τ / 12) ^ 2 := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     push_cast
     ring
@@ -78,7 +78,7 @@ theorem siegelFunction_half_zero_eq_eta {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] τ = -(η (τ / 2) / η τ) ^ 2 := by
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have he : cexp (-(π * I * τ / 12)) = cexp (-(π * I * τ / 24)) ^ 2 := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     push_cast
     ring
@@ -91,7 +91,7 @@ theorem siegelFunction_half_half_eq_eta {τ : ℂ} (hτ : 0 < τ.im) :
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have he : cexp (-(π * I / 4)) * cexp (-(π * I * τ / 12)) =
       cexp (-(π * I / 3)) * cexp (π * I / 24) ^ 2 * cexp (-(π * I * τ / 24)) ^ 2 := by
-    simp only [← Complex.exp_nat_mul, ← Complex.exp_add]
+    simp only [← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -179,10 +179,10 @@ private theorem prod_X_sub_C_siegelFunction_pow_twelve_T_smul (τ : ℍ) :
         (X - C (siegelFunction ![1 / 2, 1 / 2] τ ^ 12)) := by
   have h₆ : cexp (π * I / 6) ^ 12 = 1 := by
     have harg : ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I := by push_cast; ring
-    rw [← Complex.exp_nat_mul, harg, exp_two_pi_mul_I]
+    rw [← Complex.exp_natCast_mul, harg, exp_two_pi_mul_I]
   have h₃ : cexp (-(π * I / 3)) ^ 12 = 1 := by
     have harg : ((12 : ℕ) : ℂ) * -(π * I / 3) = ((-2 : ℤ) : ℂ) * (2 * π * I) := by push_cast; ring
-    rw [← Complex.exp_nat_mul, harg, exp_int_mul_two_pi_mul_I]
+    rw [← Complex.exp_natCast_mul, harg, exp_int_mul_two_pi_mul_I]
   rw [ModularGroup.coe_T_smul, siegelFunction_zero_half_apply_add_one,
     siegelFunction_half_zero_apply_add_one, siegelFunction_half_half_apply_add_one, mul_pow,
     mul_pow, mul_pow, h₆, h₃]

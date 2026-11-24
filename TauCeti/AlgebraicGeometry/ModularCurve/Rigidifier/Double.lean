@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
-import TauCeti.CategoryTheory.Aut.Representable
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # The scheme of two rigidifications
@@ -56,9 +56,11 @@ theorem doubleRepresentableBy_homEquiv {X : EllObj B}
       ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).1,
         ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).2,
           Q.map f.op (D.universal V))) := by
-  rw [doubleRepresentableBy, homEquiv_ofIso, Iso.trans_hom, NatTrans.comp_app,
-    types_comp_apply, associator_hom_app_apply, braiding_hom_app_apply,
-    tensorRepresentableBy_homEquiv]
+  -- `rw`, not `simp`: `simp` leaves the pointwise composite of the braiding and the associator
+  -- unreduced here (`types_comp_apply` does not fire on it)
+  rw [doubleRepresentableBy, Functor.RepresentableBy.ofIso_homEquiv_apply, Iso.trans_hom,
+    NatTrans.comp_app, types_comp_apply, Functor.Monoidal.associator_hom_app_apply,
+    Functor.Monoidal.braiding_hom_app_apply, tensorRepresentableBy_homEquiv]
 
 /-- The second projection from the scheme of two rigidifications: forget the original
 `Q`-structure and retain the additional relative one. The first projection is the existing
@@ -89,7 +91,8 @@ theorem homEquiv_comp_baseChangeFunctorHom {X : EllObj B}
     (f : X ⟶ V.baseChangeFunctor.obj (D.rep V)) :
     R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V)) =
       (P ◁ fst Q Q).app _ ((D.doubleRepresentableBy R).homEquiv f) := by
-  rw [whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply, doubleRepresentableBy_homEquiv]
+  rw [Functor.Monoidal.whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply,
+    doubleRepresentableBy_homEquiv]
   exact Prod.mk.eta.symm
 
 /-- The existing base-change projection classifies the first two structures of the universal

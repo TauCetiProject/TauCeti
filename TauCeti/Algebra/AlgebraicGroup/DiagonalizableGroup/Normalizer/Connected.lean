@@ -115,9 +115,9 @@ theorem centralizerHopfIdeal_le_ker_of_forall_mapDomain_mem_normalizerPoints
   have h := map_conjugation_tensor_eq π hπ φ hnorm x
   have hz : TensorProduct.map φ.toAlgHom.toLinearMap LinearMap.id
       (centralizerDefect π x) = 0 := by
-    simp only [centralizerDefect_def, map_sub, TensorProduct.map_algebraTensorProduct_map,
-      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, TensorProduct.map_tmul,
-      AlgHom.toLinearMap_apply, map_one, LinearMap.id_apply, h, sub_self]
+    simp only [centralizerDefect_def, map_sub, Algebra.TensorProduct.map_apply_eq_map,
+      TensorProduct.map_map, AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp,
+      TensorProduct.map_tmul, AlgHom.toLinearMap_apply, map_one, LinearMap.id_apply, h, sub_self]
   simpa only [AlgHom.toLinearMap_apply, BialgHom.coe_toAlgHom] using
     (map_centralizerDefect_eq_zero_iff π φ.toAlgHom.toLinearMap x).mp hz χ
 
@@ -168,7 +168,7 @@ theorem centralizerHopfIdeal_le_identityComponent_normalizerHopfIdeal
     isReduced_of_smooth k _
   let _ : ConnectedSpace
       (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H N.identityComponent)) :=
-    N.geometricallyConnected_identityComponent.connectedSpace k _
+    N.geometricallyConnected_identityComponent.connectedSpace
   exact centralizerHopfIdeal_le_of_le_normalizerHopfIdeal π hπ _ N.le_identityComponent
 
 /-- A reduced scheme normalizer and the scheme centralizer of a closed diagonalizable

@@ -18,9 +18,8 @@ public import TauCeti.Topology.Algebra.UnitaryGroup
 /-!
 # `SU(2)` and its maximal torus
 
-`SU(2)` is `Matrix.specialUnitaryGroup (Fin 2) ℂ`, the compact group that grounds the compact-group
-representation theory of the [compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
-Its compactness and topological group structure come from
+`SU(2)` is `Matrix.specialUnitaryGroup (Fin 2) ℂ`, the basic example of a compact non-abelian
+group. Its compactness and topological group structure come from
 `TauCeti/Topology/Algebra/UnitaryGroup.lean`, where they are proved for every special unitary
 matrix group; Hausdorffness is inherited from the ambient matrix topology, `SU(2)` carrying the
 subtype topology.
@@ -169,7 +168,7 @@ theorem torusMatrix_mem (z : Circle) :
     torusMatrix_one]
 
 theorem continuous_torusMatrix : Continuous torusMatrix := by
-  have hcoe : Continuous fun z : Circle => (z : ℂ) := continuous_subtype_val
+  have hcoe : Continuous fun z : Circle => (z : ℂ) := continuous_subtypeVal
   have hinv : Continuous fun z : Circle => ((z : ℂ))⁻¹ := hcoe.inv₀ fun z => z.coe_ne_zero
   refine Continuous.matrix_diagonal (continuous_pi fun i => ?_)
   fin_cases i
@@ -217,7 +216,7 @@ theorem mem_torus_iff {g : SU2} :
     have h01 : (g : Matrix (Fin 2) (Fin 2) ℂ) 0 1 = 0 := hdiag (by decide)
     have h10 : (g : Matrix (Fin 2) (Fin 2) ℂ) 1 0 = 0 := hdiag (by decide)
     have hunit : (g : Matrix (Fin 2) (Fin 2) ℂ) * star (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 :=
-      Matrix.mem_unitaryGroup_iff.mp (Matrix.specialUnitaryGroup_le_unitaryGroup g.2)
+      Matrix.mem_unitaryGroup_iff.mp (Matrix.specialUnitaryGroup_le_unitaryGroup g.property)
     have hmul : (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0 * star ((g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)
         = 1 := by
       have h := congrFun (congrFun hunit 0) 0
@@ -229,7 +228,7 @@ theorem mem_torus_iff {g : SU2} :
       rw [norm_mul, norm_star, norm_one] at h
       nlinarith [norm_nonneg ((g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)]
     have hdet : (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0 * (g : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = 1 := by
-      have h := (Matrix.mem_specialUnitaryGroup_iff.mp g.2).2
+      have h := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
       rw [Matrix.det_fin_two, h01] at h
       simpa using h
     have h11 : (g : Matrix (Fin 2) (Fin 2) ℂ) 1 1 = ((g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)⁻¹ :=
@@ -418,6 +417,11 @@ theorem torusExp_zero : torusExp 0 = 1 := by rw [torusExp, Circle.exp_zero, map_
 @[simp]
 theorem torusExp_neg (θ : ℝ) : torusExp (-θ) = (torusExp θ)⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← torusExp_add, neg_add_cancel, torusExp_zero])
+
+/-- The torus element `diag (e^{iθ}, e^{-iθ})` is the identity exactly when `θ` is an integer
+multiple of `2π`. -/
+theorem torusExp_eq_one_iff {θ : ℝ} : torusExp θ = 1 ↔ ∃ n : ℤ, θ = n * (2 * Real.pi) := by
+  rw [torusExp, ← map_one torusHom, torusHom_injective.eq_iff, Circle.exp_eq_one]
 
 theorem continuous_torusExp : Continuous torusExp :=
   (continuous_torusHom.comp Circle.exp.continuous).congr fun θ => by

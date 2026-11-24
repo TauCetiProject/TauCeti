@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
 public import TauCeti.LinearAlgebra.Dual.Opposite
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Retract
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -19,10 +20,10 @@ retract. This removes the projective ambiguity in the stable transpose construct
 when passing back to actual modules, a minimal transpose contributes no projective summands.
 In particular, such a transpose is projective exactly when it is zero.
 
-The results hold over an arbitrary ring. Only the two presenting projectives need be
-finitely generated; no finiteness is required of the projective retract. More generally,
-the statements apply to any map between finite projectives whose kernel is superfluous,
-without specifying an augmentation to a presented module.
+The results hold over an arbitrary ring. Only the source presenting projective `P₁` need be
+finitely generated; no finiteness is required of `P₀` or of the projective retract. More generally,
+the statements apply to any map from a finite projective to a projective whose kernel is
+superfluous, without specifying an augmentation to a presented module.
 
 ## References
 
@@ -37,11 +38,11 @@ namespace TauCeti.IsSuperfluous
 open CategoryTheory CategoryTheory.Limits
 
 variable {A P₀ P₁ : Type*} [Ring A]
-  [AddCommMonoid P₀] [Module A P₀] [Module.Finite A P₀] [Module.Projective A P₀]
+  [AddCommMonoid P₀] [Module A P₀] [Module.Projective A P₀]
   [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁] [Module.Projective A P₁]
   {p₁ : P₁ →ₗ[A] P₀}
 
-/-- The transpose of a map between finite projectives with superfluous kernel has no
+/-- The transpose of a map from a finite projective to a projective with superfluous kernel has no
 nonzero projective retract. In particular, this applies to finite minimal presentations. -/
 theorem subsingleton_of_retract_auslanderReitenTranspose
     (h : IsSuperfluous (LinearMap.ker p₁))
@@ -68,12 +69,13 @@ theorem subsingleton_of_retract_auslanderReitenTranspose
   -- The lifted idempotent kills the dual presenting map, so its original image lies
   -- in the superfluous kernel of p₁. An idempotent's image is also a direct summand.
   have hp : p₁ ∘ₗ u = 0 := by
-    apply (opDual_lcomp_bijective A P₀).injective
-    ext φ x
-    have heq : u.lcomp Aᵐᵒᵖ A (p₁.lcomp Aᵐᵒᵖ A φ) = 0 := by
-      simp [hu_apply, q]
-    simpa only [LinearMap.lcomp_apply, LinearMap.comp_apply, LinearMap.zero_apply, map_zero] using
-      LinearMap.congr_fun heq x
+    ext x
+    have hφ (φ : Module.Dual A P₀) : φ (p₁ (u x)) = 0 := by
+      have heq : u.lcomp Aᵐᵒᵖ A (p₁.lcomp Aᵐᵒᵖ A φ) = 0 := by
+        simp [hu_apply, q]
+      simpa only [LinearMap.lcomp_apply, LinearMap.comp_apply, LinearMap.zero_apply,
+        map_zero] using LinearMap.congr_fun heq x
+    exact (Module.forall_dual_apply_eq_zero_iff A _).mp hφ
   have hrange : LinearMap.range u ≤ LinearMap.ker p₁ :=
     LinearMap.range_le_ker_iff.mpr hp
   have hu_zero : u = 0 := LinearMap.range_eq_bot.mp
@@ -99,8 +101,8 @@ theorem isZero_of_retract_auslanderReitenTranspose
       simpa only [ModuleCat.hom_comp, ModuleCat.hom_id] using
         congrArg ModuleCat.Hom.hom r.retract))
 
-/-- The transpose of a map between finite projectives with superfluous kernel is projective
-exactly when it is zero. -/
+/-- The transpose of a map from a finite projective to a projective with superfluous kernel is
+projective exactly when it is zero. -/
 @[simp]
 theorem projective_auslanderReitenTranspose_iff_subsingleton
     (h : IsSuperfluous (LinearMap.ker p₁)) :

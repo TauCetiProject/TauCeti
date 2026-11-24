@@ -75,14 +75,14 @@ private theorem abs_toReal_sub_mul_self_le_of_symmDiff_le
   have he0 : 0 ≤ e := (abs_nonneg _).trans hbt
   have hbi : |μ.real (t ∩ t') - μ.real s| ≤ 2 * e :=
     (abs_toReal_inter_sub_le_toReal_symmDiff_add
-      (measure_ne_top μ _) (measure_ne_top μ _) (measure_ne_top μ _)).trans (by
+      (measure_ne_top μ _) (measure_ne_top μ _)).trans (by
         simpa only [Measure.real] using
           (calc
             μ.real (t ∆ s) + μ.real (t' ∆ s) ≤ e + e := add_le_add h1 h2
             _ = 2 * e := (two_mul e).symm))
   have hprod : |μ.real t * μ.real t' - μ.real s * μ.real s| ≤
       e * (2 * μ.real s + e) :=
-    TauCeti.abs_mul_sub_mul_self_le hbt hbt' ENNReal.toReal_nonneg
+    TauCeti.abs_mul_sub_mul_self_le hbt hbt' ENNReal.toReal_nonneg (mul_comm _ _).le
   rw [hinter] at hbi
   have hsplit : μ.real s - μ.real s * μ.real s =
       (μ.real s - μ.real t * μ.real t') +

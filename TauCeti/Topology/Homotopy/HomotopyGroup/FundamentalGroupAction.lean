@@ -250,7 +250,6 @@ theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 
   induction a using Quotient.inductionOn with
   | h f =>
     rw [homotopyGroupTransportQuotient_mk, homotopyGroupTransport_mk]
-    let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
     let r : Path x x :=
       _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
     have hqr := genLoopEquivOfUnique_trans_homotopic_transport p f
@@ -372,7 +371,7 @@ the constant loop: the identity class lies in the orbit of its class. Composing 
 null-homotopy of the inclusion moves the whole cube boundary along the single path traced by
 the base point. -/
 theorem one_mem_orbit_of_forall_mem_of_nullhomotopic [Nonempty N] [DecidableEq N] {s : Set X}
-    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtype_val).Nullhomotopic)
+    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtypeVal).Nullhomotopic)
     (p : Ω^ N X x) (hp : ∀ z, p z ∈ s) :
     (1 : HomotopyGroup N X x) ∈
       MulAction.orbit (α := HomotopyGroup N X x) (FundamentalGroup X x) ⟦p⟧ := by

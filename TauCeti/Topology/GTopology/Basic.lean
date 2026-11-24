@@ -211,7 +211,8 @@ noncomputable def grothendieckTopology : GrothendieckTopology B where
     classical
     rintro U R ⟨S, hS, hSR⟩ Q hQ
     -- Choose one local admissible cover above each member of the first cover.
-    choose T hT hTQ using fun V : S ↦ hQ (hSR V.1 (homOfLE (G.subset hS V.1 V.2)) V.2)
+    choose T hT hTQ using fun V : S ↦ hQ (hSR V.val (homOfLE (G.subset hS V.val V.property))
+        V.property)
     let T' (V : B) : Set B := if hV : V ∈ S then T ⟨V, hV⟩ else ∅
     have hT' (V : B) (hV : V ∈ S) : G.Covers V (T' V) := by
       simpa only [T', dite_eq_left hV] using hT ⟨V, hV⟩
@@ -345,7 +346,7 @@ theorem topological_grothendieckTopology :
       rw [topological_covers_iff]
       ext x
       constructor
-      · rintro ⟨_, ⟨V, ⟨f, hf⟩, rfl⟩, hxV⟩
+      · rintro ⟨_, ⟨V, ⟨f, _⟩, rfl⟩, hxV⟩
         exact leOfHom f hxV
       · intro hx
         obtain ⟨V, f, hf, hxV⟩ := hR x hx

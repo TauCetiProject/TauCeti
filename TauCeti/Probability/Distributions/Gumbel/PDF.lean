@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The density of the Gumbel distribution
@@ -93,12 +94,15 @@ theorem gumbelPDFReal_of_pos (hs : 0 < s) (m x : ℝ) :
 theorem gumbelPDF_of_nonpos (hs : s ≤ 0) (m x : ℝ) : gumbelPDF m s x = 0 := by
   rw [gumbelPDF, gumbelPDFReal_of_nonpos hs, ENNReal.ofReal_zero]
 
-/-- For positive scale, the `ℝ≥0∞`-valued Gumbel density has its classical formula. -/
-@[simp]
-theorem gumbelPDF_of_pos (hs : 0 < s) (m x : ℝ) :
+/-- The `ℝ≥0∞`-valued Gumbel density has its classical formula, at every scale: for nonpositive
+scale the density and the right-hand side both vanish. -/
+theorem gumbelPDF_eq_ofReal_exp_mul_exp_div (m s x : ℝ) :
     gumbelPDF m s x = ENNReal.ofReal
       (Real.exp (-((x - m) / s)) * Real.exp (-Real.exp (-((x - m) / s))) / s) := by
-  rw [gumbelPDF, gumbelPDFReal_of_pos hs]
+  rcases le_or_gt s 0 with hs | hs
+  · rw [gumbelPDF_of_nonpos hs, eq_comm, ENNReal.ofReal_eq_zero]
+    exact div_nonpos_of_nonneg_of_nonpos (by positivity) hs
+  · rw [gumbelPDF, gumbelPDFReal_of_pos hs]
 
 /-- The real Gumbel density is nonnegative for all parameters. -/
 theorem gumbelPDFReal_nonneg (m s x : ℝ) : 0 ≤ gumbelPDFReal m s x := by
@@ -165,7 +169,7 @@ private theorem gumbelTransform_injOn (hs : 0 < s) (m : ℝ) :
 
 private theorem gumbelTransform_weight (hs : 0 < s) (m : ℝ) (e : ℝ) (he : 0 < e) :
     ENNReal.ofReal |-(s / e)| * gumbelPDF m s (m - s * Real.log e) = exponentialPDF 1 e := by
-  rw [gumbelPDF_of_pos hs, exponentialPDF_of_nonneg he.le]
+  rw [gumbelPDF_eq_ofReal_exp_mul_exp_div, exponentialPDF_of_nonneg he.le]
   have hstandard : -((m - s * Real.log e - m) / s) = Real.log e := by
     field_simp
     ring
@@ -235,7 +239,7 @@ theorem integrable_gumbelMeasure_iff (m s : ℝ) {g : ℝ → E} :
     Integrable g (gumbelMeasure m s) ↔
       Integrable fun y ↦ gumbelPDFReal m s y • g y := by
   rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_eq_ofReal m s)]
-  exact integrable_withDensity_ofReal_iff (measurable_gumbelPDFReal m s).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_gumbelPDFReal m s).aemeasurable
     (ae_of_all _ (gumbelPDFReal_nonneg m s))
 
 /-- An integral against a Gumbel measure is the density-weighted Lebesgue integral. This holds at
@@ -243,7 +247,7 @@ every scale, including the zero measure. -/
 theorem integral_gumbelMeasure_eq (m s : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂gumbelMeasure m s = ∫ y, gumbelPDFReal m s y • g y := by
   rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_eq_ofReal m s)]
-  exact integral_withDensity_ofReal (measurable_gumbelPDFReal m s).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_gumbelPDFReal m s).aemeasurable
     (ae_of_all _ (gumbelPDFReal_nonneg m s)) g
 
 end Transfer

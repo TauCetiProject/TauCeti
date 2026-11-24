@@ -105,21 +105,33 @@ theorem nextCrossing_cons_cons_of_mem {p : Fin n}
       ((Fin.succ_injective _).comp (Fin.succ_injective _)),
     List.head_map, List.head_cons, List.cons_append, Fin.succ_inj, nextCrossing_def] using h
 
-/-- Skipping the two newly inserted crossings recovers the old successor on an affected
-position. This includes a position with just one old crossing. -/
-theorem nextCrossing_cons_cons_skip_pair {p : Fin n}
-    (hp : p = strand i ∨ p = strandSucc i) {j : Fin v.length} (hj : j ∈ v.crossingsAt p) :
+/-- Skipping the two newly inserted crossings recovers the old successor. On an affected
+position this includes a position with just one old crossing; on an unaffected position nothing
+is skipped. -/
+theorem nextCrossing_cons_cons_skip_pair {p : Fin n} (j : Fin v.length) :
     let w : BraidWord n := (i, ε) :: (i, η) :: v
     (if w.nextCrossing p j.succ.succ = 0 then
       w.nextCrossing p (w.nextCrossing p (w.nextCrossing p j.succ.succ))
     else w.nextCrossing p j.succ.succ) = (v.nextCrossing p j).succ.succ := by
   dsimp only
-  rw [nextCrossing_cons_cons_of_mem v i ε η hp hj]
-  by_cases h : v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hj)
-  · simp only [h, ite_true]
-    rw [nextCrossing_cons_cons_zero v i ε η hp,
-      nextCrossing_cons_cons_one_of_ne_nil v i ε η hp (List.ne_nil_of_mem hj)]
-  · simp [h]
+  by_cases hj : j ∈ v.crossingsAt p
+  swap
+  · -- an old crossing outside the list at `p` is fixed by both successor permutations
+    set w : BraidWord n := (i, ε) :: (i, η) :: v with hw
+    have hjw : j.succ.succ ∉ w.crossingsAt p := fun hmem ↦
+      hj ((mem_crossingsAt (w := v)).mpr (by simpa [hw] using (mem_crossingsAt (w := w)).mp hmem))
+    rw [nextCrossing_def, List.formPerm_apply_of_notMem hjw, nextCrossing_def v,
+      List.formPerm_apply_of_notMem hj]
+    simp
+  by_cases hp : p = strand i ∨ p = strandSucc i
+  · rw [nextCrossing_cons_cons_of_mem v i ε η hp hj]
+    by_cases h : v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hj)
+    · simp only [h, ite_true]
+      rw [nextCrossing_cons_cons_zero v i ε η hp,
+        nextCrossing_cons_cons_one_of_ne_nil v i ε η hp (List.ne_nil_of_mem hj)]
+    · simp [h]
+  · rw [nextCrossing_cons_cons_of_ne v i ε η (not_or.mp hp).1 (not_or.mp hp).2 j]
+    simp
 
 /-- Every arc leaving an old crossing is retained except the closing arc on an affected
 position, which now enters the first inserted crossing. The formula uses the original slots

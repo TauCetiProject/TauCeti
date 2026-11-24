@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
 /-!
 # Base change of a tensor product, and injectivity of base-change maps
@@ -35,8 +37,14 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
+The image of a base change map spans its target over the extended scalars.
+
 ## Main results
 
+* `Module.Basis.isBaseChange_of_map_basis`: a map carrying a basis to a basis over extended
+  scalars is a base-change map.
+* `Module.Basis.isPushout_of_algebraMap_eq`: compatible bases identify an algebra as the scalar
+  extension of an under-semiring model.
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
   product.
 * `IsBaseChange.liftBaseChange_bijective`, `IsBaseChange.liftBaseChange_injective`: the map
@@ -51,11 +59,34 @@ the localized semiring, without requiring its image to span the target.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
+* `IsBaseChange.span_range_eq_top`: the image of a base change map spans its target over `R'`.
 -/
 
 public section
 
 open scoped TensorProduct
+
+/-- A linear map carrying a basis to a basis over the extended scalars is a base-change map. -/
+theorem Module.Basis.isBaseChange_of_map_basis
+    {A S M N ι : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    [AddCommMonoid M] [Module A M] [AddCommMonoid N] [Module A N] [Module S N]
+    [IsScalarTower A S N] (c : Basis ι A M) (b : Basis ι S N) (f : M →ₗ[A] N)
+    (h : ∀ i, f (c i) = b i) : IsBaseChange S f := by
+  have he : (Finsupp.linearCombination A b).comp c.repr.toLinearMap = f := by
+    apply c.ext
+    intro i
+    simp [h]
+  have hbase := (IsBaseChange.of_basis A b).comp_equiv c.repr (Finsupp.linearCombination A b)
+  rwa [he] at hbase
+
+/-- Compatible bases identify an algebra as the scalar extension of an under-semiring model. -/
+theorem Module.Basis.isPushout_of_algebraMap_eq
+    {A S C B ι : Type*} [CommSemiring A] [CommSemiring S] [CommSemiring C]
+    [CommSemiring B] [Algebra A S] [Algebra A C] [Algebra S B] [Algebra C B]
+    [Algebra A B] [IsScalarTower A S B] [IsScalarTower A C B]
+    (c : Basis ι A C) (b : Basis ι S B)
+    (h : ∀ i, algebraMap C B (c i) = b i) : Algebra.IsPushout A S C B :=
+  ⟨c.isBaseChange_of_map_basis b (IsScalarTower.toAlgHom A C B).toLinearMap h⟩
 
 variable {R S M M' N N' : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']
@@ -170,3 +201,18 @@ theorem LinearMap.liftBaseChange_injective (f : M →ₗ[R] V) (S : Submonoid R)
   exact congrArg (fun m ↦ 1 ⊗ₜ[R] m) (hf (by simpa using h))
 
 end
+
+namespace IsBaseChange
+
+/-- The image of a base change map `f : M →ₗ[R] M'` spans `M'` over the extended scalars `R'`. -/
+theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R'] [Algebra R R']
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M'] [Module R' M']
+    [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f) :
+    Submodule.span R' (Set.range f) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun n ↦ ?_
+  induction n using hf.inductionOn with
+  | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
+  | smul r n hn => exact Submodule.smul_mem _ r hn
+  | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
+
+end IsBaseChange

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.Normed.Group.NullSubmodule
 public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import Mathlib.Analysis.Complex.Order
+import TauCeti.Algebra.Star.Basic
 
 /-!
 # Algebraic GNS representations
@@ -25,7 +26,8 @@ It needs no norm, order, faithfulness or traciality on the original algebra. Nor
 required only to make the cyclic vector a unit vector. `StarPositiveFunctional.comp` pulls positive
 functionals back along (possibly non-unital) `⋆`-algebra homomorphisms,
 `StarPositiveFunctional.ofPositiveLinearMap` views any order-positive functional on a
-`StarOrderedRing` as a `StarPositiveFunctional`, and
+`StarOrderedRing` as a `StarPositiveFunctional`, whose null space is then a left ideal
+(`TauCeti.map_star_mul_mul_self_eq_zero`), and
 `StarPositiveFunctional.algebraicPositiveLinearMap` realizes a unital positive functional as the
 positive vector functional at `cyclicVector` on `Module.End ℂ φ.GNS`.
 
@@ -128,7 +130,7 @@ theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOr
 
 variable (φ : StarPositiveFunctional A)
 
-variable [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+variable [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
 theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
@@ -136,7 +138,7 @@ theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a)
   have hsum := him (a + b)
   have hI := him (a + Complex.I • b)
   simp [add_mul, mul_add, him] at hsum
-  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, him] at hI
+  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm_of_starModule, him] at hI
   rw [Complex.ext_iff]
   simp only [Complex.star_def, Complex.conj_re, Complex.conj_im]
   constructor <;> linarith
@@ -326,7 +328,7 @@ def leftMul (a : A) : Module.End ℂ φ.GNS where
     obtain ⟨b, rfl⟩ := φ.classMap_surjective x
     -- On representatives, the quotient lift computes to multiplication.
     change φ.classMap (a * (r • b)) = r • φ.classMap (a * b)
-    simp [mul_smul_comm]
+    simp [mul_smul_comm_of_starModule]
 
 /-- Left multiplication acts on classes by the original multiplication. -/
 @[simp]
@@ -371,6 +373,17 @@ theorem inner_leftMul (a : A) (x y : φ.GNS) :
   simp [mul_assoc]
 
 end StarPositiveFunctional
+
+/-- For an order-positive functional `ω` on a `StarOrderedRing`, `ω (star b * b) = 0` implies
+`ω (star (a * b) * (a * b)) = 0`: the null space of `ω` is a left ideal
+(`StarPositiveFunctional.mul_mem_nullSubmodule`). -/
+theorem map_star_mul_mul_self_eq_zero {C F : Type*} [NonUnitalRing C] [PartialOrder C]
+    [StarRing C] [StarOrderedRing C] [Module ℂ C] [StarModule ℂ C] [IsScalarTower ℂ C C]
+    [FunLike F C ℂ] [LinearMapClass F ℂ C ℂ] [OrderHomClass F C ℂ] (ω : F) (a : C) {b : C}
+    (hb : ω (star b * b) = 0) : ω (star (a * b) * (a * b)) = 0 := by
+  let φ := StarPositiveFunctional.ofPositiveLinearMap (.ofClass ω)
+  exact (φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _).mp <|
+    φ.mul_mem_nullSubmodule a ((φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero b).mpr hb)
 
 end NonUnital
 

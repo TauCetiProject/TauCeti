@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Classes
 public import TauCeti.NumberTheory.QuadraticOrder.Split.Lattice
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Algebra.Group.TransferInstance
+import TauCeti.Algebra.Group.Even
 
 /-!
 # Composition of split proper classes
@@ -74,8 +75,8 @@ def splitProperClassMk (s : ℕ) (c : ℤ) (hc : IsCoprime (s : ℤ) c) : SplitP
   rfl
 
 /-- Triangular representatives give the same proper class exactly when their coefficients
-have the same residue modulo the nonzero square root. -/
-@[simp] theorem splitProperClassMk_eq_iff (s : ℕ) [NeZero s] (c d : ℤ)
+have the same residue modulo the square root. -/
+@[simp] theorem splitProperClassMk_eq_iff (s : ℕ) (c d : ℤ)
     (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
     splitProperClassMk s c hc = splitProperClassMk s d hd ↔ (c : ZMod s) = d := by
   rw [splitProperClassMk, splitProperClassMk, Quotient.eq,
@@ -84,8 +85,8 @@ have the same residue modulo the nonzero square root. -/
   -- are definitionally the original triangular forms.
   change MulAction.orbitRel SL(2, ℤ) (BinaryQuadraticForm ℤ)
     (splitTriangularForm s c) (splitTriangularForm s d) ↔ (c : ZMod s) = d
-  rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff _ _ _
-    (Nat.cast_ne_zero.mpr (NeZero.ne s)), ZMod.intCast_eq_intCast_iff_dvd_sub, dvd_sub_comm]
+  rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff,
+    ZMod.intCast_eq_intCast_iff_dvd_sub, dvd_sub_comm]
 
 /-- A unit residue gives the proper class of its triangular form. -/
 def splitUnitToProperClass (s : ℕ) (u : (ZMod s)ˣ) : SplitProperClass s :=
@@ -99,25 +100,29 @@ theorem splitUnitToProperClass_injective (s : ℕ) [NeZero s] :
   have hcast := (splitProperClassMk_eq_iff s _ _ _ _).mp h
   simpa only [Int.cast_natCast, ZMod.natCast_zmod_val] using hcast
 
-/-- Every primitive split proper class has a triangular representative from a unit residue. -/
-theorem splitUnitToProperClass_surjective (s : ℕ) [NeZero s] :
-    Function.Surjective (splitUnitToProperClass s) := by
-  intro q
+/-- Every primitive split proper class is the class of a triangular form. -/
+theorem exists_eq_splitProperClassMk (s : ℕ) (q : SplitProperClass s) :
+    ∃ (c : ℤ) (hc : IsCoprime (s : ℤ) c), q = splitProperClassMk s c hc := by
   induction q using Quotient.inductionOn with
   | h f =>
     have hf := (mem_primitiveForms _ f.val).mp f.property
     obtain ⟨γ, c, hγ, hc⟩ := exists_smul_eq_splitTriangularForm f.val s hf.1 hf.2
-    have hrep : (Quotient.mk _ f : SplitProperClass s) = splitProperClassMk s c hc := by
-      have htype : γ • f = ⟨splitTriangularForm s c,
-          (mem_primitiveForms _ _).mpr
-            ⟨discrim_splitTriangularForm s c, (isPrimitive_splitTriangularForm s c).mpr hc⟩⟩ :=
-        Subtype.ext hγ
-      rw [splitProperClassMk, ← htype]
-      exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
-    refine ⟨ZMod.unitOfIsCoprime c hc.symm, ?_⟩
-    rw [hrep]
-    apply (splitProperClassMk_eq_iff s _ _ _ _).mpr
-    simp only [Int.cast_natCast, ZMod.natCast_zmod_val, ZMod.coe_unitOfIsCoprime]
+    refine ⟨c, hc, ?_⟩
+    have htype : γ • f = ⟨splitTriangularForm s c,
+        (mem_primitiveForms _ _).mpr
+          ⟨discrim_splitTriangularForm s c, (isPrimitive_splitTriangularForm s c).mpr hc⟩⟩ :=
+      Subtype.ext hγ
+    rw [splitProperClassMk, ← htype]
+    exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
+
+/-- Every primitive split proper class has a triangular representative from a unit residue. -/
+theorem splitUnitToProperClass_surjective (s : ℕ) [NeZero s] :
+    Function.Surjective (splitUnitToProperClass s) := by
+  intro q
+  obtain ⟨c, hc, rfl⟩ := exists_eq_splitProperClassMk s q
+  refine ⟨ZMod.unitOfIsCoprime c hc.symm, ?_⟩
+  apply (splitProperClassMk_eq_iff s _ _ _ _).mpr
+  simp only [Int.cast_natCast, ZMod.natCast_zmod_val, ZMod.coe_unitOfIsCoprime]
 
 private def splitClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃ (ZMod s)ˣ :=
   (Equiv.ofBijective (splitUnitToProperClass s)
@@ -168,6 +173,25 @@ def splitProperClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃* (Z
   rw [splitProperClassEquivUnits_mk, map_one]
   apply Units.ext
   simp
+
+/-- A triangular class is a square exactly when its coefficient is a square modulo the square
+root. -/
+@[simp] theorem isSquare_splitProperClassMk_iff (s : ℕ) [NeZero s] (c : ℤ)
+    (hc : IsCoprime (s : ℤ) c) :
+    IsSquare (splitProperClassMk s c hc) ↔ IsSquare (c : ZMod s) := by
+  rw [← MulEquiv.isSquare_apply_iff (splitProperClassEquivUnits s), splitProperClassEquivUnits_mk,
+    ← Units.isSquare_coe_iff, ZMod.coe_unitOfIsCoprime]
+
+/-- Two triangular classes differ by a square exactly when the coefficient of the second is a
+square multiple of the coefficient of the first modulo the square root. -/
+theorem isSquare_inv_mul_splitProperClassMk_iff (s : ℕ) [NeZero s] (c d : ℤ)
+    (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
+    IsSquare ((splitProperClassMk s c hc)⁻¹ * splitProperClassMk s d hd) ↔
+      ∃ z : ZMod s, (d : ZMod s) = c * z ^ 2 := by
+  rw [← MulEquiv.isSquare_apply_iff (splitProperClassEquivUnits s), map_mul, map_inv,
+    splitProperClassEquivUnits_mk, splitProperClassEquivUnits_mk, ← Units.isSquare_coe_iff,
+    isSquare_iff_exists_sq]
+  simp only [Units.val_mul, Units.inv_mul_eq_iff_eq_mul, ZMod.coe_unitOfIsCoprime]
 
 private theorem splitModule_eq_of_cast_eq (s : ℕ) (c d : ℤ)
     (h : (c : ZMod s) = d) : splitModule s c = splitModule s d :=

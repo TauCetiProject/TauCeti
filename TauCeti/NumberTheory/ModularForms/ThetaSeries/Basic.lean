@@ -51,6 +51,8 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
 
 * `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
   so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
+* `ZLattice.thetaSeries_bot`, `ZLattice.thetaSeries_of_subsingleton`: the theta series of the zero
+  lattice, and of every lattice in the zero space, is `1`.
 * `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
@@ -123,6 +125,19 @@ theorem thetaCoset_apply (γ : E) (τ : ℍ) :
     thetaCoset L γ τ = ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
+/-- If the Gaussian `exp (-π y ‖γ + v‖²)` is summable over `v ∈ L` for no height `y > 0`, then the
+series defining `θ_{γ+L}(τ)` is not summable for any `τ`, so `θ_{γ+L}` is identically `0` (the value
+of a `tsum` that is not summable). -/
+theorem thetaCoset_eq_zero_of_forall_not_summable (γ : E)
+    (h : ∀ y : ℝ, 0 < y → ¬ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
+    thetaCoset L γ = 0 :=
+  funext fun τ => by
+    rw [thetaCoset_apply, Pi.zero_apply]
+    refine tsum_eq_zero_of_not_summable fun hs => h τ.im τ.im_pos <| hs.norm.congr fun v => ?_
+    rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
+    congr 1
+    ring
+
 /-- The theta series of the translate `0 + L` is the theta series of `L`. -/
 @[simp]
 theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
@@ -155,6 +170,25 @@ theorem thetaCoset_neg (γ : E) : thetaCoset L (-γ) = thetaCoset L γ := by
     ← (Equiv.neg L).tsum_eq fun v : L => cexp (π * I * (‖-γ + (v : E)‖ ^ 2 : ℝ) * τ)]
   refine tsum_congr fun v => ?_
   rw [Equiv.neg_apply, Submodule.coe_neg, ← neg_add, norm_neg]
+
+/-- The translate `γ + 0` of the zero lattice is the single vector `γ`, so its theta series is the
+single term `exp (π i ‖γ‖² τ)`. -/
+@[simp]
+theorem thetaCoset_bot (γ : E) (τ : ℍ) :
+    thetaCoset (⊥ : Submodule ℤ E) γ τ = cexp (π * I * (‖γ‖ ^ 2 : ℝ) * τ) := by
+  rw [thetaCoset_apply, tsum_eq_single 0 fun v hv ↦ (hv (Subsingleton.elim v 0)).elim]
+  simp
+
+/-- The theta series of the zero lattice is the constant function `1`. -/
+@[simp]
+theorem thetaSeries_bot : thetaSeries (⊥ : Submodule ℤ E) = 1 := by
+  ext τ
+  simp [← thetaCoset_zero]
+
+/-- Every lattice in the zero space has theta series `1`, being the zero lattice. -/
+@[simp]
+theorem thetaSeries_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : thetaSeries L = 1 :=
+  Subsingleton.elim (⊥ : Submodule ℤ E) L ▸ thetaSeries_bot
 
 /-- The sum of the terms of `θ_{γ+L}` over the fiber of the quotient map `L → L / M` is the theta
 series of the translate of `M` by `γ` plus a representative of that class. -/
@@ -257,37 +291,49 @@ theorem hasSumLocallyUniformly_thetaSeries :
       (thetaSeries L) := by
   simpa using hasSumLocallyUniformly_thetaCoset L 0
 
+omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane, as a function of
 `z : ℂ`. -/
 theorem differentiableOn_thetaCoset (γ : E) :
     DifferentiableOn ℂ (thetaCoset L γ ∘ ofComplex) {z : ℂ | 0 < z.im} := by
-  intro z hz
-  set U : Set ℂ := {w : ℂ | z.im / 2 < w.im}
-  have hU : IsOpen U := isOpen_lt continuous_const Complex.continuous_im
-  have hzU : z ∈ U := by
-    simp only [U, Set.mem_ofPred_eq]
-    exact half_lt_self hz
-  have hdiff : DifferentiableOn ℂ
-      (fun w : ℂ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * w)) U :=
-    differentiableOn_tsum_of_summable_norm (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
-      (mul_pos Real.pi_pos (half_pos hz)) γ)
-      (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
-      fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
-  refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
-    |>.differentiableWithinAt
-  filter_upwards [hU.mem_nhds hzU] with w hw
-  have hw' : 0 < w.im := lt_trans (half_pos hz) hw
-  simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
+  by_cases hL : DiscreteTopology L
+  · have := hL
+    intro z hz
+    set U : Set ℂ := {w : ℂ | z.im / 2 < w.im}
+    have hU : IsOpen U := isOpen_lt continuous_const Complex.continuous_im
+    have hzU : z ∈ U := by
+      simp only [U, Set.mem_ofPred_eq]
+      exact half_lt_self hz
+    have hdiff : DifferentiableOn ℂ
+        (fun w : ℂ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * w)) U :=
+      differentiableOn_tsum_of_summable_norm
+        (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
+          (mul_pos Real.pi_pos (half_pos hz)) γ)
+        (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
+        fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
+    refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
+      |>.differentiableWithinAt
+    filter_upwards [hU.mem_nhds hzU] with w hw
+    have hw' : 0 < w.im := lt_trans (half_pos hz) hw
+    simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
+  · have h0 : thetaCoset L γ = 0 :=
+      thetaCoset_eq_zero_of_forall_not_summable L γ fun _ _ hs =>
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ hs)
+    rw [h0]
+    exact differentiableOn_const 0
 
+omit [DiscreteTopology L] in
 /-- The theta series is holomorphic on the upper half-plane, as a function of `z : ℂ`. -/
 theorem differentiableOn_thetaSeries :
     DifferentiableOn ℂ (thetaSeries L ∘ ofComplex) {z : ℂ | 0 < z.im} := by
   simpa using differentiableOn_thetaCoset L 0
 
+omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane `ℍ`. -/
 theorem mdifferentiable_thetaCoset (γ : E) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaCoset L γ) :=
   mdifferentiable_iff.mpr (differentiableOn_thetaCoset L γ)
 
+omit [DiscreteTopology L] in
 /-- The theta series is holomorphic on the upper half-plane `ℍ`. -/
 theorem mdifferentiable_thetaSeries : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaSeries L) :=
   mdifferentiable_iff.mpr (differentiableOn_thetaSeries L)

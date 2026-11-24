@@ -104,8 +104,7 @@ theorem differentiableOn_dirichletIntegrand (a : ℝ) :
 theorem consumes. -/
 theorem neg_one_le_meromorphicOrderAt_dirichletIntegrand (a : ℝ) :
     ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (dirichletIntegrand a) 0 :=
-  neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (meromorphicAt_dirichletIntegrand a)
-    (tendsto_sub_mul_dirichletIntegrand a)
+  neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (tendsto_sub_mul_dirichletIntegrand a)
 
 /-- **The identity along the real segment.** For each positive radius the principal value of
 `e^{iaz}/z` along `[-R, R]` on the real axis is `π i` minus the arc contribution. The pole sits on
@@ -143,8 +142,8 @@ private theorem tendsto_sub_integral_arc_dirichlet {a : ℝ} (ha : 0 < a) :
 the Hungerbühler–Wasem theorem on a contour running through the pole, where the classical residue
 theorem does not apply.
 
-This is the roadmap's improper-integral acceptance criterion: the statement is about `cauchyPV`
-along the real line, with no reference to the auxiliary half-disc contour used to prove it. -/
+The statement is about `cauchyPV` along the real line, with no reference to the auxiliary half-disc
+contour used to prove it. -/
 theorem tendsto_cauchyPV_realSegment_dirichlet {a : ℝ} (ha : 0 < a) :
     Tendsto (fun R : ℝ => cauchyPV (fun t : ℝ => (t : ℂ)) (-R) R (dirichletIntegrand a))
       atTop (𝓝 ((Real.pi : ℂ) * Complex.I)) := by

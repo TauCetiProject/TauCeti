@@ -16,14 +16,15 @@ import TauCeti.Data.Set.Restrict
 
 Let `K` and `E` be number fields, `T` a set of height-one primes of `𝓞 E` and `S` one of `𝓞 K`,
 and let `π` send each prime of `E` to a prime of `K`. Suppose that `π` maps `T` into `S`, that it
-preserves absolute norms on `T`, and that every `𝔭 ∈ S` has exactly `c ≠ 0` preimages in `T`.
+preserves absolute norms on `T`, and that every `𝔭 ∈ S` has exactly `c` preimages in `T`.
 Then, for every real `s`,
 
 ```text
 ∑_{𝔓 ∈ T} N𝔓 ^ (-s) = c * ∑_{𝔭 ∈ S} N𝔭 ^ (-s),
 ```
 
-and consequently `T` has Dirichlet density `δ` exactly when `S` has Dirichlet density `δ / c`.
+and, if `c ≠ 0`, `T` has Dirichlet density `δ` exactly when `S` has Dirichlet density
+`δ / c`.
 
 The fibre count only matters away from a set of density zero. If `π` does not increase norms and
 has boundedly many preimages in `T` over each prime of `S`, the prime sum over `T` is bounded by a
@@ -40,10 +41,10 @@ theorem, where a relative Frobenius fibre over the fixed field of a cyclic subgr
 over the primes of the base field.
 
 The same fibre count multiplies the prime counts: for every cutoff `x`, `π_T(x) = c π_S(x)` and
-`ϑ_T(x) = c ϑ_S(x)`, with no error term and without the hypothesis `c ≠ 0`. By the prime ideal
-theorem the ordinary prime counts of both fields are asymptotic to `x / log x` (and the weighted
-counts `ϑ` to `x`), so the transfer, its bounded-fibre variant, and the contraction form hold for
-natural density as well.
+`ϑ_T(x) = c ϑ_S(x)`, with no error term, for every `c`, as for the prime-sum identity. By the
+prime ideal theorem the ordinary prime counts of both fields are asymptotic to `x / log x` (and
+the weighted counts `ϑ` to `x`), so the transfer, its bounded-fibre variant, and the contraction
+form hold for natural density as well.
 
 ## Main results
 
@@ -84,28 +85,35 @@ variable {K E : Type*} [Field K] [NumberField K] [Field E] [NumberField E]
   {π : HeightOneSpectrum (𝓞 E) → HeightOneSpectrum (𝓞 K)} {c : ℕ}
 
 /-- **Prime sums along a fibre count.** If `π` maps `T` into `S`, preserves absolute norms on `T`,
-and every prime of `S` has exactly `c ≠ 0` preimages in `T`, then the prime sum over `T` is `c`
+and every prime of `S` has exactly `c` preimages in `T`, then the prime sum over `T` is `c`
 times the prime sum over `S`, at every real `s`. -/
 theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
-    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal) (hc : c ≠ 0)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
     (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) (s : ℝ) :
     T.primeIdealZetaSum s = c * S.primeIdealZetaSum s := by
   classical
   let f : T → S := hmaps.restrict π T S
-  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)
+  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)
   -- The fibres of `f` are those of `π` over `S`, so each has `c` elements.
   have hcard (𝔭 : S) : Nat.card {t : T // f t = 𝔭} = c := by
-    rw [← hfiber 𝔭 𝔭.2]
+    rw [← hfiber 𝔭 𝔭.property]
     refine Nat.card_congr
       { toFun := fun t ↦
-          ⟨t.1.1, (hmaps.val_restrict_apply t.1).symm.trans (congrArg Subtype.val t.2), t.1.2⟩
+          ⟨t.val.val, (hmaps.val_restrict_apply t.val).symm.trans (congrArg Subtype.val t.property),
+              t.val.property⟩
         invFun := fun 𝔓 ↦
-          ⟨⟨𝔓.1, 𝔓.2.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.2.1)⟩
+          ⟨⟨𝔓.val, 𝔓.property.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.property.1)⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
-  -- `c ≠ 0` makes the fibres finite: an infinite fibre would have `Nat.card` equal to `0`.
-  have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} :=
-    Nat.finite_of_card_ne_zero ((hcard 𝔭).symm ▸ hc)
+  -- Each fibre is finite: `π` preserves the norm on `T`, and only finitely many primes have a
+  -- given norm.
+  have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} := by
+    refine (Ring.HasFiniteQuotients.finite_absNorm_heightOneSpectrum_le
+      (S := 𝓞 E) (Ideal.absNorm 𝔭.val.asIdeal)).to_subtype.of_injective
+      (fun t ↦ ⟨t.val.val, ?_⟩) fun t t' h ↦ ?_
+    · rw [Set.mem_ofPred_eq, hnorm t.val.val t.val.property]
+      exact (congrArg (fun q : S ↦ Ideal.absNorm q.val.asIdeal) t.property).le
+    · simpa only [Subtype.mk.injEq, Subtype.ext_iff] using h
   have hinner (𝔭 : S) : ∑' _ : {t : T // f t = 𝔭}, g 𝔭 = c * g 𝔭 := by
     have := Fintype.ofFinite {t : T // f t = 𝔭}
     rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_eq_nat_card, hcard,
@@ -115,9 +123,17 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
     rw [primeIdealZetaSum_def, ← (Equiv.sigmaFiberEquiv f).tsum_eq]
     refine tsum_congr fun ⟨𝔭, t, ht⟩ ↦ ?_
     subst ht
-    simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.1 t.2, g, f, hmaps.val_restrict_apply]
+    simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.val t.property, g, f, hmaps.val_restrict_apply]
   -- Both sides are summable together, so off summability both are the junk value `0`.
   rw [hT, primeIdealZetaSum_def]
+  rcases eq_or_ne c 0 with rfl | _
+  · -- With no preimages, `T` is empty, so both sides vanish.
+    have : IsEmpty (Σ 𝔭 : S, {t : T // f t = 𝔭}) :=
+      ⟨fun ⟨𝔭, t⟩ ↦ by
+        have := hfin 𝔭
+        have := Nonempty.intro t
+        exact (Nat.card_pos (α := {t : T // f t = 𝔭})).ne' (hcard 𝔭)⟩
+    rw [tsum_empty, Nat.cast_zero, zero_mul]
   by_cases hsum : Summable fun x : Σ 𝔭 : S, {t : T // f t = 𝔭} ↦ g x.1
   · rw [hsum.tsum_sigma, tsum_congr hinner, tsum_mul_left]
   · -- The regrouped family is summable exactly when `g` is, since `c ≠ 0`.
@@ -137,7 +153,7 @@ theorem hasDirichletDensity_iff_of_card_fiber (hmaps : Set.MapsTo π T S)
   -- The all-prime sums over `E` and `K` differ, so compare both through the logarithmic
   -- normalization, where each is asymptotic to `log (1 / (s - 1))`.
   simp_rw [hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one,
-    primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hc hfiber, mul_div_assoc]
+    primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hfiber, mul_div_assoc]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa [div_eq_inv_mul, hc'] using h.const_mul (c : ℝ)⁻¹
   · simpa [mul_div_cancel₀ δ hc'] using h.const_mul (c : ℝ)
@@ -148,29 +164,29 @@ prime sum over `T` is at most `m` times the prime sum over `S`, provided the lat
 theorem primeIdealZetaSum_le_mul_of_encard_fiber_le (hmaps : Set.MapsTo π T S)
     (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm (π 𝔓).asIdeal ≤ Ideal.absNorm 𝔓.asIdeal) {m : ℕ}
     (hfiber : ∀ 𝔭 ∈ S, (T ∩ π ⁻¹' {𝔭}).encard ≤ m) {s : ℝ} (hs : 0 ≤ s)
-    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+    (hS : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     T.primeIdealZetaSum s ≤ m * S.primeIdealZetaSum s := by
   classical
   let f : T → S := hmaps.restrict π T S
-  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)
+  let g : S → ℝ := fun 𝔭 ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)
   -- Each fibre of `f` inside a finite set of primes of `T` has at most `m` elements.
   have hcard (F : Finset T) (𝔭 : S) : (F.filter (f · = 𝔭)).card ≤ m := by
     have hsub : (((F.filter (f · = 𝔭)).map (Function.Embedding.subtype _) : Finset _) :
-        Set (HeightOneSpectrum (𝓞 E))) ⊆ T ∩ π ⁻¹' {𝔭.1} := by
+        Set (HeightOneSpectrum (𝓞 E))) ⊆ T ∩ π ⁻¹' {𝔭.val} := by
       simp only [Finset.coe_map, Function.Embedding.subtype_apply, Set.image_subset_iff]
       rintro 𝔓 h𝔓
       rw [Finset.mem_coe, Finset.mem_filter] at h𝔓
-      exact ⟨𝔓.2, by simp [← h𝔓.2, f]⟩
-    have := (Set.encard_le_encard hsub).trans (hfiber 𝔭 𝔭.2)
+      exact ⟨𝔓.property, by simp [← h𝔓.2, f]⟩
+    have := (Set.encard_le_encard hsub).trans (hfiber 𝔭 𝔭.property)
     rwa [Set.encard_coe_eq_coe_finsetCard, Finset.card_map, Nat.cast_le] at this
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def]
   refine Real.tsum_le_of_sum_le (fun _ ↦ by positivity) fun F ↦ ?_
-  calc ∑ 𝔓 ∈ F, (Ideal.absNorm 𝔓.1.asIdeal : ℝ) ^ (-s)
+  calc ∑ 𝔓 ∈ F, (Ideal.absNorm 𝔓.val.asIdeal : ℝ) ^ (-s)
       ≤ ∑ 𝔓 ∈ F, g (f 𝔓) := Finset.sum_le_sum fun 𝔓 _ ↦ by
-        have hpos : (0 : ℝ) < Ideal.absNorm (π 𝔓.1).asIdeal :=
+        have hpos : (0 : ℝ) < Ideal.absNorm (π 𝔓.val).asIdeal :=
           zero_lt_one.trans_le (TauCeti.one_le_absNorm_real_of_nonZeroDivisors
-            ⟨_, mem_nonZeroDivisors_of_ne_zero (π 𝔓.1).ne_bot⟩)
-        exact Real.rpow_le_rpow_of_nonpos hpos (by exact_mod_cast hnorm 𝔓.1 𝔓.2)
+            ⟨_, mem_nonZeroDivisors_of_ne_zero (π 𝔓.val).ne_bot⟩)
+        exact Real.rpow_le_rpow_of_nonpos hpos (by exact_mod_cast hnorm 𝔓.val 𝔓.property)
           (neg_nonpos.mpr hs)
     _ = ∑ 𝔭 ∈ F.image f, (F.filter (f · = 𝔭)).card * g 𝔭 := by
         simp only [Finset.sum_comp, nsmul_eq_mul]

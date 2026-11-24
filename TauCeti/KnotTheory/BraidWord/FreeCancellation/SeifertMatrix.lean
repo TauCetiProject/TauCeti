@@ -257,11 +257,12 @@ private theorem IsSeifertLoop.insert_cases {z : ℕ × ℕ}
 
 /-- Moving the bands of two loops past the insertion point keeps their entry. -/
 private theorem seifertMatrix_insert_moved {a b : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    {c d : (u ++ v).seifertLoops} (ha : a.1 = (insShift u.length c.1.1, insShift u.length c.1.2))
-    (hb : b.1 = (insShift u.length d.1.1, insShift u.length d.1.2)) :
+    {c d : (u ++ v).seifertLoops} (ha : a.val = (insShift u.length c.val.1,
+        insShift u.length c.val.2))
+    (hb : b.val = (insShift u.length d.val.1, insShift u.length d.val.2)) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix a b = (u ++ v).seifertMatrix c d := by
   have hab : a = b ↔ c = d := by
-    rw [Subtype.ext_iff, Subtype.ext_iff (a1 := c), ha, hb, Prod.ext_iff (x := c.1)]
+    rw [Subtype.ext_iff, Subtype.ext_iff (a1 := c), ha, hb, Prod.ext_iff (x := c.val)]
     simp
   rw [seifertMatrix_apply, seifertMatrix_apply]
   simp only [hab]
@@ -270,10 +271,10 @@ private theorem seifertMatrix_insert_moved {a b : (u ++ (i, ε) :: (i, -ε) :: v
 
 /-- The row of the loop between the two inserted bands. -/
 private theorem seifertMatrix_insert_mid_apply {β z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    (hβ : β.1 = (u.length, u.length + 1)) (hz : z ≠ β) :
+    (hβ : β.val = (u.length, u.length + 1)) (hz : z ≠ β) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix β z =
-      if u.length + 1 = z.1.1 then (if (ε : ℤ) = 1 then -1 else 0)
-      else if z.1.2 = u.length then (if (ε : ℤ) = 1 then 1 else 0) else 0 := by
+      if u.length + 1 = z.val.1 then (if (ε : ℤ) = 1 then -1 else 0)
+      else if z.val.2 = u.length then (if (ε : ℤ) = 1 then 1 else 0) else 0 := by
   obtain ⟨⟨z₁, z₂⟩, hzmem⟩ := z
   obtain ⟨h12, -, hl, -⟩ := (isSeifertLoop_iff _).1 ((mem_seifertLoops _).1 hzmem)
   simp only at h12 hl ⊢
@@ -289,10 +290,10 @@ private theorem seifertMatrix_insert_mid_apply {β z : (u ++ (i, ε) :: (i, -ε)
 
 /-- The column of the loop between the two inserted bands. -/
 private theorem seifertMatrix_insert_apply_mid {β z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    (hβ : β.1 = (u.length, u.length + 1)) (hz : z ≠ β) :
+    (hβ : β.val = (u.length, u.length + 1)) (hz : z ≠ β) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix z β =
-      if z.1.2 = u.length then (if (ε : ℤ) = -1 then -1 else 0)
-      else if u.length + 1 = z.1.1 then (if (ε : ℤ) = -1 then 1 else 0) else 0 := by
+      if z.val.2 = u.length then (if (ε : ℤ) = -1 then -1 else 0)
+      else if u.length + 1 = z.val.1 then (if (ε : ℤ) = -1 then 1 else 0) else 0 := by
   obtain ⟨⟨z₁, z₂⟩, hzmem⟩ := z
   obtain ⟨h12, -, hl, -⟩ := (isSeifertLoop_iff _).1 ((mem_seifertLoops _).1 hzmem)
   simp only at h12 hl ⊢
@@ -319,16 +320,17 @@ bands into the loops `α = (t₀, p)`, `(p, p + 1)` and `δ = (p + 1, t₁)` (po
 insertion). As a class on the new surface, `γ` is their sum, and the entries below say that this
 sum links every moved loop as `γ` did. -/
 
-variable {γ : (u ++ v).seifertLoops} (hγi : (u ++ v).levelAt γ.1.1 = some (i : ℕ))
-  (hγ₁ : γ.1.1 < u.length) (hγ₂ : u.length ≤ γ.1.2)
+variable {γ : (u ++ v).seifertLoops} (hγi : (u ++ v).levelAt γ.val.1 = some (i : ℕ))
+  (hγ₁ : γ.val.1 < u.length) (hγ₂ : u.length ≤ γ.val.2)
   {α δ : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
 include hγi hγ₁ hγ₂
 
 /-- The two cut pieces of `γ` other than the middle loop link a moved loop as `γ` did. -/
-private theorem seifertMatrix_insert_cut_add (hα : α.1 = (insShift u.length γ.1.1, u.length))
-    (hδ : δ.1 = (u.length + 1, insShift u.length γ.1.2)) {d : (u ++ v).seifertLoops} (hd : d ≠ γ)
+private theorem seifertMatrix_insert_cut_add (hα : α.val = (insShift u.length γ.val.1, u.length))
+    (hδ : δ.val = (u.length + 1, insShift u.length γ.val.2)) {d : (u ++ v).seifertLoops}
+        (hd : d ≠ γ)
     {z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    (hz : z.1 = (insShift u.length d.1.1, insShift u.length d.1.2)) :
+    (hz : z.val = (insShift u.length d.val.1, insShift u.length d.val.2)) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix α z +
         (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix δ z = (u ++ v).seifertMatrix γ d := by
   have hαz : α ≠ z := fun h ↦ by
@@ -361,10 +363,11 @@ private theorem seifertMatrix_insert_cut_add (hα : α.1 = (insShift u.length γ
     split_ifs <;> omega
 
 /-- A moved loop links the two cut pieces of `γ` other than the middle loop as it linked `γ`. -/
-private theorem seifertMatrix_insert_add_cut (hα : α.1 = (insShift u.length γ.1.1, u.length))
-    (hδ : δ.1 = (u.length + 1, insShift u.length γ.1.2)) {d : (u ++ v).seifertLoops} (hd : d ≠ γ)
+private theorem seifertMatrix_insert_add_cut (hα : α.val = (insShift u.length γ.val.1, u.length))
+    (hδ : δ.val = (u.length + 1, insShift u.length γ.val.2)) {d : (u ++ v).seifertLoops}
+        (hd : d ≠ γ)
     {z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    (hz : z.1 = (insShift u.length d.1.1, insShift u.length d.1.2)) :
+    (hz : z.val = (insShift u.length d.val.1, insShift u.length d.val.2)) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix z α +
         (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix z δ = (u ++ v).seifertMatrix d γ := by
   have hαz : z ≠ α := fun h ↦ by
@@ -397,9 +400,9 @@ private theorem seifertMatrix_insert_add_cut (hα : α.1 = (insShift u.length γ
     split_ifs <;> omega
 
 /-- The three cut pieces of `γ` together link themselves as `γ` linked itself. -/
-private theorem seifertMatrix_insert_cut_cut (hα : α.1 = (insShift u.length γ.1.1, u.length))
-    (hδ : δ.1 = (u.length + 1, insShift u.length γ.1.2))
-    {β : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops} (hβ : β.1 = (u.length, u.length + 1)) :
+private theorem seifertMatrix_insert_cut_cut (hα : α.val = (insShift u.length γ.val.1, u.length))
+    (hδ : δ.val = (u.length + 1, insShift u.length γ.val.2))
+    {β : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops} (hβ : β.val = (u.length, u.length + 1)) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix α α +
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix α β +
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix α δ +
@@ -409,7 +412,7 @@ private theorem seifertMatrix_insert_cut_cut (hα : α.1 = (insShift u.length γ
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix δ α +
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix δ β +
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix δ δ = (u ++ v).seifertMatrix γ γ := by
-  have hne : ∀ {x y : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}, x.1.2 ≠ y.1.2 → x ≠ y :=
+  have hne : ∀ {x y : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}, x.val.2 ≠ y.val.2 → x ≠ y :=
     fun h h' ↦ h (by rw [h'])
   have hαβ : α ≠ β := hne (by rw [hα, hβ]; simp)
   have hδβ : δ ≠ β := hne (by rw [hδ, hβ]; simp)
@@ -455,7 +458,7 @@ private theorem isSeifertLoop_insertLoop {c : ℕ × ℕ} (hc : (u ++ v).IsSeife
     (u ++ (i, ε) :: (i, -ε) :: v).IsSeifertLoop (insertLoop u v i c) := by
   unfold insertLoop
   split_ifs with h
-  · obtain ⟨-, -, hl, hb⟩ := (isSeifertLoop_iff _).1 hc
+  · obtain ⟨-, -, _, hb⟩ := (isSeifertLoop_iff _).1 hc
     refine (isSeifertLoop_insert_left_iff u v i ε h.2.1).2 ⟨h.1, fun k hk hk' ↦ ?_⟩
     rw [← h.1]
     exact hb k (by omega) hk
@@ -478,28 +481,28 @@ private theorem eq_of_straddle {c d : ℕ × ℕ} (hc : (u ++ v).IsSeifertLoop c
 insertion, provided `a` is the one loop after the insertion that is not of the form
 `insertLoop c` or `(p, p + 1)`. -/
 private theorem bijective_insertLoop {a β : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    (hβ : β.1 = (u.length, u.length + 1))
-    (haF : ∀ c, (u ++ v).IsSeifertLoop c → insertLoop u v i c ≠ a.1) (haβ : a ≠ β)
+    (hβ : β.val = (u.length, u.length + 1))
+    (haF : ∀ c, (u ++ v).IsSeifertLoop c → insertLoop u v i c ≠ a.val) (haβ : a ≠ β)
     (hcover : ∀ z, (u ++ (i, ε) :: (i, -ε) :: v).IsSeifertLoop z → z ≠ (u.length, u.length + 1) →
-      (∀ c, (u ++ v).IsSeifertLoop c → insertLoop u v i c ≠ z) → z = a.1) :
+      (∀ c, (u ++ v).IsSeifertLoop c → insertLoop u v i c ≠ z) → z = a.val) :
     Function.Bijective (Sum.elim
-      (fun c : (u ++ v).seifertLoops ↦ (⟨insertLoop u v i c.1, (mem_seifertLoops _).2
-        (isSeifertLoop_insertLoop u v i ε ((mem_seifertLoops _).1 c.2))⟩ :
+      (fun c : (u ++ v).seifertLoops ↦ (⟨insertLoop u v i c.val, (mem_seifertLoops _).2
+        (isSeifertLoop_insertLoop u v i ε ((mem_seifertLoops _).1 c.property))⟩ :
           (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops))
       ![a, β]) := by
-  have hcβ : ∀ c, insertLoop u v i c ≠ β.1 := fun c h ↦ by
+  have hcβ : ∀ c, insertLoop u v i c ≠ β.val := fun c h ↦ by
     simpa [hβ, insertLoop_fst] using congrArg Prod.fst h
   refine ⟨?_, fun z ↦ ?_⟩
   · rintro (c | x) (d | y) h
-    · have h₁ := congrArg (fun z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops ↦ z.1.1) h
+    · have h₁ := congrArg (fun z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops ↦ z.val.1) h
       simp only [Sum.elim_inl, insertLoop_fst, insShift_inj] at h₁
-      exact congrArg Sum.inl (Subtype.ext (((mem_seifertLoops _).1 c.2).eq_of_fst_eq
-        ((mem_seifertLoops _).1 d.2) h₁))
+      exact congrArg Sum.inl (Subtype.ext (((mem_seifertLoops _).1 c.property).eq_of_fst_eq
+        ((mem_seifertLoops _).1 d.property) h₁))
     · fin_cases y
-      · exact absurd (congrArg Subtype.val h) (haF _ ((mem_seifertLoops _).1 c.2))
+      · exact absurd (congrArg Subtype.val h) (haF _ ((mem_seifertLoops _).1 c.property))
       · exact absurd (congrArg Subtype.val h) (hcβ _)
     · fin_cases x
-      · exact absurd (congrArg Subtype.val h).symm (haF _ ((mem_seifertLoops _).1 d.2))
+      · exact absurd (congrArg Subtype.val h).symm (haF _ ((mem_seifertLoops _).1 d.property))
       · exact absurd (congrArg Subtype.val h).symm (hcβ _)
     · fin_cases x <;> fin_cases y
       · rfl
@@ -508,23 +511,23 @@ private theorem bijective_insertLoop {a β : (u ++ (i, ε) :: (i, -ε) :: v).sei
       · rfl
   · by_cases hzβ : z = β
     · exact ⟨.inr 1, by simp [hzβ]⟩
-    by_cases hzF : ∃ c, (u ++ v).IsSeifertLoop c ∧ insertLoop u v i c = z.1
+    by_cases hzF : ∃ c, (u ++ v).IsSeifertLoop c ∧ insertLoop u v i c = z.val
     · obtain ⟨c, hc, hcz⟩ := hzF
       exact ⟨.inl ⟨c, (mem_seifertLoops _).2 hc⟩, Subtype.ext hcz⟩
-    · refine ⟨.inr 0, Subtype.ext (hcover z.1 ((mem_seifertLoops _).1 z.2) ?_ ?_).symm⟩
+    · refine ⟨.inr 0, Subtype.ext (hcover z.val ((mem_seifertLoops _).1 z.property) ?_ ?_).symm⟩
       · exact fun h ↦ hzβ (Subtype.ext (h.trans hβ.symm))
       · exact fun c hc h ↦ hzF ⟨c, hc, h⟩
 
 /-- A loop away from the insertion point does not meet the loop between the two inserted bands. -/
 private theorem seifertMatrix_insert_mid_insertLoop
-    {β z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops} (hβ : β.1 = (u.length, u.length + 1))
+    {β z : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops} (hβ : β.val = (u.length, u.length + 1))
     {c : ℕ × ℕ}
     (hc : ¬((u ++ v).levelAt c.1 = some (i : ℕ) ∧ c.1 < u.length ∧ u.length ≤ c.2))
-    (hz : z.1 = insertLoop u v i c) :
+    (hz : z.val = insertLoop u v i c) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix β z = 0 ∧
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix z β = 0 := by
   rw [insertLoop_of_not u v i hc] at hz
-  have hzβ : z ≠ β := fun h ↦ by simpa [hz, hβ] using congrArg (fun z ↦ z.1.1) h
+  have hzβ : z ≠ β := fun h ↦ by simpa [hz, hβ] using congrArg (fun z ↦ z.val.1) h
   rw [seifertMatrix_insert_mid_apply u v i ε hβ hzβ, seifertMatrix_insert_apply_mid u v i ε hβ hzβ,
     hz]
   simp
@@ -540,7 +543,7 @@ variable (u v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
 /-- The loop between the two inserted bands has self-linking zero: its bands have opposite
 signs. -/
 private theorem seifertMatrix_insert_mid_self {β : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
-    (hβ : β.1 = (u.length, u.length + 1)) :
+    (hβ : β.val = (u.length, u.length + 1)) :
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix β β = 0 := by
   rw [seifertMatrix_apply_self, hβ]
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
@@ -551,8 +554,8 @@ private theorem exists_insert_congr_of_not_straddle
     (hno : ∀ c, (u ++ v).IsSeifertLoop c →
       ¬((u ++ v).levelAt c.1 = some (i : ℕ) ∧ c.1 < u.length ∧ u.length ≤ c.2))
     (G : (u ++ v).seifertLoops ⊕ Fin 2 ≃ (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops)
-    (hGl : ∀ c, (G (.inl c)).1 = insertLoop u v i c.1)
-    (hG1 : (G (.inr 1)).1 = (u.length, u.length + 1)) {s : ℤˣ}
+    (hGl : ∀ c, (G (.inl c)).val = insertLoop u v i c.val)
+    (hG1 : (G (.inr 1)).val = (u.length, u.length + 1)) {s : ℤˣ}
     (hrow : (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix (G (.inr 1)) (G (.inr 0)) =
       if (ε : ℤ) = 1 then (s : ℤ) else 0)
     (hcol : (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix (G (.inr 0)) (G (.inr 1)) =
@@ -565,7 +568,7 @@ private theorem exists_insert_congr_of_not_straddle
         Pi.single (.inr 0) (if (ε : ℤ) = 1 then (s : ℤ) else 0) ∧
       (T * (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix G G * Tᵀ).col (.inr 1) =
         Pi.single (.inr 0) (if (ε : ℤ) = 1 then 0 else (s : ℤ)) := by
-  have hno' := fun c : (u ++ v).seifertLoops ↦ hno c.1 ((mem_seifertLoops _).1 c.2)
+  have hno' := fun c : (u ++ v).seifertLoops ↦ hno c.val ((mem_seifertLoops _).1 c.property)
   refine ⟨1, by simp, ?_, ?_, ?_⟩ <;> simp only [Matrix.one_mul, transpose_one, Matrix.mul_one]
   · ext c d
     simp only [toBlocks₁₁, of_apply, submatrix_apply]
@@ -590,9 +593,9 @@ private theorem insert_straddle_row_col_inr_one {γ : (u ++ v).seifertLoops}
     (G : (u ++ v).seifertLoops ⊕ Fin 2 ≃ (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops)
     (T : Matrix ((u ++ v).seifertLoops ⊕ Fin 2) ((u ++ v).seifertLoops ⊕ Fin 2) ℤ)
     (hT : T = 1 + vecMulVec (Pi.single (.inl γ) 1) (Pi.single (.inr 0) 1 + Pi.single (.inr 1) 1))
-    (hα : (G (.inl γ)).1 = (insShift u.length γ.1.1, u.length))
-    (hG0 : (G (.inr 0)).1 = (u.length + 1, insShift u.length γ.1.2))
-    (hG1 : (G (.inr 1)).1 = (u.length, u.length + 1))
+    (hα : (G (.inl γ)).val = (insShift u.length γ.val.1, u.length))
+    (hG0 : (G (.inr 0)).val = (u.length + 1, insShift u.length γ.val.2))
+    (hG1 : (G (.inr 1)).val = (u.length, u.length + 1))
     (hαβ : G (.inl γ) ≠ G (.inr 1)) (hδβ : G (.inr 0) ≠ G (.inr 1))
     (hmid : ∀ d, d ≠ γ →
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix (G (.inr 1)) (G (.inl d)) = 0 ∧
@@ -648,11 +651,11 @@ private theorem insert_straddle_row_col_inr_one {γ : (u ++ v).seifertLoops}
 `α` by `α + δ + β`, the sum of its three pieces, gives back the Seifert matrix of `u ++ v`, and the
 two new loops `δ` and `β` meet only each other. -/
 private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
-    (hγ : (u ++ v).levelAt γ.1.1 = some (i : ℕ) ∧ γ.1.1 < u.length ∧ u.length ≤ γ.1.2)
+    (hγ : (u ++ v).levelAt γ.val.1 = some (i : ℕ) ∧ γ.val.1 < u.length ∧ u.length ≤ γ.val.2)
     (G : (u ++ v).seifertLoops ⊕ Fin 2 ≃ (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops)
-    (hGl : ∀ c, (G (.inl c)).1 = insertLoop u v i c.1)
-    (hG0 : (G (.inr 0)).1 = (u.length + 1, insShift u.length γ.1.2))
-    (hG1 : (G (.inr 1)).1 = (u.length, u.length + 1)) :
+    (hGl : ∀ c, (G (.inl c)).val = insertLoop u v i c.val)
+    (hG0 : (G (.inr 0)).val = (u.length + 1, insShift u.length γ.val.2))
+    (hG1 : (G (.inr 1)).val = (u.length, u.length + 1)) :
     ∃ T : Matrix ((u ++ v).seifertLoops ⊕ Fin 2) ((u ++ v).seifertLoops ⊕ Fin 2) ℤ,
       IsUnit T.det ∧
       (T * (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix G G * Tᵀ).toBlocks₁₁ =
@@ -661,17 +664,18 @@ private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
         Pi.single (.inr 0) (if (ε : ℤ) = 1 then -(ε : ℤ) else 0) ∧
       (T * (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix G G * Tᵀ).col (.inr 1) =
         Pi.single (.inr 0) (if (ε : ℤ) = 1 then 0 else -(ε : ℤ)) := by
-  have hα : (G (.inl γ)).1 = (insShift u.length γ.1.1, u.length) := by
+  have hα : (G (.inl γ)).val = (insShift u.length γ.val.1, u.length) := by
     rw [hGl, insertLoop, ite_eq_left hγ, insShift_of_lt hγ.2.1]
-  have hGd : ∀ d, d ≠ γ → (G (.inl d)).1 = (insShift u.length d.1.1, insShift u.length d.1.2) :=
+  have hGd : ∀ d, d ≠ γ → (G (.inl d)).val = (insShift u.length d.val.1, insShift u.length d.val.2)
+      :=
     fun d hd ↦ by
       rw [hGl, insertLoop_of_not u v i fun h ↦ hd (Subtype.ext (eq_of_straddle u v i
-        ((mem_seifertLoops _).1 d.2) ((mem_seifertLoops _).1 γ.2) h hγ))]
+        ((mem_seifertLoops _).1 d.property) ((mem_seifertLoops _).1 γ.property) h hγ))]
   have hnd : ∀ d, d ≠ γ →
-      ¬((u ++ v).levelAt d.1.1 = some (i : ℕ) ∧ d.1.1 < u.length ∧ u.length ≤ d.1.2) :=
-    fun d hd h ↦ hd (Subtype.ext (eq_of_straddle u v i ((mem_seifertLoops _).1 d.2)
-      ((mem_seifertLoops _).1 γ.2) h hγ))
-  have hne : ∀ {x y : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}, x.1.2 ≠ y.1.2 → x ≠ y :=
+      ¬((u ++ v).levelAt d.val.1 = some (i : ℕ) ∧ d.val.1 < u.length ∧ u.length ≤ d.val.2) :=
+    fun d hd h ↦ hd (Subtype.ext (eq_of_straddle u v i ((mem_seifertLoops _).1 d.property)
+      ((mem_seifertLoops _).1 γ.property) h hγ))
+  have hne : ∀ {x y : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}, x.val.2 ≠ y.val.2 → x ≠ y :=
     fun h h' ↦ h (by rw [h'])
   have hαβ : G (.inl γ) ≠ G (.inr 1) := hne (by rw [hα, hG1]; simp)
   have hδβ : G (.inr 0) ≠ G (.inr 1) := hne (by rw [hG0, hG1]; simp)
@@ -726,7 +730,7 @@ private theorem insertCongruence_of_straddle {γ : ℕ × ℕ} (hγ : (u ++ v).I
   have hbij := bijective_insertLoop u v i ε (a := ⟨_, (mem_seifertLoops _).2 hδ⟩)
     (β := ⟨_, (mem_seifertLoops _).2 (isSeifertLoop_insert_mid u v i ε)⟩) rfl
     (fun c _ h ↦ by simpa [insertLoop_fst] using congrArg Prod.fst h)
-    (fun h ↦ by simpa using congrArg (fun z ↦ z.1.1) h) fun z hz hzβ hzF ↦ ?_
+    (fun h ↦ by simpa using congrArg (fun z ↦ z.val.1) h) fun z hz hzβ hzF ↦ ?_
   · obtain ⟨T, hT, h₁, h₂, h₃⟩ := exists_insert_congr_of_straddle u v i ε
       (γ := ⟨γ, (mem_seifertLoops _).2 hγ⟩) hγs (Equiv.ofBijective _ hbij) (fun _ ↦ rfl) rfl rfl
     exact ⟨_, T, -ε, hT, h₁, by simpa using h₂, by simpa using h₃⟩
@@ -763,9 +767,9 @@ private theorem insertCongruence_of_right
   have hbij := bijective_insertLoop u v i ε (a := ⟨_, (mem_seifertLoops _).2 hδ⟩)
     (β := ⟨_, (mem_seifertLoops _).2 hβ⟩) rfl
     (fun c _ h ↦ by simpa [insertLoop_fst] using congrArg Prod.fst h)
-    (fun h ↦ by simpa using congrArg (fun z ↦ z.1.1) h) fun z hz hzβ hzF ↦ ?_
+    (fun h ↦ by simpa using congrArg (fun z ↦ z.val.1) h) fun z hz hzβ hzF ↦ ?_
   · have hδβ : (⟨_, (mem_seifertLoops _).2 hδ⟩ : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops) ≠
-        ⟨_, (mem_seifertLoops _).2 hβ⟩ := fun h ↦ by simpa using congrArg (fun z ↦ z.1.1) h
+        ⟨_, (mem_seifertLoops _).2 hβ⟩ := fun h ↦ by simpa using congrArg (fun z ↦ z.val.1) h
     have e₀ : Equiv.ofBijective _ hbij (.inr 0) = ⟨_, (mem_seifertLoops _).2 hδ⟩ := rfl
     have e₁ : Equiv.ofBijective _ hbij (.inr 1) = ⟨_, (mem_seifertLoops _).2 hβ⟩ := rfl
     obtain ⟨T, hT, h₁, h₂, h₃⟩ := exists_insert_congr_of_not_straddle u v i ε hno
@@ -812,10 +816,10 @@ private theorem insertCongruence_of_left
     (β := ⟨_, (mem_seifertLoops _).2 hβ⟩) rfl
     (fun c hc h ↦ by
       simpa [insertLoop_of_not u v i (hno c hc)] using congrArg Prod.snd h)
-    (fun h ↦ by simpa [ht₀p.ne] using congrArg (fun z ↦ z.1.1) h) fun z hz hzβ hzF ↦ ?_
+    (fun h ↦ by simpa [ht₀p.ne] using congrArg (fun z ↦ z.val.1) h) fun z hz hzβ hzF ↦ ?_
   · have hαβ : (⟨_, (mem_seifertLoops _).2 hα⟩ : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops) ≠
         ⟨_, (mem_seifertLoops _).2 hβ⟩ := fun h ↦ by
-      simpa [ht₀p.ne] using congrArg (fun z ↦ z.1.1) h
+      simpa [ht₀p.ne] using congrArg (fun z ↦ z.val.1) h
     have e₀ : Equiv.ofBijective _ hbij (.inr 0) = ⟨_, (mem_seifertLoops _).2 hα⟩ := rfl
     have e₁ : Equiv.ofBijective _ hbij (.inr 1) = ⟨_, (mem_seifertLoops _).2 hβ⟩ := rfl
     obtain ⟨T, hT, h₁, h₂, h₃⟩ := exists_insert_congr_of_not_straddle u v i ε hno
@@ -874,8 +878,8 @@ private theorem levelAt_ne_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) (k : 
 between the two inserted bands. -/
 private def unusedInsertLoop (h : ¬∃ x ∈ u ++ v, x.1 = i) :
     (u ++ v).seifertLoops ⊕ Unit → (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops
-  | .inl c => ⟨(insShift u.length c.1.1, insShift u.length c.1.2), (mem_seifertLoops _).2
-      ((isSeifertLoop_insert_insShift_iff u v i ε c.1).2 ⟨(mem_seifertLoops _).1 c.2,
+  | .inl c => ⟨(insShift u.length c.val.1, insShift u.length c.val.2), (mem_seifertLoops _).2
+      ((isSeifertLoop_insert_insShift_iff u v i ε c.val).2 ⟨(mem_seifertLoops _).1 c.property,
         fun hc ↦ levelAt_ne_of_not_exists u v i h _ hc.1⟩)⟩
   | .inr _ => ⟨(u.length, u.length + 1), (mem_seifertLoops _).2 (isSeifertLoop_insert_mid u v i ε)⟩
 
@@ -887,7 +891,7 @@ private theorem bijective_unusedInsertLoop (h : ¬∃ x ∈ u ++ v, x.1 = i) :
         insShift_ne_self, false_and, self_ne_insShift] at hcd
     · exact congrArg Sum.inl (Subtype.ext (Prod.ext hcd.1 hcd.2))
     · rfl
-  have hz := (mem_seifertLoops _).1 z.2
+  have hz := (mem_seifertLoops _).1 z.property
   rcases IsSeifertLoop.insert_cases u v i ε hz with hz' | ⟨t, ht, hz'⟩ | ⟨t, ht, hz'⟩ | ⟨c, hz'⟩
   · exact ⟨.inr (), Subtype.ext hz'.symm⟩
   · rw [hz', isSeifertLoop_insert_right_iff u v i ε ht] at hz
@@ -907,9 +911,9 @@ theorem exists_seifertMatrix_insert_eq_fromBlocks (h : ¬∃ x ∈ u ++ v, x.1 =
       (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix ι ι =
         fromBlocks (u ++ v).seifertMatrix 0 0 0 := by
   refine ⟨Equiv.ofBijective _ (bijective_unusedInsertLoop u v i ε h), ?_⟩
-  have hβ : (unusedInsertLoop u v i ε h (.inr ())).1 = (u.length, u.length + 1) := rfl
+  have hβ : (unusedInsertLoop u v i ε h (.inr ())).val = (u.length, u.length + 1) := rfl
   have hne : ∀ c, unusedInsertLoop u v i ε h (.inl c) ≠ unusedInsertLoop u v i ε h (.inr ()) :=
-    fun c hc ↦ insShift_ne_self u.length c.1.1 (congrArg (·.1.1) hc)
+    fun c hc ↦ insShift_ne_self u.length c.val.1 (congrArg (·.val.1) hc)
   ext (c | _) (d | _)
   · exact seifertMatrix_insert_moved u v i ε rfl rfl
   · simp only [submatrix_apply, Equiv.ofBijective_apply, fromBlocks_apply₁₂, Matrix.zero_apply]

@@ -86,7 +86,7 @@ theorem separableSpace (hp_top : p ≠ ∞) :
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
   -- the countable family of laws with natural multiplicities on terms of the dense sequence
   set G : Finset (ℕ × ℕ) → Measure X := fun t ↦
-    (∑ q ∈ t, (q.2 : ℝ≥0∞))⁻¹ • ∑ q ∈ t, (q.2 : ℝ≥0∞) • Measure.dirac (u q.1) with hG_def
+    (∑ q ∈ t, (q.2 : ℝ≥0∞))⁻¹ • ∑ q ∈ t, (q.2 : ℝ≥0∞) • Measure.dirac (u q.1)
   refine ⟨(fun μ : WassersteinSpace p X ↦ ((μ : ProbabilityMeasure X) : Measure X)) ⁻¹'
     Set.range G, (Set.countable_range G).preimage fun _ _ h ↦ toProbabilityMeasure_injective
       (ProbabilityMeasure.toMeasure_injective h), ?_⟩
@@ -98,7 +98,7 @@ theorem separableSpace (hp_top : p ≠ ∞) :
     ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x with hν₃_def
   have hprob₃ : IsProbabilityMeasure ν₃ := isProbabilityMeasure_natWeights hmpos
   obtain ⟨x₁, _⟩ : S.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     rintro rfl
     simp at hmpos
   have hmom₃ : HasFiniteMoment p ν₃ :=

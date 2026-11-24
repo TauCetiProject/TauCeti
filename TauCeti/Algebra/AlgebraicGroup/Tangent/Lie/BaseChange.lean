@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
 public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
+import Mathlib.RingTheory.Finiteness.Descent
 
 /-!
 # Base change of the tangent Lie algebra
@@ -19,9 +20,24 @@ along `h ↦ 1 ⊗ h` identifies the tangent Lie algebra of `K ⊗[R] H` over `K
 `K`-valued tangent derivations of `H`. The inverse sends `d` to `a ⊗ h ↦ a * d h`.
 This comparison requires neither flatness nor finiteness. It connects geometric base
 change to the coefficient-valued tangent space and its convolution bracket. For an extension
-of fields, `finrank_lie_baseChange` deduces invariance of Lie dimension when the original
-augmentation cotangent space is finite-dimensional, and `isKilling_lie_baseChange_iff` shows that
-the Lie algebra has nondegenerate Killing form exactly when its base change does.
+of fields, `finrank_lie_baseChange` deduces invariance of Lie dimension, and
+`isKilling_lie_baseChange_iff` shows that the Lie algebra has nondegenerate Killing form exactly
+when its base change does.
+
+When the augmentation cotangent space of `H` is finite projective, the Lie algebra of
+`Spec H` is the dual of that space. For a commutative `R`-algebra `S`,
+`Derivation.cotangentDualBaseChangeEquiv` composes the comparison above with scalar extension of
+tangent vectors and cotangent duality, identifying the scalar extension of this dual with the
+dual for `S ⊗[R] H`, again with no flatness assumption.
+
+## Main declarations
+
+* `TauCeti.tangentBaseChangeLieEquiv`: tangent vectors of `K ⊗[R] H` over `K` are the
+  `K`-valued tangent vectors of `H`.
+* `Derivation.cotangentDualBaseChangeEquiv`: the Lie algebra of `Spec (S ⊗[R] H)` is the scalar
+  extension of the Lie algebra of `Spec H`.
+* `Derivation.cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap`: its value on the cotangent
+  class of `1 ⊗ h`.
 
 ## References
 
@@ -228,10 +244,12 @@ theorem tangentBaseChangeLieEquiv_symm_apply
 end
 
 /-- Extension of the ground field preserves the dimension of the Lie algebra of an affine
-monoid whose augmentation cotangent space is finite-dimensional. This compares the Lie algebras
-of the original and base-changed coordinate rings, not merely their coefficient spaces. -/
+monoid. This compares the Lie algebras of the original and base-changed coordinate rings, not
+merely their coefficient spaces. Without finiteness of the augmentation cotangent space, this is
+an equality in Mathlib's finite-rank convention, where infinite-dimensional spaces have `finrank`
+zero. -/
 theorem finrank_lie_baseChange {k K H : Type*} [Field k] [Field K] [Algebra k K]
-    [CommRing H] [Bialgebra k H] [Module.Finite k (Bialgebra.CotangentSpace k H)] :
+    [CommRing H] [Bialgebra k H] :
     Module.finrank K
         (Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K)) =
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
@@ -239,24 +257,88 @@ theorem finrank_lie_baseChange {k K H : Type*} [Field k] [Field K] [Algebra k K]
     Derivation.finrank_tangent_baseChange
 
 /-- Extension of the ground field preserves and reflects nondegeneracy of the Killing form of the
-Lie algebra of an affine monoid whose augmentation cotangent space is finite-dimensional: the Lie
-algebra of `K ⊗[k] H` has nondegenerate Killing form exactly when `Lie(G)` does. -/
+Lie algebra of an affine monoid: the Lie algebra of `K ⊗[k] H` has nondegenerate Killing form
+exactly when `Lie(G)` does. When the augmentation cotangent space is infinite-dimensional, neither
+Lie algebra is Killing in Mathlib's convention, where the trace on a module without a finite
+basis is zero. -/
 theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebra k K]
-    [CommRing H] [Bialgebra k H] [Module.Finite k (Bialgebra.CotangentSpace k H)] :
+    [CommRing H] [Bialgebra k H] :
     LieAlgebra.IsKilling K
         (Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K)) ↔
       LieAlgebra.IsKilling k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
-  let e := Derivation.tangentScalarExtensionLieEquiv.trans
-    (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H))
-  constructor
-  · intro
-    have := LieAlgebra.isKilling_of_equiv e.symm
-    have := (isKilling_baseChange_iff k K _).1 this
-    exact LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv
-  · intro
-    have : LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-      LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv.symm
-    have := (isKilling_baseChange_iff k K _).2 this
-    exact LieAlgebra.isKilling_of_equiv e
+  by_cases hV : Module.Finite k (Bialgebra.CotangentSpace k H)
+  · let e := Derivation.tangentScalarExtensionLieEquiv.trans
+      (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H))
+    constructor
+    · intro
+      have := LieAlgebra.isKilling_of_equiv e.symm
+      have := (isKilling_baseChange_iff k K _).1 this
+      exact LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv
+    · intro
+      have : LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
+        LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv.symm
+      have := (isKilling_baseChange_iff k K _).2 this
+      exact LieAlgebra.isKilling_of_equiv e
+  · refine iff_of_false (fun hK ↦ hV ?_) (fun hk ↦ hV ?_)
+    · have := finite_of_isKilling (R := K)
+        (L := Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K))
+      have hdual : Module.Finite K (K ⊗[k] Bialgebra.CotangentSpace k H →ₗ[K] K) :=
+        Module.Finite.equiv
+          ((tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.symm.trans
+            ((Derivation.cotangentLinearEquiv (R := k) (A := H) (B := K)).symm.trans
+              (LinearMap.liftBaseChangeEquiv K)))
+      have : Module.Finite K (K ⊗[k] Bialgebra.CotangentSpace k H) :=
+        (Module.finite_dual_iff K).1 hdual
+      exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat K
+    · have := finite_of_isKilling (R := k) (L := Derivation k H (Bialgebra.CounitAlgebra k H k))
+      exact (Module.finite_dual_iff k).1
+        (Module.Finite.equiv Derivation.cotangentDualLieEquiv.symm.toLinearEquiv)
 
 end TauCeti
+
+namespace Derivation
+
+open TauCeti
+open scoped TensorProduct
+
+variable {R S H : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing H] [Bialgebra R H]
+  [Module.Finite R (Bialgebra.CotangentSpace R H)]
+  [Module.Projective R (Bialgebra.CotangentSpace R H)]
+
+variable (R S H) in
+/-- **Base change of the Lie algebra.** The Lie algebra of `Spec (S ⊗[R] H)` over `S` is the
+scalar extension of the Lie algebra of `Spec H`. The comparison extends a tangent vector of `H`
+`S`-linearly to `S ⊗[R] H`, through coefficient-valued tangent vectors. -/
+noncomputable def cotangentDualBaseChangeEquiv :
+    S ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H) ≃ₗ[S]
+      Module.Dual S (Bialgebra.CotangentSpace S (S ⊗[R] H)) :=
+  (tangentScalarExtensionEquiv (R := R) (A := H) (B := S)).trans
+    ((tangentBaseChangeLieEquiv (R := R) (K := S) (H := H)).toLinearEquiv.trans
+      (cotangentLinearEquiv (R := S) (A := S ⊗[R] H) (B := S)).symm)
+
+/-- Under cotangent duality, the comparison of Lie algebras is the extension of tangent vectors
+from `H` to `S ⊗[R] H`. -/
+@[simp]
+theorem cotangentLinearEquiv_cotangentDualBaseChangeEquiv
+    (z : S ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    cotangentLinearEquiv (R := S) (A := S ⊗[R] H) (B := S) (cotangentDualBaseChangeEquiv R S H z) =
+      tangentBaseChangeLieEquiv (R := R) (K := S) (H := H)
+        (tangentScalarExtensionEquiv (R := R) (A := H) (B := S) z) := by
+  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+    LieEquiv.coe_toLinearEquiv]
+
+/-- The base-changed functional `s ⊗ x` takes the value `s * x (dh)` on the cotangent class of
+`1 ⊗ h`. These classes span the cotangent space of `S ⊗[R] H` over `S`, so this determines the
+comparison. -/
+@[simp]
+theorem cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap (s : S)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) (h : H) :
+    cotangentDualBaseChangeEquiv R S H (s ⊗ₜ x)
+        (Bialgebra.cotangentMap S (S ⊗[R] H) (1 ⊗ₜ h)) =
+      s * algebraMap R S (x (Bialgebra.cotangentMap R H h)) := by
+  rw [← cotangentLinearEquiv_apply_apply, ← algEquivSelf_tangentScalarExtensionEquiv_tmul_apply]
+  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+    LieEquiv.coe_toLinearEquiv, tangentBaseChangeLieEquiv_tmul, one_mul,
+    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
+
+end Derivation

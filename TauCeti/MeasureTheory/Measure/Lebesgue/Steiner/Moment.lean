@@ -43,28 +43,19 @@ private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
     ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e)
   -- Tonelli transports the ambient moment and its finiteness to almost every line.
   have hS := nullMeasurableSet_steinerSymmetrization e he hs
-  have hmeas (u : Set E) (hu : NullMeasurableSet u volume) : AEMeasurable (m u) volume := by
-    exact aemeasurable_lintegral_line e he
-      ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+  have hg (u : Set E) (hu : NullMeasurableSet u volume) :
+      AEMeasurable (u.indicator fun x : E ↦ ENNReal.ofReal (‖x‖ ^ 2)) volume :=
+    (continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu
+  have hmeas (u : Set E) (hu : NullMeasurableSet u volume) : AEMeasurable (m u) volume :=
+    aemeasurable_lintegral_line e he (hg u hu)
   have hformula (u : Set E) (hu : NullMeasurableSet u volume) :
       (∫⁻ x in u, ENNReal.ofReal (‖x‖ ^ 2)) = ∫⁻ y, m u y := by
     rw [← lintegral_indicator₀ hu]
-    exact lintegral_eq_lintegral_lintegral_line e he
-      ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+    exact lintegral_eq_lintegral_lintegral_line e he (hg u hu)
   have hsection (u : Set E) (y : (ℝ ∙ e)ᗮ)
       (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
-      m u y = ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
-    dsimp only [m]
-    rw [← lintegral_indicator₀ hu]
-    apply lintegral_congr
-    intro t
-    -- Explicit section membership distinguishes its indicator from the ambient set's indicator.
-    by_cases ht : (y : E) + t • e ∈ u
-    · rw [indicator_of_mem ht,
-        indicator_of_mem (show t ∈ {t : ℝ | (y : E) + t • e ∈ u} from ht),
-        norm_add_smul_sq e he]
-    · rw [indicator_of_notMem ht,
-        indicator_of_notMem (show t ∉ {t : ℝ | (y : E) + t • e ∈ u} from ht)]
+      m u y = ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) :=
+    lintegral_line_indicator_norm_sq_eq e he y hu
   have hmoment' : (∫⁻ y, m s y) ≠ ∞ := by rwa [← hformula s hs]
   have hfinite := ae_lt_top' (hmeas s hs) hmoment'
   have hcomp : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume,

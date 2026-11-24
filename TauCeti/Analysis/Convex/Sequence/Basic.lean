@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
-public import TauCeti.Algebra.Order.WithTop.Untop0
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -26,7 +25,9 @@ interval, or a half-line; infinity never supplies a genuine edge slope.
 This file proves supporting-line and chord inequalities, including existence of
 affine minorants through finite heights and separation at infinite heights. It
 recovers heights from an anchor and consecutive increments, and characterises convexity by second
-differences. A sequence is admissible when it has a real affine lower bound,
+differences. In particular a real sequence with nonnegative second differences on `[0, k]` lies
+below its chord from `0` to `k` (`TauCeti.natCast_mul_le_of_two_mul_le_add`). A sequence is
+admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant; a pointwise minimum is admissible exactly when
 both sequences are. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
@@ -211,11 +212,16 @@ theorem ne_top_of_le_of_le {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     (hij : i ≤ j) (hjk : j ≤ k) : h j ≠ ⊤ :=
   hh.ordConnected.out hi hk ⟨hij, hjk⟩
 
-/-- Every later secant is bounded below by the slope of a finite edge that
-precedes it. The length-zero case is included. -/
-theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
-    (hm : h m ≠ ⊤) (hm' : h (m + 1) ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
+/-- Every later secant is bounded below by the slope of an edge `m, m + 1` that precedes it.
+Finiteness at `i` follows from that at `m` and `j`, and the edge is finite when `i < j`. For
+`i = j` the inequality is the trivial `0 ≤ 0`, with no finiteness of `h (m + 1)` needed. -/
+theorem mul_slope_le_sub {i j m : ℕ} (hj : h j ≠ ⊤)
+    (hm : h m ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
     ((j - i : ℕ) : ℝ) * unitSlope h m ≤ (h j).untop₀ - (h i).untop₀ := by
+  have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le hm hj hmi hij
+  rcases hij.eq_or_lt with rfl | hlt
+  · simp
+  have hm' : h (m + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hm hj (Nat.le_succ m) (by omega)
   have hs : ∑ _n ∈ Ico i j, unitSlope h m ≤ ∑ n ∈ Ico i j, unitSlope h n := by
     apply sum_le_sum
     intro n hn
@@ -224,24 +230,30 @@ theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
       ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
         hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ (hmi.trans hin)
   simp only [unitSlope] at hs
-  rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
+  rw [sum_Ico_sub (fun n => (h n).untop₀) hlt.le] at hs
   simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
 
-/-- Every earlier secant is bounded above by the slope of a finite edge that
-follows its last edge. The length-zero case is included. -/
-theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
-    (hm : h m ≠ ⊤) (hm' : h (m + 1) ≠ ⊤) (hij : i ≤ j) (hjm : j ≤ m + 1) :
+/-- Every earlier secant is bounded above by the slope of an edge `m, m + 1` that follows its
+last edge. The edge is finite when `i < j`, and for `i = j` the inequality is the trivial
+`0 ≤ 0`. -/
+theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hm' : h (m + 1) ≠ ⊤)
+    (hij : i ≤ j) (hjm : j ≤ m + 1) :
     (h j).untop₀ - (h i).untop₀ ≤ ((j - i : ℕ) : ℝ) * unitSlope h m := by
-  have hs : ∑ n ∈ Ico i j, unitSlope h n ≤ ∑ _n ∈ Ico i j, unitSlope h m := by
-    apply sum_le_sum
-    intro n hn
-    obtain ⟨hin, hnj⟩ := mem_Ico.mp hn
-    exact hh.monotoneOn
-      ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
-        hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ ⟨hm, hm'⟩ (by omega)
-  simp only [unitSlope] at hs
-  rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
-  simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
+  have hj : h j ≠ ⊤ := hh.ne_top_of_le_of_le hi hm' hij hjm
+  rcases le_or_gt i m with him | hmi
+  · have hm : h m ≠ ⊤ := hh.ne_top_of_le_of_le hi hm' him (Nat.le_succ m)
+    have hs : ∑ n ∈ Ico i j, unitSlope h n ≤ ∑ _n ∈ Ico i j, unitSlope h m := by
+      apply sum_le_sum
+      intro n hn
+      obtain ⟨hin, hnj⟩ := mem_Ico.mp hn
+      exact hh.monotoneOn
+        ⟨hh.ne_top_of_le_of_le hi hj hin hnj.le,
+          hh.ne_top_of_le_of_le hi hj (by omega) (by omega)⟩ ⟨hm, hm'⟩ (by omega)
+    simp only [unitSlope] at hs
+    rw [sum_Ico_sub (fun n => (h n).untop₀) hij] at hs
+    simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
+  · obtain rfl : i = j := by omega
+    simp
 
 /-- The affine line through a finite edge lies below the entire height sequence,
 including indices outside its finite domain. -/
@@ -251,10 +263,10 @@ theorem supportingLine_le {n : ℕ} (hn : h n ≠ ⊤) (hn' : h (n + 1) ≠ ⊤)
   · simp [hk]
   · rw [← WithTop.coe_untop₀_of_ne_top hk, WithTop.coe_le_coe]
     rcases le_total n k with hnk | hkn
-    · have hs := hh.mul_slope_le_sub hn hk hn hn' hnk le_rfl
+    · have hs := hh.mul_slope_le_sub hk hn hnk le_rfl
       rw [Nat.cast_sub hnk] at hs
       linarith
-    · have hs := hh.sub_le_mul_slope hk hn hn hn' hkn (Nat.le_succ n)
+    · have hs := hh.sub_le_mul_slope hk hn' hkn (Nat.le_succ n)
       rw [Nat.cast_sub hkn] at hs
       nlinarith
 
@@ -269,8 +281,8 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
   · ring_nf
     exact le_rfl
   have hj' : h (j + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hi hk (by omega) hjk'
-  have hleft := hh.sub_le_mul_slope hi hj hj hj' hij (Nat.le_succ j)
-  have hright := hh.mul_slope_le_sub hj hk hj hj' hjk le_rfl
+  have hleft := hh.sub_le_mul_slope hi hj' hij (Nat.le_succ j)
+  have hright := hh.mul_slope_le_sub hk hj hjk le_rfl
   rw [Nat.cast_sub hij] at hleft
   rw [Nat.cast_sub hjk] at hright
   have hleft' := mul_le_mul_of_nonneg_left hleft
@@ -460,6 +472,22 @@ theorem update_of_le {n : ℕ} {y : ℝ}
       exact hmid.trans (add_le_add (hraise k) (hraise (k + 2)))
 
 end IsConvexSeq
+
+/-- A real sequence which is midpoint convex on `[0, k]`, `2 d j ≤ d (j - 1) + d (j + 1)` for
+`0 < j < k`, satisfies the chord inequality from `0` to `k`: `k d j ≤ (k - j) d 0 + j d k` for
+`j ≤ k`. This is `TauCeti.IsConvexSeq.chord_inequality` for the restriction of `d` to `[0, k]`. -/
+theorem natCast_mul_le_of_two_mul_le_add {d : ℕ → ℝ} {k : ℕ}
+    (h : ∀ j, 0 < j → j < k → 2 * d j ≤ d (j - 1) + d (j + 1)) {j : ℕ} (hj : j ≤ k) :
+    (k : ℝ) * d j ≤ (k - j) * d 0 + j * d k := by
+  classical
+  have hconv : IsConvexSeq (fun n ↦ if n ∈ Set.Iic k then (d n : WithTop ℝ) else ⊤) := by
+    refine isConvexSeq_iff_two_mul_le.2 ⟨by simpa [← Set.Iic_def] using Set.ordConnected_Iic,
+      fun n _ hn₂ ↦ ?_⟩
+    have hn₂' : n + 2 ≤ k := by by_contra h'; simp [Set.mem_Iic, h'] at hn₂
+    simpa [show n ≤ k by omega, show n + 1 ≤ k by omega, hn₂'] using
+      h (n + 1) (by omega) (by omega)
+  simpa [hj] using hconv.chord_inequality (i := 0) (j := j) (k := k) (by simp) (by simp)
+    (Nat.zero_le j) hj
 
 /-- Splice two convex sequences where their heights agree, taking the prefix from the
 sequence lying higher on that prefix. This comparison ensures convexity across the join;
@@ -691,13 +719,8 @@ theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ fin
 
 /-- Scaling the heights by a nonnegative real factor preserves convexity. -/
 theorem IsConvexSeq.map_mul {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) {c : ℝ} (hc : 0 ≤ c) :
-    IsConvexSeq fun n => (h n).map (c * ·) := by
-  obtain ⟨hD, hmid⟩ := isConvexSeq_iff_two_mul_le.mp hh
-  refine isConvexSeq_iff_two_mul_le.mpr ⟨by simpa only [ne_eq, WithTop.map_eq_top_iff] using hD,
-    fun n hn hn₂ => ?_⟩
-  simp only [ne_eq, WithTop.map_eq_top_iff] at hn hn₂
-  simp only [WithTop.untop₀_map_mul]
-  nlinarith [hmid n hn hn₂]
+    IsConvexSeq fun n => (h n).map (c * ·) :=
+  hh.map (⟨AddMonoidHom.mulLeft c, fun _ _ hxy => mul_le_mul_of_nonneg_left hxy hc⟩ : ℝ →+o ℝ)
 
 /-- Scaling the heights by a nonnegative real factor preserves admissibility. -/
 theorem IsAdmissible.map_mul {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) {c : ℝ} (hc : 0 ≤ c) :

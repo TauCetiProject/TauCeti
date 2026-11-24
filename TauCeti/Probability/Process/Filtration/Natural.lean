@@ -9,12 +9,14 @@ public import Mathlib.Probability.Process.Adapted
 public import TauCeti.Probability.Process.Filtration.NullAugmentation
 
 /-!
-# Natural filtrations and deterministic translation
+# Natural filtrations, deterministic translation and future increments
 
 The natural filtration is the smallest filtration to which a process is adapted.
 Adding a deterministic function to a real-valued process leaves this filtration unchanged:
 the original process is recovered by subtracting the same function. No continuity of the
-deterministic function, or probability law of the process, is needed.
+deterministic function, or probability law of the process, is needed. The past up to a fixed
+date together with the whole future increment process determines every later observation
+(`MeasureTheory.Filtration.natural_le_sup_comap_shift`).
 
 Consequently the usual augmented natural filtrations also agree after deterministic
 translation and an equivalent change of measure. The null sets adjoined here are those of
@@ -26,6 +28,7 @@ public section
 noncomputable section
 
 open TopologicalSpace
+open scoped NNReal
 
 namespace MeasureTheory.Filtration
 
@@ -70,6 +73,22 @@ theorem nullAugment_natural_add_deterministic (W : ι → Ω → ℝ)
   rw [natural_add_deterministic]
   exact (natural W hW).nullAugment_apply_eq_of_absolutelyContinuous hQP hPQ i
 
+/-- Adding a measurable initial random variable `ξ` on the left preserves adaptedness once `ℱ` is
+enlarged by the constant filtration `σ(ξ)`. -/
+theorem _root_.MeasureTheory.Adapted.add_left_sup_comap {E : Type*} [Add E] [MeasurableSpace E]
+    [MeasurableAdd₂ E] {ℱ : Filtration ι m} {W : ι → Ω → E} (hW : Adapted ℱ W) {ξ : Ω → E}
+    (hξ : Measurable ξ) :
+    Adapted (ℱ ⊔ const ι (.comap ξ inferInstance) hξ.comap_le) (fun t ω ↦ ξ ω + W t ω) :=
+  fun t ↦ ((comap_measurable ξ).mono le_sup_right le_rfl).add ((hW t).mono le_sup_left le_rfl)
+
+/-- `t ↦ ξ + W t` is adapted to `Filtration.natural W` enlarged by `σ(ξ)`. -/
+theorem adapted_add_left_natural_sup_comap {E : Type*} [TopologicalSpace E] [MetrizableSpace E]
+    [Add E] [MeasurableSpace E] [BorelSpace E] [MeasurableAdd₂ E] {W : ι → Ω → E}
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {ξ : Ω → E} (hξ : Measurable ξ) :
+    Adapted (natural W hmeas ⊔ const ι (.comap ξ inferInstance) hξ.comap_le)
+      (fun t ω ↦ ξ ω + W t ω) :=
+  (stronglyAdapted_natural hmeas).adapted.add_left_sup_comap hξ
+
 end Preorder
 
 /-- The usual augmented natural filtrations of a process and its deterministic
@@ -83,5 +102,30 @@ theorem rightCont_nullAugment_natural_add_deterministic
       ((natural W hW).nullAugment P).rightCont i := by
   rw [natural_add_deterministic]
   exact (natural W hW).rightCont_nullAugment_apply_eq_of_absolutelyContinuous hQP hPQ i
+
+/-- The observations of a real process up to any date are determined by its past at `s`
+and its whole path of increments after `s`. No law or path regularity is required. -/
+theorem natural_le_sup_comap_shift (W : ℝ≥0 → Ω → ℝ)
+    (hW : ∀ t, StronglyMeasurable (W t)) (s t : ℝ≥0) :
+    natural W hW t ≤ natural W hW s ⊔
+      MeasurableSpace.comap (fun ω u => W (s + u) ω - W s ω) inferInstance := by
+  refine iSup₂_le fun u _ => ?_
+  by_cases hus : u ≤ s
+  · exact (((stronglyAdapted_natural hW u).measurable).mono
+      ((natural W hW).mono hus) le_rfl).comap_le.trans le_sup_left
+  · have hinc : Measurable[
+        natural W hW s ⊔ MeasurableSpace.comap
+          (fun ω v => W (s + v) ω - W s ω) inferInstance]
+        (fun ω => W (s + (u - s)) ω - W s ω) :=
+      (comap_measurable _).mono
+        ((MeasurableSpace.comap_le_comap_pi
+          (g := fun v ω => W (s + v) ω - W s ω) (u - s)).trans le_sup_right) le_rfl
+    have hstart : Measurable[
+        natural W hW s ⊔ MeasurableSpace.comap
+          (fun ω v => W (s + v) ω - W s ω) inferInstance] (W s) :=
+      ((stronglyAdapted_natural hW s).measurable).mono le_sup_left le_rfl
+    have h := hinc.add hstart
+    simp only [add_tsub_cancel_of_le (le_of_not_ge hus), Pi.add_def, sub_add_cancel] at h
+    exact h.comap_le
 
 end MeasureTheory.Filtration

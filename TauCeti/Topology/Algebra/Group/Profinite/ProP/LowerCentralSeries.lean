@@ -185,13 +185,13 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
     have hle : (proPFrattini p U.toSubgroup).map U.toSubgroup.subtype ≤
         pLowerCentralSeries p G (k + 1) := by
       rw [proPFrattini_eq_topologicalClosure hp, pLowerCentralSeries_succ, pLowerCentralStep_def]
-      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtype_val _).trans
+      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtypeVal _).trans
         (topologicalClosure_mono ?_)
       rw [Subgroup.map_sup, MonoidHom.map_closure, commutator_def, map_commutator]
       refine sup_le (le_sup_of_le_left ((Subgroup.closure_le _).mpr ?_))
         (le_sup_of_le_right (commutator_mono (map_subtype_le _) le_top))
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-      exact Subgroup.subset_closure ⟨x, x.2, (Subgroup.coe_pow _ x p).symm⟩
+      exact Subgroup.subset_closure ⟨x, x.property, (Subgroup.coe_pow _ x p).symm⟩
     exact isOpen_mono hle (hG.isOpen_map_subtype_proPFrattini p U)
 
 /-- For a prime `p`, in a topologically finitely generated profinite group every quotient
@@ -328,24 +328,6 @@ theorem IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries (hG : IsProP p G) (h
   obtain ⟨x, hxH, hx⟩ := Subgroup.mem_map.mp (h k)
   have := Subgroup.mul_mem_sup hxH (hk (QuotientGroup.eq.mp hx))
   rwa [mul_inv_cancel_left] at this
-
-/-- **Recovering elements of closed subgroups from compatible classes.** In a pro-`p` group, a
-family `q k i ∈ G ⧸ λ_k`, compatible along the quotient maps and lying at every level in the image
-of a closed subgroup `H i`, is the family of classes of elements `t i ∈ H i`. -/
-theorem IsProP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries (hG : IsProP p G)
-    (hp : p.Prime) {ι : Type*} {H : ι → Subgroup G} (hH : ∀ i, IsClosed (H i : Set G))
-    (q : ∀ k, ι → G ⧸ pLowerCentralSeries p G k)
-    (hq : ∀ k i, QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (q (k + 1) i) = q k i)
-    (hmem : ∀ k i, q k i ∈ (H i).map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
-    ∃ t : ι → G, (∀ i, t i ∈ H i) ∧
-      ∀ k i, (t i : G ⧸ pLowerCentralSeries p G k) = q k i := by
-  choose t ht using fun i ↦ (hG.existsUnique_forall_mk_eq_pLowerCentralSeries hp (fun k ↦ q k i)
-    fun k g hg ↦ by
-      rw [← hq k i]
-      exact (QuotientGroup.mapOfLE_mk (pLowerCentralSeries_succ_le k) g).symm.trans
-        (congrArg _ hg)).exists
-  exact ⟨t, fun i ↦ hG.mem_of_forall_mk_mem_map_pLowerCentralSeries hp (hH i) fun k ↦
-    (ht i k).symm ▸ hmem k i, fun k i ↦ ht i k⟩
 
 /-- A map into a pro-`p` group is continuous exactly when all of its composites with the quotient
 maps `G → G ⧸ λ_k` are. No finite generation is needed. -/

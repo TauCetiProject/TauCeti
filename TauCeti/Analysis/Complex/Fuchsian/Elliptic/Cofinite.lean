@@ -164,7 +164,6 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_dist_smul_lt (hΓ : Γ.IsCofinite)
     rw [abs_of_neg (by linarith : t ^ 2 - 4 < 0)]
     have h₁ := Real.one_le_cosh (dist (A • y) y)
     have h₂ := Real.one_le_cosh (dist (B • y) y)
-    have hτ₁ := Real.one_le_cosh τ
     nlinarith [mul_le_mul hgτ.le hkτ.le (by linarith) (by linarith)]
   · -- a large rotation: `y` is close to `w`, so `k` moves `w` less than `c`
     rw [not_lt] at hsmall
@@ -291,8 +290,8 @@ theorem IsCofinite.finite_ellipticOrbits (hΓ : Γ.IsCofinite) : Γ.ellipticOrbi
     rw [quotientMk_mem_ellipticOrbits_iff] at hq
     have hne : stabilizer Γ w ≠ ⊥ := fun h ↦ hq ((mem_freeLocus Γ ℍ).2 h)
     obtain ⟨γ, hγ₁⟩ := (Subgroup.ne_bot_iff_exists_ne_one).1 hne
-    refine ⟨w, rfl, exists_dist_smul_eq_and_forall_le hτ hP (γ : Γ).2
-      (fun h ↦ hγ₁ (Subtype.ext (Subtype.ext h))) (mem_stabilizer_iff.1 γ.2)⟩
+    refine ⟨w, rfl, exists_dist_smul_eq_and_forall_le hτ hP (γ : Γ).property
+      (fun h ↦ hγ₁ (Subtype.ext (Subtype.ext h))) (mem_stabilizer_iff.1 γ.property)⟩
   choose! w hwq g hg hg₁ hgw y hgy hthick using hex
   -- if the ball about `y q₂` meets the `k`-translate of the ball about `y q₁`, then `q₁ = q₂`,
   -- and then `k = 1` since `y q₁` is `τ / 2`-thick

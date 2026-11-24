@@ -308,8 +308,8 @@ theorem integral_id_uniformBallMeasure (c : E) (hr : 0 ≤ r) :
   rw [uniformBallMeasure_eq_map_const_add c, integral_map (by fun_prop) (by fun_prop),
     integral_add (g := fun x ↦ x) (integrable_const c)
       ((memLp_id_uniformBallMeasure 0 r 1).integrable le_rfl),
-    integral_eq_zero_of_odd (g := fun x : E ↦ x) fun _ ↦ rfl, integral_const, probReal_univ,
-    one_smul, add_zero]
+    integral_eq_zero_of_odd (g := fun x : E ↦ x) (Filter.Eventually.of_forall fun _ ↦ rfl),
+    integral_const, probReal_univ, one_smul, add_zero]
 
 end Moments
 
@@ -497,7 +497,6 @@ theorem HasLaw.indepFun_sphereDirection_norm_uniformBallMeasure
   have : Nontrivial E := ⟨⟨e, 0, ne_zero_of_mem_sphere one_ne_zero e⟩⟩
   have := isProbabilityMeasure_uniformBallMeasure (c := c) hr.le
   have := hX.isProbabilityMeasure
-  have hdir : Measurable (sphereDirection e) := measurable_sphereDirection e
   refine (indepFun_iff_hasLaw_prodMk_prod (hX.sphereDirection_uniformBallMeasure hr e)
     (hX.norm_sub_div_uniformBallMeasure hr)).2 ?_
   exact HasLaw.comp ⟨(by fun_prop), map_sphereDirection_prod_uniformBallMeasure e c hr⟩ hX

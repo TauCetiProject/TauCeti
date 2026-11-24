@@ -58,8 +58,6 @@ operators of power series. -/
 theorem contract_coe (d : ℕ+) (F : R⟦X⟧) (r : Fin d) :
     contract d (F : R⸨X⸩) r = (PowerSeries.cartier R d r F : R⸨X⸩) := by
   ext k
-  have hd : (0 : ℤ) < d := by exact_mod_cast d.pos
-  have hr : (0 : ℤ) ≤ r := Int.natCast_nonneg _
   rw [coeff_contract, PowerSeries.coeff_coe, PowerSeries.coeff_coe, PowerSeries.coeff_cartier]
   by_cases hk : k < 0
   · have : (r : ℤ) < d := by exact_mod_cast r.isLt

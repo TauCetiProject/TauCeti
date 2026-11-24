@@ -62,7 +62,7 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
   rw [Q.ord_pow, Place.ord_algebraMap_restrict k (RatFunc k)] at hord
   rw [Divisor.coeff_different, WeilDivisor.coeff_add, Divisor.coeff_zeros,
     Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) Nat.prime_two hgen hy
-      (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)]
+      (by exact_mod_cast h2)]
   rcases Place.eq_infty_or_exists_eq_adicOfIrreducible (Q.restrict k (RatFunc k)) with
     hQ | ⟨q, hq, hQ⟩
   · have hQP : Q = P := Place.eq_of_isTotallyRamified k (RatFunc k) htot
@@ -81,7 +81,7 @@ theorem different_ratFunc_eq_zeros_add_of_sq_eq_of_odd (h2 : (2 : k) ≠ 0)
   · have hQP : Q ≠ P := fun h ↦ Place.adicOfIrreducible_ne_infty hq
       (hQ.symm.trans ((congrArg (fun R : Place k F ↦ R.restrict k (RatFunc k)) h).trans hP))
     have he := Place.ramificationIdx_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-      Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+      Nat.prime_two hgen hy (by exact_mod_cast h2)
     rw [hQ, Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf] at he hord ⊢
     rw [WeilDivisor.coeff_ofPoint_of_ne hQP]
     by_cases hqf : q ∣ f

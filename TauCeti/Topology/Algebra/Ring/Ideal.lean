@@ -68,6 +68,10 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   homomorphisms out of `R ⧸ I` are determined by their composites with the quotient map.
 * `ContinuousAlgHom.continuous_quotientKerAlgEquivOfSurjective`: the algebraic first isomorphism
   `A ⧸ ker f ≃ B` induced by a continuous surjective algebra homomorphism is continuous.
+* `RingHom.isClosed_ker`: the kernel of a continuous ring homomorphism into a `T₁` semiring is
+  closed.
+* `RingHom.denseRange_quotientMap`: a ring homomorphism with dense range induces a map with
+  dense range on quotients by an ideal and its extension.
 * `RingHom.isHomeomorph_kerLift`: the map `R ⧸ ker f →+* S` induced by `f` is a homeomorphism when
   `f` is a quotient map. `IsHomeomorph.homeomorph` bundles that as
   `R ⧸ ker f ≃ₜ S`, and the map bundled is the ring homomorphism `RingHom.kerLift`, so the ring
@@ -214,6 +218,28 @@ theorem continuous_quotientKerAlgEquivOfSurjective (f : A →A[R] B)
   exact (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
 
 end ContinuousAlgHom
+
+namespace RingHom
+
+/-- The kernel of a continuous ring homomorphism into a `T₁` semiring is closed. -/
+theorem isClosed_ker {R S F : Type*} [Semiring R] [TopologicalSpace R] [Semiring S]
+    [TopologicalSpace S] [T1Space S] [FunLike F R S] [RingHomClass F R S] {f : F}
+    (hf : Continuous f) : IsClosed (ker f : Set R) :=
+  ker_eq f ▸ isClosed_singleton.preimage hf
+
+/-- A homomorphism with dense range induces a map with dense range on ideal quotients. -/
+theorem denseRange_quotientMap {A B : Type*} [CommRing A] [CommRing B]
+    [TopologicalSpace B] (f : A →+* B) (hd : DenseRange f)
+    (I : Ideal A) :
+    DenseRange (Ideal.quotientMap (I.map f) f Ideal.le_comap_map) := by
+  have h : DenseRange (fun a : A ↦ Ideal.Quotient.mk (I.map f) (f a)) :=
+    (Ideal.Quotient.mk_surjective (I := I.map f)).denseRange.comp hd
+      continuous_quotient_mk'
+  refine Dense.mono ?_ h
+  rintro _ ⟨a, rfl⟩
+  exact ⟨Ideal.Quotient.mk I a, Ideal.quotientMap_mk⟩
+
+end RingHom
 
 section FirstIsomorphism
 

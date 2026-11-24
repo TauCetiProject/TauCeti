@@ -76,7 +76,7 @@ theorem isOutwardPointing_scalarRegularSublevel_iff (hreg : IsRegularValue I �
     exact hx
   -- The inward coordinate of the preferred face chart is `a - f`.
   have hchart (w) (hw : w ∈ (chartAt (EuclideanHalfSpace (n + 1)) x).source) :
-      (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = -1 * (f w - a) := by
+      (chartAt (EuclideanHalfSpace (n + 1)) x w).val 0 = -1 * (f w - a) := by
     rw [scalarRegularSublevelChartedSpace_chartAt] at hw ⊢
     rw [scalarRegularSublevelChartAt_apply_zero_of_eq hf hreg hn hx hw]
     ring
@@ -101,7 +101,7 @@ theorem isOutwardPointing_scalarRegularBand_iff_of_eq_left {x : f ⁻¹' Icc a b
     exact Or.inl hx
   -- The inward coordinate of the preferred chart at the lower face is `f - a`.
   have hchart (w) (hw : w ∈ (chartAt (EuclideanHalfSpace (n + 1)) x).source) :
-      (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = 1 * (f w - a) := by
+      (chartAt (EuclideanHalfSpace (n + 1)) x w).val 0 = 1 * (f w - a) := by
     rw [scalarRegularBandChartedSpace_chartAt] at hw ⊢
     rw [scalarRegularBandChartAt_apply_zero_of_eq_left hf hn ha hb hx hw, one_mul]
   rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb one_ne_zero
@@ -121,9 +121,9 @@ theorem isOutwardPointing_scalarRegularBand_iff_of_eq_right {x : f ⁻¹' Icc a 
     exact Or.inr hx
   -- The inward coordinate of the preferred chart at the upper face is `b - f`.
   have hchart (w) (hw : w ∈ (chartAt (EuclideanHalfSpace (n + 1)) x).source) :
-      (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = -1 * (f w - b) := by
+      (chartAt (EuclideanHalfSpace (n + 1)) x w).val 0 = -1 * (f w - b) := by
     rw [scalarRegularBandChartedSpace_chartAt] at hw ⊢
-    rw [scalarRegularBandChartAt_apply_zero_of_eq_right hf hn ha hb hab hx hw]
+    rw [scalarRegularBandChartAt_apply_zero_of_eq_right hf hn ha hb hx hw]
     ring
   rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num)
     (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), neg_one_mul, neg_lt_zero]

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Basic
 public import Mathlib.RingTheory.Adjoin.Basic
+import Mathlib.Algebra.Algebra.Subalgebra.Tower
 
 /-!
 # Generators and vector subspaces of generated algebras
@@ -23,8 +25,11 @@ to noncommutative ambient algebras, using the same span calculation.
 
 * `TauCeti.Algebra.adjoin_algebraMap_mul_add_algebraMap_eq_adjoin`: an affine change with a
   unit multiplier generates the same subalgebra.
+* `TauCeti.Algebra.adjoin_sub_one_eq_adjoin`: `x - 1` and `x` generate the same subalgebra.
 * `TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top`: `2x - 1` generates the whole algebra when
   `x` does and `2` is a unit.
+* `TauCeti.rank_adjoin_eq_rank_adjoin_range`: adjoining a set to `F` or to the image of `F` in a
+  larger field gives the same rank.
 * `NonUnitalSubalgebra.adjoin_eq_span_one_sup`: adjoining the identity adds the scalar line
   to the underlying submodule.
 -/
@@ -55,6 +60,11 @@ theorem adjoin_algebraMap_mul_add_algebraMap_eq_adjoin {a : F} (ha : IsUnit a) (
     exact sub_mem (mul_mem (Subalgebra.algebraMap_mem _ _)
       (Algebra.subset_adjoin (Set.mem_singleton _))) (Subalgebra.algebraMap_mem _ _)
 
+/-- The elements `x - 1` and `x` generate the same subalgebra. -/
+theorem adjoin_sub_one_eq_adjoin (x : E) : Algebra.adjoin F {x - 1} = Algebra.adjoin F {x} := by
+  simpa [← sub_eq_add_neg] using
+    adjoin_algebraMap_mul_add_algebraMap_eq_adjoin (isUnit_one (M := F)) (-1) x
+
 /-- If `x` generates an algebra over a commutative ring in which `2` is a unit, then so does
 `2x - 1`. -/
 theorem adjoin_two_mul_sub_one_eq_top (h2 : IsUnit (2 : F)) {x : E}
@@ -76,3 +86,28 @@ theorem adjoin_eq_span_one_sup (B : NonUnitalSubalgebra R A) :
     ← NonUnitalAlgebra.adjoin_eq_span, NonUnitalAlgebra.adjoin_eq]
 
 end NonUnitalSubalgebra
+
+namespace TauCeti
+
+variable {k F F' : Type*} [CommSemiring k] [Field F] [Field F'] [Algebra k F] [Algebra k F']
+  [Algebra F F'] [IsScalarTower k F F']
+
+/-- Adjoining a set `s` to `F` has the same rank over `F` as adjoining it to the image of `F` in
+`F'` has over that image, because the two subalgebras are equal as subsemirings. -/
+theorem rank_adjoin_eq_rank_adjoin_range (s : Set F') :
+    Module.rank F (Algebra.adjoin F s) =
+      Module.rank (IsScalarTower.toAlgHom k F F').range
+        (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s) := by
+  have heq : (Algebra.adjoin F s).toSubsemiring =
+      (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s).toSubsemiring :=
+    congrArg Subalgebra.toSubsemiring
+      (IsScalarTower.adjoin_range_toAlgHom (R := k) (S := F) (A := F') s).symm
+  let i : F ≃ₐ[k] (IsScalarTower.toAlgHom k F F').range :=
+    AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k F F')
+  exact rank_eq_of_equiv_equiv i (RingEquiv.subsemiringCongr heq).toAddEquiv
+    i.bijective fun a ⟨x, hx⟩ ↦ by
+      ext
+      simp_rw [Algebra.smul_def]
+      rfl
+
+end TauCeti

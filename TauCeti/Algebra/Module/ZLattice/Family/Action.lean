@@ -56,7 +56,7 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCommGroup EY]
   [NormedSpace 𝕜 EY] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y] [LocallyCompactSpace Y]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace 𝕜 E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
@@ -111,7 +111,6 @@ theorem contMDiff_torusFamilyAffineMap {g : Γ}
 
 variable (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
 /-- A `C^n` affine cocycle acts by `C^n` maps on the torus family. For a group, this class
@@ -125,12 +124,12 @@ theorem contMDiffConstSMul_torusFamilyAffineMulAction
       ∀ g, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g)) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     ContMDiffConstSMul (I.prod 𝓘(𝕜, E)) n Γ
       (AddAction.orbitRel.Quotient Λ (Y × E)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   refine ⟨fun g ↦ ?_⟩
   simpa only [torusFamilyAffineMulAction_smul] using
     contMDiff_torusFamilyAffineMap P hinj hP R ρ hequiv b hb (hR g) (hbc g)
@@ -148,7 +147,6 @@ variable {Γ : Type*} [Group Γ] [MulAction Γ Y] [ProperlyDiscontinuousSMul Γ 
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
   (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
 /-- **The atlas of the quotient by a free affine action.** Let `Γ` act properly discontinuously
@@ -162,21 +160,21 @@ noncomputable def torusFamilyAffineQuotientChartedSpace (hcont : ∀ l, Continuo
     (hRc : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2)
     (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
     (hfree : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E))) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     ChartedSpace (ModelProd H E)
       (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E))) :=
   letI := periodAddAction P
   letI := torusFamilyChartedSpace (H := H) P hcont hinj
-  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   haveI := continuousConstVAdd_periodAddAction P hcont
   haveI := t2Space_torusFamily P hcont hinj
   haveI := (AddAction.isOpenQuotientMap_quotientMk (Γ := Λ) (T := Y × E)).locallyCompactSpace
-  haveI := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+  haveI := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
     hbmul
-  haveI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  haveI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hRc hbc
   haveI := hfree
   MulAction.instChartedSpaceQuotient (H := ModelProd H E)
@@ -188,16 +186,16 @@ theorem exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient
     (hRc : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2)
     (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
     (hfree : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
     {e : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       OpenPartialHomeomorph (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
         (ModelProd H E)}
     (he : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
-        hbone hbmul hcont hRc hbc hfree
+        hbmul hcont hRc hbc hfree
       e ∈ atlas (ModelProd H E)
         (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E)))) :
     letI := periodAddAction P
@@ -207,13 +205,13 @@ theorem exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient
         e.symm w = Quotient.mk _ ((chartAt (ModelProd H E) x).symm w) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P hcont hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstVAdd_periodAddAction P hcont
   have := t2Space_torusFamily P hcont hinj
   have := (AddAction.isOpenQuotientMap_quotientMk (Γ := Λ) (T := Y × E)).locallyCompactSpace
-  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
     hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     hcont hRc hbc
   have := hfree
   exact exists_symm_eq_quotientMk_of_mem_atlas_quotient he
@@ -223,7 +221,7 @@ variable (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun 
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     ∀ g, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g))
   (hfree : letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
 
 /-- The orbit map `X → X / Γ` of a free `C^n` affine action is a `C^n` local diffeomorphism, and
@@ -231,8 +229,8 @@ variable (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun 
 private theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul hbone
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
       hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
       hfree
     IsLocalDiffeomorph (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) n
@@ -241,17 +239,17 @@ private theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold :
         (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E))) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   have := continuousConstVAdd_periodAddAction P fun l ↦ (hP l).continuous
   have := t2Space_torusFamily P (fun l ↦ (hP l).continuous) hinj
   have := (AddAction.isOpenQuotientMap_quotientMk (Γ := Λ) (T := Y × E)).locallyCompactSpace
-  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone
+  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb
     hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) fun g ↦ (hbc g).continuous
   have := hfree
   have := isManifold_torusFamily P hinj hP
-  have := contMDiffConstSMul_torusFamilyAffineMulAction P hinj hP R ρ hequiv b hb hone hmul hbone
+  have := contMDiffConstSMul_torusFamilyAffineMulAction P hinj hP R ρ hequiv b hb hone hmul
     hbmul hR hbc
   exact ⟨isLocalDiffeomorph_quotientMk, instIsManifoldQuotient⟩
 
@@ -263,14 +261,14 @@ is a complex manifold. -/
 theorem isManifold_torusFamilyAffineQuotient :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul hbone
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
       hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
       hfree
     IsManifold (I.prod 𝓘(𝕜, E)) n
       (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E))) :=
   (isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
-    hmul hbone hbmul hR hbc hfree).2
+    hmul hbmul hR hbc hfree).2
 
 /-- **The orbit map of a free affine action is a local diffeomorphism.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyAffineQuotient`, the orbit map `X → X / Γ` is a `C^n` local
@@ -278,14 +276,14 @@ diffeomorphism. Over `ℂ` with holomorphic data and `n = ω`, it is a local bih
 theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul hbone
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
       hbmul (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
       hfree
     IsLocalDiffeomorph (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) n
       (Quotient.mk (MulAction.orbitRel Γ (AddAction.orbitRel.Quotient Λ (Y × E)))) :=
   (isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
-    hmul hbone hbmul hR hbc hfree).1
+    hmul hbmul hR hbc hfree).1
 
 end Quotient
 

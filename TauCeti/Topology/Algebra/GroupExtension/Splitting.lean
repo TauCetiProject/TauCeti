@@ -26,7 +26,7 @@ packages such a right inverse as a splitting while retaining its values.
 
 public section
 
-namespace TauCeti
+namespace GroupExtension
 
 variable {N E G : Type*} [Group N] [Group E] [TopologicalSpace E] [Group G] [TopologicalSpace G]
   (S : GroupExtension N E G)
@@ -35,9 +35,9 @@ variable {N E G : Type*} [Group N] [Group E] [TopologicalSpace E] [Group G] [Top
 continuously.** If the underlying homomorphism of `σ : G →ₜ* E` composed with the projection of
 `1 → N → E → G → 1` is the identity of `G`, then `σ` is a continuous splitting of the extension.
 No continuity assumption on the projection is needed. -/
-theorem _root_.GroupExtension.exists_splitting_continuous_of_comp_eq_id
+theorem exists_splitting_continuous_of_comp_eq_id
     (σ : G →ₜ* E) (hσ : S.rightHom.comp σ.toMonoidHom = MonoidHom.id G) :
     ∃ s : S.Splitting, Continuous ⇑s ∧ ∀ g, s g = σ g :=
   ⟨.mk σ.toMonoidHom fun g ↦ DFunLike.congr_fun hσ g, σ.continuous, fun _ ↦ rfl⟩
 
-end TauCeti
+end GroupExtension

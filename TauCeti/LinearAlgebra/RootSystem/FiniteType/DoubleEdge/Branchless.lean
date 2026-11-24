@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic
+import TauCeti.Data.Int.MulEqTwo
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Reindex
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.TwoDoubleEdges
 
@@ -35,8 +36,8 @@ final extraction step before this result applies to the unrestricted double-edge
 
 ## References
 
-This is the branchless double-edge case of the "classification of finite-type Cartan matrices" in
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The exclusion of two
+This is the branchless double-edge case of the classification of finite-type Cartan matrices. The
+exclusion of two
 multiple edges is the affine-diagram argument in N. Bourbaki, *Lie Groups and Lie Algebras,
 Chapters 4--6*, Chapter VI, section 4, and J. E. Humphreys, *Introduction to Lie Algebras and
 Representation Theory*, section 11.4.
@@ -88,7 +89,7 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_eq_one_or_eq_
     rintro rfl
     rw [h.apply_self] at huv
     norm_num at huv
-  rcases eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne hne) huv with
+  rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne hne) huv with
     ⟨-, hvu⟩ | ⟨huv', -⟩
   · exact key hvu
   · exact key huv'

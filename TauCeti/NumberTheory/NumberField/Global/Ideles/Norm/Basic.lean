@@ -207,6 +207,17 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele
     rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele]
     exact (Units.coe_map (RestrictedProduct.evalMonoidHom _ v) a).symm
 
+/-- The finite coordinate of the idele built from the principal finite idele of `x ∈ Kˣ` is the
+image of `x` in the completion. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (FiniteAdeleRing.unitEmbedding R K x)) =
+      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x := by
+  rw [← HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v x]
+  refine Units.ext ?_
+  simp only [HeightOneSpectrum.coe_ideleFiniteCoord, ← IdeleGroup.coe_toFiniteIdele,
+    IdeleGroup.toFiniteIdele_ofFiniteIdele, IdeleGroup.toFiniteIdele_unitEmbedding]
+
 /-- The finite coordinates of an idele concentrated at an infinite place are trivial. -/
 @[simp]
 theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofCompletion

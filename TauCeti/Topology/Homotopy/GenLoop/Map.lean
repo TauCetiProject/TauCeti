@@ -29,7 +29,7 @@ variable {N X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologica
 
 /-- A based continuous map sends generalized loops to generalized loops by postcomposition. -/
 def map (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) : Ω^ N Y y :=
-  ⟨f.comp p.1, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
+  ⟨f.comp p.val, fun t ht => by simpa [hf] using congrArg f (_root_.GenLoop.boundary p t ht)⟩
 
 @[simp]
 theorem map_apply (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) (t : I^N) :
@@ -46,7 +46,7 @@ generalized loops. -/
 theorem continuous_map (f : C(X, Y)) (hf : f x = y) :
     Continuous (map (N := N) f hf) := by
   refine Continuous.subtype_mk ?_ _
-  exact (ContinuousMap.continuous_postcomp f).comp continuous_subtype_val
+  exact (ContinuousMap.continuous_postcomp f).comp continuous_subtypeVal
 
 @[simp]
 theorem map_const (f : C(X, Y)) (hf : f x = y) :
@@ -56,16 +56,13 @@ theorem map_const (f : C(X, Y)) (hf : f x = y) :
   intro t
   simp [hf]
 
--- Not `simp`: baking the basepoint proof `rfl` into the statement forces the target basepoint
--- to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close even its own
--- statement. Use it as an explicit rewrite.
 /-- Postcomposition by a constant map yields the constant generalized loop. -/
-theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
-    map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
+@[simp]
+theorem map_continuousMap_const (c : Y) (hc : ContinuousMap.const X c x = y) (p : Ω^ N X x) :
+    map (ContinuousMap.const X c) hc p = (_root_.GenLoop.const : Ω^ N Y y) := by
   apply _root_.GenLoop.ext
   intro t
-  rw [map_apply]
-  exact _root_.GenLoop.const_apply.symm
+  simpa using hc
 
 @[simp]
 theorem map_id (p : Ω^ N X x) :

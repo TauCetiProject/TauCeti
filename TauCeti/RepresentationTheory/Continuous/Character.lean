@@ -214,12 +214,15 @@ end GroupInner
 /-! ### The character along the squaring map -/
 
 variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
-  [TopologicalSpace G] [ContinuousMul G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- The character read along the squaring map `g ↦ g * g` is continuous. -/
 theorem continuous_character_mul_self (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    Continuous fun g : G ↦ character π hπ (g * g) :=
-  (character π hπ).continuous.comp (continuous_id.mul continuous_id)
+    Continuous fun g : G ↦ character π hπ (g * g) := by
+  have h : (fun g : G ↦ character π hπ (g * g)) = fun g ↦ traceCLM 𝕜 V (π g * π g) := by
+    funext g
+    rw [character_apply, traceCLM_apply, ← map_mul π g g]
+  rw [h]
+  exact (traceCLM 𝕜 V).continuous.comp (hπ.mul hπ)
 
 end ContRepresentation

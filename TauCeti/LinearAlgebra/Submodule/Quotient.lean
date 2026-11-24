@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -23,13 +24,31 @@ image of the quotient kernel plus the span of the image of a representative. Thi
 the underlying submodule when lifting a cyclic submodule of a subquotient, for example an
 eigenline, into the ambient module.
 
+A linear map `φ : P → M` induces an isomorphism from the quotient of `P` by the preimage of a
+submodule `F` onto the subquotient `(F ⊔ range φ) ⧸ F`;
+`Submodule.quotientComapEquivSupQuotient` generalizes the second isomorphism theorem, which is
+the case `φ = p.subtype`.
+
 Two surjective linear maps with the same kernel identify their codomains, by the first
 isomorphism theorem; `LinearMap.equivOfSurjectiveOfKerEq` packages this equivalence.
+
+For linear maps `f : M₁ → M₂` and `g : M₂ → M₃` with `g ∘ f = 0`, the homology of
+`M₁ → M₂ → M₃` can be described either as `ker g` modulo the image of `f`, or as the image of
+`ker g` in the cokernel of `f`; `LinearMap.mapMkQKerEquiv` identifies the two.
 
 If an ideal `I` annihilates `S`, every linear map `M → S` kills `I • M`, so maps out of
 `M ⧸ I • M` into `S` are the same as maps out of `M`; `TauCeti.linearMapQuotientSMulTopEquiv`
 packages this as an additive equivalence. For `I = Ring.jacobson R` it applies to every semisimple
 `S`, by `IsSemisimpleModule.jacobson_le_annihilator`.
+
+The images of a set `S` span `M ⧸ p` exactly when `p ⊔ span S = ⊤`
+(`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finitely generated, finitely many
+vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`).
+
+If an `R`-submodule `P` of an `S`-module `M` equals the scalar restriction `Q.restrictScalars R`
+of an `S`-submodule `Q`, composing `Submodule.quotEquivOfEq` with
+`Submodule.Quotient.restrictScalarsEquiv` gives a canonical `R`-linear equivalence
+`Submodule.quotEquivOfEqRestrictScalars : (M ⧸ P) ≃ₗ[R] M ⧸ Q`.
 -/
 
 public section
@@ -87,6 +106,85 @@ theorem map_comap_mkQ_span_singleton (S : Submodule R M) (f : M →ₗ[R] N) (v 
   rw [← hspan, Submodule.comap_map_mkQ, Submodule.map_sup]
   simp [Submodule.map_span]
 
+/-- The map `φ` induces a linear isomorphism from the quotient of `P` by the preimage of `F`
+under `φ` onto the subquotient `(F ⊔ range φ) ⧸ F`. For `φ = p.subtype` this is the second
+isomorphism theorem `LinearMap.quotientInfEquivSupQuotient`. -/
+noncomputable def quotientComapEquivSupQuotient {P : Type*} [AddCommGroup P] [Module R P]
+    (F : Submodule R M) (φ : P →ₗ[R] M) :
+    (P ⧸ F.comap φ) ≃ₗ[R]
+      (F ⊔ LinearMap.range φ : Submodule R M) ⧸
+        F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M) :=
+  let ψ : P →ₗ[R] (F ⊔ LinearMap.range φ : Submodule R M) ⧸
+      F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M) :=
+    (F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M)).mkQ ∘ₗ
+      φ.codRestrict _ fun c ↦ Submodule.mem_sup_right ⟨c, rfl⟩
+  Submodule.quotEquivOfEq _ _ (by
+    ext c
+    simp only [LinearMap.mem_ker, ψ, LinearMap.comp_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero]
+    simp only [Submodule.submoduleOf, Submodule.mem_comap, LinearMap.codRestrict_apply,
+      Submodule.coe_subtype]) ≪≫ₗ
+  ψ.quotKerEquivOfSurjective (by
+    apply LinearMap.range_eq_top.mp
+    simp only [ψ, LinearMap.range_comp, Submodule.map_mkQ_eq_top, LinearMap.range_codRestrict]
+    exact (Submodule.submoduleOf_sup_of_le le_sup_left le_sup_right).symm.trans
+      (Submodule.submoduleOf_eq_top.mpr le_rfl))
+
+@[simp]
+theorem quotientComapEquivSupQuotient_apply_mk {P : Type*} [AddCommGroup P] [Module R P]
+    (F : Submodule R M) (φ : P →ₗ[R] M) (c : P) :
+    quotientComapEquivSupQuotient F φ (Submodule.Quotient.mk c) =
+      Submodule.Quotient.mk (p := F.submoduleOf (F ⊔ LinearMap.range φ : Submodule R M))
+        ⟨φ c, Submodule.mem_sup_right ⟨c, rfl⟩⟩ := by
+  simp [quotientComapEquivSupQuotient]
+  rfl
+
+/-- The images of a set `S` span the quotient `M ⧸ p` exactly when `p` and the span of `S`
+together span `M`. -/
+theorem span_image_mkQ_eq_top_iff {p : Submodule R M} {S : Set M} :
+    span R (p.mkQ '' S) = ⊤ ↔ p ⊔ span R S = ⊤ := by
+  rw [← map_span, map_mkQ_eq_top]
+
+/-- **Finitely many vectors complete a submodule with finitely generated quotient.** If `M ⧸ p`
+is finitely generated and `p ⊔ span R S = ⊤`, then some finite subset `t ⊆ S` already gives
+`p ⊔ span R t = ⊤`. -/
+theorem exists_finset_subset_sup_span_eq_top {p : Submodule R M} [Module.Finite R (M ⧸ p)]
+    {S : Set M} (h : p ⊔ span R S = ⊤) : ∃ t : Finset M, ↑t ⊆ S ∧ p ⊔ span R t = ⊤ := by
+  classical
+  rw [← span_image_mkQ_eq_top_iff] at h
+  obtain ⟨b, hbS, hbspan⟩ := (fg_span_iff_fg_span_finset_subset _).1 (h ▸ Module.Finite.fg_top)
+  obtain ⟨t, htS, rfl⟩ := Finset.subset_set_image_iff.1 hbS
+  refine ⟨t, htS, ?_⟩
+  rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, ← hbspan, h]
+
+section RestrictScalars
+
+variable {S : Type*} [Ring S] [SMul R S] [Module S M] [IsScalarTower R S M]
+
+/-- If an `R`-submodule `P` equals the scalar restriction of an `S`-submodule `Q`, the quotients
+`M ⧸ P` and `M ⧸ Q` are canonically `R`-linearly equivalent. -/
+def quotEquivOfEqRestrictScalars (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) : (M ⧸ P) ≃ₗ[R] M ⧸ Q :=
+  (quotEquivOfEq P (Q.restrictScalars R) h).trans (Quotient.restrictScalarsEquiv R Q)
+
+/-- `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of the same
+representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    P.quotEquivOfEqRestrictScalars Q h (Quotient.mk x) = Quotient.mk x := by
+  simp [quotEquivOfEqRestrictScalars]
+
+/-- The inverse of `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of
+the same representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_symm_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    (P.quotEquivOfEqRestrictScalars Q h).symm (Quotient.mk x) = Quotient.mk x := by
+  rw [LinearEquiv.symm_apply_eq, quotEquivOfEqRestrictScalars_mk]
+
+end RestrictScalars
+
 end Submodule
 
 namespace LinearMap
@@ -114,6 +212,32 @@ under the first map. -/
 theorem equivOfSurjectiveOfKerEq_symm_apply (x : M) :
     (g.equivOfSurjectiveOfKerEq h hg hh hk).symm (h x) = g x :=
   (LinearEquiv.symm_apply_eq _).mpr (equivOfSurjectiveOfKerEq_apply g h hg hh hk x).symm
+
+section MapMkQKer
+
+variable {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  [AddCommGroup M₃] [Module R M₃]
+
+/-- For linear maps `f : M₁ → M₂` and `g : M₂ → M₃` with `g ∘ f = 0`, the image of `ker g` in the
+cokernel of `f` is the quotient of `ker g` by the image of `f`, that is by the range of the
+corestriction of `f` to `ker g`. Both describe the homology of `M₁ → M₂ → M₃`. -/
+noncomputable def mapMkQKerEquiv (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃)
+    (hfg : ∀ x, f x ∈ ker g) :
+    (ker g ⧸ range (f.codRestrict (ker g) hfg)) ≃ₗ[R] (ker g).map (range f).mkQ :=
+  Submodule.quotEquivOfEq _ _ (by
+      rw [range_codRestrict, ker_comp, Submodule.ker_mkQ]) ≪≫ₗ
+    ((range f).mkQ ∘ₗ (ker g).subtype).quotKerEquivRange ≪≫ₗ
+      LinearEquiv.ofEq _ _ (by rw [range_comp, Submodule.range_subtype])
+
+/-- `mapMkQKerEquiv` sends the class of `x ∈ ker g` to the class of `x` modulo the image of `f`. -/
+@[simp]
+theorem coe_mapMkQKerEquiv_mk (f : M₁ →ₗ[R] M₂) (g : M₂ →ₗ[R] M₃) (hfg : ∀ x, f x ∈ ker g)
+    (x : ker g) :
+    (f.mapMkQKerEquiv g hfg (Submodule.Quotient.mk x) : M₂ ⧸ range f) =
+      Submodule.Quotient.mk (x : M₂) := by
+  simp [mapMkQKerEquiv]
+
+end MapMkQKer
 
 end LinearMap
 

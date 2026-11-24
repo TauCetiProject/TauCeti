@@ -57,7 +57,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2)
+      p.val.1.comp p.val.2 p.property)
     (hn : 1 ≤ n) (x : C) {s : Set C} (hsx : s ∈ 𝓝 x) :
     ∃ (ι : Fintype (Aut x)), letI := ι;
     ∃ (σ : ContRepresentation ℝ (Aut x) E) (c : ℝ) (B : TopologicalSpace.Opens E)
@@ -79,17 +79,16 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, z)).hom⟩ :
           Quiver.Total C) = ⟨x, x, g.asIso.hom⟩ := by
   classical
-  have := finite_hom_of_proper_source_target hp hs.isLocalHomeomorph x x
-  have : Finite (Aut x) := .of_equiv _ (Aut.isoEquiv.trans (Groupoid.isoEquivHom x x)).symm
+  have := finite_aut_of_proper_source_target hp hs.isLocalHomeomorph x
   let ι : Fintype (Aut x) := Fintype.ofFinite (Aut x)
-  obtain ⟨U, hxU, act, F₀, hsmul, hfix, hobj, hfull, hfaithful, hopen, harrow, hcentre⟩ :=
+  obtain ⟨U, hxU, act, F₀, hsmul, hfix, hobj, hfull, hfaithful, hopen, harrow, -, -, hcentre⟩ :=
     exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht hu hc x
   -- Register the action and functor instances returned by the existential chart theorem.
   let : MulAction (Aut x) U := act
   have : F₀.Full := hfull
   have : F₀.Faithful := hfaithful
   have hneigh : (Subtype.val : U → C) ⁻¹' s ∈ 𝓝 (⟨x, hxU⟩ : U) :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds hsx
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds hsx
   obtain ⟨σ, e, c, hcpos, hxe, hezero, hes, het, -, he, hei, hequiv, -⟩ :=
     exists_equivariant_contMDiff_chart_target_eq_sumOfConjugatesInnerSublevel
       (fun g ↦ hsmul.contMDiff_const_smul g) hn hfix hneigh
@@ -125,7 +124,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
         (ActionCategory.back_map_obj (MonoidHom.id (Aut x)) f a))),
     inferInstance, inferInstance, ?_, ?_, ?_⟩
   · rintro _ ⟨v, rfl⟩
-    exact hes (hf v ▸ e.map_target v.2)
+    exact hes (hf v ▸ e.map_target v.property)
   · intro g
     simp only [hlabel]
     exact (hopen g).comp hfopen

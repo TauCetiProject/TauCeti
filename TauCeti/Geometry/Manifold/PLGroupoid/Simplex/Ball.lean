@@ -118,36 +118,37 @@ theorem isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm (v : Option (Opti
 /-- The vertex-chart source is the simplex with the opposite facet deleted. -/
 def coordinateSimplexHalfSpaceChartSource (v : Option (Option ι)) :
     Set (coordinateSimplex (Option ι)) :=
-  {x | ∑ i, coordinateSimplexChartSwap v x.1 i < 1}
+  {x | ∑ i, coordinateSimplexChartSwap v x.val i < 1}
 
 /-- The origin-vertex source excludes the total-mass-one facet. -/
 @[simp] theorem coordinateSimplexHalfSpaceChartSource_none :
-    coordinateSimplexHalfSpaceChartSource (ι := ι) none = {x | ∑ i, x.1 i < 1} := by
+    coordinateSimplexHalfSpaceChartSource (ι := ι) none = {x | ∑ i, x.val i < 1} := by
   ext x
   simp only [coordinateSimplexHalfSpaceChartSource, coordinateSimplexChartSwap_none, mem_ofPred_eq]
 
 /-- A coordinate-vertex source excludes the facet on which its coordinate is zero. -/
 @[simp] theorem coordinateSimplexHalfSpaceChartSource_some (j : Option ι) :
-    coordinateSimplexHalfSpaceChartSource (some j) = {x | 0 < x.1 j} := by
+    coordinateSimplexHalfSpaceChartSource (some j) = {x | 0 < x.val j} := by
   ext x
   simp only [coordinateSimplexHalfSpaceChartSource, coordinateSimplexChartSwap_some,
     sum_coordinateSimplexVertexSwap, mem_ofPred_eq]
   constructor <;> intro h <;> linarith
 
 private theorem halfSpaceMap_nonneg (v : Option (Option ι))
-    (x : coordinateSimplex (Option ι)) : 0 ≤ (coordinateSimplexHalfSpaceMap v x.1).2 := by
+    (x : coordinateSimplex (Option ι)) : 0 ≤ (coordinateSimplexHalfSpaceMap v x.val).2 := by
   rw [halfSpaceMap_apply]
   apply (mem_nonnegOrthant_iff_nonneg_orthantFlattening_snd _).mp
-  have h := (mem_coordinateSimplex _ _).mp ((coordinateSimplexChartSwap_mem_iff v x.1).mpr x.2)
+  have h := (mem_coordinateSimplex _ _).mp ((coordinateSimplexChartSwap_mem_iff v x.val).mpr
+      x.property)
   exact ⟨fun i => h.1 (some i), h.1 none⟩
 
 private theorem inverse_mem_simplex (v : Option (Option ι))
     (q : {q : (ι → ℝ) × ℝ | 0 ≤ q.2})
-    (hq : ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1) :
-    (coordinateSimplexHalfSpaceMap v).symm q.1 ∈ coordinateSimplex (Option ι) := by
+    (hq : ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.val i < 1) :
+    (coordinateSimplexHalfSpaceMap v).symm q.val ∈ coordinateSimplex (Option ι) := by
   rw [halfSpaceMap_symm_apply, coordinateSimplexChartSwap_mem_iff]
   have hn := (mem_nonnegOrthant_iff_nonneg_orthantFlattening_snd
-    (orthantFlattening.symm q.1)).mpr (by rw [Homeomorph.apply_symm_apply]; exact q.2)
+    (orthantFlattening.symm q.val)).mpr (by rw [Homeomorph.apply_symm_apply]; exact q.property)
   rw [mem_coordinateSimplex]
   rw [coordinateSimplexHalfSpaceMap_symm_none] at hq
   refine ⟨?_, hq.le⟩
@@ -158,9 +159,10 @@ private theorem inverse_mem_simplex (v : Option (Option ι))
 
 private theorem source_to_target (v : Option (Option ι))
     (x : coordinateSimplex (Option ι)) (hx : x ∈ coordinateSimplexHalfSpaceChartSource v) :
-    ∑ i, (coordinateSimplexHalfSpaceMap none).symm (coordinateSimplexHalfSpaceMap v x.1) i < 1 := by
-  have he : Option.elim' (coordinateSimplexChartSwap v x.1 none)
-      (fun i => coordinateSimplexChartSwap v x.1 (some i)) = coordinateSimplexChartSwap v x.1 :=
+    ∑ i, (coordinateSimplexHalfSpaceMap none).symm (coordinateSimplexHalfSpaceMap v x.val) i < 1
+        := by
+  have he : Option.elim' (coordinateSimplexChartSwap v x.val none)
+      (fun i => coordinateSimplexChartSwap v x.val (some i)) = coordinateSimplexChartSwap v x.val :=
     Option.elim'_none_some _
   simpa only [coordinateSimplexHalfSpaceChartSource, mem_ofPred_eq, halfSpaceMap_apply,
     halfSpaceMap_symm_apply, coordinateSimplexChartSwap_none,
@@ -170,12 +172,12 @@ private theorem source_to_target (v : Option (Option ι))
 whose inverse origin coordinates have total mass less than one. -/
 def coordinateSimplexHalfSpaceChart (v : Option (Option ι)) :
     OpenPartialHomeomorph (coordinateSimplex (Option ι)) {q : (ι → ℝ) × ℝ | 0 ≤ q.2} where
-  toFun x := ⟨coordinateSimplexHalfSpaceMap v x.1, halfSpaceMap_nonneg v x⟩
-  invFun q := if hq : ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1 then
-    ⟨(coordinateSimplexHalfSpaceMap v).symm q.1, inverse_mem_simplex v q hq⟩
+  toFun x := ⟨coordinateSimplexHalfSpaceMap v x.val, halfSpaceMap_nonneg v x⟩
+  invFun q := if hq : ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.val i < 1 then
+    ⟨(coordinateSimplexHalfSpaceMap v).symm q.val, inverse_mem_simplex v q hq⟩
     else ⟨0, by simp⟩
   source := coordinateSimplexHalfSpaceChartSource v
-  target := {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1}
+  target := {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.val i < 1}
   map_source' := source_to_target v
   map_target' q hq := by
     simp only [mem_ofPred_eq] at hq
@@ -188,24 +190,24 @@ def coordinateSimplexHalfSpaceChart (v : Option (Option ι)) :
   right_inv' q hq := by
     simp only [mem_ofPred_eq] at hq
     rw [dite_eq_left hq]
-    exact Subtype.ext ((coordinateSimplexHalfSpaceMap v).apply_symm_apply q.1)
+    exact Subtype.ext ((coordinateSimplexHalfSpaceMap v).apply_symm_apply q.val)
   open_source := isOpen_lt
     (continuous_finsetSum _ fun i _ => (continuous_apply i).comp
-      ((coordinateSimplexChartSwap v).continuous.comp continuous_subtype_val)) continuous_const
+      ((coordinateSimplexChartSwap v).continuous.comp continuous_subtypeVal)) continuous_const
   open_target := isOpen_lt
     (continuous_finsetSum _ fun i _ => (continuous_apply i).comp
-      ((coordinateSimplexHalfSpaceMap none).symm.continuous.comp continuous_subtype_val))
+      ((coordinateSimplexHalfSpaceMap none).symm.continuous.comp continuous_subtypeVal))
     continuous_const
   continuousOn_toFun :=
-    ((coordinateSimplexHalfSpaceMap v).continuous.comp continuous_subtype_val).subtype_mk _
+    ((coordinateSimplexHalfSpaceMap v).continuous.comp continuous_subtypeVal).subtype_mk _
       |>.continuousOn
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
-    refine ((coordinateSimplexHalfSpaceMap v).symm.continuous.comp continuous_subtype_val)
+    refine ((coordinateSimplexHalfSpaceMap v).symm.continuous.comp continuous_subtypeVal)
       |>.continuousOn.congr ?_
     intro q hq
     simp only [Function.comp_apply]
-    have hq' : ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1 := hq
+    have hq' : ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.val i < 1 := hq
     rw [dite_eq_left hq']
 
 /-- The chart has the specified vertex region as its source. -/
@@ -216,19 +218,19 @@ def coordinateSimplexHalfSpaceChart (v : Option (Option ι)) :
 coordinates have total mass less than one. -/
 @[simp] theorem coordinateSimplexHalfSpaceChart_target (v : Option (Option ι)) :
     (coordinateSimplexHalfSpaceChart v).target =
-      {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.1 i < 1} := (rfl)
+      {q | ∑ i, (coordinateSimplexHalfSpaceMap none).symm q.val i < 1} := (rfl)
 
 /-- The chart is the restriction of its ambient coordinate map. -/
 @[simp] theorem coe_coordinateSimplexHalfSpaceChart_apply (v : Option (Option ι))
     (x : coordinateSimplex (Option ι)) :
-    (coordinateSimplexHalfSpaceChart v x).1 = coordinateSimplexHalfSpaceMap v x.1 := (rfl)
+    (coordinateSimplexHalfSpaceChart v x).val = coordinateSimplexHalfSpaceMap v x.val := (rfl)
 
 /-- On the target, the inverse chart agrees with its ambient PL inverse formula. -/
 theorem coe_coordinateSimplexHalfSpaceChart_symm_apply (v : Option (Option ι))
     {q : {q : (ι → ℝ) × ℝ | 0 ≤ q.2}}
     (hq : q ∈ (coordinateSimplexHalfSpaceChart v).target) :
-    ((coordinateSimplexHalfSpaceChart v).symm q).1 =
-      (coordinateSimplexHalfSpaceMap v).symm q.1 := by
+    ((coordinateSimplexHalfSpaceChart v).symm q).val =
+      (coordinateSimplexHalfSpaceMap v).symm q.val := by
   simp only [coordinateSimplexHalfSpaceChart_target, mem_ofPred_eq] at hq
   simp only [coordinateSimplexHalfSpaceChart, ← OpenPartialHomeomorph.invFun_eq_coe,
     dite_eq_left hq]
@@ -237,18 +239,19 @@ theorem coe_coordinateSimplexHalfSpaceChart_symm_apply (v : Option (Option ι))
 theorem exists_mem_coordinateSimplexHalfSpaceChartSource
     (x : coordinateSimplex (Option ι)) :
     ∃ v, x ∈ coordinateSimplexHalfSpaceChartSource v := by
-  exact (sum_lt_one_or_exists_pos x.1).elim
+  exact (sum_lt_one_or_exists_pos x.val).elim
     (fun h => ⟨none, by simpa using h⟩) (fun ⟨j, h⟩ => ⟨some j, by simpa using h⟩)
 
 /-- In a vertex chart the geometric simplex boundary is exactly height zero. -/
 theorem mem_frontier_coordinateSimplex_iff_halfSpaceChart_snd_eq_zero
     (v : Option (Option ι)) (x : coordinateSimplex (Option ι))
     (hx : x ∈ coordinateSimplexHalfSpaceChartSource v) :
-    x.1 ∈ frontier (coordinateSimplex (Option ι)) ↔
-      (coordinateSimplexHalfSpaceChart v x).1.2 = 0 := by
-  have hsum : ∑ i, coordinateSimplexChartSwap v x.1 i < 1 := hx
-  have hmem := (mem_coordinateSimplex _ _).mp ((coordinateSimplexChartSwap_mem_iff v x.1).mpr x.2)
-  rw [← coordinateSimplexChartSwap_mem_frontier_iff v x.1, mem_frontier_coordinateSimplex,
+    x.val ∈ frontier (coordinateSimplex (Option ι)) ↔
+      (coordinateSimplexHalfSpaceChart v x).val.2 = 0 := by
+  have hsum : ∑ i, coordinateSimplexChartSwap v x.val i < 1 := hx
+  have hmem := (mem_coordinateSimplex _ _).mp ((coordinateSimplexChartSwap_mem_iff v x.val).mpr
+      x.property)
+  rw [← coordinateSimplexChartSwap_mem_frontier_iff v x.val, mem_frontier_coordinateSimplex,
     coe_coordinateSimplexHalfSpaceChart_apply,
     halfSpaceMap_apply,
     ← mem_frontier_nonnegOrthant_iff_orthantFlattening_snd_eq_zero,
@@ -284,7 +287,6 @@ theorem isPiecewiseAffineOn_coordinateSimplexHalfSpaceChart_transition
     let e := (coordinateSimplexHalfSpaceChart v).symm.trans (coordinateSimplexHalfSpaceChart w)
     IsPiecewiseAffineOn (I ∘ e ∘ I.symm) (I.symm ⁻¹' e.source ∩ range I) := by
   let I := modelWithCornersHalfSpace (ι → ℝ)
-  let e := (coordinateSimplexHalfSpaceChart v).symm.trans (coordinateSimplexHalfSpaceChart w)
   refine ((isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap w).comp
     (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm v)
     (mapsTo_univ _ _)).mono (subset_univ _) |>.congr ?_

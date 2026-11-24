@@ -42,17 +42,34 @@ class, this is the compatibility of the Thom map `a ↦ π^*a ⌣ u` with the Ma
 sequences, which the proof that it is an isomorphism by induction over trivializing open sets
 uses.
 
+Applied to the pairs `(U, ∅)` and `(V, ∅)`, whose relative cohomology is absolute cohomology, this
+gives the corresponding statement for the absolute connecting morphism: for `a ∈ Hᵖ(U ∩ V)` and
+`b ∈ H^q(X)`, `δ (a ⌣ b|_{U ∩ V}) = δ a ⌣ b`
+(`TopCat.singularCohomologyMayerVietorisδ_singularCup`). The passage from pairs to absolute
+classes uses that the maps `Hⁿ(-, -) ⟶ Hⁿ(-)` from relative to absolute cohomology carry the
+connecting morphism of two pairs to the absolute one
+(`TopCat.singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ`). For a map `p : E ⟶ B`
+and an open cover `{U, V}` of `B`, this is the compatibility of the Leray–Hirsch map
+`a ↦ p^*a ⌣ e` with the Mayer–Vietoris sequences of `{U, V}` and of `{p⁻¹ U, p⁻¹ V}`.
+
 ## Main results
 
 * `TopCat.singularCohomologyPairMayerVietorisδ_singularCup`: the connecting morphism of the
   Mayer–Vietoris sequence of two pairs, applied to `a ⌣ b|`, is `δ a ⌣ b`.
 * `TopCat.interToUnionMap`: the map of pairs `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` along which `b`
   is restricted.
+* `TopCat.singularCohomologyMayerVietorisδ_singularCup`: the absolute connecting morphism of the
+  cover `{U, V}`, applied to `a ⌣ b|_{U ∩ V}`, is `δ a ⌣ b`.
+* `TopCat.interToLeftMap`, `TopCat.interToRightMap`, `TopCat.leftToUnionMap`,
+  `TopCat.rightToUnionMap`: the other inclusions of pairs among `(U ∩ V, A ∩ B)`, `(U, A)`,
+  `(V, B)` and `(U ∪ V, A ∪ B)`, and how they compose to `TopCat.interToUnionMap`
+  (`TopCat.interToLeftMap_comp_leftToUnionMap`, `TopCat.interToRightMap_comp_rightToUnionMap`).
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.1 (the Mayer–Vietoris sequences in cohomology) and Section 3.2 (cup products).
+  Section 3.1 (the Mayer–Vietoris sequences in cohomology), Section 3.2 (cup products) and
+  Section 4.D (the Leray–Hirsch theorem).
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
   Princeton (1974), §10, proof of Theorem 10.4.
 -/
@@ -76,8 +93,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
 
 namespace TopCat
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-! ### The connecting morphism and the cup product -/
 
@@ -94,28 +110,46 @@ abbrev interToUnionMap :
     Set.subset_union_left)) fun _ hx ↦ Set.subset_union_left hx.1
 
 /-- The map of pairs `(U ∩ V, A ∩ B) ⟶ (U, A)` induced by the inclusion. -/
-private abbrev interToLeftMap :
+abbrev interToLeftMap :
     TopPair.ofInclusion (Set.inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hAU :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.inter_subset_left)
     fun _ hx ↦ Set.inter_subset_left hx
 
 /-- The map of pairs `(U ∩ V, A ∩ B) ⟶ (V, B)` induced by the inclusion. -/
-private abbrev interToRightMap :
+abbrev interToRightMap :
     TopPair.ofInclusion (Set.inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hBV :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.inter_subset_right)
     fun _ hx ↦ Set.inter_subset_right hx
 
 /-- The map of pairs `(U, A) ⟶ (U ∪ V, A ∪ B)` induced by the inclusion. -/
-private abbrev leftToUnionMap :
+abbrev leftToUnionMap :
     TopPair.ofInclusion hAU ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_left)
     fun _ hx ↦ Set.subset_union_left hx
 
 /-- The map of pairs `(V, B) ⟶ (U ∪ V, A ∪ B)` induced by the inclusion. -/
-private abbrev rightToUnionMap :
+abbrev rightToUnionMap :
     TopPair.ofInclusion hBV ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_right)
     fun _ hx ↦ Set.subset_union_right hx
+
+/-- Including `(U ∩ V, A ∩ B)` into `(U, A)` and then into `(U ∪ V, A ∪ B)` is
+`interToUnionMap`. -/
+@[reassoc]
+theorem interToLeftMap_comp_leftToUnionMap :
+    interToLeftMap hAU hBV ≫ leftToUnionMap hAU hBV = interToUnionMap hAU hBV := by
+  rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U ∩ V → U ∪ V`.
+  rfl
+
+/-- Including `(U ∩ V, A ∩ B)` into `(V, B)` and then into `(U ∪ V, A ∪ B)` is
+`interToUnionMap`. -/
+@[reassoc]
+theorem interToRightMap_comp_rightToUnionMap :
+    interToRightMap hAU hBV ≫ rightToUnionMap hAU hBV = interToUnionMap hAU hBV := by
+  rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U ∩ V → U ∪ V`.
+  rfl
 
 /-- The pair `(U ∩ V, A ∩ B)`. -/
 private abbrev interPair : TopPair.{w} := TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)
@@ -168,7 +202,7 @@ private lemma cupLift_union_component {W D : Set X} (hDW : D ⊆ W) {i : Fin 2}
     _ u μ p q n h _ _).trans (congrArg
       (fun a ↦ cupCochain k ((TopPair.ofInclusion hDW).rightAlexanderWhitneyDiagonal u)
         μ p q n h a _) ?_)
-  refine chainComplexMap_f_comp_subtypeVal _ ?_ _ z
+  refine chainComplexMap_f_comp_subtypeVal_assoc _ ?_ _ z
   exact fun x ↦ congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
 
 omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
@@ -194,7 +228,7 @@ private lemma cupLift_component_d {W : Set X} {i : Fin 2} (hWi : W ⊆ ![U, V] i
   refine ((ModuleCat.comp_apply _ _ _).symm.trans
     (ConcreteCategory.congr_hom (congrArg (fun f ↦ f.f (p + 1)) hπ) _)).trans ?_
   exact (SSet.cochainComplexMap_f_apply _ _ _).trans
-    (chainComplexMap_f_toSmallSingularSubcomplex_comp _ _ _ _)
+    (by rw [← Category.assoc, chainComplexMap_f_toSmallSingularSubcomplex_ι])
 
 /-- For a relative cocycle, the coboundary of the cupped lift component is the restriction of
 `ζ ⌣ β`; the formula is uniform over the two cover members. -/
@@ -289,21 +323,21 @@ private lemma cupLift_g_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   have hgx := hg
   rw [HomologicalComplex.biprod_desc_f_apply, HomologicalComplex.neg_f_apply, ModuleCat.hom_neg,
     LinearMap.neg_apply] at hgx
   -- Restricting the components of the lift to `(U ∩ V, A ∩ B)`.
   have eU := cupLift_restrict_component k hAU hBV _ u μ (interToLeftMap hAU hBV)
-    (leftToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yU b'
+    (leftToUnionMap hAU hBV) (interToLeftMap_comp_leftToUnionMap hAU hBV) rfl yU b'
   have eV := cupLift_restrict_component k hAU hBV _ u μ (interToRightMap hAU hBV)
-    (rightToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yV b'
+    (rightToUnionMap hAU hBV) (interToRightMap_comp_rightToUnionMap hAU hBV) rfl yV b'
   -- Cupping is linear in its first argument.
   have hlin : ∀ (a₁ a₂ : ((toSSet.obj (TopPair.ofInclusion
       (Set.inter_subset_inter hAU hBV)).fst).chainComplex R).X p ⟶ M)
@@ -389,13 +423,13 @@ private lemma cupLift_d_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   have hdb : ((unionPair hAU hBV).singularChainComplex S).d
       (q + 1) q ≫ b' = 0 := d_comp_linearYonedaObj_iCycles q (q + 1) β
   refine (HomologicalComplex.biprod_lift_f_apply _ _ _ _).trans (Eq.trans ?_
@@ -468,13 +502,13 @@ private lemma pairMayerVietorisδ_cup_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   -- The pair sequence: `x₂ ⌣ β|` lifts `α ⌣ β|`, and its coboundary is the restriction of
   -- `ζ ⌣ β`.
   refine (SSetPair.shortExact_mayerVietorisCochainShortComplex T k L
@@ -502,7 +536,7 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     (a : (of ↥(U ∩ V)).singularCohomology R k M p)
     (b : (TopPair.ofInclusion (Set.union_subset_union hAU hBV)).singularCohomology S k N q) :
     singularCohomologyPairMayerVietorisδ T k L hAU hBV
-        (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val) hA hB n m hm
+        (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) hA hB n m hm
         ((TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCup k u μ p q n h a
           (TopPair.singularCohomologyMap (interToUnionMap hAU hBV) q b)) =
       (TopPair.ofInclusion (Set.union_subset_union hAU hBV)).singularCup k u μ p' q m h'
@@ -529,8 +563,8 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
   obtain ⟨x₂, α, hd, hg, rfl⟩ := hS.moduleCat_exists_d_eq_of_δ_eq p (p + 1) rfl a _ hδ
   -- It suffices to compare both sides after restricting to the singular simplices lying in `U` or
   -- in `V`, which is injective on cohomology.
-  have hU' : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)) := hU.preimage continuous_subtype_val
-  have hV' : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)) := hV.preimage continuous_subtype_val
+  have hU' : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)) := hU.preimage continuous_subtypeVal
+  have hV' : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)) := hV.preimage continuous_subtypeVal
   have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion T k L hAU hBV hU' hV' hA hB
     (p + q + 1)
   apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T) (k := k)
@@ -548,4 +582,89 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     TopPair.singularCup_homologyπ k (unionPair hAU hBV) u μ
       (p + 1) q (p + q + 1) h', moduleCat_homologyMap_homologyπ]
   exact pairMayerVietorisδ_cup_eq k hAU hBV u μ h' x₂ α ζ β hd hg
+
+/-! ### The absolute connecting morphism and the cup product -/
+
+private instance isEmpty_snd_ofInclusion_empty_union :
+    IsEmpty (TopPair.ofInclusion (Set.union_subset_union (Set.empty_subset U)
+      (Set.empty_subset V))).snd :=
+  ⟨fun x ↦ by simpa using x.property⟩
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
+include hUV in
+/-- For `U ∪ V = X`, restriction from `X` to `U ∪ V` is injective on cohomology. -/
+private lemma singularCohomologyMap_subtypeVal_union_injective {R M : C} (n : ℕ) :
+    Function.Injective (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+      (ofHom (ContinuousMap.subtypeVal (U ∪ V))) n) := by
+  let σ : X ⟶ of ↥(U ∪ V) := ofHom ⟨fun x ↦ ⟨x, hUV ▸ Set.mem_univ x⟩, by fun_prop⟩
+  have hσ : σ ≫ ofHom (ContinuousMap.subtypeVal (U ∪ V)) = 𝟙 X := rfl
+  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap σ n) fun x ↦ ?_
+  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hσ,
+    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+
+/-- **The Mayer–Vietoris connecting morphism and the cup product.** Let `U` and `V` be open
+subsets covering `X`. For `a ∈ Hᵖ(U ∩ V)` and `b ∈ H^q(X)`, the connecting morphism of the
+Mayer–Vietoris sequence of the cover `{U, V}` sends `a ⌣ b|_{U ∩ V}` to `δ a ⌣ b`. -/
+theorem singularCohomologyMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
+    {p q n p' m : ℕ} (h : p + q = n) (hp : p + 1 = p') (hm : n + 1 = m) (h' : p' + q = m)
+    (a : (of ↥(U ∩ V)).singularCohomology R k M p) (b : X.singularCohomology S k N q) :
+    singularCohomologyMayerVietorisδ T k L hU hV hUV n m hm
+        ((of ↥(U ∩ V)).singularCup k u μ p q n h a
+          (TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (U ∩ V))) q b)) =
+      X.singularCup k u μ p' q m h'
+        (singularCohomologyMayerVietorisδ R k M hU hV hUV p p' hp a) b := by
+  -- Work with the pairs `(U, ∅)` and `(V, ∅)`, whose relative cohomology is absolute cohomology.
+  have hAU : (∅ : Set X) ⊆ U := Set.empty_subset U
+  have hBV : (∅ : Set X) ⊆ V := Set.empty_subset V
+  let j : of ↥(U ∪ V) ⟶ X := ofHom (ContinuousMap.subtypeVal (U ∪ V))
+  let πU := (TopPair.ofInclusion (Set.union_subset_union hAU hBV)).singularCohomologyπ S k N q
+  let ι := interToUnionMap hAU hBV
+  -- The class `b` restricted to `U ∪ V`, as a class of the pair `(U ∪ V, ∅)`.
+  let b' := inv πU (TopCat.singularCohomologyMap j q b)
+  have hb' : πU b' = TopCat.singularCohomologyMap j q b := IsIso.inv_hom_id_apply πU _
+  have hfst : TopPair.Hom.fst ι ≫ j = ofHom (ContinuousMap.subtypeVal (U ∩ V)) := by
+    ext x
+    exact congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
+  -- Its restriction to `(U ∩ V, ∅)` maps to the restriction of `b` to `U ∩ V`.
+  have hι : (TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCohomologyπ S k N q
+      (TopPair.singularCohomologyMap ι q b') =
+      TopCat.singularCohomologyMap (ofHom (ContinuousMap.subtypeVal (U ∩ V))) q b := by
+    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyπ_naturality,
+      ConcreteCategory.comp_apply, hb']
+    -- The domain of `TopPair.Hom.fst ι` is `U ∪ V` only after unfolding `TopPair.ofInclusion`, so
+    -- the composite with `j` is formed by `singularCohomologyMap_comp` rather than by `rw`.
+    exact (ConcreteCategory.comp_apply _ _ _).symm.trans (ConcreteCategory.congr_hom
+      ((TopCat.singularCohomologyMap_comp _ j q).symm.trans
+        (congrArg (TopCat.singularCohomologyMap · q) hfst)) b)
+  apply singularCohomologyMap_subtypeVal_union_injective k hUV
+  -- Both sides are the images of the two sides of the corresponding identity for the pairs.
+  have hpair := singularCohomologyPairMayerVietorisδ_singularCup (A := ∅) (B := ∅) k hU hV hUV
+    hAU hBV
+    (by simp) (by simp) u μ h hp hm h' a b'
+  have hcomp := ConcreteCategory.congr_hom
+    (singularCohomologyPairMayerVietorisδ_comp_singularCohomologyπ T k L hAU hBV
+      (by simp) (by simp) hU hV hUV n m hm)
+    ((TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCup k u μ p q n h a
+      (TopPair.singularCohomologyMap ι q b'))
+  -- The steps below rewrite by `hι`, pass to the pairs, apply `hpair` and return to absolute
+  -- classes. The absolute cup products live on `U ∩ V` and `U ∪ V`, while the lemmas relating them
+  -- to the pairs are stated on `TopPair.fst` of the pairs, which agree only after unfolding
+  -- `TopPair.ofInclusion`; so `rw` cannot match them and each step is an explicit `Eq.trans`.
+  refine (congrArg (fun z ↦ TopCat.singularCohomologyMap j m
+    (singularCohomologyMayerVietorisδ T k L hU hV hUV n m hm
+      ((of ↥(U ∩ V)).singularCup k u μ p q n h a z))) hι.symm).trans ?_
+  refine (congrArg (fun z ↦ TopCat.singularCohomologyMap j m
+    (singularCohomologyMayerVietorisδ T k L hU hV hUV n m hm z))
+    (TopPair.singularCohomologyπ_singularCup k
+      (TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)) u μ p q n h a
+      (TopPair.singularCohomologyMap ι q b')).symm).trans ?_
+  refine hcomp.symm.trans ?_
+  refine (congrArg _ hpair).trans ?_
+  refine (TopPair.singularCohomologyπ_singularCup k
+    (TopPair.ofInclusion (Set.union_subset_union hAU hBV)) u μ p' q m h'
+    (TopCat.singularCohomologyMap j p' (singularCohomologyMayerVietorisδ R k M hU hV hUV p p' hp a))
+    b').trans ?_
+  refine (congrArg _ hb').trans ?_
+  exact singularCup_naturality j k u μ p' q m h' _ _
+
 end TopCat

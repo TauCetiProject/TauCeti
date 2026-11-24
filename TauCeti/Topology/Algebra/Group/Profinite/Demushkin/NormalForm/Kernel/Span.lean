@@ -74,7 +74,7 @@ private theorem degreeOneDeriv_gradedBracket_freeProPGen_of_ne (k : Fin n) {b : 
       (gradedMkZero p (freeProP p (Fin n)) (freeProPGen p n (2 * b)))
       (gradedMkZero p (freeProP p (Fin n)) (freeProPGen p n (2 * b + 1)))) = 0 := by
   rw [freeProPGen_of_lt p (show 2 * b < n by omega), freeProPGen_of_lt p hb]
-  exact degreeOneDeriv_gradedBracket_gradedMkZero_of_of_ne (Fin.mk_lt_mk.2 (Nat.lt_succ_self _))
+  exact degreeOneDeriv_gradedBracket_gradedMkZero_of_of_ne
     (fun h ↦ h₁ (congrArg Fin.val h).symm) fun h ↦ h₂ (congrArg Fin.val h).symm
 
 /-- The derivative `∂_k` of the class of the word at a generator `x_k` with `k ≠ 0` and

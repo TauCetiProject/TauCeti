@@ -116,6 +116,7 @@ theorem inflH1MaximalProP_apply_eq_infl (x : cohomFp p (maximalProPQuotient p G)
   rw [inflH1MaximalProP_apply, ← ConcreteCategory.comp_apply,
     coeffMap_trivialFpQuotientToInvariantsIso_hom_comp_infl]
 
+omit [Fact p.Prime] in
 /-- **Degree-two inflation from the maximal pro-`p` quotient is injective.** The inflation map
 `H²(G(p), 𝔽_p) → H²(G, 𝔽_p)` is injective. -/
 theorem inflH2MaximalProP_injective :
@@ -133,7 +134,7 @@ theorem inflH2MaximalProP_injective :
   let eR : ZMod p ≃+ FixedPoints.addSubgroup R (ZMod p) :=
     AddSubgroup.topEquiv.symm.trans (AddEquiv.addSubgroupCongr
       (fixedPoints_addSubgroup_eq_top_of_smul_eq (ZMod p) R htrivG).symm)
-  have heR (m : ZMod p) : (eR m).1 = m := by simp [eR]
+  have heR (m : ZMod p) : (eR m).val = m := by simp [eR]
   have hequiv : ∀ (q : G ⧸ R) (m : ZMod p),
       eR ((ContinuousMulEquiv.refl (G ⧸ R)) q • m) = q • eR m := by
     intro q m

@@ -24,12 +24,16 @@ relative to weights `w r` whose partial sums are at most `1`, then it is small o
 displacement `F (N + 1) - F 0`. This is how per-stage perturbation estimates, with weights such as
 `2⁻⁽ʳ⁺¹⁾`, are combined into an estimate for the limit of the stages.
 
+Finally, in a linearly ordered field, one of the `n` increments of a sequence is at most their
+average `(G n - G 0) / n`, since they telescope to `G n - G 0`.
+
 ## Main results
 
 * `TauCeti.abs_sub_sub_sum_range_le_of_forall_lt`: the bound on `G n - G 0 - ∑ k < n, g k` from
   the bounds on the increments.
 * `TauCeti.lt_of_forall_sub_lt_mul`: the telescoping bound for a subadditive function and weights
   with partial sums at most `1`.
+* `TauCeti.exists_sub_le_div`: some increment is at most the average increment.
 -/
 
 public section
@@ -50,19 +54,30 @@ theorem abs_sub_sub_sum_range_le_of_forall_lt {α : Type*} [AddCommGroup α] [Li
 /-- A telescoping bound. If a subadditive function `q` is small on each step `F (r + 1) - F r` of a
 sequence, relative to weights `w r` summing to at most `1`, then it is small on the total
 displacement `F (N + 1) - F 0`. -/
-theorem lt_of_forall_sub_lt_mul {G : Type*} [AddCommGroup G] (q : G → ℝ) (hq0 : q 0 ≤ 0)
+theorem lt_of_forall_sub_lt_mul {G : Type*} [AddCommGroup G] (q : G → ℝ)
     (hadd : ∀ a b, q (a + b) ≤ q a + q b) {t : ℝ} (ht : 0 < t) {w : ℕ → ℝ}
     (hw : ∀ N, ∑ r ∈ Finset.range N, w r ≤ 1) (F : ℕ → G) (N : ℕ)
     (h : ∀ r ≤ N, q (F (r + 1) - F r) < t * w r) : q (F (N + 1) - F 0) < t :=
   calc q (F (N + 1) - F 0) = q (∑ r ∈ Finset.range (N + 1), (F (r + 1) - F r)) := by
         rw [Finset.sum_range_sub]
     _ ≤ ∑ r ∈ Finset.range (N + 1), q (F (r + 1) - F r) :=
-        Finset.le_sum_of_subadditive _ hq0 hadd _ _
+        Finset.le_sum_nonempty_of_subadditive _ hadd ⟨0, by simp⟩ _
     _ < ∑ r ∈ Finset.range (N + 1), t * w r :=
         Finset.sum_lt_sum_of_nonempty ⟨0, by simp⟩ fun r hr ↦
           h r (Nat.lt_succ_iff.mp (Finset.mem_range.mp hr))
     _ ≤ t := by
         rw [← Finset.mul_sum]
         exact mul_le_of_le_one_right ht.le (hw _)
+
+/-- **Some increment is at most the average.** Among the increments `G (j + 1) - G j` for `j < n`,
+with `n ≠ 0`, one is at most `(G n - G 0) / n`. -/
+theorem exists_sub_le_div {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    (G : ℕ → α) {n : ℕ} (hn : n ≠ 0) :
+    ∃ j < n, G (j + 1) - G j ≤ (G n - G 0) / n := by
+  have hsum : ∑ j ∈ Finset.range n, (G (j + 1) - G j) ≤
+      ∑ _j ∈ Finset.range n, (G n - G 0) / n := by
+    simp [Finset.sum_range_sub G, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn : (n : α) ≠ 0)]
+  obtain ⟨j, hj, hjle⟩ := Finset.exists_le_of_sum_le (Finset.nonempty_range_iff.2 hn) hsum
+  exact ⟨j, Finset.mem_range.1 hj, hjle⟩
 
 end TauCeti

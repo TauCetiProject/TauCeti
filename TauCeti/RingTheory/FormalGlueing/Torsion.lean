@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.IsTensorProduct
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.RingTheory.Ideal.Quotient.Operations
 
@@ -85,7 +86,8 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet
   refine ⟨LeftInverse.injective (g := TensorProduct.lift β) fun m ↦ by simp [β], fun x ↦ ?_⟩
   induction x using TensorProduct.inductionOn with
   | tmul s m =>
-    obtain ⟨r, hr⟩ := Ideal.exists_sub_mem_of_surjective_quotientMap hI.2 s
+    obtain ⟨r, hr⟩ :=
+      Ideal.exists_sub_mem_of_surjective_quotient_mk_comp (hI.2.comp Ideal.Quotient.mk_surjective) s
     have hm : m ∈ torsionBySet R M I := (mem_torsionBySet_iff _ _).mpr fun a ↦ @hM m a
     have h := (Ideal.mem_torsionOf_iff _ _).mp (map_le_torsionOf_one_tmul (S := S) hm hr)
     rw [smul_tmul', smul_eq_mul, mul_one, sub_tmul, sub_eq_zero] at h
@@ -117,7 +119,7 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet_pow (n : ℕ) :
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, mem_torsionBySet_iff]
       intro i
       rw [smul_smul]
-      exact @hM m ⟨_, by rw [pow_succ']; exact Ideal.mul_mem_mul i.2 a.2⟩
+      exact @hM m ⟨_, by rw [pow_succ']; exact Ideal.mul_mem_mul i.property a.property⟩
     refine ⟨(injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_, fun y ↦ ?_⟩
     · have hmN : m ∈ N := by
         rw [← Submodule.Quotient.mk_eq_zero]
@@ -169,7 +171,7 @@ private noncomputable def primaryComponentMap :
     I.primaryComponent M →ₗ[R]
       ((I.map (algebraMap R S)).primaryComponent (S ⊗[R] M)).restrictScalars R :=
   ((TensorProduct.mk R S M 1).domRestrict _).codRestrict _ fun m ↦
-    one_tmul_mem_primaryComponent_map m.2
+    one_tmul_mem_primaryComponent_map m.property
 
 omit [Module.Flat R S] hI in
 private theorem coe_primaryComponentMap_apply (m : I.primaryComponent M) :
@@ -253,18 +255,23 @@ theorem baseChangeHom_bijective_of_primaryComponent_eq_top_left (hIfg : I.FG) {N
     exact h
 
 /-- Postcomposition with `n ↦ 1 ⊗ n` detects linear maps from an `I`-power torsion module
-when `I` is finitely generated and the flat algebra preserves the quotient by `I`. -/
-theorem tensorProduct_mk_comp_injective_of_primaryComponent_eq_top (hIfg : I.FG)
+when the flat algebra preserves the quotient by `I`. -/
+theorem tensorProduct_mk_comp_injective_of_primaryComponent_eq_top
     {N : Type*} [AddCommGroup N] [Module R N] (hM : I.primaryComponent M = ⊤) :
     Injective (fun f : M →ₗ[R] N ↦ (TensorProduct.mk R S N 1).comp f) := by
   intro f g hfg
-  apply (baseChangeHom_bijective_of_primaryComponent_eq_top_left hI hIfg hM).1
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro s m
-  have hm : (1 : S) ⊗ₜ[R] f m = 1 ⊗ₜ[R] g m := LinearMap.congr_fun hfg m
-  simpa only [LinearMap.baseChangeHom_apply, LinearMap.baseChange_tmul,
-    TensorProduct.smul_tmul', smul_eq_mul, mul_one] using
-      congrArg (fun t : S ⊗[R] N ↦ s • t) hm
+  -- The values of `f` and `g` lie in the `I`-power torsion `P` of `N`, where `n ↦ 1 ⊗ n` is
+  -- injective, and `S` is flat so `S ⊗ P → S ⊗ N` is injective.
+  have hmem (f : M →ₗ[R] N) (m : M) : f m ∈ I.primaryComponent N :=
+    Ideal.primaryComponent_map_mem _ f ⟨m, hM ▸ mem_top⟩
+  have hP := tensorProduct_mk_bijective_of_primaryComponent_eq_top
+    (M := I.primaryComponent N) hI (Ideal.primaryComponent_primaryComponent_eq_top I)
+  refine LinearMap.ext fun m ↦ ?_
+  have h : (1 : S) ⊗ₜ[R] f m = 1 ⊗ₜ[R] g m := LinearMap.congr_fun hfg m
+  have h' : (1 : S) ⊗ₜ[R] (⟨f m, hmem f m⟩ : I.primaryComponent N) = 1 ⊗ₜ ⟨g m, hmem g m⟩ :=
+    Module.Flat.lTensor_preserves_injective_linearMap (I.primaryComponent N).subtype
+      (I.primaryComponent N).injective_subtype (by simpa using h)
+  exact congr(Subtype.val $(hP.1 h'))
 
 /-- An `S`-module that is `IS`-power torsion is the base change of its underlying `R`-module:
 the multiplication map `S ⊗[R] N → N` is bijective. -/
@@ -280,7 +287,7 @@ theorem isBaseChange_of_primaryComponent_eq_top {N : Type*} [AddCommGroup N] [Mo
     refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨n, (mem_torsionBySet_iff _ _).mpr fun a ↦ ?_⟩
     rw [← algebraMap_smul S]
     exact (mem_torsionBySet_iff _ _).mp hn
-      ⟨_, Ideal.map_pow (algebraMap R S) I n ▸ Ideal.mem_map_of_mem _ a.2⟩
+      ⟨_, Ideal.map_pow (algebraMap R S) I n ▸ Ideal.mem_map_of_mem _ a.property⟩
   have hb := tensorProduct_mk_bijective_of_primaryComponent_eq_top hI (S := S) hN'
   let l := ((LinearMap.id : N →ₗ[S] N).restrictScalars R).liftBaseChange S
   have hl (n : N) : l (1 ⊗ₜ n) = n := by simp [l]
@@ -293,3 +300,27 @@ theorem isBaseChange_of_primaryComponent_eq_top {N : Type*} [AddCommGroup N] [Mo
   exact IsBaseChange.of_equiv (.ofBijective l hlb) fun n ↦ hl n
 
 end TauCeti
+
+namespace Ideal
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
+
+/-- A flat map inducing an isomorphism modulo `I` induces an isomorphism modulo any ideal `J`
+whose quotient is `I`-power torsion. In particular this applies to every power of `I`. -/
+theorem quotientMap_bijective_of_primaryComponent_eq_top (I J : Ideal R)
+    (hI : Function.Bijective
+      (quotientMap (I.map (algebraMap R S)) (algebraMap R S) le_comap_map))
+    (hJ : I.primaryComponent (R ⧸ J) = ⊤) :
+    Function.Bijective
+      (quotientMap (J.map (algebraMap R S)) (algebraMap R S) le_comap_map) := by
+  let e := Algebra.TensorProduct.quotIdealMapEquivTensorQuot S J
+  have h := e.symm.bijective.comp
+    (TauCeti.tensorProduct_mk_bijective_of_primaryComponent_eq_top (S := S) hI hJ)
+  convert h using 1
+  funext q
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp only [quotientMap_mk, Function.comp_apply, TensorProduct.mk_apply, e,
+    Algebra.TensorProduct.quotIdealMapEquivTensorQuot_symm_tmul, Algebra.smul_def, mul_one]
+  exact (IsScalarTower.algebraMap_apply R S (S ⧸ J.map (algebraMap R S)) r).symm
+
+end Ideal

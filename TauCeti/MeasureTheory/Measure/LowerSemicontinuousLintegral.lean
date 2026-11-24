@@ -35,6 +35,8 @@ the value `∞` is allowed on both sides.
 * `TauCeti.isClosed_setOfPred_lintegral_le_finiteMeasure` and
   `TauCeti.isClosed_setOfPred_lintegral_le_probabilityMeasure`: the sublevel sets of the pairing
   are closed.
+* `TauCeti.lintegral_le_of_tendsto_finiteMeasure`: an eventual upper bound on the integrals along
+  a weakly convergent family bounds the integral against the limit.
 * `TauCeti.lowerSemicontinuousOn_lintegral_comp`: for `h` lower semicontinuous and `Φ` arbitrary,
   `μ ↦ ∫⁻ x, h (Φ x) ∂μ` is lower semicontinuous on a set of finite or probability measures when
   `Φ` is continuous on closed sets of uniformly almost full mass.
@@ -125,6 +127,15 @@ theorem isClosed_setOfPred_lintegral_le_probabilityMeasure (hf : LowerSemicontin
     IsClosed {μ : ProbabilityMeasure Ω | ∫⁻ x, f x ∂(μ : Measure Ω) ≤ a} :=
   (lowerSemicontinuous_lintegral_probabilityMeasure hf).isClosed_preimage a
 
+/-- **Upper bounds pass to weak limits.** Along a weakly convergent family of finite measures on a
+nontrivial filter, an eventual upper bound `∫⁻ f ∂μᵢ ≤ C` on the integrals of a lower
+semicontinuous integrand also bounds `∫⁻ f ∂μ`. -/
+theorem lintegral_le_of_tendsto_finiteMeasure {γ : Type*} {L : Filter γ} [L.NeBot]
+    {μs : γ → FiniteMeasure Ω} {μ : FiniteMeasure Ω} (hf : LowerSemicontinuous f)
+    (h : Tendsto μs L (𝓝 μ)) {C : ℝ≥0∞} (hC : ∀ᶠ i in L, ∫⁻ x, f x ∂(μs i : Measure Ω) ≤ C) :
+    ∫⁻ x, f x ∂(μ : Measure Ω) ≤ C :=
+  (isClosed_setOfPred_lintegral_le_finiteMeasure hf C).mem_of_tendsto h hC
+
 /-- The direct method of the calculus of variations for a lower semicontinuous integrand: on a
 nonempty compact set of probability measures, the integral attains its infimum. The minimum value
 is allowed to be `∞`, which happens exactly when every measure in the set gives `f` infinite
@@ -143,7 +154,7 @@ theorem exists_lintegral_eq_iInf {K : Set (ProbabilityMeasure Ω)} (hK : K.Nonem
       ⨅ ν : K, ∫⁻ x, f x ∂((ν : ProbabilityMeasure Ω) : Measure Ω) := by
   obtain ⟨μ, hμK, hμ⟩ := exists_isMinOn_lintegral hK hKc hf
   refine ⟨μ, hμK, le_antisymm ?_ (iInf_le_of_le ⟨μ, hμK⟩ le_rfl)⟩
-  exact le_iInf fun ν ↦ hμ ν.2
+  exact le_iInf fun ν ↦ hμ ν.property
 
 section Lusin
 
@@ -172,8 +183,8 @@ theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
   intro μ₀ hμ₀ c hc
   beta_reduce at hc ⊢
   have hm₀ : AEMeasurable (fun x ↦ h (Φ x)) (μ₀ : Measure Ω) :=
-    hh.aemeasurable_comp_of_forall_exists_isClosed_continuousOn fun ε hε ↦
-      (hΦ ε hε).imp fun C hC ↦ ⟨hC.1, hC.2.1, hC.2.2 μ₀ hμ₀⟩
+    hh.aemeasurable_comp_of_forall_exists_measurableSet_continuousOn fun ε hε ↦
+      (hΦ ε hε).imp fun C hC ↦ ⟨hC.1.measurableSet, hC.2.1, hC.2.2 μ₀ hμ₀⟩
   -- Truncate `h ∘ Φ` at a finite height `M` without losing the strict inequality at `μ₀`.
   have hsup : ∫⁻ x, h (Φ x) ∂(μ₀ : Measure Ω) =
       ⨆ n : ℕ, ∫⁻ x, min (h (Φ x)) n ∂(μ₀ : Measure Ω) := by

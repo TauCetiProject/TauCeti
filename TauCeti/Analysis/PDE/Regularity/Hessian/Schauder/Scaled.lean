@@ -8,20 +8,26 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.LowerOrder
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecificLimits.Absorption
 
 /-!
 # The interior Schauder estimate in scaled form
 
-Let `0 < α < 1`, and let `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu` be a non-divergence-form operator on `ℝ^{n+1}`
-which is uniformly elliptic and bounded with constants `0 < λ ≤ Λ` on the ball `B_{2r} = B(x₀, 2r)`
-(`TauCeti.PDE.UniformlyEllipticOn`), with coefficients `α`-Hölder there with constant `[a]_α`.
+Let `0 < α < 1`, and let `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + b · ∇u + c u` be a non-divergence-form operator on
+`ℝ^{n+1}` whose principal part is uniformly elliptic and bounded with constants `0 < λ ≤ Λ` on the
+ball `B_{2r} = B(x₀, 2r)` (`TauCeti.PDE.UniformlyEllipticOn`), with coefficients `α`-Hölder there.
 This file proves the interior `C^{2,α}` estimate in scaled form,
-`exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_of_mul_rpow_le`:
+`exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul`:
 for every bound `M` there is a constant `C`, depending only on `n`, `α`, `λ`, `Λ` and `M`, such that
-whenever `r^α [a]_α ≤ M`, every `u` which is `C²` on `B_{2r}`, with `D²u` `α`-Hölder on each closed
-ball `closedBall x₀ ρ`, `ρ < 2r` (with any constants), satisfies
+whenever the dimensionless coefficient quantities
+
+`r^α [a]_α`, `r ‖b‖_∞`, `r^{1+α} [b]_α`, `r² ‖c‖_∞`, `r^{2+α} [c]_α`
+
+are at most `M`, every `u` which is `C²` on `B_{2r}`, with `D²u` `α`-Hölder on each closed ball
+`closedBall x₀ ρ`, `ρ < 2r` (with any constants), satisfies
 
 `[D²u]_{α; closedBall x₀ r} ≤ C (r^{-2-α} sup_{B_{2r}} |u| + [L u]_{α; B_{2r}})`.
 
@@ -37,9 +43,15 @@ only qualitatively.
 Dilating the estimate on small balls by `y ↦ δ y` gives it on every ball `B(y, δ)` with
 `[a]_α δ^α` below a threshold depending only on `n`, `α`, `λ` and `Λ`: there `[D²u]_α` on
 `closedBall y (δ / 2)` is at most a constant times
-`[L u]_α + δ^{-2-α} sup |u| + δ^{-1-α} sup ‖Du‖ + δ^{-α} sup ‖D²u‖`. For `r ≤ s < t` with `t - s`
-small compared with `r`, put `δ = (t - s) / 2`. The local interpolation inequalities
-`‖Du‖ ≤ M / ε + H ε^{1+α}` and `‖D²u‖ ≤ 2 M / ε² + 3 H ε^α`
+`[L u]_α + δ^{-2-α} sup |u| + δ^{-1-α} sup ‖Du‖ + δ^{-α} sup ‖D²u‖`. The lower-order part
+`b · ∇u + c u` is moved to the right side. On `B(y, δ)` the functions `u` and `Du` are Hölder with
+constants controlled by `sup ‖Du‖` and `sup ‖D²u‖` (the ball is convex, and Mathlib's
+`HolderOnWith.of_le` lowers the exponent on a bounded set), so once `δ ≤ r` the Hölder constant of
+`b · ∇u + c u`, times `δ^{2+α}`, is at most `3 M` times
+`sup |u| + δ sup ‖Du‖ + δ² sup ‖D²u‖`, the quantity the estimate already carries.
+
+For `r ≤ s < t` with `t - s` small compared with `r`, put `δ = (t - s) / 2`. The local
+interpolation inequalities `‖Du‖ ≤ M_u / ε + H ε^{1+α}` and `‖D²u‖ ≤ 2 M_u / ε² + 3 H ε^α`
 (`HolderOnWith.norm_fderiv_le_of_contDiffOn`,
 `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`), at a scale `ε = κ δ`
 with a small fixed `κ`, bound the first and second derivatives on `closedBall x₀ (s + δ)` by
@@ -55,7 +67,8 @@ with `A` a multiple of `sup |u|`, and the absorption lemma
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Theorem 6.2 and Lemma 6.32 (the interior Schauder estimate and interpolation).
+  Theorem 6.2 and Lemma 6.32 (the interior Schauder estimate with lower-order terms, and
+  interpolation).
 * M. Giaquinta, *Multiple Integrals in the Calculus of Variations and Nonlinear Elliptic
   Systems*, Chapter V, Lemma 3.1 (the absorption lemma).
 -/
@@ -65,7 +78,7 @@ public section
 noncomputable section
 
 open Metric Set
-open scoped NNReal
+open scoped NNReal ENNReal
 
 namespace TauCeti.PDE
 
@@ -121,7 +134,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
     calc _ = D * c₀ := by rw [Real.one_rpow, mul_one]; ring
       _ ≤ |D| * c₀ := mul_le_mul_of_nonneg_right (le_abs_self D) c₀.coe_nonneg
       _ ≤ lam := by nlinarith [c₀.coe_nonneg]
-  obtain ⟨C₁, hC₁⟩ := hball (L := c₀) (M := Lam.toNNReal) hlam one_pos hc₀ (ρ := 1 / 2)
+  obtain ⟨C₁, hC₁⟩ := hball (L := c₀) (M := Lam.toNNReal) hlam hc₀ (ρ := 1 / 2)
     (by norm_num)
   refine ⟨c₀, by rw [← NNReal.coe_pos]; exact div_pos hlam (by positivity), C₁, ?_⟩
   intro a x₀ δ Ka hδ hKa hlo hup hhol hent u N₀ N₁ N₂ K V hu hN₀ hN₁ hN₂ hV hK
@@ -133,7 +146,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
     ContinuousLinearMap.opNorm_le_bound _ δ.coe_nonneg fun y => by
       rw [ContinuousLinearEquiv.coe_coe, he, norm_smul, Real.norm_of_nonneg δ.coe_nonneg]
   have hnorms : ‖(e.symm : E →L[ℝ] E)‖₊ ≤ δ⁻¹ := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_inv]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y => ?_
     rw [ContinuousLinearEquiv.coe_coe, show e.symm y = (δ : ℝ)⁻¹ • y by
       rw [e.symm_apply_eq, he, smul_inv_smul₀ hδ'.ne'], norm_smul,
@@ -208,6 +221,99 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
   refine hu'.mono_const ?_
   gcongr
 
+/-- The arithmetic of the lower-order terms on a ball of radius `δ`. If `δ ‖b‖`, `δ^{1+α} [b]_α`,
+`δ² ‖c‖` and `δ^{2+α} [c]_α` are at most `M`, and `u` and `Du` are Lipschitz on the ball with
+constants `N₁` and `N₂`, hence `α`-Hölder with constants `N₁ (2δ)^{1-α}` and `N₂ (2δ)^{1-α}`, then
+the Hölder constant of `b · ∇u + c u` (`TauCeti.PDE.holderOnWith_fderiv_apply_add_mul`), times
+`δ^{2+α}`, is at most `3 M (N₀ + δ N₁ + δ² N₂)`, where `N₀` bounds `|u|`. -/
+private theorem lowerOrder_holder_le {δ α N₀ N₁ N₂ Kb Mb Kc Mc M : ℝ} (hδ : 0 < δ) (hα0 : 0 ≤ α)
+    (hN₀ : 0 ≤ N₀) (hN₁ : 0 ≤ N₁) (hN₂ : 0 ≤ N₂) (hMb : 0 ≤ Mb) (hMc : 0 ≤ Mc)
+    (hMbM : Mb * δ ≤ M) (hKbM : Kb * δ ^ (1 + α) ≤ M) (hMcM : Mc * δ ^ 2 ≤ M)
+    (hKcM : Kc * δ ^ (2 + α) ≤ M) :
+    δ ^ 2 * δ ^ α * (N₁ * Kb + Mb * (N₂ * (2 * δ) ^ (1 - α)) +
+      (Mc * (N₁ * (2 * δ) ^ (1 - α)) + N₀ * Kc)) ≤ 3 * M * (N₀ + δ * N₁ + δ ^ 2 * N₂) := by
+  set p := δ ^ α
+  have hp0 : 0 < p := Real.rpow_pos_of_pos hδ α
+  have hX : (2 : ℝ) ^ (1 - α) ≤ 2 := by
+    simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2)
+      (by linarith : 1 - α ≤ 1)
+  have h1 : (2 * δ) ^ (1 - α) = 2 ^ (1 - α) * (δ / p) := by
+    rw [Real.mul_rpow (by norm_num) hδ.le, Real.rpow_sub hδ, Real.rpow_one]
+  rw [Real.rpow_add hδ, Real.rpow_one] at hKbM
+  rw [Real.rpow_add hδ, Real.rpow_two] at hKcM
+  rw [h1]
+  have e : δ ^ 2 * p * (N₁ * Kb + Mb * (N₂ * (2 ^ (1 - α) * (δ / p))) +
+      (Mc * (N₁ * (2 ^ (1 - α) * (δ / p))) + N₀ * Kc)) =
+      N₁ * δ * (Kb * (δ * p)) + 2 ^ (1 - α) * (Mb * δ) * (δ ^ 2 * N₂) +
+        2 ^ (1 - α) * (Mc * δ ^ 2) * (δ * N₁) + N₀ * (Kc * (δ ^ 2 * p)) := by
+    field_simp
+    ring
+  have hM : 0 ≤ M := (mul_nonneg hMb hδ.le).trans hMbM
+  rw [e]
+  calc _ ≤ N₁ * δ * M + 2 * M * (δ ^ 2 * N₂) + 2 * M * (δ * N₁) + N₀ * M := by gcongr
+    _ ≤ _ := by nlinarith [mul_nonneg hM hN₀, mul_nonneg hM (mul_nonneg (sq_nonneg δ) hN₂)]
+
+/-- **The estimate on small balls with lower-order terms.** The threshold `c₀` and the constant
+`C₁` of `exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rpow_le`, the latter
+multiplied by `1 + 3 M`, give the same estimate for `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + b · ∇u + c u` on every
+ball `B(x₀, δ)` on which `δ ‖b‖`, `δ^{1+α} [b]_α`, `δ² ‖c‖` and `δ^{2+α} [c]_α` are at most `M`:
+the lower-order part is moved to the right side, where its Hölder constant on the ball is
+controlled by the bounds `N₀`, `N₁`, `N₂` of `u`, `Du` and `D²u` at the same scale. -/
+private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_lowerOrder
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) (M : ℝ≥0) :
+    ∃ c₀ : ℝ≥0, 0 < c₀ ∧ ∃ C : ℝ≥0,
+      ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ} {x₀ : E}
+        {δ Ka Kb Mb Kc Mc : ℝ≥0}, 0 < δ → Ka * δ ^ (α : ℝ) ≤ c₀ → Mb * δ ≤ M →
+      Kb * δ ^ (1 + (α : ℝ)) ≤ M → Mc * δ ^ 2 ≤ M → Kc * δ ^ (2 + (α : ℝ)) ≤ M →
+      (∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a x₀).toQuadraticForm' ξ) →
+      (∀ ξ : E, (a x₀).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
+      (∀ i j, HolderOnWith Ka α (fun x => a x i j) (closedBall x₀ δ)) →
+      (∀ x ∈ closedBall x₀ δ, ∀ i j, |a x i j| ≤ Lam) →
+      HolderOnWith Kb α b (ball x₀ δ) → (∀ x ∈ ball x₀ δ, ‖b x‖ ≤ Mb) →
+      HolderOnWith Kc α c (ball x₀ δ) → (∀ x ∈ ball x₀ δ, |c x| ≤ Mc) →
+      ∀ {u : E → ℝ} {N₀ N₁ N₂ K V : ℝ≥0}, ContDiffOn ℝ 2 u (ball x₀ δ) →
+        (∀ x ∈ ball x₀ δ, |u x| ≤ N₀) → (∀ x ∈ ball x₀ δ, ‖fderiv ℝ u x‖ ≤ N₁) →
+        (∀ x ∈ ball x₀ δ, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N₂) →
+        HolderOnWith V α (iteratedFDeriv ℝ 2 u) (ball x₀ δ) →
+        HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u x (b x) +
+            c x * u x) (ball x₀ δ) →
+        HolderOnWith (C * (δ ^ 2 * (K * δ ^ (α : ℝ)) + (N₀ + δ * N₁ + δ ^ 2 * N₂)) *
+          δ⁻¹ ^ 2 * δ⁻¹ ^ (α : ℝ)) α (iteratedFDeriv ℝ 2 u) (closedBall x₀ (δ / 2)) := by
+  obtain ⟨c₀, hc₀, C₁, hC₁⟩ :=
+    exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rpow_le hα hα1 hlam Lam (n := n)
+  refine ⟨c₀, hc₀, C₁ * (1 + 3 * M), ?_⟩
+  intro a b c x₀ δ Ka Kb Mb Kc Mc hδ hKa hMbM hKbM hMcM hKcM hlo hup hhol hent hb hbM hc hcM
+    u N₀ N₁ N₂ K V hu hN₀ hN₁ hN₂ hV hK
+  -- `u` and `Du` are `α`-Hölder on the ball, with constants `N₁ (2 δ)^{1-α}` and
+  -- `N₂ (2 δ)^{1-α}`.
+  have hHu := holderOnWith_ball_of_norm_fderiv_le hα1.le (hu.differentiableOn two_ne_zero) hN₁
+  have hHDu := holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le hα1.le hu hN₂
+  rw [show (2 * (δ : ℝ)).toNNReal = 2 * δ by
+    rw [← NNReal.coe_ofNat, ← NNReal.coe_mul, Real.toNNReal_coe]] at hHu hHDu
+  -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on the ball.
+  have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu hN₀ hN₁ hb hbM hc hcM
+  have hprin := hK.sub hlow
+  simp only [Pi.sub_def, add_sub_add_right_eq_sub, add_sub_cancel_right] at hprin
+  refine (hC₁ hδ hKa hlo hup hhol hent hu hN₀ hN₁ hN₂ hV hprin).mono_const ?_
+  -- It remains to absorb `δ^{2+α}` times the Hölder constant of the lower-order part.
+  have hδ' : (0 : ℝ) < δ := hδ
+  have harith := lowerOrder_holder_le hδ' α.coe_nonneg N₀.coe_nonneg N₁.coe_nonneg N₂.coe_nonneg
+    Mb.coe_nonneg Mc.coe_nonneg
+    (by exact_mod_cast hMbM) (by exact_mod_cast hKbM) (by exact_mod_cast hMcM)
+    (by exact_mod_cast hKcM)
+  rw [← NNReal.coe_le_coe]
+  push_cast
+  have hKδ : (0 : ℝ) ≤ δ ^ 2 * (K * δ ^ (α : ℝ)) := by positivity
+  have hM : (0 : ℝ) ≤ M := M.coe_nonneg
+  rw [mul_assoc (C₁ : ℝ) (1 + 3 * (M : ℝ))]
+  gcongr (C₁ : ℝ) * ?_ * _ * _
+  have key : ∀ L : ℝ, (δ : ℝ) ^ 2 * δ ^ (α : ℝ) * L ≤ 3 * M * (N₀ + δ * N₁ + δ ^ 2 * N₂) →
+      (δ : ℝ) ^ 2 * ((K + L) * δ ^ (α : ℝ)) + (N₀ + δ * N₁ + δ ^ 2 * N₂) ≤
+        (1 + 3 * M) * (δ ^ 2 * (K * δ ^ (α : ℝ)) + (N₀ + δ * N₁ + δ ^ 2 * N₂)) := fun L hL => by
+    nlinarith [mul_nonneg hM hKδ]
+  exact key _ harith
+
 /-- The arithmetic of one covering step: the constant of the estimate on a ball of radius `δ`,
 with `‖Du‖` and `‖D²u‖` interpolated at scale `κ δ`, plus the contribution of points at distance
 at least `δ / 2`. -/
@@ -218,7 +324,6 @@ private theorem covering_step_le {C₁ K Mu H δ κ α : ℝ} (hC₁ : 0 ≤ C�
         δ ^ 2 * (2 * Mu / (κ * δ) ^ 2 + 3 * H * (κ * δ) ^ α))) * δ⁻¹ ^ 2 * δ⁻¹ ^ α +
       2 * (2 * Mu / (κ * δ) ^ 2 + 3 * H * (κ * δ) ^ α) * (δ / 2) ^ (-α) ≤
     C₁ * K + (4 * C₁ + 8) * κ⁻¹ ^ 2 * δ ^ (-(2 + α)) * Mu + (4 * C₁ + 12) * κ ^ α * H := by
-  have hq0 : 0 < δ ^ α := Real.rpow_pos_of_pos hδ α
   have hk0 : 0 ≤ κ ^ α := (Real.rpow_pos_of_pos hκ α).le
   have h2α : (2 : ℝ) ^ α ≤ 2 := by
     simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num : (1 : ℝ) ≤ 2) hα1
@@ -255,35 +360,44 @@ private theorem covering_step_le {C₁ K Mu H δ κ α : ℝ} (hC₁ : 0 ≤ C�
     mul_nonneg (mul_nonneg hC₁ hkH) (sub_nonneg.2 hκ1), mul_nonneg hkH (sub_nonneg.2 h2α)]
 
 /-- **One covering step.** There are a threshold `c₀ > 0` and a constant `C₁`, depending only on
-`n`, `α`, `λ` and `Λ`, with the following property. Let `0 < κ ≤ 1 / 4` with
+`n`, `α`, `λ`, `Λ` and `M`, with the following property. Let `0 < κ ≤ 1 / 4` with
 `(4 C₁ + 12) κ^α ≤ 1 / 2`, let `a` be uniformly elliptic and bounded on `ball x₀ R` with
-entrywise Hölder constant `[a]_α`, and let `u` be `C²` on `ball x₀ R` with `|u| ≤ M_u` there and
-`[L u]_α ≤ K`. If `s < t < R`, `[a]_α ((t - s) / 2)^α ≤ c₀` and `D²u` is `α`-Hölder on
-`closedBall x₀ t` with constant `H`, then the Hölder constant of `D²u` on `closedBall x₀ s` is at
-most `H / 2 + (4 C₁ + 8) κ⁻² 2^{2+α} M_u (t - s)^{-2-α} + C₁ K`.
+entrywise Hölder constant `[a]_α`, let `b` and `c` be bounded and `α`-Hölder there, and let `u` be
+`C²` on `ball x₀ R` with `|u| ≤ M_u` there and `[L u]_α ≤ K`, where
+`L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + b · ∇u + c u`. Let `s < t < R` and `δ = (t - s) / 2`, with `[a]_α δ^α ≤ c₀`
+and with `δ ‖b‖`, `δ^{1+α} [b]_α`, `δ² ‖c‖` and `δ^{2+α} [c]_α` at most `M`. If `D²u` is
+`α`-Hölder on `closedBall x₀ t` with constant `H`, then the Hölder constant of `D²u` on
+`closedBall x₀ s` is at most `H / 2 + (4 C₁ + 8) κ⁻² 2^{2+α} M_u (t - s)^{-2-α} + C₁ K`.
 
-The estimate on small balls is applied on the balls `B(y, δ)`, `δ = (t - s) / 2`, centred in
-`closedBall x₀ s`, with `‖Du‖` and `‖D²u‖` interpolated at scale `κ δ`; points at distance at least
-`δ / 2` are compared through the bound on `‖D²u‖`. -/
+The estimate on small balls is applied on the balls `B(y, δ)` centred in `closedBall x₀ s`, with
+`‖Du‖` and `‖D²u‖` interpolated at scale `κ δ`; points at distance at least `δ / 2` are compared
+through the bound on `‖D²u‖`. -/
 private theorem exists_nnHolderNorm_closedBall_le_of_lt
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) :
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {lam : ℝ} (hlam : 0 < lam) (Lam : ℝ) (M : ℝ≥0) :
     ∃ c₀ : ℝ≥0, 0 < c₀ ∧ ∃ C₁ : ℝ≥0, ∀ {κ : ℝ}, 0 < κ → 4 * κ ≤ 1 →
       (4 * C₁ + 12) * κ ^ (α : ℝ) ≤ 1 / 2 →
-      ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ : E} {R s t : ℝ}
-        {Ka Mu K H : ℝ≥0} {u : E → ℝ}, UniformlyEllipticOn (ball x₀ R) a lam Lam →
+      ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ} {x₀ : E}
+        {R s t : ℝ} {Ka Kb Mb Kc Mc Mu K H : ℝ≥0} {u : E → ℝ},
+      UniformlyEllipticOn (ball x₀ R) a lam Lam →
       (∀ i j, HolderOnWith Ka α (fun x => a x i j) (ball x₀ R)) →
+      HolderOnWith Kb α b (ball x₀ R) → (∀ x ∈ ball x₀ R, ‖b x‖ ≤ Mb) →
+      HolderOnWith Kc α c (ball x₀ R) → (∀ x ∈ ball x₀ R, |c x| ≤ Mc) →
       ContDiffOn ℝ 2 u (ball x₀ R) → (∀ x ∈ ball x₀ R, |u x| ≤ Mu) →
       HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) (ball x₀ R) →
-      s < t → t < R → Ka * ((t - s) / 2) ^ (α : ℝ) ≤ c₀ →
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u x (b x) +
+          c x * u x) (ball x₀ R) →
+      s < t → t < R → Ka * ((t - s) / 2) ^ (α : ℝ) ≤ c₀ → Mb * ((t - s) / 2) ≤ M →
+      Kb * ((t - s) / 2) ^ (1 + (α : ℝ)) ≤ M → Mc * ((t - s) / 2) ^ 2 ≤ M →
+      Kc * ((t - s) / 2) ^ (2 + (α : ℝ)) ≤ M →
       HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closedBall x₀ t) →
       (nnHolderNorm α ((closedBall x₀ s).domRestrict (iteratedFDeriv ℝ 2 u)) : ℝ) ≤
         1 / 2 * H + (4 * C₁ + 8) * κ⁻¹ ^ 2 * 2 ^ (2 + (α : ℝ)) * Mu *
           (t - s) ^ (-(2 + (α : ℝ))) + C₁ * K := by
   obtain ⟨c₀, hc₀, C₁, hC₁⟩ :=
-    exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rpow_le hα hα1 hlam Lam (n := n)
+    exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_lowerOrder hα hα1 hlam Lam M (n := n)
   refine ⟨c₀, hc₀, C₁, ?_⟩
-  intro κ hκ hκ4 hκα a x₀ R s t Ka Mu K H u hA hKa hu hMu hK hst ht hscale hH
+  intro κ hκ hκ4 hκα a b c x₀ R s t Ka Kb Mb Kc Mc Mu K H u hA hKa hKb hMb hKc hMc hu hMu hK hst
+    ht hscale hMbs hKbs hMcs hKcs hH
   set δ : ℝ≥0 := ⟨(t - s) / 2, by linarith⟩
   have hδ : (δ : ℝ) = (t - s) / 2 := NNReal.coe_mk _ _
   have hδ0 : 0 < δ := by rw [← NNReal.coe_pos, hδ]; linarith
@@ -316,6 +430,10 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
     rw [← NNReal.coe_le_coe]
     push_cast
     rwa [hδ]
+  have hMbs' : Mb * δ ≤ M := by rw [← NNReal.coe_le_coe]; push_cast; rwa [hδ]
+  have hKbs' : Kb * δ ^ (1 + (α : ℝ)) ≤ M := by rw [← NNReal.coe_le_coe]; push_cast; rwa [hδ]
+  have hMcs' : Mc * δ ^ 2 ≤ M := by rw [← NNReal.coe_le_coe]; push_cast; rwa [hδ]
+  have hKcs' : Kc * δ ^ (2 + (α : ℝ)) ≤ M := by rw [← NNReal.coe_le_coe]; push_cast; rwa [hδ]
   -- The estimate on small balls on `closedBall y (δ / 2)`, for each `y ∈ closedBall x₀ s`.
   have hloc : ∀ y ∈ closedBall x₀ s, HolderOnWith (C₁ * (δ ^ 2 * (K * δ ^ (α : ℝ)) +
       (Mu + δ * N₁ + δ ^ 2 * N₂)) * δ⁻¹ ^ 2 * δ⁻¹ ^ (α : ℝ)) α (iteratedFDeriv ℝ 2 u)
@@ -333,8 +451,10 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
       rw [mem_ball] at hw
       linarith [dist_triangle w y x₀]
     have hyB : y ∈ ball x₀ R := hCB (mem_closedBall_self δ.coe_nonneg)
-    exact hC₁ hδ0 hscale' (hA.lower_bound hyB) (hA.toQuadraticForm'_le hyB)
+    have hBR : ball y δ ⊆ ball x₀ R := ball_subset_closedBall.trans hCB
+    exact hC₁ hδ0 hscale' hMbs' hKbs' hMcs' hKcs' (hA.lower_bound hyB) (hA.toQuadraticForm'_le hyB)
       (fun i j => (hKa i j).mono hCB) (fun w hw i j => hA.abs_apply_le (hCB hw) i j)
+      (hKb.mono hBR) (fun w hw => hMb w (hBR hw)) (hKc.mono hBR) (fun w hw => hMc w (hBR hw))
       (hu.mono (ball_subset_closedBall.trans hCB))
       (fun w hw => hMu w (hCB (ball_subset_closedBall hw)))
       (fun w hw => hN₁ ▸ (hint w (hBs w hw)).1) (fun w hw => hN₂ ▸ (hint w (hBs w hw)).2)
@@ -350,7 +470,7 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
       rw [hN₂]
       linarith
   have hcov := HolderOnWith.of_dist_lt_of_dist_le (half_pos hδ0)
-    (fun x hx y hy hxy => (hloc x hx).dist_le (mem_closedBall_self (by positivity))
+    (fun x hx y _ hxy => (hloc x hx).dist_le (mem_closedBall_self (by positivity))
       (by rw [mem_closedBall, dist_comm]; exact_mod_cast hxy.le)) hfar
   have hΦs := NNReal.coe_le_coe.2 hcov.holderWith.nnholderNorm_le
   push_cast at hΦs
@@ -361,7 +481,6 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
   have hδp : (δ : ℝ) ^ (-(2 + (α : ℝ))) = 2 ^ (2 + (α : ℝ)) * (t - s) ^ (-(2 + (α : ℝ))) := by
     rw [hδ, Real.div_rpow (by linarith) (by norm_num), Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2),
       div_inv_eq_mul, mul_comm]
-  have hH0 : (0 : ℝ) ≤ H := H.coe_nonneg
   calc _ ≤ C₁ * K + (4 * C₁ + 8) * κ⁻¹ ^ 2 * δ ^ (-(2 + (α : ℝ))) * Mu +
         (4 * C₁ + 12) * κ ^ (α : ℝ) * H := hΦs.trans harith
     _ ≤ C₁ * K + (4 * C₁ + 8) * κ⁻¹ ^ 2 * δ ^ (-(2 + (α : ℝ))) * Mu + 1 / 2 * H := by
@@ -370,33 +489,47 @@ private theorem exists_nnHolderNorm_closedBall_le_of_lt
         rw [hδp]
         ring
 
-/-- **The interior Schauder estimate in scaled form.** Let `0 < α < 1`, and let `λ`, `Λ` and `M`
-be given. Then there is a constant `C ≥ 0`, depending only on `n`, `α`, `λ`, `Λ` and `M`, with the
-following property. Let `r > 0`, let `a` be a matrix-valued coefficient which is uniformly elliptic
-and bounded with constants `0 < λ ≤ Λ` on `B_{2r} = ball x₀ (2 r)` and `α`-Hölder there entrywise
-with constant `[a]_α`, where `r^α [a]_α ≤ M`, and put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`. Let `u` be `C²` on
-`B_{2r}` with `|u| ≤ M_u` there, and with `D²u` `α`-Hölder on `closedBall x₀ ρ` for every `ρ < 2 r`
-(with any constants). If `L u` is `α`-Hölder on `B_{2r}` with constant `K`, then `D²u` is
-`α`-Hölder on `closedBall x₀ r` with constant `C (r^{-2-α} M_u + K)`.
+/-- **The interior Schauder estimate in scaled form, with lower-order terms.** Let `0 < α < 1`, and
+let `λ`, `Λ` and `M` be given. Then there is a constant `C ≥ 0`, depending only on `n`, `α`, `λ`,
+`Λ` and `M`, with the following property. Let `r > 0` and `B_{2r} = ball x₀ (2 r)`. Let `a` be a
+matrix-valued coefficient which is uniformly elliptic and bounded with constants `0 < λ ≤ Λ` on
+`B_{2r}` and `α`-Hölder there entrywise with constant `[a]_α`, let `b` be a vector field and `c` a
+function, `α`-Hölder on `B_{2r}` with constants `[b]_α`, `[c]_α` and bounded there by `‖b‖`, `‖c‖`,
+and suppose that the dimensionless quantities
 
-The constant is independent of `r`, `x₀`, `u` and of the qualitative Hölder constants of `D²u`
-(Gilbarg–Trudinger, Theorem 6.2). -/
-theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_of_mul_rpow_le
+`r^α [a]_α`, `r ‖b‖`, `r^{1+α} [b]_α`, `r² ‖c‖`, `r^{2+α} [c]_α`
+
+are at most `M`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + b · ∇u + c u`. Let `u` be `C²` on `B_{2r}` with
+`|u| ≤ M_u` there, and with `D²u` `α`-Hölder on `closedBall x₀ ρ` for every `ρ < 2 r` (with any
+constants). If `L u` is `α`-Hölder on `B_{2r}` with constant `K`, then `D²u` is `α`-Hölder on
+`closedBall x₀ r` with constant `C (r^{-2-α} M_u + K)`.
+
+The constant is independent of `r`, `x₀`, `u` and of the qualitative Hölder constants of `D²u`,
+and no sign condition on `c` is needed (Gilbarg–Trudinger, Theorem 6.2). -/
+theorem
+    exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (lam Lam : ℝ) (M : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ : E} {r : ℝ}
-      {Ka Mu K : ℝ≥0} {u : E → ℝ}, 0 < r → UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ}
+      {x₀ : E} {r : ℝ} {Ka Kb Mb Kc Mc Mu K : ℝ≥0} {u : E → ℝ}, 0 < r →
+      UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam →
       (∀ i j, HolderOnWith Ka α (fun x => a x i j) (ball x₀ (2 * r))) →
-      Ka * r ^ (α : ℝ) ≤ M → ContDiffOn ℝ 2 u (ball x₀ (2 * r)) →
-      (∀ x ∈ ball x₀ (2 * r), |u x| ≤ Mu) →
+      Ka * r ^ (α : ℝ) ≤ M →
+      HolderOnWith Kb α b (ball x₀ (2 * r)) → (∀ x ∈ ball x₀ (2 * r), ‖b x‖ ≤ Mb) →
+      Mb * r ≤ M → Kb * r ^ (1 + (α : ℝ)) ≤ M →
+      HolderOnWith Kc α c (ball x₀ (2 * r)) → (∀ x ∈ ball x₀ (2 * r), |c x| ≤ Mc) →
+      Mc * r ^ 2 ≤ M → Kc * r ^ (2 + (α : ℝ)) ≤ M →
+      ContDiffOn ℝ 2 u (ball x₀ (2 * r)) → (∀ x ∈ ball x₀ (2 * r), |u x| ≤ Mu) →
       (∀ ρ < 2 * r, ∃ V : ℝ≥0, HolderOnWith V α (iteratedFDeriv ℝ 2 u) (closedBall x₀ ρ)) →
       HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) (ball x₀ (2 * r)) →
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u x (b x) +
+          c x * u x) (ball x₀ (2 * r)) →
       HolderOnWith (C * (r ^ (-(2 + (α : ℝ))) * Mu + K)).toNNReal α
         (iteratedFDeriv ℝ 2 u) (closedBall x₀ r) := by
   -- Without `0 < λ` no coefficient field is uniformly elliptic.
   rcases le_or_gt lam 0 with hlam | hlam
   · exact ⟨0, le_rfl, fun _ hA => absurd hA.pos (not_lt.2 hlam)⟩
-  obtain ⟨c₀, hc₀, C₁, hstep₀⟩ := exists_nnHolderNorm_closedBall_le_of_lt hα hα1 hlam Lam (n := n)
+  obtain ⟨c₀, hc₀, C₁, hstep₀⟩ :=
+    exists_nnHolderNorm_closedBall_le_of_lt hα hα1 hlam Lam M (n := n)
   have hα' : (0 : ℝ) < α := hα
   -- The relative radius `θ` below which the estimate on small balls applies, and the ratio `κ`
   -- of the interpolation scale to the radius, small enough to absorb the Hölder constant.
@@ -411,9 +544,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   set A₀ : ℝ := (4 * C₁ + 8) * κ⁻¹ ^ 2 * 2 ^ (2 + (α : ℝ))
   have hθ : 0 < θ := by positivity
   have hκ : 0 < κ := by positivity
-  have hA₀ : 0 ≤ A₀ := by positivity
   refine ⟨C₃ * (A₀ * (2 * θ) ^ (-(2 + (α : ℝ))) + C₁), by positivity, ?_⟩
-  intro a x₀ r Ka Mu K u hr hA hKa hKaM hu hMu hV hK
+  intro a b c x₀ r Ka Kb Mb Kc Mc Mu K u hr hA hKa hKaM hKb hMb hMbr hKbr hKc hMc hMcr hKcr hu hMu
+    hV hK
   set r₁ := r + 2 * θ * r
   have hr₁ : r₁ < 2 * r := by simp only [r₁, θ]; nlinarith
   have hrr₁ : r < r₁ := by simp only [r₁]; nlinarith
@@ -431,9 +564,11 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
       (ΦN s : ℝ) ≤ 1 / 2 * ΦN t + A * (t - s) ^ (-(2 + (α : ℝ))) + C₁ * K := by
     intro s t hrs hst ht
     have ht2 : t < 2 * r := ht.trans_lt hr₁
-    -- The scale condition holds at radius `(t - s) / 2 ≤ θ₀ r`.
+    -- The scale conditions hold at radius `(t - s) / 2 ≤ θ₀ r ≤ r`.
+    have hδθ : (t - s) / 2 ≤ θ₀ * r := by simp only [r₁, θ] at ht; nlinarith
+    have hδ0 : 0 ≤ (t - s) / 2 := by linarith
+    have hδr : (t - s) / 2 ≤ r := hδθ.trans (mul_le_of_le_one_left hr.le hθ₀1)
     have hscale : (Ka : ℝ) * ((t - s) / 2) ^ (α : ℝ) ≤ c₀ := by
-      have hδθ : (t - s) / 2 ≤ θ₀ * r := by simp only [r₁, θ] at ht; nlinarith
       calc (Ka : ℝ) * ((t - s) / 2) ^ (α : ℝ) ≤ Ka * (θ₀ * r) ^ (α : ℝ) :=
             mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (by linarith) hδθ α.coe_nonneg)
               Ka.coe_nonneg
@@ -443,8 +578,13 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
     have hκα : (4 * C₁ + 12) * κ ^ (α : ℝ) ≤ 1 / 2 :=
       (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow hκ.le (by simp only [κ]; linarith)
         α.coe_nonneg) (by positivity)).trans hκ₀C
-    exact hstep₀ hκ (by simp only [κ]; linarith) hκα hA hKa hu hMu hK hst ht2 hscale
-      (hΦhol t ht2)
+    exact hstep₀ hκ (by simp only [κ]; linarith) hκα hA hKa hKb hMb hKc hMc hu hMu hK hst ht2
+      hscale ((mul_le_mul_of_nonneg_left hδr Mb.coe_nonneg).trans hMbr)
+      ((mul_le_mul_of_nonneg_left (Real.rpow_le_rpow hδ0 hδr (by positivity))
+        Kb.coe_nonneg).trans hKbr)
+      ((mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hδ0 hδr 2) Mc.coe_nonneg).trans hMcr)
+      ((mul_le_mul_of_nonneg_left (Real.rpow_le_rpow hδ0 hδr (by positivity))
+        Kc.coe_nonneg).trans hKcr) (hΦhol t ht2)
   -- The absorption lemma on `[r, r₁]`, where `r₁ - r = 2 θ r`.
   have hbdd : BddAbove ((fun s => (ΦN s : ℝ)) '' Icc r r₁) := by
     refine ⟨ΦN r₁, ?_⟩
@@ -455,8 +595,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   rw [hr₁r, Real.mul_rpow (by positivity) hr.le] at hΦr
   refine (hΦhol r (by linarith)).mono_const ?_
   rw [Real.le_toNNReal_iff_coe_le (by positivity)]
-  have hp : 0 ≤ (2 * θ) ^ (-(2 + (α : ℝ))) := by positivity
-  have hrp : 0 ≤ r ^ (-(2 + (α : ℝ))) := by positivity
   refine hΦr.trans ?_
   simp only [A]
   have h1 : 0 ≤ (C₃ : ℝ) * (A₀ * (2 * θ) ^ (-(2 + (α : ℝ))) * K) := by positivity

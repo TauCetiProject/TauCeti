@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.DoubleCoset.Normalizer
-public import TauCeti.NumberTheory.HeckeRing.Multiplication
+public import TauCeti.NumberTheory.HeckeRing.Associativity
 
 import Mathlib.Tactic.Group
 
@@ -51,6 +51,8 @@ For `Γ₁(N) ⊴ Γ₀(N)` it is the diamond direction of the `Γ₁(N)` Hecke 
   product, with the normalizing factor on either side.
 * `HeckeCosetModule.commute_single_of_mem_normalizer`: consequently a commutation question in
   the Hecke ring is discharged by the single coset identity `Γ(xy)Γ = Γ(yx)Γ`.
+* `HeckeCosetModule.unitOfMemNormalizer`: when `x ∈ Δ` normalizes `Γ` and `x⁻¹ ∈ Δ`, the basis
+  elements `[ΓxΓ]` and `[Γx⁻¹Γ]` form a two-sided unit of `𝕋 Δ Γ R`.
 
 ## References
 
@@ -102,7 +104,7 @@ lemma multiplicity_le_one_of_mem_normalizer_right {Γ : Subgroup G} {g h d : G}
       -- `τ = j₁.out ∈ Γ`. That word normalizes `Γ` — `τ` does because `Γ ≤ normalizer Γ`, and
       -- `h` by hypothesis — so conjugation by it may simply be undone.
       have hw : (j₁.out : G) * h ∈ Subgroup.normalizer (Γ : Set G) :=
-        Subgroup.mul_mem _ (Subgroup.le_normalizer j₁.out.2) hh
+        Subgroup.mul_mem _ (Subgroup.le_normalizer j₁.out.property) hh
       refine (Subgroup.mem_normalizer_iff''.mp hw _).mpr ?_
       have hrw : ((j₁.out : G) * h)⁻¹ * (((i₁.out : G) * g)⁻¹ * ((i₂.out : G) * g)) *
             ((j₁.out : G) * h) =
@@ -168,7 +170,7 @@ lemma mulMap_rep_mk_eq_of_mem_normalizer [IsHeckeTriple Δ Γ Γ]
     DoubleCoset.mem_doubleCoset.mp (toSet_mk y ▸ (mk Γ Γ y).rep_mem)
   -- the intervening `Γ` factor, conjugated across `x`
   have hc : (x : G) * ((p.2.out : G) * c) * (x : G)⁻¹ ∈ Γ :=
-    (Subgroup.mem_normalizer_iff.mp hx _).mp (Subgroup.mul_mem _ p.2.out.2 hc')
+    (Subgroup.mem_normalizer_iff.mp hx _).mp (Subgroup.mul_mem _ p.2.out.property hc')
   -- the word identity, in eight free atoms: quantifying over `u` and `v` keeps `group` away
   -- from the coset representatives, whose types are large
   have key₀ : ∀ u v : G, u * (a * (x : G)) * (v * (c * (y : G) * d)) =
@@ -176,7 +178,7 @@ lemma mulMap_rep_mk_eq_of_mem_normalizer [IsHeckeTriple Δ Γ Γ]
   have key := key₀ (p.1.out : G) (p.2.out : G)
   rw [← hA, ← hB] at key
   exact mulMap_eq_of_eq_mul_mul (d := x * y)
-    (Subgroup.mul_mem _ (Subgroup.mul_mem _ p.1.out.2 ha) hc) hd' key
+    (Subgroup.mul_mem _ (Subgroup.mul_mem _ p.1.out.property ha) hc) hd' key
 
 /-- **Every value of `HeckeCoset.mulMap` at a normalizing right factor is the double coset of
 the product** — the mirror of `mulMap_rep_mk_eq_of_mem_normalizer`, with the normalisation
@@ -196,13 +198,13 @@ lemma mulMap_rep_mk_eq_of_mem_normalizer_right [IsHeckeTriple Δ Γ Γ]
   -- intervening `Γ` factor is conjugated across `y` rather than across `x`.
   have hd : (y : G)⁻¹ * (b * ((p.2.out : G) * c)) * (y : G) ∈ Γ :=
     (Subgroup.mem_normalizer_iff''.mp hy _).mp
-      (Subgroup.mul_mem _ hb (Subgroup.mul_mem _ p.2.out.2 hc))
+      (Subgroup.mul_mem _ hb (Subgroup.mul_mem _ p.2.out.property hc))
   have key₀ : ∀ u v : G, u * (a * (x : G) * b) * (v * (c * (y : G))) =
       u * a * ((x : G) * (y : G)) * ((y : G)⁻¹ * (b * (v * c)) * (y : G)) := fun u v ↦ by group
   have key := key₀ (p.1.out : G) (p.2.out : G)
   rw [← hA, ← hB] at key
   exact mulMap_eq_of_eq_mul_mul (d := x * y)
-    (Subgroup.mul_mem _ p.1.out.2 ha) hd key
+    (Subgroup.mul_mem _ p.1.out.property ha) hd key
 
 end HeckeCoset
 
@@ -261,6 +263,38 @@ theorem commute_single_of_mem_normalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [S
     Commute (single R (HeckeCoset.mk Γ Γ x) 1) (single R (HeckeCoset.mk Γ Γ y) 1) := by
   rw [Commute, SemiconjBy, single_mul_single_of_mem_normalizer R hx,
     single_mul_single_of_mem_normalizer_right R hx, hxy]
+
+section Units
+
+open scoped HeckeCosetModule
+
+/-- **A normalizing element invertible in `Δ` gives a unit of the Hecke ring.** When `x ∈ Δ`
+normalizes `Γ` and `x⁻¹ ∈ Δ`, `[ΓxΓ]` and `[Γx⁻¹Γ]` are two-sided inverses in `𝕋 Δ Γ R`. -/
+noncomputable def unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R] {x : G}
+    (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) : (𝕋 Δ Γ R)ˣ where
+  val := single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1
+  inv := single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1
+  val_inv := by
+    rw [single_mul_single_of_mem_normalizer R hnorm, one_def R, HeckeCoset.one_def]
+    exact congrArg (single R · 1) (HeckeCoset.mk_congr_val (by simp))
+  inv_val := by
+    rw [single_mul_single_of_mem_normalizer_right R hnorm, one_def R, HeckeCoset.one_def]
+    exact congrArg (single R · 1) (HeckeCoset.mk_congr_val (by simp))
+
+/-- The underlying Hecke-ring element of `unitOfMemNormalizer` is the basis element `[ΓxΓ]`. -/
+@[simp]
+theorem val_unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
+    {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
+    (unitOfMemNormalizer R hx hxi hnorm : 𝕋 Δ Γ R) = single R (HeckeCoset.mk Γ Γ ⟨x, hx⟩) 1 := (rfl)
+
+/-- The inverse of `unitOfMemNormalizer` has underlying element the basis element `[Γx⁻¹Γ]`. -/
+@[simp]
+theorem val_inv_unitOfMemNormalizer [IsHeckeTriple Δ Γ Γ] (R : Type*) [Semiring R]
+    {x : G} (hx : x ∈ Δ) (hxi : x⁻¹ ∈ Δ) (hnorm : x ∈ Subgroup.normalizer (Γ : Set G)) :
+    (↑(unitOfMemNormalizer R hx hxi hnorm)⁻¹ : 𝕋 Δ Γ R) =
+      single R (HeckeCoset.mk Γ Γ ⟨x⁻¹, hxi⟩) 1 := (rfl)
+
+end Units
 
 end HeckeCosetModule
 

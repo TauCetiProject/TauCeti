@@ -31,12 +31,23 @@ for the fibre sums over the range holds for the fibre sum over every value of th
 
 * `TauCeti.prod_eq_prod_image_fiber`, `TauCeti.sum_eq_sum_image_fiber`: `∏ i, F i` is the
   product, over the values `g` takes, of the products of `F` over the fibres of `g`.
+* `Equiv.prod_fiber_eq`, `Equiv.sum_fiber_eq`: taking a product or sum over a fibre of an
+  equivalence selects its unique term.
+* `TauCeti.prod_pow_card_filter_eq_prod_comp`, `TauCeti.sum_card_filter_nsmul_eq_sum_comp`: for
+  `g` mapping `s` into `t`, `∏ i ∈ s, f (g i)` is the product over `j ∈ t` of `f j` raised to the
+  size of the fibre of `g` over `j`.
 * `TauCeti.sum_sum_eval_mul`: summing `(∑ i, φ i (z i)) * f z` over a finite dependent product
   regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
+* `TauCeti.prod_filter_eq_apply_of_injective`, `TauCeti.sum_filter_eq_apply_of_injective`: along
+  an injective map the fibre product (sum) at the value of `j` is just `F j`.
+* `TauCeti.lt_sum_filter_eq_apply_of_injective`: a strict lower bound for `F` bounds every fibre
+  sum of an injective map.
 * `TauCeti.forall_prod_filter_eq_of_forall_apply`,
   `TauCeti.forall_sum_filter_eq_of_forall_apply`: a property holding at the unit and at fibre
   products over the range holds at every fibre product; for instance a lower bound `c ≤ 0` on
   the fibre sums over the range bounds every fibre sum.
+* `Finset.card_filter_apply_eq_sum_card_filter`: counting elements `e ∈ s` satisfying `P (f e) e`
+  splits fiberwise along `f` over any `t` containing the relevant image values.
 -/
 
 public section
@@ -44,6 +55,17 @@ public section
 namespace TauCeti
 
 open Finset
+
+/-- Taking a product over a fibre of an equivalence selects the unique term in that fibre. -/
+@[to_additive (attr := simp)
+  /-- Taking a sum over a fibre of an equivalence selects the unique term in that fibre. -/]
+theorem _root_.Equiv.prod_fiber_eq {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [CommMonoid M] (e : ι ≃ κ) (b : ι → M) (j : κ) :
+    ∏ i with e i = j, b i = b (e.symm j) := by
+  classical
+  simp only [← e.eq_symm_apply]
+  rw [filter_eq' univ (e.symm j)]
+  simp
 
 /-- **A finite product is the product over the values actually taken of the products over their
 fibres.** Multiplying `F` over all of `ι` is multiplying, over each `k` in the image of `g`, the
@@ -63,6 +85,19 @@ theorem prod_eq_prod_image_fiber {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
   rw [← prod_fiberwise_of_maps_to (g := g) fun i _ ↦ mem_image_of_mem _ (mem_univ i)]
   exact prod_congr rfl fun k _ ↦ prod_subtype _ (by simp) _
 
+/-- **A product of values along a map, counted by fibres.** If `g` maps `s` into `t`, then
+`∏ i ∈ s, f (g i)` is the product over `j ∈ t` of `f j` raised to the number of `i ∈ s` that `g`
+sends to `j`. Unlike `Finset.prod_comp`, the outer index is any `t` containing the image. -/
+@[to_additive sum_card_filter_nsmul_eq_sum_comp /-- **A sum of values along a map, counted by
+fibres.** If `g` maps `s` into `t`, then `∑ i ∈ s, f (g i)` is the sum over `j ∈ t` of `f j` taken
+as many times as there are `i ∈ s` that `g` sends to `j`. Unlike `Finset.sum_comp`, the outer index
+is any `t` containing the image. -/]
+theorem prod_pow_card_filter_eq_prod_comp {ι κ M : Type*} [DecidableEq κ] [CommMonoid M]
+    {s : Finset ι} {t : Finset κ} {g : ι → κ} (h : ∀ i ∈ s, g i ∈ t) (f : κ → M) :
+    ∏ j ∈ t, f j ^ #{i ∈ s | g i = j} = ∏ i ∈ s, f (g i) := by
+  simp_rw [← prod_const]
+  exact prod_fiberwise_of_maps_to' h f
+
 /-- **Regrouping a product-indexed sum by coordinates.** Summing `f` against a weight that is a
 sum of one-coordinate functions is the same as summing, for each coordinate `i` and each value
 `a` there, the value `φ i a` against the mass `f` puts on the fibre `{z | z i = a}`. -/
@@ -77,6 +112,27 @@ theorem sum_sum_eval_mul {ι : Type*} {X : ι → Type*} {R : Type*} [Fintype ι
   rw [← sum_fiberwise univ (Function.eval i) fun z ↦ φ i (z i) * f z]
   exact sum_congr rfl fun a _ ↦ sum_congr rfl fun z hz ↦ by rw [(mem_filter.1 hz).2]
 
+/-- Along an injective map the fibre above the value at `j` is the singleton `{j}`, so the product
+of `F` over it is `F j`. -/
+@[to_additive (attr := simp) /-- Along an injective map the fibre above the value at `j` is the
+singleton `{j}`, so the sum of `F` over it is `F j`. -/]
+theorem prod_filter_eq_apply_of_injective {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [CommMonoid M] {g : ι → κ} (hg : Function.Injective g) (F : ι → M) (j : ι) :
+    ∏ i with g i = g j, F i = F j := by
+  have hfilter : univ.filter (fun i ↦ g i = g j) = {j} := by
+    ext i
+    simp only [mem_filter, mem_univ, true_and, mem_singleton]
+    exact hg.eq_iff
+  rw [hfilter, prod_singleton]
+
+/-- Along an injective map every fibre sum at a value of `g` is a value of `F`, so a strict lower
+bound for `F` is a strict lower bound for all those fibre sums. -/
+theorem lt_sum_filter_eq_apply_of_injective {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [AddCommMonoid M] [Preorder M] {g : ι → κ} (hg : Function.Injective g) {F : ι → M} {c : M}
+    (h : ∀ j, c < F j) (j : ι) : c < ∑ i with g i = g j, F i := by
+  rw [sum_filter_eq_apply_of_injective hg F j]
+  exact h j
+
 /-- A property holding at one and at every fibre product over the range holds at every fibre
 product, since fibres outside the range are empty. -/
 @[to_additive /-- A property holding at zero and at every fibre sum over the range holds at every
@@ -89,5 +145,17 @@ theorem forall_prod_filter_eq_of_forall_apply {ι κ M : Type*} [Fintype ι] [De
   · obtain ⟨j, rfl⟩ := hk
     exact h j
   · rwa [prod_eq_one fun i hi ↦ (hk ⟨i, (mem_filter.mp hi).2⟩).elim]
+
+/-- Partitioning `s` along `f : ι → κ` splits the count of elements `e ∈ s` satisfying
+`P (f e) e` into a sum over any `t : Finset κ` containing `f e` on those elements. -/
+theorem _root_.Finset.card_filter_apply_eq_sum_card_filter {ι κ : Type*} [DecidableEq κ]
+    {f : ι → κ} {s : Finset ι} {t : Finset κ} (P : κ → ι → Prop) [∀ c e, Decidable (P c e)]
+    (h : ∀ e ∈ s, P (f e) e → f e ∈ t) :
+    #{e ∈ s | P (f e) e} = ∑ c ∈ t, #{e ∈ s | f e = c ∧ P c e} := by
+  rw [card_eq_sum_card_fiberwise (f := f) (t := t) fun e he ↦
+    h e (mem_filter.1 he).1 (mem_filter.1 he).2]
+  refine sum_congr rfl fun c _ ↦ congrArg card (ext fun e ↦ ?_)
+  simp only [mem_filter]
+  exact ⟨fun ⟨⟨he, hP⟩, hf⟩ ↦ ⟨he, hf, hf ▸ hP⟩, fun ⟨he, hf, hP⟩ ↦ ⟨⟨he, hf.symm ▸ hP⟩, hf⟩⟩
 
 end TauCeti

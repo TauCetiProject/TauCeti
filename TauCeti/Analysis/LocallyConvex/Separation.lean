@@ -6,22 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
+public import Mathlib.LinearAlgebra.Ray
+import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Convex.Topology
 
 /-!
-# Separating two directions by a functional
+# Functional separation in locally convex spaces
+
+Over `ℝ` or `ℂ` (`RCLike 𝕜`), local convexity with respect to the canonical partial order on `𝕜`
+agrees with real local convexity (`TauCeti.locallyConvexSpace_RCLike_iff`), and the geometric
+Hahn–Banach theorem supplies `SeparatingDual 𝕜 E` for every `T₁` locally convex space
+(`TauCeti.instSeparatingDualOfLocallyConvexSpace`).
 
 Two vectors `d₁` and `d₂` of a real locally convex Hausdorff space with `0 ∉ [-d₁, d₂]`, that is,
 both nonzero and not on a common ray from `0`, are separated by a continuous functional `ℓ` with
 `ℓ d₁ < 0 < ℓ d₂`. This is the geometric Hahn--Banach theorem
 `geometric_hahn_banach_point_closed` applied to the point `0` and the segment `[-d₁, d₂]`. Both
 strict inequalities are open conditions, so `ℓ` can moreover be perturbed to be nonzero at any
-prescribed nonzero vector, along a functional not vanishing there.
+prescribed nonzero vector, along a functional not vanishing there. Equivalently, two nonzero
+vectors `u` and `v` that do not point in opposite directions are both positive for some
+continuous functional.
 
 ## Main results
 
+* `TauCeti.locallyConvexSpace_RCLike_iff`: local convexity over `𝕜` (`RCLike 𝕜`) agrees with local
+  convexity over `ℝ`.
+* `TauCeti.instSeparatingDualOfLocallyConvexSpace`: continuous `𝕜`-linear functionals separate
+  points of any `T₁` locally convex space over `ℝ` or `ℂ`.
 * `TauCeti.exists_strongDual_neg_pos_ne_zero`: a functional negative on `d₁`, positive on `d₂`,
   and nonzero at a prescribed vector `u`.
+* `TauCeti.exists_strongDual_pos_of_not_sameRay_neg`: two nonzero vectors that do not point in
+  opposite directions are both positive for some continuous functional.
 -/
 
 public section
@@ -29,6 +44,27 @@ public section
 open Set Topology
 
 namespace TauCeti
+
+section RCLike
+
+open scoped ComplexOrder
+
+/-- Over `ℝ` or `ℂ`, local convexity with respect to the canonical order on `𝕜` is equivalent to
+local convexity over `ℝ`. -/
+theorem locallyConvexSpace_RCLike_iff {𝕜 E : Type*} [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+    [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] :
+    LocallyConvexSpace 𝕜 E ↔ LocallyConvexSpace ℝ E := by
+  simp_rw [locallyConvexSpace_iff, convex_RCLike_iff_convex_real]
+
+/-- In a `T₁` locally convex topological vector space over `ℝ` or `ℂ`, continuous `𝕜`-linear
+functionals separate points. -/
+instance instSeparatingDualOfLocallyConvexSpace {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [Module ℝ E] [IsScalarTower ℝ 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul 𝕜 E] [LocallyConvexSpace ℝ E] [T1Space E] : SeparatingDual 𝕜 E :=
+  ⟨fun x hx ↦
+    RCLike.geometric_hahn_banach_point_point hx |>.imp fun _ hf hf' ↦ by simp [hf'] at hf⟩
+
+end RCLike
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousSMul ℝ E] [LocallyConvexSpace ℝ E] [T2Space E]
@@ -54,5 +90,15 @@ theorem exists_strongDual_neg_pos_ne_zero {d₁ d₂ : E} (h : (0 : E) ∉ segme
       ((hev.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists (f := 𝓝[≠] 0)
     exact ⟨f + ε • ℓ₀, hε₁, hε₂, by simpa [hfu, hℓ₀] using hε⟩
   · exact ⟨f, h₁, h₂, hfu⟩
+
+/-- Two nonzero vectors `u` and `v` that do not point in opposite directions,
+`¬SameRay ℝ u (-v)`, are both positive for some continuous linear functional. The hypothesis
+says exactly that `0` is not on the segment `[u, v]`. -/
+theorem exists_strongDual_pos_of_not_sameRay_neg {u v : E} (h : ¬SameRay ℝ u (-v)) :
+    ∃ L : StrongDual ℝ E, 0 < L u ∧ 0 < L v := by
+  obtain ⟨L, hu, hv, -⟩ := exists_strongDual_neg_pos_ne_zero (d₁ := -u) (d₂ := v)
+    (by rwa [neg_neg, mem_segment_iff_sameRay, zero_sub, sub_zero, sameRay_neg_swap])
+    (u := u) (by rintro rfl; exact h (SameRay.zero_left _))
+  exact ⟨L, by simpa using hu, hv⟩
 
 end TauCeti
