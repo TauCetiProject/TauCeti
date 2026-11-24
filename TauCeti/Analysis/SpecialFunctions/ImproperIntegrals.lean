@@ -87,6 +87,20 @@ private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
       congr 2
       ring
 
+private theorem isBigO_rpow_atBot_atTop_of_comap_abs {f : ℝ → ℝ} {q : ℝ}
+    (h : f =O[Filter.comap abs Filter.atTop] (fun x : ℝ => |x| ^ q)) :
+    f =O[Filter.atBot] (fun x : ℝ => (-x) ^ q) ∧
+      f =O[Filter.atTop] (fun x : ℝ => x ^ q) := by
+  constructor
+  · have h' := h.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atBot_atTop)
+    refine h'.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
+    filter_upwards [Filter.eventually_le_atBot (0 : ℝ)] with x hx
+    rw [abs_of_nonpos hx]
+  · have h' := h.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atTop_atTop)
+    refine h'.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
+    filter_upwards [Filter.eventually_ge_atTop (0 : ℝ)] with x hx
+    rw [abs_of_nonneg hx]
+
 /-- A continuous potential with sufficient logarithmic growth dominates a
 polynomial factor and makes the resulting exponential weight integrable. -/
 theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V : ℝ → ℝ}
@@ -122,18 +136,7 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
     apply Asymptotics.IsBigO.of_bound (2 ^ p)
     filter_upwards [Filter.tendsto_comap.eventually (Filter.eventually_ge_atTop R')] with x hx
     exact hdom x hx
-  have hneg : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atBot]
-      (fun x : ℝ => (-x) ^ q) := by
-    have h := hbig.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atBot_atTop)
-    refine h.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
-    filter_upwards [Filter.eventually_le_atBot (0 : ℝ)] with x hx
-    rw [abs_of_nonpos hx]
-  have hpos : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atTop]
-      (fun x : ℝ => x ^ q) := by
-    have h := hbig.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atTop_atTop)
-    refine h.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
-    filter_upwards [Filter.eventually_ge_atTop (0 : ℝ)] with x hx
-    rw [abs_of_nonneg hx]
+  obtain ⟨hneg, hpos⟩ := isBigO_rpow_atBot_atTop_of_comap_abs hbig
   exact hg.locallyIntegrable.integrable_of_isBigO_atBot_atTop hneg
     ⟨Iio (-R'), Filter.Iio_mem_atBot _, hpowNeg⟩ hpos
     ⟨Ioi R', Filter.Ioi_mem_atTop _, hpowPos⟩

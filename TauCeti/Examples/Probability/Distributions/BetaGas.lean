@@ -39,8 +39,7 @@ example (hint : Integrable (betaGasWeight n β V)
 example (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hint : ¬ Integrable (betaGasWeight n β V) (volume : Measure (Fin n → ℝ)))
     (x : Fin n → ℝ) : betaGasPDFReal n β V x = 0 := by
-  rw [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
-  rfl
+  simp [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
 
 example (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hint : ¬ Integrable (betaGasWeight n β V) (volume : Measure (Fin n → ℝ))) :
