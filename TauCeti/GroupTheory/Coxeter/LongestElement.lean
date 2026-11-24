@@ -41,7 +41,7 @@ reverses a path and sends paths of shape `λ` to paths of shape `-w₀ λ`.
 Left multiplication by `w₀` also acts on `W / W_J`, now with no condition on `J`. If `w₀J` has
 maximal length in `W_J` and `u` is a minimal coset representative of `W / W_J`, the minimal coset
 representative of `w₀ u W_J` is `w₀ * u * w₀J`, of length `ℓ w₀ - ℓ u - ℓ w₀J`
-(`CoxeterSystem.IsLongest.minimalCosetRep_mul`). Read on the right cosets
+(`CoxeterSystem.IsLongest.minimalCosetRep_mul_left`). Read on the right cosets
 `W_J w` by inversion, this is the **Kostant involution** `w ↦ w₀J * w * w₀` of the minimal
 representatives of the cosets in `W_J \ W` (`CoxeterSystem.IsLongest.kostantInvolution`). For the
 Weyl group `W` of a split reductive group `G` and the Weyl group `W_J` of the Levi subgroup of a
@@ -78,7 +78,7 @@ standard parabolic subgroup `P`, these minimal representatives are Kostant's rep
   `CoxeterSystem.MinimalCosetRepChain.last_reverseMul` and
   `CoxeterSystem.MinimalCosetRepChain.reverseMul_reverseMul`: the reversed chain runs between the
   images of the ends of the chain, and reversing twice returns the chain.
-* `CoxeterSystem.IsLongest.minimalCosetRep_mul`: for a minimal coset representative `u` of
+* `CoxeterSystem.IsLongest.minimalCosetRep_mul_left`: for a minimal coset representative `u` of
   `W / W_J`, the minimal coset representative of `w₀ * u` is `w₀ * u * w₀J`.
 * `CoxeterSystem.IsLongest.kostantInvolution_involutive` and
   `CoxeterSystem.IsLongest.length_kostantInvolution`: **the Kostant involution is an involution and
@@ -433,7 +433,7 @@ theorem isMinimalCosetRep_mul_mul (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.par
 and `w₀J` an element of maximal length of `cs.parabolic J`. For a minimal coset representative `u`
 of `W / W_J`, the minimal coset representative of `w₀ * u` is `w₀ * u * w₀J`: the longest element
 of `u W_J` is `u * w₀J`, so the shortest element of `w₀ u W_J` is `w₀ * u * w₀J`. -/
-theorem minimalCosetRep_mul (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.parabolic J)
+theorem minimalCosetRep_mul_left (h : cs.IsLongest w₀) (hJ : w₀J ∈ cs.parabolic J)
     (h₀J : ∀ v ∈ cs.parabolic J, ℓ v ≤ ℓ w₀J) (hu : cs.IsMinimalCosetRep J u) :
     cs.minimalCosetRep J (w₀ * u) = w₀ * u * w₀J := by
   refine ((cs.eq_minimalCosetRep_iff).mpr ⟨h.isMinimalCosetRep_mul_mul hJ h₀J hu, ?_⟩).symm
