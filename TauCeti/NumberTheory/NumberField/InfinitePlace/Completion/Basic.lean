@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.Analysis.Normed.Ring.WithAbs
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Normalized absolute values on archimedean completions
@@ -25,9 +26,8 @@ completion are determined by their values on it. The normalized value is continu
 Archimedean completions are nontrivially normed fields of characteristic zero, and the diagonal
 embeddings form scalar towers over any commutative semiring base.
 
-There is no ring homomorphism `ℂ →+* ℝ` (`Complex.instIsEmptyRingHomReal`), so the completion at a
-real place is not isomorphic to `ℂ`
-(`NumberField.InfinitePlace.IsReal.not_nonempty_ringEquiv_complex`).
+Since there is no ring homomorphism `ℂ →+* ℝ`, the completion at a real place is not isomorphic
+to `ℂ` (`NumberField.InfinitePlace.IsReal.not_nonempty_ringEquiv_complex`).
 
 ## References
 
@@ -137,14 +137,6 @@ theorem continuous_completionNormalizedAbsValue (w : InfinitePlace K) :
   convert continuous_norm.pow w.mult using 1
   ext x
   exact completionNormalizedAbsValue_apply w x
-
-/-- There is no ring homomorphism `ℂ →+* ℝ`: it would send `I` to a real number whose square is
-`-1`. -/
-instance _root_.Complex.instIsEmptyRingHomReal : IsEmpty (ℂ →+* ℝ) := by
-  refine ⟨fun f => ?_⟩
-  have h := congrArg f Complex.I_sq
-  rw [map_pow, map_neg, map_one] at h
-  nlinarith [sq_nonneg (f Complex.I)]
 
 /-- The completion of a field at a real place is not isomorphic to `ℂ` as a ring. -/
 theorem IsReal.not_nonempty_ringEquiv_complex {w : InfinitePlace K} (hw : w.IsReal) :

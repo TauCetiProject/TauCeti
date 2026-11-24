@@ -79,6 +79,8 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
+
+There is no ring homomorphism `ℂ →+* ℝ` (`Complex.instIsEmptyRingHomReal`).
 -/
 
 public section
@@ -456,6 +458,14 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- There is no ring homomorphism `ℂ →+* ℝ`: it would send `I` to a real number whose square is
+`-1`. -/
+instance instIsEmptyRingHomReal : IsEmpty (ℂ →+* ℝ) := by
+  refine ⟨fun f => ?_⟩
+  have h := congrArg f I_sq
+  rw [map_pow, map_neg, map_one] at h
+  nlinarith [sq_nonneg (f I)]
 
 end Complex
 
