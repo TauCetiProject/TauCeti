@@ -28,6 +28,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
+* `ContinuousLinearMap.uniqueDiffOn_halfSpace`: a closed half-space `{a ≤ ℓ}` of a real normed
+  space is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
@@ -104,6 +106,21 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
   have ha : a < a + 1 := lt_add_one a
   exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
     fun x hx ↦ hx.le
+
+/-- A closed half-space `{x | a ≤ ℓ x}` of a real normed space has unique derivatives, including
+on its boundary hyperplane. -/
+theorem ContinuousLinearMap.uniqueDiffOn_halfSpace {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) (a : ℝ) : UniqueDiffOn ℝ {x | a ≤ ℓ x} := by
+  by_cases hℓ : ℓ = 0
+  · by_cases ha : a ≤ 0
+    · simp [hℓ, ha]
+    · simp [hℓ, ha, uniqueDiffOn_empty]
+  obtain ⟨w, hw⟩ := ContinuousLinearMap.exists_ne_zero hℓ
+  -- The point `((a + 1) / ℓ w) • w` lies in the open half-space `{a < ℓ}`.
+  refine uniqueDiffOn_convex ((convex_Ici a).linear_preimage ℓ.toLinearMap)
+    ⟨((a + 1) / ℓ w) • w, mem_interior_iff_mem_nhds.2 <| mem_of_superset
+      ((isOpen_lt continuous_const ℓ.continuous).mem_nhds ?_) fun x (hx : a < ℓ x) ↦ hx.le⟩
+  simp [div_mul_cancel₀ _ hw]
 
 /-- A closed coordinate orthant `{x | ∀ i, a i ≤ x i}` has unique derivatives, including at its
 corners. -/
