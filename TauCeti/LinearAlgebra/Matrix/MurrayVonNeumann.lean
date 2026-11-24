@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
@@ -312,16 +313,16 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
   · rintro ⟨v, hv, rfl, rfl⟩
     exact hv.isMurrayVonNeumannEquivalent
 
-/-- Matrices `v` and `w` whose columns lie in the ranges of orthogonal self-adjoint matrices `a`
-and `b`, in the sense that `a * v = v`, `b * w = w` and `a * b = 0`, satisfy `vᴴ * w = 0`. -/
+/-- If `a` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `a * v = v` and
+`b * w = w` (columns in the ranges of `a` and `b`) satisfy `vᴴ * w = 0`. -/
 theorem conjTranspose_mul_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix n n R}
     (ha : IsSelfAdjoint a) {v : Matrix n k R} {w : Matrix n l R} (hv : a * v = v)
     (hw : b * w = w) (hab : a * b = 0) : vᴴ * w = 0 := by
   rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose a, ha.star_eq, Matrix.mul_assoc,
     ← Matrix.mul_assoc a, hab, Matrix.zero_mul, Matrix.mul_zero]
 
-/-- Matrices `v` and `w` whose rows lie in the ranges of orthogonal self-adjoint matrices `a` and
-`b`, in the sense that `v * a = v`, `w * b = w` and `a * b = 0`, satisfy `v * wᴴ = 0`. -/
+/-- If `b` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `v * a = v` and
+`w * b = w` (rows in the ranges of `a` and `b`) satisfy `v * wᴴ = 0`. -/
 theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix m m R}
     (hb : IsSelfAdjoint b) {v : Matrix k m R} {w : Matrix l m R} (hv : v * a = v)
     (hw : w * b = w) (hab : a * b = 0) : v * wᴴ = 0 := by
@@ -329,8 +330,7 @@ theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix m m
     Matrix.mul_assoc v, hab, Matrix.mul_zero, Matrix.zero_mul]
 
 /-- **Orthogonal sums.** If `p ∼ p'` and `q ∼ q'`, where `p` is orthogonal to `q` and `p'` to `q'`,
-then `p + q ∼ p' + q'`. Partial isometries `v` and `w` implementing the two equivalences have
-orthogonal ranges and orthogonal initial spaces, so `v + w` implements the sum. -/
+then `p + q ∼ p' + q'`. -/
 theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n n R}
     (h₁ : IsMurrayVonNeumannEquivalent p p') (h₂ : IsMurrayVonNeumannEquivalent q q')
     (hpq : p * q = 0) (hpq' : p' * q' = 0) : IsMurrayVonNeumannEquivalent (p + q) (p' + q') := by
@@ -338,10 +338,14 @@ theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n 
   have hp' := h₁.isStarProjection_right
   have hq := h₂.isStarProjection_left
   have hq' := h₂.isStarProjection_right
-  have hqp : q * p = 0 := by
-    simpa [hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq] using congr(star $hpq)
-  have hqp' : q' * p' = 0 := by
-    simpa [hp'.isSelfAdjoint.star_eq, hq'.isSelfAdjoint.star_eq] using congr(star $hpq')
+  have hqp : q * p = 0 :=
+    ((hp.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq.isSelfAdjoint).mpr hpq).mul_eq_zero
+      hq.isSelfAdjoint
+  have hqp' : q' * p' = 0 :=
+    ((hp'.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero hq'.isSelfAdjoint).mpr hpq').mul_eq_zero
+      hq'.isSelfAdjoint
+  -- Partial isometries `v` and `w` implementing the two equivalences have orthogonal ranges and
+  -- orthogonal initial spaces, so `v + w` implements the sum.
   obtain ⟨v, hvp, hvp', hv⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
   obtain ⟨w, hwq, hwq', hw⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
   -- `v` maps the range of `p` onto that of `p'`, and `w` that of `q` onto that of `q'`.
