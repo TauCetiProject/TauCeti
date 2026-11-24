@@ -24,7 +24,7 @@ curve may cross the real axis any number of times, as long as it does so on that
 
 The curves of the first kind lie in `ℂ \ ((-∞, 0] ∪ [1, ∞))`, those of the second kind in
 `ℂ \ [0, ∞)`: planes slit along the complement of a real interval, which are open
-(`TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`) and star-shaped about every point of the interval
+(`IsOpen.setOf_im_ne_zero_or_re_mem`) and star-shaped about every point of the interval
 (`Convex.starConvex_setOf_im_ne_zero_or_re_mem`), in particular about `1/2` and about `-1`, the
 vertices of the defining polygons. They contain no pole of the integrand. So the integrand has a
 primitive there (`TauCeti.Contour.isExactOn_of_starConvex`, from the homology form of Cauchy's
@@ -76,7 +76,7 @@ private theorem curveIntegral_segment_add_segment_eq_of_re_mem {S : Set ℝ} (hS
     · rw [← sub_eq_zero.1 h] at hz
       exact h₁ (ofReal_mem_setOf_im_ne_zero_or_re_mem_iff.1 (by rwa [ofReal_one]))
   exact Contour.curveIntegral_segment_add_segment_eq_intervalIntegral_deriv_smul
-    (isOpen_setOf_im_ne_zero_or_re_mem hS) hstar (differentiableOn_one_sub_zpow_mul_zpow m n hpoles)
+    hS.setOf_im_ne_zero_or_re_mem hstar (differentiableOn_one_sub_zpow_mul_zpow m n hpoles)
     hγ hγU
 
 /-- **Independence of the contour, crossing in `(0, 1)`.** For `y₂ ≤ y₁`, the incomplete beta

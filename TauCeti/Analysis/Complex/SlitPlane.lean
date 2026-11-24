@@ -39,7 +39,7 @@ These criteria feed logarithm evaluations of index integrals: a curve piece conf
 half-plane about the winding point has slit-compatible chord ratios, so its index integral
 is a principal logarithm. The plane slit along the complement of a convex real set `S` is open
 when `S` is, and star-shaped about every point of `S`
-(`TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`);
+(`IsOpen.setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`);
 it meets the real axis exactly in `S`. The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is
 open, star-convex about every real point `x < 1` (in particular about `0`), and preconnected, and is
 preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
@@ -60,7 +60,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.isOpen_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.starConvex_zero_setOf_one_sub_pow_mem_slitPlane`,
   `Complex.isConnected_setOf_one_sub_pow_mem_slitPlane`
-* `TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`,
+* `IsOpen.setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`,
   `TauCeti.ofReal_mem_setOf_im_ne_zero_or_re_mem_iff`
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
@@ -91,7 +91,7 @@ namespace TauCeti
 
 /-- The plane slit along the complement of a real set `S`, `{z | z.im ≠ 0 ∨ z.re ∈ S}`, is open
 when `S` is. -/
-theorem isOpen_setOf_im_ne_zero_or_re_mem {S : Set ℝ} (hS : IsOpen S) :
+theorem _root_.IsOpen.setOf_im_ne_zero_or_re_mem {S : Set ℝ} (hS : IsOpen S) :
     IsOpen {z : ℂ | z.im ≠ 0 ∨ z.re ∈ S} :=
   (isOpen_ne_fun Complex.continuous_im continuous_const).union
     (hS.preimage Complex.continuous_re)
