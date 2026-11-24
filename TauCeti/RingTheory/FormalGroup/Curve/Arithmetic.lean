@@ -152,15 +152,6 @@ theorem Curve.coeff_sub_add_monomialCurve_eq_zero {F : FormalGroup R} [F.IsComm]
     · simp [t]
   rw [coeff_sub_congr ht (fun _ _ ↦ rfl), sub_self, toPowerSeries_zero, map_zero]
 
-/-- Adding a monomial curve `c Tᵐ` adds `c` to the degree-`m` coefficient. -/
-theorem Curve.coeff_add_monomialCurve_self {F : FormalGroup R} (γ : F.Curve) {m : ℕ}
-    (hm : m ≠ 0) (c : R) :
-    PowerSeries.coeff m (γ + F.monomialCurve m hm c).toPowerSeries =
-      PowerSeries.coeff m γ.toPowerSeries + c := by
-  rw [coeff_add_of_forall_lt_coeff_eq_zero γ _ hm le_rfl fun i hi ↦ by
-    simp [PowerSeries.coeff_X_pow, hi.ne]]
-  simp
-
 /-! ### Division by invertible natural numbers -/
 
 section CurveDivision
