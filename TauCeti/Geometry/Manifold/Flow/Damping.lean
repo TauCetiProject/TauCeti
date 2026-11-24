@@ -168,7 +168,7 @@ theorem contMDiff_rateDampedField [IsManifold I 1 M] {n : ℕ∞}
 `C¹`, then `f` changes at rate at most `2` along `rateDamping (df(v)) • v`, so this field is
 complete by `TauCeti.isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le`. No lower bound on
 `f` and no growth condition on `v` is needed. -/
-theorem isCompleteVectorField_rateDampedField [CompleteSpace E] [T2Space M]
+theorem isCompleteVectorField_rateDampedField [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M] (hfp : IsProperMap f)
     (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) :

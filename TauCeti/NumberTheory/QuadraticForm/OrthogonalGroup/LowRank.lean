@@ -138,7 +138,7 @@ theorem exists_localSpinorNormImage_ne_unitSquareClasses :
   let Q : QuadraticForm ℚ (Fin 1 → ℚ) :=
     QuadraticMap.weightedSumSquares ℚ (fun _ ↦ 1)
   have hQ : Q.Nondegenerate :=
-    QuadraticMap.nondegenerate_weightedSumSquares fun _ ↦ isRegular_one
+    QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one
   have hV : Module.finrank ℚ (Fin 1 → ℚ) ≤ 1 := by simp
   let U := OrthogonalCompactOpens.topOfFinrankLeOne Q hQ hV
   exact ⟨Q, hQ, U, fun p _ ↦

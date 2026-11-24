@@ -81,9 +81,9 @@ private theorem exists_simpleHolding_ae_eq_of_mem_span
   let b (i : Fin k) : Ω → ℝ := fun ω ↦ c i * (A i).indicator (fun _ ↦ 1) ω
   have hb (i : Fin k) : StronglyMeasurable[ℱ (l i)] (b i) :=
     (stronglyMeasurable_const.indicator (hA i)).const_mul (c i)
-  obtain ⟨n, τ, a, hτ₀, hτ, ha, hbound, hhold, -⟩ :=
+  obtain ⟨n, τ, a, hτ₀, hτ, -, -, ha, -, hbound, hhold, -⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u b (fun i _ ↦ hb i)
-  refine ⟨n, τ, a, ∑ i, ‖c i‖, hτ₀, hτ, ha, ?_, ?_⟩
+  refine ⟨n, τ, a, ∑ i, ‖c i‖, hτ₀, hτ, fun j _ ↦ ha j, ?_, ?_⟩
   · intro j hj ω
     refine (hbound j hj ω).trans (Finset.sum_le_sum fun i _ ↦ ?_)
     by_cases hω : ω ∈ A i <;> simp [b, hω]

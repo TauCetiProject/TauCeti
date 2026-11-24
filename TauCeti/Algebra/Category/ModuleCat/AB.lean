@@ -33,15 +33,13 @@ namespace TauCeti
 the universe of the coefficient ring. -/
 instance moduleCat_ab5OfSize (R : Type u) [Ring R] [UnivLE.{w, v}] [UnivLE.{w', v}] :
     AB5OfSize.{w, w'} (ModuleCat.{v} R) where
-  ofShape J _ _ := by
-    have : AB5OfSize.{w, w'} AddCommGrpCat.{v} :=
-      AB5OfSize_of_univLE.{w, w', v, v, v, v + 1} _
-    exact HasExactColimitsOfShape.domain_of_functor J
-      (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
+  ofShape J _ _ :=
+    HasExactColimitsOfShape.domain_of_functor J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
 
-/-- Coproducts of modules are exact, with no restriction on the universe of the coefficient
-ring. -/
-instance moduleCat_ab4OfSize (R : Type u) [Ring R] : AB4OfSize.{v} (ModuleCat.{v} R) := by
+/-- Coproducts of modules indexed by types in a universe that embeds in the universe of the
+modules are exact, with no restriction on the universe of the coefficient ring. -/
+instance moduleCat_ab4OfSize (R : Type u) [Ring R] [UnivLE.{w, v}] :
+    AB4OfSize.{w} (ModuleCat.{v} R) := by
   have : HasFiniteBiproducts (ModuleCat.{v} R) := Abelian.hasFiniteBiproducts
   exact AB4.of_AB5 _
 

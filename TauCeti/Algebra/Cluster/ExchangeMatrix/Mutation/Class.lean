@@ -36,9 +36,9 @@ and do not require skew-symmetrizability.
 
 public section
 
-open TauCeti
+namespace TauCeti
 
-namespace Function.Embedding
+open Matrix
 
 variable {I₁ I₂ K₁ K₂ : Type*} [DecidableEq I₁] [DecidableEq I₂]
   [DecidableEq K₁] [DecidableEq K₂]
@@ -68,8 +68,8 @@ theorem finite_range_matrixMutationWord_fromBlocks_iff :
       (Matrix.fromBlocks B₁ 0 0 B₂))).Finite ↔
       (Set.range (matrixMutationWord row₁ B₁)).Finite ∧
         (Set.range (matrixMutationWord row₂ B₂)).Finite := by
-  rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
-    Set.finite_image_iff (Matrix.fromBlocks_diagonal_blocks_injective 0 0).injOn, Set.finite_prod]
+  rw [range_matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂,
+    Set.finite_image_iff (Matrix.fromBlocks₁₁₂₂_injective 0 0).injOn, Set.finite_prod]
   simp only [(Set.range_nonempty (matrixMutationWord row₁ B₁)).ne_empty,
     (Set.range_nonempty (matrixMutationWord row₂ B₂)).ne_empty, or_false]
 
@@ -81,8 +81,8 @@ theorem encard_range_matrixMutationWord_fromBlocks :
       (Matrix.fromBlocks B₁ 0 0 B₂))).encard =
       (Set.range (matrixMutationWord row₁ B₁)).encard *
         (Set.range (matrixMutationWord row₂ B₂)).encard := by
-  rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
-    (Matrix.fromBlocks_diagonal_blocks_injective 0 0).encard_image, Set.encard_prod]
+  rw [range_matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂,
+    (Matrix.fromBlocks₁₁₂₂_injective 0 0).encard_image, Set.encard_prod]
 
 /-- Natural cardinality of a block mutation class is the product of its component
 cardinalities, with Mathlib's zero convention for infinite sets. -/
@@ -93,22 +93,13 @@ theorem ncard_range_matrixMutationWord_fromBlocks :
       (Set.range (matrixMutationWord row₁ B₁)).ncard *
         (Set.range (matrixMutationWord row₂ B₂)).ncard := by
   simpa only [Set.ncard_def, ENat.toNat_mul] using
-    congrArg ENat.toNat (row₁.encard_range_matrixMutationWord_fromBlocks row₂ B₁ B₂)
-
-end Function.Embedding
-
-namespace Matrix
-
-variable {I₁ I₂ K₁ K₂ : Type*} [DecidableEq I₁] [DecidableEq I₂]
-  [DecidableEq K₁] [DecidableEq K₂]
+    congrArg ENat.toNat (encard_range_matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂)
 
 /-- A nonnegative uniform bound on absolute principal-entry products at distinct mutable indices
 in a rectangular block mutation class holds exactly when it holds in both components.
 Bound three gives the product-bound part of two-finiteness.
 Skew-symmetrizability supplies the sign condition. -/
-theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff
-    (B₁ : Matrix I₁ K₁ ℤ) (row₁ : K₁ ↪ I₁) (row₂ : K₂ ↪ I₂)
-    (B₂ : Matrix I₂ K₂ ℤ) (bound : ℤ) (hbound : 0 ≤ bound) :
+theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff (bound : ℤ) (hbound : 0 ≤ bound) :
     (∀ w : List (K₁ ⊕ K₂), ∀ i j, i ≠ j →
       |matrixMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂) w
           ((row₁.sumMap row₂) i) j *
@@ -124,9 +115,9 @@ theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff
     (f := matrixMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂))
     (p := fun C : Matrix (I₁ ⊕ I₂) (K₁ ⊕ K₂) ℤ ↦ ∀ i j, i ≠ j →
       |C ((row₁.sumMap row₂) i) j * C ((row₁.sumMap row₂) j) i| ≤ bound)]
-  rw [row₁.range_matrixMutationWord_fromBlocks row₂ B₁ B₂,
+  rw [range_matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂,
     Set.forall_mem_image, Set.forall_prod_set]
-  simp_rw [forall_abs_mul_le_fromBlocks_zero_iff _ _ row₁ row₂ bound hbound]
+  simp_rw [forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff _ _ row₁ row₂ bound hbound]
   simp only [Set.forall_mem_range, forall_and, forall_const]
 
-end Matrix
+end TauCeti

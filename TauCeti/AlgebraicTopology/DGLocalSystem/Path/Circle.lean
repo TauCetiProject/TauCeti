@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Augmentation
 public import TauCeti.AlgebraicTopology.DGLocalSystem.CircleResolution
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.From
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
 
 /-!
 # Brown's resolution of a circle maps quasi-isomorphically to the chains on its based paths
@@ -28,9 +28,10 @@ This file constructs that comparison for the circle and proves that it is a quas
   (`TauCeti.loopCellPathChain`): minus the cone on the point chain `[γ]` along the contraction
   `TauCeti.MoorePathFrom.truncateHomotopy` of the based path space. Its boundary is `[γ] - [b]`
   (`TauCeti.cubicalChainModuleDifferential_loopCellPathChain`, from
-  `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`), and since
-  loops act on point chains by concatenation in front (`TauCeti.point_smul_cubicalChainModulePoint`)
-  this is `([γ] - [1]) · [b]`, the image of the row of `e₁`.
+  `TauCeti.cubicalChainModuleDifferential_cone_cubicalChainModulePoint`), and since loops act on
+  point chains by concatenation in front
+  (`TauCeti.cubicalChainPoint_smul_cubicalChainModulePoint`) this is `([γ] - [1]) · [b]`, the image
+  of the row of `e₁`.
 
 So the map `α e₀ + β e₁ ↦ α · [b] + β · c_γ` (`TauCeti.loopCellPathComparison`) commutes with the
 differentials (`TauCeti.loopCellPathComparison_differential`), for every Moore loop `γ` of every
@@ -47,7 +48,8 @@ quasi-isomorphism
 of cells (`TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`): every relative cycle
 `(u, w)`, with `D u = 0` and `c(u) = d w`, is a relative boundary `(D u', c(u') + d w')`. The
 case of the complex unit circle and its counterclockwise loop is
-`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_and_loopCellPathComparison_add_eq`.
+`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_and_loopCellPathComparison_add_eq`. With
+the comparison, `K` is then a Brown model of `C_*(P_b B; R)` (`TauCeti.loopCellBrownModel`).
 
 This is the circle instance of the comparison between Brown's semi-free model and the chains on
 the based path space, whose general cell-by-cell construction runs along the skeletal filtration
@@ -58,6 +60,7 @@ the based path space, whose general cell-by-cell construction runs along the ske
 * `TauCeti.loopCellPathChain`: the `1`-chain `c_γ` of initial segments of a Moore loop, in
   `C_*(P_b B; R)`.
 * `TauCeti.loopCellPathComparison`: the map `K → C_*(P_b B; R)`, linear over `C_*(Ω_b B; R)`.
+* `TauCeti.loopCellBrownModel`: `K` with this comparison, as a Brown model, when `K` resolves `R`.
 
 ## Main results
 
@@ -261,5 +264,68 @@ theorem exists_loopCellCocycle_expLoop_differential_eq_and_loopCellPathCompariso
     exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero hu hw
 
 end QuasiIso
+
+section Model
+
+variable {B : Type*} [TopologicalSpace B] {b : B} (H : Type*) {R : Type*} [CommRing R]
+
+/-- **Brown's resolution of a circle as a Brown model.** Let the free module `K` of
+`TauCeti.loopCellCocycle R γ` resolve `R`: every cycle of `K` whose augmentation vanishes is a
+boundary, as for the counterclockwise loop of the complex unit circle
+(`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero`). Then
+`K`, with the comparison `TauCeti.loopCellPathComparison` sending `e₀` to the point chain `[b]` and
+`e₁` to the chain `c_γ` of initial segments of `γ`, is a Brown model of `C_*(P_b B; R)`. -/
+def loopCellBrownModel (γ : MooreLoopSpace B b)
+    (hK : ∀ {u : Unit ⊕ Unit →₀ loopChainAlgebra B b R},
+      rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m u = 0 →
+      loopCellAugmentation B b R u = 0 →
+      ∃ v, rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
+        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
+        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m v = u) :
+    BrownModel B b H R (Unit ⊕ Unit) (Sum.elim (fun _ ↦ 0) (fun _ ↦ 1)) where
+  cocycle := loopCellCocycle R γ
+  wellFounded := wellFounded_mem_support_loopCellCocycle γ
+  comparison := Sum.elim
+    (fun _ ↦ cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b))
+    (fun _ ↦ loopCellPathChain H R γ)
+  comparison_mem := by
+    rintro (⟨⟨⟩⟩ | ⟨⟨⟩⟩)
+    · simpa using cubicalChainModulePoint_mem (G := H) (R := R) (MoorePathFrom.refl B b)
+    · simpa using loopCellPathChain_mem (H := H) (R := R) γ
+  -- `loopCellPathComparison` is by definition the linear combination of these images.
+  linearCombination_comparison_m := (forall_linearCombination_rowFiniteTwistedDifferential_iff
+    (pathFromChain_isDGLeftModule B b H R) _ _).1 (loopCellPathComparison_differential γ)
+  exists_differential_eq_and_linearCombination_add_eq _ _ hu hw :=
+    exists_loopCellCocycle_differential_eq_and_loopCellPathComparison_add_eq hK hu hw
+
+variable {H} {γ : MooreLoopSpace B b}
+
+/-- The cocycle of the Brown model of a circle is `TauCeti.loopCellCocycle`. -/
+@[simp]
+theorem loopCellBrownModel_cocycle (hK) :
+    (loopCellBrownModel H γ hK).cocycle = loopCellCocycle R γ := (rfl)
+
+/-- The Brown model of a circle sends the generator `e₀` of the `0`-cell to the point chain `[b]`
+of the constant path. -/
+@[simp]
+theorem loopCellBrownModel_comparison_inl (hK) (x : Unit) :
+    (loopCellBrownModel H γ hK).comparison (Sum.inl x) =
+      cubicalChainModulePoint (MoorePathFrom B b) H R (MoorePathFrom.refl B b) := (rfl)
+
+/-- The Brown model of a circle sends the generator `e₁` of the `1`-cell to the chain `c_γ` of
+initial segments of `γ`. -/
+@[simp]
+theorem loopCellBrownModel_comparison_inr (hK) (x : Unit) :
+    (loopCellBrownModel H γ hK).comparison (Sum.inr x) = loopCellPathChain H R γ := (rfl)
+
+/-- The comparison of the Brown model of a circle is `TauCeti.loopCellPathComparison`. -/
+@[simp]
+theorem linearCombination_loopCellBrownModel_comparison (hK) :
+    Finsupp.linearCombination (loopChainAlgebra B b R) (loopCellBrownModel H γ hK).comparison =
+      loopCellPathComparison H R γ := (rfl)
+
+end Model
 
 end TauCeti

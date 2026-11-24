@@ -104,8 +104,8 @@ theorem pairOrbitEquivSideRepresentative_symm_apply (i : σ.SideRepresentative) 
   (rfl)
 
 /-- **The number of orbits of `σ.pair` is the number of side pairs.** -/
-theorem orbitCount_pair : orbitCount σ.pair = Nat.card σ.SideRepresentative := by
-  rw [orbitCount_def]; exact Nat.card_congr σ.pairOrbitEquivSideRepresentative
+theorem orbitCount_pair : orbitCount σ.pair = Nat.card σ.SideRepresentative :=
+  σ.pair_involutive.orbitCount_eq_natCard_le
 
 /-- The orbits of `σ.next` split into the finite vertex cycles and the ideal vertex cycles. -/
 def nextOrbitEquivSum :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Equivalence
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 
 /-!
 # Exact functors on bounded derived categories

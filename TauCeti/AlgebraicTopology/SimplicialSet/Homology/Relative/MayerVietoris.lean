@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # The relative Mayer–Vietoris sequence of a square of pairs of simplicial sets

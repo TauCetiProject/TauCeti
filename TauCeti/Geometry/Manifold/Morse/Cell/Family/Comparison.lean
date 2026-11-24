@@ -185,25 +185,6 @@ variable (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k :
   (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε) (hball : ∀ i, closedBall 0 √ε ⊆ (φ i).target)
   (hf : ∀ i, ∀ y ∈ (φ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ i y j ^ 2)
 
-include hball in
-/-- The inverses of the charts of a fixed family are continuous on the closed ball of radius `√ε`,
-uniformly in a parameter on which they do not depend. -/
-private theorem continuousOn_symm_const (i : ι) :
-    ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (φ i).symm q.2)
-      (univ ×ˢ closedBall 0 √ε) :=
-  ((φ i).continuousOn_symm.mono (hball i)).comp continuous_snd.continuousOn fun _ hq ↦ hq.2
-
-/-- On the boundary spheres, the attaching maps of the constant family are those of `φ`. -/
-private theorem sublevelInclusionHomeomorph_morseAttachingMap (i : ι) (p : P)
-    (s : TopCat.diskBoundary.{u} (k i)) :
-    sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)
-        ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s) =
-      morseFamilyAttachingMap (fun _ : P ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
-        (continuousOn_symm_const φ hball) i (p, s) :=
-  Subtype.ext (Subtype.ext ((coe_coe_sublevelInclusionHomeomorph_apply f _ _).trans
-    (coe_morseFamilyAttachingMap_apply (fun _ : P ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
-      (continuousOn_symm_const φ hball) i (p, s)).symm))
-
 /-- The attaching maps of the cells of `φ`, as a constant family over `P`. -/
 private abbrev constAttachingMap :=
   morseFamilyAttachingMap (fun _ : P ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
@@ -235,7 +216,7 @@ private theorem morseAttachingMap_comp_constInclFamily (i : ι) :
       (p, sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)
         ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s)) =
     fiberwiseCellAttachmentCell _ i (p, TopCat.diskBoundaryInclusion (k i) s)
-  rw [sublevelInclusionHomeomorph_morseAttachingMap φ k hk hε hball hf i p,
+  rw [← morseFamilyAttachingMap_const_apply φ k hk hε hball hf i p,
     fiberwiseCellAttachmentCell_diskBoundaryInclusion]
 
 /-- The map from the cell attachment of `φ` to the maps from `P` to the fiberwise cell attachment

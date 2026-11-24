@@ -11,7 +11,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The half-spin representations of `Spin(4)` and `Spinᶜ(4)`
