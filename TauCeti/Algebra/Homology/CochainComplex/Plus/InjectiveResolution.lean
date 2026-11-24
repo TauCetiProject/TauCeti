@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.Injective.Extend
 public import Mathlib.CategoryTheory.Preadditive.Injective.InjectiveObject
-public import Mathlib.CategoryTheory.Preadditive.Injective.Resolution
 public import TauCeti.Algebra.Homology.CochainComplex.Plus.Basic
-public import TauCeti.Algebra.Homology.Embedding.Extend
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 
 import Mathlib.Algebra.Homology.FullSubcategory
@@ -24,16 +23,16 @@ lifting of bounded-below complexes of injective objects into
 * `CochainComplex.Plus.liftInjective` and `CochainComplex.Plus.liftInjectiveIso`: lift a
   bounded-below cochain complex of injective objects in `C` to
   `CochainComplex.Plus (InjectiveObject C)`.
-* `CategoryTheory.InjectiveResolution.cocomplexPlus`: the bounded-below `ℤ`-indexed extension of
-  `I.cocomplex`.
-* `CategoryTheory.InjectiveResolution.cocomplexPlusMap`: functoriality in morphisms of injective
-  resolutions.
+* `CategoryTheory.InjectiveResolution.cocomplexPlus`: the bounded-below `ℤ`-indexed complex
+  `I.cochainComplex` viewed in `CochainComplex.Plus C`.
+* `CategoryTheory.InjectiveResolution.cocomplexPlusMap`: functoriality in `InjectiveResolution.Hom`
+  via `InjectiveResolution.Hom.hom'`.
 * `CategoryTheory.InjectiveResolution.cocomplexPlusHomologyIso`: natural identification of the
   cohomology of `F(I.cocomplexPlus.obj)` in degree `n : ℤ` with the cohomology of
   `F(I.cocomplex)` in degree `n : ℕ`.
 * `CategoryTheory.InjectiveResolution.ιPlus`: the bounded-below resolution morphism
-  `(TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶ I.cocomplexPlus`, together with its
-  `QuasiIso` instance and naturality lemma `ιPlus_naturality`.
+  `(TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶ I.cocomplexPlus` built from
+  `I.ι'`, together with its naturality lemma `ιPlus_naturality` via `Hom.ι'_comp_hom'`.
 -/
 
 public section
@@ -75,56 +74,20 @@ namespace CategoryTheory.InjectiveResolution
 
 section BoundedBelow
 
-variable {C : Type u₁} [Category.{v₁} C] [HasZeroMorphisms C] [HasZeroObject C]
+section Preadditive
 
-/-- The bounded-below `ℤ`-indexed cochain complex obtained by extending `I.cocomplex` along
-`ComplexShape.embeddingUpNat`. -/
-def cocomplexPlus {X : C} (I : InjectiveResolution X) : _root_.CochainComplex.Plus C :=
-  ⟨I.cocomplex.extend ComplexShape.embeddingUpNat,
-    (_root_.CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩
+variable {C : Type u₁} [Category.{v₁} C] [HasZeroObject C] [Preadditive C]
 
-/-- The underlying cochain complex of `I.cocomplexPlus` is
-`I.cocomplex.extend ComplexShape.embeddingUpNat`. -/
-@[simp]
-lemma cocomplexPlus_obj {X : C} (I : InjectiveResolution X) :
-    I.cocomplexPlus.obj = I.cocomplex.extend ComplexShape.embeddingUpNat :=
-  (rfl)
+/-- Mathlib's extended `ℤ`-indexed injective resolution `I.cochainComplex` viewed in
+`CochainComplex.Plus C`. -/
+abbrev cocomplexPlus {X : C} (I : InjectiveResolution X) : _root_.CochainComplex.Plus C :=
+  ⟨I.cochainComplex, (_root_.CochainComplex.plus_iff C _).2 ⟨0, inferInstance⟩⟩
 
-/-- The morphism `IX.cocomplexPlus ⟶ IY.cocomplexPlus` induced by a morphism
-`φ : IX.cocomplex ⟶ IY.cocomplex` of injective resolutions. -/
-def cocomplexPlusMap {X Y : C} {IX : InjectiveResolution X} {IY : InjectiveResolution Y}
-    (φ : IX.cocomplex ⟶ IY.cocomplex) :
-    IX.cocomplexPlus ⟶ IY.cocomplexPlus :=
-  ObjectProperty.homMk
-    (eqToHom IX.cocomplexPlus_obj ≫
-      HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat ≫
-      eqToHom IY.cocomplexPlus_obj.symm)
-
-/-- Underlying cochain-complex morphism of `cocomplexPlusMap φ`. -/
-@[simp]
-lemma cocomplexPlusMap_hom {X Y : C} {IX : InjectiveResolution X} {IY : InjectiveResolution Y}
-    (φ : IX.cocomplex ⟶ IY.cocomplex) :
-    (cocomplexPlusMap φ).hom =
-      eqToHom IX.cocomplexPlus_obj ≫
-        HomologicalComplex.extendMap φ ComplexShape.embeddingUpNat ≫
-        eqToHom IY.cocomplexPlus_obj.symm := by
-  simp [cocomplexPlusMap]
-
-/-- `cocomplexPlusMap` sends the identity morphism to the identity. -/
-@[simp]
-lemma cocomplexPlusMap_id {X : C} (IX : InjectiveResolution X) :
-    cocomplexPlusMap (𝟙 IX.cocomplex) = 𝟙 IX.cocomplexPlus := by
-  apply (_root_.CochainComplex.Plus.ι C).map_injective
-  simp
-
-/-- `cocomplexPlusMap` preserves composition. -/
-@[reassoc, simp]
-lemma cocomplexPlusMap_comp {X Y Z : C} {IX : InjectiveResolution X}
-    {IY : InjectiveResolution Y} {IZ : InjectiveResolution Z}
-    (φ : IX.cocomplex ⟶ IY.cocomplex) (ψ : IY.cocomplex ⟶ IZ.cocomplex) :
-    cocomplexPlusMap (φ ≫ ψ) = cocomplexPlusMap φ ≫ cocomplexPlusMap ψ := by
-  apply (_root_.CochainComplex.Plus.ι C).map_injective
-  simp
+/-- The bounded-below resolution `X[0] ⟶ I.cocomplexPlus` in `CochainComplex.Plus C` induced by
+`I.ι'`. -/
+abbrev ιPlus {X : C} (I : InjectiveResolution X) :
+    (TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶ I.cocomplexPlus :=
+  { hom := (TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫ I.ι' }
 
 section Homology
 
@@ -137,10 +100,8 @@ def cocomplexPlusHomologyIso {X : C} (I : InjectiveResolution X)
     (F : C ⥤ D) [F.PreservesZeroMorphisms] (n : ℕ) :
     ((F.mapHomologicalComplex (.up ℤ)).obj I.cocomplexPlus.obj).homology (n : ℤ) ≅
       ((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).homology n :=
-  HomologicalComplex.homologyMapIso
-      ((F.mapHomologicalComplex (.up ℤ)).mapIso (eqToIso I.cocomplexPlus_obj)) (n : ℤ) ≪≫
-    (ComplexShape.embeddingUpNat.extendFunctorCompMapHomologyFunctorIso F
-      (ComplexShape.embeddingUpNat_f n)).app I.cocomplex
+  (ComplexShape.embeddingUpNat.extendFunctorCompMapHomologyFunctorIso F
+    (ComplexShape.embeddingUpNat_f n)).app I.cocomplex
 
 /-- Characterizing formula for `(I.cocomplexPlusHomologyIso F n).hom`. -/
 @[reassoc]
@@ -148,113 +109,60 @@ lemma cocomplexPlusHomologyIso_hom {X : C} (I : InjectiveResolution X)
     (F : C ⥤ D) [F.PreservesZeroMorphisms] (n : ℕ) :
     (I.cocomplexPlusHomologyIso F n).hom =
       HomologicalComplex.homologyMap
-          ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom I.cocomplexPlus_obj)) (n : ℤ) ≫
-        HomologicalComplex.homologyMap
           (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
-          ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n)).hom := by
-  simp [cocomplexPlusHomologyIso]
+          ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n)).hom :=
+  ComplexShape.Embedding.extendFunctorCompMapHomologyFunctorIso_hom_app
+    ComplexShape.embeddingUpNat F (ComplexShape.embeddingUpNat_f n) I.cocomplex
+
+end Homology
+
+end Preadditive
+
+section Abelian
+
+variable {C : Type u₁} [Category.{v₁} C] [Abelian C]
+
+/-- The morphism `IX.cocomplexPlus ⟶ IY.cocomplexPlus` induced by a morphism
+`φ : IX.Hom IY f` of injective resolutions, wrapping `Hom.hom'`. -/
+abbrev cocomplexPlusMap {X Y : C} {IX : InjectiveResolution X} {IY : InjectiveResolution Y}
+    {f : X ⟶ Y} (φ : IX.Hom IY f) :
+    IX.cocomplexPlus ⟶ IY.cocomplexPlus :=
+  { hom := φ.hom' }
 
 /-- Naturality of `cocomplexPlusHomologyIso` in morphisms of injective resolutions. -/
 @[reassoc]
 lemma cocomplexPlusHomologyIso_hom_naturality {X Y : C}
-    {IX : InjectiveResolution X} {IY : InjectiveResolution Y}
-    (φ : IX.cocomplex ⟶ IY.cocomplex) (F : C ⥤ D) [F.PreservesZeroMorphisms] (n : ℕ) :
+    {IX : InjectiveResolution X} {IY : InjectiveResolution Y} {f : X ⟶ Y}
+    (φ : IX.Hom IY f)
+    {D : Type*} [Category* D] [HasZeroMorphisms D] [HasZeroObject D]
+    [CategoryWithHomology D] (F : C ⥤ D) [F.PreservesZeroMorphisms] (n : ℕ) :
     HomologicalComplex.homologyMap
         ((F.mapHomologicalComplex (.up ℤ)).map (cocomplexPlusMap φ).hom) (n : ℤ) ≫
         (IY.cocomplexPlusHomologyIso F n).hom =
       (IX.cocomplexPlusHomologyIso F n).hom ≫
-        HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ) n := by
-  have hι : (F.mapHomologicalComplex (.up ℤ)).map (cocomplexPlusMap φ).hom ≫
-        (F.mapHomologicalComplex (.up ℤ)).map (eqToHom IY.cocomplexPlus_obj) =
-      (F.mapHomologicalComplex (.up ℤ)).map (eqToHom IX.cocomplexPlus_obj) ≫
-        (F.mapHomologicalComplex (.up ℤ)).map
-          ((ComplexShape.embeddingUpNat.extendFunctor C).map φ) := by
-    rw [← Functor.map_comp, ← Functor.map_comp, cocomplexPlusMap_hom]
-    simp [ComplexShape.Embedding.extendFunctor]
-  have hιH := congrArg (HomologicalComplex.homologyMap · (n : ℤ)) hι
-  simp only [HomologicalComplex.homologyMap_comp] at hιH
-  have hnat := (ComplexShape.embeddingUpNat.extendFunctorCompMapHomologyFunctorIso F
-    (ComplexShape.embeddingUpNat_f n)).hom.naturality φ
-  simp only [Functor.comp_map] at hnat
-  calc HomologicalComplex.homologyMap
-        ((F.mapHomologicalComplex (.up ℤ)).map (cocomplexPlusMap φ).hom) (n : ℤ) ≫
-        (IY.cocomplexPlusHomologyIso F n).hom
-    _ = (HomologicalComplex.homologyMap
-          ((F.mapHomologicalComplex (.up ℤ)).map (cocomplexPlusMap φ).hom) (n : ℤ) ≫
-          HomologicalComplex.homologyMap
-            ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom IY.cocomplexPlus_obj)) (n : ℤ)) ≫
-          (ComplexShape.embeddingUpNat.extendFunctorCompMapHomologyFunctorIso F
-            (ComplexShape.embeddingUpNat_f n)).hom.app IY.cocomplex := by
-      simp [cocomplexPlusHomologyIso, Category.assoc]
-    _ = HomologicalComplex.homologyMap
-          ((F.mapHomologicalComplex (.up ℤ)).map (eqToHom IX.cocomplexPlus_obj)) (n : ℤ) ≫
-          ((HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-            ((F.mapHomologicalComplex (.up ℤ)).map
-              ((ComplexShape.embeddingUpNat.extendFunctor C).map φ)) ≫
-          (ComplexShape.embeddingUpNat.extendFunctorCompMapHomologyFunctorIso F
-            (ComplexShape.embeddingUpNat_f n)).hom.app IY.cocomplex) := by
-      rw [hιH, Category.assoc]
-      simp only [HomologicalComplex.homologyFunctor_map]
-    _ = (IX.cocomplexPlusHomologyIso F n).hom ≫
-        HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ) n := by
-      rw [hnat, ← Category.assoc]
-      simp [cocomplexPlusHomologyIso]
+        HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ.hom) n := by
+  dsimp only [InjectiveResolution.cochainComplex]
+  rw [cocomplexPlusHomologyIso_hom, cocomplexPlusHomologyIso_hom, Category.assoc]
+  simpa [InjectiveResolution.Hom.hom', Category.assoc] using
+    (ComplexShape.embeddingUpNat.extendFunctorCompMapHomologyFunctorIso F
+      (ComplexShape.embeddingUpNat_f n)).hom.naturality φ.hom
 
-end Homology
-
-/-- The bounded-below resolution `X[0] ⟶ I.cocomplexPlus` in `CochainComplex.Plus C` induced by
-an injective resolution `I` of `X`. -/
-def ιPlus {X : C} (I : InjectiveResolution X) :
-    (TauCeti.CochainComplex.Plus.singleFunctor C 0).obj X ⟶ I.cocomplexPlus :=
-  ObjectProperty.homMk
-    ((TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫
-      (HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat X 0 0
-        (ComplexShape.embeddingUpNat_f 0)).inv ≫
-      HomologicalComplex.extendMap I.ι ComplexShape.embeddingUpNat ≫
-      eqToHom I.cocomplexPlus_obj.symm)
-
-/-- Underlying cochain-complex morphism of `I.ιPlus`. -/
-@[simp]
-lemma ιPlus_hom {X : C} (I : InjectiveResolution X) :
-    I.ιPlus.hom =
-      (TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.app X ≫
-        (HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat X 0 0
-          (ComplexShape.embeddingUpNat_f 0)).inv ≫
-        HomologicalComplex.extendMap I.ι ComplexShape.embeddingUpNat ≫
-        eqToHom I.cocomplexPlus_obj.symm := by
-  simp [ιPlus]
-
-instance hasHomology_cocomplexPlus {X : C} (I : InjectiveResolution X) (i : ℤ) :
-    I.cocomplexPlus.obj.HasHomology i :=
-  HomologicalComplex.hasHomology_of_iso (eqToIso I.cocomplexPlus_obj).symm i
-
-instance injective_cocomplexPlus_X {X : C} (I : InjectiveResolution X) (n : ℤ) :
-    Injective (I.cocomplexPlus.obj.X n) := by
-  rw [cocomplexPlus_obj]
-  infer_instance
-
-instance quasiIso_ιPlus_hom {X : C} (I : InjectiveResolution X) :
-    QuasiIso I.ιPlus.hom := by
-  rw [ιPlus_hom]
-  infer_instance
-
-/-- Naturality of `ιPlus` with respect to a lifting morphism `φ` of injective resolutions. -/
-lemma ιPlus_naturality {X Y : C} (f : X ⟶ Y)
-    (IX : InjectiveResolution X) (IY : InjectiveResolution Y)
-    (φ : IX.cocomplex ⟶ IY.cocomplex)
-    (hφ : IX.ι ≫ φ = (_root_.CochainComplex.single₀ C).map f ≫ IY.ι) :
+/-- Naturality of `ιPlus` with respect to a morphism `φ : IX.Hom IY f` of injective
+resolutions, derived from `Hom.ι'_comp_hom'`. -/
+lemma ιPlus_naturality {X Y : C} {f : X ⟶ Y}
+    {IX : InjectiveResolution X} {IY : InjectiveResolution Y}
+    (φ : IX.Hom IY f) :
     IX.ιPlus ≫ cocomplexPlusMap φ =
       (TauCeti.CochainComplex.Plus.singleFunctor C 0).map f ≫ IY.ιPlus := by
   apply (_root_.CochainComplex.Plus.ι C).map_injective
-  simp only [ObjectProperty.ι_map, ObjectProperty.FullSubcategory.comp_hom, ιPlus_hom,
-    cocomplexPlusMap_hom, TauCeti.CochainComplex.Plus.singleFunctorCompιIso_hom_app,
-    TauCeti.CochainComplex.Plus.singleFunctor_map_hom, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp]
-  rw [← HomologicalComplex.extendMap_comp_assoc, hφ, HomologicalComplex.extendMap_comp_assoc]
-  dsimp only [_root_.CochainComplex.single₀]
-  rw [← ComplexShape.embeddingUpNat.extendSingleIso_inv_naturality_assoc f (i := 0) (i' := 0)
-    (by simp)]
+  have hnat := (TauCeti.CochainComplex.Plus.singleFunctorCompιIso C 0).hom.naturality f
+  dsimp at hnat
+  simp only [ObjectProperty.ι_map, ObjectProperty.FullSubcategory.comp_hom, Category.assoc,
+    φ.ι'_comp_hom']
+  rw [← Category.assoc, ← hnat, Category.assoc]
+
+end Abelian
 
 end BoundedBelow
 

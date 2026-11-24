@@ -290,7 +290,9 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
           (F.rightDerivedFunctorPlus.map ((DerivedCategory.Plus.singleFunctor C 0).map f)) ≫
         (degreeZeroComponent F n Y IY).hom =
       (degreeZeroComponent F n X IX).hom ≫ (F.rightDerived n).map f := by
-  let φ : IX.cocomplex ⟶ IY.cocomplex := InjectiveResolution.desc f IY IX
+  let φ : IX.Hom IY f :=
+    ⟨InjectiveResolution.desc f IY IX,
+      (InjectiveResolution.desc_commutes_zero f IY IX).trans (by simp)⟩
   have h1 := congrArg (fun g ↦ (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
       (F.rightDerivedFunctorPlus.map g))
     ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.naturality f)
@@ -299,10 +301,9 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
     IX.ιPlus IY.ιPlus
     ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f)
     (InjectiveResolution.cocomplexPlusMap φ)
-    (congrArg DerivedCategory.Plus.Q.map (InjectiveResolution.ιPlus_naturality f IX IY φ
-      (InjectiveResolution.desc_commutes f IY IX))) (n : ℤ)
+    (congrArg DerivedCategory.Plus.Q.map (InjectiveResolution.ιPlus_naturality φ)) (n : ℤ)
   have h3 := InjectiveResolution.cocomplexPlusHomologyIso_hom_naturality φ F n
-  have h4 := (InjectiveResolution.isoRightDerivedObj_inv_naturality f IX IY φ
+  have h4 := (InjectiveResolution.isoRightDerivedObj_inv_naturality f IX IY φ.hom
     (InjectiveResolution.desc_commutes_zero f IY IX) F n).symm
   simp only [Functor.comp_map, HomologicalComplex.homologyFunctor_map] at h4
   calc (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
@@ -334,7 +335,7 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
           ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IX.ιPlus (n : ℤ)).hom ≫
         (IX.cocomplexPlusHomologyIso F n).hom ≫
-        (HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ) n ≫
+        (HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ.hom) n ≫
         (IY.isoRightDerivedObj F n).inv) := by
       rw [h3, Category.assoc]
     _ = (degreeZeroComponent F n X IX).hom ≫ (F.rightDerived n).map f := by
