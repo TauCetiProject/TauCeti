@@ -162,15 +162,14 @@ example : ¬ ∃ μ : ProbabilityMeasure finSupp,
   have hmap := ProbabilityMeasure.tendsto_map_of_tendsto_of_continuous _ _ hμ continuous_subtypeVal
   have hδ : ∀ n, (diracProba (⟨segment n, segment_mem n⟩ : finSupp)).map (↑) =
       diracProba (segment n) := fun n =>
-    ProbabilityMeasure.toMeasure_injective (Measure.map_dirac' measurable_subtypeVal _)
+    ProbabilityMeasure.map_diracProba measurable_subtypeVal _
   simp only [hδ] at hmap
   have hlim : μ.map (↑) = diracProba halfLine :=
     tendsto_nhds_unique hmap tendsto_diracProba_segment
   have h1 : (μ.map ((↑) : finSupp → ℤ → Bool)) finSupp = 1 := by
     rw [ProbabilityMeasure.map_apply _ measurable_subtypeVal.aemeasurable measurableSet_finSupp]
     simp
-  rw [hlim, ← ENNReal.coe_inj, ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure] at h1
-  simp [diracProba_toMeasure_apply' _ measurableSet_finSupp, halfLine_notMem] at h1
+  simp [hlim, diracProba_apply' _ measurableSet_finSupp, halfLine_notMem] at h1
 
 /-- The two constant configurations. -/
 def constants : Set (ℤ → Bool) := {fun _ => false, fun _ => true}
@@ -230,8 +229,7 @@ example : (inferInstance : MeasurableSpace constants) = borel constants ∧
     rw [singleton_one'_eq]
     exact measurableSet_preimage_fullShift_cylinder _ _
   refine ⟨BorelSpace.measurable_eq, hm, ?_⟩
-  rw [ProbabilityMeasure.convexComb_apply, ← ENNReal.coe_inj]
-  simp [diracProba_toMeasure_apply' _ hm, Set.indicator, one'_ne_zero'.symm,
-    ENNReal.toNNReal_ofNat]
+  rw [ProbabilityMeasure.convexComb_apply]
+  simp [diracProba_apply' _ hm, one'_ne_zero'.symm, ENNReal.toNNReal_ofNat]
 
 end TauCeti.Examples.WeakTopologyConfigurations

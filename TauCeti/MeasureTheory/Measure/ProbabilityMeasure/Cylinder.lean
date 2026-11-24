@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.MeasureTheory.Measure.DiracProba
+public import TauCeti.MeasureTheory.Measure.DiracProba
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
@@ -157,8 +157,8 @@ otherwise. -/
 @[simp]
 theorem correlationFunction_diracProba (x : X) (F : Finset I) :
     (diracProba x).correlationFunction F = if ∀ i ∈ F, (x : I → Bool) i = true then 1 else 0 := by
-  rw [correlationFunction_def, ← ENNReal.coe_inj, ennreal_coeFn_eq_coeFn_toMeasure,
-    diracProba_toMeasure_apply' _ (TauCeti.measurableSet_preimage_fullShift_cylinder _ _)]
+  rw [correlationFunction_def,
+    diracProba_apply' _ (TauCeti.measurableSet_preimage_fullShift_cylinder _ _)]
   split_ifs with h <;> simpa [Set.indicator, FullShift.mem_cylinder] using h
 
 /-- **Correlation functions are affine.** The correlation function of a convex combination of

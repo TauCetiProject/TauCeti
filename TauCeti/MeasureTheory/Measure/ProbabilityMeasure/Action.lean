@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 public import Mathlib.MeasureTheory.Group.Arithmetic
-public import Mathlib.MeasureTheory.Measure.DiracProba
+public import TauCeti.MeasureTheory.Measure.DiracProba
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
@@ -20,9 +20,9 @@ an action of `M` on `ProbabilityMeasure X` by push-forward, `g • μ = μ.map (
 This action is affine (`MeasureTheory.ProbabilityMeasure.smul_convexComb`), and when `X` is a
 topological space with its Borel σ-algebra on which each `x ↦ g • x` is continuous, each
 `μ ↦ g • μ` is continuous for the weak topology. For a group this makes each `μ ↦ g • μ` an affine
-homeomorphism of `ProbabilityMeasure X` (Mathlib's `Homeomorph.smul`). This is the action of a
-group `Γ` on the space `𝔓(X)` of probability measures on a subshift `X` used to define invariant
-and ergodic measures.
+homeomorphism of `ProbabilityMeasure X` (Mathlib's `Homeomorph.smul`). For example, a group
+acting on a subshift by shifts acts on its probability measures; invariant measures are the fixed
+points of this action.
 
 ## Main declarations
 
@@ -88,7 +88,7 @@ theorem smul_convexComb (g : M) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : Prob
 /-- The action moves point masses along the action on `X`. -/
 @[simp]
 theorem smul_diracProba (g : M) (x : X) : g • diracProba x = diracProba (g • x) :=
-  toMeasure_injective (Measure.map_dirac' (measurable_const_smul g) x)
+  map_diracProba (measurable_const_smul g) x
 
 end SMul
 
