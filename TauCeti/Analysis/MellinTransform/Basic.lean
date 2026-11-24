@@ -31,6 +31,12 @@ with their unextended forms this way.
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
   open or closed upper-tail indicator is the upper Mellin integral.
+* `TauCeti.mellinConvergent_indicator_iff_of_subset_Ioi`,
+  `TauCeti.mellin_indicator_of_subset_Ioi`: the same for the indicator of any measurable subset of
+  `(0, ∞)`.
+* `TauCeti.integral_Ioc_cpow_smul_eq_integral_Ioi_comp_inv`,
+  `TauCeti.integrableOn_Ioc_cpow_smul_iff_integrableOn_Ioi_comp_inv`: the substitution `t ↦ t⁻¹`
+  exchanges the Mellin integrals over `(0, 1]` and `(1, ∞)`, with their absolute convergence.
 * `TauCeti.mellin_ofReal_zero`, `TauCeti.mellinConvergent_ofReal_zero_iff`: at `s = 0` the
   Mellin transform of a real function is the real integral `∫_{(0,∞)} f(x) dx/x`.
 * `MellinConvergent.of_support_subset_Icc`: for a function supported in a compact interval of
@@ -89,6 +95,51 @@ theorem mellin_indicator_Ici (f : ℝ → E) {a : ℝ} (ha : 0 ≤ a) (s : ℂ) 
   filter_upwards [ae_restrict_of_ae (indicator_ae_eq_of_ae_eq_set (f := f)
     (Ioi_ae_eq_Ici (a := a)))] with t ht
   rw [ht]
+
+/-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` converges exactly when
+the Mellin integrand of `f` is integrable on `s`. -/
+theorem mellinConvergent_indicator_iff_of_subset_Ioi {f : ℝ → E} {s : Set ℝ}
+    (hs : MeasurableSet s) (hs0 : s ⊆ Ioi 0) {z : ℂ} :
+    MellinConvergent (s.indicator f) z ↔ IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) s := by
+  simp_rw [MellinConvergent, ← indicator_smul, integrableOn_indicator_iff hs.nullMeasurableSet,
+    inter_eq_left.mpr hs0]
+
+/-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` is the Mellin integral
+of `f` over `s`. -/
+theorem mellin_indicator_of_subset_Ioi (f : ℝ → E) {s : Set ℝ} (hs : MeasurableSet s)
+    (hs0 : s ⊆ Ioi 0) (z : ℂ) :
+    mellin (s.indicator f) z = ∫ t : ℝ in s, (t : ℂ) ^ (z - 1) • f t := by
+  simp_rw [mellin, ← indicator_smul, setIntegral_indicator hs, inter_eq_right.mpr hs0]
+
+/-- Restricting `t ↦ f t⁻¹` to `(1, ∞)` and substituting `t⁻¹` restricts `f` to `(0, 1)`. -/
+private theorem indicator_Ioi_one_comp_inv {F : Type*} [Zero F] (f : ℝ → F) :
+    (fun t : ℝ ↦ (Ioi 1).indicator (fun u ↦ f u⁻¹) t⁻¹) = (Ioo 0 1).indicator f := by
+  ext t
+  rcases lt_or_ge 0 t with ht | ht
+  · simp only [indicator_apply, mem_Ioi, mem_Ioo, inv_inv, one_lt_inv₀ ht, ht, true_and]
+  · rw [indicator_of_notMem fun h ↦ (inv_nonpos.mpr ht).not_gt (zero_lt_one.trans h),
+      indicator_of_notMem fun (h : t ∈ Ioo 0 1) ↦ ht.not_gt h.1]
+
+/-- The substitution `t ↦ t⁻¹` exchanges the Mellin integrals over `(0, 1]` and `(1, ∞)`:
+`∫₀¹ t^{z-1} f(t) dt = ∫₁^∞ t^{-z-1} f(t⁻¹) dt`. -/
+theorem integral_Ioc_cpow_smul_eq_integral_Ioi_comp_inv (f : ℝ → E) (z : ℂ) :
+    ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t = ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (-z - 1) • f t⁻¹ := by
+  rw [integral_Ioc_eq_integral_Ioo, ← mellin_indicator_of_subset_Ioi f measurableSet_Ioo
+    Ioo_subset_Ioi_self, ← indicator_Ioi_one_comp_inv, mellin_comp_inv,
+    mellin_indicator_of_subset_Ioi _ measurableSet_Ioi (Ioi_subset_Ioi zero_le_one)]
+
+/-- The substitution `t ↦ t⁻¹` exchanges absolute convergence of the Mellin integrals over
+`(0, 1]` and `(1, ∞)`. -/
+theorem integrableOn_Ioc_cpow_smul_iff_integrableOn_Ioi_comp_inv (f : ℝ → E) (z : ℂ) :
+    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • f t) (Ioc 0 1) ↔
+      IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z - 1) • f t⁻¹) (Ioi 1) := by
+  rw [integrableOn_Ioc_iff_integrableOn_Ioo, ← mellinConvergent_indicator_iff_of_subset_Ioi
+    measurableSet_Ioo Ioo_subset_Ioi_self, ← indicator_Ioi_one_comp_inv,
+    ← mellinConvergent_indicator_iff_of_subset_Ioi measurableSet_Ioi (Ioi_subset_Ioi zero_le_one)]
+  have hz : z / ((-1 : ℝ) : ℂ) = -z := by push_cast; ring
+  simpa only [Real.rpow_neg_one, hz] using
+    MellinConvergent.comp_rpow (f := (Ioi 1).indicator fun u ↦ f u⁻¹) (s := z) (a := -1)
+      (by norm_num)
 
 /-- For a real function `f`, the Mellin transform of `f` at `0` is the real integral
 `∫_{(0,∞)} f(x) dx/x`. -/
