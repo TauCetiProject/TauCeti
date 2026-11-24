@@ -26,7 +26,7 @@ For `G` finite, every `x ∈ R[G]^G` has subgroups `P` minimal with `x ∈ Tr_P^
 (`TauCeti.exists_minimal_mem_relTraceIdeal`), since `Tr_G^G(R[G]^G) = R[G]^G`. In characteristic
 `p` each of them is a `p`-group (`TauCeti.isPGroup_of_minimal_mem_relTraceIdeal`), because
 a Sylow `p`-subgroup `S` of `P` has `|P : S|` prime to `p`, so
-`Tr_S^G(R[G]^S) = Tr_P^G(R[G]^P)` (`TauCeti.relTraceIdeal_eq_of_isUnit_index`). For a block
+`Tr_S^G(R[G]^S) = Tr_P^G(R[G]^P)` (`TauCeti.relTraceIdeal_eq_of_subgroupOf_eq_sylow`). For a block
 idempotent, these minimal subgroups are its defect groups (Webb, Theorem 12.5.2, pp. 244–245),
 which needs Rosenberg's lemma and the Mackey formula.
 
@@ -154,10 +154,8 @@ theorem isPGroup_of_minimal_mem_relTraceIdeal {x : conjInvariants R (⊤ : Subgr
     rw [← Subgroup.comap_subtype]
     exact Subgroup.comap_map_eq_self_of_injective P.subtype_injective _
   have hmem : x ∈ relTraceIdeal R (le_top : S' ≤ ⊤) := by
-    rw [relTraceIdeal_eq_of_isUnit_index hSP le_top (isUnit_natCast_of_not_dvd Fact.out ?_)]
-    · exact hP.prop
-    · rw [hS]
-      exact S.not_dvd_index
+    rw [relTraceIdeal_eq_of_subgroupOf_eq_sylow hSP le_top S hS]
+    exact hP.prop
   rw [← hP.eq_of_le hmem hSP]
   exact S.isPGroup.map P.subtype
 
