@@ -45,7 +45,8 @@ modules are the nondegenerate parts of the limits of modules.
 * for idempotented `H`, the instances `Abelian`, `HasColimits` and `HasLimits` on
   `TauCeti.NondegMod A H`, and `Coreflective` on its inclusion into modules.
 * `TauCeti.nondegeneratePartAdjunction_counit_app`: the counit of the coreflection is the
-  inclusion `H • M → M`.
+  inclusion `H • M → M`; `TauCeti.coe_nondegeneratePartAdjunction_unit_app` and
+  `TauCeti.coe_nondegeneratePartAdjunction_homEquiv_apply` compute its unit and hom-equivalence.
 
 ## References
 
@@ -96,12 +97,13 @@ theorem isNondegenerate_of_isColimit {J : Type*} [Category J]
   refine isNondegenerate_iff_nondegeneratePart_eq_top.2 (eq_top_iff.2 fun m _ ↦ ?_)
   simpa [Submodule.Quotient.mk_eq_zero] using congrArg (fun f ↦ f.hom m) hq
 
-/-- Over an idempotented algebra, the point of a limit cone over a finite diagram of
-nondegenerate modules is nondegenerate. -/
-theorem isNondegenerate_of_isLimit [IsIdempotented H] {J : Type} [SmallCategory J] [FinCategory J]
+/-- Over an idempotented algebra, the point of a limit cone over a diagram of nondegenerate
+modules indexed by a category with finitely many objects is nondegenerate. -/
+theorem isNondegenerate_of_isLimit [IsIdempotented H] {J : Type} [SmallCategory J] [Finite J]
     {F : J ⥤ ModuleCat.{v} (Unitization A H)} {c : Cone F} (hc : IsLimit c)
     (hF : ∀ j, IsNondegenerate A H (F.obj j)) : IsNondegenerate A H c.pt := by
   classical
+  have := Fintype.ofFinite J
   rw [isNondegenerate_iff]
   intro x
   choose e _ he using fun j ↦ isNondegenerate_iff.1 (hF j) (c.π.app j x)
@@ -149,7 +151,7 @@ variable (A H) [IsIdempotented H]
 
 /-- The nondegenerate part `H • M`, as a functor from modules over the unitization `A ⊕ H` to
 nondegenerate modules. -/
-@[expose, simps obj_obj map]
+@[simps obj_obj map]
 def nondegeneratePartFunctor : ModuleCat.{v} (Unitization A H) ⥤ NondegMod.{v} A H where
   obj M := ⟨ModuleCat.of _ (nondegeneratePart A H M),
     (nondegenerateModuleProperty_iff _).2 isNondegenerate_nondegeneratePart⟩
@@ -158,7 +160,6 @@ def nondegeneratePartFunctor : ModuleCat.{v} (Unitization A H) ⥤ NondegMod.{v}
 
 /-- The inclusion of nondegenerate modules is left adjoint to the nondegenerate part: a
 homomorphism from a nondegenerate module lands in the nondegenerate part of its target. -/
-@[expose]
 def nondegeneratePartAdjunction :
     (nondegenerateModuleProperty.{v} A H).ι ⊣ nondegeneratePartFunctor.{v} A H :=
   Adjunction.mkOfHomEquiv
@@ -170,6 +171,30 @@ def nondegeneratePartAdjunction :
           invFun g := ModuleCat.ofHom ((nondegeneratePart A H M).subtype ∘ₗ g.hom.hom)
           left_inv _ := rfl
           right_inv _ := rfl } }
+
+/-- The hom-equivalence of `TauCeti.nondegeneratePartAdjunction` corestricts a homomorphism
+`X → M` out of a nondegenerate module to the nondegenerate part `H • M`. -/
+@[simp]
+theorem coe_nondegeneratePartAdjunction_homEquiv_apply (X : NondegMod.{v} A H)
+    (M : ModuleCat.{v} (Unitization A H)) (f : X.obj ⟶ M) (x : X.obj) :
+    (((nondegeneratePartAdjunction.{v} A H).homEquiv X M f).hom.hom x : M) = f.hom x :=
+  rfl
+
+/-- The inverse hom-equivalence of `TauCeti.nondegeneratePartAdjunction` composes a homomorphism
+into `H • M` with the inclusion `H • M → M`. -/
+@[simp]
+theorem nondegeneratePartAdjunction_homEquiv_symm_apply (X : NondegMod.{v} A H)
+    (M : ModuleCat.{v} (Unitization A H)) (g : X ⟶ (nondegeneratePartFunctor.{v} A H).obj M) :
+    ((nondegeneratePartAdjunction.{v} A H).homEquiv X M).symm g =
+      ModuleCat.ofHom ((nondegeneratePart A H M).subtype ∘ₗ g.hom.hom) :=
+  rfl
+
+/-- The unit of `TauCeti.nondegeneratePartAdjunction` at a nondegenerate module `X` sends `x` to
+itself, viewed in `H • X = X`. -/
+@[simp]
+theorem coe_nondegeneratePartAdjunction_unit_app (X : NondegMod.{v} A H) (x : X.obj) :
+    (((nondegeneratePartAdjunction.{v} A H).unit.app X).hom.hom x : X.obj) = x :=
+  rfl
 
 /-- The counit of `TauCeti.nondegeneratePartAdjunction` is the inclusion `H • M → M`. -/
 @[simp]

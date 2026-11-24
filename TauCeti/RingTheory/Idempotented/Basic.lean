@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Unitization
 public import Mathlib.Data.Finsupp.Pointwise
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Span
+public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Idempotented algebras and their nondegenerate modules
@@ -108,9 +109,10 @@ theorem directed_corner :
 
 end IsIdempotented
 
-/-- Finitely supported functions `ι →₀ R`, for `R` with `0` and `1`, under pointwise
-multiplication, form an idempotented ring: the indicator function of a finite set containing
-the supports is a local unit. This ring has no unit when `ι` is infinite and `R` is nontrivial. -/
+/-- Finitely supported functions `ι →₀ R`, for `R` with `0` and `1`, are idempotented under
+pointwise multiplication: the indicator function of a finite set containing the supports is a
+local unit. When `R` is a ring, `ι →₀ R` is a nonunital ring, which has no unit when `ι` is
+infinite and `R` is nontrivial. -/
 instance (ι R : Type*) [MulZeroOneClass R] : IsIdempotented (ι →₀ R) := by
   classical
   refine ⟨fun s ↦ ⟨Finsupp.indicator (s.biUnion Finsupp.support) fun _ _ ↦ 1, ?_, ?_⟩⟩
@@ -201,12 +203,6 @@ theorem inl_smul_eq_inr_smul {e : H} {m : M} (hm : (e : Unitization A H) • m =
   conv_lhs => rw [← hm]
   rw [smul_smul, Unitization.inl_mul_inr]
 
-omit [IsScalarTower A H H] [SMulCommClass A H H] in
-/-- `H` is a left ideal of its unitization. -/
-private theorem mul_inr_eq (r : Unitization A H) (h : H) :
-    r * (h : Unitization A H) = ((r.fst • h + r.snd * h : H) : Unitization A H) :=
-  Unitization.ext (by simp) (by simp)
-
 /-- An additive map out of a nondegenerate module which commutes with the action of `H` is
 linear over the unitization `A ⊕ H`: the action of `A` is determined by that of `H`. -/
 theorem IsNondegenerate.map_smul_of_map_inr_smul (hM : IsNondegenerate A H M) {N : Type*}
@@ -217,7 +213,7 @@ theorem IsNondegenerate.map_smul_of_map_inr_smul (hM : IsNondegenerate A H M) {N
   induction hm using Submodule.span_induction generalizing r with
   | mem x hx =>
     obtain ⟨⟨h, x⟩, rfl⟩ := hx
-    rw [smul_smul, mul_inr_eq, hf, hf, ← mul_inr_eq, smul_smul]
+    rw [smul_smul, Unitization.mul_inr, hf, hf, ← Unitization.mul_inr, smul_smul]
   | zero => simp
   | add x y _ _ hx hy => rw [smul_add, map_add, hx, hy, map_add, smul_add]
   | smul s x _ hx => rw [smul_smul, hx, hx, smul_smul]
@@ -247,7 +243,7 @@ theorem mem_nondegeneratePart_iff {m : M} :
   | smul r x _ hx =>
     obtain ⟨e, -, he⟩ := hx
     have hrx : r • x = ((r.fst • e + r.snd * e : H) : Unitization A H) • x := by
-      rw [← mul_inr_eq, ← smul_smul, he]
+      rw [← Unitization.mul_inr, ← smul_smul, he]
     obtain ⟨f, hf, hfk⟩ := IsIdempotented.exists_isIdempotentElem {r.fst • e + r.snd * e}
     exact ⟨f, hf, by rw [hrx, smul_smul, ← Unitization.inr_mul, (hfk _ (by simp)).1]⟩
 
@@ -315,14 +311,8 @@ theorem isNondegenerate_iff_le_nondegeneratePart (N : Submodule (Unitization A H
 nondegenerate module. -/
 theorem isNondegenerate_span_singleton (e : H) :
     IsNondegenerate A H (Ideal.span {(e : Unitization A H)}) := by
-  rw [isNondegenerate_iff]
-  rintro ⟨x, hx⟩
-  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.1 hx
-  obtain ⟨f, hf, hfk⟩ := IsIdempotented.exists_isIdempotentElem {r.fst • e + r.snd * e}
-  have hk := (hfk (r.fst • e + r.snd * e) (Finset.mem_singleton_self _)).1
-  refine ⟨f, hf, Subtype.ext ?_⟩
-  simp only [Submodule.coe_smul, smul_eq_mul]
-  rw [← hr, mul_inr_eq r e, ← Unitization.inr_mul, hk]
+  rw [isNondegenerate_iff_le_nondegeneratePart, Ideal.span_singleton_le_iff_mem]
+  simpa using inr_smul_mem_nondegeneratePart (A := A) e (1 : Unitization A H)
 
 end Module
 

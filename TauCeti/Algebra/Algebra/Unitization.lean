@@ -10,12 +10,14 @@ public import Mathlib.Algebra.Algebra.Unitization
 /-!
 # Functoriality of the forced unitization
 
-A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
+A nonunital algebra `A` is a left ideal of its forced unitization: `(r, a) * a'` is
+`r • a' + a * a'` in `A`. A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
 counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 
 ## Main declarations
 
+* `Unitization.mul_inr`: `A` is a left ideal of `Unitization R A`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
@@ -25,6 +27,12 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 public section
 
 namespace Unitization
+
+/-- A nonunital algebra `A` is a left ideal of its unitization: `x * a` lies in `A`, with value
+`x.fst • a + x.snd * a`. -/
+theorem mul_inr {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+    (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
+  Unitization.ext (by simp) (by simp)
 
 variable {R A B C : Type*} [CommSemiring R]
   [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
