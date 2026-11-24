@@ -261,7 +261,7 @@ theorem exists_norm_exp_mul_smul_sub_starProjection_le_mul_norm {s : ℝ} (hs : 
     exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm hs hx hbound hsol hlim hc
   refine ⟨1 + 4 * K, by positivity, fun f v hv ↦ ?_⟩
   have hf : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume :=
-    memLp_of_mem_sobolevFields ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
+    memLp_of_forall_inclusionLp_ae_eq hs hv
   obtain ⟨w, hw, hwK⟩ := hKproj f hf
   refine ⟨v - w, fun a ↦ ?_, ?_⟩
   · have hsub : ⇑(inclusionLp hs (v a - w a)) =ᵐ[volume]
