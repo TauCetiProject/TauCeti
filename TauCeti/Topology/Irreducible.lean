@@ -22,6 +22,9 @@ whose stalks are integral domains, this map sends a point to the component conta
 
 An irreducible component has nonempty interior when there are only finitely many components, and
 more generally when it meets an open subset with finitely many components.
+
+Under a map with discrete fibres, a preirreducible set is a single point at most exactly when its
+image is (`IsPreirreducible.subsingleton_image_iff`).
 -/
 
 public section
@@ -104,3 +107,15 @@ theorem irreducibleComponentOf_eq_iff_of_existsUnique {x : α}
   ⟨fun hc ↦ hc ▸ mem_irreducibleComponentOf x, h.unique (mem_irreducibleComponentOf x)⟩
 
 end TauCeti
+
+omit [TopologicalSpace Y] in
+/-- A preirreducible set is a single point at most exactly when its image is, under a map whose
+fibres are discrete: the set lies in one fibre once its image is a point, and a preirreducible
+subset of a discrete set has at most one point. No topology on the target is needed. -/
+theorem IsPreirreducible.subsingleton_image_iff {f : X → Y} {s : Set X} (hs : IsPreirreducible s)
+    (hf : ∀ y, IsDiscrete (f ⁻¹' {y})) : (f '' s).Subsingleton ↔ s.Subsingleton := by
+  refine ⟨fun h ↦ ?_, (·.image f)⟩
+  obtain rfl | ⟨a, ha⟩ := s.eq_empty_or_nonempty
+  · exact subsingleton_empty
+  exact ((hf (f a)).mono fun b hb ↦
+    h (mem_image_of_mem f hb) (mem_image_of_mem f ha)).subsingleton_of_isPreirreducible hs
