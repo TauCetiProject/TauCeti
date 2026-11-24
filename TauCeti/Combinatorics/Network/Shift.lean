@@ -214,7 +214,8 @@ theorem shiftEquiv_zero (lo hi : Assignment Q K) (a b : V → K) :
   apply Equiv.ext
   intro f
   apply Subtype.ext
-  exact shiftEquiv_apply_val lo hi 0 a b f |>.trans (sub_zero f.val)
+  simp only [Equiv.trans_apply, congr_apply_val, shiftEquiv_apply_val, Equiv.refl_apply,
+    sub_zero]
 
 /-- Successive interval-excess shifts compose by adding their reference assignments. -/
 theorem shiftEquiv_add (lo hi h k : Assignment Q K) (a b : V → K) :
@@ -287,7 +288,8 @@ theorem shiftEquiv_zero (lo hi : Assignment Q K) (b : V → K) :
   apply Equiv.ext
   intro f
   apply Subtype.ext
-  exact shiftEquiv_apply_val lo hi 0 b f |>.trans (sub_zero f.val)
+  simp only [Equiv.trans_apply, congr_apply_val, shiftEquiv_apply_val, Equiv.refl_apply,
+    sub_zero]
 
 /-- Successive prescribed-excess shifts compose by adding their reference assignments. -/
 theorem shiftEquiv_add (lo hi h k : Assignment Q K) (b : V → K) :

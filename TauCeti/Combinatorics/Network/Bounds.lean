@@ -143,13 +143,11 @@ theorem shift_zero (N : Network K V) : N.shift 0 = N := by
 theorem shift_lower_eq_ofCapacity (N : Network K V) :
     N.shift N.lower =
       ofCapacity N.Hom (N.upper - N.lower) fun e ↦ sub_nonneg.mpr (N.lower_le_upper e) := by
-  apply (N.replaceBounds_inj
-    (h₁ := fun e ↦ sub_le_sub_right (N.lower_le_upper e) (N.lower e))
-    (h₂ := fun e ↦ sub_nonneg.mpr (N.lower_le_upper e))).2
+  simp only [shift, replaceBounds, ofCapacity, mk.injEq, heq_eq_eq, true_and]
   constructor
   · funext x y e
     exact sub_self _
-  · rfl
+  · trivial
 
 end Shift
 
@@ -161,23 +159,8 @@ variable [AddCommGroup K] [AddRightMono K]
 @[simp]
 theorem shift_shift (N : Network K V) (h k : N.Assignment K) :
     (N.shift h).shift k = N.shift (h + k) := by
-  calc
-    _ = N.replaceBounds ((N.lower - h) - k) ((N.upper - h) - k)
-        (fun e ↦ sub_le_sub_right
-          (sub_le_sub_right (N.lower_le_upper e) (h e)) (k e)) :=
-      N.replaceBounds_replaceBounds (N.lower - h) (N.upper - h)
-        (fun e ↦ sub_le_sub_right (N.lower_le_upper e) (h e))
-        ((N.lower - h) - k) ((N.upper - h) - k)
-        (fun e ↦ sub_le_sub_right
-          (sub_le_sub_right (N.lower_le_upper e) (h e)) (k e))
-    _ = _ := (N.replaceBounds_inj
-      (h₁ := fun e ↦ sub_le_sub_right
-        (sub_le_sub_right (N.lower_le_upper e) (h e)) (k e))
-      (h₂ := fun e ↦ sub_le_sub_right (N.lower_le_upper e) ((h + k) e))).2 ⟨by
-        funext x y e
-        exact sub_sub _ _ _, by
-        funext x y e
-        exact sub_sub _ _ _⟩
+  simp only [shift, replaceBounds, mk.injEq, heq_eq_eq, true_and]
+  constructor <;> funext x y e <;> exact sub_sub _ _ _
 
 end ShiftCommGroup
 
