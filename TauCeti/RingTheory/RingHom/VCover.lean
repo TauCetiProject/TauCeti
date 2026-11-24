@@ -277,7 +277,8 @@ theorem of_isIntegral_of_comap_surjective {f : A →+* B} (hf : f.IsIntegral)
     rw [PrimeSpectrum.range_comap_algebraMap_tensorProduct]
     exact hs _
   obtain ⟨P, hP⟩ := hgen
-  have hP' : P.asIdeal.comap (algebraMap V (V ⊗[A] B)) = ⊥ := congr(($hP).asIdeal)
+  have hP' : P.asIdeal.comap (algebraMap V (V ⊗[A] B)) = ⊥ := by
+    simpa only [PrimeSpectrum.comap_asIdeal] using congrArg PrimeSpectrum.asIdeal hP
   obtain ⟨Q, hPQ, _, hQ⟩ := Ideal.exists_ideal_over_prime_of_isIntegral_of_isPrime
     (maximalIdeal V) P.asIdeal (by rw [Ideal.under, hP']; exact bot_le)
   exact ⟨P.asIdeal, Q, inferInstance, ‹_›, hPQ, hP', hQ⟩
