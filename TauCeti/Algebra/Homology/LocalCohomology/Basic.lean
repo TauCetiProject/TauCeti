@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.LocalCohomology
+import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
+import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.Algebra.Homology.Ext.LeftDerived
 
 /-!
@@ -15,8 +17,8 @@ Mathlib defines the local cohomology module `H^i_I(M) = (localCohomology I i).ob
 `M` over a commutative ring `R` as the colimit over `n` of the groups `Extⁱ(R ⧸ Iⁿ, M)`, computed
 by the left derived functor `Ext R (ModuleCat R) i`. So `H^i_I(M)` vanishes as soon as each of
 these groups does. In particular the local cohomology of the zero module vanishes in every degree
-over any commutative ring, Noetherian or not: every `Extⁱ(R ⧸ Iⁿ, 0)` is computed by a complex of
-zero modules.
+over any commutative ring, Noetherian or not: every `Extⁱ(R ⧸ Iⁿ, 0)` is an `Ext` group into a
+zero object.
 
 ## Main results
 
@@ -51,11 +53,9 @@ degree `i`, the local cohomology module `H^i_I(M)` of a zero module `M` is zero.
 theorem isZero_obj_of_subsingleton (I : Ideal R) (i : ℕ) (M : ModuleCat.{u} R) [Subsingleton M] :
     IsZero ((localCohomology I i).obj M) := by
   have hM : IsZero M := ModuleCat.isZero_iff_subsingleton.2 ‹_›
-  refine isZero_obj_of_forall_isZero_ext I M fun n ↦ ?_
-  -- Compute `Extⁱ(R ⧸ Iⁿ, M)` by a projective resolution `P`: the `i`-th term of the complex
-  -- `Hom(P, M)` is a module of morphisms into the zero module, hence zero.
-  rw [(projectiveResolution _).isZero_Ext_iff_exactAt R, HomologicalComplex.exactAt_iff]
-  refine ShortComplex.exact_of_isZero_X₂ _ (ModuleCat.isZero_iff_subsingleton.2 ?_)
-  exact ⟨fun f g ↦ hM.eq_of_tgt f g⟩
+  -- Every `Extⁱ(R ⧸ Iⁿ, M)` is an `Ext` group into a zero object, hence zero.
+  exact isZero_obj_of_forall_isZero_ext I M fun n ↦
+    (Abelian.Ext.subsingleton_iff_isZero_Ext R _ M i).1
+      (TauCeti.subsingleton_ext_of_isZero_right _ hM i)
 
 end localCohomology
