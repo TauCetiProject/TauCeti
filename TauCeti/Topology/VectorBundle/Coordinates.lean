@@ -44,8 +44,10 @@ semilinear fibre maps.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
-trivializations with their core coordinate-change maps, and
-`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity.
+trivializations with their core coordinate-change maps,
+`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity, and
+`VectorBundleCore.isInvertible_coordChange` and `VectorBundleCore.coordChange_bijective` record
+invertibility and bijectivity of core transition operators on chart overlaps.
 For a core with model fibre the scalar field, `VectorBundleCore.det_coordChangeL_localTriv`
 computes the determinant of such a transition as the scalar transition function.
 The fibre instances `VectorBundleCore.isTopologicalAddGroupFiber` and
@@ -90,6 +92,17 @@ variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
 theorem coordChange_self_eq_id (Z : VectorBundleCore 𝕜 B F κ) {i : κ} {x : B}
     (hx : x ∈ Z.baseSet i) : Z.coordChange i i x = ContinuousLinearMap.id 𝕜 F :=
   ContinuousLinearMap.ext (Z.coordChange_self i x hx)
+
+/-- Every transition operator of a `VectorBundleCore` on the overlap of two charts is invertible
+as a continuous linear map. -/
+theorem isInvertible_coordChange (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) : (Z.coordChange i j x).IsInvertible :=
+  Z.localTriv_coordChangeL ⟨hi, hj⟩ ▸ ContinuousLinearMap.isInvertible_equiv
+
+/-- Every transition operator of a `VectorBundleCore` on the overlap of two charts is bijective. -/
+theorem coordChange_bijective (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) : Function.Bijective (Z.coordChange i j x) :=
+  Z.localTriv_coordChangeL ⟨hi, hj⟩ ▸ ((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x).bijective
 
 /-- The coordinate change between the local trivializations `i` and `j` of a core with model
 fibre `𝕜`, as a linear equivalence of the model fibre, has determinant the scalar transition

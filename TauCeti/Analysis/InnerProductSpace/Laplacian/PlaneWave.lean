@@ -104,7 +104,7 @@ theorem laplacian_comp_inner (g : ℝ → G) (w y : F) :
     fun a ↦ by simp [Ψ, hw]
   have hD2 := Ψ.fderiv_comp_left_of_leftInverse _ hΨ (fun z ↦ deriv g ⟪w, z⟫_ℝ) y
   rw [Function.comp_def] at hD2
-  rw [laplacian_eq_traceL, traceL_apply, hD, hD2, fderiv_comp_inner]
+  rw [laplacian_eq_traceL, ContinuousLinearMap.traceL_apply, hD, hD2, fderiv_comp_inner]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
     innerSL_apply_apply, Ψ, ContinuousLinearMap.smulRightL_apply_apply,
     smul_smul, ← Finset.sum_smul]

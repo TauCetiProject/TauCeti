@@ -47,6 +47,11 @@ and `Im s ≠ 0`.
   `-Re (ζ′/ζ(σ + ρ.im * I)) + (σ - ρ.re)⁻¹` for all `1 ≤ σ` and every zero `ρ` with `1 ≤ |ρ.im|`.
 * `TauCeti.exists_neg_re_logDeriv_riemannZeta_le_inv_add_mul_log_of_im_ne_zero`:
   `-Re (ζ′/ζ(s)) ≤ (2 |Im s|)⁻¹ + B log (|Im s| + 3)` uniformly for `1 ≤ Re s` and `Im s ≠ 0`.
+* `TauCeti.neg_re_logDeriv_riemannZeta_le`: for every `t₀ > 1`, the two inputs
+  `-Re (ζ′/ζ)(1 + δ + 2 i t) ≤ C log |t|` and
+  `-Re (ζ′/ζ)(1 + δ + i t) ≤ -1 / (1 + δ - β) + C log |t|` (at a zero `β + i t`) of the 3-4-1
+  argument at height `|t| ≥ t₀` (Davenport §13), for every `δ ≥ 0`. Its statement follows
+  chrisflav's PR https://github.com/TauCetiProject/TauCeti/pull/45143.
 
 ## References
 
@@ -185,6 +190,47 @@ theorem exists_neg_re_logDeriv_riemannZeta_le_inv_add_mul_log_of_im_ne_zero :
       simpa [LFunction_modOne_eq] using
         (1 : DirichletCharacter ℂ 1).norm_logDeriv_LFunction_le_of_le_re
           (σ := 9 / 8) (by norm_num) hs9.le
+    linarith
+
+/-- **3-4-1 inputs for `-Re (ζ′/ζ)` at height `t`.** For every `t₀ > 1` there is `C`
+such that, for `δ ≥ 0` and `|t| ≥ t₀`, `-Re (ζ′/ζ)(1 + δ + 2it) ≤ C log |t|`, and
+`-Re (ζ′/ζ)(1 + δ + it) ≤ -1 / (1 + δ - β) + C log |t|` whenever `β + it` is a zero of `ζ`: the
+two inputs of the 3-4-1 argument at height `t` (Davenport §13). The threshold keeps `log |t|`
+positive. -/
+theorem neg_re_logDeriv_riemannZeta_le (t₀ : ℝ) (ht₀ : 1 < t₀) :
+    ∃ C : ℝ, ∀ δ : ℝ, 0 ≤ δ → ∀ t : ℝ, t₀ ≤ |t| →
+      -(logDeriv riemannZeta (1 + δ + 2 * t * I)).re ≤ C * Real.log |t| ∧
+        ∀ β : ℝ, riemannZeta (β + t * I) = 0 →
+          -(logDeriv riemannZeta (1 + δ + t * I)).re ≤ -1 / (1 + δ - β) + C * Real.log |t| := by
+  obtain ⟨A₁, hA₁, hfree⟩ := exists_neg_re_logDeriv_riemannZeta_le
+  obtain ⟨A₂, hA₂, hret⟩ := exists_neg_re_logDeriv_riemannZeta_add_sub_inv_le
+  set M : ℝ := 1 + Real.log 5 / Real.log t₀
+  refine ⟨max A₁ A₂ * M, fun δ hδ t ht ↦ ?_⟩
+  have ht1 : 1 ≤ |t| := ht₀.le.trans ht
+  -- Both heights `t` and `2t` give `log (|Im s| + 3) ≤ log (5 |t|) ≤ M log |t|`.
+  have hL : Real.log (2 * |t| + 3) ≤ M * Real.log |t| := by
+    have h5 := TauCeti.le_div_mul_of_le (Real.log_nonneg (by norm_num : (1 : ℝ) ≤ 5))
+      (Real.log_pos ht₀) (Real.log_le_log (by linarith) ht)
+    calc Real.log (2 * |t| + 3) ≤ Real.log (5 * |t|) :=
+          Real.log_le_log (by positivity) (by linarith)
+      _ = Real.log 5 + Real.log |t| := Real.log_mul (by norm_num) (by positivity)
+      _ ≤ M * Real.log |t| := by simp only [M]; linarith
+  have hL1 : Real.log (|t| + 3) ≤ M * Real.log |t| :=
+    (Real.log_le_log (by positivity) (by linarith)).trans hL
+  have hML : 0 ≤ M * Real.log |t| := (Real.log_nonneg (by linarith)).trans hL1
+  have hA {A : ℝ} {L : ℝ} (hA0 : 0 < A) (hLe : L ≤ M * Real.log |t|) (hAle : A ≤ max A₁ A₂) :
+      A * L ≤ max A₁ A₂ * M * Real.log |t| := by
+    rw [mul_assoc]
+    exact (mul_le_mul_of_nonneg_left hLe hA0.le).trans (mul_le_mul_of_nonneg_right hAle hML)
+  refine ⟨?_, fun β hβ ↦ ?_⟩
+  · have h := hfree (s := 1 + δ + 2 * t * I) (by simp; linarith) (by simp [abs_mul]; linarith)
+    rw [show ((1 : ℂ) + δ + 2 * t * I).im = 2 * t by simp, abs_mul, abs_two] at h
+    exact h.trans (hA hA₁ hL (le_max_left _ _))
+  · have h := hret (σ := 1 + δ) (ρ := β + t * I) (by linarith) (by simpa using ht1) hβ
+    simp only [add_re, ofReal_re, mul_re, I_re, I_im, ofReal_im, mul_zero, mul_one, sub_zero,
+      add_im, mul_im, zero_add, add_zero, ofReal_add, ofReal_one] at h
+    have := hA hA₂ hL1 (le_max_right _ _)
+    rw [neg_div, one_div]
     linarith
 
 end TauCeti
