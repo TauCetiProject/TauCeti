@@ -40,8 +40,6 @@ cover).
 * `SimpleGraph.isMinimumVertexCover_iff_ncard_le`: a finite vertex cover is minimum if and only
   if its `Set.ncard` is at most that of every finite vertex cover (and at most that of every vertex
   cover on a finite vertex type via `SimpleGraph.isMinimumVertexCover_iff_ncard_le_of_finite`).
-* `SimpleGraph.exists_finite_induce_vertexCoverNum_eq`: every simple graph with finite vertex
-  cover number has a finite induced subgraph with the same vertex cover number.
 
 ## References
 
@@ -79,13 +77,14 @@ theorem IsMinimumVertexCover.encard_le (hc : G.IsMinimumVertexCover c) (hc' : G.
 /-- A finite minimum vertex cover is a minimal vertex cover. -/
 theorem IsMinimumVertexCover.minimal (hc : G.IsMinimumVertexCover c) (hfin : c.Finite) :
     Minimal G.IsVertexCover c :=
-  ⟨hc.1, fun _ hc' hsub ↦ ((hfin.subset hsub).eq_of_subset_of_encard_le hsub (hc.encard_le hc')).ge⟩
+  ⟨hc.1, fun _ hc' hsub ↦ (hfin.eq_of_subset_of_encard_le' hsub (hc.encard_le hc')).ge⟩
 
 /-- A vertex cover is minimum if and only if its `Set.encard` equals the vertex cover number. -/
 theorem isMinimumVertexCover_iff_encard_eq :
     G.IsMinimumVertexCover c ↔ G.IsVertexCover c ∧ c.encard = G.vertexCoverNum := by
   refine ⟨fun ⟨hc, hmin⟩ ↦ ⟨hc, ?_⟩, fun ⟨hc, h⟩ ↦
     isMinimumVertexCover_def.2 ⟨hc, fun _ hc' ↦ h.trans_le hc'.vertexCoverNum_le⟩⟩
+  unfold vertexCoverNum
   exact (IsMinOn.iInf_eq hc hmin).symm.trans iInf_subtype
 
 /-- Every minimum vertex cover has `Set.encard` equal to the vertex cover number. -/
@@ -192,82 +191,5 @@ theorem IsMinimumVertexCover.isLeast_ncard_of_finite [Finite V] (hc : G.IsMinimu
     IsLeast {n : ℕ | ∃ s : Set V, G.IsVertexCover s ∧ s.ncard = n} c.ncard :=
   let ⟨_, hmin⟩ := hc.isLeast_ncard c.toFinite
   ⟨⟨c, hc.1, rfl⟩, fun _ ⟨s, hs, hsn⟩ ↦ hmin ⟨s, hs, s.toFinite, hsn⟩⟩
-
-private theorem exists_finite_subset_eq_or_ncard_eq {α : Type*} (A : Set α) (n : ℕ) :
-    ∃ t ⊆ A, t.Finite ∧ (A.Finite → t = A) ∧ (A.Infinite → t.ncard = n) := by
-  by_cases hA : A.Finite
-  · exact ⟨A, Set.Subset.rfl, hA, fun _ ↦ rfl, fun hinf ↦ (hinf hA).elim⟩
-  · obtain ⟨t, ht_sub, ht_fin, ht_card⟩ := Set.Infinite.exists_subset_ncard_eq hA n
-    exact ⟨t, ht_sub, ht_fin, fun hf ↦ (hA hf).elim, fun _ ↦ ht_card⟩
-
-private theorem isVertexCover_image_of_induce {C₀ : Set V} (hC₀ : G.IsVertexCover C₀)
-    {T : V → Set V} (hT_sub : ∀ v, T v ⊆ G.neighborSet v)
-    (hT_all : ∀ v, (G.neighborSet v).Finite → T v = G.neighborSet v)
-    {n : ℕ} (hT_card : ∀ v, (G.neighborSet v).Infinite → (T v).ncard = n)
-    {D₀ : Set (C₀ ∪ ⋃ v ∈ C₀, T v : Set V)}
-    (hD₀ : (G.induce (C₀ ∪ ⋃ v ∈ C₀, T v)).IsVertexCover D₀)
-    (hDfin : (Subtype.val '' D₀).Finite) (hD_ncard : (Subtype.val '' D₀).ncard < n) :
-    G.IsVertexCover (Subtype.val '' D₀) := by
-  let s : Set V := C₀ ∪ ⋃ v ∈ C₀, T v
-  let D : Set V := Subtype.val '' D₀
-  -- Any neighbour `x ∈ s` of an uncovered vertex `u ∈ s \ D` must belong to `D`.
-  have mem_D_of_adj {u x : V} (hu_s : u ∈ s) (huD : u ∉ D) (hx_s : x ∈ s) (hux : G.Adj u x) :
-      x ∈ D := by
-    rcases hD₀ ((SimpleGraph.induce_adj (u := ⟨u, hu_s⟩) (v := ⟨x, hx_s⟩)).mpr hux) with h | h
-    · exact False.elim (huD ⟨⟨u, hu_s⟩, h, rfl⟩)
-    · exact ⟨⟨x, hx_s⟩, h, rfl⟩
-  -- Cover any edge `{u, w}` whose endpoint `u` lies in `C₀`: if `u ∉ D`, either `N(u) = T u ⊆ s`
-  -- forces `w ∈ D`, or `T u ⊆ D` has `n` vertices, contradicting `D.ncard < n`.
-  have step : ∀ {u w : V}, G.Adj u w → u ∈ C₀ → u ∈ D ∨ w ∈ D := by
-    intro u w huw huC₀
-    by_cases huD : u ∈ D
-    · exact Or.inl huD
-    · right
-      by_cases hfin_u : (G.neighborSet u).Finite
-      · exact mem_D_of_adj (Set.subset_union_left huC₀) huD
-          (Set.subset_union_right (Set.mem_biUnion huC₀ (hT_all u hfin_u ▸ huw))) huw
-      · have hsubD : T u ⊆ D := fun z hz ↦
-          mem_D_of_adj (Set.subset_union_left huC₀) huD
-            (Set.subset_union_right (Set.mem_biUnion huC₀ hz)) (hT_sub u hz)
-        have hle_n : n ≤ D.ncard := by
-          rw [← hT_card u hfin_u]
-          exact Set.ncard_le_ncard hsubD hDfin
-        exact False.elim (not_le_of_gt hD_ncard hle_n)
-  intro u w huw
-  rcases hC₀ huw with hu | hw
-  · exact step huw hu
-  · exact (step huw.symm hw).symm
-
-/-- Every simple graph with finite vertex cover number has a finite induced subgraph with the same
-vertex cover number. -/
-theorem exists_finite_induce_vertexCoverNum_eq (h : G.vertexCoverNum ≠ ⊤) :
-    ∃ s : Set V, s.Finite ∧ (G.induce s).vertexCoverNum = G.vertexCoverNum := by
-  classical
-  -- Take a minimum cover `C₀` of size `n = G.vertexCoverNum.toNat`, and truncate each vertex's
-  -- neighbourhood to a finite subset `T v` (all of `N(v)` if finite, `n` neighbours otherwise).
-  let n : ℕ := G.vertexCoverNum.toNat
-  have hn : (n : ℕ∞) = G.vertexCoverNum := ENat.natCast_toNat h
-  obtain ⟨C₀, hC₀eq, hC₀⟩ := G.vertexCoverNum_exists
-  have hC₀fin : C₀.Finite := Set.encard_ne_top_iff.1 (hC₀eq ▸ h)
-  choose T hT_sub hT_fin hT_all hT_card using fun v ↦
-    exists_finite_subset_eq_or_ncard_eq (G.neighborSet v) n
-  -- Form `s = C₀ ∪ ⋃ v ∈ C₀, T v`; a smaller cover `D₀` of `G.induce s` would lift to a cover
-  -- `Subtype.val '' D₀` of `G` smaller than `n`, contradiction.
-  let s : Set V := C₀ ∪ ⋃ v ∈ C₀, T v
-  have hs_fin : s.Finite := hC₀fin.union (hC₀fin.biUnion fun v _ ↦ hT_fin v)
-  refine ⟨s, hs_fin,
-    le_antisymm (IsContained.vertexCoverNum_le_vertexCoverNum ⟨Copy.induce G s⟩) ?_⟩
-  by_contra! hlt
-  obtain ⟨D₀, hD₀eq, hD₀⟩ := (G.induce s).vertexCoverNum_exists
-  have hD_encard : (Subtype.val '' D₀).encard = (G.induce s).vertexCoverNum := by
-    rw [Subtype.val_injective.encard_image, hD₀eq]
-  have hDfin : (Subtype.val '' D₀).Finite :=
-    Set.encard_lt_top_iff.1 (hD_encard ▸ hlt.trans_le le_top)
-  have hD_ncard : (Subtype.val '' D₀).ncard < n := by
-    rw [← Nat.cast_lt (α := ℕ∞), hDfin.cast_ncard_eq, hn, hD_encard]
-    exact hlt
-  have hDcov : G.IsVertexCover (Subtype.val '' D₀) :=
-    isVertexCover_image_of_induce hC₀ hT_sub hT_all hT_card hD₀ hDfin hD_ncard
-  exact not_le_of_gt hlt (hD_encard ▸ hDcov.vertexCoverNum_le)
 
 end SimpleGraph
