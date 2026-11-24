@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
-public import TauCeti.Topology.Order.LocalExtr
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The minimum principle for lower envelopes and least eigenvalues
@@ -29,8 +29,8 @@ continuous on `K × S`. If `q ≥ m` on `frontier K` and, at each interior point
 parameter `s` minimizing `q x` with `q x s < m`, some section `γ` through `s`, with
 `y ↦ q y (γ y)` `C²` at `x`, and some drift vector `b` satisfy
 `Δ (q · γ) x + D (q · γ) x b < 0`, then `q ≥ m` on `K × S`. Its quantitative form
-(`TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`), for the same compact `K` and `S` and
-jointly continuous `q`, assumes, at minimizing parameters with `q x s < min m (-k / c₀)`, a
+(`TauCeti.min_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn`), for the same compact `K` and
+`S` and jointly continuous `q`, assumes, at minimizing parameters with `q x s < min m (-k / c₀)`, a
 section `γ` through `s` with `y ↦ q y (γ y)` `C²` at `x` and a drift vector `b` such that
 
 `Δ (q · γ) x + D (q · γ) x b ≤ c x · q x s + k`,  `c x ≥ c₀ > 0`,  `k ≥ 0`,
@@ -41,10 +41,10 @@ and the derivative vanishes, so a negative minimum `μ` satisfies `0 ≤ c₀ μ
 The main application is to a field of bilinear forms `B : E → BilinForm ℝ V` on a proper real
 normed space `V`. The quadratic form `(x, v) ↦ B x v v` restricted to the unit sphere of `V` is a
 family as above, and the conclusion is the lower bound `B x v v ≥ min m (-k / c₀) ‖v‖²` for every
-`v` (`TauCeti.min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn`). When `V` is an inner
-product space and `B x` is symmetric, the lower envelope is the **least eigenvalue** of `B x`, a
-minimizing parameter is a unit eigenvector for it, and the conclusion bounds the least eigenvalue
-from below. Testing with a minimizing eigenvector avoids any regularization of the least
+`v` (`TauCeti.min_mul_norm_sq_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn`). When `V` is an
+inner product space and `B x` is symmetric, the lower envelope is the **least eigenvalue** of
+`B x`, a minimizing parameter is a unit eigenvector for it, and the conclusion bounds the least
+eigenvalue from below. Testing with a minimizing eigenvector avoids any regularization of the least
 eigenvalue across eigenvalue crossings. This is the elliptic form of Hamilton's maximum principle
 for tensors, the mechanism by which Taubes bounds the Hermitian part of the curvature of
 large-parameter Seiberg–Witten solutions from below.
@@ -53,11 +53,12 @@ large-parameter Seiberg–Witten solutions from below.
 
 * `TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`: the strict minimum principle for lower
   envelopes over compact `K` and `S`, tested along sections `γ` with `y ↦ q y (γ y)` `C²`.
-* `TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`: the quantitative minimum principle for
-  lower envelopes over compact `K` and `S`, tested along sections `γ` with `y ↦ q y (γ y)` `C²`.
-* `TauCeti.min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn`: the minimum principle for the
-  quadratic form of a field of bilinear forms, a lower bound on the least eigenvalue when the
-  forms are symmetric.
+* `TauCeti.min_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn`: the quantitative minimum
+  principle for lower envelopes over compact `K` and `S`, tested along sections `γ` with
+  `y ↦ q y (γ y)` `C²`.
+* `TauCeti.min_mul_norm_sq_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn`: the minimum principle
+  for the quadratic form of a field of bilinear forms, a lower bound on the least eigenvalue when
+  the forms are symmetric.
 
 ## References
 
@@ -110,8 +111,9 @@ point `x` and each parameter `s` minimizing `q x` over `S` with `q x s < min m (
 `c x ≥ c₀` and there are a local section `γ` of `S` through `s`, with `y ↦ q y (γ y)` `C²` at `x`,
 and a drift vector `b` such that `Δ (q · γ) x + D (q · γ) x b ≤ c x · q x s + k`, where `c₀ > 0`
 and `k ≥ 0`. Then `q ≥ min m (-k / c₀)` on `K × S`. -/
-theorem min_le_of_laplacian_le_mul_add_of_isMinOn {K : Set E} (hK : IsCompact K) {S : Set ι}
-    (hS : IsCompact S) {q : E → ι → ℝ} {c : E → ℝ} {m k c₀ : ℝ} (hc₀ : 0 < c₀) (hk : 0 ≤ k)
+theorem min_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn {K : Set E} (hK : IsCompact K)
+    {S : Set ι} (hS : IsCompact S) {q : E → ι → ℝ} {c : E → ℝ} {m k c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hk : 0 ≤ k)
     (hcont : ContinuousOn (fun p : E × ι ↦ q p.1 p.2) (K ×ˢ S))
     (hc : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃s⦄, s ∈ S → IsMinOn (q x) S s →
       q x s < min m (-(k / c₀)) → c₀ ≤ c x)
@@ -145,8 +147,9 @@ differential inequality `Δ (B · (w ·) (w ·)) x + D (B · (w ·) (w ·)) x b 
 holds, where `c₀ > 0` and `k ≥ 0`. Then `B x v v ≥ min m (-k / c₀) ‖v‖²` on `K` for every `v`.
 When `V` is an inner product space and each `B x` is symmetric, this bounds the least eigenvalue
 of `B x` from below, and the minimizing `v` are its unit eigenvectors. -/
-theorem min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn {K : Set E} (hK : IsCompact K)
-    {B : E → LinearMap.BilinForm ℝ V} {c : E → ℝ} {m k c₀ : ℝ} (hc₀ : 0 < c₀) (hk : 0 ≤ k)
+theorem min_mul_norm_sq_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn {K : Set E}
+    (hK : IsCompact K) {B : E → LinearMap.BilinForm ℝ V} {c : E → ℝ} {m k c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hk : 0 ≤ k)
     (hcont : ContinuousOn (fun p : E × V ↦ B p.1 p.2 p.2) (K ×ˢ sphere 0 1))
     (hc : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
       IsMinOn (fun u ↦ B x u u) (sphere 0 1) v → B x v v < min m (-(k / c₀)) → c₀ ≤ c x)
@@ -159,16 +162,10 @@ theorem min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn {K : Set E} (hK : 
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 → m ≤ B x v v) :
     ∀ ⦃x⦄, x ∈ K → ∀ v, min m (-(k / c₀)) * ‖v‖ ^ 2 ≤ B x v v := by
   intro x hx v
-  have hunit := min_le_of_laplacian_le_mul_add_of_isMinOn (q := fun y u ↦ B y u u) hK
+  have hunit := min_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn (q := fun y u ↦ B y u u) hK
     (isCompact_sphere 0 1) hc₀ hk hcont hc hsuper hbdry hx
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  -- Rescale `v` to the unit vector `u = ‖v‖⁻¹ v`, for which `B x v v = ‖v‖² B x u u`.
-  have hu : ‖v‖⁻¹ • v ∈ sphere (0 : V) 1 := mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm hv)
-  have hBv : B x v v = ‖v‖ ^ 2 * B x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) := by
-    rw [LinearMap.map_smul₂, LinearMap.map_smul, smul_eq_mul, smul_eq_mul]
-    field_simp
-  rw [hBv, mul_comm]
-  exact mul_le_mul_of_nonneg_left (hunit hu) (sq_nonneg _)
+  have : FiniteDimensional ℝ V := .of_locallyCompactSpace ℝ
+  simpa using mul_norm_sq_le_of_forall_mem_sphere (b := (B x).toContinuousBilinearMap)
+    (fun u hu ↦ by simpa using hunit hu) v
 
 end TauCeti

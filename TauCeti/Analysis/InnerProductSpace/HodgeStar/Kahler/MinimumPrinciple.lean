@@ -22,15 +22,17 @@ For the curvature of large-parameter Seiberg–Witten solutions this gives Taube
 `|F_a⁻| ≤ (r / (4 √2)) w₊ + C` (`TauCeti.SeibergWitten.norm_smul_sub_hodgeStar_le`).
 
 This file proves the lower bound on `B` by the minimum principle for its least eigenvalue
-(`TauCeti.min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn`). Over a compact set `K`, if
-`B ≥ m` on unit vectors over `frontier K`, and at each interior point `x` and each unit vector `v`
-minimizing `B_x(w, w)` over the unit sphere with `B_x(v, v) < min m (-k / c₀)` there are a local
-unit section `w` through `v`, `C²` at `x`, and a drift vector `b` satisfying the barrier inequality
+(`TauCeti.min_mul_norm_sq_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn`). Over a compact set
+`K`, if `B ≥ m` on unit vectors over `frontier K`, and at each interior point `x` and each unit
+vector `v` minimizing `B_x(w, w)` over the unit sphere with `B_x(v, v) < min m (-k / c₀)` there
+are a local unit section `w` through `v`, `C²` at `x`, and a drift vector `b` satisfying the
+barrier inequality
 
 `Δ (B_· (w ·, w ·)) x + D (B_· (w ·, w ·)) x b ≤ c x · B_x(v, v) + k`,  `c x ≥ c₀ > 0`,  `k ≥ 0`,
 
-then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` throughout `K`
-(`TauCeti.AlmostComplexStructure.min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_le`).
+then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` throughout `K` (the theorem
+`min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_add_fderiv_le_mul_add` in the namespace
+`TauCeti.AlmostComplexStructure`).
 The barrier inequality is only required at minimizing unit vectors, that is at eigenvectors for the
 least eigenvalue of `B_x`; no regularity of that eigenvalue across eigenvalue crossings is needed.
 Here `J` is a fixed almost complex structure on the fiber `V`, as after trivializing by a unitary
@@ -64,9 +66,9 @@ at `x`, `c x ≥ c₀`, and there are a local section `w` of the unit sphere thr
 and a drift vector `b` with `Δ (B_· (w ·, w ·)) x + D (B_· (w ·, w ·)) x b ≤ c x · B_x(v, v) + k`,
 where `c₀ > 0` and `k ≥ 0`. Then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` for every `x ∈ K` and every
 `v`. -/
-theorem min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_le (J : AlmostComplexStructure V)
-    {K : Set E} (hK : IsCompact K) {F : E → ⋀[ℝ]^2 V} {c : E → ℝ} {m k c₀ : ℝ} (hc₀ : 0 < c₀)
-    (hk : 0 ≤ k) (hFc : ContinuousOn F K)
+theorem min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_add_fderiv_le_mul_add
+    (J : AlmostComplexStructure V) {K : Set E} (hK : IsCompact K) {F : E → ⋀[ℝ]^2 V} {c : E → ℝ}
+    {m k c₀ : ℝ} (hc₀ : 0 < c₀) (hk : 0 ≤ k) (hFc : ContinuousOn F K)
     (hFd : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
       IsMinOn (fun u ↦ J.hermitianForm (F x) u u) (sphere 0 1) v →
       J.hermitianForm (F x) v v < min m (-(k / c₀)) → ContDiffAt ℝ 2 F x)
@@ -83,8 +85,8 @@ theorem min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_le (J : AlmostC
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
       m ≤ J.hermitianForm (F x) v v) :
     ∀ ⦃x⦄, x ∈ K → ∀ v, min m (-(k / c₀)) * ‖v‖ ^ 2 ≤ J.hermitianForm (F x) v v := by
-  refine min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn (B := fun x ↦ J.hermitianForm (F x))
-    hK hc₀ hk ?_ hc (fun x hx v hv hmin hlt ↦ ?_) hbdry
+  refine min_mul_norm_sq_le_of_laplacian_add_fderiv_le_mul_add_of_isMinOn
+    (B := fun x ↦ J.hermitianForm (F x)) hK hc₀ hk ?_ hc (fun x hx v hv hmin hlt ↦ ?_) hbdry
   · simpa using ((J.continuousHermitianForm.continuous.comp_continuousOn
       (hFc.comp continuousOn_fst Set.mapsTo_fst_prod)).clm_apply continuousOn_snd).clm_apply
         continuousOn_snd
