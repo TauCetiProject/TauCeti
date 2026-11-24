@@ -62,8 +62,8 @@ is bounded on `x ≥ 0`.
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
-* `TauCeti.one_add_mul_exp_le_one_add_mul_exp_mul_exp_sub_one`:
-  `1 + a eᵘ ≤ (1 + a) exp (a (eᵘ - 1))` for `a ≥ 0` and `u ≥ 0`.
+* `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
+  `1 + a x ≤ (1 + a) exp (a (x - 1))` for `a ≥ 0` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
 -/
@@ -377,13 +377,11 @@ theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k �
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
-/-- `1 + a eᵘ ≤ (1 + a) exp (a (eᵘ - 1))` for `a ≥ 0` and `u ≥ 0`. -/
-theorem one_add_mul_exp_le_one_add_mul_exp_mul_exp_sub_one {a u : ℝ} (ha : 0 ≤ a)
-    (hu : 0 ≤ u) :
-    1 + a * Real.exp u ≤ (1 + a) * Real.exp (a * (Real.exp u - 1)) := by
-  have heu : 1 ≤ Real.exp u := Real.one_le_exp hu
-  have h := Real.add_one_le_exp (a * (Real.exp u - 1))
-  nlinarith [mul_nonneg ha (sub_nonneg.2 heu), mul_nonneg (mul_nonneg ha ha) (sub_nonneg.2 heu)]
+/-- `1 + a x ≤ (1 + a) exp (a (x - 1))` for `a ≥ 0` and `x ≥ 1`. -/
+theorem one_add_mul_le_one_add_mul_exp_mul_sub_one {a x : ℝ} (ha : 0 ≤ a) (hx : 1 ≤ x) :
+    1 + a * x ≤ (1 + a) * Real.exp (a * (x - 1)) := by
+  have h := Real.add_one_le_exp (a * (x - 1))
+  nlinarith [mul_nonneg ha (sub_nonneg.2 hx), mul_nonneg (mul_nonneg ha ha) (sub_nonneg.2 hx)]
 
 /-- `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`. -/
 theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤ x) (hxt : x ≤ t)
