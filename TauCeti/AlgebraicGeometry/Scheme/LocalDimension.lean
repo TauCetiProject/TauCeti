@@ -259,7 +259,7 @@ universe u
 
 section ResidueFieldTrdeg
 
-variable (k : Type u) [Field k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))]
+variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 
 /-- On a scheme locally of finite type over a field `k`, every residue field has finite
 transcendence degree over `k`. -/
@@ -273,48 +273,16 @@ theorem trdeg_residueField_lt_aleph0 [LocallyOfFiniteType (X ↘ Spec (.of k))] 
   have : Algebra.EssFiniteType k y.asIdeal.ResidueField := .comp k R _
   exact trdeg_lt_aleph0 k _
 
-variable {k} in
+end ResidueFieldTrdeg
+
 /-- A morphism over `Spec k` inducing an isomorphism of residue fields at `x` preserves the
 transcendence degree of the residue field over `k`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.trdeg_residueField_eq_of_isIso_residueFieldMap
-    (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X)
-    [IsIso (f.residueFieldMap x)] :
+    {k : Type u} [CommRing k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))] [Y.Over (Spec (.of k))]
+    (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) [IsIso (f.residueFieldMap x)] :
     Algebra.trdeg k (X.residueField x) = Algebra.trdeg k (Y.residueField (f x)) := by
   let e : Y.residueField (f x) ≃+* X.residueField x :=
     (asIso (f.residueFieldMap x)).commRingCatIsoToRingEquiv
   exact (AlgEquiv.ofRingEquiv (f := e) fun c ↦ f.residueFieldMap_algebraMap k x c).trdeg_eq.symm
-
-variable {k} in
-/-- **Transcendence degree over a point.** Let `F` be a scheme over a field `K`, through
-`p : F ⟶ Spec K`, with `p` a morphism over a field `k`. Then for every point `z` of `F`,
-`trdeg_k κ(z) = trdeg_k κ(p z) + trdeg_K κ(z)`, where `κ(p z)` is the residue field of the point
-of `Spec K`, algebraic over `K`. -/
-theorem trdeg_residueField_eq_add_of_over (K : Type u) [Field K] {F : Scheme.{u}}
-    [F.Over (Spec (.of k))] [F.Over (Spec (.of K))] [(Spec (.of K)).Over (Spec (.of k))]
-    [(F ↘ Spec (.of K)).IsOver (Spec (.of k))] (z : F) :
-    Algebra.trdeg k (F.residueField z) =
-      Algebra.trdeg k ((Spec (.of K)).residueField ((F ↘ Spec (.of K)) z)) +
-        Algebra.trdeg K (F.residueField z) := by
-  let p := F ↘ Spec (.of K)
-  let _ : (Spec (.of K)).Over (Spec (.of K)) := ⟨𝟙 _⟩
-  have : p.IsOver (Spec (.of K)) := ⟨Category.comp_id _⟩
-  have : LocallyOfFiniteType ((Spec (.of K)) ↘ Spec (.of K)) :=
-    inferInstanceAs (LocallyOfFiniteType (𝟙 _))
-  -- The towers `k → L → κ(z)` and `K → L → κ(z)`, with `L` the residue field of `Spec K`.
-  let L := (Spec (.of K)).residueField (p z)
-  let : Algebra L (F.residueField z) := (p.residueFieldMap z).hom.toAlgebra
-  have : IsScalarTower K L (F.residueField z) :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (p.residueFieldMap_algebraMap K z c).symm
-  have : IsScalarTower k L (F.residueField z) :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (p.residueFieldMap_algebraMap k z c).symm
-  -- `L` has height zero in `Spec K`, so it is algebraic over `K`.
-  have hKL : Algebra.trdeg K L = 0 := by
-    have h0 := height_eq_toNat_trdeg_residueField K (p z)
-    rw [Order.height_eq_zero.mpr (Subsingleton.isMin _)] at h0
-    exact (Cardinal.toNat_eq_zero.mp (by exact_mod_cast h0.symm)).resolve_right
-      (not_le.mpr (trdeg_residueField_lt_aleph0 K (p z)))
-  rw [← trdeg_add_eq k L, ← trdeg_add_eq K L, hKL, zero_add]
-
-end ResidueFieldTrdeg
 
 end TauCeti.AlgebraicGeometry

@@ -28,9 +28,12 @@ below it, so the codimension in the fibre is the height of its image in `S ⧸ q
   `Spec A` inside `V(I)` is the height of its image in `A ⧸ I`.
 * `TauCeti.AlgebraicGeometry.coheight_fiber_eq_height_map`: the codimension of a point in its
   fibre over `Spec R` is the height of its image in `S ⧸ q S`.
-* `TauCeti.AlgebraicGeometry.height_eq_height_add_of_isFiberGenericPoint`: for a morphism `f` of
-  pure relative dimension `n` between schemes locally of finite type over a field `k`, a generic
-  point `x` of its fibre satisfies `dim {x}⁻ = dim {f x}⁻ + n`.
+* `TauCeti.AlgebraicGeometry.height_eq_height_add_height_asFiber`: for a morphism `f` over a
+  field `k` between schemes locally of finite type over `k`, every point `x` satisfies
+  `dim {x}⁻ = dim {f x}⁻ + dim {x}⁻_F`, the last closure taken in the fibre `F` of `f` over `f x`.
+* `TauCeti.AlgebraicGeometry.height_eq_height_add_of_isFiberGenericPoint`: if moreover `f` has
+  pure relative dimension `n`, a generic point `x` of its fibre satisfies
+  `dim {x}⁻ = dim {f x}⁻ + n`.
 -/
 
 public section
@@ -84,19 +87,16 @@ open TauCeti TauCeti.AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
 
-/-- The closure of a generic point `x` of its fibre under a morphism `f` of pure relative
-dimension `n`, taken in the scheme-theoretic fibre, has dimension `n`: it is an irreducible
-component of the fibre. -/
+/-- If the scheme-theoretic fibre of `f` over `f x` is pure-dimensional of dimension `n`, the
+closure of a generic point `x` of its fibre, taken in that fibre, has dimension `n`: it is an
+irreducible component of the fibre. -/
 theorem topologicalKrullDim_closure_singleton_asFiber_of_isFiberGenericPoint
-    (f : X ⟶ Y) (n : ℕ) [PureRelativeDimension n f] {x : X} (hx : f.IsFiberGenericPoint x) :
-    topologicalKrullDim (closure ({f.asFiber x} : Set (f.fiber (f x)))) = n := by
-  have h : f.fiberHomeo (f x) (f.asFiber x) = ⟨x, rfl⟩ := Subtype.ext (f.fiberι_asFiber x)
-  refine isPureDimensional_iff.mp (PureRelativeDimension.isPureDimensional_fiber f (f x)) _ ?_
+    (f : X ⟶ Y) {n : ℕ} {x : X} (hn : IsPureDimensional n (f.fiber (f x)))
+    (hx : f.IsFiberGenericPoint x) :
+    topologicalKrullDim (closure ({f.asFiber x} : Set (f.fiber (f x)))) = n :=
   -- `irreducibleComponents` membership of a point closure is, by definition of `genericPoints`,
   -- membership of the point in `genericPoints`.
-  change f.asFiber x ∈ genericPoints (f.fiber (f x))
-  rw [← (f.fiberHomeo (f x)).isOpenEmbedding.mem_genericPoints_iff, h]
-  exact (f.isFiberGenericPoint_iff x).mp hx
+  isPureDimensional_iff.mp hn _ ((f.isFiberGenericPoint_iff_asFiber_mem_genericPoints x).mp hx)
 
 end AlgebraicGeometry.Scheme.Hom
 
@@ -113,16 +113,44 @@ variable [LocallyOfFiniteType (X ↘ Spec (.of k))]
 
 variable [LocallyOfFiniteType (Y ↘ Spec (.of k))]
 
-/-- **Dimension of a generic point of a fibre.** Let `f : X ⟶ Y` be a morphism of pure relative
-dimension `n` between schemes locally of finite type over a field `k`. If `x` is the generic point
-of an irreducible component of its fibre, then the closure of `x` has dimension that of the
-closure of `f x` plus `n`. The residue fields satisfy
-`trdeg_k κ(x) = trdeg_k κ(f x) + trdeg_{κ(f x)} κ(x)`, and the last term is the dimension of the
-closure of `x` in the fibre, an irreducible component of the fibre. -/
-theorem height_eq_height_add_of_isFiberGenericPoint (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
-    (n : ℕ) [PureRelativeDimension n f] {x : X} (hx : f.IsFiberGenericPoint x) :
-    height x = height (f x) + n := by
-  have hdim := f.topologicalKrullDim_closure_singleton_asFiber_of_isFiberGenericPoint n hx
+variable {k} in
+/-- Let `F` be a scheme over a field `K`, through `p : F ⟶ Spec K`, with `p` a morphism over a
+field `k`. Then for every point `z` of `F`, `trdeg_k κ(z) = trdeg_k κ(p z) + trdeg_K κ(z)`, where
+`κ(p z)` is the residue field of the unique point of `Spec K`, isomorphic to `K` as a
+`K`-algebra. -/
+private theorem trdeg_residueField_eq_add_of_over (K : Type u) [Field K] {F : Scheme.{u}}
+    [F.Over (Spec (.of k))] [F.Over (Spec (.of K))] [(Spec (.of K)).Over (Spec (.of k))]
+    [(F ↘ Spec (.of K)).IsOver (Spec (.of k))] (z : F) :
+    Algebra.trdeg k (F.residueField z) =
+      Algebra.trdeg k ((Spec (.of K)).residueField ((F ↘ Spec (.of K)) z)) +
+        Algebra.trdeg K (F.residueField z) := by
+  let p := F ↘ Spec (.of K)
+  let _ : (Spec (.of K)).Over (Spec (.of K)) := ⟨𝟙 _⟩
+  have : p.IsOver (Spec (.of K)) := ⟨Category.comp_id _⟩
+  have : LocallyOfFiniteType ((Spec (.of K)) ↘ Spec (.of K)) :=
+    inferInstanceAs (LocallyOfFiniteType (𝟙 _))
+  -- The towers `k → L → κ(z)` and `K → L → κ(z)`, with `L` the residue field of `Spec K`.
+  let L := (Spec (.of K)).residueField (p z)
+  let : Algebra L (F.residueField z) := (p.residueFieldMap z).hom.toAlgebra
+  have : IsScalarTower K L (F.residueField z) :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (p.residueFieldMap_algebraMap K z c).symm
+  have : IsScalarTower k L (F.residueField z) :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (p.residueFieldMap_algebraMap k z c).symm
+  -- `L` has height zero in `Spec K`, so it is algebraic over `K`.
+  have hKL : Algebra.trdeg K L = 0 := by
+    have h0 := height_eq_toNat_trdeg_residueField K (p z)
+    rw [Order.height_eq_zero.mpr (Subsingleton.isMin _)] at h0
+    exact (Cardinal.toNat_eq_zero.mp (by exact_mod_cast h0.symm)).resolve_right
+      (not_le.mpr (trdeg_residueField_lt_aleph0 K (p z)))
+  rw [← trdeg_add_eq k L, ← trdeg_add_eq K L, hKL, zero_add]
+
+
+/-- **Dimension of a point and of its fibre.** Let `f : X ⟶ Y` be a morphism over a field `k`
+between schemes locally of finite type over `k`. Then the closure of a point `x` has dimension
+that of the closure of `f x` plus that of the closure of `x` in the scheme-theoretic fibre of `f`
+over `f x`. -/
+theorem height_eq_height_add_height_asFiber (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) :
+    height x = height (f x) + height (f.asFiber x) := by
   set y := f x
   let K : Type u := Y.residueField y
   let F := f.fiber y
@@ -148,9 +176,6 @@ theorem height_eq_height_add_of_isFiberGenericPoint (f : X ⟶ Y) [f.IsOver (Spe
     exact congrArg (· ≫ Y ↘ Spec (.of k)) (f.fiber_fac y).symm⟩
   have : LocallyOfFiniteType (F ↘ Spec (.of K)) :=
     inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
-  -- The dimension `n` of the closure of `x'` in the fibre is `trdeg_{κ(y)} κ(x')`.
-  rw [topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField K x'] at hdim
-  have hn : (Algebra.trdeg K (F.residueField x')).toNat = n := by exact_mod_cast hdim
   have e1 : height x = (Algebra.trdeg k (X.residueField (f.fiberι y x'))).toNat := by
     rw [← height_eq_toNat_trdeg_residueField k]
     exact congrArg height (f.fiberι_asFiber x).symm
@@ -158,11 +183,27 @@ theorem height_eq_height_add_of_isFiberGenericPoint (f : X ⟶ Y) [f.IsOver (Spe
       height y = (Algebra.trdeg k (Y.residueField (g ((F ↘ Spec (.of K)) x')))).toNat := by
     rw [← height_eq_toNat_trdeg_residueField k]
     exact congrArg height (Y.fromSpecResidueField_apply y _).symm
-  rw [e1, e2, ← (f.fiberι y).trdeg_residueField_eq_of_isIso_residueFieldMap x',
+  have e3 : height x' = (Algebra.trdeg K (F.residueField x')).toNat :=
+    height_eq_toNat_trdeg_residueField K x'
+  rw [e1, e2, e3, ← (f.fiberι y).trdeg_residueField_eq_of_isIso_residueFieldMap x',
     trdeg_residueField_eq_add_of_over K x', g.trdeg_residueField_eq_of_isIso_residueFieldMap,
-    Cardinal.toNat_add (trdeg_residueField_lt_aleph0 k _) (trdeg_residueField_lt_aleph0 K x'), hn]
+    Cardinal.toNat_add (trdeg_residueField_lt_aleph0 k _) (trdeg_residueField_lt_aleph0 K x')]
   push_cast
   rfl
+
+/-- **Dimension of a generic point of a fibre.** Let `f : X ⟶ Y` be a morphism over a field `k`,
+of pure relative dimension `n`, between schemes locally of finite type over `k`. If `x` is the
+generic point of an irreducible component of its fibre, then the closure of `x` has dimension
+that of the closure of `f x` plus `n`. -/
+theorem height_eq_height_add_of_isFiberGenericPoint (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+    (n : ℕ) [PureRelativeDimension n f] {x : X} (hx : f.IsFiberGenericPoint x) :
+    height x = height (f x) + n := by
+  have hdim := f.topologicalKrullDim_closure_singleton_asFiber_of_isFiberGenericPoint
+    (PureRelativeDimension.isPureDimensional_fiber (d := n) f (f x)) hx
+  have h : height (f.asFiber x) = n := by
+    have := (height_eq_topologicalKrullDim_closure_singleton (f.asFiber x)).trans hdim
+    exact_mod_cast this
+  rw [height_eq_height_add_height_asFiber k f x, h]
 
 end GenericPointDimension
 
