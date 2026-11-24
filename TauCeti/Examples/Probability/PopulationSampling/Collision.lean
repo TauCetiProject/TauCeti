@@ -128,7 +128,7 @@ example :
 
 /-- For three distinct values sampled twice, the all-distinct event has mass `2/3` with
 replacement. -/
-theorem sampleWithReplacement_dirac_id_fin_three_injective :
+theorem sampleWithReplacement_dirac_id_fin_three_injective_apply_eq :
     sampleWithReplacement (ι := Fin 2) (Measure.dirac (id : Fin 3 → Fin 3))
       {f | Injective f} = 2 / 3 := by
   rw [sampleWithReplacement_dirac_injective_apply_eq injective_id .of_discrete,
@@ -142,7 +142,8 @@ example :
       sampleWithReplacement (ι := Fin 2) (Measure.dirac (id : Fin 3 → Fin 3))
         {f | Injective f} + 1 / 3 := by
   rw [sampleWithoutReplacement_dirac_injective_apply_eq_one injective_id
-    (Fin.castLEEmb (by decide)) .of_discrete, sampleWithReplacement_dirac_id_fin_three_injective,
+    (Fin.castLEEmb (by decide)) .of_discrete,
+    sampleWithReplacement_dirac_id_fin_three_injective_apply_eq,
     ENNReal.div_add_div_same, show (2 : ℝ≥0∞) + 1 = 3 by norm_num,
     ENNReal.div_self (by norm_num) (by norm_num)]
 
@@ -150,9 +151,10 @@ example :
 theorem one_sub_descFactorial_div_pow_four_three :
     1 - (Fintype.card (Fin 4)).descFactorial (Fintype.card (Fin 3)) /
       (Fintype.card (Fin 4) : ℝ≥0∞) ^ Fintype.card (Fin 3) = 5 / 8 := by
-  rw [← uniformOn_not_injective_apply_eq, ← ofReal_measureReal,
-    uniformOn_real_not_injective_apply_eq]
-  norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
+  rw [← ENNReal.toReal_eq_toReal_iff' (by simp [ENNReal.sub_eq_top_iff])
+      (ENNReal.div_ne_top (by norm_num) (by norm_num)),
+    ENNReal.toReal_sub_of_le (by norm_num [ENNReal.div_le_iff, Nat.descFactorial]) (by simp)]
+  norm_num [Nat.descFactorial, ENNReal.toReal_div]
 
 -- For every random population of four values and every event, sampling three values without
 -- replacement exceeds sampling with replacement by at most `5/8`, in either direction.
@@ -167,19 +169,17 @@ example {α : Type*} [MeasurableSpace α] (ρ : Measure (Fin 4 → α)) [IsProba
 -- The exact error `5/8` is below the union bound `choose 3 2 / 4 = 3/4`.
 example : (5 / 8 : ℝ≥0∞) <
     (Fintype.card (Fin 3)).choose 2 / (Fintype.card (Fin 4) : ℝ≥0∞) := by
-  norm_num [Nat.choose]
-  rw [← ENNReal.toReal_lt_toReal (ENNReal.div_ne_top (by norm_num) (by norm_num))
-    (ENNReal.div_ne_top (by norm_num) (by norm_num))]
-  norm_num [ENNReal.toReal_div]
+  rw [← ENNReal.toReal_lt_toReal (by simp [ENNReal.div_eq_top]) (by simp [ENNReal.div_eq_top])]
+  norm_num [Nat.choose, ENNReal.toReal_div]
 
 /-! ### Exact-collision finite de Finetti -/
 
 /-- For `n = m = 2` the collision probability is `1 - 2/4 = 1/2`. -/
 theorem one_sub_descFactorial_div_pow_two_two :
     1 - (Nat.descFactorial 2 2 : ℝ≥0∞) / (2 : ℝ≥0∞) ^ 2 = 1 / 2 := by
-  simpa using (uniformOn_not_injective_apply_eq (ι := Fin 2) (κ := Fin 2)).symm.trans <| by
-    rw [← ofReal_measureReal, uniformOn_real_not_injective_apply_eq]
-    norm_num [Nat.descFactorial, ENNReal.ofReal_div_of_pos]
+  rw [← ENNReal.toReal_eq_toReal_iff' (by simp [ENNReal.sub_eq_top_iff]) (by simp),
+    ENNReal.toReal_sub_of_le (by norm_num [ENNReal.div_le_iff, Nat.descFactorial]) (by simp)]
+  norm_num [Nat.descFactorial, ENNReal.toReal_div]
 
 -- For a process exchangeable at `n = 2`, the two-term prefix law and the with-replacement sample
 -- of the same prefix differ by at most `1 - 2/4 = 1/2` on every event.
@@ -199,7 +199,8 @@ example {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω] {μ : Measure 
     1 - (n.descFactorial 1 : ℝ≥0∞) / (n : ℝ≥0∞) ^ 1 = 0 ∧
       sampleWithReplacement (ι := Fin 1) (prefixLaw μ X n) = prefixLaw μ X 1 := by
   refine ⟨?_, h.sampleWithReplacement_eq_prefixLaw_of_le_one le_rfl hn hX⟩
-  rw [Nat.descFactorial_one, pow_one, ENNReal.div_self (by simp; omega) (by simp), tsub_self]
+  rw [Nat.descFactorial_one, pow_one, ENNReal.div_self (Nat.cast_ne_zero.2 (by omega))
+    (ENNReal.natCast_ne_top n), tsub_self]
 
 -- A uniformly random ordering of two distinct values attains the error `1/2`: its two-term prefix
 -- law exceeds the with-replacement sample of its prefix by exactly `1/2`.
@@ -237,6 +238,11 @@ example {α : Type*} [MeasurableSpace α] [Nonempty α] :
 
 /-! ### Samples of size at most one, and the measurability of the all-distinct event -/
 
+/-- The product of trivial σ-algebras is trivial. -/
+private theorem measurableSpace_pi_bot {ι : Type*} {X : ι → Type*} :
+    MeasurableSpace.pi (m := fun i => (⊥ : MeasurableSpace (X i))) = ⊥ := by
+  simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
+
 -- For samples of size at most one, `p = 1` and a distinct-valued population has excess `0`.
 example {α ι κ : Type*} [MeasurableSpace α] [Fintype ι] [Subsingleton ι] [Fintype κ]
     [MeasurableSpace κ] [MeasurableSingletonClass κ] {x : κ → α} (hx : Injective x)
@@ -255,9 +261,7 @@ example {α ι κ : Type*} [MeasurableSpace α] [Fintype ι] [Subsingleton ι] [
 example {ι α : Type*} [Nontrivial ι] (e : ι ↪ α) :
     ¬ MeasurableSet[MeasurableSpace.pi (X := fun _ : ι => α) (m := fun _ => ⊥)]
       {f : ι → α | Injective f} := by
-  have hbot : MeasurableSpace.pi (X := fun _ : ι => α) (m := fun _ => ⊥) = ⊥ := by
-    simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
-  rw [hbot, MeasurableSpace.measurableSet_bot_iff]
+  rw [measurableSpace_pi_bot, MeasurableSpace.measurableSet_bot_iff]
   obtain ⟨i, j, hij⟩ := exists_pair_ne ι
   rintro (h | h)
   · exact (Set.eq_empty_iff_forall_notMem.1 h) e e.injective
@@ -276,9 +280,7 @@ example {α : Type*} {x : Fin 3 → α} :
     (Fin.castLEEmb (by decide))
   have := isProbabilityMeasure_sampleWithReplacement (ι := Fin 2) (Measure.dirac x)
   refine le_antisymm (iSup₂_le fun A hA => ?_) bot_le
-  have hbot : MeasurableSpace.pi (X := fun _ : Fin 2 => α) (m := fun _ => ⊥) = ⊥ := by
-    simp [MeasurableSpace.pi, MeasurableSpace.comap_bot]
-  have hA' : MeasurableSet[⊥] A := hbot ▸ hA
+  have hA' : MeasurableSet[⊥] A := measurableSpace_pi_bot (X := fun _ : Fin 2 => α) ▸ hA
   rcases MeasurableSpace.measurableSet_bot_iff.1 hA' with rfl | rfl <;>
     simp only [measure_empty, measure_univ, tsub_self, le_refl]
 
