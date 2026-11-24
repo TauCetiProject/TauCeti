@@ -8,8 +8,9 @@ module
 public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.Algebra.Category.Ring.Constructions
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.PullbackCone
-public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import TauCeti.RingTheory.Pullback
+
+import TauCeti.RingTheory.FiberProduct.Basic
 
 /-!
 # Pullbacks in the category of rings
@@ -33,8 +34,8 @@ For commutative rings, a pullback square
 with `p` surjective is also a pushout square: the natural map `B ⊗_A A' → C` is an
 isomorphism. Such squares are Ferrand's affine pinchings and the Milnor squares of algebraic
 K-theory. For the fibre product `RingHom.pullback p q` itself this is `RingHom.isPushout_pullback`
-in `TauCeti.RingTheory.FiberProduct.Basic`; here it is proved for an arbitrary pullback square,
-such as a conductor square.
+in `TauCeti.RingTheory.FiberProduct.Basic`; here it is transported along the isomorphism of
+pullback squares to an arbitrary pullback square, such as a conductor square.
 
 ## Main definitions
 
@@ -46,7 +47,7 @@ such as a conductor square.
 
 * `RingHom.isPullback_pullback`: the fibre product `B ×_C A'` with its projections is a pullback
   square in `CommRingCat`.
-* `CommRingCat.isPushout_of_isPullback`: a pullback square of commutative rings with a
+* `CommRingCat.isPushout_of_isPullback_of_surjective`: a pullback square of commutative rings with a
   surjective leg is a pushout square.
 
 ## References
@@ -119,22 +120,14 @@ namespace CommRingCat
 /-- **A pullback square of commutative rings along a surjection is a pushout square.** If
 `A` is the fibre product of `B` and `A'` over `C` and `p : B ⟶ C` is surjective, then the
 natural map `B ⊗_A A' → C` is an isomorphism. -/
-theorem isPushout_of_isPullback {A B A' C : CommRingCat.{u}} {f : A ⟶ B} {g : A ⟶ A'}
-    {p : B ⟶ C} {q : A' ⟶ C} (h : IsPullback f g p q) (hp : Function.Surjective p) :
-    IsPushout f g p q := by
-  have hT := h.map (forget CommRingCat)
-  -- a pair `(b, a')` with `p b = q a'` comes from an element of `A`
-  have hlift (b : B) (a' : A') (hba : p b = q a') : ∃ a, f a = b ∧ g a = a' :=
-    Types.exists_of_isPullback hT b a' hba
-  refine IsPushout.of_isColimit' ⟨h.w⟩ <| PushoutCocone.IsColimit.mk _
-    (fun s ↦ ofHom (p.hom.liftOfSurjective hp ⟨s.inl.hom, fun b hb ↦ ?_⟩))
-    (fun s ↦ hom_ext (p.hom.liftOfSurjective_comp hp _))
-    (fun s ↦ hom_ext <| RingHom.ext fun a' ↦ ?_)
-    (fun s m hm _ ↦ hom_ext <| p.hom.eq_liftOfSurjective hp _ _ m.hom congr(($hm).hom))
-  · obtain ⟨a, rfl, ha⟩ := hlift b 0 (by simpa using hb)
-    simpa [ha] using congr($(s.condition) a)
-  · obtain ⟨b, hb⟩ := hp (q a')
-    obtain ⟨a, rfl, rfl⟩ := hlift b a' hb
-    simpa [← hb, RingHom.liftOfSurjective_comp_apply] using congr($(s.condition) a)
+theorem isPushout_of_isPullback_of_surjective {A B A' C : CommRingCat.{u}} {f : A ⟶ B}
+    {g : A ⟶ A'} {p : B ⟶ C} {q : A' ⟶ C} (h : IsPullback f g p q)
+    (hp : Function.Surjective p) :
+    IsPushout f g p q :=
+  have h' := RingHom.isPullback_pullback p.hom q.hom
+  (RingHom.isPushout_pullback p.hom q.hom hp).of_iso (h'.isoIsPullback _ _ h) (Iso.refl _)
+    (Iso.refl _) (Iso.refl _)
+    (by simp only [Iso.refl_hom, Category.comp_id, h'.isoIsPullback_hom_fst])
+    (by simp only [Iso.refl_hom, Category.comp_id, h'.isoIsPullback_hom_snd]) (by simp) (by simp)
 
 end CommRingCat
