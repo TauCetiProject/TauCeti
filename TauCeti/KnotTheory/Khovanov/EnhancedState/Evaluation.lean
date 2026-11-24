@@ -82,8 +82,10 @@ theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.t
     ext
     simp
   rw [hhom, hunit] at hsum
-  norm_num at hsum
-  rw [← pow_mul_pow_sub (2 : ℤ) hpos, pow_one] at hsum
-  exact (mul_left_cancel₀ two_ne_zero hsum).symm
+  have hsum' : (2 : ℤ) ^ D.componentCount =
+      2 * eval₂ (RingHom.id ℤ) (-1 : ℤˣ) D.jonesPolynomial := by
+    simpa [one_add_one_eq_two] using hsum
+  rw [← pow_mul_pow_sub (2 : ℤ) (Nat.succ_le_of_lt hpos), pow_one] at hsum'
+  exact (mul_left_cancel₀ two_ne_zero hsum').symm
 
 end TauCeti.OrientedPDCode
