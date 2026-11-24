@@ -120,7 +120,8 @@ theorem smulVecHom_comp_torusLoop (n : ι → ℤ) :
   simp only [ContinuousMap.comp_apply, Path.coe_toContinuousMap, ContinuousMap.coe_ofClass, hn,
     smulVecHom_coe_pi, mulVec_smul, map_intCast_mulVec]
   simp only [TauCeti.torusLoop_apply, Pi.smul_apply, smul_eq_mul, zsmul_eq_mul]
-  ring_nf
+  congr 1
+  ring
 
 end Matrix
 
@@ -144,12 +145,9 @@ private def invMulVecHom (A : Matrix ι ι ℤ) : (ι → ℤ) →+ (ι → AddC
 private theorem invMulVecHom_apply (A : Matrix ι ι ℤ) (n : ι → ℤ) :
     invMulVecHom p A n =
       fun i ↦ (((A.map ((↑) : ℤ → K))⁻¹ *ᵥ (p • (n · : ι → K))) i : AddCircle p) := by
-  have hcast : (Int.castAddHom K).compLeft ι n = (n · : ι → K) :=
-    funext fun j ↦ by rw [AddMonoidHom.compLeft_apply, Int.coe_castAddHom, Function.comp_apply]
+  have hcast : (Int.castAddHom K).compLeft ι n = (n · : ι → K) := funext fun _ ↦ by simp
   funext i
-  rw [invMulVecHom, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, AddMonoidHom.compLeft_apply,
-    LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    mulVecLin_apply, hcast, Function.comp_apply, QuotientAddGroup.mk'_apply]
+  simp [invMulVecHom, hcast, mulVec_smul]
 
 variable [CharZero K]
 
@@ -184,6 +182,18 @@ private theorem invMulVecHom_mem_ker {A : Matrix ι ι ℤ} (hA : IsUnit (A.map 
   rw [invMulVecHom_apply, coe_mem_ker_smulVecHom_iff]
   exact ⟨n, by rw [mulVec_mulVec, mul_nonsing_inv _ hA, one_mulVec, smul_intCast_eq]⟩
 
+omit [CharZero K] in
+/-- For `det A ≠ 0`, every point of the kernel of the map of the torus induced by `A` is of the form
+`[A⁻¹ (p n)]`: if `[t]` lies in the kernel, then `A t = p n` for an integer vector `n`. -/
+private theorem exists_invMulVecHom_eq {A : Matrix ι ι ℤ} (hA : IsUnit (A.map ((↑) : ℤ → K)).det)
+    {x : ι → AddCircle p}
+    (hx : x ∈ (A.smulVecHom (AddCircle p) : (ι → AddCircle p) →+ (ι → AddCircle p)).ker) :
+    ∃ n, invMulVecHom p A n = x := by
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq x
+  obtain ⟨n, hn⟩ := (coe_mem_ker_smulVecHom_iff A p t).1 hx
+  have := invertibleOfIsUnitDet _ hA
+  exact ⟨n, by rw [invMulVecHom_apply, smul_intCast_eq, ← hn, inv_mulVec_eq_vec rfl]⟩
+
 /-- **The kernel of an integer matrix acting on a torus.** For `p ≠ 0` and a square integer matrix
 `A` with `det A ≠ 0`, the map `n ↦ [A⁻¹ (p n)]` identifies `ℤⁱ / A ℤⁱ` with the kernel of the map
 of the torus `ι → AddCircle p` induced by `A` (`Matrix.coe_quotientRangeEquivKerSmulVecHom_mk`). -/
@@ -193,13 +203,9 @@ def quotientRangeEquivKerSmulVecHom (A : Matrix ι ι ℤ) (hA : A.det ≠ 0) (h
   let ψ := (invMulVecHom p A).codRestrict _ (invMulVecHom_mem_ker p (isUnit_det_map_intCast hA))
   have hψ : Function.Surjective ψ := by
     rintro ⟨x, hx⟩
-    obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq x
-    obtain ⟨n, hn⟩ := (coe_mem_ker_smulVecHom_iff A p t).1 hx
-    have := invertibleOfIsUnitDet _ (isUnit_det_map_intCast (K := K) hA)
+    obtain ⟨n, hn⟩ := exists_invMulVecHom_eq p (isUnit_det_map_intCast hA) hx
     refine ⟨n, Subtype.ext ?_⟩
-    -- `ψ n` is the point `[A⁻¹ (p n)]`, and `p n = A t` by the choice of `n`.
-    rw [AddMonoidHom.codRestrict_apply, Subtype.coe_mk, Subtype.coe_mk, invMulVecHom_apply,
-      smul_intCast_eq, ← hn, inv_mulVec_eq_vec rfl]
+    rw [AddMonoidHom.codRestrict_apply, Subtype.coe_mk, Subtype.coe_mk, hn]
   have hker : (LinearMap.range A.mulVecLin).toAddSubgroup = ψ.ker := by
     ext n
     rw [AddMonoidHom.ker_codRestrict, AddMonoidHom.mem_ker, invMulVecHom_apply,
@@ -266,19 +272,14 @@ theorem finite_ker_smulVecHom_iff (A : Matrix ι ι ℤ) :
       A.det ≠ 0 := by
   refine ⟨fun h hA ↦ not_finite_iff_infinite.2 (infinite_ker_smulVecHom p hA) h, fun hA ↦ ?_⟩
   rcases eq_or_ne p 0 with rfl | hp
-  · -- For `p = 0` the torus is `ι → K`, on which `A` is injective.
+  · -- For `p = 0` every kernel point is `[A⁻¹ (0 • n)] = 0`.
     suffices Subsingleton
         (A.smulVecHom (AddCircle (0 : K)) : (ι → AddCircle (0 : K)) →+ (ι → AddCircle (0 : K))).ker
       from inferInstance
     refine subsingleton_of_forall_eq 0 fun ⟨x, hx⟩ ↦ ?_
-    obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq x
-    obtain ⟨n, hn⟩ := (coe_mem_ker_smulVecHom_iff A 0 t).1 hx
-    have := invertibleOfIsUnitDet _ (isUnit_det_map_intCast (K := K) hA)
-    simp only [mul_zero] at hn
-    rw [← Pi.zero_def] at hn
-    obtain rfl := inv_mulVec_eq_vec hn.symm
+    obtain ⟨n, rfl⟩ := exists_invMulVecHom_eq 0 (isUnit_det_map_intCast hA) hx
     ext i
-    simp
+    simp [invMulVecHom_apply]
   · exact Nat.finite_of_card_ne_zero <| by
       rw [natCard_ker_smulVecHom p A hp]
       exact Int.natAbs_ne_zero.2 hA
