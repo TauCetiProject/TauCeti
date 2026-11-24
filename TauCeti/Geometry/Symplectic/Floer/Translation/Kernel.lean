@@ -36,8 +36,8 @@ and a domain-independent `J`, are invariant under the rotations of the cylinder,
 solves the linearized equation
 (`TauCeti.SymplecticForm.floerLinearization_fderiv_stdComplexLineImag_eq_zero`).
 
-The kernel element `∂ₛu` is not zero away from the stationary cylinders: a map differentiable on
-the strip `ℝ × [0, 1]` has `∂ₛu = 0` there exactly when `u(s, t) = u(0, t)`
+The kernel element `∂ₛu` is not zero away from the stationary cylinders: a map differentiable at
+every point of the strip `ℝ × [0, 1]` has `∂ₛu = 0` there exactly when `u(s, t) = u(0, t)`
 (`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂ₛu` is `du` applied to `(1, 0)`). Its size is
 measured by the energy density: for the perturbation `K = K_t dt` and a solution of the Floer
 equation for an almost complex structure `J`, the Floer energy density at each point is the

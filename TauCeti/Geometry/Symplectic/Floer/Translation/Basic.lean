@@ -40,8 +40,9 @@ derivative of such a cylinder sends `(a, b)` to `b (x' - X_{H_t}(x))`
 vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). Conversely, for almost complex structures
 tamed by `ω`, a `C¹` solution has zero energy exactly when it is stationary
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`): the energy density of a solution
-vanishes only where `∂_s u = 0`, and a map differentiable on the strip is stationary there exactly
-when its `s`-derivative vanishes there (`TauCeti.fderiv_fst_eqOn_zero_iff`).
+vanishes only where `∂_s u = 0`, and a map differentiable at every point of the closed strip is
+stationary there exactly when its `s`-derivative vanishes there
+(`TauCeti.fderiv_fst_eqOn_zero_iff`).
 
 A solution of finite energy that is invariant under a translation by `c ≠ 0` has the same energy
 over each of the infinitely many disjoint period rectangles of the strip, so its energy is zero
