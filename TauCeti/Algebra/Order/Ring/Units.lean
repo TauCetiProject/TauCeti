@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Units
 import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.GroupTheory.IndexNormal
-public import TauCeti.Data.ZMod.IntUnitsPower
+public import TauCeti.GroupTheory.Index.Two
 
 /-!
 # The sign group of a linearly ordered ring
@@ -116,15 +116,20 @@ theorem signEquiv_mk_eq_one_iff (u : Rˣ) :
 
 variable (R) in
 /-- **The additive sign of a linearly ordered ring**, with values in `ZMod 2`: `1` on negative
-units and `0` on positive units. It is `Units.signEquiv` composed with the quotient map and read
-through the isomorphism `TauCeti.additiveIntUnitsAddEquiv : Additive ℤˣ ≃+ ZMod 2`. -/
+units and `0` on positive units. It is the character `Subgroup.indexTwoCharacter` of the
+index-two subgroup `Units.posSubgroup R` of positive units, written additively. -/
 noncomputable def signAddHom : Additive Rˣ →+ ZMod 2 :=
-  TauCeti.additiveIntUnitsAddEquiv.toAddMonoidHom.comp
-    ((signEquiv R).toMonoidHom.comp (QuotientGroup.mk' (Units.posSubgroup R))).toAdditive
+  MonoidHom.toAdditiveLeft ((Units.posSubgroup R).indexTwoCharacter (Units.index_posSubgroup R))
 
 @[simp]
 theorem signAddHom_ofMul (u : Rˣ) :
     signAddHom R (Additive.ofMul u) = if (u : R) < 0 then 1 else 0 := by
-  rcases lt_or_gt_of_ne u.ne_zero with hu | hu <;> simp [signAddHom, hu, hu.not_gt]
+  rw [signAddHom, MonoidHom.coe_toAdditiveLeft, Function.comp_apply, Function.comp_apply,
+    toMul_ofMul]
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · simp only [hu, ↓reduceIte]
+    exact Subgroup.toAdd_indexTwoCharacter_of_notMem _ (mt (Units.mem_posSubgroup u).1 hu.not_gt)
+  · simp only [hu.not_gt, ↓reduceIte]
+    exact Subgroup.toAdd_indexTwoCharacter_of_mem _ ((Units.mem_posSubgroup u).2 hu)
 
 end Units
