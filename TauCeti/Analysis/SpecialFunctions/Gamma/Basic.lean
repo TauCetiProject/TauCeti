@@ -93,6 +93,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
   `n^(s - 1) n! / (s)ₙ → Γ(s)` (DLMF 5.8.1 in Pochhammer form).
 * `Complex.tendsto_ascPochhammer_eval_div_natCast_cpow_mul_factorial`:
   `(s)ₙ / (n^(s - 1) n!) → (Γ(s))⁻¹`.
+* `Complex.isEquivalent_factorial_div_ascPochhammer_eval_succ`:
+  `n! / (s)ₙ₊₁ ~ Γ(s) n^(-s)` for `s ∉ {0, -1, -2, …}`.
 
 ## References
 
@@ -514,5 +516,17 @@ theorem tendsto_ascPochhammer_eval_div_natCast_cpow_mul_factorial (s : ℂ) :
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_gt_atTop k] with n hn
     rw [ascPochhammer_eval_neg_natCast_of_lt hn, zero_div]
+
+/-- **Euler's limit formula as an asymptotic equivalence.** For `s ∉ {0, -1, -2, …}`,
+`n! / (s)_{n+1} ~ Γ(s) n^{-s}` as `n → ∞`. -/
+theorem isEquivalent_factorial_div_ascPochhammer_eval_succ {s : ℂ} (hs : ∀ m : ℕ, s ≠ -m) :
+    (fun n : ℕ => (n ! : ℂ) / (ascPochhammer ℂ (n + 1)).eval s) ~[atTop]
+      fun n => Gamma s * ((n : ℂ) ^ s)⁻¹ := by
+  refine (((isEquivalent_const_iff_tendsto (Gamma_ne_zero hs)).2 (GammaSeq_tendsto_Gamma s)).mul
+    (IsEquivalent.refl (u := fun n : ℕ => ((n : ℂ) ^ s)⁻¹))).congr_left ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  have hn' : (n : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr hn))
+  simp only [Pi.mul_apply, GammaSeq, ← TauCeti.ascPochhammer_eval_eq_prod_range]
+  field_simp
 
 end Complex

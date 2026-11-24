@@ -50,7 +50,8 @@ variables. For `p > 0` the substitution `t ↦ t + √(t² + p)` is positive and
 `(0, ∞)`, and for `c > 0` the map `y ↦ y (√(y² + c) − y)` is strictly increasing on `[0, ∞)`. For
 `a ≥ 0`, `{x | x² ≤ a}` is the interval `[-√a, √a]`, and for every `a`, `{x | a ≤ x²}` is a union
 of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when
-`c > 0`), and `α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`.
+`c > 0`), `α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`, and the forward difference
+`√x (√(x + 1) - √x)` tends to `1/2` as `x → ∞`.
 
 ## Main results
 
@@ -103,6 +104,7 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
   `c √u → 0⁺` as `u → 0⁺`.
 * `Real.tendsto_div_mul_add_sqrt_sq_add_atTop`: for `β ≠ -1`,
   `α / (β y + √(y² + c)) → 0` as `y → +∞`.
+* `Real.tendsto_sqrt_mul_sqrt_add_one_sub_sqrt`: `√x (√(x + 1) - √x) → 1/2` as `x → ∞`.
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
@@ -520,6 +522,24 @@ theorem tendsto_div_mul_add_sqrt_sq_add_atTop (α : ℝ) {β : ℝ} (hβ : β �
     rw [show y ^ 2 + c = y ^ 2 * (1 + c / y ^ 2) by field_simp, sqrt_sq_mul, abs_of_pos hy]
   simp only [Pi.div_apply, hs, div_div]
   ring
+
+/-- The forward difference of the square root is asymptotic to its derivative:
+`√x (√(x + 1) - √x) → 1/2` as `x → ∞`. -/
+theorem tendsto_sqrt_mul_sqrt_add_one_sub_sqrt :
+    Tendsto (fun x : ℝ => √x * (√(x + 1) - √x)) atTop (𝓝 (1 / 2)) := by
+  have hlim : Tendsto (fun x : ℝ => (√(1 + x⁻¹) + 1)⁻¹) atTop (𝓝 (1 / 2)) := by
+    have h := ((tendsto_inv_atTop_zero.const_add 1).sqrt.add_const 1).inv₀ (by norm_num)
+    norm_num at h
+    simpa [one_div] using h
+  refine hlim.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  have ha : 0 < √x := sqrt_pos.2 hx
+  have hq : √(1 + x⁻¹) = √(x + 1) / √x := by
+    rw [← sqrt_div (by linarith) x]
+    congr 1
+    field_simp
+  rw [hq, div_add_one ha.ne', inv_div, eq_comm, eq_div_iff (by positivity)]
+  linear_combination √x * (sq_sqrt (show 0 ≤ x + 1 by linarith) - sq_sqrt hx.le)
 
 end Limits
 
