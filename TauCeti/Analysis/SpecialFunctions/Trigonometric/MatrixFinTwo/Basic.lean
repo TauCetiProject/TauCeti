@@ -271,8 +271,7 @@ theorem pslMk_rotation_pi_div_two : (↑(rotation (π / 2)) : PSL(2, ℝ)) = Tau
   have h : rotation (π / 2) = -(map (Int.castRingHom ℝ) ModularGroup.S) := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [map_apply_coe, ModularGroup.coe_S]
-  rw [h, ProjectiveSpecialLinearGroup.mk_neg, TauCeti.pslS_def, psl2zToPSL2R_mk,
-    sl2zToPSL2R_apply]
+  rw [h, ProjectiveSpecialLinearGroup.mk_neg, TauCeti.pslS_eq_mk]
 
 /-- The trace of the product of `rotation θ` with a `2 × 2` matrix `A`:
 `trace (R(θ) A) = trace A cos θ + (A₁₀ - A₀₁) sin θ`. -/

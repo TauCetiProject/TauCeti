@@ -12,6 +12,8 @@ public import TauCeti.GroupTheory.TriangleGroup.Basic
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -147,12 +149,14 @@ theorem continuous_b : Continuous b := by
 
 /-! ### The deformed matrices -/
 
-/-- The deformed matrix `U θ = !![cos θ, b θ; b θ - 1, cos θ]`. At `θ = π / p` it is elliptic of
-projective order `p`, fixing `i (b θ / sin θ)`; at `θ = 0` it is `T = !![1, 1; 0, 1]`. -/
+/-- The deformed matrix `U θ = !![cos θ, b θ; b θ - 1, cos θ]`. At `θ = π / p` with `6 ≤ p` (more
+generally when `4 sin² θ ≤ 1`) it is elliptic of projective order `p`, fixing `i (b θ / sin θ)`;
+at `θ = 0` it is `T = !![1, 1; 0, 1]`. -/
 def U (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![Real.cos θ, b θ; b θ - 1, Real.cos θ]
 
-/-- The deformed matrix `L θ = !![cos θ, b θ - 1; b θ, cos θ]`, the conjugate `S U⁻¹ S⁻¹`
+/-- The deformed matrix `L θ = !![cos θ, b θ - 1; b θ, cos θ]`, the transpose of `U θ`
+(`TauCeti.TriangleDeformation.L_eq_transpose_U`) and the conjugate `S U⁻¹ S⁻¹`
 (`TauCeti.TriangleDeformation.slL_eq`). At `θ = 0` it is `!![1, 0; 1, 1]`. -/
 def L (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![Real.cos θ, b θ - 1; b θ, Real.cos θ]
@@ -163,36 +167,36 @@ theorem U_def (θ : ℝ) : U θ = !![Real.cos θ, b θ; b θ - 1, Real.cos θ] :
 theorem L_def (θ : ℝ) : L θ = !![Real.cos θ, b θ - 1; b θ, Real.cos θ] :=
   (rfl)
 
+/-- `L θ` is the transpose of `U θ`. -/
+theorem L_eq_transpose_U (θ : ℝ) : L θ = (U θ).transpose := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
+
+/-- `U θ` has determinant `cos² θ + b θ (1 - b θ) = 1` for `4 sin² θ ≤ 1`. -/
 theorem det_U (h : 4 * Real.sin θ ^ 2 ≤ 1) : (U θ).det = 1 := by
   rw [U_def, Matrix.det_fin_two_of]
   linear_combination b_mul_one_sub_b h + Real.cos_sq_add_sin_sq θ
 
+/-- `L θ` has determinant one for `4 sin² θ ≤ 1`. -/
 theorem det_L (h : 4 * Real.sin θ ^ 2 ≤ 1) : (L θ).det = 1 := by
-  rw [L_def, Matrix.det_fin_two_of]
-  linear_combination b_mul_one_sub_b h + Real.cos_sq_add_sin_sq θ
+  rw [L_eq_transpose_U, Matrix.det_transpose, det_U h]
 
+/-- `U θ` has trace `2 cos θ`. -/
 @[simp]
 theorem trace_U (θ : ℝ) : (U θ).trace = 2 * Real.cos θ := by
   rw [U_def, Matrix.trace_fin_two_of]
   ring
 
+/-- `L θ` has trace `2 cos θ`. -/
 @[simp]
 theorem trace_L (θ : ℝ) : (L θ).trace = 2 * Real.cos θ := by
-  rw [L_def, Matrix.trace_fin_two_of]
-  ring
-
-/-- The matrix of `S` over `ℝ`. -/
-private theorem coe_S_real :
-    ((ModularGroup.S : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ) = !![0, -1; 1, 0] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.SpecialLinearGroup.map_apply_coe, ModularGroup.coe_S]
+  rw [L_eq_transpose_U, Matrix.trace_transpose, trace_U]
 
 /-- `S U θ = !![1 - b θ, -cos θ; cos θ, b θ]`. -/
 theorem S_mul_U (θ : ℝ) :
     ((ModularGroup.S : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ) * U θ =
       !![1 - b θ, -Real.cos θ; Real.cos θ, b θ] := by
-  rw [coe_S_real, U_def, Matrix.mul_fin_two]
+  rw [Matrix.SpecialLinearGroup.coe_modularGroup_S, U_def, Matrix.mul_fin_two]
   simp
 
 /-- `S U θ` has trace `1 = 2 cos (π / 3)`, the trace of an elliptic element of order `3`. -/
@@ -222,7 +226,8 @@ theorem slL_eq (h : 4 * Real.sin θ ^ 2 ≤ 1) :
     slL h = ModularGroup.S * (slU h)⁻¹ * (ModularGroup.S : SL(2, ℝ))⁻¹ := by
   ext i j
   simp only [coe_slL, Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv,
-    coe_slU, coe_S_real, L_def, U_def, Matrix.adjugate_fin_two_of]
+    coe_slU, Matrix.SpecialLinearGroup.coe_modularGroup_S, L_def, U_def,
+    Matrix.adjugate_fin_two_of]
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
 
 /-! ### The relations of `Δ(3, 2, p)` -/
@@ -293,10 +298,6 @@ theorem one_lt_cuspHeight (h : 4 * Real.sin θ ^ 2 < 1) (hθ : 0 < Real.sin θ) 
   rw [cuspHeight_def, one_lt_div hθ]
   nlinarith [one_half_lt_b h]
 
-private theorem det_mapGL_pos (g : SL(2, ℝ)) :
-    0 < (Matrix.SpecialLinearGroup.mapGL ℝ g).val.det := by
-  simp
-
 /-- **The fixed point of `U θ`.** For `0 < sin θ` and `4 sin² θ ≤ 1`, the only point of `ℍ` fixed
 by `U θ` is `i (b θ / sin θ)`. -/
 theorem slU_smul_eq_self_iff (h : 4 * Real.sin θ ^ 2 ≤ 1) (hθ : 0 < Real.sin θ) (z : ℍ) :
@@ -318,16 +319,12 @@ theorem slU_smul_eq_self_iff (h : 4 * Real.sin θ ^ 2 ≤ 1) (hθ : 0 < Real.sin
         mul_zero, mul_one] at this
       nlinarith [b_lt_one hθ.ne', cuspHeight_pos hθ]
     rw [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_specialLinearGroup_apply]
-    simp only [coe_slU, U_def, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.empty_val', Algebra.algebraMap_self,
-      RingHom.id_apply, w]
+    change ((Real.cos θ : ℂ) * (cuspHeight θ * I) + (b θ : ℂ)) /
+      (((b θ - 1 : ℝ) : ℂ) * (cuspHeight θ * I) + (Real.cos θ : ℂ)) = cuspHeight θ * I
     rw [div_eq_iff hden, ofReal_sub, ofReal_one]
     linear_combination (-1) * hy - ((b θ : ℂ) - 1) * (cuspHeight θ : ℂ) ^ 2 * I_sq
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul,
-    UpperHalfPlane.gl_smul_eq_self_iff_eq_fixedPt (det_mapGL_pos _) hell]
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul,
-    UpperHalfPlane.gl_smul_eq_self_iff_eq_fixedPt (det_mapGL_pos _) hell] at hw
-  rw [← hw, UpperHalfPlane.ext_iff, UpperHalfPlane.coe_mk]
+  rw [Matrix.SpecialLinearGroup.smul_eq_self_iff_of_isElliptic hell hw, UpperHalfPlane.ext_iff,
+    UpperHalfPlane.coe_mk]
 
 /-- **The fixed point of `S U θ`.** For `0 < cos θ` and `4 sin² θ ≤ 1`, the only point of `ℍ`
 fixed by `S U θ` is `(1 - 2 b θ + i √3) / (2 cos θ)`. -/
@@ -358,40 +355,30 @@ theorem S_mul_slU_smul_eq_self_iff (h : 4 * Real.sin θ ^ 2 ≤ 1) (hc : 0 < Rea
       have := congrArg Complex.im h0
       simp only [add_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, zero_im] at this
       nlinarith [w.im_pos]
-    rw [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_specialLinearGroup_apply]
-    simp only [Matrix.SpecialLinearGroup.coe_mul, coe_slU, S_mul_U, Matrix.of_apply,
-      Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      Matrix.empty_val', Algebra.algebraMap_self, RingHom.id_apply]
+    rw [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_specialLinearGroup_apply,
+      Matrix.SpecialLinearGroup.coe_mul, coe_slU, S_mul_U]
+    change (((1 - b θ : ℝ) : ℂ) * w + ((-Real.cos θ : ℝ) : ℂ)) /
+      ((Real.cos θ : ℂ) * w + (b θ : ℂ)) = w
     rw [div_eq_iff hden]
     simp only [w, ofReal_sub, ofReal_one, ofReal_neg, ofReal_mul,
       ofReal_ofNat]
     field_simp
     linear_combination hq - I ^ 2 * h3 - 3 * I_sq
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul,
-    UpperHalfPlane.gl_smul_eq_self_iff_eq_fixedPt (det_mapGL_pos _) hell]
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul,
-    UpperHalfPlane.gl_smul_eq_self_iff_eq_fixedPt (det_mapGL_pos _) hell] at hw
-  rw [← hw, UpperHalfPlane.ext_iff, UpperHalfPlane.coe_mk]
+  rw [Matrix.SpecialLinearGroup.smul_eq_self_iff_of_isElliptic hell hw, UpperHalfPlane.ext_iff,
+    UpperHalfPlane.coe_mk]
 
 /-! ### Limits as `p → ∞` -/
 
 @[fun_prop]
-theorem continuous_U : Continuous U := by
-  refine continuous_matrix fun i j ↦ ?_
-  simp only [U_def]
-  fin_cases i <;> fin_cases j <;>
-    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.of_apply, Matrix.cons_val',
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
-    fun_prop
+theorem continuous_U : Continuous U :=
+  continuous_matrix fun i j ↦ by
+    fin_cases i <;> fin_cases j
+    exacts [Real.continuous_cos, continuous_b, continuous_b.sub continuous_const,
+      Real.continuous_cos]
 
 @[fun_prop]
-theorem continuous_L : Continuous L := by
-  refine continuous_matrix fun i j ↦ ?_
-  simp only [L_def]
-  fin_cases i <;> fin_cases j <;>
-    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.of_apply, Matrix.cons_val',
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] <;>
-    fun_prop
+theorem continuous_L : Continuous L :=
+  continuous_U.matrix_transpose.congr fun θ ↦ (L_eq_transpose_U θ).symm
 
 @[simp]
 theorem U_zero : U 0 = !![1, 1; 0, 1] := by
@@ -399,7 +386,9 @@ theorem U_zero : U 0 = !![1, 1; 0, 1] := by
 
 @[simp]
 theorem L_zero : L 0 = !![1, 0; 1, 1] := by
-  simp [L_def]
+  rw [L_eq_transpose_U, U_zero]
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
 
 private theorem tendsto_pi_div_natCast : Tendsto (fun p : ℕ ↦ π / p) atTop (𝓝 0) :=
   tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop
@@ -469,14 +458,6 @@ theorem abs_cuspHeight_pi_div_sub_le {p : ℕ} (hp : 6 ≤ p) :
 
 /-! ### The representation of `Δ(3, 2, p)` -/
 
-/-- The class of `S` in `PSL(2, ℝ)` is `TauCeti.pslS`. -/
-private theorem mk_S : ((ModularGroup.S : SL(2, ℝ)) : PSL(2, ℝ)) = TauCeti.pslS := by
-  rw [TauCeti.pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
-
-private theorem S_mul_S_real : (ModularGroup.S : SL(2, ℝ)) * ModularGroup.S = -1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply]
-
 /-- The relation `(S U) ^ 3 = 1` in `PSL(2, ℝ)`. -/
 private theorem mk_S_mul_slU_pow_three (h : 4 * Real.sin θ ^ 2 ≤ 1) :
     (((ModularGroup.S : SL(2, ℝ)) * slU h : SL(2, ℝ)) : PSL(2, ℝ)) ^ 3 = 1 := by
@@ -489,13 +470,12 @@ private theorem mk_slU_inv_pow {p : ℕ} (hp : 2 ≤ p) (h : 4 * Real.sin (π / 
   rw [inv_pow, ← QuotientGroup.mk_pow, slU_pow_eq_neg_one hp,
     Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_one, inv_one]
 
-/-- The product relation `U⁻¹ S (S U) = S ^ 2 = 1` in `PSL(2, ℝ)`. -/
+/-- The product relation `U⁻¹ S (S U) = U⁻¹ S² U = 1` in `PSL(2, ℝ)`. -/
 private theorem mk_slU_inv_mul_pslS_mul (h : 4 * Real.sin θ ^ 2 ≤ 1) :
     ((slU h : PSL(2, ℝ)))⁻¹ * TauCeti.pslS *
       (((ModularGroup.S : SL(2, ℝ)) * slU h : SL(2, ℝ)) : PSL(2, ℝ)) = 1 := by
-  rw [← mk_S, ← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul,
-    ← mul_assoc, mul_assoc _ _ (ModularGroup.S : SL(2, ℝ)), S_mul_S_real, mul_neg_one, neg_mul,
-    inv_mul_cancel, Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_one]
+  rw [QuotientGroup.mk_mul, ← TauCeti.pslS_eq_mk, mul_assoc, ← mul_assoc TauCeti.pslS,
+    TauCeti.pslS_mul_self, one_mul, inv_mul_cancel]
 
 /-- **The deformed representation of `Δ(3, 2, p)`.** For `6 ≤ p`, the homomorphism
 `Δ(3, 2, p) →* PSL(2, ℝ)` sending `x`, `y`, `z` to the classes of `S U`, `S` and `U⁻¹`, where
@@ -524,16 +504,22 @@ theorem pslRep_z {p : ℕ} (hp : 6 ≤ p) :
       ((slU (four_mul_sin_pi_div_sq_le_one hp) : PSL(2, ℝ)))⁻¹ :=
   TriangleGroup.lift_z ..
 
+/-- The image of `x` under `pslRep` has order exactly `3`. -/
 theorem orderOf_pslRep_x {p : ℕ} (hp : 6 ≤ p) :
     orderOf (pslRep p hp (TriangleGroup.x 3 2 p)) = 3 := by
   rw [pslRep_x, orderOf_mk_S_mul_slU]
 
+/-- The image of `y` under `pslRep` has order exactly `2`. -/
 theorem orderOf_pslRep_y {p : ℕ} (hp : 6 ≤ p) :
     orderOf (pslRep p hp (TriangleGroup.y 3 2 p)) = 2 := by
-  rw [pslRep_y, ← mk_S]
+  rw [pslRep_y, TauCeti.pslS_eq_mk]
   exact Matrix.ProjectiveSpecialLinearGroup.orderOf_mk_of_trace_sq_eq_two_mul_cos_pi_div_sq le_rfl
-    (by rw [coe_S_real, Matrix.trace_fin_two_of, Nat.cast_ofNat, Real.cos_pi_div_two]; norm_num)
+    (by
+      rw [Matrix.SpecialLinearGroup.coe_modularGroup_S, Matrix.trace_fin_two_of, Nat.cast_ofNat,
+        Real.cos_pi_div_two]
+      norm_num)
 
+/-- The image of `z` under `pslRep` has order exactly `p`. -/
 theorem orderOf_pslRep_z {p : ℕ} (hp : 6 ≤ p) :
     orderOf (pslRep p hp (TriangleGroup.z 3 2 p)) = p := by
   rw [pslRep_z, orderOf_inv, orderOf_mk_slU (by omega)]

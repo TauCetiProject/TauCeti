@@ -112,11 +112,6 @@ theorem dilation_smul_coe (s x : ℝ) :
     rw [div_eq_mul_inv, ← Real.exp_neg, neg_neg, mul_right_comm, ← Real.exp_add, add_halves]
   simp [OnePoint.smul_some_eq_ite, Real.exp_ne_zero, h]
 
-private theorem pslS_eq_mk :
-    pslS = ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) ModularGroup.S : SL(2, ℝ)) :
-      PSL(2, ℝ)) := by
-  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
-
 /-- `pslS`, the class of `z ↦ -1/z`, sends the ideal point `0` to `∞`. -/
 @[simp]
 theorem pslS_smul_zero : pslS • ((0 : ℝ) : OnePoint ℝ) = ∞ := by
