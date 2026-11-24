@@ -84,12 +84,11 @@ end Groupoid
 inclusion identifies the isomorphism classes of `Core C` with those of `C`. -/
 noncomputable def skeletonEquiv : Skeleton (Core C) ≃ Skeleton C :=
   .ofBijective (inclusion C).mapSkeleton.obj <| by
-    refine ⟨fun X Y h ↦ ?_, fun X ↦ ⟨toSkeleton ⟨(fromSkeleton C).obj X⟩, ?_⟩⟩
-    · rw [← toSkeleton_fromSkeleton_obj X, ← toSkeleton_fromSkeleton_obj Y] at h ⊢
-      simp only [Functor.mapSkeleton_obj_toSkeleton] at h
-      obtain ⟨e⟩ := toSkeleton_eq_toSkeleton_iff.1 h
-      exact congr_toSkeleton_of_iso (isoMk e)
-    · simp [Functor.mapSkeleton_obj_toSkeleton, toSkeleton_fromSkeleton_obj]
+    refine ⟨fun X Y h ↦ ?_, (inclusion C).mapSkeleton_surjective⟩
+    rw [← toSkeleton_fromSkeleton_obj X, ← toSkeleton_fromSkeleton_obj Y] at h ⊢
+    simp only [Functor.mapSkeleton_obj_toSkeleton] at h
+    obtain ⟨e⟩ := toSkeleton_eq_toSkeleton_iff.1 h
+    exact congr_toSkeleton_of_iso (isoMk e)
 
 @[simp]
 lemma skeletonEquiv_toSkeleton (X : Core C) : skeletonEquiv (toSkeleton X) = toSkeleton X.of :=
