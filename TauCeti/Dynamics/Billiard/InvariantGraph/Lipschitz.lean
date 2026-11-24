@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Invariant graphs of the billiard map are Lipschitz
@@ -20,8 +21,9 @@ Let `χ` be a `C²` strictly convex billiard table with period `L` and next-coll
 with Lipschitz constant at most the largest of the ratios `|∂_v w / ∂_v t|` of `B` at the points
 `(s, ψ(s))` of the graph and the same ratios at the points `(s, -ψ(s))` of the reversed graph; the
 latter are, up to sign, the ratios `∂_w s / ∂_w v` of `B⁻¹` at the points of the graph, since
-`B⁻¹ = ι ∘ B ∘ ι` up to a period for the time reversal `ι(s, v) = (s, -v)`
-(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.lipschitzWith_of_forall_abs_le`). The ratios
+`B⁻¹ = ι ∘ B ∘ ι` up to a period for the time reversal `ι(s, v) = (s, -v)`. More precisely, `ψ`
+is `K`-Lipschitz as soon as all these ratios `∂_v w / ∂_v t`, without absolute values, are at least
+`-K` (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.lipschitzWith_of_forall_le`). The ratios
 are continuous and `L`-periodic along the graph, so such a bound exists
 (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.exists_lipschitzWith`).
 
@@ -68,15 +70,6 @@ theorem verticalImageSlope_def (s v : ℝ) :
     χ.verticalImageSlope s v = deriv (χ.nextTangential s) v / deriv (χ.nextParam s) v :=
   (rfl)
 
-/-- For a `C²` table, the partial derivative in `v` of the next tangential component exists on
-the open strip. -/
-theorem hasDerivAt_nextTangential (hχ : ContDiff ℝ 2 χ) {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
-    HasDerivAt (χ.nextTangential s) (deriv (χ.nextTangential s) v) v := by
-  have hd := ((χ.contDiffAt_nextTangential (n := 1) (hχ.contDiffAt.of_le (by norm_num))
-    (hχ.contDiffAt.of_le (by norm_num)) hv).differentiableAt one_ne_zero).comp v
-    ((differentiableAt_const s).prodMk differentiableAt_id)
-  exact hd.hasDerivAt
-
 /-- The slope of the image of the vertical is `L`-periodic in `s`. -/
 theorem verticalImageSlope_add_period {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     χ.verticalImageSlope (s + χ.period) v = χ.verticalImageSlope s v := by
@@ -87,32 +80,17 @@ theorem verticalImageSlope_add_period {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     Filter.eventuallyEq_of_mem hnhds fun u hu ↦ χ.nextTangential_add_period hu
   rw [verticalImageSlope_def, verticalImageSlope_def, hT.deriv_eq, hW.deriv_eq, deriv_add_const]
 
-/-- The partial derivative in the second variable of a `C¹` function of two variables, along a
-continuous curve `s ↦ (s, φ s)`, is continuous. -/
-private theorem continuous_deriv_comp {F : ℝ × ℝ → ℝ} {φ : ℝ → ℝ} (hφ : Continuous φ)
-    (hF : ∀ s, ContDiffAt ℝ 1 F (s, φ s)) :
-    Continuous fun s ↦ deriv (fun v ↦ F (s, v)) (φ s) := by
-  have heq (s : ℝ) : deriv (fun v ↦ F (s, v)) (φ s) = fderiv ℝ F (s, φ s) (0, 1) :=
-    (((hF s).differentiableAt one_ne_zero).hasFDerivAt.comp_hasDerivAt (φ s)
-      (HasDerivAt.prodMk (f₁ := fun _ ↦ s) (hasDerivAt_const (φ s) s)
-        (hasDerivAt_id' (φ s)))).deriv
-  simp only [heq]
-  refine continuous_iff_continuousAt.2 fun s ↦ ContinuousAt.clm_apply ?_ continuousAt_const
-  exact ContinuousAt.comp (g := fderiv ℝ F) (f := fun s ↦ (s, φ s))
-    ((hF s).fderiv_right (m := 0) (by norm_num)).continuousAt
-    (continuous_id.prodMk hφ).continuousAt
-
 /-- Along a continuous curve `s ↦ (s, φ(s))` in the open strip, the slope of the image of the
 vertical is continuous, for a `C²` table. -/
 theorem continuous_verticalImageSlope (hχ : ContDiff ℝ 2 χ) {φ : ℝ → ℝ} (hφ : Continuous φ)
     (hφI : ∀ s, φ s ∈ Ioo (-1) 1) : Continuous fun s ↦ χ.verticalImageSlope s (φ s) := by
   simp only [verticalImageSlope_def]
   refine Continuous.div ?_ ?_ fun s ↦ (χ.deriv_nextParam_neg (hφI s)).ne
-  · exact continuous_deriv_comp (F := fun x : ℝ × ℝ ↦ χ.nextTangential x.1 x.2) hφ fun s ↦
-      χ.contDiffAt_nextTangential (hχ.contDiffAt.of_le (by norm_num))
+  · exact continuous_deriv_slice_right_graph (u := fun x : ℝ × ℝ ↦ χ.nextTangential x.1 x.2) hφ
+      fun s ↦ χ.contDiffAt_nextTangential (hχ.contDiffAt.of_le (by norm_num))
         (hχ.contDiffAt.of_le (by norm_num)) (hφI s)
-  · exact continuous_deriv_comp (F := fun x : ℝ × ℝ ↦ χ.nextParam x.1 x.2) hφ fun s ↦
-      χ.contDiffAt_nextParam (hχ.contDiffAt.of_le (by norm_num))
+  · exact continuous_deriv_slice_right_graph (u := fun x : ℝ × ℝ ↦ χ.nextParam x.1 x.2) hφ
+      fun s ↦ χ.contDiffAt_nextParam (hχ.contDiffAt.of_le (by norm_num))
         (hχ.contDiffAt.of_le (by norm_num)) (hφI s)
 
 namespace IsInvariantGraph
@@ -162,7 +140,7 @@ theorem frequently_lt_slope (hχ : ContDiff ℝ 2 χ) (s' : ℝ) {r : ℝ}
   have hT := χ.hasDerivAt_nextParam (s := s') hv₀
   have hT' : deriv T v₀ ≠ 0 := (χ.deriv_nextParam_neg hv₀).ne
   rw [← hT.deriv] at hT
-  have hW := hasDerivAt_nextTangential hχ (s := s') hv₀
+  have hW := χ.hasDerivAt_nextTangential hχ (s := s') hv₀
   -- The difference quotients of the image curve tend to `∂_v w / ∂_v t`.
   have hlim : Tendsto (fun v ↦ slope W v₀ v / slope T v₀ v) (𝓝[<] v₀)
       (𝓝 (χ.verticalImageSlope s' v₀)) :=
@@ -199,8 +177,7 @@ private theorem sub_le_mul_of_forall_le (hχ : ContDiff ℝ 2 χ) {K : ℝ}
   · simpa using ((hasDerivAt_id x).sub_const a |>.const_mul K |>.const_add (-ψ a)).hasDerivWithinAt
   · obtain ⟨s', rfl⟩ := h.surjective_graphLift hχ x
     refine (h.frequently_lt_slope hχ s' (r := -r) (by linarith [hK s'])).mono fun z hz ↦ ?_
-    change slope (fun t ↦ -ψ t) _ z < r
-    rw [slope_neg]
+    simp only [slope_neg_fun, Pi.neg_apply]
     linarith
 
 /-- **Invariant graphs are Lipschitz, with explicit constant.** An invariant graph `ψ` of a `C²`

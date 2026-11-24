@@ -97,6 +97,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   norm at most that of the derivative.
 * `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
   of a `C¹` map is continuous along every vertical segment inside its open domain.
+* `TauCeti.continuous_deriv_slice_right_graph`: the partial derivative in a scalar second variable
+  of a map that is `C¹` along a continuous graph `a ↦ (a, φ a)` is continuous along it.
 * `TauCeti.continuous_fderiv_apply_slice_right`: for a `C¹` map, `t ↦ df(a, t) v` is continuous.
 * `TauCeti.continuous_fderiv_slice_right`: the derivative of the second-variable slices of a `C¹`
   function of two variables is continuous in both variables.
@@ -458,6 +460,19 @@ theorem _root_.ContDiffOn.continuousOn_deriv_slice_right {u : E × 𝕜 → G} {
   refine h.congr fun t ht ↦ ?_
   exact (hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero _ (hKU t ht)).differentiableAt
     (hU.mem_nhds (hKU t ht)))).deriv
+
+/-- The partial derivative in the second variable of a map `u`, evaluated along a continuous graph
+`a ↦ (a, φ a)` at whose points `u` is `C¹`, is continuous. -/
+theorem continuous_deriv_slice_right_graph {u : E × 𝕜 → G} {φ : E → 𝕜} (hφ : Continuous φ)
+    (hu : ∀ a, ContDiffAt 𝕜 1 u (a, φ a)) :
+    Continuous fun a ↦ deriv (fun t ↦ u (a, t)) (φ a) := by
+  have heq (a : E) : deriv (fun t ↦ u (a, t)) (φ a) = fderiv 𝕜 u (a, φ a) (0, 1) :=
+    (hasDerivAt_slice_right ((hu a).differentiableAt one_ne_zero)).deriv
+  simp only [heq]
+  refine continuous_iff_continuousAt.2 fun a ↦ ContinuousAt.clm_apply ?_ continuousAt_const
+  exact ContinuousAt.comp (g := fderiv 𝕜 u) (f := fun a ↦ (a, φ a))
+    ((hu a).fderiv_right (m := 0) (by norm_num)).continuousAt
+    (continuous_id.prodMk hφ).continuousAt
 
 /-- For a `C¹` map `f` on a product, `t ↦ df(a, t) v` is continuous. -/
 theorem continuous_fderiv_apply_slice_right {f : E × F → G} (hf : ContDiff 𝕜 1 f) (a : E)
