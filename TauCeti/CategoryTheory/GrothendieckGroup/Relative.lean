@@ -142,10 +142,21 @@ namespace RelativeK0
 noncomputable def biprodRelation (x y : T ⊡ T) : FreeAddCommGroup (ObjectCode (T ⊡ T)) :=
   freeOf (tripleBiprod T x y) - freeOf x - freeOf y
 
-/-- The composition relation `[(P, α, Q)] + [(Q, β, S)] - [(P, β ∘ α, S)]`. -/
+/-- The defining equation of `TauCeti.RelativeK0.biprodRelation`. -/
+lemma biprodRelation_def (x y : T ⊡ T) :
+    biprodRelation T x y = freeOf (tripleBiprod T x y) - freeOf x - freeOf y := (rfl)
+
+/-- The composition relation `[(P, β ∘ α, S)] - [(P, α, Q)] - [(Q, β, S)]`. -/
 noncomputable def transRelation {P Q S : C} (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S) :
     FreeAddCommGroup (ObjectCode (T ⊡ T)) :=
-  freeOf (⟨P, Q, α⟩ : T ⊡ T) + freeOf (⟨Q, S, β⟩ : T ⊡ T) - freeOf (⟨P, S, α ≪≫ β⟩ : T ⊡ T)
+  freeOf (⟨P, S, α ≪≫ β⟩ : T ⊡ T) - freeOf (⟨P, Q, α⟩ : T ⊡ T) - freeOf (⟨Q, S, β⟩ : T ⊡ T)
+
+omit [HasZeroMorphisms C] [HasBinaryBiproducts C] [HasZeroMorphisms D] [T.PreservesZeroMorphisms]
+  [PreservesBiproductsOfShape WalkingPair T] in
+/-- The defining equation of `TauCeti.RelativeK0.transRelation`. -/
+lemma transRelation_def {P Q S : C} (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S) :
+    transRelation T α β = freeOf (⟨P, S, α ≪≫ β⟩ : T ⊡ T) - freeOf (⟨P, Q, α⟩ : T ⊡ T) -
+      freeOf (⟨Q, S, β⟩ : T ⊡ T) := (rfl)
 
 /-- The family of direct-sum and composition relations presenting the relative group. -/
 def relations : Set (FreeAddCommGroup (ObjectCode (T ⊡ T))) :=
@@ -158,6 +169,13 @@ lemma mem_relations_iff {r : FreeAddCommGroup (ObjectCode (T ⊡ T))} :
     r ∈ relations T ↔ (∃ x y : T ⊡ T, r = biprodRelation T x y) ∨
       ∃ (P Q S : C) (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S),
         r = transRelation T α β := (Iff.rfl)
+
+lemma biprodRelation_mem_relations (x y : T ⊡ T) : biprodRelation T x y ∈ relations T :=
+  (mem_relations_iff T).2 (Or.inl ⟨x, y, rfl⟩)
+
+lemma transRelation_mem_relations {P Q S : C} (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S) :
+    transRelation T α β ∈ relations T :=
+  (mem_relations_iff T).2 (Or.inr ⟨P, Q, S, α, β, rfl⟩)
 
 end RelativeK0
 
@@ -187,25 +205,25 @@ lemma of_congr {x y : T ⊡ T} (e : x ≅ y) : (of x : RelativeK0 T) = of y :=
 theorem of_tripleBiprod (x y : T ⊡ T) :
     (of (tripleBiprod T x y) : RelativeK0 T) = of x + of y := by
   have h : (PresentedK0.mk (biprodRelation T x y) : PresentedK0 (relations T)) = 0 :=
-    PresentedK0.mk_eq_zero_of_mem (Or.inl ⟨x, y, rfl⟩)
-  rw [biprodRelation, map_sub, map_sub, PresentedK0.mk_freeOf, PresentedK0.mk_freeOf,
+    PresentedK0.mk_eq_zero_of_mem (biprodRelation_mem_relations T x y)
+  rw [biprodRelation_def, map_sub, map_sub, PresentedK0.mk_freeOf, PresentedK0.mk_freeOf,
     PresentedK0.mk_freeOf, sub_sub, sub_eq_zero] at h
   exact h
 
-/-- The composition relation: `(P, α, Q) + (Q, β, S) = (P, β ∘ α, S)`. -/
+/-- The composition relation: `(P, β ∘ α, S) = (P, α, Q) + (Q, β, S)`. -/
 theorem of_trans {P Q S : C} (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S) :
-    (of ⟨P, Q, α⟩ : RelativeK0 T) + of ⟨Q, S, β⟩ = of ⟨P, S, α ≪≫ β⟩ := by
+    (of ⟨P, S, α ≪≫ β⟩ : RelativeK0 T) = of ⟨P, Q, α⟩ + of ⟨Q, S, β⟩ := by
   have h : (PresentedK0.mk (transRelation T α β) : PresentedK0 (relations T)) = 0 :=
-    PresentedK0.mk_eq_zero_of_mem (Or.inr ⟨P, Q, S, α, β, rfl⟩)
-  rw [transRelation, map_sub, map_add, PresentedK0.mk_freeOf, PresentedK0.mk_freeOf,
-    PresentedK0.mk_freeOf, sub_eq_zero] at h
+    PresentedK0.mk_eq_zero_of_mem (transRelation_mem_relations T α β)
+  rw [transRelation_def, map_sub, map_sub, PresentedK0.mk_freeOf, PresentedK0.mk_freeOf,
+    PresentedK0.mk_freeOf, sub_sub, sub_eq_zero] at h
   exact h
 
 /-- The class of an identity triple `(P, id, P)` vanishes. -/
 @[simp]
 theorem of_refl (P : C) : (of ⟨P, P, Iso.refl _⟩ : RelativeK0 T) = 0 := by
   have h := of_trans (T := T) (Iso.refl (T.obj P)) (Iso.refl _)
-  rwa [Iso.refl_trans, add_eq_left] at h
+  rwa [Iso.refl_trans, left_eq_add] at h
 
 /-- Reversing a triple negates its class: `(Q, α⁻¹, P) = -(P, α, Q)`. -/
 @[simp]
@@ -213,7 +231,7 @@ theorem of_symm {P Q : C} (α : T.obj P ≅ T.obj Q) :
     (of ⟨Q, P, α.symm⟩ : RelativeK0 T) = -of ⟨P, Q, α⟩ := by
   have h := of_trans α α.symm
   rw [Iso.self_symm_id, of_refl] at h
-  exact eq_neg_of_add_eq_zero_right h
+  exact eq_neg_of_add_eq_zero_right h.symm
 
 /-- A triple whose isomorphism is the image of an isomorphism of `C` has class zero. -/
 @[simp]
@@ -269,7 +287,7 @@ structure AdditiveInvariant (G : Type*) [AddCommGroup G] where
   map_tripleBiprod : ∀ x y : T ⊡ T, obj (tripleBiprod T x y) = obj x + obj y
   /-- The value on a composite triple is the sum of the values. -/
   map_trans : ∀ {P Q S : C} (α : T.obj P ≅ T.obj Q) (β : T.obj Q ≅ T.obj S),
-    obj ⟨P, Q, α⟩ + obj ⟨Q, S, β⟩ = obj ⟨P, S, α ≪≫ β⟩
+    obj ⟨P, S, α ≪≫ β⟩ = obj ⟨P, Q, α⟩ + obj ⟨Q, S, β⟩
 
 variable {G : Type*} [AddCommGroup G]
 
@@ -279,11 +297,11 @@ private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant T
   map_iso := a.map_iso
   map_rel := by
     rintro _ (⟨x, y, rfl⟩ | ⟨P, Q, S, α, β, rfl⟩)
-    · rw [biprodRelation, map_sub, map_sub, freeLift_freeOf a.map_iso,
+    · rw [biprodRelation_def, map_sub, map_sub, freeLift_freeOf a.map_iso,
         freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso, a.map_tripleBiprod]
       abel
-    · rw [transRelation, map_sub, map_add, freeLift_freeOf a.map_iso,
-        freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso, a.map_trans, sub_self]
+    · rw [transRelation_def, map_sub, map_sub, freeLift_freeOf a.map_iso,
+        freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso, a.map_trans, sub_sub, sub_self]
 
 /-- The homomorphism out of the relative group induced by an additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant T G) : RelativeK0 T →+ G :=
@@ -307,7 +325,7 @@ noncomputable def liftEquiv : AdditiveInvariant T G ≃ (RelativeK0 T →+ G) wh
     { obj := fun x ↦ f (of x)
       map_iso := fun _ _ e ↦ by rw [of_congr e]
       map_tripleBiprod := fun x y ↦ by rw [of_tripleBiprod, map_add]
-      map_trans := fun α β ↦ by rw [← map_add, of_trans] }
+      map_trans := fun α β ↦ by rw [of_trans, map_add] }
   left_inv a := by ext x; exact lift_of a x
   right_inv f := (lift_unique _ f fun _ ↦ rfl).symm
 
@@ -357,7 +375,8 @@ of an isomorphism of `C`. -/
 theorem of_eq_zero_of_fullyFaithful (hT : T.FullyFaithful) (x : T ⊡ T) :
     (of x : RelativeK0 T) = 0 := by
   obtain ⟨P, Q, α⟩ := x
-  rw [← hT.isoEquiv.right_inv α]
+  have h : T.mapIso (hT.preimageIso α) = α := by ext; simp
+  rw [← h]
   exact of_mapIso _
 
 /-- The relative group of a fully faithful functor is trivial. -/
@@ -408,7 +427,7 @@ noncomputable def toSplitK0EquivOfIsZero : RelativeK0 T ≃+ SplitK0 C :=
     (hom_ext fun ⟨P, Q, α⟩ ↦ by
       simp only [AddMonoidHom.comp_apply, toSplitK0_of, map_sub, ofSplitK0OfIsZero_of,
         AddMonoidHom.id_apply]
-      rw [sub_eq_add_neg, ← of_symm, of_trans]
+      rw [sub_eq_add_neg, ← of_symm, ← of_trans]
       exact of_eq_of_isZero hD (Iso.refl _) (Iso.refl _))
     (SplitK0.hom_ext fun P ↦ by simp)
 
@@ -500,17 +519,17 @@ variable [EssentiallySmall.{w} C] [LocallySmall.{w} D] [EssentiallySmall.{w'} C'
 private lemma freeMap_relations_mem_closure :
     ∀ r ∈ relations T, freeMap (tripleMap F G e) r ∈ AddSubgroup.closure (relations T') := by
   rintro _ (⟨x, y, rfl⟩ | ⟨P, Q, S, α, β, rfl⟩)
-  · rw [biprodRelation, map_sub, map_sub, freeMap_freeOf, freeMap_freeOf, freeMap_freeOf,
+  · rw [biprodRelation_def, map_sub, map_sub, freeMap_freeOf, freeMap_freeOf, freeMap_freeOf,
       freeOf_congr (tripleMapTripleBiprodIso F G e x y)]
-    exact AddSubgroup.subset_closure (Or.inl ⟨_, _, rfl⟩)
+    exact AddSubgroup.subset_closure (biprodRelation_mem_relations _ _ _)
   · have h : (tripleMap F G e).obj ⟨P, S, α ≪≫ β⟩ = ⟨F.obj P, F.obj S,
         ((tripleMap F G e).obj ⟨P, Q, α⟩).iso ≪≫ ((tripleMap F G e).obj ⟨Q, S, β⟩).iso⟩ := by
       refine congrArg (CategoricalPullback.mk (F := T') (G := T') (F.obj P) (F.obj S)) ?_
       ext
       dsimp only [tripleMap]
       simp
-    rw [transRelation, map_sub, map_add, freeMap_freeOf, freeMap_freeOf, freeMap_freeOf, h]
-    exact AddSubgroup.subset_closure (Or.inr ⟨_, _, _, _, _, rfl⟩)
+    rw [transRelation_def, map_sub, map_sub, freeMap_freeOf, freeMap_freeOf, freeMap_freeOf, h]
+    exact AddSubgroup.subset_closure (transRelation_mem_relations _ _ _)
 
 /-- The homomorphism `K₀(T) → K₀(T')` induced by functors `F : C ⥤ C'` and `G : D ⥤ D'` and a
 natural isomorphism `e : T ⋙ G ≅ F ⋙ T'`, sending `[(P, α, Q)]` to
