@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 import TauCeti.Analysis.SpecificLimits.DyadicSum
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Calderón–Zygmund estimates for the kernels of uniform symbols
@@ -234,8 +233,8 @@ private theorem IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_
     by positivity, fun j x x' ↦ ?_⟩
   -- The increment is at most `G (2^j)^m ‖x - x'‖` by the mean value theorem, and vanishes off the
   -- ball of radius `2^j φ.rOut` that carries the piece.
-  refine (integral_norm_le_of_eq_zero_off_closedBall (x₀ := 0) (R := 2 ^ j * φ.rOut)
-    (K := G * ‖x - x'‖ * ((2 : ℝ) ^ j) ^ m) (fun ξ _ ↦ ?_) fun ξ hξ ↦ ?_).trans_eq ?_
+  refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
+    (s := 2 ^ j) (K := G * ‖x - x'‖) (μ := m) (fun ξ _ ↦ ?_) fun ξ hξ ↦ ?_).trans_eq (by ring)
   · have hd : Differentiable ℝ fun w ↦ (a.littlewoodPaleyPiece φ j).coefficient (w, ξ) :=
       ((a.littlewoodPaleyPiece φ j).contDiff_coefficient_slice ξ).differentiable (by simp)
     exact (convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hd w)
@@ -245,9 +244,6 @@ private theorem IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_
       exact hξ.le
     rw [a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ',
       a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x' hξ', sub_self]
-  · rw [Measure.addHaar_real_closedBall _ _ (by positivity), finrank_euclideanSpace_fin,
-      Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
-    ring
 
 /-- **Increments of the piece kernels in the first variable.** For a uniform symbol `a` of order
 `m`, `‖K_{aⱼ}(x, y) - K_{aⱼ}(x', y)‖ ≤ D (2^j)^(m + n + 1) ‖x - x'‖`. -/
