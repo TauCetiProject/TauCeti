@@ -22,9 +22,10 @@ inversion on `Γ` is continuous, the determinant character is continuous
 are continuous in `g`.
 
 On a free carrier the determinant character is the usual determinant `LinearMap.det (ρ g)`
-(`ContinuousRep.det_apply_eq_det`). It is trivial on the zero module, it recovers a character from
-its rank-one representation (`ContinuousRep.det_ofCharacter`), and it commutes with extension of
-scalars (`ContinuousRep.coe_det_baseChange_apply`).
+(`ContinuousRep.coe_det_apply_eq_linearMap_det`). It is an isomorphism invariant
+(`ContinuousRep.Iso.det_eq`), it is trivial on the zero module and on trivial representations, it
+recovers a character from its rank-one representation (`ContinuousRep.det_ofCharacter`), and it
+commutes with extension of scalars (`ContinuousRep.coe_det_baseChange_apply`).
 
 ## Main definitions
 
@@ -34,8 +35,13 @@ scalars (`ContinuousRep.coe_det_baseChange_apply`).
 ## Main results
 
 * `TauCeti.ContinuousRep.continuous_det`: the determinant character is continuous.
-* `TauCeti.ContinuousRep.det_apply_eq_det`: on a free carrier it is `LinearMap.det (ρ g)`.
+* `TauCeti.ContinuousRep.coe_det_apply_eq_linearMap_det`: on a free carrier it is
+  `LinearMap.det (ρ g)`.
+* `TauCeti.ContinuousRep.Iso.det_eq`: isomorphic representations have the same determinant
+  character.
 * `TauCeti.ContinuousRep.det_of_subsingleton`: on the zero module it is trivial.
+* `TauCeti.ContinuousRep.det_trivial`: the trivial representation has trivial determinant
+  character.
 * `TauCeti.ContinuousRep.det_ofCharacter`: the determinant of a character line is the character.
 * `TauCeti.ContinuousRep.coe_det_baseChange_apply`: it commutes with extension of scalars.
 -/
@@ -62,33 +68,42 @@ theorem coe_det_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
   (rfl)
 
 /-- On a free carrier the determinant character is the determinant of `ρ g`. -/
-theorem det_apply_eq_det [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : Γ) :
+theorem coe_det_apply_eq_linearMap_det [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : Γ) :
     (ρ.det g : A) = LinearMap.det (ρ g) := by
   rw [coe_det_apply, LinearMap.projectiveDet_eq_det]
 
 /-- On the zero module the determinant character is trivial. -/
 theorem det_of_subsingleton [Subsingleton M] (ρ : ContinuousRep Γ A M) : ρ.det = 1 := by
   ext g
-  rw [det_apply_eq_det, MonoidHom.one_apply, Units.val_one, Subsingleton.elim (ρ g) LinearMap.id,
-    LinearMap.det_id]
+  rw [coe_det_apply_eq_linearMap_det, MonoidHom.one_apply, Units.val_one,
+    Subsingleton.elim (ρ g) LinearMap.id, LinearMap.det_id]
 
 /-- The determinant character of the trivial representation is trivial. -/
 @[simp]
 theorem det_trivial : (trivial Γ A M).det = 1 := by
   ext g
-  rw [coe_det_apply,
-    show (trivial Γ A M) g = LinearMap.id from LinearMap.ext fun x => trivial_apply g x,
-    LinearMap.projectiveDet_id, MonoidHom.one_apply, Units.val_one]
+  rw [coe_det_apply, trivial_apply_eq_id, LinearMap.projectiveDet_id, MonoidHom.one_apply,
+    Units.val_one]
+
+/-- **Isomorphic continuous representations have the same determinant character.** -/
+theorem Iso.det_eq {N : Type*} [AddCommGroup N] [Module A N] [TopologicalSpace N]
+    [Module.Finite A N] [Module.Projective A N] {ρ : ContinuousRep Γ A M}
+    {σ : ContinuousRep Γ A N} (e : Iso ρ σ) : ρ.det = σ.det := by
+  ext g
+  rw [coe_det_apply, coe_det_apply, ← coe_toRepresentation σ,
+    ← e.toRepresentationEquiv.conj_apply_self g, LinearEquiv.conj_apply, LinearMap.comp_assoc,
+    LinearMap.projectiveDet_conj, coe_toRepresentation]
 
 section Continuity
 
 variable [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A M]
 
-/-- The determinant of `ρ g` is continuous in `g`: through a splitting `π ∘ σ = id` of `M` off
-`Aⁿ`, it is the determinant of a matrix whose entries are continuous in `g`. -/
+/-- For the module topology on `M`, the determinant of `ρ g` is continuous in `g`. -/
 theorem continuous_projectiveDet_apply (ρ : ContinuousRep Γ A M) :
     Continuous fun g => LinearMap.projectiveDet (ρ g) := by
   classical
+  -- Through a splitting `π ∘ σ = id` of `M` off `Aⁿ`, `projectiveDet (ρ g)` is the determinant
+  -- of a matrix whose entries are continuous in `g`.
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective A M
   simp_rw [LinearMap.projectiveDet_eq_det_of_comp_eq_id π σ h, ← LinearMap.det_toMatrix']
   refine Continuous.matrix_det (continuous_matrix fun i j => ?_)
@@ -121,14 +136,14 @@ end Continuity
 theorem det_ofCharacter [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ) :
     (ofCharacter χ).det = χ := by
   ext g
-  rw [det_apply_eq_det, LinearMap.det_ring, ofCharacter_apply, mul_one]
-  rfl
+  rw [coe_det_apply_eq_linearMap_det, LinearMap.det_ring, ofCharacter_apply, mul_one,
+    MonoidHom.coe_ofClass]
 
 /-- **The determinant character commutes with extension of scalars**: the determinant of the
 base-changed operator is the image of the determinant under `A → B`. -/
 theorem coe_det_baseChange_apply [TopologicalSpace A] [IsModuleTopology A M] (B : Type*)
     [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] [Algebra A B] [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)]
+    [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)]
     [IsModuleTopology B (B ⊗[A] M)] (ρ : ContinuousRep Γ A M) (g : Γ) :
     ((ρ.baseChange B).det g : B) = algebraMap A B (ρ.det g) := by
   rw [coe_det_apply, baseChange_apply, LinearMap.projectiveDet_baseChange, coe_det_apply]
