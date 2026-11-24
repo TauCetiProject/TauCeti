@@ -188,7 +188,7 @@ theorem volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasu
     by_cases hy : y ∈ Ioc 0 r
     · rw [indicator_of_mem hy, inter_eq_right.2 fun x hx => by
         rw [mem_preimage, mem_singleton_iff.1 hx]; exact hy]
-      rfl
+      simp only [f, preimage, mem_singleton_iff]
     · rw [indicator_of_notMem hy, ← preimage_inter, inter_singleton_eq_empty.2 hy,
         preimage_empty, measure_empty]
   rw [hshell, ← setLIntegral_one, ← lintegral_congr_ae hjac, ← hcoarea,
@@ -303,9 +303,11 @@ private theorem hasDerivWithinAt_volume_real_add_smul_closedBall_of_isCompact {K
     rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal ht.le] at hlow
     rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal ht.le,
       ENNReal.toReal_ofReal (by positivity)] at hup
-    rw [slope_def_field, sub_zero, hV t ht.le, hV 0 le_rfl, cthickening_zero,
-      hK.isClosed.closure_eq, sdiff_self, measureReal_empty, add_zero, add_sub_cancel_left,
-      le_div_iff₀ ht, div_le_iff₀ ht]
+    have hslope_eq : slope (fun t : ℝ => volume.real (K + t • closedBall (0 : E) 1)) 0 t =
+        volume.real (cthickening t K \ K) / t := by
+      rw [slope_def_field, hV t ht.le, hV 0 le_rfl]
+      simp [hK.isClosed.closure_eq]
+    rw [hslope_eq, le_div_iff₀ ht, div_le_iff₀ ht]
     exact ⟨hlow, hup⟩
   have hC : Tendsto (fun t => C t * A.toReal) (𝓝[>] 0) (𝓝 A.toReal) := by
     have hcont : ContinuousAt (fun t => C t * A.toReal) 0 := by
