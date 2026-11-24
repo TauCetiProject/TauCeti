@@ -56,7 +56,8 @@ estimator vanishes, so its contribution at `θ = 0` is zero.
   `ℝ^ι`.
 * `TauCeti.add_const_mem_pitmanGoodSet_iff`, `TauCeti.pitmanEstimator_add_const`: with no
   measurability hypothesis, the good set is invariant under diagonal translations and the Pitman
-  estimator is equivariant on it.
+  estimator is equivariant on it; `TauCeti.sub_const_mem_pitmanGoodSet_iff` and
+  `TauCeti.pitmanEstimator_sub_const` are the subtraction forms.
 * `TauCeti.ae_pitmanEstimator_add_const`: when the good set has full measure, the Pitman
   estimator is almost surely equivariant.
 * `TauCeti.pitmanEstimator_congr_ae`, `TauCeti.pitmanGoodSet_congr_ae`: both depend on the
@@ -179,6 +180,12 @@ theorem add_const_mem_pitmanGoodSet_iff {x : ι → ℝ} {a : ℝ} :
   refine ⟨fun h ↦ ?_, key x a⟩
   simpa using key _ (-a) h
 
+/-- The Pitman good set is invariant under subtracting a constant from every observation. -/
+@[simp]
+theorem sub_const_mem_pitmanGoodSet_iff {x : ι → ℝ} {a : ℝ} :
+    (fun i ↦ x i - a) ∈ pitmanGoodSet f ↔ x ∈ pitmanGoodSet f := by
+  simpa only [← sub_eq_add_neg] using add_const_mem_pitmanGoodSet_iff (f := f) (x := x) (a := -a)
+
 /-- On the good set, the Pitman estimator is location equivariant. -/
 @[simp]
 theorem pitmanEstimator_add_const {x : ι → ℝ} (hx : x ∈ pitmanGoodSet f) (a : ℝ) :
@@ -194,6 +201,12 @@ theorem pitmanEstimator_add_const {x : ι → ℝ} (hx : x ∈ pitmanGoodSet f) 
       integral_sub_right_eq_self (fun u ↦ u * ∏ i, f (x i - u)) a, integral_const_mul,
       integral_sub_right_eq_self (fun u ↦ ∏ i, f (x i - u)) a]
   rw [pitmanEstimator_def, pitmanEstimator_def, hW, hM, add_div, mul_div_cancel_right₀ _ hpos.ne']
+
+/-- On the good set the Pitman estimator commutes with subtracting a constant from every
+observation. -/
+theorem pitmanEstimator_sub_const {x : ι → ℝ} (hx : x ∈ pitmanGoodSet f) (a : ℝ) :
+    pitmanEstimator f (fun i ↦ x i - a) = pitmanEstimator f x - a := by
+  simpa only [← sub_eq_add_neg] using pitmanEstimator_add_const hx (-a)
 
 /-- If almost every sample lies in the good set, the Pitman estimator is almost surely location
 equivariant: almost every sample `x` satisfies `δ (x + a·1) = δ x + a` for every shift `a`. -/
@@ -237,17 +250,12 @@ private theorem lintegral_ofReal_pitmanEstimator_sq_mul_le (hf0 : 0 ≤ᵐ[volum
     {δ : (ι → ℝ) → ℝ} (heq : IsLocationEquivariant δ) (z : ι → ℝ) :
     ∫⁻ u : ℝ, ENNReal.ofReal (pitmanEstimator f (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) ≤
       ∫⁻ u : ℝ, ENNReal.ofReal (δ (fun i ↦ z i - u) ^ 2 * ∏ i, f (z i - u)) := by
-  have hδ (u : ℝ) : δ (fun i ↦ z i - u) = δ z - u := by
-    simpa only [← sub_eq_add_neg] using isLocationEquivariant_iff.1 heq z (-u)
   by_cases hz : z ∈ pitmanGoodSet f
-  · have hpit (u : ℝ) : pitmanEstimator f (fun i ↦ z i - u) = pitmanEstimator f z - u := by
-      simpa only [← sub_eq_add_neg] using pitmanEstimator_add_const hz (-u)
-    simp only [hpit, hδ]
+  · simp only [pitmanEstimator_sub_const hz, heq.apply_sub_const]
     exact lintegral_ofReal_sub_sq_mul_le aestronglyMeasurable_id
       (prod_apply_sub_ae_nonneg hf0 z) (mem_pitmanGoodSet.mp hz).2.1 (δ z)
   · have hpit (u : ℝ) : pitmanEstimator f (fun i ↦ z i - u) = 0 :=
-      pitmanEstimator_eq_zero_of_notMem hf0 fun h ↦
-        hz (add_const_mem_pitmanGoodSet_iff.1 (by simpa only [sub_eq_add_neg] using h))
+      pitmanEstimator_eq_zero_of_notMem hf0 (by simpa using hz)
     simp [hpit]
 
 /-- The lower integral of the squared error of the Pitman estimator under `Pⁿ` is at most that of

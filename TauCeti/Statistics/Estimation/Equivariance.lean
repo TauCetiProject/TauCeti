@@ -23,6 +23,7 @@ theorem compares the risks at `θ = 0` only.
 
 ## Main results
 
+* `TauCeti.IsLocationEquivariant.apply_sub_const`: the subtraction form of the definition.
 * `TauCeti.IsLocationEquivariant.nonempty`: location-equivariant estimators exist only for
   nonempty samples.
 -/
@@ -42,6 +43,12 @@ def IsLocationEquivariant (δ : (ι → ℝ) → ℝ) : Prop :=
 theorem isLocationEquivariant_iff {δ : (ι → ℝ) → ℝ} :
     IsLocationEquivariant δ ↔ ∀ x a, δ (fun i ↦ x i + a) = δ x + a :=
   Iff.rfl
+
+/-- A location-equivariant estimator commutes with subtracting a constant from every
+observation. -/
+theorem IsLocationEquivariant.apply_sub_const {δ : (ι → ℝ) → ℝ} (h : IsLocationEquivariant δ)
+    (x : ι → ℝ) (a : ℝ) : δ (fun i ↦ x i - a) = δ x - a := by
+  simpa only [← sub_eq_add_neg] using h x (-a)
 
 /-- A location-equivariant estimator exists only for a nonempty sample: on the empty sample the
 shift by `1` changes nothing. -/
