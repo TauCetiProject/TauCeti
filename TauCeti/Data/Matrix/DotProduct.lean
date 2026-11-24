@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Polynomial.OfFn
 import Mathlib.Algebra.Polynomial.Roots
@@ -22,12 +23,15 @@ space. The vector can be taken of the form `w i = M ^ e i` for a numbering `e` o
 because `w ⬝ᵥ v` is then the value at `M` of a nonzero polynomial with coefficients `v`.
 
 A ring homomorphism carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a (possibly rectangular) matrix
-to the form of the image matrix at the image vectors.
+to the form of the image matrix at the image vectors. Over a commutative semiring the same form is
+the trace of the rank-one matrix `vecMulVec w v` times `A`.
 
 ## Main results
 
 * `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
   `v ⬝ᵥ A *ᵥ w`.
+* `Matrix.dotProduct_mulVec_eq_trace_vecMulVec_mul`: the bilinear form `w ⬝ᵥ M *ᵥ v` is the
+  trace of `vecMulVec v w * M`.
 * `Matrix.intCast_dotProduct`: the dot product of the casts of integer vectors is the cast of their
   integer dot product.
 * `Matrix.intCast_dotProduct_mulVec`: the form of the cast of an integer matrix, at the casts of
@@ -70,6 +74,12 @@ theorem intCast_dotProduct_mulVec {R : Type*} [NonAssocRing R] (A : Matrix m n �
     (fun i ↦ (v i : R)) ⬝ᵥ A.map (Int.cast : ℤ → R) *ᵥ (fun i ↦ (w i : R)) =
       ((v ⬝ᵥ A *ᵥ w : ℤ) : R) :=
   ((Int.castRingHom R).map_dotProduct_mulVec A v w).symm
+
+/-- The bilinear form `w ⬝ᵥ M *ᵥ v` of a (possibly rectangular) matrix is the trace of the
+rank-one matrix `vecMulVec v w` times `M`. -/
+theorem dotProduct_mulVec_eq_trace_vecMulVec_mul {R : Type*} [CommSemiring R] (v : n → R)
+    (w : m → R) (M : Matrix m n R) : w ⬝ᵥ M *ᵥ v = (vecMulVec v w * M).trace := by
+  rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
 
 end Matrix
 
