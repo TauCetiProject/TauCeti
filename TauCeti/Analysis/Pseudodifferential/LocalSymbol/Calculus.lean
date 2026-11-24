@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Basic
+import TauCeti.Algebra.GroupWithZero.Indicator
 
 /-!
 # Composition and derivatives of symbols on an open set of positions
@@ -73,38 +74,6 @@ namespace LocalSymbol
 variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W X : Type*}
   [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
   [NormedAddCommGroup X] [NormedSpace ℂ X] {m m' : ℝ} {x : CoordinateSpace n}
-
-section Representatives
-
-/-- Two local symbols are equal if near every position of `U` both agree with one symbol on `ℝⁿ`.
-This transfers identities between symbols on `ℝⁿ` to local symbols through representatives. -/
-theorem ext_of_symbol_eventually_eq {a b : LocalSymbol U V W m}
-    (h : ∀ x ∈ U, ∃ s : Symbol n V W m,
-      (∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) ∧
-        ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = b.coefficient (y, η)) :
-    a = b :=
-  ext_of_mem fun x hx ξ => by
-    obtain ⟨s, hsa, hsb⟩ := h x hx
-    exact (hsa.self_of_nhds ξ).symm.trans (hsb.self_of_nhds ξ)
-
-/-- If symbols `s` and `t` on `ℝⁿ` agree near `x` with local symbols `a` and `b`, then `s + t`
-agrees near `x` with `a + b`. -/
-theorem eventually_coefficient_add_eq {a b : LocalSymbol U V W m} {s t : Symbol n V W m}
-    (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η))
-    (ht : ∀ᶠ y in 𝓝 x, ∀ η, t.coefficient (y, η) = b.coefficient (y, η)) :
-    ∀ᶠ y in 𝓝 x, ∀ η, (s + t).coefficient (y, η) = (a + b).coefficient (y, η) := by
-  filter_upwards [hs, ht] with y hys hyt η
-  simp [hys η, hyt η]
-
-/-- If a symbol `s` on `ℝⁿ` agrees near `x` with a local symbol `a`, then `c • s` agrees near `x`
-with `c • a`. -/
-theorem eventually_coefficient_smul_eq (c : ℂ) {a : LocalSymbol U V W m} {s : Symbol n V W m}
-    (hs : ∀ᶠ y in 𝓝 x, ∀ η, s.coefficient (y, η) = a.coefficient (y, η)) :
-    ∀ᶠ y in 𝓝 x, ∀ η, (c • s).coefficient (y, η) = (c • a).coefficient (y, η) := by
-  filter_upwards [hs] with y hys η
-  simp [hys η]
-
-end Representatives
 
 section Comp
 
@@ -212,14 +181,6 @@ theorem extend_comp_extend {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff 
       extend (ψ' * ψ) (hψ'.mul hψ) (tsupport_mul_subset_right.trans hψU) (b.comp a) :=
   Symbol.ext (funext fun p => by simp [smul_smul, mul_comm])
 
-/-- Multiplying `g` by a function equal to `1` on the support of `g` does not change `g`. -/
-private theorem mul_eq_of_eqOn_one_support {α M : Type*} [MulZeroOneClass M] {f g : α → M}
-    (h : EqOn f 1 (Function.support g)) : f * g = g :=
-  funext fun y => by
-    by_cases hy : g y = 0
-    · simp [hy]
-    · simp [h hy]
-
 /-- For cutoffs `ψ` and `ψ'` with `ψ' = 1` on the support of `ψ`, the composition of the cut-off
 extensions `ψ' b` and `ψ a` is the cut-off extension `ψ (b ∘ a)`. -/
 theorem extend_comp_extend_of_eqOn_one {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
@@ -228,7 +189,7 @@ theorem extend_comp_extend_of_eqOn_one {ψ ψ' : CoordinateSpace n → ℝ} (hψ
     (a : LocalSymbol U V W m) :
     (extend ψ' hψ' hψ'U b).comp (extend ψ hψ hψU a) = extend ψ hψ hψU (b.comp a) :=
   (extend_comp_extend hψ hψU hψ' hψ'U b a).trans
-    (extend_congr _ _ hψ hψU (fun y _ => congrFun (mul_eq_of_eqOn_one_support hψψ') y) _)
+    (extend_congr _ _ hψ hψU (fun y _ => congrFun hψψ'.mul_eq_right y) _)
 
 /-- For cutoffs `ψ` and `ψ'` with `ψ = 1` on the support of `ψ'`, the composition of the cut-off
 extensions `ψ' b` and `ψ a` is the cut-off extension `ψ' (b ∘ a)`. -/
@@ -237,8 +198,8 @@ theorem extend_comp_extend_of_eqOn_one' {ψ ψ' : CoordinateSpace n → ℝ} (h�
     (hψψ' : EqOn ψ 1 (Function.support ψ')) (b : LocalSymbol U W X m')
     (a : LocalSymbol U V W m) :
     (extend ψ' hψ' hψ'U b).comp (extend ψ hψ hψU a) = extend ψ' hψ' hψ'U (b.comp a) :=
-  (extend_comp_extend hψ hψU hψ' hψ'U b a).trans (extend_congr _ _ hψ' hψ'U
-    (fun y _ => congrFun ((mul_comm ψ' ψ).trans (mul_eq_of_eqOn_one_support hψψ')) y) _)
+  (extend_comp_extend hψ hψU hψ' hψ'U b a).trans
+    (extend_congr _ _ hψ' hψ'U (fun y _ => congrFun hψψ'.mul_eq_left y) _)
 
 end Comp
 
