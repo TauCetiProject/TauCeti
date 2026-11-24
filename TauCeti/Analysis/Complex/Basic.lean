@@ -21,7 +21,8 @@ Any set becomes invariant under conjugation once its mirror image is added
 (`TauCeti.conj_mem_union_preimage_conj`).
 Conjugation maps the real axis into itself
 (`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
-(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
+(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`). A function `f : ℂ → ℂ` that commutes with
+conjugation is real on the real line (`TauCeti.ofReal_re_apply_of_forall_conj`).
 
 Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 `1 - conj w * z` is symmetric in `z` and `w` (`Complex.norm_one_sub_conj_mul_comm`). This
@@ -231,6 +232,12 @@ theorem setOfPred_le_im_inter_union_preimage_conj {s : Set ℂ}
 theorem mapsTo_conj_setOf_im_eq_zero :
     Set.MapsTo (conj ·) {z : ℂ | z.im = 0} {z : ℂ | z.im = 0} := fun z hz => by
   simpa using hz
+
+/-- A function that commutes with complex conjugation is real on the real line:
+`f x` is the cast of its real part. -/
+theorem ofReal_re_apply_of_forall_conj {f : ℂ → ℂ} (hf : ∀ w, f (conj w) = conj (f w))
+    (x : ℝ) : ((f x).re : ℂ) = f x :=
+  Complex.conj_eq_iff_re.1 (by rw [← hf, Complex.conj_ofReal])
 
 /-- The rotation `z ↦ I z` does not preserve the real axis, so it is not admissible on
 half-discs. -/
