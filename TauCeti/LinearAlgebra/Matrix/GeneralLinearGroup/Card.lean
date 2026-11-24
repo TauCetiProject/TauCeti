@@ -7,11 +7,16 @@ module
 
 -- `GL` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+-- `qPochhammer` occurs in the statement of the density identity.
+public import TauCeti.Algebra.Ring.QPochhammer
 -- Non-public: `Matrix.card_GL_field` is what the two factorizations below are read off, in the
 -- proofs only.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- Non-public: the determinant surjection transfers vanishing cardinality for infinite fields.
 import Mathlib.SetTheory.Cardinal.NatCard
+-- Non-public: the density identity reverses its product and clears denominators.
+import Mathlib.Tactic.FieldSimp
+import TauCeti.Algebra.BigOperators.Finset.Range
 -- Non-public: the count along a local surjection is the unit count of the matrix rings.
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
@@ -33,6 +38,10 @@ The formulas use `q = Nat.card F` and require no chosen enumeration or finitenes
 For an infinite field, both the field and its general linear group have `Nat.card` equal to zero,
 so the same identities hold.
 
+Dividing `Matrix.card_GL_field` by the `q^{n²}` matrices gives the proportion of invertible
+matrices, `∏_{i=0}^{n-1} (q^n - q^i) / q^{n²} = ∏_{i=1}^n (1 - q^{-i})`, the q-Pochhammer product
+`(q⁻¹; q⁻¹)_n`; the identity behind this holds for any nonzero `q` in a field.
+
 ## Along a local surjection
 
 A surjective ring homomorphism `f : R →+* S` that reflects units (`IsLocalHom f`), such as the
@@ -47,6 +56,8 @@ homomorphism whose kernel is the matrices with entries in `ker f`.
 * `TauCeti.natCard_GL_fin_two`: `|GL₂(𝔽_q)| = (q - 1)² · q(q + 1)`.
 * `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: `|GL₂(𝔽_q)| = (q² - 1) · q(q - 1)`.
 * `TauCeti.natCard_GL_fin_two_of_card_eq_two`: `|GL₂(𝔽₂)| = 6`.
+* `TauCeti.prod_range_pow_sub_pow_div_pow`: `∏_{i=0}^{n-1} (q^n - q^i) / q^{n²} = (q⁻¹; q⁻¹)_n`
+  in a field, the proportion of invertible matrices over `𝔽_q`.
 -/
 
 public section
@@ -88,6 +99,21 @@ theorem natCard_GL_fin_two_of_card_eq_two (hF : Nat.card F = 2) :
     Nat.card (GL (Fin 2) F) = 6 := by
   rw [natCard_GL_fin_two F, hF]
   norm_num
+
+variable {F} in
+/-- **The proportion of invertible matrices**, as a q-Pochhammer product: in a field,
+`∏_{i=0}^{n-1} (q^n - q^i) / q^{n²} = (q⁻¹; q⁻¹)_n = ∏_{i=1}^n (1 - q^{-i})` for `q ≠ 0`. With
+`q = Nat.card F` for a finite field `F`, the left side is `|GL n F| / |M_n(F)|` by
+`Matrix.card_GL_field`. -/
+theorem prod_range_pow_sub_pow_div_pow {q : F} (hq : q ≠ 0) (n : ℕ) :
+    (∏ i ∈ Finset.range n, (q ^ n - q ^ i)) / q ^ (n * n) = qPochhammer q⁻¹ q⁻¹ n := calc
+  _ = ∏ i ∈ Finset.range n, (q ^ n - q ^ i) / q ^ n := by
+    rw [Finset.prod_div_distrib, Finset.prod_const, Finset.card_range, ← pow_mul]
+  _ = ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (n - i)) := Finset.prod_congr rfl fun i hi => by
+    rw [inv_pow, ← pow_sub_mul_pow q (Finset.mem_range.1 hi).le]
+    field_simp
+  _ = qPochhammer q⁻¹ q⁻¹ n := by
+    simpa [qPochhammer_self] using Finset.prod_range_add_sub_eq (fun j => 1 - q⁻¹ ^ j) 0 n
 
 end TauCeti
 
