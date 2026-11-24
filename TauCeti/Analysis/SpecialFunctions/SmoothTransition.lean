@@ -69,8 +69,13 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.ofReal_abs_mul_le`: `ofReal (|Real.smoothTransition x| b) ≤ ofReal b`
   for `0 ≤ b`.
+* `Real.smoothTransition.abs_one_sub_le_one`: `|1 - Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_nonpos`: `deriv Real.smoothTransition x = 0` for `x ≤ 0`.
 * `Real.smoothTransition.deriv_of_one_le`: `deriv Real.smoothTransition x = 0` for `1 ≤ x`.
+* `Real.smoothTransition.deriv_comp_sub_const_of_notMem_Ioo`: the shift
+  `s ↦ Real.smoothTransition (s - c)` has derivative zero off `(c, c + 1)`.
+* `Real.smoothTransition.abs_deriv_comp_sub_const_le`: a bound on the derivative also bounds the
+  derivative of every shift.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
 * `Real.smoothTransition.deriv_deriv_of_neg`: the second derivative vanishes on the negative
   half-line.
@@ -235,6 +240,12 @@ theorem ofReal_abs_mul_le (x : ℝ) {b : ℝ} (hb : 0 ≤ b) :
     ENNReal.ofReal (|smoothTransition x| * b) ≤ ENNReal.ofReal b :=
   ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left hb (abs_le_one x))
 
+/-- The complementary transition `1 - smoothTransition` also takes values of absolute value at
+most one. -/
+theorem abs_one_sub_le_one (x : ℝ) : |1 - smoothTransition x| ≤ 1 := by
+  rw [← one_sub]
+  exact abs_le_one _
+
 /-- The smooth transition function has derivative zero on `(-∞, 0]`. -/
 theorem deriv_of_nonpos {x : ℝ} (hx : x ≤ 0) : deriv smoothTransition x = 0 := by
   apply IsLocalMin.deriv_eq_zero
@@ -248,6 +259,23 @@ theorem deriv_of_one_le {x : ℝ} (hx : 1 ≤ x) : deriv smoothTransition x = 0 
   filter_upwards with y
   rw [one_of_one_le hx]
   exact le_one y
+
+/-- The shifted smooth transition `s ↦ smoothTransition (s - c)` has derivative zero off
+`(c, c + 1)`. -/
+theorem deriv_comp_sub_const_of_notMem_Ioo {c s : ℝ} (hs : s ∉ Ioo c (c + 1)) :
+    deriv (fun s ↦ smoothTransition (s - c)) s = 0 := by
+  rw [deriv_comp_sub_const]
+  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
+  rcases hs with hs | hs
+  · exact deriv_of_nonpos (by linarith)
+  · exact deriv_of_one_le (by linarith)
+
+/-- A bound `L` on the derivative of the smooth transition function also bounds the derivative of
+every shift `s ↦ smoothTransition (s - c)`. -/
+theorem abs_deriv_comp_sub_const_le {L : ℝ} (hL : ∀ x, ‖deriv smoothTransition x‖ ≤ L)
+    (c s : ℝ) : |deriv (fun s ↦ smoothTransition (s - c)) s| ≤ L := by
+  rw [deriv_comp_sub_const, ← Real.norm_eq_abs]
+  exact hL _
 
 /-- The derivative of the smooth transition function is nonnegative. -/
 theorem deriv_nonneg (t : ℝ) : 0 ≤ deriv smoothTransition t :=

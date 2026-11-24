@@ -36,7 +36,10 @@ and to its complement add up to the class (`multiplicationOperator_linftyIndicat
 
 A function `f` continuous and bounded on a measurable set `s` has a class
 `TauCeti.linftyOfContinuousOn μ hf hs hC` in `L∞(μ.restrict s)`, and multiplication by it acts by
-`x ↦ f x • g x` (`multiplicationOperator_linftyOfContinuousOn_ae`). Multiplication by `a` commutes
+`x ↦ f x • g x` (`multiplicationOperator_linftyOfContinuousOn_ae`). For `|f| ≤ 1` on `s` it does
+not increase the norm (`norm_multiplicationOperator_linftyOfContinuousOn_apply_le`), and
+multiplications by two functions summing to one on `s` add up to the identity
+(`multiplicationOperator_linftyOfContinuousOn_add_eq_one`). Multiplication by `a` commutes
 with composition by a continuous linear map (`ContinuousLinearMap.compLpL_multiplicationOperator`).
 -/
 
@@ -223,6 +226,35 @@ theorem multiplicationOperator_linftyOfContinuousOn_ae (hf : ContinuousOn f s)
   filter_upwards [multiplicationOperator_ae (TauCeti.linftyOfContinuousOn μ hf hs hC) g,
     TauCeti.coeFn_linftyOfContinuousOn (μ := μ) hf hs hC] with x hx h₁
   rw [hx, h₁]
+
+/-- Multiplication by the class of a function bounded by one on `s` does not increase the norm. -/
+theorem norm_multiplicationOperator_linftyOfContinuousOn_apply_le (hf : ContinuousOn f s)
+    (hs : MeasurableSet s) (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) (h₁ : ∀ x ∈ s, ‖f x‖ ≤ 1)
+    (g : Lp E p (μ.restrict s)) :
+    ‖multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hC) g‖ ≤ ‖g‖ := by
+  refine Lp.norm_le_norm_of_ae_le ?_
+  filter_upwards [multiplicationOperator_linftyOfContinuousOn_ae hf hs hC g, ae_restrict_mem hs]
+    with x hx hxs
+  rw [hx, norm_smul]
+  exact mul_le_of_le_one_left (norm_nonneg _) (h₁ x hxs)
+
+/-- Multiplications by the classes of two functions summing to one on `s` add up to the
+identity. -/
+theorem multiplicationOperator_linftyOfContinuousOn_add_eq_one {g : X → ℝ}
+    (hf : ContinuousOn f s) (hg : ContinuousOn g s) (hs : MeasurableSet s)
+    (hCf : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) (hCg : ∃ C, ∀ x ∈ s, ‖g x‖ ≤ C)
+    (h : ∀ x ∈ s, f x + g x = 1) :
+    multiplicationOperator (E := E) (p := p) (TauCeti.linftyOfContinuousOn μ hf hs hCf) +
+      multiplicationOperator (TauCeti.linftyOfContinuousOn μ hg hs hCg) = 1 := by
+  ext u : 1
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_add (multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hCf) u)
+      (multiplicationOperator (TauCeti.linftyOfContinuousOn μ hg hs hCg) u),
+    multiplicationOperator_linftyOfContinuousOn_ae hf hs hCf u,
+    multiplicationOperator_linftyOfContinuousOn_ae hg hs hCg u, ae_restrict_mem hs]
+    with x hx h₁ h₂ hxs
+  rw [add_apply, hx, Pi.add_apply, h₁, h₂, ← add_smul, h x hxs, one_smul,
+    one_apply_eq_self]
 
 end ContinuousOn
 
