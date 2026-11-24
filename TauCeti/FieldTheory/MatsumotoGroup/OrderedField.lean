@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.Algebra.Order.Ring.Units
-public import TauCeti.FieldTheory.IsRealClosed.Basic
+public import TauCeti.FieldTheory.RealClosure.Root
 public import TauCeti.FieldTheory.MatsumotoGroup.Basic
 
 /-!
