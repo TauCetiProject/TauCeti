@@ -156,10 +156,10 @@ instance instFaithfulSMulProjectiveUnitaryGroup :
   eq_of_smul_eq_smul {g h} hgh := by
     induction g using QuotientGroup.induction_on with | H A =>
     induction h using QuotientGroup.induction_on with | H B =>
-    rw [QuotientGroup.eq]
-    refine forall_smul_eq_iff_mem_range_scalarHom.1 fun p ↦ ?_
-    rw [mul_smul, inv_smul_eq_iff, ← mk_smul_projectiveUnitaryGroup,
-      ← mk_smul_projectiveUnitaryGroup, hgh]
+    obtain ⟨c, hc⟩ := forall_smul_eq_iff_mem_range_scalarHom (A := B * A⁻¹) |>.1 fun p ↦ by
+      rw [mul_smul, ← mk_smul_projectiveUnitaryGroup B, ← hgh, mk_smul_projectiveUnitaryGroup,
+        smul_inv_smul]
+    exact ProjectiveUnitaryGroup.mk_eq_mk_iff.2 ⟨c, by rw [hc, inv_mul_cancel_right]⟩
 
 /-- **`PU(n + 1)` acts transitively on `CPⁿ`.** -/
 instance instIsPretransitiveProjectiveUnitaryGroup :

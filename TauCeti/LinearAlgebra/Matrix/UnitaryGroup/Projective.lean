@@ -20,7 +20,8 @@ Over a commutative star ring `R`, every unitary scalar `c ∈ unitary R` gives t
 
 (`TauCeti.ProjectiveUnitaryGroup n R`). For `R = ℂ` and `n = Fin (k + 1)` it is the group
 `PU(k + 1)`, which acts faithfully on complex projective space `CPᵏ` because the unit scalars are
-exactly the unitary matrices acting trivially there.
+exactly the unitary matrices acting trivially there. Two unitary matrices have the same class in
+`PU(n)` exactly when they differ by a unit scalar (`TauCeti.ProjectiveUnitaryGroup.mk_eq_mk_iff`).
 
 The map `(c, B) ↦ c⁻¹ B = star c • B` is a surjective group morphism
 `U(1) × U(n) →* U(n)` (`Matrix.UnitaryGroup.starSMulHom`), whose kernel is the diagonal circle
@@ -191,7 +192,23 @@ abbrev ProjectiveUnitaryGroup : Type _ :=
 
 namespace ProjectiveUnitaryGroup
 
-variable {R}
+variable {n R}
+
+/-- A unit scalar `c • 1` is trivial in the projective unitary group. -/
+@[simp]
+theorem mk_scalarHom (c : unitary R) :
+    ((UnitaryGroup.scalarHom n R c : unitaryGroup n R) : ProjectiveUnitaryGroup n R) = 1 :=
+  (QuotientGroup.eq_one_iff _).2 ⟨c, rfl⟩
+
+/-- Two unitary matrices have the same class in the projective unitary group exactly when they
+differ by a unit scalar. -/
+theorem mk_eq_mk_iff {A B : unitaryGroup n R} :
+    (A : ProjectiveUnitaryGroup n R) = B ↔
+      ∃ c : unitary R, B = UnitaryGroup.scalarHom n R c * A := by
+  rw [QuotientGroup.eq, MonoidHom.mem_range]
+  refine exists_congr fun c ↦ ?_
+  rw [(UnitaryGroup.commute_scalarHom c A).eq]
+  exact eq_inv_mul_iff_mul_eq.trans eq_comm
 
 /-- The class of `diag(c, B)` in `PU(m + 1)` is the class of `diag(1, star c • B)`. -/
 theorem mk_prodBlockSucc {m : ℕ} (cB : unitary R × unitaryGroup (Fin m) R) :
@@ -204,8 +221,7 @@ theorem mk_prodBlockSucc {m : ℕ} (cB : unitary R × unitaryGroup (Fin m) R) :
     rw [← UnitaryGroup.prodBlockSucc_scalarHom, ← map_mul]
     congr 1
     exact Prod.ext (Unitary.star_mul_self cB.1).symm (UnitaryGroup.starSMulHom_apply cB)
-  rw [h, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).2 (MonoidHom.mem_range.2 ⟨_, rfl⟩),
-    one_mul]
+  rw [h, QuotientGroup.mk_mul, mk_scalarHom, one_mul]
 
 /-- The projective unitary group `PU(1)` is trivial. -/
 instance instSubsingletonFinOne : Subsingleton (ProjectiveUnitaryGroup (Fin 1) R) where
