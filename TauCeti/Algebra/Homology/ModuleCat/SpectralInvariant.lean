@@ -77,8 +77,9 @@ noncomputable def homologyFiltration (a : α) : Submodule R (s.pt.homology i) :=
 
 /-- The compatibility `Cocone.w_apply` of a cocone, in homology: mapping a class of `Hᵢ(F a)`
 to `Hᵢ(F b)` and then to the homology of the point is mapping it to the point directly. -/
+@[simp]
 theorem homologyMap_w_apply {a b : α} (f : a ⟶ b) (τ : (F.obj a).homology i) :
-    (HomologicalComplex.homologyMap (s.ι.app b) i).hom
+    (HomologicalComplex.homologyMap (L := s.pt) (s.ι.app b) i).hom
         ((HomologicalComplex.homologyMap (F.map f) i).hom τ) =
       (HomologicalComplex.homologyMap (s.ι.app a) i).hom τ := by
   simp only [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.homologyMap_comp,
