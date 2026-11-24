@@ -22,12 +22,12 @@ on functor categories, is `Functor.tensorPowSuccIso'`, and holds by definition.
 When `C` is monoidal and `F` is a monoidal functor, the tensor powers are compatible with the
 two operations on tuples that the Davydov–Yetter cochain complex is built from:
 
-* `TauCeti.piMerge C i : (Fin (n + 1) → C) ⥤ (Fin n → C)` tensors the entries `i` and `i + 1`
-  of a tuple together, and `Functor.tensorPowMergeIso F i` identifies `F.tensorPow n` at the
-  merged tuple with `F.tensorPow (n + 1)` at the original one, through the tensorator of `F` and
-  associators of `D`;
-* inserting the monoidal unit at position `i` (the merge of an empty block) is identified with the
-  identity of `F.tensorPow n` by `Functor.tensorPowInsertUnitIso F i`, through the unit
+* `TauCeti.piContractNth C i : (Fin (n + 1) → C) ⥤ (Fin n → C)` tensors the entries `i` and
+  `i + 1` of a tuple together (Mathlib's `Fin.contractNth` with `⊗` as the operation), and
+  `Functor.tensorPowContractNthIso F i` identifies `F.tensorPow n` at the contracted tuple with
+  `F.tensorPow (n + 1)` at the original one, through the tensorator of `F` and associators of `D`;
+* inserting the monoidal unit at position `i` (the contraction of an empty block) is identified
+  with the identity of `F.tensorPow n` by `Functor.tensorPowInsertUnitIso F i`, through the unit
   isomorphism of `F` and the left unitor.
 
 Finally, varying one entry of the tuple and fixing the others (through `TauCeti.piInsertNth`),
@@ -52,11 +52,12 @@ variable (C : Type u₁) [Category.{v₁} C] [MonoidalCategory C]
 
 -- Exposed: tensor powers compute on the image of this functor without rewriting its objects.
 /-- The functor `(Fin (n + 1) → C) ⥤ (Fin n → C)` tensoring the entries `i` and `i + 1` of a
-tuple together: `(X₀, …, Xₙ) ↦ (X₀, …, X_{i-1}, X_i ⊗ X_{i+1}, X_{i+2}, …, Xₙ)`. -/
-def piMerge {n : ℕ} (i : Fin n) : (Fin (n + 1) → C) ⥤ (Fin n → C) :=
+tuple together: `(X₀, …, Xₙ) ↦ (X₀, …, X_{i-1}, X_i ⊗ X_{i+1}, X_{i+2}, …, Xₙ)`. On objects it
+agrees entry by entry with Mathlib's `Fin.contractNth` for the operation `⊗`. -/
+def piContractNth {n : ℕ} (i : Fin n) : (Fin (n + 1) → C) ⥤ (Fin n → C) :=
   go i.val i.isLt
 where
-  /-- The recursion behind `piMerge`, on the value of the position. -/
+  /-- The recursion behind `piContractNth`, on the value of the position. -/
   go : (k : ℕ) → {n : ℕ} → k < n → (Fin (n + 1) → C) ⥤ (Fin n → C)
     | _, 0, h => absurd h (by omega)
     | 0, _ + 1, _ => Functor.pi' (Fin.cons
@@ -67,22 +68,23 @@ where
 
 variable {C}
 
-/-- Merging at position `0` tensors the first two entries. -/
-theorem piMerge_zero_obj {n : ℕ} (X : Fin (n + 2) → C) :
-    (piMerge C 0).obj X = Fin.cons (X 0 ⊗ X 1) fun j ↦ X j.succ.succ := by
+/-- Contracting at position `0` tensors the first two entries. -/
+theorem piContractNth_zero_obj {n : ℕ} (X : Fin (n + 2) → C) :
+    (piContractNth C 0).obj X = Fin.cons (X 0 ⊗ X 1) fun j ↦ X j.succ.succ := by
   funext j
   cases j using Fin.cases <;> rfl
 
-/-- Merging at position `i.succ` keeps the first entry and merges the others at position `i`. -/
-theorem piMerge_succ_obj {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
-    (piMerge C i.succ).obj X = Fin.cons (X 0) ((piMerge C i).obj fun j ↦ X j.succ) := by
+/-- Contracting at position `i.succ` keeps the first entry and contracts the others at
+position `i`. -/
+theorem piContractNth_succ_obj {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
+    (piContractNth C i.succ).obj X = Fin.cons (X 0) ((piContractNth C i).obj fun j ↦ X j.succ) := by
   funext j
   cases j using Fin.cases <;> rfl
 
-/-- Before the merged position, merging keeps the entries of the tuple. -/
+/-- Before the contracted position, contracting keeps the entries of the tuple. -/
 @[simp]
-theorem piMerge_obj_of_lt {n : ℕ} {i j : Fin n} (h : j < i) (X : Fin (n + 1) → C) :
-    (piMerge C i).obj X j = X j.castSucc := by
+theorem piContractNth_obj_of_lt {n : ℕ} {i j : Fin n} (h : j < i) (X : Fin (n + 1) → C) :
+    (piContractNth C i).obj X j = X j.castSucc := by
   induction n with
   | zero => exact j.elim0
   | succ n ih =>
@@ -93,10 +95,10 @@ theorem piMerge_obj_of_lt {n : ℕ} {i j : Fin n} (h : j < i) (X : Fin (n + 1) �
       | zero => rfl
       | succ j => exact ih (Fin.succ_lt_succ_iff.mp h) _
 
-/-- At the merged position, merging tensors the two entries `i` and `i + 1` together. -/
+/-- At the contracted position, contracting tensors the two entries `i` and `i + 1` together. -/
 @[simp]
-theorem piMerge_obj_self {n : ℕ} (i : Fin n) (X : Fin (n + 1) → C) :
-    (piMerge C i).obj X i = X i.castSucc ⊗ X i.succ := by
+theorem piContractNth_obj_self {n : ℕ} (i : Fin n) (X : Fin (n + 1) → C) :
+    (piContractNth C i).obj X i = X i.castSucc ⊗ X i.succ := by
   induction n with
   | zero => exact i.elim0
   | succ n ih =>
@@ -104,10 +106,10 @@ theorem piMerge_obj_self {n : ℕ} (i : Fin n) (X : Fin (n + 1) → C) :
     | zero => rfl
     | succ i => exact ih i _
 
-/-- After the merged position, merging shifts the entries of the tuple down by one. -/
+/-- After the contracted position, contracting shifts the entries of the tuple down by one. -/
 @[simp]
-theorem piMerge_obj_of_gt {n : ℕ} {i j : Fin n} (h : i < j) (X : Fin (n + 1) → C) :
-    (piMerge C i).obj X j = X j.succ := by
+theorem piContractNth_obj_of_gt {n : ℕ} {i j : Fin n} (h : i < j) (X : Fin (n + 1) → C) :
+    (piContractNth C i).obj X j = X j.succ := by
   induction n with
   | zero => exact j.elim0
   | succ n ih =>
@@ -118,31 +120,31 @@ theorem piMerge_obj_of_gt {n : ℕ} {i j : Fin n} (h : i < j) (X : Fin (n + 1) �
       | zero => rfl
       | succ i => exact ih (Fin.succ_lt_succ_iff.mp h) _
 
-/-- Merging at position `0`, the first entry of the morphism is the tensor product of the first
+/-- Contracting at position `0`, the first entry of the morphism is the tensor product of the first
 two. -/
 @[simp]
-theorem piMerge_zero_map_zero {n : ℕ} {X Y : Fin (n + 2) → C} (f : X ⟶ Y) :
-    (piMerge C 0).map f 0 = f 0 ⊗ₘ f 1 :=
+theorem piContractNth_zero_map_zero {n : ℕ} {X Y : Fin (n + 2) → C} (f : X ⟶ Y) :
+    (piContractNth C 0).map f 0 = f 0 ⊗ₘ f 1 :=
   (rfl)
 
-/-- Merging at position `0`, the later entries of the morphism are shifted down by one. -/
+/-- Contracting at position `0`, the later entries of the morphism are shifted down by one. -/
 @[simp]
-theorem piMerge_zero_map_succ {n : ℕ} {X Y : Fin (n + 2) → C} (f : X ⟶ Y) (j : Fin n) :
-    (piMerge C 0).map f j.succ = f j.succ.succ :=
+theorem piContractNth_zero_map_succ {n : ℕ} {X Y : Fin (n + 2) → C} (f : X ⟶ Y) (j : Fin n) :
+    (piContractNth C 0).map f j.succ = f j.succ.succ :=
   (rfl)
 
-/-- Merging at position `i.succ`, the first entry of the morphism is kept. -/
+/-- Contracting at position `i.succ`, the first entry of the morphism is kept. -/
 @[simp]
-theorem piMerge_succ_map_zero {n : ℕ} (i : Fin (n + 1)) {X Y : Fin (n + 3) → C} (f : X ⟶ Y) :
-    (piMerge C i.succ).map f 0 = f 0 :=
+theorem piContractNth_succ_map_zero {n : ℕ} (i : Fin (n + 1)) {X Y : Fin (n + 3) → C} (f : X ⟶ Y) :
+    (piContractNth C i.succ).map f 0 = f 0 :=
   (rfl)
 
-/-- Merging at position `i.succ`, the later entries of the morphism are those of the merge at
-position `i` of the remaining entries. -/
+/-- Contracting at position `i.succ`, the later entries of the morphism are those of the
+contraction at position `i` of the remaining entries. -/
 @[simp]
-theorem piMerge_succ_map_succ {n : ℕ} (i : Fin (n + 1)) {X Y : Fin (n + 3) → C} (f : X ⟶ Y)
+theorem piContractNth_succ_map_succ {n : ℕ} (i : Fin (n + 1)) {X Y : Fin (n + 3) → C} (f : X ⟶ Y)
     (j : Fin (n + 1)) :
-    (piMerge C i.succ).map f j.succ = (piMerge C i).map (fun k ↦ f k.succ) j :=
+    (piContractNth C i.succ).map f j.succ = (piContractNth C i).map (fun k ↦ f k.succ) j :=
   (rfl)
 
 end TauCeti
@@ -304,13 +306,14 @@ section Monoidal
 variable [MonoidalCategory C] [F.Monoidal]
 
 /-- For a monoidal functor `F`, the tensor functor at a tuple whose entries `i` and `i + 1` have
-been merged is isomorphic to the tensor functor at the original tuple: the component at
+been contracted is isomorphic to the tensor functor at the original tuple: the component at
 `(X₀, …, Xₙ)` is `F X₀ ⊗ ⋯ ⊗ F (X_i ⊗ X_{i+1}) ⊗ ⋯ ≅ F X₀ ⊗ ⋯ ⊗ F X_i ⊗ F X_{i+1} ⊗ ⋯`,
 given by the inverse tensorator of `F` followed by an associator. -/
-def tensorPowMergeIso : {n : ℕ} → (i : Fin n) → piMerge C i ⋙ F.tensorPow n ≅ F.tensorPow (n + 1)
+def tensorPowContractNthIso :
+    {n : ℕ} → (i : Fin n) → piContractNth C i ⋙ F.tensorPow n ≅ F.tensorPow (n + 1)
   | 0, i => i.elim0
   | m + 1, i => Fin.cases
-      (motive := fun i ↦ piMerge C i ⋙ F.tensorPow (m + 1) ≅ F.tensorPow (m + 2))
+      (motive := fun i ↦ piContractNth C i ⋙ F.tensorPow (m + 1) ≅ F.tensorPow (m + 2))
       (NatIso.ofComponents
         (fun X ↦ whiskerRightIso (Monoidal.μIso F (X 0) (X 1)).symm _ ≪≫ α_ _ _ _)
         fun {X Y} f ↦ by
@@ -326,49 +329,50 @@ def tensorPowMergeIso : {n : ℕ} → (i : Fin n) → piMerge C i ⋙ F.tensorPo
           simp only [Monoidal.μIso_inv, ← tensorHom_id, tensorHom_comp_tensorHom,
             OplaxMonoidal.δ_natural, Category.comp_id, Category.id_comp])
       (fun k ↦ NatIso.ofComponents
-        (fun X ↦ whiskerLeftIso (F.obj (X 0)) ((tensorPowMergeIso k).app fun j ↦ X j.succ))
+        (fun X ↦ whiskerLeftIso (F.obj (X 0)) ((tensorPowContractNthIso k).app fun j ↦ X j.succ))
         fun {X Y} f ↦ by
-          have h := (tensorPowMergeIso k).hom.naturality fun j ↦ f j.succ
+          have h := (tensorPowContractNthIso k).hom.naturality fun j ↦ f j.succ
           -- `change` exposes the definitional computation of both functors on `f`.
-          change (F.map (f 0) ⊗ₘ (F.tensorPow m).map ((piMerge C k).map fun j ↦ f j.succ)) ≫
-              F.obj (Y 0) ◁ (tensorPowMergeIso k).hom.app (fun j ↦ Y j.succ) =
-            F.obj (X 0) ◁ (tensorPowMergeIso k).hom.app (fun j ↦ X j.succ) ≫
+          change (F.map (f 0) ⊗ₘ (F.tensorPow m).map ((piContractNth C k).map fun j ↦ f j.succ)) ≫
+              F.obj (Y 0) ◁ (tensorPowContractNthIso k).hom.app (fun j ↦ Y j.succ) =
+            F.obj (X 0) ◁ (tensorPowContractNthIso k).hom.app (fun j ↦ X j.succ) ≫
               (F.map (f 0) ⊗ₘ (F.tensorPow (m + 1)).map fun j ↦ f j.succ)
           rw [tensorHom_comp_whiskerLeft, whiskerLeft_comp_tensorHom]
           exact congrArg (F.map (f 0) ⊗ₘ ·) h) i
 
-/-- Merging the first two entries is the inverse tensorator of `F` followed by an associator. -/
+/-- Contracting the first two entries is the inverse tensorator of `F` followed by an associator. -/
 @[simp]
-theorem tensorPowMergeIso_zero_hom_app {n : ℕ} (X : Fin (n + 2) → C) :
-    (F.tensorPowMergeIso 0).hom.app X =
+theorem tensorPowContractNthIso_zero_hom_app {n : ℕ} (X : Fin (n + 2) → C) :
+    (F.tensorPowContractNthIso 0).hom.app X =
       OplaxMonoidal.δ F (X 0) (X 1) ▷ (F.tensorPow n).obj (fun j ↦ X j.succ.succ) ≫
         (α_ (F.obj (X 0)) (F.obj (X 1)) ((F.tensorPow n).obj fun j ↦ X j.succ.succ)).hom :=
   (rfl)
 
 @[simp]
-theorem tensorPowMergeIso_zero_inv_app {n : ℕ} (X : Fin (n + 2) → C) :
-    (F.tensorPowMergeIso 0).inv.app X =
+theorem tensorPowContractNthIso_zero_inv_app {n : ℕ} (X : Fin (n + 2) → C) :
+    (F.tensorPowContractNthIso 0).inv.app X =
       (α_ (F.obj (X 0)) (F.obj (X 1)) ((F.tensorPow n).obj fun j ↦ X j.succ.succ)).inv ≫
         LaxMonoidal.μ F (X 0) (X 1) ▷ (F.tensorPow n).obj (fun j ↦ X j.succ.succ) :=
   (rfl)
 
-/-- Merging at position `i.succ` whiskers the merge at position `i` of the remaining entries. -/
+/-- Contracting at position `i.succ` whiskers the contraction at position `i` of the remaining
+entries. -/
 @[simp]
-theorem tensorPowMergeIso_succ_hom_app {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
-    (F.tensorPowMergeIso i.succ).hom.app X =
-      F.obj (X 0) ◁ (F.tensorPowMergeIso i).hom.app fun j ↦ X j.succ :=
+theorem tensorPowContractNthIso_succ_hom_app {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
+    (F.tensorPowContractNthIso i.succ).hom.app X =
+      F.obj (X 0) ◁ (F.tensorPowContractNthIso i).hom.app fun j ↦ X j.succ :=
   (rfl)
 
 @[simp]
-theorem tensorPowMergeIso_succ_inv_app {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
-    (F.tensorPowMergeIso i.succ).inv.app X =
-      F.obj (X 0) ◁ (F.tensorPowMergeIso i).inv.app fun j ↦ X j.succ :=
+theorem tensorPowContractNthIso_succ_inv_app {n : ℕ} (i : Fin (n + 1)) (X : Fin (n + 3) → C) :
+    (F.tensorPowContractNthIso i.succ).inv.app X =
+      F.obj (X 0) ◁ (F.tensorPowContractNthIso i).inv.app fun j ↦ X j.succ :=
   (rfl)
 
 /-- For a monoidal functor `F`, inserting the monoidal unit into a tuple at position `i` does not
 change its tensor power up to isomorphism: the component at `(X₀, …, X_{n-1})` removes
-`F (𝟙_ C)` through the unit isomorphism of `F` and the left unitor. This is the merge of an empty
-block, whose value is the zero-fold tensor product `𝟙_ C`. -/
+`F (𝟙_ C)` through the unit isomorphism of `F` and the left unitor. This is the contraction of an
+empty block, whose value is the zero-fold tensor product `𝟙_ C`. -/
 def tensorPowInsertUnitIso : {n : ℕ} → (i : Fin (n + 1)) →
     ((Functor.const _).obj (𝟙_ C)).prod' (𝟭 _) ⋙ piInsertNth C i ⋙ F.tensorPow (n + 1) ≅
       F.tensorPow n

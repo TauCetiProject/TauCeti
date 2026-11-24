@@ -21,8 +21,10 @@ Fixing the tuple gives the functor `C ⥤ (Fin (n + 1) → C)` that varies only 
 or linear in each slot separately. Fixing the inserted object instead gives a functor
 `(Fin n → C) ⥤ (Fin (n + 1) → C)`, for instance the insertion of the monoidal unit.
 
-The functor is defined by recursion on `i`, so that inserting at `0` is `Fin.cons` and inserting
-at `i.succ` keeps the first entry and inserts at `i` into the remaining ones, both definitionally.
+The functor is defined by recursion on `i`. Entry by entry, inserting at `0` agrees definitionally
+with `Fin.cons`, and inserting at `i.succ` keeps the first entry and inserts at `i` into the
+remaining ones. The corresponding equations of whole tuples, proved entry by entry, are
+`TauCeti.piInsertNth_zero_obj` and `TauCeti.piInsertNth_succ_obj`.
 -/
 
 @[expose] public section
