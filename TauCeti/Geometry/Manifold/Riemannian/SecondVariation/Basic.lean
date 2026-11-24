@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic

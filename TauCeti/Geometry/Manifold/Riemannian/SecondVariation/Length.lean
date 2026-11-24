@@ -277,12 +277,11 @@ theorem hasDerivAt_deriv_toReal_pathELength_of_acceleration_eq_zero {a b : ℝ} 
       intervalIntegral.integral_zero
     rw [hacc t (by rwa [uIoo_of_le hab] at ht), inner_zero_right]
   -- on `(a, b)` the central curve is a geodesic
-  have hgeod : IsGeodesicCurveOn I (F 0) (Ioo a b) := by
-    refine ⟨isOpen_Ioo.uniqueDiffOn, fun t ht ↦ ?_, fun t ht ↦ ?_⟩
-    · exact ((hF t (Ioo_subset_Icc_self ht)).comp t (contMDiff_iff_contDiff.mpr
+  have hgeod : IsGeodesicCurveOn I (F 0) (Ioo a b) :=
+    (isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).2 ⟨fun t ht ↦
+      ((hF t (Ioo_subset_Icc_self ht)).comp t (contMDiff_iff_contDiff.mpr
         (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt).contMDiffWithinAt.of_le
-          (by norm_num)
-    · rw [accelerationWithin_of_mem_nhds _ _ (isOpen_Ioo.mem_nhds ht), hacc t ht]
+          (by norm_num), hacc⟩
   -- the index form of the normal part is `I(V, V) - ∫ ⟪D_t V, γ'⟫² / C²`
   have hVlift : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (F 0 r) (V r))
       (uIcc a b) := fun t ht ↦ by
@@ -383,20 +382,19 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_toReal_pathELength_of_mem_span
     HasDerivAt (deriv fun s ↦ (Manifold.pathELength I (F s) a b).toReal) 0 0 := by
   refine (hF.hasDerivAt_deriv_toReal_pathELength_of_norm_curveVelocity_eq_one hab hacc
     hγ).congr_deriv ?_
+  have hpt : ∀ t ∈ uIoo a b, variationField I F t -
+      (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t) = 0 := fun t ht ↦ by
+    rw [uIoo_of_le hab] at ht
+    rw [(Submodule.starProjection_eq_self_iff).2 (hV t ht), sub_self]
   have hzero : indexForm I (F 0)
       (fun t ↦ variationField I F t -
         (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t))
       (fun t ↦ variationField I F t -
         (ℝ ∙ curveVelocity I (F 0) t).starProjection (variationField I F t)) a b =
       indexForm I (F 0) (fun _ ↦ 0) (fun _ ↦ 0) a b :=
-    indexForm_congr (fun _ _ ↦ rfl) (fun t ht ↦ by
-        rw [uIoo_of_le hab] at ht
-        rw [(Submodule.starProjection_eq_self_iff).2 (hV t ht), sub_self])
-      (fun t ht ↦ by
-        rw [uIoo_of_le hab] at ht
-        rw [(Submodule.starProjection_eq_self_iff).2 (hV t ht), sub_self])
-  rw [hzero, indexForm_def]
-  simp [indexFormIntegrand_def]
+    indexForm_congr (fun _ _ ↦ rfl) (fun t ht ↦ heq_of_eq (hpt t ht))
+      (fun t ht ↦ heq_of_eq (hpt t ht))
+  rw [hzero, indexForm_fun_zero_left]
 
 end TauCeti.Manifold
 
