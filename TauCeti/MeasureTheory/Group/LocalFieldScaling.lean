@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
-public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Topology
@@ -31,8 +30,7 @@ into the measure identity. On a translate of a scaled box — that is, on a ball
 same identity holds for every left-invariant measure, with no regularity hypothesis. For a general
 set the measure `s ↦ μ (A '' s)` is again a Haar measure, so by uniqueness of Haar measure it is a
 constant multiple of `μ`, and the box computes the constant; Haar measure on `ι → K` is
-automatically regular, since `ι → K` is second countable and locally compact. Clearing denominators
-by a power of `ϖ` extends this to any matrix `A : Matrix ι ι K` with scaling factor `|det A|_K`.
+automatically regular, since `ι → K` is second countable and locally compact.
 
 Specializing to diagonal matrices gives the volume of a box of ideals: the box whose `i`-th factor
 is `𝓂[K] ^ e i` is the image of the integer box under the diagonal matrix with entries `ϖ ^ e i`,
@@ -68,10 +66,8 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   the box with factors `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of the integer box.
 * `MeasureTheory.Measure.measure_integerBox_inter_coord_eq_zero`: a coordinate hyperplane
   inside an integer box of finite measure is null.
-* `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ` and integral `A`,
+* `MeasureTheory.Measure.addHaar_image_mulVec`: for a Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
-* `MeasureTheory.Measure.addHaar_image_mulVec_of_isUnit_det`: image scaling on `ι → K` by
-  `|det A|_K` for any invertible matrix `A : Matrix ι ι K`.
 
 ## References
 
@@ -82,7 +78,7 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 public section
 
 open Set ValuativeRel
-open scoped ENNReal NNReal Pointwise
+open scoped ENNReal Pointwise
 
 namespace TauCeti
 
@@ -346,70 +342,5 @@ theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
     rw [← hf, hsmul, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
     exact (ENNReal.mul_left_inj hB0 hBtop).1 h
   rw [← hf, hsmul, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul, hc]
-
-/-- Algebraic identity relating `|det A|_K` to the valuation exponent `k` of a cleared matrix
-`B = ϖ ^ m • A` over `𝒪[K]`. -/
-private theorem normalizedAbsoluteValue_det_mul_inv_pow {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ)
-    {d : K} {b : 𝒪[K]} {m n k : ℕ} (hbd : (b : K) = ((ϖ : K) ^ m) ^ n * d)
-    (hk : Associated b (ϖ ^ k)) :
-    ((normalizedAbsoluteValue K d : ℝ≥0) : ℝ≥0∞) *
-      (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (m * n)) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
-  obtain ⟨u, hu⟩ := hk.symm
-  have hval := congrArg (fun x : 𝒪[K] ↦ normalizedAbsoluteValue K (x : K)) hu
-  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, map_mul, map_pow, hbd,
-    ← pow_mul, normalizedAbsoluteValue_irreducible hϖ, normalizedAbsoluteValue_coe_unit,
-    mul_one] at hval
-  have hnnr := congrArg (fun q : ℚ≥0 ↦ ((q : ℝ≥0) : ℝ≥0∞)) hval.symm
-  have hq0 : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
-  simpa [one_div, mul_comm, inv_pow, ENNReal.coe_inv (pow_ne_zero _ hq0)] using hnnr
-
-/-- For an invertible matrix `A : Matrix ι ι K`, `A.mulVec` scales any additive Haar measure on
-`ι → K` by `|det A|_K`. -/
-theorem addHaar_image_mulVec_of_isUnit_det (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
-    {A : Matrix ι ι K} (hA : IsUnit A.det) (s : Set (ι → K)) :
-    μ (A.mulVec '' s) = ((normalizedAbsoluteValue K A.det : ℝ≥0) : ℝ≥0∞) * μ s := by
-  -- Clear denominators via `B = ϖ ^ m • A ∈ Matrix ι ι 𝒪[K]` and cancel `ϖ ^ m • 1`.
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  obtain ⟨m, hm⟩ := exists_mem_scaledIntegerBox hϖ (fun p : ι × ι ↦ A p.1 p.2)
-  rw [mem_scaledIntegerBox] at hm
-  let B : Matrix ι ι 𝒪[K] := Matrix.of fun i j ↦ ⟨(ϖ : K) ^ m * A i j, hm (i, j)⟩
-  have hBmap : B.map (algebraMap 𝒪[K] K) = ((ϖ : K) ^ m) • A := by
-    ext i j
-    simp [B, Algebra.algebraMap_ofSubsemiring_apply]
-  have hBdet_coe : (B.det : K) = ((ϖ : K) ^ m) ^ Fintype.card ι * A.det := by
-    have h := congrArg Matrix.det hBmap
-    rwa [← RingHom.mapMatrix_apply, ← RingHom.map_det, Algebra.algebraMap_ofSubsemiring_apply,
-      Matrix.det_smul] at h
-  have hBdet0 : B.det ≠ 0 := by
-    intro h0
-    have h0' : (B.det : K) = 0 := by simp [h0]
-    rw [hBdet_coe] at h0'
-    exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero m hϖ0)) hA.ne_zero h0'
-  obtain ⟨k, hk⟩ := IsDiscreteValuationRing.associated_pow_irreducible hBdet0 hϖ
-  let C : Matrix ι ι 𝒪[K] := (ϖ ^ m) • 1
-  have hCdet : Associated C.det (ϖ ^ (m * Fintype.card ι)) := by
-    rw [Matrix.det_smul, Matrix.det_one, mul_one, ← pow_mul]
-  have hB_haar := addHaar_image_mulVec μ hϖ hk s
-  have hC_haar := addHaar_image_mulVec μ hϖ hCdet (A.mulVec '' s)
-  have hBC_img : (C.map (algebraMap 𝒪[K] K)).mulVec '' (A.mulVec '' s) =
-      (B.map (algebraMap 𝒪[K] K)).mulVec '' s := by
-    have hCmap : C.map (algebraMap 𝒪[K] K) = ((ϖ : K) ^ m) • (1 : Matrix ι ι K) := by
-      ext i j
-      simp [C, Matrix.one_apply, apply_ite (algebraMap 𝒪[K] K),
-        Algebra.algebraMap_ofSubsemiring_apply]
-    rw [← image_comp, hCmap, hBmap]
-    congr 1
-    ext x
-    rw [Function.comp_apply, Matrix.smul_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
-  rw [hBC_img, hB_haar, ← normalizedAbsoluteValue_det_mul_inv_pow hϖ hBdet_coe hk,
-    mul_comm ((normalizedAbsoluteValue K A.det : ℝ≥0) : ℝ≥0∞), mul_assoc] at hC_haar
-  have hq_ne0 : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (m * Fintype.card ι) ≠ 0 := by
-    simp [ENNReal.pow_eq_top_iff]
-  have hq_lt : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (m * Fintype.card ι) ≠ ∞ := by
-    have h1 : (Nat.card 𝓀[K] : ℝ≥0∞) ^ (m * Fintype.card ι) ≠ 0 :=
-      pow_ne_zero _ (Nat.cast_ne_zero.2 Nat.card_pos.ne')
-    simp [one_div, h1]
-  exact ((ENNReal.mul_right_inj hq_ne0 hq_lt).1 hC_haar).symm
 
 end MeasureTheory.Measure

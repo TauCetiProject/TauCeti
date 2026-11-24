@@ -460,7 +460,7 @@ theorem normalizedValuation_comp_unitsMap_tower (K L M : Type*) [Field K] [Field
 
 section NormalizedAbsoluteValue
 
-open scoped NNRat
+open scoped NNRat NNReal
 
 private theorem one_lt_residueFieldCard :
     (1 : ℚ≥0) < Nat.card 𝓀[K] := by
@@ -488,6 +488,11 @@ theorem normalizedAbsoluteValue_apply_ne_zero (x : K) (hx : x ≠ 0) :
   · rw [toAdd_normalizedValuation_eq_ord, Valuation.ord_def, neg_neg]
     simp only [Units.val_mk0]
   · simp [intValuation, hx]
+
+/-- Casting `|x|_K` from `ℚ≥0` to `ℝ≥0` preserves nonvanishing for `x ≠ 0`. -/
+theorem coe_normalizedAbsoluteValue_ne_zero {x : K} (hx : x ≠ 0) :
+    (normalizedAbsoluteValue K x : ℝ≥0) ≠ 0 := by
+  simp [hx]
 
 /-- The normalized absolute value on `Kˣ` is the rational power `q ^ (-v_K(x))`. -/
 @[simp]

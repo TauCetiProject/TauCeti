@@ -5,25 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.NumberTheory.LocalField.Haar.Character
-public import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
-public import TauCeti.NumberTheory.LocalField.Topology
-public import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 
 /-!
-# Normalized additive Haar measure and multiplication scaling on local fields
+# Normalized additive Haar measure on local fields
 
 Building on `TauCeti.NumberTheory.LocalField.Haar.Character` (which defines
 `TauCeti.integerPositiveCompacts` and identifies `MeasureTheory.distribHaarChar E` with the
 normalized absolute value `|·|_E`), this module introduces the canonical regular additive Haar
 measure `TauCeti.localAddHaar E` on a nonarchimedean local field `E` normalized by
-`(localAddHaar E) 𝒪[E] = 1`, together with uniqueness, ideal-power and unit-sphere volumes, and
-multiplicative image, preimage, pushforward, and Lebesgue/Bochner integral change-of-variables
-formulas for `(a * ·)`.
+`(localAddHaar E) 𝒪[E] = 1`, together with uniqueness and ideal-power and unit-sphere volumes.
 
 Concrete specializations live in sibling modules (`TauCeti.NumberTheory.LocalField.Haar.Padic`,
 `TauCeti.NumberTheory.LocalField.Haar.LaurentSeries`, and
@@ -43,16 +38,6 @@ Concrete specializations live in sibling modules (`TauCeti.NumberTheory.LocalFie
   `TauCeti.localAddHaar_image_maximalIdeal_pow`, `TauCeti.localAddHaar_setOf_valuation_eq_one`:
   `𝓂[E] ^ n` has normalized measure `q ^ (-n)` and the unit sphere `{x : E | valuation E x = 1}`
   has normalized measure `1 - q⁻¹`.
-* `Irreducible.distribHaarChar_unitsMk0`, `Units.distribHaarChar_map_subtype_eq_one`,
-  `TauCeti.distribHaarChar_eq_one_of_mem_unitFiltration_zero`: character specializations on
-  irreducible elements, valuation-ring units, and `unitFiltration E 0`.
-* `MeasureTheory.Measure.addHaar_preimage_mul_left`,
-  `MeasureTheory.Measure.map_units_mul_left_addHaar`,
-  `MeasureTheory.Measure.map_mul_left_addHaar_of_isUniformizer`,
-  `MeasureTheory.Measure.map_integerUnits_mul_left_addHaar`,
-  `MeasureTheory.Measure.lintegral_mul_left_addHaar`,
-  `MeasureTheory.Measure.integral_mul_left_addHaar`: preimage, pushforward, and integral change of
-  variables under multiplication on `E`.
 
 ## References
 
@@ -64,7 +49,7 @@ Concrete specializations live in sibling modules (`TauCeti.NumberTheory.LocalFie
 public section
 
 open MeasureTheory MeasureTheory.Measure Set TopologicalSpace ValuativeRel
-open scoped ENNReal NNReal NNRat Pointwise WithZero
+open scoped ENNReal NNReal Pointwise
 
 namespace TauCeti
 
@@ -224,136 +209,3 @@ theorem localAddHaar_setOf_valuation_eq_one :
 end Borel
 
 end TauCeti
-
-section LocalHaarCharacter
-
-variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
-
-namespace Irreducible
-
-open TauCeti
-
-/-- An irreducible element `π` of `𝒪[E]` viewed as a unit of `E` has distributive Haar character
-`q⁻¹`. -/
-@[grind =]
-theorem distribHaarChar_unitsMk0 {π : 𝒪[E]} (hπ : Irreducible π) :
-    distribHaarChar E (Units.mk0 (π : E) fun h ↦ hπ.ne_zero (Subtype.ext h)) =
-      (Nat.card 𝓀[E] : ℝ≥0)⁻¹ := by
-  rw [distribHaarChar_eq_zpow, normalizedValuation_irreducible hπ, toAdd_ofAdd, zpow_neg_one]
-
-end Irreducible
-
-namespace Units
-
-open TauCeti
-
-/-- **Character of a valuation-ring unit.** Every unit `u ∈ 𝒪[E]ˣ` has distributive Haar character
-`1` on `E`. -/
-@[simp, grind =]
-theorem distribHaarChar_map_subtype_eq_one (u : 𝒪[E]ˣ) :
-    distribHaarChar E (Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u) = 1 := by
-  rw [distribHaarChar_eq_one_iff]
-  exact (Valuation.Integers.isUnit_iff_valuation_eq_one
-    (Valuation.integer.integers (valuation E))).1 u.isUnit
-
-end Units
-
-namespace TauCeti
-
-/-- Casting `|x|_E` from `ℚ≥0` to `ℝ≥0` preserves nonvanishing for `x ≠ 0`. -/
-theorem coe_normalizedAbsoluteValue_ne_zero {x : E} (hx : x ≠ 0) :
-    (normalizedAbsoluteValue E x : ℝ≥0) ≠ 0 := by
-  simp [hx]
-
-/-- Every element of the depth-zero unit filtration `U(E, 0) = 𝒪[E]ˣ` has distributive Haar
-character `1`. -/
-@[grind =]
-theorem distribHaarChar_eq_one_of_mem_unitFiltration_zero {u : Eˣ} (hu : u ∈ unitFiltration E 0) :
-    distribHaarChar E u = 1 := by
-  rw [distribHaarChar_eq_normalizedAbsoluteValue,
-    (normalizedAbsoluteValue_eq_one_iff _).2
-      ((normalizedValuation_eq_one_iff u).1
-        (normalizedValuation_coe_unitFiltration_zero (K := E) ⟨u, hu⟩))]
-  simp
-
-end TauCeti
-
-end LocalHaarCharacter
-
-namespace MeasureTheory.Measure
-
-open TauCeti
-
-section Scaling
-
-variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
-  [IsNonarchimedeanLocalField E] [MeasurableSpace E] [BorelSpace E]
-  (μ : Measure E) [μ.IsAddHaarMeasure]
-
-/-- Preimage under `x ↦ a * x` (`a ≠ 0`) multiplies any additive Haar measure on `E` by
-`|a|_E⁻¹`. -/
-@[simp, grind =]
-theorem addHaar_preimage_mul_left {a : E} (ha : a ≠ 0) (s : Set E) :
-    μ ((a * ·) ⁻¹' s) = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
-  have hpre : (a * ·) ⁻¹' s = a⁻¹ • s := by
-    ext x
-    simp [mem_smul_set, inv_mul_eq_iff_eq_mul₀ ha]
-  rw [hpre, addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, NNRat.cast_inv,
-    ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero ha)]
-
-/-- **Pushforward of additive Haar measure by a unit (valuation form).** For `a ∈ Eˣ` and any
-additive Haar measure `μ` on `E`, `Measure.map (a * ·) μ = q ^ (v_E(a)) • μ`, where
-`q = Nat.card 𝓀[E]`. -/
-theorem map_units_mul_left_addHaar (a : Eˣ) :
-    map ((a : E) * ·) μ =
-      ((Nat.card 𝓀[E] : ℝ≥0) ^ (normalizedValuation E a).toAdd) • μ := by
-  have hfun : ((a : E) * ·) = ((a : E) • ·) := funext fun x ↦ (smul_eq_mul (a : E) x).symm
-  rw [hfun, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ a.ne_zero,
-    normalizedAbsoluteValue_coe]
-  congr 1
-  push_cast
-  rw [zpow_neg, inv_inv]
-
-/-- Multiplying by a uniformizer `ϖ ∈ Eˣ` pushes any additive Haar measure `μ` on `E` forward to
-`q • μ`. -/
-theorem map_mul_left_addHaar_of_isUniformizer {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
-    map ((ϖ : E) * ·) μ = (Nat.card 𝓀[E] : ℝ≥0) • μ := by
-  rw [map_units_mul_left_addHaar μ ϖ, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_one]
-
-/-- **Valuation-ring units preserve additive Haar measure.** Left multiplication by any `u ∈ 𝒪[E]ˣ`
-leaves every additive Haar measure on `E` invariant. -/
-@[simp, grind =]
-theorem map_integerUnits_mul_left_addHaar (u : 𝒪[E]ˣ) :
-    map (((u : 𝒪[E]) : E) * ·) μ = μ := by
-  have hfun : (((u : 𝒪[E]) : E) * ·) = (((u : 𝒪[E]) : E) • ·) :=
-    funext fun x ↦ (smul_eq_mul _ x).symm
-  rw [hfun, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ (by simp)]
-  simp
-
-/-- Lower Lebesgue change of variables on `E` under `x ↦ a * x` (`a ≠ 0`). -/
-theorem lintegral_mul_left_addHaar {a : E} (ha : a ≠ 0) (f : E → ℝ≥0∞) :
-    ∫⁻ x, f (a * x) ∂μ = ((normalizedAbsoluteValue E a : ℝ≥0) : ℝ≥0∞)⁻¹ * ∫⁻ x, f x ∂μ := by
-  let e : E ≃ᵐ E := MeasurableEquiv.mulLeft₀ a ha
-  have h := lintegral_map_equiv f e (μ := μ)
-  simp only [e, MeasurableEquiv.coe_mulLeft₀] at h
-  have he : (fun x : E ↦ a * x) = (a • ·) := funext fun x ↦ (smul_eq_mul a x).symm
-  rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, lintegral_smul_measure,
-    ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv] at h
-  · exact h.symm
-  · exact coe_normalizedAbsoluteValue_ne_zero ha
-
-/-- Bochner integral change of variables on `E` under `x ↦ a * x` (`a ≠ 0`). -/
-theorem integral_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {a : E} (ha : a ≠ 0) (f : E → F) :
-    ∫ x, f (a * x) ∂μ = ((normalizedAbsoluteValue E a : ℝ)⁻¹) • ∫ x, f x ∂μ := by
-  let e : E ≃ᵐ E := MeasurableEquiv.mulLeft₀ a ha
-  have h := integral_map_equiv e f (μ := μ)
-  simp only [e, MeasurableEquiv.coe_mulLeft₀] at h
-  have he : (fun x : E ↦ a * x) = (a • ·) := funext fun x ↦ (smul_eq_mul a x).symm
-  rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, integral_smul_nnreal_measure,
-    NNReal.smul_def, NNReal.coe_inv] at h
-  exact h.symm
-
-end Scaling
-
-end MeasureTheory.Measure
