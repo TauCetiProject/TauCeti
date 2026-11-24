@@ -16,9 +16,10 @@ import TauCeti.Algebra.MonoidAlgebra.MapDomain
 /-!
 # Hattori–Stallings traces for monoid extensions over `ℕ`
 
-Let `1 → G → Γtilde → ℤ → 1` be a group extension with `G` finite (`ι : G →* Γtilde` injective,
-`deg : Γtilde →* Multiplicative ℤ`, `ι.range = deg.ker`), and `Γ = nonnegSubmonoid deg = deg⁻¹(ℕ)`
-(from `TauCeti.GroupTheory.GroupExtension.MonoidExtension`). For a ring `Λ` and a left
+Let `1 → G → Γtilde → ℤ` be an exact sequence with `G` finite (`ι : G →* Γtilde` injective,
+`deg : Γtilde →* Multiplicative ℤ`, `ι.range = deg.ker`, without assuming `deg` surjective), and
+`Γ = nonnegSubmonoid deg = deg⁻¹(ℕ)` (from `TauCeti.GroupTheory.GroupExtension.MonoidExtension`).
+For a ring `Λ` and a left
 `Λ[Γ]`-module `P` that is finite projective over `Λ[G]`, restricting `P` to
 `Z_γ = centralizerSubgroup ι γ.1` makes the action of `γ ∈ Γ` `Λ[Z_γ]`-linear, giving
 `centralizerGroupTrace Λ ι deg hker hPG γ ∈ Λ / [Λ, Λ]` without dividing by `|G|` or `|Z_γ|`.
@@ -96,6 +97,75 @@ def centralizerEnd : Module.End Λ[centralizerSubgroup ι γ.val] P :=
 @[simp] theorem centralizerEnd_apply (p : P) :
     centralizerEnd hPG γ hPZ p = single γ (1 : Λ) • p := by simp [centralizerEnd]
 end CentralizerEnd
+
+section ConjSemilinearEquiv
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
+
+/-- Conjugation by `k : G` on a `Λ[G]`-module `P`, as a semilinear equivalence over
+`mapDomainRingEquiv Λ (conjCentralizerEquiv ι deg k γ)`. -/
+def conjCentralizerSemilinearEquiv (Λ : Type*) [Semiring Λ] (ι : G →* Γtilde)
+    (deg : Γtilde →* Multiplicative ℤ) (k : G) (γ : nonnegSubmonoid deg)
+    {P : Type*} [AddCommMonoid P] [Module Λ[G] P]
+    [Module Λ[centralizerSubgroup ι γ.val] P]
+    [Module Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val] P]
+    (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.val]) (p : P),
+      r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.val).subtype r • p)
+    (hPZ' : ∀ (r : Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val]) (p : P),
+      r • p = mapDomainRingHom Λ
+        (centralizerSubgroup ι (conjNonneg ι deg k γ).val).subtype r • p) :
+    P ≃ₛₗ[(mapDomainRingEquiv Λ (conjCentralizerEquiv ι deg k γ) :
+      Λ[centralizerSubgroup ι γ.val] →+*
+        Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val])] P where
+  toFun p := (single k (1 : Λ) : Λ[G]) • p
+  invFun p := (single k⁻¹ (1 : Λ) : Λ[G]) • p
+  left_inv p := by simp [← mul_smul, single_mul_single, ← one_def]
+  right_inv p := by simp [← mul_smul, single_mul_single, ← one_def]
+  map_add' := smul_add _
+  map_smul' r p := by
+    let eZ := conjCentralizerEquiv ι deg k γ
+    let E := mapDomainRingEquiv Λ eZ
+    have hE : (E : Λ[centralizerSubgroup ι γ.val] →+*
+          Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val]) =
+        mapDomainRingHom Λ eZ.toMonoidHom :=
+      (RingEquiv.toRingHom_eq_coe E).symm.trans (toRingHom_mapDomainRingEquiv eZ)
+    induction r using induction_linear with
+    | zero => simp
+    | add _ _ ha hb => rw [add_smul, smul_add, _root_.map_add, add_smul, ha, hb]
+    | single z c =>
+      have hkz : k * (z : G) = (eZ z : G) * k := by
+        dsimp only [eZ]; rw [coe_conjCentralizerEquiv_apply]; simp
+      rw [hPZ, hPZ', hE]
+      simp only [mapDomainRingHom_apply, mapDomain_single, Subgroup.coe_subtype,
+        MulEquiv.coe_toMonoidHom, ← mul_smul, single_mul_single, one_mul, mul_one, hkz]
+
+@[simp] theorem conjCentralizerSemilinearEquiv_apply {Λ : Type*} [Semiring Λ]
+    (ι : G →* Γtilde) (deg : Γtilde →* Multiplicative ℤ) (k : G) (γ : nonnegSubmonoid deg)
+    {P : Type*} [AddCommMonoid P] [Module Λ[G] P]
+    [Module Λ[centralizerSubgroup ι γ.val] P]
+    [Module Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val] P]
+    (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.val]) (p : P),
+      r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.val).subtype r • p)
+    (hPZ' : ∀ (r : Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val]) (p : P),
+      r • p = mapDomainRingHom Λ
+        (centralizerSubgroup ι (conjNonneg ι deg k γ).val).subtype r • p)
+    (p : P) :
+    conjCentralizerSemilinearEquiv Λ ι deg k γ hPZ hPZ' p =
+      (single k (1 : Λ) : Λ[G]) • p := by rfl
+
+@[simp] theorem conjCentralizerSemilinearEquiv_symm_apply {Λ : Type*} [Semiring Λ]
+    (ι : G →* Γtilde) (deg : Γtilde →* Multiplicative ℤ) (k : G) (γ : nonnegSubmonoid deg)
+    {P : Type*} [AddCommMonoid P] [Module Λ[G] P]
+    [Module Λ[centralizerSubgroup ι γ.val] P]
+    [Module Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val] P]
+    (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.val]) (p : P),
+      r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.val).subtype r • p)
+    (hPZ' : ∀ (r : Λ[centralizerSubgroup ι (conjNonneg ι deg k γ).val]) (p : P),
+      r • p = mapDomainRingHom Λ
+        (centralizerSubgroup ι (conjNonneg ι deg k γ).val).subtype r • p)
+    (p : P) :
+    (conjCentralizerSemilinearEquiv Λ ι deg k γ hPZ hPZ').symm p =
+      (single k⁻¹ (1 : Λ) : Λ[G]) • p := by rfl
+end ConjSemilinearEquiv
 end ActionAndCentralizerEnd
 
 section RingSection
@@ -204,28 +274,11 @@ theorem centralizerGroupTrace_conjNonneg (k : G) (γ : nonnegSubmonoid deg) :
   let _ := RingHomInvPair.of_ringEquiv E; let _ := RingHomInvPair.of_ringEquiv_symm E
   have hE : (E : Λ[Z] →+* Λ[Z']) = mapDomainRingHom Λ eZ.toMonoidHom :=
     (RingEquiv.toRingHom_eq_coe E).symm.trans (toRingHom_mapDomainRingEquiv eZ)
-  have hZ (r : Λ[Z]) (p : P) : r • p = mapDomainRingHom Λ Z.subtype r • p := rfl
-  have hZ' (r : Λ[Z']) (p : P) : r • p = mapDomainRingHom Λ Z'.subtype r • p := rfl
-  let j : P ≃ₛₗ[(E : Λ[Z] →+* Λ[Z'])] P :=
-    { toFun := fun p ↦ (single k (1 : Λ) : Λ[G]) • p
-      invFun := fun p ↦ (single k⁻¹ (1 : Λ) : Λ[G]) • p
-      left_inv := fun p ↦ by simp [← mul_smul, single_mul_single, ← one_def]
-      right_inv := fun p ↦ by simp [← mul_smul, single_mul_single, ← one_def]
-      map_add' := smul_add _
-      map_smul' := fun r p ↦ by
-        induction r using induction_linear with
-        | zero => simp
-        | add _ _ ha hb => rw [add_smul, smul_add, _root_.map_add, add_smul, ha, hb]
-        | single z c =>
-          have hkz : k * (z : G) = (eZ z : G) * k := by
-            dsimp only [eZ]; rw [coe_conjCentralizerEquiv_apply]; simp
-          rw [hZ, hZ', hE]
-          simp only [mapDomainRingHom_apply, mapDomain_single, Subgroup.coe_subtype,
-            MulEquiv.coe_toMonoidHom, ← mul_smul, single_mul_single, one_mul, mul_one, hkz] }
+  let j := conjCentralizerSemilinearEquiv Λ ι deg k γ (P := P) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
   have hinter (p : P) : uZ' (j p) = j (uZ p) := by
-    simp only [j, uZ, uZ', LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
-      centralizerEnd_apply, ← single_mul_toNonnegSubmonoid_smul hPG,
-      ← single_toNonnegSubmonoid_mul_smul hPG, γ', conjNonneg_mul_toNonnegSubmonoid]
+    simp only [j, uZ, uZ', conjCentralizerSemilinearEquiv_apply, centralizerEnd_apply,
+      ← single_mul_toNonnegSubmonoid_smul hPG, ← single_toNonnegSubmonoid_mul_smul hPG, γ',
+      conjNonneg_mul_toNonnegSubmonoid]
   rw [centralizerGroupTrace_eq_hattoriStallingsGroupTrace hPG γ' (fun _ _ ↦ rfl) uZ'
       (centralizerEnd_apply hPG γ' _),
     centralizerGroupTrace_eq_hattoriStallingsGroupTrace hPG γ (fun _ _ ↦ rfl) uZ
@@ -277,7 +330,7 @@ def coinvariantEnd (γ₀ : nonnegSubmonoid deg) : Module.End Λ (Coinvariants �
   ext p; simp [← mul_smul]
 
 /-- Naturality of `coinvariantEnd` with respect to `Λ[G]`-linear maps commuting with `γ₀`. -/
-theorem map_coinvariantEnd [IsScalarTower Λ Λ[G] P]
+theorem map_comp_coinvariantEnd [IsScalarTower Λ Λ[G] P]
     {Q : Type*} [AddCommGroup Q] [Module Λ Q] [Module Λ[nonnegSubmonoid deg] Q]
     [IsScalarTower Λ Λ[nonnegSubmonoid deg] Q] [Module Λ[G] Q] [IsScalarTower Λ Λ[G] Q]
     (hQG : ∀ (r : Λ[G]) (q : Q), r • q = mapDomainRingHom Λ (toNonnegSubmonoid ι deg hker) r • q)
@@ -287,7 +340,7 @@ theorem map_coinvariantEnd [IsScalarTower Λ Λ[G] P]
       coinvariantEnd Λ ι deg hker hQG γ₀ ∘ₗ Coinvariants.map (Λ := Λ) f := by ext p; simp [hf]
 
 /-- Elements of `Γ` of the same degree induce the same endomorphism on `Coinvariants Λ G P`. -/
-theorem coinvariantEnd_eq_of_map_eq {γ₁ γ₀ : nonnegSubmonoid deg} (hdeg : deg γ₁.val = deg γ₀.val) :
+theorem coinvariantEnd_eq_of_deg_eq {γ₁ γ₀ : nonnegSubmonoid deg} (hdeg : deg γ₁.val = deg γ₀.val) :
     coinvariantEnd Λ ι deg hker hPG γ₁ = coinvariantEnd Λ ι deg hker hPG γ₀ := by
   obtain ⟨g, hg⟩ := MonoidHom.mem_range.1 (hker.symm ▸ deg.div_mem_ker_iff.2 hdeg)
   have hγ₁ : γ₁ = toNonnegSubmonoid ι deg hker g * γ₀ := Subtype.ext (by simp [hg, div_mul_cancel])
@@ -340,8 +393,8 @@ private theorem conjClassGroupTrace_eq_mkQ_sum_cosets [Finite G] (hι : Function
     have hγsmul : single γ.val (1 : Λ) • π (Pi.single k 1) =
         (single gγ⁻¹ (1 : Λ) : Λ[G]) • (single γ₀.val (1 : Λ) • π (Pi.single k 1)) := by
       rw [hγ_eq, single_toNonnegSubmonoid_mul_smul hPG]
-    rw [htwist, hγsmul, ← mul_smul, single_mul_single, one_mul,
-      congrFun (map_smul i _ _) k, Pi.smul_apply, smul_eq_mul]
+    rw [htwist, hγsmul, ← mul_smul, single_mul_single, one_mul, map_smul, Pi.smul_apply,
+      smul_eq_mul]
   simp [himg, gγ, γ, degreeFiberEquivGroup_conj hι γ₀ γ q.out]
 
 /-- **Coinvariant trace over `G`-conjugacy classes** (Stacks Project, Section 64.15,

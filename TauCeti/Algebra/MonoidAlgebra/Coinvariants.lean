@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
-public import Mathlib.RingTheory.Finiteness.Cardinality
-public import TauCeti.Algebra.Module.Projective.Semilinear
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 import TauCeti.Algebra.MonoidAlgebra.Basic
@@ -296,42 +294,26 @@ end Map
 variable (Λ G) in
 /-- Coinvariants of a finite free `Λ[G]`-module `(ι → Λ[G])` identify with `(ι → Λ)` via
 coordinatewise augmentation. -/
-def piEquiv (ι : Type*) [Finite ι] : Coinvariants Λ G (ι → Λ[G]) ≃ₗ[Λ] (ι → Λ) := by
-  classical
-  refine LinearEquiv.ofLinearMap
-    (lift (LinearMap.pi fun i ↦ (augmentationLinearMap Λ G).comp (LinearMap.proj i))
-      fun g v ↦ by ext i; simp [Pi.smul_apply, smul_eq_mul])
-    ((mk Λ G (ι → Λ[G])).comp (LinearMap.pi fun i ↦ lsingle (R := Λ) (1 : G) ∘ₗ LinearMap.proj i))
-    (by ext w i; simp) (by
-      cases nonempty_fintype ι; ext v
-      simp only [LinearMap.comp_apply, lift_mk, LinearMap.id_apply]
-      have hv : v = ∑ i : ι, v i • Pi.single i (1 : Λ[G]) := by
-        ext j; simp [Finset.sum_apply, Pi.single_apply]
-      have hw : (LinearMap.pi fun i ↦ lsingle (R := Λ) (1 : G) ∘ₗ LinearMap.proj i)
-            ((LinearMap.pi fun i ↦ (augmentationLinearMap Λ G).comp (LinearMap.proj i)) v) =
-          ∑ i : ι, augmentation Λ G (v i) • Pi.single i (1 : Λ[G]) := by
-        ext j; simp [Finset.sum_apply, Pi.single_apply, one_def]
-      conv_rhs => rw [hv]
-      rw [hw, map_sum, map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ by rw [mk_smul, map_smul])
+def piEquiv (ι : Type*) [Finite ι] : Coinvariants Λ G (ι → Λ[G]) ≃ₗ[Λ] (ι → Λ) :=
+  let _ : Fintype ι := Fintype.ofFinite ι
+  (balancedExtensionEquiv Λ G (ι → Λ[G])).trans
+    (BalancedExtension.piScalarRight (augmentation Λ G) ι)
 
 @[simp] theorem piEquiv_mk {ι : Type*} [Finite ι] (v : ι → Λ[G]) (i : ι) :
-    piEquiv Λ G ι (mk Λ G (ι → Λ[G]) v) i = augmentation Λ G (v i) := by simp [piEquiv]
+    piEquiv Λ G ι (mk Λ G (ι → Λ[G]) v) i = augmentation Λ G (v i) := by
+  simp [piEquiv]
 
 @[simp] theorem piEquiv_symm_apply {ι : Type*} [Finite ι] (w : ι → Λ) :
-    (piEquiv Λ G ι).symm w = mk Λ G (ι → Λ[G]) (fun i ↦ single 1 (w i)) := by rfl
+    (piEquiv Λ G ι).symm w = mk Λ G (ι → Λ[G]) (fun i ↦ single 1 (w i)) := by
+  rw [LinearEquiv.symm_apply_eq]; ext i; simp
 
 /-- Coinvariants of a finitely generated left `Λ[G]`-module are finitely generated over `Λ`. -/
-instance [Module.Finite Λ[G] P] : Module.Finite Λ (Coinvariants Λ G P) := by
-  obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' Λ[G] P
-  exact .of_surjective ((map (Λ := Λ) π).comp (piEquiv Λ G (Fin n)).symm.toLinearMap)
-    ((map_surjective hπ).comp (piEquiv Λ G (Fin n)).symm.surjective)
+instance [Module.Finite Λ[G] P] : Module.Finite Λ (Coinvariants Λ G P) :=
+  .equiv (balancedExtensionEquiv Λ G P).symm
 
 /-- Coinvariants of a projective left `Λ[G]`-module are projective over `Λ`. -/
-instance [Module.Projective Λ[G] P] : Module.Projective Λ (Coinvariants Λ G P) := by
-  refine .of_lifting_property'' fun F hF ↦ ?_
-  obtain ⟨h, hh⟩ := Module.projective_lifting_property_semilinear F hF (mkSemilinear Λ G P)
-  exact ⟨liftSemilinear h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
+instance [Module.Projective Λ[G] P] : Module.Projective Λ (Coinvariants Λ G P) :=
+  .of_equiv (balancedExtensionEquiv Λ G P).symm
 
 end ScalarTower
 

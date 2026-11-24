@@ -271,8 +271,8 @@ variable {R S M M' : Type*} [Ring R] [Ring S]
 semilinear equivalence along mutually inverse ring homomorphisms `σ : R →+* S` and `σ' : S →+* R`,
 and `T : M →ₗ[R] M` and `T' : M' →ₗ[S] M'` satisfy `T' (j x) = j (T x)`, then
 `Tr_HS(T') = σ(Tr_HS(T))`. -/
-theorem hattoriStallingsTrace_eq_map (j : M ≃ₛₗ[σ] M') {T : M →ₗ[R] M} {T' : M' →ₗ[S] M'}
-    (h : ∀ x, T' (j x) = j (T x)) :
+theorem hattoriStallingsTrace_eq_cyclicQuotientRingHomMap (j : M ≃ₛₗ[σ] M')
+    {T : M →ₗ[R] M} {T' : M' →ₗ[S] M'} (h : ∀ x, T' (j x) = j (T x)) :
     LinearMap.hattoriStallingsTrace S M' T' =
       TauCeti.cyclicQuotientRingHomMap σ (LinearMap.hattoriStallingsTrace R M T) := by
   have hconj : j.conjRingEquiv T = T' := by

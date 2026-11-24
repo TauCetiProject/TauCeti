@@ -104,6 +104,19 @@ theorem basisCosets_apply (p : M →* N) (hp : Function.Injective p) (q : N ⧸ 
     basisCosets R p hp q = single q.out⁻¹ (1 : R) := by
   simp [basisCosets, Module.Basis.coe_ofRepr, cosetLinearEquiv, cosetAddEquiv_single]
 
+/-- In `basisCosets R p hp`, the `R[M]`-coordinates of `single (p m * q.out⁻¹) r` are supported at
+`q` with value `single m r`. -/
+@[simp]
+theorem basisCosets_repr_single (p : M →* N) (hp : Function.Injective p)
+    (q : N ⧸ p.range) (m : M) (r : R) :
+    letI := (mapDomainRingHom R p).toModule
+    (basisCosets R p hp).repr (single (p m * q.out⁻¹) r) = Finsupp.single q (single m r) := by
+  let _ := (mapDomainRingHom R p).toModule
+  have h : single (p m * q.out⁻¹) r = (single m r : R[M]) • basisCosets R p hp q := by
+    rw [basisCosets_apply, RingHom.toModule_smul, mapDomainRingHom_apply, mapDomain_single,
+      single_mul_single, mul_one]
+  rw [h, LinearEquiv.map_smul, Module.Basis.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one]
+
 /-- In `basisCosets R p hp`, the `m`-th coefficient of the `q`-th `R[M]`-coordinate of `x : R[N]`
 is `x.coeff (p m * q.out⁻¹)`. -/
 @[simp]
@@ -111,8 +124,59 @@ theorem coeff_basisCosets_repr (p : M →* N) (hp : Function.Injective p) (x : R
     (q : N ⧸ p.range) (m : M) :
     letI := (mapDomainRingHom R p).toModule
     ((basisCosets R p hp).repr x q).coeff m = x.coeff (p m * q.out⁻¹) := by
-  simp [basisCosets, cosetLinearEquiv, cosetAddEquiv, Finsupp.curryAddEquiv, Finsupp.curryEquiv,
-    Subgroup.groupEquivQuotientProdSubgroup_symm_apply, MonoidHom.ofInjective_apply]
+  let _ := (mapDomainRingHom R p).toModule
+  induction x using induction_linear with
+  | zero => simp
+  | add a b ha hb => simp [ha, hb]
+  | single n r =>
+    let q' : N ⧸ p.range := QuotientGroup.mk n⁻¹
+    obtain ⟨m', hm'⟩ := QuotientGroup.eq.1 (QuotientGroup.out_eq' q').symm
+    have hn : n = p m' * q'.out⁻¹ := eq_mul_inv_of_mul_eq (by simpa using hm'.symm)
+    rw [hn, basisCosets_repr_single]
+    by_cases hq : q' = q
+    · subst hq
+      by_cases hm : m' = m
+      · subst hm; simp
+      · simp [coeff_single, hm, hp.ne hm]
+    · have hne : p m' * q'.out⁻¹ ≠ p m * q.out⁻¹ := fun heq ↦ hq <| by
+        have hmem : q.out⁻¹ * q'.out ∈ p.range := ⟨m⁻¹ * m', by
+          rw [map_mul, map_inv, inv_mul_eq_iff_eq_mul, ← mul_assoc]
+          have h1 : p m * q.out⁻¹ * q'.out = p m' := by
+            rw [← heq, mul_assoc, inv_mul_cancel, mul_one]
+          exact h1.symm⟩
+        rw [← QuotientGroup.out_eq' q, ← QuotientGroup.out_eq' q']
+        exact (QuotientGroup.eq.2 hmem).symm
+      simp [Ne.symm hq, coeff_single, hne]
+
+/-- Every coset `H g⁻¹` arising from the support of `f x`, for `x` in the `R[H]`-span of `s`,
+already appears in the finite set of cosets coming from the generators `m ∈ s`. -/
+private theorem quotient_inv_mem_biUnion_support_of_mem_span {G : Type*} [Group G]
+    (H : Subgroup G) [DecidableEq (G ⧸ H)] {P : Type*} [AddCommMonoid P] [Module R[G] P]
+    [Module R[H] P] (hP : ∀ (r : R[H]) (p : P), r • p = mapDomainRingHom R H.subtype r • p)
+    (f : P →ₗ[R[G]] R[G]) (s : Finset P) {x : P} (hx : x ∈ Submodule.span R[H] (s : Set P))
+    {g : G} (hg : g ∈ (f x).coeff.support) :
+    (QuotientGroup.mk g⁻¹ : G ⧸ H) ∈
+      s.biUnion fun m ↦ (f m).coeff.support.image fun g₀ ↦ QuotientGroup.mk g₀⁻¹ := by
+  classical
+  induction hx using Submodule.span_induction generalizing g with
+  | mem m hm => exact Finset.mem_biUnion.2 ⟨m, hm, Finset.mem_image_of_mem _ hg⟩
+  | zero => simp at hg
+  | add x y _ _ hx hy =>
+    rw [map_add, coeff_add] at hg
+    exact (Finset.mem_union.1 (Finsupp.support_add hg)).elim (hx ·) (hy ·)
+  | smul c x _ hx =>
+    induction c using induction_linear generalizing g with
+    | zero => simp at hg
+    | add c₁ c₂ hc₁ hc₂ =>
+      rw [add_smul, map_add, coeff_add] at hg
+      exact (Finset.mem_union.1 (Finsupp.support_add hg)).elim (hc₁ ·) (hc₂ ·)
+    | single h a =>
+      have himg : f (single h a • x) = single (h : G) a * f x := by
+        rw [hP, map_smul]; simp [smul_eq_mul]
+      rw [himg, Finsupp.mem_support_iff, coeff_single_mul_apply] at hg
+      have hq : (QuotientGroup.mk g⁻¹ : G ⧸ H) = QuotientGroup.mk ((h : G)⁻¹ * g)⁻¹ :=
+        QuotientGroup.eq.2 (by simp)
+      exact hq ▸ hx (Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hg))
 
 /-- If `G ⧸ H` is infinite, any finite projective `R[G]`-module that is finitely generated over
 `R[H]` is trivial. -/
@@ -125,40 +189,23 @@ theorem subsingleton_of_infinite_quotient {G : Type*} [Group G] (H : Subgroup G)
   obtain ⟨r, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective R[G] P
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R[H]) (M := P)
   refine (subsingleton_iff_forall_eq 0).2 fun p ↦ ?_
+  -- The `R[H]`-generators bound the right-coset support of `i x k` to a finite set `S`;
+  -- translating `p` by `q.out⁻¹ * g₁⁻¹` moves `g₁` to a coset `q ∉ S`, a contradiction.
   have hip : i p = 0 := by
     funext k; by_contra hne
     obtain ⟨g₁, hg₁⟩ := Finsupp.support_nonempty_iff.2 (coeff_eq_zero.not.2 hne)
+    let ik : P →ₗ[R[G]] R[G] := (LinearMap.proj k).comp i
     let S : Finset (G ⧸ H) :=
-      s.biUnion fun m ↦ (i m k).coeff.support.image fun g₀ ↦ QuotientGroup.mk g₀⁻¹
-    have hsupp : ∀ (x : P) (g : G), g ∈ (i x k).coeff.support →
-        (QuotientGroup.mk g⁻¹ : G ⧸ H) ∈ S := fun x ↦ by
-      have hx : x ∈ Submodule.span R[H] (s : Set P) := hs.symm ▸ Submodule.mem_top
-      induction hx using Submodule.span_induction with
-      | mem m hm => exact fun g hg ↦ Finset.mem_biUnion.2 ⟨m, hm, Finset.mem_image_of_mem _ hg⟩
-      | zero => simp
-      | add x y _ _ hx hy =>
-        intro g hg; rw [map_add, Pi.add_apply, coeff_add] at hg
-        exact (Finset.mem_union.1 (Finsupp.support_add hg)).elim (hx g) (hy g)
-      | smul c x _ hx =>
-        induction c using induction_linear with
-        | zero => simp
-        | add c₁ c₂ hc₁ hc₂ =>
-          intro g hg; rw [add_smul, map_add, Pi.add_apply, coeff_add] at hg
-          exact (Finset.mem_union.1 (Finsupp.support_add hg)).elim (hc₁ g) (hc₂ g)
-        | single h a =>
-          intro g hg
-          have himg : i (single h a • x) k = single (h : G) a * i x k := by
-            rw [hP, map_smul]; simp [Pi.smul_apply, smul_eq_mul]
-          rw [himg, Finsupp.mem_support_iff, coeff_single_mul_apply] at hg
-          have hq : (QuotientGroup.mk g⁻¹ : G ⧸ H) = QuotientGroup.mk ((h : G)⁻¹ * g)⁻¹ :=
-            QuotientGroup.eq.2 (by simp)
-          exact hq ▸ hx _ (Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hg))
+      s.biUnion fun m ↦ (ik m).coeff.support.image fun g₀ ↦ QuotientGroup.mk g₀⁻¹
     obtain ⟨q, hq⟩ := Infinite.exists_notMem_finset S
-    have ht : q.out⁻¹ * g₁⁻¹ * g₁ ∈ (i (single (q.out⁻¹ * g₁⁻¹) (1 : R) • p) k).coeff.support := by
-      rw [congrFun (map_smul i _ p) k, Pi.smul_apply, smul_eq_mul, Finsupp.mem_support_iff,
-        coeff_single_mul_apply, inv_mul_cancel_left, one_mul]
+    have ht : q.out⁻¹ * g₁⁻¹ * g₁ ∈ (ik (single (q.out⁻¹ * g₁⁻¹) (1 : R) • p)).coeff.support := by
+      rw [LinearMap.comp_apply, LinearMap.proj_apply, map_smul, Pi.smul_apply, smul_eq_mul,
+        Finsupp.mem_support_iff, coeff_single_mul_apply, inv_mul_cancel_left, one_mul]
       exact Finsupp.mem_support_iff.1 hg₁
-    exact hq ((by simp : (QuotientGroup.mk (q.out⁻¹ * g₁⁻¹ * g₁)⁻¹ : G ⧸ H) = q) ▸ hsupp _ _ ht)
+    have hx : single (q.out⁻¹ * g₁⁻¹) (1 : R) • p ∈ Submodule.span R[H] (s : Set P) :=
+      hs.symm ▸ Submodule.mem_top
+    exact hq ((by simp : (QuotientGroup.mk (q.out⁻¹ * g₁⁻¹ * g₁)⁻¹ : G ⧸ H) = q) ▸
+      quotient_inv_mem_biUnion_support_of_mem_span R H hP ik s hx ht)
   simpa [hip] using (LinearMap.congr_fun hπi p).symm
 
 /-- If `G` is infinite, any finite projective `R[G]`-module that is finitely generated over `R` is

@@ -621,8 +621,11 @@ variable (R S P : Type*) [CommRing R] [Ring S] [Algebra R S] [AddCommGroup P] [M
 and Mathlib's tensor product `TensorProduct R S P`, sending `s ⊗ p` to `s ⊗ₜ[R] p`. -/
 def tensorProductEquiv : BalancedExtension (algebraMap R S) P ≃ₗ[S] TensorProduct R S P :=
   let _ : Module R (BalancedExtension (algebraMap R S) P) := Module.compHom _ (algebraMap R S)
+  -- Under `Module.compHom _ (algebraMap R S)`, `r • y` is `algebraMap R S r • y` by definition.
+  have hsmul (r : R) (y : BalancedExtension (algebraMap R S) P) :
+      r • y = algebraMap R S r • y := rfl
   have : IsScalarTower R S (BalancedExtension (algebraMap R S) P) :=
-    ⟨fun r s x ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
+    ⟨fun r s x ↦ by rw [hsmul, Algebra.smul_def, mul_smul, ← hsmul]⟩
   let f : P →ₛₗ[algebraMap R S] TensorProduct R S P :=
     { toFun := fun p ↦ (1 : S) ⊗ₜ[R] p, map_add' := TensorProduct.tmul_add 1,
       map_smul' := fun r p ↦ by rw [TensorProduct.tmul_smul, algebraMap_smul] }
@@ -634,21 +637,18 @@ def tensorProductEquiv : BalancedExtension (algebraMap R S) P ≃ₗ[S] TensorPr
             exact (smul_tmul (algebraMap R S r) s p).symm }
       map_add' := fun s₁ s₂ ↦ LinearMap.ext (add_tmul s₁ s₂)
       map_smul' := fun s₁ s₂ ↦ LinearMap.ext fun p ↦ (smul_tmul s₁ s₂ p).symm }
+  have hf (p : P) : f p = (1 : S) ⊗ₜ[R] p := rfl
+  have hg (s : S) (p : P) : g s p = tmul (algebraMap R S) s p := rfl
   LinearEquiv.ofLinearMap (lift f) (TensorProduct.AlgebraTensorModule.lift g)
     (LinearMap.ext fun x ↦ x.inductionOn
       (fun s p ↦ by
         simp only [LinearMap.comp_apply, LinearMap.id_apply,
-          TensorProduct.AlgebraTensorModule.lift_tmul]
-        change lift f (tmul (algebraMap R S) s p) = s ⊗ₜ[R] p
-        rw [lift_tmul]
-        simp [f, TensorProduct.smul_tmul'])
+          TensorProduct.AlgebraTensorModule.lift_tmul, hg, lift_tmul, hf,
+          TensorProduct.smul_tmul', smul_eq_mul, mul_one])
       fun _ _ hx hy ↦ by rw [_root_.map_add, _root_.map_add, hx, hy])
     (hom_ext fun p ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, lift_tmul, one_smul]
-      change TensorProduct.AlgebraTensorModule.lift g ((1 : S) ⊗ₜ[R] p) =
-        tmul (algebraMap R S) 1 p
-      rw [TensorProduct.AlgebraTensorModule.lift_tmul]
-      rfl)
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, lift_tmul, one_smul, hf,
+        TensorProduct.AlgebraTensorModule.lift_tmul, hg])
 
 @[simp]
 theorem tensorProductEquiv_tmul (s : S) (p : P) :

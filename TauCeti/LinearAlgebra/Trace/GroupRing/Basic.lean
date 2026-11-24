@@ -17,14 +17,14 @@ import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 
 For a group `G` and an arbitrary ring `Λ`, the identity-coefficient functional `x ↦ x.coeff 1` on
 `Λ[G]` kills commutators modulo `[Λ, Λ]` and descends to
-`MonoidAlgebra.cyclicCoeffOne Λ G : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project,
+`TauCeti.MonoidAlgebra.cyclicCoeffOne Λ G : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project,
 Section 64.15, Lemma 64.15.1). Composing with the Hattori–Stallings trace of a finite projective
 left `Λ[G]`-module `P` defines `LinearMap.hattoriStallingsGroupTrace Λ G P` and, over a commutative
 ring `A`, `LinearMap.projectiveGroupTrace A G P : End_{A[G]}(P) →ₗ[A] A` without dividing by `|G|`.
 
 ## Main definitions and results
 
-* `MonoidAlgebra.cyclicCoeffOne`: `Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Lemma 64.15.1).
+* `TauCeti.MonoidAlgebra.cyclicCoeffOne`: `Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Lemma 64.15.1).
 * `LinearMap.hattoriStallingsGroupTrace` and `LinearMap.projectiveGroupTrace`: group-ring traces
   over arbitrary `Λ` and commutative `A`.
 * `LinearMap.hattoriStallingsGroupTrace_balancedExtension_mapDomainRingHom_of_injective`:
@@ -49,9 +49,8 @@ namespace MonoidAlgebra
 
 section CyclicCoeffOne
 
-variable (Λ G : Type*) [Ring Λ] [Group G]
+variable {Λ G : Type*} [Ring Λ] [Group G]
 
-variable {Λ G} in
 /-- Modulo `[Λ, Λ]`, the identity coefficient of a product in `Λ[G]` is symmetric. -/
 theorem commutatorSubmodule_mkQ_coeff_one_mul_comm (x y : Λ[G]) :
     (TauCeti.commutatorSubmodule ℤ Λ).mkQ ((x * y).coeff 1) =
@@ -73,7 +72,6 @@ theorem commutatorSubmodule_mkQ_coeff_one_mul_comm (x y : Λ[G]) :
       · simp [Finsupp.single_eq_of_ne (Ne.symm hgh),
           Finsupp.single_eq_of_ne (Ne.symm (mt mul_eq_one_comm.1 hgh))]
 
-variable {Λ G} in
 /-- The identity coefficient of any element in `[Λ[G], Λ[G]]` belongs to `[Λ, Λ]`. -/
 theorem coeff_one_mem_commutatorSubmodule {x : Λ[G]}
     (hx : x ∈ TauCeti.commutatorSubmodule ℤ Λ[G]) :
@@ -84,6 +82,18 @@ theorem coeff_one_mem_commutatorSubmodule {x : Λ[G]}
     (TauCeti.commutatorSubmodule_le_ker_iff _).2 fun _ _ ↦
       commutatorSubmodule_mkQ_coeff_one_mul_comm _ _
   simpa [Submodule.Quotient.mk_eq_zero] using LinearMap.mem_ker.1 (hle hx)
+
+end CyclicCoeffOne
+
+end MonoidAlgebra
+
+namespace TauCeti.MonoidAlgebra
+
+open _root_.MonoidAlgebra
+
+section CyclicCoeffOne
+
+variable (Λ G : Type*) [Ring Λ] [Group G]
 
 /-- **The identity-coefficient map on cyclic quotients**
 `ε : Λ[G] / [Λ[G], Λ[G]] →ₗ[ℤ] Λ / [Λ, Λ]` (Stacks Project, Section 64.15, Lemma 64.15.1). -/
@@ -116,9 +126,11 @@ variable {Λ G}
 
 end CyclicCoeffOne
 
-end MonoidAlgebra
+end TauCeti.MonoidAlgebra
 
 open MonoidAlgebra
+open TauCeti.MonoidAlgebra (cyclicCoeffOne cyclicCoeffOne_mk cyclicCoeffOne_mapRingHom
+  cyclicCoeffOne_mapDomainRingHom_of_injective)
 
 namespace LinearMap
 
@@ -215,7 +227,8 @@ theorem hattoriStallingsGroupTrace_eq_of_mapDomainRingHom {Λ H G P P' : Type*} 
     (h : ∀ x, u' (j x) = j (u x)) :
     LinearMap.hattoriStallingsGroupTrace Λ G P' u' =
       LinearMap.hattoriStallingsGroupTrace Λ H P u := by
-  rw [LinearMap.hattoriStallingsGroupTrace_apply, j.hattoriStallingsTrace_eq_map h, hσ,
+  rw [LinearMap.hattoriStallingsGroupTrace_apply,
+    j.hattoriStallingsTrace_eq_cyclicQuotientRingHomMap h, hσ,
     cyclicCoeffOne_mapDomainRingHom_of_injective e.injective,
     ← LinearMap.hattoriStallingsGroupTrace_apply]
 
@@ -228,6 +241,12 @@ section Restriction
 variable {Λ G : Type*} [Ring Λ] [Group G]
 
 variable {P : Type*} [AddCommGroup P] [Module Λ[G] P]
+
+private theorem pi_single_smul_eq {r : ℕ} (π : (Fin r → Λ[G]) →ₗ[Λ[G]] P)
+    (k : Fin r) (g : G) :
+    π (Pi.single k (MonoidAlgebra.single g (1 : Λ))) =
+      (MonoidAlgebra.single g (1 : Λ) : Λ[G]) • π (Pi.single k 1) := by
+  rw [← map_smul π, ← Pi.single_smul', smul_eq_mul, mul_one]
 
 /-- Evaluating `hattoriStallingsGroupTrace Λ H P u_H` on a `Λ[G]`-free retract `(π, i)` of `P` via
 the coset basis `basisCosets Λ H.subtype`. -/
@@ -262,7 +281,7 @@ theorem hattoriStallingsGroupTrace_eq_mkQ_sum_of_retract (H : Subgroup G)
   refine Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
   have hπ : π_H (bPi ⟨k, q⟩) =
       (MonoidAlgebra.single q.out⁻¹ (1 : Λ) : Λ[G]) • π (Pi.single k 1) := by
-    rw [← map_smul π, ← Pi.single_smul', smul_eq_mul, mul_one]; simp [π_H, bPi]
+    simpa [π_H, bPi] using pi_single_smul_eq π k q.out⁻¹
   rw [comp_apply, comp_apply, hπ]; simp [bPi, i_H]
 
 /-- **Subgroup restriction of the group-ring Hattori–Stallings trace** (Stacks Project,
@@ -291,10 +310,7 @@ theorem hattoriStallingsGroupTrace_eq_index_nsmul (H : Subgroup G)
     have hq (q : G ⧸ H.subtype.range) :
         (i (u_H ((MonoidAlgebra.single q.out⁻¹ (1 : Λ) : Λ[G]) •
             π (Pi.single k 1))) k).coeff q.out⁻¹ = (i (u (π (Pi.single k 1))) k).coeff 1 := by
-      have himg : i (u_H ((MonoidAlgebra.single q.out⁻¹ (1 : Λ) : Λ[G]) • π (Pi.single k 1))) k =
-          MonoidAlgebra.single q.out⁻¹ (1 : Λ) * i (u (π (Pi.single k 1))) k := by
-        rw [hu, map_smul u]; exact congrFun (map_smul i _ _) k
-      simp [himg]
+      simp [hu, smul_eq_mul]
     simp [hq]
   · have := TauCeti.MonoidAlgebra.subsingleton_of_infinite_quotient Λ H P hP; simp
 
@@ -331,11 +347,11 @@ theorem hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocu
     have himg (x : G) :
         i (φ ((MonoidAlgebra.single x (1 : Λ) : Λ[G]) • π (Pi.single k 1))) k =
           MonoidAlgebra.single (σ x) (1 : Λ) * yk := by
-      rw [hφ]; exact congrFun (map_smul i (MonoidAlgebra.single (σ x) (1 : Λ)) _) k
+      simp [hφ, yk, smul_eq_mul]
     have hLHS (g : G) :
         (bΛ.repr ((i_Λ ∘ₗ φ ∘ₗ π_Λ) (bΛ ⟨k, g⟩))) ⟨k, g⟩ = yk.coeff ((σ g)⁻¹ * g) := by
       have hπ : π_Λ (bΛ ⟨k, g⟩) = MonoidAlgebra.single g (1 : Λ) • π (Pi.single k 1) := by
-        rw [← map_smul π, ← Pi.single_smul', smul_eq_mul, mul_one]; simp [π_Λ, bΛ]
+        simpa [π_Λ, bΛ] using pi_single_smul_eq π k g
       have hrepr (v : Fin r → Λ[G]) : (bΛ.repr v) ⟨k, g⟩ = (v k).coeff g := by simp [bΛ]
       rw [hrepr, comp_apply, comp_apply, hπ, restrictScalars_apply, himg, coeff_single_mul_apply,
         one_mul]
