@@ -339,19 +339,20 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const {Q R : Type*}
     fun _ _ ↦ ω.hamiltonianVectorFieldInChartAt_uncurry α _ _ _ _
 
 /-- **The Hamiltonian vector field in a chart is smooth.** For a nondegenerate two-form `ω` and a
-family of Hamiltonians `K(z)` which is jointly `C^(n+1)` at every point of `U × M`, for an open set
-`U` of the domain, the Hamiltonian vector field of `K` read in the chart at `α` is `C^n` on
-`U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data assumed by the
-compactness theorems for Floer solutions in a manifold. -/
+family of Hamiltonians `K(z)`, indexed by a set `U` of a normed space `Q` (for instance a domain
+of `ℝ × ℝ`, or a domain of `P × (ℝ × ℝ)` for a family over parameters `p ∈ P`), which is jointly
+`C^(n+1)` at every point of `U × M`, the Hamiltonian vector field of `K` read in the chart at `α`
+is `C^n` on `U × (extChartAt I α).target`. With `n = 2` this is the regularity of the data assumed
+by the compactness theorems for Floer solutions in a manifold. -/
 theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsNondegenerate)
-    {U : Set (ℝ × ℝ)} {K : ℝ × ℝ → M → ℝ} {n : ℕ∞}
-    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
+    {Q : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q] {U : Set Q} {K : Q → M → ℝ} {n : ℕ∞}
+    (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, Q).prod I) 𝓘(ℝ) (n + 1) (Function.uncurry K) (z, x))
     (α : M) :
     ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α K) (U ×ˢ (extChartAt I α).target) := by
   set T := trivializationAt E (TangentSpace I) α
   set φ := extChartAt I α
-  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `(ℝ × ℝ) × M`.
-  set ψ : (ℝ × ℝ) × E → (ℝ × ℝ) × M := fun p ↦ (p.1, φ.symm p.2)
+  -- The map `(z, y) ↦ (z, φ⁻¹ y)` into `Q × M`.
+  set ψ : Q × E → Q × M := fun p ↦ (p.1, φ.symm p.2)
   rintro ⟨z, y⟩ ⟨hz, hy⟩
   have hbase {w : E} (hw : w ∈ φ.target) : φ.symm w ∈ T.baseSet := by
     simpa [T, φ] using (extChartAt I α).map_target hw
@@ -361,7 +362,7 @@ theorem IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt (hω : ω.IsN
     (hK z hz (φ.symm y))
   have hcoord := ((Bundle.Trivialization.contMDiffAt_iff (e := T)
     (by simpa [T] using hbase hy)).1 hX).2
-  have hψ : ContMDiffWithinAt 𝓘(ℝ, (ℝ × ℝ) × E) (𝓘(ℝ, ℝ × ℝ).prod I) n ψ
+  have hψ : ContMDiffWithinAt 𝓘(ℝ, Q × E) (𝓘(ℝ, Q).prod I) n ψ
       (U ×ˢ φ.target) (z, y) :=
     (contDiff_fst.contMDiff _).contMDiffWithinAt.prodMk
       (((contMDiffOn_extChartAt_symm (I := I) (n := n) α _ hy).comp (z, y)

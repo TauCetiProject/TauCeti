@@ -50,7 +50,8 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   consequence for the domain point alone; along a `C^n` family of configurations over a normed
   space of parameters and for a normed target,
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form jointly in the
-  parameter;
+  parameter, and `TauCeti.Floer.contMDiffAt_uncurry_uncurry_puncturedSpherePerturbation` that of
+  its components, in real coordinates, for a manifold target;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
@@ -420,6 +421,33 @@ theorem contMDiffAt_uncurry_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i
       ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _
         contMDiffAt_fst).prodMk contMDiffAt_snd)
   exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x).comp (z, x)
+    hφ).clm_apply contMDiffAt_const
+
+/-- **The components of the datum are smooth along a family of configurations.** Let
+`p ↦ (c p, a p)` be a family of configurations of input ends over a normed space of parameters,
+`C^n` at `p`, with nonzero scales at `p`, and let the domain point `z` (in real coordinates) be
+off the centers of `p`. For period-one Hamiltonians of class `C^n`, the components of the datum
+are `C^n` jointly in the parameter, the domain point and the target point at `((p, z), x)`. -/
+theorem contMDiffAt_uncurry_uncurry_puncturedSpherePerturbation {n : ℕ∞}
+    (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i)))
+    (hHout : Periodic Hout 1) (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout))
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {c a : P → ι → ℂ} {p : P}
+    (hc : ContDiffAt ℝ n c p) (ha : ContDiffAt ℝ n a p) (ha₀ : ∀ i, a p i ≠ 0) {z : ℝ × ℝ}
+    (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c p i) (x : M) (v : ℂ) :
+    ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (uncurry (uncurry fun p z x ↦
+        puncturedSpherePerturbation (c p) (a p) H Hout (Complex.equivRealProdCLM.symm z) x v))
+      ((p, z), x) := by
+  -- The map `((p, z), x) ↦ ((c p, a p), (z, x))` is `C^n` at `((p, z), x)`.
+  have hφ : ContMDiffAt (𝓘(ℝ, P × (ℝ × ℝ)).prod I)
+      (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun r : (P × (ℝ × ℝ)) × M ↦
+        ((c r.1.1, a r.1.1), (Complex.equivRealProdCLM.symm r.1.2, r.2))) ((p, z), x) :=
+    ((hc.prodMk ha).contMDiffAt.comp ((p, z), x)
+      (contDiff_fst.contMDiff.comp contMDiff_fst).contMDiffAt).prodMk
+      (((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp
+        contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
+  exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha₀ hz x).comp ((p, z), x)
     hφ).clm_apply contMDiffAt_const
 
 /-- Off the centers of the input ends, the components of the datum of period-one `C¹`
