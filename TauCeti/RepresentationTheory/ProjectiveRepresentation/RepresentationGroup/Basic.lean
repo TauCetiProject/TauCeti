@@ -75,7 +75,7 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
   -- Injectivity of transgression forces the central kernel into the commutator subgroup.
   refine ⟨_, inferInstance, inferInstance, α, ?_, ?_, hbij⟩
   · rw [← FactorSet.range_inl_eq_ker_rightHom]
-    exact α.inl_range_le_center trivialMulDistribMulAction_smul
+    exact α.range_inl_le_center_iff.2 trivialMulDistribMulAction_smul
   · rw [← FactorSet.range_inl_eq_ker_rightHom]
     exact (α.characterTransgression_injective_iff_range_inl_le_commutator_of_rootableBy
       trivialMulDistribMulAction_smul).mp hbij.injective

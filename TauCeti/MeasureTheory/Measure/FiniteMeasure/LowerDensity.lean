@@ -91,8 +91,9 @@ theorem mul_hausdorffMeasure_le_measure_of_tendsto [l.NeBot] (hμ : Tendsto μ l
     {U : Set X} (hU : IsOpen U) (hZU : (Z₀ : Set X) ⊆ U) :
     ENNReal.ofReal (c / 2 ^ d) * μH[d] (Z₀ : Set X) ≤ (ν : Measure X) U :=
   Measure.mul_hausdorffMeasure_le_measure_of_isOpen _ hU hZU fun _ hx ↦
-    Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall hρ₀ fun _ hρ hρρ₀ ↦
-      le_measure_closedBall_of_tendsto hμ hZ hh hdens hx hρ hρρ₀
+    Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall <| Eventually.frequently <|
+      eventually_of_mem (Ioc_mem_nhdsGT hρ₀) fun _ hρ ↦
+        le_measure_closedBall_of_tendsto hμ hZ hh hdens hx hρ.1 hρ.2
 
 /-- **The limit set has finite Hausdorff measure.** Under the hypotheses of
 `MeasureTheory.FiniteMeasure.le_measure_closedBall_of_tendsto`, with `c > 0` and `ρ₀ > 0`, the

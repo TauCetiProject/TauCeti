@@ -203,11 +203,11 @@ theorem hasDerivAt_deriv_gaussianIsoperimetricProfile (hu : u ∈ Ioo 0 1) :
 /-- The Gaussian isoperimetric function tends to `0` at `0` from the right. -/
 private theorem tendsto_gaussianIsoperimetricProfile_nhdsGT_zero :
     Tendsto gaussianIsoperimetricProfile (𝓝[>] 0) (𝓝 0) := by
-  have hq : Tendsto (gaussianReal 0 1).quantile (𝓝[>] 0) atBot := by
+  have hq : Tendsto (gaussianReal 0 1).quantile (𝓝[>] 0) (cocompact ℝ) := by
     have h := tendsto_quantile_gaussianReal_nhdsGT_zero 0 1
     simp only [one_ne_zero, ↓reduceIte] at h
-    exact EReal.tendsto_coe_nhds_bot_iff.1 h
-  refine (tendsto_gaussianPDFReal_zero_one_atBot.comp hq).congr' ?_
+    exact (EReal.tendsto_coe_nhds_bot_iff.1 h).mono_right atBot_le_cocompact
+  refine ((tendsto_gaussianPDFReal_cocompact 0 1).comp hq).congr' ?_
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with w hw using
     (gaussianIsoperimetricProfile_of_mem_Ioo hw).symm
 

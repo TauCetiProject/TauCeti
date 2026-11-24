@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Alternating.BracketWedge
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+import TauCeti.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Matrix.Normed
 
 /-!
@@ -51,14 +52,11 @@ theorem bracketWedge_commutator_apply
     bracketWedge (ContinuousLinearMap.mul ℝ A - (ContinuousLinearMap.mul ℝ A).flip) φ ψ v =
       wedgeMul φ ψ v - (-1 : ℝ) ^ (k * l) •
         wedgeMul ψ φ (v ∘ Fin.cast (Nat.add_comm l k)) := by
-  have hflip : ((ContinuousLinearMap.mul ℝ A).flip).pairingFlip
-      ((ContinuousLinearMap.mul ℝ A).flip.continuous₂) = ContinuousLinearMap.mul ℝ A := by
-    ext a b
-    simp [ContinuousLinearMap.pairingFlip_apply]
   rw [bracketWedge_def, ← pairedWedgeCLM_apply, map_sub]
   simp only [_root_.sub_apply, sub_apply, pairedWedgeCLM_apply]
   rw [pairedWedge_flip (ContinuousLinearMap.mul ℝ A).flip]
-  simp only [hflip, wedgeMul_def]
+  simp only [ContinuousLinearMap.pairingFlip_eq_flip, ContinuousLinearMap.flip_flip,
+    wedgeMul_def]
 
 /-- For an odd-degree algebra-valued form, its bracket square is twice its multiplication
 square. This applies to connection one-forms without a commutativity assumption. -/

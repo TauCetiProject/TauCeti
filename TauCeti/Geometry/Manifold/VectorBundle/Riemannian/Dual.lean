@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -17,6 +18,7 @@ Lowering a vector-bundle section with a regular metric preserves its regularity,
 for sections along a varying base map. This is the covector-valued version of Mathlib's
 `ContMDiffWithinAt.inner_bundle`. The metric itself is a regular section of the Hom bundle
 to the continuous dual. In finite rank its inverse is a regular Hom-bundle section as well.
+Lowering a finite family of sections at once gives a regular bundle map to a trivial bundle.
 -/
 
 public noncomputable section
@@ -88,6 +90,32 @@ theorem ContMDiffWithinAt.innerSL_bundle {n : ℕ∞ω}
     ext w
     exact (heq x v w).symm
   simpa only [hdual] using hd
+
+namespace TauCeti
+
+/-- On a finite-rank Riemannian bundle, metric duality applied to a finite family of regular
+sections `X i` gives a regular bundle map `v ↦ (⟪X i y, v⟫)ᵢ` to the trivial bundle with fibre
+`ι → ℝ`. -/
+theorem contMDiffWithinAt_pi_innerSL_bundle {n : ℕ∞ω} [FiniteDimensional ℝ F]
+    [IsContMDiffRiemannianBundle I n F V] {ι : Type*} [Fintype ι] {X : ι → Π x, V x}
+    {t : Set M} {x : M} (hX : ∀ i, CMDiffAt[t] n (T% (X i)) x) :
+    ContMDiffWithinAt I (I.prod 𝓘(ℝ, F →L[ℝ] (ι → ℝ))) n
+      (fun y ↦ TotalSpace.mk' (F →L[ℝ] (ι → ℝ))
+        (E := fun y ↦ V y →L[ℝ] Trivial M (ι → ℝ) y) y
+        (ContinuousLinearMap.pi fun i ↦ innerSL ℝ (X i y))) t x := by
+  rw [contMDiffWithinAt_hom_bundle]
+  refine ⟨contMDiffWithinAt_id, TauCeti.contMDiffWithinAt_clm_apply.mpr fun u ↦
+    contMDiffWithinAt_pi_module_iff.mpr fun i ↦ ?_⟩
+  -- Each coordinate of the bundle map is the covector field `⟪X i ·, ·⟫`, which is `C^n`.
+  have h := ((contMDiffWithinAt_hom_bundle _).mp (hX i).innerSL_bundle).2
+  -- The trivializations of the trivial bundles are the identity, so in coordinates both sides
+  -- are `u ↦ ⟪X i y, e⁻¹ u⟫` for the trivialization `e` of `V` at `x`.
+  simpa only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.pi_apply] using
+    TauCeti.contMDiffWithinAt_clm_apply.mp h u
+
+end TauCeti
 
 /-- Lowering a differentiable section with a C¹ metric gives a differentiable covector
 section, without assuming the section itself is C¹. -/

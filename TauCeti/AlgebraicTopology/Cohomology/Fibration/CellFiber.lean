@@ -285,6 +285,21 @@ def serreCohomologySpectralSequenceFirstPageXIsoPi (n q : ℕ) (s t : ℤ) (hs :
       (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair n (s - 1) (by lia))) ≪≫
     preimageSkeletonPairSingularCohomologyIsoPi C hp R k M n q
 
+/-- `TauCeti.TopCat.serreCohomologySpectralSequenceFirstPageXIsoPi` is the identification of the
+first page of the spectral sequence of the filtration by the preimages of the skeleta, followed by
+`TauCeti.TopCat.preimageSkeletonPairSingularCohomologyIsoPi`. -/
+lemma serreCohomologySpectralSequenceFirstPageXIsoPi_hom (n q : ℕ) (s t : ℤ) (hs : s = n)
+    (hst : s + t = (q + n : ℕ)) :
+    (serreCohomologySpectralSequenceFirstPageXIsoPi C hp R k M n q s t hs hst).hom =
+      (filteredSpaceCohomologySpectralSequenceFirstPageXIso (ModuleCat.of R R) k M
+          (monotone_preimageSkeleton p) s t (s - 1) (s - 1 + 1) rfl (sub_add_cancel s 1) (q + n)
+          hst).hom ≫
+        eqToHom (congrArg
+          (fun P : TopPair.{u} ↦ P.singularCohomology (ModuleCat.of R R) k M (q + n))
+          (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair n (s - 1) (by lia))) ≫
+        (preimageSkeletonPairSingularCohomologyIsoPi C hp R k M n q).hom :=
+  (rfl)
+
 /-- On the factor of the `n`-cell `j`,
 `TauCeti.TopCat.serreCohomologySpectralSequenceFirstPageXIsoPi` is restriction to the pullback of
 `p` along the characteristic map of `j`, followed by `Hq+n(Pⱼ, ∂Pⱼ) ≅ Hq(p⁻¹(χⱼ(0)))`. -/

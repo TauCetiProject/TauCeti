@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
@@ -21,6 +22,18 @@ component isomorphisms from an isomorphism of descent data (`DescentData.isoApp`
 compatibility squares of `toDescentData` and `pullFunctor` in terms of `Pseudofunctor.compIso`
 and flexible factorizations (`DescentData.toDescentData_obj_hom`,
 `DescentData.hom_toDescentData_obj_iff`, `DescentData.pullFunctor_obj_hom_eq`).
+
+A morphism of Mathlib's descent data `D₁ ⟶ D₂` along `f` is a family of morphisms
+`φ i : D₁.obj i ⟶ D₂.obj i` commuting with the gluing morphisms over every `Y` mapping to two of
+the `X i` compatibly with the maps to `S`. When the pairs `X i₁ ×_S X i₂` have pullbacks, it is
+enough to check this on the pullbacks themselves: every other `Y` maps to one of them, and the
+gluing morphisms over `Y` are pulled back from those over the pullback
+(`CategoryTheory.Pseudofunctor.DescentData.homMkOfIsPullback`). This is the form of the
+compatibility condition used when descent data are compared with coalgebras.
+
+The argument for `homMkOfIsPullback` is that of Mathlib's
+`CategoryTheory.Pseudofunctor.DescentData'.comm`, which proves the same compatibility for descent
+data stated on chosen pullbacks.
 -/
 
 public section
@@ -160,5 +173,52 @@ lemma pullFunctor_obj_hom_eq {S' : C} {p : S' ⟶ S} {ι' : Type*} {X' : ι' →
   rw [compIso_inv, compIso_hom]
   exact (pullFunctorObj_hom w D Y (f₁ ≫ f' j₁) j₁ j₂ f₁ f₂ rfl hf₂).trans
     (pullFunctorObjHom_eq w D (f₁ ≫ f' j₁) f₁ f₂ q' f₁' f₂' rfl hf₂ hq' hf₁' hf₂')
+
+open LocallyDiscreteOpToCat
+
+variable {D₁ D₂ : F.DescentData f}
+
+/-- **Morphisms of descent data are checked on pullbacks.** Given, for all `i j`, a pullback square
+`P i j` of `f i` and `f j` with projections `p₁ i j` and `p₂ i j`, a family of morphisms
+`φ i : D₁.obj i ⟶ D₂.obj i` which commutes with the gluing morphisms over every `P i j` is a
+morphism of descent data. -/
+def homMkOfIsPullback (φ : ∀ i, D₁.obj i ⟶ D₂.obj i) {P : ι → ι → C}
+    {p₁ : ∀ i j, P i j ⟶ X i} {p₂ : ∀ i j, P i j ⟶ X j}
+    (h : ∀ i j, IsPullback (p₁ i j) (p₂ i j) (f i) (f j))
+    (comm : ∀ i j, (F.map (p₁ i j).op.toLoc).toFunctor.map (φ i) ≫
+        D₂.hom (p₁ i j ≫ f i) (p₁ i j) (p₂ i j) rfl (h i j).w.symm =
+      D₁.hom (p₁ i j ≫ f i) (p₁ i j) (p₂ i j) rfl (h i j).w.symm ≫
+        (F.map (p₂ i j).op.toLoc).toFunctor.map (φ j)) :
+    D₁ ⟶ D₂ where
+  hom := φ
+  comm Y q i₁ i₂ f₁ f₂ hf₁ hf₂ := by
+    -- `Y` maps to the pullback `P i₁ i₂` by `g`, and the gluing morphisms over `Y` are the
+    -- pullbacks along `g` of those over `P i₁ i₂`.
+    let g := (h i₁ i₂).lift f₁ f₂ (hf₁.trans hf₂.symm)
+    have hg₁ : g ≫ p₁ i₁ i₂ = f₁ := (h i₁ i₂).lift_fst _ _ _
+    have hg₂ : g ≫ p₂ i₁ i₂ = f₂ := (h i₁ i₂).lift_snd _ _ _
+    have hq : g ≫ p₁ i₁ i₂ ≫ f i₁ = q := by rw [reassoc_of% hg₁, hf₁]
+    rw [← D₁.pullHom_hom g _ q hq _ _ rfl (h i₁ i₂).w.symm _ _ hg₁ hg₂,
+      ← D₂.pullHom_hom g _ q hq _ _ rfl (h i₁ i₂).w.symm _ _ hg₁ hg₂]
+    -- Move `φ` across the comparison isomorphisms of `F` by their naturality, and apply `comm`
+    -- pulled back along `g`.
+    dsimp only [pullHom]
+    rw [mapComp'_hom_naturality_assoc, ← Functor.map_comp_assoc, comm, Functor.map_comp_assoc,
+      mapComp'_inv_naturality]
+    simp only [Category.assoc]
+
+/-- The components of `homMkOfIsPullback φ h comm` are the given morphisms `φ i`. -/
+@[simp]
+lemma homMkOfIsPullback_hom (φ : ∀ i, D₁.obj i ⟶ D₂.obj i) {P : ι → ι → C}
+    {p₁ : ∀ i j, P i j ⟶ X i} {p₂ : ∀ i j, P i j ⟶ X j}
+    (h : ∀ i j, IsPullback (p₁ i j) (p₂ i j) (f i) (f j))
+    (comm : ∀ i j, (F.map (p₁ i j).op.toLoc).toFunctor.map (φ i) ≫
+        D₂.hom (p₁ i j ≫ f i) (p₁ i j) (p₂ i j) rfl (h i j).w.symm =
+      D₁.hom (p₁ i j ≫ f i) (p₁ i j) (p₂ i j) rfl (h i j).w.symm ≫
+        (F.map (p₂ i j).op.toLoc).toFunctor.map (φ j)) (i : ι) :
+    (homMkOfIsPullback φ h comm).hom i = φ i :=
+  -- The body of `homMkOfIsPullback` is not exposed, so this is not a `rfl` lemma for `dsimp`
+  -- outside this module.
+  by rfl
 
 end CategoryTheory.Pseudofunctor.DescentData

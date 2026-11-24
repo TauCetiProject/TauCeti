@@ -106,8 +106,8 @@ private theorem finrank_pos_of_not_isZero
     0 < Module.finrank k M.obj := by
   by_contra h
   have : Subsingleton M.obj := (Module.finrank_zero_iff (R := k)).mp (by omega)
-  exact hM <| (IsZero.iff_id_eq_zero M).2 <| ObjectProperty.hom_ext _ <|
-    GradedModuleCat.hom_ext (LinearMap.ext fun _ => Subsingleton.elim _ _)
+  exact hM <| IsZero.of_full_of_faithful_of_isZero (gradedFiniteProjectiveModules 𝒜).ι M
+    (GradedModuleCat.isZero_of_subsingleton M.obj)
 
 private theorem finrank_eq_add_of_iso_biprod
     (M Y Z : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) (e : M ≅ Y ⊞ Z) :
@@ -230,8 +230,8 @@ private theorem isEmpty_iso_shiftObj (X : (gradedFiniteProjectiveModules 𝒜).F
     IsEmpty (X ≅ ⟨X.obj.shiftObj d, gradedFiniteProjectiveModules_shiftObj X.property d⟩) := by
   refine ⟨fun e ↦ hd ?_⟩
   have : Nontrivial X.obj := not_subsingleton_iff_nontrivial.1 fun _ ↦ hX <|
-    (IsZero.iff_id_eq_zero X).2 <| ObjectProperty.hom_ext _ <|
-      GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)
+    IsZero.of_full_of_faithful_of_isZero (gradedFiniteProjectiveModules 𝒜).ι X
+      (GradedModuleCat.isZero_of_subsingleton X.obj)
   exact X.obj.eq_zero_of_iso_shiftObj (k := k) ((gradedFiniteProjectiveModules 𝒜).ι.mapIso e)
 
 variable [DirectSum.Decomposition 𝒜]
