@@ -25,7 +25,12 @@ Then the Laplace integral has the asymptotic expansion
 `∫₀^∞ e^{-xt} q(t) dt ∼ ∑ Γ(α_s) c_s x^{-α_s}`   as `x → +∞`
 
 (DLMF 2.3.7–2.3.8, where `α_s = (s + λ)/μ`; for a general sequence of exponents this is the
-extension of Bleistein and Handelsman, *Asymptotic Expansions of Integrals*, §4.1). The terms
+extension of Bleistein and Handelsman, *Asymptotic Expansions of Integrals*, §4.1). Formally the
+conclusion is `Asymptotics.HasAsymptoticExpansion`: for every `N` the remainder after `N` terms
+is `O(x^{-Re α_N})`. It is an asymptotic expansion in DLMF's sense when `Re α_s` is strictly
+increasing, which makes `fun s x => (x : ℂ) ^ (-α s)` an `Asymptotics.IsAsymptoticScale`; without
+that, the statement is only this family of remainder bounds and the coefficients need not be
+unique. The terms
 are Gamma integrals. For the remainder one splits the integral at a small `δ`: near `0` the
 bound on `q` gives `O(x^{-Re α_N})` through the Gamma integral, and beyond `δ` the factor
 `e^{-xt}` contributes `O(e^{-δx})`, which is smaller than every power of `x`.
@@ -73,7 +78,11 @@ namespace Asymptotics
 /-- **Watson's lemma** (DLMF 2.3.7–2.3.8, for a general sequence of exponents). Let `α : ℕ → ℂ`
 have `Re α_s > 0` for all `s`, and let `q : ℝ → ℂ` have `t ↦ e^{-σt} q(t)` integrable on
 `(0, ∞)` and, for every `N`, `q(t) - ∑_{s<N} c_s t^{α_s - 1} = O(t^{Re α_N - 1})` as
-`t → 0+`. Then `∫₀^∞ e^{-xt} q(t) dt ∼ ∑ Γ(α_s) c_s x^{-α_s}` as `x → +∞`.
+`t → 0+`. Then `∫₀^∞ e^{-xt} q(t) dt ∼ ∑ Γ(α_s) c_s x^{-α_s}` as `x → +∞`, in the sense of
+`HasAsymptoticExpansion`: for every `N` the remainder after `N` terms is `O(x^{-Re α_N})`. This is
+an asymptotic expansion in DLMF's sense when `Re α_s` is strictly increasing, which makes
+`fun s x => (x : ℂ) ^ (-α s)` an `IsAsymptoticScale`; otherwise it is only this family of
+remainder bounds, and the coefficients need not be unique.
 
 If instead `q` is locally integrable on `(0, ∞)` (`hloc`) and `t ↦ e^{-σt} q(t)` is integrable
 on `(1, ∞)` (`hint₁`), pass `(TauCeti.integrableOn_exp_neg_mul_smul_iff (hα 0) hq0).mpr
