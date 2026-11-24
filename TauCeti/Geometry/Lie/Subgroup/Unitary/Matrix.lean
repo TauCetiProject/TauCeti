@@ -18,6 +18,7 @@ import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
+import TauCeti.Geometry.Lie.Subgroup.Countable.Basic
 import TauCeti.Geometry.Lie.Subgroup.LimitCriterion
 import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 import TauCeti.LinearAlgebra.Matrix.Block
@@ -66,8 +67,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
   skew-Hermitian matrices.
 * `ClosedSubgroup.mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem`: the Lie algebra of
   all of `U(n)` is the skew-Hermitian matrices.
-* `ClosedSubgroup.eq_zero_of_mem_matrixLieAlgebra_of_finite`: a finite closed subgroup has Lie
-  algebra `0`.
+* `ClosedSubgroup.eq_zero_of_mem_matrixLieAlgebra_of_countable`: a countable closed subgroup has
+  Lie algebra `0`.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
 * `ClosedSubgroup.lieInvariant_of_isInvariantForm`: an `Ad(G)`-invariant bilinear form is
   `ad`-invariant, `B ⁅X, Y⁆ Z = -B Y ⁅X, Z⁆`.
@@ -108,9 +109,24 @@ theorem isCompact_image_coe_matrix (G : ClosedSubgroup (Matrix.unitaryGroup n �
 
 /-- The subgroup of the general linear group carried by a closed subgroup of `U(n)`, its image
 under `Unitary.toUnits`. -/
-@[expose]
 def toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) : Subgroup (Matrix n n 𝕜)ˣ :=
   (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
+
+/-- The units of `G.toGL` are the images of the elements of `G`. -/
+@[simp]
+theorem mem_toGL {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} {u : (Matrix n n 𝕜)ˣ} :
+    u ∈ G.toGL ↔ ∃ g ∈ G, Unitary.toUnits g = u :=
+  Subgroup.mem_map
+
+/-- The image of an element of `G` lies in `G.toGL`. -/
+theorem toUnits_mem_toGL {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
+    {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) : Unitary.toUnits g ∈ G.toGL :=
+  mem_toGL.mpr ⟨g, hg, rfl⟩
+
+/-- As a set, `G.toGL` is the image of `G` under `Unitary.toUnits`. -/
+theorem coe_toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    (G.toGL : Set (Matrix n n 𝕜)ˣ) = Unitary.toUnits '' (G : Set (Matrix.unitaryGroup n 𝕜)) :=
+  Subgroup.coe_map _ _
 
 section Transport
 
@@ -125,7 +141,7 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContin
 /-- The subgroup of units determined by `G` is closed, being the compact image of `G`. -/
 private theorem isClosed_toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
     IsClosed (toGL G : Set (Matrix n n 𝕜)ˣ) :=
-  ((isCompact_coe G).image (Unitary.continuous_toUnits (M := Matrix n n 𝕜))).isClosed
+  G.coe_toGL ▸ ((isCompact_coe G).image (Unitary.continuous_toUnits (M := Matrix n n 𝕜))).isClosed
 
 /-- Membership of the exponential line in `G` is membership in the Lie algebra of the units. -/
 private theorem forall_exp_mem_iff (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
@@ -134,10 +150,10 @@ private theorem forall_exp_mem_iff (G : ClosedSubgroup (Matrix.unitaryGroup n �
       (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm X ∈
         lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (toGL G) := by
   rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff (isClosed_toGL G)]
-  refine forall_congr' fun t ↦ ?_
-  simp only [toGL, Subgroup.mem_map, Units.ext_iff, Unitary.val_toUnits_apply,
-    expUnit_coe]
-  -- Membership in `G` and in its underlying subgroup `(G : Subgroup _)` agree by definition.
+  refine forall_congr' fun t ↦ Iff.trans ?_ mem_toGL.symm
+  simp only [Units.ext_iff, Unitary.val_toUnits_apply, expUnit_coe]
+  -- Membership in `G` is elaborated for the entrywise and for the operator-norm topology on
+  -- `U(n)`, which agree by definition.
   exact Iff.rfl
 
 private theorem conjTranspose_eq_neg_of_forall_exp_mem
@@ -145,7 +161,8 @@ private theorem conjTranspose_eq_neg_of_forall_exp_mem
     (hX : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X)) : Xᴴ = -X := by
   rw [← unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg]
   refine lieSubalgebraOfSubgroup_mono ?_ ((forall_exp_mem_iff G X).mp hX)
-  rintro _ ⟨g, -, rfl⟩
+  intro u hu
+  obtain ⟨g, -, rfl⟩ := mem_toGL.mp hu
   exact mem_unitary_units_iff.mpr g.property
 
 private theorem forall_exp_mem_add (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
@@ -238,21 +255,19 @@ theorem mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem (hG : ∀ g,
     ⟨⟨_, exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t (skewAdjoint.mem_iff.mpr hX))⟩,
       hG _, rfl⟩⟩
 
-/-- **A finite closed subgroup has Lie algebra `0`.** An exponential line in a finite subgroup is
-constant, since `ℝ` is connected, so its generator, the derivative at `0`, vanishes. -/
-theorem eq_zero_of_mem_matrixLieAlgebra_of_finite
-    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Finite) {X : Matrix n n 𝕜}
+/-- **A countable closed subgroup has Lie algebra `0`.** This is the matrix form of
+`TauCeti.Lie.lieSubalgebraOfSubgroup_eq_bot_of_countable`. -/
+theorem eq_zero_of_mem_matrixLieAlgebra_of_countable
+    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Countable) {X : Matrix n n 𝕜}
     (hX : X ∈ G.matrixLieAlgebra) : X = 0 := by
-  have hd (t : ℝ) := hasDerivAt_exp_smul_const' (𝕂 := ℝ) X t
-  have hconst (t : ℝ) : exp (t • X) = 1 := by
-    simpa using isPreconnected_univ.constant_of_mapsTo
-      ((hG.image ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜)).isDiscrete)
-      (fun t _ ↦ (hd t).continuousAt.continuousWithinAt)
-      (fun t _ ↦ by obtain ⟨g, hg, h⟩ := hX t; exact ⟨g, hg, h⟩) (Set.mem_univ t)
-      (Set.mem_univ 0)
-  have h0 := hd 0
-  simp only [zero_smul, exp_zero, mul_one, hconst] at h0
-  exact h0.unique (hasDerivAt_const 0 1)
+  have h := (forall_exp_mem_iff G X).mp hX
+  rw [TauCeti.Lie.lieSubalgebraOfSubgroup_eq_bot_of_countable (G.coe_toGL ▸ hG.image _),
+    LieSubalgebra.mem_bot] at h
+  have h0 := congrArg TauCeti.Lie.unitsLieAlgebraLieEquiv h
+  rw [LieEquiv.apply_symm_apply, map_zero] at h0
+  -- The two sides carry the zero of the operator-norm and of the entrywise structure on the
+  -- matrices, which agree by definition.
+  exact h0
 
 end OperatorNorm
 

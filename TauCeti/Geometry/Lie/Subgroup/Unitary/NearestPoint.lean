@@ -44,8 +44,9 @@ segments normal to `g 𝔤`, which is what `ClosedSubgroup.fderiv_eq_starProject
 needs. For every matrix `M`, the residual `M - π_G M` is orthogonal to the tangent space of `G` at
 `π_G M` (`ClosedSubgroup.inner_sub_matrixNearestPoint_eq_zero`). For `G = U(n)` the derivative at
 `1` is the skew-Hermitian part `H ↦ (H - Hᴴ) / 2`
-(`ClosedSubgroup.fderiv_matrixNearestPoint_one_of_forall_mem`), and for a finite `G`, such as
-`{±1}`, it vanishes (`ClosedSubgroup.fderiv_matrixNearestPoint_eq_zero_of_finite`).
+(`ClosedSubgroup.fderiv_matrixNearestPoint_one_of_forall_mem`), and for a countable `G`, such as
+the finite group `{±1}`, it vanishes
+(`ClosedSubgroup.fderiv_matrixNearestPoint_eq_zero_of_countable`).
 
 Every point of `G` has Frobenius norm `√(card n)`, so every point of `G` is a nearest point of `G`
 to `0`. Hence, as soon as `G` is not the trivial group, `0` has no unique nearest point and lies
@@ -126,7 +127,7 @@ private abbrev frobeniusTopologicalSpace : TopologicalSpace (Matrix n n 𝕜) :=
 attribute [local instance] frobeniusTopologicalSpace
 
 private theorem isCompact_toGL : IsCompact (G.toGL : Set (Matrix n n 𝕜)ˣ) :=
-  G.isClosed'.isCompact.image <| by
+  G.coe_toGL ▸ G.isClosed'.isCompact.image <| by
     rw [show frobeniusTopologicalSpace = _ from Matrix.frobeniusTopologicalSpace_eq n n 𝕜]
     exact Unitary.continuous_toUnits
 
@@ -138,10 +139,11 @@ private theorem range_coeUnits :
     range G.coeUnits = ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G := by
   ext M
   constructor
-  · rintro ⟨⟨_, g, hg, rfl⟩, rfl⟩
+  · rintro ⟨⟨_, hu⟩, rfl⟩
+    obtain ⟨g, hg, rfl⟩ := mem_toGL.mp hu
     exact ⟨g, hg, rfl⟩
   · rintro ⟨g, hg, rfl⟩
-    exact ⟨⟨Unitary.toUnits g, g, hg, rfl⟩, rfl⟩
+    exact ⟨⟨Unitary.toUnits g, toUnits_mem_toGL hg⟩, rfl⟩
 
 private theorem injective_coeUnits : Injective G.coeUnits :=
   fun _ _ h ↦ Subtype.ext (Units.ext h)
@@ -184,8 +186,8 @@ private theorem mem_normalSubspace_of_mem_orthogonal (g : G) {v : Matrix n n �
     (hv : v ∈ (G.matrixTangentSpace g)ᗮ) :
     v ∈ TauCeti.normalSubspace 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup
       (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toGL).toSubmodule) G.coeUnits
-        ⟨Unitary.toUnits g, g, g.property, rfl⟩ := by
-  let k : G.toGL := ⟨Unitary.toUnits g, g, g.property, rfl⟩
+        ⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩ := by
+  let k : G.toGL := ⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩
   let D : (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
       G.toGL).toSubmodule →L[ℝ] Matrix n n 𝕜 :=
     mfderiv 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
@@ -242,11 +244,12 @@ theorem exists_pos_contDiffOn_matrixNearestPoint :
   · intro g v hv hvδ
     -- A vector orthogonal to `g 𝔤` is normal to `G` at `g`, so `r (g + v) = g`.
     have hrk := TauCeti.eq_fst_of_isMinOn_dist_of_mem_normalTube (hf.mdifferentiable (by simp))
-      (injOn_iff_injective.mpr hemb.injective) (p := (⟨Unitary.toUnits g, g, g.property, rfl⟩, v))
+      (injOn_iff_injective.mpr hemb.injective)
+      (p := (⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩, v))
       (TauCeti.mem_normalTube.mpr ⟨G.mem_normalSubspace_of_mem_orthogonal g hv,
         hvδ.trans_le hδε⟩) (hmin _)
     have hM : (g : Matrix n n 𝕜) + v ∈ thickening δ (range G.coeUnits) :=
-      mem_thickening_iff.mpr ⟨g, ⟨⟨Unitary.toUnits g, g, g.property, rfl⟩, rfl⟩,
+      mem_thickening_iff.mpr ⟨g, ⟨⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩, rfl⟩,
         by simpa [dist_eq_norm] using hvδ⟩
     rw [hπ _ hM]
     exact congrArg G.coeUnits hrk
@@ -299,16 +302,16 @@ theorem fderiv_matrixNearestPoint_one_of_forall_mem (hG : ∀ g, g ∈ G) (H : M
     Matrix.conjTranspose_conjTranspose, star_trivial]
   module
 
-/-- **The derivative of `π_G` for a finite `G`.** If `G` is finite, such as `{±1}`, its Lie
-algebra is `0`, so the derivative of the nearest-point retraction at every `g ∈ G` is `0`, the
-projection onto the zero space. -/
-theorem fderiv_matrixNearestPoint_eq_zero_of_finite
-    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Finite) (g : G) :
+/-- **The derivative of `π_G` for a countable `G`.** If `G` is countable, for instance finite such
+as `{±1}`, its Lie algebra is `0`, so the derivative of the nearest-point retraction at every
+`g ∈ G` is `0`, the projection onto the zero space. -/
+theorem fderiv_matrixNearestPoint_eq_zero_of_countable
+    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Countable) (g : G) :
     fderiv ℝ G.matrixNearestPoint g = 0 := by
   have hbot : G.matrixTangentSpace g = ⊥ := by
     rw [eq_bot_iff]
     intro V hV
-    have h0 := eq_zero_of_mem_matrixLieAlgebra_of_finite hG (mem_matrixTangentSpace_iff.mp hV)
+    have h0 := eq_zero_of_mem_matrixLieAlgebra_of_countable hG (mem_matrixTangentSpace_iff.mp hV)
     have hV' : V = (g : Matrix n n 𝕜) * (star (g : Matrix n n 𝕜) * V) := by simp [← mul_assoc]
     rw [Submodule.mem_bot, hV', h0, mul_zero]
   -- `fderiv` is taken for the entrywise topology `instTopologicalSpaceMatrix` and the projection
