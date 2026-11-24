@@ -170,9 +170,7 @@ theorem moebiusDivSum_one : moebiusDivSum 1 = 1 := by
 theorem moebiusLogSum_one : moebiusLogSum 1 = 0 := by
   simp [moebiusLogSum]
 
-/-! ### Integrals of the step functions -/
-
-/-! ### `ℓ` through `m`, and `m` through `M` -/
+/-! ### `ℓ` through `m` and `M`, and `m` through `M` -/
 
 /-- `ℓ(x) = m(x) log x - ∑_{n ≤ x} μ(n) log n / n`. -/
 theorem moebiusLogSum_eq_moebiusDivSum_mul_log_sub (x : ℝ) :
