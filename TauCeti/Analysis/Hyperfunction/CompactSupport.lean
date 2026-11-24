@@ -252,12 +252,12 @@ theorem mapQ_zeroAtInftyEquiv {K : Compacts ℂ} {V' V : Opens ℂ}
 /-! ### Hyperfunctions supported in a compact subset of the real line -/
 
 /-- The non-real complex numbers avoid a compact set of the real line. -/
-theorem nonRealOpen_le_compl_compactsOfReal (K : Compacts ℝ) :
+theorem nonRealOpen_le_compl_ofReal (K : Compacts ℝ) :
     nonRealOpen ≤ K.ofReal.toCloseds.compl := fun _ hz hzK =>
   mem_nonRealOpen_iff.mp hz (Compacts.mem_ofReal_iff.mp hzK).1
 
 /-- A compact set of an open set `U ⊆ ℝ` lies in `W(U)`. -/
-theorem compactsOfReal_subset_complexNeighborhood {K : Compacts ℝ} {U : Opens ℝ}
+theorem ofReal_subset_complexNeighborhood {K : Compacts ℝ} {U : Opens ℝ}
     (hKU : (K : Set ℝ) ⊆ U) : (K.ofReal : Set ℂ) ⊆ complexNeighborhood U :=
   fun _ hz => mem_complexNeighborhood_iff.mpr (Or.inr (hKU (Compacts.mem_ofReal_iff.mp hz).2))
 
@@ -275,14 +275,14 @@ for a compact set `K` of the real line: the hyperfunction on `U` represented by 
 `ℂ ∖ ℝ`. -/
 def zeroAtInftyToHyperfunction (K : Compacts ℝ) (U : Opens ℝ) :
     zeroAtInftyHolomorphicSections K.ofReal →ₗ[ℂ] OneDimBoundaryQuotient U :=
-  (throughReal U).mkQ ∘ₗ holomorphicRestrict (nonRealOpen_le_compl_compactsOfReal K) ∘ₗ
+  (throughReal U).mkQ ∘ₗ holomorphicRestrict (nonRealOpen_le_compl_ofReal K) ∘ₗ
     Submodule.inclusion (zeroAtInftyHolomorphicSections_le_holomorphicSections _)
 
 @[simp]
 theorem zeroAtInftyToHyperfunction_apply (K : Compacts ℝ) (U : Opens ℝ)
     (h : zeroAtInftyHolomorphicSections K.ofReal) :
     zeroAtInftyToHyperfunction K U h =
-      Submodule.Quotient.mk (holomorphicRestrict (nonRealOpen_le_compl_compactsOfReal K)
+      Submodule.Quotient.mk (holomorphicRestrict (nonRealOpen_le_compl_ofReal K)
         ⟨h, zeroAtInftyHolomorphicSections_le_holomorphicSections _ h.property⟩) :=
   (rfl)
 
@@ -306,10 +306,10 @@ theorem zeroAtInftyToHyperfunction_injective {K : Compacts ℝ} {U : Opens ℝ}
   -- The extension `g` agrees with `h` on `W(U) ∖ K`, the real points being limits of non-real ones.
   have hgh' : EqOn g h (complexNeighborhood U ⊓ K.ofReal.toCloseds.compl :) :=
     eqOn_inf_of_eqOn_nonRealOpen (mem_holomorphicSections_iff.mp hg).1.continuousOn
-      hd.continuousOn (nonRealOpen_le_complexNeighborhood U) (nonRealOpen_le_compl_compactsOfReal K)
+      hd.continuousOn (nonRealOpen_le_complexNeighborhood U) (nonRealOpen_le_compl_ofReal K)
       fun z hz => (hgh hz).trans (holomorphicRestrict_apply_of_mem _ _ hz)
   have hzero := K.ofReal.isCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact
-    (complexNeighborhood U).isOpen (compactsOfReal_subset_complexNeighborhood hKU)
+    (complexNeighborhood U).isOpen (ofReal_subset_complexNeighborhood hKU)
     (mem_holomorphicSections_iff.mp hg).1 hd (fun z hz => hgh' hz) hlim
   refine Subtype.ext (funext fun z => ?_)
   by_cases hzK : z ∈ (K.ofReal : Set ℂ)
@@ -341,7 +341,7 @@ theorem range_zeroAtInftyToHyperfunction {K : Compacts ℝ} {U : Opens ℝ}
       obtain ⟨F, hF, hFf⟩ := hq
       obtain ⟨g, h, hg, hh, hlim, hFgh⟩ :=
         K.ofReal.isCompact.exists_eqOn_add_tendsto_cocompact
-          (complexNeighborhood U).isOpen (compactsOfReal_subset_complexNeighborhood hKU)
+          (complexNeighborhood U).isOpen (ofReal_subset_complexNeighborhood hKU)
           (mem_holomorphicSections_iff.mp hF).1
       refine ⟨⟨_, indicator_mem_zeroAtInftyHolomorphicSections hh hlim⟩, ?_⟩
       rw [zeroAtInftyToHyperfunction_apply, Submodule.Quotient.eq, mem_throughReal_iff]
@@ -350,7 +350,7 @@ theorem range_zeroAtInftyToHyperfunction {K : Compacts ℝ} {U : Opens ℝ}
         (indicator_mem_holomorphicSections_of_differentiableOn hg), fun z hz => ?_⟩
       have hzW : z ∈ complexNeighborhood U := nonRealOpen_le_complexNeighborhood U hz
       have hzK : z ∉ (K.ofReal : Set ℂ) := fun h ↦ Closeds.mem_compl.mp
-        (nonRealOpen_le_compl_compactsOfReal K hz) (Compacts.mem_toCloseds.mpr h)
+        (nonRealOpen_le_compl_ofReal K hz) (Compacts.mem_toCloseds.mpr h)
       rw [Submodule.coe_sub, Pi.sub_apply, holomorphicRestrict_apply_of_mem _ _ hz, ← hFf hz,
         Pi.neg_apply, Submodule.coe_mk, Submodule.coe_mk]
       exact neg_indicator_eq_indicator_sub hzW hzK (hFgh ⟨hzW, hzK⟩)
