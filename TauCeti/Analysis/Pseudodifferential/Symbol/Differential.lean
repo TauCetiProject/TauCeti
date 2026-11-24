@@ -709,6 +709,7 @@ def ofDifferentialOperatorMatrix : ClassicalSymbol n (ι → ℂ) (κ → ℂ) m
 
 /-- The `(i, j)` entry of the full symbol of `ofDifferentialOperatorMatrix D` is the symbol of
 `D i j`. -/
+@[simp]
 theorem coefficient_toSymbol_ofDifferentialOperatorMatrix
     (p : CoordinateSpace n × CoordinateSpace n) (u : ι → ℂ) (i : κ) :
     (ofDifferentialOperatorMatrix D).toSymbol.coefficient p u i =
@@ -737,8 +738,7 @@ theorem coefficient_toSymbol_ofDifferentialOperatorMatrix_eq_zero {x : Coordinat
     (hD : ∀ i j f, (D i j).val f x = 0) (ξ : CoordinateSpace n) :
     (ofDifferentialOperatorMatrix D).toSymbol.coefficient (x, ξ) = 0 := by
   ext u i
-  simp [coefficient_toSymbol_ofDifferentialOperatorMatrix,
-    coefficient_toSymbol_ofDifferentialOperator_eq_zero _ (hD i _)]
+  simp [coefficient_toSymbol_ofDifferentialOperator_eq_zero _ (hD i _)]
 
 /-- If the outputs of all entries of `D` vanish outside a compact set `K`, then the symbol of `D`
 has compact spatial support. -/
