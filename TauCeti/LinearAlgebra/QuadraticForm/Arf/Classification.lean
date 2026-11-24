@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Arf.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Arf.FiniteField
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Tactic.FinCases
 import TauCeti.Data.ZMod.Two
@@ -33,7 +34,9 @@ polar form:
 3. **Quadratic Lagrangian characterization of `Q.arf = 0`.** A finite-dimensional quadratic space
    `(V, Q)` over `ZMod 2` with nondegenerate polar form satisfies `Q.arf = 0` if and only if `V`
    contains a `Q`-totally-isotropic subspace equal to its own polar orthogonal complement,
-   equivalently of half the ambient dimension.
+   equivalently of half the ambient dimension. The half-dimension form is the case `k = ZMod 2` of
+   `QuadraticMap.traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq` over a finite
+   field `k` of characteristic two.
 
 ## Main definitions
 
@@ -377,11 +380,8 @@ theorem arf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq
     Q.arf = 0 ↔
       ∃ U : Submodule (ZMod 2) V,
         Q.IsTotallyIsotropic U ∧ 2 * Module.finrank (ZMod 2) U = Module.finrank (ZMod 2) V := by
-  obtain ⟨m, hm⟩ := Q.even_finrank_of_nondegenerate_polarBilin hQ
-  have hdim : Module.finrank (ZMod 2) V = 2 * m := by omega
-  rw [Q.arf_eq_zero_iff_equivalent_pi_binaryQuadraticForm_zero hQ hdim,
-    Q.equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq hQ
-      hdim]
+  rw [← traceArf_eq_arf]
+  exact traceArf_eq_zero_iff_exists_isTotallyIsotropic_two_mul_finrank_eq hQ
 
 end Classification
 
