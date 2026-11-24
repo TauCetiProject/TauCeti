@@ -118,10 +118,7 @@ private theorem hasDerivAt_fderiv_extChartAt_timeDependentFlowOf_extChartAt_symm
     have h₂ : ∀ᶠ p : ℝ × E in 𝓝 (t, e y), timeDependentFlowOf X t p.1 (e.symm p.2) ∈ e.source :=
       hΦc.preimage_mem_nhds ((isOpen_extChartAt_source z).mem_nhds (by rwa [hyty]))
     filter_upwards [h₁, h₂] with p hp₁ hp₂
-    have hV := VectorField.mpullbackWithin_extChartAt_symm_apply (X p.1) hp₂
-    rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange] at hV
-    exact ((hasMFDerivAt_timeDependentFlowOf hX hp₁).hasDerivAt_extChartAt_comp hp₂).congr_deriv
-      hV.symm
+    exact (hasMFDerivAt_timeDependentFlowOf hX hp₁).hasDerivAt_extChartAt_comp_mpullbackWithin hp₂
   exact ContDiffAt.hasDerivAt_fderiv_of_eventually_hasDerivAt
     (Y := fun u q ↦ VectorField.mpullbackWithin 𝓘(ℝ, E) I e.symm (X u) (range I) q)
     (hX.contMDiffAt.contDiffAt_uncurry_mpullbackWithin_extChartAt_symm
