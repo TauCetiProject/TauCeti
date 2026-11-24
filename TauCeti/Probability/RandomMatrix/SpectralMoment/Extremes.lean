@@ -11,6 +11,7 @@ import TauCeti.MeasureTheory.Integral.Bochner.Markov
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
+import TauCeti.Probability.Moments.GrowingOrder
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
@@ -31,15 +32,27 @@ Hermiticity and trace integrability are not assumed. The Borel–Cantelli step a
 without independence across indices. For the almost-sure bound below every threshold above a
 level, each threshold may use its own positive scale below it.
 
+For a positive-semidefinite matrix `S`, `‖S‖` is its largest eigenvalue and `‖S‖ ^ k ≤ tr (S ^ k)`
+for every `k`, not only for even `k`. Hence for eventually almost surely positive-semidefinite
+matrices, such as sample covariance matrices, a bound `E tr (S n ^ k n) ≤ C n ^ a r ^ k n` for
+every `r > s`, with orders `k n` of any parity growing faster than `log n`, gives almost surely
+`limsup ‖S n‖ ≤ s`. For sample covariance matrices, combined with a growing-moment bound
+`E tr (S ^ k) ≤ C n ^ a ((1 + √y)² + ε) ^ k`, which is not proved here, this gives the upper half
+of the limit `λ_max(XX*/n) → (1 + √y)²`.
+
 ## References
 
 * T. Tao, *Topics in Random Matrix Theory*, AMS (2012), §2.3.
+* Z. Bai and J. W. Silverstein, *Spectral Analysis of Large Dimensional Random Matrices*,
+  2nd ed., Springer (2010), Chapter 5.
+* Z. D. Bai, *Methodologies in spectral analysis of large dimensional random matrices, a review*,
+  Statistica Sinica 9 (1999), §2.2.
 -/
 
 public section
 
 open Filter MeasureTheory
-open scoped Topology ENNReal Matrix.Norms.L2Operator
+open scoped Topology ENNReal Matrix.Norms.L2Operator ComplexOrder
 
 namespace TauCeti.Probability
 
@@ -155,17 +168,28 @@ theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
       (∀ᶠ n : ℕ in atTop, (∫ ω, RCLike.re ((A n ω) ^ (2 * k n)).trace ∂P) ≤
         C * (n + 1 : ℝ) ^ d * t ^ (2 * k n))) :
     ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r := by
-  have h (j : ℕ) : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ‖A n ω‖ < s + 1 / (j + 1) := by
-    have hr : s < s + 1 / (j + 1) := lt_add_of_pos_right _ (by positivity)
-    obtain ⟨t, B, C, d, k, ht, htr, hB, hk, hi, hb⟩ := htrace _ hr
-    obtain ⟨b, hsum, h⟩ :=
-      exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
-        hA hi ht htr hB hk hb
-    simpa only [Set.mem_ofPred_eq, not_le] using
-      TauCeti.MeasureTheory.ae_eventually_notMem_of_eventually_measure_le hsum h
-  filter_upwards [ae_all_iff.2 h] with ω hω
-  intro r hr
-  obtain ⟨j, hj⟩ := exists_nat_one_div_lt (sub_pos.2 hr)
-  exact (hω j).mono fun _ hn ↦ hn.trans (by linarith)
+  refine TauCeti.MeasureTheory.ae_forall_eventually_lt_of_eventually_measure_le fun r hr ↦ ?_
+  obtain ⟨t, B, C, d, k, ht, htr, hB, hk, hi, hb⟩ := htrace r hr
+  exact exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_two_mul_le
+    hA hi ht htr hB hk hb
+
+/-- **Trace method for positive-semidefinite random matrices.** Let the matrices be eventually
+almost surely positive semidefinite on nonempty carriers, with eventually integrable real traces
+of their `k n`-th powers, where the orders `k n` have any parity and grow faster than `log n`. If
+for every `r > s ≥ 0` there are constants `C` and `a` with `E tr (A n ^ k n) ≤ C n ^ a r ^ k n`
+for all large `n`, then almost surely the norms, that is the largest eigenvalues
+(`Matrix.PosSemidef.l2_opNorm_eq_eigenvalues₀_zero`), are eventually below every `r > s`. -/
+theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le [∀ n, Nonempty (m n)]
+    (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).PosSemidef)
+    (hk : Tendsto (fun n ↦ (k n : ℝ) / Real.log n) atTop atTop)
+    (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re (A n ω ^ k n).trace) P) {s : ℝ}
+    (hs : 0 ≤ s) (hmom : ∀ r > s, ∃ C : ℝ, ∃ a : ℕ, ∀ᶠ n : ℕ in atTop,
+      ∫ ω, RCLike.re (A n ω ^ k n).trace ∂P ≤ C * n ^ a * r ^ k n) :
+    ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r :=
+  ae_forall_eventually_lt_of_integral_le_mul_pow hs
+    (hA.mono fun n hn ↦ hn.mono fun ω hω ↦ by
+      rw [abs_norm]
+      exact hω.l2_opNorm_pow_le_re_trace_pow (k n))
+    hint hk hmom
 
 end TauCeti.Probability
