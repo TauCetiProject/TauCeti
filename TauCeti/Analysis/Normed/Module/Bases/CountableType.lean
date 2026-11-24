@@ -64,10 +64,11 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
   separation statement valid over any complete normed field `K`, whether trivially or nontrivially
   normed (using open-ball submodules `{y | ‖y‖ < ‖x‖}` when `K` has the trivial norm).
 
-Neither a discrete valuation nor completeness of `E` is needed: only the finite-dimensional
-subspaces spanned by initial segments have to be closed, which holds over a complete field. Over a
-trivially normed field, adding one vector `v` to a closed subspace `W` keeps it closed, because
-the vectors of `W ⊔ K ∙ v` of norm less than `infDist v W` lie in `W`.
+Neither a discrete valuation nor completeness of `E` is needed: the Gram–Schmidt construction
+works in the normed space `SeparationQuotient E`, where the images of the finite-dimensional
+initial spans are closed over any complete normed field by
+`Submodule.isClosed_of_finiteDimensional'` (see `TauCeti.Analysis.Normed.Module.FiniteSpan`),
+and lifts each approximant back to the original initial span.
 The constant `c` in the approximation theorem does not depend on `G`; this uniformity is what
 lets the subspaces `W` attached to the increasing initial spans together span a dense subspace of
 the closure of `D`. Quotients of spaces of countable type are of countable type by
