@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Smooth real Cauchy–Riemann operators on higher-order Sobolev sections
@@ -169,7 +170,7 @@ private theorem chartValueL_dataSuccL_ae (w : A.sectionChartData.SobolevData μ 
     refine (h₃ c).trans ?_
     rw [Pi.add_apply, h₄ c, h₅ c]
   simp_rw [hc, add_smul, Finset.sum_add_distrib, Basis.sum_repr,
-    SectionChartData.sum_toMatrix_mulVec_smul, chartDeriv]
+    LinearMap.sum_toMatrix_mulVec_smul, ContinuousLinearMap.coe_coe, chartDeriv]
 
 /-- The order-one Sobolev section underlying a Sobolev section of order `k + 1`. -/
 private def toOrderOne (w : SobolevSection A μ p (k + 1)) : SobolevSection A μ p 1 :=

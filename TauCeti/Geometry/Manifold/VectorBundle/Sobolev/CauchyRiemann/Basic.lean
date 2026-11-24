@@ -216,8 +216,8 @@ private theorem chartL_ae (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))
     zeroOrderL_apply_ae A hD hDs μ p 0 i w] with y h₁ h₂ h₃
   simp only [chartL, add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply]
   rw [h₁, Pi.add_apply, h₂, ← Wkp.value_zero (zeroOrderL A hD hDs μ p 0 i w c), h₃ c]
-  -- both sides are the `c`th coordinates; the chart orders `0 + 1` and `1` agree
-  rfl
+  simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+    Basis.coord_apply]
 
 /-- **The chart formula of the realization.** In chart `i`, the chart data of the realization of
 an order-one tuple `w` are `∂bar uᵢ + Zᵢ uᵢ` almost everywhere, where `uᵢ` are the chart data of

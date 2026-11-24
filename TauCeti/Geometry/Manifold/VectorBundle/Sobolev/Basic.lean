@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Sobolev spaces of sections of a vector bundle
@@ -951,17 +952,6 @@ theorem value_fiberMap_ae (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' �
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [Wkp.value_smul, hs a, Pi.smul_apply, hr a, smul_eq_mul]
 
-/-- The vector of `G₂` whose coordinates are the matrix of `L` applied to `v` is `L` applied to
-the vector of `G₁` with coordinates `v`, in the bases `Module.finBasis ℝ G₁` and
-`Module.finBasis ℝ G₂`. -/
-theorem sum_toMatrix_mulVec_smul (L : G₁ →L[ℝ] G₂) (v : Fin (finrank ℝ G₁) → ℝ) :
-    ∑ c, (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap).mulVec v c •
-        finBasis ℝ G₂ c = L (∑ a, v a • finBasis ℝ G₁ a) := by
-  have hL := LinearMap.toMatrix_mulVec_repr (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap
-    (∑ a, v a • finBasis ℝ G₁ a)
-  rw [(finBasis ℝ G₁).repr_sum_self, ContinuousLinearMap.coe_coe] at hL
-  rw [hL, Basis.sum_repr]
-
 /-- The constant fibre map `L` on the components of a tuple, in every chart. -/
 def fiberMapData (L : G₁ →L[ℝ] G₂) {n : ℕ} {U U' : Fin n → Opens E}
     (hU : ∀ i, U' i ≤ U i) :
@@ -994,7 +984,7 @@ theorem chartValueL_ae_of_eq_fiberMap {C₁ : SectionChartData E G₁ S₁}
     value_fiberMap_ae μ p k L hU (w₁ i₁)] with y h₂ h₁ hv
   rw [h₂, h₁, hw]
   simp_rw [hv]
-  exact sum_toMatrix_mulVec_smul L _
+  exact LinearMap.sum_toMatrix_mulVec_smul _ _ L.toLinearMap _
 
 end FiberMap
 
