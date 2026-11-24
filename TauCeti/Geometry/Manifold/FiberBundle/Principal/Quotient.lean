@@ -250,38 +250,65 @@ private theorem isLocalDiffeomorphOn_sectionSMul (hU : IsOpen U)
 
 /-! ### The trivialization induced by a local section -/
 
-/-- **The trivialization induced by a local section.** A smooth section `s` of the orbit
-projection over an open set `U` trivializes the projection over `U`: the trivialization is the
-inverse of `(q, g) ↦ s q · g = g⁻¹ • s q`, a bijection from `U × G` onto the preimage of `U`. -/
-def orbitFiberTrivialization [Nonempty M] (hU : IsOpen U)
-    (hs : letI := orbitRelQuotientChartedSpace I G I' M
-      ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ s U)
-    (hsec : ∀ q ∈ U, Quotient.mk _ (s q) = q) :
-    Trivialization G (orbitFiber.proj G M) :=
-  letI := orbitRelQuotientChartedSpace I G I' M
-  haveI : Nonempty (MulAction.orbitRel.Quotient G M × G) :=
-    ⟨(Quotient.mk _ (Classical.arbitrary M), 1)⟩
-  let Φ := (isLocalDiffeomorphOn_sectionSMul hU hs hsec).partialDiffeomorphOfInjOn
-    (hU.prod isOpen_univ) (injOn_sectionSMul hsec)
-  { toOpenPartialHomeomorph := Φ.symm.toOpenPartialHomeomorph
-    baseSet := U
-    open_baseSet := hU
-    source_eq := by simpa [Φ] using image_sectionSMul hsec
-    target_eq := by simp [Φ]
-    proj_toFun p hp := by
-      have hp' : p ∈ Φ.toPartialEquiv.target := by simpa [Φ] using hp
-      have hmem : Φ.toPartialEquiv.symm p ∈ U ×ˢ univ := by
-        simpa [Φ] using Φ.toPartialEquiv.map_target hp'
-      have h := proj_sectionSMul hsec hmem.1
-      have hinv : sectionSMul s (Φ.toPartialEquiv.symm p) = p := by
-        simpa [Φ] using Φ.toPartialEquiv.right_inv hp'
-      rw [hinv] at h
-      simpa [Φ] using h.symm }
-
 variable [Nonempty M] (hU : IsOpen U)
   (hs : letI := orbitRelQuotientChartedSpace I G I' M
     ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ s U)
   (hsec : ∀ q ∈ U, Quotient.mk _ (s q) = q)
+
+/-- The map `(q, g) ↦ s q · g`, as a smooth partial diffeomorphism from `U × G` onto the preimage
+of `U`. -/
+private def sectionSMulDiffeom :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    PartialDiffeomorph (𝓘(ℝ, QuotientModelSpace E E').prod I) I'
+      (MulAction.orbitRel.Quotient G M × G) (LeftToRightAction G M) ∞ :=
+  letI := orbitRelQuotientChartedSpace I G I' M
+  haveI : Nonempty (MulAction.orbitRel.Quotient G M × G) :=
+    ⟨(Quotient.mk _ (Classical.arbitrary M), 1)⟩
+  (isLocalDiffeomorphOn_sectionSMul hU hs hsec).partialDiffeomorphOfInjOn
+    (hU.prod isOpen_univ) (injOn_sectionSMul hsec)
+
+private theorem sectionSMulDiffeom_source :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    (sectionSMulDiffeom hU hs hsec).source = U ×ˢ univ := by
+  simp [sectionSMulDiffeom]
+
+private theorem sectionSMulDiffeom_target :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    (sectionSMulDiffeom hU hs hsec).target = orbitFiber.proj G M ⁻¹' U := by
+  simpa [sectionSMulDiffeom] using image_sectionSMul hsec
+
+private theorem sectionSMulDiffeom_apply (p : MulAction.orbitRel.Quotient G M × G) :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    sectionSMulDiffeom hU hs hsec p = sectionSMul s p := by
+  simp [sectionSMulDiffeom]
+
+/-- **The trivialization induced by a local section.** A smooth section `s` of the orbit
+projection over an open set `U` trivializes the projection over `U`: the trivialization is the
+inverse of `(q, g) ↦ s q · g = g⁻¹ • s q`, a bijection from `U × G` onto the preimage of `U`. -/
+def orbitFiberTrivialization : Trivialization G (orbitFiber.proj G M) :=
+  letI := orbitRelQuotientChartedSpace I G I' M
+  let Φ := sectionSMulDiffeom hU hs hsec
+  { toOpenPartialHomeomorph := Φ.symm.toOpenPartialHomeomorph
+    baseSet := U
+    open_baseSet := hU
+    source_eq := sectionSMulDiffeom_target hU hs hsec
+    target_eq := sectionSMulDiffeom_source hU hs hsec
+    proj_toFun p hp := by
+      -- Write `p` as `Φ (Φ⁻¹ p)`, with `Φ⁻¹ p` over `U`.
+      have hp' : p ∈ Φ.target := hp
+      have hmem : Φ.toPartialEquiv.symm p ∈ U ×ˢ univ :=
+        sectionSMulDiffeom_source hU hs hsec ▸ Φ.map_target hp'
+      have h := proj_sectionSMul hsec hmem.1
+      rw [← sectionSMulDiffeom_apply hU hs hsec, Φ.right_inv hp'] at h
+      exact h.symm }
+
+/-- The trivialization induced by `s` is the inverse of the partial diffeomorphism
+`(q, g) ↦ s q · g`. -/
+private theorem orbitFiberTrivialization_toOpenPartialHomeomorph :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    (orbitFiberTrivialization hU hs hsec).toOpenPartialHomeomorph =
+      (sectionSMulDiffeom hU hs hsec).symm.toOpenPartialHomeomorph :=
+  (rfl)
 
 @[simp]
 theorem orbitFiberTrivialization_baseSet : (orbitFiberTrivialization hU hs hsec).baseSet = U :=
@@ -292,7 +319,9 @@ theorem orbitFiberTrivialization_baseSet : (orbitFiberTrivialization hU hs hsec)
 theorem orbitFiberTrivialization_symm_apply (q : MulAction.orbitRel.Quotient G M) (g : G) :
     (orbitFiberTrivialization hU hs hsec).toOpenPartialHomeomorph.symm (q, g) =
       op g • LeftToRightAction.equiv G M (s q) := by
-  simp [orbitFiberTrivialization, sectionSMul]
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  rw [orbitFiberTrivialization_toOpenPartialHomeomorph]
+  exact sectionSMulDiffeom_apply hU hs hsec (q, g)
 
 /-- The trivialization induced by `s` sends `s q` to `(q, 1)`. -/
 theorem orbitFiberTrivialization_apply_section {q : MulAction.orbitRel.Quotient G M} (hq : q ∈ U) :
@@ -324,28 +353,58 @@ theorem orbitFiberTrivialization_apply_op_smul {p : LeftToRightAction G M}
 theorem contMDiffOn_orbitFiberTrivialization :
     letI := orbitRelQuotientChartedSpace I G I' M
     ContMDiffOn I' (𝓘(ℝ, QuotientModelSpace E E').prod I) ∞
-      (orbitFiberTrivialization hU hs hsec) (orbitFiberTrivialization hU hs hsec).source :=
-  letI := orbitRelQuotientChartedSpace I G I' M
-  haveI : Nonempty (MulAction.orbitRel.Quotient G M × G) :=
-    ⟨(Quotient.mk _ (Classical.arbitrary M), 1)⟩
-  ((isLocalDiffeomorphOn_sectionSMul hU hs hsec).partialDiffeomorphOfInjOn
-    (hU.prod isOpen_univ) (injOn_sectionSMul hsec)).symm.contMDiffOn
+      (orbitFiberTrivialization hU hs hsec) (orbitFiberTrivialization hU hs hsec).source := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  rw [← Trivialization.coe_coe, orbitFiberTrivialization_toOpenPartialHomeomorph]
+  exact (sectionSMulDiffeom hU hs hsec).symm.contMDiffOn
 
 /-- The inverse of the trivialization induced by `s` is smooth on its target. -/
 theorem contMDiffOn_orbitFiberTrivialization_symm :
     letI := orbitRelQuotientChartedSpace I G I' M
     ContMDiffOn (𝓘(ℝ, QuotientModelSpace E E').prod I) I' ∞
       (orbitFiberTrivialization hU hs hsec).toOpenPartialHomeomorph.symm
-      (orbitFiberTrivialization hU hs hsec).target :=
-  letI := orbitRelQuotientChartedSpace I G I' M
-  haveI : Nonempty (MulAction.orbitRel.Quotient G M × G) :=
-    ⟨(Quotient.mk _ (Classical.arbitrary M), 1)⟩
-  ((isLocalDiffeomorphOn_sectionSMul hU hs hsec).partialDiffeomorphOfInjOn
-    (hU.prod isOpen_univ) (injOn_sectionSMul hsec)).contMDiffOn
+      (orbitFiberTrivialization hU hs hsec).target := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  rw [orbitFiberTrivialization_toOpenPartialHomeomorph]
+  exact (sectionSMulDiffeom hU hs hsec).contMDiffOn
 
 omit [Nonempty M] hU hs hsec
 
 /-! ### The principal bundle of orbits -/
+
+section Atlas
+
+variable (I G I' M) (q : MulAction.orbitRel.Quotient G M)
+
+/-- The open set of a smooth local section of the orbit projection through the orbit `q`. -/
+private def orbitFiberAtlasSet : Set (MulAction.orbitRel.Quotient G M) :=
+  (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out).choose
+
+/-- A smooth local section of the orbit projection through the orbit `q`. -/
+private def orbitFiberAtlasSection : MulAction.orbitRel.Quotient G M → M :=
+  (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out).choose_spec.2.2.choose
+
+private theorem isOpen_orbitFiberAtlasSet : IsOpen (orbitFiberAtlasSet I G I' M q) :=
+  (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out).choose_spec.1
+
+private theorem mem_orbitFiberAtlasSet : q ∈ orbitFiberAtlasSet I G I' M q :=
+  (Quotient.out_eq q).subst (motive := (· ∈ orbitFiberAtlasSet I G I' M q))
+    (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out).choose_spec.2.1
+
+private theorem contMDiffOn_orbitFiberAtlasSection :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ (orbitFiberAtlasSection I G I' M q)
+      (orbitFiberAtlasSet I G I' M q) :=
+  (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I')
+    q.out).choose_spec.2.2.choose_spec.2.1
+
+private theorem quotientMk_orbitFiberAtlasSection :
+    ∀ q' ∈ orbitFiberAtlasSet I G I' M q,
+      Quotient.mk _ (orbitFiberAtlasSection I G I' M q q') = q' :=
+  (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I')
+    q.out).choose_spec.2.2.choose_spec.2.2
+
+end Atlas
 
 variable (I G I' M) in
 /-- An atlas of the orbit projection: around every orbit, the trivialization induced by a smooth
@@ -353,37 +412,31 @@ local section through it. -/
 def orbitFiberAtlas : MapFiber.Atlas G (orbitFiber.proj G M) where
   trivAt q :=
     haveI : Nonempty M := ⟨q.out⟩
-    have h := exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out
-    orbitFiberTrivialization h.choose_spec.1 h.choose_spec.2.2.choose_spec.2.1
-      h.choose_spec.2.2.choose_spec.2.2
-  mem_baseSet_trivAt q := by
-    have : Nonempty M := ⟨q.out⟩
-    rw [orbitFiberTrivialization_baseSet]
-    exact (Quotient.out_eq q).subst (motive := (· ∈ _))
-      (exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out).choose_spec.2.1
+    orbitFiberTrivialization (isOpen_orbitFiberAtlasSet I G I' M q)
+      (contMDiffOn_orbitFiberAtlasSection I G I' M q) (quotientMk_orbitFiberAtlasSection I G I' M q)
+  mem_baseSet_trivAt q := mem_orbitFiberAtlasSet I G I' M q
 
 /-- The trivializations of `orbitFiberAtlas` turn the right action into right multiplication. -/
 private theorem orbitFiberAtlas_apply_op_smul (q : MulAction.orbitRel.Quotient G M)
     {p : LeftToRightAction G M}
     (hp : orbitFiber.proj G M p ∈ ((orbitFiberAtlas I G I' M).trivAt q).baseSet) (g : G) :
     ((orbitFiberAtlas I G I' M).trivAt q (op g • p)).2 =
-      ((orbitFiberAtlas I G I' M).trivAt q p).2 * g := by
-  have : Nonempty M := ⟨q.out⟩
-  have h := exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out
-  exact orbitFiberTrivialization_apply_op_smul h.choose_spec.1 h.choose_spec.2.2.choose_spec.2.1
-    h.choose_spec.2.2.choose_spec.2.2 (by simpa [orbitFiberAtlas] using hp) g
+      ((orbitFiberAtlas I G I' M).trivAt q p).2 * g :=
+  haveI : Nonempty M := ⟨q.out⟩
+  orbitFiberTrivialization_apply_op_smul (isOpen_orbitFiberAtlasSet I G I' M q)
+    (contMDiffOn_orbitFiberAtlasSection I G I' M q) (quotientMk_orbitFiberAtlasSection I G I' M q)
+    hp g
 
 /-- The trivializations of `orbitFiberAtlas` are diffeomorphisms onto their images. -/
 theorem isContMDiff_orbitFiberAtlas :
     letI := orbitRelQuotientChartedSpace I G I' M
     (orbitFiberAtlas I G I' M).IsContMDiff ∞ 𝓘(ℝ, QuotientModelSpace E E') I I' := by
   let _ := orbitRelQuotientChartedSpace I G I' M
-  refine ⟨fun q ↦ ?_, fun q ↦ ?_⟩ <;> have : Nonempty M := ⟨q.out⟩ <;>
-    have h := exists_contMDiffOn_section_quotientMk (I := I) (G := G) (I' := I') q.out
-  · exact contMDiffOn_orbitFiberTrivialization h.choose_spec.1
-      h.choose_spec.2.2.choose_spec.2.1 h.choose_spec.2.2.choose_spec.2.2
-  · exact contMDiffOn_orbitFiberTrivialization_symm h.choose_spec.1
-      h.choose_spec.2.2.choose_spec.2.1 h.choose_spec.2.2.choose_spec.2.2
+  refine ⟨fun q ↦ ?_, fun q ↦ ?_⟩ <;> have : Nonempty M := ⟨q.out⟩
+  · exact contMDiffOn_orbitFiberTrivialization (isOpen_orbitFiberAtlasSet I G I' M q)
+      (contMDiffOn_orbitFiberAtlasSection I G I' M q) (quotientMk_orbitFiberAtlasSection I G I' M q)
+  · exact contMDiffOn_orbitFiberTrivialization_symm (isOpen_orbitFiberAtlasSet I G I' M q)
+      (contMDiffOn_orbitFiberAtlasSection I G I' M q) (quotientMk_orbitFiberAtlasSection I G I' M q)
 
 variable (I G I' M) in
 /-- **The bundle of orbits.** For a free proper smooth action of `G` on `M`, the orbits
