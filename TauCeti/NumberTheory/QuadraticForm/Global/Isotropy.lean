@@ -16,9 +16,9 @@ import TauCeti.NumberTheory.QuadraticForm.Global.Ternary.Basic
 
 Let `Q` be a quadratic form on a finite-dimensional vector space over a number field `K`. This file
 proves the Hasse–Minkowski theorem: `Q` is isotropic over `K` if and only if it is isotropic at
-every finite and every real place of `K` (`QuadraticForm.IsLocallyIsotropic`). As a consequence, a
-regular form represents a scalar over `K` if and only if it represents it at every finite and
-every real place.
+every finite and every real place of `K` (`QuadraticForm.IsLocallyIsotropic`). As a consequence,
+`Q` represents a scalar over `K` if and only if it represents it at every finite and every real
+place.
 
 An anisotropic form over a number field is regular, so it is isometric to a diagonal form
 `TauCeti.presentedForm p` with unit weights, and it suffices to treat these diagonal forms, by
@@ -32,7 +32,9 @@ theorem to diagonal forms of rank `n - 1`.
 
 A nonzero scalar `a` is represented by a regular form `Q` exactly when `⟨-a⟩ ⊥ Q` is isotropic, and
 local representation of `a` makes `⟨-a⟩ ⊥ Q` locally isotropic, so the theorem for isotropy gives
-the theorem for representation of scalars.
+the theorem for representation of scalars by regular forms. An arbitrary form is the orthogonal sum
+of a regular form and a zero form, which contributes nothing to representation, globally or
+locally.
 
 ## Main results
 
@@ -41,8 +43,8 @@ the theorem for representation of scalars.
 * `QuadraticForm.not_anisotropic_iff_isLocallyIsotropic`: the Hasse–Minkowski theorem for isotropy.
 * `QuadraticForm.anisotropic_iff_not_isLocallyIsotropic`: a quadratic form over a number field is
   anisotropic if and only if it is anisotropic at some finite or real place.
-* `QuadraticForm.represents_iff_locallyRepresentsScalar`: a regular quadratic form over a number
-  field represents a scalar if and only if it represents it at every finite and every real place.
+* `QuadraticForm.represents_iff_locallyRepresentsScalar`: a quadratic form over a number field
+  represents a scalar if and only if it represents it at every finite and every real place.
 
 ## References
 
@@ -104,19 +106,39 @@ theorem anisotropic_iff_not_isLocallyIsotropic (Q : _root_.QuadraticForm K V) :
   (not_iff_comm.mp (not_anisotropic_iff_isLocallyIsotropic Q)).symm
 
 /-- **The Hasse–Minkowski theorem for representation of scalars** (O'Meara 66:3 for the line
-`⟨a⟩`). A regular quadratic form on a finite-dimensional space over a number field `K` represents a
-scalar `a ∈ K` over `K` if and only if it represents `a` at every finite and every real place. -/
-theorem represents_iff_locallyRepresentsScalar {Q : _root_.QuadraticForm K V}
-    (hQ : Q.Nondegenerate) (a : K) :
+`⟨a⟩`). A quadratic form on a finite-dimensional space over a number field `K`, regular or not,
+represents a scalar `a ∈ K` over `K` if and only if it represents `a` at every finite and every
+real place. -/
+theorem represents_iff_locallyRepresentsScalar (Q : _root_.QuadraticForm K V) (a : K) :
     Represents Q a ↔ Q.LocallyRepresentsScalar a := by
   refine ⟨LocallyRepresentsScalar.of_represents, fun h ↦ ?_⟩
   rcases eq_or_ne a 0 with rfl | ha
   · exact represents_zero Q
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  -- Local representation of `a` makes `⟨-a⟩ ⊥ Q` locally isotropic, hence isotropic.
-  have hiso := not_anisotropic_of_isLocallyIsotropic h.isLocallyIsotropic_smul_sq_prod
-  rw [Equivalent.anisotropic_iff ⟨IsometryEquiv.prodComm _ Q⟩] at hiso
-  exact mem_unitValueSet.mp
-    ((mem_unitValueSet_iff_not_anisotropic_prod Q hQ (Units.mk0 a ha)).mpr hiso)
+  -- Split `Q` as `Q' ⊥ 0`, where `Q'` is its regular restriction to a complement of the radical.
+  obtain ⟨W, hW⟩ := Submodule.exists_isCompl Q.radical
+  let Q' : _root_.QuadraticForm K W := Q.restrict W
+  let e := IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW
+  rw [← QuadraticMap.Equivalent.locallyRepresentsScalar_iff ⟨e⟩, locallyRepresentsScalar_iff] at h
+  -- The zero summand contributes nothing to local representation, so `Q'` represents `a` locally.
+  have hloc : Q'.LocallyRepresentsScalar a := by
+    refine (locallyRepresentsScalar_iff _ _).mpr ⟨fun v ↦ ?_, fun w ↦ ?_⟩
+    · obtain ⟨x, hx⟩ := (represents_iff _ _).mp <|
+        ((atFinitePlaceProd Q' 0 v).represents_iff _).mp (h.1 v)
+      refine (represents_iff _ _).mpr ⟨x.1, ?_⟩
+      rw [← hx, QuadraticMap.prod_apply, ← smul_zero (0 : K), atFinitePlace_smul]
+      simp
+    · obtain ⟨x, hx⟩ := (represents_iff _ _).mp <|
+        ((atRealPlaceProd Q' 0 w).represents_iff _).mp (h.2 w)
+      refine (represents_iff _ _).mpr ⟨x.1, ?_⟩
+      rw [← hx, QuadraticMap.prod_apply, ← smul_zero (0 : K), atRealPlace_smul]
+      simp
+  -- Local representation of `a` makes `⟨-a⟩ ⊥ Q'` locally isotropic, hence isotropic.
+  have hiso := not_anisotropic_of_isLocallyIsotropic hloc.isLocallyIsotropic_smul_sq_prod
+  rw [Equivalent.anisotropic_iff ⟨IsometryEquiv.prodComm _ Q'⟩] at hiso
+  obtain ⟨x, hx⟩ := (represents_iff _ _).mp <| mem_unitValueSet.mp
+    ((mem_unitValueSet_iff_not_anisotropic_prod Q' (nondegenerate_restrict_of_isCompl_radical Q hW)
+      (Units.mk0 a ha)).mpr hiso)
+  exact (represents_iff _ _).mpr ⟨x, hx⟩
 
 end QuadraticForm
