@@ -27,14 +27,14 @@ universe u
 
 namespace Representation
 
-variable {G : Type u} [Monoid G] {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M]
+variable {G : Type u} [Monoid G] {Λ : Type*} [CommSemiring Λ] {M : Type u} [AddCommMonoid M]
   [Module Λ M] (ρ : Representation Λ G M)
 
 /-- The `G`-set underlying a representation `ρ` of `G`: `g` acts on `M` by `ρ g`. -/
 @[expose]
-def toAction : Action (Type u) G where
-  V := M
-  ρ := (TypeCat.endEquiv M).toMonoidHom.comp (MulAction.toEndHom.comp ρ)
+def toAction : Action (Type u) G :=
+  letI := MulAction.compHom M ρ
+  Action.ofMulAction G M
 
 /-- The underlying type of `ρ.toAction` is the module of `ρ`. -/
 theorem toAction_V : ρ.toAction.V = M :=

@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.FieldSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
 public import TauCeti.RingTheory.Etale.Field
@@ -48,10 +46,6 @@ so if `M ≠ 0` has no nonzero invariants, the sheaf is not constant
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.nonempty_fiberFunctor_obj_iff`: a finite Galois set is nonempty
-  exactly when the corresponding finite étale `K`-scheme is.
-* `TauCeti.FiniteEtaleScheme.galoisTopology_le_jointlySurjectiveTopology`: coverings for
-  `galoisTopology K Ω` are jointly surjective.
 * `TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso_hom_naturality`,
   `TauCeti.FiniteEtaleScheme.galoisModuleSheafInverseObjIso_hom_naturality`: restriction of
   sections is precomposition of `Gal(Ω/K)`-maps.
@@ -74,44 +68,6 @@ universe u
 namespace TauCeti.FiniteEtaleScheme
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [IsGalois K Ω]
-
-variable {K Ω} in
-/-- A finite continuous `Gal(Ω/K)`-set is nonempty if and only if the corresponding finite étale
-`K`-scheme is nonempty. -/
-theorem nonempty_fiberFunctor_obj_iff (T : ContAction FintypeCat.{u} Gal(Ω/K)) :
-    Nonempty ((ContAction.fiberFunctor Gal(Ω/K)).obj T) ↔
-      Nonempty ((galoisEquivalence K Ω).inverse.obj T).obj.left := by
-  -- Both sides say that `T` is not initial.
-  rw [← not_isEmpty_iff, ← not_isEmpty_iff, ← isInitial_iff_isEmpty]
-  refine not_congr ((initial_iff_fiber_empty
-    (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) T).symm.trans
-      ⟨fun ⟨h⟩ ↦ ⟨h.isInitialObj _ _⟩, fun ⟨h⟩ ↦ ⟨?_⟩⟩)
-  exact (h.isInitialObj (galoisEquivalence K Ω).functor _).ofIso
-    ((galoisEquivalence K Ω).counitIso.app T)
-
-/-- **Galois coverings are jointly surjective.** A covering sieve of a finite continuous
-`Gal(Ω/K)`-set for the topology transported from the small étale site of `Spec K` is jointly
-surjective on underlying sets. -/
-theorem galoisTopology_le_jointlySurjectiveTopology :
-    galoisTopology K Ω ≤ ContAction.jointlySurjectiveTopology Gal(Ω/K) := by
-  -- Every point lies in the image of a Galois object `A`; the sieve pulled back to `A` covers the
-  -- nonempty scheme corresponding to `A`, so it contains a map from a nonempty Galois set to the
-  -- connected `A`, which is surjective.
-  intro X R hR
-  rw [ContAction.mem_jointlySurjectiveTopology_iff]
-  intro s
-  obtain ⟨A, a, a₀, hA, rfl⟩ := exists_hom_from_galois_of_fiber
-    (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) X s
-  have hRA := (galoisTopology K Ω).pullback_stable a hR
-  rw [Functor.mem_inducedTopology_iff_of_isCoverDense,
-    Functor.mem_inducedTopology_iff_of_isCoverDense, Scheme.mem_smallEtaleTopology_iff] at hRA
-  obtain ⟨x⟩ := (nonempty_fiberFunctor_obj_iff A).1 ⟨a₀⟩
-  obtain ⟨Y, f, y, ⟨Z, g, h, ⟨T, t, k, ht, rfl⟩, rfl⟩, -⟩ := hRA x
-  obtain ⟨t₀⟩ := (nonempty_fiberFunctor_obj_iff T).2 ⟨k.hom.left (h.left y)⟩
-  have : Nonempty ((forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}).obj T) := ⟨t₀⟩
-  obtain ⟨t₁, ht₁⟩ := surjective_of_nonempty_fiber_of_isConnected
-    (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) t a₀
-  exact ⟨T, t ≫ a, ht, t₁, by simp [ht₁]⟩
 
 variable {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M] [Module Λ M]
   (ρ : Representation Λ Gal(Ω/K) M)
