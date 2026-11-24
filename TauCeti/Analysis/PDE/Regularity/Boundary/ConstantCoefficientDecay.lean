@@ -11,7 +11,7 @@ import TauCeti.Analysis.InnerProductSpace.Transvection
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Analysis.PDE.EnergyForm.ConstantCoefficient
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.InterBall
 

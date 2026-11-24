@@ -442,7 +442,7 @@ private theorem liftedComulPoint_eq_include_mul :
     ext h
     rfl
   rw [hcomul, hleft, hright]
-  exact Bialgebra.toConv_comp_comulAlgHom up
+  exact AlgHom.toConv_comp_comulAlgHom up
 
 private theorem action_comul_eq_include_actions
     (Theta : PointRepresentation (R := R) (H := H) (V := V)) :

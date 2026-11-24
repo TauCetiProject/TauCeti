@@ -12,7 +12,7 @@ public import Mathlib.Probability.Kernel.Composition.Prod
 import TauCeti.MeasureTheory.Group.Convolution.Translation
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Multivariate
-import TauCeti.Probability.Distributions.Gaussian.Sum
+import TauCeti.Probability.Distributions.Gaussian.Sum.Multivariate
 
 /-!
 # Variance-preserving Gaussian noising kernels

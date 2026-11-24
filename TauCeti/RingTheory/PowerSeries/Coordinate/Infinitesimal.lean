@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Group.Commutator
+public import TauCeti.Algebra.DualNumber.Iterated
+public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.PowerSeries.Derivation
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.Tactic.LinearCombination
@@ -20,16 +21,35 @@ substitution `X ↦ X + e a` is the automorphism `f ↦ f + e a f'` of the `S`-a
 is the first-order Taylor formula `PowerSeries.subst_X_add_of_sq_eq_zero`. In operator notation it
 is `1 + e a D`, where `D` is the formal derivative. For a fixed `e` these automorphisms compose by
 adding the parameters, `(1 + e a D) (1 + e b D) = 1 + e (a + b) D`, because the cross term is a
-multiple of `e ^ 2 = 0`.
+multiple of `e ^ 2 = 0`. When `e * constantCoeff a = 0`, `X + e a` is a formal coordinate
+(`TauCeti.FormalCoordinate.infinitesimal`) whose substitution automorphism is `1 + e a D`.
 
 For two square-zero elements `e₁, e₂`, the group commutator of `σ₁ = 1 + e₁ a D` and
-`σ₂ = 1 + e₂ b D` in the automorphism group, whose multiplication is composition, is
+`σ₂ = 1 + e₂ b D` in the automorphism group, whose multiplication is operator composition, is
 
-`σ₁ σ₂ σ₁⁻¹ σ₂⁻¹ = 1 + e₁ e₂ (a b' - b a') D`.
+`σ₁ σ₂ σ₁⁻¹ σ₂⁻¹ = 1 + e₁ e₂ (a b' - b a') D`
 
-The vector field on the right is the commutator `[a D, b D] = (a b' - b a') D` of derivations, so
-this fixes the sign relating composition of substitutions to the bracket of vector fields. Over
-`S = DualNumber (DualNumber K) = K[ε₁, ε₂] / (ε₁², ε₂²)` this applies to `e₁ = ε₁` and `e₂ = ε₂`.
+(`TauCeti.commutatorElement_infinitesimalSubstAlgEquiv`), for arbitrary `a, b ∈ S⟦X⟧`. When
+additionally `e₁ * constantCoeff a = 0` and `e₂ * constantCoeff b = 0`, `X + e₁ a` and
+`X + e₂ b` are formal coordinates; because `φ ↦ σ_φ` is an anti-homomorphism from
+`TauCeti.FormalCoordinate S` to the automorphism group, the commutator in the coordinate
+composition group carries the opposite sign `b a' - a b'`
+(`TauCeti.FormalCoordinate.commutatorElement_infinitesimal`).
+
+Over the iterated dual numbers `R[ε][ε] = DualNumber (DualNumber R)`, identified with
+`R[ε₁, ε₂] / (ε₁², ε₂²)` via `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv`, the
+generators `ε₁ = inl ε` and `ε₂ = ε` satisfy `ε₁ ^ 2 = ε₂ ^ 2 = 0` while their product
+`ε₁ ε₂ = inl ε * ε` is part of an `R`-basis (`TauCeti.iteratedDualNumberBasis`). Specializing to
+`σ₁ = 1 + ε₁ a D` and `σ₂ = 1 + ε₂ b D` (with `a, b ∈ R⟦X⟧` embedded into `R[ε][ε]⟦X⟧`) yields
+`⁅σ₁, σ₂⁆ = 1 + ε₁ ε₂ (a b' - b a') D`
+(`PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv`). Evaluating this
+automorphism on a series `f ∈ R⟦X⟧` embedded into `R[ε][ε]⟦X⟧` returns
+`f + ε₁ ε₂ ⁅a D, b D⁆ f` in `R[ε][ε]⟦X⟧`
+(`PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map`). Because
+`ε₁ ε₂` is linearly independent over `R`, `a b' - b a'` is the unique series `c ∈ R⟦X⟧` with
+`⁅σ₁, σ₂⁆ = 1 + ε₁ ε₂ c D`
+(`PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff`), pinning the
+operator-commutator sign.
 
 Over the dual numbers `R[ε]` of a commutative ring `R`, the infinitesimal substitutions are the
 `R[ε]`-algebra automorphisms of `R[ε]⟦X⟧` that reduce to the identity modulo `ε` and preserve the
@@ -42,6 +62,8 @@ substitutions with the derivations `X R⟦X⟧ D` vanishing at the origin.
 
 * `TauCeti.infinitesimalSubstAlgEquiv e he a`: the automorphism `f ↦ f + e a f'` of `S⟦X⟧`, the
   substitution `X ↦ X + e a`.
+* `TauCeti.FormalCoordinate.infinitesimal e he a ha`: the formal coordinate `X + e a` when
+  `e * constantCoeff a = 0`.
 * `TauCeti.infinitesimalSubstitutions R`: the subgroup of `R[ε]`-algebra automorphisms of
   `R[ε]⟦X⟧` reducing to the identity modulo `ε` and preserving `(X)`.
 * `TauCeti.infinitesimalSubstitutionsEquiv R`: the isomorphism `a ↦ 1 + ε a D` from the additive
@@ -52,7 +74,15 @@ substitutions with the derivations `X R⟦X⟧ D` vanishing at the origin.
 * `TauCeti.infinitesimalSubstAlgEquiv_apply_eq_subst`: `1 + e a D` is the substitution
   `X ↦ X + e a`.
 * `TauCeti.infinitesimalSubstAlgEquiv_add`: `1 + e (a + b) D = (1 + e a D) (1 + e b D)`.
-* `TauCeti.infinitesimalSubstAlgEquiv_commutator_apply`: the commutator formula above.
+* `TauCeti.commutatorElement_infinitesimalSubstAlgEquiv`: for arbitrary `a, b ∈ S⟦X⟧`,
+  `⁅1 + e₁ a D, 1 + e₂ b D⁆ = 1 + e₁ e₂ (a b' - b a') D`.
+* `TauCeti.FormalCoordinate.commutatorElement_infinitesimal`: when `e₁ * constantCoeff a = 0` and
+  `e₂ * constantCoeff b = 0`, in `FormalCoordinate S` we have
+  `⁅X + e₁ a, X + e₂ b⁆ = X + e₁ e₂ (b a' - a b')`.
+* `PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv`: over `R[ε][ε]`,
+  `⁅1 + ε₁ a D, 1 + ε₂ b D⁆ = 1 + ε₁ ε₂ (a b' - b a') D`.
+* `PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff`:
+  uniqueness of the commutator parameter `a b' - b a'` over `R[ε][ε]`.
 * `TauCeti.infinitesimalSubstitutionsEquiv_apply_map`: the `ε`-coefficient of `1 + ε a D` on
   `R⟦X⟧` is the derivation `a D`.
 -/
@@ -131,6 +161,11 @@ theorem infinitesimalSubstAlgEquiv_zero (he : e ^ 2 = 0) :
     infinitesimalSubstAlgEquiv e he 0 = 1 :=
   AlgEquiv.ext fun f ↦ by simp
 
+@[simp]
+theorem infinitesimalSubstAlgEquiv_zero_left (he : (0 : S) ^ 2 = 0) (a : S⟦X⟧) :
+    infinitesimalSubstAlgEquiv 0 he a = 1 :=
+  AlgEquiv.ext fun f ↦ by simp
+
 /-- For a fixed square-zero `e`, infinitesimal substitutions compose by adding their parameters:
 `1 + e (a + b) D = (1 + e a D) (1 + e b D)`. -/
 theorem infinitesimalSubstAlgEquiv_add (he : e ^ 2 = 0) (a b : S⟦X⟧) :
@@ -143,20 +178,27 @@ theorem infinitesimalSubstAlgEquiv_symm (he : e ^ 2 = 0) (a : S⟦X⟧) :
     (infinitesimalSubstAlgEquiv e he a).symm = infinitesimalSubstAlgEquiv e he (-a) := by
   simp only [infinitesimalSubstAlgEquiv, AlgEquiv.ofAlgHom_symm, neg_neg]
 
+@[simp]
+theorem inv_infinitesimalSubstAlgEquiv (he : e ^ 2 = 0) (a : S⟦X⟧) :
+    (infinitesimalSubstAlgEquiv e he a)⁻¹ = infinitesimalSubstAlgEquiv e he (-a) := by
+  rw [AlgEquiv.aut_inv, infinitesimalSubstAlgEquiv_symm]
+
 /-- The commutator of infinitesimal substitutions: for square-zero `e₁, e₂`, the group commutator
 `⁅σ₁, σ₂⁆ = σ₁ σ₂ σ₁⁻¹ σ₂⁻¹` of `σ₁ = 1 + e₁ a D` and `σ₂ = 1 + e₂ b D`, with multiplication given
 by composition, is `1 + e₁ e₂ (a b' - b a') D`. -/
-theorem infinitesimalSubstAlgEquiv_commutator_apply {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0)
-    (he₂ : e₂ ^ 2 = 0) (a b f : S⟦X⟧) :
-    ⁅infinitesimalSubstAlgEquiv e₁ he₁ a, infinitesimalSubstAlgEquiv e₂ he₂ b⁆ f =
-      f + (e₁ * e₂) • ((a * d⁄dX b - b * d⁄dX a) * d⁄dX f) := by
-  have he : (e₁ * e₂) ^ 2 = 0 := by rw [mul_pow, he₁, zero_mul]
+@[simp]
+theorem commutatorElement_infinitesimalSubstAlgEquiv {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0)
+    (he₂ : e₂ ^ 2 = 0) (a b : S⟦X⟧) :
+    ⁅infinitesimalSubstAlgEquiv e₁ he₁ a, infinitesimalSubstAlgEquiv e₂ he₂ b⁆ =
+      infinitesimalSubstAlgEquiv (e₁ * e₂) (by rw [mul_pow, he₁, zero_mul])
+        (a * d⁄dX b - b * d⁄dX a) := by
   have h₁ : e₁ * e₂ * e₁ = 0 := by rw [mul_right_comm, ← sq, he₁, zero_mul]
   have h₂ : e₁ * e₂ * e₂ = 0 := by rw [mul_assoc, ← sq, he₂, mul_zero]
   -- It suffices to show `σ₁ σ₂ = τ σ₂ σ₁` for `τ = 1 + e₁ e₂ (a b' - b a') D`. Applied to `f`,
   -- the first-order part of `τ` only sees `f'`, since `e₁ e₂` kills the first-order parts of
   -- `σ₁` and `σ₂`.
-  have key : infinitesimalSubstAlgEquiv e₁ he₁ a * infinitesimalSubstAlgEquiv e₂ he₂ b =
+  have key (he : (e₁ * e₂) ^ 2 = 0) :
+      infinitesimalSubstAlgEquiv e₁ he₁ a * infinitesimalSubstAlgEquiv e₂ he₂ b =
       infinitesimalSubstAlgEquiv (e₁ * e₂) he (a * d⁄dX b - b * d⁄dX a) *
         infinitesimalSubstAlgEquiv e₂ he₂ b * infinitesimalSubstAlgEquiv e₁ he₁ a := by
     refine AlgEquiv.ext fun f ↦ ?_
@@ -168,10 +210,132 @@ theorem infinitesimalSubstAlgEquiv_commutator_apply {e₁ e₂ : S} (he₁ : e�
       smul_eq_mul]
     simp only [smul_eq_C_mul, map_mul]
     ring
-  rw [commutatorElement_def, key, mul_inv_cancel_right, mul_inv_cancel_right,
-    infinitesimalSubstAlgEquiv_apply]
+  rw [commutatorElement_def, key _, mul_inv_cancel_right, mul_inv_cancel_right]
+
+/-- Pointwise form of `TauCeti.commutatorElement_infinitesimalSubstAlgEquiv`. -/
+theorem commutatorElement_infinitesimalSubstAlgEquiv_apply {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0)
+    (he₂ : e₂ ^ 2 = 0) (a b f : S⟦X⟧) :
+    ⁅infinitesimalSubstAlgEquiv e₁ he₁ a, infinitesimalSubstAlgEquiv e₂ he₂ b⁆ f =
+      f + (e₁ * e₂) • ((a * d⁄dX b - b * d⁄dX a) * d⁄dX f) := by
+  rw [commutatorElement_infinitesimalSubstAlgEquiv, infinitesimalSubstAlgEquiv_apply]
+
+/-- Applying a ring homomorphism `φ : S →+* T` to coefficients intertwines
+`TauCeti.infinitesimalSubstAlgEquiv`. -/
+theorem _root_.RingHom.map_infinitesimalSubstAlgEquiv_apply {T : Type*} [CommRing T] (φ : S →+* T)
+    (he : e ^ 2 = 0) (a f : S⟦X⟧) :
+    map φ (infinitesimalSubstAlgEquiv e he a f) =
+      infinitesimalSubstAlgEquiv (φ e) (by rw [← map_pow, he, map_zero]) (map φ a) (map φ f) := by
+  simp [smul_eq_C_mul, derivative_map]
+
+/-- For a ring homomorphism `φ : R →+* S` and a square-zero `e : S`, the parameter `c ∈ R⟦X⟧`
+of `1 + e (map φ c) D` is uniquely determined by the resulting automorphism of `S⟦X⟧` whenever
+`r ↦ e * φ r` is injective. -/
+theorem _root_.RingHom.infinitesimalSubstAlgEquiv_map_injective {R : Type*} [Semiring R]
+    (φ : R →+* S) (he : e ^ 2 = 0) (hφ : Function.Injective fun r : R ↦ e * φ r) :
+    Function.Injective fun c : R⟦X⟧ ↦ infinitesimalSubstAlgEquiv e he (map φ c) := by
+  intro c₁ c₂ h
+  have hX : e • map φ c₁ = e • map φ c₂ := by
+    have := congrArg (fun F : S⟦X⟧ ≃ₐ[S] S⟦X⟧ ↦ F X) h
+    simpa only [infinitesimalSubstAlgEquiv_X, add_right_inj] using this
+  ext n
+  exact hφ <| by simpa only [coeff_smul, coeff_map, smul_eq_mul] using congrArg (coeff n) hX
 
 end SquareZero
+
+namespace FormalCoordinate
+
+variable {S : Type*} [CommRing S]
+
+/-- For `e` with `e ^ 2 = 0` and a power series `a` with `e * constantCoeff a = 0`, the
+infinitesimal formal coordinate `X + e • a`, whose substitution automorphism is
+`TauCeti.infinitesimalSubstAlgEquiv e he a`. -/
+noncomputable def infinitesimal (e : S) (he : e ^ 2 = 0) (a : S⟦X⟧)
+    (ha : e * constantCoeff a = 0) : FormalCoordinate S where
+  toPowerSeries := X + e • a
+  constantCoeff_toPowerSeries := by simp [ha]
+  isUnit_coeff_one := by
+    refine ⟨⟨1 + e * coeff 1 a, 1 - e * coeff 1 a, ?_, ?_⟩, by simp⟩
+    · linear_combination -(coeff 1 a ^ 2) * he
+    · linear_combination -(coeff 1 a ^ 2) * he
+
+@[simp]
+theorem toPowerSeries_infinitesimal {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧}
+    (ha : e * constantCoeff a = 0) :
+    (infinitesimal e he a ha).toPowerSeries = X + e • a :=
+  (rfl)
+
+/-- The substitution automorphism of the formal coordinate `X + e • a` is
+`TauCeti.infinitesimalSubstAlgEquiv e he a`. -/
+@[simp]
+theorem substAlgEquiv_infinitesimal {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧}
+    (ha : e * constantCoeff a = 0) :
+    (infinitesimal e he a ha).substAlgEquiv = infinitesimalSubstAlgEquiv e he a :=
+  AlgEquiv.ext fun f ↦
+    (substAlgEquiv_apply _ f).trans (infinitesimalSubstAlgEquiv_apply_eq_subst he a f).symm
+
+@[simp]
+theorem infinitesimal_zero {e : S} (he : e ^ 2 = 0) :
+    infinitesimal e he 0 (by simp) = 1 :=
+  FormalCoordinate.ext (by simp)
+
+@[simp]
+theorem infinitesimal_zero_left (he : (0 : S) ^ 2 = 0) (a : S⟦X⟧) :
+    infinitesimal 0 he a (zero_mul _) = 1 :=
+  FormalCoordinate.ext (by simp)
+
+/-- For a fixed square-zero `e`, infinitesimal formal coordinates compose by adding parameters. -/
+theorem infinitesimal_add {e : S} (he : e ^ 2 = 0) {a b : S⟦X⟧}
+    (ha : e * constantCoeff a = 0) (hb : e * constantCoeff b = 0) :
+    infinitesimal e he (a + b) (by simp [mul_add, ha, hb]) =
+      infinitesimal e he a ha * infinitesimal e he b hb :=
+  substAlgEquiv_injective <| by
+    rw [substAlgEquiv_mul, substAlgEquiv_infinitesimal, substAlgEquiv_infinitesimal,
+      substAlgEquiv_infinitesimal, ← infinitesimalSubstAlgEquiv_add, add_comm]
+
+@[simp]
+theorem inv_infinitesimal {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧} (ha : e * constantCoeff a = 0) :
+    (infinitesimal e he a ha)⁻¹ = infinitesimal e he (-a) (by simp [ha]) :=
+  substAlgEquiv_injective <| by
+    rw [← substAlgEquiv_symm, substAlgEquiv_infinitesimal, infinitesimalSubstAlgEquiv_symm,
+      substAlgEquiv_infinitesimal]
+
+/-- When `e₁ * constantCoeff a = 0` and `e₂ * constantCoeff b = 0` (unlike the unrestricted
+operator commutator `TauCeti.commutatorElement_infinitesimalSubstAlgEquiv`), `X + e₁ a` and
+`X + e₂ b` are formal coordinates, and in the coordinate composition group
+`TauCeti.FormalCoordinate S` their commutator carries `b a' - a b'`, the opposite sign to the
+operator commutator, by `TauCeti.FormalCoordinate.substAlgEquiv_commutatorElement`. -/
+@[simp]
+theorem commutatorElement_infinitesimal {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0) (he₂ : e₂ ^ 2 = 0)
+    {a b : S⟦X⟧} (ha : e₁ * constantCoeff a = 0) (hb : e₂ * constantCoeff b = 0) :
+    ⁅infinitesimal e₁ he₁ a ha, infinitesimal e₂ he₂ b hb⁆ =
+      infinitesimal (e₁ * e₂) (by rw [mul_pow, he₁, zero_mul])
+        (b * d⁄dX a - a * d⁄dX b) (by
+          rw [map_sub, map_mul, map_mul]
+          linear_combination (e₁ * constantCoeff (d⁄dX a)) * hb -
+            (e₂ * constantCoeff (d⁄dX b)) * ha) := by
+  refine substAlgEquiv_injective ?_
+  rw [substAlgEquiv_commutatorElement]
+  simp [mul_comm e₂ e₁]
+
+/-- The linear coefficient of `TauCeti.FormalCoordinate.infinitesimal e he a ha` is
+`1 + e * coeff 1 a`. -/
+theorem val_linearCoeff_infinitesimal {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧}
+    (ha : e * constantCoeff a = 0) :
+    ((infinitesimal e he a ha).linearCoeff : S) = 1 + e * coeff 1 a := by
+  simp
+
+end FormalCoordinate
+
+/-- Base change along a ring homomorphism preserves `TauCeti.FormalCoordinate.infinitesimal`. -/
+@[simp]
+theorem _root_.RingHom.map_infinitesimal {S T : Type*} [CommRing S] [CommRing T]
+    (φ : S →+* T) {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧} (ha : e * constantCoeff a = 0) :
+    FormalCoordinate.map φ (FormalCoordinate.infinitesimal e he a ha) =
+      FormalCoordinate.infinitesimal (φ e) (by rw [← map_pow, he, map_zero])
+        (PowerSeries.map φ a)
+        (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map,
+              coeff_zero_eq_constantCoeff_apply, ← map_mul, ha, map_zero]) :=
+  FormalCoordinate.ext (by simp [FormalCoordinate.toPowerSeries_map, smul_eq_C_mul])
 
 section DualNumber
 
@@ -321,5 +485,78 @@ theorem infinitesimalSubstitutionsEquiv_apply_map (a : Multiplicative (Ideal.spa
   simp [derivative_map, mul_comm]
 
 end DualNumber
+
+section IteratedDualNumber
+
+open DualNumber TrivSqZeroExt
+
+variable {R : Type*} [CommRing R]
+
+/-- Over `R[ε][ε]`, the parameter `c ∈ R⟦X⟧` of `1 + (inl ε * ε) c D` is uniquely determined by
+the resulting automorphism of `R[ε][ε]⟦X⟧`. -/
+theorem iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective :
+    Function.Injective fun c : R⟦X⟧ ↦
+      infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
+        (map (algebraMap R R[ε][ε]) c) := by
+  apply RingHom.infinitesimalSubstAlgEquiv_map_injective (S := R[ε][ε]) (R := R)
+    (φ := algebraMap R R[ε][ε]) (e := (inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
+  intro _ _ h
+  exact smul_inl_eps_mul_eps_injective <| by
+    simpa [← Algebra.commutes, ← Algebra.smul_def] using h
+
+/-- Over the iterated dual numbers `R[ε][ε]`, the group commutator of `σ₁ = 1 + (inl ε) a D` and
+`σ₂ = 1 + ε b D` in the automorphism group of `R[ε][ε]⟦X⟧` is `1 + (inl ε * ε) (a b' - b a') D`. -/
+theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv
+    (a b : R⟦X⟧) :
+    ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
+      infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆ =
+      infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
+        (map (algebraMap R R[ε][ε]) (a * d⁄dX b - b * d⁄dX a)) := by
+  rw [commutatorElement_infinitesimalSubstAlgEquiv]
+  simp [derivative_map]
+
+/-- Evaluating the commutator of `1 + (inl ε) a D` and `1 + ε b D` over `R[ε][ε]` on a series
+`f ∈ R⟦X⟧` embedded into `R[ε][ε]⟦X⟧` returns `f + (inl ε * ε) ⁅a D, b D⁆ f` in
+`R[ε][ε]⟦X⟧`. -/
+theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map
+    (a b f : R⟦X⟧) :
+    ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
+      infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆
+        (map (algebraMap R R[ε][ε]) f) =
+      map (algebraMap R R[ε][ε]) f +
+        ((inl (ε : R[ε]) : R[ε][ε]) * ε) •
+          map (algebraMap R R[ε][ε]) (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv]
+  simp [derivative_map]
+  congr 2
+  ring
+
+/-- The `inl ε * ε` coordinate of the `n`-th coefficient of `⁅1 + (inl ε) a D, 1 + ε b D⁆ f` for
+`f ∈ R⟦X⟧` is the `n`-th coefficient of `⁅a D, b D⁆ f`. -/
+theorem _root_.PowerSeries.snd_snd_coeff_iteratedDualNumber_commutatorElement_apply_map
+    (a b f : R⟦X⟧) (n : ℕ) :
+    (coeff n
+      (⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
+        infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆
+          (map (algebraMap R R[ε][ε]) f))).snd.snd =
+      coeff n (⁅mkDerivation R a, mkDerivation R b⁆ f) := by
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_apply_map]
+  simp [-lie_mkDerivation, algebraMap_eq_inl']
+
+/-- Because `inl ε * ε` is part of an `R`-basis of `R[ε][ε]`, `a b' - b a'` is the unique power
+series `c ∈ R⟦X⟧` such that `⁅1 + (inl ε) a D, 1 + ε b D⁆ = 1 + (inl ε * ε) c D`. -/
+theorem _root_.PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv_eq_iff
+    (a b c : R⟦X⟧) :
+    ⁅infinitesimalSubstAlgEquiv (inl (ε : R[ε])) inl_eps_pow_two (map (algebraMap R R[ε][ε]) a),
+      infinitesimalSubstAlgEquiv (ε : R[ε][ε]) eps_pow_two (map (algebraMap R R[ε][ε]) b)⁆ =
+      infinitesimalSubstAlgEquiv ((inl (ε : R[ε]) : R[ε][ε]) * ε) inl_eps_mul_eps_pow_two
+        (map (algebraMap R R[ε][ε]) c) ↔
+      c = a * d⁄dX b - b * d⁄dX a := by
+  rw [PowerSeries.iteratedDualNumber_commutatorElement_infinitesimalSubstAlgEquiv]
+  exact ⟨fun h ↦
+    (iteratedDualNumber_infinitesimalSubstAlgEquiv_inl_eps_mul_eps_injective h).symm,
+    fun h ↦ h ▸ rfl⟩
+
+end IteratedDualNumber
 
 end TauCeti

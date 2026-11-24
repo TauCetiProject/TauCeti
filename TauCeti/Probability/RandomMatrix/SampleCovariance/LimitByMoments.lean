@@ -144,13 +144,13 @@ theorem tendsto_expectedCovarianceSpectralMeasure_marchenkoPastur_of_uniform_ent
   refine ProbabilityMeasure.tendsto_of_tendsto_integral_pow isCompact_Icc
     (ae_iff.mp (ae_mem_Icc_zero_marchenkoPastur y)) ?_ ?_
   · intro k
-    filter_upwards [hLp (max k 2) (by omega)] with i hi
+    filter_upwards [hLp (max (2 * k) 2) (by omega)] with i hi
     exact integrable_pow_expectedCovarianceSpectralMeasure (hXm i)
       (integrable_trace_pow_sampleCovariance (fun _ ↦ inferInstance) fun a b ↦
         (hi a b).mono_exponent (by
           push_cast
           gcongr
-          exact_mod_cast le_max_left k 2))
+          exact_mod_cast le_max_left (2 * k) 2))
   · intro k
     exact tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur
       k hn hy hXm (fun _ ↦ hindep) (fun _ ↦ hmean) (hLp k) (fun _ ↦ hsecond) (hB k)
