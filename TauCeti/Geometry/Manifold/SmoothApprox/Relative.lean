@@ -83,12 +83,6 @@ variable {E F H M : Type*}
 
 variable {f e : M → F} {ε : M → ℝ} {A O : Set M}
 
-/-- A point of the segment from `a` to `b` is no farther from `a` than `b` is. -/
-private theorem dist_add_smul_sub_le {a b : F} {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
-    dist (a + t • (b - a)) a ≤ dist b a := by
-  rw [dist_self_add_left, norm_smul, ← dist_eq_norm, Real.norm_of_nonneg ht₀]
-  exact mul_le_of_le_one_left dist_nonneg ht₁
-
 /-- **Relative smooth approximation.** Let `f : M → F` be continuous, `A ⊆ M` closed, and `e` a
 map which is `C^n` on a neighbourhood `O` of `A` and agrees with `f` on `A`. Then for every
 continuous positive precision `ε`, there is a `C^n` map `g` with `dist (g x) (f x) < ε x` for all
@@ -122,7 +116,8 @@ theorem Continuous.exists_contMDiff_approx_and_eventuallyEq (n : ℕ∞)
       simp [hh, hy]
   have h_dist (x : M) : dist (h x) (f x) < ε x / 2 := by
     by_cases hx : x ∈ O'
-    · exact (dist_add_smul_sub_le (hρI x).1 (hρI x).2).trans_lt hx.2
+    · exact mem_ball.mp <| (convex_ball (f x) _).add_smul_sub_mem
+        (mem_ball_self (half_pos (hε_pos x))) (mem_ball.mpr hx.2) (hρI x)
     · simpa [hh, (hρO' hx).self_of_nhds] using half_pos (hε_pos x)
   -- A closed neighbourhood `S` of `A` on which `h = e`, inside an open set where `e` is smooth.
   set W := interior ({x | ρ x = 1} ∩ interior O)
@@ -161,7 +156,8 @@ theorem Continuous.exists_contMDiff_eventuallyEq_and_homotopyRel (n : ℕ∞)
   obtain ⟨g, hg, hge⟩ := hf.exists_contMDiff_approx_and_eventuallyEq I n hδ hδ_pos hA hO he hfe
   have hdist (t : unitInterval) (x : M) :
       dist (f x + (t : ℝ) • (g x - f x)) (f x) < δ x :=
-    (dist_add_smul_sub_le (unitInterval.nonneg t) (unitInterval.le_one t)).trans_lt (hg x)
+    mem_ball.mp <| (convex_ball (f x) _).add_smul_sub_mem (mem_ball_self (hδ_pos x))
+      (mem_ball.mpr (hg x)) t.property
   refine ⟨g, hge,
     { toFun := fun p ↦ f p.2 + (p.1 : ℝ) • (g p.2 - f p.2)
       continuous_toFun := by fun_prop
