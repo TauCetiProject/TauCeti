@@ -412,6 +412,7 @@ theorem infinitePlaceProjection_finiteEmbed (w : InfinitePlace K) (x : FiniteAde
     infinitePlaceProjection R K H w (finiteEmbed R K H x) = 1 := by
   rw [infinitePlaceProjection_apply, infiniteProjection_finiteEmbed, map_one]
 
+/-- `finiteEmbed` is injective: `finiteProjection` is a left inverse. -/
 theorem finiteEmbed_injective : Function.Injective (finiteEmbed R K H) :=
   Function.LeftInverse.injective finiteProjection_finiteEmbed
 
@@ -419,23 +420,21 @@ theorem finiteEmbed_injective : Function.Injective (finiteEmbed R K H) :=
 theorem mrange_finiteEmbed :
     MonoidHom.mrange (finiteEmbed R K H) = MonoidHom.mker (infiniteProjection R K H) := by
   ext y
-  rw [finiteEmbed, ← MonoidHom.map_mrange, Submonoid.mrange_inr, ← MonoidHom.mker_fst,
-    Submonoid.mem_map_equiv, MonoidHom.mem_mker, MonoidHom.mem_mker]
-  -- the inverse of `(prodContinuousMulEquiv R K H).symm` is `prodContinuousMulEquiv R K H`
-  exact congr_arg (· = 1) (congr_arg Prod.fst (prodContinuousMulEquiv_apply y)) |>.to_iff
+  rw [MonoidHom.mem_mker]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact infiniteProjection_finiteEmbed x
+  · intro h
+    exact ⟨finiteProjection R K H y, ext_projection (by rw [h, infiniteProjection_finiteEmbed])
+      (finiteProjection_finiteEmbed _)⟩
 
 /-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
-identity point. -/
-theorem mem_mrange_finiteEmbed_iff {y : AdelicPoints R K H} :
-    y ∈ MonoidHom.mrange (finiteEmbed R K H) ↔ infiniteProjection R K H y = 1 := by
-  rw [mrange_finiteEmbed, MonoidHom.mem_mker]
-
-/-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
-identity point. This is the simp normal form of `mem_mrange_finiteEmbed_iff`. -/
+identity point. As a simp lemma, it rewrites the existence of a finite adelic preimage to the
+condition that the infinite component is the identity point. -/
 @[simp]
 theorem exists_finiteEmbed_eq_iff {y : AdelicPoints R K H} :
-    (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 :=
-  MonoidHom.mem_mrange.symm.trans mem_mrange_finiteEmbed_iff
+    (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 := by
+  rw [← MonoidHom.mem_mrange, mrange_finiteEmbed, MonoidHom.mem_mker]
 
 /-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
 `finiteProjection`. -/
