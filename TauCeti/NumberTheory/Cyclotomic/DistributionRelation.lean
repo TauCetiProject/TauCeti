@@ -250,8 +250,7 @@ end IsCyclotomicExtension
 namespace TauCeti
 
 /-- **Irreducibility of `Φ_m` from that of `Φ_{mℓ}`.** If `Φ_{mℓ}` is irreducible over `F` for a
-prime `ℓ ∤ m` with `mℓ ≠ 0` in `F`, then so is `Φ_m`: the degrees `[F(μ_{mℓ}) : F] = φ(m) (ℓ - 1)`
-and `[F(μ_{mℓ}) : F(μ_m)] = ℓ - 1` force `[F(μ_m) : F] = φ(m)`. -/
+prime `ℓ ∤ m` with `mℓ ≠ 0` in `F`, then so is `Φ_m`. -/
 theorem irreducible_cyclotomic_of_prime_not_dvd [hℓ : Fact ℓ.Prime] [NeZero ((m * ℓ : ℕ) : F)]
     (hirr : Irreducible (cyclotomic (m * ℓ) F)) (hdvd : ¬ℓ ∣ m) :
     Irreducible (cyclotomic m F) := by
@@ -266,6 +265,8 @@ theorem irreducible_cyclotomic_of_prime_not_dvd [hℓ : Fact ℓ.Prime] [NeZero 
   have := IsCyclotomicExtension.finiteDimensional {m} F M
   have : IsCyclotomicExtension {m * ℓ} M N := IsCyclotomicExtension.tower_top F M N
   have := IsCyclotomicExtension.finiteDimensional {m * ℓ} M N
+  -- The degrees `[F(μ_{mℓ}) : F] = φ(m) (ℓ - 1)` and `[F(μ_{mℓ}) : F(μ_m)] = ℓ - 1` force
+  -- `[F(μ_m) : F] = φ(m)`.
   refine IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank F M ?_
   have h := IsCyclotomicExtension.finrank N hirr
   rw [← Module.finrank_mul_finrank F M N,
