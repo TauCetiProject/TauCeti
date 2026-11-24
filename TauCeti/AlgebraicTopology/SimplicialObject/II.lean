@@ -14,9 +14,9 @@ import Mathlib.Order.Interval.Finset.Fin
 This file supplements `Mathlib.AlgebraicTopology.SimplicialObject.II` with characterizations of
 Gabriel–Zisman's cut map `SimplexCategory.II.map'` and `SimplexCategory.II.map`:
 
-* `OrderHom.iiMap'_val_eq_card`: `(SimplexCategory.II.map' α x : ℕ)` equals the cardinality of
-  `{i | (α i).castSucc < x}`.
-* `OrderHom.iiMap'_le_castSucc_iff`:
+* `SimplexCategory.II.map'_val_eq_card`: `(SimplexCategory.II.map' α x : ℕ)` equals the
+  cardinality of `{i | (α i).castSucc < x}`.
+* `SimplexCategory.II.map'_le_castSucc_iff`:
   `SimplexCategory.II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`, showing that
   `SimplexCategory.II.map' α` is left adjoint to `α` across the `castSucc` embedding.
 * `SimplexCategory.Hom.iiMap_unop_toOrderHom_apply`:
@@ -25,13 +25,11 @@ Gabriel–Zisman's cut map `SimplexCategory.II.map'` and `SimplexCategory.II.map
 
 public section
 
-namespace OrderHom
-
-open SimplexCategory.II
+namespace SimplexCategory.II
 
 /-- Cut-counting formula for `SimplexCategory.II.map'`: for `α : Fin (k + 1) →o Fin (m + 1)` and
 cut `x : Fin (m + 2)`, `(II.map' α x : ℕ)` counts the indices `i` with `(α i).castSucc < x`. -/
-theorem iiMap'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2)) :
+theorem map'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2)) :
     (map' α x : ℕ) = (Finset.univ.filter fun i : Fin (k + 1) ↦ (α i).castSucc < x).card := by
   obtain ⟨y, hy⟩ | hx := Fin.eq_castSucc_or_eq_last (map' α x)
   · rw [hy, Fin.val_castSucc]
@@ -51,7 +49,7 @@ theorem iiMap'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : 
 
 /-- Galois characterization of `SimplexCategory.II.map'`:
 `II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`. -/
-theorem iiMap'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2))
+theorem map'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2))
     (y : Fin (k + 1)) :
     map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc := by
   constructor
@@ -65,7 +63,7 @@ theorem iiMap'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (
   · intro h
     exact Finset.min'_le (finset α x) y.castSucc ((castSucc_mem_finset_iff α x y).mpr h)
 
-end OrderHom
+end SimplexCategory.II
 
 namespace SimplexCategory.Hom
 

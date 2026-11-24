@@ -113,10 +113,8 @@ theorem preservesLast_rev_map_iff {x y : SimplexCategory} (f : x ⟶ y) :
 /-- Reversal preserves `preservesEndpoints`. -/
 @[simp]
 theorem preservesEndpoints_rev_map_iff {x y : SimplexCategory} (f : x ⟶ y) :
-    preservesEndpoints (SimplexCategory.rev.map f) ↔ preservesEndpoints f := by
-  rw [preservesEndpoints_iff, preservesEndpoints_iff, ← preservesZero_iff, ← preservesLast_iff,
-    ← preservesZero_iff, ← preservesLast_iff, preservesZero_rev_map_iff,
-    preservesLast_rev_map_iff, and_comm]
+    preservesEndpoints (SimplexCategory.rev.map f) ↔ preservesEndpoints f :=
+  ((preservesZero_rev_map_iff f).and (preservesLast_rev_map_iff f)).trans and_comm
 
 end SimplexCategory.Hom
 
@@ -412,11 +410,15 @@ instance {x : EndpointPreserving} : Unique (x ⟶ ⟨⦋0⦌⟩) where
   default := constToZero x.obj
   uniq f := WideSubcategory.hom_ext _ ((eq_const_to_zero f.hom).trans (constToZero_hom x.obj).symm)
 
+/-- Any two morphisms in `Δ_∂` with codomain `⟨⦋0⦌⟩` are equal. -/
+theorem hom_to_zero_ext {x : EndpointPreserving} (u v : x ⟶ ⟨⦋0⦌⟩) : u = v :=
+  Subsingleton.elim u v
+
 /-- There is no endpoint-preserving map `⦋0⦌ ⟶ ⦋m + 1⦌`. -/
 theorem isEmpty_hom_zero_succ (m : ℕ) : IsEmpty ((⟨⦋0⦌⟩ : EndpointPreserving) ⟶ ⟨⦋m + 1⦌⟩) :=
   ⟨fun f ↦ by
     have h0 : f.hom.toOrderHom 0 = 0 := toOrderHom_zero f
-    have hl : f.hom.toOrderHom 0 = Fin.last (m + 1) := toOrderHom_last f
+    have hl : f.hom.toOrderHom 0 = Fin.last (m + 1) := by simpa using toOrderHom_last f
     exact (Fin.last_pos (n := m)).ne' (hl.symm.trans h0)⟩
 
 end EndpointPreserving
