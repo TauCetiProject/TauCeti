@@ -22,7 +22,8 @@ deletion is antitone in the deleted set, `Graph.deleteEdges_anti_right`, complem
 `Graph.deleteEdges_isSpanningSubgraph`. Vertex deletion commutes with simplification up to the
 canonical isomorphism `Graph.toSimpleGraphDeleteVertsIso`; more generally,
 `Graph.toSimpleGraphInduceIso` identifies simplification after induction with induction after
-simplification. Both vertex maps retain the original point.
+simplification when the inducing set consists of actual vertices. Both vertex maps retain the
+original point.
 -/
 
 public section
@@ -64,15 +65,18 @@ theorem deleteVerts_eq_induce (G : Graph α β) (X : Set α) :
   simp only [h.left_mem, h.right_mem, true_and]
 
 /-- Simplifying a multigraph induced on actual vertices gives the simple graph induced on the
-corresponding vertices. The isomorphism retains the underlying ambient vertex. -/
+corresponding vertices. The isomorphism retains the underlying ambient vertex. The
+vertex-deletion isomorphism below is derived from this construction. -/
 def toSimpleGraphInduceIso (G : Graph α β) (X : Set α) (hX : X ⊆ V(G)) :
     (G.induce X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∈ X} := by
   let e : V(G.induce X) ≃ {v : V(G) // (v : α) ∈ X} :=
     (Equiv.subtypeEquivRight fun _ ↦ by
-      simp only [vertexSet_induce, mem_ofPred_eq]
-      exact ⟨fun hx ↦ ⟨hX hx, hx⟩, And.right⟩).trans
-        (Equiv.Set.sep V(G) (fun v ↦ v ∈ X))
-  have he (v : V(G.induce X)) : ((e v).val : α) = v := rfl
+      simp only [vertexSet_induce]).trans
+        (Equiv.subtypeSubtypeEquivSubtype fun hx ↦ hX hx).symm
+  -- Both canonical subtype equivalences only reorganize membership proofs.
+  have he (v : V(G.induce X)) : ((e v).val : α) = v := by
+    change v.val = v.val
+    rfl
   refine { toEquiv := e, map_rel_iff' := ?_ }
   intro u v
   have hu := u.property
@@ -84,42 +88,56 @@ def toSimpleGraphInduceIso (G : Graph α β) (X : Set α) (hX : X ⊆ V(G)) :
 @[simp]
 theorem coe_toSimpleGraphInduceIso_apply (G : Graph α β) (X : Set α) (hX : X ⊆ V(G))
     (v : V(G.induce X)) :
-    (((G.toSimpleGraphInduceIso X hX) v).val : α) = v := (rfl)
+    (((G.toSimpleGraphInduceIso X hX) v).val : α) = v := by
+  change v.val = v.val
+  rfl
 
 /-- The inverse induced-simplification isomorphism keeps the underlying ambient vertex. -/
 @[simp]
 theorem coe_toSimpleGraphInduceIso_symm_apply (G : Graph α β) (X : Set α)
     (hX : X ⊆ V(G)) (v : {v : V(G) // (v : α) ∈ X}) :
-    (((G.toSimpleGraphInduceIso X hX).symm v) : α) = v.val := (rfl)
+    (((G.toSimpleGraphInduceIso X hX).symm v) : α) = v.val := by
+  symm
+  simpa using G.coe_toSimpleGraphInduceIso_apply X hX
+    ((G.toSimpleGraphInduceIso X hX).symm v)
 
 /-- Simplifying after vertex deletion is the same as inducing the simplification on the
 remaining actual vertices. -/
 def toSimpleGraphDeleteVertsIso (G : Graph α β) (X : Set α) :
     (G.deleteVerts X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} := by
-  let e : V(G.deleteVerts X) ≃ {v : V(G) // (v : α) ∉ X} :=
-    (Equiv.subtypeEquivRight fun _ ↦ by
-      simp only [vertexSet_deleteVerts, mem_sdiff, mem_ofPred_eq]).trans
-        (Equiv.Set.sep V(G) (· ∉ X))
-  -- Both factors retain the underlying point: subtypeEquivRight changes only its proof,
-  -- and Set.sep rearranges the two membership proofs into nested subtypes.
-  have he (v : V(G.deleteVerts X)) : ((e v).val : α) = v := rfl
+  let source : V(G.deleteVerts X) ≃ V(G.induce (V(G) \ X)) :=
+    Equiv.subtypeEquivRight fun _ ↦ by
+      simp only [vertexSet_deleteVerts, vertexSet_induce]
+  let target : {v : V(G) // (v : α) ∈ V(G) \ X} ≃ {v : V(G) // (v : α) ∉ X} :=
+    Equiv.subtypeEquivRight fun v ↦ ⟨And.right, fun hv ↦ ⟨v.property, hv⟩⟩
+  let induceIso := G.toSimpleGraphInduceIso (V(G) \ X) sdiff_subset
+  let e := source.trans (induceIso.toEquiv.trans target)
   refine { toEquiv := e, map_rel_iff' := ?_ }
   intro u v
+  change (G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X}).Adj
+      (target (induceIso (source u))) (target (induceIso (source v))) ↔
+    (G.deleteVerts X).toSimpleGraph.Adj u v
+  change (G.toSimpleGraph.induce {v : V(G) | (v : α) ∈ V(G) \ X}).Adj
+      (induceIso (source u)) (induceIso (source v)) ↔
+    (G.deleteVerts X).toSimpleGraph.Adj u v
+  rw [induceIso.map_rel_iff]
   have hu := u.property
   have hv := v.property
   simp only [vertexSet_deleteVerts, mem_sdiff] at hu hv
-  simp [toSimpleGraph_adj, Graph.Adj, deleteVerts_isLink, Subtype.ext_iff, he, hu.2, hv.2]
+  simp [toSimpleGraph_adj, Graph.Adj, deleteVerts_isLink, induce_isLink, source, hu, hv]
 
--- The forward and inverse coercions retain the original point through Equiv.trans,
--- subtypeEquivRight, and Set.sep; only the arrangement of membership proofs changes.
 @[simp]
 theorem coe_toSimpleGraphDeleteVertsIso_apply (G : Graph α β) (X : Set α)
     (v : V(G.deleteVerts X)) :
-    (((G.toSimpleGraphDeleteVertsIso X) v).val : α) = v := (rfl)
+    (((G.toSimpleGraphDeleteVertsIso X) v).val : α) = v := by
+  simp [toSimpleGraphDeleteVertsIso]
 
 @[simp]
 theorem coe_toSimpleGraphDeleteVertsIso_symm_apply (G : Graph α β) (X : Set α)
     (v : {v : V(G) // (v : α) ∉ X}) :
-    (((G.toSimpleGraphDeleteVertsIso X).symm v) : α) = v.val := (rfl)
+    (((G.toSimpleGraphDeleteVertsIso X).symm v) : α) = v.val := by
+  symm
+  simpa using G.coe_toSimpleGraphDeleteVertsIso_apply X
+    ((G.toSimpleGraphDeleteVertsIso X).symm v)
 
 end Graph
