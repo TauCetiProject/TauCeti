@@ -31,6 +31,8 @@ supported vectors commutes with linear combinations of such vectors.
 
 * `LinearIndependent.mem_span_range_iff_existsUnique`: membership in the span of a
   linearly independent family is equivalent to having unique finitely supported coordinates.
+* `Finsupp.linearCombination_congr`: a linear combination depends only on the vectors indexed by
+  the support of its coefficients.
 * `List.sum_map_eq_linearCombination`: `(l.map v).sum` is the linear combination of `v` with the
   letter counts of `l` as coefficients.
 * `Finsupp.linearCombination_eq_sum_coe_of_support_subset`: if `a` is supported in `s`, then
@@ -80,6 +82,14 @@ theorem _root_.LinearIndependent.mem_span_range_iff_existsUnique {v : ι → M}
     apply h.finsuppLinearCombination_injective
     simpa only [Finsupp.linearCombination_apply] using hb.trans ha.symm
   · exact ExistsUnique.exists
+
+/-- A linear combination depends only on the vectors indexed by the support of its
+coefficients. -/
+theorem Finsupp.linearCombination_congr {v v' : ι → M} {l : ι →₀ R}
+    (h : ∀ i ∈ l.support, v i = v' i) :
+    Finsupp.linearCombination R v l = Finsupp.linearCombination R v' l := by
+  simp only [Finsupp.linearCombination_apply]
+  exact Finsupp.sum_congr fun i hi ↦ by rw [h i hi]
 
 /-- The sum of a family along a list is the linear combination of the family whose coefficients
 are the letter counts of the list. -/

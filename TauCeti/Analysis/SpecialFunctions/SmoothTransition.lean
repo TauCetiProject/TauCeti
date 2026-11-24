@@ -44,7 +44,10 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 `(a, b)`; integrating it gives such a step with slope at most `τ` whenever
 `v < τ (b - a)`, which is the best possible bound, since the mean slope of the step is
 `v / (b - a)`. Translating and reflecting the smooth transition also gives three cutoffs summing to
-one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives.
+one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives. For
+`δ > 0` the smooth lower clamp `TauCeti.smoothLowerClamp δ` is at least `δ` everywhere and equal to
+`t` for `t ≥ 2 δ`; it keeps denominators such as `‖∇ψ‖²` away from zero without changing them
+where they are already large.
 
 The derivative supremum bounds are adapted from Giada Franz’s formalization in
 [ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory),
@@ -64,8 +67,15 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `Real.smoothTransition.mul_deriv_nonneg` and `Real.smoothTransition.mul_deriv_le_deriv`:
   multiplying the derivative by its argument gives a value between zero and the derivative.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
+* `Real.smoothTransition.ofReal_abs_mul_le`: `ofReal (|Real.smoothTransition x| b) ≤ ofReal b`
+  for `0 ≤ b`.
+* `Real.smoothTransition.abs_one_sub_le_one`: `|1 - Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_nonpos`: `deriv Real.smoothTransition x = 0` for `x ≤ 0`.
 * `Real.smoothTransition.deriv_of_one_le`: `deriv Real.smoothTransition x = 0` for `1 ≤ x`.
+* `Real.smoothTransition.deriv_comp_sub_const_of_notMem_Ioo`: the shift
+  `s ↦ Real.smoothTransition (s - c)` has derivative zero off `(c, c + 1)`.
+* `Real.smoothTransition.abs_deriv_comp_sub_const_le`: a bound on the derivative also bounds the
+  derivative of every shift.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
 * `Real.smoothTransition.deriv_deriv_of_neg`: the second derivative vanishes on the negative
   half-line.
@@ -121,6 +131,8 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.exists_cutoffs_add_add_eq_one`: three smooth cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
+* `TauCeti.smoothLowerClamp`: a smooth function at least `δ` everywhere and equal to `t` for
+  `t ≥ 2 δ`.
 -/
 
 public section
@@ -222,6 +234,18 @@ theorem one_sub (x : ℝ) : smoothTransition (1 - x) = 1 - smoothTransition x :=
 theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
   (abs_of_nonneg (nonneg x)).trans_le (le_one x)
 
+/-- Scaling a nonnegative bound by the smooth transition does not increase it, as an extended
+nonnegative real. -/
+theorem ofReal_abs_mul_le (x : ℝ) {b : ℝ} (hb : 0 ≤ b) :
+    ENNReal.ofReal (|smoothTransition x| * b) ≤ ENNReal.ofReal b :=
+  ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left hb (abs_le_one x))
+
+/-- The complementary transition `1 - smoothTransition` also takes values of absolute value at
+most one. -/
+theorem abs_one_sub_le_one (x : ℝ) : |1 - smoothTransition x| ≤ 1 := by
+  rw [← one_sub]
+  exact abs_le_one _
+
 /-- The smooth transition function has derivative zero on `(-∞, 0]`. -/
 theorem deriv_of_nonpos {x : ℝ} (hx : x ≤ 0) : deriv smoothTransition x = 0 := by
   apply IsLocalMin.deriv_eq_zero
@@ -235,6 +259,23 @@ theorem deriv_of_one_le {x : ℝ} (hx : 1 ≤ x) : deriv smoothTransition x = 0 
   filter_upwards with y
   rw [one_of_one_le hx]
   exact le_one y
+
+/-- The shifted smooth transition `s ↦ smoothTransition (s - c)` has derivative zero off
+`(c, c + 1)`. -/
+theorem deriv_comp_sub_const_of_notMem_Ioo {c s : ℝ} (hs : s ∉ Ioo c (c + 1)) :
+    deriv (fun s ↦ smoothTransition (s - c)) s = 0 := by
+  rw [deriv_comp_sub_const]
+  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
+  rcases hs with hs | hs
+  · exact deriv_of_nonpos (by linarith)
+  · exact deriv_of_one_le (by linarith)
+
+/-- A bound `L` on the derivative of the smooth transition function also bounds the derivative of
+every shift `s ↦ smoothTransition (s - c)`. -/
+theorem abs_deriv_comp_sub_const_le {L : ℝ} (hL : ∀ x, ‖deriv smoothTransition x‖ ≤ L)
+    (c s : ℝ) : |deriv (fun s ↦ smoothTransition (s - c)) s| ≤ L := by
+  rw [deriv_comp_sub_const, ← Real.norm_eq_abs]
+  exact hL _
 
 /-- The derivative of the smooth transition function is nonnegative. -/
 theorem deriv_nonneg (t : ℝ) : 0 ≤ deriv smoothTransition t :=
@@ -1003,5 +1044,33 @@ theorem exists_contDiff_odd_truncation {r R : ℝ} (hrR : r < R) (hR : 0 < R) :
   · rw [← neg_neg t, hodd, hone (-t) (by linarith)]
   · rw [← neg_neg t, hodd, neg_lt_zero]
     exact hpos (-t) (by linarith)
+
+end TauCeti
+
+namespace TauCeti
+
+/-- The smooth lower clamp `δ + (t - δ) s ((t - δ) / δ)` at level `δ`, for the smooth transition
+`s`. For `δ > 0` it is at least `δ` everywhere (`TauCeti.le_smoothLowerClamp`) and equal to `t`
+for `t ≥ 2 δ` (`TauCeti.smoothLowerClamp_of_two_mul_le`). -/
+def smoothLowerClamp (δ t : ℝ) : ℝ :=
+  δ + (t - δ) * Real.smoothTransition ((t - δ) / δ)
+
+theorem contDiff_smoothLowerClamp (δ : ℝ) {n : ℕ∞} : ContDiff ℝ n (smoothLowerClamp δ) :=
+  contDiff_const.add ((contDiff_id.sub contDiff_const).mul
+    (Real.smoothTransition.contDiff.comp ((contDiff_id.sub contDiff_const).div_const δ)))
+
+theorem le_smoothLowerClamp {δ : ℝ} (hδ : 0 < δ) (t : ℝ) : δ ≤ smoothLowerClamp δ t := by
+  rw [smoothLowerClamp]
+  rcases le_or_gt t δ with ht | ht
+  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
+      hδ.le)]
+    simp
+  · have := Real.smoothTransition.nonneg ((t - δ) / δ)
+    nlinarith
+
+theorem smoothLowerClamp_of_two_mul_le {δ t : ℝ} (hδ : 0 < δ) (ht : 2 * δ ≤ t) :
+    smoothLowerClamp δ t = t := by
+  rw [smoothLowerClamp, Real.smoothTransition.one_of_one_le ((le_div_iff₀ hδ).2 (by linarith))]
+  ring
 
 end TauCeti

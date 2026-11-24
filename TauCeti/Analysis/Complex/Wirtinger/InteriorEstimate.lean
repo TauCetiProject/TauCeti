@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.CalderonZygmund
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Interior `Lᵖ` estimates for the Cauchy–Riemann operator
@@ -39,6 +41,12 @@ almost complex structure is close to the standard one. The `L²` estimate for pe
 constant compatible complex structure on a real inner product space, which needs no
 Calderón–Zygmund inequality, is in `TauCeti.Geometry.Symplectic.JHolomorphic.InteriorEstimate`.
 
+For maps into a finite-dimensional complex normed space whose real structure is only compatible
+with the complex one, the conjugate Wirtinger derivative is replaced by the complex-antilinear part
+`ContinuousLinearMap.complexAntilinearPartL` of the real derivative, and the estimate with a bounded
+zeroth-order term follows by transport along a complex-linear isomorphism with a Euclidean space
+(`TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le`).
+
 ## The argument
 
 Choose a smooth cutoff `χ` with values in `[0, 1]`, equal to one near `K` and compactly supported
@@ -57,6 +65,9 @@ into the left-hand side, which is finite because `v` is smooth with compact supp
   for `\bar∂` itself.
 * `TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_I_smul_le`: the interior estimate for the
   variable-coefficient operator `(∂ₛu + J(z) ∂ₜu) / 2 + B(z) u`.
+* `TauCeti.exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le`: the interior estimate
+  for `\bar∂` plus a bounded zeroth-order term, for maps into a finite-dimensional complex normed
+  space with any compatible real structure, such as the model fibre of a complex vector bundle.
 
 ## References
 
@@ -198,6 +209,8 @@ private theorem eLpNorm_fderiv_smul_le {χ : ℂ → ℝ} {u g : ℂ → F} {U :
 
 end Cutoff
 
+section Hilbert
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-- **The interior `Lᵖ` estimate for perturbations of `\bar∂`.** For `1 < p < ∞` there is
@@ -301,5 +314,104 @@ theorem exists_eLpNorm_fderiv_le_of_norm_sub_I_smul_le {p : ℝ≥0∞} (hp : 1 
       _ = δ * ‖fderiv ℝ u z‖ := by push_cast; ring
   · gcongr
     exact hB z hz
+
+end Hilbert
+
+section CompatibleReal
+
+/-! ### Finite-dimensional values with a compatible real structure -/
+
+open ContinuousLinearMap (complexAntilinearPartL)
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
+  [IsScalarTower ℝ ℂ F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- A pointwise bound `‖g - \bar∂u‖ ≤ M ‖u‖` transported along a complex-linear isomorphism `e`,
+with `\bar∂(e ∘ u)` written as a conjugate Wirtinger derivative. -/
+private theorem norm_sub_conjWirtingerDeriv_comp_le (e : F ≃L[ℂ] G) {u : ℂ → F}
+    {g : ℂ →L[ℝ] F} {M : ℝ≥0} {z : ℂ}
+    (hg : ‖g - complexAntilinearPartL (fderiv ℝ u z)‖ ≤ M * ‖u z‖) :
+    ‖e (g 1) - conjWirtingerDeriv (fun y ↦ e (u y)) z 1‖ ≤
+      ‖(e : F →L[ℂ] G)‖ * M * ‖(e.symm : G →L[ℂ] F)‖ * ‖e (u z)‖ := by
+  rw [e.conjWirtingerDeriv_comp_left_apply, ← map_sub]
+  calc ‖e (g 1 - complexAntilinearPartL (fderiv ℝ u z) 1)‖
+      ≤ ‖(e : F →L[ℂ] G)‖ * ‖(g - complexAntilinearPartL (fderiv ℝ u z)) 1‖ :=
+        (e : F →L[ℂ] G).le_opNorm _
+    _ ≤ ‖(e : F →L[ℂ] G)‖ * (M * ‖e.symm (e (u z))‖) := by
+        gcongr
+        simpa using ((g - complexAntilinearPartL (fderiv ℝ u z)).le_opNorm 1).trans
+          (by simpa using hg)
+    _ ≤ ‖(e : F →L[ℂ] G)‖ * (M * (‖(e.symm : G →L[ℂ] F)‖ * ‖e (u z)‖)) := by
+        gcongr
+        exact (e.symm : G →L[ℂ] F).le_opNorm _
+    _ = ‖(e : F →L[ℂ] G)‖ * M * ‖(e.symm : G →L[ℂ] F)‖ * ‖e (u z)‖ := by ring
+
+variable [FiniteDimensional ℝ F]
+
+/-- **The interior `Lᵖ` estimate for `\bar∂` plus a zeroth-order term, with finite-dimensional
+values.** For `1 < p < ∞`, `U ⊆ ℂ` open, `K ⊆ U` compact and `M ≥ 0` there is a constant `C` such
+that every map `u` smooth on `U`, with values in a finite-dimensional complex normed space, and
+every field `g` of real-linear maps with `‖g - \bar∂u‖ ≤ M ‖u‖` on `U` satisfy
+`‖Du‖_{Lᵖ(K)} ≤ C (‖g‖_{Lᵖ(U)} + ‖u‖_{Lᵖ(U)})`. Here `\bar∂u` is the complex-antilinear part
+`complexAntilinearPartL (fderiv ℝ u z)` of the derivative, a `(0,1)`-form, and the real structure of
+the values is any one compatible with the complex structure. -/
+theorem exists_eLpNorm_fderiv_le_of_norm_sub_complexAntilinearPartL_le {p : ℝ≥0∞} (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {U K : Set ℂ} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U)
+    (M : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ (u : ℂ → F) (g : ℂ → ℂ →L[ℝ] F), ContDiffOn ℝ ∞ u U →
+      (∀ z ∈ U, ‖g z - complexAntilinearPartL (fderiv ℝ u z)‖ ≤ M * ‖u z‖) →
+      eLpNorm (fderiv ℝ u) p (volume.restrict K) ≤
+        C * (eLpNorm g p (volume.restrict U) + eLpNorm u p (volume.restrict U)) := by
+  have : FiniteDimensional ℂ F := Module.Finite.of_restrictScalars_finite ℝ ℂ F
+  let Eu := EuclideanSpace ℂ (Fin (Module.finrank ℂ F))
+  let e : F ≃L[ℂ] Eu := .ofFinrankEq (by simp [Eu])
+  set a : ℝ≥0 := ‖(e : F →L[ℂ] Eu)‖₊ + 1
+  set b : ℝ≥0 := ‖(e.symm : Eu →L[ℂ] F).restrictScalars ℝ‖₊ + 1
+  have ha (x : F) : ‖e x‖ₑ ≤ a * ‖x‖ₑ := by
+    simp only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
+    exact ((e : F →L[ℂ] Eu).le_opNNNorm x).trans (by gcongr; simp [a])
+  obtain ⟨δ, -, hδ⟩ := exists_eLpNorm_fderiv_le_of_norm_sub_conjWirtingerDeriv_le (F := Eu) hp
+    hp_top
+  obtain ⟨C, hC⟩ := hδ hU hK hKU (a * M * b)
+  refine ⟨b * (C + 1) * a, fun u g hu hg ↦ ?_⟩
+  -- A nonmeasurable `g` has infinite `Lᵖ` norm, and there is nothing to prove.
+  by_cases! hgm : ¬AEStronglyMeasurable g (volume.restrict U)
+  · rw [eLpNorm_of_not_aestronglyMeasurable hgm, top_add, ENNReal.mul_top (by positivity)]
+    exact le_top
+  have hCe := hC (fun y ↦ e (u y)) (fun z ↦ e (g z 1))
+    (((e : F →L[ℂ] Eu).restrictScalars ℝ).contDiff.comp_contDiffOn hu) fun z hz ↦
+      (norm_sub_conjWirtingerDeriv_comp_le e (hg z hz)).trans
+        (le_add_of_nonneg_of_le (by positivity) (by push_cast; gcongr <;> simp [a, b]))
+  have h₁ : eLpNorm (fderiv ℝ u) p (volume.restrict K) ≤
+      b * eLpNorm (fderiv ℝ fun y ↦ e (u y)) p (volume.restrict K) := by
+    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (measurable_fderiv ℝ u).aestronglyMeasurable
+      (.of_forall fun z ↦ ?_) p
+    -- The derivative of `u` is that of `e ∘ u` followed by the real-linear map underlying `e⁻¹`.
+    have hfe : fderiv ℝ u z = ((e.symm : Eu →L[ℂ] F).restrictScalars ℝ).comp
+        (fderiv ℝ (fun y ↦ e (u y)) z) := by
+      ext v
+      simpa [Function.comp_def] using
+        congr($((e.symm.restrictScalars' ℝ).comp_fderiv (f := fun y ↦ e (u y)) (x := z)) v)
+    simp only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe, hfe]
+    exact (ContinuousLinearMap.opNNNorm_comp_le _ _).trans (by gcongr; simp [b])
+  have h₂ : eLpNorm (fun z ↦ e (g z 1)) p (volume.restrict U) ≤
+      a * eLpNorm g p (volume.restrict U) :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul' ((e.continuous.comp
+      (ContinuousLinearMap.apply ℝ F (1 : ℂ)).continuous).comp_aestronglyMeasurable hgm)
+      (.of_forall fun z ↦ (ha _).trans (by gcongr; simpa using (g z).le_opENorm 1)) p
+  have h₃ : eLpNorm (fun z ↦ e (u z)) p (volume.restrict U) ≤
+      a * eLpNorm u p (volume.restrict U) :=
+    eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (e.continuous.comp_aestronglyMeasurable
+      (hu.continuousOn.aestronglyMeasurable hU.measurableSet)) (.of_forall fun z ↦ ha _) p
+  calc eLpNorm (fderiv ℝ u) p (volume.restrict K)
+      ≤ b * ((C + 1) * (a * eLpNorm g p (volume.restrict U) +
+          a * eLpNorm u p (volume.restrict U))) :=
+        h₁.trans (by gcongr; exact hCe.trans (by gcongr; exact_mod_cast le_self_add))
+    _ = ((b * (C + 1) * a : ℝ≥0) : ℝ≥0∞) *
+          (eLpNorm g p (volume.restrict U) + eLpNorm u p (volume.restrict U)) := by
+        push_cast
+        ring
+
+end CompatibleReal
 
 end TauCeti
