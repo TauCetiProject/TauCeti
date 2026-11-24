@@ -20,6 +20,11 @@ for real `r ≥ 0`, the negation laws `√(-z) = ∓i √z` on the open upper an
 the identification of the real square root of `x ≥ 0` with the complex half-power `x ^ (1 / 2)`,
 records that the real square root of a nonnegative real, cast to `ℂ`, squares back to it, and
 packages the principal square root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
+
+The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
+real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
+(`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
+these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
 -/
 
 public section
@@ -80,15 +85,15 @@ theorem sqrt_neg_of_im_pos {z : ℂ} (hz : 0 < z.im) : sqrt (-z) = -I * sqrt z :
   rw [sqrt_eq_real_add_ite, sqrt_eq_real_add_ite]
   simp only [norm_neg, neg_re, neg_im, sub_neg_eq_add, ← sub_eq_add_neg, hz.le, ↓reduceIte,
     not_le.mpr (neg_lt_zero.mpr hz)]
-  rw [mul_add, one_mul, mul_left_comm (-I) _ I, neg_mul I I, I_mul_I, neg_neg, mul_one]
-  ring
+  ring_nf
+  simp [I_sq]
 
 /-- In the open lower half-plane, negating rotates the principal square root by `i`:
 `√(-z) = i √z`. -/
 theorem sqrt_neg_of_im_neg {z : ℂ} (hz : z.im < 0) : sqrt (-z) = I * sqrt z := by
   have h := sqrt_neg_of_im_pos (z := -z) (by simpa)
   rw [neg_neg] at h
-  rw [h, ← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
+  linear_combination -I * h + sqrt (-z) * I_mul_I
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]
@@ -144,5 +149,23 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 /-- The unit principal square root of `z` squares to `z`. -/
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
+
+/-- The real square root of a positive real, cast to `ℂ`, is nonzero. -/
+theorem ofReal_sqrt_ne_zero {x : ℝ} (hx : 0 < x) : (√x : ℂ) ≠ 0 := by
+  exact_mod_cast (Real.sqrt_pos.mpr hx).ne'
+
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) ^ 2 = x`. -/
+theorem sq_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) ^ 2 = x := by
+  exact_mod_cast Real.sq_sqrt hx
+
+/-- The inverse of the real square root of a nonnegative real `x`, cast to `ℂ`, times itself is
+`x⁻¹`. -/
+theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * (√x : ℂ)⁻¹ = (x : ℂ)⁻¹ := by
+  rw [← mul_inv, mul_self_ofReal_sqrt hx]
+
+/-- The complex number `1 + i` is nonzero. -/
+theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
+  simpa using congrArg re h
 
 end Complex

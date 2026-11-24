@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.Matrix.Frobenius
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 
 /-!
@@ -31,7 +31,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 ## Main declarations
 
 * `CStarMatrix.normalizedTrace`: the normalized trace `tr_k`, with `tr_k(1) = 1` for `k ≠ 0`,
-  `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order.
+  `tr_k(xy) = tr_k(yx)` and monotonicity for the C⋆-order; `CStarMatrix.normalizedTrace_matrixUnit`
+  evaluates it on matrix units.
 * `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
   at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
@@ -143,6 +144,14 @@ theorem normalizedTrace_one [DecidableEq n] [Nonempty n] :
     normalizedTrace (1 : CStarMatrix n n ℂ) = 1 := by
   rw [normalizedTrace_def, ofMatrix_symm_one, Matrix.trace_one]
   exact inv_mul_cancel₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
+
+/-- The normalized trace of the matrix unit `e_ij` is `1/k` if `i = j` and `0` otherwise. -/
+@[simp]
+theorem normalizedTrace_matrixUnit [DecidableEq n] (i j : n) :
+    normalizedTrace (matrixUnit i j) = if i = j then (Fintype.card n : ℂ)⁻¹ else 0 := by
+  split_ifs with h
+  · simp [normalizedTrace_eq_sum, matrixUnit_apply, h]
+  · simp [normalizedTrace_eq_sum, matrixUnit_apply, Ne.symm h]
 
 /-- On matrices with an empty index type the normalized trace vanishes. -/
 @[simp]

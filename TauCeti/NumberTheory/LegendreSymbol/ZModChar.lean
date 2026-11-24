@@ -21,6 +21,7 @@ zeros of `χ₈`, and the classical supplement formulas `χ₄ a = (-1) ^ ((a - 
 ## Main statements
 
 * `ZMod.χ₄_neg`, `ZMod.χ₈_neg`: `χ₄` is odd and `χ₈` is even.
+* `ZMod.χ₄_natAbs`, `ZMod.χ₈_natAbs`: values of `χ₄` and `χ₈` on `b.natAbs` for `b : ℤ`.
 * `ZMod.χ₄_two_mul_add_one`: `χ₄ (2 v + 1) = (-1) ^ v`.
 * `ZMod.χ₄_natCast_eq_neg_of_dvd_add`, `ZMod.χ₈_natCast_eq_of_dvd_add`: the same statements for
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
@@ -43,6 +44,24 @@ theorem χ₄_neg (x : ZMod 4) : χ₄ (-x) = -χ₄ x := by
 theorem χ₈_neg (x : ZMod 8) : χ₈ (-x) = χ₈ x := by
   revert x
   decide
+
+/-- `χ₄ (b.natAbs)` agrees with `χ₄ b` up to the sign of `b`. -/
+theorem χ₄_natAbs (b : ℤ) : χ₄ (b.natAbs : ZMod 4) = (if b < 0 then -1 else 1) * χ₄ b := by
+  rcases lt_or_ge b 0 with hb | hb
+  · have h : (b.natAbs : ZMod 4) = -(b : ZMod 4) := by
+      rw [← Int.cast_natCast, show (b.natAbs : ℤ) = -b by omega, Int.cast_neg]
+    rw [ite_eq_left hb, neg_one_mul, h, χ₄_neg]
+  · have h : (b.natAbs : ZMod 4) = (b : ZMod 4) := by
+      rw [← Int.cast_natCast, show (b.natAbs : ℤ) = b by omega]
+    rw [ite_eq_right (not_lt.mpr hb), one_mul, h]
+
+/-- `χ₈` is even, so `χ₈ (b.natAbs) = χ₈ b` for every integer `b`. -/
+theorem χ₈_natAbs (b : ℤ) : χ₈ (b.natAbs : ZMod 8) = χ₈ b := by
+  rcases lt_or_ge b 0 with hb | hb
+  · have h : (b.natAbs : ZMod 8) = -(b : ZMod 8) := by
+      rw [← Int.cast_natCast, show (b.natAbs : ℤ) = -b by omega, Int.cast_neg]
+    rw [h, χ₈_neg]
+  · rw [← Int.cast_natCast, show (b.natAbs : ℤ) = b by omega]
 
 /-- If `4 ∣ b + b'`, then `χ₄ b' = -χ₄ b`, since `χ₄` is odd. -/
 theorem χ₄_natCast_eq_neg_of_dvd_add {b b' : ℕ} (h : 4 ∣ b + b') : χ₄ b' = -χ₄ b := by

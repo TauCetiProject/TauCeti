@@ -79,8 +79,8 @@ theorem exp_add_int_mul_pi_mul_I (z : ℂ) (k : ℤ) :
 @[simp]
 theorem neg_one_zpow_mul_exp_add_int_mul_pi_mul_I (z : ℂ) (k : ℤ) :
     (-1 : ℂ) ^ k * cexp (z + k * (π * I)) = cexp z := by
-  rw [exp_add_int_mul_pi_mul_I, ← mul_assoc, ← mul_zpow, neg_one_mul, neg_neg, one_zpow,
-    one_mul]
+  rw [exp_add_int_mul_pi_mul_I, ← mul_assoc, ← mul_zpow]
+  simp
 
 /-- `e(z + k) = e(z)` for `e(z) = exp (2 π i z)` and an integer `k`. -/
 @[simp]

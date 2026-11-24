@@ -126,6 +126,14 @@ lemma pullbackSectionsLE_map {U' : X.Opens} (i : U' ⟶ U) (hV' : V ≤ g ⁻¹�
     ← ConcreteCategory.comp_apply, ← Functor.map_comp]
   -- Both sides restrict along a morphism `V ⟶ g⁻¹ U`, and `congr` uses that there is only one.
   congr 2
+/-- Pullback to a smaller open is compatible with restriction in the source. -/
+lemma presheaf_map_pullbackSectionsLE {V' : Y.Opens} (i : V' ⟶ V) (s : Γ(M, U)) :
+    ((pullback g).obj M).presheaf.map i.op (pullbackSectionsLE g M U V hV s) =
+      pullbackSectionsLE g M U V' (i.le.trans hV) s := by
+  rw [pullbackSectionsLE_apply, pullbackSectionsLE_apply, ← ConcreteCategory.comp_apply,
+    ← Functor.map_comp]
+  -- Both sides restrict along a morphism `V' ⟶ g⁻¹ U`, and `congr` uses that there is only one.
+  congr 2
 /-- Pullback to the full inverse image agrees with the canonical section pullback. -/
 @[simp] lemma pullbackSectionsLE_self (s : Γ(M, U)) :
     pullbackSectionsLE g M U (g ⁻¹ᵁ U) le_rfl s = Scheme.Hom.pullbackSections g M U s := by

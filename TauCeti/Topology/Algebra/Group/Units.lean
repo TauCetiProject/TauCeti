@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
 
 /-!
-# Separation, neighbourhoods, σ-compactness and preconnected sets in a group of units
+# Separation, neighbourhoods, countability and preconnected sets in a group of units
 
 The units `Mˣ` of a topological monoid `M` carry the topology induced by `u ↦ (u, u⁻¹)`.  This
 file records consequences of that definition.
@@ -21,6 +21,8 @@ file records consequences of that definition.
   neighbourhood of `u` and `v⁻¹` in a prescribed neighbourhood of `u⁻¹`.
 * In a `T₁` monoid with continuous multiplication, `u ↦ (u, u⁻¹)` is a closed embedding, so the
   units of a σ-compact monoid are σ-compact.
+* Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
+  countable.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
@@ -31,6 +33,8 @@ file records consequences of that definition.
 * `Units.nhds_eq_comap_inf`: the neighbourhood filter of a unit.
 * `Units.mem_nhds_iff`: the resulting membership criterion for neighbourhoods of a unit.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
+* `Units.instSecondCountableTopology`: the units of a second-countable monoid are second
+  countable.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
 -/
@@ -81,6 +85,14 @@ instance instSigmaCompactSpace [T1Space M] [ContinuousMul M] [SigmaCompactSpace 
     SigmaCompactSpace Mˣ :=
   ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isClosedEmbedding.comp
     isClosedEmbedding_embedProduct |>.sigmaCompactSpace
+
+/-- **The units of a second-countable monoid are second countable.** The map `u ↦ (u, u⁻¹)` is an
+embedding of `Mˣ` into `M × Mᵐᵒᵖ`, which is homeomorphic to the second-countable space `M × M`. -/
+@[to_additive /-- The additive units of a second-countable additive monoid are second
+countable. -/]
+instance instSecondCountableTopology [SecondCountableTopology M] : SecondCountableTopology Mˣ :=
+  ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isEmbedding.comp
+    isEmbedding_embedProduct |>.secondCountableTopology
 
 end Units
 

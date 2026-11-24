@@ -162,6 +162,18 @@ def cohomologyOnPullback (M : X.Modules) (n : ℕ) (U : X.Opens) :
     ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
       ((toSheafPullbackComparison g).app M)).app (op (g ⁻¹ᵁ U))
 
+/-- Pullback over an open is the pullback of cohomology over the open `U` along the morphism of
+sites, followed by the comparison from abelian inverse image to module pullback. -/
+lemma cohomologyOnPullback_def (M : X.Modules) (n : ℕ) (U : X.Opens) :
+    g.cohomologyOnPullback M n U =
+      CategoryTheory.Sheaf.H'.pullback
+          ((Opens.map g.base).sheafPullback AddCommGrpCat.{u}
+            (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y))
+          ((Opens.map g.base).freeYonedaSheafToSheafPullback _ _) ((toSheaf X).obj M) n (𝟙 _) ≫
+        ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+          ((toSheafPullbackComparison g).app M)).app (op (g ⁻¹ᵁ U)) :=
+  (rfl)
+
 /-- Pullback over an open is abelian inverse image followed by the map from inverse image
 to the underlying sheaf of the module pullback. -/
 lemma cohomologyOnPullback_apply (M : X.Modules) (n : ℕ) (U : X.Opens)

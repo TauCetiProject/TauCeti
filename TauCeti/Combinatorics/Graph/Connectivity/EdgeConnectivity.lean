@@ -54,6 +54,8 @@ actual vertex set.
   reachability between actual vertices.
 * `Graph.edgeReachability_le_nonloopIncidenceCount`: local edge reachability between distinct
   vertices is bounded by the number of nonloop edges at the first vertex.
+* `Graph.edgeReachability_eq_top_iff`: with finitely many nonloop edges at the first endpoint,
+  local edge reachability is `⊤` exactly on the actual diagonal.
 * `Graph.edgeConnectivity_eq_top_iff`: when the actual edge set is finite, edge connectivity is
   `⊤` exactly when there is at most one actual vertex.
 * `Graph.edgeReachability_banana`, `Graph.edgeConnectivity_banana`: two distinct vertices joined by
@@ -395,6 +397,25 @@ theorem edgeReachability_le_nonloopIncidenceCount (hxy : x ≠ y)
     G.edgeReachability x y ≤ G.nonloopIncidenceCount x :=
   ENat.forall_natCast_le_iff_le.mp fun _ hk ↦ Nat.cast_le.mpr
     (((isEdgeReachable_iff_le_edgeReachability _).mpr hk).le_nonloopIncidenceCount hxy hfin)
+
+/-- When `x` has finitely many incident nonloop edges, its local edge reachability to `y` is `⊤`
+exactly when `x` and `y` are the same actual vertex. This is the multigraph counterpart of
+`SimpleGraph.edgeReachability_eq_top_iff`. The actual-vertex condition is needed because a
+multigraph's ambient vertex type may contain points outside its vertex set. -/
+@[simp]
+theorem edgeReachability_eq_top_iff
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
+    G.edgeReachability x y = ⊤ ↔ x = y ∧ x ∈ V(G) := by
+  constructor
+  · intro htop
+    have hreach : G.IsEdgeReachable 1 x y :=
+      (isEdgeReachable_iff_le_edgeReachability 1).mpr (by rw [htop]; exact le_top)
+    refine ⟨?_, (isEdgeReachable_one.mp hreach).left_mem⟩
+    by_contra hxy
+    exact ENat.natCast_ne_top (G.nonloopIncidenceCount x)
+      (top_le_iff.mp (htop ▸ G.edgeReachability_le_nonloopIncidenceCount hxy hfin))
+  · rintro ⟨rfl, hx⟩
+    exact G.edgeReachability_self hx
 
 /-- The edge connectivity of a multigraph with two distinct actual vertices is at most the number
 of nonloop edges at the first, provided it has finitely many nonloop incident edges. -/

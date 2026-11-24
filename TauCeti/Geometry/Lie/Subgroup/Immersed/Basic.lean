@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Immersion
 public import Mathlib.Topology.Connected.TotallyDisconnected
+import TauCeti.Geometry.Lie.Basic
 
 /-!
 # Immersed Lie subgroups
@@ -31,6 +32,9 @@ of left-invariant distributions.
 * `TauCeti.Lie.ImmersedLieSubgroupData`: a connected Lie group mapping injectively and immersively
   onto a specified subgroup, with a finite-dimensional source model.
 * `TauCeti.Lie.IsImmersedLieSubgroup`: existence of immersed-Lie-subgroup data.
+* `TauCeti.Lie.ImmersedLieSubgroupData.t2Space`: the source of a presentation is Hausdorff.
+* `TauCeti.Lie.ImmersedLieSubgroupData.coe_range_toHom`: the presenting homomorphism has range
+  `K` as a set.
 * `TauCeti.Lie.ImmersedLieSubgroupData.contMDiff_toHom`: the presenting homomorphism is smooth.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_mfderiv_toHom`: its differential is injective.
 * `TauCeti.Lie.ImmersedLieSubgroupData.eq_bot_of_isTotallyDisconnected` and
@@ -124,6 +128,15 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.modelTopology
   ImmersedLieSubgroupData.chartedSpace ImmersedLieSubgroupData.lieGroup
 
+/-- The source of an immersed subgroup presentation is Hausdorff, being a Lie group. -/
+instance t2Space (d : ImmersedLieSubgroupData I K) : T2Space d.X :=
+  d.I'.t2Space_of_lieGroup ∞
+
+/-- The homomorphism presenting an immersed Lie subgroup has range `K`, as a set. -/
+@[simp]
+theorem coe_range_toHom (d : ImmersedLieSubgroupData I K) : Set.range d.toHom = K := by
+  rw [← MonoidHom.coe_range, d.range_eq]
+
 /-- The homomorphism presenting an immersed Lie subgroup is smooth. -/
 theorem contMDiff_toHom (d : ImmersedLieSubgroupData I K) :
     ContMDiff d.I' I ∞ (d.toHom : d.X → G) :=
@@ -141,10 +154,8 @@ theorem eq_bot_of_isTotallyDisconnected {K : Subgroup G}
     (hK : IsTotallyDisconnected (K : Set G)) : K = ⊥ := by
   let _ : TopologicalSpace d.X := d.topologicalSpace
   let _ : ConnectedSpace d.X := d.connectedSpace
-  have hr : Set.range d.toHom = (K : Set G) := by
-    rw [← MonoidHom.coe_range, d.range_eq]
   have hp : IsPreconnected (K : Set G) := by
-    rw [← hr]
+    rw [← d.coe_range_toHom]
     exact isPreconnected_range d.contMDiff_toHom.continuous
   have hs : (K : Set G).Subsingleton := hK (K : Set G) (fun _ hx ↦ hx) hp
   rw [Subgroup.eq_bot_iff_forall]

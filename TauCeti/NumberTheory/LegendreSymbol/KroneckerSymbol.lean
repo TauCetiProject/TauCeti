@@ -312,6 +312,10 @@ theorem kroneckerSym_sq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym (a ^ 2)
   · simp [h1]
   · simp [h1]
 
+/-- `(a / b) ^ 2 = 1` when `a` and `b` are coprime: the symbol is then `±1`. -/
+theorem sq_kroneckerSym_eq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym a b ^ 2 = 1 := by
+  rw [← kroneckerSym_pow_left, kroneckerSym_sq_one h]
+
 /-- For a square integer `a` coprime to `b`, `(a / b) = 1`. -/
 theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd b = 1) :
     kroneckerSym a b = 1 := by
@@ -442,16 +446,12 @@ theorem kroneckerSym_mod_right {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMO
 factor `-1` cancels the oddness of `χ₄`. -/
 @[simp]
 theorem kroneckerSym_neg_one_left {b : ℤ} (hb : Odd b) : kroneckerSym (-1) b = χ₄ b := by
-  have hb0 : b ≠ 0 := by rintro rfl; exact Int.not_odd_zero hb
-  rw [kroneckerSym_of_odd (-1) hb, jacobiSym.at_neg_one (Int.natAbs_odd.mpr hb)]
-  rcases Int.natAbs_eq b with h | h
-  · rw [ite_eq_right (by omega), one_mul]
-    conv_rhs => rw [h]
-    rw [Int.cast_natCast]
-  · have hbneg : b < 0 := by have := Int.natAbs_pos.mpr hb0; omega
-    rw [ite_eq_left ⟨by norm_num, hbneg⟩, neg_one_mul]
-    conv_rhs => rw [h]
-    rw [Int.cast_neg, Int.cast_natCast, χ₄_neg]
+  rw [kroneckerSym_of_odd (-1) hb, jacobiSym.at_neg_one (Int.natAbs_odd.mpr hb), χ₄_natAbs b]
+  rcases lt_or_ge b 0 with hb0 | hb0
+  · rw [ite_eq_left ⟨by norm_num, hb0⟩, ite_eq_left hb0]
+    simp
+  · rw [ite_eq_right (by omega), ite_eq_right (not_lt.mpr hb0)]
+    simp
 
 /-- `(2 / b) = χ₈ b` for every integer `b`: both sides vanish when `b` is even, and when `b` is
 odd the second supplement gives `J(2 | |b|) = χ₈ |b| = χ₈ b`. -/
@@ -459,12 +459,7 @@ odd the second supplement gives `J(2 | |b|) = χ₈ |b| = χ₈ b`. -/
 theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
   by_cases hb : Odd b
   · rw [kroneckerSym_of_odd 2 hb, ite_eq_right (by norm_num), one_mul,
-      jacobiSym.at_two (Int.natAbs_odd.mpr hb)]
-    rcases Int.natAbs_eq b with h | h
-    · conv_rhs => rw [h]
-      rw [Int.cast_natCast]
-    · conv_rhs => rw [h]
-      rw [Int.cast_neg, Int.cast_natCast, χ₈_neg]
+      jacobiSym.at_two (Int.natAbs_odd.mpr hb), χ₈_natAbs]
   · have h2 : (2 : ℤ) ∣ b := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hb)
     rw [kroneckerSym_eq_zero_of_two_dvd dvd_rfl h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
 
@@ -589,10 +584,7 @@ theorem kroneckerSym_add_self_right_of_emod_four_eq_two {c : ℤ} (hc : c % 4 = 
     have hD_mod : D ≡ 1 [ZMOD 4] := int_mul_χ₄_modEq_one hm_odd
     have hD_ne : D ≠ 0 := mul_ne_zero hm_ne hs_ne
     have hc_split : c = (2 * s) * D := by
-      calc
-        c = 2 * m * 1 := by rw [hc_eq, mul_one]
-        _ = 2 * m * (s * s) := by rw [hs_sq]
-        _ = (2 * s) * (m * s) := by ring
+      linear_combination hc_eq - 2 * m * hs_sq
     have hD_period : kroneckerSym D (d + c) = kroneckerSym D d := by
       refine kroneckerSym_mod_right' (.inr hD_mod) ?_
       rw [hc_split, Int.add_mul_emod_self_right]
