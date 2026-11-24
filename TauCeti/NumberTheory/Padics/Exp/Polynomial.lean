@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.Padics.IntegerGrid
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Interpolation
-import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.NumberTheory.Padics.Exp.Disc
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -166,7 +165,7 @@ variable {κ : Type*} {t : Finset κ} {α : κ → K}
 
 omit [Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
 /-- A unit with `‖y - 1‖ c < p ^ (-1 / (p - 1))` for a radius `c ≥ 1` lies in the disc about `1`
-on which the logarithm inverts the exponential. -/
+on which the exponential inverts the logarithm, `exp (log y) = y`. -/
 private theorem norm_sub_one_lt_amiceRadius_zero (hc : 1 ≤ c) {y : K}
     (hy : ‖y - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) : ‖y - 1‖ < amiceRadius p 0 := by
   rw [amiceRadius_def]
@@ -177,29 +176,30 @@ satisfies the same radius condition. -/
 private theorem norm_sum_intCast_mul_log_mul_lt (hc : 1 ≤ c)
     (hα : ∀ j ∈ t, ‖α j - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (l : κ → ℤ) :
     ‖∑ j ∈ t, (l j : K) * NormedSpace.log (α j)‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
-  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
-  rcases t.eq_empty_or_nonempty with rfl | hne
-  · simpa using Real.rpow_pos_of_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _
-  obtain ⟨j, hj, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne
-    fun j ↦ (l j : K) * NormedSpace.log (α j)
-  have hα1 := norm_sub_one_lt_amiceRadius_zero hc (hα j hj)
-  refine (mul_le_mul_of_nonneg_right (hle.trans ?_) (zero_le_one.trans hc)).trans_lt (hα j hj)
-  rw [norm_mul, ← norm_log_of_norm_sub_one_lt hα1]
-  exact mul_le_of_le_one_left (norm_nonneg _) (IsUltrametricDist.norm_intCast_le_one K _)
+  have hc0 : 0 < c := zero_lt_one.trans_le hc
+  have hP : 0 < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) :=
+    Real.rpow_pos_of_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _
+  rw [← lt_div_iff₀ hc0]
+  refine norm_sum_intCast_mul_log_lt (p := p) (div_pos hP hc0) ?_
+    (fun j hj ↦ (lt_div_iff₀ hc0).mpr (hα j hj)) l
+  rw [amiceRadius_def]
+  simpa using div_le_self hP.le hc
 
 /-- At an integer `b`, the exponential of `b` times the frequency `∑ⱼ lⱼ log αⱼ` is the
 product of integer powers `∏ⱼ αⱼ ^ (lⱼ b)`. -/
-private theorem exp_mul_sum_intCast_mul_log_eq_prod_zpow (hc : 1 ≤ c)
-    (hα : ∀ j ∈ t, ‖α j - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (l : κ → ℤ) (b : ℤ) :
+private theorem exp_intCast_mul_sum_intCast_mul_log
+    (hα : ∀ j ∈ t, ‖α j - 1‖ < amiceRadius p 0) (l : κ → ℤ) (b : ℤ) :
     NormedSpace.exp ((b : K) * ∑ j ∈ t, (l j : K) * NormedSpace.log (α j)) =
-      ∏ j ∈ t, α j ^ (l j * b) :=
-  exp_intCast_mul_sum_intCast_mul_log t
-    (fun j hj ↦ norm_sub_one_lt_amiceRadius_zero hc (hα j hj)) l b
+      ∏ j ∈ t, α j ^ (l j * b) := by
+  rw [← t.exp_sum_intCast_mul_log hα, mul_sum]
+  refine congrArg _ (sum_congr rfl fun j _ ↦ ?_)
+  push_cast
+  ring
 
 /-- **Interpolation of sums of products of unit powers on a finite set of integers.** Let `K` be
 a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius and `αⱼ` (`j ∈ t`) units with
-`‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))`. For a finite set `Λ` of integer exponent vectors and
-coefficients with `‖a_l‖ ≤ A`, put `x_l = ∑ⱼ lⱼ log αⱼ`. If
+`‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))`. For a finite set `Λ` of integer exponent vectors, `A ≥ 0`
+and coefficients with `‖a_l‖ ≤ A`, put `x_l = ∑ⱼ lⱼ log αⱼ`. If
 
 ```text
 ∑_l a_l x_l ^ τ ∏ⱼ αⱼ ^ (lⱼ b) = 0
@@ -224,24 +224,25 @@ theorem norm_sum_mul_prod_zpow_le_mul_norm_prod (hc : 1 ≤ c)
         ∏ j ∈ t, α j ^ (l j * z)‖ ≤
       c⁻¹ ^ k * A * (‖((∏ b ∈ g, (z - b) : ℤ) : ℤ_[p])‖ / c ^ g.card) ^ (T - k) := by
   classical
-  have hcast (b : ℤ) : algebraMap ℚ_[p] K ((b : ℤ_[p]) : ℚ_[p]) = (b : K) := by simp
+  have hα₀ (j : κ) (hj : j ∈ t) := norm_sub_one_lt_amiceRadius_zero hc (hα j hj)
   have hinj : Function.Injective (Int.cast : ℤ → ℤ_[p]) := Int.cast_injective
   have h := norm_sum_mul_exp_le_mul_norm_prod hc
     (fun l _ ↦ norm_sum_intCast_mul_log_mul_lt hc hα l) hA ha
     (g := g.image (Int.cast : ℤ → ℤ_[p])) (T := T)
     (forall_mem_image.mpr fun b hb τ hτ ↦ by
-      simpa only [hcast, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα] using hzero b hb τ hτ)
+      simpa only [PadicInt.coe_intCast, map_intCast, exp_intCast_mul_sum_intCast_mul_log hα₀]
+        using hzero b hb τ hτ)
     k z
-  simp only [hcast, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα] at h
+  simp only [PadicInt.coe_intCast, map_intCast, exp_intCast_mul_sum_intCast_mul_log hα₀] at h
   rw [prod_image hinj.injOn, card_image_of_injective _ hinj] at h
   push_cast
   exact h
 
 /-- **Interpolation of sums of products of unit powers on the integers not divisible by `q`.**
 Let `K` be a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius and `αⱼ` (`j ∈ t`)
-units with `‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))`. For a finite set `Λ` of integer exponent vectors
-and coefficients with `‖a_l‖ ≤ A`, put `x_l = ∑ⱼ lⱼ log αⱼ`, and let `q` be a positive integer
-prime to `p`. If `∑_l a_l x_l ^ τ ∏ⱼ αⱼ ^ (lⱼ b) = 0` for every `τ < T` and every integer
+units with `‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))`. For a finite set `Λ` of integer exponent vectors,
+`A ≥ 0` and coefficients with `‖a_l‖ ≤ A`, put `x_l = ∑ⱼ lⱼ log αⱼ`, and let `q` be a positive
+integer prime to `p`. If `∑_l a_l x_l ^ τ ∏ⱼ αⱼ ^ (lⱼ b) = 0` for every `τ < T` and every integer
 `0 ≤ b < N` not divisible by `q`, a grid of `S` points, then for every `k` and every integer `z`
 
 ```text
@@ -260,14 +261,15 @@ theorem norm_sum_mul_prod_zpow_le_mul_norm_factorial_pow (hc : 1 ≤ c)
         ∏ j ∈ t, α j ^ (l j * z)‖ ≤
       c⁻¹ ^ k * A *
         (‖((N / q)! : ℤ_[p])‖ ^ (q - 1) / c ^ ((range N).filter (¬q ∣ ·)).card) ^ (T - k) := by
-  have hcast : algebraMap ℚ_[p] K ((z : ℤ_[p]) : ℚ_[p]) = (z : K) := by simp
+  have hα₀ (j : κ) (hj : j ∈ t) := norm_sub_one_lt_amiceRadius_zero hc (hα j hj)
   have h := norm_sum_mul_exp_le_mul_norm_factorial_pow hc
     (fun l _ ↦ norm_sum_intCast_mul_log_mul_lt hc hα l) hA ha hq (N := N) (T := T)
     (fun b hb hqb τ hτ ↦ by
-      simpa only [← Int.cast_natCast (R := K) b, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα]
+      simpa only [← Int.cast_natCast (R := K) b, exp_intCast_mul_sum_intCast_mul_log hα₀]
         using hzero b hb hqb τ hτ)
     k z
-  simpa only [hcast, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα] using h
+  simpa only [PadicInt.coe_intCast, map_intCast, exp_intCast_mul_sum_intCast_mul_log hα₀]
+    using h
 
 end UnitPowers
 

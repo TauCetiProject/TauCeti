@@ -67,8 +67,9 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 * `TauCeti.log_exp_of_norm_lt`, `TauCeti.exp_log_of_norm_sub_one_lt`: the exponential and the
   logarithm are inverse.
 * `TauCeti.injOn_exp_ball`: the exponential is injective on the disc.
-* `TauCeti.exp_intCast_mul_sum_intCast_mul_log`: for units `αⱼ` in the disc about `1` and
-  integers `lⱼ`, `b`, `exp (b ∑ⱼ lⱼ log αⱼ) = ∏ⱼ αⱼ ^ (lⱼ b)`.
+* `TauCeti.norm_sum_intCast_mul_log_lt`, `Finset.exp_sum_intCast_mul_log`: for units `αⱼ` in
+  the disc about `1` and integers `nⱼ`, `∑ⱼ nⱼ log αⱼ` lies in the disc and
+  `exp (∑ⱼ nⱼ log αⱼ) = ∏ⱼ αⱼ ^ nⱼ`.
 
 ## References
 
@@ -330,27 +331,34 @@ theorem exp_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 0) 
     norm_coeff_exp_sub_one_mul_le norm_coeff_log_mul_le hy (hasSum_coeff_log_mul_pow hy)
     (hasSum_coeff_exp_sub_one_mul_pow hl)
 
+/-- **Integer combinations of logarithms stay in the disc.** If `0 < r ≤ r₀` and
+`‖αⱼ - 1‖ < r` for every `j ∈ s`, then `‖∑ⱼ nⱼ log αⱼ‖ < r` for all integers `nⱼ`. -/
+theorem norm_sum_intCast_mul_log_lt {ι : Type*} {s : Finset ι} {α : ι → L} {r : ℝ}
+    (hr : 0 < r) (hr₀ : r ≤ amiceRadius p 0) (hα : ∀ j ∈ s, ‖α j - 1‖ < r) (n : ι → ℤ) :
+    ‖∑ j ∈ s, (n j : L) * log (α j)‖ < r := by
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · simpa using hr
+  obtain ⟨j, hj, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne
+    fun j ↦ (n j : L) * log (α j)
+  rw [← zsmul_eq_mul] at hle
+  refine (hle.trans (IsUltrametricDist.norm_zsmul_le _ _)).trans_lt ?_
+  rw [norm_log_of_norm_sub_one_lt ((hα j hj).trans_le hr₀)]
+  exact hα j hj
+
 /-- **Integer combinations of logarithms of units near `1`.** If `‖αⱼ - 1‖ < r₀` for every
-`j ∈ s`, then for integers `lⱼ` and `b`, `exp (b ∑ⱼ lⱼ log αⱼ) = ∏ⱼ αⱼ ^ (lⱼ b)`. Thus the
-exponential sums `∑ₗ aₗ exp (z ∑ⱼ lⱼ log αⱼ)` take the values `∑ₗ aₗ ∏ⱼ αⱼ ^ (lⱼ b)` at
-integers `b`. -/
-theorem exp_intCast_mul_sum_intCast_mul_log {ι : Type*} (s : Finset ι) {α : ι → L}
-    (hα : ∀ j ∈ s, ‖α j - 1‖ < amiceRadius p 0) (l : ι → ℤ) (b : ℤ) :
-    exp ((b : L) * ∑ j ∈ s, (l j : L) * log (α j)) = ∏ j ∈ s, α j ^ (l j * b) := by
+`j ∈ s`, then `exp (∑ⱼ nⱼ log αⱼ) = ∏ⱼ αⱼ ^ nⱼ` for all integers `nⱼ`. -/
+theorem _root_.Finset.exp_sum_intCast_mul_log {ι : Type*} (s : Finset ι) {α : ι → L}
+    (hα : ∀ j ∈ s, ‖α j - 1‖ < amiceRadius p 0) (n : ι → ℤ) :
+    exp (∑ j ∈ s, (n j : L) * log (α j)) = ∏ j ∈ s, α j ^ n j := by
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
   have hlog (j : ι) (hj : j ∈ s) : ‖log (α j)‖ < amiceRadius p 0 :=
     (norm_log_of_norm_sub_one_lt (hα j hj)).trans_lt (hα j hj)
-  have hterm (j : ι) (_ : j ∈ s) :
-      (b : L) * ((l j : L) * log (α j)) = (l j * b) • log (α j) := by
-    rw [zsmul_eq_mul]
-    push_cast
-    ring
-  rw [Finset.mul_sum, Finset.sum_congr rfl hterm, exp_sum_of_norm_lt (p := p) s fun j hj ↦ ?_]
-  · refine Finset.prod_congr rfl fun j hj ↦ ?_
-    rw [exp_zsmul_of_norm_lt _ (hlog j hj), exp_log_of_norm_sub_one_lt (hα j hj)]
-  · rw [zsmul_eq_mul, norm_mul]
-    exact (mul_le_of_le_one_left (norm_nonneg _)
-      (IsUltrametricDist.norm_intCast_le_one L _)).trans_lt (hlog j hj)
+  simp_rw [← zsmul_eq_mul]
+  rw [exp_sum_of_norm_lt (p := p) s fun j hj ↦
+    (IsUltrametricDist.norm_zsmul_le _ _).trans_lt (hlog j hj)]
+  refine Finset.prod_congr rfl fun j hj ↦ ?_
+  rw [exp_zsmul_of_norm_lt _ (hlog j hj), exp_log_of_norm_sub_one_lt (hα j hj)]
 
 /-- **The `p`-adic exponential is injective on its disc** `‖x‖ < r₀`: the logarithm is a left
 inverse there. -/
