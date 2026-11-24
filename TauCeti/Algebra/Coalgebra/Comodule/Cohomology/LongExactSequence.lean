@@ -44,9 +44,9 @@ sequence API follows Mathlib's group-cohomology version,
 
 ## Main results
 
-* `TauCeti.Comodule.Cohomology.exact_cochainsMap`,
-  `TauCeti.Comodule.Cohomology.surjective_cochainsMap`,
-  `TauCeti.Comodule.Cohomology.injective_cochainsMap`: degreewise exactness of the cochain maps.
+* `TauCeti.Comodule.Cohomology.cochainsMap_exact`,
+  `TauCeti.Comodule.Cohomology.cochainsMap_surjective`,
+  `TauCeti.Comodule.Cohomology.cochainsMap_injective`: degreewise exactness of the cochain maps.
 * `TauCeti.Comodule.Cohomology.map_cochainComplexFunctor_shortExact`: a short exact sequence of
   comodules gives a short exact sequence of Hochschild complexes.
 * `TauCeti.Comodule.Cohomology.mapShortComplex₁_exact`,
@@ -84,14 +84,14 @@ variable {M₁ M₂ M₃ : Type v} [AddCommGroup M₁] [Module R M₁] [Comodule
   [AddCommGroup M₃] [Module R M₃] [Comodule R H M₃]
 
 /-- A surjective comodule morphism induces surjections on Hochschild cochains. -/
-theorem surjective_cochainsMap {g : Hom R H M₂ M₃} (hg : Function.Surjective g) (n : ℕ) :
+theorem cochainsMap_surjective {g : Hom R H M₂ M₃} (hg : Function.Surjective g) (n : ℕ) :
     Function.Surjective (cochainsMap g n) := by
   induction n with
   | zero => rw [cochainsMap_zero]; exact hg
   | succ n ih => rw [cochainsMap_succ]; exact LinearMap.rTensor_surjective H ih
 
 /-- An injective comodule morphism induces injections on Hochschild cochains, when `H` is flat. -/
-theorem injective_cochainsMap [Module.Flat R H] {f : Hom R H M₁ M₂}
+theorem cochainsMap_injective [Module.Flat R H] {f : Hom R H M₁ M₂}
     (hf : Function.Injective f) (n : ℕ) : Function.Injective (cochainsMap f n) := by
   induction n with
   | zero => rw [cochainsMap_zero]; exact hf
@@ -99,16 +99,17 @@ theorem injective_cochainsMap [Module.Flat R H] {f : Hom R H M₁ M₂}
 
 /-- A sequence `M₁ → M₂ → M₃ → 0` of comodules that is exact at `M₂` stays exact at
 `M₂ ⊗ H^⊗n` after passing to Hochschild cochains. -/
-theorem exact_cochainsMap {f : Hom R H M₁ M₂} {g : Hom R H M₂ M₃} (hfg : Function.Exact f g)
+theorem cochainsMap_exact {f : Hom R H M₁ M₂} {g : Hom R H M₂ M₃} (hfg : Function.Exact f g)
     (hg : Function.Surjective g) (n : ℕ) :
     Function.Exact (cochainsMap f n) (cochainsMap g n) := by
   induction n with
   | zero => rw [cochainsMap_zero, cochainsMap_zero]; exact hfg
   | succ n ih =>
     rw [cochainsMap_succ, cochainsMap_succ]
-    exact rTensor_exact H ih (surjective_cochainsMap hg n)
+    exact rTensor_exact H ih (cochainsMap_surjective hg n)
 
 /-- The map induced on cochains by a sum of comodule morphisms is the sum of the induced maps. -/
+@[simp]
 theorem cochainsMap_add (f f' : Hom R H M₁ M₂) (n : ℕ) :
     cochainsMap (f + f') n = cochainsMap f n + cochainsMap f' n := by
   induction n with
@@ -120,6 +121,7 @@ theorem cochainsMap_add (f f' : Hom R H M₁ M₂) (n : ℕ) :
 
 /-- The cochain map induced by a sum of comodule morphisms is the sum of the induced cochain
 maps. -/
+@[simp]
 theorem cochainComplexMap_add (f f' : Hom R H M₁ M₂) :
     cochainComplexMap (f + f') = cochainComplexMap f + cochainComplexMap f' := by
   ext n : 1
@@ -128,6 +130,25 @@ theorem cochainComplexMap_add (f f' : Hom R H M₁ M₂) :
   -- As in `cochainComplexMap_id`, the objects are the modules `ModuleCat.of R (cochains _ n)` only
   -- by unfolding `CochainComplex.of` (`cochainComplex_X`).
   exact ModuleCat.ofHom_add _ _
+
+/-- For an injective comodule morphism `f : M₁ → M₂` over a flat `H`, an `(i + 1)`-cochain `x` of
+`M₁` whose image in `M₂` is the differential of an `i`-cochain is a cocycle. -/
+theorem d_eq_zero_of_cochainsMap_eq_d [Module.Flat R H] {f : Hom R H M₁ M₂}
+    (hf : Function.Injective f) {i : ℕ} {y : cochains R H M₂ i} {x : cochains R H M₁ (i + 1)}
+    (hx : cochainsMap f (i + 1) x = d R H M₂ i y) :
+    d R H M₁ (i + 1) x = 0 := by
+  apply cochainsMap_injective hf (i + 2)
+  have h := LinearMap.congr_fun (d_comp_cochainsMap f (i + 1)) x
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, hx, d_d] at h
+  rw [map_zero]
+  exact h.symm
+
+/-- In degree zero, the image of `x ∈ M₁ ⊗ H` is the differential of `y ∈ M₂` exactly when
+`(f ⊗ id) x = ρ(y) - y ⊗ 1`. -/
+theorem cochainsMap_one_eq_d_zero_iff {f : Hom R H M₁ M₂} {x : M₁ ⊗[R] H} {y : M₂} :
+    cochainsMap f 1 x = d R H M₂ 0 y ↔
+      f.toLinearMap.rTensor H x = Comodule.coact (R := R) (C := H) y - y ⊗ₜ[R] 1 := by
+  rw [d_zero_apply, cochainsMap_succ, cochainsMap_zero]
 
 end Degreewise
 
@@ -189,20 +210,15 @@ include hX
 Hochschild complexes. -/
 theorem map_cochainComplexFunctor_shortExact :
     (X.map (cochainComplexFunctor R H)).ShortExact := by
-  -- The forgetful functor to modules is exact, so the underlying maps form a short exact
-  -- sequence of modules.
-  have hY := hX.map_of_exact (forget₂ (ComoduleCat.{u, v, v} R H) (ModuleCat.{v} R))
-  have hfg : Function.Exact X.f X.g :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hY.exact
-  have hf : Function.Injective X.f := hY.moduleCat_injective_f
-  have hg : Function.Surjective X.g := hY.moduleCat_surjective_g
+  have hfg : Function.Exact X.f X.g := X.comoduleCat_exact_iff_function_exact.1 hX.exact
+  have hg : Function.Surjective X.g := hX.comoduleCat_surjective_g
   refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
     ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_ <;>
   dsimp only [ShortComplex.map_f, ShortComplex.map_g, HomologicalComplex.eval_map] <;>
   simp only [hom_cochainComplexFunctor_map_f]
-  · exact exact_cochainsMap hfg hg n
-  · exact injective_cochainsMap hf n
-  · exact surjective_cochainsMap hg n
+  · exact cochainsMap_exact hfg hg n
+  · exact cochainsMap_injective hX.comoduleCat_injective_f n
+  · exact cochainsMap_surjective hg n
 
 open HomologicalComplex.HomologySequence
 
@@ -283,19 +299,6 @@ variable [Module.Flat R H] {X : ShortComplex (ComoduleCat.{u, v, v} R H)} (hX : 
 
 include hX
 
-/-- An `(i + 1)`-cochain `x` of `M₁` whose image in `M₂` is the differential of an `i`-cochain is
-a cocycle. -/
-theorem d_eq_zero_of_cochainsMap_eq_d {i : ℕ} {y : cochains R H X.X₂ i}
-    {x : cochains R H X.X₁ (i + 1)} (hx : cochainsMap X.f (i + 1) x = d R H X.X₂ i y) :
-    d R H X.X₁ (i + 1) x = 0 := by
-  have hf : Function.Injective (X.f : Hom R H X.X₁ X.X₂) := (hX.map_of_exact
-    (forget₂ (ComoduleCat.{u, v, v} R H) (ModuleCat.{v} R))).moduleCat_injective_f
-  apply injective_cochainsMap hf (i + 2)
-  have h := LinearMap.congr_fun (d_comp_cochainsMap X.f (i + 1)) x
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, hx, d_d] at h
-  rw [map_zero]
-  exact h.symm
-
 /-- The connecting map on cocycles. Let `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` be a short exact sequence of
 comodules, `z` an `i`-cocycle of `M₃`, `y` an `i`-cochain of `M₂` lifting `z`, and `x` an
 `(i + 1)`-cochain of `M₁` whose image is the differential of `y`. Then `x` is a cocycle, and the
@@ -305,8 +308,13 @@ theorem δ_apply {i : ℕ} (z : cochains R H X.X₃ i) (hz : d R H X.X₃ i z = 
     (x : cochains R H X.X₁ (i + 1)) (hx : cochainsMap X.f (i + 1) x = d R H X.X₂ i y) :
     (δ hX i (i + 1) rfl).hom (((cochainComplex R H X.X₃).homologyπ i).hom (cocyclesMk z hz)) =
       ((cochainComplex R H X.X₁).homologyπ (i + 1)).hom
-        (cocyclesMk x (d_eq_zero_of_cochainsMap_eq_d hX hx)) := by
+        (cocyclesMk x (d_eq_zero_of_cochainsMap_eq_d hX.comoduleCat_injective_f hx)) := by
   rw [cocyclesMk_eq_cyclesMk, cocyclesMk_eq_cyclesMk]
+  -- Mathlib's `ShortExact.δ_apply` is stated through `forget₂ (ModuleCat R) Ab`. On `ModuleCat`,
+  -- `(forget₂ _ Ab).map f` is `AddCommGrpCat.ofHom f.hom` by definition (`ModuleCat.forget₂_map`),
+  -- so its conclusion and side conditions agree with the `.hom` forms here up to that unfolding.
+  -- Rewriting with `ModuleCat.forget₂_map` instead fails, since the cycles in the statement depend
+  -- on the rewritten maps.
   exact (map_cochainComplexFunctor_shortExact hX).δ_apply i (i + 1) rfl z _ y
     (by
       simp only [ShortComplex.map_X₃, ModuleCat.forget₂_obj, ShortComplex.map_X₂,
@@ -328,11 +336,10 @@ theorem δ_zero_apply (z : fixedSubcomodule R H X.X₃) (y : X.X₂) (hy : X.g y
     (δ hX 0 1 rfl).hom ((cohomologyZeroIso R H X.X₃).inv.hom z) =
       ((cochainComplex R H X.X₁).homologyπ 1).hom
         (cocyclesMk (n := 1) x (d_eq_zero_of_cochainsMap_eq_d (i := 0)
-          (y := (y : cochains R H X.X₂ 0)) hX
-          (by rw [d_zero_apply, cochainsMap_succ, cochainsMap_zero]; exact hx))) := by
+          hX.comoduleCat_injective_f (cochainsMap_one_eq_d_zero_iff.2 hx))) := by
   rw [← homologyπ_cocyclesMk_zero]
   exact δ_apply hX (i := 0) _ _ y (by rw [cochainsMap_zero]; exact hy) x
-    (by rw [d_zero_apply, cochainsMap_succ, cochainsMap_zero]; exact hx)
+    (cochainsMap_one_eq_d_zero_iff.2 hx)
 
 /-- An invariant vector of `M₃` lifts to an invariant vector of `M₂` exactly when its image under
 the connecting map `H⁰(H, M₃) ⟶ H¹(H, M₁)` vanishes. -/

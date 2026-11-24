@@ -404,6 +404,12 @@ section Cocycles
 
 variable {R H M}
 
+/-- An invariant vector has zero Hochschild differential. -/
+theorem d_zero_eq_zero_of_mem_fixedSubcomodule {m : M} (hm : m ∈ fixedSubcomodule R H M) :
+    d R H M 0 m = 0 := by
+  rw [← LinearMap.mem_ker, ker_d_zero]
+  exact hm
+
 /-- An `n`-cochain whose differential vanishes, as an `n`-cocycle of the Hochschild complex. -/
 noncomputable def cocyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 0) :
     (cochainComplex R H M).cycles n :=
@@ -429,11 +435,10 @@ theorem iCycles_cocyclesMk {n : ℕ} (x : cochains R H M n) (hx : d R H M n x = 
 `cohomologyZeroIso`. -/
 theorem homologyπ_cocyclesMk_zero (m : fixedSubcomodule R H M) :
     ((cochainComplex R H M).homologyπ 0).hom
-        (cocyclesMk (n := 0) (m : M) (by rw [← LinearMap.mem_ker, ker_d_zero]; exact m.property)) =
+        (cocyclesMk (n := 0) (m : M) (d_zero_eq_zero_of_mem_fixedSubcomodule m.property)) =
       (cohomologyZeroIso R H M).inv.hom m := by
   have h : (cohomologyZeroIso R H M).hom.hom (((cochainComplex R H M).homologyπ 0).hom
-      (cocyclesMk (n := 0) (m : M)
-        (by rw [← LinearMap.mem_ker, ker_d_zero]; exact m.property))) = m :=
+      (cocyclesMk (n := 0) (m : M) (d_zero_eq_zero_of_mem_fixedSubcomodule m.property))) = m :=
     Subtype.ext ((coe_cohomologyZeroIso_hom_homologyπ R H M _).trans (iCycles_cocyclesMk _ _))
   conv_rhs => rw [← h]
   exact ((cohomologyZeroIso R H M).hom_inv_id_apply _).symm
