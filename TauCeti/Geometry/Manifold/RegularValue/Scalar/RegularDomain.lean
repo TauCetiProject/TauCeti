@@ -85,7 +85,7 @@ theorem IsRegularValue.interior_setOfPred_le (hreg : IsRegularValue I 𝓘(ℝ) 
       (isOpen_lt hf continuous_const))
   refine (mem_ofPred.1 (interior_subset hx)).lt_of_ne fun hxc ↦ ?_
   refine isRegularPoint_iff_notMem_criticalPoints.1 (hreg.isRegularPoint hxc)
-    (IsLocalMax.mem_criticalPoints ?_)
+    (IsLocalMax.mem_criticalPoints ?_ BoundarylessManifold.isInteriorPoint)
   filter_upwards [mem_interior_iff_mem_nhds.1 hx] with y (hy : f y ≤ c)
   exact hy.trans hxc.ge
 
@@ -100,7 +100,7 @@ theorem IsRegularValue.closure_setOfPred_lt (hreg : IsRegularValue I 𝓘(ℝ) f
   by_contra hcl
   rw [mem_closure_iff_frequently, not_frequently] at hcl
   refine isRegularPoint_iff_notMem_criticalPoints.1 (hreg.isRegularPoint hxc)
-    (IsLocalMin.mem_criticalPoints ?_)
+    (IsLocalMin.mem_criticalPoints ?_ BoundarylessManifold.isInteriorPoint)
   filter_upwards [hcl] with y (hy : ¬ f y < c)
   exact hxc.trans_le (not_lt.1 hy)
 

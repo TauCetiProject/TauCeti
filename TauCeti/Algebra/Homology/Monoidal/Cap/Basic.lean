@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Cochain

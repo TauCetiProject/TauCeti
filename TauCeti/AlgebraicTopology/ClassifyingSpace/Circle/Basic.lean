@@ -166,7 +166,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace
     classifyingSpaceFirstHomologyAddEquiv (Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom circleToClassifyingSpace)) 1).hom
-          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1
+          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1 (.refl ℤ)
             (Additive.ofMul (Group.Abelianization.of γ)))) =
       Additive.ofMul (Group.Abelianization.of (Circle.fundamentalGroupMulEquiv 1 γ)) := by
   rw [homologyMap_hurewiczHomologyAddEquiv_mapOfEq _ circleToClassifyingSpace_one, toMul_ofMul,
@@ -186,7 +186,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyi
     classifyingSpaceFirstHomologyAddEquivGroupHomology (Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom circleToClassifyingSpace)) 1).hom
-          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1
+          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1 (.refl ℤ)
             (Additive.ofMul (Group.Abelianization.of γ)))) =
       groupHomology.H1π (Rep.trivial ℤ (Multiplicative ℤ) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (Multiplicative ℤ) ℤ)).inv
@@ -208,7 +208,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyi
     classifyingSpaceFirstHomologyAddEquivGroupHomology (Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom circleToClassifyingSpace)) 1).hom
-          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1
+          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1 (.refl ℤ)
             (Additive.ofMul (Group.Abelianization.of
               (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))))) =
       groupHomology.H1π (Rep.trivial ℤ (Multiplicative ℤ) ℤ)

@@ -155,8 +155,7 @@ private theorem isOpen_window (T : ℝ) (i : Option (Puncture × ℕ × Bool)) :
 /-- The core window lies in the compact truncation `S_{T + 2}`. -/
 private theorem window_none_subset (T : ℝ) :
     window T none ⊆ equivRealProdCLM.symm ⁻¹' truncation (T + 2) :=
-  subset_preimage_truncation_of_isOpen (isOpen_window T none) fun z hz q ↦ by
-    rw [← fst_positiveEndCoord]; exact (hz.2 q).le
+  subset_preimage_truncation_of_isOpen (isOpen_window T none) fun _ hz q ↦ (hz.2 q).le
 
 /-- The windows cover `S`. -/
 private theorem iUnion_window {T : ℝ} (hT : 0 ≤ T) :

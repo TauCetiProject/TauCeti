@@ -44,7 +44,8 @@ extensions, such as an algebraic closure of an imperfect field.
 
 ## Main results
 
-* `TauCeti.Isogeny.degree_map`: `deg (φ.map f) = deg φ`.
+* `TauCeti.Isogeny.degree_map`: `deg (φ.map f) = deg φ`, and `TauCeti.Isogeny.degree_baseChange`
+  for the base change `φ.baseChange K`.
 
 ## References
 
@@ -212,6 +213,12 @@ theorem degree_map (φ : Isogeny W₁ W₂) (f : F →+* K) : (φ.map f).degree 
   rw [degree_def, degree_def, Module.finrank_eq_card_basis
     (Module.Basis.mk (linearIndependent_functionFieldMap_basis φ f b)
       (span_functionFieldMap_basis φ f b).ge), Fintype.card_fin]
+
+/-- `degree_map` for `φ.baseChange K`, stated between the base-changed curves `W₁⁄K` and `W₂⁄K`,
+which are not syntactically the curves of `φ.map (algebraMap F K)`. -/
+theorem degree_baseChange [Algebra F K] {W₁ W₂ : WeierstrassCurve F}
+    (φ : Isogeny W₁.toAffine W₂.toAffine) : (φ.baseChange K).degree = φ.degree :=
+  degree_map φ _
 
 end TauCeti.Isogeny
 

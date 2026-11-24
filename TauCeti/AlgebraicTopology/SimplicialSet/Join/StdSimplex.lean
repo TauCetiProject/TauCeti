@@ -18,7 +18,8 @@ The join `Δ[n] ⋆ Δ[m]` is the standard simplex `Δ[n + m + 1]`, with `Δ[n]`
 faces spanned by the first `n + 1` and the last `m + 1` vertices. Under this isomorphism the joins
 of horns and boundaries are horns: for `n ≠ 0`, the subcomplex
 `(Λ[n, i] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` of `Δ[n] ⋆ Δ[m]` is the horn `Λ[n + m + 1, i]`, and for
-`m ≠ 0`, `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` is the horn `Λ[n + m + 1, n + 1 + j]`. Hence the
+`m ≠ 0`, `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` is the horn `Λ[n + m + 1, n + 1 + j]`, while
+`(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` is the boundary `∂Δ[n + m + 1]`. Hence the
 pushout-join of a horn inclusion `Λ[n, i] ⟶ Δ[n]` with `0 < i` and a boundary inclusion
 `∂Δ[m] ⟶ Δ[m]` is an inner anodyne extension, and so is the pushout-join of `∂Δ[n] ⟶ Δ[n]` and
 `Λ[m, j] ⟶ Δ[m]` with `j < m`. These are the generating cases of the lifting
@@ -64,6 +65,8 @@ projections are right and left fibrations.
   `Λ[n + m + 1, i]`, for `n ≠ 0`.
 * `SSet.join.preimage_unionJoin_boundary_horn`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` corresponds to
   `Λ[n + m + 1, n + 1 + j]`, for `m ≠ 0`.
+* `SSet.join.preimage_unionJoin_boundary_boundary`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])`
+  corresponds to `∂Δ[n + m + 1]`.
 * `SSet.join.innerAnodyneExtensions_unionJoin_horn_boundary`,
   `SSet.join.innerAnodyneExtensions_unionJoin_boundary_horn`: the corresponding pushout-joins are
   inner anodyne extensions.
@@ -927,7 +930,50 @@ private lemma mem_horn_natAdd_iff (hm : m ≠ 0) (j : Fin (m + 1)) :
       obtain ⟨t, ht⟩ := hx' ⟨n + 1 + l, by omega⟩ (by simpa [Fin.ext_iff] using hlj)
       exact hl (mem_range_right hlast (by rw [ht]))
 
+variable (x) in
+/-- A simplex `x` of `Δ[n + m + 1]` lies in the boundary `∂Δ[n + m + 1]` exactly when its image in
+`Δ[n] ⋆ Δ[m]` has its part in `Δ[n]` in `∂Δ[n]` or its part in `Δ[m]` in `∂Δ[m]`. -/
+private lemma mem_boundary_iff :
+    x ∈ ∂Δ[n + m + 1].obj _ ↔
+      (stdSimplexIso n m).inv.app _ x ∈ (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).obj _ := by
+  rw [Subcomplex.mem_unionJoin_iff, objEquiv_stdSimplexIso_inv_app, mem_boundary_iff_notMem_range]
+  constructor
+  · rintro ⟨j, hjx⟩
+    by_cases hjn : (j : ℕ) ≤ n
+    · refine Or.inl fun k y hy ↦ ?_
+      induction k using Opposite.rec with | op k
+      induction k using SimplexCategory.rec with | _ a
+      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left hjn hjx y hy⟩
+    · refine Or.inr fun k y hy ↦ ?_
+      induction k using Opposite.rec with | op k
+      induction k using SimplexCategory.rec with | _ a
+      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_right (by omega) hjx y hy⟩
+  · intro h
+    by_contra hx
+    have hx' (j : Fin (n + m + 2)) : j ∈ Set.range x := by
+      by_contra hjx
+      exact hx ⟨j, hjx⟩
+    rcases h with h | h
+    · have h₀ := apply_zero_le (j := 0) (by simp) (hx' 0)
+      obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem x h₀))
+      obtain ⟨t, ht⟩ := hx' (Fin.castLE (by omega) l)
+      exact hl (mem_range_left h₀ (by rw [ht, Fin.val_castLE]))
+    · have hlast := lt_apply_last (j := Fin.last _) (by simp) (hx' _)
+      obtain ⟨l, hl⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (upperSection_mem x hlast))
+      obtain ⟨t, ht⟩ := hx' ⟨n + 1 + l, by omega⟩
+      exact hl (mem_range_right hlast (by rw [ht]))
+
 end horn
+
+variable (n m) in
+/-- **The pushout-join of two boundaries is a boundary.** Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the
+subcomplex `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` of `Δ[n] ⋆ Δ[m]` corresponds to the boundary
+`∂Δ[n + m + 1]`. -/
+theorem preimage_unionJoin_boundary_boundary :
+    (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).preimage (stdSimplexIso n m).inv = ∂Δ[n + m + 1] := by
+  ext ⟨k⟩ x
+  induction k using SimplexCategory.rec with | _ d
+  rw [Subcomplex.preimage_obj, Set.mem_preimage, mem_boundary_iff x]
 
 variable (m) in
 /-- **The pushout-join of a horn and a boundary is a horn.** Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the

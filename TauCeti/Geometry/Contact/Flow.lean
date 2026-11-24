@@ -113,7 +113,7 @@ theorem mpullback_flowOf_apply (hα : α.IsContactForm)
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
     ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
       (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
-  exact mpullback_flowOf_apply_eq_exp_integral_smul hX2 hRf α.mdifferentiable
+  exact mpullback_flowOf_apply_eq_exp_integral_smul (hX2.of_le one_le_two) hRf α.mdifferentiable
     (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)) hx
 
 /-- **Contact Hamiltonian flows preserve the coorientation.** For a contact form `α` and the
@@ -140,7 +140,7 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
   · intro h x
     -- The pullbacks `φₜ^* α` at `x` are constant for small `t`, and their velocity at `0` is
     -- `L_X α = (R_α f) α`.
-    have hd := hasDerivAt_mpullback_flowOf_zero hX2 x (α.mdifferentiable x)
+    have hd := hasDerivAt_mpullback_flowOf_zero (hX2.of_le one_le_two) x (α.mdifferentiable x)
     have hconst : (fun s ↦ TauCeti.mpullback I I (flowOf X s) α.val x) =ᶠ[𝓝 0]
         fun _ ↦ α.val x := by
       have hopen : {s | (s, x) ∈ flowDomain X} ∈ 𝓝 (0 : ℝ) :=

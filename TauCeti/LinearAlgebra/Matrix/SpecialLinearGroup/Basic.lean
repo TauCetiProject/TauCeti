@@ -413,12 +413,10 @@ theorem not_exists_isComplement'_center [NeZero (2 : R)] :
     ¬ ∃ D : Subgroup (SpecialLinearGroup (Fin 2) R),
       (Subgroup.center (SpecialLinearGroup (Fin 2) R)).IsComplement' D := by
   rintro ⟨D, hD⟩
-  let S : SpecialLinearGroup (Fin 2) R := ⟨!![0, -1; 1, 0], by simp⟩
+  let S : SpecialLinearGroup (Fin 2) R := .mk !![0, -1; 1, 0] (by simp)
   have hS2 : S ^ 2 = -1 := by
-    apply Subtype.ext
-    rw [sq, coe_mul, coe_neg, coe_one]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp [S, Matrix.mul_apply]
+    fin_cases i <;> fin_cases j <;> simp [S, sq, Matrix.mul_apply]
   obtain ⟨⟨⟨z, hz⟩, ⟨d, hd⟩⟩, hzd⟩ := (hD.existsUnique S).exists
   have hz2 : z ^ 2 = 1 := by
     obtain ⟨r, hr, hscal⟩ := mem_center_iff.mp hz

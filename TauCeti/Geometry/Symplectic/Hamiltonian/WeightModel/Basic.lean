@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Extreme
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Instances.AddCircle.Defs
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
@@ -97,8 +99,12 @@ torus.
   (`TauCeti.weightRotation_nsmul`).
 * `TauCeti.weightRotation_product_apply`: rotations commute with the complex structure
   `J(q, p) = (-p, q)`.
+* `TauCeti.complexEuclideanEquivRealProd_symm_weightRotation_apply`: in the complex coordinates
+  `z_i = q_i + i p_i`, the rotation by `θ` multiplies `z_i` by `cos θ_i + i sin θ_i`.
 * `TauCeti.continuous_weightMomentMap`, `TauCeti.weightMomentMap_weightRotation`,
   `TauCeti.weightMomentMap_torusRotation`: `μ` is continuous and invariant under every rotation.
+* `TauCeti.contDiff_weightMomentMap`, `TauCeti.contDiff_weightMomentMap_apply`: `μ` and its
+  components `μ^ξ` are smooth.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
   generator for the angles `α_i(ξ)`.
 * `TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`: the critical points of `μ^ξ` are the zeros
@@ -129,6 +135,7 @@ torus.
   `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
   `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`; coordinatewise,
   `TauCeti.torusRotation_apply_eq_self_iff_apply`.
+* `TauCeti.stdSymplecticForm_torusRotation`: these rotations are symplectic.
 * `TauCeti.prodMap_piLpCongrLeft_torusRotation`: relabelling the coordinates of `ℂ^ι` relabels the
   angles of the rotations.
 * `TauCeti.forall_weightRotation_apply_eq_self_iff`: the fixed points of the action of `𝔱`.
@@ -213,6 +220,18 @@ theorem weightRotation_apply_fst (θ : ι → ℝ) (x : EuclideanSpace ℝ ι ×
 theorem weightRotation_apply_snd (θ : ι → ℝ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
     (i : ι) : (weightRotation θ x).2 i = sin (θ i) * x.1 i + cos (θ i) * x.2 i :=
   (rfl)
+
+/-- In the complex coordinates `z_i = q_i + i p_i` (`TauCeti.complexEuclideanEquivRealProd`), the
+rotation `weightRotation θ` multiplies `z_i` by `cos θ_i + i sin θ_i`. -/
+theorem complexEuclideanEquivRealProd_symm_weightRotation_apply (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι).symm (weightRotation θ x) i =
+      (cos (θ i) + sin (θ i) * Complex.I) * (complexEuclideanEquivRealProd ι).symm x i := by
+  apply Complex.ext <;>
+    simp only [complexEuclideanEquivRealProd_symm_apply, weightRotation_apply_fst,
+      weightRotation_apply_snd, Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re,
+      Complex.I_im, Complex.ofReal_im, Complex.add_im, Complex.mul_im] <;>
+    ring
 
 /-- The infinitesimal rotation `z_i ↦ i θ_i z_i` of `ℂ^ι`, that is `(q, p) ↦ (-θ p, θ q)`
 coordinatewise: the velocity of `t ↦ weightRotation (t • θ)` at `t = 0`. -/
@@ -318,6 +337,19 @@ theorem weightMomentMap_zero (α : ι → StrongDual ℝ 𝔱) : weightMomentMap
 theorem continuous_weightMomentMap (α : ι → StrongDual ℝ 𝔱) : Continuous (weightMomentMap α) := by
   unfold weightMomentMap
   fun_prop
+
+/-- The moment map of the weight model is smooth. -/
+@[fun_prop]
+theorem contDiff_weightMomentMap (α : ι → StrongDual ℝ 𝔱) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (weightMomentMap α) := by
+  unfold weightMomentMap
+  fun_prop
+
+/-- The component `μ^ξ = ⟨μ, ξ⟩` of the moment map of the weight model is smooth. -/
+@[fun_prop]
+theorem contDiff_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱) {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ weightMomentMap α x ξ :=
+  (ContinuousLinearMap.apply ℝ ℝ ξ).contDiff.comp (contDiff_weightMomentMap α)
 
 /-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
 half squared radii `(q_i² + p_i²) / 2`. -/
@@ -715,6 +747,18 @@ theorem weightRotation_arg_circleExp (θ : ι → ℝ) :
   rw [← sub_add_cancel (fun j ↦ Complex.arg (Circle.exp (θ j))) θ, weightRotation_add,
     (weightRotation_eq_id_iff (_ - θ)).2 h, ContinuousLinearMap.id_comp]
 
+/-- **Stabilizers of the rotation by unit complex numbers.** The rotation `z_j ↦ u_j z_j` by unit
+complex numbers `u_j` fixes `z` exactly when `u_j = 1` for every coordinate `z_j = q_j + i p_j`
+that is nonzero. -/
+theorem weightRotation_arg_apply_eq_self_iff (u : ι → Circle)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (fun j ↦ Complex.arg (u j : ℂ)) x = x ↔
+      ∀ j, (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → u j = 1 := by
+  rw [weightRotation_apply_eq_self_iff]
+  refine forall_congr' fun j ↦ imp_congr_right fun _ ↦ ?_
+  conv_rhs => rw [← Circle.exp_arg (u j), Circle.exp_eq_one]
+  exact exists_congr fun k ↦ eq_comm
+
 /-- **Orbits of the rotation torus.** Some rotation of `ℂ^ι` carries `z` to `w` exactly when
 `|z_j| = |w_j|` for every `j`. -/
 theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
@@ -987,6 +1031,13 @@ theorem torusRotation_add (θ θ' : ι → AddCircle (2 * π)) :
   obtain ⟨t', rfl⟩ := AddCircle.exists_pi_coe_eq θ'
   rw [torusRotation_coe, torusRotation_coe, ← weightRotation_add, ← neg_add, ← torusRotation_coe]
   simp only [Pi.add_def, Pi.add_apply, QuotientAddGroup.mk_add]
+
+/-- Rotations by angles in `(ℝ / 2πℤ)^ι` preserve the standard symplectic form. -/
+theorem stdSymplecticForm_torusRotation (θ : ι → AddCircle (2 * π))
+    (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    stdSymplecticForm (torusRotation θ x) (torusRotation θ y) = stdSymplecticForm x y := by
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
+  rw [torusRotation_coe, stdSymplecticForm_weightRotation]
 
 /-- The rotation `z_j ↦ exp(-i θ_j) z_j` preserves each modulus `|z_j|`. -/
 @[simp]

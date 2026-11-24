@@ -129,8 +129,8 @@ the homology class of the corresponding loop. -/
 lemma ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass (p : Ω^ (Fin 1) X x) :
     (SSet.ιHomology₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p)
       (δ_zero_simplex₁_eq_δ_one_simplex₁ p)).hom 1 =
-      HurewiczOne.H₁AddEquivHomology (TopCat.of X)
-        (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) := by
+      HurewiczOne.H₁AddEquivHomology ℤ (TopCat.of X)
+        (HurewiczOne.loopClass ℤ (genLoopEquivOfUnique (Fin 1) p)) := by
   rw [SSet.ιHomology₁_def]
   refine (HurewiczOne.H₁AddEquivHomology_loopClass _ _ ?_).symm
   refine (congr($(HomologicalComplex.liftCycles_i
@@ -143,8 +143,8 @@ lemma ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass (p : Ω^ (Fin 1) X
 the homology class of the corresponding loop. -/
 theorem hurewicz_hom_one_eq_neg_loopClass (p : Ω^ (Fin 1) X x) :
     (hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 =
-      -HurewiczOne.H₁AddEquivHomology (TopCat.of X)
-        (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) :=
+      -HurewiczOne.H₁AddEquivHomology ℤ (TopCat.of X)
+        (HurewiczOne.loopClass ℤ (genLoopEquivOfUnique (Fin 1) p)) :=
   (congrArg (fun f ↦ ModuleCat.Hom.hom f 1)
     (hurewicz_eq_neg_ιHomology₁ (ModuleCat.of ℤ ℤ) p)).trans
       (congrArg Neg.neg (ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass p))
@@ -165,14 +165,14 @@ homomorphism `HomotopyGroup.hurewiczHom` with integer coefficients, evaluated at
 the singular `1`-simplex it traces. -/
 theorem hurewiczHom_hom_one_eq_neg_hurewicz₁ (a : Additive (HomotopyGroup (Fin 1) X x)) :
     (hurewiczHom (ModuleCat.of ℤ ℤ) 0 a).hom 1 =
-      -H₁AddEquivHomology (TopCat.of X) (Multiplicative.toAdd (hurewicz₁ (TopCat.of X) x
+      -H₁AddEquivHomology ℤ (TopCat.of X) (Multiplicative.toAdd (hurewicz₁ ℤ (TopCat.of X) x
         (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
   induction a using Additive.rec with | ofMul a =>
   induction a using Quotient.inductionOn with | h p =>
   refine (congrArg (fun f ↦ ModuleCat.Hom.hom f 1)
     ((hurewiczHom_apply _ 0 _).trans (hurewicz_mk _ 0 p))).trans
       ((GenLoop.hurewicz_hom_one_eq_neg_loopClass p).trans
-        (congrArg (fun h ↦ -H₁AddEquivHomology _ h) ?_))
+        (congrArg (fun h ↦ -H₁AddEquivHomology ℤ _ h) ?_))
   exact (congrArg Multiplicative.toAdd
     (hurewicz₁_mk (X := TopCat.of X) (genLoopEquivOfUnique (Fin 1) p))).symm
 
@@ -183,11 +183,12 @@ evaluated at `1 : ℤ`, is **minus** the Hurewicz isomorphism
 theorem hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv [PathConnectedSpace X]
     (a : Additive (HomotopyGroup (Fin 1) X x)) :
     (hurewiczHom (ModuleCat.of ℤ ℤ) 0 a).hom 1 =
-      -hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Group.Abelianization.of
-        (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
+      -hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ)
+        (Additive.ofMul (Group.Abelianization.of
+          (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) a.toMul))) := by
   refine (hurewiczHom_hom_one_eq_neg_hurewicz₁ a).trans (congrArg Neg.neg ?_)
-  exact (congrArg (H₁AddEquivHomology (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans
-    (hurewiczHomologyAddEquiv_apply _).symm
+  exact (congrArg (H₁AddEquivHomology ℤ (TopCat.of X)) (hurewiczAb_ofMul_of x _).symm).trans
+    (hurewiczHomologyAddEquiv_apply _ _).symm
 
 /-- **The Hurewicz class of a loop generates exactly when its abelianized class does.** For a
 path-connected space, the Hurewicz class of a loop `p` is an isomorphism `ℤ ≅ H₁(X; ℤ)` exactly
@@ -204,7 +205,7 @@ theorem isIso_hurewicz_iff_bijective_zmultiplesHom_abelianization [PathConnected
   let e : Additive (Group.Abelianization (HomotopyGroup (Fin 1) X x)) ≃+
       ((singularChains ℤ).obj (TopCat.of X)).homology 1 :=
     ((pi1MulEquivFundamentalGroup (X := X) (x := x)).abelianizationCongr.toAdditive.trans
-      (hurewiczHomologyAddEquiv (X := TopCat.of X) x)).trans
+      (hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ))).trans
         (AddEquiv.neg (((singularChains ℤ).obj (TopCat.of X)).homology 1))
   have he : e (Additive.ofMul (Group.Abelianization.of ⟦p⟧)) =
       (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by

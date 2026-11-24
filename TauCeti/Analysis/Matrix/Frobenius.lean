@@ -67,7 +67,7 @@ in an inner product space, compatible with the Frobenius norm of
 `Matrix.frobeniusSeminormedAddCommGroup`. Not declared as a global instance because there are
 several natural choices of norm on matrices; it is available through
 `open scoped Matrix.Norms.Frobenius`. -/
-@[instance_reducible]
+@[instance_reducible, expose]
 def frobeniusInnerProductSpace :
     letI : SeminormedAddCommGroup (Matrix m n E) := frobeniusSeminormedAddCommGroup
     InnerProductSpace 𝕜 (Matrix m n E) :=
