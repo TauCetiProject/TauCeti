@@ -157,9 +157,9 @@ theorem exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint 
       rw [ENNReal.coe_one, ← ofReal_norm]
       exact ENNReal.ofReal_le_one.2 (norm_phasePropagator_le _ _))
     (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le_top hst g)
-    (fun G hG hUG ↦ by
-      simp_rw [adjoint_schrodingerPropagator] at hUG ⊢
-      exact hK G hG hUG)
+    (fun G hG _ ↦ by
+      simp_rw [adjoint_schrodingerPropagator]
+      exact hK G hG)
     (fun G hG ↦ by
       simp_rw [adjoint_schrodingerPropagator]
       exact aestronglyMeasurable_phasePropagator_apply laplacianSymbol
