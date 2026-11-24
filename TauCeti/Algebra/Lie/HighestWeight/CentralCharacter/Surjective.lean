@@ -56,9 +56,9 @@ namespace TauCeti
 
 open LieAlgebra TauCeti.Algebra TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable {K : Type} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] (b : (IsKilling.rootSystem H).Base)
 

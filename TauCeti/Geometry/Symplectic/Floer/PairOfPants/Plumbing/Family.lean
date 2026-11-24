@@ -67,7 +67,7 @@ theorem contMDiffAt_plumbedPerturbation_family {n : ℕ∞} (hq : q ≠ inf)
       with p hp
     exact plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) p.2.2
   · have h2 : 2 < (q.endCoord w).re := by linarith
-    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).2
+    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).property
     rw [coe_plumbingPreimage] at hw'
     have hcoord : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
         (fun p : ℝ × (ℂ × M) => (p.2.1 - q.endCenter) / q.plumbingFactor p.1) (L, (w, x)) :=

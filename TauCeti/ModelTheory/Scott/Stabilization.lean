@@ -35,6 +35,9 @@ rather than formulas. The stabilization ordinal lives in the universe of the str
 * `exists_selfStabilizesCompletely`: every structure has a stabilizing level.
 * `exists_complete_self_stabilization`: a countable structure has one below `ω₁`.
 * `selfStabilizationOrdinal_lt_omega_one`: the least stabilizing level is below `ω₁`.
+* `FirstOrder.Language.Equiv.selfStabilizesCompletely_iff` and
+  `FirstOrder.Language.Equiv.selfStabilizationOrdinal_eq`: internal stabilization and the least
+  stabilizing level are isomorphism invariants.
 
 ## References
 
@@ -240,3 +243,35 @@ theorem selfStabilizationOrdinal_lt_omega_one [Countable M] :
   exact (selfStabilizationOrdinal_le M hs).trans_lt hα
 
 end TauCeti
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti
+
+variable {L : Language.{u, v}} [L.IsRelational]
+variable {M : Type w} {N : Type w'} [L.Structure M] [L.Structure N]
+
+/-- Internal stabilization transfers along an isomorphism. -/
+private theorem selfStabilizesCompletely_of_equiv {α : Ordinal.{o}}
+    (h : SelfStabilizesCompletely (L := L) M α) (e : M ≃[L] N) :
+    SelfStabilizesCompletely (L := L) N α := by
+  intro n a b
+  have ha := e.symm.bfEquiv α a
+  have hb := e.symm.bfEquiv α b
+  have ha' := e.symm.bfEquiv (α + 1) a
+  have hb' := e.symm.bfEquiv (α + 1) b
+  refine ⟨fun hab => ha'.trans (((h n _ _).mp (ha.symm.trans (hab.trans hb))).trans hb'.symm),
+    fun hab => hab.mono le_self_add⟩
+
+/-- Internal stabilization at a level is invariant under isomorphism. -/
+theorem selfStabilizesCompletely_iff (e : M ≃[L] N) {α : Ordinal.{o}} :
+    SelfStabilizesCompletely (L := L) M α ↔ SelfStabilizesCompletely (L := L) N α :=
+  ⟨fun h => selfStabilizesCompletely_of_equiv h e,
+    fun h => selfStabilizesCompletely_of_equiv h e.symm⟩
+
+/-- The least internal stabilization ordinal is an isomorphism invariant. -/
+theorem selfStabilizationOrdinal_eq {N : Type w} [L.Structure N] (e : M ≃[L] N) :
+    selfStabilizationOrdinal (L := L) M = selfStabilizationOrdinal (L := L) N := by
+  simp only [selfStabilizationOrdinal_def, e.selfStabilizesCompletely_iff]
+
+end FirstOrder.Language.Equiv

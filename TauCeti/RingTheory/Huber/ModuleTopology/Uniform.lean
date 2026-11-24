@@ -117,7 +117,8 @@ private theorem exists_isUnit_forall_mul_projectiveTrace_mem [Module.Projective 
       have hc : IsPowerBounded (1 - (v i : A) • b) := by
         rw [Algebra.smul_def, ← mem_powerBoundedSubring]
         exact sub_mem (one_mem _) (mul_mem (mem_powerBoundedSubring.mpr
-          (IsPowerBounded.algebraMap_of_isModuleTopology (mem_powerBoundedSubring.mp (v i).2)))
+          (IsPowerBounded.algebraMap_of_isModuleTopology (mem_powerBoundedSubring.mp
+              (v i).property)))
           (mem_powerBoundedSubring.mpr hb))
       rw [hQ, LinearMap.eval_projectiveCharpolyRev, ← map_one (Algebra.lmul A B), ← map_smul,
         ← map_sub, ← Algebra.projectiveNorm_apply]
@@ -130,7 +131,7 @@ private theorem exists_isUnit_forall_mul_projectiveTrace_mem [Module.Projective 
     rw [← neg_neg (Algebra.projectiveTrace A B b), mul_neg, hcramer]
     refine neg_mem (sum_mem fun i _ ↦ mul_mem ?_ ?_)
     · rw [hV, ← RingHom.map_adjugate]
-      exact (adjugate (vandermonde v) 1 i).2
+      exact (adjugate (vandermonde v) 1 i).property
     · have hi := heval i
       rw [eval_eq_sum_range' hdeg] at hi
       simpa [mul_comm] using hi

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Analysis.Calculus.Taylor.Symmetric
-import TauCeti.Probability.Process.PartitionLimit
+import TauCeti.Probability.Process.SubsequenceLimit
 
 /-!
 # Symmetric-endpoint, midpoint, and cross-increment limits for continuous processes

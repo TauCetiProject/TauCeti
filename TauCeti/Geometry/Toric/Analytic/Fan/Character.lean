@@ -37,15 +37,15 @@ universe u
 
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
-  (m : IntegralCharacter N) (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.1)
+  (m : IntegralCharacter N) (hm : ∀ σ : Φ.cones, m ∈ dualSemigroup Φ.lattice σ.val)
 
 private noncomputable def chartCharacter (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) : ℂ :=
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) : ℂ :=
   x (MonoidAlgebra.single (ofAdd ⟨m, hm σ⟩) 1)
 
 private theorem chartCharacter_eq_of_eq {σ τ : Φ.cones}
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
-    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.1))
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
+    (y : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice τ.val))
     (h : Φ.analyticAffineChartι hΦ σ x = Φ.analyticAffineChartι hΦ τ y) :
     Φ.chartCharacter m hm σ x = Φ.chartCharacter m hm τ y := by
   obtain ⟨z, rfl, rfl⟩ := (Φ.analyticAffineChartι_eq_analyticAffineChartι_iff hΦ x y).mp h
@@ -61,7 +61,7 @@ private noncomputable def characterFun (p : Φ.analyticRealization hΦ) : ℂ :=
   Φ.chartCharacter m hm h.choose h.choose_spec.choose
 
 private theorem characterFun_analyticAffineChartι (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     Φ.characterFun hΦ m hm (Φ.analyticAffineChartι hΦ σ x) =
       Φ.chartCharacter m hm σ x := by
   let h := Φ.exists_analyticAffineChartι_apply_eq hΦ (Φ.analyticAffineChartι hΦ σ x)
@@ -89,7 +89,7 @@ noncomputable def analyticCharacter : C(Φ.analyticRealization hΦ, ℂ) where
 theorem analyticCharacter_analyticAffineChartι (σ : Φ.cones)
     (x : (Φ.analyticAffineChartDiagram).obj σ) :
     Φ.analyticCharacter hΦ m hm (Φ.analyticAffineChartι hΦ σ x) =
-      DFunLike.coe (F := AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) x
+      DFunLike.coe (F := AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) x
         (MonoidAlgebra.single (ofAdd ⟨m, hm σ⟩) 1) :=
   Φ.characterFun_analyticAffineChartι hΦ m hm σ x
 
@@ -108,7 +108,7 @@ theorem analyticCharacter_smul (t : ComplexTorus N) (x : Φ.analyticRealization 
 /-- The zero character defines the constant function one. -/
 @[simp]
 theorem analyticCharacter_zero (x : Φ.analyticRealization hΦ) :
-    Φ.analyticCharacter hΦ 0 (fun σ ↦ (dualSemigroup Φ.lattice σ.1).zero_mem) x = 1 := by
+    Φ.analyticCharacter hΦ 0 (fun σ ↦ (dualSemigroup Φ.lattice σ.val).zero_mem) x = 1 := by
   obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
   -- Identify the bundled chart carrier with its affine complex-point carrier.
   erw [analyticCharacter_analyticAffineChartι]
@@ -118,10 +118,10 @@ theorem analyticCharacter_zero (x : Φ.analyticRealization hΦ) :
 /-- Addition of characters corresponds to multiplication of their holomorphic functions. -/
 @[simp]
 theorem analyticCharacter_add (m' : IntegralCharacter N)
-    (hm' : ∀ σ : Φ.cones, m' ∈ dualSemigroup Φ.lattice σ.1)
+    (hm' : ∀ σ : Φ.cones, m' ∈ dualSemigroup Φ.lattice σ.val)
     (x : Φ.analyticRealization hΦ) :
     Φ.analyticCharacter hΦ (m + m')
-        (fun σ ↦ (dualSemigroup Φ.lattice σ.1).add_mem (hm σ) (hm' σ)) x =
+        (fun σ ↦ (dualSemigroup Φ.lattice σ.val).add_mem (hm σ) (hm' σ)) x =
       Φ.analyticCharacter hΦ m hm x * Φ.analyticCharacter hΦ m' hm' x := by
   obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
   -- Identify the bundled chart carrier with its affine complex-point carrier.
@@ -136,10 +136,10 @@ theorem contMDiff_analyticCharacter (n : ℕ∞ω) :
       (Φ.analyticCharacter hΦ m hm) := by
   intro _ p
   obtain ⟨σ, x, hx⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ p
-  have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  have hσ := (isRegular_iff.mp hΦ) σ.val σ.property
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
-  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
-  let κ := Finite.equivFin (ToricRay σ.1)
+  have : Finite (ToricRay σ.val) := ToricRay.finite_of_fg hσ.fg
+  let κ := Finite.equivFin (ToricRay σ.val)
   let g := (Φ.analyticChartGenerators σ).2
   let _ := affinePointTopology g
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
@@ -197,7 +197,7 @@ by precomposition with its integral lattice map. Nonnegativity on the source fol
 nonnegativity on the target and the fan-morphism condition. -/
 @[simp]
 theorem analyticCharacter_analyticMap (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular)
-    (m : IntegralCharacter N') (hm : ∀ τ : Ψ.cones, m ∈ dualSemigroup Ψ.lattice τ.1)
+    (m : IntegralCharacter N') (hm : ∀ τ : Ψ.cones, m ∈ dualSemigroup Ψ.lattice τ.val)
     (x : Φ.analyticRealization hΦ) :
     Ψ.analyticCharacter hΨ m hm (f.analyticMap hΦ hΨ x) =
       Φ.analyticCharacter hΦ (m.comp f.latticeMap)
@@ -206,7 +206,8 @@ theorem analyticCharacter_analyticMap (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular) (h
             f.latticeMap f.realMap f.map_lattice]
           intro v hv
           exact (mem_dualSemigroup Ψ.lattice m).1
-            (hm ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) (f.mapsTo_leastCone σ.2 hv)) x := by
+            (hm ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩) (f.mapsTo_leastCone σ.property
+                hv)) x := by
   obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
   rw [analyticMap_analyticAffineChartι, Fan.analyticCharacter_analyticAffineChartι,
     Fan.analyticCharacter_analyticAffineChartι]
@@ -216,6 +217,6 @@ theorem analyticCharacter_analyticMap (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular) (h
   apply Subtype.ext
   ext n
   exact dualSemigroupMap_apply Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-    (f.mapsTo_leastCone σ.2) _ n
+    (f.mapsTo_leastCone σ.property) _ n
 
 end TauCeti.Toric.FanHom

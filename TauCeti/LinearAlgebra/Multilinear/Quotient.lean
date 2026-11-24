@@ -38,7 +38,7 @@ theorem apply_eq_of_mkQ_eq (f : MultilinearMap (RingHom.id R) M P) (N : ∀ i, S
   rw [heq, f.map_add_univ, Finset.sum_eq_single ∅]
   · simp
   · intro s _ hs
-    obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hs
+    obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.mp hs
     have hi' : (s.piecewise (a - b) b) i = a i - b i :=
       Finset.piecewise_eq_of_mem s (a - b) b hi
     simpa only [← hi', Function.update_eq_self] using

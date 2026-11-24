@@ -122,7 +122,7 @@ noncomputable def Z1Equiv : Z1 (freeProP p X) M ≃+ (X → M) where
   invFun v := ⟨(exists_mem_Z1_forall_apply_of_eq hM v).choose,
     (exists_mem_Z1_forall_apply_of_eq hM v).choose_spec.1⟩
   left_inv c := Subtype.ext (eq_of_mem_Z1_of_forall_of
-    (exists_mem_Z1_forall_apply_of_eq hM _).choose_spec.1 c.2
+    (exists_mem_Z1_forall_apply_of_eq hM _).choose_spec.1 c.property
     (exists_mem_Z1_forall_apply_of_eq hM _).choose_spec.2)
   right_inv v := funext (exists_mem_Z1_forall_apply_of_eq hM v).choose_spec.2
   map_add' _ _ := rfl
@@ -157,7 +157,8 @@ theorem cocyclesMap1_surjective (f : M →+ N) (hf : Continuous f)
   intro c
   choose v hv using fun x : X ↦ hsurj ((c : freeProP p X → N) (of x))
   obtain ⟨c', hc', hc'v⟩ := exists_mem_Z1_forall_apply_of_eq hM v
-  refine ⟨⟨c', hc'⟩, Subtype.ext (eq_of_mem_Z1_of_forall_of (Subtype.property _) c.2 fun x ↦ ?_)⟩
+  refine ⟨⟨c', hc'⟩, Subtype.ext (eq_of_mem_Z1_of_forall_of (Subtype.property _) c.property fun x ↦
+      ?_)⟩
   simp [cocyclesMap1_apply, hc'v, hv]
 
 include hM in

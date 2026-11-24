@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.QuadraticVariation
-public import TauCeti.Probability.BrownianMotion.WeightedQuadraticVariation
+public import TauCeti.Probability.BrownianMotion.QuadraticVariation.Basic
+public import TauCeti.Probability.BrownianMotion.WeightedQuadraticVariation.Basic
 public import TauCeti.Probability.Process.Stratonovich
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Algebra.BigOperators.Finset.Range
@@ -117,15 +117,14 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
         (B (t (i + 1)) ω - B ((t i + t (i + 1)) / 2) ω) ^ 2)) ^ 2 ∂P) =
       ∑ i ∈ range n, (∫ ω, Y i ω ^ 2 ∂P) * ((t (i + 1) : ℝ) - t i) ^ 2 := by
   -- 1. Interleave `t` with its midpoints and `Y` with `-Y` to form a `2 * n`-step weighted sum.
-  let u : ℕ → ℝ≥0 := TauCeti.interleave t fun i ↦ (t i + t (i + 1)) / 2
+  set u : ℕ → ℝ≥0 := TauCeti.interleave t fun i ↦ (t i + t (i + 1)) / 2 with hu_def
   have hu : MonotoneOn u (Set.Iic (2 * n)) := monotoneOn_interleave_midpoint ht
   let H : ℕ → Ω → ℝ := TauCeti.interleave Y fun i ↦ -Y i
   -- 2. Verify adaptedness and `L²` integrability of the interleaved weights `H`.
   have hHm : ∀ j < 2 * n, Measurable[ℱ (u j)] (H j) :=
     (TauCeti.forall_lt_two_mul_interleave_iff
       (P := fun j f ↦ Measurable[ℱ (u j)] f)).2 fun i hi ↦ by
-        rw [show u (2 * i) = t i from TauCeti.interleave_two_mul _ _ i,
-          show u (2 * i + 1) = (t i + t (i + 1)) / 2 from TauCeti.interleave_two_mul_add_one _ _ i]
+        rw [hu_def, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
         have hle : t i ≤ (t i + t (i + 1)) / 2 :=
           TauCeti.left_le_add_div_two.2 (ht hi.le hi (Nat.le_succ _))
         exact ⟨hY i hi, (hY i hi).neg.mono (ℱ.mono hle) le_rfl⟩
@@ -417,7 +416,7 @@ theorem tendstoInMeasure_sum_comp_midpoint_mul_sub (hB : IsPreBrownianReal B P)
     ((hD_sub.add (hβ.tendstoInMeasure_const (μ := P))).congr_right
       (ae_of_all _ fun _ ↦ zero_add β)).congr_left
       fun n ↦ ae_of_all _ fun ω ↦ sub_add_cancel (D n ω) (μ n)
-  exact ((TauCeti.tendstoInMeasure_const (μ := P) (l := l)
+  exact ((MeasureTheory.tendstoInMeasure_const (μ := P) (l := l)
       (fun ω ↦ (B A₁ ω ^ 2 - B A₀ ω ^ 2) / 2)).add hD_lim).congr_left
     fun n ↦ ae_of_all _ fun ω ↦ by
       dsimp only [D]
@@ -677,8 +676,9 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
     (TauCeti.forall_lt_two_mul_interleave_succ_iff (R := fun _ x y ↦ dist y x ≤ δ n)).1
       fun _ hj ↦ grid_dist_le (hu_mono n) hj (interleave_midpoint_step_le (hmono n) (hmesh n) hj)
   have hmem_mid (n i : ℕ) (hi : i < k n) : (π n i + π n (i + 1)) / 2 ∈ Icc a b := by
-    simpa [u] using grid_mem_Icc (hu_mono n) (by simp [u, ha n]) (by simp [u, hb n])
-      (show 2 * i + 1 ≤ 2 * k n by omega)
+    have hidx : 2 * i + 1 ≤ 2 * k n := by omega
+    simpa only [u, TauCeti.interleave_two_mul_add_one] using
+      grid_mem_Icc (hu_mono n) (by simp [u, ha n]) (by simp [u, hb n]) hidx
   have hR₁ := TauCeti.Probability.tendstoInMeasure_sum_midpoint_sub_half_add_sub_half_deriv
     (s := Icc a b) isCompact_Icc hh
     (x := π) (z := fun n i ↦ (π n i + π n (i + 1)) / 2) (y := fun n i ↦ π n (i + 1))
@@ -699,9 +699,9 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
         ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 -
           (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2))
       atTop (fun _ ↦ 0) := by
-    simpa only [mul_zero] using
+    simpa only [smul_eq_mul, mul_zero] using
       (hB.tendstoInMeasure_sum_mul_midpoint_sq_sub_sq hh.continuous_deriv_one
-        hmono ha hb hmesh hδ).const_mul (1 / 2)
+        hmono ha hb hmesh hδ).const_smul ((1 : ℝ) / 2)
   -- 3. Symmetric-endpoint sum `→ H(B_b) - H(B_a)`.
   have hsym := hB.tendstoInMeasure_sum_half_add_mul_sub hh hH hmono ha hb hmesh hδ
   -- 4. Reassemble `remainder + alternating + symmetric = midpoint`.

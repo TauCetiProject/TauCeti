@@ -7,16 +7,25 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 
 /-!
 # Oriented Euclidean planes
 
 The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carries the first vector
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
-`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn.
+`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn. The area form `ω(x, y)` is
+nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
+(`Orientation.areaForm_ne_zero_iff`).
+
+For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
+the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
+`ω(a, b) ≠ 0`.
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
-basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
+basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`, and
+every real two-form on `ℂ` is a multiple of it
+(`ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im`).
 
 An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
 `Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
@@ -65,6 +74,31 @@ theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
   rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
     h, zero_mul, add_zero]
 
+/-- The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a multiple of
+`x`. -/
+theorem areaForm_ne_zero_iff {x y : E} :
+    o.areaForm x y ≠ 0 ↔ x ≠ 0 ∧ ∀ c : ℝ, y ≠ c • x := by
+  rw [← TauCeti.abs_real_inner_lt_norm_iff,
+    ← pow_lt_pow_iff_left₀ (abs_nonneg _) (by positivity) two_ne_zero, sq_abs, mul_pow,
+    ← o.inner_sq_add_areaForm_sq x y, lt_add_iff_pos_right, sq_pos_iff]
+
+/-- For unit vectors `a`, `b` of an oriented plane, `√(1 - ⟪a, b⟫²) = |ω(a, b)|`: the inner
+product and the area form are the cosine and the sine of the angle from `a` to `b`. -/
+theorem sqrt_one_sub_inner_sq_eq_abs_areaForm {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) :
+    √(1 - inner ℝ a b ^ 2) = |o.areaForm a b| := by
+  have h := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at h
+  rw [← Real.sqrt_sq_eq_abs, ← h, add_sub_cancel_left]
+
+/-- Two unit vectors of an oriented plane with nonzero area form are not parallel, so their inner
+product lies in `(-1, 1)`. -/
+theorem inner_mem_Ioo_of_areaForm_ne_zero {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1)
+    (h : o.areaForm a b ≠ 0) : inner ℝ a b ∈ Set.Ioo (-1) 1 := by
+  have hsq := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at hsq
+  have hlt : inner ℝ a b ^ 2 < 1 := by nlinarith [sq_pos_of_ne_zero h]
+  exact abs_lt.1 ((sq_lt_one_iff_abs_lt_one _).1 hlt)
+
 end Orientation
 
 namespace Complex
@@ -99,3 +133,21 @@ theorem orientation_volumeFormL_apply (v : Fin 2 → ℂ) :
   fin_cases i <;> rfl
 
 end Complex
+
+namespace ContinuousAlternatingMap
+
+open Complex
+
+/-- Every real two-form on `ℂ` is a multiple of the area form `dx ∧ dy`: on a pair of vectors
+`(v, w)` it is its value on the basis `(1, I)` times `Im (conj v * w)`. -/
+theorem apply_eq_apply_one_I_mul_im (α : ℂ [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin 2 → ℂ) :
+    α v = α ![1, I] * (conj (v 0) * v 1).im := by
+  have h := congrArg (· v) (α.toAlternatingMap.eq_smul_basis_det basisOneI)
+  simp only [_root_.smul_apply, coe_toAlternatingMap, coe_basisOneI, smul_eq_mul,
+    Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, coe_basisOneI_repr,
+    Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  rw [h]
+  simp only [mul_im, conj_re, conj_im]
+  ring
+
+end ContinuousAlternatingMap

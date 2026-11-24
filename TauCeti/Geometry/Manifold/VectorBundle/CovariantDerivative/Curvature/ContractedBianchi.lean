@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Contracting the covariant derivative of the curvature
@@ -129,17 +130,8 @@ private theorem mvfderiv_ricciTensor_eq_sum_localFrameCoeff
   have hcoeff (k : Fin (Module.finrank ℝ E)) :
       MDiffAt (fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x :=
     mdifferentiableAt_localFrameCoeff b hx ((hs k).mdifferentiableAt (by simp)) k
-  have hfun : (fun y ↦ ∑ k, e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) =
-      ∑ k, fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y) := by
-    ext y; simp
-  have hH : HasMFDerivAt I 𝓘(ℝ)
-      (∑ k, fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x
-      (∑ k, mvfderiv I (fun y ↦ e.localFrameCoeff I b k y
-        (curvatureOperator cov (F k) B C y)) x) :=
-    HasMFDerivAt.sum fun k _ ↦ (hcoeff k).hasMFDerivAt
-  rw [hRic.mvfderiv_eq, hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
-  -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
-  exact _root_.sum_apply ..
+  rw [hRic.mvfderiv_eq, TauCeti.mvfderiv_fun_sum fun k _ ↦ hcoeff k,
+    _root_.sum_apply]
 
 /-- The local frame formula for `∇_v (R(Fₖ, B) C)`, read in the `k`-th coordinate of a frame `F`
 of globally smooth fields agreeing with the local frame of `e` near `x`. -/
@@ -204,7 +196,8 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
   let e := trivializationAt E (TangentSpace I : M → Type _) x
   let b := Module.finBasis ℝ E
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  obtain ⟨F, hF, hFeq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  obtain ⟨F, hF, hFeq⟩ :=
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl hx
   have hFx (k : Fin (Module.finrank ℝ E)) : F k x = e.basisAt b hx k := by
     rw [(hFeq k).self_of_nhds, e.localFrame_apply_of_mem_baseSet b hx]
   let c (k : Fin (Module.finrank ℝ E)) : TangentSpace I x →ₗ[ℝ] ℝ := e.localFrameCoeff I b k x
@@ -390,14 +383,14 @@ theorem IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature
   have hRic (y : M) :
       ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap =
         cov.ricciTensor y := by
-    ext u w
-    simp [LinearMap.toContinuousBilinearMap_apply]
-  have hScal : cov.scalarCurvature = fun y ↦ TauCeti.bilinFormTrace
+    simpa only [ContinuousLinearMap.toBilinForm] using
+      LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap (cov.ricciTensor y)
+  have hScal : cov.scalarCurvature = fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap) := by
     funext y
     rw [hRic, scalarCurvature_apply]
   simp only [derivRicciTensor_def]
-  rw [hScal, hcov.mvfderiv_bilinFormTrace (fun _ _ h₁ h₂ ↦ by
+  rw [hScal, hcov.mvfderiv_metricTrace_apply_eq_sum (fun _ _ h₁ h₂ ↦ by
     simpa only [LinearMap.toContinuousBilinearMap_apply] using
       cov.mdifferentiableAt_ricciTensor_apply h₁ h₂) b v]
 

@@ -87,7 +87,7 @@ theorem ker_specialFiberι_eq_prod_vanishingIdeal
     Scheme.IdealSheafData.ofIdealTop_span_singleton_eq_prod_vanishingIdeal
       (toBase.appTop_ΓSpecIso_inv_ne_zero hη hπm hπ0) _ fun η hpos ↦ by
         rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
-        exact (toBase.ord_germToFunctionField_appTop_pos_iff hη hπm hπ0 η.2).mp hpos]
+        exact (toBase.ord_germToFunctionField_appTop_pos_iff hη hπm hπ0 η.property).mp hpos]
   refine Finset.prod_congr rfl fun η _ ↦ ?_
   rw [← toBase.specialFiberMultiplicity_coe π η, Int.toNat_natCast]
 

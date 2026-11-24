@@ -176,7 +176,7 @@ on the group. -/
 theorem toOrbitClosure_orbitClosureIsoSmul_hom (g : 𝟙_ (Over S) ⟶ G)
     (x : 𝟙_ (Over S) ⟶ X) :
     toOrbitClosure G (g • x) ≫ (orbitClosureIsoSmul G g x).hom =
-      (rightTranslation g).hom.left ≫ toOrbitClosure G x := by
+      (GrpObj.mulRight g).hom.left ≫ toOrbitClosure G x := by
   apply (cancel_mono (orbitClosureι G x)).mp
   simp only [Category.assoc, orbitClosureIsoSmul_hom_ι, toOrbitClosure_ι]
   rw [← Over.comp_left, ← orbitMap_smul]

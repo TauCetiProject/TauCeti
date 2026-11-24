@@ -120,6 +120,10 @@ def quaternionSubgroupSignEquiv : quaternionSubgroup K ≃* ℤˣ :=
     · rw [Subgroup.signIndicatorHom_surjective_iff_index_eq_two]
       rw [Subgroup.index_bot, natCard_quaternionSubgroup]
 
+/-- The quaternion subgroup of a local field is finite. -/
+instance : Finite (quaternionSubgroup K) :=
+  .of_equiv _ quaternionSubgroupSignEquiv.symm.toEquiv
+
 /-- On a quaternion class the sign isomorphism is the norm-equation Hilbert symbol. -/
 @[simp]
 theorem quaternionSubgroupSignEquiv_apply_quaternionClass (a b : Kˣ) :

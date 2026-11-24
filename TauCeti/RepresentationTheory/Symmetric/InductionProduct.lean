@@ -139,7 +139,7 @@ for a subgroup `S` of `Sₙ` and a class function `F` of `S`,
 theorem frobeniusCharacteristic_indClassFunction {n : ℕ} (h : n ≤ Fintype.card σ)
     (S : Subgroup (Perm (Fin n))) (F : ClassFunction ℂ S) :
     (frobeniusCharacteristic σ n h (Subgroup.indClassFunction S F) : MvPolynomial σ ℂ) =
-      (Nat.card S : ℂ)⁻¹ • ∑ s : S, F.1 s • psumPart σ ℂ (s : Perm (Fin n)).partition := by
+      (Nat.card S : ℂ)⁻¹ • ∑ s : S, F.val s • psumPart σ ℂ (s : Perm (Fin n)).partition := by
   have hcard : (Nat.card (Perm (Fin n)) : ℂ) = n.factorial := by
     rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
   have hG : IsUnit (Nat.card (Perm (Fin n)) : ℂ) :=
@@ -149,7 +149,7 @@ theorem frobeniusCharacteristic_indClassFunction {n : ℕ} (h : n ≤ Fintype.ca
   -- Frobenius reciprocity against the class function `π ↦ [x^d] p_(ρ(π))`
   have hd := frobenius_reciprocity_classFunction hG F (coeffPsumPartClassFunction n d)
   simp only [coeffPsumPartClassFunction, psumPart, Perm.parts_partition_inv, hcard] at hd
-  simpa only [psumPart, coeff_smul, coeff_sum, smul_eq_mul, Finset.mul_sum,
+  simpa only [psumPart, AddMonoidAlgebra.coeff_smul_apply, coeff_sum, smul_eq_mul, Finset.mul_sum,
     Subgroup.indClassFunction_apply] using hd
 
 /-! ### Multiplicativity of the Frobenius characteristic -/
@@ -174,7 +174,7 @@ theorem frobeniusCharacteristic_inductionProduct (h : m + n ≤ Fintype.card σ)
   -- transport the average over the block subgroup to `Sₘ × Sₙ`, where it splits as a product
   rw [Finset.sum_equiv e.toEquiv.symm (t := Finset.univ)
     (g := fun q : Perm (Fin m) × Perm (Fin n) =>
-      (f.1 q.1 * g.1 q.2) • psumPart σ ℂ (Perm.finSumPerm q.1 q.2).partition)
+      (f.val q.1 * g.val q.2) • psumPart σ ℂ (Perm.finSumPerm q.1 q.2).partition)
     (fun _ => by simp) fun s _ => ?_]
   · simp only [Fintype.sum_prod_type, psumPart_partition_finSumPerm, smul_mul_smul_comm,
       Finset.sum_mul_sum, Nat.cast_mul, mul_inv]

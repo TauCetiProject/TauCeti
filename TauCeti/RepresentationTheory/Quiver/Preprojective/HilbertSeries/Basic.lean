@@ -299,7 +299,7 @@ private theorem range_koszulSum (n : ℕ) (i : Symmetrify Q) (v : Q) :
   · rintro _ ⟨z, rfl⟩
     rw [koszulSum_apply]
     exact sum_mem fun w _ => sum_mem fun b _ =>
-      preprojectiveMk_ofArrow_mul_mem_preprojectiveCorner b (z w b).2
+      preprojectiveMk_ofArrow_mul_mem_preprojectiveCorner b (z w b).property
   · obtain ⟨p, hp, rfl⟩ := Submodule.mem_map.1 hx
     obtain ⟨hpn, hpc⟩ := mem_pathsBetween_iff.1 hp
     have hpv : vertexIdempotent k (Symmetrify.of.obj v) * p = p := by
@@ -323,7 +323,7 @@ private theorem forall_preprojectiveMk_vertexIdempotent_mul {n : ℕ} {i : Symme
     (z : (w : Symmetrify Q) → (w ⟶ Symmetrify.of.obj v) → preprojectiveCorner k Q n i w)
     (w : Symmetrify Q) (b : w ⟶ Symmetrify.of.obj v) :
     preprojectiveMk k Q (vertexIdempotent k w) * (z w b : preprojectiveAlgebra k Q) = z w b :=
-  preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner (z w b).2
+  preprojectiveMk_vertexIdempotent_mul_of_mem_preprojectiveCorner (z w b).property
 
 /-- In degree `1` the middle map of the Koszul complex is injective: a solution `z_b = ε_b b* y`
 of `∑_b b z_b = 0` in degree `0` vanishes, since `b* y` has no component of degree `0`. -/
@@ -334,7 +334,7 @@ private theorem ker_koszulSum_zero (i : Symmetrify Q) (v : Q) :
   obtain ⟨y, -, hy⟩ := (sum_preprojectiveMk_ofArrow_mul_eq_zero_iff k v
     (forall_preprojectiveMk_vertexIdempotent_mul z)).1 hz
   funext w b
-  have h0 := (mem_preprojectiveCorner_iff.1 (z w b).2).1
+  have h0 := (mem_preprojectiveCorner_iff.1 (z w b).property).1
   refine Subtype.ext ?_
   rw [Pi.zero_apply, Pi.zero_apply, Submodule.coe_zero, ← DirectSum.decompose_of_mem_same _ h0,
     hy w b, decompose_smul_ofArrow_mul_zero]
@@ -349,7 +349,8 @@ private noncomputable def koszulDiff (m : ℕ) (i : Symmetrify Q) (v : Q) :
       (doubledArrowSign k b • (LinearMap.mulLeft k
         (preprojectiveMk k Q (ofArrow (Quiver.reverse b)))).comp
           (preprojectiveCorner k Q m i (Symmetrify.of.obj v)).subtype)
-      fun y => Submodule.smul_mem _ _ (preprojectiveMk_ofArrow_mul_mem_preprojectiveCorner _ y.2)
+      fun y => Submodule.smul_mem _ _ (preprojectiveMk_ofArrow_mul_mem_preprojectiveCorner _
+          y.property)
 
 private theorem koszulDiff_apply (m : ℕ) (i : Symmetrify Q) (v : Q)
     (y : preprojectiveCorner k Q m i (Symmetrify.of.obj v)) (w : Symmetrify Q)
@@ -367,10 +368,10 @@ private theorem ker_koszulSum_succ (m : ℕ) (i : Symmetrify Q) (v : Q) :
       (forall_preprojectiveMk_vertexIdempotent_mul z)).1 hz
     refine ⟨⟨_, decompose_mul_mem_preprojectiveCorner k hyv m i⟩, funext fun w => funext fun b =>
       Subtype.ext ?_⟩
-    have h1 := (mem_preprojectiveCorner_iff.1 (z w b).2).1
+    have h1 := (mem_preprojectiveCorner_iff.1 (z w b).property).1
     rw [koszulDiff_apply, Submodule.coe_mk, smul_ofArrow_mul_decompose_mul, ← hy w b,
       DirectSum.decompose_of_mem_same _ h1,
-      mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner (z w b).2]
+      mul_preprojectiveMk_vertexIdempotent_of_mem_preprojectiveCorner (z w b).property]
   · rintro _ ⟨y, rfl⟩
     rw [LinearMap.mem_ker, koszulSum_apply]
     simp only [koszulDiff_apply]
@@ -413,7 +414,7 @@ theorem exists_eq_sum_preprojectiveMk_ofArrow_mul_of_mem_preprojectiveCorner {n 
         x = ∑ w, ∑ b, preprojectiveMk k Q (ofArrow b) * z w b := by
   rw [← range_koszulSum] at hx
   obtain ⟨z, rfl⟩ := hx
-  exact ⟨fun w b => z w b, fun w b => (z w b).2, koszulSum_apply n i v z⟩
+  exact ⟨fun w b => z w b, fun w b => (z w b).property, koszulSum_apply n i v z⟩
 
 /-- **Exactness of the Koszul complex at its middle term, in one degree and cut down by `e_i`.**
 If `z_b ∈ e_w Π_{m+1} e_i` for the arrows `b : w ⟶ v` of the doubled quiver and `∑_b b z_b = 0`,
@@ -431,7 +432,7 @@ theorem exists_mem_preprojectiveCorner_of_sum_preprojectiveMk_ofArrow_mul_eq_zer
     exact hsum
   rw [ker_koszulSum_succ] at hker
   obtain ⟨y, hy⟩ := hker
-  refine ⟨y, y.2, fun w b => ?_⟩
+  refine ⟨y, y.property, fun w b => ?_⟩
   have h := congrArg (fun f => (f w b : preprojectiveAlgebra k Q)) hy
   rw [koszulDiff_apply] at h
   exact h.symm
@@ -526,7 +527,7 @@ theorem finrank_preprojectiveCorner_add_two_add_finrank_preprojectiveCorner (m :
     simp only [Submodule.mem_map, Submodule.mem_inf, Submodule.mem_iInf, Submodule.subtype_apply]
     constructor
     · rintro ⟨y, hy, rfl⟩
-      exact ⟨y.2, fun w b => LinearMap.mem_ker.2 ((mem_ker_koszulDiff_iff m i v y).1 hy w b)⟩
+      exact ⟨y.property, fun w b => LinearMap.mem_ker.2 ((mem_ker_koszulDiff_iff m i v y).1 hy w b)⟩
     · rintro ⟨hx, hy⟩
       exact ⟨⟨x, hx⟩, (mem_ker_koszulDiff_iff m i v _).2 fun w b => LinearMap.mem_ker.1 (hy w b),
         rfl⟩

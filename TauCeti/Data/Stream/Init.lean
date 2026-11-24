@@ -75,9 +75,11 @@ theorem forall_interleave_iff {s₁ s₂ : ℕ → α} {P : ℕ → α → Prop}
     (∀ j, P j (interleave s₁ s₂ j)) ↔ ∀ i, P (2 * i) (s₁ i) ∧ P (2 * i + 1) (s₂ i) := by
   refine ⟨fun h i ↦ ⟨by simpa using h (2 * i), by simpa using h (2 * i + 1)⟩, fun h j ↦ ?_⟩
   by_cases hmod : j % 2 = 0
-  · rw [show j = 2 * (j / 2) by omega]
+  · have hj : j = 2 * (j / 2) := by omega
+    rw [hj]
     simpa using (h (j / 2)).1
-  · rw [show j = 2 * (j / 2) + 1 by omega]
+  · have hj : j = 2 * (j / 2) + 1 := by omega
+    rw [hj]
     simpa using (h (j / 2)).2
 
 /-- A predicate holds at `(j, interleave s₁ s₂ j)` for every `j < 2 * n` iff it holds at
@@ -97,7 +99,8 @@ theorem forall_lt_two_mul_interleave_succ_iff {s₁ s₂ : ℕ → α} {n : ℕ}
       ∀ i < n, R (2 * i) (s₁ i) (s₂ i) ∧ R (2 * i + 1) (s₂ i) (s₁ (i + 1)) := by
   rw [forall_lt_two_mul_interleave_iff (P := fun j x ↦ R j x (interleave s₁ s₂ (j + 1)))]
   refine forall₂_congr fun i _ ↦ ?_
-  rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega, interleave_two_mul, interleave_two_mul_add_one]
+  have hsucc : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
+  rw [hsucc, interleave_two_mul, interleave_two_mul_add_one]
 
 /-- Evaluating `interleave s₁ s₂` at `n` yields `s₁ (n / 2)` for even `n` and `s₂ (n / 2)` for
 odd `n`. -/
@@ -105,8 +108,9 @@ theorem interleave_apply (s₁ s₂ : ℕ → α) (n : ℕ) :
     interleave s₁ s₂ n = if n % 2 = 0 then s₁ (n / 2) else s₂ (n / 2) :=
   (forall_interleave_iff (s₁ := s₁) (s₂ := s₂)
     (P := fun k x ↦ x = if k % 2 = 0 then s₁ (k / 2) else s₂ (k / 2))).2 (fun i ↦ by
-      constructor
-      · simp [show (2 * i) % 2 = 0 by omega, show (2 * i) / 2 = i by omega]
-      · simp [show (2 * i + 1) / 2 = i by omega]) n
+      have heven : (2 * i) % 2 = 0 := Nat.mul_mod_right 2 i
+      have hdiv₀ : (2 * i) / 2 = i := Nat.mul_div_cancel_left i Nat.two_pos
+      have hdiv₁ : (2 * i + 1) / 2 = i := by omega
+      exact ⟨by simp [heven, hdiv₀], by simp [hdiv₁]⟩) n
 
 end TauCeti

@@ -273,7 +273,7 @@ theorem range_torusFamilyAffineQuotientLift_rootsOfUnityBall (hr : 0 ≤ r) :
     induction y using Quotient.inductionOn with | h x =>
     induction x using Quotient.inductionOn with | h p =>
     rw [torusFamilyAffineQuotientLift_mk, torusFamilyProjection_mk]
-    exact ⟨p.1, mem_ball_zero_iff.2 (mem_rootsOfUnityBall.1 p.1.2), rfl⟩
+    exact ⟨p.1, mem_ball_zero_iff.2 (mem_rootsOfUnityBall.1 p.1.property), rfl⟩
   · rintro ⟨u, hu, rfl⟩
     refine ⟨Quotient.mk _ (Quotient.mk _
       (⟨u, mem_rootsOfUnityBall.2 (mem_ball_zero_iff.1 hu)⟩, 0)), ?_⟩

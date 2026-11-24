@@ -74,7 +74,7 @@ noncomputable def homeomorphFactorsThrough (q : C(A, B)) (hq : IsProperMap q)
   have hcont : Continuous (hqm.liftEquiv (Z := X)).symm :=
     continuous_induced_rng.2 (continuous_precomp q)
   (hqm.liftEquiv (Z := X)).symm.toHomeomorphOfIsInducing
-    (IsInducing.of_comp hcont continuous_subtype_val (isInducing_precomp_of_surjective q hq hsurj))
+    (IsInducing.of_comp hcont continuous_subtypeVal (isInducing_precomp_of_surjective q hq hsurj))
 
 /-- The map out of `A` attached to `f : C(B, X)` by `homeomorphFactorsThrough` is `f ∘ q`. -/
 @[simp]
@@ -90,8 +90,8 @@ value at that point of the map out of the source. -/
 @[simp]
 theorem homeomorphFactorsThrough_symm_apply_comp (q : C(A, B)) (hq : IsProperMap q)
     (hsurj : Function.Surjective q) (g : {g : C(A, X) // Function.FactorsThrough g q}) (a : A) :
-    (homeomorphFactorsThrough q hq hsurj).symm g (q a) = g.1 a := by
-  have h := congrArg (fun f : {g : C(A, X) // Function.FactorsThrough g q} => f.1 a)
+    (homeomorphFactorsThrough q hq hsurj).symm g (q a) = g.val a := by
+  have h := congrArg (fun f : {g : C(A, X) // Function.FactorsThrough g q} => f.val a)
     ((homeomorphFactorsThrough q hq hsurj).apply_symm_apply g)
   rwa [homeomorphFactorsThrough_apply] at h
 

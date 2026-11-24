@@ -76,6 +76,30 @@ def relativePicardDegreeZeroAddPresheafAddEquiv (T : (Over S)ᵒᵖ) :
       (relativePicardDegreeZeroAddPresheaf f).obj T :=
   AddEquiv.refl _
 
+/-- The additive presentation identifies the presheaf section with its native additive class. -/
+@[simp]
+theorem relativePicardDegreeZeroAddPresheaf_eqToHom_app_addEquiv
+    (T : (Over S)ᵒᵖ) (c : Additive ((relativePicardDegreeZeroFunctor f).obj T)) :
+    ConcreteCategory.hom (C := AddCommGrpCat.{u + 1})
+      (X := (relativePicardDegreeZeroAddPresheaf f).obj T)
+      (Y := CommGrpCat.toAddCommGrp.obj ((relativePicardDegreeZeroFunctor f).obj T))
+      (eqToHom (by simpa only [Functor.comp_obj] using
+        Functor.congr_obj (relativePicardDegreeZeroAddPresheaf_eq f) T))
+      (relativePicardDegreeZeroAddPresheafAddEquiv f T c) = c := by
+  rfl
+
+/-- The inverse presentation transport is the canonical additive class equivalence. -/
+@[simp]
+theorem relativePicardDegreeZeroAddPresheaf_eqToHom_symm_app
+    (T : (Over S)ᵒᵖ) (c : Additive ((relativePicardDegreeZeroFunctor f).obj T)) :
+    ConcreteCategory.hom (C := AddCommGrpCat.{u + 1})
+      (X := CommGrpCat.toAddCommGrp.obj ((relativePicardDegreeZeroFunctor f).obj T))
+      (Y := (relativePicardDegreeZeroAddPresheaf f).obj T)
+      (eqToHom (by simpa only [Functor.comp_obj] using
+        Functor.congr_obj (relativePicardDegreeZeroAddPresheaf_eq f).symm T)) c =
+      relativePicardDegreeZeroAddPresheafAddEquiv f T c := by
+  rfl
+
 /-- Pullback of a section commutes with changing the degree-zero Picard functor from
 multiplicative to additive notation. -/
 @[simp]
@@ -102,6 +126,21 @@ def relativePicardDegreeZeroAddPresheafι :
   eqToHom (relativePicardDegreeZeroAddPresheaf_eq f) ≫
     Functor.whiskerRight (relativePicardDegreeZeroFunctorι f) CommGrpCat.toAddCommGrp ≫
     eqToHom (relativePicardAddPresheaf_eq f).symm
+
+/-- The inclusion of additive presheaves sends a degree-zero section to the section of the
+additive relative Picard presheaf represented by the same line-bundle class. -/
+lemma relativePicardDegreeZeroAddPresheafι_app_addEquiv_ofMul {T : (Over S)ᵒᵖ}
+    (c : (relativePicardDegreeZeroFunctor f).obj T) (a : LineBundleClass (pullback T.unop.hom f))
+    (ha : (relativePicardDegreeZeroFunctorι f).app T c = QuotientGroup.mk a) :
+    (relativePicardDegreeZeroAddPresheafι f).app T
+        (relativePicardDegreeZeroAddPresheafAddEquiv f T (Additive.ofMul c)) =
+      relativePicardAddPresheafMk f T a := by
+  rw [relativePicardAddPresheafMk_eq, ← ha]
+  -- Both sides unfold to `Additive.ofMul ((relativePicardDegreeZeroFunctorι f).app T c)`:
+  -- `relativePicardDegreeZeroAddPresheafAddEquiv` is `AddEquiv.refl _`, the `eqToHom` components
+  -- of `relativePicardDegreeZeroAddPresheafι` are identities, and the whiskered component under
+  -- `CommGrpCat.toAddCommGrp` acts on `Additive.ofMul` by applying the same homomorphism.
+  rfl
 
 /-- The inclusion of the additive degree-zero relative Picard presheaf is a monomorphism. -/
 instance : Mono (relativePicardDegreeZeroAddPresheafι f) := by
@@ -187,6 +226,14 @@ lemma relativePicardDegreeZeroToFppfSheafOfMul_app_apply {T : (Over S)ᵒᵖ}
   rw [relativePicardDegreeZeroToFppfSheafOfMul]
   rfl
 
+/-- Every section of the degree-zero relative Picard fppf sheaf is fppf-locally represented by a
+section of the degree-zero relative Picard presheaf. -/
+instance isLocallySurjective_relativePicardDegreeZeroToFppfSheaf :
+    Presheaf.IsLocallySurjective (Scheme.fppfTopology.over S)
+      (relativePicardDegreeZeroToFppfSheaf f) := by
+  rw [relativePicardDegreeZeroToFppfSheaf_eq]
+  infer_instance
+
 /-- The inclusion of the degree-zero relative Picard fppf sheaf into the full relative Picard
 fppf sheaf, obtained by sheafifying the inclusion of presheaves. -/
 def relativePicardDegreeZeroFppfSheafι :
@@ -219,6 +266,17 @@ theorem relativePicardDegreeZeroToFppfSheaf_comp_relativePicardDegreeZeroFppfShe
       relativePicardDegreeZeroAddPresheafι f ≫ relativePicardToFppfSheaf f := by
   rw [relativePicardToFppfSheaf_eq, ← Category.assoc, toSheafify_naturality]
   simp [relativePicardDegreeZeroToFppfSheaf, relativePicardDegreeZeroFppfSheafι, sheafifyMap]
+
+/-- The inclusion of degree-zero fppf sheaves sends the image of a degree-zero presheaf section to
+the image of its inclusion into the full relative Picard presheaf. -/
+@[simp]
+theorem relativePicardDegreeZeroFppfSheafι_hom_app_toFppfSheaf {T : (Over S)ᵒᵖ}
+    (c : (relativePicardDegreeZeroAddPresheaf f).obj T) :
+    (relativePicardDegreeZeroFppfSheafι f).hom.app T
+        ((relativePicardDegreeZeroToFppfSheaf f).app T c) =
+      (relativePicardToFppfSheaf f).app T ((relativePicardDegreeZeroAddPresheafι f).app T c) :=
+  ConcreteCategory.congr_hom (NatTrans.congr_app
+    (relativePicardDegreeZeroToFppfSheaf_comp_relativePicardDegreeZeroFppfSheafι_hom f) T) c
 
 /-- **Universal property of the degree-zero relative Picard fppf sheaf.** Maps from its
 sheafification to an fppf sheaf `F` are naturally equivalent to maps from the additive

@@ -67,7 +67,7 @@ theorem fixingSubgroup_fixedField_of_fixingSubgroup_le (E : IntermediateField (f
   let N := normalClosure (fixedField U) E M
   have : FiniteDimensional (fixedField U) N := normalClosure.is_finiteDimensional _ E M
   have hN (τ : M ≃ₐ[fixedField U] M) (x : N) : τ x ∈ N :=
-    (τ : M →ₐ[fixedField U] M).map_normalClosure_le ⟨x, x.2, rfl⟩
+    (τ : M →ₐ[fixedField U] M).map_normalClosure_le ⟨x, x.property, rfl⟩
   let ρ : (M ≃ₐ[fixedField U] M) →* (N ≃ₐ[fixedField U] N) :=
     { toFun τ := AlgEquiv.ofBijective
         (((τ : M →ₐ[fixedField U] M).comp N.val).codRestrict N.toSubalgebra (hN τ))

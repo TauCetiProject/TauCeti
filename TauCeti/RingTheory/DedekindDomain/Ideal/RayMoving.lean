@@ -58,21 +58,21 @@ theorem exists_mul_toPrincipalIdeal_mem_idealsAway {S : Finset (HeightOneSpectru
     exact ⟨1, by simp [hS], by simp [hT]⟩
   -- Approximate one at the original primes and targets of the cancelling valuation elsewhere.
   choose p hp using fun v : HeightOneSpectrum R ↦
-    v.valuation_surjective K (WithZero.exp (FractionalIdeal.count K v I.1.1))
+    v.valuation_surjective K (WithZero.exp (FractionalIdeal.count K v I.val.val))
   let a : HeightOneSpectrum R → K := fun v ↦ if v ∈ S then 1 else p v
   let ε : HeightOneSpectrum R → ℤᵐ⁰ := fun v ↦
     if v ∈ S then WithZero.exp (-(n v : ℤ))
-    else WithZero.exp (FractionalIdeal.count K v I.1.1)
+    else WithZero.exp (FractionalIdeal.count K v I.val.val)
   obtain ⟨x, hx⟩ := Valuation.exists_forall_sub_lt
-    (fun v : {v : HeightOneSpectrum R // v ∈ S ∪ T} ↦ v.1.valuation K)
+    (fun v : {v : HeightOneSpectrum R // v ∈ S ∪ T} ↦ v.val.valuation K)
     (fun _ ↦ inferInstance)
     (fun v w hvw heq ↦ hvw (Subtype.ext (eq_of_valuation_isEquiv_valuation heq)))
-    (fun v ↦ a v.1) (fun v ↦ ε v.1) (fun v ↦ by
+    (fun v ↦ a v.val) (fun v ↦ ε v.val) (fun v ↦ by
       dsimp [ε]
       split <;> exact WithZero.exp_ne_zero)
   have hval (v : HeightOneSpectrum R) (hv : v ∈ S ∪ T) :
       v.valuation K x = if v ∈ S then 1 else
-        WithZero.exp (FractionalIdeal.count K v I.1.1) := by
+        WithZero.exp (FractionalIdeal.count K v I.val.val) := by
     by_cases hvS : v ∈ S
     · have hε : ε v ≤ 1 := by simp [ε, hvS]
       have hlt : v.valuation K (x - 1) < 1 := by
@@ -84,7 +84,7 @@ theorem exists_mul_toPrincipalIdeal_mem_idealsAway {S : Finset (HeightOneSpectru
       simp [hvS, Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp]
   -- A nonzero prescribed valuation at any prime in the union rules out a zero multiplier.
   have hx0 : x ≠ 0 := by
-    obtain ⟨v, hv⟩ := Finset.nonempty_iff_ne_empty.mpr hST
+    obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.1 hST
     have hne : v.valuation K x ≠ 0 := by
       rw [hval v hv]
       split
@@ -94,12 +94,12 @@ theorem exists_mul_toPrincipalIdeal_mem_idealsAway {S : Finset (HeightOneSpectru
   -- Read the approximation as congruence, and the exact valuations as ideal multiplicities.
   refine ⟨Units.mk0 x hx0, fun v hv ↦ ?_, mem_idealsAway_iff.mpr fun v hv ↦ ?_⟩
   · simpa [a, ε, hv] using (hx ⟨v, Finset.mem_union_left T hv⟩).le
-  · rw [Units.val_mul, FractionalIdeal.count_mul K v (Units.ne_zero I.1)
+  · rw [Units.val_mul, FractionalIdeal.count_mul K v (Units.ne_zero I.val)
       (Units.ne_zero (toPrincipalIdeal R K (Units.mk0 x hx0))),
       FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation, Units.val_mk0,
       hval v (Finset.mem_union_right S hv)]
     by_cases hvS : v ∈ S
-    · simp [hvS, mem_idealsAway_iff.mp I.2 v hvS]
+    · simp [hvS, mem_idealsAway_iff.mp I.property v hvS]
     · simp [hvS]
 
 end TauCeti.NumberFieldArithmetic

@@ -91,7 +91,7 @@ theorem semilocallySimplyConnectedSpace [∀ i, SemilocallySimplyConnectedSpace 
       -- The inclusion of the open set `range (subtypeVal hxV)` factors through the contractible
       -- wedge sum of the `V i`, so it is null-homotopic.
       have hnull : (ContinuousMap.mk (Subtype.val : range (subtypeVal hxV) → WedgeSum x)
-          continuous_subtype_val).Nullhomotopic := by
+          continuous_subtypeVal).Nullhomotopic := by
         convert ((id_nullhomotopic _).comp_right (subtypeVal hxV)).comp_left
           ⟨he.isEmbedding.toHomeomorph.symm, he.isEmbedding.toHomeomorph.symm.continuous⟩
         ext w
