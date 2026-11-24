@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import Mathlib.Topology.Sheaves.Flasque
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
+import TauCeti.CategoryTheory.Sites.ConstantSheaf
 import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
@@ -34,8 +35,6 @@ A spectral space with a generic point is irreducible, so this applies to it.
 
 ## Main declarations
 
-* `TauCeti.toSheafify_app_const_comp_map`: on any site, restricting the image of `A` in the
-  sections of the constant sheaf over `U` to `V` gives its image over `V`.
 * `TauCeti.Topology.injective_toSheafify_app_const`: on any space, the map `A ⟶ A_X(U)` is
   injective when `U` is nonempty.
 * `TauCeti.Topology.bijective_toSheafify_app_const`: the map `A ⟶ A_X(U)` is bijective when `U`
@@ -58,34 +57,6 @@ open CategoryTheory Limits Opposite TopologicalSpace
 universe u
 
 namespace TauCeti
-
-section Site
-
-variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
-  [HasWeakSheafify J D]
-
-/-- On any site, restricting the image of `A` in the sections of the constant sheaf over `U`
-along `i : U ⟶ V` gives the image of `A` over `V`, since the constant presheaf has identity
-restrictions. -/
-@[reassoc]
-theorem toSheafify_app_const_comp_map (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) :
-    (toSheafify J ((Functor.const _).obj A)).app U ≫ ((constantSheaf J D).obj A).obj.map i =
-      (toSheafify J ((Functor.const _).obj A)).app V :=
-  -- `((constantSheaf J D).obj A).obj` is by definition the sheafification of the constant
-  -- presheaf, whose restriction maps are identities.
-  ((toSheafify J ((Functor.const _).obj A)).naturality i).symm.trans (by simp)
-
-/-- The elementwise form of `toSheafify_app_const_comp_map`: restricting the image of `a : A` in
-the sections of the constant sheaf over `U` along `i : U ⟶ V` gives the image of `a` over `V`. -/
-@[simp]
-theorem toSheafify_app_const_map_apply {FD : D → D → Type*} {CD : D → Type*}
-    [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)] [ConcreteCategory D FD]
-    (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) (a : ToType A) :
-    ((constantSheaf J D).obj A).obj.map i ((toSheafify J ((Functor.const _).obj A)).app U a) =
-      (toSheafify J ((Functor.const _).obj A)).app V a := by
-  rw [← ConcreteCategory.comp_apply, toSheafify_app_const_comp_map]
-
-end Site
 
 namespace Topology
 
