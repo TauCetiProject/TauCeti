@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.InnerProductSpace.Continuous
-public import Mathlib.Topology.MetricSpace.Holder
 
 /-!
 # The region above a graph in an inner product space
@@ -26,16 +24,13 @@ graph itself. This file records how these sets sit relative to each other inside
   lie on `frontier Ω` (`TauCeti.mem_frontier_of_inner_eq_of_inter_eq`).
 
 These are the facts used when a domain with `C^{k,α}` boundary is described near each boundary
-point as the region above a graph. The file also names that description for `k = 2`:
-`Set.HasC2HolderBoundary Ω α` says that near every point of `frontier Ω`, in some ball, `Ω` is the
-region above the graph of a `C^{2,α}` function; such a set is open
-(`Set.HasC2HolderBoundary.isOpen`).
+point as the region above a graph.
 -/
 
 public section
 
-open Set Filter Topology Metric
-open scoped InnerProductSpace NNReal
+open Set Filter Topology
+open scoped InnerProductSpace
 
 namespace TauCeti
 
@@ -95,41 +90,3 @@ theorem mem_frontier_of_inner_eq_of_inter_eq {Ω U : Set E} {ν : E} {γ : E →
   exact lt_irrefl _ (h.1.trans_eq hyγ)
 
 end TauCeti
-
-namespace Set
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- A set `Ω` has **`C^{2,α}` boundary** if near every point `z` of its frontier, in some ball
-`B(z, r)`, it is the region `{x | γ x < ⟪x, ν⟫}` above the graph of a `C^{2,α}` function over the
-hyperplane `ν^⊥`: `ν` is a unit vector and `γ` is a `C²` function invariant along `ν` whose first
-and second derivatives are bounded by `G` and whose second derivative is `α`-Hölder with
-constant `G`. -/
-def HasC2HolderBoundary (Ω : Set E) (α : ℝ≥0) : Prop :=
-  ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-    ContDiff ℝ 2 γ ∧ (∀ x (t : ℝ), γ (x + t • ν) = γ x) ∧ (∀ x, ‖fderiv ℝ γ x‖ ≤ G) ∧
-    (∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-    Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r
-
-/-- A set has `C^{2,α}` boundary exactly when every frontier point has a ball in which the set is
-the region above the graph of a `C^{2,α}` function. -/
-theorem hasC2HolderBoundary_iff {Ω : Set E} {α : ℝ≥0} :
-    Ω.HasC2HolderBoundary α ↔ ∀ z ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ),
-      ‖ν‖ = 1 ∧ ContDiff ℝ 2 γ ∧ (∀ x (t : ℝ), γ (x + t • ν) = γ x) ∧
-      (∀ x, ‖fderiv ℝ γ x‖ ≤ G) ∧ (∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) ∧
-      HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫_ℝ} ∩ ball z r :=
-  Iff.rfl
-
-/-- A set with `C^{2,α}` boundary is open: near each frontier point it agrees with the open region
-above the graph of a continuous function, so none of its frontier points belongs to it. -/
-theorem HasC2HolderBoundary.isOpen {Ω : Set E} {α : ℝ≥0} (h : Ω.HasC2HolderBoundary α) :
-    IsOpen Ω := by
-  refine disjoint_frontier_iff_isOpen.1 (disjoint_left.2 fun z hz hzΩ => hz.2 ?_)
-  obtain ⟨ν, γ, -, r, -, hγ, -, -, -, -, hr, hΩr⟩ := h z hz
-  have hopen : IsOpen (Ω ∩ ball z r) := by
-    rw [hΩr]
-    exact (isOpen_lt hγ.continuous (continuous_id.inner continuous_const)).inter isOpen_ball
-  exact interior_maximal inter_subset_left hopen ⟨hzΩ, mem_ball_self hr⟩
-
-end Set
