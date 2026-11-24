@@ -191,14 +191,17 @@ def monoidOfMonObj (X : CompactlyGenerated.{u, w}) [MonObj X] : Monoid X where
   mul x y := μ[X] (x, y)
   one := η[X] PUnit.unit
   mul_assoc x y z := by
+    -- `X ⊗ X` and `(X ⊗ X) ⊗ X` have underlying types `X × X` and `(X × X) × X`.
     change μ[X] (μ[X] (x, y), z) = μ[X] (x, μ[X] (y, z))
     exact ConcreteCategory.congr_hom (MonObj.mul_assoc (X := X))
       (((x, y), z) : ↑((X ⊗ X) ⊗ X))
   one_mul x := by
+    -- `𝟙_ CompactlyGenerated ⊗ X` has underlying type `PUnit × X`.
     change μ[X] (η[X] PUnit.unit, x) = x
     exact ConcreteCategory.congr_hom (MonObj.one_mul (X := X))
       ((PUnit.unit, x) : ↑(𝟙_ _ ⊗ X))
   mul_one x := by
+    -- `X ⊗ 𝟙_ CompactlyGenerated` has underlying type `X × PUnit`.
     change μ[X] (x, η[X] PUnit.unit) = x
     exact ConcreteCategory.congr_hom (MonObj.mul_one (X := X))
       ((x, PUnit.unit) : ↑(X ⊗ 𝟙_ _))
@@ -210,6 +213,7 @@ def groupOfGrpObj (X : CompactlyGenerated.{u, w}) [GrpObj X] : Group X where
   __ := monoidOfMonObj X
   inv x := (ι[X] : X ⟶ X) x
   inv_mul_cancel x := by
+    -- `groupOfGrpObj`'s `mul` and `inv` unfold to `μ[X]` and `ι[X]` on `X × X`.
     change μ[X] ((ι[X] : X ⟶ X) x, x) = η[X] PUnit.unit
     have h := ConcreteCategory.congr_hom (GrpObj.left_inv X) x
     exact h.trans (congrArg η[X] (Subsingleton.elim _ PUnit.unit))
@@ -235,8 +239,13 @@ theorem isTopologicalGroup_of_grpObj (X : CompactlyGenerated.{u, w}) [GrpObj X]
   refine
     { continuous_mul := ?_
       continuous_inv := (ι[X] : X ⟶ X).hom.hom.continuous }
+  -- `counitHomeomorph (TopCat.of (X × X))` is the identity on points
+  -- (`counitHomeomorph_symm_apply`), and `X ⊗ X` is
+  -- `TopCat.toCompactlyGenerated.obj (TopCat.of (X × X))`.
   have hmul : (fun p : X × X ↦ p.1 * p.2) =
-      ⇑(μ[X] : X ⊗ X ⟶ X) ∘ ⇑(counitHomeomorph.{u, w} (TopCat.of (X × X))).symm := rfl
+      ⇑(μ[X] : X ⊗ X ⟶ X) ∘ ⇑(counitHomeomorph.{u, w} (TopCat.of (X × X))).symm :=
+    funext fun p ↦ (groupOfGrpObj_mul X p.1 p.2).trans
+      (congrArg (μ[X] : X ⊗ X ⟶ X) (counitHomeomorph_symm_apply (TopCat.of (X × X)) p).symm)
   rw [hmul]
   exact μ[X].hom.hom.continuous.comp (counitHomeomorph.{u, w} (TopCat.of (X × X))).symm.continuous
 

@@ -5,58 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Filtered.Final
-public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.BlockSucc
 public import TauCeti.Topology.Algebra.OrthogonalGroup
-public import TauCeti.Topology.Category.CompactlyGenerated.GrpObj
-public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
-public import TauCeti.Topology.Category.TopCat.Normal
+public import TauCeti.Topology.Algebra.SequentialColimitGroup
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 
 /-!
 # Stable orthogonal and special orthogonal groups
 
 Placing an `n × n` orthogonal or special orthogonal matrix in the upper-left block and extending
-with `1` on the diagonal (`TauCeti.orthogonalBlockSucc` and `TauCeti.specialOrthogonalBlockSucc`)
-gives sequential diagrams of compact Hausdorff topological groups indexed by `ℕ`.
+with `1` on the diagonal (`TauCeti.continuousOrthogonalBlockSucc ℝ` and
+`TauCeti.continuousSpecialOrthogonalBlockSucc ℝ`) gives sequential diagrams of compact Hausdorff
+topological groups indexed by `ℕ`, whose transitions are closed embeddings.
 
-Using the colimit-creation machinery for group objects in the Cartesian closed category
-`CompactlyGenerated` (`TauCeti.CategoryTheory.Monoidal.SiftedColimits` and
-`TauCeti.Topology.Category.CompactlyGenerated.GrpObj`), together with the fact that the ordinary
-product of two sequential colimits of compact Hausdorff spaces along embeddings is compactly
-generated (`TauCeti.TopCat.uCompactlyGeneratedSpace_prod_of_isColimit`), the sequential colimits
-form Hausdorff (`T4`), compactly generated topological groups:
+Specializing `TauCeti.SequentialColimitGroup` to these two diagrams yields:
 * `TauCeti.StableOrthogonalGroup` (`O`), the sequential colimit of
   `O(n) := Matrix.orthogonalGroup (Fin n) ℝ`;
 * `TauCeti.StableSpecialOrthogonalGroup` (`SO`), the sequential colimit of
   `SO(n) := Matrix.specialOrthogonalGroup (Fin n) ℝ`.
 
-Because the finite stages are compact and the colimit topology coincides with the `TopCat` colimit
-topology, both stable groups enjoy full topological-group universal properties (`lift`, into
-arbitrary topological groups) as well as continuous-map universal properties (`liftContinuous`),
-their finite stages embed as closed subgroups (`isClosedEmbedding_of`), the determinant descends to
-a continuous homomorphism `TauCeti.StableOrthogonalGroup.det : StableOrthogonalGroup →ₜ* ℤˣ`,
-and `SO` embeds as the identity path component of `O`. Connectivity and homotopy-group stability
-for `O` and `SO` are proved in `TauCeti.Topology.Algebra.StableOrthogonalGroup.Stability`.
+Both stable groups inherit `IsTopologicalGroup`, `T4Space`, closed-embedding stage inclusions
+(`TauCeti.SequentialColimitGroup.of`), and universal properties for continuous maps
+(`liftContinuous`) and continuous homomorphisms (`lift`) from `TauCeti.SequentialColimitGroup`.
+The finite-stage determinant sign `TauCeti.orthogonalDetSign` descends to a continuous homomorphism
+`TauCeti.StableOrthogonalGroup.det : StableOrthogonalGroup →ₜ* ℤˣ`, classifying path components
+(`TauCeti.StableOrthogonalGroup.joined_iff_det_eq`), and `toStableOrthogonalGroup : SO →ₜ* O` is
+both a closed and an open embedding onto `det.ker`. Connectivity and homotopy-group stability for
+`O` and `SO` are proved in `TauCeti.Topology.Algebra.StableOrthogonalGroup.Stability`.
 
 ## Main definitions
 
 * `TauCeti.StableOrthogonalGroup`, `TauCeti.StableSpecialOrthogonalGroup`: the stable orthogonal
   and special orthogonal groups `O` and `SO`.
-* `TauCeti.StableOrthogonalGroup.of`, `TauCeti.StableSpecialOrthogonalGroup.of`: the canonical
-  continuous inclusions `O(n) →ₜ* O` and `SO(n) →ₜ* SO`.
-* `TauCeti.StableOrthogonalGroup.lift`, `TauCeti.StableSpecialOrthogonalGroup.lift`: universal
-  properties for continuous homomorphisms into arbitrary topological groups.
 * `TauCeti.StableOrthogonalGroup.det`: the continuous determinant homomorphism `O →ₜ* ℤˣ`.
 * `TauCeti.StableSpecialOrthogonalGroup.toStableOrthogonalGroup`: the inclusion `SO →ₜ* O`.
 
 ## Main results
 
-* `TauCeti.StableOrthogonalGroup.isClosedEmbedding_of`,
-  `TauCeti.StableSpecialOrthogonalGroup.isClosedEmbedding_of`: the finite-stage inclusions are
-  closed embeddings.
 * `TauCeti.StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup`,
   `TauCeti.StableSpecialOrthogonalGroup.isOpenEmbedding_toStableOrthogonalGroup`: `SO → O` is both
   a closed and an open embedding with image `det.ker`.
@@ -68,178 +53,11 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Topology Set
+open Topology Set
 
 namespace TauCeti
 
 attribute [local instance] starRingOfComm
-
-section FiniteStages
-
-/-- Entrywise continuity of the upper-left block extension `Matrix.blockSucc (M x)`. -/
-@[continuity, fun_prop]
-theorem _root_.Continuous.matrix_blockSucc {X k : Type*} {n : ℕ} [TopologicalSpace X]
-    [Semiring k] [TopologicalSpace k] {M : X → Matrix (Fin n) (Fin n) k} (hM : Continuous M) :
-    Continuous fun x ↦ Matrix.blockSucc (M x) := by
-  refine continuous_matrix fun i j ↦ ?_
-  induction i using Fin.lastCases <;> induction j using Fin.lastCases
-  · simpa using continuous_const
-  · simpa using continuous_const
-  · simpa using continuous_const
-  · simpa using hM.matrix_elem _ _
-
-/-- The block inclusion `O(n) → O(n + 1)` is continuous. -/
-theorem continuous_orthogonalBlockSucc (n : ℕ) :
-    Continuous (orthogonalBlockSucc ℝ n) :=
-  continuous_induced_rng.2 <|
-    continuous_subtypeVal.matrix_blockSucc.congr fun A ↦ (coe_orthogonalBlockSucc ℝ n A).symm
-
-private theorem isClosedEmbedding_orthogonalBlockSucc (n : ℕ) :
-    IsClosedEmbedding (orthogonalBlockSucc ℝ n) :=
-  (continuous_orthogonalBlockSucc n).isClosedEmbedding (orthogonalBlockSucc_injective ℝ n)
-
-/-- The orthogonal block inclusion as a continuous monoid homomorphism `O(n) →ₜ* O(n + 1)`. -/
-@[expose]
-def continuousOrthogonalBlockSucc (n : ℕ) :
-    Matrix.orthogonalGroup (Fin n) ℝ →ₜ* Matrix.orthogonalGroup (Fin (n + 1)) ℝ where
-  __ := orthogonalBlockSucc ℝ n
-  continuous_toFun := continuous_orthogonalBlockSucc n
-
-@[simp]
-theorem continuousOrthogonalBlockSucc_apply (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    continuousOrthogonalBlockSucc n A = orthogonalBlockSucc ℝ n A := rfl
-
-/-- The block inclusion `SO(n) → SO(n + 1)` is continuous. -/
-theorem continuous_specialOrthogonalBlockSucc (n : ℕ) :
-    Continuous (specialOrthogonalBlockSucc ℝ n) :=
-  continuous_induced_rng.2 <|
-    continuous_subtypeVal.matrix_blockSucc.congr
-      fun A ↦ (coe_specialOrthogonalBlockSucc ℝ n A).symm
-
-private theorem isClosedEmbedding_specialOrthogonalBlockSucc (n : ℕ) :
-    IsClosedEmbedding (specialOrthogonalBlockSucc ℝ n) :=
-  (continuous_specialOrthogonalBlockSucc n).isClosedEmbedding
-    (specialOrthogonalBlockSucc_injective ℝ n)
-
-/-- The special orthogonal block inclusion as a continuous monoid homomorphism
-`SO(n) →ₜ* SO(n + 1)`. -/
-@[expose]
-def continuousSpecialOrthogonalBlockSucc (n : ℕ) :
-    Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ*
-      Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ where
-  __ := specialOrthogonalBlockSucc ℝ n
-  continuous_toFun := continuous_specialOrthogonalBlockSucc n
-
-@[simp]
-theorem continuousSpecialOrthogonalBlockSucc_apply (n : ℕ)
-    (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    continuousSpecialOrthogonalBlockSucc n A = specialOrthogonalBlockSucc ℝ n A := rfl
-
-/-- The canonical inclusion `SO(n) → O(n)` is continuous. -/
-theorem continuous_toOrthogonalGroup (n : ℕ) :
-    Continuous (Matrix.specialOrthogonalGroup.toOrthogonalGroup (n := Fin n) (R := ℝ)) := by
-  refine continuous_induced_rng.2 ?_
-  have hcoe : (Subtype.val ∘
-      Matrix.specialOrthogonalGroup.toOrthogonalGroup (n := Fin n) (R := ℝ)) =
-      fun A : Matrix.specialOrthogonalGroup (Fin n) ℝ ↦ (A : Matrix (Fin n) (Fin n) ℝ) :=
-    funext fun A ↦ Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup A
-  rw [hcoe]
-  exact continuous_subtypeVal
-
-private theorem isClosedEmbedding_toOrthogonalGroup (n : ℕ) :
-    IsClosedEmbedding
-      (Matrix.specialOrthogonalGroup.toOrthogonalGroup (n := Fin n) (R := ℝ)) :=
-  (continuous_toOrthogonalGroup n).isClosedEmbedding fun _ _ h ↦ Subtype.ext <| by
-    have hval := congrArg (fun X : Matrix.orthogonalGroup (Fin n) ℝ ↦
-      (X : Matrix (Fin n) (Fin n) ℝ)) h
-    simpa [Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup] using hval
-
-private instance : IsSifted ℕ := IsFiltered.isSifted
-
-/-- One step `O(n) ⟶ O(n + 1)` of the sequential diagram defining `StableOrthogonalGroup`
-in `Grp CompactlyGenerated`. -/
-@[expose]
-def orthogonalGrpStep (n : ℕ) :
-    (⟨CompactlyGenerated.of.{0, 0} (Matrix.orthogonalGroup (Fin n) ℝ)⟩ :
-      Grp CompactlyGenerated.{0, 0}) ⟶
-      ⟨CompactlyGenerated.of.{0, 0} (Matrix.orthogonalGroup (Fin (n + 1)) ℝ)⟩ :=
-  Grp.homMk (CompactlyGenerated.ofHom (continuousOrthogonalBlockSucc n : C(_, _)))
-
-/-- The sequential diagram `n ↦ O(n)` in `Grp CompactlyGenerated`. -/
-@[expose]
-def orthogonalGrpDiagram : ℕ ⥤ Grp CompactlyGenerated.{0, 0} :=
-  Functor.ofSequence orthogonalGrpStep
-
-/-- One step `SO(n) ⟶ SO(n + 1)` of the sequential diagram defining
-`StableSpecialOrthogonalGroup` in `Grp CompactlyGenerated`. -/
-@[expose]
-def specialOrthogonalGrpStep (n : ℕ) :
-    (⟨CompactlyGenerated.of.{0, 0} (Matrix.specialOrthogonalGroup (Fin n) ℝ)⟩ :
-      Grp CompactlyGenerated.{0, 0}) ⟶
-      ⟨CompactlyGenerated.of.{0, 0} (Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ)⟩ :=
-  Grp.homMk (CompactlyGenerated.ofHom (continuousSpecialOrthogonalBlockSucc n : C(_, _)))
-
-/-- The sequential diagram `n ↦ SO(n)` in `Grp CompactlyGenerated`. -/
-@[expose]
-def specialOrthogonalGrpDiagram : ℕ ⥤ Grp CompactlyGenerated.{0, 0} :=
-  Functor.ofSequence specialOrthogonalGrpStep
-
-/-- The underlying diagram of topological spaces `n ↦ O(n)` in `TopCat`. -/
-abbrev orthogonalTopDiagram : ℕ ⥤ TopCat.{0} :=
-  orthogonalGrpDiagram ⋙ Grp.forget CompactlyGenerated.{0, 0} ⋙
-    CompactlyGenerated.compactlyGeneratedToTop
-
-/-- The underlying diagram of topological spaces `n ↦ SO(n)` in `TopCat`. -/
-abbrev specialOrthogonalTopDiagram : ℕ ⥤ TopCat.{0} :=
-  specialOrthogonalGrpDiagram ⋙ Grp.forget CompactlyGenerated.{0, 0} ⋙
-    CompactlyGenerated.compactlyGeneratedToTop
-
-private instance (n : ℕ) : CompactSpace (orthogonalTopDiagram.obj n) := by
-  change CompactSpace (Matrix.orthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : T2Space (orthogonalTopDiagram.obj n) := by
-  change T2Space (Matrix.orthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : T1Space (orthogonalTopDiagram.obj n) := by
-  change T1Space (Matrix.orthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : T4Space (orthogonalTopDiagram.obj n) := by
-  change T4Space (Matrix.orthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : CompactSpace (specialOrthogonalTopDiagram.obj n) := by
-  change CompactSpace (Matrix.specialOrthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : T2Space (specialOrthogonalTopDiagram.obj n) := by
-  change T2Space (Matrix.specialOrthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : T1Space (specialOrthogonalTopDiagram.obj n) := by
-  change T1Space (Matrix.specialOrthogonalGroup (Fin n) ℝ); infer_instance
-
-private instance (n : ℕ) : T4Space (specialOrthogonalTopDiagram.obj n) := by
-  change T4Space (Matrix.specialOrthogonalGroup (Fin n) ℝ); infer_instance
-
-/-- On successor steps `n ⟶ n + 1`, `orthogonalTopDiagram` acts as `orthogonalBlockSucc ℝ n`. -/
-lemma orthogonalTopDiagram_map_succ (n : ℕ) (x : Matrix.orthogonalGroup (Fin n) ℝ) :
-    orthogonalTopDiagram.map (homOfLE n.le_succ) x = orthogonalBlockSucc ℝ n x := by
-  change (Grp.forget CompactlyGenerated.{0, 0} ⋙
-    CompactlyGenerated.compactlyGeneratedToTop).map
-      ((Functor.ofSequence orthogonalGrpStep).map (homOfLE (Nat.le_add_right n 1))) x = _
-  rw [Functor.ofSequence_map_homOfLE_succ]
-  rfl
-
-/-- On successor steps `n ⟶ n + 1`, `specialOrthogonalTopDiagram` acts as
-`specialOrthogonalBlockSucc ℝ n`. -/
-lemma specialOrthogonalTopDiagram_map_succ (n : ℕ)
-    (x : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    specialOrthogonalTopDiagram.map (homOfLE n.le_succ) x =
-      specialOrthogonalBlockSucc ℝ n x := by
-  change (Grp.forget CompactlyGenerated.{0, 0} ⋙
-    CompactlyGenerated.compactlyGeneratedToTop).map
-      ((Functor.ofSequence specialOrthogonalGrpStep).map (homOfLE (Nat.le_add_right n 1))) x = _
-  rw [Functor.ofSequence_map_homOfLE_succ]
-  rfl
-
-end FiniteStages
 
 /-! ### The stable orthogonal group `O` -/
 
@@ -247,239 +65,61 @@ end FiniteStages
 groups `O(n)` along the block inclusions `A ↦ diag(A, 1)`, equipped with the sequential colimit
 topology (which is `T4`, compactly generated, and makes multiplication and inversion jointly
 continuous). -/
-@[expose]
-def StableOrthogonalGroup : Type :=
-  (colimit orthogonalGrpDiagram).X
+abbrev StableOrthogonalGroup : Type :=
+  SequentialColimitGroup (continuousOrthogonalBlockSucc ℝ)
 
 namespace StableOrthogonalGroup
 
-/-- The colimit cocone in `TopCat` underlying `StableOrthogonalGroup`. -/
-@[expose]
-def topCocone : Cocone orthogonalTopDiagram :=
-  (Grp.forget CompactlyGenerated.{0, 0} ⋙
-    CompactlyGenerated.compactlyGeneratedToTop).mapCocone
-      (colimit.cocone orthogonalGrpDiagram)
+instance instIsTopologicalGroup : IsTopologicalGroup StableOrthogonalGroup :=
+  SequentialColimitGroup.isTopologicalGroup (continuousOrthogonalBlockSucc ℝ)
+    fun n ↦ funext (continuousOrthogonalBlockSucc_apply ℝ n) ▸
+      isClosedEmbedding_orthogonalBlockSucc ℝ n
 
-/-- `topCocone` is a colimit cocone in `TopCat`. -/
-@[expose]
-def isColimitTopCocone : IsColimit topCocone :=
-  isColimitOfPreserves
-    (Grp.forget CompactlyGenerated.{0, 0} ⋙ CompactlyGenerated.compactlyGeneratedToTop)
-    (colimit.isColimit orthogonalGrpDiagram)
-
-instance : TopologicalSpace StableOrthogonalGroup :=
-  (colimit orthogonalGrpDiagram).X.toTop.str
-
-instance : Group StableOrthogonalGroup :=
-  CompactlyGenerated.groupOfGrpObj (colimit orthogonalGrpDiagram).X
-
-instance : UCompactlyGeneratedSpace.{0} StableOrthogonalGroup :=
-  (colimit orthogonalGrpDiagram).X.is_compactly_generated
-
-/-- Every successor transition map in `orthogonalTopDiagram` is a closed embedding. -/
-lemma isClosedEmbedding_topDiagram_succ (n : ℕ) :
-    IsClosedEmbedding (orthogonalTopDiagram.map (homOfLE n.le_succ)) := by
-  have hfn : (orthogonalTopDiagram.map (homOfLE n.le_succ) :
-      Matrix.orthogonalGroup (Fin n) ℝ → Matrix.orthogonalGroup (Fin (n + 1)) ℝ) =
-      orthogonalBlockSucc ℝ n :=
-    funext (orthogonalTopDiagram_map_succ n)
-  exact hfn ▸ isClosedEmbedding_orthogonalBlockSucc n
-
-private instance instUCompactlyGeneratedSpaceProd :
-    UCompactlyGeneratedSpace.{0} (StableOrthogonalGroup × StableOrthogonalGroup) :=
-  TopCat.uCompactlyGeneratedSpace_prod_of_isColimit isColimitTopCocone isColimitTopCocone
-    (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ isClosedEmbedding_topDiagram_succ
-      isColimitTopCocone · |>.isEmbedding)
-    (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ isClosedEmbedding_topDiagram_succ
-      isColimitTopCocone · |>.isEmbedding)
-
-instance : IsTopologicalGroup StableOrthogonalGroup :=
-  CompactlyGenerated.isTopologicalGroup_of_grpObj (colimit orthogonalGrpDiagram).X
-    instUCompactlyGeneratedSpaceProd
-
-instance : T4Space StableOrthogonalGroup :=
-  TopCat.t4Space_of_isColimit isClosedEmbedding_topDiagram_succ isColimitTopCocone
-
-/-- The canonical continuous inclusion `O(n) →ₜ* O` from stage `n` into the stable orthogonal
-group. -/
-@[expose]
-def of (n : ℕ) : Matrix.orthogonalGroup (Fin n) ℝ →ₜ* StableOrthogonalGroup where
-  toFun := (topCocone.ι.app n).hom
-  map_one' := ConcreteCategory.congr_hom
-    (IsMonHom.one_hom ((colimit.cocone orthogonalGrpDiagram).ι.app n).hom.hom) PUnit.unit
-  map_mul' x y := ConcreteCategory.congr_hom
-    (IsMonHom.mul_hom ((colimit.cocone orthogonalGrpDiagram).ι.app n).hom.hom) (x, y)
-  continuous_toFun := (topCocone.ι.app n).hom.continuous
-
-private lemma coe_of_eq_topCocone (n : ℕ) :
-    (of n : Matrix.orthogonalGroup (Fin n) ℝ → StableOrthogonalGroup) =
-      topCocone.ι.app n := rfl
-
-@[simp]
-theorem of_orthogonalBlockSucc (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    of (n + 1) (orthogonalBlockSucc ℝ n A) = of n A := by
-  change (topCocone.ι.app (n + 1)).hom (orthogonalBlockSucc ℝ n A) = (topCocone.ι.app n).hom A
-  rw [← orthogonalTopDiagram_map_succ n A]
-  exact ConcreteCategory.congr_hom (topCocone.w (homOfLE n.le_succ)) A
-
-@[simp]
-theorem of_comp_continuousOrthogonalBlockSucc (n : ℕ) :
-    (of (n + 1)).comp (continuousOrthogonalBlockSucc n) = of n :=
-  ContinuousMonoidHom.ext (of_orthogonalBlockSucc n)
-
-theorem of_le {m n : ℕ} (h : m ≤ n) (A : Matrix.orthogonalGroup (Fin m) ℝ) :
-    of n (orthogonalTopDiagram.map (homOfLE h) A) = of m A := by
-  have hw := topCocone.w (homOfLE h)
-  exact ConcreteCategory.congr_hom hw A
-
-/-- Every finite-stage inclusion `O(n) → O` is a closed embedding. -/
-theorem isClosedEmbedding_of (n : ℕ) : IsClosedEmbedding (of n) :=
-  TopCat.isClosedEmbedding_ι_of_isColimit_of_succ isClosedEmbedding_topDiagram_succ
-    isColimitTopCocone n
-
-/-- Every finite-stage inclusion `O(n) → O` is injective. -/
-theorem of_injective (n : ℕ) : Function.Injective (of n) :=
-  (isClosedEmbedding_of n).injective
-
-/-- Every element of `O` lies in the image of some finite stage `O(n)`. -/
-theorem exists_of (x : StableOrthogonalGroup) :
-    ∃ (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ), of n A = x :=
-  Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (forget TopCat) isColimitTopCocone) x
-
-/-- Any two elements of `O` lie in the image of a common finite stage `O(n)`. -/
-theorem exists_of₂ (x y : StableOrthogonalGroup) :
-    ∃ (n : ℕ) (A B : Matrix.orthogonalGroup (Fin n) ℝ), of n A = x ∧ of n B = y :=
-  Types.FilteredColimit.jointly_surjective_of_isColimit₂
-    (isColimitOfPreserves (forget TopCat) isColimitTopCocone) x y
-
-/-- Two continuous homomorphisms out of `O` agree when they agree on every finite stage `O(n)`. -/
-@[ext]
-theorem hom_ext {G : Type*} [Group G] [TopologicalSpace G] {f g : StableOrthogonalGroup →ₜ* G}
-    (h : ∀ n, f.comp (of n) = g.comp (of n)) : f = g := by
-  ext x
-  obtain ⟨n, A, rfl⟩ := exists_of x
-  exact DFunLike.congr_fun (h n) A
-
-/-- Two continuous maps out of `O` agree when they agree on every finite stage `O(n)`. -/
-@[ext]
-theorem continuousMap_ext {Y : Type*} [TopologicalSpace Y] {f g : C(StableOrthogonalGroup, Y)}
-    (h : ∀ n, f.comp (of n : C(Matrix.orthogonalGroup (Fin n) ℝ, StableOrthogonalGroup)) =
-      g.comp (of n : C(Matrix.orthogonalGroup (Fin n) ℝ, StableOrthogonalGroup))) :
-    f = g := by
-  ext x
-  obtain ⟨n, A, rfl⟩ := exists_of x
-  exact ContinuousMap.congr_fun (h n) A
-
-private def liftContinuousCocone {Y : Type} [TopologicalSpace Y]
-    (f : ∀ n, C(Matrix.orthogonalGroup (Fin n) ℝ, Y))
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
-    Cocone orthogonalTopDiagram :=
-  Cocone.mk (TopCat.of Y)
-    (NatTrans.ofSequence (G := (Functor.const ℕ).obj (TopCat.of Y))
-      (fun n ↦ TopCat.ofHom (f n)) fun n ↦ ConcreteCategory.hom_ext _ _ fun A ↦ by
-        change f (n + 1) (orthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A) = f n A
-        rw [show orthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A =
-          orthogonalBlockSucc ℝ n A from orthogonalTopDiagram_map_succ n A]
-        exact hf n A)
-
-/-- **Universal property of `O` as a topological space**: a family of continuous maps out of `O(n)`
-into a space `Y : Type` compatible with `orthogonalBlockSucc` descends to a unique continuous map
-`C(O, Y)`. -/
-def liftContinuous {Y : Type} [TopologicalSpace Y]
-    (f : ∀ n, C(Matrix.orthogonalGroup (Fin n) ℝ, Y))
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
-    C(StableOrthogonalGroup, Y) :=
-  (isColimitTopCocone.desc (liftContinuousCocone f hf)).hom
-
-@[simp]
-theorem liftContinuous_of {Y : Type} [TopologicalSpace Y]
-    (f : ∀ n, C(Matrix.orthogonalGroup (Fin n) ℝ, Y))
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A)
-    (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    liftContinuous f hf (of n A) = f n A := by
-  have hfac := isColimitTopCocone.fac (liftContinuousCocone f hf) n
-  exact ConcreteCategory.congr_hom hfac A
-
-/-- **Universal property of `O` as a topological group**: a family of continuous homomorphisms out
-of `O(n)` into any group `G : Type` with a topology that is compatible with `orthogonalBlockSucc`
-descends to a unique continuous homomorphism `O →ₜ* G`. -/
-def lift {G : Type} [Group G] [TopologicalSpace G]
-    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A) :
-    StableOrthogonalGroup →ₜ* G :=
-  let g : C(StableOrthogonalGroup, G) := liftContinuous (fun n ↦ (f n).toContinuousMap) hf
-  { toFun := g
-    map_one' := by
-      change g 1 = 1
-      rw [show (1 : StableOrthogonalGroup) = of 0 1 from (map_one (of 0)).symm]
-      exact (liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf 0 1).trans (map_one (f 0))
-    map_mul' x y := by
-      obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
-      rw [← map_mul (of n), liftContinuous_of, liftContinuous_of, liftContinuous_of]
-      exact map_mul (f n) A B
-    continuous_toFun := g.continuous }
-
-@[simp]
-theorem lift_of {G : Type} [Group G] [TopologicalSpace G]
-    (f : ∀ n, Matrix.orthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (orthogonalBlockSucc ℝ n A) = f n A)
-    (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    lift f hf (of n A) = f n A :=
-  liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf n A
-
-private def orthogonalDetSign (n : ℕ) : Matrix.orthogonalGroup (Fin n) ℝ →* ℤˣ where
-  toFun A := if (A : Matrix (Fin n) (Fin n) ℝ).det = 1 then 1 else -1
-  map_one' := by simp
-  map_mul' A B := by
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
-      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
-      simp [hA, hB, Matrix.det_mul]
-    norm_num
-
-private theorem continuous_orthogonalDetSign (n : ℕ) : Continuous (orthogonalDetSign n) := by
-  refine Continuous.if ?_ continuous_const continuous_const
-  intro A hA
-  have hdet : Continuous fun B : Matrix.orthogonalGroup (Fin n) ℝ ↦
-      (B : Matrix (Fin n) (Fin n) ℝ).det :=
-    continuous_subtypeVal.matrix_det
-  have hclopen : IsClopen {B : Matrix.orthogonalGroup (Fin n) ℝ |
-      (B : Matrix (Fin n) (Fin n) ℝ).det = 1} := by
-    refine ⟨isClosed_singleton.preimage hdet, ?_⟩
-    have heq : {B : Matrix.orthogonalGroup (Fin n) ℝ |
-        (B : Matrix (Fin n) (Fin n) ℝ).det = 1} =
-        {B : Matrix.orthogonalGroup (Fin n) ℝ |
-          (0 : ℝ) < (B : Matrix (Fin n) (Fin n) ℝ).det} := by
-      ext B
-      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB
-      · simp [hB]
-      · simp [hB]; norm_num
-    rw [heq]
-    exact isOpen_lt continuous_const hdet
-  rw [hclopen.frontier_eq] at hA
-  exact hA.elim
+instance instT4Space : T4Space StableOrthogonalGroup :=
+  SequentialColimitGroup.t4Space (continuousOrthogonalBlockSucc ℝ)
+    fun n ↦ funext (continuousOrthogonalBlockSucc_apply ℝ n) ▸
+      isClosedEmbedding_orthogonalBlockSucc ℝ n
 
 /-- The determinant on `O`, taking values in `ℤˣ = {±1}` (with the discrete topology). -/
 def det : StableOrthogonalGroup →ₜ* ℤˣ :=
-  lift
-    (fun n ↦ ⟨orthogonalDetSign n, continuous_orthogonalDetSign n⟩)
+  SequentialColimitGroup.lift (continuousOrthogonalBlockSucc ℝ)
+    (fun n ↦ ⟨orthogonalDetSign (Fin n) ℝ, continuous_orthogonalDetSign⟩)
     (fun n A ↦ by
-      change orthogonalDetSign (n + 1) (orthogonalBlockSucc ℝ n A) = orthogonalDetSign n A
-      apply Units.ext
-      simp [orthogonalDetSign])
+      -- Unfold the `ContinuousMonoidHom` wrapper `{ toMonoidHom := orthogonalDetSign, ... }`.
+      change orthogonalDetSign (Fin (n + 1)) ℝ (continuousOrthogonalBlockSucc ℝ n A) =
+        orthogonalDetSign (Fin n) ℝ A
+      rw [orthogonalDetSign_apply, orthogonalDetSign_apply,
+        continuousOrthogonalBlockSucc_apply, coe_orthogonalBlockSucc, Matrix.det_blockSucc])
 
+open Classical in
+/-- Evaluating `StableOrthogonalGroup.det` on a stage matrix `of n A` returns `1` or `-1`
+according to `(A : Matrix (Fin n) (Fin n) ℝ).det = 1`. -/
 @[simp]
 theorem det_of (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    det (of n A) = if (A : Matrix (Fin n) (Fin n) ℝ).det = 1 then 1 else -1 := by
-  rw [det, lift_of]
-  rfl
+    det (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n A) =
+      if (A : Matrix (Fin n) (Fin n) ℝ).det = 1 then 1 else -1 := by
+  rw [det, SequentialColimitGroup.lift_of]
+  exact orthogonalDetSign_apply A
 
+/-- Coerced to `ℝ`, `StableOrthogonalGroup.det` agrees on every stage `O(n)` with the matrix
+determinant. -/
 theorem coe_det_of (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
-    ((det (of n A) : ℤ) : ℝ) = (A : Matrix (Fin n) (Fin n) ℝ).det := by
+    ((det (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n A) : ℤ) : ℝ) =
+      (A : Matrix (Fin n) (Fin n) ℝ).det := by
   rw [det_of]
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA
-  · simp [hA]
-  · simp [hA]; norm_num
+  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+    simp [hA, show (-1 : ℝ) ≠ 1 by norm_num]
+
+/-- A finite-stage orthogonal matrix has `det (of n A) = 1` in `O` if and only if its matrix
+determinant is `1`. -/
+theorem det_of_eq_one_iff (n : ℕ) (A : Matrix.orthogonalGroup (Fin n) ℝ) :
+    det (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n A) = 1 ↔
+      (A : Matrix (Fin n) (Fin n) ℝ).det = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have hc := coe_det_of n A
+  rw [show (det (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n A) : ℤ) = 1 from
+    congrArg Units.val h] at hc
+  simpa using hc.symm
 
 end StableOrthogonalGroup
 
@@ -487,253 +127,94 @@ end StableOrthogonalGroup
 
 /-- **The stable special orthogonal group `SO`**: the sequential colimit of the real special
 orthogonal groups `SO(n)` along the block inclusions `A ↦ diag(A, 1)`. -/
-@[expose]
-def StableSpecialOrthogonalGroup : Type :=
-  (colimit specialOrthogonalGrpDiagram).X
+abbrev StableSpecialOrthogonalGroup : Type :=
+  SequentialColimitGroup (continuousSpecialOrthogonalBlockSucc ℝ)
 
 namespace StableSpecialOrthogonalGroup
 
-/-- The colimit cocone in `TopCat` underlying `StableSpecialOrthogonalGroup`. -/
-@[expose]
-def topCocone : Cocone specialOrthogonalTopDiagram :=
-  (Grp.forget CompactlyGenerated.{0, 0} ⋙
-    CompactlyGenerated.compactlyGeneratedToTop).mapCocone
-      (colimit.cocone specialOrthogonalGrpDiagram)
+instance instIsTopologicalGroup : IsTopologicalGroup StableSpecialOrthogonalGroup :=
+  SequentialColimitGroup.isTopologicalGroup (continuousSpecialOrthogonalBlockSucc ℝ)
+    fun n ↦ funext (continuousSpecialOrthogonalBlockSucc_apply ℝ n) ▸
+      isClosedEmbedding_specialOrthogonalBlockSucc ℝ n
 
-/-- `topCocone` is a colimit cocone in `TopCat`. -/
-@[expose]
-def isColimitTopCocone : IsColimit topCocone :=
-  isColimitOfPreserves
-    (Grp.forget CompactlyGenerated.{0, 0} ⋙ CompactlyGenerated.compactlyGeneratedToTop)
-    (colimit.isColimit specialOrthogonalGrpDiagram)
-
-instance : TopologicalSpace StableSpecialOrthogonalGroup :=
-  (colimit specialOrthogonalGrpDiagram).X.toTop.str
-
-instance : Group StableSpecialOrthogonalGroup :=
-  CompactlyGenerated.groupOfGrpObj (colimit specialOrthogonalGrpDiagram).X
-
-instance : UCompactlyGeneratedSpace.{0} StableSpecialOrthogonalGroup :=
-  (colimit specialOrthogonalGrpDiagram).X.is_compactly_generated
-
-/-- Every successor transition map in `specialOrthogonalTopDiagram` is a closed embedding. -/
-lemma isClosedEmbedding_topDiagram_succ (n : ℕ) :
-    IsClosedEmbedding (specialOrthogonalTopDiagram.map (homOfLE n.le_succ)) := by
-  have hfn : (specialOrthogonalTopDiagram.map (homOfLE n.le_succ) :
-      Matrix.specialOrthogonalGroup (Fin n) ℝ →
-        Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ) =
-      specialOrthogonalBlockSucc ℝ n :=
-    funext (specialOrthogonalTopDiagram_map_succ n)
-  exact hfn ▸ isClosedEmbedding_specialOrthogonalBlockSucc n
-
-private instance instUCompactlyGeneratedSpaceProd :
-    UCompactlyGeneratedSpace.{0} (StableSpecialOrthogonalGroup × StableSpecialOrthogonalGroup) :=
-  TopCat.uCompactlyGeneratedSpace_prod_of_isColimit isColimitTopCocone isColimitTopCocone
-    (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ isClosedEmbedding_topDiagram_succ
-      isColimitTopCocone · |>.isEmbedding)
-    (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ isClosedEmbedding_topDiagram_succ
-      isColimitTopCocone · |>.isEmbedding)
-
-instance : IsTopologicalGroup StableSpecialOrthogonalGroup :=
-  CompactlyGenerated.isTopologicalGroup_of_grpObj (colimit specialOrthogonalGrpDiagram).X
-    instUCompactlyGeneratedSpaceProd
-
-instance : T4Space StableSpecialOrthogonalGroup :=
-  TopCat.t4Space_of_isColimit isClosedEmbedding_topDiagram_succ isColimitTopCocone
-
-/-- The canonical continuous inclusion `SO(n) →ₜ* SO` from stage `n` into the stable special
-orthogonal group. -/
-@[expose]
-def of (n : ℕ) :
-    Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* StableSpecialOrthogonalGroup where
-  toFun := (topCocone.ι.app n).hom
-  map_one' := ConcreteCategory.congr_hom
-    (IsMonHom.one_hom ((colimit.cocone specialOrthogonalGrpDiagram).ι.app n).hom.hom)
-    PUnit.unit
-  map_mul' x y := ConcreteCategory.congr_hom
-    (IsMonHom.mul_hom ((colimit.cocone specialOrthogonalGrpDiagram).ι.app n).hom.hom)
-    (x, y)
-  continuous_toFun := (topCocone.ι.app n).hom.continuous
-
-private lemma coe_of_eq_topCocone (n : ℕ) :
-    (of n : Matrix.specialOrthogonalGroup (Fin n) ℝ → StableSpecialOrthogonalGroup) =
-      topCocone.ι.app n := rfl
-
-@[simp]
-theorem of_specialOrthogonalBlockSucc (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    of (n + 1) (specialOrthogonalBlockSucc ℝ n A) = of n A := by
-  change (topCocone.ι.app (n + 1)).hom (specialOrthogonalBlockSucc ℝ n A) =
-    (topCocone.ι.app n).hom A
-  rw [← specialOrthogonalTopDiagram_map_succ n A]
-  exact ConcreteCategory.congr_hom (topCocone.w (homOfLE n.le_succ)) A
-
-@[simp]
-theorem of_comp_continuousSpecialOrthogonalBlockSucc (n : ℕ) :
-    (of (n + 1)).comp (continuousSpecialOrthogonalBlockSucc n) = of n :=
-  ContinuousMonoidHom.ext (of_specialOrthogonalBlockSucc n)
-
-theorem of_le {m n : ℕ} (h : m ≤ n) (A : Matrix.specialOrthogonalGroup (Fin m) ℝ) :
-    of n (specialOrthogonalTopDiagram.map (homOfLE h) A) = of m A := by
-  have hw := topCocone.w (homOfLE h)
-  exact ConcreteCategory.congr_hom hw A
-
-/-- Every finite-stage inclusion `SO(n) → SO` is a closed embedding. -/
-theorem isClosedEmbedding_of (n : ℕ) : IsClosedEmbedding (of n) :=
-  TopCat.isClosedEmbedding_ι_of_isColimit_of_succ isClosedEmbedding_topDiagram_succ
-    isColimitTopCocone n
-
-/-- Every finite-stage inclusion `SO(n) → SO` is injective. -/
-theorem of_injective (n : ℕ) : Function.Injective (of n) :=
-  (isClosedEmbedding_of n).injective
-
-/-- Every element of `SO` lies in the image of some finite stage `SO(n)`. -/
-theorem exists_of (x : StableSpecialOrthogonalGroup) :
-    ∃ (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ), of n A = x :=
-  Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (forget TopCat) isColimitTopCocone) x
-
-/-- Any two elements of `SO` lie in the image of a common finite stage `SO(n)`. -/
-theorem exists_of₂ (x y : StableSpecialOrthogonalGroup) :
-    ∃ (n : ℕ) (A B : Matrix.specialOrthogonalGroup (Fin n) ℝ), of n A = x ∧ of n B = y :=
-  Types.FilteredColimit.jointly_surjective_of_isColimit₂
-    (isColimitOfPreserves (forget TopCat) isColimitTopCocone) x y
-
-/-- Two continuous homomorphisms out of `SO` agree when they agree on every finite stage `SO(n)`. -/
-@[ext]
-theorem hom_ext {G : Type*} [Group G] [TopologicalSpace G]
-    {f g : StableSpecialOrthogonalGroup →ₜ* G}
-    (h : ∀ n, f.comp (of n) = g.comp (of n)) : f = g := by
-  ext x
-  obtain ⟨n, A, rfl⟩ := exists_of x
-  exact DFunLike.congr_fun (h n) A
-
-/-- Two continuous maps out of `SO` agree when they agree on every finite stage `SO(n)`. -/
-@[ext]
-theorem continuousMap_ext {Y : Type*} [TopologicalSpace Y]
-    {f g : C(StableSpecialOrthogonalGroup, Y)}
-    (h : ∀ n, f.comp (of n : C(Matrix.specialOrthogonalGroup (Fin n) ℝ,
-        StableSpecialOrthogonalGroup)) =
-      g.comp (of n : C(Matrix.specialOrthogonalGroup (Fin n) ℝ,
-        StableSpecialOrthogonalGroup))) :
-    f = g := by
-  ext x
-  obtain ⟨n, A, rfl⟩ := exists_of x
-  exact ContinuousMap.congr_fun (h n) A
-
-private def liftContinuousCocone {Y : Type} [TopologicalSpace Y]
-    (f : ∀ n, C(Matrix.specialOrthogonalGroup (Fin n) ℝ, Y))
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
-    Cocone specialOrthogonalTopDiagram :=
-  Cocone.mk (TopCat.of Y)
-    (NatTrans.ofSequence (G := (Functor.const ℕ).obj (TopCat.of Y))
-      (fun n ↦ TopCat.ofHom (f n)) fun n ↦ ConcreteCategory.hom_ext _ _ fun A ↦ by
-        change f (n + 1)
-          (specialOrthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A) = f n A
-        rw [show specialOrthogonalTopDiagram.map (homOfLE (n.le_add_right 1)) A =
-          specialOrthogonalBlockSucc ℝ n A from specialOrthogonalTopDiagram_map_succ n A]
-        exact hf n A)
-
-/-- **Universal property of `SO` as a topological space**: a family of continuous maps out of
-`SO(n)` into a space `Y : Type` compatible with `specialOrthogonalBlockSucc` descends to a unique
-continuous map `C(SO, Y)`. -/
-def liftContinuous {Y : Type} [TopologicalSpace Y]
-    (f : ∀ n, C(Matrix.specialOrthogonalGroup (Fin n) ℝ, Y))
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
-    C(StableSpecialOrthogonalGroup, Y) :=
-  (isColimitTopCocone.desc (liftContinuousCocone f hf)).hom
-
-@[simp]
-theorem liftContinuous_of {Y : Type} [TopologicalSpace Y]
-    (f : ∀ n, C(Matrix.specialOrthogonalGroup (Fin n) ℝ, Y))
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A)
-    (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    liftContinuous f hf (of n A) = f n A := by
-  have hfac := isColimitTopCocone.fac (liftContinuousCocone f hf) n
-  exact ConcreteCategory.congr_hom hfac A
-
-/-- **Universal property of `SO` as a topological group**: a family of continuous homomorphisms out
-of `SO(n)` into any group `G : Type` with a topology compatible with `specialOrthogonalBlockSucc`
-descends to a unique continuous homomorphism `SO →ₜ* G`. -/
-def lift {G : Type} [Group G] [TopologicalSpace G]
-    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A) :
-    StableSpecialOrthogonalGroup →ₜ* G :=
-  let g : C(StableSpecialOrthogonalGroup, G) := liftContinuous (fun n ↦ (f n).toContinuousMap) hf
-  { toFun := g
-    map_one' := by
-      change g 1 = 1
-      rw [show (1 : StableSpecialOrthogonalGroup) = of 0 1 from (map_one (of 0)).symm]
-      exact (liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf 0 1).trans (map_one (f 0))
-    map_mul' x y := by
-      obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
-      rw [← map_mul (of n), liftContinuous_of, liftContinuous_of, liftContinuous_of]
-      exact map_mul (f n) A B
-    continuous_toFun := g.continuous }
-
-@[simp]
-theorem lift_of {G : Type} [Group G] [TopologicalSpace G]
-    (f : ∀ n, Matrix.specialOrthogonalGroup (Fin n) ℝ →ₜ* G)
-    (hf : ∀ n A, f (n + 1) (specialOrthogonalBlockSucc ℝ n A) = f n A)
-    (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    lift f hf (of n A) = f n A :=
-  liftContinuous_of (fun n ↦ (f n).toContinuousMap) hf n A
+instance instT4Space : T4Space StableSpecialOrthogonalGroup :=
+  SequentialColimitGroup.t4Space (continuousSpecialOrthogonalBlockSucc ℝ)
+    fun n ↦ funext (continuousSpecialOrthogonalBlockSucc_apply ℝ n) ▸
+      isClosedEmbedding_specialOrthogonalBlockSucc ℝ n
 
 /-- **The stable special orthogonal group is path-connected.** -/
-instance : PathConnectedSpace StableSpecialOrthogonalGroup := by
+instance instPathConnectedSpace : PathConnectedSpace StableSpecialOrthogonalGroup := by
   refine ⟨⟨1⟩, fun x y ↦ ?_⟩
-  obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
-  exact (PathConnectedSpace.joined A B).map (of n).continuous
+  obtain ⟨n, A, B, rfl, rfl⟩ :=
+    SequentialColimitGroup.exists_of₂ (continuousSpecialOrthogonalBlockSucc ℝ) x y
+  exact (PathConnectedSpace.joined A B).map
+    (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n).continuous
 
 /-- The canonical inclusion `SO →ₜ* O`, induced by `SO(n) →* O(n)`. -/
 def toStableOrthogonalGroup : StableSpecialOrthogonalGroup →ₜ* StableOrthogonalGroup :=
-  lift
-    (fun n ↦ (StableOrthogonalGroup.of n).comp
-      ⟨Matrix.specialOrthogonalGroup.toOrthogonalGroup, continuous_toOrthogonalGroup n⟩)
+  SequentialColimitGroup.lift (continuousSpecialOrthogonalBlockSucc ℝ)
+    (fun n ↦ (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n).comp
+      ⟨Matrix.specialOrthogonalGroup.toOrthogonalGroup,
+        Matrix.specialOrthogonalGroup.continuous_toOrthogonalGroup⟩)
     (fun n A ↦ by
-      change StableOrthogonalGroup.of (n + 1)
-        (Matrix.specialOrthogonalGroup.toOrthogonalGroup (specialOrthogonalBlockSucc ℝ n A)) =
-        StableOrthogonalGroup.of n (Matrix.specialOrthogonalGroup.toOrthogonalGroup A)
-      rw [toOrthogonalGroup_specialOrthogonalBlockSucc,
-        StableOrthogonalGroup.of_orthogonalBlockSucc])
+      -- Unfold `ContinuousMonoidHom.comp` and the `continuous_toOrthogonalGroup` wrapper.
+      change SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) (n + 1)
+          (Matrix.specialOrthogonalGroup.toOrthogonalGroup
+            (continuousSpecialOrthogonalBlockSucc ℝ n A)) =
+        SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n
+          (Matrix.specialOrthogonalGroup.toOrthogonalGroup A)
+      rw [continuousSpecialOrthogonalBlockSucc_apply, toOrthogonalGroup_specialOrthogonalBlockSucc,
+        ← continuousOrthogonalBlockSucc_apply]
+      exact SequentialColimitGroup.of_succ (continuousOrthogonalBlockSucc ℝ) n _)
 
+/-- On a finite stage `SO(n)`, `toStableOrthogonalGroup` agrees with the stage inclusion
+`SO(n) → O(n) → O`. -/
 @[simp]
 theorem toStableOrthogonalGroup_of (n : ℕ) (A : Matrix.specialOrthogonalGroup (Fin n) ℝ) :
-    toStableOrthogonalGroup (of n A) =
-      StableOrthogonalGroup.of n (Matrix.specialOrthogonalGroup.toOrthogonalGroup A) := by
-  rw [toStableOrthogonalGroup, lift_of]
+    toStableOrthogonalGroup
+        (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n A) =
+      SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n
+        (Matrix.specialOrthogonalGroup.toOrthogonalGroup A) := by
+  rw [toStableOrthogonalGroup, SequentialColimitGroup.lift_of]
   rfl
 
+/-- The canonical inclusion `SO → O` is injective. -/
 theorem toStableOrthogonalGroup_injective : Function.Injective toStableOrthogonalGroup := by
   intro x y hxy
-  obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
+  obtain ⟨n, A, B, rfl, rfl⟩ :=
+    SequentialColimitGroup.exists_of₂ (continuousSpecialOrthogonalBlockSucc ℝ) x y
   simp only [toStableOrthogonalGroup_of] at hxy
-  have h1 := StableOrthogonalGroup.of_injective n hxy
-  exact congrArg (of n) ((isClosedEmbedding_toOrthogonalGroup n).injective h1)
+  have h1 := SequentialColimitGroup.of_injective (continuousOrthogonalBlockSucc ℝ)
+    (fun k ↦ (funext (continuousOrthogonalBlockSucc_apply ℝ k) ▸
+      isClosedEmbedding_orthogonalBlockSucc ℝ k).injective) n hxy
+  exact congrArg (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n)
+    (Matrix.specialOrthogonalGroup.isClosedEmbedding_toOrthogonalGroup.injective h1)
 
+/-- The image of `toStableOrthogonalGroup` has determinant `1`. -/
 @[simp]
 theorem det_toStableOrthogonalGroup (x : StableSpecialOrthogonalGroup) :
     StableOrthogonalGroup.det (toStableOrthogonalGroup x) = 1 := by
-  obtain ⟨n, A, rfl⟩ := exists_of x
+  obtain ⟨n, A, rfl⟩ :=
+    SequentialColimitGroup.exists_of (continuousSpecialOrthogonalBlockSucc ℝ) x
   rw [toStableOrthogonalGroup_of, StableOrthogonalGroup.det_of,
     Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup,
     (Matrix.mem_specialOrthogonalGroup_iff.1 A.property).2]
   simp
 
+/-- The image of `SO → O` is the kernel of `StableOrthogonalGroup.det`. -/
 theorem range_toStableOrthogonalGroup :
-    Set.range toStableOrthogonalGroup = (StableOrthogonalGroup.det :
-      StableOrthogonalGroup →* ℤˣ).ker := by
+    Set.range toStableOrthogonalGroup =
+      (StableOrthogonalGroup.det : StableOrthogonalGroup →* ℤˣ).ker := by
   ext y
   constructor
   · rintro ⟨x, rfl⟩
     exact det_toStableOrthogonalGroup x
   · intro hy
-    obtain ⟨n, B, rfl⟩ := StableOrthogonalGroup.exists_of y
-    have hdet : (B : Matrix (Fin n) (Fin n) ℝ).det = 1 := by
-      have h := StableOrthogonalGroup.coe_det_of n B
-      rw [show (StableOrthogonalGroup.det (StableOrthogonalGroup.of n B) : ℤ) = 1 from
-        congrArg Units.val hy] at h
-      simpa using h.symm
-    refine ⟨of n ⟨B, B.property, hdet⟩, ?_⟩
+    obtain ⟨n, B, rfl⟩ :=
+      SequentialColimitGroup.exists_of (continuousOrthogonalBlockSucc ℝ) y
+    have hdet := (StableOrthogonalGroup.det_of_eq_one_iff n B).1 hy
+    refine ⟨SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n
+      ⟨B, B.property, hdet⟩, ?_⟩
     rw [toStableOrthogonalGroup_of]
     congr 1
     exact Subtype.ext (Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup _)
@@ -743,37 +224,34 @@ theorem isClosedEmbedding_toStableOrthogonalGroup :
     IsClosedEmbedding toStableOrthogonalGroup := by
   refine .of_continuous_injective_isClosedMap toStableOrthogonalGroup.continuous
     toStableOrthogonalGroup_injective fun Z hZ ↦ ?_
-  change IsClosed (toStableOrthogonalGroup '' Z : Set StableOrthogonalGroup.topCocone.pt)
-  rw [TopCat.isClosed_iff_of_isColimit _ StableOrthogonalGroup.isColimitTopCocone]
+  rw [SequentialColimitGroup.isClosed_iff]
   intro n
-  have hpre : (StableOrthogonalGroup.of n ⁻¹' (toStableOrthogonalGroup '' Z) :
-        Set (Matrix.orthogonalGroup (Fin n) ℝ)) =
-      Matrix.specialOrthogonalGroup.toOrthogonalGroup '' (of n ⁻¹' Z) := by
+  have hpre : (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n ⁻¹'
+        (toStableOrthogonalGroup '' Z) : Set (Matrix.orthogonalGroup (Fin n) ℝ)) =
+      Matrix.specialOrthogonalGroup.toOrthogonalGroup ''
+        (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n ⁻¹' Z) := by
     ext (B : Matrix.orthogonalGroup (Fin n) ℝ)
     constructor
     · rintro ⟨x, hxZ, hxB⟩
-      have hx_det : StableOrthogonalGroup.det (StableOrthogonalGroup.of n B) = 1 := by
-        rw [← hxB]
-        exact det_toStableOrthogonalGroup x
-      have hdet : (B : Matrix (Fin n) (Fin n) ℝ).det = 1 := by
-        have h := StableOrthogonalGroup.coe_det_of n B
-        rw [show (StableOrthogonalGroup.det (StableOrthogonalGroup.of n B) : ℤ) = 1 from
-          congrArg Units.val hx_det] at h
-        simpa using h.symm
+      have hdet := (StableOrthogonalGroup.det_of_eq_one_iff n B).1
+        (hxB ▸ det_toStableOrthogonalGroup x)
       let B' : Matrix.specialOrthogonalGroup (Fin n) ℝ := ⟨B, B.property, hdet⟩
-      have hB' : toStableOrthogonalGroup (of n B') = toStableOrthogonalGroup x := by
-        rw [toStableOrthogonalGroup_of]
-        have hto : Matrix.specialOrthogonalGroup.toOrthogonalGroup B' = B :=
-          Subtype.ext (Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup B')
-        rw [hto, hxB]
-      have hxeq : of n B' = x := toStableOrthogonalGroup_injective hB'
+      have hB' : toStableOrthogonalGroup
+          (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n B') =
+          toStableOrthogonalGroup x := by
+        rw [toStableOrthogonalGroup_of,
+          show Matrix.specialOrthogonalGroup.toOrthogonalGroup B' = B from
+            Subtype.ext (Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup B'), hxB]
+      have hxeq := toStableOrthogonalGroup_injective hB'
       exact ⟨B', by simpa [hxeq] using hxZ,
         Subtype.ext (Matrix.specialOrthogonalGroup.coe_toOrthogonalGroup B')⟩
     · rintro ⟨B', hB', rfl⟩
-      exact ⟨of n B', hB', toStableOrthogonalGroup_of n B'⟩
-  change IsClosed (StableOrthogonalGroup.of n ⁻¹' (toStableOrthogonalGroup '' Z))
+      exact ⟨SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n B', hB',
+        toStableOrthogonalGroup_of n B'⟩
   rw [hpre]
-  exact (isClosedEmbedding_toOrthogonalGroup n).isClosedMap _ (hZ.preimage (of n).continuous)
+  exact Matrix.specialOrthogonalGroup.isClosedEmbedding_toOrthogonalGroup.isClosedMap _
+    (hZ.preimage (SequentialColimitGroup.of
+      (continuousSpecialOrthogonalBlockSucc ℝ) n).continuous)
 
 /-- `SO → O` is an open embedding (its image is the clopen kernel of `det`). -/
 theorem isOpenEmbedding_toStableOrthogonalGroup :
@@ -795,10 +273,12 @@ theorem joined_iff_det_eq {x y : StableOrthogonalGroup} : Joined x y ↔ det x =
     simpa only [Function.comp_apply, γ.source, γ.target] using
       isPreconnected_univ.constant hconst.continuousOn (mem_univ 0) (mem_univ 1)
   · intro h
-    obtain ⟨n, A, B, rfl, rfl⟩ := exists_of₂ x y
+    obtain ⟨n, A, B, rfl, rfl⟩ :=
+      SequentialColimitGroup.exists_of₂ (continuousOrthogonalBlockSucc ℝ) x y
     have hdet : (A : Matrix (Fin n) (Fin n) ℝ).det = (B : Matrix (Fin n) (Fin n) ℝ).det := by
       rw [← coe_det_of n A, ← coe_det_of n B, h]
-    exact (TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq.2 hdet).map (of n).continuous
+    exact (TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq.2 hdet).map
+      (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n).continuous
 
 end StableOrthogonalGroup
 

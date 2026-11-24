@@ -14,8 +14,10 @@ import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.BlockSucc
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Closedness and path components of matrix orthogonal groups
@@ -24,7 +26,11 @@ The matrix orthogonal and special orthogonal groups are closed in the entrywise 
 The orthogonal group is cut out by the transpose-inverse equations, and the special orthogonal
 group adds the determinant-one equation. Mathlib defines these groups as the unitary and special
 unitary groups for the trivial scalar star operation, so their closedness follows from the
-corresponding unitary results.
+corresponding unitary results. Likewise the block inclusions `TauCeti.orthogonalBlockSucc` and
+`TauCeti.specialOrthogonalBlockSucc` are continuous closed embeddings (bundled as
+`TauCeti.continuousOrthogonalBlockSucc` and `TauCeti.continuousSpecialOrthogonalBlockSucc`), and
+`Matrix.specialOrthogonalGroup.toOrthogonalGroup` is a continuous closed embedding whose determinant
+sign descends to `TauCeti.orthogonalDetSign : O(n) →* ℤˣ`.
 
 Over `ℝ` the special orthogonal group is path-connected, so two orthogonal matrices lie in the
 same path component exactly when they have the same determinant; for a nonempty index type the
@@ -45,6 +51,15 @@ continuous in the operator-norm topology.
 * `TauCeti.Matrix.isClosed_orthogonalGroup` and `TauCeti.Matrix.isClosed_specialOrthogonalGroup`:
   the matrix orthogonal and special orthogonal groups are closed over any `T₁` topological
   commutative ring.
+* `TauCeti.continuousOrthogonalBlockSucc`, `TauCeti.isClosedEmbedding_orthogonalBlockSucc`,
+  `TauCeti.continuousSpecialOrthogonalBlockSucc`,
+  `TauCeti.isClosedEmbedding_specialOrthogonalBlockSucc`: continuity and closed-embedding
+  properties of the upper-left block inclusions `O(n) →ₜ* O(n + 1)` and `SO(n) →ₜ* SO(n + 1)`.
+* `Matrix.specialOrthogonalGroup.continuous_toOrthogonalGroup`,
+  `Matrix.specialOrthogonalGroup.isClosedEmbedding_toOrthogonalGroup`: `SO(n) → O(n)` is a
+  continuous closed embedding.
+* `TauCeti.orthogonalDetSign`, `TauCeti.continuous_orthogonalDetSign`: the continuous determinant
+  sign homomorphism `O(n) →* ℤˣ`.
 * `TauCeti.Matrix.instPathConnectedSpaceSpecialOrthogonalGroup`: the real special orthogonal
   group is path-connected.
 * `TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq`: two real orthogonal matrices are joined by
@@ -87,6 +102,204 @@ theorem isClosed_specialOrthogonalGroup [T1Space R] :
     (TauCeti.Matrix.isClosed_specialUnitaryGroup (n := n) (𝕜 := R))
 
 end TauCeti.Matrix
+
+namespace Matrix.specialOrthogonalGroup
+
+section Topology
+
+attribute [local instance] starRingOfComm
+
+/-- The canonical inclusion `SO(n, R) → O(n, R)` is continuous. -/
+theorem continuous_toOrthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [TopologicalSpace R] :
+    Continuous (toOrthogonalGroup (n := n) (R := R)) :=
+  continuous_induced_rng.2 <|
+    continuous_subtypeVal.congr fun A ↦ (coe_toOrthogonalGroup A).symm
+
+/-- Over a `T₁` topological commutative ring, `SO(n, R) → O(n, R)` is a closed embedding. -/
+theorem isClosedEmbedding_toOrthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [T1Space R] :
+    Topology.IsClosedEmbedding (toOrthogonalGroup (n := n) (R := R)) := by
+  have hcoe : (Subtype.val ∘ toOrthogonalGroup (n := n) (R := R)) = Subtype.val :=
+    funext coe_toOrthogonalGroup
+  refine ⟨.of_comp continuous_toOrthogonalGroup continuous_subtypeVal (hcoe ▸ .subtypeVal), ?_⟩
+  have hrange : Set.range (toOrthogonalGroup (n := n) (R := R)) =
+      {A : orthogonalGroup n R | (A : Matrix n n R).det = 1} := by
+    ext A
+    exact ⟨fun ⟨B, hB⟩ ↦ by simpa [← hB, coe_toOrthogonalGroup] using
+      (mem_specialOrthogonalGroup_iff.1 B.property).2,
+      fun hdet ↦ ⟨⟨A, A.property, hdet⟩, Subtype.ext (coe_toOrthogonalGroup _)⟩⟩
+  rw [hrange]
+  exact isClosed_singleton.preimage continuous_subtypeVal.matrix_det
+
+end Topology
+
+end Matrix.specialOrthogonalGroup
+
+namespace TauCeti
+
+section BlockSucc
+
+attribute [local instance] starRingOfComm
+
+/-- The block inclusion `O(n, k) → O(n + 1, k)` is continuous. -/
+theorem continuous_orthogonalBlockSucc (k : Type*) [CommRing k] [TopologicalSpace k] (n : ℕ) :
+    Continuous (orthogonalBlockSucc k n) :=
+  continuous_induced_rng.2 <|
+    continuous_subtypeVal.matrix_blockSucc.congr fun A ↦ (coe_orthogonalBlockSucc k n A).symm
+
+/-- Over a `T₁` space, the block inclusion `O(n, k) → O(n + 1, k)` is a closed embedding. -/
+theorem isClosedEmbedding_orthogonalBlockSucc (k : Type*) [CommRing k] [TopologicalSpace k]
+    [T1Space k] (n : ℕ) :
+    Topology.IsClosedEmbedding (orthogonalBlockSucc k n) := by
+  have hcoe : (Subtype.val ∘ orthogonalBlockSucc k n) = _root_.Matrix.blockSucc ∘ Subtype.val :=
+    funext (coe_orthogonalBlockSucc k n)
+  refine ⟨.of_comp (continuous_orthogonalBlockSucc k n) continuous_subtypeVal
+    (hcoe ▸ _root_.Matrix.isEmbedding_blockSucc.comp .subtypeVal), ?_⟩
+  have hrange : Set.range (orthogonalBlockSucc k n) =
+      Subtype.val ⁻¹' Set.range
+        (_root_.Matrix.blockSucc : _root_.Matrix (Fin n) (Fin n) k → _) := by
+    ext B
+    refine ⟨?_, ?_⟩
+    · rintro ⟨A, rfl⟩
+      exact ⟨A.val, (coe_orthogonalBlockSucc k n A).symm⟩
+    · rintro ⟨M, hM⟩
+      have hMB : _root_.Matrix.blockSucc M ∈ _root_.Matrix.orthogonalGroup (Fin (n + 1)) k :=
+        hM.symm ▸ B.property
+      exact ⟨⟨M, _root_.Matrix.blockSucc_mem_orthogonalGroup_iff.mp hMB⟩,
+        Subtype.ext ((coe_orthogonalBlockSucc k n _).trans hM)⟩
+  rw [hrange]
+  exact _root_.Matrix.isClosedEmbedding_blockSucc.isClosed_range.preimage continuous_subtypeVal
+
+/-- The orthogonal block inclusion as a continuous monoid homomorphism
+`O(n, k) →ₜ* O(n + 1, k)`. -/
+def continuousOrthogonalBlockSucc (k : Type*) [CommRing k] [TopologicalSpace k] (n : ℕ) :
+    _root_.Matrix.orthogonalGroup (Fin n) k →ₜ* _root_.Matrix.orthogonalGroup (Fin (n + 1)) k where
+  __ := orthogonalBlockSucc k n
+  continuous_toFun := continuous_orthogonalBlockSucc k n
+
+/-- Evaluating `TauCeti.continuousOrthogonalBlockSucc` agrees with `TauCeti.orthogonalBlockSucc`. -/
+@[simp]
+theorem continuousOrthogonalBlockSucc_apply (k : Type*) [CommRing k] [TopologicalSpace k] (n : ℕ)
+    (A : _root_.Matrix.orthogonalGroup (Fin n) k) :
+    continuousOrthogonalBlockSucc k n A = orthogonalBlockSucc k n A :=
+  (rfl)
+
+/-- The block inclusion `SO(n, k) → SO(n + 1, k)` is continuous. -/
+theorem continuous_specialOrthogonalBlockSucc (k : Type*) [CommRing k] [TopologicalSpace k]
+    (n : ℕ) :
+    Continuous (specialOrthogonalBlockSucc k n) :=
+  continuous_induced_rng.2 <|
+    continuous_subtypeVal.matrix_blockSucc.congr
+      fun A ↦ (coe_specialOrthogonalBlockSucc k n A).symm
+
+/-- Over a `T₁` space, the block inclusion `SO(n, k) → SO(n + 1, k)` is a closed embedding. -/
+theorem isClosedEmbedding_specialOrthogonalBlockSucc (k : Type*) [CommRing k] [TopologicalSpace k]
+    [T1Space k] (n : ℕ) :
+    Topology.IsClosedEmbedding (specialOrthogonalBlockSucc k n) := by
+  have hcoe :
+      (Subtype.val ∘ specialOrthogonalBlockSucc k n) = _root_.Matrix.blockSucc ∘ Subtype.val :=
+    funext (coe_specialOrthogonalBlockSucc k n)
+  refine ⟨.of_comp (continuous_specialOrthogonalBlockSucc k n) continuous_subtypeVal
+    (hcoe ▸ _root_.Matrix.isEmbedding_blockSucc.comp .subtypeVal), ?_⟩
+  have hrange : Set.range (specialOrthogonalBlockSucc k n) =
+      Subtype.val ⁻¹' Set.range
+        (_root_.Matrix.blockSucc : _root_.Matrix (Fin n) (Fin n) k → _) := by
+    ext B
+    refine ⟨?_, ?_⟩
+    · rintro ⟨A, rfl⟩
+      exact ⟨A.val, (coe_specialOrthogonalBlockSucc k n A).symm⟩
+    · rintro ⟨M, hM⟩
+      have hMB : _root_.Matrix.blockSucc M ∈
+          _root_.Matrix.specialOrthogonalGroup (Fin (n + 1)) k := hM.symm ▸ B.property
+      exact ⟨⟨M, _root_.Matrix.blockSucc_mem_specialOrthogonalGroup_iff.mp hMB⟩,
+        Subtype.ext ((coe_specialOrthogonalBlockSucc k n _).trans hM)⟩
+  rw [hrange]
+  exact _root_.Matrix.isClosedEmbedding_blockSucc.isClosed_range.preimage continuous_subtypeVal
+
+/-- The special orthogonal block inclusion as a continuous monoid homomorphism
+`SO(n, k) →ₜ* SO(n + 1, k)`. -/
+def continuousSpecialOrthogonalBlockSucc (k : Type*) [CommRing k] [TopologicalSpace k]
+    (n : ℕ) :
+    _root_.Matrix.specialOrthogonalGroup (Fin n) k →ₜ*
+      _root_.Matrix.specialOrthogonalGroup (Fin (n + 1)) k where
+  __ := specialOrthogonalBlockSucc k n
+  continuous_toFun := continuous_specialOrthogonalBlockSucc k n
+
+/-- Evaluating `TauCeti.continuousSpecialOrthogonalBlockSucc` agrees with
+`TauCeti.specialOrthogonalBlockSucc`. -/
+@[simp]
+theorem continuousSpecialOrthogonalBlockSucc_apply (k : Type*) [CommRing k] [TopologicalSpace k]
+    (n : ℕ) (A : _root_.Matrix.specialOrthogonalGroup (Fin n) k) :
+    continuousSpecialOrthogonalBlockSucc k n A = specialOrthogonalBlockSucc k n A :=
+  (rfl)
+
+end BlockSucc
+
+section DetSign
+
+open Classical in
+/-- The determinant of an orthogonal matrix over a commutative ring without zero divisors,
+bundled as a homomorphism `O(n, R) →* ℤˣ` taking `det = 1` to `1` and `det ≠ 1` to `-1`. -/
+noncomputable def orthogonalDetSign (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
+    [NoZeroDivisors R] :
+    _root_.Matrix.orthogonalGroup n R →* ℤˣ where
+  toFun A := if (A : _root_.Matrix n n R).det = 1 then 1 else -1
+  map_one' := by simp
+  map_mul' A B := by
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
+      by_cases h1 : (-1 : R) = 1 <;>
+      simp [hA, hB, _root_.Matrix.det_mul, h1]
+
+open Classical in
+/-- Evaluating `TauCeti.orthogonalDetSign` gives `1` when the determinant is `1` and `-1`
+otherwise. -/
+@[simp]
+theorem orthogonalDetSign_apply {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [NoZeroDivisors R] (A : _root_.Matrix.orthogonalGroup n R) :
+    orthogonalDetSign n R A = if (A : _root_.Matrix n n R).det = 1 then 1 else -1 :=
+  (rfl)
+
+open Classical in
+/-- Over a `T₁` topological commutative ring without zero divisors, `TauCeti.orthogonalDetSign` is
+continuous into `ℤˣ` (with the discrete topology). -/
+theorem continuous_orthogonalDetSign {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [NoZeroDivisors R] [TopologicalSpace R] [IsTopologicalRing R] [T1Space R] :
+    Continuous (orthogonalDetSign n R) := by
+  refine Continuous.if ?_ continuous_const continuous_const
+  intro A hA
+  have hdet : Continuous fun B : _root_.Matrix.orthogonalGroup n R ↦
+      (B : _root_.Matrix n n R).det :=
+    continuous_subtypeVal.matrix_det
+  have hclosed1 : IsClosed {B : _root_.Matrix.orthogonalGroup n R |
+      (B : _root_.Matrix n n R).det = 1} :=
+    isClosed_singleton.preimage hdet
+  have hopen1 : IsOpen {B : _root_.Matrix.orthogonalGroup n R |
+      (B : _root_.Matrix n n R).det = 1} := by
+    rw [← isClosed_compl_iff]
+    by_cases h1 : (-1 : R) = 1
+    · have hc : {B : _root_.Matrix.orthogonalGroup n R |
+          (B : _root_.Matrix n n R).det = 1}ᶜ = ∅ := by
+        ext B
+        rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
+          simp [hB, h1]
+      rw [hc]
+      exact isClosed_empty
+    · have hc : {B : _root_.Matrix.orthogonalGroup n R |
+          (B : _root_.Matrix n n R).det = 1}ᶜ =
+          {B : _root_.Matrix.orthogonalGroup n R | (B : _root_.Matrix n n R).det = -1} := by
+        ext B
+        rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
+          simp [hB, h1, Ne.symm h1]
+      rw [hc]
+      exact isClosed_singleton.preimage hdet
+  rw [IsClopen.frontier_eq ⟨hclosed1, hopen1⟩] at hA
+  exact hA.elim
+
+end DetSign
+
+end TauCeti
 
 -- Reopened over `ℝ` without the local `starRingOfComm` instance of the section above.
 namespace TauCeti.Matrix

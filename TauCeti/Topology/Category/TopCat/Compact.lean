@@ -140,6 +140,178 @@ theorem exists_lift_of_compactSpace [∀ n, T1Space (F.obj n)] (hc : IsColimit c
   exact ⟨n, ⟨f, (hι n).isInducing.continuous_iff.2 (hfg ▸ g.continuous)⟩,
     ContinuousMap.ext hf⟩
 
+private structure ProdChainInv {F₁ F₂ : ℕ ⥤ TopCat.{w}} (c₁ : Cocone F₁) (c₂ : Cocone F₂)
+    (x₀ : c₁.pt) (y₀ : c₂.pt) (U : Set (c₁.pt × c₂.pt)) (n : ℕ) where
+  V : Set c₁.pt
+  K : Set c₁.pt
+  W : Set c₂.pt
+  L : Set c₂.pt
+  mem_V : x₀ ∈ V
+  mem_W : y₀ ∈ W
+  V_subset_K : V ⊆ K
+  K_subset_range : K ⊆ range (c₁.ι.app n)
+  W_subset_L : W ⊆ L
+  L_subset_range : L ⊆ range (c₂.ι.app n)
+  isOpen_V : IsOpen ((Subtype.val : range (c₁.ι.app n) → c₁.pt) ⁻¹' V)
+  isCompact_K : IsCompact K
+  isOpen_W : IsOpen ((Subtype.val : range (c₂.ι.app n) → c₂.pt) ⁻¹' W)
+  isCompact_L : IsCompact L
+  prod_subset : K ×ˢ L ⊆ U
+
+private theorem isOpen_iUnion_of_isColimit {F : ℕ ⥤ TopCat.{w}} {c : Cocone F}
+    (hc : IsColimit c) (n₀ : ℕ) (V : ℕ → Set c.pt) (hV_mono : Monotone V)
+    (hV_open : ∀ k, IsOpen ((Subtype.val : range (c.ι.app (n₀ + k)) → c.pt) ⁻¹' V k)) :
+    IsOpen (⋃ k, V k) := by
+  rw [TopCat.isOpen_iff_of_isColimit _ hc]
+  intro m
+  choose O hO_open hO_eq using fun k ↦ isOpen_induced_iff.1 (hV_open k)
+  have hpre : c.ι.app m ⁻¹' (⋃ k, V k) = ⋃ (k : ℕ) (_ : m ≤ k), c.ι.app m ⁻¹' O k := by
+    ext z
+    simp only [mem_preimage, mem_iUnion]
+    constructor
+    · rintro ⟨k, hk⟩
+      refine ⟨max m k, le_max_left m k, ?_⟩
+      have hz_mem := hV_mono (le_max_right m k) hk
+      have hzA : c.ι.app m z ∈ range (c.ι.app (n₀ + max m k)) :=
+        monotone_range_ι c (Nat.le_trans (le_max_left m k) (Nat.le_add_left _ _)) ⟨z, rfl⟩
+      have hz_pre : ⟨c.ι.app m z, hzA⟩ ∈
+          (Subtype.val : range (c.ι.app (n₀ + max m k)) → c.pt) ⁻¹' O (max m k) := by
+        rw [hO_eq (max m k)]
+        exact hz_mem
+      exact hz_pre
+    · rintro ⟨k, hmk, hk⟩
+      have hzA : c.ι.app m z ∈ range (c.ι.app (n₀ + k)) :=
+        monotone_range_ι c (hmk.trans (Nat.le_add_left _ _)) ⟨z, rfl⟩
+      have hz_pre : ⟨c.ι.app m z, hzA⟩ ∈
+          (Subtype.val : range (c.ι.app (n₀ + k)) → c.pt) ⁻¹' V k := by
+        rw [← hO_eq k]
+        exact hk
+      exact ⟨k, hz_pre⟩
+  rw [hpre]
+  exact isOpen_iUnion fun k ↦
+    isOpen_iUnion fun _ ↦ (hO_open k).preimage (c.ι.app m).hom.continuous
+
+private theorem isOpen_stage_trace_prod
+    {F₁ F₂ : ℕ ⥤ TopCat.{w}} [∀ n, CompactSpace (F₁.obj n)] [∀ n, T2Space (F₁.obj n)]
+    [∀ n, CompactSpace (F₂.obj n)] [∀ n, T2Space (F₂.obj n)]
+    [∀ n, Small.{u} (F₁.obj n)] [∀ n, Small.{u} (F₂.obj n)]
+    {c₁ : Cocone F₁} {c₂ : Cocone F₂}
+    (hι₁ : ∀ n, IsEmbedding (c₁.ι.app n)) (hι₂ : ∀ n, IsEmbedding (c₂.ι.app n))
+    {U : Set (c₁.pt × c₂.pt)}
+    (hU : ∀ (K : CompHaus.{u}) (f : C(K, c₁.pt × c₂.pt)), IsOpen (f ⁻¹' U)) (n : ℕ) :
+    IsOpen (Prod.map (Subtype.val : range (c₁.ι.app n) → c₁.pt)
+      (Subtype.val : range (c₂.ι.app n) → c₂.pt) ⁻¹' U) := by
+  let pmap := (c₁.ι.app n).hom.prodMap (c₂.ι.app n).hom
+  let eShrink := Shrink.homeomorph.{u, w} (F₁.obj n × F₂.obj n)
+  have : CompactSpace (Shrink.{u} (F₁.obj n × F₂.obj n)) := eShrink.compactSpace
+  have : T2Space (Shrink.{u} (F₁.obj n × F₂.obj n)) := eShrink.t2Space
+  let f : C(CompHaus.of (Shrink.{u} (F₁.obj n × F₂.obj n)), c₁.pt × c₂.pt) :=
+    pmap.comp ⟨eShrink.symm, eShrink.symm.continuous⟩
+  have hpre : IsOpen (pmap ⁻¹' U) := by
+    convert eShrink.continuous.isOpen_preimage _ (hU _ f) using 1
+    ext x
+    simp [f, Homeomorph.symm_apply_apply]
+  let e₁ := (hι₁ n).toHomeomorph
+  let e₂ := (hι₂ n).toHomeomorph
+  let hrange := e₁.prodCongr e₂
+  have heq : hrange.symm ⁻¹' (pmap ⁻¹' U) =
+      Prod.map (Subtype.val : range (c₁.ι.app n) → c₁.pt)
+        (Subtype.val : range (c₂.ι.app n) → c₂.pt) ⁻¹' U := by
+    ext ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
+    have ha' : c₁.ι.app n (e₁.symm ⟨a, ha⟩) = a :=
+      congrArg Subtype.val (e₁.apply_symm_apply ⟨a, ha⟩)
+    have hb' : c₂.ι.app n (e₂.symm ⟨b, hb⟩) = b :=
+      congrArg Subtype.val (e₂.apply_symm_apply ⟨b, hb⟩)
+    simp [pmap, hrange, ha', hb']
+  rw [← heq]
+  exact hrange.symm.continuous.isOpen_preimage _ hpre
+
+private theorem exists_prodChainInv_zero
+    {F₁ F₂ : ℕ ⥤ TopCat.{w}} {c₁ : Cocone F₁} {c₂ : Cocone F₂}
+    {x₀ : c₁.pt} {y₀ : c₂.pt} {U : Set (c₁.pt × c₂.pt)} (n₀ : ℕ)
+    [CompactSpace (range (c₁.ι.app n₀))] [T2Space (range (c₁.ι.app n₀))]
+    [CompactSpace (range (c₂.ι.app n₀))] [T2Space (range (c₂.ι.app n₀))]
+    (hx₀ : x₀ ∈ range (c₁.ι.app n₀)) (hy₀ : y₀ ∈ range (c₂.ι.app n₀)) (hxy₀ : (x₀, y₀) ∈ U)
+    (hU_stage : IsOpen (Prod.map (Subtype.val : range (c₁.ι.app n₀) → c₁.pt)
+      (Subtype.val : range (c₂.ι.app n₀) → c₂.pt) ⁻¹' U)) :
+    Nonempty (ProdChainInv c₁ c₂ x₀ y₀ U n₀) := by
+  obtain ⟨V₀', W₀', hV₀', hW₀', hx₀V', hy₀W', hV₀'W₀'⟩ :=
+    isOpen_prod_iff.1 hU_stage ⟨x₀, hx₀⟩ ⟨y₀, hy₀⟩ hxy₀
+  obtain ⟨V₀, hV₀, hx₀V₀, hclV₀⟩ :=
+    normal_exists_closure_subset isClosed_singleton hV₀' (singleton_subset_iff.2 hx₀V')
+  obtain ⟨W₀, hW₀, hy₀W₀, hclW₀⟩ :=
+    normal_exists_closure_subset isClosed_singleton hW₀' (singleton_subset_iff.2 hy₀W')
+  exact ⟨{
+    V := Subtype.val '' V₀
+    K := Subtype.val '' closure V₀
+    W := Subtype.val '' W₀
+    L := Subtype.val '' closure W₀
+    mem_V := ⟨⟨x₀, hx₀⟩, hx₀V₀ rfl, rfl⟩
+    mem_W := ⟨⟨y₀, hy₀⟩, hy₀W₀ rfl, rfl⟩
+    V_subset_K := image_mono subset_closure
+    K_subset_range := Subtype.coe_image_subset _ _
+    W_subset_L := image_mono subset_closure
+    L_subset_range := Subtype.coe_image_subset _ _
+    isOpen_V := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
+    isCompact_K := isClosed_closure.isCompact.image continuous_subtypeVal
+    isOpen_W := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
+    isCompact_L := isClosed_closure.isCompact.image continuous_subtypeVal
+    prod_subset := by
+      rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
+      exact hV₀'W₀' (mk_mem_prod (hclV₀ ha) (hclW₀ hb)) }⟩
+
+private theorem exists_prodChainInv_succ
+    {F₁ F₂ : ℕ ⥤ TopCat.{w}} {c₁ : Cocone F₁} {c₂ : Cocone F₂}
+    {x₀ : c₁.pt} {y₀ : c₂.pt} {U : Set (c₁.pt × c₂.pt)} {n n' : ℕ} (hle : n ≤ n')
+    [CompactSpace (range (c₁.ι.app n'))] [T2Space (range (c₁.ι.app n'))]
+    [CompactSpace (range (c₂.ι.app n'))] [T2Space (range (c₂.ι.app n'))]
+    (hU_stage : IsOpen (Prod.map (Subtype.val : range (c₁.ι.app n') → c₁.pt)
+      (Subtype.val : range (c₂.ι.app n') → c₂.pt) ⁻¹' U))
+    (d : ProdChainInv c₁ c₂ x₀ y₀ U n) :
+    ∃ d' : ProdChainInv c₁ c₂ x₀ y₀ U n', d.V ⊆ d'.V ∧ d.W ⊆ d'.W := by
+  have hAmono : range (c₁.ι.app n) ⊆ range (c₁.ι.app n') := monotone_range_ι c₁ hle
+  have hBmono : range (c₂.ι.app n) ⊆ range (c₂.ι.app n') := monotone_range_ι c₂ hle
+  have hK'c : IsCompact ((Subtype.val : range (c₁.ι.app n') → c₁.pt) ⁻¹' d.K) :=
+    IsInducing.subtypeVal.isCompact_preimage' d.isCompact_K (by
+      rw [Subtype.range_coe_subtype]; exact d.K_subset_range.trans hAmono)
+  have hL'c : IsCompact ((Subtype.val : range (c₂.ι.app n') → c₂.pt) ⁻¹' d.L) :=
+    IsInducing.subtypeVal.isCompact_preimage' d.isCompact_L (by
+      rw [Subtype.range_coe_subtype]; exact d.L_subset_range.trans hBmono)
+  have hsub : ((Subtype.val : range (c₁.ι.app n') → c₁.pt) ⁻¹' d.K) ×ˢ
+      ((Subtype.val : range (c₂.ι.app n') → c₂.pt) ⁻¹' d.L) ⊆
+      Prod.map (Subtype.val : range (c₁.ι.app n') → c₁.pt)
+        (Subtype.val : range (c₂.ι.app n') → c₂.pt) ⁻¹' U :=
+    fun ⟨a, b⟩ ⟨ha, hb⟩ ↦ d.prod_subset (mk_mem_prod ha hb)
+  obtain ⟨V', W', hV', hW', hKV', hLW', hVW'⟩ :=
+    generalized_tube_lemma hK'c hL'c hU_stage hsub
+  obtain ⟨V'', hV'', hKV'', hclV''⟩ :=
+    normal_exists_closure_subset hK'c.isClosed hV' hKV'
+  obtain ⟨W'', hW'', hLW'', hclW''⟩ :=
+    normal_exists_closure_subset hL'c.isClosed hW' hLW'
+  have hKV_sub : d.K ⊆ Subtype.val '' V'' := fun x hx ↦
+    ⟨⟨x, hAmono (d.K_subset_range hx)⟩, hKV'' hx, rfl⟩
+  have hLW_sub : d.L ⊆ Subtype.val '' W'' := fun y hy ↦
+    ⟨⟨y, hBmono (d.L_subset_range hy)⟩, hLW'' hy, rfl⟩
+  refine ⟨{
+    V := Subtype.val '' V''
+    K := Subtype.val '' closure V''
+    W := Subtype.val '' W''
+    L := Subtype.val '' closure W''
+    mem_V := hKV_sub (d.V_subset_K d.mem_V)
+    mem_W := hLW_sub (d.W_subset_L d.mem_W)
+    V_subset_K := image_mono subset_closure
+    K_subset_range := Subtype.coe_image_subset _ _
+    W_subset_L := image_mono subset_closure
+    L_subset_range := Subtype.coe_image_subset _ _
+    isOpen_V := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
+    isCompact_K := isClosed_closure.isCompact.image continuous_subtypeVal
+    isOpen_W := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
+    isCompact_L := isClosed_closure.isCompact.image continuous_subtypeVal
+    prod_subset := by
+      rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
+      exact hVW' (mk_mem_prod (hclV'' ha) (hclW'' hb)) },
+    d.V_subset_K.trans hKV_sub, d.W_subset_L.trans hLW_sub⟩
+
 /-- The product of two sequential colimits of `u`-small compact Hausdorff spaces along embeddings in
 `TopCat` is `u`-compactly generated in the ordinary product topology. -/
 theorem uCompactlyGeneratedSpace_prod_of_isColimit
@@ -152,207 +324,37 @@ theorem uCompactlyGeneratedSpace_prod_of_isColimit
     UCompactlyGeneratedSpace.{u} (c₁.pt × c₂.pt) := by
   refine uCompactlyGeneratedSpace_of_isOpen fun U hU ↦ isOpen_iff_forall_mem_open.2 ?_
   rintro ⟨x₀, y₀⟩ hxy₀
-  let A (n : ℕ) : Set c₁.pt := range (c₁.ι.app n)
-  let B (n : ℕ) : Set c₂.pt := range (c₂.ι.app n)
-  have (n : ℕ) : CompactSpace (A n) :=
-    (hι₁ n).toHomeomorph.compactSpace
-  have (n : ℕ) : T2Space (A n) :=
-    (hι₁ n).toHomeomorph.t2Space
-  have (n : ℕ) : CompactSpace (B n) :=
-    (hι₂ n).toHomeomorph.compactSpace
-  have (n : ℕ) : T2Space (B n) :=
-    (hι₂ n).toHomeomorph.t2Space
-  -- On every stage product `A n × B n`, the trace of `U` is open via a `CompHaus.{u}` test map.
-  have hU_stage (n : ℕ) :
-      IsOpen (Prod.map ((↑) : A n → c₁.pt) ((↑) : B n → c₂.pt) ⁻¹' U) := by
-    let pmap := (c₁.ι.app n).hom.prodMap (c₂.ι.app n).hom
-    let eShrink := Shrink.homeomorph.{u, w} (F₁.obj n × F₂.obj n)
-    have : CompactSpace (Shrink.{u} (F₁.obj n × F₂.obj n)) := eShrink.compactSpace
-    have : T2Space (Shrink.{u} (F₁.obj n × F₂.obj n)) := eShrink.t2Space
-    let f : C(CompHaus.of (Shrink.{u} (F₁.obj n × F₂.obj n)), c₁.pt × c₂.pt) :=
-      pmap.comp ⟨eShrink.symm, eShrink.symm.continuous⟩
-    have hfU : IsOpen (f ⁻¹' U) := hU _ f
-    have hpre : IsOpen (pmap ⁻¹' U) := by
-      convert eShrink.continuous.isOpen_preimage _ hfU using 1
-      ext x
-      simp [f, Homeomorph.symm_apply_apply]
-    let e₁ := (hι₁ n).toHomeomorph
-    let e₂ := (hι₂ n).toHomeomorph
-    let hrange := e₁.prodCongr e₂
-    have heq : hrange.symm ⁻¹' (pmap ⁻¹' U) =
-        Prod.map ((↑) : A n → c₁.pt) ((↑) : B n → c₂.pt) ⁻¹' U := by
-      ext ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
-      have ha' : c₁.ι.app n (e₁.symm ⟨a, ha⟩) = a :=
-        congrArg Subtype.val (e₁.apply_symm_apply ⟨a, ha⟩)
-      have hb' : c₂.ι.app n (e₂.symm ⟨b, hb⟩) = b :=
-        congrArg Subtype.val (e₂.apply_symm_apply ⟨b, hb⟩)
-      simp [pmap, hrange, ha', hb']
-    rw [← heq]
-    exact hrange.symm.continuous.isOpen_preimage _ hpre
+  have (n : ℕ) : CompactSpace (range (c₁.ι.app n)) := (hι₁ n).toHomeomorph.compactSpace
+  have (n : ℕ) : T2Space (range (c₁.ι.app n)) := (hι₁ n).toHomeomorph.t2Space
+  have (n : ℕ) : CompactSpace (range (c₂.ι.app n)) := (hι₂ n).toHomeomorph.compactSpace
+  have (n : ℕ) : T2Space (range (c₂.ι.app n)) := (hι₂ n).toHomeomorph.t2Space
+  have hU_stage := isOpen_stage_trace_prod hι₁ hι₂ hU
   obtain ⟨n₁, hn₁⟩ := mem_iUnion.1 (iUnion_range_ι_of_isColimit hc₁ ▸ mem_univ x₀)
   obtain ⟨n₂, hn₂⟩ := mem_iUnion.1 (iUnion_range_ι_of_isColimit hc₂ ▸ mem_univ y₀)
   let n₀ := max n₁ n₂
-  have hx₀ : x₀ ∈ A n₀ := monotone_range_ι c₁ (le_max_left n₁ n₂) hn₁
-  have hy₀ : y₀ ∈ B n₀ := monotone_range_ι c₂ (le_max_right n₁ n₂) hn₂
-  -- Stagewise invariant at `n = n₀ + k`: open `V ⊆ K ⊆ A n` and `W ⊆ L ⊆ B n`.
-  let Inv (k : ℕ) (d : Set c₁.pt × Set c₁.pt × Set c₂.pt × Set c₂.pt) : Prop :=
-    let V := d.1; let K := d.2.1; let W := d.2.2.1; let L := d.2.2.2
-    x₀ ∈ V ∧ y₀ ∈ W ∧ V ⊆ K ∧ K ⊆ A (n₀ + k) ∧ W ⊆ L ∧
-      L ⊆ B (n₀ + k) ∧
-      IsOpen (((↑) : A (n₀ + k) → c₁.pt) ⁻¹' V) ∧ IsCompact K ∧
-      IsOpen (((↑) : B (n₀ + k) → c₂.pt) ⁻¹' W) ∧ IsCompact L ∧ K ×ˢ L ⊆ U
-  have hbase : ∃ d, Inv 0 d := by
-    obtain ⟨V₀', W₀', hV₀', hW₀', hx₀V', hy₀W', hV₀'W₀'⟩ :=
-      isOpen_prod_iff.1 (hU_stage n₀) ⟨x₀, hx₀⟩ ⟨y₀, hy₀⟩ hxy₀
-    obtain ⟨V₀, hV₀, hx₀V₀, hclV₀⟩ :=
-      normal_exists_closure_subset isClosed_singleton hV₀' (singleton_subset_iff.2 hx₀V')
-    obtain ⟨W₀, hW₀, hy₀W₀, hclW₀⟩ :=
-      normal_exists_closure_subset isClosed_singleton hW₀' (singleton_subset_iff.2 hy₀W')
-    refine ⟨(Subtype.val '' V₀, Subtype.val '' closure V₀,
-      Subtype.val '' W₀, Subtype.val '' closure W₀), ?_⟩
-    have hK : IsCompact (Subtype.val '' closure V₀) :=
-      isClosed_closure.isCompact.image continuous_subtypeVal
-    have hL : IsCompact (Subtype.val '' closure W₀) :=
-      isClosed_closure.isCompact.image continuous_subtypeVal
-    have hV_eq : ((↑) : A (n₀ + 0) → c₁.pt) ⁻¹' (Subtype.val '' V₀) = V₀ :=
-      Set.preimage_image_eq _ Subtype.val_injective
-    have hW_eq : ((↑) : B (n₀ + 0) → c₂.pt) ⁻¹' (Subtype.val '' W₀) = W₀ :=
-      Set.preimage_image_eq _ Subtype.val_injective
-    refine ⟨⟨⟨x₀, hx₀⟩, hx₀V₀ rfl, rfl⟩,
-      ⟨⟨y₀, hy₀⟩, hy₀W₀ rfl, rfl⟩,
-      image_mono subset_closure, Subtype.coe_image_subset _ _,
-      image_mono subset_closure, Subtype.coe_image_subset _ _,
-      ?_, hK, ?_, hL, ?_⟩
-    · dsimp only; rwa [hV_eq]
-    · dsimp only; rwa [hW_eq]
-    · rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
-      exact hV₀'W₀' (mk_mem_prod (hclV₀ ha) (hclW₀ hb))
-  have hstep : ∀ (k : ℕ) (d : Set c₁.pt × Set c₁.pt × Set c₂.pt × Set c₂.pt),
-      Inv k d → ∃ d', Inv (k + 1) d' ∧ d.1 ⊆ d'.1 ∧ d.2.2.1 ⊆ d'.2.2.1 := by
-    rintro k ⟨V, K, W, L⟩ ⟨hxV, hyW, hVK, hKA, hWL, hLB, -, hKc, -, hLc, hKL⟩
-    let n' := n₀ + (k + 1)
-    have hAmono : A (n₀ + k) ⊆ A n' :=
-      monotone_range_ι c₁ (Nat.add_le_add_left k.le_succ n₀)
-    have hBmono : B (n₀ + k) ⊆ B n' :=
-      monotone_range_ι c₂ (Nat.add_le_add_left k.le_succ n₀)
-    have hK'c : IsCompact (((↑) : A n' → c₁.pt) ⁻¹' K) :=
-      IsInducing.subtypeVal.isCompact_preimage' hKc (by
-        rw [Subtype.range_coe_subtype]; exact hKA.trans hAmono)
-    have hL'c : IsCompact (((↑) : B n' → c₂.pt) ⁻¹' L) :=
-      IsInducing.subtypeVal.isCompact_preimage' hLc (by
-        rw [Subtype.range_coe_subtype]; exact hLB.trans hBmono)
-    have hsub : (((↑) : A n' → c₁.pt) ⁻¹' K) ×ˢ (((↑) : B n' → c₂.pt) ⁻¹' L) ⊆
-        Prod.map ((↑) : A n' → c₁.pt) ((↑) : B n' → c₂.pt) ⁻¹' U := by
-      rintro ⟨a, b⟩ ⟨ha, hb⟩
-      exact hKL (mk_mem_prod ha hb)
-    obtain ⟨V', W', hV', hW', hKV', hLW', hVW'⟩ :=
-      generalized_tube_lemma hK'c hL'c (hU_stage n') hsub
-    obtain ⟨V'', hV'', hKV'', hclV''⟩ :=
-      normal_exists_closure_subset hK'c.isClosed hV' hKV'
-    obtain ⟨W'', hW'', hLW'', hclW''⟩ :=
-      normal_exists_closure_subset hL'c.isClosed hW' hLW'
-    have hK' : IsCompact (Subtype.val '' closure V'') :=
-      isClosed_closure.isCompact.image continuous_subtypeVal
-    have hL' : IsCompact (Subtype.val '' closure W'') :=
-      isClosed_closure.isCompact.image continuous_subtypeVal
-    have hKV_sub : K ⊆ Subtype.val '' V'' := fun x hx ↦
-      ⟨⟨x, hAmono (hKA hx)⟩, hKV'' hx, rfl⟩
-    have hLW_sub : L ⊆ Subtype.val '' W'' := fun y hy ↦
-      ⟨⟨y, hBmono (hLB hy)⟩, hLW'' hy, rfl⟩
-    have hV'_eq : ((↑) : A (n₀ + (k + 1)) → c₁.pt) ⁻¹' (Subtype.val '' V'') = V'' :=
-      Set.preimage_image_eq _ Subtype.val_injective
-    have hW'_eq : ((↑) : B (n₀ + (k + 1)) → c₂.pt) ⁻¹' (Subtype.val '' W'') = W'' :=
-      Set.preimage_image_eq _ Subtype.val_injective
-    refine ⟨(Subtype.val '' V'', Subtype.val '' closure V'',
-      Subtype.val '' W'', Subtype.val '' closure W''), ⟨?_, ?_⟩⟩
-    · refine ⟨hKV_sub (hVK hxV), hLW_sub (hWL hyW), image_mono subset_closure,
-        Subtype.coe_image_subset _ _, image_mono subset_closure, Subtype.coe_image_subset _ _,
-        ?_, hK', ?_, hL', ?_⟩
-      · dsimp only; rwa [hV'_eq]
-      · dsimp only; rwa [hW'_eq]
-      · rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
-        exact hVW' (mk_mem_prod (hclV'' ha) (hclW'' hb))
-    · exact ⟨hVK.trans hKV_sub, hWL.trans hLW_sub⟩
-  let seq : (k : ℕ) → { d // Inv k d } := Nat.rec ⟨hbase.choose, hbase.choose_spec⟩
-    fun k d ↦ ⟨(hstep k d.val d.property).choose, (hstep k d.val d.property).choose_spec.1⟩
-  have hseqV_mono : Monotone fun k ↦ (seq k).val.1 :=
-    monotone_nat_of_le_succ fun k ↦ (hstep k (seq k).val (seq k).property).choose_spec.2.1
-  have hseqW_mono : Monotone fun k ↦ (seq k).val.2.2.1 :=
-    monotone_nat_of_le_succ fun k ↦ (hstep k (seq k).val (seq k).property).choose_spec.2.2
-  let V := ⋃ k, (seq k).val.1
-  let W := ⋃ k, (seq k).val.2.2.1
-  have hV_open : IsOpen V := by
-    rw [TopCat.isOpen_iff_of_isColimit _ hc₁]
-    intro m
-    choose O hO_open hO_eq using fun k ↦ isOpen_induced_iff.1 (seq k).property.2.2.2.2.2.2.1
-    have hpre : c₁.ι.app m ⁻¹' V = ⋃ (k : ℕ) (_ : m ≤ k), c₁.ι.app m ⁻¹' O k := by
-      ext z
-      simp only [V, mem_preimage, mem_iUnion]
-      constructor
-      · rintro ⟨k, hk⟩
-        refine ⟨max m k, le_max_left m k, ?_⟩
-        have hz_mem := hseqV_mono (le_max_right m k) hk
-        have hzA : c₁.ι.app m z ∈ A (n₀ + max m k) :=
-          monotone_range_ι c₁ (Nat.le_trans (le_max_left m k) (Nat.le_add_left _ _)) ⟨z, rfl⟩
-        have hz_pre :
-            ⟨c₁.ι.app m z, hzA⟩ ∈
-              ((↑) : A (n₀ + max m k) → c₁.pt) ⁻¹' O (max m k) := by
-          rw [hO_eq (max m k)]
-          exact hz_mem
-        exact hz_pre
-      · rintro ⟨k, hmk, hk⟩
-        have hzA : c₁.ι.app m z ∈ A (n₀ + k) :=
-          monotone_range_ι c₁ (hmk.trans (Nat.le_add_left _ _)) ⟨z, rfl⟩
-        have hz_pre :
-            ⟨c₁.ι.app m z, hzA⟩ ∈
-              ((↑) : A (n₀ + k) → c₁.pt) ⁻¹' (seq k).val.1 := by
-          rw [← hO_eq k]
-          exact hk
-        exact ⟨k, hz_pre⟩
-    rw [hpre]
-    exact isOpen_iUnion fun k ↦
-      isOpen_iUnion fun _ ↦ (hO_open k).preimage (c₁.ι.app m).hom.continuous
-  have hW_open : IsOpen W := by
-    rw [TopCat.isOpen_iff_of_isColimit _ hc₂]
-    intro m
-    choose O hO_open hO_eq using fun k ↦
-      isOpen_induced_iff.1 (seq k).property.2.2.2.2.2.2.2.2.1
-    have hpre : c₂.ι.app m ⁻¹' W = ⋃ (k : ℕ) (_ : m ≤ k), c₂.ι.app m ⁻¹' O k := by
-      ext z
-      simp only [W, mem_preimage, mem_iUnion]
-      constructor
-      · rintro ⟨k, hk⟩
-        refine ⟨max m k, le_max_left m k, ?_⟩
-        have hz_mem := hseqW_mono (le_max_right m k) hk
-        have hzB : c₂.ι.app m z ∈ B (n₀ + max m k) :=
-          monotone_range_ι c₂ (Nat.le_trans (le_max_left m k) (Nat.le_add_left _ _)) ⟨z, rfl⟩
-        have hz_pre :
-            ⟨c₂.ι.app m z, hzB⟩ ∈
-              ((↑) : B (n₀ + max m k) → c₂.pt) ⁻¹' O (max m k) := by
-          rw [hO_eq (max m k)]
-          exact hz_mem
-        exact hz_pre
-      · rintro ⟨k, hmk, hk⟩
-        have hzB : c₂.ι.app m z ∈ B (n₀ + k) :=
-          monotone_range_ι c₂ (hmk.trans (Nat.le_add_left _ _)) ⟨z, rfl⟩
-        have hz_pre :
-            ⟨c₂.ι.app m z, hzB⟩ ∈
-              ((↑) : B (n₀ + k) → c₂.pt) ⁻¹' (seq k).val.2.2.1 := by
-          rw [← hO_eq k]
-          exact hk
-        exact ⟨k, hz_pre⟩
-    rw [hpre]
-    exact isOpen_iUnion fun k ↦
-      isOpen_iUnion fun _ ↦ (hO_open k).preimage (c₂.ι.app m).hom.continuous
-  refine ⟨V ×ˢ W, ?_, hV_open.prod hW_open,
-    ⟨mem_iUnion.2 ⟨0, (seq 0).property.1⟩, mem_iUnion.2 ⟨0, (seq 0).property.2.1⟩⟩⟩
+  obtain ⟨d₀⟩ := exists_prodChainInv_zero n₀ (monotone_range_ι c₁ (le_max_left n₁ n₂) hn₁)
+    (monotone_range_ι c₂ (le_max_right n₁ n₂) hn₂) hxy₀ (hU_stage n₀)
+  have hstep (k : ℕ) (d : ProdChainInv c₁ c₂ x₀ y₀ U (n₀ + k)) :=
+    exists_prodChainInv_succ (Nat.add_le_add_left k.le_succ n₀) (hU_stage (n₀ + (k + 1))) d
+  let seq : (k : ℕ) → ProdChainInv c₁ c₂ x₀ y₀ U (n₀ + k) :=
+    Nat.rec d₀ fun k d ↦ (hstep k d).choose
+  have hseqV_mono : Monotone fun k ↦ (seq k).V :=
+    monotone_nat_of_le_succ fun k ↦ (hstep k (seq k)).choose_spec.1
+  have hseqW_mono : Monotone fun k ↦ (seq k).W :=
+    monotone_nat_of_le_succ fun k ↦ (hstep k (seq k)).choose_spec.2
+  have hV_open := isOpen_iUnion_of_isColimit hc₁ n₀ (fun k ↦ (seq k).V) hseqV_mono
+    fun k ↦ (seq k).isOpen_V
+  have hW_open := isOpen_iUnion_of_isColimit hc₂ n₀ (fun k ↦ (seq k).W) hseqW_mono
+    fun k ↦ (seq k).isOpen_W
+  refine ⟨(⋃ k, (seq k).V) ×ˢ (⋃ k, (seq k).W), ?_, hV_open.prod hW_open,
+    ⟨mem_iUnion.2 ⟨0, (seq 0).mem_V⟩, mem_iUnion.2 ⟨0, (seq 0).mem_W⟩⟩⟩
   rintro ⟨x, y⟩ ⟨hx, hy⟩
   obtain ⟨k₁, hk₁⟩ := mem_iUnion.1 hx
   obtain ⟨k₂, hk₂⟩ := mem_iUnion.1 hy
   let k := max k₁ k₂
-  exact (seq k).property.2.2.2.2.2.2.2.2.2.2 <|
-    mk_mem_prod ((seq k).property.2.2.1 (hseqV_mono (le_max_left k₁ k₂) hk₁))
-      ((seq k).property.2.2.2.2.1 (hseqW_mono (le_max_right k₁ k₂) hk₂))
+  exact (seq k).prod_subset <| mk_mem_prod
+    ((seq k).V_subset_K (hseqV_mono (le_max_left k₁ k₂) hk₁))
+    ((seq k).W_subset_L (hseqW_mono (le_max_right k₁ k₂) hk₂))
 
 end Sequential
 

@@ -119,16 +119,21 @@ section HomotopyGroup
 variable {F : ℕ ⥤ TopCat.{u}} {c : Cocone F} (hc : IsColimit c)
   (hι : ∀ n, IsEmbedding (c.ι.app n))
 
+private theorem map_homOfLE_add_zero {F : ℕ ⥤ TopCat.{u}} (m : ℕ) :
+    (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id (F.obj m) := by
+  ext z
+  rw [Subsingleton.elim (homOfLE (Nat.le_add_right m 0)) (𝟙 m), F.map_id, TopCat.coe_id, id_eq,
+    ContinuousMap.id_apply]
+
 private theorem homotopyGroup_map_comp_le {N : Type*} {m k : ℕ} (hmk : m ≤ k) (x : F.obj m) :
     HomotopyGroup.map (N := N) (x := F.map (homOfLE hmk) x)
           (F.map (homOfLE k.le_succ)).hom rfl ∘
         HomotopyGroup.map (x := x) (F.map (homOfLE hmk)).hom rfl =
       HomotopyGroup.map (x := x) (F.map (homOfLE (hmk.trans k.le_succ))).hom
-        (by rw [← ConcreteCategory.comp_apply, ← F.map_comp]; rfl) := by
+        (by rw [← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]) := by
   refine HomotopyGroup.map_comp_map_of_comp_eq ?_ rfl rfl _
   ext z
-  rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp]
-  rfl
+  rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]
 
 private theorem homotopyGroup_map_ι_comp_le {N : Type*} {m n : ℕ} (hmn : m ≤ n) (x : F.obj m) :
     HomotopyGroup.map (N := N) (x := F.map (homOfLE hmn) x) (c.ι.app n).hom
@@ -158,10 +163,12 @@ theorem surjective_homotopyGroup_map_ι {N : Type*} (m : ℕ) (x : F.obj m)
     | zero =>
       intro a
       have hx : ContinuousMap.id (F.obj m) (F.map (homOfLE (Nat.le_add_right m 0)) x) = x := by
-        change F.map (𝟙 m) x = x; simp
+        change ContinuousMap.id (F.obj m) ((F.map (homOfLE (Nat.le_add_right m 0))).hom x) = x
+        rw [map_homOfLE_add_zero]
+        rfl
       have hcomp : (F.map (homOfLE (Nat.le_add_right m 0))).hom.comp
           (ContinuousMap.id (F.obj m)) = ContinuousMap.id (F.obj m) := by
-        ext z; change F.map (𝟙 m) z = z; simp
+        rw [map_homOfLE_add_zero, ContinuousMap.comp_id]
       refine ⟨HomotopyGroup.map (ContinuousMap.id (F.obj m)) hx a, ?_⟩
       exact HomotopyGroup.map_map_of_comp_eq_id (F.map (homOfLE (Nat.le_add_right m 0))).hom
         (ContinuousMap.id (F.obj m)) hx rfl hcomp a
@@ -199,10 +206,11 @@ theorem injective_homotopyGroup_map_ι {N : Type*} (m : ℕ) (x : F.obj m)
     | zero =>
       intro a b hab
       have hx : F.map (homOfLE (Nat.le_add_right m 0)) x = x := by
-        change F.map (𝟙 m) x = x; simp
+        change (F.map (homOfLE (Nat.le_add_right m 0))).hom x = x
+        rw [map_homOfLE_add_zero, ContinuousMap.id_apply]
       have hcomp : (ContinuousMap.id (F.obj m)).comp
           (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id (F.obj m) := by
-        ext z; change F.map (𝟙 m) z = z; simp
+        rw [map_homOfLE_add_zero, ContinuousMap.id_comp]
       have hab' := congrArg (HomotopyGroup.map (N := N) (ContinuousMap.id (F.obj m)) hx) hab
       rwa [HomotopyGroup.map_map_of_comp_eq_id _ _ rfl hx hcomp a,
         HomotopyGroup.map_map_of_comp_eq_id _ _ rfl hx hcomp b] at hab'
@@ -259,19 +267,14 @@ theorem isNConnected_ι_of_forall_succ (m d : ℕ)
       intro d'
       induction d' with
       | zero =>
-        have h : (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id _ := by
-          ext a
-          change F.map (𝟙 m) a = a
-          simp
-        rw [h]
+        rw [map_homOfLE_add_zero]
         exact ContinuousMap.IsWeakHomotopyEquivalence.id.isNConnected d
       | succ d' ih =>
         have hcomp : (F.map (homOfLE (Nat.le_add_right m (d' + 1)))).hom =
             (F.map (homOfLE (m + d').le_succ)).hom.comp
               (F.map (homOfLE (Nat.le_add_right m d'))).hom := by
           ext a
-          rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp]
-          rfl
+          rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]
         rw [hcomp]
         exact (hconn (m + d') (Nat.le_add_right m d')).comp ih
     let z : F.obj (m + k) := F.map (homOfLE (hk ▸ le_max_right m n₀)) x₀

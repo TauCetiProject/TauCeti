@@ -8,15 +8,16 @@ module
 public import Mathlib.CategoryTheory.Limits.Creates
 public import Mathlib.CategoryTheory.Monoidal.CommGrp_
 public import Mathlib.CategoryTheory.Monoidal.Limits.Colimits
+public import TauCeti.CategoryTheory.Limits.Sifted
 public import TauCeti.CategoryTheory.Monoidal.Limits
 
 /-!
 # Sifted colimits of monoid and group objects
 
 In a monoidal category `C` where tensoring on each side preserves colimits of sifted shape `J`
-(for example, any monoidal closed category), the forgetful functors from `Mon C` and `CommMon C`
-create colimits of shape `J`. If moreover `C` is Cartesian monoidal, the forgetful functors from
-`Grp C` and `CommGrp C` create colimits of shape `J`.
+(for example, any braided monoidal closed category), the forgetful functors from `Mon C` and
+`CommMon C` create colimits of shape `J`. If moreover `C` is Cartesian monoidal, the forgetful
+functors from `Grp C` and `CommGrp C` create colimits of shape `J`.
 
 Since filtered categories (in particular `ℕ`) are sifted (`IsFiltered.isSifted`), this provides
 filtered and sequential colimits of monoid and group objects in Cartesian closed categories such as
@@ -47,12 +48,6 @@ section Mon
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C]
   {J : Type w} [Category.{w'} J] [IsSifted J]
-
-private lemma isSifted_exists_cospan (j₁ j₂ : J) :
-    ∃ k : J, Nonempty (j₁ ⟶ k) ∧ Nonempty (j₂ ⟶ k) := by
-  let S : Functor.Final (Functor.diag J) := inferInstance
-  obtain ⟨X⟩ := (S.out (j₁, j₂)).is_nonempty
-  exact ⟨X.right, ⟨X.hom.fst⟩, ⟨X.hom.snd⟩⟩
 
 /-- A cocone in `Mon C` over a sifted diagram whose underlying cocone in `C` is colimiting and
 whose tensor square is preserved as a colimit is itself colimiting. -/
@@ -130,10 +125,10 @@ private noncomputable def colimitOne : 𝟙_ C ⟶ c.pt :=
 
 omit [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
   [∀ X : C, PreservesColimitsOfShape J (tensorRight X)] in
-private theorem one_comp_ι (j : J) :
+private theorem one_comp_colimitOne (j : J) :
     η[(F.obj j).X] ≫ (c.ι.app j : (F.obj j).X ⟶ c.pt) = colimitOne F c := by
   let j₀ : J := Nonempty.some IsSifted.nonempty
-  obtain ⟨k, ⟨f₁⟩, ⟨f₂⟩⟩ := isSifted_exists_cospan j j₀
+  obtain ⟨k, ⟨f₁⟩, ⟨f₂⟩⟩ := IsSifted.exists_cospan j j₀
   let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
   let ιk : (F.obj k).X ⟶ c.pt := c.ι.app k
   let ι₀ : (F.obj j₀).X ⟶ c.pt := c.ι.app j₀
@@ -146,122 +141,127 @@ private theorem one_comp_ι (j : J) :
     _ = η[(F.obj j₀).X] ≫ (F.map f₂).hom ≫ ιk := by rw [IsMonHom.one_hom_assoc]
     _ = η[(F.obj j₀).X] ≫ ι₀ := by rw [hw₂]
 
+private theorem one_mul_colimitMul :
+    colimitOne F c ▷ c.pt ≫ colimitMul F c hc = (λ_ c.pt).hom := by
+  apply IsColimit.hom_ext_whiskerLeft hc
+  intro j
+  let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  have hone : η[(F.obj j).X] ≫ ιj = colimitOne F c := one_comp_colimitOne F c j
+  have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
+    tensor_ι_colimitMul F c hc j
+  calc
+    (𝟙_ C ◁ ιj) ≫ colimitOne F c ▷ c.pt ≫ colimitMul F c hc
+      = (colimitOne F c ▷ (F.obj j).X) ≫ (c.pt ◁ ιj) ≫ colimitMul F c hc := by
+        rw [← Category.assoc, whisker_exchange, Category.assoc]
+    _ = ((η[(F.obj j).X] ≫ ιj) ▷ (F.obj j).X) ≫ (c.pt ◁ ιj) ≫ colimitMul F c hc := by
+        rw [hone]
+    _ = (η[(F.obj j).X] ▷ (F.obj j).X) ≫ (ιj ▷ (F.obj j).X) ≫
+          (c.pt ◁ ιj) ≫ colimitMul F c hc := by
+        rw [comp_whiskerRight_assoc]
+    _ = (η[(F.obj j).X] ▷ (F.obj j).X) ≫ (ιj ⊗ₘ ιj) ≫ colimitMul F c hc := by
+        rw [← tensorHom_def_assoc]
+    _ = (η[(F.obj j).X] ▷ (F.obj j).X) ≫ μ[(F.obj j).X] ≫ ιj := by rw [hmul]
+    _ = (λ_ (F.obj j).X).hom ≫ ιj := by rw [MonObj.one_mul_assoc]
+    _ = (𝟙_ C ◁ ιj) ≫ (λ_ c.pt).hom := by rw [leftUnitor_naturality]
+
+private theorem mul_one_colimitMul :
+    c.pt ◁ colimitOne F c ≫ colimitMul F c hc = (ρ_ c.pt).hom := by
+  apply IsColimit.hom_ext_whiskerRight hc
+  intro j
+  let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  have hone : η[(F.obj j).X] ≫ ιj = colimitOne F c := one_comp_colimitOne F c j
+  have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
+    tensor_ι_colimitMul F c hc j
+  calc
+    (ιj ▷ 𝟙_ C) ≫ c.pt ◁ colimitOne F c ≫ colimitMul F c hc
+      = ((F.obj j).X ◁ colimitOne F c) ≫ (ιj ▷ c.pt) ≫ colimitMul F c hc := by
+        rw [← Category.assoc, ← whisker_exchange, Category.assoc]
+    _ = ((F.obj j).X ◁ (η[(F.obj j).X] ≫ ιj)) ≫ (ιj ▷ c.pt) ≫ colimitMul F c hc := by
+        rw [hone]
+    _ = ((F.obj j).X ◁ η[(F.obj j).X]) ≫ ((F.obj j).X ◁ ιj) ≫
+          (ιj ▷ c.pt) ≫ colimitMul F c hc := by
+        rw [MonoidalCategory.whiskerLeft_comp_assoc]
+    _ = ((F.obj j).X ◁ η[(F.obj j).X]) ≫ (ιj ⊗ₘ ιj) ≫ colimitMul F c hc := by
+        rw [← tensorHom_def'_assoc]
+    _ = ((F.obj j).X ◁ η[(F.obj j).X]) ≫ μ[(F.obj j).X] ≫ ιj := by rw [hmul]
+    _ = (ρ_ (F.obj j).X).hom ≫ ιj := by rw [MonObj.mul_one_assoc]
+    _ = (ιj ▷ 𝟙_ C) ≫ (ρ_ c.pt).hom := by rw [rightUnitor_naturality]
+
+private theorem mul_assoc_colimitMul_lhs (j : J) :
+    (((c.ι.app j : (F.obj j).X ⟶ c.pt) ⊗ₘ c.ι.app j) ⊗ₘ c.ι.app j) ≫
+        (colimitMul F c hc ▷ c.pt) ≫ colimitMul F c hc =
+      ((μ[(F.obj j).X] ▷ (F.obj j).X) ≫ μ[(F.obj j).X]) ≫ c.ι.app j := by
+  let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
+    tensor_ι_colimitMul F c hc j
+  calc
+    ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (colimitMul F c hc ▷ c.pt) ≫ colimitMul F c hc
+      = (((ιj ⊗ₘ ιj) ≫ colimitMul F c hc) ⊗ₘ (ιj ≫ 𝟙 c.pt)) ≫ colimitMul F c hc := by
+        rw [← tensorHom_id, tensorHom_comp_tensorHom_assoc]
+    _ = ((μ[(F.obj j).X] ≫ ιj) ⊗ₘ (𝟙 (F.obj j).X ≫ ιj)) ≫ colimitMul F c hc := by
+        rw [hmul, Category.comp_id, Category.id_comp]
+    _ = ((μ[(F.obj j).X] ▷ (F.obj j).X) ≫ (ιj ⊗ₘ ιj)) ≫ colimitMul F c hc := by
+        rw [← tensorHom_comp_tensorHom, tensorHom_id]
+    _ = ((μ[(F.obj j).X] ▷ (F.obj j).X) ≫ μ[(F.obj j).X]) ≫ ιj := by
+        rw [Category.assoc, hmul, ← Category.assoc]
+
+private theorem mul_assoc_colimitMul_rhs (j : J) :
+    (((c.ι.app j : (F.obj j).X ⟶ c.pt) ⊗ₘ c.ι.app j) ⊗ₘ c.ι.app j) ≫
+        (α_ c.pt c.pt c.pt).hom ≫ (c.pt ◁ colimitMul F c hc) ≫ colimitMul F c hc =
+      ((α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
+        ((F.obj j).X ◁ μ[(F.obj j).X]) ≫ μ[(F.obj j).X]) ≫ c.ι.app j := by
+  let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
+    tensor_ι_colimitMul F c hc j
+  have ha : ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (α_ c.pt c.pt c.pt).hom =
+      (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫ (ιj ⊗ₘ (ιj ⊗ₘ ιj)) :=
+    associator_naturality _ _ _
+  calc
+    ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (α_ c.pt c.pt c.pt).hom ≫
+        (c.pt ◁ colimitMul F c hc) ≫ colimitMul F c hc
+      = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
+          ((ιj ⊗ₘ (ιj ⊗ₘ ιj)) ≫ (𝟙 c.pt ⊗ₘ colimitMul F c hc)) ≫ colimitMul F c hc := by
+        rw [← Category.assoc, ha, Category.assoc, id_tensorHom, Category.assoc]
+    _ = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
+          ((ιj ≫ 𝟙 c.pt) ⊗ₘ ((ιj ⊗ₘ ιj) ≫ colimitMul F c hc)) ≫ colimitMul F c hc := by
+        rw [tensorHom_comp_tensorHom]
+    _ = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
+          ((𝟙 (F.obj j).X ≫ ιj) ⊗ₘ (μ[(F.obj j).X] ≫ ιj)) ≫ colimitMul F c hc := by
+        rw [Category.comp_id, Category.id_comp, hmul]
+    _ = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
+          (((F.obj j).X ◁ μ[(F.obj j).X]) ≫ (ιj ⊗ₘ ιj)) ≫ colimitMul F c hc := by
+        rw [← tensorHom_comp_tensorHom, id_tensorHom]
+    _ = ((α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
+          ((F.obj j).X ◁ μ[(F.obj j).X]) ≫ μ[(F.obj j).X]) ≫ ιj := by
+        simp only [Category.assoc, hmul]
+
+private theorem mul_assoc_colimitMul :
+    colimitMul F c hc ▷ c.pt ≫ colimitMul F c hc =
+      (α_ c.pt c.pt c.pt).hom ≫ c.pt ◁ colimitMul F c hc ≫ colimitMul F c hc := by
+  apply ((hc.tensor hc).tensor hc).hom_ext
+  intro j
+  -- Unfold the tensor-cube cocone leg `((c.tensor c).tensor c).ι.app j`.
+  change (((c.ι.app j : (F.obj j).X ⟶ c.pt) ⊗ₘ c.ι.app j) ⊗ₘ c.ι.app j) ≫ _ =
+    (((c.ι.app j : (F.obj j).X ⟶ c.pt) ⊗ₘ c.ι.app j) ⊗ₘ c.ι.app j) ≫ _
+  exact (mul_assoc_colimitMul_lhs F c hc j).trans <| by
+    rw [mul_assoc_colimitMul_rhs F c hc j, MonObj.mul_assoc]
+
 /-- The monoid object structure induced on the underlying colimit of a sifted diagram in `Mon C`. -/
 @[instance_reducible]
 noncomputable def monObj : MonObj c.pt where
   one := colimitOne F c
   mul := colimitMul F c hc
-  one_mul := by
-    apply IsColimit.hom_ext_whiskerLeft hc
-    intro j
-    let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
-    have hone : η[(F.obj j).X] ≫ ιj = colimitOne F c := one_comp_ι F c j
-    have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
-      tensor_ι_colimitMul F c hc j
-    change (𝟙_ C ◁ ιj) ≫ colimitOne F c ▷ c.pt ≫ colimitMul F c hc =
-      (𝟙_ C ◁ ιj) ≫ (λ_ c.pt).hom
-    calc
-      (𝟙_ C ◁ ιj) ≫ colimitOne F c ▷ c.pt ≫ colimitMul F c hc
-        = (colimitOne F c ▷ (F.obj j).X) ≫ (c.pt ◁ ιj) ≫ colimitMul F c hc := by
-          rw [← Category.assoc, whisker_exchange, Category.assoc]
-      _ = ((η[(F.obj j).X] ≫ ιj) ▷ (F.obj j).X) ≫ (c.pt ◁ ιj) ≫ colimitMul F c hc := by
-          rw [hone]
-      _ = (η[(F.obj j).X] ▷ (F.obj j).X) ≫ (ιj ▷ (F.obj j).X) ≫
-            (c.pt ◁ ιj) ≫ colimitMul F c hc := by
-          rw [comp_whiskerRight_assoc]
-      _ = (η[(F.obj j).X] ▷ (F.obj j).X) ≫ (ιj ⊗ₘ ιj) ≫ colimitMul F c hc := by
-          rw [← tensorHom_def_assoc]
-      _ = (η[(F.obj j).X] ▷ (F.obj j).X) ≫ μ[(F.obj j).X] ≫ ιj := by
-          rw [hmul]
-      _ = (λ_ (F.obj j).X).hom ≫ ιj := by
-          rw [MonObj.one_mul_assoc]
-      _ = (𝟙_ C ◁ ιj) ≫ (λ_ c.pt).hom := by
-          rw [leftUnitor_naturality]
-  mul_one := by
-    apply IsColimit.hom_ext_whiskerRight hc
-    intro j
-    let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
-    have hone : η[(F.obj j).X] ≫ ιj = colimitOne F c := one_comp_ι F c j
-    have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
-      tensor_ι_colimitMul F c hc j
-    change (ιj ▷ 𝟙_ C) ≫ c.pt ◁ colimitOne F c ≫ colimitMul F c hc =
-      (ιj ▷ 𝟙_ C) ≫ (ρ_ c.pt).hom
-    calc
-      (ιj ▷ 𝟙_ C) ≫ c.pt ◁ colimitOne F c ≫ colimitMul F c hc
-        = ((F.obj j).X ◁ colimitOne F c) ≫ (ιj ▷ c.pt) ≫ colimitMul F c hc := by
-          rw [← Category.assoc, ← whisker_exchange, Category.assoc]
-      _ = ((F.obj j).X ◁ (η[(F.obj j).X] ≫ ιj)) ≫ (ιj ▷ c.pt) ≫ colimitMul F c hc := by
-          rw [hone]
-      _ = ((F.obj j).X ◁ η[(F.obj j).X]) ≫ ((F.obj j).X ◁ ιj) ≫
-            (ιj ▷ c.pt) ≫ colimitMul F c hc := by
-          rw [MonoidalCategory.whiskerLeft_comp_assoc]
-      _ = ((F.obj j).X ◁ η[(F.obj j).X]) ≫ (ιj ⊗ₘ ιj) ≫ colimitMul F c hc := by
-          rw [← tensorHom_def'_assoc]
-      _ = ((F.obj j).X ◁ η[(F.obj j).X]) ≫ μ[(F.obj j).X] ≫ ιj := by
-          rw [hmul]
-      _ = (ρ_ (F.obj j).X).hom ≫ ιj := by
-          rw [MonObj.mul_one_assoc]
-      _ = (ιj ▷ 𝟙_ C) ≫ (ρ_ c.pt).hom := by
-          rw [rightUnitor_naturality]
-  mul_assoc := by
-    apply ((hc.tensor hc).tensor hc).hom_ext
-    intro j
-    let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
-    have hmul : (ιj ⊗ₘ ιj) ≫ colimitMul F c hc = μ[(F.obj j).X] ≫ ιj :=
-      tensor_ι_colimitMul F c hc j
-    change ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (colimitMul F c hc ▷ c.pt) ≫ colimitMul F c hc =
-      ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (α_ c.pt c.pt c.pt).hom ≫
-        (c.pt ◁ colimitMul F c hc) ≫ colimitMul F c hc
-    have h₁ :
-        ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (colimitMul F c hc ▷ c.pt) ≫ colimitMul F c hc =
-        ((μ[(F.obj j).X] ▷ (F.obj j).X) ≫ μ[(F.obj j).X]) ≫ ιj := by
-      calc
-        ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (colimitMul F c hc ▷ c.pt) ≫ colimitMul F c hc
-          = (((ιj ⊗ₘ ιj) ≫ colimitMul F c hc) ⊗ₘ (ιj ≫ 𝟙 c.pt)) ≫
-              colimitMul F c hc := by
-            rw [← tensorHom_id, tensorHom_comp_tensorHom_assoc]
-        _ = ((μ[(F.obj j).X] ≫ ιj) ⊗ₘ (𝟙 (F.obj j).X ≫ ιj)) ≫
-              colimitMul F c hc := by
-            rw [hmul, Category.comp_id, Category.id_comp]
-        _ = ((μ[(F.obj j).X] ▷ (F.obj j).X) ≫ (ιj ⊗ₘ ιj)) ≫ colimitMul F c hc := by
-            rw [← tensorHom_comp_tensorHom, tensorHom_id]
-        _ = ((μ[(F.obj j).X] ▷ (F.obj j).X) ≫ μ[(F.obj j).X]) ≫ ιj := by
-            rw [Category.assoc, hmul, ← Category.assoc]
-    have h₂ : ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (α_ c.pt c.pt c.pt).hom ≫
-        (c.pt ◁ colimitMul F c hc) ≫ colimitMul F c hc =
-        ((α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
-          ((F.obj j).X ◁ μ[(F.obj j).X]) ≫ μ[(F.obj j).X]) ≫ ιj := by
-      have ha : ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (α_ c.pt c.pt c.pt).hom =
-          (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫ (ιj ⊗ₘ (ιj ⊗ₘ ιj)) :=
-        associator_naturality _ _ _
-      calc
-        ((ιj ⊗ₘ ιj) ⊗ₘ ιj) ≫ (α_ c.pt c.pt c.pt).hom ≫
-            (c.pt ◁ colimitMul F c hc) ≫ colimitMul F c hc
-          = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
-              ((ιj ⊗ₘ (ιj ⊗ₘ ιj)) ≫ (𝟙 c.pt ⊗ₘ colimitMul F c hc)) ≫
-              colimitMul F c hc := by
-            rw [← Category.assoc, ha, Category.assoc, id_tensorHom, Category.assoc]
-        _ = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
-              ((ιj ≫ 𝟙 c.pt) ⊗ₘ ((ιj ⊗ₘ ιj) ≫ colimitMul F c hc)) ≫
-              colimitMul F c hc := by
-            rw [tensorHom_comp_tensorHom]
-        _ = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
-              ((𝟙 (F.obj j).X ≫ ιj) ⊗ₘ (μ[(F.obj j).X] ≫ ιj)) ≫
-              colimitMul F c hc := by
-            rw [Category.comp_id, Category.id_comp, hmul]
-        _ = (α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
-              (((F.obj j).X ◁ μ[(F.obj j).X]) ≫ (ιj ⊗ₘ ιj)) ≫ colimitMul F c hc := by
-            rw [← tensorHom_comp_tensorHom, id_tensorHom]
-        _ = ((α_ (F.obj j).X (F.obj j).X (F.obj j).X).hom ≫
-              ((F.obj j).X ◁ μ[(F.obj j).X]) ≫ μ[(F.obj j).X]) ≫ ιj := by
-            simp only [Category.assoc, hmul]
-    exact h₁.trans (by rw [h₂, MonObj.mul_assoc])
+  one_mul := one_mul_colimitMul F c hc
+  mul_one := mul_one_colimitMul F c hc
+  mul_assoc := mul_assoc_colimitMul F c hc
 
-theorem one_eq (j : J) :
+/-- Each stage unit commutes with the colimit inclusion into `monObj F c hc`. -/
+theorem one_comp_ι (j : J) :
     let _ := monObj F c hc
     η[(F.obj j).X] ≫ c.ι.app j = η[c.pt] :=
-  one_comp_ι F c j
+  one_comp_colimitOne F c j
 
+/-- Each stage multiplication commutes with the colimit inclusion into `monObj F c hc`. -/
 theorem tensor_ι_mul (j : J) :
     let _ := monObj F c hc
     ((c.ι.app j : (F.obj j).X ⟶ c.pt) ⊗ₘ (c.ι.app j : (F.obj j).X ⟶ c.pt)) ≫ μ[c.pt] =
@@ -272,7 +272,7 @@ theorem tensor_ι_mul (j : J) :
 noncomputable def cocone : Cocone F :=
   let _ := monObj F c hc
   Cocone.mk { X := c.pt, mon := monObj F c hc }
-    { app j := Mon.Hom.mk' (c.ι.app j) (one_eq F c hc j) (tensor_ι_mul F c hc j).symm
+    { app j := Mon.Hom.mk' (c.ι.app j) (one_comp_ι F c hc j) (tensor_ι_mul F c hc j).symm
       naturality _ _ f := Mon.Hom.ext ((c.w f).trans (Category.comp_id _).symm) }
 
 /-- Forgetting the monoid structure of the lifted cocone recovers the underlying cocone. -/
@@ -312,19 +312,13 @@ section CommMon
 variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C] [BraidedCategory.{v} C]
   {J : Type w} [Category.{w'} J]
   [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
-
-private lemma preservesColimitsOfShape_tensorRight (X : C) :
-    PreservesColimitsOfShape J (tensorRight X) where
-  preservesColimit {F} :=
-    MonoidalCategory.Limits.preservesColimit_of_braided_and_preservesColimit_tensor_left F X
-
-variable [IsSifted J]
+  [IsSifted J]
 
 /-- A cocone in `CommMon C` over a sifted diagram whose underlying cocone in `C` is colimiting is
 itself colimiting. -/
 noncomputable def CommMon.isColimitOfForget (F : J ⥤ CommMon C) (c : Cocone F)
     (hc : IsColimit ((CommMon.forget C).mapCocone c)) : IsColimit c :=
-  have := preservesColimitsOfShape_tensorRight (C := C) (J := J)
+  have := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
   isColimitOfReflects (CommMon.forget₂Mon C)
     (Mon.isColimitOfForget (F ⋙ CommMon.forget₂Mon C) ((CommMon.forget₂Mon C).mapCocone c) hc)
 
@@ -333,10 +327,10 @@ namespace CommMon.ColimitConstruction
 variable (F : J ⥤ CommMon C) (c : Cocone (F ⋙ CommMon.forget C)) (hc : IsColimit c)
 
 private lemma isCommMonObj_colimit :
-    let _ := preservesColimitsOfShape_tensorRight (C := C) (J := J)
+    let _ := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
     let _ := Mon.ColimitConstruction.monObj (F ⋙ CommMon.forget₂Mon C) c hc
     IsCommMonObj c.pt := by
-  let _ := preservesColimitsOfShape_tensorRight (C := C) (J := J)
+  let _ := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
   let _ := Mon.ColimitConstruction.monObj (F ⋙ CommMon.forget₂Mon C) c hc
   refine ⟨(hc.tensor hc).hom_ext fun j ↦ ?_⟩
   let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
@@ -350,7 +344,7 @@ private lemma isCommMonObj_colimit :
 
 /-- The lifted cocone in `CommMon C` over an underlying colimiting cocone. -/
 noncomputable def cocone : Cocone F :=
-  let _ := preservesColimitsOfShape_tensorRight (C := C) (J := J)
+  let _ := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
   let mc := Mon.ColimitConstruction.cocone (F ⋙ CommMon.forget₂Mon C) c hc
   Cocone.mk
     { X := c.pt
@@ -439,65 +433,65 @@ private theorem ι_colimitInv (j : J) :
     (c.ι.app j : (F.obj j).X ⟶ c.pt) ≫ colimitInv F c hc = ι[(F.obj j).X] ≫ c.ι.app j :=
   hc.fac (invCocone F c) j
 
+private theorem left_inv_colimitInv :
+    letI := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
+    lift (colimitInv F c hc) (𝟙 c.pt) ≫ μ[c.pt] = toUnit c.pt ≫ η[c.pt] := by
+  let _ := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
+  refine hc.hom_ext fun j ↦ ?_
+  let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  have hmul : (ιj ⊗ₘ ιj) ≫ μ[c.pt] = μ[(F.obj j).X] ≫ ιj :=
+    Mon.ColimitConstruction.tensor_ι_mul (F ⋙ Grp.forget₂Mon C) c hc j
+  have hone : η[(F.obj j).X] ≫ ιj = η[c.pt] :=
+    Mon.ColimitConstruction.one_comp_ι (F ⋙ Grp.forget₂Mon C) c hc j
+  have hinv : ιj ≫ colimitInv F c hc = ι[(F.obj j).X] ≫ ιj :=
+    ι_colimitInv F c hc j
+  calc
+    ιj ≫ lift (colimitInv F c hc) (𝟙 c.pt) ≫ μ[c.pt]
+      = lift (ιj ≫ colimitInv F c hc) ιj ≫ μ[c.pt] := by
+        rw [← Category.assoc, comp_lift, Category.comp_id]
+    _ = lift (ι[(F.obj j).X] ≫ ιj) (𝟙 (F.obj j).X ≫ ιj) ≫ μ[c.pt] := by
+        rw [hinv, Category.id_comp]
+    _ = lift ι[(F.obj j).X] (𝟙 (F.obj j).X) ≫ (ιj ⊗ₘ ιj) ≫ μ[c.pt] := by
+        rw [lift_map_assoc]
+    _ = lift ι[(F.obj j).X] (𝟙 (F.obj j).X) ≫ μ[(F.obj j).X] ≫ ιj := by rw [hmul]
+    _ = toUnit (F.obj j).X ≫ η[(F.obj j).X] ≫ ιj := by rw [GrpObj.left_inv_assoc]
+    _ = toUnit (F.obj j).X ≫ η[c.pt] := by rw [hone]
+    _ = ιj ≫ toUnit c.pt ≫ η[c.pt] := by
+        rw [← Category.assoc, toUnit_unique (ιj ≫ toUnit c.pt) (toUnit (F.obj j).X)]
+
+private theorem right_inv_colimitInv :
+    letI := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
+    lift (𝟙 c.pt) (colimitInv F c hc) ≫ μ[c.pt] = toUnit c.pt ≫ η[c.pt] := by
+  let _ := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
+  refine hc.hom_ext fun j ↦ ?_
+  let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  have hmul : (ιj ⊗ₘ ιj) ≫ μ[c.pt] = μ[(F.obj j).X] ≫ ιj :=
+    Mon.ColimitConstruction.tensor_ι_mul (F ⋙ Grp.forget₂Mon C) c hc j
+  have hone : η[(F.obj j).X] ≫ ιj = η[c.pt] :=
+    Mon.ColimitConstruction.one_comp_ι (F ⋙ Grp.forget₂Mon C) c hc j
+  have hinv : ιj ≫ colimitInv F c hc = ι[(F.obj j).X] ≫ ιj :=
+    ι_colimitInv F c hc j
+  calc
+    ιj ≫ lift (𝟙 c.pt) (colimitInv F c hc) ≫ μ[c.pt]
+      = lift ιj (ιj ≫ colimitInv F c hc) ≫ μ[c.pt] := by
+        rw [← Category.assoc, comp_lift, Category.comp_id]
+    _ = lift (𝟙 (F.obj j).X ≫ ιj) (ι[(F.obj j).X] ≫ ιj) ≫ μ[c.pt] := by
+        rw [hinv, Category.id_comp]
+    _ = lift (𝟙 (F.obj j).X) ι[(F.obj j).X] ≫ (ιj ⊗ₘ ιj) ≫ μ[c.pt] := by
+        rw [lift_map_assoc]
+    _ = lift (𝟙 (F.obj j).X) ι[(F.obj j).X] ≫ μ[(F.obj j).X] ≫ ιj := by rw [hmul]
+    _ = toUnit (F.obj j).X ≫ η[(F.obj j).X] ≫ ιj := by rw [GrpObj.right_inv_assoc]
+    _ = toUnit (F.obj j).X ≫ η[c.pt] := by rw [hone]
+    _ = ιj ≫ toUnit c.pt ≫ η[c.pt] := by
+        rw [← Category.assoc, toUnit_unique (ιj ≫ toUnit c.pt) (toUnit (F.obj j).X)]
+
 /-- The group object structure induced on the underlying colimit of a sifted diagram in `Grp C`. -/
 @[instance_reducible]
 noncomputable def grpObj : GrpObj c.pt where
   toMonObj := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
   inv := colimitInv F c hc
-  left_inv := by
-    let _ := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
-    refine hc.hom_ext fun j ↦ ?_
-    let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
-    have hmul : (ιj ⊗ₘ ιj) ≫ μ[c.pt] = μ[(F.obj j).X] ≫ ιj :=
-      Mon.ColimitConstruction.tensor_ι_mul (F ⋙ Grp.forget₂Mon C) c hc j
-    have hone : η[(F.obj j).X] ≫ ιj = η[c.pt] :=
-      Mon.ColimitConstruction.one_eq (F ⋙ Grp.forget₂Mon C) c hc j
-    have hinv : ιj ≫ colimitInv F c hc = ι[(F.obj j).X] ≫ ιj :=
-      ι_colimitInv F c hc j
-    change ιj ≫ lift (colimitInv F c hc) (𝟙 c.pt) ≫ μ[c.pt] =
-      ιj ≫ toUnit c.pt ≫ η[c.pt]
-    calc
-      ιj ≫ lift (colimitInv F c hc) (𝟙 c.pt) ≫ μ[c.pt]
-        = lift (ιj ≫ colimitInv F c hc) ιj ≫ μ[c.pt] := by
-          rw [← Category.assoc, comp_lift, Category.comp_id]
-      _ = lift (ι[(F.obj j).X] ≫ ιj) (𝟙 (F.obj j).X ≫ ιj) ≫ μ[c.pt] := by
-          rw [hinv, Category.id_comp]
-      _ = lift ι[(F.obj j).X] (𝟙 (F.obj j).X) ≫ (ιj ⊗ₘ ιj) ≫ μ[c.pt] := by
-          rw [lift_map_assoc]
-      _ = lift ι[(F.obj j).X] (𝟙 (F.obj j).X) ≫ μ[(F.obj j).X] ≫ ιj := by
-          rw [hmul]
-      _ = toUnit (F.obj j).X ≫ η[(F.obj j).X] ≫ ιj := by
-          rw [GrpObj.left_inv_assoc]
-      _ = toUnit (F.obj j).X ≫ η[c.pt] := by rw [hone]
-      _ = ιj ≫ toUnit c.pt ≫ η[c.pt] := by
-          rw [← Category.assoc, toUnit_unique (ιj ≫ toUnit c.pt) (toUnit (F.obj j).X)]
-  right_inv := by
-    let _ := Mon.ColimitConstruction.monObj (F ⋙ Grp.forget₂Mon C) c hc
-    refine hc.hom_ext fun j ↦ ?_
-    let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
-    have hmul : (ιj ⊗ₘ ιj) ≫ μ[c.pt] = μ[(F.obj j).X] ≫ ιj :=
-      Mon.ColimitConstruction.tensor_ι_mul (F ⋙ Grp.forget₂Mon C) c hc j
-    have hone : η[(F.obj j).X] ≫ ιj = η[c.pt] :=
-      Mon.ColimitConstruction.one_eq (F ⋙ Grp.forget₂Mon C) c hc j
-    have hinv : ιj ≫ colimitInv F c hc = ι[(F.obj j).X] ≫ ιj :=
-      ι_colimitInv F c hc j
-    change ιj ≫ lift (𝟙 c.pt) (colimitInv F c hc) ≫ μ[c.pt] =
-      ιj ≫ toUnit c.pt ≫ η[c.pt]
-    calc
-      ιj ≫ lift (𝟙 c.pt) (colimitInv F c hc) ≫ μ[c.pt]
-        = lift ιj (ιj ≫ colimitInv F c hc) ≫ μ[c.pt] := by
-          rw [← Category.assoc, comp_lift, Category.comp_id]
-      _ = lift (𝟙 (F.obj j).X ≫ ιj) (ι[(F.obj j).X] ≫ ιj) ≫ μ[c.pt] := by
-          rw [hinv, Category.id_comp]
-      _ = lift (𝟙 (F.obj j).X) ι[(F.obj j).X] ≫ (ιj ⊗ₘ ιj) ≫ μ[c.pt] := by
-          rw [lift_map_assoc]
-      _ = lift (𝟙 (F.obj j).X) ι[(F.obj j).X] ≫ μ[(F.obj j).X] ≫ ιj := by
-          rw [hmul]
-      _ = toUnit (F.obj j).X ≫ η[(F.obj j).X] ≫ ιj := by
-          rw [GrpObj.right_inv_assoc]
-      _ = toUnit (F.obj j).X ≫ η[c.pt] := by rw [hone]
-      _ = ιj ≫ toUnit c.pt ≫ η[c.pt] := by
-          rw [← Category.assoc, toUnit_unique (ιj ≫ toUnit c.pt) (toUnit (F.obj j).X)]
+  left_inv := left_inv_colimitInv F c hc
+  right_inv := right_inv_colimitInv F c hc
 
 /-- The lifted cocone in `Grp C` over an underlying colimiting cocone. -/
 noncomputable def cocone : Cocone F :=
@@ -547,7 +541,7 @@ variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory.{v} C] [Braide
 itself colimiting. -/
 noncomputable def CommGrp.isColimitOfForget (F : J ⥤ CommGrp C) (c : Cocone F)
     (hc : IsColimit ((CommGrp.forget C).mapCocone c)) : IsColimit c :=
-  have := preservesColimitsOfShape_tensorRight (C := C) (J := J)
+  have := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
   isColimitOfReflects (CommGrp.forget₂Grp C)
     (Grp.isColimitOfForget (F ⋙ CommGrp.forget₂Grp C) ((CommGrp.forget₂Grp C).mapCocone c) hc)
 
@@ -557,7 +551,7 @@ variable (F : J ⥤ CommGrp C) (c : Cocone (F ⋙ CommGrp.forget C)) (hc : IsCol
 
 /-- The lifted cocone in `CommGrp C` over an underlying colimiting cocone. -/
 noncomputable def cocone : Cocone F :=
-  let _ := preservesColimitsOfShape_tensorRight (C := C) (J := J)
+  let _ := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
   let gc := Grp.ColimitConstruction.cocone (F ⋙ CommGrp.forget₂Grp C) c hc
   Cocone.mk
     { X := c.pt

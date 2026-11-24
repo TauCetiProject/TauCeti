@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Category
+public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
@@ -83,5 +84,13 @@ theorem hom_ext_whiskerRight (hc : IsColimit c) {U Z : C} [PreservesColimit F (t
   (isColimitOfPreserves (tensorRight U) hc).hom_ext h
 
 end IsColimit
+
+/-- When `C` is braided and `tensorLeft X` preserves `J`-shaped colimits, then `tensorRight X`
+also preserves `J`-shaped colimits. -/
+theorem preservesColimitsOfShape_tensorRight_of_braided
+    [BraidedCategory C] (X : C) [PreservesColimitsOfShape J (tensorLeft X)] :
+    PreservesColimitsOfShape J (tensorRight X) where
+  preservesColimit {F} :=
+    MonoidalCategory.Limits.preservesColimit_of_braided_and_preservesColimit_tensor_left F X
 
 end CategoryTheory.Limits
