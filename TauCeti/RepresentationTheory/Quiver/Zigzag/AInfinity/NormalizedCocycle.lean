@@ -207,21 +207,24 @@ private theorem taylor_splice_insertLetter {F : ReducedTensorWords k Z →ₗ[k]
   subst d
   by_cases hfit : p + N ≤ N + 1
   swap
-  · rw [subword_eq_zero_of_lt_add k y (by omega), map_zero, splice_zero, map_zero, smul_zero,
-      ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+  · rw [subword_eq_zero_of_lt_add k y (by omega), map_zero, splice_zero, map_zero, smul_zero]
+    split_ifs <;> first | omega | simp
   by_cases hblock : p ≤ j ∧ j < p + N
   · -- The block contains the idempotent, so `F` kills it.
     rw [LinearMap.mem_ker.mp (hFe u (subword_mem_degenerateWords y
       ⟨⟨j, by omega⟩, hblock.1, hblock.2, by simp [y, insertLetter]⟩)), splice_zero, map_zero,
-      smul_zero, ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      smul_zero]
+    split_ifs <;> first | omega | simp
   rcases Nat.lt_or_ge p 1 with hp0 | hp1
   · -- Everything but a final idempotent collapses.
     obtain rfl : p = 0 := by omega
     have hjN : j = N := by omega
     subst j
     have hy : y (Fin.last N) = 𝔢 u := by simp [y, insertLetter]
-    rw [ite_eq_right (by omega), ite_eq_left ⟨rfl, rfl, rfl⟩, zero_add, Finset.sum_range_zero,
-      mul_zero, negOnePowCast_zero, one_smul, subword_zero_insertLetter_self k (by omega),
+    rw [ite_eq_right (show ¬(0 = 1 ∧ N = N ∧ N = 0) by omega),
+      ite_eq_left (show 0 = 0 ∧ N = N ∧ N = N from ⟨rfl, rfl, rfl⟩), zero_add,
+      Finset.sum_range_zero, mul_zero, negOnePowCast_zero, one_smul,
+      subword_zero_insertLetter_self k (by omega),
       splice_collapse_init_eq k (by omega), hy, AInfinityAlgebra.taylor_of_two,
       zigzagStrictAInfinityAlgebra_m_two_apply]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
@@ -232,8 +235,9 @@ private theorem taylor_splice_insertLetter {F : ReducedTensorWords k Z →ₗ[k]
     obtain rfl : p = 1 := by omega
     obtain rfl : j = 0 := by omega
     have hy : y 0 = 𝔢 u := by simp [y, insertLetter]
-    rw [ite_eq_left ⟨rfl, rfl, rfl⟩, ite_eq_right (by omega), add_zero, Finset.sum_range_one,
-      ite_eq_left rfl, subword_one_insertLetter_zero k (by omega),
+    rw [ite_eq_left (show 1 = 1 ∧ N = N ∧ 0 = 0 from ⟨rfl, rfl, rfl⟩),
+      ite_eq_right (show ¬(1 = 0 ∧ N = N ∧ 0 = N) by omega), add_zero, Finset.sum_range_one,
+      ite_eq_left (show (0 : ℕ) = 0 from rfl), subword_one_insertLetter_zero k (by omega),
       splice_collapse_tail_eq k (by omega), hy, AInfinityAlgebra.taylor_of_two,
       zigzagStrictAInfinityAlgebra_m_two_apply]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
@@ -294,20 +298,21 @@ private theorem apply_splice_taylor_insertLetter {F : ReducedTensorWords k Z →
   by_cases hd2 : d = 2
   swap
   · rw [zigzagStrictAInfinityAlgebra_taylor_subword_eq_zero_of_ne_two y p d hd2, splice_zero,
-      map_zero, smul_zero, ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      map_zero, smul_zero]
+    split_ifs <;> first | omega | simp
   subst d
   by_cases hfit : p + 2 ≤ N + 1
   swap
-  · rw [subword_eq_zero_of_lt_add k y (by omega), map_zero, splice_zero, map_zero, smul_zero,
-      ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+  · rw [subword_eq_zero_of_lt_add k y (by omega), map_zero, splice_zero, map_zero, smul_zero]
+    split_ifs <;> first | omega | simp
   by_cases hblock : p ≤ j ∧ j < p + 2
   swap
   · -- The collapse leaves the idempotent in place, so `F` kills the spliced word.
     obtain ⟨z, ⟨i, hi⟩, hz⟩ := exists_splice_eq_of_tprod k y hfit
       ((𝒵).taylor (subword k y p 2)) (i := ⟨j, by omega⟩) hblock
     rw [hz, LinearMap.mem_ker.mp (hFe u (of_tprod_mem_degenerateWords
-      ⟨N + 1 + 1 - 2, by omega⟩ z ⟨i, hi.trans (by simp [y, insertLetter])⟩)), smul_zero,
-      ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      ⟨N + 1 + 1 - 2, by omega⟩ z ⟨i, hi.trans (by simp [y, insertLetter])⟩)), smul_zero]
+    split_ifs <;> first | omega | simp
   rw [zigzagStrictAInfinityAlgebra_taylor_subword_two y p hfit,
     negOnePowCast_sum_range_of_le hblock.1, one_smul]
   rcases Nat.lt_or_ge p j with hpj | hpj
@@ -315,12 +320,13 @@ private theorem apply_splice_taylor_insertLetter {F : ReducedTensorWords k Z →
     have hy₀ : y ⟨p, by omega⟩ = a p := by simp [y, insertLetter, hpj]
     have hpj' : p + 1 = j := by omega
     have hy₁ : y ⟨p + 1, by omega⟩ = 𝔢 u := by simp [y, insertLetter, hpj']
+    -- The arrow before the idempotent has odd degree, so the Koszul twist negates it.
+    have hsign : (((1 : ℤ).negOnePow : ℤ) : k) • a p * 𝔢 u = -(a p * 𝔢 u) := by simp
     rw [hy₀, hy₁, InternalGrading.koszulTwist_one_apply_of_mem _ (e := 1)
-      (by rw [zigzagStrictAInfinityAlgebra_grading_piece]; exact ha p (by omega)),
-      Int.negOnePow_one, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul,
-      neg_mul, splice_neg, map_neg, splice_insertLetter k a _ _ (by omega) (by omega) (by omega),
-      ite_eq_left (by and_intros <;> first | trivial | omega), ite_eq_right (by omega),
-      add_zero]
+      (by rw [zigzagStrictAInfinityAlgebra_grading_piece]; exact ha p (by omega)), hsign,
+      splice_neg, map_neg, splice_insertLetter k a _ _ (by omega) (by omega) (by omega),
+      ite_eq_left (show p = j - 1 ∧ 2 = 2 ∧ 0 < j by omega),
+      ite_eq_right (show ¬(p = j ∧ 2 = 2 ∧ j < N) by omega), add_zero]
   · -- The idempotent is the first letter of the collapsed block.
     obtain rfl : p = j := by omega
     have hy₀ : y ⟨p, by omega⟩ = 𝔢 u := by simp [y, insertLetter]
@@ -328,8 +334,9 @@ private theorem apply_splice_taylor_insertLetter {F : ReducedTensorWords k Z →
     rw [hy₀, hy₁, InternalGrading.koszulTwist_apply_of_mem_zero _
       (by rw [zigzagStrictAInfinityAlgebra_grading_piece]
           exact zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G u),
-      splice_insertLetter k a _ _ le_rfl (by omega) (by omega), ite_eq_right (by omega),
-      ite_eq_left (by and_intros <;> first | trivial | omega), zero_add]
+      splice_insertLetter k a _ _ le_rfl (by omega) (by omega),
+      ite_eq_right (show ¬(p = p - 1 ∧ 2 = 2 ∧ 0 < p) by omega),
+      ite_eq_left (show p = p ∧ 2 = 2 ∧ p < N by omega), zero_add]
 
 /-- The `F{m}` half of the Hochschild differential of a normalized cochain, on a word with a
 vertex idempotent inserted at position `j` into letters of path length one: only the products of
@@ -431,8 +438,9 @@ private theorem vertexIdempotent_mul_apply_arrows {F : ReducedTensorWords k Z �
     (w ⟨0, by omega⟩).snd
   have he : 𝔢 (w ⟨0, by omega⟩).snd * arrowFamily (k := k) w 0 = arrowFamily w 0 := by
     rw [arrowFamily, dite_eq_left (by omega), zigzagMk_vertexIdempotent_mul_ofArrow]
-  rw [ite_eq_left rfl, ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega),
-    he, update_arrowFamily_self, arrowFamily_fin, add_zero, zero_add, neg_add_eq_zero] at h
+  rw [ite_eq_left (show (0 : ℕ) = 0 from rfl), ite_eq_right (show ¬(0 : ℕ) = N by omega),
+    ite_eq_right (show ¬(0 : ℕ) < 0 by omega), ite_eq_left (show (0 : ℕ) < N by omega), he,
+    update_arrowFamily_self, arrowFamily_fin, add_zero, zero_add, neg_add_eq_zero] at h
   exact h
 
 /-- A normalized cocycle on the arrows of a word `w` takes values in the corner of the vertex
@@ -450,8 +458,9 @@ private theorem apply_arrows_mul_vertexIdempotent {F : ReducedTensorWords k Z �
   have he : arrowFamily (k := k) w (N - 1) * 𝔢 (w ⟨N - 1, by omega⟩).fst =
       arrowFamily w (N - 1) := by
     rw [arrowFamily, dite_eq_left (by omega), zigzagMk_ofArrow_mul_vertexIdempotent]
-  rw [ite_eq_right (by omega), ite_eq_left rfl, ite_eq_left (by omega), ite_eq_right (by omega),
-    he, update_arrowFamily_self, arrowFamily_fin, add_zero, zero_add, ← sub_eq_add_neg,
+  rw [ite_eq_right (show ¬N = 0 by omega), ite_eq_left (show N = N from rfl),
+    ite_eq_left (show 0 < N by omega), ite_eq_right (show ¬N < N by omega), he,
+    update_arrowFamily_self, arrowFamily_fin, add_zero, zero_add, ← sub_eq_add_neg,
     sub_eq_zero] at h
   exact h
 
@@ -470,67 +479,13 @@ private theorem apply_arrows_eq_zero_of_ne {F : ReducedTensorWords k Z →ₗ[k]
     rw [arrowFamily, dite_eq_left (by omega), zigzagMk_ofArrow_mul_vertexIdempotent]
   have he₂ : 𝔢 (w ⟨p, by omega⟩).fst * arrowFamily (k := k) w (p + 1) = 0 := by
     rw [arrowFamily, dite_eq_left hp, zigzagMk_vertexIdempotent_mul_ofArrow_of_ne k G _ hw]
-  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega),
-    ite_eq_left (by omega), Nat.add_sub_cancel, he₁, update_arrowFamily_self, he₂,
-    tprod_update_arrowFamily_zero w hp, map_zero, map_zero, arrowFamily_fin] at h
+  rw [ite_eq_right (show ¬p + 1 = 0 by omega), ite_eq_right (show ¬p + 1 = N by omega),
+    ite_eq_left (show 0 < p + 1 by omega), ite_eq_left (show p + 1 < N by omega),
+    Nat.add_sub_cancel, he₁, update_arrowFamily_self, he₂, tprod_update_arrowFamily_zero w hp,
+    map_zero, map_zero, arrowFamily_fin] at h
   simpa using h
 
 end Arrows
-
-/-! ### Volume classes -/
-
-section Volume
-
-local notation "Z" => nonisolatedZigzagQuotient k G
-
-/-- The volume coordinate at `v` of the volume class at `v'`. -/
-private theorem zigzagBasis_coord_zigzagVolume [DecidableEq V] (v v' : V) :
-    (zigzagBasis k G hns).coord (.inr (.inr v)) (zigzagVolume k G v') =
-      if v' = v then 1 else 0 := by
-  rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
-  simp
-
-/-- On the left, a vertex idempotent cuts an element of path length two down to its volume
-coordinate at that vertex. -/
-private theorem zigzagMk_vertexIdempotent_mul_of_mem_two {y : Z}
-    (hy : y ∈ zigzagIntegerGrade k G 2) (v : V) :
-    𝔢 v * y = (zigzagBasis k G hns).coord (.inr (.inr v)) y • zigzagVolume k G v := by
-  classical
-  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
-    zigzagGrade_two_eq_span_range_zigzagVolume] at hy
-  induction hy using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨v', rfl⟩ := hx
-    rw [zigzagBasis_coord_zigzagVolume]
-    rcases eq_or_ne v' v with rfl | h
-    · simp
-    · rw [zigzagMk_vertexIdempotent_mul_zigzagVolume_of_ne k G h.symm, ite_eq_right h,
-        zero_smul]
-  | zero => simp
-  | add x y _ _ hx hy => rw [mul_add, hx, hy, map_add, add_smul]
-  | smul r x _ hx => rw [mul_smul_comm, hx, map_smul, smul_eq_mul, mul_smul]
-
-/-- On the right, a vertex idempotent cuts an element of path length two down to its volume
-coordinate at that vertex. -/
-private theorem mul_zigzagMk_vertexIdempotent_of_mem_two {y : Z}
-    (hy : y ∈ zigzagIntegerGrade k G 2) (v : V) :
-    y * 𝔢 v = (zigzagBasis k G hns).coord (.inr (.inr v)) y • zigzagVolume k G v := by
-  classical
-  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
-    zigzagGrade_two_eq_span_range_zigzagVolume] at hy
-  induction hy using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨v', rfl⟩ := hx
-    rw [zigzagBasis_coord_zigzagVolume]
-    rcases eq_or_ne v' v with rfl | h
-    · simp
-    · rw [zigzagVolume_mul_zigzagMk_vertexIdempotent_of_ne k G h.symm, ite_eq_right h,
-        zero_smul]
-  | zero => simp
-  | add x y _ _ hx hy => rw [add_mul, hx, hy, map_add, add_smul]
-  | smul r x _ hx => rw [smul_mul_assoc, hx, map_smul, smul_eq_mul, mul_smul]
-
-end Volume
 
 /-! ### Normalized cocycles are loop operations -/
 
@@ -552,7 +507,7 @@ private theorem apply_arrows_eq_smul_zigzagVolume {N : ℕ} {F : ReducedTensorWo
         zigzagVolume k G (w ⟨0, by omega⟩).snd := by
   have h2 := apply_mem_zigzagIntegerGrade_two (by omega) hF (arrowFamily_mem w)
   rw [arrowFamily_fin] at h2
-  rw [← zigzagMk_vertexIdempotent_mul_of_mem_two h2,
+  rw [← zigzagMk_vertexIdempotent_mul_of_mem_zigzagIntegerGrade_two k G hns h2,
     vertexIdempotent_mul_apply_arrows hN hF hFN hδF hFe w]
 
 /-- A normalized cocycle vanishes on the arrows of every word which is not a closed walk. -/
@@ -576,15 +531,20 @@ private theorem fst_eq_snd_of_apply_arrows_ne_zero {n : ℕ}
   · -- The last dart and the first.
     obtain rfl : i = Fin.last (n + 1) := Fin.ext (by simp only [Fin.val_last]; omega)
     rw [Fin.last_add_one]
+    classical
     by_contra hne
     apply h0
+    -- The value lies in the corners of both end vertices, which differ.
+    have h2 := apply_mem_zigzagIntegerGrade_two (N := n + 2) (by omega) hF (arrowFamily_mem w)
+    rw [arrowFamily_fin] at h2
     have h := apply_arrows_mul_vertexIdempotent (N := n + 2) (by omega) hF hFN hδF hFe w
     have hl : (⟨n + 2 - 1, by omega⟩ : Fin (n + 2)) = Fin.last (n + 1) := Fin.ext (by simp)
-    rw [hl, apply_arrows_eq_smul_zigzagVolume (by omega) hF hFN hδF hFe w, smul_mul_assoc,
-      zigzagVolume_mul_zigzagMk_vertexIdempotent_of_ne k G (i := (w ⟨0, by omega⟩).snd)
-        (v := (w (Fin.last (n + 1))).fst) hne, smul_zero] at h
-    rw [apply_arrows_eq_smul_zigzagVolume (by omega) hF hFN hδF hFe w]
-    exact h.symm
+    rw [hl, mul_zigzagMk_vertexIdempotent_of_mem_zigzagIntegerGrade_two k G hns h2] at h
+    have hcoord := congrArg ((zigzagBasis k G hns).coord (.inr (.inr (w ⟨0, by omega⟩).snd))) h
+    rw [map_smul, zigzagBasis_coord_zigzagVolume,
+      ite_eq_right (show (w (Fin.last (n + 1))).fst ≠ (w ⟨0, by omega⟩).snd from hne),
+      smul_zero] at hcoord
+    rw [apply_arrows_eq_smul_zigzagVolume (by omega) hF hFN hδF hFe w, ← hcoord, zero_smul]
 
 /-- The obstruction of a loop deformation vanishes on a word one of whose letters is homogeneous
 of path length other than one, such as a vertex idempotent or a volume class. -/
@@ -594,9 +554,7 @@ private theorem obstruction_of_tprod_eq_zero_of_mem {n : ℕ} (hn : 1 ≤ n)
     (hy : y i ∈ zigzagIntegerGrade k G e) :
     (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩
       (of k Z ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k y)) = 0 := by
-  simp only [AInfinityAlgebra.obstruction_def, LinearMap.comp_apply, LinearMap.sub_apply]
-  rw [lengthProj_of_self, AInfinityAlgebra.taylor_of_tprod, AInfinityAlgebra.taylor_of_tprod,
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by dsimp only; omega), _root_.zero_apply, sub_zero,
+  rw [obstruction_zigzagLoopAInfinityAlgebra_of_tprod_eq_m hn,
     zigzagLoopAInfinityAlgebra_m_eq_linearCombination c hc (by omega),
     Finsupp.linearCombination_apply, Finsupp.sum, _root_.sum_apply]
   refine Finset.sum_eq_zero fun w _ ↦ ?_
