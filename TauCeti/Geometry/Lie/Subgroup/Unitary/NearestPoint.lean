@@ -49,7 +49,7 @@ needs. For every matrix `M`, the residual `M - π_G M` is orthogonal to the tang
 
 Every point of `G` has Frobenius norm `√(card n)`, so every point of `G` is a nearest point of `G`
 to `0`. Hence, as soon as `G` is not the trivial group, `0` has no unique nearest point and lies
-outside `𝒰` (`ClosedSubgroup.zero_notMem_thickening`).
+outside `𝒰` (`ClosedSubgroup.zero_notMem_thickening_image_coe_matrix`).
 
 The manifold structure on `G` comes from the closed-subgroup theorem applied to `G` as a closed
 subgroup of the units of the matrices, normed by the Frobenius norm. The Frobenius norm is a scoped
@@ -285,7 +285,7 @@ retraction at `1` is the skew-Hermitian part `H ↦ (H - Hᴴ) / 2`, the orthogo
 Lie algebra of skew-Hermitian matrices. For `n = 1` and `𝕜 = ℂ` this is `a + i b ↦ i b`. -/
 theorem fderiv_matrixNearestPoint_one_of_forall_mem (hG : ∀ g, g ∈ G) (H : Matrix n n 𝕜) :
     fderiv ℝ G.matrixNearestPoint 1 H = (2⁻¹ : ℝ) • (H - Hᴴ) := by
-  have h1 : (((1 : G) : Matrix.unitaryGroup n 𝕜) : Matrix n n 𝕜) = 1 := rfl
+  have h1 : (((1 : G) : Matrix.unitaryGroup n 𝕜) : Matrix n n 𝕜) = 1 := by simp
   rw [← h1, fderiv_matrixNearestPoint, matrixTangentSpace_one]
   refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun W hW ↦ ?_
   · rw [LieSubalgebra.mem_toSubmodule, mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG,
@@ -322,13 +322,17 @@ theorem fderiv_matrixNearestPoint_eq_zero_of_finite
     have hV' : V = (g : Matrix n n 𝕜) * (star (g : Matrix n n 𝕜) * V) := by simp [← mul_assoc]
     rw [Submodule.mem_bot, hV', h0, mul_zero]
   rw [fderiv_matrixNearestPoint, hbot, Submodule.starProjection_bot]
+  -- The two zeros are continuous linear maps for different topologies on the matrices: the
+  -- Frobenius-norm topology (from `Matrix.frobeniusNormedAddCommGroup`) and the entrywise
+  -- `instTopologicalSpaceMatrix`. These agree definitionally, as `fderiv_matrixNearestPoint`
+  -- already uses, but not reducibly, so `rw` and `simp` cannot close the goal.
   rfl
 
 /-- **`0` lies outside `𝒰` for a nontrivial `G`.** Every point of `G` has Frobenius norm
 `√(card n)`, so every point of `G` is a nearest point to `0`. If nearest points are unique on the
 `ε`-neighbourhood of `G` and `G` has a point other than `1`, then `0` is not in that
 neighbourhood. -/
-theorem zero_notMem_thickening {ε : ℝ}
+theorem zero_notMem_thickening_image_coe_matrix {ε : ℝ}
     (huniq : ∀ M ∈ thickening ε (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G),
       ∀ A ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G,
         IsMinOn (dist M) (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) A →
