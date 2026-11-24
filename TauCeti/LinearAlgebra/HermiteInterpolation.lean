@@ -41,7 +41,7 @@ followed by the Taylor coordinates `TauCeti.taylorJetQuotientEquiv` at each node
 
 For nodes indexed by `Fin r`, the matrix of `Polynomial.hermiteJet a m` from the monomial basis
 `Polynomial.degreeLT.basis R M` to the lexicographically ordered standard basis
-`Polynomial.lexJetBasis R m` of the jet space is `Matrix.confluentVandermonde a m`
+`TauCeti.lexJetBasis R m` of the jet space is `Matrix.confluentVandermonde a m`
 (`Polynomial.toMatrix_hermiteJet`), so the Hermite jet map is bijective iff the confluent
 Vandermonde determinant is a unit (`Polynomial.hermiteJet_bijective_iff_isUnit_det`), and the
 inverse matrix `(Matrix.confluentVandermonde a m)⁻¹` represents the interpolation operator
@@ -60,7 +60,7 @@ interpolation over arbitrary commutative rings and fields (`Polynomial.hermiteJe
 * `Polynomial.hermiteJetEquiv`: for nodes with unit differences, Hermite interpolation as a linear
   equivalence; its inverse sends a jet datum to its interpolation polynomial.
 * `Polynomial.hermiteBasis`: the basis of `degreeLT R (∑ i, m i)` dual to the Hasse jets.
-* `Polynomial.lexJetBasis R m`: the standard basis of the jet space `∀ i, Fin (m i) → R`, indexed
+* `TauCeti.lexJetBasis R m`: the standard basis of the jet space `∀ i, Fin (m i) → R`, indexed
   by `Fin (∑ i, m i)` through `finSigmaFinEquiv`.
 
 ## Main results
@@ -114,6 +114,33 @@ public section
 
 open Function Finset
 open scoped Matrix Nat
+
+namespace TauCeti
+
+variable {R : Type*} [Semiring R]
+
+variable (R) in
+/-- The standard basis of the jet space `∀ i, Fin (m i) → R`, indexed by `Fin (∑ i, m i)` in the
+lexicographic order `finSigmaFinEquiv ⟨i, k⟩` of the jets. -/
+noncomputable def lexJetBasis {r : ℕ} (m : Fin r → ℕ) :
+    Module.Basis (Fin (∑ i, m i)) R (∀ i, Fin (m i) → R) :=
+  (Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv
+
+/-- The coordinate of a jet datum at the position `ρ` is its entry at the jet
+`finSigmaFinEquiv.symm ρ`. -/
+@[simp]
+theorem lexJetBasis_repr {r : ℕ} (m : Fin r → ℕ) (c : ∀ i, Fin (m i) → R) (ρ : Fin (∑ i, m i)) :
+    (lexJetBasis R m).repr c ρ = c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
+  simp [lexJetBasis]
+
+/-- The basis vector at the position `ρ` is the indicator of the jet `finSigmaFinEquiv.symm ρ`. -/
+@[simp]
+theorem lexJetBasis_apply {r : ℕ} (m : Fin r → ℕ) (ρ : Fin (∑ i, m i)) :
+    lexJetBasis R m ρ =
+      Pi.single (finSigmaFinEquiv.symm ρ).1 (Pi.single (finSigmaFinEquiv.symm ρ).2 1) := by
+  simp [lexJetBasis, Pi.basis_apply]
+
+end TauCeti
 
 namespace Polynomial
 
@@ -190,27 +217,6 @@ theorem ordinaryHermiteJet_eq_factorial_mul (a : ι → R) (m : ι → ℕ) (f :
   rw [ordinaryHermiteJet_apply, hermiteJet_apply, hasseJet_apply, ← factorial_smul_hasseDeriv]
   simp [nsmul_eq_mul]
 
-variable (R) in
-/-- The standard basis of the jet space `∀ i, Fin (m i) → R`, indexed by `Fin (∑ i, m i)` in the
-lexicographic order `finSigmaFinEquiv ⟨i, k⟩` of the jets. -/
-noncomputable def lexJetBasis {r : ℕ} (m : Fin r → ℕ) :
-    Module.Basis (Fin (∑ i, m i)) R (∀ i, Fin (m i) → R) :=
-  (Pi.basis fun i => Pi.basisFun R (Fin (m i))).reindex finSigmaFinEquiv
-
-/-- The coordinate of a jet datum at the position `ρ` is its entry at the jet
-`finSigmaFinEquiv.symm ρ`. -/
-@[simp]
-theorem lexJetBasis_repr {r : ℕ} (m : Fin r → ℕ) (c : ∀ i, Fin (m i) → R) (ρ : Fin (∑ i, m i)) :
-    (lexJetBasis R m).repr c ρ = c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
-  simp [lexJetBasis]
-
-/-- The basis vector at the position `ρ` is the indicator of the jet `finSigmaFinEquiv.symm ρ`. -/
-@[simp]
-theorem lexJetBasis_apply {r : ℕ} (m : Fin r → ℕ) (ρ : Fin (∑ i, m i)) :
-    lexJetBasis R m ρ =
-      Pi.single (finSigmaFinEquiv.symm ρ).1 (Pi.single (finSigmaFinEquiv.symm ρ).2 1) := by
-  simp [lexJetBasis, Pi.basis_apply]
-
 end Semiring
 
 section CommSemiring
@@ -234,11 +240,11 @@ variable {r : ℕ}
 
 /-- **The matrix of the Hermite jet map is the confluent Vandermonde matrix.** With respect to the
 monomial basis `degreeLT.basis R (∑ i, m i)` of `degreeLT R (∑ i, m i)` and the lexicographically
-ordered standard basis `lexJetBasis R m` of the jet space `∀ i : Fin r, Fin (m i) → R`, the matrix
-of `hermiteJet a m` is `Matrix.confluentVandermonde a m`. -/
+ordered standard basis `TauCeti.lexJetBasis R m` of the jet space `∀ i : Fin r, Fin (m i) → R`,
+the matrix of `hermiteJet a m` is `Matrix.confluentVandermonde a m`. -/
 @[simp]
 theorem toMatrix_hermiteJet (a : Fin r → R) (m : Fin r → ℕ) :
-    LinearMap.toMatrix (degreeLT.basis R (∑ i, m i)) (lexJetBasis R m) (hermiteJet a m) =
+    LinearMap.toMatrix (degreeLT.basis R (∑ i, m i)) (TauCeti.lexJetBasis R m) (hermiteJet a m) =
       Matrix.confluentVandermonde a m := by
   ext ρ j
   simp [LinearMap.toMatrix_apply, Matrix.confluentVandermonde_apply]
@@ -246,7 +252,7 @@ theorem toMatrix_hermiteJet (a : Fin r → R) (m : Fin r → ℕ) :
 /-- The Hermite jet map is the linear map of the confluent Vandermonde matrix in the monomial
 basis and the lexicographic jet basis. -/
 theorem toLin_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
-    Matrix.toLin (degreeLT.basis R (∑ i, m i)) (lexJetBasis R m)
+    Matrix.toLin (degreeLT.basis R (∑ i, m i)) (TauCeti.lexJetBasis R m)
       (Matrix.confluentVandermonde a m) = hermiteJet a m := by
   rw [← toMatrix_hermiteJet, Matrix.toLin_toMatrix]
 
@@ -256,7 +262,7 @@ theorem confluentVandermonde_mulVec_degreeLTEquiv (a : Fin r → R) (m : Fin r �
     (f : degreeLT R (∑ i, m i)) :
     Matrix.confluentVandermonde a m *ᵥ degreeLTEquiv R (∑ i, m i) f =
       fun ρ => hermiteJet a m f (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 := by
-  have h := LinearMap.toMatrix_mulVec_repr (degreeLT.basis R (∑ i, m i)) (lexJetBasis R m)
+  have h := LinearMap.toMatrix_mulVec_repr (degreeLT.basis R (∑ i, m i)) (TauCeti.lexJetBasis R m)
     (hermiteJet a m) f
   have hf : ⇑((degreeLT.basis R (∑ i, m i)).repr f) = degreeLTEquiv R (∑ i, m i) f :=
     _root_.funext fun j => degreeLT.basis_repr j f
@@ -583,7 +589,7 @@ lexicographically ordered standard jet basis to the monomial basis is
 @[simp]
 theorem toMatrix_hermiteJetEquiv_symm
     (ha : Pairwise fun i j => IsUnit (a i - a j)) (m : Fin r → ℕ) :
-    LinearMap.toMatrix (lexJetBasis R m) (degreeLT.basis R (∑ i, m i))
+    LinearMap.toMatrix (TauCeti.lexJetBasis R m) (degreeLT.basis R (∑ i, m i))
       (hermiteJetEquiv ha m).symm.toLinearMap =
       (Matrix.confluentVandermonde a m)⁻¹ := by
   rw [← degreeLT_basis_toMatrix_hermiteBasis_reindex ha m]
@@ -598,11 +604,11 @@ theorem confluentVandermonde_inv_mulVec
     (Matrix.confluentVandermonde a m)⁻¹ *ᵥ
         (fun ρ => c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2) =
       degreeLTEquiv R (∑ i, m i) ((hermiteJetEquiv ha m).symm c) := by
-  have h := LinearMap.toMatrix_mulVec_repr (lexJetBasis R m) (degreeLT.basis R (∑ i, m i))
+  have h := LinearMap.toMatrix_mulVec_repr (TauCeti.lexJetBasis R m) (degreeLT.basis R (∑ i, m i))
     (hermiteJetEquiv ha m).symm.toLinearMap c
-  have hc : ⇑((lexJetBasis R m).repr c) =
+  have hc : ⇑((TauCeti.lexJetBasis R m).repr c) =
       fun ρ => c (finSigmaFinEquiv.symm ρ).1 (finSigmaFinEquiv.symm ρ).2 :=
-    _root_.funext (lexJetBasis_repr m c)
+    _root_.funext (TauCeti.lexJetBasis_repr m c)
   rw [toMatrix_hermiteJetEquiv_symm, hc] at h
   exact h.trans (_root_.funext fun j => degreeLT.basis_repr j _)
 
@@ -792,7 +798,7 @@ example : ((hermiteJetEquiv (a := ![(0 : ℤ), 1])
   · fin_cases i <;> fin_cases k <;> simp [hasseDeriv_one]
 
 /-- The matrix of the Hermite jet map at the double node `0` and the simple node `1`. -/
-example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![2, 1] i)) (lexJetBasis ℤ ![2, 1])
+example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![2, 1] i)) (TauCeti.lexJetBasis ℤ ![2, 1])
     (hermiteJet ![(0 : ℤ), 1] ![2, 1]) = !![1, 0, 0; 0, 1, 0; 1, 1, 1] := by
   rw [toMatrix_hermiteJet]
   ext ρ j
@@ -801,7 +807,7 @@ example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![2, 1] i)) (lexJetBasi
   fin_cases i <;> fin_cases k <;> fin_cases j <;> decide
 
 /-- The nodes `(1, 0)` give the matrix `[[1, 1], [1, 0]]`, whose determinant `-1` pins the sign. -/
-example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![1, 1] i)) (lexJetBasis ℤ ![1, 1])
+example : LinearMap.toMatrix (degreeLT.basis ℤ (∑ i, ![1, 1] i)) (TauCeti.lexJetBasis ℤ ![1, 1])
     (hermiteJet ![(1 : ℤ), 0] ![1, 1]) = !![1, 1; 1, 0] := by
   rw [toMatrix_hermiteJet]
   ext ρ j
