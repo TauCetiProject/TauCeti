@@ -525,7 +525,7 @@ theorem map_surjective (f : R →+* R') (hf : Surjective f) :
 theorem ghostMap_map (f : R →+* R') (x : BigWittVector S R) (n : S) :
     ghostMap (map f x) n = f (ghostMap x n) := by
   rw [ghostMap_apply, ghostMap_apply, map_ghostPolynomial]
-  rfl
+  exact ghostPolynomial_congr fun d _ ↦ coeff_map f x d
 
 /-! ### Restriction to a smaller truncation set -/
 
