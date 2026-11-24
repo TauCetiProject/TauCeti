@@ -173,10 +173,11 @@ theorem map_const_eq_zero {k : ℕ} (hk : k ≠ 0) (c : M') :
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
   refine LinearMap.ext fun a ↦ ?_
   obtain ⟨φ, rfl⟩ := mk_surjective I' k.succ a
-  rw [map_mk, LinearMap.zero_apply, mk_eq_zero_iff]
-  convert Submodule.zero_mem (exactForms I M (k + 1))
-  ext : 2
-  simp [closedForms.coe_mpullback, SmoothForm.coe_mpullback, mpullback_const]
+  have h : closedForms.mpullback (I := I) (M := M) (fun _ ↦ c) contMDiff_const (k + 1) φ = 0 := by
+    ext : 2
+    simp [closedForms.coe_mpullback, SmoothForm.coe_mpullback]
+  rw [map_mk, LinearMap.zero_apply, mk_eq_zero_iff, h, Submodule.coe_zero]
+  exact Submodule.zero_mem _
 
 /-- A smooth diffeomorphism `Φ : M ≃ M'` induces a linear equivalence `H^k(M') ≃ H^k(M)` on de Rham
 cohomology: pullback along `Φ`, with inverse pullback along `Φ.symm`. -/

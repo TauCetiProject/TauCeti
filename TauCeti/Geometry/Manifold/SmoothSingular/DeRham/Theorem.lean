@@ -74,30 +74,22 @@ theorem singularCohomologyZeroEval_deRhamHom (c : deRhamCohomology I M 0) (x : M
     singularCohomologyZeroEval (X := TopCat.of M) x (deRhamHom I M 0 c) =
       deRhamCohomologyZeroEquiv I M c x := by
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I 0 c
-  -- The value at `x` is the Kronecker pairing with the class of the smooth `0`-simplex at `x`.
-  let σ := (SmoothSimplex.equiv₀ I M).symm x
-  have hσ : TopCat.toSSetObj₀Equiv.symm x = (smoothSingularSubcomplex I M).ι.app _ σ :=
-    (SmoothSimplex.coe_equiv₀_symm x).symm
-  let z := ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).liftCycles
-    ((smoothSingularSubcomplex I M : SSet).ιChainComplex σ) 0 (by simp) (by simp)
-  have hx : (singularHomology₀Section (𝟙_ (ModuleCat ℝ)) (X := TopCat.of M) x).hom 1 =
-      (smoothSingularHomologyIso I M (ModuleCat.of ℝ ℝ) 0).hom
-        ((((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).homologyπ 0).hom
-          (z.hom 1)) := by
-    rw [smoothSingularHomologyIso_hom, singularHomology₀Section_def, hσ,
-      ← SSet.ιHomology₀_homologyMap, SSet.ιHomology₀_def]
-    -- Both sides apply the same composite of morphisms; singular homology is by definition the
-    -- homology of the singular simplicial set, and `𝟙_ (ModuleCat ℝ)` is `ModuleCat.of ℝ ℝ`.
-    rfl
-  have hz : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).iCycles 0).hom
-      (z.hom 1) = ((smoothSingularSubcomplex I M : SSet).ιChainComplex
-        (R := ModuleCat.of ℝ ℝ) σ).hom 1 := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, HomologicalComplex.liftCycles_i]
+  -- The class of the point `x` is the image of the class of the smooth `0`-simplex at `x`. The
+  -- coefficients of `singularCohomologyZeroEval` are `𝟙_ (ModuleCat ℝ)`, which is
+  -- `ModuleCat.of ℝ ℝ` by definition.
+  have hx := congr(ModuleCat.Hom.hom
+    $(ιHomology₀_smoothSingularHomologyIso_hom I M (ModuleCat.of ℝ ℝ) x) 1)
+  simp only [SSet.ιHomology₀_def, ModuleCat.hom_comp, LinearMap.comp_apply] at hx
+  replace hx : (singularHomology₀Section (𝟙_ (ModuleCat ℝ)) (X := TopCat.of M) x).hom 1 = _ :=
+    hx.symm
+  -- So the value at `x` is the integral of `φ` over the smooth `0`-simplex at `x`.
   rw [singularCohomologyZeroEval_apply, ModuleCat.hom_comp, LinearMap.comp_apply, hx,
-    singularKronecker_deRhamHom_mk_apply, hz, integrationCochain_ιChainComplex, one_smul,
-    deRhamCohomologyZeroEquiv_mk, RoughForm.eq_ofFunction φ.val.val,
-    SmoothSimplex.integral_ofFunction, SmoothSimplex.toContinuousMap_equiv₀_symm_apply,
-    RoughForm.ofFunction_apply]
+    singularKronecker_deRhamHom_mk_apply, ← ConcreteCategory.comp_apply,
+    ← ConcreteCategory.comp_apply, HomologicalComplex.liftCycles_i_assoc,
+    ConcreteCategory.comp_apply, integrationCochain_ιChainComplex]
+  -- The integral of a function over the smooth `0`-simplex at `x` is its value at `x`.
+  rw [RoughForm.eq_ofFunction φ.val.val, SmoothSimplex.integral_equiv₀_symm_ofFunction]
+  simp
 
 /-- **The de Rham theorem in degree zero**: on every Hausdorff `σ`-compact smooth manifold
 modelled on a finite-dimensional real model with corners, the de Rham homomorphism
