@@ -64,7 +64,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The Lie algebra is finite-dimensional; a local instance for the rest of this file. -/
-noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+private noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
 
