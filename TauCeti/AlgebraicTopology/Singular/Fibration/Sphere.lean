@@ -26,7 +26,11 @@ top cell, shifted by `n`:
 and `Hₘ(E, F; R) = 0` for `m < n`
 (`TauCeti.TopCat.isZero_singularHomology_sphereFibration_of_lt`). Together with the long exact
 sequence of the pair `(E, F)` these are the terms of the Wang sequence
-`⋯ ⟶ Hₖ(F) ⟶ Hₖ(E) ⟶ Hₖ₋ₙ(p⁻¹(x₁)) ⟶ Hₖ₋₁(F) ⟶ ⋯` of a fibration over a sphere. When the total
+`⋯ ⟶ Hₖ(F) ⟶ Hₖ(E) ⟶ Hₖ₋ₙ(p⁻¹(x₁)) ⟶ Hₖ₋₁(F) ⟶ ⋯` of a fibration over a sphere. Two consequences
+need no knowledge of the connecting maps: the inclusion `F ⟶ E` is an isomorphism on `Hₖ` for
+`k + 1 < n` (`TauCeti.TopCat.isIso_homologyMap_sphereFibration_of_lt`), and
+`Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)` whenever `F` has no homology in degrees `q + n` and `q + n - 1`
+(`TauCeti.TopCat.singularHomologySphereFibrationIsoOfIsZero`). When the total
 space is contractible, the connecting isomorphisms of the pair turn them into
 `H~q+n-1(F; R) ≅ Hq(p⁻¹(x₁); R)`; for the path fibration of the sphere this computes the homology of
 the loop space of the sphere.
@@ -50,6 +54,9 @@ sphere, read on the sphere itself rather than on the ambient Euclidean space
 
 * `TauCeti.TopCat.sphereFibrationSingularHomologyIso`: `Hq+n(E, F; R) ≅ Hq(p⁻¹(x₁); R)`.
 * `TauCeti.TopCat.isZero_singularHomology_sphereFibration_of_lt`: `Hₘ(E, F; R) = 0` for `m < n`.
+* `TauCeti.TopCat.isIso_homologyMap_sphereFibration_of_lt`: `Hₖ(F; R) ≅ Hₖ(E; R)` for `k + 1 < n`.
+* `TauCeti.TopCat.singularHomologySphereFibrationIsoOfIsZero`: `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)` when
+  `Hq+n(F; R)` and `Hq+n-1(F; R)` vanish.
 * `TauCeti.TopCat.reducedSingularHomologySphereFibrationIso`,
   `TauCeti.TopCat.isZero_reducedSingularHomology_sphereFibration_of_lt`: for a contractible total
   space over `Sⁿ⁺¹`, `H~q+n(F; R) ≅ Hq(p⁻¹(x₁); R)`, and `H~ₖ(F; R) = 0` for `k < n`.
@@ -227,6 +234,34 @@ theorem isZero_singularHomology_sphereFibration_of_lt {m : ℕ} (hm : m < n) :
   -- `(i : ℕ∞) + 1` and `((i + 1 : ℕ) : ℕ∞)` are defeq, so the pair is `preimageSkeletonPair p _ n`.
   exact (TopPair.singularHomologyMapIso (ModuleCat.of R R)
     (spherePreimageSkeletonPairIso h (by omega)) m).symm
+
+/-- **Below the dimension of the sphere, the fibre carries the homology of the total space.** For
+a Serre fibration `p : E ⟶ Sⁿ` with fibre `F` over the pole, the inclusion `F ⟶ E` induces an
+isomorphism `Hₖ(F; R) ≅ Hₖ(E; R)` for `k + 1 < n`. -/
+theorem isIso_homologyMap_sphereFibration_of_lt {k : ℕ} (hk : k + 1 < n) :
+    IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
+      (TopPair.ofSubset (p ⁻¹' {spherePolePoint h})).map) (ModuleCat.of R R) k) :=
+  TopPair.isIso_homologyMap_map_of_isZero _ _
+    (isZero_singularHomology_sphereFibration_of_lt h hp R hk)
+    (isZero_singularHomology_sphereFibration_of_lt h hp R (by omega))
+
+/-- **The homology of the total space of a fibration over a sphere where the fibre has none.** For
+a Serre fibration `p : E ⟶ Sⁿ`, `n ≥ 1`, whose fibre `F` over the pole has vanishing homology in
+the degrees `q + n` and `m = q + n - 1`, the map `Hq+n(E) ⟶ Hq+n(E, F)` of the long exact sequence
+of the pair is an isomorphism, so `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)`, where `x₁` is the centre of the
+top cell of `Sⁿ`. -/
+def singularHomologySphereFibrationIsoOfIsZero (hn : 1 ≤ n) {q m : ℕ} (hm : m + 1 = q + n)
+    (hq : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (q + n)).obj
+      (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {spherePolePoint h} : Set E))))
+    (hm' : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+      (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {spherePolePoint h} : Set E)))) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (q + n)).obj
+        (ModuleCat.of R R)).obj E ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {sphereTopCellCenter h} : Set E)) :=
+  @asIso _ _ _ _ _ (TopPair.isIso_singularHomologyπ_of_isZero
+      (TopPair.ofSubset (p ⁻¹' {spherePolePoint h})) (ModuleCat.of R R) hm hq hm') ≪≫
+    sphereFibrationSingularHomologyIso h hp R hn q
 
 section Contractible
 

@@ -38,6 +38,8 @@ coproducts and homology. Degree equalities induce canonical isomorphisms on rela
 In abelian coefficients, the long exact sequence of a pair gives five lemmas comparing maps of
 pairs: on relative homology (`TopPair.isIso_singularHomologyMap_of_isIso`) and on the homology of
 the ambient spaces when the relative homology vanishes (`TopPair.isIso_homologyMap_fst_of_isZero`).
+When the homology of the subspace vanishes in degrees `n` and `n - 1`, the map from ambient to
+relative homology is an isomorphism in degree `n` (`TopPair.isIso_singularHomologyπ_of_isZero`).
 The five lemma for the ambient spaces, `TopPair.isIso_homologyMap_fst_of_isIso`, is the case of
 the zero objects of its form modulo a Serre class, in
 `TauCeti.AlgebraicTopology.Singular.SerreClass`.
@@ -719,6 +721,25 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.mono_homologyMap_map_of_isZero R h₁
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
+
+/-- If `Hₙ(A)` and `Hₘ(A)` vanish, where `m + 1 = n`, the map `Hₙ(X) ⟶ Hₙ(X, A)` is an
+isomorphism. -/
+lemma isIso_singularHomologyπ_of_isZero {n m : ℕ} (h : m + 1 = n)
+    (hn : IsZero ((toSSetPair.obj P).left.homology R n))
+    (hm : IsZero ((toSSetPair.obj P).left.homology R m)) :
+    IsIso (P.singularHomologyπ R n) :=
+  have : Mono (P.singularHomologyπ R n) :=
+    (P.singularHomology_exact_space R n).mono_g (hn.eq_of_src _ _)
+  have : Epi (P.singularHomologyπ R n) :=
+    (P.singularHomology_exact_relative R n m h).epi_f (hm.eq_of_tgt _ _)
+  isIso_of_mono_of_epi _
+
+/-- If `Hₙ(A)` and `Hₙ(X, A)` vanish, so does `Hₙ(X)`. -/
+lemma isZero_singularHomology_fst_of_isZero {n : ℕ}
+    (hA : IsZero ((toSSetPair.obj P).left.homology R n))
+    (hXA : IsZero (P.singularHomology R n)) :
+    IsZero ((toSSetPair.obj P).right.homology R n) :=
+  (P.singularHomology_exact_space R n).isZero_X₂ (hA.eq_of_src _ _) (hXA.eq_of_tgt _ _)
 
 /-- If the inclusion of the subspace induces an epimorphism `Hₙ(A) ⟶ Hₙ(X)` and a monomorphism
 `Hₘ(A) ⟶ Hₘ(X)`, where `m + 1 = n`, then `Hₙ(X, A)` vanishes. -/
