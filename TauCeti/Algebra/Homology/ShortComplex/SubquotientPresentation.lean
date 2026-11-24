@@ -116,15 +116,16 @@ lemma homologyPresentation_mapsTo {S' : ShortComplex C} (α : S ⟶ S') :
 
 /-- A morphism `φ : S ⟶ S'` maps `kernelSubobject S.g` into `kernelSubobject S'.g`. -/
 lemma exists_kernelSubobject_le {C : Type*} [Category* C] [HasZeroMorphisms C] [HasImages C]
-    [HasEqualizers C] {S S' : ShortComplex C} (φ : S ⟶ S') [HasKernel S.g] [HasKernel S'.g] :
+    {S S' : ShortComplex C} (φ : S ⟶ S') [HasKernel S.g] [HasKernel S'.g] :
     (Subobject.exists φ.τ₂).obj (kernelSubobject S.g) ≤ kernelSubobject S'.g := by
   rw [Subobject.exists_eq_imageSubobject]
-  exact le_kernelSubobject S'.g _ (imageSubobject_arrow_comp_eq_zero
-    (by rw [Category.assoc, φ.comm₂₃, kernelSubobject_arrow_comp_assoc, zero_comp]))
+  exact imageSubobject_le _ (kernelSubobjectMap (Arrow.homMk φ.τ₂ φ.τ₃ φ.comm₂₃))
+    (kernelSubobjectMap_arrow _)
 
 /-- A morphism `φ : S ⟶ S'` maps `imageSubobject S.f` into `imageSubobject S'.f`. -/
 lemma exists_imageSubobject_le {C : Type*} [Category* C] [HasZeroMorphisms C] [HasImages C]
-    [HasImageMaps C] {S S' : ShortComplex C} (φ : S ⟶ S') :
+    {S S' : ShortComplex C} (φ : S ⟶ S')
+    [HasImageMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f) φ.τ₁ φ.τ₂ φ.comm₁₂)] :
     (Subobject.exists φ.τ₂).obj (imageSubobject S.f) ≤ imageSubobject S'.f := by
   rw [Subobject.exists_eq_imageSubobject]
   exact imageSubobject_le _ (imageSubobjectMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f)
@@ -151,15 +152,7 @@ lemma homologyPresentation_eq_refl_mapIso (hf : S.f = 0) (hg : S.g = 0) :
 lemma mapInduced_homologyPresentation {S S' : ShortComplex C} (φ : S ⟶ S') :
     S.homologyPresentation.mapInduced S'.homologyPresentation φ.τ₂
         (exists_kernelSubobject_le φ) (exists_imageSubobject_le φ) =
-      ShortComplex.homologyMap φ := by
-  symm; refine S.homologyPresentation.mapInduced_unique S'.homologyPresentation φ.τ₂ _ _ ?_
-  rw [π_homologyPresentation', π_homologyPresentation']
-  simp only [Category.assoc, ShortComplex.homologyπ_naturality]
-  simp only [← Category.assoc]
-  refine congrArg (· ≫ S'.homologyπ) ?_
-  rw [← cancel_mono S'.iCycles]
-  simp only [Category.assoc, kernelSubobjectIsoCycles_hom_iCycles, ofLE_arrow, cyclesMap_i,
-    kernelSubobjectIsoCycles_hom_iCycles_assoc, ofLE_arrow_assoc]
-  exact (S.homologyPresentation.liftZ_arrow S'.homologyPresentation φ.τ₂ _).symm
+      ShortComplex.homologyMap φ :=
+  (S.homologyPresentation_mapsTo φ).mapInduced_eq _ _
 
 end CategoryTheory.ShortComplex

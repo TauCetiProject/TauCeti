@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.SubquotientPresentation
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.CategoryTheory.Subobject.Basic
 
 /-!
@@ -263,14 +264,12 @@ lemma boundariesSubobject_le_cyclesSubobject (r r' : ℤ) (hr : r₀ ≤ r) (hr'
 /-- The differential `dFrom pq` on page `r` vanishes iff every differential leaving `pq` does. -/
 lemma page_dFrom_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (E.page r hr).dFrom pq = 0 ↔ ∀ pq' : κ, (E.page r hr).d pq pq' = 0 :=
-  ⟨fun h pq' ↦ by classical exact if hrel : (c r).Rel pq pq' then (c r).next_eq' hrel ▸ h
-      else (E.page r hr).shape pq pq' hrel, fun h ↦ h ((c r).next pq)⟩
+  (E.page r hr).dFrom_eq_zero_iff pq
 
 /-- The differential `dTo pq` on page `r` vanishes iff every differential entering `pq` does. -/
 lemma page_dTo_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (E.page r hr).dTo pq = 0 ↔ ∀ pq' : κ, (E.page r hr).d pq' pq = 0 :=
-  ⟨fun h pq' ↦ by classical exact if hrel : (c r).Rel pq' pq then (c r).prev_eq' hrel ▸ h
-      else (E.page r hr).shape pq' pq hrel, fun h ↦ h ((c r).prev pq)⟩
+  (E.page r hr).dTo_eq_zero_iff pq
 
 /-- The cycles do not change from the page `r` to the page `r + 1` exactly when the differential
 of the page `r` leaving `pq` vanishes. -/
@@ -373,41 +372,8 @@ lemma Hom.exists_boundariesSubobject_le (f : E ⟶ E') (pq : κ) (r : ℤ) (hr :
 lemma Hom.mapInduced_pagePresentation (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (E.pagePresentation pq r hr).mapInduced (E'.pagePresentation pq r hr) ((f.hom r₀).f pq)
         (f.exists_cyclesSubobject_le pq r hr) (f.exists_boundariesSubobject_le pq r hr) =
-      (f.hom r hr).f pq := by
-  let f₀ := (f.hom r₀).f pq
-  induction r, hr using Int.leInduction with
-  | base =>
-    exact (SubquotientPresentation.mapInduced_congr (E.pagePresentation_self pq)
-      (E'.pagePresentation_self pq) rfl _ _
-      (by simp only [SubquotientPresentation.refl_Z]; exact le_top)
-      (by simp only [SubquotientPresentation.refl_B, (Subobject.existsPullbackAdj _).gc.l_bot,
-        bot_le])).trans (SubquotientPresentation.refl_mapInduced_refl f₀ _ _)
-  | succ r hr ih =>
-    let p := E.pagePresentation pq r hr; let p' := E'.pagePresentation pq r hr
-    let φ := (HomologicalComplex.shortComplexFunctor C (c r) pq).map (f.hom r hr)
-    have hZ := f.exists_cyclesSubobject_le pq r hr
-    have hB := f.exists_boundariesSubobject_le pq r hr
-    have hZ_s : (Subobject.exists (p.mapInduced p' f₀ hZ hB)).obj
-        (kernelSubobject ((E.page r hr).sc pq).g) ≤ kernelSubobject ((E'.page r hr).sc pq).g :=
-      ih.symm ▸ ShortComplex.exists_kernelSubobject_le φ
-    have hB_s : (Subobject.exists (p.mapInduced p' f₀ hZ hB)).obj
-        (imageSubobject ((E.page r hr).sc pq).f) ≤ imageSubobject ((E'.page r hr).sc pq).f :=
-      ih.symm ▸ ShortComplex.exists_imageSubobject_le φ
-    have hZ' := (p.exists_preimage_le_preimage_iff p' f₀ hZ hB _ _).mpr hZ_s
-    have hB' := (p.exists_preimage_le_preimage_iff p' f₀ hZ hB _ _).mpr hB_s
-    have hhom : ((E.page r hr).sc pq).homologyPresentation.mapInduced
-          ((E'.page r hr).sc pq).homologyPresentation (p.mapInduced p' f₀ hZ hB) hZ_s hB_s =
-        HomologicalComplex.homologyMap (f.hom r hr) pq :=
-      (SubquotientPresentation.mapInduced_congr rfl rfl ih _ _ _ _).trans
-        (ShortComplex.mapInduced_homologyPresentation φ)
-    refine (SubquotientPresentation.mapInduced_congr (pagePresentation_add_one E pq r hr)
-        (pagePresentation_add_one E' pq r hr) rfl _ _ hZ' hB').trans ?_
-    refine (SubquotientPresentation.mapInduced_mapIso
-        (p.trans ((E.page r hr).sc pq).homologyPresentation)
-        (p'.trans ((E'.page r hr).sc pq).homologyPresentation)
-        (E.iso r (r + 1) pq rfl hr) (E'.iso r (r + 1) pq rfl hr) f₀ _ _).trans ?_
-    rw [SubquotientPresentation.mapInduced_trans p p' _ _ f₀ hZ hB hZ_s hB_s, hhom,
-      f.comm r (r + 1) pq rfl hr, Iso.inv_hom_id_assoc]
+      (f.hom r hr).f pq :=
+  (pagePresentation_mapsTo pq f r hr).mapInduced_eq _ _
 
 /-- Under an isomorphism of spectral sequences, the cycles of `E` are the pullback of the cycles
 of `E'` along the first-page component. -/
@@ -425,29 +391,21 @@ lemma pullback_boundariesSubobject_of_iso (pq : κ) (e : E ≅ E') (r : ℤ) (hr
   pullback_eq_of_comp_eq_id (hom_inv_id_hom_f e r₀ le_rfl pq)
     (boundariesSubobject_le_pullback pq e.hom r hr) (boundariesSubobject_le_pullback pq e.inv r hr)
 
-private lemma exists_eq_of_iso_aux (e : E ≅ E') (pq : κ) {S : Subobject ((E.page r₀).X pq)}
-    {S' : Subobject ((E'.page r₀).X pq)}
-    (h1 : (Subobject.exists ((e.hom.hom r₀).f pq)).obj S ≤ S')
-    (h2 : (Subobject.exists ((e.inv.hom r₀).f pq)).obj S' ≤ S) :
-    (Subobject.exists ((e.hom.hom r₀).f pq)).obj S = S' := by
-  refine le_antisymm h1 ?_
-  have h := (Subobject.exists ((e.hom.hom r₀).f pq)).monotone h2
-  rw [← Subobject.exists_comp, inv_hom_id_hom_f e r₀ le_rfl pq, Subobject.exists_id] at h
-  exact h
-
 /-- An isomorphism `e : E ≅ E'` carries `Z_r(E, pq)` onto `Z_r(E', pq)`. -/
 lemma exists_cyclesSubobject_eq_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj (E.cyclesSubobject pq r hr) =
-      E'.cyclesSubobject pq r hr :=
-  exists_eq_of_iso_aux e pq (e.hom.exists_cyclesSubobject_le pq r hr)
-    (e.inv.exists_cyclesSubobject_le pq r hr)
+      E'.cyclesSubobject pq r hr := by
+  have : IsIso ((e.hom.hom r₀).f pq) :=
+    ⟨⟨(e.inv.hom r₀).f pq, hom_inv_id_hom_f e r₀ le_rfl pq, inv_hom_id_hom_f e r₀ le_rfl pq⟩⟩
+  rw [← pullback_cyclesSubobject_of_iso pq e r hr, Subobject.exists_pullback_eq_self_of_epi]
 
 /-- An isomorphism `e : E ≅ E'` carries `B_r(E, pq)` onto `B_r(E', pq)`. -/
 lemma exists_boundariesSubobject_eq_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) =
-      E'.boundariesSubobject pq r hr :=
-  exists_eq_of_iso_aux e pq (e.hom.exists_boundariesSubobject_le pq r hr)
-    (e.inv.exists_boundariesSubobject_le pq r hr)
+      E'.boundariesSubobject pq r hr := by
+  have : IsIso ((e.hom.hom r₀).f pq) :=
+    ⟨⟨(e.inv.hom r₀).f pq, hom_inv_id_hom_f e r₀ le_rfl pq, inv_hom_id_hom_f e r₀ le_rfl pq⟩⟩
+  rw [← pullback_boundariesSubobject_of_iso pq e r hr, Subobject.exists_pullback_eq_self_of_epi]
 
 end Naturality
 

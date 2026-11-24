@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.NormalMono.Basic
 public import Mathlib.CategoryTheory.Subobject.Limits
+import TauCeti.CategoryTheory.Limits.Shapes.NormalMono.Basic
 
 /-!
 # Additional limit and colimit lemmas for subobjects
@@ -44,16 +45,6 @@ theorem imageSubobject_eq_bot_iff [HasZeroMorphisms C] [HasZeroObject C] {X Y : 
     rw [← imageSubobject_arrow_comp f, harrow, comp_zero],
    fun h ↦ h ▸ imageSubobject_zero⟩
 
-private noncomputable def isLimitKernelForkCokernelπ [HasZeroMorphisms C] [IsNormalMonoCategory C]
-    {X Y : C} (f : X ⟶ Y) [Mono f] [HasCokernel f] :
-    IsLimit (KernelFork.ofι f (cokernel.condition f)) := by
-  letI hf := normalMonoOfMono f
-  exact KernelFork.IsLimit.ofι _ _
-    (fun k hk ↦ (NormalMono.lift' f k (by
-      rw [← cokernel.π_desc f hf.g hf.w, reassoc_of% hk, zero_comp])).val)
-    (fun k hk ↦ (NormalMono.lift' f k _).property)
-    (fun k hk m hm ↦ (cancel_mono f).mp (hm.trans (NormalMono.lift' f k _).property.symm))
-
 /-- In a normal-mono category, the kernel subobject of `cokernel.π f` for a mono `f` is `mk f`. -/
 @[simp]
 theorem kernelSubobject_cokernel_π [HasZeroMorphisms C] [IsNormalMonoCategory C] {X Y : C}
@@ -61,7 +52,8 @@ theorem kernelSubobject_cokernel_π [HasZeroMorphisms C] [IsNormalMonoCategory C
     kernelSubobject (cokernel.π f) = Subobject.mk f := by
   refine le_antisymm ?_ (le_kernelSubobject _ _ (by
     rw [← Subobject.underlyingIso_hom_comp_eq_mk f, Category.assoc, cokernel.condition, comp_zero]))
-  obtain ⟨l, hl⟩ := KernelFork.IsLimit.lift' (isLimitKernelForkCokernelπ f)
+  let := normalMonoOfMono f
+  obtain ⟨l, hl⟩ := KernelFork.IsLimit.lift' (NormalMono.isLimitKernelForkCokernelπ f)
     (kernelSubobject (cokernel.π f)).arrow (kernelSubobject_arrow_comp _)
   exact Subobject.le_mk_of_comm l hl
 
@@ -87,8 +79,9 @@ theorem isGLB_kernelSubobject_piLift [HasZeroMorphisms C] [HasCokernels C] [IsNo
       rw [kernelSubobject_arrow_comp_assoc, zero_comp]
     simpa [φ] using hpi
   have : HasKernel (cokernel.π (S i).arrow) :=
+    let := normalMonoOfMono (S i).arrow
     ⟨⟨⟨KernelFork.ofι (S i).arrow (cokernel.condition _),
-      isLimitKernelForkCokernelπ (S i).arrow⟩⟩⟩
+      NormalMono.isLimitKernelForkCokernelπ (S i).arrow⟩⟩⟩
   rw [← Subobject.mk_arrow (S i), ← kernelSubobject_cokernel_π (S i).arrow]
   exact le_kernelSubobject _ _ hcomp
 

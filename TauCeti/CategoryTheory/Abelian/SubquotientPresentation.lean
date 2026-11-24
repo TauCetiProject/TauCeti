@@ -742,16 +742,22 @@ section MapInduced
 variable {A' A'' X' X'' : C} (P : SubquotientPresentation A X)
   (P' : SubquotientPresentation A' X')
 
+private lemma imageSubobject_le_iff_factors {W₁ W₂ : C} (f : W₁ ⟶ W₂) (S : Subobject W₂) :
+    imageSubobject f ≤ S ↔ S.Factors f :=
+  ⟨fun h ↦ factors_of_le f h (by simpa using imageSubobject_factors_comp_self f (𝟙 _)),
+   fun h ↦ imageSubobject_le f (S.factorThru f h) (factorThru_arrow _ _ _)⟩
+
 /-- Lift a morphism `f : A ⟶ A'` to `P.Z ⟶ P'.Z` when `(Subobject.exists f).obj P.Z ≤ P'.Z`. -/
 noncomputable def liftZ (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
     (P.Z : C) ⟶ (P'.Z : C) :=
-  factorThruImageSubobject (P.Z.arrow ≫ f) ≫
-    Subobject.ofLE _ P'.Z ((Subobject.exists_eq_imageSubobject f P.Z).symm.trans_le hZ)
+  P'.Z.factorThru (P.Z.arrow ≫ f)
+    ((imageSubobject_le_iff_factors _ _).mp
+      ((Subobject.exists_eq_imageSubobject f P.Z).symm.trans_le hZ))
 
 @[reassoc (attr := simp)]
 lemma liftZ_arrow (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
-    P.liftZ P' f hZ ≫ P'.Z.arrow = P.Z.arrow ≫ f := by
-  rw [liftZ, Category.assoc, ofLE_arrow, imageSubobject_arrow_comp]
+    P.liftZ P' f hZ ≫ P'.Z.arrow = P.Z.arrow ≫ f :=
+  factorThru_arrow _ _ _
 
 /-- The morphism `X ⟶ X'` induced by `f : A ⟶ A'` sending `P.Z` into `P'.Z` and `P.B` into
 `P'.B`. -/
@@ -759,13 +765,11 @@ noncomputable def mapInduced (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z �
     (hB : (Subobject.exists f).obj P.B ≤ P'.B) : X ⟶ X' :=
   P.desc (P.liftZ P' f hZ ≫ P'.π) (by
     let liftB : (P.B : C) ⟶ (P'.B : C) :=
-      factorThruImageSubobject (P.B.arrow ≫ f) ≫
-        Subobject.ofLE _ P'.B ((Subobject.exists_eq_imageSubobject f P.B).symm.trans_le hB)
+      P'.B.factorThru (P.B.arrow ≫ f)
+        ((imageSubobject_le_iff_factors _ _).mp
+          ((Subobject.exists_eq_imageSubobject f P.B).symm.trans_le hB))
     have hsq : ofLE P.B P.Z P.le ≫ P.liftZ P' f hZ = liftB ≫ ofLE P'.B P'.Z P'.le := by
-      rw [← cancel_mono P'.Z.arrow, Category.assoc, Category.assoc, ofLE_arrow, liftZ_arrow,
-        ofLE_arrow_assoc]
-      dsimp only [liftB]
-      rw [Category.assoc, ofLE_arrow, imageSubobject_arrow_comp]
+      simp [← cancel_mono P'.Z.arrow, liftB]
     rw [reassoc_of% hsq, P'.ofLE_π, comp_zero])
 
 @[reassoc (attr := simp)]
@@ -819,85 +823,17 @@ lemma mapInduced_comp (P'' : SubquotientPresentation A'' X'') (f : A ⟶ A') (g 
     rw [P.π_mapInduced_assoc, P'.π_mapInduced, ← Category.assoc]
     congr 1; rw [← cancel_mono P''.Z.arrow]; simp)).symm
 
-lemma mapInduced_mapIso (e : X ≅ Y) (e' : X' ≅ W) (f : A ⟶ A')
-    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
-    (P.mapIso e).mapInduced (P'.mapIso e') f hZ hB =
-      e.inv ≫ P.mapInduced P' f hZ hB ≫ e'.hom :=
-  ((P.mapIso e).mapInduced_unique (P'.mapIso e') f hZ hB (by
-    have hlift :
-        ofLE (P.mapIso e).Z P.Z (P.mapIso_Z e).le ≫ P.liftZ P' f hZ =
-          (P.mapIso e).liftZ (P'.mapIso e') f hZ ≫
-            ofLE (P'.mapIso e').Z P'.Z (P'.mapIso_Z e').le := by
-      rw [← cancel_mono P'.Z.arrow, Category.assoc, Category.assoc, ofLE_arrow, liftZ_arrow,
-        ofLE_arrow_assoc]
-      dsimp only [mapIso]
-      rw [liftZ_arrow]
-    rw [π_mapIso', Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, P.π_mapInduced_assoc,
-      π_mapIso', reassoc_of% hlift])).symm
-
 /-- Compatibility of `mapInduced` with preimages. -/
 lemma exists_preimage_le_preimage_iff (f : A ⟶ A')
     (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B)
     (S : Subobject X) (S' : Subobject X') :
     (Subobject.exists f).obj (P.preimage S) ≤ P'.preimage S' ↔
       (Subobject.exists (P.mapInduced P' f hZ hB)).obj S ≤ S' := by
-  have hleZ' : (Subobject.exists f).obj (P.preimage S) ≤ P'.Z :=
-    ((Subobject.exists f).monotone (P.preimage_le_Z S)).trans hZ
-  have hiff : ∀ T : Subobject A', T ≤ P'.Z →
-      (T ≤ P'.preimage S' ↔ P'.image T ≤ S') := fun T hT ↦ by
-    rw [image, (existsPullbackAdj P'.π).gc.le_iff_le, ← P'.pullback_Z_arrow_preimage S']
-    exact ⟨fun h ↦ (Subobject.pullback P'.Z.arrow).monotone h,
-      fun h ↦ (map_pullback_arrow_of_le hT).symm.trans_le
-        (((Subobject.map P'.Z.arrow).monotone h).trans_eq
-          (map_pullback_arrow_of_le (P'.preimage_le_Z S')))⟩
-  rw [hiff _ hleZ', image, pullback_arrow_of_le hleZ', exists_mk_eq_imageSubobject]
-  conv_rhs => rw [Subobject.exists_eq_imageSubobject]
-  have heq := Subobject.exists_eq_imageSubobject f (P.preimage S)
-  have hle_img : imageSubobject ((P.preimage S).arrow ≫ f) ≤ P'.Z := heq.symm.trans_le hleZ'
-  have hof : ofLE ((Subobject.exists f).obj (P.preimage S)) P'.Z hleZ' =
-      (Subobject.isoOfEq _ _ heq).hom ≫
-        ofLE (imageSubobject ((P.preimage S).arrow ≫ f)) P'.Z hle_img := by
-    rw [Subobject.isoOfEq_hom, ofLE_comp_ofLE]
-  have hfac : factorThruImageSubobject ((P.preimage S).arrow ≫ f) ≫
-        ofLE (imageSubobject ((P.preimage S).arrow ≫ f)) P'.Z hle_img =
-      ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ := by
-    rw [← cancel_mono P'.Z.arrow, Category.assoc, Category.assoc, ofLE_arrow,
-      imageSubobject_arrow_comp, liftZ_arrow, ofLE_arrow_assoc]
-  conv_lhs =>
-    rw [hof, Category.assoc, imageSubobject_comp_eq_of_epi (Subobject.isoOfEq _ _ heq).hom,
-      ← imageSubobject_comp_eq_of_epi (factorThruImageSubobject ((P.preimage S).arrow ≫ f)),
-      reassoc_of% hfac, ← P.π_mapInduced P' f hZ hB, ← Category.assoc, ← P.preimageπ_arrow S,
-      Category.assoc, imageSubobject_comp_eq_of_epi (P.preimageπ S)]
-
-/-- Compatibility of `mapInduced` with composition of subquotient presentations. -/
-lemma mapInduced_trans (Q : SubquotientPresentation X Y)
-    (Q' : SubquotientPresentation X' Y') (f : A ⟶ A')
-    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B)
-    (hZq : (Subobject.exists (P.mapInduced P' f hZ hB)).obj Q.Z ≤ Q'.Z)
-    (hBq : (Subobject.exists (P.mapInduced P' f hZ hB)).obj Q.B ≤ Q'.B) :
-    (P.trans Q).mapInduced (P'.trans Q') f
-        ((P.exists_preimage_le_preimage_iff P' f hZ hB Q.Z Q'.Z).mpr hZq)
-        ((P.exists_preimage_le_preimage_iff P' f hZ hB Q.B Q'.B).mpr hBq) =
-      Q.mapInduced Q' (P.mapInduced P' f hZ hB) hZq hBq := by
-  have hZpq : (Subobject.exists f).obj (P.trans Q).Z ≤ (P'.trans Q').Z :=
-    (P.exists_preimage_le_preimage_iff P' f hZ hB Q.Z Q'.Z).mpr hZq
-  symm; refine (P.trans Q).mapInduced_unique (P'.trans Q') f _ _ ?_
-  have hliftP :
-      ofLE (P.trans Q).Z P.Z ((trans_Z P Q).le.trans (P.preimage_le_Z Q.Z)) ≫ P.liftZ P' f hZ =
-        (P.trans Q).liftZ (P'.trans Q') f hZpq ≫
-          ofLE (P'.trans Q').Z P'.Z ((trans_Z P' Q').le.trans (P'.preimage_le_Z Q'.Z)) := by
-    rw [← cancel_mono P'.Z.arrow, Category.assoc, Category.assoc, ofLE_arrow, liftZ_arrow,
-      ofLE_arrow_assoc, liftZ_arrow]
-  have hlift :
-      ofLE (P.trans Q).Z (P.preimage Q.Z) (trans_Z P Q).le ≫ P.preimageπ Q.Z ≫
-          Q.liftZ Q' (P.mapInduced P' f hZ hB) hZq =
-        (P.trans Q).liftZ (P'.trans Q') f hZpq ≫
-          ofLE (P'.trans Q').Z (P'.preimage Q'.Z) (trans_Z P' Q').le ≫ P'.preimageπ Q'.Z := by
-    rw [← cancel_mono Q'.Z.arrow]
-    simp only [Category.assoc, preimageπ_arrow, preimageπ_arrow_assoc, liftZ_arrow,
-      ofLE_comp_ofLE_assoc]
-    rw [P.π_mapInduced, reassoc_of% hliftP]
-  rw [π_trans', Category.assoc, Category.assoc, Q.π_mapInduced, π_trans', reassoc_of% hlift]
+  rw [Subobject.exists_eq_imageSubobject, Subobject.exists_eq_imageSubobject,
+    ← imageSubobject_comp_eq_of_epi (P.preimageπ S), imageSubobject_le_iff_factors,
+    imageSubobject_le_iff_factors, ← ofLE_arrow (P.preimage_le_Z S), Category.assoc,
+    ← P.liftZ_arrow P' f hZ, ← Category.assoc, P'.factors_preimage_iff, Category.assoc,
+    P.preimageπ_arrow_assoc, P.π_mapInduced]
 
 end MapInduced
 
@@ -944,6 +880,35 @@ lemma MapsTo.Z_le_pullback (h : P.MapsTo P' φ g) : P.Z ≤ (Subobject.pullback 
 lemma MapsTo.B_le_pullback (h : P.MapsTo P' φ g) : P.B ≤ (Subobject.pullback φ).obj P'.B :=
   (P.B_le_preimage _).trans (by simpa using h.le_pullback_preimage ⊥)
 
+/-- If `φ` maps `P` to `P'` over `g`, then the induced morphism equals `g`. -/
+lemma MapsTo.mapInduced_eq (h : P.MapsTo P' φ g)
+    (hZ : (Subobject.exists φ).obj P.Z ≤ P'.Z :=
+      (Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.Z_le_pullback)
+    (hB : (Subobject.exists φ).obj P.B ≤ P'.B :=
+      (Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.B_le_pullback) :
+    P.mapInduced P' φ hZ hB = g := by
+  obtain ⟨ψ, hψ, hψπ⟩ := h
+  have hlift : ψ = P.liftZ P' φ hZ := by
+    rw [← cancel_mono P'.Z.arrow, hψ, liftZ_arrow]
+  exact (P.mapInduced_unique P' φ hZ hB (by rw [← hψπ, hlift])).symm
+
+/-- The induced morphism makes `f` map `P` to `P'` over `P.mapInduced P' f hZ hB`. -/
+lemma mapsTo_mapInduced (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z)
+    (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.MapsTo P' f (P.mapInduced P' f hZ hB) :=
+  ⟨P.liftZ P' f hZ, P.liftZ_arrow P' f hZ, (P.π_mapInduced P' f hZ hB).symm⟩
+
+/-- A morphism `φ : A ⟶ A'` maps `P` to `P'` over `g` if and only if it maps `P.Z` into `P'.Z`
+and `P.B` into `P'.B` and the induced morphism equals `g`. -/
+lemma mapsTo_iff_mapInduced :
+    P.MapsTo P' φ g ↔
+      ∃ (hZ : (Subobject.exists φ).obj P.Z ≤ P'.Z)
+        (hB : (Subobject.exists φ).obj P.B ≤ P'.B), P.mapInduced P' φ hZ hB = g :=
+  ⟨fun h ↦ ⟨(Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.Z_le_pullback,
+      (Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.B_le_pullback, h.mapInduced_eq⟩,
+   fun ⟨hZ, hB, hg⟩ ↦ hg ▸ P.mapsTo_mapInduced P' φ hZ hB⟩
+
 /-- The identity presentations are mapped to each other by any morphism, over itself. -/
 lemma mapsTo_refl (φ : A ⟶ A') : (refl A).MapsTo (refl A') φ φ :=
   ⟨(refl A').Z.factorThru ((refl A).Z.arrow ≫ φ) (by rw [refl_Z]; exact top_factors _),
@@ -979,6 +944,41 @@ lemma MapsTo.mapIso (h : P.MapsTo P' φ g) {e : X ≅ Y} {e' : X' ≅ Y'} {g' : 
   refine ⟨ofLE _ _ (P.mapIso_Z e).le ≫ ψ ≫ ofLE _ _ (P'.mapIso_Z e').ge, by simp [hψ], ?_⟩
   rw [π_mapIso', π_mapIso']
   simp [ofLE_comp_ofLE_assoc, reassoc_of% hψπ, hg]
+
+lemma mapInduced_mapIso (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (e : X ≅ Y) (e' : X' ≅ W) (f : A ⟶ A')
+    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    (P.mapIso e).mapInduced (P'.mapIso e') f hZ hB =
+      e.inv ≫ P.mapInduced P' f hZ hB ≫ e'.hom :=
+  ((P.mapsTo_mapInduced P' f hZ hB).mapIso (e := e) (e' := e')
+    (by rw [Iso.hom_inv_id_assoc])).mapInduced_eq hZ hB
+
+/-- Isomorphisms `isoOfEq` commute with morphisms induced by the same ambient morphism. -/
+@[reassoc]
+lemma mapInduced_comp_isoOfEq_hom (P : SubquotientPresentation A X)
+    (P' : SubquotientPresentation A' X') {Q : SubquotientPresentation A Y}
+    {Q' : SubquotientPresentation A' Y'} (hB : P.B = Q.B) (hZ : P.Z = Q.Z)
+    (hB' : P'.B = Q'.B) (hZ' : P'.Z = Q'.Z) (f : A ⟶ A')
+    (hZP : (Subobject.exists f).obj P.Z ≤ P'.Z) (hBP : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.mapInduced P' f hZP hBP ≫ (P'.isoOfEq Q' hB' hZ').hom =
+      (P.isoOfEq Q hB hZ).hom ≫
+        Q.mapInduced Q' f (by rw [← hZ, ← hZ']; exact hZP) (by rw [← hB, ← hB']; exact hBP) := by
+  have h := (mapInduced_congr (P.mapIso_isoOfEq Q hB hZ) (P'.mapIso_isoOfEq Q' hB' hZ') rfl
+    hZP hBP (by rw [← hZ, ← hZ']; exact hZP) (by rw [← hB, ← hB']; exact hBP)).symm.trans
+    (P.mapInduced_mapIso P' (P.isoOfEq Q hB hZ) (P'.isoOfEq Q' hB' hZ') f hZP hBP)
+  rw [h, Iso.hom_inv_id_assoc]
+
+/-- Compatibility of `mapInduced` with composition of subquotient presentations. -/
+lemma mapInduced_trans (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (Q : SubquotientPresentation X Y) (Q' : SubquotientPresentation X' Y') (f : A ⟶ A')
+    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B)
+    (hZq : (Subobject.exists (P.mapInduced P' f hZ hB)).obj Q.Z ≤ Q'.Z)
+    (hBq : (Subobject.exists (P.mapInduced P' f hZ hB)).obj Q.B ≤ Q'.B) :
+    (P.trans Q).mapInduced (P'.trans Q') f
+        ((P.exists_preimage_le_preimage_iff P' f hZ hB Q.Z Q'.Z).mpr hZq)
+        ((P.exists_preimage_le_preimage_iff P' f hZ hB Q.B Q'.B).mpr hBq) =
+      Q.mapInduced Q' (P.mapInduced P' f hZ hB) hZq hBq :=
+  ((P.mapsTo_mapInduced P' f hZ hB).trans (Q.mapsTo_mapInduced Q' _ hZq hBq)).mapInduced_eq _ _
 
 end MapsTo
 
