@@ -42,8 +42,8 @@ subcategory closed under products, so it contains the contraacyclic modules.
 Consequently the localization functor to the contraderived category is bijective on morphisms
 out of a graded-projective module. This is the full faithfulness in Positselski's graded-projective
 model of the contraderived category; essential surjectivity under the countable-product
-condition `(**)` is proved in `Graded.Projective.Countable`
-(`ContraderivedCategory.isEquivalence_ι_comp_Q_of_countableProjectiveCondition`).
+hypothesis is proved in `Graded.Projective.Countable`
+(`ContraderivedCategory.isEquivalence_ι_comp_Q_of_hasFiniteProjectiveDimensionOfCountableProducts`).
 
 ## Main definitions
 
@@ -131,10 +131,12 @@ instance projective_toGradedModuleCat_cone {M N : CurvedDGRightModuleCat.{u, u, 
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
     [Projective (toGradedModuleCat M)] [Projective (toGradedModuleCat N)] :
     Projective (toGradedModuleCat (cone f)) := by
-  have hiso := (coneGradedSplitting f).isoBinaryBiproduct.symm
-  simp only [ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃,
-    coneShortComplex_X₁, coneShortComplex_X₂, coneShortComplex_X₃,
-    forgetDifferential_obj_of] at hiso
+  have hiso : toGradedModuleCat N ⊞ toGradedModuleCat (M.shift 1) ≅
+      toGradedModuleCat (cone f) :=
+    biprod.mapIso (eqToIso (by simp [coneShortComplex_X₁]))
+        (eqToIso (by simp [coneShortComplex_X₃])) ≪≫
+      (coneGradedSplitting f).isoBinaryBiproduct.symm ≪≫
+      eqToIso (by simp [coneShortComplex_X₂])
   exact Projective.of_iso hiso inferInstance
 
 /-- The zero curved module is graded-projective. -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.GradedDimension
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Resolution.Basic
 
@@ -64,7 +63,6 @@ countable products and kernels of epimorphisms.
 public section
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated DirectSum MulOpposite
-open scoped Pointwise
 
 namespace TauCeti.CurvedDGRightModuleCat
 
@@ -88,6 +86,14 @@ variable {M : CurvedDGRightModuleCat.{u, u, u} h} (r : LeftResolution M)
 
 /-! ### Product totalization and augmentation -/
 
+private theorem closedHom_mem_add_nat_succ {X Y : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) X ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Y)
+    {p : ℤ} {k : ℕ} {x : X} (hx : x ∈ X.grading (p + ((k + 1 : ℕ) : ℤ))) :
+    closedHom f x ∈ Y.grading (p + 1 + (k : ℤ)) := by
+  have heq : p + ((k + 1 : ℕ) : ℤ) = p + 1 + (k : ℤ) := by push_cast; omega
+  exact heq ▸ closedHom_mem f hx
+
 /-- The horizontal component `(H y)_n = δ_n(y_{n+1})` of the total differential on the degreewise
 graded product `∏ₙ P_n[n]`. -/
 private noncomputable def prodTotalHorizontalDiff :
@@ -109,9 +115,7 @@ private noncomputable def prodTotalHorizontalDiff :
           (GradedModuleCat.mem_product_piece_iff _ p y).mp hy (ULift.up (n.down + 1))
       rw [toGradedModuleCat_piece, LinearMap.comp_apply, InternalGrading.productEval_apply,
         LinearMap.restrictScalars_apply, shift_grading]
-      have hmem := closedHom_mem (r.diff n.down) hy1
-      have heq : p + ((n.down + 1 : ℕ) : ℤ) = p + 1 + (n.down : ℤ) := by push_cast; omega
-      rwa [heq] at hmem)
+      exact closedHom_mem_add_nat_succ (r.diff n.down) hy1)
 
 private theorem prodTotalHorizontalDiff_apply
     (y : product fun n : ULift.{u} ℕ ↦ (r.term n.down).shift (n.down : ℤ)) (n : ℕ) :
@@ -127,6 +131,37 @@ private theorem prodTotalHorizontalDiff_isHomogeneous :
       (product fun n : ULift.{u} ℕ ↦ (r.term n.down).shift (n.down : ℤ)).grading 1 := by
   dsimp only [prodTotalHorizontalDiff]
   exact InternalGrading.productLiftLinear_isHomogeneous _ _ 1 _ _
+
+private theorem prodTotalHorizontalDiff_smul (a : A)
+    (y : product fun n : ULift.{u} ℕ ↦ (r.term n.down).shift (n.down : ℤ)) :
+    r.prodTotalHorizontalDiff (op a • y) = op a • r.prodTotalHorizontalDiff y := by
+  apply Subtype.ext; funext ⟨n⟩
+  rw [Submodule.coe_smul, Pi.smul_apply, prodTotalHorizontalDiff_apply,
+    prodTotalHorizontalDiff_apply]
+  exact map_smul (closedHom (r.diff n)) (op a) (y.val ⟨n + 1⟩)
+
+private theorem prodTotal_sq_eq
+    (y : product fun n : ULift.{u} ℕ ↦ (r.term n.down).shift (n.down : ℤ)) :
+    let B := product fun n : ULift.{u} ℕ ↦ (r.term n.down).shift (n.down : ℤ)
+    (B.differential + r.prodTotalHorizontalDiff)
+      ((B.differential + r.prodTotalHorizontalDiff) y) = op w • y := by
+  intro B
+  apply Subtype.ext; funext ⟨n⟩
+  have hsq := congrArg (fun z ↦ z.val ⟨n⟩) (B.isCurvedDGRightModule.sq_eq y)
+  have hcancel :
+      closedHom (r.diff n)
+          (((n + 1 : ℕ) : ℤ).negOnePow • (r.term (n + 1)).differential (y.val ⟨n + 1⟩)) +
+        (n : ℤ).negOnePow •
+          (r.term n).differential (closedHom (r.diff n) (y.val ⟨n + 1⟩)) = 0 := by
+    simp only [Units.smul_def, Nat.cast_add, Nat.cast_one, Int.negOnePow_add,
+      Int.negOnePow_one, mul_neg_one, Units.val_neg, neg_zsmul, map_neg, map_zsmul,
+      differential_closedHom, neg_add_cancel]
+  have hcoe (u v : B) : (u + v).val ⟨n⟩ = u.val ⟨n⟩ + v.val ⟨n⟩ := rfl
+  simp only [LinearMap.add_apply, map_add, hcoe]
+  rw [hsq]
+  simp only [B, product_differential_apply, shift_differential_apply, prodTotalHorizontalDiff_apply,
+    r.closedHom_diff_diff_apply]
+  rw [add_zero, add_assoc, hcancel, add_zero]
 
 /-- The **product totalization** `Tot^Π(r)` of a left resolution `r`: carried by the degreewise
 graded product `∏ₙ P_n[n]` with differential `(D y)_n = (-1)^n d_{P_n}(y_n) + δ_n(y_{n+1})`. -/
@@ -147,34 +182,10 @@ noncomputable def prodTotal : CurvedDGRightModuleCat.{u, u, u} h := by
       (B.isCurvedDGRightModule.isHomogeneous.map_mem hy)
       (r.prodTotalHorizontalDiff_isHomogeneous.map_mem hy)
   · intro p y hy a
-    rw [LinearMap.add_apply, LinearMap.add_apply, B.isCurvedDGRightModule.leibniz hy a]
-    have hhor : r.prodTotalHorizontalDiff (op a • y) = op a • r.prodTotalHorizontalDiff y := by
-      apply Subtype.ext; funext ⟨n⟩
-      rw [Submodule.coe_smul, Pi.smul_apply, prodTotalHorizontalDiff_apply,
-        prodTotalHorizontalDiff_apply]
-      exact map_smul (closedHom (r.diff n)) (op a) (y.val ⟨n + 1⟩)
-    rw [hhor, smul_add]
+    rw [LinearMap.add_apply, LinearMap.add_apply, B.isCurvedDGRightModule.leibniz hy a,
+      r.prodTotalHorizontalDiff_smul a y, smul_add]
     abel
-  · intro y
-    apply Subtype.ext; funext ⟨n⟩
-    have hsq := congrArg (fun z ↦ z.val ⟨n⟩) (B.isCurvedDGRightModule.sq_eq y)
-    dsimp only [B] at hsq ⊢
-    simp only [LinearMap.add_apply, map_add]
-    rw [Submodule.coe_add, Submodule.coe_add, Submodule.coe_add,
-      Pi.add_apply, Pi.add_apply, Pi.add_apply,
-      hsq, product_differential_apply, shift_differential_apply, prodTotalHorizontalDiff_apply,
-      prodTotalHorizontalDiff_apply, product_differential_apply, shift_differential_apply,
-      prodTotalHorizontalDiff_apply, prodTotalHorizontalDiff_apply]
-    have hcancel :
-        closedHom (r.diff n)
-            (((n + 1 : ℕ) : ℤ).negOnePow • (r.term (n + 1)).differential (y.val ⟨n + 1⟩)) +
-          (n : ℤ).negOnePow •
-            (r.term n).differential (closedHom (r.diff n) (y.val ⟨n + 1⟩)) = 0 := by
-      simp only [Units.smul_def, Nat.cast_add, Nat.cast_one, Int.negOnePow_add,
-        Int.negOnePow_one, mul_neg_one, Units.val_neg, neg_zsmul, map_neg, map_zsmul,
-        differential_closedHom, neg_add_cancel]
-    dsimp only
-    rw [r.closedHom_diff_diff_apply n _, add_zero, add_assoc, hcancel, add_zero]
+  · exact r.prodTotal_sq_eq
 
 private noncomputable def prodTotalEquiv :
     r.prodTotal ≃ₗ[Aᵐᵒᵖ] product fun n : ULift.{u} ℕ ↦ (r.term n.down).shift (n.down : ℤ) :=
@@ -440,9 +451,7 @@ private theorem partialMapSuccLin_mem (k : ℕ)
   rw [cone_grading, Submodule.mem_prod, LinearMap.neg_apply, LinearMap.comp_apply,
     LinearMap.inl_apply, Prod.neg_mk, neg_zero, shift_grading]
   refine ⟨((r.term k).grading (p + 1 + (k : ℤ))).neg_mem ?_, (G.grading p).zero_mem⟩
-  have hmem := closedHom_mem (r.ι k) hx
-  have heq : p + ((k + 1 : ℕ) : ℤ) = p + 1 + (k : ℤ) := by push_cast; omega
-  rwa [heq] at hmem
+  exact closedHom_mem_add_nat_succ (r.ι k) hx
 
 private theorem partialMapSuccLin_differential (k : ℕ)
     {G : CurvedDGRightModuleCat.{u, u, u} h}
@@ -778,14 +787,13 @@ private theorem surjective_truncTransition_piece (k : ℕ) (p : ℤ)
       closedHom (r.truncTransition k) z = w := by
   let g : toGradedModuleCat (r.truncObj (k + 1)) ⟶ toGradedModuleCat (r.truncObj k) :=
     forgetDifferential.map (r.truncTransition k)
-  have hsurj := GradedModuleCat.smulPieceMap_surjective (e := (1 : Aᵐᵒᵖ)) (g := g)
+  obtain ⟨z, hz, hzw⟩ := GradedModuleCat.exists_mem_piece_of_surjective g
     (by
       dsimp only [g]; rw [forgetDifferential_map_hom]
-      exact (shortExact_iff.1 (r.truncTransition_shortExact k)).2.1) p
-  obtain ⟨⟨z, hz⟩, hzw⟩ := hsurj ⟨w, by rw [one_smul, toGradedModuleCat_piece]; exact hw⟩
-  rw [one_smul, toGradedModuleCat_piece] at hz; refine ⟨z, hz, ?_⟩
-  simpa [g, GradedModuleCat.coe_smulPieceMap_apply, forgetDifferential_map_hom] using
-    congrArg Subtype.val hzw
+      exact (shortExact_iff.1 (r.truncTransition_shortExact k)).2.1)
+    p (by simpa only [toGradedModuleCat_piece] using hw)
+  exact ⟨z, by simpa only [toGradedModuleCat_piece] using hz,
+    by simpa only [g, forgetDifferential_map_hom] using hzw⟩
 
 /-- The Milnor product `∏ₖ F_k` of all truncations in the tower. -/
 private noncomputable abbrev truncProd : CurvedDGRightModuleCat.{u, u, u} h :=
@@ -971,15 +979,10 @@ end MilnorTower
 right module `M`, the mapping cone of the closed augmentation `r.prodTotalAug : Tot^Π(r) ⟶ M`
 is contraacyclic. -/
 theorem contraacyclic_cone_prodTotalAug :
-    contraacyclic R h (DGHomotopyCategory.of R (cone r.prodTotalAug)) := by
-  have h0 : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.prodTotalAugZero) :=
-    (trW_dgClosedToHomotopy_map_iff _ r.prodTotalAugZero).2 r.contraacyclic_cone_prodTotalAugZero
-  have hiso : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.syzygyZeroIso.hom) :=
-    ObjectProperty.trW_of_isIso _ _
-  have hcomp : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.prodTotalAug) := by
-    rw [prodTotalAug, Functor.map_comp]
-    exact MorphismProperty.comp_mem _ _ _ h0 hiso
-  exact (trW_dgClosedToHomotopy_map_iff _ r.prodTotalAug).1 hcomp
+    contraacyclic R h (DGHomotopyCategory.of R (cone r.prodTotalAug)) :=
+  cone_comp_mem_of_isTriangulated (contraacyclic R h) r.prodTotalAugZero r.syzygyZeroIso.hom
+    r.contraacyclic_cone_prodTotalAugZero
+    ((contraacyclic R h).prop_of_isZero (isZero_homotopy_cone_isIso _))
 
 end LeftResolution
 
