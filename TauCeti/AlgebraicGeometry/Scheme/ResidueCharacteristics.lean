@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.Characteristic
 public import TauCeti.AlgebraicGeometry.Scheme.CoefficientInvertibility
 public import TauCeti.AlgebraicGeometry.Scheme.ZeroLocusComponents
+public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.Topology.Constructible.Basic
 public import TauCeti.Topology.Sober
 
@@ -86,11 +87,6 @@ namespace AlgebraicGeometry.Scheme
 
 variable {X Y : Scheme.{u}} {p : ℕ}
 
-/-- The only prime divisible by a prime `p` is `p` itself. -/
-private theorem prime_and_dvd_iff_eq (hp : p.Prime) {q : ℕ} : q.Prime ∧ p ∣ q ↔ q = p :=
-  ⟨fun ⟨hq, hpq⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp hq).mp hpq).symm,
-    by rintro rfl; exact ⟨hp, dvd_rfl⟩⟩
-
 /-- The residue characteristics of a scheme `X`: the primes `p` that are the characteristic of the
 residue field `κ(x)` at some point `x` of `X`. Residue characteristic zero contributes nothing, and
 the empty scheme has no residue characteristics. -/
@@ -113,19 +109,6 @@ theorem ringChar_residueField_mem_residueChars (x : X) (hx : ringChar (X.residue
 theorem mem_residueChars_iff_exists_charP :
     p ∈ X.residueChars ↔ p.Prime ∧ ∃ x : X, CharP (X.residueField x) p := by
   simp only [mem_residueChars, ringChar.eq_iff]
-
-/-- A point `x ∈ U` lies in the zero locus of a section `a` over `U` exactly when `a` vanishes in
-its residue field. -/
-theorem mem_zeroLocus_singleton_iff {U : X.Opens} (a : Γ(X, U)) {x : X} (hx : x ∈ U) :
-    x ∈ X.zeroLocus {a} ↔ X.evaluation U x hx a = 0 := by
-  rw [zeroLocus_singleton, Set.mem_compl_iff, SetLike.mem_coe,
-    ← X.evaluation_ne_zero_iff_mem_basicOpen x hx, not_not]
-
-/-- A point `x ∈ U` lies in the zero locus of the function `n` on `U` exactly when `n` vanishes in
-its residue field. -/
-theorem mem_zeroLocus_natCast_iff {U : X.Opens} (n : ℕ) {x : X} (hx : x ∈ U) :
-    x ∈ X.zeroLocus {(n : Γ(X, U))} ↔ (n : X.residueField x) = 0 := by
-  rw [mem_zeroLocus_singleton_iff _ hx, map_natCast]
 
 /-- A prime `p` is a residue characteristic exactly when it vanishes in some residue field. -/
 theorem mem_residueChars_iff_exists_natCast_eq_zero :
@@ -195,7 +178,7 @@ theorem _root_.TauCeti.AlgebraicGeometry.SchemeCharP.residueChars_eq [hp : Fact 
   ext q
   simp only [mem_residueChars_iff_not_isUnit, CharP.isUnit_natCast_iff hp.out, not_not,
     Set.mem_singleton_iff]
-  exact prime_and_dvd_iff_eq hp.out
+  exact hp.out.prime_and_dvd_iff_eq
 
 /-! ### Dominant morphisms of finite type -/
 
@@ -290,7 +273,7 @@ theorem residueChars_Spec_intLocalizationAtPrime (ℓ : ℕ) [hℓ : Fact ℓ.Pr
   rw [IsLocalization.AtPrime.isUnit_to_map_iff _ (Ideal.span {(ℓ : ℤ)})]
   simp only [Ideal.mem_primeCompl_iff, Ideal.mem_span_singleton, Int.natCast_dvd_natCast, not_not,
     Set.mem_singleton_iff]
-  exact prime_and_dvd_iff_eq hℓ.out
+  exact hℓ.out.prime_and_dvd_iff_eq
 
 /-- Inverting `n` in the integers removes exactly the prime divisors of `n` from the residue
 characteristics; for instance `Spec ℤ[1/6]` has the primes other than `2` and `3`. -/

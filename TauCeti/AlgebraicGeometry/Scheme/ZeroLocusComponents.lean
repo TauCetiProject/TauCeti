@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
@@ -24,6 +25,9 @@ maximal ideal of the local ring `𝒪_{X, x}` is a minimal prime over the germ o
 height at most one, and it has height at least one because `a` is a unit at the generic point of
 `X`, which therefore does not lie in `V(a)`.
 
+Pointwise, a point lies in the zero locus of a section exactly when the section vanishes in the
+residue field there, which for the function `n` means that `n` is zero in the residue field.
+
 The points of the spectrum of the local ring `𝒪_{X, x}` are the generizations of `x`, and the
 germ of `a` lies in the prime corresponding to a generization `y` exactly when `a` vanishes at
 `y`; this is `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_mem_basicOpen_iff`, which is what
@@ -40,6 +44,9 @@ points of the total space at which the uniformizer vanishes.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.mem_zeroLocus_singleton_iff` and
+  `AlgebraicGeometry.Scheme.mem_zeroLocus_natCast_iff`: a point lies in the zero locus of a section
+  over an open containing it exactly when the section vanishes in its residue field;
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecStalk_mem_basicOpen_iff`: a point of the spectrum of
   a local ring of `X` lies in the basic open of a section exactly when the germ of that section
   is outside the corresponding prime ideal;
@@ -71,6 +78,25 @@ points of the total space at which the uniformizer vanishes.
 public section
 
 open AlgebraicGeometry CategoryTheory Order TopologicalSpace
+
+namespace AlgebraicGeometry.Scheme
+
+variable {X : Scheme} {U : X.Opens} {x : X}
+
+/-- A point `x ∈ U` lies in the zero locus of a section `a` over `U` exactly when `a` vanishes in
+its residue field. -/
+theorem mem_zeroLocus_singleton_iff (a : Γ(X, U)) (hx : x ∈ U) :
+    x ∈ X.zeroLocus {a} ↔ X.evaluation U x hx a = 0 := by
+  rw [zeroLocus_singleton, Set.mem_compl_iff, SetLike.mem_coe,
+    ← X.evaluation_ne_zero_iff_mem_basicOpen x hx, not_not]
+
+/-- A point `x ∈ U` lies in the zero locus of the function `n` on `U` exactly when `n` vanishes in
+its residue field. -/
+theorem mem_zeroLocus_natCast_iff (n : ℕ) (hx : x ∈ U) :
+    x ∈ X.zeroLocus {(n : Γ(X, U))} ↔ (n : X.residueField x) = 0 := by
+  rw [mem_zeroLocus_singleton_iff _ hx, map_natCast]
+
+end AlgebraicGeometry.Scheme
 
 namespace TauCeti
 
