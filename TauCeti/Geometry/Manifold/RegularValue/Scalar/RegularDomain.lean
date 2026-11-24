@@ -32,7 +32,7 @@ submanifold with boundary.
 Every compact subset `K` of a Hausdorff, σ-compact (for instance second-countable),
 finite-dimensional smooth manifold without boundary lies in the strict sublevel `{f < c}` of a
 smooth function `f` at a regular value `c` whose sublevel `{f ≤ c}` is compact
-(`IsCompact.exists_isRegularValue_isCompact_setOf_le`). In positive dimension and on a
+(`IsCompact.exists_isRegularValue_isCompact_setOfPred_le`). In positive dimension and on a
 boundaryless model, this sublevel is a compact regular domain of the kind above with `K` in its
 interior. The manifold carries a smooth proper exhaustion function `f ≥ 0`
 (`TauCeti.exists_contMDiffMap_isProperMap_nonneg`). By Sard's theorem
@@ -47,10 +47,10 @@ manifold structure with boundary needs positive dimension and a boundaryless mod
 
 ## Main results
 
-* `TauCeti.IsRegularValue.interior_setOf_le`, `TauCeti.IsRegularValue.closure_setOf_lt` and
-  `TauCeti.IsRegularValue.frontier_setOf_le`: the interior, closure and frontier of the sublevels
-  at a regular value.
-* `IsCompact.exists_isRegularValue_isCompact_setOf_le`: every compact set lies in the strict
+* `TauCeti.IsRegularValue.interior_setOfPred_le`, `TauCeti.IsRegularValue.closure_setOfPred_lt` and
+  `TauCeti.IsRegularValue.frontier_setOfPred_le`: the interior, closure and frontier of the
+  sublevels at a regular value.
+* `IsCompact.exists_isRegularValue_isCompact_setOfPred_le`: every compact set lies in the strict
   sublevel of a smooth function at a regular value whose sublevel is compact.
 
 ## References
@@ -78,7 +78,7 @@ variable [BoundarylessManifold I M] {f : M → ℝ} {c : ℝ}
 sublevel `{f ≤ c}` of a continuous function at a regular value `c` is the strict sublevel
 `{f < c}`: a point of the level `f⁻¹(c)` in that interior would be a local maximum of `f`, hence a
 critical point. -/
-theorem IsRegularValue.interior_setOf_le (hreg : IsRegularValue I 𝓘(ℝ) f c)
+theorem IsRegularValue.interior_setOfPred_le (hreg : IsRegularValue I 𝓘(ℝ) f c)
     (hf : Continuous f) : interior {x | f x ≤ c} = {x | f x < c} := by
   refine Subset.antisymm (fun x hx ↦ ?_)
     (interior_maximal (fun _ hx ↦ mem_ofPred.2 (mem_ofPred.1 hx).le)
@@ -93,7 +93,7 @@ theorem IsRegularValue.interior_setOf_le (hreg : IsRegularValue I 𝓘(ℝ) f c)
 strict sublevel `{f < c}` of a continuous function at a regular value `c` is the sublevel
 `{f ≤ c}`: a point of the level `f⁻¹(c)` outside that closure would be a local minimum of `f`,
 hence a critical point. -/
-theorem IsRegularValue.closure_setOf_lt (hreg : IsRegularValue I 𝓘(ℝ) f c)
+theorem IsRegularValue.closure_setOfPred_lt (hreg : IsRegularValue I 𝓘(ℝ) f c)
     (hf : Continuous f) : closure {x | f x < c} = {x | f x ≤ c} := by
   refine (closure_lt_subset_le hf continuous_const).antisymm fun x (hx : f x ≤ c) ↦ ?_
   refine hx.lt_or_eq.elim (fun h ↦ subset_closure h) fun hxc ↦ ?_
@@ -107,9 +107,9 @@ theorem IsRegularValue.closure_setOf_lt (hreg : IsRegularValue I 𝓘(ℝ) f c)
 /-- **The frontier of a regular sublevel is the level.** On a boundaryless manifold, the frontier
 of the sublevel `{f ≤ c}` of a continuous function at a regular value `c` is the level
 `f⁻¹(c)`. -/
-theorem IsRegularValue.frontier_setOf_le (hreg : IsRegularValue I 𝓘(ℝ) f c)
+theorem IsRegularValue.frontier_setOfPred_le (hreg : IsRegularValue I 𝓘(ℝ) f c)
     (hf : Continuous f) : frontier {x | f x ≤ c} = {x | f x = c} := by
-  rw [frontier, (isClosed_le hf continuous_const).closure_eq, hreg.interior_setOf_le hf]
+  rw [frontier, (isClosed_le hf continuous_const).closure_eq, hreg.interior_setOfPred_le hf]
   ext x
   simp only [Set.mem_sdiff, mem_ofPred, not_lt, le_antisymm_iff]
 
@@ -126,8 +126,9 @@ the strict sublevel `{f < c}` of a smooth function `f` at a regular value `c` wh
 `{f ≤ c}` is compact. When `M` is modelled on a space of dimension `n + 1` and the model `I` is
 boundaryless (`I.Boundaryless`), this sublevel is a compact manifold with boundary `f⁻¹(c)` for
 `TauCeti.scalarRegularSublevelChartedSpace`, and `K` lies in its interior
-(`TauCeti.IsRegularValue.interior_setOf_le`). -/
-theorem _root_.IsCompact.exists_isRegularValue_isCompact_setOf_le {K : Set M} (hK : IsCompact K) :
+(`TauCeti.IsRegularValue.interior_setOfPred_le`). -/
+theorem _root_.IsCompact.exists_isRegularValue_isCompact_setOfPred_le {K : Set M}
+    (hK : IsCompact K) :
     ∃ (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (c : ℝ), IsRegularValue I 𝓘(ℝ) f c ∧
       IsCompact {x | f x ≤ c} ∧ K ⊆ {x | f x < c} := by
   obtain ⟨f, hp, hf0⟩ := exists_contMDiffMap_isProperMap_nonneg I (M := M)
