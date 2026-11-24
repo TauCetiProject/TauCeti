@@ -26,6 +26,10 @@ Transporting a product `∀ i, M i` of monoids along an equivalence `e : ι' ≃
 multiplicative equivalence; it relabels the factors of a product of groups. Relabelling along two
 equivalences in turn is relabelling along their composite (`MulEquiv.piCongrLeft_trans`).
 
+A product indexed by `Option α` splits off its factor at `none`:
+`MulEquiv.piOptionEquivProd : (∀ a, N a) ≃* N none × ∀ a, N (some a)` is
+`Equiv.piOptionEquivProd` as a multiplicative equivalence.
+
 ## Main declarations
 
 * `TauCeti.MulEquiv.arrowProdEquivProdArrow`:
@@ -35,6 +39,8 @@ equivalences in turn is relabelling along their composite (`MulEquiv.piCongrLeft
   in function transport.
 * `MulEquiv.piCongrLeft`, `AddEquiv.piCongrLeft`: transport of dependent functions along an
   equivalence of the index types.
+* `MulEquiv.piOptionEquivProd`, `AddEquiv.piOptionEquivProd`: splitting off the factor at `none`
+  of a product indexed by `Option α`.
 -/
 
 public section
@@ -80,6 +86,30 @@ theorem piCongrLeft_trans (e₁ : ι'' ≃ ι') (e₂ : ι' ≃ ι) :
     (piCongrLeft (fun i' ↦ M (e₂ i')) e₁).trans (piCongrLeft M e₂) =
       piCongrLeft M (e₁.trans e₂) :=
   toEquiv_injective (Equiv.piCongrLeft_trans M e₁ e₂)
+
+variable {α : Type*} {N : Option α → Type*} [∀ a, Mul (N a)]
+
+/-- A product indexed by `Option α` splits off the factor at `none`. This is
+`Equiv.piOptionEquivProd` as a `MulEquiv`. -/
+@[to_additive /-- A product indexed by `Option α` splits off the summand at `none`. This is
+`Equiv.piOptionEquivProd` as an `AddEquiv`. -/]
+def piOptionEquivProd : (∀ a, N a) ≃* N none × ∀ a, N (some a) :=
+  { Equiv.piOptionEquivProd with map_mul' := fun _ _ ↦ rfl }
+
+@[to_additive (attr := simp)]
+theorem piOptionEquivProd_apply (g : ∀ a, N a) :
+    piOptionEquivProd g = (g none, fun a ↦ g (some a)) :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem piOptionEquivProd_symm_apply_none (x : N none × ∀ a, N (some a)) :
+    piOptionEquivProd.symm x none = x.1 :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem piOptionEquivProd_symm_apply_some (x : N none × ∀ a, N (some a)) (a : α) :
+    piOptionEquivProd.symm x (some a) = x.2 a :=
+  (rfl)
 
 end MulEquiv
 

@@ -8,16 +8,18 @@ module
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
-# Extended-real limits and `limsup` lemmas
+# Extended-real limits, `limsup`, and lower semicontinuity lemmas
 
-Complements `Mathlib.Topology.Instances.EReal.Lemmas` with limit and `limsup` lemmas for
-`EReal`-valued families:
+Complements `Mathlib.Topology.Instances.EReal.Lemmas` with limit, `limsup`, and lower
+semicontinuity lemmas for `EReal`-valued families:
 
 * `EReal.tendsto_coe_mul_add_coe_mul_sub`: weighted sums `s a + t b - r` with nonnegative real
   weights and a real correction preserve limits when both endpoint limits are different from `⊤`
   (allowing endpoint limits equal to `⊥`).
 * `EReal.limsup_mul_eq_of_tendsto_one`: multiplying an `EReal`-valued family by eventual `[0, 1]`
   factors converging to `1` preserves its `limsup`.
+* `LowerSemicontinuous.ereal_add`: sums of lower semicontinuous extended-real functions are lower
+  semicontinuous.
 -/
 
 public section
@@ -87,3 +89,17 @@ theorem limsup_mul_eq_of_tendsto_one {ι : Type*} {l : Filter ι} {u b : ι → 
           nlinarith
 
 end EReal
+
+/-- The sum of two lower semicontinuous extended-real functions is lower semicontinuous. -/
+theorem LowerSemicontinuous.ereal_add {X : Type*} [TopologicalSpace X] {f g : X → EReal}
+    (hf : LowerSemicontinuous f) (hg : LowerSemicontinuous g) :
+    LowerSemicontinuous (fun x ↦ f x + g x) := by
+  intro x y hy
+  have hfbot : f x ≠ ⊥ := by
+    intro h
+    simp [h] at hy
+  have hgbot : g x ≠ ⊥ := by
+    intro h
+    simp [h] at hy
+  exact LowerSemicontinuousAt.add' (hf x) (hg x)
+    (EReal.continuousAt_add (.inr hgbot) (.inl hfbot)) y hy

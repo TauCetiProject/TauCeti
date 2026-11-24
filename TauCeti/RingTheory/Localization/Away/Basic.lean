@@ -64,6 +64,10 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
   `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.injective_iff_isRegular`: the localization map away from `x` is injective
+  if and only if `x` is regular.
+* `IsLocalization.Away.map_eq` and `IsLocalization.Away.map_mk'`: the map `A_t → B_{f t}`
+  induced by `f : A →+* B` sends `[a]` to `[f a]` and the fraction `a / s` to `f a / f s`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -98,12 +102,19 @@ source never states.
 `mk'_pow_eq_invSelf_pow_mul` is **also a later addition with no AINTLIB analogue**, proved here
 directly from Mathlib's `mk'` API.
 
+`IsLocalization.Away.injective_iff_isRegular` is **also a later addition with no AINTLIB analogue**,
+proved here directly from Mathlib's `IsLocalization.injective_iff_isRegular`.
+
 `IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
 nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `mk'` API.
 
 `Localization.isScalarTower_awayMap` is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `IsLocalization.map_eq`.
+
+`IsLocalization.Away.map_eq` and `IsLocalization.Away.map_mk'` are **also later additions with no
+AINTLIB analogue**: they specialise Mathlib's `IsLocalization.map_eq` and `IsLocalization.map_mk'`
+to `IsLocalization.Away.map`.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -483,6 +494,32 @@ theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algeb
   have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
   exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
     inferInstance
+
+/-- The localization map away from `x` is injective if and only if `x` is regular. -/
+theorem injective_iff_isRegular {A S : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    (x : A) [IsLocalization.Away x S] :
+    Function.Injective (algebraMap A S) ↔ IsRegular x := by
+  rw [IsLocalization.injective_iff_isRegular (Submonoid.powers x)]
+  exact ⟨fun h ↦ h ⟨x, Submonoid.mem_powers x⟩, fun hx ⟨_, k, hk⟩ ↦ hk ▸ hx.pow k⟩
+
+section Map
+
+variable {A B : Type*} [CommSemiring A] [CommSemiring B] (f : A →+* B) (t : A)
+variable (S Q : Type*) [CommSemiring S] [CommSemiring Q] [Algebra A S] [Algebra B Q]
+  [IsLocalization.Away t S] [IsLocalization.Away (f t) Q]
+
+/-- The map `A_t → B_{f t}` sends `[a]` to `[f a]`. -/
+@[simp]
+theorem map_eq (a : A) : map S Q f t (algebraMap A S a) = algebraMap B Q (f a) :=
+  IsLocalization.map_eq _ _
+
+/-- The map `A_t → B_{f t}` sends the fraction `a / s` to `f a / f s`. -/
+theorem map_mk' (a : A) (s : Submonoid.powers t) :
+    map S Q f t (mk' S a s) =
+      mk' Q (f a) ⟨f s, Submonoid.map_powers f t ▸ Submonoid.mem_map_of_mem f s.property⟩ :=
+  IsLocalization.map_mk' _ _ _
+
+end Map
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 

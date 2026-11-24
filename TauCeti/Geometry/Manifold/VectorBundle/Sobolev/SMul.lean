@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 
 /-!
 # Multiplication by a smooth function on Sobolev sections
@@ -60,8 +61,15 @@ components of the section `x ↦ φ x • s x`
 * `TauCeti.SobolevSection.contMDiffSMulL_const`, `TauCeti.SobolevSection.contMDiffSMulL_add`,
   `TauCeti.SobolevSection.contMDiffSMulL_mul`: multiplication by constants, additivity and
   multiplicativity in the multiplier.
+* `TauCeti.SobolevSection.contMDiffSMulL_contMDiffSMulL_of_eqOn`: a multiplier equal to `1` on
+  the support of `φ` fixes `φ • w`.
+* `TauCeti.SobolevSection.contMDiffSMulL_finsetSum`,
+  `TauCeti.SobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one`: additivity over finite sums
+  of multipliers; multipliers summing to `1`, such as a smooth partition of unity, decompose `w`.
 * `TauCeti.SobolevSection.lowerOrderL_contMDiffSMulL`: multiplication commutes with the inclusion
   `W^{k+1,p}(V) → W^{k,p}(V)`.
+* `TauCeti.SobolevSection.contMDiffSMulL_ofContMDiffSection`: multiplying the Sobolev section of a
+  `Cᵏ` section `s` by `φ` gives the Sobolev section of `x ↦ φ x • s x`.
 
 ## References
 
@@ -323,6 +331,40 @@ theorem contMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     contMDiffSMulL A μ p k (hφ.add hψ) = contMDiffSMulL A μ p k hφ + contMDiffSMulL A μ p k hψ :=
   A.sectionChartData.contDiffOnSMulL_add μ p k _ _ _ _ _ _ _
 
+/-- Smooth multiplication depends only on the multiplier, not on the proof of its smoothness. -/
+theorem contMDiffSMulL_congr (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) (h : φ = ψ) :
+    contMDiffSMulL A μ p k hφ = contMDiffSMulL A μ p k hψ := by
+  subst h
+  rfl
+
+/-- Smooth multiplication is additive in the multiplier over finite sums. -/
+theorem contMDiffSMulL_finsetSum {ι : Type*} (s : Finset ι) {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (φ i)) :
+    contMDiffSMulL A μ p k (contMDiff_finsetSum (t := s) fun i _ ↦ hφ i) =
+      ∑ i ∈ s, contMDiffSMulL A μ p k (hφ i) := by
+  induction s using Finset.cons_induction with
+  | empty =>
+    symm
+    rw [Finset.sum_empty, contMDiffSMulL_congr _ (contMDiff_const (c := (0 : ℝ)))
+      (funext fun _ ↦ Finset.sum_empty), contMDiffSMulL_const]
+    exact (zero_smul ℝ _).symm
+  | cons a s ha ih =>
+    rw [Finset.sum_cons, ← ih, ← contMDiffSMulL_add]
+    exact contMDiffSMulL_congr _ _ (funext fun _ ↦ by rw [Pi.add_apply, Finset.sum_cons])
+
+/-- **Partition of unity.** If smooth functions `φ i`, finitely many, sum to one at every point,
+then every element of `W^{k,p}(V)` is the sum of its products with the `φ i`. -/
+theorem sum_contMDiffSMulL_eq_self_of_sum_eq_one {ι : Type*} [Fintype ι] {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (φ i)) (h1 : ∀ x, ∑ i, φ i x = 1)
+    (w : SobolevSection A μ p k) :
+    ∑ i, contMDiffSMulL A μ p k (hφ i) w = w := by
+  have h := congrArg (fun T : SobolevSection A μ p k →L[ℝ] SobolevSection A μ p k ↦ T w)
+    (contMDiffSMulL_finsetSum Finset.univ hφ)
+  simp only [FunLike.coe_sum, Finset.sum_apply] at h
+  rw [← h, contMDiffSMulL_congr _ contMDiff_const (funext h1), contMDiffSMulL_const, one_smul,
+    ContinuousLinearMap.id_apply]
+
 /-- Smooth multiplication is multiplicative in the multiplier: `(φ ψ) • w = φ • (ψ • w)`. -/
 theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) :
@@ -330,12 +372,35 @@ theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
       (contMDiffSMulL A μ p k hφ).comp (contMDiffSMulL A μ p k hψ) :=
   A.sectionChartData.contDiffOnSMulL_mul μ p k _ _ _ _ _ _ _
 
+/-- If `ψ = 1` on the support of `φ`, then `ψ • (φ • w) = φ • w`. -/
+theorem contMDiffSMulL_contMDiffSMulL_of_eqOn (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) (h : EqOn ψ 1 (tsupport φ)) (w : SobolevSection A μ p k) :
+    contMDiffSMulL A μ p k hψ (contMDiffSMulL A μ p k hφ w) = contMDiffSMulL A μ p k hφ w := by
+  rw [← ContinuousLinearMap.comp_apply, ← contMDiffSMulL_mul]
+  refine congrArg (· w) (contMDiffSMulL_congr _ _ (funext fun x ↦ ?_))
+  by_cases hx : x ∈ tsupport φ
+  · simp [h hx]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (w : SobolevSection A μ p (k + 1)) :
     A.sectionChartData.lowerOrderL μ p k (contMDiffSMulL A μ p (k + 1) hφ w) =
       contMDiffSMulL A μ p k hφ (A.sectionChartData.lowerOrderL μ p k w) :=
   A.sectionChartData.lowerOrderL_contDiffOnSMulL μ p k _ _ _ _ _ w
+
+variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
+/-- Multiplying the Sobolev section of a `Cᵏ` section `s` by a smooth function `χ` gives the
+Sobolev section of the `Cᵏ` section `x ↦ χ x • s x`. -/
+@[simp]
+theorem contMDiffSMulL_ofContMDiffSection {χ : M → ℝ} (hχ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ χ)
+    (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
+    contMDiffSMulL A μ p k hχ (ofContMDiffSection A μ p k s) =
+      ofContMDiffSection A μ p k
+        ⟨fun x ↦ χ x • s x, (hχ.of_le (by exact_mod_cast le_top)).smul_section s.contMDiff⟩ :=
+  eq_of_ae_eq_coord
+    (chartValueL_contMDiffSMulL_ae_coord hχ (chartValueL_ofContMDiffSection_ae A μ p k s))
+    (chartValueL_ofContMDiffSection_ae A μ p k _)
 
 end SobolevSection
 

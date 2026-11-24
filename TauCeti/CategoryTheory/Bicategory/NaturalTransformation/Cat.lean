@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Equivalence
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Equivalence
 
@@ -26,7 +27,12 @@ modification with unitor components from a composite of two such transformations
 arbitrary `1`-morphisms, so that they apply by unification to goals whose `1`-morphisms are values
 of composite pseudofunctors, which `simp` and `rw` do not see through. The same reduction
 handles identity and composite transport cells. The file also evaluates the naturality cell
-of a composite strong transformation on objects, with the Cat endpoints made explicit.
+of a composite strong transformation on objects, with the Cat endpoints made explicit, and
+packages the components of a naturality isomorphism at an object
+(`Pseudofunctor.StrongTrans.naturalityObjIso`). It also conjugates pullbacks of morphisms by
+the naturality isomorphisms of a strong transformation. When the values of the target
+pseudofunctor are groupoids, every modification between strong transformations into it is
+invertible (`Pseudofunctor.StrongTrans.isGroupoid_of_isGroupoid`).
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
@@ -148,6 +154,48 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
     simp
   exact (congrArg (fun m => m.toNatTrans.app X)
     (categoryStruct_comp_naturality_hom η θ f)).trans h
+
+/-- The component at an object `X` of the naturality isomorphism of a strong transformation
+`η : F ⟶ G` into `Cat` along `f : a ⟶ b`: the image under `η` of the transport of `X` along `f`
+is isomorphic to the transport along `f` of the image of `X` under `η`. -/
+noncomputable def naturalityObjIso {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.app b).toFunctor.obj ((F.map f).toFunctor.obj X) ≅
+      (G.map f).toFunctor.obj ((η.app a).toFunctor.obj X) :=
+  (Cat.Hom.toNatIso (η.naturality f)).app X
+
+@[simp]
+lemma naturalityObjIso_hom {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.naturalityObjIso f X).hom = (η.naturality f).hom.toNatTrans.app X :=
+  (rfl)
+
+@[simp]
+lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
+    (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
+  (rfl)
+
+/-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`
+turns the image under `η.app b` of the pullback of a morphism `φ` into the pullback of the image
+of `φ` under `η.app a`. -/
+@[reassoc]
+lemma naturality_naturality_1 {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) {a b : B} (f : a ⟶ b) {X Y : F.obj a} (φ : X ⟶ Y) :
+    (η.naturality f).inv.toNatTrans.app X ≫
+        (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) ≫
+          (η.naturality f).hom.toNatTrans.app Y =
+      (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
+  NatIso.naturality_1 (Cat.Hom.toNatIso (η.naturality f)) φ
+
+/-- If the values of `G` are groupoids, every modification between strong transformations
+`F ⟶ G` is invertible, so strong transformations `F ⟶ G` and their modifications form a
+groupoid. This applies when `G` is a gerbe. -/
+instance isGroupoid_of_isGroupoid {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} [∀ b, IsGroupoid (G.obj b)] : IsGroupoid (F ⟶ G) where
+  all_isIso Γ := by
+    have (a : B) : IsIso (Γ.as.app a) := Cat.Hom₂.isIso_of_isIso_app _
+    exact isIso_of_isIso_app Γ
 
 end Pseudofunctor.StrongTrans
 

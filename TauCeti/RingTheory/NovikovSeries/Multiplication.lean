@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.NovikovSeries.Basic
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.MonoidAlgebra.Defs
+public import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.RingTheory.Ideal.BigOperators
 
 /-!
 # Convolution of Novikov series
@@ -36,7 +38,8 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
 ## Main definitions
 
 * `TauCeti.NovikovSeries.convolution`: the convolution of Novikov series along an additive
-  bilinear map of their coefficients.
+  bilinear map of their coefficients. Its `R`-bilinear version along an `R`-bilinear map is
+  `TauCeti.NovikovSeries.convolutionₗ`, in `TauCeti.RingTheory.NovikovSeries.Convolution`.
 * `TauCeti.NovikovSeries.instMul`: the convolution product, along multiplication.
 * `TauCeti.NovikovSeries.instSemiring`, `TauCeti.NovikovSeries.instCommRing`, ...: the
   (commutative) (semi)ring structures, with unit the monomial `single 0 1`.
@@ -49,8 +52,11 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
 
 ## Main results
 
-* `TauCeti.NovikovSeries.coeff_mul_eq_sum`: computing a coefficient of a product over any finite
-  set of pairs containing the pairs of support exponents.
+* `TauCeti.NovikovSeries.coeff_convolution_eq_sum`, `TauCeti.NovikovSeries.coeff_mul_eq_sum`:
+  computing a coefficient of a convolution or a product over any finite set of pairs containing
+  the pairs of support exponents.
+* `TauCeti.NovikovSeries.convolution_add_left`, `TauCeti.NovikovSeries.convolution_add_right`: the
+  convolution is biadditive.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
 * `TauCeti.NovikovSeries.convolution_single_single`, `TauCeti.NovikovSeries.single_mul_single`
@@ -208,6 +214,28 @@ theorem convolution_single_single (B : V →+ W →+ U) (g g' : H) (x : V) (y : 
     subst hu hu'
     exact mem_filter.2 ⟨mem_singleton_self _, huu'⟩
 
+/-- A nonzero coefficient of a convolution comes from a pair of support exponents. -/
+theorem exists_add_eq_of_coeff_convolution_ne_zero {B : V →+ W →+ U} {v : NovikovSeries V H N}
+    {w : NovikovSeries W H N} {h : H} (hvw : (convolution B v w).coeff h ≠ 0) :
+    ∃ u u', u + u' = h ∧ v.coeff u ≠ 0 ∧ w.coeff u' ≠ 0 := by
+  obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hvw
+  rw [Set.Finite.mem_toFinset] at hp
+  exact ⟨p.1, p.2, hp⟩
+
+/-- Convolving with the zero series on the left gives zero. -/
+@[simp]
+theorem zero_convolution (B : V →+ W →+ U) (w : NovikovSeries W H N) :
+    convolution B (0 : NovikovSeries V H N) w = 0 := by
+  ext h
+  simp [coeff_convolution]
+
+/-- Convolving with the zero series on the right gives zero. -/
+@[simp]
+theorem convolution_zero (B : V →+ W →+ U) (v : NovikovSeries V H N) :
+    convolution B v (0 : NovikovSeries W H N) = 0 := by
+  ext h
+  simp [coeff_convolution]
+
 end Convolution
 
 section Mul
@@ -217,7 +245,12 @@ variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocSemiring R]
 /-- The convolution product of Novikov series: the coefficient of `a * b` at `h` is the finite
 sum of `a.coeff u * b.coeff v` over the pairs `(u, v)` of support exponents with `u + v = h`. -/
 instance instMul : Mul (NovikovSeries R H N) where
-  mul := convolution (AddMonoidHom.mul)
+  mul := convolution AddMonoidHom.mul
+
+/-- The product of Novikov series is their convolution along the multiplication of `R`. -/
+theorem mul_eq_convolution (a b : NovikovSeries R H N) :
+    a * b = convolution AddMonoidHom.mul a b :=
+  (rfl)
 
 /-- The coefficient of `a * b` at `h`, as a sum over the finite set of pairs of support exponents
 adding up to `h`. -/
@@ -235,10 +268,8 @@ theorem coeff_mul_eq_sum {a b : NovikovSeries R H N} {h : H} {s : Finset (H × H
 
 /-- A nonzero coefficient of a product comes from a pair of support exponents. -/
 theorem exists_add_eq_of_coeff_mul_ne_zero {a b : NovikovSeries R H N} {h : H}
-    (hab : (a * b).coeff h ≠ 0) : ∃ u v, u + v = h ∧ a.coeff u ≠ 0 ∧ b.coeff v ≠ 0 := by
-  obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hab
-  rw [Set.Finite.mem_toFinset] at hp
-  exact ⟨p.1, p.2, hp⟩
+    (hab : (a * b).coeff h ≠ 0) : ∃ u v, u + v = h ∧ a.coeff u ≠ 0 ∧ b.coeff v ≠ 0 :=
+  exists_add_eq_of_coeff_convolution_ne_zero hab
 
 /-- The support of a product lies in the sum of the supports. -/
 theorem support_mul_subset (a b : NovikovSeries R H N) :
@@ -325,12 +356,8 @@ theorem coeff_mul_single_add [IsRightCancelAdd H] (a : NovikovSeries R H N) (g :
 instance instNonUnitalNonAssocSemiring : NonUnitalNonAssocSemiring (NovikovSeries R H N) where
   left_distrib := convolution_add_right _
   right_distrib := convolution_add_left _
-  zero_mul a := by
-    ext h
-    simp [coeff_mul]
-  mul_zero a := by
-    ext h
-    simp [coeff_mul]
+  zero_mul := zero_convolution _
+  mul_zero := convolution_zero _
 
 end Mul
 
@@ -673,6 +700,30 @@ theorem coeffZeroRingEquiv_symm_apply [NonUnitalNonAssocSemiring R] (r : R) :
   (rfl)
 
 end Subsingleton
+
+section Coefficients
+
+/-! ### Coefficients in an ideal -/
+
+variable {R H : Type*} [CommSemiring R] [AddMonoid H] {N : H →+ ℝ}
+
+/-- If the coefficients of `a` lie in an ideal `I` and those of `b` lie in `J`, then the
+coefficients of `a * b` lie in `I * J`. -/
+theorem coeff_mul_mem_mul {I J : Ideal R} {a b : NovikovSeries R H N} (ha : ∀ h, a.coeff h ∈ I)
+    (hb : ∀ h, b.coeff h ∈ J) (h : H) : (a * b).coeff h ∈ I * J := by
+  rw [coeff_mul]
+  exact Ideal.sum_mem _ fun p _ => Ideal.mul_mem_mul (ha p.1) (hb p.2)
+
+/-- If the coefficients of `a` lie in an ideal `I`, then those of `a ^ n` lie in `I ^ n`. -/
+theorem coeff_pow_mem_pow {I : Ideal R} {a : NovikovSeries R H N} (ha : ∀ h, a.coeff h ∈ I)
+    (n : ℕ) (h : H) : (a ^ n).coeff h ∈ I ^ n := by
+  induction n generalizing h with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, pow_succ]
+    exact coeff_mul_mem_mul ih ha h
+
+end Coefficients
 
 end NovikovSeries
 
