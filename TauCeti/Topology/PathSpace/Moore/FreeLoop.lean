@@ -299,6 +299,11 @@ theorem toMoorePath_toMooreLoop (γ : MooreFreeLoopSpace X) :
 theorem length_toMooreLoop (γ : MooreFreeLoopSpace X) : γ.toMooreLoop.length = γ.length := by
   rw [← MooreLoopSpace.length_toMoorePath, toMoorePath_toMooreLoop, length_toMoorePath]
 
+/-- A constant free loop, read as a based loop, is the unit loop. -/
+@[simp]
+theorem toMooreLoop_const (x : X) : (const x).toMooreLoop = 1 :=
+  MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
+
 /-- Reading a free loop as a based loop at its base point and back gives the same free loop. -/
 @[simp]
 theorem toFreeLoop_toMooreLoop (γ : MooreFreeLoopSpace X) : γ.toMooreLoop.toFreeLoop = γ :=

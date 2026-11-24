@@ -81,6 +81,12 @@ def signRankOneLocalSystem {x : X} (hx : (p ⁻¹' {x}).Finite) : RankOneLocalSy
   RankOneLocalSystem.ofMonodromy
     ((Units.map (Int.castRingHom R).toMonoidHom).comp (hp.signCharacter hx))
 
+theorem signRankOneLocalSystem_def {x : X} (hx : (p ⁻¹' {x}).Finite) :
+    hp.signRankOneLocalSystem R hx =
+      RankOneLocalSystem.ofMonodromy
+        ((Units.map (Int.castRingHom R).toMonoidHom).comp (hp.signCharacter hx)) :=
+  (rfl)
+
 variable {R} {x : X}
 
 /-- The monodromy of the sign local system is the sign character of the covering. -/
@@ -145,8 +151,8 @@ theorem freeLoopSignTwist_def (γ₀ : MooreFreeLoopSpace X) :
           (MooreFreeLoopSpace.basepointMap_apply γ₀)
           (hp.signRankOneLocalSystem R (hfin γ₀.basepoint) ^
             (-hp.freeLoopSignExponent hfin γ₀)) := by
-  rw [freeLoopSignTwist, RankOneLocalSystem.freeLoopTwist_def, freeLoopSignExponent_def]
-  rfl
+  rw [freeLoopSignTwist, RankOneLocalSystem.freeLoopTwist_def, freeLoopSignExponent_def,
+    signRankOneLocalSystem_def]
 
 /-- On a component of free loops of sign `1`, the sign twist is `ev₀^*(o⁻¹)`. -/
 theorem freeLoopSignTwist_eq_pullback_of_freeLoopSignCharacter_eq_one {γ₀ : MooreFreeLoopSpace X}
@@ -155,8 +161,8 @@ theorem freeLoopSignTwist_eq_pullback_of_freeLoopSignCharacter_eq_one {γ₀ : M
       RankOneLocalSystem.pullback (MooreFreeLoopSpace.basepointMap X)
         (MooreFreeLoopSpace.basepointMap_apply γ₀)
         (hp.signRankOneLocalSystem R (hfin γ₀.basepoint))⁻¹ := by
-  rw [inv_signRankOneLocalSystem]
-  exact RankOneLocalSystem.freeLoopTwist_of_apply_eq_one
+  rw [freeLoopSignTwist, inv_signRankOneLocalSystem, signRankOneLocalSystem_def]
+  exact RankOneLocalSystem.freeLoopTwist_eq_pullback_of_apply_eq_one
     ((hp.freeLoopSignCharacter_toCircleMap hfin γ₀).symm.trans h)
 
 /-- On a component of free loops of sign `-1`, the sign twist is trivial: there it is
@@ -164,7 +170,7 @@ theorem freeLoopSignTwist_eq_pullback_of_freeLoopSignCharacter_eq_one {γ₀ : M
 theorem freeLoopSignTwist_eq_one_of_freeLoopSignCharacter_eq_neg_one {γ₀ : MooreFreeLoopSpace X}
     (h : hp.freeLoopSignCharacter hfin (MooreFreeLoopSpace.toCircleMap γ₀) = -1) :
     hp.freeLoopSignTwist R hfin γ₀ = 1 :=
-  RankOneLocalSystem.freeLoopTwist_of_apply_ne_one <| by
+  RankOneLocalSystem.freeLoopTwist_eq_one_of_apply_ne_one <| by
     rw [← freeLoopSignCharacter_toCircleMap, h]
     decide
 

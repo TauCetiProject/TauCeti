@@ -35,8 +35,6 @@ statement for loops parametrized by the unit interval is
 
 * `TauCeti.orientationCharacter_eq_of_joined_toCircle`: freely homotopic loops have the same
   orientation character.
-* `TauCeti.orientationCharacter_fundamentalGroupHom_congr`: Moore loops with the same underlying
-  Moore path have the same orientation character.
 * `TauCeti.MooreFreeLoopSpace.orientationSign_eq_of_joined`: the orientation sign is constant on
   the path components of the free loop space.
 * `TauCeti.MooreFreeLoopSpace.orientationSign_const`: constant loops preserve the orientation.
@@ -73,15 +71,6 @@ theorem orientationCharacter_eq_of_joined_toCircle {x y : M} {ℓ₀ : Path x x}
   apply_fromPath_eq_of_joined_toCircle (orientationCharacter hd)
     (orientationCharacter_fundamentalGroupMulEquivOfPath hd) h
 
-/-- Moore loops in `M` with the same underlying Moore path have the same orientation character,
-even when their base points are only propositionally equal. -/
-theorem orientationCharacter_fundamentalGroupHom_congr {x y : M}
-    {α : MooreLoopSpace M y} {β : MooreLoopSpace M x} (h : α.toMoorePath = β.toMoorePath) :
-    orientationCharacter hd y (MooreLoopSpace.fundamentalGroupHom y α) =
-      orientationCharacter hd x (MooreLoopSpace.fundamentalGroupHom x β) := by
-  obtain rfl : y = x := by rw [← α.source_eq, h, β.source_eq]
-  rw [MooreLoopSpace.ext h]
-
 namespace MooreFreeLoopSpace
 
 /-- The **orientation sign** `w₁(γ) ∈ {±1}` of a free Moore loop `γ` in a manifold: the orientation
@@ -116,9 +105,7 @@ theorem orientationSign_eq_of_joined {γ γ' : MooreFreeLoopSpace M} (h : Joined
 /-- **Constant loops preserve the orientation.** -/
 @[simp]
 theorem orientationSign_const (x : M) : orientationSign hd (const x) = 1 := by
-  have h : (const x).toMooreLoop = 1 :=
-    MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
-  rw [orientationSign_def, h, map_one, map_one]
+  rw [orientationSign_def, toMooreLoop_const, map_one, map_one]
 
 end MooreFreeLoopSpace
 

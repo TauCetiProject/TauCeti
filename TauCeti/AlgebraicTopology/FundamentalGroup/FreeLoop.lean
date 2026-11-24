@@ -401,9 +401,7 @@ theorem signExponent_eq_of_joined
 /-- Constant loops have sign exponent `0`. -/
 @[simp]
 theorem signExponent_const (x : X) : signExponent χ (const x) = 0 := by
-  have h : (const x).toMooreLoop = 1 :=
-    MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
-  rw [signExponent_eq_zero_iff, h, map_one, map_one]
+  rw [signExponent_eq_zero_iff, toMooreLoop_const, map_one, map_one]
 
 end MooreFreeLoopSpace
 

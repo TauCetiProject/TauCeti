@@ -28,11 +28,12 @@ orientation double cover of a vector bundle give `IsCoveringMap.freeLoopSignTwis
 orientation characters of a manifold give `TauCeti.RankOneLocalSystem.viterboOrientationTwist`.
 
 When `χ` takes the value `1` on `γ` the twist is `ev₀^* o`, and otherwise it is trivial, because
-`o⁻¹ ⊗ o` is (`TauCeti.RankOneLocalSystem.freeLoopTwist_of_apply_eq_one`,
-`TauCeti.RankOneLocalSystem.freeLoopTwist_of_apply_ne_one`). A loop of free loops acts accordingly
-by `χ` of the loop traced by the base points, or trivially
+`o⁻¹ ⊗ o` is (`TauCeti.RankOneLocalSystem.freeLoopTwist_eq_pullback_of_apply_eq_one`,
+`TauCeti.RankOneLocalSystem.freeLoopTwist_eq_one_of_apply_ne_one`). A loop of free loops acts
+accordingly by `χ` of the loop traced by the base points, or trivially
 (`TauCeti.RankOneLocalSystem.freeLoopTwist_ρ_apply`). The twist is its own inverse, and it is
-trivial when `χ` is trivial at the base point or `2 = 0` in `R`.
+trivial when `χ` is trivial at the base point or `2 = 0` in `R`. Along the constant loops it is `o`
+(`TauCeti.RankOneLocalSystem.pullback_constMap_freeLoopTwist`).
 
 The factor `ev₀^*(o^{-w})` is needed to make the twist trivial along rotations. Rotating a free
 loop `γ` once around itself is a loop of free loops based at `γ` whose base points trace `γ`
@@ -48,10 +49,12 @@ rotation of every loop (`TauCeti.RankOneLocalSystem.freeLoopTwist_ρ_rotationLoo
 
 ## Main results
 
-* `TauCeti.RankOneLocalSystem.freeLoopTwist_of_apply_eq_one`,
-  `TauCeti.RankOneLocalSystem.freeLoopTwist_of_apply_ne_one`: its value on each kind of component.
+* `TauCeti.RankOneLocalSystem.freeLoopTwist_eq_pullback_of_apply_eq_one`,
+  `TauCeti.RankOneLocalSystem.freeLoopTwist_eq_one_of_apply_ne_one`: its value on each kind of
+  component.
 * `TauCeti.RankOneLocalSystem.freeLoopTwist_ρ_apply`,
   `TauCeti.RankOneLocalSystem.monodromy_freeLoopTwist`: its action and its monodromy.
+* `TauCeti.RankOneLocalSystem.pullback_constMap_freeLoopTwist`: along the constant loops it is `o`.
 * `TauCeti.RankOneLocalSystem.freeLoopTwist_ρ_rotationLoop`: it is trivial along the rotation of
   every loop.
 
@@ -97,7 +100,7 @@ theorem freeLoopTwist_def (γ : MooreFreeLoopSpace X) :
   (rfl)
 
 /-- **Where `χ` takes the value `1` on `γ`, the twist is `ev₀^* o`.** -/
-theorem freeLoopTwist_of_apply_eq_one {γ : MooreFreeLoopSpace X}
+theorem freeLoopTwist_eq_pullback_of_apply_eq_one {γ : MooreFreeLoopSpace X}
     (h : χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1) :
     freeLoopTwist R χ γ =
       pullback (basepointMap X) (basepointMap_apply γ)
@@ -107,7 +110,7 @@ theorem freeLoopTwist_of_apply_eq_one {γ : MooreFreeLoopSpace X}
 
 /-- **Where `χ` takes the value `-1` on `γ`, the twist is trivial**: there it is
 `ev₀^*(o⁻¹ ⊗ o)`. -/
-theorem freeLoopTwist_of_apply_ne_one {γ : MooreFreeLoopSpace X}
+theorem freeLoopTwist_eq_one_of_apply_ne_one {γ : MooreFreeLoopSpace X}
     (h : χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) ≠ 1) :
     freeLoopTwist R χ γ = 1 := by
   rw [freeLoopTwist_def,
@@ -126,8 +129,9 @@ theorem freeLoopTwist_ρ_apply (γ : MooreFreeLoopSpace X)
             (MooreLoopSpace.map (basepointMap X) (basepointMap_apply γ) Γ)))
       else 1 := by
   split_ifs with h
-  · rw [freeLoopTwist_of_apply_eq_one h, pullback_ρ_apply, ofMonodromy_unitsMap_comp_ρ_apply]
-  · rw [freeLoopTwist_of_apply_ne_one h, one_ρ, MonoidHom.one_apply]
+  · rw [freeLoopTwist_eq_pullback_of_apply_eq_one h, pullback_ρ_apply,
+      ofMonodromy_unitsMap_comp_ρ_apply]
+  · rw [freeLoopTwist_eq_one_of_apply_ne_one h, one_ρ, MonoidHom.one_apply]
 
 /-- The monodromy of the twist: `χ` composed with the map of fundamental groups induced by
 evaluation at the base point, read in `Rˣ`, when `χ` takes the value `1` on `γ`, and trivial
@@ -139,16 +143,16 @@ theorem monodromy_freeLoopTwist (γ : MooreFreeLoopSpace X) :
           (FundamentalGroup.mapOfEq (basepointMap X) (basepointMap_apply γ))
       else 1 := by
   split_ifs with h
-  · rw [freeLoopTwist_of_apply_eq_one h, monodromy_pullback, monodromy_ofMonodromy]
-  · rw [freeLoopTwist_of_apply_ne_one h, monodromy_one]
+  · rw [freeLoopTwist_eq_pullback_of_apply_eq_one h, monodromy_pullback, monodromy_ofMonodromy]
+  · rw [freeLoopTwist_eq_one_of_apply_ne_one h, monodromy_one]
 
 /-- **The twist is its own inverse.** -/
 @[simp]
 theorem inv_freeLoopTwist (γ : MooreFreeLoopSpace X) :
     (freeLoopTwist R χ γ)⁻¹ = freeLoopTwist R χ γ := by
   by_cases h : χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1
-  · rw [freeLoopTwist_of_apply_eq_one h, ← map_inv, inv_ofMonodromy_unitsMap_comp]
-  · rw [freeLoopTwist_of_apply_ne_one h, inv_one]
+  · rw [freeLoopTwist_eq_pullback_of_apply_eq_one h, ← map_inv, inv_ofMonodromy_unitsMap_comp]
+  · rw [freeLoopTwist_eq_one_of_apply_ne_one h, inv_one]
 
 /-- A character trivial at the base point gives a trivial twist. -/
 theorem freeLoopTwist_eq_one {γ : MooreFreeLoopSpace X} (h : χ γ.basepoint = 1) :
@@ -161,6 +165,21 @@ theorem freeLoopTwist_eq_one_of_two_eq_zero (h2 : (2 : R) = 0) (γ : MooreFreeLo
     freeLoopTwist R χ γ = 1 := by
   rw [freeLoopTwist_def, (ofMonodromy_unitsMap_comp_eq_one_iff _).2 (.inr h2), inv_one, one_zpow,
     map_one, one_mul]
+
+/-! ### Constant loops -/
+
+/-- **Along the constant loops the twist is `o`**: its pullback along the inclusion `X → 𝓛X` of the
+constant loops is the rank-one local system with monodromy `χ` read in `Rˣ`. -/
+theorem pullback_constMap_freeLoopTwist (x : X) :
+    pullback (constMap X) (constMap_apply x) (freeLoopTwist R χ (const x)) =
+      ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp (χ x)) := by
+  refine RankOneLocalSystem.ext <| MonoidHom.ext fun δ ↦ ?_
+  rw [freeLoopTwist_eq_pullback_of_apply_eq_one (by rw [toMooreLoop_const, map_one, map_one]),
+    pullback_ρ_apply, pullback_ρ_apply, ofMonodromy_unitsMap_comp_ρ_apply,
+    ofMonodromy_unitsMap_comp_ρ_apply]
+  congr 1
+  exact MooreLoopSpace.apply_fundamentalGroupHom_congr χ <| MoorePath.ext (by simp) fun t ↦ by
+    simp [MoorePath.map_apply]
 
 /-! ### The rotation of a loop -/
 
@@ -191,9 +210,9 @@ theorem pullback_basepointMap_ofMonodromy_ρ_rotationLoop_ne_one (h2 : (2 : R) �
 theorem freeLoopTwist_ρ_rotationLoop (γ : MooreFreeLoopSpace X) :
     (freeLoopTwist R χ γ).ρ γ.rotationLoop = 1 := by
   by_cases h : χ γ.basepoint (MooreLoopSpace.fundamentalGroupHom γ.basepoint γ.toMooreLoop) = 1
-  · rw [freeLoopTwist_of_apply_eq_one h, pullback_basepointMap_ofMonodromy_ρ_rotationLoop, h,
-      map_one]
-  · rw [freeLoopTwist_of_apply_ne_one h, one_ρ, MonoidHom.one_apply]
+  · rw [freeLoopTwist_eq_pullback_of_apply_eq_one h,
+      pullback_basepointMap_ofMonodromy_ρ_rotationLoop, h, map_one]
+  · rw [freeLoopTwist_eq_one_of_apply_ne_one h, one_ρ, MonoidHom.one_apply]
 
 end RankOneLocalSystem
 

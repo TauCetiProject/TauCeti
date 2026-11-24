@@ -55,7 +55,8 @@ identification `i_M^* η₀ ≃ o_M` of the twist along the constant loops.
 ## Main results
 
 * `TauCeti.RankOneLocalSystem.viterboOrientationTwist_ρ_rotationLoop`: it is trivial along the
-  rotation of every loop, while `ev₀^* o_M` is not
+  rotation of every loop, while `ev₀^* o_M` is not trivial along the rotation of an
+  orientation-reversing loop when `2 ≠ 0`
   (`TauCeti.RankOneLocalSystem.pullback_basepointMap_orientation_ρ_rotationLoop_ne_one`).
 * `TauCeti.RankOneLocalSystem.pullback_constMap_viterboOrientationTwist`: along the constant loops
   it is the orientation local system.
@@ -147,14 +148,7 @@ system**: its pullback along the inclusion `M → 𝓛M` of the constant loops i
 theorem pullback_constMap_viterboOrientationTwist (x : M) :
     pullback (constMap M) (constMap_apply x) (viterboOrientationTwist R hd (const x)) =
       orientation R hd x := by
-  have h := orientationSign_const hd x
-  rw [orientationSign_def] at h
-  refine RankOneLocalSystem.ext <| MonoidHom.ext fun δ ↦ ?_
-  rw [viterboOrientationTwist_eq_freeLoopTwist, freeLoopTwist_of_apply_eq_one h, pullback_ρ_apply,
-    pullback_ρ_apply, ofMonodromy_unitsMap_comp_ρ_apply, orientation_ρ_apply]
-  congr 1
-  exact orientationCharacter_fundamentalGroupHom_congr hd <| MoorePath.ext (by simp) fun t ↦ by
-    simp [MoorePath.map_apply]
+  rw [viterboOrientationTwist_eq_freeLoopTwist, pullback_constMap_freeLoopTwist, orientation_def]
 
 end RankOneLocalSystem
 
