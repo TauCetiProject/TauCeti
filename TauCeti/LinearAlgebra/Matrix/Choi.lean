@@ -13,9 +13,9 @@ import Mathlib.LinearAlgebra.Matrix.StdBasis
 
 The Choi matrix uses `Matrix.comp` to flatten the block matrix of images of the
 input matrix units. Its indices agree with the column stacking of `Matrix.vec`,
-with the input index first. Choi matrices respect pointwise finite sums and scalar
-multiplication and determine linear maps with finite input index types and arbitrary
-output index types.
+with the input index first. Choi matrices respect pointwise zero, addition, finite sums
+and scalar multiplication. They determine linear maps with finite input index types and
+arbitrary output index types.
 `choiMatrixAddEquiv` reconstructs such a linear map from the blocks of its Choi matrix.
 
 For a map `X ↦ A * X * B`, the Choi matrix is the outer product of `A.vec`
@@ -54,20 +54,42 @@ theorem choiMatrix_apply {m n R : Type*} [DecidableEq n] [Zero R] [One R]
     choiMatrix Φ p q = Φ (Matrix.single p.fst q.fst 1) p.snd q.snd := by
   simp only [choiMatrix, Matrix.comp_apply, Matrix.of_apply]
 
+/-- The Choi matrix of the pointwise zero map is zero. -/
+@[simp]
+theorem choiMatrix_zero {m n R : Type*} [DecidableEq n] [Zero R] [One R] :
+    choiMatrix (0 : Matrix n n R → Matrix m m R) = 0 := by
+  ext p q
+  simp only [choiMatrix_apply, Pi.zero_apply, Matrix.zero_apply]
+
+/-- The Choi matrix of the zero linear map is zero. -/
+@[simp]
+theorem choiMatrix_zero_linearMap {m n R : Type*} [DecidableEq n] [Semiring R] :
+    choiMatrix (0 : Matrix n n R →ₗ[R] Matrix m m R) = 0 := by
+  rw [(LinearMap.coe_zero_iff _).2 rfl, choiMatrix_zero]
+
+/-- Forming a Choi matrix commutes with pointwise addition of matrix-valued maps. -/
+@[simp]
+theorem choiMatrix_add {m n R : Type*} [DecidableEq n] [Zero R] [One R] [Add R]
+    (Φ Ψ : Matrix n n R → Matrix m m R) :
+    choiMatrix (Φ + Ψ) = choiMatrix Φ + choiMatrix Ψ := by
+  ext p q
+  simp only [choiMatrix_apply, Pi.add_apply, Matrix.add_apply]
+
 /-- Forming a Choi matrix commutes with finite pointwise sums of matrix-valued maps. -/
+@[simp]
 theorem choiMatrix_sum {ι m n R : Type*} [DecidableEq n] [AddCommMonoid R] [One R]
     (s : Finset ι) (Φ : ι → Matrix n n R → Matrix m m R) :
-    choiMatrix (fun X => ∑ i ∈ s, Φ i X) = ∑ i ∈ s, choiMatrix (Φ i) := by
+    choiMatrix (∑ i ∈ s, Φ i) = ∑ i ∈ s, choiMatrix (Φ i) := by
   ext p q
-  simp only [choiMatrix_apply, Matrix.sum_apply]
+  simp only [choiMatrix_apply, Finset.sum_apply, Matrix.sum_apply]
 
 /-- Forming a Choi matrix commutes with pointwise scaling of a matrix-valued map. -/
 @[simp]
 theorem choiMatrix_smul {S m n R : Type*} [DecidableEq n] [Zero R] [One R] [SMul S R]
     (c : S) (Φ : Matrix n n R → Matrix m m R) :
-    choiMatrix (fun X => c • Φ X) = c • choiMatrix Φ := by
+    choiMatrix (c • Φ) = c • choiMatrix Φ := by
   ext p q
-  simp only [choiMatrix_apply, Matrix.smul_apply]
+  simp only [choiMatrix_apply, Pi.smul_apply, Matrix.smul_apply]
 
 /-- The additive equivalence sending a linear map with a finite input index type to its
 Choi matrix. The output index type is arbitrary. The inverse reconstructs the linear map
