@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Second
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Variance
 import Mathlib.Analysis.PSeries
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Almost-sure convergence of Wigner spectral moments
@@ -222,12 +223,13 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_of_seq {s : ℝ≥0
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ))
       atTop (𝓝 (∫ x, x ^ k ∂semicircleReal 0 s)) := by
   have := (hindep 0).isProbabilityMeasure
-  have hξ' (n ij hij) := (hξp n ij hij).memLp_and_integral_norm_pow_le_sqrt (hξ n ij hij)
-  have hη' (n i hi) := (hηp n i hi).memLp_and_integral_norm_pow_le_sqrt (hη n i hi)
+  have hle : (k : ℝ≥0∞) ≤ (2 * k : ℕ) := by exact_mod_cast Nat.le_mul_of_pos_left k two_pos
   have hmean := tendsto_integral_integral_pow_spectralMeasure_wignerMatrix' (P := fun _ ↦ P)
-    (k := k) (B := √B) (s := s) hindep hξzero hηzero (fun n ij hij ↦ (hξ' n ij hij).1)
-    (fun n i hi ↦ (hη' n i hi).1) (fun n ij hij ↦ (hξ' n ij hij).2)
-    (fun n i hi ↦ (hη' n i hi).2) hξsq
+    (k := k) (B := √B) (s := s) hindep hξzero hηzero
+    (fun n ij hij ↦ (hξp n ij hij).mono_exponent hle)
+    (fun n i hi ↦ (hηp n i hi).mono_exponent hle)
+    (fun n ij hij ↦ (hξp n ij hij).integral_norm_pow_le_sqrt (hξ n ij hij))
+    (fun n i hi ↦ (hηp n i hi).integral_norm_pow_le_sqrt (hη n i hi)) hξsq
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_of_seq
     hindep hξzero hηzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean
@@ -298,12 +300,13 @@ theorem ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ))
       atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hξ' (ij) := (hξp ij).memLp_and_integral_norm_pow_le_sqrt (hξ ij)
-  have hη' (i) := (hηp i).memLp_and_integral_norm_pow_le_sqrt (hη i)
+  have hle : ((2 * m + 1 : ℕ) : ℝ≥0∞) ≤ (2 * (2 * m + 1) : ℕ) := by exact_mod_cast (by omega)
   have hmean := tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
-    (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ↦ hηzero)
-    (fun _ ij ↦ (hξ' ij).1) (fun _ i ↦ (hη' i).1)
-    (fun _ ij ↦ (hξ' ij).2) (fun _ i ↦ (hη' i).2)
+    (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
+    (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
+    (fun _ ij _ ↦ (hξp ij).mono_exponent hle) (fun _ i _ ↦ (hηp i).mono_exponent hle)
+    (fun _ ij _ ↦ (hξp ij).integral_norm_pow_le_sqrt (hξ ij))
+    (fun _ i _ ↦ (hηp i).integral_norm_pow_le_sqrt (hη i))
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     hindep hξzero hηzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean

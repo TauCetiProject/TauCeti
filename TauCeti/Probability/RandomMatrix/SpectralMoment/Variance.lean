@@ -9,7 +9,7 @@ public import TauCeti.Probability.RandomMatrix.Covariance
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Expected
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Probability.Moments.Variance
-import TauCeti.Probability.Independence.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Covariance, variance, and concentration of Wigner empirical spectral moments
@@ -44,11 +44,12 @@ Borel--Cantelli lemma is established in
   `tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability`: Chebyshev tail bound
   and convergence in probability of moment fluctuations to zero, allowing varying spaces.
 * `tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix`: convergence to
-  zero of expected odd empirical spectral moments under `(2m + 1)`-st moment assumptions alone,
-  from the `O((n + 1)⁻¹/²)` bound
+  zero of expected odd empirical spectral moments under corner-local `(2m + 1)`-st moment
+  assumptions alone, from the `O((n + 1)⁻¹/²)` bound
   `TauCeti.Probability.abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le`.
 * `tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probability`: convergence in
-  probability of odd empirical spectral moments to zero, allowing varying spaces.
+  probability of odd empirical spectral moments to zero under corner-local hypotheses, allowing
+  varying spaces.
 * `tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_probability`: convergence in
   probability of the `k`-th empirical spectral moment to `∫ x, x ^ k ∂semicircleReal 0 s` when
   both entry families lie in `L^(2k)` in each corner with uniformly bounded `2k`-th absolute moment
@@ -70,33 +71,6 @@ open scoped Topology ENNReal NNReal
 namespace TauCeti.Probability
 
 section CornerHelpers
-
-open Classical in
-private theorem iIndepFun_ite_lt {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {n : ℕ}
-    (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P) :
-    iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
-      Sum.elim (fun ij ↦ if ij.val.2 < n then ξ ij else 0)
-        (fun i ω ↦ ((if i < n then η i else 0) ω : ℂ)) idx) P := by
-  have := hindep.isProbabilityMeasure
-  let s : Set (StrictUpper ⊕ ℕ) := {idx | Sum.elim (fun ij ↦ ij.val.2 < n) (fun i ↦ i < n) idx}
-  refine ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside (s := s) ?_ ?_
-  · refine (hindep.precomp (Equiv.subtypeSum (p := fun idx ↦ idx ∈ s)).injective).congr
-      fun ⟨idx, hidx⟩ ↦ .of_forall fun ω ↦ ?_
-    rcases idx with ij | i <;> simp only [s, Set.mem_ofPred_eq, Sum.elim_inl, Sum.elim_inr] at hidx
-    · change ξ ij ω = (if ij.val.2 < n then ξ ij else 0) ω
-      simp [hidx]
-    · change (η i ω : ℂ) = ((if i < n then η i else 0) ω : ℂ)
-      simp [hidx]
-  · intro idx hnot
-    refine ⟨0, .of_forall fun ω ↦ ?_⟩
-    rcases idx with ij | i <;> simp only [s, Set.mem_ofPred_eq, Sum.elim_inl, Sum.elim_inr] at hnot
-    · change (if ij.val.2 < n then ξ ij else 0) ω = 0
-      simp [hnot]
-    · change ((if i < n then η i else 0) ω : ℂ) = 0
-      simp [hnot]
 
 private theorem ite_zero_memLp_moment {ι Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     [NormedAddCommGroup E] [NormedSpace ℝ E] (p : ι → Prop) [DecidablePred p]
@@ -275,20 +249,21 @@ end FixedSpace
 section VaryingSpaces
 
 /-- Every expected odd empirical spectral moment of a Wigner matrix converges to zero under
-independent centered entries in `L^(2m + 1)` with uniformly bounded `(2m + 1)`-st absolute moments,
-including for triangular arrays on varying probability spaces. -/
+corner-local independent centered entries in `L^(2m + 1)` with uniformly bounded `(2m + 1)`-st
+absolute moments, including for triangular arrays on varying probability spaces. -/
 theorem tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {m : ℕ} {B : ℝ}
-    (hindep : ∀ n, iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
-      Sum.elim (ξ n) (fun i ω ↦ (η n i ω : ℂ)) idx) (P n))
-    (hξzero : ∀ n ij, ∫ ω, ξ n ij ω ∂P n = 0)
-    (hηzero : ∀ n i, ∫ ω, η n i ω ∂P n = 0)
-    (hξp : ∀ n ij, MemLp (ξ n ij) (2 * m + 1 : ℕ) (P n))
-    (hηp : ∀ n i, MemLp (η n i) (2 * m + 1 : ℕ) (P n))
-    (hξ : ∀ n ij, ∫ ω, ‖ξ n ij ω‖ ^ (2 * m + 1) ∂P n ≤ B)
-    (hη : ∀ n i, ∫ ω, ‖η n i ω‖ ^ (2 * m + 1) ∂P n ≤ B) :
+    (hindep : ∀ n, iIndepFun
+      (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
+        Sum.elim (fun ij ↦ ξ n ij.val) (fun i ω ↦ (η n i.val ω : ℂ)) r) (P n))
+    (hξzero : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ξ n ij ω ∂P n = 0)
+    (hηzero : ∀ n, ∀ i < n + 1, ∫ ω, η n i ω ∂P n = 0)
+    (hξp : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → MemLp (ξ n ij) (2 * m + 1 : ℕ) (P n))
+    (hηp : ∀ n, ∀ i < n + 1, MemLp (η n i) (2 * m + 1 : ℕ) (P n))
+    (hξ : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ‖ξ n ij ω‖ ^ (2 * m + 1) ∂P n ≤ B)
+    (hη : ∀ n, ∀ i < n + 1, ∫ ω, ‖η n i ω‖ ^ (2 * m + 1) ∂P n ≤ B) :
     Tendsto (fun n ↦ ∫ ω, (∫ x, x ^ (2 * m + 1)
       ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n)
@@ -300,9 +275,7 @@ theorem tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatr
   exact squeeze_zero_norm (fun n ↦ by
     simpa only [Real.norm_eq_abs] using
       abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le
-        (iIndepFun_sumElim_ofReal_subtype_lt (hindep n)) (fun ij _ ↦ hξzero n ij)
-        (fun i _ ↦ hηzero n i) (fun ij _ ↦ hξp n ij) (fun i _ ↦ hηp n i)
-        (fun ij _ ↦ hξ n ij) (fun i _ ↦ hη n i)) hlim
+        (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n)) hlim
 
 /-- Empirical spectral moment fluctuations around their expectations vanish in probability under
 corner-local independent centered entries in `L^(2k)` with uniformly bounded `2k`-th absolute
@@ -347,53 +320,37 @@ theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability
         (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n))
   exact tendsto_measure_abs_sub_integral_ge_of_tendsto_variance hmem hvar hε
 
-private theorem tendsto_measure_abs_sub_ge_of_tendsto_integral
-    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
-    {P : (n : ℕ) → Measure (Ω n)}
-    {X : (n : ℕ) → Ω n → ℝ} {c : ℝ}
-    (hmean : Tendsto (fun n ↦ ∫ ω, X n ω ∂P n) atTop (𝓝 c))
-    {ε : ℝ} (hε : 0 < ε)
-    (hfluc : Tendsto (fun n ↦ P n {ω | ε / 2 ≤ |X n ω - ∫ ω', X n ω' ∂P n|}) atTop (𝓝 0)) :
-    Tendsto (fun n ↦ P n {ω | ε ≤ |X n ω - c|}) atTop (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hfluc
-    (.of_forall fun _ ↦ bot_le) ?_
-  filter_upwards [Metric.tendsto_nhds.1 hmean (ε / 2) (half_pos hε)] with n hn
-  rw [Real.dist_eq] at hn
-  refine measure_mono fun ω hω ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hω ⊢
-  linarith [abs_sub_le (X n ω) (∫ ω', X n ω' ∂P n) c]
-
 /-- Every odd empirical spectral moment of a Wigner matrix converges to zero in probability under
-independent centered entries in `L^(4m + 2)` with uniformly bounded `(4m + 2)`-th absolute moments,
-including for triangular arrays on varying probability spaces. -/
+corner-local independent centered entries in `L^(4m + 2)` with uniformly bounded `(4m + 2)`-th
+absolute moments, including for triangular arrays on varying probability spaces. -/
 theorem tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probability
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {m : ℕ} {B : ℝ}
-    (hindep : ∀ n, iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
-      Sum.elim (ξ n) (fun i ω ↦ (η n i ω : ℂ)) idx) (P n))
-    (hξzero : ∀ n ij, ∫ ω, ξ n ij ω ∂P n = 0)
-    (hηzero : ∀ n i, ∫ ω, η n i ω ∂P n = 0)
-    (hξp : ∀ n ij, MemLp (ξ n ij) (2 * (2 * m + 1) : ℕ) (P n))
-    (hηp : ∀ n i, MemLp (η n i) (2 * (2 * m + 1) : ℕ) (P n))
-    (hξ : ∀ n ij, ∫ ω, ‖ξ n ij ω‖ ^ (2 * (2 * m + 1)) ∂P n ≤ B)
-    (hη : ∀ n i, ∫ ω, ‖η n i ω‖ ^ (2 * (2 * m + 1)) ∂P n ≤ B)
+    (hindep : ∀ n, iIndepFun
+      (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
+        Sum.elim (fun ij ↦ ξ n ij.val) (fun i ω ↦ (η n i.val ω : ℂ)) r) (P n))
+    (hξzero : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ξ n ij ω ∂P n = 0)
+    (hηzero : ∀ n, ∀ i < n + 1, ∫ ω, η n i ω ∂P n = 0)
+    (hξp : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → MemLp (ξ n ij) (2 * (2 * m + 1) : ℕ) (P n))
+    (hηp : ∀ n, ∀ i < n + 1, MemLp (η n i) (2 * (2 * m + 1) : ℕ) (P n))
+    (hξ : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 →
+      ∫ ω, ‖ξ n ij ω‖ ^ (2 * (2 * m + 1)) ∂P n ≤ B)
+    (hη : ∀ n, ∀ i < n + 1, ∫ ω, ‖η n i ω‖ ^ (2 * (2 * m + 1)) ∂P n ≤ B)
     {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun n ↦ P n {ω | ε ≤
       |∫ x, x ^ (2 * m + 1) ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)|})
       atTop (𝓝 0) := by
   have (n : ℕ) : IsProbabilityMeasure (P n) := (hindep n).isProbabilityMeasure
-  have hξ' (n ij) := (hξp n ij).memLp_and_integral_norm_pow_le_sqrt (hξ n ij)
-  have hη' (n i) := (hηp n i).memLp_and_integral_norm_pow_le_sqrt (hη n i)
+  have hle : ((2 * m + 1 : ℕ) : ℝ≥0∞) ≤ (2 * (2 * m + 1) : ℕ) := by exact_mod_cast (by omega)
   have hmean := tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
-    hindep hξzero hηzero (fun n ij ↦ (hξ' n ij).1) (fun n i ↦ (hη' n i).1)
-    (fun n ij ↦ (hξ' n ij).2) (fun n i ↦ (hη' n i).2)
+    hindep hξzero hηzero (fun n ij hij ↦ (hξp n ij hij).mono_exponent hle)
+    (fun n i hi ↦ (hηp n i hi).mono_exponent hle)
+    (fun n ij hij ↦ (hξp n ij hij).integral_norm_pow_le_sqrt (hξ n ij hij))
+    (fun n i hi ↦ (hηp n i hi).integral_norm_pow_le_sqrt (hη n i hi))
   have hfluc := tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability
-    (fun n ↦ iIndepFun_sumElim_ofReal_subtype_lt (hindep n))
-    (fun n ij _ ↦ hξzero n ij) (fun n i _ ↦ hηzero n i)
-    (fun n ij _ ↦ hξp n ij) (fun n i _ ↦ hηp n i)
-    (fun n ij _ ↦ hξ n ij) (fun n i _ ↦ hη n i) (half_pos hε)
+    hindep hξzero hηzero hξp hηp hξ hη (half_pos hε)
   simpa only [sub_zero] using tendsto_measure_abs_sub_ge_of_tendsto_integral hmean hε hfluc
 
 /-- **Convergence in probability of empirical spectral moments.** On possibly varying probability
@@ -423,12 +380,13 @@ theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_semicircleReal_pro
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) -
       ∫ x, x ^ k ∂semicircleReal 0 s|}) atTop (𝓝 0) := by
   have (n : ℕ) : IsProbabilityMeasure (P n) := (hindep n).isProbabilityMeasure
-  have hξ' (n ij hij) := (hξp n ij hij).memLp_and_integral_norm_pow_le_sqrt (hξ n ij hij)
-  have hη' (n i hi) := (hηp n i hi).memLp_and_integral_norm_pow_le_sqrt (hη n i hi)
+  have hle : (k : ℝ≥0∞) ≤ (2 * k : ℕ) := by exact_mod_cast Nat.le_mul_of_pos_left k two_pos
   have hmean := tendsto_integral_integral_pow_spectralMeasure_wignerMatrix' (k := k) (B := √B)
-    (s := s) hindep hξzero hηzero (fun n ij hij ↦ (hξ' n ij hij).1)
-    (fun n i hi ↦ (hη' n i hi).1) (fun n ij hij ↦ (hξ' n ij hij).2)
-    (fun n i hi ↦ (hη' n i hi).2) hξsq
+    (s := s) hindep hξzero hηzero
+    (fun n ij hij ↦ (hξp n ij hij).mono_exponent hle)
+    (fun n i hi ↦ (hηp n i hi).mono_exponent hle)
+    (fun n ij hij ↦ (hξp n ij hij).integral_norm_pow_le_sqrt (hξ n ij hij))
+    (fun n i hi ↦ (hηp n i hi).integral_norm_pow_le_sqrt (hη n i hi)) hξsq
   have hfluc := tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability
     hindep hξzero hηzero hξp hηp hξ hη (half_pos hε)
   exact tendsto_measure_abs_sub_ge_of_tendsto_integral hmean hε hfluc

@@ -16,6 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Wigner matrices
@@ -40,7 +41,8 @@ and resolvent methods:
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
   the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`),
-  independence restricts to the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`), and the law
+  independence restricts to the `< n` corner (`iIndepFun_sumElim_ofReal_subtype_lt`) and
+  zero-padding outside the `< n` corner preserves independence (`iIndepFun_ite_lt`), and the law
   of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`). For zero
   diagonal and jointly independent, a.e.-measurable upper entries in the finite corner, deleting
   any index gives a minor independent of the removed off-diagonal column
@@ -656,6 +658,36 @@ theorem iIndepFun_sumElim_ofReal_subtype_lt {n : ℕ}
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P := by
   simpa only [Function.comp_def, Sum.elim_map] using
     hindep.precomp (Subtype.val_injective.sumMap Subtype.val_injective)
+
+open Classical in
+/-- Zeroing the coordinates of an entry array outside the top-left `n × n` corner preserves joint
+independence from corner-local independence. -/
+theorem iIndepFun_ite_lt {n : ℕ}
+    (hindep : iIndepFun
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P) :
+    iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
+      Sum.elim (fun ij ↦ if ij.val.2 < n then ξ ij else 0)
+        (fun i ω ↦ ((if i < n then η i else 0) ω : ℂ)) idx) P := by
+  have := hindep.isProbabilityMeasure
+  let s : Set (StrictUpper ⊕ ℕ) := {idx | Sum.elim (fun ij ↦ ij.val.2 < n) (fun i ↦ i < n) idx}
+  let e : s → {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n}
+    | ⟨.inl ij, h⟩ => .inl ⟨ij, h⟩
+    | ⟨.inr i, h⟩ => .inr ⟨i, h⟩
+  have he : Function.Injective e := by
+    rintro ⟨a | a, ha⟩ ⟨b | b, hb⟩ hab <;> cases hab <;> rfl
+  refine ProbabilityTheory.iIndepFun.of_subtype_of_ae_eq_const_outside (s := s) ?_ ?_
+  · refine (hindep.precomp he).congr fun ⟨idx, hidx⟩ ↦ .of_forall fun ω ↦ ?_
+    rcases idx with ij | i <;>
+      simp only [s, Set.mem_ofPred_eq, Sum.elim_inl, Sum.elim_inr] at hidx
+    · simp [e, hidx]
+    · simp [e, hidx]
+  · intro idx hnot
+    refine ⟨0, .of_forall fun ω ↦ ?_⟩
+    rcases idx with ij | i <;>
+      simp only [s, Set.mem_ofPred_eq, Sum.elim_inl, Sum.elim_inr] at hnot
+    · simp [hnot]
+    · simp [hnot]
 
 end Independence
 

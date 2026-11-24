@@ -14,7 +14,6 @@ public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
-import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # The mean squared distance between two independent copies and nonzero-variance bounds
@@ -55,6 +54,8 @@ convergence to the mean from summable variances.
   bounds for weighted sums of pairwise independent variables.
 * `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
   variances imply convergence in measure to the mean, including on varying finite measure spaces.
+* `TauCeti.Probability.tendsto_measure_abs_sub_ge_of_tendsto_integral`: convergence in measure to
+  the limit of the expectations from convergence in measure of the fluctuations around them.
 * `TauCeti.Probability.ae_tendsto_sub_integral_of_summable_variance`: summable variances imply
   almost-everywhere convergence to the mean on a finite measure space.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
@@ -118,17 +119,6 @@ theorem integrable_norm_sub_sq_prod [IsFiniteMeasure μ] {f : α → E} (hf : Me
 end MeasureTheory.MemLp
 
 namespace MeasureTheory
-
-/-- On a probability space, a function in `L^(2k)` whose `2k`-th absolute moment is at most `B`
-also lies in `L^k` with `k`-th absolute moment at most `√B`. -/
-theorem MemLp.memLp_and_integral_norm_pow_le_sqrt {Ω E : Type*} [MeasurableSpace Ω]
-    [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
-    {k : ℕ} {B : ℝ} (hf : MemLp f (2 * k : ℕ) μ)
-    (hB : ∫ x, ‖f x‖ ^ (2 * k) ∂μ ≤ B) :
-    MemLp f (k : ℕ) μ ∧ ∫ x, ‖f x‖ ^ k ∂μ ≤ √B :=
-  ⟨hf.mono_exponent (by exact_mod_cast Nat.le_mul_of_pos_left k two_pos),
-    (hf.integrable_norm_pow'.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
-      (Real.sqrt_le_sqrt hB)⟩
 
 section Centering
 
@@ -311,6 +301,26 @@ theorem tendsto_measure_abs_sub_integral_ge_of_tendsto_variance {ι : Type*} {l 
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hreal)
     (fun _ ↦ bot_le) (fun i ↦ meas_ge_le_variance_div_sq (hX i) hε)
+
+/-- **Convergence in measure from expectation convergence and fluctuation concentration.** If the
+expectations of real-valued functions on possibly varying measure spaces converge to `c` along a
+filter `l` and their deviations from their expectations vanish in measure, then their deviations
+from `c` also vanish in measure along `l`. -/
+theorem tendsto_measure_abs_sub_ge_of_tendsto_integral {ι : Type*} {l : Filter ι}
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
+    {P : (i : ι) → Measure (Ω i)}
+    {X : (i : ι) → Ω i → ℝ} {c : ℝ}
+    (hmean : Tendsto (fun i ↦ ∫ ω, X i ω ∂P i) l (𝓝 c))
+    {ε : ℝ} (hε : 0 < ε)
+    (hfluc : Tendsto (fun i ↦ P i {ω | ε / 2 ≤ |X i ω - ∫ ω', X i ω' ∂P i|}) l (𝓝 0)) :
+    Tendsto (fun i ↦ P i {ω | ε ≤ |X i ω - c|}) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hfluc
+    (.of_forall fun _ ↦ bot_le) ?_
+  filter_upwards [Metric.tendsto_nhds.1 hmean (ε / 2) (half_pos hε)] with i hi
+  rw [Real.dist_eq] at hi
+  refine measure_mono fun ω hω ↦ ?_
+  simp only [Set.mem_ofPred_eq] at hω ⊢
+  linarith [abs_sub_le (X i ω) (∫ ω', X i ω' ∂P i) c]
 
 /-- **Borel--Cantelli almost-everywhere convergence from summable variances.** On a finite measure
 space, if a sequence of square-integrable real-valued functions has summable variances, then its
