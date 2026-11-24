@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.CharacterKernel
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
+public import Mathlib.FieldTheory.Perfect
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 public import TauCeti.RingTheory.TensorProduct.Reduced
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
@@ -23,9 +25,15 @@ import TauCeti.Algebra.AlgebraicGroup.Unipotent.Semisimple
 /-!
 # The unipotent radical of a connected solvable group
 
-Let `G` be a reduced connected affine group of finite type over an algebraically closed field
-`k`, whose group of rational points is solvable. This file proves the structure theorem for the
-unipotent part of `G`:
+Let `G` be a smooth geometrically connected affine group of finite type over a perfect field `k`
+whose geometric points form a solvable group. Then the affine quotient `G ⧸ R_u(G)` of `G` by its
+unipotent radical is a torus
+(`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical_of_perfectField`, Milne,
+Theorem 16.33).
+
+In the special case where `G` is a reduced connected affine group of finite type over an
+algebraically closed field `k`, whose group of rational points is solvable, this file proves the
+structure theorem for the unipotent part of `G`:
 
 * the affine quotient `G ⧸ R_u(G)` of `G` by its unipotent radical is a torus;
 * a rational point of `G` is unipotent exactly when it lies in `R_u(G)`, so the unipotent
@@ -53,8 +61,10 @@ that the common kernel of characters has only unipotent points is
 
 ## Main declarations
 
-* `TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`: `G ⧸ R_u(G)` is a
-  torus.
+* `TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical_of_perfectField`: over a
+  perfect field, `G ⧸ R_u(G)` is a torus for smooth connected solvable `G` (Milne, Theorem 16.33).
+* `TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`: over an algebraically
+  closed field, `G ⧸ R_u(G)` is a torus.
 * `TauCeti.FiniteTypeCommHopfAlgCat.groupLikeSpannedProperty_coinvariants_unipotentRadical`:
   `G ⧸ R_u(G)` is spanned by its characters.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mem_quotientPointsSubgroup_unipotentRadical_iff`: a rational
@@ -67,6 +77,7 @@ that the common kernel of characters has only unipotent points is
 * A. Borel, *Linear Algebraic Groups*, 2nd ed. (1991), Theorem 10.6.
 * T. A. Springer, *Linear Algebraic Groups*, 2nd ed. (1998), Theorem 6.3.5.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Theorem 19.3.
+* J. S. Milne, *Algebraic Groups* (2017), Theorem 16.33, pp. 335–336.
 -/
 
 public section
@@ -78,6 +89,27 @@ namespace TauCeti.FiniteTypeCommHopfAlgCat
 universe u
 
 variable {k : Type u} [Field k]
+
+/-- **The quotient of a smooth connected solvable group by its unipotent radical is a torus**
+over a perfect field, in every characteristic (Milne, Theorem 16.33). -/
+theorem torus_coinvariants_unipotentRadical_of_perfectField [PerfectField k]
+    (G : FiniteTypeCommHopfAlgCat.{u, u} k) [Algebra.Smooth k G]
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k G.obj)
+    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k G.obj) :
+    let hR := isNormal_unipotentRadicalDefiningIdeal G
+    letI := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
+    let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
+      ⟨CommHopfAlgCat.coinvariants hR,
+        (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
+    torusCommHopfAlgProperty k Q := by
+  intro hR Q
+  have hQ : geometricallySolvablePointsCommHopfAlgProperty k Q.obj :=
+    hsolv.of_faithfullyFlat (CommHopfAlgCat.coinvariantsι hR)
+      (AlgHom.FiniteType.of_finitePresentation
+        (CommHopfAlgCat.finitePresentation_coinvariantsι hR))
+      (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
+  exact (reductive_coinvariants_unipotentRadical G hconnected).torus_of_geometricallySolvable hQ
+
 variable (G : FiniteTypeCommHopfAlgCat.{u, u} k)
 variable [IsAlgClosed k]
 variable [IsReduced G] [ConnectedSpace (PrimeSpectrum G)]
@@ -92,19 +124,13 @@ theorem torus_coinvariants_unipotentRadical :
       ⟨CommHopfAlgCat.coinvariants hR,
         (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
     torusCommHopfAlgProperty k Q := by
-  intro hR Q
   let _ : Algebra.Smooth k G := (smoothCommHopfAlgProperty_iff _).mp
     (smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k G.obj)
   have hconnected : geometricallyConnectedCommHopfAlgProperty k G.obj :=
     (geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k G.obj).mpr inferInstance
   have hsolv : geometricallySolvablePointsCommHopfAlgProperty k G.obj :=
     geometricallySolvablePointsCommHopfAlgProperty_of_isAlgClosed G.obj
-  have hQ : geometricallySolvablePointsCommHopfAlgProperty k Q.obj :=
-    hsolv.of_faithfullyFlat (CommHopfAlgCat.coinvariantsι hR)
-      (AlgHom.FiniteType.of_finitePresentation
-        (CommHopfAlgCat.finitePresentation_coinvariantsι hR))
-      (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
-  exact (reductive_coinvariants_unipotentRadical G hconnected).torus_of_geometricallySolvable hQ
+  exact torus_coinvariants_unipotentRadical_of_perfectField G hconnected hsolv
 
 /-- The torus `G ⧸ R_u(G)` of a reduced connected solvable group is spanned by its characters,
 over an algebraically closed field. -/
