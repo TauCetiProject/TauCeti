@@ -173,7 +173,7 @@ omit [FiniteDimensional K (C.X 1)] in
 private theorem finrank_cycles_zero :
     finrank K (C.cycles 0) = finrank K (LinearMap.range (C.d 1 0).hom) +
       finrank K (C.homology 0) := by
-  have h₁ := C.finrank_X_eq 0
+  have h₁ := C.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range 0
   rw [prev_zmod_two_zero, next_zmod_two_zero] at h₁
   have h₂ := (C.moduleCat_exact_iCycles_d next_zmod_two_zero).rangeRestrict.finrank_eq_add
     (C.moduleCat_iCycles_injective 0) (C.d 0 1).hom.surjective_rangeRestrict
@@ -184,7 +184,7 @@ omit [FiniteDimensional K (C.X 0)] in
 private theorem finrank_opcycles_one :
     finrank K (C.opcycles 1) = finrank K (C.homology 1) +
       finrank K (LinearMap.range (C.d 1 0).hom) := by
-  have h₁ := C.finrank_X_eq 1
+  have h₁ := C.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range 1
   rw [prev_zmod_two_one, next_zmod_two_one] at h₁
   have h₂ := (C.moduleCat_exact_d_pOpcycles prev_zmod_two_one).range_subtype.finrank_eq_add
     (Submodule.injective_subtype _) (C.moduleCat_pOpcycles_surjective 1)

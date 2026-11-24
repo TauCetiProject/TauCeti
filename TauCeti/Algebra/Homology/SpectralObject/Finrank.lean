@@ -94,7 +94,8 @@ theorem finrank_abutmentFiltration_eq_add_sum_Ico
       exact X.finite_abutmentFiltration_of_finite_cokernel (Int.le_add_one has) hfin
     rw [← Finset.sum_Ico_add_eq_sum_Ico_add_one has, ← add_assoc,
       ← ih fun q hq ↦ hfin q (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hq)]
-    exact (X.shortExact_cokernelSequence_abutmentFiltrationMap s m).moduleCat_finrank_eq_add
+    exact (TauCeti.cokernelSequence_shortExact
+      (X.abutmentFiltrationMap s m)).moduleCat_finrank_eq_add
 
 /-- **Rank of the abutment from its graded pieces.** Over a ring satisfying the strong rank
 condition and rank--nullity, if the filtration of `X.abutment m` starts at `0` at `a`, reaches the

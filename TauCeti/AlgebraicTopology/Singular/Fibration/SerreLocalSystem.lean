@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalSystem
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Transport
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.SerreFibration.Transport
 
 import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 
@@ -15,9 +16,9 @@ import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 
 Let `p : E → B` be a Serre fibration (`TauCeti.TopCat.serreFibrations`). A Serre fibration need
 not have a transport map between its fibres, but it has one on homology via path transport
-(`TauCeti.TopCat.fiberSingularHomologyIsoOfPath`), specialized from the general transport
-`TauCeti.TopCat.fiberIsoOfPath` / `TauCeti.TopCat.pullbackFiberIso` in
-`TauCeti.Topology.Homotopy.SerreFibration.Transport`. Since path transport depends only on the
+(`TauCeti.TopCat.fiberIsoOfPath`, specialized to singular homology via
+`TauCeti.TopCat.weakEquivalences_isInvertedBy_singularHomologyFunctor` in
+`TauCeti.Topology.Homotopy.SerreFibration.Transport`). Since path transport depends only on the
 homotopy class of `γ` relative to its end points, sends constant paths to identities and
 concatenations to composites, `b ↦ Hₙ(p⁻¹(b); M)` is a local coefficient system on `B`
 (`TauCeti.TopCat.serreFiberLocalSystem`), the local system of fibre homology of `p`. With path
@@ -29,7 +30,7 @@ page while `page 3` corresponds to the classical `E²` page).
 When `p` has a lifting function `Λ`, so that it is a Hurewicz fibration with a transport map
 `Λ.transport γ` between its fibres, the transport on homology is the map induced by
 `Λ.transport γ`
-(`TauCeti.TopCat.fiberSingularHomologyIsoOfPath_hom_eq_singularHomologyMap_fiberTransport`): the
+(`TauCeti.TopCat.fiberIsoOfPath_singularHomology_hom_eq_singularHomologyMap_fiberTransport`): the
 lifts of `γ` give a homotopy, in `γ*E`, from the inclusion of the fibre over `b₀` to the transport
 followed by the inclusion of the fibre over `b₁`. So the local system of fibre homology agrees with
 the one built from a lifting function
@@ -52,8 +53,8 @@ Serre fibration.
 ## Main results
 
 * `TauCeti.TopCat.serreFiberLocalSystem_map_mk`: monodromy of `serreFiberLocalSystem` is given by
-  `TauCeti.TopCat.fiberSingularHomologyIsoOfPath`.
-* `TauCeti.TopCat.fiberSingularHomologyIsoOfPath_hom_eq_singularHomologyMap_fiberTransport`: for a
+  `TauCeti.TopCat.fiberIsoOfPath`.
+* `TauCeti.TopCat.fiberIsoOfPath_singularHomology_hom_eq_singularHomologyMap_fiberTransport`: for a
   fibration with a lifting function, path transport on homology is induced by the transport map.
 * `TauCeti.TopCat.serreFiberLocalSystemIsoFiberLocalSystem`: identification with
   `TauCeti.fiberLocalSystem`.
@@ -88,20 +89,24 @@ include hp
 
 /-- **The local system of fibre homology of a Serre fibration** `b ↦ Hₙ(p⁻¹(b); M)`, with
 singular homology with coefficients in a module `M`. The class of a path acts by path transport
-along it (`TauCeti.TopCat.fiberSingularHomologyIsoOfPath`). -/
+along it (`TauCeti.TopCat.fiberIsoOfPath`). -/
 def serreFiberLocalSystem : LocalCoefficientSystem.{w, u, u} R B where
   obj b := ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b.as)
-  map {b₀ b₁} := Quotient.lift (fun γ ↦ (fiberSingularHomologyIsoOfPath hp M γ n).hom)
-    (fun _ _ h ↦ congrArg Iso.hom (fiberSingularHomologyIsoOfPath_congr hp M h n))
+  map {b₀ b₁} := Quotient.lift
+    (fun γ ↦ (fiberIsoOfPath (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ).hom)
+    (fun _ _ h ↦ congrArg Iso.hom
+      (fiberIsoOfPath_congr (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp h))
   -- The identity of the fundamental groupoid is the class of the constant path
   -- (`FundamentalGroupoid.id_eq_path_refl`).
-  map_id b := congrArg Iso.hom (fiberSingularHomologyIsoOfPath_refl hp M b.as n)
+  map_id b := congrArg Iso.hom
+    (fiberIsoOfPath_refl (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp b.as)
   -- Composition in the fundamental groupoid is the class of the concatenation
   -- (`FundamentalGroupoid.comp_eq`), on which `Quotient.lift` evaluates by definition.
   map_comp f g := by
     induction f using Path.Homotopic.Quotient.ind with | mk γ =>
     induction g using Path.Homotopic.Quotient.ind with | mk δ =>
-    exact congrArg Iso.hom (fiberSingularHomologyIsoOfPath_trans hp M γ δ n)
+    exact congrArg Iso.hom
+      (fiberIsoOfPath_trans (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ δ)
 
 /-- The value of the local system of fibre homology at a point is the homology of the fibre over
 it. -/
@@ -116,7 +121,7 @@ theorem serreFiberLocalSystem_map_mk {b₀ b₁ : FundamentalGroupoid B}
     (γ : Path b₀.as b₁.as) :
     (serreFiberLocalSystem hp M n).map (Path.Homotopic.Quotient.mk γ) =
       (serreFiberLocalSystemObjIso hp M n b₀).hom ≫
-        (fiberSingularHomologyIsoOfPath hp M γ n).hom ≫
+        (fiberIsoOfPath (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ).hom ≫
         (serreFiberLocalSystemObjIso hp M n b₁).inv := by
   simp only [serreFiberLocalSystemObjIso, Iso.refl_hom, Iso.refl_inv]
   -- `Quotient.lift` evaluates on the class of a path by definition.
@@ -129,11 +134,12 @@ fibration `p` has a lifting function `Λ`, path transport along `γ` on the homo
 the map induced by the transport map `Λ.transport γ`: the lifts of `γ` from the points of the
 fibre over `b₀` form a homotopy, in `γ*E`, from the inclusion of that fibre to the transport
 followed by the inclusion of the fibre over `b₁`. -/
-theorem fiberSingularHomologyIsoOfPath_hom_eq_singularHomologyMap_fiberTransport
+theorem fiberIsoOfPath_singularHomology_hom_eq_singularHomologyMap_fiberTransport
     (Λ : LiftingFunction p.hom) (γ : Path b₀ b₁) :
-    (fiberSingularHomologyIsoOfPath hp M γ n).hom =
+    (fiberIsoOfPath (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ).hom =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (fiberTransport Λ γ) := by
-  refine ((eq_fiberSingularHomologyIsoOfPath_hom_iff hp M γ n _).2 ?_).symm
+  refine ((eq_fiberIsoOfPath_hom_iff
+    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ _).2 ?_).symm
   let H : _root_.TopCat.Homotopy
       (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0) (TopCat.pathEquiv.symm γ).hom₀)
       (fiberTransport Λ γ ≫
@@ -168,7 +174,7 @@ def serreFiberLocalSystemIsoFiberLocalSystem
     fun {b₀ b₁} q ↦ by
       induction q using Path.Homotopic.Quotient.ind with | mk γ =>
       rw [serreFiberLocalSystem_map_mk, fiberLocalSystem_map_mk_singular,
-        fiberSingularHomologyIsoOfPath_hom_eq_singularHomologyMap_fiberTransport hp _ n Λ]
+        fiberIsoOfPath_singularHomology_hom_eq_singularHomologyMap_fiberTransport hp _ n Λ]
       -- `serreFiberLocalSystemObjIso` is the identity, and the map induced on
       -- `singularHomologyFunctor` is by definition the map induced on the homology of
       -- `singularChains`; `rw` cannot see through either, so `change` states both sides on the
@@ -233,7 +239,8 @@ def serreFiberLocalSystemMap :
     congr 1
     rw [← Category.assoc, ← Category.assoc]
     congr 1
-    exact fiberSingularHomologyIsoOfPath_naturality hp M hp' sq γ n
+    exact fiberIsoOfPath_naturality
+      (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp hp' sq γ
 
 /-- On the fibre over `b`, the map of local systems induced by a map of Serre fibrations is the map
 induced on homology by the map of fibres. -/

@@ -16,8 +16,9 @@ import TauCeti.Algebra.Homology.ModuleCat.Finrank
 A chain complex `K` indexed by `ℕ`, with differentials `Kₙ₊₁ ⟶ Kₙ`, is the shape of singular and
 cellular chains.  Over any ring `R` satisfying the strong rank condition and rank--nullity (for
 instance a division ring or a commutative domain), when its terms are finitely generated,
-rank--nullity at each degree (`HomologicalComplex.finrank_X_eq`), applied to the boundaries
-`Bₙ = im (Kₙ₊₁ ⟶ Kₙ)`, gives
+rank--nullity at each degree
+(`HomologicalComplex.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range`), applied to
+the boundaries `Bₙ = im (Kₙ₊₁ ⟶ Kₙ)`, gives
 
 ```text
 finrank R Kₙ = finrank R Hₙ(K) + finrank R Bₙ + finrank R Bₙ₋₁,
@@ -91,7 +92,7 @@ variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 `finrank R K₀ = finrank R H₀(K) + finrank R im (K₁ ⟶ K₀)`. -/
 theorem finrank_X_zero [Module.Finite R (K.X 0)] :
     finrank R (K.X 0) = finrank R (K.homology 0) + finrank R (LinearMap.range (K.d 1 0).hom) := by
-  have h := K.finrank_X_eq 0
+  have h := K.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range 0
   -- `simp` cannot rewrite the submodule inside `finrank`, as the instances depend on it.
   rw [ChainComplex.prev, ChainComplex.next_nat_zero, K.shape 0 0 (by simp), ModuleCat.hom_zero,
     LinearMap.range_zero, finrank_bot] at h
@@ -103,7 +104,7 @@ theorem finrank_X_succ (n : ℕ) [Module.Finite R (K.X (n + 1))] :
     finrank R (K.X (n + 1)) = finrank R (K.homology (n + 1)) +
       finrank R (LinearMap.range (K.d (n + 2) (n + 1)).hom) +
         finrank R (LinearMap.range (K.d (n + 1) n).hom) := by
-  have h := K.finrank_X_eq (n + 1)
+  have h := K.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range (n + 1)
   rwa [ChainComplex.prev, ChainComplex.next_nat_succ] at h
 
 /-- In every degree `n`, rank--nullity gives

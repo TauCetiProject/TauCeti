@@ -29,7 +29,7 @@ with equality, even for complexes of modules over any ring, when the differentia
 that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`). Over any ring
 satisfying the strong rank condition and rank--nullity, the rank of a finitely generated term
 `K.X i` equals the rank of `K.homology i` plus the ranks of the incoming and outgoing boundary
-submodules (`HomologicalComplex.finrank_X_eq`).
+submodules (`HomologicalComplex.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range`).
 When the incoming or outgoing differential from outside a finite index set `s` vanishes, the rank
 of the incoming or outgoing boundary submodule equals the sum of the differential ranks over `s`
 (`HomologicalComplex.finrank_range_d_prev_eq_sum`,
@@ -92,7 +92,8 @@ theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Ty
 /-- **Rank--nullity at one index of a homological complex.** Over a ring satisfying the strong rank
 condition and rank--nullity, if `K.X i` is finitely generated, its rank is the rank of
 `K.homology i` plus the ranks of the incoming and outgoing boundary submodules. -/
-theorem finrank_X_eq {R : Type*} [Ring R] [StrongRankCondition R] {ι : Type*}
+theorem finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range
+    {R : Type*} [Ring R] [StrongRankCondition R] {ι : Type*}
     {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c) [HasRankNullity.{v} R]
     (i : ι) [Module.Finite R (K.X i)] :
     finrank R (K.X i) = finrank R (K.homology i) +

@@ -14,17 +14,15 @@ import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 Mathlib defines `HomologicalComplex.eulerChar` and `HomologicalComplex.homologyEulerChar` for a
 complex `K : HomologicalComplex (ModuleCat R) c` of any shape `c : ComplexShape ι` equipped with
-alternating signs `[c.EulerCharSigns]`. Existing files establish Euler--Poincaré for chain
-complexes over a division ring indexed by `ℕ`
-(`TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex`) and for bounded cochain complexes
-indexed by `ℤ` over a Noetherian ring
-(`TauCeti.Algebra.Homology.EulerCharacteristic.Finite`). Pages of a spectral sequence, however, are
-complexes indexed by `ℤ × ℤ` whose differential direction changes from page to page.
+alternating signs `[c.EulerCharSigns]`. Because pages of a spectral sequence are complexes indexed
+by `ℤ × ℤ` whose differential direction changes from page to page, the Euler--Poincaré identity
+is needed for complexes of arbitrary shape `c`.
 
 This file proves the Euler--Poincaré identity for complexes of arbitrary shape `c` over any ring
 `R` satisfying the strong rank condition and rank--nullity (`[StrongRankCondition R]` and
 `[HasRankNullity R]`, covering division rings and commutative domains such as `ℤ`, with no
-Noetherian assumption), using `HomologicalComplex.finrank_X_eq`:
+Noetherian assumption), using
+`HomologicalComplex.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range`:
 
 * `HomologicalComplex.finite_not_isZero_X_of_eventually_isZero`: an `ℕ`-indexed complex vanishing
   from some degree on has finite support.
@@ -89,7 +87,8 @@ theorem sum_finrank_X_eq_sum_finrank_homology (s : Finset ι)
         ((∑ j ∈ s, (c.χ i : ℤ) * finrank R (LinearMap.range (K.d j i).hom)) +
           ∑ j ∈ s, (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i j).hom)) := by
     have := hfin i hi
-    rw [K.finrank_X_eq i, finrank_range_d_prev_eq_sum K (hprev i hi),
+    rw [K.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range i,
+      finrank_range_d_prev_eq_sum K (hprev i hi),
       finrank_range_d_next_eq_sum K (hnext i hi)]
     push_cast
     rw [mul_add, mul_add, Finset.mul_sum, Finset.mul_sum, add_assoc]

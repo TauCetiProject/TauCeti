@@ -24,8 +24,7 @@ elements, for the arrows `i ≤ j ≤ k` of `ι`.
 
 For a spectral object `X` in `ModuleCat R` indexed by `EInt`, each step
 `0 ⟶ F_q H^m ⟶ F_{q+1} H^m ⟶ cokernel (X.abutmentFiltrationMap q m) ⟶ 0` of the abutment filtration
-is short exact
-(`CategoryTheory.Abelian.SpectralObject.shortExact_cokernelSequence_abutmentFiltrationMap`).
+is short exact (`TauCeti.cokernelSequence_shortExact`).
 Inducting across a finite filtration `a ≤ q < b` therefore passes finite generation from the
 starting stage `F_a H^m` and the graded pieces to `F_b H^m` and, when `F_a H^m = 0` and
 `F_b H^m ≅ H^m`, to the abutment.

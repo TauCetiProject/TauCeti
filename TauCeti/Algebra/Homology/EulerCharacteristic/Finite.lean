@@ -127,6 +127,8 @@ theorem eulerChar_forgetFG_eq_homologyEulerChar {R : Type u} [Ring R] [StrongRan
         (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K) := by
   let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
   let K' := (F.mapHomologicalComplex _).obj K
+  -- The forgetful functor `forget₂ FGModuleCat ModuleCat` is the identity on carriers and
+  -- `mapHomologicalComplex` acts termwise, so `K'.X i` and `K.X i` are definitionally equal.
   have (i : ℤ) : Module.Finite R (K'.X i) := inferInstanceAs (Module.Finite R (K.X i))
   have hK' : {i : ℤ | ¬ IsZero (K'.X i)}.Finite :=
     (K.finite_not_isZero_X a b).subset fun i hi h ↦ hi (F.map_isZero h)

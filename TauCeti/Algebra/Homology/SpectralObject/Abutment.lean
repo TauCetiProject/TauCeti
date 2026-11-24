@@ -31,7 +31,7 @@ vanish for some `b ≤ a`, the abutment itself vanishes (`isZero_abutment_of_le`
 `⊥ ≤ b ≤ a ≤ ⊤` of `isZero_H_obj_mk₁_of_isZero_of_isZero`, which holds for three composable
 morphisms in any index category. Since each filtration step
 `0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ cokernel (X.abutmentFiltrationMap q n) ⟶ 0` is short exact
-(`shortExact_cokernelSequence_abutmentFiltrationMap`), any extension-closed property passes across
+(`TauCeti.cokernelSequence_shortExact`), any extension-closed property passes across
 filtration stages from an arbitrary starting stage `F_a H^n`
 (`prop_abutmentFiltration_of_prop_cokernel`) and, when it also contains zero and is closed under
 isomorphisms, passes to the abutment (`prop_abutment_of_prop_cokernel`, and in particular
@@ -163,12 +163,6 @@ lemma isZero_abutment_of_le {a b n : ℤ} (hba : b ≤ a)
     (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Subsingleton.elim _ _) n ha hb
 
 
-/-- The filtration step `0 ⟶ F_q H^n ⟶ F_{q+1} H^n ⟶ F_{q+1} H^n / F_q H^n ⟶ 0` of the abutment of
-a spectral object is short exact. -/
-lemma shortExact_cokernelSequence_abutmentFiltrationMap (q n : ℤ) :
-    (ShortComplex.cokernelSequence (X.abutmentFiltrationMap q n)).ShortExact :=
-  TauCeti.cokernelSequence_shortExact _
-
 /-- If a filtration stage `F_a H^m` vanishes, then every earlier stage `F_b H^m` (`b ≤ a`) also
 vanishes, since the transition maps `F_q H^m ⟶ F_{q+1} H^m` are monomorphisms. -/
 lemma isZero_abutmentFiltration_of_le {a b m : ℤ} (hba : b ≤ a)
@@ -189,7 +183,8 @@ theorem prop_abutmentFiltration_of_prop_cokernel (P : ObjectProperty C)
   induction b, hab using Int.leInduction with
   | base => exact ha
   | succ s has ih =>
-    exact P.prop_X₂_of_shortExact (X.shortExact_cokernelSequence_abutmentFiltrationMap s m)
+    exact P.prop_X₂_of_shortExact
+      (TauCeti.cokernelSequence_shortExact (X.abutmentFiltrationMap s m))
       (ih fun q hq ↦ hcok q (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hq))
       (hcok s (Finset.mem_Ico.2 ⟨has, by lia⟩))
 
