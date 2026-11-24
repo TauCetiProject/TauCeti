@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.MeasureTheory.Measure.Haar.MatrixUnits
 
-import Mathlib.LinearAlgebra.Matrix.Unique
 import Mathlib.Topology.Algebra.Ring.Compact
 
 /-!
@@ -21,8 +20,8 @@ field of `q` elements, `∏_{i=1}^n (1 - q^{-i})` (`Matrix.measureReal_setOf_isU
 * for `n = 0` the product is empty, so the invertible `0 × 0` matrices have full measure
   (`TauCeti.measureReal_setOf_isUnit_matrix_fin_zero`);
 * for `O = ℤ_p`, the units `ℤ_p^×` have additive Haar probability `1 - p⁻¹`
-  (`TauCeti.measureReal_setOf_isUnit_padicInt`). This is the case `n = 1`, `q = p`, transported
-  along `ℤ_p ≃ M_1(ℤ_p)`.
+  (`TauCeti.measureReal_setOf_isUnit_padicInt`). This is the case `n = 1`, `q = p`, through
+  `IsLocalRing.measureReal_setOf_isUnit`.
 -/
 
 public section
@@ -46,21 +45,9 @@ theorem measureReal_setOf_isUnit_matrix_fin_zero {R : Type*} [CommRing R] [IsLoc
 theorem measureReal_setOf_isUnit_padicInt (p : ℕ) [Fact p.Prime] [MeasurableSpace ℤ_[p]]
     [BorelSpace ℤ_[p]] (μ : Measure ℤ_[p]) [μ.IsAddLeftInvariant] [IsProbabilityMeasure μ] :
     μ.real {x | IsUnit x} = 1 - (p : ℝ)⁻¹ := by
-  let e : ℤ_[p] ≃ᵐ Matrix (Fin 1) (Fin 1) ℤ_[p] :=
-    ⟨Matrix.uniqueEquiv.symm,
-      (Matrix.measurable_of _ _ _).comp <| .of_eval fun _ ↦ .of_eval fun _ ↦ measurable_id,
-      (measurable_pi_apply default).comp (measurable_pi_apply default)⟩
-  let f : ℤ_[p] →ₙ+ Matrix (Fin 1) (Fin 1) ℤ_[p] :=
-    { toFun := e
-      map_add' := fun _ _ ↦ rfl }
-  have : (μ.map e).IsAddLeftInvariant := isAddLeftInvariant_map f e.measurable e.surjective
   have : Finite (ResidueField ℤ_[p]) := .of_equiv _ PadicInt.residueField.symm.toEquiv
   have hk : Nat.card (ResidueField ℤ_[p]) = p := by
     rw [Nat.card_congr PadicInt.residueField.toEquiv, Nat.card_zmod]
-  have hset : e ⁻¹' {M | IsUnit M} = {x | IsUnit x} := by
-    ext x
-    simp [e, ← MeasurableEquiv.coe_toEquiv, Matrix.isUnit_iff_isUnit_det, Matrix.det_unique]
-  have h := Matrix.measureReal_setOf_isUnit 1 (isOpen_maximalIdeal ℤ_[p]).measurableSet (μ.map e)
-  rwa [measureReal_def, e.map_apply, hset, ← measureReal_def, qPochhammer_one, hk] at h
+  rw [IsLocalRing.measureReal_setOf_isUnit (isOpen_maximalIdeal ℤ_[p]).measurableSet μ, hk]
 
 end TauCeti

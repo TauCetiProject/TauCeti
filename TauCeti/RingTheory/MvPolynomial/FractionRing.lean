@@ -15,7 +15,7 @@ public import Mathlib.RingTheory.Localization.Integer
 Let `R` be a domain with fraction field `E`. A nonzero polynomial over `E` in any family of
 variables becomes, after multiplication by a common denominator of its coefficients, a nonzero
 polynomial over `R` with the same zero locus on `R`-points
-(`MvPolynomial.exists_ne_zero_eval_iff_eval_algebraMap_eq_zero`).
+(`MvPolynomial.exists_ne_zero_eval_algebraMap_eq_zero_iff_eval_eq_zero`).
 -/
 
 public section
@@ -24,11 +24,13 @@ open Set
 
 namespace MvPolynomial
 
-variable {R E ι : Type*} [CommRing R] [IsDomain R] [Field E] [Algebra R E] [IsFractionRing R E]
+variable (R : Type*) {E ι : Type*} [CommRing R] [IsDomain R] [Field E] [Algebra R E]
+  [IsFractionRing R E]
 
 /-- **Clearing denominators.** A nonzero polynomial over the fraction field `E` of a domain `R`
 has a nonzero multiple over `R` with the same zero locus on `R`-points. -/
-theorem exists_ne_zero_eval_iff_eval_algebraMap_eq_zero (P : MvPolynomial ι E) (hP : P ≠ 0) :
+theorem exists_ne_zero_eval_algebraMap_eq_zero_iff_eval_eq_zero (P : MvPolynomial ι E)
+    (hP : P ≠ 0) :
     ∃ Q : MvPolynomial ι R, Q ≠ 0 ∧
       ∀ x : ι → R, eval (algebraMap R E ∘ x) P = 0 ↔ eval x Q = 0 := by
   classical

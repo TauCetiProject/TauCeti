@@ -24,7 +24,7 @@ continuous with respect to the product of additive Haar measures of `R`
 (`MeasureTheory.Measure.absolutelyContinuous_isAddHaarMeasure`), for which the zero locus of a
 nonzero polynomial over `R` is null (`MvPolynomial.measure_pi_setOfPred_eval_eq_zero`), and
 clearing the denominators of the coefficients reduces the case of `E` to that of `R`
-(`MvPolynomial.exists_ne_zero_eval_iff_eval_algebraMap_eq_zero`).
+(`MvPolynomial.exists_ne_zero_eval_algebraMap_eq_zero_iff_eval_eq_zero`).
 
 For matrices this gives the "Null zero loci" statement of Serre's density argument: if `G` is a
 compact group embedded with open image in `M_n(R)`, for instance an open subgroup of `GL_n(O_E)`,
@@ -77,7 +77,7 @@ measure on `R^ι`. -/
 theorem measure_setOf_eval_algebraMap_eq_zero (μ : Measure (ι → R)) [SigmaFinite μ]
     [μ.IsAddLeftInvariant] (P : MvPolynomial ι E) (hP : P ≠ 0) :
     μ {x | eval (algebraMap R E ∘ x) P = 0} = 0 := by
-  obtain ⟨Q, hQ, hPQ⟩ := exists_ne_zero_eval_iff_eval_algebraMap_eq_zero (R := R) P hP
+  obtain ⟨Q, hQ, hPQ⟩ := exists_ne_zero_eval_algebraMap_eq_zero_iff_eval_eq_zero R P hP
   simpa only [hPQ] using measure_setOf_eval_eq_zero μ Q hQ
 
 end MvPolynomial
@@ -106,11 +106,12 @@ theorem measure_setOf_eval_algebraMap_eq_zero (μ : Measure (Matrix m n R)) [Sig
       map_add' := fun _ _ ↦ rfl }
   have : SigmaFinite (μ.map e) := e.sigmaFinite_map
   have : (μ.map e).IsAddLeftInvariant := isAddLeftInvariant_map f e.measurable e.surjective
+  have hset : e ⁻¹' {x | MvPolynomial.eval (algebraMap R E ∘ x) P = 0} =
+      {M | MvPolynomial.eval (fun p ↦ algebraMap R E (M p.1 p.2)) P = 0} := by
+    ext M
+    simp [e, Function.comp_def, Function.uncurry_def, Matrix.row_apply]
   have h := MvPolynomial.measure_setOf_eval_algebraMap_eq_zero (μ.map e) P hP
-  rw [e.map_apply] at h
-  -- `e M` is the uncurried matrix `fun p ↦ M p.1 p.2`, so the preimage under `e` of the zero
-  -- locus in `R^(m × n)` is the matrix zero locus by unfolding.
-  exact h
+  rwa [e.map_apply, hset] at h
 
 end Measure
 
