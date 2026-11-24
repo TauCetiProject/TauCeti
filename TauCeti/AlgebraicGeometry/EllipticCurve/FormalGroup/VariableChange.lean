@@ -189,13 +189,13 @@ theorem formalCoordinate_mk (W : WeierstrassCurve R) (u : Rˣ) :
   -- The denominator `u³ - su²z - t w(z)` of the transition is the constant `u³`.
   have hinv : invOfUnit (PowerSeries.C (u : R) ^ 3) (u ^ 3) = PowerSeries.C (↑u⁻¹ ^ 3 : R) :=
     left_inv_eq_right_inv (invOfUnit_mul _ _ (by simp))
-      (by rw [← map_pow, ← map_mul, ← mul_pow, Units.mul_inv, one_pow, map_one])
+      (by simp [← map_pow, ← map_mul, ← mul_pow])
+  have hu : (u : R) ^ 2 * ↑u⁻¹ ^ 3 = ↑u⁻¹ := by
+    simp [pow_succ, ← mul_assoc]
   refine TauCeti.FormalCoordinate.ext ?_
   simp only [formalCoordinate_toPowerSeries, formalDenom_def, map_zero, zero_mul, add_zero,
     sub_zero, hinv, TauCeti.FormalCoordinate.toPowerSeries_homothety, smul_eq_C_mul]
-  -- `u² u⁻³ = u⁻¹`
-  rw [mul_right_comm, ← map_pow, ← map_mul, pow_succ _ 2, ← mul_assoc, ← mul_pow, Units.mul_inv,
-    one_pow, one_mul]
+  simp [mul_right_comm _ X, ← map_pow, ← map_mul, hu]
 
 /-- Substitution into the old `w`-expansion gives the new `w`-expansion divided
 by `u³ - su²z - t w(z)`. This identifies the formal neighbourhoods in the two
