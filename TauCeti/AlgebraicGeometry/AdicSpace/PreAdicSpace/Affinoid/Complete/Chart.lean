@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Open
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
+public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 
+import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
@@ -21,13 +23,15 @@ presentation `(P, S)` into a `CompleteAffinoidOpen` interface built on
 * **Completed presentations**: `CompleteAffinoidOpen.ofCompletion` produces a complete Hausdorff
   sheafy `CompleteAffinoidOpen` over `Spa(A, A⁺)`, with canonical pair morphism
   `CompleteAffinoidOpen.toCompletionHom`, surjectivity on underlying points
-  (`range_ofCompletion_hom_base`), and finite-type / discrete finite-presentation lemmas
+  (`range_ofCompletion_hom_base`), ascent of Huber's standing class
+  (`isHuberStandard_ofCompletion`), and finite-type / discrete finite-presentation lemmas
   (`isTopologicallyFiniteType_toCompletionHom`, `finitePresentation_toCompletionHom`).
 * **Functoriality and commuting completion square**: `CompleteAffinoidOpen.ofCompletionMap` lifts
   any Huber-pair morphism `φ : S → T` between sheafy presentations to a morphism between their
   `{1} / 1` completions, obeying naturality (`ofCompletionMap_comp_toCompletionHom`), the
-  commuting-square law (`pairComap_ofCompletionMap_comp_hom`), and preservation of topological
-  finite type (`isTopologicallyFiniteType_ofCompletionMap`).
+  commuting-square law (`pairComap_ofCompletionMap_comp_hom`), preservation of topological finite
+  type (`isTopologicallyFiniteType_ofCompletionMap`), and conditional discrete algebraic finite
+  presentation (`finitePresentation_ofCompletionMap_of_discreteTopology`).
 
 ## References
 
@@ -94,6 +98,13 @@ theorem finitePresentation_toCompletionHom [DiscreteTopology A] :
     (toCompletionHom P hP hsheaf).toRingHom.FinitePresentation :=
   finitePresentation_toRationalLocalizationHom P hP hsheaf (𝟙 _) ({1} : Finset A) 1 (by simp)
 
+/-- Huber's standing class ascends from a Huber ring `A` to the completed presentation
+`ofCompletion P hP hsheaf`. -/
+theorem isHuberStandard_ofCompletion [IsHuberStandard A] :
+    IsHuberStandard (ofCompletion P hP hsheaf).Ring :=
+  .of_isTopologicallyFiniteType
+    (isTopologicallyFiniteType_toCompletionHom P hP hsheaf).isTopologicallyFiniteType_toRingHom
+
 end Single
 
 variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
@@ -146,5 +157,24 @@ theorem isTopologicallyFiniteType_ofCompletionMap (φ : Pair.Hom S T)
     (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).IsTopologicallyFiniteType :=
   .of_comp ((ofCompletionMap_comp_toCompletionHom P hP hsheafA P' hP' hsheafB φ).symm ▸
     (isTopologicallyFiniteType_toCompletionHom P' hP' hsheafB).comp hφ)
+
+/-- When `A` is in Huber's standing class, `φ : S → T` is topologically of finite type,
+`B` is finitely presented over `A` whenever `A` is discrete, and the completed target ring
+`(ofCompletion P hP hsheafA).Ring` is discrete, the lifted morphism
+`ofCompletionMap P hP hsheafA P' hP' hsheafB φ` is algebraically of finite presentation. -/
+theorem finitePresentation_ofCompletionMap_of_discreteTopology [IsHuberStandard A]
+    (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType)
+    (hfp : DiscreteTopology A → φ.toRingHom.FinitePresentation)
+    [DiscreteTopology (ofCompletion P hP hsheafA).Ring] :
+    (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).toRingHom.FinitePresentation :=
+  (isTopologicallyFiniteType_toCompletionHom P hP hsheafA).isTopologicallyFiniteType_toRingHom
+    |>.finitePresentation_of_comp
+      (isTopologicallyFiniteType_ofCompletionMap P hP hsheafA P' hP' hsheafB φ
+        hφ).isTopologicallyFiniteType_toRingHom
+      fun hDiscA ↦ by
+        have : DiscreteTopology B := hφ.isTopologicallyFiniteType_toRingHom.discreteTopology
+        rw [← Pair.Hom.toRingHom_comp, ofCompletionMap_comp_toCompletionHom,
+          Pair.Hom.toRingHom_comp]
+        exact (finitePresentation_toCompletionHom P' hP' hsheafB).comp (hfp hDiscA)
 
 end TauCeti.PreAdicSpace.CompleteAffinoidOpen

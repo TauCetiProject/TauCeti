@@ -32,10 +32,11 @@ This file compares `TauCeti.AdicSpace.LocallyOfFinitePresentation` with
 
 * `locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_isNoetherianRing`,
   `locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ`,
-  `locallyOfFinitePresentation_iff_of_isAnalytic`, and `IsLocallyNoetherian` counterparts.
+  `locallyOfFinitePresentation_iff_locallyOfFiniteType_of_isAnalytic`, and `IsLocallyNoetherian`
+  counterparts.
 * `LocallyOfFiniteType.locallyOfFinitePresentation_analyticLocusMap`.
 * `locallyOfFinitePresentation_comapOfPresentation`, `locallyOfFinitePresentation_comapOfPair`,
-  `locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian`.
+  `locallyOfFinitePresentation_comapOfPair_of_isTateRing`.
 * `LocallyOfFinitePresentation.finitePresentation_of_discreteTopology`,
   `locallyOfFinitePresentation_comapOfPair_discrete_iff`.
 
@@ -72,7 +73,7 @@ theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_forall_discrete_i
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP ⟶ Y.obj),
       PreAdicSpace.IsOpenImmersion k → IsNoetherianRing A) :
     LocallyOfFinitePresentation f ↔ LocallyOfFiniteType f := by
-  refine ⟨fun hf ↦ (locallyOfFiniteType_iff f).mpr hf.locallyOfFiniteType,
+  refine ⟨fun hf ↦ hf.locallyOfFiniteType,
     fun hf ↦ (locallyOfFinitePresentation_iff f).mpr fun x ↦ ?_⟩
   obtain ⟨V, hV, hfxV⟩ := isLocallyHuberStandard_iff.mp hY (f.hom.base x)
   obtain ⟨A, _, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ :=
@@ -119,7 +120,7 @@ theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq
 
 /-- **Over an analytic target locally of Huber's standing class (`Y.IsAnalytic`),
 `LocallyOfFinitePresentation` and `LocallyOfFiniteType` coincide** (Huber 1996, §1.2). -/
-theorem locallyOfFinitePresentation_iff_of_isAnalytic {f : X ⟶ Y}
+theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_isAnalytic {f : X ⟶ Y}
     (hY : Y.IsLocallyHuberStandard) (ha : Y.IsAnalytic) :
     LocallyOfFinitePresentation f ↔ LocallyOfFiniteType f :=
   locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ hY
@@ -138,7 +139,7 @@ theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq
 
 /-- **Over a locally noetherian analytic target (`Y.IsAnalytic`), `LocallyOfFinitePresentation` and
 `LocallyOfFiniteType` coincide.** -/
-theorem locallyOfFinitePresentation_iff_of_isAnalytic {f : X ⟶ Y}
+theorem locallyOfFinitePresentation_iff_locallyOfFiniteType_of_isAnalytic {f : X ⟶ Y}
     (hY : Y.IsLocallyNoetherian) (ha : Y.IsAnalytic) :
     LocallyOfFinitePresentation f ↔ LocallyOfFiniteType f :=
   hY.locallyOfFinitePresentation_iff_locallyOfFiniteType_of_analyticPoints_eq_univ
@@ -179,18 +180,11 @@ theorem locallyOfFinitePresentation_comapOfPresentation {A B : Type u} [CommRing
   let CY := ofCompletion P hS hsheafS
   let CX := ofCompletion P' hT hsheafT
   let φ₁ := ofCompletionMap P hS hsheafS P' hT hsheafT φ
-  have hιA := isTopologicallyFiniteType_toCompletionHom P hS hsheafS
-  have : IsHuberStandard CY.Ring :=
-    .of_isTopologicallyFiniteType hιA.isTopologicallyFiniteType_toRingHom
+  have : IsHuberStandard CY.Ring := isHuberStandard_ofCompletion P hS hsheafS
   have hφ₁ : φ₁.IsTopologicallyFiniteType :=
     isTopologicallyFiniteType_ofCompletionMap P hS hsheafS P' hT hsheafT φ hφ
   have hfp₁ : DiscreteTopology CY.Ring → φ₁.toRingHom.FinitePresentation := fun _ ↦
-    hιA.isTopologicallyFiniteType_toRingHom.finitePresentation_of_comp
-      hφ₁.isTopologicallyFiniteType_toRingHom fun hDiscA ↦ by
-        have : DiscreteTopology B := hφ.isTopologicallyFiniteType_toRingHom.discreteTopology
-        rw [← Pair.Hom.toRingHom_comp, ofCompletionMap_comp_toCompletionHom,
-          Pair.Hom.toRingHom_comp]
-        exact (finitePresentation_toCompletionHom P' hT hsheafT).comp (hfp hDiscA)
+    finitePresentation_ofCompletionMap_of_discreteTopology P hS hsheafS P' hT hsheafT φ hφ hfp
   refine (locallyOfFinitePresentation_iff _).mpr fun x ↦ ?_
   obtain ⟨b₀, hb₀⟩ : x ∈ Set.range CX.hom.base :=
     range_ofCompletion_hom_base P' hT hsheafT ▸ Set.mem_univ _
@@ -213,12 +207,13 @@ theorem locallyOfFinitePresentation_comapOfPair {A B : Type u} [CommRing A] [Top
   exact (comapOfPair_iff_comapOfPresentation LocallyOfFinitePresentation hS hT P hP P' hP' φ).mpr
     (locallyOfFinitePresentation_comapOfPresentation _ _ _ _ _ _ _ _ φ hφ hfp)
 
-/-- **Affinoid sufficient condition over a strongly noetherian Tate ring**: if `A` is a strongly
-noetherian Tate ring and `φ : S → T` is topologically of finite type between sheafy Huber pairs,
-then `comapOfPair hS hT φ` is automatically locally of finite presentation (no discrete
-finite-presentation hypothesis or completeness/Hausdorffness assumption is required). -/
-theorem locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian {A B : Type u} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A]
+/-- **Affinoid sufficient condition over a Tate ring in Huber's standing class**: if `A` is a
+Tate ring in Huber's standing class (in particular, any strongly noetherian Tate ring) and
+`φ : S → T` is topologically of finite type between sheafy Huber pairs, then `comapOfPair hS hT φ`
+is automatically locally of finite presentation (no discrete finite-presentation hypothesis or
+completeness/Hausdorffness assumption is required). -/
+theorem locallyOfFinitePresentation_comapOfPair_of_isTateRing {A B : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] [IsHuberStandard A]
     [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
     {S : Pair A} {T : Pair B}
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
@@ -279,8 +274,8 @@ theorem locallyOfFinitePresentation_comapOfPair_discrete_iff {A B : Type u} [Com
     LocallyOfFinitePresentation (comapOfPair hS hT φ) ↔ φ.toRingHom.FinitePresentation :=
   ⟨fun hf ↦ hf.finitePresentation_of_discreteTopology, fun hφ ↦
     locallyOfFinitePresentation_comapOfPair hS hT φ
-      ((Pair.Hom.isTopologicallyFiniteType_iff_finiteType_of_plus_eq_top
-        Pair.discrete_plus Pair.discrete_plus).mpr (RingHom.FiniteType.of_finitePresentation hφ))
+      (Pair.Hom.isTopologicallyFiniteType_iff_finiteType_discrete.mpr
+        (RingHom.FiniteType.of_finitePresentation hφ))
       fun _ ↦ hφ⟩
 
 end Affinoid

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.WeaklyFiniteType
+public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 
@@ -114,8 +114,8 @@ theorem locallyOfFinitePresentation_iff_chartLocally (f : X ⟶ Y) :
 /-- **A morphism locally of finite presentation is locally of finite type** (Huber 1996, §1.2):
 on each chart it is induced by a morphism of Huber pairs topologically of finite type. -/
 theorem LocallyOfFinitePresentation.locallyOfFiniteType {f : X ⟶ Y}
-    (hf : LocallyOfFinitePresentation f) : PreAdicSpace.LocallyOfFiniteType f.hom :=
-  (locallyOfFiniteType_iff f.hom).mpr <|
+    (hf : LocallyOfFinitePresentation f) : LocallyOfFiniteType f :=
+  (locallyOfFiniteType_iff_chartLocally f).mpr <|
     chartLocally_mono (fun _ hφ ↦ hφ.1) ((locallyOfFinitePresentation_iff_chartLocally f).mp hf)
 
 /-- **Being locally of finite presentation is invariant under isomorphisms** of the source and of

@@ -45,7 +45,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) :
     LocallyOfFinitePresentation (comapOfPair hS hT φ) ∧
       (ofPair T hT).IsLocallyHuberStandard ∧ (ofPair T hT).IsLocallyNoetherian := by
   intro S T hn _ _ φ hS hT
-  have hlfp := locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian hS hT φ
+  have hlfp := locallyOfFinitePresentation_comapOfPair_of_isTateRing hS hT φ
     (S.isTopologicallyFiniteType_weightedCompletionHom (fun _ ↦ Set.finite_singleton 1)
       isWeightFamily_one_weight)
   exact ⟨hlfp, hlfp.isLocallyHuberStandard_source, hlfp.isLocallyNoetherian_source⟩
@@ -63,7 +63,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) (t : Fin n → (Pair.powerBounded ℚ
     LocallyOfFinitePresentation (comapOfPair hT hS ev) := by
   intro S T hn _ _ ev hS hT
   let φ : S.Hom T := S.weightedCompletionHom isWeightFamily_one_weight
-  have hπ := locallyOfFinitePresentation_comapOfPair_of_isStronglyNoetherian hS hT φ
+  have hπ := locallyOfFinitePresentation_comapOfPair_of_isTateRing hS hT φ
     (S.isTopologicallyFiniteType_weightedCompletionHom (fun _ ↦ Set.finite_singleton 1)
       isWeightFamily_one_weight)
   have hsec : comapOfPair hT hS ev ≫ comapOfPair hS hT φ = 𝟙 (ofPair S hS) := by
@@ -74,7 +74,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) (t : Fin n → (Pair.powerBounded ℚ
     S.isRingOfIntegralElements.isPowerBounded_of_mem hP (hS.isSheaf P hP)).of_isOpenImmersion
     (ofPairIsoOfPresentation S hS P hP).hom
   exact LocallyOfFinitePresentation.of_comp (hsec.symm ▸ LocallyOfFinitePresentation.id hStdS)
-    ((AdicSpace.locallyOfFiniteType_iff _).mpr hπ.locallyOfFiniteType)
+    hπ.locallyOfFiniteType
 
 /-- Analytic-locus upgrade for morphisms locally of finite type into a locally noetherian target. -/
 example {X Y : AdicSpace.{u}} {f : X ⟶ Y} (hf : LocallyOfFiniteType f)

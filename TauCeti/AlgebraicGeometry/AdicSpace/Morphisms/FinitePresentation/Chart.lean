@@ -100,17 +100,17 @@ def LocallyOfFinitePresentationAt (f : X ⟶ Y) (x : X.obj) : Prop :=
 /-- **A morphism locally of finite presentation is locally of +weakly finite type.** -/
 theorem LocallyOfFinitePresentation.locallyOfPlusWeaklyFiniteType {f : X ⟶ Y}
     (hf : LocallyOfFinitePresentation f) : LocallyOfPlusWeaklyFiniteType f :=
-  ((locallyOfFiniteType_iff f).mpr hf.locallyOfFiniteType).locallyOfPlusWeaklyFiniteType
+  hf.locallyOfFiniteType.locallyOfPlusWeaklyFiniteType
 
 /-- **A morphism locally of finite presentation is locally of weakly finite type.** -/
 theorem LocallyOfFinitePresentation.locallyOfWeaklyFiniteType {f : X ⟶ Y}
     (hf : LocallyOfFinitePresentation f) : LocallyOfWeaklyFiniteType f :=
-  ((locallyOfFiniteType_iff f).mpr hf.locallyOfFiniteType).locallyOfWeaklyFiniteType
+  hf.locallyOfFiniteType.locallyOfWeaklyFiniteType
 
 /-- **A morphism locally of finite presentation is adic** (Huber 1996, §1.2). -/
 theorem LocallyOfFinitePresentation.isAdic {f : X ⟶ Y}
     (hf : LocallyOfFinitePresentation f) : IsAdic f :=
-  ((locallyOfFiniteType_iff f).mpr hf.locallyOfFiniteType).isAdic
+  hf.locallyOfFiniteType.isAdic
 
 /-- **Unconditional source regularity**: if `f : X ⟶ Y` is locally of finite presentation, then the
 source `X` is locally of Huber's standing class (`X.IsLocallyHuberStandard`), with no hypothesis on
@@ -173,20 +173,11 @@ theorem locallyOfFinitePresentation_iff (f : X ⟶ Y) :
     let CY₀ := ofCompletion P hP hsheafA
     let CX₀ := ofCompletion P' hP' hsheafB
     let φ₁ := ofCompletionMap P hP hsheafA P' hP' hsheafB φ
-    let ιA := toCompletionHom P hP hsheafA
-    have hιA : ιA.IsTopologicallyFiniteType :=
-      isTopologicallyFiniteType_toCompletionHom P hP hsheafA
     have hφ₁ : φ₁.IsTopologicallyFiniteType :=
       isTopologicallyFiniteType_ofCompletionMap P hP hsheafA P' hP' hsheafB φ hφ
-    have hStdCY₀ : IsHuberStandard CY₀.Ring :=
-      .of_isTopologicallyFiniteType hιA.isTopologicallyFiniteType_toRingHom
+    have hStdCY₀ : IsHuberStandard CY₀.Ring := isHuberStandard_ofCompletion P hP hsheafA
     have hfp₁ : DiscreteTopology CY₀.Ring → φ₁.toRingHom.FinitePresentation := fun _ ↦
-      hιA.isTopologicallyFiniteType_toRingHom.finitePresentation_of_comp
-        hφ₁.isTopologicallyFiniteType_toRingHom fun hDiscA ↦ by
-          have : DiscreteTopology B := hφ.isTopologicallyFiniteType_toRingHom.discreteTopology
-          rw [← Pair.Hom.toRingHom_comp, ofCompletionMap_comp_toCompletionHom,
-            Pair.Hom.toRingHom_comp]
-          exact (finitePresentation_toCompletionHom P' hP' hsheafB).comp (hfp hDiscA)
+      finitePresentation_ofCompletionMap_of_discreteTopology P hP hsheafA P' hP' hsheafB φ hφ hfp
     let CY := CY₀.compOpenImmersion (eV.inv ≫ Y.obj.ofRestrict V.isOpenEmbedding)
     let CX := CX₀.compOpenImmersion (eU.inv ≫ X.obj.ofRestrict U.isOpenEmbedding)
     have : IsHuberStandard CY.Ring := hStdCY₀

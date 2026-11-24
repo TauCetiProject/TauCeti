@@ -371,8 +371,7 @@ theorem locallyOfFiniteType_comapOfPair_discrete_iff {A B : Type u} [CommRing A]
     (φ : Pair.Hom (Pair.discrete A) (Pair.discrete B)) :
     LocallyOfFiniteType (comapOfPair hS hT φ) ↔ φ.toRingHom.FiniteType :=
   ⟨fun hf ↦ hf.finiteType_of_discreteTopology, fun hφ ↦ locallyOfFiniteType_comapOfPair hS hT φ
-    ((Pair.Hom.isTopologicallyFiniteType_iff_finiteType_of_plus_eq_top
-      Pair.discrete_plus Pair.discrete_plus).mpr hφ)⟩
+    (Pair.Hom.isTopologicallyFiniteType_iff_finiteType_discrete.mpr hφ)⟩
 
 end Affinoid
 
