@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Holder.Interpolation
 public import TauCeti.Analysis.InnerProductSpace.GraphPatch
-import Mathlib.Analysis.Calculus.ContDiff.Comp
 
 /-!
 # Interpolation inequalities up to the boundary of a domain
@@ -16,8 +15,8 @@ The interpolation inequalities of `TauCeti.Analysis.Holder.Interpolation` bound 
 Hessian of a `C²` function at the centre `x` of a ball in a set `s` by the supremum `M` of the
 function and the Hölder constant `H` of its Hessian on `s`. At a point of the closure of a domain
 there is no such ball. It suffices, however, to have a ball `B(y, 2 ε) ⊆ s` nearby, joined to `x`
-by a segment in `s`: the Hölder bound moves the Hessian estimate from `y` to `x`, and the mean value
-inequality along the segment moves the gradient estimate, giving
+by a segment in `s` (`HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem` and
+`HolderOnWith.norm_fderiv_le_of_contDiffOn_of_segment_subset`), giving
 
 `‖D²u(x)‖ ≤ 2 M / ε² + 3 H ε^α + H ‖x - y‖^α`,
 `‖Du(x)‖ ≤ M / ε + H ε^(1 + α) + ‖x - y‖ (2 M / ε² + 3 H ε^α + H ‖x - y‖^α)`.
@@ -34,9 +33,6 @@ Schauder estimate to the supremum of the function.
 
 ## Main declarations
 
-* `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem` and
-  `HolderOnWith.norm_fderiv_le_of_contDiffOn_of_segment_subset`: the interpolation inequalities at a
-  point seeing a ball nearby.
 * `TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded`: the interpolation
   inequalities on the closure of a bounded domain with Lipschitz graph boundary.
 
@@ -52,67 +48,6 @@ open Set
 open scoped NNReal InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-namespace HolderOnWith
-
-variable [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- **Interpolation of the Hessian away from the centre of a ball.** Let `u` be `C²` on an open
-set `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. If a closed ball
-of radius `2 ε > 0` about `y` lies in `s`, then at every `x ∈ s`
-
-`‖D²u(x)‖ ≤ 2 M / ε² + 3 H ε^α + H ‖x - y‖^α`.
-
-Near the boundary of a domain, `x` need not be the centre of a ball in `s`, but a ball nearby
-suffices. -/
-theorem norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem {U s : Set E} {u : E → F}
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
-    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
-    {x y : E} (hx : x ∈ s) {ε : ℝ} (hε : 0 < ε) (hys : Metric.closedBall y (2 * ε) ⊆ s) :
-    ‖iteratedFDeriv ℝ 2 u x‖ ≤
-      2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ) := by
-  have hy := hH.norm_iteratedFDeriv_two_le_of_contDiffOn hU hu hsU hM hε hys
-  have hxy := hH.dist_le hx (hys (Metric.mem_closedBall_self (by positivity)))
-  rw [dist_eq_norm] at hxy
-  linarith [norm_le_norm_add_norm_sub' (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y)]
-
-/-- **Interpolation of the gradient away from the centre of a ball.** Let `u` be `C²` on an open
-set `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. If a closed ball
-of radius `2 ε > 0` about `y` lies in `s`, then at every `x` joined to `y` by a segment in `s`
-
-`‖Du(x)‖ ≤ M / ε + H ε^(1 + α) + ‖x - y‖ (2 M / ε² + 3 H ε^α + H ‖x - y‖^α)`:
-
-the gradient at `y` is controlled by interpolation on the ball, and its change along the segment
-by the Hessian bound of `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem`. -/
-theorem norm_fderiv_le_of_contDiffOn_of_segment_subset {U s : Set E} {u : E → F}
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
-    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
-    {x y : E} (hxy : segment ℝ x y ⊆ s) {ε : ℝ} (hε : 0 < ε)
-    (hys : Metric.closedBall y (2 * ε) ⊆ s) :
-    ‖fderiv ℝ u x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) +
-      dist x y * (2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ)) := by
-  have hy := hH.norm_fderiv_le_of_contDiffOn hU hu hsU hM hε
-    ((Metric.closedBall_subset_closedBall (by linarith)).trans hys)
-  -- Along the segment the Hessian is bounded by its value near `y`, since `‖z - y‖ ≤ ‖x - y‖`.
-  have hbound : ∀ z ∈ segment ℝ x y, ‖fderiv ℝ (fderiv ℝ u) z‖ ≤
-      2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ) := by
-    intro z hz
-    have hzy : dist z y ≤ dist x y := (convex_closedBall y (dist x y)).segment_subset
-      (Metric.mem_closedBall.2 le_rfl) (Metric.mem_closedBall_self dist_nonneg) hz
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-    refine (hH.norm_iteratedFDeriv_two_le_of_contDiffOn_of_mem hU hu hsU hM (hxy hz) hε
-      hys).trans ?_
-    gcongr
-  have hmv := (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
-    (fun z hz => ((hu.contDiffAt (hU.mem_nhds (hsU (hxy hz)))).fderiv_right
-      (m := 1) le_rfl).differentiableAt one_ne_zero)
-    hbound (right_mem_segment ℝ x y) (left_mem_segment ℝ x y)
-  rw [← dist_eq_norm x y] at hmv
-  have hdist := norm_le_norm_add_norm_sub' (fderiv ℝ u x) (fderiv ℝ u y)
-  linarith [mul_comm (dist x y)
-    (2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) + H * dist x y ^ (α : ℝ))]
-
-end HolderOnWith
 
 namespace TauCeti
 

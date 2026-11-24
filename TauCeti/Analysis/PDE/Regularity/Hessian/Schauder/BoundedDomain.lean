@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.BoundaryInterpolation
 import TauCeti.Analysis.InnerProductSpace.GraphPatch
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -401,18 +402,21 @@ private theorem forall_norm_le_of_interpolation {α C₂ : ℝ≥0} {Ω U : Set 
 
 /-- **Absorption.** If `H ≤ C₁ (K + N₁)` for `N₁ = N + c N + C₂ H e` with `C₁ C₂ e ≤ 1 / 2`,
 `0 ≤ c` and `e ≤ 1`, then `H ≤ A (K + N)` and `N₁ ≤ (1 + A + c + C₂ A) (K + N)`, where
-`A = 2 C₁ (1 + c)`. -/
+`A = 2 C₁ (2 + c)`. -/
 private theorem le_mul_add_and_le_mul_add_of_le_mul_add {C₁ C₂ H K N : ℝ≥0} {c e : ℝ} (hc : 0 ≤ c)
     (he : e ≤ 1) (hC : C₁ * C₂ * e ≤ 1 / 2) (hH : (H : ℝ) ≤ C₁ * (K + (N + c * N + C₂ * H * e))) :
-    (H : ℝ) ≤ 2 * C₁ * (1 + c) * (K + N) ∧
-      N + c * N + C₂ * H * e ≤ (1 + 2 * C₁ * (1 + c) + c + C₂ * (2 * C₁ * (1 + c))) * (K + N) := by
-  set A : ℝ := 2 * C₁ * (1 + c)
-  -- `H ≤ C₁ (K + (1 + c) N) + C₁ C₂ e H ≤ C₁ (K + (1 + c) N) + H / 2`.
+    (H : ℝ) ≤ 2 * C₁ * (2 + c) * (K + N) ∧
+      N + c * N + C₂ * H * e ≤ (1 + 2 * C₁ * (2 + c) + c + C₂ * (2 * C₁ * (2 + c))) * (K + N) := by
+  set A : ℝ := 2 * C₁ * (2 + c)
+  -- The shared absorption step, with `K₀ = K + c N + C₂ H e`, `γ = 1 + c` and `β = C₂ / 2`.
   have hHA : (H : ℝ) ≤ A * (K + N) := by
-    have habs : C₁ * C₂ * e * H ≤ 1 / 2 * H := mul_le_mul_of_nonneg_right hC H.coe_nonneg
-    have hC₁cK : 0 ≤ (C₁ : ℝ) * c * K := by positivity
-    simp only [A]
-    nlinarith
+    have hHle : (H : ℝ) ≤ C₁ * ((K + c * N + C₂ * H * e) + N) := hH.trans_eq (by ring)
+    have habs : 2 * C₁ * (C₂ / 2) * e * H ≤ 1 / 2 * (H : ℝ) :=
+      calc 2 * C₁ * (C₂ / 2) * e * H = C₁ * C₂ * e * H := by ring
+        _ ≤ 1 / 2 * H := mul_le_mul_of_nonneg_right hC H.coe_nonneg
+    exact (hHle.trans (mul_add_le_two_mul_one_add_mul_add C₁.coe_nonneg K.coe_nonneg
+      N.coe_nonneg (by linarith : (0 : ℝ) ≤ 1 + c) (by ring) hHle habs)).trans_eq
+        (by simp only [A]; ring)
   refine ⟨hHA, ?_⟩
   have h1 : (C₂ : ℝ) * H * e ≤ C₂ * (A * (K + N)) := by
     calc (C₂ : ℝ) * H * e ≤ C₂ * H := mul_le_of_le_one_right (by positivity) he
@@ -478,7 +482,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_sum_smul_f
     (Real.rpow_le_rpow hε.le (min_le_left _ _) α.coe_nonneg) (by positivity)).trans hε₁C
   set c : ℝ := C₂ / ε ^ 2
   have hc : 0 ≤ c := by positivity
-  set A : ℝ := 2 * C₁ * (1 + c)
+  set A : ℝ := 2 * C₁ * (2 + c)
   refine ⟨(1 + A + c + C₂ * A).toNNReal,
     fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN hV hK => ?_⟩
   -- The Hölder constant `H` of `D²u` on `closure Ω`, the smallest one.
