@@ -8,15 +8,13 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.RingTheory.AlgebraTower
-import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 
 /-!
 # Dimensions of Euclidean spaces
 
 The first lemma derives positive ambient dimension from two distinct points, in particular from
 a nonzero vector. Distinct points thus supply the dimension hypothesis needed for Newtonian-kernel
-monotonicity and Poisson-kernel positivity. Likewise two orthogonal nonzero vectors of `𝕜ⁿ⁺¹` force
-`n ≠ 0` (`TauCeti.ne_zero_of_inner_eq_zero_euclideanSpace`).
+monotonicity and Poisson-kernel positivity.
 
 The lemma `TauCeti.finrank_real_euclideanSpace_complex` and the instance
 `TauCeti.factFinrankEuclideanSpaceComplex` record the real dimension of `ℂᵏ⁺¹` as `(2k + 1) + 1`.
@@ -51,15 +49,6 @@ namespace TauCeti
 theorem pos_of_ne_euclideanSpace {𝕜 : Type*} {n : ℕ} {x y : EuclideanSpace 𝕜 (Fin n)}
     (hxy : x ≠ y) : 0 < n :=
   Nat.pos_of_ne_zero (by rintro rfl; exact hxy (Subsingleton.elim x y))
-
-/-- Two orthogonal nonzero vectors of `EuclideanSpace 𝕜 (Fin (n + 1))` force `n ≠ 0`, the form
-in which the complex projective space `CPⁿ` API takes its dimension hypothesis. -/
-theorem ne_zero_of_inner_eq_zero_euclideanSpace {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
-    {x y : EuclideanSpace 𝕜 (Fin (n + 1))} (hx : x ≠ 0) (hy : y ≠ 0) (hxy : ⟪x, y⟫_𝕜 = 0) :
-    n ≠ 0 := by
-  have h := one_lt_finrank_of_inner_eq_zero hx hy hxy
-  rw [finrank_euclideanSpace_fin] at h
-  omega
 
 /-- The real dimension of `ℂᵏ⁺¹` is `2k + 2`, written as `(2k + 1) + 1`, so that its unit sphere
 is `S²ᵏ⁺¹`. -/

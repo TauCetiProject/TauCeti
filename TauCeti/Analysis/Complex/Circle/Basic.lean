@@ -105,11 +105,6 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
 
-/-- The homeomorphism `Circle ≃ₜ sphere (0 : ℂ) 1` sends `1` to the unit `1` of the sphere. -/
-@[simp]
-theorem homeomorphSphere_one : homeomorphSphere 1 = (1 : sphere (0 : ℂ) 1) :=
-  Subtype.ext (by simp)
-
 /-- The real part of `exp (i x)`, read on the unit sphere of `ℂ`, is `cos x`. -/
 theorem coe_homeomorphSphere_exp_re (x : ℝ) : (homeomorphSphere (exp x) : ℂ).re = Real.cos x := by
   rw [coe_homeomorphSphere_apply, coe_exp]

@@ -493,16 +493,6 @@ theorem GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z : I^(Fi
     GenLoop.fromDoubleLoop β z = β (z 0) (z 1) :=
   (rfl)
 
-/-- The inverse of `pi1MulEquivFundamentalGroup` sends the class of a loop to the class of the
-corresponding one-dimensional generalized loop. -/
-@[simp]
-theorem HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk (γ : Path x x) :
-    pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ)) =
-      (⟦(genLoopEquivOfUnique (Fin 1)).symm γ⟧ : π_ 1 X x) :=
-  -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
-  -- representatives
-  (rfl)
-
 /-- `fundamentalGroupLoopSpaceMulEquiv` sends the class of a double loop to the class of its
 square. -/
 @[simp]
@@ -510,7 +500,11 @@ theorem HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk
     (β : Ω (Ω X x) (Path.refl x)) :
     fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
       ⟦GenLoop.fromDoubleLoop β⟧ := by
-  rw [fundamentalGroupLoopSpaceMulEquiv_apply, pi1MulEquivFundamentalGroup_symm_fromPath_mk,
+  -- `pi1MulEquivFundamentalGroup` is a quotient map, so its inverse is computed on
+  -- representatives
+  have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
+      ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h,
     pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
   refine congrArg _ (GenLoop.ext _ _ fun z => ?_)
   rw [GenLoop.fromDoubleLoop_apply, GenLoop.genLoopLoopHomeomorph_apply,

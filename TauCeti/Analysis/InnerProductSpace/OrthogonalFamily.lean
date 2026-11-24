@@ -38,8 +38,6 @@ Orthogonality also gives linear independence: a nonzero vector followed by a lin
 family of vectors orthogonal to it is linearly independent
 (`LinearIndependent.finCons_of_inner_eq_zero`), as for an outward normal followed by a basis of a
 tangent space.
-In particular two orthogonal nonzero vectors force the dimension to be at least two
-(`TauCeti.one_lt_finrank_of_inner_eq_zero`).
 -/
 
 public section
@@ -234,17 +232,6 @@ theorem orthonormal_inv_norm_smul_of_pairwise_inner_eq_zero {v : ι → E}
   refine ⟨fun i ↦ ?_, fun i j hij ↦ ?_⟩
   · simp [norm_smul, i.property]
   · simp [inner_smul_left, inner_smul_right, hv (Subtype.coe_ne_coe.mpr hij)]
-
-/-- Two orthogonal nonzero vectors of a finite-dimensional inner product space force its
-dimension to be at least two. -/
-theorem one_lt_finrank_of_inner_eq_zero [FiniteDimensional 𝕜 E] {x y : E} (hx : x ≠ 0)
-    (hy : y ≠ 0) (hxy : ⟪x, y⟫_𝕜 = 0) : 1 < Module.finrank 𝕜 E := by
-  have h := (linearIndependent_of_ne_zero_of_inner_eq_zero (𝕜 := 𝕜) (v := ![x, y])
-    (by simp [Fin.forall_fin_two, hx, hy])
-    (fun i j hij ↦ by
-      fin_cases i <;> fin_cases j <;> simp_all [inner_eq_zero_symm])).fintype_card_le_finrank
-  rw [Fintype.card_fin] at h
-  omega
 
 end TauCeti
 
