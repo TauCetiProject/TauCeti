@@ -691,23 +691,8 @@ theorem coe_lie (I : RestrictedLieIdeal R p L) (x y : I) :
 /-- A restricted Lie ideal inherits a restricted Lie algebra structure from the ambient
 restricted Lie algebra. -/
 instance instRestrictedLieAlgebra (I : RestrictedLieIdeal R p L) :
-    RestrictedLieAlgebra R I p where
-  prime := RestrictedLieAlgebra.prime (R := R) (L := L) (p := p)
-  p_nsmul_eq_zero x := Subtype.ext (RestrictedLieAlgebra.p_nsmul_eq_zero (R := R) (p := p) (x : L))
-  pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), I.pMap_mem x.property⟩
-  pMap_smul c x := Subtype.ext (RestrictedLieAlgebra.pMap_smul c (x : L))
-  ad_pMap x := by
-    refine LinearMap.ext fun y => Subtype.ext ?_
-    rw [LieAlgebra.ad_apply, coe_lie]
-    exact (RestrictedLieAlgebra.pMap_lie (R := R) (p := p) (x : L) (y : L)).trans
-      (LieSubalgebra.coe_ad_pow (R := R) (L := L) I.toLieIdeal.toLieSubalgebra x y p).symm
-  pMap_add x y := by
-    refine Subtype.ext ?_
-    have hincl : ((LieAlgebra.jacobson p x y : I) : L) = LieAlgebra.jacobson p (x : L) (y : L) :=
-      LieHom.map_jacobson I.toLieIdeal.incl p x y
-    dsimp only
-    rw [coe_add, coe_add, coe_add, hincl]
-    exact RestrictedLieAlgebra.pMap_add (R := R) (p := p) (x : L) (y : L)
+    RestrictedLieAlgebra R I p :=
+  inferInstanceAs <| RestrictedLieAlgebra R I.toRestrictedLieSubalgebra p
 
 /-- The `p`-map on a restricted Lie ideal coerces to the ambient `p`-map. -/
 @[simp]
@@ -717,9 +702,8 @@ theorem coe_pMap (I : RestrictedLieIdeal R p L) (x : I) :
   (rfl)
 
 /-- The canonical inclusion `I → L` of a restricted Lie ideal as a restricted morphism. -/
-def incl (I : RestrictedLieIdeal R p L) : RestrictedLieHom R p I L where
-  toLieHom := I.toLieIdeal.incl
-  map_pMap' _ := rfl
+def incl (I : RestrictedLieIdeal R p L) : RestrictedLieHom R p I L :=
+  I.toRestrictedLieSubalgebra.incl
 
 @[simp]
 theorem incl_apply (I : RestrictedLieIdeal R p L) (x : I) : I.incl x = x :=

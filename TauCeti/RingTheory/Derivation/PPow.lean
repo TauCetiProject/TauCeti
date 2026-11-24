@@ -221,10 +221,9 @@ theorem hochschildCoeff_eq_zero_of_two_le_of_lt (D : Derivation R A A) (a : A) (
     simp [D']
   let E : Derivation R A[X] A[X] := (Polynomial.C a • D').pPow p
   have hlhs : (E (Polynomial.X ^ m : A[X])).coeff 0 = 0 := by
-    rw [E.leibniz_pow, smul_eq_mul, nsmul_eq_mul, Polynomial.coeff_natCast_mul]
     have hm1 : m - 1 = (m - 2) + 1 := by omega
-    rw [hm1, pow_succ', mul_assoc, Polynomial.mul_coeff_zero, Polynomial.coeff_X_zero, zero_mul,
-      mul_zero]
+    rw [E.leibniz_pow, hm1, pow_succ']
+    simp [mul_assoc, Polynomial.mul_coeff_zero]
   have hrhs : (E (Polynomial.X ^ m : A[X])).coeff 0 = hochschildCoeff D a p m * (m ! : A) := by
     dsimp only [E]
     rw [pPow_apply, iterate_smul_eq_sum_hochschildCoeff D D' Polynomial.C hD'C a p,
@@ -242,20 +241,21 @@ element `a : A` and a derivation `D : Derivation R A A` in prime characteristic 
 theorem pPow_smul (D : Derivation R A A) (p : ℕ) [Fact p.Prime] [CharP A p] (a : A) :
     (a • D).pPow p = a ^ p • D.pPow p + ((⇑(a • D))^[p - 1] a) • D := by
   have hp : p.Prime := Fact.out
+  obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, (Nat.sub_add_cancel hp.one_le).symm⟩
   ext b
   rw [pPow_apply, add_apply, smul_apply, smul_apply, pPow_apply, smul_eq_mul, smul_eq_mul]
-  have hexp := iterate_smul_eq_sum_hochschildCoeff D D (RingHom.id A) (fun _ => rfl) a p b
+  have hexp := iterate_smul_eq_sum_hochschildCoeff D D (RingHom.id A) (fun _ => rfl) a (q + 1) b
   simp only [RingHom.id_apply] at hexp
   rw [hexp, Finset.sum_range_succ, hochschildCoeff_self, add_comm]
   congr 1
   rw [Finset.sum_eq_single_of_mem 1 (Finset.mem_range.mpr hp.one_lt)]
-  · have hp1 : (p - 1) + 1 = p := Nat.sub_add_cancel hp.one_le
-    rw [Function.iterate_one, ← hp1, hochschildCoeff_one, Nat.add_sub_cancel]
+  · rw [Function.iterate_one, hochschildCoeff_one, Nat.add_sub_cancel]
   · intro k hk hk1
     rcases eq_or_ne k 0 with rfl | hk0
     · rw [hochschildCoeff_zero_right_eq_zero_of_pos D a hp.pos, zero_mul]
     · have hk2 : 2 ≤ k := by omega
-      rw [hochschildCoeff_eq_zero_of_two_le_of_lt D a p hk2 (Finset.mem_range.mp hk), zero_mul]
+      rw [hochschildCoeff_eq_zero_of_two_le_of_lt D a (q + 1) hk2 (Finset.mem_range.mp hk),
+        zero_mul]
 
 /-- In exponential characteristic `p`, if `D a = 0`, then `(a • D).pPow p = a ^ p • D.pPow p`:
 in prime characteristic `p`, Hochschild's correction term vanishes; at `p = 1`, this follows from
@@ -400,7 +400,7 @@ section Examples
 
 open Polynomial
 
--- Witness 1: on `R[X]` in prime characteristic `p`, Hochschild's formula gives
+-- Witness: on `R[X]` in prime characteristic `p`, Hochschild's formula gives
 -- `(X • d/dX).pPow p = X • d/dX` (confirming the `+` sign in `Derivation.pPow_smul`).
 example (R : Type*) [CommSemiring R] (p : ℕ) [Fact p.Prime] [CharP R p] :
     ((Polynomial.X : R[X]) • Polynomial.derivative' (R := R)).pPow p =
@@ -411,7 +411,7 @@ example (R : Type*) [CommSemiring R] (p : ℕ) [Fact p.Prime] [CharP R p] :
   rw [Derivation.pPow_smul, Derivation.pPow_derivative', smul_zero, zero_add,
     Function.iterate_fixed hX]
 
--- Witness 3: characteristic `0` counterexample on `ℚ[X]` showing `(d/dX)^[2]` fails the Leibniz
+-- Witness: characteristic `0` counterexample on `ℚ[X]` showing `(d/dX)^[2]` fails the Leibniz
 -- rule without `[ExpChar A p]`.
 example :
     (Polynomial.derivative' (R := ℚ))^[2] ((Polynomial.X : ℚ[X]) * Polynomial.X) ≠
