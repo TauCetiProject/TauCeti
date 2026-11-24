@@ -391,13 +391,16 @@ private lemma evenTypeAFoldAtomFixed_left (n : ℕ) (i : Fin n) :
       ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩ :=
   Subtype.ext (by rw [coe_evenTypeAFoldAtomFixed, evenTypeAFoldAtom_left])
 
+private lemma evenTypeAFoldAtomFixed_rev (n : ℕ) (a : Fin (2 * n + 1)) :
+    evenTypeAFoldAtomFixed K n a.rev = -evenTypeAFoldAtomFixed K n a :=
+  Subtype.ext (by
+    rw [Submodule.coe_neg, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed,
+      evenTypeAFoldAtom, Fin.rev_rev, evenTypeAFoldAtom, neg_typeAZeroSumVec])
+
 private lemma evenTypeAFixedCoordEquiv_foldAtom_rev (n : ℕ) (a : Fin (2 * n + 1)) :
     evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n a.rev) =
       -evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n a) := by
-  rw [← map_neg (evenTypeAFixedCoordEquiv K n)]
-  exact congrArg _ (Subtype.ext (by
-    rw [Submodule.coe_neg, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed,
-      evenTypeAFoldAtom, Fin.rev_rev, evenTypeAFoldAtom, neg_typeAZeroSumVec]))
+  rw [evenTypeAFoldAtomFixed_rev, map_neg (evenTypeAFixedCoordEquiv K n)]
 
 private lemma evenTypeAFixedCoordEquiv_foldAtom_mid (n : ℕ) :
     evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n (evenTypeAMidIdx n)) = 0 := by
@@ -419,6 +422,18 @@ private lemma evenTypeAFixedCoordEquiv_signedIdx (n : ℕ) (u : Fin (2 * n)) :
       evenTypeASignedIdx, dite_eq_right hlt, evenTypeAFixedCoordEquiv_foldAtom_rev,
       evenTypeAFoldAtomFixed_left]
 
+private lemma eq_evenTypeAFoldAtomFixed_of_coordEquiv_eq_rootOfPair {n : ℕ}
+    {x : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap} {u v : Fin (2 * n)}
+    (h : evenTypeAFixedCoordEquiv K n x = Pi.algebraMap (Fin n) ℤ K (TypeB.rootOfPair u v)) :
+    (u = v → x = evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u)) ∧
+      (u ≠ v → x = evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) +
+        evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n v)) := by
+  refine ⟨fun heq ↦ (evenTypeAFixedCoordEquiv K n).injective ?_,
+    fun hne ↦ (evenTypeAFixedCoordEquiv K n).injective ?_⟩
+  · rw [h, heq, TypeB.rootOfPair_self, evenTypeAFixedCoordEquiv_signedIdx]
+  · rw [h, TypeB.rootOfPair_of_ne hne, map_add, map_add (evenTypeAFixedCoordEquiv K n),
+      evenTypeAFixedCoordEquiv_signedIdx, evenTypeAFixedCoordEquiv_signedIdx]
+
 private lemma mem_foldedIndices_of_mem_range_typeB {n : ℕ}
     {x : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap}
     (hx : evenTypeAFixedCoordEquiv K n x ∈ Set.range (typeBBaseChangeRootSystem K n).root) :
@@ -429,26 +444,22 @@ private lemma mem_foldedIndices_of_mem_range_typeB {n : ℕ}
   obtain ⟨u, v, huv, hr⟩ := mem_range_root_typeBSimplyConnectedRootDatum_iff.mp ⟨idx, rfl⟩
   have hroot : evenTypeAFixedCoordEquiv K n x =
       Pi.algebraMap (Fin n) ℤ K (TypeB.rootOfPair u v) := hidx.symm.trans (congrArg _ hr)
+  have hcase := eq_evenTypeAFoldAtomFixed_of_coordEquiv_eq_rootOfPair K hroot
   rcases eq_or_ne u v with rfl | hne
   · refine ⟨⟨(evenTypeASignedIdx n u, (evenTypeASignedIdx n u).rev),
       fun hc ↦ evenTypeASignedIdx_ne_mid n u (rev_eq_self_iff_eq_evenTypeAMidIdx.mp hc.symm)⟩, ?_⟩
-    have hx' : x = evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) :=
-      (evenTypeAFixedCoordEquiv K n).injective (by
-        rw [hroot, TypeB.rootOfPair_self, evenTypeAFixedCoordEquiv_signedIdx])
-    rw [hx', orbitSum_typeAZeroSumRevAut_eq, ite_eq_left rfl, coe_evenTypeAFoldAtomFixed]
+    rw [hcase.1 rfl, orbitSum_typeAZeroSumRevAut_eq, ite_eq_left rfl, coe_evenTypeAFoldAtomFixed]
   · let a := evenTypeASignedIdx n u; let b := (evenTypeASignedIdx n v).rev
     have hab : a ≠ b := fun hc ↦ huv.ne_opp (evenTypeASignedIdx_injective n (by
       simpa [a, b, rev_evenTypeASignedIdx] using hc))
     have hnotfix : b ≠ a.rev :=
       fun hc ↦ hne (evenTypeASignedIdx_injective n (Fin.rev_inj.mp hc).symm)
     refine ⟨⟨(a, b), hab⟩, ?_⟩
-    have hx' : x = evenTypeAFoldAtomFixed K n a - evenTypeAFoldAtomFixed K n b :=
-      (evenTypeAFixedCoordEquiv K n).injective (by
-        rw [hroot, TypeB.rootOfPair_of_ne hne, map_add, map_sub (evenTypeAFixedCoordEquiv K n),
-          evenTypeAFixedCoordEquiv_foldAtom_rev, sub_neg_eq_add,
-          evenTypeAFixedCoordEquiv_signedIdx, evenTypeAFixedCoordEquiv_signedIdx])
-    rw [hx', orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hnotfix, Submodule.coe_sub,
-      coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed]
+    have hrev_b : evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n v) =
+        -evenTypeAFoldAtomFixed K n b := by
+      rw [← evenTypeAFoldAtomFixed_rev, Fin.rev_rev]
+    rw [hcase.2 hne, hrev_b, Submodule.coe_add, Submodule.coe_neg, orbitSum_typeAZeroSumRevAut_eq,
+      ite_eq_right hnotfix, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed, sub_eq_add_neg]
 
 private lemma evenTypeAFoldAtom_mem_range_typeB (n : ℕ) {a : Fin (2 * n + 1)}
     (ha : a ≠ evenTypeAMidIdx n) :
@@ -506,18 +517,67 @@ theorem mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices (n : ℕ)
         Submodule.coe_sub, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed])
     exact hx' ▸ evenTypeAFoldAtom_sub_mem_range_typeB K n p.property hfix
 
-/-- Ambient characterization of `foldedIndices` for `typeAZeroSumRootPairing K (2 * n)` under
-`typeAZeroSumRevAut K (2 * n)`: its elements are precisely `±fᵢ` (`i : Fin n`) and `±fᵢ ± fⱼ`
-(`i ≠ j`). -/
-theorem mem_foldedIndices_typeAZeroSumRevAut_iff (n : ℕ)
-    (x : singleParityCheckCode K (Fin (2 * n + 1))) :
-    x ∈ (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n)) ↔
-      (∃ i : Fin n, x = evenTypeABasisVec K n i ∨ x = -evenTypeABasisVec K n i) ∨
-        (∃ i j : Fin n, i ≠ j ∧
-          (x = evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
-           x = evenTypeABasisVec K n i - evenTypeABasisVec K n j ∨
-           x = -evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
-           x = -evenTypeABasisVec K n i - evenTypeABasisVec K n j)) := by
+private lemma mem_foldedIndices_typeAZeroSumRevAut_mp {n : ℕ}
+    {x : singleParityCheckCode K (Fin (2 * n + 1))}
+    (hx : x ∈ (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n))) :
+    (∃ i : Fin n, x = evenTypeABasisVec K n i ∨ x = -evenTypeABasisVec K n i) ∨
+      (∃ i j : Fin n, i ≠ j ∧
+        (x = evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
+         x = evenTypeABasisVec K n i - evenTypeABasisVec K n j ∨
+         x = -evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
+         x = -evenTypeABasisVec K n i - evenTypeABasisVec K n j)) := by
+  -- Transport `x` to a type-`Bₙ` root `TypeB.rootOfPair u v`.
+  obtain ⟨p, hp⟩ := RootPairing.mem_foldedIndices.mp hx
+  let xf : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap :=
+    ⟨x, hp ▸ RootPairing.orbitSum_mem_fixedSubmodule _ _ p⟩
+  obtain ⟨idx, hidx⟩ :=
+    (mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices K n xf).mpr hx
+  rw [root_typeBBaseChangeRootSystem] at hidx
+  obtain ⟨u, v, huv, hr⟩ := mem_range_root_typeBSimplyConnectedRootDatum_iff.mp ⟨idx, rfl⟩
+  have hroot : evenTypeAFixedCoordEquiv K n xf =
+      Pi.algebraMap (Fin n) ℤ K (TypeB.rootOfPair u v) := hidx.symm.trans (congrArg _ hr)
+  have hcase := eq_evenTypeAFoldAtomFixed_of_coordEquiv_eq_rootOfPair K hroot
+  -- Split on `u = v` (short root `±fᵢ`) vs `u ≠ v` (long root `±fᵢ ± fⱼ`).
+  rcases eq_or_ne u v with rfl | hne
+  · left
+    have hu : x = (evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) :
+        singleParityCheckCode K (Fin (2 * n + 1))) := congrArg Subtype.val (hcase.1 rfl)
+    rw [hu, coe_evenTypeAFoldAtomFixed, evenTypeASignedIdx]
+    split_ifs with hlt
+    · exact ⟨⟨u, hlt⟩, Or.inl rfl⟩
+    · refine ⟨⟨(u : ℕ) - n, by have := u.isLt; omega⟩, Or.inr ?_⟩
+      rw [evenTypeAFoldAtom, ← neg_typeAZeroSumVec, Fin.rev_rev]; rfl
+  · right
+    have hax : TypeB.axis u ≠ TypeB.axis v := ((TypeB.isPair_iff u v).mp huv).resolve_left hne
+    have hx' : x = (evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) +
+        evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n v) :
+        singleParityCheckCode K (Fin (2 * n + 1))) := congrArg Subtype.val (hcase.2 hne)
+    have hu := u.isLt; have hv := v.isLt
+    by_cases hlu : (u : ℕ) < n <;> by_cases hlv : (v : ℕ) < n
+    · refine ⟨⟨u, hlu⟩, ⟨v, hlv⟩, ?_, Or.inl ?_⟩
+      · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
+      · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec] using hx'
+    · refine ⟨⟨u, hlu⟩, ⟨(v : ℕ) - n, by omega⟩, ?_, Or.inr (Or.inl ?_)⟩
+      · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
+      · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec, sub_eq_add_neg]
+          using hx'
+    · refine ⟨⟨(u : ℕ) - n, by omega⟩, ⟨v, hlv⟩, ?_, Or.inr (Or.inr (Or.inl ?_))⟩
+      · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
+      · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec] using hx'
+    · refine ⟨⟨(u : ℕ) - n, by omega⟩, ⟨(v : ℕ) - n, by omega⟩, ?_, Or.inr (Or.inr (Or.inr ?_))⟩
+      · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
+      · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec, sub_eq_add_neg]
+          using hx'
+
+private lemma mem_foldedIndices_typeAZeroSumRevAut_mpr {n : ℕ}
+    {x : singleParityCheckCode K (Fin (2 * n + 1))}
+    (hx : (∃ i : Fin n, x = evenTypeABasisVec K n i ∨ x = -evenTypeABasisVec K n i) ∨
+      (∃ i j : Fin n, i ≠ j ∧
+        (x = evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
+         x = evenTypeABasisVec K n i - evenTypeABasisVec K n j ∨
+         x = -evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
+         x = -evenTypeABasisVec K n i - evenTypeABasisVec K n j))) :
+    x ∈ (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n)) := by
   have hmem_pair (y : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap)
       (u v : Fin (2 * n)) (huv : TypeB.IsPair u v)
       (hy : evenTypeAFixedCoordEquiv K n y = Pi.algebraMap (Fin n) ℤ K (TypeB.rootOfPair u v)) :
@@ -547,95 +607,61 @@ theorem mem_foldedIndices_typeAZeroSumRevAut_iff (n : ℕ)
         (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n)) := by
     refine hmem_pair (y₁ + y₂) u v ((TypeB.isPair_iff u v).mpr (Or.inr hax)) ?_
     rw [map_add, hy₁, hy₂, TypeB.rootOfPair_of_ne (fun h ↦ hax (congrArg TypeB.axis h)), map_add]
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · obtain ⟨p, hp⟩ := RootPairing.mem_foldedIndices.mp hx
-    let xf : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap :=
-      ⟨x, hp ▸ RootPairing.orbitSum_mem_fixedSubmodule _ _ p⟩
-    obtain ⟨idx, hidx⟩ :=
-      (mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices K n xf).mpr hx
-    rw [root_typeBBaseChangeRootSystem] at hidx
-    obtain ⟨u, v, huv, hr⟩ := mem_range_root_typeBSimplyConnectedRootDatum_iff.mp ⟨idx, rfl⟩
-    have hroot : evenTypeAFixedCoordEquiv K n xf =
-        Pi.algebraMap (Fin n) ℤ K (TypeB.rootOfPair u v) := hidx.symm.trans (congrArg _ hr)
-    rcases eq_or_ne u v with rfl | hne
-    · left
-      have hxf : xf = evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) :=
-        (evenTypeAFixedCoordEquiv K n).injective (by
-          rw [hroot, TypeB.rootOfPair_self, evenTypeAFixedCoordEquiv_signedIdx])
-      have hu : x = (evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) :
-          singleParityCheckCode K (Fin (2 * n + 1))) := congrArg Subtype.val hxf
-      rw [hu, coe_evenTypeAFoldAtomFixed, evenTypeASignedIdx]
-      split_ifs with hlt
-      · exact ⟨⟨u, hlt⟩, Or.inl rfl⟩
-      · refine ⟨⟨(u : ℕ) - n, by have := u.isLt; omega⟩, Or.inr ?_⟩
-        rw [evenTypeAFoldAtom, ← neg_typeAZeroSumVec, Fin.rev_rev]; rfl
-    · right
-      have hax : TypeB.axis u ≠ TypeB.axis v := ((TypeB.isPair_iff u v).mp huv).resolve_left hne
-      have hxf : xf = evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) +
-          evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n v) :=
-        (evenTypeAFixedCoordEquiv K n).injective (by
-          rw [hroot, TypeB.rootOfPair_of_ne hne, map_add, map_add (evenTypeAFixedCoordEquiv K n),
-            evenTypeAFixedCoordEquiv_signedIdx, evenTypeAFixedCoordEquiv_signedIdx])
-      have hx' : x = (evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) +
-          evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n v) :
-          singleParityCheckCode K (Fin (2 * n + 1))) := congrArg Subtype.val hxf
-      have hu := u.isLt; have hv := v.isLt
-      by_cases hlu : (u : ℕ) < n <;> by_cases hlv : (v : ℕ) < n
-      · refine ⟨⟨u, hlu⟩, ⟨v, hlv⟩, ?_, Or.inl ?_⟩
-        · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
-        · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec] using hx'
-      · refine ⟨⟨u, hlu⟩, ⟨(v : ℕ) - n, by omega⟩, ?_, Or.inr (Or.inl ?_)⟩
-        · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
-        · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec, sub_eq_add_neg]
-            using hx'
-      · refine ⟨⟨(u : ℕ) - n, by omega⟩, ⟨v, hlv⟩, ?_, Or.inr (Or.inr (Or.inl ?_))⟩
-        · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
-        · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec] using hx'
-      · refine ⟨⟨(u : ℕ) - n, by omega⟩, ⟨(v : ℕ) - n, by omega⟩, ?_, Or.inr (Or.inr (Or.inr ?_))⟩
-        · simpa [Fin.ext_iff, TypeB.axis_def, hlu, hlv] using hax
-        · simpa [evenTypeASignedIdx, hlu, hlv, evenTypeAFoldAtom, evenTypeABasisVec, sub_eq_add_neg]
-            using hx'
-  · rintro (⟨i, rfl | rfl⟩ | ⟨i, j, hij, rfl | rfl | rfl | rfl⟩)
-    · refine hmem_pair ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
-        ⟨i, by have := i.isLt; omega⟩ ⟨i, by have := i.isLt; omega⟩
-        ((TypeB.isPair_iff _ _).mpr (Or.inl rfl)) ?_
-      rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, TypeB.rootOfPair_self, (hpos_signed i).2]
-    · refine hmem_pair (-⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩)
-        ⟨n + i, by have := i.isLt; omega⟩ ⟨n + i, by have := i.isLt; omega⟩
-        ((TypeB.isPair_iff _ _).mpr (Or.inl rfl)) ?_
-      rw [map_neg (evenTypeAFixedCoordEquiv K n), evenTypeAFixedCoordEquiv_evenTypeABasisVec,
-        TypeB.rootOfPair_self, (hneg_signed i).2, map_neg]
-    · exact hmem_pair_ne ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
-        ⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩
-        ⟨i, by have := i.isLt; omega⟩ ⟨j, by have := j.isLt; omega⟩
-        (by rw [(hpos_signed i).1, (hpos_signed j).1]; exact Fin.val_ne_of_ne hij)
+  rcases hx with ⟨i, rfl | rfl⟩ | ⟨i, j, hij, rfl | rfl | rfl | rfl⟩
+  · refine hmem_pair ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
+      ⟨i, by have := i.isLt; omega⟩ ⟨i, by have := i.isLt; omega⟩
+      ((TypeB.isPair_iff _ _).mpr (Or.inl rfl)) ?_
+    rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, TypeB.rootOfPair_self, (hpos_signed i).2]
+  · refine hmem_pair (-⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩)
+      ⟨n + i, by have := i.isLt; omega⟩ ⟨n + i, by have := i.isLt; omega⟩
+      ((TypeB.isPair_iff _ _).mpr (Or.inl rfl)) ?_
+    rw [map_neg (evenTypeAFixedCoordEquiv K n), evenTypeAFixedCoordEquiv_evenTypeABasisVec,
+      TypeB.rootOfPair_self, (hneg_signed i).2, map_neg]
+  · exact hmem_pair_ne ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
+      ⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩
+      ⟨i, by have := i.isLt; omega⟩ ⟨j, by have := j.isLt; omega⟩
+      (by rw [(hpos_signed i).1, (hpos_signed j).1]; exact Fin.val_ne_of_ne hij)
+      (by rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hpos_signed i).2])
+      (by rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hpos_signed j).2])
+  · simpa only [Submodule.coe_add, Submodule.coe_neg, ← sub_eq_add_neg] using
+      hmem_pair_ne ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
+        (-⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩)
+        ⟨i, by have := i.isLt; omega⟩ ⟨n + j, by have := j.isLt; omega⟩
+        (by rw [(hpos_signed i).1, (hneg_signed j).1]; exact Fin.val_ne_of_ne hij)
         (by rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hpos_signed i).2])
+        (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
+          evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed j).2, map_neg])
+  · simpa only [Submodule.coe_add, Submodule.coe_neg] using
+      hmem_pair_ne (-⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩)
+        ⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩
+        ⟨n + i, by have := i.isLt; omega⟩ ⟨j, by have := j.isLt; omega⟩
+        (by rw [(hneg_signed i).1, (hpos_signed j).1]; exact Fin.val_ne_of_ne hij)
+        (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
+          evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed i).2, map_neg])
         (by rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hpos_signed j).2])
-    · simpa only [Submodule.coe_add, Submodule.coe_neg, ← sub_eq_add_neg] using
-        hmem_pair_ne ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
-          (-⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩)
-          ⟨i, by have := i.isLt; omega⟩ ⟨n + j, by have := j.isLt; omega⟩
-          (by rw [(hpos_signed i).1, (hneg_signed j).1]; exact Fin.val_ne_of_ne hij)
-          (by rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hpos_signed i).2])
-          (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
-            evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed j).2, map_neg])
-    · simpa only [Submodule.coe_add, Submodule.coe_neg] using
-        hmem_pair_ne (-⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩)
-          ⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩
-          ⟨n + i, by have := i.isLt; omega⟩ ⟨j, by have := j.isLt; omega⟩
-          (by rw [(hneg_signed i).1, (hpos_signed j).1]; exact Fin.val_ne_of_ne hij)
-          (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
-            evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed i).2, map_neg])
-          (by rw [evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hpos_signed j).2])
-    · simpa only [Submodule.coe_add, Submodule.coe_neg, ← sub_eq_add_neg] using
-        hmem_pair_ne (-⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩)
-          (-⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩)
-          ⟨n + i, by have := i.isLt; omega⟩ ⟨n + j, by have := j.isLt; omega⟩
-          (by rw [(hneg_signed i).1, (hneg_signed j).1]; exact Fin.val_ne_of_ne hij)
-          (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
-            evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed i).2, map_neg])
-          (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
-            evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed j).2, map_neg])
+  · simpa only [Submodule.coe_add, Submodule.coe_neg, ← sub_eq_add_neg] using
+      hmem_pair_ne (-⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩)
+        (-⟨evenTypeABasisVec K n j, evenTypeABasisVec_mem_fixedSubmodule K n j⟩)
+        ⟨n + i, by have := i.isLt; omega⟩ ⟨n + j, by have := j.isLt; omega⟩
+        (by rw [(hneg_signed i).1, (hneg_signed j).1]; exact Fin.val_ne_of_ne hij)
+        (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
+          evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed i).2, map_neg])
+        (by rw [map_neg (evenTypeAFixedCoordEquiv K n),
+          evenTypeAFixedCoordEquiv_evenTypeABasisVec, (hneg_signed j).2, map_neg])
+
+/-- Ambient characterization of `foldedIndices` for `typeAZeroSumRootPairing K (2 * n)` under
+`typeAZeroSumRevAut K (2 * n)`: its elements are precisely `±fᵢ` (`i : Fin n`) and `±fᵢ ± fⱼ`
+(`i ≠ j`). -/
+theorem mem_foldedIndices_typeAZeroSumRevAut_iff (n : ℕ)
+    (x : singleParityCheckCode K (Fin (2 * n + 1))) :
+    x ∈ (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n)) ↔
+      (∃ i : Fin n, x = evenTypeABasisVec K n i ∨ x = -evenTypeABasisVec K n i) ∨
+        (∃ i j : Fin n, i ≠ j ∧
+          (x = evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
+           x = evenTypeABasisVec K n i - evenTypeABasisVec K n j ∨
+           x = -evenTypeABasisVec K n i + evenTypeABasisVec K n j ∨
+           x = -evenTypeABasisVec K n i - evenTypeABasisVec K n j)) :=
+  ⟨mem_foldedIndices_typeAZeroSumRevAut_mp K, mem_foldedIndices_typeAZeroSumRevAut_mpr K⟩
 
 /-- `evenTypeAFixedCoordEquiv K n` sends the `k`-th simple orbit sum of `A₂ₙ` to the `k`-th
 Bourbaki simple root of `typeBBaseChangeRootSystem K n`. -/

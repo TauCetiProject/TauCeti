@@ -271,6 +271,15 @@ noncomputable def typeAZeroSumBase (m : ℕ) : (typeAZeroSumRootPairing K m).Bas
     (typeAZeroSumRootPairing K m).coroot p = typeAZeroSumVec K p.val.1 p.val.2 := by
   rw [typeAZeroSumRootPairing, RootPairing.coroot_map, Equiv.symm_symm, zeroSumCoweightEquiv_coroot]
 
+/-- The ambient dot product of two roots of `typeAZeroSumRootPairing K m` equals their pairing. -/
+theorem root_dotProduct_root_typeAZeroSumRootPairing (m : ℕ) (a b : TypeAIndex m) :
+    ((typeAZeroSumRootPairing K m).root a : Fin (m + 1) → K) ⬝ᵥ
+        ((typeAZeroSumRootPairing K m).root b : Fin (m + 1) → K) =
+      (typeAZeroSumRootPairing K m).pairing a b := by
+  simp only [← (typeAZeroSumRootPairing K m).root_coroot_eq_pairing,
+    toLinearMap_typeAZeroSumRootPairing, root_typeAZeroSumRootPairing,
+    coroot_typeAZeroSumRootPairing]
+
 -- Not `@[simp]`: `RootPairing.coroot'` is an `abbrev`, so `simp` already proves this via
 -- `LinearMap.flip_apply`, `coroot_typeAZeroSumRootPairing`, and
 -- `toLinearMap_typeAZeroSumRootPairing` (`simpNF`).

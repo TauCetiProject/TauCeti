@@ -460,8 +460,7 @@ to orbit sums of `σ₂`. -/
 theorem weightMap_orbitSum_of_autCongr (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
     (hφ : φ.autCongr σ = σ₂) (i : ι) :
     φ.weightMap (P.orbitSum σ i) = P₂.orbitSum σ₂ (φ.indexEquiv i) :=
-  RootPairing.weightMap_orbitSum φ
-    (fun j ↦ by rw [← hφ, indexEquiv_autCongr_apply, _root_.Equiv.symm_apply_apply]) i
+  RootPairing.weightMap_orbitSum φ (φ.indexEquiv_apply_of_autCongr_eq hφ) i
 
 /-- An equivalence intertwining `σ` and `σ₂` carries members of `P.foldedIndices σ` into
 `P₂.foldedIndices σ₂`. -/

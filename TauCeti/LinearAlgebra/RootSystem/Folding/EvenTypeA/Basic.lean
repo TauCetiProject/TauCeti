@@ -73,10 +73,15 @@ private lemma exists_fin_of_mem_support
 
 end SimpleIndex
 
-private lemma pairing_eq_of_pairingIn_eq {ι R M N : Type*} [CommRing R] [AddCommGroup M]
+private lemma pairing_eq_zero_of_pairingIn {ι R M N : Type*} [CommRing R] [AddCommGroup M]
     [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [P.IsValuedIn ℤ]
-    {i j : ι} {z : ℤ} (h : P.pairingIn ℤ i j = z) : P.pairing i j = (z : R) := by
-  rw [← P.algebraMap_pairingIn ℤ, h, eq_intCast]
+    {i j : ι} (h : P.pairingIn ℤ i j = 0) : P.pairing i j = 0 := by
+  rw [← P.algebraMap_pairingIn ℤ, h, map_zero]
+
+private lemma pairing_eq_neg_one_of_pairingIn {ι R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) [P.IsValuedIn ℤ]
+    {i j : ι} (h : P.pairingIn ℤ i j = -1) : P.pairing i j = -1 := by
+  rw [← P.algebraMap_pairingIn ℤ, h, map_neg, map_one]
 
 private lemma pairingIn_eq_of_pairing_eq_int {ι K M N : Type*} [Field K] [CharZero K]
     [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
@@ -163,6 +168,12 @@ private noncomputable def evenTypeAIndexEquiv : Fin (2 * n ^ 2) ≃ P.foldedIndi
         exact ⟨k, Subtype.ext <| by
           dsimp only; rw [hk]; exact congrArg Subtype.val (Ψ.symm_apply_apply x)⟩⟩
 
+private lemma coe_evenTypeAIndexEquiv_apply (k : Fin (2 * n ^ 2)) :
+    ((evenTypeAIndexEquiv P b σ hσ e he hrev k : P.foldedIndices σ) : M) =
+      (((evenTypeAWeightEquiv P b σ hσ e he hrev).symm
+        ((typeBBaseChangeRootSystem K n).root k) : LinearMap.fixedSubmodule σ.weightMap) : M) :=
+  rfl
+
 /-- **The folded root system of `(P, b, σ)` of type `A (2 * n)` under diagram reversal.** -/
 noncomputable def evenTypeAFoldedPairing :
     RootPairing (P.foldedIndices σ) K (LinearMap.fixedSubmodule σ.weightMap)
@@ -235,12 +246,10 @@ theorem evenTypeAFoldedPairing_congr
 
 private lemma indexEquiv_evenTypeAToZeroSumEquiv_comp_aut (r : ι) :
     (evenTypeAToZeroSumEquiv P b e he).indexEquiv (σ.indexEquiv r) =
-      finDistinctPairsRevSwap (2 * n + 1) ((evenTypeAToZeroSumEquiv P b e he).indexEquiv r) := by
-  set Φ := evenTypeAToZeroSumEquiv P b e he
-  have h := Equiv.indexEquiv_autCongr_apply Φ σ (Φ.indexEquiv r)
-  rw [autCongr_evenTypeAToZeroSumEquiv P b σ hσ e he hrev, indexEquiv_typeAZeroSumRevAut,
-    Equiv.symm_apply_apply] at h
-  exact h.symm
+      finDistinctPairsRevSwap (2 * n + 1) ((evenTypeAToZeroSumEquiv P b e he).indexEquiv r) :=
+  ((evenTypeAToZeroSumEquiv P b e he).indexEquiv_apply_of_autCongr_eq
+    (autCongr_evenTypeAToZeroSumEquiv P b σ hσ e he hrev) r).trans
+    (by rw [indexEquiv_typeAZeroSumRevAut])
 
 private lemma indexEquiv_indexEquiv (j : ι) : σ.indexEquiv (σ.indexEquiv j) = j := by
   apply (evenTypeAToZeroSumEquiv P b e he).indexEquiv.injective
@@ -301,11 +310,9 @@ private lemma reflection_fixed_eq_preReflection_of_pairingIn_eq_zero {j : ι}
         P.coroot' j (x : M)) • P.orbitSum σ j := by
   have hne_neg : P.pairingIn ℤ (σ.indexEquiv j) j ≠ -1 := by rw [h0]; decide
   have hne : σ.indexEquiv j ≠ j := P.ne_of_pairingIn_ne_two (by rw [h0]; decide)
-  have h0K : P.pairing (σ.indexEquiv j) j = 0 :=
-    (pairing_eq_of_pairingIn_eq P h0).trans Int.cast_zero
   rw [ite_eq_right hne_neg, one_mul,
     P.orbitSum_eq_add_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev j) hne,
-    RootPairing.reflection_reflection_of_pairing_eq_zero P h0K,
+    RootPairing.reflection_reflection_of_pairing_eq_zero P (pairing_eq_zero_of_pairingIn P h0),
     P.coroot'_indexEquiv_of_mem_fixedSubmodule σ j x.property, smul_add, sub_sub,
     add_comm (P.coroot' j (x : M) • P.root (σ.indexEquiv j))]
 
@@ -315,9 +322,10 @@ private lemma reflection_fixed_eq_preReflection_of_pairingIn_eq_neg_one {j : ι}
       (x : M) - ((if P.pairingIn ℤ (σ.indexEquiv j) j = -1 then (2 : K) else 1) *
         P.coroot' j (x : M)) • P.orbitSum σ j := by
   have hne : σ.indexEquiv j ≠ j := P.ne_of_pairingIn_ne_two (by rw [hneg]; decide)
-  have hnegK : P.pairing (σ.indexEquiv j) j = -1 := by simpa using pairing_eq_of_pairingIn_eq P hneg
+  have hnegK := pairing_eq_neg_one_of_pairingIn P hneg
   have hnegK' : P.pairing j (σ.indexEquiv j) = -1 :=
-    (σ.pairing_indexEquiv_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev j)).trans hnegK
+    (σ.pairing_indexEquiv_comm_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev j)).trans
+      hnegK
   rw [ite_eq_left hneg,
     P.orbitSum_eq_add_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev j) hne,
     P.reflection_reflection_reflection_of_pairing_eq_neg_one hnegK hnegK',
@@ -339,28 +347,27 @@ private lemma exists_aut_comm_eq_preReflection (j : ι) :
     refine ⟨by rw [ite_eq_right hne, one_mul, orbitSum_eq_root_of_indexEquiv_eq hfix,
       root_coroot'_eq_pairing, pairing_same], Equiv.reflection P j,
       σ.indexEquiv_reflection_comm_of_indexEquiv_eq hfix, fun x ↦ by
-        rw [P.reflection_weightMap_apply,
+        rw [Equiv.reflection_weightMap_apply,
           reflection_fixed_eq_preReflection_of_indexEquiv_eq P σ hfix x]⟩
   · have hne_neg : P.pairingIn ℤ (σ.indexEquiv j) j ≠ -1 := by rw [h0]; decide
     have hne : σ.indexEquiv j ≠ j := P.ne_of_pairingIn_ne_two (by rw [h0]; decide)
-    have h0K : P.pairing (σ.indexEquiv j) j = 0 :=
-      (pairing_eq_of_pairingIn_eq P h0).trans Int.cast_zero
+    have h0K := pairing_eq_zero_of_pairingIn P h0
     refine ⟨?_, Equiv.reflection P j * Equiv.reflection P (σ.indexEquiv j),
       σ.indexEquiv_reflection_mul_comm_of_pairing_eq_zero
         (indexEquiv_indexEquiv P b σ hσ e he hrev j) h0K, fun x ↦ by
-        rw [Equiv.weightMap_mul_apply, P.reflection_weightMap_apply, P.reflection_weightMap_apply,
+        rw [Equiv.weightMap_mul_apply, Equiv.reflection_weightMap_apply,
+          Equiv.reflection_weightMap_apply,
           reflection_fixed_eq_preReflection_of_pairingIn_eq_zero P b σ hσ e he hrev h0 x]⟩
     rw [ite_eq_right hne_neg, one_mul,
       P.orbitSum_eq_add_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev j) hne, map_add,
       root_coroot'_eq_pairing, root_coroot'_eq_pairing, pairing_same, h0K, add_zero]
   · have hne : σ.indexEquiv j ≠ j := P.ne_of_pairingIn_ne_two (by rw [hneg]; decide)
-    have hnegK : P.pairing (σ.indexEquiv j) j = -1 :=
-      by simpa using pairing_eq_of_pairingIn_eq P hneg
+    have hnegK := pairing_eq_neg_one_of_pairingIn P hneg
     refine ⟨?_, Equiv.reflection P j * Equiv.reflection P (σ.indexEquiv j) * Equiv.reflection P j,
       σ.indexEquiv_reflection_braid_comm_of_pairing_eq_neg_one
         (indexEquiv_indexEquiv P b σ hσ e he hrev j) hnegK, fun x ↦ by
-        rw [Equiv.weightMap_mul_apply, Equiv.weightMap_mul_apply, P.reflection_weightMap_apply,
-          P.reflection_weightMap_apply, P.reflection_weightMap_apply,
+        rw [Equiv.weightMap_mul_apply, Equiv.weightMap_mul_apply, Equiv.reflection_weightMap_apply,
+          Equiv.reflection_weightMap_apply, Equiv.reflection_weightMap_apply,
           reflection_fixed_eq_preReflection_of_pairingIn_eq_neg_one P b σ hσ e he hrev hneg x]⟩
     rw [ite_eq_left hneg,
       P.orbitSum_eq_add_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev j) hne, map_add,
@@ -565,7 +572,7 @@ theorem reflectionPerm_evenTypeAFoldedPairing_of_indexEquiv_eq {v w : P.foldedIn
   rw [← coe_root_evenTypeAFoldedPairing P b σ hσ e he hrev (P'.reflectionPerm v w),
     root_reflectionPerm,
     coe_reflection_evenTypeAFoldedPairing_of_indexEquiv_eq P b σ hσ e he hrev hv hfix,
-    coe_root_evenTypeAFoldedPairing, ← hw, ← P.reflection_weightMap_apply]
+    coe_root_evenTypeAFoldedPairing, ← hw, ← Equiv.reflection_weightMap_apply]
   have h := weightMap_orbitSum (σ := σ) (τ := σ) (Equiv.reflection P j)
     (σ.indexEquiv_reflection_comm_of_indexEquiv_eq hfix) i
   rwa [Equiv.reflection_indexEquiv] at h
@@ -580,8 +587,6 @@ theorem reflectionPerm_evenTypeAFoldedPairing_of_pairingIn_eq_zero {v w : P.fold
       ⟨P.orbitSum σ (P.reflectionPerm j (P.reflectionPerm (σ.indexEquiv j) i)),
         P.orbitSum_mem_foldedIndices σ _⟩ := by
   let P' := P.evenTypeAFoldedPairing b σ hσ e he hrev
-  have h0K : P.pairing (σ.indexEquiv j) j = 0 :=
-    (pairing_eq_of_pairingIn_eq P h0).trans Int.cast_zero
   apply Subtype.ext
   rw [← coe_root_evenTypeAFoldedPairing P b σ hσ e he hrev (P'.reflectionPerm v w),
     root_reflectionPerm,
@@ -590,9 +595,10 @@ theorem reflectionPerm_evenTypeAFoldedPairing_of_pairingIn_eq_zero {v w : P.fold
   have h := weightMap_orbitSum (σ := σ) (τ := σ)
     (Equiv.reflection P j * Equiv.reflection P (σ.indexEquiv j))
     (σ.indexEquiv_reflection_mul_comm_of_pairing_eq_zero
-      (indexEquiv_indexEquiv P b σ hσ e he hrev j) h0K) i
-  rwa [Equiv.weightMap_mul_apply, P.reflection_weightMap_apply, P.reflection_weightMap_apply,
-    Equiv.indexEquiv_mul_apply, Equiv.reflection_indexEquiv, Equiv.reflection_indexEquiv] at h
+      (indexEquiv_indexEquiv P b σ hσ e he hrev j) (pairing_eq_zero_of_pairingIn P h0)) i
+  rwa [Equiv.weightMap_mul_apply, Equiv.reflection_weightMap_apply,
+    Equiv.reflection_weightMap_apply, Equiv.indexEquiv_mul_apply, Equiv.reflection_indexEquiv,
+    Equiv.reflection_indexEquiv] at h
 
 /-- At an adjacent pair (`P.pairingIn ℤ (σ.indexEquiv j) j = -1`), the folded reflection
 permutation acts on orbit representatives by
@@ -604,7 +610,6 @@ theorem reflectionPerm_evenTypeAFoldedPairing_of_pairingIn_eq_neg_one {v w : P.f
       ⟨P.orbitSum σ (P.reflectionPerm j (P.reflectionPerm (σ.indexEquiv j)
           (P.reflectionPerm j i))), P.orbitSum_mem_foldedIndices σ _⟩ := by
   let P' := P.evenTypeAFoldedPairing b σ hσ e he hrev
-  have hnegK : P.pairing (σ.indexEquiv j) j = -1 := by simpa using pairing_eq_of_pairingIn_eq P hneg
   apply Subtype.ext
   rw [← coe_root_evenTypeAFoldedPairing P b σ hσ e he hrev (P'.reflectionPerm v w),
     root_reflectionPerm,
@@ -613,9 +618,9 @@ theorem reflectionPerm_evenTypeAFoldedPairing_of_pairingIn_eq_neg_one {v w : P.f
   have h := weightMap_orbitSum (σ := σ) (τ := σ)
     (Equiv.reflection P j * Equiv.reflection P (σ.indexEquiv j) * Equiv.reflection P j)
     (σ.indexEquiv_reflection_braid_comm_of_pairing_eq_neg_one
-      (indexEquiv_indexEquiv P b σ hσ e he hrev j) hnegK) i
-  rwa [Equiv.weightMap_mul_apply, Equiv.weightMap_mul_apply, P.reflection_weightMap_apply,
-    P.reflection_weightMap_apply, P.reflection_weightMap_apply, Equiv.indexEquiv_mul_apply,
+      (indexEquiv_indexEquiv P b σ hσ e he hrev j) (pairing_eq_neg_one_of_pairingIn P hneg)) i
+  rwa [Equiv.weightMap_mul_apply, Equiv.weightMap_mul_apply, Equiv.reflection_weightMap_apply,
+    Equiv.reflection_weightMap_apply, Equiv.reflection_weightMap_apply, Equiv.indexEquiv_mul_apply,
     Equiv.indexEquiv_mul_apply, Equiv.reflection_indexEquiv, Equiv.reflection_indexEquiv] at h
 
 private lemma evenTypeAIndexEquiv_typeBSimpleIndex (k : Fin n) :
@@ -632,9 +637,8 @@ private lemma evenTypeAIndexEquiv_typeBSimpleIndex (k : Fin n) :
       Φ.weightMap_orbitSum_of_autCongr (autCongr_evenTypeAToZeroSumEquiv P b σ hσ e he hrev),
       indexEquiv_evenTypeAToZeroSumEquiv_support P b e he jk, Equiv.apply_symm_apply]
   exact Subtype.ext (by
-    have hcoe : ((evenTypeAIndexEquiv P b σ hσ e he hrev (typeBSimpleIndex n k) : _) : M) =
-        ((Ψ.symm ((typeBBaseChangeRootSystem K n).root (typeBSimpleIndex n k)) : _) : M) := rfl
-    rw [hcoe, Base.coe_evenTypeAFoldedSimpleIndex, ← hΨ, Ψ.symm_apply_apply])
+    rw [coe_evenTypeAIndexEquiv_apply, Base.coe_evenTypeAFoldedSimpleIndex, ← hΨ,
+      Ψ.symm_apply_apply])
 
 variable {P}
 
@@ -793,6 +797,57 @@ private lemma not_eq_neg_evenTypeABasisVec_of_isPos {v : P.foldedIndices σ}
   exact reflectionPerm_self_notMem_posRoots P' b' ((mem_posRoots P' b' v).mpr hv_pos)
     ((mem_posRoots P' b' _).mpr (hu_eq ▸ hu_pos))
 
+private lemma indexEquiv_ne_of_dotProduct_weightMap_orbitSum_eq_four {r : ι}
+    (hdot : (((evenTypeAToZeroSumEquiv P b e he).weightMap (P.orbitSum σ r) :
+      singleParityCheckCode K (Fin (2 * n + 1))) : Fin (2 * n + 1) → K) ⬝ᵥ
+      ((evenTypeAToZeroSumEquiv P b e he).weightMap (P.orbitSum σ r) :
+        Fin (2 * n + 1) → K) = 4) :
+    σ.indexEquiv r ≠ r := by
+  intro hfix
+  set Φ := evenTypeAToZeroSumEquiv P b e he
+  have hφ := autCongr_evenTypeAToZeroSumEquiv P b σ hσ e he hrev
+  have hfix' : (typeAZeroSumRevAut K (2 * n)).indexEquiv (Φ.indexEquiv r) = Φ.indexEquiv r := by
+    rw [← Φ.indexEquiv_apply_of_autCongr_eq hφ, hfix]
+  have hx : Φ.weightMap (P.orbitSum σ r) =
+      (typeAZeroSumRootPairing K (2 * n)).root (Φ.indexEquiv r) := by
+    rw [Φ.weightMap_orbitSum_of_autCongr hφ r, orbitSum_eq_root_of_indexEquiv_eq hfix']
+  rw [hx, root_typeAZeroSumRootPairing,
+    typeAZeroSumVec_dotProduct_self K (Φ.indexEquiv r).property] at hdot
+  norm_num at hdot
+
+private lemma pairingIn_ne_neg_one_of_dotProduct_weightMap_orbitSum_eq_four {r : ι}
+    (hdot : (((evenTypeAToZeroSumEquiv P b e he).weightMap (P.orbitSum σ r) :
+      singleParityCheckCode K (Fin (2 * n + 1))) : Fin (2 * n + 1) → K) ⬝ᵥ
+      ((evenTypeAToZeroSumEquiv P b e he).weightMap (P.orbitSum σ r) :
+        Fin (2 * n + 1) → K) = 4) :
+    P.pairingIn ℤ (σ.indexEquiv r) r ≠ -1 := by
+  intro hneg
+  set Φ := evenTypeAToZeroSumEquiv P b e he
+  have hφ := autCongr_evenTypeAToZeroSumEquiv P b σ hσ e he hrev
+  have hne := P.ne_of_pairingIn_ne_two (by rw [hneg]; decide)
+  have hnegK := pairing_eq_neg_one_of_pairingIn P hneg
+  have hnegK' : P.pairing r (σ.indexEquiv r) = -1 :=
+    (σ.pairing_indexEquiv_comm_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev r)).trans
+      hnegK
+  let q := Φ.indexEquiv r
+  have hadd : Φ.weightMap (P.orbitSum σ r) =
+      (typeAZeroSumRootPairing K (2 * n)).root q +
+        (typeAZeroSumRootPairing K (2 * n)).root ((typeAZeroSumRevAut K (2 * n)).indexEquiv q) := by
+    rw [P.orbitSum_eq_add_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev r) hne,
+      map_add, Hom.root_weightMap_apply, Hom.root_weightMap_apply,
+      Φ.indexEquiv_apply_of_autCongr_eq hφ]
+  have hq1 : (typeAZeroSumRootPairing K (2 * n)).pairing
+      ((typeAZeroSumRevAut K (2 * n)).indexEquiv q) q = -1 := by
+    rw [← Φ.indexEquiv_apply_of_autCongr_eq hφ]; exact Φ.toHom.pairing.trans hnegK
+  have hq2 : (typeAZeroSumRootPairing K (2 * n)).pairing q
+      ((typeAZeroSumRevAut K (2 * n)).indexEquiv q) = -1 := by
+    rw [← Φ.indexEquiv_apply_of_autCongr_eq hφ]; exact Φ.toHom.pairing.trans hnegK'
+  rw [hadd, Submodule.coe_add, add_dotProduct, dotProduct_add, dotProduct_add,
+    root_dotProduct_root_typeAZeroSumRootPairing, root_dotProduct_root_typeAZeroSumRootPairing,
+    root_dotProduct_root_typeAZeroSumRootPairing, root_dotProduct_root_typeAZeroSumRootPairing,
+    pairing_same, pairing_same, hq1, hq2] at hdot
+  norm_num at hdot
+
 private lemma not_short_of_mem_long_orbit {v : P.foldedIndices σ}
     (hv_short : ∀ w : P.foldedIndices σ,
       2 ∣ (P.evenTypeAFoldedPairing b σ hσ e he hrev).pairingIn ℤ w v)
@@ -833,45 +888,19 @@ private lemma not_short_of_mem_long_orbit {v : P.foldedIndices σ}
   -- (`pairingIn = -1`) orbits using `x ⬝ᵥ x = 4`, so `v` has scaling factor `1`.
   obtain ⟨r, hr⟩ := mem_foldedIndices.mp v.property
   let q := Φ.indexEquiv r
-  have hq_sum : (typeAZeroSumRootPairing K (2 * n)).orbitSum
-      (typeAZeroSumRevAut K (2 * n)) q = x := by
-    rw [← Φ.weightMap_orbitSum_of_autCongr hφ r, hr]
-  have hne : σ.indexEquiv r ≠ r := fun hfix ↦ by
-    have hx_eq : x = (typeAZeroSumRootPairing K (2 * n)).root q := by
-      rw [← hq_sum, orbitSum_eq_root_of_indexEquiv_eq (by
-        rw [← hφ, Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply, hfix])]
-    rw [hx_eq, root_typeAZeroSumRootPairing, typeAZeroSumVec_dotProduct_self K q.property] at hdot_x
-    norm_num at hdot_x
+  have hdot_r : ((Φ.weightMap (P.orbitSum σ r) :
+        singleParityCheckCode K (Fin (2 * n + 1))) : Fin (2 * n + 1) → K) ⬝ᵥ
+      (Φ.weightMap (P.orbitSum σ r) : Fin (2 * n + 1) → K) = 4 := hr.symm ▸ hdot_x
+  have hne := indexEquiv_ne_of_dotProduct_weightMap_orbitSum_eq_four b σ hσ e he hrev hdot_r
+  have hc_ne :=
+    pairingIn_ne_neg_one_of_dotProduct_weightMap_orbitSum_eq_four b σ hσ e he hrev hdot_r
   have hx_add : x = (typeAZeroSumRootPairing K (2 * n)).root q +
       (typeAZeroSumRootPairing K (2 * n)).root ((typeAZeroSumRevAut K (2 * n)).indexEquiv q) := by
     have horb := P.orbitSum_eq_add_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev r) hne
     have h := congrArg Φ.weightMap (hr.symm.trans horb)
-    rw [map_add, Hom.root_weightMap_apply, Hom.root_weightMap_apply] at h
-    rw [← hφ, Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
+    rw [map_add, Hom.root_weightMap_apply, Hom.root_weightMap_apply,
+      Φ.indexEquiv_apply_of_autCongr_eq hφ] at h
     exact h
-  have hdot_root (a b : TypeAIndex (2 * n)) :
-      ((typeAZeroSumRootPairing K (2 * n)).root a : Fin (2 * n + 1) → K) ⬝ᵥ
-        ((typeAZeroSumRootPairing K (2 * n)).root b : Fin (2 * n + 1) → K) =
-        (typeAZeroSumRootPairing K (2 * n)).pairing a b := by
-    simp only [← (typeAZeroSumRootPairing K (2 * n)).root_coroot_eq_pairing,
-      toLinearMap_typeAZeroSumRootPairing, root_typeAZeroSumRootPairing,
-      coroot_typeAZeroSumRootPairing]
-  have hc_ne : P.pairingIn ℤ (σ.indexEquiv r) r ≠ -1 := fun hneg ↦ by
-    have hnegK : P.pairing (σ.indexEquiv r) r = -1 := by
-      simpa using pairing_eq_of_pairingIn_eq P hneg
-    have hnegK' : P.pairing r (σ.indexEquiv r) = -1 :=
-      (σ.pairing_indexEquiv_of_apply_apply (indexEquiv_indexEquiv P b σ hσ e he hrev r)).trans hnegK
-    have hq1 : (typeAZeroSumRootPairing K (2 * n)).pairing
-        ((typeAZeroSumRevAut K (2 * n)).indexEquiv q) q = -1 := by
-      rw [← hφ, Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
-      exact Φ.toHom.pairing.trans hnegK
-    have hq2 : (typeAZeroSumRootPairing K (2 * n)).pairing q
-        ((typeAZeroSumRevAut K (2 * n)).indexEquiv q) = -1 := by
-      rw [← hφ, Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
-      exact Φ.toHom.pairing.trans hnegK'
-    rw [hx_add, Submodule.coe_add, add_dotProduct, dotProduct_add, dotProduct_add,
-      hdot_root, hdot_root, hdot_root, hdot_root, pairing_same, pairing_same, hq1, hq2] at hdot_x
-    norm_num at hdot_x
   -- Step 3: Pair `v` against `w` (lifting `f_i`) to get `2 * P'.pairing w v = f_i ⬝ᵥ x ∈ {±2}`,
   -- contradicting `2 ∣ P'.pairingIn ℤ w v`.
   let u_i : (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n)) :=
@@ -879,8 +908,8 @@ private lemma not_short_of_mem_long_orbit {v : P.foldedIndices σ}
       orbitSum_mem_foldedIndices _ _ _⟩
   let w : P.foldedIndices σ := (Φ.foldedIndicesCongr hφ).symm u_i
   obtain ⟨z, hz⟩ := hv_short w
-  have hpair_eq : (P'.pairing w v : K) = 2 * (z : K) :=
-    (pairing_eq_of_pairingIn_eq P' hz).trans (by push_cast; rfl)
+  have hpair_eq : (P'.pairing w v : K) = 2 * (z : K) := by
+    rw [← P'.algebraMap_pairingIn ℤ, hz, map_mul, map_ofNat, eq_intCast]
   have hw_map : Φ.weightMap (w : M) = evenTypeABasisVec K n i := by
     rw [← Equiv.weightEquiv_apply, Equiv.coe_foldedIndicesCongr_symm_apply,
       LinearEquiv.apply_symm_apply]
@@ -948,7 +977,7 @@ private lemma exists_pos_lift_of_short {v : P.foldedIndices σ}
   refine ⟨j, (b.isPos_map_iff Φ j).mp (by simpa [hb_map, j] using hp_pos), ?_, ?_⟩
   · have hcard := congrArg Finset.card <|
       map_orbitIndices (σ := σ) (τ := typeAZeroSumRevAut K (2 * n)) Φ
-        (fun q ↦ by rw [← hφ, Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]) j
+        (Φ.indexEquiv_apply_of_autCongr_eq hφ) j
     rw [Finset.card_map, Equiv.apply_symm_apply] at hcard; exact hcard.trans hp_card
   · apply Φ.weightEquiv.injective
     rw [Equiv.weightEquiv_apply, Equiv.weightEquiv_apply, Φ.weightMap_orbitSum_of_autCongr hφ,
