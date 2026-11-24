@@ -28,9 +28,10 @@ projections (`CategoryTheory.IsPullback.pullback_map_pullback_map`). This is the
 middle-four interchange of fibre products,
 `(T₁ ×_S T₂) ×_S (X₁ ×_S X₂) ≅ (T₁ ×_S X₁) ×_S (T₂ ×_S X₂)`.
 
-The canonical identification of an iterated fibre product with a direct fibre product commutes
+The canonical identifications of an iterated fibre product with a direct fibre product commute
 with maps in the first factor
-(`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`).
+(`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`) and in the second factor
+(`CategoryTheory.Limits.pullbackRightPullbackFstIso_hom_naturality`).
 -/
 
 public section
@@ -191,6 +192,24 @@ theorem pullbackLeftPullbackSndIso_inv_naturality
         pullback.map (pullback.snd a g) h (pullback.snd b g) h
           (pullback.map a g b g φ (𝟙 T) (𝟙 S) (by simp [hφ]) (by simp)) (𝟙 U) (𝟙 T)
           (by simp) (by simp) := by
+  ext <;> simp
+
+/-- The canonical isomorphism between an iterated and a direct pullback is natural in morphisms
+of the second factor over the common base: base change in two stages, along `g` and then along
+`h`, agrees with base change along `h ≫ g`. -/
+@[reassoc]
+theorem pullbackRightPullbackFstIso_hom_naturality
+    {C : Type*} [Category* C] {S T U X Y : C}
+    (a : X ⟶ S) (b : Y ⟶ S) (g : T ⟶ S) (h : U ⟶ T)
+    [HasPullback g a] [HasPullback g b]
+    [HasPullback h (pullback.fst g a)] [HasPullback h (pullback.fst g b)]
+    (φ : X ⟶ Y) (hφ : φ ≫ b = a) :
+    pullback.map h (pullback.fst g a) h (pullback.fst g b) (𝟙 U)
+        (pullback.map g a g b (𝟙 T) φ (𝟙 S) (by simp) (by simp [hφ])) (𝟙 T)
+        (by simp) (by simp) ≫
+        (pullbackRightPullbackFstIso g b h).hom =
+      (pullbackRightPullbackFstIso g a h).hom ≫
+        pullback.map (h ≫ g) a (h ≫ g) b (𝟙 U) φ (𝟙 S) (by simp) (by simp [hφ]) := by
   ext <;> simp
 
 end CategoryTheory.Limits

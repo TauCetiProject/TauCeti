@@ -79,8 +79,12 @@ spectral sequence
   (`TopCat.singularKunnethAbutmentIso_naturality_right`). The lift depends on choices, so no
   functoriality is stated in `Y`.
 
-The identification of the morphisms on the second page with the maps induced on `Tor`, the edge
-maps and the collapse corollaries are not treated here.
+On the second page, identified with `⨁_{i + j = q} Torₚ(Hᵢ(X; R), Hⱼ(Y; R))`, these morphisms are
+the maps induced on `Tor` by `g_*` and by `k_*`
+(`TopCat.singularKunnethSpectralSequenceSecondPageXIso_hom_naturality_left`,
+`TopCat.singularKunnethSpectralSequenceSecondPageXIso_hom_naturality_right`); in particular, from
+the second page on the morphism in `Y` does not depend on the choice of the lift. The edge maps
+and the collapse corollaries are not treated here.
 
 ## Indexing
 
@@ -350,6 +354,20 @@ lemma singularKunnethAbutmentIso_naturality_left (n : ℕ) :
     HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality_assoc,
     singularKunnethTotalHomologyIso_naturality_left, Category.assoc]
 
+/-- **The morphism of singular Künneth spectral sequences in the first space on the second
+page.** Under the identifications `TopCat.singularKunnethSpectralSequenceSecondPageXIso` of the
+second pages with `⨁_{i + j = q} Torₚ(Hᵢ(X; R), Hⱼ(Y; R))`, the morphism induced by `g : X ⟶ X'` is
+the map induced by the maps `Torₚ(g_*, Hⱼ(Y; R))`. -/
+@[reassoc]
+theorem singularKunnethSpectralSequenceSecondPageXIso_hom_naturality_left (p q : ℕ) :
+    ((singularKunnethSpectralSequenceMapLeft Y R g).hom 3).f (-(q : ℤ) - 2 * p, p) ≫
+        (singularKunnethSpectralSequenceSecondPageXIso X' Y R p q).hom =
+      (singularKunnethSpectralSequenceSecondPageXIso X Y R p q).hom ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2)
+          (fun i ↦ ((singularHomologyFunctor _ i).obj (𝟙_ (ModuleCat.{u} R))).map g) (𝟙 _) q :=
+  -- the map induced on singular homology is by definition that induced on the singular chains
+  kunnethSpectralSequenceSecondPageXIso_hom_naturality _ _ p q
+
 /-! ### Naturality in the second space -/
 
 section Right
@@ -405,6 +423,22 @@ lemma singularKunnethAbutmentIso_naturality_right (n : ℕ) :
   rw [singularKunnethAbutmentIso_eq, singularKunnethAbutmentIso_eq, Iso.trans_hom, Iso.trans_hom,
     HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality_assoc,
     singularKunnethTotalHomologyIso_naturality_right, Category.assoc]
+
+/-- **The morphism of singular Künneth spectral sequences in the second space on the second
+page.** Under the identifications `TopCat.singularKunnethSpectralSequenceSecondPageXIso` of the
+second pages with `⨁_{i + j = q} Torₚ(Hᵢ(X; R), Hⱼ(Y; R))`, the morphism over `k : Y ⟶ Y'` is the
+map induced by the maps `Torₚ(Hᵢ(X; R), k_*)`. In particular, from the second page on it does not
+depend on the choice of the lift of `k_*` to the Cartan–Eilenberg resolutions
+(`HomologicalComplex.kunnethSpectralSequenceMapRightOfLift_hom_eq`). -/
+@[reassoc]
+theorem singularKunnethSpectralSequenceSecondPageXIso_hom_naturality_right (p q : ℕ) :
+    ((singularKunnethSpectralSequenceMapRight X R k).hom 3).f (-(q : ℤ) - 2 * p, p) ≫
+        (singularKunnethSpectralSequenceSecondPageXIso X Y' R p q).hom =
+      (singularKunnethSpectralSequenceSecondPageXIso X Y R p q).hom ≫
+        GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2) (𝟙 _)
+          (fun j ↦ ((singularHomologyFunctor _ j).obj (𝟙_ (ModuleCat.{u} R))).map k) q :=
+  -- the map induced on singular homology is by definition that induced on the singular chains
+  kunnethSpectralSequenceSecondPageXIso_hom_naturality_right _ _ p q
 
 end Right
 
