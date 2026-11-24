@@ -7,15 +7,16 @@ module
 
 public import TauCeti.Analysis.Complex.Laurent.Series
 import Mathlib.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Analysis.Contour.Cauchy.Circle
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
 # Laurent series expansion, uniqueness, removable singularities, and differentiation
 
-Let `E` be a complex normed space. Building on the two-circle Cauchy integral formula and radius
-invariance of `TauCeti.circleLaurentCoeff` from `TauCeti.Analysis.Complex.Laurent.Basic` together
-with `TauCeti.HasLaurentSeriesOnAnnulus` from `TauCeti.Analysis.Complex.Laurent.Series`, this file
-proves:
+Let `E` be a complex normed space. Building on the two-circle Cauchy integral formula from
+`TauCeti.Analysis.Contour.Cauchy.Circle` and radius invariance of `TauCeti.circleLaurentCoeff`
+from `TauCeti.Analysis.Complex.Laurent.Basic` together with `TauCeti.HasLaurentSeriesOnAnnulus`
+from `TauCeti.Analysis.Complex.Laurent.Series`, this file proves:
 
 1. **Cauchy-Laurent geometric expansions on circles** (without completeness): the nonnegative circle
    Laurent series on `C(c, R)` sums inside `Metric.ball c R` to the outer Cauchy integral, and the
