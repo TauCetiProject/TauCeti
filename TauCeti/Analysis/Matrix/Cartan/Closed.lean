@@ -347,11 +347,19 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal TauCeti.normedAlgebraRat
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {H : Subgroup (GL n 𝕜)}
 
-/-- A unit of `H` whose matrix is `exp x` is the unit exponential of `x`. -/
-private theorem expUnit_mem_of_coe_eq {x : Matrix n n 𝕜} {g : GL n 𝕜} (hg : g ∈ H)
-    (hgx : (g : Matrix n n 𝕜) = NormedSpace.exp x) : TauCeti.expUnit x ∈ H := by
-  have h : g = TauCeti.expUnit x := Units.ext (by rw [TauCeti.expUnit_coe, hgx])
-  rwa [← h]
+/-- A unit whose matrix is `exp x` is the unit exponential of `x`. -/
+private theorem eq_expUnit_of_coe_eq {x : Matrix n n 𝕜} {g : GL n 𝕜}
+    (hgx : (g : Matrix n n 𝕜) = NormedSpace.exp x) : g = TauCeti.expUnit x :=
+  Units.ext (by rw [TauCeti.expUnit_coe, hgx])
+
+/-- The exponential-line condition `exp (t x) ∈ H` for all real `t`, stated with the unit
+exponential, is the same condition stated through the matrix exponential. -/
+private theorem forall_expUnit_smul_mem_iff (x : Matrix n n 𝕜) :
+    (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) ↔
+      ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • x) := by
+  refine ⟨fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩, fun h t ↦ ?_⟩
+  obtain ⟨g, hg, hgx⟩ := h t
+  rwa [← eq_expUnit_of_coe_eq hgx]
 
 /-- **The line through a positive element.** Let `H` be a closed subgroup of `GL n 𝕜`, for
 `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose. If `H` contains `g = exp X` for a Hermitian
@@ -362,7 +370,7 @@ theorem exists_mem_coe_eq_exp_smul_of_pow_mem_connectedComponentOfOne
     (hX : X.IsHermitian) {g : GL n 𝕜} (hg : g ∈ H) (hgX : (g : Matrix n n 𝕜) = NormedSpace.exp X)
     (hm : ∃ m : ℕ, 0 < m ∧ (⟨g, hg⟩ : H) ^ m ∈ Subgroup.connectedComponentOfOne H) (t : ℝ) :
     ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
-  obtain rfl : g = TauCeti.expUnit X := Units.ext (by rw [TauCeti.expUnit_coe, hgX])
+  obtain rfl := eq_expUnit_of_coe_eq hgX
   exact ⟨_, (mem_unitsLieSubalgebraOfSubgroup_iff hH _).1
     (mem_lieAlg_of_pow_mem hH hstar hX hg hm) t, TauCeti.expUnit_coe _⟩
 
@@ -386,10 +394,26 @@ theorem forall_exists_mem_coe_eq_exp_smul_iff_mem_unitsLieSubalgebraOfSubgroup
     (hH : IsClosed (H : Set (GL n 𝕜))) (X : Matrix n n 𝕜) :
     (∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X)) ↔
       X ∈ unitsLieSubalgebraOfSubgroup H := by
-  rw [mem_unitsLieSubalgebraOfSubgroup_iff hH]
-  refine ⟨fun h t ↦ ?_, fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩⟩
-  obtain ⟨g, hg, hgx⟩ := h t
-  exact expUnit_mem_of_coe_eq hg hgx
+  rw [mem_unitsLieSubalgebraOfSubgroup_iff hH, forall_expUnit_smul_mem_iff]
+
+/-- For a closed subgroup `H` of `GL n 𝕜` stable under the conjugate transpose and with finitely
+many connected components, the line through a Hermitian `x` with `exp x ∈ H` lies in `H`: the line
+hypothesis of `Subgroup.cartanHomeomorph`. -/
+private theorem expUnit_smul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
+    (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (x : Matrix n n 𝕜)
+    (hx : IsSelfAdjoint x) (hxH : TauCeti.expUnit x ∈ H) (t : ℝ) :
+    TauCeti.expUnit (t • x) ∈ H :=
+  (forall_expUnit_smul_mem_iff x).2 (exists_mem_coe_eq_exp_smul_of_isClosed hH hstar hfin
+    hx.isHermitian hxH (TauCeti.expUnit_coe x)) t
+
+/-- The Hermitian factor domain of `Subgroup.cartanHomeomorphOfIsClosed`, written through the
+matrix exponential, is the domain of `Subgroup.cartanHomeomorph`, written through the unit
+exponential. -/
+private def lineDomainHomeomorph (H : Subgroup (GL n 𝕜)) :
+    {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
+        ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ
+      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
+  (Homeomorph.refl _).subtype fun X ↦ (forall_expUnit_smul_mem_iff (X : Matrix n n 𝕜)).symm
 
 variable (H) in
 /-- **The Cartan decomposition of a closed matrix group stable under the conjugate transpose.**
@@ -406,21 +430,9 @@ def cartanHomeomorphOfIsClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) :
     {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
         {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
-          ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ H := by
-  have hline (x : Matrix n n 𝕜) : (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) ↔
-      ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • x) := by
-    refine ⟨fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩, fun h t ↦ ?_⟩
-    obtain ⟨g, hg, hgx⟩ := h t
-    exact expUnit_mem_of_coe_eq hg hgx
-  have hexp (x : Matrix n n 𝕜) (hx : IsSelfAdjoint x) (hxH : TauCeti.expUnit x ∈ H) (t : ℝ) :
-      TauCeti.expUnit (t • x) ∈ H :=
-    (hline x).2 (exists_mem_coe_eq_exp_smul_of_isClosed hH hstar hfin hx.isHermitian hxH
-      (TauCeti.expUnit_coe x)) t
-  let eP : {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
-        ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ
-      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
-    (Homeomorph.refl _).subtype fun X ↦ (hline (X : Matrix n n 𝕜)).symm
-  exact ((Homeomorph.refl _).prodCongr eP).trans (H.cartanHomeomorph hstar hexp)
+          ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ H :=
+  ((Homeomorph.refl _).prodCongr (lineDomainHomeomorph H)).trans
+    (H.cartanHomeomorph hstar (expUnit_smul_mem_of_isClosed hH hstar hfin))
 
 /-- The Cartan decomposition of `H` sends `(k, X)` to `k * exp X`. -/
 @[simp]
@@ -476,9 +488,10 @@ theorem existsUnique_unitary_mul_exp_of_isClosed (hH : IsClosed (H : Set (GL n �
       (g : Matrix n n 𝕜) =
         (p.1 : Matrix n n 𝕜) * NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) :
           Matrix n n 𝕜) := by
-  refine (existsUnique_congr fun p ↦ ?_).1
-    ((H.cartanHomeomorphOfIsClosed hH hstar hfin).bijective.existsUnique ⟨g, hg⟩)
-  rw [Subtype.ext_iff, Units.ext_iff, val_cartanHomeomorphOfIsClosed_apply, eq_comm]
+  -- Transport the general uniqueness along the identification of the Hermitian factor domains,
+  -- which keeps both factors' values.
+  exact ((Homeomorph.refl _).prodCongr (lineDomainHomeomorph H)).toEquiv.existsUnique_congr_right.2
+    (H.existsUnique_unitary_mul_exp hstar (expUnit_smul_mem_of_isClosed hH hstar hfin) hg)
 
 /-- The unitary polar factor of an element of a closed subgroup `H` of `GL n 𝕜` stable under the
 conjugate transpose, with finitely many connected components, lies in `H`. -/

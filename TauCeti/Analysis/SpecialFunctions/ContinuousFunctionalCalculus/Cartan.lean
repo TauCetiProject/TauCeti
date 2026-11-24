@@ -30,8 +30,8 @@ For `A = Matrix n n ℝ` this is the global Cartan decomposition `GL(n, ℝ) = O
 general linear group, where `𝔭` is the space of symmetric matrices, the `-1` eigenspace of the
 Cartan involution `X ↦ -Xᵀ` of `𝔤𝔩(n, ℝ)`; over `ℂ` it is `GL(n, ℂ) = U(n) · exp 𝔭` with `𝔭` the
 Hermitian matrices. The matrix statement is `Matrix.GeneralLinearGroup.cartanHomeomorph`, in
-`TauCeti/Analysis/Matrix/Cartan.lean`. Topologically, the homeomorphism identifies `Aˣ` with the
-product of the unitary group and the real vector space `selfAdjoint A`.
+`TauCeti/Analysis/Matrix/Cartan/Basic.lean`. Topologically, the homeomorphism identifies `Aˣ` with
+the product of the unitary group and the real vector space `selfAdjoint A`.
 
 The decomposition restricts to a subgroup `G` of `Aˣ` that is closed under `a ↦ a⋆` and such that,
 for self-adjoint `x`, the line `t ↦ exp (t x)` lies in `G` as soon as `exp x` does. For `a ∈ G`,
@@ -42,7 +42,10 @@ and of the self-adjoint elements of its Lie algebra `{x | ∀ t, exp (t x) ∈ G
 and `𝔭` the Hermitian part of the Lie algebra of `G`. The hypotheses hold for the special linear
 groups (`Matrix.SpecialLinearGroup.cartanHomeomorph`) and, more generally, for real algebraic groups
 stable under conjugate transpose; they fail for a discrete subgroup such as the powers of a
-positive diagonal matrix, which is not a product of this form.
+positive diagonal matrix, which is not a product of this form. For a closed subgroup of
+`GL(n, ℝ)` or `GL(n, ℂ)` with finitely many connected components, the line hypothesis is
+discharged in `TauCeti/Analysis/Matrix/Cartan/Closed.lean`
+(`Subgroup.cartanHomeomorphOfIsClosed`).
 
 ## Main declarations
 
