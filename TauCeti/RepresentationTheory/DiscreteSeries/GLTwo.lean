@@ -448,17 +448,10 @@ variable (k μ) in
 /-- The coordinates `ℓ ↦ c_ℓ` of a vector `∑ c_ℓ v_ℓ`. -/
 def equivFinsupp : CompactWeightModule k μ ≃ₗ[ℂ] (ℤ →₀ ℂ) := LinearEquiv.refl ℂ (ℤ →₀ ℂ)
 
-end CompactWeightModule
-
-variable {k μ : ℂ}
-
 /-- The bracket of `𝔤𝔩₂(ℂ)` with `TauCeti.CompactWeightModule k μ` is `TauCeti.compactRep k μ`. -/
-theorem lie_compactWeightModule (M : Matrix (Fin 2) (Fin 2) ℂ) (v : CompactWeightModule k μ) :
-    CompactWeightModule.equivFinsupp k μ ⁅M, v⁆ =
-      compactRep k μ M (CompactWeightModule.equivFinsupp k μ v) :=
+theorem equivFinsupp_lie (M : Matrix (Fin 2) (Fin 2) ℂ) (v : CompactWeightModule k μ) :
+    equivFinsupp k μ ⁅M, v⁆ = compactRep k μ M (equivFinsupp k μ v) :=
   (rfl)
-
-namespace CompactWeightModule
 
 variable (k μ) in
 /-- The weight vector `v_ℓ`. -/
@@ -481,6 +474,8 @@ theorem weightBasis_apply (ℓ : ℤ) : weightBasis k μ ℓ = weightVector k μ
 
 end CompactWeightModule
 
+variable {k μ : ℂ}
+
 open CompactWeightModule (weightVector weightBasis weightBasis_apply)
 
 /-- `H_c v_ℓ = ℓ v_ℓ`. -/
@@ -488,33 +483,34 @@ open CompactWeightModule (weightVector weightBasis weightBasis_apply)
 theorem lie_compactCartanH_weightVector (ℓ : ℤ) :
     ⁅compactCartanH, weightVector k μ ℓ⁆ = (ℓ : ℂ) • weightVector k μ ℓ := by
   apply (CompactWeightModule.equivFinsupp k μ).injective
-  rw [lie_compactWeightModule, map_smul, CompactWeightModule.equivFinsupp_weightVector,
-    compactRep_compactCartanH, compactWeightOp_single]
+  rw [CompactWeightModule.equivFinsupp_lie, map_smul,
+    CompactWeightModule.equivFinsupp_weightVector, compactRep_compactCartanH,
+    compactWeightOp_single]
 
 /-- `X_c v_ℓ = (k + ℓ) / 2 v_{ℓ + 2}`. -/
 @[simp]
 theorem lie_compactCartanX_weightVector (ℓ : ℤ) :
     ⁅compactCartanX, weightVector k μ ℓ⁆ = ((k + ℓ) / 2) • weightVector k μ (ℓ + 2) := by
   apply (CompactWeightModule.equivFinsupp k μ).injective
-  rw [lie_compactWeightModule, map_smul, CompactWeightModule.equivFinsupp_weightVector,
-    CompactWeightModule.equivFinsupp_weightVector, compactRep_compactCartanX,
-    compactRaiseOp_single]
+  rw [CompactWeightModule.equivFinsupp_lie, map_smul,
+    CompactWeightModule.equivFinsupp_weightVector, CompactWeightModule.equivFinsupp_weightVector,
+    compactRep_compactCartanX, compactRaiseOp_single]
 
 /-- `Y_c v_ℓ = (k - ℓ) / 2 v_{ℓ - 2}`. -/
 @[simp]
 theorem lie_compactCartanY_weightVector (ℓ : ℤ) :
     ⁅compactCartanY, weightVector k μ ℓ⁆ = ((k - ℓ) / 2) • weightVector k μ (ℓ - 2) := by
   apply (CompactWeightModule.equivFinsupp k μ).injective
-  rw [lie_compactWeightModule, map_smul, CompactWeightModule.equivFinsupp_weightVector,
-    CompactWeightModule.equivFinsupp_weightVector, compactRep_compactCartanY,
-    compactLowerOp_single]
+  rw [CompactWeightModule.equivFinsupp_lie, map_smul,
+    CompactWeightModule.equivFinsupp_weightVector, CompactWeightModule.equivFinsupp_weightVector,
+    compactRep_compactCartanY, compactLowerOp_single]
 
 /-- **The central scalar**: the identity matrix acts by `μ`. -/
 @[simp]
 theorem one_lie_compactWeightModule (v : CompactWeightModule k μ) :
     ⁅(1 : Matrix (Fin 2) (Fin 2) ℂ), v⁆ = μ • v := by
   apply (CompactWeightModule.equivFinsupp k μ).injective
-  rw [lie_compactWeightModule, compactRep_one, map_smul]
+  rw [CompactWeightModule.equivFinsupp_lie, compactRep_one, map_smul]
   simp
 
 /-- The bracket of a matrix with a weight vector, in the coordinates of the compact Cartan basis. -/
@@ -544,17 +540,27 @@ theorem compactCartanH_eq : compactCartanH = -I • glTwoRotationGenerator := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [compactCartanH, glTwoRotationGenerator]
 
+/-- The reflection `A = diag(1, -1)` of `O(2)`, which normalizes the compact Cartan subalgebra. -/
+def compactCartanReflection : Matrix (Fin 2) (Fin 2) ℂ := !![1, 0; 0, -1]
+
+/-- `A² = 1`, so that `A⁻¹ = A`. -/
+@[simp]
+theorem compactCartanReflection_mul_self :
+    compactCartanReflection * compactCartanReflection = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [compactCartanReflection]
+
 /-- `X_c = (A + iB) / 2` with `A = diag(1, -1)` and `B = E₁₂ + E₂₁`. -/
 theorem compactCartanX_eq :
-    compactCartanX = (1 / 2 : ℂ) • (!![1, 0; 0, -1] + I • !![0, 1; 1, 0]) := by
+    compactCartanX = (1 / 2 : ℂ) • (compactCartanReflection + I • !![0, 1; 1, 0]) := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [compactCartanX] <;> ring
+  fin_cases i <;> fin_cases j <;> simp [compactCartanX, compactCartanReflection] <;> ring
 
 /-- `Y_c = (A - iB) / 2` with `A = diag(1, -1)` and `B = E₁₂ + E₂₁`. -/
 theorem compactCartanY_eq :
-    compactCartanY = (1 / 2 : ℂ) • (!![1, 0; 0, -1] - I • !![0, 1; 1, 0]) := by
+    compactCartanY = (1 / 2 : ℂ) • (compactCartanReflection - I • !![0, 1; 1, 0]) := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [compactCartanY] <;> ring
+  fin_cases i <;> fin_cases j <;> simp [compactCartanY, compactCartanReflection] <;> ring
 
 /-- `J v_ℓ = iℓ v_ℓ`, the derivative of `r_θ v_ℓ = e^{iℓθ} v_ℓ`. -/
 theorem lie_glTwoRotationGenerator_weightVector (ℓ : ℤ) :
@@ -571,12 +577,32 @@ def compactCasimir (V : Type*) [AddCommGroup V] [Module ℂ V]
     Module.End ℂ V :=
   (2⁻¹ : ℂ) • sl2Casimir ℂ compactCartanH compactCartanX compactCartanY V
 
+section CompactCasimir
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] [LieRingModule (Matrix (Fin 2) (Fin 2) ℂ) V]
+  [LieModule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V]
+
+/-- `Ω v = (H_c² v + 2 X_c Y_c v + 2 Y_c X_c v) / 4`. -/
+theorem compactCasimir_apply (v : V) :
+    compactCasimir V v = (4⁻¹ : ℂ) • (⁅compactCartanH, ⁅compactCartanH, v⁆⁆ +
+      (2 : ℂ) • ⁅compactCartanX, ⁅compactCartanY, v⁆⁆ +
+      (2 : ℂ) • ⁅compactCartanY, ⁅compactCartanX, v⁆⁆) := by
+  rw [compactCasimir, LinearMap.smul_apply, sl2Casimir_apply]
+  module
+
+/-- The Casimir operator of a Lie submodule is the restriction of that of the ambient module. -/
+theorem coe_compactCasimir_lieSubmodule {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V}
+    (v : N) : (compactCasimir N v : V) = compactCasimir V (v : V) := by
+  simp [compactCasimir_apply]
+
+end CompactCasimir
+
 /-- **The Casimir operator acts by `k(k - 2)/4`** on every vector of
 `TauCeti.CompactWeightModule k μ`. -/
 theorem compactCasimir_compactWeightModule :
     compactCasimir (CompactWeightModule k μ) = (k * (k - 2) / 4) • 1 := by
   refine (weightBasis k μ).ext fun ℓ ↦ ?_
-  simp only [weightBasis_apply, compactCasimir, LinearMap.smul_apply, sl2Casimir_apply,
+  simp only [weightBasis_apply, compactCasimir_apply, LinearMap.smul_apply,
     lie_compactCartanH_weightVector, lie_compactCartanX_weightVector,
     lie_compactCartanY_weightVector, lie_smul, sub_add_cancel, add_sub_cancel_right, smul_smul,
     one_apply_eq_self]
@@ -593,10 +619,8 @@ theorem compactCasimir_lieSubmodule
     (N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ)) (v : N) :
     compactCasimir N v = (k * (k - 2) / 4) • v := by
   ext
-  simp only [compactCasimir, LinearMap.smul_apply, LieSubmodule.coe_smul,
-    coe_sl2Casimir_lieSubmodule]
-  have := congr($(compactCasimir_compactWeightModule (k := k) (μ := μ)) (v : _))
-  simpa [compactCasimir] using this
+  rw [coe_compactCasimir_lieSubmodule, compactCasimir_compactWeightModule, LieSubmodule.coe_smul]
+  rfl
 
 /-- The identity matrix acts by `μ` on every Lie submodule of `TauCeti.CompactWeightModule k μ`. -/
 theorem one_lie_lieSubmodule
@@ -618,7 +642,7 @@ def weightLieSubmodule (S : Set ℤ) (hX : ∀ ℓ ∈ S, ℓ + 2 ∉ S → k + 
     replace hv := Submodule.mem_comap.1 hv
     refine Submodule.mem_comap.2 ?_
     rw [LinearEquiv.coe_coe] at hv ⊢
-    rw [lie_compactWeightModule, compactRep_apply]
+    rw [equivFinsupp_lie, compactRep_apply]
     simp only [LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self]
     refine add_mem (add_mem (add_mem (Submodule.smul_mem _ _ ?_) (Submodule.smul_mem _ _ ?_))
       (Submodule.smul_mem _ _ ?_)) (Submodule.smul_mem _ _ hv)
@@ -816,9 +840,6 @@ theorem one_lie_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
 
 /-! ### The reflection -/
 
-/-- The reflection `A = diag(1, -1)` of `O(2)`, which normalizes the compact Cartan subalgebra. -/
-def compactCartanReflection : Matrix (Fin 2) (Fin 2) ℂ := !![1, 0; 0, -1]
-
 /-- Conjugation by `A = diag(1, -1)` negates the off-diagonal entries. -/
 theorem compactCartanReflection_mul_mul (M : Matrix (Fin 2) (Fin 2) ℂ) :
     compactCartanReflection * M * compactCartanReflection = !![M 0 0, -M 0 1; -M 1 0, M 1 1] := by
@@ -888,8 +909,8 @@ theorem reflection_reflection (v : CompactWeightModule k μ) :
 theorem reflection_symm : (reflection k μ).symm = reflection k μ :=
   LinearEquiv.ext fun v ↦ (reflection k μ).symm_apply_eq.2 (reflection_reflection v).symm
 
-/-- The reflection intertwines the action of `M` with that of `A M A⁻¹`, `A = diag(1, -1)`: it
-exchanges `X_c` and `Y_c` and negates `H_c`. -/
+/-- The reflection intertwines the action of `M` with that of `A M A⁻¹ = A M A`, `A = diag(1, -1)`
+(`TauCeti.compactCartanReflection_mul_self`): it exchanges `X_c` and `Y_c` and negates `H_c`. -/
 theorem reflection_lie (M : Matrix (Fin 2) (Fin 2) ℂ) (v : CompactWeightModule k μ) :
     reflection k μ ⁅M, v⁆ =
       ⁅compactCartanReflection * M * compactCartanReflection, reflection k μ v⁆ := by
