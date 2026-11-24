@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
-public import TauCeti.LinearAlgebra.Matrix.AlternatingModIdeal
+public import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
@@ -83,17 +83,21 @@ algebra of `GLₙ`, for `M` the coefficient matrix of `q`. -/
 noncomputable def relationMatrix :
     Matrix (Fin n) (Fin n) (GeneralLinear.coordinateHopfAlgebra R n) :=
   (GeneralLinear.genericMatrix R n)ᵀ *
-      (coefficientMatrix q).map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
+      (coefficientMatrix q (Pi.basisFun R (Fin n))).map
+        (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
       GeneralLinear.genericMatrix R n -
-    (coefficientMatrix q).map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))
+    (coefficientMatrix q (Pi.basisFun R (Fin n))).map
+      (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))
 
 /-- The relation matrix is `Xᵀ M X - M`. -/
 theorem relationMatrix_def :
     relationMatrix R n q =
       (GeneralLinear.genericMatrix R n)ᵀ *
-          (coefficientMatrix q).map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
+          (coefficientMatrix q (Pi.basisFun R (Fin n))).map
+            (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           GeneralLinear.genericMatrix R n -
-        (coefficientMatrix q).map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) := by
+        (coefficientMatrix q (Pi.basisFun R (Fin n))).map
+          (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) := by
   rw [relationMatrix]
 
 /-- **The defining relations** of `O(q)`: the coefficients of `q(X x) - q(x)`, namely the
@@ -105,23 +109,18 @@ noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
     Set.range fun ij : Fin n × Fin n =>
       relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1
 
-/-- The relation matrix is alternating modulo the ideal its relations generate. -/
-theorem isAltMod_relationMatrix :
-    IsAltMod (Ideal.span (relationSet R n q)) (relationMatrix R n q) :=
-  ⟨fun i => Ideal.subset_span (Or.inl ⟨i, rfl⟩),
-    fun i j => Ideal.subset_span (Or.inr ⟨(i, j), rfl⟩)⟩
-
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the image of
 the generic matrix. -/
 theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
     (phi : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] T) :
     (relationMatrix R n q).map phi =
       ((GeneralLinear.genericMatrix R n).map phi)ᵀ *
-          (coefficientMatrix q).map (algebraMap R T) * (GeneralLinear.genericMatrix R n).map phi -
-        (coefficientMatrix q).map (algebraMap R T) := by
-  have hC : ((coefficientMatrix q).map
+          (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) *
+          (GeneralLinear.genericMatrix R n).map phi -
+        (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
+  have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map
       (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map phi =
-      (coefficientMatrix q).map (algebraMap R T) := by
+      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
     rw [Matrix.map_map]
     exact congrArg _ (funext fun r => phi.commutes r)
   rw [relationMatrix, Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul, hC,
@@ -132,10 +131,16 @@ alternating. -/
 theorem span_relationSet_le_iff {I : Ideal (GeneralLinear.coordinateHopfAlgebra R n)} :
     Ideal.span (relationSet R n q) ≤ I ↔ IsAltMod I (relationMatrix R n q) := by
   rw [Ideal.span_le]
-  refine ⟨fun h => ⟨fun i => h (Or.inl ⟨i, rfl⟩), fun i j => h (Or.inr ⟨(i, j), rfl⟩)⟩, ?_⟩
+  refine ⟨fun h => IsAltMod.of_mem (fun i => h (Or.inl ⟨i, rfl⟩))
+    fun i j => h (Or.inr ⟨(i, j), rfl⟩), ?_⟩
   rintro h _ (⟨i, rfl⟩ | ⟨ij, rfl⟩)
-  · exact h.1 i
-  · exact h.2 ij.1 ij.2
+  · exact h.diag_mem i
+  · exact h.add_transpose_mem ij.1 ij.2
+
+/-- The relation matrix is alternating modulo the ideal its relations generate. -/
+theorem isAltMod_relationMatrix :
+    IsAltMod (Ideal.span (relationSet R n q)) (relationMatrix R n q) :=
+  (span_relationSet_le_iff R n q).mp le_rfl
 
 /-- If a ring morphism makes the image of the relation matrix alternating modulo `J`, it carries
 every defining relation into `J`. -/
@@ -144,9 +149,12 @@ theorem apply_mem_of_isAltMod_map {T F : Type*} [CommRing T]
     [RingHomClass F (GeneralLinear.coordinateHopfAlgebra R n) T] {f : F} {J : Ideal T}
     (h : IsAltMod J ((relationMatrix R n q).map f)) {x : GeneralLinear.coordinateHopfAlgebra R n}
     (hx : x ∈ relationSet R n q) : f x ∈ J := by
-  rcases hx with ⟨i, rfl⟩ | ⟨ij, rfl⟩
-  · exact h.1 i
-  · simpa only [Matrix.map_apply, map_add] using h.2 ij.1 ij.2
+  -- The relation matrix is alternating modulo the preimage of `J`, which therefore contains
+  -- every relation.
+  have hcomap : IsAltMod (J.comap f) (relationMatrix R n q) :=
+    IsAltMod.of_mem (fun i => Ideal.mem_comap.mpr (h.diag_mem i)) fun i j => by
+      simpa only [Ideal.mem_comap, Matrix.map_apply, map_add] using h.add_transpose_mem i j
+  exact Ideal.mem_comap.mp ((span_relationSet_le_iff R n q).mpr hcomap (Ideal.subset_span hx))
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -213,9 +221,9 @@ private theorem relationMatrix_map_antipode :
   rw [relationMatrix_map, GeneralLinear.map_antipode_genericMatrix, relationMatrix,
     Matrix.mul_sub, Matrix.sub_mul, neg_sub]
   congr 1
-  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, ← Matrix.transpose_mul,
-    Matrix.mul_nonsing_inv _ h, Matrix.transpose_one, Matrix.one_mul, Matrix.mul_assoc,
-    Matrix.mul_nonsing_inv _ h, Matrix.mul_one]
+  have hinv : ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ * (GeneralLinear.genericMatrix R n)ᵀ = 1 := by
+    rw [← Matrix.transpose_mul, Matrix.mul_nonsing_inv _ h, Matrix.transpose_one]
+  simp only [← Matrix.mul_assoc, hinv, Matrix.one_mul, Matrix.mul_nonsing_inv_cancel_right _ _ h]
 
 /-- The antipode carries every defining relation into the span of the relations. -/
 private theorem antipode_relation_mem {x : GeneralLinear.coordinateHopfAlgebra R n}
@@ -255,7 +263,7 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R
     (definingHopfIdeal R n q).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       IsAltMod ⊥ ((relationMatrix R n q).map phi) := by
   rw [definingHopfIdeal_toIdeal, span_relationSet_le_iff]
-  simp only [IsAltMod, Matrix.map_apply, RingHom.mem_ker, Ideal.mem_bot, AlgHom.coe_toRingHom,
+  simp only [isAltMod_iff, Matrix.map_apply, RingHom.mem_ker, Ideal.mem_bot, AlgHom.coe_toRingHom,
     map_add]
 
 /-- The coordinate Hopf algebra of `O(q)`. -/
@@ -288,17 +296,13 @@ section Points
 
 variable (A : Type w) [CommRing A] [Algebra R A]
 
-/-- The identification of invertible matrices with linear automorphisms of `Aⁿ`, a matrix acting
-by multiplication of column vectors (`TauCeti.matrixGeneralLinearEquiv`). -/
-noncomputable abbrev matrixLinearEquiv : GL (Fin n) A ≃* ((Fin n → A) ≃ₗ[A] (Fin n → A)) :=
-  matrixGeneralLinearEquiv.trans (LinearMap.GeneralLinearGroup.generalLinearEquiv A (Fin n → A))
-
 /-- **The group `O(q)(A)`**: invertible matrices `g` with `q_A(g x) = q_A(x)` for every
 `x ∈ Aⁿ`, the preimage of `TauCeti.QuadraticMap.orthogonalGroup (baseChangeForm q A)` under the
-identification of invertible matrices with linear automorphisms of `Aⁿ`. -/
+identification `TauCeti.matrixLinearEquiv` of invertible matrices with linear automorphisms of
+`Aⁿ`. -/
 noncomputable def pointsSubgroup : Subgroup (GL (Fin n) A) :=
   (QuadraticMap.orthogonalGroup (baseChangeForm q A)).comap
-    (matrixLinearEquiv n A).toMonoidHom
+    (matrixLinearEquiv (R := A) (n := Fin n)).toMonoidHom
 
 variable {R n q A}
 
@@ -308,18 +312,22 @@ theorem mem_pointsSubgroup_iff (g : GL (Fin n) A) :
     g ∈ pointsSubgroup R n q A ↔
       ∀ x, baseChangeForm q A ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) = baseChangeForm q A x := by
   rw [pointsSubgroup, Subgroup.mem_comap, QuadraticMap.mem_orthogonalGroup_iff]
-  simp only [MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, matrixGeneralLinearEquiv_apply]
+  simp only [MulEquiv.coe_toMonoidHom, matrixLinearEquiv_apply]
 
 /-- A matrix preserves `q_A` exactly when `gᵀ M g - M` is alternating. -/
 theorem mem_pointsSubgroup_iff_isAltMod (g : GL (Fin n) A) :
     g ∈ pointsSubgroup R n q A ↔
-      IsAltMod ⊥ ((g : Matrix (Fin n) (Fin n) A)ᵀ * (coefficientMatrix q).map (algebraMap R A) *
-        (g : Matrix (Fin n) (Fin n) A) - (coefficientMatrix q).map (algebraMap R A)) := by
-  rw [mem_pointsSubgroup_iff, isAltMod_bot_iff]
-  refine forall_congr' fun x => ?_
-  rw [baseChangeForm_apply, baseChangeForm_apply, Matrix.sub_mulVec, dotProduct_sub,
-    sub_eq_zero, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
-    Matrix.dotProduct_mulVec x (g : Matrix (Fin n) (Fin n) A)ᵀ, Matrix.vecMul_transpose]
+      IsAltMod ⊥ ((g : Matrix (Fin n) (Fin n) A)ᵀ *
+          (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A) *
+          (g : Matrix (Fin n) (Fin n) A) -
+        (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)) := by
+  -- Moving `g` across the dot product: `(g x)ᵀ M (g x) = xᵀ (gᵀ M g) x`.
+  have hframe (M : Matrix (Fin n) (Fin n) A) (x : Fin n → A) :
+      ((g : Matrix (Fin n) (Fin n) A) *ᵥ x) ⬝ᵥ (M *ᵥ ((g : Matrix (Fin n) (Fin n) A) *ᵥ x)) =
+        x ⬝ᵥ (((g : Matrix (Fin n) (Fin n) A)ᵀ * M * (g : Matrix (Fin n) (Fin n) A)) *ᵥ x) := by
+    simp only [← Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec x, Matrix.vecMul_transpose]
+  simp only [mem_pointsSubgroup_iff, isAltMod_bot_iff, baseChangeForm_apply, hframe,
+    Matrix.sub_mulVec, dotProduct_sub, sub_eq_zero]
 
 variable (R n q A)
 
@@ -331,8 +339,9 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
   ext g
   obtain ⟨p, rfl⟩ := (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).surjective g
   rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, MulEquiv.symm_apply_apply,
-    mem_pointsSubgroup_iff_isAltMod, GeneralLinear.pointsMulEquiv_apply,
-    ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, ← relationMatrix_map,
+    mem_pointsSubgroup_iff_isAltMod, GeneralLinear.pointsMulEquiv_apply]
+  -- The matrix of the point `p` is the image of the generic matrix under `p`.
+  rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, ← relationMatrix_map,
     ← definingHopfIdeal_toIdeal_le_ker_iff]
   exact ⟨fun h x hx => h x (HopfIdeal.mem_toIdeal.mp hx), fun h x hx => h hx⟩
 
@@ -366,9 +375,9 @@ noncomputable def pointsMulEquivOrthogonalGroup :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A) ≃*
       QuadraticMap.orthogonalGroup (baseChangeForm q A) :=
   (pointsMulEquiv R n q A).trans
-    (((matrixLinearEquiv n A).subgroupMap _).trans
+    (((matrixLinearEquiv (R := A) (n := Fin n)).subgroupMap _).trans
       (MulEquiv.subgroupCongr (Subgroup.map_comap_eq_self_of_surjective
-        (matrixLinearEquiv n A).surjective _)))
+        (matrixLinearEquiv (R := A) (n := Fin n)).surjective _)))
 
 variable {R n q A}
 
@@ -380,10 +389,10 @@ theorem pointsMulEquivOrthogonalGroup_apply
     (pointsMulEquivOrthogonalGroup R n q A f : (Fin n → A) ≃ₗ[A] (Fin n → A)) x =
       ((pointsMulEquiv R n q A f : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) *ᵥ x := by
   have h : (pointsMulEquivOrthogonalGroup R n q A f : (Fin n → A) ≃ₗ[A] (Fin n → A)) =
-      matrixLinearEquiv n A (pointsMulEquiv R n q A f) := by
+      matrixLinearEquiv (pointsMulEquiv R n q A f) := by
     rw [pointsMulEquivOrthogonalGroup, MulEquiv.trans_apply, MulEquiv.trans_apply]
     exact MulEquiv.coe_subgroupMap_apply _ _ _
-  rw [h, MulEquiv.trans_apply, matrixGeneralLinearEquiv_apply]
+  rw [h, matrixLinearEquiv_apply]
 
 end Points
 

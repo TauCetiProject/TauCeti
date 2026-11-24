@@ -18,20 +18,20 @@ therefore differs from the quadratic discriminant by `2` to the dimension, inclu
 zero. These formulas make the convention explicit when changing between bilinear and quadratic
 Gram determinants.
 
-Without `2` invertible, a quadratic form `q` on `Rⁿ` is still `x ↦ xᵀ M x` for its upper
-triangular *coefficient matrix* `M` (`QuadraticForm.coefficientMatrix`): the diagonal entries
-are the values `q(eᵢ)`, the entries above the diagonal are the polar values `q(eᵢ + eⱼ) - q(eᵢ) -
-q(eⱼ)`, and the entries below it are `0` (`QuadraticForm.coefficientMatrix_apply`). Reading `M` in
-an `R`-algebra `A` gives the form `q_A` on `Aⁿ` with the same coefficients
-(`QuadraticForm.baseChangeForm`). Mathlib's `QuadraticForm.baseChange` instead lives on
-`A ⊗[R] Rⁿ` and assumes `2` invertible.
+Without `2` invertible, a quadratic form `q` is still `x ↦ xᵀ M x` in the coordinates of a basis
+`b` indexed by a linearly ordered type, for its upper triangular *coefficient matrix* `M`
+(`QuadraticForm.coefficientMatrix`): the diagonal entries are the values `q(bᵢ)`, the entries above
+the diagonal are the polar values `q(bᵢ + bⱼ) - q(bᵢ) - q(bⱼ)`, and the entries below it are `0`
+(`QuadraticForm.coefficientMatrix_apply`). For a form on `R^ι`, reading `M` in an `R`-algebra `A`
+gives the form `q_A` on `A^ι` with the same coefficients (`QuadraticForm.baseChangeForm`).
+Mathlib's `QuadraticForm.baseChange` instead lives on `A ⊗[R] R^ι` and assumes `2` invertible.
 
 ## Main declarations
 
 * `QuadraticForm.toMatrix_polarBilin` and `QuadraticForm.det_toMatrix_polarBilin`: the full
   polar matrix and its determinant.
 * `QuadraticForm.coefficientMatrix` and `QuadraticForm.coefficientMatrix_apply`: the upper
-  triangular coefficient matrix of a quadratic form on `Rⁿ`.
+  triangular coefficient matrix of a quadratic form in an ordered basis.
 * `QuadraticForm.baseChangeForm`, `QuadraticForm.baseChangeForm_apply` and
   `QuadraticForm.baseChangeForm_self`: the form with the same coefficients over an `R`-algebra.
 -/
@@ -67,41 +67,43 @@ namespace QuadraticForm
 
 section Coefficients
 
-variable {R : Type*} [CommRing R] {n : ℕ}
+variable {R V ι : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Fintype ι] [LinearOrder ι]
 
-/-- The **coefficient matrix** of a quadratic form `q` on `Rⁿ`: the upper triangular matrix `M`
-with `q(x) = xᵀ M x`, from Mathlib's `QuadraticMap.toBilin` in the standard basis. -/
-noncomputable def coefficientMatrix (q : QuadraticForm R (Fin n → R)) :
-    Matrix (Fin n) (Fin n) R :=
-  LinearMap.toMatrix₂' R (q.toBilin (Pi.basisFun R (Fin n)))
+/-- The **coefficient matrix** of a quadratic form `q` in a basis `b` indexed by a linearly ordered
+type: the upper triangular matrix `M` with `q(Σ xᵢ bᵢ) = xᵀ M x`, from Mathlib's
+`QuadraticMap.toBilin`. -/
+noncomputable def coefficientMatrix (q : QuadraticForm R V) (b : Module.Basis ι R V) :
+    Matrix ι ι R :=
+  LinearMap.toMatrix₂ b b (q.toBilin b)
 
-/-- The entries of the coefficient matrix: `q(eᵢ)` on the diagonal, the polar value
-`q(eᵢ + eⱼ) - q(eᵢ) - q(eⱼ)` above it and `0` below it. -/
-theorem coefficientMatrix_apply (q : QuadraticForm R (Fin n → R)) (i j : Fin n) :
-    coefficientMatrix q i j =
-      if i = j then q (Pi.single i 1)
-      else if i < j then QuadraticMap.polar q (Pi.single i 1) (Pi.single j 1) else 0 := by
-  rw [coefficientMatrix, LinearMap.toMatrix₂'_apply, ← Pi.basisFun_apply R (Fin n) i,
-    ← Pi.basisFun_apply R (Fin n) j, QuadraticMap.toBilin_apply]
+/-- The entries of the coefficient matrix: `q(bᵢ)` on the diagonal, the polar value
+`q(bᵢ + bⱼ) - q(bᵢ) - q(bⱼ)` above it and `0` below it. -/
+theorem coefficientMatrix_apply (q : QuadraticForm R V) (b : Module.Basis ι R V) (i j : ι) :
+    coefficientMatrix q b i j =
+      if i = j then q (b i) else if i < j then QuadraticMap.polar q (b i) (b j) else 0 := by
+  rw [coefficientMatrix, LinearMap.toMatrix₂_apply, QuadraticMap.toBilin_apply]
 
-/-- The form `q_A` on `Aⁿ` with the same coefficients as `q`: `x ↦ xᵀ M x` for the coefficient
-matrix `M` of `q` read in `A`. -/
-noncomputable def baseChangeForm (q : QuadraticForm R (Fin n → R)) (A : Type*) [CommRing A]
-    [Algebra R A] : QuadraticForm A (Fin n → A) :=
-  Matrix.toQuadraticForm' ((coefficientMatrix q).map (algebraMap R A))
+/-- The form `q_A` on `A^ι` with the same coefficients as a form `q` on `R^ι`: `x ↦ xᵀ M x` for
+the coefficient matrix `M` of `q` in the standard basis, read in `A`. -/
+noncomputable def baseChangeForm (q : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
+    [Algebra R A] : QuadraticForm A (ι → A) :=
+  Matrix.toQuadraticForm' ((coefficientMatrix q (Pi.basisFun R ι)).map (algebraMap R A))
 
 /-- The form `q_A` evaluates as `xᵀ M x`. -/
-theorem baseChangeForm_apply (q : QuadraticForm R (Fin n → R)) (A : Type*) [CommRing A]
-    [Algebra R A] (x : Fin n → A) :
-    baseChangeForm q A x = x ⬝ᵥ ((coefficientMatrix q).map (algebraMap R A) *ᵥ x) := by
+@[simp]
+theorem baseChangeForm_apply (q : QuadraticForm R (ι → R)) (A : Type*) [CommRing A]
+    [Algebra R A] (x : ι → A) :
+    baseChangeForm q A x =
+      x ⬝ᵥ ((coefficientMatrix q (Pi.basisFun R ι)).map (algebraMap R A) *ᵥ x) := by
   rw [baseChangeForm, Matrix.toQuadraticForm', LinearMap.BilinMap.toQuadraticMap_apply,
     Matrix.toLinearMap₂'_apply']
 
 /-- Over `R` itself, the form with the coefficients of `q` is `q`. -/
 @[simp]
-theorem baseChangeForm_self (q : QuadraticForm R (Fin n → R)) : baseChangeForm q R = q := by
-  rw [baseChangeForm, Algebra.algebraMap_self, RingHom.coe_id, Matrix.map_id, coefficientMatrix,
-    Matrix.toQuadraticForm', Matrix.toLinearMap₂'_toMatrix', QuadraticMap.toQuadraticMap_toBilin]
+theorem baseChangeForm_self (q : QuadraticForm R (ι → R)) : baseChangeForm q R = q := by
+  simp only [baseChangeForm, coefficientMatrix, Algebra.algebraMap_self, RingHom.coe_id,
+    Matrix.map_id, Matrix.toQuadraticForm', LinearMap.toMatrix₂_basisFun,
+    Matrix.toLinearMap₂'_toMatrix', QuadraticMap.toQuadraticMap_toBilin]
 
 end Coefficients
 
