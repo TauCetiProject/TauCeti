@@ -44,6 +44,8 @@ coning a triangulation of its boundary, and the pieces are glued.
 
 * `Geometry.SimplicialComplex.glue`: the simplicial complex whose faces are the faces of a
   family of pairwise compatible complexes.
+* `Geometry.SimplicialComplex.ofSimplices`: the simplicial complex whose faces are the faces of
+  a family of affinely independent simplices meeting pairwise in common faces.
 
 ## Main results
 
@@ -315,6 +317,45 @@ theorem restrict_glue
     hjG.mem_of_centerMass_mem (fun _ _ => one_pos)
       (by simpa using convexHull_subset_space hs) hxG (mem_coe.1 hy)⟩
   exact restrict_le (hG hsG)
+
+/-- The simplicial complex whose faces are the nonempty subsets of the simplices `σ k`, provided
+each `σ k` is affinely independent and the convex hulls of any two of them meet inside the convex
+hull of their common vertices. -/
+def ofSimplices (σ : ι → Finset E) (indep : ∀ k, AffineIndependent 𝕜 ((↑) : σ k → E))
+    (inter : ∀ k l, convexHull 𝕜 ↑(σ k) ∩ convexHull 𝕜 ↑(σ l) ⊆
+      convexHull 𝕜 ((σ k : Set E) ∩ σ l)) :
+    SimplicialComplex 𝕜 E where
+  faces := {t | t.Nonempty ∧ ∃ k, t ⊆ σ k}
+  isRelLowerSet_faces := by
+    rintro t ⟨ht, k, htk⟩
+    exact ⟨ht, fun u hut hu => ⟨hu, k, hut.trans htk⟩⟩
+  indep := by
+    rintro t ⟨-, k, htk⟩
+    exact (indep k).mono (coe_subset.2 htk)
+  inter_subset_convexHull := by
+    classical
+    rintro s t ⟨-, k, hsk⟩ ⟨-, l, htl⟩ x ⟨hxs, hxt⟩
+    set U := σ k ∩ σ l
+    have hU : x ∈ convexHull 𝕜 (U : Set E) := by
+      rw [coe_inter]
+      exact inter k l ⟨convexHull_mono (coe_subset.2 hsk) hxs,
+        convexHull_mono (coe_subset.2 htl) hxt⟩
+    -- inside each of the two affinely independent simplices, `x` is carried by common vertices
+    have hs : x ∈ convexHull 𝕜 (s ∩ U : Set E) :=
+      ((indep k).convexHull_inter hsk inter_subset_left).ge ⟨hxs, hU⟩
+    have ht : x ∈ convexHull 𝕜 (t ∩ U : Set E) :=
+      ((indep l).convexHull_inter htl inter_subset_right).ge ⟨hxt, hU⟩
+    rw [← coe_inter] at hs ht
+    refine convexHull_mono (fun y hy => ?_) (((indep k).convexHull_inter
+      (inter_subset_left.trans hsk) (inter_subset_right.trans inter_subset_left)).ge ⟨hs, ht⟩)
+    simp only [coe_inter, Set.mem_inter_iff] at hy
+    exact ⟨hy.1.1, hy.2.1⟩
+
+/-- The faces of `ofSimplices σ indep inter` are the nonempty subsets of the simplices `σ k`. -/
+@[simp]
+theorem mem_ofSimplices_faces {σ : ι → Finset E} {indep} {inter} :
+    s ∈ (ofSimplices (𝕜 := 𝕜) σ indep inter).faces ↔ s.Nonempty ∧ ∃ k, s ⊆ σ k :=
+  Iff.rfl
 
 end LinearOrderedField
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
-public import TauCeti.Analysis.Convex.SimplicialComplex.Restrict
+public import TauCeti.Analysis.Convex.SimplicialComplex.Glue
 public import TauCeti.Topology.Order.RegionBetween
 import TauCeti.Analysis.Convex.RegionBetween
 
@@ -389,36 +389,9 @@ variable (v a b) in
 with ordered affinely independent vertices `v`: its faces are the nonempty subsets of the staircase
 simplices. -/
 noncomputable def staircaseComplex (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v i) ≤ b (v i)) :
-    Geometry.SimplicialComplex ℝ (E × ℝ) where
-  faces := {t | t.Nonempty ∧ ∃ k, t ⊆ staircaseSimplex v a b k}
-  isRelLowerSet_faces := by
-    rintro t ⟨ht, k, htk⟩
-    exact ⟨ht, fun u hut hu ↦ ⟨hu, k, hut.trans htk⟩⟩
-  indep := by
-    rintro t ⟨-, k, htk⟩
-    exact AffineIndependent.mono (affineIndependent_staircaseSimplex hv k)
-      (by exact_mod_cast htk)
-  inter_subset_convexHull := by
-    classical
-    rintro s t ⟨-, k, hsk⟩ ⟨-, l, htl⟩ p ⟨hps, hpt⟩
-    set U := staircaseSimplex v a b k ∩ staircaseSimplex v a b l
-    have hU : p ∈ convexHull ℝ (U : Set (E × ℝ)) := by
-      rw [coe_inter]
-      exact convexHull_inter_convexHull_staircaseSimplex_subset hv hab k l
-        ⟨convexHull_mono (by exact_mod_cast hsk) hps, convexHull_mono (by exact_mod_cast htl) hpt⟩
-    -- inside each of the two affinely independent simplices, `p` is carried by common vertices
-    have hk := affineIndependent_staircaseSimplex (a := a) (b := b) hv k
-    have hl := affineIndependent_staircaseSimplex (a := a) (b := b) hv l
-    have h₁ : p ∈ convexHull ℝ (s ∩ U : Set (E × ℝ)) :=
-      (hk.convexHull_inter hsk inter_subset_left).ge ⟨hps, hU⟩
-    have h₂ : p ∈ convexHull ℝ (t ∩ U : Set (E × ℝ)) :=
-      (hl.convexHull_inter htl inter_subset_right).ge ⟨hpt, hU⟩
-    rw [← coe_inter] at h₁ h₂
-    refine convexHull_mono ?_ ((hk.convexHull_inter (inter_subset_left.trans hsk)
-      (inter_subset_right.trans inter_subset_left)).ge ⟨h₁, h₂⟩)
-    intro x
-    simp only [coe_inter, Set.mem_inter_iff]
-    tauto
+    Geometry.SimplicialComplex ℝ (E × ℝ) :=
+  .ofSimplices (staircaseSimplex v a b) (affineIndependent_staircaseSimplex hv)
+    (convexHull_inter_convexHull_staircaseSimplex_subset hv hab)
 
 variable (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v i) ≤ b (v i))
 
@@ -427,12 +400,12 @@ variable (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v i) ≤ b (v i))
 theorem mem_staircaseComplex_faces {t : Finset (E × ℝ)} :
     t ∈ (staircaseComplex v a b hv hab).faces ↔
       t.Nonempty ∧ ∃ k, t ⊆ staircaseSimplex v a b k :=
-  Iff.rfl
+  Geometry.SimplicialComplex.mem_ofSimplices_faces
 
 /-- Every staircase simplex is a face of the staircase triangulation. -/
 theorem staircaseSimplex_mem_staircaseComplex_faces (k : ι) :
     staircaseSimplex v a b k ∈ (staircaseComplex v a b hv hab).faces :=
-  ⟨⟨_, lower_mem_staircaseSimplex le_rfl⟩, k, Finset.Subset.rfl⟩
+  (mem_staircaseComplex_faces hv hab).2 ⟨⟨_, lower_mem_staircaseSimplex le_rfl⟩, k, subset_rfl⟩
 
 /-- The vertices of the staircase triangulation are the lower and the upper vertices. -/
 theorem vertices_staircaseComplex :
@@ -453,7 +426,9 @@ along `e`, is a subcomplex of the staircase triangulation over the whole simplex
 theorem staircaseComplex_comp_le (e : κ ↪o ι) :
     staircaseComplex (v ∘ e) a b (hv.comp_embedding e.toEmbedding) (fun i ↦ hab (e i)) ≤
       staircaseComplex v a b hv hab := by
-  rintro t ⟨ht, k, htk⟩
+  intro t
+  simp only [mem_staircaseComplex_faces]
+  rintro ⟨ht, k, htk⟩
   refine ⟨ht, e k, fun p hp ↦ ?_⟩
   rcases mem_staircaseSimplex.1 (htk hp) with ⟨i, hik, rfl⟩ | ⟨i, hki, rfl⟩
   · exact lower_mem_staircaseSimplex (e.le_iff_le.2 hik)
@@ -470,8 +445,9 @@ theorem restrict_staircaseComplex (e : κ ↪o ι) :
   rw [Geometry.SimplicialComplex.mem_restrict_faces]
   refine ⟨?_, fun ht ↦ ⟨staircaseComplex_comp_le hv hab e ht, fun p hp ↦ ?_⟩⟩
   swap
-  · obtain ⟨-, k, htk⟩ := ht
+  · obtain ⟨-, k, htk⟩ := (mem_staircaseComplex_faces _ _).1 ht
     rcases mem_staircaseSimplex.1 (htk hp) with ⟨i, -, rfl⟩ | ⟨i, -, rfl⟩ <;> exact ⟨i, rfl⟩
+  rw [mem_staircaseComplex_faces, mem_staircaseComplex_faces]
   rintro ⟨⟨hne, k, htk⟩, htB⟩
   -- every vertex of `t` is a lower vertex below `k` or an upper vertex above `k` over the face
   have key : ∀ p ∈ t, ∃ j, (e j ≤ k ∧ (v (e j), a (v (e j))) = p) ∨
@@ -518,7 +494,8 @@ theorem space_staircaseComplex (hv : AffineIndependent ℝ v) (hab : ∀ i, a (v
   ext p
   rw [Geometry.SimplicialComplex.mem_space_iff, hband]
   constructor
-  · rintro ⟨t, ⟨-, k, htk⟩, hp⟩
+  · rintro ⟨t, ht, hp⟩
+    obtain ⟨-, k, htk⟩ := (mem_staircaseComplex_faces hv hab).1 ht
     refine convexHull_mono (fun q hq ↦ ?_) (convexHull_mono (by exact_mod_cast htk) hp)
     rcases mem_staircaseSimplex.1 hq with ⟨i, -, rfl⟩ | ⟨i, -, rfl⟩
     exacts [.inl (Set.mem_graphOn.2 ⟨⟨i, rfl⟩, rfl⟩), .inr (Set.mem_graphOn.2 ⟨⟨i, rfl⟩, rfl⟩)]
