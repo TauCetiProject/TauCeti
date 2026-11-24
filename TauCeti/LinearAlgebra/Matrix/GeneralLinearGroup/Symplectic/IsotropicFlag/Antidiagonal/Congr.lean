@@ -79,14 +79,20 @@ theorem antidiagSign_flagOrder (i : Fin (m + m)) :
   · simp
   · simp [Fin.natAdd_eq_addNat]
 
+/-- The permutation matrix `P_σ` of the self-dual flag order is symmetric, since `σ` is an
+involution. -/
+theorem transpose_toMatrix_flagOrder :
+    ((flagOrder m).toPEquiv.toMatrix : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ =
+      (flagOrder m).toPEquiv.toMatrix := by
+  rw [← PEquiv.toMatrix_symm, ← Equiv.toPEquiv_symm, flagOrder_symm]
+
 /-- Conjugating by the permutation matrix `P_σ` of the self-dual flag order permutes rows and
 columns by `σ`, since `σ` is an involution. -/
 theorem toMatrix_flagOrder_mul_mul (M : Matrix (Fin (m + m)) (Fin (m + m)) R) :
     (flagOrder m).toPEquiv.toMatrix * M * (flagOrder m).toPEquiv.toMatrix =
       M.submatrix (flagOrder m) (flagOrder m) := by
   rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, submatrix_submatrix,
-    flagOrder_symm]
-  rfl
+    flagOrder_symm, Function.comp_id, Function.id_comp]
 
 variable (m R)
 
@@ -108,8 +114,8 @@ theorem antidiagCongrMatrix_mul_mul_transpose (M : Matrix (Fin (m + m)) (Fin (m 
     antidiagCongrMatrix m R * M * (antidiagCongrMatrix m R)ᵀ =
       diagonal (antidiagSign m R) * M.submatrix (flagOrder m) (flagOrder m) *
         diagonal (antidiagSign m R) := by
-  rw [antidiagCongrMatrix, transpose_mul, diagonal_transpose, ← PEquiv.toMatrix_symm,
-    ← Equiv.toPEquiv_symm, flagOrder_symm, ← toMatrix_flagOrder_mul_mul]
+  rw [antidiagCongrMatrix, transpose_mul, diagonal_transpose, transpose_toMatrix_flagOrder,
+    ← toMatrix_flagOrder_mul_mul]
   simp only [Matrix.mul_assoc]
 
 /-- The transposed congruence: `Pᵀ M P` is `diag(s) M diag(s)` permuted by the flag order. -/
@@ -117,8 +123,8 @@ theorem transpose_antidiagCongrMatrix_mul_mul (M : Matrix (Fin (m + m)) (Fin (m 
     (antidiagCongrMatrix m R)ᵀ * M * antidiagCongrMatrix m R =
       (diagonal (antidiagSign m R) * M * diagonal (antidiagSign m R)).submatrix (flagOrder m)
         (flagOrder m) := by
-  rw [antidiagCongrMatrix, transpose_mul, diagonal_transpose, ← PEquiv.toMatrix_symm,
-    ← Equiv.toPEquiv_symm, flagOrder_symm, ← toMatrix_flagOrder_mul_mul]
+  rw [antidiagCongrMatrix, transpose_mul, diagonal_transpose, transpose_toMatrix_flagOrder,
+    ← toMatrix_flagOrder_mul_mul]
   simp only [Matrix.mul_assoc]
 
 theorem diagonal_antidiagSign_mul_self :

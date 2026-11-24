@@ -47,24 +47,21 @@ theorem not_mul_JAntidiag_mul_transpose {a : R} (ha : a ≠ 0) :
   refine ha ?_
   simpa [Matrix.mul_apply, Fin.sum_univ_four, Matrix.one_apply, single_apply] using h₀₁
 
+open GLSymplecticFin.IsotropicFlag in
 /-- In the `JFin` model the root group `I + a E₂₃` of the antidiagonal model becomes `I - a E₂₄`. -/
 theorem antidiagCongr_mul_root_mul_inv (a : R) :
     (antidiagCongr 2 R : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) *
         (1 + single (1 : Fin (2 + 2)) 2 a) *
         (((antidiagCongr 2 R)⁻¹ : GL (Fin (2 + 2)) R) : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       1 - single (1 : Fin (2 + 2)) 3 a := by
-  open GLSymplecticFin.IsotropicFlag in
-  have h₀ : flagOrder 2 0 = 0 := flagOrder_castAdd (m := 2) 0
-  open GLSymplecticFin.IsotropicFlag in
-  have h₁ : flagOrder 2 1 = 1 := flagOrder_castAdd (m := 2) 1
-  open GLSymplecticFin.IsotropicFlag in
-  have h₂ : flagOrder 2 2 = 3 := flagOrder_addNat (m := 2) 0
-  open GLSymplecticFin.IsotropicFlag in
-  have h₃ : flagOrder 2 3 = 2 := flagOrder_addNat (m := 2) 1
-  have s₀ : antidiagSign 2 R 0 = -1 := antidiagSign_castAdd (m := 2) 0
-  have s₁ : antidiagSign 2 R 1 = -1 := antidiagSign_castAdd (m := 2) 1
-  have s₂ : antidiagSign 2 R 2 = 1 := antidiagSign_addNat (m := 2) 0
-  have s₃ : antidiagSign 2 R 3 = 1 := antidiagSign_addNat (m := 2) 1
+  have h₀ : flagOrder 2 0 = 0 := by simpa using flagOrder_castAdd 2 0
+  have h₁ : flagOrder 2 1 = 1 := by simpa using flagOrder_castAdd 2 1
+  have h₂ : flagOrder 2 2 = 3 := by simpa using flagOrder_addNat 2 0
+  have h₃ : flagOrder 2 3 = 2 := by simpa using flagOrder_addNat 2 1
+  have s₀ : antidiagSign 2 R 0 = -1 := by simpa using antidiagSign_castAdd (R := R) (m := 2) 0
+  have s₁ : antidiagSign 2 R 1 = -1 := by simpa using antidiagSign_castAdd (R := R) (m := 2) 1
+  have s₂ : antidiagSign 2 R 2 = 1 := by simpa using antidiagSign_addNat (R := R) (m := 2) 0
+  have s₃ : antidiagSign 2 R 3 = 1 := by simpa using antidiagSign_addNat (R := R) (m := 2) 1
   rw [coe_antidiagCongr, coe_antidiagCongr_inv, antidiagCongrMatrix_mul_mul_transpose]
   ext i j
   fin_cases i <;> fin_cases j <;>
