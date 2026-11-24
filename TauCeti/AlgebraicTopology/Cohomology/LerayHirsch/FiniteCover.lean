@@ -137,18 +137,11 @@ theorem lerayHirschRestrict_bijective_of_trivialization (t : Bundle.Trivializati
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
         TopCat.singularCohomologyMap (trivializationFiberInclusion t (hS hx)) d (e d i))) :
     Function.Bijective (lerayHirschRestrict p e S n) := by
-  let φ : of S ⊗ F ≅ of (p ⁻¹' S) := isoOfHomeo (t.preimageHomeomorph hS).symm
-  have hφ : φ.hom ≫ ofHom (p.hom.restrictPreimage S) = fst (of S) F ≫ 𝟙 (of S) := by
-    ext y
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.id_apply]
-    -- `φ` applies `(t.preimageHomeomorph hS).symm` on `S × F`, the carrier of `of S ⊗ F`.
-    change p ((t.preimageHomeomorph hS).symm (y.1, y.2)).val = (y.1 : B)
-    rw [t.preimageHomeomorph_symm_apply]
-    exact t.proj_symm_apply' (hS y.1.property)
-  refine (lerayHirsch_bijective_iff_of_isIso φ.hom (𝟙 _) hφ (fun _ _ _ ↦ rfl)).1
+  refine (lerayHirsch_bijective_iff_of_isIso (trivializationPreimageIso t hS).hom (𝟙 _)
+    (by rw [trivializationPreimageIso_hom_comp, Category.comp_id]) (fun _ _ _ ↦ rfl)).1
     (lerayHirsch_fst_bijective_of_fiberwise_basis (of S) n _ hF fun x d hd ↦ ?_)
-  simp only [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, φ,
-    prodFiberInclusion_comp_preimageHomeomorph_symm]
+  simp only [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
+    prodFiberInclusion_comp_trivializationPreimageIso_hom]
   exact hc x x.property d hd
 
 /-- **The Leray–Hirsch theorem over a base with a finite trivializing cover.** Let `p : E ⟶ B` have
