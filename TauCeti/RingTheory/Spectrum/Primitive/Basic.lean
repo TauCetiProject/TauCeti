@@ -55,7 +55,7 @@ theorem ext {p q : PrimitiveSpectrum R} (h : p.asTwoSidedIdeal = q.asTwoSidedIde
 private def equivSubtype : PrimitiveSpectrum R ≃
     {I : TwoSidedIdeal R | I.asIdeal.IsPrimitive} where
   toFun p := ⟨p.asTwoSidedIdeal, p.isPrimitive⟩
-  invFun I := ⟨I.1, I.2⟩
+  invFun I := ⟨I.val, I.property⟩
 
 private theorem infPrime (I : TwoSidedIdeal R) (hI : I.asIdeal.IsPrimitive) :
     InfPrime I := by

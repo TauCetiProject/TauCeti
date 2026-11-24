@@ -290,11 +290,11 @@ private theorem existsUnique_equiv_of_eventually_apply_eq_zero_imp [Finite ι] [
     rw [← hφψ hwt]
     exact hw h
   have hστ (i : {i // i ∈ S ∧ y i = 0}) : τ ⟨σ i, hσS i, hσy i⟩ = i :=
-    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.2.2 (hτy _) <| by
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.property.2 (hτy _) <| by
       filter_upwards [hσ i, hback i] with z h₁ h₂ h
       exact h₂ (h₁ h)).symm
   have hτσ (j : {j // j ∈ S' ∧ φ y j = 0}) : σ ⟨τ j, hτS j, hτy j⟩ = j :=
-    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.2.2 (hσy _) <| by
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.property.2 (hσy _) <| by
       filter_upwards [hτ j, hforth j] with w h₁ h₂ h
       exact h₂ (h₁ h)).symm
   let e : {i // i ∈ S ∧ y i = 0} ≃ {j // j ∈ S' ∧ φ y j = 0} :=
@@ -308,7 +308,7 @@ private theorem existsUnique_equiv_of_eventually_apply_eq_zero_imp [Finite ι] [
     exact ⟨fun h ↦ hστ i ▸ h₂ h, h₁⟩
   refine ⟨e, eventually_all.2 hiff, fun e' he' ↦ Equiv.ext fun i ↦ Subtype.ext ?_⟩
   -- Two such bijections agree: pull both characterizations back along `ψ`.
-  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).2.2 (hσy i) ?_
+  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).property.2 (hσy i) ?_
   filter_upwards [hTψ.eventually he', hTψ.eventually (hiff i), ht] with w h₁ h₂ hwt h
   rw [hφψ hwt] at h₁ h₂
   exact h₂.2 ((h₁ i).1 h)
@@ -360,10 +360,11 @@ theorem existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq
   -- Each face at `y` goes into a face at `φ y`, and back.
   have hσ (i : {i // i ∈ S ∧ y i = 0}) :=
     TauCeti.exists_eventually_apply_eq_zero_of_apply_eq_zero hy hs₀ (hφ.mono inter_subset_left)
-      (fun z hz ↦ hφs hz.1) (fun z hz ↦ hcard hz.1 hz.2) i.2.1 i.2.2
+      (fun z hz ↦ hφs hz.1) (fun z hz ↦ hcard hz.1 hz.2) i.property.1 i.property.2
   have hτ (j : {j // j ∈ S' ∧ φ y j = 0}) :=
     TauCeti.exists_eventually_apply_eq_zero_of_apply_eq_zero hφy ht₀
-      (hψ.mono fun _ hw ↦ hw.1.1) (fun w hw ↦ hψt hw.1.1) (fun w hw ↦ hcard' hw) j.2.1 j.2.2
+      (hψ.mono fun _ hw ↦ hw.1.1) (fun w hw ↦ hψt hw.1.1) (fun w hw ↦ hcard' hw) j.property.1
+          j.property.2
   choose σ hσS hσy hσ using hσ
   choose τ hτS hτy hτ using hτ
   rw [hψy] at hτy

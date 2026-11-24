@@ -74,7 +74,7 @@ ideal sheaf. In particular, neither finite type nor Noetherianity is required. -
 theorem isIso_blowupToBase_restrict_of_disjoint_support {U : X.Opens}
     (hU : Disjoint (U : Set X) (I.support : Set X)) :
     IsIso (I.blowupToBase ∣_ U) := by
-  let V (W : X.affineOpens) : U.toScheme.Opens := U.ι ⁻¹ᵁ W.1
+  let V (W : X.affineOpens) : U.toScheme.Opens := U.ι ⁻¹ᵁ W.val
   have hV : ⨆ W, V W = ⊤ := by
     simp only [V, ← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top,
       Scheme.Hom.preimage_top]
@@ -84,11 +84,11 @@ theorem isIso_blowupToBase_restrict_of_disjoint_support {U : X.Opens}
   refine ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
     (morphismRestrictRestrict I.blowupToBase U (V W))).mpr ?_
   exact (MorphismProperty.isomorphisms.iff _).mpr
-    (I.isIso_blowupToBase_restrict_of_le_affine W.2 (U.ι.image_preimage_le W.1)
+    (I.isIso_blowupToBase_restrict_of_le_affine W.property (U.ι.image_preimage_le W.val)
       (hU.mono_left (by
         intro x hx
         obtain ⟨y, _, rfl⟩ := hx
-        exact y.2)))
+        exact y.property)))
 
 /-- The blowup is canonically isomorphic to the base over the complement of its centre. -/
 instance isIso_blowupToBase_restrict_compl_support :

@@ -40,6 +40,9 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 
 ## Main results
 
+* `MvPolynomial.aeval_blockLinearForm_eq_linearSubst`, `MvPolynomial.blockSubst_eq_linearSubst`:
+  substituting square block-linear forms is a block-diagonal `MvPolynomial.linearSubst`, and in
+  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`.
 * `MvPolynomial.blockSubst_mul`: block substitution is a right action of the matrix monoid, and
   `MvPolynomial.blockSubst_inv_blockSubst`, `MvPolynomial.blockSubst_blockSubst_inv`: an
   invertible matrix gives an automorphism.
@@ -100,12 +103,22 @@ theorem blockSubst_one [DecidableEq ι] :
   refine algHom_ext fun ⟨h, j⟩ ↦ ?_
   simp [Matrix.one_apply, apply_ite C, ite_mul]
 
+/-- Substituting square block-linear forms `MvPolynomial.blockLinearForm` is the linear
+substitution `MvPolynomial.linearSubst` by the block-diagonal matrix with block `A h` on block
+`h`. -/
+theorem aeval_blockLinearForm_eq_linearSubst [Fintype κ] [DecidableEq κ] (A : κ → ι → ι → R) :
+    aeval (blockLinearForm A) =
+      linearSubst (Matrix.of fun p q : κ × ι ↦
+        if p.1 = q.1 then A p.1 p.2 q.2 else 0) := by
+  refine algHom_ext fun ⟨h, j⟩ ↦ ?_
+  simp [blockLinearForm_apply, linearSubst_X, Fintype.sum_prod_type, apply_ite C, ite_mul]
+
 /-- Block substitution is the linear substitution `MvPolynomial.linearSubst` of the
 block-diagonal matrix `1 ⊗ₖ A`, with one copy of `A` for each block. -/
 theorem blockSubst_eq_linearSubst [Fintype κ] [DecidableEq κ] (A : Matrix ι ι R) :
     (blockSubst A : MvPolynomial (κ × ι) R →ₐ[R] _) = linearSubst ((1 : Matrix κ κ R) ⊗ₖ A) := by
-  refine algHom_ext fun ⟨h, j⟩ ↦ ?_
-  simp [linearSubst_X, Fintype.sum_prod_type, Matrix.one_apply, ite_mul, apply_ite C]
+  rw [blockSubst_eq_aeval, aeval_blockLinearForm_eq_linearSubst]
+  exact congrArg linearSubst (Matrix.ext fun _ _ ↦ by simp [Matrix.one_apply])
 
 /-- Block substitution is a right action of the matrix monoid. -/
 theorem blockSubst_mul (A B : Matrix ι ι R) :
@@ -179,7 +192,8 @@ theorem coeff_blockSubst_hasseDeriv_eq_zero_of_forall_coeff_add [Finite κ]
   have := Fintype.ofFinite κ
   rw [blockSubst_inv_hasseDeriv hA, coeff_sum]
   refine sum_eq_zero fun e he ↦ ?_
-  rw [coeff_smul, hasseDeriv_coeff, hP e (mem_filter.1 he).2, mul_zero, smul_zero]
+  rw [AddMonoidAlgebra.coeff_smul_apply, hasseDeriv_coeff, hP e (mem_filter.1 he).2, mul_zero,
+    smul_zero]
 
 /-- **Vanishing along a form passes to Hasse derivatives** (Bombieri–Gubler, §7.5.14). Fix a
 row `i` of the invertible matrix `A` and a multidegree `d`. If the coefficients of

@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Differential.CyclicPermutation
 public import TauCeti.KnotTheory.Grid.Filtered.Alexander
 public import TauCeti.KnotTheory.Grid.Grading.CyclicPermutation
+public import TauCeti.Algebra.Homology.SquareZero.Filtered
 
 /-!
 # The filtered grid complex under cyclic permutation
@@ -37,7 +38,12 @@ maps preserve the Alexander grading of grid states
 (`OddComponentGridDiagram.alexanderℤ_relabelRows_finRotate`,
 `OddComponentGridDiagram.alexanderℤ_relabelColumns_finRotate`) and the total degree of monomials,
 so they carry each level `F_a` of the Alexander filtration exactly onto the level `F_a` of the
-permuted diagram.
+permuted diagram. For the rows, over a commutative ring `R`, this packages the relabeling as a
+filtered chain homotopy equivalence with zero homotopies
+(`OddComponentGridDiagram.relabelRowsFilteredHomotopyEquiv`). In characteristic two, where the
+filtered differential squares to zero, it identifies the homologies of all the levels and
+subquotients of the two Alexander filtrations. The column
+relabeling is only semilinear over the polynomial ring, so it is not packaged in the same way.
 
 ## Main results
 
@@ -55,6 +61,8 @@ permuted diagram.
   `TauCeti.OddComponentGridDiagram.map_relabelColumnsRenameEquiv_finRotate_alexanderFiltration`:
   they carry each level of the Alexander filtration onto the corresponding level of the permuted
   diagram.
+* `TauCeti.OddComponentGridDiagram.relabelRowsFilteredHomotopyEquiv`: the row relabeling as a
+  filtered chain homotopy equivalence.
 
 ## References
 
@@ -205,6 +213,52 @@ theorem map_relabelColumnsRenameEquiv_finRotate_alexanderFiltration (a : ℤ) :
   rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap,
     ← relabelColumnsRenameEquiv_finRotate_mem_alexanderFiltration_iff, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply]
+
+end OddComponentGridDiagram
+
+namespace OddComponentGridDiagram
+
+/-! ### The filtered chain homotopy equivalence of a cyclic permutation of the rows -/
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R]
+
+/-- Relabeling the grid states along a cyclic permutation of the rows is a filtered chain homotopy
+equivalence from the filtered grid complex of `G` to that of the row-permuted diagram, with zero
+homotopies: it intertwines the filtered differentials and carries each level of the Alexander
+filtration onto the corresponding level. -/
+noncomputable def relabelRowsFilteredHomotopyEquiv :
+    LinearMap.FilteredHomotopyEquiv (G.val.filteredDifferential R)
+      ((G.relabelRows (finRotate n)).val.filteredDifferential R) (G.alexanderFiltration R)
+      ((G.relabelRows (finRotate n)).alexanderFiltration R) :=
+  .ofLinearEquiv (GridChain.relabelRowsEquiv (finRotate n))
+    (by rw [val_relabelRows]; exact (G.val.filteredDifferential_relabelRows_finRotate R).symm)
+    (G.map_relabelRowsEquiv_finRotate_alexanderFiltration R)
+
+/-- The chain map of `relabelRowsFilteredHomotopyEquiv` is the relabeling of the grid states. -/
+@[simp]
+theorem relabelRowsFilteredHomotopyEquiv_hom :
+    (G.relabelRowsFilteredHomotopyEquiv R).hom =
+      (GridChain.relabelRowsEquiv (finRotate n)).toLinearMap :=
+  LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_hom _ _ _
+
+/-- The inverse chain map of `relabelRowsFilteredHomotopyEquiv` is the inverse relabeling. -/
+@[simp]
+theorem relabelRowsFilteredHomotopyEquiv_inv :
+    (G.relabelRowsFilteredHomotopyEquiv R).inv =
+      (GridChain.relabelRowsEquiv (finRotate n)).symm.toLinearMap :=
+  LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_inv _ _ _
+
+/-- The homotopy `homotopyHomInvId` of `relabelRowsFilteredHomotopyEquiv` vanishes. -/
+@[simp]
+theorem relabelRowsFilteredHomotopyEquiv_homotopyHomInvId :
+    (G.relabelRowsFilteredHomotopyEquiv R).homotopyHomInvId = 0 :=
+  LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_homotopyHomInvId _ _ _
+
+/-- The homotopy `homotopyInvHomId` of `relabelRowsFilteredHomotopyEquiv` vanishes. -/
+@[simp]
+theorem relabelRowsFilteredHomotopyEquiv_homotopyInvHomId :
+    (G.relabelRowsFilteredHomotopyEquiv R).homotopyInvHomId = 0 :=
+  LinearMap.FilteredHomotopyEquiv.ofLinearEquiv_homotopyInvHomId _ _ _
 
 end OddComponentGridDiagram
 

@@ -69,18 +69,27 @@ theorem toMatrix_inj [Countable β]
   · rintro rfl
     rfl
 
-/-- Composition of finite kernels is matrix multiplication, in transition order. -/
-@[simp]
-theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β]
-    [MeasurableSingletonClass γ] (κ : Kernel α β) (η : Kernel β γ)
-    [IsFiniteKernel κ] [IsFiniteKernel η] :
-    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix := by
-  funext a c
+/-- Propagating an initial finite measure is multiplication of its mass row vector by the
+transition matrix. The target space needs no measurable singletons. -/
+theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
+    (κ : Kernel α β) [IsFiniteKernel κ]
+    (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
+    ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
   apply ENNReal.coe_injective
-  simp only [coe_toMatrix_apply, Matrix.mul_apply, ENNReal.ofNNReal_finsetSum,
-    ENNReal.coe_mul]
-  rw [comp_apply' _ _ _ (measurableSet_singleton _), lintegral_fintype]
-  exact Finset.sum_congr rfl fun b _ => mul_comm _ _
+  simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
+    ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
+  simp [Measure.comp_eq_sum_of_countable]
+
+/-- Composition of finite kernels is matrix multiplication, in transition order. The final
+target space needs no measurable singletons. -/
+@[simp]
+theorem toMatrix_comp [Fintype β] [MeasurableSingletonClass β] (κ : Kernel α β)
+    (η : Kernel β γ) [IsFiniteKernel κ] [IsFiniteKernel η] :
+    (η ∘ₖ κ).toMatrix = κ.toMatrix * η.toMatrix := by
+  refine Matrix.ext fun a c => ?_
+  rw [Matrix.mul_apply, toMatrix_apply, Kernel.comp_apply,
+    comp_apply_singleton_eq_vecMul η (κ a) c]
+  simp [Matrix.vecMul, dotProduct]
 
 /-- The identity kernel has the identity transition matrix. -/
 @[simp]
@@ -108,18 +117,6 @@ theorem toMatrix_mem_rowStochastic [Fintype α] [DecidableEq α]
   apply ENNReal.coe_injective
   simp only [ENNReal.ofNNReal_finsetSum, coe_toMatrix_apply, ENNReal.coe_one]
   simp
-
-/-- Propagating an initial finite measure is multiplication of its mass row vector by the
-transition matrix. -/
-theorem comp_apply_singleton_eq_vecMul [Fintype α] [MeasurableSingletonClass α]
-    [MeasurableSingletonClass β] (κ : Kernel α β) [IsFiniteKernel κ]
-    (ν : Measure α) [IsFiniteMeasure ν] (b : β) :
-    ((κ ∘ₘ ν) {b}).toNNReal = ((fun a => (ν {a}).toNNReal) ᵥ* κ.toMatrix) b := by
-  apply ENNReal.coe_injective
-  simp only [ENNReal.coe_toNNReal (measure_ne_top _ _), Matrix.vecMul, dotProduct,
-    ENNReal.ofNNReal_finsetSum, ENNReal.coe_mul, coe_toMatrix_apply]
-  rw [Measure.bind_apply (measurableSet_singleton _) κ.aemeasurable, lintegral_fintype]
-  exact Finset.sum_congr rfl fun a _ => mul_comm _ _
 
 end ProbabilityTheory.Kernel
 

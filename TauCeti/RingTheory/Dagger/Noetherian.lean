@@ -84,11 +84,9 @@ private theorem finite_comp_optionC_of_surjective {A : Type*}
   have hφ : Function.Surjective φ := by
     intro a
     obtain ⟨f, rfl⟩ := hπ a
-    obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-    have hf : f = q * g + polynomialToOption r :=
-      optionSeries_injective (by simpa using hqr.symm)
+    obtain ⟨q, r, hr, hf⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
     refine ⟨⟨r, Polynomial.mem_degreeLT.mpr hr⟩, ?_⟩
-    simp [hf, hzero, hev, φ]
+    simp [← hf, hzero, hev, φ]
   have : Module.Finite W (Polynomial.degreeLT W s) :=
     Module.Finite.equiv (Polynomial.degreeLTEquiv W s).symm
   exact Module.Finite.of_surjective φ hφ

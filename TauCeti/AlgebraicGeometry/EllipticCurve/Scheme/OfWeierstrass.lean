@@ -54,6 +54,9 @@ itself: `toEllipticCurveGeomIso` is an isomorphism of group schemes over `Spec R
   isomorphism of group schemes over `Spec R`.
 * `WeierstrassCurve.j_toEllipticCurveGeom`: the `j`-invariant of `toEllipticCurveGeom W` is the
   `j`-invariant `W.j` of the equation.
+* `WeierstrassCurve.isPullback_toEllipticCurveGeomIso_hom_projModelBaseChange`: the elliptic curve
+  of `W.map φ` is a base change of that of `W` along `Spec φ`, through the base change morphism of
+  projective models.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_iso_toEllipticCurveGeom`: every elliptic curve
   over a local ring `R` is isomorphic, over `Spec R` and compatibly with the zero sections, to
   `toEllipticCurveGeom W` for an elliptic Weierstrass curve `W` over `R`.
@@ -286,6 +289,29 @@ theorem zero_toEllipticCurveGeomBaseChangeIso_hom :
     ((toEllipticCurveGeom W).baseChange (Spec.map (CommRingCat.ofHom φ))).zero ≫
       (toEllipticCurveGeomBaseChangeIso W φ).hom = (W.map φ).projModelZero := by
   apply (W.isPullback_projModelBaseChange φ).hom_ext <;> simp
+
+/-- **The elliptic curve of `W.map φ` is a base change of that of `W`.** The base change morphism
+`W.projModelBaseChange φ`, read on the total spaces of `toEllipticCurveGeom (W.map φ)` and
+`toEllipticCurveGeom W`, forms a pullback square with the two structure morphisms and
+`Spec φ : Spec R' ⟶ Spec R`. -/
+theorem isPullback_toEllipticCurveGeomIso_hom_projModelBaseChange :
+    IsPullback ((toEllipticCurveGeomIso (W.map φ)).hom ≫ W.projModelBaseChange φ ≫
+        (toEllipticCurveGeomIso W).inv) (toEllipticCurveGeom (W.map φ)).structureMap
+      (toEllipticCurveGeom W).structureMap (Spec.map (CommRingCat.ofHom φ)) :=
+  (isPullback_projModelBaseChange_comp_toEllipticCurveGeomIso_inv W φ).of_iso
+    (toEllipticCurveGeomIso _).symm (.refl _) (.refl _) (.refl _) (by simp)
+    (by simp [Iso.eq_inv_comp]) (by simp) (by simp)
+
+/-- The base change morphism from `toEllipticCurveGeom (W.map φ)` to `toEllipticCurveGeom W`
+carries the zero section of the former to that of the latter. -/
+@[reassoc]
+theorem zero_toEllipticCurveGeomIso_hom_projModelBaseChange :
+    (toEllipticCurveGeom (W.map φ)).zero ≫ (toEllipticCurveGeomIso (W.map φ)).hom ≫
+        W.projModelBaseChange φ ≫ (toEllipticCurveGeomIso W).inv =
+      Spec.map (CommRingCat.ofHom φ) ≫ (toEllipticCurveGeom W).zero := by
+  rw [← cancel_mono (toEllipticCurveGeomIso W).hom]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, zero_toEllipticCurveGeomIso_hom,
+    zero_toEllipticCurveGeomIso_hom_assoc, projModelZero_projModelBaseChange]
 
 end WeierstrassCurve
 

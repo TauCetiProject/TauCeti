@@ -88,6 +88,18 @@ theorem symmetricGroupFourMatching_injective : Function.Injective symmetricGroup
   unfold Function.Injective
   decide
 
+/-- The double transposition of each matching is an involution. -/
+@[simp]
+theorem symmetricGroupFourMatching_sq (m : Fin 3) : symmetricGroupFourMatching m ^ 2 = 1 := by
+  revert m
+  decide
+
+/-- The double transposition of each matching is not the identity. -/
+@[simp]
+theorem symmetricGroupFourMatching_ne_one (m : Fin 3) : symmetricGroupFourMatching m ≠ 1 := by
+  revert m
+  decide
+
 /-- The double transposition of each matching is an even permutation. -/
 theorem symmetricGroupFourMatching_mem_alternatingGroup (m : Fin 3) :
     symmetricGroupFourMatching m ∈ alternatingGroup (Fin 4) := by
@@ -170,7 +182,8 @@ transposition. -/
 theorem mem_centralizer_symmetricGroupFourMatching_iff {σ : Perm (Fin 4)} {m : Fin 3} :
     σ ∈ Subgroup.centralizer {symmetricGroupFourMatching m} ↔
       symmetricGroupFourMatchingHom σ m = m := by
-  rw [Subgroup.mem_centralizer_singleton_iff, ← symmetricGroupFourMatching_injective.eq_iff,
+  rw [Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, eq_comm,
+    ← symmetricGroupFourMatching_injective.eq_iff,
     symmetricGroupFourMatching_symmetricGroupFourMatchingHom_apply, mul_inv_eq_iff_eq_mul,
     eq_comm]
 
@@ -189,8 +202,8 @@ theorem centralizer_symmetricGroupFourMatching_two_eq_closure :
     obtain ⟨i, j, rfl⟩ := hword σ (Subgroup.mem_centralizer_singleton_iff.1 hσ)
     exact mul_mem (pow_mem (Subgroup.subset_closure (by simp)) _)
       (pow_mem (Subgroup.subset_closure (by simp)) _)
-  · rintro σ (rfl | rfl) <;> rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff] <;>
-      decide
+  · rintro σ (rfl | rfl) <;>
+      rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff, commute_iff_eq] <;> decide
 
 /-- The transposition `(01)` fixes `M₀ = 01|23` and swaps `M₁ = 03|12` with `M₂ = 02|13`. -/
 @[simp]

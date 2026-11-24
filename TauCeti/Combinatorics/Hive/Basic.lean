@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Lattice
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 import Mathlib.Algebra.Order.Ring.Int
@@ -19,22 +20,24 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Hives, gauge symmetries, and dominant-weight boundaries
 
-A normalized **hive** of size `n` with values in a partially ordered abelian group `R` is a
+A normalized **hive** of size `n` with values in a preordered additive commutative monoid `R` is a
 function `h : Hive.Vertex n → R` vanishing at `A = (n, 0, 0)` such that on every unit rhombus
 `(a, b, c, d)` in perimeter order with obtuse corners `a, c`, `h b + h d ≤ h a + h c`.
-Equivalently, every unit-rhombus slack `h a + h c - (h b + h d)` is nonnegative, and every mixed
-second forward difference `(h(p + v + w) - h(p + w)) - (h(p + v) - h(p))` along unit lattice steps
+For ordered abelian group values, equivalently every unit-rhombus slack
+`h a + h c - (h b + h d)` is nonnegative, and every mixed second forward difference
+`(h(p + v + w) - h(p + w)) - (h(p + v) - h(p))` along unit lattice steps
 `v, w` of inner product `1` is nonpositive. Restricting to unit steps is essential: on `Δ₇` the
 hive `h(x, y, z) = 49 - x²` has unit slacks `0` and `2`, yet its mixed second difference at
 `(3, 4, 0)` along `(2, -3, 1)` and `(-3, -1, 4)` is `+12`.
 
 Adding a barycentric-affine function `c₀ + x • α + y • β + z • γ` preserves every rhombus slack,
 and subtracting the value at `A` normalizes any rhombus-concave function (`Hive.ofRhombusConcave`).
-Normalized hives form an `AddCommMonoid` (`IntegerHive n`) and, over an ordered ring, a pointed
+Normalized hives form an `AddCommMonoid` (`IntegerHive n`) and, over an ordered semiring, a pointed
 cone (`Hive.pointedCone`). Clockwise edge differences along `A → B → C → A` define an ambient
 linear map `Hive.boundaryLinear` whose values telescope to zero (`Hive.sum_boundary`) and decrease
 weakly along each side (`Hive.boundary_antitone`), making each side of an integer hive a
@@ -56,11 +59,15 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 
 ## Main results
 
-* `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`.
-* `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
+* `TauCeti.Hive.isRhombusConcave_iff_ofChart`, `TauCeti.Hive.rhombusSlack_add_barycentricLinear`,
+  `TauCeti.Hive.ofRhombusConcave_eq_iff`.
+* `TauCeti.Hive.IsRhombusConcave.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
-* `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
-* `TauCeti.Hive.boundary_rotate`, `TauCeti.Hive.boundaryWeight_reflect`,
+* `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`,
+  `TauCeti.Hive.apply_ofChart_zero_left`, `TauCeti.Hive.apply_ofChart_right`,
+  `TauCeti.Hive.apply_ofChart_self`.
+* `TauCeti.Hive.rotate_rotate_apply`, `TauCeti.Hive.rotate_rotate_apply_ofChart`,
+  `TauCeti.Hive.boundary_rotate`, `TauCeti.Hive.boundaryWeight_reflect`,
   `TauCeti.Hive.boundary_injective_two`.
 
 ## References
@@ -78,10 +85,147 @@ open scoped BigOperators
 
 namespace TauCeti
 
-/-- A normalized **hive** of size `n` with values in `R`: a function on the triangular lattice
-`Hive.Vertex n` vanishing at `A = (n, 0, 0)` such that on every unit rhombus `(a, b, c, d)` in
+namespace Hive
+
+/-- A lattice function is **rhombus-concave** (an unnormalized hive) if on every unit rhombus the
+sum at the obtuse corners is at least the sum at the acute corners. -/
+def IsRhombusConcave {n : ℕ} {R : Type*} [Add R] [LE R] (f : Vertex n → R) : Prop :=
+  ∀ ⦃a b c d : Vertex n⦄, IsRhombus a b c d → f b + f d ≤ f a + f c
+
+theorem isRhombusConcave_def {n : ℕ} {R : Type*} [Add R] [LE R] (f : Vertex n → R) :
+    IsRhombusConcave f ↔ ∀ ⦃a b c d : Vertex n⦄, IsRhombus a b c d → f b + f d ≤ f a + f c :=
+  Iff.rfl
+
+instance {n : ℕ} {R : Type*} [Add R] [LE R] [DecidableLE R] (f : Vertex n → R) :
+    Decidable (IsRhombusConcave f) :=
+  decidable_of_iff _ (isRhombusConcave_def f).symm
+
+section Concavity
+
+variable {n : ℕ} {R : Type*}
+
+/-- Evaluate rhombus concavity on a unit rhombus. -/
+theorem IsRhombusConcave.le [Add R] [LE R] {f : Vertex n → R}
+    (hf : IsRhombusConcave f) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
+    f b + f d ≤ f a + f c := hf hr
+
+/-- **Product-chart characterization of rhombus concavity**: a lattice function `f : Vertex n → R`
+is rhombus-concave if and only if it satisfies the three product-chart unit-rhombus families
+(`isRhombus_ofChart_diag_y`, `isRhombus_ofChart_diag_z`, and `isRhombus_ofChart_diag_x`). -/
+theorem isRhombusConcave_iff_ofChart [AddCommMagma R] [LE R] (f : Vertex n → R) :
+    IsRhombusConcave f ↔
+      (∀ i j (hij : i < j) (hj : j < n),
+        f (Vertex.ofChart n (i + 1) j hij hj.le) +
+          f (Vertex.ofChart n i (j + 1) (by omega) hj) ≤
+          f (Vertex.ofChart n i j hij.le hj.le) +
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hj)) ∧
+      (∀ i j (hij : i < j) (hj : j < n),
+        f (Vertex.ofChart n i j hij.le hj.le) +
+          f (Vertex.ofChart n (i + 2) (j + 1) (Nat.succ_le_succ hij) hj) ≤
+          f (Vertex.ofChart n (i + 1) j hij hj.le) +
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij.le) hj)) ∧
+      (∀ i j (hij : i ≤ j) (hj : j + 2 ≤ n),
+        f (Vertex.ofChart n i j hij (by omega)) +
+          f (Vertex.ofChart n (i + 1) (j + 2) (by omega) hj) ≤
+          f (Vertex.ofChart n i (j + 1) (by omega) (by omega)) +
+            f (Vertex.ofChart n (i + 1) (j + 1) (Nat.succ_le_succ hij) (by omega))) :=
+  ⟨fun hf => ⟨fun i j hij hj => hf (isRhombus_ofChart_diag_y hij hj),
+    fun i j hij hj => hf (isRhombus_ofChart_diag_z hij hj),
+    fun i j hij hj => hf (isRhombus_ofChart_diag_x hij hj)⟩,
+   fun ⟨hy, hz, hx⟩ _ _ _ _ hr => hr.elim_ofChart
+    (P := fun a b c d => f b + f d ≤ f a + f c)
+    (fun {_ _ c _} h => by rwa [add_comm (f c)])
+    (fun {_ _ _ d} h => by rwa [add_comm (f d)]) hy hz hx⟩
+
+/-- Clockwise rotation preserves rhombus concavity. -/
+theorem IsRhombusConcave.rotate [Add R] [LE R] {f : Vertex n → R}
+    (hf : IsRhombusConcave f) : IsRhombusConcave (fun p => f p.rotate) :=
+  fun _ _ _ _ hr => hf hr.rotate
+
+/-- Reflection preserves rhombus concavity. -/
+theorem IsRhombusConcave.reflect [Add R] [LE R] {f : Vertex n → R}
+    (hf : IsRhombusConcave f) : IsRhombusConcave (fun p => f p.reflect) :=
+  fun _ _ _ _ hr => hf hr.reflect
+
+@[simp] theorem isRhombusConcave_rotate_iff [Add R] [LE R] (f : Vertex n → R) :
+    IsRhombusConcave (fun p => f p.rotate) ↔ IsRhombusConcave f := by
+  refine ⟨fun hf => ?_, IsRhombusConcave.rotate⟩
+  simpa only [Vertex.rotate_rotate_rotate] using hf.rotate.rotate
+
+@[simp] theorem isRhombusConcave_reflect_iff [Add R] [LE R] (f : Vertex n → R) :
+    IsRhombusConcave (fun p => f p.reflect) ↔ IsRhombusConcave f := by
+  refine ⟨fun hf => ?_, IsRhombusConcave.reflect⟩
+  simpa only [Vertex.reflect_reflect] using hf.reflect
+
+/-- Restriction to a translated subtriangle preserves rhombus concavity. -/
+theorem IsRhombusConcave.subtriangle [Add R] [LE R] {m : ℕ} {f : Vertex (m + n) → R}
+    (hf : IsRhombusConcave f) (p : Vertex m) : IsRhombusConcave (fun q => f (p.add q)) :=
+  fun _ _ _ _ hr => hf (hr.add p)
+
+@[simp] theorem isRhombusConcave_const [Add R] [Preorder R] (c : R) :
+    IsRhombusConcave (fun _ : Vertex n => c) := fun _ _ _ _ _ => le_rfl
+
+@[simp] theorem isRhombusConcave_zero [Add R] [Zero R] [Preorder R] :
+    IsRhombusConcave (0 : Vertex n → R) := isRhombusConcave_const 0
+
+/-- Pointwise addition preserves rhombus concavity. -/
+theorem IsRhombusConcave.add [AddCommMonoid R] [Preorder R] [IsOrderedAddMonoid R]
+    {f g : Vertex n → R} (hf : IsRhombusConcave f) (hg : IsRhombusConcave g) :
+    IsRhombusConcave (f + g) := by
+  intro a b c d hr
+  simpa only [Pi.add_apply, add_add_add_comm] using add_le_add (hf hr) (hg hr)
+
+/-- Natural scaling preserves rhombus concavity. -/
+theorem IsRhombusConcave.nsmul [AddCommMonoid R] [Preorder R] [IsOrderedAddMonoid R]
+    {f : Vertex n → R} (hf : IsRhombusConcave f) (k : ℕ) : IsRhombusConcave (k • f) := by
+  intro a b c d hr
+  simpa only [Pi.smul_apply, smul_add] using nsmul_le_nsmul_right (hf.le hr) k
+
+/-- Adding a constant does not affect rhombus concavity, even for monoid values. -/
+@[simp] theorem isRhombusConcave_add_const_iff [AddCommMonoid R] [Preorder R]
+    [IsOrderedCancelAddMonoid R] (f : Vertex n → R) (c : R) :
+    IsRhombusConcave (fun p => f p + c) ↔ IsRhombusConcave f := by
+  constructor <;> intro hf a b c' d hr
+  · have hi : (f b + f d) + (c + c) ≤ (f a + f c') + (c + c) := by
+      convert hf hr using 1 <;> dsimp only <;> abel
+    exact (add_le_add_iff_right _).mp hi
+  · convert add_le_add_right (hf hr) (c + c) using 1 <;> dsimp only <;> abel
+
+@[simp] theorem isRhombusConcave_const_add_iff [AddCommMonoid R] [Preorder R]
+    [IsOrderedCancelAddMonoid R] (c : R) (f : Vertex n → R) :
+    IsRhombusConcave (fun p => c + f p) ↔ IsRhombusConcave f := by
+  simpa only [add_comm] using isRhombusConcave_add_const_iff f c
+
+@[simp] theorem isRhombusConcave_sub_const_iff [AddCommGroup R] [Preorder R]
+    [IsOrderedAddMonoid R] (f : Vertex n → R) (c : R) :
+    IsRhombusConcave (fun p => f p - c) ↔ IsRhombusConcave f := by
+  simpa only [sub_eq_add_neg] using isRhombusConcave_add_const_iff f (-c)
+
+/-- Nonnegative distributive scaling preserves rhombus concavity. -/
+theorem IsRhombusConcave.smul_of_nonneg {S : Type*} [Zero S] [Preorder S]
+    [AddZeroClass R] [Preorder R] [DistribSMul S R] [PosSMulMono S R]
+    {c : S} (hc : 0 ≤ c) {f : Vertex n → R} (hf : IsRhombusConcave f) :
+    IsRhombusConcave (c • f) := by
+  intro a b c' d hr
+  simpa only [Pi.smul_apply, smul_add] using smul_le_smul_of_nonneg_left (hf.le hr) hc
+
+/-- Order-preserving additive maps preserve rhombus concavity. -/
+theorem IsRhombusConcave.map [Add R] [Preorder R]
+    {S F : Type*} [FunLike F R S] [Add S] [Preorder S]
+    [AddHomClass F R S] [OrderHomClass F R S] (φ : F)
+    {f : Vertex n → R} (hf : IsRhombusConcave f) : IsRhombusConcave (fun p => φ (f p)) := by
+  intro a b c d hr
+  simpa only [map_add] using OrderHomClass.mono φ (hf.le hr)
+
+end Concavity
+
+end Hive
+
+/-- A normalized **hive** of size `n` with values in a preordered additive commutative monoid `R`:
+a function on the triangular lattice `Hive.Vertex n` vanishing at `A = (n, 0, 0)` such that on
+every unit rhombus `(a, b, c, d)` in
 perimeter order with obtuse corners `a, c`, `value b + value d ≤ value a + value c`. -/
-structure Hive (n : ℕ) (R : Type*) [AddCommGroup R] [PartialOrder R] where
+structure Hive (n : ℕ) (R : Type*) [AddCommMonoid R] [Preorder R] where
   /-- The value assigned to each vertex of the triangular lattice. -/
   value : Hive.Vertex n → R
   /-- Hives are normalized to vanish at the top corner `A = (n, 0, 0)`. -/
@@ -100,7 +244,7 @@ namespace Hive
 
 section Basic
 
-variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
+variable {n : ℕ} {R : Type*} [AddCommMonoid R] [Preorder R]
 
 instance instFunLike : FunLike (Hive n R) (Vertex n) R where
   coe := Hive.value
@@ -113,9 +257,13 @@ instance instFunLike : FunLike (Hive n R) (Vertex n) R where
 instance [DecidableEq R] : DecidableEq (Hive n R) := fun h₁ h₂ =>
   decidable_of_iff (∀ p, h₁ p = h₂ p) ⟨ext, fun h p => congrArg (· p) h⟩
 
-theorem coe_mk (f : Vertex n → R) (hA : f (Vertex.cornerA n) = 0)
+@[simp] theorem coe_mk (f : Vertex n → R) (hA : f (Vertex.cornerA n) = 0)
     (hr : ∀ {a b c d : Vertex n}, IsRhombus a b c d → f b + f d ≤ f a + f c) :
     ⇑(⟨f, hA, hr⟩ : Hive n R) = f := (rfl)
+
+@[simp] theorem mk_coe (h : Hive n R) (hA : h (Vertex.cornerA n) = 0)
+    (hr : ∀ {a b c d : Vertex n}, IsRhombus a b c d → h b + h d ≤ h a + h c) :
+    (⟨⇑h, hA, hr⟩ : Hive n R) = h := (rfl)
 
 @[simp] theorem mk_apply (f : Vertex n → R) (hA : f (Vertex.cornerA n) = 0)
     (hr : ∀ {a b c d : Vertex n}, IsRhombus a b c d → f b + f d ≤ f a + f c) (p : Vertex n) :
@@ -128,9 +276,54 @@ theorem coe_mk (f : Vertex n → R) (hA : f (Vertex.cornerA n) = 0)
 theorem le_of_isRhombus (h : Hive n R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     h b + h d ≤ h a + h c := h.le_of_isRhombus' hr
 
+@[simp] theorem isRhombusConcave (h : Hive n R) : IsRhombusConcave (h : Vertex n → R) :=
+  fun _ _ _ _ hr => h.le_of_isRhombus hr
+
 end Basic
 
 /-! ### Rhombus slacks, unnormalized hives, and affine gauge transformations -/
+
+section Barycentric
+
+variable {n : ℕ} {R : Type*} [AddCommMonoid R]
+
+/-- A barycentric-affine function `p ↦ c₀ + p.x • α + p.y • β + p.z • γ` on `Vertex n`. -/
+def barycentricLinear (c₀ α β γ : R) (p : Vertex n) : R := c₀ + p.x • α + p.y • β + p.z • γ
+
+@[simp] theorem barycentricLinear_apply (c₀ α β γ : R) (p : Vertex n) :
+    barycentricLinear c₀ α β γ p = c₀ + p.x • α + p.y • β + p.z • γ := (rfl)
+
+/-- Barycentric-affine functions have equal sums on opposite corners of a unit rhombus. -/
+theorem barycentricLinear_add_eq_of_isRhombus (c₀ α β γ : R)
+    {a b c d : Vertex n} (hr : IsRhombus a b c d) :
+    barycentricLinear c₀ α β γ a + barycentricLinear c₀ α β γ c =
+      barycentricLinear c₀ α β γ b + barycentricLinear c₀ α β γ d := by
+  simp only [barycentricLinear_apply]
+  calc (c₀ + a.x • α + a.y • β + a.z • γ) + (c₀ + c.x • α + c.y • β + c.z • γ)
+      = (c₀ + c₀) + (a.x + c.x) • α + (a.y + c.y) • β + (a.z + c.z) • γ := by
+          simp only [add_nsmul]; abel
+    _ = (c₀ + c₀) + (b.x + d.x) • α + (b.y + d.y) • β + (b.z + d.z) • γ := by
+          rw [hr.midpoint_x, hr.midpoint_y, hr.midpoint_z]
+    _ = (c₀ + b.x • α + b.y • β + b.z • γ) + (c₀ + d.x • α + d.y • β + d.z • γ) := by
+          simp only [add_nsmul]; abel
+
+@[simp] theorem isRhombusConcave_barycentricLinear [Preorder R] (c₀ α β γ : R) :
+    IsRhombusConcave (barycentricLinear c₀ α β γ : Vertex n → R) :=
+  fun _ _ _ _ hr => le_of_eq (barycentricLinear_add_eq_of_isRhombus c₀ α β γ hr).symm
+
+/-- Rhombus concavity is invariant under adding any barycentric-affine function. -/
+@[simp] theorem isRhombusConcave_add_barycentricLinear_iff [Preorder R]
+    [IsOrderedCancelAddMonoid R] (f : Vertex n → R) (c₀ α β γ : R) :
+    IsRhombusConcave (f + barycentricLinear c₀ α β γ) ↔ IsRhombusConcave f := by
+  have heq (p q : Vertex n) :
+      (f p + barycentricLinear c₀ α β γ p) + (f q + barycentricLinear c₀ α β γ q) =
+        (f p + f q) + (barycentricLinear c₀ α β γ p + barycentricLinear c₀ α β γ q) :=
+    add_add_add_comm _ _ _ _
+  refine forall₄_congr fun a b c d => imp_congr_right fun hr => ?_
+  simp only [Pi.add_apply]
+  rw [heq, heq, ← barycentricLinear_add_eq_of_isRhombus c₀ α β γ hr, add_le_add_iff_right]
+
+end Barycentric
 
 section Gauge
 
@@ -145,69 +338,54 @@ theorem rhombusSlack_def (f : Vertex n → R) (a b c d : Vertex n) :
 @[simp] theorem rhombusSlack_zero (a b c d : Vertex n) :
     rhombusSlack (0 : Vertex n → R) a b c d = 0 := by simp [rhombusSlack]
 
-theorem rhombusSlack_add (f g : Vertex n → R) (a b c d : Vertex n) :
+@[simp] theorem rhombusSlack_add (f g : Vertex n → R) (a b c d : Vertex n) :
     rhombusSlack (f + g) a b c d = rhombusSlack f a b c d + rhombusSlack g a b c d := by
   simp only [rhombusSlack, Pi.add_apply]; abel
 
-theorem rhombusSlack_sub (f g : Vertex n → R) (a b c d : Vertex n) :
+@[simp] theorem rhombusSlack_sub (f g : Vertex n → R) (a b c d : Vertex n) :
     rhombusSlack (f - g) a b c d = rhombusSlack f a b c d - rhombusSlack g a b c d := by
   simp only [rhombusSlack, Pi.sub_apply]; abel
 
-theorem rhombusSlack_smul {S : Type*} [Semiring S] [Module S R]
+@[simp] theorem rhombusSlack_smul {S : Type*} [DistribSMul S R]
     (c : S) (f : Vertex n → R) (a b c' d : Vertex n) :
     rhombusSlack (c • f) a b c' d = c • rhombusSlack f a b c' d := by
   simp [rhombusSlack, smul_sub, smul_add]
 
+@[simp] theorem rhombusSlack_neg (f : Vertex n → R) (a b c d : Vertex n) :
+    rhombusSlack (-f) a b c d = -rhombusSlack f a b c d := by
+  simp only [rhombusSlack_def, Pi.neg_apply]; abel
+
 @[simp] theorem rhombusSlack_const (c : R) (a b c' d : Vertex n) :
     rhombusSlack (fun _ => c) a b c' d = 0 := sub_self (c + c)
-
-/-- A lattice function is **rhombus-concave** (an unnormalized hive) if on every unit rhombus the
-sum at the obtuse corners is at least the sum at the acute corners. -/
-def IsRhombusConcave [Preorder R] (f : Vertex n → R) : Prop :=
-  ∀ ⦃a b c d : Vertex n⦄, IsRhombus a b c d → f b + f d ≤ f a + f c
-
-theorem isRhombusConcave_def [Preorder R] (f : Vertex n → R) :
-    IsRhombusConcave f ↔ ∀ ⦃a b c d : Vertex n⦄, IsRhombus a b c d → f b + f d ≤ f a + f c :=
-  Iff.rfl
-
-instance [Preorder R] [DecidableRel (· ≤ · : R → R → Prop)] (f : Vertex n → R) :
-    Decidable (IsRhombusConcave f) :=
-  decidable_of_iff _ (isRhombusConcave_def f).symm
-
-/-- A barycentric-affine function `p ↦ c₀ + p.x • α + p.y • β + p.z • γ` on `Vertex n`. -/
-def barycentricLinear (c₀ α β γ : R) (p : Vertex n) : R := c₀ + p.x • α + p.y • β + p.z • γ
-
-@[simp] theorem barycentricLinear_apply (c₀ α β γ : R) (p : Vertex n) :
-    barycentricLinear c₀ α β γ p = c₀ + p.x • α + p.y • β + p.z • γ := (rfl)
 
 /-- Every barycentric-affine function has zero slack on every unit rhombus, because opposite
 corners share the same midpoint in barycentric coordinates. -/
 @[simp] theorem rhombusSlack_barycentricLinear (c₀ α β γ : R)
     {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     rhombusSlack (barycentricLinear c₀ α β γ) a b c d = 0 := by
-  have hx : (a.x + c.x) • α = (b.x + d.x) • α := congrArg (· • α) hr.midpoint_x
-  have hy : (a.y + c.y) • β = (b.y + d.y) • β := congrArg (· • β) hr.midpoint_y
-  have hz : (a.z + c.z) • γ = (b.z + d.z) • γ := congrArg (· • γ) hr.midpoint_z
-  simp only [add_nsmul] at hx hy hz
-  simp only [rhombusSlack_def, barycentricLinear_apply]
-  calc (c₀ + a.x • α + a.y • β + a.z • γ) + (c₀ + c.x • α + c.y • β + c.z • γ) -
-        ((c₀ + b.x • α + b.y • β + b.z • γ) + (c₀ + d.x • α + d.y • β + d.z • γ))
-      = ((a.x • α + c.x • α) - (b.x • α + d.x • α)) + ((a.y • β + c.y • β) -
-          (b.y • β + d.y • β)) + ((a.z • γ + c.z • γ) - (b.z • γ + d.z • γ)) := by abel
-    _ = 0 := by rw [hx, hy, hz, sub_self, sub_self, sub_self, add_zero, add_zero]
+  exact sub_eq_zero.mpr (barycentricLinear_add_eq_of_isRhombus c₀ α β γ hr)
 
 /-- Adding a barycentric-affine function leaves all unit-rhombus slacks unchanged. -/
-@[simp] theorem rhombusSlack_add_barycentricLinear (f : Vertex n → R) (c₀ α β γ : R)
+theorem rhombusSlack_add_barycentricLinear (f : Vertex n → R) (c₀ α β γ : R)
     {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     rhombusSlack (f + barycentricLinear c₀ α β γ) a b c d = rhombusSlack f a b c d := by
   rw [rhombusSlack_add, rhombusSlack_barycentricLinear c₀ α β γ hr, add_zero]
 
+@[simp] theorem rhombusSlack_add_const (f : Vertex n → R) (k : R) (a b c d : Vertex n) :
+    rhombusSlack (fun p => f p + k) a b c d = rhombusSlack f a b c d := by
+  simp only [rhombusSlack_def]; abel
+
+@[simp] theorem rhombusSlack_const_add (k : R) (f : Vertex n → R) (a b c d : Vertex n) :
+    rhombusSlack (fun p => k + f p) a b c d = rhombusSlack f a b c d := by
+  simpa only [add_comm] using rhombusSlack_add_const f k a b c d
+
+@[simp] theorem rhombusSlack_sub_const (f : Vertex n → R) (k : R) (a b c d : Vertex n) :
+    rhombusSlack (fun p => f p - k) a b c d = rhombusSlack f a b c d := by
+  simpa only [sub_eq_add_neg] using rhombusSlack_add_const f (-k) a b c d
+
 section Ordered
 
-variable [PartialOrder R]
-
-theorem isRhombusConcave (h : Hive n R) : IsRhombusConcave (h : Vertex n → R) :=
-  fun _ _ _ _ hr => h.le_of_isRhombus hr
+variable [Preorder R]
 
 variable [IsOrderedAddMonoid R]
 
@@ -219,34 +397,49 @@ theorem isRhombusConcave_iff_rhombusSlack_nonneg (f : Vertex n → R) :
 theorem rhombusSlack_nonneg (h : Hive n R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     0 ≤ rhombusSlack h a b c d := sub_nonneg.mpr (h.le_of_isRhombus hr)
 
-/-- Rhombus concavity is invariant under adding any barycentric-affine function. -/
-@[simp] theorem isRhombusConcave_add_barycentricLinear_iff (f : Vertex n → R) (c₀ α β γ : R) :
-    IsRhombusConcave (f + barycentricLinear c₀ α β γ) ↔ IsRhombusConcave f := by
-  simp only [isRhombusConcave_iff_rhombusSlack_nonneg]
-  exact forall₄_congr fun _ _ _ _ => imp_congr_right fun hr => by
-    rw [rhombusSlack_add_barycentricLinear f c₀ α β γ hr]
-
-theorem isRhombusConcave_barycentricLinear (c₀ α β γ : R) :
-    IsRhombusConcave (barycentricLinear c₀ α β γ : Vertex n → R) := by
-  simpa using (isRhombusConcave_add_barycentricLinear_iff (0 : Vertex n → R) c₀ α β γ).mpr
-    fun _ _ _ _ _ => by simp
-
 /-- Normalize an unnormalized rhombus-concave function by subtracting its value at `A = (n, 0, 0)`.
 -/
 def ofRhombusConcave (f : Vertex n → R) (hf : IsRhombusConcave f) : Hive n R where
   value p := f p - f (Vertex.cornerA n)
   value_cornerA' := sub_self _
-  le_of_isRhombus' {a b c d} hr := by
-    calc (f b - f (Vertex.cornerA n)) + (f d - f (Vertex.cornerA n))
-        = (f b + f d) - (f (Vertex.cornerA n) + f (Vertex.cornerA n)) := by abel
-      _ ≤ (f a + f c) - (f (Vertex.cornerA n) + f (Vertex.cornerA n)) := sub_le_sub_right (hf hr) _
-      _ = (f a - f (Vertex.cornerA n)) + (f c - f (Vertex.cornerA n)) := by abel
+  le_of_isRhombus' hr := ((isRhombusConcave_sub_const_iff f (f (Vertex.cornerA n))).mpr hf) hr
+
+/-- The labelling underlying normalization. -/
+theorem coe_ofRhombusConcave (f : Vertex n → R) (hf : IsRhombusConcave f) :
+    ⇑(ofRhombusConcave f hf) = fun p => f p - f (Vertex.cornerA n) := (rfl)
 
 @[simp] theorem ofRhombusConcave_apply (f : Vertex n → R) (hf : IsRhombusConcave f) (p : Vertex n) :
     ofRhombusConcave f hf p = f p - f (Vertex.cornerA n) := (rfl)
 
+/-- Normalization preserves every rhombus slack. -/
+@[simp] theorem rhombusSlack_ofRhombusConcave (f : Vertex n → R) (hf : IsRhombusConcave f)
+    (a b c d : Vertex n) :
+    rhombusSlack (ofRhombusConcave f hf) a b c d = rhombusSlack f a b c d := by
+  rw [coe_ofRhombusConcave, rhombusSlack_sub_const]
+
 @[simp] theorem ofRhombusConcave_coe (h : Hive n R) : ofRhombusConcave h h.isRhombusConcave = h :=
   by ext p; simp
+
+/-- Normalization removes an additive constant on the right. -/
+@[simp] theorem ofRhombusConcave_add_const (f : Vertex n → R) (k : R)
+    (hf : IsRhombusConcave (fun p => f p + k)) :
+    ofRhombusConcave (fun p => f p + k) hf =
+      ofRhombusConcave f ((isRhombusConcave_add_const_iff f k).mp hf) := by
+  ext p; simp only [ofRhombusConcave_apply]; abel
+
+/-- Normalization removes an additive constant on the left. -/
+@[simp] theorem ofRhombusConcave_const_add (k : R) (f : Vertex n → R)
+    (hf : IsRhombusConcave (fun p => k + f p)) :
+    ofRhombusConcave (fun p => k + f p) hf =
+      ofRhombusConcave f ((isRhombusConcave_const_add_iff k f).mp hf) := by
+  ext p; simp only [ofRhombusConcave_apply]; abel
+
+/-- Normalization removes a subtracted constant. -/
+@[simp] theorem ofRhombusConcave_sub_const (f : Vertex n → R) (k : R)
+    (hf : IsRhombusConcave (fun p => f p - k)) :
+    ofRhombusConcave (fun p => f p - k) hf =
+      ofRhombusConcave f ((isRhombusConcave_sub_const_iff f k).mp hf) := by
+  ext p; simp only [ofRhombusConcave_apply]; abel
 
 /-- Two unnormalized hives normalize to the same `Hive` iff they differ by an additive constant. -/
 theorem ofRhombusConcave_eq_iff {f₁ f₂ : Vertex n → R}
@@ -268,55 +461,71 @@ end Gauge
 
 section Algebra
 
-variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
+variable {n : ℕ} {R : Type*} [AddCommMonoid R] [Preorder R]
 
-instance : Zero (Hive n R) := ⟨⟨0, rfl, fun _ => by simp⟩⟩
+instance : Zero (Hive n R) := ⟨⟨0, rfl, fun hr => isRhombusConcave_zero.le hr⟩⟩
 instance : Inhabited (Hive n R) := ⟨0⟩
 
 @[simp] theorem coe_zero : ⇑(0 : Hive n R) = 0 := (rfl)
 @[simp] theorem zero_apply (p : Vertex n) : (0 : Hive n R) p = 0 := (rfl)
 
 /-- Nonnegative scalars from a partially ordered semiring act on hives. -/
-instance instSMulNonneg {S : Type*} [Semiring S] [PartialOrder S]
-    [Module S R] [PosSMulMono S R] : SMul (Nonneg S) (Hive n R) where
-  smul c h := ⟨c.1 • ⇑h, by simp, fun hr => by
-    simp only [Pi.smul_apply, ← smul_add]
-    exact smul_le_smul_of_nonneg_left (h.le_of_isRhombus hr) c.2⟩
+instance instSMulWithZeroNonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] : SMulWithZero (Nonneg S) (Hive n R) where
+  smul c h := ⟨c.val • ⇑h, by simp, fun hr => (h.isRhombusConcave.smul_of_nonneg c.property).le hr⟩
+  smul_zero c := by ext _; exact smul_zero c.val
+  zero_smul h := by ext p; exact zero_smul S (h p)
 
 @[simp] theorem coe_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
-    [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) : ⇑(c • h) = c.1 • ⇑h := (rfl)
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) : ⇑(c • h) = c.val • ⇑h := (rfl)
 
 @[simp] theorem smul_nonneg_apply {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) (p : Vertex n) :
-    (c • h) p = c.1 • h p := (rfl)
+    (c • h) p = c.val • h p := (rfl)
+
+/-- Nonnegative scaling satisfies the multiplicative action laws. -/
+instance instMulActionWithZeroNonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [Module S R] [PosSMulMono S R] :
+    MulActionWithZero (Nonneg S) (Hive n R) where
+  __ := instSMulWithZeroNonneg
+  one_smul h := by ext p; simp only [smul_nonneg_apply, Nonneg.coe_one, one_smul]
+  mul_smul c d h := by ext p; simp only [smul_nonneg_apply, Nonneg.coe_mul, mul_smul]
 
 /-- Push a hive forward along an order-preserving additive monoid homomorphism. -/
-def map {S : Type*} [AddCommGroup S] [PartialOrder S] (φ : R →+o S) (h : Hive n R) : Hive n S where
+def map {S : Type*} [AddCommMonoid S] [Preorder S] (φ : R →+o S) (h : Hive n R) : Hive n S where
   value p := φ (h p)
   value_cornerA' := by simp
-  le_of_isRhombus' hr := by simpa only [map_add] using OrderHomClass.mono φ (h.le_of_isRhombus hr)
+  le_of_isRhombus' hr := (h.isRhombusConcave.map φ).le hr
 
-@[simp] theorem map_apply {S : Type*} [AddCommGroup S] [PartialOrder S]
+@[simp] theorem map_apply {S : Type*} [AddCommMonoid S] [Preorder S]
     (φ : R →+o S) (h : Hive n R) (p : Vertex n) : h.map φ p = φ (h p) := (rfl)
+
+/-- The function underlying pushforward along an ordered additive map. -/
+theorem coe_map {S : Type*} [AddCommMonoid S] [Preorder S]
+    (φ : R →+o S) (h : Hive n R) : ⇑(h.map φ) = φ ∘ ⇑h := (rfl)
+
+@[simp] theorem map_id (h : Hive n R) : h.map (OrderAddMonoidHom.id R) = h := by
+  ext p; simp
+
+@[simp] theorem map_map {S T : Type*} [AddCommMonoid S] [Preorder S]
+    [AddCommMonoid T] [Preorder T] (ψ : S →+o T) (φ : R →+o S) (h : Hive n R) :
+    (h.map φ).map ψ = h.map (ψ.comp φ) := by ext p; rfl
+
+@[simp] theorem map_zero {S : Type*} [AddCommMonoid S] [Preorder S] (φ : R →+o S) :
+    (0 : Hive n R).map φ = 0 := by ext p; simp
 
 section OrderedAdd
 
 variable [IsOrderedAddMonoid R]
 
 instance : Add (Hive n R) where
-  add h₁ h₂ := ⟨h₁ + h₂, by simp, fun {a b c d} hr => by
-    simp only [Pi.add_apply]
-    calc (h₁ b + h₂ b) + (h₁ d + h₂ d) = (h₁ b + h₁ d) + (h₂ b + h₂ d) := by abel
-      _ ≤ (h₁ a + h₁ c) + (h₂ a + h₂ c) :=
-          add_le_add (h₁.le_of_isRhombus hr) (h₂.le_of_isRhombus hr)
-      _ = (h₁ a + h₂ a) + (h₁ c + h₂ c) := by abel⟩
+  add h₁ h₂ := ⟨h₁ + h₂, by simp, fun hr => (h₁.isRhombusConcave.add h₂.isRhombusConcave).le hr⟩
 
 @[simp] theorem coe_add (h₁ h₂ : Hive n R) : ⇑(h₁ + h₂) = ⇑h₁ + ⇑h₂ := (rfl)
 @[simp] theorem add_apply (h₁ h₂ : Hive n R) (p : Vertex n) : (h₁ + h₂) p = h₁ p + h₂ p := (rfl)
 
 instance : SMul ℕ (Hive n R) where
-  smul k h := ⟨k • ⇑h, by simp, fun hr => by
-    simp only [Pi.smul_apply, ← smul_add]; exact nsmul_le_nsmul_right (h.le_of_isRhombus hr) k⟩
+  smul k h := ⟨k • ⇑h, by simp, fun hr => (h.isRhombusConcave.nsmul k).le hr⟩
 
 @[simp] theorem coe_nsmul (k : ℕ) (h : Hive n R) : ⇑(k • h) = k • ⇑h := (rfl)
 @[simp] theorem nsmul_apply (k : ℕ) (h : Hive n R) (p : Vertex n) : (k • h) p = k • h p := (rfl)
@@ -325,10 +534,28 @@ instance : AddCommMonoid (Hive n R) :=
   DFunLike.coe_injective.addCommMonoid _ coe_zero coe_add fun _ _ => rfl
 
 /-- Evaluation as an additive monoid homomorphism from `Hive n R` to lattice functions. -/
-def coeAddMonoidHom (n : ℕ) (R : Type*) [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R] :
+def coeAddMonoidHom (n : ℕ) (R : Type*) [AddCommMonoid R] [Preorder R] [IsOrderedAddMonoid R] :
     Hive n R →+ (Vertex n → R) := ⟨⟨fun h => ⇑h, rfl⟩, fun _ _ => rfl⟩
 
 @[simp] theorem coeAddMonoidHom_apply (h : Hive n R) : coeAddMonoidHom n R h = ⇑h := (rfl)
+
+/-- Hives form a module over the semiring of nonnegative scalars. -/
+instance instModuleNonneg {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
+    [Module S R] [PosSMulMono S R] : Module (Nonneg S) (Hive n R) :=
+  Function.Injective.module (Nonneg S) (coeAddMonoidHom n R)
+    (fun _ _ heq => DFunLike.coe_injective (by simpa only [coeAddMonoidHom_apply] using heq))
+    (fun _ _ => by simp only [coeAddMonoidHom_apply, coe_smul_nonneg, Nonneg.coe_smul])
+
+@[simp] theorem map_add {S : Type*} [AddCommMonoid S] [Preorder S] [IsOrderedAddMonoid S]
+    (φ : R →+o S) (h₁ h₂ : Hive n R) : (h₁ + h₂).map φ = h₁.map φ + h₂.map φ := by
+  ext p; simp
+
+/-- Pushforward commutes with natural scaling, as every additive map does. -/
+@[simp] theorem map_nsmul {S : Type*} [AddCommMonoid S] [Preorder S] [IsOrderedAddMonoid S]
+    (φ : R →+o S) (k : ℕ) (h : Hive n R) : (k • h).map φ = k • h.map φ := by
+  ext p; simp
+
+end OrderedAdd
 
 /-- Normalized affine hive `p ↦ p.y • β + p.z • γ`, vanishing at `A` with zero slack everywhere. -/
 def affine (n : ℕ) (β γ : R) : Hive n R where
@@ -337,17 +564,87 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
   le_of_isRhombus' hr := by
     simpa [barycentricLinear] using isRhombusConcave_barycentricLinear (n := n) (0 : R) 0 β γ hr
 
+/-- The labelling underlying an affine hive. -/
+theorem coe_affine (β γ : R) :
+    ⇑(affine n β γ) = fun p => p.y • β + p.z • γ := (rfl)
+
 @[simp] theorem affine_apply (β γ : R) (p : Vertex n) : affine n β γ p = p.y • β + p.z • γ := (rfl)
+
+/-- Zero slopes give the zero hive. -/
+@[simp] theorem affine_zero : affine n (0 : R) 0 = 0 := by ext p; simp
+
+/-- Addition of affine hives adds their slopes. -/
+@[simp] theorem affine_add_affine [IsOrderedAddMonoid R] (u v u' v' : R) :
+    affine n u v + affine n u' v' = affine n (u + u') (v + v') := by
+  ext p; simp only [affine_apply, add_apply, nsmul_add]; abel
+
+/-- Natural scaling of an affine hive scales its slopes. -/
+@[simp] theorem nsmul_affine [IsOrderedAddMonoid R] (k : ℕ) (β γ : R) :
+    k • affine n β γ = affine n (k • β) (k • γ) := by
+  ext p; simp only [nsmul_apply, affine_apply, smul_add, smul_comm k]
+
+/-- Nonnegative scaling of an affine hive scales its slopes. -/
+@[simp] theorem smul_nonneg_affine {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (β γ : R) :
+    c • affine n β γ = affine n (c.val • β) (c.val • γ) := by
+  ext p; simp only [smul_nonneg_apply, affine_apply, smul_add, smul_comm c.val]
+
+/-- Pushforward of an affine hive applies the map to its slopes. -/
+@[simp] theorem map_affine {S : Type*} [AddCommMonoid S] [Preorder S]
+    (φ : R →+o S) (β γ : R) : (affine n β γ).map φ = affine n (φ β) (φ γ) := by
+  ext p; simp
+
+end Algebra
+
+section Restriction
+
+variable {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
 
 @[simp] theorem rhombusSlack_affine (β γ : R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     rhombusSlack (affine n β γ) a b c d = 0 := by
   simpa [barycentricLinear, rhombusSlack, affine_apply] using
     rhombusSlack_barycentricLinear (n := n) (0 : R) 0 β γ hr
 
+/-- Rhombus slacks commute with pushforward along an ordered additive map. -/
+@[simp] theorem rhombusSlack_map {S : Type*} [AddCommGroup S] [Preorder S]
+    (φ : R →+o S) (h : Hive n R) (a b c d : Vertex n) :
+    rhombusSlack (h.map φ) a b c d = φ (rhombusSlack h a b c d) := by
+  simp [rhombusSlack_def, map_sub]
+
+variable [IsOrderedAddMonoid R]
+
+/-- Normalization commutes with natural scaling. -/
+@[simp] theorem ofRhombusConcave_nsmul (k : ℕ) (f : Vertex n → R)
+    (hf : IsRhombusConcave f) :
+    ofRhombusConcave (k • f) (hf.nsmul k) = k • ofRhombusConcave f hf := by
+  ext p; simp only [ofRhombusConcave_apply, nsmul_apply, Pi.smul_apply, smul_sub]
+
+/-- Normalization commutes with nonnegative scaling. -/
+@[simp] theorem ofRhombusConcave_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (f : Vertex n → R)
+    (hf : IsRhombusConcave f) :
+    ofRhombusConcave (c • f) (hf.smul_of_nonneg c.property) = c • ofRhombusConcave f hf := by
+  ext p; simp [smul_sub]
+
+/-- Normalization removes the constant and the common barycentric slope. -/
+@[simp] theorem ofRhombusConcave_barycentricLinear (c₀ α β γ : R) :
+    ofRhombusConcave (barycentricLinear c₀ α β γ : Vertex n → R)
+      (isRhombusConcave_barycentricLinear c₀ α β γ) = affine n (β - α) (γ - α) := by
+  ext p
+  simp only [ofRhombusConcave_apply, barycentricLinear_apply, affine_apply,
+    Vertex.cornerA_x, Vertex.cornerA_y, Vertex.cornerA_z, zero_nsmul, add_zero, nsmul_sub]
+  have hn : n • α = p.x • α + p.y • α + p.z • α := by
+    rw [← add_nsmul, ← add_nsmul, p.sum_eq]
+  rw [hn]; abel
+
 /-- Restrict a hive on `Δ_{m + k}` to the subtriangle of side `k` translated by `p : Δ_m`,
 normalizing at `p.add (cornerA k)`. -/
 def subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) : Hive k R :=
-  ofRhombusConcave (fun q => h (p.add q)) fun _ _ _ _ hr => h.le_of_isRhombus (hr.add p)
+  ofRhombusConcave (fun q => h (p.add q)) (h.isRhombusConcave.subtriangle p)
+
+/-- The labelling underlying normalized restriction. -/
+theorem coe_subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
+    ⇑(h.subtriangle p) = fun q => h (p.add q) - h (p.add (Vertex.cornerA k)) := (rfl)
 
 @[simp] theorem subtriangle_apply {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) (q : Vertex k) :
     h.subtriangle p q = h (p.add q) - h (p.add (Vertex.cornerA k)) := (rfl)
@@ -362,13 +659,47 @@ def subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) : Hive k R :=
 @[simp] theorem subtriangle_zero {m k : ℕ} (p : Vertex m) :
     (0 : Hive (m + k) R).subtriangle p = 0 := by ext q; simp
 
-theorem subtriangle_add {m k : ℕ} (h₁ h₂ : Hive (m + k) R) (p : Vertex m) :
+@[simp] theorem subtriangle_add {m k : ℕ} (h₁ h₂ : Hive (m + k) R) (p : Vertex m) :
     (h₁ + h₂).subtriangle p = h₁.subtriangle p + h₂.subtriangle p := by
   ext q; simp only [subtriangle_apply, add_apply]; abel
 
-end OrderedAdd
+/-- Restriction commutes with natural scaling. -/
+@[simp] theorem subtriangle_nsmul {m k : ℕ} (a : ℕ) (h : Hive (m + k) R) (p : Vertex m) :
+    (a • h).subtriangle p = a • h.subtriangle p := by ext q; simp [smul_sub]
 
-end Algebra
+/-- Restriction commutes with nonnegative scaling. -/
+@[simp] theorem subtriangle_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] {m k : ℕ} (c : Nonneg S) (h : Hive (m + k) R)
+    (p : Vertex m) : (c • h).subtriangle p = c • h.subtriangle p := by
+  ext q; simp [smul_sub]
+
+/-- Restriction commutes with pushforward along an ordered additive map. -/
+@[simp] theorem map_subtriangle {S : Type*} [AddCommGroup S] [Preorder S]
+    [IsOrderedAddMonoid S] (φ : R →+o S) {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
+    (h.subtriangle p).map φ = (h.map φ).subtriangle p := by
+  ext q; simp [map_sub]
+
+/-- Restriction preserves the slopes of an affine hive. -/
+@[simp] theorem subtriangle_affine {m k : ℕ} (u v : R) (p : Vertex m) :
+    (affine (m + k) u v).subtriangle p = affine k u v := by
+  ext q
+  simp only [subtriangle_apply, affine_apply, Vertex.add_y, Vertex.add_z, add_nsmul,
+    Vertex.cornerA_y, Vertex.cornerA_z, add_zero]; abel
+
+/-- Normalization sends every constant labelling to the zero hive. -/
+@[simp] theorem ofRhombusConcave_const (c : R) :
+    ofRhombusConcave (fun _ : Vertex n => c) (isRhombusConcave_const c) = 0 := by ext p; simp
+
+@[simp] theorem ofRhombusConcave_zero :
+    ofRhombusConcave (0 : Vertex n → R) isRhombusConcave_zero = 0 := by ext p; simp
+
+/-- Normalization commutes with pointwise addition. -/
+@[simp] theorem ofRhombusConcave_add (f g : Vertex n → R)
+    (hf : IsRhombusConcave f) (hg : IsRhombusConcave g) :
+    ofRhombusConcave (f + g) (hf.add hg) = ofRhombusConcave f hf + ofRhombusConcave g hg := by
+  ext p; simp only [ofRhombusConcave_apply, add_apply, Pi.add_apply]; abel
+
+end Restriction
 
 section Cone
 
@@ -384,6 +715,25 @@ def ofInt (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R] {n : ℕ} :
 @[simp] theorem ofInt_apply {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
     (h : IntegerHive n) (p : Vertex n) : ofInt R h p = (h p : R) := (rfl)
 
+/-- The labelling underlying the integer-hive embedding. -/
+theorem coe_ofInt {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) : ⇑(ofInt R h) = fun p => (h p : R) := (rfl)
+
+/-- Rhombus slacks commute with the integer-hive embedding. -/
+@[simp] theorem rhombusSlack_ofInt {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) (a b c d : Vertex n) :
+    rhombusSlack (ofInt R h) a b c d = (rhombusSlack (R := ℤ) h a b c d : R) := by
+  simp [rhombusSlack_def]
+
+/-- The integer-hive embedding preserves affine hives. -/
+@[simp] theorem ofInt_affine {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (β γ : ℤ) : ofInt R (affine n β γ) = affine n (β : R) (γ : R) := by ext p; simp
+
+/-- The integer-hive embedding commutes with restriction. -/
+@[simp] theorem ofInt_subtriangle {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    {m k : ℕ} (h : IntegerHive (m + k)) (p : Vertex m) :
+    ofInt R (h.subtriangle p) = (ofInt R h).subtriangle p := by ext q; simp
+
 /-- Canonical additive monoid embedding of integer hives into real hives. -/
 abbrev toReal {n : ℕ} : IntegerHive n →+ RealHive n := ofInt ℝ
 
@@ -391,25 +741,19 @@ theorem ofInt_injective (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R] 
     {n : ℕ} : Function.Injective (ofInt R (n := n)) := fun _ _ heq =>
   ext fun p => Int.cast_injective (congrArg (fun k : Hive n R => k p) heq)
 
-/-- The pointed cone of normalized hives inside `Vertex n → R` over an ordered ring `R`. -/
-def pointedCone (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R] (n : ℕ) :
+/-- The pointed cone of normalized hives inside `Vertex n → R` over an ordered semiring `R`. -/
+def pointedCone (R : Type*) [Semiring R] [PartialOrder R] [IsOrderedRing R] (n : ℕ) :
     PointedCone R (Vertex n → R) where
   carrier := {f | f (Vertex.cornerA n) = 0 ∧ IsRhombusConcave f}
-  zero_mem' := ⟨rfl, fun _ _ _ _ _ => by simp⟩
-  add_mem' {f g} hf hg := ⟨by simp [hf.1, hg.1], fun {a b c d} hr => by
-    simp only [Pi.add_apply]
-    calc (f b + g b) + (f d + g d) = (f b + f d) + (g b + g d) := by abel
-      _ ≤ (f a + f c) + (g a + g c) := add_le_add (hf.2 hr) (hg.2 hr)
-      _ = (f a + g a) + (f c + g c) := by abel⟩
-  smul_mem' c f hf := ⟨by simp [hf.1], fun {a b c' d} hr => by
-    simp only [Pi.smul_apply, ← Nonneg.coe_smul, smul_eq_mul, ← mul_add]
-    exact mul_le_mul_of_nonneg_left (hf.2 hr) c.2⟩
+  zero_mem' := ⟨rfl, isRhombusConcave_zero⟩
+  add_mem' hf hg := ⟨by simp [hf.1, hg.1], hf.2.add hg.2⟩
+  smul_mem' c f hf := ⟨by simp [hf.1], hf.2.smul_of_nonneg c.property⟩
 
-@[simp] theorem mem_pointedCone_iff {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+@[simp] theorem mem_pointedCone_iff {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
     {f : Vertex n → R} : f ∈ pointedCone R n ↔ f (Vertex.cornerA n) = 0 ∧ IsRhombusConcave f :=
   Iff.rfl
 
-theorem coe_mem_pointedCone {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+theorem coe_mem_pointedCone {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
     (h : Hive n R) : (h : Vertex n → R) ∈ pointedCone R n := ⟨h.apply_cornerA, h.isRhombusConcave⟩
 
 end Cone
@@ -418,14 +762,15 @@ end Cone
 
 section UnitSteps
 
-/-- Along unit lattice edge directions `v, w` of inner product `1`, a hive has nonpositive mixed
-second forward difference `(h(p + v + w) - h(p + w)) - (h(p + v) - h(p)) ≤ 0`. -/
-theorem mixedDiff_nonpos_of_isUnitStep {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
-    [IsOrderedAddMonoid R] (h : Hive n R) {p pv pw pvw : Vertex n} {v w : Fin 3 → ℤ}
+/-- Along unit lattice steps of inner product `1`, a rhombus-concave labelling has nonpositive
+mixed second forward difference. -/
+theorem IsRhombusConcave.mixedDiff_nonpos_of_isUnitStep {n : ℕ} {R : Type*}
+    [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R] {h : Vertex n → R}
+    (hf : IsRhombusConcave h) {p pv pw pvw : Vertex n} {v w : Fin 3 → ℤ}
     (hv : IsUnitStep v) (hw : IsUnitStep w) (hdot : (∑ i, v i * w i) = 1)
     (hpv : HasStep p pv v) (hpw : HasStep p pw w) (hpvw : HasStep p pvw (v + w)) :
     (h pvw - h pw) - (h pv - h p) ≤ 0 := by
-  have hle := h.le_of_isRhombus ((isRhombus_of_hasStep_iff hv hw hpv hpw hpvw).mpr hdot)
+  have hle := hf.le ((isRhombus_of_hasStep_iff hv hw hpv hpw hpvw).mpr hdot)
   calc (h pvw - h pw) - (h pv - h p) = (h p + h pvw) - (h pv + h pw) := by abel
     _ ≤ (h pv + h pw) - (h pv + h pw) := sub_le_sub_right hle _
     _ = 0 := sub_self _
@@ -503,11 +848,63 @@ def boundaryLinear (S : Type*) (n : ℕ) (R : Type*) [Semiring S] [AddCommGroup 
     boundaryLinear S n R f s i =
       f (Vertex.edgePoint n s i.succ) - f (Vertex.edgePoint n s i.castSucc) := (rfl)
 
+section Ambient
+
+variable [AddCommGroup R] (S : Type*) [Semiring S] [Module S R]
+
+/-- The function underlying the ambient boundary linear map. -/
+theorem coe_boundaryLinear :
+    ⇑(boundaryLinear S n R) = fun f s i =>
+      f (Vertex.edgePoint n s i.succ) - f (Vertex.edgePoint n s i.castSucc) := by
+  funext f s i
+  exact boundaryLinear_apply S f s i
+
+/-- Reflecting a labelling reverses the side order and negates the reversed differences. -/
+@[simp] theorem boundaryLinear_reflect (f : Vertex n → R) :
+    boundaryLinear S n R (fun p => f p.reflect) =
+      fun s i => -boundaryLinear S n R f s.rev i.rev := by
+  funext s i
+  simp only [boundaryLinear_apply, Vertex.reflect_edgePoint, ← Fin.rev_castSucc,
+    ← Fin.rev_succ]; abel
+
+/-- The clockwise slopes of a barycentric-affine labelling. -/
+@[simp] theorem boundaryLinear_barycentricLinear (c₀ α β γ : R) :
+    boundaryLinear S n R (barycentricLinear c₀ α β γ) =
+      ![fun _ => β - α, fun _ => γ - β, fun _ => α - γ] := by
+  ext s i
+  have hsub : n - i.val = (n - (i.val + 1)) + 1 := by omega
+  fin_cases s <;> simp [barycentricLinear_apply, hsub, add_nsmul] <;> abel
+
+/-- Rotating a labelling cycles its clockwise boundary sides. -/
+@[simp] theorem boundaryLinear_rotate (f : Vertex n → R) :
+    boundaryLinear S n R (fun p => f p.rotate) = fun s => boundaryLinear S n R f (s + 1) := by
+  funext s i; simp only [boundaryLinear_apply, Vertex.rotate_edgePoint]
+
+@[simp] theorem boundaryLinear_const (c : R) :
+    boundaryLinear S n R (fun _ => c) = 0 := by ext s i; simp
+
+/-- Boundary differences do not depend on the additive gauge. -/
+@[simp] theorem boundaryLinear_add_const (f : Vertex n → R) (c : R) :
+    boundaryLinear S n R (fun p => f p + c) = boundaryLinear S n R f := by ext s i; simp
+
+@[simp] theorem boundaryLinear_const_add (c : R) (f : Vertex n → R) :
+    boundaryLinear S n R (fun p => c + f p) = boundaryLinear S n R f := by ext s i; simp
+
+@[simp] theorem boundaryLinear_sub_const (f : Vertex n → R) (c : R) :
+    boundaryLinear S n R (fun p => f p - c) = boundaryLinear S n R f := by ext s i; simp
+
+/-- The ambient boundary commutes with any distributive scalar action. -/
+@[simp] theorem boundaryLinear_smul {K : Type*} [DistribSMul K R] (c : K) (f : Vertex n → R) :
+    boundaryLinear S n R (c • f) = c • boundaryLinear S n R f := by
+  ext s i; simp only [boundaryLinear_apply, Pi.smul_apply, smul_sub]
+
+end Ambient
+
 /-- Along the first `k` steps of side `s`, the edge differences telescope to
 `f(edgePoint n s k) - f(edgePoint n s 0)`. -/
-theorem sum_boundaryLinear_lt [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) (k : ℕ)
-    (hk : k ≤ n) :
-    (∑ i : Fin n with i.val < k, boundaryLinear ℤ n R f s i) =
+theorem sum_boundaryLinear_lt {S : Type*} [Semiring S] [AddCommGroup R] [Module S R]
+    (f : Vertex n → R) (s : Fin 3) (k : ℕ) (hk : k ≤ n) :
+    (∑ i : Fin n with i.val < k, boundaryLinear S n R f s i) =
       f (Vertex.edgePoint n s ⟨k, by omega⟩) - f (Vertex.edgePoint n s 0) := by
   induction k with
   | zero => simp
@@ -521,15 +918,17 @@ theorem sum_boundaryLinear_lt [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) 
       Fin.castSucc_mk]; abel
 
 /-- Along side `s`, the `n` edge differences telescope to the difference of its two corners. -/
-theorem sum_boundaryLinear_side [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) :
-    (∑ i : Fin n, boundaryLinear ℤ n R f s i) =
+theorem sum_boundaryLinear_side {S : Type*} [Semiring S] [AddCommGroup R] [Module S R]
+    (f : Vertex n → R) (s : Fin 3) :
+    (∑ i : Fin n, boundaryLinear S n R f s i) =
       f (Vertex.edgePoint n s (Fin.last n)) - f (Vertex.edgePoint n s 0) := by
-  have hall : ({i : Fin n | i.val < n} : Finset (Fin n)) = Finset.univ := by ext i; simp
-  simpa [hall, Fin.last] using sum_boundaryLinear_lt f s n le_rfl
+  simpa only [boundaryLinear_apply] using
+    Fin.sum_univ_succ_sub_castSucc (fun i => f (Vertex.edgePoint n s i))
 
 /-- The cyclic trace `∑ s, ∑ i, boundaryLinear f s i` vanishes for every lattice function `f`. -/
-theorem sum_boundaryLinear [AddCommGroup R] (f : Vertex n → R) :
-    (∑ s : Fin 3, ∑ i : Fin n, boundaryLinear ℤ n R f s i) = 0 := by
+theorem sum_boundaryLinear {S : Type*} [Semiring S] [AddCommGroup R] [Module S R]
+    (f : Vertex n → R) :
+    (∑ s : Fin 3, ∑ i : Fin n, boundaryLinear S n R f s i) = 0 := by
   simp only [Fin.sum_univ_three, sum_boundaryLinear_side]
   rw [← Vertex.edgePoint_add_one_zero n 0, ← Vertex.edgePoint_add_one_zero n 1,
     Vertex.edgePoint_zero_zero, Vertex.edgePoint_two_last,
@@ -537,7 +936,7 @@ theorem sum_boundaryLinear [AddCommGroup R] (f : Vertex n → R) :
 
 section HiveBoundary
 
-variable [AddCommGroup R] [PartialOrder R]
+variable [AddCommGroup R] [Preorder R]
 
 /-- The clockwise cyclic boundary of a hive along `A → B`, `B → C`, and `C → A`. -/
 def boundary (h : Hive n R) : Fin 3 → Fin n → R := boundaryLinear ℤ n R h
@@ -550,31 +949,47 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
 @[simp] theorem boundaryLinear_coe (S : Type*) [Semiring S] [Module S R] (h : Hive n R) :
     boundaryLinear S n R h = h.boundary := by ext s i; rw [boundaryLinear_apply, boundary_apply]
 
-@[simp] theorem boundary_zero : (0 : Hive n R).boundary = 0 := map_zero (boundaryLinear ℤ n R)
+/-- Bundling a normalized rhombus-concave function preserves its edge differences. -/
+@[simp] theorem boundary_mk (f : Vertex n → R) (hA : f (Vertex.cornerA n) = 0)
+    (hf : ∀ {a b c d : Vertex n}, IsRhombus a b c d → f b + f d ≤ f a + f c) :
+    (Hive.mk f hA hf).boundary = boundaryLinear ℤ n R f := (rfl)
+
+/-- Normalization leaves the clockwise boundary unchanged. -/
+@[simp] theorem boundary_ofRhombusConcave [IsOrderedAddMonoid R]
+    (f : Vertex n → R) (hf : IsRhombusConcave f) :
+    (ofRhombusConcave f hf).boundary = boundaryLinear ℤ n R f :=
+  boundaryLinear_sub_const ℤ f (f (Vertex.cornerA n))
+
+/-- A subtriangle has the boundary of its translated, unnormalized labelling. -/
+@[simp] theorem boundary_subtriangle [IsOrderedAddMonoid R]
+    {m : ℕ} (h : Hive (m + n) R) (p : Vertex m) :
+    (h.subtriangle p).boundary = boundaryLinear ℤ n R (fun q => h (p.add q)) :=
+  boundary_ofRhombusConcave (fun q => h (p.add q)) _
+
+@[simp] theorem boundary_zero : (0 : Hive n R).boundary = 0 :=
+  _root_.map_zero (boundaryLinear ℤ n R)
 
 @[simp] theorem boundary_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
-    (h₁ + h₂).boundary = h₁.boundary + h₂.boundary := map_add (boundaryLinear ℤ n R) ⇑h₁ ⇑h₂
+    (h₁ + h₂).boundary = h₁.boundary + h₂.boundary := _root_.map_add (boundaryLinear ℤ n R) ⇑h₁ ⇑h₂
 
 @[simp] theorem boundary_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
     (k • h).boundary = k • h.boundary := by ext s i; simp [boundary_apply, smul_sub]
 
 @[simp] theorem boundary_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) :
-    (c • h).boundary = c.1 • h.boundary := by ext s i; simp [boundary_apply, smul_sub]
+    (c • h).boundary = c.val • h.boundary := by ext s i; simp [boundary_apply, smul_sub]
 
-@[simp] theorem boundary_map {S : Type*} [AddCommGroup S] [PartialOrder S]
-    (φ : R →+o S) (h : Hive n R) (s : Fin 3) (i : Fin n) :
-    (h.map φ).boundary s i = φ (h.boundary s i) := by simp [boundary_apply, map_sub]
+@[simp] theorem boundary_map {S : Type*} [AddCommGroup S] [Preorder S]
+    (φ : R →+o S) (h : Hive n R) :
+    (h.map φ).boundary = fun s i => φ (h.boundary s i) := by
+  ext s i; simp [boundary_apply, map_sub]
 
-@[simp] theorem boundary_affine [IsOrderedAddMonoid R] (β γ : R) :
+@[simp] theorem boundary_affine (β γ : R) :
     (affine n β γ).boundary = ![fun _ => β, fun _ => γ - β, fun _ => -γ] := by
-  ext s i; fin_cases s
-  · simp [boundary_apply, affine_apply, add_nsmul]
-  · have hsub : n - i.val = (n - (i.val + 1)) + 1 := by omega
-    simp [boundary_apply, affine_apply, hsub, add_nsmul]
-    abel
-  · have hsub : n - i.val = (n - (i.val + 1)) + 1 := by omega
-    simp [boundary_apply, affine_apply, hsub, add_nsmul]
+  have heq : (barycentricLinear (0 : R) 0 β γ : Vertex n → R) = ⇑(affine n β γ) := by
+    funext p; simp
+  simpa only [heq, boundaryLinear_coe, sub_zero, zero_sub] using
+    boundaryLinear_barycentricLinear (n := n) ℤ (0 : R) 0 β γ
 
 /-- The cyclic trace `∑ s, ∑ i, h.boundary s i` of any hive vanishes. -/
 @[simp] theorem sum_boundary (h : Hive n R) : (∑ s : Fin 3, ∑ i : Fin n, h.boundary s i) = 0 :=
@@ -583,7 +998,7 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
 /-- Value of a hive at the `k`-th vertex of side `A → B` (`s = 0`) in terms of its boundary. -/
 theorem apply_edgePoint_zero (h : Hive n R) (k : Fin (n + 1)) :
     h (Vertex.edgePoint n 0 k) = ∑ i : Fin n with i.val < k.val, h.boundary 0 i := by
-  have ht := sum_boundaryLinear_lt (⇑h) 0 k.val (Nat.le_of_lt_succ k.isLt)
+  have ht := sum_boundaryLinear_lt (S := ℤ) (⇑h) 0 k.val (Nat.le_of_lt_succ k.isLt)
   rw [boundaryLinear_coe, Fin.eta, Vertex.edgePoint_zero_zero, h.apply_cornerA, sub_zero] at ht
   exact ht.symm
 
@@ -591,8 +1006,8 @@ theorem apply_edgePoint_zero (h : Hive n R) (k : Fin (n + 1)) :
 theorem apply_edgePoint_one (h : Hive n R) (k : Fin (n + 1)) :
     h (Vertex.edgePoint n 1 k) =
       (∑ i : Fin n, h.boundary 0 i) + ∑ i : Fin n with i.val < k.val, h.boundary 1 i := by
-  have ht1 := sum_boundaryLinear_lt (⇑h) 1 k.val (Nat.le_of_lt_succ k.isLt)
-  have ht0 := sum_boundaryLinear_side (⇑h) 0
+  have ht1 := sum_boundaryLinear_lt (S := ℤ) (⇑h) 1 k.val (Nat.le_of_lt_succ k.isLt)
+  have ht0 := sum_boundaryLinear_side (S := ℤ) (⇑h) 0
   rw [boundaryLinear_coe, Fin.eta] at ht1
   rw [boundaryLinear_coe, Vertex.edgePoint_zero_zero, h.apply_cornerA, sub_zero,
     ← Vertex.edgePoint_add_one_zero n 0, zero_add] at ht0
@@ -605,8 +1020,8 @@ theorem apply_edgePoint_two (h : Hive n R) (k : Fin (n + 1)) :
       (∑ i : Fin n with k.val ≤ i.val, h.boundary 2 i) = ∑ i : Fin n, h.boundary 2 i := by
     simpa [not_lt] using Finset.sum_filter_add_sum_filter_not Finset.univ
       (fun i : Fin n => i.val < k.val) (h.boundary 2)
-  have ht := sum_boundaryLinear_lt (⇑h) 2 k.val (Nat.le_of_lt_succ k.isLt)
-  have hfull := sum_boundaryLinear_side (⇑h) 2
+  have ht := sum_boundaryLinear_lt (S := ℤ) (⇑h) 2 k.val (Nat.le_of_lt_succ k.isLt)
+  have hfull := sum_boundaryLinear_side (S := ℤ) (⇑h) 2
   rw [boundaryLinear_coe, Fin.eta] at ht
   rw [boundaryLinear_coe, Vertex.edgePoint_two_last, h.apply_cornerA, zero_sub] at hfull
   rw [ht, hfull] at hcompl
@@ -617,9 +1032,29 @@ theorem apply_edgePoint_two (h : Hive n R) (k : Fin (n + 1)) :
       _ = -h (Vertex.edgePoint n 2 0) + h (Vertex.edgePoint n 2 0) := by rw [hcompl]
       _ = 0 := neg_add_cancel _)
 
+/-- Along `A → B` (`i = 0`), `h(0, j)` equals `TauCeti.prefixSum j (h.boundary 0)`. -/
+theorem apply_ofChart_zero_left (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j (h.boundary 0) := by
+  rw [Vertex.ofChart_zero_left, h.apply_edgePoint_zero, TauCeti.prefixSum_def]
+
+/-- Along `B → C` (`j = n`), `h(i, n)` equals
+`(∑ r, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1)`. -/
+theorem apply_ofChart_right (h : Hive n R) {i : ℕ} (hi : i ≤ n) :
+    h (Vertex.ofChart n i n hi le_rfl) =
+      (∑ r : Fin n, h.boundary 0 r) + TauCeti.prefixSum i (h.boundary 1) := by
+  rw [Vertex.ofChart_right, h.apply_edgePoint_one, TauCeti.prefixSum_def]
+
+/-- Along `C → A` (`i = j`), `h(j, j) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev)`. -/
+theorem apply_ofChart_self (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev) := by
+  rw [Vertex.ofChart_self, h.apply_edgePoint_two, Fin.val_mk,
+    TauCeti.prefixSum_comp_rev hj (fun r => -h.boundary 2 r), Finset.sum_neg_distrib]
+
 /-- Side `0` edge differences of any rhombus-concave function are antitone. -/
-theorem antitone_boundaryLinear_zero_of_isRhombusConcave [IsOrderedAddMonoid R]
-    {f : Vertex n → R} (hf : IsRhombusConcave f) : Antitone (boundaryLinear ℤ n R f 0) := by
+private theorem antitone_boundaryLinear_zero_of_isRhombusConcave
+    (S : Type*) [Semiring S] [Module S R]
+    [IsOrderedAddMonoid R] {f : Vertex n → R} (hf : IsRhombusConcave f) :
+    Antitone (boundaryLinear S n R f 0) := by
   match n with
   | 0 | 1 => exact Subsingleton.antitone _
   | k + 2 =>
@@ -651,26 +1086,37 @@ theorem antitone_boundaryLinear_zero_of_isRhombusConcave [IsOrderedAddMonoid R]
       _ ≤ (f p₁ + f p₁) - (f p₀ + f p₁) := sub_le_sub_right hconc _
       _ = f p₁ - f p₀ := by abel
 
+/-- Each side of an unnormalized rhombus-concave labelling has antitone differences. -/
+theorem IsRhombusConcave.boundaryLinear_antitone {S : Type*} [Semiring S] [Module S R]
+    [IsOrderedAddMonoid R] {f : Vertex n → R} (hf : IsRhombusConcave f) (s : Fin 3) :
+    Antitone (boundaryLinear S n R f s) := by
+  -- The cyclic-shift lemmas use side numerals; fin_cases instead produces Fin constructors.
+  -- The change steps identify these indices without unfolding the boundary operator.
+  fin_cases s
+  · exact antitone_boundaryLinear_zero_of_isRhombusConcave S hf
+  · change Antitone (boundaryLinear S n R f 1)
+    simpa only [boundaryLinear_rotate, zero_add] using
+      antitone_boundaryLinear_zero_of_isRhombusConcave S hf.rotate
+  · change Antitone (boundaryLinear S n R f 2)
+    have heq : boundaryLinear S n R f 2 =
+        boundaryLinear S n R (fun p => f p.rotate.rotate) 0 := by
+      calc boundaryLinear S n R f 2 = boundaryLinear S n R (fun p => f p.rotate) 1 :=
+            (congrFun (boundaryLinear_rotate S f) 1).symm
+        _ = boundaryLinear S n R (fun p => f p.rotate.rotate) 0 :=
+            (congrFun (boundaryLinear_rotate S (fun p => f p.rotate)) 0).symm
+    rw [heq]
+    exact antitone_boundaryLinear_zero_of_isRhombusConcave S hf.rotate.rotate
+
 /-- **Each boundary side of a hive is antitone**: for every hive over an ordered abelian group and
 every side `s : Fin 3`, the successive clockwise edge differences `h.boundary s` decrease weakly. -/
 theorem boundary_antitone [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
-    Antitone (h.boundary s) := by
-  have hrot {f : Vertex n → R} (hf : IsRhombusConcave f) :
-      IsRhombusConcave (fun p => f p.rotate) := fun _ _ _ _ hr => hf hr.rotate
-  fin_cases s
-  · exact antitone_boundaryLinear_zero_of_isRhombusConcave h.isRhombusConcave
-  · have heq : h.boundary 1 = boundaryLinear ℤ n R (fun p => h p.rotate) 0 := by
-      ext i; simp [boundary_apply, Vertex.rotate_edgePoint]
-    exact heq ▸ antitone_boundaryLinear_zero_of_isRhombusConcave (hrot h.isRhombusConcave)
-  · have heq : h.boundary 2 = boundaryLinear ℤ n R (fun p => h p.rotate.rotate) 0 := by
-      ext i; simp [boundary_apply, Vertex.rotate_edgePoint]
-    exact heq ▸ antitone_boundaryLinear_zero_of_isRhombusConcave (hrot (hrot h.isRhombusConcave))
+    Antitone (h.boundary s) := h.isRhombusConcave.boundaryLinear_antitone s
 
 end HiveBoundary
 
-@[simp] theorem boundary_ofInt [Ring R] [PartialOrder R] [IsOrderedRing R] (h : IntegerHive n)
-    (s : Fin 3) (i : Fin n) : (ofInt R h).boundary s i = (h.boundary s i : R) := by
-  simp [boundary_apply]
+@[simp] theorem boundary_ofInt [Ring R] [PartialOrder R] [IsOrderedRing R] (h : IntegerHive n) :
+    (ofInt R h).boundary = fun s i => (h.boundary s i : R) := by
+  ext s i; simp [boundary_apply]
 
 /-- Side `s` of an integer hive packaged as a `TauCeti.DominantWeight`. -/
 def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
@@ -679,37 +1125,193 @@ def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
 @[simp] theorem coe_boundaryWeight (h : IntegerHive n) (s : Fin 3) :
     (h.boundaryWeight s : Fin n → ℤ) = h.boundary s := (rfl)
 
+/-- The zero hive has zero weight on every side. -/
+@[simp] theorem boundaryWeight_zero (s : Fin 3) : (0 : IntegerHive n).boundaryWeight s = 0 := by
+  ext i; simp [coe_boundaryWeight]
+
+/-- Side weights are additive in the hive. -/
+@[simp] theorem boundaryWeight_add (h g : IntegerHive n) (s : Fin 3) :
+    (h + g).boundaryWeight s = h.boundaryWeight s + g.boundaryWeight s := by
+  ext i; simp [coe_boundaryWeight]
+
+/-- Side weights commute with natural scaling. -/
+@[simp] theorem boundaryWeight_nsmul (k : ℕ) (h : IntegerHive n) (s : Fin 3) :
+    (k • h).boundaryWeight s = k • h.boundaryWeight s := by
+  ext i; simp [coe_boundaryWeight]
+
 /-- The cyclic boundary `(λ, μ, γ*)` counting the multiplicity of `V_γ` in `V_λ ⊗ V_μ`. -/
-def productBoundary (lam μ γ : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.1, μ.1, γ.dual.1]
+def productBoundary (lam μ γ : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.val, μ.val,
+    γ.dual.val]
+
+theorem productBoundary_def (lam μ γ : DominantWeight n) :
+    productBoundary lam μ γ = ![lam.val, μ.val, γ.dual.val] := (rfl)
+
+/-- Zero weights give the zero cyclic boundary. -/
+@[simp] theorem productBoundary_zero_zero_zero :
+    productBoundary (0 : DominantWeight n) 0 0 = 0 := by
+  ext s i; fin_cases s <;> simp [productBoundary_def]
+
+/-- Cyclic product boundaries are additive in their three weights. -/
+@[simp] theorem productBoundary_add (lam μ γ lam' μ' γ' : DominantWeight n) :
+    productBoundary (lam + lam') (μ + μ') (γ + γ') =
+      productBoundary lam μ γ + productBoundary lam' μ' γ' := by
+  ext s i; fin_cases s <;> simp [productBoundary_def]
+
+/-- Cyclic product boundaries commute with simultaneous natural scaling. -/
+@[simp] theorem productBoundary_nsmul (k : ℕ) (lam μ γ : DominantWeight n) :
+    productBoundary (k • lam) (k • μ) (k • γ) = k • productBoundary lam μ γ := by
+  ext s i; fin_cases s <;> simp [productBoundary_def]
 
 @[simp] theorem productBoundary_zero (lam μ γ : DominantWeight n) :
-    productBoundary lam μ γ 0 = lam.1 := (rfl)
+    productBoundary lam μ γ 0 = lam.val := (rfl)
 @[simp] theorem productBoundary_one (lam μ γ : DominantWeight n) :
-    productBoundary lam μ γ 1 = μ.1 := (rfl)
+    productBoundary lam μ γ 1 = μ.val := (rfl)
 @[simp] theorem productBoundary_two (lam μ γ : DominantWeight n) :
-    productBoundary lam μ γ 2 = γ.dual.1 := (rfl)
+    productBoundary lam μ γ 2 = γ.dual.val := (rfl)
 
 /-- Cyclic trace zero for `productBoundary lam μ γ` is degree conservation `|λ| + |μ| = |γ|`. -/
 theorem sum_productBoundary_eq_zero_iff (lam μ γ : DominantWeight n) :
     (∑ s : Fin 3, ∑ i : Fin n, productBoundary lam μ γ s i) = 0 ↔
-      (∑ i, lam.1 i) + (∑ i, μ.1 i) = ∑ i, γ.1 i := by
+      (∑ i, lam.val i) + (∑ i, μ.val i) = ∑ i, γ.val i := by
   simp only [Fin.sum_univ_three, productBoundary_zero, productBoundary_one, productBoundary_two,
     DominantWeight.sum_dual]; omega
+
+theorem apply_ofChart_zero_left_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j lam.val := by
+  rw [h.apply_ofChart_zero_left hj, hb, productBoundary_zero]
+
+theorem apply_ofChart_right_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {i : ℕ} (hi : i ≤ n) :
+    h (Vertex.ofChart n i n hi le_rfl) = (∑ r : Fin n, lam.val r) + TauCeti.prefixSum i μ.val := by
+  rw [h.apply_ofChart_right hi, hb, productBoundary_zero, productBoundary_one]
+
+theorem apply_ofChart_self_of_productBoundary {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j γ.val := by
+  rw [h.apply_ofChart_self hj]; exact congrArg (TauCeti.prefixSum j) (funext fun r => by simp [hb])
 
 end Boundary
 
 /-! ### Dihedral action on normalized hives and boundaries -/
 
+section MonoidSymmetries
+
+variable {n : ℕ} {R : Type*} [AddCommMonoid R] [Preorder R]
+
+/-- Reflection of a normalized hive across `A`: pull back along `Vertex.reflect`. -/
+def reflect (h : Hive n R) : Hive n R :=
+  ⟨fun p => h p.reflect, by simp, fun hr => h.isRhombusConcave.reflect hr⟩
+
+/-- The labelling underlying reflection. -/
+theorem coe_reflect (h : Hive n R) : ⇑h.reflect = fun p => h p.reflect := (rfl)
+
+@[simp] theorem reflect_apply (h : Hive n R) (p : Vertex n) : h.reflect p = h p.reflect := (rfl)
+
+/-- Reflection commutes with pushforward along an ordered additive map. -/
+@[simp] theorem map_reflect {S : Type*} [AddCommMonoid S] [Preorder S]
+    (φ : R →+o S) (h : Hive n R) : h.reflect.map φ = (h.map φ).reflect := by ext p; simp
+
+/-- Reflection commutes with the integer-hive embedding. -/
+@[simp] theorem ofInt_reflect {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) : ofInt R h.reflect = (ofInt R h).reflect := by ext p; simp
+
+@[simp] theorem reflect_zero : (0 : Hive n R).reflect = 0 := by ext p; simp
+
+@[simp] theorem reflect_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
+    (h₁ + h₂).reflect = h₁.reflect + h₂.reflect := by ext p; simp
+
+@[simp] theorem reflect_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
+    (k • h).reflect = k • h.reflect := by ext p; simp
+
+@[simp] theorem reflect_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) :
+    (c • h).reflect = c • h.reflect := by ext p; simp
+
+@[simp] theorem reflect_affine (β γ : R) : (affine n β γ).reflect = affine n γ β := by
+  ext p; simp [add_comm]
+
+@[simp] theorem reflect_reflect (h : Hive n R) : h.reflect.reflect = h := by ext p; simp
+
+theorem reflect_involutive : Function.Involutive (reflect (n := n) (R := R)) := reflect_reflect
+theorem reflect_injective : Function.Injective (reflect (n := n) (R := R)) :=
+  reflect_involutive.injective
+
+end MonoidSymmetries
+
 section Symmetries
 
-variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
+variable {n : ℕ} {R : Type*} [AddCommGroup R] [Preorder R]
 
 /-- Clockwise rotation of a normalized hive, re-normalized at `A = (n, 0, 0)`. -/
 def rotate [IsOrderedAddMonoid R] (h : Hive n R) : Hive n R :=
-  ofRhombusConcave (fun p => h p.rotate) fun _ _ _ _ hr => h.le_of_isRhombus hr.rotate
+  ofRhombusConcave (fun p => h p.rotate) h.isRhombusConcave.rotate
+
+/-- The labelling underlying normalized rotation. -/
+theorem coe_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
+    ⇑h.rotate = fun p => h p.rotate - h (Vertex.cornerA n).rotate := (rfl)
 
 @[simp] theorem rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
     h.rotate p = h p.rotate - h (Vertex.cornerA n).rotate := (rfl)
+
+/-- Rotation commutes with pushforward along an ordered additive map. -/
+@[simp] theorem map_rotate [IsOrderedAddMonoid R] {S : Type*} [AddCommGroup S] [Preorder S]
+    [IsOrderedAddMonoid S] (φ : R →+o S) (h : Hive n R) :
+    h.rotate.map φ = (h.map φ).rotate := by ext p; simp [map_sub]
+
+/-- Rotation commutes with the integer-hive embedding. -/
+@[simp] theorem ofInt_rotate {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    (h : IntegerHive n) : ofInt R h.rotate = (ofInt R h).rotate := by ext p; simp
+
+@[simp] theorem rotate_zero [IsOrderedAddMonoid R] : (0 : Hive n R).rotate = 0 := by
+  ext p; simp
+
+@[simp] theorem rotate_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
+    (h₁ + h₂).rotate = h₁.rotate + h₂.rotate := by
+  ext p; simp only [rotate_apply, add_apply]; abel
+
+@[simp] theorem rotate_nsmul [IsOrderedAddMonoid R] (k : ℕ) (h : Hive n R) :
+    (k • h).rotate = k • h.rotate := by ext p; simp [smul_sub]
+
+@[simp] theorem rotate_smul_nonneg [IsOrderedAddMonoid R]
+    {S : Type*} [Semiring S] [PartialOrder S] [Module S R] [PosSMulMono S R]
+    (c : Nonneg S) (h : Hive n R) : (c • h).rotate = c • h.rotate := by
+  ext p; simp [smul_sub]
+
+@[simp] theorem rotate_affine [IsOrderedAddMonoid R] (β γ : R) :
+    (affine n β γ).rotate = affine n (γ - β) (-β) := by
+  ext p
+  simp only [rotate_apply, affine_apply, Vertex.rotate_y, Vertex.rotate_z,
+    Vertex.cornerA_x, Vertex.cornerA_y, zero_nsmul, add_zero, nsmul_sub, smul_neg]
+  have hn : n • β = p.x • β + p.y • β + p.z • β := by
+    rw [← add_nsmul, ← add_nsmul, p.sum_eq]
+  rw [hn]; abel
+
+@[simp] theorem rhombusSlack_reflect (h : Hive n R) (a b c d : Vertex n) :
+    rhombusSlack h.reflect a b c d = rhombusSlack h a.reflect b.reflect c.reflect d.reflect := by
+  simp only [rhombusSlack_def, reflect_apply]
+
+@[simp] theorem rhombusSlack_rotate [IsOrderedAddMonoid R] (h : Hive n R)
+    (a b c d : Vertex n) :
+    rhombusSlack h.rotate a b c d = rhombusSlack h a.rotate b.rotate c.rotate d.rotate := by
+  simp only [rhombusSlack_def, rotate_apply]; abel
+
+/-- Two clockwise rotations evaluate `h` at `p.rotate.rotate`, re-normalized by subtracting the
+value at `C = (0, 0, n) = (cornerA n).rotate.rotate`. -/
+theorem rotate_rotate_apply [IsOrderedAddMonoid R] (h : Hive n R) (p : Vertex n) :
+    h.rotate.rotate p = h p.rotate.rotate - h (Vertex.cornerA n).rotate.rotate := by
+  simp only [rotate_apply]; abel
+
+/-- In the product chart, `h.rotate.rotate` evaluates `h` at `⟨j - i, i, n - j, _⟩` shifted by the
+constant gauge offset `∑ r : Fin n, h.boundary 2 r`. -/
+theorem rotate_rotate_apply_ofChart [IsOrderedAddMonoid R] (h : Hive n R) {i j : ℕ}
+    (hij : i ≤ j) (hj : j ≤ n) :
+    h.rotate.rotate (Vertex.ofChart n i j hij hj) =
+      h ⟨j - i, i, n - j, by omega⟩ + ∑ r : Fin n, h.boundary 2 r := by
+  have hC : (Vertex.cornerA n).rotate.rotate = Vertex.edgePoint n 2 0 := by ext <;> simp
+  have hall : ({r : Fin n | 0 ≤ r.val} : Finset (Fin n)) = Finset.univ := by ext r; simp
+  rw [h.rotate_rotate_apply, Vertex.rotate_rotate_ofChart, hC, h.apply_edgePoint_two 0,
+    Fin.val_zero, hall, sub_neg_eq_add]
 
 @[simp] theorem rotate_rotate_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
     h.rotate.rotate.rotate = h := by
@@ -721,37 +1323,25 @@ theorem rotate_injective [IsOrderedAddMonoid R] :
 
 /-- Rotating a hive cyclically shifts its boundary sides: `h.rotate.boundary s = h.boundary (s+1)`.
 -/
-@[simp] theorem boundary_rotate [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
-    h.rotate.boundary s = h.boundary (s + 1) := by
-  ext i; simp only [boundary_apply, rotate_apply, Vertex.rotate_edgePoint]; abel
+@[simp] theorem boundary_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
+    h.rotate.boundary = fun s => h.boundary (s + 1) := by
+  simp only [rotate, boundary_ofRhombusConcave, boundaryLinear_rotate, boundaryLinear_coe]
 
 @[simp] theorem boundaryWeight_rotate (h : IntegerHive n) (s : Fin 3) :
     h.rotate.boundaryWeight s = h.boundaryWeight (s + 1) := by ext i; simp [coe_boundaryWeight]
 
-/-- Reflection of a normalized hive across `A`: pull back along `Vertex.reflect`. -/
-def reflect (h : Hive n R) : Hive n R :=
-  ⟨fun p => h p.reflect, by simp, fun hr => h.le_of_isRhombus hr.reflect⟩
-
-@[simp] theorem reflect_apply (h : Hive n R) (p : Vertex n) : h.reflect p = h p.reflect := (rfl)
-@[simp] theorem reflect_reflect (h : Hive n R) : h.reflect.reflect = h := by ext p; simp
-
-theorem reflect_involutive : Function.Involutive (reflect (n := n) (R := R)) := reflect_reflect
-theorem reflect_injective : Function.Injective (reflect (n := n) (R := R)) :=
-  reflect_involutive.injective
-
-@[simp] theorem reflect_rotate_reflect_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
-    h.reflect.rotate.reflect.rotate = h := by
+/-- Reflection conjugates clockwise rotation to counterclockwise rotation. -/
+@[simp] theorem reflect_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
+    h.rotate.reflect = h.reflect.rotate.rotate := by
   ext p
-  have hp : p.rotate.reflect.rotate.reflect = p := by ext <;> simp
-  have hA : (Vertex.cornerA n).rotate.reflect.rotate.reflect = Vertex.cornerA n := by ext <;> simp
-  simp only [rotate_apply, reflect_apply, hp, hA, apply_cornerA]; abel
+  simp only [reflect_apply, rotate_apply, Vertex.reflect_rotate, Vertex.rotate_rotate_rotate,
+    Vertex.reflect_cornerA]; abel
 
 /-- Reflecting a hive reverses the side order (`0 ↔ 2`, fixing `1`) and dualizes each side weight.
 -/
-@[simp] theorem boundary_reflect (h : Hive n R) (s : Fin 3) (i : Fin n) :
-    h.reflect.boundary s i = -h.boundary s.rev i.rev := by
-  simp only [boundary_apply, reflect_apply, Vertex.reflect_edgePoint, ← Fin.rev_castSucc,
-    ← Fin.rev_succ]; abel
+@[simp] theorem boundary_reflect (h : Hive n R) :
+    h.reflect.boundary = fun s i => -h.boundary s.rev i.rev := by
+  rw [boundary_def, coe_reflect, boundaryLinear_reflect, boundaryLinear_coe]
 
 @[simp] theorem boundaryWeight_reflect (h : IntegerHive n) (s : Fin 3) :
     h.reflect.boundaryWeight s = (h.boundaryWeight s.rev).dual := by
@@ -767,9 +1357,9 @@ end Symmetries
 
 /-! ### Small-rank structure and chirality checks -/
 
-section SmallRank
+section SmallRankMonoid
 
-variable {R : Type*} [AddCommGroup R] [PartialOrder R]
+variable {R : Type*} [AddCommMonoid R] [Preorder R]
 
 /-- At size `0`, the unique normalized hive is `0` with empty boundary. -/
 instance uniqueZero : Unique (Hive 0 R) where
@@ -797,6 +1387,12 @@ def equivOne : Hive 1 R ≃ (R × R) where
 
 @[simp] theorem equivOne_symm_apply (bc : R × R) (p : Vertex 1) :
     equivOne.symm bc p = if p.y = 1 then bc.1 else if p.z = 1 then bc.2 else 0 := (rfl)
+
+end SmallRankMonoid
+
+section SmallRank
+
+variable {R : Type*} [AddCommGroup R] [Preorder R]
 
 @[simp] theorem boundary_equivOne_symm (b c : R) :
     (equivOne.symm (b, c)).boundary = ![fun _ => b, fun _ => c - b, fun _ => -c] := by

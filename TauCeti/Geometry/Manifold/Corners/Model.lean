@@ -90,43 +90,43 @@ theorem euclideanQuadrantFaceParam_faceProj {i : Fin (m + 1)}
 
 /-- On the quadrant, `TauCeti.euclideanQuadrantFaceParam i` takes values in the quadrant. -/
 theorem euclideanQuadrantFaceParam_nonneg (i : Fin (m + 1)) (q : EuclideanQuadrant m)
-    (j : Fin (m + 1)) : 0 ≤ euclideanQuadrantFaceParam i q.1 j := by
+    (j : Fin (m + 1)) : 0 ≤ euclideanQuadrantFaceParam i q.val j := by
   refine Fin.succAboveCases i ?_ (fun k ↦ ?_) j
   · simp
-  · simpa using q.2 k
+  · simpa using q.property k
 
 /-- The inclusion of the quadrant of dimension `m` onto the face `z i = 0` of the quadrant of
 dimension `m + 1`: reinsert a zero coordinate in slot `i`. -/
 def euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
     EuclideanQuadrant (m + 1) :=
-  ⟨euclideanQuadrantFaceParam i q.1, euclideanQuadrantFaceParam_nonneg i q⟩
+  ⟨euclideanQuadrantFaceParam i q.val, euclideanQuadrantFaceParam_nonneg i q⟩
 
 @[simp]
 theorem coe_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
-    (euclideanQuadrantFaceInclusion i q).1 = euclideanQuadrantFaceParam i q.1 :=
+    (euclideanQuadrantFaceInclusion i q).val = euclideanQuadrantFaceParam i q.val :=
   (rfl)
 
 @[fun_prop]
 theorem continuous_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceInclusion (m := m) i) :=
-  ((euclideanQuadrantFaceParam i).continuous.comp continuous_subtype_val).subtype_mk _
+  ((euclideanQuadrantFaceParam i).continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- The retraction of the quadrant of dimension `m + 1` onto its face `z i = 0`, read in the
 quadrant of dimension `m`: delete the coordinate `i`. On the face it inverts
 `TauCeti.euclideanQuadrantFaceInclusion i`. -/
 def euclideanQuadrantFaceRetract (i : Fin (m + 1)) (z : EuclideanQuadrant (m + 1)) :
     EuclideanQuadrant m :=
-  ⟨euclideanQuadrantFaceProj i z.1, fun k ↦ by simpa using z.2 (i.succAbove k)⟩
+  ⟨euclideanQuadrantFaceProj i z.val, fun k ↦ by simpa using z.property (i.succAbove k)⟩
 
 @[simp]
 theorem coe_euclideanQuadrantFaceRetract (i : Fin (m + 1)) (z : EuclideanQuadrant (m + 1)) :
-    (euclideanQuadrantFaceRetract i z).1 = euclideanQuadrantFaceProj i z.1 :=
+    (euclideanQuadrantFaceRetract i z).val = euclideanQuadrantFaceProj i z.val :=
   (rfl)
 
 @[fun_prop]
 theorem continuous_euclideanQuadrantFaceRetract (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceRetract (m := m) i) :=
-  ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtype_val).subtype_mk _
+  ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem euclideanQuadrantFaceRetract_faceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
@@ -135,7 +135,7 @@ theorem euclideanQuadrantFaceRetract_faceInclusion (i : Fin (m + 1)) (q : Euclid
 
 @[simp]
 theorem euclideanQuadrantFaceInclusion_faceRetract {i : Fin (m + 1)}
-    {z : EuclideanQuadrant (m + 1)} (hz : z.1 i = 0) :
+    {z : EuclideanQuadrant (m + 1)} (hz : z.val i = 0) :
     euclideanQuadrantFaceInclusion i (euclideanQuadrantFaceRetract i z) = z :=
   Subtype.ext <| by simp [hz]
 
@@ -149,7 +149,7 @@ theorem modelWithCornersEuclideanQuadrant_euclideanQuadrantFaceRetract (i : Fin 
 @[simp]
 theorem modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam (i : Fin (m + 1))
     (q : EuclideanQuadrant m) :
-    (𝓡c (m + 1)).symm (euclideanQuadrantFaceParam i q.1) =
+    (𝓡c (m + 1)).symm (euclideanQuadrantFaceParam i q.val) =
       euclideanQuadrantFaceInclusion i q := by
   rw [← coe_euclideanQuadrantFaceInclusion, ← modelWithCornersEuclideanQuadrant_apply,
     ModelWithCorners.left_inv]
@@ -170,5 +170,13 @@ theorem nonneg_of_mem_range_modelWithCornersEuclideanQuadrant (i : Fin m) :
     ∀ z ∈ range (𝓡c m), 0 ≤ z i := by
   rw [range_modelWithCornersEuclideanQuadrant]
   exact fun _ hz ↦ hz i
+
+/-- The quadrant model sends a point to the frontier of its range exactly when the point has a
+vanishing coordinate. -/
+theorem modelWithCornersEuclideanQuadrant_mem_frontier_range_iff (z : EuclideanQuadrant m) :
+    (𝓡c m) z ∈ frontier (range (𝓡c m)) ↔ ∃ i, z.val i = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
+  simp only [mem_ofPred_eq, eq_comm (a := (0 : ℝ))]
+  exact and_iff_right z.property
 
 end TauCeti

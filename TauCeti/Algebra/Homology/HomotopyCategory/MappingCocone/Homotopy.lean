@@ -66,7 +66,7 @@ lemma mapOfHomotopy_fst (H : Homotopy (f₁ ≫ v) (u ≫ f₂)) :
     (fst f₁).f p ≫ u.f p
   rw [fst_f, fst_f, shiftFunctor_map_f']
   change (mappingCone.mapOfHomotopy H).f (p + -1) ≫
-      (mappingCone.fst f₂).1.v (p + -1) p (by omega) = _
+      (mappingCone.fst f₂).val.v (p + -1) p (by omega) = _
   exact mappingCone.mapOfHomotopy_f_fst_v H _ _ (by omega)
 
 /-- The second projection of the fibre map retains the square homotopy. -/

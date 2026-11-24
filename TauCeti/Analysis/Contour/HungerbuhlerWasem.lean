@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.ConditionDischarge
 import TauCeti.Analysis.Contour.InvSubCPVExistence
 import TauCeti.Analysis.Contour.Residue.Assembly
@@ -113,11 +114,11 @@ theorem PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_
           + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ c d s * residue f s) := by
     intro c d hcd h_imm hcl hc hcU hA' hB'
     have h_interior : ∀ s : S, ∀ t ∈ Icc c d, γ t = (s : ℂ) → t ∈ Ioo c d := fun s =>
-      mem_Ioo_of_closed_of_ne hcl fun h => hc (h ▸ Finset.mem_coe.mpr s.2)
+      mem_Ioo_of_closed_of_ne hcl fun h => hc (h ▸ Finset.mem_coe.mpr s.property)
     exact decomp.hasCauchyPV_analyticRemainder_add_residue_sum h_imm hcd hcl hcU h_interior
-      (fun s k hk1 _ => hA'.flatOfOrder_of_crossing _ s s.2 h_imm hcd (h_interior s)
+      (fun s k hk1 _ => hA'.flatOfOrder_of_crossing _ s s.property h_imm hcd (h_interior s)
         (h_ord s) k hk1)
-      (fun s => hB'.pow_unit_tangent_eq_of_coeff_ne_zero _ hU hSU s (hmero ↑s s.2) h_imm
+      (fun s => hB'.pow_unit_tangent_eq_of_coeff_ne_zero _ hU hSU s (hmero ↑s s.property) h_imm
         (h_interior s) (h_ord s))
   rcases le_total a b with hab | hba
   · exact core a b hab hγ_imm hclosed hγa hγU hA hB
@@ -175,8 +176,8 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
       ∑ s ∈ S, windingNumber γ a b s * residue f s :=
     Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero
-    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
-    hnull, zero_add, hsum] at h
+    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU
+    hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval hγU hclosed hnull, zero_add, hsum] at h
 
 /-- **Half-residue: the winding-`½` on-cycle case of HW Thm 3.3** — the `S = {s}`
 specialisation: when the generalized winding number of the closed, null-homologous immersion

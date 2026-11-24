@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TotallyDisconnected
 
 /-!

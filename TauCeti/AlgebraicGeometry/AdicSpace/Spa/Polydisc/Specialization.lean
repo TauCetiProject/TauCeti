@@ -83,9 +83,10 @@ omit [IsUltrametricDist K] in
 /-- `TauCeti.ValuationSpectrum.vlt_of_specializes` for points of the closed unit disc, stated with
 valuations: if `x ⤳ z` and `x(g) < x(f)`, then `z(g) < z(f)` unless `z(f) = z(g) = 0`. -/
 private theorem valuation_lt_of_specializes {x z : closedPolydisc 1 K} (h : x ⤳ z) {f g : 𝒯}
-    (hx : x.1.valuation g < x.1.valuation f)
-    (hz : z.1.valuation g ≠ 0 ∨ z.1.valuation f ≠ 0) : z.1.valuation g < z.1.valuation f := by
-  have hne {u : 𝒯} (hu : z.1.valuation u ≠ 0) : ¬ z.1.toValuativeRel.vle u 0 :=
+    (hx : x.val.valuation g < x.val.valuation f)
+    (hz : z.val.valuation g ≠ 0 ∨ z.val.valuation f ≠ 0) : z.val.valuation g < z.val.valuation f
+        := by
+  have hne {u : 𝒯} (hu : z.val.valuation u ≠ 0) : ¬ z.val.toValuativeRel.vle u 0 :=
     fun h0 ↦ hu (by simpa using (valuation_le_iff _ _ _).mpr h0)
   rw [valuation_lt_iff] at hx ⊢
   exact vlt_of_specializes ((subtype_specializes_iff x z).mp h) hx (hz.imp hne hne)
@@ -96,12 +97,12 @@ strictly below the constants with `Q c`, then so does `z(T - a)` at every specia
 `x`. -/
 private theorem forall_lt_and_forall_gt_of_specializes {x z : closedPolydisc 1 K} (h : x ⤳ z)
     {a : K} (P Q : K → Prop) (hP : ∃ d ≠ 0, P d)
-    (hx : (∀ c : K, P c → x.1.valuation (C c) < x.1.valuation (T - C a)) ∧
-      ∀ c : K, Q c → x.1.valuation (T - C a) < x.1.valuation (C c)) :
-    (∀ c : K, P c → z.1.valuation (C c) < z.1.valuation (T - C a)) ∧
-      ∀ c : K, Q c → z.1.valuation (T - C a) < z.1.valuation (C c) := by
+    (hx : (∀ c : K, P c → x.val.valuation (C c) < x.val.valuation (T - C a)) ∧
+      ∀ c : K, Q c → x.val.valuation (T - C a) < x.val.valuation (C c)) :
+    (∀ c : K, P c → z.val.valuation (C c) < z.val.valuation (T - C a)) ∧
+      ∀ c : K, Q c → z.val.valuation (T - C a) < z.val.valuation (C c) := by
   obtain ⟨d, hd, hPd⟩ := hP
-  have hz₀ : z.1.valuation (T - C a) ≠ 0 :=
+  have hz₀ : z.val.valuation (T - C a) ≠ 0 :=
     (zero_le.trans_lt (valuation_lt_of_specializes h (hx.1 d hPd)
       (Or.inl ((closedPolydisc_valuation_weightedC_eq_zero_iff z d).not.mpr hd)))).ne'
   exact ⟨fun c hc ↦ valuation_lt_of_specializes h (hx.1 c hc) (Or.inr hz₀),
@@ -115,8 +116,8 @@ variable [CompleteSpace K] [IsAlgClosed K]
 norm less than `r` and strictly below the constants of norm greater than `r`. -/
 private theorem forall_lt_and_forall_gt_of_discPoint_specializes {a : K} (ha : ‖a‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) {z : closedPolydisc 1 K} (h : discPoint a ha hr₀ hr₁ ⤳ z) :
-    (∀ c : K, ‖c‖ < r → z.1.valuation (C c) < z.1.valuation (T - C a)) ∧
-      ∀ c : K, r < ‖c‖ → z.1.valuation (T - C a) < z.1.valuation (C c) := by
+    (∀ c : K, ‖c‖ < r → z.val.valuation (C c) < z.val.valuation (T - C a)) ∧
+      ∀ c : K, r < ‖c‖ → z.val.valuation (T - C a) < z.val.valuation (C c) := by
   obtain ⟨-, hle, hge⟩ := (eq_discPoint_iff (discPoint a ha hr₀ hr₁) ha hr₀ hr₁).mp rfl
   obtain ⟨d, hd₀, hdr⟩ := NormedField.exists_lt_norm_lt_of_isAlgClosed K le_rfl hr₀
   refine forall_lt_and_forall_gt_of_specializes h _ _ ⟨d, norm_pos_iff.mp hd₀, hdr⟩
@@ -130,17 +131,18 @@ private theorem forall_lt_and_forall_gt_of_discPoint_specializes {a : K} (ha : �
 Then `r < 1`, since `z(T - a) ≤ 1`. -/
 private theorem exists_eq_discPointAbove_of_discPoint_specializes {a : K} (ha : ‖a‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) {z : closedPolydisc 1 K} (h : discPoint a ha hr₀ hr₁ ⤳ z)
-    {c₀ : K} (hc₀ : ‖c₀‖ = r) (hlt₀ : z.1.valuation (C c₀) < z.1.valuation (T - C a)) :
+    {c₀ : K} (hc₀ : ‖c₀‖ = r) (hlt₀ : z.val.valuation (C c₀) < z.val.valuation (T - C a)) :
     ∃ hr : r < 1, z = discPointAbove a ha hr₀ hr := by
   have hr : r < 1 := by
     refine hr₁.lt_of_ne fun hr1 ↦ ?_
     -- at radius one, `z(T - a) ≤ max (z(T), z(a)) ≤ 1 = z(c₀)`
-    have hT : z.1.valuation T ≤ 1 := by
-      simpa using (valuation_le_iff _ _ _).mpr (((mem_closedPolydisc_iff 1 K z.1).mp z.2).2 _
+    have hT : z.val.valuation T ≤ 1 := by
+      simpa using (valuation_le_iff _ _ _).mpr (((mem_closedPolydisc_iff 1 K z.val).mp z.property).2
+          _
         (mem_powerBoundedSubring.mpr (isPowerBounded_weightedX_one_weight 0)))
-    have hCa : z.1.valuation (C a) ≤ 1 := by
+    have hCa : z.val.valuation (C a) ≤ 1 := by
       simpa using (closedPolydisc_valuation_weightedC_le_iff z a 1).mpr (by simpa using ha)
-    have hc₀1 : z.1.valuation (C c₀) = 1 :=
+    have hc₀1 : z.val.valuation (C c₀) = 1 :=
       (closedPolydisc_valuation_weightedC_eq_of_norm_eq z (by rw [hc₀, hr1, norm_one] :
         ‖c₀‖ = ‖(1 : K)‖)).trans (by simp)
     exact (hlt₀.trans_le ((Valuation.map_sub _ _ _).trans (max_le hT hCa))).ne hc₀1
@@ -157,7 +159,7 @@ private theorem exists_eq_discPointAbove_of_discPoint_specializes {a : K} (ha : 
 `η_{a,r⁻}`. -/
 private theorem eq_discPointBelow_of_discPoint_specializes {a : K} (ha : ‖a‖ ≤ 1)
     (hr₀ : 0 < r) (hr₁ : r ≤ 1) {z : closedPolydisc 1 K} (h : discPoint a ha hr₀ hr₁ ⤳ z)
-    {c₀ : K} (hc₀ : ‖c₀‖ = r) (hgt₀ : z.1.valuation (T - C a) < z.1.valuation (C c₀)) :
+    {c₀ : K} (hc₀ : ‖c₀‖ = r) (hgt₀ : z.val.valuation (T - C a) < z.val.valuation (C c₀)) :
     z = discPointBelow a ha hr₀ hr₁ := by
   obtain ⟨hlt, -⟩ := forall_lt_and_forall_gt_of_discPoint_specializes ha hr₀ hr₁ h
   refine (eq_discPointBelow_iff z ha hr₀ hr₁).mpr fun c ↦ ?_
@@ -172,23 +174,23 @@ private theorem eq_discPointBelow_of_discPoint_specializes {a : K} (ha : ‖a‖
 `r` is `η_{a,r}`, or is `η_{b,r⁻}` for some `b` with `‖b - a‖ = r`. -/
 private theorem eq_discPoint_or_of_discPoint_specializes {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     (hr₁ : r ≤ 1) {z : closedPolydisc 1 K} (h : discPoint a ha hr₀ hr₁ ⤳ z)
-    (hA : ∀ c : K, ‖c‖ = r → z.1.valuation (T - C a) ≤ z.1.valuation (C c))
-    (hB : ∀ c : K, ‖c‖ = r → z.1.valuation (C c) ≤ z.1.valuation (T - C a)) :
+    (hA : ∀ c : K, ‖c‖ = r → z.val.valuation (T - C a) ≤ z.val.valuation (C c))
+    (hB : ∀ c : K, ‖c‖ = r → z.val.valuation (C c) ≤ z.val.valuation (T - C a)) :
     z = discPoint a ha hr₀ hr₁ ∨
       ∃ (b : K) (hb : ‖b‖ ≤ 1), ‖b - a‖ = r ∧ z = discPointBelow b hb hr₀ hr₁ := by
   obtain ⟨hlt, hgt⟩ := forall_lt_and_forall_gt_of_discPoint_specializes ha hr₀ hr₁ h
   -- `z(T - a)` compares with the constants as `r` compares with their norms
-  have hle (c : K) : z.1.valuation (T - C a) ≤ z.1.valuation (C c) ↔ r ≤ ‖c‖ := by
+  have hle (c : K) : z.val.valuation (T - C a) ≤ z.val.valuation (C c) ↔ r ≤ ‖c‖ := by
     refine ⟨fun hle ↦ le_of_not_gt fun hc ↦ (hlt c hc).not_ge hle, fun hc ↦ ?_⟩
     rcases hc.lt_or_eq with hc | hc
     · exact (hgt c hc).le
     · exact hA c hc.symm
-  have hge (c : K) : z.1.valuation (C c) ≤ z.1.valuation (T - C a) ↔ ‖c‖ ≤ r := by
+  have hge (c : K) : z.val.valuation (C c) ≤ z.val.valuation (T - C a) ↔ ‖c‖ ≤ r := by
     refine ⟨fun hge ↦ le_of_not_gt fun hc ↦ (hgt c hc).not_ge hge, fun hc ↦ ?_⟩
     rcases hc.lt_or_eq with hc | hc
     · exact (hlt c hc).le
     · exact hB c hc
-  by_cases hmin : ∀ b : K, ‖b - a‖ ≤ r → z.1.valuation (T - C a) ≤ z.1.valuation (T - C b)
+  by_cases hmin : ∀ b : K, ‖b - a‖ ≤ r → z.val.valuation (T - C a) ≤ z.val.valuation (T - C b)
   · refine Or.inl ((eq_discPoint_iff z ha hr₀ hr₁).mpr
       ⟨fun b hb ↦ (valuation_le_iff _ _ _).mp (hmin b hb), fun c ↦ ?_, fun c ↦ ?_⟩)
     · rw [← valuation_le_iff]
@@ -229,11 +231,11 @@ theorem discPoint_specializes_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (
       ((∃ hr : r < 1, z = discPointAbove a ha hr₀ hr) ∨
         ∃ (b : K) (hb : ‖b‖ ≤ 1), ‖b - a‖ ≤ r ∧ z = discPointBelow b hb hr₀ hr₁) := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · by_cases hA : ∃ c₀ : K, ‖c₀‖ = r ∧ z.1.valuation (C c₀) < z.1.valuation (T - C a)
+  · by_cases hA : ∃ c₀ : K, ‖c₀‖ = r ∧ z.val.valuation (C c₀) < z.val.valuation (T - C a)
     · obtain ⟨c₀, hc₀, hlt₀⟩ := hA
       exact Or.inr ⟨⟨c₀, hc₀⟩, Or.inl
         (exists_eq_discPointAbove_of_discPoint_specializes ha hr₀ hr₁ h hc₀ hlt₀)⟩
-    by_cases hB : ∃ c₀ : K, ‖c₀‖ = r ∧ z.1.valuation (T - C a) < z.1.valuation (C c₀)
+    by_cases hB : ∃ c₀ : K, ‖c₀‖ = r ∧ z.val.valuation (T - C a) < z.val.valuation (C c₀)
     · obtain ⟨c₀, hc₀, hgt₀⟩ := hB
       exact Or.inr ⟨⟨c₀, hc₀⟩, Or.inr ⟨a, ha, by simpa using hr₀.le,
         eq_discPointBelow_of_discPoint_specializes ha hr₀ hr₁ h hc₀ hgt₀⟩⟩

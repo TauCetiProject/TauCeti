@@ -64,22 +64,22 @@ variable (A : Type*) [AddCommGroup A] [Finite A]
 omit [Finite A] in
 private theorem primaryComponents_pairwise_addCommute :
     Pairwise fun p q : (Nat.card A).primeFactors ↦
-      ∀ x y : A, x ∈ AddCommGroup.primaryComponent A p.1 →
-        y ∈ AddCommGroup.primaryComponent A q.1 → AddCommute x y :=
+      ∀ x y : A, x ∈ AddCommGroup.primaryComponent A p.val →
+        y ∈ AddCommGroup.primaryComponent A q.val → AddCommute x y :=
   fun _ _ _ x y _ _ ↦ AddCommute.all x y
 
 private noncomputable def primaryDecompositionHom :
-    (∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.1) →+ A :=
+    (∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val) →+ A :=
   AddSubgroup.noncommPiCoprod (primaryComponents_pairwise_addCommute A)
 
 /-- A finite abelian group is canonically the direct product of its prime-primary components. -/
 noncomputable def primaryDecomposition :
-    (∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.1) ≃+ A :=
+    (∀ p : (Nat.card A).primeFactors, AddCommGroup.primaryComponent A p.val) ≃+ A :=
   AddEquiv.ofBijective (primaryDecompositionHom A) (by
     classical
     let _ := Fintype.ofFinite A
     let _ : ∀ p : (Nat.card A).primeFactors,
-        Fintype (AddCommGroup.primaryComponent A p.1) := fun _ ↦ Fintype.ofFinite _
+        Fintype (AddCommGroup.primaryComponent A p.val) := fun _ ↦ Fintype.ofFinite _
     apply (Fintype.bijective_iff_injective_and_card _).mpr
     constructor
     · rw [primaryDecompositionHom]
@@ -94,13 +94,13 @@ noncomputable def primaryDecomposition :
     · simp only [← Nat.card_eq_fintype_card]
       calc
         Nat.card (∀ p : (Nat.card A).primeFactors,
-            AddCommGroup.primaryComponent A p.1) =
+            AddCommGroup.primaryComponent A p.val) =
             ∏ p : (Nat.card A).primeFactors,
-              Nat.card (AddCommGroup.primaryComponent A p.1) := Nat.card_pi
+              Nat.card (AddCommGroup.primaryComponent A p.val) := Nat.card_pi
         _ = ∏ p : (Nat.card A).primeFactors,
-            p.1 ^ (Nat.card A).factorization p.1 := by
+            p.val ^ (Nat.card A).factorization p.val := by
           congr 1 with p
-          exact natCard_primaryComponent A (Nat.prime_of_mem_primeFactors p.2)
+          exact natCard_primaryComponent A (Nat.prime_of_mem_primeFactors p.property)
         _ = ∏ p ∈ (Nat.card A).primeFactors,
             p ^ (Nat.card A).factorization p :=
           Finset.prod_finset_coe (fun p ↦ p ^ (Nat.card A).factorization p) _

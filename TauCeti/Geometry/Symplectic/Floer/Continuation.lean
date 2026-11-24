@@ -81,6 +81,8 @@ existence, compactness and counting of continuation cylinders are not treated he
 
 * `TauCeti.Floer.linearHomotopy_of_eq_zero`, `TauCeti.Floer.linearHomotopy_of_eq_one`: the
   linear homotopy is `H₀` where `β = 0` and `H₁` where `β = 1`.
+* `TauCeti.Floer.continuationHomotopy_self`: the continuation homotopy from `H` to itself is the
+  cylindrical perturbation `H_t dt`.
 * `TauCeti.Floer.continuationHomotopy_eq_left_of_nonpos`,
   `TauCeti.Floer.continuationHomotopy_eq_right_of_one_le`: the continuation homotopy is `H₀` for
   `s ≤ 0` and `H₁` for `s ≥ 1`.
@@ -102,6 +104,8 @@ existence, compactness and counting of continuation cylinders are not treated he
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_add_of_continuationHomotopy`,
   `SymplecticForm.le_add_integral_of_tendsto_hamiltonianAction_continuationHomotopy`: the action
   shift of a continuation cylinder, over a rectangle and between the limiting actions.
+* `SymplecticForm.setLIntegral_univ_prod_Icc_floerEnergyDensity_continuationHomotopy_le`: for a
+  cylinder of period one in `t`, the energy bound over every strip `ℝ × [c, c + 1]`.
 
 ## References
 
@@ -200,6 +204,14 @@ theorem continuationHomotopy_eq_linearHomotopy :
 theorem continuationHomotopy_def (z : ℝ × ℝ) (x : V) :
     continuationHomotopy H₀ H₁ z x = H₀ z.2 x + smoothTransition z.1 * (H₁ z.2 x - H₀ z.2 x) :=
   (rfl)
+
+/-- The continuation homotopy from a Hamiltonian to itself is that Hamiltonian at every `s`: its
+perturbation `H_{(s, t)} dt` is the cylindrical perturbation `H_t dt` of Floer cylinders. -/
+@[simp]
+theorem continuationHomotopy_self (H : ℝ → V → ℝ) :
+    continuationHomotopy H H = fun z ↦ H z.2 := by
+  ext z x
+  simp [continuationHomotopy_def]
 
 /-- The continuation homotopy is `H₀` for `s ≤ 0`. -/
 @[simp]
@@ -495,6 +507,48 @@ theorem le_add_integral_of_tendsto_hamiltonianAction_continuationHomotopy (ω : 
   exact ω.hamiltonianAction_le_hamiltonianAction_add_of_continuationHomotopy
     (fun z hz ↦ hJ z (hRsub n hz)) hH₀ hH₁ hU hu (neg_nonpos.2 (zero_le_one.trans hn')) hn'
     ((hRsub n).trans hRU) (fun s _ ↦ hper s) (fun z hz ↦ hfloer z (hRsub n hz)) hh hhi
+
+/-- **The energy bound of a continuation cylinder over every strip of height one.** Let `H₀` and
+`H₁` be `C¹` Hamiltonians of period one in time with `H₀ - H₁ ≤ h` on `[0, 1]`, uniformly on the
+target, and let `u` be a `C²` map of period one in `t` solving the Floer equation
+`∂_s u + J_z (∂_t u - X_{H_z}(u)) = 0` for the continuation homotopy, with almost complex
+structures `J_z` tamed by `ω`. If `A_{H₀}(u(s, ·))` tends to `A₁` as `s → -∞` and
+`A_{H₁}(u(s, ·))` tends to `A₂` as `s → ∞`, then for every real `c` the energy of `u` over the
+strip `ℝ × [c, c + 1]` is at most `A₂ - A₁ + ∫₀¹ h`. -/
+theorem setLIntegral_univ_prod_Icc_floerEnergyDensity_continuationHomotopy_le
+    (ω : SymplecticForm V) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z)) (hH₀ : ContDiff ℝ 1 (uncurry H₀))
+    (hH₁ : ContDiff ℝ 1 (uncurry H₁)) (hH₀p : Periodic H₀ 1) (hH₁p : Periodic H₁ 1)
+    (hu : ContDiff ℝ 2 u) (hper : ∀ s t, u (s, t + 1) = u (s, t))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
+      J z (fderiv ℝ u z stdComplexLineImag -
+        ω.hamiltonianVectorField (continuationHomotopy H₀ H₁ z) (u z)) = 0)
+    {h : ℝ → ℝ} (hh : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, H₀ t x - H₁ t x ≤ h t)
+    (hhi : IntegrableOn h (Icc 0 1)) {A₁ A₂ : ℝ}
+    (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H₀ (fun t ↦ u (s, t))) atBot (𝓝 A₁))
+    (htop : Tendsto (fun s ↦ ω.hamiltonianAction H₁ (fun t ↦ u (s, t))) atTop (𝓝 A₂)) (c : ℝ) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ Icc c (c + 1),
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (continuationHomotopy H₀ H₁) u z) ≤
+      ENNReal.ofReal (A₂ - A₁ + ∫ t in Icc 0 1, h t) := by
+  -- The continuation homotopy, like `u`, has period one in `t`, hence so does the energy density.
+  have hKper (s t : ℝ) :
+      continuationHomotopy H₀ H₁ (s, t + 1) = continuationHomotopy H₀ H₁ (s, t) :=
+    funext fun x ↦ by simp [continuationHomotopy_def, hH₀p t, hH₁p t]
+  have hcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0)
+    (Kt := continuationHomotopy H₀ H₁) isOpen_univ (hu.of_le one_le_two).contDiffOn
+    contDiffOn_const (contDiff_uncurry_continuationHomotopy hH₀ hH₁).contDiffOn
+  rw [setLIntegral_univ_prod_Icc_add_one_eq_of_periodic
+    (g := fun z ↦ ENNReal.ofReal
+      (ω.floerEnergyDensity (fun _ _ ↦ 0) (continuationHomotopy H₀ H₁) u z))
+    (ENNReal.measurable_ofReal.comp (continuousOn_univ.1 hcont).measurable)
+    (fun s t ↦ by
+      have h := ω.periodic_floerEnergyDensity (Ks := fun _ _ ↦ 0) (v := ((0 : ℝ), (1 : ℝ)))
+        (fun _ ↦ rfl) (fun z ↦ by rw [Prod.add_def, add_zero]; exact hKper z.1 z.2)
+        (fun z ↦ by rw [Prod.add_def, add_zero]; exact hper z.1 z.2) (s, t)
+      rw [Prod.mk_add_mk, add_zero] at h
+      rw [h]) c]
+  exact ω.lintegral_floerEnergyDensity_continuationHomotopy_le hJ hH₀ hH₁ isOpen_univ
+    hu.contDiffOn (subset_univ _) (fun s ↦ by simpa using hper s 0) hfloer hh hhi hbot htop
 
 end ContinuationHomotopy
 

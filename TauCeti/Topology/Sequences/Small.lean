@@ -33,7 +33,7 @@ namespace Set
 theorem small_closure {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [T2Space X]
     (s : Set X) [Small.{w} s] : Small.{w} (closure s) := by
   let lim : {u : ℕ → s // ∃ x, Tendsto (fun n => (u n : X)) atTop (𝓝 x)} → X :=
-    fun u => have : Nonempty X := ⟨u.1 0⟩; limUnder atTop fun n => (u.1 n : X)
+    fun u => have : Nonempty X := ⟨u.val 0⟩; limUnder atTop fun n => (u.val n : X)
   refine small_subset (s := Set.range lim) fun x hx => ?_
   obtain ⟨u, hu, hux⟩ := mem_closure_iff_seq_limit.1 hx
   exact ⟨⟨fun n => ⟨u n, hu n⟩, x, hux⟩, hux.limUnder_eq⟩

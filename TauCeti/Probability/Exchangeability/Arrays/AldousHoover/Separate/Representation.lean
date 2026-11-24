@@ -126,9 +126,9 @@ private theorem exists_map_cellCoding_visibleArray_eq [StandardBorelSpace α] [N
   have hread : Measurable fun (z : (H → α) × (V → α)) (p : ℕ × ℕ) => z.2 (k p) :=
     Measurable.of_eval fun p => (measurable_pi_apply _).comp measurable_snd
   have hcode : Measurable fun q : (ℕ × ℕ → α) × (V → I) =>
-      (H.domRestrict q.1, fun p : V => G (cellContext e e p.1.1 p.1.2 q.1) (q.2 p)) :=
+      (H.domRestrict q.1, fun p : V => G (cellContext e e p.val.1 p.val.2 q.1) (q.2 p)) :=
     ((Set.measurable_restrict _).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
-      hG.comp (((measurable_cellContext e e p.1.1 p.1.2).comp measurable_fst).prodMk
+      hG.comp (((measurable_cellContext e e p.val.1 p.val.2).comp measurable_fst).prodMk
         ((measurable_pi_apply p).comp measurable_snd)))
   have hHV : Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, V.domRestrict x) :=
     (Set.measurable_restrict _).prodMk (Set.measurable_restrict _)
@@ -140,7 +140,7 @@ private theorem exists_map_cellCoding_visibleArray_eq [StandardBorelSpace α] [N
           (fun q => x (e q.1, e q.2), fun i b => x (g i, e b), fun j a => x (e a, g j)))
           (fun w p => w (k p)) =
       (fun (z : (H → α) × (V → α)) p => z.2 (k p)) ∘ fun q : (ℕ × ℕ → α) × (V → I) =>
-        (H.domRestrict q.1, fun p : V => G (cellContext e e p.1.1 p.1.2 q.1) (q.2 p)) := by
+        (H.domRestrict q.1, fun p : V => G (cellContext e e p.val.1 p.val.2 q.1) (q.2 p)) := by
     funext q p
     simp only [Function.comp_apply, Prod.map]
     congr 1

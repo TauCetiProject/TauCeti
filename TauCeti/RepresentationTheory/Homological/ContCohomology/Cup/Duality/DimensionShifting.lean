@@ -105,7 +105,7 @@ cokernel `Coind_V^G A ⧸ A` of the unit of coinduction. -/
 private theorem nsmul_eq_zero_and_smul_eq_self_coindQuotient :
     (∀ c : CoindQuotient G V A, n • c = 0) ∧ ∀ v ∈ V, ∀ c : CoindQuotient G V A, v • c = c :=
   ⟨(coindShortExact G V A).nsmul_eq_zero_right (DiscreteCoind.nsmul_eq_zero hA),
-    fun _ hv ↦ CoindQuotient.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ hAV u u.2 a) hv⟩
+    fun _ hv ↦ CoindQuotient.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ hAV u u.property a) hv⟩
 
 include e₂ hcoind₁ hA hAV in
 /-- Injectivity of `α₀` and `α₁`, which needs only `α₀` bijective and `α₁` injective on the

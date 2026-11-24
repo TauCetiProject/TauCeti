@@ -23,12 +23,16 @@ surjective star-algebra homomorphism carries increasing approximate units to inc
 approximate units, so pulling a positive functional back along it does not change the norm,
 `PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`. In particular states pull back
 to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
-On unital C⋆-algebras, `‖ω‖ = ω 1`, so pulling back along any star homomorphism that preserves `1`
-also preserves the norm (`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_map_one`,
+For the same reason the norm is additive on positive functionals,
+`PositiveContinuousLinearMap.opNorm_add`. On unital C⋆-algebras, `‖ω‖ = ω 1`, so pulling back
+along any star homomorphism that preserves `1` also preserves the norm
+(`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_map_one`,
 `PositiveContinuousLinearMap.opNorm_comp_ofClass`).
 
-By the approximate-unit Cauchy–Schwarz inequality, any element `a` with `ω (star a * a) = 0` also
-satisfies `ω a = 0` (`PositiveContinuousLinearMap.apply_eq_zero_of_map_star_mul_self_eq_zero`).
+The bound `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖` of Mathlib's
+`PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul` shows that a positive functional vanishes
+at every `a` with `ω (star a * a) = 0`
+(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`).
 
 Conversely, any positive functional `ω : A →P[ℂ] ℂ` vanishing on the kernel of a surjective star
 homomorphism `f : A → B` lifts uniquely (`PositiveContinuousLinearMap.eq_liftOfSurjective_iff`) to
@@ -64,14 +68,19 @@ section NonUnital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- If a positive continuous linear functional `ω : A →P[ℂ] ℂ` vanishes on `star a * a`, then
-`ω a = 0`, even when `A` has no unit. -/
-theorem apply_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
+/-- The norm of a sum of positive functionals on a C⋆-algebra is the sum of their norms. -/
+theorem opNorm_add (τ σ : A →P[ℂ] ℂ) :
+    ‖((τ + σ : A →P[ℂ] ℂ) : A →L[ℂ] ℂ)‖ = ‖(τ : A →L[ℂ] ℂ)‖ + ‖(σ : A →L[ℂ] ℂ)‖ := by
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  refine Complex.ofReal_injective <| tendsto_nhds_unique ((τ + σ).tendsto_nhds_opNorm hl) ?_
+  push_cast
+  exact (τ.tendsto_nhds_opNorm hl).add (σ.tendsto_nhds_opNorm hl)
+
+/-- A positive functional vanishes at every element `a` with `ω (star a * a) = 0`, since
+`‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖`. -/
+theorem map_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
     (ha : ω (star a * a) = 0) : ω a = 0 := by
-  -- Use the approximate-unit Cauchy–Schwarz bound `‖ω a‖ ^ 2 ≤ ‖ω‖ * ‖ω (star a * a)‖`.
-  have hsq := ω.norm_map_sq_le_opNorm_mul a
-  rw [ha, norm_zero, mul_zero] at hsq
-  exact norm_eq_zero.mp (sq_eq_zero_iff.mp (le_antisymm hsq (sq_nonneg _)))
+  simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
 
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]

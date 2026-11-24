@@ -147,7 +147,7 @@ theorem card_filter_sum_div_le_mul_one_sub_le {ι : Type*} [Fintype ι] [Decidab
         gcongr with i
         exact sum_range_exp_mul_div_sub_half_le (hr i) _
     _ = (∏ i, ((r i : ℝ) + 1)) * exp (-(ε ^ 2 * n / 2)) := by
-        simp only [prod_mul_distrib, prod_const, card_univ, ← exp_nat_mul, ← hn]
+        simp only [prod_mul_distrib, prod_const, card_univ, ← exp_natCast_mul, ← hn]
         rw [mul_left_comm, ← exp_add]
         congr 2
         ring
