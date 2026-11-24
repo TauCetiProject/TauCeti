@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Markov
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Probability.Moments.GrowingOrder
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
@@ -32,13 +30,16 @@ Hermiticity and trace integrability are not assumed. The Borel–Cantelli step a
 without independence across indices. For the almost-sure bound below every threshold above a
 level, each threshold may use its own positive scale below it.
 
+The Markov and summability steps are the general ones of
+`TauCeti.Probability.Moments.GrowingOrder`, applied to the norm and the real trace.
+
 For a positive-semidefinite matrix `S`, `‖S‖` is its largest eigenvalue and `‖S‖ ^ k ≤ tr (S ^ k)`
 for every `k`, not only for even `k`. Hence for eventually almost surely positive-semidefinite
-matrices, such as sample covariance matrices, a bound `E tr (S n ^ k n) ≤ C n ^ a r ^ k n` for
-every `r > s`, with orders `k n` of any parity growing faster than `log n`, gives almost surely
-`limsup ‖S n‖ ≤ s`. For sample covariance matrices, combined with a growing-moment bound
-`E tr (S ^ k) ≤ C n ^ a ((1 + √y)² + ε) ^ k`, which is not proved here, this gives the upper half
-of the limit `λ_max(XX*/n) → (1 + √y)²`.
+matrices, such as sample covariance matrices, the same almost-sure bound holds with trace
+estimates `E tr (S n ^ k n) ≤ C (n + 1) ^ d t ^ k n` for orders `k n` of any parity. For sample
+covariance matrices, combined with a growing-moment bound
+`E tr (S ^ k) ≤ C n ^ a ((1 + √y)² + ε) ^ k` with `k / log n → ∞`, which is not proved here, this
+gives the upper half of the limit `λ_max(XX*/n) → (1 + √y)²`.
 
 ## References
 
@@ -85,6 +86,14 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow
     (Y := fun ω ↦ RCLike.re ((A ω) ^ (2 * k)).trace) 1 (by simpa only [pow_one] using hint)
     (by simpa only [pow_one] using hnonneg) (pow_pos hr _)
 
+/-- A square matrix with positive Euclidean operator norm has a nonempty index type. -/
+private lemma nonempty_of_pos_l2_opNorm [Fintype ι] [DecidableEq ι] {M : Matrix ι ι 𝕜}
+    (h : 0 < ‖M‖) : Nonempty ι := by
+  by_contra hι
+  rw [not_nonempty_iff] at hι
+  rw [Subsingleton.elim M 0, norm_zero] at h
+  exact lt_irrefl _ h
+
 variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
   {A : (n : ℕ) → Ω → Matrix (m n) (m n) 𝕜} {k : ℕ → ℕ}
 
@@ -102,33 +111,22 @@ theorem exists_tsum_lt_top_and_eventually_meas_l2_opNorm_ge_le_of_integral_re_tr
       C * (n + 1 : ℝ) ^ d * s ^ (2 * k n)) :
     ∃ b : ℕ → ℝ≥0∞, (∑' n, b n) < ∞ ∧ ∀ᶠ n in atTop, P {ω | r ≤ ‖A n ω‖} ≤ b n := by
   have hr₀ := hs.trans hr
-  let e := d + 2 * B * Real.log (s / r)
-  have he : e < -1 := by
-    dsimp only [e]
-    rw [Real.log_div hs.ne' hr₀.ne']
-    rw [Real.log_div hr₀.ne' hs.ne'] at hB
+  refine exists_tsum_lt_top_and_eventually_measure_ge_le_of_integral_le_mul_rpow_mul_pow
+    (Y := fun n ω ↦ ‖A n ω‖) (k := fun n ↦ 2 * k n) (B := 2 * B) hs hr hB ?_ ?_ ?_ hint hbound
+  · filter_upwards [hk] with n hn
+    push_cast
     linarith
-  let b (n : ℕ) := |C| * (n + 1 : ℝ) ^ e
-  refine ⟨fun n ↦ ENNReal.ofReal (b n), tsum_ofReal_mul_natCast_add_one_rpow_lt_top |C| he, ?_⟩
-  filter_upwards [hA, hint, hbound, hk] with n hh hi hn hk'
-  refine (meas_l2_opNorm_ge_le_integral_re_trace_pow_two_mul_div_pow hh _ hi hr₀).trans ?_
-  apply ENNReal.ofReal_le_ofReal
-  calc
-    _ ≤ |C| * ((n + 1 : ℝ) ^ d * (s / r) ^ (2 * k n)) := by
-      have habs : C * (n + 1 : ℝ) ^ d * s ^ (2 * k n) ≤
-          |C| * (n + 1 : ℝ) ^ d * s ^ (2 * k n) :=
-        mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)) (by positivity)
-      refine (div_le_div_of_nonneg_right (hn.trans habs) (by positivity)).trans_eq ?_
-      rw [div_pow]
-      ring
-    _ ≤ b n := by
-      apply mul_le_mul_of_nonneg_left _ (abs_nonneg C)
-      apply rpow_mul_pow_le_rpow_of_log_le (B := 2 * B)
-        (le_add_of_nonneg_left (Nat.cast_nonneg _)) (div_pos hs hr₀) ((div_le_one hr₀).2 hr.le)
-        _ le_rfl
-      push_cast
-      linarith
+  · filter_upwards [hA] with n hn
+    filter_upwards [hn] with ω hω hrω
+    exact (pow_le_pow_left₀ hr₀.le hrω _).trans
+      (hω.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul _ fun _ ↦
+        nonempty_of_pos_l2_opNorm (hr₀.trans_le hrω))
+  · filter_upwards [hA] with n hn
+    filter_upwards [hn] with ω hω
+    -- `A ^ (2 * k) = (A ^ k)ᴴ * A ^ k` is positive semidefinite.
+    have h := (posSemidef_conjTranspose_mul_self (A n ω ^ k n)).trace_nonneg
+    rw [(hω.pow (k n)).eq, ← pow_add, ← two_mul] at h
+    exact (RCLike.nonneg_iff.1 h).1
 
 /-- An eventual even trace bound with polynomial prefactor `(n + 1)^d` in the sequence index
 gives summable norm tails at `r > s` when `k n ≥ B * log (n + 1)` eventually and
@@ -174,25 +172,31 @@ theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
     hA hi ht htr hB hk hb
 
 /-- **Trace method for positive-semidefinite random matrices.** Let the matrices be eventually
-almost surely positive semidefinite, with eventually integrable real traces
-of their `k n`-th powers, where the orders `k n` have any parity and grow faster than `log n`. If
-for every `r > s ≥ 0` there are constants `C` and `a` with `E tr (A n ^ k n) ≤ C n ^ a r ^ k n`
-for all large `n`, then almost surely the norms, that is the largest eigenvalues
-(`Matrix.PosSemidef.l2_opNorm_eq_eigenvalues₀_zero`), are eventually below every `r > s`. -/
+almost surely positive semidefinite. If, for each threshold `r > s`, the real traces of the
+`k n`-th powers, for orders `k n` of any parity and of sufficiently large logarithmic size, are
+eventually integrable and eventually satisfy a trace estimate at some exponential scale
+`0 < t < r`, then the norms, that is the largest eigenvalues
+(`Matrix.PosSemidef.l2_opNorm_eq_eigenvalues₀_zero`), are almost surely eventually below every
+threshold `r > s`. The scale, moment orders and polynomial prefactors may depend on the threshold.
+Orders growing faster than `log n` meet the logarithmic size condition for every `B`. -/
 theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le
-    (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).PosSemidef)
-    (hk : Tendsto (fun n ↦ (k n : ℝ) / Real.log n) atTop atTop)
-    (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re (A n ω ^ k n).trace) P) {s : ℝ}
-    (hs : 0 ≤ s) (hmom : ∀ r > s, ∃ C : ℝ, ∃ a : ℕ, ∀ᶠ n : ℕ in atTop,
-      ∫ ω, RCLike.re (A n ω ^ k n).trace ∂P ≤ C * n ^ a * r ^ k n) :
+    (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).PosSemidef) {s : ℝ}
+    (htrace : ∀ r > s, ∃ (t B C d : ℝ) (k : ℕ → ℕ), 0 < t ∧ t < r ∧
+      d + 1 < B * Real.log (r / t) ∧
+      (∀ᶠ n : ℕ in atTop, B * Real.log (n + 1) ≤ (k n : ℝ)) ∧
+      (∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ k n).trace) P) ∧
+      (∀ᶠ n : ℕ in atTop, (∫ ω, RCLike.re ((A n ω) ^ k n).trace ∂P) ≤
+        C * (n + 1 : ℝ) ^ d * t ^ k n)) :
     ∀ᵐ ω ∂P, ∀ r > s, ∀ᶠ n in atTop, ‖A n ω‖ < r := by
-  -- Orders growing faster than `log n` are eventually nonzero.
-  have hk₀ : ∀ᶠ n in atTop, k n ≠ 0 :=
-    (hk.eventually_gt_atTop 0).mono fun n hn hkn ↦ by simp [hkn] at hn
-  exact ae_forall_eventually_lt_of_integral_le_mul_pow hs
-    ((hA.and hk₀).mono fun n hn ↦ hn.1.mono fun ω hω ↦ by
-      rw [abs_norm]
-      exact hω.l2_opNorm_pow_le_re_trace_pow (k n) fun h ↦ absurd h hn.2)
-    hint hk hmom
+  refine TauCeti.MeasureTheory.ae_forall_eventually_lt_of_eventually_measure_le fun r hr ↦ ?_
+  obtain ⟨t, B, C, d, k, ht, htr, hB, hk, hi, hb⟩ := htrace r hr
+  have hr₀ := ht.trans htr
+  refine exists_tsum_lt_top_and_eventually_measure_ge_le_of_integral_le_mul_rpow_mul_pow
+    (Y := fun n ω ↦ ‖A n ω‖) ht htr hB hk ?_ ?_ hi hb
+  · exact hA.mono fun n hn ↦ hn.mono fun ω (hω : (A n ω).PosSemidef) hrω ↦
+      (pow_le_pow_left₀ hr₀.le hrω _).trans
+        (hω.l2_opNorm_pow_le_re_trace_pow _ fun _ ↦ nonempty_of_pos_l2_opNorm (hr₀.trans_le hrω))
+  · exact hA.mono fun n hn ↦ hn.mono fun ω (hω : (A n ω).PosSemidef) ↦
+      (RCLike.nonneg_iff.1 (hω.pow _).trace_nonneg).1
 
 end TauCeti.Probability
