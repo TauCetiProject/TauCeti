@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.WittVector.Frobenius
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
+-- Proof-only: `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`.
+import TauCeti.FieldTheory.Perfect
 
 /-!
 # Cyclotomic period elements of Witt vectors
@@ -138,11 +140,6 @@ theorem cyclotomicXiTilde_eq_sum (ε : S) :
 theorem cyclotomicXiTilde_eq_cyclotomicXi_pow (ε : S) :
     cyclotomicXiTilde p ε = cyclotomicXi p (ε ^ p) := by
   rw [cyclotomicXiTilde_eq_sum, cyclotomicXi_def, frobeniusEquiv_symm_pow]
-
-/-- In a perfect ring of characteristic `p`, `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`. -/
-private theorem frobeniusEquiv_symm_sub_one_pow (ε : S) :
-    ((_root_.frobeniusEquiv S p).symm ε - 1) ^ p = ε - 1 := by
-  rw [sub_pow_char, one_pow, frobeniusEquiv_symm_pow_p]
 
 /-- For `ε = 1`, the period element `ξ = ∑_{j < p} [1] ^ j` is `p`. -/
 @[simp]
