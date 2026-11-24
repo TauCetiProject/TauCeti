@@ -70,7 +70,7 @@ theorem ker_fontaineTheta_eq_span_map (f : A →+* B) {g : WittVector p (PreTilt
     RingHom.ker (fontaineTheta B p) = span {map (PreTilt.map p f) g} := by
   have hgk : g ∈ RingHom.ker (fontaineTheta A p) := hg ▸ mem_span_singleton_self g
   refine (IsIntegralPerfectoid.ker_fontaineTheta_eq_span_iff_isDistinguished ?_).mpr
-    (((IsIntegralPerfectoid.ker_fontaineTheta_eq_span_iff_isDistinguished hgk).mp hg).map _)
+    ((IsIntegralPerfectoid.isDistinguished_of_ker_fontaineTheta_eq_span hg).map _)
   rw [RingHom.mem_ker, theta_natural, RingHom.mem_ker.mp hgk, map_zero]
 
 /-- **`A_inf(f)` maps `ker θ_A` to generators of `ker θ_B`.** For a ring homomorphism

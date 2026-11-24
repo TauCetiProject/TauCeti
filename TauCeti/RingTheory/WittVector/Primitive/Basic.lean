@@ -457,9 +457,9 @@ theorem IsPrimitive.mem_nonZeroDivisors [TopologicalSpace S] {ξ : 𝕎 S} (hξ 
   hξ.isDistinguished.mem_nonZeroDivisors
     (hξ.isTopologicallyNilpotent_coeff_zero.eventually_mem hϖ₀).exists
 
-/-- **`[ϖ]` is a nonzerodivisor modulo a primitive element.** Under the hypotheses of
-`WittVector.IsPrimitive.mem_nonZeroDivisors` except separatedness, the image of `[ϖ]` in
-`𝕎 S ⧸ (ξ)` is a nonzerodivisor for every primitive `ξ`. -/
+/-- **`[ϖ]` is a nonzerodivisor modulo a primitive element.** Let `S` be a perfect topological
+ring of characteristic `p`, and `ϖ` a nonzerodivisor of `S` such that `(ϖ)` is a neighbourhood of
+`0`. Then the image of `[ϖ]` in `𝕎 S ⧸ (ξ)` is a nonzerodivisor for every primitive `ξ`. -/
 theorem IsPrimitive.mk_teichmuller_mem_nonZeroDivisors [TopologicalSpace S] {ξ : 𝕎 S}
     (hξ : ξ.IsPrimitive) (hϖ : ϖ ∈ S⁰) (hϖ₀ : (Ideal.span {ϖ} : Set S) ∈ 𝓝 0) :
     Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ϖ) ∈ (𝕎 S ⧸ Ideal.span {ξ})⁰ :=
