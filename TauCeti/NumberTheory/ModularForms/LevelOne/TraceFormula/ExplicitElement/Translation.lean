@@ -494,8 +494,7 @@ theorem finsum_weight_traceDetFiber_of_det_lt_trace (hn : 0 < n) (ht : n < t) :
       have hb : 0 ≤ M.val 0 1 ∧ M.val 0 1 < n := by split_ifs at hw <;> omega
       exact Finset.mem_image.mpr ⟨M.val 0 1, Finset.mem_Ico.mpr hb, Subtype.ext hM'.symm⟩
     rw [finsum_eq_sum_of_support_subset _ hsub, Finset.sum_image fun b _ b' _ hb ↦ hφ hb]
-    change ∑ b ∈ Finset.Ico 0 n, weight !![1, b; 0, n] = _
-    rw [sum_Ico_weight_upperTriangular 1 n one_pos]
+    simp only [φ, sum_Ico_weight_upperTriangular 1 n one_pos]
     split_ifs <;> omega
   · rw [ite_eq_right htn]
     refine finsum_eq_zero_of_forall_eq_zero fun M ↦ ?_
