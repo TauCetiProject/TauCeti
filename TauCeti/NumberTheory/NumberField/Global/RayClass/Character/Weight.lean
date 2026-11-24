@@ -133,12 +133,6 @@ theorem toUnitaryIdealWeight_one_of_finitePart_eq_top (h : 𝔪.finitePart = ⊤
   simp [TauCeti.MultiplicativeIdealWeight.one_apply,
     Modulus.support_eq_empty_of_finitePart_eq_top h]
 
-/-- At `Modulus.one K`, the trivial ray class character gives the trivial unitary ideal weight. -/
-@[simp]
-theorem toUnitaryIdealWeight_one_of_modulus_one :
-    (1 : RayClassCharacter (Modulus.one K)).toUnitaryIdealWeight = 1 :=
-  toUnitaryIdealWeight_one_of_finitePart_eq_top Modulus.one_finitePart
-
 /-- Increasing the modulus restricts the induced character's ideal weight away from the finite
 primes of the larger modulus. -/
 theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
