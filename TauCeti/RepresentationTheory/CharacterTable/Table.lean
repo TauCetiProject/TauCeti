@@ -161,8 +161,8 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
 theorem apply_one_ne_zero_of_mem_irreducibleCharacters [CharZero k] {f : G → k}
     (hf : f ∈ irreducibleCharacters k G) : f 1 ≠ 0 := by
   obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
-  rw [Representation.char_one, Nat.cast_ne_zero]
-  exact hρ.finrank_pos.ne'
+  rw [Representation.char_one]
+  exact hρ.natCast_finrank_ne_zero
 
 variable [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
@@ -319,28 +319,35 @@ end Enumeration
 
 section Subsingleton
 
-variable {k : Type u} [Field k] [IsAlgClosed k]
+variable {k : Type u} [Field k]
 
-/-- A group with one element has the trivial character as its only irreducible character. -/
+/-- A group with one element has the trivial character as its only irreducible character, over any
+field: every subspace is invariant, so an irreducible representation is a line. -/
 @[simp]
 theorem irreducibleCharacters_of_subsingleton {G : Type v} [Group G] [Subsingleton G] :
     irreducibleCharacters k G = {fun _ => 1} := by
-  let : Invertible (Nat.card G : k) := invertibleOfNonzero (by simp)
-  obtain ⟨i, hi⟩ := exists_irreducibleCharacter_eq_one k G
-  have : Subsingleton (ConjClasses G) := ⟨fun a b => by
-    obtain ⟨x, rfl⟩ := ConjClasses.mk_surjective a
-    obtain ⟨y, rfl⟩ := ConjClasses.mk_surjective b
-    rw [Subsingleton.elim x y]⟩
-  have hcard : Nat.card (irreducibleCharacters k G) = 1 := by
-    rw [card_irreducibleCharacters, Nat.card_eq_one_iff_unique]
-    exact ⟨inferInstance, ⟨ConjClasses.mk 1⟩⟩
-  obtain ⟨⟨f, hf⟩, hx⟩ := Nat.card_eq_one_iff_exists.mp hcard
-  have h1 : (fun _ : G => (1 : k)) ∈ irreducibleCharacters k G := hi ▸ irreducibleCharacter_mem k i
-  ext g
-  refine ⟨fun hg => ?_, fun hg => (Set.mem_singleton_iff.mp hg) ▸ h1⟩
-  have e1 := congrArg Subtype.val (hx ⟨g, hg⟩)
-  have e2 := congrArg Subtype.val (hx ⟨_, h1⟩)
-  exact Set.mem_singleton_iff.mpr (e1.trans e2.symm)
+  ext f
+  refine ⟨fun hf => ?_, fun hf => ?_⟩
+  · obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
+    have := hρ.nontrivial
+    obtain ⟨v, hv⟩ := exists_ne (0 : Fin n → k)
+    -- the line through `v` is invariant, hence everything
+    let σ : Subrepresentation ρ :=
+      { toSubmodule := k ∙ v
+        apply_mem_toSubmodule g w hw := by
+          rwa [Subsingleton.elim g 1, map_one, one_apply_eq_self] }
+    have hσ : σ = ⊤ := (eq_bot_or_eq_top σ).resolve_left fun h => hv <| by
+      have hmem : v ∈ σ.toSubmodule := Submodule.mem_span_singleton_self v
+      rwa [h, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem
+    have h1 : finrank k (Fin n → k) = 1 := by
+      rw [← finrank_top k (Fin n → k), ← Subrepresentation.toSubmodule_top (ρ := ρ), ← hσ]
+      exact finrank_span_singleton hv
+    refine Set.mem_singleton_iff.mpr (funext fun g => ?_)
+    rw [Subsingleton.elim g 1, Representation.char_one, h1, Nat.cast_one]
+  · rw [Set.mem_singleton_iff.mp hf]
+    convert character_mem_irreducibleCharacters (Representation.trivial k G k) using 1
+    funext g
+    rw [Subsingleton.elim g 1, Representation.char_one, finrank_self, Nat.cast_one]
 
 end Subsingleton
 

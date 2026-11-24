@@ -22,21 +22,21 @@ that `θ` occurs in the restriction of `ψ` to `N`. These form the set
 
 The proof is character-theoretic. Its key input is that the restriction of `χ` to every coset of
 `N` has the same norm: `∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g`
-(`TauCeti.sum_character_mul_mul_character_mul_inv_eq_card`). Indeed, writing `χ` as the character
-of `ρ` on `V`, the left side is the trace of `σ g ∘ S` on `End V`, where `σ` is the conjugation
-action of `G` and `S = ∑ n ∈ N, σ n`. Every value of `S` commutes with `N`, hence is a scalar since
-`ρ` restricts irreducibly to `N`, hence is fixed by `σ g`; so the trace is that of `S`, which is
-`|N|` times the norm of `θ`. Consequently multiplication by `χ` preserves the character pairing
-of functions inflated from `G ⧸ N`, up to the normalisation
-(`TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`), which gives irreducibility and injectivity; the
-column orthogonality of `G ⧸ N` gives surjectivity.
+(`Representation.sum_character_mul_mul_character_mul_inv_eq_card`). Indeed, writing `χ` as the
+character of `ρ` on `V`, the left side is the trace of `σ g ∘ S` on `End V`, where `σ` is the
+conjugation action of `G` and `S = ∑ n ∈ N, σ n`. Every value of `S` commutes with `N`, hence is a
+scalar since `ρ` restricts irreducibly to `N`, hence is fixed by `σ g`; so the trace is that of
+`S`, which is `|N|` times the norm of `θ`. Consequently multiplication by `χ` preserves the
+character pairing of functions inflated from `G ⧸ N`, up to the normalisation
+(`Representation.sum_mul_comp_mk_mul_mul_comp_mk_inv`), which gives irreducibility and
+injectivity; the column orthogonality of `G ⧸ N` gives surjectivity.
 
 ## Main results
 
-* `TauCeti.sum_character_mul_mul_character_mul_inv_eq_card`: a character restricting irreducibly to
-  `N` has norm `|N|` on every coset of `N`.
-* `TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`: multiplication by such a character is an isometry
-  on functions inflated from `G ⧸ N`.
+* `Representation.sum_character_mul_mul_character_mul_inv_eq_card`: a character restricting
+  irreducibly to `N` has norm `|N|` on every coset of `N`.
+* `Representation.sum_mul_comp_mk_mul_mul_comp_mk_inv`: multiplication by such a character is an
+  isometry on functions inflated from `G ⧸ N`.
 * `TauCeti.gallagher_bijOn`: **Gallagher's correspondence** `Irr(G ⧸ N) ≃ Irr(G | θ)`,
   `β ↦ χ · (β ∘ π)`.
 
@@ -67,8 +67,8 @@ variable [IsAlgClosed k] [CharZero k]
 restriction to `N` of the character of `ρ` is an irreducible character of `N`, then
 `∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g ∈ G`. The space `V` need not be assumed
 finite-dimensional. -/
-theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G V)
-    (N : Subgroup G) [Fintype N]
+theorem _root_.Representation.sum_character_mul_mul_character_mul_inv_eq_card
+    (ρ : Representation k G V) (N : Subgroup G) [Fintype N]
     (hθ : (fun n : N => ρ.character n) ∈ irreducibleCharacters k N) (g : G) :
     ∑ n : N, ρ.character (g * n) * ρ.character (g * n)⁻¹ = Nat.card N := by
   -- Otherwise the character vanishes, and its restriction is not irreducible.
@@ -107,8 +107,8 @@ theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G
 isometry on functions inflated from `G ⧸ N`**: if `χ` is the character of `ρ` and its restriction
 to `N` is irreducible, then for all `β β' : G ⧸ N → k`,
 `∑ g, χ g β g · χ g⁻¹ β' g⁻¹ = |N| ∑ q, β q β' q⁻¹`. -/
-theorem sum_mul_comp_mk_mul_mul_comp_mk_inv [Fintype G] (ρ : Representation k G V)
-    (N : Subgroup G) [N.Normal] [Fintype (G ⧸ N)]
+theorem _root_.Representation.sum_mul_comp_mk_mul_mul_comp_mk_inv [Fintype G]
+    (ρ : Representation k G V) (N : Subgroup G) [N.Normal] [Fintype (G ⧸ N)]
     (hθ : (fun n : N => ρ.character n) ∈ irreducibleCharacters k N) (β β' : G ⧸ N → k) :
     ∑ g : G, ρ.character g * β g * (ρ.character g⁻¹ * β' (g⁻¹ : G)) =
       Nat.card N * ∑ q : G ⧸ N, β q * β' q⁻¹ := by
@@ -119,7 +119,7 @@ theorem sum_mul_comp_mk_mul_mul_comp_mk_inv [Fintype G] (ρ : Representation k G
   have hfib (q : G ⧸ N) :
       ∑ g ∈ univ.filter (fun g : G => (g : G ⧸ N) = q), ρ.character g * ρ.character g⁻¹ =
         Nat.card N := by
-    rw [← sum_character_mul_mul_character_mul_inv_eq_card ρ N hθ q.out]
+    rw [← ρ.sum_character_mul_mul_character_mul_inv_eq_card N hθ q.out]
     symm
     refine Finset.sum_bij (fun n _ => q.out * n) (fun n _ => ?_) (fun n _ m _ h => ?_)
       (fun g hg => ?_) (fun n _ => rfl)
@@ -150,7 +150,7 @@ theorem mul_comp_mk_mem_irreducibleCharacters (hχ : χ ∈ irreducibleCharacter
     (hθ : (fun n : N => χ n) ∈ irreducibleCharacters k N) {β : G ⧸ N → k}
     (hβ : β ∈ irreducibleCharacters k (G ⧸ N)) :
     (fun g : G => χ g * β g) ∈ irreducibleCharacters k G := by
-  -- Its norm is that of `β` by `TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`.
+  -- Its norm is that of `β` by `Representation.sum_mul_comp_mk_mul_mul_comp_mk_inv`.
   classical
   have := Fintype.ofFinite G
   obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
@@ -167,7 +167,7 @@ theorem mul_comp_mk_mem_irreducibleCharacters (hχ : χ ∈ irreducibleCharacter
     (f := ⟨_, virtualCharacters_le_classFunction hv⟩) hv ?_ (n := d * m) ?_
   · rw [ClassFunction.characterPairing_apply]
     dsimp only
-    rw [sum_mul_comp_mk_mul_mul_comp_mk_inv ρ N hθ,
+    rw [ρ.sum_mul_comp_mk_mul_mul_comp_mk_inv N hθ,
       sum_mul_inv_self_of_mem_irreducibleCharacters hβ, hG]
     field_simp
   · simp
@@ -236,7 +236,7 @@ theorem gallagher_bijOn {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
   have hN0 : (Nat.card N : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hQ0 : (Nat.card (G ⧸ N) : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
-  have hiso := sum_mul_comp_mk_mul_mul_comp_mk_inv ρ N hθ'
+  have hiso := ρ.sum_mul_comp_mk_mul_mul_comp_mk_inv N hθ'
   refine ⟨fun β hβ => mem_irreducibleCharactersOver_iff_sum.mpr
       ⟨mul_comp_mk_mem_irreducibleCharacters hχ hθ' hβ, ?_⟩,
     fun β hβ β' hβ' heq => ?_,
