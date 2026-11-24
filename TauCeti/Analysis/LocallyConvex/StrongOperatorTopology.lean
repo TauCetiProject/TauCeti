@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 public import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
+import Mathlib.Analysis.Normed.Operator.Completeness
 
 /-!
 # Bounded composition in the strong operator topology
@@ -18,9 +18,7 @@ Composition preserves pointwise convergence when the outer operators are uniform
 in operator norm. Only that family needs a bound, and neither space needs completeness.
 For sequences on a Banach space the bound follows automatically from Banach–Steinhaus.
 
-Operator norm bounds also pass to pointwise limits
-(`ContinuousLinearMap.opNorm_le_of_tendsto_pointwise`), so closed operator-norm balls are closed
-in the strong operator topology
+Closed operator-norm balls are closed in the strong operator topology
 (`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
 
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
@@ -165,24 +163,23 @@ namespace PointwiseConvergenceCLM
 section ClosedBall
 
 variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
-  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [NormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
 /-- Every closed operator-norm ball is closed in the topology of pointwise convergence (the strong
 operator topology). Neither space needs completeness. -/
 theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] F) (r : ℝ) :
     IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
       Metric.closedBall f₀ r) := by
-  refine closure_subset_iff_isClosed.mp fun T hT => ?_
-  obtain ⟨T', rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
-  obtain ⟨l, hl, hmem, hlim⟩ :=
-    ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mp hT
-  have : l.NeBot := hl -- Supplies the `NeBot` instance for `opNorm_le_of_tendsto_pointwise`.
-  refine ⟨T', ?_, rfl⟩
-  rw [Metric.mem_closedBall, dist_eq_norm]
-  exact ContinuousLinearMap.opNorm_le_of_tendsto_pointwise (T := fun A => A - f₀)
-    (hmem.mono fun A hA => by simpa [Metric.mem_closedBall, dist_eq_norm] using hA)
-    fun x => (hlim x).sub_const (f₀ x)
+  convert (ContinuousLinearMap.isClosed_image_coe_closedBall f₀ r).preimage
+    (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous using 1
+  ext T
+  simp only [Set.mem_image, Set.mem_preimage]
+  constructor
+  · rintro ⟨f, hf, rfl⟩
+    exact ⟨f, hf, rfl⟩
+  · rintro ⟨f, hf, hT⟩
+    exact ⟨f, hf, DFunLike.coe_injective hT⟩
 
 end ClosedBall
 

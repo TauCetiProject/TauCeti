@@ -30,8 +30,8 @@ strong-operator topology in the positive-contraction clause:
 * On `ℓ^2(ℕ, ℂ)`, the diagonal orthogonal projection `evenProjection` onto the even coordinates is
   a positive contraction in `(finiteRankPlusScalars ℓ^2(ℕ, ℂ))'' = Set.univ`, approximated in the
   strong operator topology by its finite-rank coordinate truncations `evenProjectionTrunc n`. Yet
-  for every scalar `c : ℂ` and compact operator `K`, testing on the even and odd coordinate basis
-  vectors yields `max ‖1 - c‖ ‖c‖ ≤ ‖evenProjection - (algebraMap ℂ _ c + K)‖`, hence
+  for every scalar `c : ℂ` and compact operator `K`, we have
+  `max ‖1 - c‖ ‖c‖ ≤ ‖evenProjection - (algebraMap ℂ _ c + K)‖`, hence
   `1 / 2 ≤ ‖evenProjection - a‖` for every `a ∈ finiteRankPlusScalars ℓ^2(ℕ, ℂ)`. Thus
   `evenProjection` lies at operator-norm distance at least `1 / 2` from `finiteRankPlusScalars`,
   demonstrating that strong-operator density in Kaplansky's theorem cannot be upgraded to norm

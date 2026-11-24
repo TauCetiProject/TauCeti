@@ -137,10 +137,6 @@ theorem ofCLM_injective :
     Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
   equiv.symm.injective
 
-theorem ofCLM_surjective :
-    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltraweak 𝕜 E F) :=
-  equiv.symm.surjective
-
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltraweak 𝕜 E F) :=
   equiv.addCommGroup
 
@@ -457,10 +453,14 @@ theorem closure_image_ofCLM_of_closure_image_WOT {t u : Set (E →L[𝕜] F)} {C
     (ht : ∀ T ∈ t, ‖T‖ ≤ C)
     (hwot : closure (ContinuousLinearMapWOT.ofCLM '' t) = ContinuousLinearMapWOT.ofCLM '' u) :
     closure (ofCLM '' t) = ofCLM '' u := by
-  ext A
-  obtain ⟨x, rfl⟩ := ofCLM_surjective A
-  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hwot,
-    ContinuousLinearMapWOT.ofCLM_injective.mem_set_image, ofCLM_injective.mem_set_image]
+  let q := fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ContinuousLinearMapWOT.ofCLM A.toCLM
+  have hq_inj : Function.Injective q :=
+    fun _ _ h ↦ toCLM_injective (ContinuousLinearMapWOT.ofCLM_injective h)
+  refine closure_eq_of_isInducing_domRestrict continuous_toWOT hq_inj
+    (isClosed_image_toWOT_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
+    (isInducing_restrict_toWOT fun _ hA ↦ hA)
+    (s := {A | ‖A.toCLM‖ ≤ C}) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT) ?_
+  simpa only [q, Set.image_image] using hwot
 
 end Comparison
 

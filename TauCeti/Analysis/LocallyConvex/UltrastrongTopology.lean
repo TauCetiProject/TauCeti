@@ -103,10 +103,6 @@ theorem ofCLM_injective :
     Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.symm.injective
 
-theorem ofCLM_surjective :
-    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
-  equiv.symm.surjective
-
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
 
@@ -433,7 +429,7 @@ private theorem isClosed_image_toPointwiseConvergenceCLM_norm_le (C : ℝ) :
   have himg : (fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F ∘ equiv :=
-    rfl
+    funext fun A ↦ by simp only [Function.comp_apply, equiv_apply]
   rw [hpre, himg, Set.image_comp, Set.image_preimage_eq _ equiv.surjective]
   exact PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall
     (0 : E →L[𝕜] F) C
@@ -465,11 +461,15 @@ theorem closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM {t u : Se
     (hsot : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' u) :
     closure (ofCLM '' t) = ofCLM '' u := by
-  ext A
-  obtain ⟨x, rfl⟩ := ofCLM_surjective A
-  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hsot,
-    ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
-    ofCLM_injective.mem_set_image]
+  let q := fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+    ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM
+  have hq_inj : Function.Injective q :=
+    fun _ _ h ↦ toCLM_injective (ContinuousLinearMap.toPointwiseConvergenceCLM_injective h)
+  refine closure_eq_of_isInducing_domRestrict continuous_toPointwiseConvergenceCLM hq_inj
+    (isClosed_image_toPointwiseConvergenceCLM_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
+    (isInducing_restrict_toPointwiseConvergenceCLM fun _ hA ↦ hA)
+    (s := {A | ‖A.toCLM‖ ≤ C}) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT) ?_
+  simpa only [q, Set.image_image] using hsot
 
 end Comparison
 

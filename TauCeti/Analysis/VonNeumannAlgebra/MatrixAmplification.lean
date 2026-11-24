@@ -22,9 +22,7 @@ Taking double commutants commutes with matrix amplification: an operator on the 
 in the double commutant of `Mᵢ(S)` exactly when all its matrix entries lie in the double commutant
 of `S` (`StarSubalgebra.mem_centralizer_centralizer_piLpMatrix_iff`). The commutant of `Mᵢ(S)`
 consists of the block-diagonal operators with constant diagonal entry in the commutant of `S`
-(`StarSubalgebra.mem_centralizer_piLpMatrix_iff`): an operator commuting with the matrix units is
-diagonal with equal diagonal entries, and commuting with the diagonal copies of `S` puts that entry
-in the commutant of `S`.
+(`StarSubalgebra.mem_centralizer_piLpMatrix_iff`).
 
 This is how statements about the double commutant of `S`, such as the Kaplansky density theorem,
 pass to its matrix amplifications; the `2 × 2` case turns the self-adjoint form of the Kaplansky
@@ -163,8 +161,9 @@ theorem toStarSubalgebra_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fint
 matrix entries lie in `M`. -/
 theorem mem_piLpMatrix_iff {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι] [DecidableEq ι]
     {T : PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H)} :
-    T ∈ M.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ M :=
-  M.toStarSubalgebra.mem_piLpMatrix
+    T ∈ M.piLpMatrix ι ↔ ∀ i j, T.piLpEntry i j ∈ M := by
+  rw [← SetLike.mem_coe, ← mem_carrier, toStarSubalgebra_piLpMatrix, StarSubalgebra.mem_piLpMatrix]
+  simp only [mem_carrier, SetLike.mem_coe]
 
 /-- The underlying set of `M.piLpMatrix ι` consists of all operators whose matrix entries lie in
 `M`. -/
@@ -172,21 +171,23 @@ theorem coe_piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι] [Deci
     (M.piLpMatrix ι : Set (PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H))) =
       {T | ∀ i j, T.piLpEntry i j ∈ M} := by
   ext T
-  exact M.toStarSubalgebra.mem_piLpMatrix
+  exact mem_piLpMatrix_iff
 
 /-- Placing an element in a single `(i, j)` block belongs to `M.piLpMatrix ι` if and only if
 the element belongs to `M`. -/
 @[simp]
 theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] {i j : ι} {s : H →L[ℂ] H} :
-    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M :=
-  M.toStarSubalgebra.singleEntryCLM_mem_piLpMatrix
+    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M := by
+  rw [← SetLike.mem_coe, ← mem_carrier, toStarSubalgebra_piLpMatrix,
+    StarSubalgebra.singleEntryCLM_mem_piLpMatrix, mem_carrier, SetLike.mem_coe]
 
 /-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
 theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] {s : H →L[ℂ] H} (hs : s ∈ M) :
-    PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι :=
-  M.toStarSubalgebra.diagStarAlgHom_mem_piLpMatrix hs
+    PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι := by
+  rw [← SetLike.mem_coe, ← mem_carrier, toStarSubalgebra_piLpMatrix]
+  exact M.toStarSubalgebra.diagStarAlgHom_mem_piLpMatrix (mem_carrier.mpr (SetLike.mem_coe.mpr hs))
 
 /-- The commutant of the matrix von Neumann algebra `M.piLpMatrix ι` consists of block-diagonal
 operators with constant diagonal entry in `M.commutant`. -/

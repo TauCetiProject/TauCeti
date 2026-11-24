@@ -33,11 +33,9 @@ In particular, it supplies the common continuity step for
 uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
 Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
-`AddMonoidHomClass.continuous_apply_of_bound`). Operator norm bounds pass to pointwise limits
-without completeness (`ContinuousLinearMap.opNorm_le_of_tendsto_pointwise`). Continuous semilinear
-maps over an isometric scalar homomorphism whose operator norms tend to zero eventually map any
-bounded set into any neighbourhood of `0`
-(`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero`).
+`AddMonoidHomClass.continuous_apply_of_bound`). Continuous semilinear maps over an isometric
+scalar homomorphism whose operator norms tend to zero eventually map any bounded set into any
+neighbourhood of `0` (`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -225,28 +223,6 @@ noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
   .ofSeparation fun f ↦ f.opNorm_zero_iff'.mp
 
 end Semilinear
-
-section SemilinearSeminormed
-
-variable {𝕜₁ 𝕜₂ E F ι : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
-  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- **Norm lower semicontinuity of strong limits.** If a net of continuous semilinear maps is
-eventually bounded in operator norm by `C` along a nontrivial filter and converges pointwise to
-`T₀`, then `‖T₀‖ ≤ C`. Neither space needs completeness. -/
-theorem opNorm_le_of_tendsto_pointwise {l : Filter ι} [l.NeBot]
-    {T : ι → E →SL[σ] F} {T₀ : E →SL[σ] F} {C : ℝ}
-    (hC : ∀ᶠ i in l, ‖T i‖ ≤ C)
-    (hT : ∀ x, Tendsto (fun i => T i x) l (𝓝 (T₀ x))) :
-    ‖T₀‖ ≤ C := by
-  have hC0 : 0 ≤ C := by
-    obtain ⟨i, hi⟩ := hC.exists
-    exact (norm_nonneg _).trans hi
-  exact T₀.opNorm_le_bound hC0 fun x =>
-    le_of_tendsto (hT x).norm (hC.mono fun i hi => (T i).le_of_opNorm_le hi x)
-
-end SemilinearSeminormed
 
 /-- Right scalar multiplication `r ↦ r • e` by `e : E` under a bounded scalar action of a
 seminormed ring `R` is uniformly bounded. -/
