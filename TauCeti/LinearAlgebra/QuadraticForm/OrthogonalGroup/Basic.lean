@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.SpecialLinearGroup
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
@@ -97,7 +98,9 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes every vector orthogonal to `v`,
   `TauCeti.QuadraticMap.reflection_smul_eq` that rescaling by a scalar keeping the norm invertible
   does not change it, and `TauCeti.QuadraticMap.det_reflection` computes its determinant on a
-  finite free module.
+  finite free module. In characteristic two it is the transvection
+  `y ↦ y + (polar Q v y / Q v) • v` (`TauCeti.QuadraticMap.reflection_apply_of_charTwo`,
+  `TauCeti.QuadraticMap.reflectionOrthogonal_apply_of_charTwo`).
   These are the factors in the Cartan-Dieudonné theorem
   `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_eq` (a field of characteristic not
   two, a nondegenerate form, finite dimension; none of that is assumed here), and the image of the
@@ -911,6 +914,13 @@ theorem reflection_apply_of_polar_eq_zero {y : M} (hy : polar Q v y = 0) :
     reflection Q v y = y := by
   rw [reflection_apply, hy, mul_zero, zero_smul, sub_zero]
 
+/-- In characteristic two the reflection in `v` is the transvection
+`y ↦ y + (polar Q v y / Q v) • v`. -/
+theorem reflection_apply_of_charTwo [CharP R 2] (y : M) :
+    reflection Q v y = y + (⅟(Q v) * polar Q v y) • v := by
+  rw [reflection_apply, sub_eq_add_neg,
+    neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo R _)]
+
 /-- The reflection in `v` fixes every vector orthogonal to `v`. When `2` is invertible, together
 with `reflection_apply_self` this says it is the reflection in the hyperplane `v ^ ⊥`. -/
 theorem reflection_apply_of_isOrtho {y : M} (hy : Q.IsOrtho v y) : reflection Q v y = y :=
@@ -968,6 +978,12 @@ noncomputable def reflectionOrthogonal : orthogonalGroup Q :=
 theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
+
+/-- In characteristic two the bundled reflection in `v` is the transvection
+`y ↦ y + (polar Q v y / Q v) • v`. -/
+theorem reflectionOrthogonal_apply_of_charTwo [CharP R 2] (y : M) :
+    (reflectionOrthogonal Q v : M ≃ₗ[R] M) y = y + (⅟(Q v) * polar Q v y) • v := by
+  rw [coe_reflectionOrthogonal, reflection_apply_of_charTwo]
 
 /-- Rescaling the defining vector by a scalar that keeps its norm invertible does not change the
 bundled orthogonal reflection. -/

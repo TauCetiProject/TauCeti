@@ -77,8 +77,7 @@ private noncomputable def tv (a : V) (ha : Q a ≠ 0) : orthogonalGroup Q :=
 private theorem tv_apply (a : V) (ha : Q a ≠ 0) (x : V) :
     (tv Q a ha : V ≃ₗ[K] V) x = x + ((Q a)⁻¹ * polar Q a x) • a := by
   let _ := invertibleOfNonzero ha
-  rw [tv, coe_reflectionOrthogonal, reflection_apply, invOf_eq_inv, sub_eq_add_neg,
-    neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo K _)]
+  rw [tv, reflectionOrthogonal_apply_of_charTwo, invOf_eq_inv]
 
 omit [CharP K 2] in
 private theorem tv_apply_of_polar_eq_zero (a : V) (ha : Q a ≠ 0) {x : V}
@@ -94,11 +93,6 @@ omit [CharP K 2] in
 private theorem coe_mul_apply (g h : orthogonalGroup Q) (x : V) :
     ((g * h : orthogonalGroup Q) : V ≃ₗ[K] V) x = (g : V ≃ₗ[K] V) ((h : V ≃ₗ[K] V) x) := by
   rw [Subgroup.coe_mul, mul_apply_eq_comp]
-
-/-- In characteristic two, `Q (x + y)` is the polar pairing of `x` and `y` when `Q x = Q y`. -/
-private theorem map_add_eq_polar_of_map_eq {x y : V} (hxy : Q x = Q y) :
-    Q (x + y) = polar Q x y := by
-  rw [QuadraticMap.map_add (⇑Q), hxy, CharTwo.add_self_eq_zero, zero_add]
 
 private theorem map_add_ne_zero_of_polar_ne_zero {x y : V} (hxy : Q x = Q y)
     (hp : polar Q x y ≠ 0) : Q (x + y) ≠ 0 := by
@@ -138,16 +132,15 @@ private theorem exists_mem_fix_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H) {e f f'
   · set z := f + (Q e)⁻¹ • e with hz
     have hQz : Q z = Q f := by
       have h : (Q e)⁻¹ * (Q e)⁻¹ * Q e = (Q e)⁻¹ := by field_simp
-      rw [hz, QuadraticMap.map_add (⇑Q), QuadraticMap.map_smul, polar_smul_right, hfe]
-      simp only [smul_eq_mul, h, mul_one]
-      rw [add_assoc, CharTwo.add_self_eq_zero, add_zero]
+      simp only [hz, QuadraticMap.map_add (⇑Q), QuadraticMap.map_smul, polar_smul_right, hfe,
+        smul_eq_mul, h, mul_one, add_assoc, CharTwo.add_self_eq_zero, add_zero]
     have hze : polar Q z e = 1 := by
-      rw [hz, polar_add_left, polar_smul_left, polar_self_eq_zero, smul_zero, add_zero, hfe]
+      simp only [hz, polar_add_left, polar_smul_left, polar_self_eq_zero, smul_zero, add_zero, hfe]
     have hzf : polar Q z f = (Q e)⁻¹ := by
-      rw [hz, polar_add_left, polar_smul_left, polar_self_eq_zero, hf, smul_eq_mul, mul_one,
+      simp only [hz, polar_add_left, polar_smul_left, polar_self_eq_zero, hf, smul_eq_mul, mul_one,
         zero_add]
     have hf'z : polar Q f' z = (Q e)⁻¹ := by
-      rw [hz, polar_add_right, polar_smul_right, hp, hf'e, smul_eq_mul, mul_one, zero_add]
+      simp only [hz, polar_add_right, polar_smul_right, hp, hf'e, smul_eq_mul, mul_one, zero_add]
     have hinv : (Q e)⁻¹ ≠ 0 := inv_ne_zero he
     obtain ⟨h₁, hh₁, hh₁f', hh₁e⟩ :=
       exists_mem_apply_eq_of_polar_ne_zero H hH (hff.trans hQz.symm) (hf'z ▸ hinv)
@@ -176,10 +169,11 @@ private theorem exists_mem_apply_eq (hH : ∀ a ha, tv Q a ha ∈ H)
     set z := (tv Q w hw : V ≃ₗ[K] V) x
     have hQz : Q x = Q z := (map_app_of_mem_orthogonalGroup (tv Q w hw).property x).symm
     have hxz : polar Q x z ≠ 0 := by
-      rw [hz, polar_add_right, polar_smul_right, polar_self_eq_zero, zero_add, smul_eq_mul]
+      simp only [hz, polar_add_right, polar_smul_right, polar_self_eq_zero, zero_add, smul_eq_mul]
       exact mul_ne_zero hc0 hxw
     have hzy : polar Q z y ≠ 0 := by
-      rw [hz, polar_add_left, polar_smul_left, hp, zero_add, smul_eq_mul, polar_comm _ w y]
+      simp only [hz, polar_add_left, polar_smul_left, hp, zero_add, smul_eq_mul,
+        polar_comm (⇑Q) w y]
       exact mul_ne_zero hc0 hyw
     obtain ⟨h₁, hh₁, hh₁x, -⟩ := exists_mem_apply_eq_of_polar_ne_zero H hH hQz hxz
     obtain ⟨h₂, hh₂, hh₂z, -⟩ :=
@@ -193,18 +187,6 @@ end Transvection
 section Nondegenerate
 
 variable {Q : QuadraticForm K V}
-
-private theorem exists_polar_ne_zero_ne_zero (hB : Q.polarBilin.Nondegenerate) {x y : V}
-    (hx : x ≠ 0) (hy : y ≠ 0) : ∃ f, polar Q x f ≠ 0 ∧ polar Q y f ≠ 0 := by
-  obtain ⟨u, hu⟩ := LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero hB hx
-  obtain ⟨v, hv⟩ := LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero hB hy
-  rw [polarBilin_apply_apply] at hu hv
-  by_cases hyu : polar Q y u = 0
-  · by_cases hxv : polar Q x v = 0
-    · exact ⟨u + v, by rwa [polar_add_right, hxv, add_zero], by rwa [polar_add_right, hyu,
-        zero_add]⟩
-    · exact ⟨v, hxv, hv⟩
-  · exact ⟨u, hu, hyu⟩
 
 /-- A nonzero nondegenerate quadratic space has a vector `e` of nonzero norm and a vector `f`
 with `polar Q e f = 1`. -/
@@ -295,8 +277,8 @@ private theorem exists_isTotallyIsotropic_finrank_eq_two [CharP K 2] {x y f : V}
     rw [LinearIndependent.pair_iff]
     intro a b hab
     have h1 := congrArg (polar Q x) hab
-    rw [polar_add_right, polar_smul_right, polar_smul_right, polar_add_right, polar_self_eq_zero,
-      hp, add_zero, smul_zero, add_zero, polar_zero_right, smul_eq_mul] at h1
+    simp only [polar_add_right, polar_smul_right, polar_self_eq_zero, hp, add_zero, mul_zero,
+      polar_zero_right, smul_eq_mul] at h1
     have ha : a = 0 := (mul_eq_zero.mp h1).resolve_right hxf
     refine ⟨ha, ?_⟩
     rw [ha, zero_smul, zero_add] at hab
@@ -320,7 +302,9 @@ private theorem exists_good [CharP K 2] [FiniteDimensional K V]
     ∃ w, Q w ≠ 0 ∧ polar Q x w ≠ 0 ∧ polar Q y w ≠ 0 := by
   have hx0 : x ≠ 0 := fun h ↦ hx (by rw [h, map_zero])
   have hy0 : y ≠ 0 := fun h ↦ hx (by rw [hxy, h, map_zero])
-  obtain ⟨f, hxf, hyf⟩ := exists_polar_ne_zero_ne_zero hB hx0 hy0
+  obtain ⟨f, hxf, hyf⟩ :=
+    LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero_and_apply_ne_zero hB hx0 hy0
+  rw [polarBilin_apply_apply] at hxf hyf
   by_contra! hno
   have hfx : polar Q f x ≠ 0 := by rwa [polar_comm]
   have hfy : polar Q f y ≠ 0 := by rwa [polar_comm]
@@ -412,7 +396,7 @@ private theorem mem_of_apply_eq_self {e f : V} (hef : polar Q e f = 1)
         (by rw [Submodule.map_span, Set.image_pair, LinearEquiv.coe_coe, hge, hgf])) ∈
         extensionSubgroup H W P := by
     rw [ih _ (tv_mem_extensionSubgroup hH le_rfl)]
-    trivial
+    exact Subgroup.mem_top _
   convert hg'
   refine Subtype.ext (LinearEquiv.toLinearMap_injective (LinearMap.ext_on_codisjoint
     (LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal Q.isAlt_polarBilin
@@ -548,19 +532,16 @@ private theorem not_exc_orthogonal_span_pair_add [FiniteDimensional K V]
   rw [Fin.sum_univ_three, hux₀, zero_smul, add_zero] at hexp
   have hyx (i j : Fin 3) : polar Q (y i) (x j) = if j = i then 1 else 0 := by
     rw [polar_comm, hxy]
-  have hQ := congrArg Q hexp
-  simp only [QuadraticMap.map_add (⇑Q), QuadraticMap.map_smul, polar_add_left, polar_add_right,
-    polar_smul_left, polar_smul_right, hxy, hyx, hxx, hyy, hQx₀, hQx₁, hQx₂, hQy₁, hQy₂,
-    smul_eq_mul, hQu] at hQ
-  simp only [Fin.isValue, Fin.reduceEq, ite_false, ite_true, mul_zero, mul_one, zero_add,
-    add_zero] at hQ
+  have hQ : 0 = polar Q u (y 0) * polar Q u (y 0) + polar Q u (x 1) * polar Q u (y 1) +
+      polar Q u (x 2) * polar Q u (y 2) := by
+    simpa [QuadraticMap.map_add (⇑Q), QuadraticMap.map_smul, polar_add_left, polar_add_right,
+      polar_smul_left, polar_smul_right, hxy, hyx, hxx, hyy, hQx₀, hQx₁, hQx₂, hQy₁, hQy₂,
+      hQu] using congrArg Q hexp
   rw [mul_comm] at hCD
   rw [huy₀, hCD, add_zero] at hQ
   obtain ⟨h₁, h₂⟩ := eq_zero_and_eq_zero_of_natCard_eq_two hcard (p := polar Q u (x 1))
     (q := polar Q u (y 1)) (by linear_combination -hQ)
-  rw [huy₀, h₁, h₂, add_zero, zero_smul, zero_smul, zero_smul, zero_add, zero_add,
-    zero_add] at hexp
-  exact hexp
+  simpa only [huy₀, h₁, h₂, add_zero, zero_smul, zero_add] using hexp
 
 /-- An exceptional polar orthogonal complement of a frame `(e, f)` contains two mutually
 polar-orthogonal singular vectors `s₁, s₂` with `e, f, s₁, s₂` linearly independent. -/
@@ -658,7 +639,7 @@ private theorem exists_frame_not_exc_of_exc [FiniteDimensional K V]
     hs₁'s₂'⟩ := exists_hyperbolic_partners hB hes₁ hfs₁ hes₂ hfs₂ hQs₁ hQs₂ hs₁s₂ hli
   refine ⟨e, f + s₁ + s₁', he, by rw [polar_add_right, polar_add_right, hef, hes₁, hes₁',
     add_zero, add_zero], ?_⟩
-  have h := not_exc_orthogonal_span_pair_add hB hcard hn (x := ![e, s₁, s₂])
+  exact not_exc_orthogonal_span_pair_add hB hcard hn (x := ![e, s₁, s₂])
     (y := ![f, s₁', s₂'])
     (fun i j ↦ by
       fin_cases i <;> fin_cases j <;> simp [hef, hes₁', hes₂', polar_comm (⇑Q) s₁ f, hfs₁,
@@ -671,7 +652,6 @@ private theorem exists_frame_not_exc_of_exc [FiniteDimensional K V]
         hfs₂', polar_comm (⇑Q) s₁' f, polar_comm (⇑Q) s₂' f, polar_comm (⇑Q) s₂' s₁', hs₁'s₂'])
     (by simpa using (natCard_eq_two_iff_forall_eq_zero_or_eq_one.mp hcard _).resolve_left he)
     hQs₁ hQs₂ hQs₁' hQs₂'
-  exact h
 
 /-- A frame `(e, f)` whose polar orthogonal complement is not exceptional. -/
 private theorem exists_frame_not_exc [FiniteDimensional K V] [Nontrivial V]

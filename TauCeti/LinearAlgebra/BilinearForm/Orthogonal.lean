@@ -45,10 +45,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   vectors are orthogonal.
 * `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: orthogonality to the span of two vectors.
 * `LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero`,
+  `LinearMap.BilinForm.Nondegenerate.exists_apply_ne_zero_and_apply_ne_zero`,
   `LinearMap.BilinForm.Nondegenerate.exists_forall_apply_eq` and
   `LinearMap.BilinForm.Nondegenerate.eq_sum_apply_smul`: a nonzero vector pairs nontrivially with
-  some vector, prescribed pairings with a linearly independent family are realized, and vectors
-  expand in a pair of dual families.
+  some vector, two nonzero vectors pair nontrivially with a common vector, prescribed pairings with
+  a linearly independent family are realized, and vectors expand in a pair of dual families.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
@@ -176,6 +177,18 @@ theorem Nondegenerate.exists_apply_ne_zero {B : LinearMap.BilinForm K V} (hB : B
     {x : V} (hx : x ≠ 0) : ∃ y, B x y ≠ 0 := by
   by_contra! h
   exact hx (hB.1 x h)
+
+/-- For a nondegenerate form, two nonzero vectors pair nontrivially with a common vector. -/
+theorem Nondegenerate.exists_apply_ne_zero_and_apply_ne_zero {B : LinearMap.BilinForm K V}
+    (hB : B.Nondegenerate) {x y : V} (hx : x ≠ 0) (hy : y ≠ 0) :
+    ∃ w, B x w ≠ 0 ∧ B y w ≠ 0 := by
+  obtain ⟨u, hu⟩ := hB.exists_apply_ne_zero hx
+  obtain ⟨v, hv⟩ := hB.exists_apply_ne_zero hy
+  by_cases hyu : B y u = 0
+  · by_cases hxv : B x v = 0
+    · exact ⟨u + v, by simpa [hxv] using hu, by simpa [hyu] using hv⟩
+    · exact ⟨v, hxv, hv⟩
+  · exact ⟨u, hu, hyu⟩
 
 /-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
 sets are orthogonal. -/
@@ -811,7 +824,7 @@ theorem Nondegenerate.eq_sum_apply_smul (hB : B.Nondegenerate) {ι : Type*} [Fin
   refine hB.1 _ fun x ↦ apply_eq_zero_of_mem_span ?_ (Submodule.mem_span_singleton_self _)
     (show x ∈ Submodule.span K (Set.range w) by
       rw [hw.span_eq_top_of_card_eq_finrank' hcard]
-      trivial)
+      exact Submodule.mem_top)
   rintro _ rfl _ ⟨j, rfl⟩
   simp [h]
 
