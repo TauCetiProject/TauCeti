@@ -203,8 +203,10 @@ theorem IsOrthogonalFiber.fiberConj {σ : K →+* ℂ} {v : Codomain σ ⊗[𝓞
   induction w using TensorProduct.inductionOn with
   | add w₁ w₂ h₁ h₂ => rw [map_add, LinearMap.map_add₂, h₁, h₂, add_zero]
   | tmul c x =>
-    rw [Codomain.tmul_eq_smul, LinearMap.map_smul_of_tower, LinearMap.map_smulₛₗ₂,
-      ← fiberConj_one_tmul σ x, ← fiberConj_baseChange, form_fiberConj, hv, map_zero, smul_zero]
+    have := congrArg conj (hv (1 ⊗ₜ x))
+    rw [← form_fiberConj, fiberConj_baseChange] at this
+    simp at this
+    simp [Codomain.tmul_eq_smul _ c, this]
 
 /-- The lifts at conjugate embeddings are exchanged by complex conjugation of fibres. -/
 theorem quotientLift_fiberConj (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] (E ⧸ F')) :

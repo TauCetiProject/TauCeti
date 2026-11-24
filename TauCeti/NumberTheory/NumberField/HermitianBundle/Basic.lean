@@ -293,9 +293,8 @@ theorem form_fiberConj (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
     induction v using TensorProduct.inductionOn with
     | add v₁ v₂ h₁ h₂ => simp only [map_add, h₁, h₂]
     | tmul d y =>
-      rw [fiberConj_tmul, fiberConj_tmul, h.form_tmul_tmul, h.form_tmul_tmul σ c d,
-        Codomain.equiv_conj, Codomain.equiv_conj, h.form_conjugate_tmul, map_mul, map_mul,
-        Complex.conj_conj]
+      simp [h.form_tmul_tmul σ c d, h.form_tmul_tmul (conjugate σ) (Codomain.conj σ c),
+        h.form_conjugate_tmul]
 
 end FiberConj
 
