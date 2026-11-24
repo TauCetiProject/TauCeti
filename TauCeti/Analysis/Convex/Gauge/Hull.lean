@@ -17,7 +17,8 @@ which every point lies in some dilate `r • s` with `r > 0`. A convex set with 
 boundary, such as a polytope having `0` as a vertex, is not absorbent: the points lying in some
 dilate `r • s` form the cone hull `ConvexCone.hull ℝ s` (`ConvexCone.mem_hull_of_convex`), and
 outside it the infimum defining the gauge is taken over the empty set. This file proves, on the
-cone hull, the properties of the gauge that Mathlib proves for absorbent sets.
+cone hull, subadditivity of the gauge and, for closed bounded `s ∋ 0`, that the infimum defining
+the gauge is attained and that its sublevel sets are the dilates `t • s`.
 
 ## Main results
 
@@ -42,7 +43,10 @@ namespace TauCeti
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] {s : Set E} {x y : E} {t : ℝ}
 
 /-- If `x` lies in the cone hull of a convex set `s` and `gauge s x < a`, then `x` lies in a
-dilate `b • s` with `0 < b < a`. -/
+dilate `b • s` with `0 < b < a`.
+
+Adapted from Mathlib's `exists_lt_of_gauge_lt`, with absorbency replaced by membership in the
+cone hull. -/
 theorem exists_lt_of_gauge_lt_of_mem_hull (hs : Convex ℝ s) (hx : x ∈ ConvexCone.hull ℝ s)
     {a : ℝ} (ha : gauge s x < a) : ∃ b, 0 < b ∧ b < a ∧ x ∈ b • s := by
   obtain ⟨b, ⟨hb, hxb⟩, hba⟩ :=
@@ -50,7 +54,9 @@ theorem exists_lt_of_gauge_lt_of_mem_hull (hs : Convex ℝ s) (hx : x ∈ Convex
       ((ConvexCone.mem_hull_of_convex hs).1 hx) ha
   exact ⟨b, hb, hba, hxb⟩
 
-/-- The gauge of a convex set is subadditive on its cone hull. -/
+/-- The gauge of a convex set is subadditive on its cone hull.
+
+Adapted from Mathlib's `gauge_add_le`, with absorbency replaced by membership in the cone hull. -/
 theorem gauge_add_le_of_mem_hull (hs : Convex ℝ s) (hx : x ∈ ConvexCone.hull ℝ s)
     (hy : y ∈ ConvexCone.hull ℝ s) : gauge s (x + y) ≤ gauge s x + gauge s y := by
   refine le_of_forall_pos_lt_add fun ε hε => ?_
@@ -104,7 +110,7 @@ theorem mem_smul_of_gauge_le_of_mem_hull (hs : Convex ℝ s) (hs₀ : (0 : E) �
     · exact (((continuousAt_inv₀ htpos.ne').smul continuousAt_const).tendsto).mono_left
         nhdsWithin_le_nhds
     · refine eventually_nhdsWithin_of_forall fun r hr => ?_
-      have hr : t < r := hr
+      have hr : t < r := Set.mem_Ioi.1 hr
       exact (Set.mem_smul_set_iff_inv_smul_mem₀ (htpos.trans hr).ne' _ _).1 (hmem r hr)
 
 /-- For a closed bounded convex set `s` containing `0`, the infimum defining the gauge is

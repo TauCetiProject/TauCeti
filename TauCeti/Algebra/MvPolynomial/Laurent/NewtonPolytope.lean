@@ -56,6 +56,7 @@ filtration by the ℓ¹ degree (`TauCeti.LaurentRing.mem_newtonFiltration_sum_X_
 * `TauCeti.LaurentRing.newtonPolytope φ`: the Newton polytope `conv({0} ∪ supp φ)`.
 * `TauCeti.LaurentRing.newtonFiltration φ a`: the span of the monomials `x^m` with `m` in the
   cone over the Newton polytope and of Newton height at most `a`.
+* `TauCeti.LaurentRing.newtonFiltrationLT φ a`: the union `F_{<a}` of the `F_b` with `b < a`.
 
 ## Main results
 
@@ -64,7 +65,10 @@ filtration by the ℓ¹ degree (`TauCeti.LaurentRing.mem_newtonFiltration_sum_X_
 * `TauCeti.LaurentRing.mem_newtonFiltration_iff` and
   `TauCeti.LaurentRing.mem_newtonFiltration_iff_mem_smul`: membership in the Newton filtration,
   through the height and through the dilates of the polytope.
+* `TauCeti.LaurentRing.mem_newtonFiltrationLT_iff`: membership in `F_{<a}`, through the strict
+  sublevels of the height.
 * `TauCeti.LaurentRing.mul_mem_newtonFiltration`: `F_a F_b ⊆ F_{a+b}`.
+* `TauCeti.LaurentRing.newtonFiltration_eq_bot_of_neg`: `F_a = 0` for `a < 0`.
 * `TauCeti.LaurentRing.self_mem_newtonFiltration_one`: `φ ∈ F_1`.
 * `TauCeti.LaurentRing.newtonFiltration_zero`: `F_0` is spanned by `1`.
 * `TauCeti.LaurentRing.iSup_newtonFiltration`: the filtration exhausts the cone algebra.
@@ -186,6 +190,21 @@ noncomputable def newtonFiltration (φ : LaurentRing R K) (a : ℝ) : Submodule 
   supported R R {m | latticePoint m ∈ ConvexCone.hull ℝ (newtonPolytope φ) ∧
     gauge (newtonPolytope φ) (latticePoint m) ≤ a}
 
+theorem newtonFiltration_def (φ : LaurentRing R K) (a : ℝ) :
+    newtonFiltration φ a = supported R R {m | latticePoint m ∈
+      ConvexCone.hull ℝ (newtonPolytope φ) ∧ gauge (newtonPolytope φ) (latticePoint m) ≤ a} :=
+  (rfl)
+
+/-- The strict sublevels `F_{<a}` of the Newton filtration: the union of the `F_b` with `b < a`.
+They form the second family of the `IsRingFiltration` instance, and `F_a / F_{<a}` is the
+degree-`a` piece of the associated graded ring. -/
+noncomputable def newtonFiltrationLT (φ : LaurentRing R K) (a : ℝ) :
+    Submodule R (LaurentRing R K) :=
+  ⨆ b < a, newtonFiltration φ b
+
+theorem newtonFiltrationLT_def (φ : LaurentRing R K) (a : ℝ) :
+    newtonFiltrationLT φ a = ⨆ b < a, newtonFiltration φ b := (rfl)
+
 variable {φ f g : LaurentRing R K} {a b : ℝ}
 
 /-- A Laurent polynomial lies in `F_a` exactly when each of its exponents lies in the cone over
@@ -212,6 +231,28 @@ theorem single_mem_newtonFiltration_iff {m : K →₀ ℤ} {r : R} (hr : r ≠ 0
         gauge (newtonPolytope φ) (latticePoint m) ≤ a := by
   simp [mem_newtonFiltration_iff, coeff_single, Finsupp.support_single _ hr]
 
+/-- A Laurent polynomial lies in `F_{<a}` exactly when each of its exponents lies in the cone over
+the Newton polytope and has Newton height less than `a`. -/
+theorem mem_newtonFiltrationLT_iff :
+    f ∈ newtonFiltrationLT φ a ↔ ∀ m ∈ f.coeff.support,
+      latticePoint m ∈ ConvexCone.hull ℝ (newtonPolytope φ) ∧
+        gauge (newtonPolytope φ) (latticePoint m) < a := by
+  refine ⟨fun hf => ?_, fun h => ?_⟩
+  · have hle : newtonFiltrationLT φ a ≤ supported R R {m | latticePoint m ∈
+        ConvexCone.hull ℝ (newtonPolytope φ) ∧ gauge (newtonPolytope φ) (latticePoint m) < a} :=
+      iSup₂_le fun b hb => supported_mono fun _ hm => ⟨hm.1, hm.2.trans_lt hb⟩
+    exact fun m hm => mem_supported.1 (hle hf) hm
+  · -- the support is finite, so the largest height `b` of an exponent is still less than `a`
+    rw [newtonFiltrationLT_def]
+    rcases f.coeff.support.eq_empty_or_nonempty with h₀ | hne
+    · refine Submodule.mem_iSup_of_mem (a - 1) (Submodule.mem_iSup_of_mem (by linarith) ?_)
+      simp [mem_newtonFiltration_iff, h₀]
+    · let b := f.coeff.support.sup' hne fun m => gauge (newtonPolytope φ) (latticePoint m)
+      refine Submodule.mem_iSup_of_mem b (Submodule.mem_iSup_of_mem
+        ((Finset.sup'_lt_iff hne).2 fun m hm => (h m hm).2) ?_)
+      exact mem_newtonFiltration_iff.2 fun m hm =>
+        ⟨(h m hm).1, Finset.le_sup' (fun m => gauge (newtonPolytope φ) (latticePoint m)) hm⟩
+
 theorem single_mem_newtonFiltration {m : K →₀ ℤ} (r : R)
     (hm : latticePoint m ∈ ConvexCone.hull ℝ (newtonPolytope φ))
     (ha : gauge (newtonPolytope φ) (latticePoint m) ≤ a) : single m r ∈ newtonFiltration φ a := by
@@ -222,6 +263,7 @@ theorem single_mem_newtonFiltration {m : K →₀ ℤ} (r : R)
 theorem newtonFiltration_mono (φ : LaurentRing R K) : Monotone (newtonFiltration φ) :=
   fun _ _ hab => supported_mono fun _ hm => ⟨hm.1, hm.2.trans hab⟩
 
+/-- `F_a = 0` for `a < 0`: the Newton height is nonnegative. -/
 theorem newtonFiltration_eq_bot_of_neg (ha : a < 0) : newtonFiltration φ a = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun f hf => ?_
   ext m
@@ -272,7 +314,7 @@ instance newtonFiltration.gradedMonoid (φ : LaurentRing R K) :
 
 /-- The Newton filtration is an increasing ring filtration indexed by `ℝ`. -/
 instance newtonFiltration.isRingFiltration (φ : LaurentRing R K) :
-    IsRingFiltration (newtonFiltration φ) (fun a => ⨆ b < a, newtonFiltration φ b) where
+    IsRingFiltration (newtonFiltration φ) (newtonFiltrationLT φ) where
   mono := newtonFiltration_mono φ
   is_le hab := le_iSup₂_of_le _ hab le_rfl
   is_sup _ _ h := iSup₂_le h
@@ -327,10 +369,8 @@ theorem newtonPolytope_sum_X_add_inv [Nontrivial R] :
     newtonPolytope (∑ i, (X i + (((unitX i)⁻¹ : (LaurentRing R K)ˣ) : LaurentRing R K)) :
       LaurentRing R K) = l1Ball K := by
   classical
-  rw [newtonPolytope_def, coeff_support_sum_X_add_inv, l1Ball_eq_convexHull, Finset.coe_union,
-    Finset.coe_image, Finset.coe_image, Set.image_union, Set.image_image, Set.image_image,
-    Finset.coe_univ, Set.image_univ, Set.image_univ]
-  simp [latticePoint_single]
+  rw [newtonPolytope_def, coeff_support_sum_X_add_inv, l1Ball_eq_convexHull]
+  simp [Set.image_union, ← Set.range_comp, Function.comp_def, latticePoint_single]
 
 variable (R) in
 /-- The Newton height of `∑ᵢ (x_i + x_i⁻¹)` is the ℓ¹ norm of the exponent. -/
