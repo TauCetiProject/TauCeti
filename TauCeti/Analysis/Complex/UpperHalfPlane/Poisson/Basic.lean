@@ -59,6 +59,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
 * `TauCeti.isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel`: `ν` is Poisson-finite
   exactly when `P(z, ·)` is `ν`-integrable.
+* `TauCeti.integrable_upperHalfPlanePoissonMeasure_iff`: for a.e. strongly measurable `h`,
+  `h ∈ L¹(Π)` for the Poisson measure `Π` exactly when `P[|h| dx](i) < ∞`.
 * `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegral`: `S[ν]` is holomorphic on `ℂ₊`.
 * `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]`.
 * `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊`.
@@ -358,6 +360,34 @@ theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoisson
       simpa using upperHalfPlanePoissonKernel_nonneg (z := conj z) (by simpa using hz) x
     rw [ENNReal.ofReal_of_nonpos (integral_nonpos hP)]
     simp [ENNReal.ofReal_of_nonpos, hP]
+
+/-- **Integrability against the Poisson measure through the Poisson integral at `i`.** An almost
+everywhere strongly measurable `h : ℝ → E` lies in `L¹(Π)`, for the Poisson measure
+`Π = dx / (1 + x ^ 2)`, exactly when the extended Poisson integral of `|h| dx` is finite at `i`,
+as `P(i, x) = 1 / (π (1 + x ^ 2))`. -/
+theorem integrable_upperHalfPlanePoissonMeasure_iff {E : Type*} [NormedAddCommGroup E]
+    {h : ℝ → E} (hh : AEStronglyMeasurable h volume) :
+    Integrable h upperHalfPlanePoissonMeasure ↔
+      upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I < ∞ := by
+  have hd : Measurable fun x : ℝ ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by fun_prop
+  have hPi : upperHalfPlanePoissonMeasure ≪ volume := by
+    rw [upperHalfPlanePoissonMeasure_eq_withDensity]
+    exact withDensity_absolutelyContinuous _ _
+  have hP : upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I =
+      ENNReal.ofReal π⁻¹ * ∫⁻ x, ‖h x‖ₑ ∂upperHalfPlanePoissonMeasure := by
+    rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonMeasure_eq_withDensity,
+      lintegral_withDensity_eq_lintegral_mul₀ hh.eNorm (by fun_prop),
+      lintegral_withDensity_eq_lintegral_mul₀ hd.aemeasurable hh.eNorm,
+      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine lintegral_congr fun x ↦ ?_
+    simp only [Pi.mul_apply, upperHalfPlanePoissonKernel_I, mul_inv]
+    rw [ENNReal.ofReal_mul (by positivity)]
+    ring
+  rw [hP, Integrable, and_iff_right (hh.mono_ac hPi), HasFiniteIntegral,
+    ENNReal.mul_lt_top_iff]
+  simp only [ENNReal.ofReal_lt_top, true_and, ENNReal.ofReal_eq_zero, not_le.mpr
+    (inv_pos.mpr Real.pi_pos), false_or, iff_self_or]
+  exact fun h0 ↦ h0 ▸ ENNReal.zero_lt_top
 
 /-! ### The Schwarz integral -/
 
