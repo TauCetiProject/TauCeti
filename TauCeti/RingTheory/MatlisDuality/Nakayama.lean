@@ -75,7 +75,7 @@ theorem IsInjectiveEnvelope.bijective_mapOp_lcomp (hf : IsInjectiveEnvelope f)
     (Q : Type w') [AddCommGroup Q] [Module A Q] [Module.Finite A Q] [Module.Projective A Q] :
     Function.Bijective fun g : P →ₗ[A] Q => mapOp (R := R) (E := E) (g.lcomp Aᵐᵒᵖ A) :=
   have := hf.moduleInjective
-  (MatlisDual.bijective_mapOp hf.length_quotient_linearMap_eq_one (isFiniteLength_dual R A Q)
+  (MatlisDual.bijective_mapOp hf.length_quotient_linearMap_eq_one
     (isFiniteLength_dual R A P)).comp (opDual_lcomp_bijective A Q)
 
 variable {I : Type w} [AddCommGroup I] [Module R I] [Module A I] [IsScalarTower R A I]

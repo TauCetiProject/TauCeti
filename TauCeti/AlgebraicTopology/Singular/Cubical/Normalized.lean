@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
+import Mathlib.Topology.CompactOpen
 
 /-!
 # Normalized cubical chains
@@ -34,6 +35,8 @@ inverse.
 * `TauCeti.NormalizedCubicalChain.cast R h`: reindexing along an equality of dimensions.
 * `TauCeti.NormalizedCubicalChain.desc g hg`: the linear map determined by its values on cubes,
   vanishing on the degenerate ones.
+* `TauCeti.NormalizedCubicalChain.zeroEquiv X R`: the normalized `0`-chains are the formal
+  combinations of points.
 
 ## Main results
 
@@ -42,6 +45,8 @@ inverse.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
+* `TauCeti.NormalizedCubicalChain.boundary_ofCube_comp_squareSwap`: transposing a square negates
+  its boundary.
 * `TauCeti.NormalizedCubicalChain.map_boundary` and
   `TauCeti.NormalizedCubicalChain.map_boundary_apply`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
@@ -282,6 +287,25 @@ theorem desc_ofCube {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ} (g : Sin
   simp [desc, ofCube_def]
 
 variable (X) in
+/-- **The normalized `0`-chains are the formal combinations of points**: no `0`-cube is
+degenerate, and a `0`-cube is the constant cube at its value. -/
+def zeroEquiv : NormalizedCubicalChain X R 0 ≃ₗ[R] (X →₀ R) :=
+  Submodule.quotEquivOfEqBot _ (CubicalChain.degenerate_zero (X := X) (R := R)) ≪≫ₗ
+    Finsupp.domLCongr (Homeomorph.continuousMapOfUnique (X := Fin 0 → I) (Y := X)).symm.toEquiv
+
+/-- The class of the `0`-cube at a point is the indicator of that point. -/
+@[simp]
+theorem zeroEquiv_ofCube_point (x : X) :
+    zeroEquiv X R (ofCube X R (SingularCube.point x)) = Finsupp.single x 1 := by
+  simp [zeroEquiv, ofCube_def]
+
+/-- The indicator of a point is the class of the `0`-cube at that point. -/
+@[simp]
+theorem zeroEquiv_symm_single (x : X) (r : R) :
+    (zeroEquiv X R).symm (Finsupp.single x r) = r • ofCube X R (SingularCube.point x) := by
+  rw [LinearEquiv.symm_apply_eq, map_smul, zeroEquiv_ofCube_point, Finsupp.smul_single_one]
+
+variable (X) in
 /-- The boundary of normalized cubical chains, induced by the boundary of the unnormalized ones. -/
 def boundary (n : ℕ) : NormalizedCubicalChain X R (n + 1) →ₗ[R] NormalizedCubicalChain X R n :=
   Submodule.mapQ _ _ (CubicalChain.boundary X R R n) (degenerate_le_comap_boundary R n)
@@ -305,6 +329,12 @@ theorem boundary_ofCube {n : ℕ} (c : SingularCube X (n + 1)) :
         (ofCube X R (SingularCube.face i 0 c) - ofCube X R (SingularCube.face i 1 c)) := by
   rw [ofCube_def, boundary_mk, CubicalChain.boundary_single_one, CubicalChain.boundaryCube_def]
   simp only [ofCube_def, ← Submodule.mkQ_apply, map_sum, map_smul, map_sub]
+
+/-- The boundary of a transposed square is minus the boundary of the square. -/
+theorem boundary_ofCube_comp_squareSwap (c : SingularCube X 2) :
+    boundary X R 1 (ofCube X R (c.comp SingularCube.squareSwap)) =
+      -boundary X R 1 (ofCube X R c) := by
+  simp [Fin.sum_univ_two]
 
 /-- Normalized cubical chains pushed forward along a continuous map. -/
 def map (f : C(X, Y)) (n : ℕ) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain Y R n :=

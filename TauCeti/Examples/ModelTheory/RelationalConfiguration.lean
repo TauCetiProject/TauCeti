@@ -65,3 +65,9 @@ example {L : Language} [L.IsRelational] [∀ n, Countable (L.Relations n)] (φ :
 -- The coding space of graphs on `ℕ` has continuum many points.
 example : Cardinal.mk (RelationalConfiguration Language.graph ℕ) = Cardinal.continuum :=
   mk_eq_continuum _ _ two_ne_zero Language.adj
+
+-- Finite cylinders of configurations are measurable.
+example {L : Language} {V : Type*} (s : Finset (Atom L V)) (f : Atom L V → Bool) :
+    MeasurableSet
+      (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) :=
+  SymbolicDynamics.FullShift.measurableSet_cylinder s f

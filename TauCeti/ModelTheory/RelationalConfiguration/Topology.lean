@@ -9,7 +9,8 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.SetTheory.Cardinal.Continuum
 public import TauCeti.Topology.Algebra.Group.Perm
-public import Mathlib.Dynamics.SymbolicDynamics.Basic
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.Perm
+public import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 
 /-!
 # Topology of relational configurations
@@ -19,18 +20,22 @@ permutation of the carrier is continuous. Restriction along a vertex map is cont
 jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
 truth value gives a clopen, measurable cylinder, and so does specifying the truth values of a
 finite set of atoms (`SymbolicDynamics.FullShift.cylinder`, clopen by
-`SymbolicDynamics.FullShift.isOpen_cylinder` and `SymbolicDynamics.FullShift.isClosed_cylinder`);
-these finite cylinders form a basis of the topology
-(`TauCeti.RelationalConfiguration.isTopologicalBasis_cylinder`). On countable carriers in
-countable relational vocabularies the topology is Polish and its Borel σ-algebra is the existing
-product σ-algebra. There are at most continuum many configurations, and exactly continuum many on
-a countably infinite carrier when some relation symbol has positive arity
-(`TauCeti.RelationalConfiguration.mk_eq_continuum`). The same construction handles finite and
-empty carriers.
+`SymbolicDynamics.FullShift.isOpen_cylinder` and `SymbolicDynamics.FullShift.isClosed_cylinder`,
+measurable by `SymbolicDynamics.FullShift.measurableSet_cylinder`); these finite cylinders form a
+basis of the topology (`TauCeti.RelationalConfiguration.isTopologicalBasis_cylinder`). On
+countable carriers in countable relational vocabularies the topology is Polish and its Borel
+σ-algebra is the existing product σ-algebra. There are at most continuum many configurations, and
+exactly continuum many on a countably infinite carrier when some relation symbol has positive
+arity (`TauCeti.RelationalConfiguration.mk_eq_continuum`). The same construction handles finite
+and empty carriers.
 
 For a discrete carrier, the *logic action* of its permutation group, with the topology of
 pointwise convergence, is jointly continuous, for every language, so stabilizers of
-configurations are closed subgroups (`TauCeti.isClosed_stabilizer`).
+configurations are closed subgroups (`TauCeti.isClosed_stabilizer`). On a countable discrete
+carrier in a countable relational vocabulary both spaces are second countable and carry their
+Borel σ-algebras, so the action is jointly measurable (Mathlib's instance
+`ContinuousSMul.measurableSMul₂`): the coding space on `ℕ` is a Borel `S∞`-space, whose orbit
+relation is isomorphism (`TauCeti.RelationalConfiguration.isoSetoid_eq_orbitRel`).
 
 These are the usual spaces of structures used for the logic action; see Gao,
 *Invariant Descriptive Set Theory*. The measurable coordinates and encoding of structures are
@@ -66,6 +71,14 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → RelationalCon
     Continuous f ↔ ∀ a, Continuous (fun x => (f x).eval a) := by
   simp only [eval_def]
   exact continuous_pi_iff
+
+/-- Convergence of configurations is convergence of every atom coordinate. -/
+theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → RelationalConfiguration L V}
+    {c : RelationalConfiguration L V} :
+    Filter.Tendsto f l (nhds c) ↔
+      ∀ a, Filter.Tendsto (fun i => (f i).eval a) l (nhds (c.eval a)) := by
+  simp only [eval_def]
+  exact tendsto_pi_nhds
 
 /-- Building a configuration from its atom values is continuous. -/
 @[fun_prop]
@@ -110,14 +123,6 @@ instance instContinuousSMulPerm [TopologicalSpace V] [DiscreteTopology V] :
 theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :
     IsClopen {c : RelationalConfiguration L V | c.eval a = b} :=
   (isClopen_discrete {b}).preimage (continuous_eval a)
-
-/-- A finite cylinder `SymbolicDynamics.FullShift.cylinder s f` of configurations, those agreeing
-with `f` on the finite set `s` of atoms, is measurable. -/
-theorem measurableSet_cylinder (s : Finset (Atom L V)) (f : Atom L V → Bool) :
-    MeasurableSet
-      (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) := by
-  rw [SymbolicDynamics.FullShift.cylinder_eq_set_pi]
-  exact MeasurableSet.pi s.countable_toSet fun a _ => measurableSet_singleton (f a)
 
 /-- The finite cylinders form a basis of the topology of the coding space. -/
 theorem isTopologicalBasis_cylinder :
