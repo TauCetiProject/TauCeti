@@ -24,7 +24,7 @@ with parameters `a` and `1/2`. This gives the quadratic transformation
 At natural parameters the unit-step recurrence in the first parameter peels one negative binomial
 weight off `I_x(m, n)` at a time, and the negative binomial series of `(1 - x) ^ (-n)` sums all of
 them to `1`. Together they give `I_x(m, n) = (1 - x) ^ n * ∑_{j ≥ m} (n + j - 1).choose j * x ^ j`
-for `n > 0` and `0 ≤ x < 1`.
+for natural `m` and `n`, not both `0`, and `0 ≤ x < 1`.
 
 ## Main results
 
