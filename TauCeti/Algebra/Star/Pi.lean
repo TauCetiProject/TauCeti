@@ -82,25 +82,23 @@ section Unique
 /-- Functions from a `Unique` type `ι` to `A` are `⋆`-algebra equivalent to `A`. -/
 def funUnique (R ι A : Type*) [Unique ι] [CommSemiring R] [Semiring A] [Algebra R A] [Star A] :
     (ι → A) ≃⋆ₐ[R] A :=
-  StarAlgEquiv.ofAlgEquiv (AlgEquiv.funUnique R ι A) fun _ ↦ rfl
+  StarAlgEquiv.ofAlgEquiv (AlgEquiv.funUnique R ι A) fun _ ↦ by simp
 
 /-- Applying `StarAlgEquiv.funUnique` evaluates at `default`. -/
 @[simp low]
 theorem funUnique_apply {R ι A : Type*} [Unique ι] [CommSemiring R] [Semiring A] [Algebra R A]
     [Star A] (f : ι → A) :
     funUnique R ι A f = f default := by
-  change AlgEquiv.funUnique R ι A f = f default
-  rw [AlgEquiv.funUnique_apply, Equiv.funUnique_apply]
+  rw [funUnique, StarAlgEquiv.ofAlgEquiv_apply, AlgEquiv.funUnique_apply, Equiv.funUnique_apply]
 
 /-- Applying `(StarAlgEquiv.funUnique R ι A).symm a` at any index returns `a`. -/
 @[simp low]
 theorem funUnique_symm_apply {R ι A : Type*} [Unique ι] [CommSemiring R] [Semiring A]
     [Algebra R A] [Star A] (a : A) (i : ι) :
     (funUnique R ι A).symm a i = a := by
-  change (AlgEquiv.funUnique R ι A).symm a i = a
-  rw [AlgEquiv.funUnique_symm_apply, Equiv.funUnique_symm_apply]
-  cases Unique.eq_default i
-  rfl
+  have h : (funUnique R ι A).symm a = fun _ ↦ a := by
+    rw [symm_apply_eq, funUnique_apply]
+  exact congrFun h i
 
 end Unique
 
@@ -141,18 +139,15 @@ variable {R ι κ μ A B C : Type*} [Unique ι] [Unique κ] [Unique μ] [CommSem
 @[simp]
 theorem funUniqueEquiv_apply (φ : (ι → A) →⋆ₙₐ[R] (κ → B)) (a : A) :
     funUniqueEquiv R ι κ A B φ a = φ (fun _ ↦ a) default := by
-  rw [funUniqueEquiv, StarAlgEquiv.arrowCongr'_apply, comp_apply, comp_apply,
-    StarAlgEquiv.toNonUnitalStarAlgHom_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
-    StarAlgEquiv.funUnique_apply]
-  exact congrArg (fun x ↦ φ x default) (funext fun i ↦ StarAlgEquiv.funUnique_symm_apply a i)
+  have h : (StarAlgEquiv.funUnique R ι A).symm a = fun _ ↦ a :=
+    funext (StarAlgEquiv.funUnique_symm_apply a)
+  simp [funUniqueEquiv, h]
 
 /-- Applying `(NonUnitalStarAlgHom.funUniqueEquiv R ι κ A B).symm` evaluates `φ` at `default`. -/
 @[simp]
 theorem funUniqueEquiv_symm_apply (φ : A →⋆ₙₐ[R] B) (x : ι → A) (j : κ) :
     (funUniqueEquiv R ι κ A B).symm φ x j = φ (x default) := by
-  rw [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr', StarAlgEquiv.arrowCongr'_apply, comp_apply,
-    comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
-    StarAlgEquiv.symm_symm, StarAlgEquiv.funUnique_symm_apply, StarAlgEquiv.funUnique_apply]
+  simp [funUniqueEquiv]
 
 /-- `NonUnitalStarAlgHom.funUniqueEquiv` preserves composition. -/
 theorem funUniqueEquiv_comp (ψ : (κ → B) →⋆ₙₐ[R] (μ → C)) (φ : (ι → A) →⋆ₙₐ[R] (κ → B)) :

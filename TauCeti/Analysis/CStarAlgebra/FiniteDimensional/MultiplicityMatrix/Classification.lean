@@ -427,17 +427,28 @@ theorem exists_unitary_conj_iff_multiplicityMatrix_eq [Finite ι] [∀ i, Fintyp
         rw [comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
           hu x]
     rw [hψ, φ.multiplicityMatrix_conjStarAlgAut_comp u]
-  · let f := φ.canonicalBlockEmbedding
+  · let B := ∀ j, CStarMatrix (m j) (m j) ℂ
+    let f := φ.canonicalBlockEmbedding
+    let φ₀ := TauCeti.cstarMatrixPiBlockHom φ.multiplicityMatrix f
     obtain ⟨u₁, hu₁⟩ := φ.exists_unitary_conj_cstarMatrixPiBlockHom f
     obtain ⟨u₂, hu₂⟩ := ψ.exists_unitary_conj_cstarMatrixPiBlockHom (hEq ▸ f)
     have hcast {H₁ H₂ : Matrix κ ι ℕ} (h : H₁ = H₂)
         (g : ∀ j, (Σ i, n i × Fin (H₁ j i)) ↪ m j) :
         TauCeti.cstarMatrixPiBlockHom H₂ (h ▸ g) = TauCeti.cstarMatrixPiBlockHom H₁ g := by
       subst h; rfl
+    rw [hcast hEq f] at hu₂
     refine ⟨u₂ * star u₁, fun x ↦ ?_⟩
-    rw [← Unitary.conjStarAlgAut_apply (S := ℂ), Unitary.conjStarAlgAut_mul_apply,
-      ← Unitary.conjStarAlgAut_symm, ← hu₁ x, ← Unitary.conjStarAlgAut_apply (S := ℂ),
-      StarAlgEquiv.symm_apply_apply, ← hcast hEq f, Unitary.conjStarAlgAut_apply, hu₂ x]
+    calc ((u₂ * star u₁ : unitary B) : B) * φ x * star ((u₂ * star u₁ : unitary B) : B)
+        = ((u₂ : B) * star (u₁ : B)) * ((u₁ : B) * φ₀ x * star (u₁ : B)) *
+            ((u₁ : B) * star (u₂ : B)) := by
+          rw [← hu₁ x]
+          simp [φ₀]
+      _ = (u₂ : B) * ((star (u₁ : B) * (u₁ : B)) * φ₀ x * (star (u₁ : B) * (u₁ : B))) *
+            star (u₂ : B) := by
+          simp only [mul_assoc]
+      _ = (u₂ : B) * φ₀ x * star (u₂ : B) := by
+          rw [Unitary.coe_star_mul_self, one_mul, mul_one]
+      _ = ψ x := hu₂ x
 
 end UnitaryConjugacy
 
