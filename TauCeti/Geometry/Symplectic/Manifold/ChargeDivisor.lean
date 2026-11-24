@@ -114,6 +114,12 @@ infinitely many nonzero terms. -/
 def chargeSum (σ : C(𝔻, Y)) (g : 𝔻 → F) : F :=
   ∑ᶠ z, A.localCharge σ z • g z
 
+/-- The charge-weighted sum unfolds to the `finsum` of the local charges times the values of `g`,
+whether or not `σ⁻¹(Z)` is finite. -/
+theorem chargeSum_def (σ : C(𝔻, Y)) (g : 𝔻 → F) :
+    A.chargeSum σ g = ∑ᶠ z, A.localCharge σ z • g z :=
+  (rfl)
+
 /-- If `σ⁻¹(Z)` is the finite set `s`, the charge-weighted sum is the sum over `s` of the local
 charges times the values of `g`. -/
 theorem chargeSum_eq_sum {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : ∀ z, σ z ∈ Z ↔ z ∈ s) (g : 𝔻 → F) :
@@ -154,6 +160,12 @@ charges are nonnegative, as for a `J`-holomorphic disc
 integer of `σ` (`TauCeti.PositiveCohomologyAssignment.card_chargeMultiset`). -/
 def chargeMultiset (σ : C(𝔻, Y)) : Multiset 𝔻 :=
   ∑ᶠ z, (A.localCharge σ z).toNat • {z}
+
+/-- The charge multiset unfolds to the `finsum` of the points with their local charges as
+multiplicities, whether or not `σ⁻¹(Z)` is finite. -/
+theorem chargeMultiset_def (σ : C(𝔻, Y)) :
+    A.chargeMultiset σ = ∑ᶠ z, (A.localCharge σ z).toNat • {z} :=
+  (rfl)
 
 /-- If `σ⁻¹(Z)` is the finite set `s`, the charge multiset is the sum over `s` of the points with
 their local charges as multiplicities. -/
