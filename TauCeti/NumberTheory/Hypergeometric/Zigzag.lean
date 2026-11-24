@@ -161,6 +161,16 @@ private theorem card_filter_eq_countP (p : ℚ → Prop) [DecidablePred p] :
     Multiset.filter_map, Multiset.card_map]
   simp only [Function.comp_def]
 
+/-- Summing the steps over the classes of `α + β` satisfying `q` gives the number of those in
+`α` minus the number of those in `β`. -/
+private theorem sum_map_step_rep_filter (q : AddCircle (1 : ℚ) → Prop) [DecidablePred q] :
+    (((P.α + P.β).filter q).map fun a ↦ P.step (rep a)).sum =
+      (P.α.filter q).card - (P.β.filter q).card := by
+  rw [Multiset.filter_add, Multiset.map_add, Multiset.sum_add,
+    Multiset.map_congr rfl fun a ha ↦ P.step_rep_of_mem_α (Multiset.mem_filter.1 ha).1,
+    Multiset.map_congr rfl fun b hb ↦ P.step_rep_of_mem_β (Multiset.mem_filter.1 hb).1]
+  simp [sub_eq_add_neg]
+
 /-- For a predicate `p` closed downwards, the walk after the entries satisfying `p` is at the
 number of classes of `α` whose representatives satisfy `p` minus the number of those of `β`. -/
 private theorem height_card_filter (p : ℚ → Prop) [DecidablePred p]
@@ -169,12 +179,10 @@ private theorem height_card_filter (p : ℚ → Prop) [DecidablePred p]
       (P.α.filter fun a ↦ p (rep a)).card - (P.β.filter fun b ↦ p (rep b)).card := by
   have hpw : P.sortedReps.Pairwise fun x y ↦ decide (p y) → decide (p x) :=
     (List.sortedLE_iff_pairwise.1 P.sortedLE_sortedReps).imp fun hxy ↦ by simpa using hp _ _ hxy
-  rw [card_filter_eq_countP, height, List.take_countP_eq_filter hpw, ← Multiset.sum_coe,
-    ← Multiset.map_coe, ← Multiset.filter_coe, coe_sortedReps, Multiset.filter_map,
-    Multiset.map_map, Multiset.filter_add, Multiset.map_add, Multiset.sum_add, Function.comp_def,
-    Multiset.map_congr rfl fun a ha ↦ P.step_rep_of_mem_α (Multiset.mem_filter.1 ha).1,
-    Multiset.map_congr rfl fun b hb ↦ P.step_rep_of_mem_β (Multiset.mem_filter.1 hb).1]
-  simp [sub_eq_add_neg]
+  rw [card_filter_eq_countP, height, List.take_countP_eq_filter hpw, ← P.sum_map_step_rep_filter,
+    ← Multiset.sum_coe, ← Multiset.map_coe, ← Multiset.filter_coe, coe_sortedReps,
+    Multiset.filter_map, Multiset.map_map]
+  simp only [Function.comp_def]
 
 /-- After the entries at most `x`, the walk is at height `Z(x)`. -/
 theorem height_card_filter_rep_le (x : ℚ) :

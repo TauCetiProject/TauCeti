@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Hypergeometric.Zigzag
 import Mathlib.Tactic.NormNum
-import TauCeti.Algebra.AddCircle
 
 /-!
 # Examples of the zigzag walk
@@ -53,7 +52,7 @@ theorem sortedReps_zigzagLegendre : zigzagLegendre.sortedReps = [1 / 2, 1 / 2, 1
   refine ⟨by simp; norm_num, ?_⟩
   simp only [zigzagLegendre, Multiset.insert_eq_cons, Multiset.cons_add, Multiset.singleton_add,
     Multiset.map_cons, Multiset.map_singleton, rep_half, rep_one]
-  rfl
+  simp [← Multiset.cons_coe]
 
 theorem countingFunction_zigzagLegendre : zigzagLegendre.countingFunction (1 / 2) = 2 := by
   simp only [Parameters.countingFunction_def, zigzagLegendre, Multiset.insert_eq_cons,
@@ -110,8 +109,8 @@ theorem sortedReps_zigzagHalfQuarter :
     Multiset.map_cons, Multiset.map_singleton, rep_half,
     rep_coe_of_mem (show (1 / 4 : ℚ) ∈ Ioc 0 1 by norm_num),
     rep_coe_of_mem (show (3 / 4 : ℚ) ∈ Ioc 0 1 by norm_num)]
-  rw [Multiset.cons_swap (1 / 2 : ℚ) (1 / 4), Multiset.cons_swap (1 / 2 : ℚ) (1 / 4)]
-  rfl
+  simp only [← Multiset.coe_singleton, Multiset.cons_coe, Multiset.coe_eq_coe]
+  exact (List.perm_middle (l₁ := [1 / 2, 1 / 2])).symm
 
 -- The walk `0, -1, 0, 1, 0`.
 example : (List.range 5).map zigzagHalfQuarter.height = [0, -1, 0, 1, 0] := by
