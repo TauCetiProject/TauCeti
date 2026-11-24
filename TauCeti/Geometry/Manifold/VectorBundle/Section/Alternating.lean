@@ -34,13 +34,12 @@ bundle `Bundle.Trivial M 𝕜`). This file provides the algebraic and calculus o
   `ContMDiffSection.eq_of_evalAlternating_eq` for `n ≤ ∞`);
 * the degree-zero `C^n(M)`-linear equivalence `ContMDiffSection.constOfIsEmptyEquiv` between scalar
   functions `C^n⟮I, M; 𝕜⟯` and sections of `fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜` for `[IsEmpty ι]`;
-* degree transport `ContMDiffSection.castDeg` across equal degrees `k = l`;
 * the interior product `ContMDiffSection.interiorProd` contracting the first slot of a
   bundle-valued alternating section with a section of `V`, intertwining evaluation with
   `AlternatingMap.curryLeft`, together with `ContMDiffSection.apply_eq_interiorProd_tail`;
 * the smooth fibrewise wedge product `ContMDiffSection.wedge` of real scalar alternating sections,
   together with its graded commutativity, associativity, and interior-product antiderivation laws
-  on sections via `ContMDiffSection.castDeg`;
+  on sections via `LinearEquiv.cast`;
 * the tensoriality equivalence `ContMDiffSection.evalAlternatingEquiv` identifying `C^n` sections
   of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` on a finite-rank `C^n` real vector bundle over a
   finite-dimensional Hausdorff `C^n` manifold (`1 ≤ n ≤ ∞`) with `C^n(M)`-multilinear alternating
@@ -235,40 +234,11 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
 
 local notation "Ω₂[" k "]" => Cₛ^n⟮I; F [⋀^Fin k]→L[𝕜] F₂, fun x ↦ V x [⋀^Fin k]→L[𝕜] V₂ x⟯
 
-/-- Transport a `C^n` alternating section across an equality of degrees `k = l`, as a
-`C^n(M)`-linear equivalence. -/
-def castDeg {k l : ℕ} (h : k = l) : Ω₂[k] ≃ₗ[C^n⟮I, M; 𝕜⟯] Ω₂[l] :=
-  LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) h
-
-/-- Transporting a `C^n` alternating section across a reflexive degree equality is the identity. -/
-@[simp]
-theorem castDeg_rfl {k : ℕ} (h : k = k) (φ : Ω₂[k]) : castDeg h φ = φ := by
-  rw [castDeg]; rfl
-
 /-- Evaluating a degree-transported `C^n` alternating section on a tuple transports the tuple by
 `Fin.cast h`. -/
-@[simp]
-theorem castDeg_apply {k l : ℕ} (h : k = l) (φ : Ω₂[k]) (x : M) (v : Fin l → V x) :
-    castDeg h φ x v = φ x (v ∘ Fin.cast h) := by
-  subst h; rfl
-
-/-- Inverting degree transport yields transport along the symmetric equality. -/
-@[simp]
-theorem castDeg_symm {k l : ℕ} (h : k = l) :
-    (castDeg (I := I) (F := F) (F₂ := F₂) (n := n) (V := V) (V₂ := V₂) h).symm =
-      castDeg h.symm := by
-  subst h; rfl
-
-/-- Successive degree transports compose along transitivity of equality. -/
-@[simp]
-theorem castDeg_castDeg {k l m : ℕ} (h₁ : k = l) (h₂ : l = m) (φ : Ω₂[k]) :
-    castDeg h₂ (castDeg h₁ φ) = castDeg (h₁.trans h₂) φ := by
-  subst h₁ h₂; rfl
-
-/-- Degree transport commutes with constant scalar multiplication. -/
-@[simp]
-theorem castDeg_const_smul {k l : ℕ} (h : k = l) (c : 𝕜) (φ : Ω₂[k]) :
-    castDeg h (c • φ) = c • castDeg h φ := by
+theorem cast_apply {k l : ℕ} (h : k = l) (φ : Ω₂[k]) (x : M) (v : Fin l → V x) :
+    LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) h φ x v =
+      φ x (v ∘ Fin.cast h) := by
   subst h; rfl
 
 /-- Contract the first argument of a `C^n` section of `fun x ↦ V x [⋀^Fin (k + 1)]→L[𝕜] V₂ x`
@@ -310,9 +280,10 @@ theorem apply_eq_interiorProd_tail {k : ℕ} (φ : Ω₂[k + 1]) {a : Cₛ^n⟮I
   exact congrArg (φ x) (funext fun i ↦ Fin.cases ha.symm (fun _ ↦ rfl) i)
 
 /-- Interior product commutes with degree transport. -/
-@[simp]
-theorem interiorProd_castDeg {k l : ℕ} (h : k + 1 = l + 1) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (castDeg h φ).interiorProd a = castDeg (Nat.succ.inj h) (φ.interiorProd a) := by
+theorem interiorProd_cast {k l : ℕ} (h : k + 1 = l + 1) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) h φ).interiorProd a =
+      LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) (Nat.succ.inj h)
+        (φ.interiorProd a) := by
   obtain rfl : k = l := Nat.succ.inj h
   rfl
 
@@ -409,11 +380,13 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Evaluating a degree-transported `C^n` scalar alternating section on a tuple of `C^n`
 sections transports the tuple by `Fin.cast h`. -/
-@[simp]
-theorem evalAlternating_castDeg {k l : ℕ} (h : k = l)
+theorem evalAlternating_cast {k l : ℕ} (h : k = l)
     (φ : Cₛ^n⟮I; F [⋀^Fin k]→L[𝕜] 𝕜, fun x ↦ V x [⋀^Fin k]→L[𝕜] 𝕜⟯)
     (s : Fin l → Cₛ^n⟮I; F, V⟯) :
-    (castDeg h φ).evalAlternating s = φ.evalAlternating (s ∘ Fin.cast h) := by
+    (LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯)
+        (M := fun q : ℕ ↦ Cₛ^n⟮I; F [⋀^Fin q]→L[𝕜] 𝕜, fun x ↦ V x [⋀^Fin q]→L[𝕜] 𝕜⟯) h
+        φ).evalAlternating s =
+      φ.evalAlternating (s ∘ Fin.cast h) := by
   subst h; rfl
 
 end
@@ -529,17 +502,19 @@ theorem wedge_sub_right {k l : ℕ} (φ : Ω[k]) (ψ₁ ψ₂ : Ω[l]) :
 
 /-- Transporting the left factor across a degree equality commutes with the fibrewise wedge
 product. -/
-@[simp]
-theorem wedge_castDeg_left {k k' l : ℕ} (h : k = k') (φ : Ω[k]) (ψ : Ω[l]) :
-    (castDeg h φ).wedge ψ = castDeg (congrArg (· + l) h) (φ.wedge ψ) := by
-  subst h; simp
+theorem wedge_cast_left {k k' l : ℕ} (h : k = k') (φ : Ω[k]) (ψ : Ω[l]) :
+    (LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h φ).wedge ψ =
+      LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (congrArg (· + l) h)
+        (φ.wedge ψ) := by
+  subst h; rfl
 
 /-- Transporting the right factor across a degree equality commutes with the fibrewise wedge
 product. -/
-@[simp]
-theorem wedge_castDeg_right {k l l' : ℕ} (h : l = l') (φ : Ω[k]) (ψ : Ω[l]) :
-    φ.wedge (castDeg h ψ) = castDeg (congrArg (k + ·) h) (φ.wedge ψ) := by
-  subst h; simp
+theorem wedge_cast_right {k l l' : ℕ} (h : l = l') (φ : Ω[k]) (ψ : Ω[l]) :
+    φ.wedge (LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) h ψ) =
+      LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (congrArg (k + ·) h)
+        (φ.wedge ψ) := by
+  subst h; rfl
 
 /-- Pointwise left degree-zero multiplication of the fibrewise wedge product. -/
 theorem wedge_apply_zero_left {l : ℕ} (φ : Ω[0]) (ψ : Ω[l]) (x : M) (v : Fin (0 + l) → V x) :
@@ -550,11 +525,12 @@ theorem wedge_apply_zero_left {l : ℕ} (φ : Ω[0]) (ψ : Ω[l]) (x : M) (v : F
 /-- Left degree-zero multiplication of the fibrewise wedge product on sections, transported across
 `0 + l = l`. -/
 @[simp]
-theorem wedge_eq_castDeg_smul_left {l : ℕ} (φ : Ω[0]) (ψ : Ω[l]) :
+theorem wedge_eq_cast_smul_left {l : ℕ} (φ : Ω[0]) (ψ : Ω[l]) :
     φ.wedge ψ =
-      castDeg (Nat.zero_add l).symm ((constOfIsEmptyEquiv I F n V (Fin 0)).symm φ • ψ) := by
+      LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.zero_add l).symm
+        ((constOfIsEmptyEquiv I F n V (Fin 0)).symm φ • ψ) := by
   ext x v
-  rw [castDeg_apply, smul_apply, constOfIsEmptyEquiv_symm_apply,
+  rw [cast_apply, smul_apply, constOfIsEmptyEquiv_symm_apply,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul, wedge_apply_zero_left]
   exact congrArg (· * _) (congrArg (φ x) (Subsingleton.elim _ _))
 
@@ -580,11 +556,14 @@ theorem wedge_comm_apply {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (x : M) (v : Fin 
     (fun a b : ℝ ↦ mul_comm a b) (φ x) (ψ x) v
 
 /-- Graded commutativity of the fibrewise wedge product on sections:
-`φ ∧ ψ = (-1)^(k * l) • castDeg (Nat.add_comm l k) (ψ ∧ φ)`. -/
+`φ ∧ ψ = (-1)^(k * l) • LinearEquiv.cast ... (Nat.add_comm l k) (ψ ∧ φ)`. -/
 theorem wedge_comm {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) :
-    φ.wedge ψ = (-1 : ℝ) ^ (k * l) • castDeg (Nat.add_comm l k) (ψ.wedge φ) := by
+    φ.wedge ψ =
+      (-1 : ℝ) ^ (k * l) •
+        LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.add_comm l k)
+          (ψ.wedge φ) := by
   ext x v
-  rw [coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, castDeg_apply]
+  rw [coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, cast_apply]
   exact wedge_comm_apply φ ψ x v
 
 /-- Pointwise associativity of the fibrewise wedge product up to
@@ -599,11 +578,13 @@ theorem wedge_assoc_apply {k l m : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (θ : Ω[m])
     (fun a b c : ℝ ↦ mul_assoc a b c) (φ x) (ψ x) (θ x) v
 
 /-- Associativity of the fibrewise wedge product on sections:
-`(φ ∧ ψ) ∧ θ = castDeg (Nat.add_assoc k l m).symm (φ ∧ (ψ ∧ θ))`. -/
+`(φ ∧ ψ) ∧ θ = LinearEquiv.cast ... (Nat.add_assoc k l m).symm (φ ∧ (ψ ∧ θ))`. -/
 theorem wedge_assoc {k l m : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (θ : Ω[m]) :
-    (φ.wedge ψ).wedge θ = castDeg (Nat.add_assoc k l m).symm (φ.wedge (ψ.wedge θ)) := by
+    (φ.wedge ψ).wedge θ =
+      LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.add_assoc k l m).symm
+        (φ.wedge (ψ.wedge θ)) := by
   ext x v
-  simpa only [castDeg_apply] using wedge_assoc_apply φ ψ θ x v
+  simpa only [cast_apply] using wedge_assoc_apply φ ψ θ x v
 
 /-- Contracting a wedge whose left factor has degree zero multiplies by that scalar function:
 `ι_a (φ ∧ ψ) = φ ∧ (ι_a ψ)`. -/
@@ -635,14 +616,16 @@ theorem interiorProd_wedge_succ_apply {k l : ℕ}
 
 /-- Graded antiderivation law for `ContMDiffSection.interiorProd` across a fibrewise wedge of two
 sections of positive degree:
-`ι_a (φ ∧ ψ) = castDeg (Nat.add_right_comm k 1 l).symm (ι_a φ ∧ ψ) + (-1)^(k + 1) • (φ ∧ ι_a ψ)`. -/
+`ι_a (φ ∧ ψ) = LinearEquiv.cast ... (Nat.add_right_comm k 1 l).symm (ι_a φ ∧ ψ)`
+`  + (-1)^(k + 1) • (φ ∧ ι_a ψ)`. -/
 theorem interiorProd_wedge_succ {k l : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) :
     (φ.wedge ψ).interiorProd a =
-      castDeg (Nat.add_right_comm k 1 l).symm ((φ.interiorProd a).wedge ψ) +
+      LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
+          (Nat.add_right_comm k 1 l).symm ((φ.interiorProd a).wedge ψ) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interiorProd a) := by
   ext x w
-  rw [coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply, castDeg_apply,
+  rw [coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply, cast_apply,
     coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
   exact interiorProd_wedge_succ_apply φ ψ a x w
 
@@ -804,10 +787,8 @@ finite-dimensional Hausdorff `C^n` manifold (`1 ≤ n ≤ ∞`) are `C^n(M)`-lin
 `C^n(M)`-multilinear alternating maps `Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; ℝ⟯] C^n⟮I, M; ℝ⟯`. -/
 def evalAlternatingEquiv (ι : Type*) [Fintype ι] (hn : 1 ≤ n := by simp) :
     Ω[ι] ≃ₗ[C^n⟮I, M; ℝ⟯] Alt[ι] where
-  toFun := evalAlternating
+  __ := evalAlternatingLinear I F n V ι
   invFun Φ := ofAlternating Φ hn
-  map_add' := evalAlternating_add
-  map_smul' := evalAlternating_smul
   left_inv φ := ofAlternating_evalAlternating φ hn
   right_inv Φ := evalAlternating_ofAlternating Φ hn
 
