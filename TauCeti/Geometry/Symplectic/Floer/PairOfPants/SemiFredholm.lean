@@ -61,10 +61,12 @@ their energy density is integrable over every half-cylinder
 The same patching gives the semi-Fredholm estimate of the formal adjoint `D_u^*`
 (`TauCeti.SymplecticForm.floerLinearizationAdjoint`), whose kernel is the cokernel of `D_u`. A
 `C²` covector field `η` with compact support in `S` is read on the end `q` as the form
-`η'_q = η (φ'_q ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`), and `D_u^* η` is measured by
-`∫ ρ⁻¹ ‖D_u^* η‖²` for the cylindrical weight `ρ = TauCeti.Floer.cylindricalWeight`. This is the
-weighted `L²` norm dual, under the pairing `∫ η(ξ)`, to the weighted norm `∫ ρ ‖ξ‖²` of the
-Sobolev space `W^{1,2}_0(S, V)` of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev`:
+`η'_q = η (φ'_q ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`), whose energy density is
+integrable over every half-cylinder
+(`TauCeti.Floer.integrableOn_sobolevDensity_covectorPullback_positiveEndChart`), and `D_u^* η` is
+measured by `∫ ρ⁻¹ ‖D_u^* η‖²` for the cylindrical weight `ρ = TauCeti.Floer.cylindricalWeight`.
+This is the weighted `L²` norm dual, under the pairing `∫ η(ξ)`, to the weighted norm `∫ ρ ‖ξ‖²`
+of the Sobolev space `W^{1,2}_0(S, V)` of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev`:
 
 `∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
 `  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`.
@@ -122,6 +124,69 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V
     by_contra! h
     exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
   rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
+
+/-- When `J` and `u` are `C¹` along `u` on `S`, a `C¹` covector field with compact support in `S`
+reads in the positive end chart of `q` as a form `η (φ'_q ·) ∘ (a + b J)` that is `C¹`: it vanishes
+near every point that the chart maps outside the support of `η`. -/
+private theorem contDiff_covectorPullback_positiveEndChart [FiniteDimensional ℝ V]
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 1 η) (hηS : tsupport η ⊆ thricePuncturedSphereReal) (q : Puncture) :
+    ContDiff ℝ 1 (covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) := by
+  set φ := positiveEndChart q
+  refine contDiff_iff_contDiffAt.2 fun ζ ↦ ?_
+  by_cases hζ : φ ζ ∈ tsupport η
+  · have hS : φ ζ ∈ thricePuncturedSphereReal := hηS hζ
+    have hφ : ContDiffAt ℝ 1 φ ζ := (contDiff_positiveEndChart q 1).contDiffAt
+    have hA : ContDiff ℝ 1 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
+      ((contDiff_positiveEndChart q 2).fderiv_right (by norm_num)).clm_apply contDiff_const
+    have hJζ : ContDiffAt ℝ 1
+        (fun ζ' ↦ (J (φ ζ') (u (φ ζ'))).toLinearMap.toContinuousLinearMap) ζ :=
+      (hJ _ hS).comp (f := fun ζ' ↦ (φ ζ', u (φ ζ'))) ζ (hφ.prodMk ((hu _ hS).comp ζ hφ))
+    rw [funext (covectorPullback_apply φ _ u η)]
+    exact (hη.contDiffAt.comp ζ hφ).clm_comp
+      (((contDiff_fst.comp hA).contDiffAt.smul contDiffAt_const).add
+        ((contDiff_snd.comp hA).contDiffAt.smul hJζ))
+  · have h : ∀ᶠ ζ' in 𝓝 ζ, φ ζ' ∉ tsupport η :=
+      (contDiff_positiveEndChart q 1).continuous.continuousAt.preimage_mem_nhds
+        ((isClosed_tsupport η).isOpen_compl.mem_nhds hζ)
+    refine (contDiffAt_const (c := (0 : V →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
+    filter_upwards [h] with ζ' hζ'
+    rw [covectorPullback_apply, image_eq_zero_of_notMem_tsupport hζ',
+      ContinuousLinearMap.zero_comp]
+
+/-- When `J` and `u` are `C¹` along `u` on `S`, a `C¹` covector field with compact support in `S`
+has integrable `W^{1,2}` energy density, read in the positive end chart of `q` as the form
+`η (φ'_q ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`), over every half-cylinder
+`(a, ∞) × [0, 1]`: the reading is `C¹` and vanishes far out on the end. -/
+theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart [FiniteDimensional ℝ V]
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) (q : Puncture) (a : ℝ) :
+    IntegrableOn (sobolevDensity (covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η)) (Ioi a ×ˢ Icc 0 1) := by
+  -- Beyond some `N` in the end chart, `η` vanishes identically, and so does its reading.
+  obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc hηS q
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (((continuous_sobolevDensity (contDiff_covectorPullback_positiveEndChart hJ hu hη hηS
+    q)).continuousOn).integrableOn_compact hK).of_forall_sdiff_eq_zero
+    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hζN : N < ζ.1 := by
+    by_contra! h
+    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
+  have h : covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η =ᶠ[𝓝 ζ] 0 := by
+    filter_upwards [hzero ζ hζN] with ζ' hζ'
+    have h0 : η (positiveEndChart q ζ') = 0 := by
+      simpa only [Function.comp_apply, Pi.zero_apply] using hζ'
+    rw [covectorPullback_apply, h0, ContinuousLinearMap.zero_comp, Pi.zero_apply]
+  rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
 
 end TauCeti.Floer
 
@@ -736,71 +801,6 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
 
 /-! ### The semi-Fredholm estimate of the formal adjoint -/
 
-/-- On the part `±s > 0` of the end `q`, where `J` and `u` are `C¹` along `u`, a `C¹` covector
-field reads in the positive end chart as a form `η (φ'_q ·) ∘ (a + b J)` that is `C¹`. -/
-private theorem contDiffAt_covectorPullback_positiveEndChart
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη : ContDiff ℝ 1 η) (q : Puncture) {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
-    ContDiffAt ℝ 1 (covectorPullback (positiveEndChart q)
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ := by
-  set φ := positiveEndChart q
-  have hS : φ ζ ∈ thricePuncturedSphereReal := positiveEndChart_mem_thricePuncturedSphereReal hζ
-  have hφ : ContDiffAt ℝ 1 φ ζ := (contDiff_positiveEndChart q 1).contDiffAt
-  have hA : ContDiff ℝ 1 fun ζ ↦ fderiv ℝ φ ζ stdComplexLineReal :=
-    ((contDiff_positiveEndChart q 2).fderiv_right (by norm_num)).clm_apply contDiff_const
-  have hJζ : ContDiffAt ℝ 1
-      (fun ζ' ↦ (J (φ ζ') (u (φ ζ'))).toLinearMap.toContinuousLinearMap) ζ :=
-    (hJ _ hS).comp (f := fun ζ' ↦ (φ ζ', u (φ ζ'))) ζ (hφ.prodMk ((hu _ hS).comp ζ hφ))
-  rw [funext (covectorPullback_apply φ _ u η)]
-  exact (hη.contDiffAt.comp ζ hφ).clm_comp
-    (((contDiff_fst.comp hA).contDiffAt.smul contDiffAt_const).add
-      ((contDiff_snd.comp hA).contDiffAt.smul hJζ))
-
-/-- A `C¹` covector field with compact support in the part `±s ≥ a > 0` of the end `q` has
-integrable `W^{1,2}` energy density, read in the positive end chart, over the half-cylinder
-`(0, ∞) × [0, 1]`: its reading vanishes outside a band `a ≤ s ≤ N`. -/
-private theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) {q : Puncture} {a : ℝ} (ha : 0 < a)
-    (hηa : tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ a ≤ (positiveEndCoord q z).1}) :
-    IntegrableOn (sobolevDensity (covectorPullback (positiveEndChart q)
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η)) (Ioi 0 ×ˢ Icc 0 1) := by
-  set η' := covectorPullback (positiveEndChart q)
-    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η
-  obtain ⟨N, hN⟩ :=
-    exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc (fun z hz ↦ (hηa hz).1) q
-  -- The reading vanishes near every point outside the band `a ≤ s ≤ N`.
-  have hzero (ζ : ℝ × ℝ) (hζ : ζ.1 < a ∨ N < ζ.1) : η' =ᶠ[𝓝 ζ] 0 := by
-    have h : η ∘ positiveEndChart q =ᶠ[𝓝 ζ] 0 := by
-      rcases hζ with hζ | hζ
-      · filter_upwards [(isOpen_lt continuous_fst continuous_const).mem_nhds hζ] with ζ' hζ'
-        refine image_eq_zero_of_notMem_tsupport (f := η) fun h ↦ ?_
-        have := (hηa h).2
-        rw [fst_positiveEndCoord_positiveEndChart] at this
-        exact absurd hζ' (not_lt.2 this)
-      · exact hN ζ hζ
-    filter_upwards [h] with ζ' hζ'
-    simp only [η', covectorPullback_apply, Pi.zero_apply]
-    have h0 : η (positiveEndChart q ζ') = 0 := by
-      simpa only [Function.comp_apply, Pi.zero_apply] using hζ'
-    rw [h0, ContinuousLinearMap.zero_comp]
-  have hK : IsCompact (Icc (a / 2) (max N a) ×ˢ Icc (0 : ℝ) 1) :=
-    isCompact_Icc.prod isCompact_Icc
-  refine (ContinuousOn.integrableOn_compact hK fun ζ hζ ↦ ?_).of_forall_sdiff_eq_zero
-    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  · exact (continuousAt_sobolevDensity (contDiffAt_covectorPullback_positiveEndChart hJ hu hη q
-      (lt_of_lt_of_le (by linarith) hζ.1.1))).continuousWithinAt
-  · have h : ζ.1 < a ∨ N < ζ.1 := by
-      by_contra! h'
-      exact hζ.2 ⟨⟨by linarith [h'.1], h'.2.trans (le_max_left _ _)⟩, hζ.1.2⟩
-    rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ h), sobolevDensity_zero]
-
 /-- For a `C¹` covector field `η` with compact support in `S`, the formal adjoint `D_u^* η`
 weighted by the inverse of the cylindrical weight, `ρ⁻¹ ‖D_u^* η‖²`, is integrable: it is
 continuous with compact support. -/
@@ -938,7 +938,7 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff (ω 
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u)
     (covectorPullback_fun_smul _ _ u) hR₀.le
     (fun θ hθ hθc hθS ↦ integrableOn_sobolevDensity_covectorPullback_positiveEndChart hJ hu
-      (hθ.of_le one_le_two) hθc hR₀ hθS) hRq hend hη hηc hηS
+      (hθ.of_le one_le_two) hθc (fun z hz ↦ (hθS hz).1) q 0) hRq hend hη hηc hηS
     (integral_nonneg fun _ ↦ by positivity) (hD.trans (by linarith))
 
 /-- On a compact set `K ⊆ S` where the cylindrical weight is at most `P`, the `L²` norm on `K` of a
