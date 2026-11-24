@@ -241,42 +241,17 @@ theorem norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self
   simp only [mul_zero, RCLike.zero_re, add_zero, norm_smul, hnorm]
   ring
 
-open AlmostComplexStructure in
 /-- **The Dirac symbol on the canonical eigenspace vanishes exactly on `∂bar`-closed
 covectors**: for `P_α ψ = ψ`, `∑ₖ x_k c(e_k) ψ = 0` if and only if `ψ = 0` or
-`x₀ + i x₁ = x₂ + i x₃ = 0`. -/
+`x₀ + i x₁ = x₂ + i x₃ = 0`
+(`AlmostComplexStructure.sum_smul_ι_apply_eq_zero_iff_of_bivectorExterior_apply`). -/
 theorem sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     {ψ : positiveHalfSpinors o ρ} (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ)
     (x : Fin 4 → ℂ) :
     ∑ k, x k • ρ (ι Q (e k)) ψ = 0 ↔
-      (ψ : W) = 0 ∨ (x 0 + Complex.I * x 1 = 0 ∧ x 2 + Complex.I * x 3 = 0) := by
-  have hψ' := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ
-  rw [AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ']
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · -- Applying `c(e₀)` sends `c(e₀) ψ` to `-ψ` (eigenvalue `-2i`) and `c(e₂) ψ` to `c(e₀) c(e₂) ψ`
-    -- (eigenvalue `2i`), which separate under `c₂(ω)`.
-    have h1 := congrArg (ρ (ι Q (e 0))) h
-    simp only [map_add, map_smul, map_zero, e.map_ι_apply_map_ι_apply hQ ρ] at h1
-    have h2 := congrArg (ρ (bivectorExterior Q J.kahlerForm)) h1
-    have h20 := bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_apply
-      hQ h₀ h₂ hψ'
-    simp only [map_add, map_smul, map_neg, map_zero, hψ', h20] at h2
-    have hz0 : (-4 * Complex.I * (x 0 + Complex.I * x 1)) • (ψ : W) = 0 := by
-      linear_combination (norm := module) (2 * Complex.I) • h1 - h2
-    have hz2' : (4 * Complex.I * (x 2 + Complex.I * x 3)) •
-        ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (ψ : W)) = 0 := by
-      linear_combination (norm := module) (2 * Complex.I) • h1 + h2
-    have hz2 : (4 * Complex.I * (x 2 + Complex.I * x 3)) • (ψ : W) = 0 := by
-      have := congrArg (fun w ↦ ρ (ι Q (e 2)) (ρ (ι Q (e 0)) w)) hz2'
-      simpa only [map_smul, map_zero, e.map_ι_apply_map_ι_apply hQ ρ, map_neg, neg_neg] using this
-    rcases smul_eq_zero.1 hz0 with h0 | h0
-    · rcases smul_eq_zero.1 hz2 with h2' | h2'
-      · exact Or.inr ⟨by simpa [Complex.I_ne_zero] using h0, by simpa [Complex.I_ne_zero] using h2'⟩
-      · exact Or.inl h2'
-    · exact Or.inl h0
-  · rintro (h | ⟨h0, h2'⟩)
-    · simp [h]
-    · simp [h0, h2']
+      (ψ : W) = 0 ∨ (x 0 + Complex.I * x 1 = 0 ∧ x 2 + Complex.I * x 3 = 0) :=
+  AlmostComplexStructure.sum_smul_ι_apply_eq_zero_iff_of_bivectorExterior_apply hQ h₀ h₂
+    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ) x
 
 end DiracSymbol
 
@@ -362,18 +337,13 @@ theorem coe_pairedSpinor (u₀ : positiveHalfSpinors o ρ) :
 /-- `c(e₀) β₀ = c(e₂) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
 theorem ι_zero_apply_pairedSpinor (hQ : ∀ v, Q v = -‖v‖ ^ 2) (u₀ : positiveHalfSpinors o ρ) :
     ρ (ι Q (e 0)) (pairedSpinor e u₀ : W) = ρ (ι Q (e 2)) u₀ := by
-  have h02 : ι Q (e 0) * (ι Q (e 2) * ι Q (e 0)) = ι Q (e 2) := by
-    rw [← mul_assoc, ι_mul_ι_comm_of_isOrtho (e.isOrtho_apply hQ (by decide)), neg_mul, mul_assoc,
-      ι_sq_scalar, hQ, e.orthonormal.1 0]
-    simp
-  simpa only [coe_pairedSpinor, ← mul_apply_eq_comp, ← map_mul] using
-    congrArg (fun x ↦ ρ x u₀) h02
+  rw [coe_pairedSpinor, e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide),
+    e.map_ι_apply_map_ι_apply hQ ρ, map_neg, neg_neg]
 
 /-- `c(e₂) β₀ = -c(e₀) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
 theorem ι_two_apply_pairedSpinor (hQ : ∀ v, Q v = -‖v‖ ^ 2) (u₀ : positiveHalfSpinors o ρ) :
     ρ (ι Q (e 2)) (pairedSpinor e u₀ : W) = -ρ (ι Q (e 0)) u₀ := by
-  rw [coe_pairedSpinor, ← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, hQ, e.orthonormal.1 2]
-  simp
+  rw [coe_pairedSpinor, e.map_ι_apply_map_ι_apply hQ ρ]
 
 end Algebraic
 
