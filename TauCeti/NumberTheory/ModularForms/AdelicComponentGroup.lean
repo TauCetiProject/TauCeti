@@ -24,7 +24,7 @@ of `ℤ`, hence equal to `1` (`IsDedekindDomain.FiniteAdeleRing.eq_one_of_pos_of
 
 ## Main definitions
 
-* `TauCeti.AdelicExamples.GL2.componentGroup g U`: the group `Γ_{g,U} = GL₂(ℚ)^+ ∩ gUg⁻¹`.
+* `TauCeti.AdelicExamples.GL2.componentGroup U g`: the group `Γ_{g,U} = GL₂(ℚ)^+ ∩ gUg⁻¹`.
 
 ## Main results
 
@@ -50,27 +50,27 @@ namespace AdelicExamples.GL2
 /-- The group `Γ_{g,U} = GL₂(ℚ)^+ ∩ gUg⁻¹` of the component through `g` of the adelic quotient
 `GL₂(ℚ)\GL₂(𝔸)/K_∞U`: the rational matrices of positive determinant whose diagonal image in
 `GL₂(𝔸_f)` lies in the conjugate `gUg⁻¹`. -/
-def componentGroup (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ))
-    (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) : Subgroup (GL (Fin 2) ℚ) :=
+def componentGroup (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) : Subgroup (GL (Fin 2) ℚ) :=
   GLPos (Fin 2) ℚ ⊓
     (U.map (MulAut.conj g).toMonoidHom).comap
       (GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)))
 
 /-- Membership in `Γ_{g,U}`: positive determinant, and diagonal image in `gUg⁻¹`. -/
 @[simp]
-theorem mem_componentGroup_iff {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
-    {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} {γ : GL (Fin 2) ℚ} :
-    γ ∈ componentGroup g U ↔
+theorem mem_componentGroup_iff {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
+    {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} {γ : GL (Fin 2) ℚ} :
+    γ ∈ componentGroup U g ↔
       0 < (GeneralLinearGroup.det γ : ℚ) ∧
         g⁻¹ * GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ)) γ * g ∈ U := by
   rw [componentGroup, Subgroup.mem_inf, mem_glpos, Subgroup.mem_comap, Subgroup.mem_map_equiv,
     MulAut.conj_symm_apply]
 
 /-- **For compact `U`, every element of `Γ_{g,U}` has determinant `1`.** -/
-theorem det_eq_one_of_mem_componentGroup {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
-    {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
+theorem det_eq_one_of_mem_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
-    {γ : GL (Fin 2) ℚ} (hγ : γ ∈ componentGroup g U) : GeneralLinearGroup.det γ = 1 := by
+    {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} {γ : GL (Fin 2) ℚ} (hγ : γ ∈ componentGroup U g) :
+    GeneralLinearGroup.det γ = 1 := by
   rw [mem_componentGroup_iff] at hγ
   refine eq_one_of_pos_of_mem_integralUnits hγ.1 ?_
   have hmem := map_det_le_integralUnits_of_isCompact hU
@@ -84,10 +84,10 @@ theorem det_eq_one_of_mem_componentGroup {g : GL (Fin 2) (FiniteAdeleRing ℤ �
 
 /-- **`Γ_{g,U} = SL₂(ℚ) ∩ gUg⁻¹`** for compact `U`: the positivity condition on the determinant
 can be replaced by the condition that it is `1`. -/
-theorem componentGroup_eq_ker_det_inf (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ))
-    {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
-    (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))) :
-    componentGroup g U =
+theorem componentGroup_eq_ker_det_inf {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
+    (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) :
+    componentGroup U g =
       GeneralLinearGroup.det.ker ⊓
         (U.map (MulAut.conj g).toMonoidHom).comap
           (GeneralLinearGroup.map (algebraMap ℚ (FiniteAdeleRing ℤ ℚ))) := by
