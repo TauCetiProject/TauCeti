@@ -27,8 +27,9 @@ of places and `w ∈ ℤ`:
 * `ρ` is *unramified outside `T`* if each `I v`, `v ∉ T`, acts trivially;
 * `ρ` is *pure of weight `w` outside `T`* if it is unramified outside `T` and, for every `v ∉ T`,
   every root of the characteristic polynomial `P_v = det (X - ρ (F v))` in an algebraic closure
-  of `E` is a Weil `q v`-number of weight `w`: it is algebraic over `ℚ`, and all its complex
-  conjugates have absolute value `q v ^ (w / 2)`;
+  of `E` is a Weil `q v`-number of weight `w`: `1 < q v`, it is algebraic over `ℚ`, and all its
+  complex conjugates have absolute value `q v ^ (w / 2)`. So a nonzero pure representation has
+  residue sizes greater than `1` at all places outside `T`;
 * for a field embedding `ι : E →+* ℂ` and a real number `r`, `ρ` is *`ι`-pure of weight `r`
   outside `T`* if it is unramified outside `T` and, for every `v ∉ T`, every complex root of
   `ι (P_v)` has absolute value `q v ^ (r / 2)`. This makes no algebraicity assertion;
@@ -219,8 +220,7 @@ variable (V) in
 outside `T` has more than one element. -/
 theorem isPureOutside_trivial (hq : ∀ v ∉ T, 1 < q v) : (trivial E G V).IsPureOutside I F q T 0 :=
   ⟨isUnramifiedOutside_trivial V, fun v hv α hα ↦ by
-    rw [charpoly_trivial_apply, ← C_1, aroots_pow, aroots_X_sub_C, map_one] at hα
-    rw [Multiset.mem_singleton.mp (Multiset.mem_of_mem_nsmul hα)]
+    rw [eq_one_of_mem_roots_map_charpoly_trivial hα]
     exact isWeilNumber_one (by exact_mod_cast hq v hv)⟩
 
 /-- The line on which `G` acts through a character `χ` is pure of weight `w` outside `T` exactly
@@ -302,11 +302,10 @@ theorem isIotaPureOutside_of_subsingleton [Subsingleton V] {r : ℝ} :
 
 variable (V) in
 /-- The trivial representation is `ι`-pure of weight `0`. -/
+@[simp]
 theorem isIotaPureOutside_trivial : (trivial E G V).IsIotaPureOutside ι I F q T 0 :=
   ⟨isUnramifiedOutside_trivial V, fun v _ z hz ↦ by
-    rw [charpoly_trivial_apply, ← C_1, Polynomial.map_pow, Polynomial.map_sub, map_X, map_C,
-      roots_pow, roots_X_sub_C] at hz
-    simp [Multiset.mem_singleton.mp (Multiset.mem_of_mem_nsmul hz)]⟩
+    simp [eq_one_of_mem_roots_map_charpoly_trivial hz]⟩
 
 /-- The line on which `G` acts through a character `χ` is `ι`-pure of weight `r` outside `T`
 exactly when `χ` is trivial on inertia outside `T` and its values at the Frobenius elements
@@ -387,6 +386,7 @@ theorem hasIntegralCharpolyOutside_of_subsingleton [Subsingleton W] :
 
 variable (W) in
 /-- The trivial representation has integral characteristic polynomials `(X - 1) ^ dim W`. -/
+@[simp]
 theorem hasIntegralCharpolyOutside_trivial : (trivial R G W).HasIntegralCharpolyOutside I F T :=
   ⟨isUnramifiedOutside_trivial W, fun v _ ↦ by
     rw [charpoly_trivial_apply]
@@ -401,9 +401,8 @@ theorem hasIntegralCharpolyOutside_ofLinearCharacter_iff (χ : G →* Rˣ) :
   rw [← isUnramifiedOutside_ofLinearCharacter_iff]
   refine ⟨fun h ↦ ⟨h.isUnramifiedOutside, fun v hv ↦ ?_⟩, fun h ↦ ⟨h.1, fun v hv ↦ ?_⟩⟩
   · obtain ⟨n, hn⟩ := (lifts_iff_coeff_lifts _).mp (h.charpoly_mem_lifts v hv) 0
-    rw [charpoly_ofLinearCharacter_apply, coeff_sub, coeff_X_zero, coeff_C_zero, zero_sub,
-      eq_intCast, eq_neg_iff_add_eq_zero, add_comm, ← eq_neg_iff_add_eq_zero] at hn
-    exact ⟨-n, by rw [hn, Int.cast_neg]⟩
+    have hn' : (n : R) = -(χ (F v) : R) := by simpa [charpoly_ofLinearCharacter_apply] using hn
+    exact ⟨-n, by simp [hn']⟩
   · obtain ⟨n, hn⟩ := h.2 v hv
     exact ⟨X - C n, by simp [charpoly_ofLinearCharacter_apply, hn]⟩
 
@@ -460,7 +459,7 @@ example (w : ℤ) : ¬((trivial ℂ ℂˣ ℂ).prod (ofLinearCharacter (MonoidHo
       ).charpoly.aroots ℂ = {1, ((tateFrob p : ℂˣ) : ℂ)} := by
     rw [charpoly_prod_apply, charpoly_trivial_apply, charpoly_ofLinearCharacter_apply,
       Module.finrank_self, pow_one, ← C_1, aroots_mul ((monic_X_sub_C _).mul
-      (monic_X_sub_C _)).ne_zero, aroots_X_sub_C, aroots_X_sub_C]
+      (monic_X_sub_C _)).ne_zero, aroots_X_sub_C]
     simp
   have h1 := (h.isWeilNumber_of_mem_aroots (Set.notMem_empty p) (hroots ▸ by simp)).unique
     (isWeilNumber_one (K := ℂ) (by norm_num))

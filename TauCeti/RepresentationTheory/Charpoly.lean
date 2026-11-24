@@ -21,6 +21,7 @@ multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial repre
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
+* `Representation.eq_one_of_mem_roots_map_charpoly_trivial`: its roots in any domain are `1`.
 -/
 
 public section
@@ -51,5 +52,13 @@ representation. -/
 theorem charpoly_trivial_apply (g : G) : (trivial R G V g).charpoly = (X - 1) ^ finrank R V := by
   nontriviality R
   rw [isTrivial_def, ← Module.End.one_eq_id, LinearMap.charpoly_one]
+
+/-- Every root of the characteristic polynomial of an element of the trivial representation, mapped
+to a domain `S`, is `1`. -/
+theorem eq_one_of_mem_roots_map_charpoly_trivial {S : Type*} [CommRing S] [IsDomain S]
+    {φ : R →+* S} {g : G} {z : S} (hz : z ∈ ((trivial R G V g).charpoly.map φ).roots) :
+    z = 1 := by
+  obtain ⟨-, -, h⟩ : _ ∧ _ ∧ z = 1 := by simpa [sub_eq_zero] using hz
+  exact h
 
 end Representation
