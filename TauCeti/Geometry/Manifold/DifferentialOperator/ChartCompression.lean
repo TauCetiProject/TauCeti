@@ -125,27 +125,18 @@ theorem cutoffPullback_apply_of_notMem (ψ : 𝓓(⟨e.target, e.open_target⟩,
     e.cutoffPullback he ψ f x = 0 :=
   indicator_of_notMem hx _
 
-omit he [ChartedSpace E M] [T2Space M] in
-/-- The image of the support of a cutoff under the inverse of the chart is compact. -/
-theorem isCompact_symm_image_tsupport (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
-    IsCompact (e.symm '' tsupport ψ) :=
-  ψ.hasCompactSupport.isCompact.image_of_continuousOn (e.continuousOn_symm.mono ψ.tsupport_subset)
-
-omit he [ChartedSpace E M] in
-/-- A function on `M` vanishing off the chart source and at the points `x` with `ψ (e x) = 0` is
-supported in the image of the support of `ψ` under the inverse of the chart. -/
-private theorem tsupport_subset_symm_image_tsupport {F : Type*} [Zero F] {g : M → F}
-    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (hg : ∀ x ∈ e.source, ψ (e x) = 0 → g x = 0)
-    (hg0 : ∀ x ∉ e.source, g x = 0) : tsupport g ⊆ e.symm '' tsupport ψ := by
-  refine closure_minimal (fun x hx ↦ ?_) (isCompact_symm_image_tsupport ψ).isClosed
-  have hxs : x ∈ e.source := by_contra fun h ↦ hx (hg0 x h)
-  exact ⟨e x, subset_tsupport _ fun h ↦ hx (hg x hxs h), e.left_inv hxs⟩
+/-- On the chart source, the pullback of the constant function `1` is the cutoff read through the
+chart. -/
+@[simp]
+theorem cutoffPullback_one_apply_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : M}
+    (hx : x ∈ e.source) : e.cutoffPullback he ψ 1 x = ψ (e x) := by
+  rw [cutoffPullback_apply_of_mem he _ _ hx, ContMDiffMap.coe_one, Pi.one_apply, mul_one]
 
 /-- The pullback `(ψ f) ∘ e` is supported in the image of the support of `ψ` under the inverse of
 the chart. -/
 theorem tsupport_cutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : tsupport (e.cutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
-  tsupport_subset_symm_image_tsupport ψ
+  e.tsupport_subset_symm_image_tsupport ψ
     (fun x hx h ↦ by rw [cutoffPullback_apply_of_mem he _ _ hx, h, zero_mul])
     fun _ hx ↦ cutoffPullback_apply_of_notMem he _ _ hx
 
@@ -413,7 +404,7 @@ inverse of the chart. -/
 theorem tsupport_complexCutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (f : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, ℂ), ℂ⟯) :
     tsupport (e.complexCutoffPullback he ψ f) ⊆ e.symm '' tsupport ψ :=
-  tsupport_subset_symm_image_tsupport ψ
+  e.tsupport_subset_symm_image_tsupport ψ
     (fun x hx h ↦ by rw [complexCutoffPullback_apply_of_mem he _ _ hx, h, zero_smul])
     fun _ hx ↦ complexCutoffPullback_apply_of_notMem he _ _ hx
 

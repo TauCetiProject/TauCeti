@@ -25,6 +25,10 @@ of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce sta
 postcomposition with `Complex.conjCLE`, is an involution on complex test functions. On an
 infinite-dimensional space every test function is zero (Riesz).
 
+For an open partial homeomorphism `e : M → E`, such as a chart of a manifold, a test function `φ`
+on the target of `e` has a compact support `e⁻¹(supp φ)` in `M`, which bounds the support of every
+function on `M` vanishing off the source of `e` and wherever `φ ∘ e` vanishes.
+
 ## Main declarations
 
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
@@ -43,6 +47,10 @@ infinite-dimensional space every test function is zero (Riesz).
   of its components in a basis, times the basis vectors.
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
   to `ψ • v`.
+* `OpenPartialHomeomorph.isCompact_symm_image_tsupport`: the image `e⁻¹(supp φ)` of the support of
+  a test function on the target of `e` is compact.
+* `OpenPartialHomeomorph.tsupport_subset_symm_image_tsupport`: a function on `M` vanishing off the
+  source of `e` and wherever `φ ∘ e` vanishes is supported in `e⁻¹(supp φ)`.
 -/
 
 public section
@@ -137,3 +145,28 @@ theorem postcompCLM_postcompCLM_toSpanSingleton (f : F →L[ℝ] ℝ) (ψ : 𝓓
   simp [mul_comm]
 
 end TestFunction
+
+namespace OpenPartialHomeomorph
+
+open scoped Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
+  {M : Type*} [TopologicalSpace M] (e : OpenPartialHomeomorph M E)
+
+/-- The image of the support of a test function on the target of `e` under the inverse of `e` is
+compact. -/
+theorem isCompact_symm_image_tsupport (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) :
+    IsCompact (e.symm '' tsupport φ) :=
+  φ.hasCompactSupport.isCompact.image_of_continuousOn (e.continuousOn_symm.mono φ.tsupport_subset)
+
+/-- A function on `M` vanishing off the source of `e` and at the points `x` with `φ (e x) = 0` is
+supported in the image of the support of `φ` under the inverse of `e`. -/
+theorem tsupport_subset_symm_image_tsupport [T2Space M] {G : Type*} [Zero G] {g : M → G}
+    (φ : 𝓓^{n}(⟨e.target, e.open_target⟩, F)) (hg : ∀ x ∈ e.source, φ (e x) = 0 → g x = 0)
+    (hg0 : ∀ x ∉ e.source, g x = 0) : tsupport g ⊆ e.symm '' tsupport φ := by
+  refine closure_minimal (fun x hx ↦ ?_) (e.isCompact_symm_image_tsupport φ).isClosed
+  have hxs : x ∈ e.source := by_contra fun h ↦ hx (hg0 x h)
+  exact ⟨e x, subset_tsupport _ fun h ↦ hx (hg x hxs h), e.left_inv hxs⟩
+
+end OpenPartialHomeomorph

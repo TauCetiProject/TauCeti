@@ -163,7 +163,7 @@ when the input vanishes near `e⁻¹(supp ψ)`. -/
 theorem isProperlySupported_chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (a : ClassicalSymbol n ℂ ℂ m) : IsProperlySupported (e.chartQuantization he φ ψ a) := by
   refine isProperlySupported_iff.2 fun _ _ ↦ ⟨e.symm '' tsupport φ ∪ e.symm '' tsupport ψ,
-    (isCompact_symm_image_tsupport φ).union (isCompact_symm_image_tsupport ψ),
+    (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
     fun u _ ↦ (tsupport_chartQuantization_subset he φ ψ a u).trans subset_union_left,
     fun u hu p _ ↦ ?_⟩
   -- If `u` vanishes near `e⁻¹(supp ψ)`, then `ψ · (u ∘ e⁻¹)` is the zero function.
@@ -192,17 +192,22 @@ private def overlapCutoff (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) : CoordinateSpace n → ℝ :=
   e'.cutoffPushforward he' φ' (e.cutoffPullback he φ 1)
 
+/-- The overlap cutoff is the coercion of a smooth function on `ℝⁿ`. -/
+private theorem overlapCutoff_eq (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    overlapCutoff he he' φ' φ = ⇑(e'.cutoffPushforward he' φ' (e.cutoffPullback he φ 1)) :=
+  rfl
+
 private theorem overlapCutoff_apply (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (x : CoordinateSpace n) :
-    overlapCutoff he he' φ' φ x = φ' x * e.cutoffPullback he φ 1 (e'.symm x) :=
-  e'.cutoffPushforward_apply he' φ' _ x
+    overlapCutoff he he' φ' φ x = φ' x * e.cutoffPullback he φ 1 (e'.symm x) := by
+  rw [overlapCutoff_eq, cutoffPushforward_apply]
 
 private theorem overlapCutoff_apply_of_mem (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : CoordinateSpace n}
     (hx : e'.symm x ∈ e.source) :
     overlapCutoff he he' φ' φ x = φ' x * φ (e (e'.symm x)) := by
-  rw [overlapCutoff_apply, cutoffPullback_apply_of_mem he _ _ hx, ContMDiffMap.coe_one,
-    Pi.one_apply, mul_one]
+  rw [overlapCutoff_apply, cutoffPullback_one_apply_of_mem he _ hx]
 
 private theorem overlapCutoff_apply_of_notMem (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {x : CoordinateSpace n}
@@ -220,12 +225,12 @@ private theorem overlapCutoff_spec (φ' : 𝓓(⟨e'.target, e'.open_target⟩, 
       tsupport (overlapCutoff he he' φ' φ) ⊆ (e'.symm.trans e).source := by
   have hfun : overlapCutoff he he' φ' φ = fun x ↦ φ' x * e.cutoffPullback he φ 1 (e'.symm x) :=
     funext (overlapCutoff_apply he he' φ' φ)
-  refine ⟨contMDiff_iff_contDiff.1 (ContMDiffMap.contMDiff _),
+  refine ⟨overlapCutoff_eq he he' φ' φ ▸ contMDiff_iff_contDiff.1 (ContMDiffMap.contMDiff _),
     hfun ▸ φ'.hasCompactSupport.mul_right, ?_⟩
   -- The support lies in the set of `x ∈ supp φ'` with `e'⁻¹ x ∈ e⁻¹(supp φ)`, which is closed.
   have hS : IsClosed (tsupport φ' ∩ e'.symm ⁻¹' (e.symm '' tsupport φ)) :=
     (e'.continuousOn_symm.mono φ'.tsupport_subset).preimage_isClosed_of_isClosed
-      (isClosed_tsupport _) (isCompact_symm_image_tsupport φ).isClosed
+      (isClosed_tsupport _) (e.isCompact_symm_image_tsupport φ).isClosed
   refine (closure_minimal (fun x hx ↦ ?_) hS).trans fun x ⟨hx', y, hy, hyx⟩ ↦ ?_
   · rw [Function.mem_support, hfun, ne_eq, mul_eq_zero, not_or] at hx
     exact ⟨subset_tsupport _ hx.1,
@@ -246,8 +251,8 @@ private theorem cutoffPushforwardSchwartz_complexCutoffPullback_apply
   rw [trans_source, symm_source] at hy
   rw [cutoffPushforwardSchwartz_apply, overlapCutoff_apply_of_mem he he' ψ' ψ hy.2, coe_trans,
     Function.comp_apply, e.left_inv hy.2,
-    complexCutoffPullback_apply_of_mem he' _ _ (e'.map_target hy.1), e'.right_inv hy.1,
-    ContMDiffMap.coe_ofContDiff, smul_smul, mul_comm]
+    complexCutoffPullback_apply_of_mem he' _ _ (e'.map_target hy.1), e'.right_inv hy.1]
+  simp [mul_comm, mul_left_comm]
 
 /-- Off the target of the transition map `e ∘ e'⁻¹`, the Schwartz function
 `ψ · (((ψ' u) ∘ e') ∘ e⁻¹)` vanishes: either `ψ` or the pullback by `ψ'` does. -/
@@ -293,15 +298,16 @@ theorem exists_complexChartCompression_chartQuantization_eq
   obtain ⟨b, hb, hop⟩ := a.exists_smul_quantizeSchwartzValue_comp_eq κ hκ hκ' hΦ hΦc hΦs hΨ hΨc hΨs
   refine ⟨b, fun x hx ξ ↦ ?_, fun x hx ξ ↦ ?_, fun u x ↦ ?_⟩
   · rw [hb, overlapCutoff_apply_of_mem he he' φ' φ hx.2,
-      overlapCutoff_apply_of_mem he he' ψ' ψ hx.2, hκ_def, coe_trans, Function.comp_apply]
+      overlapCutoff_apply_of_mem he he' ψ' ψ hx.2]
+    simp [hκ_def]
   · rw [hb, overlapCutoff_apply_of_notMem he he' φ' φ hx, zero_mul, zero_smul]
   rw [← hop u _ (cutoffPushforwardSchwartz_complexCutoffPullback_apply he he' ψ ψ' u)
     (cutoffPushforwardSchwartz_complexCutoffPullback_eq_zero he he' ψ ψ' u),
     complexChartCompression_apply, overlapCutoff_apply]
   by_cases hx : e'.symm x ∈ e.source
   · rw [chartQuantization_apply_of_mem he φ ψ a _ (cutoffPushforwardSchwartz_apply he ψ _) hx,
-      cutoffPullback_apply_of_mem he _ _ hx, ContMDiffMap.coe_one, Pi.one_apply, mul_one,
-      smul_smul, hκ_def, coe_trans, Function.comp_apply]
+      cutoffPullback_one_apply_of_mem he _ hx]
+    simp [hκ_def, mul_assoc]
   · rw [chartQuantization_apply_of_notMem he φ ψ a _ hx, cutoffPullback_apply_of_notMem he _ _ hx,
       mul_zero, zero_smul, smul_zero]
 
