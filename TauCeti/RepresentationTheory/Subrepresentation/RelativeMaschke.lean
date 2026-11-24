@@ -30,6 +30,13 @@ a `G`-stable complement of `W`.
 
 * `Representation.isSemisimpleRepresentation_of_comp_subtype`: a representation whose restriction
   to a subgroup of finite index invertible in `k` is semisimple is itself semisimple.
+
+## References
+
+* W. Gaschütz, *Über den Fundamentalsatz von Maschke zur Darstellungstheorie der endlichen
+  Gruppen*, Math. Z. **56** (1952), 376–387.
+* D. G. Higman, *Modules with a group of operators*, Duke Math. J. **21** (1954), 369–376, for
+  the averaging of a projection over a transversal of a subgroup.
 -/
 
 public section
