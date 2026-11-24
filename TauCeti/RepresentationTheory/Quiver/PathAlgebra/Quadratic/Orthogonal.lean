@@ -31,11 +31,11 @@ variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q] [Finite Q]
 
 private instance : Finite {x : Quiver.TotalPath Q // x.2.2.length = 2} := by
   let f : {x : Quiver.TotalPath Q // x.2.2.length = 2} → ShortPath Q 3 :=
-    fun x => ⟨x.1, by omega⟩
+    fun x => ⟨x.val, by omega⟩
   exact Finite.of_injective f (by
     intro x y h
     apply Subtype.ext
-    exact congrArg (fun z : ShortPath Q 3 => z.1) h)
+    exact congrArg (fun z : ShortPath Q 3 => z.val) h)
 
 private instance : FiniteDimensional k (grade k Q 2) :=
   Module.Finite.of_basis (gradeBasis k Q 2)
@@ -46,13 +46,13 @@ private noncomputable def gradeTwoPairing : LinearMap.BilinForm k (grade k Q 2) 
 
 omit [Finite Q] [∀ i j : Q, Finite (i ⟶ j)] in
 private theorem gradeTwoPairing_apply (x y : grade k Q 2) :
-    gradeTwoPairing k Q x y = pathPairing k Q x.1 y.1 := rfl
+    gradeTwoPairing k Q x y = pathPairing k Q x.val y.val := rfl
 
 omit [Finite Q] [∀ i j : Q, Finite (i ⟶ j)] in
 private theorem gradeTwoPairing_basis
     (x y : {p : Quiver.TotalPath Q // p.2.2.length = 2}) :
     gradeTwoPairing k Q (gradeBasis k Q 2 x) (gradeBasis k Q 2 y) =
-      (Finsupp.single x.1 (1 : k)) y.1 := by
+      (Finsupp.single x.val (1 : k)) y.val := by
   classical
   rw [gradeTwoPairing_apply, coe_gradeBasis_apply, coe_gradeBasis_apply,
     pathPairing_apply_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
@@ -113,16 +113,16 @@ theorem quadraticOrthogonal_quadraticOrthogonal (R : Submodule k (pathAlgebra k 
       calc
         gradeTwoPairing k Q y ⟨x, hxE⟩ = gradeTwoPairing k Q ⟨x, hxE⟩ y :=
           (gradeTwoPairing_isSymm k Q).eq _ _
-        _ = pathPairing k Q x y.1 := gradeTwoPairing_apply k Q _ _
-        _ = 0 := hxorth y.1 hy
+        _ = pathPairing k Q x y.val := gradeTwoPairing_apply k Q _ _
+        _ = 0 := hxorth y.val hy
     · rintro ⟨y, hy, rfl⟩
       rw [mem_quadraticOrthogonal_iff]
-      refine ⟨y.2, ?_⟩
+      refine ⟨y.property, ?_⟩
       intro z hz
       have hzE : z ∈ E := hT hz
       have hzorth := (LinearMap.BilinForm.mem_orthogonal_iff.mp hy) ⟨z, hzE⟩ hz
       calc
-        pathPairing k Q y.1 z = gradeTwoPairing k Q y ⟨z, hzE⟩ :=
+        pathPairing k Q y.val z = gradeTwoPairing k Q y ⟨z, hzE⟩ :=
           (gradeTwoPairing_apply k Q y ⟨z, hzE⟩).symm
         _ = gradeTwoPairing k Q ⟨z, hzE⟩ y := (gradeTwoPairing_isSymm k Q).eq _ _
         _ = 0 := hzorth

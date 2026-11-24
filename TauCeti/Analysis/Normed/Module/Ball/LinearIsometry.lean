@@ -41,7 +41,7 @@ variable {R R₂ E F : Type*} [Semiring R] [Semiring R₂] {σ₁₂ : R →+* R
 
 /-- The restriction of a (semi)linear isometry to the closed unit balls. -/
 def unitClosedBallMap (f : E →ₛₗᵢ[σ₁₂] F) (x : closedBall (0 : E) 1) : closedBall (0 : F) 1 :=
-  ⟨f x, f.map_zero ▸ f.isometry.mapsTo_closedBall 0 1 x.2⟩
+  ⟨f x, f.map_zero ▸ f.isometry.mapsTo_closedBall 0 1 x.property⟩
 
 @[simp]
 theorem coe_unitClosedBallMap_apply (f : E →ₛₗᵢ[σ₁₂] F) (x : closedBall (0 : E) 1) :

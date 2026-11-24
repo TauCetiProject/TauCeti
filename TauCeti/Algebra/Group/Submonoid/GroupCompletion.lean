@@ -60,7 +60,7 @@ theorem mrange_toGroupClosure :
 generates. -/
 def toGroupClosureEquiv : S ≃+ S.comap (AddSubgroup.closure (S : Set G)).subtype where
   toFun s := ⟨S.toGroupClosure s, s.property⟩
-  invFun y := ⟨y.1.1, y.2⟩
+  invFun y := ⟨y.val.val, y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

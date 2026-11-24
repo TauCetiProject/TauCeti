@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
-public import TauCeti.ModelTheory.RelationalConfiguration.Structure
-public import TauCeti.ModelTheory.RelationalConfiguration.Topology
+public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 import TauCeti.ModelTheory.Syntax
 
 /-!
@@ -39,6 +38,8 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.mem_modelsOf_toInf`: the model class of a first-order sentence
+  consists of the configurations satisfying it.
 * `TauCeti.RelationalConfiguration.modelsOf_inf`, `modelsOf_sup`, `modelsOf_iInf`,
   `modelsOf_iSup`, `modelsOf_not`, `modelsOf_imp`, `modelsOf_top` and `modelsOf_bot`: model
   classes turn the connectives into the Boolean set operations.
@@ -48,8 +49,9 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 * `TauCeti.RelationalConfiguration.measurableSet_modelsOf`: model classes of such sentences are
   measurable, and `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes them
   standard Borel.
-* `FirstOrder.Language.Equiv.mem_modelsOf_iff`: model classes are invariant under isomorphism of
-  the decoded structures.
+* `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
+  `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes are invariant
+  under isomorphism of the decoded structures.
 -/
 
 public section
@@ -73,6 +75,13 @@ def modelsOf (φ : L.SentenceInf ι) : Set (RelationalConfiguration L V) :=
 theorem mem_modelsOf {φ : L.SentenceInf ι} {c : RelationalConfiguration L V} :
     c ∈ modelsOf φ ↔ @SentenceInf.Realize L ι φ V c.toStructure :=
   Iff.rfl
+
+/-- A configuration lies in the model class of a first-order sentence, embedded in the infinitary
+logic, exactly when its decoded structure satisfies the sentence. Not a simp lemma: `simp` already
+reaches the right side through `mem_modelsOf` and `Sentence.realize_toInf`. -/
+theorem mem_modelsOf_toInf {φ : L.Sentence} {c : RelationalConfiguration L V} :
+    c ∈ modelsOf (φ.toInf (ι := ι)) ↔ @Sentence.Realize L V c.toStructure φ :=
+  @Sentence.realize_toInf L ι φ V c.toStructure
 
 /-- The false sentence has no models. -/
 @[simp]
@@ -207,3 +216,17 @@ theorem mem_modelsOf_iff {c : RelationalConfiguration L V} {d : RelationalConfig
   @StrongHomClass.realize_sentenceInf L ι V W c.toStructure d.toStructure _ _ _ e φ
 
 end FirstOrder.Language.Equiv
+
+namespace TauCeti.RelationalConfiguration
+
+variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
+
+/-- Model classes of infinitary sentences are isomorphism invariant, on any carrier and for any
+branching index. -/
+theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
+    IsomorphismInvariant (modelsOf (V := V) φ) :=
+  isomorphismInvariant_iff.2 fun _ _ h hc => by
+    obtain ⟨e⟩ := isoSetoid_apply.1 h
+    exact (e.mem_modelsOf_iff φ).1 hc
+
+end TauCeti.RelationalConfiguration

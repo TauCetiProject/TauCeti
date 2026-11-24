@@ -10,6 +10,7 @@ public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.Density
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The triangular distribution
@@ -398,7 +399,7 @@ theorem integrable_triangularMeasure_iff {g : ℝ → E} :
     Integrable g (triangularMeasure a b c) ↔
       Integrable (fun x ↦ triangularPDFReal a b c x • g x) := by
   rw [triangularMeasure_eq_withDensity, funext (triangularPDF_eq_ofReal a b c)]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_triangularPDFReal a b c).aemeasurable
     (ae_of_all _ (triangularPDFReal_nonneg a b c))
 
@@ -407,7 +408,7 @@ integral. This holds at every parameter, the zero measure included. -/
 theorem integral_triangularMeasure_eq (a b c : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂triangularMeasure a b c = ∫ x, triangularPDFReal a b c x • g x := by
   rw [triangularMeasure_eq_withDensity, funext (triangularPDF_eq_ofReal a b c)]
-  exact Probability.integral_withDensity_ofReal (measurable_triangularPDFReal a b c).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_triangularPDFReal a b c).aemeasurable
     (ae_of_all _ (triangularPDFReal_nonneg a b c)) g
 
 end Transfer
@@ -507,8 +508,8 @@ private theorem cdf_triangularMeasure_eq_triangularSpline (hab : a < b) (hac : a
     cdf (triangularMeasure a b c) x = triangularSpline a b c x := by
   have := isProbabilityMeasure_triangularMeasure hab hac hcb
   rw [cdf_eq_real, triangularMeasure_eq_withDensity, funext (triangularPDF_eq_ofReal a b c),
-    measureReal_withDensity_ofReal (ae_of_all _ (triangularPDFReal_nonneg a b c))
-      measurableSet_Iic (measurable_triangularPDFReal a b c).aemeasurable,
+    MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (triangularPDFReal_nonneg a b c))
+      nullMeasurableSet_Iic (measurable_triangularPDFReal a b c).aemeasurable,
     integral_Iic_triangularPDFReal hab hac hcb]
 
 /-- The triangular cdf in closed form at every point: `0` up to the lower endpoint, the rising

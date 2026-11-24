@@ -296,10 +296,10 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   set S : Set K := {u | ‖u‖ = ‖s‖}
   have : CompleteSpace S := (isClosed_eq continuous_norm continuous_const).completeSpace_coe
   have : Nonempty S := ⟨⟨s, rfl⟩⟩
-  have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.2]; exact hs0.ne')
+  have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.property]; exact hs0.ne')
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
   have hUv (v : S) : ((U v : Kˣ) : K) = v := Units.val_mk0 _
-  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := by rw [hUv]; exact v.2
+  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := by rw [hUv]; exact v.property
   have hU₁ (v : S) : ‖1 - ((U v : Kˣ) : K)‖ = 1 :=
     norm_one_sub_of_norm_lt_one ((hU v).trans_lt hs)
   have hqU (v : S) : ‖(q : K)‖ ≤ ‖((U v : Kˣ) : K)‖ ^ 2 := by rw [hU v]; exact hqs

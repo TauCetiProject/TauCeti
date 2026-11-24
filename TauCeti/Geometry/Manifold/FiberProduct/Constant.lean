@@ -85,7 +85,7 @@ noncomputable def fiberProductConstDiffeomorph (hn : 1 ≤ n) (hf : ContMDiff IX
 @[simp]
 theorem fiberProductConstDiffeomorph_apply (hn : 1 ≤ n) (hf : ContMDiff IX IN n f)
     (hreg : IsRegularValue IX IN f c) (p : {p : X × Y // f p.1 = c}) :
-    fiberProductConstDiffeomorph (IY := IY) hn hf hreg p = (⟨p.1.1, p.2⟩, p.1.2) :=
+    fiberProductConstDiffeomorph (IY := IY) hn hf hreg p = (⟨p.val.1, p.property⟩, p.val.2) :=
   (rfl)
 
 /-- The inverse constant-map comparison sends a point of the regular fibre and a point of `Y`
@@ -98,7 +98,7 @@ theorem fiberProductConstDiffeomorph_symm_apply (hn : 1 ≤ n) (hf : ContMDiff I
       (fun p hp ↦ by
         rw [LinearMap.range_eq_top.mpr (isRegularPoint_iff.mp (hreg.isRegularPoint hp)),
           top_sup_eq])
-    (fiberProductConstDiffeomorph (IY := IY) hn hf hreg).symm p = ⟨(p.1.1, p.2), p.1.2⟩ :=
+    (fiberProductConstDiffeomorph (IY := IY) hn hf hreg).symm p = ⟨(p.1.val, p.2), p.1.property⟩ :=
   (rfl)
 
 end TauCeti

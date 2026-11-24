@@ -176,7 +176,7 @@ theorem existsUnique_sidePairing_of_carrier_eq_dirichletDomain
       map_pair := fun i ↦ by rw [he, hg_pair, inv_inv, Subgroup.coe_inv, inv_inv]
       map_smul_vertex := fun i ↦ (hvert i).1
       map_smul_vertex_add_one := fun i ↦ (hvert i).2 }
-  refine ⟨σ, fun i ↦ ((g i)⁻¹ : Γ).2, fun τ hτ ↦ ?_⟩
+  refine ⟨σ, fun i ↦ ((g i)⁻¹ : Γ).property, fun τ hτ ↦ ?_⟩
   -- a side pairing by elements of `Γ` pairs each side along the face of the inverse map
   have hmap (i : Fin n) : τ.map i = σ.map i := by
     have hti := (existsUnique_side_eq_dirichletFace hP hp i).unique (hg i)

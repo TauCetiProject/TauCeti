@@ -72,11 +72,8 @@ theorem rowLen_ofRowLensFin_eq_zero_of_le (f : Fin n → ℕ) (hf : Antitone f) 
 
 /-- `ofRowLensFin f hf` has at most `n` rows. -/
 theorem colLen_zero_ofRowLensFin_le (f : Fin n → ℕ) (hf : Antitone f) :
-    (ofRowLensFin f hf).colLen 0 ≤ n := by
-  by_contra h
-  have hmem : ((n, 0) : ℕ × ℕ) ∈ ofRowLensFin f hf :=
-    _root_.YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le h)
-  grind [_root_.YoungDiagram.mem_iff_lt_rowLen, rowLen_ofRowLensFin_eq_zero_of_le]
+    (ofRowLensFin f hf).colLen 0 ≤ n :=
+  rowLen_eq_zero_iff.mp (rowLen_ofRowLensFin_eq_zero_of_le f hf le_rfl)
 
 /-- Reading the first `n` row lengths off a Young diagram with at most `n` rows recovers it. -/
 theorem ofRowLensFin_rowLen (μ : _root_.YoungDiagram) (hμ : μ.colLen 0 ≤ n) :
@@ -84,7 +81,7 @@ theorem ofRowLensFin_rowLen (μ : _root_.YoungDiagram) (hμ : μ.colLen 0 ≤ n)
   refine rowLen_injective (funext fun i => ?_)
   by_cases hi : i < n
   · simpa using rowLen_ofRowLensFin _ _ ⟨i, hi⟩
-  · grind [rowLen_ofRowLensFin_eq_zero_of_le, rowLen_eq_zero_of_colLen_le]
+  · grind [rowLen_ofRowLensFin_eq_zero_of_le, rowLen_eq_zero_iff]
 
 /-- `ofRowLensFin f hf` has `∑ i, f i` cells. -/
 @[simp]

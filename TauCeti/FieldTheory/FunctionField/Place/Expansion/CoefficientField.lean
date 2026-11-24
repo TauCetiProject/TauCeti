@@ -290,7 +290,7 @@ theorem completionIntegersEquivPowerSeriesOfSection_section (a : P.ResidueField)
     P.completionIntegersEquivPowerSeriesOfSection s hs ht (s a) = PowerSeries.C a := by
   refine (P.completionIntegersEquivPowerSeriesOfSection_eq_iff s hs ht _ _).mpr fun n ↦ ?_
   rcases n with _ | n
-  · simpa using P.completionPlace.mem_filtration_zero_iff.mpr (s a).2
+  · simpa using P.completionPlace.mem_filtration_zero_iff.mpr (s a).property
   · rw [Fin.sum_univ_succ]
     simp [PowerSeries.coeff_C]
 

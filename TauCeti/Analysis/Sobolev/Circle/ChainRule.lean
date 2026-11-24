@@ -325,14 +325,14 @@ that `F (x + T) = F x + T` and `φ x = F x`, and suppose that `F` has a continuo
 `0 < c ≤ F' ≤ M`. Then `u ↦ u ∘ φ` is a continuous linear automorphism of `H¹`, whose inverse is
 precomposition with the inverse map of the circle. -/
 def precompOneEquivOfLift : CircleSobolev 1 ℂ ≃L[ℂ] CircleSobolev 1 ℂ :=
-  ContinuousLinearEquiv.equivOfInverse (precompOneCLM hF hper hφ hc hcF hMF hF'c)
+  ContinuousLinearEquiv.ofContinuousLinearMap (precompOneCLM hF hper hφ hc hcF hMF hF'c)
     (precompOneInvCLM hF hper hφ hc hcF hMF hF'c)
-    (fun a ↦ inclusion_injective zero_le_one (by
-      rw [inclusion_precompOneInvCLM, inclusion_precompOneCLM]
-      exact (precompEquivOfLift hF hper hφ hc hcF hMF).symm_apply_apply _))
-    (fun a ↦ inclusion_injective zero_le_one (by
-      rw [inclusion_precompOneCLM, inclusion_precompOneInvCLM]
+    (ContinuousLinearMap.ext fun a ↦ inclusion_injective zero_le_one (by
+      rw [ContinuousLinearMap.comp_apply, inclusion_precompOneCLM, inclusion_precompOneInvCLM]
       exact (precompEquivOfLift hF hper hφ hc hcF hMF).apply_symm_apply _))
+    (ContinuousLinearMap.ext fun a ↦ inclusion_injective zero_le_one (by
+      rw [ContinuousLinearMap.comp_apply, inclusion_precompOneInvCLM, inclusion_precompOneCLM]
+      exact (precompEquivOfLift hF hper hφ hc hcF hMF).symm_apply_apply _))
 
 /-- In `H⁰`, precomposition on `H¹` is the precomposition `precompEquivOfLift`: the inclusion of
 `u ∘ φ` into `H⁰` is the precomposition of the inclusion of `u`. -/

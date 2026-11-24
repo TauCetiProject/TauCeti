@@ -145,6 +145,6 @@ theorem exists_forall_genusCharFunElementaryTwoQuotientFamilyLinearMap_eq {s : F
   refine ⟨TauCeti.elementaryTwoQuotientMk A, fun P => ?_⟩
   rw [genusCharFunElementaryTwoQuotientFamilyLinearMap_apply,
     genusCharFunElementaryTwoQuotientLinearMap_mk]
-  exact hA P P.2
+  exact hA P P.property
 
 end TauCeti.Multiquadratic

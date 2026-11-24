@@ -16,10 +16,11 @@ Complex-valued functions on a real manifold are real smooth maps, not holomorphi
 This file equips their native `ContMDiffMap` carrier with the complex algebra structure
 induced by constant functions. The native real scalar action agrees with restriction of
 scalars. Real and imaginary parts identify this real vector space with a pair of real
-function spaces, and conjugation is a real algebra involution. Differentiation commutes with
-real and imaginary parts at every nonzero differentiability order. Precomposition with a
-smooth map is a complex algebra homomorphism (`ContMDiffMap.compRightComplexAlgHom`), used
-to pull back complex-valued differential data.
+function spaces, so complex-linear maps out of it are determined on real-valued functions
+(`ContMDiffMap.linearMap_ext_ofReal`), and conjugation is a real algebra involution.
+Differentiation commutes with real and imaginary parts at every nonzero differentiability
+order. Precomposition with a smooth map is a complex algebra homomorphism
+(`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -184,6 +185,14 @@ theorem ofReal_re_add_I_smul_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ofReal f.re + Complex.I • ofReal f.im = f := by
   ext x
   simpa [mul_comm] using Complex.re_add_im (f x)
+
+/-- A complex-linear map out of complex-valued smooth functions is determined by its values on
+real-valued functions. -/
+theorem linearMap_ext_ofReal {N : Type*} [AddCommMonoid N] [Module ℂ N]
+    {φ ψ : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] N} (h : ∀ u : C^n⟮I, M; ℝ⟯, φ (ofReal u) = ψ (ofReal u)) :
+    φ = ψ := by
+  ext f
+  rw [← ofReal_re_add_I_smul_im f, map_add, map_add, map_smul, map_smul, h, h]
 
 /-- Complex-valued real-smooth functions are uniquely pairs of real-smooth functions. -/
 def equivRealProd :

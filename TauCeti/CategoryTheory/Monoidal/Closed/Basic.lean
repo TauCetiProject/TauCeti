@@ -33,9 +33,6 @@ in `CategoryTheory.Functor.ihomComparison_isIso_of_iso`.  It is Mathlib's isomor
   precomposition with a zero morphism is zero, so internal Hom into a fixed object preserves zero
   morphisms in its first variable (`MonoidalClosed.preservesZeroMorphisms_internalHom_flip_obj`).
   No zero object is needed.
-* `MonoidalClosed.ofEquiv_curry`: simplifies `MonoidalClosed.ofEquiv_curry_def` by cancelling the
-  equivalence adjunction against `Iso.compInverseIso`, expressing currying under
-  `MonoidalClosed.ofEquiv` directly in terms of `Functor.LaxMonoidal.μ F X Y ≫ F.map f`.
 -/
 
 public section
@@ -116,28 +113,5 @@ instance MonoidalClosed.preservesZeroMorphisms_internalHom_flip_obj (X : C) :
     exact MonoidalClosed.pre_app_zero X
 
 end Zero
-
-section OfEquiv
-
-universe v₂ u₂
-
-open MonoidalClosed
-
-variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory.{v₂} D] [MonoidalClosed D]
-
-/-- Currying in the monoidal closed structure transported via `MonoidalClosed.ofEquiv F adj`
-factors through `Functor.LaxMonoidal.μ F X Y ≫ F.map f`, currying in `D`, and `adj.homEquiv`. -/
-theorem MonoidalClosed.ofEquiv_curry (F : C ⥤ D) {G : D ⥤ C} (adj : F ⊣ G)
-    [F.Monoidal] [F.IsEquivalence] {X Y Z : C} (f : X ⊗ Y ⟶ Z) :
-    letI := MonoidalClosed.ofEquiv F adj
-    MonoidalClosed.curry f =
-      adj.homEquiv Y ((ihom (F.obj X)).obj (F.obj Z))
-        (MonoidalClosed.curry (Functor.LaxMonoidal.μ F X Y ≫ F.map f)) := by
-  refine (MonoidalClosed.ofEquiv_curry_def F adj f).trans ?_
-  congr 2
-  rw [Adjunction.homEquiv_unit]
-  simp [Iso.compInverseIso, Functor.Monoidal.commTensorLeft, Adjunction.toEquivalence]
-
-end OfEquiv
 
 end CategoryTheory

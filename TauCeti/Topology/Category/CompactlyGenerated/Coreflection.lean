@@ -5,30 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Preserves.Limits
 public import Mathlib.Topology.Category.CompactlyGenerated
-public import Mathlib.Topology.Category.TopCat.Monoidal
+public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
-# The compact-generation coreflection on `TopCat`
+# Coreflection of `CompactlyGenerated` in `TopCat`
 
-To embed `TopCat` into a cartesian closed category for homotopy theory without altering existing
-compactly generated spaces, one refines spaces to `TopologicalSpace.compactlyGenerated.{u} X`. Via
-`Topology.isGeneratedBy_compHaus_iff`, we identify `CompactlyGenerated.{u, w}` strictly with
-`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)` over `TopCat.{w}`
-(`CompactlyGenerated.equivGeneratedByTopCat`) and transport `GeneratedByTopCat.adj`
-(`Mathlib.Topology.Convenient.Category`):
+Mathlib defines `CompactlyGenerated.{u, w}` as the full subcategory of `TopCat.{w}` spanned by
+`u`-compactly generated spaces (`UCompactlyGeneratedSpace.{u}`), with inclusion
+`CompactlyGenerated.compactlyGeneratedToTop`. Mirroring Mathlib's `GeneratedByTopCat.adj`
+(`Mathlib.Topology.Convenient.Category`), we construct the right adjoint coreflector
+`TopCat.toCompactlyGenerated.{u, w} : TopCat.{w} ⥤ CompactlyGenerated.{u, w}` equipping `X` with
+`TopologicalSpace.compactlyGenerated.{u} X`, establish the coreflection `CompactlyGenerated.adj`,
+and deduce completeness, cocompleteness, counit characterizations, and map/product functoriality:
 
-* `TopCat.toCompactlyGenerated : TopCat.{w} ⥤ CompactlyGenerated.{u, w}` refines `X` while keeping
-  points and maps fixed, unwrapped pointwise via `TopCat.toCompactlyGeneratedEquiv X`.
+* `CompactlyGenerated.equivalenceGeneratedByTopCat` identifies `CompactlyGenerated.{u, w}` with
+  `GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)` over `TopCat.{w}`.
 * `CompactlyGenerated.adj : compactlyGeneratedToTop.{u, w} ⊣ TopCat.toCompactlyGenerated.{u, w}`
-  makes `CompactlyGenerated.{u, w}` coreflective in `TopCat.{w}`, creating colimits and providing
-  all limits and colimits.
-* `CompactlyGenerated.isIso_adjCounit_app_iff` characterizes `IsIso (adjCounit.app X)` by
-  `UCompactlyGeneratedSpace.{u} X`, specializing to Hausdorff weakly locally compact spaces at
-  `max w u` (`isIso_adjCounit_app_of_t2Space_of_weaklyLocallyCompactSpace`; see
-  `TauCeti.Topology.CWComplex.Classical.CompactlyGenerated` for Hausdorff CW complexes at any `u`),
-  together with specializations to `PEmpty`, `PUnit`, `TopCat.I`, and Sierpiński `Prop`.
+  has invertible unit (`CompactlyGenerated.adjUnitIso`) and identity-on-points counit, giving
+  `Coreflective`, `CreatesColimits`, `HasLimits`, `HasColimits`, and
+  `CompactlyGenerated.limitIsoToCompactlyGeneratedLimit`.
+* `CompactlyGenerated.isIso_counit_app_iff` and `CompactlyGenerated.isHomeomorph_counit_app_iff`
+  characterize counit invertibility, specializing to `u`-small Hausdorff compactly coherent (in
+  particular weakly locally compact) spaces and colimits of `u`-compactly generated stages (for
+  Hausdorff CW complexes, see `TauCeti.Topology.Category.CompactlyGenerated.CWComplex`).
+* `TopCat.toCompactlyGeneratedProdRightHomeomorph`,
+  `TopCat.toCompactlyGeneratedProdLeftHomeomorph`,
+  `TopCat.toCompactlyGeneratedOfContinuousGeneratedBy`, `ContinuousMap.toCompactlyGenerated`, and
+  `CompactlyGenerated.continuous_eval_toCompactlyGeneratedContinuousMap`: commutation of `k` with
+  `u`-small locally compact Hausdorff products, functoriality of `k` on continuous and
+  `CompHaus.{u}`-continuous maps across universes, and ordinary product evaluation continuity on
+  `k(C(Y, Z)) × Y` (for homotopy preservation, see
+  `TauCeti.Topology.Category.CompactlyGenerated.Homotopy`).
 
 ## References
 
@@ -36,294 +46,486 @@ compactly generated spaces, one refines spaces to `TopologicalSpace.compactlyGen
   133–152.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
   (Basel) 22 (1971), 545–555.
-* M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core) compactly
-  generated spaces*, Topology Appl. 143 (2004), 105–145.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix,
-  Section "Compactly Generated Spaces".
+* M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
+  compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Appendix.
 -/
 
 public section
 
-universe u v w
+noncomputable section
 
-open CategoryTheory Limits Topology TopologicalSpace
+open CategoryTheory Limits Topology
 
-instance : UCompactlyGeneratedSpace.{u} TopCat.I.{w} :=
-  inferInstanceAs (UCompactlyGeneratedSpace.{u} (ULift unitInterval))
+universe u w v v' v₁ v₂ v₃
 
-/-! ### Comparison with `GeneratedByTopCat` and the coreflection adjunction -/
+/-- The coreflector `k : TopCat.{w} ⥤ CompactlyGenerated.{u, w}`, equipping a topological space
+`X` with `TopologicalSpace.compactlyGenerated.{u} X` and acting as the identity on underlying
+types and maps. -/
+@[expose]
+def TopCat.toCompactlyGenerated : TopCat.{w} ⥤ CompactlyGenerated.{u, w} where
+  obj X :=
+    { toTop := @TopCat.of X (TopologicalSpace.compactlyGenerated.{u} X)
+      is_compactly_generated := TopologicalSpace.uCompactlyGeneratedSpace_compactlyGenerated.{u} X }
+  map {X Y} f := InducedCategory.homMk
+    (@TopCat.ofHom X Y (TopologicalSpace.compactlyGenerated.{u} X)
+      (TopologicalSpace.compactlyGenerated.{u} Y)
+      (@ContinuousMap.mk X Y (TopologicalSpace.compactlyGenerated.{u} X)
+        (TopologicalSpace.compactlyGenerated.{u} Y) f
+        (continuous_from_compactlyGenerated.{u} (t := TopologicalSpace.compactlyGenerated.{u} Y) f
+          fun _ g ↦ TopologicalSpace.continuous_to_compactlyGenerated.{u} (f.hom.comp g))))
 
-namespace CompactlyGenerated
+/-- `TopCat.toCompactlyGenerated` preserves the underlying carrier type definitionally. -/
+theorem TopCat.coe_toCompactlyGenerated_obj (X : TopCat.{w}) :
+    (TopCat.toCompactlyGenerated.{u, w}.obj X : Type w) = X := rfl
 
-/-- Reinterpret an object or morphism of `CompactlyGenerated.{u, w}` in
-`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)`. -/
-@[expose, simps] def toGeneratedByTopCat :
-    CompactlyGenerated.{u, w} ⥤ GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) where
-  obj X := ⟨X.toTop, (isGeneratedBy_compHaus_iff X.toTop).2 X.is_compactly_generated⟩
-  map f := ObjectProperty.homMk f.hom
+@[simp]
+theorem TopCat.toCompactlyGenerated_map_apply {X Y : TopCat.{w}} (f : X ⟶ Y)
+    (x : TopCat.toCompactlyGenerated.{u, w}.obj X) :
+    TopCat.toCompactlyGenerated.{u, w}.map f x = f x := rfl
 
-/-- Reinterpret an object or morphism of `GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)` in
-`CompactlyGenerated.{u, w}`. -/
-@[expose, simps] def fromGeneratedByTopCat :
-    GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) ⥤ CompactlyGenerated.{u, w} where
-  obj Y := { toTop := Y.obj, is_compactly_generated := (isGeneratedBy_compHaus_iff Y.obj).1 Y.2 }
-  map g := InducedCategory.homMk g.hom
+instance (X : TopCat.{w}) [T2Space X] : T2Space (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
+  TopologicalSpace.t2Space_compactlyGenerated.{u} X
 
-@[simp] theorem toGeneratedByTopCat_comp_fromGeneratedByTopCat :
-    toGeneratedByTopCat.{u, w} ⋙ fromGeneratedByTopCat.{u, w} = 𝟭 _ := (rfl)
-@[simp] theorem fromGeneratedByTopCat_comp_toGeneratedByTopCat :
-    fromGeneratedByTopCat.{u, w} ⋙ toGeneratedByTopCat.{u, w} = 𝟭 _ := (rfl)
-@[simp] theorem toGeneratedByTopCat_comp_toTopCat :
-    toGeneratedByTopCat.{u, w} ⋙ GeneratedByTopCat.toTopCat = compactlyGeneratedToTop.{u, w} :=
-  (rfl)
-@[simp] theorem fromGeneratedByTopCat_comp_compactlyGeneratedToTop :
-    fromGeneratedByTopCat.{u, w} ⋙ compactlyGeneratedToTop.{u, w} = GeneratedByTopCat.toTopCat :=
-  (rfl)
+instance (X : TopCat.{w}) [Small.{v} X] : Small.{v} (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
+  ‹Small.{v} X›
 
-/-- `CompactlyGenerated.{u, w}` is strictly isomorphic to
-`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)`. -/
-@[expose, simps] def equivGeneratedByTopCat :
-    CompactlyGenerated.{u, w} ≌ GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) where
-  functor := toGeneratedByTopCat
-  inverse := fromGeneratedByTopCat
-  unitIso := Iso.refl _
-  counitIso := Iso.refl _
-  functor_unitIso_comp _ := Category.comp_id _
+instance (X : TopCat.{w}) [IsEmpty X] : IsEmpty (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
+  ‹IsEmpty X›
 
-instance : toGeneratedByTopCat.{u, w}.IsEquivalence := equivGeneratedByTopCat.isEquivalence_functor
-instance : fromGeneratedByTopCat.{u, w}.IsEquivalence :=
-  equivGeneratedByTopCat.isEquivalence_inverse
+instance (X : TopCat.{w}) [Unique X] : Unique (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
+  ‹Unique X›
 
-end CompactlyGenerated
+instance (X : TopCat.{w}) [Nontrivial X] :
+    Nontrivial (TopCat.toCompactlyGenerated.{u, w}.obj X) :=
+  ‹Nontrivial X›
 
-/-- The compact-generation coreflector `TopCat.{w} ⥤ CompactlyGenerated.{u, w}`, refining the
-topology of `X` to the `u`-compactly generated topology while leaving points and maps unchanged. -/
-@[expose] def TopCat.toCompactlyGenerated : TopCat.{w} ⥤ CompactlyGenerated.{u, w} :=
-  TopCat.toGeneratedByTopCat (X := fun K : CompHaus.{u} ↦ K) ⋙
-    CompactlyGenerated.fromGeneratedByTopCat.{u, w}
+instance {α : Sort*} {β : α → Sort*} (X : TopCat.{w}) [DFunLike X α β] :
+    DFunLike (TopCat.toCompactlyGenerated.{u, w}.obj X) α β := ‹DFunLike X α β›
 
-namespace TopCat
+/-- A subset of `TopCat.toCompactlyGenerated.{u, w}.obj X` is open iff its preimage under every
+continuous probe from a `u`-small compact Hausdorff space into `X` is open. -/
+theorem TopCat.isOpen_toCompactlyGenerated_iff (X : TopCat.{w})
+    (U : Set (TopCat.toCompactlyGenerated.{u, w}.obj X)) :
+    IsOpen U ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)), IsOpen (f ⁻¹' U) :=
+  @TauCeti.isOpen_compactlyGenerated_iff X X.str U
 
-/-- The canonical bijection between `TopCat.toCompactlyGenerated.{u, w}.obj X` and `X`. -/
-@[expose] def toCompactlyGeneratedEquiv (X : TopCat.{w}) :
-    ↑(TopCat.toCompactlyGenerated.{u, w}.obj X) ≃ X :=
-  WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X)
-
-@[ext] theorem toCompactlyGenerated_obj_ext {X : TopCat.{w}}
-    {x y : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X)}
-    (h : toCompactlyGeneratedEquiv.{u, w} X x = toCompactlyGeneratedEquiv.{u, w} X y) : x = y :=
-  (toCompactlyGeneratedEquiv.{u, w} X).injective h
-@[simp] theorem toCompactlyGenerated_map_apply {X Y : TopCat.{w}} (f : X ⟶ Y)
-    (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X)) :
-    toCompactlyGeneratedEquiv.{u, w} Y (TopCat.toCompactlyGenerated.{u, w}.map f x) =
-      f (toCompactlyGeneratedEquiv.{u, w} X x) := (rfl)
-@[continuity, fun_prop] theorem continuous_toCompactlyGeneratedEquiv (X : TopCat.{w}) :
-    Continuous (toCompactlyGeneratedEquiv.{u, w} X) :=
-  WithGeneratedByTopology.continuous_equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X)
-
-/-- A subset of `TopCat.toCompactlyGenerated.{u, w}.obj X` is open iff its image in `X` is open in
-`TopologicalSpace.compactlyGenerated.{u} X`. -/
-theorem isOpen_toCompactlyGenerated_iff (X : TopCat.{w})
-    (U : Set ↑(TopCat.toCompactlyGenerated.{u, w}.obj X)) :
-    IsOpen U ↔ IsOpen[TopologicalSpace.compactlyGenerated.{u} X]
-      ((toCompactlyGeneratedEquiv.{u, w} X).symm ⁻¹' U) := by
-  refine (WithGeneratedByTopology.isOpen_iff
-    (X := fun K : CompHaus.{u} ↦ K) (Y := X) (U := U)).trans ?_
-  rw [← TopologicalSpace.generatedBy_compHaus, TopologicalSpace.generatedBy]
-  simp only [isOpen_iSup_iff, isOpen_coinduced, Set.preimage_preimage]; rfl
-
-/-- A subset of `TopCat.toCompactlyGenerated.{u, w}.obj X` is closed iff its image in `X` is closed
-in `TopologicalSpace.compactlyGenerated.{u} X`. -/
-theorem isClosed_toCompactlyGenerated_iff (X : TopCat.{w})
-    (C : Set ↑(TopCat.toCompactlyGenerated.{u, w}.obj X)) :
-    IsClosed C ↔ IsClosed[TopologicalSpace.compactlyGenerated.{u} X]
-      ((toCompactlyGeneratedEquiv.{u, w} X).symm ⁻¹' C) := by
-  rw [← isOpen_compl_iff, isOpen_toCompactlyGenerated_iff]
-  exact @isOpen_compl_iff _ _ (TopologicalSpace.compactlyGenerated.{u} X)
+/-- A subset of `TopCat.toCompactlyGenerated.{u, w}.obj X` is closed iff its preimage under every
+continuous probe from a `u`-small compact Hausdorff space into `X` is closed. -/
+theorem TopCat.isClosed_toCompactlyGenerated_iff (X : TopCat.{w})
+    (C : Set (TopCat.toCompactlyGenerated.{u, w}.obj X)) :
+    IsClosed C ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)), IsClosed (f ⁻¹' C) :=
+  @TauCeti.isClosed_compactlyGenerated_iff X X.str C
 
 /-- A map out of `TopCat.toCompactlyGenerated.{u, w}.obj X` is continuous iff its composites with
 all probes from `u`-small compact Hausdorff spaces into `X` are continuous. -/
-theorem continuous_from_toCompactlyGenerated_iff {X : TopCat.{w}} {Y : Type v}
-    [TopologicalSpace Y] (g : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X) → Y) :
-    Continuous g ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)),
-      Continuous (g ∘ (toCompactlyGeneratedEquiv.{u, w} X).symm ∘ f) :=
-  WithGeneratedByTopology.continuous_from_iff (X := fun K : CompHaus.{u} ↦ K) (Y := X) g
-
-/-- A map from a `u`-compactly generated space `Y` into `TopCat.toCompactlyGenerated.{u, w}.obj X`
-is continuous iff the underlying map `Y → X` is continuous. -/
-theorem toCompactlyGeneratedEquiv_symm_comp_continuous_iff {X : TopCat.{w}} {Y : Type v}
-    [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y] (g : Y → X) :
-    Continuous ((toCompactlyGeneratedEquiv.{u, w} X).symm ∘ g) ↔ Continuous g :=
-  IsGeneratedBy.equiv_symm_comp_continuous_iff (fun K : CompHaus.{u} ↦ K) g
-
-instance instIsEmptyToCompactlyGenerated (X : TopCat.{w}) [IsEmpty X] :
-    IsEmpty ↑(TopCat.toCompactlyGenerated.{u, w}.obj X) :=
-  inferInstanceAs (IsEmpty (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) X))
-instance instNontrivialToCompactlyGenerated (X : TopCat.{w}) [Nontrivial X] :
-    Nontrivial ↑(TopCat.toCompactlyGenerated.{u, w}.obj X) :=
-  inferInstanceAs (Nontrivial (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) X))
-/-- Refining a Hausdorff space `X` to its compactly generated topology preserves `T2Space`. -/
-instance instT2SpaceToCompactlyGenerated (X : TopCat.{w}) [T2Space X] :
-    T2Space ↑(TopCat.toCompactlyGenerated.{u, w}.obj X) :=
-  inferInstanceAs (T2Space (WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) X))
-
-end TopCat
+theorem TopCat.continuous_from_toCompactlyGenerated_iff {X : TopCat.{w}} {Y : Type v}
+    [tY : TopologicalSpace Y] (g : TopCat.toCompactlyGenerated.{u, w}.obj X → Y) :
+    Continuous g ↔ ∀ (K : CompHaus.{u}) (f : C(K, X)), Continuous (g ∘ f) :=
+  @TauCeti.continuous_compactlyGenerated_iff X X.str Y tY g
 
 namespace CompactlyGenerated
 
-/-- When `X` is `u`-compactly generated, the counit gives a homeomorphism from
-`TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of X)` onto `X`. -/
-def counitHomeomorph (X : Type w) [TopologicalSpace X] [UCompactlyGeneratedSpace.{u} X] :
-    ↑(TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of X)) ≃ₜ X :=
-  IsGeneratedBy.homeomorph (X := fun K : CompHaus.{u} ↦ K) (Y := X)
+@[simp]
+theorem isoOfHomeo_hom_apply {X Y : CompactlyGenerated.{u, w}} (e : X ≃ₜ Y) (x : X) :
+    (isoOfHomeo e).hom x = e x := rfl
 
-@[simp] theorem counitHomeomorph_apply {X : Type w} [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of X))) :
-    counitHomeomorph.{u, w} X x = TopCat.toCompactlyGeneratedEquiv.{u, w} (TopCat.of X) x := (rfl)
-@[simp] theorem counitHomeomorph_symm_apply {X : Type w} [TopologicalSpace X]
-    [UCompactlyGeneratedSpace.{u} X] (x : X) : (counitHomeomorph.{u, w} X).symm x =
-      (TopCat.toCompactlyGeneratedEquiv.{u, w} (TopCat.of X)).symm x := (rfl)
+@[simp]
+theorem isoOfHomeo_inv_apply {X Y : CompactlyGenerated.{u, w}} (e : X ≃ₜ Y) (y : Y) :
+    (isoOfHomeo e).inv y = e.symm y := rfl
 
-/-- The unit isomorphism `𝟭 _ ≅ compactlyGeneratedToTop ⋙ TopCat.toCompactlyGenerated` of the
-compact-generation coreflection. -/
-def adjUnitIso : 𝟭 CompactlyGenerated.{u, w} ≅
-    compactlyGeneratedToTop.{u, w} ⋙ TopCat.toCompactlyGenerated.{u, w} :=
-  NatIso.ofComponents (fun X ↦ isoOfHomeo (counitHomeomorph.{u, w} X.toTop).symm)
-    (fun _ ↦ by ext; rfl)
+/-- View an object of `CompactlyGenerated.{u, w}` in
+`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)`. -/
+@[expose, simps! obj]
+def toGeneratedByTopCat :
+    CompactlyGenerated.{u, w} ⥤ GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) where
+  obj Y := ⟨Y.toTop, inferInstanceAs (IsGeneratedBy (fun K : CompHaus.{u} ↦ K) Y)⟩
+  map f := ObjectProperty.homMk f.hom
 
-/-- The counit `(TopCat.toCompactlyGenerated ⋙ compactlyGeneratedToTop) ⟶ 𝟭 TopCat` of the
-compact-generation coreflection. -/
+/-- View an object of `GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)` in
+`CompactlyGenerated.{u, w}`. -/
+@[expose, simps! obj_toTop]
+def ofGeneratedByTopCat :
+    GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) ⥤ CompactlyGenerated.{u, w} where
+  obj Y :=
+    { toTop := Y.obj
+      is_compactly_generated := (Topology.isGeneratedBy_compHaus_iff.{u} Y.obj).1 Y.property }
+  map f := InducedCategory.homMk f.hom
+
+/-- `CompactlyGenerated.{u, w}` is equivalent to
+`GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K)`. -/
+@[expose, simps!]
+def equivalenceGeneratedByTopCat :
+    CompactlyGenerated.{u, w} ≌ GeneratedByTopCat.{w} (fun K : CompHaus.{u} ↦ K) where
+  functor := toGeneratedByTopCat.{u, w}
+  inverse := ofGeneratedByTopCat.{u, w}
+  unitIso := NatIso.ofComponents fun Y ↦
+    { hom := InducedCategory.homMk (𝟙 Y.toTop), inv := InducedCategory.homMk (𝟙 Y.toTop) }
+  counitIso := NatIso.ofComponents fun Y ↦
+    { hom := ObjectProperty.homMk (𝟙 Y.obj), inv := ObjectProperty.homMk (𝟙 Y.obj) }
+
+instance : toGeneratedByTopCat.{u, w}.IsEquivalence :=
+  equivalenceGeneratedByTopCat.{u, w}.isEquivalence_functor
+
+instance : ofGeneratedByTopCat.{u, w}.IsEquivalence :=
+  equivalenceGeneratedByTopCat.{u, w}.isEquivalence_inverse
+
+@[simp]
+theorem toGeneratedByTopCat_comp_toTopCat :
+    toGeneratedByTopCat.{u, w} ⋙ GeneratedByTopCat.toTopCat = compactlyGeneratedToTop.{u, w} := rfl
+
+@[simp]
+theorem ofGeneratedByTopCat_comp_compactlyGeneratedToTop :
+    ofGeneratedByTopCat.{u, w} ⋙ compactlyGeneratedToTop.{u, w} = GeneratedByTopCat.toTopCat := rfl
+
+/-- Homeomorphism identifying `TopCat.toCompactlyGenerated.obj X` with
+`WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) X`, acting as the identity on points. -/
+@[expose]
+def toCompactlyGeneratedHomeomorphGeneratedBy (X : TopCat.{w}) :
+    TopCat.toCompactlyGenerated.{u, w}.obj X ≃ₜ
+      WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) X where
+  toEquiv := (WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X)).symm
+  continuous_toFun :=
+    @continuous_from_compactlyGenerated.{u} X _ X.str _ _ fun _ g ↦
+      (IsGeneratedBy.equiv_symm_comp_continuous_iff
+        (X := fun K : CompHaus.{u} ↦ K) g).2 g.continuous
+  continuous_invFun :=
+    (@WithGeneratedByTopology.continuous_from_iff _ (fun K : CompHaus.{u} ↦ K) _ X X.str
+      (TopCat.toCompactlyGenerated.{u, w}.obj X) _ _).2 fun _ g ↦
+      TopologicalSpace.continuous_to_compactlyGenerated.{u} g
+
+@[simp]
+theorem toCompactlyGeneratedHomeomorphGeneratedBy_apply (X : TopCat.{w})
+    (x : TopCat.toCompactlyGenerated.{u, w}.obj X) :
+    toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} X x =
+      (WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X)).symm x := rfl
+
+@[simp]
+theorem toCompactlyGeneratedHomeomorphGeneratedBy_symm_apply (X : TopCat.{w})
+    (x : WithGeneratedByTopology (fun K : CompHaus.{u} ↦ K) X) :
+    (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} X).symm x =
+      WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X) x := rfl
+
+/-- Natural isomorphism comparing `TopCat.toCompactlyGenerated` with
+`TopCat.toGeneratedByTopCat ⋙ ofGeneratedByTopCat`. Both functors act as the identity on
+underlying types and maps. -/
+@[expose]
+def toCompactlyGeneratedIsoGeneratedBy :
+    TopCat.toCompactlyGenerated.{u, w} ≅
+      TopCat.toGeneratedByTopCat (X := fun K : CompHaus.{u} ↦ K) ⋙ ofGeneratedByTopCat.{u, w} :=
+  NatIso.ofComponents fun X ↦
+    { hom := InducedCategory.homMk
+        (TopCat.isoOfHomeo (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} X)).hom
+      inv := InducedCategory.homMk
+        (TopCat.isoOfHomeo (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} X)).inv }
+
+/-- The unit isomorphism `𝟭 CompactlyGenerated ≅ i ⋙ k` of `CompactlyGenerated.adj`. -/
+@[expose]
+def adjUnitIso :
+    𝟭 CompactlyGenerated.{u, w} ≅
+      compactlyGeneratedToTop.{u, w} ⋙ TopCat.toCompactlyGenerated.{u, w} :=
+  NatIso.ofComponents fun Y ↦
+    { hom := InducedCategory.homMk
+        (@TopCat.ofHom Y Y Y.toTop.str (TopologicalSpace.compactlyGenerated.{u} Y)
+          (@ContinuousMap.mk Y Y Y.toTop.str (TopologicalSpace.compactlyGenerated.{u} Y) id
+            (continuous_id_iff_le.2 (UCompactlyGeneratedSpace.le_compactlyGenerated.{u} (X := Y)))))
+      inv := InducedCategory.homMk
+        (@TopCat.ofHom Y Y (TopologicalSpace.compactlyGenerated.{u} Y) Y.toTop.str
+          (@ContinuousMap.mk Y Y (TopologicalSpace.compactlyGenerated.{u} Y) Y.toTop.str id
+            (continuous_id_iff_le.2 (TopologicalSpace.compactlyGenerated_le.{u} Y)))) }
+
+@[simp]
+theorem adjUnitIso_hom_app_apply (Y : CompactlyGenerated.{u, w}) (y : Y) :
+    dsimp% only [Functor.id_obj, Functor.comp_obj] (adjUnitIso.{u, w}.hom.app Y y) = y := rfl
+
+@[simp]
+theorem adjUnitIso_inv_app_apply (Y : CompactlyGenerated.{u, w}) (y : Y) :
+    dsimp% only [Functor.comp_obj, Functor.id_obj] (adjUnitIso.{u, w}.inv.app Y y) = y := rfl
+
+/-- The counit `k ⋙ i ⟶ 𝟭 TopCat` of `CompactlyGenerated.adj`, acting as the identity on
+points. -/
+@[expose]
 def adjCounit :
-    TopCat.toCompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w} ⟶ 𝟭 TopCat.{w} :=
-  GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{u} ↦ K)
+    TopCat.toCompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w} ⟶ 𝟭 TopCat.{w} where
+  app X := @TopCat.ofHom X X (TopologicalSpace.compactlyGenerated.{u} X) X.str
+    (@ContinuousMap.mk X X (TopologicalSpace.compactlyGenerated.{u} X) X.str id
+      (continuous_id_iff_le.2 (TopologicalSpace.compactlyGenerated_le.{u} X)))
 
-theorem adjCounit_eq_generatedByTopCat_adjCounit :
-    adjCounit.{u, w} = GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{u} ↦ K) := (rfl)
-@[simp] theorem adjCounit_app_apply (X : TopCat.{w})
-    (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X)) :
-    dsimp% adjCounit.{u, w}.app X x = TopCat.toCompactlyGeneratedEquiv.{u, w} X x := (rfl)
-@[simp] theorem adjUnitIso_hom_app_apply (X : CompactlyGenerated.{u, w}) (x : X) :
-    dsimp% TopCat.toCompactlyGeneratedEquiv.{u, w} X.toTop ((adjUnitIso.{u, w}.hom.app X) x) = x :=
-  (rfl)
-@[simp] theorem adjUnitIso_inv_app_apply (X : CompactlyGenerated.{u, w})
-    (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X.toTop)) :
-    dsimp% (adjUnitIso.{u, w}.inv.app X) x = TopCat.toCompactlyGeneratedEquiv.{u, w} X.toTop x :=
-  (rfl)
+@[simp]
+theorem adjCounit_app_apply (X : TopCat.{w})
+    (x : (TopCat.toCompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w}).obj X) :
+    dsimp% only [Functor.comp_obj, Functor.id_obj] (adjCounit.{u, w}.app X x) = x := rfl
 
-/-- **The compact-generation coreflection**: `compactlyGeneratedToTop` is left adjoint to
-`TopCat.toCompactlyGenerated`. -/
+/-- A map from a `u`-compactly generated space `Y` into `TopCat.toCompactlyGenerated.{u, w}.obj X`
+is continuous iff its composite with the counit `adjCounit.app X` into `X` is continuous. -/
+theorem _root_.TopCat.continuous_to_toCompactlyGenerated_iff {X : TopCat.{w}} {Y : Type v}
+    [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y]
+    (g : Y → TopCat.toCompactlyGenerated.{u, w}.obj X) :
+    Continuous g ↔ Continuous (adjCounit.{u, w}.app X ∘ g) :=
+  (toCompactlyGeneratedHomeomorphGeneratedBy.{u, w} X).isInducing.continuous_iff.trans
+    (IsGeneratedBy.equiv_symm_comp_continuous_iff (fun K : CompHaus.{u} ↦ K)
+      (adjCounit.{u, w}.app X ∘ g))
+
+/-- The coreflection adjunction `i ⊣ k` between `CompactlyGenerated.{u, w}` and `TopCat.{w}`. -/
+@[expose, simps]
 def adj : compactlyGeneratedToTop.{u, w} ⊣ TopCat.toCompactlyGenerated.{u, w} where
-  unit := adjUnitIso.hom
-  counit := adjCounit
+  unit := adjUnitIso.{u, w}.hom
+  counit := adjCounit.{u, w}
   left_triangle_components _ := by ext; rfl
   right_triangle_components _ := by ext; rfl
 
-@[simp] theorem adj_unit : adj.{u, w}.unit = adjUnitIso.{u, w}.hom := (rfl)
-@[simp] theorem adj_counit : adj.{u, w}.counit = adjCounit.{u, w} := (rfl)
-@[simp] theorem adj_homEquiv_apply {X : CompactlyGenerated.{u, w}} {Y : TopCat.{w}}
-    (f : compactlyGeneratedToTop.{u, w}.obj X ⟶ Y) (x : X) :
-    TopCat.toCompactlyGeneratedEquiv.{u, w} Y (adj.{u, w}.homEquiv X Y f x) = f x := by
-  rw [Adjunction.homEquiv_unit, CategoryTheory.comp_apply, adj_unit,
-    TopCat.toCompactlyGenerated_map_apply]
-  exact congrArg f (adjUnitIso_hom_app_apply X x)
-@[simp] theorem adj_homEquiv_symm_apply {X : CompactlyGenerated.{u, w}} {Y : TopCat.{w}}
-    (g : X ⟶ TopCat.toCompactlyGenerated.{u, w}.obj Y) (x : X) :
-    dsimp% (adj.{u, w}.homEquiv X Y).symm g x = TopCat.toCompactlyGeneratedEquiv.{u, w} Y (g x) :=
-  congr($(Adjunction.homEquiv_counit adj.{u, w} X Y g) x).trans (adjCounit_app_apply.{u, w} Y (g x))
+@[simp]
+theorem adj_homEquiv_apply {Y : CompactlyGenerated.{u, w}} {X : TopCat.{w}}
+    (f : compactlyGeneratedToTop.{u, w}.obj Y ⟶ X) (y : Y) :
+    adj.{u, w}.homEquiv Y X f y = f y := rfl
+
+@[simp]
+theorem adj_homEquiv_symm_apply {Y : CompactlyGenerated.{u, w}} {X : TopCat.{w}}
+    (g : Y ⟶ TopCat.toCompactlyGenerated.{u, w}.obj X) (y : Y) :
+    (adj.{u, w}.homEquiv Y X).symm g y = g y := rfl
 
 instance : IsIso adj.{u, w}.unit := inferInstanceAs (IsIso adjUnitIso.{u, w}.hom)
-instance : compactlyGeneratedToTop.{u, w}.IsLeftAdjoint := adj.isLeftAdjoint
-instance : TopCat.toCompactlyGenerated.{u, w}.IsRightAdjoint := adj.isRightAdjoint
-instance : TopCat.toCompactlyGenerated.{u, w}.Faithful :=
-  inferInstanceAs ((TopCat.toContinuousGeneratedByCat (fun K : CompHaus.{u} ↦ K) ⋙
-    ContinuousGeneratedByCat.toGeneratedByTopCat ⋙
-    CompactlyGenerated.fromGeneratedByTopCat.{u, w}).Faithful)
+
+instance : compactlyGeneratedToTop.{u, w}.IsLeftAdjoint := adj.{u, w}.isLeftAdjoint
+
+instance : TopCat.toCompactlyGenerated.{u, w}.IsRightAdjoint := adj.{u, w}.isRightAdjoint
+
+instance : TopCat.toCompactlyGenerated.{u, w}.Faithful where
+  map_injective h := by ext x; exact ConcreteCategory.congr_hom h x
 
 /-- `CompactlyGenerated.{u, w}` is a coreflective subcategory of `TopCat.{w}`. -/
 instance instCoreflectiveCompactlyGeneratedToTop : Coreflective compactlyGeneratedToTop.{u, w} where
-  R := TopCat.toCompactlyGenerated
-  adj := adj
+  R := TopCat.toCompactlyGenerated.{u, w}
+  adj := adj.{u, w}
 
-noncomputable instance instCreatesColimitsCompactlyGeneratedToTop :
+instance instCreatesColimitsCompactlyGeneratedToTop :
     CreatesColimits compactlyGeneratedToTop.{u, w} := comonadicCreatesColimits _
-instance : HasLimits CompactlyGenerated.{u, w} := hasLimits_of_coreflective compactlyGeneratedToTop
+
+instance : HasLimits CompactlyGenerated.{u, w} :=
+  hasLimits_of_coreflective compactlyGeneratedToTop.{u, w}
+
 instance : HasColimits CompactlyGenerated.{u, w} :=
-  hasColimits_of_hasColimits_createsColimits compactlyGeneratedToTop
-instance (X : TopCat.{w}) :
-    IsIso (TopCat.toCompactlyGenerated.{u, w}.map (adjCounit.{u, w}.app X)) :=
-  inferInstanceAs (IsIso (TopCat.toCompactlyGenerated.map (adj.counit.app X)))
+  hasColimits_of_hasColimits_createsColimits compactlyGeneratedToTop.{u, w}
 
-/-! ### Characterization and specializations of the counit isomorphism -/
+/-- Limits in `CompactlyGenerated.{u, w}` are computed by taking the limit in `TopCat.{w}` and
+applying the coreflector `TopCat.toCompactlyGenerated`. -/
+@[expose]
+def limitIsoToCompactlyGeneratedLimit {J : Type v} [Category.{v'} J]
+    (F : J ⥤ CompactlyGenerated.{u, w}) [HasLimit F]
+    [HasLimit (F ⋙ compactlyGeneratedToTop.{u, w})] :
+    limit F ≅
+      TopCat.toCompactlyGenerated.{u, w}.obj (limit (F ⋙ compactlyGeneratedToTop.{u, w})) :=
+  let e : F ≅ F ⋙ compactlyGeneratedToTop.{u, w} ⋙ TopCat.toCompactlyGenerated.{u, w} :=
+    F.rightUnitor.symm.trans (Functor.isoWhiskerLeft F adjUnitIso.{u, w})
+  have : HasLimit (F ⋙ compactlyGeneratedToTop.{u, w} ⋙ TopCat.toCompactlyGenerated.{u, w}) :=
+    hasLimit_of_iso e
+  have : PreservesLimitsOfSize.{v', v} TopCat.toCompactlyGenerated.{u, w} :=
+    adj.{u, w}.rightAdjoint_preservesLimits
+  (HasLimit.isoOfNatIso e).trans
+    (preservesLimitIso TopCat.toCompactlyGenerated.{u, w} (F ⋙ compactlyGeneratedToTop.{u, w})).symm
 
-/-- If `X` is `u`-compactly generated, `adjCounit.app X` is an isomorphism in `TopCat.{w}`. -/
-instance isIso_adjCounit_app (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
-    IsIso (adjCounit.{u, w}.app X) := by
-  rw [adjCounit_eq_generatedByTopCat_adjCounit]
-  exact GeneratedByTopCat.isIso_adjCounit_app (G := fun K : CompHaus.{u} ↦ K) X
+/-- When `X : TopCat.{w}` is `u`-compactly generated, the counit `kX ⟶ X` is a homeomorphism. -/
+@[expose]
+def counitHomeomorph (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
+    TopCat.toCompactlyGenerated.{u, w}.obj X ≃ₜ X where
+  toFun := adj.{u, w}.counit.app X
+  invFun := adjUnitIso.{u, w}.hom.app { toTop := X }
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (adj.{u, w}.counit.app X).hom.continuous
+  continuous_invFun := (adjUnitIso.{u, w}.hom.app { toTop := X }).hom.hom.continuous
 
-/-- **Characterization of the coreflection counit**: `adjCounit.app X` is an isomorphism in
-`TopCat.{w}` if and only if `X` is already `u`-compactly generated. -/
-theorem isIso_adjCounit_app_iff (X : TopCat.{w}) :
-    IsIso (adjCounit.{u, w}.app X) ↔ UCompactlyGeneratedSpace.{u} X := by
-  rw [adjCounit_eq_generatedByTopCat_adjCounit]
-  exact (GeneratedByTopCat.isIso_adjCounit_app_iff (G := fun K : CompHaus.{u} ↦ K) X).trans
-    (isGeneratedBy_compHaus_iff X)
+@[simp]
+theorem counitHomeomorph_apply (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X]
+    (x : TopCat.toCompactlyGenerated.{u, w}.obj X) : counitHomeomorph.{u, w} X x = (x : X) := rfl
 
-/-- For a Hausdorff weakly locally compact space `X : TopCat.{w}`, the counit for test universe
-`max w u` is an isomorphism. -/
-theorem isIso_adjCounit_app_of_t2Space_of_weaklyLocallyCompactSpace (X : TopCat.{w})
-    [T2Space X] [WeaklyLocallyCompactSpace X] : IsIso (adjCounit.{max w u, w}.app X) :=
-  have := UCompactlyGeneratedSpace.of_t2Space_of_weaklyLocallyCompactSpace.{u, w} X; inferInstance
+@[simp]
+theorem counitHomeomorph_symm_apply (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] (x : X) :
+    ((counitHomeomorph.{u, w} X).symm x : X) = x := rfl
 
-/-! ### Specializations: initial object, unit interval, and Sierpiński space -/
+/-- When `X : TopCat.{w}` is `u`-compactly generated, the counit `(k ⋙ i).obj X ⟶ X` is an
+isomorphism in `TopCat.{w}`. -/
+@[expose]
+def counitIso (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
+    (TopCat.toCompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w}).obj X ≅ X :=
+  TopCat.isoOfHomeo (counitHomeomorph.{u, w} X)
 
-/-- The empty space `PEmpty` is initial in `CompactlyGenerated.{u, w}`. -/
-def isInitialPEmpty : IsInitial (of.{u, w} PEmpty.{w + 1}) :=
-  IsInitial.ofUniqueHom (fun _ ↦ ofHom ⟨PEmpty.elim, continuous_of_discreteTopology⟩)
-    (fun _ _ ↦ by ext x; exact x.elim)
+@[simp]
+theorem counitIso_hom (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
+    (counitIso.{u, w} X).hom = adj.{u, w}.counit.app X := by ext; rfl
 
-/-- `PUnit` is fixed up to canonical isomorphism by `TopCat.toCompactlyGenerated`. -/
-def toCompactlyGeneratedPUnitIso :
-    TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of PUnit.{w + 1}) ≅ of.{u, w} PUnit.{w + 1} :=
-  (adjUnitIso.{u, w}.app (of.{u, w} PUnit.{w + 1})).symm
+instance instIsIsoCounitApp (X : TopCat.{w}) [UCompactlyGeneratedSpace.{u} X] :
+    IsIso (adj.{u, w}.counit.app X) := counitIso_hom.{u, w} X ▸ inferInstance
 
-@[simp] theorem toCompactlyGeneratedPUnitIso_hom_apply
-    (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of PUnit.{w + 1}))) :
-    toCompactlyGeneratedPUnitIso.{u, w}.hom x =
-      TopCat.toCompactlyGeneratedEquiv.{u, w} (TopCat.of PUnit.{w + 1}) x := (rfl)
-@[simp] theorem toCompactlyGeneratedPUnitIso_inv_apply (x : PUnit.{w + 1}) :
-    toCompactlyGeneratedPUnitIso.{u, w}.inv x =
-      (TopCat.toCompactlyGeneratedEquiv.{u, w} (TopCat.of PUnit.{w + 1})).symm x := (rfl)
+/-- The counit `kX ⟶ X` at `X : TopCat.{w}` is an isomorphism in `TopCat` if and only if `X` is
+`u`-compactly generated. -/
+theorem isIso_counit_app_iff (X : TopCat.{w}) :
+    IsIso (adj.{u, w}.counit.app X) ↔ UCompactlyGeneratedSpace.{u} X :=
+  ⟨fun _ ↦ let e := TopCat.homeoOfIso (asIso (adj.{u, w}.counit.app X))
+    uCompactlyGeneratedSpace_of_coinduced (X := TopCat.toCompactlyGenerated.{u, w}.obj X)
+      e.continuous e.coinduced_eq.symm, fun _ ↦ inferInstance⟩
 
-/-- The unit interval `TopCat.I` is fixed up to canonical isomorphism by
-`TopCat.toCompactlyGenerated`. -/
-def toCompactlyGeneratedUnitIntervalIso :
-    TopCat.toCompactlyGenerated.{u, w}.obj TopCat.I.{w} ≅ of.{u, w} TopCat.I.{w} :=
-  (adjUnitIso.{u, w}.app (of.{u, w} TopCat.I.{w})).symm
+/-- The counit `kX ⟶ X` at `X : TopCat.{w}` is a homeomorphism if and only if `X` is `u`-compactly
+generated. -/
+theorem isHomeomorph_counit_app_iff (X : TopCat.{w}) :
+    IsHomeomorph (adj.{u, w}.counit.app X) ↔ UCompactlyGeneratedSpace.{u} X := by
+  rw [← TopCat.isIso_iff_isHomeomorph, isIso_counit_app_iff]
 
-@[simp] theorem toCompactlyGeneratedUnitIntervalIso_hom_apply
-    (x : ↑(TopCat.toCompactlyGenerated.{u, w}.obj TopCat.I.{w})) :
-    toCompactlyGeneratedUnitIntervalIso.{u, w}.hom x =
-      TopCat.toCompactlyGeneratedEquiv.{u, w} TopCat.I.{w} x := (rfl)
-@[simp] theorem toCompactlyGeneratedUnitIntervalIso_inv_apply (x : TopCat.I.{w}) :
-    toCompactlyGeneratedUnitIntervalIso.{u, w}.inv x =
-      (TopCat.toCompactlyGeneratedEquiv.{u, w} TopCat.I.{w}).symm x := (rfl)
+/-- On any `u`-small Hausdorff compactly coherent space (in particular, any `u`-small Hausdorff
+weakly locally compact space), the counit `kX ⟶ X` is an isomorphism in `TopCat`. -/
+theorem isIso_counit_app_of_compactlyCoherentSpace (X : Type w) [TopologicalSpace X]
+    [T2Space X] [CompactlyCoherentSpace X] [Small.{u} X] :
+    IsIso (adj.{u, w}.counit.app (TopCat.of X)) := inferInstance
+
+/-- On any colimit cocone in `TopCat` whose stages are `u`-compactly generated, the counit on the
+colimit point is an isomorphism. -/
+theorem isIso_counit_app_of_isColimit {J : Type v} [Category.{v'} J] {F : J ⥤ TopCat.{w}}
+    {c : Cocone F} [∀ j, UCompactlyGeneratedSpace.{u} (F.obj j)] (hc : IsColimit c) :
+    IsIso (adj.{u, w}.counit.app c.pt) :=
+  have := TauCeti.TopCat.uCompactlyGeneratedSpace_of_isColimit hc; inferInstance
+
+/-- Ordinary product evaluation `k(C(Y, Z)) × Y → Z` is continuous whenever the evaluation source
+`Y` is locally compact. -/
+theorem continuous_eval_toCompactlyGeneratedContinuousMap (Y : Type v₁) (Z : Type v₂)
+    [TopologicalSpace Y] [TopologicalSpace Z] [LocallyCompactSpace Y] :
+    Continuous fun p :
+        TopCat.toCompactlyGenerated.{u, max v₁ v₂}.obj (TopCat.of C(Y, Z)) × Y ↦ p.1 p.2 :=
+  (continuous_eval (F := C(Y, Z))).comp <|
+    (adj.{u, max v₁ v₂}.counit.app (TopCat.of C(Y, Z))).hom.continuous.prodMap continuous_id
 
 end CompactlyGenerated
 
-namespace TauCeti
+/-! ### Functoriality of `k` on maps and locally compact products -/
 
-/-- The Sierpiński space `Prop` is already `u`-compactly generated for every universe `u`. -/
-theorem compactlyGenerated_sierpinski :
-    TopologicalSpace.compactlyGenerated.{u} Prop = sierpinskiSpace :=
-  (eq_compactlyGenerated.{u} (X := Prop)).symm
+namespace TopCat
 
-/-- `CompactlyGenerated.of.{u, 0} Prop` is not Hausdorff (`¬ T2Space`), confirming that
-`CompactlyGenerated` performs genuine compact generation without Hausdorffification. -/
-theorem not_t2Space_sierpinski : ¬ T2Space (CompactlyGenerated.of.{u, 0} Prop) := fun h ↦ by
-  obtain ⟨U, V, _, hVo, hTU, hFV, hUV⟩ := h.t2 (by simp : (True : Prop) ≠ False)
-  exact hUV.notMem_of_mem_left hTU (Filter.mem_top.1 (nhds_false ▸ hVo.mem_nhds hFV) ▸ trivial)
+/-- When `L` is a `u`-small locally compact Hausdorff space, refining `X × L` by
+`TopCat.toCompactlyGenerated` agrees with refining `X` alone and taking the ordinary topological
+product with `L`. -/
+@[expose]
+def toCompactlyGeneratedProdRightHomeomorph (X : Type v₁) (L : Type v₂)
+    [TopologicalSpace X] [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L] :
+    TopCat.toCompactlyGenerated.{u, max v₁ v₂}.obj (TopCat.of (X × L)) ≃ₜ
+      TopCat.toCompactlyGenerated.{u, v₁}.obj (TopCat.of X) × L :=
+  let e := (CompactlyGenerated.toCompactlyGeneratedHomeomorphGeneratedBy.{u, max v₁ v₂}
+      (TopCat.of (X × L))).trans <|
+    (Topology.WithGeneratedByTopology.prodRightHomeomorph (fun K : CompHaus.{u} ↦ K) X L).trans <|
+      (CompactlyGenerated.toCompactlyGeneratedHomeomorphGeneratedBy.{u, v₁}
+        (TopCat.of X)).symm.prodCongr (Homeomorph.refl L)
+  let eqvXL := Topology.WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X × L)
+  let eqvX := Topology.WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X)
+  { toEquiv := Equiv.refl (X × L)
+    continuous_toFun := e.continuous.congr fun p ↦ Prod.ext
+      ((eqvX.apply_symm_apply _).trans (congrArg Prod.fst (eqvXL.apply_symm_apply p)))
+      (congrArg Prod.snd (eqvXL.apply_symm_apply p))
+    continuous_invFun := e.symm.continuous.congr fun p ↦
+      (eqvXL.apply_symm_apply _).trans (Prod.ext (eqvX.apply_symm_apply p.1) rfl) }
 
-end TauCeti
+@[simp]
+theorem toCompactlyGeneratedProdRightHomeomorph_apply {X : Type v₁} {L : Type v₂}
+    [TopologicalSpace X] [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
+    (p : TopCat.toCompactlyGenerated.{u, max v₁ v₂}.obj (TopCat.of (X × L))) :
+    toCompactlyGeneratedProdRightHomeomorph.{u} X L p = p := rfl
+
+@[simp]
+theorem toCompactlyGeneratedProdRightHomeomorph_symm_apply {X : Type v₁} {L : Type v₂}
+    [TopologicalSpace X] [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
+    (p : TopCat.toCompactlyGenerated.{u, v₁}.obj (TopCat.of X) × L) :
+    (toCompactlyGeneratedProdRightHomeomorph.{u} X L).symm p = p := rfl
+
+/-- When `L` is a `u`-small locally compact Hausdorff space, refining `L × X` by
+`TopCat.toCompactlyGenerated` agrees with taking the ordinary topological product of `L` with the
+refinement of `X`. -/
+@[expose]
+def toCompactlyGeneratedProdLeftHomeomorph (L : Type v₁) (X : Type v₂)
+    [TopologicalSpace L] [TopologicalSpace X] [LocallyCompactSpace L] [T2Space L] [Small.{u} L] :
+    TopCat.toCompactlyGenerated.{u, max v₁ v₂}.obj (TopCat.of (L × X)) ≃ₜ
+      L × TopCat.toCompactlyGenerated.{u, v₂}.obj (TopCat.of X) :=
+  let e := (CompactlyGenerated.toCompactlyGeneratedHomeomorphGeneratedBy.{u, max v₁ v₂}
+      (TopCat.of (L × X))).trans <|
+    (Topology.WithGeneratedByTopology.prodLeftHomeomorph (fun K : CompHaus.{u} ↦ K) L X).trans <|
+      (Homeomorph.refl L).prodCongr
+        (CompactlyGenerated.toCompactlyGeneratedHomeomorphGeneratedBy.{u, v₂} (TopCat.of X)).symm
+  let eqvLX := Topology.WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := L × X)
+  let eqvX := Topology.WithGeneratedByTopology.equiv (X := fun K : CompHaus.{u} ↦ K) (Y := X)
+  { toEquiv := Equiv.refl (L × X)
+    continuous_toFun := e.continuous.congr fun p ↦ Prod.ext
+      (congrArg Prod.fst (eqvLX.apply_symm_apply p))
+      ((eqvX.apply_symm_apply _).trans (congrArg Prod.snd (eqvLX.apply_symm_apply p)))
+    continuous_invFun := e.symm.continuous.congr fun p ↦
+      (eqvLX.apply_symm_apply _).trans (Prod.ext rfl (eqvX.apply_symm_apply p.2)) }
+
+@[simp]
+theorem toCompactlyGeneratedProdLeftHomeomorph_apply {L : Type v₁} {X : Type v₂}
+    [TopologicalSpace L] [TopologicalSpace X] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
+    (p : TopCat.toCompactlyGenerated.{u, max v₁ v₂}.obj (TopCat.of (L × X))) :
+    toCompactlyGeneratedProdLeftHomeomorph.{u} L X p = p := rfl
+
+@[simp]
+theorem toCompactlyGeneratedProdLeftHomeomorph_symm_apply {L : Type v₁} {X : Type v₂}
+    [TopologicalSpace L] [TopologicalSpace X] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
+    (p : L × TopCat.toCompactlyGenerated.{u, v₂}.obj (TopCat.of X)) :
+    (toCompactlyGeneratedProdLeftHomeomorph.{u} L X).symm p = p := rfl
+
+/-- Any `CompHaus.{u}`-continuous map `A → B` induces a morphism `kA ⟶ kB` in
+`CompactlyGenerated.{u, w}` acting identically on underlying points. -/
+@[expose]
+def toCompactlyGeneratedOfContinuousGeneratedBy {A B : Type w}
+    [TopologicalSpace A] [TopologicalSpace B]
+    (φ : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) A B) :
+    TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of A) ⟶
+      TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of B) :=
+  InducedCategory.homMk <| @TopCat.ofHom A B (TopologicalSpace.compactlyGenerated.{u} A)
+    (TopologicalSpace.compactlyGenerated.{u} B) <|
+    @ContinuousMap.mk A B (TopologicalSpace.compactlyGenerated.{u} A)
+      (TopologicalSpace.compactlyGenerated.{u} B) φ
+      (continuous_from_compactlyGenerated.{u} (t := TopologicalSpace.compactlyGenerated.{u} B) φ
+        fun _ g ↦ TopologicalSpace.continuous_to_compactlyGenerated.{u} ⟨φ ∘ g, φ.prop g⟩)
+
+@[simp]
+theorem toCompactlyGeneratedOfContinuousGeneratedBy_apply {A B : Type w}
+    [TopologicalSpace A] [TopologicalSpace B]
+    (φ : ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) A B)
+    (a : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of A)) :
+    toCompactlyGeneratedOfContinuousGeneratedBy.{u} φ a = φ a := rfl
+
+end TopCat
+
+namespace ContinuousMap
+
+section ToCompactlyGenerated
+
+variable {X : Type v₁} {Y : Type v₂} {Z : Type v₃}
+  [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- Apply the compact-generation coreflector `k` to a continuous map `C(X, Y)`, with `X` and `Y` in
+possibly distinct universes. -/
+@[expose]
+def toCompactlyGenerated (f : C(X, Y)) :
+    C(TopCat.toCompactlyGenerated.{u, v₁}.obj (TopCat.of X),
+      TopCat.toCompactlyGenerated.{u, v₂}.obj (TopCat.of Y)) where
+  toFun := f
+  continuous_toFun :=
+    continuous_from_compactlyGenerated.{u} (t := TopologicalSpace.compactlyGenerated.{u} Y) f
+      fun _ g ↦ TopologicalSpace.continuous_to_compactlyGenerated.{u} (f.comp g)
+
+@[simp]
+theorem toCompactlyGenerated_apply (f : C(X, Y))
+    (x : TopCat.toCompactlyGenerated.{u, v₁}.obj (TopCat.of X)) :
+    f.toCompactlyGenerated.{u} x = f x := rfl
+
+@[simp]
+theorem toCompactlyGenerated_id :
+    (ContinuousMap.id X).toCompactlyGenerated.{u} =
+      ContinuousMap.id (TopCat.toCompactlyGenerated.{u, v₁}.obj (TopCat.of X)) := rfl
+
+@[simp]
+theorem toCompactlyGenerated_comp (g : C(Y, Z)) (f : C(X, Y)) :
+    (g.comp f).toCompactlyGenerated.{u} =
+      g.toCompactlyGenerated.{u}.comp f.toCompactlyGenerated.{u} := rfl
+
+end ToCompactlyGenerated
+
+end ContinuousMap
 
 end

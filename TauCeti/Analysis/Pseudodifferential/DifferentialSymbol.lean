@@ -105,6 +105,22 @@ theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
   funext p
   simp [differentialSymbol, smul_comm _ z, Finset.smul_sum]
 
+/-- The norm of a polynomial differential symbol is at most the sum over its summands of
+`‖ξ‖ ^ order` times the norms of the derivative directions and of the coefficient. -/
+theorem norm_differentialSymbol_le (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → V →L[ℂ] W) (x ξ : E) :
+    ‖differentialSymbol s v b (x, ξ)‖ ≤ ∑ i ∈ s, ‖ξ‖ ^ k i * (∏ j, ‖v i j‖) * ‖b i x‖ := by
+  rw [differentialSymbol_def]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [norm_smul, Complex.norm_prod]
+  gcongr
+  calc ∏ j, ‖Complex.I * (⟪ξ, v i j⟫ : ℂ)‖ ≤ ∏ j, ‖ξ‖ * ‖v i j‖ :=
+        Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ by
+          rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real]
+          exact norm_inner_le_norm ξ (v i j)
+    _ = ‖ξ‖ ^ k i * ∏ j, ‖v i j‖ := by
+      rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
 /-- Coefficients of class `C^r` give a polynomial differential symbol of class `C^r` jointly in
 the position and the frequency. -/
 theorem contDiff_differentialSymbol {r : ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)

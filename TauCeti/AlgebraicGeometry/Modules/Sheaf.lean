@@ -14,23 +14,23 @@ public import Mathlib.AlgebraicGeometry.AffineScheme
 
 Mathlib packages the forgetful functors out of the category `X.Modules` of `𝒪_X`-modules on a
 scheme that land in presheaves: `AlgebraicGeometry.Scheme.Modules.toPresheafOfModules` and
-`AlgebraicGeometry.Scheme.Modules.toPresheaf`. This file adds the conversion of sheaf-level
-isomorphisms back to `𝒪_X`-module isomorphisms, the one that lands in abelian sheaves, and records
-that the latter is exact.
-It also gives an epimorphism criterion using surjectivity on sections over affine opens, and an
-isomorphism criterion using sections over the members of a basis.
+`AlgebraicGeometry.Scheme.Modules.toPresheaf`. This file adds the one that lands in abelian
+sheaves, and records that it is exact.
+It also gives an epimorphism criterion using surjectivity on sections over the members of a basis
+(in particular over affine opens), and an isomorphism criterion using sections over the members of
+a basis.
 
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf`, the functor sending an `𝒪_X`-module to its
   underlying sheaf of abelian groups, with instances saying that it is additive and preserves
   finite limits and finite colimits;
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso`, which lifts an isomorphism of
-  underlying sheaves of modules to an isomorphism in `X.Modules`;
 * `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`, the `Γ(X, U)`-linear equivalence of
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
   `𝒪_X`-modules stays short exact after forgetting the module structures;
+* `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis`: a morphism of
+  `𝒪_X`-modules that is surjective on the sections over the members of a basis is an epimorphism;
 * `AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_isBasis`: a morphism of `𝒪_X`-modules that is an
   isomorphism on the sections over the members of a basis is an isomorphism.
 
@@ -54,39 +54,15 @@ universe u
 noncomputable section
 
 /-- Composition of scheme-module morphisms acts sectionwise by composition. -/
-@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.comp_val_app_apply
     {X : Scheme.{u}} {M N P : X.Modules}
     (f : M ⟶ N) (g : N ⟶ P) (U : X.Opens) (m : M.val.obj (.op U)) :
-    (f ≫ g).val.app (.op U) m = g.val.app (.op U) (f.val.app (.op U) m) := rfl
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((f ≫ g).val.app (.op U) m = g.val.app (.op U) (f.val.app (.op U) m)) := rfl
 
 namespace Scheme.Modules
 
 variable (X : Scheme.{u})
-
-/-- Convert an isomorphism of sheaves of modules into an isomorphism of `𝒪_X`-modules. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso (X : Scheme.{u})
-    {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) : M ≅ N :=
-  { hom := ⟨e.hom.val⟩
-    inv := ⟨e.inv.val⟩
-    hom_inv_id := by
-      apply SheafOfModules.Hom.ext
-      exact congrArg SheafOfModules.Hom.val e.hom_inv_id
-    inv_hom_id := by
-      apply SheafOfModules.Hom.ext
-      exact congrArg SheafOfModules.Hom.val e.inv_hom_id }
-
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_hom_val (X : Scheme.{u})
-    {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) :
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e).hom.val = e.hom.val :=
-  by simp only [_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso]
-
-@[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val (X : Scheme.{u})
-    {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) :
-    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e).inv.val = e.inv.val :=
-  by simp only [_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso]
 
 variable {X} in
 /-- An isomorphism of `𝒪_X`-modules induces a `Γ(X, U)`-linear equivalence between the modules
@@ -155,18 +131,26 @@ theorem shortExact_map_toSheaf {S : ShortComplex X.Modules} (hS : S.ShortExact) 
     (S.map (toSheaf X)).ShortExact :=
   hS.map_of_exact _
 
+/-- A morphism of `𝒪_X`-modules that is surjective on the sections over the members of a basis of
+the topology of `X` is an epimorphism. No quasicoherence hypothesis is required. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis
+    {M N : X.Modules} (f : M ⟶ N) {ι : Type*} {B : ι → X.Opens}
+    (hB : TopologicalSpace.Opens.IsBasis (Set.range B))
+    (hf : ∀ i, Function.Surjective (f.app (B i))) : Epi f := by
+  have : Sheaf.IsLocallySurjective ((toSheaf X).map f) := by
+    constructor
+    intro U s x hx
+    obtain ⟨_, ⟨i, rfl⟩, hxi, hiU⟩ := (TopologicalSpace.Opens.isBasis_iff_nbhd.mp hB) hx
+    exact ⟨B i, homOfLE hiU, hf i (N.presheaf.map (homOfLE hiU).op s), hxi⟩
+  exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
+
 /-- Surjectivity on sections over affine opens implies that a module-sheaf morphism is an
 epimorphism. No quasicoherence hypothesis is required. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineOpens
     {M N : X.Modules} (f : M ⟶ N)
-    (hf : ∀ U : X.Opens, IsAffineOpen U → Function.Surjective (f.app U)) : Epi f := by
-  have : Sheaf.IsLocallySurjective ((toSheaf X).map f) := by
-    constructor
-    intro U s x hx
-    obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
-    have hVU' : V ≤ U := hVU
-    exact ⟨V, homOfLE hVU', hf V hV (N.presheaf.map (homOfLE hVU').op s), hxV⟩
-  exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
+    (hf : ∀ U : X.Opens, IsAffineOpen U → Function.Surjective (f.app U)) : Epi f :=
+  Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis f (B := fun U : X.affineOpens ↦ U.val)
+    (by rw [Subtype.range_coe]; exact X.isBasis_affineOpens) fun U ↦ hf U.val U.property
 
 /-- A morphism of `𝒪_X`-modules is an isomorphism as soon as it is one on the sections over the
 members of a basis of the topology of `X`. -/

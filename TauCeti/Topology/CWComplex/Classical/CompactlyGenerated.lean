@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
 public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
+public import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
-# Compact generation of CW complexes and the coreflection counit
+# Compact generation of relative CW complexes
 
 Every Hausdorff relative CW complex over a `u`-compactly generated base is `u`-compactly generated
-for every universe `u` (`TauCeti.uCompactlyGeneratedSpace_of_relCWComplex`), so the coreflection
-counit `CompactlyGenerated.adjCounit` is an isomorphism at every Hausdorff CW complex
-(`CompactlyGenerated.isIso_adjCounit_app_of_cwComplex`, `isIso_adjCounit_app_of_cwComplex_univ`).
+for every universe `u` (`TauCeti.uCompactlyGeneratedSpace_of_relCWComplex`), generalizing the
+delta-generated base case (`TauCeti.deltaGeneratedSpace_of_relCWComplex`) to arbitrary
+`u`-compactly generated bases.
 
 ## References
 
@@ -28,27 +28,13 @@ public section
 
 universe u w
 
-open CategoryTheory Topology
+open Topology
 
 /-- A Hausdorff relative CW complex over a `u`-compactly generated base is `u`-compactly generated
 for every test universe `u`. -/
 theorem TauCeti.uCompactlyGeneratedSpace_of_relCWComplex {X : Type w} [TopologicalSpace X]
     [T2Space X] {C D : Set X} [RelCWComplex C D] [UCompactlyGeneratedSpace.{u} D] :
     UCompactlyGeneratedSpace.{u} C :=
-  (isGeneratedBy_compHaus_iff C).1 isQuotientMap_sumElim_base_map.isGeneratedBy
-
-namespace CompactlyGenerated
-
-/-- For a Hausdorff CW complex `C` in `X : Type w`, `adjCounit.app (TopCat.of C)` is an isomorphism
-for every test universe `u`. -/
-theorem isIso_adjCounit_app_of_cwComplex {X : Type w} [TopologicalSpace X] [T2Space X]
-    (C : Set X) [CWComplex C] : IsIso (adjCounit.{u, w}.app (TopCat.of C)) := inferInstance
-
-/-- For a Hausdorff space `X : Type w` with `[CWComplex (Set.univ : Set X)]`,
-`adjCounit.app (TopCat.of X)` is an isomorphism for every test universe `u`. -/
-theorem isIso_adjCounit_app_of_cwComplex_univ (X : Type w) [TopologicalSpace X] [T2Space X]
-    [CWComplex (Set.univ : Set X)] : IsIso (adjCounit.{u, w}.app (TopCat.of X)) := inferInstance
-
-end CompactlyGenerated
+  (Topology.isGeneratedBy_compHaus_iff.{u} C).1 isQuotientMap_sumElim_base_map.isGeneratedBy
 
 end
