@@ -36,9 +36,10 @@ long as the order of `N` is prime to the index of one of the two subgroups.
   form.
 * `IsCyclic.index_inf_eq_lcm`: in a cyclic group the index of `H ⊓ K` is the least common multiple
   of the indices of `H` and `K`.
-* `IsCyclic.index_zpowGroupHom_range`, `IsCyclic.index_zpowGroupHom_range_of_infinite`: in a cyclic
-  commutative group `G`, the `m`-th power subgroup has index `m.gcd (Nat.card G)` (and `m.natAbs`
-  when `G` is infinite), with additive versions for `zsmulAddGroupHom`.
+* `IsCyclic.index_zpowGroupHom_range`, `IsCyclic.index_zpowGroupHom_range_of_infinite`, and
+  `Subgroup.index_zpowers_zpow_of_isMulTorsionFree`: in a cyclic commutative group `G`, the
+  `m`-th power subgroup has index `m.gcd (Nat.card G)` (and `m.natAbs` when `G` is infinite or
+  torsion-free with nontrivial generator), with additive versions.
 * `Subgroup.index_inf_eq_lcm_of_isCyclic_quotient`: the same holds in a group with a normal
   subgroup `N` whose quotient is cyclic, provided the order of `N` is prime to the index of one of
   the two subgroups. This is the group theory behind Abhyankar's lemma, where `N` is the wild
@@ -231,5 +232,16 @@ theorem _root_.IsCyclic.index_zpowGroupHom_range_of_infinite {G : Type*} [CommGr
     (zpowGroupHom m : G →* G).range.index = m.natAbs := by
   rw [IsCyclic.index_zpowGroupHom_range, Nat.card_eq_zero_of_infinite, Int.natCast_zero,
     Int.gcd_zero_right]
+
+/-- **Index of a power-generated subgroup in a torsion-free cyclic group.** If `g ≠ 1` generates
+a torsion-free group `G`, then `zpowers (g ^ e)` has index `e.natAbs`. -/
+@[to_additive
+/-- **Index of a multiple-generated subgroup in a torsion-free additive cyclic group.** If `g ≠ 0`
+generates a torsion-free additive group `G`, then `zmultiples (e • g)` has index `e.natAbs`. -/]
+theorem index_zpowers_zpow_of_isMulTorsionFree [IsMulTorsionFree G]
+    (hg : zpowers g = ⊤) (h1 : g ≠ 1) (e : ℤ) :
+    (zpowers (g ^ e)).index = e.natAbs := by
+  rw [index_zpowers_zpow hg, orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree h1),
+    Nat.cast_zero, Int.gcd_zero_right]
 
 end Subgroup

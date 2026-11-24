@@ -129,9 +129,9 @@ theorem isTotallyRamified_of_pow_eq_of_finrank_eq [ValuativeRel L] [TopologicalS
   have : Module.Finite ℚ_[p] L :=
     Module.finite_of_finrank_pos (by have := (Fact.out : p.Prime).pos; omega)
   rw [isTotallyRamified_iff_ramificationIdx_eq_finrank]
-  refine Nat.le_antisymm (ValuativeRel.valuation L).ramificationIdx_le_finrank ?_
-  rw [hfin, ramificationIdx_valuation_eq_ramificationIndex]
-  exact Nat.le_of_dvd ramificationIndex_pos (dvd_ramificationIndex_of_pow_eq hα)
+  refine (ValuativeRel.valuation L).ramificationIdx_eq_finrank_of_dvd ?_ hfin.le
+  rw [ramificationIdx_valuation_eq_ramificationIndex]
+  exact dvd_ramificationIndex_of_pow_eq hα
 
 end XPowSubP
 

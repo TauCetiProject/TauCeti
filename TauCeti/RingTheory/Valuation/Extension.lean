@@ -35,8 +35,9 @@ division-ring extension `L / K`.
 * `Valuation.ramificationIdx_comap_mul_ramificationIdx` and `Valuation.ramificationIdx_tower`:
   multiplicativity in algebra towers.
 * `Valuation.linearIndependent_of_quotient_valueGroup`,
-  `Valuation.isFiniteRelIndex_valueGroup_comap`, and `Valuation.ramificationIdx_le_finrank`:
-  coset linear independence, finiteness, and `[Γ_w : Γ_{w|_K}] ≤ [L : K]`.
+  `Valuation.isFiniteRelIndex_valueGroup_comap`, `Valuation.ramificationIdx_le_finrank`,
+  `Valuation.le_finrank_of_dvd_ramificationIdx`, and `Valuation.ramificationIdx_eq_finrank_of_dvd`:
+  coset linear independence, finiteness, `[Γ_w : Γ_{w|_K}] ≤ [L : K]`, and total ramification.
 
 ## References
 
@@ -298,6 +299,17 @@ theorem ramificationIdx_le_finrank : w.ramificationIdx K ≤ Module.finrank K L 
   let _ := @Fintype.ofFinite _ he.finite
   rw [ramificationIdx_def, Subgroup.relIndex, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
   exact he.fintype_card_le_finrank
+
+/-- Any divisor of `w.ramificationIdx K` is at most `[L : K]`. -/
+theorem le_finrank_of_dvd_ramificationIdx {d : ℕ} (h : d ∣ w.ramificationIdx K) :
+    d ≤ Module.finrank K L :=
+  (Nat.le_of_dvd w.ramificationIdx_pos h).trans w.ramificationIdx_le_finrank
+
+/-- **Total ramification from a divisor of the ramification index.** If `d` divides
+`w.ramificationIdx K` and `[L : K] ≤ d`, then `w.ramificationIdx K = [L : K]`. -/
+theorem ramificationIdx_eq_finrank_of_dvd {d : ℕ} (h : d ∣ w.ramificationIdx K)
+    (hdeg : Module.finrank K L ≤ d) : w.ramificationIdx K = Module.finrank K L :=
+  Nat.le_antisymm w.ramificationIdx_le_finrank (hdeg.trans (Nat.le_of_dvd w.ramificationIdx_pos h))
 
 end Finite
 

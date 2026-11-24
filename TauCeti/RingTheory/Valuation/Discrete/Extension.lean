@@ -139,12 +139,11 @@ theorem generator_comap_eq_pow_ramificationIdx (w : Valuation L ΓL) [hw : w.IsR
     refine exists_congr fun k ↦ ?_
     rw [Subtype.ext_iff, Subgroup.coe_zpow, Subgroup.coe_zpow, IsRankOneDiscrete.generator',
       ← zpow_mul, ← he, ← zpow_mul]
-  have hord0 : orderOf hw.generator' = 0 :=
-    orderOf_eq_zero_iff.mpr (not_isOfFinOrder_of_isMulTorsionFree hw.generator'_lt_one.ne)
   have hram : (w.ramificationIdx K : ℤ) = e := by
     rw [ramificationIdx_def, Subgroup.relIndex, hsub,
-      Subgroup.index_zpowers_zpow hw.generator'_zpowers_eq_top, hord0, Nat.cast_zero,
-      Int.gcd_zero_right, Int.natAbs_of_nonneg he_pos.le]
+      Subgroup.index_zpowers_zpow_of_isMulTorsionFree hw.generator'_zpowers_eq_top
+        hw.generator'_lt_one.ne]
+    exact Int.natAbs_of_nonneg he_pos.le
   rw [← zpow_natCast, hram, he]
 
 /-- **Positivity of the ramification index** for any extension of rank-one discrete valuations on a
@@ -243,13 +242,11 @@ theorem ramificationIdx_eq_ordIndex :
   have hg₀ := IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective w.intValuation_surjective
   have hzpow : Subgroup.zpowers (Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)) = ⊤ := by
     rw [← hg₀, IsRankOneDiscrete.generator_zpowers_eq_valueGroup, htop]
-  have hord0 : orderOf (Units.mk0 (WithZero.exp (-1 : ℤ)) (by simp)) = 0 :=
-    orderOf_eq_zero_iff.mpr <|
-      not_isOfFinOrder_of_isMulTorsionFree (hg₀ ▸ IsRankOneDiscrete.generator_ne_one _)
   rw [w.isEquiv_intValuation.symm.ramificationIdx_eq, ramificationIdx_def, htop,
     Subgroup.relIndex_top_right, valueGroup_eq_zpowers_ordIndex,
-    Subgroup.index_zpowers_zpow hzpow, hord0]
-  simp
+    Subgroup.index_zpowers_zpow_of_isMulTorsionFree hzpow
+      (hg₀ ▸ IsRankOneDiscrete.generator_ne_one _),
+    Int.natAbs_natCast]
 
 /-- Normalizing the restriction of `w.intValuation` to `K` recovers `v.intValuation`. -/
 theorem normalization_comap_intValuation (v : Valuation K ΓK) [v.IsRankOneDiscrete]
@@ -478,8 +475,7 @@ theorem den_le_finrank_of_extRealAddVal_eq_ratCast [Module.Finite K L]
     (w : Valuation L ΓL) [w.IsRankOneDiscrete] {α : L} {q : ℚ}
     (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) :
     q.den ≤ Module.finrank K L :=
-  (Nat.le_of_dvd w.ramificationIdx_pos
-    (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα)).trans w.ramificationIdx_le_finrank
+  w.le_finrank_of_dvd_ramificationIdx (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα)
 
 /-- **Criterion for total ramification from a rational value.** In a finite extension `L / K`, if an
 element `α : L` has rational base-normalized valuation `q` with `Module.finrank K L ≤ q.den`, then
@@ -488,9 +484,8 @@ theorem ramificationIdx_eq_finrank_of_extRealAddVal_eq_ratCast [Module.Finite K 
     (w : Valuation L ΓL) [w.IsRankOneDiscrete] {α : L} {q : ℚ}
     (hα : w.extRealAddVal K α = ((q : ℝ) : WithTop ℝ)) (hdeg : Module.finrank K L ≤ q.den) :
     w.ramificationIdx K = Module.finrank K L :=
-  Nat.le_antisymm w.ramificationIdx_le_finrank
-    (hdeg.trans (Nat.le_of_dvd w.ramificationIdx_pos
-      (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα)))
+  w.ramificationIdx_eq_finrank_of_dvd
+    (w.den_dvd_ramificationIdx_of_extRealAddVal_eq_ratCast hα) hdeg
 
 end FieldBase
 
