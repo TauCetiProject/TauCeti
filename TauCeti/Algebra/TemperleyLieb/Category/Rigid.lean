@@ -46,6 +46,8 @@ object of `TLDiagCat` to that of its image along the identity
   `δ` times the identity of the unit.
 * `TauCeti.TLCat.linearize_map_coevaluation`, `TauCeti.TLCat.linearize_map_evaluation`,
   `TauCeti.TLCat.linearize_map_rightAdjointMate`: linearization preserves the rigid structure.
+* `TauCeti.TLCat.linearize_mapRightDualIso`: the dual comparison isomorphism of linearization is
+  the identity.
 * `TauCeti.TLCat.linearize_sendsSelfDuality`: linearization sends each self-duality of
   `TLDiagCat` to the corresponding one of `TLCat R δ`.
 
@@ -164,21 +166,37 @@ theorem rightDual_eq (X : TLCat R δ) : Xᘁ = X := (rfl)
 @[simp]
 theorem leftDual_eq (X : TLCat R δ) : (ᘁX : TLCat R δ) = X := (rfl)
 
+/-- The dual comparison for linearization is the identity: both right duals of
+`(linearize R δ).obj X` are given by the same exact pairing. -/
+theorem linearize_mapRightDualIso (X : TLDiagCat) :
+    (linearize R δ).mapRightDualIso X = Iso.refl _ := by
+  refine Iso.ext (ExactPairing.rightHom_ext (X := (linearize R δ).obj X)
+    (Y := ((linearize R δ).obj X)ᘁ)
+    ((Functor.mapRightDualIso_hom_whiskerRight_evaluation X).trans ?_))
+  simp only [linearize_μ, linearize_η, Iso.refl_hom, id_whiskerRight, Category.id_comp]
+  exact (Category.comp_id _).trans (linearize_map_evaluation X)
+
+/-- The forward dual comparison for linearization is the identity. -/
+@[simp]
+theorem linearize_mapRightDualIso_hom (X : TLDiagCat) :
+    ((linearize R δ).mapRightDualIso X).hom = 𝟙 ((linearize R δ).obj Xᘁ) := by
+  rw [linearize_mapRightDualIso, Iso.refl_hom]
+
+/-- The inverse dual comparison for linearization is the identity. -/
+@[simp]
+theorem linearize_mapRightDualIso_inv (X : TLDiagCat) :
+    ((linearize R δ).mapRightDualIso X).inv = 𝟙 ((linearize R δ).obj X)ᘁ :=
+  -- `Iso.refl_inv` gives the identity of the image of the dual, which is the dual of the image
+  -- up to unfolding the rigid structure of `TLCat R δ`.
+  congrArg Iso.inv (linearize_mapRightDualIso X)
+
 /-- Linearization sends the right adjoint mate of a morphism of `TLDiagCat` to the right adjoint
 mate of its image. -/
 @[simp]
 theorem linearize_map_rightAdjointMate {X Y : TLDiagCat} (f : X ⟶ Y) :
     (linearize R δ).map (fᘁ) = ((linearize R δ).map f)ᘁ := by
-  -- Both right duals of `(linearize R δ).obj X` are given by the same exact pairing, so the
-  -- comparison between them is the identity.
-  have h (Z : TLDiagCat) : (linearize R δ).mapRightDualIso Z = Iso.refl _ := by
-    refine Iso.ext (ExactPairing.rightHom_ext (X := (linearize R δ).obj Z)
-      (Y := ((linearize R δ).obj Z)ᘁ)
-      ((Functor.mapRightDualIso_hom_whiskerRight_evaluation Z).trans ?_))
-    simp only [linearize_μ, linearize_η, Iso.refl_hom, id_whiskerRight, Category.id_comp]
-    exact (Category.comp_id _).trans (linearize_map_evaluation Z)
-  simpa only [h, Iso.refl_hom, Category.comp_id, Category.id_comp] using
-    Functor.mapRightDualIso_hom_naturality (F := linearize R δ) f
+  simpa only [linearize_mapRightDualIso_hom, linearize_mapRightDualIso_inv, Category.comp_id,
+    Category.id_comp] using Functor.mapRightDualIso_hom_naturality (F := linearize R δ) f
 
 /-- **Linearization sends self-dualities to self-dualities**: it sends the self-duality of an
 object `X` of `TLDiagCat` to the self-duality of its image, along the identity. -/
