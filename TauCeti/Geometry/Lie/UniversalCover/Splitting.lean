@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.SimplyConnected
 public import TauCeti.Geometry.Lie.Prod
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Splitting a simply connected Lie group along complementary ideals
@@ -290,6 +291,32 @@ private theorem lieMap_centerFactorLieEquiv_symm
       z :=
   congrArg Subtype.val ((centerFactorLieEquiv (I := I) (G := G)).apply_symm_apply z)
 
+omit [SimplyConnectedSpace G] [T2Space G] in
+/-- The integral leaf subgroup of the centre is Hausdorff, as a Lie group. -/
+private theorem t2Space_centerFactor :
+    T2Space ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
+  ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+    LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+      (I := I)).I'.t2Space_of_lieGroup ∞
+
+omit [SimplyConnectedSpace G] [T2Space G] in
+/-- The integral leaf subgroup of the centre is commutative. -/
+private theorem isMulCommutative_centerFactor :
+    IsMulCommutative ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
+  ⟨⟨fun x y ↦ (commute_integralLeafSubgroupData_center x y).eq⟩⟩
+
+omit [T2Space G] in
+/-- The integral leaf subgroup of the centre is simply connected, as a factor of `G`. -/
+private theorem simplyConnectedSpace_centerFactor
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    SimplyConnectedSpace ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
+  (simplyConnectedSpace_prod_iff.mp
+    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).1
+
 /-- The first factor of `TauCeti.Lie.centerProdDerivedContinuousMulEquiv`, the integral leaf
 subgroup of the centre `𝔷`, is the vector group `𝔷` through its exponential: it is a simply
 connected commutative Lie group (`TauCeti.lieExpContinuousAddEquiv`) whose Lie algebra is carried
@@ -302,28 +329,15 @@ private def centerFactorContinuousMulEquiv
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
   let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
     LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
-  have : T2Space A.X := A.I'.t2Space_of_lieGroup ∞
-  have : IsMulCommutative A.X := ⟨⟨fun x y ↦ (commute_integralLeafSubgroupData_center x y).eq⟩⟩
-  have : SimplyConnectedSpace A.X := (simplyConnectedSpace_prod_iff.mp
-    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).1
+  have := t2Space_centerFactor (I := I) (G := G)
+  have := isMulCommutative_centerFactor (I := I) (G := G)
+  have := simplyConnectedSpace_centerFactor hc
   have : FiniteDimensional ℝ (LeftInvariantDerivation A.I' A.X) :=
     finiteDimensional_leftInvariantDerivation
       (ContMDiffMul.isInteriorPoint (I := A.I') (n := ∞) (by simp) (1 : A.X))
-  have : FiniteDimensional ℝ (LeftInvariantDerivation A.I' A.X) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint (I := A.I') (n := ∞) (by simp) (1 : A.X))
-  let d := (centerFactorLieEquiv (I := I) (G := G)).toContinuousLinearEquiv
-  let tA : Additive A.X ≃ₜ A.X := ⟨Additive.toMul, continuous_toMul, continuous_ofMul⟩
-  let tz : Multiplicative (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ≃ₜ
-      (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule :=
-    ⟨Multiplicative.toAdd, continuous_toAdd, continuous_ofAdd⟩
-  ContinuousMulEquiv.mk' ((tz.trans (d.symm.toHomeomorph.trans
-    (lieExpContinuousAddEquiv (I := A.I') (G := A.X)).toHomeomorph)).trans tA)
-    (fun x y ↦ by
-      simp only [Homeomorph.trans_apply, tz, tA, Homeomorph.homeomorph_mk_coe, toAdd_mul,
-        ContinuousLinearEquiv.coe_toHomeomorph, ContinuousAddEquiv.toEquiv_eq_coe, map_add]
-      exact congrArg Additive.toMul (map_add (lieExpContinuousAddEquiv (I := A.I') (G := A.X))
-        _ _))
+  ((centerFactorLieEquiv (I := I) (G := G)).toContinuousLinearEquiv.symm.toContinuousAddEquiv.trans
+    (lieExpContinuousAddEquiv (I := A.I') (G := A.X))).toMultiplicative.trans
+    (ContinuousMulEquiv.multiplicativeAdditive A.X)
 
 /-- The centre factor carries `z ∈ 𝔷` to `exp z`. -/
 private theorem toHom_centerFactorContinuousMulEquiv
@@ -334,22 +348,17 @@ private theorem toHom_centerFactorContinuousMulEquiv
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom
         (centerFactorContinuousMulEquiv hc z) =
       lieExp (I := I) (z.toAdd : LeftInvariantDerivation I G) := by
-  let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
-    LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
-  have : T2Space A.X := A.I'.t2Space_of_lieGroup ∞
-  have : IsMulCommutative A.X := ⟨⟨fun x y ↦ (commute_integralLeafSubgroupData_center x y).eq⟩⟩
-  have : SimplyConnectedSpace A.X := (simplyConnectedSpace_prod_iff.mp
-    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).1
-  simp only [centerFactorContinuousMulEquiv, ContinuousMulEquiv.coe_mk',
-    Homeomorph.trans_apply, Homeomorph.homeomorph_mk_coe, ContinuousLinearEquiv.coe_toHomeomorph,
-    LinearEquiv.coe_toContinuousLinearEquiv_symm']
+  have := t2Space_centerFactor (I := I) (G := G)
+  have := isMulCommutative_centerFactor (I := I) (G := G)
+  have := simplyConnectedSpace_centerFactor hc
+  simp only [centerFactorContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
+    ContinuousAddEquiv.toMultiplicative_apply, ContinuousMulEquiv.multiplicativeAdditive_apply,
+    toAdd_ofAdd, ContinuousAddEquiv.trans_apply, lieExpContinuousAddEquiv_apply, toMul_ofMul,
+    ContinuousLinearEquiv.toContinuousAddEquiv_coe, LinearEquiv.coe_toContinuousLinearEquiv_symm']
   -- The exponential of the centre factor at `Y`, pushed into `G`, is `exp` of the image of `Y`
   -- under the Lie map of the inclusion, and that Lie map inverts the linear isomorphism onto `𝔷`.
-  refine (congrArg (fun w ↦ ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
-      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom
-        (Additive.toMul w)) (lieExpContinuousAddEquiv_apply _)).trans ?_
-  rw [toMul_ofMul, ← ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply, map_lieExp]
-  rw [lieMap_centerFactorLieEquiv_symm]
+  rw [← ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply, map_lieExp,
+    lieMap_centerFactorLieEquiv_symm]
 
 /-- **The centre factor of a simply connected Lie group is the centre of its Lie algebra.** If the
 centre `𝔷` and the derived algebra `[𝔤, 𝔤]` of the Lie algebra of a simply connected Lie group `G`
@@ -371,10 +380,10 @@ def lieExpCenterProdDerivedContinuousMulEquiv
     ((e.toHomeomorph.prodCongr (Homeomorph.refl _)).trans
       (centerProdDerivedContinuousMulEquiv hc).toHomeomorph)
     (fun p q ↦ by
-      have h := map_mul (centerProdDerivedContinuousMulEquiv hc) (e p.1, p.2) (e q.1, q.2)
-      rw [Prod.mk_mul_mk, ← map_mul e] at h
-      -- Both sides are `h` up to unfolding the product and composite of homeomorphisms.
-      exact h)
+      simp only [Homeomorph.trans_apply, Homeomorph.coe_prodCongr, Homeomorph.refl_apply,
+        ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
+        ← map_mul (centerProdDerivedContinuousMulEquiv hc), Prod.map, id_eq, map_mul e,
+        Prod.mk_mul_mk])
 
 @[simp]
 theorem lieExpCenterProdDerivedContinuousMulEquiv_apply
@@ -388,10 +397,27 @@ theorem lieExpCenterProdDerivedContinuousMulEquiv_apply
         ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
           LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
             (I := I)).toHom p.2 := by
-  -- Unfolded, the left side is the splitting applied to `(e p.1, p.2)`, where `e` is the centre
-  -- factor isomorphism.
-  rw [← toHom_centerFactorContinuousMulEquiv hc]
-  exact centerProdDerivedContinuousMulEquiv_apply hc (centerFactorContinuousMulEquiv hc p.1, p.2)
+  simp only [lieExpCenterProdDerivedContinuousMulEquiv, ContinuousMulEquiv.coe_mk',
+    Homeomorph.trans_apply, Homeomorph.coe_prodCongr, Homeomorph.refl_apply,
+    ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
+    centerProdDerivedContinuousMulEquiv_apply, Prod.map_fst, Prod.map_snd, id_eq,
+    toHom_centerFactorContinuousMulEquiv]
+
+@[simp]
+theorem lieExpCenterProdDerivedContinuousMulEquiv_symm_apply_lieExp_mul
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1))
+    (z : (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule)
+    (k : ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) :
+    (lieExpCenterProdDerivedContinuousMulEquiv hc).symm
+        (lieExp (I := I) (z : LeftInvariantDerivation I G) *
+          ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+            LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+              (I := I)).toHom k) =
+      (Multiplicative.ofAdd z, k) := by
+  rw [ContinuousMulEquiv.symm_apply_eq, lieExpCenterProdDerivedContinuousMulEquiv_apply,
+    toAdd_ofAdd]
 
 end Center
 
