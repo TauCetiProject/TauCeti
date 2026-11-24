@@ -46,13 +46,11 @@ def piLp (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ :
   embed₀_injective _ _ h := by ext i; exact (C i).embed₀_injective (congrFun h i)
   embed₁_injective _ _ h := by ext i; exact (C i).embed₁_injective (congrFun h i)
 
-@[simp]
-theorem piLp_embed₀_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
+@[simp] theorem piLp_embed₀_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     (x : PiLp q₀ X₀) (i : ι) : (piLp C q₀ q₁).embed₀ x i = (C i).embed₀ (x i) := by
   simp [piLp]
 
-@[simp]
-theorem piLp_embed₁_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
+@[simp] theorem piLp_embed₁_apply (C : ∀ i, CompatibleCouple 𝕜 (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞)
     (x : PiLp q₁ X₁) (i : ι) : (piLp C q₀ q₁).embed₁ x i = (C i).embed₁ (x i) := by
   simp [piLp]
 
@@ -124,12 +122,9 @@ def piLpSumEquiv : (piLp C q₀ q₁).SumSpace ≃L[𝕜] ∀ i, (C i).SumSpace 
     (ContinuousLinearMap.ext fun v => by
       classical
       ext j; apply (C j).sumSpace_ext
-      have hexp : (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁ (piLpSumInv C q₀ q₁ v) j) =
-          ∑ i : ι, (C j).sumSpaceEmbed (piLpSumFwd C q₀ q₁
-            (piLpSumInvSingle C q₀ q₁ i (v i)) j) := by
-        simp [piLpSumInv, Finset.sum_apply, map_sum]
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, hexp,
-        Fintype.sum_eq_single j]
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, piLpSumInv,
+        FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.proj_apply, map_sum]
+      rw [Fintype.sum_eq_single j]
       · obtain ⟨y₀, y₁, hy⟩ := (C j).exists_fstToSum_add_sndToSum_eq (v j)
         rw [← hy]; simp [piLpSumInvSingle, sumLift_fstToSum, sumLift_sndToSum,
           piLpSumFwd_fstToSum, piLpSumFwd_sndToSum, PiLp.singleCLM_apply]
@@ -165,13 +160,11 @@ theorem piLpSumEquiv_apply_eq_sumLift (u : (piLp C q₀ q₁).SumSpace) (i : ι)
     piLpSumEquiv C q₀ q₁ ((piLp C q₀ q₁).sndToSum x) i = (C i).sndToSum (x i) :=
   piLpSumFwd_sndToSum C q₀ q₁ x i
 
-@[simp]
-theorem sumSpaceEmbed_piLpSumEquiv_apply (u : (piLp C q₀ q₁).SumSpace) (i : ι) :
+@[simp] theorem sumSpaceEmbed_piLpSumEquiv_apply (u : (piLp C q₀ q₁).SumSpace) (i : ι) :
     (C i).sumSpaceEmbed (piLpSumEquiv C q₀ q₁ u i) = (piLp C q₀ q₁).sumSpaceEmbed u i := by
   obtain ⟨x₀, x₁, rfl⟩ := (piLp C q₀ q₁).exists_fstToSum_add_sndToSum_eq u; simp
 
-@[simp]
-theorem sumSpaceEmbed_piLpSumEquiv_symm (v : ∀ i, (C i).SumSpace) (i : ι) :
+@[simp] theorem sumSpaceEmbed_piLpSumEquiv_symm (v : ∀ i, (C i).SumSpace) (i : ι) :
     (piLp C q₀ q₁).sumSpaceEmbed ((piLpSumEquiv C q₀ q₁).symm v) i = (C i).sumSpaceEmbed (v i) := by
   rw [← sumSpaceEmbed_piLpSumEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
 

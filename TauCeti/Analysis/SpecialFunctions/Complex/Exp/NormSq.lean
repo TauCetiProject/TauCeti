@@ -24,13 +24,9 @@ theorem normSq_one_add_exp (z : ℂ) :
     normSq (1 + exp z) = (Real.exp z.re + Real.cos z.im) ^ 2 + Real.sin z.im ^ 2 := by
   rw [normSq_apply, add_re, add_im, one_re, one_im, zero_add, exp_re, exp_im]
   have hcs := Real.cos_sq_add_sin_sq z.im
-  calc (1 + Real.exp z.re * Real.cos z.im) * (1 + Real.exp z.re * Real.cos z.im) +
-        Real.exp z.re * Real.sin z.im * (Real.exp z.re * Real.sin z.im)
-      = 1 + 2 * Real.exp z.re * Real.cos z.im +
-          Real.exp z.re ^ 2 * (Real.cos z.im ^ 2 + Real.sin z.im ^ 2) := by ring
-    _ = Real.exp z.re ^ 2 + 2 * Real.exp z.re * Real.cos z.im +
-          (Real.cos z.im ^ 2 + Real.sin z.im ^ 2) := by rw [hcs]; ring
-    _ = (Real.exp z.re + Real.cos z.im) ^ 2 + Real.sin z.im ^ 2 := by ring
+  have hcs' : Real.exp z.re ^ 2 * (Real.cos z.im ^ 2 + Real.sin z.im ^ 2) = Real.exp z.re ^ 2 := by
+    rw [hcs, mul_one]
+  linarith
 
 /-- Hyperbolic-trigonometric formula `‖1 + exp z‖² = 2 exp (re z) (cosh (re z) + cos (im z))`. -/
 theorem normSq_one_add_exp_eq_two_mul_cosh_add_cos (z : ℂ) :
@@ -38,9 +34,6 @@ theorem normSq_one_add_exp_eq_two_mul_cosh_add_cos (z : ℂ) :
   rw [normSq_one_add_exp, Real.cosh_eq, Real.sin_sq]
   have hexp : Real.exp z.re * Real.exp (-z.re) = 1 := by
     rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
-  calc (Real.exp z.re + Real.cos z.im) ^ 2 + (1 - Real.cos z.im ^ 2)
-      = Real.exp z.re ^ 2 + Real.exp z.re * Real.exp (-z.re) +
-          2 * Real.exp z.re * Real.cos z.im := by rw [hexp]; ring
-    _ = 2 * Real.exp z.re * ((Real.exp z.re + Real.exp (-z.re)) / 2 + Real.cos z.im) := by ring
+  linarith
 
 end Complex

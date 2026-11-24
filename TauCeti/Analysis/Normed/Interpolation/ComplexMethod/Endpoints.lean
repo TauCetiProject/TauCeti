@@ -68,27 +68,22 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
     (fun t => by
       rw [norm_smul]; by_cases ht : |t| < δ
       · have hd := hclose (by simpa [Real.dist_eq] using ht); rw [dist_eq_norm] at hd
-        exact (mul_le_of_le_one_left (norm_nonneg _)
-          (hc_le _ (by simp [verticalClosedStrip]))).trans
+        exact (mul_le_of_le_one_left (norm_nonneg _) (hc_le _ (by simp))).trans
           (by linarith [norm_sub_norm_le (g.val.1 t) (g.val.1 0)])
       · have hsq : δ ^ 2 ≤ t ^ 2 := by simpa [sq_abs] using pow_le_pow_left₀ hδ.le (not_lt.1 ht) 2
         have hA1' : 2 * ‖g.val.1‖ / ε < A * δ ^ 2 := (div_lt_iff₀ hε).2 <| by
           nlinarith [(div_lt_iff₀ (by positivity)).1
             (((le_max_left _ _).trans (le_max_right _ _)).trans_lt hAgt)]
         rw [hc_fst]
-        exact (exp_neg_mul_le_half_of_le (norm_nonneg _)
-          (ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.1 t)
-          (by positivity) (by nlinarith) hε hA1').trans
-          (le_add_of_nonneg_left (norm_nonneg _)))
+        exact (exp_neg_mul_le_half_of_le (norm_nonneg _) (g.val.1.norm_coe_le_norm t)
+          (by positivity) (by nlinarith) hε hA1').trans (le_add_of_nonneg_left (norm_nonneg _)))
     (fun t => by
       rw [norm_smul, hc_snd]
-      exact (exp_neg_mul_le_half_of_le (norm_nonneg _)
-        (ZeroAtInftyContinuousMap.norm_coe_le_norm g.val.2 t)
+      exact (exp_neg_mul_le_half_of_le (norm_nonneg _) (g.val.2.norm_coe_le_norm t)
         hA (by nlinarith [sq_nonneg t]) hε
         (((le_max_right _ _).trans (le_max_right _ _)).trans_lt hAgt)).trans
         (le_add_of_nonneg_left (norm_nonneg _)))
-  rw [norm_smul, hc_zero, one_mul] at hbound
-  linarith [half_lt_self hε]
+  rw [norm_smul, hc_zero, one_mul] at hbound; linarith [half_lt_self hε]
 
 /-- At `θ = 0`, the quotient norm of an admissible trace pair is the norm in `X₀` of its left
 boundary trace at `0`. -/

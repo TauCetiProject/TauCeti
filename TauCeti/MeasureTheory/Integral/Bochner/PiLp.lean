@@ -68,25 +68,20 @@ theorem norm_toLp_integral_weighted_le {Ω ι : Type*} [Fintype ι] [MeasurableS
     integral_congr_ae (hw'.mono fun _ ht ↦ by dsimp only; rw [ht])
   simp_rw [hint_eq]
   have hint (i : ι) : Integrable (fun t ↦ ‖f t i‖ * w' t) μ :=
-    hw'_int.bdd_mul (hf i).aestronglyMeasurable
-      (hfM.mono fun t ht ↦ by
-        rw [Real.norm_of_nonneg (norm_nonneg _)]
-        exact (PiLp.norm_apply_le (f t) i).trans ht)
+    hw'_int.bdd_mul (hf i).aestronglyMeasurable (hfM.mono fun t ht ↦ by
+      rw [Real.norm_of_nonneg (norm_nonneg _)]; exact (PiLp.norm_apply_le (f t) i).trans ht)
   have hpull : WithLp.toLp p (fun i ↦ α⁻¹ * ∫ t, ‖f t i‖ * w' t ∂μ) =
-      α⁻¹ • WithLp.toLp p (fun i ↦ ∫ t, ‖f t i‖ * w' t ∂μ) :=
-    PiLp.ext fun _ ↦ by simp
+      α⁻¹ • WithLp.toLp p (fun i ↦ ∫ t, ‖f t i‖ * w' t ∂μ) := PiLp.ext fun _ ↦ by simp
   have hpt (t : Ω) : WithLp.toLp p (fun i ↦ ‖f t i‖ * w' t) =
-      w' t • WithLp.toLp p (fun i ↦ ‖f t i‖) :=
-    PiLp.ext fun _ ↦ by simp [mul_comm]
+      w' t • WithLp.toLp p (fun i ↦ ‖f t i‖) := PiLp.ext fun _ ↦ by simp [mul_comm]
   rw [hpull, norm_smul, Real.norm_of_nonneg (inv_pos.2 hα).le]
   calc α⁻¹ * ‖WithLp.toLp p (fun i ↦ ∫ t, ‖f t i‖ * w' t ∂μ)‖
       ≤ α⁻¹ * ∫ t, ‖WithLp.toLp p (fun i ↦ ‖f t i‖ * w' t)‖ ∂μ :=
         mul_le_mul_of_nonneg_left (norm_toLp_integral_le _ hint) (inv_pos.2 hα).le
     _ ≤ α⁻¹ * ∫ t, M * w' t ∂μ := mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
         (ae_of_all _ fun _ ↦ norm_nonneg _) (hw'_int.const_mul M) (hfM.mono fun t ht ↦ by
-          dsimp only
-          rw [hpt t, norm_smul, Real.norm_of_nonneg (le_max_right _ _), PiLp.norm_norm (f t),
-            mul_comm]
+          dsimp only; rw [hpt t, norm_smul, Real.norm_of_nonneg (le_max_right _ _),
+            PiLp.norm_norm (f t), mul_comm]
           exact mul_le_mul_of_nonneg_right ht (le_max_right _ _)))
         (inv_pos.2 hα).le
     _ = M := by rw [integral_const_mul, hw'_sum, mul_comm M, inv_mul_cancel_left₀ hα.ne']

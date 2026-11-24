@@ -374,25 +374,20 @@ theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k �
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
 /-- For `0 < x ≤ y`, `exp (-y) ≤ x⁻¹`. -/
-theorem exp_neg_le_inv {x y : ℝ} (hx : 0 < x) (hy : x ≤ y) : exp (-y) ≤ x⁻¹ := by
-  rw [exp_neg]
-  exact inv_anti₀ hx (hy.trans (by linarith [add_one_le_exp y]))
+theorem exp_neg_le_inv {x y : ℝ} (hx : 0 < x) (hy : x ≤ y) : exp (-y) ≤ x⁻¹ :=
+  exp_neg y ▸ inv_anti₀ hx (hy.trans (by linarith [add_one_le_exp y]))
 
 /-- If `0 ≤ a ≤ b`, `0 < b`, and `log b - κ ≤ r`, then `exp (-r) * a ≤ exp κ`. -/
 theorem exp_neg_mul_le_exp_of_log_sub_le {a b κ r : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) (hb : 0 < b)
-    (hr : log b - κ ≤ r) : exp (-r) * a ≤ exp κ := by
-  calc exp (-r) * a
-      ≤ exp (κ - log b) * b :=
-        mul_le_mul (exp_le_exp.2 (by linarith)) hab ha (exp_pos _).le
-    _ = exp κ := by
-        rw [exp_sub, div_mul_eq_mul_div, exp_log hb, mul_div_cancel_right₀ _ hb.ne']
+    (hr : log b - κ ≤ r) : exp (-r) * a ≤ exp κ :=
+  (mul_le_mul (exp_le_exp.2 (by linarith : -r ≤ κ - log b)) hab ha (exp_pos _).le).trans_eq <| by
+    rw [exp_sub, div_mul_eq_mul_div, exp_log hb, mul_div_cancel_right₀ _ hb.ne']
 
 /-- If `0 ≤ a ≤ M`, `0 < x ≤ y`, `0 < ε`, and `2 * M / ε < x`, then `exp (-y) * a ≤ ε / 2`. -/
 theorem exp_neg_mul_le_half_of_le {a M x y ε : ℝ} (ha : 0 ≤ a) (haM : a ≤ M)
     (hx : 0 < x) (hy : x ≤ y) (hε : 0 < ε) (hA : 2 * M / ε < x) :
-    exp (-y) * a ≤ ε / 2 := by
-  have h2 : M / x ≤ ε / 2 := (div_le_iff₀ hx).2 (by nlinarith [(div_lt_iff₀ hε).1 hA])
-  exact (mul_le_mul (exp_neg_le_inv hx hy) haM ha (inv_pos.2 hx).le).trans
-    ((inv_mul_eq_div _ _).trans_le h2)
+    exp (-y) * a ≤ ε / 2 :=
+  (mul_le_mul (exp_neg_le_inv hx hy) haM ha (inv_pos.2 hx).le).trans
+    ((inv_mul_eq_div _ _).trans_le ((div_le_iff₀ hx).2 (by nlinarith [(div_lt_iff₀ hε).1 hA])))
 
 end TauCeti

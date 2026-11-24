@@ -90,20 +90,18 @@ private theorem inv_mul_integral_log_max_le {Ω E : Type*} [TopologicalSpace Ω]
     (hmax_int : Integrable (fun s ↦ max ‖f s‖ δ * w s) μ) :
     α⁻¹ * ∫ s, Real.log (max ‖f s‖ δ) * w s ∂μ ≤ Real.log (α⁻¹ * ∫ s, max ‖f s‖ δ * w s ∂μ) := by
   -- Positive total mass forces `Ω` to be nonempty so `ν.normalize` is defined.
-  have _ : Nonempty Ω := by_contra fun h ↦ by
-    have _ := not_nonempty_iff.1 h
-    exact hα.ne' (hw_sum.symm.trans integral_of_isEmpty)
+  have _ : Nonempty Ω := by_contra fun h ↦
+    have _ := not_nonempty_iff.1 h; hα.ne' (hw_sum.symm.trans integral_of_isEmpty)
   let ν0 : Measure Ω := μ.withDensity (fun s ↦ ENNReal.ofReal (w s))
   have hν0_univ : ν0 Set.univ = ENNReal.ofReal α := by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
       ← ofReal_integral_eq_lintegral_ofReal hw_int hw_nonneg, hw_sum]
   let ν : FiniteMeasure Ω := ⟨ν0, ⟨hν0_univ ▸ ENNReal.ofReal_lt_top⟩⟩
   let α_nn : ℝ≥0 := ⟨α, hα.le⟩
-  have hν_mass : ν.mass = α_nn := ENNReal.coe_injective <| by
-    rw [FiniteMeasure.ennreal_mass]
-    exact hν0_univ.trans (ENNReal.ofReal_eq_coe_nnreal hα.le)
+  have hν_mass : ν.mass = α_nn := ENNReal.coe_injective <|
+    FiniteMeasure.ennreal_mass.trans (hν0_univ.trans (ENNReal.ofReal_eq_coe_nnreal hα.le))
   have hν_ne : ν ≠ 0 :=
-    (ν.mass_ne_zero_iff).1 (by rw [hν_mass]; exact NNReal.coe_ne_zero.1 hα.ne')
+    (ν.mass_ne_zero_iff).1 (hν_mass ▸ NNReal.coe_ne_zero.1 hα.ne')
   have hnorm_meas : (ν.normalize : Measure Ω) = ν.mass⁻¹ • ν0 := by
     rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
       ν.normalize_eq_inv_mass_smul_of_ne_zero hν_ne, FiniteMeasure.toMeasure_smul,
@@ -143,8 +141,8 @@ private theorem inv_mul_integral_max_le {Ω E : Type*} [TopologicalSpace Ω] [Me
     (integral_mono_ae hmax_int (hf_int.add (hw_int.const_mul δ)) (hw_nonneg.mono fun s hs ↦ by
       rw [Pi.add_apply, ← add_mul]; exact mul_le_mul_of_nonneg_right (max_le
         (le_add_of_nonneg_right hδ.le) (le_add_of_nonneg_left (norm_nonneg _))) hs)).trans_eq
-      (by simp only [Pi.add_apply]
-          rw [integral_add hf_int (hw_int.const_mul δ), integral_const_mul, hw_sum])
+      (by simp only [Pi.add_apply, integral_add hf_int (hw_int.const_mul δ), integral_const_mul,
+        hw_sum])
   refine (mul_le_mul_of_nonneg_left hint (inv_pos.2 hα).le).trans_eq ?_
   rw [mul_add, mul_left_comm, inv_mul_cancel₀ hα.ne', mul_one]
 

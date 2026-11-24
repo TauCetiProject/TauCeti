@@ -93,7 +93,8 @@ admissible functions (complete when `X₀` and `X₁` are complete) through thei
 * `ComplexMethodSpace.norm_mk_le_rpow_mul_rpow`: the three-lines bound
   `‖mk θ g‖ ≤ ‖g₀‖ ^ (1 - θ) * ‖g₁‖ ^ θ` in `[X₀, X₁]_θ` for every real `θ`
   (`ComplexMethodSpace.exists_stripTraces_smul_of_diffContOnCl`,
-  `ComplexMethodSpace.norm_smul_mk_le_of_diffContOnCl`).
+  `ComplexMethodSpace.norm_smul_mk_le_of_diffContOnCl`,
+  `ComplexMethodSpace.exists_stripTraces_rescale`).
 
 ## References
 
@@ -571,14 +572,12 @@ def boundaryMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
       (hT.exists_norm_snd_le.imp fun _ hM t => (T₁ t).le_of_opNorm_le (hM t)))
 
 omit [T1Space V] [T1Space W] in
-@[simp]
-theorem boundaryMap_apply_fst (hT : IsBoundedAnalyticFamily T T₀ T₁)
+@[simp] theorem boundaryMap_apply_fst (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)) (t : ℝ) : (hT.boundaryMap g).1 t = T₀ t (g.1 t) :=
   ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _ _ _
 
 omit [T1Space V] [T1Space W] in
-@[simp]
-theorem boundaryMap_apply_snd (hT : IsBoundedAnalyticFamily T T₀ T₁)
+@[simp] theorem boundaryMap_apply_snd (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)) (t : ℝ) : (hT.boundaryMap g).2 t = T₁ t (g.2 t) :=
   ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _ _ _
 
@@ -626,8 +625,7 @@ def stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) : C.stripTraces �
   (hT.boundaryMap.comp C.stripTraces.subtypeL).codRestrict D.stripTraces fun g =>
     mem_stripTraces_iff.2 ⟨_, hT.isStripFunction_apply (C.isStripFunction_stripFunction g)⟩
 
-@[simp]
-theorem coe_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
+@[simp] theorem coe_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
     (hT.stripTracesMap g : C₀(ℝ, Y₀) × C₀(ℝ, Y₁)) = hT.boundaryMap g := (rfl)
 
 theorem isStripFunction_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
@@ -660,13 +658,11 @@ def analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
     rw [ContinuousLinearMap.comp_apply, ← map_zero (mk (C := D) θ), mk_eq_mk_iff,
       hT.stripEval_stripTracesMap, hg, map_zero, map_zero]
 
-@[simp]
-theorem analyticFamilyMap_mk (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
+@[simp] theorem analyticFamilyMap_mk (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
     analyticFamilyMap θ hT (mk θ g) = mk θ (hT.stripTracesMap g) := (rfl)
 
 /-- The map induced by a bounded analytic family `T` lies over `T θ`. -/
-@[simp]
-theorem toSum_analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
+@[simp] theorem toSum_analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (u : C.ComplexMethodSpace θ) :
     toSum (analyticFamilyMap θ hT u) = T θ (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
@@ -739,6 +735,37 @@ theorem norm_smul_mk_le_of_diffContOnCl (θ : ℝ) (g : C.stripTraces) {c : ℂ 
   exact ((norm_mk_le g').trans_eq (Submodule.norm_coe g').symm).trans (max_le
     ((ZeroAtInftyContinuousMap.norm_le hB).2 fun t => by rw [hg₀']; exact hb₀ t)
     ((ZeroAtInftyContinuousMap.norm_le hB).2 fun t => by rw [hg₁']; exact hb₁ t))
+
+/-- Rescaling an admissible trace pair `g` with `‖g‖ ≤ b` (`b > 0`) by `scaleFactor` against
+`B > 0` and weights `α₀, α₁` satisfying `(1 - θ) * α₀ + θ * α₁ = 1` preserves `mk θ g` while
+bounding the two boundary traces pointwise by `B * (b / B) ^ α₀` and `B * (b / B) ^ α₁`. -/
+theorem exists_stripTraces_rescale {θ α₀ α₁ b B : ℝ}
+    (hα : (1 - θ) * α₀ + θ * α₁ = 1) (hb : 0 < b) (hB : 0 < B) (g : C.stripTraces)
+    (hg : ‖g‖ ≤ b) :
+    ∃ g' : C.stripTraces, mk θ g' = mk θ g ∧
+      (∀ t : ℝ, ‖(g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t‖ ≤ B * (b / B) ^ α₀) ∧
+      (∀ t : ℝ, ‖(g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t‖ ≤ B * (b / B) ^ α₁) := by
+  have hq : 0 < b / B := div_pos hb hB
+  let M₀ := (b / B) ^ (1 - α₀); let M₁ := (b / B) ^ (1 - α₁)
+  obtain ⟨g', hg₀', hg₁', heq⟩ := exists_stripTraces_smul_of_diffContOnCl g
+    (differentiable_scaleFactor M₀ M₁).diffContOnCl fun _ hz => norm_scaleFactor_le hz
+  have hcθ : scaleFactor M₀ M₁ θ = 1 := by
+    have hre : ((θ : ℂ) - 1) * Real.log M₀ - θ * Real.log M₁ = 0 := by
+      norm_cast; simp only [M₀, M₁, Real.log_rpow hq]; linear_combination Real.log (b / B) * hα
+    rw [scaleFactor_def, hre, Complex.exp_zero]
+  have hscale (α x : ℝ) (hx : x ≤ b) : ((b / B) ^ (1 - α))⁻¹ * x ≤ B * (b / B) ^ α := by
+    rw [← Real.rpow_neg hq.le, neg_sub]
+    calc (b / B) ^ (α - 1) * x ≤ (b / B) ^ (α - 1) * b :=
+          mul_le_mul_of_nonneg_left hx (Real.rpow_nonneg hq.le _)
+      _ = B * ((b / B) ^ (α - 1) * (b / B) ^ (1 : ℝ)) := by rw [Real.rpow_one]; field_simp [hB.ne']
+      _ = B * (b / B) ^ α := by rw [← Real.rpow_add hq, sub_add_cancel]
+  exact ⟨g', by rw [heq θ, hcθ, one_smul],
+    fun t => (hg₀' t ▸ norm_smul _ _).trans_le (by
+      rw [norm_scaleFactor_mul_I (Real.rpow_pos_of_pos hq _)]
+      exact hscale α₀ _ ((norm_stripTraces_fst_apply_le g t).trans hg)),
+    fun t => (hg₁' t ▸ norm_smul _ _).trans_le (by
+      rw [norm_scaleFactor_one_add_mul_I (Real.rpow_pos_of_pos hq _)]
+      exact hscale α₁ _ ((norm_stripTraces_snd_apply_le g t).trans hg))⟩
 
 /-- **Three-lines bound in `[X₀, X₁]_θ`.** For every real `θ` and admissible trace pair
 `g = (g₀, g₁)`, the complex interpolation norm satisfies
