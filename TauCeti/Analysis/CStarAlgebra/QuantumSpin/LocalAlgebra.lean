@@ -86,7 +86,7 @@ theorem configurationEquiv_symm_apply_of_notMem (h : Λ ⊆ Λ') (p : (Λ → S)
   simp [configurationEquiv, hi]
 
 /-- No site of `Λ` lies outside `Λ`. -/
-private instance : IsEmpty {i : Λ // (i : L) ∉ Λ} := ⟨fun i => i.2 i.1.2⟩
+private instance : IsEmpty {i : Λ // (i : L) ∉ Λ} := ⟨fun i => i.property i.val.property⟩
 
 /-- For regions `Λ ⊆ Λ' ⊆ Λ''`, a configuration of the sites of `Λ''` outside `Λ` is a
 configuration of the sites of `Λ'` outside `Λ` together with one of the sites of `Λ''` outside
@@ -94,12 +94,13 @@ configuration of the sites of `Λ'` outside `Λ` together with one of the sites 
 private def complementEquiv (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') :
     ({i : Λ' // (i : L) ∉ Λ} → S) × ({i : Λ'' // (i : L) ∉ Λ'} → S) ≃
       ({i : Λ'' // (i : L) ∉ Λ} → S) where
-  toFun ζ i := if hi : (i : L) ∈ Λ' then ζ.1 ⟨⟨i, hi⟩, i.2⟩ else ζ.2 ⟨i, hi⟩
-  invFun ζ := (fun i => ζ ⟨⟨i, h₂ i.1.2⟩, i.2⟩, fun i => ζ ⟨i, fun hi => i.2 (h₁ hi)⟩)
+  toFun ζ i := if hi : (i : L) ∈ Λ' then ζ.1 ⟨⟨i, hi⟩, i.property⟩ else ζ.2 ⟨i, hi⟩
+  invFun ζ := (fun i => ζ ⟨⟨i, h₂ i.val.property⟩, i.property⟩, fun i => ζ ⟨i, fun hi => i.property
+      (h₁ hi)⟩)
   left_inv ζ := by
     ext i
-    · simp [i.1.2]
-    · simp [i.2]
+    · simp [i.val.property]
+    · simp [i.property]
   right_inv ζ := by
     ext i
     by_cases hi : (i : L) ∈ Λ' <;> simp [hi]
@@ -212,11 +213,11 @@ private theorem inclusion_mul_inclusion_apply {Λ₁ Λ₂ : Finset L} (h₁ : �
   have hρ₁ : Finset.restrict₂ (π := fun _ => S) h₁ ρ =
       Finset.restrict₂ (π := fun _ => S) h₁ τ := by
     ext i
-    simp [ρ, i.2]
+    simp [ρ, i.property]
   have hρ₂ : Finset.restrict₂ (π := fun _ => S) h₂ ρ =
       Finset.restrict₂ (π := fun _ => S) h₂ σ := by
     ext i
-    simp [ρ, Finset.disjoint_right.1 hd i.2]
+    simp [ρ, Finset.disjoint_right.1 hd i.property]
   have hσρ : ∀ i : Λ, (i : L) ∉ Λ₁ → σ i = ρ i := fun i hi => by simp [ρ, hi]
   have hρτ : (∀ i : Λ, (i : L) ∉ Λ₂ → ρ i = τ i) ↔
       ∀ i : Λ, (i : L) ∉ Λ₁ → (i : L) ∉ Λ₂ → σ i = τ i := by
@@ -306,7 +307,7 @@ theorem _root_.Matrix.PosSemidef.quantumSpinPartialTrace {R : Type*} [Ring R] [P
 @[simp]
 theorem partialTrace_self (X : Matrix (Λ → S) (Λ → S) R) : partialTrace (subset_refl Λ) X = X := by
   have hσ (σ : Λ → S) ζ : (configurationEquiv (subset_refl Λ)).symm (σ, ζ) = σ :=
-    funext fun i => configurationEquiv_symm_apply_of_mem _ _ i.2
+    funext fun i => configurationEquiv_symm_apply_of_mem _ _ i.property
   ext σ τ
   simp [partialTrace_apply, hσ]
 

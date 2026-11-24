@@ -541,7 +541,7 @@ theorem exists_chain_or_fork_or_exceptional {S : Finset T.Component}
   have ht : 0 < t := by
     by_contra ht
     obtain ⟨x, hx⟩ : S.Nonempty := by
-      rw [nonempty_iff_ne_empty]
+      rw [← ne_empty_iff_nonempty]
       rintro rfl
       exact hAS (subset_empty.mp hAsub)
     have := hmax 1 (fun _ ↦ x) ⟨by omega, fun _ _ ↦ hS x hx, by omega⟩ fun _ _ ↦ hx

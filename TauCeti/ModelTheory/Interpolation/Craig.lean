@@ -74,17 +74,6 @@ section Craig
 
 variable {L : Language.{u, v}}
 
-private theorem relationsIn_subset_inter_of_signed {φ ψ θ : L.Sentenceω}
-    (hpos : θ.relationsInSigned true ⊆ φ.relationsInSigned true ∩ ψ.relationsInSigned true)
-    (hneg : θ.relationsInSigned false ⊆ φ.relationsInSigned false ∩ ψ.relationsInSigned false) :
-    θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn := by
-  rw [← relationsInSigned_union_not true θ]
-  exact Set.union_subset
-    (hpos.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn true φ)
-      (relationsInSigned_subset_relationsIn true ψ)))
-    (hneg.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn false φ)
-      (relationsInSigned_subset_relationsIn false ψ)))
-
 /-- **Relational Craig interpolation for `L_{ω₁ω}`.** In any relational language `L` (of any
 cardinality and in any universes), if an `L_{ω₁ω}` sentence `φ` entails `ψ`, there is an
 `L_{ω₁ω}` sentence `θ` whose occurring relation symbols lie in `φ.relationsIn ∩ ψ.relationsIn`
@@ -94,7 +83,7 @@ theorem craig_interpolation_relational [L.IsRelational] (φ ψ : L.Sentenceω)
     ∃ θ : L.Sentenceω, θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn ∧
       Sentenceω.Entails φ θ ∧ Sentenceω.Entails θ ψ := by
   obtain ⟨θ, hpos, hneg, hφθ, hθψ⟩ := lyndon_interpolation_relational φ ψ h
-  exact ⟨θ, relationsIn_subset_inter_of_signed hpos hneg, hφθ, hθψ⟩
+  exact ⟨θ, relationsIn_subset_inter_of_relationsInSigned_subset hpos hneg, hφθ, hθψ⟩
 
 /-- **Craig interpolation for `L_{ω₁ω}`.** In any language `L` (of any cardinality, with function
 symbols, and in any universes), if an `L_{ω₁ω}` sentence `φ` entails `ψ`, there is an `L_{ω₁ω}`
@@ -105,7 +94,7 @@ theorem craig_interpolation (φ ψ : L.Sentenceω) (h : φ.Entails ψ) :
     ∃ θ : L.Sentenceω, θ.functionsIn ⊆ φ.functionsIn ∩ ψ.functionsIn ∧
       θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn ∧ φ.Entails θ ∧ θ.Entails ψ := by
   obtain ⟨θ, hfun, hpos, hneg, hφθ, hθψ⟩ := lyndon_interpolation φ ψ h
-  exact ⟨θ, hfun, relationsIn_subset_inter_of_signed hpos hneg, hφθ, hθψ⟩
+  exact ⟨θ, hfun, relationsIn_subset_inter_of_relationsInSigned_subset hpos hneg, hφθ, hθψ⟩
 
 /-- **Countable-theory Craig interpolation.** If a countable `L_{ω₁ω}` theory `T` entails `ψ`,
 there is an interpolant `θ` whose occurring function and relation symbols appear both in some
@@ -121,9 +110,9 @@ theorem Theoryω.craig_interpolation {T : L.Theoryω} (hT : T.Countable) (ψ : L
     hrel.trans (Set.inter_subset_inter_left _ ?_),
     (Theoryω.entails_iff_conjunction_entails hT).2 hTθ, hθψ⟩
   · rw [Theoryω.conjunction_def, functionsIn_iInfAlong]
-    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.property
   · rw [Theoryω.conjunction_def, relationsIn_iInfAlong]
-    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+    exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.property
 
 /-- **Projective-class separation from mutual inconsistency.** If `ψ₁ ⊨ ¬ψ₂`, some sentence `θ` of
 the shared symbol sublanguage

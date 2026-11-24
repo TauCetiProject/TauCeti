@@ -38,6 +38,8 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   point of a trajectory is fixed.
 * `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
   of distinct points are disjoint.
+* `Flow.eq_of_mem_stableSet` and `Flow.eq_of_mem_unstableSet`: a fixed point lies on no stable
+  (respectively unstable) set but its own.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
@@ -140,6 +142,26 @@ theorem apply_mem_stableSet_iff (φ : _root_.Flow ℝ α) (t : ℝ) {x y : α} :
 theorem apply_mem_unstableSet_iff (φ : _root_.Flow ℝ α) (t : ℝ) {x y : α} :
     φ t y ∈ unstableSet φ x ↔ y ∈ unstableSet φ x :=
   (isInvariant_unstableSet φ x).flow_apply_mem_iff t
+
+/-- A curve which from time `b` on is the trajectory of `y`, shifted by `b`, converges to `x` in
+forward time exactly when `y` lies in the stable set of `x`. -/
+theorem tendsto_atTop_iff_mem_stableSet_of_eqOn {φ : _root_.Flow ℝ α} {γ : ℝ → α} {b : ℝ}
+    {x y : α} (h : EqOn γ (fun s ↦ φ (s - b) y) (Ici b)) :
+    Tendsto γ atTop (𝓝 x) ↔ y ∈ stableSet φ x := by
+  rw [tendsto_congr' (eventuallyEq_of_mem (Ici_mem_atTop b) h), mem_stableSet]
+  exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ b tendsto_id)).congr fun s ↦ by simp,
+    fun h ↦ h.comp (tendsto_atTop_add_const_right _ (-b) tendsto_id) |>.congr fun s ↦ by
+      simp [sub_eq_add_neg]⟩
+
+/-- A curve which up to time `a` is the trajectory of `y`, shifted by `a`, converges to `x` in
+backward time exactly when `y` lies in the unstable set of `x`. -/
+theorem tendsto_atBot_iff_mem_unstableSet_of_eqOn {φ : _root_.Flow ℝ α} {γ : ℝ → α} {a : ℝ}
+    {x y : α} (h : EqOn γ (fun s ↦ φ (s - a) y) (Iic a)) :
+    Tendsto γ atBot (𝓝 x) ↔ y ∈ unstableSet φ x := by
+  rw [tendsto_congr' (eventuallyEq_of_mem (Iic_mem_atBot a) h), mem_unstableSet]
+  exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ a tendsto_id)).congr fun s ↦ by simp,
+    fun h ↦ h.comp (tendsto_atBot_add_const_right _ (-a) tendsto_id) |>.congr fun s ↦ by
+      simp [sub_eq_add_neg]⟩
 
 /-- If some trajectory converges to `x` in forward time, then `x` is fixed by every time map of
 the flow. -/
@@ -337,6 +359,14 @@ theorem eq_of_mem_unstableSet_of_periodic (hx : x ∈ unstableSet φ q) {T : ℝ
   apply eq_of_mem_stableSet_of_periodic (φ := φ.reverse) (by simpa using hx) hT
   intro t
   simpa only [_root_.Flow.reverse_apply, neg_add_rev, add_comm] using (hper.neg (-t))
+
+/-- A fixed point of the flow lies on no stable set but its own. -/
+theorem eq_of_mem_stableSet {c : α} (hx : ∀ t, φ t x = x) (h : x ∈ stableSet φ c) : x = c :=
+  eq_of_mem_stableSet_of_periodic h one_ne_zero fun t ↦ by simp only [hx]
+
+/-- A fixed point of the flow lies on no unstable set but its own. -/
+theorem eq_of_mem_unstableSet {c : α} (hx : ∀ t, φ t x = x) (h : x ∈ unstableSet φ c) : x = c :=
+  eq_of_mem_unstableSet_of_periodic h one_ne_zero fun t ↦ by simp only [hx]
 
 /-- A nonconstant orbit that converges in forward time is injectively parametrized by time. -/
 theorem orbit_injective_of_mem_stableSet_of_ne

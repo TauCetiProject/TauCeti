@@ -18,12 +18,16 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 # Bounded diagonal operators on sequence spaces
 
 A bounded scalar family defines coordinatewise multiplication on `lp` for every exponent
-`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms. Finite coordinate
-truncations have rank at most the number of retained coordinates, and the discarded coefficients
-bound their error in operator norm. These estimates provide finite-rank approximations of
-diagonal operators. Over a locally compact scalar field, coefficients tending to
-zero along the cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone
-`ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence (`lp.ofAntitone`).
+`1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms, and the operator is
+injective exactly when no coefficient vanishes. Finite coordinate truncations have rank at most
+the number of retained coordinates, the retained coefficients bound their operator norm, and
+the discarded coefficients bound their error in operator norm. These estimates provide
+finite-rank approximations of diagonal operators. Conversely, on the span of finitely many
+coordinate vectors whose coefficients have norm at least `c > 0`, a diagonal operator has a left
+inverse of norm at most `c⁻¹` (`lp.exists_comp_diagonalCLM_comp_subtypeL_eq_id`). Over a locally
+compact scalar field, coefficients tending to zero along the cofinite filter give a compact
+diagonal operator. Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0` sequence defines a nonnegative
+bounded sequence (`lp.ofAntitone`).
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -107,6 +111,17 @@ theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
     diagonalCLM (p := p) (d * e) = (diagonalCLM d).comp (diagonalCLM e) := by
   ext x i
   simp [mul_assoc]
+
+/-- A diagonal operator is injective exactly when none of its coefficients vanishes. -/
+theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+    Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
+  classical
+  refine ⟨fun h i hi ↦ ?_, fun hd ↦ (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_⟩
+  · -- The coordinate vector at a vanishing coefficient is sent to `0`.
+    have h0 : lp.single p i (1 : 𝕜) = 0 := h (by simp [hi])
+    simpa using congr_arg (· i) h0
+  · ext i
+    simpa [hd i] using congr_arg (· i) hx
 
 variable [DecidableEq ι]
 
@@ -210,6 +225,63 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, �
     ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊ ≤ ‖d n‖₊ := by
   exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
     (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
+
+/-- A finite diagonal truncation is bounded by any bound on its retained coefficients. -/
+theorem norm_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) {C : ℝ} (hC : 0 ≤ C)
+    (hd : ∀ i ∈ s, ‖d i‖ ≤ C) : ‖diagonalTruncation (p := p) d s‖ ≤ C := by
+  rw [diagonalTruncation_eq_diagonalCLM, norm_diagonalCLM]
+  refine norm_le_of_forall_le hC fun i ↦ ?_
+  rw [← evalCLM_apply (𝕜 := 𝕜) i, map_sum]
+  by_cases hi : i ∈ s <;> simp [lp.single_apply, Pi.single_apply, hi, hd i, hC]
+
+omit [DecidableEq ι] in
+/-- **Left inverse on a coordinate subspace.** If the coefficients of a diagonal operator have
+norm at least `c > 0` on a finite set `s` of coordinates, then on the span `M` of the coordinate
+vectors indexed by `s`, a subspace of rank `#s`, the diagonal operator has a left inverse
+`B : ℓᵖ → M` with `c ‖B‖ ≤ 1`. -/
+theorem exists_comp_diagonalCLM_comp_subtypeL_eq_id (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) {c : ℝ≥0}
+    (hc : 0 < c) (hd : ∀ i ∈ s, c ≤ ‖d i‖₊) :
+    ∃ (M : Submodule 𝕜 ℓ^p(ι, 𝕜)) (B : ℓ^p(ι, 𝕜) →L[𝕜] M), Module.rank 𝕜 M = s.card ∧
+      c * ‖B‖₊ ≤ 1 ∧ B ∘L diagonalCLM d ∘L M.subtypeL = ContinuousLinearMap.id 𝕜 M := by
+  classical
+  let v : s → ℓ^p(ι, 𝕜) := fun i ↦ lp.single p (i : ι) 1
+  have hv : LinearIndependent 𝕜 v :=
+    (linearIndependent_single_one (p := p) (𝕜 := 𝕜)).comp _ Subtype.val_injective
+  let M := Submodule.span 𝕜 (Set.range v)
+  -- The coefficients `e` invert those of `d` on `s`, and truncating to `s` lands in `M`.
+  let e : ℓ^∞(ι, 𝕜) := ∑ i ∈ s, lp.single ∞ i (d i)⁻¹
+  have he (i : ι) (hi : i ∈ s) : e i = (d i)⁻¹ := by
+    rw [← evalCLM_apply (𝕜 := 𝕜) i e, map_sum]
+    simp [lp.single_apply, Pi.single_apply, hi]
+  have hrange (x : ℓ^p(ι, 𝕜)) : diagonalTruncation e s x ∈ M := by
+    rw [diagonalTruncation_apply_eq_sum_single]
+    exact Submodule.sum_mem _ fun i hi ↦
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨⟨i, hi⟩, rfl⟩)
+  let B : ℓ^p(ι, 𝕜) →L[𝕜] M := (diagonalTruncation e s).codRestrict M hrange
+  have : FiniteDimensional 𝕜 M := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  refine ⟨M, B, ?_, ?_, ?_⟩
+  · rw [← Module.finrank_eq_rank, finrank_span_eq_card hv, Fintype.card_coe]
+  · have hc' : (0 : ℝ) < c := hc
+    have he_le : ‖diagonalTruncation (p := p) e s‖ ≤ (c : ℝ)⁻¹ :=
+      norm_diagonalTruncation_le e s (by positivity) fun i hi ↦ by
+        rw [he i hi, norm_inv]
+        exact inv_anti₀ hc' (by exact_mod_cast hd i hi)
+    have hB : ‖B‖ ≤ (c : ℝ)⁻¹ :=
+      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
+        rw [← Submodule.norm_coe, ContinuousLinearMap.coe_codRestrict_apply]
+        exact ((diagonalTruncation (p := p) e s).le_opNorm x).trans (by gcongr)
+    rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, NNReal.coe_one]
+    calc
+      (c : ℝ) * ‖B‖ ≤ c * (c : ℝ)⁻¹ := by gcongr
+      _ = 1 := mul_inv_cancel₀ hc'.ne'
+  · ext x i
+    obtain ⟨x, hx⟩ := x
+    by_cases hi : i ∈ s
+    · have hdi : d i ≠ 0 := fun h ↦ by simpa [h] using hc.trans_le (hd i hi)
+      simp [B, hi, he i hi, inv_mul_cancel_left₀ hdi]
+    · have hx0 : x i = 0 := apply_eq_zero_of_mem_span_single (fun j : s ↦ (j : ι)) hx
+        (by simpa using hi)
+      simp [B, hi, hx0]
 
 /-- When the coefficient norms of a bounded diagonal multiplier tend to zero along the cofinite
 filter, its finite coordinate truncations converge to it in operator norm. -/

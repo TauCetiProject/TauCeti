@@ -5,20 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Pauli
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod
-public import TauCeti.LinearAlgebra.Matrix.Pauli
--- Private: tensor-product formal-adjoint identity and negative-plane coordinate/quaternion Pauli
--- model are used only inside unexposed definitions and proofs.
-import TauCeti.Analysis.InnerProductSpace.TensorProduct
-import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Orthonormal
-import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Pauli
+-- Private: tensor-product formal-adjoint identity is used only inside proofs.
+import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 
 /-!
 # The chirality operator of a real Clifford action
@@ -51,13 +46,8 @@ under the geometric convention `ρ_ℂ(Γ)` is symmetric (and self-adjoint in fi
 half-spinor spaces are orthogonal. Moreover, this chirality grading makes the graded tensor product
 `CliffordAlgebra.complexProdTensor` preserve `AlgHom.IsGeometricClifford` on `WithLp 2 (V × W)`.
 These are the forms of `Γ` and `S^±` used for Clifford-module bundles, whose fibres carry real
-Clifford actions. A concrete 2D witness is given on the negative Pauli plane
-(`TauCeti.negativePlanePauliAction`), where `c(e₀) = i σ₃`, `c(e₁) = i σ₂`, and `Γ = -σ₁`.
-
-## Main definitions
-
-* `TauCeti.negativePlanePauliAction`: geometric Clifford action of `EuclideanSpace ℝ (Fin 2)` on
-  `EuclideanSpace ℂ (Fin 2)` with Pauli generators `i σ₃`, `i σ₂` and chirality `-σ₁`.
+Clifford actions. On the concrete 2D negative Pauli plane (`TauCeti.negativePlanePauliAction`), the
+chirality operator for the standard orientation is `-σ₁`.
 
 ## Main results
 
@@ -77,9 +67,8 @@ Clifford actions. A concrete 2D witness is given on the negative Pauli plane
   `AlgHom.IsGeometricClifford.isOrtho_eigenspace_liftBaseChange_complexVolume`: `S⁺ ⟂ S⁻`.
 * `AlgHom.IsGeometricClifford.complexProdTensor`: graded tensor product preservation of the
   geometric convention on `WithLp 2 (V × W)`.
-* `TauCeti.isGeometricClifford_negativePlanePauliAction`,
-  `TauCeti.liftBaseChange_complexVolume_negativePlanePauliAction`: concrete 2D negative-Pauli-plane
-  witness and chirality operator `-σ₁`.
+* `TauCeti.liftBaseChange_complexVolume_negativePlanePauliAction`: chirality operator `-σ₁` of the
+  2D negative-Pauli-plane action.
 
 ## References
 
@@ -255,70 +244,17 @@ end TensorProduct
 
 end AlgHom.IsGeometricClifford
 
-/-! ### Concrete 2D witness on the negative Pauli plane -/
+/-! ### Chirality on the negative Pauli plane -/
 
 namespace TauCeti
 
 open _root_.CliffordAlgebra
 
-noncomputable section NegativePauliPlane
-
-variable {Q : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 2))}
-
-/-- **2D negative Pauli plane geometric Clifford action**: for `Q v = -‖v‖²` on
-`EuclideanSpace ℝ (Fin 2)`, the Clifford algebra acts on `EuclideanSpace ℂ (Fin 2)` through the
-standard coordinate model `OrthonormalBasis.isometryEquivRealCliffordForm` and quaternion Pauli
-embedding `Quaternion.toComplexMatrix ∘ realCliffordZeroTwoEquivQuaternion`, sending `e₀ ↦ i σ₃`
-and `e₁ ↦ i σ₂`. -/
-def negativePlanePauliAction (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ (EuclideanSpace ℂ (Fin 2)) :=
-  (((Matrix.toLpLinAlgEquiv 2).toAlgHom.restrictScalars ℝ).comp
-    Quaternion.toComplexMatrix.toAlgHom).comp
-    (realCliffordZeroTwoEquivQuaternion.toAlgHom.comp
-      (CliffordAlgebra.equivOfIsometry
-        ((EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ)).toAlgHom)
-
-/-- Value of `TauCeti.negativePlanePauliAction` on a generator `ι Q v`. -/
-@[simp]
-theorem negativePlanePauliAction_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v : EuclideanSpace ℝ (Fin 2)) :
-    negativePlanePauliAction hQ (ι Q v) = (Complex.I • pauli ![0, v 1, v 0]).toEuclideanLin := by
-  have hv : (EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ v =
-      fun i ↦ v i := by
-    ext i
-    rw [OrthonormalBasis.isometryEquivRealCliffordForm_apply, EuclideanSpace.basisFun_repr,
-      Fin.cast_eq_self]
-  simp [-realCliffordZeroTwoEquivQuaternion_ι, negativePlanePauliAction, Matrix.toLpLinAlgEquiv,
-    toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι, hv]
-
-/-- `TauCeti.negativePlanePauliAction` satisfies `AlgHom.IsGeometricClifford`. -/
-theorem isGeometricClifford_negativePlanePauliAction (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    (negativePlanePauliAction hQ).IsGeometricClifford := by
-  rw [AlgHom.isGeometricClifford_iff_adjoint]
-  refine ⟨hQ, fun v ↦ ?_⟩
-  rw [negativePlanePauliAction_ι, ← Matrix.toEuclideanLin_conjTranspose_eq_adjoint,
-    Matrix.conjTranspose_smul, Complex.star_def, Complex.conj_I,
-    (isHermitian_pauli ![0, v 1, v 0]).eq, neg_smul, map_neg]
-
-/-- On the negative Pauli plane, the ordered product `c(e₀) c(e₁)` of the standard orthonormal
-basis vectors equals `(i • σ₁).toEuclideanLin` (`iX`). -/
-theorem negativePlanePauliAction_ι_single_zero_mul_ι_single_one (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    negativePlanePauliAction hQ (ι Q (EuclideanSpace.single 0 1)) *
-        negativePlanePauliAction hQ (ι Q (EuclideanSpace.single 1 1)) =
-      (Complex.I • pauli ![1, 0, 0]).toEuclideanLin := by
-  have hs (i : Fin 2) :
-      (EuclideanSpace.basisFun (Fin 2) ℝ).isometryEquivRealCliffordForm hQ
-        (EuclideanSpace.single i 1) = Pi.single i 1 := by
-    rw [← EuclideanSpace.basisFun_apply, OrthonormalBasis.isometryEquivRealCliffordForm_apply_self,
-      Fin.cast_eq_self]
-  rw [← map_mul]
-  simp [-map_mul, negativePlanePauliAction, Matrix.toLpLinAlgEquiv,
-    map_mul (CliffordAlgebra.map _), hs, toComplexMatrix_realCliffordZeroTwoEquivQuaternion_ι_mul_ι]
-
 /-- **Chirality on the negative Pauli plane**: for the standard orientation of
 `EuclideanSpace ℝ (Fin 2)`, the chirality operator of `TauCeti.negativePlanePauliAction` is
 `(-σ₁).toEuclideanLin` (`-X`). -/
 theorem liftBaseChange_complexVolume_negativePlanePauliAction
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
+    {Q : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 2))} (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
     liftBaseChange ℂ Q (negativePlanePauliAction hQ)
         (complexVolume Q (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation) =
       (-pauli ![1, 0, 0]).toEuclideanLin := by
@@ -329,7 +265,5 @@ theorem liftBaseChange_complexVolume_negativePlanePauliAction
   simp only [pow_one, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one,
     EuclideanSpace.basisFun_apply, negativePlanePauliAction_ι_single_zero_mul_ι_single_one hQ,
     ← map_smul, smul_smul, Complex.I_mul_I, neg_one_smul]
-
-end NegativePauliPlane
 
 end TauCeti

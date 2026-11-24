@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
+import TauCeti.Analysis.Normed.Module.Multiplier
 import TauCeti.Analysis.Normed.Operator.Dense
 import TauCeti.Topology.Algebra.Module.Span
 
@@ -22,7 +23,9 @@ approximate unit `e`.
 A nondegenerate representation extends uniquely to a unital star-algebra homomorphism
 `π' := π.multiplierExtension hπ : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H)` of the multiplier algebra. It is
 characterized by `π' m * π a = π (m * a)`, and it is the strong limit of `π (m * e)` along any
-eventually norm-bounded left approximate unit `e`. This extension is how covariant pairs `(π, U)`
+eventually norm-bounded left approximate unit `e`. Its underlying algebra homomorphism is
+`ContinuousLinearMap.multiplierExtension`; the centralizer identities imply preservation of star.
+This extension is how covariant pairs `(π, U)`
 with unitary multipliers `U_s` are obtained from nondegenerate representations of crossed products.
 
 ## Main declarations
@@ -95,55 +98,38 @@ theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙ�
     (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
   hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
 
-/-- For a nondegenerate representation, the vectors `π (m * e) ξ` converge along any eventually
-norm-bounded net `e` with `e * a → a`, and the limit is a bounded operator `T` with
-`T * π a = π (m * a)`. -/
-private theorem exists_tendsto {l : Filter A} [l.NeBot] {C : ℝ} (hπ : π.IsNondegenerate)
-    (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) :
-    ∃ T : H →L[ℂ] H, (∀ a, T * π a = π (m.fst a)) ∧
-      ∀ ξ, Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (T ξ)) :=
-  m.exists_clm_tendsto_fst (K := 1) (L := ⇑π) hC hl (fun _ => by fun_prop) (map_mul π)
-    (fun a => by simpa only [one_mul] using norm_apply_le π a) hπ
-
-/-- A nondegenerate representation admits, for each multiplier `m`, an operator `T` with
-`T * π a = π (m * a)`. -/
-private theorem exists_mul_eq (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) :
-    ∃ T : H →L[ℂ] H, ∀ a, T * π a = π (m.fst a) := by
+/-- The Banach-module extension, before recording preservation of star. -/
+private def extensionAlgHom (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →ₐ[ℂ] (H →L[ℂ] H) := by
   let := CStarAlgebra.spectralOrder A
   have := CStarAlgebra.spectralOrderedRing A
   have hl := CStarAlgebra.increasingApproximateUnit A
   have := hl.neBot
-  obtain ⟨T, hT, -⟩ := exists_tendsto hπ hl.eventually_norm hl.tendsto_mul_right m
-  exact ⟨T, hT⟩
+  let ρ : A →L[ℂ] H →L[ℂ] H := (LinearMap.ofClass π).mkContinuous 1
+    (fun a => by simpa only [LinearMap.coe_ofClass, one_mul] using norm_apply_le π a)
+  exact ρ.multiplierExtension (map_mul π) hπ hl.eventually_norm hl.tendsto_mul_right
 
-/-- The operator `π' m` determined by `π' m * π a = π (m * a)`. -/
-private def extensionOp (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) : H →L[ℂ] H :=
-  (exists_mul_eq hπ m).choose
+private theorem extensionAlgHom_mul (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) (a : A) :
+    extensionAlgHom hπ m * π a = π (m.fst a) := by
+  dsimp only [extensionAlgHom]
+  exact ContinuousLinearMap.multiplierExtension_mul_eq_fst ..
 
-private theorem extensionOp_mul (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) (a : A) :
-    extensionOp hπ m * π a = π (m.fst a) :=
-  (exists_mul_eq hπ m).choose_spec a
+private theorem eq_extensionAlgHom (hπ : π.IsNondegenerate) {m : 𝓜(ℂ, A)} {T : H →L[ℂ] H}
+    (hT : ∀ a, T * π a = π (m.fst a)) : T = extensionAlgHom hπ m := by
+  dsimp only [extensionAlgHom]
+  exact (ContinuousLinearMap.eq_multiplierExtension_iff ..).2 hT
 
-private theorem eq_extensionOp (hπ : π.IsNondegenerate) {m : 𝓜(ℂ, A)} {T : H →L[ℂ] H}
-    (hT : ∀ a, T * π a = π (m.fst a)) : T = extensionOp hπ m :=
-  hπ.ext fun a => by rw [hT, extensionOp_mul]
-
-private theorem mul_extensionOp (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) (a : A) :
-    π a * extensionOp hπ m = π (m.snd a) :=
-  hπ.ext fun b => by rw [mul_assoc, extensionOp_mul, ← map_mul, ← map_mul, m.central]
+private theorem mul_extensionAlgHom (hπ : π.IsNondegenerate) (m : 𝓜(ℂ, A)) (a : A) :
+    π a * extensionAlgHom hπ m = π (m.snd a) :=
+  hπ.ext fun b => by rw [mul_assoc, extensionAlgHom_mul, ← map_mul, ← map_mul, m.central]
 
 /-- The extension of a nondegenerate representation to the multiplier algebra: the unique
 operator `π' m` with `π' m * π a = π (m * a)` for every `a`. -/
 def multiplierExtension (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H) where
-  toFun := extensionOp hπ
-  map_one' := (eq_extensionOp hπ fun a => by simp).symm
-  map_mul' m n := (eq_extensionOp hπ fun a => by simp [mul_assoc, extensionOp_mul]).symm
-  map_zero' := (eq_extensionOp hπ fun a => by simp).symm
-  map_add' m n := (eq_extensionOp hπ fun a => by simp [add_mul, extensionOp_mul]).symm
-  commutes' r := (eq_extensionOp hπ fun a => by simp [Algebra.algebraMap_eq_smul_one]).symm
-  map_star' m := (eq_extensionOp hπ fun a => by
-    rw [DoubleCentralizer.star_fst, map_star, ← mul_extensionOp hπ, star_mul, ← map_star,
-      star_star]).symm
+  toAlgHom := extensionAlgHom hπ
+  map_star' m := (eq_extensionAlgHom hπ fun a => by
+    rw [DoubleCentralizer.star_fst, map_star π, ← mul_extensionAlgHom hπ, star_mul,
+      ← map_star π, star_star]
+    rfl).symm
 
 variable (hπ : π.IsNondegenerate)
 
@@ -151,13 +137,13 @@ variable (hπ : π.IsNondegenerate)
 @[simp]
 theorem multiplierExtension_mul_eq_fst (m : 𝓜(ℂ, A)) (a : A) :
     π.multiplierExtension hπ m * π a = π (m.fst a) :=
-  extensionOp_mul hπ m a
+  extensionAlgHom_mul hπ m a
 
 /-- The right-handed identity `π a * π' m = π (a * m)` of the multiplier extension. -/
 @[simp]
 theorem mul_multiplierExtension_eq_snd (m : 𝓜(ℂ, A)) (a : A) :
     π a * π.multiplierExtension hπ m = π (m.snd a) :=
-  mul_extensionOp hπ m a
+  mul_extensionAlgHom hπ m a
 
 /-- The multiplier extension sends `π a ξ` to `π (m * a) ξ`. -/
 @[simp]
@@ -168,7 +154,7 @@ theorem multiplierExtension_apply_apply (m : 𝓜(ℂ, A)) (a : A) (ξ : H) :
 /-- An operator equals `π' m` exactly when it satisfies the defining identity. -/
 theorem eq_multiplierExtension_iff {m : 𝓜(ℂ, A)} {T : H →L[ℂ] H} :
     T = π.multiplierExtension hπ m ↔ ∀ a, T * π a = π (m.fst a) :=
-  ⟨fun h a => h ▸ multiplierExtension_mul_eq_fst hπ m a, eq_extensionOp hπ⟩
+  ⟨fun h a => h ▸ multiplierExtension_mul_eq_fst hπ m a, eq_extensionAlgHom hπ⟩
 
 /-- The multiplier extension restricts to `π` on `A`. -/
 @[simp]
@@ -188,7 +174,9 @@ theorem eq_multiplierExtension_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) 
 theorem tendsto_multiplierExtension_apply {l : Filter A} [l.NeBot] {C : ℝ}
     (hC : ∀ᶠ e in l, ‖e‖ ≤ C) (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (m : 𝓜(ℂ, A)) (ξ : H) :
     Tendsto (fun e => π (m.fst e) ξ) l (𝓝 (π.multiplierExtension hπ m ξ)) := by
-  obtain ⟨T, hT, hlim⟩ := exists_tendsto hπ hC hl m
+  obtain ⟨T, hT, hlim⟩ := m.exists_clm_tendsto_fst (K := 1) (L := ⇑π) hC hl
+    (fun _ => by fun_prop) (map_mul π)
+    (fun a => by simpa only [one_mul] using norm_apply_le π a) hπ
   rw [← (eq_multiplierExtension_iff hπ).2 hT]
   exact hlim ξ
 
@@ -250,5 +238,12 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
     π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ i, Set.range (π (g i))) : Set H) := by
   simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_range_comp_eq hg]
+
+/-- Precomposing a representation with a star homomorphism of dense range preserves and reflects
+nondegeneracy. -/
+theorem isNondegenerate_comp_iff {B : Type*} [NonUnitalCStarAlgebra B] {φ : B →⋆ₙₐ[ℂ] A}
+    (hφ : DenseRange φ) : (π.comp φ).IsNondegenerate ↔ π.IsNondegenerate := by
+  rw [isNondegenerate_iff_dense_span_comp hφ, isNondegenerate_iff_dense]
+  simp only [comp_apply]
 
 end NonUnitalStarAlgHom

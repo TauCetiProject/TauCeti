@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 public import Mathlib.AlgebraicGeometry.Over
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 
 /-!
 # Closed subschemes of a scheme over a base
@@ -24,6 +25,9 @@ scheme over `S` through its inclusion `V(I) ⟶ X ⟶ S`, and the inclusion is t
 
 * `AlgebraicGeometry.Scheme.IdealSheafData.over_eq_subschemeι_comp`: the structure morphism of
   `V(I)` is the inclusion followed by the structure morphism of `X`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.isFinite_subschemeι_comp_of_finite_support`: a closed
+  subscheme with finitely many points of a scheme locally of finite type over a field is finite
+  over the field.
 -/
 
 public section
@@ -52,6 +56,23 @@ theorem over_eq_subschemeι_comp : I.subscheme ↘ S = I.subschemeι ≫ X ↘ S
 /-- The inclusion of a closed subscheme is a morphism over `S`. -/
 instance isOver_subschemeι : I.subschemeι.IsOver S :=
   ⟨rfl⟩
+
+/-- A closed subscheme with finitely many points of a scheme locally of finite type over a field is
+finite over the field. -/
+theorem isFinite_subschemeι_comp_of_finite_support (k : Type u) [Field k] {X : Scheme.{u}}
+    [X.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))] (I : X.IdealSheafData)
+    (hI : (I.support : Set X).Finite) : IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)) := by
+  -- The closed immersion `V(I) ⟶ X` maps the points of `V(I)` injectively into `I.support`.
+  have : Finite I.subscheme := by
+    have := hI.to_subtype
+    refine Finite.of_injective (β := I.support)
+      (fun z ↦ ⟨I.subschemeι z, by
+        rw [← SetLike.mem_coe, ← I.range_subschemeι]; exact Set.mem_range_self z⟩) fun _ _ h ↦ ?_
+    exact I.subschemeι.isClosedEmbedding.injective (congrArg Subtype.val h)
+  have := LocallyQuasiFinite.of_finite_preimage_singleton (I.subschemeι ≫ X ↘ Spec (.of k))
+    fun _ ↦ Set.toFinite _
+  -- `V(I)` is finite, hence compact, so its morphism to the affine `Spec k` is quasi-compact.
+  exact IsFinite.of_locallyQuasiFinite _
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

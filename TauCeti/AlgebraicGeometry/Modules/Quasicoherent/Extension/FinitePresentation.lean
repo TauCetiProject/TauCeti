@@ -47,33 +47,33 @@ private theorem exists_finitePresentation_restrict_sup [QuasiSeparatedSpace X]
     {N : X.Modules} [N.IsQuasicoherent] (V : X.Opens) (hV : IsCompact (V : Set X))
     [(N.restrict V.ι).IsFinitePresentation] (U : X.affineOpens) :
     ∃ (N' : X.Modules) (_ : N'.IsQuasicoherent) (i : N' ⟶ N),
-      IsIso ((restrictFunctor V.ι).map i) ∧ (N'.restrict (V ⊔ U.1).ι).IsFinitePresentation := by
-  have : IsAffine U.1.toScheme := U.2
-  have : QuasiCompact U.1.ι := inferInstance
-  let W := U.1.ι ⁻¹ᵁ V
-  let f := U.1.ι.resLE V W le_rfl
+      IsIso ((restrictFunctor V.ι).map i) ∧ (N'.restrict (V ⊔ U.val).ι).IsFinitePresentation := by
+  have : IsAffine U.val.toScheme := U.property
+  have : QuasiCompact U.val.ι := inferInstance
+  let W := U.val.ι ⁻¹ᵁ V
+  let f := U.val.ι.resLE V W le_rfl
   have : IsOpenImmersion f := by dsimp [f, Scheme.Hom.resLE]; infer_instance
   have : ((N.restrict V.ι).restrict f).IsFinitePresentation := inferInstance
-  have : ((N.restrict U.1.ι).restrict W.ι).IsFinitePresentation :=
+  have : ((N.restrict U.val.ι).restrict W.ι).IsFinitePresentation :=
     (SheafOfModules.isFinitePresentation W.toScheme.ringCatSheaf).prop_of_iso
       (((restrictFunctorComp f V.ι).app N).symm ≪≫
-        (restrictFunctorCongr (U.1.ι.resLE_comp_ι le_rfl)).app N ≪≫
-        (restrictFunctorComp W.ι U.1.ι).app N) this
+        (restrictFunctorCongr (U.val.ι.resLE_comp_ι le_rfl)).app N ≪≫
+        (restrictFunctorComp W.ι U.val.ι).app N) this
   obtain ⟨Q, _, q, hq⟩ :=
-    exists_isFinitePresentation_isIso_restrict (N := N.restrict U.1.ι) W
-      (U.1.ι.isCompact_preimage hV)
+    exists_isFinitePresentation_isIso_restrict (N := N.restrict U.val.ι) W
+      (U.val.ι.isCompact_preimage hV)
   have : Q.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation Q
-  obtain ⟨N', _, i, e, -, hkeep⟩ := exists_isQuasicoherent_restrictFunctor_map_eq U.1.ι q
+  obtain ⟨N', _, i, e, -, hkeep⟩ := exists_isQuasicoherent_restrictFunctor_map_eq U.val.ι q
   have hi : IsIso ((restrictFunctor V.ι).map i) := hkeep V hq
   have : (N'.restrict V.ι).IsFinitePresentation :=
     (SheafOfModules.isFinitePresentation V.toScheme.ringCatSheaf).prop_of_iso
       (asIso ((restrictFunctor V.ι).map i)).symm inferInstance
-  have : (N'.restrict U.1.ι).IsFinitePresentation :=
-    (SheafOfModules.isFinitePresentation U.1.toScheme.ringCatSheaf).prop_of_iso e.symm
+  have : (N'.restrict U.val.ι).IsFinitePresentation :=
+    (SheafOfModules.isFinitePresentation U.val.toScheme.ringCatSheaf).prop_of_iso e.symm
       inferInstance
   refine ⟨N', inferInstance, i, hi, ?_⟩
-  rw [sup_eq_iSup V U.1]
-  exact isFinitePresentation_restrict_iSup N' (fun b : Bool ↦ cond b V U.1)
+  rw [sup_eq_iSup V U.val]
+  exact isFinitePresentation_restrict_iSup N' (fun b : Bool ↦ cond b V U.val)
     (by intro b; cases b <;> assumption)
 
 /-- On a quasi-compact quasi-separated scheme, a quasi-coherent module `N` that is finitely
@@ -89,20 +89,20 @@ theorem exists_isFinitePresentation_isIso_restrict_of_quasiSeparatedSpace
   have aux (s : Finset X.affineOpens) :
       ∃ (N' : X.Modules) (_ : N'.IsQuasicoherent) (i : N' ⟶ N),
         IsIso ((restrictFunctor V.ι).map i) ∧
-          (N'.restrict (V ⊔ ⨆ U ∈ s, U.1).ι).IsFinitePresentation := by
+          (N'.restrict (V ⊔ ⨆ U ∈ s, U.val).ι).IsFinitePresentation := by
     induction s using Finset.induction_on with
     | empty =>
       refine ⟨N, inferInstance, 𝟙 N, ?_, ?_⟩
       · rw [CategoryTheory.Functor.map_id]
         infer_instance
-      · have h : V ⊔ ⨆ U ∈ (∅ : Finset X.affineOpens), U.1 = V := by simp
+      · have h : V ⊔ ⨆ U ∈ (∅ : Finset X.affineOpens), U.val = V := by simp
         rw [h]
         infer_instance
     | insert U s _ ih =>
       obtain ⟨M, _, i, hi, hM⟩ := ih
-      let W := V ⊔ ⨆ U ∈ s, U.1
+      let W := V ⊔ ⨆ U ∈ s, U.val
       have hW : IsCompact (W : Set X) :=
-        hV.union (by simpa using s.finite_toSet.isCompact_biUnion (fun U _ ↦ U.2.isCompact))
+        hV.union (by simpa using s.finite_toSet.isCompact_biUnion (fun U _ ↦ U.property.isCompact))
       have : (M.restrict W.ι).IsFinitePresentation := hM
       obtain ⟨M', _, a, ha, hM'⟩ := exists_finitePresentation_restrict_sup (N := M) W hW U
       have : IsIso ((restrictFunctor V.ι).map a) :=
@@ -115,7 +115,7 @@ theorem exists_isFinitePresentation_isIso_restrict_of_quasiSeparatedSpace
   have hX : IsCompact ((⊤ : X.Opens) : Set X) := isCompact_univ
   obtain ⟨s, hs, hcover⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hX
   obtain ⟨N', _, i, hi, hN'⟩ := aux hs.toFinset
-  have htop : V ⊔ ⨆ U ∈ hs.toFinset, U.1 = ⊤ := by simpa using congrArg (V ⊔ ·) hcover.symm
+  have htop : V ⊔ ⨆ U ∈ hs.toFinset, U.val = ⊤ := by simpa using congrArg (V ⊔ ·) hcover.symm
   rw [htop] at hN'
   have : ((N'.restrict (⊤ : X.Opens).ι).restrict X.topIso.inv).IsFinitePresentation :=
     inferInstance

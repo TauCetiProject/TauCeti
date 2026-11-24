@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Basic
+public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Coalgebra
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Basic
 
@@ -32,6 +32,14 @@ along `φ` (`tildeEquivFunctorCompPullbackIso`, the quasi-coherent form of
 finite limits when `φ` is flat and reflects isomorphisms when `φ` is faithfully flat, and Beck's
 comonadicity theorem applies.
 
+Combined with the passage from descent data to coalgebras
+(`TauCeti.AlgebraicGeometry.Descent.qcohDescentDataToCoalgebra`, the Bénabou–Roubaud comparison),
+this gives effective descent along `Spec φ`. For flat `φ`, the coaction of a descent datum along
+`Spec φ` is a morphism of quasi-coherent modules, so descent data are coalgebras for the comonad
+`(Spec φ)^* (Spec φ)_*` on `QCoh(Spec S)`, fully faithfully. On the descent datum of a pullback
+this is Beck's comparison coalgebra, so for faithfully flat `φ` every coalgebra comes from a descent
+datum and descent data along `Spec φ` are equivalent to quasi-coherent modules on `Spec R`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.comonadicPullbackSpecMap`: for faithfully flat
@@ -41,7 +49,13 @@ comonadicity theorem applies.
 * `TauCeti.AlgebraicGeometry.Descent.qcohPseudofunctorMapSpecMapAdjunction` and
   `isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction`: the same adjunction and
   comonadicity for the functor `qcohPseudofunctor.map` along `Spec φ`, the form of pullback in
-  which descent data are stated.
+  which descent data are stated;
+* `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataToCoalgebraSpecMap`: descent data along
+  `Spec φ` as coalgebras for this comonad, an equivalence for faithfully flat `φ`
+  (`isEquivalence_qcohDescentDataToCoalgebraSpecMap`);
+* `TauCeti.AlgebraicGeometry.Descent.isEquivalence_toDescentData_specMap`: for faithfully flat
+  `φ`, quasi-coherent modules on `Spec R` are equivalent to descent data along `Spec φ`, so these
+  descent data are effective.
 
 ## References
 
@@ -49,6 +63,8 @@ comonadicity theorem applies.
   Proposition 35.5.2 (023T), descent of quasi-coherent modules along fpqc coverings.
 * A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé VIII,
   Théorème 1.1.
+* J. Bénabou, J. Roubaud, *Monades et descente*, C. R. Acad. Sci. Paris Sér. A-B 270 (1970),
+  A96–A98.
 -/
 
 public section
@@ -164,6 +180,114 @@ theorem isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction
     ⟨fun _ _ _ ↦ inferInstance⟩
   exact (Comonad.comonadicOfHasPreservesFSplitEqualizersOfReflectsIsomorphisms
     (qcohPseudofunctorMapSpecMapAdjunction φ)).eqv
+
+section Coalgebra
+
+open _root_.AlgebraicGeometry
+
+variable [Flat (Spec.map φ)]
+
+/-- **Descent data along `Spec φ` as coalgebras of quasi-coherent modules.** For a flat ring map
+`φ : R ⟶ S`, the coaction `qcohDescentDataCoaction` of a descent datum for quasi-coherent modules
+along `Spec φ : Spec S ⟶ Spec R` is a morphism of quasi-coherent modules, so the descent datum is a
+coalgebra for the comonad of `qcohPseudofunctorMapSpecMapAdjunction φ` on `QCoh(Spec S)`, the
+comonad of Beck's comparison in `isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction`.
+This is `qcohDescentDataToCoalgebra (Spec.map φ)` read in quasi-coherent modules. -/
+@[expose, simps]
+def qcohDescentDataToCoalgebraSpecMap :
+    qcohPseudofunctor.DescentData (fun _ : PUnit ↦ Spec.map φ) ⥤
+      (qcohPseudofunctorMapSpecMapAdjunction φ).toComonad.Coalgebra where
+  obj D :=
+    { A := D.obj PUnit.unit
+      a := ObjectProperty.homMk (qcohDescentDataCoaction (Spec.map φ) D)
+      counit := ObjectProperty.hom_ext _
+        ((congrArg (qcohDescentDataCoaction (Spec.map φ) D ≫ ·)
+          (qcohPseudofunctorMapSpecMapAdjunction_counit_app_hom φ _)).trans
+            qcohDescentDataCoaction_counit)
+      coassoc := ObjectProperty.hom_ext _
+        ((congrArg (qcohDescentDataCoaction (Spec.map φ) D ≫ (Scheme.Modules.pullback _).map ·)
+          (qcohPseudofunctorMapSpecMapAdjunction_unit_app_hom φ _)).trans
+            qcohDescentDataCoaction_coassoc.symm) }
+  map ψ :=
+    { f := ψ.hom PUnit.unit
+      h := ObjectProperty.hom_ext _ (qcohDescentDataCoaction_comp_map ψ) }
+
+/-- The functor `qcohDescentDataToCoalgebraSpecMap φ` is fully faithful, as
+`qcohDescentDataToCoalgebra (Spec.map φ)` is (`fullyFaithfulQcohDescentDataToCoalgebra`). -/
+def fullyFaithfulQcohDescentDataToCoalgebraSpecMap :
+    (qcohDescentDataToCoalgebraSpecMap φ).FullyFaithful where
+  preimage g := (fullyFaithfulQcohDescentDataToCoalgebra (Spec.map φ)).preimage
+    { f := g.f.hom
+      h := congrArg (·.hom) g.h }
+  map_preimage _ := Comonad.Coalgebra.Hom.ext (ObjectProperty.hom_ext _
+    (congrArg Comonad.Coalgebra.Hom.f
+      ((fullyFaithfulQcohDescentDataToCoalgebra (Spec.map φ)).map_preimage _)))
+  preimage_map ψ := (fullyFaithfulQcohDescentDataToCoalgebra (Spec.map φ)).preimage_map ψ
+
+/-- On the descent datum of the pullback of a quasi-coherent module `M` on `Spec R`, the coaction
+of `qcohDescentDataToCoalgebraSpecMap φ` is the coaction of Beck's comparison coalgebra of `M`, the
+pullback of the unit `M ⟶ (Spec φ)_* (Spec φ)^* M` (`qcohDescentDataCoaction_ofObj`). -/
+lemma qcohDescentDataToCoalgebraSpecMap_obj_ofObj_a (M : QuasicoherentSheaf (Spec R)) :
+    ((qcohDescentDataToCoalgebraSpecMap φ).obj (.ofObj M)).a =
+      ((Comonad.comparison (qcohPseudofunctorMapSpecMapAdjunction φ)).obj M).a := by
+  have : M.obj.IsQuasicoherent := M.property
+  refine ObjectProperty.hom_ext _ ((qcohDescentDataCoaction_ofObj M).trans ?_)
+  exact congrArg (Scheme.Modules.pullback (Spec.map φ)).map
+    (qcohPseudofunctorMapSpecMapAdjunction_unit_app_hom φ M).symm
+
+/-- On the descent datum of the pullback of a quasi-coherent module `M` on `Spec R`, the coalgebra
+`qcohDescentDataToCoalgebraSpecMap φ` is the coalgebra that Beck's comparison functor of
+`qcohPseudofunctorMapSpecMapAdjunction φ` attaches to `M`. -/
+def toDescentDataCompQcohDescentDataToCoalgebraSpecMapIso :
+    qcohPseudofunctor.toDescentData (fun _ : PUnit ↦ Spec.map φ) ⋙
+        qcohDescentDataToCoalgebraSpecMap φ ≅
+      Comonad.comparison (qcohPseudofunctorMapSpecMapAdjunction φ) :=
+  NatIso.ofComponents
+    (fun M ↦ Comonad.Coalgebra.isoMk (Iso.refl _) (by
+      -- The two coactions agree. As `qcohPseudofunctor.obj T` is `QuasicoherentSheaf T` only up
+      -- to unfolding, `simp` removes `T.map (𝟙 _)` only for a general comonad `T`.
+      have key {C : Type (u + 1)} [Category.{u} C] (T : Comonad C) {A : C}
+          (a b : A ⟶ T.obj A) (h : a = b) : a ≫ T.map (Iso.refl A).hom = (Iso.refl A).hom ≫ b := by
+        simp [h]
+      exact key _ _ _ (qcohDescentDataToCoalgebraSpecMap_obj_ofObj_a φ M)))
+    (fun _ ↦ Comonad.Coalgebra.Hom.ext ((Category.comp_id _).trans (Category.id_comp _).symm))
+
+variable [Surjective (Spec.map φ)]
+
+/-- **Faithfully flat descent data are coalgebras.** For a flat ring map `φ : R ⟶ S` with
+`Spec φ` surjective, that is, for `φ` faithfully flat, descent data for quasi-coherent modules along
+`Spec φ : Spec S ⟶ Spec R` are equivalent to coalgebras for the comonad `(Spec φ)^* (Spec φ)_*` on
+`QCoh(Spec S)`. This is the sheaf form of the description of descent data on an `S`-module as a
+coassociative and counital coaction `N → S ⊗[R] N`. -/
+theorem isEquivalence_qcohDescentDataToCoalgebraSpecMap :
+    (qcohDescentDataToCoalgebraSpecMap φ).IsEquivalence := by
+  have := isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction φ
+    ((flat_and_surjective_SpecMap_iff φ).1 ⟨‹_›, ‹_›⟩)
+  have hK := fullyFaithfulQcohDescentDataToCoalgebraSpecMap φ
+  have := hK.full
+  have := hK.faithful
+  -- Every coalgebra is Beck's comparison coalgebra of a quasi-coherent module on `Spec R`, which
+  -- is the coalgebra of the descent datum of its pullback.
+  have : (qcohDescentDataToCoalgebraSpecMap φ).EssSurj := ⟨fun C ↦
+    ⟨_, ⟨(toDescentDataCompQcohDescentDataToCoalgebraSpecMapIso φ).app _ ≪≫
+      (Comonad.comparison (qcohPseudofunctorMapSpecMapAdjunction φ)).objObjPreimageIso C⟩⟩⟩
+  exact { }
+
+/-- **Faithfully flat descent of quasi-coherent modules on affine schemes.** For a flat ring map
+`φ : R ⟶ S` with `Spec φ` surjective, that is, for `φ` faithfully flat, the functor from
+quasi-coherent modules on `Spec R` to descent data for quasi-coherent modules along
+`Spec φ : Spec S ⟶ Spec R` is an equivalence: descent data along `Spec φ` are effective and
+morphisms descend. -/
+theorem isEquivalence_toDescentData_specMap :
+    (qcohPseudofunctor.toDescentData (fun _ : PUnit ↦ Spec.map φ)).IsEquivalence := by
+  have := isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction φ
+    ((flat_and_surjective_SpecMap_iff φ).1 ⟨‹_›, ‹_›⟩)
+  have := isEquivalence_qcohDescentDataToCoalgebraSpecMap φ
+  have :=
+    Functor.isEquivalence_of_iso (toDescentDataCompQcohDescentDataToCoalgebraSpecMapIso φ).symm
+  exact Functor.isEquivalence_of_comp_right _ (qcohDescentDataToCoalgebraSpecMap φ)
+
+end Coalgebra
 
 end
 

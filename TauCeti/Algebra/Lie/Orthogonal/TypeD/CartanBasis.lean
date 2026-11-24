@@ -99,11 +99,11 @@ At the two fork nodes they are half that total minus its last entry and half tha
 theorem typeDSimpleCorootBasis_repr_apply (n : ℕ) (hn : 4 ≤ n)
     (A : typeDDiagonalCartan K (Fin n)) (k : Fin n) :
     (typeDSimpleCorootBasis (K := K) n hn).repr A k =
-      if (k : ℕ) + 2 < n then ∑ j ∈ Finset.Iic k, A.1.1 (Sum.inl j) (Sum.inl j)
+      if (k : ℕ) + 2 < n then ∑ j ∈ Finset.Iic k, A.val.val (Sum.inl j) (Sum.inl j)
       else if (k : ℕ) + 1 < n then
-        ⅟ (2 : K) * (∑ j, A.1.1 (Sum.inl j) (Sum.inl j)) -
-          A.1.1 (Sum.inl ⟨n - 1, by omega⟩) (Sum.inl ⟨n - 1, by omega⟩)
-      else ⅟ (2 : K) * (∑ j, A.1.1 (Sum.inl j) (Sum.inl j)) := by
+        ⅟ (2 : K) * (∑ j, A.val.val (Sum.inl j) (Sum.inl j)) -
+          A.val.val (Sum.inl ⟨n - 1, by omega⟩) (Sum.inl ⟨n - 1, by omega⟩)
+      else ⅟ (2 : K) * (∑ j, A.val.val (Sum.inl j) (Sum.inl j)) := by
   rw [typeDSimpleCorootBasis, Module.Basis.map_repr, LinearEquiv.trans_apply]
   simpa only [typeDDiagonalEquiv_symm_apply] using
     DynkinType.typeDSimpleRootBasis_repr_apply K hn

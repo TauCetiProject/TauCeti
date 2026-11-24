@@ -104,7 +104,7 @@ noncomputable def quotientAnnihilatorEquivDual (S : Submodule 𝕜 E) :
       have hres : g.comp S.subtypeL = f.comp S.subtypeL := by
         have hfg := (Submodule.Quotient.eq _).mp hg
         ext x
-        simpa [sub_eq_zero] using (mem_orthogonalBilin.mp hfg) x x.2
+        simpa [sub_eq_zero] using (mem_orthogonalBilin.mp hfg) x x.property
       calc
         ‖f.comp S.subtypeL‖ = ‖g.comp S.subtypeL‖ := by rw [hres]
         _ ≤ ‖g‖ * ‖S.subtypeL‖ := g.opNorm_comp_le _

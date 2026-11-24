@@ -161,6 +161,7 @@ theorem hasCompactoidImage_iff_isCompletelyContinuous {u : E →L[K] F} :
     u.HasCompactoidImage ↔ u.IsCompletelyContinuous :=
   ⟨HasCompactoidImage.isCompletelyContinuous, IsCompletelyContinuous.hasCompactoidImage⟩
 
+omit [CompleteSpace K] in
 /-- Over a locally compact nontrivially normed field, such as `ℚ_p`, a continuous linear map into an
 ultrametric Banach space is a compact operator exactly when it is completely continuous. -/
 theorem isCompactOperator_iff_isCompletelyContinuous [ProperSpace K] {u : E →L[K] F} :

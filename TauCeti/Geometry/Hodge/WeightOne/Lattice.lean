@@ -300,10 +300,11 @@ noncomputable def latticeHodgeStructureEquiv (hℂ : IsBaseChange ℂ ιℂ) :
     AlmostComplexStructure (Hodge.Realification V) ≃
       {hs : Hodge.HodgeStructure hℂ 1 // hs.IsEffective} where
   toFun J := ⟨J.latticeHodgeStructure hℂ, J.isEffective_latticeHodgeStructure hℂ⟩
-  invFun hs := hs.1.latticeAlmostComplexStructure odd_one
+  invFun hs := hs.val.latticeAlmostComplexStructure odd_one
   left_inv J := J.latticeAlmostComplexStructure_latticeHodgeStructure hℂ
   right_inv hs := Subtype.ext
-    (hs.1.latticeHodgeStructure_latticeAlmostComplexStructure (hs.1.isEffective_iff.mp hs.2))
+    (hs.val.latticeHodgeStructure_latticeAlmostComplexStructure
+        (hs.val.isEffective_iff.mp hs.property))
 
 /-- The equivalence sends `J` to its integral weight-one Hodge structure. -/
 @[simp]
@@ -316,7 +317,7 @@ theorem coe_latticeHodgeStructureEquiv_apply (hℂ : IsBaseChange ℂ ιℂ)
 @[simp]
 theorem latticeHodgeStructureEquiv_symm_apply (hℂ : IsBaseChange ℂ ιℂ)
     (hs : {hs : Hodge.HodgeStructure hℂ 1 // hs.IsEffective}) :
-    (latticeHodgeStructureEquiv hℂ).symm hs = hs.1.latticeAlmostComplexStructure odd_one :=
+    (latticeHodgeStructureEquiv hℂ).symm hs = hs.val.latticeAlmostComplexStructure odd_one :=
   (rfl)
 
 end TauCeti.AlmostComplexStructure

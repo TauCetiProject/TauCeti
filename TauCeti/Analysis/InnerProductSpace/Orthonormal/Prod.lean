@@ -10,7 +10,10 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
-# Orthogonality of product orthonormal bases for a quadratic form
+# Orthonormal frames of products
+
+A product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` of the `L²` product
+`WithLp 2 (V × W)` is orthonormal exactly when `v` and `w` are.
 
 Let `V ⊕ W` be the `L²` product `WithLp 2 (V × W)` of two inner product spaces, with a quadratic
 form `Q` satisfying `Q (v, w) = Q₁ v + Q₂ w`. If orthonormal bases `b₁` of `V` and `b₂` of `W`
@@ -20,6 +23,7 @@ are orthogonal for the polar forms of `Q₁` and `Q₂`, then the product orthon
 
 ## Main results
 
+* `TauCeti.orthonormal_append_toLp_iff`: orthonormality of a product frame.
 * `OrthonormalBasis.isOrthoᵢ_associated_prod`: the product of orthogonal orthonormal bases is
   orthogonal for `Q`.
 * `QuadraticMap.apply_prod_eq_add_of_neg_norm_sq`: when `Q₁`, `Q₂`, and `Q` on `WithLp 2 (V × W)`
@@ -56,20 +60,37 @@ theorem isOrthoᵢ_associated_prod (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q
 
 end OrthonormalBasis
 
+namespace TauCeti
+
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {k l : ℕ}
+
+/-- A product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` of `V ⊕ W` is orthonormal
+exactly when `v` and `w` are. -/
+theorem orthonormal_append_toLp_iff {v : Fin k → V} {w : Fin l → W} :
+    Orthonormal 𝕜 (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : W)))
+      (fun j ↦ WithLp.toLp 2 ((0 : V), w j))) ↔ Orthonormal 𝕜 v ∧ Orthonormal 𝕜 w := by
+  classical
+  have hne (i : Fin k) (j : Fin l) : Fin.castAdd l i ≠ Fin.natAdd k j := by
+    rw [Ne, Fin.ext_iff]
+    simp only [Fin.val_castAdd, Fin.val_natAdd]
+    omega
+  simp [orthonormal_iff_ite, Fin.forall_fin_add, forall_and, hne, (hne _ _).symm,
+    (Fin.castAdd_injective _ _).eq_iff, (Fin.natAdd_injective _ _).eq_iff]
+
+end TauCeti
+
 namespace QuadraticMap
 
 /-- When `Q₁`, `Q₂`, and `Q` on `WithLp 2 (V × W)` are each minus the squared norm, `Q` splits
 additively as `Q₁ x.1 + Q₂ x.2`. -/
 theorem apply_prod_eq_add_of_neg_norm_sq {V W : Type*}
-    [AddCommGroup V] [Module ℝ V] [Norm V] [AddCommGroup W] [Module ℝ W] [Norm W]
+    [NormedAddCommGroup V] [Module ℝ V] [NormedAddCommGroup W] [Module ℝ W]
     {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
     (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (hQ : ∀ x, Q x = -‖x‖ ^ 2) (x : WithLp 2 (V × W)) :
     Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2 := by
-  have hnorm : ‖x‖ ^ 2 = ‖x.fst‖ ^ 2 + ‖x.snd‖ ^ 2 := by
-    rw [WithLp.prod_norm_eq_of_nat 2 (by norm_cast) x]
-    norm_num
-    rw [← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
+  have hnorm := WithLp.prod_norm_sq_eq_of_L2 x
   rw [hQ, hQ₁, hQ₂, hnorm, WithLp.ofLp_fst, WithLp.ofLp_snd]
   ring
 

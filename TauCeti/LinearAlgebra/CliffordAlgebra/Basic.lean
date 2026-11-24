@@ -18,10 +18,15 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basis
 # Basic Clifford algebra API
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
-linear equivalence with the exterior algebra, the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, and planar bivector
-scaling `CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul` for an orthogonal equal-square
-pair. Rescaling the factors of a product of vectors pulls the scalars out in front
+linear equivalence with the exterior algebra, and the commutation rule
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
+square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`), planar bivector
+scaling for an orthogonal equal-square pair
+(`CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul`), and the extensionality of algebra
+equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
+A vector squares to its scalar inside a product (`CliffordAlgebra.ι_mul_ι_mul_eq_algebraMap_mul`),
+and `(e f) (f e) = Q e Q f` (`CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap`).
+Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
@@ -71,6 +76,25 @@ theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R
     ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
     ← ι_mul_ι_add_swap, add_sub_cancel_right]
 
+/-- The square of an element `r + ι Q t` of the first filtration step: its vector part is
+`ι Q ((2 * r) • t)`. -/
+theorem algebraMap_add_ι_mul_self (Q : QuadraticForm R M) (r : R) (t : M) :
+    (algebraMap R (CliffordAlgebra Q) r + ι Q t) * (algebraMap R _ r + ι Q t) =
+      algebraMap R _ (r * r + Q t) + ι Q ((2 * r) • t) := by
+  rw [add_mul, mul_add, mul_add, ι_sq_scalar, ← map_mul, ← Algebra.commutes r (ι Q t),
+    ← Algebra.smul_def, map_add, map_smul, mul_smul, two_smul]
+  abel
+
+/-- A vector squares to its quadratic form value, also inside a product: `x (x y) = Q x y`. -/
+theorem ι_mul_ι_mul_eq_algebraMap_mul {Q : QuadraticForm R M} (x : M) (y : CliffordAlgebra Q) :
+    ι Q x * (ι Q x * y) = algebraMap R _ (Q x) * y := by
+  rw [← mul_assoc, ι_sq_scalar]
+
+/-- The product `(e f) (f e)` of two vectors and their swap is the scalar `Q e * Q f`. -/
+theorem ι_mul_ι_mul_ι_mul_ι_swap {Q : QuadraticForm R M} (e f : M) :
+    ι Q e * ι Q f * (ι Q f * ι Q e) = algebraMap R _ (Q e * Q f) := by
+  rw [mul_assoc, ι_mul_ι_mul_eq_algebraMap_mul, Algebra.commutes, ← mul_assoc, ι_sq_scalar, map_mul]
+
 /-- For orthogonal vectors `e₁, e₂` with `Q e₁ = Q e₂`, a planar combination
 `(c • e₁ + s • e₂, -s • e₁ + c • e₂)` scales their Clifford product `ι Q e₁ * ι Q e₂` by
 `c ^ 2 + s ^ 2`. -/
@@ -81,6 +105,12 @@ theorem ι_smul_add_smul_mul_ι_neg_smul_add_smul {Q : QuadraticForm R M} {e₁ 
   simp only [neg_smul, map_add, map_neg, map_smul, add_mul, mul_add, mul_neg, smul_mul_assoc,
     mul_smul_comm, smul_neg, ι_sq_scalar, hQ, ι_mul_ι_comm_of_isOrtho h12.symm]
   module
+
+/-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators:
+the equivalence form of `CliffordAlgebra.hom_ext`. -/
+theorem algEquiv_ext_ι {Q : QuadraticForm R M} {A : Type*} [Semiring A] [Algebra R A]
+    {φ ψ : CliffordAlgebra Q ≃ₐ[R] A} (h : ∀ v, φ (ι Q v) = ψ (ι Q v)) : φ = ψ :=
+  AlgEquiv.coe_toAlgHom_injective <| hom_ext <| LinearMap.ext h
 
 /-- Rescaling every factor of a product of vectors collects the product of the scalars in front
 of the product. -/
@@ -169,7 +199,7 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero
   by_cases hs : s = ∅
   · subst s
     simp
-  · obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hs
+  · obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.1 hs
     have hproject : exteriorCoordProj b i x = 0 := by
       rw [exteriorCoordProj, LinearMap.comp_apply, hx, LinearMap.mulLeft_apply, mul_zero]
     have hcoord := exteriorCoordProj_repr_of_mem b i s hi x

@@ -39,7 +39,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 
 /-- The optimal nonnegative Poincaré constant, or `∞` if no finite constant is valid. -/
 def poincareConstant (μ : Measure E) : ℝ≥0∞ :=
-  ⨅ C : {C : ℝ≥0 // PoincareInequality μ C}, (C.1 : ℝ≥0∞)
+  ⨅ C : {C : ℝ≥0 // PoincareInequality μ C}, (C.val : ℝ≥0∞)
 
 /-- A valid nonnegative constant bounds the optimal Poincaré constant from above. -/
 theorem PoincareInequality.poincareConstant_le {μ : Measure E} {C : ℝ≥0}
@@ -50,14 +50,14 @@ theorem PoincareInequality.poincareConstant_le {μ : Measure E} {C : ℝ≥0}
 theorem le_poincareConstant {μ : Measure E} {r : ℝ≥0∞}
     (h : ∀ C : ℝ≥0, PoincareInequality μ C → r ≤ (C : ℝ≥0∞)) :
     r ≤ poincareConstant μ :=
-  le_iInf fun C ↦ h C.1 C.2
+  le_iInf fun C ↦ h C.val C.property
 
 /-- A strict upper bound on the optimal constant admits a finite valid constant below it. -/
 theorem poincareConstant_lt_iff {μ : Measure E} {r : ℝ≥0∞} :
     poincareConstant μ < r ↔
       ∃ C : ℝ≥0, PoincareInequality μ C ∧ (C : ℝ≥0∞) < r := by
   rw [poincareConstant, iInf_lt_iff]
-  exact ⟨fun ⟨C, hC⟩ ↦ ⟨C.1, C.2, hC⟩, fun ⟨C, hC, hr⟩ ↦ ⟨⟨C, hC⟩, hr⟩⟩
+  exact ⟨fun ⟨C, hC⟩ ↦ ⟨C.val, C.property, hC⟩, fun ⟨C, hC, hr⟩ ↦ ⟨⟨C, hC⟩, hr⟩⟩
 
 /-- A finite upper bound on the optimal constant is itself a valid Poincaré constant. -/
 theorem poincareConstant_le_iff {μ : Measure E} {C : ℝ≥0} :

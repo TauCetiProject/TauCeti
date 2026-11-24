@@ -49,6 +49,8 @@ it need not be finite-dimensional or irreducible.
   `μ`-eigenspace of `Γ` on the reverse dual with the dual of the `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of
   `Γ` on `S`, and `AlgHom.finrank_eigenspace_cliffordReverseDual_complexVolume` gives the
   dimension count.
+* `AlgHom.cliffordReverseDual_complexVolume_eq_dualMap_iff`: for nontrivial `S` over
+  `Q v = -‖v‖²`, the reverse-dual chirality agrees with `(Γ_S)ᵀ` if and only if `n / 2` is even.
 
 ## References
 
@@ -166,6 +168,21 @@ theorem finrank_eigenspace_cliffordReverseDual_complexVolume {μ : ℂ}
       finrank ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) := by
   rw [(cliffordReverseDualComplexVolumeEigenspaceEquiv ρ o hQ hμ).finrank_eq,
     Subspace.dual_finrank_eq]
+
+/-- For a nontrivial module over `Q v = -‖v‖²`, the chirality of the reverse dual agrees with the
+transpose `(ρ (complexVolume Q o)).dualMap` if and only if `n / 2` is even. -/
+theorem cliffordReverseDual_complexVolume_eq_dualMap_iff [Nontrivial S] :
+    cliffordReverseDual ρ (complexVolume Q o) = (ρ (complexVolume Q o)).dualMap ↔
+      Even (n / 2) := by
+  refine ⟨fun h ↦ ?_, fun he ↦ by rw [cliffordReverseDual_complexVolume, he.neg_one_pow, one_smul]⟩
+  by_contra hne
+  have ho : Odd (n / 2) := Nat.not_even_iff_odd.mp hne
+  obtain ⟨s, hs⟩ := exists_ne (0 : S)
+  obtain ⟨φ, hφ⟩ := Projective.exists_dual_eq_one ℂ hs
+  have h1 := LinearMap.congr_fun (LinearMap.congr_fun h φ) (ρ (complexVolume Q o) s)
+  simp only [cliffordReverseDual_complexVolume, ho.neg_one_pow, LinearMap.smul_apply,
+    LinearMap.dualMap_apply, smul_eq_mul, involutive_complexVolume ρ o hQ s, hφ] at h1
+  norm_num at h1
 
 end Form
 

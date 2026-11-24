@@ -8,10 +8,8 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
--- Private: `VolumeElement.Basic` supplies `ι_mul_ι_mul_self_of_isOrtho`, and
--- `CliffordAlgebra.Equivs` supplies `CliffordAlgebraComplex.toComplex` for the 1D witness.
+-- Private: `CliffordAlgebra.Equivs` supplies `CliffordAlgebraComplex.toComplex` for the 1D witness.
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # The geometric convention for real Clifford actions
@@ -102,7 +100,7 @@ theorem isGeometricClifford_iff {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End �
     ρ.IsGeometricClifford ↔
       (∀ v, Q v = -‖v‖ ^ 2) ∧
         ∀ (v : V) (s t : S), ⟪ρ (ι Q v) s, t⟫_ℂ = -⟪s, ρ (ι Q v) t⟫_ℂ :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.apply_eq_neg_norm_sq, h.inner_map_ι_apply_left⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 namespace IsGeometricClifford
 
@@ -131,9 +129,9 @@ theorem adjoint_map_ι [FiniteDimensional ℂ S] (v : V) :
 `c(v) c(w) + c(w) c(v) = -2 ⟪v, w⟫`. -/
 theorem map_ι_mul_map_ι_add_swap (v w : V) :
     ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) = ((-2 * ⟪v, w⟫_ℝ : ℝ) : ℂ) • 1 := by
-  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ,
-    ι_mul_ι_add_swap_eq_neg_two_inner hρ.apply_eq_neg_norm_sq, AlgHom.commutes,
-    Algebra.algebraMap_eq_smul_one, Complex.coe_smul]
+  rw [Complex.coe_smul]
+  exact ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner
+    hρ.apply_eq_neg_norm_sq v w
 
 /-- Pointwise polarized Clifford relation on spinors:
 `c(v) (c(w) s) + c(w) (c(v) s) = (-2 * ⟪v, w⟫_ℝ) • s`. -/
@@ -149,23 +147,20 @@ theorem map_ι_mul_self (v : V) : ρ (ι Q v) * ρ (ι Q v) = ((-‖v‖ ^ 2 : �
 
 /-- Clifford multiplications by orthogonal vectors anticommute. -/
 theorem map_ι_mul_map_ι_comm_of_inner_eq_zero {v w : V} (h : ⟪v, w⟫_ℝ = 0) :
-    ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
-  rw [← map_mul ρ, ← map_mul ρ, ← map_neg ρ,
-    ι_mul_ι_comm_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h)]
+    ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) :=
+  ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_of_inner_eq_zero hρ.apply_eq_neg_norm_sq h
 
 /-- Clifford multiplication by a unit vector squares to `-1`. -/
-theorem map_ι_mul_self_of_norm_eq_one {v : V} (h : ‖v‖ = 1) : ρ (ι Q v) * ρ (ι Q v) = -1 := by
-  simp [hρ.map_ι_mul_self, h]
+theorem map_ι_mul_self_of_norm_eq_one {v : V} (h : ‖v‖ = 1) : ρ (ι Q v) * ρ (ι Q v) = -1 :=
+  ρ.map_cliffordAlgebraι_sq_of_norm_eq_one hρ.apply_eq_neg_norm_sq h
 
 /-- **A unit orthogonal pair**: for orthonormal `e₁, e₂`, the product `c(e₁) c(e₂)` squares to
 `-1`, so that `i c(e₁) c(e₂)` is an involution. -/
 theorem map_ι_mul_map_ι_mul_self_of_orthonormal {e₁ e₂ : V} (h₁ : ‖e₁‖ = 1) (h₂ : ‖e₂‖ = 1)
     (h : ⟪e₁, e₂⟫_ℝ = 0) :
-    ρ (ι Q e₁) * ρ (ι Q e₂) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 := by
-  rw [← map_mul ρ, ← map_mul ρ, ι_mul_ι_mul_self_of_isOrtho
-    ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h), map_neg,
-    AlgHom.commutes, hρ.apply_eq_neg_norm_sq, hρ.apply_eq_neg_norm_sq, h₁, h₂]
-  simp
+    ρ (ι Q e₁) * ρ (ι Q e₂) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 :=
+  ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_sq_of_orthonormal
+    hρ.apply_eq_neg_norm_sq h₁ h₂ h
 
 /-- **Polarized Hermitian identity**: combining skew-Hermiticity with the polarized Clifford
 relation gives `⟪c(v) s, c(w) t⟫_ℂ + ⟪c(w) s, c(v) t⟫_ℂ = 2 ⟪v, w⟫_ℝ ⟪s, t⟫_ℂ` without assuming
@@ -214,10 +209,8 @@ theorem adjoint_map_eq_map_star [FiniteDimensional ℂ S] (a : CliffordAlgebra Q
 complex-linear extension `ρ_ℂ` satisfies `⟪ρ_ℂ(a) s, t⟫ = ⟪s, ρ_ℂ(conjStar a) t⟫`, on a module
 of any dimension. -/
 theorem inner_liftBaseChange_apply_left (a : CliffordAlgebra (Q.baseChange ℂ)) (s t : S) :
-    ⟪liftBaseChange ℂ Q ρ a s, t⟫_ℂ = ⟪s, liftBaseChange ℂ Q ρ (conjStar Q a) t⟫_ℂ := by
-  refine sesqForm_map_eq_map_conjStar (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ) (fun v x y ↦ ?_) a s t
-  simpa only [innerₛₗ_apply_apply, liftBaseChange_ι_tmul, one_smul] using
-    hρ.inner_map_ι_apply_left v x y
+    ⟪liftBaseChange ℂ Q ρ a s, t⟫_ℂ = ⟪s, liftBaseChange ℂ Q ρ (conjStar Q a) t⟫_ℂ :=
+  (inner_liftBaseChange_eq_liftBaseChange_conjStar_iff.2 hρ.inner_map_ι_apply_left) a s t
 
 /-- On a finite-dimensional Hermitian module, the complexification of a geometric Clifford action is
 a `*`-representation for `CliffordAlgebra.conjStar`. -/

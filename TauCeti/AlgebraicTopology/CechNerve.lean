@@ -201,18 +201,18 @@ omit [∀ n : ℕ, HasWidePullback f.right (fun _ : Fin (n + 1) ↦ f.left) fun 
 /-- A chosen lift along `f.hom` of a morphism which admits one. -/
 private noncomputable def lift (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
     T ⟶ f.left :=
-  g.2.choose
+  g.property.choose
 
 omit [∀ n : ℕ, HasWidePullback f.right (fun _ : Fin (n + 1) ↦ f.left) fun _ ↦ f.hom] in
 @[reassoc (attr := simp)]
 private theorem lift_comp (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
-    lift g ≫ f.hom = g.1 :=
-  g.2.choose_spec
+    lift g ≫ f.hom = g.val :=
+  g.property.choose_spec
 
 /-- The section of the augmentation in degree `0`: a liftable morphism goes to its chosen lift. -/
 private noncomputable def sectionFun (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
     T ⟶ f.cechNerve _⦋0⦌ :=
-  WidePullback.lift g.1 (fun _ ↦ lift g) (by simp)
+  WidePullback.lift g.val (fun _ ↦ lift g) (by simp)
 
 /-- The extra degeneracy on maps into the Čech nerve: it inserts the chosen lift of the base
 as the new `0`-th factor. -/
@@ -230,7 +230,7 @@ private theorem sectionFun_π (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l
 
 @[reassoc (attr := simp)]
 private theorem sectionFun_base (g : {g : T ⟶ f.right // ∃ l : T ⟶ f.left, l ≫ f.hom = g}) :
-    sectionFun g ≫ WidePullback.base _ = g.1 :=
+    sectionFun g ≫ WidePullback.base _ = g.val :=
   WidePullback.lift_base _ _ _ _
 
 @[reassoc (attr := simp)]

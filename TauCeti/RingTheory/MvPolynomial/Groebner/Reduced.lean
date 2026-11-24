@@ -152,8 +152,8 @@ theorem IsReducedGroebnerBasis.eq_of_degree_eq (hG : m.IsReducedGroebnerBasis G 
     le_antisymm (by simpa [hdeg] using (m.degree_sub_le (f := g) (g := h)))
       (m.toSyn_monotone htop)
   have hz : (g - h).coeff (m.degree g) = 0 := by
-    rw [coeff_sub, (hG.monic g hg).coeff_degree, hdeg, (hH.monic h hh).coeff_degree,
-      sub_self]
+    rw [AddMonoidAlgebra.coeff_sub_apply, (hG.monic g hg).coeff_degree, hdeg,
+      (hH.monic h hh).coeff_degree, sub_self]
   exact (mem_support_iff.mp (heq ▸ m.degree_mem_support hdiff)) hz
 
 /-- **Uniqueness of the reduced monic Gröbner basis.** Any two reduced monic Gröbner bases
