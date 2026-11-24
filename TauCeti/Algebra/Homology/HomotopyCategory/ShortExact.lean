@@ -33,7 +33,7 @@ the mapping cone that are only known to factor through the cokernel: for a short
 (`CochainComplex.mappingCone.quasiIso_desc_of_shortExact`). This is how a three-term sequence
 which is short exact only up to a quasi-isomorphism, such as a Mayer–Vietoris sequence of singular
 chains, is shown to have acyclic total complex. In particular, extension by zero along an
-embedding `ComplexShape.down ℕ ⟶ ComplexShape.up ℤ` carries a sequence `P₄ ⟶ P₂ ⊞ P₃ ⟶ P₁` of chain
+embedding into `ComplexShape.up ℤ` carries a sequence `P₄ ⟶ P₂ ⊞ P₃ ⟶ P₁` of homological
 complexes, with monomorphic first map `(f₂, -f₃)` and second map `g₂ + g₃` inducing a
 quasi-isomorphism from its cokernel, to one whose Mayer–Vietoris map out of the mapping cone of
 `(f₂, f₃)` is a quasi-isomorphism
@@ -126,14 +126,15 @@ lemma quasiIso_desc_of_shortExact (hS : S.ShortExact) {W : CochainComplex C ℤ}
   rw [hd]
   infer_instance
 
-/-- Extension by zero along `e` carries a three-term sequence `P₄ ⟶ P₂ ⊞ P₃ ⟶ P₁` of chain
+/-- Extension by zero along `e` carries a three-term sequence `P₄ ⟶ P₂ ⊞ P₃ ⟶ P₁` of homological
 complexes, with monomorphic first map `(f₂, -f₃)` and second map `g₂ + g₃` inducing a
 quasi-isomorphism from its cokernel, to one whose Mayer–Vietoris map
 `mappingCone (E f₂, E f₃) ⟶ E P₁`, given by `(E g₂, -E g₃)` as in
 `TopCat.KPresheaf.mayerVietorisDesc`, is a quasi-isomorphism. -/
-lemma quasiIso_desc_extendMap_of_quasiIso_cokernelDesc {P₁ P₂ P₃ P₄ : ChainComplex C ℕ}
-    (e : (ComplexShape.down ℕ).Embedding (ComplexShape.up ℤ)) {f₂ : P₄ ⟶ P₂} {f₃ : P₄ ⟶ P₃}
-    {g₂ : P₂ ⟶ P₁} {g₃ : P₃ ⟶ P₁} {a : P₄ ⟶ P₂ ⊞ P₃} {b : P₂ ⊞ P₃ ⟶ P₁} [Mono a]
+lemma quasiIso_desc_extendMap_of_quasiIso_cokernelDesc {ι : Type*} {c : ComplexShape ι}
+    {P₁ P₂ P₃ P₄ : HomologicalComplex C c} (e : c.Embedding (ComplexShape.up ℤ))
+    {f₂ : P₄ ⟶ P₂} {f₃ : P₄ ⟶ P₃} {g₂ : P₂ ⟶ P₁} {g₃ : P₃ ⟶ P₁} {a : P₄ ⟶ P₂ ⊞ P₃}
+    {b : P₂ ⊞ P₃ ⟶ P₁} [Mono a]
     (hab : a ≫ b = 0) [QuasiIso (cokernel.desc a b hab)] (ha : a = biprod.lift f₂ (-f₃))
     (hb : b = biprod.desc g₂ g₃)
     (eq : δ (-1) 0 (0 : Cochain _ _ (-1)) = Cochain.ofHom
