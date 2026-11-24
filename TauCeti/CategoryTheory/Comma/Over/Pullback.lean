@@ -35,7 +35,9 @@ when `i` and `i'` are points, this says the fiber at `i'` of the base change alo
 change along `t` of the fiber at `i`. For a commuting triangle `a ≫ b = d`, the natural isomorphism
 `CategoryTheory.Over.pullbackCompIsoOfEq` identifies base change along `b` and then along `a` with
 base change along `d`, coherently for three composable morphisms
-(`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`).
+(`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`); in particular, morphisms which agree after
+base change along `b` agree after base change along `d`
+(`CategoryTheory.Over.pullback_map_eq_map_of_comp_eq`).
 
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
@@ -240,6 +242,14 @@ theorem pullbackCompIsoOfEq_hom_app_eq {W : C} {x : W ⟶ X} {y : W ⟶ Y} {v : 
   apply pullback.hom_ext
   · simp [h₁]
   · simp [h₂]
+
+/-- For a commuting triangle `a ≫ b = d`, morphisms which agree after base change along `b` agree
+after base change along `d`. -/
+theorem pullback_map_eq_map_of_comp_eq (h : a ≫ b = d) {A B : Over Z} {u v : A ⟶ B}
+    (huv : (pullback b).map u = (pullback b).map v) : (pullback d).map u = (pullback d).map v := by
+  rw [← cancel_epi ((pullbackCompIsoOfEq h).hom.app A), ← (pullbackCompIsoOfEq h).hom.naturality,
+    ← (pullbackCompIsoOfEq h).hom.naturality]
+  simp [huv]
 
 end Triangle
 

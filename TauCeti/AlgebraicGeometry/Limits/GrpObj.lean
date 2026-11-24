@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.Descent
+public import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact.Over
+public import TauCeti.CategoryTheory.Filtered.Basic
 public import TauCeti.CategoryTheory.Monoidal.Grp.OfMap
 
 /-!
@@ -82,26 +84,6 @@ private theorem LiftsAlong.comp {i : I} {A B : Over (D.obj i)}
   rw [hcoh, hcoh]
   simp [C, reassoc_of% hnat, hv]
 
-/-- Morphisms which agree after base change along `g` agree after base change along `h ≫ g`. -/
-private theorem map_eq_map_comp {j k l : I} {A B : Over (D.obj j)} {u v : A ⟶ B} {g : k ⟶ j}
-    (h : l ⟶ k) (huv : (Over.pullback (D.map g)).map u = (Over.pullback (D.map g)).map v) :
-    (Over.pullback (D.map (h ≫ g))).map u = (Over.pullback (D.map (h ≫ g))).map v := by
-  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
-  rw [← cancel_epi (C.hom.app A), ← C.hom.naturality, ← C.hom.naturality]
-  simp [huv]
-
-/-- In a cofiltered category, two properties of morphisms to `i` which are stable under
-precomposition and each hold for some morphism to `i` hold together for some morphism to `i`. -/
-private theorem exists_and_of_comp [IsCofiltered I] {i : I} {R₁ R₂ : ∀ {k : I}, (k ⟶ i) → Prop}
-    (hR₁ : ∀ {k l : I} {g : k ⟶ i} (h : l ⟶ k), R₁ g → R₁ (h ≫ g))
-    (hR₂ : ∀ {k l : I} {g : k ⟶ i} (h : l ⟶ k), R₂ g → R₂ (h ≫ g))
-    (h₁ : ∃ (k : I) (g : k ⟶ i), R₁ g) (h₂ : ∃ (k : I) (g : k ⟶ i), R₂ g) :
-    ∃ (k : I) (g : k ⟶ i), R₁ g ∧ R₂ g := by
-  obtain ⟨k₁, g₁, r₁⟩ := h₁
-  obtain ⟨k₂, g₂, r₂⟩ := h₂
-  obtain ⟨l, a₁, a₂, ha⟩ := IsCofiltered.cospan g₁ g₂
-  exact ⟨l, a₁ ≫ g₁, hR₁ a₁ r₁, ha ▸ hR₂ a₂ r₂⟩
-
 end Eventually
 
 section GrpObj
@@ -130,20 +112,15 @@ private theorem exists_lifts {i : I} (X : Over (D.obj i)) [LocallyOfFinitePresen
         (Over.pullback (c.π.app j)).map inv ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app X =
           (Over.pullbackCompIsoOfEq (c.w g)).hom.app X ≫
             ι[(Over.pullback (c.π.app i)).obj X] := by
-  have : QuasiCompact (X ⊗ X).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have : QuasiSeparated (X ⊗ X).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have : QuasiCompact (𝟙_ (Over (D.obj i))).hom := by
-    rw [Over.tensorUnit_hom]; exact inferInstanceAs (QuasiCompact (𝟙 (D.obj i)))
-  have : QuasiSeparated (𝟙_ (Over (D.obj i))).hom := by
-    rw [Over.tensorUnit_hom]; exact inferInstanceAs (QuasiSeparated (𝟙 (D.obj i)))
   -- Lift the three structure morphisms, each along some morphism to `i`, then along a common one.
-  obtain ⟨j, g, ⟨⟨vo, hvo⟩, ⟨vm, hvm⟩⟩, ⟨vi, hvi⟩⟩ := exists_and_of_comp
+  obtain ⟨j, g, ⟨⟨vo, hvo⟩, ⟨vm, hvm⟩⟩, ⟨vi, hvi⟩⟩ := IsCofiltered.exists_and_of_stable
     (R₁ := fun g ↦ LiftsAlong c (Functor.OplaxMonoidal.η (Over.pullback (c.π.app i)) ≫
         η[(Over.pullback (c.π.app i)).obj X]) g ∧
       LiftsAlong c (δ (Over.pullback (c.π.app i)) X X ≫ μ[(Over.pullback (c.π.app i)).obj X]) g)
     (R₂ := LiftsAlong c ι[(Over.pullback (c.π.app i)).obj X])
     (fun h hg ↦ ⟨hg.1.comp h, hg.2.comp h⟩) (fun h hg ↦ hg.comp h)
-    (exists_and_of_comp (fun h hg ↦ LiftsAlong.comp h hg) (fun h hg ↦ LiftsAlong.comp h hg)
+    (IsCofiltered.exists_and_of_stable (fun h hg ↦ LiftsAlong.comp h hg)
+      (fun h hg ↦ LiftsAlong.comp h hg)
       (hc.exists_overPullback_map_comp_eq _) (hc.exists_overPullback_map_comp_eq _))
     (hc.exists_overPullback_map_comp_eq _)
   refine ⟨j, g, ε _ ≫ vo, Functor.LaxMonoidal.μ _ X X ≫ vm, vi, ?_, ?_, hvi⟩
@@ -191,24 +168,22 @@ private theorem exists_map_axioms {j : I} (Y : Over (D.obj j)) [QuasiCompact Y.h
         (Over.pullback (D.map h)).map (toUnit Y ≫ one) ∧
       (Over.pullback (D.map h)).map (CartesianMonoidalCategory.lift (𝟙 Y) inv ≫ mul) =
         (Over.pullback (D.map h)).map (toUnit Y ≫ one) := by
-  have : QuasiCompact (Y ⊗ Y).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have : QuasiCompact ((Y ⊗ Y) ⊗ Y).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have : QuasiCompact (𝟙_ (Over (D.obj j))).hom := by
-    rw [Over.tensorUnit_hom]; exact inferInstanceAs (QuasiCompact (𝟙 (D.obj j)))
-  have : QuasiCompact (𝟙_ (Over (D.obj j)) ⊗ Y).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have : QuasiCompact (Y ⊗ 𝟙_ (Over (D.obj j))).hom := by rw [Over.tensorObj_hom]; infer_instance
+  -- Equality after base change along `g` persists after base change along `h ≫ g`.
+  have stable {A B : Over (D.obj j)} {u v : A ⟶ B} {k l : I} {g : k ⟶ j} (h : l ⟶ k)
+      (e : (Over.pullback (D.map g)).map u = (Over.pullback (D.map g)).map v) :
+      (Over.pullback (D.map (h ≫ g))).map u = (Over.pullback (D.map (h ≫ g))).map v :=
+    Over.pullback_map_eq_map_of_comp_eq (D.map_comp h g).symm e
   -- Each axiom holds along some morphism to `j`; combine them along a common one.
-  exact exists_and_of_comp (fun h e ↦ map_eq_map_comp h e)
-    (fun h e ↦ ⟨map_eq_map_comp h e.1, map_eq_map_comp h e.2.1, map_eq_map_comp h e.2.2.1,
-      map_eq_map_comp h e.2.2.2⟩)
+  exact IsCofiltered.exists_and_of_stable (fun h e ↦ stable h e)
+    (fun h e ↦ ⟨stable h e.1, stable h e.2.1, stable h e.2.2.1, stable h e.2.2.2⟩)
     (hc.exists_overPullback_map_eq_map _ _ h_one_mul)
-    (exists_and_of_comp (fun h e ↦ map_eq_map_comp h e)
-      (fun h e ↦ ⟨map_eq_map_comp h e.1, map_eq_map_comp h e.2.1, map_eq_map_comp h e.2.2⟩)
+    (IsCofiltered.exists_and_of_stable (fun h e ↦ stable h e)
+      (fun h e ↦ ⟨stable h e.1, stable h e.2.1, stable h e.2.2⟩)
       (hc.exists_overPullback_map_eq_map _ _ h_mul_one)
-      (exists_and_of_comp (fun h e ↦ map_eq_map_comp h e)
-        (fun h e ↦ ⟨map_eq_map_comp h e.1, map_eq_map_comp h e.2⟩)
+      (IsCofiltered.exists_and_of_stable (fun h e ↦ stable h e)
+        (fun h e ↦ ⟨stable h e.1, stable h e.2⟩)
         (hc.exists_overPullback_map_eq_map _ _ h_mul_assoc)
-        (exists_and_of_comp (fun h e ↦ map_eq_map_comp h e) (fun h e ↦ map_eq_map_comp h e)
+        (IsCofiltered.exists_and_of_stable (fun h e ↦ stable h e) (fun h e ↦ stable h e)
           (hc.exists_overPullback_map_eq_map _ _ h_left_inv)
           (hc.exists_overPullback_map_eq_map _ _ h_right_inv))))
 
@@ -269,13 +244,7 @@ private theorem exists_grpObj_of_map_axioms {i j k : I} (X : Over (D.obj i))
       (G := Over.pullback (c.π.app j)) (X := (Over.pullback (D.map g)).obj X)
       (hF := Functor.monObjObj (F := Over.pullback (c.π.app k))
         ((Over.pullback (D.map g) ⋙ Over.pullback (D.map h)).obj X)) (hG := T'.toMonObj)
-      (one := one) (mul := mul) _ ?_ ?_ h_one h_mul
-    · dsimp +instances only [S', S, Functor.monObjObj, Functor.grpObjObjOfMap,
-        Functor.monObjObjOfMap]
-      simp
-    · dsimp +instances only [S', S, Functor.monObjObj, Functor.grpObjObjOfMap,
-        Functor.monObjObjOfMap]
-      simp
+      (one := one) (mul := mul) _ ?_ ?_ h_one h_mul <;> simp [S', S]
   infer_instance
 
 include hc in
@@ -296,20 +265,17 @@ theorem exists_grpObj_overPullback {i : I} (X : Over (D.obj i))
     .ofIso ((Over.pullbackCompIsoOfEq (c.w g)).app X).symm
   have h_one' : (Over.pullback (c.π.app j)).map one = Functor.OplaxMonoidal.η _ ≫
       η[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] := by
-    rw [toUnit_unique (Functor.OplaxMonoidal.η _) (toUnit _)]
-    dsimp +instances only [T, MonObj.ofIso_one]
-    rw [← Category.assoc, ← h_one]
+    rw [toUnit_unique (Functor.OplaxMonoidal.η _) (toUnit _), MonObj.ofIso_one, ← Category.assoc,
+      ← h_one]
     simp
   have h_mul' : (Over.pullback (c.π.app j)).map mul =
       δ _ _ _ ≫ μ[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] := by
-    dsimp +instances only [T, MonObj.ofIso_mul]
-    simp only [Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
+    simp only [T, MonObj.ofIso_mul, Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
     rw [← reassoc_of% h_mul]
     simp
   have h_inv' : (Over.pullback (c.π.app j)).map inv =
       ι[(Over.pullback (c.π.app j)).obj ((Over.pullback (D.map g)).obj X)] := by
-    dsimp +instances only [T, GrpObj.ofIso]
-    simp only [Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
+    simp only [T, GrpObj.ofIso_inv, Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
     rw [← Category.assoc, ← h_inv]
     simp
   have : QuasiCompact ((Over.pullback (D.map g)).obj X).hom :=

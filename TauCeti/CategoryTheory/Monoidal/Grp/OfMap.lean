@@ -140,13 +140,11 @@ abbrev grpObjObjOfMap (h_one_mul : F.map (one ▷ X ≫ mul) = F.map (λ_ X).hom
   __ := F.monObjObjOfMap one mul h_one_mul h_mul_one h_mul_assoc
   inv := F.map inv
   left_inv := by
-    dsimp +instances only [monObjObjOfMap]
-    rw [← F.map_id, Functor.Monoidal.lift_μ_assoc, ← F.map_comp, h_left_inv, F.map_comp,
-      Functor.Monoidal.toUnit_ε_assoc]
+    rw [monObjObjOfMap_mul, monObjObjOfMap_one, ← F.map_id, Functor.Monoidal.lift_μ_assoc,
+      ← F.map_comp, h_left_inv, F.map_comp, Functor.Monoidal.toUnit_ε_assoc]
   right_inv := by
-    dsimp +instances only [monObjObjOfMap]
-    rw [← F.map_id, Functor.Monoidal.lift_μ_assoc, ← F.map_comp, h_right_inv, F.map_comp,
-      Functor.Monoidal.toUnit_ε_assoc]
+    rw [monObjObjOfMap_mul, monObjObjOfMap_one, ← F.map_id, Functor.Monoidal.lift_μ_assoc,
+      ← F.map_comp, h_right_inv, F.map_comp, Functor.Monoidal.toUnit_ε_assoc]
 
 end Cartesian
 
