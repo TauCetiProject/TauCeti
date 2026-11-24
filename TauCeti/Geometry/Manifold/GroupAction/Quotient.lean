@@ -17,7 +17,7 @@ public import TauCeti.Topology.Algebra.GroupAction.Quotient
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 import TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap
 import TauCeti.Geometry.Manifold.GroupAction.Orbit
-import TauCeti.Geometry.Manifold.GroupAction.SliceChart
+import TauCeti.Geometry.Manifold.GroupAction.Slice.Chart
 import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
