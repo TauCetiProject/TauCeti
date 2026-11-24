@@ -284,8 +284,10 @@ theorem frontier_liouvilleGraphRegion [IsManifold J (⊤ : ℕ∞) S] [Boundaryl
 Let `ι : S → M` be a smooth injective immersion onto the boundary of `W` of a boundaryless manifold
 of one dimension less, and `f > 1`. Then there is a retraction `r` of the region bounded
 by the Liouville graph of `f` onto `W`, and a homotopy from its composite with the inclusion to the
-identity that fixes `W` pointwise: a point `φ_t(ι s)` outside `W` moves along its trajectory,
-through `φ_{τ t}(ι s)`, `τ ∈ [0, 1]`. -/
+identity that fixes `W` pointwise.
+
+The proof constructs the homotopy by moving a point `φ_t(ι s)` outside `W` along its trajectory,
+through `φ_{τ t}(ι s)`, `τ ∈ [0, 1]`; the statement does not record this. -/
 theorem exists_liouvilleGraphRegion_deformation [IsManifold J (⊤ : ℕ∞) S]
     [BoundarylessManifold J S] (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (himm : ∀ s, Injective (mfderiv J I ι s)) (hιinj : Injective ι) (hιW : range ι = frontier W)
