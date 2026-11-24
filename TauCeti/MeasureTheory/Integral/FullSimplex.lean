@@ -51,7 +51,8 @@ These are the scalar computations behind Stokes' theorem on the standard simplex
   null set (`TauCeti.aedisjoint_squareLowerHalf_squareUpperHalf`) and are the two shear images of
   `Δ²` (`TauCeti.setIntegral_fullSimplex_comp_shear_fst`,
   `TauCeti.setIntegral_fullSimplex_comp_shear_snd`), so an integral over the square is the sum of
-  two integrals over `Δ²`.
+  two integrals over `Δ²`. The upper half is also the image of `Δ²` under `y ↦ (y₁, y₀ + y₁)`
+  (`TauCeti.setIntegral_fullSimplex_comp_swap_shear_snd`).
 -/
 
 public section
@@ -288,6 +289,27 @@ theorem setIntegral_fullSimplex_comp_shear_snd (f : ℝ × ℝ → F) :
       constructor
       · rintro ⟨h₁, h₂, h₃⟩; exact ⟨⟨h₁, by linarith⟩, h₃⟩
       · rintro ⟨⟨h₀, h₁⟩, h₂⟩; exact ⟨h₀, by linarith, h₂⟩) f
+
+omit [CompleteSpace F] in
+/-- The map `y ↦ (y₁, y₀ + y₁)`, the shear `y ↦ (y₀, y₀ + y₁)` after exchanging the two coordinates,
+carries `Δ²` onto the upper half of the unit square, preserving volume. -/
+theorem setIntegral_fullSimplex_comp_swap_shear_snd (f : ℝ × ℝ → F) :
+    ∫ y in fullSimplex 2, f (y 1, y 0 + y 1) = ∫ z in squareUpperHalf, f z :=
+  setIntegral_fullSimplex_comp_of_mem_iff (g := fun z ↦ (z.2, z.1 + z.2))
+    (by
+      convert (measurePreserving_prod_add volume volume).comp
+        (Measure.measurePreserving_swap (μ := (volume : Measure ℝ)) (ν := volume)) using 1
+      ext z <;> simp [add_comm])
+    (by
+      convert ((Homeomorph.shearAddRight ℝ).measurableEmbedding.comp
+        MeasurableEquiv.prodComm.measurableEmbedding) using 1
+      ext z <;> simp [Homeomorph.shearAddRight_coe, MeasurableEquiv.coe_prodComm, add_comm])
+    (fun y ↦ by
+      simp only [mem_squareUpperHalf_iff, mem_fullSimplex_iff, Fin.forall_fin_two,
+        Fin.sum_univ_two]
+      constructor
+      · rintro ⟨h₁, h₂, h₃⟩; exact ⟨⟨by linarith, h₁⟩, h₃⟩
+      · rintro ⟨⟨h₀, h₁⟩, h₂⟩; exact ⟨h₁, by linarith, h₂⟩) f
 
 omit [CompleteSpace F] in
 /-- **The unit square is the union of two simplices.** For a function `f` integrable on the unit

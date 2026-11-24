@@ -26,6 +26,8 @@ by `tangentSpaceCast`.
 * `ENat.LEInfty.add`: a sum of exponents at most `∞` is at most `∞`.
 * `IsManifold.minSmoothness_of_isRCLikeNormedField`: a `Cⁿ` manifold over an `IsRCLikeNormedField`
   is a `C^(minSmoothness 𝕜 n)` manifold (opt-in local instance).
+* `TauCeti.isManifold_natCast_zero`: every charted space is a `C⁰` manifold for the order `0`
+  written as the cast of the natural number `0`.
 * `TauCeti.finrank_tangentSpace`: the tangent space at any point has the dimension of the model
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
@@ -78,6 +80,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A charted space is a `C⁰` manifold for the order `0` written as the cast of the natural number
+`0`, the form in which `TauCeti.CompactChartAtlas.CkHolderSpace 0` asks for it. -/
+instance isManifold_natCast_zero (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] : IsManifold I ((0 : ℕ) : WithTop ℕ∞) M := by
+  rw [Nat.cast_zero]
+  infer_instance
 
 /-- The tangent space at any point of a manifold has the dimension of the model vector space. -/
 @[simp]

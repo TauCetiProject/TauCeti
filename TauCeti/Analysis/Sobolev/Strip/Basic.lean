@@ -13,9 +13,9 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Sobolev.Trace.Estimate
 import TauCeti.MeasureTheory.Function.Lp.AeMem
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.EndpointEstimates
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -559,7 +559,7 @@ theorem norm_sq_add_norm_sq_le_integral_jet (hξ : ContDiff ℝ 1 ξ) (s : ℝ) 
   have hderiv : ∀ t, deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) (0, 1) := fun t ↦
     (hasDerivAt_slice_right ((hξ.differentiable one_ne_zero) (s, t))).deriv
   have h := norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
-    (g := fun t ↦ ξ (s, t)) (fun t _ ↦ (hξ.comp (contDiff_const.prodMk contDiff_id)).contDiffAt)
+    (g := fun t ↦ ξ (s, t)) (hξ.comp (contDiff_const.prodMk contDiff_id)).contDiffOn
     zero_lt_one
   simp only [hderiv] at h
   rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc] at h
