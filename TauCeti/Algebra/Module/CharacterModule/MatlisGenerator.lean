@@ -26,9 +26,9 @@ When `R` is finite, `E_R` has as many elements as `R`, so a Matlis generator mak
 isomorphism `R ≃ E_R` of `R`-modules, and any two Matlis generators differ by a unique unit of `R`.
 Since `R` is flat over itself, `E_R` is an injective `R`-module, so a finite ring with a Matlis
 generator is self-injective. For a finite local ring the converse holds, and both properties are
-equivalent to the simplicity of the socle, the ideal of elements killed by the maximal ideal: a
-character that does not vanish at a nonzero socle element is a Matlis generator when the socle is
-simple, because every nonzero ideal contains the whole socle.
+equivalent to the simplicity of the socle, the ideal of elements killed by the maximal ideal. When
+the socle is simple, every nonzero ideal contains the whole socle, so the proof that a Matlis
+generator exists takes a character that does not vanish at a nonzero socle element.
 
 For a finite self-injective coefficient ring `R` of residue characteristic `p`, the characters land
 in `ℚ_p/ℤ_p`, and a Matlis generator `λ` is the trace that turns the additive Cartier dual
@@ -182,9 +182,9 @@ theorem IsMatlisGenerator.moduleInjective (hχ : χ.IsMatlisGenerator) : Module.
 
 end Finite
 
-/-- **An artinian local ring with a simple socle has a Matlis generator**: any character which does
-not vanish at a nonzero element of the socle. Every nonzero ideal meets the socle, hence contains
-it, so no nonzero ideal lies in the kernel of such a character. -/
+/-- **An artinian local ring with a simple socle has a Matlis generator.** The proof takes a
+character which does not vanish at a nonzero element of the socle: every nonzero ideal meets the
+socle, hence contains it, so no nonzero ideal lies in the kernel of that character. -/
 theorem exists_isMatlisGenerator_of_isSimpleModule [IsLocalRing R] [IsArtinianRing R]
     (h : IsSimpleModule R (torsionBySet R R (maximalIdeal R))) :
     ∃ χ : CharacterModule R, χ.IsMatlisGenerator := by
