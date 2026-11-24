@@ -305,7 +305,7 @@ theorem residueCharacter_inverse (χ : Grossencharacter K 𝔪) :
 
 /-- At trivial finite modulus `𝔪.finitePart = ⊤`, the residue ring has one element, a unit, on
 which the residue character is identically `1`. -/
-theorem residueCharacter_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+theorem residueCharacter_eq_one_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
     (h : 𝔪.finitePart = ⊤) (q : 𝓞 K ⧸ 𝔪.finitePart) : χ.residueCharacter q = 1 := by
   have h1 : q = 1 := by
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q

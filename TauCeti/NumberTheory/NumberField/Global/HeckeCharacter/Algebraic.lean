@@ -181,7 +181,7 @@ theorem coe_infiniteComponent_real_of_eq_add (χ : HeckeCharacter K) (n : Algebr
 /-- At a complex place, the component of `χ` at `x : Kˣ` equals the product of the two conjugate
 embeddings at `w` each raised to the exponent assigned to that embedding by an algebraic infinity
 type `n` with `χ.infinityType = n + e`. -/
-theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
+theorem coe_infiniteComponent_complex_of_eq_add (χ : HeckeCharacter K)
     (n : AlgebraicInfinityType K)
     (e : FiniteOrderInfinityType K)
     (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
@@ -251,7 +251,7 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter_mul_sign (χ : HeckeCha
     rw [InfinitePlace.filter_mk_eq,
       Finset.prod_pair (InfinitePlace.embedding_ne_conjugate_of_isComplex hcx),
       dite_eq_right hw, mul_one]
-    exact coe_infiniteComponent_complex χ n e he ⟨w, hcx⟩ x
+    exact coe_infiniteComponent_complex_of_eq_add χ n e he ⟨w, hcx⟩ x
 
 /-- The product of the infinite components of `χ` at `x` is exactly the monomial of an algebraic
 infinity type `n` matching the character on the identity component, provided `x` is positive at
