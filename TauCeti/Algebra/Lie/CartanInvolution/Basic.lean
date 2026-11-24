@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
-import TauCeti.Algebra.Lie.Reductive.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -82,6 +81,19 @@ open LieAlgebra LieModule Module
 
 namespace LieEquiv
 
+section
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R L']
+
+/-- Double conjugation of a Lie algebra automorphism by an equivalence cancels. -/
+@[simp]
+theorem trans_symm_trans_trans_symm (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ L') :
+    e.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ :=
+  LieEquiv.ext fun x ↦ by simp
+
+end
+
 /-! ### Cartan involutions over a partially ordered commutative ring -/
 
 section PartialOrder
@@ -106,6 +118,18 @@ variable {θ : L ≃ₗ⁅R⁆ L}
 theorem twistedKillingForm_pos (hθ : θ.IsCartanInvolution) {x : L} (hx : x ≠ 0) :
     0 < θ.twistedKillingForm x x :=
   hθ.posDef_twistedKillingForm x hx
+
+/-- The twisted Killing form of a Cartan involution vanishes on `(x, x)` only at `x = 0`. -/
+theorem eq_zero_of_twistedKillingForm_self_eq_zero (hθ : θ.IsCartanInvolution) {x : L}
+    (hx : θ.twistedKillingForm x x = 0) : x = 0 :=
+  hθ.posDef_twistedKillingForm.anisotropic x hx
+
+/-- The twisted Killing form of a Cartan involution is nonnegative on `(x, x)`. -/
+theorem twistedKillingForm_nonneg (hθ : θ.IsCartanInvolution) (x : L) :
+    0 ≤ θ.twistedKillingForm x x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · exact (hθ.twistedKillingForm_pos hx).le
 
 /-- The twisted Killing form of a Cartan involution is symmetric. -/
 theorem twistedKillingForm_isSymm (hθ : θ.IsCartanInvolution) : θ.twistedKillingForm.IsSymm :=
@@ -170,11 +194,9 @@ theorem orthogonal_fixedSubalgebra_eq_cartanP (hθ : θ.IsCartanInvolution)
       rw [← hθk, killingForm_of_equiv_apply θ, hkx]
     have hkk : killingForm R L (x + θ x) (x + θ x) = 0 := by
       rw [map_add, hkx, hkθx, add_zero]
-    have hzero : x + θ x = 0 := by
-      by_contra hne
-      have hpos := hθ.twistedKillingForm_pos hne
-      rw [twistedKillingForm_apply, hθk, hkk, neg_zero] at hpos
-      exact lt_irrefl 0 hpos
+    have hzero : x + θ x = 0 :=
+      hθ.eq_zero_of_twistedKillingForm_self_eq_zero <| by
+        rw [twistedKillingForm_apply, hθk, hkk, neg_zero]
     exact mem_cartanP.mpr (eq_neg_of_add_eq_zero_right hzero)
   · exact (killingForm R L).mem_orthogonal_iff.mpr fun k hk ↦
       killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP h2
@@ -195,11 +217,9 @@ theorem orthogonal_cartanP_eq_fixedSubalgebra (hθ : θ.IsCartanInvolution)
       exact h
     have hpp : killingForm R L (x - θ x) (x - θ x) = 0 := by
       rw [map_sub, hpx, hpθx, sub_zero]
-    have hzero : x - θ x = 0 := by
-      by_contra hne
-      have hpos := hθ.twistedKillingForm_pos hne
-      rw [twistedKillingForm_apply, mem_cartanP.mp hp, map_neg, neg_neg, hpp] at hpos
-      exact lt_irrefl 0 hpos
+    have hzero : x - θ x = 0 :=
+      hθ.eq_zero_of_twistedKillingForm_self_eq_zero <| by
+        rw [twistedKillingForm_apply, mem_cartanP.mp hp, map_neg, neg_neg, hpp]
     exact (LieSubalgebra.mem_toSubmodule _).mpr
       (LieHom.mem_fixedSubalgebra.mpr (sub_eq_zero.mp hzero).symm)
   · exact (killingForm R L).mem_orthogonal_iff.mpr fun p hp ↦ by
@@ -214,31 +234,19 @@ theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅R⁆ L} (hθ : θ.IsCartanInv
   have hp : θ.cartanP = θ'.cartanP := by
     rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP h2,
       ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP h2, h]
-  refine LieEquiv.ext fun x ↦ ?_
+  refine LieEquiv.ext fun x ↦ (sub_eq_zero.mp ?_).symm
   have hk : x + θ x ∈ θ'.toLieHom.fixedSubalgebra := by
     rw [← h, LieHom.mem_fixedSubalgebra, coe_toLieHom, map_add, hθ.involutive, add_comm]
   have hθ'k : θ' (x + θ x) = x + θ x := LieHom.mem_fixedSubalgebra.mp hk
   have hp' : x - θ x ∈ θ'.cartanP := by
     rw [← hp, mem_cartanP, map_sub, hθ.involutive, neg_sub]
-  have hadd : θ' (x + θ x) + θ' (x - θ x) = (x + θ x) + -(x - θ x) := by
-    rw [hθ'k, mem_cartanP.mp hp']
   have hdiff : (θ' x - θ x) + (θ' x - θ x) = 0 := by
-    rw [map_add, map_sub] at hadd
-    have hadd' : (θ' x + θ' (θ x)) + (θ' x - θ' (θ x)) = (x + θ x) - (x - θ x) := by
-      simpa only [sub_eq_add_neg] using hadd
-    have heq : θ' x + θ' x = θ x + θ x := by
-      calc θ' x + θ' x = (θ' x + θ' (θ x)) + (θ' x - θ' (θ x)) := by abel
-        _ = (x + θ x) - (x - θ x) := hadd'
-        _ = θ x + θ x := by abel
-    calc (θ' x - θ x) + (θ' x - θ x) = (θ' x + θ' x) - (θ x + θ x) := by abel
-      _ = 0 := sub_eq_zero.mpr heq
-  have hform : θ.twistedKillingForm (θ' x - θ x) (θ' x - θ x) = 0 := by
-    refine h2 _ ?_
-    rw [← map_add, hdiff, map_zero]
-  by_contra hne
-  have hpos := hθ.twistedKillingForm_pos (sub_ne_zero.mpr (Ne.symm hne))
-  rw [hform] at hpos
-  exact lt_irrefl 0 hpos
+    have h1 : (θ' x - θ x) + (θ' x - θ x) =
+        (θ' (x + θ x) + θ' (x - θ x)) - ((x + θ x) + -(x - θ x)) := by
+      rw [map_add, map_sub]; abel
+    rw [h1, hθ'k, mem_cartanP.mp hp', sub_self]
+  exact hθ.eq_zero_of_twistedKillingForm_self_eq_zero <|
+    h2 _ (by rw [← map_add, hdiff, map_zero])
 
 /-- A Cartan involution is uniquely determined by its `-1`-eigenspace `𝔭`: two Cartan involutions
 with the same `-1`-eigenspace are equal. -/
@@ -258,11 +266,7 @@ involution. -/
 @[simp]
 theorem isCartanInvolution_conj_iff {θ : L ≃ₗ⁅R⁆ L} (e : L ≃ₗ⁅R⁆ L') :
     (e.symm.trans (θ.trans e)).IsCartanInvolution ↔ θ.IsCartanInvolution :=
-  ⟨fun h ↦ by
-    have h' := h.conj e.symm
-    have heq : e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ :=
-      LieEquiv.ext fun x ↦ by simp
-    rwa [heq] at h', fun h ↦ h.conj e⟩
+  ⟨fun h ↦ by simpa using h.conj e.symm, fun h ↦ h.conj e⟩
 
 /-- A nontrivial abelian Lie algebra admits no Cartan involution. -/
 theorem not_isCartanInvolution_of_isLieAbelian [IsLieAbelian L] [Nontrivial L]
@@ -343,14 +347,14 @@ theorem eq_of_commute {θ' : L ≃ₗ⁅R⁆ L} (hθ : θ.IsCartanInvolution)
   set v : L := θ x - θ' x
   have hθ'_v : θ' v = -θ v := by
     simp only [v, map_sub, hθ'.involutive x, hcomm x, hθ.involutive x, neg_sub]
-  have hsum : θ'.twistedKillingForm v v + θ.twistedKillingForm v v = 0 := by
+  have hsum : θ.twistedKillingForm v v + θ'.twistedKillingForm v v = 0 := by
     rw [twistedKillingForm_apply, twistedKillingForm_apply, hθ'_v, map_neg, neg_neg,
-      add_neg_cancel]
-  by_contra hv
-  have hpos : (0 : R) < θ'.twistedKillingForm v v + θ.twistedKillingForm v v :=
-    add_pos (hθ'.twistedKillingForm_pos hv) (hθ.twistedKillingForm_pos hv)
-  rw [hsum] at hpos
-  exact lt_irrefl 0 hpos
+      neg_add_cancel]
+  have hle : θ.twistedKillingForm v v ≤ θ.twistedKillingForm v v + θ'.twistedKillingForm v v :=
+    (eq_or_lt_of_le (hθ'.twistedKillingForm_nonneg v)).elim
+      (fun h0 ↦ by rw [← h0, add_zero]) fun hpos ↦ (lt_add_of_pos_right _ hpos).le
+  exact hθ.eq_zero_of_twistedKillingForm_self_eq_zero <|
+    le_antisymm (hsum ▸ hle) (hθ.twistedKillingForm_nonneg v)
 
 /-- On a compact Lie algebra (negative-definite Killing form), the identity is the unique Cartan
 involution. -/

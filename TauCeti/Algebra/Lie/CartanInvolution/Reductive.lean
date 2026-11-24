@@ -115,11 +115,7 @@ reductive Cartan involution. -/
 @[simp]
 theorem isReductiveCartanInvolution_conj_iff {θ : L ≃ₗ⁅R⁆ L} (e : L ≃ₗ⁅R⁆ L') :
     (e.symm.trans (θ.trans e)).IsReductiveCartanInvolution ↔ θ.IsReductiveCartanInvolution :=
-  ⟨fun h ↦ by
-    have h' := h.conj e.symm
-    have heq : e.symm.symm.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ :=
-      LieEquiv.ext fun x ↦ by simp
-    rwa [heq] at h', fun h ↦ h.conj e⟩
+  ⟨fun h ↦ by simpa using h.conj e.symm, fun h ↦ h.conj e⟩
 
 /-- Every involutive automorphism of an abelian Lie algebra is a reductive Cartan involution. -/
 theorem isReductiveCartanInvolution_of_isLieAbelian [IsLieAbelian L] {θ : L ≃ₗ⁅R⁆ L}

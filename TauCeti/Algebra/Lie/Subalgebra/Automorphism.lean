@@ -86,6 +86,8 @@ def restrictDerivedSeries (k : ℕ) :
     (by
       rw [← LieSubalgebra.toSubmodule_inj, ← LieIdeal.derivedSeries_map_eq k e.surjective,
         LieIdeal.toLieSubalgebra_toSubmodule, LieIdeal.coe_map_of_surjective e.surjective]
+      -- `(H.map f).toSubmodule` and `((I : LieIdeal R L).toLieSubalgebra : Submodule R L)` are
+      -- definitionally `H.toSubmodule.map f` and `I.toSubmodule`.
       rfl)
 
 /-- Evaluating `LieEquiv.restrictDerivedSeries` agrees with evaluating the ambient equivalence. -/

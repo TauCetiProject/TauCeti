@@ -38,6 +38,8 @@ Baker--Campbell--Hausdorff expansion.
   origin.
 * `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
+* `NormedSpace.map_exp_of_isTopologicalRing`: a continuous ring homomorphism from a complete
+  normed algebra into a Hausdorff topological algebra commutes with `NormedSpace.exp`.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
@@ -126,6 +128,22 @@ theorem exp_add_smul (a : A) (s t : 𝕂) :
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
+
+/-- **Continuous ring homomorphisms into Hausdorff topological algebras commute with `exp`.**
+This generalizes `NormedSpace.map_exp` by dropping the normed-ring assumption on the target `𝔹`. -/
+theorem map_exp_of_isTopologicalRing {𝕜 𝔸 𝔹 : Type*}
+    [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+    [NormedRing 𝔸] [NormedAlgebra 𝕜 𝔸] [CompleteSpace 𝔸]
+    [Ring 𝔹] [Algebra 𝕜 𝔹] [TopologicalSpace 𝔹] [IsTopologicalRing 𝔹] [T2Space 𝔹]
+    {F : Type*} [FunLike F 𝔸 𝔹] [RingHomClass F 𝔸 𝔹]
+    (f : F) (hf : Continuous f) (x : 𝔸) :
+    f (exp x) = exp (f x) := by
+  have h := ((exp_series_hasSum_exp' (𝕂 := 𝕜) x).map (f : 𝔸 →+ 𝔹) hf).tsum_eq.symm
+  change f (exp x) = _ at h
+  rw [h, exp_eq_tsum 𝕜]
+  congr 1
+  ext n
+  simp [map_inv_natCast_smul f 𝕜 𝕜]
 
 end NormedSpace
 

@@ -219,7 +219,8 @@ theorem map_maximal_abelian_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅
       · intro x hx y hy
         apply e.injective
         simpa only [coe_toLieHom, map_lie, map_zero] using h𝔟'ab (e x) hx (e y) hy
-  exact (by simpa only [himg, Set.mem_ofPred_eq] using hmax : Maximal _ (o 𝔞))
+  rw [himg] at hmax
+  simpa only [Set.mem_ofPred_eq, o, Submodule.orderIsoMapComap_apply] using hmax
 
 /-- The inverse of a Lie automorphism has the same `-1`-eigenspace. -/
 @[simp]

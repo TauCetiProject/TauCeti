@@ -269,15 +269,8 @@ theorem exp_conj_continuousLinearEquiv {𝕜 E F : Type*}
     (B : E →L[𝕜] E) :
     exp (e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap)) =
       e.toContinuousLinearMap.comp ((exp B).comp e.symm.toContinuousLinearMap) := by
-  have hsum : HasSum (fun n : ℕ ↦ ((Nat.factorial n : 𝕜)⁻¹) • (e.conjContinuousAlgEquiv B) ^ n)
-      (e.conjContinuousAlgEquiv (exp B)) := by
-    have h1 : HasSum (fun n : ℕ ↦ e.conjContinuousAlgEquiv (((Nat.factorial n : 𝕜)⁻¹) • B ^ n))
-        (e.conjContinuousAlgEquiv (exp B)) :=
-      (exp_series_hasSum_exp' (𝕂 := 𝕜) B).map e.conjContinuousAlgEquiv.toAlgHom.toAddMonoidHom
-        hcont
-    simpa only [map_smul, map_pow] using h1
-  rw [← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, exp_eq_tsum 𝕜]
-  exact hsum.tsum_eq
+  simpa only [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply] using
+    (map_exp_of_isTopologicalRing (𝕜 := 𝕜) e.conjContinuousAlgEquiv hcont B).symm
 
 /-- **Conjugation invariance of the operator exponential in finite dimension**: for a continuous
 linear equivalence `e : E ≃L[𝕜] F` from a finite-dimensional normed space `E` over a complete

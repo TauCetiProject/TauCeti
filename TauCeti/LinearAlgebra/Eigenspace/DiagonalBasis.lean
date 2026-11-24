@@ -34,22 +34,15 @@ closed field, in finite dimension, and with semisimple restrictions.  A diagonal
 carries all of that for free and in coordinates, which is the form used here: no finiteness, no
 algebraic closedness, and the answer names the basis vectors involved.
 
-## Main definitions
-
-* `Module.Basis.diagEnd`: the endomorphism scaling each basis vector `b i` by `a i`.
-
 ## Main results
 
 * `Module.Basis.repr_apply_of_apply_basis`: the coordinates of `f w` are those of `w` scaled by
   the eigenvalues.
-* `Module.Basis.diagEnd_apply_self`, `Module.Basis.repr_diagEnd`, `Module.Basis.diagEnd_one`,
-  `Module.Basis.diagEnd_comp`, `Module.Basis.diagEnd_neg`,
-  `Module.Basis.diagEnd_comp_apply_of_eigenvector`, and
-  `Module.Basis.diagEnd_comp_eq_comp_diagEnd`: evaluation, coordinates, identity, composition,
-  negation, eigenvector action, and intertwining of diagonal endomorphisms in a basis.
 * `Module.Basis.apply_eq_smul_of_apply_basis`: if `f` and `g` are both diagonal in `b`, any
   `μ`-eigenvector of `f` is a `ν`-eigenvector of `g` whenever every basis index with
   `f`-eigenvalue `μ` has `g`-eigenvalue `ν`.
+* `Module.Basis.comp_eq_comp_of_apply_basis`: intertwining two diagonal endomorphisms across a map
+  sending each basis vector to a shifted eigenvector.
 * `Module.Basis.repr_eq_zero_of_weight_ne`: a joint eigenvector has zero coordinate at a basis
   vector of a different joint weight.
 * `Module.Basis.self_mem_of_repr_ne_zero`, `Module.Basis.eq_span_self_mem`,
@@ -90,46 +83,7 @@ theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
     · simp [hf j, hj]
   simpa using LinearMap.congr_fun key w
 
-/-- The diagonal endomorphism in the basis `b` scaling each `b i` by `a i`. -/
-noncomputable def _root_.Module.Basis.diagEnd (b : Module.Basis ι K V) (a : ι → K) :
-    Module.End K V :=
-  b.constr K fun i => a i • b i
-
-/-- Evaluating `b.diagEnd a` on a basis vector scales it by `a i`. -/
-@[simp]
-theorem _root_.Module.Basis.diagEnd_apply_self (b : Module.Basis ι K V) (a : ι → K) (i : ι) :
-    b.diagEnd a (b i) = a i • b i :=
-  b.constr_basis K _ i
-
-/-- `b.diagEnd a` scales the `i`-th basis coordinate of every vector by `a i`. -/
-theorem _root_.Module.Basis.repr_diagEnd (b : Module.Basis ι K V) (a : ι → K) (w : V) (i : ι) :
-    b.repr (b.diagEnd a w) i = a i * b.repr w i :=
-  b.repr_apply_of_apply_basis (b.diagEnd_apply_self a) w i
-
-/-- The diagonal endomorphism with all entries `1` is the identity. -/
-@[simp]
-theorem _root_.Module.Basis.diagEnd_one (b : Module.Basis ι K V) :
-    b.diagEnd 1 = LinearMap.id :=
-  b.ext fun i => by simp
-
-/-- Composing two diagonal endomorphisms in the same basis multiplies their diagonal entries. -/
-theorem _root_.Module.Basis.diagEnd_comp (b : Module.Basis ι K V) (a c : ι → K) :
-    (b.diagEnd a).comp (b.diagEnd c) = b.diagEnd (fun i => a i * c i) :=
-  b.ext fun i => by simp [smul_smul, mul_comm]
-
 end CommSemiring
-
-section CommRing
-
-variable [CommRing K] [AddCommGroup V] [Module K V]
-
-/-- Negating the diagonal entries negates the diagonal endomorphism. -/
-@[simp]
-theorem _root_.Module.Basis.diagEnd_neg (b : Module.Basis ι K V) (a : ι → K) :
-    b.diagEnd (fun i => -a i) = -b.diagEnd a :=
-  b.ext fun i => by simp [neg_smul]
-
-end CommRing
 
 section IsCancelMulZero
 
@@ -165,25 +119,20 @@ theorem _root_.Module.Basis.apply_eq_smul_of_apply_basis (b : Module.Basis ι K 
       (fun hfn => hai (congr_fun hfn ()))
     simp [h0]
 
-/-- A diagonal operator `b.diagEnd (fun i => g (a i))` acts by `g μ` on any `μ`-eigenvector
-of an endomorphism `f` diagonal in `b` with eigenvalues `a`. -/
-theorem _root_.Module.Basis.diagEnd_comp_apply_of_eigenvector (b : Module.Basis ι K V)
-    {f : Module.End K V} {a : ι → K} (hf : ∀ i, f (b i) = a i • b i)
-    (g : K → K) {w : V} {μ : K} (hw : f w = μ • w) :
-    b.diagEnd (fun i => g (a i)) w = g μ • w :=
-  b.apply_eq_smul_of_apply_basis hf (b.diagEnd_apply_self _) hw fun _ hi => congrArg g hi
-
-/-- If `f` is diagonal in `b` with eigenvalues `a` and `φ` sends each `b i` to a
-`ψ (a i)`-eigenvector of `f`, then `b.diagEnd (g₁ ∘ a)` intertwined across `φ` equals
-`b.diagEnd (g₂ ∘ a)` whenever `g₁ (ψ (a i)) = g₂ (a i)` for all `i`. -/
-theorem _root_.Module.Basis.diagEnd_comp_eq_comp_diagEnd (b : Module.Basis ι K V)
-    {f φ : Module.End K V} {a : ι → K} (hf : ∀ i, f (b i) = a i • b i)
-    (ψ g₁ g₂ : K → K) (hφ : ∀ i, f (φ (b i)) = ψ (a i) • φ (b i))
-    (hg : ∀ i, g₁ (ψ (a i)) = g₂ (a i)) :
-    (b.diagEnd (fun i => g₁ (a i))).comp φ = φ.comp (b.diagEnd (fun i => g₂ (a i))) := by
+/-- If `f` is diagonal in `b` with eigenvalues `a`, `φ` sends each `b i` to a
+`ψ (a i)`-eigenvector of `f`, and `g₁`, `g₂` are diagonal in `b` with eigenvalues `c₁`, `c₂`
+satisfying `c₁ j = c₂ i` whenever `a j = ψ (a i)`, then `g₁ ∘ φ = φ ∘ g₂`. -/
+theorem _root_.Module.Basis.comp_eq_comp_of_apply_basis (b : Module.Basis ι K V)
+    {f g₁ g₂ φ : Module.End K V} {a c₁ c₂ : ι → K}
+    (hf : ∀ i, f (b i) = a i • b i)
+    (hg₁ : ∀ i, g₁ (b i) = c₁ i • b i)
+    (hg₂ : ∀ i, g₂ (b i) = c₂ i • b i)
+    (ψ : K → K) (hφ : ∀ i, f (φ (b i)) = ψ (a i) • φ (b i))
+    (hc : ∀ i j, a j = ψ (a i) → c₁ j = c₂ i) :
+    g₁.comp φ = φ.comp g₂ := by
   refine b.ext fun i => ?_
   simp only [LinearMap.comp_apply]
-  rw [b.diagEnd_comp_apply_of_eigenvector hf g₁ (hφ i), hg i, b.diagEnd_apply_self, map_smul]
+  rw [b.apply_eq_smul_of_apply_basis hf hg₁ (hφ i) (hc i), hg₂ i, map_smul]
 
 end IsCancelMulZero
 

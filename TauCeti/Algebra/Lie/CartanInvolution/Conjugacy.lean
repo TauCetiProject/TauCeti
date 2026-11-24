@@ -125,55 +125,74 @@ private theorem trans_sq_apply_involutive {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   rw [hPθ, hPsymm, map_smul]
 
 /-- Intertwining `P^s (θ y) = θ (P^{-s} y)` for `P = (θ' ∘ θ)²`. -/
-private theorem rpowLieEquiv_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
-    {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+private theorem rpowLieEquiv_apply_involutive {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : Basis ι ℝ L) {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
     (hlam : ∀ i, 0 < lam i)
     (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i)
     (s : ℝ) (y : L) :
     rpowLieEquiv B hlam hB s (θ y) = θ (rpowLieEquiv B hlam hB (-s) y) := by
-  have h := B.diagEnd_comp_eq_comp_diagEnd
+  have h := B.comp_eq_comp_of_apply_basis
     (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
-    (φ := (θ : L →ₗ[ℝ] L)) hB (·⁻¹) (· ^ s) (· ^ (-s))
-    (fun i ↦ trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i))
-    fun i ↦ by rw [Real.inv_rpow (hlam i).le, Real.rpow_neg (hlam i).le]
+    (g₁ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)))
+    (g₂ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ (-s))))
+    (φ := (θ : L →ₗ[ℝ] L)) (c₁ := fun i ↦ lam i ^ s) (c₂ := fun i ↦ lam i ^ (-s)) hB
+    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (·⁻¹) (fun i ↦ trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i))
+    fun i j hj ↦ by rw [hj, Real.inv_rpow (hlam i).le, Real.rpow_neg (hlam i).le]
   simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     coe_toLinearEquiv] using congr($h y)
 
 /-- `θ.trans θ'` commutes with all real powers of `P = (θ.trans θ')²`. -/
-private theorem rpowLieEquiv_comm_trans {ι : Type*} (B : Basis ι ℝ L)
-    {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+private theorem rpowLieEquiv_comm_trans {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : Basis ι ℝ L) {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
     (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i)
     (s : ℝ) (y : L) :
     (θ.trans θ') (rpowLieEquiv B hlam hB s y) =
       rpowLieEquiv B hlam hB s ((θ.trans θ') y) := by
-  have h := B.diagEnd_comp_eq_comp_diagEnd
+  have h := B.comp_eq_comp_of_apply_basis
     (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
-    (φ := ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L)) hB id (· ^ s) (· ^ s)
+    (g₁ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)))
+    (g₂ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)))
+    (φ := ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
+    (c₁ := fun i ↦ lam i ^ s) (c₂ := fun i ↦ lam i ^ s) hB
+    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (fun i ↦ by simp [Matrix.diagonal_apply])
+    id
     (fun i ↦ by
       simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
       have hcomm : ((θ.trans θ').trans (θ.trans θ')) ((θ.trans θ') (B i)) =
           (θ.trans θ') (((θ.trans θ').trans (θ.trans θ')) (B i)) := by
         simp only [trans_apply]
       rw [hcomm, hB i, map_smul, id_eq])
-    fun _ ↦ rfl
+    fun i j hj ↦ by rw [hj, id_eq]
   simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     coe_toLinearEquiv] using congr($h y).symm
 
 /-- `log P` anticommutes with `θ` for `P = (θ' ∘ θ)²`. -/
-private theorem logLieDerivation_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
-    {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+private theorem logLieDerivation_apply_involutive {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : Basis ι ℝ L) {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
     (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i) (y : L) :
     logLieDerivation B hB (θ y) = -θ (logLieDerivation B hB y) := by
-  have hne : ∀ i, lam i ≠ 0 := fun i hi ↦
-    B.ne_zero i (((θ.trans θ').trans (θ.trans θ')).injective (by simpa [hi] using hB i))
-  have h := B.diagEnd_comp_eq_comp_diagEnd
+  have h := B.comp_eq_comp_of_apply_basis
     (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
-    (φ := (θ : L →ₗ[ℝ] L)) hB (·⁻¹) Real.log (fun r ↦ -Real.log r)
-    (fun i ↦ trans_sq_apply_involutive hθ hθ' (hne i) (hB i))
-    fun i ↦ Real.log_inv (lam i)
-  rw [B.diagEnd_neg, LinearMap.comp_neg] at h
+    (g₁ := Matrix.toLin B B (Matrix.diagonal (Real.log ∘ lam)))
+    (g₂ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ -Real.log (lam i))))
+    (φ := (θ : L →ₗ[ℝ] L))
+    (c₁ := Real.log ∘ lam) (c₂ := fun i ↦ -Real.log (lam i)) hB
+    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (·⁻¹)
+    (fun i ↦ trans_sq_apply_involutive hθ hθ' (eigenvalue_ne_zero_of_apply_basis B (hB i))
+      (hB i))
+    fun i j hj ↦ by simp only [Function.comp_apply, hj, Real.log_inv]
+  have hneg : Matrix.toLin B B (Matrix.diagonal (fun i ↦ -Real.log (lam i))) =
+      -Matrix.toLin B B (Matrix.diagonal (Real.log ∘ lam)) := by
+    rw [← map_neg, ← Matrix.diagonal_neg]
+    rfl
+  rw [hneg, LinearMap.comp_neg] at h
   simpa only [logLieDerivation_apply, LinearMap.comp_apply, LinearMap.neg_apply,
     LinearEquiv.coe_coe, coe_toLinearEquiv] using congr($h y)
 
