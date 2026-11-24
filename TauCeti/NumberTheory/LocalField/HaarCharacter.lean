@@ -279,7 +279,7 @@ theorem addHaar_setOf_normalizedAbsoluteValue_lt (a : K) :
     ext x
     rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, normalizedAbsoluteValue_lt_iff_le_inv_mul ha,
       map_mul, normalizedAbsoluteValue_irreducible hϖ]
-  have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := residueFieldCard_pos.ne'
+  have hq : (Nat.card 𝓀[K] : ℝ≥0) ≠ 0 := natCard_residueField_pos.ne'
   rw [h, addHaar_setOf_normalizedAbsoluteValue_le, map_mul,
     normalizedAbsoluteValue_irreducible hϖ]
   simp [ENNReal.coe_inv hq]
@@ -300,7 +300,7 @@ theorem addHaar_setOf_normalizedAbsoluteValue_eq (a : K) :
     measurableSet_setOf_normalizedAbsoluteValue_lt (K := K) (normalizedAbsoluteValue K a)
   have hfin : μ 𝒪[K] ≠ ∞ := (integerPositiveCompacts K).isCompact.measure_ne_top
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ ∞ :=
-    ENNReal.inv_ne_top.2 residueFieldCard_pos.ne'
+    ENNReal.inv_ne_top.2 natCard_residueField_pos.ne'
   rw [h, measure_sdiff (Set.ofPred_subset_ofPred.2 fun _ hx ↦ hx.le) hmeas.nullMeasurableSet
       (by rw [addHaar_setOf_normalizedAbsoluteValue_lt]; finiteness),
     addHaar_setOf_normalizedAbsoluteValue_le, addHaar_setOf_normalizedAbsoluteValue_lt,

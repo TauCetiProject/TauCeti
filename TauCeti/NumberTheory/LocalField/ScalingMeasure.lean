@@ -112,8 +112,8 @@ theorem scalingDensity_eq_zero_of_nonpos (hβ : β ≤ 0) : scalingDensity K β 
   · simp
   rw [scalingDensity_apply_of_ne_zero hx, Pi.zero_apply, ENNReal.ofReal_eq_zero]
   refine mul_nonpos_of_nonpos_of_nonneg
-    (div_nonpos_of_nonpos_of_nonneg ?_ one_sub_inv_residueFieldCard_pos.le) (by positivity)
-  linarith [Real.one_le_rpow (one_lt_residueFieldCard (K := K)).le (neg_nonneg.2 hβ)]
+    (div_nonpos_of_nonpos_of_nonneg ?_ one_sub_inv_natCard_residueField_pos.le) (by positivity)
+  linarith [Real.one_le_rpow (one_lt_natCard_residueField (K := K)).le (neg_nonneg.2 hβ)]
 
 /-- At `β = 1` the density is the indicator function of `K ∖ {0}`. -/
 theorem scalingDensity_one : scalingDensity K 1 = ({0}ᶜ : Set K).indicator 1 := by
@@ -121,7 +121,7 @@ theorem scalingDensity_one : scalingDensity K 1 = ({0}ᶜ : Set K).indicator 1 :
   rcases eq_or_ne x 0 with rfl | hx
   · simp
   rw [scalingDensity_apply_of_ne_zero hx, Set.indicator_of_mem (by simpa using hx),
-    Real.rpow_neg_one, div_self (one_sub_inv_residueFieldCard_pos (K := K)).ne', sub_self,
+    Real.rpow_neg_one, div_self (one_sub_inv_natCard_residueField_pos (K := K)).ne', sub_self,
     Real.rpow_zero, one_mul, ENNReal.ofReal_one, Pi.one_apply]
 
 /-- The density is measurable: it is locally constant away from `0`. -/
@@ -143,10 +143,10 @@ theorem measurable_scalingDensity [MeasurableSpace K] [OpensMeasurableSpace K] (
 
 /-- The factor `1 - q⁻¹` of the sphere masses, as the extended nonnegative real of a real
 number. -/
-private theorem one_sub_inv_residueFieldCard_eq_ofReal :
+private theorem one_sub_inv_natCard_residueField_eq_ofReal :
     1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 - (Nat.card 𝓀[K] : ℝ)⁻¹) := by
   rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one,
-    ENNReal.ofReal_inv_of_pos residueFieldCard_pos, ENNReal.ofReal_natCast]
+    ENNReal.ofReal_inv_of_pos natCard_residueField_pos, ENNReal.ofReal_natCast]
 
 end TauCeti
 
@@ -168,7 +168,7 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
         {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-k)} =
       ENNReal.ofReal ((1 - (Nat.card 𝓀[K] : ℝ) ^ (-β)) * (Nat.card 𝓀[K] : ℝ) ^ (-(k * β))) *
         μ 𝒪[K] := by
-  have hq0 : (0 : ℝ) < Nat.card 𝓀[K] := residueFieldCard_pos
+  have hq0 : (0 : ℝ) < Nat.card 𝓀[K] := natCard_residueField_pos
   -- Write the shell as the sphere `|x|_K = |a|_K` through `a = ϖ ^ k`; the density is constant
   -- on it.
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
@@ -182,9 +182,9 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
     setLIntegral_const, addHaar_setOf_normalizedAbsoluteValue_eq,
     scalingDensity_apply_of_ne_zero ha0, ← mul_assoc]
   · congr 1
-    rw [one_sub_inv_residueFieldCard_eq_ofReal, ← ENNReal.ofReal_coe_nnreal,
-      ← ENNReal.ofReal_mul one_sub_inv_residueFieldCard_pos.le,
-      ← ENNReal.ofReal_mul' (mul_nonneg one_sub_inv_residueFieldCard_pos.le (by positivity))]
+    rw [one_sub_inv_natCard_residueField_eq_ofReal, ← ENNReal.ofReal_coe_nnreal,
+      ← ENNReal.ofReal_mul one_sub_inv_natCard_residueField_pos.le,
+      ← ENNReal.ofReal_mul' (mul_nonneg one_sub_inv_natCard_residueField_pos.le (by positivity))]
     congr 1
     have hx : ((Nat.card 𝓀[K] : ℝ) ^ (-k)) ^ (β - 1) * (Nat.card 𝓀[K] : ℝ) ^ (-k) =
         (Nat.card 𝓀[K] : ℝ) ^ (-(k * β)) := by
@@ -194,7 +194,7 @@ theorem withDensity_scalingDensity_setOf_eq_zpow (β : ℝ) (k : ℤ) :
       ring_nf
     norm_cast
     push_cast [ha, ← hx]
-    field_simp [(sub_pos.2 (one_lt_residueFieldCard (K := K) (R := ℝ))).ne']
+    field_simp [(sub_pos.2 (one_lt_natCard_residueField (K := K) (R := ℝ))).ne']
   · have hx0 : x ≠ 0 := by
       rintro rfl
       exact ha0 (by simpa using hx.symm)
@@ -280,13 +280,13 @@ theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
       {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))}) := by
     intro m n hmn
     refine Set.disjoint_left.2 fun x (hm : _ = _) (hn : _ = _) ↦ hmn ?_
-    have :=
-      zpow_right_injective₀ residueFieldCard_pos one_lt_residueFieldCard.ne' (hm.symm.trans hn)
+    have := zpow_right_injective₀ natCard_residueField_pos one_lt_natCard_residueField.ne'
+      (hm.symm.trans hn)
     omega
   have h0 : (0 : K) ∉ ⋃ n : ℕ,
       {x | normalizedAbsoluteValue K x = (Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ))} := by
     simp only [Set.mem_iUnion, Set.mem_ofPred_eq, map_zero, not_exists]
-    exact fun n h ↦ (zpow_pos residueFieldCard_pos _).ne h
+    exact fun n h ↦ (zpow_pos natCard_residueField_pos _).ne h
   have hmeas (n : ℕ) := measurableSet_setOf_normalizedAbsoluteValue_eq (K := K)
     ((Nat.card 𝓀[K] : ℚ≥0) ^ (-(n : ℤ)))
   conv_lhs => rw [integer_eq_singleton_union_iUnion_setOf_normalizedAbsoluteValue_eq]
@@ -298,7 +298,7 @@ theorem withDensity_scalingDensity_integer {β : ℝ} (hβ : 0 < β) :
   -- The shell masses `(1 - r) r ^ n`, with `r = q ^ (-β) < 1`, sum to `1`.
   set r : ℝ := (Nat.card 𝓀[K] : ℝ) ^ (-β) with hr
   have hr0 : 0 ≤ r := by positivity
-  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_residueFieldCard (by linarith)
+  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_natCard_residueField (by linarith)
   have hterm (n : ℕ) :
       (1 - r) * (Nat.card 𝓀[K] : ℝ) ^ (-(((n : ℤ) : ℝ) * β)) = (1 - r) * r ^ n := by
     rw [hr, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
@@ -318,7 +318,7 @@ instance isFiniteMeasureOnCompacts_withDensity_scalingDensity (β : ℝ) :
   -- For `β > 0`, a compact set lies in some ball `|x|_K ≤ q ^ n`, whose mass is
   -- `q ^ (nβ) μ(𝒪[K])` by the scaling law.
   obtain ⟨M, hM⟩ := hs.bddAbove_image continuous_normalizedAbsoluteValue.continuousOn
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M (one_lt_residueFieldCard (K := K))
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M (one_lt_natCard_residueField (K := K))
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hsub : s ⊆ ((ϖ : K) ^ (-(n : ℤ))) • (𝒪[K] : Set K) := by
     intro x hx

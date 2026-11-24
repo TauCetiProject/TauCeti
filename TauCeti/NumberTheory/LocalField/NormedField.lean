@@ -127,6 +127,7 @@ theorem normalizedNormedField_completeSpace :
 
 /-- The normalized absolute value is continuous for the given topology of a nonarchimedean local
 field: it is the norm of `normalizedNormedField K`, whose topology is the given one. -/
+@[fun_prop, continuity]
 theorem continuous_normalizedAbsoluteValue :
     Continuous fun x : K ↦ (normalizedAbsoluteValue K x : ℝ) := by
   let _ := normalizedNormedField K

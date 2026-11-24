@@ -470,24 +470,24 @@ open scoped NNRat
 
 /-- The residue field of a nonarchimedean local field has more than one element, so its
 cardinality `q` satisfies `1 < q` in every ordered semiring of characteristic zero. -/
-theorem one_lt_residueFieldCard {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
+theorem one_lt_natCard_residueField {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
     [AddLeftMono R] [ZeroLEOneClass R] [CharZero R] :
     (1 : R) < Nat.card 𝓀[K] :=
   Nat.one_lt_cast.2 Finite.one_lt_card
 
 /-- The cardinality `q` of the residue field of a nonarchimedean local field is positive in every
 ordered semiring of characteristic zero. -/
-theorem residueFieldCard_pos {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
+theorem natCard_residueField_pos {R : Type*} [AddMonoidWithOne R] [PartialOrder R]
     [AddLeftMono R] [ZeroLEOneClass R] [CharZero R] :
     (0 : R) < Nat.card 𝓀[K] :=
-  zero_le_one.trans_lt one_lt_residueFieldCard
+  zero_le_one.trans_lt one_lt_natCard_residueField
 
 /-- The inverse `q⁻¹` of the residue-field cardinality is less than one, so `1 - q⁻¹` is
 positive. -/
-theorem one_sub_inv_residueFieldCard_pos {R : Type*} [Field R] [LinearOrder R]
+theorem one_sub_inv_natCard_residueField_pos {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] :
     (0 : R) < 1 - (Nat.card 𝓀[K] : R)⁻¹ :=
-  sub_pos.2 (inv_lt_one_of_one_lt₀ one_lt_residueFieldCard)
+  sub_pos.2 (inv_lt_one_of_one_lt₀ one_lt_natCard_residueField)
 
 variable (K) in
 /-- The normalized absolute value of a nonarchimedean local field, with values in `ℚ≥0`.
@@ -495,8 +495,8 @@ For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 `q = Nat.card 𝓀[K]` is the cardinality of the residue field. -/
 noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
   (intValuation (K := K)).toAbsoluteValue
-    (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
-    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone
+    (WithZeroMulInt.toNNRat (one_lt_natCard_residueField (K := K)).ne_zero)
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_natCard_residueField (K := K))).monotone
     (fun _ ↦ map_eq_zero _)
     (fun _ ↦ (intValuation (K := K)).zero_iff)
 
@@ -557,7 +557,7 @@ theorem normalizedAbsoluteValue_le_normalizedAbsoluteValue_iff (x y : K) :
     normalizedAbsoluteValue K x ≤ normalizedAbsoluteValue K y ↔
       valuation K x ≤ valuation K y := by
   rw [normalizedAbsoluteValue, Valuation.toAbsoluteValue_apply, Valuation.toAbsoluteValue_apply,
-    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).le_iff_le]
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_natCard_residueField (K := K))).le_iff_le]
   exact OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
 
 /-- The normalized absolute value induces the strict order of Mathlib's valuation. -/
@@ -585,7 +585,7 @@ theorem normalizedAbsoluteValue_eq_one_iff (x : K) :
     have hone : valueGroupWithZeroIsoInt K (1 : ValueGroupWithZero K) = 1 := map_one _
     rw [← hone]
     exact (valueGroupWithZeroIsoInt K).injective.eq_iff
-  · exact (one_lt_residueFieldCard (K := K)).ne'
+  · exact (one_lt_natCard_residueField (K := K)).ne'
 
 /-- The normalized absolute value takes its values in the powers of `q`, so it is less than
 `|a|_K ≠ 0` exactly when it is at most `q⁻¹ |a|_K`, where `q` is the cardinality of the residue
@@ -596,9 +596,9 @@ theorem normalizedAbsoluteValue_lt_iff_le_inv_mul {x a : K} (ha : a ≠ 0) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp [pos_iff_ne_zero, ha]
   rw [normalizedAbsoluteValue_apply_ne_zero x hx, normalizedAbsoluteValue_apply_ne_zero a ha,
-    ← zpow_neg_one, ← zpow_add₀ residueFieldCard_pos.ne',
-    zpow_lt_zpow_iff_right₀ one_lt_residueFieldCard,
-    zpow_le_zpow_iff_right₀ one_lt_residueFieldCard]
+    ← zpow_neg_one, ← zpow_add₀ natCard_residueField_pos.ne',
+    zpow_lt_zpow_iff_right₀ one_lt_natCard_residueField,
+    zpow_le_zpow_iff_right₀ one_lt_natCard_residueField]
   omega
 
 /-- An element belongs to the ring of integers exactly when its normalized absolute value is at
@@ -614,7 +614,7 @@ theorem mem_integer_iff_normalizedAbsoluteValue_le_one (x : K) :
     simpa only [map_one] using
       (OrderIsoClass.map_le_map_iff (valueGroupWithZeroIsoInt K)
         (a := valuation K x) (b := 1)).symm
-  · exact one_lt_residueFieldCard (K := K)
+  · exact one_lt_natCard_residueField (K := K)
 
 /-- The ring of integers is `{0}` together with the shells `|x|_K = q ^ (-n)`, `n : ℕ`, where `q`
 is the cardinality of the residue field. -/
@@ -629,12 +629,12 @@ theorem integer_eq_singleton_union_iUnion_setOf_normalizedAbsoluteValue_eq :
     rcases eq_or_ne x 0 with rfl | hx0
     · exact Or.inl rfl
     rw [normalizedAbsoluteValue_apply_ne_zero x hx0] at hx ⊢
-    rw [zpow_le_one_iff_right₀ one_lt_residueFieldCard, neg_nonpos] at hx
+    rw [zpow_le_one_iff_right₀ one_lt_natCard_residueField, neg_nonpos] at hx
     exact Or.inr ⟨_, by rw [Int.toNat_of_nonneg hx]⟩
   · rintro (rfl | ⟨n, hn⟩)
     · simp
     rw [hn]
-    exact zpow_le_one_of_nonpos₀ one_lt_residueFieldCard.le (by simp)
+    exact zpow_le_one_of_nonpos₀ one_lt_natCard_residueField.le (by simp)
 
 /-- The normalized absolute value is one on every unit of the ring of integers. -/
 @[simp]
