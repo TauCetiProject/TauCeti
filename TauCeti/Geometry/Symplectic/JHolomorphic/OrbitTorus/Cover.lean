@@ -33,23 +33,23 @@ determinant signs to these covers:
   (`TauCeti.coverPullback_apply_I_smul`);
 * on the `n`-fold cover, the untwisted operator is invertible exactly when `det (1 - P ^ n) ≠ 0`
   (`TauCeti.isInvertible_periodicTorusOperator_coverPullback_iff_det_ne_zero`), and the operator
-  twisted along the orbit of the cover exactly when `det (1 + P ^ n) ≠ 0`
-  (`TauCeti.isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_iff`);
+  twisted along the orbit of the cover exactly when `det (1 + P ^ n) ≠ 0`, see
+  `isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_iff_det_one_add_ne_zero`;
 * the complex orientation, transported along a path of loops to these operators, has sign
   `sgn det (1 - P ^ n)` on the untwisted operator of the cover
   (`TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign_det`) and
-  `sgn det (1 + P ^ n)` on the operator twisted along its orbit
-  (`sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback`).
+  `sgn det (1 + P ^ n)` on the operator twisted along its orbit, see
+`sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_eq_sign_det`
 
 The sign character of `C` that is nontrivial on `γ` only pulls back to the `n`-fold cover as the
 character with sign `(-1) ^ n` along the orbit of the cover. Its operator, the pullback of the
 operator of `C` twisted along `γ`, has return map `(-P) ^ n` and determinant sign
-`sgn det (1 - (-P) ^ n)`
-(`TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGaugeLoop`).
-For the double cover the untwisted sign is the product of the two signs of `C` trivial on the
-circle factor, `sgn det (1 - P ^ 2) = sgn det (1 - P) · sgn det (1 + P)`
-(`TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two`), the analytic
-counterpart of `TauCeti.orbitTorusTwistSign_sq_zero`.
+`sgn det (1 - (-P) ^ n)`; the theorem
+`sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGaugeLoop_eq_sign_det`
+states this. For the double cover the untwisted sign is the product of the two signs of `C`
+trivial on the circle factor, `sgn det (1 - P ^ 2) = sgn det (1 - P) · sgn det (1 + P)`
+(`TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two_eq_sign_mul_sign`),
+the analytic counterpart of `TauCeti.orbitTorusTwistSign_sq_zero`.
 
 The covers along the circle factor need nothing new: the results for the operators periodic of
 period `ℓ` in `s` hold for every `ℓ ≠ 0`, in particular for `k ℓ`, so the statements here cover
@@ -58,16 +58,16 @@ not spanned by translations along the two factors are not treated here.
 
 ## Main results
 
-* `TauCeti.isInvertible_periodicTorusOperator_coverPullback_iff_det_ne_zero`,
-  `TauCeti.isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_iff`: the
-  Fredholm alternative on the `n`-fold cover along the orbit.
-* `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign_det`,
-  `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback`:
-  the determinant signs `sgn det (1 ∓ P ^ n)` on the `n`-fold cover.
-* `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGaugeLoop`:
-  the sign `sgn det (1 - (-P) ^ n)` of the pullback of the operator twisted along the orbit.
-* `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two`: the double
-  cover law.
+* The Fredholm alternative on the `n`-fold cover along the orbit:
+  `TauCeti.isInvertible_periodicTorusOperator_coverPullback_iff_det_ne_zero` and
+  `isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_iff_det_one_add_ne_zero`
+* The determinant signs `sgn det (1 ∓ P ^ n)` on the `n`-fold cover:
+  `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign_det` and
+`sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_eq_sign_det`
+* The sign `sgn det (1 - (-P) ^ n)` of the pullback of the operator twisted along the orbit:
+`sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGaugeLoop_eq_sign_det`
+* The double cover law:
+  `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two_eq_sign_mul_sign`.
 
 ## References
 
@@ -129,18 +129,6 @@ local instance instCompleteSpaceOrbitTorusCover : CompleteSpace F :=
 
 /-! ### The Fredholm alternative on the covers -/
 
-/-- **The return map of the loop of the cover twisted along its orbit.** On the `n`-fold cover the
-periodic gauge `Sₐ` of the pulled-back loop has return map `-P ^ n` over the period `n T`, so
-`1 - Ψₐ(n T) = 1 + P ^ n`. -/
-theorem one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_coverPullback
-    (S : C(AddCircle T, F →L[ℝ] F)) :
-    (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦
-        antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n S) t) (n * T)) :
-          F →ₗ[ℝ] F)) =
-      1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F) ^ n := by
-  rw [one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_period, dysonSeriesLeft_coverPullback,
-    ContinuousLinearMap.toLinearMap_pow]
-
 /-- **The Fredholm alternative on the `n`-fold cover along the orbit.** For `ℓ ≠ 0` and an
 infinitesimally symplectic loop `S` with return map `P = Ψ(T)`, the operator `∂s + J₀ (∂t - S)` of
 the loop traversed `n` times, on maps periodic of period `ℓ` in `s` and `n T` in `t`, is invertible
@@ -158,15 +146,17 @@ theorem isInvertible_periodicTorusOperator_coverPullback_iff_det_ne_zero (hℓ :
 infinitesimally symplectic loop `S` with return map `P = Ψ(T)`, the operator of the loop traversed
 `n` times, on maps periodic in `s` and antiperiodic of period `n T` in `t`, is invertible exactly
 when `det (1 + P ^ n) ≠ 0`. -/
-theorem isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_iff (hℓ : ℓ ≠ 0)
+theorem
+    isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_iff_det_one_add_ne_zero
+    (hℓ : ℓ ≠ 0)
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (periodicTorusOperator ((n : ℝ) * T) ℓ
         (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n S))).IsInvertible ↔
       LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F) ^ n) ≠ 0 := by
-  rw [isInvertible_periodicTorusOperator_iff_det_ne_zero _ hℓ _
-    (im_inner_antiperiodicGaugeLoop_add_eq_zero _ (im_inner_coverPullback_add_eq_zero n hS)),
-    one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_coverPullback]
+  rw [isInvertible_periodicTorusOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero _ hℓ _
+    (im_inner_coverPullback_add_eq_zero n hS), dysonSeriesLeft_coverPullback,
+    ContinuousLinearMap.toLinearMap_pow]
 
 /-! ### The determinant signs on the covers -/
 
@@ -225,7 +215,8 @@ periodic gauge by the loops `TauCeti.CircleSobolev.antiperiodicGaugeLoop (n T)` 
 loops. If the one at `b` is bijective, every element `x` of its determinant line in the orientation
 transported from the complex orientation at `a` reads, in the trivialization given by bijectivity,
 with the sign of `det (1 + P ^ n)`, where `P = Ψ_b(T)`. -/
-theorem sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback
+theorem
+sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPullback_eq_sign_det
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
@@ -261,14 +252,12 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign
         (LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F) ^ n)) := by
-  rw [← one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_coverPullback]
-  exact sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det _
-    (M := fun τ ↦ antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M τ))) hℓ
-    ((continuous_antiperiodicGaugeLoop _).comp_continuousOn
-      ((AddCircle.continuous_coverPullback n).comp_continuousOn hM))
-    (fun τ hτ ↦ im_inner_antiperiodicGaugeLoop_add_eq_zero _
-      (im_inner_coverPullback_add_eq_zero n (hMs τ hτ)))
-    (antiperiodicGaugeLoop_apply_I_smul _ (coverPullback_apply_I_smul n hMa)) hf hz hb hx hxz
+  rw [← ContinuousLinearMap.toLinearMap_pow, ← dysonSeriesLeft_coverPullback]
+  exact sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_eq_sign_det _
+    (M := fun τ ↦ AddCircle.coverPullback n (M τ)) hℓ
+    ((AddCircle.continuous_coverPullback n).comp_continuousOn hM)
+    (fun τ hτ ↦ im_inner_coverPullback_add_eq_zero n (hMs τ hτ))
+    (coverPullback_apply_I_smul n hMa) hf hz hb hx hxz
 
 /-- **The pullback of the operator twisted along the orbit has determinant sign
 `sgn det (1 - (-P) ^ n)`.** The sign character of the orbit torus that is nontrivial on the orbit
@@ -279,7 +268,8 @@ situation of `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPu
 for these loops, if the operator at `b` is bijective, every element `x` of its determinant line in
 the orientation transported from the complex orientation at `a` reads, in the trivialization given
 by bijectivity, with the sign of `det (1 - (-P) ^ n)`, where `P = Ψ_b(T)`. -/
-theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGaugeLoop
+theorem
+sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGaugeLoop_eq_sign_det
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
@@ -329,7 +319,7 @@ whose pullbacks to the double cover are trivial. In the situation of
 `TauCeti.sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign_det` for `n = 2`,
 every element `x` of the determinant line at `b` in the transported complex orientation reads, in
 the trivialization given by bijectivity, with this sign, where `P = Ψ_b(T)`. -/
-theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two
+theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two_eq_sign_mul_sign
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
