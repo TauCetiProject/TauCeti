@@ -252,7 +252,7 @@ field of a differentiable one-form `α`, `ι_Z dα = α`, then the Liouville gra
 `s ↦ φ_{log f(s)}(ι s)` pulls `α` back to `f ι^* α` at every point `s` where `ι` and `f` are
 differentiable, `f s > 0` and `ι s` stays in the flow domain up to time `log f(s)`: the flow
 rescales the primitive by `e^{log f} = f`, and the primitive vanishes on its Liouville field. For a
-smooth form `α`, apply it to `α.val` with `α.mdifferentiable rfl`. -/
+smooth form `α`, apply it to `α.val` with `α.mdifferentiable`. -/
 theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.tangent 1 (T% Z))
     {α : RoughForm I M ℝ 1} {σ : RoughForm I M ℝ 2}
     (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
