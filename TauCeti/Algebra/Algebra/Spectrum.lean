@@ -80,8 +80,14 @@ theorem isUnit_one_add_smul_iff {R A : Type*} [Field R] [Ring A] [Algebra R A] {
     IsUnit (1 + k • a) ↔ ∀ x ∈ spectrum R a, 1 + k * x ≠ 0 := by
   rcases eq_or_ne k 0 with rfl | hk
   · simp
-  rw [← zero_notMem_iff R, ← map_one (algebraMap R A), ← singleton_add_eq, ← Units.val_mk0 hk,
-    ← Units.smul_def, unit_smul_eq_smul]
-  simp [Set.mem_smul_set, eq_neg_iff_add_eq_zero, add_comm]
+  -- The spectrum of `1 + k a` is the image of that of `a` under `x ↦ 1 + k x`.
+  have hσ : spectrum R (1 + k • a) = (fun x ↦ 1 + k * x) '' spectrum R a := by
+    have h₁ := singleton_add_eq (Units.mk0 k hk • a) (1 : R)
+    have h₂ := unit_smul_eq_smul a (Units.mk0 k hk)
+    simp only [map_one, Units.smul_mk0] at h₁ h₂
+    rw [← h₁, h₂, Set.singleton_add, ← Set.image_smul, Set.image_image]
+    simp only [smul_eq_mul]
+  rw [← zero_notMem_iff R, hσ]
+  simp
 
 end spectrum

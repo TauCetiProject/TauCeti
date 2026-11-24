@@ -668,15 +668,14 @@ theorem spectralFlow_eq_of_isSpectralFlowPotential_iff {B : ℝ → K →L[𝕜]
   simp only [spectralFlow, hB, ↓reduceDIte]
   exact ((h _).1 hB.choose_spec).sub_eq_sub hFp hab hA hsa hF
 
-end Comparison
-
 /-- **Local comparison of spectral flows.** Two continuous paths `A` and `B` of self-adjoint
-Fredholm operators have the same spectral flow over `[a, b]` if near every time `t` they have
-spectral cuts `c` and `c'` across which their counts of eigenvalues change in the same way: for
-every nearby time `u`, the count of `B` in `[0, c']` changes from `t` to `u` as much as the count of
-`A` in `[0, c]`. -/
-theorem spectralFlow_eq_of_forall_exists_isSpectralCutOn {B : ℝ → H →L[𝕜] H} {a b : ℝ}
-    (hab : a ≤ b) (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
+Fredholm operators, on possibly different Hilbert spaces, have the same spectral flow over
+`[a, b]` if near every time `t` they have spectral cuts `c` and `c'` across which their counts of
+eigenvalues change in the same way: for every nearby time `u`, the count of `B` in `[0, c']`
+changes from `t` to `u` as much as the count of `A` in `[0, c]`. -/
+theorem spectralFlow_eq_of_forall_exists_isSpectralCutOn [IsScalarTower ℝ 𝕜 (K →L[𝕜] K)]
+    {B : ℝ → K →L[𝕜] K} {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
+    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
     (hF : ∀ t ∈ Icc a b, (A t).IsFredholm) (hB : ContinuousOn B (Icc a b))
     (hsaB : ∀ t ∈ Icc a b, IsSelfAdjoint (B t)) (hFB : ∀ t ∈ Icc a b, (B t).IsFredholm)
     (hloc : ∀ t ∈ Icc a b, ∃ ε > 0, ∃ c c', IsSpectralCutOn A c (ball t ε ∩ Icc a b) ∧
@@ -697,6 +696,8 @@ theorem spectralFlow_eq_of_forall_exists_isSpectralCutOn {B : ℝ → H →L[�
     have h₃ := hcount u ⟨huε, hu⟩
     linarith) ⟨hab, le_rfl⟩ ⟨le_rfl, hab⟩
   linarith
+
+end Comparison
 
 /-- **Phillips' partition formula.** For a partition `a = p 0 ≤ p 1 ≤ ⋯ ≤ p n = b` and a spectral
 cut `c k` of `A` on each `[p k, p (k + 1)]`, the spectral flow is the sum of the changes of the

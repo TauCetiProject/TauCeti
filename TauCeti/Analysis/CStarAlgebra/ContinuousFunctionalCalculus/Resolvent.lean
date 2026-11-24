@@ -65,8 +65,8 @@ theorem cfc_div_one_add_mul (ha : IsSelfAdjoint a) {k : ℝ} (hk : IsUnit (1 + k
     cfc (fun x : ℝ ↦ x / (1 + k * x)) a = a * Ring.inverse (1 + k • a) := by
   have hne := spectrum.isUnit_one_add_smul_iff.1 hk
   simp_rw [div_eq_mul_inv]
-  rw [cfc_mul (fun x : ℝ ↦ x) (fun x ↦ (1 + k * x)⁻¹) a, cfc_id' ℝ a,
-    cfc_inv (fun x : ℝ ↦ 1 + k * x) a hne, cfc_const_add 1 (fun x : ℝ ↦ k * x) a,
-    cfc_const_mul_id k a, Algebra.algebraMap_eq_smul_one, one_smul]
+  rw [cfc_mul (fun x : ℝ ↦ x) (fun x ↦ (1 + k * x)⁻¹) a,
+    cfc_inv (fun x : ℝ ↦ 1 + k * x) a hne]
+  simp [cfc_id' ℝ a, cfc_const_add 1 (fun x : ℝ ↦ k * x) a, cfc_const_mul_id k a]
 
 end IsSelfAdjoint

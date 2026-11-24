@@ -35,11 +35,7 @@ multiple of a compact perturbation of the identity when `ι` is compact, hence F
 `A x = λ ι x`, is an eigenvector of `τ_c A` with eigenvalue `c λ / (c - λ)`
 (`ContinuousLinearMap.shiftedResolventTransform_apply_of_apply_eq_smul`); only this direction of
 the spectral correspondence is proved here. The function `λ ↦ c λ / (c - λ)` fixes `0` and has
-derivative `1` there, so `τ_c A` is expected to turn a path of self-adjoint operators with compact
-resolvent into a path of bounded self-adjoint Fredholm operators whose eigenvalues cross `0` where
-and as those of the unbounded operators do. This is the basis for defining the spectral flow of
-unbounded families on a fixed compactly embedded domain through the spectral flow of bounded
-families.
+derivative `1` there.
 
 The shift is a choice, and a single shift need not be admissible along a whole path. The transforms
 at two shifts `c` and `c'` are related by the fractional linear function `x ↦ x / (1 + k x)`, for
@@ -52,8 +48,6 @@ invertible (`ContinuousLinearMap.isUnit_one_add_smul_shiftedResolventTransform`)
 `(c / c') (c' ι - A) (c ι - A)⁻¹`. Hence the spectral flow of the transformed path does not depend
 on the shift (`TauCeti.spectralFlow_shiftedResolventTransform_eq`): this is
 `TauCeti.spectralFlow_mul_ringInverse_one_add_smul` for the change of operator `x ↦ x / (1 + k x)`.
-It is one step towards the spectral flow of unbounded families, which still requires gluing the
-transforms at shifts admissible on different parts of a path.
 
 ## References
 
@@ -84,6 +78,11 @@ def shiftedResolventTransform (ι A : D →L[𝕜] H) (c : ℝ) : H →L[𝕜] H
 
 variable {ι A : D →L[𝕜] H} {c c' : ℝ}
 
+/-- When `c ι - A` is invertible, its inverse sends `c ι x - A x` back to `x`. -/
+theorem inverse_smul_sub_apply (h : ((c : 𝕜) • ι - A).IsInvertible) (x : D) :
+    ((c : 𝕜) • ι - A).inverse ((c : 𝕜) • ι x - A x) = x := by
+  simpa only [sub_apply, smul_apply] using h.inverse_apply_self x
+
 /-- Unfolds `ContinuousLinearMap.shiftedResolventTransform`. -/
 theorem shiftedResolventTransform_def (ι A : D →L[𝕜] H) (c : ℝ) :
     ι.shiftedResolventTransform A c = (c : 𝕜) • (A ∘L ((c : 𝕜) • ι - A).inverse) :=
@@ -100,8 +99,7 @@ theorem shiftedResolventTransform_of_not_isInvertible (h : ¬((c : 𝕜) • ι 
 to `c A x`. -/
 theorem shiftedResolventTransform_apply_sub (h : ((c : 𝕜) • ι - A).IsInvertible) (x : D) :
     ι.shiftedResolventTransform A c ((c : 𝕜) • ι x - A x) = (c : 𝕜) • A x := by
-  have hx : ((c : 𝕜) • ι - A).inverse ((c : 𝕜) • ι x - A x) = x := h.inverse_apply_self x
-  rw [shiftedResolventTransform_def, smul_apply, comp_apply, hx]
+  rw [shiftedResolventTransform_def, smul_apply, comp_apply, inverse_smul_sub_apply h]
 
 /-- The shifted resolvent transform at a shift `c` with `c ι - A` invertible is
 `c² ι (c ι - A)⁻¹ - c`. -/
@@ -110,8 +108,8 @@ theorem shiftedResolventTransform_eq_sub (h : ((c : 𝕜) • ι - A).IsInvertib
       (c : 𝕜) ^ 2 • (ι ∘L ((c : 𝕜) • ι - A).inverse) - (c : 𝕜) • 1 := by
   ext y
   obtain ⟨x, rfl⟩ := h.surjective y
-  have hx : ((c : 𝕜) • ι - A).inverse ((c : 𝕜) • ι x - A x) = x := h.inverse_apply_self x
-  simp only [sub_apply, smul_apply, comp_apply, hx, shiftedResolventTransform_apply_sub h,
+  simp only [sub_apply, smul_apply, comp_apply, inverse_smul_sub_apply h,
+    shiftedResolventTransform_apply_sub h,
     one_apply_eq_self]
   module
 
@@ -171,8 +169,7 @@ theorem one_add_smul_shiftedResolventTransform_eq (h : ((c : 𝕜) • ι - A).I
       ((c / c' : ℝ) : 𝕜) • (((c' : 𝕜) • ι - A) ∘L ((c : 𝕜) • ι - A).inverse) := by
   ext y
   obtain ⟨x, rfl⟩ := h.surjective y
-  have hx : ((c : 𝕜) • ι - A).inverse ((c : 𝕜) • ι x - A x) = x := h.inverse_apply_self x
-  simp only [add_apply, sub_apply, smul_apply, comp_apply, hx,
+  simp only [add_apply, sub_apply, smul_apply, comp_apply, inverse_smul_sub_apply h,
     shiftedResolventTransform_apply_sub h, one_apply_eq_self]
   have hc𝕜 : (c : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc
   have hc'𝕜 : (c' : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc'
@@ -190,9 +187,8 @@ theorem shiftedResolventTransform_mul_one_add_smul (h : ((c : 𝕜) • ι - A).
   rw [one_add_smul_shiftedResolventTransform_eq h hc hc']
   ext y
   obtain ⟨x, rfl⟩ := h.surjective y
-  have hx : ((c : 𝕜) • ι - A).inverse ((c : 𝕜) • ι x - A x) = x := h.inverse_apply_self x
   rw [mul_apply_eq_comp]
-  simp only [comp_apply, sub_apply, smul_apply, hx, map_smul,
+  simp only [comp_apply, sub_apply, smul_apply, inverse_smul_sub_apply h, map_smul,
     shiftedResolventTransform_apply_sub h, shiftedResolventTransform_apply_sub h', smul_smul]
   congr 1
   have hc'𝕜 : (c' : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.2 hc'
