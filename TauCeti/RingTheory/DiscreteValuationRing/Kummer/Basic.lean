@@ -68,6 +68,8 @@ tame ramification.
 * `TauCeti.IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible` and
   `TauCeti.IsDiscreteValuationRing.isTamelyRamifiedWRT_adjoin_iff_of_pow_eq_of_irreducible`: `L`
   (or `K(α)`) is tamely ramified with respect to `A` iff `n` is invertible in `κ_A`.
+* `TauCeti.IsDiscreteValuationRing.isUnramifiedWRT_iff_of_pow_eq_of_irreducible`: `L` is
+  unramified with respect to `A` iff `n = 1`.
 * `TauCeti.IsDiscreteValuationRing.mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible`:
   the roots of unity in `L` of order invertible in `κ_A` lie in `K`.
 * `TauCeti.IsDiscreteValuationRing.eq_adjoin_pow_finrank_of_pow_eq_of_irreducible`: if `n` is
@@ -395,6 +397,24 @@ theorem isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π)
   · have : (maximalIdeal (integralClosure A L)).LiesOver (maximalIdeal A) :=
       ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
     simpa [he] using (h (maximalIdeal _)).2
+  -- The residue field extension is trivial, hence separable.
+  let := Ideal.Quotient.field (maximalIdeal A)
+  obtain ⟨y, rfl⟩ := surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hα hgen P x
+  exact isSeparable_algebraMap y
+
+/-- **When a Kummer extension of a discrete valuation ring is unramified.** If `L` is generated
+over the fraction field `K` of a discrete valuation ring `A` by an `n`-th root of a uniformizer of
+`A`, then `L` is unramified with respect to `A` iff `n = 1`. -/
+theorem isUnramifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π)
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
+    Algebra.IsUnramifiedWRT A L ↔ n = 1 := by
+  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hα hgen
+  have he := ramificationIdx_eq_of_pow_eq_of_irreducible hπ hα hgen
+  rw [Algebra.isUnramifiedWRT_def]
+  refine ⟨fun h ↦ ?_, fun hn P _ _ ↦ ⟨(he P).trans hn, ⟨fun x ↦ ?_⟩⟩⟩
+  · have : (maximalIdeal (integralClosure A L)).LiesOver (maximalIdeal A) :=
+      ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
+    simpa [he] using (h (maximalIdeal _)).1
   -- The residue field extension is trivial, hence separable.
   let := Ideal.Quotient.field (maximalIdeal A)
   obtain ⟨y, rfl⟩ := surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hα hgen P x
