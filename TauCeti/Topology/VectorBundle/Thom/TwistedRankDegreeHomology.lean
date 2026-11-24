@@ -351,8 +351,7 @@ theorem thomPairOverSignFiberClassOf_eq (e e' : Trivialization F (π F E)) [e.Is
         hι (ModuleCat.of R R) (h.trans ho.symm) (finrank ℝ F)).symm)
     simp only [TopPair.singularHomologyMapIso_inv] at hinv
     rw [thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf, h', hinv]
-  · have h' : (e'.mapOrientation ι hx').symm ω = -o := by
-      rw [← neg_neg ω, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
+  · have h' : (e'.mapOrientation ι hx').symm ω = -o := e'.mapOrientation_symm_eq_neg_of_eq_neg hx' h
     have hinv : TopPair.singularHomologyMap
         (e'.continuousLinearEquivAt ℝ x hx').complZeroPairIso.inv
         (ModuleCat.of R R) (finrank ℝ F) =

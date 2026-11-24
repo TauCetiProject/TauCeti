@@ -219,6 +219,21 @@ theorem RoughForm.tsupport_interior_subset (ω : RoughForm I M F (k + 1))
   simp only [RoughForm.interior_apply, h]
   exact (ω x).map_coord_zero 0 rfl
 
+/-- The interior product of a form is supported in the topological support of the form. -/
+theorem RoughForm.tsupport_interior_subset_form (X : (x : M) → TangentSpace I x)
+    (ω : RoughForm I M F (k + 1)) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X) ⊆
+      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) ω :=
+  closure_mono fun x hx hω ↦ hx (by ext v; rw [RoughForm.interior_apply, hω]; rfl)
+
+/-- Compact support is preserved by the interior product with any vector field. -/
+theorem RoughForm.isCompact_tsupport_interior (X : (x : M) → TangentSpace I x)
+    {ω : RoughForm I M F (k + 1)}
+    (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) ω)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X)) :=
+  hω.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) _)
+    (ω.tsupport_interior_subset_form X)
+
 /-- Insertion of the zero field vanishes. -/
 @[simp]
 theorem RoughForm.interior_zero_field (ω : RoughForm I M F (k + 1)) :

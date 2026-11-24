@@ -32,9 +32,10 @@ We also define *full* elements of a topological ring (`TauCeti.IsFull`, generati
 two-sided ideal), together with basic facts for units (`TauCeti.IsFull.of_isUnit`,
 `TauCeti.isFull_one`) and zero (`TauCeti.not_isFull_zero`).
 
-The annihilator of any two-sided ideal of a `T₁` topological ring is closed
-(`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a self-adjoint ideal is
-essential as soon as it meets every nonzero closed two-sided ideal
+The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed
+(`TwoSidedIdeal.isClosed_comap`). The annihilator of any two-sided ideal of a `T₁` topological
+ring is closed (`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a
+self-adjoint ideal is essential as soon as it meets every nonzero closed two-sided ideal
 (`TwoSidedIdeal.isEssential_iff_forall_isClosed`).
 
 The quotient-ring construction generalizes Patrick Massot's
@@ -167,6 +168,20 @@ theorem isClosed_ker {f : F} (hf : Continuous f) : IsClosed (TwoSidedIdeal.ker f
   exact isClosed_singleton.preimage hf
 
 end ClosedKer
+
+section ClosedComap
+
+variable {F R S : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S] [TopologicalSpace R]
+  [TopologicalSpace S] [FunLike F R S] [NonUnitalRingHomClass F R S]
+
+/-- The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed. -/
+theorem isClosed_comap {φ : F} (hφ : Continuous φ) {J : TwoSidedIdeal S}
+    (hJ : IsClosed (J : Set S)) : IsClosed (J.comap φ : Set R) := by
+  have : (J.comap φ : Set R) = φ ⁻¹' J := Set.ext fun _ => mem_comap φ
+  rw [this]
+  exact hJ.preimage hφ
+
+end ClosedComap
 
 section Annihilator
 
