@@ -141,15 +141,6 @@ theorem
   refine ⟨C, hC, fun ξ hξ hper ha hb ↦ (h hξ hper ha hb).trans_eq ?_⟩
   simp only [floerLinearization_eq_add, LinearMap.coe_toContinuousLinearMap']
 
-/-- The zeroth-order coefficient `ω♭⁻¹ ∘ (· ∘ A(z)) ∘ ω♭` of the formal adjoint read through
-`ω♭ v = ω(v, ·)`, for the zeroth-order coefficient `A = ∂t J - C` of
-`floerLinearizationAdjoint_eq_neg`. -/
-private noncomputable def adjointFlatCoeff (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) : V →L[ℝ] V :=
-  (ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V).comp (((compL ℝ V V ℝ).flip
-    (fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag -
-      ω.floerLinearizationCoeff J Ks Kt u z)).comp (ω.flatEquiv : V →L[ℝ] V →L[ℝ] ℝ))
-
 /-- The derivative of a covector field read through `ω♭⁻¹` is `ω♭⁻¹` of its derivative. -/
 private theorem fderiv_flatEquiv_symm_comp_apply (ω : SymplecticForm V)
     {η : ℝ × ℝ → V →L[ℝ] ℝ} (z v : ℝ × ℝ) :
@@ -164,7 +155,8 @@ private theorem fderiv_flatEquiv_symm_comp_apply (ω : SymplecticForm V)
 
 `D_u^* η = -ω♭ (∂s ζ - J(z, u z) ∂t ζ + T ζ)`
 
-at `z`, where `T = adjointFlatCoeff`. -/
+at `z`, where `T = Aᵀ` is the `ω`-transpose (`leftAdjointL`) of the zeroth-order coefficient
+`A = ∂t J - C` of `floerLinearizationAdjoint_eq_neg`. -/
 private theorem flatEquiv_fderiv_flatEquiv_symm_add_eq_neg_floerLinearizationAdjoint
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η z)
@@ -172,29 +164,26 @@ private theorem flatEquiv_fderiv_flatEquiv_symm_add_eq_neg_floerLinearizationAdj
     (hc : ω.Invariant (J z (u z))) :
     ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
         (-J z (u z)) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag) +
-        adjointFlatCoeff ω (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z
+        ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z
+            stdComplexLineImag - ω.floerLinearizationCoeff
+              (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z)
           (ω.flatEquiv.symm (η z))) =
       -ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
         η z := by
   rw [floerLinearizationAdjoint_eq_neg hη hJu, neg_neg, fderiv_flatEquiv_symm_comp_apply,
     fderiv_flatEquiv_symm_comp_apply]
   ext y
-  have h : ω.toBilinForm ((J z (u z)).toLinearMap
-      (ω.flatEquiv.symm (fderiv ℝ η z stdComplexLineImag))) y =
-      -fderiv ℝ η z stdComplexLineImag ((J z (u z)).toLinearMap y) := by
-    simpa using hc.apply_apply_eq_neg (ω.flatEquiv.symm (fderiv ℝ η z stdComplexLineImag)) y
-  simp only [adjointFlatCoeff, map_add, map_neg, add_apply, neg_apply, coe_comp,
-    Function.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
-    flip_apply, compL_apply, flatEquiv_apply, LinearMap.coe_toContinuousLinearMap',
-    AlmostComplexStructure.neg_toLinearMap, LinearMap.neg_apply]
-  rw [h, neg_neg]
+  simp only [map_add, map_neg, add_apply, neg_apply, coe_comp, Function.comp_apply,
+    flatEquiv_apply, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply,
+    AlmostComplexStructure.neg_toLinearMap, LinearMap.neg_apply, hc.apply_apply_eq_neg, neg_neg,
+    LinearMap.coe_toContinuousLinearMap']
 
 /-- **The `L²` estimate in the symplectic dual.** Under the hypotheses of
 `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint`, the
-Cauchy–Riemann operator `ζ ↦ ∂s ζ - J(z, u z) ∂t ζ + T ζ` with `T = adjointFlatCoeff`, which is
-the formal adjoint read through `ω`, satisfies the `L²` estimate on `K`: the structure `-J` is
-compatible with the symplectic form `-ω`. -/
-private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_adjointFlatCoeff
+Cauchy–Riemann operator `ζ ↦ ∂s ζ - J(z, u z) ∂t ζ + T ζ` with `T = Aᵀ` the `ω`-transpose of
+`A = ∂t J - C`, which is the formal adjoint read through `ω`, satisfies the `L²` estimate on `K`:
+the structure `-J` is compatible with the symplectic form `-ω`. -/
+private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_leftAdjointL
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} {μ : Measure (ℝ × ℝ)} [μ.IsAddHaarMeasure]
     (hK : IsCompact K)
@@ -208,8 +197,10 @@ private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_adjointFlatCoeff
           ‖fderiv ℝ ζ z stdComplexLineImag‖ ^ 2) ∂μ ≤
         C * ∫ z in K, (‖fderiv ℝ ζ z stdComplexLineReal +
             (-J z (u z)) (fderiv ℝ ζ z stdComplexLineImag) +
-            adjointFlatCoeff ω (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z
-              (ζ z)‖ ^ 2 + ‖ζ z‖ ^ 2) ∂μ := by
+            ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z
+                stdComplexLineImag - ω.floerLinearizationCoeff
+                  (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z) (ζ z)‖ ^ 2 +
+          ‖ζ z‖ ^ 2) ∂μ := by
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   have hJu (z : ℝ × ℝ) (hz : z ∈ K) : ContDiffAt ℝ 1 (fun w ↦ J' w (u w)) z :=
     (hJ z hz).comp (f := fun w ↦ (w, u w)) z (contDiffAt_id.prodMk (hu z hz))
@@ -218,9 +209,9 @@ private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_adjointFlatCoeff
     (((hJu z hz).continuousAt_fderiv one_ne_zero).clm_apply
       continuousAt_const).continuousWithinAt.sub
         (ω.continuousOn_floerLinearizationCoeff (J := J') hJ hKs hKt hu z hz)
-  have hT : ContinuousOn (adjointFlatCoeff ω J' Ks Kt u) K :=
-    continuousOn_const.clm_comp ((((compL ℝ V V ℝ).flip).continuous.comp_continuousOn hA).clm_comp
-      continuousOn_const)
+  have hT : ContinuousOn (fun z ↦ ω.leftAdjointL (fderiv ℝ (fun w ↦ J' w (u w)) z
+      stdComplexLineImag - ω.floerLinearizationCoeff J' Ks Kt u z)) K :=
+    ω.leftAdjointL.continuous.comp_continuousOn hA
   -- `-J` is compatible with the symplectic form `-ω`.
   have hc' (z : ℝ × ℝ) (hz : z ∈ K) : (ω.rescale (-1) (by norm_num)).Compatible (-J z (u z)) :=
     (hc z hz).rescale_neg_of_neg (by norm_num)
@@ -234,8 +225,9 @@ private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_adjointFlatCoeff
 /-- **Comparing the two operators on `K`.** Under the hypotheses of
 `exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint`, for a
 `C²` covector field `η = ω♭ ∘ ζ`, the `L²` norm on `K` of `∂s ζ - J ∂t ζ + T ζ` and `ζ`, with
-`T = adjointFlatCoeff`, is at most `‖ω♭⁻¹‖²` times that of `D_u^* η` and `η`. -/
-private theorem setIntegral_norm_adjointFlatCoeff_sq_le (ω : SymplecticForm V)
+`T = Aᵀ` the `ω`-transpose of `A = ∂t J - C`, is at most `‖ω♭⁻¹‖²` times that of `D_u^* η` and
+`η`. -/
+private theorem setIntegral_norm_leftAdjointL_sq_le (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} {μ : Measure (ℝ × ℝ)} [μ.IsAddHaarMeasure]
     (hK : IsCompact K)
@@ -247,7 +239,9 @@ private theorem setIntegral_norm_adjointFlatCoeff_sq_le (ω : SymplecticForm V)
     {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) :
     ∫ z in K, (‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
         (-J z (u z)) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag) +
-        adjointFlatCoeff ω (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z
+        ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) z
+            stdComplexLineImag - ω.floerLinearizationCoeff
+              (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z)
           (ω.flatEquiv.symm (η z))‖ ^ 2 + ‖ω.flatEquiv.symm (η z)‖ ^ 2) ∂μ ≤
       ∫ z in K, ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 *
         (‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
@@ -296,7 +290,7 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLineari
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 +
           ‖η z‖ ^ 2) ∂μ := by
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
-  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_adjointFlatCoeff ω (μ := μ)
+  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_leftAdjointL ω (μ := μ)
     hK hJ hKs hKt hu hc
   -- Compare the norms of `η = ω♭ ∘ ζ` and `ζ` through `a = ‖ω♭‖` and `b = ‖ω♭⁻¹‖`.
   set a := ‖(ω.flatEquiv : V →L[ℝ] V →L[ℝ] ℝ)‖
@@ -321,7 +315,7 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLineari
       ((hcont.continuousOn.integrableOn_compact hK).const_mul _) (hae fun z _ ↦ ?_)
     rw [hdη, hdη, mul_add]
     exact add_le_add (hsq₁ _) (hsq₁ _)
-  have hle₂ := setIntegral_norm_adjointFlatCoeff_sq_le ω (μ := μ) hK hJ hKs hKt hu hc hη
+  have hle₂ := setIntegral_norm_leftAdjointL_sq_le ω (μ := μ) hK hJ hKs hKt hu hc hη
   calc _ ≤ _ := hle₁
     _ = a ^ 2 * ∫ z in K, (‖fderiv ℝ ζ z stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ ζ z stdComplexLineImag‖ ^ 2) ∂μ := integral_const_mul _ _
