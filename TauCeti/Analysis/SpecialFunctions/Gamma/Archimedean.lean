@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 
 /-!
-# Zero locus, relations, regularity, and norms of the archimedean gamma factors
+# Zero locus, relations, regularity, norms, and integer values of the archimedean gamma factors
 
 Deligne's archimedean factors are
 $$\Gamma_{\mathbb{R}}(s) = \pi^{-s/2} \Gamma(s/2), \qquad
@@ -16,7 +16,7 @@ $$\Gamma_{\mathbb{R}}(s) = \pi^{-s/2} \Gamma(s/2), \qquad
 Mathlib uses total division for the gamma function, so `Gammaℝ` and `Gammaℂ` take the junk value
 `0` at their poles `-2n` and `-n` (`n : ℕ`) and are nonzero everywhere else; in particular neither
 vanishes off the real axis. Because their reciprocals are entire (`differentiable_Gammaℝ_inv` and
-`differentiable_Gammaℂ_inv`), both factors are complex-differentiable wherever they are nonzero.
+`differentiable_Gammaℂ_inv`), both factors are analytic wherever they are nonzero.
 
 Since the bases `π` and `2π` are positive reals, their complex powers have norms `π ^ (-s.re / 2)`
 and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponential prefactors from
@@ -39,6 +39,10 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
   `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
 * `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
   `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
+* `Complex.Gammaℂ_nat_add_one`, `Complex.Gammaℝ_two_mul_nat_add_two`,
+  `Complex.Gammaℝ_two_mul_nat_add_one`, `Complex.Gammaℝ_neg_two_mul_nat_sub_one`: the values at
+  positive integers and at the negative odd integers, where `Gammaℝ` is regular; each is a
+  rational multiple of a power of `π`.
 
 ## References
 
@@ -52,12 +56,14 @@ public section
 namespace Complex
 
 /-- The real-place gamma factor is analytic wherever it is nonzero. -/
+@[fun_prop]
 theorem analyticAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
     AnalyticAt ℂ Gammaℝ s := by
   simpa only [Pi.inv_def, inv_inv] using
     (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
 
 /-- The complex-place gamma factor is analytic wherever it is nonzero. -/
+@[fun_prop]
 theorem analyticAt_Gammaℂ_of_ne_zero {s : ℂ} (hs : Gammaℂ s ≠ 0) :
     AnalyticAt ℂ Gammaℂ s := by
   simpa only [Pi.inv_def, inv_inv] using
@@ -153,6 +159,63 @@ theorem log_norm_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) :
   rw [norm_Gammaℂ, Real.log_mul (by positivity) hΓ, Real.log_mul two_ne_zero hpow.ne',
     Real.log_rpow h2pi]
   ring
+
+section IntegerValues
+
+open scoped Nat
+
+/-- The complex archimedean factor at a positive integer: `Γ_ℂ(m + 1) = 2 m! / (2π) ^ (m + 1)`. -/
+theorem Gammaℂ_nat_add_one (m : ℕ) :
+    Gammaℂ (m + 1) = 2 * m ! / (2 * Real.pi) ^ (m + 1) := by
+  rw [Gammaℂ_def, Gamma_nat_eq_factorial,
+    show -((m : ℂ) + 1) = -((m + 1 : ℕ) : ℂ) by push_cast; ring, cpow_neg, cpow_natCast]
+  ring
+
+/-- The real archimedean factor at a positive even integer: `Γ_ℝ(2k + 2) = k! / π ^ (k + 1)`. -/
+theorem Gammaℝ_two_mul_nat_add_two (k : ℕ) :
+    Gammaℝ (2 * k + 2) = k ! / Real.pi ^ (k + 1) := by
+  rw [Gammaℝ_def, show -(2 * (k : ℂ) + 2) / 2 = -((k + 1 : ℕ) : ℂ) by push_cast; ring,
+    show (2 * (k : ℂ) + 2) / 2 = k + 1 by ring, Gamma_nat_eq_factorial, cpow_neg, cpow_natCast]
+  ring
+
+/-- The real archimedean factor at a positive odd integer:
+`Γ_ℝ(2k + 1) = (2k)! / (4 ^ k k! π ^ k)`. -/
+theorem Gammaℝ_two_mul_nat_add_one (k : ℕ) :
+    Gammaℝ (2 * k + 1) = (2 * k)! / (4 ^ k * k ! * Real.pi ^ k) := by
+  -- Legendre duplication `Γ_ℝ(s) Γ_ℝ(s + 1) = Γ_ℂ(s)` at `s = 2k + 1`, and the two values above
+  have h := Gammaℝ_mul_Gammaℝ_add_one (2 * k + 1)
+  rw [show 2 * (k : ℂ) + 1 + 1 = 2 * k + 2 by ring, Gammaℝ_two_mul_nat_add_two,
+    show 2 * (k : ℂ) + 1 = ((2 * k : ℕ) : ℂ) + 1 by push_cast; ring, Gammaℂ_nat_add_one] at h
+  rw [show 2 * (k : ℂ) + 1 = ((2 * k : ℕ) : ℂ) + 1 by push_cast; ring]
+  have hπ : (Real.pi : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
+  have hk : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
+  have h4 : (4 : ℂ) ^ k = 2 ^ (2 * k) := by rw [pow_mul]; norm_num
+  rw [eq_div_iff (by simp [hπ, hk]), h4]
+  field_simp at h
+  refine mul_left_cancel₀ (by simp [hπ] : (2 * Real.pi ^ (k + 1) : ℂ) ≠ 0) ?_
+  linear_combination h
+
+/-- The real archimedean factor at a negative odd integer, where it is regular:
+`Γ_ℝ(-2k - 1) = (-1) ^ (k + 1) 4 ^ (k + 1) (k + 1)! π ^ (k + 1) / (2k + 2)!`. -/
+theorem Gammaℝ_neg_two_mul_nat_sub_one (k : ℕ) :
+    Gammaℝ (-(2 * k) - 1) =
+      (-1) ^ (k + 1) * 4 ^ (k + 1) * (k + 1)! * Real.pi ^ (k + 1) / (2 * k + 2)! := by
+  -- the reflection formula `Γ_ℝ(1 - s) Γ_ℝ(1 + s) = 1 / cos (π s / 2)` at `s = 2k + 2`
+  have h := Gammaℝ_one_sub_mul_Gammaℝ_one_add (2 * k + 2)
+  have hΓ : Gammaℝ (1 + (2 * k + 2)) =
+      (2 * k + 2)! / (4 ^ (k + 1) * (k + 1)! * Real.pi ^ (k + 1)) := by
+    convert Gammaℝ_two_mul_nat_add_one (k + 1) using 2
+    push_cast; ring
+  have hcos : (cos (Real.pi * (2 * k + 2) / 2))⁻¹ = (-1) ^ (k + 1) := by
+    convert congrArg (fun x : ℝ ↦ (x : ℂ)⁻¹) (Real.cos_nat_mul_pi (k + 1)) using 1
+    · push_cast; ring_nf
+    · simp [← inv_pow]
+  rw [show 1 - (2 * (k : ℂ) + 2) = -(2 * k) - 1 by ring, hΓ, hcos] at h
+  have hπ : (Real.pi : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
+  field_simp [Nat.factorial_ne_zero] at h ⊢
+  linear_combination h
+
+end IntegerValues
 
 end Complex
 
