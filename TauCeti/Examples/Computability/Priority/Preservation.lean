@@ -24,12 +24,12 @@ queries the oracle at its input `n` and has use `n + 1`.
   is never injured.
 * Finite injury alone does not make an arbitrary restraint stabilize: under a restraint
   alternating between `none` and `some 0` nothing is ever injured, although every number enters.
-* Without injury, a restraint that later drops does not preserve an earlier use it no longer
-  covers: the restraint `some 0` protects the run at input `0` at stage `0` and is then lifted,
-  after which `0` enters without injury and the run against the limit has another output.
 * A stage computation against a fixed oracle persists at every later stage; one against a moving
   oracle can disappear: the computation found at a stage `m` against the empty stage is no longer
   a stage computation at stage `m + 1`, after `0` enters the enumeration.
+* Without injury, a restraint that later drops does not preserve an earlier use it no longer
+  covers: the restraint `some 0` protects the run at input `0` at stage `0` and is then lifted,
+  after which `0` enters without injury and the run against the limit has another output.
 
 ## References
 
@@ -105,13 +105,14 @@ theorem injuriesAt_Ico_three_eq_empty (t : ℕ) :
 example :
     evaln (setAnswers (stageLimit fun s => Finset.Ico 3 (s + 3))) 3 oracle 0 = some ⟨0, 1⟩ ∧
       evaln (setAnswers (stageLimit fun s => Finset.Ico 3 (s + 3))) 3 oracle 2 =
-        some ⟨0, 3⟩ :=
-  ⟨evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_eq_empty (s := 0) monotone_Ico_three
-      (by simp) (fun _ _ z hz => ⟨2, rfl, by simp at hz; omega⟩)
-      fun t _ => injuriesAt_Ico_three_eq_empty t,
-    evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_eq_empty (s := 0) monotone_Ico_three
-      (by simp) (fun _ _ z hz => ⟨2, rfl, by simp at hz; omega⟩)
-      fun t _ => injuriesAt_Ico_three_eq_empty t⟩
+        some ⟨0, 3⟩ := by
+  -- A run against stage `0` with use at most `3` is covered by the restraint `some 2`.
+  have h {n : ℕ} {d : Halt} (hd : evaln (setAnswers ↑(Finset.Ico 3 (0 + 3))) 3 oracle n = some d)
+      (hu : d.use ≤ 3) : evaln (setAnswers (stageLimit fun s => Finset.Ico 3 (s + 3))) 3 oracle n =
+        some d :=
+    evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_eq_empty monotone_Ico_three hd
+      (fun _ _ z hz => ⟨2, rfl, by omega⟩) fun t _ => injuriesAt_Ico_three_eq_empty t
+  exact ⟨h (by simp) (by simp), h (by simp) (by simp)⟩
 
 /-! ### Finite injury without a stable restraint -/
 
@@ -141,40 +142,6 @@ example : ¬∃ b, ∀ᶠ s in atTop, alternatingRestraint 0 s = b := by
   simp only [alternatingRestraint, even_two_mul, ↓reduceIte, Nat.not_even_two_mul_add_one] at h₀ h₁
   exact absurd (h₀.trans h₁.symm) (by simp)
 
-/-! ### A dropping restraint -/
-
-/-- The stages of the dropping-restraint example: `0` enters at stage `2`. -/
-def dropStages (s : ℕ) : Finset ℕ :=
-  if s ≤ 1 then ∅ else {0}
-
-/-- The stages of the dropping-restraint example are monotone. -/
-theorem monotone_dropStages : Monotone dropStages := by
-  intro s t hst
-  simp only [dropStages]
-  split_ifs <;> first | omega | simp
-
-/-- The restraint `some 0` at stage `0`, lifted at every later stage. -/
-def dropRestraint (_ s : ℕ) : Option ℕ :=
-  if s = 0 then some 0 else none
-
--- At stage `0` the run at input `0` has output `0` and use `1`, covered by the restraint
--- `some 0` ...
-example :
-    evaln (setAnswers ↑(dropStages 0)) 1 oracle 0 = some ⟨0, 1⟩ ∧ dropRestraint 0 0 = some 0 := by
-  simp [dropStages, dropRestraint]
-
--- ... and nothing is ever injured, since `0` enters after the restraint is lifted ...
-example : injurySet dropStages dropRestraint 0 = ∅ := by
-  refine Set.eq_empty_of_forall_notMem fun x hx => ?_
-  obtain ⟨s, hs⟩ := mem_injurySet.1 hx
-  simp only [mem_injuriesAt, dropStages, dropRestraint] at hs
-  rcases s with - | s <;> simp_all
-
--- ... but against the limit the run has output `1`: the earlier computation is not preserved.
-example : evaln (setAnswers (stageLimit dropStages)) 1 oracle 0 = some ⟨1, 1⟩ := by
-  have h0 : 0 ∈ stageLimit dropStages := mem_stageLimit.2 ⟨2, by simp [dropStages]⟩
-  simp [h0]
-
 /-! ### Fixed and moving oracles -/
 
 /-- The stages of a moving oracle: empty up to stage `m`, and `{0}` afterwards. -/
@@ -201,5 +168,30 @@ example (m : ℕ) (hm : Encodable.encode oracle < m) (t : ℕ) (ht : m ≤ t) :
 example (m : ℕ) :
     evalStage (setAnswers ↑(movingStages m (m + 1))) (m + 1) oracle 0 ≠ some ⟨0, 1⟩ := by
   simp [movingStages]
+
+/-! ### A dropping restraint -/
+
+/-- The restraint `some 0` at stage `0`, lifted at every later stage. -/
+def dropRestraint (_ s : ℕ) : Option ℕ :=
+  if s = 0 then some 0 else none
+
+-- The stages are `movingStages 1`, where `0` enters at stage `2`. At stage `0` the run at input
+-- `0` has output `0` and use `1`, covered by the restraint `some 0` ...
+example :
+    evaln (setAnswers ↑(movingStages 1 0)) 1 oracle 0 = some ⟨0, 1⟩ ∧
+      dropRestraint 0 0 = some 0 := by
+  simp [movingStages, dropRestraint]
+
+-- ... and nothing is ever injured, since `0` enters after the restraint is lifted ...
+example : injurySet (movingStages 1) dropRestraint 0 = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun x hx => ?_
+  obtain ⟨s, hs⟩ := mem_injurySet.1 hx
+  simp only [mem_injuriesAt, movingStages, dropRestraint] at hs
+  rcases s with - | s <;> simp_all
+
+-- ... but against the limit the run has output `1`: the earlier computation is not preserved.
+example : evaln (setAnswers (stageLimit (movingStages 1))) 1 oracle 0 = some ⟨1, 1⟩ := by
+  have h0 : 0 ∈ stageLimit (movingStages 1) := mem_stageLimit.2 ⟨2, by simp [movingStages]⟩
+  simp [h0]
 
 end TauCeti.PreservationExample
