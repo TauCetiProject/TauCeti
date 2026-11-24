@@ -105,11 +105,7 @@ theorem partialDivByMonic_zero_fun (i : ι) (P : ℂ[X]) :
   unfold partialDivByMonic
   induction P.roots.toList with
   | nil => rfl
-  | cons ζ l ih =>
-    have h0 : partialDslope i (0 : (ι → ℂ) → E) ζ = 0 := by
-      ext z
-      simp [partialDslope_apply, dslope, update_apply, slope_def_module]
-    rw [List.foldl_cons, h0, ih]
+  | cons ζ l ih => rw [List.foldl_cons, partialDslope_zero_fun, ih]
 
 @[simp]
 theorem partialModByMonic_zero_fun (i : ι) (P : ℂ[X]) :
