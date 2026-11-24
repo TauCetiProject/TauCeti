@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
-public import TauCeti.Geometry.Manifold.Submersion.EhresmannConnection
+public import TauCeti.Geometry.Manifold.Submersion.EhresmannConnection.Basic
 
 /-!
 # The Ehresmann connection of a Riemannian submersion

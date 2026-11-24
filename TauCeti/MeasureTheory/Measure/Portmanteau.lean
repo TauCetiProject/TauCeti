@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import Mathlib.MeasureTheory.Measure.Support
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 import TauCeti.MeasureTheory.Integral.LayerCake
 
 /-!
@@ -46,6 +47,13 @@ approximations of nonnegative bounded continuous functions.
 * `MeasureTheory.ProbabilityMeasure.exists_measure_nndist_ge_le_of_tendsto` — along a weakly
   convergent family of probability measures, the mass outside some ball about a basepoint is
   eventually at most any prescribed `ε > 0`.
+* `MeasureTheory.ProbabilityMeasure.tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport`
+  — on a finite-dimensional real normed space, smooth compactly supported test functions determine
+  weak convergence of probability measures.
+* `ProbabilityMeasure.tendsto_integral_sub_integral_of_forall_contDiff_hasCompactSupport` — on a
+  real normed space, if the integrals of two families of probability measures against every smooth
+  compactly supported function become asymptotically equal, so do their integrals against every
+  continuous compactly supported function.
 * `MeasureTheory.ProbabilityMeasure.eventually_measure_pos_of_tendsto_of_mem_support` — along a
   weakly convergent family of probability measures, every neighbourhood of a point of the support
   of the limit eventually has positive mass.
@@ -277,6 +285,54 @@ theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
     _ ≤ _ := liminf_le_liminf (Eventually.of_forall fun i ↦
       integral_le_measure (fun x _ ↦ (h01 (mem_range_self x)).2) fun x hx ↦
         (Function.notMem_support.mp (fun hs ↦ hx (hsub (subset_tsupport f hs)))).le)
+
+/-- Smooth compactly supported test functions control vague convergence of differences: if the
+integrals of `μs i` and `νs i` against every smooth compactly supported function become
+asymptotically equal, then so do their integrals against every continuous compactly supported
+function. No tightness is needed. -/
+theorem tendsto_integral_sub_integral_of_forall_contDiff_hasCompactSupport
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+    [OpensMeasurableSpace E] {ι : Type*} {l : Filter ι}
+    {μs νs : ι → ProbabilityMeasure E}
+    (h : ∀ f : E → ℝ, ContDiff ℝ ∞ f → HasCompactSupport f →
+      Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure E) - ∫ x, f x ∂(νs i : Measure E)) l (𝓝 0))
+    {f : E → ℝ} (hf : Continuous f) (hc : HasCompactSupport f) :
+    Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure E) - ∫ x, f x ∂(νs i : Measure E)) l (𝓝 0) := by
+  -- On an infinite-dimensional space a continuous compactly supported function vanishes.
+  rcases hc.eq_zero_or_finiteDimensional ℝ hf with rfl | hE
+  · simpa using tendsto_const_nhds
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  -- A smooth compactly supported `g` with `|g - f| < ε / 4` everywhere.
+  obtain ⟨u, K, hK, -, hu, hlim⟩ :=
+    (contDiff_zero.2 hf).exists_contDiff_hasCompactSupport_tendstoUniformly_iteratedFDeriv hc
+      isOpen_univ (subset_univ _)
+  obtain ⟨n, hn⟩ := (Metric.tendstoUniformly_iff.1 (hlim 0 le_rfl) (ε / 4) (by positivity)).exists
+  let g := u n
+  have hg : ContDiff ℝ ∞ g := (hu n).1
+  have hgc : HasCompactSupport g := hK.of_isClosed_subset (isClosed_tsupport _) (hu n).2
+  have hgf (x : E) : dist (g x) (f x) < ε / 4 := by
+    simpa only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, LinearIsometryEquiv.dist_map,
+      dist_comm (f x)] using hn x
+  have hclose (σ : ProbabilityMeasure E) :
+      |∫ x, f x ∂(σ : Measure E) - ∫ x, g x ∂(σ : Measure E)| ≤ ε / 4 := by
+    rw [← integral_sub (hf.integrable_of_hasCompactSupport hc)
+      (hg.continuous.integrable_of_hasCompactSupport hgc), ← Real.norm_eq_abs]
+    refine (norm_integral_le_of_norm_le_const (C := ε / 4) (.of_forall fun x ↦ ?_)).trans ?_
+    · rw [← dist_eq_norm, dist_comm]
+      exact (hgf x).le
+    · simp
+  filter_upwards [Metric.tendsto_nhds.1 (h g hg hgc) (ε / 4) (by positivity)] with i hi
+  rw [Real.dist_eq, sub_zero] at hi ⊢
+  calc |∫ x, f x ∂(μs i : Measure E) - ∫ x, f x ∂(νs i : Measure E)|
+      = |(∫ x, g x ∂(μs i : Measure E) - ∫ x, g x ∂(νs i : Measure E)) +
+          (∫ x, f x ∂(μs i : Measure E) - ∫ x, g x ∂(μs i : Measure E)) -
+          (∫ x, f x ∂(νs i : Measure E) - ∫ x, g x ∂(νs i : Measure E))| := by
+        congr 1
+        ring
+    _ ≤ ε / 4 + ε / 4 + ε / 4 := (abs_sub _ _).trans
+        (add_le_add ((abs_add_le _ _).trans (add_le_add hi.le (hclose _))) (hclose _))
+    _ < ε := by linarith
 
 section Support
 
