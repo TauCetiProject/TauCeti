@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 
 /-!
 # Scalar multiples of determinant-one matrices and `SL` versus `GL` conjugacy
@@ -93,10 +94,7 @@ theorem exists_toGL_mul_scalar_eq (g : GL ι K) :
   obtain ⟨s, hs⟩ := (ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed
     (n := ι) (F := K)).symm.surjective (ProjGenLinGroup.mk g)
   have hs' : ProjectiveSpecialLinearGroup.toPGL s = ProjGenLinGroup.mk g := by
-    -- Both branches of Mathlib's equivalence invert the same inclusion into PGL.
-    simp only [ProjectiveSpecialLinearGroup.isoPSLOfAlgClosed,
-      ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty] at hs
-    split_ifs at hs <;> exact hs
+    simpa using hs
   induction s using QuotientGroup.induction_on with
   | H s =>
     obtain ⟨z, hz⟩ := ProjGenLinGroup.mk_eq_mk_iff.mp hs'

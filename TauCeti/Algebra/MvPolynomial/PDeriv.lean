@@ -66,6 +66,8 @@ difference of their constant coefficients.
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
   over an arbitrary variable type.
+* `MvPolynomial.sq_dvd_eval_add_smul_sub_sum_pderiv`: the first-order Taylor estimate
+  `d ^ 2 ∣ p(a + d b) - p(a) - d ∑ⱼ ∂ⱼp(a) bⱼ`.
 * `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's divisibility estimate
   `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
 * `MvPolynomial.pderiv.ext`: over a commutative ring with `HasUniqueDiv`, a polynomial is
@@ -348,6 +350,19 @@ theorem eval_sub_eval_sub_sum_pderiv_mem_sq (p : MvPolynomial σ R) {I : Ideal R
   have heval_a : eval (a ∘ Subtype.val) q = eval a p := by
     rw [← hq, eval_rename]
   simpa only [Function.comp_apply, heval_b, heval_a, hsum] using hmem
+
+/-- **First-order Taylor estimate modulo `d ^ 2` along the translates `a + d • b`.** Summing
+over the finitely many variables of `p`, `p(a + d b) - p(a) - d ∑ⱼ ∂ⱼp(a) bⱼ` is divisible by
+`d ^ 2`. -/
+theorem sq_dvd_eval_add_smul_sub_sum_pderiv (p : MvPolynomial σ R) (d : R) (a b : σ → R) :
+    d ^ 2 ∣ eval (a + d • b) p - eval a p - d * ∑ j ∈ p.vars, eval a (pderiv j p) * b j := by
+  have h := eval_sub_eval_sub_sum_pderiv_mem_sq p (I := Ideal.span {d}) (a := a)
+    (b := a + d • b) (s := p.vars) (fun i hi _ ↦ hi)
+    (fun i _ ↦ Ideal.mem_span_singleton.2 ⟨b i, by simp⟩)
+  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
+  convert h using 2
+  rw [Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by simp [mul_left_comm]
 
 /-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
 every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by

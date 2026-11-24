@@ -87,6 +87,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
   including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
@@ -101,11 +102,17 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
+* `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
+  `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
+  `z + c` is in the slit plane.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
 * `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
+  in a closed ball.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
   `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
   `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
@@ -578,6 +585,12 @@ end TauCeti
 
 namespace Complex
 
+/-- An exponential based at a principal logarithm splits into a principal power and the
+exponential of the remaining summand. -/
+theorem exp_log_add_mul {z : ℂ} (hz : z ≠ 0) (w e : ℂ) :
+    exp ((log z + w) * e) = z ^ e * exp (w * e) := by
+  rw [add_mul, exp_add, cpow_def_of_ne_zero hz]
+
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
   rcases eq_or_ne w 0 with rfl | hw
@@ -722,6 +735,16 @@ theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u 
   rw [cpow_ofReal_im]
   rcases h with h | h <;> rw [h] <;> simp
 
+/-- The derivative of a shifted power times an exponential: where `z + c` lies in the slit plane,
+`w ↦ (w + c) ^ b e^{k w}` has derivative `(b / (z + c) + k) (z + c) ^ b e^{k z}`. -/
+theorem hasDerivAt_add_cpow_mul_exp_mul (b c k : ℂ) {z : ℂ} (hz : z + c ∈ slitPlane) :
+    HasDerivAt (fun w => (w + c) ^ b * cexp (k * w))
+      ((b / (z + c) + k) * ((z + c) ^ b * cexp (k * z))) z := by
+  refine ((((hasDerivAt_id z).add_const c).cpow_const (c := b) hz).mul
+    ((hasDerivAt_id z).const_mul k).cexp).congr_deriv ?_
+  rw [id, cpow_sub _ _ (slitPlane_ne_zero hz), cpow_one]
+  field_simp
+
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
     ‖(a : ℂ) ^ w‖ ≤ Real.exp (|Real.log a| * ‖w‖) := by
@@ -778,6 +801,30 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
         mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
           (Real.rpow_nonneg (norm_nonneg w) _)
 
+/-- For a nonzero base `w`, the norm of `w ^ b` is bounded uniformly for the exponent `b` in the
+closed ball of radius `R` about `a₀`:
+`‖w ^ b‖ ≤ e^{π (|Im a₀| + R)} (‖w‖^{Re a₀ − R} + ‖w‖^{Re a₀ + R})`. -/
+theorem norm_cpow_le_of_mem_closedBall {w : ℂ} (hw : w ≠ 0) {a₀ b : ℂ} {R : ℝ}
+    (hb : b ∈ Metric.closedBall a₀ R) :
+    ‖w ^ b‖ ≤ Real.exp (Real.pi * (|a₀.im| + R)) * (‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R)) := by
+  have hb' : ‖b - a₀‖ ≤ R := by
+    have h := Metric.mem_closedBall.mp hb
+    rwa [dist_eq_norm] at h
+  have hre : |b.re - a₀.re| ≤ R := by simpa using (abs_re_le_norm (b - a₀)).trans hb'
+  have him : |b.im| ≤ |a₀.im| + R := by
+    have := (abs_im_le_norm (b - a₀)).trans hb'
+    rw [sub_im] at this
+    linarith [abs_sub_abs_le_abs_sub b.im a₀.im]
+  have hpow : ‖w‖ ^ b.re ≤ ‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R) :=
+    Real.rpow_le_rpow_add_rpow_of_mem_Icc (norm_pos_iff.mpr hw)
+      ⟨by linarith [abs_le.mp hre], by linarith [abs_le.mp hre]⟩
+  have hexp : Real.exp (Real.pi * |b.im|) ≤ Real.exp (Real.pi * (|a₀.im| + R)) :=
+    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left him Real.pi_pos.le)
+  calc ‖w ^ b‖ ≤ ‖w‖ ^ b.re * Real.exp (Real.pi * |b.im|) := norm_cpow_le_mul_exp w b
+    _ ≤ (‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R)) * Real.exp (Real.pi * (|a₀.im| + R)) := by
+        gcongr
+    _ = _ := mul_comm _ _
+
 /-- For `z` in the closed right half-plane (`0 ≤ z.re`) and any `d : ℂ`,
 `‖(1 + z) ^ d‖ ≤ exp (π * |d.im|) * (1 + ‖z‖) ^ max 0 d.re`. -/
 theorem norm_one_add_cpow_le {z : ℂ} (hz : 0 ≤ z.re) (d : ℂ) :
@@ -822,6 +869,26 @@ theorem neg_cpow_half_eq_or_eq_neg (w : ℂ) :
     (-w) ^ (1 / 2 : ℂ) = I * w ^ (1 / 2 : ℂ) ∨
       (-w) ^ (1 / 2 : ℂ) = -(I * w ^ (1 / 2 : ℂ)) :=
   sq_eq_sq_iff_eq_or_eq_neg.mp <| by rw [mul_pow, I_sq]; simp [one_div]
+
+/-- Reversing a finite sum of powers: for `z ≠ 0`,
+`z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k`. -/
+theorem cpow_sub_natCast_mul_sum_mul_pow (a : ℂ) {z : ℂ} (hz : z ≠ 0) (n : ℕ) (f : ℕ → ℂ) :
+    z ^ (a - n) * ∑ k ∈ Finset.range n, f (n - 1 - k) * z ^ k =
+      z ^ (a - 1) * ∑ k ∈ Finset.range n, f k / z ^ k := by
+  rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk : k < n := Finset.mem_range.mp hk
+  -- The reflected index `n - 1 - k` and `k` add up to `n - 1`.
+  have hidx : n - 1 - k + k = n - 1 := by omega
+  have hpow : z ^ (a - n) * z ^ (n - 1 - k) * z ^ k = z ^ (a - 1) := by
+    rw [mul_assoc, ← pow_add, hidx, ← cpow_natCast, ← cpow_add _ _ hz, Nat.cast_sub (by omega)]
+    congr 1
+    push_cast
+    ring
+  -- The reflection `n - 1 - (n - 1 - k) = k` returns the original index.
+  have hrefl : n - 1 - (n - 1 - k) = k := by omega
+  rw [hrefl, ← hpow]
+  field_simp
 
 end Complex
 

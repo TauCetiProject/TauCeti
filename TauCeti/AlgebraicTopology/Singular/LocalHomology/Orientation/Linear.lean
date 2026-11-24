@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PicardGroup
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Linear
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.LinearAlgebra.Orientation.Basic
@@ -43,11 +44,15 @@ on the identification used.
 * `Orientation.localOrientation`: the local orientation at the origin selected by an orientation.
 * `Orientation.localOrientationEquiv`: orientations correspond bijectively to local orientations
   at the origin.
+* `TauCeti.orientationModule`: the integral local homology at the origin in the dimension of
+  the space.
 * `TauCeti.singularHomologyComplZeroIso`: the integral local homology of `F` at the origin in
   the top degree is one copy of `ℤ`.
 
 ## Main results
 
+* `TauCeti.orientationModule.instInvertible`, `TauCeti.finrank_orientationModule`: in finite
+  dimension the orientation module is invertible and has rank one, including in dimension zero.
 * `Orientation.localOrientation_map`: continuous linear equivalences carry the selected local
   orientations to each other.
 * `Orientation.localOrientation_neg`: reversing the orientation reverses the local orientation.
@@ -79,6 +84,25 @@ open CategoryTheory Module TauCeti
 universe w
 
 namespace TauCeti
+
+variable (E : Type w) [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The integral orientation module of a real normed space: its local homology at the origin
+in degree `dim E`. -/
+abbrev orientationModule :=
+  localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set E)
+    (finrank ℝ E)
+
+instance orientationModule.instInvertible [FiniteDimensional ℝ E] :
+    Module.Invertible ℤ (orientationModule E) :=
+  Module.Invertible.congr (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
+    rfl ULift.moduleEquiv (0 : E)).symm
+
+/-- The integral orientation module has rank one, also for a zero-dimensional space. -/
+@[simp]
+theorem finrank_orientationModule [FiniteDimensional ℝ E] :
+    finrank ℤ (orientationModule E) = 1 :=
+  Module.Invertible.finrank_eq_one ℤ (orientationModule E)
 
 variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
 

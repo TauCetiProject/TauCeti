@@ -55,10 +55,14 @@ it is invertible exactly when `det (1 - P) ≠ 0`
 (`TauCeti.isInvertible_periodicTorusOperator_iff_det_ne_zero`), and then the orientation of its
 determinant line induced by `1 - P` and the one given by bijectivity differ by the sign of
 `det (1 - P)` (`TauCeti.sign_detLineEndEquiv_detLinePeriodicTorusOperatorEquiv`). For `S = 0` the
-operator `∂s + J₀ ∂t` is complex linear (`TauCeti.periodicTorusOperator_zero_apply_smul`).
+operator `∂s + J₀ ∂t` is complex linear (`TauCeti.periodicTorusOperator_zero_apply_smul`), and so
+is the operator of every loop whose loop operator is complex linear
+(`TauCeti.periodicTorusOperator_apply_smul`).
 
-The twist along `γ` by the sign `-1`, whose loop operator acts on maps antiperiodic in `t`, and
-finite covers of the torus are not treated here.
+The twist along `γ` by the sign `-1`, whose loop operator acts on maps antiperiodic in `t`, is the
+operator of the loop `TauCeti.CircleSobolev.antiperiodicGaugeLoop T S`; its comparison with
+`det (1 + P)` is in `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.OrbitTwistSobolev`.
+Finite covers of the torus are not treated here.
 
 ## Main definitions
 
@@ -126,14 +130,23 @@ theorem periodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] 
     periodicTorusOperator T ℓ S x = (I • loopOperator T S x.1, torusModeOperator T _ S x.2) :=
   (rfl)
 
+/-- **Complex linearity.** If the loop operator `L_S` commutes with multiplication by complex
+scalars, as for a constant complex scalar loop, so does the operator `∂s + A` on maps periodic in
+`s`, the complex structure of the Sobolev spaces acting by `J₀`. -/
+theorem periodicTorusOperator_apply_smul (ℓ : ℝ) {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ (c : ℂ) (a : CircleSobolev 1 F), loopOperator T S (c • a) = c • loopOperator T S a)
+    (c : ℂ) (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
+    periodicTorusOperator T ℓ S (c • x) = c • periodicTorusOperator T ℓ S x := by
+  refine Prod.ext ?_ (torusModeOperator_apply_smul T _ hS c x.2)
+  simp [hS, smul_comm c I]
+
 /-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` on maps
 periodic in `s` commutes with multiplication by complex scalars, the complex structure of the
 Sobolev spaces acting by `J₀`. -/
 theorem periodicTorusOperator_zero_apply_smul (ℓ : ℝ) (c : ℂ)
     (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
-    periodicTorusOperator T ℓ 0 (c • x) = c • periodicTorusOperator T ℓ 0 x := by
-  refine Prod.ext ?_ (torusModeOperator_zero_apply_smul T _ c x.2)
-  simp [smul_comm c I]
+    periodicTorusOperator T ℓ 0 (c • x) = c • periodicTorusOperator T ℓ 0 x :=
+  periodicTorusOperator_apply_smul T ℓ (fun c a ↦ by simp) c x
 
 /-- **Continuous dependence on the loop.** The operator `∂s + A` on maps periodic in `s` depends
 continuously, in operator norm, on the loop `S` with its uniform norm. -/
@@ -276,6 +289,31 @@ def detLinePeriodicTorusOperatorEquiv (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F �
     ((kerPeriodicTorusOperatorEquiv T hℓ S hS).trans (kerLoopOperatorEquiv T S))
     ((quotientRangePeriodicTorusOperatorEquiv T hℓ S hS).trans
       (quotientRangeLoopOperatorEquiv T S))
+
+/-- `TauCeti.detLinePeriodicTorusOperatorEquiv` is the isomorphism of determinant lines induced by
+the isomorphisms of kernels and cokernels with those of `1 - Ψ(T)`. -/
+theorem detLinePeriodicTorusOperatorEquiv_def (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    detLinePeriodicTorusOperatorEquiv T hℓ S hS =
+      LinearMap.detLineCongrKerCoker
+        ((kerPeriodicTorusOperatorEquiv T hℓ S hS).trans (kerLoopOperatorEquiv T S))
+        ((quotientRangePeriodicTorusOperatorEquiv T hℓ S hS).trans
+          (quotientRangeLoopOperatorEquiv T S)) :=
+  (rfl)
+
+/-- `TauCeti.detLinePeriodicTorusOperatorEquiv` is the transport along the isomorphisms of kernels
+and cokernels with those of `L_S` (`TauCeti.kerPeriodicTorusOperatorEquiv`,
+`TauCeti.quotientRangePeriodicTorusOperatorEquiv`), followed by the identification of the
+determinant line of `L_S` with that of `1 - Ψ(T)`
+(`TauCeti.CircleSobolev.detLineLoopOperatorEquiv`). -/
+theorem detLinePeriodicTorusOperatorEquiv_eq_trans (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    detLinePeriodicTorusOperatorEquiv T hℓ S hS =
+      (LinearMap.detLineCongrKerCoker (kerPeriodicTorusOperatorEquiv T hℓ S hS)
+        (quotientRangePeriodicTorusOperatorEquiv T hℓ S hS)).trans
+        (detLineLoopOperatorEquiv T S) := by
+  rw [detLineLoopOperatorEquiv_def, ← LinearMap.detLineCongrKerCoker_trans]
+  rfl
 
 /-- **The periodic orbit-torus operator is Fredholm.** It is the direct sum of the Fredholm
 operator `J₀ L_S` and an invertible operator. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
+import TauCeti.Topology.ContinuousMap.CodRestrict
 
 /-!
 # Relative cubical chains
@@ -33,6 +34,8 @@ pairs fit into a short exact sequence.
 
 * `TauCeti.NormalizedCubicalChain.boundary_mem_supportedIn`: the chains supported in `A` form a
   subcomplex.
+* `TauCeti.NormalizedCubicalChain.map_mem_supportedIn_range`: the push-forward along any map is
+  supported in its range.
 * `TauCeti.NormalizedCubicalChain.range_map_eq_supportedIn_range`: the push-forward along an
   inducing map has image the chains supported in its range.
 * `TauCeti.NormalizedCubicalChain.map_mem_supportedIn_image_iff`: along an embedding `ι`, a chain is
@@ -104,6 +107,13 @@ theorem map_mem_supportedIn {Y : Type*} [TopologicalSpace Y] {A : Set X} {B : Se
     ContinuousMap.ext fun _ ↦ rfl
   refine ⟨map R f' n h, ?_⟩
   rw [← LinearMap.comp_apply, ← map_comp, hres, map_comp, LinearMap.comp_apply]
+
+/-- The push-forward of a chain along a map `f` is supported in the range of `f`. -/
+theorem map_mem_supportedIn_range {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {n : ℕ}
+    (g : NormalizedCubicalChain X R n) : map R f n g ∈ supportedIn R (Set.range f) n := by
+  -- `f` factors through its range.
+  have h := map_subtypeVal_mem_supportedIn R (map R (f.codRestrict _ Set.mem_range_self) n g)
+  rwa [← LinearMap.comp_apply, ← map_comp, ContinuousMap.subtypeVal_comp_codRestrict] at h
 
 private theorem supportedIn_le_comap_map {Y : Type*} [TopologicalSpace Y] {A : Set X} {B : Set Y}
     {f : C(X, Y)} (hf : Set.MapsTo f A B) (n : ℕ) :

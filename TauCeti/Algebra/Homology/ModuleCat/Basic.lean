@@ -35,6 +35,8 @@ and the square of the differential vanishes, on elements (`HomologicalComplex.Ho
 constructor directly returns an element of `K.cycles n` for modules over a ring in any universe,
 whereas Mathlib's `HomologicalComplex.cyclesMk` returns an element of
 `(forget₂ C Ab).obj (K.cycles n)`.
+A chain map that is a monomorphism in degree `j` reflects the vanishing of the differential into
+degree `j` (`HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero`).
 A linear map into `K.X n` whose values are cycles induces a class map into the homology,
 `HomologicalComplex.moduleCatHomologyClass`; it is surjective when every cycle is a value, its
 kernel consists of the elements sent to boundaries, and chain maps act on it compatibly.
@@ -748,6 +750,13 @@ lemma homologyMap_homologyπ_moduleCatCyclesMk {L : HomologicalComplex (ModuleCa
   congr 1
   apply L.moduleCat_iCycles_injective
   rw [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk]
+
+variable {K} in
+/-- A chain map of complexes of modules that is a monomorphism in degree `j` reflects the vanishing
+of the differential `K.X i ⟶ K.X j`: `x` is killed by it as soon as its image is. -/
+lemma d_apply_eq_zero_of_d_f_apply_eq_zero {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
+    {i j : ι} [Mono (φ.f j)] {x : K.X i} (hx : L.d i j ((φ.f i).hom x) = 0) : K.d i j x = 0 :=
+  (ModuleCat.mono_iff_injective (φ.f j)).1 inferInstance (by rw [map_zero, ← Hom.comm_apply, hx])
 
 /-- **Local nilpotence passes to homology.** Let `φ` be a family of chain endomorphisms of a
 complex of modules. If every element of the degree-`n` term is killed by all sufficiently long
