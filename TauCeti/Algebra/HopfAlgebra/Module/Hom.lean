@@ -98,11 +98,8 @@ theorem hopfLinHom_apply_eq_sum (ρ : H →ₐ[R] Module.End R V) (σ : H →ₐ
     (𝓡 : Repr R a ι) (f : V →ₗ[R] W) :
     ρ.hopfLinHom σ hS a f =
       ∑ i ∈ 𝓡.index, σ (𝓡.right i) ∘ₗ f ∘ₗ ρ (inverseAntipode hS (𝓡.left i)) := by
-  rw [hopfLinHom, coe_comp, Function.comp_apply, Bialgebra.comulAlgHom_apply, ← 𝓡.eq, map_sum,
-    LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun i _ => ?_
   ext v
-  simp [hopfLinHomPre, hopfLinHomPost]
+  simp [hopfLinHom, ← 𝓡.eq, hopfLinHomPre, hopfLinHomPost]
 
 /-- An element whose coproduct is a pure tensor `b ⊗ c` acts on linear maps by
 `f ↦ σ(c) ∘ f ∘ ρ(S⁻¹(b))`. For instance, an element `g` with coproduct `g ⊗ g` acts by

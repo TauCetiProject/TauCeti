@@ -212,16 +212,19 @@ theorem monoidalClosed_pre_app_hom {M M' : HopfModuleCat k H} (f : M' ⟶ M)
     letI := monoidalClosed hS
     ((MonoidalClosed.pre f).app N).hom = linHomPrecomp N hS f.hom := by
   let := monoidalClosed hS
-  -- Both sides uncurry to `m ⊗ g ↦ g (f m)`.
-  have hev (m : M') (g : (ihom hS M).obj N) :
-      (f ▷ _ ≫ (ihom.ev M).app N).hom (tmul k H m g) = linHomEquiv k H M N hS g (f.hom m) :=
-    (congrArg ((ihom.ev M).app N).hom (whiskerRight_tmul f m g)).trans <|
-      (DFunLike.congr_fun (monoidalClosed_ev_app_hom M N) _).trans (linHomEval_tmul _ g)
-  have : (MonoidalClosed.pre f).app N = ofHom (linHomPrecomp N hS f.hom) :=
-    MonoidalClosed.uncurry_injective <| (MonoidalClosed.uncurry_pre f N).trans <| Eq.symm <|
-      (monoidalClosed_uncurry (X := (ihom hS M).obj N) _).trans <| tensor_ext fun m g =>
-        (tensorHomEquiv_symm_apply_hom_tmul _ m g).trans <|
-          (linHomEquiv_linHomPrecomp_apply f.hom g m).trans (hev m g).symm
+  -- Both sides uncurry to `m ⊗ g ↦ g (f m)`. The goals mix `CategoryTheory.ihom M` with
+  -- `ihom hS M`, which agree only after unfolding `ihom`, so `rw` and `simp` cannot match there;
+  -- those steps go through `refine` and `exact`, which unify at default transparency.
+  have hev (m : M') (g : (CategoryTheory.ihom M).obj N) :
+      (f ▷ _ ≫ (ihom.ev M).app N).hom (tmul k H m g) = linHomEquiv k H M N hS g (f.hom m) := by
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, whiskerRight_tmul, monoidalClosed_ev_app_hom]
+    exact linHomEval_tmul _ g
+  have : (MonoidalClosed.pre f).app N = ofHom (linHomPrecomp N hS f.hom) := by
+    refine MonoidalClosed.uncurry_injective ((MonoidalClosed.uncurry_pre f N).trans ?_)
+    refine ((monoidalClosed_uncurry (X := (ihom hS M).obj N) _).trans ?_).symm
+    ext m g
+    exact (tensorHomEquiv_symm_apply_hom_tmul _ m g).trans <|
+      (linHomEquiv_linHomPrecomp_apply f.hom g m).trans (hev m g).symm
   exact (congrArg ModuleCat.Hom.hom this).trans (ModuleCat.hom_ofHom _)
 
 end TauCeti.HopfModuleCat

@@ -187,9 +187,7 @@ coproduct of `h`: `h • (m ⊗ n) = ∑ᵢ h₁ᵢ • m ⊗ h₂ᵢ • n`. -/
 theorem smul_tmul_eq_sum {h : H} {ι : Type*} (𝓡 : Coalgebra.Repr R h ι) (m : M) (n : N) :
     h • tmul R H m n = ∑ i ∈ 𝓡.index, tmul R H (𝓡.left i • m) (𝓡.right i • n) := by
   apply (tensorEquiv R H M N).injective
-  rw [tensorEquiv_smul, tensorAction_apply, tensorEquiv_tmul, ← 𝓡.eq, map_sum,
-    LinearMap.sum_apply, map_sum]
-  simp
+  simp [tensorEquiv_smul, tensorAction_apply, ← 𝓡.eq, map_sum]
 
 /-- An element with coproduct `a ⊗ a` acts on the coproduct tensor product as the tensor product
 of its actions on the two factors. -/
