@@ -40,8 +40,8 @@ hom-modules.
 * `TauCeti.InternalGrading.tensorProductOver_piece`: a degree piece is the image of the
   corresponding piece of `M ⊗[k] N`.
 * `TauCeti.InternalGrading.tmul_mem_tensorProductOver`: degrees add on pure tensors.
-* `TauCeti.InternalGrading.tensorProductOver_piece_le`: a submodule containing the homogeneous
-  pure tensors of total degree `d` contains the degree-`d` piece.
+* `TauCeti.InternalGrading.tensorProductOver_piece_le_of_add_eq`: a submodule containing the
+  homogeneous pure tensors of total degree `d` contains the degree-`d` piece.
 * `TauCeti.InternalGrading.isHomogeneous_of_tmul_mem_tensorProductOver`: homogeneity of a map
   out of `M ⊗[A] N` can be checked on homogeneous pure tensors.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProductOver`: tensoring homogeneous `A`-linear maps adds
@@ -161,9 +161,9 @@ theorem tensorProductOver_piece (d : ℤ) :
     (G.tensorProductOver 𝒜 H).piece d =
       ((G.tensorProduct H).piece d).map (mapOfCompatibleSMul A k k M N) := by
   rw [tensorProductOver, map_piece, quotient_piece, ← Submodule.map_comp]
-  refine congrArg (Submodule.map · _) (LinearMap.ext fun x ↦ ?_)
-  rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, Submodule.mkQ_apply,
-    LinearEquiv.coe_coe, LinearMap.quotKerEquivOfSurjective_apply_mk]
+  -- The composite sends `x` to the class of `x` and then to `mapOfCompatibleSMul x`; Mathlib
+  -- proves this pointwise identity `LinearMap.quotKerEquivOfSurjective_apply_mk` by `rfl`.
+  rfl
 
 /-- An element of `M ⊗[A] N` has degree `d` exactly when it is the image of an element of
 `M ⊗[k] N` of degree `d`. -/
@@ -180,7 +180,7 @@ theorem tmul_mem_tensorProductOver {p q : ℤ} {m : M} {n : N} (hm : m ∈ G.pie
 
 /-- A `k`-submodule containing every pure tensor of homogeneous elements whose degrees sum to
 `d` contains the degree-`d` piece. -/
-theorem tensorProductOver_piece_le {d : ℤ} {C : Submodule k (M ⊗[A] N)}
+theorem tensorProductOver_piece_le_of_add_eq {d : ℤ} {C : Submodule k (M ⊗[A] N)}
     (h : ∀ p q : ℤ, p + q = d → ∀ m ∈ G.piece p, ∀ n ∈ H.piece q, m ⊗ₜ[A] n ∈ C) :
     (G.tensorProductOver 𝒜 H).piece d ≤ C := by
   rw [tensorProductOver_piece, Submodule.map_le_iff_le_comap]
@@ -194,7 +194,7 @@ theorem isHomogeneous_of_tmul_mem_tensorProductOver {Q : Type*} [AddCommMonoid Q
       f (m ⊗ₜ[A] n) ∈ 𝓠 (p + q + s)) :
     LinearMap.IsHomogeneous f (G.tensorProductOver 𝒜 H).piece 𝓠 s :=
   LinearMap.isHomogeneous_def.2 fun d _ hz ↦
-    (G.tensorProductOver_piece_le 𝒜 H (C := (𝓠 (d + s)).comap (f.restrictScalars k))
+    (G.tensorProductOver_piece_le_of_add_eq 𝒜 H (C := (𝓠 (d + s)).comap (f.restrictScalars k))
       fun p q hpq _ hm _ hn ↦ by
         simpa only [Submodule.mem_comap, LinearMap.restrictScalars_apply, ← hpq] using hf hm hn) hz
 
@@ -202,12 +202,10 @@ theorem isHomogeneous_of_tmul_mem_tensorProductOver {Q : Type*} [AddCommMonoid Q
 instance gradedSMul_tensorProductOver :
     SetLike.GradedSMul 𝒜 (G.tensorProductOver 𝒜 H).piece where
   smul_mem {i d} a z ha hz := by
-    refine (G.tensorProductOver_piece_le 𝒜 H
-      (C := ((G.tensorProductOver 𝒜 H).piece (i + d)).comap
-        ((LinearMap.lsmul A (M ⊗[A] N) a).restrictScalars k))
-      fun p q hpq m hm n hn ↦ ?_) hz
-    rw [Submodule.mem_comap, LinearMap.restrictScalars_apply, LinearMap.lsmul_apply, smul_tmul',
-      ← hpq, ← add_assoc]
+    rw [vadd_eq_add, add_comm]
+    refine (G.isHomogeneous_of_tmul_mem_tensorProductOver 𝒜 H _ (LinearMap.lsmul A _ a) i
+      fun {p q m n} hm hn ↦ ?_).map_mem hz
+    rw [LinearMap.lsmul_apply, smul_tmul', add_comm (p + q), ← add_assoc]
     exact G.tmul_mem_tensorProductOver 𝒜 H (SetLike.GradedSMul.smul_mem ha hm) hn
 
 section Assoc
@@ -234,12 +232,11 @@ theorem isHomogeneous_assoc_tensorProductOver :
       -- Fix the third factor `r` and check the first factor on homogeneous pure tensors.
       let f : M ⊗[A] N →ₗ[A] M ⊗[A] (N ⊗[A] P) :=
         (TensorProduct.assoc A M N P).toLinearMap ∘ₗ (TensorProduct.mk A (M ⊗[A] N) P).flip r
-      refine (G.tensorProductOver_piece_le 𝒜 H
-        (C := ((G.tensorProductOver 𝒜 (H.tensorProductOver 𝒜 K)).piece (p + q + 0)).comap
-          (f.restrictScalars k))
-        fun p₁ p₂ hp m hm n hn ↦ ?_) hx
-      rw [Submodule.mem_comap, LinearMap.restrictScalars_apply, LinearMap.comp_apply,
-        LinearMap.flip_apply, mk_apply, ← hp, add_zero, add_assoc]
+      rw [add_zero]
+      refine (G.isHomogeneous_of_tmul_mem_tensorProductOver 𝒜 H _ f q
+        fun {p₁ p₂ m n} hm hn ↦ ?_).map_mem hx
+      rw [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply, LinearEquiv.coe_coe, assoc_tmul,
+        add_assoc]
       exact G.tmul_mem_tensorProductOver 𝒜 _ hm (H.tmul_mem_tensorProductOver 𝒜 K hn hr)
 
 end Assoc

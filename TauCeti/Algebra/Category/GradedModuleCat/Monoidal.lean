@@ -315,13 +315,14 @@ theorem mem_tensorObj_shiftObj_piece_iff {p : ℤ} {x : M ⊗[A] N} :
   have := (N.shiftObj b).gradedSMul
   rw [mem_shiftObj_piece_iff, tensorObj_grading, tensorObj_grading]
   constructor
-  · refine fun hx ↦ (M.shiftObj a).grading.tensorProductOver_piece_le 𝒜 (N.shiftObj b).grading
+  · refine fun hx ↦ (M.shiftObj a).grading.tensorProductOver_piece_le_of_add_eq 𝒜
+      (N.shiftObj b).grading
       (C := (M.grading.tensorProductOver 𝒜 N.grading).piece (p - (a + b)))
       (fun p₁ p₂ hp m hm n hn ↦ ?_) hx
     rw [mem_shiftObj_piece_iff] at hm hn
     convert M.grading.tmul_mem_tensorProductOver 𝒜 N.grading hm hn using 2
     omega
-  · refine fun hx ↦ M.grading.tensorProductOver_piece_le 𝒜 N.grading
+  · refine fun hx ↦ M.grading.tensorProductOver_piece_le_of_add_eq 𝒜 N.grading
       (C := ((M.shiftObj a).grading.tensorProductOver 𝒜 (N.shiftObj b).grading).piece p)
       (fun p₁ p₂ hp m hm n hn ↦ ?_) hx
     have hm' : m ∈ (M.shiftObj a).grading.piece (p₁ + a) := by
