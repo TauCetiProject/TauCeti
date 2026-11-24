@@ -196,8 +196,10 @@ theorem NumericallyTrivial.restrictScalars (h : NumericallyTrivial K x a) :
     NumericallyTrivial k (x ≫ Spec.map (CommRingCat.ofHom (algebraMap k K))) a :=
   fun C _ _ i _ hi hC ↦ by
     let : C.Over (Spec (.of K)) := ⟨i ≫ x⟩
-    rw [intersectionNumber_eq_finrank_mul (κ := K) i (hi.trans (Category.assoc _ _ _).symm).symm,
-      h.intersectionNumber_eq_zero i rfl hC, mul_zero]
+    -- Under the local `Over` instance, `C ↘ Spec K` is by definition `i ≫ x`.
+    have hK : C ↘ Spec (.of K) = i ≫ x := rfl
+    rw [intersectionNumber_eq_finrank_mul (κ := K) i (by rw [hK, hi, Category.assoc]),
+      h.intersectionNumber_eq_zero i hK hC, mul_zero]
 
 /-- **Numerical triviality along a finite extension.** Let `K / k` be a finite field extension and
 `x : X ⟶ Spec K`. A class is numerically trivial over `k` exactly when it is numerically trivial
@@ -339,9 +341,6 @@ theorem relNumericallyTrivial_iff_numericallyTrivial {k : Type u} [Field k]
       isIso_SpecMap_iff.mp this
     have : FiniteDimensional k ((Spec (.of k)).residueField s) :=
       .of_surjective (Algebra.linearMap k _) hbij.surjective
-    -- `fiberι` is defined as the first projection of the pullback along `fromSpecResidueField`.
-    have : IsIso (x.fiberι s) :=
-      inferInstanceAs (IsIso (pullback.fst x ((Spec (.of k)).fromSpecResidueField s)))
     rw [← numericallyTrivial_iff_of_finiteDimensional (k := k), he, ← Scheme.Hom.fiber_fac,
       numericallyTrivial_pullback_iff_of_isIso]
   obtain ⟨s⟩ : Nonempty (Spec (.of k)) := inferInstanceAs (Nonempty (PrimeSpectrum k))
