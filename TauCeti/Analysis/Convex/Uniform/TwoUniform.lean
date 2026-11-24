@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
-public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Convex.Uniform.Modulus
 public import TauCeti.Analysis.Convex.Uniform.Smoothness
-import TauCeti.Analysis.Normed.Module.Dual.Basic
+public import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Analysis.Normed.Module.DualitySet
 
 /-!
@@ -134,6 +133,22 @@ theorem isTwoUniformlySmooth_one_of_innerProductSpace : IsTwoUniformlySmooth E 1
 
 end InnerProductSpace
 
+section Midpoint
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V]
+
+/-- The midpoint of `x` and `y` plus their half difference is `x`. -/
+private theorem inv_two_smul_add_add_inv_two_smul_sub (x y : V) :
+    (2⁻¹ : 𝕜) • (x + y) + (2⁻¹ : 𝕜) • (x - y) = x := by
+  module
+
+/-- The midpoint of `x` and `y` minus their half difference is `y`. -/
+private theorem inv_two_smul_add_sub_inv_two_smul_sub (x y : V) :
+    (2⁻¹ : 𝕜) • (x + y) - (2⁻¹ : 𝕜) • (x - y) = y := by
+  module
+
+end Midpoint
+
 section Moduli
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
@@ -151,8 +166,8 @@ theorem IsTwoUniformlyConvex.one_sub_sqrt_le_modulusOfConvexity (h : IsTwoUnifor
     ⟨by linarith [Real.sqrt_nonneg (1 - c * ε ^ 2 / 4)], fun x y hx hy hxy ↦ ?_⟩
   -- Apply the inequality to the midpoint and the half difference of `x` and `y`.
   have hm := h ((2⁻¹ : ℝ) • (x + y)) ((2⁻¹ : ℝ) • (x - y))
-  rw [show (2⁻¹ : ℝ) • (x + y) + (2⁻¹ : ℝ) • (x - y) = x by module,
-    show (2⁻¹ : ℝ) • (x + y) - (2⁻¹ : ℝ) • (x - y) = y by module, norm_smul, norm_smul,
+  rw [inv_two_smul_add_add_inv_two_smul_sub, inv_two_smul_add_sub_inv_two_smul_sub, norm_smul,
+    norm_smul,
     Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 2⁻¹)] at hm
   have hsq : (‖x + y‖ / 2) ^ 2 ≤ 1 - c * ε ^ 2 / 4 := by
     have hε' : ε ^ 2 ≤ ‖x - y‖ ^ 2 := pow_le_pow_left₀ hε hxy 2
@@ -170,9 +185,8 @@ theorem IsTwoUniformlyConvex.mul_sq_div_eight_le_modulusOfConvexity
     c * ε ^ 2 / 8 ≤ modulusOfConvexity E ε := by
   refine le_trans ?_ (h.one_sub_sqrt_le_modulusOfConvexity hε₀)
   have ha : c * ε ^ 2 / 4 ≤ 1 := by nlinarith [sq_nonneg ε]
-  have : √(1 - c * ε ^ 2 / 4) ≤ 1 - c * ε ^ 2 / 8 := by
-    rw [Real.sqrt_le_left (by linarith)]
-    nlinarith [sq_nonneg (c * ε ^ 2)]
+  have := Real.sqrt_one_add_le (x := -(c * ε ^ 2 / 4)) (by linarith)
+  rw [← sub_eq_add_neg] at this
   linarith
 
 /-- A real seminormed space that is two-uniformly convex with a positive constant is uniformly
@@ -205,9 +219,7 @@ theorem IsTwoUniformlySmooth.modulusOfSmoothness_le_sqrt_sub_one (h : IsTwoUnifo
 theorem IsTwoUniformlySmooth.modulusOfSmoothness_le_mul_sq_div_two (h : IsTwoUniformlySmooth E c)
     (hc : 0 ≤ c) (t : ℝ) : modulusOfSmoothness E t ≤ c * t ^ 2 / 2 := by
   refine (h.modulusOfSmoothness_le_sqrt_sub_one hc t).trans ?_
-  have : √(1 + c * t ^ 2) ≤ 1 + c * t ^ 2 / 2 := by
-    rw [Real.sqrt_le_left (by positivity)]
-    nlinarith [sq_nonneg (c * t ^ 2)]
+  have := Real.sqrt_one_add_le (x := c * t ^ 2) (by linarith [mul_nonneg hc (sq_nonneg t)])
   linarith
 
 /-- **Uniform smoothness.** In a two-uniformly smooth space, `ρ(t) / t → 0` as `t → 0⁺`. -/
@@ -232,64 +244,6 @@ section Duality
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] {c : ℝ}
 
-/-- The scaled Fenchel–Young inequality `2 re (f x) ≤ ‖f‖ ^ 2 / c + c ‖x‖ ^ 2` for `0 < c`. -/
-private theorem two_mul_re_apply_le (f : StrongDual 𝕜 E) (x : E) (hc : 0 < c) :
-    2 * re (f x) ≤ ‖f‖ ^ 2 / c + c * ‖x‖ ^ 2 := by
-  have h₁ : re (f x) ≤ ‖f‖ * ‖x‖ := (re_le_norm _).trans (f.le_opNorm x)
-  have h₂ : 0 ≤ (‖f‖ - c * ‖x‖) ^ 2 / c := by positivity
-  have h₃ : (‖f‖ - c * ‖x‖) ^ 2 / c = ‖f‖ ^ 2 / c - 2 * (‖f‖ * ‖x‖) + c * ‖x‖ ^ 2 := by
-    field_simp
-    ring
-  linarith
-
-/-- The scaled Fenchel–Young inequality is attained at every vector: a functional in the duality
-set of `x`, rescaled by `c`, realizes it. -/
-private theorem exists_le_two_mul_re_apply_sub (x : E) (hc : 0 < c) :
-    ∃ f : StrongDual 𝕜 E, c * ‖x‖ ^ 2 ≤ 2 * re (f x) - ‖f‖ ^ 2 / c := by
-  obtain ⟨J, hJ⟩ := dualitySet_nonempty 𝕜 x
-  obtain ⟨hJx, hJ⟩ := mem_dualitySet_iff.1 hJ
-  refine ⟨(c : 𝕜) • J, le_of_eq ?_⟩
-  rw [smul_apply, hJx, smul_eq_mul, ← ofReal_pow, ← ofReal_mul, ofReal_re, norm_smul, norm_ofReal,
-    abs_of_pos hc, hJ]
-  field_simp
-  ring
-
-/-- The scaled Fenchel–Young inequality determines the dual norm: if
-`2 re (f x) - c ‖x‖ ^ 2 ≤ B` for every `x`, then `‖f‖ ^ 2 / c ≤ B`. -/
-private theorem sq_norm_div_le_of_forall {f : StrongDual 𝕜 E} {B : ℝ} (hc : 0 < c)
-    (h : ∀ x, 2 * re (f x) - c * ‖x‖ ^ 2 ≤ B) : ‖f‖ ^ 2 / c ≤ B := by
-  have hB : 0 ≤ B := by simpa using h 0
-  by_contra! hlt
-  -- Otherwise `r = √(c B) < ‖f‖`, and a vector on which `re f` exceeds `r ‖x‖`, suitably
-  -- rescaled, violates the bound.
-  have hf : 0 < ‖f‖ := (norm_nonneg f).lt_of_ne fun h₀ ↦ by
-    rw [← h₀] at hlt
-    simp at hlt
-    linarith
-  have hr : √(c * B) < ‖f‖ := by
-    rw [Real.sqrt_lt' hf]
-    rwa [lt_div_iff₀ hc, mul_comm] at hlt
-  obtain ⟨x, hx⟩ := f.exists_mul_norm_lt_re_apply (Real.sqrt_nonneg _) hr
-  have hfx : 0 < re (f x) := lt_of_le_of_lt (by positivity) hx
-  have hx₀ : 0 < ‖x‖ := (norm_nonneg x).lt_of_ne fun h₀ ↦ by
-    have := (re_le_norm (f x)).trans (f.le_opNorm x)
-    rw [← h₀, mul_zero] at this
-    linarith
-  have hcx : 0 < c * ‖x‖ ^ 2 := mul_pos hc (pow_pos hx₀ 2)
-  set s : ℝ := re (f x) / (c * ‖x‖ ^ 2)
-  have hs := h ((s : 𝕜) • x)
-  rw [map_smul, smul_eq_mul, re_ofReal_mul, norm_smul, norm_ofReal,
-    abs_of_pos (div_pos hfx hcx)] at hs
-  have e : 2 * (s * re (f x)) - c * (s * ‖x‖) ^ 2 = re (f x) ^ 2 / (c * ‖x‖ ^ 2) := by
-    have := hx₀.ne'
-    simp only [s]
-    field_simp
-    ring
-  rw [e, div_le_iff₀ hcx] at hs
-  have h₁ : (√(c * B) * ‖x‖) ^ 2 < re (f x) ^ 2 := pow_lt_pow_left₀ hx (by positivity) two_ne_zero
-  rw [mul_pow, Real.sq_sqrt (by positivity)] at h₁
-  nlinarith
-
 private theorem re_apply_add_add_re_apply_sub (f g : StrongDual 𝕜 E) (x y : E) :
     re ((f + g) (x + y)) + re ((f - g) (x - y)) = 2 * re (f x) + 2 * re (g y) := by
   simp only [add_apply, sub_apply, map_add, map_sub]
@@ -305,20 +259,18 @@ theorem IsTwoUniformlyConvex.isTwoUniformlySmooth_strongDual (h : IsTwoUniformly
   have core (x y : E) : 2 * re ((f + g) x) - 1 * ‖x‖ ^ 2 + (2 * re ((f - g) y) - 1 * ‖y‖ ^ 2) ≤
       2 * ‖f‖ ^ 2 + 2 * (‖g‖ ^ 2 / c) := by
     have hconv := h ((2⁻¹ : 𝕜) • (x + y)) ((2⁻¹ : 𝕜) • (x - y))
-    rw [show (2⁻¹ : 𝕜) • (x + y) + (2⁻¹ : 𝕜) • (x - y) = x by module,
-      show (2⁻¹ : 𝕜) • (x + y) - (2⁻¹ : 𝕜) • (x - y) = y by module] at hconv
-    have h₁ := two_mul_re_apply_le f ((2⁻¹ : 𝕜) • (x + y)) one_pos
-    have h₂ := two_mul_re_apply_le g ((2⁻¹ : 𝕜) • (x - y)) hc
+    rw [inv_two_smul_add_add_inv_two_smul_sub, inv_two_smul_add_sub_inv_two_smul_sub] at hconv
+    have h₁ := StrongDual.two_mul_re_apply_le f ((2⁻¹ : 𝕜) • (x + y)) one_pos
+    have h₂ := StrongDual.two_mul_re_apply_le g ((2⁻¹ : 𝕜) • (x - y)) hc
     have hre := re_apply_add_add_re_apply_sub f g ((2⁻¹ : 𝕜) • (x + y)) ((2⁻¹ : 𝕜) • (x - y))
-    rw [show (2⁻¹ : 𝕜) • (x + y) + (2⁻¹ : 𝕜) • (x - y) = x by module,
-      show (2⁻¹ : 𝕜) • (x + y) - (2⁻¹ : 𝕜) • (x - y) = y by module] at hre
+    rw [inv_two_smul_add_add_inv_two_smul_sub, inv_two_smul_add_sub_inv_two_smul_sub] at hre
     rw [div_one] at h₁
     linarith
   have hsub (x : E) : ‖f - g‖ ^ 2 / 1 ≤
       2 * ‖f‖ ^ 2 + 2 * (‖g‖ ^ 2 / c) - (2 * re ((f + g) x) - 1 * ‖x‖ ^ 2) :=
-    sq_norm_div_le_of_forall one_pos fun y ↦ by linarith [core x y]
+    StrongDual.sq_norm_div_le_of_forall one_pos fun y ↦ by linarith [core x y]
   have hadd : ‖f + g‖ ^ 2 / 1 ≤ 2 * ‖f‖ ^ 2 + 2 * (‖g‖ ^ 2 / c) - ‖f - g‖ ^ 2 / 1 :=
-    sq_norm_div_le_of_forall one_pos fun x ↦ by linarith [hsub x]
+    StrongDual.sq_norm_div_le_of_forall one_pos fun x ↦ by linarith [hsub x]
   rw [div_one, div_one] at hadd
   rw [inv_mul_eq_div]
   linarith
@@ -332,15 +284,15 @@ theorem IsTwoUniformlySmooth.isTwoUniformlyConvex_strongDual (h : IsTwoUniformly
   -- The inequality between the two suprema defining `‖f‖ ^ 2` and `‖g‖ ^ 2 / c`.
   have core (x y : E) : 2 * re (f x) - 1 * ‖x‖ ^ 2 + (2 * re (g y) - c * ‖y‖ ^ 2) ≤
       (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2) / 2 := by
-    have h₁ := two_mul_re_apply_le (f + g) (x + y) one_pos
-    have h₂ := two_mul_re_apply_le (f - g) (x - y) one_pos
+    have h₁ := StrongDual.two_mul_re_apply_le (f + g) (x + y) one_pos
+    have h₂ := StrongDual.two_mul_re_apply_le (f - g) (x - y) one_pos
     have hre := re_apply_add_add_re_apply_sub f g x y
     rw [div_one] at h₁ h₂
     linarith [h x y]
   have hf (y : E) : ‖f‖ ^ 2 / 1 ≤ (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2) / 2 - (2 * re (g y) - c * ‖y‖ ^ 2) :=
-    sq_norm_div_le_of_forall one_pos fun x ↦ by linarith [core x y]
+    StrongDual.sq_norm_div_le_of_forall one_pos fun x ↦ by linarith [core x y]
   have hg : ‖g‖ ^ 2 / c ≤ (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2) / 2 - ‖f‖ ^ 2 / 1 :=
-    sq_norm_div_le_of_forall hc fun y ↦ by linarith [hf y]
+    StrongDual.sq_norm_div_le_of_forall hc fun y ↦ by linarith [hf y]
   rw [div_one] at hg
   rw [inv_mul_eq_div]
   linarith
@@ -353,8 +305,8 @@ theorem isTwoUniformlySmooth_strongDual_iff (hc : 0 < c) :
   refine ⟨fun h x y ↦ ?_, fun h ↦ h.isTwoUniformlySmooth_strongDual 𝕜 hc⟩
   obtain ⟨f, hf⟩ := exists_le_two_mul_re_apply_sub (𝕜 := 𝕜) x one_pos
   obtain ⟨g, hg⟩ := exists_le_two_mul_re_apply_sub (𝕜 := 𝕜) y hc
-  have h₁ := two_mul_re_apply_le (f + g) (x + y) one_pos
-  have h₂ := two_mul_re_apply_le (f - g) (x - y) one_pos
+  have h₁ := StrongDual.two_mul_re_apply_le (f + g) (x + y) one_pos
+  have h₂ := StrongDual.two_mul_re_apply_le (f - g) (x - y) one_pos
   have hre := re_apply_add_add_re_apply_sub f g x y
   have hs := h f g
   rw [inv_mul_eq_div] at hs
@@ -371,11 +323,10 @@ theorem isTwoUniformlyConvex_strongDual_iff (hc : 0 < c) :
   obtain ⟨G, hG⟩ := exists_le_two_mul_re_apply_sub (𝕜 := 𝕜) (x - y) one_pos
   -- Write `F = f + g` and `G = f - g`.
   have hfg := h ((2⁻¹ : 𝕜) • (F + G)) ((2⁻¹ : 𝕜) • (F - G))
-  have h₁ := two_mul_re_apply_le ((2⁻¹ : 𝕜) • (F + G)) x one_pos
-  have h₂ := two_mul_re_apply_le ((2⁻¹ : 𝕜) • (F - G)) y hc
+  have h₁ := StrongDual.two_mul_re_apply_le ((2⁻¹ : 𝕜) • (F + G)) x one_pos
+  have h₂ := StrongDual.two_mul_re_apply_le ((2⁻¹ : 𝕜) • (F - G)) y hc
   have hre := re_apply_add_add_re_apply_sub ((2⁻¹ : 𝕜) • (F + G)) ((2⁻¹ : 𝕜) • (F - G)) x y
-  rw [show (2⁻¹ : 𝕜) • (F + G) + (2⁻¹ : 𝕜) • (F - G) = F by module,
-    show (2⁻¹ : 𝕜) • (F + G) - (2⁻¹ : 𝕜) • (F - G) = G by module] at hfg hre
+  rw [inv_two_smul_add_add_inv_two_smul_sub, inv_two_smul_add_sub_inv_two_smul_sub] at hfg hre
   rw [inv_mul_eq_div] at hfg
   rw [div_one] at hF hG h₁
   linarith

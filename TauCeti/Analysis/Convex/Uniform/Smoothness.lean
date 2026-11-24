@@ -139,7 +139,8 @@ theorem modulusOfSmoothness_eq_zero_of_subsingleton [Subsingleton E] (t : ℝ) :
 theorem monotoneOn_modulusOfSmoothness : MonotoneOn (modulusOfSmoothness E) (Ici 0) := by
   intro s hs t _ hst
   obtain h0 | ht := ((mem_Ici.1 hs).trans hst).eq_or_lt
-  · rw [show s = t by linarith [mem_Ici.1 hs]]
+  · subst h0
+    rw [le_antisymm hst (mem_Ici.1 hs)]
   refine (modulusOfSmoothness_le_iff E).2 ⟨modulusOfSmoothness_nonneg E t, fun x y hx hy ↦ ?_⟩
   refine le_trans ?_ (le_modulusOfSmoothness E hx hy)
   -- `x ± s • y` are convex combinations of `x + t • y` and `x - t • y`, with weights
