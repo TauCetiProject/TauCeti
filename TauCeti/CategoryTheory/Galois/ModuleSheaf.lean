@@ -20,10 +20,11 @@ continuous `G`-set `S`, the `G`-equivariant maps from `S` to `M` form a `Λ`-mod
 `Λ`-modules (`ContAction.modulePresheaf ρ`). Its underlying presheaf of sets is the presheaf of
 `G`-maps into the underlying `G`-set `Representation.toAction ρ` of `ρ`
 (`ContAction.modulePresheafCompForgetIso`), so it is a sheaf for the jointly surjective topology
-(`ContAction.isSheaf_modulePresheaf`). When `Λ` is Noetherian and `M` is finitely generated, its
-values are finitely generated. Its sections over a point are the invariants of `ρ`
-(`ContAction.modulePresheafObjEquivInvariants`), and for `G` finite discrete and `M ≠ 0` it has a
-nonzero section over the regular `G`-set (`ContAction.nontrivial_modulePresheaf_obj_regular`).
+(`ContAction.isSheaf_modulePresheaf`), bundled as `ContAction.moduleSheaf ρ`. When `Λ` is
+Noetherian and `M` is finitely generated, its values are finitely generated. Its sections over a
+point are the invariants of `ρ` (`ContAction.modulePresheafObjEquivInvariants`), and for `G` finite
+discrete and `M ≠ 0` it has a nonzero section over the regular `G`-set
+(`ContAction.nontrivial_modulePresheaf_obj_regular`).
 
 ## Main definitions
 
@@ -31,6 +32,7 @@ nonzero section over the regular `G`-set (`ContAction.nontrivial_modulePresheaf_
 * `ContAction.modulePresheaf ρ`: the presheaf of these modules on finite continuous `G`-sets, with
   sections `ContAction.modulePresheafObjEquiv`, determined by their values
   (`ContAction.modulePresheafObj_ext`).
+* `ContAction.moduleSheaf ρ`: the same presheaf, as a sheaf for the jointly surjective topology.
 * `ContAction.modulePresheafObjEquivInvariants`: sections over a terminal `G`-set are invariants.
 
 ## Main results
@@ -119,6 +121,17 @@ theorem isSheaf_modulePresheaf [IsTopologicalGroup G] :
     (Presheaf.isSheaf_of_isSheaf_comp _ _ (forget AddCommGrpCat.{u})
       ((Presheaf.isSheaf_of_iso_iff (modulePresheafCompForgetIso ρ)).2
         (isSheaf_homPresheaf ρ.toAction)))
+
+/-- The `G`-equivariant maps into a representation `ρ`, as a sheaf of `Λ`-modules on finite
+continuous `G`-sets for the jointly surjective topology. -/
+noncomputable def moduleSheaf [IsTopologicalGroup G] :
+    Sheaf (jointlySurjectiveTopology G) (ModuleCat.{u} Λ) :=
+  ⟨modulePresheaf ρ, isSheaf_modulePresheaf ρ⟩
+
+/-- The underlying presheaf of `moduleSheaf ρ` is `modulePresheaf ρ`. -/
+@[simp]
+theorem moduleSheaf_obj [IsTopologicalGroup G] : (moduleSheaf ρ).obj = modulePresheaf ρ :=
+  (rfl)
 
 /-- The `G`-equivariant maps from a finite `G`-set to a finitely generated module over a
 Noetherian ring form a finitely generated module. -/
