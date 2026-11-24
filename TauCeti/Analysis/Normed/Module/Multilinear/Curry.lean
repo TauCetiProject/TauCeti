@@ -164,10 +164,7 @@ theorem norm_applyLastL_le (m : ℕ) (h : E) : ‖applyLastL 𝕜 F m h‖ ≤ �
   refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg h) fun M ↦ ?_
   refine opNorm_le_bound (by positivity) fun v ↦ ?_
   rw [applyLastL_apply]
-  refine (M.le_opNorm _).trans_eq ?_
-  rw [Fin.prod_univ_castSucc, Fin.snoc_last]
-  simp only [Fin.snoc_castSucc]
-  ring
+  exact (M.norm_map_snoc_le v h).trans_eq (by ring)
 
 /-- Evaluation with `h` in the last argument is `‖h‖`-Lipschitz. -/
 theorem lipschitzWith_applyLastL (m : ℕ) (h : E) : LipschitzWith ‖h‖₊ (applyLastL 𝕜 F m h) :=
