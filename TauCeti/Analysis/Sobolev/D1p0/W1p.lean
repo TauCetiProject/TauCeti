@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.D1p0.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Sobolev.W1p.Density
 
 /-!
@@ -16,10 +15,10 @@ import TauCeti.Analysis.Sobolev.W1p.Density
 An element `u` of `W^{1,p}_0(Ω)` is a limit of test functions `φₖ` in the graph norm, so the
 gradients `∇φₖ` converge to `∇u` in `Lᵖ(Ω, E)`. Hence `∇u` lies in `D^{1,p}_0(Ω)`, the closure of
 the test-function gradients. For a Haar measure and the Sobolev conjugate `1/p⋆ + 1/n = 1/p` with
-`p⋆ ≠ ∞`, the Sobolev embedding sends this element to `u` itself: it is the `L^{p⋆}` limit of the
-`φₖ`, which also converge to `u` in `Lᵖ`, and two limits in measure agree almost everywhere. In
-particular every element of `W^{1,p}_0(Ω)` lies in `L^{p⋆}(Ω)`, with the
-Gagliardo--Nirenberg--Sobolev bound `‖u‖_{p⋆} ≤ C ‖∇u‖_p`.
+`p⋆ ≠ ∞`, the Sobolev embedding of `D^{1,p}_0(Ω)` restricts along this inclusion to the Sobolev
+embedding of `W^{1,p}_0(Ω)` (`TauCeti.W1p0.sobolevEmbeddingL`): both are continuous and send a
+test-function jet to the class of the test function. So the Sobolev embedding sends the gradient of
+`u` back to `u` itself, by `TauCeti.W1p0.coeFn_sobolevEmbeddingL`.
 
 On the whole space `W^{1,p}_0 = W^{1,p}` for `p < ∞` (`TauCeti.w1p0Submodule_top_eq_top`), so every
 element of `W^{1,p}(E)` lies in the range of the Sobolev embedding of `D^{1,p}_0(E)`.
@@ -31,6 +30,8 @@ element of `W^{1,p}(E)` lies in the range of the Sobolev embedding of `D^{1,p}_0
 
 ## Main results
 
+* `TauCeti.W1p0.sobolevEmbeddingL_comp_toD1p0L`: the Sobolev embedding of `D^{1,p}_0(Ω)` composed
+  with `W1p0.toD1p0L` is the Sobolev embedding of `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.sobolevEmbeddingL_toD1p0L_ae_eq`: the Sobolev embedding sends `W1p0.toD1p0L u`
   to the value of `u`.
 * `TauCeti.W1p.exists_sobolevEmbeddingL_ae_eq_top`: on the whole space, every element of
@@ -74,7 +75,58 @@ theorem W1p0.coe_toD1p0L_apply (u : W1p0 mu Omega p) :
     (W1p0.toD1p0L u : Lp E p (mu.restrict Omega)) = W1p.gradient (u : W1p mu Omega p) := by
   simp [W1p0.toD1p0L]
 
+/-- `W1p0.toD1p0L` sends a test-function jet to the gradient of the test function. -/
+@[simp]
+theorem W1p0.toD1p0L_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
+    W1p0.toD1p0L ⟨W1p.ofTestFunctionₗ mu Omega p phi, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩ =
+      D1p0.ofTestFunctionₗ mu Omega p phi :=
+  Subtype.ext (by simp only [W1p0.coe_toD1p0L_apply, W1p.gradient_ofTestFunctionₗ,
+    D1p0.coe_ofTestFunctionₗ])
+
 variable {pstar : ENNReal}
+
+/-- The Sobolev embedding of `W^{1,p}_0(Ω)` sends a test-function jet to the class of the test
+function. -/
+private theorem W1p0.sobolevEmbeddingL_ofTestFunctionₗ (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (phi : 𝓓(Omega, ℝ)) :
+    W1p0.sobolevEmbeddingL hpstar hexp
+        ⟨W1p.ofTestFunctionₗ mu Omega p phi, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩ =
+      testFunctionLp pstar phi := by
+  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+  refine Lp.ext ?_
+  filter_upwards [W1p0.coeFn_sobolevEmbeddingL hpstar hexp
+      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩, testFunctionLp_apply_ae p phi,
+    testFunctionLp_apply_ae pstar phi] with x h1 h2 h3
+  rw [h1, W1p.value_ofTestFunctionₗ, h2, h3]
+
+/-- **The two Sobolev embeddings agree on `W^{1,p}_0(Ω)`**: for the Sobolev conjugate `p⋆ ≠ ∞`,
+the Sobolev embedding of `D^{1,p}_0(Ω)` composed with `W1p0.toD1p0L` is the Sobolev embedding of
+`W^{1,p}_0(Ω)`. -/
+theorem W1p0.sobolevEmbeddingL_comp_toD1p0L (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) :
+    letI := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+    (D1p0.sobolevEmbeddingL hexp).comp W1p0.toD1p0L =
+      W1p0.sobolevEmbeddingL (mu := mu) (Omega := Omega) hpstar hexp := by
+  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+  refine ContinuousLinearMap.ext fun u => ?_
+  obtain ⟨phi, hphi⟩ := mem_w1p0Submodule_iff_exists_seq_tendsto.mp u.property
+  -- The test functions converge to `u` in `W^{1,p}_0(Ω)`, and both maps send them to themselves.
+  have hlim : Tendsto (fun k => (⟨W1p.ofTestFunctionₗ mu Omega p (phi k),
+      W1p.ofTestFunctionₗ_mem_w1p0Submodule (phi k)⟩ : W1p0 mu Omega p)) atTop (𝓝 u) :=
+    tendsto_subtype_rng.mpr hphi
+  have hf := (((D1p0.sobolevEmbeddingL hexp).comp W1p0.toD1p0L).continuous.tendsto u).comp hlim
+  have hg := ((W1p0.sobolevEmbeddingL hpstar hexp).continuous.tendsto u).comp hlim
+  refine tendsto_nhds_unique (hf.congr fun k => ?_) hg
+  simp only [Function.comp_apply, ContinuousLinearMap.comp_apply, W1p0.toD1p0L_ofTestFunctionₗ,
+    D1p0.sobolevEmbeddingL_ofTestFunctionₗ hpstar, W1p0.sobolevEmbeddingL_ofTestFunctionₗ hpstar]
+
+/-- The Sobolev embedding of `D^{1,p}_0(Ω)` sends `W1p0.toD1p0L u` to the Sobolev embedding of
+`u ∈ W^{1,p}_0(Ω)`. -/
+@[simp]
+theorem W1p0.sobolevEmbeddingL_toD1p0L (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (u : W1p0 mu Omega p) :
+    D1p0.sobolevEmbeddingL hexp (W1p0.toD1p0L u) = W1p0.sobolevEmbeddingL hpstar hexp u :=
+  DFunLike.congr_fun (W1p0.sobolevEmbeddingL_comp_toD1p0L hpstar hexp) u
 
 /-- **The Sobolev embedding on `W^{1,p}_0(Ω)`**: for the Sobolev conjugate `p⋆ ≠ ∞`, the Sobolev
 embedding of `D^{1,p}_0(Ω)` sends the gradient of `u ∈ W^{1,p}_0(Ω)` to the value of `u`. -/
@@ -82,30 +134,8 @@ theorem W1p0.sobolevEmbeddingL_toD1p0L_ae_eq (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (u : W1p0 mu Omega p) :
     (D1p0.sobolevEmbeddingL hexp (W1p0.toD1p0L u) : E → ℝ) =ᵐ[mu.restrict Omega]
       W1p.value (u : W1p mu Omega p) := by
-  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  obtain ⟨phi, hphi⟩ := mem_w1p0Submodule_iff_exists_seq_tendsto.mp u.property
-  -- The test functions converge to `u` in `W^{1,p}_0(Ω)`.
-  have hlim : Tendsto (fun k => (⟨W1p.ofTestFunctionₗ mu Omega p (phi k),
-      W1p.ofTestFunctionₗ_mem_w1p0Submodule (phi k)⟩ : W1p0 mu Omega p)) atTop (𝓝 u) :=
-    tendsto_subtype_rng.mpr hphi
-  have htest (k : ℕ) : W1p0.toD1p0L ⟨W1p.ofTestFunctionₗ mu Omega p (phi k),
-      W1p.ofTestFunctionₗ_mem_w1p0Submodule (phi k)⟩ = D1p0.ofTestFunctionₗ mu Omega p (phi k) :=
-    Subtype.ext (by simp only [W1p0.coe_toD1p0L_apply, W1p.gradient_ofTestFunctionₗ,
-      D1p0.coe_ofTestFunctionₗ])
-  -- The values converge in `Lᵖ`, and the embedded test functions in `L^{p⋆}`.
-  have hval := (W1p0.valueL.continuous.tendsto u).comp hlim
-  have hemb := (((D1p0.sobolevEmbeddingL hexp).comp W1p0.toD1p0L).continuous.tendsto u).comp hlim
-  simp only [Function.comp_def, ContinuousLinearMap.comp_apply, htest,
-    D1p0.sobolevEmbeddingL_ofTestFunctionₗ hpstar] at hemb
-  simp only [Function.comp_def, W1p0.valueL_apply, W1p.value_ofTestFunctionₗ] at hval
-  -- Both sequences are almost everywhere the test functions themselves.
-  have hm1 : TendstoInMeasure (mu.restrict Omega) (fun k => (phi k : E → ℝ)) atTop
-      (D1p0.sobolevEmbeddingL hexp (W1p0.toD1p0L u)) :=
-    (tendstoInMeasure_of_tendsto_Lp hemb).congr_left fun k => testFunctionLp_apply_ae pstar _
-  have hm2 : TendstoInMeasure (mu.restrict Omega) (fun k => (phi k : E → ℝ)) atTop
-      (W1p.value (u : W1p mu Omega p)) :=
-    (tendstoInMeasure_of_tendsto_Lp hval).congr_left fun k => testFunctionLp_apply_ae p _
-  exact tendstoInMeasure_ae_unique hm1 hm2
+  rw [W1p0.sobolevEmbeddingL_toD1p0L hpstar hexp]
+  exact W1p0.coeFn_sobolevEmbeddingL hpstar hexp u
 
 /-- **`W^{1,p}(E)` inside the range of the Sobolev embedding.** On the whole space, for `1 ≤ p`
 and the Sobolev conjugate `p⋆ ≠ ∞` (which force `p < ∞`), every `u ∈ W^{1,p}(E)` is the image
@@ -115,9 +145,7 @@ theorem W1p.exists_sobolevEmbeddingL_ae_eq_top (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (u : W1p mu ⊤ p) :
     ∃ v : D1p0 mu ⊤ p, (v : Lp E p (mu.restrict ⊤)) = W1p.gradient u ∧
       (D1p0.sobolevEmbeddingL hexp v : E → ℝ) =ᵐ[mu.restrict ⊤] W1p.value u := by
-  have hp : p ≠ ∞ := by
-    rintro rfl
-    simp at hexp
+  have hp : p ≠ ∞ := ne_top_of_inv_add_inv_eq_inv hexp
   exact ⟨W1p0.toD1p0L ⟨u, W1p.mem_w1p0Submodule_top hp u⟩, W1p0.coe_toD1p0L_apply _,
     W1p0.sobolevEmbeddingL_toD1p0L_ae_eq hpstar hexp ⟨u, W1p.mem_w1p0Submodule_top hp u⟩⟩
 
