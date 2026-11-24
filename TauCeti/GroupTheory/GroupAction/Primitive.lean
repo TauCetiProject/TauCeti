@@ -38,6 +38,10 @@ the stabilizer `G_x` of `x` in the whole group, so on an orbit `O` of `G_x` on w
 quasi-primitively it is either trivial or transitive; the first case is excluded by the
 fixed-point property, so `N_x` is transitive on `O` and the length of `O` divides its order.
 
+Finally, a block containing `a` is a union of stabilizer-`a` orbits. For a finite transitive
+action covered by `a` and two such orbits, this gives primitivity when neither orbit size
+plus one divides the degree.
+
 ## Main results
 
 * `MulAction.IsBlock.orbit_stabilizer_subset`,
@@ -47,6 +51,8 @@ fixed-point property, so `N_x` is transitive on `O` and the length of `O` divide
   and primitivity to larger ones.
 * `MulAction.IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot`: in a faithful
   quasi-primitive action, every nontrivial normal subgroup acts transitively.
+* `MulAction.IsPreprimitive.of_two_orbit_stabilizer`: a divisibility criterion for primitivity
+  of finite transitive actions covered by two non-base-point suborbits.
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton`: a nontrivial point stabilizer in a
   faithful primitive action fixes exactly its base point.
 * `TauCeti.MulAction.exists_mem_stabilizer_smul_ne`: such a stabilizer moves every other point.
@@ -145,6 +151,80 @@ theorem _root_.MulAction.IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot
   IsQuasiPreprimitive.isPretransitive_of_normal (fixedPoints_ne_univ_of_ne_bot hN)
 
 end Normal
+
+section Suborbits
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
+/-- In a finite transitive action, a block contained in a base point together with one
+stabilizer orbit is a singleton if the orbit size plus one does not divide the degree. -/
+theorem _root_.MulAction.IsBlock.subsingleton_of_subset_insert_orbit_stabilizer
+    [Finite X] [IsPretransitive G X]
+    {B : Set X} (hB : IsBlock G B) {a b : X} (ha : a ∈ B)
+    (hsub : B ⊆ insert a (orbit (stabilizer G a) b))
+    (hb : ¬ (1 + (orbit (stabilizer G a) b).ncard) ∣ Nat.card X) : B.Subsingleton := by
+  classical
+  by_cases hbB : b ∈ B
+  · have hset : B = insert a (orbit (stabilizer G a) b) :=
+      hsub.antisymm (Set.insert_subset ha (hB.orbit_stabilizer_subset ha hbB))
+    by_cases hab : a ∈ orbit (stabilizer G a) b
+    · have hba : b = a := by
+        obtain ⟨g, hg⟩ := mem_orbit_symm.mp hab
+        simp only [Subgroup.smul_def] at hg
+        exact hg.symm.trans (mem_stabilizer_iff.mp g.property)
+      subst b
+      apply Set.subsingleton_of_subset_singleton (a := a)
+      intro x hx
+      rcases hsub hx with rfl | ⟨g, rfl⟩
+      · simp
+      · simpa only [Subgroup.smul_def, Set.mem_singleton_iff] using
+          mem_stabilizer_iff.mp g.property
+    · have hdvd := hB.ncard_dvd_card ⟨a, ha⟩
+      rw [hset, Set.ncard_insert_of_notMem hab, Nat.add_comm] at hdvd
+      exact (hb hdvd).elim
+  · apply Set.subsingleton_of_subset_singleton (a := a)
+    intro x hx
+    rcases hsub hx with rfl | hxb
+    · simp
+    · exact (hbB (hB.orbit_stabilizer_subset ha hx (mem_orbit_symm.mp hxb))).elim
+
+/-- A finite transitive action covered by a base point and two stabilizer orbits is primitive
+if adjoining the base point to either orbit gives a size that does not divide the degree.
+The orbits need not be assumed distinct or nontrivial. -/
+theorem _root_.MulAction.IsPreprimitive.of_two_orbit_stabilizer [Finite X]
+    [IsPretransitive G X] (a b c : X)
+    (hcover : ∀ x, x = a ∨ x ∈ orbit (stabilizer G a) b ∨ x ∈ orbit (stabilizer G a) c)
+    (hb : ¬ (1 + (orbit (stabilizer G a) b).ncard) ∣ Nat.card X)
+    (hc : ¬ (1 + (orbit (stabilizer G a) c).ncard) ∣ Nat.card X) :
+    IsPreprimitive G X := by
+  classical
+  apply IsPreprimitive.of_isTrivialBlock_base a
+  intro B ha hB
+  by_cases hbB : b ∈ B
+  · by_cases hcB : c ∈ B
+    · right
+      apply Set.eq_univ_of_forall
+      intro x
+      rcases hcover x with rfl | hx | hx
+      · exact ha
+      · exact hB.orbit_stabilizer_subset ha hbB hx
+      · exact hB.orbit_stabilizer_subset ha hcB hx
+    · left
+      refine hB.subsingleton_of_subset_insert_orbit_stabilizer ha ?_ hb
+      intro x hx
+      rcases hcover x with rfl | hxb | hxc
+      · simp
+      · exact Set.mem_insert_of_mem a hxb
+      · exact (hcB (hB.orbit_stabilizer_subset ha hx (mem_orbit_symm.mp hxc))).elim
+  · left
+    refine hB.subsingleton_of_subset_insert_orbit_stabilizer ha ?_ hc
+    intro x hx
+    rcases hcover x with rfl | hxb | hxc
+    · simp
+    · exact (hbB (hB.orbit_stabilizer_subset ha hx (mem_orbit_symm.mp hxb))).elim
+    · exact Set.mem_insert_of_mem a hxc
+
+end Suborbits
 
 section Regular
 

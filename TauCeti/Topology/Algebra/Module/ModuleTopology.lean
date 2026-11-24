@@ -324,28 +324,35 @@ theorem sigmaCompactSpace (b : _root_.Module.Basis ι K V) [SigmaCompactSpace K]
 
 section toMatrix
 
-variable {R M N X ι κ : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalSemiring R]
-  [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
-  [AddCommGroup N] [Module R N] [TopologicalSpace N] [IsModuleTopology R N]
+variable {R M N X ι κ : Type*} [CommSemiring R] [TopologicalSpace R] [IsTopologicalSemiring R]
+  [AddCommMonoid M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
+  [AddCommMonoid N] [Module R N] [TopologicalSpace N] [IsModuleTopology R N]
   [TopologicalSpace X] [Fintype ι] [DecidableEq ι] [Finite κ]
 
 /-- **Joint continuity of a family of linear maps through its matrices.** For finite bases `b`
-of `M` and `c` of `N`, both modules carrying their module topologies, a family `f` of linear
-maps `M → N` parametrised by a space `X` is jointly continuous on `X × M` exactly when its matrix
-`x ↦ LinearMap.toMatrix b c (f x)` is continuous, that is, when every matrix entry is. -/
+of `M` and `c` of `N` over a commutative topological semiring, with both modules carrying their
+module topologies, a family `f` of linear maps `M → N` parametrised by a space `X` is jointly
+continuous on `X × M` exactly when its matrix `x ↦ LinearMap.toMatrix b c (f x)` is continuous,
+that is, when every matrix entry is. The bases may be empty. -/
 theorem continuous_linearMap_apply_iff_continuous_toMatrix (b : _root_.Module.Basis ι R M)
     (c : _root_.Module.Basis κ R N) (f : X → M →ₗ[R] N) :
     (Continuous fun p : X × M => f p.1 p.2) ↔
       Continuous fun x => LinearMap.toMatrix b c (f x) := by
-  have := IsModuleTopology.toContinuousAdd R N
-  rw [IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top f b.span_eq]
-  -- Read the `j`-th column `x ↦ f x (b j)` in the coordinates of `c`, a homeomorphism.
-  have hcol (j : ι) : Continuous (fun x => f x (b j)) ↔
-      ∀ i, Continuous fun x => LinearMap.toMatrix b c (f x) i j := by
-    rw [← (equivFunHomeomorph c).comp_continuous_iff, continuous_pi_iff]
-    simp [LinearMap.toMatrix_apply]
-  simp_rw [hcol]
-  exact ⟨fun h => continuous_matrix fun i j => h j i, fun h j i => h.matrix_elem i j⟩
+  constructor
+  · intro h
+    refine continuous_matrix fun i j => ?_
+    have hj : Continuous (fun x => f x (b j)) := h.comp (continuous_id.prodMk continuous_const)
+    have := IsModuleTopology.toContinuousAdd R N
+    simpa only [Function.comp_def, LinearMap.toMatrix_apply, Module.Basis.coord_apply] using
+      (IsModuleTopology.continuous_of_linearMap (c.coord i)).comp hj
+  · intro h
+    apply (equivFunHomeomorph c).comp_continuous_iff.mp
+    -- In basis coordinates, joint evaluation is matrix-vector multiplication.
+    have hv : Continuous (fun p : X × M => equivFunHomeomorph b p.2) :=
+      (equivFunHomeomorph b).continuous.comp continuous_snd
+    refine ((h.comp continuous_fst).matrix_mulVec hv).congr fun p => ?_
+    simpa only [Function.comp_apply, equivFunHomeomorph_apply, Module.Basis.equivFun_apply] using
+      (f p.1).toMatrix_mulVec_repr b c p.2
 
 end toMatrix
 
