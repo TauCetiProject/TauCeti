@@ -256,15 +256,14 @@ theorem differentiableAt_hypergeometricMellinBarnesIntegrand {a b c z t : ℂ} (
   have hpow := differentiableAt_id.const_cpow (x := t) (.inl (neg_ne_zero.mpr hz))
   exact (((hGa.mul hGb).mul hGs).mul hGc).mul hpow
 
-/-- For `-z ∈ slitPlane`, on a line `Re t = σ` with `σ < 0` avoiding the poles of
-`Γ(a + t) Γ(b + t)`, the integrand of Barnes's integral is integrable. -/
+/-- For `-z ∈ slitPlane`, on a line `Re t = σ` avoiding the poles of `Γ(a + t)`, `Γ(b + t)` and
+`Γ(-t)`, the integrand of Barnes's integral is integrable. -/
 theorem integrable_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
-    (hz : -z ∈ slitPlane) {σ : ℝ} (hσ : σ < 0) (ha : ∀ n : ℕ, a.re + σ ≠ -n)
-    (hb : ∀ n : ℕ, b.re + σ ≠ -n) :
+    (hz : -z ∈ slitPlane) {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n)
+    (hb : ∀ n : ℕ, b.re + σ ≠ -n) (hσ : ∀ n : ℕ, σ ≠ n) :
     Integrable fun y : ℝ ↦ hypergeometricMellinBarnesIntegrand a b c z (σ + y * I) := by
   simp only [hypergeometricMellinBarnesIntegrand_def]
-  exact integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow c hz ha hb
-    fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
+  exact integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow c hz ha hb hσ
 
 /-- A pole of `Γ(a + t) Γ(b + t)` does not lie on a line `Re t = σ` that avoids the poles. -/
 private theorem re_ne_of_pole {a b t : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n)
@@ -331,8 +330,10 @@ private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz 
   rw [← uIcc_of_le hle] at hhor
   have hshift := TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue _ hle hU hstrip
     P hP hF (fun p _ ↦ meromorphicAt_hypergeometricMellinBarnesIntegrand a b c z p)
-    (integrable_hypergeometricMellinBarnesIntegrand a b c hz hσ₂ ha₂ hb₂)
-    (integrable_hypergeometricMellinBarnesIntegrand a b c hz (hle.trans_lt hσ₂) ha₁ hb₁)
+    (integrable_hypergeometricMellinBarnesIntegrand a b c hz ha₂ hb₂
+      fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])
+    (integrable_hypergeometricMellinBarnesIntegrand a b c hz ha₁ hb₁
+      fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])
     (TauCeti.Contour.tendsto_intervalIntegral_horizontal
       (hhor.mono_left (prod_mono atTop_le_cocompact le_rfl)))
     (TauCeti.Contour.tendsto_intervalIntegral_horizontal

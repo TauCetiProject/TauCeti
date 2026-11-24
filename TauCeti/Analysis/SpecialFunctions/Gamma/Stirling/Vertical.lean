@@ -63,6 +63,10 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `TauCeti.exists_norm_Gamma_sub_I_le`: uniform upper bounds
   `C (1 + |t|) ^ (σ - 1/2) exp (-π |t| / 2)` and `C (1 + |y|) ^ (Re w - 1/2) exp (-π |y| / 2)` on
   pole-free vertical lines.
+* `TauCeti.exists_norm_Gamma_add_vertical_strip_le`,
+  `TauCeti.exists_norm_inv_Gamma_add_vertical_strip_le`: bounds for the shifted values
+  `‖Γ(w + x + i T)‖` (for `|T|` large) and `‖Γ(w + x + i T)⁻¹‖`, uniform in `x ∈ [A, B]`, of the
+  form `C (1 + |T|) ^ K exp (-π |T| / 2)` and `C (1 + |T|) ^ K exp (π |T| / 2)`.
 * `TauCeti.exists_norm_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
