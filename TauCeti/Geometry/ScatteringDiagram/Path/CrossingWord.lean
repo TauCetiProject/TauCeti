@@ -123,7 +123,7 @@ theorem pairwise_orderedCrossings (e : x ⟶ y) :
 /-- The ordered crossing list is the unique strictly time-ordered list of the geometric
 crossings. -/
 theorem orderedCrossings_eq_iff (e : x ⟶ y) (l : List (C.walls × ℝ)) :
-    l = C.orderedCrossings e ↔
+    C.orderedCrossings e = l ↔
       l.Pairwise (fun a b => a.2 < b.2) ∧ ∀ a, a ∈ l ↔ a ∈ crossings x y := by
   constructor
   · rintro rfl
@@ -132,8 +132,8 @@ theorem orderedCrossings_eq_iff (e : x ⟶ y) (l : List (C.walls × ℝ)) :
     have : Std.Antisymm (fun a b : C.walls × ℝ => a.2 < b.2) :=
       ⟨fun _ _ hab hba => (lt_asymm hab hba).elim⟩
     have : Std.Irrefl (fun a b : C.walls × ℝ => a.2 < b.2) := ⟨fun a => lt_irrefl a.2⟩
-    exact hpair.eq_of_mem_iff (C.pairwise_orderedCrossings e)
-      fun a => (hmem a).trans (C.mem_orderedCrossings e a).symm
+    exact (C.pairwise_orderedCrossings e).eq_of_mem_iff hpair
+      fun a => (C.mem_orderedCrossings e a).trans (hmem a).symm
 
 /-- The distinct crossing times of a segment through a complex are the times of its ordered
 crossings. -/
@@ -150,7 +150,7 @@ theorem orderedCrossingTimes_eq_map_snd (e : x ⟶ y) :
 theorem orderedCrossings_reverse (e : x ⟶ y) :
     C.orderedCrossings (Quiver.reverse e) =
       (C.orderedCrossings e).reverse.map fun a => (a.1, 1 - a.2) := by
-  refine ((C.orderedCrossings_eq_iff _ _).mpr ⟨?_, fun a => ?_⟩).symm
+  refine (C.orderedCrossings_eq_iff _ _).mpr ⟨?_, fun a => ?_⟩
   · exact List.pairwise_map.mpr <|
       (C.pairwise_orderedCrossings e).reverse.imp fun hab => by dsimp; linarith
   · rcases a with ⟨P, t⟩
@@ -169,7 +169,7 @@ theorem orderedCrossings_subdivide (e : x ⟶ y) (e₁ : x ⟶ z) (e₂ : z ⟶ 
     C.orderedCrossings e =
       (C.orderedCrossings e₁).map (fun a => (a.1, a.2 * t)) ++
         (C.orderedCrossings e₂).map (fun a => (a.1, 1 - (1 - a.2) * (1 - t))) := by
-  refine ((C.orderedCrossings_eq_iff e _).mpr ⟨?_, fun a => ?_⟩).symm
+  refine (C.orderedCrossings_eq_iff e _).mpr ⟨?_, fun a => ?_⟩
   · refine List.pairwise_append.mpr ⟨List.pairwise_map.mpr <|
       (C.pairwise_orderedCrossings e₁).imp fun hab => mul_lt_mul_of_pos_right hab ht.1,
       List.pairwise_map.mpr <| (C.pairwise_orderedCrossings e₂).imp fun hab => ?_, ?_⟩
@@ -300,11 +300,11 @@ theorem segmentCrossingWord_subdivide (ν : C.walls → V →ₗ[ℝ] ℝ) (e : 
   rcases eq_or_lt_of_le ht.1 with ht0 | ht0
   · obtain rfl : z = x := WallComplement.ext (by simpa [← ht0] using hz)
     rw [segmentCrossingWord_self, mul_one,
-      show e = e₂ from PLift.ext (Subsingleton.elim _ _)]
+      Subsingleton.elim e e₂]
   rcases eq_or_lt_of_le ht.2 with ht1 | ht1
   · obtain rfl : z = y := WallComplement.ext (by simpa [ht1] using hz)
     rw [segmentCrossingWord_self, one_mul,
-      show e = e₁ from PLift.ext (Subsingleton.elim _ _)]
+      Subsingleton.elim e e₁]
   simp only [segmentCrossingWord_def, C.orderedCrossings_subdivide e e₁ e₂ ⟨ht0, ht1⟩ hz,
     List.reverse_append, List.map_append, List.prod_append, List.map_reverse, List.map_map,
     Function.comp_def, C.crossingLetter_subdivide_left ν ht0 hz,
@@ -382,7 +382,7 @@ theorem orderedCrossings_restrictPrefunctor (e : x ⟶ y) :
     · simp only [f, ha, dite_true, Option.some.injEq, Prod.mk.injEq, Subtype.mk.injEq]
     · simp only [f, ha, dite_false, reduceCtorEq, false_iff, not_and]
       exact fun hab => (ha (hab ▸ hQ)).elim
-  refine ((D.orderedCrossings_eq_iff _ _).mpr ⟨?_, fun b => ?_⟩).symm
+  refine (D.orderedCrossings_eq_iff _ _).mpr ⟨?_, fun b => ?_⟩
   · refine (C.pairwise_orderedCrossings e).filterMap f fun a a' haa b hb b' hb' => ?_
     rw [hsome] at hb hb'
     simpa only [← hb.2, ← hb'.2] using haa
@@ -394,6 +394,22 @@ theorem orderedCrossings_restrictPrefunctor (e : x ⟶ y) :
       exact hab ▸ ha
     · exact fun hb => ⟨⟨P.val, hW P.property⟩, t, hb, (hsome _ _).mpr ⟨rfl, rfl⟩⟩
 
+/-- Wall deletion sends a crossing letter of a retained wall to the crossing letter of that wall
+at the restricted endpoints, and the letter of a deleted wall to `1`. -/
+theorem wallDeletion_crossingLetter (ν : C.walls → V →ₗ[ℝ] ℝ) (P : C.walls) :
+    C.wallDeletion D (C.crossingLetter ν x y P) =
+      if hP : P.val ∈ D.walls then
+        D.crossingLetter (fun Q => ν ⟨Q.val, hW Q.property⟩)
+          ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
+            fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).obj x)
+          ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
+            fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).obj y) ⟨P.val, hP⟩
+      else 1 := by
+  rw [crossingLetter_eq_zpow, map_zpow, wallDeletion_of]
+  by_cases hP : P.val ∈ D.walls
+  · simp only [dite_eq_left hP, crossingLetter_eq_zpow]
+  · simp only [dite_eq_right hP, one_zpow]
+
 /-- Deleting walls maps a segment word by `wallDeletion`, the remaining walls keeping their
 coorientations. -/
 @[simp]
@@ -402,29 +418,15 @@ theorem segmentCrossingWord_restrictPrefunctor (ν : C.walls → V →ₗ[ℝ] �
         ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
           fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).map e) =
       C.wallDeletion D (C.segmentCrossingWord ν e) := by
-  classical
-  have hl (l : List (C.walls × ℝ)) :
-      ((l.filterMap fun a => if hP : a.1.val ∈ D.walls then some (⟨a.1.val, hP⟩, a.2)
-          else none).map fun a => D.crossingLetter (fun P => ν ⟨P.val, hW P.property⟩)
-            ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
-              fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).obj x)
-            ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
-              fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).obj y) a.1).prod =
-        C.wallDeletion D ((l.map fun a => C.crossingLetter ν x y a.1).prod) := by
-    induction l with
-    | nil => simp
-    | cons a l ih =>
-      by_cases ha : a.1.val ∈ D.walls
-      · rw [List.filterMap_cons_some (b := (⟨a.1.val, ha⟩, a.2)) (dite_eq_left ha)]
-        simp only [List.map_cons, List.prod_cons, map_mul, ih]
-        simp only [crossingLetter_eq_zpow, map_zpow, wallDeletion_of, dite_eq_left ha,
-          Subtype.coe_eta]
-      · rw [List.filterMap_cons_none (dite_eq_right ha)]
-        simp only [List.map_cons, List.prod_cons, map_mul, ih]
-        simp only [crossingLetter_eq_zpow, map_zpow, wallDeletion_of, dite_eq_right ha,
-          one_zpow, one_mul]
-  simpa only [segmentCrossingWord_def, orderedCrossings_restrictPrefunctor hW e,
-    ← List.filterMap_reverse] using hl (C.orderedCrossings e).reverse
+  rw [segmentCrossingWord_def, segmentCrossingWord_def, orderedCrossings_restrictPrefunctor hW e,
+    ← List.filterMap_reverse]
+  generalize (C.orderedCrossings e).reverse = l
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    by_cases ha : a.1.val ∈ D.walls <;>
+      simp only [List.filterMap_cons, ha, ↓reduceDIte, List.map_cons, List.prod_cons, map_mul,
+        ih, wallDeletion_crossingLetter hW, one_mul]
 
 end Deletion
 

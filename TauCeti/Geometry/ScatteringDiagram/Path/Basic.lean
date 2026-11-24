@@ -76,6 +76,10 @@ structure AdmissibleSegment (x y : WallComplement W) : Prop where
 instance : Quiver (WallComplement W) where
   Hom x y := PLift (AdmissibleSegment x y)
 
+/-- There is at most one admissible segment between two allowed vertices. -/
+instance (x y : WallComplement W) : Subsingleton (x ⟶ y) :=
+  ⟨fun _ _ => PLift.ext (Subsingleton.elim _ _)⟩
+
 /-- The wall indices and affine crossing parameters of one segment. -/
 def crossings (x y : WallComplement W) : Set (ι × ℝ) :=
   {p | p.2 ∈ Icc (0 : ℝ) 1 ∧ AffineMap.lineMap x.val y.val p.2 ∈ W p.1}
@@ -279,7 +283,7 @@ theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → 
 /-- Reversal of segments makes the allowed-vertex quiver symmetric. -/
 instance : Quiver.HasInvolutiveReverse (WallComplement W) where
   reverse' e := ⟨e.down.symm⟩
-  inv' _ := PLift.ext (Subsingleton.elim _ _)
+  inv' _ := Subsingleton.elim _ _
 
 end WallComplement
 
