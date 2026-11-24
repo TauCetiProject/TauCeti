@@ -18,7 +18,9 @@ Under a zero or probability measure, the quadratic MGF bound forces a sub-Gaussi
 variable to have mean zero and bounds its second moment by the variance proxy. The bound is
 monotone in the proxy and, under any measure, bounds the first absolute moment by `√(2c)`. By
 Fatou's lemma, an almost everywhere limit of sub-Gaussian random variables with a common variance
-proxy is sub-Gaussian with the same proxy.
+proxy is sub-Gaussian with the same proxy; in particular a fixed proxy survives uniform
+approximation (`ProbabilityTheory.HasSubgaussianMGF.of_forall_exists_abs_sub_le`), so a Lipschitz
+function inherits the concentration of its smooth approximations.
 -/
 
 public section
@@ -158,5 +160,22 @@ theorem of_tendsto {Ω ι : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {l : F
     (hbound t), fun t ↦ ?_⟩
   rw [mgf]
   exact TauCeti.integral_le_of_tendsto_of_integral_le (hint t) (hpos t) (hexp t) (hbound t)
+
+/-- Sub-Gaussianity with a fixed variance proxy is stable under uniform approximation: if for
+every `ε > 0` some `c`-sub-Gaussian variable is within `ε` of `X` almost everywhere, then `X` is
+`c`-sub-Gaussian. -/
+theorem of_forall_exists_abs_sub_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {X : Ω → ℝ} {c : ℝ≥0}
+    (h : ∀ ε > 0, ∃ Y : Ω → ℝ, HasSubgaussianMGF Y c μ ∧ ∀ᵐ ω ∂μ, |X ω - Y ω| ≤ ε) :
+    HasSubgaussianMGF X c μ := by
+  choose Y hY hXY using h
+  -- `X` is the almost-everywhere limit of the approximants at `ε = 1 / (n + 1)`.
+  refine of_tendsto (l := atTop) (X := fun n : ℕ ↦ Y (1 / (n + 1)) (by positivity))
+    (.of_forall fun n ↦ hY _ _) ?_
+  filter_upwards [ae_all_iff.2 fun n : ℕ ↦ hXY (1 / (n + 1)) (by positivity)] with ω hω
+  refine tendsto_iff_dist_tendsto_zero.2 (squeeze_zero (fun _ ↦ dist_nonneg) (fun n ↦ ?_)
+    tendsto_one_div_add_atTop_nhds_zero_nat)
+  rw [Real.dist_eq, abs_sub_comm]
+  exact hω n
 
 end ProbabilityTheory.HasSubgaussianMGF

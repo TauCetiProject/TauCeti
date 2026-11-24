@@ -85,6 +85,8 @@ All in the namespace `TauCeti.Symbol`:
 * `quantizeUniformBesselPotentialSpace`: the bounded operator `H^{s,p} → H^{s - m,p}`, which for
   symbols with compact spatial support extends `Op(a)` from Schwartz functions
   (`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`).
+  For `p = 2`, complex Hilbert spaces as fibres and compact spatial support it is
+  `quantizeSobolev` (`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_two`).
 * `HasBesselPotentialSpaceExtension`: the property that the operator extends `Op(a)` from Schwartz
   functions for every `s`. For `p < ∞` it is closed under the linear operations on symbols and
   under raising the order (`HasBesselPotentialSpaceExtension.add` and the lemmas after it). The
@@ -570,9 +572,11 @@ are uniform in the position, the left quantization `Op(a)` as a bounded operator
 (`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM` and
 `quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM` in the namespace `TauCeti.Symbol`),
 and by density of the Schwartz functions it is the unique continuous linear map with this property
-(`BesselPotentialSpace.continuousLinearMap_ext`). Otherwise its value is unspecified. Its
-counterpart on `H^s = H^{s,2}` for Hilbert fibres and compact spatial support is
-`TauCeti.Symbol.quantizeSobolev`. -/
+(`BesselPotentialSpace.continuousLinearMap_ext`). Otherwise its value is unspecified. For `p = 2`,
+complex Hilbert spaces `V` and `W` and compact spatial support it is
+`TauCeti.Symbol.quantizeSobolev`
+(`HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_two` in the namespace
+`TauCeti.Symbol`). -/
 def quantizeUniformBesselPotentialSpace {m : ℝ} (a : Symbol n V W m) (ha : a.IsUniform) (s : ℝ)
     (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     H^{s, p}(CoordinateSpace n, V) →L[ℂ] H^{s - m, p}(CoordinateSpace n, W) :=
@@ -917,6 +921,28 @@ theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_toBesselPot
 theorem HasCompactSpatialSupport.hasBesselPotentialSpaceExtension (ha : a.HasCompactSpatialSupport)
     (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) : a.HasBesselPotentialSpaceExtension ha.isUniform p :=
   fun s ↦ ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s hp hp_top
+
+/-- For `p = 2`, complex Hilbert spaces as fibres and a symbol `a` of order `m` with compact
+spatial support, the operator `Op(a) : H^{s,p} → H^{s - m,p}` is the operator
+`TauCeti.Symbol.quantizeSobolev` on `H^s`. -/
+theorem HasCompactSpatialSupport.quantizeUniformBesselPotentialSpace_two {H₁ H₂ : Type*}
+    [NormedAddCommGroup H₁] [InnerProductSpace ℂ H₁] [CompleteSpace H₁] [NormedAddCommGroup H₂]
+    [InnerProductSpace ℂ H₂] [CompleteSpace H₂] {a : Symbol n H₁ H₂ m}
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) :
+    a.quantizeUniformBesselPotentialSpace ha.isUniform s 2 = a.quantizeSobolev ha s := by
+  -- Both operators extend `Op(a)` from Schwartz functions, and `quantizeSobolev` bounds it.
+  have h (u : 𝓢(CoordinateSpace n, H₁)) :
+      a.quantizeSobolev ha s (toBesselPotentialSpaceCLM s 2 u) =
+        toBesselPotentialSpaceCLM (s - m) 2 (quantizeUniformCLM a ha.isUniform u) := by
+    refine BesselPotentialSpace.ext ?_
+    ext φ
+    rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, toDistr_toBesselPotentialSpaceCLM]
+    simp [quantizeUniformCLM_apply]
+  rw [quantizeUniformBesselPotentialSpace]
+  refine LinearMap.extendOfNorm_unique
+    (denseRange_toBesselPotentialSpaceCLM (p := 2) s ENNReal.ofNat_ne_top)
+    ‖a.quantizeSobolev ha s‖ (fun u ↦ ?_) _ (LinearMap.ext h)
+  simpa [h] using (a.quantizeSobolev ha s).le_opNorm (toBesselPotentialSpaceCLM s 2 u)
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes differences of symbols to differences of
 operators. -/
