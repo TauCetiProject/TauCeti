@@ -16,7 +16,8 @@ public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 Coordinate relabelling transports additive codes over an arbitrary group alphabet. It requires
 no scalar closure, and restricts to an additive equivalence of codewords. Permutation equivalence
 preserves cardinality and minimum distance, including the zero-code convention. The permutation
-automorphism group acts additively on codewords by the same coordinate relabelling, and coordinate
+automorphism group acts additively on codewords by the same coordinate relabelling
+(`permutationAutToMulAut`, written multiplicatively for semidirect products), and coordinate
 relabelling induces a conjugation isomorphism between permutation automorphism groups
 (`reindexPermutationAutEquiv`).
 
@@ -233,6 +234,21 @@ instance instDistribMulActionPermutationAut (C : AddSubgroup (ι → A)) :
     simp [Equiv.Perm.mul_def])
   smul_zero e := Subtype.ext (by ext; simp)
   smul_add e x y := Subtype.ext (by ext; simp)
+
+/-- The action of the permutation automorphisms on the codewords, `e • x = x ∘ e⁻¹`, as a
+homomorphism to the automorphisms of the code written multiplicatively. This is the action
+defining the semidirect product of a code by its permutation automorphism group. -/
+def permutationAutToMulAut (C : AddSubgroup (ι → A)) :
+    permutationAut C →* MulAut (Multiplicative C) where
+  toFun e := AddEquiv.toMultiplicative (DistribMulAction.toAddEquiv _ e)
+  map_one' := MulEquiv.ext fun x ↦ by simp
+  map_mul' e f := MulEquiv.ext fun x ↦ by simp [mul_smul]
+
+/-- A permutation automorphism acts on a codeword written multiplicatively by `x ↦ e • x`. -/
+@[simp]
+theorem permutationAutToMulAut_apply (C : AddSubgroup (ι → A)) (e : permutationAut C)
+    (x : Multiplicative C) :
+    permutationAutToMulAut C e x = Multiplicative.ofAdd (e • x.toAdd) := (rfl)
 
 /-- Permutation automorphisms preserve Hamming weight. -/
 @[simp↓]
