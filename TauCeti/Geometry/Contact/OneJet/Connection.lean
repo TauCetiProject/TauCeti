@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Contact.OneJet
 import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Leibniz
-import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
@@ -42,7 +42,8 @@ Changing the trivialization changes the form by a conformal factor. For a smooth
 function `g` on `M`, the connection `d + a` reads `d + a'` with `a' = a - g⁻¹ dg` in the frame
 `e / g`, and a section `z e` with covariant derivative `p e` reads `(g z) (e / g)` with covariant
 derivative `(g p) (e / g)`. Accordingly the **frame change** `(q, p, z) ↦ (q, g q p, g q z)`
-(`TauCeti.CotangentBundle.connectionFrameChange`) pulls `θ_(a')` back to `g θ_a`
+(`TauCeti.CotangentBundle.connectionFrameChange`), whose composites are the frame changes by the
+products (`TauCeti.CotangentBundle.connectionFrameChange_trans`), pulls `θ_(a')` back to `g θ_a`
 (`TauCeti.CotangentBundle.mpullback_connectionFrameChange_connectionOneJetForm`), so it is a
 contactomorphism from `ker θ_a` to `ker θ_(a')`
 (`TauCeti.CotangentBundle.kerDistribution_mpullback_connectionFrameChange_connectionOneJetForm`).
@@ -119,25 +120,35 @@ def connectionOneJetForm (a : SmoothForm I M ℝ 1) :
     SmoothForm.funSMulₗ ContMDiffMap.snd
       (SmoothForm.mpullback (fun w : CotangentBundle I M × ℝ ↦ w.1.proj) contMDiff_proj_fst a)
 
+/-- The one-jet form of `d + a` is the sum of `dz - λ` and the pullback of `a` to `T*M × ℝ`
+multiplied by the coordinate `z`. -/
+theorem connectionOneJetForm_def (a : SmoothForm I M ℝ 1) :
+    connectionOneJetForm a = (liouvilleForm I M).contactization +
+      SmoothForm.funSMulₗ ContMDiffMap.snd
+        (SmoothForm.mpullback (fun w : CotangentBundle I M × ℝ ↦ w.1.proj)
+          ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)).comp contMDiff_fst) a) :=
+  (rfl)
+
 /-- The one-jet form of `d + a` evaluates a tangent vector `v` at `w = (q, p, z)` as `dz - λ`
 does, plus `z` times `a` on the image of `v` in `T_q M`. -/
+@[simp]
 theorem connectionOneJetForm_apply (a : SmoothForm I M ℝ 1) (w : CotangentBundle I M × ℝ)
     (v : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) w) :
     (connectionOneJetForm a).val w ![v] =
       (liouvilleForm I M).contactization.val w ![v] +
         w.2 * a.val w.1.proj ![mfderiv ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) I
           (fun w : CotangentBundle I M × ℝ ↦ w.1.proj) w v] := by
-  rw [connectionOneJetForm, SmoothForm.add_toRoughForm, Pi.add_apply,
+  rw [connectionOneJetForm_def, SmoothForm.add_toRoughForm, Pi.add_apply,
     ContinuousAlternatingMap.add_apply, SmoothForm.coe_funSMulₗ,
-    ContinuousAlternatingMap.smul_apply, SmoothForm.mpullback_apply_one, smul_eq_mul]
-  rfl
+    ContinuousAlternatingMap.smul_apply, SmoothForm.mpullback_apply_one, smul_eq_mul,
+    ContMDiffMap.snd_apply]
 
 /-- For the flat connection `d`, the one-jet form is the standard contact form `dz - λ` of the
 one-jet space. -/
 @[simp]
 theorem connectionOneJetForm_zero :
     connectionOneJetForm (0 : SmoothForm I M ℝ 1) = (liouvilleForm I M).contactization := by
-  rw [connectionOneJetForm, map_zero, map_zero, add_zero]
+  rw [connectionOneJetForm_def, map_zero, map_zero, add_zero]
 
 /-! ### Change of connection -/
 
@@ -250,8 +261,8 @@ private theorem mpullback_connectionShift_mpullback_fst_liouvilleForm (a : Smoot
     mpullback_liouvilleForm_apply_of_proj_fst Prod.fst contMDiff_fst (fun _ ↦ rfl),
     SmoothForm.coe_funSMulₗ,
     ContinuousAlternatingMap.smul_apply, SmoothForm.mpullback_apply, hv]
-  rw [Function.comp_apply, connectionShift_fst_snd_apply, Matrix.vec_single_eq_const]
-  rfl
+  rw [Function.comp_apply, connectionShift_fst_snd_apply, Matrix.vec_single_eq_const,
+    ContMDiffMap.snd_apply, smul_eq_mul]
 
 /-- **The connection shift turns the flat one-jet form into the one-jet form of a connection.**
 The shift `(q, p, z) ↦ (q, p - z a_q, z)` pulls the contact form `dz - λ` back to
@@ -266,7 +277,7 @@ theorem mpullback_connectionShift_contactization_liouvilleForm (a : SmoothForm I
     rw [SmoothForm.mpullback_mpullback]
     rfl
   rw [SmoothForm.contactization_def, map_sub, hdz,
-    mpullback_connectionShift_mpullback_fst_liouvilleForm, connectionOneJetForm,
+    mpullback_connectionShift_mpullback_fst_liouvilleForm, connectionOneJetForm_def,
     SmoothForm.contactization_def]
   abel
 
@@ -328,6 +339,29 @@ theorem connectionFrameChange_apply {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) 
         g w.1.proj * w.2) :=
   (rfl)
 
+/-- The inverse of the frame change by `g` is the frame change by `g⁻¹`. -/
+@[simp]
+theorem connectionFrameChange_symm {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
+    (hg₀ : ∀ x, g x ≠ 0) :
+    (connectionFrameChange I hg hg₀).symm =
+      connectionFrameChange I (hg.inv₀ hg₀) fun x ↦ inv_ne_zero (hg₀ x) :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+/-- The frame change by the constant function `1` is the identity. -/
+@[simp]
+theorem connectionFrameChange_one :
+    connectionFrameChange I (contMDiff_const (c := (1 : ℝ))) (fun _ ↦ one_ne_zero) =
+      Diffeomorph.refl ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (CotangentBundle I M × ℝ) ∞ :=
+  Diffeomorph.ext fun w ↦ by simp
+
+/-- Successive frame changes multiply the functions. -/
+@[simp]
+theorem connectionFrameChange_trans {g h : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
+    (hg₀ : ∀ x, g x ≠ 0) (hh : ContMDiff I 𝓘(ℝ) ∞ h) (hh₀ : ∀ x, h x ≠ 0) :
+    (connectionFrameChange I hg hg₀).trans (connectionFrameChange I hh hh₀) =
+      connectionFrameChange I (hh.mul hg) fun x ↦ mul_ne_zero (hh₀ x) (hg₀ x) :=
+  Diffeomorph.ext fun w ↦ by simp [smul_smul, mul_assoc]
+
 /-- The frame change by `g` multiplies `z` by `g q`, so by the Leibniz rule it pulls `dz` back to
 `g dz + z dg`, where `g` and `dg` are read at the base point. -/
 private theorem mpullback_connectionFrameChange_mpullback_snd_realLineCoordForm {g : M → ℝ}
@@ -341,6 +375,7 @@ private theorem mpullback_connectionFrameChange_mpullback_snd_realLineCoordForm 
           (fun w : CotangentBundle I M × ℝ ↦ w.1.proj)
           (mextDeriv (RoughForm.ofFunction I g)) w := by
   have hP := contMDiff_proj_fst (I := I) (M := M)
+  -- The coordinate `z` of the image is `g q * z`, by the definition of the frame change.
   have hmul : Prod.snd ∘ connectionFrameChange I hg hg₀ =
       (g ∘ fun w : CotangentBundle I M × ℝ ↦ w.1.proj) * Prod.snd :=
     rfl
@@ -348,8 +383,8 @@ private theorem mpullback_connectionFrameChange_mpullback_snd_realLineCoordForm 
     SmoothForm.mpullback_realLineCoordForm, SmoothForm.coe_mpullback,
     SmoothForm.mpullback_realLineCoordForm, hmul,
     mextDeriv_ofFunction_mul (((hg.comp hP) w).mdifferentiableAt (by simp)) mdifferentiableAt_snd,
-    mpullback_mextDeriv_ofFunction (hP.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))]
-  rfl
+    mpullback_mextDeriv_ofFunction (hP.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)),
+    Function.comp_apply]
 
 /-- The frame change by `g` multiplies the covector by `g q` and fixes `q`, so it pulls the
 Liouville form, read on the first factor of `T*M × ℝ`, back to `g λ`. -/
@@ -364,8 +399,8 @@ private theorem mpullback_connectionFrameChange_mpullback_fst_liouvilleForm {g :
   rw [ContinuousAlternatingMap.smul_apply,
     mpullback_liouvilleForm_apply_of_proj_fst (Prod.fst ∘ connectionFrameChange I hg hg₀) _
       (fun _ ↦ rfl),
-    mpullback_liouvilleForm_apply_of_proj_fst Prod.fst contMDiff_fst (fun _ ↦ rfl)]
-  rfl
+    mpullback_liouvilleForm_apply_of_proj_fst Prod.fst contMDiff_fst (fun _ ↦ rfl),
+    Function.comp_apply, connectionFrameChange_apply, smul_apply]
 
 /-- **Change of trivialization.** Let `g` be a smooth nowhere vanishing function on `M`, and let
 `a' = a - g⁻¹ dg` be the connection form of `d + a` in the frame `e / g`. Then the frame change
@@ -389,21 +424,20 @@ theorem mpullback_connectionFrameChange_connectionOneJetForm {g : M → ℝ}
         (g w.1.proj * w.2) •
           ((SmoothForm.mpullback (fun w : CotangentBundle I M × ℝ ↦ w.1.proj) hP a).val w -
             (g w.1.proj)⁻¹ • D w) := by
+    -- The frame change fixes the base point `q`.
+    have hπ : (fun w : CotangentBundle I M × ℝ ↦ w.1.proj) ∘ Ψ = fun w ↦ w.1.proj := rfl
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_funSMulₗ, mpullback_fun_smul,
       ← SmoothForm.coe_mpullback Ψ Ψ.contMDiff, SmoothForm.mpullback_mpullback,
-      SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, ha', mpullback_sub, mpullback_fun_smul]
-    rfl
-  rw [connectionOneJetForm, map_add, SmoothForm.contactization_def, map_sub, Submodule.coe_add,
-    Submodule.coe_sub, Pi.add_apply, Pi.sub_apply,
-    mpullback_connectionFrameChange_mpullback_snd_realLineCoordForm,
-    mpullback_connectionFrameChange_mpullback_fst_liouvilleForm, hβ, connectionOneJetForm,
-    SmoothForm.contactization_def, Submodule.coe_add, Submodule.coe_sub, Pi.add_apply,
-    Pi.sub_apply, SmoothForm.coe_funSMulₗ]
+      SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, ha', mpullback_sub, mpullback_fun_smul,
+      hπ]
+    simp only [Ψ, ContMDiffMap.snd_apply, connectionFrameChange_apply, Pi.sub_apply, D]
+  simp only [connectionOneJetForm_def, SmoothForm.contactization_def, map_add, map_sub,
+    Submodule.coe_add, Submodule.coe_sub, Pi.add_apply, Pi.sub_apply]
+  rw [mpullback_connectionFrameChange_mpullback_snd_realLineCoordForm,
+    mpullback_connectionFrameChange_mpullback_fst_liouvilleForm, hβ, SmoothForm.coe_funSMulₗ]
   -- The terms `z dg` cancel, as `g q * z * (g q)⁻¹ = z`.
   have hc : g w.1.proj * w.2 * (g w.1.proj)⁻¹ = w.2 := by field_simp [hg₀ w.1.proj]
-  have hz (x : CotangentBundle I M × ℝ) : (ContMDiffMap.snd : C^∞⟮(I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod
-      𝓘(ℝ), CotangentBundle I M × ℝ; 𝓘(ℝ), ℝ⟯) x = x.2 := (rfl)
-  simp only [hz, smul_add, smul_sub, smul_smul, hc]
+  simp only [ContMDiffMap.snd_apply, smul_add, smul_sub, smul_smul, hc]
   abel
 
 /-- The frame change by `g` carries the contact structure `ker θ_a` onto `ker θ_(a')`, for the
@@ -446,8 +480,8 @@ theorem mpullback_prodMk_connectionOneJetForm (a α : SmoothForm I M ℝ 1) {g :
         a))).val = fun x ↦ g x • a.val x := by
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_funSMulₗ, mpullback_fun_smul,
       ← SmoothForm.coe_mpullback j hj, ha]
-    rfl
-  rw [connectionOneJetForm, map_add, SmoothForm.add_toRoughForm, hz,
+    simp only [ContMDiffMap.snd_apply, j]
+  rw [connectionOneJetForm_def, map_add, SmoothForm.add_toRoughForm, hz,
     SmoothForm.mpullback_prodMk_contactization _ (SmoothForm.degreeOneEquiv α).contMDiff hg,
     mpullback_liouvilleForm]
   abel
@@ -465,6 +499,17 @@ theorem isHorizontalMap_connectionOneJetForm_iff (a α : SmoothForm I M ℝ 1) {
       ((SmoothForm.degreeOneEquiv α).contMDiff.prodMk hg), Subtype.ext_iff,
     mpullback_prodMk_connectionOneJetForm a α hg, ZeroMemClass.coe_zero, sub_eq_zero, eq_comm]
 
+/-- For a smooth function `g`, the section `q ↦ (α_q, g q)` of the one-jet space defined by a
+smooth one-form `α` is a Legendrian embedding for the one-jet form of the connection `d + a`
+exactly when `α = dg + g a`. -/
+theorem isLegendrianEmbedding_connectionOneJetForm_iff [FiniteDimensional ℝ E] [I.Boundaryless]
+    (a α : SmoothForm I M ℝ 1) {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
+    IsLegendrianEmbedding I (connectionOneJetForm a).kerDistribution
+        (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
+      α.val = mextDeriv (RoughForm.ofFunction I g) + fun x ↦ g x • a.val x :=
+  (isLegendrianEmbedding_iff_isHorizontalMap (isContactForm_connectionOneJetForm a) α hg).trans
+    (isHorizontalMap_connectionOneJetForm_iff a α hg)
+
 /-- **Covariant one-jets are Legendrian.** For a smooth one-form `a` and a smooth function `g` on
 `M`, let `α = dg + g a` be the covariant derivative of `g` for the connection `d + a`. Then the
 covariant one-jet `q ↦ (α_q, g q)` is a Legendrian embedding of `M` into the one-jet space
@@ -474,28 +519,8 @@ theorem isLegendrianEmbedding_connectionOneJetForm [FiniteDimensional ℝ E] [I.
     (a α : SmoothForm I M ℝ 1) {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
     (hα : α.val = mextDeriv (RoughForm.ofFunction I g) + fun x ↦ g x • a.val x) :
     IsLegendrianEmbedding I (connectionOneJetForm a).kerDistribution
-      (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) := by
-  -- The kernel of `θ_a` is a `C¹` contact structure, which needs a `C²` manifold structure.
-  have : IsManifold ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) (1 + 1) (CotangentBundle I M × ℝ) :=
-    .of_le (n := ∞) (by norm_num)
-  -- The base projection of `T*M × ℝ` is a smooth left inverse of the section.
-  have hemb := ((SmoothForm.degreeOneEquiv α).contMDiff.prodMk hg).isSmoothEmbedding_of_leftInverse
-    (by simp) (contMDiff_proj_fst.of_le (by simp)) (g := fun w ↦ w.1.proj) fun _ ↦ rfl
-  refine (isLegendrianEmbedding_iff_of_isSmoothEmbedding hemb).2
-    ⟨(isContactForm_connectionOneJetForm a).isContactDistribution_kerDistribution,
-      hemb.isImmersion, (isHorizontalMap_connectionOneJetForm_iff a α hg).2 hα, ?_⟩
-  rw [finrank_prod, finrank_prod, finrank_self, ContinuousLinearMap.dual_finrank_eq, two_mul]
-
-/-- For a smooth function `g`, the section `q ↦ (α_q, g q)` of the one-jet space defined by a
-smooth one-form `α` is a Legendrian embedding for the one-jet form of the connection `d + a`
-exactly when `α = dg + g a`. -/
-theorem isLegendrianEmbedding_connectionOneJetForm_iff [FiniteDimensional ℝ E] [I.Boundaryless]
-    (a α : SmoothForm I M ℝ 1) {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g) :
-    IsLegendrianEmbedding I (connectionOneJetForm a).kerDistribution
-        (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) ↔
-      α.val = mextDeriv (RoughForm.ofFunction I g) + fun x ↦ g x • a.val x :=
-  ⟨fun h ↦ (isHorizontalMap_connectionOneJetForm_iff a α hg).1 h.isHorizontalMap,
-    isLegendrianEmbedding_connectionOneJetForm a α hg⟩
+      (fun x ↦ (TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x), g x)) :=
+  (isLegendrianEmbedding_connectionOneJetForm_iff a α hg).2 hα
 
 end CotangentBundle
 
