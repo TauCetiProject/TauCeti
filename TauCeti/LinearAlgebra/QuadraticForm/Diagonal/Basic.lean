@@ -259,11 +259,9 @@ def weightedSumSquaresMulFiberIsometryEquiv {α : Type*} [DecidableEq α]
       calc
         ∑ m : Finset.univ.image k,
             s m.val * ∑ i : {i : ι // k i = m.val}, u i.val * (x i.val * x i.val)
-            = ∑ m ∈ Finset.univ.image k,
-                s m * ∑ i with k i = m, u i * (x i * x i) := by
+            = ∑ m ∈ Finset.univ.image k, s m * ∑ i with k i = m, u i * (x i * x i) := by
               rw [← Finset.sum_attach (Finset.univ.image k)]
-              refine Finset.sum_congr rfl fun m _ ↦ ?_
-              congr 1
+              refine Finset.sum_congr rfl fun m _ ↦ congrArg (s m.val * ·) ?_
               exact (Finset.sum_subtype {i : ι | k i = m.val} (fun _ ↦ by simp)
                 (fun i ↦ u i * (x i * x i))).symm
         _ = ∑ m ∈ Finset.univ.image k,
@@ -324,9 +322,7 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {α : Type*} [Decidabl
     QuadraticMap.Equivalent.pi fun m ↦ by
       obtain ⟨e⟩ := hfiber m.val
       exact ⟨{ toLinearEquiv := e.toLinearEquiv
-               map_app' := fun x ↦ by
-                 simp only [smul_apply, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
-                   QuadraticMap.IsometryEquiv.coe_toLinearEquiv, e.map_app] }⟩
+               map_app' := fun x ↦ by simp [e.map_app] }⟩
   exact QuadraticMap.Equivalent.trans ⟨weightedSumSquaresMulFiberIsometryEquiv k s w⟩
     (hpi.trans ⟨(weightedSumSquaresMulFiberIsometryEquiv k s v).symm⟩)
 

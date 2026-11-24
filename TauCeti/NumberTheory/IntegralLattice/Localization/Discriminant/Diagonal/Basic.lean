@@ -86,9 +86,7 @@ private theorem exists_completedRationalForm_eq_add_algebraMap [DecidableEq ι]
     refine ⟨t, ?_⟩
     rw [sub_eq_iff_eq_add.mp ht]
     simp only [map_add, map_mul, map_pow, map_natCast, map_intCast]
-    push_cast
-    field_simp
-    ring
+    push_cast; field_simp; ring
   · exact ⟨0, by simp⟩
 
 /-- The `p`-primary classes of the dual vectors `p^{-kᵢ} bᵢ` pair to `δᵢⱼ θᵢ / pᵏⁱ` in `ℚ/ℤ`. -/
@@ -126,12 +124,8 @@ private theorem discriminantPairing_symm_mk [DecidableEq ι]
   rw [eq_intCast] at hn
   simp only [Submodule.coe_smul_of_tower, map_nsmul, nsmul_eq_mul, Nat.cast_pow] at hn
   split_ifs with hij
-  · subst hij
-    push_cast
-    field_simp
-    linear_combination -hn
-  · push_cast
-    linear_combination -hn
+  · subst hij; push_cast; field_simp; linear_combination -hn
+  · push_cast; linear_combination -hn
 
 /-- Integer combinations of the classes of the dual vectors `p^{-kᵢ} bᵢ` pair like vectors of the
 orthogonal sum of the cyclic forms `θᵢ xy / pᵏⁱ`. -/
@@ -152,9 +146,7 @@ private theorem discriminantPairing_sum_zsmul [Fintype ι]
     LinearMap.sum_apply, LinearMap.smul_apply, discriminantPairing_symm_mk hb hbu hy hθ]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
-  simp only [↓reduceIte, ← AddCircle.coe_zsmul, zsmul_eq_mul]
-  congr 1
-  ring
+  simp only [↓reduceIte, ← AddCircle.coe_zsmul, zsmul_eq_mul]; congr 1; ring
 
 /-! ### The `p`-primary discriminant form -/
 

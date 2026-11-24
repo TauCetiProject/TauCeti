@@ -116,8 +116,7 @@ noncomputable def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector 
       (even_iff_two_dvd.mp ((L.mem_evenSublattice_carrier_iff yL).mp hy))))
     refine Submodule.mem_one.mpr ⟨k, ?_⟩
     rw [eq_intCast, L.evenSublattice_form, map_smul, LinearMap.smul_apply, smul_eq_mul,
-      ← L.integralForm_cast w yL, hk]
-    push_cast; ring⟩
+      ← L.integralForm_cast w yL, hk]; push_cast; ring⟩
 
 /-- The ambient rational vector underlying `L.halfCharacteristicDual hw` is `(1 / 2 : ℚ) • w`. -/
 @[simp]
@@ -165,10 +164,9 @@ theorem discriminantQuadraticMap_mk_halfCharacteristicDual_add {w : L}
         (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le) y).mp hx
       rwa [coe_toIntermediateCarrier] at this
     obtain ⟨k, hk⟩ := halfNorm_add_lattice_vector L hw ⟨y, hy⟩
-    rw [← Submodule.Quotient.mk_add, discriminantQuadraticMap_mk,
-      discriminantQuadraticMap_mk, L.evenSublattice_form]
-    simp only [Submodule.coe_add, coe_halfCharacteristicDual]
-    rw [hk, AddCircle.coe_add_intCast]
+    rw [← Submodule.Quotient.mk_add, discriminantQuadraticMap_mk, discriminantQuadraticMap_mk,
+      L.evenSublattice_form]
+    simp only [Submodule.coe_add, coe_halfCharacteristicDual]; rw [hk, AddCircle.coe_add_intCast]
 
 /-- The discriminant class `[w / 2]` lies in the `2`-primary component of
 `L.evenSublattice.DiscriminantGroup`. -/

@@ -233,9 +233,7 @@ satisfies `c ^ 2 = c` has a vector `w` satisfying `B w x = B x x` for every `x`.
 theorem IsSymm.exists_apply_eq_apply_self [Free R M] [Module.Finite R M] (hB : B.IsSymm)
     (hsq : ∀ c : R, c ^ 2 = c) : ∃ w : M, ∀ x : M, B w x = B x x := by
   have h2 : (2 : R) = 0 := by
-    have h1 := hsq (-1)
-    rw [neg_one_sq] at h1
-    linear_combination h1
+    have h1 := hsq (-1); rw [neg_one_sq] at h1; linear_combination h1
   obtain ⟨w, hw⟩ := hB.exists_isCharacteristic_of_finite fun c ↦ by simp [hsq c]
   exact ⟨w, fun x ↦ sub_eq_zero.mp (zero_dvd_iff.mp (h2 ▸ hw x))⟩
 

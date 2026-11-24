@@ -161,8 +161,7 @@ private noncomputable def discriminantHom_one_thirtyNine_three_thirteen :
       FiniteBilinearModule.pairing_zero_left, zero_add, hx2, hy2,
       discriminantBilinearModule_pairing_zsmul_rankOneClass]
   rw [hLHS, hRHS, AddCircle.coe_eq_coe_iff_exists_zsmul]
-  refine ⟨kx * ky, ?_⟩
-  rw [zsmul_one]; push_cast; ring
+  exact ⟨kx * ky, by rw [zsmul_one]; push_cast; ring⟩
 
 /-- An explicit bilinear isometry between the discriminant forms of `⟨1⟩ ⊕ ⟨39⟩` and
 `⟨3⟩ ⊕ ⟨13⟩`. -/
@@ -177,8 +176,7 @@ private noncomputable def discriminantIsometry_one_thirtyNine_three_thirteen :
   let g := discriminantHom_one_thirtyNine_three_thirteen
   have hnd : ((rankOne 1).discriminantBilinearModule.prod
       (rankOne 39).discriminantBilinearModule).IsNondegenerate :=
-    ((rankOne 1).discriminantBilinearModule.isNondegenerate_prod
-      (rankOne 39).discriminantBilinearModule).mpr
+    ((rankOne 1).discriminantBilinearModule.isNondegenerate_prod _).mpr
       ⟨(rankOne 1).isNondegenerate_discriminantBilinearModule,
         (rankOne 39).isNondegenerate_discriminantBilinearModule⟩
   have hcard : Nat.card ((rankOne 1).discriminantBilinearModule.prod
@@ -201,12 +199,11 @@ theorem sameGenus_rankOne_one_thirtyNine_three_thirteen :
   refine (((rankOne 1).orthogonalSum (rankOne 39)).sameGenus_iff_of_odd_discriminant
     ((rankOne 3).orthogonalSum (rankOne 13)) hodd).mpr ⟨?_, ?_,
       ⟨discriminantIsometry_one_thirtyNine_three_thirteen⟩⟩
-  · rw [signature_orthogonalSum, signature_orthogonalSum]
-    have h1 := rankOne_signature_of_pos (a := 1) (by norm_num)
+  · have h1 := rankOne_signature_of_pos (a := 1) (by norm_num)
     have h39 := rankOne_signature_of_pos (a := 39) (by norm_num)
     have h3 := rankOne_signature_of_pos (a := 3) (by norm_num)
     have h13 := rankOne_signature_of_pos (a := 13) (by norm_num)
-    simp only [signature, Prod.mk.injEq] at h1 h39 h3 h13 ⊢; omega
+    simp only [signature_orthogonalSum, signature, Prod.mk.injEq] at h1 h39 h3 h13 ⊢; omega
   · simp only [isEven_orthogonalSum_iff, isEven_rankOne_iff]; decide
 
 /-- **`⟨1⟩ ⊕ ⟨39⟩` and `⟨3⟩ ⊕ ⟨13⟩` are not isometric**, even though they lie in the same genus:
@@ -231,9 +228,7 @@ theorem isEmpty_isometry_rankOne_one_thirtyNine_three_thirteen :
     (orthogonalSumSnd (rankOne 3) (rankOne 13) (e.carrierEquiv v)).property
   rw [integralNorm_rankOne_eq _ hx.symm, integralNorm_rankOne_eq _ hy.symm] at himg_norm
   rcases eq_or_ne x 0 with rfl | hx0
-  · rcases eq_or_ne y 0 with rfl | hy0
-    · omega
-    · nlinarith [sq_pos_iff.mpr hy0]
+  · rcases eq_or_ne y 0 with rfl | hy0 <;> [omega; nlinarith [sq_pos_iff.mpr hy0]]
   · nlinarith [sq_pos_iff.mpr hx0, sq_nonneg y]
 
 end TauCeti.IntegralLattice

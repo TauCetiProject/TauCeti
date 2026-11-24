@@ -56,9 +56,8 @@ theorem forall_pos_card_filter_eq_and_isSquare_of_isometry_pi_oddCyclic
   classical
   have hp : p ≠ 2 := fun h ↦ by subst h; exact absurd hp_odd (by decide)
   have hodd_card : Odd (Nat.card (pi fun i ↦ oddCyclic (p ^ k i) hp_odd.pow (θ i))) := by
-    rw [Nat.card_pi]
-    exact Finset.prod_induction _ Odd (fun _ _ ha hb ↦ ha.mul hb) odd_one fun i _ ↦ by
-      rw [natCard_oddCyclic]; exact hp_odd.pow
+    rw [Nat.card_pi]; exact Finset.prod_induction _ Odd (fun _ _ ha hb ↦ ha.mul hb) odd_one
+      fun i _ ↦ by rw [natCard_oddCyclic]; exact hp_odd.pow
   have hquad : Nonempty (Isometry
       (pi fun i ↦ oddCyclic (p ^ k i) hp_odd.pow (θ i))
       (pi fun j ↦ oddCyclic (p ^ l j) hp_odd.pow (η j))) :=

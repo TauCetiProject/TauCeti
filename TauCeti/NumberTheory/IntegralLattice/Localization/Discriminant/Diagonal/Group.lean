@@ -166,8 +166,7 @@ private theorem bijective_piZModPowHom [Fintype ι]
       refine ⟨b.repr x j, (u j).isUnit.mul_right_cancel ?_⟩
       linear_combination -hpair
     exact (ZMod.natCast_zmod_val (c j)) ▸
-      (ZMod.natCast_eq_zero_iff (c j).val (p ^ k j)).mpr
-        ((PadicInt.pow_p_dvd_natCast_iff _ _).mp hdvd)
+      (ZMod.natCast_eq_zero_iff _ _).mpr ((PadicInt.pow_p_dvd_natCast_iff _ _).mp hdvd)
   · obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _
       (L.primaryComponentEquivLocalDiscriminantGroup p c)
     refine ⟨fun i ↦ PadicInt.toZModPow (k i)

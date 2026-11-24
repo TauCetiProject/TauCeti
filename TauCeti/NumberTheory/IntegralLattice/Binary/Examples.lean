@@ -341,10 +341,8 @@ theorem hyperbolicPlane_binaryNormForm_primPart :
 
 private def binaryFiveMatrix : Matrix (Fin 2) (Fin 2) ℤ := !![2, 1; 1, 3]
 
-private theorem binaryFiveMatrix_isSymm : binaryFiveMatrix.IsSymm := by
-  apply Matrix.IsSymm.ext
-  intro i j
-  fin_cases i <;> fin_cases j <;> rfl
+private theorem binaryFiveMatrix_isSymm : binaryFiveMatrix.IsSymm :=
+  Matrix.IsSymm.ext fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl
 
 /-- The positive definite odd binary integral lattice on `Fin 2 → ℚ` with Gram matrix
 `!![2, 1; 1, 3]` and determinant `5`. -/
@@ -355,8 +353,7 @@ noncomputable def binaryDeterminantFive : IntegralLattice (Fin 2 → ℚ) :=
 `!![2, 1; 1, 3]`. -/
 theorem binaryDeterminantFive_eq_ofGramMatrix
     (hG : (!![2, 1; 1, 3] : Matrix (Fin 2) (Fin 2) ℤ).IsSymm) :
-    binaryDeterminantFive = ofGramMatrix (Pi.basisFun ℚ (Fin 2)) !![2, 1; 1, 3] hG := by
-  rfl
+    binaryDeterminantFive = ofGramMatrix (Pi.basisFun ℚ (Fin 2)) !![2, 1; 1, 3] hG := by rfl
 
 /-- A rational vector belongs to `binaryDeterminantFive` exactly when both coordinates are
 integers. -/
@@ -401,15 +398,9 @@ theorem binaryDeterminantFive_isPosDef : binaryDeterminantFive.IsPosDef := by
   rw [binaryDeterminantFive.isPosDef_iff]
   intro x hx
   rw [binaryDeterminantFive_form_apply]
-  have hx' : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
-    by_contra! h
-    apply hx
-    ext i
-    fin_cases i <;> simp [h]
-  rcases hx' with h | h
-  · have := sq_pos_iff.mpr h
-    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 1)]
-  · have := sq_pos_iff.mpr h
-    nlinarith [sq_nonneg (x 0 + x 1), sq_nonneg (x 0)]
+  by_cases hx0 : x 0 = 0
+  · have hx1 : x 1 ≠ 0 := fun hx1 ↦ hx (funext fun i ↦ by fin_cases i <;> simp [hx0, hx1])
+    nlinarith [sq_pos_iff.mpr hx1, sq_nonneg (x 0 + x 1), sq_nonneg (x 0)]
+  · nlinarith [sq_pos_iff.mpr hx0, sq_nonneg (x 0 + x 1), sq_nonneg (x 1)]
 
 end TauCeti.IntegralLattice

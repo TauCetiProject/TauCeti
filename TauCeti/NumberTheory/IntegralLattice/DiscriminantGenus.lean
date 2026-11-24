@@ -76,12 +76,10 @@ theorem sameGenus_iff_localIntegralForm_two_equivalent_and_discriminantBilinearM
   have hdet := L.determinant_eq_of_signature_eq_of_discriminant_eq hsig hdisc
   refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ ?_⟩
   by_cases hp2 : p = 2
-  · subst hp2
-    exact h2
+  · subst hp2; exact h2
   · refine (L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp2).mpr
-      ⟨L.finrank_eq_of_signature_eq hsig, ?_, ⟨f.restrictPrimaryComponent p⟩⟩
-    rw [hdet]
-    exact IsSquare.mul_self _
+      ⟨L.finrank_eq_of_signature_eq hsig, hdet ▸ IsSquare.mul_self _,
+        ⟨f.restrictPrimaryComponent p⟩⟩
 
 /-- **Genus characterization for even lattices up to dyadic equivalence.** Two even nondegenerate
 integral lattices lie in one genus if and only if they have the same real signature, isometric

@@ -73,10 +73,8 @@ theorem isSquare_mul_iff_quadraticChar_toZMod_eq (hp : p ≠ 2) {u v : ℤ_[p]}
         quadraticChar (ZMod p) (_root_.PadicInt.toZMod v) := by
   rw [isSquare_iff_quadraticChar_toZMod_eq_one hp (hu.mul hv), map_mul, map_mul]
   rcases quadraticChar_dichotomy ((_root_.PadicInt.isUnit_iff_toZMod_ne_zero u).mp hu) with
-    h1 | h1 <;>
-    rcases quadraticChar_dichotomy ((_root_.PadicInt.isUnit_iff_toZMod_ne_zero v).mp hv) with
-      h2 | h2 <;>
-    simp [h1, h2]
+    h1 | h1 <;> rcases quadraticChar_dichotomy
+      ((_root_.PadicInt.isUnit_iff_toZMod_ne_zero v).mp hv) with h2 | h2 <;> simp [h1, h2]
 
 /-- For an odd prime `p`, if two `p`-adic integers agree modulo `p` and one is a unit, then their
 product is a square in `ℤ_p`. -/

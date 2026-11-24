@@ -381,9 +381,7 @@ theorem isCoprime_of_isUnit_of_dvd_sub {x : ℤ_[p]} (hx : IsUnit x) {a : ℤ}
   have hndvd : ¬(p : ℤ) ∣ a := by rwa [← ZMod.intCast_zmod_eq_zero_iff_dvd]
   have hcop : p.Coprime a.natAbs :=
     hp.out.coprime_iff_not_dvd.mpr fun h ↦ hndvd (Int.natCast_dvd.mpr h)
-  rcases Int.natAbs_eq a with h | h
-  · exact h ▸ hcop.isCoprime
-  · exact h ▸ hcop.isCoprime.neg_right
+  exact (Int.natAbs_eq a).elim (· ▸ hcop.isCoprime) (· ▸ hcop.isCoprime.neg_right)
 
 open scoped Classical Finset in
 /-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are

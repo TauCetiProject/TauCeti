@@ -68,11 +68,6 @@ private theorem eq_zero_of_coprime_nsmul_eq_zero {M : Type*} [AddMonoid M] {m n 
   rw [← AddMonoid.addOrderOf_eq_one_iff]
   exact Nat.eq_one_of_dvd_coprimes hmn horder_m horder_n
 
-private theorem map_mem_primaryComponent_iff {M N : Type*} [AddCommGroup M] [AddCommGroup N]
-    (e : M ≃+ N) {n : ℕ} {x : M} :
-    e x ∈ AddCommGroup.primaryComponent N n ↔ x ∈ AddCommGroup.primaryComponent M n := by
-  simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
-
 namespace FiniteBilinearModule
 
 variable (A : FiniteBilinearModule)
@@ -183,8 +178,8 @@ def Isometry.restrictPrimaryComponent {A : FiniteBilinearModule.{u}} {B : Finite
     Isometry (A.restrict (AddCommGroup.primaryComponent A n))
       (B.restrict (AddCommGroup.primaryComponent B n)) where
   toAddEquiv :=
-    { toFun x := ⟨f x.val, (map_mem_primaryComponent_iff f.toAddEquiv).mpr x.property⟩
-      invFun y := ⟨f.symm y.val, (map_mem_primaryComponent_iff f.symm.toAddEquiv).mpr y.property⟩
+    { toFun x := ⟨f x.val, f.toAddEquiv.map_mem_primaryComponent_iff.mpr x.property⟩
+      invFun y := ⟨f.symm y.val, f.symm.toAddEquiv.map_mem_primaryComponent_iff.mpr y.property⟩
       left_inv x := Subtype.ext (f.symm_apply_apply x.val)
       right_inv y := Subtype.ext (f.apply_symm_apply y.val)
       map_add' x y := Subtype.ext (map_add f x.val y.val) }
@@ -195,8 +190,7 @@ def Isometry.restrictPrimaryComponent {A : FiniteBilinearModule.{u}} {B : Finite
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u}}
     {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ)
     (x : AddCommGroup.primaryComponent A n) :
-    (f.restrictPrimaryComponent n x : B) = f x.val := by
-  rfl
+    (f.restrictPrimaryComponent n x : B) = f x.val := (rfl)
 
 /-- Restricting a bilinear isometry to `n`-primary components commutes with inversion. -/
 @[simp]
@@ -300,7 +294,7 @@ isometry between them. -/
 def Isometry.restrictPrimaryComponent {B : FiniteQuadraticModule} (f : Isometry A B) (p : ℕ) :
     Isometry (A.restrict (AddCommGroup.primaryComponent A p))
       (B.restrict (AddCommGroup.primaryComponent B p)) :=
-  f.restrict fun _ ↦ map_mem_primaryComponent_iff f.toLinearEquiv.toAddEquiv
+  f.restrict fun _ ↦ f.toLinearEquiv.toAddEquiv.map_mem_primaryComponent_iff
 
 variable {A} in
 /-- The restriction of an isometry to primary components acts as the isometry. -/

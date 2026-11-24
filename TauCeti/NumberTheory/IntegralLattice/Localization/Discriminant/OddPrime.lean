@@ -67,9 +67,9 @@ private theorem exists_int_lifts_and_isometry_pi_oddCyclic_primaryComponent
   choose θ _ hθ_dvd using fun i ↦
     _root_.PadicInt.exists_int_isCoprime_and_pow_dvd_sub (u i).isUnit (k i)
   refine ⟨θ, fun i ↦ by simpa only [pow_one] using
-    (pow_dvd_pow (p : ℤ_[p]) (le_max_right (k i) 1)).trans (hθ_dvd i), ?_⟩
-  exact L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu fun i ↦
-    (pow_dvd_pow (p : ℤ_[p]) (le_max_left (k i) 1)).trans (hθ_dvd i)
+    (pow_dvd_pow (p : ℤ_[p]) (le_max_right (k i) 1)).trans (hθ_dvd i),
+    L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu fun i ↦
+      (pow_dvd_pow (p : ℤ_[p]) (le_max_left (k i) 1)).trans (hθ_dvd i)⟩
 
 /-- Given two diagonal Jordan forms of the same rank at an odd prime `p` whose `p`-primary
 discriminant bilinear modules are isometric, `k` and `l` agree up to a permutation `σ` and every
@@ -171,15 +171,11 @@ theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinear
           (L.discriminantBilinearModule.restrict (primaryComponent L.discriminantBilinearModule p))
           (M.discriminantBilinearModule.restrict
             (primaryComponent M.discriminantBilinearModule p))) := by
-  constructor
-  · intro h
-    exact ⟨(L.localIntegralForm_equivalent_imp M p h).1,
-      L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p h,
-      h.map primaryDiscriminantBilinearIsometry⟩
-  · rintro ⟨hrank, ⟨u, hu⟩, hdisc⟩
-    refine (L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp).mpr
-      ⟨hrank, ?_, hdisc⟩
-    exact ⟨(u : ℤ_[p]) * (M.determinant : ℤ_[p]), by rw [hu]; ring⟩
+  refine ⟨fun h ↦ ⟨(L.localIntegralForm_equivalent_imp M p h).1,
+    L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p h,
+    h.map primaryDiscriminantBilinearIsometry⟩, fun ⟨hrank, ⟨u, hu⟩, hdisc⟩ ↦ ?_⟩
+  refine (L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp).mpr
+    ⟨hrank, ⟨(u : ℤ_[p]) * (M.determinant : ℤ_[p]), by rw [hu]; ring⟩, hdisc⟩
 
 /-- **Odd-prime local classification for even lattices.** For even nondegenerate lattices `L` and
 `M` and an odd prime `p`, `L_p ≃ M_p` iff `rank L = rank M`, `det L · det M` is a square in `ℤ_p`,
@@ -220,12 +216,10 @@ theorem localIntegralForm_equivalent_iff_of_finrank_eq_rank
   classical
   refine ⟨fun h ↦ h.map primaryDiscriminantBilinearIsometry, fun ⟨fLM⟩ ↦ ?_⟩
   have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp
-  obtain ⟨b, u, k, hb, hbu⟩ :=
-    L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp L.form_nondegenerate
-      (rfl : finrank ℤ L = _)
-  obtain ⟨c, v, l, hc, hcv⟩ :=
-    M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp M.form_nondegenerate
-      (rfl : finrank ℤ M = _)
+  obtain ⟨b, u, k, hb, hbu⟩ := L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow
+    hp L.form_nondegenerate (rfl : finrank ℤ L = _)
+  obtain ⟨c, v, l, hc, hcv⟩ := M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow
+    hp M.form_nondegenerate (rfl : finrank ℤ M = _)
   obtain ⟨θL, hθL, ⟨fL⟩⟩ :=
     exists_int_lifts_and_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu
   obtain ⟨θM, hθM, ⟨fM⟩⟩ :=
