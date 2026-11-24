@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.CompositionOuterApprox
+public import TauCeti.Analysis.Convex.Lifting.OuterApprox
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -16,10 +16,10 @@ import Mathlib.Tactic.Linarith
 /-!
 # Examples of matched outer approximations
 
-Small real examples for the rows `TauCeti.CompositionLift.componentRow`,
-`TauCeti.CompositionLift.outerRow` and `TauCeti.CompositionLift.directRow` and the outer
-approximations `TauCeti.CompositionLift.directOuterApprox`,
-`TauCeti.CompositionLift.sharedOuterApprox` and `TauCeti.CompositionLift.sharedOuterApproxOn`.
+Small real examples for the rows `TauCeti.ConvexLifting.componentRow`,
+`TauCeti.ConvexLifting.outerRow` and `TauCeti.ConvexLifting.directRow` and the outer
+approximations `TauCeti.ConvexLifting.directOuterApprox`,
+`TauCeti.ConvexLifting.sharedOuterApprox` and `TauCeti.ConvexLifting.sharedOuterApproxOn`.
 In the explicitly computed rows, all derivatives are the actual Fréchet derivatives of the inner
 and outer functions at the anchors; the empty-height result holds for arbitrary continuous linear
 row maps. The shared approximations below use unrestricted heights (every height is admissible),
@@ -41,7 +41,7 @@ identity-map and two-anchor bullets are computed with unrestricted heights.
   direct set `|x₀ + x₁| ≤ 5/4` and the projected shared set `|x₀| + |x₁| ≤ 5/4`. The objective
   `-x₀ + x₁` attains `-2`, `-5/4` and `-1` on the direct set, the projected shared set and the
   original set, and the exact
-  lift of `TauCeti.CompositionLift.liftedSet` retains `-1`.
+  lift of `TauCeti.ConvexLifting.liftedSet` retains `-1`.
 * For `g x = x ^ 2` and `h = id` with budget `1/4`, the shared heights at the anchor `0` project
   onto the whole line, while the direct row at the anchor `1` is `C x = 2 x - 1`, whose budget
   constraint gives the direct set `x ≤ 5/8`: with different anchors the shared projection need not
@@ -70,7 +70,7 @@ public section
 open Set
 open ContinuousLinearMap (mul proj toSpanSingleton)
 
-namespace TauCeti.CompositionLift
+namespace TauCeti.ConvexLifting
 
 /-! ### Squared coordinates with outer sum -/
 
@@ -359,12 +359,12 @@ theorem mem_and_isMinOn_originalSet_sq_sum_half :
         (fun y ↦ ∑ j, y j) (1 / 2) ∧
       IsMinOn (fun x : Fin 2 → ℝ ↦ -x 0 + x 1) (originalSet (Icc (-1) 1)
         (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2) (fun y ↦ ∑ j, y j) (1 / 2)) ![1 / 2, -1 / 2] := by
-  refine ⟨mem_originalSet.2 ⟨mem_Icc.2 ⟨fun j ↦ ?_, fun j ↦ ?_⟩, ?_⟩,
+  refine ⟨mem_originalSet_iff.2 ⟨mem_Icc.2 ⟨fun j ↦ ?_, fun j ↦ ?_⟩, ?_⟩,
     isMinOn_iff.2 fun x hx ↦ ?_⟩
   · fin_cases j <;> norm_num
   · fin_cases j <;> norm_num
   · norm_num [Fin.sum_univ_two]
-  · have hb := (mem_originalSet.1 hx).2
+  · have hb := (mem_originalSet_iff.1 hx).2
     rw [Fin.sum_univ_two] at hb
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     nlinarith [sq_nonneg (x 0 + x 1)]
@@ -384,7 +384,7 @@ theorem mem_and_isMinOn_liftedSet_sq_sum_half :
   refine ⟨?_, (isMinOn_comp_fst_liftedSet_iff (mapsTo_univ _ _)
     (Fintype.sum_mono.monotoneOn univ) _ _).2 hmin⟩
   rw [← hg]
-  exact mk_mem_liftedSet_of_mem_originalSet (mapsTo_univ _ _) hmem
+  exact graph_mem_liftedSet (mapsTo_univ _ _) hmem
 
 end TwoAnchors
 
@@ -412,7 +412,7 @@ theorem originalSet_sq_line_quarter :
       Icc (-1 / 2) (1 / 2) := by
   ext x
   have hq : (1 / 4 : ℝ) = (1 / 2) ^ 2 := by norm_num
-  simp only [mem_originalSet, mem_univ, true_and, mem_Icc, hq, sq_le_sq,
+  simp only [mem_originalSet_iff, mem_univ, true_and, mem_Icc, hq, sq_le_sq,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2), abs_le, neg_div]
 
 /-- For `x ^ 2 ≤ 1/4` on the line, the shared heights at the anchor `0` project onto the whole line:
@@ -671,4 +671,4 @@ theorem originalSet_id_sq_two :
 
 end Line
 
-end TauCeti.CompositionLift
+end TauCeti.ConvexLifting

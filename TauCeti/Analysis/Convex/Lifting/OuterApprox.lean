@@ -73,18 +73,18 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   with inequality heights only, under monotone outer derivatives.
 * `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_subset_directOuterApprox_of_monotone`:
   the same comparison when `h` is monotone on the whole height space.
-* `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
-  `TauCeti.CompositionLift.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
+* `TauCeti.ConvexLifting.directOuterApprox_subset_fst_image_sharedOuterApproxOn` and
+  `TauCeti.ConvexLifting.directOuterApprox_subset_fst_image_sharedOuterApprox`: the reverse
   inclusion when, at every point of the direct approximation, all anchors share a common component
   row and that row is an admissible height.
-* `TauCeti.CompositionLift.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
-  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
+* `TauCeti.ConvexLifting.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
   combined into an equality.
-* `TauCeti.CompositionLift.sharedOuterApprox_empty_heights`,
-  `TauCeti.CompositionLift.sharedOuterApproxOn_empty_heights`,
-  `TauCeti.CompositionLift.directOuterApprox_of_isEmpty`,
-  `TauCeti.CompositionLift.sharedOuterApproxOn_of_isEmpty` and
-  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
+* `TauCeti.ConvexLifting.sharedOuterApprox_empty_heights`,
+  `TauCeti.ConvexLifting.sharedOuterApproxOn_empty_heights`,
+  `TauCeti.ConvexLifting.directOuterApprox_of_isEmpty`,
+  `TauCeti.ConvexLifting.sharedOuterApproxOn_of_isEmpty` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
   admissible heights and no anchors.
 
 ## References
