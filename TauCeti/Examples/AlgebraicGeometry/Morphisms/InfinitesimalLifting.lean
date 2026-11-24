@@ -82,7 +82,7 @@ theorem isThickening_evalZero : IsThickening (Spec.map (CommRingCat.ofHom (evalZ
   intro a ha
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective a
   have hp : p ∈ idealOfVars ℕ k := by
-    rwa [← ker_constantCoeff, RingHom.mem_ker, ← eval_zero, ← evalZero_mk]
+    simpa [evalZero_mk, eval_zero, ← ker_constantCoeff] using ha
   have hle : idealOfVars ℕ k ≤ (nilradical (A k)).comap (Ideal.Quotient.mk _) := by
     rw [Ideal.span_le]
     rintro _ ⟨n, rfl⟩
