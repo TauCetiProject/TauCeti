@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Interior
 public import TauCeti.LowDimTopology.Surface.Basic
 
@@ -32,16 +33,12 @@ noncomputable section
 
 open Set Metric Module Topology
 
-open scoped Manifold
+open scoped Manifold EuclideanSpace
 
 namespace TauCeti
 
 /-- The closed unit disk of the Euclidean plane. -/
 local notation "𝕔𝔻" => closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1
-
-/-- The Euclidean plane has dimension two, as the closed-ball charts require. -/
-local instance factFinrankEuclideanPlane : Fact (finrank ℝ (EuclideanSpace ℝ (Fin 2)) = 2) :=
-  ⟨finrank_euclideanSpace_fin⟩
 
 /-- The closed unit disk is a compact connected surface. -/
 theorem isCompactConnectedSurface_closedDisk : IsCompactConnectedSurface 𝕔𝔻 :=
@@ -77,35 +74,27 @@ theorem numPunctures_closedDisk : closedDisk.numPunctures = 0 := by
   rw [PuncturedSurface.numPunctures_def, punctures_closedDisk]
   exact Finset.card_empty
 
-/-- The centre of the closed unit disk. -/
-def closedDiskCenter : 𝕔𝔻 :=
-  ⟨0, by simp⟩
-
-@[simp]
-theorem coe_closedDiskCenter : (closedDiskCenter : EuclideanSpace ℝ (Fin 2)) = 0 :=
-  (rfl)
-
-/-- **The closed unit disk punctured at its centre.** -/
+/-- **The closed unit disk punctured at its centre** `TauCeti.diskCenter`. -/
 def puncturedDisk : PuncturedSurface 𝕔𝔻 where
   isCompactConnectedSurface := isCompactConnectedSurface_closedDisk
   orientation := closedDiskOrientation
-  punctures := {closedDiskCenter}
+  punctures := {(diskCenter.{0} 2).down}
   punctures_subset_interior := by
     simp only [Finset.coe_singleton, singleton_subset_iff]
-    exact isInteriorPoint_closedBall_iff.2 (by simp [closedDiskCenter])
+    exact isInteriorPoint_closedBall_iff.2 (by simp)
 
 @[simp]
 theorem orientation_puncturedDisk : puncturedDisk.orientation = closedDiskOrientation :=
   (rfl)
 
 @[simp]
-theorem punctures_puncturedDisk : puncturedDisk.punctures = {closedDiskCenter} :=
+theorem punctures_puncturedDisk : puncturedDisk.punctures = {(diskCenter.{0} 2).down} :=
   (rfl)
 
 @[simp]
 theorem numPunctures_puncturedDisk : puncturedDisk.numPunctures = 1 := by
   rw [PuncturedSurface.numPunctures_def, punctures_puncturedDisk]
-  exact Finset.card_singleton closedDiskCenter
+  exact Finset.card_singleton _
 
 /-- The boundary of the punctured disk is the unit circle. -/
 theorem image_boundary_puncturedDisk :
