@@ -83,17 +83,22 @@ theorem ordinaryProjection_def (U : Module.End R M) :
 theorem commute_ordinaryProjection (U : Module.End R M) : Commute U U.ordinaryProjection :=
   (Commute.refl U).pow_right _
 
+/-- The ordinary projector commutes with every power of `U`, applied form:
+`e_U ((U ^ k) x) = (U ^ k) (e_U x)`. -/
+theorem ordinaryProjection_pow_apply_comm (U : Module.End R M) (k : ℕ) (x : M) :
+    U.ordinaryProjection ((U ^ k) x) = (U ^ k) (U.ordinaryProjection x) :=
+  LinearMap.congr_fun ((commute_ordinaryProjection U).pow_left k).eq.symm x
+
 /-- The ordinary part is `U`-stable. -/
 theorem range_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
     range U.ordinaryProjection ∈ U.invtSubmodule := by
   rintro _ ⟨x, rfl⟩
-  exact ⟨U x, LinearMap.congr_fun (commute_ordinaryProjection U).eq.symm x⟩
+  exact ⟨U x, by simpa using ordinaryProjection_pow_apply_comm U 1 x⟩
 
 /-- The non-ordinary part is `U`-stable. -/
 theorem ker_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
     ker U.ordinaryProjection ∈ U.invtSubmodule := fun x hx ↦ by
-  rw [Submodule.mem_comap, mem_ker, ← mul_apply_eq_comp, ← (commute_ordinaryProjection U).eq,
-    mul_apply_eq_comp, mem_ker.mp hx, map_zero]
+  simpa [mem_ker.mp hx] using ordinaryProjection_pow_apply_comm U 1 x
 
 @[simp]
 theorem ordinaryProjection_one : (1 : Module.End R M).ordinaryProjection = 1 :=
@@ -183,8 +188,7 @@ theorem ker_ordinaryProjection : ker U.ordinaryProjection = ker (U ^ Nat.card M)
     exact iterate_mem_periodicPts_of_card_le le_rfl x
   calc (U ^ Nat.card M) x = U.ordinaryProjection ((U ^ Nat.card M) x) :=
         (ordinaryProjection_apply_of_mem_periodicPts hper).symm
-    _ = (U ^ Nat.card M) (U.ordinaryProjection x) :=
-        LinearMap.congr_fun ((commute_ordinaryProjection U).pow_left _).eq.symm x
+    _ = (U ^ Nat.card M) (U.ordinaryProjection x) := ordinaryProjection_pow_apply_comm U _ x
     _ = 0 := by rw [mem_ker.mp hx, map_zero]
 
 theorem mem_ker_ordinaryProjection_iff {x : M} :
@@ -227,8 +231,7 @@ noncomputable def ordinaryEquiv (U : Module.End R M) :
   invFun x := ⟨(U ^ ((Nat.card M)! - 1)) x, by
     obtain ⟨y, hy⟩ := x.property
     rw [← hy]
-    exact ⟨(U ^ ((Nat.card M)! - 1)) y,
-      LinearMap.congr_fun ((commute_ordinaryProjection U).pow_left _).eq.symm y⟩⟩
+    exact ⟨(U ^ ((Nat.card M)! - 1)) y, ordinaryProjection_pow_apply_comm U _ y⟩⟩
   left_inv x := Subtype.ext (invOn_range_ordinaryProjection.1 x.property)
   right_inv x := Subtype.ext (invOn_range_ordinaryProjection.2 x.property)
 
