@@ -77,9 +77,9 @@ end Over
 
 end CategoryTheory
 
-namespace TauCeti
-
 open CategoryTheory
+
+namespace TauCeti
 
 variable {C : Type u₁} [Category.{v₁} C] {X : C}
 
