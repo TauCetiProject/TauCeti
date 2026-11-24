@@ -24,8 +24,9 @@ This file reads these statements in a positively oriented orthonormal frame `(e�
 with coefficients `F_ij = F (eᵢ ∧ eⱼ)`, in the normalisation used for Yang–Mills curvature:
 `|F|² = ∑_{i < j} ⟨F_ij, F_ij⟩`, and the density `⋆⟨F ∧ F⟩` of the wedge square of
 `F` paired by `B` is `2 (⟨F₀₁, F₂₃⟩ - ⟨F₀₂, F₁₃⟩ + ⟨F₀₃, F₁₂⟩)`
-(`LinearMap.BilinForm.wedgeDensity`). The main identity is that this density is `⟨F, ⋆F⟩`
-(`Orientation.wedgeDensity_eq_vectorFormInner_vectorFormHodgeStar`),
+(`LinearMap.BilinForm.wedgeDensity`). The main identity, read off from the frame expansion
+`Orientation.vectorFormInner_vectorFormHodgeStar_fin_four` of `⟨F, ⋆G⟩`, is that this density is
+`⟨F, ⋆F⟩` (`Orientation.wedgeDensity_eq_vectorFormInner_vectorFormHodgeStar`),
 hence `|F⁺|² - |F⁻|²`, and that its absolute value is at most `|F|²`, with equality exactly when
 `F⁺ = 0` or `F⁻ = 0`. For a compact matrix structure group, `Ad(g)` preserves the pairing of
 forms (`TauCeti.CompactMatrixStructureGroup.vectorFormInner_matrixAdjointRepresentation_comp`).
@@ -47,9 +48,6 @@ lemmas `Orientation.vectorFormHodgeStar_innerₗ`,
 
 ## Main results
 
-* `LinearMap.BilinForm.vectorFormInner_two_eq_sum_fin_four`: the pairing of two-forms in a frame,
-  `⟨F, G⟩ = ∑_{i < j} B (F_ij, G_ij)`.
-* `Orientation.vectorFormInner_vectorFormHodgeStar_fin_four`: `⟨F, ⋆G⟩` in a positive frame.
 * `Orientation.wedgeDensity_eq_sub`: `⋆⟨F ∧ F⟩ = |F⁺|² - |F⁻|²`.
 * `Orientation.abs_wedgeDensity_le`: the pointwise Bogomol'nyi inequality `|⋆⟨F ∧ F⟩| ≤ |F|²` in
   coordinates, and `Orientation.abs_wedgeDensity_eq_iff`: its equality case.
@@ -79,20 +77,6 @@ variable {E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace LinearMap.BilinForm
 
 variable (B : LinearMap.BilinForm ℝ V)
-
-/-- **The pairing of two-forms in a frame**: for an orthonormal basis `e` indexed by `Fin 4`,
-`⟨F, G⟩ = ∑_{i < j} B (F (eᵢ ∧ eⱼ), G (eᵢ ∧ eⱼ))`. -/
-theorem vectorFormInner_two_eq_sum_fin_four (e : OrthonormalBasis (Fin 4) ℝ E)
-    (F G : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
-    vectorFormInner B 2 F G =
-      B (F (ιMulti ℝ 2 ![e 0, e 1])) (G (ιMulti ℝ 2 ![e 0, e 1])) +
-        B (F (ιMulti ℝ 2 ![e 0, e 2])) (G (ιMulti ℝ 2 ![e 0, e 2])) +
-        B (F (ιMulti ℝ 2 ![e 0, e 3])) (G (ιMulti ℝ 2 ![e 0, e 3])) +
-        B (F (ιMulti ℝ 2 ![e 1, e 2])) (G (ιMulti ℝ 2 ![e 1, e 2])) +
-        B (F (ιMulti ℝ 2 ![e 1, e 3])) (G (ιMulti ℝ 2 ![e 1, e 3])) +
-        B (F (ιMulti ℝ 2 ![e 2, e 3])) (G (ιMulti ℝ 2 ![e 2, e 3])) := by
-  rw [vectorFormInner_eq_sum e.wedgeTwoBasis]
-  simp [Fin.sum_univ_six]
 
 /-- For `F = X (e⁰ ∧ e¹ + e² ∧ e³)`, `|F|² = 2 B (X, X)`. -/
 theorem vectorFormInner_smulRight_innerₗ_ιMulti_zero_one_add_ιMulti_two_three
@@ -143,24 +127,6 @@ open LinearMap.BilinForm
 variable [Fact (finrank ℝ E = 4)] {o : Orientation ℝ E (Fin 4)} (hkl : 2 + 2 = finrank ℝ E)
   {e : OrthonormalBasis (Fin 4) ℝ E} (he : e.toBasis.orientation = o)
 include he
-
-/-- **The pairing with a Hodge star in a positive frame**: for a positively oriented orthonormal
-basis `e` in dimension four, with `F_ij = F (eᵢ ∧ eⱼ)`, `⟨F, ⋆G⟩` is
-`B (F₀₁, G₂₃) - B (F₀₂, G₁₃) + B (F₀₃, G₁₂) + B (F₁₂, G₀₃) - B (F₁₃, G₀₂) + B (F₂₃, G₀₁)`. -/
-theorem vectorFormInner_vectorFormHodgeStar_fin_four (B : LinearMap.BilinForm ℝ V)
-    (F G : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
-    vectorFormInner B 2 F (o.vectorFormHodgeStar hkl G) =
-      B (F (ιMulti ℝ 2 ![e 0, e 1])) (G (ιMulti ℝ 2 ![e 2, e 3])) -
-        B (F (ιMulti ℝ 2 ![e 0, e 2])) (G (ιMulti ℝ 2 ![e 1, e 3])) +
-        B (F (ιMulti ℝ 2 ![e 0, e 3])) (G (ιMulti ℝ 2 ![e 1, e 2])) +
-        B (F (ιMulti ℝ 2 ![e 1, e 2])) (G (ιMulti ℝ 2 ![e 0, e 3])) -
-        B (F (ιMulti ℝ 2 ![e 1, e 3])) (G (ιMulti ℝ 2 ![e 0, e 2])) +
-        B (F (ιMulti ℝ 2 ![e 2, e 3])) (G (ιMulti ℝ 2 ![e 0, e 1])) := by
-  simp only [B.vectorFormInner_two_eq_sum_fin_four e, o.vectorFormHodgeStar_apply_of_even even_two,
-    o.hodgeStar_ιMulti_zero_one hkl he, o.hodgeStar_ιMulti_zero_two hkl he,
-    o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_ιMulti_one_two hkl he,
-    o.hodgeStar_ιMulti_one_three hkl he, o.hodgeStar_ιMulti_two_three hkl he, map_neg]
-  ring
 
 /-- **The wedge density in a positive frame**: for a symmetric `B` and a positively oriented
 orthonormal basis `e` in dimension four, the density `⋆⟨F ∧ F⟩ = 2 (B (F₀₁, F₂₃) - B (F₀₂, F₁₃) +

@@ -68,6 +68,10 @@ preserves the pairing when it preserves `B`; reversing the orientation exchanges
   equality case.
 * `Orientation.vectorFormSelfDualPart_neg_orientation`: reversing the orientation exchanges the two
   parts.
+* `LinearMap.BilinForm.vectorFormInner_two_eq_sum_fin_four`: the pairing of two-forms in a `Fin 4`
+  frame, `⟨F, G⟩ = ∑_{i < j} B (F_ij, G_ij)`, and
+  `Orientation.vectorFormInner_vectorFormHodgeStar_fin_four`: `⟨F, ⋆G⟩` in a positive `Fin 4`
+  frame.
 
 ## References
 
@@ -141,6 +145,20 @@ theorem vectorFormInner_eq_sum_powersetCard {ι : Type*} [Fintype ι] [LinearOrd
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [← OrthonormalBasis.coe_toBasis, OrthonormalBasis.toBasis_exteriorPower, basis_apply,
     ιMulti_family, OrthonormalBasis.coe_toBasis]
+
+/-- **The pairing of two-forms in a frame**: for an orthonormal basis `e` indexed by `Fin 4`,
+`⟨F, G⟩ = ∑_{i < j} B (F (eᵢ ∧ eⱼ), G (eᵢ ∧ eⱼ))`. -/
+theorem vectorFormInner_two_eq_sum_fin_four (B : LinearMap.BilinForm ℝ V)
+    (e : OrthonormalBasis (Fin 4) ℝ E) (F G : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
+    vectorFormInner B 2 F G =
+      B (F (ιMulti ℝ 2 ![e 0, e 1])) (G (ιMulti ℝ 2 ![e 0, e 1])) +
+        B (F (ιMulti ℝ 2 ![e 0, e 2])) (G (ιMulti ℝ 2 ![e 0, e 2])) +
+        B (F (ιMulti ℝ 2 ![e 0, e 3])) (G (ιMulti ℝ 2 ![e 0, e 3])) +
+        B (F (ιMulti ℝ 2 ![e 1, e 2])) (G (ιMulti ℝ 2 ![e 1, e 2])) +
+        B (F (ιMulti ℝ 2 ![e 1, e 3])) (G (ιMulti ℝ 2 ![e 1, e 3])) +
+        B (F (ιMulti ℝ 2 ![e 2, e 3])) (G (ιMulti ℝ 2 ![e 2, e 3])) := by
+  rw [vectorFormInner_eq_sum e.wedgeTwoBasis]
+  simp [Fin.sum_univ_six]
 
 /-- The pairing of `T ∘ F` and `T ∘ G` for a linear map `T : V → W` is the pairing of `F` and `G`
 for the pulled-back form `B (T ·) (T ·)`. In particular a linear map preserving the bilinear forms
@@ -634,5 +652,35 @@ theorem vectorFormAntiSelfDualPart_neg_orientation (F : ⋀[ℝ]^k E →ₗ[ℝ]
     vectorFormHodgeStar_neg_orientation, sub_neg_eq_add]
 
 end Even
+
+end Orientation
+
+/-! ### Two-forms in a four-dimensional frame -/
+
+namespace Orientation
+
+open LinearMap.BilinForm
+
+variable [Fact (finrank ℝ E = 4)] {o : Orientation ℝ E (Fin 4)} (hkl : 2 + 2 = finrank ℝ E)
+  {e : OrthonormalBasis (Fin 4) ℝ E} (he : e.toBasis.orientation = o)
+include he
+
+/-- **The pairing with a Hodge star in a positive frame**: for a positively oriented orthonormal
+basis `e` in dimension four, with `F_ij = F (eᵢ ∧ eⱼ)`, `⟨F, ⋆G⟩` is
+`B (F₀₁, G₂₃) - B (F₀₂, G₁₃) + B (F₀₃, G₁₂) + B (F₁₂, G₀₃) - B (F₁₃, G₀₂) + B (F₂₃, G₀₁)`. -/
+theorem vectorFormInner_vectorFormHodgeStar_fin_four (B : LinearMap.BilinForm ℝ V)
+    (F G : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
+    vectorFormInner B 2 F (o.vectorFormHodgeStar hkl G) =
+      B (F (ιMulti ℝ 2 ![e 0, e 1])) (G (ιMulti ℝ 2 ![e 2, e 3])) -
+        B (F (ιMulti ℝ 2 ![e 0, e 2])) (G (ιMulti ℝ 2 ![e 1, e 3])) +
+        B (F (ιMulti ℝ 2 ![e 0, e 3])) (G (ιMulti ℝ 2 ![e 1, e 2])) +
+        B (F (ιMulti ℝ 2 ![e 1, e 2])) (G (ιMulti ℝ 2 ![e 0, e 3])) -
+        B (F (ιMulti ℝ 2 ![e 1, e 3])) (G (ιMulti ℝ 2 ![e 0, e 2])) +
+        B (F (ιMulti ℝ 2 ![e 2, e 3])) (G (ιMulti ℝ 2 ![e 0, e 1])) := by
+  simp only [B.vectorFormInner_two_eq_sum_fin_four e, o.vectorFormHodgeStar_apply_of_even even_two,
+    o.hodgeStar_ιMulti_zero_one hkl he, o.hodgeStar_ιMulti_zero_two hkl he,
+    o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_ιMulti_one_two hkl he,
+    o.hodgeStar_ιMulti_one_three hkl he, o.hodgeStar_ιMulti_two_three hkl he, map_neg]
+  ring
 
 end Orientation
