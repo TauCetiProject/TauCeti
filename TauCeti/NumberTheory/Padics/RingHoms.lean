@@ -38,6 +38,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 
 * `PadicInt.val_toZModPow_eq_appr`, `PadicInt.toZModPow_eq_natCast_appr`: `appr` computes the
   `ZMod (p ^ n)`-value of `toZModPow`, which is the class of the natural number `x.appr n`.
+* `PadicInt.isLocalHom_toZModPow`: for `n ≠ 0`, truncation modulo `p ^ n` is a local ring
+  homomorphism, so a `p`-adic integer is a unit exactly when its residue modulo `p ^ n` is
+  (`isUnit_map_iff`).
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
@@ -115,6 +118,13 @@ variable {p : ℕ} [hp : Fact p.Prime]
 /-- P-adic truncation is surjective, allowing semilinear submodule images along it. -/
 instance (n : ℕ) : RingHomSurjective (toZModPow (p := p) n) :=
   ⟨ZMod.ringHom_surjective _⟩
+
+/-- For `n ≠ 0`, truncation modulo `p ^ n` is a local ring homomorphism: a `p`-adic integer is a
+unit exactly when its residue modulo `p ^ n` is (`isUnit_map_iff`). At `n = 0` the target
+`ZMod (p ^ 0)` is the zero ring, where `p` maps to a unit, so `n ≠ 0` is needed. -/
+instance isLocalHom_toZModPow (n : ℕ) [NeZero n] : IsLocalHom (toZModPow (p := p) n) :=
+  have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (NeZero.ne n) hp.out.one_lt⟩
+  .of_surjective _ (ZMod.ringHom_surjective _)
 
 /-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
 instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
@@ -552,9 +562,9 @@ theorem unitsToZModPow_surjective (n : ℕ) :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
     exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
-  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+  · have : NeZero n := ⟨hn.ne'⟩
     exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
-      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+      inferInstance
 
 /-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
 truncation modulo `p ^ m`. -/

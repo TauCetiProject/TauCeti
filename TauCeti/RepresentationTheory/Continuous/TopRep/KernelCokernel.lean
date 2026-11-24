@@ -55,7 +55,7 @@ def kerι : ker f ⟶ A :=
 -- `dsimp% only`, as in #8315.
 /-- The inclusion of the kernel sends a vector to the same vector of `A`. -/
 @[simp]
-theorem kerι_apply (a : ker f) : dsimp% only ((kerι f).hom a) = a.1 :=
+theorem kerι_apply (a : ker f) : dsimp% only ((kerι f).hom a) = a.val :=
   (rfl)
 
 /-- The inclusion of the kernel is injective. -/
@@ -70,7 +70,7 @@ theorem exact_kerι : Function.Exact (kerι f).hom f.hom :=
 @[reassoc (attr := simp)]
 theorem kerι_comp : kerι f ≫ f = 0 := by
   ext a
-  exact LinearMap.mem_ker.1 a.2
+  exact LinearMap.mem_ker.1 a.property
 
 /-- `TopRep.kerι f` is a kernel of `f` in `TopRep k G`. -/
 def isLimitKer : IsLimit (KernelFork.ofι (kerι f) (kerι_comp f)) :=

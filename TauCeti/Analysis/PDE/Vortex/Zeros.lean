@@ -23,8 +23,10 @@ identity is asserted here.
 
 Two such sections with the same multiplicity function differ by a nowhere-vanishing `Cᵏ`
 factor (`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Since the exponent of a local
-factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), the factor at a zero is the
-quotient of the two similarity-principle factors there.
+factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), a factorization whose factor
+is only continuous at `z` has a `Cᵏ` factor with the same exponent
+(`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul_of_order`), and the factor at a zero
+is the quotient of the two similarity-principle factors there.
 
 Only the holomorphicity rows are used. The curvature equation is unnecessary, and the
 section components need only be real differentiable when the connection is `Cᵏ`.
@@ -68,6 +70,23 @@ theorem conjWirtingerDeriv_apply_one_section_eq_mul {z : ℂ}
   rw [equation_apply_one] at h₁
   rw [equation_apply_two] at h₂
   apply Complex.ext <;> simp <;> linarith
+
+/-- The two holomorphicity rows are equivalent to the scalar Cauchy–Riemann equation `∂bar α = c α`
+for `α = 2(p + i q)`, with `c = (b₂ - i b₁) / 2`. -/
+theorem conjWirtingerDeriv_apply_one_section_eq_mul_iff {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    conjWirtingerDeriv (sectionValue x) z 1 =
+        ((x z 1 : ℂ) - I * x z 0) / 2 * sectionValue x z ↔
+      equation x z 1 = 0 ∧ equation x z 2 = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ conjWirtingerDeriv_apply_one_section_eq_mul hp hq h.1 h.2⟩
+  rw [conjWirtingerDeriv_apply_one_sectionValue hp hq, sectionValue_apply] at h
+  have h₁ := congrArg Complex.re h
+  have h₂ := congrArg Complex.im h
+  simp only [add_re, add_im, mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im, sub_re, sub_im,
+    div_ofNat_re, div_ofNat_im, re_ofNat, im_ofNat] at h₁ h₂
+  rw [equation_apply_one, equation_apply_two]
+  constructor <;> linarith
 
 /-- The coefficient `c = (b₂ - i b₁) / 2` is as regular as the connection. -/
 theorem contDiff_connectionCoeff {k : WithTop ℕ∞} (hb₁ : ContDiff ℝ k (fun w ↦ x w 0))
@@ -138,7 +157,7 @@ variable {k : ℕ∞} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- A local factorization of a vortex section with a factor only continuous at `z` can be
 replaced by one with the same exponent and a `Cᵏ` factor. -/
-private theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_order (hk : 1 ≤ k)
+theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_order (hk : 1 ≤ k)
     (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
     (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {z : ℂ} {n : ℕ}

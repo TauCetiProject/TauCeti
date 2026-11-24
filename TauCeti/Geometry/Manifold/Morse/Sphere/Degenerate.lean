@@ -36,6 +36,9 @@ statements about smooth functions with few critical points.
   (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_eq_one`). So `f` has two critical values
   but never exactly two critical points in positive dimension: a count of critical values cannot
   replace the count of critical points in such a theorem.
+* **A constant function.** Every point is a critical point of a constant function, so in positive
+  dimension it has infinitely many critical points
+  (`TauCeti.totalCriticalCount_const_sphere`), and its count is `⊤` rather than a natural number.
 
 ## References
 
@@ -151,5 +154,18 @@ theorem totalCriticalCount_sq_comp_sphereHeight_of_eq_one (hn : n = 1) (v : sphe
     ← hfin.cast_ncard_eq, ncard_setOf_sphereHeight_eq_zero hE,
     encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
   norm_num
+
+/-! ### Constant functions -/
+
+/-- **A constant function on a sphere of positive dimension has infinitely many critical points**,
+for instance on the circle: every point is critical, so its critical count is `⊤`, not a junk
+natural number. -/
+theorem totalCriticalCount_const_sphere (hn : n ≠ 0) (c : ℝ) :
+    totalCriticalCount (𝓡 n) (fun _ : sphere (0 : E) 1 ↦ c) = ⊤ := by
+  have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
+    Module.nontrivial_of_finrank_pos (R := ℝ) (by simp [Nat.pos_of_ne_zero hn])
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out (p := finrank ℝ E = n + 1))
+  have : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  exact totalCriticalCount_const_eq_top c
 
 end TauCeti

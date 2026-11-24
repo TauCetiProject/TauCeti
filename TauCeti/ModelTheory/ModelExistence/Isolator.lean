@@ -52,7 +52,7 @@ noncomputable def realizedTypeIsolator (h : (realizedTypes (L := L) M n).Countab
 @[simp]
 theorem realize_realizedTypeIsolator (h : (realizedTypes (L := L) M n).Countable)
     (p : realizedTypes (L := L) M n) (a : Fin n → M) :
-    (realizedTypeIsolator h p).Realize Empty.elim a ↔ infinitaryType M a = p.1 := by
+    (realizedTypeIsolator h p).Realize Empty.elim a ↔ infinitaryType M a = p.val := by
   rw [realizedTypeIsolator]
   exact ((exists_isolatingFormula h (mem_realizedTypes.mp p.property).choose).choose_spec a).trans
     (by rw [(mem_realizedTypes.mp p.property).choose_spec])

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+public import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Affine change of variables for Bochner integrals
@@ -22,9 +23,11 @@ uses the totalized Bochner integral, and
 is equivalent to integrability in the parameters. In particular, both integrals vanish
 when the integrands are not integrable.
 
-On `Fin n → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Icc 0 1` gives
-the change of variables from the unit cube to an affine parallelepiped. The same formula
-in one lower dimension gives the scaling of individual face integrals.
+On `ι → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Icc 0 1` gives invariance
+under single-coordinate reflections `u k ↦ 1 - u k`
+(`MeasureTheory.setIntegral_Icc_single_add_negCoord`) and rescaling of arbitrary closed
+boxes `Set.Icc a b` (`a ≤ b`) to `Set.Icc 0 1` with Jacobian `∏ i, (b i - a i)`
+(`MeasureTheory.setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one`), including on degenerate boxes.
 
 The proofs use `MeasureTheory.Measure.map_affine_addHaar_eq_smul`, the image of an additive Haar
 measure under an affine map, and Mathlib's transport of set integrals along measurable
@@ -92,3 +95,52 @@ theorem integral_image_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f
     _ = _ := congrArg (|LinearMap.det (L : V →ₗ[ℝ] V)| • ·) h
 
 end ContinuousLinearEquiv
+
+namespace MeasureTheory
+
+/-- Reflecting one coordinate `u k ↦ 1 - u k` of the unit cube `[0, 1]^ι` leaves the Bochner set
+integral invariant, without measurability, integrability or completeness hypotheses. -/
+theorem setIntegral_Icc_single_add_negCoord {ι E : Type*} [Fintype ι] [DecidableEq ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (k : ι) (f : (ι → ℝ) → E) :
+    ∫ u in Icc (0 : ι → ℝ) 1, f (Pi.single k 1 + ContinuousLinearEquiv.negCoord ℝ k u) =
+      ∫ u in Icc (0 : ι → ℝ) 1, f u := by
+  have h := (ContinuousLinearEquiv.negCoord ℝ (Q := fun _ : ι ↦ ℝ) k).integral_image_affine
+    (Pi.single k 1) f (Icc 0 1) volume
+  simpa [TauCeti.image_single_add_negCoord_Icc] using h.symm
+
+/-- Rescaling a closed rectangular box `Set.Icc a b` (`a ≤ b`) in `ι → ℝ` to `Set.Icc 0 1` pulls
+back any Bochner set integral with the box volume `∏ i, (b i - a i)` as Jacobian, including on
+degenerate boxes and without measurability, integrability or completeness hypotheses. -/
+theorem setIntegral_Icc_eq_smul_setIntegral_Icc_zero_one {ι E : Type*} [Fintype ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ι → ℝ} (hab : a ≤ b) (f : (ι → ℝ) → E) :
+    ∫ y in Icc a b, f y =
+      (∏ i, (b i - a i)) • ∫ u in Icc (0 : ι → ℝ) 1, f (fun i ↦ a i + (b i - a i) * u i) := by
+  by_cases hdeg : ∃ k, a k = b k
+  · obtain ⟨k, hk⟩ := hdeg
+    have hvol : volume (Icc a b) = 0 := by
+      rw [Real.volume_Icc_pi]
+      exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp [hk])
+    have hprod : ∏ i, (b i - a i) = 0 :=
+      Finset.prod_eq_zero (Finset.mem_univ k) (sub_eq_zero.mpr hk.symm)
+    rw [setIntegral_measure_zero _ hvol, hprod, zero_smul]
+  · push Not at hdeg
+    have hlt : ∀ i, a i < b i := fun i ↦ (hab i).lt_of_ne (hdeg i)
+    let L : (ι → ℝ) ≃L[ℝ] (ι → ℝ) := ContinuousLinearEquiv.piCongrRight fun i ↦
+      (ContinuousLinearEquiv.smulLeft
+        (Units.mk0 (b i - a i) (sub_ne_zero.mpr (hlt i).ne')) : ℝ ≃L[ℝ] ℝ)
+    have hdet : |LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ)| = ∏ i, (b i - a i) := by
+      have hpos : 0 < ∏ i, (b i - a i) :=
+        Finset.prod_pos fun i _ ↦ sub_pos.mpr (hlt i)
+      have hd : LinearMap.det (L : (ι → ℝ) →ₗ[ℝ] ι → ℝ) = ∏ i, (b i - a i) := by
+        simp [L, ContinuousLinearEquiv.det_piCongrRight]
+      rw [hd, abs_of_pos hpos]
+    have himg : (fun u ↦ a + L u) '' Icc 0 1 = Icc a b :=
+      TauCeti.image_add_piCongrRight_smulLeft_Icc hlt
+    have hfun : ∀ u, a + L u = fun i ↦ a i + (b i - a i) * u i := fun u ↦ by
+      ext i
+      simp [L]
+    have h := L.integral_image_affine a f (Icc 0 1) volume
+    rw [himg, hdet, integral_smul] at h
+    simpa only [hfun] using h
+
+end MeasureTheory

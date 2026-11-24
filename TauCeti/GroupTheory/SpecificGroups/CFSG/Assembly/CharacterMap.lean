@@ -55,9 +55,9 @@ namespace TauCeti.UnimodularExceptionalIndex
 /-- The native datum Steinberg map is the character pullback of the represented Steinberg
 map on the full-weight Geck torus of an untwisted unimodular exceptional index. -/
 theorem isCharacterMap_steinberg (d : UnimodularExceptionalIndex) :
-    IsCharacterMap d.1.1.geckWeightTorus d.steinberg d.1.1.datumSteinberg.weightMap := by
-  rw [d.1.1.datumSteinberg_weightMap_of_diagramPerm_eq_one
-    d.2 d.diagramPerm_toGraphTwistedIndex]
+    IsCharacterMap d.val.val.geckWeightTorus d.steinberg d.val.val.datumSteinberg.weightMap := by
+  rw [d.val.val.datumSteinberg_weightMap_of_diagramPerm_eq_one
+    d.property d.diagramPerm_toGraphTwistedIndex]
   exact IsCharacterMap.of_map_eq_pow d.steinberg_geckWeightTorus
 
 end TauCeti.UnimodularExceptionalIndex
@@ -79,7 +79,7 @@ def weightTorus : (d : ValidLieTypeIndex) → (Fin d.rank → d.Closureˣ) →* 
   | ⟨.E8 _, hv⟩ | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩ => geckWeightTorus ⟨_, hv⟩
   | ⟨.twistedE6 _, hv⟩ => TypeTwistedE6LieIndex.weightTorus ⟨⟨_, hv⟩, by simp⟩
   | ⟨.trialityD4 _, hv⟩ => TypeTrialityD4LieIndex.weightTorus ⟨⟨_, hv⟩, by simp⟩
-  | ⟨.suzuki m, hv⟩ => SpStd.b2WeightTorusPoints (SuzukiLieIndex.of m hv).1.Closure
+  | ⟨.suzuki m, hv⟩ => SpStd.b2WeightTorusPoints (SuzukiLieIndex.of m hv).val.Closure
   | ⟨.reeG2 m, hv⟩ => (ReeG2LieIndex.of m hv).weightTorus
   | ⟨.reeF4 m, hv⟩ => (ReeF4LieIndex.of m hv).weightTorus
   | ⟨.tits, _⟩ => TitsLieIndex.of.weightTorus
@@ -155,7 +155,7 @@ theorem weightTorus_trialityD4 (hv : (LieTypeIndex.trialityD4 q).Valid) :
 
 /-- On the Suzuki family the symplectic torus is read in type-B₂ coordinates. -/
 theorem weightTorus_suzuki (hv : (LieTypeIndex.suzuki m).Valid) :
-    weightTorus ⟨_, hv⟩ = SpStd.b2WeightTorusPoints (SuzukiLieIndex.of m hv).1.Closure :=
+    weightTorus ⟨_, hv⟩ = SpStd.b2WeightTorusPoints (SuzukiLieIndex.of m hv).val.Closure :=
   (rfl)
 
 /-- On the Ree G₂ family the represented torus is the short-root model's weight torus. -/

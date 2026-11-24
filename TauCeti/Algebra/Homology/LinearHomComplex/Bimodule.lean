@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Ext.ScalarAction
 public import TauCeti.Algebra.Homology.LinearHomComplex.Single
 import Mathlib.Algebra.Module.LinearMap.End
+import TauCeti.Algebra.Category.ModuleCat.ScalarAction
 import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
 /-!
@@ -24,10 +26,17 @@ When `k` is commutative (and `S` is any semiring), scalar multiplication by `s :
 a cochain endomorphism `CochainComplex.linearHomComplexSingleScalarHom` of
 `CochainComplex.linearHomComplex k K ((singleFunctor _ 0).obj (ModuleCat.of k M))` and induces a
 ring homomorphism `CochainComplex.linearHomComplexSingleHomologyAction` into the `k`-linear
-endomorphism ring of its cohomology. When `S` is a ring, forgetting scalar actions identifies
-`linearHomComplex` into `M` placed in degree `0` with `bimoduleHomComplex` as cochain complexes of
-abelian groups (`CochainComplex.forget₂BimoduleHomComplexIso`), intertwining
-`linearHomComplexSingleScalarHom` with `s • 𝟙 _` when `S` is commutative
+endomorphism ring of its cohomology. Both arrows of the universal coefficient sequence
+(`CochainComplex.linearHomComplexSingleKronecker`,
+`CochainComplex.linearHomComplexSingleExtToHomology`) and the splitting induced by a `k`-linear
+cycle retraction (`CochainComplex.linearHomComplexSingleKroneckerSection`,
+`CochainComplex.linearHomComplexSingleUniversalCoefficientEquiv`) commute with this `S`-action and
+`TauCeti.extScalarAction`.
+
+When `S` is a ring, forgetting scalar actions identifies `linearHomComplex` into `M` placed in
+degree `0` with `bimoduleHomComplex` as cochain complexes of abelian groups
+(`CochainComplex.forget₂BimoduleHomComplexIso`), intertwining `linearHomComplexSingleScalarHom` with
+`s • 𝟙 _` when `S` is commutative
 (`CochainComplex.map_linearHomComplexSingleScalarHom_comp_forget₂BimoduleHomComplexIso_hom`).
 
 ## Main definitions
@@ -36,7 +45,8 @@ abelian groups (`CochainComplex.forget₂BimoduleHomComplexIso`), intertwining
   complex `i ↦ (K.X (-i) →ₗ[k] M)` in `ModuleCat S` and its degreewise carrier identification.
 * `CochainComplex.linearHomComplexSingleScalarHom` and
   `CochainComplex.linearHomComplexSingleHomologyAction`: the cochain endomorphism and cohomology
-  ring action induced by a commuting semiring scalar action on `M`.
+  ring action induced by a commuting semiring scalar action on `M`, with equivariance of the
+  universal coefficient sequence.
 * `CochainComplex.forget₂BimoduleHomComplexIso`: comparison between `linearHomComplex` into `M[0]`
   and `bimoduleHomComplex` in `CochainComplex AddCommGrpCat ℤ`.
 
@@ -52,7 +62,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits HomologicalComplex
+open CategoryTheory Limits HomologicalComplex Abelian
 open CochainComplex CochainComplex.HomComplex
 
 universe v u
@@ -229,6 +239,71 @@ lemma linearHomComplexSingleHomologyAction_apply (i : ℤ) (s : S)
     rfl
   exact h1
 
+/-- `CochainComplex.linearHomComplexSingleKronecker` commutes with the `S`-scalar actions on
+cohomology and on `K.homology (-i) →ₗ[k] M`. -/
+lemma hom_linearHomComplexSingleKronecker_linearHomComplexSingleHomologyAction (i : ℤ) (s : S)
+    (x : (linearHomComplex k K ((singleFunctor (ModuleCat.{v} k) 0).obj
+      (ModuleCat.of k M))).homology i) :
+    (linearHomComplexSingleKronecker k K (ModuleCat.of k M) i
+        (K.linearHomComplexSingleHomologyAction S M i s x)).hom =
+      s • (linearHomComplexSingleKronecker k K (ModuleCat.of k M) i x).hom := by
+  have := SMulCommClass.symm k S M
+  rw [linearHomComplexSingleHomologyAction_apply, linearHomComplexSingleScalarHom_def,
+    linearHomComplexSingleKronecker_coefficient_naturality, ModuleCat.comp_ofHom_distribSMul,
+    ModuleCat.hom_ofHom]
+
+/-- For a fixed `k`-linear retraction of `K.iCycles (-i)`,
+`CochainComplex.linearHomComplexSingleKroneckerSection` commutes with the `S`-scalar action. -/
+lemma linearHomComplexSingleKroneckerSection_ofHom_smul (i : ℤ) [IsSplitMono (K.iCycles (-i))]
+    (s : S) (f : K.homology (-i) →ₗ[k] M) :
+    linearHomComplexSingleKroneckerSection k K (ModuleCat.of k M) i (ModuleCat.ofHom (s • f)) =
+      K.linearHomComplexSingleHomologyAction S M i s
+        (linearHomComplexSingleKroneckerSection k K (ModuleCat.of k M) i (ModuleCat.ofHom f)) := by
+  have := SMulCommClass.symm k S M
+  let g : K.homology (-i) ⟶ ModuleCat.of k M := ModuleCat.ofHom f
+  rw [linearHomComplexSingleHomologyAction_apply, linearHomComplexSingleScalarHom_def]
+  exact ((linearHomComplexSingleKroneckerSection_coefficient_naturality (k := k) K
+    (ModuleCat.ofHom (DistribSMul.toLinearMap k M s)) i g).trans
+    (congrArg (linearHomComplexSingleKroneckerSection k K (ModuleCat.of k M) i)
+      (ModuleCat.comp_ofHom_distribSMul (k := k) (S := S) (M := M) g s))).symm
+
+/-- `CochainComplex.linearHomComplexSingleExtToHomology` commutes with the `S`-scalar actions on
+`Ext¹` and on the cohomology of `linearHomComplex`. -/
+lemma linearHomComplexSingleExtToHomology_extScalarAction [Small.{v} k] (i : ℤ)
+    [Projective (K.cycles (1 - i))] [IsSplitMono (K.iCycles (1 - i))] (s : S)
+    (e : Ext.{v} (K.homology (1 - i)) (ModuleCat.of k M) 1) :
+    linearHomComplexSingleExtToHomology.{v} k K (ModuleCat.of k M) i
+        (TauCeti.extScalarAction k S M (K.homology (1 - i)) 1 s e) =
+      K.linearHomComplexSingleHomologyAction S M i s
+        (linearHomComplexSingleExtToHomology.{v} k K (ModuleCat.of k M) i e) := by
+  have := SMulCommClass.symm k S M
+  rw [TauCeti.extScalarAction_apply, linearHomComplexSingleHomologyAction_apply,
+    linearHomComplexSingleScalarHom_def]
+  exact linearHomComplexSingleExtToHomology_coefficient_naturality K
+    (ModuleCat.ofHom (DistribSMul.toLinearMap k M s)) i e
+
+/-- For a fixed `k`-linear retraction of `K.iCycles (-i)`, the universal coefficient splitting
+`CochainComplex.linearHomComplexSingleUniversalCoefficientEquiv` commutes with the `S`-scalar
+actions on both factors. -/
+lemma linearHomComplexSingleUniversalCoefficientEquiv_linearHomComplexSingleHomologyAction
+    [Small.{v} k] (i : ℤ)
+    [Projective (K.cycles (1 - i))] [IsSplitMono (K.iCycles (1 - i))]
+    [IsSplitMono (K.iCycles (-i))] (s : S)
+    (x : (linearHomComplex k K ((singleFunctor (ModuleCat.{v} k) 0).obj
+      (ModuleCat.of k M))).homology i) :
+    linearHomComplexSingleUniversalCoefficientEquiv.{v} k K (ModuleCat.of k M) i
+        (K.linearHomComplexSingleHomologyAction S M i s x) =
+      (TauCeti.extScalarAction k S M (K.homology (1 - i)) 1 s
+          (linearHomComplexSingleUniversalCoefficientEquiv.{v} k K (ModuleCat.of k M) i x).1,
+        ModuleCat.ofHom
+          (s • (linearHomComplexSingleUniversalCoefficientEquiv.{v} k K
+            (ModuleCat.of k M) i x).2.hom)) := by
+  have := SMulCommClass.symm k S M
+  rw [TauCeti.extScalarAction_apply, linearHomComplexSingleHomologyAction_apply,
+    linearHomComplexSingleScalarHom_def,
+    linearHomComplexSingleUniversalCoefficientEquiv_coefficient_naturality,
+    ModuleCat.comp_ofHom_distribSMul]
+
 end Receiver
 
 /-- `linearHomComplexSingleScalarHom` commutes with precomposition by a cochain map `φ : K' ⟶ K`. -/
@@ -280,7 +355,7 @@ def forget₂BimoduleHomComplexIso :
           (((linearHomComplex k K
             ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M))).d i (i + 1)).hom z)).hom
       rw [K.bimoduleHomComplex_d_apply,
-        K.toSingleLinearEquiv_linearHomComplex_d_apply k (ModuleCat.of k M) i z,
+        K.toSingleLinearEquiv_linearHomComplex_d_apply (ModuleCat.of k M) k i z,
         ← LinearMap.comp_apply ((K.bimoduleHomComplexXIso S M i).hom.hom), ← ModuleCat.hom_comp,
         Iso.inv_hom_id, ModuleCat.hom_id, LinearMap.id_apply, ModuleCat.hom_zsmul,
         ModuleCat.hom_comp]

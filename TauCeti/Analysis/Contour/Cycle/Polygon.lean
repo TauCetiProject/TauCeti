@@ -46,6 +46,8 @@ become a contour cycle.
 * `TauCeti.Contour.Cycle.exists_windingNumber_integral_eq_sum_segments`: a balanced finite family
   of oriented segments is a contour cycle, with the sums of the segment winding numbers and
   segment integrals as its winding numbers and integrals.
+* `TauCeti.Contour.Cycle.integral_eq_sum_segments_complex`: lowers the universe level of a
+  segment-sum integration formula from `Type u`-valued continuous functions to `ℂ`-valued ones.
 
 ## References
 
@@ -156,11 +158,11 @@ theorem _root_.Polygon.contourCurve_apply {t : ℝ} (ht : t ∈ Icc (0 : ℝ) n)
 /-- The closed polygonal curve of a polygon `poly` with `n ≠ 0` vertices, as a one-generator
 contour cycle. -/
 def _root_.Polygon.contourCycle : Cycle :=
-  FreeAbelianGroup.of poly.contourCurve
+  FreeAddCommGroup.of poly.contourCurve
 
 /-- The cycle of a polygon is the single generator given by its polygonal curve. -/
 theorem _root_.Polygon.contourCycle_def :
-    poly.contourCycle = FreeAbelianGroup.of poly.contourCurve := (rfl)
+    poly.contourCycle = FreeAddCommGroup.of poly.contourCurve := (rfl)
 
 /-- The trace of the cycle of a polygon is the boundary of the polygon. -/
 @[simp]
@@ -256,7 +258,7 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     intro z hz
     obtain ⟨i, hi⟩ := mem_iUnion.1 hz
     rw [Polygon.edgeSet_eq_image_edgePath, hedge, ← segment_eq_image_lineMap] at hi
-    exact mem_biUnion (σ^[i] e).2 hi
+    exact mem_biUnion (σ^[i] e).property hi
   -- The cycle is the sum of the polygons of the orbits; sums over the segments are computed orbit
   -- by orbit.
   refine ⟨∑ q : Quotient (Equiv.Perm.SameCycle.setoid σ), (P q.out).contourCycle,
@@ -273,6 +275,26 @@ theorem exists_windingNumber_integral_eq_sum_segments {E : Finset (ℂ × ℂ)}
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     rw [Polygon.integral_contourCycle _ (hf.mono (hbd _)), ← Fin.sum_univ_eq_sum_range]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hedge, hPsucc, hP]
+
+/-- Lowering the universe level of the segment-sum integration formula of a cycle to scalar
+`ℂ`-valued integrands: if `Γ` integrates every continuous function into a `Type u` complex normed
+space as the sum of its segment integrals over `E`, the same formula holds for `ℂ`-valued
+functions. -/
+theorem integral_eq_sum_segments_complex {E : Finset (ℂ × ℂ)} {Γ : Cycle}
+    (hint : ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] {f : ℂ → F},
+      ContinuousOn f (⋃ e ∈ E, segment ℝ e.1 e.2) → integral f Γ =
+        ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t))
+    {g : ℂ → ℂ} (hg : ContinuousOn g (⋃ e ∈ E, segment ℝ e.1 e.2)) :
+    integral g Γ = ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, g (AffineMap.lineMap e.1 e.2 t) := by
+  let v : PUnit.{u + 1} → ℂ := fun _ ↦ 1
+  have h := hint (F := PUnit.{u + 1} → ℂ) (f := fun z ↦ g z • v) (hg.smul continuousOn_const)
+  rw [integral_smul_const] at h
+  have h0 := congr_fun h PUnit.unit
+  simp only [Pi.smul_apply, smul_eq_mul, mul_one, Finset.sum_apply, v] at h0
+  rw [h0]
+  refine Finset.sum_congr rfl fun e _ ↦ ?_
+  rw [intervalIntegral.integral_smul_const]
+  simp
 
 end Cycle
 

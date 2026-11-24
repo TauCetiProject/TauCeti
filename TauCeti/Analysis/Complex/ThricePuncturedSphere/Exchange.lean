@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 
 /-!
 # The exchange of the finite punctures in end coordinates

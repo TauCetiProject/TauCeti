@@ -42,6 +42,8 @@ open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
+section Scalar
+
 variable {𝕜 G : Type*} [NormedField 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 variable (𝕜 G) in
@@ -103,6 +105,12 @@ theorem mem_rightUcbSubalgebra_iff_uniformContinuous {f : G →ᵇ 𝕜} :
     exact @UniformContinuous.comp G G 𝕜 (IsTopologicalGroup.rightUniformSpace G)
       (IsTopologicalGroup.leftUniformSpace G) _ (f : G → 𝕜) Inv.inv h hrl
 
+end Scalar
+
+section Real
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
 variable (G) in
 /-- The subalgebra of real bounded continuous functions uniformly continuous under small right
 multiplication, the case `𝕜 = ℝ` of `rightUcbSubalgebra 𝕜 G`. -/
@@ -160,7 +168,11 @@ theorem le_def {f h : RightUCB G} : f ≤ h ↔ ∀ x, (f : G →ᵇ ℝ) x ≤ 
 
 end RightUCB
 
+end Real
+
 namespace ucbSubalgebra
+
+variable {𝕜 G : Type*} [NormedField 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 variable (𝕜 G) in
 /-- Precomposition by inversion identifies the two uniform-continuity conventions as algebras.
@@ -171,9 +183,9 @@ def invEquiv : ucbSubalgebra 𝕜 G ≃ₐ[𝕜] rightUcbSubalgebra 𝕜 G where
       have hinv : ((f : G →ᵇ 𝕜).compContinuous ⟨Inv.inv, continuous_inv⟩).compContinuous
           ⟨Inv.inv, continuous_inv⟩ = (f : G →ᵇ 𝕜) := by ext x; simp
       rw [hinv]
-      exact f.2)⟩
+      exact f.property)⟩
   invFun f := ⟨(f : G →ᵇ 𝕜).compContinuous ⟨Inv.inv, continuous_inv⟩,
-    mem_rightUcbSubalgebra_iff_comp_inv.1 f.2⟩
+    mem_rightUcbSubalgebra_iff_comp_inv.1 f.property⟩
   left_inv f := by ext x; simp
   right_inv f := by ext x; simp
   map_mul' _ _ := rfl
@@ -236,6 +248,8 @@ theorem invLinearIsometryEquiv_symm_apply (f : rightUcbSubalgebra 𝕜 G) :
 end ucbSubalgebra
 
 namespace UCB
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 -- Specialize the domain and codomain to the named real spaces: simp does not unfold
 -- ucb and rightUcb when matching the scalar-general evaluation and norm lemmas.

@@ -8,16 +8,17 @@ module
 public import TauCeti.Probability.Distributions.Bernoulli.Cdf
 public import TauCeti.Probability.Distributions.Bernoulli.Support
 public import TauCeti.Probability.Quantile
+public import TauCeti.Probability.Quantile.Map
 
 /-!
-# Quantiles of Bernoulli laws
+# Lower and upper quantiles of Bernoulli laws
 
 A real Bernoulli law `Ber(a, b, p)` puts mass `p` on `a` and mass `1 - p` on `b`. At an interior
-probability level `u`, its lower quantile is the lower atom through the cumulative mass of that
-atom, and the upper atom above it; the level at the cumulative jump belongs to the lower branch.
-The formula is stated separately for the two orders of the atoms and includes coincident atoms
-and the Dirac boundaries `p = 0` and `p = 1`. For the standard law `Ber(1, 0, p)` the quantile is
-zero when `u ≤ 1 - p` and one otherwise.
+probability level `u`, its lower quantile assigns the cumulative jump to the lower branch, while
+its upper quantile assigns it to the upper branch. The formulas are stated separately for the two
+orders of the atoms and include coincident atoms and the Dirac boundaries `p = 0` and `p = 1`.
+For a nondegenerate two-point law, the quantiles therefore differ at the jump, and reflection
+sends the lower quantile there to the negative of the original upper atom.
 
 The one-sided endpoint limits in `EReal` are the endpoints of the actual support: at the Dirac
 boundaries both are the single atom carrying all the mass, and otherwise they are the minimum
@@ -49,6 +50,18 @@ theorem quantile_bernoulliMeasure_of_ge (hba : b ≤ a) (hu : u ∈ Ioo 0 1) :
   rw [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_bernoulliMeasure]
   split_ifs <;> grind
 
+/-- The upper quantile of a Bernoulli law whose failure atom `b` lies below its success atom `a`
+is `b` strictly below cumulative mass `1 - p` and `a` from that level onwards. This includes
+coincident atoms and the probability-zero and probability-one boundaries. -/
+@[simp]
+theorem upperQuantile_bernoulliMeasure_of_ge (hba : b ≤ a) (hu : u ∈ Ioo 0 1) :
+    Ber(a, b, p).upperQuantile u = if u < 1 - (p : ℝ) then b else a := by
+  refine eq_of_forall_le_iff fun x ↦ ?_
+  rw [Measure.le_upperQuantile_iff _ hu.1 hu.2,
+    bernoulliMeasure_real_apply p measurableSet_Iio]
+  simp only [mem_Iio, unitInterval.coe_toNNReal, unitInterval.coe_symm_eq]
+  split_ifs <;> grind
+
 /-- The lower quantile of a Bernoulli law whose success atom `a` lies below its failure atom `b`
 is `a` through cumulative mass `p` and `b` above it, including coincident atoms and the
 probability-zero and probability-one boundaries. -/
@@ -58,6 +71,50 @@ theorem quantile_bernoulliMeasure_of_le (hab : a ≤ b) (hu : u ∈ Ioo 0 1) :
   refine eq_of_forall_lt_iff fun x ↦ ?_
   rw [Measure.lt_quantile_iff _ hu.1 hu.2, cdf_bernoulliMeasure]
   split_ifs <;> grind
+
+/-- The upper quantile of a Bernoulli law whose success atom `a` lies below its failure atom `b`
+is `a` strictly below cumulative mass `p` and `b` from that level onwards. This includes
+coincident atoms and the probability-zero and probability-one boundaries. -/
+@[simp]
+theorem upperQuantile_bernoulliMeasure_of_le (hab : a ≤ b) (hu : u ∈ Ioo 0 1) :
+    Ber(a, b, p).upperQuantile u = if u < (p : ℝ) then a else b := by
+  refine eq_of_forall_le_iff fun x ↦ ?_
+  rw [Measure.le_upperQuantile_iff _ hu.1 hu.2,
+    bernoulliMeasure_real_apply p measurableSet_Iio]
+  simp only [mem_Iio, unitInterval.coe_toNNReal, unitInterval.coe_symm_eq]
+  split_ifs <;> grind
+
+/-- At the cdf jump of a nondegenerate two-point Bernoulli law, the lower and upper quantiles
+are the two distinct atoms. -/
+theorem quantile_ne_upperQuantile_bernoulliMeasure_at_jump (hba : b < a)
+    (hp : (p : ℝ) ∈ Ioo 0 1) :
+    Ber(a, b, p).quantile (1 - p) ≠ Ber(a, b, p).upperQuantile (1 - p) := by
+  have hp' := Set.Ioo.one_sub_mem hp
+  rw [quantile_bernoulliMeasure_of_ge hba.le, upperQuantile_bernoulliMeasure_of_ge hba.le]
+  · simp [hba.ne]
+  · exact hp'
+  · exact hp'
+
+/-- At an interior jump level of a two-point Bernoulli law whose failure atom is no greater than
+its success atom, reflection sends the lower quantile to the negative of the original upper
+atom. -/
+theorem quantile_neg_bernoulliMeasure_at_jump (hba : b ≤ a)
+    (hp : (p : ℝ) ∈ Ioo 0 1) : Ber(a, b, p).neg.quantile p = -a := by
+  rw [Measure.quantile_neg hp.1 hp.2,
+    upperQuantile_bernoulliMeasure_of_ge hba]
+  · simp
+  · exact Set.Ioo.one_sub_mem hp
+
+/-- Reflection of a nondegenerate two-point Bernoulli law demonstrates that a decreasing affine
+quantile formula must use the upper quantile at the complementary level: negating the lower
+quantile gives a different answer at the cdf jump. -/
+theorem quantile_neg_bernoulliMeasure_ne_neg_quantile (hba : b < a)
+    (hp : (p : ℝ) ∈ Ioo 0 1) :
+    Ber(a, b, p).neg.quantile p ≠ -Ber(a, b, p).quantile (1 - p) := by
+  rw [quantile_neg_bernoulliMeasure_at_jump hba.le hp,
+    quantile_bernoulliMeasure_of_ge hba.le]
+  · simp [hba.ne']
+  · exact Set.Ioo.one_sub_mem hp
 
 /-- As the level tends to zero from above, the Bernoulli quantile tends to the lower endpoint
 of its support: the single atom at success probability zero or one, and the smaller atom

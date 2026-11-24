@@ -140,7 +140,7 @@ private theorem add_mul_eq_zero_of_add_mul_eq_zero (N : Submodule Π Π) (g : N 
   obtain ⟨hsm, -⟩ := hS.1 ht
   have hamN : a * m ∈ N := by
     rw [eq_neg_of_add_eq_zero_right hna]
-    exact N.neg_mem n.2
+    exact N.neg_mem n.property
   have ht0 : t = 0 := by
     by_contra ht0
     apply hmN

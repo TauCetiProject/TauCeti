@@ -5,16 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.Algebra.Homology.Cube.Dual.Complex
-public import TauCeti.Algebra.Homology.PrincipalIdealRing
-public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Module
-public import TauCeti.KnotTheory.Khovanov.Homology
+public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
+public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.Mirror
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
-# Mirror duality for the Khovanov complex and Khovanov homology
+# The Khovanov complex of the mirror diagram is the dual complex
 
 For a planar oriented PD-code `D`, the normalized Khovanov complex of the mirror `D.mirror` in
 quantum degree `j` is isomorphic to the dual of the normalized Khovanov complex of `D` in
@@ -22,8 +19,8 @@ quantum degree `-j`, the cochain complex `Hom(C(D)_{-j}, R)` of linear maps into
 degree `0` (`TauCeti.OrientedPDCode.khovanovComplexMirrorIso`). Its term in cochain degree `i` is
 `Hom(C(D)^{-i}_{-j}, R)`, so the bidegree `(i, j)` of the mirror corresponds to `(-i, -j)`.
 
-The chain-level isomorphism combines three identifications. The Frobenius pairing identifies the
-cube of resolutions of the mirror with the dual cube of the cube of resolutions of `D`
+The isomorphism combines three identifications. The Frobenius pairing identifies the cube of
+resolutions of the mirror with the dual cube of the cube of resolutions of `D`
 (`TauCeti.PDCode.mirrorKhovanovBracketIso`). The totalization of a dual cube, shifted by
 `b = n₊(D) = n₋(D.mirror)`, is the dual of the totalization shifted by `a = n₋(D)`, since
 `a + b` is the number of crossings (`CategoryTheory.Functor.dualCubeComplexIso`). Finally the
@@ -31,53 +28,25 @@ normalized complexes are the native cochain shifts of the brackets by their nega
 counts (`TauCeti.OrientedPDCode.khovanovComplexShiftIso`). The resulting isomorphism respects the
 differentials with all their signs; it is not merely an identification of ranks.
 
-Passing to cohomology yields the mirror Kronecker pairing
-`Khⁱʲ(D.mirror; R) →ₗ[R] Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))` over any commutative ring `R`
-(`TauCeti.OrientedPDCode.khovanovMirrorKronecker`). Over a principal ideal ring without zero
-divisors (in particular over `ℤ` and over any field), every term of `C(D)_{-j}` is finite free, so
-the cochain universal coefficient sequence gives the split short exact sequence
-`0 → Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R) → Khⁱʲ(D.mirror; R) → Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R)) → 0`.
-Over a principal ideal domain, the `Ext¹` image is canonically the torsion submodule of
-`Khⁱʲ(D.mirror; R)` (`TauCeti.OrientedPDCode.khovanovMirrorExtEquivTorsion`), the torsion-free
-quotient is canonically `Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`
-(`TauCeti.OrientedPDCode.khovanovMirrorModTorsionEquivDual`), and `Khⁱʲ(D.mirror; R)` and
-`Kh⁻ⁱ,⁻ʲ(D; R)` have equal `finrank` (`TauCeti.OrientedPDCode.finrank_khovanovHomology_mirror`).
-Over a field `K`, the `Ext¹` group vanishes and `Khⁱʲ(D.mirror; K)` is canonically dual to
-`Kh⁻ⁱ,⁻ʲ(D; K)` (`TauCeti.OrientedPDCode.khovanovHomologyMirrorDualEquiv`).
-
 ## Main definitions
 
-* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso`: isomorphism from `C(D.mirror)_j` to the dual
-  complex `Hom(C(D)_{-j}, R)`.
-* `TauCeti.OrientedPDCode.khovanovHomologyMirrorIso`: induced isomorphism on cohomology in
-  degree `i`.
-* `TauCeti.OrientedPDCode.khovanovMirrorKronecker` and
-  `TauCeti.OrientedPDCode.khovanovMirrorExtToHomology`: the Kronecker evaluation and `Ext¹`
-  inclusion for `Khⁱʲ(D.mirror; R)`.
-* `TauCeti.OrientedPDCode.khovanovHomologyMirrorUniversalCoefficientEquiv`: non-canonical split
-  decomposition `Khⁱʲ(D.mirror; R) ≃ₗ[R] Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R) × Dual_R(Kh⁻ⁱ,⁻ʲ(D; R))`.
-* `TauCeti.OrientedPDCode.khovanovMirrorExtEquivTorsion` and
-  `TauCeti.OrientedPDCode.khovanovMirrorModTorsionEquivDual`: canonical PID identifications of the
-  torsion submodule and torsion-free quotient of `Khⁱʲ(D.mirror; R)`.
-* `TauCeti.OrientedPDCode.khovanovHomologyMirrorDualEquiv`: canonical `K`-linear equivalence
-  `Khⁱʲ(D.mirror; K) ≃ₗ[K] Module.Dual K (Kh⁻ⁱ,⁻ʲ(D; K))` over a field `K`.
+* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso D hD R j`: the isomorphism from the
+  normalized Khovanov complex of `D.mirror` in quantum degree `j` to the dual of the normalized
+  Khovanov complex of `D` in quantum degree `-j`.
 
 ## Main results
 
-* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso_hom_f_apply` and
-  `TauCeti.OrientedPDCode.khovanovComplexMirrorIso_inv_f_apply`: explicit statewise Frobenius
-  pairing formulas for the mirror complex isomorphism and its inverse.
-* `TauCeti.OrientedPDCode.exact_khovanovMirrorExtToHomology_khovanovMirrorKronecker`: exactness of
-  the mirror universal coefficient sequence in the middle, paired with
-  `TauCeti.OrientedPDCode.khovanovMirrorExtToHomology_injective` and
-  `TauCeti.OrientedPDCode.khovanovMirrorKronecker_surjective`.
-* `TauCeti.OrientedPDCode.finrank_khovanovHomology_mirror`: equality of `finrank` between
-  `Khⁱʲ(D.mirror; R)` and `Kh⁻ⁱ,⁻ʲ(D; R)` over any principal ideal domain.
+* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso_hom_f_apply`: the isomorphism sends an
+  element `x` of the state `S` of the mirror to the cochain pairing `x` with the complementary
+  state `Sᶜ` of `D` by the Frobenius pairing of circle tensors, times the sign
+  `(-1)^(i n) * Finset.dualCubeSign S n₋(D)`.
+* `TauCeti.OrientedPDCode.khovanovComplexMirrorIso_inv_f_apply`: the inverse isomorphism sends a
+  cochain `f` to the element whose state-`S` component pairs with `y` in the state `Sᶜ` of `D`
+  to `f(y)`, times the same sign.
 
 ## References
 
-* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §7.3,
-  Corollary 11.
+* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §7.3.
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*,
   Algebr. Geom. Topol. 2 (2002), §3.
 -/
@@ -91,8 +60,6 @@ open CategoryTheory CochainComplex Opposite Finset
 namespace TauCeti.OrientedPDCode
 
 universe u
-
-section Complex
 
 variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
   (j : ℤ)
@@ -202,28 +169,28 @@ code of `D`, on which `TauCeti.PDCode.mirrorResolutionCubeIso` pairs circle tens
 theorem khovanovComplexMirrorIso_hom_f_apply (hD' : D.mirror.toPDCode.IsPlanar) (i : ℤ)
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.mirror.negativeCrossingCount})
     (x : (D.mirror.toPDCode.resolutionCube hD' R
-      (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj S.1) :
+      (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj S.val) :
     HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
         (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
           ((D.mirror.khovanovComplexι hD' R j S).hom x)) =
-      ((i * n).negOnePow * S.1.dualCubeSign (D.negativeCrossingCount : ℤ)) •
-        (D.khovanovComplexπ hD R (-j) ⟨S.1ᶜ, by
-          have := card_compl_add_card S.1
+      ((i * n).negOnePow * S.val.dualCubeSign (D.negativeCrossingCount : ℤ)) •
+        (D.khovanovComplexπ hD R (-j) ⟨S.valᶜ, by
+          have := card_compl_add_card S.val
           have := D.positiveCrossingCount_add_negativeCrossingCount
-          have := S.2
+          have := S.property
           simp only [negativeCrossingCount_mirror, Fintype.card_fin] at *
           omega⟩ ≫ ModuleCat.ofHom
           (Khovanov.circleDuality R _ (PiTensorProduct.reindex R (fun _ ↦ DualNumber R)
             (PDCode.SmoothingEquiv.mirror D.toPDCode
-              (PDCode.cubeState_compl S.1)).symm.resolvedCircleCongr
+              (PDCode.cubeState_compl S.val)).symm.resolvedCircleCongr
               ((D.toPDCode.mirror.resolutionCubeι ((PDCode.isPlanar_mirror _).2 hD) R
                 (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)
-                  S.1).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
+                  S.val).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
                     (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                      S.1 = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
+                      S.val = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
                     (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                      S.1 by simp only [mirror_toPDCode])).hom x))) ∘ₗ
-            (D.toPDCode.resolutionCubeι hD R _ S.1ᶜ).hom)) := by
+                      S.val by simp only [mirror_toPDCode])).hom x))) ∘ₗ
+            (D.toPDCode.resolutionCubeι hD R _ S.valᶜ).hom)) := by
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp]
   simp only [khovanovComplexMirrorIso, Iso.trans_hom, HomologicalComplex.comp_f,
     Functor.mapIso_hom, khovanovComplexShiftIso_hom_f, khovanovComplexι_def, Category.assoc,
@@ -275,26 +242,26 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
     (f : HomComplex.Cochain (D.khovanovComplex hD R (-j))
       ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i)
     (y : (D.toPDCode.resolutionCube hD R
-      (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1ᶜ) :
+      (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.valᶜ) :
     Khovanov.circleDuality R _ (PiTensorProduct.reindex R (fun _ ↦ DualNumber R)
         (PDCode.SmoothingEquiv.mirror D.toPDCode
-          (PDCode.cubeState_compl S.1)).symm.resolvedCircleCongr
+          (PDCode.cubeState_compl S.val)).symm.resolvedCircleCongr
           ((D.toPDCode.mirror.resolutionCubeι ((PDCode.isPlanar_mirror _).2 hD) R
             (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)
-              S.1).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
+              S.val).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
                 (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                  S.1 = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
+                  S.val = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
                 (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                  S.1 by simp only [mirror_toPDCode])).hom
+                  S.val by simp only [mirror_toPDCode])).hom
               ((D.mirror.khovanovComplexπ hD' R j S).hom
                 (((D.khovanovComplexMirrorIso hD R j hD').inv.f i).hom f)))))
-        ((D.toPDCode.resolutionCubeι hD R _ S.1ᶜ).hom y) =
-      ((i * n).negOnePow * S.1.dualCubeSign (D.negativeCrossingCount : ℤ)) •
+        ((D.toPDCode.resolutionCubeι hD R _ S.valᶜ).hom y) =
+      ((i * n).negOnePow * S.val.dualCubeSign (D.negativeCrossingCount : ℤ)) •
         (HomComplex.Cochain.toSingleEquiv (neg_add_cancel i) f).hom
-          ((D.khovanovComplexι hD R (-j) ⟨S.1ᶜ, by
-            have := card_compl_add_card S.1
+          ((D.khovanovComplexι hD R (-j) ⟨S.valᶜ, by
+            have := card_compl_add_card S.val
             have := D.positiveCrossingCount_add_negativeCrossingCount
-            have := S.2
+            have := S.property
             simp only [negativeCrossingCount_mirror, Fintype.card_fin] at *
             omega⟩).hom y) := by
   -- Write `f` as the image of `z`, and `z` as the sum of its state components.
@@ -314,10 +281,10 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
   -- Only the state `S` pairs with the complementary state of `D`.
   have hιπ (T T' : {T : Finset (Fin n) // (#T : ℤ) = -i + D.negativeCrossingCount})
       (w : (D.toPDCode.resolutionCube hD R
-        (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.1) :
+        (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.val) :
       (D.khovanovComplexπ hD R (-j) T').hom ((D.khovanovComplexι hD R (-j) T).hom w) =
         if h : T = T' then (eqToHom (congrArg (fun T ↦ (D.toPDCode.resolutionCube hD R
-          (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.1) h)).hom w
+          (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.val) h)).hom w
         else 0 := by
     split_ifs with h
     · subst h
@@ -326,7 +293,7 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
     · rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, khovanovComplexι_π_of_ne _ _ _ _ h]
       rfl
   rw [Fintype.sum_eq_single S fun T h ↦ by
-    have h' : S.1 ≠ T.1 := fun e ↦ h (Subtype.ext e.symm)
+    have h' : S.val ≠ T.val := fun e ↦ h (Subtype.ext e.symm)
     simp only [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
       LinearMap.comp_apply, hιπ, Subtype.mk.injEq, compl_inj_iff, h', ↓reduceDIte, map_zero,
       smul_zero]]
@@ -335,544 +302,5 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
     Int.units_mul_self, Units.val_one, one_smul]
   -- The remaining transport of `y` is along a reflexive equality.
   rfl
-
-end Complex
-
-section Homology
-
-open CategoryTheory.Abelian
-
-section CommRing
-
-variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-  (hD' : D.mirror.toPDCode.IsPlanar) (R : Type u) [CommRing R] (i j : ℤ)
-
-/-- **Mirror Khovanov homology as cohomology of the dual complex.** Passing to cohomology in
-degree `i` along `TauCeti.OrientedPDCode.khovanovComplexMirrorIso` identifies `Khⁱʲ(D.mirror; R)`
-with `Hⁱ(Hom(C(D)_{-j}, R))`. -/
-def khovanovHomologyMirrorIso :
-    D.mirror.khovanovHomology hD' R i j ≅
-      (linearHomComplex R (D.khovanovComplex hD R (-j))
-        ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).homology i :=
-  HomologicalComplex.homologyMapIso (D.khovanovComplexMirrorIso hD R j hD') i
-
-/-- `khovanovHomologyMirrorIso` is the isomorphism on degree-`i` cohomology induced by
-`khovanovComplexMirrorIso`. -/
-lemma khovanovHomologyMirrorIso_def :
-    D.khovanovHomologyMirrorIso hD hD' R i j =
-      HomologicalComplex.homologyMapIso (D.khovanovComplexMirrorIso hD R j hD') i := by
-  rfl
-
-/-- `khovanovHomologyMirrorIso.hom` maps the homology class of a mirror cocycle `z` to the homology
-class of its image under `khovanovComplexMirrorIso.hom`. -/
-@[simp]
-lemma khovanovHomologyMirrorIso_hom_homologyπ
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] {i j : ℤ}
-    (z : (D.mirror.khovanovComplex hD' R j).cycles i) :
-    (D.khovanovHomologyMirrorIso hD hD' R i j).hom
-        ((D.mirror.khovanovComplex hD' R j).homologyπ i z) =
-      (linearHomComplex R (D.khovanovComplex hD R (-j))
-        ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).homologyπ i
-        (HomologicalComplex.cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z) := by
-  rw [khovanovHomologyMirrorIso_def, HomologicalComplex.homologyMapIso_hom,
-    HomologicalComplex.moduleCat_homologyMap_homologyπ]
-
-/-- `khovanovHomologyMirrorIso.inv` maps the homology class of a dual cocycle `φ` to the homology
-class of its image under `khovanovComplexMirrorIso.inv`. -/
-@[simp]
-lemma khovanovHomologyMirrorIso_inv_homologyπ
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] {i j : ℤ}
-    (φ : (linearHomComplex R (D.khovanovComplex hD R (-j))
-      ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).cycles i) :
-    (D.khovanovHomologyMirrorIso hD hD' R i j).inv
-        ((linearHomComplex R (D.khovanovComplex hD R (-j))
-          ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).homologyπ i φ) =
-      (D.mirror.khovanovComplex hD' R j).homologyπ i
-        (HomologicalComplex.cyclesMap (D.khovanovComplexMirrorIso hD R j hD').inv i φ) := by
-  rw [khovanovHomologyMirrorIso_def, HomologicalComplex.homologyMapIso_inv,
-    HomologicalComplex.moduleCat_homologyMap_homologyπ]
-
-/-- **The mirror Kronecker pairing** `Khⁱʲ(D.mirror; R) →ₗ[R] Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`:
-transports a mirror cohomology class along `khovanovHomologyMirrorIso` and evaluates the resulting
-dual cocycle class on `Kh⁻ⁱ,⁻ʲ(D; R)`. -/
-def khovanovMirrorKronecker :
-    D.mirror.khovanovHomology hD' R i j →ₗ[R]
-      Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
-  (ModuleCat.homLinearEquiv (R := R) (S := R)).toLinearMap ∘ₗ
-    (D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i ∘ₗ
-    (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.toLinearMap
-
-/-- `khovanovMirrorKronecker` factors as `khovanovHomologyMirrorIso` followed by
-`CochainComplex.kronecker` and `ModuleCat.homLinearEquiv`. -/
-lemma khovanovMirrorKronecker_def :
-    D.khovanovMirrorKronecker hD hD' R i j =
-      (ModuleCat.homLinearEquiv (R := R) (S := R)).toLinearMap ∘ₗ
-        (D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i ∘ₗ
-        (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.toLinearMap := by
-  rfl
-
-/-- Evaluation of `khovanovMirrorKronecker` in terms of `CochainComplex.kronecker` and
-`khovanovHomologyMirrorIso`. -/
-lemma khovanovMirrorKronecker_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] {i j : ℤ}
-    (x : D.mirror.khovanovHomology hD' R i j) :
-    D.khovanovMirrorKronecker hD hD' R i j x =
-      ((D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i
-        ((D.khovanovHomologyMirrorIso hD hD' R i j).hom x)).hom := by
-  simp only [khovanovMirrorKronecker_def, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Iso.toLinearEquiv_apply]
-  rfl
-
-/-- On homology classes of cycles, `khovanovMirrorKronecker` evaluates the mirror cocycle image of
-`z` on the underlying cycle of `w`. -/
-@[simp]
-theorem khovanovMirrorKronecker_homologyπ_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] {i j : ℤ}
-    (z : (D.mirror.khovanovComplex hD' R j).cycles i)
-    (w : (D.khovanovComplex hD R (-j)).cycles (-i)) :
-    D.khovanovMirrorKronecker hD hD' R i j
-        ((D.mirror.khovanovComplex hD' R j).homologyπ i z)
-        ((D.khovanovComplex hD R (-j)).homologyπ (-i) w) =
-      (HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
-        (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
-          ((D.mirror.khovanovComplex hD' R j).iCycles i z))).hom
-        ((D.khovanovComplex hD R (-j)).iCycles (-i) w) := by
-  have h := congrArg (fun f ↦ f.hom w)
-    ((D.khovanovComplex hD R (-j)).kronecker_homologyπ (k := R) (Y := ModuleCat.of R R) i
-      (HomologicalComplex.cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z))
-  rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-    HomologicalComplex.moduleCat_iCycles_cyclesMap_apply] at h
-  rw [khovanovMirrorKronecker_apply, khovanovHomologyMirrorIso_hom_homologyπ]
-  exact h
-
-/-- Over a self-injective commutative coefficient ring `R`, the mirror Kronecker pairing is an
-`R`-linear equivalence `Khⁱʲ(D.mirror; R) ≃ₗ[R] Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`. -/
-def khovanovHomologyMirrorDualEquivOfInjective [Injective (ModuleCat.of R R)] :
-    D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
-      Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    (((D.khovanovComplex hD R (-j)).kroneckerEquiv R (ModuleCat.of R R) i).trans
-      (ModuleCat.homLinearEquiv (R := R) (S := R)))
-
-@[simp]
-theorem khovanovHomologyMirrorDualEquivOfInjective_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [Injective (ModuleCat.of R R)] {i j : ℤ}
-    (x : D.mirror.khovanovHomology hD' R i j) :
-    D.khovanovHomologyMirrorDualEquivOfInjective hD hD' R i j x =
-      D.khovanovMirrorKronecker hD hD' R i j x := by
-  simp [khovanovHomologyMirrorDualEquivOfInjective, khovanovMirrorKronecker]
-
-end CommRing
-
-section PrincipalIdealRing
-
-variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-  (hD' : D.mirror.toPDCode.IsPlanar)
-  (R : Type u) [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] (i j : ℤ)
-
-/-- **The `Ext¹` inclusion into mirror Khovanov homology**: over a principal ideal ring `R`
-without zero divisors, the canonical `R`-linear injection
-`Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R) →ₗ[R] Khⁱʲ(D.mirror; R)`. Characterized on cocycles by
-`TauCeti.OrientedPDCode.khovanovMirrorExtToHomology_extClass_comp_mk₀`. -/
-def khovanovMirrorExtToHomology :
-    Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 →ₗ[R]
-      D.mirror.khovanovHomology hD' R i j :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
-    CochainComplex.extToHomology.{u} (D.khovanovComplex hD R (-j)) R
-      (ModuleCat.of R R) i
-
-/-- `khovanovMirrorExtToHomology` is `CochainComplex.extToHomology` transported along
-`(khovanovHomologyMirrorIso).symm`. -/
-lemma khovanovMirrorExtToHomology_def :
-    D.khovanovMirrorExtToHomology hD hD' R i j =
-      (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
-        CochainComplex.extToHomology.{u} (D.khovanovComplex hD R (-j)) R
-          (ModuleCat.of R R) i := by
-  rfl
-
-/-- Transporting `khovanovMirrorExtToHomology` along `khovanovHomologyMirrorIso.hom` recovers
-`CochainComplex.extToHomology`. -/
-@[simp]
-lemma khovanovHomologyMirrorIso_hom_khovanovMirrorExtToHomology
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1) :
-    (D.khovanovHomologyMirrorIso hD hD' R i j).hom
-        (D.khovanovMirrorExtToHomology hD hD' R i j e) =
-      CochainComplex.extToHomology.{u} (D.khovanovComplex hD R (-j)) R (ModuleCat.of R R) i e := by
-  rw [khovanovMirrorExtToHomology_def, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    ← Iso.toLinearEquiv_apply, LinearEquiv.apply_symm_apply]
-
-/-- **Characterization of `khovanovMirrorExtToHomology` on cocycles**: over a principal ideal ring
-`R` without zero divisors, the class in `Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R)` of a morphism
-`β : kernel ((D.khovanovComplex hD R (-j)).homologyπ (1 - i)) ⟶ ModuleCat.of R R` maps to the class
-of any mirror cocycle `z` whose image under `khovanovComplexMirrorIso` is
-`(D.khovanovComplex hD R (-j)).toBoundaries (-i) (1 - i) ≫ β`. -/
-lemma khovanovMirrorExtToHomology_extClass_comp_mk₀
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (β : Limits.kernel ((D.khovanovComplex hD R (-j)).homologyπ (1 - i)) ⟶ ModuleCat.of R R)
-    (z : (D.mirror.khovanovComplex hD' R j).cycles i)
-    (hz : HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
-        (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
-          ((D.mirror.khovanovComplex hD' R j).iCycles i z)) =
-      (D.khovanovComplex hD R (-j)).toBoundaries (-i) (1 - i) ≫ β) :
-    D.khovanovMirrorExtToHomology hD hD' R i j
-        ((TauCeti.kernelSequence_shortExact
-          ((D.khovanovComplex hD R (-j)).homologyπ (1 - i))).extClass.comp
-          (Ext.mk₀ β) (add_zero 1)) =
-      (D.mirror.khovanovComplex hD' R j).homologyπ i z := by
-  apply (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.injective
-  let e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 :=
-    (TauCeti.kernelSequence_shortExact
-      ((D.khovanovComplex hD R (-j)).homologyπ (1 - i))).extClass.comp
-      (Ext.mk₀ β) (add_zero 1)
-  -- Fold the `Ext` class as `e` and cross `Iso.toLinearEquiv_apply` so `rw` avoids an
-  -- `implicit`-transparency mismatch on `(ShortComplex.kernelSequence _).X₁`.
-  change (D.khovanovHomologyMirrorIso hD hD' R i j).hom
-      (D.khovanovMirrorExtToHomology hD hD' R i j e) =
-    (D.khovanovHomologyMirrorIso hD hD' R i j).hom
-      ((D.mirror.khovanovComplex hD' R j).homologyπ i z)
-  rw [khovanovHomologyMirrorIso_hom_khovanovMirrorExtToHomology,
-    khovanovHomologyMirrorIso_hom_homologyπ]
-  exact CochainComplex.extToHomology_extClass_comp_mk₀ (k := R) (Y := ModuleCat.of R R) i β
-    (HomologicalComplex.cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z)
-    (by rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]; exact hz)
-
-/-- **Injectivity on the left** in the mirror Khovanov universal coefficient sequence over a
-principal ideal ring `R` without zero divisors. -/
-theorem khovanovMirrorExtToHomology_injective :
-    Function.Injective (D.khovanovMirrorExtToHomology hD hD' R i j) :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.injective.comp
-    (CochainComplex.extToHomology_injective i)
-
-/-- **Exactness in the middle** of the mirror Khovanov universal coefficient sequence over a
-principal ideal ring `R` without zero divisors: the kernel of `khovanovMirrorKronecker` is the
-image of `khovanovMirrorExtToHomology`. -/
-theorem exact_khovanovMirrorExtToHomology_khovanovMirrorKronecker :
-    Function.Exact (D.khovanovMirrorExtToHomology hD hD' R i j)
-      (D.khovanovMirrorKronecker hD hD' R i j) := by
-  intro x
-  simp only [khovanovMirrorKronecker, khovanovMirrorExtToHomology, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearEquiv.map_eq_zero_iff,
-    (CochainComplex.exact_extToHomology_kronecker
-      (K := D.khovanovComplex hD R (-j)) (k := R) (Y := ModuleCat.of R R) i) _,
-    Set.mem_range, LinearEquiv.symm_apply_eq]
-
-/-- Over a principal ideal ring `R` without zero divisors, `khovanovMirrorKronecker` vanishes on
-the image of `khovanovMirrorExtToHomology`. -/
-@[simp]
-theorem khovanovMirrorKronecker_khovanovMirrorExtToHomology
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1) :
-    D.khovanovMirrorKronecker hD hD' R i j (D.khovanovMirrorExtToHomology hD hD' R i j e) = 0 :=
-  (D.exact_khovanovMirrorExtToHomology_khovanovMirrorKronecker hD hD' R i j).apply_apply_eq_zero e
-
-/-- Over a principal ideal ring `R` without zero divisors, a chosen `R`-linear section of
-`khovanovMirrorKronecker`, extending a linear form on `Kh⁻ⁱ,⁻ʲ(D; R)` along a cycle retraction of
-`C(D)_{-j}` in degree `-i` (`TauCeti.OrientedPDCode.khovanovMirrorKroneckerSection_apply`). -/
-def khovanovMirrorKroneckerSection :
-    Module.Dual R (D.khovanovHomology hD R (-i) (-j)) →ₗ[R]
-      D.mirror.khovanovHomology hD' R i j :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
-    (D.khovanovComplex hD R (-j)).kroneckerSection R (ModuleCat.of R R) i ∘ₗ
-    (ModuleCat.homLinearEquiv (M := D.khovanovHomology hD R (-i) (-j))
-      (N := ModuleCat.of R R) (R := R) (S := R)).symm.toLinearMap
-
-/-- `khovanovMirrorKroneckerSection` is `CochainComplex.kroneckerSection` transported along
-`ModuleCat.homLinearEquiv.symm` and `(khovanovHomologyMirrorIso).symm`. -/
-lemma khovanovMirrorKroneckerSection_def :
-    D.khovanovMirrorKroneckerSection hD hD' R i j =
-      (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.symm.toLinearMap ∘ₗ
-        (D.khovanovComplex hD R (-j)).kroneckerSection R (ModuleCat.of R R) i ∘ₗ
-        (ModuleCat.homLinearEquiv (M := D.khovanovHomology hD R (-i) (-j))
-          (N := ModuleCat.of R R) (R := R) (S := R)).symm.toLinearMap := by
-  rfl
-
-/-- Transporting `khovanovMirrorKroneckerSection` along `khovanovHomologyMirrorIso.hom` recovers
-`CochainComplex.kroneckerSection`. -/
-@[simp]
-lemma khovanovHomologyMirrorIso_hom_khovanovMirrorKroneckerSection
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (f : Module.Dual R (D.khovanovHomology hD R (-i) (-j))) :
-    (D.khovanovHomologyMirrorIso hD hD' R i j).hom
-        (D.khovanovMirrorKroneckerSection hD hD' R i j f) =
-      (D.khovanovComplex hD R (-j)).kroneckerSection R (ModuleCat.of R R) i
-        (ModuleCat.ofHom f) := by
-  rw [khovanovMirrorKroneckerSection_def, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, ← Iso.toLinearEquiv_apply, LinearEquiv.apply_symm_apply,
-    LinearEquiv.coe_coe, ModuleCat.homLinearEquiv_symm_apply]
-  rfl
-
-/-- **Characterization of `khovanovMirrorKroneckerSection` on cocycles**: over a principal ideal
-ring `R` without zero divisors, `khovanovMirrorKroneckerSection` sends `f` to the class of any
-mirror cocycle `z` whose image under `khovanovComplexMirrorIso` is
-`retraction ((D.khovanovComplex hD R (-j)).iCycles (-i)) ≫ homologyπ (-i) ≫ ModuleCat.ofHom f`. -/
-lemma khovanovMirrorKroneckerSection_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (f : Module.Dual R (D.khovanovHomology hD R (-i) (-j)))
-    (z : (D.mirror.khovanovComplex hD' R j).cycles i)
-    (hz : HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
-        (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
-          ((D.mirror.khovanovComplex hD' R j).iCycles i z)) =
-      retraction ((D.khovanovComplex hD R (-j)).iCycles (-i)) ≫
-        (D.khovanovComplex hD R (-j)).homologyπ (-i) ≫ ModuleCat.ofHom f) :
-    D.khovanovMirrorKroneckerSection hD hD' R i j f =
-      (D.mirror.khovanovComplex hD' R j).homologyπ i z := by
-  apply (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.injective
-  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
-    khovanovHomologyMirrorIso_hom_khovanovMirrorKroneckerSection,
-    khovanovHomologyMirrorIso_hom_homologyπ]
-  exact CochainComplex.kroneckerSection_apply i (ModuleCat.ofHom f)
-    (HomologicalComplex.cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z)
-    (by rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]; exact hz)
-
-@[simp]
-theorem khovanovMirrorKronecker_khovanovMirrorKroneckerSection
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (f : Module.Dual R (D.khovanovHomology hD R (-i) (-j))) :
-    D.khovanovMirrorKronecker hD hD' R i j
-        (D.khovanovMirrorKroneckerSection hD hD' R i j f) = f := by
-  simp [khovanovMirrorKronecker, khovanovMirrorKroneckerSection]
-
-/-- **Surjectivity on the right** in the mirror Khovanov universal coefficient sequence over a
-principal ideal ring `R` without zero divisors. -/
-theorem khovanovMirrorKronecker_surjective :
-    Function.Surjective (D.khovanovMirrorKronecker hD hD' R i j) :=
-  fun f ↦ ⟨D.khovanovMirrorKroneckerSection hD hD' R i j f,
-    khovanovMirrorKronecker_khovanovMirrorKroneckerSection f⟩
-
-/-- **Split universal coefficient decomposition for mirror Khovanov homology**: over a principal
-ideal ring `R` without zero divisors,
-`Khⁱʲ(D.mirror; R) ≃ₗ[R] Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R) × Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`. The splitting
-depends on a chosen cycle retraction in `C(D)_{-j}`. -/
-def khovanovHomologyMirrorUniversalCoefficientEquiv :
-    D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
-      Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 ×
-        Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    ((CochainComplex.universalCoefficientEquiv.{u} (D.khovanovComplex hD R (-j)) R
-      (ModuleCat.of R R) i).trans
-      (LinearEquiv.prodCongr (LinearEquiv.refl R _)
-        (ModuleCat.homLinearEquiv (R := R) (S := R))))
-
-/-- `khovanovHomologyMirrorUniversalCoefficientEquiv` transports
-`CochainComplex.universalCoefficientEquiv` along `khovanovHomologyMirrorIso` and
-`ModuleCat.homLinearEquiv`. -/
-lemma khovanovHomologyMirrorUniversalCoefficientEquiv_def :
-    D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j =
-      (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-        ((CochainComplex.universalCoefficientEquiv.{u} (D.khovanovComplex hD R (-j)) R
-          (ModuleCat.of R R) i).trans
-          (LinearEquiv.prodCongr (LinearEquiv.refl R _)
-            (ModuleCat.homLinearEquiv (R := R) (S := R)))) := by
-  rfl
-
-@[simp]
-theorem khovanovHomologyMirrorUniversalCoefficientEquiv_symm_inl
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1) :
-    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j).symm (e, 0) =
-      D.khovanovMirrorExtToHomology hD hD' R i j e := by
-  simp [khovanovHomologyMirrorUniversalCoefficientEquiv, khovanovMirrorExtToHomology]
-
-@[simp]
-theorem khovanovHomologyMirrorUniversalCoefficientEquiv_symm_inr
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (f : Module.Dual R (D.khovanovHomology hD R (-i) (-j))) :
-    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j).symm (0, f) =
-      D.khovanovMirrorKroneckerSection hD hD' R i j f := by
-  simp [khovanovHomologyMirrorUniversalCoefficientEquiv, khovanovMirrorKroneckerSection]
-
-theorem khovanovHomologyMirrorUniversalCoefficientEquiv_symm_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1)
-    (f : Module.Dual R (D.khovanovHomology hD R (-i) (-j))) :
-    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j).symm (e, f) =
-      D.khovanovMirrorExtToHomology hD hD' R i j e +
-        D.khovanovMirrorKroneckerSection hD hD' R i j f := by
-  have h : (e, f) = (e, 0) + (0, f) := by ext <;> simp
-  conv_lhs => rw [h]
-  rw [map_add, khovanovHomologyMirrorUniversalCoefficientEquiv_symm_inl,
-    khovanovHomologyMirrorUniversalCoefficientEquiv_symm_inr]
-
-/-- `khovanovHomologyMirrorUniversalCoefficientEquiv` sends `khovanovMirrorExtToHomology e` to
-`(e, 0)`. -/
-@[simp]
-theorem khovanovHomologyMirrorUniversalCoefficientEquiv_khovanovMirrorExtToHomology
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1) :
-    D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j
-        (D.khovanovMirrorExtToHomology hD hD' R i j e) =
-      (e, 0) := by
-  rw [← khovanovHomologyMirrorUniversalCoefficientEquiv_symm_inl, LinearEquiv.apply_symm_apply]
-
-/-- `khovanovHomologyMirrorUniversalCoefficientEquiv` sends `khovanovMirrorKroneckerSection f` to
-`(0, f)`. -/
-@[simp]
-theorem khovanovHomologyMirrorUniversalCoefficientEquiv_khovanovMirrorKroneckerSection
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (f : Module.Dual R (D.khovanovHomology hD R (-i) (-j))) :
-    D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j
-        (D.khovanovMirrorKroneckerSection hD hD' R i j f) =
-      (0, f) := by
-  rw [← khovanovHomologyMirrorUniversalCoefficientEquiv_symm_inr, LinearEquiv.apply_symm_apply]
-
-@[simp]
-theorem khovanovHomologyMirrorUniversalCoefficientEquiv_apply_snd
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (x : D.mirror.khovanovHomology hD' R i j) :
-    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j x).2 =
-      D.khovanovMirrorKronecker hD hD' R i j x := by
-  simp [khovanovHomologyMirrorUniversalCoefficientEquiv, khovanovMirrorKronecker]
-
-/-- Over a principal ideal ring `R` without zero divisors, when `Kh¹⁻ⁱ,⁻ʲ(D; R)` is projective,
-`Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R)` vanishes and the mirror Kronecker pairing is a canonical `R`-linear
-equivalence `Khⁱʲ(D.mirror; R) ≃ₗ[R] Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))`. -/
-def khovanovHomologyMirrorDualEquivOfProjective
-    [Module.Projective R (D.khovanovHomology hD R (1 - i) (-j))] :
-    D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
-      Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    (((D.khovanovComplex hD R (-j)).kroneckerEquivOfProjectiveHomology R
-      (ModuleCat.of R R) i).trans
-      (ModuleCat.homLinearEquiv (R := R) (S := R)))
-
-@[simp]
-theorem khovanovHomologyMirrorDualEquivOfProjective_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [NoZeroDivisors R] [IsPrincipalIdealRing R] {i j : ℤ}
-    [Module.Projective R (D.khovanovHomology hD R (1 - i) (-j))]
-    (x : D.mirror.khovanovHomology hD' R i j) :
-    D.khovanovHomologyMirrorDualEquivOfProjective hD hD' R i j x =
-      D.khovanovMirrorKronecker hD hD' R i j x := by
-  simp [khovanovHomologyMirrorDualEquivOfProjective, khovanovMirrorKronecker]
-
-/-- Over a principal ideal ring `R` without zero divisors, if `Kh¹⁻ⁱ,⁻ʲ(D; R)` is projective and
-`Kh⁻ⁱ,⁻ʲ(D; R)` is zero, then `Khⁱʲ(D.mirror; R)` is zero. -/
-theorem isZero_khovanovHomology_mirror_of_projective
-    [Module.Projective R (D.khovanovHomology hD R (1 - i) (-j))]
-    (h : Limits.IsZero (D.khovanovHomology hD R (-i) (-j))) :
-    Limits.IsZero (D.mirror.khovanovHomology hD' R i j) :=
-  (CochainComplex.isZero_homology_linearHomComplex_singleFunctor_obj_of_projective_homology
-    (k := R) (Y := ModuleCat.of R R) i h).of_iso (D.khovanovHomologyMirrorIso hD hD' R i j)
-
-end PrincipalIdealRing
-
-section PrincipalIdealDomain
-
-variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-  (hD' : D.mirror.toPDCode.IsPlanar)
-  (R : Type u) [CommRing R] [IsDomain R] [IsPrincipalIdealRing R] (i j : ℤ)
-
-/-- Over a principal ideal domain, the image of `khovanovMirrorExtToHomology` is the torsion
-submodule of `Khⁱʲ(D.mirror; R)`. -/
-@[simp]
-theorem range_khovanovMirrorExtToHomology :
-    LinearMap.range (D.khovanovMirrorExtToHomology hD hD' R i j) =
-      Submodule.torsion R (D.mirror.khovanovHomology hD' R i j) := by
-  rw [khovanovMirrorExtToHomology, LinearMap.range_comp,
-    CochainComplex.range_extToHomology_eq_torsion]
-  ext x
-  simp only [Submodule.mem_map, LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq, exists_eq_right,
-    Submodule.mem_torsion_iff, Submonoid.smul_def, ← map_smul, LinearEquiv.map_eq_zero_iff]
-
-/-- **Canonical torsion duality for mirror Khovanov homology.** Over a principal ideal domain (in
-particular over `ℤ`), `Ext¹_R(Kh¹⁻ⁱ,⁻ʲ(D; R), R)` is canonically `R`-linearly equivalent to the
-torsion submodule of `Khⁱʲ(D.mirror; R)`, with no choice of cycle retraction. -/
-def khovanovMirrorExtEquivTorsion :
-    Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 ≃ₗ[R]
-      Submodule.torsion R (D.mirror.khovanovHomology hD' R i j) :=
-  (LinearEquiv.ofInjective (D.khovanovMirrorExtToHomology hD hD' R i j)
-    (D.khovanovMirrorExtToHomology_injective hD hD' R i j)).trans
-    (LinearEquiv.ofEq _ _ (D.range_khovanovMirrorExtToHomology hD hD' R i j))
-
-@[simp]
-theorem coe_khovanovMirrorExtEquivTorsion_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1) :
-    (D.khovanovMirrorExtEquivTorsion hD hD' R i j e : D.mirror.khovanovHomology hD' R i j) =
-      D.khovanovMirrorExtToHomology hD hD' R i j e := by
-  simp [khovanovMirrorExtEquivTorsion]
-
-/-- **Canonical torsion-free quotient duality for mirror Khovanov homology.** Over a principal
-ideal domain, the quotient of `Khⁱʲ(D.mirror; R)` by its torsion submodule is canonically
-`R`-linearly equivalent to `Module.Dual R (Kh⁻ⁱ,⁻ʲ(D; R))` via `khovanovMirrorKronecker`. -/
-def khovanovMirrorModTorsionEquivDual :
-    (D.mirror.khovanovHomology hD' R i j ⧸
-        Submodule.torsion R (D.mirror.khovanovHomology hD' R i j)) ≃ₗ[R]
-      Module.Dual R (D.khovanovHomology hD R (-i) (-j)) :=
-  have hker :=
-    (D.exact_khovanovMirrorExtToHomology_khovanovMirrorKronecker hD hD' R i j).linearMap_ker_eq
-  (Submodule.quotEquivOfEq _ _
-    (hker.trans (D.range_khovanovMirrorExtToHomology hD hD' R i j)).symm).trans
-    ((D.khovanovMirrorKronecker hD hD' R i j).quotKerEquivOfSurjective
-      (D.khovanovMirrorKronecker_surjective hD hD' R i j))
-
-@[simp]
-theorem khovanovMirrorModTorsionEquivDual_mk
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {R : Type u} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R] {i j : ℤ}
-    (x : D.mirror.khovanovHomology hD' R i j) :
-    D.khovanovMirrorModTorsionEquivDual hD hD' R i j (Submodule.Quotient.mk x) =
-      D.khovanovMirrorKronecker hD hD' R i j x := by
-  simp [khovanovMirrorModTorsionEquivDual]
-
-omit hD in
-/-- **Free-rank mirror symmetry of Khovanov homology.** Over any principal ideal domain `R` (in
-particular over `ℤ` and over any field), `Khⁱʲ(D.mirror; R)` and `Kh⁻ⁱ,⁻ʲ(D; R)` have the same
-`finrank`. -/
-@[simp]
-theorem finrank_khovanovHomology_mirror :
-    Module.finrank R (D.mirror.khovanovHomology hD' R i j) =
-      Module.finrank R
-        (D.khovanovHomology
-          ((PDCode.isPlanar_mirror D.toPDCode).1 (by rwa [← mirror_toPDCode])) R (-i) (-j)) :=
-  (D.khovanovHomologyMirrorIso _ hD' R i j).toLinearEquiv.finrank_eq.trans
-    ((D.khovanovComplex _ R (-j)).finrank_homology_linearHomComplex_singleFunctor_obj i)
-
-end PrincipalIdealDomain
-
-section Field
-
-variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
-  (hD' : D.mirror.toPDCode.IsPlanar) (K : Type u) [Field K] (i j : ℤ)
-
-/-- **Field mirror duality for Khovanov homology** (Khovanov, Corollary 11): over a field `K`, the
-mirror Kronecker pairing is a canonical `K`-linear equivalence
-`Khⁱʲ(D.mirror; K) ≃ₗ[K] Module.Dual K (Kh⁻ⁱ,⁻ʲ(D; K))`. -/
-def khovanovHomologyMirrorDualEquiv :
-    D.mirror.khovanovHomology hD' K i j ≃ₗ[K]
-      Module.Dual K (D.khovanovHomology hD K (-i) (-j)) :=
-  D.khovanovHomologyMirrorDualEquivOfProjective hD hD' K i j
-
-@[simp]
-theorem khovanovHomologyMirrorDualEquiv_apply
-    {D : OrientedPDCode n} {hD : D.toPDCode.IsPlanar} {hD' : D.mirror.toPDCode.IsPlanar}
-    {K : Type u} [Field K] {i j : ℤ}
-    (x : D.mirror.khovanovHomology hD' K i j) :
-    D.khovanovHomologyMirrorDualEquiv hD hD' K i j x =
-      D.khovanovMirrorKronecker hD hD' K i j x := by
-  simp [khovanovHomologyMirrorDualEquiv]
-
-end Field
-
-end Homology
 
 end TauCeti.OrientedPDCode

@@ -6,20 +6,46 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Coalgebra.GroupLike
+public import Mathlib.RingTheory.Flat.Basic
 
 /-!
-# Transport of group-like elements along coalgebra equivalences
+# Transport of group-like elements along coalgebra morphisms
 
 A coalgebra equivalence preserves the group-like equations in both directions and therefore
-induces an equivalence of group-like elements.
+induces an equivalence of group-like elements. An injective morphism of flat coalgebras still
+reflects them, because its tensor square is injective.
 
 ## Main declarations
 
 * `CoalgEquiv.mapGroupLike`: the equivalence of group-like elements induced by a coalgebra
   equivalence, compatible with `CoalgEquiv.refl`, `CoalgEquiv.trans` and `CoalgEquiv.symm`.
+* `TauCeti.isGroupLikeElem_map_iff_of_injective`: an injective morphism of flat coalgebras reflects
+  group-like elements.
 -/
 
 public section
+
+namespace TauCeti
+
+section Injective
+
+variable {R A B F : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B] [Module R A]
+  [Module R B] [Coalgebra R A] [Coalgebra R B] [Module.Flat R A] [Module.Flat R B]
+  [FunLike F A B] [CoalgHomClass F R A B]
+
+/-- An injective morphism of flat coalgebras reflects group-like elements: an element is
+group-like as soon as its image is. Over a field every coalgebra is flat. -/
+theorem isGroupLikeElem_map_iff_of_injective (f : F) (hf : Function.Injective f) {a : A} :
+    IsGroupLikeElem R (f a) ↔ IsGroupLikeElem R a := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, .map f⟩
+  · rw [← CoalgHomClass.counit_comp_apply f a, h.counit_eq_one]
+  · apply TensorProduct.map_injective_of_flat_flat (f : A →ₗ[R] B) (f : A →ₗ[R] B) hf hf
+    rw [CoalgHomClass.map_comp_comul_apply, TensorProduct.map_tmul]
+    exact h.comul_eq_tmul_self
+
+end Injective
+
+end TauCeti
 
 namespace CoalgEquiv
 

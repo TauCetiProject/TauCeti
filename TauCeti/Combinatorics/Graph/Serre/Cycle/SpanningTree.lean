@@ -136,19 +136,19 @@ noncomputable def cycleBasis : Module.Basis ↥(O \ T.darts) R (Γ.incidenceBoun
 spanning forest of positive tree darts. -/
 theorem cycleBasis_apply (e : ↥(O \ T.darts)) :
     T.cycleBasis hO R e =
-      (T.isSpanningForest hO).cycleBasis R ⟨e.1, e.2.1, fun h => e.2.2 h.1⟩ := by
+      (T.isSpanningForest hO).cycleBasis R ⟨e.val, e.property.1, fun h => e.property.2 h.1⟩ := by
   simp [cycleBasis]
 
 /-- The coefficient of the fundamental cycle of a positive dart outside the tree in a cycle is the
 coordinate of the cycle at that dart. -/
 @[simp] theorem cycleBasis_repr (c : (Γ.incidenceBoundary O R).ker) (e : ↥(O \ T.darts)) :
-    (T.cycleBasis hO R).repr c e = c.val ⟨e.1, e.2.1⟩ := by
+    (T.cycleBasis hO R).repr c e = c.val ⟨e.val, e.property.1⟩ := by
   simp [cycleBasis]
 
 /-- The fundamental cycles of the tree have unit coordinates at the positive darts outside the
 tree. -/
 @[simp] theorem cycleBasis_apply_chord (e f : ↥(O \ T.darts)) :
-    (T.cycleBasis hO R e).val ⟨f.1, f.2.1⟩ = Finsupp.single e (1 : R) f := by
+    (T.cycleBasis hO R e).val ⟨f.val, f.property.1⟩ = Finsupp.single e (1 : R) f := by
   rw [← T.cycleBasis_repr hO]
   simp
 
@@ -161,8 +161,8 @@ the unit vector of its dart. -/
 
 /-- The fundamental cycle of a positive loop dart outside the tree is the unit chain on that
 loop. -/
-theorem cycleBasis_of_loop (e : ↥(O \ T.darts)) (he : Γ.src e.1 = Γ.tgt e.1) :
-    (T.cycleBasis hO R e).val = Finsupp.single ⟨e.1, e.2.1⟩ 1 := by
+theorem cycleBasis_of_loop (e : ↥(O \ T.darts)) (he : Γ.src e.val = Γ.tgt e.val) :
+    (T.cycleBasis hO R e).val = Finsupp.single ⟨e.val, e.property.1⟩ 1 := by
   simp [cycleBasis_apply, IsSpanningForest.cycleBasis_of_loop, he]
 
 /-- Extension of scalars sends `r ⊗` an integral fundamental cycle of a spanning tree to `r` times
@@ -200,7 +200,7 @@ theorem card_diff_add_card [Finite O] :
     ((Set.finite_range Γ.tgt).insert v).subset fun w _ => by
       cases T.path v w with
       | nil => exact .inl rfl
-      | cons _ e => exact .inr ⟨e.1, e.2.2⟩
+      | cons _ e => exact .inr ⟨e.val, e.property.2⟩
   have h := Set.ncard_inter_add_ncard_sdiff_eq_ncard O T.darts (Set.toFinite O)
   have h' := T.card_inter_add_one hO
   rw [Set.inter_comm] at h'

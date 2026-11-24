@@ -68,7 +68,7 @@ lemma lift_ι (N : M.Submodule) (φ : P ⟶ M)
 /-- The inclusion `N.ι` sends every section of `N` into the defining submodule. -/
 lemma ι_app_mem (N : M.Submodule) (U : Cᵒᵖ) (s : N.toPresheafOfModules.obj U) :
     N.ι.app U s ∈ N.obj U :=
-  s.2
+  s.property
 
 /-- The image of the inclusion `N.ι` on sections is the defining submodule. -/
 @[simp]
@@ -86,7 +86,7 @@ lemma isIso_lift (N : M.Submodule) (φ : P ⟶ M)
   have (U : Cᵒᵖ) : IsIso ((N.lift φ hφ).app U) := by
     rw [ConcreteCategory.isIso_iff_bijective]
     refine ⟨fun a b hab ↦ hinj U (by simpa using congrArg Subtype.val hab), fun s ↦ ?_⟩
-    obtain ⟨t, ht⟩ := hsurj U s.1 s.2
+    obtain ⟨t, ht⟩ := hsurj U s.val s.property
     exact ⟨t, Subtype.ext (by simpa using ht)⟩
   exact (isoMk (fun U ↦ asIso ((N.lift φ hφ).app U))
     fun _ _ f ↦ (N.lift φ hφ).naturality f).isIso_hom

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Commute
 public import Mathlib.Algebra.Ring.Equiv
 import Mathlib.Data.Nat.Cast.Basic
+import Mathlib.Tactic.Abel
 
 /-!
 # Multiplicative maps, ring homomorphisms, and ring equivalences
@@ -15,6 +16,11 @@ import Mathlib.Data.Nat.Cast.Basic
 The element `-1` squares to `1`. A multiplicative map into a ring without zero divisors
 therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
 unit-valued characters after composing with the coercion homomorphism.
+
+A multiplicative map `f` from a monoid to a ring need not send `1` to `1`, but `f 1` is then an
+idempotent, and `a ↦ f a + (1 - f 1)` is a monoid homomorphism: it acts as `f` on the range of
+`f 1` and as the identity on the range of `1 - f 1`. This is how a nonunital representation of a
+unital algebra still lets its invertible elements act by invertible operators.
 
 A ring homomorphism fixes natural number casts, so it preserves membership statements of the form
 `n ^ k * x ∈ A`: if it maps `A` into `B`, then `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`. This
@@ -29,6 +35,8 @@ along field and completion isomorphisms.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
+  to a ring, which is a monoid homomorphism.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
@@ -68,6 +76,30 @@ theorem natCast_pow_mul_apply_mem {R S F : Type*} [Semiring R] [Semiring S]
   simpa only [map_mul, map_pow, map_natCast] using hf hx
 
 end Set.MapsTo
+
+namespace MulHom
+
+variable {M R : Type*} [MulOneClass M] [NonAssocRing R]
+
+/-- The **unitization** `a ↦ f a + (1 - f 1)` of a multiplicative map `f` from a monoid to a
+ring: it agrees with `f` on the range of the idempotent `f 1` and is the identity on the range of
+`1 - f 1`, so it is multiplicative and unital even when `f` does not preserve `1`. -/
+def unitize (f : M →ₙ* R) : M →* R where
+  toFun a := f a + (1 - f 1)
+  map_one' := add_sub_cancel _ _
+  map_mul' a b := by
+    have h₁ : f a * f 1 = f a := by rw [← map_mul, mul_one]
+    have h₂ : f 1 * f b = f b := by rw [← map_mul, one_mul]
+    have h₃ : f 1 * f 1 = f 1 := by rw [← map_mul, mul_one]
+    simp only [map_mul, mul_add, add_mul, mul_sub, sub_mul, mul_one, one_mul, h₁, h₂, h₃]
+    abel
+
+/-- The unitization of `f` sends `a` to `f a + (1 - f 1)`. -/
+@[simp]
+theorem unitize_apply (f : M →ₙ* R) (a : M) : f.unitize a = f a + (1 - f 1) :=
+  (rfl)
+
+end MulHom
 
 namespace RingEquiv
 

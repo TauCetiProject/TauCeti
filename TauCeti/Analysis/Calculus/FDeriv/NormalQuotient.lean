@@ -16,6 +16,12 @@ The normal fiber of a map `u` at `x` is the quotient by the actual derivative im
 `range (d(Φ ∘ u) x)`, so it induces the map of normal quotients `normalFDerivMap`, built with
 `Submodule.mapQ`. It does not require `u` to be immersive or `Φ` to be invertible.
 
+Precomposing with a source map `ψ` goes the other way: the derivative image of `u ∘ ψ` at `y`
+lies in that of `u` at `ψ y`, with equality when `dψ y` is surjective. So the normal fiber of
+`u ∘ ψ` maps onto that of `u` by `Submodule.factor`, and the two are identified by
+`Submodule.quotEquivOfEq` when `ψ` is a submersion at `y`, for instance a local
+reparametrization.
+
 ## Main results
 
 * `TauCeti.normalFDerivMap_id`, `TauCeti.normalFDerivMap_comp`: functoriality in the target
@@ -23,6 +29,9 @@ The normal fiber of a map `u` at `x` is the quotient by the actual derivative im
 * `TauCeti.normalFDerivMap_injective`, `TauCeti.normalFDerivMap_surjective`,
   `TauCeti.normalFDerivMap_bijective`: the induced map inherits injectivity, surjectivity and
   bijectivity from the differential of the target map.
+* `TauCeti.range_fderiv_comp_le_range_fderiv`, `TauCeti.range_fderiv_comp_eq_range_fderiv`:
+  precomposition with a source map shrinks the derivative image, and preserves it when the
+  differential of the source map is surjective.
 -/
 
 public section
@@ -124,5 +133,27 @@ theorem normalFDerivMap_bijective (u : U → V) (Φ : V → W) (x : U)
     (h : Function.Bijective (fderiv 𝕜 Φ (u x))) :
     Function.Bijective (normalFDerivMap 𝕜 u Φ x) :=
   ⟨normalFDerivMap_injective u Φ x hu hΦ h.1, normalFDerivMap_surjective u Φ x h.2⟩
+
+section Source
+
+variable {U' : Type*} [NormedAddCommGroup U'] [NormedSpace 𝕜 U']
+
+/-- The derivative image of `u ∘ ψ` at `y` lies in the derivative image of `u` at `ψ y`. Both
+maps must be differentiable: otherwise `fderiv` is zero on one side only. -/
+theorem range_fderiv_comp_le_range_fderiv (u : U → V) (ψ : U' → U) (y : U')
+    (hu : DifferentiableAt 𝕜 u (ψ y)) (hψ : DifferentiableAt 𝕜 ψ y) :
+    (fderiv 𝕜 (u ∘ ψ) y).toLinearMap.range ≤ (fderiv 𝕜 u (ψ y)).toLinearMap.range := by
+  rw [fderiv_comp y hu hψ, ContinuousLinearMap.toLinearMap_comp]
+  exact LinearMap.range_comp_le_range _ _
+
+/-- A source map with surjective differential does not change the derivative image. -/
+theorem range_fderiv_comp_eq_range_fderiv (u : U → V) (ψ : U' → U) (y : U')
+    (hu : DifferentiableAt 𝕜 u (ψ y)) (hψ : DifferentiableAt 𝕜 ψ y)
+    (h : Function.Surjective (fderiv 𝕜 ψ y)) :
+    (fderiv 𝕜 (u ∘ ψ) y).toLinearMap.range = (fderiv 𝕜 u (ψ y)).toLinearMap.range := by
+  rw [fderiv_comp y hu hψ, ContinuousLinearMap.toLinearMap_comp]
+  exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 h)
+
+end Source
 
 end TauCeti

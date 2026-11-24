@@ -59,9 +59,9 @@ theorem norm_fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (hb : 0 < b) (z : E) :
 
 omit [InnerProductSpace ℝ E] in
 /-- The factor `‖z‖ / √(b + ‖z‖²)` in the logarithmic gradient is at most `1`. -/
-theorem norm_div_sqrt_add_norm_sq_le_one (hb : 0 ≤ b) (z : E) : ‖z‖ / √(b + ‖z‖ ^ 2) ≤ 1 :=
-  div_le_one_of_le₀ ((Real.le_sqrt (norm_nonneg z) (by positivity)).2 (by linarith))
-    (Real.sqrt_nonneg _)
+theorem norm_div_sqrt_add_norm_sq_le_one (hb : 0 ≤ b) (z : E) : ‖z‖ / √(b + ‖z‖ ^ 2) ≤ 1 := by
+  simpa only [abs_div, abs_norm, abs_of_nonneg (Real.sqrt_nonneg _), add_comm] using
+    Real.abs_div_sqrt_sq_add_le_one hb ‖z‖
 
 /-- The logarithmic gradient of the regularized radial exponential weight has norm
 at most `|c|`, with no restriction on the sign of `c`. -/

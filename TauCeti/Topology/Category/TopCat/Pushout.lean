@@ -12,6 +12,7 @@ import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Pullbacks
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import Mathlib.Topology.LocallyFinite
+import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 /-!
 # Maps and homotopies out of pushouts in `TopCat`
@@ -45,6 +46,10 @@ closed embedding.
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
+* `CategoryTheory.IsPushout.of_isClosedEmbedding_of_range_union_range`: a cover by two closed
+  subspaces meeting along a prescribed subspace is a pushout square.
+* `CategoryTheory.IsPushout.of_isPushout_forget`: a square whose underlying square of sets is a
+  pushout, and whose corner carries the final topology of the two maps into it, is a pushout.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -280,7 +285,50 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
       rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hk,
         (desc s).choose_spec.2 k]
 
+/-- **A cover by two closed subspaces is a pushout.** Let `X` be covered by the ranges of two
+closed embeddings `i : A ⟶ X` and `j : B ⟶ X` which meet exactly along `S`: the square
+`g ≫ i = m ≫ j` commutes, and every point `i a = j b` comes from a point `s` of `S` with `g s = a`
+and `m s = b`. Then `X` is the pushout of `A` and `B` along `S`. This is the one-piece case of
+`CategoryTheory.IsPushout.of_isClosedEmbedding`, without the coproducts. -/
+theorem of_isClosedEmbedding_of_range_union_range {S A B X : TopCat.{u}} {g : S ⟶ A}
+    {m : S ⟶ B} {i : A ⟶ X} {j : B ⟶ X} (w : g ≫ i = m ≫ j) (hi : IsClosedEmbedding i)
+    (hj : IsClosedEmbedding j) (hcover : range i ∪ range j = univ)
+    (hij : ∀ a b, i a = j b → ∃ s, g s = a ∧ m s = b) :
+    IsPushout g m i j := by
+  let desc (s : PushoutCocone g m) : X ⟶ s.pt :=
+    TopCat.ofHom (ContinuousMap.glueClosedEmbeddings s.inl.hom s.inr.hom hi hj hcover
+      fun a b h ↦ by
+        obtain ⟨t, rfl, rfl⟩ := hij a b h
+        exact ConcreteCategory.congr_hom s.condition t)
+  refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w desc
+    (fun s ↦ by ext; simp [desc]) (fun s ↦ by ext; simp [desc]) fun s d h₁ h₂ ↦
+      TopCat.hom_ext (ContinuousMap.eq_glueClosedEmbeddings (ConcreteCategory.congr_hom h₁)
+        (ConcreteCategory.congr_hom h₂)))
+
 end ClosedCover
+
+section Forget
+
+open Limits
+
+/-- **Pushouts in `TopCat` from pushouts of sets.** A commutative square in `TopCat` is a pushout
+when its underlying square of sets is a pushout and the corner `P` carries the final topology of
+the two maps into it: a set is open as soon as its preimages under `i` and `j` are open. -/
+theorem of_isPushout_forget {S A B P : TopCat.{u}} {f : S ⟶ A} {g : S ⟶ B} {i : A ⟶ P}
+    {j : B ⟶ P}
+    (h : IsPushout ((forget TopCat).map f) ((forget TopCat).map g) ((forget TopCat).map i)
+      ((forget TopCat).map j))
+    (hP : ∀ s : Set P, IsOpen (i ⁻¹' s) → IsOpen (j ⁻¹' s) → IsOpen s) : IsPushout f g i j := by
+  have w : f ≫ i = g ≫ j :=
+    (forget TopCat).map_injective (by rw [Functor.map_comp, Functor.map_comp]; exact h.w)
+  refine ⟨⟨w⟩, ⟨Classical.choice <| (TopCat.nonempty_isColimit_iff_eq_coinduced _
+    ((isColimitMapCoconePushoutCoconeEquiv _ w).symm h.isColimit)).2 ?_⟩⟩
+  refine le_antisymm (TopologicalSpace.le_def.2 fun s hs ↦ ?_)
+    (iSup_le fun k ↦ (PushoutCocone.mk i j w).ι.app k |>.hom.continuous.coinduced_le)
+  rw [isOpen_iSup_iff] at hs
+  exact hP s (hs WalkingSpan.left) (hs WalkingSpan.right)
+
+end Forget
 
 end CategoryTheory.IsPushout
 

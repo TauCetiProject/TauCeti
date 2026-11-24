@@ -300,7 +300,7 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
     ⟨Equiv.ofBijective m ⟨hm, surjective_of_eventually_mem_end hgc hgne hginf hc₀ hgU hE'd
       (fun k => (hE'E k).trans (hEU k)) hE'b hmE⟩, rfl⟩
   set a' : κ → ℝ := fun k => (μ.symm k : ℝ)
-  have hga' (k : κ) : g (a' k) = 0 := (μ.symm k).2
+  have hga' (k : κ) : g (a' k) = 0 := (μ.symm k).property
   have hfa' (k : κ) : ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((a' k : ℝ) : ℂ), f z ∈ E k := by
     simpa using (hmE (μ.symm k)).mono fun z hz => hE'E _ hz
   have hinj : Injective (Sum.elim a a') :=

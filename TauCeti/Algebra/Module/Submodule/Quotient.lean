@@ -88,23 +88,23 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 submodules in the interval from `p` to `q`. -/
 private def iciSubmoduleOrderIsoIcc {p q : Submodule R M} (r : Submodule R q)
     (hr : r.map q.subtype = p) : Set.Ici r ≃o Set.Icc p q where
-  toFun N := ⟨(q.mapIic N.1 : Submodule R M), by
-    refine ⟨?_, (q.mapIic N.1).2⟩
+  toFun N := ⟨(q.mapIic N.val : Submodule R M), by
+    refine ⟨?_, (q.mapIic N.val).property⟩
     rw [coe_mapIic_apply, ← hr]
-    exact map_mono N.2⟩
-  invFun N := ⟨q.mapIic.symm ⟨N.1, N.2.2⟩, by
+    exact map_mono N.property⟩
+  invFun N := ⟨q.mapIic.symm ⟨N.val, N.property.2⟩, by
     rw [mapIic_symm_apply]
-    exact (le_comap_map q.subtype r).trans (comap_mono (hr.le.trans N.2.1))⟩
-  left_inv N := Subtype.ext (q.mapIic.symm_apply_apply N.1)
+    exact (le_comap_map q.subtype r).trans (comap_mono (hr.le.trans N.property.1))⟩
+  left_inv N := Subtype.ext (q.mapIic.symm_apply_apply N.val)
   right_inv N := Subtype.ext <| congrArg (fun P : Set.Iic q ↦ (P : Submodule R M))
-    (q.mapIic.apply_symm_apply ⟨N.1, N.2.2⟩)
+    (q.mapIic.apply_symm_apply ⟨N.val, N.property.2⟩)
   map_rel_iff' := Subtype.coe_le_coe.trans q.mapIic.le_iff_le
 
 private theorem coe_iciSubmoduleOrderIsoIcc_symm_apply {p q : Submodule R M}
     (r : Submodule R q) (hr : r.map q.subtype = p) (N : Set.Icc p q) :
-    (((iciSubmoduleOrderIsoIcc r hr).symm N).1 : Submodule R q) =
-      N.1.comap q.subtype :=
-  mapIic_symm_apply q ⟨N.1, N.2.2⟩
+    (((iciSubmoduleOrderIsoIcc r hr).symm N).val : Submodule R q) =
+      N.val.comap q.subtype :=
+  mapIic_symm_apply q ⟨N.val, N.property.2⟩
 
 end Order
 
@@ -123,10 +123,10 @@ when its underlying ambient element belongs to the corresponding interval submod
 theorem mk_mem_iccOrderIsoQuotientOfMapEq_iff {p q : Submodule R M} (r : Submodule R q)
     (hr : r.map q.subtype = p) (N : Set.Icc p q) (x : q) :
     Submodule.Quotient.mk x ∈ iccOrderIsoQuotientOfMapEq r hr N ↔
-      (x : M) ∈ N.1 := by
+      (x : M) ∈ N.val := by
   rw [iccOrderIsoQuotientOfMapEq, OrderIso.trans_apply]
   have hcomap : ((comapMkQRelIso r).symm ((iciSubmoduleOrderIsoIcc r hr).symm N)).comap r.mkQ =
-      (((iciSubmoduleOrderIsoIcc r hr).symm N).1 : Submodule R q) :=
+      (((iciSubmoduleOrderIsoIcc r hr).symm N).val : Submodule R q) :=
     congrArg Subtype.val
       ((comapMkQRelIso r).apply_symm_apply ((iciSubmoduleOrderIsoIcc r hr).symm N))
   rw [← r.mkQ_apply, ← mem_comap, hcomap, coe_iciSubmoduleOrderIsoIcc_symm_apply, mem_comap,
@@ -138,7 +138,7 @@ when its quotient class belongs to `Q`. -/
 theorem mem_iccOrderIsoQuotientOfMapEq_symm_apply_iff {p q : Submodule R M}
     (r : Submodule R q)
     (hr : r.map q.subtype = p) (Q : Submodule R (q ⧸ r)) (x : q) :
-    (x : M) ∈ ((iccOrderIsoQuotientOfMapEq r hr).symm Q).1 ↔
+    (x : M) ∈ ((iccOrderIsoQuotientOfMapEq r hr).symm Q).val ↔
       Submodule.Quotient.mk x ∈ Q := by
   simpa only [OrderIso.apply_symm_apply] using
     (mk_mem_iccOrderIsoQuotientOfMapEq_iff r hr

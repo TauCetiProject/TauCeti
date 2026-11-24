@@ -68,7 +68,7 @@ def complexSpinSmoothHom :
 /-- The smooth restriction has the usual action of the Clifford homomorphism on units. -/
 @[simp]
 theorem complexSpinSmoothHom_apply (g : SpinUnitsRange) :
-    f.complexSpinSmoothHom g = Units.map f.toMonoidHom g.1 := by
+    f.complexSpinSmoothHom g = Units.map f.toMonoidHom g.val := by
   simp only [complexSpinSmoothHom, ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
     TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply, unitsSmoothHom_apply]
 

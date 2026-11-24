@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Topology.MetricSpace.Defs
+import Mathlib.Topology.MetricSpace.Basic
 
 /-!
 # Small closed balls around finitely many points are separated
@@ -20,10 +21,16 @@ over the roots of a polynomial.
 
 ## Main declarations
 
-* `TauCeti.exists_pos_closedBall_subset_and_lt_dist`: a common radius that is small enough for
+* `TauCeti.eventually_closedBall_subset_and_lt_dist`: every small enough common radius works for
   every centre at once.
+* `TauCeti.exists_pos_closedBall_subset_and_lt_dist`: a positive common radius that is small
+  enough for every centre at once.
 * `TauCeti.eq_of_dist_lt_of_dist_lt`: two such centres within the radius of a common point
   coincide.
+* `TauCeti.eq_of_mem_closedBall_of_lt_dist`: a centre within the radius of another coincides
+  with it.
+* `TauCeti.exists_pos_ball_subset_and_ball_sdiff_singleton_subset_sdiff`: small punctured balls
+  about a point of an open set lie in it and avoid a given finite set.
 * `TauCeti.mem_and_apply_eq_of_surjOn_of_dist_lt`: a map moving the points of a separated set
   by less than the radius and onto a target is determined by the points of the target near the
   source points.
@@ -37,19 +44,30 @@ namespace TauCeti
 
 variable {X : Type*} [MetricSpace X]
 
+/-- Around finitely many points, closed balls of every small enough common radius lie in
+prescribed neighbourhoods of their centres and are pairwise far apart: twice the radius is less
+than the distance between any two distinct centres. -/
+theorem eventually_closedBall_subset_and_lt_dist {T : Set X} (hT : T.Finite) {U : X → Set X}
+    (hU : ∀ w ∈ T, U w ∈ 𝓝 w) :
+    ∀ᶠ r in 𝓝 (0 : ℝ), (∀ w ∈ T, closedBall w r ⊆ U w) ∧
+      ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
+  have h1 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, closedBall w r ⊆ U w :=
+    (eventually_all_finite hT).2 fun w hw => eventually_closedBall_subset (hU w hw)
+  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
+    (eventually_all_finite hT).2 fun w _ => (eventually_all_finite hT).2 fun w' _ =>
+      eventually_imp_distrib_left.2 fun hww =>
+        (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun _ _ => by linarith
+  exact h1.and h2
+
 /-- Around finitely many points, closed balls of a small enough common radius lie in prescribed
 neighbourhoods of their centres and are pairwise far apart: twice the radius is less than the
 distance between any two distinct centres. -/
 theorem exists_pos_closedBall_subset_and_lt_dist {T : Finset X} {U : X → Set X}
     (hU : ∀ w ∈ T, U w ∈ 𝓝 w) :
-    ∃ r > 0, (∀ w ∈ T, closedBall w r ⊆ U w) ∧ ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
-  have h1 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, closedBall w r ⊆ U w :=
-    (eventually_all_finset T).2 fun w hw => eventually_closedBall_subset (hU w hw)
-  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
-    (eventually_all_finset T).2 fun w _ => (eventually_all_finset T).2 fun w' _ =>
-      eventually_imp_distrib_left.2 fun hww =>
-        (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun _ _ => by linarith
-  exact (eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (h1.and h2))).exists (f := 𝓝[>] 0)
+    ∃ r > 0, (∀ w ∈ T, closedBall w r ⊆ U w) ∧ ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
+  (eventually_mem_nhdsWithin.and
+    (nhdsWithin_le_nhds (eventually_closedBall_subset_and_lt_dist T.finite_toSet hU))).exists
+    (f := 𝓝[>] 0)
 
 /-- Two points that are either equal or more than `2 * r` apart are equal if both lie within `r`
 of a common point. -/
@@ -57,6 +75,23 @@ theorem eq_of_dist_lt_of_dist_lt {Y : Type*} [PseudoMetricSpace Y] {w w' y : Y} 
     (hsep : w ≠ w' → 2 * r < dist w w') (h : dist y w < r) (h' : dist y w' < r) : w = w' := by
   by_contra hne
   linarith [hsep hne, dist_triangle_left w w' y]
+
+/-- A point within `r` of `z` is `z` itself if it is either equal to `z` or more than `2 * r` away
+from it. -/
+theorem eq_of_mem_closedBall_of_lt_dist {Y : Type*} [PseudoMetricSpace Y] {w z : Y} {r : ℝ}
+    (hsep : w ≠ z → 2 * r < dist w z) (h : w ∈ closedBall z r) : w = z := by
+  by_contra hne
+  linarith [hsep hne, mem_closedBall.1 h, dist_nonneg (x := w) (y := z)]
+
+/-- About a point `z` of an open set `Ω`, small balls lie in `Ω` and, punctured at `z`, avoid a
+finite set `Z`. -/
+theorem exists_pos_ball_subset_and_ball_sdiff_singleton_subset_sdiff {Ω Z : Set X} {z : X}
+    (hΩ : IsOpen Ω) (hZ : Z.Finite) (hz : z ∈ Ω) :
+    ∃ r > 0, ball z r ⊆ Ω ∧ ball z r \ {z} ⊆ Ω \ Z := by
+  obtain ⟨r, hr, hrsub⟩ := isOpen_iff.1
+    (hΩ.inter (hZ.sdiff (t := {z})).isClosed.isOpen_compl) z ⟨hz, fun h ↦ h.2 rfl⟩
+  exact ⟨r, hr, fun y hy ↦ (hrsub hy).1,
+    fun y hy ↦ ⟨(hrsub hy.1).1, fun hyZ ↦ (hrsub hy.1).2 ⟨hyZ, hy.2⟩⟩⟩
 
 omit [MetricSpace X] in
 /-- A map `e` from `A` onto `B` that moves each point of `A` by less than `r`, with `A` inside

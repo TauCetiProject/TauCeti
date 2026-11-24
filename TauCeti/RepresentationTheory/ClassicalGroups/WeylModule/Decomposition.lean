@@ -205,10 +205,10 @@ Specht module by the ideal `ℂ[S_d] c_μ`, add the zero summands of the shapes 
 rows, and apply `TauCeti.schurWeylEquiv`. -/
 private noncomputable def schurWeylDecompositionLinearEquiv :
     (⨁ μ : {μ : d.Partition // μ.parts.card ≤ n},
-      (spechtModuleℂ μ.1).V ⊗[ℂ] (schurFunctor n (YoungDiagram.ofPartition μ.1)).V) ≃ₗ[ℂ]
+      (spechtModuleℂ μ.val).V ⊗[ℂ] (schurFunctor n (YoungDiagram.ofPartition μ.val)).V) ≃ₗ[ℂ]
       ⨂[ℂ]^d (Fin n → ℂ) :=
   ((DirectSum.congrLinearEquiv fun μ => TensorProduct.congr
-      μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm.toLinearEquiv (LinearEquiv.refl ℂ _)).trans
+      μ.val.spanYoungSymmetrizerEquivSpechtModuleℂ.symm.toLinearEquiv (LinearEquiv.refl ℂ _)).trans
     (DirectSum.restrictSubtypeLinearEquiv (schurWeylSummand n d) (fun μ => μ.parts.card ≤ n)
       fun _ hμ =>
       subsingleton_span_youngSymmetrizer_tensorProduct_weylModuleOfShape n d
@@ -218,10 +218,10 @@ private noncomputable def schurWeylDecompositionLinearEquiv :
 /-- The linear equivalence `schurWeylDecompositionLinearEquiv` on a pure tensor of a summand. -/
 private theorem schurWeylDecompositionLinearEquiv_lof_tmul
     (μ : {μ : d.Partition // μ.parts.card ≤ n})
-    (s : spechtModuleℂ μ.1) (w : schurFunctor n (YoungDiagram.ofPartition μ.1)) :
+    (s : spechtModuleℂ μ.val) (w : schurFunctor n (YoungDiagram.ofPartition μ.val)) :
     schurWeylDecompositionLinearEquiv n d (DirectSum.lof ℂ _ _ μ (s ⊗ₜ w)) =
-      schurWeylEquiv ℂ n d (DirectSum.lof ℂ d.Partition _ μ.1
-        (μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s ⊗ₜ w)) := by
+      schurWeylEquiv ℂ n d (DirectSum.lof ℂ d.Partition _ μ.val
+        (μ.val.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s ⊗ₜ w)) := by
   simp [schurWeylDecompositionLinearEquiv, DirectSum.coe_congrLinearEquiv]
 
 /-- The linear equivalence `schurWeylDecompositionLinearEquiv` intertwines the actions of
@@ -229,18 +229,18 @@ private theorem schurWeylDecompositionLinearEquiv_lof_tmul
 private theorem schurWeylDecompositionLinearEquiv_comp (σg : Equiv.Perm (Fin d) × GL (Fin n) ℂ) :
     (schurWeylDecompositionLinearEquiv n d).toLinearMap ∘ₗ
         Representation.directSum (fun μ : {μ : d.Partition // μ.parts.card ≤ n} =>
-          Representation.tprod ((spechtModuleℂ μ.1).ρ.comp (MonoidHom.fst _ (GL (Fin n) ℂ)))
-            ((schurFunctor n (YoungDiagram.ofPartition μ.1)).ρ.comp
+          Representation.tprod ((spechtModuleℂ μ.val).ρ.comp (MonoidHom.fst _ (GL (Fin n) ℂ)))
+            ((schurFunctor n (YoungDiagram.ofPartition μ.val)).ρ.comp
               (MonoidHom.snd (Equiv.Perm (Fin d)) _))) σg =
       permTensorPowerRep ℂ n d σg ∘ₗ (schurWeylDecompositionLinearEquiv n d).toLinearMap := by
   obtain ⟨σ, g⟩ := σg
   refine DirectSum.linearMap_ext ℂ fun μ => TensorProduct.ext' fun s w => ?_
   -- move the action of `σ` from the complex Specht module to the ideal `ℂ[S_d] c_μ`
   have he := Representation.IntertwiningMap.isIntertwining _ _
-    μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm.toIntertwiningMap σ s
+    μ.val.spanYoungSymmetrizerEquivSpechtModuleℂ.symm.toIntertwiningMap σ s
   have hsw := Representation.IntertwiningMap.isIntertwining _ _
     (schurWeylEquiv ℂ n d).toIntertwiningMap (σ, g)
-    (DirectSum.lof ℂ d.Partition _ μ.1 (μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s ⊗ₜ w))
+    (DirectSum.lof ℂ d.Partition _ μ.val (μ.val.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s ⊗ₜ w))
   simp only [Representation.Equiv.coe_toIntertwiningMap] at he hsw
   simp only [Representation.directSum_apply, DirectSum.lmap_lof, Representation.tprod_apply,
     TensorProduct.map_tmul, MonoidHom.comp_apply, MonoidHom.coe_fst, MonoidHom.coe_snd] at hsw
@@ -266,8 +266,8 @@ two factors of `S_d × GL n ℂ` gives the two equivariances separately. -/
 noncomputable def schurWeylDecomposition :
     (permTensorPowerRep ℂ n d).Equiv
       (Representation.directSum fun μ : {μ : d.Partition // μ.parts.card ≤ n} =>
-        Representation.tprod ((spechtModuleℂ μ.1).ρ.comp (MonoidHom.fst _ (GL (Fin n) ℂ)))
-          ((schurFunctor n (YoungDiagram.ofPartition μ.1)).ρ.comp
+        Representation.tprod ((spechtModuleℂ μ.val).ρ.comp (MonoidHom.fst _ (GL (Fin n) ℂ)))
+          ((schurFunctor n (YoungDiagram.ofPartition μ.val)).ρ.comp
             (MonoidHom.snd (Equiv.Perm (Fin d)) _))) :=
   .mk (schurWeylDecompositionLinearEquiv n d).symm
     (LinearEquiv.isIntertwining_symm_isIntertwining (schurWeylDecompositionLinearEquiv_comp n d))
@@ -277,12 +277,12 @@ noncomputable def schurWeylDecomposition :
 factors. -/
 @[simp]
 theorem schurWeylDecomposition_symm_lof_tmul (μ : {μ : d.Partition // μ.parts.card ≤ n})
-    (s : spechtModuleℂ μ.1) (w : schurFunctor n (YoungDiagram.ofPartition μ.1)) :
+    (s : spechtModuleℂ μ.val) (w : schurFunctor n (YoungDiagram.ofPartition μ.val)) :
     (schurWeylDecomposition n d).symm (DirectSum.lof ℂ _ _ μ (s ⊗ₜ w)) =
       (permTensorAction ℂ n d).asAlgebraHom
-        (μ.1.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s : MonoidAlgebra ℂ (Equiv.Perm (Fin d)))
+        (μ.val.spanYoungSymmetrizerEquivSpechtModuleℂ.symm s : MonoidAlgebra ℂ (Equiv.Perm (Fin d)))
         (PiTensorProduct.reindex ℂ (fun _ => Fin n → ℂ)
-          (finCongr (YoungDiagram.card_ofPartition μ.1)) w) := by
+          (finCongr (YoungDiagram.card_ofPartition μ.val)) w) := by
   rw [schurWeylDecomposition, Representation.Equiv.mk_symm, Representation.Equiv.mk_apply,
     LinearEquiv.symm_symm, schurWeylDecompositionLinearEquiv_lof_tmul, schurWeylEquiv_lof_tmul]
 
@@ -291,7 +291,8 @@ of `(ℂⁿ)^{⊗d}` corresponds to the summand-wise action of `S_d` on the comp
 theorem schurWeylDecomposition_comp_permTensorAction (σ : Equiv.Perm (Fin d)) :
     (schurWeylDecomposition n d).toLinearMap ∘ₗ permTensorAction ℂ n d σ =
       DirectSum.lmap (fun μ : {μ : d.Partition // μ.parts.card ≤ n} =>
-          ((spechtModuleℂ μ.1).ρ σ).rTensor (schurFunctor n (YoungDiagram.ofPartition μ.1)).V) ∘ₗ
+          ((spechtModuleℂ μ.val).ρ σ).rTensor (schurFunctor n (YoungDiagram.ofPartition μ.val)).V)
+              ∘ₗ
         (schurWeylDecomposition n d).toLinearMap := by
   have h := (schurWeylDecomposition n d).toIntertwiningMap.isIntertwining' (σ, 1)
   rw [permTensorPowerRep_apply, map_one (tensorPowerRep ℂ n d), mul_one] at h
@@ -305,7 +306,8 @@ theorem schurWeylDecomposition_comp_permTensorAction (σ : Equiv.Perm (Fin d)) :
 theorem schurWeylDecomposition_comp_tensorPowerRep (g : GL (Fin n) ℂ) :
     (schurWeylDecomposition n d).toLinearMap ∘ₗ tensorPowerRep ℂ n d g =
       DirectSum.lmap (fun μ : {μ : d.Partition // μ.parts.card ≤ n} =>
-          ((schurFunctor n (YoungDiagram.ofPartition μ.1)).ρ g).lTensor (spechtModuleℂ μ.1).V) ∘ₗ
+          ((schurFunctor n (YoungDiagram.ofPartition μ.val)).ρ g).lTensor
+              (spechtModuleℂ μ.val).V) ∘ₗ
         (schurWeylDecomposition n d).toLinearMap := by
   have h := (schurWeylDecomposition n d).toIntertwiningMap.isIntertwining' (1, g)
   rw [permTensorPowerRep_apply, map_one (permTensorAction ℂ n d), one_mul] at h

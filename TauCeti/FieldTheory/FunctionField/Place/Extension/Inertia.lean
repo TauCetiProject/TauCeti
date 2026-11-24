@@ -211,7 +211,7 @@ private theorem isInvariant_integers_of_decompositionSubgroup_eq_top
   have hfix : ∀ τ : F' ≃ₐ[F] F', τ (b : F') = (b : F') := fun τ ↦
     congrArg (fun z : P.integers ↦ (z : F')) (hb ⟨τ, by rw [h]; trivial⟩)
   obtain ⟨z, hz⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (F := F) (b : F')).mpr hfix
-  exact ⟨⟨z, (mem_integers_restrict_iff k F P z).mpr (hz ▸ b.2)⟩,
+  exact ⟨⟨z, (mem_integers_restrict_iff k F P z).mpr (hz ▸ b.property)⟩,
     Subtype.ext (by rw [coe_algebraMap_integers]; exact hz)⟩
 
 /-- **A place fixed by the whole Galois group is the integral closure of the place below**
@@ -222,7 +222,7 @@ theorem isIntegral_iff_mem_integers_of_decompositionSubgroup_eq_top
     (h : P.integers.decompositionSubgroup F = ⊤) {z : F'} :
     IsIntegral (P.restrict k F).integers z ↔ z ∈ P.integers := by
   refine ⟨P.mem_integers_of_isIntegral (R := (P.restrict k F).integers) fun a ↦
-    (mem_integers_restrict_iff k F P (a : F)).mp a.2, fun hz ↦ ?_⟩
+    (mem_integers_restrict_iff k F P (a : F)).mp a.property, fun hz ↦ ?_⟩
   have := isInvariant_integers_of_decompositionSubgroup_eq_top F P h
   have := Algebra.IsInvariant.isIntegral (P.restrict k F).integers P.integers
     (P.integers.decompositionSubgroup F)
@@ -253,7 +253,7 @@ private theorem range_algebraMap_residueField_eq :
       (R := ((P.restrict k (decompositionField F P)).restrict k F).integers) u
     have ha : (a : F) ∈ (P.restrict k F).integers := by
       rw [← restrict_restrict (k₁ := k) (F₁ := (decompositionField F P : Type v')) P]
-      exact a.2
+      exact a.property
     refine ⟨IsLocalRing.residue (P.restrict k F).integers ⟨(a : F), ha⟩, ?_⟩
     rw [← hu, IsLocalRing.ResidueField.algebraMap_residue,
       IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue]
@@ -265,7 +265,7 @@ private theorem range_algebraMap_residueField_eq :
     have hb : algebraMap F (decompositionField F P : Type v') (b : F) ∈
         (P.restrict k (decompositionField F P)).integers := by
       rw [mem_integers_restrict_iff, ← IsScalarTower.algebraMap_apply]
-      exact (mem_integers_restrict_iff k F P (b : F)).mp b.2
+      exact (mem_integers_restrict_iff k F P (b : F)).mp b.property
     refine ⟨IsLocalRing.residue _ ⟨_, hb⟩, ?_⟩
     rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue]
     refine congrArg (IsLocalRing.residue P.integers) (Subtype.ext ?_)
@@ -477,7 +477,7 @@ theorem mem_inertiaField_iff (x : F') :
 /-- The decomposition field of `P` lies inside its inertia field. -/
 theorem decompositionField_le_inertiaField : decompositionField F P ≤ inertiaField F P :=
   fun x hx ↦ (mem_inertiaField_iff F P x).mpr fun g _ ↦
-    (mem_decompositionField_iff F P x).mp hx g g.2
+    (mem_decompositionField_iff F P x).mp hx g g.property
 
 variable [FiniteDimensional F F']
 
@@ -505,7 +505,7 @@ noncomputable def inertiaFieldAutEquiv :
   have h₁ (σ : F' ≃ₐ[inertiaField F P] F') :
       σ.restrictScalars F ∈ P.integers.decompositionSubgroup F := by
     obtain ⟨g, -, hgσ⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P σ
-    exact hgσ ▸ g.2
+    exact hgσ ▸ g.property
   have h₂ (σ : F' ≃ₐ[inertiaField F P] F') :
       (⟨σ.restrictScalars F, h₁ σ⟩ : P.integers.decompositionSubgroup F) ∈
         P.integers.inertiaSubgroup F := by
@@ -522,7 +522,7 @@ noncomputable def inertiaFieldAutEquiv :
   · have hg : ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') ∈
         (inertiaField F P).fixingSubgroup := by
       rw [fixingSubgroup_inertiaField]
-      exact Subgroup.mem_map_of_mem _ g.2
+      exact Subgroup.mem_map_of_mem _ g.property
     exact ⟨(inertiaField F P).fixingSubgroupEquiv ⟨_, hg⟩, Subtype.ext (Subtype.ext (by ext; rfl))⟩
 
 /-- The element of the inertia group attached by `TauCeti.Place.inertiaFieldAutEquiv` to an
@@ -571,12 +571,12 @@ private theorem map_conj_le_map_inertiaSubgroup_smul (σ : F' ≃ₐ[F] F') :
   rintro _ ⟨_, ⟨g, hg, rfl⟩, rfl⟩
   have hZ : MulAut.conj σ (g : F' ≃ₐ[F] F') ∈ (σ • P).integers.decompositionSubgroup F := by
     rw [decompositionSubgroup_integers_smul]
-    exact Subgroup.mem_map_of_mem _ g.2
+    exact Subgroup.mem_map_of_mem _ g.property
   refine ⟨⟨_, hZ⟩, ?_, rfl⟩
   rw [SetLike.mem_coe, ValuationSubring.mem_inertiaSubgroup_iff] at hg ⊢
   intro x
   -- Write `x = σ y` with `y` regular at `P`; then `σ g σ⁻¹ x - x = σ (g y - y)`.
-  have hy : σ.symm (x : F') ∈ P.integers := (mem_integers_smul_iff σ P).mp x.2
+  have hy : σ.symm (x : F') ∈ P.integers := (mem_integers_smul_iff σ P).mp x.property
   have hgy := hg ⟨_, hy⟩
   rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff_valuation_lt_one] at hgy ⊢
   simp only [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
@@ -608,7 +608,7 @@ theorem restrictScalars_smul_eq_self_of_inertiaField (τ : F' ≃ₐ[inertiaFiel
     τ.restrictScalars F • P = P := by
   obtain ⟨g, -, hg⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P τ
   rw [← hg, ← MulAction.mem_stabilizer_iff, stabilizer_eq_decompositionSubgroup]
-  exact g.2
+  exact g.property
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- Over its inertia field a place is fixed by the whole Galois group. -/
@@ -619,7 +619,7 @@ theorem decompositionSubgroup_inertiaField_eq_top :
   simp only [Subgroup.mem_top, iff_true]
   obtain ⟨g, -, hg⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P τ
   exact (ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff (K := F)
-      P.integers τ).mp (hg ▸ g.2)
+      P.integers τ).mp (hg ▸ g.property)
 
 variable [IsGalois F F']
 

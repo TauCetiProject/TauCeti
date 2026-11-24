@@ -76,9 +76,9 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_isStablyU
     (hW : W ∈ spaRationalOpens Aplus) (f : A) :
     IsClosedEmbedding fun x : presentationLimit (P := P) Aplus W ↦
       ((presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.1 x,
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f true ≤ W)).hom.val x,
         (presentationLimitMap (P := P)
-          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.1 x) := by
+          (inf_le_left : W ⊓ laurentCoverOpen Aplus f false ≤ W)).hom.val x) := by
   -- The coordinate ring `A⟨T/s⟩` is stably uniform, hence uniform because it is complete and
   -- Hausdorff.  Transport its Laurent closed embedding back through rational localization.
   obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hW
@@ -106,7 +106,7 @@ theorem injective_presentationLimitMap_inf_laurentCoverOpen_of_isStablyUniform
     Function.Injective fun (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))
         (b : Bool) ↦
       (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 x := by
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.val x := by
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden
   have _ := isUniformAddGroup_locUniformSpace P T s _ hden
@@ -130,13 +130,13 @@ theorem exists_presentationLimitMap_eq_of_inf_laurentCoverOpen_of_isStablyUnifor
       (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b))
     (hx : (presentationLimitMap (P := P) (inf_le_left :
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x true) =
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val (x true) =
       (presentationLimitMap (P := P) (inf_le_right :
         (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f true) ⊓
-          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.1 (x false)) :
+          (spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f false) ≤ _)).hom.val (x false)) :
     ∃ a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s), ∀ b,
       (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.1 a =
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)).hom.val a =
           x b := by
   have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
   let _ := locUniformSpace P T s _ hden

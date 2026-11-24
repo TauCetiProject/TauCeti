@@ -224,7 +224,7 @@ tensor product of the identities of its two components. -/
 theorem dgId_tensor (X : C × D) :
     dgId R X = dgTensorHom R (dgId R X.1) (dgId R X.2) (add_zero 0) := by
   rw [dgId_def, eId_tensor_eq, HomologicalComplex.comp_f, leftUnitor_inv_f,
-    leftUnitor'_inv, Category.assoc, Category.assoc, tensorHom_eq_mapBifunctorMap,
+    Category.assoc, Category.assoc, tensorHom_eq_mapBifunctorMap,
     ι_mapBifunctorMap]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, curriedTensor_map_app,
     curriedTensor_obj_map, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,

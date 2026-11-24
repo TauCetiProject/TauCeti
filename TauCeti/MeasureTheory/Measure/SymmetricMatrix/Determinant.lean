@@ -57,7 +57,7 @@ theorem eval_symmetricDetPolynomial (p : ℕ) (x : upperTriangle p → ℝ) :
 /-- The upper-triangular coordinates of the identity matrix reconstruct the identity matrix. -/
 private theorem coe_symmetricCoordinates_symm_one (p : ℕ) :
     ((symmetricCoordinates p).symm
-          (fun ij : upperTriangle p => if ij.1.1 = ij.1.2 then (1 : ℝ) else 0) :
+          (fun ij : upperTriangle p => if ij.val.1 = ij.val.2 then (1 : ℝ) else 0) :
         Matrix (Fin p) (Fin p) ℝ) = 1 := by
   ext i j
   by_cases h : i ≤ j
@@ -70,7 +70,7 @@ one. This nondegeneracy is what lets the zero-locus theorem apply. -/
 theorem symmetricDetPolynomial_ne_zero (p : ℕ) : symmetricDetPolynomial p ≠ 0 := by
   intro h
   have hval := eval_symmetricDetPolynomial p
-    (fun ij : upperTriangle p => if ij.1.1 = ij.1.2 then (1 : ℝ) else 0)
+    (fun ij : upperTriangle p => if ij.val.1 = ij.val.2 then (1 : ℝ) else 0)
   rw [h, map_zero, coe_symmetricCoordinates_symm_one, Matrix.det_one] at hval
   exact zero_ne_one hval
 
@@ -79,7 +79,7 @@ continuous. -/
 theorem measurableSet_setOfPred_det_eq_zero (p : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).det = 0} :=
-  (isClosed_eq (Continuous.matrix_det continuous_subtype_val) continuous_const).measurableSet
+  (isClosed_eq (Continuous.matrix_det continuous_subtypeVal) continuous_const).measurableSet
 
 /-- The singular symmetric matrices form a `symmetricLebesgue`-null set. -/
 theorem symmetricLebesgue_setOf_det_eq_zero (p : ℕ) :

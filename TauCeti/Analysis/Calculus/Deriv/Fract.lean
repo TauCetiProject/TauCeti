@@ -20,9 +20,12 @@ in Euler–Maclaurin type estimates.
 
 ## Main declarations
 
-* `Int.continuous_fract_sq_sub_fract`: `t ↦ fract t ^ 2 - fract t` is continuous.
-* `Int.hasDerivWithinAt_fract_sq_sub_fract`: its right derivative at `t` is `2 fract t - 1`.
+* `Int.continuous_fract_sq_sub_fract`, `Int.continuous_fract_sub_fract_sq`:
+  `t ↦ fract t ^ 2 - fract t` and `t ↦ fract t - fract t ^ 2` are continuous.
+* `Int.hasDerivWithinAt_fract_sq_sub_fract`: the right derivative of `fract t ^ 2 - fract t` at `t`
+  is `2 fract t - 1`.
 * `Int.abs_fract_sq_sub_fract_le`: `|fract t ^ 2 - fract t| ≤ 1 / 4`.
+* `Int.fract_sub_fract_sq_nonneg`, `Int.fract_sub_fract_sq_le`: `0 ≤ fract t - fract t ^ 2 ≤ 1 / 4`.
 -/
 
 public section
@@ -34,6 +37,10 @@ namespace Int
 /-- The function `t ↦ fract t ^ 2 - fract t` is continuous: `x ^ 2 - x` agrees at `0` and `1`. -/
 theorem continuous_fract_sq_sub_fract : Continuous fun t : ℝ ↦ fract t ^ 2 - fract t :=
   ContinuousOn.comp_fract'' (f := fun x : ℝ ↦ x ^ 2 - x) (by fun_prop) (by norm_num)
+
+/-- The function `t ↦ fract t - fract t ^ 2` is continuous: `x - x ^ 2` agrees at `0` and `1`. -/
+theorem continuous_fract_sub_fract_sq : Continuous fun t : ℝ ↦ fract t - fract t ^ 2 :=
+  continuous_fract_sq_sub_fract.neg.congr fun _ ↦ neg_sub _ _
 
 /-- The function `t ↦ fract t ^ 2 - fract t` has right derivative `2 fract t - 1` at every
 point. -/
@@ -58,5 +65,13 @@ theorem abs_fract_sq_sub_fract_le (t : ℝ) : |fract t ^ 2 - fract t| ≤ 1 / 4 
   have h1 := fract_lt_one t
   rw [abs_le]
   constructor <;> nlinarith [sq_nonneg (fract t - 1 / 2)]
+
+/-- `0 ≤ fract t - fract t ^ 2`, since `fract t ∈ [0, 1)`. -/
+theorem fract_sub_fract_sq_nonneg (t : ℝ) : 0 ≤ fract t - fract t ^ 2 := by
+  nlinarith [fract_nonneg t, fract_lt_one t]
+
+/-- `fract t - fract t ^ 2 ≤ 1 / 4`, with equality at half-integers. -/
+theorem fract_sub_fract_sq_le (t : ℝ) : fract t - fract t ^ 2 ≤ 1 / 4 := by
+  nlinarith [sq_nonneg (fract t - 1 / 2)]
 
 end Int

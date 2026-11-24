@@ -362,11 +362,11 @@ theorem mackeyClassFun_mem_classFunction (s : G) (H K : Subgroup G) {f : H → k
 element of `TauCeti.ClassFunction`. -/
 def mackeyClassFunction (s : G) (H K : Subgroup G) (f : ClassFunction k H) :
     ClassFunction k ((mackeySubgroup s H K).subgroupOf K) :=
-  ⟨mackeyClassFun s H K f.1, mackeyClassFun_mem_classFunction s H K f.2⟩
+  ⟨mackeyClassFun s H K f.val, mackeyClassFun_mem_classFunction s H K f.property⟩
 
 @[simp]
 theorem mackeyClassFunction_coe (s : G) (H K : Subgroup G) (f : ClassFunction k H) :
-    (mackeyClassFunction s H K f).1 = mackeyClassFun s H K f.1 :=
+    (mackeyClassFunction s H K f).val = mackeyClassFun s H K f.val :=
   (rfl)
 
 /-- **The Mackey subgroup sees the induced summand.**  The summand of the class function induced
@@ -455,7 +455,7 @@ theorem _root_.Subgroup.comap_subtype_indClassFunction_mackey (K : Subgroup G) {
   rw [ClassFunction.comap_apply, Subgroup.indClassFunction_apply, Subgroup.coe_subtype]
   simp only [Submodule.coe_sum, Finset.sum_apply, Subgroup.indClassFunction_apply,
     mackeyClassFunction_coe]
-  exact H.indClassFun_mackey f.2 x
+  exact H.indClassFun_mackey f.property x
 
 end ClassFun
 

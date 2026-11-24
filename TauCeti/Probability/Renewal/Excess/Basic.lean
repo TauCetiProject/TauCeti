@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.MeasurableSpace.Eval
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Equation
+import TauCeti.Probability.HasLaw
+import TauCeti.Probability.IdentDistrib
 
 /-!
 # The excess of a renewal process
@@ -23,9 +25,12 @@ where `N t = renewalCountNat T t` is the number of positive-index arrivals in `[
 nonexplosive path the arrival `arrival T (N t + 1)` is the first one strictly after `t`, so the
 excess is strictly positive; on explosive paths the formula uses the exceptional value `N t = 0`.
 
-For independent increments with common law `F` that are not almost surely zero, this file computes
-the law of the excess at each fixed time in terms of the renewal measure `U = ∑ n, F^{∗n}`. Writing
-`F> u = F((u, ∞))` for the tail of `F` and `F≤ u = F([0, u])` for its distribution function,
+For independent increments with common law `F`, this file computes
+the law of the excess at each fixed time in terms of the renewal measure `U = ∑ n, F^{∗n}`. The
+tail representation holds for every `F`; the distribution-function representation requires that
+`F {0} < 1`, that is, `F` is not concentrated at zero (otherwise `E t = 0` almost surely, so
+`P(E t ≤ x) = 1`, while the integrand below vanishes). Writing `F> u = F((u, ∞))` for the tail of
+`F` and `F≤ u = F([0, u])` for its distribution function,
 
 ```text
 P(x < E t) = ∫_{[0, t]} F> (t - s + x) U(ds),
@@ -34,12 +39,14 @@ P(E t ≤ x) = ∫_{[0, t]} (F≤ (t - s + x) - F≤ (t - s)) U(ds).
 
 The first identity splits the event `x < E t` according to the value `n` of `N t`. Almost surely
 it is the disjoint union over `n` of the events `{arrival T n ≤ t, t + x < arrival T n + T n}`, and
-`arrival T n`, which has law `F^{∗n}`, is independent of `T n`. The second identity follows from the
-tail identity `∫_{[0, t]} F> (t - s) U(ds) = 1`
-(`TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`). In the notation of
-`TauCeti.Probability.renewalConv`, both probabilities are of the form `h ∗ U`, so they solve the
-renewal equation `g = h + g ∗ F` with forcing terms `F> (t + x)` and `F≤ (t + x) - F≤ t`
-respectively. These representations are the input of the limit theorem for the excess.
+`arrival T n`, which has law `F^{∗n}`, is independent of `T n`. The second identity, for `F` not
+concentrated at zero, follows from the tail identity `∫_{[0, t]} F> (t - s) U(ds) = 1`
+(`TauCeti.Probability.renewalConv_measureReal_Ioi_renewalMeasure`), which also needs `F` not
+concentrated at zero. In the notation of `TauCeti.Probability.renewalConv`, both probabilities are
+of the form `h ∗ U` (the second for `F` not concentrated at zero), so they solve the renewal
+equation `g = h + g ∗ F` with forcing terms `F> (t + x)` and `F≤ (t + x) - F≤ t` respectively. Both
+renewal equations hold for every `F`: for almost surely zero increments `h = 0` and `g ∗ F = g`.
+These representations are the input of the limit theorem for the excess.
 
 ## Main definitions
 
@@ -49,12 +56,14 @@ respectively. These representations are the input of the limit theorem for the e
 
 * `TauCeti.Probability.lt_renewalExcess_iff`: on a nonexplosive path, `x < E t` exactly when some
   arrival `arrival T n` is at most `t` while the next one is after `t + x`.
-* `TauCeti.Probability.measurable_renewalExcess`: measurability of the excess.
+* `TauCeti.Probability.measurable_renewalExcess`, `TauCeti.Probability.aemeasurable_renewalExcess`,
+  `TauCeti.Probability.renewalExcess_congr_ae`: measurability, almost-everywhere measurability,
+  and almost-everywhere congruence of the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
-* `TauCeti.Probability.measureReal_renewalExcess_le`: the distribution function of the excess is
-  `P(E t ≤ x) = ((F≤ (· + x) - F≤) ∗ U) t`.
+* `TauCeti.Probability.measureReal_renewalExcess_le`: for `F` not concentrated at zero, the
+  distribution function of the excess is `P(E t ≤ x) = ((F≤ (· + x) - F≤) ∗ U) t`.
 * `TauCeti.Probability.measureReal_lt_renewalExcess_eq_add`,
   `TauCeti.Probability.measureReal_renewalExcess_le_eq_add`: the renewal equations satisfied by
   `t ↦ P(x < E t)` and `t ↦ P(E t ≤ x)`.
@@ -147,23 +156,58 @@ lemma measurable_renewalExcess (hT : ∀ n, Measurable (T n)) (t : ℝ≥0) :
 
 variable {P : Measure Ω}
 
+/-- If two increment sequences agree almost everywhere at each index, then almost everywhere their
+excesses agree at all times. -/
+theorem renewalExcess_congr_ae {T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) :
+    ∀ᵐ ω ∂P, ∀ t, renewalExcess T t ω = renewalExcess T' t ω := by
+  filter_upwards [arrival_congr_ae h, renewalCountNat_congr_ae h] with ω harr hcount t
+  rw [renewalExcess_def, renewalExcess_def, hcount, harr]
+
+/-- If every increment is almost-everywhere measurable, so is the excess at every time `t`. -/
+@[fun_prop]
+theorem aemeasurable_renewalExcess (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ≥0) :
+    AEMeasurable (renewalExcess T t) P :=
+  (measurable_renewalExcess (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr <|
+    all_ae_of (renewalExcess_congr_ae fun n ↦ (hT n).ae_eq_mk.symm) t
+
+/-- For almost-everywhere measurable increments on a probability space, the excess sublevel
+probability at time `t` is one minus the strict-superlevel probability. -/
+theorem measureReal_renewalExcess_le_eq_one_sub [IsProbabilityMeasure P]
+    (hT : ∀ n, AEMeasurable (T n) P) (t x : ℝ≥0) :
+    P.real {ω | renewalExcess T t ω ≤ x} = 1 - P.real {ω | x < renewalExcess T t ω} := by
+  have hnull : NullMeasurableSet {ω | x < renewalExcess T t ω} P :=
+    (aemeasurable_renewalExcess hT t).nullMeasurableSet_preimage measurableSet_Ioi
+  rw [← probReal_compl_eq_one_sub₀ hnull]
+  congr 1
+  ext ω
+  simp
+
+/-- For a probability measure and almost-everywhere measurable increments, the excess upper
+tail is one minus the excess distribution function. -/
+theorem measureReal_lt_renewalExcess_eq_one_sub [IsProbabilityMeasure P]
+    (hT : ∀ n, AEMeasurable (T n) P) (t x : ℝ≥0) :
+    P.real {ω | x < renewalExcess T t ω} = 1 - P.real {ω | renewalExcess T t ω ≤ x} := by
+  rw [measureReal_renewalExcess_le_eq_one_sub hT, sub_sub_cancel]
+
 /-- For i.i.d. increments with law `F`, the `n`-th arrival is at most `t` and the next one is
 after `t + x` with probability `∫_{[0, t]} F((t - s + x, ∞)) F^{∗n}(ds)`, because `arrival T n`
 is independent of `T n`. -/
-private lemma measure_arrival_le_lt_arrival_succ (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) (t x : ℝ≥0) :
+private lemma measure_arrival_le_lt_arrival_succ (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) (t x : ℝ≥0) :
     P {ω | arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω} =
       ∫⁻ s in Iic t, P.map (T 0) (Ioi (t - s + x)) ∂(P.map (T 0)).convolutionPower n := by
   have := hindep.isProbabilityMeasure
+  have hT (i : ℕ) : AEMeasurable (T i) P := (hid i).aemeasurable_fst
   have hS : arrival T n = ∑ j ∈ Finset.range n, T j := by
     ext ω
     simp [arrival_def]
-  have hind : IndepFun (arrival T n) (T n) P := hS ▸ hindep.indepFun_sum_range_succ hT n
-  have hpair : Measurable fun ω ↦ (arrival T n ω, T n ω) := (measurable_arrival hT n).prodMk (hT n)
+  have hind : IndepFun (arrival T n) (T n) P := hS ▸ hindep.indepFun_sum_range_succ₀ hT n
+  have hpair : AEMeasurable (fun ω ↦ (arrival T n ω, T n ω)) P :=
+    (aemeasurable_arrival hT n).prodMk (hT n)
   have hmap : P.map (fun ω ↦ (arrival T n ω, T n ω)) =
       ((P.map (T 0)).convolutionPower n).prod (P.map (T 0)) := by
-    rw [(indepFun_iff_map_prod_eq_prod_map_map (measurable_arrival hT n).aemeasurable
-      (hT n).aemeasurable).1 hind, (hasLaw_arrival hindep hid n).map_eq, (hid n).map_eq]
+    rw [(indepFun_iff_map_prod_eq_prod_map_map (aemeasurable_arrival hT n) (hT n)).1 hind,
+      (hasLaw_arrival hindep hid n).map_eq, (hid n).map_eq]
   set B : Set (ℝ≥0 × ℝ≥0) := {p | p.1 ≤ t ∧ t + x < p.1 + p.2}
   have hB : MeasurableSet B := (measurableSet_le measurable_fst measurable_const).inter
     (measurableSet_lt measurable_const (measurable_fst.add measurable_snd))
@@ -171,7 +215,7 @@ private lemma measure_arrival_le_lt_arrival_succ (hT : ∀ n, Measurable (T n))
       (fun ω ↦ (arrival T n ω, T n ω)) ⁻¹' B := by
     ext ω
     simp [B, arrival_succ]
-  rw [hset, ← Measure.map_apply hpair hB, hmap, Measure.prod_apply hB,
+  rw [hset, ← Measure.map_apply_of_aemeasurable hpair hB, hmap, Measure.prod_apply hB,
     ← lintegral_indicator measurableSet_Iic]
   refine lintegral_congr fun s ↦ ?_
   by_cases hs : s ≤ t
@@ -182,37 +226,49 @@ private lemma measure_arrival_le_lt_arrival_succ (hT : ∀ n, Measurable (T n))
   · rw [indicator_of_notMem (by simpa using hs)]
     simp [B, hs]
 
-/-- **The excess-tail representation**, in `ℝ≥0∞`. For i.i.d. increments with law `F` that are not
-almost surely zero, the excess at time `t` exceeds `x` with probability
-`∫_{[0, t]} F((t - s + x, ∞)) U(ds)`, where `U` is the renewal measure of `F`. -/
-theorem measure_lt_renewalExcess (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t x : ℝ≥0) :
+/-- **The excess-tail representation**, in `ℝ≥0∞`. For i.i.d. increments with law `F`, the excess
+at time `t` exceeds `x` with probability `∫_{[0, t]} F((t - s + x, ∞)) U(ds)`, where `U` is the
+renewal measure of `F`. If the increments are almost surely zero, both sides vanish. The increments
+need not be measurable: they are almost everywhere measurable, being identically distributed. -/
+theorem measure_lt_renewalExcess (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t x : ℝ≥0) :
     P {ω | x < renewalExcess T t ω} =
       ∫⁻ s in Iic t, P.map (T 0) (Ioi (t - s + x)) ∂(P.map (T 0)).renewalMeasure := by
-  have hA (n : ℕ) : MeasurableSet {ω | arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω} :=
-    (measurableSet_le (measurable_arrival hT n) measurable_const).inter
-      (measurableSet_lt measurable_const (measurable_arrival hT _))
+  have := hindep.isProbabilityMeasure
+  have hT (i : ℕ) : AEMeasurable (T i) P := (hid i).aemeasurable_fst
+  by_cases hzero : P {ω | T 0 ω = 0} < 1
+  swap
+  · -- Almost surely every increment vanishes, hence so does the excess, while `F = δ₀` has no
+    -- mass to the right of any `y ≥ 0`.
+    have hlaw := hasLaw_dirac_of_prob_eq_one (hT 0) (le_antisymm prob_le_one (not_lt.1 hzero))
+    have hex : ∀ᵐ ω ∂P, ω ∉ {ω | x < renewalExcess T t ω} := by
+      filter_upwards [ae_forall_eq_of_identDistrib hid hlaw.ae_eq_of_dirac] with ω hω
+      simp [renewalExcess_def, arrival_def, hω]
+    simp [measure_eq_zero_iff_ae_notMem.2 hex, hlaw.map_eq]
+  have hA (n : ℕ) : NullMeasurableSet {ω | arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω} P :=
+    (nullMeasurableSet_le (aemeasurable_arrival hT n) aemeasurable_const).inter
+      (nullMeasurableSet_lt aemeasurable_const (aemeasurable_arrival hT _))
   -- On nonexplosive paths, `{x < E t}` is the disjoint union over the value `n` of the count.
   have hae : {ω | x < renewalExcess T t ω} =ᵐ[P]
       ⋃ n, {ω | arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω} := by
     refine eventuallyEqSet_iff.2 ?_
     filter_upwards [ae_tendsto_arrival_atTop hindep hid hzero] with ω hω
     simpa using lt_renewalExcess_iff hω
-  rw [measure_congr hae, measure_iUnion (pairwise_disjoint_setOf_arrival T t x) hA,
+  rw [measure_congr hae, measure_iUnion₀ (pairwise_disjoint_setOf_arrival T t x).aedisjoint hA,
     Measure.renewalMeasure_def, Measure.restrict_sum _ measurableSet_Iic, lintegral_sum_measure]
-  exact tsum_congr fun n ↦ measure_arrival_le_lt_arrival_succ hT hindep hid n t x
+  exact tsum_congr fun n ↦ measure_arrival_le_lt_arrival_succ hindep hid n t x
 
-/-- **The excess-tail representation.** For i.i.d. increments with law `F` that are not almost
-surely zero, `P(x < E t) = (h ∗ U) t` for the forcing term `h u = F((u + x, ∞))`, where `U` is the
-renewal measure of `F`. -/
-theorem measureReal_lt_renewalExcess (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t x : ℝ≥0) :
+/-- **The excess-tail representation.** For i.i.d. increments with law `F`,
+`P(x < E t) = (h ∗ U) t` for the forcing term `h u = F((u + x, ∞))`, where `U` is the renewal
+measure of `F`. -/
+theorem measureReal_lt_renewalExcess (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t x : ℝ≥0) :
     P.real {ω | x < renewalExcess T t ω} =
       renewalConv (fun u ↦ (P.map (T 0)).real (Ioi (u + x))) (P.map (T 0)).renewalMeasure t := by
   have := hindep.isProbabilityMeasure
   have hmeas : Measurable fun s ↦ (P.map (T 0)).real (Ioi (t - s + x)) :=
     Monotone.measurable fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr))
-  rw [measureReal_def, measure_lt_renewalExcess hT hindep hid hzero, renewalConv_def,
+  rw [measureReal_def, measure_lt_renewalExcess hindep hid, renewalConv_def,
     integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ measureReal_nonneg)
       hmeas.aestronglyMeasurable]
   congr 1
@@ -221,24 +277,22 @@ theorem measureReal_lt_renewalExcess (hT : ∀ n, Measurable (T n)) (hindep : iI
 /-- **The distribution function of the excess.** For i.i.d. increments with law `F` that are not
 almost surely zero, `P(E t ≤ x) = (h ∗ U) t` for the forcing term `h u = F([0, u + x]) - F([0, u])`,
 where `U` is the renewal measure of `F`. -/
-theorem measureReal_renewalExcess_le (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem measureReal_renewalExcess_le (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t x : ℝ≥0) :
     P.real {ω | renewalExcess T t ω ≤ x} =
       renewalConv (fun u ↦ (P.map (T 0)).real (Iic (u + x)) - (P.map (T 0)).real (Iic u))
         (P.map (T 0)).renewalMeasure t := by
   have := hindep.isProbabilityMeasure
+  have hT (n : ℕ) : AEMeasurable (T n) P := (hid n).aemeasurable_fst
   set F := P.map (T 0)
-  have hF : F {0} < 1 := by rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
+  have hF : F {0} < 1 := by
+    rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have hU := (Measure.renewalMeasure_Iic_lt_top F hF t).ne
   have hint (y : ℝ≥0) := integrableOn_Iic_sub (h := fun u ↦ F.real (Ioi (u + y))) (C := 1)
     (Antitone.measurable fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr)))
     (fun u _ ↦ by simp [abs_of_nonneg measureReal_nonneg]) hU
   -- `P(E t ≤ x) = 1 - P(x < E t)`, and `1 = (F> ∗ U) t` by the tail identity.
-  have hcompl : {ω | renewalExcess T t ω ≤ x} = {ω | x < renewalExcess T t ω}ᶜ := by
-    ext
-    simp
-  rw [hcompl, probReal_compl_eq_one_sub (measurableSet_lt measurable_const
-      (measurable_renewalExcess hT t)), measureReal_lt_renewalExcess hT hindep hid hzero,
+  rw [measureReal_renewalExcess_le_eq_one_sub hT, measureReal_lt_renewalExcess hindep hid,
     ← renewalConv_measureReal_Ioi_renewalMeasure hF t]
   have hfun : (fun u ↦ F.real (Iic (u + x)) - F.real (Iic u)) =
       (fun u ↦ F.real (Ioi (u + 0))) - fun u ↦ F.real (Ioi (u + x)) := by
@@ -248,35 +302,47 @@ theorem measureReal_renewalExcess_le (hT : ∀ n, Measurable (T n)) (hindep : iI
   rw [hfun, renewalConv_sub (hint 0) (hint x)]
   simp only [add_zero, F]
 
-/-- **The renewal equation for the excess tail.** For i.i.d. increments with law `F` that are not
-almost surely zero, `g t = P(x < E t)` solves the renewal equation `g = h + g ∗ F` with forcing
+/-- **The renewal equation for the excess tail.** For i.i.d. increments with law `F`,
+`g t = P(x < E t)` solves the renewal equation `g = h + g ∗ F` with forcing
 term `h t = F((t + x, ∞))`. -/
-theorem measureReal_lt_renewalExcess_eq_add (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t x : ℝ≥0) :
+theorem measureReal_lt_renewalExcess_eq_add (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t x : ℝ≥0) :
     P.real {ω | x < renewalExcess T t ω} = (P.map (T 0)).real (Ioi (t + x)) +
       renewalConv (fun s ↦ P.real {ω | x < renewalExcess T s ω}) (P.map (T 0)) t := by
   have := hindep.isProbabilityMeasure
+  by_cases hzero : P {ω | T 0 ω = 0} < 1
+  swap
+  · -- For `F = δ₀` the forcing term vanishes and `g ∗ δ₀ = g`.
+    simp [(hasLaw_dirac_of_prob_eq_one (hid 0).aemeasurable_fst
+      (le_antisymm prob_le_one (not_lt.1 hzero))).map_eq]
   have := Measure.isLocallyFiniteMeasure_renewalMeasure _
-    (by rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)])
-  simp_rw [measureReal_lt_renewalExcess hT hindep hid hzero]
+    (by rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
+      (measurableSet_singleton 0)])
+  simp_rw [measureReal_lt_renewalExcess hindep hid]
   exact renewalConv_renewalMeasure_eq_add (C := 1)
     (Antitone.measurable fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr)))
     fun u _ ↦ by simp [abs_of_nonneg measureReal_nonneg]
 
 /-- **The renewal equation for the distribution function of the excess.** For i.i.d. increments
-with law `F` that are not almost surely zero, `g t = P(E t ≤ x)` solves the renewal equation
-`g = h + g ∗ F` with forcing term `h t = F([0, t + x]) - F([0, t])`. -/
-theorem measureReal_renewalExcess_le_eq_add (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t x : ℝ≥0) :
+with law `F`, `g t = P(E t ≤ x)` solves the renewal equation `g = h + g ∗ F` with forcing term
+`h t = F([0, t + x]) - F([0, t])`. If the increments are almost surely zero, `g = 1` and `h = 0`. -/
+theorem measureReal_renewalExcess_le_eq_add (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t x : ℝ≥0) :
     P.real {ω | renewalExcess T t ω ≤ x} =
       ((P.map (T 0)).real (Iic (t + x)) - (P.map (T 0)).real (Iic t)) +
         renewalConv (fun s ↦ P.real {ω | renewalExcess T s ω ≤ x}) (P.map (T 0)) t := by
   have := hindep.isProbabilityMeasure
+  by_cases hzero : P {ω | T 0 ω = 0} < 1
+  swap
+  · -- For `F = δ₀` the forcing term is `1 - 1 = 0` and `g ∗ δ₀ = g`.
+    simp [(hasLaw_dirac_of_prob_eq_one (hid 0).aemeasurable_fst
+      (le_antisymm prob_le_one (not_lt.1 hzero))).map_eq]
   have := Measure.isLocallyFiniteMeasure_renewalMeasure _
-    (by rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)])
+    (by rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
+      (measurableSet_singleton 0)])
   have hcdf : Measurable fun u : ℝ≥0 ↦ (P.map (T 0)).real (Iic u) :=
     Monotone.measurable fun _ _ h ↦ measureReal_mono (Iic_subset_Iic.2 h)
-  simp_rw [measureReal_renewalExcess_le hT hindep hid hzero]
+  simp_rw [measureReal_renewalExcess_le hindep hid hzero]
   refine renewalConv_renewalMeasure_eq_add (C := 1) ((hcdf.comp (measurable_add_const x)).sub hcdf)
     fun u _ ↦ abs_sub_le_iff.2 ⟨?_, ?_⟩ <;>
   linarith [measureReal_nonneg (μ := P.map (T 0)) (s := Iic u),
