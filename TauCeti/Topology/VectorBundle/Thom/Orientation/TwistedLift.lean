@@ -94,16 +94,6 @@ variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [Norm
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (R : Type) [CommRing R]
 
-/-- Evaluation at a point of the orientation cover commutes with the identification of the fibres
-of `o(E)` over equal points. -/
-private theorem liftFiberEquiv_eqToHom_apply {x y : B} (h : x = y)
-    (e : VectorBundleOrientationCover F E ι) (hx : e.proj = x) (hy : e.proj = y)
-    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
-    liftFiberEquiv hι e hy ((eqToHom (congrArg (fun b ↦ (signLocalSystem F E R hι).obj
-      (FundamentalGroupoid.mk b)) h) : _ ⟶ _).hom f) = liftFiberEquiv hι e hx f := by
-  subst h
-  rfl
-
 /-- On the fibre over a point `p` of the orientation cover, the trivialization of the orientation
 system used by `thomPairSignChainMap`, transported to the fibre of `E` below, is the trivialization
 by the orientation `p`. -/
@@ -135,6 +125,8 @@ private theorem pullbackThomPairSignLocalSystemIso_inv_comp_eq_thomPairSignFiber
     (fiberThomPairMap_fst_proj (F := F) (E := E) p.proj v.as).symm).injective ?_
   refine Eq.trans ?_ (liftFiberEquiv_thomPairSignFiberIso_inv_app_apply (R := R) hι p.proj
     p.orientation v r).symm
+  -- `erw`: the components of these composites of local systems are taken in the functor category
+  -- out of the fundamental groupoid, which the local systems unfold to.
   erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
     LocalCoefficientSystem.pullbackConstantIso_inv_app, TopPair.fstPullbackCompIso_inv_app,
     eqToHom_app, LocalCoefficientSystem.pullback_map_app, LocalCoefficientSystem.pullback_map_app,
@@ -148,9 +140,11 @@ private theorem pullbackThomPairSignLocalSystemIso_inv_comp_eq_thomPairSignFiber
         (proj_proj_eq_proj_coverThomPairMap_fst _)
   have H₂ := congrArg (fun g ↦ TotalSpace.proj (TopPair.Hom.fst g v.as : TotalSpace F E))
     (fiberThomPairMap_comp_coverThomPairMap (F := F) (E := E) p)
+  -- `erw`: the fibres of the pulled-back systems are fibres of `o(E)` only after unfolding the
+  -- pull-backs, so the transport lemma matches up to that unfolding.
   erw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-    liftFiberEquiv_eqToHom_apply hι R (h := H₂) (hx := H₁.trans rfl),
-    liftFiberEquiv_eqToHom_apply hι R (h := rfl) (hx := H₁)]
+    liftFiberEquiv_eqToHom_apply hι (R := R) (h := H₂) (hx := H₁.trans rfl),
+    liftFiberEquiv_eqToHom_apply hι (R := R) (h := rfl) (hx := H₁)]
   -- The vector `v` of the fibre over `p` lies over `p`, at which the trivialization evaluates.
   have hgen : ∀ (e e' : VectorBundleOrientationCover F E ι) (_ : e = e') {x : B}
       (he : e.proj = x) (he' : e'.proj = x) (f : (signLocalSystem F E R hι).obj
@@ -206,6 +200,8 @@ theorem singularChainComplexMap_fiberThomPairMap_comp_thomPairSignChainMap
   simp only [← TopPair.twistedChainComplexCoefficientMap_comp_assoc, Iso.inv_hom_id,
     TopPair.twistedChainComplexCoefficientMap_id, Category.id_comp] at h2'
   rw [← reassoc_of% h2']
+  -- `erw`: `π^*o(E)` is a local system on `TopCat.of (TotalSpace F E)`, the ambient space of
+  -- `thomPair F E` only after unfolding the pair.
   erw [TopPair.twistedChainComplexMap_naturality,
     ← TopPair.twistedChainComplexCoefficientMap_comp_assoc,
     ← TopPair.twistedChainComplexCoefficientMap_comp_assoc,
@@ -281,6 +277,7 @@ private theorem singularKronecker_singularCohomologyMap_thomPairSignCohomologyMa
             (twistedThomClass F E R hι ω) := by
     rw [TopPair.singularKronecker_naturality, TopPair.singularKronecker_def,
       thomPairSignCohomologyMap_def, thomPairSignCochainMap_def]
+    -- `erw`: as above, `π^*o(E)` lives on the ambient space of `thomPair F E` only up to unfolding.
     erw [TopPair.twistedKronecker_def]
     exact congrArg (_ ≫ ·) (TauCeti.ChainComplex.kronecker_naturality
       (thomPairSignChainMap F E hι R) (finrank ℝ F) (twistedThomClass F E R hι ω))
@@ -322,10 +319,12 @@ theorem isThomClass_thomPairSignCohomologyMap_twistedThomClass [CompactSpace B]
   -- `κ` evaluates the twisted Thom class on a fibre class normalized by the orientation of `F`
   -- which the trivialization reads from `p`.
   have hκ := singularKronecker_singularCohomologyMap_thomPairSignCohomologyMap_apply hι R ω p _ hb
+  -- `erw`: `κ` is a composite of linear maps between the carriers of the modules involved.
   erw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.applyₗ_apply_apply, hκ]
   rcases Orientation.eq_or_eq_neg_of_card_eq_finrank
     ((trivializationAt F E p.proj).mapOrientation ι hb p.orientation) ω hι with h | h <;>
     simp only [h, thomPairSignFiberClass_neg, map_neg] <;>
+    -- `erw`: the Kronecker map is applied through `ModuleCat.Hom.hom`.
     erw [twistedKronecker_twistedThomClass_thomPairSignFiberClass] <;>
     exact Ideal.span_singleton_eq_top.2 (by simp)
 
@@ -421,6 +420,7 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap
             (finrank ℝ F) :=
       (HomologicalComplex.comp_f _ _ _).symm.trans hd
     rw [show ((Units.map (Int.castRingHom R : ℤ →* R) (-1) : Rˣ) : R) = -1 by simp, neg_one_smul]
+    -- `erw`: the action of `ℤˣ` on the total space is read through `TopCat.ofHom`.
     erw [neg_one_smul_eq_deckThomPairMap_fst hι]
     refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) e1)).trans ?_
     exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans

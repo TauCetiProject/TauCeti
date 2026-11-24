@@ -125,6 +125,8 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w}
 variable (F E R) in
 /-- The orientation local system `o(E)` of a real vector bundle, pulled back to its total space
 along the projection: its fibre over a vector `v` is the fibre of `o(E)` over `π v`. -/
+-- Exposed so that statements may evaluate its fibres at orientations, as fibres of `o(E)`
+-- (`TauCeti.liftFiberEquiv_thomPairSignFiberIso_inv_app_apply`).
 @[expose] def thomPairSignLocalSystem : LocalCoefficientSystem R (TopCat.of (TotalSpace F E)) :=
   (LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
     ⟨π F E, FiberBundle.continuous_proj F E⟩).obj
@@ -221,13 +223,6 @@ private theorem fiberSignIso_neg_inv {W : Set B} {x : B} (hx : x ∈ W) (o : Ori
   exact congrArg ModuleCat.ofHom
     (VectorBundleOrientationCover.signLocalSystemFiberEquiv_neg_symm hι o)
 
-omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-/-- A vector of the fibre pair over `b` lies over `b`. -/
-theorem fiberThomPairMap_fst_proj (b : B)
-    (v : (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).fst) :
-    (TopPair.Hom.fst (fiberThomPairMap F E b) v).proj = b :=
-  congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b v)
-
 omit [FiniteDimensional ℝ F] in
 variable (F E R) in
 /-- **The orientation system over a fibre.** The pulled-back orientation system `π^*o(E)`,
@@ -240,7 +235,7 @@ def thomPairSignFiberIso (b : B) (o : Orientation ℝ (E b) ι) :
       (constantFunctor _).obj (ModuleCat.of R R) :=
   NatIso.ofComponents (fun v ↦
       (VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩
-        (fiberThomPairMap_fst_proj b v.as).symm).toModuleIso)
+        (fiberThomPairMap_fst_proj F E b v.as).symm).toModuleIso)
     fun {v v'} q ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦ by
       -- The constant lift at `(b, o)` lifts the projection of `q`, so monodromy in the cover fixes
       -- `(b, o)`.
@@ -248,17 +243,21 @@ def thomPairSignFiberIso (b : B) (o : Orientation ℝ (E b) ι) :
         hι).monodromy_map_of_lift (g := (⟨π F E, FiberBundle.continuous_proj F E⟩ :
           C(TotalSpace F E, B)).comp (TopPair.Hom.fst (fiberThomPairMap F E b)).hom)
         (s := fun _ ↦ (⟨b, o⟩ : VectorBundleOrientationCover F E ι)) continuous_const
-        (fun v ↦ (fiberThomPairMap_fst_proj b v).symm) q
+        (fun v ↦ (fiberThomPairMap_fst_proj F E b v).symm) q
+      -- `change`: the components are the evaluations at `(b, o)`, and the constant system
+      -- transports by the identity.
       change VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩
-          (fiberThomPairMap_fst_proj b v'.as).symm
+          (fiberThomPairMap_fst_proj F E b v'.as).symm
           ((signLocalSystem F E R hι).map
             ((FundamentalGroupoid.map (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
               ⟨π F E, FiberBundle.continuous_proj F E⟩).map
             ((FundamentalGroupoid.map (TopPair.Hom.fst (fiberThomPairMap F E b)).hom).map q)) f) =
         VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩
-          (fiberThomPairMap_fst_proj b v.as).symm f
+          (fiberThomPairMap_fst_proj F E b v.as).symm f
       refine (VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ _).trans
         (.trans ?_ (VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ f).symm)
+      -- `erw`: the path class lives in the fundamental groupoid of the fibre pair, which is `E_b`
+      -- only after unfolding the pair.
       erw [Path.Homotopic.Quotient.map_comp, ← FundamentalGroupoid.map_map] at hm
       rw [← hm]
       exact VectorBundleOrientationCover.signLocalSystemObjEquiv_map_apply_monodromy hι _ f _)
@@ -269,7 +268,8 @@ the fibre of `o(E)` whose value at the orientation `o` is `r`. -/
 theorem liftFiberEquiv_thomPairSignFiberIso_inv_app_apply (b : B) (o : Orientation ℝ (E b) ι)
     (v : FundamentalGroupoid (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).fst)
     (r : R) :
-    VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩ (fiberThomPairMap_fst_proj b v.as).symm
+    VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩
+        (fiberThomPairMap_fst_proj F E b v.as).symm
         ((thomPairSignFiberIso F E R hι b o).inv.app v r) = r :=
   LinearEquiv.apply_symm_apply _ r
 
@@ -873,6 +873,8 @@ private theorem overUnivIso_hom_eq (n : ℕ) :
         TopPair.twistedHomologyMap (thomPairOverUnivIso F E).hom (thomPairSignLocalSystem F E R hι)
           n := by
   rw [overUnivIso, Iso.trans_hom, Functor.mapIso_hom, HomologicalComplex.homologyFunctor_map]
+  -- `erw`: the homology map of the coefficient isomorphism is `twistedHomologyCoefficientMap` only
+  -- after unfolding that abbreviation; `rfl` then identifies `(asIso f).hom` with `f`.
   erw [TopPair.twistedChainComplexCoefficientIso_hom]
   rfl
 
@@ -920,16 +922,21 @@ private theorem fiberSignIso_inv_comp_eq_thomPairSignFiberIso_inv (b : B)
         (fiberThomPairOverMap_comp_thomPairOverUnivIso_hom F E b)) =
       (thomPairSignFiberIso F E R hι b o).inv := by
   refine NatTrans.ext (funext fun v ↦ ModuleCat.hom_ext (LinearMap.ext fun (r : R) ↦ ?_))
+  -- `erw`: the components of these composites of local systems are taken in the functor category
+  -- out of the fundamental groupoid, which the local systems unfold to.
   erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app, eqToHom_app,
     TopPair.fstPullbackCompIso_inv_app, eqToHom_app, Category.comp_id, Category.assoc,
     eqToHom_trans]
   -- Compare both sides by their values at the orientation `o` of `E_b`.
   have hx : b = π F E (TopPair.Hom.fst (fiberThomPairMap F E b) v.as) :=
-    (fiberThomPairMap_fst_proj b v.as).symm
+    (fiberThomPairMap_fst_proj F E b v.as).symm
   refine (VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩ hx).injective ?_
+  -- `change`: the component of `thomPairSignFiberIso` is the inverse of evaluation at `(b, o)`.
   change _ = VectorBundleOrientationCover.liftFiberEquiv hι _ hx
     ((VectorBundleOrientationCover.liftFiberEquiv hι _ hx).symm r)
   rw [LinearEquiv.apply_symm_apply, ModuleCat.hom_comp]
+  -- `erw`: the fibres of the pulled-back system are fibres of `o(E)` only after unfolding the
+  -- pull-backs.
   erw [LinearMap.comp_apply, VectorBundleOrientationCover.liftFiberEquiv_apply,
     VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToHom_apply hι hx _ _ rfl hx]
   -- The component of `fiberSignIso` is the inverse of evaluation at the same orientation.
@@ -964,6 +971,8 @@ theorem thomPairSignFiberClass_eq (e : Trivialization F (π F E)) [e.IsLinear �
       TopPair.twistedHomologyMap (fiberThomPairMap F E b) (thomPairSignLocalSystem F E R hι)
         (finrank ℝ F) := by
     rw [overUnivIso_hom_eq]
+    -- `erw`: the coefficient system of the pair over the whole base is the pull-back of `π^*o(E)`
+    -- along the inclusion only after unfolding `thomPairOverSignLocalSystem`.
     erw [TopPair.twistedHomologyMap_naturality_assoc,
       twistedHomologyMap_fiberThomPairOverMap_comp_thomPairOverUnivIso,
       ← TopPair.twistedHomologyCoefficientMap_comp_assoc,

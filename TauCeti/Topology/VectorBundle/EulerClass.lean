@@ -282,6 +282,12 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
   unfold fiberThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
 
+/-- A vector of the fibre pair over `b` lies over `b`. -/
+theorem fiberThomPairMap_fst_proj (b : B)
+    (x : (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).fst) :
+    (TopPair.Hom.fst (fiberThomPairMap F E b) x).proj = b :=
+  congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x)
+
 /-- The map of ambient spaces of the fibre inclusion over `b` is `x ↦ (b, x)`. -/
 theorem fiberThomPairMap_fst (b : B) :
     TopPair.Hom.fst (fiberThomPairMap F E b) =
