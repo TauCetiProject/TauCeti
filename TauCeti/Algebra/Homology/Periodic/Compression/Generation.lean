@@ -17,7 +17,8 @@ dimensions, every isomorphism-closed triangulated subcategory containing the com
 bounded complexes, the gradable objects, is the entire positive-period derived category. This
 is generation by shifts and cones, without taking retracts or passing to an idempotent
 completion. In particular the thick envelope of the gradable objects is also the entire
-category.
+category. The gradable objects are the essential image of the derived orbit functor
+(`essImage_orbitDerivedCompressionFunctor`), so both statements apply to that image.
 
 The proof uses projective flag resolutions. Every zero-differential layer of such a flag is
 itself the compression of a bounded complex, and degreewise split extensions give distinguished
@@ -37,7 +38,7 @@ public section
 
 open CategoryTheory Limits HomologicalComplex ZeroObject
 
-universe w v u
+universe v u
 
 namespace TauCeti.PeriodicComplex
 
@@ -94,26 +95,5 @@ positive-period derived category. The stronger shift-and-cone generation stateme
 theorem triangEnvelope_gradable_eq_top (d : ℕ) (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
     (gradable C n).triangEnvelope = ⊤ :=
   eq_top_of_gradable_le d hd _ (ObjectProperty.le_triangEnvelope _)
-
-variable [HasDerivedCategory.{w} C]
-
-/-- The essential image of the derived orbit functor generates the periodic derived category
-under shifts and cones alone. No closure under retracts is required. -/
-theorem eq_top_of_essImage_orbitDerivedCompressionFunctor_le (d : ℕ)
-    (hd : ∀ X : C, HasProjectiveDimensionLT X d)
-    (P : ObjectProperty (DerivedCategory C n)) [P.IsTriangulated]
-    [P.IsClosedUnderIsomorphisms]
-    (hP : (orbitDerivedCompressionFunctor (C := C) n).essImage ≤ P) : P = ⊤ := by
-  rw [essImage_orbitDerivedCompressionFunctor] at hP
-  exact eq_top_of_gradable_le d hd P hP
-
-/-- In finite global dimension, the thick envelope of the derived orbit functor's image is the
-entire positive-period derived category. The stronger shift-and-cone generation statement is
-`eq_top_of_essImage_orbitDerivedCompressionFunctor_le`. -/
-theorem triangEnvelope_essImage_orbitDerivedCompressionFunctor_eq_top (d : ℕ)
-    (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
-    (orbitDerivedCompressionFunctor (C := C) n).essImage.triangEnvelope = ⊤ := by
-  rw [essImage_orbitDerivedCompressionFunctor]
-  exact triangEnvelope_gradable_eq_top d hd
 
 end TauCeti.PeriodicComplex
