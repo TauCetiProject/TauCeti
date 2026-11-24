@@ -35,7 +35,9 @@ The conjugation relation `r(w) N r(w)⁻¹ = q ^ deg w • N` holds for each bec
 and over a field the dual has the same kernel as the parameter. For the twist and the tensor
 product the kernel only contains an open subgroup, so these need multiplication on `W` to be
 separately continuous. Each operation is functorial on morphisms and isomorphisms of parameters
-(the dual contravariantly), and the sum and the twist commute with transport. For
+(the dual contravariantly), compatibly with inverses of isomorphisms, and the sum and the twist
+commute with transport. The direct sum comes with its inclusions, projections and the pairing of
+two morphisms, and twisting by characters is an action of the character group. For
 finite-dimensional `V` the double dual is isomorphic to the parameter through the canonical
 evaluation map (`TauCeti.WeilDeligneParameter.dualDualIso`), so double duality recovers `N`.
 
@@ -118,6 +120,65 @@ theorem Hom.prodMap_comp (f : Hom D₂ D₃) (g : Hom D₂' D₃') (f' : Hom D�
     (g' : Hom D₁' D₂') : (f.comp f').prodMap (g.comp g') = (f.prodMap g).comp (f'.prodMap g') :=
   Hom.ext (LinearMap.ext fun x ↦ by simp)
 
+/-- The inclusion of the first summand into a direct sum of parameters. -/
+def Hom.inl : Hom D (D.prod D') where
+  toLinearMap := LinearMap.inl E V V'
+  isIntertwining' w := LinearMap.ext fun _ ↦ Prod.ext rfl (map_zero (D'.r w)).symm
+  comp_N := LinearMap.ext fun _ ↦ Prod.ext rfl (map_zero D'.N).symm
+
+/-- The inclusion of the second summand into a direct sum of parameters. -/
+def Hom.inr : Hom D' (D.prod D') where
+  toLinearMap := LinearMap.inr E V V'
+  isIntertwining' w := LinearMap.ext fun _ ↦ Prod.ext (map_zero (D.r w)).symm rfl
+  comp_N := LinearMap.ext fun _ ↦ Prod.ext (map_zero D.N).symm rfl
+
+/-- The projection of a direct sum of parameters onto its first summand. -/
+def Hom.fst : Hom (D.prod D') D where
+  toLinearMap := LinearMap.fst E V V'
+  isIntertwining' _ := rfl
+  comp_N := rfl
+
+/-- The projection of a direct sum of parameters onto its second summand. -/
+def Hom.snd : Hom (D.prod D') D' where
+  toLinearMap := LinearMap.snd E V V'
+  isIntertwining' _ := rfl
+  comp_N := rfl
+
+/-- The morphism into a direct sum of parameters given by a pair of morphisms. -/
+def Hom.prod (f : Hom D₃ D₁) (g : Hom D₃ D₁') : Hom D₃ (D₁.prod D₁') where
+  toLinearMap := f.toLinearMap.prod g.toLinearMap
+  isIntertwining' w := LinearMap.ext fun x ↦ Prod.ext (f.map_r_apply w x) (g.map_r_apply w x)
+  comp_N := LinearMap.ext fun x ↦ Prod.ext (f.map_N_apply x) (g.map_N_apply x)
+
+@[simp]
+theorem Hom.inl_apply (v : V) : Hom.inl D D' v = (v, 0) :=
+  (rfl)
+
+@[simp]
+theorem Hom.inr_apply (v : V') : Hom.inr D D' v = (0, v) :=
+  (rfl)
+
+@[simp]
+theorem Hom.fst_apply (x : V × V') : Hom.fst D D' x = x.1 :=
+  (rfl)
+
+@[simp]
+theorem Hom.snd_apply (x : V × V') : Hom.snd D D' x = x.2 :=
+  (rfl)
+
+@[simp]
+theorem Hom.prod_apply (f : Hom D₃ D₁) (g : Hom D₃ D₁') (x : V₃) : f.prod g x = (f x, g x) :=
+  (rfl)
+
+@[simp]
+theorem Hom.fst_comp_prod (f : Hom D₃ D₁) (g : Hom D₃ D₁') : (Hom.fst D₁ D₁').comp (f.prod g) = f :=
+  Hom.ext (LinearMap.ext fun x ↦ by simp)
+
+@[simp]
+theorem Hom.snd_comp_prod (f : Hom D₃ D₁) (g : Hom D₃ D₁') :
+    (Hom.snd D₁ D₁').comp (f.prod g) = g :=
+  Hom.ext (LinearMap.ext fun x ↦ by simp)
+
 /-- The direct sum of two isomorphisms of parameters. -/
 def Iso.prodCongr (f : Iso D₁ D₂) (g : Iso D₁' D₂') : Iso (D₁.prod D₁') (D₂.prod D₂') :=
   Iso.ofBijective (f.toHom.prodMap g.toHom) (by
@@ -144,6 +205,11 @@ theorem Iso.prodCongr_trans (f : Iso D₁ D₂) (g : Iso D₁' D₂') (f' : Iso 
     (g' : Iso D₂' D₃') :
     (f.prodCongr g).trans (f'.prodCongr g') = (f.trans f').prodCongr (g.trans g') :=
   Iso.ext (LinearEquiv.ext fun x ↦ by simp)
+
+@[simp]
+theorem Iso.prodCongr_symm (f : Iso D₁ D₂) (g : Iso D₁' D₂') :
+    (f.prodCongr g).symm = f.symm.prodCongr g.symm :=
+  Iso.ext (LinearEquiv.ext fun x ↦ (f.prodCongr g).injective (by simp))
 
 /-- The direct sum commutes with transport. -/
 theorem prod_transport (e : V ≃ₗ[E] V₁) (e' : V' ≃ₗ[E] V₁') :
@@ -221,6 +287,10 @@ theorem Iso.dual_trans (f : Iso D₁ D₂) (g : Iso D₂ D₃) :
     (f.trans g).dual = g.dual.trans f.dual :=
   Iso.ext (LinearEquiv.ext fun φ ↦ LinearMap.ext fun v ↦ by simp)
 
+@[simp]
+theorem Iso.dual_symm (f : Iso D₁ D₂) : f.dual.symm = f.symm.dual :=
+  Iso.ext (LinearEquiv.ext fun φ ↦ f.dual.injective (LinearMap.ext fun v ↦ by simp))
+
 /-- **Double duality.** For finite-dimensional `V`, the canonical evaluation map is an
 isomorphism from a parameter to its double dual; in particular the monodromy of the double dual
 is `N`. -/
@@ -246,20 +316,14 @@ variable [SeparatelyContinuousMul W]
 with open kernel. -/
 def twist (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W)) : WeilDeligneParameter E W V deg q where
   r := Representation.charTwist χ D.r
-  isOpen_ker := by
-    refine Subgroup.isOpen_mono (H₁ := χ.ker ⊓ D.r.ker) (fun w hw ↦ ?_) (hχ.inter D.isOpen_ker)
-    rw [MonoidHom.mem_ker, Representation.charTwist_apply, MonoidHom.mem_ker.mp hw.1,
-      MonoidHom.mem_ker.mp hw.2, Units.val_one, one_smul]
+  isOpen_ker :=
+    Subgroup.isOpen_mono (Representation.inf_ker_le_ker_charTwist χ D.r) (hχ.inter D.isOpen_ker)
   N := D.N
   isNilpotent_N := D.isNilpotent_N
   conj_N w := by
     ext v
-    have h : ((χ w⁻¹ : E) * (χ w : E)) = 1 := by
-      rw [← Units.val_mul, ← map_mul, inv_mul_cancel, map_one, Units.val_one]
-    simp only [Module.End.mul_eq_comp, LinearMap.comp_apply,
-      Representation.charTwist_apply_apply, map_smul, LinearMap.smul_apply, smul_smul, h,
-      one_smul]
-    exact D.r_apply_N_apply_r_inv_apply w v
+    simpa [Representation.charTwist_apply_apply, smul_smul] using
+      D.r_apply_N_apply_r_inv_apply w v
 
 variable (χ : W →* Eˣ) (hχ : IsOpen (χ.ker : Set W))
 
@@ -270,6 +334,19 @@ theorem twist_r : (D.twist χ hχ).r = Representation.charTwist χ D.r :=
 @[simp]
 theorem twist_N : (D.twist χ hχ).N = D.N :=
   (rfl)
+
+/-- Twisting by the trivial character changes nothing. -/
+@[simp]
+theorem twist_one (h : IsOpen ((1 : W →* Eˣ).ker : Set W)) : D.twist 1 h = D := by
+  ext w v <;> simp
+
+/-- Twisting twice multiplies the characters. -/
+@[simp]
+theorem twist_twist (ψ : W →* Eˣ) (hψ : IsOpen (ψ.ker : Set W)) :
+    (D.twist χ hχ).twist ψ hψ = D.twist (ψ * χ) (Subgroup.isOpen_mono (H₁ := ψ.ker ⊓ χ.ker)
+      (fun w hw ↦ by simp [MonoidHom.mem_ker.mp hw.1, MonoidHom.mem_ker.mp hw.2])
+      (hψ.inter hχ)) := by
+  ext w v <;> simp [Representation.charTwist_charTwist]
 
 /-- The twist of a morphism of parameters by a common character. -/
 def Hom.twist (f : Hom D₁ D₂) : Hom (D₁.twist χ hχ) (D₂.twist χ hχ) where
@@ -313,6 +390,10 @@ theorem Iso.twist_trans (f : Iso D₁ D₂) (g : Iso D₂ D₃) :
     (f.twist χ hχ).trans (g.twist χ hχ) = (f.trans g).twist χ hχ :=
   Iso.ext (LinearEquiv.ext fun v ↦ by simp)
 
+@[simp]
+theorem Iso.twist_symm (f : Iso D₁ D₂) : (f.twist χ hχ).symm = f.symm.twist χ hχ :=
+  Iso.ext (LinearEquiv.ext fun v ↦ (f.twist χ hχ).injective (by simp))
+
 /-- The twist commutes with transport. -/
 theorem twist_transport (e : V ≃ₗ[E] V₁) :
     (D.transport e).twist χ hχ = (D.twist χ hχ).transport e := by
@@ -324,11 +405,9 @@ theorem twist_transport (e : V ≃ₗ[E] V₁) :
 parameters. -/
 def tensor : WeilDeligneParameter E W (V ⊗[E] V') deg q where
   r := D.r.tprod D'.r
-  isOpen_ker := by
-    refine Subgroup.isOpen_mono (H₁ := D.r.ker ⊓ D'.r.ker) (fun w hw ↦ ?_)
+  isOpen_ker :=
+    Subgroup.isOpen_mono (Representation.inf_ker_le_ker_tprod D.r D'.r)
       (D.isOpen_ker.inter D'.isOpen_ker)
-    rw [MonoidHom.mem_ker, Representation.tprod_apply, MonoidHom.mem_ker.mp hw.1,
-      MonoidHom.mem_ker.mp hw.2, TensorProduct.map_one]
   N := D.N.rTensor V' + D'.N.lTensor V
   isNilpotent_N := by
     refine Commute.isNilpotent_add ?_ ?_ ?_
@@ -398,6 +477,12 @@ theorem Iso.tensor_trans (f : Iso D₁ D₂) (g : Iso D₁' D₂') (f' : Iso D�
     (g' : Iso D₂' D₃') :
     (f.tensor g).trans (f'.tensor g') = (f.trans f').tensor (g.trans g') :=
   Iso.ext (LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun v v' ↦ by simp))
+
+@[simp]
+theorem Iso.tensor_symm (f : Iso D₁ D₂) (g : Iso D₁' D₂') :
+    (f.tensor g).symm = f.symm.tensor g.symm :=
+  Iso.ext (LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun v v' ↦
+    (f.tensor g).injective (by simp)))
 
 end WeilDeligneParameter
 
