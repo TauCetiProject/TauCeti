@@ -176,26 +176,22 @@ private theorem hasMFDerivAt_jetLine (q : Λ) (p : TangentSpace I q →L[ℝ] �
       (fun t : ℝ ↦ ((⟨q, t • p⟩ : CotangentBundle I Λ), t * c)) 0
       ((1 : ℝ →L[ℝ] ℝ).smulRight (((0 : E), (p : E →L[ℝ] ℝ)), c)) := by
   have hcoord : (trivializationAt (E →L[ℝ] ℝ) (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q
-      ⟨q, p⟩).2 = p := by
-    rw [CotangentBundle.trivializationAt_mk_snd]
-    ext v
-    simp [Manifold.symmL_trivializationAt_self]
-    -- The two sides differ only in reading `v` in `E` or in `TangentSpace I q`, which unfolds to
-    -- `E`.
-    rfl
+      ⟨q, p⟩).2 = p :=
+    (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _
+      (FiberBundle.mem_baseSet_trivializationAt (E →L[ℝ] ℝ)
+        (fun x : Λ ↦ TangentSpace I x →L[ℝ] ℝ) q) p).symm.trans
+      (CotangentBundle.continuousLinearMapAt_trivializationAt_self q p)
   have h1 := TotalSpace.hasMFDerivAt_smul_curve (IB := I)
     (⟨q, p⟩ : CotangentBundle I Λ) (hasDerivAt_id (0 : ℝ))
   simp only [hcoord] at h1
   have h2 : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun t : ℝ ↦ t * c) 0 ((1 : ℝ →L[ℝ] ℝ).smulRight c) := by
-    refine ((hasDerivAt_id (0 : ℝ)).mul_const c).hasFDerivAt.hasMFDerivAt.congr_mfderiv ?_
-    -- `smulRight 1 x` sends `1` to `1 • x` by the definition of `ContinuousLinearMap.smulRight`.
-    ext
-    exact congrArg (fun x : ℝ ↦ (1 : ℝ) • x) (one_mul c)
-  refine (h1.prodMk h2).congr_mfderiv ?_
-  -- Likewise, both sides evaluate at `1` to `((0, 1 • p), 1 • c)`.
-  ext
-  · exact Prod.ext rfl (congrArg (fun x : E →L[ℝ] ℝ ↦ (1 : ℝ) • x) (one_smul ℝ (p : E →L[ℝ] ℝ)))
-  · rfl
+    exact (hasDerivAt_mul_const c).hasFDerivAt.hasMFDerivAt.congr_mfderiv
+      (ContinuousLinearMap.smulRight_one_eq_toSpanSingleton (R₁ := ℝ) c).symm
+  have h3 : ((1 : ℝ →L[ℝ] ℝ).smulRight ((0 : E), (1 : ℝ) • (p : E →L[ℝ] ℝ))).prod
+      ((1 : ℝ →L[ℝ] ℝ).smulRight c) =
+        (1 : ℝ →L[ℝ] ℝ).smulRight (((0 : E), (p : E →L[ℝ] ℝ)), c) := by
+    ext <;> simp
+  exact (h1.prodMk h2).congr_mfderiv h3
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] in
 /-- The differential of the zero section `q ↦ (0_q, 0)` of `J¹Λ` sends `u` to `((u, 0), 0)`. -/
@@ -501,8 +497,8 @@ private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaC
     refine (SmoothForm.mpullback_apply_one _ _ SmoothForm.realLineCoordForm
       (y : CotangentBundle I Λ × ℝ) v).trans ?_
     rw [SmoothForm.realLineCoordForm_apply, Matrix.cons_val_zero, mfderiv_snd]
-    -- `ContinuousLinearMap.snd` is `Prod.snd` once `TangentSpace` unfolds to the model product.
-    rfl
+    -- The tangent spaces are the model product, where `ContinuousLinearMap.snd` is `Prod.snd`.
+    exact congrFun (ContinuousLinearMap.coe_snd' (R := ℝ) (M₁ := E × (E →L[ℝ] ℝ)) (M₂ := ℝ)) v
   refine
     SmoothForm.exists_partialDiffeomorph_mpullback_eq_of_isContactFormAt_of_apply_mfderiv_eq_zero
     (β := β) (fun y hy ↦ (hvc y hy).2) (fun y hy ↦ (hvc y hy).1) (hσ.restrictPreimage W)
@@ -514,9 +510,9 @@ private theorem exists_partialDiffeomorph_opens_zeroSection [T2Space Λ] [SigmaC
   · rintro ⟨x, hx⟩ ⟨q, rfl⟩
     exact ⟨⟨zeroSection _ _ q, hx⟩, rfl⟩
   · rw [hβ', Manifold.mfderiv_restrictPreimage_apply hσ.continuous W, (hdσ s).mfderiv]
-    -- The second component of `(id.prod 0) w` is `0` by the definition of
-    -- `ContinuousLinearMap.prod`; the tangent spaces are model spaces.
-    rfl
+    -- The tangent spaces are model spaces, where `(id.prod 0) w` has second component `0`.
+    exact (by simp : ∀ x : E × (E →L[ℝ] ℝ), ((ContinuousLinearMap.id ℝ _).prod
+      (0 : E × (E →L[ℝ] ℝ) →L[ℝ] ℝ) x).2 = 0) w
   · rintro ⟨x, hx⟩ ⟨q, rfl⟩
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [show v = ![v 0] from funext fun i ↦ by fin_cases i; rfl, hβ',
