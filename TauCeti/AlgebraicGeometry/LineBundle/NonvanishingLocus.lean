@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 import Mathlib.AlgebraicGeometry.Morphisms.Affine
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
@@ -35,6 +36,12 @@ On an affine open `U`, the nonvanishing locus of every section over `U` is affin
 `f` of the sections over `U`. These are the two facts making every invertible sheaf on an affine
 scheme ample.
 
+For a line bundle `L` whose class in the Picard group is trivial, `L` is only isomorphic to `𝒪_X`,
+not equal to it, but the nonvanishing loci of its sections over `U` are still exactly the basic
+open sets of the regular functions on `U`. When the global functions on `X` form a field, as on an
+integral scheme universally closed over a field (`AlgebraicGeometry.isField_of_universallyClosed`),
+a global section of `L` therefore vanishes either everywhere or nowhere.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus`: the open set `X_s` of points at which the
@@ -62,6 +69,11 @@ scheme ample.
 * `AlgebraicGeometry.IsAffineOpen.nonvanishingLocus`: on an affine open, `X_s` is affine;
 * `AlgebraicGeometry.Scheme.Modules.exists_mem_nonvanishingLocus_of_isAffineOpen`: every point of
   an affine open `U` lies in `X_s` for some section `s` over `U`.
+* `InvertibleSheaf.range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one`:
+  the nonvanishing loci of sections of a line bundle of trivial class are the basic open sets;
+* `InvertibleSheaf.nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one`:
+  when `Γ(X, ⊤)` is a field, a global section of a line bundle of trivial class vanishes
+  everywhere or nowhere.
 
 ## References
 
@@ -401,3 +413,37 @@ theorem exists_mem_nonvanishingLocus_of_isAffineOpen {U : X.Opens} (hU : IsAffin
   exact ((X.mem_basicOpen _ _ hx).mp hxf).pow n
 
 end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
+
+universe u
+
+variable {X : Scheme.{u}}
+
+/-- The nonvanishing loci of the sections over `U` of a line bundle of trivial class are exactly the
+basic open sets of the regular functions on `U`. -/
+theorem range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one {L : InvertibleSheaf X}
+    (hL : LineBundleClass.mk L = 1) (U : X.Opens) :
+    Set.range (L.obj.nonvanishingLocus (U := U)) = Set.range (X.basicOpen (U := U)) := by
+  -- The tensor unit `𝟙_ X.Modules` is by definition the structure sheaf `SheafOfModules.unit`.
+  obtain ⟨e⟩ : Nonempty (L.obj ≅ SheafOfModules.unit X.ringCatSheaf) :=
+    LineBundleClass.mk_eq_one_iff.mp hL
+  rw [Scheme.Modules.range_nonvanishingLocus_eq_of_iso e U]
+  exact congrArg Set.range (funext Scheme.Modules.nonvanishingLocus_unit)
+
+/-- When the global functions on `X` form a field, for instance on an integral scheme universally
+closed over a field, a global section of a line bundle of trivial class vanishes either everywhere
+or nowhere. -/
+theorem nonvanishingLocus_eq_bot_or_eq_top_of_isField_of_mk_eq_one (hX : IsField Γ(X, ⊤))
+    {L : InvertibleSheaf X} (hL : LineBundleClass.mk L = 1) (s : Γ(L.obj, ⊤)) :
+    L.obj.nonvanishingLocus s = ⊥ ∨ L.obj.nonvanishingLocus s = ⊤ := by
+  obtain ⟨r, hr⟩ : L.obj.nonvanishingLocus s ∈ Set.range (X.basicOpen (U := ⊤)) := by
+    rw [← range_nonvanishingLocus_eq_range_basicOpen_of_mk_eq_one hL ⊤]
+    exact ⟨s, rfl⟩
+  let := hX.toField
+  rw [← hr]
+  obtain rfl | hr₀ := eq_or_ne r 0
+  · exact Or.inl (X.basicOpen_zero ⊤)
+  · exact Or.inr (X.basicOpen_of_isUnit hr₀.isUnit)
+
+end TauCeti.AlgebraicGeometry.InvertibleSheaf
