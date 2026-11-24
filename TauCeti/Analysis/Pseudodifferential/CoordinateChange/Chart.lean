@@ -175,6 +175,41 @@ private theorem exists_sum_eq
     ring_nf
   · simp [hw, hv0 z hz]
 
+/-- **Transporting a cut-off Schwartz function.** For a cutoff `ψ` with compact support in the
+source of a partial diffeomorphism `κ` and a Schwartz function `u`, the function equal to
+`(ψ u) ∘ κ⁻¹` on the target of `κ` and to `0` off it is a Schwartz function. These are the inputs
+`v` of the changes of coordinates below. -/
+theorem exists_schwartzMap_apply_eq_smul
+    {κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n)}
+    (hκ' : ContDiffOn ℝ ∞ κ.symm κ.target) {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ κ.source) (u : 𝓢(CoordinateSpace n, V)) :
+    ∃ v : 𝓢(CoordinateSpace n, V), (∀ y ∈ κ.source, v (κ y) = ψ y • u y) ∧
+      ∀ z ∉ κ.target, v z = 0 := by
+  -- The cutoff `ψ` transported to the target of `κ`, extended by `0`, has compact support there.
+  set ψ' : CoordinateSpace n → ℝ := κ.target.indicator (ψ ∘ κ.symm)
+  have hψ'κ : ∀ y ∈ κ.source, ψ' (κ y) = ψ y := fun y hy ↦ by
+    simp [ψ', indicator_of_mem (κ.map_source hy), κ.left_inv hy]
+  have hψ'0 : ∀ z ∉ κ.target, ψ' z = 0 := fun z hz ↦ indicator_of_notMem hz _
+  have hK : IsCompact (κ '' tsupport ψ) :=
+    hψc.isCompact.image_of_continuousOn (κ.continuousOn.mono hψs)
+  have hsub : Function.support ψ' ⊆ κ '' tsupport ψ := fun z hz ↦ by
+    have hzt : z ∈ κ.target := by_contra fun h ↦ hz (hψ'0 z h)
+    refine ⟨κ.symm z, subset_tsupport _ fun h ↦ hz ?_, κ.right_inv hzt⟩
+    rw [← κ.right_inv hzt, hψ'κ _ (κ.map_target hzt), h]
+  have hc : HasCompactSupport ψ' :=
+    .intro' hK hK.isClosed fun z hz ↦ Function.notMem_support.1 fun h ↦ hz (hsub h)
+  have hst : tsupport ψ' ⊆ κ.target := (hK.isClosed.closure_subset_iff.2 hsub).trans <| by
+    rintro _ ⟨y, hy, rfl⟩
+    exact κ.map_source (hψs hy)
+  have hψ'd : ContDiffOn ℝ ∞ ψ' κ.target :=
+    (hψ.comp_contDiffOn hκ').congr fun z hz ↦ indicator_of_mem hz _
+  have hv : ContDiff ℝ ∞ fun z ↦ ψ' z • u (κ.symm z) :=
+    ((u.smooth ⊤).comp_contDiffOn hκ').contDiff_smul_of_tsupport_subset κ.open_target hψ'd hst
+  refine ⟨(hc.smul_right (f' := fun z ↦ u (κ.symm z))).toSchwartzMap hv, fun y hy ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · simp [hψ'κ y hy, κ.left_inv hy]
+  · simp [hψ'0 z hz]
+
 variable [CompleteSpace V] [CompleteSpace W]
 
 /-- **Integral operators under a change of variables.** Let `κ` be a diffeomorphism from an open
