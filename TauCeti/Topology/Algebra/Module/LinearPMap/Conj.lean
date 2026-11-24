@@ -28,8 +28,9 @@ with `B` and `e⁻¹` intertwines `B` with `A`.
 * `LinearPMap.isClosed_conj_iff`, `LinearPMap.isClosable_conj_iff` and
   `LinearPMap.closure_conj`: closedness, closability and closures.
 * `LinearPMap.dense_conj_domain_iff` and `LinearPMap.HasCore.conj`: dense domains and cores.
-* `LinearPMap.conj_mem_domain` and `LinearPMap.conj_apply_comp_conj`: transporting domain
-  preservation and operator application under `e ∘L T ∘L e⁻¹`.
+* `LinearPMap.conj_mem_domain`, `LinearPMap.conj_apply_comp_conj`, and
+  `LinearPMap.comp_conj_apply_conj`: transporting domain preservation and operator application
+  under `e ∘L T ∘L e⁻¹`.
 * `LinearPMap.conj_eq_iff_intertwines`: the intertwining characterisation.
 
 ## References
@@ -92,6 +93,15 @@ theorem conj_apply_comp_conj (A : E →ₗ.[R] E) {T : E →L[R] E}
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
         ContinuousLinearEquiv.coe_toLinearEquiv, x])
   rw [hdom, conj_apply_map, ContinuousLinearEquiv.coe_toLinearEquiv]
+
+/-- Evaluating `e ∘L T ∘L e⁻¹` on `A.conj e y` applies `e` to `T (A (e⁻¹ y))`. -/
+theorem comp_conj_apply_conj (A : E →ₗ.[R] E) (T : E →L[R] E)
+    (y : (A.conj (e : E ≃ₗ[R] F)).domain) :
+    ((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) (A.conj (e : E ≃ₗ[R] F) y) =
+      e (T (A ⟨e.symm y, mem_conj_domain_iff.1 y.property⟩)) := by
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, conj_apply]
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ← ContinuousLinearEquiv.toLinearEquiv_symm, ContinuousLinearEquiv.symm_apply_apply]
 
 /-! ### Intertwining -/
 

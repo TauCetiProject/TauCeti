@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Bounded
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Eigenbasis
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.OneAddSq
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Sylvester
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Conj
 import TauCeti.Analysis.InnerProductSpace.Sylvester
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Normed.Operator.Resolvent.Analytic
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvSqrtAdd
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Sylvester
 
 /-!
 # The bounded transform and Baaj–Julg commutator theorem
@@ -23,7 +26,7 @@ For a self-adjoint `A : H →ₗ.[ℂ] H`, the **bounded transform**
 `F_A = A (1 + A²)⁻¹/²` (`LinearPMap.boundedTransform`) is a self-adjoint contraction satisfying
 `1 - F_A² = (1 + A²)⁻¹`. When `A` has compact resolvent and `T : H →L[ℂ] H` solves a
 domain-aware Sylvester equation `SylvesterEquation A A T C` (`[A, T] = C` on `D(A)`), `[F_A, T]`
-is compact with `‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`.
+is compact with `‖[F_A, T]‖ ≤ ‖C‖`.
 
 ## Main definitions & results
 
@@ -234,65 +237,22 @@ private theorem bjMulRes_apply_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : Hi
 private theorem isCompactOperator_bjMulRes (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
     (r : ℝ) : IsCompactOperator ⇑(bjMulRes A r) := by
   rw [bjMulRes, FunLike.coe_smul, FunLike.coe_add]
-  have hc1 := (hA.hasCompactResolvent_iff_isCompactOperator_resolvent
-    (z := Complex.I * bjShift r) (by simp [(bjShift_pos r).ne'])).1 h
-  have hc2 := (hA.hasCompactResolvent_iff_isCompactOperator_resolvent
-    (z := -Complex.I * bjShift r) (by simp [(bjShift_pos r).ne'])).1 h
   exact (compactOperator (RingHom.id ℂ) H H).smul_mem _
-    ((compactOperator (RingHom.id ℂ) H H).add_mem hc1 hc2)
-
-private theorem norm_resolvent_I_mul_sub_le (hA : IsSelfAdjoint A) {t₁ t₂ : ℝ}
-    (ht₁ : 1 ≤ t₁) (ht₂ : 1 ≤ t₂) :
-    ‖A.resolvent (Complex.I * t₁) - A.resolvent (Complex.I * t₂)‖ ≤ ‖t₁ - t₂‖ := by
-  have h1 := hA.mem_resolventSet_I_mul (zero_lt_one.trans_le ht₁).ne'
-  have h2 := hA.mem_resolventSet_I_mul (zero_lt_one.trans_le ht₂).ne'
-  have hsub : ‖Complex.I * (t₂ : ℂ) - Complex.I * (t₁ : ℂ)‖ = ‖t₁ - t₂‖ := by
-    rw [← mul_sub, norm_mul, Complex.norm_I, one_mul, ← Complex.ofReal_sub, Complex.norm_real,
-      norm_sub_rev]
-  have hn {t : ℝ} (ht : 1 ≤ t) : ‖A.resolvent (Complex.I * t)‖ ≤ 1 := by
-    have h := hA.norm_resolvent_I_mul_le (zero_lt_one.trans_le ht).ne'
-    rw [abs_of_pos (zero_lt_one.trans_le ht)] at h
-    exact h.trans (inv_le_one_of_one_le₀ ht)
-  rw [resolvent_sub_resolvent h1 h2, norm_smul, hsub]
-  calc ‖t₁ - t₂‖ * ‖A.resolvent (Complex.I * t₁) ∘L A.resolvent (Complex.I * t₂)‖
-      ≤ ‖t₁ - t₂‖ * (‖A.resolvent (Complex.I * t₁)‖ * ‖A.resolvent (Complex.I * t₂)‖) := by
-        gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ ‖t₁ - t₂‖ * (1 * 1) := by gcongr <;> exact hn ‹_›
-    _ = ‖t₁ - t₂‖ := by ring
+    ((compactOperator (RingHom.id ℂ) H H).add_mem
+      (h.isCompactOperator_resolvent (mem_resolventSet_I_bjShift hA r))
+      (h.isCompactOperator_resolvent (mem_resolventSet_neg_I_bjShift hA r)))
 
 private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRes A) := by
-  have hcont_pos : Continuous fun r ↦ A.resolvent (Complex.I * bjShift r) := by
-    have hon : ContinuousOn (fun t : ℝ ↦ A.resolvent (Complex.I * t)) (Ici 1) := by
-      rw [Metric.continuousOn_iff]
-      intro t ht ε hε
-      refine ⟨ε, hε, fun t' ht' htt' ↦ ?_⟩
-      rw [dist_eq_norm] at htt' ⊢
-      exact (norm_resolvent_I_mul_sub_le hA ht' ht).trans_lt htt'
-    exact hon.comp_continuous continuous_bjShift one_le_bjShift
+  have hcont_pos : Continuous fun r ↦ A.resolvent (Complex.I * bjShift r) :=
+    A.analyticOnNhd_resolvent.continuousOn.comp_continuous
+      (continuous_const.mul (Complex.continuous_ofReal.comp continuous_bjShift))
+      (mem_resolventSet_I_bjShift hA)
   have hcont_neg : Continuous fun r ↦ A.resolvent (-Complex.I * bjShift r) := by
     rw [show (fun r ↦ A.resolvent (-Complex.I * bjShift r)) =
         fun r ↦ ContinuousLinearMap.adjoint (A.resolvent (Complex.I * bjShift r)) from
       funext fun r ↦ (adjoint_resolvent_I_bjShift hA r).symm]
     exact ContinuousLinearMap.adjoint.continuous.comp hcont_pos
   exact (continuous_const (y := -(2 : ℂ)⁻¹)).smul (hcont_pos.add hcont_neg)
-
-omit [CompleteSpace H] in
-private theorem resolvent_mul_sub_mul_resolvent {T C : H →L[ℂ] H}
-    (hTC : SylvesterEquation A A T C) {z : ℂ} (hz : z ∈ A.resolventSet) :
-    A.resolvent z * T - T * A.resolvent z = A.resolvent z * C * A.resolvent z := by
-  ext y
-  simp only [_root_.sub_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply]
-  have hmem : A.resolvent z y ∈ A.domain := resolvent_mem_domain hz y
-  have hTmem : T (A.resolvent z y) ∈ A.domain := hTC.mapsTo_domain ⟨A.resolvent z y, hmem⟩
-  have hstep : z • T (A.resolvent z y) - A ⟨T (A.resolvent z y), hTmem⟩ =
-      T y - C (A.resolvent z y) := by
-    have hC := hTC.equation ⟨A.resolvent z y, hmem⟩
-    dsimp only at hC
-    conv_rhs => arg 1; rw [← smul_sub_apply_resolvent hz y, T.map_sub, ContinuousLinearMap.map_smul]
-    rw [← hC]; abel
-  have happ := congrArg (A.resolvent z) hstep
-  rw [resolvent_smul_sub_apply hz ⟨T (A.resolvent z y), hTmem⟩, (A.resolvent z).map_sub] at happ
-  exact sub_eq_iff_eq_add'.2 (eq_add_of_sub_eq happ.symm)
 
 private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
     (hTC : SylvesterEquation A A T C) {r : ℝ} (hr : 0 ≤ r) :
@@ -301,8 +261,8 @@ private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L
       -(2 : ℂ)⁻¹ • (A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r) +
         A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)) := by
     rw [bjMulRes, smul_mul_assoc, mul_smul_comm, ← smul_sub, add_mul, mul_add, add_sub_add_comm,
-      resolvent_mul_sub_mul_resolvent hTC (mem_resolventSet_I_bjShift hA r),
-      resolvent_mul_sub_mul_resolvent hTC (mem_resolventSet_neg_I_bjShift hA r)]
+      hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_I_bjShift hA r),
+      hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_neg_I_bjShift hA r)]
   have hs0 : bjShift r ≠ 0 := (bjShift_pos r).ne'
   have hs2 : bjShift r ^ 2 = 1 + r := by rw [sq_bjShift, max_eq_left hr]
   have hn_pos : ‖A.resolvent (Complex.I * bjShift r)‖ ≤ (bjShift r)⁻¹ := by
@@ -441,10 +401,10 @@ theorem isCompactOperator_commutator_boundedTransform (h : A.HasCompactResolvent
   exact (compactOperator (RingHom.id ℂ) H H).smul_mem _ hcomm
 
 /-- **Baaj–Julg norm estimate.** If `T` and `C` satisfy the domain-aware Sylvester equation
-`A T - T A = C`, then `‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`. -/
+`A T - T A = C`, then `‖[F_A, T]‖ ≤ ‖C‖`. -/
 theorem norm_commutator_boundedTransform_le (h : A.HasCompactResolvent)
     {T C : H →L[ℂ] H} (hTC : SylvesterEquation A A T C) :
-    ‖A.boundedTransform hA * T - T * A.boundedTransform hA‖ ≤ 5 / 4 * ‖C‖ := by
+    ‖A.boundedTransform hA * T - T * A.boundedTransform hA‖ ≤ ‖C‖ := by
   rw [commutator_boundedTransform_eq_integral hA h hTC]
   have hint := integrableOn_bjIntegrand hA hTC
   calc ‖∫ r in Ioi (0 : ℝ), bjIntegrand A T r‖
@@ -453,7 +413,6 @@ theorem norm_commutator_boundedTransform_le (h : A.HasCompactResolvent)
         setIntegral_mono_on hint.norm (integrableOn_bjMajorant ‖C‖) measurableSet_Ioi fun _ hr ↦
           norm_bjIntegrand_le hA hTC hr
     _ = ‖C‖ := integral_bjMajorant ‖C‖
-    _ ≤ 5 / 4 * ‖C‖ := by linarith [norm_nonneg C]
 
 end BoundedTransform
 

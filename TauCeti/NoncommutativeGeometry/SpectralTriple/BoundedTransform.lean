@@ -15,7 +15,7 @@ import TauCeti.Algebra.Ring.Commute
 
 Every spectral triple `(A, H, D)` determines a bounded self-adjoint contraction
 `F_D = D (1 + D²)⁻¹/²` (`SpectralTriple.boundedTransform`) with `1 - F_D² = (1 + D²)⁻¹` compact
-and `[F_D, π(a)]` compact with `‖[F_D, π(a)]‖ ≤ (5 / 4) ‖[D, π(a)]‖`, yielding a Fredholm
+and `[F_D, π(a)]` compact with `‖[F_D, π(a)]‖ ≤ ‖[D, π(a)]‖`, yielding a Fredholm
 module `SpectralTriple.toFredholmModule` (and an even Fredholm module
 `EvenSpectralTriple.toEvenFredholmModule`), equivariantly under unitary transport.
 
@@ -59,9 +59,9 @@ theorem isCompactOperator_commutator_boundedTransform (a : A) :
     S.hasCompactResolvent_operator (S.sylvesterEquation_commutator a)
 
 /-- **Baaj–Julg norm estimate for spectral triples.** For every `a : A`,
-`‖[F_D, π(a)]‖ ≤ (5 / 4) ‖[D, π(a)]‖`. -/
+`‖[F_D, π(a)]‖ ≤ ‖[D, π(a)]‖`. -/
 theorem norm_commutator_boundedTransform_le (a : A) :
-    ‖S.boundedTransform * S.rep a - S.rep a * S.boundedTransform‖ ≤ 5 / 4 * ‖S.commutator a‖ :=
+    ‖S.boundedTransform * S.rep a - S.rep a * S.boundedTransform‖ ≤ ‖S.commutator a‖ :=
   S.operator.norm_commutator_boundedTransform_le S.isSelfAdjoint_operator
     S.hasCompactResolvent_operator (S.sylvesterEquation_commutator a)
 
@@ -95,8 +95,6 @@ def toFredholmModule : FredholmModule A H where
 
 @[simp]
 theorem toFredholmModule_rep : S.toFredholmModule.rep = S.rep.toNonUnitalStarAlgHom := by rfl
-
-theorem toFredholmModule_rep_apply (a : A) : S.toFredholmModule.rep a = S.rep a := by rfl
 
 @[simp]
 theorem toFredholmModule_operator : S.toFredholmModule.operator = S.boundedTransform := by rfl

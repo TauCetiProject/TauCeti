@@ -226,60 +226,16 @@ section Conj
 
 variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
 
-private theorem conjStarAlgEquiv_eq_comp (U : H ≃ₗᵢ[ℂ] H') (T : H →L[ℂ] H) :
-    U.conjStarAlgEquiv T =
-      ((U : H ≃L[ℂ] H') : H →L[ℂ] H') ∘L T ∘L
-        (((U : H ≃L[ℂ] H').symm : H' ≃L[ℂ] H) : H' →L[ℂ] H) := by
-  ext x; simp
-
-private theorem conjStarAlgEquiv_mem_conj_domain (U : H ≃ₗᵢ[ℂ] H') (D : H →ₗ.[ℂ] H)
-    {T : H →L[ℂ] H} (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain)
-    {y : H'} (hy : y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
-    U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain := by
-  rw [conjStarAlgEquiv_eq_comp]
-  exact LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') D hT hy
-
-private theorem conj_apply_conjStarAlgEquiv (U : H ≃ₗᵢ[ℂ] H') (D : H →ₗ.[ℂ] H)
-    {T : H →L[ℂ] H} (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain)
-    (y : (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain)
-    (hy : U.symm (y : H') ∈ D.domain)
-    (hmem : U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
-    D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') ⟨U.conjStarAlgEquiv T y, hmem⟩ =
-      U (D ⟨T (U.symm y), hT hy⟩) := by
-  have hcomp : (⟨U.conjStarAlgEquiv T y, hmem⟩ :
-      (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) =
-      ⟨(((U : H ≃L[ℂ] H') : H →L[ℂ] H') ∘L T ∘L
-        (((U : H ≃L[ℂ] H').symm : H' ≃L[ℂ] H) : H' →L[ℂ] H)) y,
-        LinearPMap.conj_mem_domain (U : H ≃L[ℂ] H') D hT y.property⟩ :=
-    Subtype.ext (congrArg (fun f : H' →L[ℂ] H' ↦ f y) (conjStarAlgEquiv_eq_comp U T))
-  rw [hcomp, LinearPMap.conj_apply_comp_conj (U : H ≃L[ℂ] H') D hT y]
-  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm]
-
-private theorem conjStarAlgEquiv_apply_conj (U : H ≃ₗᵢ[ℂ] H') (D : H →ₗ.[ℂ] H)
-    (T : H →L[ℂ] H) (y : (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain)
-    (hy : U.symm (y : H') ∈ D.domain) :
-    U.conjStarAlgEquiv T (D.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y) =
-      U (T (D ⟨U.symm y, hy⟩)) := by
-  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearPMap.conj_apply]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ← ContinuousLinearEquiv.toLinearEquiv_symm,
-    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, LinearIsometryEquiv.symm_apply_apply]
-
 private theorem conj_sylvesterEquation (U : H ≃ₗᵢ[ℂ] H') (a : A) :
     LinearPMap.SylvesterEquation (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))
       (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))
       (U.conjStarAlgEquiv (S.rep a)) (U.conjStarAlgEquiv (S.commutator a)) where
-  mapsTo_domain y := conjStarAlgEquiv_mem_conj_domain U S.operator (S.rep_mem_domain a) y.property
+  mapsTo_domain y :=
+    LinearPMap.conjStarAlgEquiv_mem_conj_domain U S.operator (S.rep_mem_domain a) y.property
   equation y := by
-    have hy : U.symm (y : H') ∈ S.operator.domain := by
-      simpa using (LinearPMap.mem_conj_domain_iff
-        (e := ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))).1 y.property
-    rw [conj_apply_conjStarAlgEquiv U S.operator (S.rep_mem_domain a) y hy,
-      conjStarAlgEquiv_apply_conj U S.operator (S.rep a) y hy, ← map_sub,
-      S.commutator_apply_domain a ⟨U.symm y, hy⟩,
-      LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
+    rw [LinearPMap.conj_apply_conjStarAlgEquiv U S.operator (S.rep_mem_domain a) y,
+      LinearPMap.conjStarAlgEquiv_apply_conj U S.operator (S.rep a) y, ← map_sub,
+      S.commutator_apply_domain a ⟨U.symm y, _⟩, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply]
 
 /-- **Unitary equivalence.** The spectral triple on `H'` obtained by transporting `S` along the
 unitary `U : H ≃ₗᵢ[ℂ] H'`, with representation `U π(a) U*` and Dirac operator `U D U*`. -/
@@ -399,11 +355,6 @@ theorem ofFiniteDimensional_operator [FiniteDimensional ℂ H] (π : A →⋆ₐ
     (ofFiniteDimensional π D hD).operator = (D : H →ₗ[ℂ] H).toPMap ⊤ := by rfl
 
 @[simp]
-theorem ofFiniteDimensional_operator_apply [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
-    (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) (x : (ofFiniteDimensional π D hD).operator.domain) :
-    (ofFiniteDimensional π D hD).operator x = D x := by rfl
-
-@[simp]
 theorem ofFiniteDimensional_commutator [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
     (D : H →L[ℂ] H) (hD : IsSelfAdjoint D) (a : A) :
     (ofFiniteDimensional π D hD).commutator a = D * π a - π a * D :=
@@ -446,6 +397,16 @@ section Conj
 
 variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H'] [CompleteSpace H']
 
+private theorem conj_grading_apply_operator (U : H ≃ₗᵢ[ℂ] H')
+    (y : (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain) :
+    (U.conjStarAlgEquiv S.grading) (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y) =
+      -(S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
+        ⟨U.conjStarAlgEquiv S.grading y,
+          LinearPMap.conjStarAlgEquiv_mem_conj_domain U S.operator S.grading_mem_domain
+            y.property⟩) := by
+  rw [LinearPMap.conjStarAlgEquiv_apply_conj, LinearPMap.conj_apply_conjStarAlgEquiv,
+    S.grading_apply_operator, map_neg]
+
 /-- **Unitary equivalence**, even version: the grading is transported to `U γ U*`. -/
 def conj (U : H ≃ₗᵢ[ℂ] H') : EvenSpectralTriple A H' where
   toSpectralTriple := S.toSpectralTriple.conj U
@@ -456,21 +417,8 @@ def conj (U : H ≃ₗᵢ[ℂ] H') : EvenSpectralTriple A H' where
     rw [SpectralTriple.conj_rep_apply]
     exact (S.commute_grading_rep a).map U.conjStarAlgEquiv
   grading_mem_domain hy :=
-    SpectralTriple.conjStarAlgEquiv_mem_conj_domain U S.operator S.grading_mem_domain hy
-  grading_apply_operator y := by
-    let y' : (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')).domain := y
-    have hy : U.symm (y' : H') ∈ S.operator.domain := by
-      simpa using (LinearPMap.mem_conj_domain_iff
-        (e := ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H'))).1 y'.property
-    change (U.conjStarAlgEquiv S.grading)
-        (S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H') y') =
-      -(S.operator.conj ((U : H ≃L[ℂ] H') : H ≃ₗ[ℂ] H')
-        ⟨U.conjStarAlgEquiv S.grading y',
-          SpectralTriple.conjStarAlgEquiv_mem_conj_domain U S.operator S.grading_mem_domain
-            y'.property⟩)
-    rw [SpectralTriple.conjStarAlgEquiv_apply_conj U S.operator S.grading y' hy,
-      SpectralTriple.conj_apply_conjStarAlgEquiv U S.operator S.grading_mem_domain y' hy,
-      S.grading_apply_operator, map_neg]
+    LinearPMap.conjStarAlgEquiv_mem_conj_domain U S.operator S.grading_mem_domain hy
+  grading_apply_operator := S.conj_grading_apply_operator U
 
 @[simp]
 theorem conj_toSpectralTriple (U : H ≃ₗᵢ[ℂ] H') :
@@ -559,7 +507,10 @@ def ofFiniteDimensional [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[
   commute_grading_rep := hγπ
   grading_mem_domain _ := Submodule.mem_top
   grading_apply_operator x := by
-    simp only [SpectralTriple.ofFiniteDimensional_operator_apply]
+    have h1 : (SpectralTriple.ofFiniteDimensional π D hD).operator x = D x := rfl
+    have h2 : (SpectralTriple.ofFiniteDimensional π D hD).operator ⟨γ ↑x, Submodule.mem_top⟩ =
+        D (γ ↑x) := rfl
+    rw [h1, h2]
     simpa [ContinuousLinearMap.mul_def] using congrArg (fun T : H →L[ℂ] H ↦ T (x : H)) hγD
 
 @[simp]

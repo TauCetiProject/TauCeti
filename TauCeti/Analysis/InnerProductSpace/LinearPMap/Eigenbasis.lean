@@ -48,9 +48,8 @@ in `TauCeti.Analysis.InnerProductSpace.Spectrum`.
   operator with compact resolvent has a Hilbert basis of eigenvectors with real eigenvalues.
 * `IsSelfAdjoint.separableSpace_of_hasCompactResolvent`: a complex Hilbert space admitting a
   self-adjoint operator with compact resolvent is separable.
-* `LinearPMap.HasCompactResolvent.northcott_abs_of_eigenbasis` and
-  `LinearPMap.HasCompactResolvent.countable_of_eigenbasis`: Northcott property of `|λᵢ|` and
-  countability of the eigenbasis index type.
+* `LinearPMap.HasCompactResolvent.countable_of_eigenbasis`: countability of the eigenbasis index
+  type.
 
 ## References
 
@@ -116,22 +115,15 @@ end LinearPMap
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 
-/-- The absolute values of the real eigenvalues in an orthonormal eigenbasis of an operator with
-compact resolvent satisfy the Northcott property. -/
-theorem LinearPMap.HasCompactResolvent.northcott_abs_of_eigenbasis
-    {A : H →ₗ.[ℂ] H} (h : A.HasCompactResolvent) {ι : Type*} (b : HilbertBasis ι ℂ H)
-    {lam : ι → ℝ} (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : ℂ) • b k) :
-    Northcott fun k ↦ |lam k| := by
-  simpa only [Complex.norm_real, Real.norm_eq_abs] using
-    h.northcott_norm_of_orthonormal b.orthonormal hb
-
 /-- Any index type of an orthonormal eigenbasis of an operator with compact resolvent is
 countable. -/
 theorem LinearPMap.HasCompactResolvent.countable_of_eigenbasis
     {A : H →ₗ.[ℂ] H} (h : A.HasCompactResolvent) {ι : Type*} (b : HilbertBasis ι ℂ H)
     {lam : ι → ℝ} (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : ℂ) • b k) :
     Countable ι := by
-  have hN := h.northcott_abs_of_eigenbasis b hb
+  have hN : Northcott fun k ↦ |lam k| := by
+    simpa only [Complex.norm_real, Real.norm_eq_abs] using
+      h.northcott_norm_of_orthonormal b.orthonormal hb
   have huniv : (Set.univ : Set ι) = ⋃ n : ℕ, {k | |lam k| ≤ (n : ℝ)} := by
     ext k; simp [exists_nat_ge]
   rw [← Set.countable_univ_iff, huniv]
