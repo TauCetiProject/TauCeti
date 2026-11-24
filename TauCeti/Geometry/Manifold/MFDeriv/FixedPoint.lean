@@ -795,7 +795,7 @@ theorem _root_.HasMFDerivAt.fixedPointDet_eq {D : E →L[𝕜] E} (hD : HasMFDer
   rfl
 
 /-- Where `f` is not differentiable its differential is zero, so `fixedPointDet I f x = 1`. -/
-theorem fixedPointDet_of_not_mdifferentiableAt (hf : ¬MDifferentiableAt I I f x) :
+theorem fixedPointDet_eq_one_of_not_mdifferentiableAt (hf : ¬MDifferentiableAt I I f x) :
     fixedPointDet I f x = 1 := by
   rw [fixedPointDet_def, mfderiv_zero_of_not_mdifferentiableAt hf]
   -- The zero map between the tangent spaces at `x` and `f x` is the zero map of `E`.
@@ -803,7 +803,7 @@ theorem fixedPointDet_of_not_mdifferentiableAt (hf : ¬MDifferentiableAt I I f x
 
 /-- On a zero-dimensional model space the determinant of every endomorphism is `1`, so
 `fixedPointDet I f x = 1`. -/
-theorem fixedPointDet_of_subsingleton [Subsingleton E] : fixedPointDet I f x = 1 :=
+theorem fixedPointDet_eq_one_of_subsingleton [Subsingleton E] : fixedPointDet I f x = 1 :=
   -- The tangent space at `x` is the model space `E`.
   have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
   LinearMap.det_eq_one_of_subsingleton _
@@ -953,8 +953,8 @@ theorem IsNondegenerateFixedPt.fixedPointSign_eq_sign [FiniteDimensional ℝ E]
   TauCeti.fixedPointSign_eq_sign h.fixedPointDet_ne_zero
 
 /-- On a zero-dimensional model space every point has Lefschetz sign `1`. -/
-theorem fixedPointSign_of_subsingleton [Subsingleton E] : fixedPointSign I f x = 1 :=
-  fixedPointSign_eq_one_iff.2 (by rw [fixedPointDet_of_subsingleton]; exact one_pos)
+theorem fixedPointSign_eq_one_of_subsingleton [Subsingleton E] : fixedPointSign I f x = 1 :=
+  fixedPointSign_eq_one_iff.2 (by rw [fixedPointDet_eq_one_of_subsingleton]; exact one_pos)
 
 /-- **The Lefschetz sign is invariant under conjugation by a diffeomorphism**, whether or not the
 diffeomorphism preserves an orientation. -/
