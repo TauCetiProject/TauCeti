@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.Center
-public import TauCeti.RepresentationTheory.GroupAlgebra.Block
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 
 /-!
 # Scalar extension of blocks

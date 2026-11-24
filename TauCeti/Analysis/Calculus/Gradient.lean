@@ -11,8 +11,9 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Topology.MetricSpace.Holder
--- Private: the derivative sum and scalar rules, the symmetry of second derivatives and the local
--- Lipschitz property of `C¹` maps are used only inside the proofs below.
+-- Private: the derivative sum and scalar rules, the symmetry of second derivatives, the local
+-- Lipschitz property of `C¹` maps and the continuity of slice derivatives are used only inside the
+-- proofs below.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
@@ -20,6 +21,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Norm
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The gradient is an isometric conjugate-linear image of the Fréchet derivative
@@ -43,6 +45,8 @@ chain rule for the gradient of a real profile composed with a real function.
 ## Main declarations
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
+* `TauCeti.gradient_eq_of_iteratedFDeriv_one`: equal first iterated derivatives give equal
+  gradients, including at different points.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_add_const` and `TauCeti.gradient_const_add`: adding a constant does not change
   the gradient.
@@ -64,7 +68,9 @@ chain rule for the gradient of a real profile composed with a real function.
   of the gradient `∇ f` is the partial derivative `∂ᵢ f`.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
-  continuous; `ContDiff.locallyLipschitz_neg_gradient`: the negative gradient field of a `C²`
+  continuous; `TauCeti.continuous_gradient_slice_right`: the gradients of the second-variable
+  slices of a `C¹` function of two variables are continuous in both variables;
+  `ContDiff.locallyLipschitz_neg_gradient`: the negative gradient field of a `C²`
   function is locally Lipschitz; `HasCompactSupport.memLp_gradient`: the gradient of a compactly
   supported `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
   `ContDiffAt.continuousAt_fderiv_gradient` and
@@ -115,6 +121,15 @@ derivatives, with no differentiability assumptions. -/
 theorem norm_gradient_sub_gradient_eq_norm_fderiv_sub (f g : F → 𝕜) (x : F) :
     ‖∇ f x - ∇ g x‖ = ‖fderiv 𝕜 f x - fderiv 𝕜 g x‖ := by
   simp only [gradient, ← map_sub, LinearIsometryEquiv.norm_map]
+
+/-- Equal first iterated derivatives give equal gradients, with no differentiability assumptions. -/
+theorem gradient_eq_of_iteratedFDeriv_one {y : F}
+    (h : iteratedFDeriv 𝕜 1 f x = iteratedFDeriv 𝕜 1 g y) : ∇ f x = ∇ g y := by
+  apply (toDual 𝕜 F).injective
+  rw [toDual_gradient, toDual_gradient]
+  ext e
+  simpa only [iteratedFDeriv_one_apply] using
+    congrArg (fun A : F [×1]→L[𝕜] 𝕜 ↦ A (fun _ ↦ e)) h
 
 /-- The gradient is additive wherever both summands are differentiable. -/
 theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
@@ -233,6 +248,14 @@ theorem _root_.ContDiff.continuous_gradient {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
     (hn : n ≠ 0) : Continuous (∇ f) :=
   (toDual ℝ E).symm.continuous.comp (hf.continuous_fderiv hn)
+
+/-- Over `ℝ`, the gradient `∇ (f a) y` of the second-variable slices of a `C¹` function of `(a, y)`
+is continuous in `(a, y)`, as is the derivative (`TauCeti.continuous_fderiv_slice_right`). -/
+theorem continuous_gradient_slice_right {D E : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] {f : D → E → ℝ}
+    (hf : ContDiff ℝ 1 fun p : D × E ↦ f p.1 p.2) :
+    Continuous fun p : D × E ↦ ∇ (f p.1) p.2 :=
+  (toDual ℝ E).symm.continuous.comp (continuous_fderiv_slice_right hf)
 
 /-- Over `ℝ`, the negative gradient field `-∇f` of a `C²` function is `C¹`, hence locally
 Lipschitz. -/

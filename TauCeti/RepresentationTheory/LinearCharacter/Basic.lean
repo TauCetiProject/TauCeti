@@ -49,6 +49,9 @@ representation, and its irreducibility is what the Mackey criterion decides.
   subrepresentation.
 * `Representation.IsIrreducible.nonempty_equiv_ofLinearCharacter_iff`: an irreducible
   representation is the line of `χ` exactly when each `g` acts by the scalar `χ g`.
+* `Representation.stabilizer_ofLinearCharacter_one` and
+  `Representation.ker_le_stabilizer_ofLinearCharacter`: the stabilizer of `1` is the kernel of
+  `χ`, which fixes every vector.
 * `FDRep.ofLinearCharacter_def`: the bundled representation is the unbundled one, bundled.
 * `FDRep.finrank_ofLinearCharacter`: it is a line.
 * `FDRep.simple_ofLinearCharacter`: it is a simple object of `FDRep k G`, being a line.
@@ -162,6 +165,24 @@ theorem IsIrreducible.nonempty_equiv_ofLinearCharacter_iff [Field k] [Monoid G] 
   have hf : f ≠ 0 := fun h0 ↦ hv (by simpa [f] using DFunLike.congr_fun h0 1)
   exact ⟨(f.ofBijective ((IsIrreducible.bijective_or_eq_zero f).resolve_right hf)).symm⟩
 
+section Stabilizer
+
+variable [CommSemiring k] [Group G]
+
+/-- The stabilizer of `1` in the representation of a linear character `χ` is the kernel of `χ`. -/
+@[simp]
+theorem stabilizer_ofLinearCharacter_one (χ : G →* kˣ) :
+    (ofLinearCharacter χ).stabilizer 1 = χ.ker := by
+  ext g
+  simp [mem_stabilizer, Units.val_eq_one]
+
+/-- The kernel of a linear character `χ` fixes every vector of its representation. -/
+theorem ker_le_stabilizer_ofLinearCharacter (χ : G →* kˣ) (x : k) :
+    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := by
+  simpa using (ofLinearCharacter χ).le_stabilizer_smul x 1
+
+end Stabilizer
+
 end Representation
 
 namespace FDRep
@@ -239,11 +260,6 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
   choose c hc using fun g => hW.exists_forall_apply_eq_smul (W.ρ g) fun h v => by
     rw [← mul_apply_eq_comp, (hcomm g h).eq, mul_apply_eq_comp]
   obtain ⟨v, hv⟩ := exists_ne (0 : W)
-  have hmul (g h : G) : c (g * h) = c g * c h := by
-    refine smul_left_injective k hv ?_
-    dsimp only
-    rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
-  have hone : c 1 = 1 := smul_left_injective k hv (by simp [← hc])
   -- The line through `v` is stable, hence everything: `W` is one-dimensional.
   let line : Subrepresentation W.ρ :=
     ⟨k ∙ v, fun g w hw => by
@@ -256,7 +272,10 @@ theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : 
     exact hmem
   have hfin : Module.finrank k W = 1 :=
     (finrank_eq_one_iff_of_ne_zero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
-  let χ : G →* k := { toFun := c, map_one' := hone, map_mul' := hmul }
+  let χ : G →* k :=
+    { toFun := c
+      map_one' := Representation.map_one_of_forall_apply_eq_smul W.ρ hc
+      map_mul' := Representation.map_mul_of_forall_apply_eq_smul W.ρ hc }
   refine ⟨χ.toHomUnits, funext fun g => ?_⟩
   have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)
   simp [χ, character, hρ, hfin]
