@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Algebra.Order.Star.Prod
-public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
-import TauCeti.Analysis.CStarAlgebra.State.Space
+public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 
 /-!
 # Positive tracial functionals and tracial states
@@ -20,11 +19,9 @@ bounded, but it need not have norm one. These are the functionals that pair with
 the unnormalized matrix trace `τ_m(p) = ∑ i, τ (p i i)`.
 
 Tracial states are the norm-one case. This file does not define its own tracial-state predicate:
-a tracial state is a `0`-KMS state of the trivial real dynamics,
-`(CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0 ω`, which
-`CStarAction.isKMSState_zero_iff` identifies with a positive functional of norm one satisfying
-`ω (a * b) = ω (b * a)`. The statements below about tracial states are phrased with that
-predicate applied to `τ.toPositiveContinuousLinearMap`.
+the statements below about tracial states use `PositiveContinuousLinearMap.IsTracialState`, a
+positive functional of norm one satisfying `ω (a * b) = ω (b * a)`, applied to
+`τ.toPositiveContinuousLinearMap`.
 
 Positive tracial functionals pull back along star homomorphisms: for `φ : A →⋆ₙₐ[ℂ] B` and a
 positive tracial functional `τ` of `B`, the composite `τ ∘ φ` is a positive tracial functional of
@@ -40,14 +37,14 @@ positive tracial functional `τ` of `B`, the composite `τ ∘ φ` is a positive
   with `PositiveTracialFunctional.norm_apply_le`.
 * `TauCeti.PositiveTracialFunctional.comp`: pullback along a star homomorphism, with
   `comp_id` and `comp_comp`.
-* `TauCeti.PositiveTracialFunctional.isKMSState_trivial_zero_iff_opNorm_eq_one`: a positive
-  tracial functional is a tracial state exactly when it has norm one, and for unital `A`
-  exactly when it takes the value `1` at `1`, `isKMSState_trivial_zero_iff_map_one`. Tracial
-  states pull back to tracial states along unital star homomorphisms,
-  `isKMSState_trivial_zero_comp`, and are bounded by `1`, `norm_apply_le_of_isKMSState`.
-* `TauCeti.PositiveTracialFunctional.ofIsKMSState`: a tracial state as a positive tracial
+* `TauCeti.PositiveTracialFunctional.isTracialState_iff_opNorm_eq_one`: a positive tracial
+  functional is a tracial state exactly when it has norm one, and for unital `A` exactly when it
+  takes the value `1` at `1`, `isTracialState_iff_map_one`. Tracial states pull back to tracial
+  states along unital star homomorphisms, `isTracialState_comp`, and are bounded by `1`,
+  `norm_apply_le_of_isTracialState`.
+* `TauCeti.PositiveTracialFunctional.ofIsTracialState`: a tracial state as a positive tracial
   functional.
-* `TauCeti.not_isKMSState_sndTracialFunctional_comp_inl`: the pullback of the tracial state
+* `TauCeti.not_isTracialState_sndTracialFunctional_comp_inl`: the pullback of the tracial state
   `(a, b) ↦ b` of `ℂ × ℂ` along `λ ↦ (λ, 0)` is zero, a positive tracial functional that is not
   a state.
 
@@ -126,8 +123,10 @@ theorem toPositiveContinuousLinearMap_apply (τ : PositiveTracialFunctional A) (
 
 /-- A positive tracial functional is bounded by the operator norm of its bounded functional. -/
 theorem norm_apply_le (τ : PositiveTracialFunctional A) (a : A) :
-    ‖τ a‖ ≤ ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ * ‖a‖ :=
-  (τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ).le_opNorm a
+    ‖τ a‖ ≤ ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ * ‖a‖ := by
+  simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+    toPositiveContinuousLinearMap_apply] using
+    (τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ).le_opNorm a
 
 /-- **Naturality.** The pullback `τ ∘ φ` of a positive tracial functional along a star
 homomorphism. -/
@@ -135,10 +134,10 @@ noncomputable def comp (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[�
     PositiveTracialFunctional A where
   toPositiveLinearMap := τ.toPositiveLinearMap.comp (.ofClass φ)
   map_mul_comm' a b := by
-    -- The composite evaluates as `τ ∘ φ` by definition; `comp_apply` is stated after this
-    -- structure, so the field is proved by unfolding the composite here.
-    change τ (φ (a * b)) = τ (φ (b * a))
-    rw [map_mul φ, map_mul φ]
+    -- Mathlib has no evaluation lemma for `PositiveLinearMap.ofClass`; it evaluates as `φ`.
+    have hφ (x : A) : PositiveLinearMap.ofClass (R := ℂ) φ x = φ x := rfl
+    simp only [PositiveLinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap, hφ, map_mul,
+      toPositiveLinearMap_apply]
     exact τ.map_mul_comm (φ a) (φ b)
 
 @[simp]
@@ -156,39 +155,33 @@ theorem comp_comp (τ : PositiveTracialFunctional C) (ψ : B →⋆ₙₐ[ℂ] C
   ext a
   simp
 
-/-- A positive tracial functional is a tracial state, a `0`-KMS state of the trivial dynamics,
-exactly when it has norm one. -/
-theorem isKMSState_trivial_zero_iff_opNorm_eq_one (τ : PositiveTracialFunctional A) :
-    (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0
-        τ.toPositiveContinuousLinearMap ↔
+/-- A positive tracial functional is a tracial state exactly when it has norm one. -/
+theorem isTracialState_iff_opNorm_eq_one (τ : PositiveTracialFunctional A) :
+    τ.toPositiveContinuousLinearMap.IsTracialState ↔
       ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ = 1 := by
-  rw [CStarAction.isKMSState_zero_iff]
-  exact and_iff_left fun a b => τ.map_mul_comm a b
+  rw [PositiveContinuousLinearMap.isTracialState_iff]
+  simp only [toPositiveContinuousLinearMap_apply]
+  exact and_iff_left τ.map_mul_comm
 
-/-- A tracial state, a `0`-KMS state of the trivial dynamics, is bounded by `1`. -/
-theorem norm_apply_le_of_isKMSState {τ : PositiveTracialFunctional A}
-    (hτ : (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0
-      τ.toPositiveContinuousLinearMap) (a : A) : ‖τ a‖ ≤ ‖a‖ := by
+/-- A tracial state is bounded by `1`. -/
+theorem norm_apply_le_of_isTracialState {τ : PositiveTracialFunctional A}
+    (hτ : τ.toPositiveContinuousLinearMap.IsTracialState) (a : A) : ‖τ a‖ ≤ ‖a‖ := by
   simpa [hτ.norm_eq_one] using τ.norm_apply_le a
 
-/-- A tracial state, a `0`-KMS state `ω` of the trivial dynamics, as a positive tracial
-functional. -/
-def ofIsKMSState (ω : A →P[ℂ] ℂ)
-    (hω : (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0 ω) :
-    PositiveTracialFunctional A where
+/-- A tracial state as a positive tracial functional. -/
+def ofIsTracialState (ω : A →P[ℂ] ℂ) (hω : ω.IsTracialState) : PositiveTracialFunctional A where
   toPositiveLinearMap := ω.toPositiveLinearMap
-  map_mul_comm' := (CStarAction.isKMSState_zero_iff.mp hω).2
+  map_mul_comm' a b := by
+    simpa only [PositiveContinuousLinearMap.coe_toPositiveLinearMap] using hω.map_mul_comm a b
 
 @[simp]
-theorem ofIsKMSState_apply (ω : A →P[ℂ] ℂ)
-    (hω : (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0 ω) (a : A) :
-    ofIsKMSState ω hω a = ω a :=
+theorem ofIsTracialState_apply (ω : A →P[ℂ] ℂ) (hω : ω.IsTracialState) (a : A) :
+    ofIsTracialState ω hω a = ω a :=
   (rfl)
 
 @[simp]
-theorem toPositiveContinuousLinearMap_ofIsKMSState (ω : A →P[ℂ] ℂ)
-    (hω : (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0 ω) :
-    (ofIsKMSState ω hω).toPositiveContinuousLinearMap = ω := by
+theorem toPositiveContinuousLinearMap_ofIsTracialState (ω : A →P[ℂ] ℂ) (hω : ω.IsTracialState) :
+    (ofIsTracialState ω hω).toPositiveContinuousLinearMap = ω := by
   ext a
   simp
 
@@ -203,25 +196,19 @@ variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 namespace PositiveTracialFunctional
 
-/-- On a unital C⋆-algebra a positive tracial functional is a tracial state, a `0`-KMS state of
-the trivial dynamics, exactly when `τ 1 = 1`. -/
-theorem isKMSState_trivial_zero_iff_map_one (τ : PositiveTracialFunctional A) :
-    (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0
-        τ.toPositiveContinuousLinearMap ↔ τ 1 = 1 := by
-  rw [isKMSState_trivial_zero_iff_opNorm_eq_one,
-    ← PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff, mem_stateSpace_iff_map_one]
-  refine ⟨fun h => ?_, fun h => ⟨fun a ha => ?_, ?_⟩⟩
-  · simpa using h.2
-  · simpa using map_nonneg τ ha
-  · simpa using h
+/-- On a unital C⋆-algebra a positive tracial functional is a tracial state exactly when
+`τ 1 = 1`. -/
+theorem isTracialState_iff_map_one (τ : PositiveTracialFunctional A) :
+    τ.toPositiveContinuousLinearMap.IsTracialState ↔ τ 1 = 1 := by
+  rw [PositiveContinuousLinearMap.isTracialState_iff_map_one]
+  simp only [toPositiveContinuousLinearMap_apply]
+  exact and_iff_left τ.map_mul_comm
 
 /-- Tracial states pull back to tracial states along unital star homomorphisms. -/
-theorem isKMSState_trivial_zero_comp {τ : PositiveTracialFunctional B}
-    (hτ : (CStarAction.trivial : CStarAction (Multiplicative ℝ) B).IsKMSState 0
-      τ.toPositiveContinuousLinearMap) (φ : A →⋆ₐ[ℂ] B) :
-    (CStarAction.trivial : CStarAction (Multiplicative ℝ) A).IsKMSState 0
-      (τ.comp φ.toNonUnitalStarAlgHom).toPositiveContinuousLinearMap := by
-  rw [isKMSState_trivial_zero_iff_map_one] at hτ ⊢
+theorem isTracialState_comp {τ : PositiveTracialFunctional B}
+    (hτ : τ.toPositiveContinuousLinearMap.IsTracialState) (φ : A →⋆ₐ[ℂ] B) :
+    (τ.comp φ.toNonUnitalStarAlgHom).toPositiveContinuousLinearMap.IsTracialState := by
+  rw [isTracialState_iff_map_one] at hτ ⊢
   simpa using hτ
 
 end PositiveTracialFunctional
@@ -243,10 +230,9 @@ theorem sndTracialFunctional_apply (x : ℂ × ℂ) : sndTracialFunctional x = x
   (rfl)
 
 /-- The second-coordinate functional on `ℂ × ℂ` is a tracial state. -/
-theorem isKMSState_sndTracialFunctional :
-    (CStarAction.trivial : CStarAction (Multiplicative ℝ) (ℂ × ℂ)).IsKMSState 0
-      sndTracialFunctional.toPositiveContinuousLinearMap := by
-  simp [isKMSState_trivial_zero_iff_map_one]
+theorem isTracialState_sndTracialFunctional :
+    sndTracialFunctional.toPositiveContinuousLinearMap.IsTracialState := by
+  simp [isTracialState_iff_map_one]
 
 /-- The pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is zero. -/
 theorem sndTracialFunctional_comp_inl_apply (z : ℂ) :
@@ -256,11 +242,10 @@ theorem sndTracialFunctional_comp_inl_apply (z : ℂ) :
 /-- A pullback of a tracial state along a nonunital star homomorphism need not be a state: the
 pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is the zero functional. So the natural pairing with
 `K₀` uses positive tracial functionals rather than tracial states. -/
-theorem not_isKMSState_sndTracialFunctional_comp_inl :
-    ¬ (CStarAction.trivial : CStarAction (Multiplicative ℝ) ℂ).IsKMSState 0
-      (sndTracialFunctional.comp
-        (NonUnitalStarAlgHom.inl ℂ ℂ ℂ)).toPositiveContinuousLinearMap := by
-  rw [isKMSState_trivial_zero_iff_map_one, sndTracialFunctional_comp_inl_apply]
+theorem not_isTracialState_sndTracialFunctional_comp_inl :
+    ¬ (sndTracialFunctional.comp
+      (NonUnitalStarAlgHom.inl ℂ ℂ ℂ)).toPositiveContinuousLinearMap.IsTracialState := by
+  rw [isTracialState_iff_map_one, sndTracialFunctional_comp_inl_apply]
   exact zero_ne_one
 
 end Example
