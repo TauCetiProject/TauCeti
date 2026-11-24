@@ -64,8 +64,9 @@ private theorem integral_Ioi_exp_neg_mul_smul_eq {g : ℝ → E} {p : ℝ} (hp :
       iteratedTailIntegral g 1 0 -
         p • ∫ s in Ioi 0, Real.exp (-(p * s)) • iteratedTailIntegral g 1 s := by
   have hderiv (s : ℝ) :
-      deriv (fun t : ℝ ↦ Real.exp (-(p * t))) s = -p * Real.exp (-(p * s)) :=
-    ((((hasDerivAt_id s).const_mul p).neg.exp).congr_deriv (by simp; ring)).deriv
+      deriv (fun t : ℝ ↦ Real.exp (-(p * t))) s = -p * Real.exp (-(p * s)) := by
+    simpa only [pow_zero, mul_one, Nat.cast_zero, zero_mul, zero_sub, neg_mul] using
+      (hasDerivAt_exp_neg_mul_mul_pow_right p s 0).deriv
   have hφ'_int : IntegrableOn (deriv fun t : ℝ ↦ Real.exp (-(p * t))) (Ioi 0) :=
     IntegrableOn.congr_fun ((exp_neg_integrableOn_Ioi 0 hp).const_mul (-p))
       (fun s _ ↦ by simp [hderiv, neg_mul]) measurableSet_Ioi
@@ -86,9 +87,9 @@ private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq {g : ℝ → E} {p
   let φ : ℝ → ℝ := fun t ↦ Real.exp (-(p * t)) * t ^ (m + 1)
   let φ' : ℝ → ℝ := fun s ↦
     (m + 1 : ℝ) * (Real.exp (-(p * s)) * s ^ m) - p * (Real.exp (-(p * s)) * s ^ (m + 1))
-  have hderiv (s : ℝ) : deriv φ s = φ' s :=
-    (((((hasDerivAt_id s).const_mul p).neg.exp).mul
-      (hasDerivAt_pow (m + 1) s)).congr_deriv (by simp [φ']; ring)).deriv
+  have hderiv (s : ℝ) : deriv φ s = φ' s := by
+    simpa only [Nat.cast_add, Nat.cast_one, Nat.add_sub_cancel] using
+      (hasDerivAt_exp_neg_mul_mul_pow_right p s (m + 1)).deriv
   have hpow_int (k : ℕ) : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s)) * s ^ k) (Ioi 0) :=
     integrableOn_exp_neg_mul_mul_pow_Ioi k hp
   have hφ'_int : IntegrableOn (deriv φ) (Ioi 0) :=
@@ -214,7 +215,8 @@ theorem tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n
     push_cast [Nat.factorial_succ]
     refine hlim.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-    simpa using (integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp n hloc ⟨L0, hL0'⟩
+    rw [Nat.add_sub_cancel_left, pow_one]
+    exact (integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp n hloc ⟨L0, hL0'⟩
       (integrableOn_exp_neg_mul_mul_pow_smul_of_lt (half_lt_self hp) (hf (p / 2) (half_pos hp))
         (n + 1))).symm
 

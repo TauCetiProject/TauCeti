@@ -50,6 +50,23 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- Derivative of the Laplace-moment kernel `r ↦ exp (-(r * t)) * t ^ k` with respect to the
+rate `r`. -/
+theorem hasDerivAt_exp_neg_mul_mul_pow_left (r t : ℝ) (k : ℕ) :
+    HasDerivAt (fun p : ℝ ↦ Real.exp (-(p * t)) * t ^ k)
+      (-(Real.exp (-(r * t)) * t ^ (k + 1))) r := by
+  refine ((((hasDerivAt_id r).mul_const t).neg.exp).mul_const (t ^ k)).congr_deriv ?_
+  simp only [Pi.neg_apply, id_eq, one_mul, pow_succ]
+  ring
+
+/-- Derivative of the Laplace-moment kernel `t ↦ exp (-(p * t)) * t ^ k` with respect to `t`. -/
+theorem hasDerivAt_exp_neg_mul_mul_pow_right (p s : ℝ) (k : ℕ) :
+    HasDerivAt (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ k)
+      ((k : ℝ) * (Real.exp (-(p * s)) * s ^ (k - 1)) - p * (Real.exp (-(p * s)) * s ^ k)) s := by
+  refine ((((hasDerivAt_id s).const_mul p).neg.exp).mul (hasDerivAt_pow k s)).congr_deriv ?_
+  simp only [Pi.neg_apply, id_eq, mul_one]
+  ring
+
 /-- When `t ↦ exp (-(q * t)) • f t` is integrable on `(0, ∞)` with respect to `μ`, the `j`-th
 Laplace moment `r ↦ ∫ t in Ioi 0, (exp (-(r * t)) * t ^ j) • f t ∂μ` has derivative
 `-(∫ t in Ioi 0, (exp (-(p * t)) * t ^ (j + 1)) • f t ∂μ)` at every `p > q`. -/
@@ -76,8 +93,8 @@ theorem hasDerivAt_integral_exp_neg_mul_mul_pow_smul {μ : Measure ℝ} {f : ℝ
     exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
       (Real.exp_le_exp.mpr (by nlinarith)) (pow_nonneg ht.le _)) (norm_nonneg _)
   · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t _ r _
-    exact (((((hasDerivAt_id r).mul_const t).neg.exp).mul_const (t ^ j)).congr_deriv
-      (by simp [pow_succ]; ring)).smul_const (f t) |>.congr_deriv (neg_smul _ _)
+    exact ((hasDerivAt_exp_neg_mul_mul_pow_left r t j).smul_const (f t)).congr_deriv
+      (neg_smul _ _)
 
 /-- Formula for the `n`-th derivative of the Laplace integral
 `r ↦ ∫ t in Ioi 0, exp (-(r * t)) • f t ∂μ` at any `p > q` where `t ↦ exp (-(q * t)) • f t` is
