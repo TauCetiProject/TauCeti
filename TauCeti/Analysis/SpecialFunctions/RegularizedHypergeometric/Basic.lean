@@ -38,6 +38,9 @@ an everywhere convergent power series with coefficients
 `(a + b + n - 1)_n / (n! Γ(a + n) Γ(b + n))`, valid without pole exclusions on `a` or `b`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
+Conjugating both `b` and `z` conjugates the value, so for real `b` the function commutes with
+complex conjugation. For `y ≥ 0` all terms after the first are nonnegative when `b > -1`, so
+`₀F₁(; b; y) ≥ 1 / Γ(b)`, which is positive when `b > 0`.
 Likewise, on the open unit disk `‖z‖ < 1`, `Complex.regularizedGaussHGFun a b c` evaluates to
 `(Gamma c)⁻¹` at `z = 0`, is analytic in `z`, has derivative
 `a * b * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z`, satisfies the classical first-order
@@ -69,6 +72,11 @@ with no condition on the lower parameters.
   `Complex.summable_norm_regularizedHGFun_zero_singleton_mul`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments, with Cauchy product `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul`.
+* `Complex.regularizedHGFun_zero_singleton_conj` — `₀F₁(; conj b; conj z) = conj ₀F₁(; b; z)`,
+  and `Complex.regularizedHGFun_zero_ofReal_singleton_conj` for real `b`.
+* `Complex.inv_Gamma_le_regularizedHGFun_zero_singleton_ofReal_re`,
+  `Complex.regularizedHGFun_zero_singleton_ofReal_re_pos` — for `y ≥ 0`, `₀F₁(; b; y) ≥ 1 / Γ(b)`
+  when `b > -1`, and `₀F₁(; b; y) > 0` when `b > 0`.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
 * `Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`,
@@ -229,6 +237,43 @@ theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     HasSum (fun n : ℕ => y ^ n / (n ! * Real.Gamma (b + n)))
       (regularizedHGFun 0 {(b : ℂ)} y).re := by
   simpa only [ofReal_re] using hasSum_re (hasSum_ofReal_regularizedHGFun_zero_singleton b y)
+
+open scoped ComplexConjugate in
+/-- `₀F₁(; b; z)` commutes with complex conjugation of the parameter and the argument together:
+`₀F₁(; conj b; conj z) = conj ₀F₁(; b; z)`.
+
+Adapted from `regularized0F1_conj` in the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Bessel/Basic/RegularizedSeries.lean`. -/
+theorem regularizedHGFun_zero_singleton_conj (b z : ℂ) :
+    regularizedHGFun 0 {conj b} (conj z) = conj (regularizedHGFun 0 {b} z) := by
+  refine (hasSum_regularizedHGFun (a := 0) (b := {conj b}) (by simp) (conj z)).unique ?_
+  refine (hasSum_conj'.2 (hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) z)).congr_fun
+    fun n => ?_
+  simp [← Gamma_conj]
+
+open scoped ComplexConjugate in
+/-- For a real parameter `b`, `₀F₁(; b; z)` commutes with complex conjugation:
+`₀F₁(; b; conj z) = conj ₀F₁(; b; z)`. -/
+theorem regularizedHGFun_zero_ofReal_singleton_conj (z : ℂ) (b : ℝ) :
+    regularizedHGFun 0 {(b : ℂ)} (conj z) = conj (regularizedHGFun 0 {(b : ℂ)} z) := by
+  simpa using regularizedHGFun_zero_singleton_conj b z
+
+/-- For `b > -1` and `y ≥ 0` every term of the real series of `₀F₁(; b; y)` after the first is
+nonnegative, so `₀F₁(; b; y)` is at least its first term `1 / Γ(b)`. -/
+theorem inv_Gamma_le_regularizedHGFun_zero_singleton_ofReal_re {b y : ℝ} (hb : -1 < b)
+    (hy : 0 ≤ y) : (Real.Gamma b)⁻¹ ≤ (regularizedHGFun 0 {(b : ℂ)} y).re := by
+  have h := le_hasSum (hasSum_regularizedHGFun_zero_singleton_ofReal_re b y) 0 fun n hn => by
+    have hn : (1 : ℝ) ≤ n := by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn
+    have hbn : 0 < b + n := by linarith
+    have := Real.Gamma_pos_of_pos hbn
+    positivity
+  simpa using h
+
+/-- For `b > 0` and `y ≥ 0`, `₀F₁(; b; y)` is positive. -/
+theorem regularizedHGFun_zero_singleton_ofReal_re_pos {b y : ℝ} (hb : 0 < b) (hy : 0 ≤ y) :
+    0 < (regularizedHGFun 0 {(b : ℂ)} y).re :=
+  (inv_pos.2 (Real.Gamma_pos_of_pos hb)).trans_le
+    (inv_Gamma_le_regularizedHGFun_zero_singleton_ofReal_re (by linarith) hy)
 
 /-- The real part of `₀F₁(; b; y)` is jointly continuous in the real parameter `b` and the real
 argument `y`. -/
