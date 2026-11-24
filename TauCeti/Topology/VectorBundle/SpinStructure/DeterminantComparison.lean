@@ -58,6 +58,7 @@ variable {X : Type} [TopologicalSpace X] {F : Type*} {E : X → Type}
 /-- **The determinant class of a Spin structure vanishes**: the `Spinᶜ` structure induced by a
 Spin structure has first Chern class `0`, since its determinant line has the nowhere-vanishing
 continuous section `x ↦ [[p, 1], 1]` (`TauCeti.SpinStructure.determinantLineSection`). -/
+@[simp]
 theorem SpinStructure.firstChernClass_toSpinC (s : SpinStructure F E n) :
     s.toSpinC.firstChernClass = 0 := by
   rw [SpinCStructure.firstChernClass_def, lineFirstChernClass_def]
@@ -75,57 +76,50 @@ variable (f : (realCliffordForm n 0).IsometryEquiv (realCliffordForm n 0))
 /-- The automorphism `σ : [g, z] ↦ [f⁻¹ g, z]` of `Spinᶜ(n)` does not change the action on the
 determinant model, since `det ∘ σ = det`. -/
 private theorem precompIsometryHom_smul (g : spinCGroup (realCliffordForm n 0) hQ)
-    (w : DeterminantModel n) : precompIsometryHom f g • w = g • w :=
+    (w : DeterminantModel n) : g • w = precompIsometryHom f g • w :=
   DeterminantModel.toComplex.injective (by
     rw [DeterminantModel.toComplex_smul, DeterminantModel.toComplex_smul,
       QuadraticMap.Isometry.det_spinCGroupMap])
-
-/-- The point `[p, 1]` of the principal bundle of `s.precompIsometry f` over the point `p` of the
-principal bundle of `s`. -/
-private def inlPrecomp {x : X} (p : s.P x) : (s.precompIsometry f).P x :=
-  PrincipalBundle.Extend.inl (precompIsometryHom f)
-    (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p
-
-private theorem inlPrecomp_smul {x : X} (p : s.P x) (g : spinCGroup (realCliffordForm n 0) hQ) :
-    inlPrecomp f s (op g • p) = op (precompIsometryHom f g) • inlPrecomp f s p :=
-  PrincipalBundle.Extend.inl_smul _ (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) p g
-
-private theorem continuous_inlPrecomp :
-    Continuous fun p : TotalSpace (spinCGroup (realCliffordForm n 0) hQ) s.P ↦
-      TotalSpace.mk' (spinCGroup (realCliffordForm n 0) hQ) p.proj (inlPrecomp f s p.snd) :=
-  PrincipalBundle.Extend.continuous_inl s.P _ (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
 
 /-- The comparison `[p, z] ↦ [[p, 1], z]` from the determinant line of `s` to that of
 `s.precompIsometry f`, at a fibre. -/
 private def determinantLinePrecompEquiv (x : X) :
     s.determinantLine x ≃L[ℂ] (s.precompIsometry f).determinantLine x :=
   (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (Classical.arbitrary (s.P x))).symm.trans
-    (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (inlPrecomp f s (Classical.arbitrary (s.P x))))
+    (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (PrincipalBundle.Extend.inl
+      (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+      (Classical.arbitrary (s.P x))))
 
-private theorem determinantLinePrecompEquiv_mk {x : X} (q : s.P x) (w : DeterminantModel n) :
-    determinantLinePrecompEquiv f s x (AssociatedBundle.mk _ q w) =
-      AssociatedBundle.mk _ (inlPrecomp f s q) w := by
-  set p := Classical.arbitrary (s.P x)
+/-- The comparison of determinant lines is the inverse of the identification
+`PrincipalBundle.Extend.associatedEquiv` of associated bundles of an extended principal bundle. -/
+private theorem determinantLinePrecompEquiv_apply {x : X} (z : s.determinantLine x) :
+    determinantLinePrecompEquiv f s x z = (PrincipalBundle.Extend.associatedEquiv
+      (precompIsometryHom f) (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+      (precompIsometryHom_smul f) x).symm z := by
+  obtain ⟨w, rfl⟩ := (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (F := DeterminantModel n)
+    (Classical.arbitrary (s.P x))).surjective z
   rw [determinantLinePrecompEquiv, ContinuousLinearEquiv.trans_apply,
-    AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk,
-    AssociatedBundle.mkContinuousLinearEquiv_apply]
-  conv_rhs => rw [← PrincipalBundle.smul_division (G := spinCGroup (realCliffordForm n 0) hQ) p q]
-  rw [inlPrecomp_smul, AssociatedBundle.mk_smul, precompIsometryHom_smul]
+    ContinuousLinearEquiv.symm_apply_apply, AssociatedBundle.mkContinuousLinearEquiv_apply]
+  exact (AssociatedBundle.mkContinuousLinearEquiv_apply _ _).trans
+    (PrincipalBundle.Extend.associatedEquiv_symm_mk (precompIsometryHom f)
+    (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ) (precompIsometryHom_smul f) (P := s.P)
+    (Classical.arbitrary (s.P x)) w).symm
 
 /-- **The first Chern class is unchanged by precomposing with an isometry**: for an isometry `f`
 of `ℝⁿ`, `c₁(s.precompIsometry f) = c₁(s)`. The automorphism `[g, z] ↦ [f⁻¹ g, z]` of `Spinᶜ(n)`
 through which `s.precompIsometry f` is built preserves the determinant character, so
 `[p, z] ↦ [[p, 1], z]` is a continuous fibrewise isomorphism of determinant lines. -/
+@[simp]
 theorem firstChernClass_precompIsometry :
     (s.precompIsometry f).firstChernClass = s.firstChernClass := by
   rw [firstChernClass_def, firstChernClass_def, lineFirstChernClass_def, lineFirstChernClass_def]
   refine (complexEulerClass_eq_of_fiberwise (DeterminantModel.finrank_eq_one n)
     (DeterminantModel.finrank_eq_one n) (φ := determinantLinePrecompEquiv f s) ?_).symm
-  refine (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk _ s.P
-    (DeterminantModel n)).isQuotientMap.continuous_iff.2 ?_
-  refine (((continuous_inlPrecomp f s).comp
-      continuous_fst).totalSpaceMk_associatedBundleMk continuous_snd).congr fun y ↦ ?_
-  rw [Function.comp_apply, determinantLinePrecompEquiv_mk]
+  refine (PrincipalBundle.Extend.associatedHomeomorph (P := s.P) (precompIsometryHom f)
+    (f.symm.toIsometry.continuous_spinCGroupMap hQ hQ)
+    (precompIsometryHom_smul f)).symm.continuous.congr fun z ↦ ?_
+  rw [PrincipalBundle.Extend.associatedHomeomorph_symm_apply, determinantLinePrecompEquiv_apply]
+  rfl
 
 /-- **Orientation reversal does not change the first Chern class**: `c₁(s.reverse) = c₁(s)`. -/
 theorem firstChernClass_reverse : s.reverse.firstChernClass = s.firstChernClass :=
