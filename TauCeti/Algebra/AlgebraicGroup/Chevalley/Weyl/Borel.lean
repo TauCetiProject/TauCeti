@@ -116,16 +116,6 @@ theorem weylWord_mem_borelSubgroup_iff [Nontrivial A] (l : List (Fin t.rank)) :
     D.range_torusPoints_le_borelSubgroup A
       (D.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one A l hl)⟩
 
-/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
-stays inside `D.borelSubgroup A`. -/
-theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
-    (s : Fin t.rank → Aˣ) :
-    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
-  D.range_torusPoints_le_borelSubgroup A <|
-    (Subgroup.mem_normalizer_iff.mp
-      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
-      (D.torusPoints A s)).mp ⟨s, rfl⟩
-
 /-- Over every commutative ring, the positive point subgroup intersects the Weyl subgroup
 trivially. -/
 @[simp]
@@ -169,16 +159,22 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
       rwa [D.positivePoints_inf_weylSubgroup_eq_bot A, Subgroup.mem_bot] at hmem
     rw [hu1, one_mul]
     exact ⟨s, rfl⟩
-  · refine le_inf (D.range_torusPoints_le_borelSubgroup A) ?_
-    rintro _ ⟨s, rfl⟩
-    exact D.torusPoints_mem_weylSubgroup A s
+  · exact le_inf (D.range_torusPoints_le_borelSubgroup A) (D.range_torusPoints_le_weylSubgroup A)
+
+/-- Read inside `D.weylSubgroup A`, the Borel subgroup cuts out the actual weight-lattice torus,
+over every commutative ring. -/
+@[simp]
+theorem borelSubgroup_subgroupOf_weylSubgroup :
+    (D.borelSubgroup A).subgroupOf (D.weylSubgroup A) =
+      ((D.torusPoints A).range).subgroupOf (D.weylSubgroup A) := by
+  rw [Subgroup.subgroupOf_inj, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints,
+    inf_eq_left.mpr (D.range_torusPoints_le_weylSubgroup A)]
 
 /-- `B ∩ N` is normal in `N`: it is the actual torus, which `N` normalizes. This is the normality
 axiom of a Tits system with these subgroups. -/
 instance normal_borelSubgroup_subgroupOf_weylSubgroup :
     ((D.borelSubgroup A).subgroupOf (D.weylSubgroup A)).Normal := by
-  rw [← Subgroup.inf_subgroupOf_left, inf_comm,
-    D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints A]
+  rw [D.borelSubgroup_subgroupOf_weylSubgroup A]
   infer_instance
 
 /-- Over every commutative ring, an element of `D.weylSubgroup A` belongs to `D.borelSubgroup A`

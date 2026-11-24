@@ -178,6 +178,14 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorPreservesLimitsO
   _root_.SheafOfModules.evaluationPreservesLimitsOfSize _ _
 
 variable {X} in
+/-- The sections over `U`, as a functor to abelian groups, send a morphism of `𝒪ₓ`-modules to
+its component `Scheme.Modules.Hom.app` over `U`, which is defined as this composite. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.forget₂_map_sectionsFunctor_map (U : X.Opens)
+    {M N : X.Modules} (φ : M ⟶ N) :
+    (forget₂ _ AddCommGrpCat).map ((Scheme.Modules.sectionsFunctor U).map φ) = φ.app U :=
+  rfl
+
+variable {X} in
 /-- The unit comparison of the sections functor is the identity on regular functions. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_ε
