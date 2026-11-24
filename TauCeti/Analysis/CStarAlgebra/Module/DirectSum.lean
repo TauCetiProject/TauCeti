@@ -12,6 +12,7 @@ public import TauCeti.Analysis.CStarAlgebra.Module.FiniteSum
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Hilbert direct sums of C⋆-modules
@@ -29,24 +30,27 @@ whenever every summand `E i` is complete.
 
 Every element `x` is the unconditional norm sum `∑' i, single A E i (x i)` of its coordinates,
 so finitely supported families are dense; when `ι` is finite, `HilbertDirectSum A E` agrees
-isometrically and inner-product-preservingly with `C⋆ᵐᵒᵈ(A, Π i, E i)`. Finally, the Banach
-`ℓ²`-sum `lp E 2` of families satisfying `∑' i, ‖x i‖ ^ 2 < ∞` embeds contractively, injectively,
-and with dense range into `HilbertDirectSum A E`, and agrees isometrically with
-`HilbertDirectSum ℂ E` via `equivLp` when `A = ℂ`. Right Hilbert `B`-modules are covered
-throughout by taking `A = Bᵐᵒᵖ`.
+isometrically and inner-product-preservingly with `C⋆ᵐᵒᵈ(A, Π i, E i)`. Finally, the `ℓ²` sum
+`lp E 2` of families whose squared coordinate norms are summable (`Summable (fun i ↦ ‖x i‖ ^ 2)`)
+embeds contractively, injectively, and with dense range into `HilbertDirectSum A E`, and agrees
+isometrically with `HilbertDirectSum ℂ E` via `equivLp` when `A = ℂ`. Right Hilbert `B`-modules are
+covered throughout by taking `A = Bᵐᵒᵖ`.
 
 ## Main declarations
 
 * `TauCeti.HilbertDirectSum`: the Hilbert direct sum `⊕ᵢ E i` of a family of `CStarModule`s,
-  equipped with `CStarModule A`, `NormedAddCommGroup`, `NormedSpace ℂ`, and `CompleteSpace`.
+  equipped with `CStarModule A`, `NormedAddCommGroup`, `NormedSpace ℂ`, and `CompleteSpace`
+  (when `[∀ i, CompleteSpace (E i)]`).
 * `TauCeti.HilbertDirectSum.single`, `TauCeti.HilbertDirectSum.evalCLM`,
   `TauCeti.HilbertDirectSum.trunc`: coordinate inclusions, coordinate projections, and finite-set
-  truncations, with `hasSum_single` and `denseRange_ofDFinsupp`.
+  truncations, with `hasSum_single`, `continuousLinearMap_ext_single`, `mem_range_ofDFinsupp_iff`,
+  and `denseRange_ofDFinsupp`.
 * `TauCeti.HilbertDirectSum.equivWithCStarModulePi`: agreement with `C⋆ᵐᵒᵈ(A, Π i, E i)` when
   `[Fintype ι]`.
 * `TauCeti.HilbertDirectSum.ofLp`, `TauCeti.HilbertDirectSum.equivLp`: contractive, injective
-  continuous linear map `lp E 2 →L[ℂ] HilbertDirectSum A E` with dense range (`denseRange_ofLp`),
-  and complex linear isometric equivalence `HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2` when `A = ℂ`.
+  continuous linear map `lp E 2 →L[ℂ] HilbertDirectSum A E` with `mem_range_ofLp_iff` and dense
+  range (`denseRange_ofLp`), and complex linear isometric equivalence
+  `HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2` when `A = ℂ`.
 
 ## References
 
@@ -298,15 +302,14 @@ variable {A ι : Type*} {E : ι → Type*}
   [∀ i, SMul A (E i)] [∀ i, CStarModule A (E i)]
 
 omit [StarOrderedRing A] in
-/-- If `x : ∀ i, E i` lies in the Banach `ℓ²` sum (`Memℓp x 2`), then the norms of its diagonal
+/-- If `x : ∀ i, E i` lies in the `ℓ²` sum (`Memℓp x 2`), then the norms of its diagonal
 inner products `‖⟪x i, x i⟫_A‖` are summable. -/
 theorem _root_.Memℓp.summable_norm_inner_self {x : ∀ i, E i} (hx : Memℓp x 2) :
     Summable fun i ↦ ‖inner A (x i) (x i)‖ := by
-  have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
-  simpa [CStarModule.norm_sq_eq A] using (memℓp_gen_iff h2).mp hx
+  simpa [CStarModule.norm_sq_eq A] using memℓp_two_iff.mp hx
 
 omit [StarOrderedRing A] in
-/-- If `x : ∀ i, E i` lies in the Banach `ℓ²` sum (`Memℓp x 2`), then its diagonal inner products
+/-- If `x : ∀ i, E i` lies in the `ℓ²` sum (`Memℓp x 2`), then its diagonal inner products
 `⟪x i, x i⟫_A` are unconditionally summable in the norm topology of `A`. -/
 theorem _root_.Memℓp.summable_inner_self {x : ∀ i, E i} (hx : Memℓp x 2) :
     Summable fun i ↦ inner A (x i) (x i) :=
@@ -541,6 +544,15 @@ theorem inner_trunc_trunc [DecidableEq ι] (s t : Finset ι) (x y : HilbertDirec
     inner A (trunc A E s x) (trunc A E t y) = ∑ i ∈ s ∩ t, inner A (x i) (y i) := by
   rw [(isAdjointPair_trunc s).inner_eq_cstarModule, trunc_trunc, inner_trunc_right]
 
+/-- The diagonal inner product of the truncation error `x - trunc A E s x` is the tail
+`⟪x, x⟫_A - ∑ i ∈ s, ⟪x i, x i⟫_A`. -/
+theorem inner_sub_trunc_self [DecidableEq ι] (s : Finset ι) (x : HilbertDirectSum A E) :
+    inner A (x - trunc A E s x) (x - trunc A E s x) =
+      inner A x x - ∑ i ∈ s, inner A (x i) (x i) := by
+  simp only [CStarModule.inner_sub_left (A := A), CStarModule.inner_sub_right (A := A)]
+  rw [inner_trunc_trunc, inner_trunc_left, inner_trunc_right]
+  simp
+
 /-- Every finite-coordinate truncation does not increase the norm of a vector. -/
 theorem norm_trunc_apply_le [DecidableEq ι] (s : Finset ι) (x : HilbertDirectSum A E) :
     ‖trunc A E s x‖ ≤ ‖x‖ := by
@@ -560,16 +572,21 @@ theorem hasSum_single [DecidableEq ι] (x : HilbertDirectSum A E) :
   have hnorm : ∀ s : Finset ι,
       ‖∑ i ∈ s, single A E i (x i) - x‖ = √‖inner A x x - ∑ i ∈ s, inner A (x i) (x i)‖ :=
     fun s ↦ by
-      rw [← trunc_eq_sum_single, CStarModule.norm_eq_sqrt_norm_inner_self (A := A)]
-      congr 2
-      rw [CStarModule.inner_sub_left (A := A), CStarModule.inner_sub_right (A := A),
-        CStarModule.inner_sub_right (A := A), inner_trunc_trunc, Finset.inter_self,
-        inner_trunc_left, inner_trunc_right, sub_self, zero_sub, neg_sub]
+      rw [← trunc_eq_sum_single, norm_sub_rev,
+        CStarModule.norm_eq_sqrt_norm_inner_self (A := A), inner_sub_trunc_self]
   simp_rw [hnorm]
   have hlim : Tendsto (fun s : Finset ι ↦ ‖inner A x x - ∑ i ∈ s, inner A (x i) (x i)‖)
       (SummationFilter.unconditional ι).filter (𝓝 0) := by
     simpa only [norm_sub_rev] using tendsto_iff_norm_sub_tendsto_zero.mp (hasSum_inner x x)
   simpa [Function.comp_def] using (Real.continuous_sqrt.tendsto 0).comp hlim
+
+/-- Continuous linear maps out of `HilbertDirectSum A E` into a Hausdorff space are determined by
+their values on the coordinate inclusions `single A E i y`. -/
+theorem continuousLinearMap_ext_single [DecidableEq ι] {F : Type*} [AddCommMonoid F] [Module ℂ F]
+    [TopologicalSpace F] [T2Space F] {f g : HilbertDirectSum A E →L[ℂ] F}
+    (h : ∀ i (y : E i), f (single A E i y) = g (single A E i y)) : f = g :=
+  ContinuousLinearMap.ext fun x ↦
+    ((hasSum_single x).mapL f).unique (by simpa only [h] using (hasSum_single x).mapL g)
 
 /-- Finite-coordinate truncations `trunc A E s x` converge in norm to `x` along `atTop`. -/
 theorem tendsto_trunc [DecidableEq ι] (x : HilbertDirectSum A E) :
@@ -592,17 +609,31 @@ theorem ofDFinsupp_single [DecidableEq ι] (i : ι) (y : E i) :
 @[simp]
 theorem ofDFinsupp_apply [DecidableEq ι] (f : Π₀ i, E i) (i : ι) :
     ofDFinsupp A E f i = f i := by
-  induction f using DFinsupp.induction with
-  | h0 => simp
-  | ha j y g hj hy ih =>
-    simp only [map_add, ofDFinsupp_single, add_apply, ih, DFinsupp.add_apply]
-    by_cases h : i = j
-    · subst h; simp
-    · rw [single_apply_of_ne h, DFinsupp.single_eq_of_ne h]
+  have h : (evalCLM A E i).toLinearMap.comp (ofDFinsupp A E) = DFinsupp.lapply i :=
+    DFinsupp.lhom_ext fun j y ↦ by
+      simp only [LinearMap.comp_apply, ofDFinsupp_single, ContinuousLinearMap.coe_coe,
+        evalCLM_apply, single_apply, DFinsupp.lapply_apply]
+      rcases eq_or_ne i j with rfl | hij
+      · simp
+      · simp [hij, hij.symm]
+  exact LinearMap.congr_fun h f
 
 /-- The complex-linear inclusion `ofDFinsupp A E` of finitely supported families is injective. -/
 theorem ofDFinsupp_injective [DecidableEq ι] : Function.Injective (ofDFinsupp A E) :=
   fun _ _ h ↦ DFinsupp.ext fun i ↦ by simpa only [ofDFinsupp_apply] using congrArg (· i) h
+
+/-- An element of `HilbertDirectSum A E` lies in the range of `ofDFinsupp A E` if and only if it
+has finite coordinate support. -/
+theorem mem_range_ofDFinsupp_iff [DecidableEq ι] {x : HilbertDirectSum A E} :
+    x ∈ Set.range (ofDFinsupp A E) ↔ {i | x i ≠ 0}.Finite := by
+  refine ⟨?_, fun hx ↦ ⟨DFinsupp.mk hx.toFinset fun i ↦ x i, ?_⟩⟩
+  · rintro ⟨f, rfl⟩
+    exact f.finite_support.subset fun i hi ↦ by simpa [ofDFinsupp_apply] using hi
+  · ext i
+    rw [ofDFinsupp_apply, DFinsupp.mk_apply]
+    split_ifs with hi
+    · rfl
+    · exact (not_not.mp (hx.mem_toFinset.not.mp hi)).symm
 
 /-- Finitely supported families form a dense complex subspace of `HilbertDirectSum A E`. -/
 theorem denseRange_ofDFinsupp [DecidableEq ι] : DenseRange (ofDFinsupp A E) := by
@@ -615,10 +646,10 @@ theorem denseRange_ofDFinsupp [DecidableEq ι] : DenseRange (ofDFinsupp A E) := 
 theorem dense_setOf_finite_support :
     Dense {x : HilbertDirectSum A E | {i | x i ≠ 0}.Finite} := by
   classical
-  refine denseRange_ofDFinsupp.mono ?_
-  rintro _ ⟨f, rfl⟩
-  refine f.finite_support.subset fun i hi ↦ ?_
-  simpa [ofDFinsupp_apply] using hi
+  have h : {x : HilbertDirectSum A E | {i | x i ≠ 0}.Finite} = Set.range (ofDFinsupp A E) :=
+    Set.ext fun _ ↦ (mem_range_ofDFinsupp_iff (A := A) (E := E)).symm
+  rw [h]
+  exact denseRange_ofDFinsupp
 
 /-! #### Agreement with Mathlib's finite `WithCStarModule` product -/
 
@@ -700,10 +731,10 @@ variable {A ι : Type*} {E : ι → Type*}
 theorem norm_evalCLM_le (i : ι) : ‖evalCLM A E i‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
-/-! #### Contractive dense embedding of the Banach `ℓ²` sum `lp E 2` -/
+/-! #### Contractive dense embedding of the `ℓ²` sum `lp E 2` -/
 
 variable (A E) in
-/-- The Banach `ℓ²` space `lp E 2` of families with `∑' i, ‖x i‖ ^ 2 < ∞` embeds contractively
+/-- The `ℓ²` sum `lp E 2` of families with `Summable (fun i ↦ ‖x i‖ ^ 2)` embeds contractively
 into `HilbertDirectSum A E`. -/
 def ofLp : lp E 2 →L[ℂ] HilbertDirectSum A E :=
   LinearMap.mkContinuous
@@ -717,14 +748,12 @@ def ofLp : lp E 2 →L[ℂ] HilbertDirectSum A E :=
         rw [smul_complex_apply, mk_apply, mk_apply]
         simp [Pi.smul_apply] }
     1 fun x ↦ by
-      have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
       have hsq : ‖∑' i, inner A (x i) (x i)‖ ≤ ‖x‖ ^ 2 := by
         calc ‖∑' i, inner A (x i) (x i)‖
             ≤ ∑' i, ‖inner A (x i) (x i)‖ :=
               norm_tsum_le_tsum_norm (x.prop.summable_norm_inner_self (A := A))
           _ = ∑' i, ‖x i‖ ^ 2 := by simp_rw [CStarModule.norm_sq_eq A]
-          _ = ‖x‖ ^ 2 := by
-              simpa using (lp.norm_rpow_eq_tsum (p := 2) h2 x).symm
+          _ = ‖x‖ ^ 2 := (lp.norm_sq_eq_tsum x).symm
       simpa [one_mul, norm_def] using
         (Real.sqrt_le_sqrt hsq).trans_eq (Real.sqrt_sq (norm_nonneg x))
 
@@ -735,7 +764,7 @@ theorem ofLp_apply (x : lp E 2) (i : ι) : ofLp A E x i = x i := (rfl)
 theorem norm_ofLp_le : ‖ofLp A E‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
-/-- The Hilbert direct sum norm of `ofLp A E x` is bounded above by the Banach `ℓ²` norm `‖x‖`. -/
+/-- The Hilbert direct sum norm of `ofLp A E x` is bounded above by the `ℓ²` sum norm `‖x‖`. -/
 theorem norm_ofLp_apply_le (x : lp E 2) : ‖ofLp A E x‖ ≤ ‖x‖ := by
   simpa only [one_mul] using (ofLp A E).le_of_opNorm_le norm_ofLp_le x
 
@@ -743,6 +772,12 @@ theorem norm_ofLp_apply_le (x : lp E 2) : ‖ofLp A E x‖ ≤ ‖x‖ := by
 theorem ofLp_injective : Function.Injective (ofLp A E) := fun x y h ↦ by
   ext i
   exact congrArg (fun z : HilbertDirectSum A E ↦ z i) h
+
+/-- An element of `HilbertDirectSum A E` lies in the range of `ofLp A E` if and only if its
+coordinate family lies in `lp E 2` (`Memℓp ⇑x 2`). -/
+theorem mem_range_ofLp_iff {x : HilbertDirectSum A E} :
+    x ∈ Set.range (ofLp A E) ↔ Memℓp ⇑x 2 :=
+  ⟨by rintro ⟨y, rfl⟩; exact y.prop, fun hx ↦ ⟨⟨⇑x, hx⟩, by ext i; rfl⟩⟩
 
 @[simp]
 theorem ofLp_single [DecidableEq ι] (i : ι) (y : E i) :
@@ -770,14 +805,13 @@ section Memℓp
 variable {ι : Type*} {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, Module ℂ (E i)] [∀ i, CStarModule ℂ (E i)]
 
-/-- Over `A = ℂ`, every element of `HilbertDirectSum ℂ E` lies in the Banach `ℓ²` space `lp E 2`
+/-- Over `A = ℂ`, every element of `HilbertDirectSum ℂ E` lies in the `ℓ²` sum `lp E 2`
 (`Memℓp ⇑x 2`). -/
 theorem memℓp_two (x : HilbertDirectSum ℂ E) : Memℓp ⇑x 2 := by
-  have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
-  refine (memℓp_gen_iff h2).mpr ?_
+  refine memℓp_two_iff.mpr ?_
   have hsum : Summable fun i ↦ ((‖x i‖ ^ 2 : ℝ) : ℂ) := by
     simpa only [CStarModule.inner_self_eq_norm_sq_complex] using x.summable_inner_self
-  simpa using Complex.summable_ofReal.mp hsum
+  exact Complex.summable_ofReal.mp hsum
 
 end Memℓp
 
@@ -788,7 +822,7 @@ variable {ι : Type*} {E : ι → Type*}
 
 variable (E) in
 /-- Over `A = ℂ`, the Hilbert direct sum `HilbertDirectSum ℂ E` is complex linearly isometrically
-equivalent to the Banach `ℓ²` space `lp E 2` (inverse to `ofLp ℂ E`). -/
+equivalent to the `ℓ²` sum `lp E 2` (inverse to `ofLp ℂ E`). -/
 def equivLp : HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2 where
   toFun x := ⟨⇑x, memℓp_two x⟩
   invFun z := ofLp ℂ E z
@@ -801,10 +835,10 @@ def equivLp : HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2 where
   left_inv _ := by ext i; simp
   right_inv _ := by ext i; simp
   norm_map' x := by
-    have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
     set z : lp E 2 := ⟨⇑x, memℓp_two x⟩
-    have htsum : ∑' i, ‖x i‖ ^ 2 = ‖z‖ ^ 2 := by
-      simpa [z] using (lp.norm_rpow_eq_tsum (p := 2) h2 z).symm
+    have hz : ∀ i, z i = x i := fun _ ↦ rfl
+    have htsum : ∑' i, ‖x i‖ ^ 2 = ‖z‖ ^ 2 :=
+      (tsum_congr fun i ↦ by rw [hz i]).symm.trans (lp.norm_sq_eq_tsum z).symm
     have hinner : inner ℂ x x = ((‖z‖ ^ 2 : ℝ) : ℂ) := by
       rw [inner_def]
       simp_rw [CStarModule.inner_self_eq_norm_sq_complex]
@@ -827,12 +861,16 @@ theorem equivLp_symm_toContinuousLinearMap :
   simp
 
 @[simp]
-theorem equivLp_ofLp (x : lp E 2) : equivLp E (ofLp ℂ E x) = x :=
-  (equivLp E).apply_symm_apply x
+theorem equivLp_ofLp (x : lp E 2) : equivLp E (ofLp ℂ E x) = x := by
+  rw [← equivLp_symm_toContinuousLinearMap, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry]
+  exact (equivLp E).apply_symm_apply x
 
 @[simp]
-theorem ofLp_equivLp (x : HilbertDirectSum ℂ E) : ofLp ℂ E (equivLp E x) = x :=
-  (equivLp E).symm_apply_apply x
+theorem ofLp_equivLp (x : HilbertDirectSum ℂ E) : ofLp ℂ E (equivLp E x) = x := by
+  rw [← equivLp_symm_toContinuousLinearMap, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry]
+  exact (equivLp E).symm_apply_apply x
 
 @[simp]
 theorem equivLp_single [DecidableEq ι] (i : ι) (y : E i) :

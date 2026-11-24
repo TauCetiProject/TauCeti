@@ -22,7 +22,9 @@ coordinate evaluation (`lp.evalCLM_apply`, `lp.evalCLM_comp_singleContinuousLine
 `lp.leftInverse_evalCLM_singleContinuousLinearMap`, `lp.evalCLM_surjective`) let users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
-extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
+extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Similarly, a
+sequence lies in `ℓ²` exactly when its squared coordinate norms are summable (`memℓp_two_iff`),
+and its squared `ℓ²` norm is their sum (`lp.norm_sq_eq_tsum`). Sequences whose
 coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
 particular the sequence `i ↦ ‖f i‖` of coordinate norms of `f ∈ ℓᵖ` (`lp.normSeq`) has `ℓᵖ` norm
 `‖f‖` (`lp.norm_normSeq`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
@@ -120,6 +122,12 @@ theorem Memℓp.countable_dsupport {ι : Type*} {E : ι → Type*} [∀ i, Norme
     refine (hf.summable hpr).countable_support.mono fun i hi ↦ ?_
     exact (Real.rpow_pos_of_pos (norm_pos_iff.2 hi) p.toReal).ne'
 
+/-- A dependent family lies in `ℓ²` if and only if the squares of its coordinate norms are
+summable. -/
+theorem memℓp_two_iff {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
+    {f : ∀ i, E i} : Memℓp f 2 ↔ Summable fun i ↦ ‖f i‖ ^ 2 := by
+  simpa using memℓp_gen_iff (p := 2) (by norm_num) (f := f)
+
 namespace lp
 
 variable {ι 𝕜 : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
@@ -133,6 +141,10 @@ theorem evalCLM_apply [Fact (1 ≤ p)] (i : ι) (x : lp E p) : evalCLM 𝕜 E p 
 /-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
 theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
   simpa using lp.hasSum_norm (p := 1) (by simp) y
+
+/-- The square of the `ℓ²` norm is the sum of the squared norms of the coordinates. -/
+theorem norm_sq_eq_tsum (x : lp E 2) : ‖x‖ ^ 2 = ∑' i, ‖x i‖ ^ 2 := by
+  simpa using lp.norm_rpow_eq_tsum (p := 2) (by norm_num) x
 
 /-- **The `ℓᵖ` norms decrease in the exponent.** For `0 < p ≤ q`, a sequence `f ∈ ℓᵖ` lies in
 `ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. -/

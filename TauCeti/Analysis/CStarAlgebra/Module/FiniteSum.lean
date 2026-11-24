@@ -239,24 +239,12 @@ theorem single_apply_of_ne [DecidableEq ι] {i j : ι} (h : j ≠ i) (y : E i) :
     single A E i y j = 0 := by
   simp [single_apply, h]
 
-/-- Bundled `WithCStarModule.single` counterpart of `WithCStarModule.inner_single_left`. -/
-@[simp]
-theorem inner_single_left' [DecidableEq ι] (i : ι) (y : E i) (z : C⋆ᵐᵒᵈ(A, Π j, E j)) :
-    inner A (single A E i y) z = inner A y (z i) := by
-  simp [single]
-
-/-- Bundled `WithCStarModule.single` counterpart of `WithCStarModule.inner_single_right`. -/
-@[simp]
-theorem inner_single_right' [DecidableEq ι] (z : C⋆ᵐᵒᵈ(A, Π j, E j)) (i : ι) (y : E i) :
-    inner A z (single A E i y) = inner A (z i) y := by
-  simp [single]
-
 /-- The `i`-th coordinate inclusion and projection on `C⋆ᵐᵒᵈ(A, Π j, E j)` form a C⋆-module
 adjoint pair. -/
 theorem isAdjointPair_single_evalCLM [DecidableEq ι] (i : ι) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A)).flip
       (CStarModule.innerₛₗ (A := A)).flip (single A E i) (evalCLM A E i) :=
-  CStarModule.isAdjointPair_inner_iff.mpr fun _ _ ↦ by simp
+  CStarModule.isAdjointPair_inner_iff.mpr fun _ _ ↦ by simp [WithCStarModule.single]
 
 @[simp]
 theorem single_smul [DecidableEq ι] (i : ι) (a : A) (y : E i) :
@@ -267,12 +255,10 @@ theorem single_smul [DecidableEq ι] (i : ι) (a : A) (y : E i) :
 @[simp]
 theorem univ_sum_single [DecidableEq ι] (z : C⋆ᵐᵒᵈ(A, Π j, E j)) :
     ∑ i, single A E i (z i) = z := by
-  apply CStarModule.ext_inner_left (A := A)
-  intro w
-  refine (CStarModule.inner_sum_right (A := A) (x := w)
-    (y := fun i ↦ single A E i (z i))).trans ?_
-  simp only [inner_single_right']
-  rw [pi_inner]
+  apply (linearEquiv ℂ A (Π j, E j)).injective
+  rw [map_sum]
+  exact (Finset.sum_congr rfl fun i _ ↦ funext (single_apply (A := A) i (z i))).trans
+    (LinearMap.sum_single_apply E (linearEquiv ℂ A (Π j, E j) z))
 
 end Pi
 

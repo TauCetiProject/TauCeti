@@ -14,9 +14,9 @@ import TauCeti.Analysis.Normed.Lp.Diagonal.Positive
 /-!
 # Strictness of the Banach `ℓ²` inclusion into `StandardHilbertModule K(ℓ²(ℕ, ℂ))`
 
-For a C⋆-algebra `A`, the Banach `ℓ²` space `lp (fun _ : ℕ ↦ A) 2` of sequences satisfying
-`∑' n, ‖x n‖ ^ 2 < ∞` embeds contractively and with dense range into
-`TauCeti.StandardHilbertModule A` via `TauCeti.HilbertDirectSum.ofLp`. Following Lance
+For a C⋆-algebra `A`, the Banach `ℓ²` space `lp (fun _ : ℕ ↦ A) 2` of sequences whose squared
+coordinate norms are summable (`Summable (fun n ↦ ‖x n‖ ^ 2)`) embeds contractively and with dense
+range into `TauCeti.StandardHilbertModule A` via `TauCeti.HilbertDirectSum.ofLp`. Following Lance
 (*Hilbert C⋆-Modules*, Chapter 1, p. 7), this file shows that the inclusion is not surjective in
 general: for the nonunital C⋆-algebra `TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ)` of
 compact operators on `ℓ²(ℕ, ℂ)`, the sequence `a n = (√(n + 1))⁻¹ • P_n` of scaled rank-one
@@ -54,19 +54,13 @@ private theorem antitone_inv_add_one :
 private def harmonicDiag : ℓ^∞(ℕ, ℂ) :=
   lp.ofAntitone ℂ antitone_inv_add_one
 
-private theorem harmonicDiag_apply (n : ℕ) :
-    harmonicDiag n = (((n : ℝ) + 1)⁻¹ : ℝ) :=
-  lp.ofAntitone_apply ℂ antitone_inv_add_one n
-
-private theorem norm_harmonicDiag_apply (n : ℕ) :
-    ‖harmonicDiag n‖ = ((n : ℝ) + 1)⁻¹ :=
-  lp.norm_ofAntitone_apply ℂ antitone_inv_add_one n
-
 private theorem tendsto_norm_harmonicDiag :
     Tendsto (fun n : ℕ ↦ ‖harmonicDiag n‖) cofinite (𝓝 0) := by
   rw [Nat.cofinite_eq_atTop]
   refine tendsto_one_div_add_atTop_nhds_zero_nat.congr fun n ↦ ?_
-  rw [norm_harmonicDiag_apply, one_div]
+  unfold harmonicDiag
+  rw [one_div]
+  exact (lp.norm_ofAntitone_apply ℂ antitone_inv_add_one n).symm
 
 private def harmonicCoord (n : ℕ) :
     TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ) :=
@@ -101,8 +95,10 @@ private theorem star_mul_self_harmonicCoord (n : ℕ) :
     by_cases hi : i = n
     · subst i
       have hpos : 0 ≤ (n : ℝ) + 1 := by positivity
-      simp only [e, lp.single_apply_self, harmonicDiag_apply, ← Complex.ofReal_mul]
+      unfold harmonicDiag
+      simp only [e, lp.single_apply_self, ← Complex.ofReal_mul]
       rw [← mul_inv, Real.mul_self_sqrt hpos]
+      exact (lp.ofAntitone_apply ℂ antitone_inv_add_one n).symm
     · simp [e, Pi.single_eq_of_ne hi]
   simp only [MulMemClass.coe_mul, StarMemClass.coe_star, coe_harmonicCoord, he, hself.star_eq,
     ContinuousLinearMap.mul_def, ← lp.diagonalCLM_mul, he_sq]
@@ -134,14 +130,9 @@ theorem exists_notMem_range_ofLp_compactOperator :
           (TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ))ᵐᵒᵖ
           (fun _ : ℕ ↦ TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ))) := by
   refine ⟨mkOfSummable harmonicCoord hasSum_star_mul_self_harmonicCoord.summable, ?_⟩
-  rintro ⟨y, hy⟩
-  have hcoord : (y : ℕ → _) = harmonicCoord := funext fun n ↦ by
-    simpa [HilbertDirectSum.ofLp_apply] using
-      congrArg (fun z : StandardHilbertModule _ ↦ z n) hy
-  have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
-  have hmem : Summable fun n : ℕ ↦ ‖harmonicCoord n‖ ^ 2 := by
-    simpa [hcoord] using (memℓp_gen_iff h2).mp y.prop
-  simp_rw [norm_harmonicCoord_sq] at hmem
+  rw [HilbertDirectSum.mem_range_ofLp_iff, memℓp_two_iff]
+  intro hmem
+  simp_rw [mkOfSummable_apply, norm_harmonicCoord_sq] at hmem
   exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp hmem)
 
 /-- The contractive dense embedding `lp (fun _ : ℕ ↦ K(ℓ²)) 2 →L[ℂ] StandardHilbertModule K(ℓ²)`

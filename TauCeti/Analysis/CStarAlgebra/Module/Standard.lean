@@ -20,10 +20,11 @@ unconditionally in the norm topology of `A`, with right action `(op a • x) n =
 inner product `unop ⟪x, y⟫_{Aᵐᵒᵖ} = ∑' n, star (x n) * y n`, and norm
 `‖x‖ = √‖∑' n, star (x n) * x n‖`. Like `A` itself, `StandardHilbertModule A` is full over `A`.
 
-While the Banach `ℓ²` space `lp (fun _ : ℕ ↦ A) 2` of sequences satisfying `∑' n, ‖x n‖ ^ 2 < ∞`
-embeds contractively and with dense range into `StandardHilbertModule A` via
-`HilbertDirectSum.ofLp`, unconditional convergence of `∑' n, star (x n) * x n` in the norm topology
-of `A` is strictly weaker than scalar square-summability of `‖x n‖` in general; see
+While the Banach `ℓ²` space `lp (fun _ : ℕ ↦ A) 2` of sequences satisfying
+`Summable (fun n ↦ ‖x n‖ ^ 2)` embeds contractively and with dense range into
+`StandardHilbertModule A` via `HilbertDirectSum.ofLp`, unconditional convergence of
+`∑' n, star (x n) * x n` in the norm topology of `A` is strictly weaker than scalar
+square-summability of `‖x n‖` in general; see
 `TauCeti.Examples.Analysis.CStarAlgebra.Module.Standard` for Lance's compact-operator
 counterexample on `K(ℓ²(ℕ, ℂ))`.
 
@@ -112,11 +113,6 @@ theorem norm_eq_sqrt_norm_tsum (x : StandardHilbertModule A) :
 theorem norm_sq_eq_norm_tsum (x : StandardHilbertModule A) :
     ‖x‖ ^ 2 = ‖∑' n, star (x n) * x n‖ := by
   rw [CStarModule.norm_sq_eq Aᵐᵒᵖ (x := x), ← norm_unop, unop_inner_eq_tsum]
-
-/-- The right `A`-action on `StandardHilbertModule A` multiplies each coordinate on the right. -/
-theorem op_smul_apply (a : A) (x : StandardHilbertModule A) (n : ℕ) :
-    (op a • x) n = x n * a := by
-  simp
 
 /-- The `A`-valued inner products on `StandardHilbertModule A` form a dense subset of `A`. -/
 theorem dense_range_unop_inner :
