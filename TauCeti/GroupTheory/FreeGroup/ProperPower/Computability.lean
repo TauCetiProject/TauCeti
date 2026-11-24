@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
-public import TauCeti.GroupTheory.ProperPower
+public import TauCeti.Algebra.Group.ProperPower
 import TauCeti.Computability.Primrec.List
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Word
 
@@ -62,7 +62,7 @@ private theorem primrecRel_repeatedBlock [Primcodable α] :
 /-- Proper-power membership of the element represented by an arbitrary word is primitive
 recursive on Mathlib's standard list encoding. The alphabet need not be finite. -/
 theorem primrecPred_isProperPower_mk [Primcodable α] :
-    PrimrecPred fun w : List (α × Bool) => Group.IsProperPower (mk w) := by
+    PrimrecPred fun w : List (α × Bool) => TauCeti.IsProperPower (mk w) := by
   classical
   -- Eliminate the indices in turn by bounded list searches, then freely reduce the input.
   have exponent : PrimrecPred fun p : List (α × Bool) × ℕ × ℕ =>
