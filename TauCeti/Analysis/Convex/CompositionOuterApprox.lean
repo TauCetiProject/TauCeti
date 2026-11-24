@@ -86,6 +86,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   `TauCeti.CompositionLift.sharedOuterApproxOn_of_isEmpty` and
   `TauCeti.CompositionLift.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
   admissible heights and no anchors.
+* `TauCeti.CompositionLift.directOuterApprox_of_isEmpty_heights` and
+  `TauCeti.CompositionLift.fst_image_sharedOuterApprox_of_isEmpty_heights`: the degenerate case of
+  no height coordinates, where every row reduces to the scalar condition `h 0 ≤ b`.
 
 ## References
 
@@ -379,6 +382,29 @@ domain. -/
 theorem fst_image_sharedOuterApprox_of_isEmpty [IsEmpty κ] (hE : E.Nonempty) :
     Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = D := by
   rw [sharedOuterApprox_of_isEmpty, fst_image_prod _ hE]
+
+/-- With no height coordinates and at least one anchor, every direct row is the scalar `h 0`, so
+the direct approximation is the set of points of the domain satisfying `h 0 ≤ b`. -/
+theorem directOuterApprox_of_isEmpty_heights [IsEmpty ι] [Nonempty κ] :
+    directOuterApprox D g h a Dg Dh b = {x | x ∈ D ∧ h 0 ≤ b} := by
+  have hDh : ∀ i v, Dh i v = 0 := fun i v ↦ by rw [Subsingleton.elim v 0, map_zero]
+  ext x
+  simp [directRow_def, hDh, Subsingleton.elim (g _) 0]
+
+/-- With no height coordinates and at least one anchor, the shared approximation projects onto the
+points of the domain satisfying `h 0 ≤ b`, provided the unique height `0` is admissible. -/
+theorem fst_image_sharedOuterApprox_of_isEmpty_heights [IsEmpty ι] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = {x | x ∈ D ∧ 0 ∈ E ∧ h 0 ≤ b} := by
+  have hDh : ∀ i v, Dh i v = 0 := fun i v ↦ by rw [Subsingleton.elim v 0, map_zero]
+  ext x
+  simp only [mem_image, mem_sharedOuterApprox, outerRow_def, hDh, Subsingleton.elim (g _) 0,
+    Subsingleton.elim (componentRow g _ _ _) 0, Prod.exists, exists_and_right, exists_eq_right,
+    mem_ofPred_eq, add_zero, forall_const]
+  constructor
+  · rintro ⟨y, hx, hy, -, hb⟩
+    exact ⟨hx, Subsingleton.elim y 0 ▸ hy, hb⟩
+  · rintro ⟨hx, hE, hb⟩
+    exact ⟨0, hx, hE, le_rfl, hb⟩
 
 /-! ### The comparison theorems -/
 
