@@ -26,8 +26,9 @@ is a scalar, the centre acts by scalars, and reading off the scalar is an `R`-al
 `Z(U(L)) →ₐ[R] R` (`TauCeti.UniversalEnvelopingAlgebra.centralCharacterOfForallExistsSmul`). Over a
 field this covers absolutely irreducible finite-dimensional modules, whose endomorphisms are all
 scalars, and also modules whose commutant is a central division algebra, as for the quaternionic
-real irreducible modules. The hypothesis is turned into the bijectivity of `R → Z(End_{U(L)}(M))` by
-`TauCeti.UniversalEnvelopingAlgebra.bijective_algebraMap_center_end_of_forall_exists_smul`.
+real irreducible modules. The hypothesis says that the commutant `End_{U(L)}(M)` is a central
+`R`-algebra (`TauCeti.UniversalEnvelopingAlgebra.isCentral_end_of_forall_exists_smul`), which makes
+`R → Z(End_{U(L)}(M))` bijective (`TauCeti.bijective_algebraMap_center_end_of_isCentral`).
 
 Over an algebraically closed field `K`, Schur's lemma makes
 every endomorphism of a finite-dimensional irreducible module a scalar. The centre then acts by
@@ -104,8 +105,9 @@ noncomputable def centralCharacterOfForallExistsSmul
     (h : ∀ f : M →ₗ⁅R,L⁆ M, (∀ g : M →ₗ⁅R,L⁆ M, f.comp g = g.comp f) →
       ∃ c : R, ∀ m, f m = c • m) :
     Subalgebra.center R (U R L) →ₐ[R] R :=
+  haveI := isCentral_end_of_forall_exists_smul (asModule_ι_smul R L M) h
   centralCharacterOfBijectiveAlgebraMap R (U R L) M
-    (bijective_algebraMap_center_end_of_forall_exists_smul (asModule_ι_smul R L M) h)
+    (bijective_algebraMap_center_end_of_isCentral R (U R L) M)
 
 variable (h : ∀ f : M →ₗ⁅R,L⁆ M, (∀ g : M →ₗ⁅R,L⁆ M, f.comp g = g.comp f) →
   ∃ c : R, ∀ m, f m = c • m)

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Central.Defs
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.Lie.Submodule.Atom
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.Algebra.Lie.DirectSum
-import TauCeti.RingTheory.Semisimple.CentralCharacter
 
 /-!
 # The enveloping-algebra dictionary for Lie modules
@@ -422,26 +422,25 @@ theorem coe_lieModuleHomEquiv_symm
   (rfl)
 
 /-- **The central character dictionary.** If every Lie module endomorphism of `M` that commutes
-with all others is a scalar, and `R` acts faithfully, then the structure map from `R` to the centre
-of the commutant `End_{U(L)}(M)` is bijective. This is the hypothesis of
-`TauCeti.centralCharacterOfBijectiveAlgebraMap`. It holds for absolutely irreducible modules, all
-of whose endomorphisms are scalars, and also for modules whose commutant is a central division
-algebra, such as the quaternionic real irreducible modules. This is the Lie module form of
-`TauCeti.bijective_algebraMap_center_end_of_forall_exists_smul`. -/
-theorem bijective_algebraMap_center_end_of_forall_exists_smul [FaithfulSMul R M]
-    (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆)
+with all others is a scalar, then the commutant `End_{U(L)}(M)` is a central `R`-algebra. With a
+faithful action of `R` this gives the hypothesis of `TauCeti.centralCharacterOfBijectiveAlgebraMap`
+through `TauCeti.bijective_algebraMap_center_end_of_isCentral`. It holds for absolutely irreducible
+modules, all of whose endomorphisms are scalars, and also for modules whose commutant is a central
+division algebra, such as the quaternionic real irreducible modules. -/
+theorem isCentral_end_of_forall_exists_smul (hM : ∀ (x : L) (m : M), ι R x • m = ⁅x, m⁆)
     (h : ∀ f : M →ₗ⁅R,L⁆ M, (∀ g : M →ₗ⁅R,L⁆ M, f.comp g = g.comp f) →
       ∃ c : R, ∀ m, f m = c • m) :
-    Function.Bijective (algebraMap R (Subalgebra.center R (Module.End U M))) := by
+    Algebra.IsCentral R (Module.End U M) := by
   -- The compatibility `hM` makes the bracket `R`-bilinear, which `lieModuleHomEquiv` needs.
   have : LieModule R L M :=
     { smul_lie := fun t x m => by rw [← hM, ← hM, map_smul, smul_assoc]
       lie_smul := fun t x m => by rw [← hM, ← hM, smul_comm] }
-  refine _root_.TauCeti.bijective_algebraMap_center_end_of_forall_exists_smul fun f hf => ?_
-  exact h ((lieModuleHomEquiv hM hM).symm f) fun g => by
+  refine ⟨fun f hf => ?_⟩
+  obtain ⟨c, hc⟩ := h ((lieModuleHomEquiv hM hM).symm f) fun g => by
     ext m
     simpa using (LinearMap.congr_fun
       (Subalgebra.mem_center_iff.mp hf (lieModuleHomEquiv hM hM g)) m).symm
+  exact ⟨c, LinearMap.ext fun m => by simpa using (hc m).symm⟩
 
 /-! #### Equivalences -/
 

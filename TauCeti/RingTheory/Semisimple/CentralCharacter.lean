@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Central.Defs
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 public import TauCeti.Algebra.Subalgebra.Center
+import Mathlib.Algebra.Central.Basic
 
 /-!
 # The central character of a simple module
@@ -52,9 +54,10 @@ size and normalized by the degree: `ωᵪ(K_C) = |C| · χ(g) / χ(1)`, when `χ
   (`TauCeti.centralCharacterOfBijectiveAlgebraMap_eq_of_ne_zero_of_smul_eq`).
 * `TauCeti.centralCharacterOfBijectiveAlgebraMap_congr`: isomorphic modules have the same central
   character.
-* `TauCeti.bijective_algebraMap_center_end_of_forall_exists_smul`: the hypothesis of
-  `TauCeti.centralCharacterOfBijectiveAlgebraMap` holds when `k` acts faithfully and every central
-  endomorphism of the commutant is a scalar.
+* `TauCeti.bijective_algebraMap_center_end_of_isCentral`: the hypothesis of
+  `TauCeti.centralCharacterOfBijectiveAlgebraMap` holds when `k` acts faithfully and the commutant
+  is a central `k`-algebra (`Algebra.IsCentral`), that is every central endomorphism of the
+  commutant is a scalar.
 * `TauCeti.smul_eq_centralCharacter_smul`: the defining property, that a central element acts as
   multiplication by its central character.
 * `TauCeti.centralCharacter_eq_of_smul_eq`: the central character is the *only* scalar with that
@@ -128,17 +131,16 @@ section OfBijective
 variable (k : Type u) [CommSemiring k] (A : Type v) [Semiring A] [Algebra k A]
 variable (M : Type w) [AddCommMonoid M] [Module A M] [Module k M] [IsScalarTower k A M]
 
-variable {k A M} in
-/-- If `k` acts faithfully on `M` and every endomorphism in the centre of the commutant `End_A M`
-is a scalar, then the structure map `k → Z(End_A M)` is bijective. This is the hypothesis of
-`TauCeti.centralCharacterOfBijectiveAlgebraMap`. -/
-theorem bijective_algebraMap_center_end_of_forall_exists_smul [FaithfulSMul k M]
-    (h : ∀ f ∈ Subalgebra.center k (Module.End A M), ∃ c : k, ∀ m, f m = c • m) :
+/-- If `k` acts faithfully on `M` and the commutant `End_A M` is a central `k`-algebra, that is
+every endomorphism in its centre is a scalar, then the structure map `k → Z(End_A M)` is bijective.
+This is the hypothesis of `TauCeti.centralCharacterOfBijectiveAlgebraMap`. -/
+theorem bijective_algebraMap_center_end_of_isCentral [FaithfulSMul k M]
+    [Algebra.IsCentral k (Module.End A M)] :
     Function.Bijective (algebraMap k (Subalgebra.center k (Module.End A M))) := by
   refine ⟨fun _ _ hab => eq_of_smul_eq_smul (α := M) fun m => ?_, fun f => ?_⟩
   · simpa using LinearMap.congr_fun (congrArg Subtype.val hab) m
-  · obtain ⟨c, hc⟩ := h f f.property
-    exact ⟨c, Subtype.ext <| LinearMap.ext fun m => by simpa using (hc m).symm⟩
+  · obtain ⟨c, hc⟩ := (Algebra.IsCentral.mem_center_iff k).1 f.property
+    exact ⟨c, Subtype.ext hc.symm⟩
 
 variable (h : Function.Bijective (algebraMap k (Subalgebra.center k (Module.End A M))))
 
