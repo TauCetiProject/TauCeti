@@ -57,7 +57,8 @@ the inner morphism over every field, is proved in `Isogeny/Hom/Ring.lean`.
 * `TauCeti.Isogeny.Hom.comp_pointMap`: a composite acts by composition.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_toPointHom`: for a separable isogeny over a
   separably closed field the action is the class-group point map.
-* `TauCeti.Isogeny.Hom.setOf_pointMap_eq_self`: the points fixed by `f` are the kernel of `1 - f`.
+* `TauCeti.Isogeny.Hom.setOf_pointMap_eq_self` and `TauCeti.Isogeny.Hom.setOf_pointMap_eq_self'`:
+  the points fixed by `f` are the kernel of `1 - f`, equivalently of `f - 1`.
 * `TauCeti.Isogeny.Hom.finite_setOf_pointMap_eq`: a nonzero morphism has finite fibres.
 * `TauCeti.Isogeny.Hom.ncard_setOf_pointMap_eq`: over a separably closed field, a nonzero
   separable morphism has fibres of size its degree.
@@ -260,6 +261,13 @@ theorem setOf_pointMap_eq_self (f : Hom W₁ W₁) :
   ext P
   rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, sub_pointMap, one_def, id_pointMap, sub_eq_zero,
     eq_comm]
+
+/-- **The points fixed by an endomorphism `f` are the kernel of `f - 1`.** Compare
+`setOf_pointMap_eq_self`, the same set as the kernel of `1 - f`. -/
+theorem setOf_pointMap_eq_self' (f : Hom W₁ W₁) :
+    {P | f.pointMap P = P} = {P | (f - 1).pointMap P = 0} := by
+  ext P
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, sub_pointMap, one_def, id_pointMap, sub_eq_zero]
 
 /-- **A nonzero morphism has finite fibres on points.** -/
 theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Point) :

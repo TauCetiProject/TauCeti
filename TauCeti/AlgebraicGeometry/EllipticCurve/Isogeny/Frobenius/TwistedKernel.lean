@@ -49,19 +49,6 @@ open WeierstrassCurve WeierstrassCurve.Affine
 
 namespace TauCeti.Isogeny.Hom
 
-section Finite
-
-variable {F K : Type*} [Field F] [Finite F] [Field K] [DecidableEq K] [Algebra F K]
-  (W : WeierstrassCurve.Affine F) [W.IsElliptic]
-
-/-- A point fixed by `r π` is killed by the degree of `r π - 1`. -/
-private theorem nsmul_eq_zero_of_zsmul_ofIsogeny_baseChangeFrobenius_pointMap_eq_self {r : ℤ}
-    {P : (W⁄K).toAffine.Point} (hP : (r • ofIsogeny (baseChangeFrobenius K W)).pointMap P = P) :
-    (r • ofIsogeny (baseChangeFrobenius K W) - (1 : ℤ) • id (W⁄K).toAffine).degree • P = 0 := by
-  rw [← dual_pointMap_pointMap, sub_pointMap, one_zsmul, id_pointMap, hP, sub_self, pointMap_zero]
-
-end Finite
-
 variable {F : Type*} [Field F] [Fintype F] (W : WeierstrassCurve F) [W.IsElliptic]
 
 /-- **The order of the twisted Frobenius kernel**: over a separably closed extension of a finite
@@ -96,8 +83,9 @@ theorem _root_.WeierstrassCurve.card_twistedFrobeniusKernel (L : Type*) [Field L
     ext P
     simp only [SetLike.mem_coe, mem_twistedFrobeniusKernel_iff, Set.mem_ofPred_eq, hfix,
       and_iff_right_iff_imp]
-    exact fun hP ↦ ⟨D, hpos, hcop,
-      nsmul_eq_zero_of_zsmul_ofIsogeny_baseChangeFrobenius_pointMap_eq_self W hP⟩
+    refine fun hP ↦ ⟨D, hpos, hcop, ?_⟩
+    rw [hD, one_zsmul, ← one_def]
+    exact degree_sub_one_nsmul_eq_zero_of_pointMap_eq_self hP
   rw [← SetLike.coe_sort_coe, Nat.card_coe_set_eq, hset,
     ncard_fixedPoints_zsmul_ofIsogeny_baseChangeFrobenius, hr]
   push_cast
