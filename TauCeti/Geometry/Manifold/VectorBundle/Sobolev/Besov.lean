@@ -164,12 +164,8 @@ theorem MemBesov.add {T' : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemBesov φ
 
 theorem MemBesov.smul (hT : A.MemBesov φ s p q T) (a : ℝ) : A.MemBesov φ s p q (a • T) :=
   fun i j ↦ by
-    -- The real action on tempered distributions is the restriction of the complex one.
-    have h : A.localization i j (a • T) = (a : ℂ) • A.localization i j T := by
-      ext ψ
-      simp [Complex.real_smul]
-    rw [h]
-    exact (hT i j).smul (a : ℂ)
+    rw [map_smul]
+    exact (hT i j).smul_of_tower a
 
 /-- **`H^s ⊆ B^s_{2,∞}`.** A functional which is `H^s` with respect to `A` is `B^s_{2,∞}` with
 respect to `A`. -/
@@ -430,6 +426,23 @@ private theorem norm_mapOfToDistrEq_apply_le {φ' : ContDiffBump (0 : E)} {s' : 
     rw [mapOfToDistrEq_apply]
     exact (hfC _).trans (mul_le_mul_of_nonneg_left (A.norm_besovSpace_val_apply_le φ u k) hC)
 
+private theorem mapOfToDistrEq_injective {φ' : ContDiffBump (0 : E)} {s' : ℝ} {p' q' : ℝ≥0∞}
+    [Fact (1 ≤ p')] [Fact (1 ≤ q')] (f : BesovSpace ℂ φ s p q →L[ℂ] BesovSpace ℂ φ' s' p' q')
+    (hf : ∀ u, (f u).toDistr = u.toDistr) : Function.Injective (A.mapOfToDistrEq φ f hf) :=
+  fun u u' huu' ↦ A.besovToDistribution_injective φ <| by
+    rw [← A.besovToDistribution_mapOfToDistrEq φ f hf u,
+      ← A.besovToDistribution_mapOfToDistrEq φ f hf u', huu']
+
+/-- Two componentwise maps which do not change the represented functional are mutually inverse. -/
+private theorem mapOfToDistrEq_comp_mapOfToDistrEq {φ' : ContDiffBump (0 : E)} {s' : ℝ}
+    {p' q' : ℝ≥0∞} [Fact (1 ≤ p')] [Fact (1 ≤ q')]
+    (f : BesovSpace ℂ φ s p q →L[ℂ] BesovSpace ℂ φ' s' p' q') (hf : ∀ u, (f u).toDistr = u.toDistr)
+    (g : BesovSpace ℂ φ' s' p' q' →L[ℂ] BesovSpace ℂ φ s p q)
+    (hg : ∀ u, (g u).toDistr = u.toDistr) :
+    A.mapOfToDistrEq φ f hf ∘L A.mapOfToDistrEq φ' g hg = .id ℝ _ :=
+  ContinuousLinearMap.ext fun _ ↦ A.besovToDistribution_injective φ' <| by
+    simp [besovToDistribution_mapOfToDistrEq]
+
 /-! ### The inclusions between the Besov spaces -/
 
 variable {s' : ℝ} {q' : ℝ≥0∞} [Fact (1 ≤ q')]
@@ -465,10 +478,20 @@ theorem besovInclusion_ofMemBesov (hs : s' ≤ s) (hq : q ≤ q') {T : BundleTes
   A.besovToDistribution_injective φ (by simp)
 
 theorem besovInclusion_injective (hs : s' ≤ s) (hq : q ≤ q') :
-    Function.Injective (A.besovInclusion φ p hs hq) := fun u u' huu' ↦
-  A.besovToDistribution_injective φ <| by
-    rw [← A.besovToDistribution_besovInclusion φ hs hq u,
-      ← A.besovToDistribution_besovInclusion φ hs hq u', huu']
+    Function.Injective (A.besovInclusion φ p hs hq) :=
+  A.mapOfToDistrEq_injective φ _ _
+
+@[simp]
+theorem besovInclusion_self (u : A.besovSpace φ s p q) :
+    A.besovInclusion φ p le_rfl le_rfl u = u :=
+  A.besovToDistribution_injective φ (A.besovToDistribution_besovInclusion φ le_rfl le_rfl u)
+
+@[simp]
+theorem besovInclusion_besovInclusion {s'' : ℝ} {q'' : ℝ≥0∞} [Fact (1 ≤ q'')] (hs : s' ≤ s)
+    (hq : q ≤ q') (hs' : s'' ≤ s') (hq' : q' ≤ q'') (u : A.besovSpace φ s p q) :
+    A.besovInclusion φ p hs' hq' (A.besovInclusion φ p hs hq u) =
+      A.besovInclusion φ p (hs'.trans hs) (hq.trans hq') u :=
+  A.besovToDistribution_injective φ (by simp)
 
 /-- The inclusion `B^s_{p,q} ⊆ B^{s'}_{p,q'}` does not increase the norm. -/
 theorem norm_besovInclusion_le (hs : s' ≤ s) (hq : q ≤ q') : ‖A.besovInclusion φ p hs hq‖ ≤ 1 :=
@@ -506,6 +529,10 @@ theorem besovInclusionOfLT_ofMemBesov (hs : s' < s) {T : BundleTest I F V →L_c
       A.ofMemBesov φ (hT.of_lt hs (zero_lt_one.trans_le Fact.out).ne') :=
   A.besovToDistribution_injective φ (by simp)
 
+theorem besovInclusionOfLT_injective (hs : s' < s) :
+    Function.Injective (A.besovInclusionOfLT φ p q q' hs) :=
+  A.mapOfToDistrEq_injective φ _ _
+
 /-- The inclusion `B^s_{p,q} ⊆ B^{s'}_{p,q'}`, `s' < s`, has norm at most `(1 - 2^{s' - s})⁻¹`. -/
 theorem norm_besovInclusionOfLT_le (hs : s' < s) :
     ‖A.besovInclusionOfLT φ p q q' hs‖ ≤ (1 - 2 ^ (s' - s))⁻¹ := by
@@ -530,20 +557,8 @@ def besovBumpEquiv (φ' : ContDiffBump (0 : E)) :
       (BesovSpace.toDistr_bumpEquiv φ'))
     (A.mapOfToDistrEq φ' (BesovSpace.bumpEquiv ℂ φ' φ s p q).toContinuousLinearMap
       (BesovSpace.toDistr_bumpEquiv φ))
-    (ContinuousLinearMap.ext fun _ ↦ A.besovToDistribution_injective φ' <|
-      (A.besovToDistribution_mapOfToDistrEq φ
-          (BesovSpace.bumpEquiv ℂ φ φ' s p q).toContinuousLinearMap
-          (BesovSpace.toDistr_bumpEquiv φ') _).trans
-        (A.besovToDistribution_mapOfToDistrEq φ'
-          (BesovSpace.bumpEquiv ℂ φ' φ s p q).toContinuousLinearMap
-          (BesovSpace.toDistr_bumpEquiv φ) _))
-    (ContinuousLinearMap.ext fun _ ↦ A.besovToDistribution_injective φ <|
-      (A.besovToDistribution_mapOfToDistrEq φ'
-          (BesovSpace.bumpEquiv ℂ φ' φ s p q).toContinuousLinearMap
-          (BesovSpace.toDistr_bumpEquiv φ) _).trans
-        (A.besovToDistribution_mapOfToDistrEq φ
-          (BesovSpace.bumpEquiv ℂ φ φ' s p q).toContinuousLinearMap
-          (BesovSpace.toDistr_bumpEquiv φ') _))
+    (A.mapOfToDistrEq_comp_mapOfToDistrEq φ _ _ _ _)
+    (A.mapOfToDistrEq_comp_mapOfToDistrEq φ' _ _ _ _)
 
 private theorem coe_besovBumpEquiv (φ' : ContDiffBump (0 : E)) :
     ⇑(A.besovBumpEquiv φ s p q φ') =
@@ -566,6 +581,12 @@ theorem besovToDistribution_besovBumpEquiv (φ' : ContDiffBump (0 : E))
       A.besovToDistribution φ s p q u := by
   rw [coe_besovBumpEquiv]
   exact A.besovToDistribution_mapOfToDistrEq φ _ _ u
+
+@[simp]
+theorem besovBumpEquiv_ofMemBesov (φ' : ContDiffBump (0 : E)) {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemBesov φ s p q T) :
+    A.besovBumpEquiv φ s p q φ' (A.ofMemBesov φ hT) = A.ofMemBesov φ' (hT.of_bump φ') :=
+  A.besovToDistribution_injective φ' (by simp)
 
 @[simp]
 theorem besovBumpEquiv_symm (φ' : ContDiffBump (0 : E)) :
@@ -627,6 +648,20 @@ theorem besovSpaceEquivSobolevSpace_ofMemBesov {T : BundleTest I F V →L_c[ℝ]
     A.besovSpaceEquivSobolevSpace φ s (A.ofMemBesov φ hT) =
       A.ofMemSobolev s ((A.memBesov_two_two_iff_memSobolev φ).1 hT) :=
   A.toDistribution_injective s (by simp)
+
+/-- The inverse isomorphism `H^s ≃ B^s_{2,2}` does not change the represented functional. -/
+@[simp]
+theorem besovToDistribution_besovSpaceEquivSobolevSpace_symm (v : A.sobolevSpace s) :
+    A.besovToDistribution φ s 2 2 ((A.besovSpaceEquivSobolevSpace φ s).symm v) =
+      A.toDistribution s v := by
+  rw [← toDistribution_besovSpaceEquivSobolevSpace, ContinuousLinearEquiv.apply_symm_apply]
+
+@[simp]
+theorem besovSpaceEquivSobolevSpace_symm_ofMemSobolev {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemSobolev s T) :
+    (A.besovSpaceEquivSobolevSpace φ s).symm (A.ofMemSobolev s hT) =
+      A.ofMemBesov φ ((A.memBesov_two_two_iff_memSobolev φ).2 hT) :=
+  A.besovToDistribution_injective φ (by simp)
 
 end BesovSpace
 
