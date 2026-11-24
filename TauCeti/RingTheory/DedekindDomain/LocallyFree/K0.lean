@@ -77,15 +77,11 @@ private noncomputable def rankSteinitzInvariant :
         (Module.rank_lt_aleph0 A Y.obj), Module.steinitzClass_prod]
     simp
 
-/-- The regular module `A`, as an object of the category of finite projective modules. -/
-private noncomputable abbrev regular : (finiteProjectiveModules A).FullSubcategory :=
-  ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-
 /-- The inverse of the rank–Steinitz isomorphism, `(n, c) ↦ n[A] + idealClassHom c`. -/
 private noncomputable def rankSteinitzInv :
     ℤ × Additive (ClassGroup A) →+ SplitK0.{u} (finiteProjectiveModules A).FullSubcategory :=
   (zmultiplesHom (SplitK0.{u} (finiteProjectiveModules A).FullSubcategory)
-    (SplitK0.of (regular A))).coprod (idealClassHom A)
+    (SplitK0.of.{u} (finiteProjectiveModulesRegular A))).coprod (idealClassHom A)
 
 /-- The homomorphism from projective `K₀` of a Dedekind domain sending the class of a finite
 projective module to its rank and its Steinitz class. -/
@@ -102,10 +98,8 @@ theorem rankSteinitz_of (P : (finiteProjectiveModules A).FullSubcategory) :
 
 /-- The class of the regular module goes to rank one and the trivial class. -/
 theorem rankSteinitz_regular :
-    rankSteinitz A (SplitK0.of
-      ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) =
-      (1, 0) := by
-  simp
+    rankSteinitz A (SplitK0.of.{u} (finiteProjectiveModulesRegular A)) = (1, 0) := by
+  simp [finiteProjectiveModulesRegular]
 
 /-- A reduced ideal class `[I] - [A]` has rank zero and Steinitz class `[I]`. -/
 @[simp]
@@ -129,7 +123,8 @@ noncomputable def rankSteinitzEquiv :
   invFun := rankSteinitzInv A
   left_inv := DFunLike.congr_fun (show (rankSteinitzInv A).comp (rankSteinitz A) =
       AddMonoidHom.id _ from SplitK0.hom_ext fun P ↦ by
-    simp [rankSteinitzInv, idealClassHom_steinitzClass, classOf_def])
+    simp [rankSteinitzInv, idealClassHom_steinitzClass, classOf_def,
+      finiteProjectiveModulesRegular])
   right_inv p := by
     simp only [rankSteinitzInv, AddMonoidHom.coprod_apply, zmultiplesHom_apply, map_add,
       map_zsmul, rankSteinitz_regular, rankSteinitz_idealClassHom]
@@ -146,9 +141,7 @@ class `c`. -/
 @[simp]
 theorem rankSteinitzEquiv_symm_apply (p : ℤ × Additive (ClassGroup A)) :
     (rankSteinitzEquiv A).symm p =
-      p.1 • SplitK0.of
-        ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ +
-      idealClassHom A p.2 := by
+      p.1 • SplitK0.of.{u} (finiteProjectiveModulesRegular A) + idealClassHom A p.2 := by
   simp [rankSteinitzEquiv, rankSteinitzInv, AddEquiv.symm_mk, AddMonoidHom.coprod_apply,
     zmultiplesHom_apply]
 
