@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Topology.Algebra.Star.Idealizer
 import TauCeti.Analysis.CStarAlgebra.Ideal
@@ -179,21 +178,22 @@ def idealizerToMultiplier (ι : A →⋆ₙₐ[ℂ] D) (hι : Function.Injective
     ι.range.idealizer →⋆ₐ[ℂ] 𝓜(ℂ, A) :=
   let ψ := (codRestrictIdealizer ι).idealToMultiplier (codRestrictIdealizer_injective hι)
     (mul_codRestrictIdealizer_mem_range ι)
-  ψ.toStarAlgHom <| DoubleCentralizer.ext_fst fun _ =>
+  have h1 : ψ 1 = 1 := DoubleCentralizer.ext_fst fun _ =>
     codRestrictIdealizer_injective hι (by simp [ψ])
+  { __ := ψ
+    map_one' := h1
+    commutes' c := by
+      rw [NonUnitalAlgHom.toFun_eq_coe, NonUnitalStarAlgHom.coe_toNonUnitalAlgHom,
+        Algebra.algebraMap_eq_smul_one, map_smul, h1, Algebra.algebraMap_eq_smul_one] }
 
 @[simp] theorem map_idealizerToMultiplier_fst {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)
-    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).fst a) = (d : D) * ι a := by
-  dsimp only [idealizerToMultiplier]
-  rw [NonUnitalStarAlgHom.toStarAlgHom_apply]
-  exact congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_fst
+    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).fst a) = (d : D) * ι a :=
+  congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_fst
     (codRestrictIdealizer_injective hι) (mul_codRestrictIdealizer_mem_range ι) d a
 
 @[simp] theorem map_idealizerToMultiplier_snd {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)
-    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).snd a) = ι a * (d : D) := by
-  dsimp only [idealizerToMultiplier]
-  rw [NonUnitalStarAlgHom.toStarAlgHom_apply]
-  exact congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_snd
+    (d : ι.range.idealizer) (a : A) : ι ((ι.idealizerToMultiplier hι d).snd a) = ι a * (d : D) :=
+  congrArg Subtype.val <| (codRestrictIdealizer ι).map_idealToMultiplier_snd
     (codRestrictIdealizer_injective hι) (mul_codRestrictIdealizer_mem_range ι) d a
 
 @[simp] theorem idealizerToMultiplier_apply_map {ι : A →⋆ₙₐ[ℂ] D} (hι : Function.Injective ι)

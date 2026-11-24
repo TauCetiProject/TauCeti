@@ -9,13 +9,13 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
+import TauCeti.Algebra.Order.Module.PositiveLinearMap
 import TauCeti.Algebra.Star.StarAlgHom
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.Representation.Ampliation
 import TauCeti.Analysis.CStarAlgebra.State.Series
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Positive
 
 /-!
 # Faithful representations of separable C⋆-algebras on separable Hilbert space and `ℓ²`
@@ -94,7 +94,7 @@ theorem exists_injective_nondegenerate_representation_separable (A : Type u)
     exact ⟨f.GNS, inferInstance, inferInstance, inferInstance, inferInstance,
       f.gnsNonUnitalStarAlgHom,
       f.gnsNonUnitalStarAlgHom_injective fun _ =>
-        ψ.eq_zero_of_faithful_apply_star_mul_self hfaith,
+        f.eq_zero_of_faithful_apply_star_mul_self hfaith,
       f.isNondegenerate_gnsNonUnitalStarAlgHom⟩
 
 /-- Every nontrivial separable unital complex C⋆-algebra `A : Type u` admits an injective unital
@@ -117,7 +117,7 @@ theorem exists_injective_starAlgHom_unit_cyclic_separable (A : Type u)
   exact ⟨f.GNS, inferInstance, inferInstance, inferInstance, inferInstance,
     f.gnsStarAlgHom, f.gnsVector,
     f.gnsNonUnitalStarAlgHom_injective fun _ =>
-      ψ.eq_zero_of_faithful_apply_star_mul_self hfaith,
+      f.eq_zero_of_faithful_apply_star_mul_self hfaith,
     f.norm_gnsVector hf1, f.denseRange_gnsStarAlgHom_gnsVector⟩
 
 /-- Every separable unital complex C⋆-algebra `A : Type u` (possibly zero) admits an injective

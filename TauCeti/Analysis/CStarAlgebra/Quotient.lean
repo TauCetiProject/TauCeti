@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
@@ -363,16 +362,23 @@ theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I :=
 noncomputable def liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
     A ⧸ I →⋆ₐ[ℂ] B :=
   let hf' : ∀ a ∈ I, f.toNonUnitalStarAlgHom a = 0 := hf
-  have h1 : liftStarAlgHom I f.toNonUnitalStarAlgHom hf' 1 = 1 := by
-    rw [← mk_one I, liftStarAlgHom_mk]
-    exact map_one f
-  NonUnitalStarAlgHom.toStarAlgHom (liftStarAlgHom I f.toNonUnitalStarAlgHom hf') h1
+  { toFun := liftStarAlgHom I f.toNonUnitalStarAlgHom hf'
+    map_one' := by
+      rw [← mk_one I, liftStarAlgHom_mk]
+      exact map_one f
+    map_mul' := map_mul _
+    map_zero' := map_zero _
+    map_add' := map_add _
+    commutes' c := by
+      have hf1 : f.toNonUnitalStarAlgHom 1 = 1 := map_one f
+      rw [Algebra.algebraMap_eq_smul_one, map_smul, ← mk_one I, liftStarAlgHom_mk, hf1,
+        ← Algebra.algebraMap_eq_smul_one]
+    map_star' := map_star _ }
 
 @[simp]
 theorem liftUnitalStarAlgHom_mk (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) (a : A) :
     liftUnitalStarAlgHom I f hf (mk I a) = f a :=
-  (NonUnitalStarAlgHom.toStarAlgHom_apply _ _ _).trans
-    (liftStarAlgHom_mk I f.toNonUnitalStarAlgHom hf a)
+  liftStarAlgHom_mk I f.toNonUnitalStarAlgHom hf a
 
 @[simp]
 theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
@@ -383,7 +389,7 @@ theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (h
 theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
     (liftUnitalStarAlgHom I f hf).toNonUnitalStarAlgHom =
       liftStarAlgHom I f.toNonUnitalStarAlgHom hf :=
-  NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom _ _
+  (rfl)
 
 end Unital
 

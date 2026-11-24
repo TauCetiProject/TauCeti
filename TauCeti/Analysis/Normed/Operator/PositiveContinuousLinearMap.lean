@@ -23,14 +23,14 @@ When the series converges in operator norm, it evaluates pointwise
 dominates every summand on nonnegative elements (`PositiveContinuousLinearMap.le_tsum_apply`), and
 vanishes at a nonnegative element if and only if every summand vanishes there
 (`PositiveContinuousLinearMap.tsum_apply_eq_zero_iff`). The bundled sum satisfies `tsum_zero`,
-`tsum_const_zero`, `tsum_eq_zero_of_not_summable`, `tsum_eq_sum`, and `tsum_add`.
+`tsum_eq_zero_of_not_summable`, `tsum_eq_sum`, and `tsum_add`.
 
 ## Main declarations
 
 * `PositiveContinuousLinearMap.tsum`: the operator-norm `tsum` of an indexed family of positive
   continuous linear maps.
 * `PositiveContinuousLinearMap.toContinuousLinearMap_tsum`: coercion to `E₁ →L[𝕜] E₂`.
-* `PositiveContinuousLinearMap.tsum_zero`, `PositiveContinuousLinearMap.tsum_const_zero`,
+* `PositiveContinuousLinearMap.tsum_zero`,
   `PositiveContinuousLinearMap.tsum_eq_zero_of_not_summable`,
   `PositiveContinuousLinearMap.tsum_eq_sum`,
   `PositiveContinuousLinearMap.tsum_add`: algebraic, finite-support, and nonsummable
@@ -75,15 +75,10 @@ theorem toContinuousLinearMap_tsum (f : ι → E₁ →P[𝕜] E₂) :
 
 /-- The `tsum` of the zero family is `0`. -/
 @[simp]
-theorem tsum_zero : tsum (0 : ι → E₁ →P[𝕜] E₂) = 0 :=
+theorem tsum_zero : tsum (fun _ : ι => (0 : E₁ →P[𝕜] E₂)) = 0 :=
   toContinuousLinearMap_injective <| by
     rw [toContinuousLinearMap_tsum]
     exact _root_.tsum_zero
-
-/-- The `tsum` of a pointwise-zero family is `0`. -/
-@[simp]
-theorem tsum_const_zero : tsum (fun _ : ι => (0 : E₁ →P[𝕜] E₂)) = 0 :=
-  tsum_zero
 
 /-- A nonsummable family has `tsum` equal to `0`. -/
 @[simp]

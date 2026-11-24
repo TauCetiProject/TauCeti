@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.LinearAlgebra.TensorProduct.Map
-public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.InnerProductSpace.Positive
@@ -628,15 +627,15 @@ variable {D : Type u} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
     simp [stinespringHom_apply, ContinuousLinearMap.completion_apply_coe]
 
 /-- The unital Stinespring `⋆`-representation of a unital C⋆-algebra `D` on `φ.Stinespring`. -/
-noncomputable def stinespringStarAlgHom : D →⋆ₐ[ℂ] (φ.Stinespring →L[ℂ] φ.Stinespring) :=
-  φ.stinespringHom.toStarAlgHom φ.stinespringHom_one
+noncomputable def stinespringStarAlgHom : D →⋆ₐ[ℂ] (φ.Stinespring →L[ℂ] φ.Stinespring) where
+  __ := φ.stinespringHom
+  map_one' := φ.stinespringHom_one
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, φ.stinespringHom_one]
 
-@[simp] theorem coe_stinespringStarAlgHom : ⇑φ.stinespringStarAlgHom = ⇑φ.stinespringHom :=
-  NonUnitalStarAlgHom.coe_toStarAlgHom _ _
+@[simp] theorem coe_stinespringStarAlgHom : ⇑φ.stinespringStarAlgHom = ⇑φ.stinespringHom := (rfl)
 
 @[simp] theorem toNonUnitalStarAlgHom_stinespringStarAlgHom :
-    φ.stinespringStarAlgHom.toNonUnitalStarAlgHom = φ.stinespringHom :=
-  NonUnitalStarAlgHom.toNonUnitalStarAlgHom_toStarAlgHom _ _
+    φ.stinespringStarAlgHom.toNonUnitalStarAlgHom = φ.stinespringHom := (rfl)
 
 /-- When the domain is unital, `φ.stinespringOp` is simply `ξ ↦ [1 ⊗ ξ]`. -/
 theorem stinespringOp_eq_toStinespring_one : φ.stinespringOp = φ.toStinespring 1 := by
@@ -681,9 +680,8 @@ theorem stinespring :
       (∀ a, φ a = V.adjoint.comp ((π a).comp V)) ∧ ‖V‖ ^ 2 = ‖φ 1‖ ∧
       (Submodule.span ℂ {x : K | ∃ (a : D) (ξ : H), x = π a (V ξ)}).topologicalClosure = ⊤ :=
   ⟨φ.Stinespring, inferInstance, inferInstance, inferInstance, φ.stinespringStarAlgHom,
-    φ.stinespringOp, fun a => by rw [coe_stinespringStarAlgHom, (φ.stinespring_eq a).symm],
-    φ.norm_stinespringOp_sq_eq_norm_map_one,
-    by simp only [coe_stinespringStarAlgHom, φ.topologicalClosure_span_stinespring]⟩
+    φ.stinespringOp, fun a => (φ.stinespring_eq a).symm, φ.norm_stinespringOp_sq_eq_norm_map_one,
+    φ.topologicalClosure_span_stinespring⟩
 
 end Unital
 
