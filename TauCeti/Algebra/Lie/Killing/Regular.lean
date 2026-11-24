@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.Regular
 import Mathlib.Algebra.Lie.Weights.Killing
 import TauCeti.Algebra.Lie.CartanExists
+import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
 # The minimal centralizer dimension of a Killing Lie algebra is its rank
@@ -82,8 +83,8 @@ theorem IsRegular.ker_ad_eq_toSubmodule_engel {x : L} (hx : IsRegular K x) :
 /-- **The centralizer of a regular element has dimension `rank K L`.** -/
 theorem IsRegular.finrank_ker_ad_eq_rank {x : L} (hx : IsRegular K x) :
     finrank K (ker (ad K L x)) = rank K L := by
-  rw [hx.ker_ad_eq_toSubmodule_engel, ← (isRegular_iff_finrank_engel_eq_rank K x).mp hx]
-  rfl
+  rw [hx.ker_ad_eq_toSubmodule_engel, LieSubalgebra.finrank_toSubmodule,
+    (isRegular_iff_finrank_engel_eq_rank K x).mp hx]
 
 variable (K) in
 /-- **Every centralizer has dimension at least the rank.** An element that is regular both in

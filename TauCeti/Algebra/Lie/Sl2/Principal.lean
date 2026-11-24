@@ -13,6 +13,7 @@ import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.Algebra.Lie.Killing.Regular
 import TauCeti.Algebra.Lie.Presentation.Serre.Killing
 import TauCeti.Algebra.Lie.Sl2.Centralizer
+import TauCeti.Algebra.Lie.Submodule.Finrank
 import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
@@ -263,13 +264,12 @@ theorem finrank_range_ad_e_add_finrank_cartan
     have : ((1 : ℤ) : K) = ((2 * n : ℤ) : K) := by push_cast; exact hn
     have := Int.cast_injective this
     omega
-  -- the Cartan subalgebra and its underlying submodule have the same carrier
-  have hH : finrank K H.toSubmodule = finrank K H := rfl
   have h := t.finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one (K := K)
   -- no root vanishes at `2ρ^∨`, so its centralizer is `H`
   rwa [Module.End.eigenspace_zero, H.ker_ad_eq_toSubmodule_of_forall_root_apply_ne_zero
       fun α hα ↦ TauCeti.root_apply_twoWeylVector_flip_ne_zero b ⟨α, hα⟩,
-    TauCeti.eigenspace_ad_twoWeylVector_flip_eq_bot b h1, finrank_bot, add_zero, hH] at h
+    TauCeti.eigenspace_ad_twoWeylVector_flip_eq_bot b h1, finrank_bot, add_zero,
+    LieSubalgebra.finrank_toSubmodule] at h
 
 /-- **The centralizer of a principal nilpotent element has dimension `dim H`.** For an `sl₂`
 triple `(2ρ^∨, e, f)`, the kernel of `ad e` has the dimension of the Cartan subalgebra, which is
@@ -365,7 +365,7 @@ theorem isCentralizerRegular_e_iff {h : H} (t : IsSl2Triple (h : L) e f)
     have hmono := Submodule.finrank_mono hle
     have hsup := Submodule.finrank_add_le_finrank_add_finrank ((ad K L h).eigenspace 0)
       ((ad K L h).eigenspace 1)
-    have hH : finrank K H.toSubmodule = finrank K H := rfl
+    have hH := H.finrank_toSubmodule
     omega
   -- so every simple root takes the value `2` at `h`
   refine (b.weightedDynkinDiagram_eq_two_iff
