@@ -91,7 +91,7 @@ its topological part plus that constant.
   `H'_q` of the positive end.
 * `isComplexLinearMap_perturbedMFDeriv_continuationHomotopy_comp_positiveEndChart_add`,
   `floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add` and
-  `setIntegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq` (in
+  `lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq` (in
   `TauCeti.SmoothTwoForm`): for a manifold target, read in the positive end chart translated by the
   neck position, `w ↦ u(φ'_q(w + (L_q, 0)))`, a Floer solution solves the continuation equation
   of `C'_q(s, t) dt` where `s + L_q ≥ 2`, its energy density is the Jacobian of the chart times
@@ -465,7 +465,10 @@ theorem perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbatio
   rw [pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos hG hH
     (by simpa [← mul_assoc] using (by linarith : (0 : ℝ) < ζ.1))]
   have h1 : smoothTransition (ζ.1 - 1) = 1 := smoothTransition.one_of_one_le (by linarith)
-  simp [← mul_assoc, continuationHomotopy_def, positiveEndHamiltonian_apply, h1]
+  simp only [Complex.I_im, map_smul, Complex.real_smul, Complex.mul_re, Complex.mul_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.equivRealProdCLM_symm_apply_re,
+    Complex.equivRealProdCLM_symm_apply_im, zero_mul, sub_zero, add_zero, ← mul_assoc,
+    endSign_mul_self, one_mul, h1, continuationHomotopy_def, positiveEndHamiltonian_apply]
   ring
 
 end Necks
@@ -887,31 +890,34 @@ theorem floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add
 with `w.1 + L_q ≥ 2` in a band `ℝ × [t₀, t₀ + 1)` of angular width one, and let `u` be
 differentiable at the points `φ'_q(w + (L_q, 0))` for `w ∈ s`. The energy over `s` of the
 translated map `w ↦ u(φ'_q(w + (L_q, 0)))` for the continuation datum `C'_q(s, t) dt` is the energy
-of `u` over the image of `s` for the pair-of-pants perturbation with continuation necks. -/
-theorem setIntegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq
+of `u` over the image of `s` for the pair-of-pants perturbation with continuation necks, both
+taken as lower integrals of the positive parts of the densities. -/
+theorem lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq
     (ω : SmoothTwoForm I M) (hG : ∀ r, Periodic (G r) 1) (hH : ∀ r, Periodic (H r) 1)
     (hGs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (G r)))
     (hHs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H r)))
     {u : ℝ × ℝ → M} {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) (hsL : ∀ w ∈ s, 2 ≤ w.1 + L q)
     {t₀ : ℝ} (hsI : s ⊆ univ ×ˢ Ico t₀ (t₀ + 1))
     (hu : ∀ w ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (positiveEndChart q (w + (L q, 0)))) :
-    ∫ w in s, ω.floerEnergyDensity (fun _ _ ↦ 0)
+    ∫⁻ w in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q))
-        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w =
-      ∫ z in (fun w ↦ positiveEndChart q (w + (L q, 0))) '' s, ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦
-          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z := by
+        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w) =
+      ∫⁻ z in (fun w ↦ positiveEndChart q (w + (L q, 0))) '' s, ENNReal.ofReal
+        (ω.floerEnergyDensity
+          (fun z x ↦
+            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦
+            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) := by
   -- The translation by `(L_q, 0)` preserves the band, on which `φ'_q` is injective.
-  refine (integral_image_eq_integral_of_eq_abs_det_smul
+  refine (lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul
     (φ := fun w ↦ positiveEndChart q (w + (L q, 0))) hs
     ((injOn_positiveEndChart q t₀).comp (add_left_injective _).injOn
       fun w hw ↦ ⟨mem_univ _, by simpa using (hsI hw).2⟩)
     (fun w _ ↦ (hasFDerivAt_positiveEndChart_add q (L q, 0) w).differentiableAt)
     fun w hw ↦ ?_).symm
   rw [(hasFDerivAt_positiveEndChart_add q (L q, 0) w).fderiv,
-    abs_of_pos (det_fderiv_positiveEndChart_pos q _), smul_eq_mul,
+    abs_of_pos (det_fderiv_positiveEndChart_pos q _),
     ω.floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add hG hH hGs hHs (hsL w hw)
       (hu w hw)]
 
@@ -1081,25 +1087,27 @@ theorem floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add
 band `ℝ × [t₀, t₀ + 1)` of angular width one, and let `u` be differentiable at the points
 `φ'_q(w + (L_q, 0))` for `w ∈ s`. The energy over `s` of the translated map
 `w ↦ u(φ'_q(w + (L_q, 0)))` for the continuation datum `C'_q(s, t) dt` is the energy of `u` over
-the image of `s` for the pair-of-pants perturbation with continuation necks. This is the
-vector-space case of
-`SmoothTwoForm.setIntegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq`. -/
-theorem setIntegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq
+the image of `s` for the pair-of-pants perturbation with continuation necks, both taken as lower
+integrals of the positive parts of the densities. This is the vector-space case of
+`SmoothTwoForm.lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq`. -/
+theorem lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq
     (ω : SymplecticForm V) (hG : ∀ r, Periodic (G r) 1) (hH : ∀ r, Periodic (H r) 1)
     (hGs : ∀ r, ContDiff ℝ 1 (uncurry (G r))) (hHs : ∀ r, ContDiff ℝ 1 (uncurry (H r)))
     {u : ℝ × ℝ → V} {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) (hsL : ∀ w ∈ s, 2 ≤ w.1 + L q)
     {t₀ : ℝ} (hsI : s ⊆ univ ×ˢ Ico t₀ (t₀ + 1))
     (hu : ∀ w ∈ s, DifferentiableAt ℝ u (positiveEndChart q (w + (L q, 0)))) :
-    ∫ w in s, ω.floerEnergyDensity (fun _ _ ↦ 0)
+    ∫⁻ w in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q))
-        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w =
-      ∫ z in (fun w ↦ positiveEndChart q (w + (L q, 0))) '' s, ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦
-          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z := by
+        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w) =
+      ∫⁻ z in (fun w ↦ positiveEndChart q (w + (L q, 0))) '' s, ENNReal.ofReal
+        (ω.floerEnergyDensity
+          (fun z x ↦
+            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦
+            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) := by
   simpa only [floerEnergyDensity_constSmooth] using
-    ω.constSmooth.setIntegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq
+    ω.constSmooth.lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq
       hG hH (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hGs r).contMDiff)
       (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs r).contMDiff) hs hsL hsI
       fun w hw ↦ (hu w hw).mdifferentiableAt

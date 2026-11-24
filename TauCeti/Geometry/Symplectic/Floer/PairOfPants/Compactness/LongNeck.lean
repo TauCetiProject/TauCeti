@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Capped
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -614,11 +615,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedPert
     refine le_trans (le_of_eq (setLIntegral_congr_fun hΩ.measurableSet fun z hz ↦ ?_))
       ((setLIntegral_le_lintegral _ _).trans (hE k))
     rw [ω.floerEnergyDensity_congr_perturbation _ (hKp k (hΩT hz) 1) (hKp k (hΩT hz) I)]
-  have hIE (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le hΩ
-    (((hu k).of_le (by norm_num)).mono hΩS)
-    (((hP 1).of_le (by norm_num)).mono (prod_mono hΩS subset_rfl))
-    (((hP I).of_le (by norm_num)).mono (prod_mono hΩS subset_rfl))
-    (fun z hz ↦ hJt z (hΩT hz) _ (huK k hz)) (fun z hz ↦ hflp k hz) (hlin k)
+  have hIE (k : ℕ) := MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
+      ((hu k).of_le (by norm_num)) ((hP 1).of_le (by norm_num)) ((hP I).of_le (by norm_num))).mono
+        hΩS).aestronglyMeasurable hΩ.measurableSet)
+    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJt z (hΩT hz) _ (huK k hz)) (hflp k hz)) (hlin k)
   exact hconv hΩ hΩT (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hflp k hz) huK
     (fun k ↦ (hIE k).1) fun k ↦ (hIE k).2
 
@@ -835,10 +837,12 @@ theorem
   have hwΩ (k : ℕ) : ContDiffOn ℝ 3 (w k) Ω :=
     (hu k).comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
       fun _ hz ↦ hψS k hz
-  have hIE (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le hΩ
-    ((hwΩ k).of_le (by norm_num)) ((hP 1).of_le (by norm_num)).contDiffOn
-    ((hP I).of_le (by norm_num)).contDiffOn (fun z hz ↦ hJt z (hΩD hz) _ (huK k hz))
-    (fun z hz ↦ hflw k hz) (hlin k)
+  have hIE (k : ℕ) := MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
+    ((ω.continuousOn_floerEnergyDensity hΩ ((hwΩ k).of_le (by norm_num))
+      ((hP 1).of_le (by norm_num)).contDiffOn ((hP I).of_le (by norm_num)).contDiffOn
+        ).aestronglyMeasurable hΩm)
+    (ae_restrict_of_forall_mem hΩm fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK k hz)) (hflw k hz)) (hlin k)
   exact hconv hΩ hΩD hwΩ (fun k z hz ↦ hflw k hz) huK (fun k ↦ (hIE k).1) fun k ↦ (hIE k).2
 
 end PlaneCompactness

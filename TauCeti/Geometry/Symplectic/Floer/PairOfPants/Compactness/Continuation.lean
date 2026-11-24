@@ -70,11 +70,12 @@ not on the neck positions themselves.
 
 On the necks, read in the positive end chart `φ'_q` translated by the neck position, the map
 `w ↦ u(φ'_q(w + (L_q, 0)))` solves the continuation equation of the cylinder where `s + L_q ≥ 2`,
-and its energy density is the Jacobian of the chart times that of `u`
+and on a band of angular width one its energy is the energy of `u` over the image
 (`isComplexLinearMap_perturbedFDeriv_continuationHomotopy_comp_positiveEndChart_add`,
-`floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add`). So the compactness theorem
-for the fixed continuation datum applies on every window `[a, b] × [t₀, t₀ + 1]` of the cylinder
-once `a + L_q ≥ 2`, with a threshold `δ` independent of the neck positions:
+`lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq`). So the
+compactness theorem for the fixed continuation datum applies on every window
+`[a, b] × [t₀, t₀ + 1]` of the cylinder once `a + L_q ≥ 2`, with a threshold `δ` independent of
+the neck positions:
 `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_positiveEndChart_add`.
 
 In both, the energy bound is the energy of `u` over the part of `S` considered, at most the total
@@ -456,15 +457,16 @@ theorem
         (u k)) Ω := fun z hz ↦
     ω.floerEnergyDensity_congr_perturbation _ (hKL k (hΩT hz) 1).symm (hKL k (hΩT hz) I).symm
   -- The energy densities are continuous and nonnegative on `Ω`, so integrable there.
-  have hint (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le hΩ
-    ((hu k).of_le (by norm_num))
+  have hint (k : ℕ) := ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
+    subset_rfl ((hu k).of_le (by norm_num))
     (fun y hy ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
       (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num)) (L k)
       (hTS (hΩT hy.1)) y.2 1).contDiffWithinAt)
     (fun y hy ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
       (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num)) (L k)
       (hTS (hΩT hy.1)) y.2 I).contDiffWithinAt)
-    (fun z hz ↦ hJt _ (hLC k) z (hΩT hz) _ (huK k hz)) (hfl k) (hE k)
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt _ (hLC k) z (hΩT hz) _ (huK k hz)) (hfl k z hz))
+    E.coe_nonneg (by rw [ENNReal.ofReal_coe_nnreal]; exact hE k)
   obtain ⟨φ, -, Z, v, hφ, -, -, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ :=
     hconv (p := p) hΩ hΩT (fun k ↦ by
       rw [mem_preimage, ContinuousLinearEquiv.coe_toHomeomorph, hp]; exact hLC k) hu
@@ -554,22 +556,15 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   -- The energy of the translated map over `Ω` is the energy of `u k` over the image of `Ω`.
   have hEΩ (k : ℕ) : ∫⁻ w in Ω, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) C'
       (fun w ↦ u k (positiveEndChart q (w + (L k q, 0)))) w) ≤ E := by
-    rw [← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul
-      (φ := fun w ↦ positiveEndChart q (w + (L k q, 0))) hΩ.measurableSet
-      ((injOn_positiveEndChart q t₀).comp (add_left_injective _).injOn
-        fun w hw ↦ ⟨mem_univ _, by simpa using (hΩI hw).2⟩)
-      (fun w _ ↦ (hasFDerivAt_positiveEndChart_add q (L k q, 0) w).differentiableAt)
-      fun w hw ↦ by
-        rw [(hasFDerivAt_positiveEndChart_add q (L k q, 0) w).fderiv,
-          abs_of_pos (det_fderiv_positiveEndChart_pos q _)]
-        exact ω.floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add hG hH
-          (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num))
-          (hΩL k w hw) ((hu k w hw).differentiableAt (by norm_num))]
+    rw [ω.lintegral_floerEnergyDensity_continuationHomotopy_comp_positiveEndChart_add_eq hG hH
+      (fun r ↦ (hGs r).of_le (by norm_num)) (fun r ↦ (hHs r).of_le (by norm_num))
+      hΩ.measurableSet (hΩL k) hΩI fun w hw ↦ (hu k w hw).differentiableAt (by norm_num)]
     exact hE k
   -- The energy densities are continuous and nonnegative on `Ω`, so integrable there.
-  have hint (k : ℕ) := ω.integrableOn_floerEnergyDensity_and_setIntegral_le hΩ
-    ((hv k).of_le (by norm_num)) contDiffOn_const (hC'.of_le (by norm_num)).contDiffOn
-    (fun w hw ↦ hJt w (hΩD hw) _ (huK k hw)) (hfl' k) (hEΩ k)
+  have hint (k : ℕ) := ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
+    subset_rfl ((hv k).of_le (by norm_num)) contDiffOn_const (hC'.of_le (by norm_num)).contDiffOn
+    (fun w hw ↦ ω.floerEnergyDensity_nonneg (hJt w (hΩD hw) _ (huK k hw)) (hfl' k w hw))
+    E.coe_nonneg (by rw [ENNReal.ofReal_coe_nnreal]; exact hEΩ k)
   exact hconv hΩ hΩD hv hfl' huK (fun k ↦ (hint k).1) fun k ↦ (hint k).2
 
 end TauCeti.SymplecticForm

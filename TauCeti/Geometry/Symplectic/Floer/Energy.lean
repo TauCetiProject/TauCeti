@@ -16,7 +16,6 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -744,25 +743,6 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
-
-open scoped NNReal in
-/-- **An energy bound makes the energy density integrable.** Let the map `u` and the perturbation
-data be `C¹` over an open set `U` of the domain, and let `u` solve the Floer equation on `U` for
-structures `J z` tamed by `ω`. If the lower integral of the Floer energy density over `U` is at
-most `E`, then the density is integrable on `U`, with integral at most `E`. -/
-theorem integrableOn_floerEnergyDensity_and_setIntegral_le (ω : SymplecticForm V)
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
-    (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ)) (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ))
-    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ U, ω.Tames (J z))
-    (hfloer : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) {E : ℝ≥0}
-    (hE : ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ E) :
-    IntegrableOn (ω.floerEnergyDensity Ks Kt u) U ∧
-      ∫ z in U, ω.floerEnergyDensity Ks Kt u z ≤ E :=
-  TauCeti.MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
-    ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).aestronglyMeasurable hU.measurableSet)
-    (ae_restrict_of_forall_mem hU.measurableSet fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)) hE
 
 /-- **The energy-density pairing is continuous.** The Floer energy density is the pairing
 `ω((L - X) e₁, (L - X) e₂)` with `L = du(z)` and `X = X_K(z, u z)`. If `L` and `X` depend on a
