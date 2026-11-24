@@ -21,7 +21,10 @@ be its Pontryagin–Thom collapse (`TauCeti.pontryaginThomCollapseMap`). A cohom
 `u ∈ Hᵖ⁺¹(V⁺, V⁺ ∖ 0)` of the pair
 (`TauCeti.onePointThomPair`), pulls back along `c` to a class of `(M, M ∖ f(S))`, since the core
 `f(S)` is the preimage of the origin. This file computes the cap product with its image
-`c^* u ∈ Hᵖ⁺¹(M)` in absolute cohomology: it is **Poincaré dual to the submanifold**.
+`c^* u ∈ Hᵖ⁺¹(M)` in absolute cohomology: capping a class that restricts along the core to the
+image of a cross product `o × x` with `c^* u` gives `⟨u, o⟩ • f_* x`. Informally, and only under
+this restriction hypothesis, this says that `c^* u` behaves as a Poincaré dual of the submanifold;
+no Poincaré duality statement is proved here.
 
 Let `z ∈ Hₚ₊₁₊q(M)` be a class whose image in `Hₚ₊₁₊q(M, M ∖ f(S))` is the image under the tube of
 a relative cross product `o × x`, with `o ∈ Hₚ₊₁(V, V ∖ 0)` and `x ∈ H_q(S)`. Then
@@ -31,13 +34,15 @@ a relative cross product `o × x`, with `o ∈ Hₚ₊₁(V, V ∖ 0)` and `x �
 in `H_q(M)` (`TauCeti.IsFramedTube.singularCap_pontryaginThomCollapse`), where `⟨u, o⟩` is the
 Kronecker pairing of the restriction of `u` to `(V, V ∖ 0)` with `o`. For an oriented closed
 manifold `M` of dimension `n + k`, a framed submanifold `S` of dimension `n`, the local orientation
-`o ∈ Hₖ(ℝᵏ, ℝᵏ ∖ 0)` of the fibre and the class `u` taking the value `1` on it, the hypothesis says
-that the fundamental class `[M]` restricts along the core to `o × [S]`, which is the orientation
-convention *the fibre followed by the core*; then the formula is `[M] ⌢ c^* u = f_*[S]`, the image
-of the fundamental class of the submanifold. With the opposite convention *the core followed by
-the fibre* of Barraud–Damian–Humilière–Oancea (Remark 9.2.4), the cross product `[S] × o` differs
-from `o × [S]` by the sign `(-1)^(n k)` of the exchange of the factors, so that the formula reads
-`[M] ⌢ c^* u = (-1)^(n k) f_*[S]`; that exchange of factors is not proved here.
+`o ∈ Hₖ(ℝᵏ, ℝᵏ ∖ 0)` of the fibre and the class `u` taking the value `1` on it, take `z = [M]` and
+`x = [S]`. The hypothesis then asks that the fundamental class `[M]` restricts along the core to
+`o × [S]`, which is the orientation convention *the fibre followed by the core*; this file takes it
+as an assumption and does not derive it from orientations of `M` and of the normal framing. Under
+it, the formula is `[M] ⌢ c^* u = f_*[S]`, the image of the fundamental class of the submanifold.
+With the opposite convention *the core followed by the fibre* of Barraud–Damian–Humilière–Oancea
+(Remark 9.2.4), the cross product `[S] × o` differs from `o × [S]` by the sign `(-1)^(n k)` of the
+exchange of the factors, so that the formula would read `[M] ⌢ c^* u = (-1)^(n k) f_*[S]`; that
+exchange of factors is not proved here.
 
 The proof is the chain of identities
 
@@ -199,9 +204,12 @@ theorem singularHomologyFunctor_map_tubePairMap (h : IsFramedTube f τ) {C : Typ
     [Preadditive C] [HasCoproducts.{w} C] [CategoryWithHomology C] (A : C) (n : ℕ) :
     ((singularHomologyFunctor C n).obj A).map (TopPair.Hom.fst h.tubePairMap) =
       ((singularHomologyFunctor C n).obj A).map (snd (TopCat.of V) (TopCat.of S)) ≫
-        ((singularHomologyFunctor C n).obj A).map (TopCat.ofHom ⟨f, h.continuous⟩) :=
-  ((TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-    (tubePairMapHomotopy h) A n).symm.trans (by rw [← Functor.map_comp]; rfl))
+        ((singularHomologyFunctor C n).obj A).map (TopCat.ofHom ⟨f, h.continuous⟩) := by
+  rw [← Functor.map_comp, singularHomologyFunctor_obj_map, singularHomologyFunctor_obj_map]
+  -- `SSet.homologyMap` of the singular simplicial map is the homology of the map of singular
+  -- chains by definition.
+  exact (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
+    (tubePairMapHomotopy h) A n).symm
 
 variable [ContinuousAdd V] [CompactSpace S] [T2Space M] {k : Type w} [CommRing k]
   {R L : ModuleCat.{w} k} {p q : ℕ}
