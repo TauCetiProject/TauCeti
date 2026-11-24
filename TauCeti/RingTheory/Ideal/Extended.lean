@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -40,10 +41,9 @@ from `R`, so the Krull intersection theorem applies to its powers.
 
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
-* `Ideal.quotSMulTopEquivQuotMap`: the quotient of `A` by the `R`-submodule `I • ⊤` is, as an
-  `R`-module, the quotient of `A` by the extended ideal; so the two quotients have the same
-  cardinality (`Ideal.card_quotient_map_algebraMap`) and are finite together
-  (`Ideal.finite_quotient_map_algebraMap`).
+* `Ideal.card_quotient_map_algebraMap` and `Ideal.finite_quotient_map_algebraMap`: the quotients
+  of `A` by the `R`-submodule `I • ⊤` and by the extended ideal have the same cardinality and are
+  finite together, through `Submodule.quotEquivOfEqRestrictScalars`.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
 * `Ideal.map_algebraMap_eq_top_iff`: in a nontrivial free `R`-algebra, the extension of `I` is the
   unit ideal exactly when `I` is.
@@ -188,40 +188,19 @@ section Ring
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (I : Ideal R)
 
-/-- The quotient of `A` by the `R`-submodule `I • ⊤` is the quotient of `A` by the extended ideal
-`I.map (algebraMap R A)`, as an `R`-module. -/
-noncomputable def quotSMulTopEquivQuotMap :
-    (A ⧸ (I • ⊤ : Submodule R A)) ≃ₗ[R] A ⧸ I.map (algebraMap R A) :=
-  (Submodule.quotEquivOfEq _ _ (smul_top_eq_restrictScalars_map I)).trans
-    (Submodule.Quotient.restrictScalarsEquiv R _)
-
-/-- `Ideal.quotSMulTopEquivQuotMap` sends the class of `x` modulo `I • ⊤` to its class modulo the
-extended ideal. -/
-@[simp]
-theorem quotSMulTopEquivQuotMap_mk (x : A) :
-    quotSMulTopEquivQuotMap I (Submodule.Quotient.mk x) =
-      Ideal.Quotient.mk (I.map (algebraMap R A)) x :=
-  (rfl)
-
-/-- The inverse of `Ideal.quotSMulTopEquivQuotMap` sends the class of `x` modulo the extended
-ideal to its class modulo `I • ⊤`. -/
-@[simp]
-theorem quotSMulTopEquivQuotMap_symm_mk (x : A) :
-    (quotSMulTopEquivQuotMap I).symm (Ideal.Quotient.mk (I.map (algebraMap R A)) x) =
-      Submodule.Quotient.mk x :=
-  (rfl)
-
 /-- The quotient of `A` by the extended ideal `I.map (algebraMap R A)` is finite when the
 quotient by `I • ⊤` is. -/
 instance finite_quotient_map_algebraMap [Finite (A ⧸ (I • ⊤ : Submodule R A))] :
     Finite (A ⧸ I.map (algebraMap R A)) :=
-  .of_equiv _ (quotSMulTopEquivQuotMap I).toEquiv
+  .of_equiv _ ((I • ⊤ : Submodule R A).quotEquivOfEqRestrictScalars (I.map (algebraMap R A))
+    (smul_top_eq_restrictScalars_map I)).toEquiv
 
 /-- The quotients of `A` by the extended ideal `I.map (algebraMap R A)` and by `I • ⊤` have the
 same cardinality. -/
 theorem card_quotient_map_algebraMap :
     Nat.card (A ⧸ I.map (algebraMap R A)) = Nat.card (A ⧸ (I • ⊤ : Submodule R A)) :=
-  (Nat.card_congr (quotSMulTopEquivQuotMap I).toEquiv).symm
+  (Nat.card_congr ((I • ⊤ : Submodule R A).quotEquivOfEqRestrictScalars
+    (I.map (algebraMap R A)) (smul_top_eq_restrictScalars_map I)).toEquiv).symm
 
 end Ring
 
