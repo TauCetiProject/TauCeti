@@ -70,6 +70,41 @@ universe u v
 
 namespace TauCeti
 
+/-- Any well-pointed aspherical space `X` of CW type admits pointed maps to and from a cellular
+classifying space inducing inverse isomorphisms on `π₁` and composing to the identity on `X` up to
+homotopy relative to `{x}`. -/
+private theorem exists_cellularClassifyingSpace_pointedHomotopyEquiv {X : Type u}
+    [TopologicalSpace X] [CWType X] {x : X} (hX : IsAspherical X x)
+    (hX_hep : HasHomotopyExtensionProperty ({x} : Set X)) :
+    ∃ (R : Set (FreeGroup (FundamentalGroup X x)))
+      (φ : FundamentalGroup (cellularClassifyingSpace R) (cellularClassifyingSpaceBasepoint R) ≃*
+        FundamentalGroup X x)
+      (u : C(cellularClassifyingSpace R, X)) (v : C(X, cellularClassifyingSpace R))
+      (hu : u (cellularClassifyingSpaceBasepoint R) = x)
+      (hv : v x = cellularClassifyingSpaceBasepoint R),
+      FundamentalGroup.mapOfEq u hu = φ.toMonoidHom ∧
+      FundamentalGroup.mapOfEq v hv = φ.symm.toMonoidHom ∧
+      (u.comp v).HomotopicRel (ContinuousMap.id X) {x} := by
+  let R : Set (FreeGroup (FundamentalGroup X x)) :=
+    ((FreeGroup.lift (id : FundamentalGroup X x → FundamentalGroup X x)).ker : Set _)
+  obtain ⟨φ⟩ := (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker
+    (FundamentalGroup X x)).nonempty_fundamentalGroupMulEquiv
+  let e := cellularClassifyingSpaceHomotopyEquivIso (Y := ⟨X, x⟩) R hX hX_hep φ
+  let h := PointedHomotopyCat.homotopyEquivOfIso e
+  refine ⟨R, φ, h.toFun, h.invFun, PointedHomotopyCat.homotopyEquivOfIso_toFun_basepoint e,
+    PointedHomotopyCat.homotopyEquivOfIso_invFun_basepoint e, ?_, ?_,
+    PointedHomotopyCat.homotopyEquivOfIso_right_inv_homotopicRel e⟩
+  · exact congrArg GrpCat.Hom.hom <|
+      (congrArg PointedHomotopyCat.fundamentalGroupFunctor.map
+        (PointedHomotopyCat.quotient_map_homotopyEquivOfIso_toFun e)).trans
+        (fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_hom
+          (Y := ⟨X, x⟩) R hX hX_hep φ)
+  · exact congrArg GrpCat.Hom.hom <|
+      (congrArg PointedHomotopyCat.fundamentalGroupFunctor.map
+        (PointedHomotopyCat.quotient_map_homotopyEquivOfIso_invFun e)).trans
+        (fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_inv
+          (Y := ⟨X, x⟩) R hX hX_hep φ)
+
 /-- **Homomorphisms out of `π₁` of a well-pointed aspherical space of CW type are induced by
 pointed maps.** If the homotopy groups of `(Z, z)` vanish from degree `2` on, every homomorphism
 `π₁(X, x) →* π₁(Z, z)` is induced by a continuous map sending `x` to `z`. -/
@@ -79,19 +114,9 @@ theorem IsAspherical.exists_mapOfEq {X Z : Type u} [TopologicalSpace X] [CWType 
     (hZ : ∀ k, 2 ≤ k → Subsingleton (π_ k Z z))
     (fπ : FundamentalGroup X x →* FundamentalGroup Z z) :
     ∃ (f : C(X, Z)) (hf : f x = z), FundamentalGroup.mapOfEq f hf = fπ := by
-  let hC := isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker (FundamentalGroup X x)
-  obtain ⟨φ⟩ := hC.nonempty_fundamentalGroupMulEquiv
-  let e := cellularClassifyingSpaceHomotopyEquivIso (Y := ⟨X, x⟩) _ hX hX_hep φ
-  let v : C(X, cellularClassifyingSpace _) := (PointedHomotopyCat.homotopyEquivOfIso e).invFun
-  have hv : v x = cellularClassifyingSpaceBasepoint _ :=
-    PointedHomotopyCat.homotopyEquivOfIso_invFun_basepoint e
-  have hvπ : FundamentalGroup.mapOfEq v hv = φ.symm.toMonoidHom :=
-    congrArg GrpCat.Hom.hom <|
-      (congrArg PointedHomotopyCat.fundamentalGroupFunctor.map
-        (PointedHomotopyCat.quotient_map_homotopyEquivOfIso_invFun e)).trans
-        (fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_inv
-          (Y := ⟨X, x⟩) _ hX hX_hep φ)
-  obtain ⟨f, hf, hfπ⟩ := exists_mapOfEq_cellularClassifyingSpace _ hZ (fπ.comp φ.toMonoidHom)
+  obtain ⟨R, φ, -, v, -, hv, -, hvπ, -⟩ :=
+    exists_cellularClassifyingSpace_pointedHomotopyEquiv hX hX_hep
+  obtain ⟨f, hf, hfπ⟩ := exists_mapOfEq_cellularClassifyingSpace R hZ (fπ.comp φ.toMonoidHom)
   refine ⟨f.comp v, by rw [ContinuousMap.comp_apply, hv, hf], MonoidHom.ext fun a ↦ ?_⟩
   rw [← FundamentalGroup.mapOfEq_comp f v hv hf a, hvπ, hfπ]
   exact congrArg fπ (φ.apply_symm_apply a)
@@ -107,20 +132,11 @@ theorem IsAspherical.homotopicRel_of_mapOfEq_eq {X : Type u} {Z : Type v} [Topol
     {f g : C(X, Z)} {z : Z} (hf : f x = z) (hg : g x = z)
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x} := by
-  let hC := isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker (FundamentalGroup X x)
-  obtain ⟨φ⟩ := hC.nonempty_fundamentalGroupMulEquiv
-  let e := cellularClassifyingSpaceHomotopyEquivIso (Y := ⟨X, x⟩) _ hX hX_hep φ
-  let u : C(cellularClassifyingSpace _, X) := (PointedHomotopyCat.homotopyEquivOfIso e).toFun
-  let v : C(X, cellularClassifyingSpace _) := (PointedHomotopyCat.homotopyEquivOfIso e).invFun
-  have hu : u (cellularClassifyingSpaceBasepoint _) = x :=
-    PointedHomotopyCat.homotopyEquivOfIso_toFun_basepoint e
-  have hv : v x = cellularClassifyingSpaceBasepoint _ :=
-    PointedHomotopyCat.homotopyEquivOfIso_invFun_basepoint e
-  have hright : (u.comp v).HomotopicRel (ContinuousMap.id X) {x} :=
-    PointedHomotopyCat.homotopyEquivOfIso_right_inv_homotopicRel e
+  obtain ⟨R, -, u, v, hu, hv, -, -, hright⟩ :=
+    exists_cellularClassifyingSpace_pointedHomotopyEquiv hX hX_hep
   -- Pulling back along `u` transfers the problem to the cellular model.
-  have hcell : (f.comp u).HomotopicRel (g.comp u) {cellularClassifyingSpaceBasepoint _} :=
-    homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace _ hZ
+  have hcell : (f.comp u).HomotopicRel (g.comp u) {cellularClassifyingSpaceBasepoint R} :=
+    homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R hZ
       (by rw [ContinuousMap.comp_apply, hu, hf]) (by rw [ContinuousMap.comp_apply, hu, hg]) <|
       MonoidHom.ext fun a ↦ by
         rw [← FundamentalGroup.mapOfEq_comp f u hu hf a,

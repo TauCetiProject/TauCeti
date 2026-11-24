@@ -417,15 +417,6 @@ lemma ofBaseSubsetSkeletonLTOne_I_succ {S : Set X} (hDS : D ⊆ S)
     (ofBaseSubsetSkeletonLTOne hDS hS).I (n + 1) = ∅ :=
   (rfl)
 
-/-- The `n`-cells of `ofBaseSubsetSkeletonLTOne hDS hS` are the `0`-cells of `C` lying in `S` when
-`n = 0`, and empty in positive dimensions. -/
-lemma ofBaseSubsetSkeletonLTOne_I {S : Set X} (hDS : D ⊆ S)
-    (hS : S ⊆ (skeletonLT C 1 : Set X)) (n : ℕ) :
-    (ofBaseSubsetSkeletonLTOne hDS hS).I n = match n with
-      | 0 => {j : cell C 0 | map 0 j ![] ∈ S}
-      | _ + 1 => ∅ :=
-  (rfl)
-
 end
 
 end Topology.RelCWComplex.Subcomplex

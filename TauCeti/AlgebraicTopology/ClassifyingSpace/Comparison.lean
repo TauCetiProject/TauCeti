@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.HomotopyEquiv
 import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
-import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
-import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
 /-!
 # The cellular and the simplicial classifying spaces agree
@@ -28,10 +26,7 @@ every isomorphism `e : PresentedGroup R ≃* G`,
 `TauCeti.cellularHomotopyEquivClassifyingSpace R e` is a homotopy equivalence
 from the cellular to the simplicial model, inducing `e` under the identifications
 `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv` and
-`TauCeti.classifyingSpaceFundamentalGroupMulEquiv` of both fundamental groups, and admitting a
-based homotopy inverse inducing `e⁻¹` with both homotopies relative to the base points
-(`TauCeti.exists_basedInverse_cellularHomotopyEquivClassifyingSpace`), upgrading to an isomorphism
-`TauCeti.cellularHomotopyEquivClassifyingSpaceIso` in `TauCeti.PointedHomotopyCat`. Every group has
+`TauCeti.classifyingSpaceFundamentalGroupMulEquiv` of both fundamental groups. Every group has
 a presentation, for instance the tautological one, so this applies to every group.
 
 Semilocal simple connectivity is a homotopy invariant
@@ -49,8 +44,6 @@ hypotheses of covering-space theory exactly as the existence theorem for Milnor'
   the cellular classifying space of a presentation of `G` to Milnor's classifying space of `G`.
 * `TauCeti.cellularHomotopyEquivClassifyingSpaceBasedHom`: the comparison of the cellular model
   with Milnor's classifying space, as a based map.
-* `TauCeti.cellularHomotopyEquivClassifyingSpaceIso`: pointed isomorphism comparing the cellular
-  and simplicial models of the classifying space.
 
 ## Main results
 
@@ -59,8 +52,6 @@ hypotheses of covering-space theory exactly as the existence theorem for Milnor'
   under the identifications of both fundamental groups with `G`.
 * `TauCeti.homotopicRel_cellularHomotopyEquivClassifyingSpace_toFun`: the comparison of the two
   models is determined by `e` up to homotopy relative to the base point.
-* `TauCeti.exists_basedInverse_cellularHomotopyEquivClassifyingSpace`: the comparison of the two
-  models admits a pointed homotopy inverse inducing `e⁻¹` with no base-point change.
 * `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
   classes of maps out of a cellular classifying space into a space with no higher homotopy groups
   are classified by their effect on `π₁`.
@@ -168,36 +159,6 @@ theorem exists_path_map_cellularHomotopyEquivClassifyingSpace_invFun :
     rw [hγ, MulEquiv.symm_trans_apply, MulEquiv.apply_symm_apply, MulEquiv.symm_trans_apply,
       MulEquiv.symm_symm]⟩
 
-/-- **The comparison of the two models admits a pointed homotopy inverse inducing `e⁻¹`.** Unlike
-`TauCeti.exists_path_map_cellularHomotopyEquivClassifyingSpace_invFun`, the inverse `g` preserves
-the base points, both composites are homotopic to the identities relative to the base points, and
-`g` induces `e⁻¹` on fundamental groups with no change of base point. -/
-theorem exists_basedInverse_cellularHomotopyEquivClassifyingSpace {G : Type u} [Group G]
-    (e : PresentedGroup R ≃* G) :
-    ∃ (g : C(classifyingSpace G, cellularClassifyingSpace R))
-      (hg : g (classifyingSpaceBasepoint G) = cellularClassifyingSpaceBasepoint R),
-      (g.comp (cellularHomotopyEquivClassifyingSpace R e).toFun).HomotopicRel
-        (ContinuousMap.id _) {cellularClassifyingSpaceBasepoint R} ∧
-      ((cellularHomotopyEquivClassifyingSpace R e).toFun.comp g).HomotopicRel
-        (ContinuousMap.id _) {classifyingSpaceBasepoint G} ∧
-      ∀ a, cellularClassifyingSpaceFundamentalGroupMulEquiv R (FundamentalGroup.mapOfEq g hg a) =
-        e.symm (classifyingSpaceFundamentalGroupMulEquiv G a) := by
-  obtain ⟨g, hg, hleft, hright⟩ :=
-    (hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint R)
-      |>.exists_basedInverse_homotopicRel
-      (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
-      (cellularHomotopyEquivClassifyingSpace R e)
-      (cellularHomotopyEquivClassifyingSpace_toFun_basepoint R e)
-  refine ⟨g, hg, hleft, hright, fun a ↦ ?_⟩
-  have hcomp := congrArg (fun k ↦ classifyingSpaceFundamentalGroupMulEquiv G (k a))
-    (FundamentalGroup.mapOfEq_eq_of_homotopicRel
-      (by rw [ContinuousMap.comp_apply, hg, cellularHomotopyEquivClassifyingSpace_toFun_basepoint])
-      (ContinuousMap.id_apply _) rfl hright)
-  rw [FundamentalGroup.mapOfEq_id, ← FundamentalGroup.mapOfEq_comp _ _ hg
-      (cellularHomotopyEquivClassifyingSpace_toFun_basepoint R e) a,
-    classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace] at hcomp
-  exact e.eq_symm_apply.2 hcomp
-
 /-- The comparison `cellularHomotopyEquivClassifyingSpace R e` of the cellular model with Milnor's
 classifying space, as a based map. -/
 @[expose] def cellularHomotopyEquivClassifyingSpaceBasedHom :
@@ -210,52 +171,6 @@ theorem cellularHomotopyEquivClassifyingSpaceBasedHom_toContinuousMap :
     (cellularHomotopyEquivClassifyingSpaceBasedHom R e).toContinuousMap =
       (cellularHomotopyEquivClassifyingSpace R e).toFun :=
   (rfl)
-
-/-- **The cellular and the simplicial classifying spaces are isomorphic in `PointedHomotopyCat`.**
-For a presentation `e : PresentedGroup R ≃* G`, the forward morphism is the pointed homotopy class
-of `cellularHomotopyEquivClassifyingSpaceBasedHom R e` (inducing `e` on `π₁`), and the inverse
-induces `e⁻¹` with no base-point change. -/
-def cellularHomotopyEquivClassifyingSpaceIso :
-    PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R) ≅
-      PointedHomotopyCat.quotient.obj (classifyingSpaceFunctor.obj (GrpCat.of G)) :=
-  PointedHomotopyCat.isoOfHomotopyEquiv
-    (hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint R)
-    (hasHomotopyExtensionProperty_classifyingSpaceBasepoint G)
-    (cellularHomotopyEquivClassifyingSpace R e)
-    (cellularHomotopyEquivClassifyingSpace_toFun_basepoint R e)
-
-/-- The forward morphism of `cellularHomotopyEquivClassifyingSpaceIso` is the pointed homotopy
-class of `cellularHomotopyEquivClassifyingSpaceBasedHom`. -/
-theorem cellularHomotopyEquivClassifyingSpaceIso_hom :
-    (cellularHomotopyEquivClassifyingSpaceIso R e).hom =
-      PointedHomotopyCat.quotient.map (cellularHomotopyEquivClassifyingSpaceBasedHom R e) :=
-  PointedHomotopyCat.isoOfHomotopyEquiv_hom _ _ _ _
-
-/-- The forward morphism of `cellularHomotopyEquivClassifyingSpaceIso` induces `e` on `π₁`, under
-the identifications of both fundamental groups. -/
-@[simp]
-theorem fundamentalGroupFunctor_map_cellularHomotopyEquivClassifyingSpaceIso_hom :
-    PointedHomotopyCat.fundamentalGroupFunctor.map
-        (cellularHomotopyEquivClassifyingSpaceIso R e).hom =
-      GrpCat.ofHom ((cellularClassifyingSpaceFundamentalGroupMulEquiv R).trans
-        (e.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)).toMonoidHom := by
-  rw [cellularHomotopyEquivClassifyingSpaceIso_hom]
-  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦
-    (classifyingSpaceFundamentalGroupMulEquiv G).injective ?_
-  exact (classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_cellularHomotopyEquivClassifyingSpace
-    R e a).trans ((classifyingSpaceFundamentalGroupMulEquiv G).apply_symm_apply _).symm
-
-/-- The inverse morphism of `cellularHomotopyEquivClassifyingSpaceIso` induces `e⁻¹` on `π₁`, under
-the identifications of both fundamental groups. -/
-@[simp]
-theorem fundamentalGroupFunctor_map_cellularHomotopyEquivClassifyingSpaceIso_inv :
-    PointedHomotopyCat.fundamentalGroupFunctor.map
-        (cellularHomotopyEquivClassifyingSpaceIso R e).inv =
-      GrpCat.ofHom ((classifyingSpaceFundamentalGroupMulEquiv G).trans
-        (e.symm.trans (cellularClassifyingSpaceFundamentalGroupMulEquiv R).symm)).toMonoidHom :=
-  (PointedHomotopyCat.fundamentalGroupFunctor_map_inv_of_map_hom_eq
-    (fundamentalGroupFunctor_map_cellularHomotopyEquivClassifyingSpaceIso_hom R e)).trans
-    (GrpCat.hom_ext <| MonoidHom.ext fun _ ↦ rfl)
 
 /-- **The cellular classifying space is semilocally simply connected.** It is homotopy equivalent
 to Milnor's classifying space of its fundamental group, which is semilocally simply connected, and
