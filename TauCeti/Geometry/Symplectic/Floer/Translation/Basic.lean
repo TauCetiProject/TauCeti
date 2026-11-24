@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
