@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Quartic.Trajectory
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Order.Interval.Set.Pi
 import Mathlib.Analysis.Calculus.Deriv.Prod
 
 /-!
@@ -166,39 +167,35 @@ theorem quarticGluingLate_same_left (p q : ι → ℝ) (ρ : ℝ) (u : ι → �
   · simp [quarticTrajectoryPoint_apply_of_eq _ h, h]
   · simp [quarticTrajectoryPoint_apply_of_ne _ h, h]
 
-/-- A point lies in the cube `[-1, 1]^ι` when each coordinate has absolute value at most `1`. -/
-private theorem mem_Icc_of_abs_le_one {y : ι → ℝ} (h : ∀ i, |y i| ≤ 1) : y ∈ Icc (-1) 1 :=
-  ⟨fun i ↦ (abs_le.1 (h i)).1, fun i ↦ (abs_le.1 (h i)).2⟩
-
-/-- A coordinate `q i * t` lies in `[-1, 1]` when `q` lies in the cube and `|t| ≤ 1`. -/
-private theorem abs_mul_le_one_of_mem_Icc {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (i : ι) {t : ℝ}
-    (ht : |t| ≤ 1) : |q i * t| ≤ 1 := by
-  rw [abs_mul]
-  exact (mul_le_of_le_one_left (abs_nonneg t) (abs_le.2 ⟨hq.1 i, hq.2 i⟩)).trans ht
-
 /-- The early point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingEarly_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
     (u : ι → ℝ) : quarticGluingEarly p r q ρ u ∈ Icc (-1) 1 :=
-  mem_Icc_of_abs_le_one fun i ↦ by
+  mem_Icc_neg_iff_forall_abs_le.2 fun i ↦ by
+    have hq' := mem_Icc_neg_iff_forall_abs_le.1 hq i
+    have hmul {t : ℝ} (ht : |t| ≤ 1) : |q i * t| ≤ 1 :=
+      (abs_mul _ _).trans_le ((mul_le_of_le_one_left (abs_nonneg t) hq').trans ht)
     have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
     rw [quarticGluingEarly_apply]
     split_ifs with hpq
-    · exact hpq ▸ abs_le.2 ⟨hq.1 i, hq.2 i⟩
-    · refine abs_mul_le_one_of_mem_Icc hq i ?_
+    · exact hpq ▸ hq'
+    · refine hmul ?_
       have h := Real.abs_div_sqrt_sq_add_le_one zero_le_one (Real.exp (u i) * ρ)
       rwa [add_comm, div_eq_mul_inv] at h
-    · exact abs_mul_le_one_of_mem_Icc hq i ((abs_of_pos ho.1).trans_le ho.2.le)
+    · exact hmul ((abs_of_pos ho.1).trans_le ho.2.le)
 
 /-- The late point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingLate_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
     (u : ι → ℝ) : quarticGluingLate p r q ρ u ∈ Icc (-1) 1 :=
-  mem_Icc_of_abs_le_one fun i ↦ by
+  mem_Icc_neg_iff_forall_abs_le.2 fun i ↦ by
+    have hq' := mem_Icc_neg_iff_forall_abs_le.1 hq i
+    have hmul {t : ℝ} (ht : |t| ≤ 1) : |q i * t| ≤ 1 :=
+      (abs_mul _ _).trans_le ((mul_le_of_le_one_left (abs_nonneg t) hq').trans ht)
     have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
     rw [quarticGluingLate_apply]
     split_ifs with hpq
-    · exact hpq ▸ abs_le.2 ⟨hq.1 i, hq.2 i⟩
-    · exact abs_mul_le_one_of_mem_Icc hq i ((abs_of_pos ho.1).trans_le ho.2.le)
-    · refine abs_mul_le_one_of_mem_Icc hq i ?_
+    · exact hpq ▸ hq'
+    · exact hmul ((abs_of_pos ho.1).trans_le ho.2.le)
+    · refine hmul ?_
       rw [abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
       exact inv_le_one_of_one_le₀ (Real.one_le_sqrt_one_add_sq _)
 
@@ -339,28 +336,21 @@ theorem quarticGluingLate_neg (p r q : ι → ℝ) (ρ : ℝ) (u : ι → ℝ) :
 
 /-! ### Recovering the gluing parameter and the time coordinates -/
 
-/-- The time coordinate of `|c * intervalBaseOrbit 1 t|` is `t` when `c = ±1`. -/
-private theorem intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit {c : ℝ} (hc : c = -1 ∨ c = 1)
-    (t : ℝ) : intervalBaseTimeCoordinate |c * intervalBaseOrbit 1 t| = t := by
-  have hc' : |c| = 1 := by rcases hc with h | h <;> simp [h]
-  rw [abs_mul, hc', one_mul, abs_of_pos (intervalBaseOrbit_mem_Ioo 1 t).1,
-    intervalBaseTimeCoordinate_intervalBaseOrbit, one_mul]
-
 /-- On a coordinate moving between `p` and `r` towards `q i = ±1`, the time coordinate is
 recovered from the early point. -/
 theorem intervalBaseTimeCoordinate_abs_quarticGluingEarly {p r q : ι → ℝ} {i : ι}
     (hpq : p i ≠ q i) (hpr : p i ≠ r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticGluingEarly p r q ρ u i| = u i := by
-  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_right hpr]
-  exact intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit hq (u i)
+  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_right hpr,
+    intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit hq, one_mul]
 
 /-- On a coordinate moving between `r` and `q` towards `q i = ±1`, the time coordinate is
 recovered from the late point. -/
 theorem intervalBaseTimeCoordinate_abs_quarticGluingLate {p r q : ι → ℝ} {i : ι}
     (hpq : p i ≠ q i) (hpr : p i = r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     intervalBaseTimeCoordinate |quarticGluingLate p r q ρ u i| = u i := by
-  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_left hpr]
-  exact intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit hq (u i)
+  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_left hpr,
+    intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit hq, one_mul]
 
 /-- On a coordinate `i` moving between `r` and `q` towards `q i = ±1`, the gluing parameter is
 recovered from the early point `y` and the time coordinate as `e^{-u i} q i y i / √(1 - y i²)`. -/
@@ -368,10 +358,10 @@ theorem exp_neg_mul_mul_quarticGluingEarly_div_sqrt_one_sub_sq {p r q : ι → �
     (hpq : p i ≠ q i) (hpr : p i = r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     Real.exp (-u i) * (q i * quarticGluingEarly p r q ρ u i /
       √(1 - quarticGluingEarly p r q ρ u i ^ 2)) = ρ := by
-  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_left hpr]
-  rcases hq with h | h <;> simp only [h, neg_mul, one_mul, neg_neg, neg_sq,
-    Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq] <;>
-    simp [← mul_assoc, ← Real.exp_add]
+  have hq2 : q i * q i = 1 := by rw [← abs_mul_abs_self, (abs_eq zero_le_one).2 hq.symm, one_mul]
+  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_left hpr, ← mul_assoc, hq2, one_mul,
+    mul_pow (q i), sq (q i), hq2, one_mul, Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq,
+    Real.exp_neg, inv_mul_cancel_left₀ (Real.exp_pos _).ne']
 
 /-- On a coordinate `i` moving between `p` and `r` towards `q i = ±1`, the absolute value of the
 gluing parameter is recovered from the late point `y` and the time coordinate as
@@ -380,11 +370,12 @@ theorem exp_mul_sqrt_one_sub_quarticGluingLate_sq_div_abs {p r q : ι → ℝ} {
     (hpq : p i ≠ q i) (hpr : p i ≠ r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     Real.exp (u i) * (√(1 - quarticGluingLate p r q ρ u i ^ 2) /
       |quarticGluingLate p r q ρ u i|) = |ρ| := by
-  have hs : 0 < (√(1 + (Real.exp (-u i) * ρ) ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
-  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_right hpr]
-  rcases hq with h | h <;> simp only [h, neg_mul, one_mul, neg_sq, abs_neg, abs_of_pos hs,
-    Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq, abs_mul, Real.abs_exp, ← mul_assoc,
-    ← Real.exp_add, add_neg_cancel, Real.exp_zero]
+  have hq1 : |q i| = 1 := (abs_eq zero_le_one).2 hq.symm
+  have hs : 0 ≤ (√(1 + (Real.exp (-u i) * ρ) ^ 2))⁻¹ := by positivity
+  rw [quarticGluingLate_apply, ite_eq_right hpq, ite_eq_right hpr, mul_pow, ← sq_abs (q i), hq1,
+    one_pow, one_mul, abs_mul, hq1, one_mul, abs_of_nonneg hs,
+    Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq, abs_mul, Real.abs_exp, Real.exp_neg,
+    mul_inv_cancel_left₀ (Real.exp_pos _).ne']
 
 /-- **The glued pair determines its parameters.** For gluing parameters `ρ₁, ρ₂ ≥ 0`, the glued
 pairs agree exactly when the time coordinates agree on every moving coordinate with `q i ≠ 0`,
@@ -411,12 +402,13 @@ theorem quarticGluingEarly_eq_and_quarticGluingLate_eq_iff {p r q : ι → ℝ} 
     have h₃ := congrArg (fun y ↦ y / √(1 - y ^ 2)) h₁
     simp only [Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq, h₂] at h₃
     exact ⟨h₂, mul_left_cancel₀ (Real.exp_pos _).ne' h₃⟩
-  · simp only [hpr, ↓reduceIte, mul_right_inj' hq0] at h
-    rw [(intervalBaseOrbit_injective one_ne_zero).eq_iff, inv_inj,
-      Real.sqrt_inj (by positivity) (by positivity), add_right_inj] at h
+  · simp only [hpr, ↓reduceIte, mul_right_inj' hq0,
+      (intervalBaseOrbit_injective one_ne_zero).eq_iff] at h
     obtain ⟨h₁, h₂⟩ := h
-    rw [h₁, sq_eq_sq₀ (by positivity) (by positivity)] at h₂
-    exact ⟨h₁, mul_left_cancel₀ (Real.exp_pos _).ne' h₂⟩
+    have h₃ := congrArg (fun y ↦ √(1 - y ^ 2) / y) h₂
+    simp only [Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq, abs_mul, Real.abs_exp,
+      abs_of_nonneg hρ₁, abs_of_nonneg hρ₂, h₁] at h₃
+    exact ⟨h₁, mul_left_cancel₀ (Real.exp_pos _).ne' h₃⟩
 
 /-! ### Smoothness across the break -/
 

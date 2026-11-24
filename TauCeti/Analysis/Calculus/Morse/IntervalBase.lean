@@ -61,7 +61,9 @@ bijective.
 * `TauCeti.intervalBaseOrbit` and `TauCeti.isIntegralCurve_intervalBaseOrbit`: a trajectory from
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
-  `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+  `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`,
+  also along the signed copies `±q`
+  (`TauCeti.intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit`).
 * `TauCeti.mul_one_sub_sq_inv_mul_eq_of_hasDerivAt`: the linearized flow along a solution in
   `(0, 1)` preserves `U'(x) w = w / (x (1 - x²))`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
@@ -489,8 +491,9 @@ trajectory is `q(s) = 1 / √(1 + ε²)`: it depends on `ε` only through `ε²`
 `1` at rate `2 C`. -/
 theorem intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq (C s : ℝ) :
     intervalBaseOrbit C s = (√(1 + Real.exp (-(C * s)) ^ 2))⁻¹ := by
-  rw [intervalBaseOrbit_apply, ← Real.exp_natCast_mul,
-    show (2 : ℕ) * -(C * s) = -(2 * C * s) by push_cast; ring]
+  rw [intervalBaseOrbit_apply, ← Real.exp_natCast_mul]
+  push_cast
+  ring_nf
 
 /-- **The departing chart under a time shift.** Delaying the trajectory `q` by `log x / C`
 multiplies its departing gluing parameter `ε = e^{C t}`
@@ -708,6 +711,13 @@ theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
     intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
+
+/-- Along a signed copy `c q` of the trajectory, `c = ±1`, the time coordinate of the absolute value
+is `C s`. -/
+theorem intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit {c : ℝ} (hc : c = -1 ∨ c = 1)
+    (C s : ℝ) : intervalBaseTimeCoordinate |c * intervalBaseOrbit C s| = C * s := by
+  rw [abs_mul, (abs_eq zero_le_one).2 hc.symm, one_mul,
+    abs_of_pos (intervalBaseOrbit_mem_Ioo C s).1, intervalBaseTimeCoordinate_intervalBaseOrbit]
 
 /-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate `C s` recovers the time. -/
 theorem intervalBaseOrbit_injective (hC : C ≠ 0) : Function.Injective (intervalBaseOrbit C) :=
