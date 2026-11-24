@@ -779,6 +779,18 @@ private noncomputable def withContinuousSMul (M : Type*) [AddCommGroup M] [Modul
   haveI : ContinuousSMul K⸨X⸩ M := ⟨(hL.comp continuous_fst).smul continuous_snd⟩
   f
 
+omit [Algebra K L] [IsScalarTower K K⸨X⸩ L] [Algebra.FormallyEtale K⸨X⸩ L] in
+private theorem withContinuousSMul_apply (M : Type*) [AddCommGroup M] [Module L M]
+    [TopologicalSpace M] [ContinuousSMul L M] {P : Sort*}
+    (hL : Continuous (algebraMap K⸨X⸩ L))
+    (f : ∀ [Module K⸨X⸩ M] [IsScalarTower K⸨X⸩ L M] [ContinuousSMul K⸨X⸩ M], P) :
+    withContinuousSMul M hL f =
+      letI := Module.compHom M (algebraMap K⸨X⸩ L)
+      haveI := IsScalarTower.of_compHom K⸨X⸩ L M
+      haveI : ContinuousSMul K⸨X⸩ M := ⟨(hL.comp continuous_fst).smul continuous_snd⟩
+      f :=
+  rfl
+
 variable {M : Type*} [AddCommGroup M] [Module L M] [Module K M] [IsScalarTower K L M]
   [TopologicalSpace M] [T2Space M] [ContinuousSMul L M]
 
@@ -796,8 +808,8 @@ continuous `L`-linear map. -/
 noncomputable def continuousLift [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X⸩ L))
     (δ : Derivation K L M) (hδ : Continuous δ) :
     ContinuousKaehlerDifferential K L →L[L] M :=
-  withContinuousSMul M hL
-    { lift δ (hδ.comp hL) with cont := IsModuleTopology.continuous_of_linearMap _ }
+  { withContinuousSMul M hL (lift δ (hδ.comp hL)) with
+    cont := IsModuleTopology.continuous_of_linearMap _ }
 
 /-- Evaluating `continuousLift hL δ hδ` on a quotient representative `mk K L ω` recovers the
 algebraic Kähler lift `δ.liftKaehlerDifferential ω`. -/
@@ -806,8 +818,10 @@ theorem continuousLift_mk [ContinuousAdd M] (hL : Continuous (algebraMap K⸨X�
     (δ : Derivation K L M) (hδ : Continuous δ) (ω : Ω[L⁄K]) :
     continuousLift hL δ hδ (mk K L ω) = δ.liftKaehlerDifferential ω :=
   withContinuousSMul M hL <| by
-    dsimp only [continuousLift, withContinuousSMul]
-    rw [ContinuousLinearMap.coe_mk']
+    -- Both `withContinuousSMul` instances install the same reducible `Module.compHom` (`letI`)
+    -- and `Prop`-valued `IsScalarTower` / `ContinuousSMul` instances, so the inner `lift` is
+    -- definitionally equal to the outer one.
+    rw [continuousLift, ContinuousLinearMap.coe_mk', withContinuousSMul_apply]
     exact lift_mk δ (hδ.comp hL) ω
 
 /-- Evaluating `continuousLift hL δ hδ` on `d x` recovers `δ x`. -/
