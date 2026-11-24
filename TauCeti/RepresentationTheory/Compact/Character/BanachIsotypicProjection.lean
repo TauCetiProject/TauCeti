@@ -106,18 +106,12 @@ theorem banachIsotypicProjector_apply_of_mem (σ : ContRepresentation k G W)
       (isotypicProjector (π.subrepresentation S.toSubmodule
           fun g _ hu ↦ S.apply_mem_toSubmodule g hu)
         (continuous_subrepresentation_of_finiteDimensional hπ) σ hσ ⟨v, hv⟩ : V) := by
-  have hρ := continuous_subrepresentation_of_finiteDimensional hπ
-    (W := S.toSubmodule) (hW := fun g _ hu ↦ S.apply_mem_toSubmodule g hu)
-  have hι (w : S.toSubmodule) : (subrepresentationInclusion π S).toContinuousLinearMap w = w :=
-    subrepresentationInclusion_apply π S w
   have h := congrArg (fun T : S.toSubmodule →L[k] V ↦ T ⟨v, hv⟩)
     (comp_strongIntegratedOperator _ (continuous_subrepresentation_apply hπ) π hπ
       (subrepresentationInclusion π S) (isotypicKernel σ hσ))
-  simp only [ContinuousLinearMap.comp_apply, hι,
-    strongIntegratedOperator_eq_integratedOperator _ _ hρ] at h
-  rw [← ContIntertwiningMap.toContinuousLinearMap_apply,
-    toContinuousLinearMap_banachIsotypicProjector, ← h,
-    ← ContIntertwiningMap.toContinuousLinearMap_apply, toContinuousLinearMap_isotypicProjector]
+  simp only [ContinuousLinearMap.comp_apply, ContIntertwiningMap.toContinuousLinearMap_apply,
+    subrepresentationInclusion_apply, strongIntegratedOperator_apply] at h
+  simpa [banachIsotypicProjector_apply, isotypicProjector_apply] using h.symm
 
 variable [IsAlgClosed k]
 
