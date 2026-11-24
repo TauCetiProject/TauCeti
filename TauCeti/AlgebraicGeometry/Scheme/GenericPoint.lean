@@ -133,11 +133,11 @@ theorem isClosed_singleton_of_ne_genericPoint (hX : topologicalKrullDim X ≤ 1)
     ((coheight_eq_one_iff_ne_genericPoint hX).mpr hz)
 
 /-- On an irreducible scheme of dimension at most one, a closed immersion from an irreducible
-scheme with more than one point is surjective. The image of its generic point cannot be a closed
-point of `X`, since its preimage would then be a closed point generizing every point; so it is the
-generic point of `X`, and the closed image contains it. -/
+scheme with more than one point is surjective. -/
 theorem surjective_of_isClosedImmersion (hX : topologicalKrullDim X ≤ 1) {C : Scheme.{u}}
     [IrreducibleSpace C] [Nontrivial C] (i : C ⟶ X) [IsClosedImmersion i] : Surjective i := by
+  -- The image of the generic point of `C` is not a closed point of `X`: its preimage would be a
+  -- closed point generizing every point of `C`. So it is the generic point of `X`.
   have hgen : i (genericPoint C) = genericPoint X := by
     by_contra hne
     have hcl := (isClosed_singleton_of_ne_genericPoint hX hne).preimage i.continuous

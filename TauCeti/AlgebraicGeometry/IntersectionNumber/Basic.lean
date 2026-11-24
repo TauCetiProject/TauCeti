@@ -459,11 +459,11 @@ end ClosedImmersion
 
 section Curve
 
-variable [IsIntegral C] [IsClosedImmersion ι] [X.Over (Spec (.of k))] [IsIntegral X]
+variable [IrreducibleSpace C] [IsClosedImmersion ι] [X.Over (Spec (.of k))] [IsIntegral X]
 
 /-- **Curves on a curve.** On an integral `k`-scheme `X` of dimension at most one, the
-intersection number of a class with an integral closed curve `C` over `k` is the degree of the
-class on `X`: the curve is all of `X`. -/
+intersection number of a class with an irreducible closed curve `C` over `k` is the degree of
+the class on `X`: the curve is all of `X`. -/
 theorem intersectionNumber_eq_eulerDegree_of_isClosedImmersion
     (hX : topologicalKrullDim X ≤ 1) (hι : C ↘ Spec (.of k) = ι ≫ (X ↘ Spec (.of k)))
     (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) :
