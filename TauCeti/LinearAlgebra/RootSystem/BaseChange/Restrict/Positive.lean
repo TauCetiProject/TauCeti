@@ -46,7 +46,10 @@ theorem Base.height_restrictScalars' [CharZero K] [CharZero L] (i : ι) :
   obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
   have hfK : (P.restrictScalars' K).root i =
       ∑ j ∈ (b.restrictScalars' K).support, f j • (P.restrictScalars' K).root j := by
-    ext; simpa using hf
+    refine Subtype.ext ?_
+    simp only [Base.support_restrictScalars', Submodule.coe_sum, AddSubgroupClass.coe_zsmul,
+      restrictScalars_coe_root]
+    exact hf
   rw [(b.restrictScalars' K).height_eq_sum hfK, b.height_eq_sum hf, support_restrictScalars']
 
 /-- Positivity of a root index with respect to `b.restrictScalars' K` agrees with positivity with

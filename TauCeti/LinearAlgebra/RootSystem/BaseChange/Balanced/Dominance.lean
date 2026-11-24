@@ -40,7 +40,7 @@ theorem rootLE_coe_rootSpanProj_of_rootLE (b : P.Base) {x y : M} (h : P.rootLE b
     P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) := by
   have hmem := P.sub_mem_rootSpan_of_rootLE b h
   rw [rootLE_iff_sub_mem_posRootCone] at h ⊢
-  simpa only [← Submodule.coe_sub, P.coe_rootSpanProj_sub_of_sub_mem hmem] using h
+  simpa only [← Submodule.coe_sub, P.coe_sub_rootSpanProj_eq_sub_of_sub_mem hmem] using h
 
 /-- For weights whose difference lies in the root span (that is, weights with the same central
 component), integral root dominance after projecting onto the root span is equivalent to integral
@@ -49,6 +49,6 @@ theorem rootLE_coe_rootSpanProj_iff_of_sub_mem (b : P.Base) {x y : M}
     (h : y - x ∈ P.rootSpan R) :
     P.rootLE b (P.rootSpanProj x : M) (P.rootSpanProj y : M) ↔ P.rootLE b x y := by
   rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone, ← Submodule.coe_sub,
-    P.coe_rootSpanProj_sub_of_sub_mem h]
+    P.coe_sub_rootSpanProj_eq_sub_of_sub_mem h]
 
 end RootPairing

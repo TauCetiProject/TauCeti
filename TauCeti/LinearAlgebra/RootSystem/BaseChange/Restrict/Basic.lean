@@ -60,20 +60,6 @@ theorem restrictScalars'_reflectionPerm :
     (P.restrictScalars' K).reflectionPerm = P.reflectionPerm :=
   (rfl)
 
--- Not `@[simp]`: `coroot'` is an `abbrev` for `toLinearMap.flip ∘ coroot`, which `simp` unfolds to
--- `restrictScalars_toLinearMap_apply_apply` (`simpNF`).
-/-- Under `algebraMap K L`, each coroot functional of `P.restrictScalars' K` agrees with that of
-`P`. -/
-theorem algebraMap_restrictScalars'_coroot'_apply (i : ι) (x : span K (range P.root)) :
-    algebraMap K L ((P.restrictScalars' K).coroot' i x) = P.coroot' i x := by
-  simp
-
-/-- Under `algebraMap K L`, each root functional of `P.restrictScalars' K` agrees with that of
-`P`. -/
-theorem algebraMap_restrictScalars'_root'_apply (i : ι) (y : span K (range P.coroot)) :
-    algebraMap K L ((P.restrictScalars' K).root' i y) = P.root' i y := by
-  simp [root']
-
 /-- Under `algebraMap K L`, the Coxeter weights of `P.restrictScalars' K` agree with those of
 `P`. -/
 @[simp]
@@ -87,7 +73,10 @@ reflection of `P`. -/
 theorem coe_restrictScalars'_reflection_apply (i : ι) (x : span K (range P.root)) :
     ((P.restrictScalars' K).reflection i x : M) = P.reflection i x := by
   rw [reflection_apply, Submodule.coe_sub, SetLike.val_smul, restrictScalars_coe_root,
-    algebra_compatible_smul L, algebraMap_restrictScalars'_coroot'_apply, reflection_apply]
+    algebra_compatible_smul L, reflection_apply]
+  dsimp only [coroot', LinearMap.flip_apply]
+  rw [← restrictScalars_coe_coroot (P := P) (K := K), restrictScalars_toLinearMap_apply_apply,
+    restrictScalars_coe_coroot]
 
 /-- Each coreflection of `P.restrictScalars' K` is the restriction of the corresponding
 coreflection of `P`. -/
@@ -95,7 +84,10 @@ coreflection of `P`. -/
 theorem coe_restrictScalars'_coreflection_apply (i : ι) (y : span K (range P.coroot)) :
     ((P.restrictScalars' K).coreflection i y : N) = P.coreflection i y := by
   rw [coreflection_apply, Submodule.coe_sub, SetLike.val_smul, restrictScalars_coe_coroot,
-    algebra_compatible_smul L, algebraMap_restrictScalars'_root'_apply, coreflection_apply]
+    algebra_compatible_smul L, coreflection_apply]
+  dsimp only [root']
+  rw [← restrictScalars_coe_root (P := P) (K := K), restrictScalars_toLinearMap_apply_apply,
+    restrictScalars_coe_root]
 
 section IsValuedIn
 
@@ -129,7 +121,7 @@ instance isReduced_restrictScalars' [P.IsReduced] : (P.restrictScalars' K).IsRed
       refine LinearIndependent.of_comp (span K (range P.root)).subtype ?_
       convert h.restrict_scalars' K using 1
       ext k
-      fin_cases k <;> rfl
+      fin_cases k <;> simp [restrictScalars_coe_root]
     exact (IsReduced.eq_or_eq_neg (P := P) i j hL).imp Subtype.ext Subtype.ext
 
 end Basic

@@ -10,15 +10,15 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
-# Equivariance of the root-span projection under equivalences
+# Naturality of the root-span projection under morphisms
 
-This file records that equivalences and automorphisms of balanced root pairings commute with
+This file records that morphisms and automorphisms of balanced root pairings commute with
 `RootPairing.rootSpanProj`.
 
 ## Main results
 
-* `RootPairing.Equiv.coe_rootSpanProj_weightMap` and `RootPairing.coe_rootSpanProj_smul`:
-  equivalences and automorphisms of balanced root pairings commute with `rootSpanProj`.
+* `RootPairing.Hom.coe_rootSpanProj_weightMap` and `RootPairing.coe_rootSpanProj_smul`:
+  morphisms and automorphisms of balanced root pairings commute with `rootSpanProj`.
 
 ## References
 
@@ -30,28 +30,31 @@ public section
 
 namespace RootPairing
 
-section Equiv
+section Hom
 
 variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
 
-/-- **Equivalences of balanced root pairings commute with `rootSpanProj`.** -/
-theorem Equiv.coe_rootSpanProj_weightMap [P.IsBalanced] [Q.IsBalanced] (e : P.Equiv Q) (x : M) :
-    (Q.rootSpanProj (e.weightMap x) : M₂) = e.weightMap (P.rootSpanProj x : M) := by
+/-- **Morphisms of balanced root pairings commute with `rootSpanProj`.** -/
+theorem Hom.coe_rootSpanProj_weightMap [P.IsBalanced] [Q.IsBalanced] (f : P.Hom Q) (x : M) :
+    (Q.rootSpanProj (f.weightMap x) : M₂) = f.weightMap (P.rootSpanProj x : M) := by
   refine congrArg Subtype.val ((Q.rootSpanProj_eq_iff (y :=
-    ⟨e.weightMap (P.rootSpanProj x : M),
-      e.toHom.weightMap_mem_rootSpan (P.rootSpanProj x).property⟩)).mpr ?_)
-  rw [← map_sub, e.weightMap_mem_corootKer_iff]
-  exact P.sub_coe_rootSpanProj_mem_corootKer x
+    ⟨f.weightMap (P.rootSpanProj x : M),
+      f.weightMap_mem_rootSpan (P.rootSpanProj x).property⟩)).mpr ?_)
+  rw [← map_sub, mem_corootKer]
+  intro j
+  obtain ⟨i, rfl⟩ := f.indexEquiv.surjective j
+  rw [f.coroot'_weightMap]
+  exact mem_corootKer.mp (P.sub_coe_rootSpanProj_mem_corootKer x) i
 
 /-- Automorphisms of a balanced root pairing commute with `rootSpanProj`. -/
 @[simp]
 theorem coe_rootSpanProj_smul [P.IsBalanced] (g : P.Aut) (x : M) :
     (P.rootSpanProj (g • x) : M) = g • (P.rootSpanProj x : M) :=
-  g.coe_rootSpanProj_weightMap x
+  g.toHom.coe_rootSpanProj_weightMap x
 
-end Equiv
+end Hom
 
 end RootPairing

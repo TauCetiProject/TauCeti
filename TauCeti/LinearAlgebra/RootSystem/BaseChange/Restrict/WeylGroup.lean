@@ -60,7 +60,8 @@ theorem map_weylGroup_restrictScalars'Hom :
 /-- **The Weyl group of `P` is canonically isomorphic to that of `P.restrictScalars' K`.** -/
 noncomputable def weylGroupRestrictScalars'Equiv :
     P.weylGroup ≃* (P.restrictScalars' K).weylGroup :=
-  P.weylGroupEquivOfReflectionPermEq (P.restrictScalars' K) rfl
+  P.weylGroupEquivOfReflectionPermEq (P.restrictScalars' K)
+    (P.restrictScalars'_reflectionPerm K).symm
     P.weylGroupToPerm_injective_of_isBalanced (weylGroupToPerm_injective (P.restrictScalars' K))
 
 /-- `RootPairing.weylGroupRestrictScalars'Equiv` commutes with the root-index permutation

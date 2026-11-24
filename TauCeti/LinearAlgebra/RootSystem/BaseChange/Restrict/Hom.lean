@@ -106,34 +106,32 @@ theorem Hom.restrictScalars'_comp {ι₃ M₃ N₃ : Type*} [AddCommGroup M₃] 
       Hom.comp (g.restrictScalars' K) (f.restrictScalars' K) := by
   ext <;> rfl
 
-private lemma bijective_restrict_of_equiv {A B : Type*} [AddCommGroup A] [AddCommGroup B]
-    [Module L A] [Module L B] [Module K A] [Module K B]
-    [IsScalarTower K L A] [IsScalarTower K L B]
-    {S₁ : Submodule K A} {S₂ : Submodule K B}
-    {f : A →ₗ[L] B} {g : B →ₗ[L] A} (hf : ∀ x ∈ S₁, f x ∈ S₂) (hg : ∀ y ∈ S₂, g y ∈ S₁)
-    (hinj : Injective f) (hfg : ∀ y, f (g y) = y) :
-    Bijective ((f.restrictScalars K).restrict hf) :=
-  ⟨fun _ _ h ↦ Subtype.ext (hinj (congrArg Subtype.val h)),
-   fun y ↦ ⟨⟨g y, hg y y.property⟩, Subtype.ext (hfg y)⟩⟩
-
 /-- Restriction of an equivalence of balanced root pairings to `restrictScalars' K`. -/
 noncomputable def Equiv.restrictScalars' (e : P.Equiv Q) :
     (P.restrictScalars' K).Equiv (Q.restrictScalars' K) :=
   { e.toHom.restrictScalars' K with
-    bijective_weightMap := bijective_restrict_of_equiv K
-      (g := (Equiv.symm P Q e).weightMap)
-      (fun _ hx ↦ by simpa only [rootSpan] using e.toHom.weightMap_mem_rootSpan hx)
-      (fun _ hy ↦ by
-        simpa only [rootSpan] using (Equiv.symm P Q e).toHom.weightMap_mem_rootSpan hy)
-      e.bijective_weightMap.1
-      (fun y ↦ by rw [Equiv.inv_weightMap]; exact e.weightMap_weightEquiv_symm y)
-    bijective_coweightMap := bijective_restrict_of_equiv K
-      (g := (Equiv.symm P Q e).coweightMap)
-      (fun _ hy ↦ by simpa only [corootSpan] using e.toHom.coweightMap_mem_corootSpan hy)
-      (fun _ hx ↦ by
-        simpa only [corootSpan] using (Equiv.symm P Q e).toHom.coweightMap_mem_corootSpan hx)
-      e.bijective_coweightMap.1
-      (fun x ↦ by rw [Equiv.inv_coweightMap]; exact e.coweightMap_coweightEquiv_symm x) }
+    bijective_weightMap := by
+      have hspan : (span K (range P.root)).map
+          ((e.weightEquiv.restrictScalars K : M ≃ₗ[K] M₂) : M →ₗ[K] M₂) =
+          span K (range Q.root) := by
+        rw [Submodule.map_span, ← Set.range_comp]
+        have hcomp : ((e.weightEquiv.restrictScalars K : M ≃ₗ[K] M₂) : M →ₗ[K] M₂) ∘ P.root =
+            Q.root ∘ e.indexEquiv := by
+          ext i
+          simp [e.root_weightMap_apply P Q i]
+        rw [hcomp, e.indexEquiv.surjective.range_comp]
+      exact ((e.weightEquiv.restrictScalars K).ofSubmodules _ _ hspan).bijective
+    bijective_coweightMap := by
+      have hspan : (span K (range Q.coroot)).map
+          ((e.coweightEquiv.restrictScalars K : N₂ ≃ₗ[K] N) : N₂ →ₗ[K] N) =
+          span K (range P.coroot) := by
+        rw [Submodule.map_span, ← Set.range_comp]
+        have hcomp : ((e.coweightEquiv.restrictScalars K : N₂ ≃ₗ[K] N) : N₂ →ₗ[K] N) ∘
+            Q.coroot = P.coroot ∘ e.indexEquiv.symm := by
+          ext j
+          simp [e.coroot_coweightMap_apply P Q j]
+        rw [hcomp, e.indexEquiv.symm.surjective.range_comp]
+      exact ((e.coweightEquiv.restrictScalars K).ofSubmodules _ _ hspan).bijective }
 
 /-- The underlying morphism of `e.restrictScalars' K` is `e.toHom.restrictScalars' K`. -/
 @[simp]
@@ -151,6 +149,8 @@ theorem Equiv.coe_coweightEquiv_restrictScalars' (e : P.Equiv Q) (y : span K (ra
     ((e.restrictScalars' K).coweightEquiv y : N) = e.coweightEquiv y :=
   (rfl)
 
+-- Not `@[simp]`: `Equiv.toHom_restrictScalars'` and `Hom.indexEquiv_restrictScalars'` are
+-- `@[simp]`, so `simp` already reduces the LHS to `e.toHom.indexEquiv` (`simpNF`).
 /-- `Equiv.restrictScalars'` preserves the root-index equivalence. -/
 theorem Equiv.indexEquiv_restrictScalars' (e : P.Equiv Q) :
     (e.restrictScalars' K).indexEquiv = e.indexEquiv :=

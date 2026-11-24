@@ -16,9 +16,8 @@ the Cartan matrix of `b` along `RootPairing.Base.supportRestrictScalars'Equiv`.
 
 ## Main results
 
-* `RootPairing.Base.cartanMatrixIn_restrictScalars'_apply` and
-  `RootPairing.Base.cartanMatrix_restrictScalars'_apply`: equality of the `T`-valued and integral
-  Cartan matrices under scalar restriction.
+* `RootPairing.Base.cartanMatrixIn_restrictScalars'_apply`: equality of `T`-valued Cartan
+  matrices under scalar restriction.
 
 ## References
 
@@ -46,16 +45,5 @@ theorem Base.cartanMatrixIn_restrictScalars'_apply (T : Type*) [CommRing T] [Alg
         (b.supportRestrictScalars'Equiv K j) := by
   simp only [Base.cartanMatrixIn, Matrix.of_apply, Base.coe_supportRestrictScalars'Equiv,
     P.restrictScalars'_pairingIn]
-
--- Not `@[simp]`: `cartanMatrix` is an `abbrev` for `cartanMatrixIn ℤ`, which
--- `Base.cartanMatrixIn_restrictScalars'_apply` already simplifies (`simpNF`).
-/-- The Cartan matrix of `b.restrictScalars' K` agrees with that of `b` along
-`Base.supportRestrictScalars'Equiv`. -/
-theorem Base.cartanMatrix_restrictScalars'_apply [P.IsCrystallographic]
-    (i j : (b.restrictScalars' K).support) :
-    (b.restrictScalars' K).cartanMatrix i j =
-      b.cartanMatrix (b.supportRestrictScalars'Equiv K i)
-        (b.supportRestrictScalars'Equiv K j) :=
-  b.cartanMatrixIn_restrictScalars'_apply K ℤ i j
 
 end RootPairing

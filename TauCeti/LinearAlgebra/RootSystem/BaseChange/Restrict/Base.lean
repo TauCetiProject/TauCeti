@@ -50,21 +50,22 @@ private lemma Base.restrictScalars'_root_mem_or_neg_mem {ι L M N : Type*} [Fiel
         AddSubmonoid.closure ((Q.restrictScalars' K).root '' b'.support) ∨
       -(Q.restrictScalars' K).root i ∈
         AddSubmonoid.closure ((Q.restrictScalars' K).root '' b'.support) := by
-  obtain ⟨f, -, h | h⟩ := b'.exists_root_eq_sum_nat_or_neg i
-  · refine Or.inl ?_
-    have hi : (Q.restrictScalars' K).root i =
-        ∑ j ∈ b'.support, f j • (Q.restrictScalars' K).root j := by
-      ext; simpa using h
-    rw [hi]
-    exact sum_mem fun j hj ↦
-      nsmul_mem (AddSubmonoid.subset_closure (mem_image_of_mem _ hj)) (f j)
-  · refine Or.inr ?_
-    have hi : -(Q.restrictScalars' K).root i =
-        ∑ j ∈ b'.support, f j • (Q.restrictScalars' K).root j := by
-      ext; simpa [neg_eq_iff_eq_neg] using h
-    rw [hi]
-    exact sum_mem fun j hj ↦
-      nsmul_mem (AddSubmonoid.subset_closure (mem_image_of_mem _ hj)) (f j)
+  let f : span K (range Q.root) →+ M := (span K (range Q.root)).subtype.toAddMonoidHom
+  have him :
+      (AddSubmonoid.closure ((Q.restrictScalars' K).root '' b'.support)).map f =
+        AddSubmonoid.closure (Q.root '' b'.support) := by
+    rw [AddMonoidHom.map_mclosure, ← Set.image_comp]
+    have hcomp : f ∘ (Q.restrictScalars' K).root = Q.root :=
+      funext fun j ↦ restrictScalars_coe_root Q K j
+    rw [hcomp]
+  have hmem (x : span K (range Q.root)) :
+      x ∈ AddSubmonoid.closure ((Q.restrictScalars' K).root '' b'.support) ↔
+        (x : M) ∈ AddSubmonoid.closure (Q.root '' b'.support) := by
+    rw [← AddSubmonoid.mem_map_iff_mem (f := f) Subtype.coe_injective, him]
+    rfl
+  exact (b'.root_mem_or_neg_mem i).imp
+    (fun h ↦ (hmem _).mpr (by rw [restrictScalars_coe_root]; exact h))
+    (fun h ↦ (hmem _).mpr (by rw [Submodule.coe_neg, restrictScalars_coe_root]; exact h))
 
 variable {ι L M N : Type*} [Field L] [AddCommGroup M] [AddCommGroup N] [Module L M] [Module L N]
   {P : RootPairing ι L M N} (K : Type*) [Field K] [Algebra K L]

@@ -40,7 +40,8 @@ preserves every coroot evaluation and commutes with root reflections.
   complements `P.flip.corootKer`.
 * `RootPairing.rootSpanProj_eq_iff`: characterizes `P.rootSpanProj x` as the unique element of
   `P.rootSpan R` differing from `x` by an element of `P.corootKer`.
-* `RootPairing.coroot'_coe_rootSpanProj`: `P.rootSpanProj` preserves all coroot evaluations.
+* `RootPairing.toLinearMap_coe_rootSpanProj_coroot`: `P.rootSpanProj` preserves all coroot
+  evaluations.
 
 ## References
 
@@ -132,8 +133,8 @@ theorem range_rootSpanProj : LinearMap.range P.rootSpanProj = ⊤ :=
 
 /-- Every weight differs from its root-span projection by an element of the central kernel. -/
 theorem sub_coe_rootSpanProj_mem_corootKer (x : M) :
-    x - (P.rootSpanProj x : M) ∈ P.corootKer := by
-  rw [← rootSpanProj_eq_zero_iff, map_sub, rootSpanProj_coe, sub_self]
+    x - (P.rootSpanProj x : M) ∈ P.corootKer :=
+  Submodule.sub_projection_mem P.isCompl_rootSpan_corootKer x
 
 /-- `P.rootSpanProj x` is the unique element of `P.rootSpan R` differing from `x` by an element
 of `P.corootKer`. -/
@@ -143,40 +144,35 @@ theorem rootSpanProj_eq_iff {x : M} {y : P.rootSpan R} :
   have hzero := P.rootSpanProj_eq_zero_iff.mpr h
   rwa [map_sub, rootSpanProj_coe, sub_eq_zero] at hzero
 
--- Not `@[simp]`: `coroot'` is an `abbrev` for `toLinearMap.flip ∘ coroot`, which `simp` unfolds to
--- `toLinearMap_coe_rootSpanProj_coroot` below (`simpNF`).
-/-- Projecting onto the root span leaves every coroot evaluation unchanged. -/
-theorem coroot'_coe_rootSpanProj (i : ι) (x : M) :
-    P.coroot' i (P.rootSpanProj x : M) = P.coroot' i x := by
-  have h := mem_corootKer.mp (P.sub_coe_rootSpanProj_mem_corootKer x) i
-  rw [map_sub, sub_eq_zero] at h
-  exact h.symm
-
 /-- Pairing `P.rootSpanProj x` with any coroot agrees with pairing `x` with that coroot. -/
 @[simp]
 theorem toLinearMap_coe_rootSpanProj_coroot (i : ι) (x : M) :
-    P.toLinearMap (P.rootSpanProj x : M) (P.coroot i) = P.toLinearMap x (P.coroot i) :=
-  P.coroot'_coe_rootSpanProj i x
+    P.toLinearMap (P.rootSpanProj x : M) (P.coroot i) = P.toLinearMap x (P.coroot i) := by
+  have h := mem_corootKer.mp (P.sub_coe_rootSpanProj_mem_corootKer x) i
+  rw [map_sub, sub_eq_zero] at h
+  exact h.symm
 
 /-- The root-span projection commutes with every root reflection. -/
 @[simp]
 theorem coe_rootSpanProj_reflection (i : ι) (x : M) :
     (P.rootSpanProj (P.reflection i x) : M) = P.reflection i (P.rootSpanProj x : M) := by
   rw [reflection_apply, map_sub, map_smul, Submodule.coe_sub, SetLike.val_smul,
-    rootSpanProj_root, reflection_apply, coroot'_coe_rootSpanProj]
+    rootSpanProj_root, reflection_apply]
+  dsimp only [coroot', LinearMap.flip_apply]
+  rw [toLinearMap_coe_rootSpanProj_coroot]
 
 /-- When two weights differ by an element of the root span, projecting onto the root span
 preserves their difference. -/
-theorem coe_rootSpanProj_sub_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
+theorem coe_sub_rootSpanProj_eq_sub_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
     ((P.rootSpanProj y - P.rootSpanProj x : P.rootSpan R) : M) = y - x := by
   rw [← map_sub, P.coe_rootSpanProj_of_mem h]
 
 /-- Two weights whose difference lies in the root span have equal root-span projections if and
 only if they are equal. -/
-theorem rootSpanProj_eq_iff_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
+theorem rootSpanProj_inj_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
     P.rootSpanProj x = P.rootSpanProj y ↔ x = y := by
   refine ⟨fun heq ↦ ?_, fun hxy ↦ hxy ▸ rfl⟩
-  have hsub := P.coe_rootSpanProj_sub_of_sub_mem h
+  have hsub := P.coe_sub_rootSpanProj_eq_sub_of_sub_mem h
   rw [heq, sub_self, ZeroMemClass.coe_zero] at hsub
   exact (sub_eq_zero.mp hsub.symm).symm
 
