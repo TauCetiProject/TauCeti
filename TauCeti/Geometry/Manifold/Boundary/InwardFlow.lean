@@ -124,7 +124,8 @@ private theorem exists_isOpen_contDiffOn_chartField
   obtain ⟨O, hO, haO, hOdom⟩ := mem_nhdsWithin.mp hdom
   have hOdom' : O ∩ {z | 0 ≤ z 0} ⊆ φ.target ∩ φ.symm ⁻¹' V := fun z hz ↦
     hOdom ⟨hz.1, by simpa [range_modelWithCornersEuclideanHalfSpace] using hz.2⟩
-  have : IsManifold (𝓡∂ (n + 1)) (∞ + 1) M := inferInstanceAs (IsManifold (𝓡∂ (n + 1)) ∞ M)
+  have : IsManifold (𝓡∂ (n + 1)) (∞ + 1) M := by
+    simpa using (inferInstance : IsManifold (𝓡∂ (n + 1)) ∞ M)
   refine ⟨O, hO, haO, hOdom', ((Manifold.contDiffOn_trivializationAt_extChartAt_symm (n := ∞) v a
     hv).mono hOdom').congr fun z _ ↦ ?_⟩
   exact (TangentBundle.trivializationAt_snd_eq_tangentCoordChange _).symm

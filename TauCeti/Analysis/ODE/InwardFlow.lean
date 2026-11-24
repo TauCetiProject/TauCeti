@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.ODE.LocalFlow
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Seeley
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 
 /-!
@@ -49,35 +48,6 @@ open TauCeti.HalfSpaceExtension
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
-/-- A field `C^(n+1)` on the half-space near `a` agrees near `a`, on the half-space, with a field
-`C^(n+1)` on the whole space: cut it off by a bump function supported near `a`, which makes it
-`C^(n+1)` on the whole closed half-space, and apply Seeley's extension. -/
-private theorem exists_contDiff_eqOn_upperHalfSpace {n : ℕ∞} {v : ℝ × F → ℝ × F}
-    {a : ℝ × F} {s : Set (ℝ × F)} (hv : ContDiffOn ℝ (n + 1) v (s ∩ upperHalfSpace F))
-    (hs : s ∈ 𝓝 a) :
-    ∃ W : ℝ × F → ℝ × F, ∃ r > 0, ball a r ⊆ s ∧
-      ContDiff ℝ (n + 1) W ∧ EqOn W v (ball a r ∩ upperHalfSpace F) := by
-  obtain ⟨R, hR, hRs⟩ := nhds_basis_ball.mem_iff.mp hs
-  let χ : ContDiffBump a := ⟨R / 4, R / 2, by positivity, by linarith⟩
-  have hg : ContDiffOn ℝ ((n + 1 : ℕ∞) : WithTop ℕ∞) (fun y ↦ χ y • v y) (upperHalfSpace F) := by
-    push_cast
-    refine contDiffOn_of_locally_contDiffOn fun y _ ↦ ?_
-    by_cases hy : y ∈ ball a R
-    · refine ⟨ball a R, isOpen_ball, hy, ?_⟩
-      exact χ.contDiff.contDiffOn.smul (hv.mono fun z hz ↦ ⟨hRs hz.2, hz.1⟩)
-    · -- Outside the ball of radius `R` the cut-off field vanishes near `y`.
-      have hy' : y ∉ closedBall a (R / 2) := fun h ↦
-        hy (closedBall_subset_ball (by linarith) h)
-      refine ⟨(closedBall a (R / 2))ᶜ, isClosed_closedBall.isOpen_compl, hy', ?_⟩
-      refine (contDiffOn_const (c := (0 : ℝ × F))).congr fun z hz ↦ ?_
-      have hz' : R / 2 < dist z a := by simpa [mem_closedBall] using hz.2
-      rw [χ.zero_of_le_dist hz'.le, zero_smul]
-  refine ⟨seeleyExtension fun y ↦ χ y • v y, R / 4, by positivity,
-    (ball_subset_ball (by linarith)).trans hRs, by exact_mod_cast contDiff_seeleyExtension hg,
-    fun y hy ↦ ?_⟩
-  rw [seeleyExtension_eqOn_upperHalfSpace _ hy.2,
-    χ.one_of_mem_closedBall (ball_subset_closedBall hy.1), one_smul]
-
 /-- **Local flows of inward-pointing fields on a closed half-space.** Let `v` be `C^(n+1)` on the
 part of a neighbourhood `s` of `a` in the closed half-space `{x | 0 ≤ x.1}`, with `a` in the
 half-space and `v a` pointing strictly inward. Then there are a family `Φ x t`, jointly
@@ -95,7 +65,8 @@ theorem exists_contDiffOn_localFlow_upperHalfSpace {n : ℕ∞} {v : ℝ × F �
       ∀ x ∈ U ∩ upperHalfSpace F, ∀ t ∈ Ico 0 ε,
         Φ x t ∈ s ∩ upperHalfSpace F ∧ HasDerivAt (Φ x) (v (Φ x t)) t := by
   -- Cut the field off near `a` and extend it across the boundary hyperplane.
-  obtain ⟨W, r, hr, hrs, hW, hWv⟩ := exists_contDiff_eqOn_upperHalfSpace hv hs
+  obtain ⟨W, r, hr, hrs, hW, hWv⟩ :=
+    exists_contDiff_eqOn_upperHalfSpace (n := n + 1) (by exact_mod_cast hv) hs
   obtain ⟨Φ, O, hO, haO, hΦ, hΦ0, hΦadd, hderiv⟩ :=
     ODE.exists_contDiffOn_localFlow W hW.contDiffOn univ_mem
   -- Near `a`, the extended field agrees with `v` on the half-space and points strictly inward.
