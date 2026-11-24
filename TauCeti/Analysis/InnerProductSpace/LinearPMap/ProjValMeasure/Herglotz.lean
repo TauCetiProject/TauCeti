@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Pick.Herglotz.Finite
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Basic
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!

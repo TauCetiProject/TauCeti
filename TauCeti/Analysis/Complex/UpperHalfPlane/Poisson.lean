@@ -249,9 +249,7 @@ theorem isPoissonFinite_volume : IsPoissonFinite volume :=
 /-- Every finite measure is Poisson-finite. -/
 theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure ν] :
     IsPoissonFinite ν :=
-  (isPoissonFinite_iff _).2 <| .of_bound (by fun_prop) 1 <| .of_forall fun x ↦ by
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg x])
+  (isPoissonFinite_iff_lintegral_lt_top ν).2 (lintegral_inv_one_add_sq_lt_top ν)
 
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
 @[simp]

@@ -19,7 +19,9 @@ This kernel is positive in the upper half-plane, so the imaginary part of the tr
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
 away from the real axis, the continuity of the kernel there, the Lipschitz bound
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
-affine covariance under pushforward. No moment assumptions are needed.
+affine covariance under pushforward. No moment assumptions are needed. Conversely, off the real
+axis the transform of a measure `μ` without finite weighted mass `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since
+the kernel `‖(x - z)⁻¹‖` dominates `(1 + x ^ 2)⁻¹` up to a constant and so is not integrable.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -113,6 +115,24 @@ theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) 
   rw [resolventTransform_apply, ← integral_neg]
   congr 1 with x
   rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
+
+/-- At a nonreal point, the resolvent transform of a measure `μ` without finite weighted mass
+`∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since the resolvent kernel is not integrable. -/
+theorem resolventTransform_eq_zero_of_not_lintegral_lt_top {μ : Measure ℝ}
+    (hμ : ¬∫⁻ x, ENNReal.ofReal (1 + x ^ 2)⁻¹ ∂μ < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    resolventTransform μ z = 0 := by
+  rw [resolventTransform_apply]
+  refine integral_undef fun h ↦ hμ (Integrable.lintegral_lt_top ?_)
+  refine (h.norm.const_mul (1 + ‖z‖)).mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  have hx : 0 < ‖(x : ℂ) - z‖ :=
+    norm_pos_iff.2 fun h ↦ hz (by simpa using congrArg Complex.im h)
+  have hle : ‖(x : ℂ) - z‖ ≤ (1 + x ^ 2) * (1 + ‖z‖) := by
+    have h1 : ‖(x : ℂ) - z‖ ≤ |x| + ‖z‖ := by simpa using norm_sub_le (x : ℂ) z
+    nlinarith [abs_nonneg x, sq_abs x, norm_nonneg z, sq_nonneg (|x| - 1), mul_nonneg
+      (sq_nonneg x) (norm_nonneg z)]
+  rw [Real.norm_of_nonneg (by positivity), Complex.resolvent_real_eq_inv, norm_inv,
+    ← div_eq_mul_inv, le_div_iff₀ hx, inv_mul_le_iff₀ (by positivity)]
+  exact hle
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 

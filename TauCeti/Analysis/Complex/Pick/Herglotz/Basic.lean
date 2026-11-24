@@ -39,6 +39,7 @@ not proved here.
   `dν = (1 + t ^ 2) dρ` the subtracted resolvent kernel integrates to the Nevanlinna kernel.
 * `MeasureTheory.Measure.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
   `∫ (1 + t ^ 2)⁻¹ dν = ρ(ℝ)`.
+* `TauCeti.lintegral_inv_one_add_sq_lt_top`: every finite measure has finite weighted mass.
 * `TauCeti.integrable_subtractedResolventKernel_iff`,
   `TauCeti.integrable_im_subtractedResolventKernel_iff`: at a nonreal point the kernel, or its
   imaginary part, is `ν`-integrable exactly when `ν` has finite weighted mass.
@@ -204,6 +205,13 @@ theorem subtractedResolventKernel_ofReal_mul_I_im (y t : ℝ) :
   rw [subtractedResolventKernel_im, normSq_apply]
   simp only [mul_im, mul_re, ofReal_re, ofReal_im, I_re, I_im, sub_re, sub_im]
   ring
+
+/-- Every finite measure `ν` has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, since the weight is at
+most `1`. -/
+theorem lintegral_inv_one_add_sq_lt_top (nu : Measure ℝ) [IsFiniteMeasure nu] :
+    ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ :=
+  (lintegral_mono fun t ↦ ENNReal.ofReal_le_one.2 (inv_le_one_of_one_le₀
+    (by nlinarith [sq_nonneg t]))).trans_lt (lintegral_one.trans_lt (measure_lt_top nu _))
 
 /-- The subtracted resolvent kernel at a nonreal point is integrable against every measure `ν` of
 finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Herglotz representations with a decaying imaginary-axis bound
@@ -56,24 +57,6 @@ noncomputable section
 
 open Complex MeasureTheory Filter Topology
 
-namespace MeasureTheory
-
-open TauCeti
-
-/-- At a nonreal point, the resolvent transform of a measure `ν` without finite weighted mass
-`∫ (1 + t ^ 2)⁻¹ dν` is `0`, since the resolvent kernel is not integrable. -/
-theorem resolventTransform_eq_zero_of_not_lintegral_lt_top {nu : Measure ℝ}
-    (hnu : ¬∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
-    resolventTransform nu z = 0 := by
-  rw [resolventTransform_apply]
-  refine integral_undef fun (h : Integrable (resolvent (R := ℝ) z) nu) ↦
-    hnu (lintegral_lt_top_of_integrable_im hz (h.im.congr (.of_forall fun t ↦ ?_)))
-  simp only [RCLike.im_to_complex, Complex.im_resolvent_real,
-    subtractedResolventKernel_im, normSq_apply, sub_re, ofReal_re, sub_im, ofReal_im]
-  ring
-
-end MeasureTheory
-
 namespace TauCeti
 
 variable {F : ℂ → ℂ} {a b C : ℝ} {nu : Measure ℝ}
@@ -121,12 +104,6 @@ theorem mul_im_eq_of_eq_subtractedResolventKernel_add
   · ring
   · congr 1 with t
     ring
-
-/-- A bound on `y ‖f y‖` for large `y` bounds `y |Im f y|`. -/
-theorem eventually_mul_abs_im_le_of_mul_norm_le {f : ℝ → ℂ}
-    (h : ∀ᶠ y : ℝ in atTop, y * ‖f y‖ ≤ C) : ∀ᶠ y : ℝ in atTop, y * |(f y).im| ≤ C := by
-  filter_upwards [h, eventually_gt_atTop 0] with y hy hy0
-  exact (mul_le_mul_of_nonneg_left (abs_im_le_norm _) hy0.le).trans hy
 
 /-- If `y |Im F(i y)|` is eventually bounded, the measure `ν` of a Herglotz representation of `F`
 of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν < ∞` is finite. -/
@@ -188,9 +165,8 @@ theorem tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound
   · -- Without finite weighted mass, `ν` is infinite and the integrals vanish.
     have htop : nu Set.univ = ⊤ := by
       by_contra h
-      refine hnu ((lintegral_mono fun t ↦ ?_).trans_lt ((lintegral_one (μ := nu)).trans_lt
-        (lt_top_iff_ne_top.mpr h)))
-      exact ENNReal.ofReal_le_one.mpr (inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg t]))
+      have : IsFiniteMeasure nu := ⟨lt_top_iff_ne_top.mpr h⟩
+      exact hnu (lintegral_inv_one_add_sq_lt_top nu)
     rw [measureReal_def, htop, ENNReal.toReal_top]
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with y hy
@@ -260,10 +236,8 @@ theorem eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound
       · rw [hrep z hz, integral_subtractedResolventKernel_eq (ne_of_gt hz)]
         push_cast
         ring
-      refine squeeze_zero_norm' ?_ (tendsto_const_nhds.div_atTop tendsto_id :
-        Tendsto (fun y : ℝ ↦ nu.real Set.univ / y) atTop (𝓝 0))
+      refine tendsto_zero_of_eventually_mul_norm_le (K := nu.real Set.univ) tendsto_id ?_
       filter_upwards [eventually_gt_atTop 0] with y hy
-      rw [le_div_iff₀ hy, mul_comm]
       exact mul_norm_resolventTransform_ofReal_mul_I_le hy
     · -- Without finite weighted mass, neither kernel is integrable.
       refine ⟨a, fun z hz ↦ ?_, tendsto_const_nhds.congr' ?_⟩
@@ -276,12 +250,8 @@ theorem eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound
   suffices hc : c = 0 by
     intro z hz
     rw [hrep' z hz, hc, zero_add]
-  have hF : Tendsto (fun y : ℝ ↦ F (y * I)) atTop (𝓝 0) := by
-    refine squeeze_zero_norm' ?_ (tendsto_const_nhds.div_atTop tendsto_id :
-      Tendsto (fun y : ℝ ↦ C / y) atTop (𝓝 0))
-    filter_upwards [hbound, eventually_gt_atTop 0] with y hy hy0
-    rw [le_div_iff₀ hy0, mul_comm]
-    exact hy
+  have hF : Tendsto (fun y : ℝ ↦ F (y * I)) atTop (𝓝 0) :=
+    tendsto_zero_of_eventually_mul_norm_le tendsto_id hbound
   have hc : Tendsto (fun y : ℝ ↦ F (y * I) - resolventTransform nu (y * I)) atTop (𝓝 c) :=
     tendsto_const_nhds.congr' (by
       filter_upwards [eventually_gt_atTop 0] with y hy
