@@ -10,11 +10,11 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Data.Fintype.Pigeonhole
-import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
+import TauCeti.GroupTheory.GroupAction.Orbit.Card
 
 /-!
 # Elementary facts about permutations
@@ -219,7 +219,7 @@ both sides are `0`. -/
 theorem ncard_setOf_sameCycle (x : α) :
     {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
   simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq]
-  exact (Nat.card_congr (MulAction.orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
+  exact MulAction.natCard_orbit_zpowers σ x
 
 /-- If a single cycle of `σ` passes through every point, then every point has minimal period
 `Nat.card α`. If `α` is infinite, then both sides are `0`. -/

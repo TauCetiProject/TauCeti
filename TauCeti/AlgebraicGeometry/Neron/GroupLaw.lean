@@ -78,40 +78,42 @@ of those of `A`, transported to the base change of the model along the marking
 (Bosch–Lütkebohmert–Raynaud, *Néron Models*, §1.2, Proposition 6). -/
 instance grpObj : GrpObj M.model :=
   letI : GrpObj ((Over.pullback j).obj M.model) := .ofIso M.genericIso.symm
-  { one := M.extend _ ((OplaxMonoidal.η (Over.pullback j) ≫ η[_]) ≫ M.genericIso.hom)
-    mul := M.extend _ ((OplaxMonoidal.δ (Over.pullback j) _ _ ≫ μ[_]) ≫ M.genericIso.hom)
-    inv := M.extend _ (ι[_] ≫ M.genericIso.hom)
-    one_mul := M.mappingProperty.hom_ext <| by
-      simp [map_extend_eq_comp_inv, ← OplaxMonoidal.δ_natural_left_assoc]
-    mul_one := M.mappingProperty.hom_ext <| by
-      simp [map_extend_eq_comp_inv, ← OplaxMonoidal.δ_natural_right_assoc]
-    mul_assoc := M.mappingProperty.hom_ext <| by
-      simp [map_extend_eq_comp_inv, ← OplaxMonoidal.δ_natural_left_assoc,
+  { one := M.extend _ inferInstance
+      ((OplaxMonoidal.η (Over.pullback j) ≫ η[_]) ≫ M.genericIso.hom)
+    mul := M.extend _ inferInstance
+      ((OplaxMonoidal.δ (Over.pullback j) _ _ ≫ μ[_]) ≫ M.genericIso.hom)
+    inv := M.extend _ inferInstance (ι[_] ≫ M.genericIso.hom)
+    one_mul := M.mappingProperty.hom_ext inferInstance <| by
+      simp [Model.map_extend_eq_comp_inv, ← OplaxMonoidal.δ_natural_left_assoc]
+    mul_one := M.mappingProperty.hom_ext inferInstance <| by
+      simp [Model.map_extend_eq_comp_inv, ← OplaxMonoidal.δ_natural_right_assoc]
+    mul_assoc := M.mappingProperty.hom_ext inferInstance <| by
+      simp [Model.map_extend_eq_comp_inv, ← OplaxMonoidal.δ_natural_left_assoc,
         ← OplaxMonoidal.δ_natural_right_assoc]
-    left_inv := M.mappingProperty.hom_ext <| by
-      simp [map_extend_eq_comp_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory]
-    right_inv := M.mappingProperty.hom_ext <| by
-      simp [map_extend_eq_comp_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory] }
+    left_inv := M.mappingProperty.hom_ext inferInstance <| by
+      simp [Model.map_extend_eq_comp_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory]
+    right_inv := M.mappingProperty.hom_ext inferInstance <| by
+      simp [Model.map_extend_eq_comp_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory] }
 
 /-- The identity of the model restricts to the identity of `A` along the marking. -/
 @[reassoc (attr := simp)]
 theorem map_one_comp_genericIso_hom :
     (Over.pullback j).map η[M.model] ≫ M.genericIso.hom =
       OplaxMonoidal.η (Over.pullback j) ≫ η[A] :=
-  (M.map_extend _).trans (by simp [MonObj.ofIso_one])
+  (M.map_extend _ _).trans (by simp [MonObj.ofIso_one])
 
 /-- The multiplication of the model restricts to the multiplication of `A` along the marking. -/
 @[reassoc (attr := simp)]
 theorem map_mul_comp_genericIso_hom :
     (Over.pullback j).map μ[M.model] ≫ M.genericIso.hom =
       OplaxMonoidal.δ (Over.pullback j) _ _ ≫ (M.genericIso.hom ⊗ₘ M.genericIso.hom) ≫ μ[A] :=
-  (M.map_extend _).trans (by simp [MonObj.ofIso_mul])
+  (M.map_extend _ _).trans (by simp [MonObj.ofIso_mul])
 
 /-- The inverse of the model restricts to the inverse of `A` along the marking. -/
 @[reassoc (attr := simp)]
 theorem map_inv_comp_genericIso_hom :
     (Over.pullback j).map ι[M.model] ≫ M.genericIso.hom = M.genericIso.hom ≫ ι[A] :=
-  (M.map_extend _).trans (by simp [GrpObj.ofIso_inv])
+  (M.map_extend _ _).trans (by simp [GrpObj.ofIso_inv])
 
 /-- The marking is a homomorphism from the base change of the group law of the model to the group
 law of `A`. -/
@@ -123,7 +125,7 @@ instance isMonHom_genericIso_hom : IsMonHom M.genericIso.hom where
 monoid structure underlying the group law. -/
 theorem eq_toMonObj_of_isMonHom (h : MonObj M.model)
     (hh : letI := h; IsMonHom M.genericIso.hom) : h = (grpObj M).toMonObj := by
-  refine MonObj.ext _ _ (M.hom_ext ?_)
+  refine MonObj.ext _ _ (M.hom_ext inferInstance ?_)
   rw [map_mul_comp_genericIso_hom, ← cancel_epi (LaxMonoidal.μ (Over.pullback j) _ _)]
   simpa using hh.mul_hom
 
@@ -137,14 +139,14 @@ theorem existsUnique_grpObj_isMonHom :
 
 /-- The Néron model of a commutative group object is commutative. -/
 instance isCommMonObj [IsCommMonObj A] : IsCommMonObj M.model where
-  mul_comm := M.hom_ext <| by
+  mul_comm := M.hom_ext inferInstance <| by
     simp [Functor.map_braiding, ← BraidedCategory.braiding_naturality_assoc]
 
 /-- The extension of a homomorphism `φ : A ⟶ B` to Néron models is a homomorphism. -/
 instance isMonHom_extendHom [GrpObj B] (N : NeronModel j B) (φ : A ⟶ B) [IsMonHom φ] :
     IsMonHom (M.extendHom N φ) where
-  one_hom := N.hom_ext <| by simp
-  mul_hom := N.hom_ext <| by simp [← OplaxMonoidal.δ_natural_assoc]
+  one_hom := N.hom_ext inferInstance <| by simp
+  mul_hom := N.hom_ext inferInstance <| by simp [← OplaxMonoidal.δ_natural_assoc]
 
 /-- A morphism `φ : A ⟶ B` of group objects extends to a homomorphism of Néron models exactly
 when it is a homomorphism. -/
@@ -157,22 +159,23 @@ theorem isMonHom_extendHom_iff [GrpObj B] (N : NeronModel j B) (φ : A ⟶ B) :
 
 /-- For a smooth test object `Y`, marked restriction is a group isomorphism from the
 `S`-morphisms `Y ⟶ M.model` to the morphisms from the base change of `Y` to `A`. -/
-def homMulEquiv (Y : Over S) [Smooth Y.hom] :
+def homMulEquiv (Y : Over S) (hY : Smooth Y.hom) :
     (Y ⟶ M.model) ≃* ((Over.pullback j).obj Y ⟶ A) where
-  __ := M.homEquiv Y
+  __ := M.homEquiv Y hY
   map_mul' f g := by simp [Functor.map_mul, MonObj.mul_comp]
 
 /-- `NeronModel.homMulEquiv` is marked restriction. -/
 @[simp]
-theorem homMulEquiv_apply {Y : Over S} [Smooth Y.hom] (g : Y ⟶ M.model) :
-    M.homMulEquiv Y g = (Over.pullback j).map g ≫ M.genericIso.hom :=
-  M.homEquiv_apply g
+theorem homMulEquiv_apply {Y : Over S} (hY : Smooth Y.hom) (g : Y ⟶ M.model) :
+    M.homMulEquiv Y hY g = (Over.pullback j).map g ≫ M.genericIso.hom :=
+  M.homEquiv_apply hY g
 
 /-- The inverse of `NeronModel.homMulEquiv` is extension. -/
 @[simp]
-theorem homMulEquiv_symm_apply {Y : Over S} [Smooth Y.hom] (f : (Over.pullback j).obj Y ⟶ A) :
-    (M.homMulEquiv Y).symm f = M.extend Y f :=
-  (M.homMulEquiv Y).symm_apply_eq.2 (by simp)
+theorem homMulEquiv_symm_apply {Y : Over S} (hY : Smooth Y.hom)
+    (f : (Over.pullback j).obj Y ⟶ A) :
+    (M.homMulEquiv Y hY).symm f = M.extend Y hY f :=
+  (M.homMulEquiv Y hY).symm_apply_eq.2 (by simp)
 
 end NeronModel
 

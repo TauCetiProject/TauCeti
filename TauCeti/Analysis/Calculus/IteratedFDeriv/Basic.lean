@@ -30,8 +30,9 @@ evaluated iterated derivative is continuous for a `C^n` map
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, with the left currying of the one- and two-variable inverse curryings
 (`TauCeti.curryLeft_continuousMultilinearCurryFin1_symm`,
-`TauCeti.curryLeft_continuousMultilinearCurryFin2_symm`), and the corresponding exact comparison
-for differences of second derivatives, which transfers Hölder bounds between the two forms of the
+`TauCeti.curryLeft_continuousMultilinearCurryFin2_symm`), and the corresponding exact comparisons
+of norms (`TauCeti.norm_fderiv_fderiv`) and of differences of second derivatives, the latter of
+which transfers Hölder bounds between the two forms of the
 second derivative (`TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two`). The same holds
 for the second iterated derivative of the `k`-th iterated derivative and the `(k + 2)`-th iterated
 derivative (`TauCeti.holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff`).
@@ -148,6 +149,12 @@ theorem iteratedFDeriv_three_apply (f : E → F) (x : E) (m : Fin 3 → E) :
     iteratedFDeriv 𝕜 3 f x m = fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 f)) x (m 0) (m 1) (m 2) := by
   rw [iteratedFDeriv_succ_apply_right, iteratedFDeriv_two_apply]
   rfl
+
+/-- The curried second derivative and the multilinear second derivative have exactly the same
+norm, without differentiability assumptions. -/
+theorem norm_fderiv_fderiv (f : E → F) (x : E) :
+    ‖fderiv 𝕜 (fderiv 𝕜 f) x‖ = ‖iteratedFDeriv 𝕜 2 f x‖ := by
+  rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
 
 /-- Differences of curried second derivatives and multilinear second derivatives have
 exactly the same norm, without differentiability assumptions. -/
