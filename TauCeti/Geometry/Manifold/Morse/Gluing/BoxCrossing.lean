@@ -96,10 +96,9 @@ private theorem flow_ne_of_norm_fst_eq (hX : IsAdaptedPseudoGradient f X)
     nlinarith
   by_cases hs : z.snd = 0
   · -- On the stable plane the model orbit stays in the box.
-    refine hbox_ne fun s hs' ↦ ?_
-    rw [uIcc_of_le ht₀.le] at hs'
-    rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, hs, norm_zero, mul_zero, hz]
-    exact ⟨mul_le_of_le_one_left hε₀.le (Real.exp_le_one_iff.2 (by linarith [hs'.1])), hε₀.le⟩
+    refine hbox_ne fun s hs' ↦ norm_fst_le_and_norm_snd_le_splitQuadraticFlow hz.le
+      (by rw [norm_snd_splitQuadraticFlow, hs, norm_zero, mul_zero]; exact hε₀.le)
+      (by rwa [uIcc_of_le ht₀.le] at hs')
   have hsrc : z ∈ (splitPassage ε).source := mem_splitPassage_source.2 ⟨hz, hs, hzs⟩
   by_cases htT : t ≤ splitExitTime ε z
   · refine hbox_ne fun s hs' ↦ ?_
