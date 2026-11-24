@@ -492,19 +492,18 @@ theorem bijective_dualityMap_comap_iff_of_range_eq {U U' : Type} [TopologicalSpa
   have key := (o.comap hj').compactSupportCohomologyExtend_dualityMap hn L (j := f)
     e.isOpenEmbedding p q h
   rw [o.comap_comap_of_comp_eq hj' e.isOpenEmbedding hj he] at key
-  have : IsIso (TopCat.ofHom f) := (TopCat.isIso_iff_isHomeomorph _).2 e.isHomeomorph
-  have := TopCat.isIso_compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ))
-    (k := ℤ) (M := L) (f := TopCat.ofHom f) e.isOpenEmbedding p
   have hext := ConcreteCategory.bijective_of_isIso
-    (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-      (f := TopCat.ofHom f) e.isOpenEmbedding p)
+    (TopCat.compactSupportCohomologyIsoOfHomeomorph (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L
+      (U := TopCat.of U) (X := TopCat.of U') e p).hom
   have hmap := ConcreteCategory.bijective_of_isIso
-    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map (TopCat.ofHom f))
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).mapIso
+      (TopCat.isoOfHomeo (X := TopCat.of U) (Y := TopCat.of U') e)).hom
   refine (Function.Bijective.of_comp_iff' hmap _).symm.trans ?_
   rw [← Function.Bijective.of_comp_iff _ hext]
   refine iff_of_eq (congrArg _ (funext fun x ↦ ?_))
-  simpa only [ConcreteCategory.comp_apply, Function.comp_apply] using
-    (ConcreteCategory.congr_hom key x).symm
+  simpa only [ConcreteCategory.comp_apply, Function.comp_apply,
+    TopCat.compactSupportCohomologyIsoOfHomeomorph_hom, Functor.mapIso_hom,
+    TopCat.isoOfHomeo_hom] using (ConcreteCategory.congr_hom key x).symm
 
 /-- The duality maps of open subsets `U ≤ V` of `M` commute with the extension
 `Hᵖ_c(U; L) ⟶ Hᵖ_c(V; L)` and the pushforward `H_q(U; L) ⟶ H_q(V; L)`. -/
@@ -522,6 +521,20 @@ private lemma compactSupportCohomologyExtend_dualityMap_of_le {U V : Opens M} (h
   have key := (o.comap V.isOpenEmbedding').compactSupportCohomologyExtend_dualityMap hn L
     (j := ι) hι p q h
   rwa [o.comap_comap_of_comp_eq V.isOpenEmbedding' hι U.isOpenEmbedding' rfl] at key
+
+/-- If the duality maps of two oriented manifolds `U` and `V` are bijective, so is the map
+`Hᵖ_c(U; L) ⊞ Hᵖ_c(V; L) ⟶ H_q(U; L) ⊞ H_q(V; L)` that they form, the map between the middle terms
+of two Mayer–Vietoris sequences. -/
+theorem bijective_biprodMap_dualityMap {U V : Type} [TopologicalSpace U] [T2Space U]
+    [ChartedSpace E U] [TopologicalSpace V] [T2Space V] [ChartedSpace E V]
+    {oU : HomologicalOrientation U E n} {oV : HomologicalOrientation V E n}
+    (hU : Function.Bijective (oU.dualityMap hn L p q h))
+    (hV : Function.Bijective (oV.dualityMap hn L p q h)) :
+    Function.Bijective (biprod.map (oU.dualityMap hn L p q h) (oV.dualityMap hn L p q h)).hom := by
+  have := (ConcreteCategory.isIso_iff_bijective _).2 hU
+  have := (ConcreteCategory.isIso_iff_bijective _).2 hV
+  have := isIso_of_mono_of_epi (biprod.map (oU.dualityMap hn L p q h) (oV.dualityMap hn L p q h))
+  exact ConcreteCategory.bijective_of_isIso _
 
 /-- **Poincaré duality for a disjoint union of two open sets.** If `M` is the union of two
 disjoint open sets `U` and `V` whose duality maps, for the pulled-back orientations, are bijective,
@@ -546,10 +559,7 @@ theorem bijective_dualityMap_of_disjoint {U V : Opens M} (hUV : U ⊔ V = ⊤) (
   have hFh : IsIso Fh := TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint
     (X := TopCat.of M) L U.isOpen V.isOpen (by rw [← Opens.coe_sup, hUV, Opens.coe_top])
     (Opens.coe_disjoint.2 hd) q
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hU
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hV
-  have := isIso_of_mono_of_epi (biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
-    ((o.comap V.isOpenEmbedding').dualityMap hn L p q h))
+  have := (ConcreteCategory.isIso_iff_bijective _).2 (bijective_biprodMap_dualityMap hn L h hU hV)
   -- The duality maps commute with them, by naturality along the inclusions.
   have hsq : Fc ≫ o.dualityMap hn L p q h =
       biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)

@@ -165,19 +165,6 @@ section Union
 
 variable {U V}
 
-/-- If the duality maps of `U` and `V` are bijective, so is the map between the middle terms of the
-two Mayer–Vietoris sequences that they form. -/
-private lemma bijective_biprodMap_dualityMap
-    (hDU : Function.Bijective ((o.comap U.isOpenEmbedding).dualityMap hn L p q h))
-    (hDV : Function.Bijective ((o.comap V.isOpenEmbedding).dualityMap hn L p q h)) :
-    Function.Bijective (biprod.map ((o.comap U.isOpenEmbedding).dualityMap hn L p q h)
-      ((o.comap V.isOpenEmbedding).dualityMap hn L p q h)).hom := by
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hDU
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hDV
-  have := isIso_of_mono_of_epi (biprod.map ((o.comap U.isOpenEmbedding).dualityMap hn L p q h)
-    ((o.comap V.isOpenEmbedding).dualityMap hn L p q h))
-  exact ConcreteCategory.bijective_of_isIso _
-
 /-- `compactSupportCohomologyMayerVietorisToBiprod_dualityMap` as an equation of linear maps, the
 form of the commuting squares in Mathlib's five lemma for modules. -/
 private lemma toBiprod_comp_dualityMap :
@@ -269,7 +256,7 @@ theorem bijective_dualityMap_of_sup_eq_top (hUV : U ⊔ V = ⊤)
     exact LinearMap.bijective_of_surjective_of_bijective_of_right_exact _ _ _ _ _ _ _
       (o.toBiprod_comp_dualityMap hn L h) (o.fromBiprod_comp_dualityMap hn L h) (hexact hc₁)
       (hexact (TopCat.mayerVietoris_exact₂ L U.isOpen V.isOpen hUV' 0)) (hDUV n 0 h).2
-      (o.bijective_biprodMap_dualityMap hn L h (hDU n 0 h) (hDV n 0 h))
+      (bijective_biprodMap_dualityMap hn L h (hDU n 0 h) (hDV n 0 h))
       ((ModuleCat.epi_iff_surjective _).1 (hc₂.epi_f (hzero.eq_of_tgt _ _)))
       ((ModuleCat.epi_iff_surjective _).1 (TopCat.epi_mayerVietorisFromBiprod_zero L hUV'))
   · -- Otherwise the five lemma applies to the rows from `Hᵖ_c(U ∩ V)` to `Hᵖ⁺¹_c(U) ⊞ Hᵖ⁺¹_c(V)`
@@ -285,10 +272,10 @@ theorem bijective_dualityMap_of_sup_eq_top (hUV : U ⊔ V = ⊤)
       (hexact (TopCat.mayerVietoris_exact₂ L U.isOpen V.isOpen hUV' (q + 1)))
       (hexact (TopCat.mayerVietoris_exact₃ L U.isOpen V.isOpen hUV' (q + 1) q))
       (hexact (TopCat.mayerVietoris_exact₁ L U.isOpen V.isOpen hUV' (q + 1) q))
-      (hDUV p (q + 1) h).2 (o.bijective_biprodMap_dualityMap hn L h (hDU _ _ h) (hDV _ _ h))
+      (hDUV p (q + 1) h).2 (bijective_biprodMap_dualityMap hn L h (hDU _ _ h) (hDV _ _ h))
       (((isUnit_neg_one (α := ℤ)).pow (p + 1)).smul_bijective.comp (hDUV (p + 1) q h'))
       (((isUnit_neg_one (α := ℤ)).pow (p + 1)).smul_bijective.1.comp
-        (o.bijective_biprodMap_dualityMap hn L h' (hDU _ _ h') (hDV _ _ h')).1)
+        (bijective_biprodMap_dualityMap hn L h' (hDU _ _ h') (hDV _ _ h')).1)
 
 /-- **Poincaré duality for the union of two open subsets.** If the duality maps of open subsets
 `U`, `V` and `U ∩ V` of `M`, for the orientations pulled back from `M`, are bijective in every
@@ -309,18 +296,12 @@ theorem bijective_dualityMap_comap_sup {U V : Opens M}
   have hinf : Opens.comap i U ⊓ Opens.comap i V = Opens.comap i (U ⊓ V) := (map_inf _ _ _).symm
   -- `U ∩ V`, read as an open subset of `U ∪ V`, is homeomorphic to `U ∩ V`, so its cohomology with
   -- compact supports vanishes in degree `n + 1` too.
-  let e : ↥(Opens.comap i (U ⊓ V)) ≃ₜ ↥(U ⊓ V) :=
-    { toFun x := ⟨x.val.val, x.property⟩
-      invFun y := ⟨⟨y.val, (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V) y.property⟩,
-        y.property⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
-      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
-  have : IsIso (TopCat.ofHom (⟨e, e.continuous⟩ : C(_, _))) :=
-    (TopCat.isIso_iff_isHomeomorph _).2 e.isHomeomorph
-  have hiso := TopCat.isIso_compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ))
-    (k := ℤ) (M := L) (f := TopCat.ofHom (⟨e, e.continuous⟩ : C(_, _))) e.isOpenEmbedding (n + 1)
+  have hrange : Set.range (fun x : Opens.comap i (U ⊓ V) ↦ x.val.val) = (U ⊓ V : Opens M) :=
+    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.property,
+      fun hx ↦ ⟨⟨⟨x, (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V) hx⟩, hx⟩, rfl⟩⟩
+  let e : Opens.comap i (U ⊓ V) ≃ₜ (U ⊓ V : Opens M) :=
+    (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal).toHomeomorph.trans
+      (Homeomorph.setCongr hrange)
   refine (o.comap (U ⊔ V).isOpenEmbedding').bijective_dualityMap_of_sup_eq_top hn L h
     (U := Opens.comap i U) (V := Opens.comap i V) ?_
     (fun p q h ↦ (o.bijective_dualityMap_comap_comap_iff hn L h le_sup_left).2 (hDU p q h))
@@ -332,9 +313,7 @@ theorem bijective_dualityMap_comap_sup {U V : Opens M}
     exact (o.bijective_dualityMap_comap_comap_iff hn L h (inf_le_left.trans le_sup_left)).2
       (hDUV p q h)
   · rw [hinf]
-    -- The goal is stated on `(Opens.toTopCat _).obj _`, which is `TopCat.of` of the subtype only
-    -- up to unfolding, so instance search does not find `hiso` and it is passed explicitly.
-    exact hzero.of_iso (@asIso _ _ _ _ _ hiso)
+    exact hzero.of_iso (TopCat.compactSupportCohomologyIsoOfHomeomorph _ ℤ L e (n + 1))
 
 end Union
 
