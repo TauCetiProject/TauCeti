@@ -471,15 +471,12 @@ variable (G Y H H' R) in
 /-- The change of phantom monoid `TauCeti.cubicalChainModulePhantomEquiv`, as an equivalence of
 left modules over the chains of `G`. -/
 def cubicalChainModuleLeftPhantomEquiv :
-    cubicalChainModule Y H R ≃ₗ[normalizedCubicalChainAlgebra G R] cubicalChainModule Y H' R where
-  toFun := cubicalChainModulePhantomEquiv Y H H' R
-  invFun := cubicalChainModulePhantomEquiv Y H' H R
-  map_add' := map_add _
-  map_smul' a x := by
-    rw [cubicalChainModulePhantomEquiv_apply, cubicalChainModulePhantomEquiv_apply]
-    exact cubicalChainModuleLinearMap_smul (ContinuousMap.id Y) (fun _ _ ↦ rfl) a x
-  left_inv x := by simpa using (cubicalChainModulePhantomEquiv Y H H' R).symm_apply_apply x
-  right_inv x := by simpa using (cubicalChainModulePhantomEquiv Y H H' R).apply_symm_apply x
+    cubicalChainModule Y H R ≃ₗ[normalizedCubicalChainAlgebra G R] cubicalChainModule Y H' R :=
+  { cubicalChainModulePhantomEquiv Y H H' R with
+    map_smul' a x := by
+      rw [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, cubicalChainModulePhantomEquiv_apply,
+        cubicalChainModulePhantomEquiv_apply]
+      exact cubicalChainModuleLinearMap_smul (ContinuousMap.id Y) (fun _ _ ↦ rfl) a x }
 
 /-- The change of phantom monoid over the chains of `G` is the one over `R`. -/
 theorem cubicalChainModuleLeftPhantomEquiv_apply (x : cubicalChainModule Y H R) :
@@ -491,7 +488,8 @@ theorem cubicalChainModuleLeftPhantomEquiv_apply (x : cubicalChainModule Y H R) 
 theorem cubicalChainModuleLeftPhantomEquiv_symm :
     (cubicalChainModuleLeftPhantomEquiv G Y H H' R).symm =
       cubicalChainModuleLeftPhantomEquiv G Y H' H R :=
-  LinearEquiv.ext fun _ ↦ rfl
+  LinearEquiv.ext fun x ↦
+    (DFunLike.congr_fun (cubicalChainModulePhantomEquiv_symm (Y := Y) (G := H) (G' := H')) x :)
 
 /-- The change of phantom monoid over the chains of `G` commutes with the differentials. -/
 theorem cubicalChainModuleDifferential_leftPhantomEquiv (x : cubicalChainModule Y H R) :

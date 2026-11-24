@@ -271,23 +271,23 @@ theorem nonempty_rowFiniteHomologous_brownCocycle_brownCocycle {C' : Set B} [CWC
       (brownCocycle H' R τ' hC')) := by
   -- Change the phantom parameter, linearly over the loop chains.
   let L := cubicalChainModuleLeftPhantomEquiv (MooreLoopSpace B b) (MoorePathFrom B b) H' H R
+  have hL (u) : L (linearCombination (loopChainAlgebra B b R) (brownComparison H' R τ' hC') u) =
+      linearCombination (loopChainAlgebra B b R) (L ∘ brownComparison H' R τ' hC') u :=
+    apply_linearCombination _ L.toLinearMap _ u
   obtain ⟨E, _⟩ := exists_rowFiniteHomologous_brownCocycle_homotopy τ hC
     (wellFounded_mem_support_brownCocycle τ' hC') (g := L ∘ brownComparison H' R τ' hC')
     (fun x ↦ cubicalChainModuleLeftPhantomEquiv_mem
       (brownComparison_mem_cubicalChainModuleGrading τ' hC' x))
     (fun x ↦ by
-      rw [← L.coe_coe, ← apply_linearCombination, linearCombination_brownComparison_brownCocycle_m]
+      rw [← hL, linearCombination_brownComparison_brownCocycle_m]
       exact (cubicalChainModuleDifferential_leftPhantomEquiv _).symm)
     fun u w hDu huw ↦ by
       obtain ⟨u', w', hu', hw'⟩ := exists_rowFiniteTwistedDifferential_brownCocycle_eq τ' hC' u
         (L.symm w) hDu <| L.injective <| by
-          rw [← L.coe_coe, apply_linearCombination, L.coe_coe, huw,
-            cubicalChainModuleLeftPhantomEquiv_symm,
-            cubicalChainModuleDifferential_leftPhantomEquiv,
-            ← cubicalChainModuleLeftPhantomEquiv_symm, L.apply_symm_apply]
+          rw [hL, huw, ← cubicalChainModuleDifferential_leftPhantomEquiv, L.apply_symm_apply]
       refine ⟨u', L w', hu', ?_⟩
-      rw [← L.coe_coe, ← apply_linearCombination, L.coe_coe,
-        cubicalChainModuleDifferential_leftPhantomEquiv, ← map_add, hw', L.apply_symm_apply]
+      rw [← hL, cubicalChainModuleDifferential_leftPhantomEquiv, ← map_add, hw',
+        L.apply_symm_apply]
   exact ⟨E⟩
 
 end TauCeti
