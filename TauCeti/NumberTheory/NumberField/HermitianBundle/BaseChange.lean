@@ -217,7 +217,7 @@ def baseChange (e : IsometryEquiv h h') :
     rw [baseChange_form_apply, baseChange_form_apply,
       ← LinearEquiv.coe_coe (e.toLinearEquiv.baseChange (𝓞 K) (𝓞 L) E F),
       LinearEquiv.coe_baseChange, baseChangeFiberEquiv_one_tmul_baseChange,
-      baseChangeFiberEquiv_one_tmul_baseChange, e.form_baseChange]
+      baseChangeFiberEquiv_one_tmul_baseChange, e.form_toLinearMap_baseChange]
 
 @[simp]
 theorem baseChange_tmul (e : IsometryEquiv h h') (a : 𝓞 L) (x : E) :
