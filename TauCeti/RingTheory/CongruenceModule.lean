@@ -46,8 +46,10 @@ levels.
 
 ## References
 
-* S. B. Iyengar, C. B. Khare, J. Manning, congruence modules of augmented algebras, §2.2,
-  Proposition 2.10 and Example 2.11, <https://par.nsf.gov/servlets/purl/10585269>.
+* S. B. Iyengar, C. B. Khare, J. Manning, *Congruence modules and the Wiles–Lenstra–Diamond
+  numerical criterion in higher codimensions*, Invent. Math. (2024),
+  <https://doi.org/10.1007/s00222-024-01292-y>, §2.2, Proposition 2.10 and Example 2.11,
+  <https://par.nsf.gov/servlets/purl/10585269>.
 * K. A. Ribet, *Report on mod ℓ representations of Gal(Q-bar/Q)*, §7, for the level-change
   application.
 -/
@@ -62,6 +64,10 @@ namespace AlgHom
 
 variable {O A : Type*} [CommRing O] [CommRing A] [Algebra O A] (φ : A →ₐ[O] O)
 
+/-- An augmentation `φ : A →ₐ[O] O` is surjective, since `φ (algebraMap O A x) = x`. -/
+theorem augmentation_surjective : Function.Surjective φ :=
+  Function.LeftInverse.surjective φ.commutes
+
 /-- The *congruence ideal* `η_φ = φ (Ann_A (ker φ))` of an augmentation `φ : A →ₐ[O] O`. -/
 def congruenceIdeal : Ideal O :=
   (RingHom.ker φ).annihilator.map φ
@@ -70,7 +76,7 @@ def congruenceIdeal : Ideal O :=
 `A` killed by `ker φ`. -/
 theorem mem_congruenceIdeal {x : O} :
     x ∈ φ.congruenceIdeal ↔ ∃ a : A, (∀ b ∈ RingHom.ker φ, b * a = 0) ∧ φ a = x := by
-  rw [congruenceIdeal, Ideal.mem_map_iff_of_surjective _ fun x => ⟨algebraMap O A x, by simp⟩]
+  rw [congruenceIdeal, Ideal.mem_map_iff_of_surjective _ φ.augmentation_surjective]
   simp [Submodule.mem_annihilator, mul_comm]
 
 variable (M : Type*) [AddCommGroup M] [Module A M] [Module O M] [IsScalarTower O A M]
@@ -99,6 +105,13 @@ abbrev congruenceModule : Type _ :=
 noncomputable def congruenceModuleMk : M →ₗ[O] φ.congruenceModule M :=
   (LinearMap.range (φ.congruenceMap M)).mkQ ∘ₗ (torsion O _).mkQ ∘ₗ
     (RingHom.ker φ • ⊤ : Submodule A M).mkQ.restrictScalars O
+
+/-- The class of `m` in `Ψ_φ(M)` is its image in the iterated quotient. This is not a simp
+lemma, so that simp keeps working with `AlgHom.congruenceModuleMk`. -/
+theorem congruenceModuleMk_apply (m : M) :
+    φ.congruenceModuleMk M m =
+      Submodule.Quotient.mk (Submodule.Quotient.mk (Submodule.Quotient.mk m)) :=
+  (rfl)
 
 /-- Every element of `Ψ_φ(M)` is the class of an element of `M`. -/
 theorem congruenceModuleMk_surjective : Function.Surjective (φ.congruenceModuleMk M) :=
@@ -261,6 +274,16 @@ theorem congruenceModuleCongr_symm (e : M ≃ₗ[A] N) :
     (φ.congruenceModuleCongr e).symm = φ.congruenceModuleCongr e.symm :=
   (rfl)
 
+@[simp]
+theorem congruenceModuleCongr_refl :
+    φ.congruenceModuleCongr (LinearEquiv.refl A M) = LinearEquiv.refl O _ :=
+  LinearEquiv.toLinearMap_injective φ.congruenceModuleMap_id
+
+theorem congruenceModuleCongr_trans (e₁ : M ≃ₗ[A] N) (e₂ : N ≃ₗ[A] P) :
+    φ.congruenceModuleCongr (e₁ ≪≫ₗ e₂) =
+      φ.congruenceModuleCongr e₁ ≪≫ₗ φ.congruenceModuleCongr e₂ :=
+  LinearEquiv.toLinearMap_injective (φ.congruenceModuleMap_comp e₂.toLinearMap e₁.toLinearMap)
+
 end Functoriality
 
 section Pi
@@ -317,12 +340,20 @@ noncomputable def congruenceModuleSelfEquiv : φ.congruenceModule A ≃ₗ[O] O 
       rw [LinearMap.mem_ker, congruenceModuleMk_self_eq_zero_iff, LinearMap.mem_ker,
         LinearMap.comp_apply, mkQ_apply, Submodule.Quotient.mk_eq_zero, toLinearMap_apply]) ≪≫ₗ
     ((φ.congruenceIdeal.mkQ ∘ₗ φ.toLinearMap).quotKerEquivOfSurjective
-      ((mkQ_surjective _).comp fun x => ⟨algebraMap O A x, by simp⟩))
+      ((mkQ_surjective _).comp φ.augmentation_surjective))
 
 @[simp]
 theorem congruenceModuleSelfEquiv_congruenceModuleMk (a : A) :
     φ.congruenceModuleSelfEquiv (φ.congruenceModuleMk A a) = Submodule.Quotient.mk (φ a) := by
   simp [congruenceModuleSelfEquiv, LinearEquiv.trans_apply]
+
+@[simp]
+theorem congruenceModuleSelfEquiv_symm_mk (x : O) :
+    φ.congruenceModuleSelfEquiv.symm (Ideal.Quotient.mk φ.congruenceIdeal x) =
+      φ.congruenceModuleMk A (algebraMap O A x) := by
+  rw [← Ideal.Quotient.mk_eq_mk, LinearEquiv.symm_apply_eq,
+    congruenceModuleSelfEquiv_congruenceModuleMk, φ.commutes, Algebra.algebraMap_self,
+    RingHom.id_apply]
 
 end Self
 
@@ -341,6 +372,21 @@ theorem congruenceModuleEquivOfBasis_congruenceModuleMk (b : Module.Basis ι A M
     φ.congruenceModuleEquivOfBasis b (φ.congruenceModuleMk M m) i =
       Submodule.Quotient.mk (φ (b.repr m i)) := by
   simp [congruenceModuleEquivOfBasis]
+
+/-- The inverse of `AlgHom.congruenceModuleEquivOfBasis` sends the family of classes of `x i` to
+the class of `∑ i, x i • b i`. -/
+@[simp]
+theorem congruenceModuleEquivOfBasis_symm_mk (b : Module.Basis ι A M) (x : ι → O) :
+    (φ.congruenceModuleEquivOfBasis b).symm
+        (fun i => Ideal.Quotient.mk φ.congruenceIdeal (x i)) =
+      φ.congruenceModuleMk M (∑ i, x i • b i) := by
+  have h : ∑ i, x i • b i = b.equivFun.symm fun i => algebraMap O A (x i) := by
+    simp [Module.Basis.equivFun_symm_apply, algebraMap_smul]
+  simp only [← Ideal.Quotient.mk_eq_mk]
+  rw [LinearEquiv.symm_apply_eq]
+  ext i
+  rw [congruenceModuleEquivOfBasis_congruenceModuleMk, h, ← b.equivFun_apply,
+    LinearEquiv.apply_symm_apply, φ.commutes, Algebra.algebraMap_self, RingHom.id_apply]
 
 end Basis
 
