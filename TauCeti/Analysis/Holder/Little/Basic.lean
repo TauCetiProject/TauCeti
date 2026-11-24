@@ -477,11 +477,11 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
   have hgi : ContDiff ℝ i g₀ := hg₀.of_le (by exact_mod_cast le_top)
   rw [coe_sub, hg, iteratedFDeriv_sub hfi hgi, hD i hi]
 
-/-- **Mollification approximates elements of `h^{k,α}` without spreading their support.** An
-element `f` of the little Hölder space `h^{k,α}` on a finite-dimensional space is approximated in
-the `C^{k,α}` norm by smooth maps `g` all of whose derivatives are bounded, supported within any
-prescribed distance `r > 0` of the support of `f`: its convolutions with normalized bumps at small
-enough scales. In particular a compactly supported `f` is approximated by smooth maps supported in
+/-- **Mollification approximates elements of `h^{k,α}` with support control.** An element `f` of
+the little Hölder space `h^{k,α}` on a finite-dimensional space is approximated in the `C^{k,α}`
+norm by smooth maps `g` all of whose derivatives are bounded, supported within any prescribed
+distance `r > 0` of the support of `f`: its convolutions with normalized bumps at small enough
+scales. In particular a compactly supported `f` is approximated by smooth maps supported in
 any given neighbourhood of its support. -/
 theorem exists_mem_smoothBoundedDerivatives_tsupport_subset_norm_sub_lt
     (f : CkHolderSpace k α E F) (hf : f ∈ littleHolder k α E F) {ε : ℝ} (hε : 0 < ε) {r : ℝ}
