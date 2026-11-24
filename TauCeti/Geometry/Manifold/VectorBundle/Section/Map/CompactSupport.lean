@@ -5,156 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Topology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 
 /-!
-# Continuous transport of supported sections and native bundle tests
+# Continuous transport of compactly supported sections and native bundle tests
 
 A smooth fibrewise linear equivalence whose expressions in common frame domains are fixed
-continuous linear maps in both directions transports fixed-support stages, their final locally
-convex compact-support topologies, and native smooth bundle tests. The frames and domains are
-arbitrary. Only the comparison with native bundle tests needs a covering family and a locally
-compact base model. No completeness or finite-dimensionality of the fibre models is required.
+continuous linear maps in both directions is continuous on every fixed-support stage
+(`ContMDiffSection.mapSupportedInCLE`). It therefore transports the final locally convex
+compact-support topologies (`ContMDiffSection.mapCompactlySupportedCLE`) and native smooth bundle
+tests (`TauCeti.BundleTest.mapCLE`). The frames and domains are arbitrary. Only the comparison
+with native bundle tests needs a covering family and a locally compact base model. No
+completeness or finite-dimensionality of the fibre models is required.
 -/
 
 public noncomputable section
 
 open Bundle Set TopologicalSpace Topology
 open scoped ContDiff Manifold
-
-namespace ContMDiffSection
-
-variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
-  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup G] [NormedSpace 𝕜 G] {n : ℕ∞ω}
-  {V W : M → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
-  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
-  (φ : ∀ x, V x ≃ₗ[𝕜] W x)
-  (hφ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
-    (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W)))
-  (hφ' : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, F)) n
-    (fun p : TotalSpace G W ↦ (⟨p.proj, (φ p.proj).symm p.snd⟩ : TotalSpace F V)))
-
-/-- Fibre transport commutes with the inclusion of a fixed-compact support stage. -/
-@[simp]
-theorem mapCompactlySupportedEquiv_ofSupportedIn (K : Compacts M)
-    (s : supportedIn I F n V K) :
-    mapCompactlySupportedEquiv φ hφ hφ' (ofSupportedIn K s) =
-      ofSupportedIn K (mapSupportedInEquiv φ hφ hφ' K s) := by
-  apply Subtype.ext
-  rw [coe_mapCompactlySupportedEquiv, ofSupportedIn_apply, ofSupportedIn_apply,
-    coe_mapSupportedInEquiv]
-
-/-- Inverse transport also commutes with the inclusion of a fixed-compact support stage. -/
-theorem mapCompactlySupportedEquiv_symm_ofSupportedIn (K : Compacts M)
-    (s : supportedIn I G n W K) :
-    (mapCompactlySupportedEquiv φ hφ hφ').symm (ofSupportedIn K s) =
-      ofSupportedIn K ((mapSupportedInEquiv φ hφ hφ' K).symm s) := by
-  apply (mapCompactlySupportedEquiv φ hφ hφ').injective
-  rw [LinearEquiv.apply_symm_apply, mapCompactlySupportedEquiv_ofSupportedIn,
-    LinearEquiv.apply_symm_apply]
-
-/-- Inverting the fibre equivalences inverts transport of compactly supported sections. -/
-@[simp]
-theorem mapCompactlySupportedEquiv_symm :
-    (mapCompactlySupportedEquiv φ hφ hφ').symm =
-      mapCompactlySupportedEquiv (fun x ↦ (φ x).symm) hφ'
-        (by simpa only [LinearEquiv.symm_symm] using hφ) := by
-  apply LinearEquiv.ext
-  intro s
-  apply Subtype.ext
-  rw [coe_mapCompactlySupportedEquiv_symm, coe_mapCompactlySupportedEquiv]
-  exact congrArg (fun l ↦ l s.val) (mapEquiv_symm φ hφ hφ')
-
-section Frames
-
-variable [ContMDiffVectorBundle n F V I] [ContMDiffVectorBundle n G W I] [IsManifold I n M]
-  {ι : Type*} (e : ι → Trivialization F (π F V)) (d : ι → Trivialization G (π G W))
-  [∀ i, MemTrivializationAtlas (e i)] [∀ i, MemTrivializationAtlas (d i)]
-  (U : ι → Opens M) (he : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
-  (hd : ∀ i, (U i : Set M) ⊆ (d i).baseSet)
-  (A : ι → F →L[𝕜] G) (B : ι → G →L[𝕜] F)
-  (hA : ∀ i s (x : U i), (d i).frameCoordinates (hd i) (mapEquiv φ hφ hφ' s) x =
-    A i ((e i).frameCoordinates (he i) s x))
-  (hB : ∀ i s (x : U i), (e i).frameCoordinates (he i) ((mapEquiv φ hφ hφ').symm s) x =
-    B i ((d i).frameCoordinates (hd i) s x))
-
-include A hA in
-/-- Fixed linear frame expressions make fibre transport continuous for the frame topologies. -/
-theorem continuous_mapEquiv_frameTopology :
-    let _ := frameTopology (I := I) (n := n) e U he
-    let _ := frameTopology (I := I) (n := n) d U hd
-    Continuous (mapEquiv φ hφ hφ') :=
-  continuous_frameTopology_of_frameCoordinates_eq_clm_apply e U he d hd A hA
-
-include B hB in
-/-- The inverse frame expressions make inverse transport continuous for the frame topologies. -/
-theorem continuous_mapEquiv_symm_frameTopology :
-    let _ := frameTopology (I := I) (n := n) e U he
-    let _ := frameTopology (I := I) (n := n) d U hd
-    Continuous (mapEquiv φ hφ hφ').symm :=
-  continuous_frameTopology_of_frameCoordinates_eq_clm_apply d U hd e he B hB
-
-include A B hA hB in
-/-- Smooth fibre transport as a continuous linear equivalence on any support stage, computed in
-arbitrary common frame domains. No covering assumption on the domains is required. -/
-def mapSupportedInCLE (K : Set M) :
-    let _ := frameTopology (I := I) (n := n) e U he
-    let _ := frameTopology (I := I) (n := n) d U hd
-    supportedIn I F n V K ≃L[𝕜] supportedIn I G n W K := by
-  let _ := frameTopology (I := I) (n := n) e U he
-  let _ := frameTopology (I := I) (n := n) d U hd
-  refine ContinuousLinearEquiv.mk (mapSupportedInEquiv φ hφ hφ' K) ?_ ?_
-  · apply continuous_induced_rng.2
-    exact ((continuous_mapEquiv_frameTopology φ hφ hφ' e d U he hd A hA).comp
-      continuous_subtypeVal).congr fun s ↦ (coe_mapSupportedInEquiv φ hφ hφ' K s).symm
-  · apply continuous_induced_rng.2
-    exact ((continuous_mapEquiv_symm_frameTopology φ hφ hφ' e d U he hd B hB).comp
-      continuous_subtypeVal).congr fun s ↦ (coe_mapSupportedInEquiv_symm φ hφ hφ' K s).symm
-
-/-- The support-stage continuous equivalence has exactly the existing algebraic transport. -/
-@[simp]
-theorem mapSupportedInCLE_toLinearEquiv (K : Set M) :
-    let _ := frameTopology (I := I) (n := n) e U he
-    let _ := frameTopology (I := I) (n := n) d U hd
-    (mapSupportedInCLE φ hφ hφ' e d U he hd A B hA hB K).toLinearEquiv =
-      mapSupportedInEquiv φ hφ hφ' K := by
-  unfold mapSupportedInCLE
-  rfl
-
-/-- Forward evaluation of continuous support-stage transport is the original fibre map. -/
-@[simp]
-theorem mapSupportedInCLE_apply (K : Set M) (s : supportedIn I F n V K) (x : M) :
-    let _ := frameTopology (I := I) (n := n) e U he
-    let _ := frameTopology (I := I) (n := n) d U hd
-    (mapSupportedInCLE φ hφ hφ' e d U he hd A B hA hB K s).val x = φ x (s.val x) := by
-  let _ := frameTopology (I := I) (n := n) e U he
-  let _ := frameTopology (I := I) (n := n) d U hd
-  simpa only [mapSupportedInCLE, ContinuousLinearEquiv.coe_mk, mapEquiv_apply] using
-    congrFun (congrArg DFunLike.coe (coe_mapSupportedInEquiv φ hφ hφ' K s)) x
-
-/-- Inverse evaluation of continuous support-stage transport is the inverse fibre map. -/
-@[simp]
-theorem mapSupportedInCLE_symm_apply (K : Set M) (s : supportedIn I G n W K) (x : M) :
-    let _ := frameTopology (I := I) (n := n) e U he
-    let _ := frameTopology (I := I) (n := n) d U hd
-    ((mapSupportedInCLE φ hφ hφ' e d U he hd A B hA hB K).symm s).val x = (φ x).symm (s.val x) := by
-  let _ := frameTopology (I := I) (n := n) e U he
-  let _ := frameTopology (I := I) (n := n) d U hd
-  have h := mapSupportedInCLE_toLinearEquiv φ hφ hφ' e d U he hd A B hA hB K
-  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, h]
-  simpa only [mapEquiv_symm, mapEquiv_apply] using
-    congrFun (congrArg DFunLike.coe (coe_mapSupportedInEquiv_symm φ hφ hφ' K s)) x
-
-end Frames
-end ContMDiffSection
-
 
 namespace ContMDiffSection
 
@@ -199,11 +68,8 @@ theorem continuous_mapCompactlySupportedEquiv :
   apply (continuous_compactlySupportedTopology_iff e U he
     (mapCompactlySupportedEquiv φ hφ hφ').toLinearMap).2
   intro K
-  have hc : Continuous (mapSupportedInEquiv φ hφ hφ' (K : Set M)) :=
-    continuous_induced_rng.2 <|
-      ((continuous_mapEquiv_frameTopology φ hφ hφ' e d U he hd A hA).comp
-        continuous_subtypeVal).congr fun s ↦ (coe_mapSupportedInEquiv φ hφ hφ' K s).symm
-  exact ((continuous_ofSupportedIn (I := I) (n := n) d U hd K).comp hc).congr fun s ↦
+  exact ((continuous_ofSupportedIn (I := I) (n := n) d U hd K).comp
+    (continuous_mapSupportedInEquiv φ hφ hφ' e d U he hd A hA K)).congr fun s ↦
     (mapCompactlySupportedEquiv_ofSupportedIn φ hφ hφ' K s).symm
 
 include B hB in
@@ -280,8 +146,9 @@ theorem mapCompactlySupportedCLE_ofSupportedIn (K : Compacts M)
   let _ := frameTopology (I := I) (n := n) d U hd
   let _ := compactlySupportedTopology (I := I) (n := n) e U he
   let _ := compactlySupportedTopology (I := I) (n := n) d U hd
-  simpa only [mapCompactlySupportedCLE, mapSupportedInCLE, ContinuousLinearEquiv.coe_mk] using
-    mapCompactlySupportedEquiv_ofSupportedIn φ hφ hφ' K s
+  rw [← ContinuousLinearEquiv.coe_toLinearEquiv, mapCompactlySupportedCLE_toLinearEquiv,
+    ← ContinuousLinearEquiv.coe_toLinearEquiv, mapSupportedInCLE_toLinearEquiv]
+  exact mapCompactlySupportedEquiv_ofSupportedIn φ hφ hφ' K s
 
 end ContMDiffSection
 
