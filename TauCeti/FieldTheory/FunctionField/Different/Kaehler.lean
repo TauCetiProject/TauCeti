@@ -19,8 +19,9 @@ sheaf `TauCeti.AlgebraicGeometry.ramificationIdealSheaf` of a finite map of curv
 
 When the residue extension at `P'` is separable, the completed extension is monogenic, and the
 Kähler different is `𝔪̂_{P'} ^ d(P' ∣ P)`, with `d(P' ∣ P)` the exponent of the trace-dual
-different. Only the residue extension at `P'` is assumed separable: the constant fields, the
-residue fields and the extension `F' / F` away from `P'` are arbitrary.
+different. Only the residue extension at `P'` is assumed separable: the constant fields are
+arbitrary, and other places of `F'` may be wildly ramified or have inseparable residue
+extensions.
 
 ## Main results
 
