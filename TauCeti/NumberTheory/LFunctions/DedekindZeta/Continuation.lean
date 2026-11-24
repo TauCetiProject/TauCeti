@@ -39,7 +39,7 @@ rank is positive, whereas in unit rank `0` (`ℚ` and imaginary quadratic fields
   `TauCeti.LFunctions.completedDedekindZeta_eventuallyEq_mul_dedekindZetaC`,
   `TauCeti.LFunctions.completedDedekindZeta_eq_mul_dedekindZetaC`: relation between
   `dedekindZetaC K` and `completedDedekindZeta K`.
-* `TauCeti.LFunctions.dedekindZetaC_eq`: agreement with `NumberField.dedekindZeta K` on
+* `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: agreement with `NumberField.dedekindZeta K` on
   `Re s > 1`.
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC`,
   `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`: analyticity away from `s = 1`.
@@ -113,7 +113,7 @@ theorem dedekindZetaC_eventuallyEq_mul_completedDedekindZeta (s : ℂ) :
 
 /-- On `Re s > 1`, the continued Dedekind zeta function agrees with Mathlib's Dirichlet series
 `NumberField.dedekindZeta K`. -/
-theorem dedekindZetaC_eq {s : ℂ} (hs : 1 < s.re) :
+theorem dedekindZetaC_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
     dedekindZetaC K s = NumberField.dedekindZeta K s := by
   rw [← dedekindZetaData_continuedL K,
     (dedekindZetaData_hasDirichletAgreement K).continuedL_eq_LSeries
@@ -318,8 +318,8 @@ theorem dedekindZetaC_eq_mul_completedDedekindZeta {s : ℂ}
 /- The simple-pole, analyticity characterization, and canonical pole-value proofs below follow
 the corresponding class-indexed partial-zeta API in
 `TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta`
-(`meromorphicOrderAt_completedPartialZetaClass_one`,
-`analyticAt_completedPartialZetaClass_iff`, and `completedPartialZetaClass_one`) as their formal
+(`meromorphicOrderAt_completedPartialZeta_one`,
+`analyticAt_completedPartialZeta_iff`, and `completedPartialZeta_one`) as their formal
 template. -/
 
 variable (K) in
@@ -357,7 +357,7 @@ theorem tendsto_sub_one_mul_dedekindZetaC :
     refine (NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT K).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with x (hx : 1 < x)
     have hre : 1 < (x : ℂ).re := by simpa using hx
-    rw [dedekindZetaC_eq hre]
+    rw [dedekindZetaC_eq_dedekindZeta hre]
   rwa [tendsto_nhds_unique hreal hzeta] at hlim
 
 /-- `dedekindZetaC K` is analytic at `s` if and only if `s ≠ 1`. -/

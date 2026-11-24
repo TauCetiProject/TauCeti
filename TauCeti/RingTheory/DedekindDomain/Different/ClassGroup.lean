@@ -15,17 +15,44 @@ This module connects `FractionalIdeal.dualEquiv` and `differentIdeal` with `Clas
 adding a `Mathlib.RingTheory.ClassGroup.Basic` dependency to
 `TauCeti.RingTheory.DedekindDomain.Different.Basic`.
 
+## Main definitions
+
+* `ClassGroup.different`: the ideal class of `differentIdeal R S` in `ClassGroup S`.
+
 ## Main results
 
+* `ClassGroup.different_def`: defining formula for `ClassGroup.different R S`.
 * `ClassGroup.mk_dualEquiv`: the ideal class of `dualEquiv R K I` is
   `[dualEquiv R K 1] * [I]⁻¹`.
 * `ClassGroup.mk0_differentIdeal`: the ideal class of `differentIdeal R S` is
+  `[dualEquiv R K 1]⁻¹`.
+* `ClassGroup.different_eq_inv_mk_dualEquiv_one`: `ClassGroup.different R S` equals
   `[dualEquiv R K 1]⁻¹`.
 -/
 
 public section
 
 open scoped nonZeroDivisors
+
+section
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
+
+variable (R S : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+  [CommRing S] [IsDedekindDomain S] [Algebra R S] [Module.IsTorsionFree R S]
+  [Module.Finite R S] [Algebra.IsSeparable (FractionRing R) (FractionRing S)]
+
+/-- **The ideal class of the different ideal** `differentIdeal R S` in `ClassGroup S`. -/
+noncomputable def ClassGroup.different : ClassGroup S :=
+  ClassGroup.mk0 ⟨differentIdeal R S, mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩
+
+/-- Defining equation of `ClassGroup.different`. -/
+theorem ClassGroup.different_def :
+    ClassGroup.different R S =
+      ClassGroup.mk0 ⟨differentIdeal R S, mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩ :=
+  (rfl)
+
+end
 
 section
 
@@ -55,5 +82,19 @@ theorem ClassGroup.mk0_differentIdeal [Module.IsTorsionFree R S]
   apply Units.ext
   rw [FractionalIdeal.coe_mk0, Units.val_inv_eq_inv_val, FractionalIdeal.coe_dualEquiv,
     Units.val_one, coeIdeal_differentIdeal (A := R) (K := K)]
+
+section
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
+
+/-- The ideal class `ClassGroup.different R S` equals the inverse of the class of the inverse
+different `FractionalIdeal.dualEquiv R K 1`. -/
+theorem ClassGroup.different_eq_inv_mk_dualEquiv_one [Module.IsTorsionFree R S]
+    [Module.Finite R S] [Algebra.IsSeparable (FractionRing R) (FractionRing S)] :
+    ClassGroup.different R S =
+      (ClassGroup.mk L (FractionalIdeal.dualEquiv R K (1 : (FractionalIdeal S⁰ L)ˣ)))⁻¹ := by
+  rw [ClassGroup.different_def, ClassGroup.mk0_differentIdeal R K (L := L)]
+
+end
 
 end

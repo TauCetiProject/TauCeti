@@ -358,7 +358,7 @@ private theorem covolume_gamma_mul_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s
           (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) * h2cancel
 
 /-- On `Re s > 1`, `mellinKernel D (idealLattice K I) - mellinConstant K` has Mellin transform at
-`s / 2` equal to the completed partial zeta series of `I`. -/
+`s / 2` equal to the completed partial zeta series of the ideal class `[I]⁻¹`. -/
 theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum
     {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
     (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
@@ -374,7 +374,7 @@ theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum
   simpa only [covolume_gamma_mul_eq] using hm
 
 /-- On `Re s > 1`, `(mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` equals the completed
-partial zeta series of `I`. -/
+partial zeta series of the ideal class `[I]⁻¹`. -/
 theorem mellinKernelFEPair_Λ_div_two_eq_tsum {D : Set (realSpace K)}
     (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ}
     (hs : 1 < s.re) :

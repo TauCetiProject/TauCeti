@@ -156,7 +156,8 @@ theorem dedekindZetaData_hasDirichletAgreement :
   completed_eq s hs := by
     have hcoeff : (dedekindZetaData K).coeff = ⇑(normCoeff K (1 : IdealArithmeticFunction K)) :=
       funext (dedekindZetaData_coeff K)
-    rw [dedekindZetaData_completed, completedDedekindZeta_eq hs, dedekindZetaData_conductor_cast,
+    rw [dedekindZetaData_completed, completedDedekindZeta_eq_mul_dedekindZeta hs,
+      dedekindZetaData_conductor_cast,
       dedekindZetaData_gammaFactor, hcoeff, dedekindZeta_eq_LSeries_normCoeff_one K s]
     ring
 

@@ -50,7 +50,7 @@ private theorem completedDedekindZeta_rat_eqOn :
   intro s hs
   have hs_re : 1 < s.re := Set.mem_ofPred_eq.mp hs
   have hs0 : s ≠ 0 := by rintro rfl; norm_num at hs_re
-  rw [completedDedekindZeta_eq hs_re, NumberField.discr_rat,
+  rw [completedDedekindZeta_eq_mul_dedekindZeta hs_re, NumberField.discr_rat,
     InfinitePlace.nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ),
     InfinitePlace.nrComplexPlaces_eq_zero_of_finrank_eq_one (Module.finrank_self ℚ),
     dedekindZeta_rat_eq_riemannZeta hs_re, riemannZeta_def_of_ne_zero hs0]

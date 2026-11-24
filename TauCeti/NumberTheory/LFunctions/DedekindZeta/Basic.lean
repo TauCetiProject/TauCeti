@@ -19,7 +19,7 @@ agreeing with `ζ_K` on `Re s > 1` when one exists, and `0` as a fallback if non
 functions agreeing on a half-plane agree everywhere, so the continued function is well defined. For
 a number field `K`, a whole-plane meromorphic continuation does exist, so the fallback never
 occurs and `dedekindZetaC K` agrees unconditionally with `ζ_K` on `Re s > 1`
-(`TauCeti.LFunctions.dedekindZetaC_eq` in
+(`TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta` in
 `TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation`).
 Every statement about `ζ_K` off the half-plane of convergence, such as a factorization through
 other L-functions, is a statement about `dedekindZetaC K`.
@@ -57,7 +57,7 @@ variable (K : Type*) [Field K] [NumberField K]
 continuation from `Re s > 1` of Mathlib's `NumberField.dedekindZeta K`. Generically,
 `TauCeti.meromorphicContinuation` falls back to `0` if no whole-plane meromorphic continuation
 exists; for `dedekindZetaC K`, a continuation exists and unconditional agreement with `ζ_K` on
-`Re s > 1` is proved in `TauCeti.LFunctions.dedekindZetaC_eq`
+`Re s > 1` is proved in `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`
 (`TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation`). -/
 def dedekindZetaC : ℂ → ℂ :=
   meromorphicContinuation 1 (NumberField.dedekindZeta K)
