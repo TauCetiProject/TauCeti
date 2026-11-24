@@ -28,7 +28,10 @@ of `Q(E)` is the space whose loop space is the algebraic K-theory of `E`.
 ## Main definitions
 
 * `TauCeti.ExactStructure.QConstruction E`: Quillen's category `Q(E)`.
+* `TauCeti.ExactStructure.QConstruction.obj`: the object of `C` underlying an object of `Q(E)`.
 * `TauCeti.ExactStructure.QConstruction.homMk`: the Q-morphism represented by a span.
+* `TauCeti.ExactStructure.QConstruction.homLift`: a function on spans invariant under
+  isomorphism of their middle objects, descended to Q-morphisms.
 * `TauCeti.ExactStructure.QConstruction.ofInflation`: the Q-morphism `X ⟶ Y` of an inflation
   `X ↣ Y`.
 * `TauCeti.ExactStructure.QConstruction.ofDeflation`: the reversed Q-morphism `Y ⟶ X` of a
@@ -92,13 +95,35 @@ noncomputable instance : Category.{max u v} E.QConstruction :=
 noncomputable def mk (X : C) : E.QConstruction :=
   ⟨⟨X⟩⟩
 
+variable {E} in
+/-- The object of `C` underlying an object of the Q-construction. -/
+noncomputable def obj (Z : E.QConstruction) : C :=
+  Z.as.of
+
+/-- The object of `C` underlying `mk E X` is `X`. -/
+@[simp]
+theorem obj_mk (X : C) : (mk E X).obj = X :=
+  (rfl)
+
+/-- Every object of the Q-construction is `mk E` of its underlying object. -/
+@[simp]
+theorem mk_obj (Z : E.QConstruction) : mk E Z.obj = Z :=
+  (rfl)
+
+/-- Induction principle for objects of the Q-construction: a property holding for every object
+coming from `C` holds for every object. -/
+@[elab_as_elim]
+theorem obj_induction {motive : E.QConstruction → Prop} (h : ∀ X : C, motive (mk E X))
+    (Z : E.QConstruction) : motive Z :=
+  mk_obj E Z ▸ h Z.obj
+
 /-- Every object of the Q-construction comes from an object of `C`. -/
 theorem mk_surjective : Function.Surjective (mk E) :=
-  fun X => ⟨X.as.of, (rfl)⟩
+  fun Z => ⟨Z.obj, mk_obj E Z⟩
 
 /-- Distinct objects of `C` give distinct objects of the Q-construction. -/
 theorem mk_injective : Function.Injective (mk E) :=
-  fun _ _ h => congrArg (fun Z : E.QConstruction => Z.as.of) h
+  fun _ _ h => by simpa using congrArg obj h
 
 variable {E}
 
@@ -114,6 +139,42 @@ theorem homMk_surjective {X Y : C} (f : mk E X ⟶ mk E Y) :
       homMk p hp i hi = f := by
   obtain ⟨S, rfl⟩ := Truncation.homMk_surjective f
   exact ⟨S.apex, S.l, S.wl, S.r, S.wr, (rfl)⟩
+
+/-- Induction principle for Q-morphisms: a property holding for the Q-morphism of every span holds
+for every Q-morphism. -/
+@[elab_as_elim]
+theorem hom_induction {X Y : C} {motive : (mk E X ⟶ mk E Y) → Prop}
+    (h : ∀ (M : C) (p : M ⟶ X) (hp : E.IsDeflation p) (i : M ⟶ Y) (hi : E.IsInflation i),
+      motive (homMk p hp i hi))
+    (f : mk E X ⟶ mk E Y) : motive f := by
+  obtain ⟨M, p, hp, i, hi, rfl⟩ := homMk_surjective f
+  exact h M p hp i hi
+
+/-- A function on spans `X ↞ M ↣ Y` that takes the same value on spans related by an isomorphism
+of their middle objects compatible with both legs descends to the Q-morphisms `X ⟶ Y`. -/
+noncomputable def homLift {X Y : C} {α : Sort*}
+    (F : ∀ (M : C) (p : M ⟶ X), E.IsDeflation p → ∀ i : M ⟶ Y, E.IsInflation i → α)
+    (hF : ∀ ⦃M M' : C⦄ (e : M ≅ M') ⦃p : M ⟶ X⦄ (hp : E.IsDeflation p) ⦃i : M ⟶ Y⦄
+      (hi : E.IsInflation i) ⦃p' : M' ⟶ X⦄ (hp' : E.IsDeflation p') ⦃i' : M' ⟶ Y⦄
+      (hi' : E.IsInflation i'), e.hom ≫ p' = p → e.hom ≫ i' = i →
+        F M p hp i hi = F M' p' hp' i' hi') :
+    (mk E X ⟶ mk E Y) → α :=
+  Truncation.homLift (a := (⟨X⟩ : SpanBicat C E.deflations E.inflations)) (b := ⟨Y⟩)
+    (fun S => F S.apex S.l S.wl S.r S.wr)
+    fun _ _ e => hF (SpanBicat.apexIso e) _ _ _ _ e.hom.hom_l e.hom.hom_r
+
+/-- Evaluating a function descended with `homLift` on the Q-morphism of a span returns its value
+on that span. -/
+@[simp]
+theorem homLift_homMk {X Y M : C} {α : Sort*}
+    (F : ∀ (M : C) (p : M ⟶ X), E.IsDeflation p → ∀ i : M ⟶ Y, E.IsInflation i → α)
+    (hF : ∀ ⦃M M' : C⦄ (e : M ≅ M') ⦃p : M ⟶ X⦄ (hp : E.IsDeflation p) ⦃i : M ⟶ Y⦄
+      (hi : E.IsInflation i) ⦃p' : M' ⟶ X⦄ (hp' : E.IsDeflation p') ⦃i' : M' ⟶ Y⦄
+      (hi' : E.IsInflation i'), e.hom ≫ p' = p → e.hom ≫ i' = i →
+        F M p hp i hi = F M' p' hp' i' hi')
+    (p : M ⟶ X) (hp : E.IsDeflation p) (i : M ⟶ Y) (hi : E.IsInflation i) :
+    homLift F hF (homMk p hp i hi) = F M p hp i hi :=
+  Truncation.homLift_homMk _ _ _
 
 /-- Two spans represent the same Q-morphism exactly when there is an isomorphism of their middle
 objects compatible with both legs. -/
@@ -276,30 +337,26 @@ theorem isIso_ofDeflation_iff {X Y : C} {p : X ⟶ Y} {hp : E.IsDeflation p} :
 
 open ZeroObject
 
-/-- The admissible subobject of `Y` cut out by the right leg of a span `0 ↞ M ↣ Y`. -/
-private noncomputable def admissibleSubobject {Y : C}
-    (S : (⟨0⟩ : SpanBicat C E.deflations E.inflations) ⟶ ⟨Y⟩) :
-    {P : Subobject Y // E.IsInflation P.arrow} :=
-  have := ConflationClass.IsInflation.mono S.wr
-  ⟨Subobject.mk S.r, by
-    rw [← Subobject.underlyingIso_hom_comp_eq_mk]
-    exact E.isInflation_comp _ _ (E.inflations.of_isIso _) S.wr⟩
-
 /-- The admissible subobject of `Y` attached to a Q-morphism `0 ⟶ Y`: the image of the right
 leg of any span representing it. -/
 private noncomputable def toAdmissibleSubobject {Y : C} :
     (mk E 0 ⟶ mk E Y) → {P : Subobject Y // E.IsInflation P.arrow} :=
-  Truncation.homLift admissibleSubobject fun S S' e => by
-    have := ConflationClass.IsInflation.mono S.wr
-    have := ConflationClass.IsInflation.mono S'.wr
-    exact Subtype.ext (Subobject.mk_eq_mk_of_comm _ _ (SpanBicat.apexIso e) e.hom.hom_r)
+  homLift
+    (fun _ _ _ i hi =>
+      have := hi.mono
+      ⟨Subobject.mk i, by
+        rw [← Subobject.underlyingIso_hom_comp_eq_mk]
+        exact E.isInflation_comp _ _ (E.inflations.of_isIso _) hi⟩)
+    fun _ _ e _ _ _ hi _ _ _ hi' _ he => by
+      have := hi.mono
+      have := hi'.mono
+      exact Subtype.ext (Subobject.mk_eq_mk_of_comm _ _ e he)
 
 private theorem toAdmissibleSubobject_homMk {Y M : C} {p : M ⟶ 0} {hp : E.IsDeflation p}
     {i : M ⟶ Y} {hi : E.IsInflation i} :
     haveI := hi.mono
     (toAdmissibleSubobject (homMk p hp i hi) : Subobject Y) = Subobject.mk i := by
-  rw [toAdmissibleSubobject, homMk, Truncation.homLift_homMk]
-  rfl
+  rw [toAdmissibleSubobject, homLift_homMk]
 
 /-- **Q-morphisms out of zero are admissible subobjects.** A Q-morphism `0 ⟶ Y` is the same as a
 subobject of `Y` whose inclusion is an inflation: the span `0 ↞ M ↣ Y` corresponds to the
