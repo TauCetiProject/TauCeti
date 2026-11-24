@@ -31,10 +31,12 @@ condition, so `outerLIntegral μ f = ∞` whenever `f` admits no integrable meas
   superlevel sets by Mathlib's outer measure `μ`.
 * `TauCeti.outerLIntegral_indicator_const` and `TauCeti.outerLIntegral_indicator_one`: the outer
   Lebesgue integral of a constant indicator recovers the outer measure `c * μ s`.
-* `TauCeti.exists_measurable_ge_outerLIntegral_eq` and
+* `TauCeti.exists_measurable_ge_outerLIntegral_eq`: existence of an attaining measurable majorant
+  for any function `f`.
+* `TauCeti.exists_measurable_ge_outerLIntegral_eq_of_lt_top` and
   `TauCeti.exists_measurable_ge_outerLIntegral_eq_of_sFinite`: existence of an attaining
-  measurable majorant, minimal almost everywhere whenever the outer integral is finite or `μ` is
-  s-finite.
+  measurable majorant that is minimal almost everywhere whenever the outer integral is finite or `μ`
+  is s-finite.
 * `TauCeti.outerLIntegral_iSup` and `TauCeti.outerLIntegral_liminf_le`: monotone convergence and
   Fatou's lemma for `outerLIntegral`.
 * `TauCeti.outerLIntegral_add_le`, `TauCeti.outerLIntegral_tsum_le`, and

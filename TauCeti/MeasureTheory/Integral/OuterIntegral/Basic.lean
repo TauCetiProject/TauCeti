@@ -11,7 +11,9 @@ public import TauCeti.MeasureTheory.Integral.OuterIntegral.LIntegral
 import Mathlib.Basic.Real.Pointwise
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Measure.AEMeasurable
+import TauCeti.Order.Filter.Group
 
 /-!
 # Real-valued outer and inner integrals
@@ -339,12 +341,6 @@ private theorem lintegral_min_negPart_le_of_bddBelow {μ : Measure α} [IsFinite
   rw [← ofReal_integral_eq_lintegral_ofReal hq_int (ae_of_all _ hq_nn)]
   exact ENNReal.ofReal_le_ofReal (by linarith)
 
-private theorem iSup_ofReal_min_nat (x : ℝ) :
-    (⨆ n : ℕ, ENNReal.ofReal (min x n)) = ENNReal.ofReal x := by
-  refine le_antisymm (iSup_le fun _ ↦ ENNReal.ofReal_le_ofReal (min_le_left _ _)) ?_
-  obtain ⟨n, hn⟩ := exists_nat_ge x
-  exact le_iSup_of_le n (by rw [min_eq_left hn])
-
 private theorem integrable_of_aemeasurable_of_bddBelow {μ : Measure α} [IsFiniteMeasure μ]
     {f u : α → ℝ} (hf : AEMeasurable f μ) (hu_meas : Measurable u) (hu_int : Integrable u μ)
     (hfu : f ≤ u)
@@ -360,7 +356,7 @@ private theorem integrable_of_aemeasurable_of_bddBelow {μ : Measure α} [IsFini
     ((hf.ae_eq_mk.symm.le.trans (ae_of_all _ hfu)).mono fun _ hω ↦ max_le_max_right _ hω)
     (integrable_zero α ℝ μ) (hu_int.sup (integrable_zero α ℝ μ))
   have hneg_fin : ∫⁻ ω, ENNReal.ofReal (max (-f₀ ω) 0) ∂μ < ⊤ := by
-    simp_rw [← iSup_ofReal_min_nat (max (-f₀ _) 0)]
+    simp_rw [← ENNReal.iSup_ofReal_min_natCast (max (-f₀ _) 0)]
     have hq_meas : ∀ n : ℕ, Measurable fun ω ↦ ENNReal.ofReal (min (max (-f₀ ω) 0) n) :=
       fun n ↦ ((hf₀_meas.neg.max measurable_const).min measurable_const).ennreal_ofReal
     rw [lintegral_iSup hq_meas
@@ -708,10 +704,7 @@ private theorem exists_integrable_le_ae_neg {μ : Measure α} {f : α → ℝ}
     (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
     ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] -f :=
   let ⟨u, hu_int, hfu⟩ := hu
-  ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
-
-private theorem ae_le_neg {μ : Measure α} {f g : α → ℝ} (h : f ≤ᵐ[μ] g) : -g ≤ᵐ[μ] -f :=
-  h.mono fun _ hω ↦ neg_le_neg hω
+  ⟨-u, hu_int.neg, hfu.neg⟩
 
 /-- `innerIntegral μ (-f) = -outerIntegral μ f`. -/
 @[simp]
@@ -796,7 +789,7 @@ theorem integral_le_innerIntegral_of_ae {μ : Measure α} {f g : α → ℝ}
     (hl : ∃ l, Measurable l ∧ l ≤ f) (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
     ∫ ω, g ω ∂μ ≤ innerIntegral μ f := by
   rw [innerIntegral_def, le_neg, ← integral_neg]
-  exact outerIntegral_le_integral_of_ae hg.neg (ae_le_neg hgf)
+  exact outerIntegral_le_integral_of_ae hg.neg hgf.neg
     (exists_measurable_ge_neg hl) (exists_integrable_le_ae_neg hu)
 
 /-- `innerIntegral μ f` is bounded above by the integral of any integrable majorant `u ≥ᵐ[μ] f`,
@@ -806,7 +799,7 @@ theorem innerIntegral_le_integral {μ : Measure α} {f u : α → ℝ}
     (hl : ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f) :
     innerIntegral μ f ≤ ∫ ω, u ω ∂μ := by
   rw [innerIntegral_def, neg_le, ← integral_neg]
-  exact integral_le_outerIntegral hu.neg (ae_le_neg hfu)
+  exact integral_le_outerIntegral hu.neg hfu.neg
     (exists_measurable_integrable_ge_neg_iff.mpr hl)
 
 /-- `innerIntegral μ f ≤ outerIntegral μ f` whenever `f` admits both a measurable integrable
@@ -831,7 +824,7 @@ theorem innerIntegral_mono_ae {μ : Measure α} {f₁ f₂ : α → ℝ} (h : f�
     (hu₂ : ∃ u, Integrable u μ ∧ f₂ ≤ᵐ[μ] u) :
     innerIntegral μ f₁ ≤ innerIntegral μ f₂ := by
   rw [innerIntegral_def, innerIntegral_def, neg_le_neg_iff]
-  exact outerIntegral_mono_ae (ae_le_neg h)
+  exact outerIntegral_mono_ae h.neg
     (exists_measurable_ge_neg hl₂) (exists_measurable_integrable_ge_neg_iff.mpr hl₁)
     (exists_integrable_le_ae_neg hu₂)
 
@@ -955,7 +948,7 @@ theorem exists_measurable_le_innerIntegral_eq {μ : Measure α} {f : α → ℝ}
   refine ⟨-g', hg'_meas.neg, hg'_int.neg, neg_le.mp hfg', ?_, fun h hh hhf ↦ ?_⟩
   · rw [innerIntegral_def, ← hg'_eq]
     simp [Pi.neg_apply, integral_neg]
-  · exact (hg'_min (-h) hh.neg (ae_le_neg hhf)).mono fun ω hω ↦ le_neg.mp hω
+  · exact (hg'_min (-h) hh.neg hhf.neg).mono fun ω hω ↦ le_neg.mp hω
 
 end InnerIntegral
 
