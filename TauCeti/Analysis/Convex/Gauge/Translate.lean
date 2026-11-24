@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Gauge
+public import TauCeti.Analysis.LocallyConvex.Bounded
 
 /-!
 # The gauge centred at a point
@@ -14,11 +15,11 @@ The gauge of a set `s` centred at a point `p` is the gauge of the translate
 `(p + ·) ⁻¹' s = {v | p + v ∈ s}`, evaluated at `x - p`. This file transports the basic
 properties of Mathlib's gauge, which is centred at `0`, to an arbitrary centre `p`:
 
-* `TauCeti.preimage_add_mem_nhds_zero`, `Bornology.IsVonNBounded.preimage_add`,
-  `TauCeti.frontier_preimage_add`: translating a neighbourhood of `p`, a von Neumann bounded set
-  and a frontier by `p`;
+* `TauCeti.preimage_add_mem_nhds_zero`, `TauCeti.frontier_preimage_add`: translating a
+  neighbourhood of `p` and a frontier by `p`;
 * `TauCeti.gauge_preimage_add_sub_pos_iff`: for a bounded neighbourhood of `p` the gauge centred
-  at `p` is positive exactly off `p`;
+  at `p` is positive exactly off `p`, using `Bornology.IsVonNBounded.preimage_add` from
+  `TauCeti.Analysis.LocallyConvex.Bounded`;
 * `TauCeti.gauge_preimage_add_sub_eq_one_iff_mem_frontier`: for a convex neighbourhood of `p` the
   gauge centred at `p` takes the value one exactly on the frontier;
 * `TauCeti.le_gauge_preimage_add_of_subset_closedBall`: if `s ⊆ closedBall p R`, the gauge
@@ -31,12 +32,6 @@ public section
 
 open Set Metric Topology Bornology
 open scoped NNReal
-
-/-- The translate of a von Neumann bounded set is von Neumann bounded. -/
-protected theorem Bornology.IsVonNBounded.preimage_add {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] {s : Set E}
-    (hb : IsVonNBounded ℝ s) (p : E) : IsVonNBounded ℝ ((p + ·) ⁻¹' s) := by
-  simpa [← image_vadd, image_add_left] using hb.vadd (-p)
 
 namespace TauCeti
 
