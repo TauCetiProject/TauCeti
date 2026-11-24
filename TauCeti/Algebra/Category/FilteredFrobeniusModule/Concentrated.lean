@@ -83,6 +83,11 @@ abbrev concentrated (ψ : V →ₛₗ[σ] V) (j : ℤ) : FilteredFrobeniusModule
 
 variable {ϖ} (ψ : V →ₛₗ[σ] V) (ψ' : V' →ₛₗ[σ] V') (j : ℤ)
 
+/-- An element lies in `Fil^i` of the object with a single jump `j` iff `i ≤ j` or it is zero. -/
+theorem mem_concentrated_fil_iff {i : ℤ} {x : V} :
+    x ∈ (concentrated ϖ ψ j).fil i ↔ i ≤ j ∨ x = 0 := by
+  by_cases h : i ≤ j <;> simp [h]
+
 theorem concentrated_fil_of_le {i : ℤ} (h : i ≤ j) : (concentrated ϖ ψ j).fil i = ⊤ := by
   simp [h]
 
@@ -127,6 +132,7 @@ theorem range_concentrated_phi_self :
   exact ⟨⟨x, by simp⟩, by simpa using hy⟩
 
 /-- An object with a single jump is generating iff the image of `ψ` spans `V`. -/
+@[simp]
 theorem isGenerating_concentrated_iff :
     (concentrated ϖ ψ j).IsGenerating ↔ Submodule.span W (Set.range ψ) = ⊤ := by
   rw [isGenerating_iff_of_isSupportedIn (isSupportedIn_concentrated ψ j le_rfl le_rfl),
@@ -153,11 +159,8 @@ with the same single jump. -/
 def concentratedHom (f : V →ₗ[W] V') (hf : ∀ x, f (ψ x) = ψ' (f x)) :
     concentrated ϖ ψ j ⟶ concentrated ϖ ψ' j where
   hom := f
-  map_fil i x hx := by
-    by_cases h : i ≤ j
-    · simp [h]
-    · simp only [h, ↓reduceIte, Submodule.mem_bot] at hx
-      simp [hx]
+  map_fil _ _ hx := (mem_concentrated_fil_iff (ϖ := ϖ) ψ' j).2
+    (((mem_concentrated_fil_iff (ϖ := ϖ) ψ j).1 hx).imp_right fun h => by rw [h, map_zero])
   hom_phi i x hx := by
     by_cases h : i ≤ j
     · simp [h, hf]
@@ -193,22 +196,16 @@ def concentratedTwistIso (k : ℤ) :
     (concentrated ϖ ψ j).twist k ≅ concentrated ϖ ψ (j + k) where
   hom :=
     { hom := LinearMap.id
-      map_fil i x hx := by
-        by_cases h : i - k ≤ j
-        · simp [show i ≤ j + k by omega]
-        · simp only [h, ↓reduceIte, Submodule.mem_bot] at hx
-          simp [hx]
+      map_fil _ _ hx := (mem_concentrated_fil_iff (ϖ := ϖ) ψ (j + k)).2
+        (((mem_concentrated_fil_iff (ϖ := ϖ) ψ j).1 hx).imp_left fun _ => by omega)
       hom_phi i x hx := by
         by_cases h : i - k ≤ j
         · simp [h, show i ≤ j + k by omega, show j - (i - k) = j + k - i by ring]
         · simp [h, show ¬ i ≤ j + k by omega] }
   inv :=
     { hom := LinearMap.id
-      map_fil i x hx := by
-        by_cases h : i ≤ j + k
-        · simp [show i - k ≤ j by omega]
-        · simp only [h, ↓reduceIte, Submodule.mem_bot] at hx
-          simp [hx]
+      map_fil _ _ hx := (mem_concentrated_fil_iff (ϖ := ϖ) ψ j).2
+        (((mem_concentrated_fil_iff (ϖ := ϖ) ψ (j + k)).1 hx).imp_left fun _ => by omega)
       hom_phi i x hx := by
         by_cases h : i ≤ j + k
         · simp [h, show i - k ≤ j by omega, show j - (i - k) = j + k - i by ring]

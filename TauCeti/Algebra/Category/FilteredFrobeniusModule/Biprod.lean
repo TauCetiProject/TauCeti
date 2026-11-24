@@ -145,12 +145,14 @@ instance : HasBinaryBiproducts (FilteredFrobeniusModule.{v} σ ϖ) where
   has_binary_biproduct M N := HasBinaryBiproduct.mk ⟨_, prodIsBilimit M N⟩
 
 /-- The direct sum is supported in `[a, b]` iff both summands are. -/
+@[simp]
 theorem isSupportedIn_prod_iff (a b : ℤ) :
     (prod M N).IsSupportedIn a b ↔ M.IsSupportedIn a b ∧ N.IsSupportedIn a b := by
   simp only [isSupportedIn_iff, Submodule.prod_eq_top_iff, Submodule.prod_eq_bot_iff]
   tauto
 
 /-- The direct sum is generating iff both summands are. -/
+@[simp]
 theorem isGenerating_prod_iff :
     (prod M N).IsGenerating ↔ M.IsGenerating ∧ N.IsGenerating := by
   refine ⟨fun h => ⟨h.of_surjective (prodFst M N) LinearMap.fst_surjective,

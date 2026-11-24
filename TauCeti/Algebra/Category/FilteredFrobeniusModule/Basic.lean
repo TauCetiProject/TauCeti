@@ -267,23 +267,33 @@ instance : Zero (M ⟶ N) := ⟨⟨0, fun _ _ _ => zero_mem _, fun i _ _ => (map
 
 instance : Add (M ⟶ N) :=
   ⟨fun f g => ⟨f.hom + g.hom, fun i _ hx => add_mem (f.map_fil i hx) (g.map_fil i hx),
-    fun i x hx => by rw [LinearMap.add_apply, f.hom_phi, g.hom_phi, ← map_add]; rfl⟩⟩
+    fun i x hx => by
+      rw [LinearMap.add_apply, f.hom_phi, g.hom_phi, ← map_add]
+      exact congrArg _ (Subtype.ext (by simp))⟩⟩
 
 instance : Neg (M ⟶ N) :=
   ⟨fun f => ⟨-f.hom, fun i _ hx => neg_mem (f.map_fil i hx),
-    fun i x hx => by rw [LinearMap.neg_apply, f.hom_phi, ← map_neg]; rfl⟩⟩
+    fun i x hx => by
+      rw [LinearMap.neg_apply, f.hom_phi, ← map_neg]
+      exact congrArg _ (Subtype.ext (by simp))⟩⟩
 
 instance : Sub (M ⟶ N) :=
   ⟨fun f g => ⟨f.hom - g.hom, fun i _ hx => sub_mem (f.map_fil i hx) (g.map_fil i hx),
-    fun i x hx => by rw [LinearMap.sub_apply, f.hom_phi, g.hom_phi, ← map_sub]; rfl⟩⟩
+    fun i x hx => by
+      rw [LinearMap.sub_apply, f.hom_phi, g.hom_phi, ← map_sub]
+      exact congrArg _ (Subtype.ext (by simp))⟩⟩
 
 instance : SMul ℕ (M ⟶ N) :=
   ⟨fun n f => ⟨n • f.hom, fun i _ hx => Submodule.smul_of_tower_mem _ n (f.map_fil i hx),
-    fun i x hx => by rw [LinearMap.smul_apply, f.hom_phi, ← map_nsmul]; rfl⟩⟩
+    fun i x hx => by
+      rw [LinearMap.smul_apply, f.hom_phi, ← map_nsmul]
+      exact congrArg _ (Subtype.ext (by simp))⟩⟩
 
 instance : SMul ℤ (M ⟶ N) :=
   ⟨fun n f => ⟨n • f.hom, fun i _ hx => Submodule.smul_of_tower_mem _ n (f.map_fil i hx),
-    fun i x hx => by rw [LinearMap.smul_apply, f.hom_phi, ← map_zsmul]; rfl⟩⟩
+    fun i x hx => by
+      rw [LinearMap.smul_apply, f.hom_phi, ← map_zsmul]
+      exact congrArg _ (Subtype.ext (by simp))⟩⟩
 
 @[simp] theorem hom_zero : (0 : M ⟶ N).hom = 0 := (rfl)
 
@@ -410,11 +420,9 @@ theorem isGenerating_iff_of_isSupportedIn {a b : ℤ} (h : M.IsSupportedIn a b) 
     exact hx0 (by simpa [h.fil_eq_bot (not_le.1 hbi)] using hx)
   rcases lt_or_ge i a with hia | hai
   · have hxa : x ∈ M.fil a := h.1 ▸ Submodule.mem_top
-    have hab : a ≤ b := by
-      by_contra hba
-      exact hx0 (by simpa [h.fil_eq_bot (not_le.1 hba)] using hxa)
+    have : Nontrivial M := nontrivial_of_ne x 0 hx0
     exact Submodule.mem_iSup_of_mem a (Submodule.mem_iSup_of_mem
-      (Set.mem_Icc.2 ⟨le_rfl, hab⟩) (M.phi_mem_span_range hia.le hxa))
+      (Set.mem_Icc.2 ⟨le_rfl, h.le⟩) (M.phi_mem_span_range hia.le hxa))
   · exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem
       (Set.mem_Icc.2 ⟨hai, hib⟩) (Submodule.subset_span ⟨_, rfl⟩))
 

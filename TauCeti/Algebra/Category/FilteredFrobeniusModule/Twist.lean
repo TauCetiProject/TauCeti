@@ -75,6 +75,7 @@ theorem twist_phi (i : ℤ) (x : M) (hx : x ∈ (M.twist j).fil i) :
     (M.twist j).phi i ⟨x, hx⟩ = M.phi (i - j) ⟨x, hx⟩ := (rfl)
 
 /-- `M(j)` is supported in `[a, b]` iff `M` is supported in `[a - j, b - j]`. -/
+@[simp]
 theorem isSupportedIn_twist_iff (a b : ℤ) :
     (M.twist j).IsSupportedIn a b ↔ M.IsSupportedIn (a - j) (b - j) := by
   simp only [isSupportedIn_iff, sub_add_eq_add_sub]
