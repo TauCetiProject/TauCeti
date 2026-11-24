@@ -13,6 +13,7 @@ import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Probability.Distributions.Gaussian.Cdf
+import TauCeti.Probability.Distributions.Gaussian.PDF
 
 /-!
 # Repeated integrals of the Gaussian

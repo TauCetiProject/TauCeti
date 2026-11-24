@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
 import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Measure.Tail
+import TauCeti.Probability.Distributions.Gaussian.PDF
 import TauCeti.Probability.Cdf.Density
 
 /-!
@@ -32,8 +33,6 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   difference of
   error-function values.
 * `TauCeti.Probability.integral_Iic_gaussianPDFReal` — the same over a left half-line.
-* `TauCeti.Probability.measureReal_gaussianReal_eq_setIntegral` — for a nonzero variance the
-  real mass of a set is the integral of the density over it.
 * `TauCeti.Probability.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
 * `TauCeti.Probability.cdf_gaussianReal_eq_cdf_zero_one` — standardization `Φ ((x - m) / √v)`.
@@ -143,13 +142,6 @@ theorem integral_Iic_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x :
     convert h.congr fun y => (intervalIntegral_gaussianPDFReal m (v := v) y x).symm using 2
     ring
   exact tendsto_nhds_unique hlim hlim'
-
-/-- For a nonzero variance, the real mass of a set `s` under `gaussianReal m v` is the integral
-of the Gaussian density over `s`. -/
-theorem measureReal_gaussianReal_eq_setIntegral (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (s : Set ℝ) :
-    (gaussianReal m v).real s = ∫ t in s, gaussianPDFReal m v t := by
-  rw [measureReal_def, gaussianReal_apply_eq_integral m hv,
-    ENNReal.toReal_ofReal (integral_nonneg fun t => gaussianPDFReal_nonneg m v t)]
 
 /-- The cumulative distribution function of a Gaussian law with nonzero variance. -/
 theorem cdf_gaussianReal_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :

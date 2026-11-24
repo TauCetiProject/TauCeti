@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.WrappedNormal.Density
 public import TauCeti.Probability.Quantile
-import TauCeti.Probability.Distributions.Gaussian.Cdf
+import TauCeti.Probability.Distributions.Gaussian.PDF
 import TauCeti.Probability.Distributions.Gaussian.Periodization
 import TauCeti.MeasureTheory.Measure.AddCircle
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
