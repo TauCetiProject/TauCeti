@@ -218,18 +218,6 @@ variable {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
 current is a compact subset of `Ω`, then the current and its boundary have finite mass. -/
 theorem IsLocallyNormal.isNormal (hT : IsLocallyNormal T) (hc : IsCompact (dsupport T))
     (hΩ : dsupport T ⊆ Ω) : IsNormal T := by
-  by_cases hE : FiniteDimensional ℝ E
-  swap
-  · -- without finite dimension every test function vanishes, so every current has zero mass
-    have h0 {m : ℕ} (S : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] V) : mass S ≠ ⊤ := by
-      refine ne_top_of_le_ne_top ENNReal.zero_ne_top (mass_le_iff.2 fun φ _ => ?_)
-      obtain h | h := φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous
-      · have : φ = 0 := TestFunction.ext fun x => congrFun h x
-        simp [this]
-      · exact absurd h hE
-    cases k with
-    | zero => exact h0 T
-    | succ k => exact ⟨h0 T, h0 _⟩
   cases k with
   | zero => exact HasLocallyFiniteMass.mass_ne_top hT hc hΩ
   | succ k =>

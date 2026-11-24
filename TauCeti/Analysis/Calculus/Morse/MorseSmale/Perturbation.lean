@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Dynamics.Flow.Variational
 
 /-!
@@ -194,15 +195,10 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     refine iff_of_false ?_ hne
     rw [fderiv_perturb (hfd x) fun i ↦ hhd i x]
     intro h0
-    have h1 : ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ Fintype.card ι * max C 0 * ‖s‖ := by
-      calc ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ∑ i, ‖s i • fderiv ℝ (h i) x‖ := norm_sum_le _ _
-        _ ≤ ∑ _i : ι, ‖s‖ * max C 0 := Finset.sum_le_sum fun i _ ↦ by
-          rw [norm_smul]
-          exact mul_le_mul (PiLp.norm_apply_le s i)
-            ((hB i x).trans ((hC i).trans (le_max_left _ _))) (norm_nonneg _) (norm_nonneg _)
-        _ = Fintype.card ι * max C 0 * ‖s‖ := by
-          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-          ring
+    have h1 : ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ‖s‖ * (Fintype.card ι * max C 0) := by
+      refine (PiLp.norm_sum_smul_le s _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg s))
+      simpa using Finset.sum_le_card_nsmul Finset.univ _ _
+        fun i _ ↦ (hB i x).trans ((hC i).trans (le_max_left _ _))
     have h2 : ‖fderiv ℝ f x‖ ≤ ‖∑ i, s i • fderiv ℝ (h i) x‖ := by
       have : fderiv ℝ f x = -∑ i, s i • fderiv ℝ (h i) x := eq_neg_of_add_eq_zero_left h0
       rw [this, norm_neg]

@@ -184,7 +184,8 @@ theorem eq_zero_of_character_eq_zero {a : NovikovSeries ℤ (ZMod 2) 0} (h₁ : 
 def fractionCharacter (s : ℤˣ) : FractionRing (NovikovSeries ℤ (ZMod 2) 0) →+* ℚ :=
   IsLocalization.lift (M := nonZeroDivisors (NovikovSeries ℤ (ZMod 2) 0))
     (g := (Int.castRingHom ℚ).comp (character s)) fun a ↦
-      isUnit_iff_ne_zero.2 (Int.cast_ne_zero.2 (character_ne_zero_of_mem_nonZeroDivisors s a.2))
+      isUnit_iff_ne_zero.2 (Int.cast_ne_zero.2 (character_ne_zero_of_mem_nonZeroDivisors s
+          a.property))
 
 @[simp]
 theorem fractionCharacter_algebraMap (s : ℤˣ) (a : NovikovSeries ℤ (ZMod 2) 0) :
@@ -197,7 +198,7 @@ theorem fractionCharacter_mk' (s : ℤˣ) (a : NovikovSeries ℤ (ZMod 2) 0)
     (d : nonZeroDivisors (NovikovSeries ℤ (ZMod 2) 0)) :
     fractionCharacter s (IsLocalization.mk' (FractionRing (NovikovSeries ℤ (ZMod 2) 0)) a d) =
       character s a / character s d := by
-  rw [eq_div_iff (Int.cast_ne_zero.2 (character_ne_zero_of_mem_nonZeroDivisors s d.2)),
+  rw [eq_div_iff (Int.cast_ne_zero.2 (character_ne_zero_of_mem_nonZeroDivisors s d.property)),
     ← fractionCharacter_algebraMap, ← fractionCharacter_algebraMap, ← _root_.map_mul,
     IsLocalization.mk'_spec]
 
@@ -209,8 +210,8 @@ private theorem fractionCharacter_injective :
   simp only [RingHom.prod_apply, Prod.mk_eq_zero, fractionCharacter_mk', div_eq_zero_iff,
     Int.cast_eq_zero] at hx
   rw [eq_zero_of_character_eq_zero
-      (hx.1.resolve_right (character_ne_zero_of_mem_nonZeroDivisors 1 d.2))
-      (hx.2.resolve_right (character_ne_zero_of_mem_nonZeroDivisors (-1) d.2))]
+      (hx.1.resolve_right (character_ne_zero_of_mem_nonZeroDivisors 1 d.property))
+      (hx.2.resolve_right (character_ne_zero_of_mem_nonZeroDivisors (-1) d.property))]
   exact IsLocalization.mk'_zero d
 
 private theorem fractionCharacter_surjective :

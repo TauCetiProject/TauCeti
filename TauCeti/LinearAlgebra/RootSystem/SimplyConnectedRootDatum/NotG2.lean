@@ -12,10 +12,11 @@ import TauCeti.LinearAlgebra.RootSystem.RankTwo
 /-!
 # The pinned root systems outside G₂
 
-The Cartan integers of the pinned rational systems of simply-laced types and types B, C,
-and F₄ have absolute value at most two. These instances make the root-string bounds outside
-G₂ available for collecting positive root subgroups and for punctured-positive normalization.
-The proof uses `hasCartanType_G2_of_isG2` and uniqueness of valid Cartan types to exclude G₂.
+The pinned rational root system is not G₂ when its Dynkin type is not G₂, and its Cartan
+integers then have absolute value at most two. Instances for simply-laced types and types
+B, C, and F₄ make these root-string bounds available for collecting positive root subgroups
+and for punctured-positive normalization. The proof uses `hasCartanType_G2_of_isG2` and
+uniqueness of valid Cartan types to exclude G₂.
 
 ## References
 
@@ -33,6 +34,15 @@ theorem isNotG2_rationalRootSystem_of_ne_G2 {t : DynkinType} {ht : t.Valid}
   (t.rationalRootSystem ht).not_isG2_iff_isNotG2.mp fun hG2 =>
     h ((hasCartanType_rationalRootSystem t ht).eq_of_valid
       (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht valid_G2)
+
+/-- The pinned rational root system has no triple root strings exactly when its Dynkin
+type is not `G₂`. -/
+@[simp] theorem isNotG2_rationalRootSystem_iff {t : DynkinType} {ht : t.Valid} :
+    (t.rationalRootSystem ht).IsNotG2 ↔ t ≠ G2 := by
+  refine ⟨fun h hG2 => ?_, isNotG2_rationalRootSystem_of_ne_G2⟩
+  subst t
+  exact ((RootPairing.not_isG2_iff_isNotG2 (G2.rationalRootSystem ht)).mpr h)
+    (isG2_of_hasCartanType_G2 (G2.hasCartanType_rationalRootSystem ht))
 
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :

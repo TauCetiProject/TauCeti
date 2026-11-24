@@ -41,7 +41,7 @@ cannot be dropped from `TauCeti.IsRegularRing.flat_frobenius`: Frobenius of `�
 `ε` and is not flat. -/
 theorem isReduced_of_flat_frobenius (hp : 1 < p) (h : (frobenius R p).Flat) : IsReduced R := by
   have hcomap : Function.Surjective (PrimeSpectrum.comap (frobenius R p)) := fun P ↦
-    ⟨P, PrimeSpectrum.ext <| Ideal.ext fun _ ↦ P.2.pow_mem_iff_mem p (zero_lt_one.trans hp)⟩
+    ⟨P, PrimeSpectrum.ext <| Ideal.ext fun _ ↦ P.isPrime.pow_mem_iff_mem p (zero_lt_one.trans hp)⟩
   have hinj := (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.2 ⟨h, hcomap⟩).injective
   exact (isReduced_iff_pow_one_lt p hp).2 fun a ha ↦
     hinj (ha.trans (map_zero (frobenius R p)).symm)

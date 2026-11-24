@@ -25,16 +25,24 @@ whose generic fibre already has a divisor of degree one.
 
 In general a smooth proper geometrically integral curve `C` of genus zero over `K` acquires a
 rational point only after a finite separable extension of `K`, and one of degree at most two
-suffices: over it, `C` becomes `ℙ¹`
-(`AlgebraicGeometry.Scheme.exists_finrank_le_two_and_iso_projectiveLine_of_genus_eq_zero`). Choosing
-a place of that extension above the closed point of `R`, with local ring `R'`, the base change of
-`C` has the smooth proper model `ℙ¹_{R'}`.
+suffices: `C` has a closed point `x` whose residue field `κ(x)` is separable of degree at most two
+over `K`, and `C` becomes `ℙ¹` over every extension of `K` receiving a `K`-embedding of `κ(x)`
+(`AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_isPullback_of_genus_eq_zero`). For every
+place of such an extension above the closed point of `R`, with local ring `R'`, the base change of
+`C` therefore has the smooth proper model `ℙ¹_{R'}`. This gives nodal reduction simultaneously at
+all places above `R` of the single extension `κ(x)`, and of every further finite separable
+extension.
 
 ## Main results
 
 * `TauCeti.HasNodalReduction.projectiveLine`: `ℙ¹_K` has nodal reduction over `R`.
 * `TauCeti.HasNodalReduction.of_genus_eq_zero_of_divisor_degree_eq_one`: a regular proper curve
   of genus zero over `K` with a divisor of degree one has nodal reduction over `R`.
+* `TauCeti.HasNodalReduction.exists_finrank_residueField_le_two_and_forall_of_genus_eq_zero`: a
+  smooth proper geometrically integral curve of genus zero over `K` has a closed point with
+  residue field separable of degree at most two over `K`, such that the curve has nodal reduction
+  at every chosen place of every finite separable extension of `K` into which that residue field
+  embeds.
 * `TauCeti.HasNodalReduction.exists_finrank_le_two_of_genus_eq_zero`: a smooth proper
   geometrically integral curve of genus zero over `K` has nodal reduction after a finite separable
   extension of `K` of degree at most two, with a chosen place above the closed point of `R`.
@@ -90,6 +98,41 @@ theorem of_genus_eq_zero_of_divisor_degree_eq_one (C : Scheme.{u}) [C.Over (Spec
     (Over.isoMk (f := Over.mk (AlgebraicGeometry.projectiveLine K ↘ Spec (.of K)))
       (g := Over.mk (C ↘ Spec (.of K))) e.symm (by simp))
 
+/-- **A smooth curve of genus zero has nodal reduction at every place of one separable extension of
+degree at most two.** Let `C` be a smooth proper geometrically integral curve over the fraction
+field `K` of a discrete valuation ring `R`, with `dim_K H¹(C, 𝒪_C) = 0`. Then `C` has a closed
+point `x` whose residue field `κ(x)` is a separable extension of `K` of degree at most two, such
+that for every finite separable extension `K'` of `K` admitting a `K`-embedding `κ(x) → K'` and
+every place of `K'` above the closed point of `R`, with local ring `R'`, the curve `C_{K'}` has a
+proper at-worst-nodal model over `R'`; indeed `C_{K'} ≅ ℙ¹_{K'}`, which has the smooth proper
+model `ℙ¹_{R'}`.
+
+In particular `C_{κ(x)}` has nodal reduction at every place of `κ(x)` above the closed point of
+`R`, and keeps it after every further finite separable extension of `κ(x)`. -/
+theorem exists_finrank_residueField_le_two_and_forall_of_genus_eq_zero (C : Scheme.{u})
+    [C.Over (Spec (.of K))] [IsProper (C ↘ Spec (.of K))]
+    [SmoothOfRelativeDimension 1 (C ↘ Spec (.of K))] [GeometricallyIntegral (C ↘ Spec (.of K))]
+    (hg : finrank K (AlgebraicGeometry.Scheme.Modules.Cohomology
+      (AlgebraicGeometry.InvertibleSheaf.trivial C).obj 1) = 0) :
+    ∃ x : C, FiniteDimensional K (C.residueField x) ∧ finrank K (C.residueField x) ≤ 2 ∧
+      Algebra.IsSeparable K (C.residueField x) ∧
+      ∀ E : FiniteDVRExtension R K, (C.residueField x →ₐ[K] E.extensionField) →
+        HasNodalReduction E.localRing E.extensionField
+          (genericFiber K E.extensionField (C ↘ Spec (.of K))).left
+          (genericFiber K E.extensionField (C ↘ Spec (.of K))).hom := by
+  obtain ⟨x, hfin, hx, hsep⟩ :=
+    C.exists_finrank_residueField_le_two_and_isSeparable_of_genus_eq_zero hg
+  refine ⟨x, hfin, hx, hsep, fun E φ ↦ ?_⟩
+  let _ : (genericFiber K E.extensionField (C ↘ Spec (.of K))).left.Over
+      (Spec (.of E.extensionField)) := ⟨(genericFiber K E.extensionField (C ↘ Spec (.of K))).hom⟩
+  obtain ⟨f, hf⟩ := C.exists_iso_projectiveLine_of_isPullback_of_genus_eq_zero
+    (isPullback_genericFiber K E.extensionField (C ↘ Spec (.of K))) hg x φ
+  refine (projectiveLine E.localRing E.extensionField).of_iso
+    (Over.isoMk (f := Over.mk (AlgebraicGeometry.projectiveLine E.extensionField ↘
+      Spec (.of E.extensionField))) f.symm ?_)
+  rw [Iso.symm_hom, Iso.inv_comp_eq]
+  exact hf.comp_over.symm
+
 /-- **A smooth curve of genus zero has nodal reduction after a separable extension of degree at
 most two.** Let `C` be a smooth proper geometrically integral curve over the fraction field `K` of
 a discrete valuation ring `R`, with `dim_K H¹(C, 𝒪_C) = 0`. Then there is a finite separable
@@ -105,17 +148,10 @@ theorem exists_finrank_le_two_of_genus_eq_zero (C : Scheme.{u}) [C.Over (Spec (.
       HasNodalReduction E.localRing E.extensionField
         (genericFiber K E.extensionField (C ↘ Spec (.of K))).left
         (genericFiber K E.extensionField (C ↘ Spec (.of K))).hom := by
-  obtain ⟨x, _, hx, _⟩ := C.exists_finrank_residueField_le_two_and_isSeparable_of_genus_eq_zero hg
+  obtain ⟨x, _, hx, _, h⟩ :=
+    exists_finrank_residueField_le_two_and_forall_of_genus_eq_zero (R := R) C hg
   obtain ⟨E, ⟨e⟩⟩ := FiniteDVRExtension.exists_algEquiv_extensionField R K (C.residueField x)
-  let _ : (genericFiber K E.extensionField (C ↘ Spec (.of K))).left.Over
-      (Spec (.of E.extensionField)) := ⟨(genericFiber K E.extensionField (C ↘ Spec (.of K))).hom⟩
-  obtain ⟨f, hf⟩ := C.exists_iso_projectiveLine_of_isPullback_of_genus_eq_zero
-    (isPullback_genericFiber K E.extensionField (C ↘ Spec (.of K))) hg x e.symm.toAlgHom
-  refine ⟨E, e.toLinearEquiv.finrank_eq ▸ hx, (projectiveLine E.localRing E.extensionField).of_iso
-    (Over.isoMk (f := Over.mk (AlgebraicGeometry.projectiveLine E.extensionField ↘
-      Spec (.of E.extensionField))) f.symm ?_)⟩
-  rw [Iso.symm_hom, Iso.inv_comp_eq]
-  exact hf.comp_over.symm
+  exact ⟨E, e.toLinearEquiv.finrank_eq ▸ hx, h E e.symm.toAlgHom⟩
 
 end HasNodalReduction
 

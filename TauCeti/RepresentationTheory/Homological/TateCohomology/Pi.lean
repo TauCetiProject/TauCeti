@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.TrivialityCriterion
-public import TauCeti.RepresentationTheory.Pi
+public import TauCeti.RepresentationTheory.Pi.Basic
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -89,7 +89,7 @@ private def H0ToPi : tateCohomology (Rep.pi M) 0 →ₗ[R] ∀ i, tateCohomology
 
 private theorem H0ToPi_H0π (y : (Rep.pi M).ρ.invariants) (i : ι) :
     H0ToPi M (H0π (Rep.pi M) y) i =
-      H0π (M i) ⟨y.1 i, ((Representation.mem_invariants_pi_iff _).1 y.2) i⟩ := by
+      H0π (M i) ⟨y.val i, ((Representation.mem_invariants_pi_iff _).1 y.property) i⟩ := by
   simp only [H0ToPi, LinearMap.pi_apply]
   exact (H0π_comp_map_apply (isIntertwiningMap_proj M i) y).trans
     (congrArg _ (Subtype.ext (mapInvariants_apply_coe _ y)))
@@ -101,7 +101,7 @@ private theorem H0ToPi_bijective : Function.Bijective (H0ToPi M) := by
     induction x using H0_induction_on with | h y => ?_
     -- Every component of `y` is a norm; a choice of preimages in all factors at once is a
     -- preimage of `y`.
-    have h (i : ι) : ∃ z : M i, (M i).ρ.norm z = y.1 i := by
+    have h (i : ι) : ∃ z : M i, (M i).ρ.norm z = y.val i := by
       obtain ⟨z, hz⟩ := (H0π_eq_zero_iff _).1 ((H0ToPi_H0π M y i).symm.trans (congrFun hx i))
       exact ⟨z, hz⟩
     choose z hz using h
@@ -110,8 +110,8 @@ private theorem H0ToPi_bijective : Function.Bijective (H0ToPi M) := by
     have h (i : ι) : ∃ y : (M i).ρ.invariants, H0π (M i) y = x i :=
       H0_induction_on (C := fun x ↦ ∃ y, H0π (M i) y = x) (x i) fun y ↦ ⟨y, rfl⟩
     choose y hy using h
-    refine ⟨H0π (Rep.pi M) ⟨fun i ↦ (y i).1, (Representation.mem_invariants_pi_iff _).2
-      fun i ↦ (y i).2⟩, funext fun i ↦ ?_⟩
+    refine ⟨H0π (Rep.pi M) ⟨fun i ↦ (y i).val, (Representation.mem_invariants_pi_iff _).2
+      fun i ↦ (y i).property⟩, funext fun i ↦ ?_⟩
     rw [H0ToPi_H0π, ← hy i]
 
 /-! ### Degree minus one -/
@@ -123,7 +123,7 @@ private def HNegOneToPi : tateCohomology (Rep.pi M) (-1) →ₗ[R] ∀ i, tateCo
 
 private theorem HNegOneToPi_HNegOneπ (y : ker (Rep.pi M).ρ.norm) (i : ι) :
     HNegOneToPi M (HNegOneπ (Rep.pi M) y) i =
-      HNegOneπ (M i) ⟨y.1 i, (Representation.mem_ker_norm_pi_iff _).1 y.2 i⟩ := by
+      HNegOneπ (M i) ⟨y.val i, (Representation.mem_ker_norm_pi_iff _).1 y.property i⟩ := by
   simp only [HNegOneToPi, LinearMap.pi_apply]
   exact (HNegOneπ_comp_map_apply (isIntertwiningMap_proj M i) y).trans
     (congrArg _ (Subtype.ext (mapKerNorm_apply_coe _ y)))
@@ -142,8 +142,8 @@ private theorem HNegOneToPi_bijective : Function.Bijective (HNegOneToPi M) := by
     have h (i : ι) : ∃ y : ker (M i).ρ.norm, HNegOneπ (M i) y = x i :=
       HNegOne_induction_on (C := fun x ↦ ∃ y, HNegOneπ (M i) y = x) (x i) fun y ↦ ⟨y, rfl⟩
     choose y hy using h
-    refine ⟨HNegOneπ (Rep.pi M) ⟨fun i ↦ (y i).1,
-      (Representation.mem_ker_norm_pi_iff _).2 fun i ↦ (y i).2⟩, funext fun i ↦ ?_⟩
+    refine ⟨HNegOneπ (Rep.pi M) ⟨fun i ↦ (y i).val,
+      (Representation.mem_ker_norm_pi_iff _).2 fun i ↦ (y i).property⟩, funext fun i ↦ ?_⟩
     rw [HNegOneToPi_HNegOneπ, ← hy i]
 
 /-! ### Products of cohomologically trivial representations -/
@@ -234,14 +234,13 @@ private theorem toPi_bijective (n : ℤ) : ∀ M : ι → Rep R G, Function.Bije
     intro M
     exact (toPi_bijective_of_shortExact (fun i ↦ coindBotUnit (M i))
       (fun i ↦ dimensionShiftUpπ (M i)) (fun i ↦ coindBotUnit_comp_dimensionShiftUpπ (M i))
-      (fun i ↦ by simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact (M i))
+      (fun i ↦ dimensionShiftUpSES_shortExact (M i))
       (fun i S _ m ↦ isZero_res_coindBot S (M i).V m) n).1 (ih _)
   | pred n ih =>
     intro M
     refine (toPi_bijective_of_shortExact (fun i ↦ dimensionShiftDownι (M i))
       (fun i ↦ indBotCounit (M i)) (fun i ↦ dimensionShiftDownι_comp_indBotCounit (M i))
-      (fun i ↦ by
-        simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact (M i))
+      (fun i ↦ dimensionShiftDownSES_shortExact (M i))
       (fun i S _ m ↦ isZero_res_indBot S (M i).V m) _).2 ?_
     rw [sub_add_cancel]
     exact ih _
@@ -262,7 +261,7 @@ theorem linearEquivPi_apply (n : ℤ) (x : tateCohomology (Rep.pi M) n) (i : ι)
 family of the classes of its components. -/
 theorem linearEquivPi_zero_H0π (y : (Rep.pi M).ρ.invariants) (i : ι) :
     linearEquivPi M 0 (H0π (Rep.pi M) y) i =
-      H0π (M i) ⟨y.1 i, ((Representation.mem_invariants_pi_iff _).1 y.2) i⟩ := by
+      H0π (M i) ⟨y.val i, ((Representation.mem_invariants_pi_iff _).1 y.property) i⟩ := by
   rw [← H0ToPi_H0π, ← toPi_zero]
   rfl
 
@@ -270,7 +269,7 @@ theorem linearEquivPi_zero_H0π (y : (Rep.pi M).ρ.invariants) (i : ι) :
 family of the classes of its components. -/
 theorem linearEquivPi_negOne_HNegOneπ (y : ker (Rep.pi M).ρ.norm) (i : ι) :
     linearEquivPi M (-1) (HNegOneπ (Rep.pi M) y) i =
-      HNegOneπ (M i) ⟨y.1 i, (Representation.mem_ker_norm_pi_iff _).1 y.2 i⟩ := by
+      HNegOneπ (M i) ⟨y.val i, (Representation.mem_ker_norm_pi_iff _).1 y.property i⟩ := by
   rw [← HNegOneToPi_HNegOneπ, ← toPi_negOne]
   rfl
 

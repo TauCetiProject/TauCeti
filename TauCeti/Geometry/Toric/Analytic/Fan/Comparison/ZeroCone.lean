@@ -117,11 +117,11 @@ theorem coe_zeroConeAlgebraicComplexPointEquiv_symm_apply (p : (Φ₀).Algebraic
 zero-cone fan attached to a torus point `t` is `Spec` of the complex point of the dense torus
 given by `t`, followed by the dense-torus inclusion, which is an isomorphism. -/
 theorem coe_zeroConeAlgebraicComplexPointEquiv_apply (t : ComplexTorus N) :
-    (zeroConeAlgebraicComplexPointEquiv hi t).1 =
+    (zeroConeAlgebraicComplexPointEquiv hi t).val =
       Spec.map (CommRingCat.ofHom (t • (default : AffineSemigroupComplexPoint
         (dualSemigroup hi (⊥ : PointedCone ℝ V)))).toRingHom) ≫ (Φ₀).denseTorusι ⟨z₀⟩ := by
   rw [zeroConeAlgebraicComplexPointEquiv_apply, torusι_eq_ofAffinePoint _ z₀,
-    coe_ofAffinePoint, denseTorusι_eq_affineToricChartι _ _ z₀.2]
+    coe_ofAffinePoint, denseTorusι_eq_affineToricChartι _ _ (z₀).property]
 
 /-- Torus translation of a complex point of the toric scheme of the zero-cone fan multiplies its
 torus point. -/

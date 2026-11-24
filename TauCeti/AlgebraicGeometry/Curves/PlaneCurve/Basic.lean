@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.PolynomialQuotient
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Polynomial.Quotient
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.RingTheory.Polynomial.UniqueFactorization

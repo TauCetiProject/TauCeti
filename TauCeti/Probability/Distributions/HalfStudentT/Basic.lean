@@ -186,7 +186,7 @@ theorem halfStudentTMeasure_eq_withDensity (ν s : ℝ) :
       ((Ioi 0).indicator fun x ↦ studentTPDF ν x + studentTPDF ν (-x)) h.2.ne'
     simp only [zero_add] at hscale
     rw [halfStudentTMeasure_eq_map_abs h.2, studentTMeasure_def,
-      map_abs_withDensity (measurable_studentTPDF ν), hscale]
+      map_abs_withDensity (measurable_studentTPDF ν).aemeasurable, hscale]
     apply withDensity_congr_ae
     refine .of_forall fun x ↦ ?_
     simp only [affineDensity_apply, abs_of_pos h.2, sub_zero]

@@ -560,7 +560,7 @@ theorem IsMulDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
     ∃ q r : PowerSeries.IsRestricted.subring (R := R) c,
       (∀ m, s ≤ m → (r : PowerSeries R).coeff m = 0) ∧ q * f + r = g := by
-  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hc f.2 g.2
+  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hc f.property g.property
   rw [mul_comm] at hqr
   -- the coercion of a sum and of a product in a subring reduces to the sum and product of the
   -- coercions, so `hqr` is literally the required equation of underlying series
@@ -588,7 +588,7 @@ theorem IsMulDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
       (h3.trans hqr.symm)
     simpa using this
   obtain ⟨e1, e2⟩ := hf.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
-    hf.norm_mul_coeff p.1.2 q.2 h2 hr
+    hf.norm_mul_coeff p.1.property q.property h2 hr
     hcoe
   exact Prod.ext (Subtype.ext e1) (Subtype.ext e2)
 

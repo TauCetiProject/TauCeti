@@ -43,6 +43,9 @@ boundary, so the set-level result applies. This application is in
   connected.
 * `LocallyFinite.locallyConnectedSpace_iUnion` — a locally finite union of closed, locally
   connected sets is locally connected; for instance a finite union of arcs.
+* `TauCeti.locallyConnectedSpace_subtype_iff_nhdsWithin` — a subspace `s` is locally connected if
+  and only if every relative neighborhood `V ∈ 𝓝[s] x` contains a preconnected relative
+  neighborhood contained in `s ∩ V`.
 
 ## References
 
@@ -75,6 +78,31 @@ theorem locallyConnectedSpace_image_of_isCompact [T2Space Y] {s : Set X} {f : X 
   have : CompactSpace s := isCompact_iff_compactSpace.mp hs
   exact locallyConnectedSpace_of_continuous_surjective (hf.mapsToRestrict (mapsTo_image f s))
     (surjective_mapsTo_image_restrict f s)
+
+/-- A subspace `s` is locally connected if and only if, for every `x ∈ s`, every relative
+neighborhood `V ∈ 𝓝[s] x` contains a preconnected relative neighborhood `C ⊆ s ∩ V`. -/
+theorem locallyConnectedSpace_subtype_iff_nhdsWithin {s : Set X} :
+    LocallyConnectedSpace s ↔
+      ∀ x ∈ s, ∀ V ∈ 𝓝[s] x, ∃ C ∈ 𝓝[s] x, C ⊆ s ∩ V ∧ IsPreconnected C := by
+  refine ⟨fun h x hx V hV ↦ ?_, fun h ↦ ?_⟩
+  · have hV' : (Subtype.val : s → X) ⁻¹' V ∈ 𝓝 (⟨x, hx⟩ : s) := by
+      rw [nhds_subtype_eq_comap_nhdsWithin]
+      exact Filter.preimage_mem_comap hV
+    obtain ⟨U, hU, hUc, hUV⟩ := locallyConnectedSpace_iff_connected_subsets.1 h ⟨x, hx⟩ _ hV'
+    refine ⟨(Subtype.val : s → X) '' U, ?_,
+      subset_inter (Subtype.coe_image_subset s U) (image_subset_iff.2 hUV),
+      hUc.image Subtype.val continuous_subtypeVal.continuousOn⟩
+    rw [← map_nhds_subtypeVal (⟨x, hx⟩ : s)]
+    exact Filter.image_mem_map hU
+  · refine locallyConnectedSpace_iff_connected_subsets.2 fun x V hV ↦ ?_
+    obtain ⟨W, hW, hWV⟩ := (mem_nhds_subtype s x V).1 hV
+    obtain ⟨C, hCn, hCW, hc⟩ := h x x.property W (mem_nhdsWithin_of_mem_nhds hW)
+    refine ⟨(Subtype.val : s → X) ⁻¹' C, ?_, ?_, fun y hy ↦ hWV (hCW hy).2⟩
+    · rw [nhds_subtype_eq_comap_nhdsWithin]
+      exact Filter.preimage_mem_comap hCn
+    · apply Topology.IsInducing.subtypeVal.isPreconnected_image.1
+      simpa only [Subtype.image_preimage_val, inter_eq_right.2 (hCW.trans inter_subset_left)]
+        using hc
 
 end TauCeti
 
@@ -109,6 +137,6 @@ theorem LocallyFinite.locallyConnectedSpace_iUnion {X ι : Type*} [TopologicalSp
     ext ⟨y, hy⟩
     simp [sigmaToiUnion]
   rw [himage]
-  refine IsClosed.preimage continuous_subtype_val <|
+  refine IsClosed.preimage continuous_subtypeVal <|
     (hf.subset fun i => Subtype.coe_image_subset _ _).isClosed_iUnion fun i => ?_
-  exact (hs i).isClosedMap_subtype_val _ (isClosed_sigma_iff.1 hC i)
+  exact (hs i).isClosedMap_subtypeVal _ (isClosed_sigma_iff.1 hC i)

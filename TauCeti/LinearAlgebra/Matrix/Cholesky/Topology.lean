@@ -55,7 +55,7 @@ variable {p : ℕ}
 theorem continuous_choleskyReconstruction :
     Continuous (@choleskyReconstruction p) := by
   refine continuous_induced_rng.2 (continuous_induced_rng.2 ?_)
-  exact (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose).congr
+  exact (continuous_subtypeVal.matrix_mul continuous_subtypeVal.matrix_transpose).congr
     fun L ↦ (choleskyReconstruction_coe L).symm
 
 /-- The factors of the matrices in a set `K` of positive-definite matrices are the lower-triangular
@@ -64,17 +64,17 @@ automatic. -/
 private theorem image_val_preimage_choleskyReconstruction (K : Set (PosDefMatrix p)) :
     Subtype.val '' (choleskyReconstruction ⁻¹' K) =
       {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧
-        L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K} := by
+        L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.val : Matrix (Fin p) (Fin p) ℝ)) '' K} := by
   ext L
   constructor
   · rintro ⟨L, hL, rfl⟩
-    exact ⟨L.2.1, fun i ↦ (L.2.2 i).le, _, hL, choleskyReconstruction_coe L⟩
+    exact ⟨L.property.1, fun i ↦ (L.property.2 i).le, _, hL, choleskyReconstruction_coe L⟩
   · rintro ⟨htri, hdiag, A, hA, hAL⟩
     -- `hAL` is stated through the lambda `fun A ↦ ↑A`; restating it beta-reduces that lambda so
     -- that it can rewrite the determinant of `A`.
-    have hAL' : (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ := hAL
+    have hAL' : (A.val : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ := hAL
     have hdet : L.det ≠ 0 := by
-      have h := A.2.det_pos
+      have h := A.property.det_pos
       rw [hAL', Matrix.det_mul, Matrix.det_transpose, ← sq] at h
       exact pow_ne_zero_iff two_ne_zero |>.1 h.ne'
     have hpos : ∀ i, 0 < L i i := fun i ↦
@@ -90,11 +90,11 @@ a compact set of positive-definite matrices form a compact set. -/
 theorem isProperMap_choleskyReconstruction :
     IsProperMap (@choleskyReconstruction p) := by
   refine isProperMap_iff_isCompact_preimage.2 ⟨continuous_choleskyReconstruction, fun K hK ↦ ?_⟩
-  have hK'c : IsCompact ((fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K) :=
-    hK.image (continuous_subtype_val.comp continuous_subtype_val)
+  have hK'c : IsCompact ((fun A : PosDefMatrix p ↦ (A.val : Matrix (Fin p) (Fin p) ℝ)) '' K) :=
+    hK.image (continuous_subtypeVal.comp continuous_subtypeVal)
   obtain ⟨c, hc⟩ := hK'c.bddAbove_image (continuous_id.matrix_trace).continuousOn
   have hTclosed : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧
-      L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K} :=
+      L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.val : Matrix (Fin p) (Fin p) ℝ)) '' K} :=
     (isClosed_setOfPred_blockTriangular (b := OrderDual.toDual)).inter
       (Matrix.isClosed_setOfPred_nonneg_diag.inter
         (hK'c.isClosed.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))

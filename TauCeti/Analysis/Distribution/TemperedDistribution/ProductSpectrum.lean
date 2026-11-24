@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Topology.Algebra.Group.Pointwise
 
 /-!
@@ -121,14 +122,11 @@ omit [CompleteSpace F] in
 /-- The integrand `(x, y) ↦ (ψ (x - y) • u y) • (θ x • v x)` of the pairing of `u • v` with `θ`,
 after `u` is written as the convolution `ψ ⋆ u`, is integrable on `E × E`: for fixed `x` the
 integral in `y` is at most `‖ψ‖_{p'} ‖u‖_p` by Hölder's inequality, and `θ • v` is integrable. -/
-private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [hq : Fact (1 ≤ q)]
+private theorem integrable_smul_smul {p q : ℝ≥0∞} [hp : Fact (1 ≤ p)] [Fact (1 ≤ q)]
     (ψ θ : 𝓢(E, ℂ)) (u : Lp ℂ p (volume : Measure E)) (v : Lp F q (volume : Measure E)) :
     Integrable (uncurry fun x y ↦ (ψ (x - y) • u y) • (θ x • v x))
       ((volume : Measure E).prod volume) := by
-  have hθv : Integrable (fun x ↦ θ x • v x) := by
-    have : (1 - q⁻¹)⁻¹.HolderConjugate q :=
-      (ENNReal.HolderConjugate.inv_one_sub_inv' hq.out).symm
-    exact memLp_one_iff_integrable.1 ((θ.memLp (1 - q⁻¹)⁻¹ (μ := volume)).smul (Lp.memLp v))
+  have hθv := integrable_schwartzMap_smul θ v
   have hmeas : AEStronglyMeasurable (uncurry fun x y ↦ (ψ (x - y) • u y) • (θ x • v x))
       ((volume : Measure E).prod volume) :=
     ((ψ.continuous.comp (continuous_fst.sub continuous_snd)).aestronglyMeasurable.smul

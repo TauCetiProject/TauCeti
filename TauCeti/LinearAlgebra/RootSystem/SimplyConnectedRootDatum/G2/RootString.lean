@@ -282,11 +282,14 @@ theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
       g2SimplyConnectedRootDatum.chainBotCoeff l k = 2 := by
   let P := g2SimplyConnectedRootDatum
   obtain ⟨hi, hj⟩ : g2Length i = 1 ∧ g2Length j = 3 := by
-    simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hk hl ho
-    simp only [g2Length_apply]
-    clear * - hk hl ho
-    revert i j k l o
-    decide +kernel
+    have key : ∀ i j : Fin 12, (∃ k, g2Root k = g2Root i + g2Root j) →
+        (∃ l, g2Root l = g2Root i + (g2Root i + g2Root j)) →
+        (∃ o, g2Root o = g2Root i + (g2Root i + g2Root j) + (g2Root i + g2Root j)) →
+        g2Length i = 1 ∧ g2Length j = 3 := by
+      simp only [g2Root_apply, g2Length_apply]
+      decide +kernel
+    simp only [g2SimplyConnectedRootDatum_root] at hk hl ho
+    exact key i j ⟨k, hk⟩ ⟨l, by rw [hl, hk]⟩ ⟨o, by rw [ho, hl, hk]⟩
   have hroot : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
   have hlin := P.linearIndependent_of_add_mem_range_root' hroot
   have hbot : P.chainBotCoeff i j = 0 :=

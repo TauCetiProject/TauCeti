@@ -31,13 +31,21 @@ uniformly on the complement of the zeros.
 
 ## Main results
 
-* `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne` and `TauCeti.hadamard_of_orderLE_one`:
-  Hadamard's factorization, with the product as `divisorProductOne f` and as a multipliable
-  product over `ℂ`.
+* `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne`,
+  `TauCeti.OrderLE.eq_mul_cexp_logDeriv_mul_divisorProductOne`, and
+  `TauCeti.hadamard_of_orderLE_one`: Hadamard's factorization, with the product as
+  `divisorProductOne f` and as a multipliable product over `ℂ`.
 * `TauCeti.OrderLE.logDeriv_eq_add_tsum`,
-  `TauCeti.OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div` and
+  `TauCeti.OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div`, and
   `TauCeti.OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub`: the partial-fraction expansion of
-  the logarithmic derivative; absolute convergence holds for every order below two.
+  the logarithmic derivative; absolute convergence holds at every point for every order below two.
+* `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub_iff`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub`, and
+  `TauCeti.OrderLE.re_logDeriv_eq_add_tsum_add_tsum`: for every order below two, summability of
+  `m_ρ * Re (1 / (z - ρ))` is equivalent to summability of `m_ρ * Re (1 / ρ)` (guaranteed in
+  particular when all zeros lie in a bounded vertical strip `|Re ρ| ≤ B`), splitting
+  `Re (logDeriv f z)` into three terms at order at most one.
 
 The examples `exp (c s)` and `1 - s` use `TauCeti.divisorProductOne_cexp_mul` and
 `TauCeti.divisorProductOne_one_sub`.
@@ -166,7 +174,7 @@ private theorem norm_finsum_sub_tsum_le (hf : Differentiable ℂ f) (hf0 : f 0 �
       simp only [ψ, ite_eq_right hρ,
         Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hmem, Int.cast_zero, zero_div]
   have hg : Summable g :=
-    (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div h0 hsum hzS).of_norm
+    (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hsum z).of_norm
   have hψ : Summable fun ρ : d.support ↦ ψ ρ :=
     summable_of_hasFiniteSupport (hψfin.preimage Subtype.val_injective.injOn)
   rw [hfinsum, ← hψ.tsum_sub hg, ← tsum_mul_left]
@@ -334,6 +342,14 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
         (fun q ↦ (fderiv_apply_one_eq_deriv (f := L) (x := q)).trans (hconst q)) 0 z
     rw [hLz, hb, mul_comm, mul_comm z]
 
+/-- **Hadamard factorization at order at most one**, with explicit leading constant `f 0`:
+`f z = f 0 * exp (logDeriv f 0 * z) * divisorProductOne f z`. -/
+theorem OrderLE.eq_mul_cexp_logDeriv_mul_divisorProductOne (h : OrderLE f 1)
+    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (z : ℂ) :
+    f z = f 0 * exp (logDeriv f 0 * z) * divisorProductOne f z := by
+  obtain ⟨a, ha, hfa⟩ := h.exists_eq_cexp_mul_divisorProductOne hf hf0
+  rw [hfa z, exp_add, ha]
+
 /-- **Hadamard's theorem at order at most one**, with the product taken over all of `ℂ`: for
 every `s` the family `ρ ↦ E₁(ρ⁻¹ s) ^ m_ρ` over `ℂ` is multipliable and
 `f s = exp (a + b s) ∏' ρ, E₁(ρ⁻¹ s) ^ m_ρ`, where `m_ρ` is the divisor of `f`,
@@ -374,16 +390,14 @@ theorem OrderLE.logDeriv_eq_add_tsum (h : OrderLE f 1) (hf : Differentiable ℂ 
       (h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num))
       ((hf.analyticAt _).notMem_divisor_support_of_ne_zero hz)]
 
-/-- The partial-fraction series of an entire function of order less than two, nonzero at the
-origin, converges absolutely off its zeros. -/
+/-- The partial-fraction series of an entire function of order less than two converges absolutely
+at every point, using total division at `ρ = 0` and `ρ = z`. -/
 theorem OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div {A : ℝ} (h : OrderLE f A)
-    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (hA : A < 2) {z : ℂ} (hz : f z ≠ 0) :
+    (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)‖) :=
   summable_norm_natCast_divisor_mul_one_div_sub_add_one_div
-    ((hf.analyticAt _).notMem_divisor_support_of_ne_zero hf0)
-    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA)
-    ((hf.analyticAt _).notMem_divisor_support_of_ne_zero hz)
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z
 
 /-- The partial-fraction series of an entire function of order at most one converges locally
 uniformly off its zeros to `logDeriv f - logDeriv f 0`. -/
@@ -404,6 +418,66 @@ theorem OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub (h : OrderLE f 1)
     (fun _ ↦ le_of_eq (Function.notMem_support.mp hz))
     ((divisorProductOne_eq_zero_iff hf hf0 hsum z).mpr hfz)
   rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hfz, add_sub_cancel_left]
+
+/-! ### Vertical-strip zero location and real-part unpairing -/
+
+/-- For an entire function `f` of order less than two and every `z : ℂ`, the unsubtracted
+real-part series `ρ ↦ m_ρ * Re (1 / (z - ρ))` is summable on the divisor support if and only if
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div_sub_iff {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) (z : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) ↔
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  TauCeti.summable_divisor_toNat_mul_re_one_div_sub_iff
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA) z
+
+/-- For an entire function `f` of order less than two whose zeros have bounded real part
+(`|ρ.re| ≤ B`), the real-part series `ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  TauCeti.summable_divisor_toNat_mul_re_one_div
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf hA)
+    fun ρ hρ ↦ hre ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')
+
+/-- For an entire function `f` of order less than two whose zeros have bounded real part
+(`|ρ.re| ≤ B`), the unsubtracted real-part series `ρ ↦ m_ρ * Re (1 / (z - ρ))` is summable on the
+divisor support for every `z : ℂ`. -/
+theorem OrderLE.summable_divisor_toNat_mul_re_one_div_sub {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B)
+    (z : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) :=
+  (h.summable_divisor_toNat_mul_re_one_div_sub_iff hf hA z).mpr
+    (h.summable_divisor_toNat_mul_re_one_div hf hA hre)
+
+/-- Off the zeros of an entire function `f` of order at most one with `f 0 ≠ 0`, whenever
+`ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support, the real part of `logDeriv f z` splits
+into the separately convergent sum
+`Re (logDeriv f 0) + ∑' ρ, m_ρ * Re (1 / (z - ρ)) + ∑' ρ, m_ρ * Re (1 / ρ)`. -/
+theorem OrderLE.re_logDeriv_eq_add_tsum_add_tsum (h : OrderLE f 1) (hf : Differentiable ℂ f)
+    (hf0 : f 0 ≠ 0)
+    (hinv : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re))
+    {z : ℂ} (hz : f z ≠ 0) :
+    (logDeriv f z).re = (logDeriv f 0).re +
+      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re) +
+      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
+  have hc := (h.summable_norm_divisor_mul_one_div_sub_add_one_div hf (by norm_num) z).of_norm
+  have hsub := (h.summable_divisor_toNat_mul_re_one_div_sub_iff hf (by norm_num) z).mpr hinv
+  have htsum_re : (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)).re =
+      ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
+        (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (z - ρ)).re +
+          ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
+    rw [Complex.re_tsum hc]
+    exact tsum_congr fun ρ ↦ by simp; ring
+  rw [h.logDeriv_eq_add_tsum hf hf0 hz, add_re, htsum_re, Summable.tsum_add hsub hinv, add_assoc]
 
 /-! ### Examples -/
 

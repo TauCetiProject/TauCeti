@@ -9,13 +9,11 @@ public import TauCeti.Computability.SingleOracle.Universal
 import TauCeti.Data.PFun.Basic
 
 /-!
-# Uniform parameter compilation and recursion for oracle programs
+# Recursion for oracle programs
 
-`Code.curry` specializes the first input of an oracle program. Both this compiler and
-`Code.fixedPoint`, the self-reference compiler, are primitive recursive on programs and do
-not depend on the oracle. Their semantic equations hold even for partial oracles.
-In particular, the fixed-point compiler supplies its own program number as data, rather than
-extracting a program from an extensional relative-computability proof.
+`Code.fixedPoint` uses `Code.curry` to compile self-reference. The compiler is primitive
+recursive on programs and supplies its own program number as data. Its semantic equation
+holds for every partial oracle.
 
 `Code.fixed_point` is the corresponding Rogers theorem: every computable transformation of
 programs has one semantic fixed point simultaneously for all total oracles. Totality is needed
@@ -27,9 +25,7 @@ numerical parameter while supplying the index of each specialized program to its
 
 * R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987, I.3 and III.1.
 * M. Carneiro, *Formalizing computability theory via partial recursive functions*, ITP 2019.
-  The parameter compiler follows Mathlib's `Nat.Partrec.Code.curry`; self-reference uses the
-  usual diagonal specialization of that compiler. Ordinary constant programs and their
-  effectiveness certificates are reused from Mathlib, not reimplemented.
+  Self-reference uses diagonal parameter specialization.
 -/
 
 public section
@@ -37,30 +33,6 @@ public section
 open Encodable Denumerable
 
 namespace TauCeti.Oracle.Single.Code
-
-/-- Specialize a program's first input to `a`, leaving the second input free. -/
-def curry (c : Code) (a : ℕ) : Code :=
-  comp c (pair (Nat.Partrec.Code.const a).toSingleOracleCode (pair left right))
-
-/-- Parameter specialization preserves evaluation, uniformly for every partial oracle. -/
-@[simp]
-theorem eval_curry (O : ℕ →. ℕ) (c : Code) (a x : ℕ) :
-    eval O (curry c a) x = eval O c (Nat.pair a x) := by
-  simp [curry, Nat.Partrec.Code.eval_const, Seq.seq]
-
-/-- The parameter compiler is primitive recursive on programs and parameters. -/
-theorem primrec₂_curry : Primrec₂ curry :=
-  primrec₂_comp.comp Primrec.fst <| primrec₂_pair.comp
-    (Nat.Partrec.Code.primrec_toSingleOracleCode.comp
-      (Nat.Partrec.Code.primrec_const.comp Primrec.snd))
-    (Primrec.const (pair left right))
-
-/-- Specialization retains both the source program and the parameter in its syntax. -/
-theorem curry_inj {c d : Code} {a b : ℕ} (h : curry c a = curry d b) :
-    c = d ∧ a = b := by
-  simp only [curry, Code.comp.injEq, Code.pair.injEq] at h
-  exact ⟨h.1, Nat.Partrec.Code.const_inj
-    (Nat.Partrec.Code.toSingleOracleCode_injective h.2.1)⟩
 
 /-! ### A self-reference compiler -/
 

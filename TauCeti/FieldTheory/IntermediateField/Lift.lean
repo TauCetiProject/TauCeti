@@ -57,9 +57,9 @@ order isomorphism. Its body is not exposed: rewrite with `liftOrderIso_apply` an
 `liftOrderIso_symm_apply`, which evaluate it as `lift` and `restrict`, rather than unfolding it. -/
 def liftOrderIso : IntermediateField F E ≃o Set.Iic E where
   toFun E' := ⟨lift E', lift_le E'⟩
-  invFun E' := restrict E'.2
+  invFun E' := restrict E'.property
   left_inv E' := restrict_lift E'
-  right_inv E' := Subtype.ext (lift_restrict E'.2)
+  right_inv E' := Subtype.ext (lift_restrict E'.property)
   map_rel_iff' := lift_le_lift_iff
 
 @[simp]
@@ -69,7 +69,7 @@ theorem liftOrderIso_apply (E' : IntermediateField F E) :
 
 @[simp]
 theorem liftOrderIso_symm_apply (E' : Set.Iic E) :
-    (liftOrderIso E).symm E' = restrict E'.2 :=
+    (liftOrderIso E).symm E' = restrict E'.property :=
   (rfl)
 
 end IntermediateField

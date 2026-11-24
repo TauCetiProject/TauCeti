@@ -179,7 +179,7 @@ postcomposition descend to the residue ring of `End Y`. -/
 theorem irreducibleMorphismPostcomp_eq_zero_of_mem_jacobson {g : End Y}
     (hg : g ∈ Ring.jacobson (End Y)) : irreducibleMorphismPostcomp k X Y g = 0 := by
   ext f
-  simpa using comp_mem_jacobsonRadicalSq (mem_jacobsonRadicalSubmodule.mp f.2)
+  simpa using comp_mem_jacobsonRadicalSq (mem_jacobsonRadicalSubmodule.mp f.property)
     (mem_jacobsonRadical_self_iff_mem_jacobson.mpr hg)
 
 /-! ### Composing with an endomorphism of the source -/
@@ -253,7 +253,7 @@ theorem irreducibleMorphismPrecomp_eq_zero_of_mem_jacobson {a : End X}
     (ha : a ∈ Ring.jacobson (End X)) : irreducibleMorphismPrecomp k X Y a = 0 := by
   ext f
   simpa using comp_mem_jacobsonRadicalSq
-    (mem_jacobsonRadical_self_iff_mem_jacobson.mpr ha) (mem_jacobsonRadicalSubmodule.mp f.2)
+    (mem_jacobsonRadical_self_iff_mem_jacobson.mpr ha) (mem_jacobsonRadicalSubmodule.mp f.property)
 
 /-- The two actions commute: `a ≫ (f ≫ g)` and `(a ≫ f) ≫ g` are the same morphism. -/
 theorem irreducibleMorphismPrecomp_comp_postcomp (a : End X) (g : End Y) :

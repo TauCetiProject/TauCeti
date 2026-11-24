@@ -164,7 +164,7 @@ variable [NeZero (2 : k)]
 theorem degree_different (h5 : (5 : k) ≠ 0) :
     Divisor.degree (Divisor.different k (FunctionField k) (IsFunctionField.ratFunc k)) = 6 := by
   have h := degree_different_ratFunc_of_sq_eq (NeZero.ne (2 : k))
-    (squarefree k h5) (odd_natDegree k).pos
+    (squarefree k h5)
     (adjoin_genY_eq_top k) (genY_sq k)
   simp only [natDegree_X_pow_sub_C] at h
   norm_num at h

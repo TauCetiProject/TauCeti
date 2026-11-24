@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The complex lower incomplete Gamma function
@@ -21,11 +22,18 @@ both defined through Tricomi's entire function `γ*` of
 
 * `Complex.lowerIncompleteGamma_eq_integral`: DLMF 8.2.1, `γ(a, z) = z^a ∫₀¹ s^{a−1} e^{−zs} ds`
   for `0 < Re a`;
+* `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul`: DLMF 8.2.1 rescaled,
+  `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0`, `0 ≤ x`;
 * `Complex.tendsto_mul_lowerIncompleteGamma`: for `z ≠ 0`, `γ(·, z)` has simple poles at
   `a = −n` with residue `(−1)ⁿ/n!`, from the residue of `Γ`
   (`Complex.tendsto_add_natCast_mul_Gamma`);
 * `Complex.differentiable_regularizedGamma_left`: for `z ≠ 0`, `P(·, z)` is entire;
 * `Complex.differentiableAt_lowerIncompleteGamma_left`: `γ(·, z)` is holomorphic off `−ℕ`;
+* `Complex.differentiableAt_lowerIncompleteGamma_right`,
+  `Complex.analyticOnNhd_lowerIncompleteGamma`: `γ(a, ·)` is holomorphic on the slit plane;
+* `Complex.lowerIncompleteGamma_ofReal_eq_partialGamma`: on the nonnegative real axis `γ(a, x)` is
+  Mathlib's `Complex.partialGamma a x`, for `0 < Re a`;
+* `Complex.lowerIncompleteGamma_neg_natCast`: `γ(−n, ·)` is identically `0`, Mathlib's junk value;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
   `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12);
@@ -43,13 +51,15 @@ At the poles `a ∈ −ℕ`, `γ(a, z)` takes the value given by Mathlib's junk 
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMF/IncompleteGamma/ContinuedProperties.lean`, and restated on Tricomi's `γ*`.
+The slit-plane holomorphy in `z`, the identification with `Complex.partialGamma` and the
+rescaled integral `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul` are new proofs.
 -/
 
 public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
+open Filter Set
 open scoped Nat Topology
 
 namespace Complex
@@ -115,6 +125,27 @@ theorem differentiableAt_lowerIncompleteGamma_left {a : ℂ} (ha : ∀ m : ℕ, 
     exact differentiableAt_const _
   · exact (differentiableAt_Gamma a ha).mul (differentiable_regularizedGamma_left hz a)
 
+/-- `γ(a, ·)` is holomorphic on the slit plane. -/
+theorem differentiableAt_lowerIncompleteGamma_right (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
+    DifferentiableAt ℂ (lowerIncompleteGamma a) z := by
+  have h := ((((hasDerivAt_id z).cpow_const (c := a) hz).differentiableAt.mul
+    (differentiable_tricomiIncompleteGamma a z)).const_mul (Gamma a))
+  exact h.congr_of_eventuallyEq (.of_forall fun w => by
+    simp [lowerIncompleteGamma_def, regularizedGamma_def])
+
+/-- `γ(a, ·)` is analytic on the slit plane. -/
+theorem analyticOnNhd_lowerIncompleteGamma (a : ℂ) :
+    AnalyticOnNhd ℂ (lowerIncompleteGamma a) slitPlane :=
+  DifferentiableOn.analyticOnNhd
+    (fun _ hz => (differentiableAt_lowerIncompleteGamma_right a hz).differentiableWithinAt)
+    isOpen_slitPlane
+
+/-- At `a = −n` the lower incomplete Gamma function is identically Mathlib's junk value `0`,
+since `Γ(−n) = 0`. -/
+@[simp]
+theorem lowerIncompleteGamma_neg_natCast (n : ℕ) : lowerIncompleteGamma (-n) = fun _ => 0 :=
+  funext fun _ => by simp [lowerIncompleteGamma_def, Gamma_neg_nat_eq_zero]
+
 /-- `P(−n, z) = 1` for `z ≠ 0` (DLMF 8.4.12). -/
 @[simp]
 theorem regularizedGamma_neg_natCast (n : ℕ) {z : ℂ} (hz : z ≠ 0) :
@@ -146,44 +177,59 @@ theorem tendsto_mul_lowerIncompleteGamma (n : ℕ) {z : ℂ} (hz : z ≠ 0) :
       nhdsWithin_le_nhds
   simpa [lowerIncompleteGamma_def, mul_assoc] using (tendsto_add_natCast_mul_Gamma n).mul hP
 
+end Complex
+
+namespace TauCeti
+
+open Complex Set
+
+/-- DLMF 8.2.1 rescaled: `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0` and
+`0 ≤ x`. -/
+theorem intervalIntegral_cpow_mul_exp_neg_mul {a r : ℂ} (ha : 0 < a.re) (hr : r ≠ 0) {x : ℝ}
+    (hx : 0 ≤ x) :
+    ∫ t in (0 : ℝ)..x, (t : ℂ) ^ (a - 1) * cexp (-(r * t)) =
+      r ^ (-a) * Complex.lowerIncompleteGamma a (r * x) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
+  have hra : r ^ a ≠ 0 := (cpow_ne_zero_iff_of_exponent_ne_zero
+    (fun h => by simp [h] at ha)).mpr hr
+  have hrx : (r * x) ^ a = r ^ a * (x : ℂ) ^ a := by
+    rw [mul_comm, TauCeti.ofReal_mul_cpow hx.le, mul_comm]
+  rw [Complex.lowerIncompleteGamma_eq_integral ha, hrx, ← mul_assoc, ← mul_assoc, cpow_neg,
+    inv_mul_cancel₀ hra, one_mul]
+  have h := intervalIntegral.smul_integral_comp_mul_left (a := 0) (b := 1)
+    (f := fun t : ℝ => (t : ℂ) ^ (a - 1) * cexp (-(r * t))) x
+  rw [mul_zero, mul_one] at h
+  rw [← h, real_smul, ← intervalIntegral.integral_const_mul,
+    ← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.integral_congr fun u hu => ?_
+  rw [uIcc_of_le zero_le_one] at hu
+  rw [ofReal_mul, ofReal_mul_cpow hx.le, cpow_sub _ _ hx0, cpow_one]
+  field_simp
+
+end TauCeti
+
+namespace Complex
+
+/-- On the nonnegative real axis, `γ(a, x)` is Mathlib's `Complex.partialGamma a x` when
+`0 < Re a`. -/
+theorem lowerIncompleteGamma_ofReal_eq_partialGamma (a : ℂ) (ha : 0 < a.re) {x : ℝ}
+    (hx : 0 ≤ x) : lowerIncompleteGamma a x = partialGamma a x := by
+  -- the rescaled integral at `r = 1`
+  have h := TauCeti.intervalIntegral_cpow_mul_exp_neg_mul ha one_ne_zero hx
+  simp only [one_cpow, one_mul] at h
+  rw [← h, partialGamma]
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  push_cast
+  ring
+
 /-- For `0 < s` and `0 ≤ x`, the complex lower incomplete Gamma function restricts to the real
 `TauCeti.lowerIncompleteGamma`. -/
 theorem lowerIncompleteGamma_ofReal {s x : ℝ} (hs : 0 < s) (hx : 0 ≤ x) :
     lowerIncompleteGamma (s : ℂ) (x : ℂ) = (TauCeti.lowerIncompleteGamma s x : ℂ) := by
-  rcases hx.eq_or_lt with rfl | hx
-  · simp
-  · have hsre : 0 < (s : ℂ).re := by simpa using hs
-    have hsub := congr_arg (fun y : ℝ => x * y)
-      (intervalIntegral.integral_comp_mul_right
-        (fun t : ℝ => t ^ (s - 1) * Real.exp (-t)) hx.ne' (a := (0 : ℝ)) (b := 1))
-    dsimp at hsub
-    rw [zero_mul, one_mul, ← mul_assoc, mul_inv_cancel₀ hx.ne', one_mul] at hsub
-    rw [TauCeti.lowerIncompleteGamma_eq_integral hx.le, ← hsub, ofReal_mul,
-      ← intervalIntegral.integral_ofReal, ← intervalIntegral.integral_const_mul,
-      lowerIncompleteGamma_eq_integral hsre, ← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr_ae ?_
-    filter_upwards [volume.ae_ne (0 : ℝ)] with u hune hu
-    rw [Set.uIoc_of_le zero_le_one] at hu
-    have hupos : 0 < u := lt_of_le_of_ne hu.1.le hune.symm
-    have hxpow : x * (u * x) ^ (s - 1) = x ^ s * u ^ (s - 1) := by
-      have hx1 : x * x ^ (s - 1) = x ^ s := by
-        conv_lhs => enter [1]; rw [← Real.rpow_one x]
-        rw [← Real.rpow_add hx]
-        congr 1
-        ring
-      rw [Real.mul_rpow hupos.le hx.le, mul_left_comm, hx1, mul_comm]
-    have hcpow_u : (u : ℂ) ^ ((s : ℂ) - 1) = ((u ^ (s - 1) : ℝ) : ℂ) := by
-      rw [ofReal_cpow hupos.le, ofReal_sub, ofReal_one]
-    have hexp : cexp (-((x : ℂ) * u)) = (Real.exp (-(u * x)) : ℂ) := by
-      rw [ofReal_exp, ofReal_neg, ofReal_mul, mul_comm (u : ℂ) (x : ℂ)]
-    rw [← ofReal_cpow hx.le s, hcpow_u, hexp, ofReal_mul]
-    calc ((x ^ s : ℝ) : ℂ) * (((u ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ))
-      _ = (((x ^ s * u ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ)) := by
-        rw [ofReal_mul, mul_assoc]
-      _ = (((x * (u * x) ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ)) := by
-        rw [hxpow]
-      _ = (x : ℂ) * ((((u * x) ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ)) := by
-        rw [ofReal_mul, mul_assoc]
+  rw [lowerIncompleteGamma_ofReal_eq_partialGamma (s : ℂ) (by simpa using hs) hx,
+    ← TauCeti.ofReal_lowerIncompleteGamma_eq_partialGamma hx]
 
 /-- For `0 < s` and `0 ≤ x`, the complex regularized lower incomplete Gamma function restricts to
 the real `TauCeti.regularizedGamma`. -/

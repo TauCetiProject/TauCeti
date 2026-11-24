@@ -8,12 +8,16 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Order.Prod.Lex.Basic
+public import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.Linarith
 
 /-!
 # Sums over finite types
 
 A sum of values that are all equal to `d` on the indices satisfying `p`, and zero elsewhere, is
-the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`).
+the number of such indices times `d` (`Fintype.sum_ite_eq_card_nsmul`). The pairs of elements
+with equal values of a function `f` are counted by the sum of the squares of the fibre sizes of
+`f` (`Fintype.card_subtype_apply_fst_eq_apply_snd`).
 
 For a finite type `ι` and finite coordinate sets `s i`, a sum over maps taking their `i`th value
 in `s i` of a quantity depending only on two distinct coordinates is a sum over the pairs of
@@ -27,10 +31,21 @@ substituted with `Function.update`. Telescoping arguments use this to test one p
 coordinates while the others stay fixed. The same splitting at three distinct coordinates tests
 one triple of coordinates.
 
+Prescribing the values of the maps in such a box on a finset `I` of coordinates leaves as many
+maps as the volume of the cells outside `I`
+(`Fintype.card_filter_piFinset_forall_eq_of_forall_mem`), so the volume of the box is that number
+times the volume of the cells on `I` (`Fintype.prod_card_eq_card_filter_piFinset_mul_prod`). The
+cases of one, two and three coordinates are stated separately.
+
 Splitting at a single coordinate `e` averages it out: if `G` does not see the value at `e`, the
 sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
 (`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
-use this to discard every term containing a coordinate that occurs only once.
+use this to discard every term containing a coordinate that occurs only once. The label
+deviation `Fintype.labelDev p i v`, the deviation of the indicator of `v = i` from its mean
+`1 / |ι|`, switched off unless `p` holds (`Fintype.labelDev_eq`), is such an `a`: it sums to zero
+over the labels `v` (`Fintype.sum_labelDev`) and has absolute value at most one
+(`Fintype.abs_labelDev_le_one`).
+Quasirandom splitting arguments average it over all labellings.
 
 Selecting, among all maps, those that agree with a fixed map `f` away from a coordinate `i` and
 summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`). A sum over maps
@@ -58,6 +73,33 @@ theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p :
   rw [Fintype.card_subtype, ← sum_filter]
   exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
 
+/-- The pairs of elements of a finite type with equal values of `f` are counted by the sum of the
+squares of the fibre sizes of `f`. -/
+theorem card_subtype_apply_fst_eq_apply_snd {α β : Type*} [Fintype α] [Fintype β] [DecidableEq β]
+    (f : α → β) :
+    Fintype.card {p : α × α // f p.1 = f p.2} = ∑ b, Fintype.card {a // f a = b} ^ 2 := by
+  simp_rw [Fintype.card_subtype, card_filter, Fintype.sum_prod_type, sq, sum_mul_sum, ite_mul,
+    one_mul, zero_mul]
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun b _ ↦ ?_
+  simp [eq_comm]
+
+/-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
+finset `I` leaves as many maps as the volume of the cells outside `I`. -/
+theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} = ∏ m ∈ univ \ I, #(s m) := by
+  -- The maps with the prescribed values on `I` form the box with cells `{a m}` on `I`.
+  have hbox : {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
+      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m := by
+    grind
+  rw [hbox, card_piFinset, ← prod_sdiff (subset_univ I),
+    Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
+  exact Finset.prod_congr rfl fun m hm ↦ by simp [(mem_sdiff.1 hm).2]
+
 /-- A sum of a function of two distinct coordinates over a finite box counts each pair
 of values once for every choice of the remaining coordinates. -/
 theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι] [AddCommMonoid M]
@@ -68,17 +110,11 @@ theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
   have hfib (p : κ × κ) (hp : p ∈ s i ×ˢ s j) :
       #{g ∈ piFinset s | (g i, g j) = p} = ∏ k ∈ univ \ {i, j}, #(s k) := by
     rw [mem_product] at hp
-    have hj : p.2 ∈ Function.update s i {p.1} j := by
-      simpa [Function.update_of_ne hij.symm] using hp.2
-    simp only [Prod.ext_iff, ← filter_filter]
-    rw [← piFinset_update_singleton_eq_filter_piFinset_eq s i hp.1,
-      ← piFinset_update_singleton_eq_filter_piFinset_eq _ j hj, card_piFinset]
-    simp_rw [Function.apply_update (fun _ ↦ Finset.card (α := κ))]
-    rw [prod_update_of_mem (mem_univ j), prod_update_of_mem (by simpa using hij)]
-    simp only [card_singleton, one_mul]
+    rw [← card_filter_piFinset_forall_eq_of_forall_mem s {i, j}
+      (a := fun m _ ↦ if m = i then p.1 else p.2) (by simp_all [hij.symm])]
     congr 1
-    ext k
-    simp [and_comm]
+    ext g
+    simp [Prod.ext_iff, hij.symm]
   rw [← sum_fiberwise_of_maps_to (g := fun g : ι → κ ↦ (g i, g j)) (t := s i ×ˢ s j)
     fun g hg ↦ mem_product.2 ⟨mem_piFinset.1 hg i, mem_piFinset.1 hg j⟩]
   calc ∑ p ∈ s i ×ˢ s j, ∑ g ∈ piFinset s with (g i, g j) = p, F (g i) (g j)
@@ -155,6 +191,50 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
+/-- The volume of a finite box is the number of maps in the box with prescribed values
+`a m ∈ s m` at the coordinates `m` of a finset `I`, times the volume of the cells on `I`. -/
+theorem prod_card_eq_card_filter_piFinset_mul_prod {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} * ∏ m ∈ I, #(s m) := by
+  rw [card_filter_piFinset_forall_eq_of_forall_mem s I ha, prod_sdiff (subset_univ I)]
+
+/-- The volume of a finite box is the number of maps in the box with a prescribed value `a ∈ s i`
+at the coordinate `i`, times the size of the cell at `i`. -/
+theorem prod_card_eq_card_filter_piFinset_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (i : ι) {a : κ i}
+    (ha : a ∈ s i) : ∏ m, #(s m) = #{h ∈ piFinset s | h i = a} * #(s i) := by
+  rw [card_filter_piFinset_eq_of_mem s i ha, prod_erase_mul _ _ (mem_univ i)]
+
+/-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`
+and `b ∈ s j` at two distinct coordinates `i` and `j`, times the volume of the cells at those
+coordinates. -/
+theorem prod_card_eq_card_filter_piFinset_mul_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j : ι} (hij : i ≠ j) (s : ∀ m, Finset (κ m))
+    {a : κ i} {b : κ j} (ha : a ∈ s i) (hb : b ∈ s j) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | h i = a ∧ h j = b} * (#(s i) * #(s j)) := by
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i, j}
+    (a := Pi.cons {j} i a fun m hm ↦ (mem_singleton.1 hm).symm ▸ b)
+    (by grind [Pi.cons_same, Pi.cons_ne]), prod_pair hij]
+  congr 2
+  grind [Pi.cons_same, Pi.cons_ne]
+
+/-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`,
+`b ∈ s j` and `c ∈ s l` at three distinct coordinates `i`, `j` and `l`, times the volume of the
+cells at those coordinates. -/
+theorem prod_card_eq_card_filter_piFinset_mul_mul_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j l : ι} (hij : i ≠ j) (hil : i ≠ l)
+    (hjl : j ≠ l) (s : ∀ m, Finset (κ m)) {a : κ i} {b : κ j} {c : κ l} (ha : a ∈ s i)
+    (hb : b ∈ s j) (hc : c ∈ s l) :
+    ∏ m, #(s m) =
+      #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i, j, l}
+    (a := Pi.cons {j, l} i a <| Pi.cons {l} j b fun m hm ↦ (mem_singleton.1 hm).symm ▸ c)
+    (by grind [Pi.cons_same, Pi.cons_ne]), prod_insert (by simp [hij, hil]), prod_pair hjl,
+    mul_assoc]
+  congr 2
+  grind [Pi.cons_same, Pi.cons_ne]
+
 /-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
 its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
 theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [Fintype α]
@@ -177,6 +257,55 @@ theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [F
       = ∑ v, a v * G ((Equiv.funSplitAt e α).symm (w, r)) :=
         Finset.sum_congr rfl fun v _ ↦ by rw [hsplit v, hG, Function.update_self]
     _ = 0 := by rw [← sum_mul, ha, zero_mul]
+
+/-- The deviation, at the label `v`, of the indicator of `v = i` from its mean `1 / |ι|` over
+the labels; it is zero unless `p` holds. -/
+def labelDev {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] (p : Prop)
+    [Decidable p] (i v : ι) : R :=
+  if p then (if v = i then 1 else 0) - (Fintype.card ι : R)⁻¹ else 0
+
+/-- Where `p` holds, the label deviation is the indicator of `v = i` minus `1 / |ι|`. -/
+theorem labelDev_of_pos {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] {p : Prop}
+    [Decidable p] (hp : p) (i v : ι) :
+    labelDev (R := R) p i v = (if v = i then 1 else 0) - (Fintype.card ι : R)⁻¹ :=
+  ite_eq_left hp
+
+/-- Where `p` fails, the label deviation vanishes. -/
+theorem labelDev_of_neg {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] {p : Prop}
+    [Decidable p] (hp : ¬p) (i v : ι) : labelDev (R := R) p i v = 0 :=
+  ite_eq_right hp
+
+/-- The label deviation is the indicator of `p ∧ v = i` minus a `1 / |ι|` share of the indicator
+of `p`. -/
+theorem labelDev_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [DivisionRing R] (p : Prop)
+    [Decidable p] (i v : ι) :
+    labelDev (R := R) p i v =
+      (if p ∧ v = i then 1 else 0) - (if p then 1 else 0) / (Fintype.card ι : R) := by
+  by_cases hp : p
+  · rw [labelDev_of_pos hp]
+    simp [hp, div_eq_mul_inv]
+  · rw [labelDev_of_neg hp]
+    simp [hp]
+
+/-- The label deviation has mean zero over the labels. -/
+theorem sum_labelDev {ι R : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] [DivisionRing R]
+    [CharZero R] (p : Prop) [Decidable p] (i : ι) : ∑ v, labelDev (R := R) p i v = 0 := by
+  by_cases hp : p
+  · simp only [labelDev_of_pos hp]
+    simp [sum_sub_distrib]
+  · simp [labelDev_of_neg hp]
+
+/-- The label deviation has absolute value at most one. -/
+theorem abs_labelDev_le_one {ι R : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι] [Field R]
+    [LinearOrder R] [IsStrictOrderedRing R] (p : Prop) [Decidable p] (i v : ι) :
+    |labelDev (R := R) p i v| ≤ 1 := by
+  have hq : (1 : R) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
+  have h₀ : 0 < (Fintype.card ι : R)⁻¹ := inv_pos.2 (zero_lt_one.trans_le hq)
+  have h₁ : (Fintype.card ι : R)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hq
+  by_cases hp : p
+  · rw [labelDev_of_pos hp]
+    split_ifs <;> rw [abs_le] <;> constructor <;> linarith
+  · simp [labelDev_of_neg hp]
 
 /-- A product over all maps of the factors at the maps that agree with `f` away from `i`, the
 other factors being `1`, is a product over the value at `i`. -/

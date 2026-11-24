@@ -77,7 +77,7 @@ variable [NormedRing A] [NormedAlgebra 𝕂 A]
 theorem one_le_logSeries_radius : 1 ≤ (logSeries 𝕂 A).radius := by
   refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
   have hr1 : (r : ℝ) < 1 := by exact_mod_cast ENNReal.coe_lt_one_iff.1 hr
-  obtain ⟨B, hB⟩ := (NormedField.tendsto_norm_inv_natCast_mul_pow 𝕂 r.2 hr1).bddAbove_range
+  obtain ⟨B, hB⟩ := (NormedField.tendsto_norm_inv_natCast_mul_pow 𝕂 r.property hr1).bddAbove_range
   refine FormalMultilinearSeries.le_radius_of_bound _ (max B ‖logSeries 𝕂 A 0‖) fun n ↦ ?_
   rcases n.eq_zero_or_pos with rfl | hn
   · simp

@@ -123,7 +123,7 @@ private noncomputable def π' : fiberProduct E F ⧸ antidiagonal E F →ₐ[A] 
     (by rintro _ ⟨m, hm⟩; simp [hm])
 
 variable {E F} in
-private theorem π'_mk' (p : fiberProduct E F) : π' E F (mk' E F p) = E.π p.1.1 :=
+private theorem π'_mk' (p : fiberProduct E F) : π' E F (mk' E F p) = E.π p.val.1 :=
   Ideal.Quotient.liftₐ_apply _ _ _ _
 
 /-- The pair `(ι_E m, ι_F n)` of kernel elements, as an element of the fibre product. -/
@@ -200,7 +200,7 @@ theorem baerSumMk_eq_baerSumMk_iff {p q : fiberProduct E F} :
 
 variable {E F} in
 @[simp]
-theorem π_baerSumMk (p : fiberProduct E F) : (baerSum E F).π (baerSumMk E F p) = E.π p.1.1 :=
+theorem π_baerSumMk (p : fiberProduct E F) : (baerSum E F).π (baerSumMk E F p) = E.π p.val.1 :=
   π'_mk' p
 
 /-- The class of a pair `(ι_E m, ι_F n)` of kernel elements is the kernel element `m + n`. -/
@@ -214,8 +214,8 @@ theorem ι_baerSum (m : M) : (baerSum E F).ι m = baerSumMk E F ⟨(E.ι m, 0), 
 
 variable {E F} in
 /-- A version of `baerSumMk_ι_ι` for an element of the fibre product given by its coordinates. -/
-private theorem baerSumMk_eq_ι {p : fiberProduct E F} {m n : M} (hm : p.1.1 = E.ι m)
-    (hn : p.1.2 = F.ι n) : baerSumMk E F p = (baerSum E F).ι (m + n) := by
+private theorem baerSumMk_eq_ι {p : fiberProduct E F} {m n : M} (hm : p.val.1 = E.ι m)
+    (hn : p.val.2 = F.ι n) : baerSumMk E F p = (baerSum E F).ι (m + n) := by
   rw [← baerSumMk_ι_ι]
   exact congrArg _ (Subtype.ext (Prod.ext hm hn))
 
@@ -239,7 +239,7 @@ private theorem liftAux_mk' (φ : fiberProduct E F →ₐ[A] G.Ring)
 /-- A morphism out of the Baer sum, from an algebra map on the fibre product `E ×_B F` that is
 compatible with the projections to `B` and sends `(ι_E m, ι_F n)` to `ι_G (m + n)`. -/
 noncomputable def baerSumLift (φ : fiberProduct E F →ₐ[A] G.Ring)
-    (hπ : ∀ p, G.π (φ p) = E.π p.1.1)
+    (hπ : ∀ p, G.π (φ p) = E.π p.val.1)
     (hι : ∀ m n, φ ⟨(E.ι m, F.ι n), by simp⟩ = G.ι (m + n)) : baerSum E F ⟶ G where
   toAlgHom := liftAux φ hι
   π_toAlgHom q := by
@@ -251,7 +251,7 @@ noncomputable def baerSumLift (φ : fiberProduct E F →ₐ[A] G.Ring)
 
 @[simp]
 theorem baerSumLift_toAlgHom_baerSumMk (φ : fiberProduct E F →ₐ[A] G.Ring)
-    (hπ : ∀ p, G.π (φ p) = E.π p.1.1)
+    (hπ : ∀ p, G.π (φ p) = E.π p.val.1)
     (hι : ∀ m n, φ ⟨(E.ι m, F.ι n), by simp⟩ = G.ι (m + n)) (p : fiberProduct E F) :
     (baerSumLift φ hπ hι).toAlgHom (baerSumMk E F p) = φ p :=
   liftAux_mk' φ hι p
@@ -266,7 +266,7 @@ variable {E E' F F' G : SquareZeroExtension.{w} A B M}
 noncomputable def baerSumMap (e : E ⟶ E') (f : F ⟶ F') : baerSum E F ⟶ baerSum E' F' :=
   baerSumLift ((baerSumMk E' F').comp (fiberProductLift (e.toAlgHom.comp (AlgHom.fst A _ _ |>.comp
     (fiberProduct E F).val)) (f.toAlgHom.comp (AlgHom.snd A _ _ |>.comp (fiberProduct E F).val))
-    fun p ↦ by simpa using mem_fiberProduct.1 p.2))
+    fun p ↦ by simpa using mem_fiberProduct.1 p.property))
     (fun p ↦ by simp) (fun m n ↦ by
       rw [AlgHom.comp_apply, ← baerSumMk_ι_ι]
       exact congrArg (baerSumMk E' F') (Subtype.ext (by simp)))
@@ -274,8 +274,8 @@ noncomputable def baerSumMap (e : E ⟶ E') (f : F ⟶ F') : baerSum E F ⟶ bae
 @[simp]
 theorem baerSumMap_toAlgHom_baerSumMk (e : E ⟶ E') (f : F ⟶ F') (p : fiberProduct E F) :
     (baerSumMap e f).toAlgHom (baerSumMk E F p) =
-      baerSumMk E' F' ⟨(e.toAlgHom p.1.1, f.toAlgHom p.1.2),
-        mem_fiberProduct.2 (by simpa using mem_fiberProduct.1 p.2)⟩ := by
+      baerSumMk E' F' ⟨(e.toAlgHom p.val.1, f.toAlgHom p.val.2),
+        mem_fiberProduct.2 (by simpa using mem_fiberProduct.1 p.property)⟩ := by
   rw [baerSumMap, baerSumLift_toAlgHom_baerSumMk]
   rfl
 
@@ -283,8 +283,8 @@ theorem baerSumMap_toAlgHom_baerSumMk (e : E ⟶ E') (f : F ⟶ F') (p : fiberPr
 noncomputable def baerSumComm (E F : SquareZeroExtension.{w} A B M) : baerSum E F ⟶ baerSum F E :=
   baerSumLift ((baerSumMk F E).comp (fiberProductLift (AlgHom.snd A _ _ |>.comp
     (fiberProduct E F).val) (AlgHom.fst A _ _ |>.comp (fiberProduct E F).val)
-    fun p ↦ by simpa using (mem_fiberProduct.1 p.2).symm))
-    (fun p ↦ by simpa using (mem_fiberProduct.1 p.2).symm)
+    fun p ↦ by simpa using (mem_fiberProduct.1 p.property).symm))
+    (fun p ↦ by simpa using (mem_fiberProduct.1 p.property).symm)
     (fun m n ↦ by
       rw [AlgHom.comp_apply, add_comm, ← baerSumMk_ι_ι]
       exact congrArg (baerSumMk F E) (Subtype.ext (by simp)))
@@ -292,7 +292,7 @@ noncomputable def baerSumComm (E F : SquareZeroExtension.{w} A B M) : baerSum E 
 @[simp]
 theorem baerSumComm_toAlgHom_baerSumMk (p : fiberProduct E F) :
     (baerSumComm E F).toAlgHom (baerSumMk E F p) =
-      baerSumMk F E ⟨(p.1.2, p.1.1), by simpa using (mem_fiberProduct.1 p.2).symm⟩ := by
+      baerSumMk F E ⟨(p.val.2, p.val.1), by simpa using (mem_fiberProduct.1 p.property).symm⟩ := by
   rw [baerSumComm, baerSumLift_toAlgHom_baerSumMk]
   rfl
 
@@ -390,13 +390,13 @@ private def t₃ : triple E F G →ₐ[A] G.Ring :=
 
 variable {E F G}
 
-private theorem t₁_apply (q : triple E F G) : t₁ E F G q = q.1.1 :=
+private theorem t₁_apply (q : triple E F G) : t₁ E F G q = q.val.1 :=
   rfl
 
-private theorem t₂_apply (q : triple E F G) : t₂ E F G q = q.1.2.1 :=
+private theorem t₂_apply (q : triple E F G) : t₂ E F G q = q.val.2.1 :=
   rfl
 
-private theorem t₃_apply (q : triple E F G) : t₃ E F G q = q.1.2.2 :=
+private theorem t₃_apply (q : triple E F G) : t₃ E F G q = q.val.2.2 :=
   rfl
 
 private theorem mem_triple {q : E.Ring × F.Ring × G.Ring} :
@@ -409,40 +409,40 @@ variable (E F G)
 private noncomputable def tripleXY : triple E F G →ₐ[A] fiberProduct E F :=
   fiberProductLift (t₁ E F G) (t₂ E F G) fun q ↦ by
     rw [t₁_apply, t₂_apply]
-    exact (mem_triple.1 q.2).1
+    exact (mem_triple.1 q.property).1
 
 /-- The map `(x, y, z) ↦ (y, z)` from triples to `F ×_B G`. -/
 private noncomputable def tripleYZ : triple E F G →ₐ[A] fiberProduct F G :=
   fiberProductLift (t₂ E F G) (t₃ E F G) fun q ↦ by
-    rw [t₂_apply, t₃_apply, ← (mem_triple.1 q.2).1]
-    exact (mem_triple.1 q.2).2
+    rw [t₂_apply, t₃_apply, ← (mem_triple.1 q.property).1]
+    exact (mem_triple.1 q.property).2
 
 /-- The surjection `(x, y, z) ↦ ([x, y], z)` from triples onto `(E + F) ×_B G`. -/
 private noncomputable def tripleToLeft : triple E F G →ₐ[A] fiberProduct (baerSum E F) G :=
   fiberProductLift ((baerSumMk E F).comp (tripleXY E F G)) (t₃ E F G) fun q ↦ by
     rw [AlgHom.comp_apply, π_baerSumMk, t₃_apply]
-    exact (mem_triple.1 q.2).2
+    exact (mem_triple.1 q.property).2
 
 /-- The map `(x, y, z) ↦ [x, [y, z]]` from triples to `E + (F + G)`. -/
 private noncomputable def tripleToRight : triple E F G →ₐ[A] (baerSum E (baerSum F G)).Ring :=
   (baerSumMk E (baerSum F G)).comp <| fiberProductLift (t₁ E F G)
     ((baerSumMk F G).comp (tripleYZ E F G)) fun q ↦ by
       rw [AlgHom.comp_apply, π_baerSumMk, t₁_apply]
-      exact (mem_triple.1 q.2).1
+      exact (mem_triple.1 q.property).1
 
 variable {E F G}
 
 private theorem coe_tripleToLeft_apply (q : triple E F G) :
     (tripleToLeft E F G q : (baerSum E F).Ring × G.Ring) =
-      (baerSumMk E F ⟨(q.1.1, q.1.2.1), (mem_triple.1 q.2).1⟩, q.1.2.2) :=
+      (baerSumMk E F ⟨(q.val.1, q.val.2.1), (mem_triple.1 q.property).1⟩, q.val.2.2) :=
   rfl
 
 private theorem π_tripleToRight (q : triple E F G) :
-    (baerSum E (baerSum F G)).π (tripleToRight E F G q) = E.π q.1.1 :=
+    (baerSum E (baerSum F G)).π (tripleToRight E F G q) = E.π q.val.1 :=
   π_baerSumMk _
 
-private theorem tripleToRight_eq_ι {q : triple E F G} {a b c : M} (ha : q.1.1 = E.ι a)
-    (hb : q.1.2.1 = F.ι b) (hc : q.1.2.2 = G.ι c) :
+private theorem tripleToRight_eq_ι {q : triple E F G} {a b c : M} (ha : q.val.1 = E.ι a)
+    (hb : q.val.2.1 = F.ι b) (hc : q.val.2.2 = G.ι c) :
     tripleToRight E F G q = (baerSum E (baerSum F G)).ι (a + (b + c)) := by
   rw [tripleToRight, AlgHom.comp_apply]
   refine baerSumMk_eq_ι ha ?_
@@ -461,8 +461,8 @@ private theorem tripleToRight_eq_zero {q : triple E F G} (h : tripleToLeft E F G
   rw [coe_tripleToLeft_apply, ZeroMemClass.coe_zero, Prod.mk_eq_zero] at h'
   obtain ⟨m, hm⟩ := (baerSumMk_eq_baerSumMk_iff (q := 0)).1 (h'.1.trans (map_zero _).symm)
   rw [ZeroMemClass.coe_zero, sub_zero] at hm
-  have h₁ : q.1.1 = E.ι m := congrArg Prod.fst hm
-  have h₂ : q.1.2.1 = F.ι (-m) := (congrArg Prod.snd hm).trans (map_neg F.ι m).symm
+  have h₁ : q.val.1 = E.ι m := congrArg Prod.fst hm
+  have h₂ : q.val.2.1 = F.ι (-m) := (congrArg Prod.snd hm).trans (map_neg F.ι m).symm
   rw [tripleToRight_eq_ι h₁ h₂ (h'.2.trans (map_zero G.ι).symm), add_zero, add_neg_cancel,
     map_zero]
 

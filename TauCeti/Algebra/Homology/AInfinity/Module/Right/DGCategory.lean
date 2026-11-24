@@ -171,7 +171,7 @@ variable {M N P}
 /-- The cycle associated to a module morphism has its original bar map. -/
 @[simp]
 theorem coe_homEquivDGCycles_apply (f : M ⟶ N) :
-    (dgHomLinearEquivCochains M N 0 (homEquivDGCycles M N f)).1 = f.barMap := by
+    (dgHomLinearEquivCochains M N 0 (homEquivDGCycles M N f)).val = f.barMap := by
   simp only [homEquivDGCycles, Equiv.trans_apply, LinearEquiv.coe_toEquiv,
     LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply,
     LinearEquiv.apply_symm_apply]
@@ -180,7 +180,7 @@ theorem coe_homEquivDGCycles_apply (f : M ⟶ N) :
 /-- The morphism associated to a DG cycle has the cycle's bar map. -/
 @[simp]
 theorem barMap_homEquivDGCycles_symm (f : dgCycles R M N) :
-    ((homEquivDGCycles M N).symm f).barMap = (dgHomLinearEquivCochains M N 0 f).1 := by
+    ((homEquivDGCycles M N).symm f).barMap = (dgHomLinearEquivCochains M N 0 f).val := by
   simpa only [Equiv.apply_symm_apply] using
     (coe_homEquivDGCycles_apply ((homEquivDGCycles M N).symm f)).symm
 
@@ -214,7 +214,7 @@ noncomputable def toClosedCategory :
       ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (AInfinityRightModuleCat.{u, u, u} AA)
     where
   obj M := ForgetEnrichment.of _ M
-  map {M N} f := dgClosedHomOf R (homEquivDGCycles M N f).1 (homEquivDGCycles M N f).2
+  map {M N} f := dgClosedHomOf R (homEquivDGCycles M N f).val (homEquivDGCycles M N f).property
   map_id M := by
     apply dgClosedHom_injective R
     rw [dgClosedHom_dgClosedHomOf, dgClosedHom_id]
@@ -235,7 +235,7 @@ theorem toClosedCategory_obj (M : AInfinityRightModuleCat.{u, u, u} AA) :
 /-- Extracting the closed component recovers the cycle associated to the module morphism. -/
 @[simp]
 theorem dgClosedHom_toClosedCategory_map (f : M ⟶ N) :
-    dgClosedHom R ((toClosedCategory AA).map f) = (homEquivDGCycles M N f).1 :=
+    dgClosedHom R ((toClosedCategory AA).map f) = (homEquivDGCycles M N f).val :=
   dgClosedHom_dgClosedHomOf R _ _
 
 instance : (toClosedCategory AA).Faithful where

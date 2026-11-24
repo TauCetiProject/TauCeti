@@ -142,12 +142,12 @@ theorem cliffordRestrictionAdjoint_conjContinuousAlgEquiv (hkl : 2 + 2 = finrank
       o.hodgeStar_map f hkl hkl', hinj.eq_iff]
   set τT := cliffordRestrictionAdjoint o ρ hkl T
   suffices h : cliffordRestrictionAdjoint o' ρ' hkl'
-      (e.toContinuousLinearEquiv.conjContinuousAlgEquiv T) = ⟨_, (hmem τT).2 τT.2⟩ from
+      (e.toContinuousLinearEquiv.conjContinuousAlgEquiv T) = ⟨_, (hmem τT).2 τT.property⟩ from
     congrArg Subtype.val h
   -- Test against a self-dual form `β' = ⋀²f β` of `V'`.
   refine ext_inner_right ℝ fun β' ↦ ?_
   obtain ⟨β, hβ⟩ := exteriorPower.map_surjective (n := 2) f.surjective (β' : ⋀[ℝ]^2 V')
-  have hβmem := (hmem β).1 (hβ ▸ β'.2)
+  have hβmem := (hmem β).1 (hβ ▸ β'.property)
   have hβ' : β' = ⟨_, (hmem β).2 hβmem⟩ := Subtype.ext hβ.symm
   -- Conjugation by `e` preserves traces.
   have htr (X : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) :

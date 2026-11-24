@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Connected.Basic
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
-# Topology of additive fixed points
+# Topology of fixed points
 
 The fixed points of a subgroup carry the subspace topology from the coefficient space. This file
 proves continuity of restricted biadditive pairings and supplies the continuous quotient actions
@@ -20,8 +23,9 @@ For a normal subgroup `H`, the algebraic `G ⧸ H`-action on the fixed points of
 `TauCeti/GroupTheory/GroupAction/FixedPoints.lean`. If the coefficients are discrete and `H` is
 open, the quotient is discrete, so its action is continuous without a continuity assumption on
 the ambient action. For an arbitrary normal `H`, a continuous ambient action also descends to a
-continuous quotient action on discrete fixed points. The latter uses only the quotient topology,
-with no compatibility assumption on the topology and group structure of `G`.
+continuous quotient action whenever the fixed points themselves are discrete (in particular when
+the ambient module is discrete, or `T₁` with finite fixed points). The latter uses only the
+quotient topology, with no compatibility assumption on the topology and group structure of `G`.
 
 The fixed points of open normal subgroups form a directed family, growing as the subgroup
 shrinks. Together with quotient-action continuity, this gives the coefficient system used in
@@ -30,6 +34,9 @@ finite-quotient descriptions of continuous cohomology.
 Pairings and quotient-action continuity have both additive-submonoid and additive-subgroup
 forms. The subgroup forms retain the coefficient groups' additive inverses and match the
 subgroup carrier used by group cohomology.
+
+An equivariant homeomorphism carries the fixed set onto the fixed set, so it carries each
+connected component of the fixed set onto the component through the image point.
 
 ## Main results
 
@@ -46,6 +53,8 @@ subgroup carrier used by group cohomology.
   points of arbitrary normal subgroups are continuous when the ambient action is continuous.
 * `TauCeti.continuous_fixedPoints_addSubgroup_subtype`: the inclusion of the fixed-point additive
   subgroup into the ambient coefficient group is continuous.
+* `Homeomorph.image_connectedComponentIn_fixedPoints`: an equivariant homeomorphism carries each
+  connected component of the fixed set onto the connected component through the image point.
 -/
 
 public section
@@ -72,7 +81,7 @@ theorem continuous_fixedPointsAddSubmonoidPairing (H : Subgroup G) (μ : M →+ 
   refine continuous_induced_rng.2 ?_
   simpa only [Function.comp_def, coe_fixedPointsAddSubmonoidPairing,
     Prod.map_fst, Prod.map_snd] using
-    hμ.comp (continuous_subtype_val.prodMap continuous_subtype_val)
+    hμ.comp (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 end Pairing
 
@@ -154,7 +163,7 @@ variable [TopologicalSpace M]
 /-- The inclusion `M ^ H ↪ M` of the invariants is continuous for the subspace topology. -/
 theorem continuous_fixedPoints_addSubgroup_subtype (H : Subgroup G) :
     Continuous ⇑(FixedPoints.addSubgroup H M).subtype :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 end Subtype
 
@@ -162,17 +171,18 @@ section ArbitraryNormalSubgroup
 
 variable (G : Type*) [Group G] [TopologicalSpace G]
 variable (M : Type*) [AddMonoid M] [DistribMulAction G M]
-variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
+variable [TopologicalSpace M] [ContinuousSMul G M]
 
-/-- For an arbitrary normal subgroup `H`, the action of `G ⧸ H` on the invariants `M ^ H` of a
-discrete module is continuous. Unlike
+/-- For an arbitrary normal subgroup `H`, the action of `G ⧸ H` on discrete invariants `M ^ H` is
+continuous when the ambient `G`-action is continuous. Unlike
 `TauCeti.continuousSMulQuotientFixedPoints`, which reads the continuity off the discreteness of
 `G ⧸ H` for open `H` and needs no continuity of the `G`-action, this deduces it from continuity of
 the `G`-action: the invariants are discrete, so continuity is continuity in the group variable
 alone, and there it is the continuity of the `G`-action read through the quotient map. No
 compatibility of the topology of `G` with its group structure is needed, since `G ⧸ H` carries the
 quotient topology. -/
-instance continuousSMulQuotientFixedPointsAddSubmonoidOfContinuousSMul (H : Subgroup G) [H.Normal] :
+instance continuousSMulQuotientFixedPointsAddSubmonoidOfContinuousSMul (H : Subgroup G) [H.Normal]
+    [DiscreteTopology (FixedPoints.addSubmonoid H M)] :
     ContinuousSMul (G ⧸ H) (FixedPoints.addSubmonoid H M) where
   continuous_smul := by
     rw [continuous_prod_of_discrete_right]
@@ -181,15 +191,30 @@ instance continuousSMulQuotientFixedPointsAddSubmonoidOfContinuousSMul (H : Subg
     refine Topology.IsInducing.subtypeVal.continuous_iff.2 ?_
     exact (continuous_id.smul continuous_const : Continuous fun g : G => g • (m : M))
 
-/-- For an arbitrary normal subgroup `H`, the quotient acts continuously on the fixed-point
-additive subgroup of a discrete module with continuous `G`-action. -/
+/-- For an arbitrary normal subgroup `H`, the quotient acts continuously on a discrete fixed-point
+additive subgroup when the ambient `G`-action is continuous. -/
 instance continuousSMulQuotientFixedPointsOfContinuousSMul (G : Type*) [Group G]
     [TopologicalSpace G] (M : Type*) [AddGroup M] [DistribMulAction G M]
-    [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
-    (H : Subgroup G) [H.Normal] :
+    [TopologicalSpace M] [ContinuousSMul G M]
+    (H : Subgroup G) [H.Normal] [DiscreteTopology (FixedPoints.addSubgroup H M)] :
     ContinuousSMul (G ⧸ H) (FixedPoints.addSubgroup H M) :=
+  letI : DiscreteTopology (FixedPoints.addSubmonoid H M) := ‹_›
   inferInstanceAs <| ContinuousSMul (G ⧸ H) (FixedPoints.addSubmonoid H M)
 
 end ArbitraryNormalSubgroup
 
 end TauCeti
+
+namespace Homeomorph
+
+/-- An equivariant homeomorphism carries each connected component of the fixed set onto the
+connected component of the fixed set through the image point. -/
+theorem image_connectedComponentIn_fixedPoints {K M N : Type*} [Monoid K] [TopologicalSpace M]
+    [TopologicalSpace N] [MulAction K M] [MulAction K N] (ψ : M ≃ₜ N)
+    (hψ : ∀ (k : K) (x : M), ψ (k • x) = k • ψ x) {x : M} (hx : x ∈ MulAction.fixedPoints K M) :
+    ψ '' connectedComponentIn (MulAction.fixedPoints K M) x =
+      connectedComponentIn (MulAction.fixedPoints K N) (ψ x) := by
+  rw [← TauCeti.MulAction.image_fixedPoints_of_bijective ψ.bijective hψ]
+  exact ψ.image_connectedComponentIn hx
+
+end Homeomorph

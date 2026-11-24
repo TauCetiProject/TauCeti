@@ -86,7 +86,7 @@ theorem coe_mem_neighborKernel_iff (v x : L) :
 /-- The neighbor kernel is contained in the original carrier. -/
 theorem neighborKernel_le (v : L) : L.neighborKernel p v ≤ L.carrier := by
   rintro _ ⟨y, -, rfl⟩
-  exact y.2
+  exact y.property
 
 /-- **Membership in the neighbor kernel**: its vectors are the lattice vectors whose pairing with
 `v` is divisible by `p`. -/
@@ -155,26 +155,26 @@ theorem relIndex_neighborKernel {v w : L} (hvw : IsCoprime (L.integralForm v w) 
   simp
 
 /-- The neighbor kernel is a full lattice in the ambient space, since it contains `p L`. -/
-instance isLattice_neighborKernel [NeZero p] (v : L) :
-    (L.neighborKernel p v).IsLattice ℚ where
-  fg := by
+instance isFullLattice_neighborKernel [NeZero p] (v : L) :
+    (L.neighborKernel p v).IsFullLattice ℚ where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := L.neighborKernel p v) (by
     rw [neighborKernel]
-    exact (IsNoetherian.noetherian _).map _
+    exact (IsNoetherian.noetherian _).map _)
   span_eq_top := by
     apply top_unique
-    rw [← L.isLattice.span_eq_top, Submodule.span_le]
+    rw [← L.isFullLattice.span_eq_top, Submodule.span_le]
     intro x hx
     have h := (Submodule.span ℚ (L.neighborKernel p v : Set V)).smul_mem (p : ℚ)⁻¹
       (Submodule.subset_span (L.smul_mem_neighborKernel p v ⟨x, hx⟩))
     rwa [smul_comm, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ,
       smul_inv_smul₀ (Nat.cast_ne_zero.mpr (NeZero.ne p))] at h
 
-private theorem isLattice_neighborCarrier [NeZero p] (v : L) :
-    (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsLattice ℚ :=
-  Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ le_sup_left
-    (Submodule.IsLattice.fg.sup (Submodule.fg_span_singleton _))
+private theorem isFullLattice_neighborCarrier [NeZero p] (v : L) :
+    (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsFullLattice ℚ :=
+  Submodule.IsFullLattice.of_le_of_fg ℚ le_sup_left
+    ((Submodule.IsLattice.fg ℚ (L.neighborKernel p v)).sup (Submodule.fg_span_singleton _))
 
-attribute [local instance] isLattice_neighborCarrier
+attribute [local instance] isFullLattice_neighborCarrier
 
 variable {L p}
 
@@ -283,7 +283,7 @@ theorem isEven_neighbor (hL : L.IsEven) (hv₂ : 2 * (p : ℤ) ^ 2 ∣ L.integra
     (L.neighbor p v hv).IsEven := by
   rw [isEven_iff_forall_norm]
   intro x
-  obtain ⟨y, hy, n, hx⟩ := (L.mem_neighbor_carrier_iff hv x).mp x.2
+  obtain ⟨y, hy, n, hx⟩ := (L.mem_neighbor_carrier_iff hv x).mp x.property
   obtain ⟨a, ha⟩ := hL.exists_norm_eq_two_mul ⟨y, L.neighborKernel_le p v hy⟩
   obtain ⟨c, hc⟩ := exists_form_inv_smul_eq hy
   obtain ⟨b, hb⟩ := hv₂
@@ -319,7 +319,7 @@ theorem zsmul_inv_smul_mem_carrier_iff {w : L} (hvw : IsCoprime (L.integralForm 
     exact hvw.symm.dvd_of_dvd_mul_right hdvd
   · rintro ⟨m, rfl⟩
     rw [mul_comm, mul_smul, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ, smul_inv_smul₀ hp]
-    exact L.carrier.smul_mem m v.2
+    exact L.carrier.smul_mem m v.property
 
 /-- The multiples of `p (v / p)` lie in the neighbor kernel. -/
 private theorem zsmul_inv_smul_mem_neighborKernel (m : ℤ) :

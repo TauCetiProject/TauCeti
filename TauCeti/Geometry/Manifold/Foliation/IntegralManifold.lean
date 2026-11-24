@@ -126,10 +126,10 @@ theorem range_leaf_distribution (F : Foliation I n M k) {m : ℕ∞} (hm : 1 ≤
       have hsub := ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := 1) u).mdifferentiableAt
         one_ne_zero).hasMFDerivAt
       have hγu := hasMFDerivWithinAt_curveVelocityWithin
-        (hγ.mdifferentiableOn one_ne_zero u.1 u.2)
+        (hγ.mdifferentiableOn one_ne_zero u.val u.property)
       have hcomp := hasMFDerivWithinAt_univ.mp <|
-        hγu.comp u hsub.hasMFDerivWithinAt fun z _ ↦ z.2
-      exact DFunLike.congr_fun hcomp.mfderiv v ▸ Submodule.smul_mem _ _ (htan u.1 u.2)
+        hγu.comp u hsub.hasMFDerivWithinAt fun z _ ↦ z.property
+      exact DFunLike.congr_fun hcomp.mfderiv v ▸ Submodule.smul_mem _ _ (htan u.val u.property)
     have hsub : range g ⊆ range (F.isInvolutiveDistribution.leaf hm hmr hD (γ 0)).map :=
       F.isInvolutiveDistribution.range_subset_leaf_of_isHorizontalMap hm hmr hD hg_hor hg_diff
         ⟨γ 0, ⟨⟨0, left_mem_Icc.mpr zero_le_one⟩, rfl⟩,
