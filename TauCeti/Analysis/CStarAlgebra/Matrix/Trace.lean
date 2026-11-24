@@ -168,12 +168,17 @@ theorem normalizedTrace_unitary_conj [DecidableEq n] {u : CStarMatrix n n ℂ}
     normalizedTrace (u * x * star u) = normalizedTrace x :=
   normalizedTrace_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem hu) x
 
+/-- Reindexing a `CStarMatrix` along `e` is `Matrix.reindex e e` on the underlying matrix. -/
+theorem ofMatrix_symm_reindexₐ {m : Type*} [Fintype m] (e : n ≃ m) (x : CStarMatrix n n ℂ) :
+    ofMatrix.symm (reindexₐ ℂ ℂ e x) = Matrix.reindex e e (ofMatrix.symm x) :=
+  (rfl)
+
 /-- The normalized trace is invariant under reindexing the rows and columns of a matrix. -/
 @[simp]
 theorem normalizedTrace_reindexₐ {m : Type*} [Fintype m] (e : n ≃ m) (x : CStarMatrix n n ℂ) :
     normalizedTrace (reindexₐ ℂ ℂ e x) = normalizedTrace x := by
-  rw [normalizedTrace_def, normalizedTrace_def, Fintype.card_congr e]
-  exact congrArg _ (Matrix.trace_reindex_self e (ofMatrix.symm x))
+  rw [normalizedTrace_def, normalizedTrace_def, Fintype.card_congr e, ofMatrix_symm_reindexₐ,
+    Matrix.trace_reindex_self]
 
 /-- The normalized trace of a positive matrix is nonnegative. -/
 theorem normalizedTrace_nonneg {x : CStarMatrix n n ℂ} (hx : 0 ≤ x) :
