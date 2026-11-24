@@ -125,8 +125,7 @@ public theorem IsAutomorphic.const_smul (c : ℂ) (hf : IsAutomorphic N χ f) :
 public theorem isAutomorphic_one_iff :
     IsAutomorphic N 1 f ↔ ∀ γ ∈ Gamma0 N, ∀ z : ℍ, f (γ • z) = f z := by
   refine isAutomorphic_iff.trans (forall₂_congr fun γ hγ ↦ forall_congr' fun z ↦ ?_)
-  rw [MulChar.one_apply (IsUnit.of_mul_eq_one_right _
-    (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)), one_mul]
+  rw [MulChar.one_apply (isUnit_intCast_apply_one_one_of_mem_Gamma0 hγ), one_mul]
 
 /-! ### The parity lemma -/
 
@@ -234,12 +233,9 @@ public theorem IsAutomorphic.comp_scaleGL_smul {M d : ℕ} [NeZero d] {χ : Diri
   have hconj : scaleGL d * mapGL ℝ γ = mapGL ℝ (conjScale d γ c hc) * scaleGL d :=
     mul_inv_eq_iff_eq_mul.mp (mapGL_conjScale γ c hc)
   rw [hf.apply_smul_smul_of_mul_eq hconj hm, conjScale_apply_one_one]
-  congr 1
-  -- the lower-right entry is a unit modulo `N`, whose reduction modulo `M` is read by `χ`
-  have hu := IsUnit.of_mul_eq_one_right _
-    (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
-  rw [← hu.unit_spec, DirichletCharacter.changeLevel_eq_cast_of_dvd, hu.unit_spec,
-    ZMod.cast_intCast ((Dvd.intro_left d rfl).trans h)]
+  -- the lower-right entry is coprime to `N`, so the lift of `χ` reads it as `χ` does
+  rw [DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ (isCoprime_comm.mp
+    ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp (isUnit_intCast_apply_one_one_of_mem_Gamma0 hγ)))]
 
 /-- **Level raising**: an automorphic function for `Γ₀(M)` with character `χ` is automorphic
 for `Γ₀(N)` with the lift of `χ`, for every multiple `N` of `M`. -/
