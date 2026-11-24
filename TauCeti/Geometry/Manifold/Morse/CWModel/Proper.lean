@@ -223,9 +223,10 @@ private theorem IsMorse.exists_sublevelCWModel_tower (hf : IsMorse I f) (hp : Is
 
 /-- **The CW model of a proper Morse function, with its sublevels** (Milnor, *Morse Theory*,
 Theorem 3.5 and its proof). Let `f` be a Morse function on a boundaryless manifold `M`, proper and
-bounded below. There are regular values `a 0 < a 1 < ⋯` of `f` tending to infinity, a Hausdorff CW
-complex `X` whose `m`-cells are labelled by the critical points of `f` of index `m`, a homotopy
-equivalence `H : X ≃ₕ M`, and subcomplexes `W k` of `X` such that:
+bounded below. There are regular values `a 0 < a 1 < ⋯` of `f` tending to infinity, with `a 0`
+below every value of `f`, a Hausdorff CW complex `X` whose `m`-cells are labelled by the critical
+points of `f` of index `m`, a homotopy equivalence `H : X ≃ₕ M`, and subcomplexes `W k` of `X`
+such that:
 
 * the cells of `W k` are those labelled by the critical points in the sublevel `{f ≤ a k}`;
 * every compact subset of `X` lies in some `W k`;
@@ -236,6 +237,7 @@ maps commuting strictly with the inclusions. -/
 theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse I f)
     (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
     ∃ a : ℕ → ℝ, StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
+      (∀ x, a 0 < f x) ∧
       ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X))
         (H : X ≃ₕ M)
         (e : ∀ m, cell (univ : Set X) m ≃
@@ -285,7 +287,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse
     (Equiv.emptySum _ _).trans <|
       (Equiv.sigmaCongrRight fun k ↦ (e k m).complRangeSymmInl).trans
         (sigmaCriticalPointsIocEquiv hmono htop ha0 m)
-  refine ⟨a, hmono, htop, hreg, c.pt, _, inferInstance, ‹_›, H, eX,
+  refine ⟨a, hmono, htop, hreg, ha0, c.pt, _, inferInstance, ‹_›, H, eX,
     cwComplexOfIsColimitSubcomplex hF hιc hc, fun k m j ↦ ?_,
     fun L hL ↦ exists_subset_cwComplexOfIsColimitSubcomplex_of_isCompact hF hιc hc hL, fun k ↦ ?_⟩
   · -- A new cell of the stage `k' + 1` belongs to the stage `k` exactly when `k' < k`, and its
@@ -297,15 +299,10 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse
     simp only [eX, Equiv.trans_apply, Equiv.apply_symm_apply]
     refine ⟨fun hk ↦ hx.2.trans (hmono.monotone hk), fun hk ↦ ?_⟩
     exact hmono.lt_iff_lt.1 (hx.1.trans_le hk)
-  · -- On the stage `k`, `H` is the model `S k` of `M_{a k}`, read through the closed embedding of
-    -- the stage into `X`.
-    have hemb := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding
-    refine ⟨(Homeomorph.setCongr (coe_cwComplexOfIsColimitSubcomplex hF hιc hc k)).trans
-      hemb.toHomeomorph.symm |>.toHomotopyEquiv.trans (S k).h, fun w ↦ ?_⟩
-    obtain ⟨w, hw⟩ := w
-    obtain ⟨z, rfl⟩ := (coe_cwComplexOfIsColimitSubcomplex hF hιc hc k).subset hw
-    rw [hH]
-    exact congrArg (fun y ↦ ((S k).h y : M)) (hemb.toHomeomorph_symm_apply z)
+  · -- On the stage `k`, which is homeomorphic to `S k`, `H` is the model of the sublevel `M_{a k}`.
+    exact ⟨(cwComplexOfIsColimitSubcomplexHomeomorph hF hιc hc k).toHomotopyEquiv.trans (S k).h,
+      fun w ↦ (hH k _).symm.trans
+        (congrArg H (ι_app_cwComplexOfIsColimitSubcomplexHomeomorph hF hιc hc k w))⟩
 
 /-- **The sublevel-compatible CW exhaustion of a proper Morse function** (Milnor, *Morse Theory*,
 Theorem 3.5 and its proof). Let `f` be a proper, bounded-below Morse function on a boundaryless
@@ -414,7 +411,7 @@ private theorem IsMorse.exists_cwComplex_homotopyEquiv_of_finiteDimensional (hf 
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
-  obtain ⟨-, -, -, -, X, _, _, _, H, e, -⟩ :=
+  obtain ⟨-, -, -, -, -, X, _, _, _, H, e, -⟩ :=
     hf.exists_cwComplex_homotopyEquiv_subcomplex_sublevel hp hbdd
   exact ⟨X, _, ‹_›, ‹_›, ⟨H.symm⟩, fun m ↦ ⟨e m⟩⟩
 

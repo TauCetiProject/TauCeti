@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Fourier.Torus.Multiplier
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Convolution
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
@@ -45,6 +46,9 @@ It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝ�
 
 ## Main declarations
 
+* `SchwartzMap.periodicKernel`: the periodic kernel `∑ₙ σ(n) eₙ` of a Schwartz symbol.
+* `SchwartzMap.mFourierCoeff_periodicKernel`: its Fourier coefficients are the values `σ(n)`.
+* `SchwartzMap.eLpNorm_periodicKernel_le`: its `L¹` norm is at most `‖𝓕⁻ σ‖_{L¹(ℝᵈ)}`.
 * `TauCeti.UnitAddTorus.eLpNorm_fourierMultiplier_le`: the `Lᵖ` bound for a Fourier multiplier
   whose symbol is a Schwartz function sampled on `ℤᵈ`.
 
@@ -69,6 +73,56 @@ open _root_.UnitAddTorus
 
 variable {d : Type*} [Fintype d]
 
+/-! ### The periodic kernel -/
+
+/-- A Schwartz function is absolutely summable over the integer points. -/
+private theorem summable_norm_apply_latticePoint (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+    Summable fun n : d → ℤ ↦ ‖σ (latticePoint n)‖ := by
+  simpa only [← latticePoint_eq_sum] using
+    σ.summable_norm_apply_sum_intCast_smul (EuclideanSpace.basisFun d ℝ)
+
+private theorem summable_smul_mFourier (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+    Summable fun n : d → ℤ ↦ σ (latticePoint n) • mFourier n :=
+  .of_norm <| (summable_norm_apply_latticePoint σ).congr fun n ↦ by
+    rw [norm_smul, mFourier_norm, mul_one]
+
+/-- The periodic kernel `K = ∑ₙ σ(n) eₙ` of the multiplier with symbol `σ`. -/
+def _root_.SchwartzMap.periodicKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : C(UnitAddTorus d, ℂ) :=
+  ∑' n : d → ℤ, σ (latticePoint n) • mFourier n
+
+/-- The periodic kernel is the pointwise sum of its absolutely convergent Fourier series. -/
+theorem _root_.SchwartzMap.periodicKernel_apply (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
+    (z : UnitAddTorus d) :
+    σ.periodicKernel z = ∑' n : d → ℤ, σ (latticePoint n) * mFourier n z := by
+  rw [SchwartzMap.periodicKernel, ← ContinuousMap.tsum_apply (summable_smul_mFourier σ)]
+  simp only [ContinuousMap.smul_apply, smul_eq_mul]
+
+/-- The Fourier coefficients of the periodic kernel are the values `σ(n)` of the symbol at the
+integer points. -/
+@[simp]
+theorem _root_.SchwartzMap.mFourierCoeff_periodicKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
+    (n : d → ℤ) : mFourierCoeff σ.periodicKernel n = σ (latticePoint n) := by
+  have h : ⇑σ.periodicKernel = fun z ↦ ∑' m : d → ℤ, σ (latticePoint m) • mFourier m z :=
+    funext fun z ↦ by simp only [SchwartzMap.periodicKernel_apply, smul_eq_mul]
+  rw [h]
+  exact mFourierCoeff_tsum_smul_mFourier (summable_norm_apply_latticePoint σ) n
+
+/-- **The `L¹` norm of the periodic kernel** is at most the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`: the
+kernel is the periodization of `𝓕⁻ σ`. -/
+theorem _root_.SchwartzMap.eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+    eLpNorm σ.periodicKernel 1 volume ≤
+      ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) := by
+  have h := (𝓕⁻ σ).lintegral_eNorm_tsum_fourier_mul_mFourier_le (EuclideanSpace.basisFun d ℝ)
+  simp only [← latticePoint_eq_sum, ← SchwartzMap.fourier_coe,
+    FourierTransform.fourier_fourierInv_eq] at h
+  rw [eLpNorm_one_eq_lintegral_eNorm σ.periodicKernel.continuous.aestronglyMeasurable,
+    ← SchwartzMap.fourierInv_coe, ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ σ).integrable,
+    volume_eq_pi_haarAddCircle]
+  -- `h` integrates for Mathlib's file-local volume on the torus, which is by definition the
+  -- product of the Haar probability measures `AddCircle.haarAddCircle` on the circle factors.
+  simp only [SchwartzMap.periodicKernel_apply]
+  exact h
+
 -- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
 -- measures on the circle factors, given by this instance; use it here so that the multipliers act
 -- on that same space.
@@ -84,41 +138,6 @@ local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
   inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
 
 local notation "L²(" α ")" => Lp ℂ 2 (volume : Measure α)
-
-/-! ### The periodic kernel -/
-
-/-- A Schwartz function is absolutely summable over the integer points. -/
-private theorem summable_norm_apply_latticePoint (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
-    Summable fun n : d → ℤ ↦ ‖σ (latticePoint n)‖ := by
-  simpa only [← latticePoint_eq_sum] using
-    σ.summable_norm_apply_sum_intCast_smul (EuclideanSpace.basisFun d ℝ)
-
-private theorem summable_smul_mFourier (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
-    Summable fun n : d → ℤ ↦ σ (latticePoint n) • mFourier n :=
-  .of_norm <| (summable_norm_apply_latticePoint σ).congr fun n ↦ by
-    rw [norm_smul, mFourier_norm, mul_one]
-
-/-- The periodic kernel `K = ∑ₙ σ(n) eₙ` of the multiplier with symbol `σ`. -/
-private def periodicKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : C(UnitAddTorus d, ℂ) :=
-  ∑' n : d → ℤ, σ (latticePoint n) • mFourier n
-
-private theorem _root_.UnitAddTorus.periodicKernel_apply (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
-    (z : UnitAddTorus d) :
-    periodicKernel σ z = ∑' n : d → ℤ, σ (latticePoint n) * mFourier n z := by
-  rw [periodicKernel, ← ContinuousMap.tsum_apply (summable_smul_mFourier σ)]
-  simp only [ContinuousMap.smul_apply, smul_eq_mul]
-
-/-- **The `L¹` norm of the periodic kernel** is at most the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`: the
-kernel is the periodization of `𝓕⁻ σ`. -/
-private theorem eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
-    eLpNorm (periodicKernel σ) 1 volume ≤
-      ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) := by
-  have h := (𝓕⁻ σ).lintegral_eNorm_tsum_fourier_mul_mFourier_le (EuclideanSpace.basisFun d ℝ)
-  simp only [← latticePoint_eq_sum, ← SchwartzMap.fourier_coe,
-    FourierTransform.fourier_fourierInv_eq] at h
-  rw [eLpNorm_one_eq_lintegral_eNorm (periodicKernel σ).continuous.aestronglyMeasurable,
-    ← SchwartzMap.fourierInv_coe, ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ σ).integrable]
-  simpa only [periodicKernel_apply] using h
 
 /-! ### The multiplier is a convolution -/
 
@@ -139,11 +158,11 @@ variable (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {m : ℓ^∞(d → ℤ, ℂ)}
 Fourier series `∑ₙ σ(n) f̂(n) eₙ`. -/
 private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply (f : L²(UnitAddTorus d))
     (x : UnitAddTorus d) :
-    (periodicKernel σ ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) x =
+    (σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) x =
       ∑' n : d → ℤ, σ (latticePoint n) * mFourierCoeff f n * mFourier n x := by
   have hf : Integrable (fun t ↦ f (x - t)) := ((Lp.memLp f).integrable one_le_two).comp_sub_left x
   rw [convolution_def]
-  simp only [ContinuousLinearMap.mul_apply', periodicKernel_apply, ← tsum_mul_right]
+  simp only [ContinuousLinearMap.mul_apply', SchwartzMap.periodicKernel_apply, ← tsum_mul_right]
   rw [← integral_tsum_of_summable_integral_norm]
   · refine tsum_congr fun n ↦ ?_
     simp_rw [mul_assoc, integral_const_mul, integral_mFourier_mul_sub]
@@ -161,7 +180,7 @@ the periodic kernel. -/
 private theorem fourierMultiplier_ae_eq_convolution (hm : ∀ n, m n = σ (latticePoint n))
     (f : L²(UnitAddTorus d)) :
     fourierMultiplier m f =ᵐ[volume]
-      periodicKernel σ ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f := by
+      σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f := by
   set c : (d → ℤ) → ℂ := fun n ↦ m n * mFourierCoeff f n
   have hc : Summable fun n ↦ c n • mFourier n := .of_norm <|
     ((summable_norm_apply_latticePoint σ).mul_right ‖f‖).of_nonneg_of_le
@@ -192,15 +211,18 @@ theorem eLpNorm_fourierMultiplier_le (hm : ∀ n, m n = σ (latticePoint n)) {p 
     eLpNorm (fourierMultiplier m f) p volume ≤
       ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
   rw [eLpNorm_congr_ae (fourierMultiplier_ae_eq_convolution σ hm f)]
-  refine (eLpNorm_convolution_le _ (periodicKernel σ).continuous.aestronglyMeasurable
+  refine (eLpNorm_convolution_le _ σ.periodicKernel.continuous.aestronglyMeasurable
     (Lp.aestronglyMeasurable f) hp).trans ?_
   have hL : ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ ≤ 1 := by
     rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff, ← NNReal.coe_le_one, coe_nnNorm]
     exact ContinuousLinearMap.opNorm_mul_le ℂ ℂ
-  calc ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ * eLpNorm (periodicKernel σ) 1 volume * eLpNorm f p volume
+  calc ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ * eLpNorm σ.periodicKernel 1 volume * eLpNorm f p volume
       ≤ 1 * ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
         gcongr
-        exact eLpNorm_periodicKernel_le σ
+        -- The bound is stated for the global volume, the product of the Haar probability
+        -- measures, which is by definition the volume given by the local instance here.
+        have h := σ.eLpNorm_periodicKernel_le
+        rwa [volume_eq_pi_haarAddCircle] at h
     _ = _ := by rw [one_mul]
 
 end TauCeti.UnitAddTorus

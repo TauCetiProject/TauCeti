@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Hurewicz classes of spheres detected by a fibre
