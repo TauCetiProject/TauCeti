@@ -8,15 +8,19 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
-public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Topology.Homotopy.Isotopy.Basic
 
 /-!
 # Continuous evaluation of diffeomorphisms
 
 On a compact source manifold with locally compact model, the weak Whitney topology makes
 evaluation of `C^n` diffeomorphisms continuous in both the diffeomorphism and the point.
-For self-diffeomorphisms this gives continuity of the tautological action, and evaluations
-at the two ends of a path in the source are homotopic (`Diffeomorph.evalAtHomotopy`).
+For self-diffeomorphisms this gives continuity of the tautological action. The scoped
+`ContinuousEval` instance also lets `Path.evalHomotopy` (in
+`TauCeti.Topology.MappingSpace.Evaluation`) apply to diffeomorphisms. A path of
+diffeomorphisms traces an isotopy through the homeomorphisms underlying its points
+(`Diffeomorph.isotopyOfPath`), so diffeomorphisms joined by a path are isotopic
+(`Diffeomorph.isotopic_of_joined`).
 -/
 
 public section
@@ -50,19 +54,25 @@ theorem applyContinuousSMul : ContinuousSMul (M ≃ₘ^n⟮I, I⟯ M) M :=
 scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]
   Diffeomorph.applyContinuousSMul
 
-/-- Evaluations at two points joined by a path `γ` are homotopic, through evaluation along `γ`. -/
-noncomputable def evalAtHomotopy {x₀ x₁ : M} (γ : Path x₀ x₁) :
-    ContinuousMap.Homotopy (evalAt (I := I) (J := J) (n := n) (N := N) x₀) (evalAt x₁) where
-  toFun p := p.2 (γ p.1)
+/-- A path `γ` of diffeomorphisms from `f` to `g`, for the weak Whitney topology, traces the
+isotopy `(t, x) ↦ γ t x` from `f` to `g`, every slice being a homeomorphism. -/
+noncomputable def isotopyOfPath {f g : M ≃ₘ^n⟮I, J⟯ N} (γ : Path f g) :
+    TauCeti.Isotopy (f.toHomeomorph : C(M, N)) g.toHomeomorph where
+  toFun p := γ p.1 p.2
   continuous_toFun := by fun_prop
-  map_zero_left f := by simp
-  map_one_left f := by simp
+  map_zero_left x := by simp
+  map_one_left x := by simp
+  prop' t := (γ t).toHomeomorph.isEmbedding
 
-/-- At time `t`, the homotopy `evalAtHomotopy γ` evaluates at `γ t`. -/
+/-- At time `t`, the isotopy traced by `γ` is the diffeomorphism `γ t`. -/
 @[simp]
-theorem evalAtHomotopy_apply {x₀ x₁ : M} (γ : Path x₀ x₁)
-    (p : unitInterval × (M ≃ₘ^n⟮I, J⟯ N)) :
-    evalAtHomotopy (I := I) (J := J) (n := n) γ p = p.2 (γ p.1) :=
+theorem isotopyOfPath_apply {f g : M ≃ₘ^n⟮I, J⟯ N} (γ : Path f g)
+    (p : unitInterval × M) : isotopyOfPath γ p = γ p.1 p.2 :=
   (rfl)
+
+/-- Diffeomorphisms joined by a path for the weak Whitney topology are isotopic. -/
+theorem isotopic_of_joined {f g : M ≃ₘ^n⟮I, J⟯ N} (h : Joined f g) :
+    TauCeti.Isotopic (f.toHomeomorph : C(M, N)) g.toHomeomorph :=
+  .of_isotopy (isotopyOfPath h.somePath)
 
 end Diffeomorph

@@ -23,8 +23,11 @@ import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 /-!
 # Quadratic forms, idempotents, and the number of symmetric matrices
 
-For a symmetric matrix `A` over a commutative ring, the quadratic form `x ↦ xᵀ A x` satisfies
-the polarization identities `(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`.
+For a symmetric matrix `A` over a commutative ring, every congruent matrix `P A Pᵀ` is symmetric,
+and the quadratic form `x ↦ xᵀ A x` satisfies the polarization identities
+`(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`. If moreover `A` is invertible, translating `x`
+by `A y` changes the quadratic form of `A⁻¹` by
+`(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`.
 
 For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
 `mᵀ A m = ∑ᵢⱼ mᵢ mⱼ aᵢⱼ` agrees modulo two with `∑ᵢ mᵢ aᵢᵢ`: its off-diagonal part is even
@@ -57,8 +60,11 @@ same way by their entries on and above the diagonal, in every characteristic.
 
 ## Main results
 
+* `Matrix.IsSymm.mul_mul_transpose`: a congruence `P A Pᵀ` of a symmetric matrix is symmetric.
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
   polarization identities for a symmetric matrix.
+* `Matrix.IsSymm.add_mulVec_dotProduct_inv_mulVec_add_mulVec`: for an invertible symmetric `A`,
+  `(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`.
 * `Matrix.IsSymm.dotProduct_eq_zero_of_mem_eigenspace`: distinct eigenspaces of a symmetric matrix
   are orthogonal.
 * `Matrix.IsSymm.even_sum_mul_diag_iff_even_dotProduct_mulVec`: if `A` is a symmetric integer
@@ -90,6 +96,11 @@ namespace Matrix
 
 open Finset
 
+/-- A congruence `P A Pᵀ` of a symmetric matrix `A` is symmetric. -/
+theorem IsSymm.mul_mul_transpose {m n R : Type*} [Fintype n] [NonUnitalCommSemiring R]
+    {A : Matrix n n R} (hA : A.IsSymm) (P : Matrix m n R) : (P * A * Pᵀ).IsSymm := by
+  rw [IsSymm, transpose_mul, transpose_mul, transpose_transpose, hA.eq, Matrix.mul_assoc]
+
 /-- Expanding the quadratic form of a symmetric matrix at a sum. -/
 theorem IsSymm.add_dotProduct_mulVec_add {ι R : Type*} [Fintype ι] [CommSemiring R]
     {A : Matrix ι ι R} (hA : A.IsSymm) (x y : ι → R) :
@@ -104,6 +115,22 @@ theorem IsSymm.sub_dotProduct_mulVec_sub {ι R : Type*} [Fintype ι] [CommRing R
     (x - y) ⬝ᵥ A *ᵥ (x - y) = x ⬝ᵥ A *ᵥ x + y ⬝ᵥ A *ᵥ y - 2 * (x ⬝ᵥ A *ᵥ y) := by
   rw [sub_eq_add_neg, hA.add_dotProduct_mulVec_add, mulVec_neg, neg_dotProduct, dotProduct_neg,
     dotProduct_neg, neg_neg]
+  ring
+
+/-- Translating `x` by `A y` in the quadratic form of the inverse of an invertible symmetric
+matrix: `(x + A y)ᵀ A⁻¹ (x + A y) = xᵀ A⁻¹ x + 2 xᵀ y + yᵀ A y`. -/
+theorem IsSymm.add_mulVec_dotProduct_inv_mulVec_add_mulVec {ι R : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] {A : Matrix ι ι R} (hA : A.IsSymm) (hdet : IsUnit A.det)
+    (x y : ι → R) :
+    (x + A *ᵥ y) ⬝ᵥ A⁻¹ *ᵥ (x + A *ᵥ y) = x ⬝ᵥ A⁻¹ *ᵥ x + 2 * (x ⬝ᵥ y) + y ⬝ᵥ A *ᵥ y := by
+  -- `A⁻¹ (A y) = y` and, by symmetry of `A`, `(A y)ᵀ A⁻¹ x = yᵀ A (A⁻¹ x) = xᵀ y`.
+  have hinv : A⁻¹ *ᵥ (A *ᵥ y) = y := by
+    rw [mulVec_mulVec, nonsing_inv_mul A hdet, one_mulVec]
+  have hswap : (A *ᵥ y) ⬝ᵥ A⁻¹ *ᵥ x = x ⬝ᵥ y := by
+    rw [dotProduct_comm, hA.dotProduct_mulVec_comm, mulVec_mulVec, mul_nonsing_inv A hdet,
+      one_mulVec, dotProduct_comm]
+  rw [mulVec_add, hinv, add_dotProduct, dotProduct_add, dotProduct_add, hswap,
+    dotProduct_comm (A *ᵥ y) y]
   ring
 
 /-- **Distinct eigenspaces of a symmetric matrix are orthogonal** for the dot product, over a ring

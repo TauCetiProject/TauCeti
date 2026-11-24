@@ -16,7 +16,9 @@ so have finite measure under a measure finite on compact sets, the same holds fo
 measure `μ.real`, and likewise for closed balls. For a locally finite measure, closed balls of
 small positive radius around a point have positive finite measure, so proportions of sets in
 shrinking balls are well behaved. Since a property holding almost everywhere holds on a dense
-set, an almost everywhere inequality between continuous functions holds everywhere.
+set, an almost everywhere inequality between continuous functions holds everywhere. On a linear
+order without extremal elements, the same density shows that such a property holds frequently at
+`±∞`.
 
 An almost-everywhere inclusion of an open set in another set implies inclusion in its closure.
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
@@ -49,6 +51,9 @@ set whose closure contains the point, for any measure positive on nonempty open 
   continuous on `U` holds at every point of `U`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
+* `MeasureTheory.frequently_atTop_of_ae`, `MeasureTheory.frequently_atBot_of_ae`: on a linear
+  order without a maximum (minimum), a property of almost every point holds frequently at `+∞`
+  (`-∞`).
 * `TauCeti.not_continuousAt_of_tendsto_of_ae_eq`,
   `TauCeti.not_continuousWithinAt_of_tendsto_of_ae_eq`: a function tending at a point to a filter
   disjoint from the neighbourhoods of a value, such as `atTop`, has no almost everywhere
@@ -184,6 +189,22 @@ theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [Topolog
     [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
     ae μ = ⊤ :=
   ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
+
+/-- On a linear order without a maximum, a property of almost every point, for a measure positive
+on nonempty open sets, holds frequently at `+∞`: every ray `(a, ∞)` is a nonempty open set. -/
+theorem _root_.MeasureTheory.frequently_atTop_of_ae {α : Type*} [TopologicalSpace α]
+    [LinearOrder α] [Nonempty α] [ClosedIicTopology α] [NoMaxOrder α] [MeasurableSpace α]
+    {μ : Measure α} [μ.IsOpenPosMeasure] {p : α → Prop} (h : ∀ᵐ x ∂μ, p x) :
+    ∃ᶠ x in atTop, p x :=
+  frequently_atTop.2 fun a ↦ ((Measure.dense_of_ae h).exists_ge a).imp fun _ hx ↦ ⟨hx.2, hx.1⟩
+
+/-- On a linear order without a minimum, a property of almost every point, for a measure positive
+on nonempty open sets, holds frequently at `-∞`: every ray `(-∞, a)` is a nonempty open set. -/
+theorem _root_.MeasureTheory.frequently_atBot_of_ae {α : Type*} [TopologicalSpace α]
+    [LinearOrder α] [Nonempty α] [ClosedIciTopology α] [NoMinOrder α] [MeasurableSpace α]
+    {μ : Measure α} [μ.IsOpenPosMeasure] {p : α → Prop} (h : ∀ᵐ x ∂μ, p x) :
+    ∃ᶠ x in atBot, p x :=
+  frequently_atBot.2 fun a ↦ ((Measure.dense_of_ae h).exists_le a).imp fun _ hx ↦ ⟨hx.2, hx.1⟩
 
 /-- **No continuous representative across a jump to a disjoint filter.** Let `u` be an open set
 with `x` in its closure and `u ⊆ t`. If `f` tends along `𝓝[u] x` to a filter `l` disjoint from the

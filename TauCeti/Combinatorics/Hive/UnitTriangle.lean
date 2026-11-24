@@ -103,7 +103,8 @@ theorem isClosed_barycentricSimplex (n : ℕ) : IsClosed (barycentricSimplex n) 
 private theorem barycentricSimplex_one_eq_convexHull :
     barycentricSimplex 1 = convexHull ℝ (Set.range fun i : Fin 3 => Pi.single i (1 : ℝ)) := by
   ext x
-  rw [← Set.image_univ, mem_convexHull_pi_single_iff]
+  rw [← Set.image_univ, mem_convexHull_pi_single_iff,
+    Convexity.StdSimplex.mem_range_toFun_comp_weights_iff]
   simp
 
 private theorem barycentricSimplex_eq_smul (n : ℕ) :
