@@ -159,11 +159,8 @@ vectors by the entries of the generalized Cartan matrix, is the affine root latt
 theorem eq_rootLattice {L : IntegralLattice (Fin t.nodes → ℚ)}
     (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
     (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((t.cartanMatrix i j : ℤ) : ℚ)) :
-    L = t.rootLattice := by
-  refine IntegralLattice.ext (Submodule.ext fun x ↦
-    (hcarrier x).trans (mem_rootLattice_carrier_iff x).symm) ?_
-  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ (Fin t.nodes)) fun i j ↦ ?_
-  rw [Pi.basisFun_apply, Pi.basisFun_apply, hform, rootLattice_form_single_single]
+    L = t.rootLattice :=
+  eq_ofGramMatrix_basisFun _ _ hcarrier hform
 
 /-- The affine root lattice has rank the number of nodes of the diagram. -/
 @[simp]
