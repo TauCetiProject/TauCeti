@@ -94,8 +94,8 @@ theorem norm_norm_one_sub_mul_autEquivPow_symm_inv_apply
           (ZMod.unitOfCoprime ℓ (hcop.coprime_dvd_right hmn))⁻¹ (Algebra.norm K (1 - η)) =
       Algebra.norm K (1 - η) := by
   have := IsCyclotomicExtension.neZero' (n * ℓ) F N
-  have hM :=
-    TauCeti.irreducible_cyclotomic_of_prime_not_dvd hirr (hℓ.out.coprime_iff_not_dvd.1 hcop)
+  have hM : Irreducible (cyclotomic n F) :=
+    TauCeti.irreducible_cyclotomic_of_dvd hirr (dvd_mul_right n ℓ)
   -- The inverse Frobenius `σ` of `M` restricts to that of `K`, and the norm `N_{M/K}` commutes
   -- with this pair.
   set σ := (IsCyclotomicExtension.autEquivPow M hM).symm (ZMod.unitOfCoprime ℓ hcop)⁻¹
