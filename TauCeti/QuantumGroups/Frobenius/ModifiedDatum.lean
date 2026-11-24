@@ -365,9 +365,7 @@ instance isReflexive_modifiedWeightLattice [Module.Finite ℤ X] (L : ℕ) :
 
 /-- For `L ≠ 0`, the modified weight lattice `X*` is reflexive over `ℤ` with no finiteness
 assumption on `X`: the weight lattice `X` is reflexive because its pairing with `Y` is perfect, and
-`X*` contains `L • X`. A form `Φ` on `Hom(X*, ℤ)` is represented on `X` by some `x`; this `x`
-lies in `X*` because `hᵢ` restricts to `ℓᵢ • hᵢ*`, and testing `Φ` against `f (L • -)`
-identifies `Φ f` with `f x` after cancelling `L`. -/
+`X*` contains `L • X`. -/
 instance isReflexive_modifiedWeightLattice_of_neZero (L : ℕ) [NeZero L] :
     IsReflexive ℤ (D.modifiedWeightLattice L) where
   bijective_dual_eval' := by
@@ -375,13 +373,16 @@ instance isReflexive_modifiedWeightLattice_of_neZero (L : ℕ) [NeZero L] :
     set W := D.modifiedWeightLattice L
     refine ⟨fun x y hxy ↦ Subtype.ext <| (bijective_dual_eval ℤ X).injective <|
       LinearMap.ext fun g ↦ by simpa using congr($hxy (W.dualRestrict g)), fun Φ ↦ ?_⟩
+    -- A form `Φ` on `Hom(X*, ℤ)` is represented on `X` by some `x`; this `x` lies in `X*`
+    -- because `hᵢ` restricts to `ℓᵢ • hᵢ*`.
     obtain ⟨x, hx⟩ := (bijective_dual_eval ℤ X).surjective (Φ ∘ₗ W.dualRestrict)
     have hmem : x ∈ W := (D.mem_modifiedWeightLattice_iff L x).mpr fun i ↦
       ⟨Φ (D.modifiedCoroot L i), by
         simpa [W, ← frobeniusOrder_nsmul_modifiedCoroot] using
           congr($hx (D.pairing.flip (D.coroot i)))⟩
     refine ⟨⟨x, hmem⟩, LinearMap.ext fun f ↦ ?_⟩
-    -- Test `Φ` against `f ∘ φ`, where `φ : X → X*` is `x ↦ L • x`.
+    -- Test `Φ` against `f ∘ φ`, where `φ : X → X*` is `x ↦ L • x`; this identifies `Φ f` with
+    -- `f x` after cancelling `L`.
     let φ : X →ₗ[ℤ] W := (L • LinearMap.id).codRestrict W (D.nsmul_mem_modifiedWeightLattice L)
     have hφ (y : X) (hy : y ∈ W) : φ y = L • ⟨y, hy⟩ := Subtype.ext (by simp [φ])
     have hres : W.dualRestrict (f ∘ₗ φ) = L • f := LinearMap.ext fun y ↦ by simp [hφ _ y.property]
@@ -468,7 +469,7 @@ theorem coweightToModified_coreflection (L : ℕ) (hL : 0 < L) (i : ι) (y : Y) 
 /-- The toral directions of `D*` are rescaled restrictions of those of `D`:
 `ℓᵢ² dᵢ hᵢ* = ℓᵢ (dᵢ hᵢ)|_{X*}`. -/
 @[simp]
-theorem modifiedDatum_simpleTorus (L : ℕ) (hL : 0 < L) (i : ι) :
+theorem simpleTorus_modifiedDatum (L : ℕ) (hL : 0 < L) (i : ι) :
     (D.modifiedDatum L hL).simpleTorus i =
       D.frobeniusOrder L i • D.coweightToModified L (D.simpleTorus i) := by
   ext x
