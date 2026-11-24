@@ -125,9 +125,11 @@ theorem represents_iff_locallyRepresentsScalar (Q : _root_.QuadraticForm K V) (a
   -- Local representation of `a` makes `⟨-a⟩ ⊥ Q'` locally isotropic, hence isotropic.
   have hiso := not_anisotropic_of_isLocallyIsotropic hloc.isLocallyIsotropic_smul_sq_prod
   rw [Equivalent.anisotropic_iff ⟨IsometryEquiv.prodComm _ Q'⟩] at hiso
-  obtain ⟨x, hx⟩ := (represents_iff _ _).mp <| mem_unitValueSet.mp
+  have hrep := mem_unitValueSet.mp
     ((mem_unitValueSet_iff_not_anisotropic_prod Q' (nondegenerate_restrict_of_isCompl_radical Q hW)
       (Units.mk0 a ha)).mpr hiso)
-  exact (represents_iff _ _).mpr ⟨x, hx⟩
+  rw [Units.val_mk0] at hrep
+  -- A value of the restriction `Q'` is a value of `Q`.
+  exact (restrict_isRepresentedBy Q W).represents hrep
 
 end QuadraticForm
