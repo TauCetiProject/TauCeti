@@ -9,7 +9,9 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
+import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.RingTheory.DualNumber
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Basic properties of dual numbers
@@ -20,9 +22,12 @@ the coefficients does; the two laws lift separately. When the coordinatewise act
 structure over a commutative semiring, together they make multiplication bilinear, which makes
 bilinear multiplication and convolution available with that module structure.
 The dual numbers are a finite module over their coefficient ring, so dual numbers over an
-Artinian ring are also Artinian.
+Artinian ring are also Artinian, and dual numbers over a finite or free module are again finite
+or free.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
-`1 + inr c` is a unit with inverse `1 - inr c`.
+`1 + inr c` is a unit with inverse `1 - inr c`; these units multiply by adding the
+infinitesimal parts, so the `n`th power of `1 + inr c` is `1 + inr (n • c)`, and `1 + inr c`
+determines `c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
 their value on `ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
 are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
@@ -46,10 +51,50 @@ theorem coe_dualNumberUnit {R : Type*} [Ring R] (c : R) :
     (dualNumberUnit c : DualNumber R) = 1 + TrivSqZeroExt.inr c := (rfl)
 
 /-- The underlying dual number of the inverse of `dualNumberUnit c` is `1 - inr c`. -/
-@[simp]
 theorem coe_dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
     (((dualNumberUnit c)⁻¹ : (DualNumber R)ˣ) : DualNumber R) =
       1 - TrivSqZeroExt.inr c := (rfl)
+
+/-- `dualNumberUnit` is injective. -/
+theorem dualNumberUnit_injective {R : Type*} [Ring R] :
+    Function.Injective (dualNumberUnit : R → (DualNumber R)ˣ) := fun c d h ↦ by
+  simpa using congr_arg (fun u : (DualNumber R)ˣ ↦ TrivSqZeroExt.snd (u : DualNumber R)) h
+
+/-- `dualNumberUnit c = dualNumberUnit d` exactly when `c = d`. -/
+@[simp]
+theorem dualNumberUnit_inj {R : Type*} [Ring R] {c d : R} :
+    dualNumberUnit c = dualNumberUnit d ↔ c = d :=
+  dualNumberUnit_injective.eq_iff
+
+/-- `dualNumberUnit 0` is the identity unit. -/
+@[simp]
+theorem dualNumberUnit_zero {R : Type*} [Ring R] : dualNumberUnit (0 : R) = 1 := by
+  ext <;> simp
+
+/-- The product of `dualNumberUnit c` and `dualNumberUnit d` is `dualNumberUnit (c + d)`. -/
+@[simp]
+theorem dualNumberUnit_mul {R : Type*} [Ring R] (c d : R) :
+    dualNumberUnit c * dualNumberUnit d = dualNumberUnit (c + d) := by
+  ext <;> simp [TrivSqZeroExt.snd_mul, add_comm]
+
+/-- `dualNumberUnit c` is the identity unit exactly when `c = 0`. -/
+@[simp]
+theorem dualNumberUnit_eq_one_iff {R : Type*} [Ring R] {c : R} : dualNumberUnit c = 1 ↔ c = 0 := by
+  rw [← dualNumberUnit_zero, dualNumberUnit_inj]
+
+/-- The inverse of `dualNumberUnit c` is `dualNumberUnit (-c)`. -/
+@[simp]
+theorem dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
+    (dualNumberUnit c)⁻¹ = dualNumberUnit (-c) := by
+  rw [inv_eq_iff_mul_eq_one, dualNumberUnit_mul, add_neg_cancel, dualNumberUnit_zero]
+
+/-- The `n`th power of `dualNumberUnit c` is `dualNumberUnit (n • c)`. -/
+@[simp]
+theorem dualNumberUnit_pow {R : Type*} [Ring R] (c : R) (n : ℕ) :
+    dualNumberUnit c ^ n = dualNumberUnit (n • c) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, ih, dualNumberUnit_mul, succ_nsmul]
 
 /-- The scalar projection sends `dualNumberUnit c` to the identity unit. -/
 @[simp]
@@ -150,15 +195,6 @@ theorem dualNumberBasis_zero : dualNumberBasis R 0 = 1 :=
 theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
   Module.Basis.finTwoProd_one R
 
-/-- The dual numbers are a finite module over their coefficient ring, with basis `1, ε`. -/
-instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
-  Module.Finite.of_basis (dualNumberBasis R)
-
-/-- The dual numbers are a free module of rank two over their coefficient ring, with basis
-`1, ε`. -/
-instance dualNumberModuleFree : Module.Free R (DualNumber R) :=
-  Module.Free.of_basis (dualNumberBasis R)
-
 variable {R}
 
 /-- The coordinate of `x` along `1` is its scalar part. -/
@@ -179,6 +215,16 @@ theorem dualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
   (dualNumberBasis R).ext fun i => by fin_cases i <;> simpa
 
 end DualNumberBasis
+
+/-- Dual numbers over a finite `R`-module form a finite `R`-module. -/
+instance dualNumberModuleFinite {R B : Type*} [Semiring R] [AddCommMonoid B] [Module R B]
+    [Module.Finite R B] : Module.Finite R (DualNumber B) :=
+  inferInstanceAs (Module.Finite R (B × B))
+
+/-- Dual numbers over a free `R`-module form a free `R`-module. -/
+instance dualNumberModuleFree {R B : Type*} [Semiring R] [AddCommMonoid B] [Module R B]
+    [Module.Free R B] : Module.Free R (DualNumber B) :=
+  inferInstanceAs (Module.Free R (B × B))
 
 /-- Dual numbers over an Artinian ring form an Artinian ring. -/
 instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
