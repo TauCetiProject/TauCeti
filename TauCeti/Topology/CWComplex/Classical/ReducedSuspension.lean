@@ -130,21 +130,6 @@ private theorem isPushout_cylinder :
     (by ext; rfl) (by ext) (by ext p; exact (homeomorphOrdinaryPairQuotient_mk p.val).symm)
     (by ext; exact homeomorphOrdinaryPairQuotient_basepoint.symm)
 
-/-- Collapsing to a point is cellular: the part in the base of the boundary of an `n`-cell of the
-relative cylinder is mapped into the skeleton of dimension `n` of the point. -/
-private theorem const_mem_skeletonLT_of_mem_cellFrontier (n : ℕ)
-    (c : letI := relCWComplexCylinder X x₀; cell (univ ×ˢ univ : Set (X × I)) n)
-    (p : cylinderBase X x₀)
-    (hp : letI := relCWComplexCylinder X x₀; (p : X × I) ∈ cellFrontier n c) :
-    TopCat.ofHom (ContinuousMap.const (cylinderBase X x₀) PUnit.unit) p ∈
-      (skeletonLT (univ : Set PUnit.{u + 1}) n : Set PUnit.{u + 1}) := by
-  let := relCWComplexCylinder X x₀
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · rw [cellFrontier_zero_eq_empty] at hp
-    exact hp.elim
-  · rw [skeletonLT_univ_eq_univ_of_ne_zero hn.ne']
-    exact mem_univ _
-
 /-- **The reduced suspension of a CW complex based at a `0`-cell is a CW complex.** It has one
 `0`-cell, the basepoint, and one `(n + 1)`-cell for each `n`-cell of `X` other than the basepoint
 (`TauCeti.ReducedSuspension.cellEquiv`), whose characteristic map is the suspension of that of the
@@ -152,7 +137,7 @@ cell of `X` (`TauCeti.ReducedSuspension.cwComplex_map_cellEquiv_symm`). -/
 @[instance_reducible]
 def cwComplex : CWComplex (univ : Set (ReducedSuspension X x₀)) :=
   letI := relCWComplexCylinder X x₀
-  isPushout_cylinder.cwComplexOfMapsToSkeletonLT const_mem_skeletonLT_of_mem_cellFrontier
+  isPushout_cylinder.cwComplexOfMapsToSkeletonLT (mem_skeletonLT_univ_of_mem_cellFrontier _)
 
 attribute [instance] cwComplex
 
@@ -169,7 +154,7 @@ private def pushoutCellEquiv (n : ℕ) :
       cell (univ : Set PUnit.{u + 1}) n ⊕ cell (univ ×ˢ univ : Set (X × I)) n :=
   letI := relCWComplexCylinder X x₀
   isPushout_cylinder.cwComplexOfMapsToSkeletonLTCellEquiv
-    const_mem_skeletonLT_of_mem_cellFrontier n
+    (mem_skeletonLT_univ_of_mem_cellFrontier _) n
 
 /-- The `(n + 1)`-cells of the cylinder on `X` relative to its basepoint are the `n`-cells of `X`
 other than the basepoint. -/
@@ -210,7 +195,7 @@ private theorem cwComplex_map_cellEquiv_symm_eq {n : ℕ}
         ((cylinderCellEquiv n).symm c) y) :=
   let := relCWComplexCylinder X x₀
   isPushout_cylinder.cwComplexOfMapsToSkeletonLT_map_inr
-    const_mem_skeletonLT_of_mem_cellFrontier (n + 1) ((cylinderCellEquiv n).symm c) ⟨y, hy⟩
+    (mem_skeletonLT_univ_of_mem_cellFrontier _) (n + 1) ((cylinderCellEquiv n).symm c) ⟨y, hy⟩
 
 /-- **The cells of the reduced suspension are suspensions.** The characteristic map of the
 `(n + 1)`-cell of `ΣX` over an `n`-cell `c` of `X` with characteristic map `φ` sends `x` to
@@ -259,7 +244,7 @@ theorem cwComplex_map_zero (c : cell (univ : Set (ReducedSuspension X x₀)) 0) 
   obtain ⟨c, rfl⟩ := (pushoutCellEquiv (X := X) (x₀ := x₀) 0).symm.surjective c
   rcases c with c | c
   · exact isPushout_cylinder.cwComplexOfMapsToSkeletonLT_map_inl
-      const_mem_skeletonLT_of_mem_cellFrontier 0 c x
+      (mem_skeletonLT_univ_of_mem_cellFrontier _) 0 c x
   · exact (IsEmpty.false c).elim
 
 /-- **The reduced suspension has exactly one `0`-cell**, whose characteristic map is the basepoint
@@ -301,7 +286,7 @@ instance finite_cwComplex [RelCWComplex.Finite (univ : Set X)] :
     · exact isEmptyElim c
     · exact ⟨⟨n, cylinderCellEquiv n c⟩, by simp⟩
   exact isPushout_cylinder.finite_cwComplexOfMapsToSkeletonLT
-    const_mem_skeletonLT_of_mem_cellFrontier
+    (mem_skeletonLT_univ_of_mem_cellFrontier _)
 
 end ReducedSuspension
 
