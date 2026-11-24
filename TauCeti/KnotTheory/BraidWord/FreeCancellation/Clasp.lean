@@ -180,64 +180,12 @@ private def readClasp {N : ℕ} (D : OrientedPDCode (N + 2)) : OrientedPDCode (N
 private def readLowerClasp {N : ℕ} (D : OrientedPDCode (N + 2)) : OrientedPDCode (N + 2) :=
   readClaspWith (Equiv.refl (Fin 4)) (Equiv.addRight 2) 0 2 D
 
-private theorem reidemeisterEquiv_iterate_rotateCrossing {M : ℕ} (C : OrientedPDCode M)
-    (c : Fin M) (k : ℕ) :
-    OrientedPDCode.ReidemeisterEquiv C
-      ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C) := by
-  induction k with
-  | zero => exact OrientedPDCode.ReidemeisterEquiv.refl C
-  | succ k ih =>
-    rw [Function.iterate_succ_apply']
-    exact ih.trans (OrientedPDCode.reidemeisterEquiv_rotateCrossing _ c)
-
-private theorem iterate_rotateCrossing_edgePair {M : ℕ} (C : OrientedPDCode M)
-    (c : Fin M) (k : ℕ) :
-    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).edgePair = C.edgePair := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply']
-    simpa using ih
-
-private theorem iterate_rotateCrossing_orientation {M : ℕ} (C : OrientedPDCode M)
-    (c : Fin M) (k : ℕ) :
-    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).orientation = C.orientation := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply']
-    simpa using ih
-
-private theorem iterate_rotateCrossing_crossinglessComponents {M : ℕ} (C : OrientedPDCode M)
-    (c : Fin M) (k : ℕ) :
-    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).crossinglessComponents =
-      C.crossinglessComponents := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply']
-    simpa using ih
-
-private theorem iterate_rotateCrossing_halfEdge {M : ℕ} (C : OrientedPDCode M) (c : Fin M)
-    (k : ℕ) (j : Fin M) (s : Fin 4) :
-    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).halfEdge
-        (crossingSlotEquiv M (j, s)) =
-      C.halfEdge (crossingSlotEquiv M (j, if j = c then s + k • 1 else s)) := by
-  induction k generalizing s with
-  | zero => simp
-  | succ k ih =>
-    rw [Function.iterate_succ_apply']
-    by_cases hj : j = c
-    · subst hj
-      simp [ih, succ_nsmul, add_assoc, add_comm]
-    · simp [ih, hj]
-
 private theorem reidemeisterEquiv_readClaspWith {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4)
     (k₀ k₁ : ℕ) (D : OrientedPDCode (N + 2)) :
     OrientedPDCode.ReidemeisterEquiv D (readClaspWith f₀ f₁ k₀ k₁ D) :=
   (OrientedPDCode.reidemeisterEquiv_relabel D (claspHalfWith N f₀ f₁) (claspCross N)).trans
-    ((reidemeisterEquiv_iterate_rotateCrossing _ 0 k₀).trans
-      (reidemeisterEquiv_iterate_rotateCrossing _ 1 k₁))
+    ((OrientedPDCode.reidemeisterEquiv_iterate_rotateCrossing _ 0 k₀).trans
+      (OrientedPDCode.reidemeisterEquiv_iterate_rotateCrossing _ 1 k₁))
 
 private theorem reidemeisterEquiv_readClasp {N : ℕ} (D : OrientedPDCode (N + 2)) :
     OrientedPDCode.ReidemeisterEquiv D (readClasp D) :=
@@ -251,8 +199,7 @@ private theorem readClaspWith_edgePair_apply {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fi
     (k₀ k₁ : ℕ) (D : OrientedPDCode (N + 2)) (x : Fin (4 * (N + 2))) :
     (readClaspWith f₀ f₁ k₀ k₁ D).edgePair.val (claspHalfWith N f₀ f₁ x) =
       claspHalfWith N f₀ f₁ (D.edgePair.val x) := by
-  rw [readClaspWith, iterate_rotateCrossing_edgePair, iterate_rotateCrossing_edgePair]
-  simp
+  simp [readClaspWith]
 
 private theorem readClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N + 2))
     (x : Fin (4 * (N + 2))) :
@@ -268,8 +215,7 @@ private theorem readLowerClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N +
 @[simp] private theorem readClaspWith_crossinglessComponents {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4)
     (k₀ k₁ : ℕ) (D : OrientedPDCode (N + 2)) :
     (readClaspWith f₀ f₁ k₀ k₁ D).crossinglessComponents = D.crossinglessComponents := by
-  rw [readClaspWith, iterate_rotateCrossing_crossinglessComponents,
-    iterate_rotateCrossing_crossinglessComponents, OrientedPDCode.relabel_crossinglessComponents]
+  simp [readClaspWith]
 
 private theorem readClaspWith_halfEdge {N : ℕ} {f₀ f₁ : Fin 4 ≃ Fin 4} {k₀ k₁ : ℕ}
     {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1)
@@ -279,7 +225,9 @@ private theorem readClaspWith_halfEdge {N : ℕ} {f₀ f₁ : Fin 4 ≃ Fin 4} {
   apply Equiv.ext
   intro x
   obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (N + 2)).surjective x
-  rw [readClaspWith, iterate_rotateCrossing_halfEdge, iterate_rotateCrossing_halfEdge]
+  rw [readClaspWith, OrientedPDCode.toPDCode_iterate_rotateCrossing,
+    OrientedPDCode.toPDCode_iterate_rotateCrossing,
+    PDCode.iterate_rotateCrossing_halfEdge, PDCode.iterate_rotateCrossing_halfEdge]
   rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
   · simp [h, crossingSlotEquiv_succ_castSucc, crossingSlotEquiv_succ_last, hf₀]
   · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
@@ -330,7 +278,8 @@ private theorem readClaspWith_orientation_eq_closure
       v.closure.orientation (crossingSlotEquiv v.length (j, s))) :
     (readClaspWith f₀ f₁ k₀ k₁ D).orientation =
       (closure ((i, ε) :: (i, -ε) :: v)).orientation := by
-  rw [readClaspWith, iterate_rotateCrossing_orientation, iterate_rotateCrossing_orientation]
+  rw [readClaspWith, OrientedPDCode.iterate_rotateCrossing_orientation,
+    OrientedPDCode.iterate_rotateCrossing_orientation]
   funext x
   obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (v.length + 2)).surjective x
   have hori : (closure ((i, ε) :: (i, -ε) :: v)).orientation

@@ -107,6 +107,72 @@ variable (D : PDCode n) (i : Fin n)
     (D.rotateCrossing i).overPair j = D.overPair j := by
   simp [rotateCrossing, hj]
 
+/-- Rotating a crossing `k` times shifts the slots of that crossing by `k • 1`. -/
+@[simp] theorem iterate_rotateCrossing_crossing_self (k : ℕ) (slot : Fin 4) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).halfEdge (crossingSlotEquiv n (i, slot)) =
+      D.halfEdge (crossingSlotEquiv n (i, slot + k • 1)) := by
+  induction k generalizing slot with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_crossing_self, ih, succ_nsmul, add_assoc,
+      add_comm 1]
+
+/-- Rotating a crossing `k` times keeps the slots of all other crossings. -/
+@[simp] theorem iterate_rotateCrossing_crossing_of_ne (k : ℕ) {j : Fin n} (hj : j ≠ i)
+    (slot : Fin 4) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).halfEdge (crossingSlotEquiv n (j, slot)) =
+      D.halfEdge (crossingSlotEquiv n (j, slot)) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_crossing_of_ne _ _ hj, ih]
+
+/-- Rotating a crossing `k` times keeps the arc pairing. -/
+@[simp] theorem iterate_rotateCrossing_edgePair (k : ℕ) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).edgePair = D.edgePair := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_edgePair, ih]
+
+/-- Rotating a crossing `k` times keeps the crossing-free component count. -/
+@[simp] theorem iterate_rotateCrossing_crossinglessComponentCount (k : ℕ) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).crossinglessComponentCount =
+      D.crossinglessComponentCount := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_crossinglessComponentCount, ih]
+
+/-- Rotating a crossing `k` times flips its over-pair indicator when `k` is odd. -/
+@[simp] theorem iterate_rotateCrossing_overPair_self (k : ℕ) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).overPair i =
+      (D.overPair i ^^ decide (k % 2 = 1)) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_overPair_self, ih]
+    rcases Nat.mod_two_eq_zero_or_one k with h | h <;>
+      simp [h, Nat.succ_mod_two_eq_one_iff]
+
+/-- Rotating a crossing `k` times keeps the over-pair indicators of all other crossings. -/
+@[simp] theorem iterate_rotateCrossing_overPair_of_ne (k : ℕ) {j : Fin n} (hj : j ≠ i) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).overPair j = D.overPair j := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_overPair_of_ne _ _ hj, ih]
+
+/-- Rotating a crossing `k` times shifts the slots of `i` by `k • 1` and keeps every other
+crossing's slots fixed. -/
+theorem iterate_rotateCrossing_halfEdge (k : ℕ) (j : Fin n) (slot : Fin 4) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).halfEdge (crossingSlotEquiv n (j, slot)) =
+      D.halfEdge (crossingSlotEquiv n (j, if j = i then slot + k • 1 else slot)) := by
+  by_cases hj : j = i
+  · subst hj
+    simp
+  · simp [hj]
+
 /-- Every half-edge of the rotated code is the one in a slot of `D`, read at the same crossing;
 the rotation only shifts the slots of `i`. -/
 private theorem rotateCrossing_halfEdge (j : Fin n) (slot : Fin 4) :
@@ -267,6 +333,32 @@ variable (D : OrientedPDCode n) (i : Fin n)
 /-- The rotation keeps the oriented crossing-free circles. -/
 @[simp] theorem rotateCrossing_crossinglessComponents :
     (D.rotateCrossing i).crossinglessComponents = D.crossinglessComponents := (rfl)
+
+/-- Forgetting orientation commutes with rotating a crossing `k` times. -/
+@[simp] theorem toPDCode_iterate_rotateCrossing (k : ℕ) :
+    ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D).toPDCode =
+      (fun E : PDCode n ↦ E.rotateCrossing i)^[k] D.toPDCode := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', Function.iterate_succ_apply', toPDCode_rotateCrossing, ih]
+
+/-- Rotating a crossing `k` times keeps the orientation of every half-edge. -/
+@[simp] theorem iterate_rotateCrossing_orientation (k : ℕ) :
+    ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D).orientation = D.orientation := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_orientation, ih]
+
+/-- Rotating a crossing `k` times keeps the oriented crossing-free circles. -/
+@[simp] theorem iterate_rotateCrossing_crossinglessComponents (k : ℕ) :
+    ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D).crossinglessComponents =
+      D.crossinglessComponents := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_crossinglessComponents, ih]
 
 /-- Mirroring commutes with changing the starting slot of an oriented crossing. -/
 @[simp] theorem mirror_rotateCrossing :
