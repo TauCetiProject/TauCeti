@@ -51,6 +51,8 @@ smooth multiples and finite sums. Exchanging the roles of the two charts gives t
 
 * `Bundle.Trivialization.forall_isLocallySobolevAt_chartComponent_iff`: local Sobolev
   regularity of all components does not depend on the chart and the frame.
+* `Bundle.Trivialization.isLocallySobolevAt_chartComponent_of_basis`: the components along a basis
+  of `F` control all components.
 * `TauCeti.BundleTest.IsLocallySobolevAt`: the functional `T` is `H^s` near a point of `M`, and
   `TauCeti.BundleTest.isLocallySobolevAt_iff`, its characterization in every chart and frame.
 * `TauCeti.BundleTest.sobolevSingularSupport`: the `H^s` singular support, a closed subset of `M`
@@ -98,7 +100,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
 
 /-- Finitely many components, along a basis of `F`, control the local Sobolev regularity of all
 components. -/
-private theorem isLocallySobolevAt_chartComponent_of_basis {ι : Type*} [Finite ι]
+theorem isLocallySobolevAt_chartComponent_of_basis {ι : Type*} [Finite ι]
     (b : Module.Basis ι ℝ F) (T : BundleTest I F V →L_c[ℝ] ℝ) {s : ℝ} {y : E} (hy : y ∈ c.target)
     (h : ∀ i, (t.chartComponent c hc hct T (b i)).IsLocallySobolevAt s y) (v : F) :
     (t.chartComponent c hc hct T v).IsLocallySobolevAt s y := by

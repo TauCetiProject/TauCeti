@@ -343,6 +343,15 @@ theorem sub_algebraMap_add_algebraMap_mem_integralAdeles {f : FiniteAdeleRing R 
   rw [map_add, ← IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K), sub_add_eq_sub_sub]
   exact sub_mem hx ((integralAdeles R K).algebraMap_mem y)
 
+variable (K) in
+/-- If `R` is not a field, the diagonal map `K → 𝔸_f` is injective: `R` then has a maximal
+ideal, hence a finite place, and `K` embeds in its completion there. -/
+theorem algebraMap_injective (hR : ¬ IsField R) :
+    Function.Injective (algebraMap K (FiniteAdeleRing R K)) := by
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal R
+  let v : HeightOneSpectrum R := ⟨M, hM.isPrime, Ring.ne_bot_of_isMaximal_of_not_isField hM hR⟩
+  exact fun x y h ↦ by simpa using congr($h v)
+
 end IsDedekindDomain.FiniteAdeleRing
 
 /-! ### Strong approximation -/

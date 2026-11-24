@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Extend
+import TauCeti.LinearAlgebra.LinearMap.Comp
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -26,7 +27,9 @@ algebra is finite-dimensional is itself finite-dimensional. In a projective modu
 semiring, functionals also detect membership in `I • M` for a two-sided ideal `I`.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
-family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
+family of vectors. Over any ring, a finite biorthogonal family of vectors `v` and linear forms `f`
+splits the module as the span of the `v j` plus the common kernel of the `f i`. Linearly
+independent functionals, as many as the dimension, span the dual space
 and so separate points. Conversely, a separating family of functionals on a finite-dimensional
 space contains such a family, which gives coordinates on the space.
 
@@ -63,6 +66,8 @@ space contains such a family, which gives coordinates on the space.
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
   functional vanishes on `p` and equals one at some vector.
+* `Submodule.isCompl_span_range_iInf_ker_of_apply_eq_ite`: a finite biorthogonal family of vectors
+  `v` and linear forms `f` splits the module as `span (range v) ⊕ ⋂ᵢ ker (f i)`.
 * `Module.forall_dual_apply_mem_iff`: in a projective module, `m ∈ I • M` for a two-sided ideal
   `I` exactly when every linear functional takes a value in `I` at `m`.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
@@ -364,6 +369,21 @@ theorem exists_dual_apply_eq_one_of_ne_top {p : Submodule K V} (hp : p ≠ ⊤) 
   have hxmap : f x ∈ p.map f := ⟨x, hx, rfl⟩
   rw [hfp, mem_bot] at hxmap
   exact hxmap
+
+/-- **Splitting by a biorthogonal family.** If the linear forms `f i` and the vectors `v j` are
+biorthogonal, `f i (v j) = if i = j then 1 else 0`, with `ι` finite, then `M` is the internal
+direct sum of the span of the `v j` and the common kernel of the `f i`. The projection onto the
+first summand is `m ↦ ∑ j, f j m • v j`. -/
+theorem isCompl_span_range_iInf_ker_of_apply_eq_ite {R M ι : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [Finite ι] [DecidableEq ι] {v : ι → M} {f : ι → M →ₗ[R] R}
+    (h : ∀ i j, f i (v j) = if i = j then 1 else 0) :
+    IsCompl (span R (Set.range v)) (⨅ i, LinearMap.ker (f i)) := by
+  have := Fintype.ofFinite ι
+  have hcomp : LinearMap.pi f ∘ₗ Fintype.linearCombination R v = LinearMap.id := by
+    refine LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring (funext fun i ↦ ?_)
+    simp [Fintype.linearCombination_apply_single, h, Pi.single_apply]
+  have hc := (LinearMap.bijective_comp_iff.1 (by rw [hcomp]; exact Function.bijective_id)).2.1
+  rwa [Fintype.range_linearCombination, LinearMap.ker_pi] at hc
 
 end Submodule
 
