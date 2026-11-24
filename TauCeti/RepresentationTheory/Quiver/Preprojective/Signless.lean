@@ -313,29 +313,36 @@ end Lift
 section Trace
 
 variable {k : Type w} {R : Type u} {M : Type*} [CommRing k] [Quiver.{v} R] [HasReverse R]
-  [Finite R] [∀ x : R, Fintype (Quiver.Star x)] [AddCommGroup M] [Module k M]
+  [∀ x : R, Fintype (Quiver.Star x)] [AddCommGroup M] [Module k M]
   (f : pathAlgebra k R →ₗ[k] M)
 
 /-- **A trace which kills the signless relators kills the signless ideal.** Let `f` be a linear
 map out of the path algebra taking the same value on `x * y` and on `y * x`, and vanishing on
 every product `s_v * x` of a signless relator with an element of the path algebra. Then `f`
-vanishes on the signless ideal: by the trace property, `f (a * s_v * b) = f (s_v * (b * a))`. -/
+vanishes on the signless ideal, with no finiteness assumption on the vertices: `s_v = s_v * e_v`,
+and by the trace property `f (a * s_v * b) = f (s_v * (b * a))`. -/
 theorem map_eq_zero_of_mem_signlessPreprojectiveIdeal (hf : ∀ x y, f (x * y) = f (y * x))
     (hrel : ∀ (v : R) (x : pathAlgebra k R), f (signlessPreprojectiveRelator k v * x) = 0)
     {x : pathAlgebra k R} (hx : x ∈ signlessPreprojectiveIdeal k R) : f x = 0 := by
   rw [signlessPreprojectiveIdeal_eq_span] at hx
-  suffices h : ∀ a b, f (a * x * b) = 0 by simpa using h 1 1
+  suffices h : f x = 0 ∧ ∀ c, f (x * c) = 0 from h.1
   induction hx using TwoSidedIdeal.span_induction with
   | mem x hx =>
     obtain ⟨v, rfl⟩ := hx
-    intro a b
-    -- Rotate the relator to the front.
-    rw [mul_assoc, hf, mul_assoc, hrel]
+    -- No unit is needed: the relator at `v` absorbs the vertex idempotent `e_v` on the right.
+    exact ⟨by simpa using hrel v (vertexIdempotent k v), hrel v⟩
   | zero => simp
-  | add x y _ _ hx hy => intro a b; rw [mul_add, add_mul, map_add, hx, hy, add_zero]
-  | neg x _ hx => intro a b; rw [mul_neg, neg_mul, map_neg, hx, neg_zero]
-  | left_absorb c x _ hx => intro a b; simpa only [mul_assoc] using hx (a * c) b
-  | right_absorb c x _ hx => intro a b; simpa only [mul_assoc] using hx a (c * b)
+  | add x y _ _ hx hy =>
+    exact ⟨by rw [map_add, hx.1, hy.1, add_zero],
+      fun c => by rw [add_mul, map_add, hx.2, hy.2, add_zero]⟩
+  | neg x _ hx =>
+    exact ⟨by rw [map_neg, hx.1, neg_zero], fun c => by rw [neg_mul x c, map_neg, hx.2, neg_zero]⟩
+  | left_absorb c x _ hx =>
+    -- Rotate the absorbed factor `c` to the back.
+    exact ⟨by rw [hf, hx.2], fun d => by rw [mul_assoc, hf, mul_assoc, hx.2]⟩
+  | right_absorb c x _ hx => exact ⟨hx.2 c, fun d => by rw [mul_assoc, hx.2]⟩
+
+variable [Finite R]
 
 /-- **The descent of a trace to the signless algebra**: a linear map out of the path algebra which
 takes the same value on `x * y` and on `y * x`, and kills every product `s_v * x` of a signless

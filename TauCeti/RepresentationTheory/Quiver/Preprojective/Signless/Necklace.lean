@@ -255,8 +255,6 @@ private theorem necklaceFunctional_signlessPreprojectiveRelator_mul
     rw [single_eq_smul_ofPath, mul_smul_comm, map_smul,
       necklaceFunctional_relator_mul_ofPath hW, smul_zero]
 
-variable [Finite V]
-
 /-- **The necklace functional kills the signless relation ideal** when its weight satisfies the
 signless necklace relations. -/
 theorem DoubledQuiver.necklaceFunctional_eq_zero_of_mem_signlessPreprojectiveIdeal
@@ -265,6 +263,8 @@ theorem DoubledQuiver.necklaceFunctional_eq_zero_of_mem_signlessPreprojectiveIde
     necklaceFunctional k G W x = 0 :=
   map_eq_zero_of_mem_signlessPreprojectiveIdeal _ (necklaceFunctional_mul_comm W)
     (necklaceFunctional_signlessPreprojectiveRelator_mul hW) hx
+
+variable [Finite V]
 
 variable (k G W) in
 /-- The **signless necklace functional**: for a weight `W` on necklaces satisfying the signless
