@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.Frobenius
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.Matrix.Order
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # The normalized trace and 2-norm on matrix algebras
@@ -31,7 +32,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
 * `CStarMatrix.normalizedTrace`: the normalized trace `tr_k`, with `tr_k(1) = 1` for `k ≠ 0`,
   `tr_k(xy) = tr_k(yx)`, invariance under reindexing and monotonicity for the C⋆-order.
 * `CStarMatrix.normalizedTraceMap`: `tr_k` as a positive continuous linear functional, of norm
-  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
+  at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`, and
+  invariant under reindexing (`CStarMatrix.normalizedTraceMap_comp_reindexₐ`).
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
 * `CStarMatrix.normalizedTwoNormAddGroupNorm`: `‖·‖₂` as an additive group norm; its complex
@@ -170,11 +172,8 @@ theorem normalizedTrace_unitary_conj [DecidableEq n] {u : CStarMatrix n n ℂ}
 @[simp]
 theorem normalizedTrace_reindexₐ {m : Type*} [Fintype m] (e : n ≃ m) (x : CStarMatrix n n ℂ) :
     normalizedTrace (reindexₐ ℂ ℂ e x) = normalizedTrace x := by
-  rw [normalizedTrace_eq_sum, normalizedTrace_eq_sum, Fintype.card_congr e]
-  congr 1
-  -- `reindexₐ` moves entries along `e` by definition; Mathlib's `reindexₐ_apply` states this
-  -- through `Matrix.reindex` applied to a `CStarMatrix`, which `rw` cannot see through
-  exact Fintype.sum_equiv e.symm _ _ fun _ => rfl
+  rw [normalizedTrace_def, normalizedTrace_def, Fintype.card_congr e]
+  exact congrArg _ (Matrix.trace_reindex_self e (ofMatrix.symm x))
 
 /-- The normalized trace of a positive matrix is nonnegative. -/
 theorem normalizedTrace_nonneg {x : CStarMatrix n n ℂ} (hx : 0 ≤ x) :
@@ -413,6 +412,15 @@ def normalizedTraceMap : CStarMatrix n n ℂ →P[ℂ] ℂ where
 theorem normalizedTraceMap_apply (x : CStarMatrix n n ℂ) :
     normalizedTraceMap n x = normalizedTrace x :=
   (rfl)
+
+open scoped CStarAlgebra in
+/-- The normalized trace is invariant under reindexing: its pullback along the reindexing star
+isomorphism of an equivalence `n ≃ m` is the normalized trace on `CStarMatrix n n ℂ`. -/
+@[simp]
+theorem normalizedTraceMap_comp_reindexₐ {m : Type*} [Fintype m] (e : n ≃ m) :
+    (normalizedTraceMap m).comp (.ofClass (reindexₐ ℂ ℂ e)) = normalizedTraceMap n := by
+  ext x
+  simp
 
 variable (n) in
 /-- The normalized trace has operator norm at most `1`. -/

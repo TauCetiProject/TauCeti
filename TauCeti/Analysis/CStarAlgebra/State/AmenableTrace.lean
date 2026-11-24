@@ -36,6 +36,9 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
 
 ## Main results
 
+* `PositiveContinuousLinearMap.isAmenableTrace_iff` and its siblings unfold the three predicates,
+  and `PositiveContinuousLinearMap.isAmenableTrace_iff_exists_superset` and its siblings record
+  their monotonicity: a witness for `(F', ε')` is a witness for every `F ⊆ F'` and `ε ≥ ε'`.
 * `PositiveContinuousLinearMap.IsQuasidiagonalTrace.isAmenableTrace` and
   `PositiveContinuousLinearMap.IsUniformAmenableTrace.isAmenableTrace`: quasidiagonal and uniform
   amenable traces are amenable, because `‖x‖₂ ≤ ‖x‖` and the recovery error `ε‖a‖` is uniformly
@@ -49,9 +52,12 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
   `CStarMatrix.isAmenableTrace_normalizedTraceMap`: the normalized trace of a matrix algebra has
   all three properties, witnessed by the identity map; composing with `IsAmenableTrace.comp`, so
   does `tr_k ∘ π` for every star homomorphism `π : A → M_k`.
-* `TauCeti.mapsTo_pullbackFunctional_amenableTraces` and its siblings: for unital `A` and `B`,
-  restriction along a unital star homomorphism maps each of the three sets for `B` into the
-  corresponding set for `A`.
+* `TauCeti.pullbackFunctional_mem_amenableTraces` and its siblings: the restriction of an element
+  of each of the three sets along a star homomorphism lies in the corresponding set as soon as it
+  is a state. Hence `TauCeti.mapsTo_pullbackFunctional_amenableTraces_of_surjective` and its
+  siblings lift the three sets from quotients, and
+  `TauCeti.mapsTo_pullbackFunctional_amenableTraces` and its siblings restrict them along unital
+  star homomorphisms of unital algebras.
 
 ## References
 
@@ -97,6 +103,67 @@ def IsUniformAmenableTrace (τ : A →P[ℂ] ℂ) : Prop :=
     (∀ a ∈ F, ∀ b ∈ F, CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε) ∧
     ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε * ‖a‖
 
+/-- Unfolding lemma for `IsAmenableTrace`. -/
+theorem isAmenableTrace_iff : τ.IsAmenableTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ),
+      (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
+      (∀ a ∈ F, ∀ b ∈ F, CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε) ∧
+      ∀ a ∈ F, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε :=
+  Iff.rfl
+
+/-- Unfolding lemma for `IsQuasidiagonalTrace`. -/
+theorem isQuasidiagonalTrace_iff : τ.IsQuasidiagonalTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ),
+      (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
+      (∀ a ∈ F, ∀ b ∈ F, ‖φ (a * b) - φ a * φ b‖ < ε) ∧
+      ∀ a ∈ F, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε :=
+  Iff.rfl
+
+/-- Unfolding lemma for `IsUniformAmenableTrace`. -/
+theorem isUniformAmenableTrace_iff : τ.IsUniformAmenableTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ),
+      (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
+      (∀ a ∈ F, ∀ b ∈ F, CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε) ∧
+      ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε * ‖a‖ :=
+  Iff.rfl
+
+/-- **Monotonicity of amenability.** A witness for `(F', ε')` is a witness for every `F ⊆ F'`
+and `ε ≥ ε'`, so it suffices to find, for each `(F, ε)`, a witness for some larger finite set
+and some smaller error. -/
+theorem isAmenableTrace_iff_exists_superset : τ.IsAmenableTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
+      ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
+      (∀ a ∈ F', ∀ b ∈ F', CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε') ∧
+      ∀ a ∈ F', ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε' :=
+  ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
+    obtain ⟨F', hF, ε', hε', k, φ, hφ, hmul, htr⟩ := h F ε hε
+    exact ⟨k, φ, hφ, fun a ha b hb => (hmul a (hF ha) b (hF hb)).trans_le hε',
+      fun a ha => (htr a (hF ha)).trans_le hε'⟩⟩
+
+/-- **Monotonicity of quasidiagonality.** A witness for `(F', ε')` is a witness for every
+`F ⊆ F'` and `ε ≥ ε'`. -/
+theorem isQuasidiagonalTrace_iff_exists_superset : τ.IsQuasidiagonalTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
+      ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
+      (∀ a ∈ F', ∀ b ∈ F', ‖φ (a * b) - φ a * φ b‖ < ε') ∧
+      ∀ a ∈ F', ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε' :=
+  ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
+    obtain ⟨F', hF, ε', hε', k, φ, hφ, hmul, htr⟩ := h F ε hε
+    exact ⟨k, φ, hφ, fun a ha b hb => (hmul a (hF ha) b (hF hb)).trans_le hε',
+      fun a ha => (htr a (hF ha)).trans_le hε'⟩⟩
+
+/-- **Monotonicity of uniform amenability.** A witness for `(F', ε')` is a witness for every
+`F ⊆ F'` and `ε ≥ ε'`. -/
+theorem isUniformAmenableTrace_iff_exists_superset : τ.IsUniformAmenableTrace ↔
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ F' : Finset A, F ⊆ F' ∧ ∃ ε' ≤ ε,
+      ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
+      (∀ a ∈ F', ∀ b ∈ F', CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b) < ε') ∧
+      ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε' * ‖a‖ :=
+  ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
+    obtain ⟨F', hF, ε', hε', k, φ, hφ, hmul, htr⟩ := h F ε hε
+    exact ⟨k, φ, hφ, fun a ha b hb => (hmul a (hF ha) b (hF hb)).trans_le hε',
+      fun a => (htr a).trans (mul_le_mul_of_nonneg_right hε' (norm_nonneg a))⟩⟩
+
 /-- A quasidiagonal trace is amenable, since `‖x‖₂ ≤ ‖x‖` on matrix algebras. -/
 theorem IsQuasidiagonalTrace.isAmenableTrace (hτ : τ.IsQuasidiagonalTrace) :
     τ.IsAmenableTrace := by
@@ -126,6 +193,19 @@ section Pullback
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] {σ : B →P[ℂ] ℂ}
 
+/-- Composing an approximant `φ` of a trace of `B` with a star homomorphism `f : A → B` gives a
+contraction which is as multiplicative on `S` as `φ` is on `f '' S`, for any measure `d` of the
+multiplicativity defect. -/
+private theorem comp_approx (d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ) (f : F)
+    [DecidableEq B] {S : Finset A} {ε : ℝ} {k : ℕ} {φ : B →CP CStarMatrix (Fin k) (Fin k) ℂ}
+    (hφ : ∀ b, ‖φ b‖ ≤ ‖b‖)
+    (hmul : ∀ a ∈ S.image f, ∀ b ∈ S.image f, d k (φ (a * b) - φ a * φ b) < ε) :
+    (∀ a, ‖φ.comp (f : A →CP B) a‖ ≤ ‖a‖) ∧ ∀ a ∈ S, ∀ b ∈ S,
+      d k (φ.comp (f : A →CP B) (a * b) - φ.comp (f : A →CP B) a * φ.comp (f : A →CP B) b) < ε :=
+  ⟨fun a => by simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
+    fun a ha b hb => by
+      simpa using hmul (f a) (Finset.mem_image_of_mem f ha) (f b) (Finset.mem_image_of_mem f hb)⟩
+
 /-- **Pullback of amenable traces.** If `σ` is an amenable trace of `B`, then so is its composite
 with any star homomorphism `f : A → B`: an approximant `φ` of `σ` gives the approximant
 `φ ∘ f` of `σ ∘ f`. The composite is a tracial state only under a norm condition, see
@@ -135,11 +215,8 @@ theorem IsAmenableTrace.comp (hσ : σ.IsAmenableTrace) (f : F) :
   classical
   intro S ε hε
   obtain ⟨k, φ, hφ, hmul, htr⟩ := hσ (S.image f) ε hε
-  refine ⟨k, φ.comp (f : A →CP B), fun a => by
-    simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
-    fun a ha b hb => ?_, fun a ha => ?_⟩
-  · simpa using hmul (f a) (Finset.mem_image_of_mem f ha) (f b) (Finset.mem_image_of_mem f hb)
-  · simpa using htr (f a) (Finset.mem_image_of_mem f ha)
+  obtain ⟨hφ', hmul'⟩ := comp_approx (fun _ => CStarMatrix.normalizedTwoNorm) f hφ hmul
+  exact ⟨k, _, hφ', hmul', fun a ha => by simpa using htr (f a) (Finset.mem_image_of_mem f ha)⟩
 
 /-- **Pullback of quasidiagonal traces** along any star homomorphism `f : A → B`. -/
 theorem IsQuasidiagonalTrace.comp (hσ : σ.IsQuasidiagonalTrace) (f : F) :
@@ -147,11 +224,8 @@ theorem IsQuasidiagonalTrace.comp (hσ : σ.IsQuasidiagonalTrace) (f : F) :
   classical
   intro S ε hε
   obtain ⟨k, φ, hφ, hmul, htr⟩ := hσ (S.image f) ε hε
-  refine ⟨k, φ.comp (f : A →CP B), fun a => by
-    simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
-    fun a ha b hb => ?_, fun a ha => ?_⟩
-  · simpa using hmul (f a) (Finset.mem_image_of_mem f ha) (f b) (Finset.mem_image_of_mem f hb)
-  · simpa using htr (f a) (Finset.mem_image_of_mem f ha)
+  obtain ⟨hφ', hmul'⟩ := comp_approx (fun _ => norm) f hφ hmul
+  exact ⟨k, _, hφ', hmul', fun a ha => by simpa using htr (f a) (Finset.mem_image_of_mem f ha)⟩
 
 /-- **Pullback of uniform amenable traces** along any star homomorphism `f : A → B`; the
 recovery error at `a` is the error of `σ` at `f a`, and `‖f a‖ ≤ ‖a‖`. -/
@@ -160,12 +234,10 @@ theorem IsUniformAmenableTrace.comp (hσ : σ.IsUniformAmenableTrace) (f : F) :
   classical
   intro S ε hε
   obtain ⟨k, φ, hφ, hmul, htr⟩ := hσ (S.image f) ε hε
-  refine ⟨k, φ.comp (f : A →CP B), fun a => by
-    simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
-    fun a ha b hb => ?_, fun a => ?_⟩
-  · simpa using hmul (f a) (Finset.mem_image_of_mem f ha) (f b) (Finset.mem_image_of_mem f hb)
-  · simpa using (htr (f a)).trans
-      (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f a) hε.le)
+  obtain ⟨hφ', hmul'⟩ := comp_approx (fun _ => CStarMatrix.normalizedTwoNorm) f hφ hmul
+  refine ⟨k, _, hφ', hmul', fun a => ?_⟩
+  simpa using (htr (f a)).trans
+    (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f a) hε.le)
 
 /-- Amenability of traces is invariant under star isomorphisms. -/
 theorem isAmenableTrace_comp_iff (e : A ≃⋆ₐ[ℂ] B) :
@@ -206,14 +278,6 @@ theorem isTracialState_normalizedTraceMap [Nonempty n] :
     (normalizedTraceMap n).IsTracialState :=
   isTracialState_iff.2 ⟨norm_normalizedTraceMap n, fun x y => by
     simpa using normalizedTrace_mul_comm x y⟩
-
-/-- The normalized trace is invariant under reindexing: its pullback along the reindexing star
-isomorphism of an equivalence `n ≃ m` is the normalized trace on `CStarMatrix n n ℂ`. -/
-@[simp]
-theorem normalizedTraceMap_comp_reindexₐ {m : Type*} [Fintype m] (e : n ≃ m) :
-    (normalizedTraceMap m).comp (.ofClass (reindexₐ ℂ ℂ e)) = normalizedTraceMap n := by
-  ext x
-  simp
 
 /-- The normalized trace of a matrix algebra is a quasidiagonal trace: on `M_k` the identity map
 is an exact approximant, and a general finite index type is reindexed to `Fin k`. -/
@@ -291,6 +355,24 @@ theorem toWeakDual_mem_uniformAmenableTraces_iff {τ : A →P[ℂ] ℂ} :
       τ.IsTracialState ∧ τ.IsUniformAmenableTrace :=
   (StrongDual.toWeakDual.injective.comp toContinuousLinearMap_injective).mem_set_image
 
+/-- The elements of `AT(A)` are the functionals induced by amenable tracial states. -/
+theorem mem_amenableTraces_iff {φ : WeakDual ℂ A} : φ ∈ amenableTraces A ↔
+    ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧ τ.IsAmenableTrace ∧
+      StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) = φ :=
+  exists_congr fun _ => and_assoc
+
+/-- The elements of `AT_QD(A)` are the functionals induced by quasidiagonal tracial states. -/
+theorem mem_quasidiagonalTraces_iff {φ : WeakDual ℂ A} : φ ∈ quasidiagonalTraces A ↔
+    ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧ τ.IsQuasidiagonalTrace ∧
+      StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) = φ :=
+  exists_congr fun _ => and_assoc
+
+/-- The elements of `UAT(A)` are the functionals induced by uniform amenable tracial states. -/
+theorem mem_uniformAmenableTraces_iff {φ : WeakDual ℂ A} : φ ∈ uniformAmenableTraces A ↔
+    ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧ τ.IsUniformAmenableTrace ∧
+      StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) = φ :=
+  exists_congr fun _ => and_assoc
+
 /-- Amenable traces are tracial states. -/
 theorem amenableTraces_subset_tracialStates : amenableTraces A ⊆ tracialStates A := by
   rintro _ ⟨τ, hτ, rfl⟩
@@ -316,6 +398,72 @@ theorem uniformAmenableTraces_subset_amenableTraces :
     uniformAmenableTraces A ⊆ amenableTraces A :=
   image_mono fun _ hτ => ⟨hτ.1, hτ.2.isAmenableTrace⟩
 
+variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] {φ : WeakDual ℂ B}
+
+/-- Restricting the functional induced by `σ` along `f` gives the functional induced by
+`σ ∘ f`. -/
+private theorem pullbackFunctional_toWeakDual (f : F) (σ : B →P[ℂ] ℂ) :
+    pullbackFunctional A f (StrongDual.toWeakDual (σ : B →L[ℂ] ℂ)) =
+      StrongDual.toWeakDual ((σ.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) :=
+  DFunLike.ext _ _ fun _ => by simp
+
+/-- **Pullback of amenable traces.** If `φ ∈ AT(B)` and its restriction along a star
+homomorphism `f : A → B` is a state, then that restriction lies in `AT(A)`. -/
+theorem pullbackFunctional_mem_amenableTraces (f : F) (hφ : φ ∈ amenableTraces B)
+    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
+    pullbackFunctional A f φ ∈ amenableTraces A := by
+  obtain ⟨σ, hσ, hσ', rfl⟩ := mem_amenableTraces_iff.1 hφ
+  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_stateSpace_iff] at hf
+  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_amenableTraces_iff]
+  exact ⟨hσ.comp_of_norm_eq_one f hf, hσ'.comp f⟩
+
+/-- **Pullback of quasidiagonal traces.** If `φ ∈ AT_QD(B)` and its restriction along a star
+homomorphism `f : A → B` is a state, then that restriction lies in `AT_QD(A)`. -/
+theorem pullbackFunctional_mem_quasidiagonalTraces (f : F) (hφ : φ ∈ quasidiagonalTraces B)
+    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
+    pullbackFunctional A f φ ∈ quasidiagonalTraces A := by
+  obtain ⟨σ, hσ, hσ', rfl⟩ := mem_quasidiagonalTraces_iff.1 hφ
+  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_stateSpace_iff] at hf
+  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_quasidiagonalTraces_iff]
+  exact ⟨hσ.comp_of_norm_eq_one f hf, hσ'.comp f⟩
+
+/-- **Pullback of uniform amenable traces.** If `φ ∈ UAT(B)` and its restriction along a star
+homomorphism `f : A → B` is a state, then that restriction lies in `UAT(A)`. -/
+theorem pullbackFunctional_mem_uniformAmenableTraces (f : F) (hφ : φ ∈ uniformAmenableTraces B)
+    (hf : pullbackFunctional A f φ ∈ stateSpace A) :
+    pullbackFunctional A f φ ∈ uniformAmenableTraces A := by
+  obtain ⟨σ, hσ, hσ', rfl⟩ := mem_uniformAmenableTraces_iff.1 hφ
+  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_stateSpace_iff] at hf
+  rw [pullbackFunctional_toWeakDual, toWeakDual_mem_uniformAmenableTraces_iff]
+  exact ⟨hσ.comp_of_norm_eq_one f hf, hσ'.comp f⟩
+
+/-- **Lifting amenable traces from quotients.** Precomposition with a surjective star
+homomorphism `A → B` maps `AT(B)` to `AT(A)`. -/
+theorem mapsTo_pullbackFunctional_amenableTraces_of_surjective (f : F)
+    (hf : Function.Surjective f) :
+    MapsTo (pullbackFunctional A f) (amenableTraces B) (amenableTraces A) := fun _ hφ =>
+  pullbackFunctional_mem_amenableTraces f hφ <| mapsTo_pullbackFunctional_stateSpace_of_surjective
+    f hf <| tracialStates_subset_stateSpace <| amenableTraces_subset_tracialStates hφ
+
+/-- **Lifting quasidiagonal traces from quotients.** Precomposition with a surjective star
+homomorphism `A → B` maps `AT_QD(B)` to `AT_QD(A)`. -/
+theorem mapsTo_pullbackFunctional_quasidiagonalTraces_of_surjective (f : F)
+    (hf : Function.Surjective f) :
+    MapsTo (pullbackFunctional A f) (quasidiagonalTraces B) (quasidiagonalTraces A) := fun _ hφ =>
+  pullbackFunctional_mem_quasidiagonalTraces f hφ <|
+    mapsTo_pullbackFunctional_stateSpace_of_surjective f hf <| tracialStates_subset_stateSpace <|
+      quasidiagonalTraces_subset_tracialStates hφ
+
+/-- **Lifting uniform amenable traces from quotients.** Precomposition with a surjective star
+homomorphism `A → B` maps `UAT(B)` to `UAT(A)`. -/
+theorem mapsTo_pullbackFunctional_uniformAmenableTraces_of_surjective (f : F)
+    (hf : Function.Surjective f) :
+    MapsTo (pullbackFunctional A f) (uniformAmenableTraces B) (uniformAmenableTraces A) :=
+  fun _ hφ => pullbackFunctional_mem_uniformAmenableTraces f hφ <|
+    mapsTo_pullbackFunctional_stateSpace_of_surjective f hf <| tracialStates_subset_stateSpace <|
+      uniformAmenableTraces_subset_tracialStates hφ
+
 end NonUnital
 
 section Unital
@@ -327,23 +475,24 @@ variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- **Restriction of amenable traces.** Precomposition with a unital star homomorphism `A → B`
 maps `AT(B)` to `AT(A)`; in particular amenable traces restrict to unital C⋆-subalgebras. -/
 theorem mapsTo_pullbackFunctional_amenableTraces (f : F) :
-    MapsTo (pullbackFunctional A f) (amenableTraces B) (amenableTraces A) := by
-  rintro _ ⟨σ, hσ, rfl⟩
-  exact ⟨σ.comp (.ofClass f), ⟨hσ.1.comp f, hσ.2.comp f⟩, DFunLike.ext _ _ fun _ => by simp⟩
+    MapsTo (pullbackFunctional A f) (amenableTraces B) (amenableTraces A) := fun _ hφ =>
+  pullbackFunctional_mem_amenableTraces f hφ <| mapsTo_pullbackFunctional_stateSpace f <|
+    tracialStates_subset_stateSpace <| amenableTraces_subset_tracialStates hφ
 
 /-- **Restriction of quasidiagonal traces.** Precomposition with a unital star homomorphism
 `A → B` maps `AT_QD(B)` to `AT_QD(A)`. -/
 theorem mapsTo_pullbackFunctional_quasidiagonalTraces (f : F) :
-    MapsTo (pullbackFunctional A f) (quasidiagonalTraces B) (quasidiagonalTraces A) := by
-  rintro _ ⟨σ, hσ, rfl⟩
-  exact ⟨σ.comp (.ofClass f), ⟨hσ.1.comp f, hσ.2.comp f⟩, DFunLike.ext _ _ fun _ => by simp⟩
+    MapsTo (pullbackFunctional A f) (quasidiagonalTraces B) (quasidiagonalTraces A) := fun _ hφ =>
+  pullbackFunctional_mem_quasidiagonalTraces f hφ <| mapsTo_pullbackFunctional_stateSpace f <|
+    tracialStates_subset_stateSpace <| quasidiagonalTraces_subset_tracialStates hφ
 
 /-- **Restriction of uniform amenable traces.** Precomposition with a unital star homomorphism
 `A → B` maps `UAT(B)` to `UAT(A)`. -/
 theorem mapsTo_pullbackFunctional_uniformAmenableTraces (f : F) :
-    MapsTo (pullbackFunctional A f) (uniformAmenableTraces B) (uniformAmenableTraces A) := by
-  rintro _ ⟨σ, hσ, rfl⟩
-  exact ⟨σ.comp (.ofClass f), ⟨hσ.1.comp f, hσ.2.comp f⟩, DFunLike.ext _ _ fun _ => by simp⟩
+    MapsTo (pullbackFunctional A f) (uniformAmenableTraces B) (uniformAmenableTraces A) :=
+  fun _ hφ => pullbackFunctional_mem_uniformAmenableTraces f hφ <|
+    mapsTo_pullbackFunctional_stateSpace f <| tracialStates_subset_stateSpace <|
+      uniformAmenableTraces_subset_tracialStates hφ
 
 end Unital
 
