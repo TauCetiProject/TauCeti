@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Power
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
@@ -40,24 +39,12 @@ all-degree Wirtinger inequality (`TauCeti.norm_kahlerPowerForm_le`, `TauCeti.nor
 and calibrated-frame classification (`TauCeti.isCalibratedFrame_kahlerPowerForm_iff`) on any
 finite-dimensional Hermitian vector space `E` in terms of `TauCeti.complexToRealFamily`.
 
-This module also publicly re-exports
-`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo`, where the Lagrange-type identity
-in degree two (`r = 1`) characterizes non-orthonormal equality `ω(v, w) = ‖v ∧ w‖` for `v ≠ 0`
-(`alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`, and
-`TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero` on finite-dimensional Hermitian vector
-spaces, including `ℂⁿ = EuclideanSpace ℂ (Fin n)`).
-
 ## Main results
 
 In the namespace `TauCeti.AlmostComplexStructure`, for an orthogonal `J`:
 
 * `isCalibratedFrame_kahlerPowerForm_iff`: the calibrated-frame classification for every power
   index `r` (form degree `2 * r`).
-* `norm_alternatingFormEquiv_kahlerForm` (re-exported from `Kahler.DegreeTwo`, when `V` is
-  nontrivial) and `isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff`: degree-two comass one
-  and calibrated pairs `(v, J v)` with `‖v‖ = 1` for `alternatingFormEquiv V 2 J.kahlerForm`.
-* `alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff` (re-exported from `Kahler.DegreeTwo`):
-  for `v ≠ 0`, the equality `ω(v, w) = ‖v ∧ w‖` holds exactly when `w = a v + b J v` with `b ≥ 0`.
 
 On finite-dimensional Hermitian vector spaces:
 
@@ -65,8 +52,6 @@ On finite-dimensional Hermitian vector spaces:
   `TauCeti.isCalibratedFrame_kahlerPowerForm_iff`: the Wirtinger inequality and calibrated-frame
   classification on any finite-dimensional Hermitian vector space in every power index `r` (form
   degree `2 * r`).
-* `TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff_of_ne_zero` (re-exported from `Kahler.DegreeTwo`):
-  for `v ≠ 0`, `ω(v, w) = ‖v ∧ w‖` exactly when `w = c v` for a complex number `c` with `0 ≤ Im c`.
 
 ## References
 
