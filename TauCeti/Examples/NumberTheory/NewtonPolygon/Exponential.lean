@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Padics.ExponentialDisc
 public import TauCeti.NumberTheory.Padics.Factorial
 public import TauCeti.NumberTheory.Padics.LogGauge
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
+import TauCeti.RingTheory.PowerSeries.Exp.Padic
 
 /-!
 # The Newton polygon and radius of the `p`-adic exponential
@@ -78,40 +79,18 @@ private theorem p_sub_one_pos : (0 : ℝ) < (p : ℝ) - 1 :=
 
 /-! ### Coefficient heights -/
 
+/-- The `n`-th coefficient of the exponential series over `ℚ_[p]` is `(n!)⁻¹`. -/
+private theorem coeff_exp_eq_inv_factorial (n : ℕ) : coeff n (exp ℚ_[p]) = (n ! : ℚ_[p])⁻¹ := by
+  simp [coeff_exp]
+
 /-- The `n`-th coefficient `1 / n!` of the exponential series over `ℚ_[p]` has valuation
 `-v_p(n!)`. -/
 theorem padicRealValuation_coeff_exp (n : ℕ) :
     padicRealValuation p (coeff n (exp ℚ_[p])) = ((-(multiplicity p n ! : ℝ) : ℝ) : WithTop ℝ) := by
   have hn : (n ! : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
-  rw [coeff_exp, map_div₀, map_one, map_natCast, one_div, AddValuation.map_inv,
-    padicRealValuation_eq_map, Padic.addValuation.apply hn, Padic.valuation_natCast]
+  rw [coeff_exp_eq_inv_factorial, AddValuation.map_inv, padicRealValuation_eq_map,
+    Padic.addValuation.apply hn, Padic.valuation_natCast]
   simp
-
-/-- **Legendre's bound.** `v_p(n!) < n / (p - 1)` for `n ≠ 0`, since the base-`p` digit sum of
-`n` is positive. -/
-private theorem multiplicity_factorial_lt_div {n : ℕ} (hn : n ≠ 0) :
-    (multiplicity p n ! : ℝ) < n / ((p : ℝ) - 1) := by
-  have h : (((p - 1) * multiplicity p n ! : ℕ) : ℝ) < n := by
-    exact_mod_cast sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
-  push_cast [Nat.cast_sub (Fact.out : p.Prime).one_le] at h
-  rw [lt_div_iff₀ p_sub_one_pos]
-  linarith
-
-private theorem multiplicity_factorial_le_div (n : ℕ) :
-    (multiplicity p n ! : ℝ) ≤ n / ((p : ℝ) - 1) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · exact (multiplicity_factorial_lt_div hn).le
-
-/-- At a power `n = pᵏ`, Legendre's formula is `(p - 1) v_p(n!) = n - 1`. -/
-private theorem cast_multiplicity_factorial_pow (k : ℕ) :
-    (multiplicity p (p ^ k)! : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
-  have h : (((p - 1) * multiplicity p (p ^ k)! : ℕ) : ℝ) = ((p ^ k - 1 : ℕ) : ℝ) := by
-    rw [← Nat.padicValNat_def, sub_one_mul_padicValNat_factorial_pow p k]
-  push_cast [Nat.cast_sub (Fact.out : p.Prime).one_le,
-    Nat.cast_sub (Nat.one_le_pow k p (Fact.out : p.Prime).pos)] at h
-  rw [eq_div_iff p_sub_one_pos.ne']
-  linarith
 
 /-! ### The Newton polygon -/
 
@@ -125,7 +104,7 @@ nonnegative, vanish at `0`, and stay bounded along `n = pᵏ`. -/
 private theorem isLowerConvexEnvelope_shearedHeight :
     IsLowerConvexEnvelope (shearedHeight p) 0 := by
   refine isLowerConvexEnvelope_zero_of_linearGrowthInf_nonpos (by simp [shearedHeight])
-    (fun n ↦ WithTop.coe_nonneg.mpr (sub_nonneg.mpr (multiplicity_factorial_le_div n))) ?_
+    (fun n ↦ WithTop.coe_nonneg.mpr (sub_nonneg.mpr (multiplicity_factorial_le_div p n))) ?_
   refine (linearGrowthInf_le_linearGrowthSup_of_frequently_le
     (v := fun _ ↦ ((((p : ℝ) - 1)⁻¹ : ℝ) : EReal)) ?_).trans_eq
     (linearGrowthSup_const (EReal.coe_ne_bot _) (EReal.coe_ne_top _))
@@ -182,7 +161,7 @@ theorem padicRealValuation_coeff_exp_eq_newtonPolygon_iff {n : ℕ} :
     padicRealValuation p (coeff n (exp ℚ_[p])) =
         (exp ℚ_[p]).newtonPolygon (padicRealValuation p) n ↔ n = 0 := by
   rw [padicRealValuation_coeff_exp, newtonPolygon_exp, WithTop.coe_eq_coe]
-  refine ⟨fun h ↦ by_contra fun hn ↦ (multiplicity_factorial_lt_div (p := p) hn).ne ?_,
+  refine ⟨fun h ↦ by_contra fun hn ↦ (multiplicity_factorial_lt_div p hn).ne ?_,
     fun h ↦ by simp [h]⟩
   rw [div_eq_inv_mul]
   linarith
@@ -209,36 +188,19 @@ theorem not_isEntire_exp : ¬(exp ℚ_[p]).IsEntire := by
   rw [← radius_eq_top_iff, radius_exp]
   exact ENNReal.ofReal_ne_top
 
-/-- The terms of degree `pᵏ` of `exp` at the radius `r₀ = p ^ (-1 / (p - 1))` have weighted norm
-`‖1 / (pᵏ)!‖ r₀ ^ pᵏ = r₀`. -/
-private theorem norm_coeff_exp_mul_amiceRadius_pow (k : ℕ) :
-    ‖coeff (p ^ k) (exp ℚ_[p])‖ * amiceRadius p 0 ^ p ^ k = amiceRadius p 0 := by
-  have hp0 : (0 : ℝ) < p := zero_lt_one.trans one_lt_p
-  have hr := amiceRadius_pos (p := p) 0
-  rw [coeff_exp, map_div₀, map_one, map_natCast, norm_div, norm_one,
-    norm_factorial_pow_eq_mul_amiceRadius_pow 0 k, zero_add, one_div_mul_eq_div,
-    div_mul_cancel_right₀ (pow_pos hr _).ne', amiceRadius_def, pow_zero, mul_one,
-    Real.rpow_neg hp0.le]
-
-/-- **No restrictedness at the boundary.** The `p`-adic exponential is not restricted at its
-radius `p ^ (-1 / (p - 1))`: its terms of degree `pᵏ` all have weighted norm
-`p ^ (-1 / (p - 1))` there. -/
-theorem not_isRestricted_exp_amiceRadius : ¬(exp ℚ_[p]).IsRestricted (amiceRadius p 0) := by
-  intro hres
-  rw [isRestricted_iff'] at hres
-  have h := hres.comp (tendsto_pow_atTop_atTop_of_one_lt (Fact.out : p.Prime).one_lt)
-  simp only [Function.comp_def, norm_coeff_exp_mul_amiceRadius_pow] at h
-  exact (amiceRadius_pos 0).ne' (tendsto_nhds_unique tendsto_const_nhds h)
-
 /-- The `p`-adic exponential is restricted at the radius `r` exactly when
 `|r| < p ^ (-1 / (p - 1))`. -/
 theorem isRestricted_exp_iff {r : ℝ} :
     (exp ℚ_[p]).IsRestricted r ↔ |r| < amiceRadius p 0 := by
-  refine ⟨fun h ↦ lt_of_not_ge fun hle ↦ not_isRestricted_exp_amiceRadius
-    (TauCeti.PowerSeries.isRestricted_of_abs_le h ?_), fun h ↦ isRestricted_of_lt_radius ?_⟩
-  · rwa [abs_of_pos (amiceRadius_pos 0)]
-  · rw [radius_exp, ← Real.eNorm_abs, ← ofReal_norm, Real.norm_eq_abs, abs_abs]
-    exact (ENNReal.ofReal_lt_ofReal_iff (amiceRadius_pos 0)).mpr h
+  have h := isRestricted_rescale_exp_iff (p := p) (K := ℚ_[p]) (x := 1) (abs_nonneg r)
+  rw [rescale_one, RingHom.id_apply, norm_one, one_mul] at h
+  rw [← isRestricted_abs_iff, h, amiceRadius_def, pow_zero, mul_one, one_div]
+
+/-- **No restrictedness at the boundary.** The `p`-adic exponential is not restricted at its
+radius `p ^ (-1 / (p - 1))`: its terms of degree `pᵏ` all have weighted norm
+`p ^ (-1 / (p - 1))` there. -/
+theorem not_isRestricted_exp_amiceRadius : ¬(exp ℚ_[p]).IsRestricted (amiceRadius p 0) :=
+  fun h ↦ (isRestricted_exp_iff.mp h).ne (abs_of_pos (amiceRadius_pos 0))
 
 /-! ### Convergence and zeros in extensions -/
 
@@ -265,8 +227,7 @@ theorem evalAt_exp {x : L} (hx : ‖x‖ < amiceRadius p 0) :
     (exp ℚ_[p]).evalAt x = NormedSpace.exp x := by
   rw [evalAt_def, ← (expSeries_div_hasSum_exp_of_norm_lt hx).tsum_eq]
   congr 1 with n
-  rw [coeff_exp, map_div₀, map_one, map_natCast, Algebra.smul_def, map_div₀, map_one,
-    map_natCast, one_div, inv_mul_eq_div]
+  rw [coeff_exp_eq_inv_factorial, Algebra.smul_def, map_inv₀, map_natCast, inv_mul_eq_div]
 
 /-- **No zeros in the disc of convergence.** On the open disc `‖x‖ < p ^ (-1 / (p - 1))` of a
 complete normed field over `ℚ_[p]`, such as `ℂ_[p]`, the exponential series does not vanish:
