@@ -194,15 +194,26 @@ theorem volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasu
   rw [hshell, ← setLIntegral_one, ← lintegral_congr_ae hjac, ← hcoarea,
     lintegral_congr hfiber, lintegral_indicator measurableSet_Ioc]
 
+/-- The case of `TauCeti.volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasure`
+for a closed set `K`. -/
+private theorem volume_cthickening_sdiff_eq_setLIntegral {K : Set E} (hK : IsClosed K) (t : ℝ) :
+    volume (cthickening t K \ K) =
+      ∫⁻ τ in Ioc 0 t, μHE[finrank ℝ E - 1] {x | infDist x K = τ} := by
+  have hshell := volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasure K t
+  rwa [hK.closure_eq] at hshell
+
+/-- The shell `cthickening t K \ K` around a compact set `K` has finite volume. -/
+private theorem volume_cthickening_sdiff_lt_top {K : Set E} (hK : IsCompact K) (t : ℝ) :
+    volume (cthickening t K \ K) < ∞ :=
+  (measure_mono sdiff_subset).trans_lt hK.cthickening.measure_lt_top
+
 /-- For a compact convex set `K`, the surface area of `K` times `t` is at most the volume of the
 shell `cthickening t K \ K`, since every level set of the distance to `K` at a positive level is
 the frontier of a convex set containing `K`. -/
 private theorem euclideanHausdorffMeasure_frontier_mul_le_volume_cthickening_sdiff {K : Set E}
     (hKc : Convex ℝ K) (hK : IsCompact K) (t : ℝ) :
     μHE[finrank ℝ E - 1] (frontier K) * ENNReal.ofReal t ≤ volume (cthickening t K \ K) := by
-  have hshell := volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasure K t
-  rw [hK.isClosed.closure_eq] at hshell
-  rw [hshell]
+  rw [volume_cthickening_sdiff_eq_setLIntegral hK.isClosed]
   calc μHE[finrank ℝ E - 1] (frontier K) * ENNReal.ofReal t
       = ∫⁻ _ in Ioc 0 t, μHE[finrank ℝ E - 1] (frontier K) := by
         rw [setLIntegral_const, Real.volume_Ioc, sub_zero]
@@ -239,8 +250,8 @@ private theorem euclideanHausdorffMeasure_setOf_infDist_eq_le {K : Set E} (hKc :
         (hKc.cthickening t).euclideanHausdorffMeasure_frontier_le hsub (hK.image hH).isBounded _
     _ ≤ μHE[finrank ℝ E - 1] (H '' frontier K) := measure_mono hfr
     _ = _ := by
-        rw [euclideanHausdorffMeasure_homothety_image _ _ hc.ne', ENNReal.smul_def, smul_eq_mul,
-          ENNReal.ofReal_pow hc.le, ENNReal.coe_pow, Real.nnNorm_of_nonneg hc.le,
+        rw [euclideanHausdorffMeasure_homothety_image _ _ hc.ne']
+        simp [ENNReal.smul_def, ENNReal.ofReal_pow hc.le, Real.nnNorm_of_nonneg hc.le,
           ENNReal.ofReal_eq_coe_nnreal hc.le]
 
 /-- If a compact convex set `K` contains the closed ball of radius `ρ > 0` about `x₀`, then the
@@ -250,9 +261,7 @@ private theorem volume_cthickening_sdiff_le {K : Set E} (hKc : Convex ℝ K) (hK
     {x₀ : E} {ρ : ℝ} (hρ : 0 < ρ) (hρK : closedBall x₀ ρ ⊆ K) (t : ℝ) :
     volume (cthickening t K \ K) ≤ ENNReal.ofReal (((ρ + t) / ρ) ^ (finrank ℝ E - 1)) *
       μHE[finrank ℝ E - 1] (frontier K) * ENNReal.ofReal t := by
-  have hshell := volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasure K t
-  rw [hK.isClosed.closure_eq] at hshell
-  rw [hshell]
+  rw [volume_cthickening_sdiff_eq_setLIntegral hK.isClosed]
   calc ∫⁻ τ in Ioc 0 t, μHE[finrank ℝ E - 1] {x | infDist x K = τ}
       ≤ ∫⁻ _ in Ioc 0 t, ENNReal.ofReal (((ρ + t) / ρ) ^ (finrank ℝ E - 1)) *
           μHE[finrank ℝ E - 1] (frontier K) := by
@@ -270,8 +279,7 @@ theorem _root_.Convex.euclideanHausdorffMeasure_frontier_lt_top {K : Set E} (hKc
   have h := euclideanHausdorffMeasure_frontier_mul_le_volume_cthickening_sdiff hKc.closure
     hK.isCompact_closure 1
   rw [ENNReal.ofReal_one, mul_one, hKc.frontier_closure] at h
-  exact h.trans_lt
-    ((measure_mono sdiff_subset).trans_lt hK.isCompact_closure.cthickening.measure_lt_top)
+  exact h.trans_lt (volume_cthickening_sdiff_lt_top hK.isCompact_closure 1)
 
 /-- The case of `Convex.hasDerivWithinAt_volume_real_add_smul_closedBall` for a compact convex
 set `K`. -/
@@ -295,9 +303,7 @@ private theorem hasDerivWithinAt_volume_real_add_smul_closedBall_of_isCompact {K
       volume.real (K + t • closedBall (0 : E) 1)) 0 t ∧ slope (fun t : ℝ =>
       volume.real (K + t • closedBall (0 : E) 1)) 0 t ≤ C t * A.toReal := by
     intro t (ht : 0 < t)
-    have hfin : volume (cthickening t K \ K) ≠ ∞ :=
-      ((measure_mono sdiff_subset).trans_lt hK.cthickening.measure_lt_top).ne
-    have hlow := ENNReal.toReal_mono hfin
+    have hlow := ENNReal.toReal_mono (volume_cthickening_sdiff_lt_top hK t).ne
       (euclideanHausdorffMeasure_frontier_mul_le_volume_cthickening_sdiff hKc hK t)
     have hup := ENNReal.toReal_mono (by finiteness) (volume_cthickening_sdiff_le hKc hK hρ hρK t)
     rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal ht.le] at hlow

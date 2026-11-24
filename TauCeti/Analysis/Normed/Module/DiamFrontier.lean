@@ -71,7 +71,7 @@ theorem _root_.Bornology.IsBounded.exists_add_smul_mem_frontier (hV : IsBounded 
   have hT : 0 ≤ T := by positivity
   have hTV : γ T ∉ V := fun hmem => by
     have := mem_closedBall.1 (hR hmem)
-    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hT,
+    rw [dist_self_add_left, norm_smul, Real.norm_of_nonneg hT,
       div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)] at this
     linarith
   obtain ⟨_, ⟨s, hs, rfl⟩, hpf⟩ :=
@@ -89,8 +89,9 @@ theorem exists_mem_frontier_dist_le (hV : IsBounded V) (hx : x ∈ V) (hne : y �
   have hsub : x + s • (x - y) - y = (1 + s) • (x - y) := by
     rw [add_smul, one_smul]
     abel
-  rw [dist_comm, dist_comm y, dist_eq_norm, dist_eq_norm, hsub, norm_smul,
-    Real.norm_of_nonneg (by linarith)]
+  have hdist : dist y (x + s • (x - y)) = (1 + s) * ‖x - y‖ := by
+    rw [dist_eq_norm', hsub, norm_smul, Real.norm_of_nonneg (by linarith)]
+  rw [hdist, dist_eq_norm']
   nlinarith [norm_nonneg (x - y)]
 
 /-- **A bounded set is no wider than its frontier.** Every distance realised between two points of

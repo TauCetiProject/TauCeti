@@ -105,8 +105,7 @@ theorem add_smul_closedBall_subset_image_homothety {K : Set E} (hK : Convex ℝ 
   have ha1 : a ≤ 1 := (div_le_one hρt).2 (by linarith)
   have hxb : x₀ + ρ • b ∈ K := hρK <| by
     rw [mem_closedBall_zero_iff] at hb
-    rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul,
-      Real.norm_of_nonneg hρ.le]
+    rw [Metric.mem_closedBall, dist_self_add_left, norm_smul, Real.norm_of_nonneg hρ.le]
     exact mul_le_of_le_one_right hρ.le hb
   -- The preimage of `k + t • b` is the convex combination `a • k + (1 - a) • (x₀ + ρ • b)`.
   refine ⟨a • k + (1 - a) • (x₀ + ρ • b),
