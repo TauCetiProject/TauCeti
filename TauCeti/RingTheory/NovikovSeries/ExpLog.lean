@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovSeries.Derivation
+public import TauCeti.RingTheory.NovikovSeries.Functoriality
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.ExpLog
@@ -50,6 +51,8 @@ they differentiate the logarithm of a principal unit logarithmically: `u * D (lo
   the exponent monoid, without a positivity assumption.
 * `TauCeti.NovikovSeries.mul_degreeDerivation_log`: the logarithmic derivative of the logarithm
   along a degree derivation.
+* `TauCeti.NovikovSeries.mapRingHom_exp`: the pushforward along a coefficient map and a
+  period-rescaling exponent map commutes with the exponential of a series of the positive ideal.
 
 ## References
 
@@ -148,6 +151,23 @@ theorem mul_degreeDerivation_log (ℓ : H →+ K) {u : nonnegSubring K N}
     ((isTopologicallyNilpotent_of_mem_posIdeal' hu).mul_derivation_log
       (nonnegDegreeDerivation ℓ) (continuous_nonnegDegreeDerivation ℓ))
   simpa only [Subring.coe_mul, coe_nonnegDegreeDerivation, coe_log_nonnegSubring] using this
+
+section Map
+
+variable {H' K' : Type*} [AddCommMonoid H'] {N' : H' →+ ℝ} [CommRing K'] [Algebra ℚ K']
+
+/-- **Naturality of the exponential.** The pushforward along a ring homomorphism `ρ` of
+coefficients and an exponent homomorphism `φ` rescaling periods commutes with the exponential of
+a series of the positive ideal: `P_(ρ,φ) (exp a) = exp (P_(ρ,φ) a)`. -/
+theorem mapRingHom_exp (ρ : K →+* K') (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    {a : nonnegSubring K N} (ha : a ∈ posIdeal K N) :
+    mapRingHom ρ φ hφ (NormedSpace.exp (a : NovikovSeries K H N)) =
+      NormedSpace.exp (mapRingHom ρ φ hφ a) := by
+  rw [← coe_exp_nonnegSubring, mapRingHom_apply, ← coe_mapNonnegSubring,
+    (isTopologicallyNilpotent_of_mem_posIdeal' ha).map_exp _ (continuous_mapNonnegSubring ρ φ hφ),
+    coe_exp_nonnegSubring, coe_mapNonnegSubring, mapRingHom_apply]
+
+end Map
 
 end NovikovSeries
 

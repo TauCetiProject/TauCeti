@@ -81,7 +81,7 @@ private def coverForm (ℓ : Cover →L[ℝ] ℝ) : SmoothForm 𝓘(ℝ, Cover) 
 
 /-- The differential of `ℓ`, as a rough form. -/
 private theorem coe_coverForm (ℓ : Cover →L[ℝ] ℝ) :
-    (coverForm ℓ).1 = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) ℓ) := by
+    (coverForm ℓ).val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) ℓ) := by
   rw [coverForm, SmoothForm.coe_mpullback, SmoothForm.mpullback_realLineCoordForm]
 
 /-- The differential of a functional is closed. -/
@@ -111,7 +111,7 @@ private def descForm (ℓ : Cover →L[ℝ] ℝ) (hℓ : ∀ a p, ℓ (shear a p
 
 /-- The descended form pulls back to the differential of `ℓ` on the cover. -/
 private theorem mpullback_mk_descForm (ℓ : Cover →L[ℝ] ℝ) (hℓ : ∀ a p, ℓ (shear a p) = ℓ p) :
-    SmoothForm.mpullback mk isLocalDiffeomorph_mk.contMDiff (descForm ℓ hℓ).1 =
+    SmoothForm.mpullback mk isLocalDiffeomorph_mk.contMDiff (descForm ℓ hℓ).val =
       coverForm ℓ :=
   SmoothForm.mpullback_quotientMk_descend
 
@@ -119,12 +119,12 @@ private theorem mpullback_mk_descForm (ℓ : Cover →L[ℝ] ℝ) (hℓ : ∀ a 
 `dℓ` along the straight segment from `0` to `g • 0` in the cover. -/
 private theorem pathClassIntegral_descForm_deckLoop (ℓ : Cover →L[ℝ] ℝ)
     (hℓ : ∀ a p, ℓ (shear a p) = ℓ p) (g : DeckGroup) :
-    pathClassIntegral (descForm ℓ hℓ).1.1
+    pathClassIntegral (descForm ℓ hℓ).val.val
         (.mk (deckLoop g)) = ℓ (g • 0) := by
-  set θ := (descForm ℓ hℓ).1.1
+  set θ := (descForm ℓ hℓ).val.val
   have hθ : IsSmoothForm 𝓘(ℝ, Cover) 1 θ :=
-    (descForm ℓ hℓ).1.isSmoothForm.of_le (by simp)
-  have hclosed : mextDeriv θ = 0 := (mem_closedForms _ _).1 (descForm ℓ hℓ).2
+    (descForm ℓ hℓ).val.isSmoothForm.of_le (by simp)
+  have hclosed : mextDeriv θ = 0 := (mem_closedForms _ _).1 (descForm ℓ hℓ).property
   have hpull : TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk θ =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) ℓ) := by
     rw [← coe_coverForm, ← mpullback_mk_descForm ℓ hℓ, SmoothForm.coe_mpullback]
@@ -183,21 +183,21 @@ def dtForm : closedForms 𝓘(ℝ, Cover) KodairaThurston 1 :=
 
 /-- `dx` pulls back to the differential of the `x`-coordinate of the cover. -/
 theorem mpullback_mk_dxForm :
-    TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dxForm.1.1 =
+    TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dxForm.val.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) x) := by
   rw [← SmoothForm.coe_mpullback _ isLocalDiffeomorph_mk.contMDiff, dxForm,
     mpullback_mk_descForm, coe_coverForm, coe_xL]
 
 /-- `dy` pulls back to the differential of the `y`-coordinate of the cover. -/
 theorem mpullback_mk_dyForm :
-    TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dyForm.1.1 =
+    TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dyForm.val.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) y) := by
   rw [← SmoothForm.coe_mpullback _ isLocalDiffeomorph_mk.contMDiff, dyForm,
     mpullback_mk_descForm, coe_coverForm, coe_yL]
 
 /-- `dt` pulls back to the differential of the `t`-coordinate of the cover. -/
 theorem mpullback_mk_dtForm :
-    TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dtForm.1.1 =
+    TauCeti.mpullback 𝓘(ℝ, Cover) 𝓘(ℝ, Cover) mk dtForm.val.val =
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) t) := by
   rw [← SmoothForm.coe_mpullback _ isLocalDiffeomorph_mk.contMDiff, dtForm,
     mpullback_mk_descForm, coe_coverForm, coe_tL]
@@ -207,13 +207,13 @@ theorem mpullback_mk_dtForm :
 /-- The first homology class of the loop `deckLoop g`. -/
 private abbrev deckClass (g : DeckGroup) :
     ((singularChains ℤ).obj (TopCat.of KodairaThurston)).homology 1 :=
-  H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston) (deckLoop g))
+  H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop g))
 
 /-- The period of `dx` on the loop `deckLoop g`, the integral along it, is the first Heisenberg
 coordinate of `g`. -/
 @[simp]
 theorem pathClassIntegral_dxForm_deckLoop (g : DeckGroup) :
-    pathClassIntegral dxForm.1.1 (.mk (deckLoop g)) = g.1.x := by
+    pathClassIntegral dxForm.val.val (.mk (deckLoop g)) = g.1.x := by
   rw [dxForm, pathClassIntegral_descForm_deckLoop, xL_apply]
   simp
 
@@ -221,7 +221,7 @@ theorem pathClassIntegral_dxForm_deckLoop (g : DeckGroup) :
 coordinate of `g`. -/
 @[simp]
 theorem pathClassIntegral_dyForm_deckLoop (g : DeckGroup) :
-    pathClassIntegral dyForm.1.1 (.mk (deckLoop g)) = g.1.y := by
+    pathClassIntegral dyForm.val.val (.mk (deckLoop g)) = g.1.y := by
   rw [dyForm, pathClassIntegral_descForm_deckLoop, yL_apply]
   simp
 
@@ -229,7 +229,7 @@ theorem pathClassIntegral_dyForm_deckLoop (g : DeckGroup) :
 coordinate of `g`. -/
 @[simp]
 theorem pathClassIntegral_dtForm_deckLoop (g : DeckGroup) :
-    pathClassIntegral dtForm.1.1 (.mk (deckLoop g)) = g.2.toAdd := by
+    pathClassIntegral dtForm.val.val (.mk (deckLoop g)) = g.2.toAdd := by
   rw [dtForm, pathClassIntegral_descForm_deckLoop, tL_apply]
   simp
 
@@ -296,12 +296,12 @@ def deRhamCohomologyOneEquiv :
 `((1, 0, 0), 0)`, `((0, 1, 0), 0)` and `((0, 0, 0), 1)` of the deck group. -/
 theorem deRhamCohomologyOneEquiv_apply (c : deRhamCohomology 𝓘(ℝ, Cover) KodairaThurston 1) :
     deRhamCohomologyOneEquiv c =
-      (deRhamCohomology.homologyPeriod c (H₁AddEquivHomology _
-          (loopClass (X := TopCat.of KodairaThurston) (deckLoop (⟨1, 0, 0⟩, 1)))),
-        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology _
-          (loopClass (X := TopCat.of KodairaThurston) (deckLoop (⟨0, 1, 0⟩, 1)))),
-        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology _
-          (loopClass (X := TopCat.of KodairaThurston) (deckLoop (1, .ofAdd 1))))) := by
+      (deRhamCohomology.homologyPeriod c (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop (⟨1, 0, 0⟩, 1)))),
+        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop (⟨0, 1, 0⟩, 1)))),
+        deRhamCohomology.homologyPeriod c (H₁AddEquivHomology ℤ _
+          (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop (1, .ofAdd 1))))) := by
   simp only [deRhamCohomologyOneEquiv, LinearEquiv.ofBijective_apply, periods, LinearMap.coe_mk,
     AddHom.coe_mk]
 

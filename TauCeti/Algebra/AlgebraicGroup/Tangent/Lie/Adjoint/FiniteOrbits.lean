@@ -8,65 +8,59 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
-public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Dominant
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.WeightedDiagram
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.GradeTwoOrbit
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Exponential
 import TauCeti.Algebra.Lie.CartanExists
-import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 
 /-!
-# Finiteness and cardinality bounds for nilpotent adjoint orbits
+# Nilpotent `G°(k)`-orbits, intermediate subgroups, and topological orbit images
 
 Let `G = Spec H` be an affine group of finite type over an algebraically closed field `k` of
 characteristic zero whose Lie algebra `𝔤 = Module.Dual k (Bialgebra.CotangentSpace k H)` has
 nondegenerate Killing form. Fix a Cartan subalgebra `𝔥 ≤ 𝔤` and a base `b` of its root system.
 
-Combining three ingredients established in `TauCeti`:
+While `TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.WeightedDiagram` proves finiteness and
+the `3 ^ finrank k 𝔥 - 1` / `3 ^ finrank k 𝔥` cardinality bounds for full rational `G(k)`-orbits
+(`TauCeti.Comodule.VectorOrbit`), a disconnected group `G` may split a single `G(k)`-orbit into
+several orbits of the identity component `G°(k)` or of an intermediate subgroup
+`G°(k) ≤ Γ ≤ G(k)`.
 
-1. Lie-algebraic reduction of `sl₂` triples and nonzero `ad`-nilpotent elements into the finite set
-   `b.dominantNeutralElements` under `Int(𝔤)`
-   (`IsSl2Triple.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed` and
-   `TauCeti.exists_mem_intLieAlgebra_isSl2Triple_smul_of_isNilpotent_ad`);
-2. realization of `Int(𝔤)` inside the adjoint action of `G°(k)`
-   (`TauCeti.exists_mem_identityComponentHopfIdeal_ofLinearEquiv_basePointsAdjointLieEquiv_eq`);
-3. Malcev–Kostant conjugacy at fixed neutral element inside `C_G(h)°(k) ≤ G°(k)`
+Combining:
+
+1. dominant conjugation of `sl₂` triples by rational points of `G°`
+   (`IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_dominantNeutralElements`);
+2. Malcev–Kostant conjugacy at fixed neutral element inside `C_G(h)°(k) ≤ G°(k)`
    (`IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq`
    together with `TauCeti.HopfIdeal.identityComponentHopfIdeal_le_identityComponent`),
 
 every nonzero `ad`-nilpotent element of `𝔤` lies in the `G°(k)`-orbit of one of at most
-`3 ^ Module.finrank k 𝔥` chosen nilpositive representatives indexed by `b.dominantNeutralElements`.
+`3 ^ Module.finrank k 𝔥 - 1` chosen nilpositive representatives indexed by
+`b.dominantNeutralElements`.
 
 Consequently:
 
 * for *every* subgroup `Γ ≤ G(k)` containing `G°(k)` — in particular for `G°(k)` itself — there are
-  only finitely many nilpotent `Γ`-orbits in `𝔤`: at most `3 ^ finrank k 𝔥` nonzero orbits and at
-  most `3 ^ finrank k 𝔥 + 1` in total;
-* the rational `G(k)`-orbits (`TauCeti.Comodule.VectorOrbit`) and their topological orbit images
-  (`TauCeti.Comodule.VectorOrbit.image`) in `P(𝔤 × k)` of `ad`-nilpotent elements (and, when `G` is
-  connected, of the rational points of the nilpotent cone `TauCeti.nilpotentConeIdeal k H`) are
-  likewise finite in number, bounded by `3 ^ finrank k 𝔥` (nonzero) and `3 ^ finrank k 𝔥 + 1`
-  (all).
+  only finitely many nilpotent `Γ`-orbits in `𝔤`: at most `3 ^ finrank k 𝔥 - 1` nonzero orbits and
+  at most `3 ^ finrank k 𝔥` in total;
+* the topological adjoint `G`-orbit images (`TauCeti.Comodule.VectorOrbit.image`) in `P(𝔤 × k)` of
+  `ad`-nilpotent elements (and, when `G` is connected, of the rational points of the nilpotent cone
+  `TauCeti.nilpotentConeIdeal k H`) are likewise finite in number, bounded by
+  `3 ^ finrank k 𝔥 - 1` (nonzero) and `3 ^ finrank k 𝔥` (all).
 
 ## Main declarations
 
-* `IsSl2Triple.exists_mem_identityComponentHopfIdeal_dominantNeutralElements`: every `sl₂` triple
-  in `𝔤` is conjugate under `G°(k)` to one whose neutral element lies in
-  `b.dominantNeutralElements`.
 * `TauCeti.exists_mem_identityComponentHopfIdeal_isSl2Triple_of_isNilpotent_ad`: every nonzero
   `ad`-nilpotent element of `𝔤` is conjugate under `G°(k)` to the nilpositive element of an `sl₂`
   triple with neutral element in `b.dominantNeutralElements`.
 * `TauCeti.exists_finite_subset_isNilpotent_ad_ncard_le`: existence of a finite set `S ⊆ 𝔤` of at
-  most `3 ^ finrank k 𝔥` nonzero `ad`-nilpotent representatives meeting every nonzero nilpotent
+  most `3 ^ finrank k 𝔥 - 1` nonzero `ad`-nilpotent representatives meeting every nonzero nilpotent
   `G°(k)`-orbit.
 * `TauCeti.finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad`,
   `TauCeti.ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero_le`,
   and `TauCeti.ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_le`:
-  finiteness and the `3 ^ rank` / `3 ^ rank + 1` bounds for nilpotent `Γ`-orbits in `𝔤` whenever
+  finiteness and the `3 ^ rank - 1` / `3 ^ rank` bounds for nilpotent `Γ`-orbits in `𝔤` whenever
   `G°(k) ≤ Γ ≤ G(k)`, with specialization to `G°(k)`.
-* `TauCeti.finite_image_vectorOrbit_mk_setOf_isNilpotent_ad`,
-  `TauCeti.ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero_le`, and
-  `TauCeti.ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_le`: finiteness and bounds for rational
-  nilpotent `G(k)`-orbits in `TauCeti.Comodule.VectorOrbit`.
 * `TauCeti.finite_image_vectorOrbit_image_mk_setOf_isNilpotent_ad`,
   `TauCeti.ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero_le`,
   `TauCeti.ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_le`, and
@@ -86,46 +80,6 @@ Consequently:
 public section
 
 open WithConv
-
-namespace IsSl2Triple
-
-open TauCeti
-
-universe u
-
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-  {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-  [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
-  {𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))} [𝔥.IsCartanSubalgebra]
-
-attribute [local instance] Derivation.adjointComodule
-
-/-- **Group-level dominant conjugation of `sl₂` triples.** Over an algebraically closed field `k`
-of characteristic zero, if `G = Spec H` is of finite type with Killing Lie algebra `𝔤`, every `sl₂`
-triple `(h, e, f)` in `𝔤` is conjugate by a rational point of `G°` to an `sl₂` triple whose neutral
-element lies in `b.dominantNeutralElements`. -/
-theorem exists_mem_identityComponentHopfIdeal_dominantNeutralElements
-    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
-    {h e f : Module.Dual k (Bialgebra.CotangentSpace k H)} (t : IsSl2Triple h e f) :
-    ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k),
-      ∃ h' ∈ b.dominantNeutralElements,
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h =
-            (h' : Module.Dual k (Bialgebra.CotangentSpace k H)) ∧
-          IsSl2Triple (h' : Module.Dual k (Bialgebra.CotangentSpace k H))
-            (Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e)
-            (Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g
-              f) := by
-  let _ : LieAlgebra ℚ (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-    TauCeti.ratLieAlgebra k _
-  obtain ⟨φ, hφ, h', hh', hφh, t'⟩ :=
-    t.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed b
-  obtain ⟨g, -, hg₀, -, happ⟩ :=
-    exists_mem_identityComponentHopfIdeal_ofLinearEquiv_basePointsAdjointLieEquiv_eq (H := H) hφ
-  refine ⟨g, hg₀, h', hh', (happ h).trans hφh, ?_⟩
-  simpa only [happ] using t'
-
-end IsSl2Triple
 
 namespace TauCeti
 
@@ -168,12 +122,12 @@ theorem exists_mem_identityComponentHopfIdeal_isSl2Triple_of_isNilpotent_ad
 
 /-- **Finite set of `G°(k)`-representatives for nonzero nilpotent elements.** Given a base `b` of
 the root system of a Cartan subalgebra `𝔥 ≤ 𝔤`, there is a finite subset `S ⊆ 𝔤` of cardinality at
-most `3 ^ finrank k 𝔥` consisting of nonzero `ad`-nilpotent elements such that every nonzero
+most `3 ^ finrank k 𝔥 - 1` consisting of nonzero `ad`-nilpotent elements such that every nonzero
 `ad`-nilpotent `e ∈ 𝔤` lies in the `G°(k)`-orbit of some element of `S`. -/
 theorem exists_finite_subset_isNilpotent_ad_ncard_le
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     ∃ S : Set (Module.Dual k (Bialgebra.CotangentSpace k H)),
-      S.Finite ∧ S.ncard ≤ 3 ^ Module.finrank k 𝔥 ∧
+      S.Finite ∧ S.ncard ≤ 3 ^ Module.finrank k 𝔥 - 1 ∧
       (∀ x ∈ S,
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x) ∧ x ≠ 0) ∧
       ∀ e : Module.Dual k (Bialgebra.CotangentSpace k H),
@@ -184,17 +138,19 @@ theorem exists_finite_subset_isNilpotent_ad_ncard_le
             (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = x := by
   let 𝔤 := Module.Dual k (Bialgebra.CotangentSpace k H)
   let rep : b.dominantNeutralElements → 𝔤 := fun h =>
-    Classical.choose ((b.mem_dominantNeutralElements_iff h.1).mp h.2).1
-  have hrep : ∀ h : b.dominantNeutralElements, ∃ f : 𝔤, IsSl2Triple (h.1 : 𝔤) (rep h) f :=
-    fun h => Classical.choose_spec ((b.mem_dominantNeutralElements_iff h.1).mp h.2).1
+    Classical.choose ((b.mem_dominantNeutralElements_iff h.val).mp h.property).left
+  have hrep : ∀ h : b.dominantNeutralElements, ∃ f : 𝔤, IsSl2Triple (h.val : 𝔤) (rep h) f :=
+    fun h => Classical.choose_spec ((b.mem_dominantNeutralElements_iff h.val).mp h.property).left
   have : Finite b.dominantNeutralElements := b.finite_dominantNeutralElements.to_subtype
   have huniv : (Set.univ : Set b.dominantNeutralElements).ncard =
       b.dominantNeutralElements.ncard := by
     simp
   refine ⟨Set.range rep, Set.finite_range rep, ?_, ?_, ?_⟩
   · rw [← Set.image_univ]
-    exact (Set.ncard_image_le Set.finite_univ).trans
-      (huniv.trans_le b.ncard_dominantNeutralElements_le)
+    have hle : (rep '' Set.univ).ncard ≤ b.dominantNeutralElements.ncard :=
+      (Set.ncard_image_le Set.finite_univ).trans huniv.le
+    have hbound := b.ncard_dominantNeutralElements_add_one_le
+    omega
   · rintro _ ⟨h, rfl⟩
     obtain ⟨f₀, t₀⟩ := hrep h
     exact ⟨t₀.isNilpotent_toEnd_e (K := k) (M := 𝔤), t₀.e_ne_zero⟩
@@ -218,7 +174,7 @@ end Representatives
 section PointOrbits
 
 /-- Any map `orb : 𝔤 → α` constant on `G°(k)`-orbits sends the nonzero `ad`-nilpotent elements of
-`𝔤` onto a finite set of cardinality at most `3 ^ finrank k 𝔥`. -/
+`𝔤` onto a finite set of cardinality at most `3 ^ finrank k 𝔥 - 1`. -/
 private theorem finite_and_ncard_image_le_of_forall_eq {α : Type*}
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra]
     {orb : Module.Dual k (Bialgebra.CotangentSpace k H) → α}
@@ -232,7 +188,7 @@ private theorem finite_and_ncard_image_le_of_forall_eq {α : Type*}
           e ≠ 0}).Finite ∧
       (orb '' {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
-          e ≠ 0}).ncard ≤ 3 ^ Module.finrank k 𝔥 := by
+          e ≠ 0}).ncard ≤ 3 ^ Module.finrank k 𝔥 - 1 := by
   let b := (LieAlgebra.IsKilling.rootSystem 𝔥).nonempty_base.some
   obtain ⟨S, hSfin, hScard, hSnilp, hSsurj⟩ :=
     exists_finite_subset_isNilpotent_ad_ncard_le (H := H) b
@@ -249,8 +205,8 @@ private theorem finite_and_ncard_image_le_of_forall_eq {α : Type*}
   exact ⟨hSfin.image orb, (Set.ncard_image_le hSfin).trans hScard⟩
 
 /-- **Bound on nonzero nilpotent `Γ`-orbits in `Lie(G)`.** For any Cartan subalgebra `𝔥 ≤ 𝔤` and
-any subgroup `Γ ≤ G(k)` containing `G°(k)`, there are at most `3 ^ finrank k 𝔥` nonzero nilpotent
-`Γ`-orbits in `𝔤`. -/
+any subgroup `Γ ≤ G(k)` containing `G°(k)`, there are at most `3 ^ finrank k 𝔥 - 1` nonzero
+nilpotent `Γ`-orbits in `𝔤`. -/
 theorem ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero_le
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra]
     {Γ : Subgroup (WithConv (H →ₐ[k] k))}
@@ -258,16 +214,16 @@ theorem ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad
       (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) ≤ Γ) :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
         Set.range fun γ : Γ => Comodule.basePointsRepresentation
-          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.1 e) ''
+          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.val e) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
           e ≠ 0}).ncard ≤
-      3 ^ Module.finrank k 𝔥 := by
+      3 ^ Module.finrank k 𝔥 - 1 := by
   let 𝔤 := Module.Dual k (Bialgebra.CotangentSpace k H)
   let _ : MulAction Γ 𝔤 := MulAction.compHom 𝔤
     ((Representation.asGroupHom (Comodule.basePointsRepresentation 𝔤)).comp Γ.subtype)
   exact (finite_and_ncard_image_le_of_forall_eq (H := H) 𝔥
-    fun g hg e => MulAction.orbit_smul (⟨g, hΓ hg⟩ : Γ) e).2
+    fun g hg e => MulAction.orbit_smul (⟨g, hΓ hg⟩ : Γ) e).right
 
 /-- **Finiteness of nonzero nilpotent `Γ`-orbits in `Lie(G)`.** -/
 theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero
@@ -276,7 +232,7 @@ theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_a
       (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) ≤ Γ) :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
         Set.range fun γ : Γ => Comodule.basePointsRepresentation
-          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.1 e) ''
+          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.val e) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
           e ≠ 0}).Finite := by
@@ -285,7 +241,7 @@ theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_a
     ((Representation.asGroupHom (Comodule.basePointsRepresentation 𝔤)).comp Γ.subtype)
   obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k 𝔤
   exact (finite_and_ncard_image_le_of_forall_eq (H := H) (LieSubalgebra.engel k x)
-    fun g hg e => MulAction.orbit_smul (⟨g, hΓ hg⟩ : Γ) e).1
+    fun g hg e => MulAction.orbit_smul (⟨g, hΓ hg⟩ : Γ) e).left
 
 /-- **Finiteness of nilpotent `Γ`-orbits in `Lie(G)`.** Over an algebraically closed field of
 characteristic zero, if `𝔤 = Lie(G)` is Killing and `G°(k) ≤ Γ ≤ G(k)`, there are only finitely
@@ -296,7 +252,7 @@ theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_a
       (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) ≤ Γ) :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
         Set.range fun γ : Γ => Comodule.basePointsRepresentation
-          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.1 e) ''
+          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.val e) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent
           (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).Finite := by
@@ -308,8 +264,8 @@ theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_a
     (finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero hΓ).insert _
 
 /-- **Bound on all nilpotent `Γ`-orbits in `Lie(G)`.** For any Cartan subalgebra `𝔥 ≤ 𝔤` and any
-subgroup `Γ ≤ G(k)` containing `G°(k)`, there are at most `3 ^ finrank k 𝔥 + 1` nilpotent
-`Γ`-orbits in `𝔤`. -/
+subgroup `Γ ≤ G(k)` containing `G°(k)`, there are at most `3 ^ finrank k 𝔥` nilpotent `Γ`-orbits
+in `𝔤`. -/
 theorem ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_le
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra]
     {Γ : Subgroup (WithConv (H →ₐ[k] k))}
@@ -317,16 +273,31 @@ theorem ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad
       (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) ≤ Γ) :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
         Set.range fun γ : Γ => Comodule.basePointsRepresentation
-          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.1 e) ''
+          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.val e) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).ncard ≤
-      3 ^ Module.finrank k 𝔥 + 1 := by
+      3 ^ Module.finrank k 𝔥 := by
   have h0 : (0 : Module.Dual k (Bialgebra.CotangentSpace k H)) ∈
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by simp
+  have hpos : 1 ≤ 3 ^ Module.finrank k 𝔥 := Nat.one_le_pow _ _ (by decide)
+  have h1 := ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero_le
+    𝔥 hΓ
   rw [← Set.insert_sdiff_self_of_mem h0, Set.image_insert_eq]
-  exact (Set.ncard_insert_le _ _).trans <| Nat.add_le_add_right
-    (ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero_le 𝔥 hΓ) 1
+  have h2 := Set.ncard_insert_le
+    (Set.range fun γ : Γ => Comodule.basePointsRepresentation
+      (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.val 0)
+    ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
+        Set.range fun γ : Γ => Comodule.basePointsRepresentation
+          (Module.Dual k (Bialgebra.CotangentSpace k H)) γ.val e) ''
+      ({e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} \ {0}))
+  have hdiff : ({e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+      IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} \ {0}) =
+    {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+      IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧ e ≠ 0} := rfl
+  rw [hdiff] at h2 ⊢
+  omega
 
 /-- **Finiteness of nilpotent `G°(k)`-orbits in `Lie(G)`.** -/
 theorem finite_image_range_identityComponentHopfIdeal_setOf_isNilpotent_ad :
@@ -334,83 +305,31 @@ theorem finite_image_range_identityComponentHopfIdeal_setOf_isNilpotent_ad :
         Set.range fun g : CommHopfAlgCat.quotientPointsSubgroup H.obj
             (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) =>
           Comodule.basePointsRepresentation
-            (Module.Dual k (Bialgebra.CotangentSpace k H)) g.1 e) ''
+            (Module.Dual k (Bialgebra.CotangentSpace k H)) g.val e) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).Finite :=
   finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad (H := H) le_rfl
 
-/-- **`3 ^ rank + 1` bound on nilpotent `G°(k)`-orbits in `Lie(G)`.** -/
+/-- **`3 ^ rank` bound on nilpotent `G°(k)`-orbits in `Lie(G)`.** -/
 theorem ncard_image_range_identityComponentHopfIdeal_setOf_isNilpotent_ad_le
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra] :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
         Set.range fun g : CommHopfAlgCat.quotientPointsSubgroup H.obj
             (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) =>
           Comodule.basePointsRepresentation
-            (Module.Dual k (Bialgebra.CotangentSpace k H)) g.1 e) ''
+            (Module.Dual k (Bialgebra.CotangentSpace k H)) g.val e) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).ncard ≤
-      3 ^ Module.finrank k 𝔥 + 1 :=
-  ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_le (H := H) 𝔥 le_rfl
-
-/-- **Bound on nonzero rational nilpotent `G(k)`-orbits in `Lie(G)`.** -/
-theorem ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero_le
-    (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra] :
-    ((Comodule.VectorOrbit.mk (k := k) (H := H) :
-        Module.Dual k (Bialgebra.CotangentSpace k H) → _) ''
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
-          e ≠ 0}).ncard ≤
       3 ^ Module.finrank k 𝔥 :=
-  (finite_and_ncard_image_le_of_forall_eq (H := H) 𝔥
-    fun g _ e => Comodule.VectorOrbit.mk_basePointsRepresentation g e).2
-
-/-- **Finiteness of nonzero rational nilpotent `G(k)`-orbits in `Lie(G)`.** -/
-theorem finite_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero :
-    ((Comodule.VectorOrbit.mk (k := k) (H := H) :
-        Module.Dual k (Bialgebra.CotangentSpace k H) → _) ''
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
-          e ≠ 0}).Finite := by
-  obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k
-    (Module.Dual k (Bialgebra.CotangentSpace k H))
-  exact (finite_and_ncard_image_le_of_forall_eq (H := H) (LieSubalgebra.engel k x)
-    fun g _ e => Comodule.VectorOrbit.mk_basePointsRepresentation g e).1
-
-/-- **Finiteness of rational nilpotent `G(k)`-orbits in `Lie(G)`.** -/
-theorem finite_image_vectorOrbit_mk_setOf_isNilpotent_ad :
-    ((Comodule.VectorOrbit.mk (k := k) (H := H) :
-        Module.Dual k (Bialgebra.CotangentSpace k H) → _) ''
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent
-          (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).Finite := by
-  have h0 : (0 : Module.Dual k (Bialgebra.CotangentSpace k H)) ∈
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by simp
-  rw [← Set.insert_sdiff_self_of_mem h0, Set.image_insert_eq]
-  exact (finite_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero (H := H)).insert _
-
-/-- **`3 ^ rank + 1` bound on rational nilpotent `G(k)`-orbits in `Lie(G)`.** -/
-theorem ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_le
-    (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra] :
-    ((Comodule.VectorOrbit.mk (k := k) (H := H) :
-        Module.Dual k (Bialgebra.CotangentSpace k H) → _) ''
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).ncard ≤
-      3 ^ Module.finrank k 𝔥 + 1 := by
-  have h0 : (0 : Module.Dual k (Bialgebra.CotangentSpace k H)) ∈
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by simp
-  rw [← Set.insert_sdiff_self_of_mem h0, Set.image_insert_eq]
-  exact (Set.ncard_insert_le _ _).trans <| Nat.add_le_add_right
-    (ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero_le (H := H) 𝔥) 1
+  ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_le (H := H) 𝔥 le_rfl
 
 end PointOrbits
 
 section SchemeOrbitImages
 
 /-- **Bound on nonzero nilpotent topological adjoint `G`-orbit images.** For any Cartan subalgebra
-`𝔥 ≤ 𝔤`, there are at most `3 ^ finrank k 𝔥` topological adjoint `G`-orbit images in `P(𝔤 × k)` of
-nonzero `ad`-nilpotent elements. -/
+`𝔥 ≤ 𝔤`, there are at most `3 ^ finrank k 𝔥 - 1` topological adjoint `G`-orbit images in
+`P(𝔤 × k)` of nonzero `ad`-nilpotent elements. -/
 theorem ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero_le
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra] :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
@@ -418,11 +337,10 @@ theorem ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero_le
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
           e ≠ 0}).ncard ≤
-      3 ^ Module.finrank k 𝔥 := by
-  rw [← Set.image_image Comodule.VectorOrbit.image Comodule.VectorOrbit.mk]
-  exact (Set.ncard_image_le
-      (finite_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero (H := H))).trans
-    (ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero_le (H := H) 𝔥)
+      3 ^ Module.finrank k 𝔥 - 1 :=
+  (finite_and_ncard_image_le_of_forall_eq (H := H) 𝔥
+    fun g _ e => congrArg Comodule.VectorOrbit.image
+      (Comodule.VectorOrbit.mk_basePointsRepresentation g e)).right
 
 /-- **Finiteness of nonzero nilpotent topological adjoint `G`-orbit images.** -/
 theorem finite_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero :
@@ -431,8 +349,11 @@ theorem finite_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero :
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
           e ≠ 0}).Finite := by
-  rw [← Set.image_image Comodule.VectorOrbit.image Comodule.VectorOrbit.mk]
-  exact (finite_image_vectorOrbit_mk_setOf_isNilpotent_ad_ne_zero (H := H)).image _
+  obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k
+    (Module.Dual k (Bialgebra.CotangentSpace k H))
+  exact (finite_and_ncard_image_le_of_forall_eq (H := H) (LieSubalgebra.engel k x)
+    fun g _ e => congrArg Comodule.VectorOrbit.image
+      (Comodule.VectorOrbit.mk_basePointsRepresentation g e)).left
 
 /-- **Finiteness of nilpotent topological adjoint `G`-orbit images.** Over an algebraically closed
 field of characteristic zero, if `𝔤 = Lie(G)` is Killing, the `ad`-nilpotent elements of `𝔤` have
@@ -443,22 +364,41 @@ theorem finite_image_vectorOrbit_image_mk_setOf_isNilpotent_ad :
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent
           (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).Finite := by
-  rw [← Set.image_image Comodule.VectorOrbit.image Comodule.VectorOrbit.mk]
-  exact (finite_image_vectorOrbit_mk_setOf_isNilpotent_ad (H := H)).image _
+  have h0 : (0 : Module.Dual k (Bialgebra.CotangentSpace k H)) ∈
+      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by simp
+  rw [← Set.insert_sdiff_self_of_mem h0, Set.image_insert_eq]
+  exact (finite_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero (H := H)).insert _
 
 /-- **Bound on all nilpotent topological adjoint `G`-orbit images.** For any Cartan subalgebra
-`𝔥 ≤ 𝔤`, there are at most `3 ^ finrank k 𝔥 + 1` topological adjoint `G`-orbit images in `P(𝔤 × k)`
-of `ad`-nilpotent elements. -/
+`𝔥 ≤ 𝔤`, there are at most `3 ^ finrank k 𝔥` topological adjoint `G`-orbit images in `P(𝔤 × k)` of
+`ad`-nilpotent elements. -/
 theorem ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_le
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra] :
     ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
         (Comodule.VectorOrbit.mk (k := k) (H := H) e).image) ''
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).ncard ≤
-      3 ^ Module.finrank k 𝔥 + 1 := by
-  rw [← Set.image_image Comodule.VectorOrbit.image Comodule.VectorOrbit.mk]
-  exact (Set.ncard_image_le (finite_image_vectorOrbit_mk_setOf_isNilpotent_ad (H := H))).trans
-    (ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_le (H := H) 𝔥)
+      3 ^ Module.finrank k 𝔥 := by
+  have h0 : (0 : Module.Dual k (Bialgebra.CotangentSpace k H)) ∈
+      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by simp
+  have hpos : 1 ≤ 3 ^ Module.finrank k 𝔥 := Nat.one_le_pow _ _ (by decide)
+  have h1 := ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_ne_zero_le (H := H) 𝔥
+  rw [← Set.insert_sdiff_self_of_mem h0, Set.image_insert_eq]
+  have h2 := Set.ncard_insert_le
+    (Comodule.VectorOrbit.mk (k := k) (H := H)
+      (0 : Module.Dual k (Bialgebra.CotangentSpace k H))).image
+    ((fun e : Module.Dual k (Bialgebra.CotangentSpace k H) =>
+        (Comodule.VectorOrbit.mk (k := k) (H := H) e).image) ''
+      ({e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} \ {0}))
+  have hdiff : ({e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+      IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} \ {0}) =
+    {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
+      IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧ e ≠ 0} := rfl
+  rw [hdiff] at h2 ⊢
+  omega
 
 /-- **Finiteness of adjoint `G`-orbit images on the nilpotent cone.** For a connected affine group
 `G = Spec H` of finite type over an algebraically closed field of characteristic zero with Killing
@@ -476,7 +416,7 @@ theorem finite_image_vectorOrbit_image_mk_setOf_nilpotentConeIdeal_le_ker_lift_e
   simpa only [nilpotentConeIdeal_le_ker_lift_eval_iff] using
     finite_image_vectorOrbit_image_mk_setOf_isNilpotent_ad (H := H)
 
-/-- **`3 ^ rank + 1` bound on adjoint `G`-orbit images on the nilpotent cone.** -/
+/-- **`3 ^ rank` bound on adjoint `G`-orbit images on the nilpotent cone.** -/
 theorem ncard_image_vectorOrbit_image_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval_le
     [ConnectedSpace (PrimeSpectrum H)]
     (𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))) [𝔥.IsCartanSubalgebra] :
@@ -487,7 +427,7 @@ theorem ncard_image_vectorOrbit_image_mk_setOf_nilpotentConeIdeal_le_ker_lift_ev
           RingHom.ker
             (SymmetricAlgebra.lift
               (Module.Dual.eval k (Module.Dual k (Bialgebra.CotangentSpace k H)) e))}).ncard ≤
-      3 ^ Module.finrank k 𝔥 + 1 := by
+      3 ^ Module.finrank k 𝔥 := by
   simpa only [nilpotentConeIdeal_le_ker_lift_eval_iff] using
     ncard_image_vectorOrbit_image_mk_setOf_isNilpotent_ad_le (H := H) 𝔥
 

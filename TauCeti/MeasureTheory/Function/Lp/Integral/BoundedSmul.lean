@@ -22,7 +22,9 @@ inequality on `W`,
 (`TauCeti.integrable_smul_and_norm_integral_smul_le`). This is the estimate that makes
 `h ↦ ∫ k • h` continuous on `Lᵖ` functions supported in `W`, used to pass to the limit in kernel
 integrals `∫ K(x - y) h(y) dy` for `x` away from the support of `h`
-(`TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`).
+(`TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`). The same Hölder bound holds for an
+operator-valued kernel `A` with `‖A y‖ ≤ M` on `W`, in lower Lebesgue integral form:
+`∫⁻ ‖A y (h y)‖ ≤ M μ(W) ^ (1 - 1/p) ‖h‖_p` (`TauCeti.lintegral_enorm_apply_le_mul_eLpNorm`).
 -/
 
 public section
@@ -99,5 +101,41 @@ theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {𝕜 : Type*} [NormedRing 
   rw [norm_norm, ← integral_sub hint₁ hint₂]
   simp_rw [← smul_sub]
   exact hle
+
+/-- If the operators `A y` satisfy `‖A y‖ ≤ M` for a.e. `y ∈ W` and `h` vanishes a.e. off `W`,
+then for `1 ≤ p`, by Hölder's inequality on `W`,
+`∫⁻ ‖A y (h y)‖ ≤ M μ(W) ^ (1 - 1/p) ‖h‖_p`. The bound is finite when `μ W` and `‖h‖_p` are. -/
+theorem lintegral_enorm_apply_le_mul_eLpNorm {𝕜 E G : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {A : α → E →L[𝕜] G} {W : Set α} {M : ℝ} (hM : ∀ᵐ y ∂μ, y ∈ W → ‖A y‖ ≤ M)
+    {p : ℝ≥0∞} (hp : 1 ≤ p) {h : α → E} (hh : AEStronglyMeasurable h μ)
+    (h0 : ∀ᵐ y ∂μ, y ∉ W → h y = 0) :
+    ∫⁻ y, ‖A y (h y)‖ₑ ∂μ ≤ ENNReal.ofReal M * μ W ^ (1 - 1 / p.toReal) * eLpNorm h p μ := by
+  set W' := toMeasurable μ W
+  calc (∫⁻ y, ‖A y (h y)‖ₑ ∂μ)
+      ≤ ∫⁻ y, W'.indicator (fun y => ENNReal.ofReal M * ‖h y‖ₑ) y ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [hM, h0] with y hyM hy
+        by_cases hyW : y ∈ W
+        · rw [indicator_of_mem (subset_toMeasurable μ W hyW)]
+          refine ((A y).le_opENorm (h y)).trans ?_
+          gcongr
+          rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (hyM hyW)
+        · rw [hy hyW, map_zero, eNorm_zero]
+          exact zero_le
+    _ = ENNReal.ofReal M * eLpNorm h 1 (μ.restrict W') := by
+        rw [lintegral_indicator (measurableSet_toMeasurable μ W),
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          eLpNorm_one_eq_lintegral_eNorm hh.restrict]
+    _ ≤ ENNReal.ofReal M * (eLpNorm h p (μ.restrict W') *
+          μ.restrict W' univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal)) := by
+        gcongr
+        exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hh.restrict
+    _ ≤ ENNReal.ofReal M * μ W ^ (1 - 1 / p.toReal) * eLpNorm h p μ := by
+        rw [Measure.restrict_apply_univ, measure_toMeasurable, ENNReal.toReal_one, div_one,
+          mul_comm (eLpNorm h p _), ← mul_assoc]
+        gcongr
+        exact Measure.restrict_le_self
 
 end TauCeti

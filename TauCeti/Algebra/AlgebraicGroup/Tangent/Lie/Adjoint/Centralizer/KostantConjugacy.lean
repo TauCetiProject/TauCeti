@@ -140,7 +140,7 @@ theorem expAdSubgroup_le_map_closure_centralizerHopfIdeal_isUnipotentPoint
   refine expAdSubgroup_le_iff.mpr fun y hy hye => ?_
   have hd := exists_iterate_leftInvariantDerivation_of_mem_ker_inf_range (H := H) hye
   have hdI := cotangentDualLieEquiv_mem_lieSubalgebra_centralizerHopfIdeal_of_mem_ker (H := H)
-    (Submodule.mem_inf.mp hye).1
+    (Submodule.mem_inf.mp hye).left
   let u := toConv (Bialgebra.expPoint (cotangentDualLieEquiv (R := k) (H := H) y) hd)
   refine ⟨u, Subgroup.subset_closure ⟨?_, ?_⟩, ?_⟩
   · simpa [u, Bialgebra.expPointAt_one] using
@@ -180,7 +180,7 @@ theorem expAdSubgroup_le_map_closure_identityComponent_isUnipotentPoint
   refine expAdSubgroup_le_iff.mpr fun y hy hye => ?_
   have hd := exists_iterate_leftInvariantDerivation_of_mem_ker_inf_range (H := H) hye
   have hdI := cotangentDualLieEquiv_mem_lieSubalgebra_centralizerHopfIdeal_of_mem_ker (H := H)
-    (Submodule.mem_inf.mp hye).1
+    (Submodule.mem_inf.mp hye).left
   let u := toConv (Bialgebra.expPoint (cotangentDualLieEquiv (R := k) (H := H) y) hd)
   refine ⟨u, Subgroup.subset_closure ⟨?_, ?_⟩, ?_⟩
   · simpa [u, Bialgebra.expPointAt_one] using
@@ -252,7 +252,7 @@ theorem exists_mem_centralizerHopfIdeal_e_basePointsRepresentation_eq
   exact (Subgroup.closure_le
     (CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
       (centralizerHopfIdeal H e) (CommAlgCat.of k k))).mpr
-    (fun _ hu => (Set.mem_ofPred.mp hu).1) hg
+    (fun _ hu => (Set.mem_ofPred.mp hu).left) hg
 
 end CharZero
 
@@ -291,7 +291,8 @@ theorem exists_mem_closure_identityComponent_e_basePointsRepresentation_eq
 
 /-- **Kostant conjugacy at fixed nilpositive element in `C_G(e)°`.** Over an algebraically closed
 field `k` of characteristic zero, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `Lie(G)`
-sharing `e` are conjugate by a rational point of the connected centralizer `C_G(e)°`. -/
+sharing `e` are conjugate by a rational point of the connected centralizer `C_G(e)°` (requiring no
+Killing-form or reductivity hypothesis on `G`). -/
 theorem exists_mem_identityComponent_e_basePointsRepresentation_eq
     (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
     ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
@@ -306,7 +307,7 @@ theorem exists_mem_identityComponent_e_basePointsRepresentation_eq
   exact (Subgroup.closure_le
     (CommHopfAlgCat.quotientPointsSubgroup H.obj
       (centralizerHopfIdeal H e).identityComponent (CommAlgCat.of k k))).mpr
-    (fun _ hu => (Set.mem_ofPred.mp hu).1) hg
+    (fun _ hu => (Set.mem_ofPred.mp hu).left) hg
 
 end AlgClosed
 

@@ -20,7 +20,8 @@ This file records the carrier-level criterion that a product of evenly many Clif
 norms multiply to one belongs to the Spin group, and its special case for even basis monomials
 of an orthogonal basis, identifies membership in the range of
 `spinGroup.toUnits` with membership of the underlying Clifford value, shows that Spin elements
-are Clifford units, includes the Spin group in the even Clifford subalgebra, writes every Spin
+are Clifford units, includes the Spin group in the even Clifford subalgebra, compares spans of
+families of Spin elements inside the even subalgebra and the Clifford algebra, writes every Spin
 element as a product of an even number of vectors of invertible norm when `2` is invertible, and
 proves that the Spin group of the zero module is trivial. The action and its orthogonal comparison
 are defined in `Spin.Action` and `Pin.Action`.
@@ -42,7 +43,7 @@ theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
     u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
   constructor
   · rintro ⟨s, rfl⟩
-    exact s.2
+    exact s.property
   · intro hu
     refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
     apply Units.ext
@@ -71,6 +72,18 @@ theorem spinGroupToEven_mk (x : CliffordAlgebra Q) (hx : x ∈ spinGroup Q) :
     spinGroupToEven Q ⟨x, hx⟩ = ⟨x, spinGroup.mem_even hx⟩ :=
   Subtype.ext (coe_spinGroupToEven_apply Q _)
 
+/-- **A family of Spin elements spans the even subalgebra exactly when it spans the even part of
+the Clifford algebra.** For `f : ι → spinGroup Q`, the images of the `f i` under
+`spinGroupToEven` span `even Q` if and only if the Clifford values `f i` span
+`(even Q).toSubmodule`. -/
+theorem span_range_spinGroupToEven_comp_eq_top_iff {ι : Type*} (f : ι → spinGroup Q) :
+    Submodule.span R (Set.range (spinGroupToEven Q ∘ f)) = ⊤ ↔
+      Submodule.span R (Set.range fun i : ι ↦ (f i : CliffordAlgebra Q)) =
+        (even Q).toSubmodule :=
+  -- `spinGroupToEven Q x` is `⟨x, _⟩` by definition, so this is Mathlib's subtype-family case.
+  Submodule.span_range_subtype_eq_top_iff (even Q).toSubmodule fun i ↦
+    spinGroup.mem_even (f i).property
+
 /-- **A product of evenly many vectors whose norms multiply to one lies in the Spin group.** The
 norms are then units, so the product is a unit of the Lipschitz group, and its Clifford norm
 `star x * x` is `(-1) ^ n * Q v₁ ⋯ Q vₙ = 1`. -/
@@ -98,14 +111,14 @@ theorem exists_even_length_list_of_spinGroup [Invertible (2 : R)] (x : spinGroup
     ∃ l : List M, (∀ v ∈ l, IsUnit (Q v)) ∧ Even l.length ∧
       (x : CliffordAlgebra Q) = (l.map (ι Q)).prod := by
   obtain ⟨l, hl, hx⟩ := mem_lipschitzGroup_iff_exists_list.mp
-    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits x) x.2)
+    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits x) x.property)
   rw [spinGroup.val_toUnits_apply] at hx
   by_cases heven : Even l.length
   · exact ⟨l, hl, heven, hx⟩
   -- An odd product of vectors is negated by the grade involution, while the even element `x` is
   -- fixed by it. So the unit `x` vanishes, the Clifford algebra is trivial, and `[]` works.
   have hinv := involute_prod_map_ι (Q := Q) l
-  rw [← hx, spinGroup.involute_eq x.2, (Nat.not_even_iff_odd.mp heven).neg_one_pow,
+  rw [← hx, spinGroup.involute_eq x.property, (Nat.not_even_iff_odd.mp heven).neg_one_pow,
     neg_one_smul] at hinv
   have hzero : (x : CliffordAlgebra Q) = 0 := by
     have h2 : (2 : R) • (x : CliffordAlgebra Q) = 0 := by
@@ -123,7 +136,7 @@ containing it is (`lipschitzGroup_eq_bot`). -/
 instance instSubsingletonSpinGroup [Subsingleton M] : Subsingleton (spinGroup Q) := by
   refine ⟨fun x y => Subtype.ext ?_⟩
   have h (z : spinGroup Q) : (z : CliffordAlgebra Q) = 1 := by
-    obtain ⟨w, hw, hwz⟩ := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin z.2)
+    obtain ⟨w, hw, hwz⟩ := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin z.property)
     rw [SetLike.mem_coe, Subgroup.mem_toSubmonoid, lipschitzGroup_eq_bot, Subgroup.mem_bot] at hw
     simp [← hwz, hw]
   rw [h x, h y]

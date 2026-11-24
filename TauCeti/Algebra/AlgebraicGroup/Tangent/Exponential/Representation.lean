@@ -8,55 +8,51 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Nilpotent.Exp
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Comodule
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Exponential
-import TauCeti.Algebra.AlgebraicGroup.Representation.Kernel
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
-# Comodule representations of tangent exponentials
+# Exponential curves on comodules and unipotent exponential points
 
 Let `H` be a commutative Hopf algebra over `R` which is also a `ℚ`-algebra, and let `d` be a
-tangent vector at the identity whose left-invariant derivation `D` is locally nilpotent. On any
-right `H`-comodule `M`, the powers of the differentiated action `Comodule.differential d` contract
-the coaction against the counits `ε ∘ Dⁿ` of the iterated invariant derivation. Consequently,
-whenever `Comodule.differential d` is nilpotent on `M` (and `M` carries a `ℚ`-module structure, or
-after extending scalars to a commutative `R`-algebra `A` that is a `ℚ`-module), the exponential
-curve `t ↦ expPointAt d hd t` acts on `A ⊗[R] M` by the finite operator exponential
-`IsNilpotent.exp (t • (Comodule.differential d).baseChange A)`, and on `M` itself at `t : R` by
-`IsNilpotent.exp (t • Comodule.differential d)`.
+tangent vector at the identity whose left-invariant derivation `D` is locally nilpotent. Building on
+`TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Comodule` (which treats the exponential point
+`expPoint d hd` at parameter `1`), this module describes the action of the entire polynomial
+exponential curve `t ↦ expPointAt d hd t` on scalar extensions `A ⊗[R] M` and deduces representation
+criteria for unipotence and local nilpotence:
 
-Quantifying over all finitely generated comodules yields two consequences:
-
+* in the convolution dual of `H`, the functional `ε ∘ Dⁿ` is the `n`-th convolution power of `d`,
+  so `(Comodule.differential d) ^ n` is the convolution action of `ε ∘ Dⁿ`;
+* whenever `Comodule.differential d` is nilpotent on `M` and `A` is a commutative `R`-algebra that
+  is a `ℚ`-module, evaluating the exponential curve at `t : A` acts on `A ⊗[R] M` by the finite
+  operator exponential `IsNilpotent.exp (t • (Comodule.differential d).baseChange A)`, and on `M`
+  itself at `t : R` by `IsNilpotent.exp (t • Comodule.differential d)`;
 * every point `expPointAt d hd t` (and `expPoint d hd`) is unipotent in the representation-theoretic
   sense (`HopfAlgebra.IsUnipotentPoint`) whenever `d` acts nilpotently on every finitely generated
   `H`-comodule;
-* conversely, if `H` has a finite free representation with surjective coordinate map `O(GLₙ) ⟶ H`
-  on which `Comodule.differential d` is nilpotent, or if `H` is projective as an `R`-module (in
-  particular whenever `R` is a field, without any finite-type assumption on `H`) and `d` acts
-  nilpotently on every finitely generated `H`-comodule, then the left-invariant derivation of `d`
-  is locally nilpotent on `H`.
+* conversely, if `H` is projective as an `R`-module (in particular whenever `R` is a field, without
+  any finite-type assumption on `H`) and `d` acts nilpotently on every finitely generated
+  `H`-comodule, then the left-invariant derivation of `d` is locally nilpotent on `H`.
 
 ## Main declarations
 
 * `TauCeti.Bialgebra.toConv_counit_comp_pow_leftInvariantDerivation`: in the convolution dual,
   `ε ∘ Dⁿ` is the `n`-th convolution power of `d`.
-* `TauCeti.Comodule.differential_pow` and `TauCeti.Comodule.differential_pow_apply`: powers of the
-  differentiated comodule action contract the coaction against `ε ∘ Dⁿ`.
-* `TauCeti.Comodule.endOfPoint_expPointAt`: on `A ⊗[R] M`, the exponential curve acts by
-  `IsNilpotent.exp (t • (Comodule.differential d).baseChange A)`.
-* `TauCeti.Comodule.basePointsRepresentation_expPointAt` and
-  `TauCeti.Comodule.basePointsRepresentation_expPoint`: on `M`, the base-valued exponential curve
-  and exponential point act by `IsNilpotent.exp (t • Comodule.differential d)` and
-  `IsNilpotent.exp (Comodule.differential d)`.
+* `TauCeti.Comodule.differential_pow`: `(Comodule.differential d) ^ n` is the convolution action of
+  `ε ∘ Dⁿ`.
+* `TauCeti.Comodule.endOfPoint_expPointAt` and
+  `TauCeti.Comodule.basePointsRepresentation_expPointAt`: on `A ⊗[R] M` and on `M`, the exponential
+  curve at parameter `t` acts by `IsNilpotent.exp (t • (Comodule.differential d).baseChange A)` and
+  `IsNilpotent.exp (t • Comodule.differential d)`.
 * `TauCeti.HopfAlgebra.isUnipotentPoint_expPointAt` and
   `TauCeti.HopfAlgebra.isUnipotentPoint_expPoint`: exponential points of tangent vectors acting
   nilpotently on every finitely generated comodule are unipotent points.
-* `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential` and
-  `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule`: local
-  nilpotence of the left-invariant derivation from nilpotence of differentiated representations.
+* `Derivation.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule`: local
+  nilpotence of the left-invariant derivation on any projective bialgebra from nilpotence on all
+  finitely generated comodules.
 
 ## References
 
@@ -112,16 +108,6 @@ theorem differential_pow (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (n
     ext m
     simp [differential_apply]
   rw [Bialgebra.toConv_counit_comp_pow_leftInvariantDerivation, map_pow, ← hd]
-
-/-- Applying the `n`-th power of the differentiated action of `d` contracts the coaction against
-`ε ∘ Dⁿ`. -/
-theorem differential_pow_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
-    (n : ℕ) (m : M) :
-    (differential (R := R) (H := H) (M := M) d ^ n) m =
-      tensorComponent
-        (Coalgebra.counit (R := R) ∘ₗ (Bialgebra.leftInvariantDerivation d).toLinearMap ^ n)
-        (coact (R := R) (C := H) m) := by
-  rw [differential_pow, convolutionAction_apply, ofConv_toConv]
 
 end DifferentialPow
 
@@ -234,7 +220,7 @@ theorem endOfPoint_expPointAt {A : Type*} [CommRing A] [Algebra R A] [Module ℚ
   rw [endOfPoint_tmul, one_smul, hN₀ N (le_max_left N₀ K), IsNilpotent.exp_eq_sum hbaseN,
     LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [← differential_pow_apply]
+  rw [← pow_differential_apply]
   simp [smul_pow, ← LinearMap.baseChange_pow]
 
 /-- The exponential curve evaluated at a base scalar `t : R` acts on a comodule `M` by
@@ -261,16 +247,6 @@ theorem basePointsRepresentation_expPointAt [Module ℚ M]
   simp only [LinearMap.sum_apply, map_sum]
   refine Finset.sum_congr rfl fun k _ => ?_
   simp [hrat, smul_pow, ← LinearMap.baseChange_pow]
-
-/-- The exponential point `expPoint d hd` acts on a comodule `M` by
-`IsNilpotent.exp (differential d)` whenever `differential d` is nilpotent on `M`. -/
-theorem basePointsRepresentation_expPoint [Module ℚ M]
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
-    (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0)
-    (hdiff : IsNilpotent (differential (R := R) (H := H) (M := M) d)) :
-    basePointsRepresentation (H := H) M (toConv (Bialgebra.expPoint d hd)) =
-      IsNilpotent.exp (differential (R := R) (H := H) (M := M) d) := by
-  rw [← Bialgebra.expPointAt_one, basePointsRepresentation_expPointAt d hd hdiff 1, one_smul]
 
 end ExponentialAction
 
@@ -319,32 +295,6 @@ namespace Derivation
 
 open TauCeti
 
-section SurjectiveCoordinate
-
-universe u v w
-
-variable {R : Type u} {H : Type v} {M : Type w} [CommRing R] [CommRing H] [HopfAlgebra R H]
-variable [AddCommGroup M] [Module R M] [Comodule R H M] {n : ℕ}
-
-/-- If a finite free representation of `H` has surjective coordinate bialgebra morphism
-`O(GLₙ) ⟶ H` and `d` acts nilpotently on it, then the left-invariant derivation of `d` is locally
-nilpotent on `H`. -/
-theorem exists_iterate_leftInvariantDerivation_eq_zero_of_isNilpotent_differential
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (b : Module.Basis (Fin n) R M)
-    (hb : Function.Surjective (Comodule.coordinateBialgHom (H := H) b))
-    (hdiff : IsNilpotent (Comodule.differential (R := R) (H := H) (M := M) d)) :
-    ∀ h : H, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
-  let f := Comodule.coordinateBialgHom (H := H) b
-  have hmat : IsNilpotent (GeneralLinear.tangentMatrix n (derivationComp f d)) := by
-    rw [d.tangentMatrix_comp_coordinateBialgHom b]
-    exact hdiff.map (LinearMap.toMatrixAlgEquiv b).toRingHom
-  exact f.exists_iterate_leftInvariantDerivation_eq_zero_of_surjective hb d
-    (GeneralLinear.exists_iterate_leftInvariantDerivation_eq_zero n _ hmat)
-
-end SurjectiveCoordinate
-
-section ProjectiveBialgebra
-
 universe u v
 
 /-- If `H` is projective as an `R`-module (for instance whenever `R` is a field, without any
@@ -373,7 +323,5 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_fgComodule
     simpa [fM, pow_apply_eq_iterate] using LinearMap.congr_fun hm ⟨h, hh⟩
   rw [show h = W.subtype ⟨h, hh⟩ from (W.subtype_apply ⟨h, hh⟩).symm,
     ← hsemi.iterate_right m ⟨h, hh⟩, hm0, map_zero]
-
-end ProjectiveBialgebra
 
 end Derivation

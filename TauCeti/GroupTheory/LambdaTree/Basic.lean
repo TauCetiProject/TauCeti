@@ -159,6 +159,10 @@ theorem self_apply (a b : Λ) : (self Λ) a b = |a - b| :=
 def IsIsometricAction (G : Type*) [SMul G X] : Prop :=
   ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y
 
+theorem isIsometricAction_iff {G : Type*} [SMul G X] :
+    d.IsIsometricAction G ↔ ∀ (g : G) (x y : X), d (g • x) (g • y) = d x y :=
+  Iff.rfl
+
 namespace IsIsometricAction
 
 variable {d} {G : Type*}
@@ -318,6 +322,13 @@ theorem dist_eq_abs_sub (h : d.IsSegment σ x y) {u v : X} (hu : u ∈ σ) (hv :
   obtain ⟨s, hs, rfl⟩ := hu
   obtain ⟨t, ht, rfl⟩ := hv
   rw [hf s hs t ht, dist_apply_of_isometricOn hf0 hf hs, dist_apply_of_isometricOn hf0 hf ht]
+
+/-- A point of a segment from `x` to `y` is uniquely determined by its distance from `x`. -/
+theorem eq_of_dist_eq (h : d.IsSegment σ x y) {u v : X} (hu : u ∈ σ) (hv : v ∈ σ)
+    (huv : d x u = d x v) : u = v := by
+  have hdist := h.dist_eq_abs_sub hu hv
+  rw [huv, sub_self, abs_zero, d.eq_zero_iff] at hdist
+  exact hdist
 
 /-- A point of a segment from `x` to `y` lies between `x` and `y`. -/
 theorem dist_add_dist (h : d.IsSegment σ x y) {u : X} (hu : u ∈ σ) : d x u + d u y = d x y := by

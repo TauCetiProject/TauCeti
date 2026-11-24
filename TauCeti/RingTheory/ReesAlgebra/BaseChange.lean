@@ -82,7 +82,8 @@ private theorem toPolynomial_mem (x : S ⊗[R] reesAlgebra I) :
     rw [toPolynomial_tmul, mem_reesAlgebra_iff]
     intro n
     rw [AddMonoidAlgebra.coeff_smul_apply, coeff_map, smul_eq_mul, ← Ideal.map_pow]
-    exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ ((mem_reesAlgebra_iff I _).mp f.2 n))
+    exact Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ ((mem_reesAlgebra_iff I _).mp f.property
+        n))
 
 /-- The comparison `S ⊗[R] R[It] →ₐ[S] S[(IS)t]` between the base change of the Rees algebra of
 `I` and the Rees algebra of the extended ideal `IS`: it sends `s ⊗ f` to `s · f`, with the
@@ -121,7 +122,7 @@ theorem baseChangeHom_surjective : Function.Surjective (baseChangeHom I S) := by
     rintro - ⟨c, hc, rfl⟩
     exact hmon hc
   intro f
-  obtain ⟨x, hx⟩ := hle f.2
+  obtain ⟨x, hx⟩ := hle f.property
   exact ⟨x, Subtype.ext hx⟩
 
 /-- **The comparison of Rees algebras is injective after flat base change**: for flat `S`, the
