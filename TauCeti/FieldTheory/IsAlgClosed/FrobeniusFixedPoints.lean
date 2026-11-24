@@ -44,10 +44,12 @@ trivial.
 
 ## Main results
 
-* `LinearMap.exists_ne_zero_isFixedPt_of_injective`: an injective Frobenius-semilinear map on a
-  nonzero finite-dimensional space has a nonzero fixed vector.
-* `LinearMap.span_fixedPoints_eq_top_of_injective`: its fixed vectors span the space.
-* `LinearMap.exists_basis_isFixedPt_of_injective`: the space has a basis of fixed vectors.
+* `LinearMap.exists_ne_zero_isFixedPt_of_injective_iterateFrobenius`: an injective
+  Frobenius-semilinear map on a nonzero finite-dimensional space has a nonzero fixed vector.
+* `LinearMap.span_fixedPoints_eq_top_of_injective_iterateFrobenius`: its fixed vectors span the
+  space.
+* `LinearMap.exists_basis_isFixedPt_of_injective_iterateFrobenius`: the space has a basis of fixed
+  vectors.
 * `Matrix.exists_isUnit_mul_map_iterateFrobenius_eq`: Lang's theorem for `GLₙ(k)`, every
   invertible `A` has an invertible `B` with `A σ(B) = B`.
 
@@ -122,8 +124,8 @@ variable {p f : ℕ} [Fact p.Prime] [CharP k p] [IsAlgClosed k]
 /-- **A nonzero fixed vector.** Over an algebraically closed field `k` of characteristic `p`, an
 injective `σ`-semilinear map `F` on a nonzero finite-dimensional space, for the Frobenius
 `σ x = x ^ p ^ f` with `f ≠ 0`, has a nonzero fixed vector. -/
-theorem exists_ne_zero_isFixedPt_of_injective [FiniteDimensional k V] [Nontrivial V] (hf : f ≠ 0)
-    {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} (hF : Injective F) :
+theorem exists_ne_zero_isFixedPt_of_injective_iterateFrobenius [FiniteDimensional k V]
+    [Nontrivial V] (hf : f ≠ 0) {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} (hF : Injective F) :
     ∃ x, x ≠ 0 ∧ IsFixedPt F x := by
   set q := p ^ f
   have hq : 1 < q := Nat.one_lt_pow hf (Fact.out : p.Prime).one_lt
@@ -175,15 +177,15 @@ theorem exists_ne_zero_isFixedPt_of_injective [FiniteDimensional k V] [Nontrivia
 /-- **The fixed vectors span.** Over an algebraically closed field `k` of characteristic `p`, the
 fixed vectors of an injective `σ`-semilinear map on a finite-dimensional space, for the Frobenius
 `σ x = x ^ p ^ f` with `f ≠ 0`, span the space. -/
-theorem span_fixedPoints_eq_top_of_injective [FiniteDimensional k V] (hf : f ≠ 0)
-    {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} (hF : Injective F) :
+theorem span_fixedPoints_eq_top_of_injective_iterateFrobenius [FiniteDimensional k V]
+    (hf : f ≠ 0) {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} (hF : Injective F) :
     span k (fixedPoints F) = ⊤ := by
   set U := span k (fixedPoints F)
   have hq : 1 < p ^ f := Nat.one_lt_pow hf (Fact.out : p.Prime).one_lt
   have hσ (c : k) : _root_.iterateFrobenius k p f c = c ^ p ^ f := _root_.iterateFrobenius_def p f c
   by_contra hU
   have : Nontrivial (V ⧸ U) := Submodule.Quotient.nontrivial_iff.2 hU
-  obtain ⟨y, hy0, hy⟩ := exists_ne_zero_isFixedPt_of_injective hf
+  obtain ⟨y, hy0, hy⟩ := exists_ne_zero_isFixedPt_of_injective_iterateFrobenius hf
     (injective_mapQ_span_fixedPoints (iterateFrobeniusEquiv k p f).surjective hF)
   obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective U y
   have hw : F w - w ∈ U := by
@@ -208,11 +210,11 @@ theorem span_fixedPoints_eq_top_of_injective [FiniteDimensional k V] (hf : f ≠
 /-- **Lang's lemma.** Over an algebraically closed field `k` of characteristic `p`, a
 finite-dimensional space with an injective `σ`-semilinear map `F`, for the Frobenius
 `σ x = x ^ p ^ f` with `f ≠ 0`, has a basis of `F`-fixed vectors. -/
-theorem exists_basis_isFixedPt_of_injective [FiniteDimensional k V] (hf : f ≠ 0)
-    {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} (hF : Injective F) :
+theorem exists_basis_isFixedPt_of_injective_iterateFrobenius [FiniteDimensional k V]
+    (hf : f ≠ 0) {F : V →ₛₗ[_root_.iterateFrobenius k p f] V} (hF : Injective F) :
     ∃ b : Basis (Fin (finrank k V)) k V, ∀ i, IsFixedPt F (b i) := by
   obtain ⟨s, hs, hspan, hli⟩ := exists_linearIndependent k (fixedPoints F)
-  rw [span_fixedPoints_eq_top_of_injective hf hF] at hspan
+  rw [span_fixedPoints_eq_top_of_injective_iterateFrobenius hf hF] at hspan
   let b := Basis.mk hli (by rw [Subtype.range_coe, hspan])
   refine ⟨b.reindex (b.indexEquiv (finBasis k V)), fun i ↦ ?_⟩
   rw [Basis.reindex_apply, Basis.mk_apply]
@@ -251,7 +253,7 @@ theorem exists_isUnit_mul_map_iterateFrobenius_eq (hf : f ≠ 0) {A : Matrix n n
     intro x y hxy
     rw [hFapply, hFapply] at hxy
     exact this hxy
-  obtain ⟨b, hb⟩ := LinearMap.exists_basis_isFixedPt_of_injective hf hF
+  obtain ⟨b, hb⟩ := LinearMap.exists_basis_isFixedPt_of_injective_iterateFrobenius hf hF
   let b' := b.reindex (b.indexEquiv (Pi.basisFun k n))
   have hb' (j : n) : A *ᵥ (σ ∘ b' j) = b' j := by
     rw [← hFapply, Basis.reindex_apply]
