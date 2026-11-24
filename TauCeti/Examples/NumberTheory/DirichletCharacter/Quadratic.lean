@@ -8,16 +8,18 @@ module
 import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Conrey
+import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
 public import TauCeti.NumberTheory.DirichletCharacter.OddPrimePower.Quadratic
 
 /-!
 # Local quadratic-character examples
 
-Worked computations of complex Dirichlet characters at levels 3, 9, 25 and 16.
+Worked computations of complex Dirichlet characters at levels 3, 9, 25, 4 and 16.
 At level nine, the two primitive characters of order three distinguish the complete character
 group from its quadratic subgroup. The level-three and level-twenty-five tables include
-nonunits, where the characters vanish. At level sixteen the four quadratic value triples exclude
-the all-minus-one triple.
+nonunits, where the characters vanish. The level-four character `χ₄` shows that the odd-prime
+classification fails at `p = 2`, and the dyadic counts are `1, 1, 2, 4`. At level sixteen the
+four quadratic value triples exclude the all-minus-one triple.
 -/
 
 public section
@@ -111,6 +113,35 @@ example :
   rw [changeLevel_natCast_of_coprime _ _ (by decide : Nat.Coprime 2 25),
     MulChar.ringHomComp_apply, h2]
   simp
+
+-- Dropping `p ≠ 2`: the quadratic character of `ZMod 2` is trivial, and at level `4` the
+-- quadratic character `χ₄` is neither principal nor the lift of that character.
+example :
+    quadraticChar (ZMod 2) = 1 ∧
+      let χ : DirichletCharacter ℂ 4 := ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)
+      χ.IsQuadratic ∧ ¬(χ = 1 ∨ ∃ h : 2 ∣ 4,
+        χ = changeLevel h ((quadraticChar (ZMod 2)).ringHomComp (Int.castRingHom ℂ))) := by
+  have h2 : quadraticChar (ZMod 2) = 1 := MulChar.ext fun u ↦ by
+    rw [(by decide : ∀ u : (ZMod 2)ˣ, u = 1) u, Units.val_one, MulChar.map_one, MulChar.map_one]
+  refine ⟨h2, ZMod.isQuadratic_χ₄.comp _, ?_⟩
+  have hne : ZMod.χ₄.ringHomComp (Int.castRingHom ℂ) ≠ 1 :=
+    ne_of_apply_ne conductor (by rw [conductor_χ₄_ringHomComp, conductor_one]; decide)
+  rintro (h | ⟨h, h'⟩)
+  · exact hne h
+  · rw [h2, MulChar.ringHomComp_one, changeLevel_one] at h'
+    exact hne h'
+
+/-! ## Quadratic characters at power-of-two levels -/
+
+-- One quadratic character at levels `1` and `2`, two at level `4`, four at every `2 ^ k`, `k ≥ 3`.
+example :
+    Nat.card {χ : DirichletCharacter ℂ 1 // χ.IsQuadratic} = 1 ∧
+      Nat.card {χ : DirichletCharacter ℂ 2 // χ.IsQuadratic} = 1 ∧
+      Nat.card {χ : DirichletCharacter ℂ 4 // χ.IsQuadratic} = 2 ∧
+      ∀ k ≥ 3, Nat.card {χ : DirichletCharacter ℂ (2 ^ k) // χ.IsQuadratic} = 4 := by
+  refine ⟨natCard_isQuadratic_two_pow 0, natCard_isQuadratic_two_pow 1,
+    natCard_isQuadratic_two_pow 2, fun k hk ↦ ?_⟩
+  simp [natCard_isQuadratic_two_pow, show ¬k ≤ 1 by omega, show k ≠ 2 by omega]
 
 /-! ## The four quadratic characters at level sixteen -/
 
