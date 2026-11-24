@@ -13,7 +13,6 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -58,8 +57,6 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   of `G` as a finite sum of scalar multiplications.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
   conjugate-linear map.
-* `SchwartzMap.norm_le_norm_toLp_top`: a Schwartz function is pointwise bounded by the `L^∞` norm
-  of its class, for a measure charging every nonempty open set.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `SchwartzMap.eq_of_forall_integral_mul_eq`: two `𝕜`-valued Schwartz functions with the same
@@ -281,15 +278,6 @@ theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) 
       ≤ ‖iteratedFDeriv ℝ n f (z + h)‖ * (2 * (1 + ‖z + h‖)) ^ p := by gcongr
     _ = 2 ^ p * ((1 + ‖z + h‖) ^ p * ‖iteratedFDeriv ℝ n f (z + h)‖) := by rw [mul_pow]; ring
     _ ≤ 2 ^ p * (2 ^ p * S) := by gcongr
-
-/-- For a measure charging every nonempty open set, the values of a Schwartz function are bounded by
-the `L^∞` norm of its class, by `ContinuousAt.eNorm_le_eLpNorm_top`. -/
-theorem norm_le_norm_toLp_top [μ.IsOpenPosMeasure] (f : 𝓢(E, F)) (x : E) :
-    ‖f x‖ ≤ ‖f.toLp ⊤ μ‖ := by
-  rw [norm_toLp]
-  refine (ENNReal.ofReal_le_iff_le_toReal (memLp_top f μ).eLpNorm_ne_top).1 ?_
-  rw [ofReal_norm]
-  exact f.continuous.continuousAt.eNorm_le_eLpNorm_top
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 

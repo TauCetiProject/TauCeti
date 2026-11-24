@@ -13,6 +13,7 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecificLimits.DyadicSum
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Zygmund estimates for pseudodifferential operators with compact spatial support
@@ -569,7 +570,8 @@ theorem
     refine le_trans ?_ (v.rpow_mul_norm_block_le k)
     rw [BesovSpace.block_toBesovSpaceCLM]
     gcongr
-    exact SchwartzMap.norm_le_norm_toLp_top _ x
+    exact Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (SchwartzMap.coeFn_toLp _ ⊤ volume)
+      (SchwartzMap.continuous _).continuousAt
   rw [BesovSpace.norm_eq_ciSup]
   refine ciSup_le fun j ↦ ?_
   rw [BesovSpace.block_toBesovSpaceCLM, ← le_div_iff₀' (by positivity)]
