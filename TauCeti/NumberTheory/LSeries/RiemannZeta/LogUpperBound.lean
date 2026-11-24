@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.Analysis.Asymptotics.Sum.Rpow
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 
 /-!
@@ -21,10 +22,8 @@ to the right and compactness at bounded height, this bounds the entire function
 `riemannZeta₀ s = ζ(s) - 1/(s - 1)` by `C log (|Im s| + 2)` on the whole region
 `1 - A / log (|Im s| + 2) ≤ Re s`, for every real `A`.
 
-This is the bound on `G(s) = ζ(s) - 1/(s - 1)` in the zero-free strip of
-TauCetiRoadmap `AnalyticNumberTheoryPartI` §0.33, with Mathlib's entire `riemannZeta₀` as the
-analytic extension of `G` across `s = 1`. The region contains the strip
-`1 - β / log (|Im s| + 2) ≤ Re s ≤ 10` for every width `β`.
+With Mathlib's entire `riemannZeta₀` as the analytic extension of `ζ(s) - 1/(s - 1)`, the region
+contains the strip `1 - β / log (|Im s| + 2) ≤ Re s ≤ 10` for every width `β`.
 
 ## Main results
 
@@ -74,37 +73,6 @@ private lemma one_le_log_abs_im_add_two {s : ℂ} (ht : 1 ≤ |s.im|) :
   rw [← Real.log_exp 1]
   exact Real.log_le_log (Real.exp_pos 1) (by linarith [Real.exp_one_lt_d9])
 
-/-- For a natural number `n ≤ x`, the weight `n^(1-σ)` is at most `max 1 (x^(1-σ))`, whatever
-the sign of `1 - σ`. -/
-private lemma natCast_rpow_one_sub_le_max {n : ℕ} {x σ : ℝ} (hnx : (n : ℝ) ≤ x) :
-    (n : ℝ) ^ (1 - σ) ≤ max 1 (x ^ (1 - σ)) := by
-  rcases le_total (1 - σ) 0 with h | h
-  · refine le_trans ?_ (le_max_left _ _)
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simpa using Real.zero_rpow_le_one (1 - σ)
-    · exact Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
-  · exact (Real.rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
-
-/-- A Dirichlet polynomial `∑_{n ≤ N} n^(-s)` whose weights `n^(1 - Re s)` are at most `M ≥ 0`
-is at most `M` times the harmonic number, hence at most `M (1 + log N)`. -/
-private lemma norm_sum_Icc_cpow_neg_le {s : ℂ} {N : ℕ} {M : ℝ} (hM₀ : 0 ≤ M)
-    (hM : ∀ n : ℕ, 0 < n → n ≤ N → (n : ℝ) ^ (1 - s.re) ≤ M) :
-    ‖∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-s)‖ ≤ M * (1 + Real.log N) := by
-  refine (norm_sum_le _ _).trans ?_
-  have hsum : ∑ n ∈ Finset.Icc 1 N, ‖(n : ℂ) ^ (-s)‖ ≤ ∑ n ∈ Finset.Icc 1 N, M * (n : ℝ)⁻¹ := by
-    refine Finset.sum_le_sum fun n hn ↦ ?_
-    obtain ⟨hn₁, hnN⟩ := Finset.mem_Icc.mp hn
-    rw [norm_natCast_cpow_of_pos hn₁, neg_re, show -s.re = 1 - s.re - 1 by ring,
-      Real.rpow_sub_one (by positivity), div_eq_mul_inv]
-    exact mul_le_mul_of_nonneg_right (hM n hn₁ hnN) (by positivity)
-  have hH : ∑ n ∈ Finset.Icc 1 N, (n : ℝ)⁻¹ ≤ 1 + Real.log N := by
-    have := harmonic_le_one_add_log N
-    rw [harmonic_eq_sum_Icc] at this
-    push_cast at this
-    exact this
-  rw [← Finset.mul_sum] at hsum
-  exact hsum.trans (mul_le_mul_of_nonneg_left hH hM₀)
-
 /-- The sawtooth tail at a cut point `N ≥ |Im s|`: `‖s‖ N^(-σ)/(2σ) ≤ N^(-σ)/2 + N^(1-σ)/(2σ)`
 for `σ = Re s > 0`. -/
 private lemma norm_mul_rpow_neg_div_le {s : ℂ} (hs : 0 < s.re) {N : ℝ} (htN : |s.im| ≤ N) :
@@ -123,8 +91,7 @@ private lemma norm_mul_rpow_neg_div_le {s : ℂ} (hs : 0 < s.re) {N : ℝ} (htN 
     _ = _ := by rw [hNN]; field_simp
 
 /-- **A weighted harmonic bound for `ζ` off the real axis.** For `0 < Re s` and `1 ≤ |Im s|`,
-`‖ζ(s)‖ ≤ max 1 ((|Im s| + 2)^(1 - Re s)) * (log (|Im s| + 2) + 2 + 1/(2 Re s)) + 1`, from the
-first-order Euler–Maclaurin formula cut at `⌈|Im s|⌉₊`. -/
+`‖ζ(s)‖ ≤ max 1 ((|Im s| + 2)^(1 - Re s)) * (log (|Im s| + 2) + 2 + 1/(2 Re s)) + 1`. -/
 theorem norm_riemannZeta_le_of_one_le_abs_im {s : ℂ} (hs : 0 < s.re) (ht : 1 ≤ |s.im|) :
     ‖riemannZeta s‖ ≤ max 1 ((|s.im| + 2) ^ (1 - s.re)) *
       (Real.log (|s.im| + 2) + 2 + 1 / (2 * s.re)) + 1 := by
@@ -136,11 +103,11 @@ theorem norm_riemannZeta_le_of_one_le_abs_im {s : ℂ} (hs : 0 < s.re) (ht : 1 �
   have hN₁ : (1 : ℝ) ≤ N := by exact_mod_cast hN
   have hNt : (N : ℝ) ≤ t + 2 := by linarith [Nat.ceil_lt_add_one (by linarith : 0 ≤ t)]
   have hNσ : (N : ℝ) ^ (-σ) ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos hN₁ (by linarith)
-  have hNM : (N : ℝ) ^ (1 - σ) ≤ M := natCast_rpow_one_sub_le_max hNt
+  have hNM : (N : ℝ) ^ (1 - σ) ≤ M := Real.natCast_rpow_le_max_one_rpow hNt _
   -- The finite sum, the polar term, the boundary term and the sawtooth tail.
   have h₁ : ‖∑ n ∈ Finset.Icc 1 N, (n : ℂ) ^ (-s)‖ ≤ M * (1 + Real.log (t + 2)) := by
-    refine (norm_sum_Icc_cpow_neg_le (by positivity) fun n hn hnN ↦ natCast_rpow_one_sub_le_max
-      ((Nat.cast_le.mpr hnN).trans hNt)).trans ?_
+    refine (norm_sum_Icc_cpow_neg_le_mul_one_add_log (by positivity) fun n _ hnN ↦
+      Real.natCast_rpow_le_max_one_rpow ((Nat.cast_le.mpr hnN).trans hNt) _).trans ?_
     gcongr
   have h₂ : ‖(N : ℂ) ^ (1 - s) / (s - 1)‖ ≤ M := by
     rw [norm_div, norm_natCast_cpow_of_pos hN]
@@ -162,8 +129,7 @@ theorem norm_riemannZeta_le_of_one_le_abs_im {s : ℂ} (hs : 0 < s.re) (ht : 1 �
   nlinarith
 
 /-- **`riemannZeta₀` is bounded on half-strips of bounded height.** For real `σ₁` and `T` there is
-`D` with `‖riemannZeta₀ s‖ ≤ D` whenever `σ₁ ≤ Re s` and `|Im s| ≤ T`: compactness up to
-`Re s = 2`, and `‖riemannZeta₀ s - 1/2‖ ≤ ‖s‖/(2 Re s)` beyond. -/
+`D` with `‖riemannZeta₀ s‖ ≤ D` whenever `σ₁ ≤ Re s` and `|Im s| ≤ T`. -/
 theorem exists_norm_riemannZeta₀_le_of_abs_im_le (σ₁ T : ℝ) :
     ∃ D : ℝ, ∀ s : ℂ, σ₁ ≤ s.re → |s.im| ≤ T → ‖riemannZeta₀ s‖ ≤ D := by
   obtain ⟨K, hK⟩ := (isCompact_closedBall (0 : ℂ) (|σ₁| + 2 + T)).exists_bound_of_continuousOn
