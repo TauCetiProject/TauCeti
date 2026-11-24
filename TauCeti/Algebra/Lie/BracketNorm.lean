@@ -255,27 +255,24 @@ theorem isLeast_lieBracketNorm (hQ : Q.PosDef) :
   ⟨⟨lieBracketNorm_nonneg Q, sqrt_apply_lie_le hQ⟩,
     fun _ hC ↦ lieBracketNorm_le_of_forall_le hC.1 hC.2⟩
 
-/-- On a nonzero Lie algebra the norm of the Lie bracket is the supremum of the ratios
-`|⁅X, Y⁆| / (|X| |Y|)` over nonzero `X` and `Y`. -/
-theorem lieBracketNorm_eq_sSup_div [Nontrivial L] (hQ : Q.PosDef) :
+/-- The norm of the Lie bracket is the supremum of the ratios `|⁅X, Y⁆| / (|X| |Y|)` over
+nonzero `X` and `Y` (both sides vanish on the zero Lie algebra). -/
+theorem lieBracketNorm_eq_sSup_div (hQ : Q.PosDef) :
     Q.lieBracketNorm = sSup ((fun p : L × L ↦ √(Q ⁅p.1, p.2⁆) / (√(Q p.1) * √(Q p.2))) ''
       {p | p.1 ≠ 0 ∧ p.2 ≠ 0}) := by
   set S := (fun p : L × L ↦ √(Q ⁅p.1, p.2⁆) / (√(Q p.1) * √(Q p.2))) ''
     {p | p.1 ≠ 0 ∧ p.2 ≠ 0}
   have hpos {Z : L} (hZ : Z ≠ 0) : 0 < √(Q Z) := Real.sqrt_pos.mpr (hQ Z hZ)
-  obtain ⟨Z, hZ⟩ := exists_ne (0 : L)
-  have hne : S.Nonempty := ⟨_, (Z, Z), ⟨hZ, hZ⟩, rfl⟩
   have hle : ∀ r ∈ S, r ≤ Q.lieBracketNorm := by
     rintro _ ⟨⟨X, Y⟩, ⟨hX, hY⟩, rfl⟩
     rw [div_le_iff₀ (mul_pos (hpos hX) (hpos hY)), ← mul_assoc]
     exact sqrt_apply_lie_le hQ X Y
-  refine le_antisymm ?_ (csSup_le hne hle)
+  refine le_antisymm ?_ (Real.sSup_le hle (lieBracketNorm_nonneg Q))
   obtain ⟨X, Y, hX, hY, h⟩ := exists_sqrt_apply_lie_eq_lieBracketNorm hQ
   rcases eq_or_ne ⁅X, Y⁆ 0 with h0 | h0
   · rw [← h, h0, map_zero, Real.sqrt_zero]
-    obtain ⟨r, hr⟩ := hne
-    refine le_csSup_of_le ⟨_, hle⟩ hr ?_
-    obtain ⟨p, -, rfl⟩ := hr
+    refine Real.sSup_nonneg ?_
+    rintro _ ⟨p, -, rfl⟩
     positivity
   · have hX0 : X ≠ 0 := by rintro rfl; simp at h0
     have hY0 : Y ≠ 0 := by rintro rfl; simp at h0
