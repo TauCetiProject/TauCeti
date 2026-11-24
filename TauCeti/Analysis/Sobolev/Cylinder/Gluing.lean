@@ -9,8 +9,10 @@ public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.MeasureTheory.Function.Lp.Multiplication
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
 # Gluing first-order operators on the cylinder along a long neck
@@ -571,32 +573,24 @@ theorem exists_forall_ge_exists_rightInverse_jetOperator_gluedCoeff
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
           (H1 V).subtypeL).comp Q = ContinuousLinearMap.id ℝ _ ∧
         ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖) := by
-  -- The zero stabilizer on the zero space, and a right inverse of each stabilized operator.
+  -- The zero stabilizer on the zero space.
   have h0 : ∀ σ : Unit, ∀ᵐ z ∂stripMeasure,
       (0 : Unit →L[ℝ] Lp W 2 stripMeasure) σ z = 0 := fun σ ↦ by
     filter_upwards [Lp.coeFn_zero W 2 stripMeasure] with z hz
     rw [zero_apply, hz, Pi.zero_apply]
-  have hprod {N : ℝ × ℝ → V × V × V →L[ℝ] W} {P : Lp W 2 stripMeasure →L[ℝ] H1 V}
-      (hP : ((jetOperator stripMeasure N).comp (H1 V).subtypeL).comp P =
-        ContinuousLinearMap.id ℝ _) :
-      (((jetOperator stripMeasure N).comp (H1 V).subtypeL).coprod
-        (0 : Unit →L[ℝ] Lp W 2 stripMeasure)).comp (P.prod 0) = ContinuousLinearMap.id ℝ _ := by
-    rw [← hP]
-    ext η
-    simp
-  have hnorm (P : Lp W 2 stripMeasure →L[ℝ] H1 V) : ‖P.prod (0 : _ →L[ℝ] Unit)‖ = ‖P‖ := by
-    rw [ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg P)]
   obtain ⟨R₀, hR₀⟩ := exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff hM₁ hM₂
     h₁ h₂ (T := 0) (fun σ ↦ (h0 σ).mono fun z hz _ ↦ hz) (fun σ ↦ (h0 σ).mono fun z hz _ ↦ hz)
-    (hprod hQ₁) (hprod hQ₂)
+    (Q₁ := Q₁.prod 0) (Q₂ := Q₂.prod 0)
+    (by rw [ContinuousLinearMap.coprod_zero_comp_prod_zero, hQ₁])
+    (by rw [ContinuousLinearMap.coprod_zero_comp_prod_zero, hQ₂])
   refine ⟨R₀, fun R hR ↦ ?_⟩
   obtain ⟨Q, hQ, hQn⟩ := hR₀ R hR
   refine ⟨(ContinuousLinearMap.fst ℝ _ _).comp Q, ?_, ?_⟩
-  · rw [← hQ]
-    ext η
-    simp
-  · rw [← hnorm Q₁, ← hnorm Q₂]
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      ((mul_le_of_le_one_left (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ _ _)).trans hQn)
+  · have hj : gluedStabilizer (0 : Unit →L[ℝ] Lp W 2 stripMeasure)
+        (0 : Unit →L[ℝ] Lp W 2 stripMeasure) R = 0 := by
+      ext <;> simp
+    rw [← hQ, hj, ContinuousLinearMap.coprod_zero_right, ← ContinuousLinearMap.comp_assoc]
+  · rw [← Q₁.opNorm_prod_zero (G := Unit), ← Q₂.opNorm_prod_zero (G := Unit)]
+    exact Q.opNorm_fst_comp_le.trans hQn
 
 end TauCeti.CylinderSobolev

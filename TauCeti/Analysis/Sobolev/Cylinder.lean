@@ -16,9 +16,11 @@ import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
 # The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument
@@ -582,14 +584,12 @@ theorem exists_rightInverse_jetOperator_comp_add {M : ℝ × ℝ → V × V × V
       ((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
         ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
   obtain ⟨Q', hQ', hQ'n⟩ := exists_rightInverse_coprod_jetOperator_comp_add hM
-    (ι := (0 : Unit →L[ℝ] Lp W 2 stripMeasure)) (Q := Q.prod 0) (by rw [← hQ]; ext η; simp) a
-  refine ⟨(ContinuousLinearMap.fst ℝ _ _).comp Q', by rw [← hQ']; ext η; simp, ?_⟩
-  calc ‖(ContinuousLinearMap.fst ℝ _ _).comp Q'‖ ≤ ‖Q'‖ :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_of_le_one_left (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ _ _))
-    _ ≤ ‖Q.prod (0 : _ →L[ℝ] Unit)‖ := hQ'n
-    _ = ‖Q‖ := by
-        rw [ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg Q)]
+    (ι := (0 : Unit →L[ℝ] Lp W 2 stripMeasure)) (Q := Q.prod 0)
+    (by rw [ContinuousLinearMap.coprod_zero_comp_prod_zero, hQ]) a
+  refine ⟨(ContinuousLinearMap.fst ℝ _ _).comp Q', ?_, Q'.opNorm_fst_comp_le.trans
+    (hQ'n.trans_eq Q.opNorm_prod_zero)⟩
+  rw [← hQ', ContinuousLinearMap.comp_zero, ContinuousLinearMap.coprod_zero_right,
+    ← ContinuousLinearMap.comp_assoc]
 
 end Operator
 
