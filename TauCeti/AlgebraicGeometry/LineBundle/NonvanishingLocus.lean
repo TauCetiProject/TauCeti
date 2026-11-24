@@ -447,7 +447,10 @@ theorem mem_nonvanishingLocus_iff_pullbackSectionsLE_ne_zero {U : X.Opens} (s : 
     TauCeti.IsLocalRing.span_singleton_eq_top_iff_one_tmul_ne_zero
       (Module.finrank_baseChange.trans (finrank_stalk_of_isInvertible M x)),
     ← one_smul (X.residueField x) (Scheme.Hom.pullbackSectionsLE _ M U ⊤ _ s),
-    ← residueFieldPullbackSectionsEquiv_tmul_germ, LinearEquiv.map_ne_zero_iff]
+    ← residueFieldPullbackSectionsEquiv_tmul_germ x M hx, LinearEquiv.map_ne_zero_iff]
+  -- The two sides differ only in their residue field: `X.residueField x` is defined as the
+  -- bundled `IsLocalRing.ResidueField (X.presheaf.stalk x)`, with its field and algebra structures
+  -- inherited from it, and Mathlib has no lemma rewriting one into the other.
   rfl
 
 /-- **The nonvanishing locus of a pulled-back section is the preimage.** For a morphism

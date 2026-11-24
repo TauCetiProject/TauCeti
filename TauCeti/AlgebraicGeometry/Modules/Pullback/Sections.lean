@@ -188,9 +188,15 @@ theorem
       j.pullbackSectionsLE N (j ''ᵁ U) U (j.preimage_image_eq U).ge s := by
   have hu := Adjunction.unit_leftAdjointUniq_hom_app (restrictAdjunction j)
     (pullbackPushforwardAdjunction j) N
-  have hn := PresheafOfModules.naturality_apply ((restrictFunctorIsoPullback j).hom.app N).val
+  -- `restrictFunctorIsoPullback j` is defined as this `leftAdjointUniq`.
+  rw [← restrictFunctorIsoPullback] at hu
+  have hn := NatTrans.naturality_apply ((restrictFunctorIsoPullback j).hom.app N).mapPresheaf
     (homOfLE (j.preimage_image_eq U).ge).op (((restrictAdjunction j).unit.app N).app (j ''ᵁ U) s)
+  rw [mapPresheaf_app, mapPresheaf_app] at hn
   rw [pullbackSectionsLE_apply, pullbackSections_apply, ← hu]
+  -- `hn` ends with the composite unit evaluated componentwise; the goal evaluates the composite,
+  -- which agrees by the `rfl` lemmas `Hom.comp_app` and `pushforward_map_app`. Rewriting with them
+  -- fails because the goal is only type-correct up to `Γ((pushforward j).obj _, V) = Γ(_, j⁻¹ V)`.
   refine Eq.trans ?_ (hn.trans rfl)
   apply congrArg (((restrictFunctorIsoPullback j).hom.app N).app U)
   rw [restrictAdjunction_unit_app_app]
@@ -201,10 +207,9 @@ theorem
       ((N.restrictAppIso j (j ⁻¹ᵁ (j ''ᵁ U))).inv
         (N.presheaf.map (homOfLE (j.image_preimage_le (j ''ᵁ U))).op s))
   rw [← ConcreteCategory.comp_apply, restrictAppIso_inv_map, ConcreteCategory.comp_apply,
-    ← N.presheaf.map_comp_apply]
-  simpa only [N.presheaf.map_id, ConcreteCategory.id_apply] using
-    congrArg (fun i ↦ (N.restrictAppIso j U).inv (N.presheaf.map i s))
-      (Subsingleton.elim (𝟙 _) _)
+    ← N.presheaf.map_comp_apply, ← op_comp, homOfLE_comp,
+    show homOfLE _ = 𝟙 (j ''ᵁ U) from homOfLE_refl _, op_id,
+    N.presheaf.map_id, ConcreteCategory.id_apply]
 
 /-- Pulling back sections over `U` along the open immersion `U.ι : U ⟶ Y` identifies them with the
 global sections of the pullback to `U`. The global open is given as any `T` equal to `⊤`, such as

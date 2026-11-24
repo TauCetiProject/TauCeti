@@ -66,6 +66,14 @@ noncomputable def tensorPowTrivialIso (n : ℕ) : TauCeti.tensorPow (trivial X) 
   TauCeti.tensorPowMapIso (trivialIsoTensorUnit X) n ≪≫ TauCeti.tensorPowUnitIso n ≪≫
     (trivialIsoTensorUnit X).symm
 
+variable (X) in
+/-- The isomorphism `𝒪_X^{⊗n} ≅ 𝒪_X` is `TauCeti.tensorPowUnitIso n` transported along the
+identification `trivialIsoTensorUnit X` of `𝒪_X` with the monoidal unit. -/
+theorem tensorPowTrivialIso_def (n : ℕ) :
+    tensorPowTrivialIso X n = TauCeti.tensorPowMapIso (trivialIsoTensorUnit X) n ≪≫
+      TauCeti.tensorPowUnitIso n ≪≫ (trivialIsoTensorUnit X).symm :=
+  (rfl)
+
 end InvertibleSheaf
 
 namespace LineBundleClass
