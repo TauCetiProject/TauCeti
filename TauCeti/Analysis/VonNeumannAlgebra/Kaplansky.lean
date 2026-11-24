@@ -201,13 +201,14 @@ private theorem norm_offDiag_le {x : H →L[ℂ] H} (hx : ‖x‖ ≤ 1) : ‖of
   gcongr
 
 /-- For a contraction `x` of `S''`, the operator `[[0, x], [x⋆, 0]]` is a strong limit of
-self-adjoint contractions of the matrix amplification `M₂(S)`, so that their matrix entries converge
-strongly to those of `[[0, x], [x⋆, 0]]`. -/
+self-adjoint contractions of the matrix amplification `M₂(S)`, so that their `(0, 1)` and `(1, 0)`
+entries converge strongly to `x` and `x⋆`. -/
 private theorem exists_tendsto_offDiag {S : StarSubalgebra ℂ (H →L[ℂ] H)} {x : H →L[ℂ] H}
     (hx : x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer) (hx₁ : ‖x‖ ≤ 1) :
     ∃ l : Filter (PiLp 2 (fun _ : Fin 2 => H) →L[ℂ] PiLp 2 (fun _ : Fin 2 => H)), l.NeBot ∧
       (∀ᶠ Y in l, Y ∈ S.piLpMatrix (Fin 2) ∧ IsSelfAdjoint Y ∧ ‖Y‖ ≤ 1) ∧
-      ∀ i j v, Tendsto (fun Y => Y.piLpEntry i j v) l (𝓝 ((offDiag x).piLpEntry i j v)) := by
+      (∀ v, Tendsto (fun Y => Y.piLpEntry 0 1 v) l (𝓝 (x v))) ∧
+      ∀ v, Tendsto (fun Y => Y.piLpEntry 1 0 v) l (𝓝 (x.adjoint v)) := by
   -- `[[0, x], [x⋆, 0]]` is a self-adjoint contraction in the double commutant of `M₂(S)`.
   have hX : offDiag x ∈ ((S.piLpMatrix (Fin 2) : Set _)).centralizer.centralizer := by
     refine (S.mem_centralizer_centralizer_piLpMatrix_iff).mpr fun i j => ?_
@@ -221,9 +222,14 @@ private theorem exists_tendsto_offDiag {S : StarSubalgebra ℂ (H →L[ℂ] H)} 
       ▸ ⟨offDiag x, ⟨hX, isSelfAdjoint_offDiag x, norm_offDiag_le hx₁⟩, rfl⟩
   obtain ⟨l, hl, hlS, hlim⟩ :=
     ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mp hXS
-  refine ⟨l, hl, hlS, fun i j v => ?_⟩
-  simp only [ContinuousLinearMap.piLpEntry_apply]
-  exact ((PiLp.continuous_apply 2 _ i).tendsto _).comp (hlim _)
+  have hentry : ∀ i j v,
+      Tendsto (fun Y => Y.piLpEntry i j v) l (𝓝 ((offDiag x).piLpEntry i j v)) := fun i j v => by
+    simp only [ContinuousLinearMap.piLpEntry_apply]
+    exact ((PiLp.continuous_apply 2 _ i).tendsto _).comp (hlim _)
+  refine ⟨l, hl, hlS, fun v => ?_, fun v => ?_⟩
+  · simpa [offDiag, ContinuousLinearMap.piLpEntry_ofPiLpEntries] using hentry 0 1 v
+  · simpa [offDiag, ContinuousLinearMap.piLpEntry_ofPiLpEntries,
+      ContinuousLinearMap.star_eq_adjoint] using hentry 1 0 v
 
 /-- **The Kaplansky density theorem.** For a unital star subalgebra `S` of `B(H)`, the strong
 operator closure of the closed unit ball of `S` is the closed unit ball of its double commutant
@@ -239,13 +245,13 @@ theorem closure_unitBall_eq_unitBall_double_centralizer (S : StarSubalgebra ℂ 
   refine subset_antisymm (closure_minimal
     (Set.image_mono fun x ⟨hx, hx₁⟩ => ⟨Set.subset_centralizer_centralizer hx, hx₁⟩) hball) ?_
   rintro _ ⟨x, ⟨hx, hx₁⟩, rfl⟩
-  obtain ⟨l, hl, hlS, hlim⟩ := exists_tendsto_offDiag hx hx₁
+  obtain ⟨l, hl, hlS, h01, -⟩ := exists_tendsto_offDiag hx hx₁
   -- The `(0, 1)` entries of the approximants are contractions of `S` converging strongly to `x`.
   refine ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff.mpr
     ⟨l.map fun Y => Y.piLpEntry 0 1, hl.map _, eventually_map.mpr ?_, fun v => ?_⟩
   · filter_upwards [hlS] with Y ⟨hY, _, hY₁⟩
     exact ⟨mem_piLpMatrix.mp hY 0 1, (Y.norm_piLpEntry_le 0 1).trans hY₁⟩
-  · simpa [tendsto_map'_iff, Function.comp_def, offDiag] using hlim 0 1 v
+  · exact tendsto_map'_iff.mpr (h01 v)
 
 /-- **The Kaplansky density theorem for matrix amplifications.** For a unital star subalgebra `S`
 of `B(H)` and a finite index type `ι`, the strong operator closure of the closed unit ball of the
@@ -307,7 +313,7 @@ theorem closure_strongStar_unitBall_eq_unitBall_double_centralizer
     exact ⟨A.toCLM, ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image.mp h,
       rfl⟩
   rintro _ ⟨x, ⟨hx, hx₁⟩, rfl⟩
-  obtain ⟨l, hl, hlS, hlim⟩ := exists_tendsto_offDiag hx hx₁
+  obtain ⟨l, hl, hlS, h01, h10⟩ := exists_tendsto_offDiag hx hx₁
   -- The `(0, 1)` entries `aᵢ` of the self-adjoint approximants `Yᵢ` are contractions of `S`
   -- converging strongly to `x`, and their adjoints are the `(1, 0)` entries of the `Yᵢ`, which
   -- converge strongly to `x⋆`.
@@ -315,13 +321,9 @@ theorem closure_strongStar_unitBall_eq_unitBall_double_centralizer
     hlS.mono fun Y ⟨_, hYsa, _⟩ => by
       rw [← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.piLpEntry_star,
         hYsa.star_eq]
-  have := hl
   refine mem_closure_of_tendsto (f := fun Y => ContinuousLinearMapStrongStar.ofCLM
     (Y.piLpEntry 0 1)) (b := l) (ContinuousLinearMapStrongStar.tendsto_iff_forall_tendsto.mpr
-      ⟨fun v => by simpa [offDiag] using hlim 0 1 v, fun w => ?_⟩) ?_
-  · have h10 : Tendsto (fun Y => Y.piLpEntry 1 0 w) l (𝓝 (x.adjoint w)) := by
-      simpa [offDiag, ContinuousLinearMap.star_eq_adjoint] using hlim 1 0 w
-    exact h10.congr' (hadj.mono fun Y hY => by dsimp only; rw [hY])
+      ⟨h01, fun w => (h10 w).congr' (hadj.mono fun Y hY => by dsimp only; rw [hY])⟩) ?_
   · filter_upwards [hlS] with Y ⟨hY, _, hY₁⟩
     exact ⟨_, ⟨mem_piLpMatrix.mp hY 0 1, (Y.norm_piLpEntry_le 0 1).trans hY₁⟩, rfl⟩
 
