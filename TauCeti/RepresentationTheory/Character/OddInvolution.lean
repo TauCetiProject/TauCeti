@@ -16,6 +16,8 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Topology.Algebra.GroupWithZero
+import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Trace.Idempotent
 import TauCeti.RepresentationTheory.Semisimple
 
 /-!
@@ -31,9 +33,10 @@ representation over that same field.
 
 ## Main results
 
-* `TauCeti.exists_isSemisimpleRepresentation_character_eq_of_odd_involution`: a continuous
-  rank-two trace with an odd involution is the character of a semisimple representation on `K²`
-  with continuous matrix entries.
+* `TauCeti.exists_isSemisimpleRepresentation_character_eq_of_odd_involution`: a rank-two trace
+  with an odd involution is the character of a semisimple representation on `K²`.
+* `TauCeti.exists_continuous_isSemisimpleRepresentation_character_eq_of_odd_involution`: if the
+  trace is moreover continuous, the representation can be taken with continuous matrix entries.
 * `Representation.nonempty_equiv_of_character_eq_of_odd_involution`: two semisimple
   representations on planes with the same character, vanishing at an involution, are equivalent.
 
@@ -238,17 +241,13 @@ private lemma model_idem {y₀ z₀ : A} (hx : τ (e * y₀ * (1 - e) * z₀) �
 private lemma model_offDiag_iff {y₀ z₀ : A} (hx : τ (e * y₀ * (1 - e) * z₀) ≠ 0 ∨
     ∀ y z, τ (e * y * (1 - e) * z) = 0) :
     (∀ u, model hτ he he1 hx u 0 1 = 0) ↔ ∀ u, model hτ he he1 hx u 1 0 = 0 := by
-  simp only [model_apply, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
   have hzero : τ (e * y₀ * (1 - e) * z₀) = 0 → ∀ y z, τ (e * y * (1 - e) * z) = 0 :=
     fun h => hx.resolve_left (not_not.mpr h)
   constructor
   · intro h u
-    have h₀ := h y₀
-    rw [div_eq_zero_iff, or_self] at h₀
-    exact hzero h₀ _ _
+    simpa [model_apply] using hzero (by simpa [model_apply] using h y₀) y₀ u
   · intro h u
-    simp [hzero (h z₀)]
+    simp [model_apply, hzero (by simpa [model_apply] using h z₀)]
 
 end IsRankTwoTrace
 
@@ -325,8 +324,7 @@ private lemma isIdempotentElem_halfOnePlus (h2 : (2 : K) ≠ 0) {c : G} (hc : c 
 
 private lemma traceLin_halfOnePlus {T : G → K} (h2 : (2 : K) ≠ 0) (h_one : T 1 = 2) {c : G}
     (h_odd : T c = 0) : traceLin T (halfOnePlus c) = 1 := by
-  rw [halfOnePlus, map_smul, map_add, traceLin_of, smul_eq_mul, MonoidAlgebra.one_def,
-    traceLin_single, one_mul, h_one, h_odd, add_zero, inv_mul_cancel₀ h2]
+  simp [halfOnePlus, MonoidAlgebra.one_def, traceLin_single, h_one, h_odd, h2]
 
 private lemma continuous_traceLin_mul_of_mul [TopologicalSpace G] [ContinuousMul G]
     [TopologicalSpace K] [IsTopologicalSemiring K] {T : G → K} (hT : Continuous T)
@@ -344,31 +342,12 @@ private lemma continuous_traceLin_mul_of_mul [TopologicalSpace G] [ContinuousMul
       exact continuous_const.mul
         (hT.comp ((continuous_const.mul continuous_id).mul continuous_const))
 
-/-- The coordinate subspace complementary to `W`: the vectors vanishing at every coordinate on
-which some vector of `W` does not vanish. -/
-private def coordCompl {ι : Type*} (W : Submodule K (ι → K)) : Submodule K (ι → K) where
-  carrier := {v | ∀ i, (∃ w ∈ W, w i ≠ 0) → v i = 0}
-  add_mem' ha hb i h := by simp [ha i h, hb i h]
-  zero_mem' _ _ := rfl
-  smul_mem' r v hv i h := by simp [hv i h]
-
-/-- A subspace of `K^ι` containing the basis vector `e_i` whenever it has a vector with nonzero
-`i`-th coordinate is complemented by its coordinate complement. -/
-private lemma isCompl_coordCompl {ι : Type*} [Finite ι] [DecidableEq ι]
-    {W : Submodule K (ι → K)} (hW : ∀ i, (∃ w ∈ W, w i ≠ 0) → Pi.single i 1 ∈ W) :
-    IsCompl W (coordCompl W) := by
-  have := Fintype.ofFinite ι
-  refine ⟨Submodule.disjoint_def.mpr fun v hv hv' => funext fun i => ?_, ?_⟩
-  · exact by_contra fun h => h (hv' i ⟨v, hv, h⟩)
-  rw [codisjoint_iff, Submodule.eq_top_iff']
-  intro v
-  rw [← Finset.univ_sum_single v]
-  refine Submodule.sum_mem _ fun i _ => ?_
-  by_cases hi : ∃ w ∈ W, w i ≠ 0
-  · rw [← mul_one (v i), ← smul_eq_mul, Pi.single_smul]
-    exact Submodule.mem_sup_left (W.smul_mem _ (hW i hi))
-  · exact Submodule.mem_sup_right fun j hj =>
-      Pi.single_eq_of_ne (by rintro rfl; exact hi hj) _
+/-- A subrepresentation is stable under the action of the monoid algebra. -/
+private lemma asAlgebraHom_mem {V : Type*} [AddCommGroup V] [Module K V]
+    {ρ : Representation K G V} (W : Subrepresentation ρ) {v : V} (hv : v ∈ W.toSubmodule)
+    (u : K[G]) : ρ.asAlgebraHom u v ∈ W.toSubmodule :=
+  ρ.asAlgebraHom_mem_of_forall_mem W.toSubmodule (fun g _ hv => W.apply_mem_toSubmodule g hv) v
+    hv u
 
 /-- A representation on `K²` whose group-algebra action is given by matrices `N u`, in which some
 `q` acts as the projection `diag(1, 0)`, and whose two off-diagonal entries vanish identically
@@ -377,18 +356,16 @@ private lemma isSemisimpleRepresentation_of_offDiag {ρ : Representation K G (Fi
     {N : K[G] →ₐ[K] Matrix (Fin 2) (Fin 2) K}
     (hN : ∀ u v, ρ.asAlgebraHom u v = N u *ᵥ v) {q : K[G]} (hq : N q = !![1, 0; 0, 0])
     (hsym : (∀ u, N u 0 1 = 0) ↔ ∀ u, N u 1 0 = 0) : ρ.IsSemisimpleRepresentation := by
-  have hmem (W : Subrepresentation ρ) {v : Fin 2 → K} (hv : v ∈ W) (u : K[G]) :
-      N u *ᵥ v ∈ W := by
-    rw [← hN]
-    exact ρ.asAlgebraHom_mem_of_forall_mem W.toSubmodule
-      (fun g _ hv => W.apply_mem_toSubmodule g hv) v hv u
+  have hmem (W : Subrepresentation ρ) {v : Fin 2 → K} (hv : v ∈ W.toSubmodule) (u : K[G]) :
+      N u *ᵥ v ∈ W.toSubmodule :=
+    hN u v ▸ asAlgebraHom_mem W hv u
   have hproj (i : Fin 2) : ∃ q, N q = Matrix.single i i 1 := by
     fin_cases i
     · exact ⟨q, by rw [hq]; ext j k; fin_cases j <;> fin_cases k <;> simp⟩
     · exact ⟨1 - q, by rw [map_sub, map_one, hq]; ext j k; fin_cases j <;> fin_cases k <;> simp⟩
   -- A subrepresentation with a vector of nonzero `i`-th coordinate contains `e_i`.
-  have hsingle (W : Subrepresentation ρ) (i : Fin 2) (hi : ∃ w ∈ W, w i ≠ 0) :
-      Pi.single i 1 ∈ W := by
+  have hsingle (W : Subrepresentation ρ) (i : Fin 2) (hi : ∃ w ∈ W.toSubmodule, w i ≠ 0) :
+      Pi.single i 1 ∈ W.toSubmodule := by
     obtain ⟨w, hw, hwi⟩ := hi
     obtain ⟨q, hq⟩ := hproj i
     have := W.toSubmodule.smul_mem (w i)⁻¹ (hmem W hw q)
@@ -396,8 +373,9 @@ private lemma isSemisimpleRepresentation_of_offDiag {ρ : Representation K G (Fi
       inv_mul_cancel₀ hwi] at this
   -- If `e_i ∈ W` while no vector of `W` has a nonzero `j`-th coordinate, then the `(j, i)` entry
   -- vanishes, and by `hsym` so does the `(i, j)` entry.
-  have hoff (W : Subrepresentation ρ) {i j : Fin 2} (hij : i ≠ j) (hi : ∃ w ∈ W, w i ≠ 0)
-      (hj : ¬ ∃ w ∈ W, w j ≠ 0) (u : K[G]) : N u i j = 0 := by
+  have hoff (W : Subrepresentation ρ) {i j : Fin 2} (hij : i ≠ j)
+      (hi : ∃ w ∈ W.toSubmodule, w i ≠ 0) (hj : ¬ ∃ w ∈ W.toSubmodule, w j ≠ 0) (u : K[G]) :
+      N u i j = 0 := by
     have hji (u : K[G]) : N u j i = 0 := by_contra fun hne => hj
       ⟨_, hmem W (hsingle W i hi) u, by rwa [Matrix.mulVec_single_one, Matrix.col_apply]⟩
     fin_cases i <;> fin_cases j
@@ -405,11 +383,15 @@ private lemma isSemisimpleRepresentation_of_offDiag {ρ : Representation K G (Fi
     · exact hsym.mpr hji u
     · exact hsym.mp hji u
     · exact absurd rfl hij
-  refine ⟨fun W => ⟨⟨coordCompl W.toSubmodule, fun g v hv i hi => ?_⟩,
-    Subrepresentation.isCompl_toSubmodule.mp (isCompl_coordCompl (hsingle W))⟩⟩
-  -- The coordinate complement is stable: write the `i`-th coordinate of `ρ g v` over `i` and `j`.
+  -- A complement of `W` is the subspace of vectors vanishing where some vector of `W` does not.
+  refine ⟨fun W => ⟨⟨Submodule.pi {i | ∃ w ∈ W.toSubmodule, w i ≠ 0} fun _ => ⊥,
+    fun g v hv => Submodule.mem_pi.mpr fun i hi => (Submodule.mem_bot K).mpr ?_⟩,
+    Subrepresentation.isCompl_toSubmodule.mp
+      (Submodule.isCompl_pi_bot_of_single_mem (hsingle W))⟩⟩
+  -- This complement is stable: write the `i`-th coordinate of `ρ g v` over `i` and `j`.
   rw [← Representation.asAlgebraHom_of, hN, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-  have hv' (k : Fin 2) (hk : ∃ w ∈ W.toSubmodule, w k ≠ 0) : v k = 0 := hv k hk
+  have hv' (k : Fin 2) (hk : ∃ w ∈ W.toSubmodule, w k ≠ 0) : v k = 0 :=
+    (Submodule.mem_bot K).mp (Submodule.mem_pi.mp hv k hk)
   fin_cases i
   · by_cases h₁ : ∃ w ∈ W.toSubmodule, w 1 ≠ 0
     · simp [hv' 0 hi, hv' 1 h₁]
@@ -423,46 +405,8 @@ private lemma trace_asAlgebraHom_halfOnePlus {V : Type*} [AddCommGroup V] [Modul
     (h_odd : ρ.character c = 0) :
     LinearMap.trace K V (ρ.asAlgebraHom (halfOnePlus c)) = 1 := by
   have := Module.finite_of_finrank_eq_succ hV
-  rw [halfOnePlus, map_smul, map_add, map_one, Representation.asAlgebraHom_of, map_smul,
-    map_add, LinearMap.trace_one, hV, ← Representation.character, h_odd, smul_eq_mul]
-  push_cast
-  rw [add_zero, inv_mul_cancel₀ h2]
-
-/-- A trace-one idempotent endomorphism of a plane is the projection `diag(1, 0)` in some basis. -/
-private lemma exists_basis_toMatrix_eq {V : Type*} [AddCommGroup V] [Module K V]
-    (hV : finrank K V = 2) {P : Module.End K V} (hP : IsIdempotentElem P)
-    (htr : LinearMap.trace K V P = 1) :
-    ∃ b : Basis (Fin 2) K V, LinearMap.toMatrix b b P = !![1, 0; 0, 0] := by
-  have := Module.finite_of_finrank_eq_succ hV
-  have htr' : LinearMap.trace K V (1 - P) = 1 := by
-    rw [map_sub, LinearMap.trace_one, hV, htr]; norm_num
-  obtain ⟨v, hv⟩ : ∃ v, P v ≠ 0 := by
-    by_contra! h
-    rw [show P = 0 from LinearMap.ext fun x => by simpa using h x, map_zero] at htr
-    exact zero_ne_one htr
-  obtain ⟨w, hw⟩ : ∃ w, (1 - P) w ≠ 0 := by
-    by_contra! h
-    rw [show 1 - P = 0 from LinearMap.ext fun x => by simpa using h x, map_zero] at htr'
-    exact zero_ne_one htr'
-  have hPP (x : V) : P (P x) = P x := LinearMap.congr_fun hP.eq x
-  have hPv : P (P v) = P v := hPP v
-  have hPw : P ((1 - P) w) = 0 := by simp [hPP]
-  have hli : LinearIndependent K ![P v, (1 - P) w] := by
-    rw [LinearIndependent.pair_iff]
-    intro s t hst
-    have hs : s = 0 := by
-      have := congrArg P hst
-      rw [map_add, map_smul, map_smul, hPv, hPw, smul_zero, add_zero, map_zero] at this
-      exact (smul_eq_zero.mp this).resolve_right hv
-    subst hs
-    rw [zero_smul, zero_add] at hst
-    exact ⟨rfl, (smul_eq_zero.mp hst).resolve_right hw⟩
-  let b := basisOfLinearIndependentOfCardEqFinrank hli (by rw [hV, Fintype.card_fin])
-  have hb₀ : P (b 0) = b 0 := by simpa [b] using hPv
-  have hb₁ : P (b 1) = 0 := by simpa [b] using hPw
-  refine ⟨b, ?_⟩
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix_apply, hb₀, hb₁]
+  rw [Representation.character] at h_odd
+  simp [halfOnePlus, hV, h2, h_odd]
 
 variable {V : Type*} [AddCommGroup V] [Module K V]
 
@@ -525,10 +469,6 @@ private lemma toMatrix_offDiag_eq_zero {ρ : Representation K G V}
         LinearMap.toMatrix b b (ρ.asAlgebraHom u) j k • b j := by
     rw [LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
       repr_smul_add_repr_smul b hij]
-  have hmem (W : Subrepresentation ρ) {v : V} (hv : v ∈ W) (u : K[G]) :
-      ρ.asAlgebraHom u v ∈ W :=
-    ρ.asAlgebraHom_mem_of_forall_mem W.toSubmodule
-      (fun g _ hv => W.apply_mem_toSubmodule g hv) v hv u
   have hline {r : K} : r • b i ∈ K ∙ b i :=
     Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
   -- The line through `b i` is a subrepresentation; let `W` be a complement.
@@ -547,9 +487,9 @@ private lemma toMatrix_offDiag_eq_zero {ρ : Representation K G V}
       conv_lhs => rw [← repr_smul_add_repr_smul b hij w]
       rw [map_add, map_smul, map_smul, hexp, hexp, hq]
       simp [hij]
-    exact hq' ▸ hmem W hw q
+    exact hq' ▸ asAlgebraHom_mem W hw q
   apply hsmul
-  have := W.toSubmodule.sub_mem (hmem W hbj u)
+  have := W.toSubmodule.sub_mem (asAlgebraHom_mem W hbj u)
     (W.toSubmodule.smul_mem (LinearMap.toMatrix b b (ρ.asAlgebraHom u) j j) hbj)
   rwa [hexp, add_sub_cancel_right] at this
 
@@ -607,22 +547,18 @@ private lemma diagonal_of_offDiag_mul_eq_zero {ρ : Representation K G V}
       (mul_eq_zero.mp (hzero y z)).resolve_left hy
     exact ⟨toMatrix_offDiag_eq_zero b (by decide) hb₀ h₁₀ u, h₁₀ u⟩
 
-/-- **Odd-involution field descent: existence.** Let `T : G → K` be a continuous function on a
-topological monoid satisfying the identities of the trace of a rank-two representation: `T 1 = 2`
-and the polarized Cayley–Hamilton identity in three variables (which, as `2 ≠ 0`, implies
-`T (g h) = T (h g)`). If some involution `c` has `T c = 0`, then `T` is the character of a
-semisimple representation of `G` on `K²` whose matrix entries are continuous. -/
-public theorem exists_isSemisimpleRepresentation_character_eq_of_odd_involution
-    [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace K] [IsTopologicalSemiring K]
-    (h2 : (2 : K) ≠ 0) (T : G → K) (hT : Continuous T) (h_one : T 1 = 2)
+/-- The representation built from the matrix model: a rank-two trace with an odd involution is the
+character of a semisimple representation on `K²`, each of whose matrix entries is
+`g ↦ τ (u g v) * r` for the linear extension `τ` of `T` and some `u v : K[G]`, `r : K`. -/
+private lemma exists_isSemisimpleRepresentation_character_eq_traceLin (h2 : (2 : K) ≠ 0)
+    (T : G → K) (h_one : T 1 = 2)
     (h_trace : ∀ g h k : G,
       T (g * h * k) + T (g * k * h) - T (g * k) * T h - T (k * h) * T g -
         T (h * g) * T k + T g * T h * T k = 0)
     {c : G} (hc : c * c = 1) (h_odd : T c = 0) :
-    ∃ ρ : Representation K G (Fin 2 → K),
-      ρ.IsSemisimpleRepresentation ∧
-      Continuous (fun g => fun i j : Fin 2 => ρ g (Pi.single j 1) i) ∧
-      ρ.character = T := by
+    ∃ ρ : Representation K G (Fin 2 → K), ρ.IsSemisimpleRepresentation ∧ ρ.character = T ∧
+      ∀ i j : Fin 2, ∃ (u v : K[G]) (r : K),
+        ∀ g, ρ g (Pi.single j 1) i = traceLin T (u * MonoidAlgebra.of K G g * v) * r := by
   have h_comm (g h : G) : T (g * h) = T (h * g) := by
     have := h_trace g h 1
     rw [mul_one, mul_one, one_mul, h_one] at this
@@ -644,22 +580,59 @@ public theorem exists_isSemisimpleRepresentation_character_eq_of_odd_involution
   let ρ : Representation K G (Fin 2 → K) :=
     (MonoidAlgebra.lift K _ G).symm (Matrix.toLinAlgEquiv'.toAlgHom.comp M)
   have hρA (u : K[G]) (v : Fin 2 → K) : ρ.asAlgebraHom u v = M u *ᵥ v := by
-    simp [ρ, Representation.asAlgebraHom]
+    simp [ρ, Representation.asAlgebraHom_def]
   have hρ (g : G) : ρ g = Matrix.toLin' (M (MonoidAlgebra.of K G g)) := by
     refine LinearMap.ext fun v => ?_
     rw [← Representation.asAlgebraHom_of, hρA, Matrix.toLin'_apply]
   refine ⟨ρ, isSemisimpleRepresentation_of_offDiag hρA (hτ.model_idem he he1 hx)
-    (hτ.model_offDiag_iff he he1 hx), ?_, ?_⟩
-  · have hcont (u v : K[G]) := continuous_traceLin_mul_of_mul hT u v
-    refine continuous_pi fun i => continuous_pi fun j => ?_
-    simp only [hρ, Matrix.toLin'_apply, Matrix.mulVec_single_one, Matrix.col_apply]
-    fin_cases i <;> fin_cases j <;> simp only [M, IsRankTwoTrace.model_apply]
-    · simpa using hcont e 1
-    · simpa [mul_assoc] using (hcont e ((1 - e) * z₀)).div_const _
-    · simpa using hcont (e * y₀ * (1 - e)) 1
-    · simpa using hcont (1 - e) 1
+    (hτ.model_offDiag_iff he he1 hx), ?_, fun i j => ?_⟩
   · ext g
     rw [Representation.character, hρ, Matrix.trace_toLin'_eq, hτ.trace_model, traceLin_of]
+  · simp only [hρ, Matrix.toLin'_apply, Matrix.mulVec_single_one, Matrix.col_apply]
+    fin_cases i <;> fin_cases j <;> simp only [M, IsRankTwoTrace.model_apply]
+    · exact ⟨e, 1, 1, fun g => by simp⟩
+    · exact ⟨e, (1 - e) * z₀, (τ (e * y₀ * (1 - e) * z₀))⁻¹, fun g => by
+        simp [mul_assoc, div_eq_mul_inv]⟩
+    · exact ⟨e * y₀ * (1 - e), 1, 1, fun g => by simp⟩
+    · exact ⟨1 - e, 1, 1, fun g => by simp⟩
+
+/-- **Odd-involution field descent: existence.** Let `T : G → K` be a function on a monoid
+satisfying the identities of the trace of a rank-two representation: `T 1 = 2` and the polarized
+Cayley–Hamilton identity in three variables (which, as `2 ≠ 0`, implies `T (g h) = T (h g)`). If
+some involution `c` has `T c = 0`, then `T` is the character of a semisimple representation of `G`
+on `K²`. -/
+public theorem exists_isSemisimpleRepresentation_character_eq_of_odd_involution
+    (h2 : (2 : K) ≠ 0) (T : G → K) (h_one : T 1 = 2)
+    (h_trace : ∀ g h k : G,
+      T (g * h * k) + T (g * k * h) - T (g * k) * T h - T (k * h) * T g -
+        T (h * g) * T k + T g * T h * T k = 0)
+    {c : G} (hc : c * c = 1) (h_odd : T c = 0) :
+    ∃ ρ : Representation K G (Fin 2 → K), ρ.IsSemisimpleRepresentation ∧ ρ.character = T :=
+  let ⟨ρ, hss, hchar, _⟩ :=
+    exists_isSemisimpleRepresentation_character_eq_traceLin h2 T h_one h_trace hc h_odd
+  ⟨ρ, hss, hchar⟩
+
+/-- **Odd-involution field descent: existence, continuous version.** If, in
+`exists_isSemisimpleRepresentation_character_eq_of_odd_involution`, the monoid `G` and the field
+`K` are topological and `T` is continuous, then `T` is the character of a semisimple
+representation of `G` on `K²` whose matrix entries are continuous. -/
+public theorem exists_continuous_isSemisimpleRepresentation_character_eq_of_odd_involution
+    [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace K] [IsTopologicalSemiring K]
+    (h2 : (2 : K) ≠ 0) (T : G → K) (hT : Continuous T) (h_one : T 1 = 2)
+    (h_trace : ∀ g h k : G,
+      T (g * h * k) + T (g * k * h) - T (g * k) * T h - T (k * h) * T g -
+        T (h * g) * T k + T g * T h * T k = 0)
+    {c : G} (hc : c * c = 1) (h_odd : T c = 0) :
+    ∃ ρ : Representation K G (Fin 2 → K),
+      ρ.IsSemisimpleRepresentation ∧
+      Continuous (fun g => fun i j : Fin 2 => ρ g (Pi.single j 1) i) ∧
+      ρ.character = T := by
+  obtain ⟨ρ, hss, hchar, hent⟩ :=
+    exists_isSemisimpleRepresentation_character_eq_traceLin h2 T h_one h_trace hc h_odd
+  refine ⟨ρ, hss, continuous_pi fun i => continuous_pi fun j => ?_, hchar⟩
+  obtain ⟨u, v, r, h⟩ := hent i j
+  simp only [h]
+  exact (continuous_traceLin_mul_of_mul hT u v).mul continuous_const
 
 end Group
 
@@ -682,10 +655,10 @@ public theorem nonempty_equiv_of_character_eq_of_odd_involution (ρ : Representa
     Nonempty (ρ.Equiv σ) := by
   have he := isIdempotentElem_halfOnePlus (K := K) h2 hc
   set e : K[G] := halfOnePlus c
-  obtain ⟨b₁, hb₁⟩ := exists_basis_toMatrix_eq hV (he.map ρ.asAlgebraHom)
-    (trace_asAlgebraHom_halfOnePlus h2 hV h_odd)
-  obtain ⟨b₂, hb₂⟩ := exists_basis_toMatrix_eq hW (he.map σ.asAlgebraHom)
-    (trace_asAlgebraHom_halfOnePlus h2 hW (h ▸ h_odd))
+  obtain ⟨b₁, hb₁⟩ := LinearMap.exists_basis_toMatrix_eq_of_isIdempotentElem_of_trace_eq_one hV
+    (he.map ρ.asAlgebraHom) (trace_asAlgebraHom_halfOnePlus h2 hV h_odd)
+  obtain ⟨b₂, hb₂⟩ := LinearMap.exists_basis_toMatrix_eq_of_isIdempotentElem_of_trace_eq_one hW
+    (he.map σ.asAlgebraHom) (trace_asAlgebraHom_halfOnePlus h2 hW (h ▸ h_odd))
   obtain ⟨N₁, hN₁⟩ : ∃ N : K[G] → Matrix (Fin 2) (Fin 2) K,
       ∀ u, LinearMap.toMatrix b₁ b₁ (ρ.asAlgebraHom u) = N u := ⟨_, fun _ => rfl⟩
   obtain ⟨N₂, hN₂⟩ : ∃ N : K[G] → Matrix (Fin 2) (Fin 2) K,
