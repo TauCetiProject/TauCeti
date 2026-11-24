@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.RingTheory.Perfectoid.Integral.Tilt
 
 /-!
@@ -53,8 +53,9 @@ coordinate and on `A` through `θ` (`PreTilt.torsionByEquiv_coeff_zero_smul`): `
 * `PreTilt.coe_torsionByEquiv_apply`, `PreTilt.untilt_torsionByEquiv_symm_apply`:
   `PreTilt.torsionByEquiv` is the sharp map.
 * `PreTilt.torsionByEquiv_coeff_zero_smul`: `PreTilt.torsionByEquiv` is `W(A♭)`-linear.
-* `TauCeti.Perfectoid.IsIntegralPerfectoid.isSMulRegular_iff_isSMulRegular_untilt`: for
-  `t♯ ∣ p`, `A♭` is `t`-torsion-free if and only if `A` is `t♯`-torsion-free.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.isSMulRegular_iff_isSMulRegular_of_associated`: for
+  `t♯` associated to `π` with `π ∣ p`, `A♭` is `t`-torsion-free if and only if `A` is
+  `π`-torsion-free.
 
 ## References
 
@@ -201,12 +202,7 @@ end TauCeti.Perfectoid.IsIntegralPerfectoid
 namespace PreTilt
 
 open TauCeti.Perfectoid IsIntegralPerfectoid
-
-/-- In a commutative ring `R`, `x` lies in the `a`-torsion `R[a]` exactly when `a * x = 0`: the
-scalar action of `R` on itself is multiplication. -/
-private theorem mem_torsionBy_self_iff {R : Type*} [CommRing R] {a x : R} :
-    x ∈ Submodule.torsionBy R R a ↔ a * x = 0 := by
-  rw [Submodule.mem_torsionBy_iff, smul_eq_mul]
+open Submodule (mem_torsionBy_self_iff)
 
 variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsIntegralPerfectoid p A]
   [Fact ¬IsUnit (p : A)] {t : PreTilt A p} {π : A}
@@ -278,13 +274,14 @@ variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsIntegralPerfectoid
   [Fact ¬IsUnit (p : A)]
 
 /-- **Torsion-freeness transfers along tilting** (Česnavičius–Scholze, *Purity for flat
-cohomology*, (2.1.2.5)). If `t : A♭` has `t♯ ∣ p`, then `A♭` is `t`-torsion-free if and only if `A`
-is `t♯`-torsion-free. For instance `A♭` is `ϖ♭`-torsion-free if and only if `A` is
-`(ϖ♭)♯`-torsion-free. -/
-theorem isSMulRegular_iff_isSMulRegular_untilt {t : PreTilt A p} (ht : t.untilt ∣ (p : A)) :
-    IsSMulRegular (PreTilt A p) t ↔ IsSMulRegular A t.untilt := by
+cohomology*, (2.1.2.5)). If `t : A♭` has `t♯` associated to a divisor `π` of `p`, then `A♭` is
+`t`-torsion-free if and only if `A` is `π`-torsion-free. For instance, if `ϖ` is associated to
+`(ϖ♭)♯` and `ϖ ^ p ∣ p`, then `A♭` is `ϖ♭`-torsion-free if and only if `A` is `ϖ`-torsion-free. -/
+theorem isSMulRegular_iff_isSMulRegular_of_associated {t : PreTilt A p} {π : A}
+    (ht : Associated t.untilt π) (hπ : π ∣ (p : A)) :
+    IsSMulRegular (PreTilt A p) t ↔ IsSMulRegular A π := by
   rw [isSMulRegular_iff_torsionBy_eq_bot, isSMulRegular_iff_torsionBy_eq_bot,
     ← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
-  exact (PreTilt.torsionByEquiv (Associated.refl _) ht).subsingleton_congr
+  exact (PreTilt.torsionByEquiv ht hπ).subsingleton_congr
 
 end TauCeti.Perfectoid.IsIntegralPerfectoid
