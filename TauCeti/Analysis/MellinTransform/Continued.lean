@@ -423,9 +423,10 @@ theorem mellinContAtTop_eq_of_le [CompleteSpace E] (hf : LocallyIntegrableOn f (
       (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b m))
       (isBigO_sub_sum_rpow_atTop (hexp.isBigO m)) hzm) (Or.inr hzm), ih]
 
-/-- Adding back the principal parts `b_k/(z - β_k)` leaves a function holomorphic on the whole
-strip `-c < Re z < Re β_n`, for `f = O(t^c)` at `0+` (DLMF 2.5.27). The bound at `+∞` is the
-`n`th remainder bound of an expansion `HasAsymptoticExpansion atTop (fun k t ↦ t ^ (-β k)) b f`. -/
+/-- Removing the principal parts `-b_k/(z - β_k)`, i.e. adding `∑ b_k/(z - β_k)`, leaves a function
+holomorphic on the whole strip `-c < Re z < Re β_n`, for `f = O(t^c)` at `0+` (DLMF 2.5.27). The
+bound at `+∞` is the `n`th remainder bound of an expansion
+`HasAsymptoticExpansion atTop (fun k t ↦ t ^ (-β k)) b f`. -/
 theorem differentiableOn_mellinContAtTop_add_sum (hf : LocallyIntegrableOn f (Ioi 0))
     (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
       fun t ↦ (t : ℂ) ^ (-β n))
@@ -486,8 +487,8 @@ theorem mellinContAtTop_eq_mellin [CompleteSpace E]
 /-- The continuation at `+∞` assembled (DLMF 2.5.27–2.5.28): for an expansion of `f` at `+∞` with
 strictly increasing `Re β_k` and `f = O(t^c)` at `0+`, `mellinContAtTop f b β n` is holomorphic on
 the strip `-c < Re z < Re β_n` away from the poles `β_k`, agrees with the continuation through `m`
-terms on `Re z < Re β_{min n m}`, equals `mellin f` on `-c < Re z < Re β_0`, and plus the principal
-parts `b_k/(z - β_k)` is holomorphic on the whole strip. -/
+terms on `Re z < Re β_{min n m}`, equals `mellin f` on `-c < Re z < Re β_0`, and with its principal
+parts `-b_k/(z - β_k)` removed (i.e. plus `∑ b_k/(z - β_k)`) is holomorphic on the whole strip. -/
 theorem mellinContAtTop_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
     (hexp : HasAsymptoticExpansion atTop (fun k (t : ℝ) ↦ (t : ℂ) ^ (-β k)) b f)
     (hβ : StrictMono fun k ↦ (β k).re) {c : ℝ} (hc : f =O[𝓝[>] 0] (· ^ c)) (n : ℕ) :
