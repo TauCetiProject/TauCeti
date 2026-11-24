@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRing.LaurentExpansion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Affine
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FormalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
@@ -27,8 +28,9 @@ point `[z : -1 : w(z)]` along the zero section, with values in the power series 
 
 ## Main results
 
-* `WeierstrassCurve.exists_SpecMap_comp_tautologicalPoint_eq_chartι`: the chart `D₊(Z)` factors
-  through the tautological point.
+* `WeierstrassCurve.tautologicalPoint_eq_SpecMap_chartι`: the tautological point is the chart
+  `D₊(Z)` after the canonical affine coordinate-ring comparison.
+* `WeierstrassCurve.opensRange_tautologicalPoint`: its image is exactly `D₊(Z)`.
 * `WeierstrassCurve.SpecMap_laurentExpansion_tautologicalPoint`: expanded at the point at
   infinity, the tautological point is the formal point.
 
@@ -75,23 +77,43 @@ theorem tautologicalPoint_projModelOver : W.tautologicalPoint ≫ W.projModelOve
     Spec.map (CommRingCat.ofHom (algebraMap R W.toAffine.CoordinateRing)) := by
   rw [tautologicalPoint_def, projModelPoint_projModelOver]
 
-/-- The chart `D₊(Z)` of the projective model factors through the tautological point: the
-universal point of the chart is `[X / Z : Y / Z : 1]`, the image of `[x : y : 1]` under an
-`R`-algebra map `R[W] → ChartRing 2`. -/
-theorem exists_SpecMap_comp_tautologicalPoint_eq_chartι :
-    ∃ k : W.toAffine.CoordinateRing →ₐ[R] W.toProjective.ChartRing 2,
-      Spec.map (CommRingCat.ofHom k.toRingHom) ≫ W.tautologicalPoint = W.chartι 2 := by
-  -- the universal point of the chart is `(X / Z, Y / Z, 1)`
-  have hP : W.toProjective.chartPoint 2 = ![W.toProjective.chartPoint 2 0,
-      W.toProjective.chartPoint 2 1, 1] := funext fun k ↦ by
-    fin_cases k <;> simp
-  have hE := W.toProjective.equation_chartPoint 2
-  rw [hP] at hE
-  refine ⟨Affine.CoordinateRing.evalAlgHom ((Projective.equation_some _ _).mp hE), ?_⟩
-  rw [tautologicalPoint_def, SpecMap_projModelPoint, chartι_eq_projModelPoint,
-    projModelPoint_eq_projModelPoint_iff]
-  refine ⟨RingHom.ext (Affine.CoordinateRing.evalAlgHom _).commutes, 1, funext fun k ↦ ?_⟩
-  fin_cases k <;> simp
+/-- The canonical inverse coordinate-ring comparison sends the tautological point to the
+universal point of the third projective chart. -/
+theorem SpecMap_chartRingTwoEquivCoordinateRing_symm_tautologicalPoint :
+    Spec.map W.toProjective.chartRingTwoEquivCoordinateRing.toRingEquiv.toCommRingCatIso.inv ≫
+        W.tautologicalPoint =
+      W.chartι 2 := by
+  rw [RingEquiv.toCommRingCatIso_inv, tautologicalPoint_def, SpecMap_projModelPoint,
+    chartι_eq_projModelPoint, projModelPoint_eq_projModelPoint_iff]
+  refine ⟨RingHom.ext W.toProjective.chartRingTwoEquivCoordinateRing.symm.commutes,
+    1, funext fun k ↦ ?_⟩
+  fin_cases k <;> simp [Projective.chartRingTwoEquivCoordinateRing_symm_of_X,
+    Projective.chartRingTwoEquivCoordinateRing_symm_root]
+
+/-- The tautological point is the standard affine chart `D₊(Z)` transported along the canonical
+comparison of the chart ring with the affine Weierstrass coordinate ring. -/
+theorem tautologicalPoint_eq_SpecMap_chartι : W.tautologicalPoint =
+    Spec.map W.toProjective.chartRingTwoEquivCoordinateRing.toRingEquiv.toCommRingCatIso.hom ≫
+      W.chartι 2 := by
+  apply (cancel_epi (Spec.map
+    W.toProjective.chartRingTwoEquivCoordinateRing.toRingEquiv.toCommRingCatIso.inv)).mp
+  rw [SpecMap_chartRingTwoEquivCoordinateRing_symm_tautologicalPoint,
+    ← Spec.map_comp_assoc, Iso.hom_inv_id, Spec.map_id, Category.id_comp]
+
+/-- The tautological point identifies the affine Weierstrass scheme with an open subscheme of
+the projective model. -/
+instance isOpenImmersion_tautologicalPoint : IsOpenImmersion W.tautologicalPoint := by
+  rw [W.tautologicalPoint_eq_SpecMap_chartι]
+  infer_instance
+
+/-- The image of the tautological point is the standard affine open `D₊(Z)`. -/
+@[simp]
+theorem opensRange_tautologicalPoint : W.tautologicalPoint.opensRange =
+    Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2) := by
+  simpa only [← W.tautologicalPoint_eq_SpecMap_chartι] using
+    (Scheme.Hom.opensRange_comp_of_isIso
+      (Spec.map W.toProjective.chartRingTwoEquivCoordinateRing.toRingEquiv.toCommRingCatIso.hom)
+      (W.chartι 2)).trans (W.opensRange_chartι 2)
 
 /-- **The tautological point at infinity.** Expanded in Laurent series at the point at infinity,
 the tautological point `[x : y : 1]` is the formal point `[z : -1 : w(z)]`: its coordinates are

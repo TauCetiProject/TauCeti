@@ -99,7 +99,8 @@ private theorem exists_ball_finite_boundary_of_inverted_coordinate
     exact (lt_irrefl 0) hypos
   refine ⟨r, hr, hFcont, hFinj, fun z hz hzH => himage hz hzH, fun z hz hz0 => ?_⟩
   exact hgU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
-    (continuousWithinAt_const.add ((hgc z hz0.ge).inv₀ (hnonzero hz hz0.ge)))
+    ((continuousWithinAt_const.add ((hgc z hz0.ge).inv₀ (hnonzero hz hz0.ge))).mono
+      (fun w (hw : 0 < w.im) ↦ hw.le))
     hz0 (hnot hz hz0)
 
 /-- Near a nonzero boundary value of a continuous inverted coordinate, the recovered finite map

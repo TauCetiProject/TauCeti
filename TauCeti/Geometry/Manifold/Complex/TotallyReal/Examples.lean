@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 /-!
 # Model examples of totally real embeddings
 
-The real locus in complex coordinate space and the unit circle give totally real embeddings.
+The real locus in complex coordinate space, in particular the real line in `ℂ`, and the unit
+circle give totally real embeddings.
 Complex tangent planes fail the maximal-total-reality test, and a real line in complex dimension
 two fails the half-dimension condition. The statements use the native constant smooth structure
 for multiplication by `I`, interpreted pointwise, and allow every embedding regularity.
@@ -65,6 +66,25 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
   apply ht.isMaximalTotallyReal (hJi.comp (LinearMap.range L.toLinearMap).subtype_injective)
   rw [LinearMap.finrank_range_of_inj hinj]
   simp [Module.finrank_pi_fintype, Nat.mul_comm]
+
+/-- The real line is a totally real embedding into `ℂ` for the standard complex structure, for
+every regularity: the case of a single coordinate of `TauCeti.isTotallyRealEmbedding_realLocus`,
+with the real line `ℝ` itself as domain. -/
+theorem isTotallyRealEmbedding_ofRealCLM (n : ℕ∞ω) :
+    IsTotallyRealEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) n
+      (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
+      Complex.ofRealCLM := by
+  rw [ContinuousLinearMap.isTotallyRealEmbedding_iff]
+  refine ⟨by simp, ?_⟩
+  have hJ : (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap =
+      (LinearMap.lsmul ℂ ℂ I).restrictScalars ℝ := by
+    ext v
+    simp [AlmostComplexStructure.ofComplexModule_apply]
+  have hr : LinearMap.range Complex.ofRealCLM.toLinearMap = Submodule.span ℝ {(1 : ℂ)} := by
+    ext v
+    simp [Submodule.mem_span_singleton, Complex.real_smul]
+  rw [hJ, hr]
+  exact isMaximalTotallyReal_span_one
 
 attribute [local instance] finrank_real_complex_fact'
 

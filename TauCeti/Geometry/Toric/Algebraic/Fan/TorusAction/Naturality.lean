@@ -73,10 +73,10 @@ target chart by the affine action-domain map. -/
 @[reassoc]
 theorem algebraicRealizationActionChartMap_comp_algebraicActionMap (σ : Φ.cones) :
     Fan.algebraicRealizationActionChartMap σ ≫ f.algebraicActionMap =
-      affineToricSchemeActionMap Φ.lattice σ.1 Ψ.lattice f.latticeMap f.realMap
-          f.map_lattice (f.mapsTo_leastCone σ.2) ≫
+      affineToricSchemeActionMap Φ.lattice σ.val Ψ.lattice f.latticeMap f.realMap
+          f.map_lattice (f.mapsTo_leastCone σ.property) ≫
         Fan.algebraicRealizationActionChartMap
-          ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ := by
+          ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ := by
   apply pullback.hom_ext
   · simp
   · simp [affineToricChartMap_def]

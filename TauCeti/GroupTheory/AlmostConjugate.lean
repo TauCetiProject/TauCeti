@@ -277,7 +277,7 @@ theorem almostConjugate_iff_forall_natCard_cycleType_eq {α : Type*} [Fintype α
     exact h g
   · have (L : Subgroup (Equiv.Perm α)) :
         IsEmpty {σ : Equiv.Perm α // σ.cycleType = m ∧ σ ∈ L} :=
-      ⟨fun σ ↦ hm ⟨σ, σ.2.1⟩⟩
+      ⟨fun σ ↦ hm ⟨σ, σ.property.1⟩⟩
     rw [Nat.card_of_isEmpty, Nat.card_of_isEmpty]
 
 end Subgroup

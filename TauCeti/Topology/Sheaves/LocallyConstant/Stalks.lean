@@ -45,7 +45,7 @@ private def locallyConstantStalkEval (x : X) :
   colimit.desc ((OpenNhds.inclusion x).op ⋙ locallyConstantRingCatPresheaf X R)
     { pt := RingCat.of R
       ι :=
-        { app := fun U ↦ RingCat.ofHom (LocallyConstant.evalRingHom ⟨x, U.unop.2⟩)
+        { app := fun U ↦ RingCat.ofHom (LocallyConstant.evalRingHom ⟨x, U.unop.property⟩)
           naturality := fun _ _ _ ↦ by ext; rfl } }
 
 private theorem locallyConstantStalkEval_germ (x : X) (U : Opens X) (hx : x ∈ U)
@@ -64,8 +64,8 @@ theorem germ_locallyConstant_eq_const (x : X) (U : Opens X) (hx : x ∈ U)
       (locallyConstantRingCatPresheaf X R).germ ⊤ x (by trivial)
         (LocallyConstant.const _ (f ⟨x, hx⟩)) := by
   obtain ⟨V, hV, hxV, hf⟩ := f.isLocallyConstant.exists_open ⟨x, hx⟩
-  let W : Opens X := ⟨Subtype.val '' V, U.isOpen.isOpenMap_subtype_val _ hV⟩
-  have hWU : W ≤ U := by rintro _ ⟨y, _, rfl⟩; exact y.2
+  let W : Opens X := ⟨Subtype.val '' V, U.isOpen.isOpenMap_subtypeVal _ hV⟩
+  have hWU : W ≤ U := by rintro _ ⟨y, _, rfl⟩; exact y.property
   have hxW : x ∈ W := ⟨⟨x, hx⟩, hxV, rfl⟩
   have he : (locallyConstantRingCatPresheaf X R).map (homOfLE hWU).op f =
       (locallyConstantRingCatPresheaf X R).map (homOfLE (le_top : W ≤ ⊤)).op

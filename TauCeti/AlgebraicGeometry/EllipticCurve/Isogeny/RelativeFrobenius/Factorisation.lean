@@ -76,7 +76,7 @@ private theorem fieldRange_le_of_inseparableDegree_eq_pow {r : ℕ}
     intro z
     obtain ⟨y, hy⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow _ _ p hS.le z
     rw [hS_def, IntermediateField.mem_restrictScalars, ← hy]
-    exact y.2
+    exact y.property
   -- both have degree `p ^ r` under `F(W₁)`, so they coincide
   have heq : (iterateRelativeFrobeniusIsogeny p W₁ r).fieldPullback.fieldRange = S :=
     IntermediateField.eq_of_le_of_finrank_eq' hle <| by

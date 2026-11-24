@@ -165,7 +165,7 @@ theorem heckeSymbol_heckeSymbol_mk (x : degreeZero R ⊗[R] homogeneousSubmodule
   refine Finset.sum_congr rfl fun u _ ↦ ?_
   rw [heckeSymbol_mk]
   refine Finset.sum_congr rfl fun v _ ↦ ?_
-  rw [← Submonoid.mk_mul_mk, map_mul, mul_apply_eq_comp]
+  rw [symbolIntRep_mul_apply]
 
 variable {ι κ : Type*} (a : ι → GL (Fin 2) ℚ) (b : κ → GL (Fin 2) ℚ)
   (hcover₁ : doubleCoset (D₁.out : GL (Fin 2) ℚ) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) =
@@ -198,7 +198,7 @@ theorem heckeSymbol_heckeSymbol_mk_eq_sum_of_rightCosets [Finite ι] [Finite κ]
   rw [heckeSymbol_mk_eq_sum_of_rightCosets Γ₁ Γ₂ D₁ hD₁ a (mem_intEntries_of_cover 2 hD₁ hcover₁)
     hcover₁ hinj₁]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← Submonoid.mk_mul_mk, map_mul, mul_apply_eq_comp]
+  rw [symbolIntRep_mul_apply]
 
 variable [Finite ι] [Finite κ] (D₃ : HeckeCoset Δ (Γ₁.map (mapGL ℚ)) (Γ₃.map (mapGL ℚ)))
   [Finite (DecompQuotient (Γ₃.map (mapGL ℚ)) (Γ₁.map (mapGL ℚ)) (D₃.out : GL (Fin 2) ℚ)⁻¹)]
@@ -273,9 +273,9 @@ theorem heckeSymbol_comp_heckeSymbol_eq_sum_nsmul :
     heckeSymbol Γ₁ Γ₂ D₁ hD₁ ∘ₗ heckeSymbol Γ₂ Γ₃ D₂ hD₂ =
       ∑ D ∈ (Finset.univ.image (pairCoset D₁ D₂)).attach,
         DoubleCoset.multiplicity (Γ₃.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) (Γ₁.map (mapGL ℚ))
-          (D₂.out : GL (Fin 2) ℚ)⁻¹ (D₁.out : GL (Fin 2) ℚ)⁻¹ (D.1.out : GL (Fin 2) ℚ)⁻¹ •
-            (heckeSymbol Γ₁ Γ₃ D.1 (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂
-              D.2) : ModularSymbols R Γ₃ w →ₗ[R] ModularSymbols R Γ₁ w) := by
+          (D₂.out : GL (Fin 2) ℚ)⁻¹ (D₁.out : GL (Fin 2) ℚ)⁻¹ (D.val.out : GL (Fin 2) ℚ)⁻¹ •
+            (heckeSymbol Γ₁ Γ₃ D.val (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂
+              D.property) : ModularSymbols R Γ₃ w →ₗ[R] ModularSymbols R Γ₁ w) := by
   -- the same composite triple the statement derives; `IsHeckeTriple.trans` cannot be an
   -- instance, since `Γ₂` does not occur in the conclusion, so it is named at both points
   let _ : IsHeckeTriple Δ (Γ₁.map (mapGL ℚ)) (Γ₃.map (mapGL ℚ)) :=
@@ -291,9 +291,9 @@ theorem heckeSymbol_comp_heckeSymbol_eq_sum_nsmul :
             (rightCosetRep_mem D₂ hD₂ (map_mapGL_le_intEntries 2 Γ₃) q.2)⟩ x),
     ← Finset.sum_attach (Finset.univ.image (pairCoset D₁ D₂))]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
-  convert sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk (ι := {q // pairCoset D₁ D₂ q = D.1})
-    Γ₁ Γ₃ D.1 (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂ D.2) _ _
-    (fun i ↦ pairCoset_eq_iff.mp i.2)
+  convert sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk (ι := {q // pairCoset D₁ D₂ q = D.val})
+    Γ₁ Γ₃ D.val (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂ D.property) _ _
+    (fun i ↦ pairCoset_eq_iff.mp i.property)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) x
 
 end Assembly

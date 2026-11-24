@@ -67,20 +67,37 @@ lemma comp_right_app_apply {X Y Z : PointedSSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (n : SimplexCategoryᵒᵖ) (x : X.right.obj n) :
     (f ≫ g).right.app n x = g.right.app n (f.right.app n x) := (rfl)
 
+/-- The pointing map `Δ[0] ⟶ X.right` of any pointed simplicial set is a monomorphism. -/
+instance mono_hom (X : PointedSSet.{u}) : Mono X.hom :=
+  ⟨fun _ _ _ ↦ by ext; exact SSet.stdSimplex.objEquiv.injective (Subsingleton.elim _ _)⟩
+
+/-- The canonical map from `Under.mk (𝟙 Δ[0])` to any pointed simplicial set is a monomorphism on
+underlying simplicial sets. -/
+instance mono_mkIdInitial_to_right (X : PointedSSet.{u}) :
+    Mono (Under.mkIdInitial.to X).right := by
+  rw [Under.mkIdInitial_to_right]
+  infer_instance
+
+/-- The unique based map from an initial pointed simplicial set to `X` is a monomorphism on
+underlying simplicial sets. -/
+instance mono_initial_to_right [Limits.HasInitial PointedSSet.{u}] (X : PointedSSet.{u}) :
+    Mono (Limits.initial.to X).right := by
+  let e : Limits.initial PointedSSet.{u} ≅ Under.mk (𝟙 (Δ[0] : SSet.{u})) :=
+    Limits.initialIsInitial.uniqueUpToIso Under.mkIdInitial
+  rw [Limits.initialIsInitial.hom_ext (Limits.initial.to X) (e.hom ≫ Under.mkIdInitial.to X),
+    Under.comp_right]
+  have : Mono e.hom.right :=
+    inferInstanceAs (Mono ((Under.forget (Δ[0] : SSet.{u})).map e.hom))
+  exact mono_comp _ _
+
 /-- Evaluate a pointed simplicial set as a simplicial object in pointed types. -/
 def toSimplicialPointed : PointedSSet.{u} ⥤ SimplicialObject Pointed.{u} where
   obj X :=
     { obj n := Pointed.of (X.point n)
-      map f := ⟨X.right.map f, X.map_point f⟩
-      map_id n := Pointed.Hom.ext (by funext x; exact congr_hom (X.right.map_id n) x)
-      map_comp f g := Pointed.Hom.ext (by
-        funext x
-        exact congr_hom (X.right.map_comp f g) x) }
+      map f := ⟨X.right.map f, X.map_point f⟩ }
   map f :=
     { app n := ⟨f.right.app n, app_point f n⟩
-      naturality n m g := Pointed.Hom.ext (by
-        funext x
-        exact congr_hom (f.right.naturality g) x) }
+      naturality _ _ g := by ext x; exact congr_hom (f.right.naturality g) x }
 
 /-- Recover a pointed simplicial set from its compatible degreewise points. -/
 def fromSimplicialPointed : SimplicialObject Pointed.{u} ⥤ PointedSSet.{u} where
@@ -107,7 +124,6 @@ def forgetIso :
     toSimplicialPointed ⋙ (SimplicialObject.whiskering _ _).obj (forget Pointed.{u}) ≅
       Under.forget (Δ[0] : SSet.{u}) :=
   NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Iso.refl _))
-    (by intros; ext n x; rfl)
 
 lemma forgetIso_hom_app_app (X : PointedSSet.{u}) (n : SimplexCategoryᵒᵖ) :
     (forgetIso.hom.app X).app n = eqToHom (by simp) := (rfl)
@@ -138,7 +154,6 @@ def fromForgetIso :
     fromSimplicialPointed ⋙ Under.forget (Δ[0] : SSet.{u}) ≅
       (SimplicialObject.whiskering _ _).obj (forget Pointed.{u}) :=
   NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Iso.refl _))
-    (by intros; ext n x; rfl)
 
 lemma fromForgetIso_hom_app_app (X : SimplicialObject Pointed.{u})
     (n : SimplexCategoryᵒᵖ) :
@@ -162,14 +177,12 @@ lemma fromSimplicialPointed_map_app {X Y : SimplicialObject Pointed.{u}} (f : X 
 
 /-- The conversion back to a pointed simplicial set preserves every simplex. -/
 def unitIso : 𝟭 PointedSSet.{u} ≅ toSimplicialPointed ⋙ fromSimplicialPointed :=
-  NatIso.ofComponents (fun X ↦ Under.isoMk (NatIso.ofComponents (fun _ ↦ Iso.refl _))
-    (by ext n x; exact X.hom_app n x)) (by intros; ext n x; rfl)
+  NatIso.ofComponents (fun _ ↦ Under.isoMk (NatIso.ofComponents (fun _ ↦ Iso.refl _)))
 
 /-- The degreewise pointed presentation is recovered by the identity maps. -/
 def counitIso : fromSimplicialPointed ⋙ toSimplicialPointed ≅
     𝟭 (SimplicialObject Pointed.{u}) :=
-  NatIso.ofComponents (fun X ↦ NatIso.ofComponents
-    (fun n ↦ Pointed.Iso.mk (Equiv.refl _) rfl)) (by intros; ext n x; rfl)
+  NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Pointed.Iso.mk (Equiv.refl _) rfl))
 
 lemma unitIso_hom_app_right_app (X : PointedSSet.{u}) (n : SimplexCategoryᵒᵖ) :
     (unitIso.hom.app X).right.app n = eqToHom (by simp) := (rfl)
@@ -193,7 +206,6 @@ def simplicialPointedEquivalence : PointedSSet.{u} ≌ SimplicialObject Pointed.
   inverse := fromSimplicialPointed
   unitIso := unitIso
   counitIso := counitIso
-  functor_unitIso_comp X := by ext n x; rfl
 
 @[simp]
 lemma simplicialPointedEquivalence_functor :

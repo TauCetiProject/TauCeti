@@ -51,7 +51,7 @@ topology in the linear automorphism group. -/
 @[fun_prop]
 theorem continuous_spinToSpecialOrthogonal : Continuous (spinToSpecialOrthogonal Q) := by
   apply continuous_induced_rng.mpr
-  have h := continuous_subtype_val.comp (continuous_spinToOrthogonal Q)
+  have h := continuous_subtypeVal.comp (continuous_spinToOrthogonal Q)
   refine h.congr fun x => ?_
   apply LinearEquiv.ext
   intro v

@@ -6,12 +6,13 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # Double adjoints of submodules and densely defined operators
 
-The double adjoint of a submodule is its topological closure, so the double
-adjoint of a closed submodule is the original submodule.
+The double adjoint of a submodule of a product of complete spaces is its topological closure,
+and the double adjoint of a complete submodule is the original submodule.
 As a consequence, the adjoint of a closable partial linear map has dense domain.
 
 ## Main results
@@ -21,17 +22,16 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
   submodule is the adjoint of the submodule.
 * `Submodule.adjoint_adjoint_eq_topologicalClosure`: the double adjoint is the
   topological closure.
-* `Submodule.adjoint_adjoint`: equality for closed submodules.
+* `Submodule.adjoint_adjoint`: equality for complete submodules.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
 * `LinearPMap.closure_adjoint`: taking the closure of a partial linear map does not
   change its adjoint.
-* `LinearPMap.orthogonal_range_eq_ker_adjoint` and
-  `LinearPMap.adjoint_apply_mem_orthogonal_ker`: `(range T)ᗮ = ker T†` when `T` is
-  densely defined, and `T† y ∈ (ker T)ᗮ` unconditionally.
-* `LinearPMap.adjoint_adjoint_eq_closure` and `LinearPMap.IsClosed.adjoint_adjoint`:
-  for a closable densely defined operator `T`, `T†† = T.closure`, so `T†† = T` when
-  `T` is closed.
+* `LinearPMap.adjoint_apply_mem_orthogonal_ker`: `T† y ∈ (ker T)ᗮ` unconditionally.
+* `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
+  operator.
+* `LinearPMap.adjoint_adjoint`, `LinearPMap.adjoint_adjoint_apply`: `T†† = T` for a closed
+  densely defined operator.
 * `ContinuousLinearMap.compPMap_adjoint`: the adjoint of `W ∘ M` for a bounded
   operator `W` and an arbitrary partial linear map `M` is `M† ∘ W†` on its maximal
   domain.
@@ -84,48 +84,62 @@ theorem topologicalClosure_adjoint (g : Submodule 𝕜 (E × F)) :
       (continuous_fst.inner continuous_const)) continuous_const
   exact closure_minimal (fun p hp ↦ h p.1 p.2 hp) hcl (by rwa [← topologicalClosure_coe])
 
+/-- Transport of the double adjoint to the `L²` product: a point of `g.adjoint.adjoint` lies in
+the double orthogonal complement of the copy of `g` in `WithLp 2 (E × F)`. -/
+private theorem toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint {g : Submodule 𝕜 (E × F)}
+    {x : E × F} (hx : x ∈ g.adjoint.adjoint) :
+    WithLp.toLp 2 x ∈ (g.comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap)ᗮᗮ := by
+  rw [Submodule.mem_orthogonal]
+  intro y hy
+  rw [Submodule.mem_orthogonal] at hy
+  have hab : ((-(WithLp.ofLp y).2 : F), ((WithLp.ofLp y).1 : E)) ∈ g.adjoint := by
+    rw [Submodule.mem_adjoint_iff]
+    intro c d hcd
+    have := hy (WithLp.toLp 2 (c, d)) (by simpa using hcd)
+    rw [WithLp.prod_inner_apply] at this
+    simp only [inner_neg_right]
+    linear_combination -this
+  have hxy := (Submodule.mem_adjoint_iff _ x).mp hx _ _ hab
+  rw [WithLp.prod_inner_apply]
+  simp only [inner_neg_left] at hxy
+  linear_combination hxy
+
 /-- The double adjoint of a submodule is its topological closure when the ambient
 inner product spaces are complete. -/
 theorem adjoint_adjoint_eq_topologicalClosure [CompleteSpace E] [CompleteSpace F]
     (g : Submodule 𝕜 (E × F)) : g.adjoint.adjoint = g.topologicalClosure := by
-  refine le_antisymm ?_ (g.topologicalClosure_minimal g.le_adjoint_adjoint ?_)
-  · set L := WithLp.prodContinuousLinearEquiv 2 𝕜 E F with hL
-    set G : Submodule 𝕜 (WithLp 2 (E × F)) :=
-      g.comap (L : WithLp 2 (E × F) →L[𝕜] E × F).toLinearMap with hG
-    intro x hx
-    have hmem : (L.symm x) ∈ Gᗮᗮ := by
-      rw [Submodule.mem_orthogonal]
-      intro y hy
-      rw [Submodule.mem_orthogonal] at hy
-      have hab : ((-(WithLp.ofLp y).2 : F), ((WithLp.ofLp y).1 : E)) ∈ g.adjoint := by
-        rw [Submodule.mem_adjoint_iff]
-        intro c d hcd
-        have hu : (L.symm (c, d)) ∈ G := by simpa [hG, hL] using hcd
-        have := hy _ hu
-        rw [WithLp.prod_inner_apply] at this
-        simp only [hL, WithLp.prodContinuousLinearEquiv_symm_apply, WithLp.ofLp_toLp] at this ⊢
-        simp only [inner_neg_right]
-        linear_combination -this
-      have hxy := (Submodule.mem_adjoint_iff _ x).mp hx _ _ hab
-      rw [WithLp.prod_inner_apply]
-      simp only [hL, WithLp.prodContinuousLinearEquiv_symm_apply, WithLp.ofLp_toLp]
-      simp only [inner_neg_left] at hxy
-      linear_combination hxy
-    rw [G.orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe, topologicalClosure_coe] at hmem
+  refine le_antisymm (fun x hx => ?_) (g.topologicalClosure_minimal g.le_adjoint_adjoint ?_)
+  · have hmem := toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint hx
+    rw [orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe, topologicalClosure_coe, comap_coe,
+      LinearEquiv.coe_toLinearMap, WithLp.coe_linearEquiv] at hmem
     rw [← SetLike.mem_coe, topologicalClosure_coe]
-    simpa [hG, ← L.preimage_closure] using hmem
+    simpa using (WithLp.prod_continuous_ofLp 2 E F).closure_preimage_subset _ hmem
   · -- A submodule adjoint is closed: it is the preimage of an orthogonal complement.
     rw [Submodule.adjoint, map_coe, LinearEquiv.coe_coe, LinearEquiv.image_eq_preimage_symm]
     exact (isClosed_orthogonal _).preimage (WithLp.prod_continuous_toLp _ _ _)
 
-/-- **Involutivity of the submodule adjoint on closed submodules.**
+/-- **Involutivity of the submodule adjoint on complete submodules.**
 
 This is the graph-level statement that makes the unbounded-operator adjoint
 theory close on itself: with `LinearPMap.adjoint_graph_eq_graph_adjoint` it says
-`Γ(T††) = Γ(T)` for closed densely defined `T`. -/
-theorem adjoint_adjoint [CompleteSpace E] [CompleteSpace F] (g : Submodule 𝕜 (E × F))
-    (hg : IsClosed (g : Set (E × F))) : g.adjoint.adjoint = g :=
-  (adjoint_adjoint_eq_topologicalClosure g).trans hg.submodule_topologicalClosure_eq
+`Γ(T††) = Γ(T)` for closed densely defined `T`. Only the submodule needs to be complete, not
+the ambient spaces: the proof applies `Submodule.orthogonal_orthogonal`, whose
+`HasOrthogonalProjection` hypothesis a complete submodule satisfies through
+`Submodule.HasOrthogonalProjection.ofCompleteSpace`. In complete ambient spaces, apply it to a
+closed submodule through `IsClosed.isComplete`. -/
+@[simp]
+theorem adjoint_adjoint (g : Submodule 𝕜 (E × F)) (hg : IsComplete (g : Set (E × F))) :
+    g.adjoint.adjoint = g := by
+  refine le_antisymm (fun x hx => ?_) g.le_adjoint_adjoint
+  set G := g.comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
+  -- `G` is the image of `g` under the uniform equivalence `WithLp.toLp`, hence complete.
+  have : CompleteSpace G := by
+    refine completeSpace_coe_iff_isComplete.mpr ?_
+    rwa [comap_coe, LinearEquiv.coe_toLinearMap, ← LinearEquiv.image_symm_eq_preimage,
+      WithLp.coe_symm_linearEquiv, (WithLp.isUniformInducing_toLp 2 E F).isComplete_iff]
+  have hmem := toLp_mem_orthogonal_orthogonal_of_mem_adjoint_adjoint hx
+  rw [orthogonal_orthogonal] at hmem
+  simpa [G] using hmem
 
 end Submodule
 
@@ -142,10 +156,10 @@ private theorem closure_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosab
   refine le_antisymm (fun y hy ↦ ?_) (fun y hy ↦ ?_)
   · rw [mem_adjoint_domain_iff] at hy ⊢
     have hfun : ⇑((innerₛₗ 𝕜 y).comp T.toFun) =
-        fun x : T.domain ↦ ((innerₛₗ 𝕜 y).comp T.closure.toFun) ⟨x, T.le_closure.1 x.2⟩ := by
-      funext x; simp [T.le_closure.2 (y := ⟨x, T.le_closure.1 x.2⟩) rfl]
+        fun x : T.domain ↦ ((innerₛₗ 𝕜 y).comp T.closure.toFun) ⟨x, T.le_closure.1 x.property⟩ := by
+      funext x; simp [T.le_closure.2 (y := ⟨x, T.le_closure.1 x.property⟩) rfl]
     rw [hfun]
-    exact hy.comp (continuous_subtype_val.subtype_mk _)
+    exact hy.comp (continuous_subtypeVal.subtype_mk _)
   · rw [mem_adjoint_domain_iff] at hy ⊢
     let φ : StrongDual 𝕜 T.domain := ⟨(innerₛₗ 𝕜 y).comp T.toFun, hy⟩
     have hcl : _root_.IsClosed {p : E × F | ‖inner 𝕜 y p.2‖ ≤ ‖φ‖ * ‖p.1‖} :=
@@ -185,22 +199,6 @@ theorem closure_adjoint (T : E →ₗ.[𝕜] F) : T.closure† = T† := by
       refine LinearPMap.ext (closure_adjoint_domain hTc) fun y hy hy' ↦ ?_
       rw [adjoint_apply_of_not_dense hd' ⟨y, hy⟩, adjoint_apply_of_not_dense hd ⟨y, hy'⟩]
   · rw [closure_def' hTc]
-
-/-- For a densely defined partial linear map `T`, the orthogonal complement of its range is the
-kernel of its adjoint `T†`. -/
-theorem orthogonal_range_eq_ker_adjoint {T : E →ₗ.[𝕜] F} (hd : Dense (T.domain : Set E)) :
-    (LinearMap.range T.toFun)ᗮ = T†.ker := by
-  refine le_antisymm (fun y hy ↦ ?_) (fun y hy ↦ ?_)
-  · have hpair : ∀ x : T.domain, inner 𝕜 (0 : E) (x : E) = inner 𝕜 y (T x) := fun x ↦ by
-      rw [inner_zero_left]
-      exact (Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self T.toFun x) hy).symm
-    have hy' : y ∈ T†.domain := mem_adjoint_domain_of_exists y ⟨0, hpair⟩
-    exact mem_ker_iff.2 ⟨⟨y, hy'⟩, rfl, adjoint_apply_eq hd ⟨y, hy'⟩ hpair⟩
-  · obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hy
-    rw [Submodule.mem_orthogonal]
-    rintro _ ⟨x, rfl⟩
-    rw [toFun_eq_coe, ← inner_conj_symm, ← adjoint_isFormalAdjoint hd z x, hz, inner_zero_left,
-      _root_.map_zero]
 
 /-- Every value `T† y` of the adjoint of a partial linear map lies in `(ker T)ᗮ`. No density or
 closedness assumption is required: when `T.domain` is not dense, `T†` takes the value `0`. -/
@@ -245,22 +243,24 @@ theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable) :
     hTc.graph_closure_eq_closure_graph] at hmem
   exact T.closure.graph_fst_eq_zero_snd hmem rfl
 
-/-- **von Neumann's double-adjoint theorem.** The double adjoint of a closable densely defined
-partial linear map between Hilbert spaces is its closure. -/
-theorem adjoint_adjoint_eq_closure {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable)
-    (hd : Dense (T.domain : Set E)) : T†† = T.closure := by
+/-- **The double adjoint is the closure.** For a closable densely defined partial linear map `T`
+between Hilbert spaces, `T†† = closure T`. -/
+theorem adjoint_adjoint_eq_closure {T : E →ₗ.[𝕜] F} (hT : T.IsClosable)
+    (hd : Dense (T.domain : Set E)) : T.adjoint.adjoint = T.closure := by
   apply eq_of_eq_graph
-  rw [adjoint_graph_eq_graph_adjoint (dense_adjoint_domain hTc),
-    adjoint_graph_eq_graph_adjoint hd, Submodule.adjoint_adjoint_eq_topologicalClosure,
-    hTc.graph_closure_eq_closure_graph]
+  rw [adjoint_graph_eq_graph_adjoint (dense_adjoint_domain hT), adjoint_graph_eq_graph_adjoint hd,
+    Submodule.adjoint_adjoint_eq_topologicalClosure, hT.graph_closure_eq_closure_graph]
 
-/-- For a closed densely defined partial linear map between Hilbert spaces, the double adjoint
-recovers the map itself: `T†† = T`. -/
-theorem IsClosed.adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
-    (hd : Dense (T.domain : Set E)) : T†† = T :=
-  (adjoint_adjoint_eq_closure hT.isClosable hd).trans <|
-    eq_of_eq_graph (hT.isClosable.graph_closure_eq_closure_graph.symm.trans
-      hT.submodule_topologicalClosure_eq)
+/-- **The adjoint of a closed operator is involutive.** For a closed densely defined partial linear
+map `T` between Hilbert spaces, `T†† = T`. -/
+theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
+    T.adjoint.adjoint = T :=
+  (adjoint_adjoint_eq_closure hT.isClosable hd).trans hT.closure_eq
+
+/-- For a closed densely defined `T`, the double adjoint `T††` evaluates as `T` on `dom T`. -/
+theorem adjoint_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E))
+    (x : T.domain) : T.adjoint.adjoint ⟨x, (adjoint_adjoint hT hd).symm ▸ x.property⟩ = T x :=
+  (adjoint_adjoint hT hd).le.2 rfl
 
 end LinearPMap
 
@@ -277,10 +277,10 @@ assumption on `M` is needed. -/
 theorem compPMap_adjoint (W : E →L[𝕜] F) (M : G →ₗ.[𝕜] E) :
     ((W : E →ₗ[𝕜] F).compPMap M)† =
       M†.comp ((W.adjoint : F →ₗ[𝕜] E).toPMap (M†.domain.comap (W.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.2 := by
+        fun y ↦ y.property := by
   have hdom : ((W : E →ₗ[𝕜] F).compPMap M)†.domain =
       (M†.comp ((W.adjoint : F →ₗ[𝕜] E).toPMap (M†.domain.comap (W.adjoint : F →ₗ[𝕜] E)))
-        fun y ↦ y.2).domain := by
+        fun y ↦ y.property).domain := by
     ext y
     -- `LinearPMap.comp` has no simp lemma for `.domain`; unfold it and `compPMap.domain`.
     change y ∈ ((W : E →ₗ[𝕜] F).compPMap M)†.domain ↔ W.adjoint y ∈ M†.domain

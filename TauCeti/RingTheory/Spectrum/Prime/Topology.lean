@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
 import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -26,7 +27,11 @@ homomorphism with nil kernel, and in particular along an injective one.
 A subset of the prime spectrum containing every minimal prime is dense. This is how
 generic properties, such as freeness of a module at the minimal primes of a reduced ring, are
 turned into dense subsets of the spectrum. In particular the basic open set `D(a)` of a
-nonzerodivisor `a` is dense, since minimal primes consist of zero divisors.
+nonzerodivisor `a` is dense, since minimal primes consist of zero divisors. A basic open set
+`D(f)` is the whole spectrum exactly when `f` is a unit.
+
+When there are finitely many minimal primes, every dense open contains them all and remains
+nonempty after any nontrivial localization.
 
 A bijection on minimal primes induces a bijection on irreducible components by taking closures
 of images under the spectral map.
@@ -105,6 +110,8 @@ end RingHom
 
 namespace PrimeSpectrum
 
+open TopologicalSpace
+
 section Quotient
 
 variable {R : Type*} [CommRing R]
@@ -137,6 +144,16 @@ end Quotient
 
 variable {R : Type*} [CommSemiring R]
 
+/-- The union of the basic opens indexed by an arbitrary set is the complement of its
+zero locus. This needs only a commutative semiring. -/
+theorem iSup_basicOpen_eq_compl_zeroLocus (s : Set R) :
+    (⨆ r : s, basicOpen r.val) =
+      (⟨(zeroLocus s)ᶜ, (isClosed_zeroLocus s).isOpen_compl⟩ : Opens (PrimeSpectrum R)) := by
+  rw [SetLike.ext'_iff, Opens.coe_iSup]
+  simp only [basicOpen_eq_zeroLocus_compl, ← Set.compl_iInter, ← zeroLocus_iUnion,
+    Set.iUnion_of_singleton_coe]
+  rfl
+
 /-- A subset of the prime spectrum containing every minimal prime is dense: every nonempty open
 set contains a minimal prime, namely a generization of any of its points. -/
 theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
@@ -146,12 +163,39 @@ theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
   have hspec : (⟨q, hq.1.1⟩ : PrimeSpectrum R) ⤳ x := (le_iff_specializes _ _).mp hqx
   exact ⟨_, hspec.mem_open hU hx, hs q hq⟩
 
+/-- If there are finitely many minimal primes, a dense open contains each of them. -/
+theorem mem_of_isOpen_of_dense_of_mem_minimalPrimes
+    (hfin : (minimalPrimes R).Finite) {s : Set (PrimeSpectrum R)} (hs : IsOpen s)
+    (hdense : Dense s) {p : PrimeSpectrum R} (hp : p.asIdeal ∈ minimalPrimes R) : p ∈ s := by
+  obtain ⟨g, hgp, hg⟩ :=
+    Ideal.exists_notMem_forall_le_of_mem_minimalPrimes (⊥ : Ideal R) hfin hp
+  obtain ⟨q, hqs, hqg⟩ := hdense.exists_mem_open (basicOpen g).isOpen ⟨p, hgp⟩
+  exact ((le_iff_specializes p q).mp (hg q.asIdeal q.isPrime bot_le hqg)).mem_open hs hqs
+
+/-- If there are finitely many minimal primes, a dense open has nonempty preimage in every
+nontrivial localization. -/
+theorem preimage_comap_nonempty_of_isOpen_of_dense (hfin : (minimalPrimes R).Finite)
+    {s : Set (PrimeSpectrum R)} (hs : IsOpen s) (hdense : Dense s)
+    (M : Submonoid R) (S : Type*) [CommSemiring S] [Nontrivial S] [Algebra R S]
+    [IsLocalization M S] : (comap (algebraMap R S) ⁻¹' s).Nonempty := by
+  obtain ⟨⟨p, hp⟩⟩ := Ideal.nonempty_minimalPrimes (R := S) (I := ⊥) bot_ne_top
+  have hp' : p.under R ∈ minimalPrimes R := by
+    rw [← Set.mem_preimage, ← IsLocalization.minimalPrimes_map M S (⊥ : Ideal R)]
+    simpa only [Ideal.map_bot] using hp
+  exact ⟨⟨p, hp.isPrime⟩, mem_of_isOpen_of_dense_of_mem_minimalPrimes hfin hs hdense hp'⟩
+
 /-- The basic open set `D(a)` of a nonzerodivisor `a` is dense: it contains every minimal prime,
 since minimal primes consist of zero divisors. -/
 theorem dense_basicOpen_of_mem_nonZeroDivisors {a : R} (ha : a ∈ nonZeroDivisors R) :
     Dense (basicOpen a : Set (PrimeSpectrum R)) :=
   dense_of_forall_mem_minimalPrimes fun _ hp ↦
     Set.disjoint_right.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp) ha
+
+/-- A basic open set `D(f)` is the whole spectrum if and only if `f` is a unit. -/
+@[simp]
+theorem basicOpen_eq_top_iff (f : R) : basicOpen f = ⊤ ↔ IsUnit f := by
+  simpa only [ciSup_const, Set.range_const, Ideal.span_singleton_eq_top] using
+    iSup_basicOpen_eq_top_iff (f := fun _ : Unit ↦ f)
 
 /-- For an ideal `I` of a commutative ring `S` contained in the Jacobson radical of `S`, an open
 subset of the prime spectrum of `S` contains the zero locus of `I` exactly when it is the whole

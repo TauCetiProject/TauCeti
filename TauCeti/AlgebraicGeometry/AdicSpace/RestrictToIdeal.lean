@@ -161,7 +161,7 @@ of the subspace. -/
 theorem restrictToIdealCodRestrict_coe (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) (v : (spvOfIdeal I hfg : Set (Spv A))) :
     restrictToIdealCodRestrict I hfg (v : Spv A) = v :=
-  Subtype.ext (restrictToIdeal_eq_self_of_mem_spvOfIdeal _ I hfg v.2)
+  Subtype.ext (restrictToIdeal_eq_self_of_mem_spvOfIdeal _ I hfg v.property)
 
 /-- **The restriction of a continuous point is continuous.** This is the valuation-level
 `Valuation.IsContinuous.restrictToIdeal`, read on the canonical valuation of the point. -/

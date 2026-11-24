@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Complement.Local
+public import TauCeti.GroupTheory.Complement.SemidirectProduct
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
 
 /-!
@@ -19,7 +19,10 @@ or finiteness is needed.
 `Subgroup.localQuotientSplittingEquiv` combines the global quotient-splitting dictionary
 with the passage between subgroups of `H` and subgroups of the ambient group contained in `H`.
 Its inverse recovers the right projection of the local product decomposition; the left
-projection is the remainder after removing that splitting value.
+projection is the remainder after removing that splitting value. Relabelling `N.subgroupOf H`
+as `N` and `H ⧸ N.subgroupOf H` as `K` intertwines the local semidirect-product isomorphism
+`Subgroup.IsLocalComplement.semidirectProductMulEquiv` with the splitting's
+`GroupExtension.Splitting.semidirectProductMulEquiv`.
 -/
 
 public section
@@ -109,6 +112,74 @@ theorem coe_leftProjection_eq_mul_inv_localQuotientSplitting (x : H) :
         (QuotientGroup.mk' (N.subgroupOf H) x) : G)⁻¹ := by
   rw [h.coe_localQuotientSplittingEquiv_symm_mk]
   exact eq_mul_inv_iff_mul_eq.mpr (h.leftProjection_mul_rightProjection x)
+
+/-- In the ambient group, the right component of `h.semidirectProductMulEquiv.symm x` is the
+associated local quotient splitting evaluated at the coset of `x`. -/
+theorem coe_semidirectProductMulEquiv_symm_right_eq_localQuotientSplitting (x : H) :
+    ((h.semidirectProductMulEquiv.symm x).right : G) =
+      ((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩
+        (QuotientGroup.mk' (N.subgroupOf H) x) : G) := by
+  rw [h.semidirectProductMulEquiv_symm_right, h.coe_localQuotientSplittingEquiv_symm_mk]
+
+/-- In the ambient group, the left component of `h.semidirectProductMulEquiv.symm x` is the
+remainder after removing the local quotient splitting value. -/
+theorem coe_semidirectProductMulEquiv_symm_left_eq_mul_inv_localQuotientSplitting (x : H) :
+    ((h.semidirectProductMulEquiv.symm x).left : G) = (x : G) *
+      ((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩
+        (QuotientGroup.mk' (N.subgroupOf H) x) : G)⁻¹ := by
+  rw [h.semidirectProductMulEquiv_symm_left, h.coe_leftProjection_eq_mul_inv_localQuotientSplitting]
+
+/-- Relabelling `N.subgroupOf H` as `N` and `H ⧸ N.subgroupOf H` as `K` identifies the semidirect
+product associated to `(N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩` with the external
+semidirect product `N ⋊ K` of `Subgroup.IsLocalComplement.semidirectProductMulEquiv`. -/
+noncomputable def localQuotientSplittingSemidirectProductMulEquiv :
+    (N.subgroupOf H) ⋊[((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩).conjAct]
+        (H ⧸ N.subgroupOf H) ≃*
+      N ⋊[(N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)] K :=
+  SemidirectProduct.congr (subgroupOfEquivOfLe h.left_le)
+    (h.isComplement'_subgroupOf.symm.QuotientMulEquiv.trans (subgroupOfEquivOfLe h.right_le))
+    fun q => by
+      ext n
+      simp [IsComplement'.quotientSplitting_apply]
+
+@[simp]
+theorem localQuotientSplittingSemidirectProductMulEquiv_left
+    (x : (N.subgroupOf H) ⋊[((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩).conjAct]
+      (H ⧸ N.subgroupOf H)) :
+    (h.localQuotientSplittingSemidirectProductMulEquiv x).left =
+      subgroupOfEquivOfLe h.left_le x.left := (rfl)
+
+@[simp]
+theorem localQuotientSplittingSemidirectProductMulEquiv_right
+    (x : (N.subgroupOf H) ⋊[((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩).conjAct]
+      (H ⧸ N.subgroupOf H)) :
+    (h.localQuotientSplittingSemidirectProductMulEquiv x).right =
+      subgroupOfEquivOfLe h.right_le (h.isComplement'_subgroupOf.symm.QuotientMulEquiv x.right) :=
+  (rfl)
+
+@[simp]
+theorem localQuotientSplittingSemidirectProductMulEquiv_symm_left
+    (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)] K) :
+    (h.localQuotientSplittingSemidirectProductMulEquiv.symm x).left =
+      (subgroupOfEquivOfLe h.left_le).symm x.left := (rfl)
+
+@[simp]
+theorem localQuotientSplittingSemidirectProductMulEquiv_symm_right
+    (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)] K) :
+    (h.localQuotientSplittingSemidirectProductMulEquiv.symm x).right =
+      (inclusion h.right_le x.right : H ⧸ N.subgroupOf H) :=
+  h.isComplement'_subgroupOf.symm.QuotientMulEquiv_symm_apply
+    ((subgroupOfEquivOfLe h.right_le).symm x.right)
+
+/-- Transporting along `h.localQuotientSplittingSemidirectProductMulEquiv` intertwines
+`h.semidirectProductMulEquiv` with the semidirect-product isomorphism of the associated local
+quotient splitting. -/
+@[simp]
+theorem localQuotientSplittingSemidirectProductMulEquiv_trans_semidirectProductMulEquiv :
+    h.localQuotientSplittingSemidirectProductMulEquiv.trans h.semidirectProductMulEquiv =
+      ((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩).semidirectProductMulEquiv := by
+  ext x
+  simp [IsComplement'.quotientSplitting_apply]
 
 end IsLocalComplement
 

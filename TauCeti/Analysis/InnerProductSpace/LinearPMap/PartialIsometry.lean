@@ -69,11 +69,11 @@ theorem IsPartialIsometry.isClosed_compPMap_iff [TopologicalSpace G]
       rw [SetLike.mem_coe, LinearPMap.mem_graph_iff]
       refine ⟨?_, fun ⟨hq₁, hq₂⟩ ↦ ?_⟩
       · rintro ⟨w, rfl, rfl⟩
-        exact ⟨((u : E →ₗ[𝕜] F).compPMap M).mem_graph_iff.mpr ⟨⟨w, w.2⟩, rfl, rfl⟩,
+        exact ⟨((u : E →ₗ[𝕜] F).compPMap M).mem_graph_iff.mpr ⟨⟨w, w.property⟩, rfl, rfl⟩,
           hrange (LinearMap.mem_range_self M.toFun w)⟩
       · obtain ⟨w, hw₁, hw₂⟩ := ((u : E →ₗ[𝕜] F).compPMap M).mem_graph_iff.mp hq₁
-        refine ⟨⟨w, w.2⟩, hw₁, ?_⟩
-        calc M ⟨w, w.2⟩ = u.adjoint (u (M ⟨w, w.2⟩)) := (hproj ⟨w, w.2⟩).symm
+        refine ⟨⟨w, w.property⟩, hw₁, ?_⟩
+        calc M ⟨w, w.property⟩ = u.adjoint (u (M ⟨w, w.property⟩)) := (hproj ⟨w, w.property⟩).symm
           _ = u.adjoint (u z) := congrArg u.adjoint hw₂
           _ = z := hu.adjoint_apply_apply hq₂
     rw [LinearPMap.IsClosed, hgraph]
@@ -85,10 +85,10 @@ theorem IsPartialIsometry.isClosed_compPMap_iff [TopologicalSpace G]
       rw [SetLike.mem_coe, LinearPMap.mem_graph_iff]
       refine ⟨?_, fun ⟨hp₁, hp₂⟩ ↦ ?_⟩
       · rintro ⟨w, rfl, rfl⟩
-        let w' : M.domain := ⟨w, w.2⟩
+        let w' : M.domain := ⟨w, w.property⟩
         exact ⟨M.mem_graph_iff.mpr ⟨w', rfl, (hproj w').symm⟩, hu.apply_adjoint_apply (M w')⟩
       · obtain ⟨w, hw₁, hw₂⟩ := M.mem_graph_iff.mp hp₁
-        exact ⟨⟨w, w.2⟩, hw₁, (congrArg u hw₂).trans hp₂⟩
+        exact ⟨⟨w, w.property⟩, hw₁, (congrArg u hw₂).trans hp₂⟩
     rw [LinearPMap.IsClosed, hgraph]
     exact (hM.preimage (continuous_fst.prodMk (u.adjoint.continuous.comp continuous_snd))).inter
       (isClosed_eq (u.continuous.comp (u.adjoint.continuous.comp continuous_snd)) continuous_snd)
@@ -138,13 +138,13 @@ theorem IsPartialIsometry.compPMap_adjointComp {u : E →L[𝕜] F} (hu : u.IsPa
   rw [LinearPMap.adjointComp_apply _ ⟨x, hx₁⟩, LinearPMap.adjointComp_apply M ⟨x, hx₂⟩]
   have hcomp : ((u : E →ₗ[𝕜] F).compPMap M) ⟨x, LinearPMap.adjointComp_domain_le _ hx₁⟩ ∈
       (M†.comp ((u.adjoint : F →ₗ[𝕜] E).toPMap
-        (M†.domain.comap (u.adjoint : F →ₗ[𝕜] E))) fun y ↦ y.2).domain := hux
+        (M†.domain.comap (u.adjoint : F →ₗ[𝕜] E))) fun y ↦ y.property).domain := hux
   let lhsVal : (((u : E →ₗ[𝕜] F).compPMap M)†).domain :=
     ⟨((u : E →ₗ[𝕜] F).compPMap M) ⟨x, LinearPMap.adjointComp_domain_le _ hx₁⟩,
       (LinearPMap.mem_adjointComp_domain.mp hx₁).choose_spec⟩
   have lhs_eq : (((u : E →ₗ[𝕜] F).compPMap M)†) lhsVal =
       (M†) ⟨u.adjoint (u (M ⟨x, hxM⟩)), hux⟩ :=
-    LinearPMap.congr_fun hadj lhsVal.2 hcomp
+    LinearPMap.congr_fun hadj lhsVal.property hcomp
   rw [lhs_eq]
   exact congrArg (M†) (Subtype.ext (hproj ⟨x, hxM⟩))
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.MarkedCase
 public import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The dyadic cyclotomic image in the even-degree cases
@@ -59,7 +58,7 @@ theorem exists_range_localCyclotomicCharacter_eq_unitsPlusMinus [Algebra ℚ_[2]
   have hA : (localCyclotomicCharacter 2 K).range ⊓ unitsPrincipal 2 2 ≠ ⊥ := by
     intro h
     have hbot : (localCyclotomicCharacter 2 K).range ≠ ⊥ := fun hbot ↦
-      PadicInt.units_neg_one_ne_one (by rwa [hbot, Subgroup.mem_bot] at hneg)
+      (neg_units_ne_self 1) (by rwa [hbot, Subgroup.mem_bot] at hneg)
     have hinf := infinite_range_localCyclotomicCharacter 2 K
     rw [eq_zpowers_neg_one_of_inf_unitsPrincipal_two_eq_bot hbot h] at hinf
     exact not_finite_iff_infinite.mpr hinf

@@ -10,7 +10,7 @@ public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functorial
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 
 /-!
-# Pointwise formulas for the coinduced resolution, and classes of homogeneous cocycles
+# The coinduced resolution functor, pointwise formulas, and homogeneous cocycle classes
 
 Mathlib computes the continuous cohomology of a topological representation `X` from the coinduced
 resolution `TopRep.resolutionX X n`, the iterated function space `C(G, C(G, …, C(G, X)))`, whose
@@ -32,6 +32,7 @@ it, and two such cocycles have the same class exactly when they differ by a homo
 
 ## Main definitions
 
+* `TopRep.resolutionFunctor`: a fixed degree of the coinduced resolution, as a functor.
 * `TopRep.cochainClass`: the class in `continuousCohomology n X` of a homogeneous `n`-cochain whose
   differential vanishes.
 
@@ -66,6 +67,31 @@ it, and two such cocycles have the same class exactly when they differ by a homo
 public section
 
 namespace TopRep
+
+noncomputable section
+
+open CategoryTheory
+
+universe u v w
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- The functor taking a representation to a fixed degree of its coinduced resolution. -/
+@[expose, simps -isSimp obj map]
+def resolutionFunctor (n : ℕ) :
+    TopRep.{max v w} R G ⥤ TopRep.{max v w} R G where
+  obj X := resolutionX X n
+  map f := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
+  map_id X := _root_.ContinuousCohomology.resolutionMap_id X n
+  map_comp f g := _root_.ContinuousCohomology.resolutionMap_comp
+    (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g n
+
+attribute [simp] resolutionFunctor_obj
+-- Let the generic functor laws simplify identities and composites first.
+attribute [simp low] resolutionFunctor_map
+
+end
 
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] (X : TopRep k G)

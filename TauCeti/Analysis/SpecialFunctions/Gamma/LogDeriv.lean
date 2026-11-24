@@ -6,7 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
@@ -84,29 +84,25 @@ theorem logDeriv_Gammaℂ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
       (differentiableAt_Gamma _ hs), hlog, ← digamma_def]
   ring
 
+/-- At one the complex-place normalization contributes log of two pi, not log of pi. -/
+example : logDeriv Gammaℂ 1 =
+    -(Real.eulerMascheroniConstant : ℂ) - (Real.log (2 * Real.pi) : ℂ) := by
+  simpa only [digamma_one] using
+    logDeriv_Gammaℂ (s := 1) (by
+      simpa only [Ne, Complex.Gamma_eq_zero_iff, not_exists] using
+        Gamma_ne_zero_of_re_pos (by norm_num : 0 < (1 : ℂ).re))
+
 /-- The logarithmic derivative is analytic off the poles of the real-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℝ {s : ℂ} (hs : Gammaℝ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℝ) s := by
-  have ha : AnalyticAt ℂ Gammaℝ s := by
-    have h := (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
-    rw [show (fun z ↦ (Gammaℝ z)⁻¹)⁻¹ = Gammaℝ from funext (fun z ↦ inv_inv _)] at h
-    exact h
+  have ha := analyticAt_Gammaℝ_of_ne_zero hs
   exact ha.deriv.div ha hs
 
 /-- The logarithmic derivative is analytic off the poles of the complex-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℂ {s : ℂ} (hs : Gammaℂ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℂ) s := by
-  have ha : AnalyticAt ℂ Gammaℂ s := by
-    have h := (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
-    rw [show (fun z ↦ (Gammaℂ z)⁻¹)⁻¹ = Gammaℂ from funext (fun z ↦ inv_inv _)] at h
-    exact h
+  have ha := analyticAt_Gammaℂ_of_ne_zero hs
   exact ha.deriv.div ha hs
-
-/-- The complex-place gamma factor is nonzero on the positive half-plane. -/
-theorem Gammaℂ_ne_zero_of_re_pos {s : ℂ} (hs : 0 < s.re) : Gammaℂ s ≠ 0 := by
-  rw [Gammaℂ_def]
-  exact mul_ne_zero (mul_ne_zero (by norm_num) (by simp [Real.pi_ne_zero]))
-    (Gamma_ne_zero_of_re_pos hs)
 
 /-- The real-place logarithmic derivative is continuous on the positive half-plane. -/
 theorem continuousOn_logDeriv_Gammaℝ :

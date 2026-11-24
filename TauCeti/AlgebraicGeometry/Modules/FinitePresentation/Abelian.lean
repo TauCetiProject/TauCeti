@@ -53,12 +53,12 @@ instance isFinitePresentation_kernel [IsLocallyNoetherian X] (f : M ⟶ N)
     [M.IsQuasicoherent] [M.IsFiniteType] [N.IsQuasicoherent] :
     (kernel f).IsFinitePresentation := by
   refine isFinitePresentation_of_isFinitePresentation_restrict (kernel f)
-    (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  let F := restrictFunctor U.1.ι
-  let G := restrictFunctor U.2.isoSpec.inv
-  have : IsNoetherianRing Γ(X, U.1) := IsLocallyNoetherian.component_noetherian U
-  apply (isFinitePresentation_restrict_iff_of_isIso _ U.2.isoSpec.inv).mp
-  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+    (fun U : X.affineOpens ↦ U.val) (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  let F := restrictFunctor U.val.ι
+  let G := restrictFunctor U.property.isoSpec.inv
+  have : IsNoetherianRing Γ(X, U.val) := IsLocallyNoetherian.component_noetherian U
+  apply (isFinitePresentation_restrict_iff_of_isIso _ U.property.isoSpec.inv).mp
+  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.val)).ringCatSheaf).prop_of_iso
     (G.mapIso (PreservesKernel.iso F f) ≪≫ PreservesKernel.iso G (F.map f)).symm
     (isFinitePresentation_kernel_spec (G.map (F.map f)))
 

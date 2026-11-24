@@ -50,6 +50,10 @@ analysing structures that realize countably many types.
   endpoints, tuples of the same atomic type have the same complete type.
 * `FirstOrder.Language.exists_isolatingFormula`: if a structure realizes countably many complete
   `n`-types, each realized type is isolated among them by a single formula.
+* `FirstOrder.Language.LHom.preimage_onBoundedFormulaInf_infinitaryType`,
+  `FirstOrder.Language.LEquiv.infinitaryType_reduct` and
+  `FirstOrder.Language.LEquiv.realizedTypes_reduct`: transport of complete types and realized types
+  along language expansions and equivalences.
 
 ## References
 
@@ -62,7 +66,7 @@ analysing structures that realize countably many types.
 
 public section
 
-universe u v w w'
+universe u v u' v' w w'
 
 namespace FirstOrder
 
@@ -158,7 +162,7 @@ theorem exists_isolatingFormula (h : (realizedTypes (L := L) M n).Countable) (a 
       χ.Realize Empty.elim b ↔ infinitaryType (L := L) M b = infinitaryType M a := by
   -- For each realized type `q`, a formula of the type of `a` that separates it from `q`.
   have hsep : ∀ q : realizedTypes (L := L) M n, ∃ θ ∈ infinitaryType M a,
-      q.1 ≠ infinitaryType M a → θ ∉ q.1 := by
+      q.val ≠ infinitaryType M a → θ ∉ q.val := by
     rintro ⟨_, b, rfl⟩
     by_cases hb : infinitaryType (L := L) M b = infinitaryType M a
     · exact ⟨⊤, BoundedFormulaInf.realize_top.2 trivial, fun hne => (hne hb).elim⟩
@@ -173,6 +177,38 @@ theorem exists_isolatingFormula (h : (realizedTypes (L := L) M n).Countable) (a 
     exact hθq ⟨_, infinitaryType_mem_realizedTypes b⟩ hne (hb _)
   · rw [← mem_infinitaryType, hb]
     exact hθa q
+
+/-! ### Transport along language maps -/
+
+/-- Along an expansion, the preimage of the complete `L'_{ω₁ω}`-type under `g` is the complete
+`L_{ω₁ω}`-type. -/
+@[simp]
+theorem LHom.preimage_onBoundedFormulaInf_infinitaryType {L' : Language.{u', v'}} (g : L →ᴸ L')
+    [L'.Structure M] [g.IsExpansionOn M] (a : Fin n → M) :
+    g.onBoundedFormulaInf ⁻¹' infinitaryType (L := L') M a = infinitaryType (L := L) M a := by
+  ext φ
+  simp [LHom.realize_onBoundedFormulaInf]
+
+/-- Along a language equivalence, reinterpreting `M` along the inverse map transports complete
+`L_{ω₁ω}`-types by `e.onBoundedFormulaInf`. -/
+theorem LEquiv.infinitaryType_reduct {L' : Language.{u', v'}} (e : L ≃ᴸ L') (a : Fin n → M) :
+    letI := e.invLHom.reduct M
+    infinitaryType (L := L') M a = e.onBoundedFormulaInf '' infinitaryType (L := L) M a := by
+  let := e.invLHom.reduct M
+  rw [Equiv.image_eq_preimage_symm]
+  ext ψ
+  simp [LHom.realize_onBoundedFormulaInf]
+
+/-- Along a language equivalence, reinterpreting `M` along the inverse map transports the set of
+realized types by `Set.image e.onBoundedFormulaInf`. -/
+theorem LEquiv.realizedTypes_reduct {L' : Language.{u', v'}} (e : L ≃ᴸ L') (M : Type w)
+    [L.Structure M] (n : ℕ) :
+    letI := e.invLHom.reduct M
+    realizedTypes (L := L') M n =
+      Set.image e.onBoundedFormulaInf '' realizedTypes (L := L) M n := by
+  let := e.invLHom.reduct M
+  ext q
+  simp only [mem_realizedTypes, Set.mem_image, exists_exists_eq_and, e.infinitaryType_reduct]
 
 end Language
 

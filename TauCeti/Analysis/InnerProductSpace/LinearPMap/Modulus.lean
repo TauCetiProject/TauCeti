@@ -161,6 +161,7 @@ private theorem norm_modulus_apply_of_mem_adjointComp_domain {T : E →ₗ.[𝕜
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
 
 /-- For a closed densely defined operator `T`, the domain of its modulus `|T|` equals `D(T)`. -/
+@[simp]
 theorem IsClosed.modulus_domain {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.domain = T.domain :=
   le_antisymm
@@ -180,17 +181,18 @@ theorem IsClosed.norm_modulus_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (norm_modulus_apply_of_mem_adjointComp_domain hT hd)).2 ⟨x, hx⟩
 
 /-- The modulus and the operator have the same kernel when `T` is closed and densely defined. -/
+@[simp]
 theorem IsClosed.ker_modulus {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.ker = T.ker := by
   refine le_antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
   · obtain ⟨u, rfl, hu⟩ := mem_ker_iff.mp hx
-    have hxT : (u : E) ∈ T.domain := hT.modulus_domain hd ▸ u.2
+    have hxT : (u : E) ∈ T.domain := hT.modulus_domain hd ▸ u.property
     refine mem_ker_iff.mpr ⟨⟨u, hxT⟩, rfl, norm_eq_zero.mp ?_⟩
-    rw [← hT.norm_modulus_apply hd u.2 hxT, hu, norm_zero]
+    rw [← hT.norm_modulus_apply hd u.property hxT, hu, norm_zero]
   · obtain ⟨u, rfl, hu⟩ := mem_ker_iff.mp hx
-    have hxM : (u : E) ∈ T.modulus.domain := (hT.modulus_domain hd).symm ▸ u.2
+    have hxM : (u : E) ∈ T.modulus.domain := (hT.modulus_domain hd).symm ▸ u.property
     refine mem_ker_iff.mpr ⟨⟨u, hxM⟩, rfl, norm_eq_zero.mp ?_⟩
-    rw [hT.norm_modulus_apply hd hxM u.2, hu, norm_zero]
+    rw [hT.norm_modulus_apply hd hxM u.property, hu, norm_zero]
 
 /-- For a closed densely defined operator `T`, the orthogonal complement of the range of `|T|` is
 `ker T`. -/
@@ -211,6 +213,7 @@ theorem _root_.IsSelfAdjoint.modulus_eq_of_re_inner_nonneg {A : E →ₗ.[𝕜] 
   (hA.isClosed.eq_modulus hA.dense_domain hA hpos rfl).symm
 
 /-- For a closed densely defined operator `T`, the modulus of `|T|` is `|T|`. -/
+@[simp]
 theorem IsClosed.modulus_modulus {T : E →ₗ.[𝕜] F} (hT : T.IsClosed)
     (hd : Dense (T.domain : Set E)) : T.modulus.modulus = T.modulus :=
   (hT.isSelfAdjoint_modulus hd).modulus_eq_of_re_inner_nonneg (hT.re_inner_modulus_nonneg hd)

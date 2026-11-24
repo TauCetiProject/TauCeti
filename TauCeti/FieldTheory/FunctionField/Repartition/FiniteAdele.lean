@@ -51,8 +51,8 @@ variable (R) in
 /-- Restriction of a repartition to an affine chart, followed by the embeddings into the
 adic completions. The omitted places, such as the places at infinity, are forgotten. -/
 noncomputable def repartitionToFiniteAdeles : repartitionSpace k F →+ FiniteAdeleRing R F where
-  toFun b := ⟨fun p ↦ algebraMap F (p.adicCompletion F) (b.1 (Place.ofPrime k F p)), by
-    have hb := mem_repartitionSpace_iff_finite.mp b.2
+  toFun b := ⟨fun p ↦ algebraMap F (p.adicCompletion F) (b.val (Place.ofPrime k F p)), by
+    have hb := mem_repartitionSpace_iff_finite.mp b.property
     have hfin := hb.preimage (Place.ofPrime_injective k F (R := R)).injOn
     simpa only [Filter.eventually_cofinite, SetLike.mem_coe, Set.preimage_ofPred_eq,
       HeightOneSpectrum.mem_adicCompletionIntegers,
@@ -68,7 +68,7 @@ noncomputable def repartitionToFiniteAdeles : repartitionSpace k F →+ FiniteAd
 @[simp]
 theorem repartitionToFiniteAdeles_apply (b : repartitionSpace k F) (p : HeightOneSpectrum R) :
     repartitionToFiniteAdeles R b p =
-      algebraMap F (p.adicCompletion F) (b.1 (Place.ofPrime k F p)) :=
+      algebraMap F (p.adicCompletion F) (b.val (Place.ofPrime k F p)) :=
   (rfl)
 
 /-- Scalar multiplication is preserved, with constants embedded diagonally in the finite
@@ -86,7 +86,7 @@ theorem repartitionToFiniteAdeles_smul (c : k) (b : repartitionSpace k F) :
 /-- The comparison preserves the value of each retained entry. -/
 theorem valued_repartitionToFiniteAdeles (b : repartitionSpace k F) (p : HeightOneSpectrum R) :
     Valued.v (repartitionToFiniteAdeles R b p) =
-      (Place.ofPrime k F p).valuation (b.1 (Place.ofPrime k F p)) := by
+      (Place.ofPrime k F p).valuation (b.val (Place.ofPrime k F p)) := by
   simp only [repartitionToFiniteAdeles_apply, HeightOneSpectrum.algebraMap_adicCompletion,
     Function.comp_apply, Algebra.algebraMap_self_apply,
     HeightOneSpectrum.valuedAdicCompletion_eq_valuation',
@@ -97,7 +97,7 @@ affine chart. Thus the map can have a kernel even though each local embedding is
 @[simp]
 theorem repartitionToFiniteAdeles_eq_zero_iff (b : repartitionSpace k F) :
     repartitionToFiniteAdeles R b = 0 ↔
-      ∀ p : HeightOneSpectrum R, b.1 (Place.ofPrime k F p) = 0 := by
+      ∀ p : HeightOneSpectrum R, b.val (Place.ofPrime k F p) = 0 := by
   constructor
   · intro h p
     have hp := congrArg (fun a : FiniteAdeleRing R F ↦ a p) h
@@ -121,7 +121,7 @@ theorem repartitionToFiniteAdeles_const (hF : IsFunctionField k F) (f : F) :
 
 /-- A divisor bound on a repartition remains the same bound at each completed finite place. -/
 theorem repartitionToFiniteAdeles_valuation_le {D : Divisor k F} {b : repartitionSpace k F}
-    (hb : b.1 ∈ adeleFiltration D) (p : HeightOneSpectrum R) :
+    (hb : b.val ∈ adeleFiltration D) (p : HeightOneSpectrum R) :
     Valued.v (repartitionToFiniteAdeles R b p) ≤ exp (D.coeff (Place.ofPrime k F p)) := by
   rw [valued_repartitionToFiniteAdeles]
   exact (mem_adeleFiltration_iff.mp hb) (Place.ofPrime k F p)
@@ -134,7 +134,7 @@ The bound is multiplicative, so it includes zero errors even at negative coeffic
 of `D`. No function-field, exact-constants, or perfectness hypothesis is needed. -/
 theorem exists_finite_support_repartition_valuation_sub_le (a : FiniteAdeleRing R F)
     (D : Divisor k F) :
-    ∃ b : repartitionSpace k F, (Function.support b.1).Finite ∧
+    ∃ b : repartitionSpace k F, (Function.support b.val).Finite ∧
       ∀ p : HeightOneSpectrum R,
         Valued.v (repartitionToFiniteAdeles R b p - a p) ≤ exp (D.coeff (Place.ofPrime k F p)) := by
   classical

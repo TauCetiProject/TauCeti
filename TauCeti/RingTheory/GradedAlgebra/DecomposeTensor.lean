@@ -89,7 +89,7 @@ instance decomposeTensor.gradedMul [Add ι] [SetLike.GradedMul 𝒜] :
       | tmul b k =>
         simp only [LinearMap.rTensor_tmul, Submodule.subtype_apply,
           Algebra.TensorProduct.tmul_mul_tmul]
-        exact tmul_mem_decomposeTensor (SetLike.mul_mem_graded a.2 b.2) _
+        exact tmul_mem_decomposeTensor (SetLike.mul_mem_graded a.property b.property) _
       | add y₁ y₂ h₁ h₂ =>
         simpa only [map_add, mul_add] using add_mem h₁ h₂
     | add x₁ x₂ h₁ h₂ =>

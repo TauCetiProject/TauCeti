@@ -55,7 +55,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 def adjointComp (T : E →ₗ.[𝕜] F) : E →ₗ.[𝕜] E :=
   let D := (Submodule.comap T.toFun T†.domain).map T.domain.subtype
   T†.comp (T.domRestrict D) fun x ↦ by
-    obtain ⟨⟨y, hy⟩, hy', hxy⟩ := x.2.1
+    obtain ⟨⟨y, hy⟩, hy', hxy⟩ := x.property.1
     have h : T.domRestrict D x = T ⟨y, hy⟩ := domRestrict_apply hxy.symm
     rw [h]
     exact hy'
@@ -78,8 +78,8 @@ theorem adjointComp_domain_le (T : E →ₗ.[𝕜] F) : T.adjointComp.domain ≤
 /-- Evaluating `adjointComp T` at `x` applies `T†` to `T x`. -/
 @[simp]
 theorem adjointComp_apply (T : E →ₗ.[𝕜] F) (x : (adjointComp T).domain) :
-    adjointComp T x = T† ⟨T ⟨x, adjointComp_domain_le T x.2⟩,
-      (mem_adjointComp_domain.mp x.2).choose_spec⟩ :=
+    adjointComp T x = T† ⟨T ⟨x, adjointComp_domain_le T x.property⟩,
+      (mem_adjointComp_domain.mp x.property).choose_spec⟩ :=
   -- Unfolding composition and domain restriction gives the same arguments of `T` and `T†`
   -- by proof irrelevance of the membership witnesses.
   (rfl)
@@ -90,7 +90,7 @@ local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 theorem inner_adjointComp {T : E →ₗ.[𝕜] F} (hd : Dense (T.domain : Set E))
     (x : (adjointComp T).domain) {y : E} (hy : y ∈ T.domain) :
     ⟪adjointComp T x, y⟫ =
-      ⟪T ⟨x, adjointComp_domain_le T x.2⟩, T ⟨y, hy⟩⟫ := by
+      ⟪T ⟨x, adjointComp_domain_le T x.property⟩, T ⟨y, hy⟩⟫ := by
   rw [adjointComp_apply]
   exact adjoint_isFormalAdjoint hd _ ⟨y, hy⟩
 
@@ -99,7 +99,7 @@ is not dense, `T†` takes the value `0`. -/
 theorem re_inner_adjointComp_nonneg (T : E →ₗ.[𝕜] F) (x : T.adjointComp.domain) :
     0 ≤ RCLike.re ⟪T.adjointComp x, (x : E)⟫ := by
   by_cases hd : Dense (T.domain : Set E)
-  · rw [inner_adjointComp hd x (T.adjointComp_domain_le x.2)]
+  · rw [inner_adjointComp hd x (T.adjointComp_domain_le x.property)]
     exact inner_self_nonneg
   · rw [adjointComp_apply, adjoint_apply_of_not_dense hd, inner_zero_left, _root_.map_zero]
 
@@ -108,16 +108,16 @@ private theorem adjointComp_isFormalAdjoint {T : E →ₗ.[𝕜] F}
     (hd : Dense (T.domain : Set E)) :
     (adjointComp T).IsFormalAdjoint (adjointComp T) := by
   intro x y
-  rw [inner_adjointComp hd x (adjointComp_domain_le T y.2), adjointComp_apply]
+  rw [inner_adjointComp hd x (adjointComp_domain_le T y.property), adjointComp_apply]
   exact (adjoint_isFormalAdjoint hd (T := T)).symm
-    ⟨x, adjointComp_domain_le T x.2⟩
-    ⟨T ⟨y, adjointComp_domain_le T y.2⟩, (mem_adjointComp_domain.mp y.2).choose_spec⟩
+    ⟨x, adjointComp_domain_le T x.property⟩
+    ⟨T ⟨y, adjointComp_domain_le T y.property⟩, (mem_adjointComp_domain.mp y.property).choose_spec⟩
 
 /-- The composition `T T†` on its maximal domain `{y ∈ D(T†) | T† y ∈ D(T)}`. -/
 def compAdjoint (T : E →ₗ.[𝕜] F) : F →ₗ.[𝕜] F :=
   let D := (Submodule.comap T†.toFun T.domain).map T†.domain.subtype
   T.comp (T†.domRestrict D) fun y ↦ by
-    obtain ⟨⟨z, hz⟩, hz', hzy⟩ := y.2.1
+    obtain ⟨⟨z, hz⟩, hz', hzy⟩ := y.property.1
     have h : T†.domRestrict D y = T† ⟨z, hz⟩ := domRestrict_apply hzy.symm
     rwa [h]
 
@@ -139,8 +139,8 @@ theorem compAdjoint_domain_le (T : E →ₗ.[𝕜] F) : T.compAdjoint.domain ≤
 /-- Evaluating `compAdjoint T` at `y` applies `T` to `T† y`. -/
 @[simp]
 theorem compAdjoint_apply (T : E →ₗ.[𝕜] F) (y : T.compAdjoint.domain) :
-    T.compAdjoint y = T ⟨T† ⟨y, compAdjoint_domain_le T y.2⟩,
-      (mem_compAdjoint_domain.mp y.2).choose_spec⟩ :=
+    T.compAdjoint y = T ⟨T† ⟨y, compAdjoint_domain_le T y.property⟩,
+      (mem_compAdjoint_domain.mp y.property).choose_spec⟩ :=
   -- Unfolding composition and domain restriction gives the same arguments of `T†` and `T`
   -- by proof irrelevance of the membership witnesses.
   (rfl)
@@ -149,7 +149,7 @@ theorem compAdjoint_apply (T : E →ₗ.[𝕜] F) (y : T.compAdjoint.domain) :
 theorem inner_compAdjoint {T : E →ₗ.[𝕜] F} (hd : Dense (T.domain : Set E))
     (x : T.compAdjoint.domain) {y : F} (hy : y ∈ T†.domain) :
     ⟪T.compAdjoint x, y⟫ =
-      ⟪T† ⟨x, compAdjoint_domain_le T x.2⟩, T† ⟨y, hy⟩⟫ := by
+      ⟪T† ⟨x, compAdjoint_domain_le T x.property⟩, T† ⟨y, hy⟩⟫ := by
   rw [compAdjoint_apply]
   exact (adjoint_isFormalAdjoint hd).symm _ ⟨y, hy⟩
 
@@ -158,11 +158,11 @@ is not dense, `T†` takes the value `0`. -/
 theorem re_inner_compAdjoint_nonneg (T : E →ₗ.[𝕜] F) (x : T.compAdjoint.domain) :
     0 ≤ RCLike.re ⟪T.compAdjoint x, (x : F)⟫ := by
   by_cases hd : Dense (T.domain : Set E)
-  · rw [inner_compAdjoint hd x (T.compAdjoint_domain_le x.2)]
+  · rw [inner_compAdjoint hd x (T.compAdjoint_domain_le x.property)]
     exact inner_self_nonneg
   · rw [compAdjoint_apply]
-    have hz : (⟨T† ⟨x, compAdjoint_domain_le T x.2⟩,
-        (mem_compAdjoint_domain.mp x.2).choose_spec⟩ : T.domain) = 0 :=
+    have hz : (⟨T† ⟨x, compAdjoint_domain_le T x.property⟩,
+        (mem_compAdjoint_domain.mp x.property).choose_spec⟩ : T.domain) = 0 :=
       Subtype.ext (adjoint_apply_of_not_dense hd _)
     rw [hz, map_zero, inner_zero_left, _root_.map_zero]
 
@@ -176,7 +176,7 @@ theorem surjective_add_adjointComp (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
   intro z
   obtain ⟨u, hu⟩ := hT.exists_inner_sub_eq_inner_map z
   have hTu : T u ∈ T†.domain := mem_adjoint_domain_of_exists _ ⟨z - (u : E), hu⟩
-  refine ⟨⟨u, mem_adjointComp_domain.mpr ⟨u.2, hTu⟩⟩, ?_⟩
+  refine ⟨⟨u, mem_adjointComp_domain.mpr ⟨u.property, hTu⟩⟩, ?_⟩
   dsimp only
   rw [adjointComp_apply]
   -- Both subtype arguments of `T†` have value `T u`; only their membership proofs differ.
@@ -192,18 +192,18 @@ theorem dense_adjointComp_domain (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
   intro z hz
   obtain ⟨x, hx⟩ := surjective_add_adjointComp T hT hd z
   dsimp only at hx
-  have hzero : ⟪(x : E), z⟫ = 0 := hz (x : E) x.2
+  have hzero : ⟪(x : E), z⟫ = 0 := hz (x : E) x.property
   have hsum : RCLike.re ⟪(x : E), (x : E)⟫ +
-      RCLike.re ⟪T ⟨x, adjointComp_domain_le T x.2⟩,
-        T ⟨x, adjointComp_domain_le T x.2⟩⟫ = 0 := by
+      RCLike.re ⟪T ⟨x, adjointComp_domain_le T x.property⟩,
+        T ⟨x, adjointComp_domain_le T x.property⟩⟫ = 0 := by
     have h := congrArg RCLike.re hzero
     rw [← hx, inner_add_right, _root_.map_add RCLike.re,
       inner_re_symm (x : E) (adjointComp T x),
-      inner_adjointComp hd x (adjointComp_domain_le T x.2)] at h
+      inner_adjointComp hd x (adjointComp_domain_le T x.property)] at h
     simpa only [_root_.map_zero] using h
   have hx0 : (x : E) = 0 := re_inner_self_nonpos.mp <| by
-    have hn : 0 ≤ RCLike.re ⟪T ⟨x, adjointComp_domain_le T x.2⟩,
-        T ⟨x, adjointComp_domain_le T x.2⟩⟫ := inner_self_nonneg
+    have hn : 0 ≤ RCLike.re ⟪T ⟨x, adjointComp_domain_le T x.property⟩,
+        T ⟨x, adjointComp_domain_le T x.property⟩⟫ := inner_self_nonneg
     linarith
   have hx' : x = 0 := Subtype.ext hx0
   rw [← hx, hx']
@@ -237,8 +237,8 @@ theorem isSelfAdjoint_adjointComp (T : E →ₗ.[𝕜] F) (hT : T.IsClosed)
       rw [← hxeq, inner_sub_right, ea, eb, sub_self]
     have hyu : (y : E) = (u : E) :=
       sub_eq_zero.mp (inner_self_eq_zero.mp (hperp ((y : E) - (u : E))))
-    refine ⟨hyu ▸ u.2, ?_⟩
-    have hAu : adjointComp T ⟨(y : E), hyu ▸ u.2⟩ = adjointComp T u := by
+    refine ⟨hyu ▸ u.property, ?_⟩
+    have hAu : adjointComp T ⟨(y : E), hyu ▸ u.property⟩ = adjointComp T u := by
       congr 1
       exact Subtype.ext hyu
     rw [hAu]
@@ -269,10 +269,11 @@ theorem IsClosed.hasCore_adjointComp_domain {T : E →ₗ.[𝕜] F} (hT : T.IsCl
     rw [Submodule.dense_iff_topologicalClosure_eq_top, Submodule.topologicalClosure_eq_top_iff,
       Submodule.eq_bot_iff]
     intro w hw
-    obtain ⟨x₀, hx₀1, hx₀2⟩ := T.mem_graph_iff.mp (Submodule.mem_comap.mp w.2)
+    obtain ⟨x₀, hx₀1, hx₀2⟩ := T.mem_graph_iff.mp (Submodule.mem_comap.mp w.property)
     obtain ⟨u, hu⟩ := hT.exists_inner_sub_eq_inner_map (x₀ : E)
     have hu_mem : (u : E) ∈ T.adjointComp.domain :=
-      mem_adjointComp_domain.mpr ⟨u.2, mem_adjoint_domain_of_exists _ ⟨(x₀ : E) - (u : E), hu⟩⟩
+      mem_adjointComp_domain.mpr
+        ⟨u.property, mem_adjoint_domain_of_exists _ ⟨(x₀ : E) - (u : E), hu⟩⟩
     have huK : WithLp.toLp 2 ((u : E), T u) ∈ K := by
       rw [Submodule.mem_comap]
       simpa only [L, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
@@ -280,7 +281,7 @@ theorem IsClosed.hasCore_adjointComp_domain {T : E →ₗ.[𝕜] F} (hT : T.IsCl
     have huG : (⟨WithLp.toLp 2 ((u : E), T u), huK⟩ : K) ∈ G := by
       rw [Submodule.mem_comap, Submodule.mem_comap]
       exact (T.domRestrict T.adjointComp.domain).mem_graph_iff.mpr
-        ⟨⟨u, hu_mem, u.2⟩, rfl, domRestrict_apply rfl⟩
+        ⟨⟨u, hu_mem, u.property⟩, rfl, domRestrict_apply rfl⟩
     have h0 : ⟪(u : E), (x₀ : E)⟫ + ⟪T u, T x₀⟫ = 0 := by
       have h := (Submodule.mem_orthogonal G w).mp hw ⟨_, huK⟩ huG
       rw [Submodule.coe_inner, WithLp.prod_inner_apply] at h
@@ -299,7 +300,7 @@ theorem IsClosed.hasCore_adjointComp_domain {T : E →ₗ.[𝕜] F} (hT : T.IsCl
   have hpK : L.symm p ∈ K := by
     rw [Submodule.mem_comap]
     simpa [L] using hp
-  have hmem := (L.continuous.comp continuous_subtype_val).range_subset_closure_image_dense hdG
+  have hmem := (L.continuous.comp continuous_subtypeVal).range_subset_closure_image_dense hdG
     ⟨⟨L.symm p, hpK⟩, L.apply_symm_apply p⟩
   exact closure_mono (by rintro _ ⟨q, hq, rfl⟩; exact hq) hmem
 
@@ -309,7 +310,7 @@ both operators are `0` on `T†.domain`. -/
 theorem IsClosed.compAdjoint_eq_adjoint_adjointComp {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) :
     T.compAdjoint = (T†).adjointComp := by
   by_cases hd : Dense (T.domain : Set E)
-  · have hdd := hT.adjoint_adjoint hd
+  · have hdd := adjoint_adjoint hT hd
     have hdom : T.compAdjoint.domain = (T†).adjointComp.domain := by
       ext y
       simp only [mem_compAdjoint_domain, mem_adjointComp_domain, hdd]

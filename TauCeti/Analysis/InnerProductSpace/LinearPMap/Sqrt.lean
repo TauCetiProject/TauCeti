@@ -237,8 +237,8 @@ private theorem sqrt_isFormalAdjoint (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) :
     A.sqrt.IsFormalAdjoint A.sqrt := by
   intro x y
-  obtain ⟨z₁, hz₁⟩ := mem_sqrt_domain_iff.mp x.2
-  obtain ⟨z₂, hz₂⟩ := mem_sqrt_domain_iff.mp y.2
+  obtain ⟨z₁, hz₁⟩ := mem_sqrt_domain_iff.mp x.property
+  obtain ⟨z₂, hz₂⟩ := mem_sqrt_domain_iff.mp y.property
   have hx : x = ⟨sqrtS A z₁, sqrtS_mem_sqrt_domain z₁⟩ := Subtype.ext hz₁.symm
   have hy : y = ⟨sqrtS A z₂, sqrtS_mem_sqrt_domain z₂⟩ := Subtype.ext hz₂.symm
   rw [hx, hy, sqrt_apply_sqrtS hA hpos, sqrt_apply_sqrtS hA hpos]
@@ -295,11 +295,9 @@ end Helpers
 /-- The positive square root of a nonnegative self-adjoint partial linear map is self-adjoint. -/
 theorem _root_.IsSelfAdjoint.isSelfAdjoint_sqrt {A : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) :
-    IsSelfAdjoint A.sqrt := by
-  rw [isSelfAdjoint_def]
-  exact (sqrt_isFormalAdjoint hA hpos).adjoint_eq_of_smul_sub_surjective
+    IsSelfAdjoint A.sqrt :=
+  (sqrt_isFormalAdjoint hA hpos).isSelfAdjoint_of_surjective_smul_sub (by simp)
     (surjective_neg_one_sub_sqrt hA hpos)
-    (by simpa using surjective_neg_one_sub_sqrt hA hpos)
 
 /-- The domain of the positive square root of a nonnegative self-adjoint partial linear map is
 dense. -/
@@ -313,7 +311,7 @@ quadratic form. -/
 theorem _root_.IsSelfAdjoint.re_inner_sqrt_nonneg {A : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
     (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫) (x : A.sqrt.domain) :
     0 ≤ RCLike.re ⟪A.sqrt x, (x : E)⟫ := by
-  obtain ⟨z, hz⟩ := mem_sqrt_domain_iff.mp x.2
+  obtain ⟨z, hz⟩ := mem_sqrt_domain_iff.mp x.property
   have hx : x = ⟨sqrtS A z, sqrtS_mem_sqrt_domain z⟩ := Subtype.ext hz.symm
   rw [hx, sqrt_apply_sqrtS hA hpos]
   exact re_inner_sqrtC_sqrtS_nonneg z
@@ -353,17 +351,17 @@ theorem _root_.IsSelfAdjoint.sqrt_adjointComp {A : E →ₗ.[𝕜] E} (hA : IsSe
       have hxB : sqrtB A z = (x : E) := sqrtB_add_apply hA hpos x
       have hxS : sqrtS A (sqrtS A z) = (x : E) := by
         rw [← mul_apply_eq_comp, sqrtS_mul_self hA hpos, hxB]
-      have h1 : A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.2⟩ = sqrtS A (sqrtC A z) := by
-        have hsub : (⟨y, adjointComp_domain_le A.sqrt y.2⟩ : A.sqrt.domain) =
+      have h1 : A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.property⟩ = sqrtS A (sqrtC A z) := by
+        have hsub : (⟨y, adjointComp_domain_le A.sqrt y.property⟩ : A.sqrt.domain) =
             ⟨sqrtS A (sqrtS A z), sqrtS_mem_sqrt_domain _⟩ := Subtype.ext (hxy.symm.trans hxS.symm)
         rw [hsub, sqrt_apply_sqrtS hA hpos, ← mul_apply_eq_comp,
           commute_sqrtS_sqrtC.symm.eq, mul_apply_eq_comp]
       rw [adjointComp_apply]
       have h2 := LinearPMap.congr_fun hsqrt_adj
-        (mem_adjointComp_domain.mp y.2).choose_spec
+        (mem_adjointComp_domain.mp y.property).choose_spec
         (h1 ▸ sqrtS_mem_sqrt_domain (sqrtC A z))
       rw [h2]
-      have hsub2 : (⟨A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.2⟩,
+      have hsub2 : (⟨A.sqrt ⟨y, adjointComp_domain_le A.sqrt y.property⟩,
           h1 ▸ sqrtS_mem_sqrt_domain (sqrtC A z)⟩ : A.sqrt.domain) =
           ⟨sqrtS A (sqrtC A z), sqrtS_mem_sqrt_domain _⟩ := Subtype.ext h1
       rw [hsub2, sqrt_apply_sqrtS hA hpos, ← mul_apply_eq_comp,
@@ -403,10 +401,10 @@ private def sqrtAuxCLM {A M : E →ₗ.[𝕜] E} (hA : IsSelfAdjoint A)
       dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
       refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
       let uA : A.domain := ⟨sqrtB A z, sqrtB_mem_domain hA hpos z⟩
-      let uM : M.adjointComp.domain := ⟨sqrtB A z, hMsq.symm ▸ uA.2⟩
+      let uM : M.adjointComp.domain := ⟨sqrtB A z, hMsq.symm ▸ uA.property⟩
       have hnormM : ‖M ⟨sqrtB A z, hdom z⟩‖ ^ 2 = RCLike.re ⟪A uA, (uA : E)⟫ := by
         rw [← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_adjointComp hM.dense_domain uM (hdom z),
-          LinearPMap.congr_fun hMsq uM.2 uA.2]
+          LinearPMap.congr_fun hMsq uM.property uA.property]
       have hz : z = (uA : E) + A uA := (add_apply_sqrtB hA hpos z).symm
       have hnormz : ‖z‖ ^ 2 =
           ‖(uA : E)‖ ^ 2 + 2 * RCLike.re ⟪A uA, (uA : E)⟫ + ‖A uA‖ ^ 2 := by
@@ -478,9 +476,9 @@ private theorem sqrtAuxCLM_apply_eq_sqrtB_apply {A M : E →ₗ.[𝕜] E} (hA : 
   have hMdom : M†.domain = M.domain := congrArg domain hMadj
   obtain ⟨u, v, -, hv, hMu, hw⟩ := sqrtAuxCLM_decomp hA hpos hM hMsq (w : E)
   have hMv_eq : M v = ((w - u : M.domain) : E) := eq_sub_of_add_eq' hw.symm
-  have hMv_dom : M v ∈ M.domain := hMv_eq ▸ (w - u).2
+  have hMv_dom : M v ∈ M.domain := hMv_eq ▸ (w - u).property
   have hMv_adj : M v ∈ M†.domain := hMdom.symm ▸ hMv_dom
-  have hvMC : (v : E) ∈ M.adjointComp.domain := mem_adjointComp_domain.mpr ⟨v.2, hMv_adj⟩
+  have hvMC : (v : E) ∈ M.adjointComp.domain := mem_adjointComp_domain.mpr ⟨v.property, hMv_adj⟩
   have hvA : (v : E) ∈ A.domain := hMsq ▸ hvMC
   have hAv : A ⟨(v : E), hvA⟩ = M w - (v : E) := by
     have hsub : (⟨M v, hMv_dom⟩ : M.domain) = w - u := Subtype.ext hMv_eq

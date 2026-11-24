@@ -85,7 +85,8 @@ theorem sum_eq_zero_or_norm_sum_eq_card_of_isIntegral {n : ℕ} (hn : n ≠ 0) {
   have : NumberField K := ⟨⟩
   -- `s`, read inside `K`
   set t : Multiset K :=
-    s.attach.map fun p => (⟨p.1, hζ.mem_adjoin_of_pow_eq_one (hs p.1 p.2)⟩ : K) with htdef
+    s.attach.map fun p => (⟨p.val, hζ.mem_adjoin_of_pow_eq_one (hs p.val p.property)⟩ : K) with
+        htdef
   have hcoe : t.map (algebraMap K ℂ) = s := by
     rw [htdef, Multiset.map_map]
     exact Multiset.attach_map_val s
@@ -95,7 +96,7 @@ theorem sum_eq_zero_or_norm_sum_eq_card_of_isIntegral {n : ℕ} (hn : n ≠ 0) {
     intro ν hν
     rw [htdef, Multiset.mem_map] at hν
     obtain ⟨p, -, rfl⟩ := hν
-    exact Subtype.ext (by simpa using hs p.1 p.2)
+    exact Subtype.ext (by simpa using hs p.val p.property)
   have hsum : algebraMap K ℂ t.sum = s.sum := by rw [map_multiset_sum, hcoe]
   -- the average, read inside `K`
   set α : K := t.sum / (Multiset.card s : K) with hαdef

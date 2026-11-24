@@ -56,7 +56,7 @@ theorem exists_isNoetherianRing_and_eq_one_tmul {A B : Type u} [CommRing A] [Com
   refine ⟨A₀, A₀ ⊗[A₁] B₁, inferInstance, inferInstance, inferInstance, inferInstance,
     isNoetherianRing_of_fg (Subalgebra.fg_adjoin_finset _), inferInstance,
     e₁.trans (Algebra.TensorProduct.cancelBaseChange A₁ A₀ A A B₁).symm,
-    ∑ i ∈ s.attach, (⟨i.1.1, hmem _ i.2⟩ : A₀) ⊗ₜ[A₁] i.1.2, ?_⟩
+    ∑ i ∈ s.attach, (⟨i.val.1, hmem _ i.property⟩ : A₀) ⊗ₜ[A₁] i.val.2, ?_⟩
   rw [AlgEquiv.trans_apply, AlgEquiv.symm_apply_eq, hs]
   simp [tmul_sum, Algebra.smul_def, ← Finset.sum_attach s]
 
