@@ -13,7 +13,7 @@ import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.Analysis.PDE.Regularity.Hessian.VariableCoefficient
-import TauCeti.Analysis.Sobolev.Wkp.AffineScaling
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 

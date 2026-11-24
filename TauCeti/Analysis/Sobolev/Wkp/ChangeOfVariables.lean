@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
-public import TauCeti.Analysis.Sobolev.Wkp.AffineScaling
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv

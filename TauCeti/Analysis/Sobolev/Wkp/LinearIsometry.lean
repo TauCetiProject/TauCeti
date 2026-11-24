@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.AffineScaling
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 
 /-!
@@ -66,70 +66,69 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finite
 
 namespace Wkp
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
+  [FiniteDimensional ℝ E'] [ν.IsAddHaarMeasure] in
+private theorem measurePreserving_restrict (he : MeasurePreserving e μ ν)
+    (hUW : (U : Set E) = e ⁻¹' W) :
+    MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
+  hUW ▸ he.restrict_preimage W.isOpen.measurableSet
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
+  [FiniteDimensional ℝ E'] [BorelSpace E'] [ν.IsAddHaarMeasure] [Fact (1 ≤ p)] in
+private theorem lp_norm_eq_of_ae_norm_eq {G₁ G₂ : Type*}
+    [NormedAddCommGroup G₁] [NormedAddCommGroup G₂]
+    (hres : MeasurePreserving e (μ.restrict U) (ν.restrict W))
+    {f : Lp G₁ p (μ.restrict U)} {g : Lp G₂ p (ν.restrict W)}
+    (hpt : ∀ᵐ x ∂μ.restrict U, ‖f x‖ = ‖g (e x)‖) : ‖f‖ = ‖g‖ := by
+  have hm : AEStronglyMeasurable g (ν.restrict W) := Lp.aestronglyMeasurable _
+  rw [Lp.norm_def, Lp.norm_def]
+  exact congrArg ENNReal.toReal <|
+    (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+      (hm.comp_quasiMeasurePreserving hres.quasiMeasurePreserving) hpt).trans
+      (eLpNorm_comp_measurePreserving hm hres)
+
 private theorem norm_compAffineEquiv_zero (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) :
     ∀ (k : ℕ) (u : Wkp ν W p k),
       ‖compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k u‖ = ‖u‖
   | 0, u => by
-    have hres : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
-      hUW ▸ he.restrict_preimage W.isOpen.measurableSet
-    rw [← value_zero (compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 0 u),
-      Lp.norm_def, Lp.norm_def]
-    exact congrArg ENNReal.toReal <|
-      (eLpNorm_congr_ae (by simpa using
-        value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 0 u)).trans
-        (by
-          rw [← Function.comp_def]
-          exact eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hres)
+    rw [← value_zero (compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 0 u)]
+    conv_rhs => rw [← value_zero u]
+    exact lp_norm_eq_of_ae_norm_eq (measurePreserving_restrict he hUW) <| by
+      filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (by simpa using hUW)
+        0 u] with x hx
+      rw [hx, add_zero]
+      rfl
   | 1, u => by
-    have hres : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
-      hUW ▸ he.restrict_preimage W.isOpen.measurableSet
-    let v : W1p μ U p := compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 1 u
-    let u₁ : W1p ν W p := u
-    have hv_norm : ∀ᵐ x ∂μ.restrict U,
-        ‖(v : Sobolev1JetLp μ U p) x‖ = ‖(u₁ : Sobolev1JetLp ν W p) (e x)‖ := by
-      filter_upwards [W1p.norm_apply_sq_ae v,
-        hres.quasiMeasurePreserving.ae (W1p.norm_apply_sq_ae u₁),
-        value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 1 u,
-        iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 0 u]
-        with x h1 h2 hx hg
-      rw [value_one, value_one] at hx
-      rw [iteratedGradient_zero, iteratedGradient_zero,
-        LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm,
-        LinearIsometryEquiv.iteratedGradientCongr_zero] at hg
-      refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-      rw [h1, h2, hx, hg]
-      simp [u₁]
-    change ‖v‖ = ‖u₁‖
-    have hm : AEStronglyMeasurable (u₁ : Sobolev1JetLp ν W p) (ν.restrict W) :=
-      Lp.aestronglyMeasurable _
-    rw [← Submodule.norm_coe v, ← Submodule.norm_coe u₁, Lp.norm_def, Lp.norm_def]
-    exact congrArg ENNReal.toReal <|
-      (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-        (hm.comp_quasiMeasurePreserving hres.quasiMeasurePreserving)
-        hv_norm).trans (eLpNorm_comp_measurePreserving hm hres)
+    have hpt := W1p.ae_norm_coe_eq_of_ae_eq
+      (measurePreserving_restrict he hUW).quasiMeasurePreserving
+      (v := firstOrder 0 (compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) 1 u))
+      (u := firstOrder 0 u)
+      (by
+        filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
+          (by simpa using hUW) 1 u] with x hx
+        rw [value_firstOrder 0, value_firstOrder 0, hx, add_zero]
+        rfl)
+      (by
+        filter_upwards [iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
+          (by simpa using hUW) 0 u] with x hx
+        rw [firstOrder_zero, firstOrder_zero, ← iteratedGradient_zero, ← iteratedGradient_zero, hx,
+          add_zero, LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm]
+        exact (e.iteratedGradientCongr 0).symm.norm_map _)
+    have h1 := lp_norm_eq_of_ae_norm_eq (measurePreserving_restrict he hUW) hpt
+    rwa [Submodule.norm_coe, Submodule.norm_coe, firstOrder_zero, firstOrder_zero] at h1
   | k + 2, u => by
-    have hres : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
-      hUW ▸ he.restrict_preimage W.isOpen.measurableSet
     let w := compAffineEquiv μ e.toContinuousLinearEquiv 0 (by simpa using hUW) (k + 2) u
     have hlow : ‖lowerOrder (k + 1) w‖ = ‖lowerOrder (k + 1) u‖ := by
       dsimp only [w]
       rw [lowerOrder_compAffineEquiv]
       exact norm_compAffineEquiv_zero he hUW (k + 1) (lowerOrder (k + 1) u)
-    have hgrad_ae : ∀ᵐ x ∂μ.restrict U,
-        ‖iteratedGradient (k + 1) w x‖ = ‖iteratedGradient (k + 1) u (e x)‖ := by
+    have hgrad : ‖iteratedGradient (k + 1) w‖ = ‖iteratedGradient (k + 1) u‖ := by
+      refine lp_norm_eq_of_ae_norm_eq (measurePreserving_restrict he hUW) ?_
       filter_upwards [iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
         (by simpa using hUW) (k + 1) u] with x hx
       rw [hx, add_zero, LinearIsometryEquiv.iteratedGradientPullback_eq_iteratedGradientCongr_symm]
       exact (e.iteratedGradientCongr (k + 1)).symm.norm_map _
-    have hgrad : ‖iteratedGradient (k + 1) w‖ = ‖iteratedGradient (k + 1) u‖ := by
-      have hm : AEStronglyMeasurable (iteratedGradient (k + 1) u) (ν.restrict W) :=
-        Lp.aestronglyMeasurable _
-      rw [Lp.norm_def, Lp.norm_def]
-      exact congrArg ENNReal.toReal <|
-        (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-          (hm.comp_quasiMeasurePreserving hres.quasiMeasurePreserving)
-          hgrad_ae).trans (eLpNorm_comp_measurePreserving hm hres)
     refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
     rw [norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k w,
       norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u, hlow, hgrad]
@@ -163,9 +162,7 @@ theorem compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν)
   refine LinearIsometryEquiv.ext fun u ↦ (compLinearIsometryEquiv he hUW k).injective ?_
   rw [LinearIsometryEquiv.apply_symm_apply]
   refine Eq.symm <| (compAffineEquiv_eq_iff μ _ 0 (by simpa using hUW) k _ _).2 ?_
-  have hres : MeasurePreserving e (μ.restrict U) (ν.restrict W) :=
-    hUW ▸ he.restrict_preimage W.isOpen.measurableSet
-  filter_upwards [hres.quasiMeasurePreserving.ae
+  filter_upwards [(measurePreserving_restrict he hUW).quasiMeasurePreserving.ae
     (value_compAffineEquiv_ae ν e.symm.toContinuousLinearEquiv 0 (by simpa using hWU) k u)]
     with x hx
   simpa [compLinearIsometryEquiv] using hx.symm
@@ -201,8 +198,26 @@ theorem compLinearIsometryEquiv_ofTestFunctionₗ (he : MeasurePreserving e μ �
     (hUW : (U : Set E) = e ⁻¹' W) (hWU : MapsTo e.symm W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compLinearIsometryEquiv he hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
       ofTestFunctionₗ k (e.symm.toContinuousLinearEquiv.transportTestFunction hWU φ) := by
-  simpa [compLinearIsometryEquiv, ContinuousLinearEquiv.transportAddTestFunction_zero] using
-    compAffineEquiv_ofTestFunctionₗ μ e.toContinuousLinearEquiv 0 (by simpa using hUW) k φ
+  have h := compAffineEquiv_ofTestFunctionₗ (ν := ν) (p := p) μ e.toContinuousLinearEquiv 0
+    (by simpa using hUW) k φ
+  refine h.trans (congrArg (ofTestFunctionₗ k) ?_)
+  ext x
+  have h1 := translateTestFunction_apply (h := -e.toContinuousLinearEquiv.symm 0)
+    (mapsTo_preimage _ (U : Set E))
+    (e.toContinuousLinearEquiv.symm.transportTestFunction (V := W)
+      (Ω := ⟨(· + -e.toContinuousLinearEquiv.symm 0) ⁻¹' U,
+        U.isOpen.preimage (continuous_add_const _)⟩)
+      (e.toContinuousLinearEquiv.toLinearEquiv.mapsTo_symm_add_neg 0 (by simpa using hUW)) φ) x
+  have h2 := ContinuousLinearEquiv.transportTestFunction_apply
+    e.toContinuousLinearEquiv.symm (V := W)
+    (Ω := ⟨(· + -e.toContinuousLinearEquiv.symm 0) ⁻¹' U,
+      U.isOpen.preimage (continuous_add_const _)⟩)
+    (e.toContinuousLinearEquiv.toLinearEquiv.mapsTo_symm_add_neg 0 (by simpa using hUW)) φ
+    (x - -e.toContinuousLinearEquiv.symm 0)
+  have h3 := ContinuousLinearEquiv.transportTestFunction_apply
+    e.symm.toContinuousLinearEquiv hWU φ x
+  rw [h1, h2, h3]
+  simp
 
 /-- The transport maps `W^{k,p}_0(W)` into `W^{k,p}_0(U)`. -/
 theorem compLinearIsometryEquiv_mem_wkp0Submodule (he : MeasurePreserving e μ ν)

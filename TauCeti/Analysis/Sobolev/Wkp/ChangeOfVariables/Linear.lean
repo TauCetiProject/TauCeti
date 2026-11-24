@@ -26,7 +26,8 @@ for the Laplacian on `U` transfers to solutions of `tr (A D²u) = f` on `W`
 
 General `Cᵏ` changes of variables in `W^{k,p}` are treated in
 `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables`, and linear/affine precomposition
-`TauCeti.Wkp.compAffineEquiv` in `W^{k,p}` is in `TauCeti.Analysis.Sobolev.Wkp.AffineScaling`.
+`TauCeti.Wkp.compAffineEquiv` in `W^{k,p}` is in
+`TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine`.
 
 ## Main declarations
 

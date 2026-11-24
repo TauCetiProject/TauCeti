@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Dilation scaling of the `Lᵖ` seminorm
@@ -44,6 +45,9 @@ continuous extended norm.
   `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage`: the same
   identities for the `Lᵖ` seminorms on the preimage of `s` and on `s`.
 * `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`.
+* `MeasureTheory.Lp.compContinuousLinearEquivAddRestrict`,
+  `MeasureTheory.Lp.coeFn_compContinuousLinearEquivAddRestrict`: restricted additive Haar `Lᵖ`
+  precomposition along an invertible affine map `x ↦ B x + b`.
 * `MeasureTheory.Lp.norm_le_mul_det_inv_of_ae_le`,
   `MeasureTheory.Lp.norm_eq_mul_det_inv_of_ae_eq`: affine `Lᵖ` norm comparison and exact identity
   on arbitrary sets.
@@ -273,5 +277,39 @@ theorem norm_eq_mul_det_inv_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommGroup E] [
     Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p,
     ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm,
     toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← mul_assoc]
+
+section Affine
+
+variable {E' F G : Type*}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [MeasurableSpace E'] [BorelSpace E']
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [LocallyCompactSpace F]
+  [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
+  [NormedAddCommGroup G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Affine precomposition on restricted `Lᵖ` spaces.** For an invertible continuous linear map
+`B : E' ≃L[ℝ] F`, translation `b : F`, target set `t`, and `s` mapped into `t` by
+`x ↦ B x + b`, precomposition `f ↦ f (B · + b)` is a bounded `𝕜`-linear operator
+`Lᵖ(ν.restrict t) →L[𝕜] Lᵖ(μ.restrict s)` for any additive Haar measures `μ` and `ν`, with no
+measurability assumption on `s` or `t`. -/
+noncomputable def compContinuousLinearEquivAddRestrict (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 G]
+    (μ : Measure E') [μ.IsAddHaarMeasure] (ν : Measure F) [ν.IsAddHaarMeasure]
+    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F)
+    (hst : Set.MapsTo (fun x ↦ B x + b) s t) :
+    Lp G p (ν.restrict t) →L[𝕜] Lp G p (μ.restrict s) :=
+  compOfMapLeSmul 𝕜 (B.continuous.add (continuous_const (y := b))).measurable.aemeasurable
+    (ENNReal.coe_ne_top (r := Measure.addHaarScalarFactor (μ.map B) ν))
+    (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b hst)
+
+/-- Precomposing an `Lᵖ` function on `ν.restrict t` with `x ↦ B x + b` agrees almost everywhere
+on `μ.restrict s` with `x ↦ f (B x + b)`. -/
+theorem coeFn_compContinuousLinearEquivAddRestrict {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 G]
+    {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F} [ν.IsAddHaarMeasure]
+    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F)
+    (hst : Set.MapsTo (fun x ↦ B x + b) s t) (f : Lp G p (ν.restrict t)) :
+    compContinuousLinearEquivAddRestrict 𝕜 μ ν B b hst f =ᵐ[μ.restrict s]
+      fun x ↦ f (B x + b) :=
+  coeFn_compOfMapLeSmul _ _ _ f
+
+end Affine
 
 end MeasureTheory.Lp

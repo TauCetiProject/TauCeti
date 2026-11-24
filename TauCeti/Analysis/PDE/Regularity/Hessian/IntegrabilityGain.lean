@@ -12,7 +12,7 @@ import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Sobolev.Wkp.AffineScaling
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.Lp.Dilation

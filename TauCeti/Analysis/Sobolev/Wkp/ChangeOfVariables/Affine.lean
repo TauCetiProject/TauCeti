@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Pullback
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.Analysis.Normed.Operator.BallDiam
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Affine
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
@@ -508,32 +509,40 @@ theorem compAffineEquiv_trans {E'' : Type*} [NormedAddCommGroup E''] [InnerProdu
       compAffineL_comp μ B₁ b₁ (hUW ▸ mapsTo_preimage _ _) B₂ b₂ (hWO ▸ mapsTo_preimage _ _)
         (hUO ▸ mapsTo_preimage _ _) k]
 
-/-- Pulling back an embedded test function `φ` on `W` along `x ↦ B x + b` gives the embedded test
-function `B.symm.transportAddTestFunction (-B.symm b) hWU φ` on `U`, whenever the inverse affine
-map carries `W` into `U`. -/
+/-- Pulling back an embedded test function `φ` on `W` along `x ↦ B x + b` gives the translated
+and linearly transported test function on `U`, whenever the inverse affine map carries `W` into
+`U`. -/
 theorem compAffineL_ofTestFunctionₗ (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
     (b : E') (hUW : MapsTo (fun x ↦ B x + b) U W)
     (hWU : MapsTo (fun y ↦ B.symm y + -B.symm b) W U) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compAffineL μ B b hUW k (ofTestFunctionₗ (mu := ν) (p := p) k φ) =
-      ofTestFunctionₗ k (B.symm.transportAddTestFunction (-B.symm b) hWU φ) := by
+      ofTestFunctionₗ k (translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
+        (B.symm.transportTestFunction
+          (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ)) := by
   refine (compAffineL_eq_iff μ B b hUW k _ _).2 ?_
   have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ ν B b hUW
-  filter_upwards [value_ofTestFunctionₗ (mu := μ) (p := p) k
-      (B.symm.transportAddTestFunction (-B.symm b) hWU φ) ▸ testFunctionLp_apply_ae p _,
+  filter_upwards [value_ofTestFunctionₗ (mu := μ) (p := p) k _ ▸ testFunctionLp_apply_ae p _,
     hqmp.ae (value_ofTestFunctionₗ (mu := ν) (p := p) k φ ▸ testFunctionLp_apply_ae p φ)]
     with x hx hy
-  rw [hx, hy, ContinuousLinearEquiv.transportAddTestFunction_apply,
-    ContinuousLinearEquiv.symm_symm, sub_neg_eq_add, map_add,
-    ContinuousLinearEquiv.apply_symm_apply]
+  have h1 := translateTestFunction_apply (h := -B.symm b)
+    (mapsTo_preimage (· + -B.symm b) (U : Set E))
+    (B.symm.transportTestFunction
+      (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩) hWU φ) x
+  have h2 := ContinuousLinearEquiv.transportTestFunction_apply B.symm
+    (V := W) (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩)
+    hWU φ (x - -B.symm b)
+  rw [hx, hy, h1, h2]
+  simp
 
-/-- Pulling back an embedded test function `φ` on `W` by `compAffineEquiv` gives the embedded
-test function `B.symm.transportAddTestFunction (-B.symm b) ... φ` on `U`. -/
+/-- Pulling back an embedded test function `φ` on `W` by `compAffineEquiv` gives the translated
+and linearly transported test function on `U`. -/
 theorem compAffineEquiv_ofTestFunctionₗ (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
     (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (φ : 𝓓(W, ℝ)) :
     compAffineEquiv (ν := ν) (p := p) μ B b hUW k (ofTestFunctionₗ k φ) =
-      ofTestFunctionₗ k
-        (B.symm.transportAddTestFunction (-B.symm b)
-          (B.toLinearEquiv.mapsTo_symm_add_neg b hUW) φ) := by
+      ofTestFunctionₗ k (translateTestFunction (h := -B.symm b) (mapsTo_preimage _ _)
+        (B.symm.transportTestFunction
+          (Ω := ⟨(· + -B.symm b) ⁻¹' U, U.isOpen.preimage (continuous_add_const _)⟩)
+          (B.toLinearEquiv.mapsTo_symm_add_neg b hUW) φ)) := by
   rw [compAffineEquiv_apply]
   exact compAffineL_ofTestFunctionₗ μ B b (hUW ▸ mapsTo_preimage _ _)
     (B.toLinearEquiv.mapsTo_symm_add_neg b hUW) k φ
@@ -685,34 +694,31 @@ theorem norm_compAffineL_le (B : E ≃L[ℝ] E) (b : E)
     ∀ (k : ℕ) (u : Wkp μ W p k),
       ‖compAffineL μ B b hUW k u‖ ≤
         |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * max 1 ‖(B : E →L[ℝ] E)‖ ^ k * ‖u‖
+  -- Order `0`: immediate from `norm_value_compAffineL_le`.
   | 0, u => by
       simpa only [value_zero, pow_zero, mul_one] using norm_value_compAffineL_le B b hUW 0 u
+  -- Order `1`: apply the pointwise `W1p` jet-norm bound and affine `Lᵖ` scaling.
   | 1, u => by
-      let u₁ : W1p μ W p := u
-      let v₁ : W1p μ U p := compAffineL μ B b hUW 1 u
-      have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ μ B b hUW
       have hM : 0 ≤ max 1 ‖(B : E →L[ℝ] E)‖ := zero_le_one.trans (le_max_left _ _)
-      have hpt : ∀ᵐ x ∂μ.restrict U,
-          ‖(v₁ : Sobolev1JetLp μ U p) x‖ ≤
-            max 1 ‖(B : E →L[ℝ] E)‖ * ‖(u₁ : Sobolev1JetLp μ W p) (B x + b)‖ := by
-        filter_upwards [W1p.norm_apply_sq_ae v₁, hqmp.ae (W1p.norm_apply_sq_ae u₁),
-          value_compAffineL_ae μ B b hUW 1 u,
-          iteratedGradient_compAffineL_ae μ B b hUW 0 u] with x hv hu hxv hxg
-        rw [value_one, value_one] at hxv
-        rw [iteratedGradient_zero, iteratedGradient_zero,
-          ContinuousLinearMap.iteratedGradientPullback_zero] at hxg
-        refine le_of_pow_le_pow_left₀ two_ne_zero (mul_nonneg hM (norm_nonneg _)) ?_
-        rw [hv, mul_pow, hu, mul_add]
-        refine add_le_add ?_ ?_
-        · rw [hxv]; exact le_mul_of_one_le_left (sq_nonneg _) (one_le_pow₀ (le_max_left _ _))
-        · rw [hxg, ← mul_pow]
-          refine pow_le_pow_left₀ (norm_nonneg _)
-            (((B : E →L[ℝ] E).adjoint.le_opNorm _).trans ?_) 2
+      have hpt := W1p.ae_norm_coe_le_mul_of_ae_le
+        (Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ μ B b hUW)
+        (v := firstOrder 0 (compAffineL μ B b hUW 1 u)) (u := firstOrder 0 u) hM
+        (by
+          filter_upwards [value_compAffineL_ae μ B b hUW 1 u] with x hx
+          rw [value_firstOrder, value_firstOrder, hx]
+          exact le_mul_of_one_le_left (norm_nonneg _) (le_max_left _ _))
+        (by
+          filter_upwards [iteratedGradient_compAffineL_ae μ B b hUW 0 u] with x hx
+          rw [firstOrder_zero, firstOrder_zero, ← iteratedGradient_zero, ← iteratedGradient_zero,
+            hx, ContinuousLinearMap.iteratedGradientPullback_zero]
+          refine ((B : E →L[ℝ] E).adjoint.le_opNorm _).trans ?_
           rw [LinearIsometryEquiv.norm_map]
-          exact mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)
+          exact mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _))
       have h1 := Lp.norm_le_mul_det_inv_of_ae_le B b hUW hM hpt
-      rw [Submodule.norm_coe, Submodule.norm_coe, mul_comm (max 1 ‖(B : E →L[ℝ] E)‖)] at h1
-      dsimp only [v₁, u₁] at h1; rwa [pow_one]
+      rw [Submodule.norm_coe, Submodule.norm_coe, firstOrder_zero, firstOrder_zero,
+        mul_comm (max 1 ‖(B : E →L[ℝ] E)‖)] at h1
+      rwa [pow_one]
+  -- Order `k + 2`: combine the inductive lower-order bound with the highest-derivative bound.
   | k + 2, u => by
       have hlow : ‖lowerOrder (k + 1) (compAffineL μ B b hUW (k + 2) u)‖ ≤
           |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * max 1 ‖(B : E →L[ℝ] E)‖ ^ (k + 2) *

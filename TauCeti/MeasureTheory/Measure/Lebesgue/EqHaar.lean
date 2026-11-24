@@ -26,9 +26,7 @@ by the absolute value of the determinant of its linear part on images
 `MeasureTheory.Measure.addHaar_image_affineEquiv`) and by the reciprocal factor on preimages when
 its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`,
 `MeasureTheory.Measure.addHaar_eq_abs_det_mul_addHaar_preimage_affineMap`,
-`MeasureTheory.Measure.abs_det_eq_toReal_addHaar_div_preimage_affineMap`,
-`MeasureTheory.Measure.addHaar_preimage_affineEquiv`,
-`MeasureTheory.Measure.addHaar_preimage_continuousLinearEquiv_add`), the affine forms of
+`MeasureTheory.Measure.abs_det_eq_toReal_addHaar_div_preimage_affineMap`), the affine forms of
 Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
 `MeasureTheory.Measure.addHaar_preimage_linearMap`. Between possibly distinct real normed spaces,
 an invertible affine map `x ↦ B x + b` pushes forward a restricted additive Haar measure with
@@ -172,45 +170,6 @@ theorem abs_det_eq_toReal_addHaar_div_preimage_affineMap (f : F →ᵃ[ℝ] F)
     conv_lhs => rw [addHaar_eq_abs_det_mul_addHaar_preimage_affineMap μ f hf s]
     rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
   rw [hmul, mul_div_cancel_right₀ _ hpos.ne']
-
-/-- The preimage of a set under an affine equivalence has Haar measure equal to `|(det f.linear)⁻¹|`
-times the measure of the set. -/
-theorem addHaar_preimage_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
-    μ (f ⁻¹' s) = ENNReal.ofReal |(LinearMap.det (f.linear : F →ₗ[ℝ] F))⁻¹| * μ s :=
-  addHaar_preimage_affineMap μ (f : F →ᵃ[ℝ] F) (LinearEquiv.isUnit_det' f.linear).ne_zero s
-
-/-- The preimage of a set under `x ↦ B x + b`, for a continuous linear equivalence `B`, has Haar
-measure equal to `|(det B)⁻¹|` times the measure of the set. -/
-theorem addHaar_preimage_continuousLinearEquiv_add (B : F ≃L[ℝ] F) (b : F) (s : Set F) :
-    μ ((fun x ↦ B x + b) ⁻¹' s) =
-      ENNReal.ofReal |(LinearMap.det (B : F →ₗ[ℝ] F))⁻¹| * μ s := by
-  simpa [AffineMap.const_linear, Pi.add_def] using
-    addHaar_preimage_affineMap μ ((B : F →ₗ[ℝ] F).toAffineMap + AffineMap.const ℝ F b)
-      (by simpa [AffineMap.const_linear] using (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero) s
-
-/-- For every set `s` (including `∅` and sets of infinite measure) and continuous linear
-equivalence `B`, the Haar measure of `s` equals `|det B|` times the Haar measure of its affine
-preimage `(fun x ↦ B x + b) ⁻¹' s`. -/
-theorem addHaar_eq_abs_det_mul_addHaar_preimage_continuousLinearEquiv_add (B : F ≃L[ℝ] F) (b : F)
-    (s : Set F) :
-    μ s = ENNReal.ofReal |LinearMap.det (B : F →ₗ[ℝ] F)| * μ ((fun x ↦ B x + b) ⁻¹' s) := by
-  simpa [AffineMap.const_linear, Pi.add_def] using
-    addHaar_eq_abs_det_mul_addHaar_preimage_affineMap μ
-      ((B : F →ₗ[ℝ] F).toAffineMap + AffineMap.const ℝ F b)
-      (by simpa [AffineMap.const_linear] using (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero) s
-
-/-- When the affine preimage `s' = (fun x ↦ B x + b) ⁻¹' s` has positive finite Haar measure,
-`|det B|` equals the volume ratio `(μ s).toReal / (μ s').toReal`. -/
-theorem abs_det_eq_toReal_addHaar_div_preimage_continuousLinearEquiv_add (B : F ≃L[ℝ] F) (b : F)
-    {s : Set F}
-    (hs₀ : μ ((fun x ↦ B x + b) ⁻¹' s) ≠ 0) (hstop : μ ((fun x ↦ B x + b) ⁻¹' s) ≠ ∞) :
-    |LinearMap.det (B : F →ₗ[ℝ] F)| =
-      (μ s).toReal / (μ ((fun x ↦ B x + b) ⁻¹' s)).toReal := by
-  simpa [AffineMap.const_linear, Pi.add_def] using
-    abs_det_eq_toReal_addHaar_div_preimage_affineMap μ
-      ((B : F →ₗ[ℝ] F).toAffineMap + AffineMap.const ℝ F b)
-      (by simpa [AffineMap.const_linear] using (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero)
-      (by simpa [Pi.add_def] using hs₀) (by simpa [Pi.add_def] using hstop)
 
 /-- **Linear change of variables.** Substituting `x = N y` for an invertible linear map `N`
 multiplies an integral against an additive Haar measure by `|det N|`. -/
