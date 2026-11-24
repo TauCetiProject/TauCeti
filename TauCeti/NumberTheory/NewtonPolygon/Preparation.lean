@@ -91,13 +91,13 @@ theorem isMulDistinguished_finsum_newtonSlopeMultiplicity (hf : f.IsEntire)
   rw [← hj, TauCeti.PowerSeries.isMulDistinguished_iff_isUnit]
   exact ⟨hd, isUnit_iff_ne_zero.mpr hd.coeff_ne_zero⟩
 
-/-- A nonzero entire series which is a unit of the ring of series restricted at `b ^ σ` has no
-slopes at most `σ`: it is a unit at every radius `b ^ s` with `s ≤ σ`, so its Newton polygon has a
+/-- An entire series which is a unit of the ring of series restricted at `b ^ σ` has no slopes at
+most `σ`: it is a unit at every radius `b ^ s` with `s ≤ σ`, so its Newton polygon has a
 single-point face of each such slope. -/
 theorem newtonSlopeMultiplicity_eq_zero_of_isUnit [IsUltrametricDist K] (hf : f.IsEntire)
-    (hf0 : f ≠ 0) {σ : ℝ}
-    (hu : IsUnit (⟨f, hf.isRestricted (b ^ σ)⟩ : IsRestricted.subring (R := K) (b ^ σ)))
+    {σ : ℝ} (hu : IsUnit (⟨f, hf.isRestricted (b ^ σ)⟩ : IsRestricted.subring (R := K) (b ^ σ)))
     {s : ℝ} (hs : s ≤ σ) : f.newtonSlopeMultiplicity v s = 0 := by
+  have hf0 : f ≠ 0 := fun h ↦ hu.ne_zero (Subtype.ext h)
   have hb0 : 0 < b := zero_lt_one.trans hb
   have hcs : 0 < b ^ s := Real.rpow_pos_of_pos hb0 s
   have hunit := hu.map (Subring.inclusion (TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le (by
@@ -125,8 +125,7 @@ theorem isUnit_iff_forall_newtonSlopeMultiplicity_eq_zero [CompleteSpace K] (hf 
     (hf0 : constantCoeff f ≠ 0) (σ : ℝ) :
     IsUnit (⟨f, hf.isRestricted (b ^ σ)⟩ : IsRestricted.subring (R := K) (b ^ σ)) ↔
       ∀ s ≤ σ, f.newtonSlopeMultiplicity v s = 0 := by
-  refine ⟨fun hu s hs ↦ hf.newtonSlopeMultiplicity_eq_zero_of_isUnit v hb hv
-    (fun h ↦ hf0 (by simp [h])) hu hs, fun h ↦ ?_⟩
+  refine ⟨fun hu s hs ↦ hf.newtonSlopeMultiplicity_eq_zero_of_isUnit v hb hv hu hs, fun h ↦ ?_⟩
   have hd := hf.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv hf0 σ
   rw [finsum_mem_eq_zero_of_forall_eq_zero fun s hs ↦ h s hs] at hd
   exact (TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero
@@ -195,7 +194,7 @@ theorem newtonSlopeMultiplicity_left (h : IsEntirePreparation (b ^ σ) d f P G)
       if s ≤ σ then f.newtonSlopeMultiplicity v s else 0 := by
   split_ifs with hs
   · rw [h.newtonSlopeMultiplicity_eq_add v hb hv,
-      h.isEntire.newtonSlopeMultiplicity_eq_zero_of_isUnit v hb hv h.right_ne_zero h.isUnit hs,
+      h.isEntire.newtonSlopeMultiplicity_eq_zero_of_isUnit v hb hv h.isUnit hs,
       add_zero]
   · rw [Polynomial.newtonSlopeMultiplicity_coe, Multiset.count_eq_zero]
     exact fun hmem ↦ hs <| PowerSeries.le_of_mem_newtonSlopes_of_isUnit_mul v hb hv hf h.isUnit
@@ -208,7 +207,7 @@ theorem newtonSlopeMultiplicity_right (h : IsEntirePreparation (b ^ σ) d f P G)
     (hf : IsDistinguished (b ^ σ) d f) (s : ℝ) :
     G.newtonSlopeMultiplicity v s = if s ≤ σ then 0 else f.newtonSlopeMultiplicity v s := by
   split_ifs with hs
-  · exact h.isEntire.newtonSlopeMultiplicity_eq_zero_of_isUnit v hb hv h.right_ne_zero h.isUnit hs
+  · exact h.isEntire.newtonSlopeMultiplicity_eq_zero_of_isUnit v hb hv h.isUnit hs
   · rw [h.newtonSlopeMultiplicity_eq_add v hb hv, h.newtonSlopeMultiplicity_left v hb hv hf s]
     simp [hs]
 

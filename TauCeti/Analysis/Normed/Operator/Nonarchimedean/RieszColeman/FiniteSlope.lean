@@ -117,6 +117,16 @@ theorem IsPrCompact.exists_isRieszColemanProjection_of_isMulDistinguished {u : M
 
 end Ring
 
+/-- If `u` is upper triangular for a splitting `i r + j s = id`, that is `s u i = 0`, then `i`
+intertwines the diagonal block `r u i` with `u`. -/
+private theorem semiconj_of_split {K M F N : Type*} [Semiring K] [AddCommMonoid M]
+    [TopologicalSpace M] [ContinuousAdd M] [Module K M] [AddCommMonoid F] [TopologicalSpace F]
+    [Module K F] [AddCommMonoid N] [TopologicalSpace N] [Module K N] {u : M →L[K] M}
+    (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) :
+    Function.Semiconj (i : F →ₗ[K] M) (r.comp (u.comp i)) u := fun x ↦ by
+  simpa [show s (u (i x)) = 0 from congr($htri x)] using congr($hsplit (u (i x)))
+
 section Field
 
 variable {K M : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
@@ -245,6 +255,24 @@ theorem IsPrCompact.isEntirePreparation_of_split (hu : u.IsPrCompact) (hF : TauC
     |>.isEntirePreparation_finsum_newtonSlopeMultiplicity v hb hv
       (constantCoeff_charPowerSeries _) (LinearMap.coeff_projectiveCharpolyRev_zero _) hQ hS
 
+omit [IsBoundedSMul K M] in
+/-- Under the hypotheses of `IsPrCompact.isEntirePreparation_of_split`, any normalised entire
+preparation of `H_u` at `b ^ h` in the degree `N_h` has factors `det (1 - T (r u i))` and
+`det (1 - T (s u j))`. -/
+private theorem IsPrCompact.eq_of_split (hu : u.IsPrCompact) (hF : TauCeti.HasPr K F)
+    (hN : TauCeti.HasPr K N) (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) {h : ℝ}
+    (hQ : ∀ σ ∈ (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.newtonSlopes v, σ ≤ h)
+    (hS : ∀ σ ≤ h, (s.comp (u.comp j)).charPowerSeries.newtonSlopeMultiplicity v σ = 0)
+    {Q : K[X]} {S : K⟦X⟧}
+    (hQS : IsEntirePreparation (b ^ h)
+      (∑ᶠ σ ∈ Set.Iic h, u.charPowerSeries.newtonSlopeMultiplicity v σ) u.charPowerSeries Q S) :
+    Q = (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev ∧
+      S = (s.comp (u.comp j)).charPowerSeries :=
+  hQS.unique (hu.isEntirePreparation_of_split v hb hv hF hN i r j s hsplit htri hQ hS)
+    (hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h)
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) h)
+
 /-- **An invertible slope-separated invariant summand is the finite-slope part.** Let `u` be
 `(Pr)`-compact, upper triangular for a bounded splitting `i r + j s = id` through a
 finite-dimensional `F` and a complement `N`. Suppose that `u` is invertible on `F`, that every
@@ -266,12 +294,10 @@ theorem IsPrCompact.range_eq_range_of_split (hu : u.IsPrCompact) (hF : TauCeti.H
     E.range = i.range := by
   have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
   have hdist := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
-  obtain ⟨rfl, rfl⟩ :=
-    hQS.unique (hu.isEntirePreparation_of_split v hb hv hF hN i r j s hsplit htri hQ hS) hdist hc
+  obtain ⟨rfl, rfl⟩ := hu.eq_of_split v hb hv hF hN i r j s hsplit htri hQ hS hQS
   have hdeg := LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_of_isUnit hunit
   -- `i` intertwines `r u i` with `u`, and Cayley–Hamilton kills `Q*(r u i)`.
-  have hsemi : Function.Semiconj (i : F →ₗ[K] M) (r.comp (u.comp i)) u := fun x ↦ by
-    simpa [show s (u (i x)) = 0 from congr($htri x)] using congr($hsplit (u (i x)))
+  have hsemi := semiconj_of_split i r j s hsplit htri
   have hCH : Polynomial.aeval (r.comp (u.comp i))
       (r.comp (u.comp i) : F →ₗ[K] F).projectiveCharpolyRev.reverse = 0 := by
     refine ContinuousLinearMap.coe_injective ?_
@@ -312,8 +338,7 @@ theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompa
   have hrange := hu.range_eq_range_of_split v hb hv hF hN i r j s hsplit htri hunit hQ hS hQS hE
   have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
   have hdist := hu.isMulDistinguished_finsum_newtonSlopeMultiplicity v hb hv h
-  obtain ⟨-, rfl⟩ :=
-    hQS.unique (hu.isEntirePreparation_of_split v hb hv hF hN i r j s hsplit htri hQ hS) hdist hc
+  obtain ⟨-, rfl⟩ := hu.eq_of_split v hb hv hF hN i r j s hsplit htri hQ hS hQS
   -- `E` fixes the image of `F`.
   have hEi (x : F) : E (i x) = i x := by
     obtain ⟨y, hy⟩ : i x ∈ E.range := hrange ▸ LinearMap.mem_range_self _ x
@@ -322,8 +347,7 @@ theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompa
   -- `E` kills the image of `N`: there `j` intertwines `s u j` with `u`, and `Q*(s u j)` is
   -- invertible because `Q` is coprime to `det (1 - T (s u j))`.
   have hEj (y : N) : E (j y) = 0 := by
-    have hsemi : Function.Semiconj (j : N →ₗ[K] M) (s.comp (u.comp j)) u := fun z ↦ by
-      simpa [show r (u (j z)) = 0 from congr($hrj z)] using congr($hsplit (u (j z)))
+    have hsemi := semiconj_of_split j s i r ((add_comm _ _).trans hsplit) hrj
     obtain ⟨w, hw⟩ := ((((hu.comp_clm j hN).clm_comp s hN).isUnit_aeval_reverse_iff
       hQS.isUnit_leadingCoeff).mpr (hQS.isCoprime hdist hc)).exists_right_inv
     have hy : j y ∈ LinearMap.ker (E : M →ₗ[K] M) := by
