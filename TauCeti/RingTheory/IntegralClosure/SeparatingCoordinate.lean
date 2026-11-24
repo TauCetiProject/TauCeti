@@ -111,7 +111,7 @@ theorem exists_notMem_finite_localizedModule_integralClosure_of_forall_isSeparab
   have : Algebra.EssFiniteType R B := .comp R K B
   have : Algebra.EssFiniteType R[X] B := .of_comp R R[X] B
   have : Algebra.Etale (FractionRing R[X]) (FractionRing R[X] ⊗[R[X]] B) :=
-    etale_tensorProduct_polynomial_of_forall_isSeparable (K := K) fun p _ hp _ ↦ by
+    etale_tensorProduct_polynomial_of_forall_isSeparable (K := K) _ fun p _ hp _ ↦ by
       rw [hX p]
       exact (hsep p hp).2
   have := Ring.finite_integralClosure_of_isTorsionFree_of_etale (R := R[X]) (FractionRing R[X]) B
