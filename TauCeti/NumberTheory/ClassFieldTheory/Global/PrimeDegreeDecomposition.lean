@@ -177,7 +177,7 @@ end OpenNormalSubgroup
 
 namespace TauCeti.ClassFieldTheory.NormalLayer
 
-open TauCeti IntermediateField
+open TauCeti _root_.IntermediateField
 
 /-- **A prime-degree layer has a surjective decomposition map at some finite place.** Let
 `V ◁ U` be a finite normal layer of `G_K` of prime degree. There are a finite place `v` of `K` and

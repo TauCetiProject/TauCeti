@@ -15,6 +15,8 @@ for some `n ≤ m`, then `f` is `Cⁿ` at `φ a` (`ContDiffAt.of_comp_right`): n
 `f ∘ φ` composed with the local inverse of `φ`, which is `Cᵐ` by the inverse function theorem
 (`ContDiffAt.to_localInverse`). This is how smoothness of a map defined on a surface is read off in
 a chart that covers its domain only up to a periodicity, such as the cylindrical chart of an end.
+Together with the chain rule, `f ∘ φ` is then `Cⁿ` at `a` exactly when `f` is `Cⁿ` at `φ a`
+(`ContDiffAt.contDiffAt_comp_iff`).
 -/
 
 public section
@@ -37,5 +39,12 @@ theorem of_comp_right {f : F → G} {φ : E → F} {L : E ≃L[𝕂] F} {a : E} 
   refine (hf.comp _ ((hφ.to_localInverse hφ' hm).of_le hnm)).congr_of_eventuallyEq ?_
   filter_upwards [(hφ.hasStrictFDerivAt hφ' hm).eventually_right_inverse] with w hw
   exact congrArg f hw.symm
+
+/-- **Precomposition with a local diffeomorphism.** If `φ` is `Cⁿ` at `a`, `n ≠ 0`, with an
+invertible derivative there, then `f ∘ φ` is `Cⁿ` at `a` exactly when `f` is `Cⁿ` at `φ a`. -/
+theorem contDiffAt_comp_iff {f : F → G} {φ : E → F} {L : E ≃L[𝕂] F} {a : E} {n : WithTop ℕ∞}
+    (hφ : ContDiffAt 𝕂 n φ a) (hφ' : HasFDerivAt φ (L : E →L[𝕂] F) a) (hn : n ≠ 0) :
+    ContDiffAt 𝕂 n (f ∘ φ) a ↔ ContDiffAt 𝕂 n f (φ a) :=
+  ⟨fun hf ↦ hf.of_comp_right hφ hφ' hn le_rfl, fun hf ↦ hf.comp a hφ⟩
 
 end ContDiffAt

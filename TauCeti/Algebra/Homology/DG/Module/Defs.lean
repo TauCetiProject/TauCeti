@@ -17,7 +17,7 @@ import TauCeti.Algebra.Module.GradedModule.Internal
 Let `d` be a differential on an internally `ℤ`-graded `R`-algebra `𝒜` on a carrier `A`, in the
 sense of `TauCeti.IsDGAlgebra`.  A **differential graded left module** over it is an `A`-module `M`
 with an internal `ℤ`-grading `ℳ` for which the action adds degrees, together with an `R`-linear
-differential `dM` of degree `+1`, in the sense of `TauCeti.LinearMap.IsHomogeneous`, which squares
+differential `dM` of degree `+1`, in the sense of `LinearMap.IsHomogeneous`, which squares
 to zero and satisfies the graded Leibniz rule
 
 `dM (a • x) = d a • x + (-1) ^ |a| • (a • dM x)`.
