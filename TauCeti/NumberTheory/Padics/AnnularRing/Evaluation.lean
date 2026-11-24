@@ -314,7 +314,8 @@ private theorem tsum_evalTerm_mul (h₀ : (p : ℝ)⁻¹ < ‖t‖) (h₁ : ‖t
             rw [← zpow_add₀ ht, add_sub_cancel]]
           ring
     _ = evalTerm t (x * y) m := ((hasSum_coeff_mul x y m).map (padicIntAlgebraMap p K)
-        continuous_padicIntAlgebraMap).mul_right (t ^ m) |>.tsum_eq
+        (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))).mul_right (t ^ m)
+        |>.tsum_eq
 
 /-- **Evaluation on the annulus.** For `t` in a complete normed field over `ℚ_p` with
 `p⁻¹ < ‖t‖ < 1`, the ring homomorphism `∑_m d_m T ^ m ↦ ∑_m d_m t ^ m` from the annular
@@ -396,7 +397,7 @@ theorem hasSum_eval_ofMvPowerSeries (h₀ : (p : ℝ)⁻¹ < ‖t‖) (h₁ : �
       (MvPowerSeries.coeff n F) * t ^ n 0 * ((p : K) / t) ^ n 1 :=
     (hasSum_evalTerm h₀ h₁ _).unique (((Equiv.prodComm _ _).hasSum_iff.2 hG).prod_fiberwise fun m ↦
       ((hasSum_coeff_ofMvPowerSeries F m).map (padicIntAlgebraMap p K)
-        continuous_padicIntAlgebraMap).mul_right (t ^ m))
+        (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))).mul_right (t ^ m))
   rw [heq]
   simpa only [padicIntAlgebraMap_apply] using hs.hasSum
 
