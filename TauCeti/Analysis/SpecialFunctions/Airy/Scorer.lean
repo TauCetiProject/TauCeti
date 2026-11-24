@@ -27,7 +27,9 @@ the origin these are Gamma values, `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) /
 moment plus `1`, which is the inhomogeneous Airy equation `Hi'' = z Hi + 1/π` (DLMF 9.12.1). For a
 cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every equation
 `w'' = z w + c` (`TauCeti.airy_inhomogeneous_ode_rotation`); with `ν = e^{∓2πi/3}` this gives the
-`Hi` part of DLMF 9.12.3. On the real line `Hi` is real.
+`Hi` part of DLMF 9.12.3. Since `Bi'' = z Bi`, `Gi = Bi − Hi` solves `Gi'' = z Gi − 1/π`
+(DLMF 9.12.3), and every entire solution of `w'' = z w + 1/π` differs from `Hi` by a solution of
+Airy's equation, a combination of `Ai` and `Bi` (DLMF 9.12.2). On the real line `Hi` is real.
 
 ## Main results
 
@@ -42,8 +44,11 @@ cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every
   entire, and `Real.differentiable_scorerHi`, `Real.differentiable_scorerGi` — their real
   restrictions are differentiable.
 * `TauCeti.scorerHi_ode` — `Hi'' = z Hi + 1/π` (DLMF 9.12.1).
-* `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
+* `TauCeti.scorerGi_ode` — `Gi'' = z Gi − 1/π` (DLMF 9.12.3), and
+  `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
   (DLMF 9.12.3).
+* `TauCeti.exists_eq_scorerHi_add_airy_combination` — every entire solution of
+  `w'' = z w + 1/π` is `Hi + c₁ Ai + c₂ Bi` (DLMF 9.12.2).
 * `Nat.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
   `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
@@ -243,6 +248,22 @@ Airy equation `w'' = z w + 1/π`; with `ν = e^{∓2πi/3}` this is DLMF 9.12.3 
 theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
     deriv^[2] (fun w => ν * scorerHi (ν * w)) z = z * (ν * scorerHi (ν * z)) + (π : ℂ)⁻¹ :=
   airy_inhomogeneous_ode_rotation scorerHi_ode hν z
+
+/-- `Gi` solves the inhomogeneous Airy equation `Gi'' = z Gi − 1/π` (DLMF 9.12.3). -/
+theorem scorerGi_ode (z : ℂ) : deriv^[2] scorerGi z = z * scorerGi z - (π : ℂ)⁻¹ := by
+  rw [show scorerGi = airyBi - scorerHi from funext Complex.scorerGi_def,
+    ← iteratedDeriv_eq_iterate,
+    iteratedDeriv_sub differentiable_airyBi.contDiff.contDiffAt
+      differentiable_scorerHi.contDiff.contDiffAt,
+    iteratedDeriv_eq_iterate, iteratedDeriv_eq_iterate, airyBi_ode, scorerHi_ode, Pi.sub_apply]
+  ring
+
+/-- **The general solution** of `w'' = z w + 1/π` (DLMF 9.12.2): every entire solution is
+`Hi + c₁ Ai + c₂ Bi`. -/
+theorem exists_eq_scorerHi_add_airy_combination {w : ℂ → ℂ} (hw : Differentiable ℂ w)
+    (hode : ∀ z, deriv^[2] w z = z * w z + (π : ℂ)⁻¹) :
+    ∃ c₁ c₂ : ℂ, w = fun z => scorerHi z + c₁ * airyAi z + c₂ * airyBi z :=
+  exists_eq_add_airy_combination differentiable_scorerHi hw scorerHi_ode hode
 
 /-! ### The value at the origin -/
 

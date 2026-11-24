@@ -30,7 +30,9 @@ solution satisfies the Riccati equation `W' = z − W²`.
 * `TauCeti.hasDerivAt_deriv_div_of_airy_ode_at`, `TauCeti.hasDerivAt_deriv_div_of_airy_ode`: the
   Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
 * `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
-  `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`.
+  `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`;
+* `TauCeti.exists_eq_add_airy_combination`: every entire solution of `w'' = z w + c` is a given
+  entire solution plus a combination of `Ai` and `Bi`.
 
 ## Implementation notes
 
@@ -263,5 +265,23 @@ theorem airy_inhomogeneous_ode_rotation {f : ℂ → ℂ} {c ν : ℂ}
     iteratedDeriv_comp_mul_left, smul_eq_mul]
   rw [iteratedDeriv_eq_iterate, hf]
   linear_combination (ν * z * f (ν * z) + c) * hν
+
+/-- **The inhomogeneous Airy equation**: if `p` and `w` are entire solutions of `w'' = z w + c`,
+then `w` is `p` plus a combination of `Ai` and `Bi`. With `p = Hi` and `c = 1/π` this is
+DLMF 9.12.2 (`TauCeti.exists_eq_scorerHi_add_airy_combination`). -/
+theorem exists_eq_add_airy_combination {c : ℂ} {p w : ℂ → ℂ} (hp : Differentiable ℂ p)
+    (hw : Differentiable ℂ w) (hp' : ∀ z, deriv^[2] p z = z * p z + c)
+    (hw' : ∀ z, deriv^[2] w z = z * w z + c) :
+    ∃ c₁ c₂ : ℂ, w = fun z => p z + c₁ * airyAi z + c₂ * airyBi z := by
+  have hode (z : ℂ) : deriv^[2] (w - p) z = z * (w - p) z := by
+    rw [← iteratedDeriv_eq_iterate,
+      iteratedDeriv_sub hw.contDiff.contDiffAt hp.contDiff.contDiffAt,
+      iteratedDeriv_eq_iterate, iteratedDeriv_eq_iterate, hw', hp', Pi.sub_apply]
+    ring
+  refine ⟨π * ((w - p) 0 * deriv airyBi 0 - deriv (w - p) 0 * airyBi 0),
+    π * (deriv (w - p) 0 * airyAi 0 - (w - p) 0 * deriv airyAi 0), funext fun z => ?_⟩
+  have h := congrFun (eq_airy_combination (hw.sub hp) hode) z
+  rw [Pi.sub_apply] at h
+  linear_combination h
 
 end TauCeti
