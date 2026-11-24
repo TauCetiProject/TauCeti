@@ -10,6 +10,7 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
+import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -211,39 +212,11 @@ theorem isCompactOperator_toLpOfLE {q : ℝ≥0∞} [Fact (1 ≤ q)] (hn : 2 < f
   rcases le_or_gt q 2 with hq2 | hq2
   · exact isCompactOperator_toLp.of_forall_ae_eq_of_le hq2 fun w ↦ by rw [coeFn_toLpOfLE]
   -- For `2 < q`, interpolate between `L²` and the critical exponent `pₙ = 2n/(n-2)`:
-  -- `1/q = (1 - θ)/2 + θ/pₙ` with `θ = n/2 - n/q ∈ (0, 1)`.
-  have hn' : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
-  set n : ℝ := (finrank ℝ E : ℝ)
-  have hq0 : q ≠ ⊤ := hq.ne_top
-  set a := q.toReal
-  have hqa : q = ENNReal.ofReal a := (ENNReal.ofReal_toReal hq0).symm
-  have ha2 : 2 < a := by
-    rw [hqa] at hq2
-    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg zero_le_two).1 (by simpa using hq2)
-  have hapn : a < 2 * n / (n - 2) := by
-    rw [hqa] at hq
-    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by linarith)).1 hq
-  have hpn1 : (1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * n / (n - 2)) :=
-    hq2.le.trans' one_le_two |>.trans hq.le
-  have : Fact ((1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * n / (n - 2))) := ⟨hpn1⟩
-  have ha0 : 0 < a := by linarith
-  have hθ0 : 0 ≤ n / 2 - n / a := by
-    rw [sub_nonneg]
-    exact div_le_div_of_nonneg_left (by linarith) zero_lt_two ha2.le
-  have hθ1 : n / 2 - n / a < 1 := by
-    have h : a * (n - 2) < 2 * n := (lt_div_iff₀ (by linarith)).1 hapn
-    have h' : (n - 2) / 2 < n / a := by
-      rw [div_lt_div_iff₀ two_pos ha0]
-      linarith
-    linarith
-  refine isCompactOperator_toLp.of_forall_ae_eq_of_interpolation (toLpOfLE hn le_rfl) hθ0 hθ1 ?_
-    (fun w ↦ by rw [coeFn_toLpOfLE]) fun w ↦ by rw [coeFn_toLpOfLE, coeFn_toLpOfLE]
-  have h : a⁻¹ = (1 - (n / 2 - n / a)) * 2⁻¹ + (n / 2 - n / a) * (2 * n / (n - 2))⁻¹ := by
-    field_simp
-    ring
-  rw [hqa, ← ENNReal.ofReal_inv_of_pos ha0, h,
-    ENNReal.ofReal_add (mul_nonneg (by linarith) (by norm_num)) (by positivity),
-    ENNReal.ofReal_mul (by linarith), ENNReal.ofReal_mul hθ0, ENNReal.ofReal_inv_of_pos two_pos,
-    ENNReal.ofReal_inv_of_pos (by positivity), ENNReal.ofReal_ofNat]
+  -- `1/q = (1 - θ)/2 + θ/pₙ` for some `θ ∈ (0, 1)`.
+  have : Fact ((1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) :=
+    ⟨one_le_two.trans (hq2.le.trans hq.le)⟩
+  obtain ⟨θ, hθ, hrel⟩ := exists_inv_eq_of_mem_Ioo two_ne_zero ⟨hq2, hq⟩
+  exact isCompactOperator_toLp.of_forall_ae_eq_of_interpolation (toLpOfLE hn le_rfl) hθ.1.le
+    hθ.2 hrel (fun w ↦ by rw [coeFn_toLpOfLE]) fun w ↦ by rw [coeFn_toLpOfLE, coeFn_toLpOfLE]
 
 end TauCeti.Manifold.SobolevH1
