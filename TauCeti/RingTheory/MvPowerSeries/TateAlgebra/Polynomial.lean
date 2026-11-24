@@ -91,15 +91,8 @@ theorem tendsto_truncFinset_atTop (f : IsRestricted.subring (R := R) c) :
     Tendsto (fun s : Finset (σ →₀ ℕ) ↦
       polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) atTop (𝓝 f) := by
   classical
-  -- Transport the module statement along the isometric coefficient comparison `Φ`.
-  let Φ : IsRestricted.subring (R := R) c ≃ₗ[R] IsRestrictedFamily.Gauss c R :=
-    (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
-      (IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv R).symm
-  have hdist (g h : IsRestricted.subring (R := R) c) : dist g h = dist (Φ g) (Φ h) := by
-    rw [dist_eq_norm, dist_eq_norm, ← map_sub]
-    simp only [Φ, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
-      IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
-      IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
+  -- Transport the module statement along the coefficient isometry `Φ`.
+  let Φ := IsRestrictedFamily.Gauss.subringLinearIsometryEquiv (σ := σ) (c := c) R
   have hΦ (s : Finset (σ →₀ ℕ)) :
       Φ (polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))) =
         ∑ t ∈ s, IsRestrictedFamily.Gauss.ofFinsupp R c (Finsupp.single t (Φ f t)) := by
@@ -107,9 +100,10 @@ theorem tendsto_truncFinset_atTop (f : IsRestricted.subring (R := R) c) :
     by_cases ht : t ∈ s <;>
       simp [Φ, ← map_sum, Finsupp.single_apply, ht, coeff_truncFinset_of_mem,
         coeff_truncFinset_eq_zero]
-  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-  simpa only [hdist, hΦ, SummationFilter.unconditional_filter] using
-    Metric.tendsto_nhds.mp (IsRestrictedFamily.Gauss.hasSum_ofFinsupp_single R (Φ f)) ε hε
+  have h := (IsRestrictedFamily.Gauss.hasSum_ofFinsupp_single R (Φ f)).map Φ.symm Φ.symm.continuous
+  rw [Φ.symm_apply_apply] at h
+  refine Tendsto.congr (fun s ↦ Φ.injective ?_) h
+  simp [hΦ]
 
 /-- **Total-degree truncations converge**: in finitely many variables, the truncations of a
 restricted series below total degree `n` tend to it in the Gauss norm as `n → ∞`. -/

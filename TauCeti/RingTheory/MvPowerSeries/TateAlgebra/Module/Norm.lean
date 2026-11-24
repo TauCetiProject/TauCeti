@@ -27,9 +27,12 @@ and finite-support families are dense. The construction allows arbitrary
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
 Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
-with scalar restricted series preserves the Gauss norm. Over an ultrametric ring, bounded
-coefficient maps induce continuous linear maps over the scalar restricted series, and
-coefficient equivalences bounded in both directions induce topological isomorphisms.
+with scalar restricted series preserves the Gauss norm, so over a commutative ultrametric ring it
+is a linear isometric equivalence
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.subringLinearIsometryEquiv`). Over an
+ultrametric ring, bounded coefficient maps induce continuous linear maps over the scalar
+restricted series, and coefficient equivalences bounded in both directions induce topological
+isomorphisms.
 
 ## References
 
@@ -499,6 +502,29 @@ theorem norm_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
     ‖ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)‖ = ‖f‖ := by
   rw [norm_eq_iSup, _root_.MvPowerSeries.norm_eq_gaussNorm, gaussNorm]
   simp only [coe_subringLinearEquiv]
+
+section Comm
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+variable (R) in
+/-- The ring-valued coefficient comparison as a linear isometric equivalence between the scalar
+restricted series and the Gauss families of their coefficients, at every positive polyradius. -/
+def subringLinearIsometryEquiv : IsRestricted.subring (R := R) c ≃ₗᵢ[R] Gauss c R where
+  toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
+    (toAddSubgroupLinearEquiv R).symm
+  norm_map' := norm_subringLinearEquiv
+
+/-- The coefficient isometry sends a restricted series to its family of coefficients. -/
+@[simp]
+theorem subringLinearIsometryEquiv_apply (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
+    subringLinearIsometryEquiv R f t = _root_.MvPowerSeries.coeff t (f : MvPowerSeries σ R) := by
+  rw [← LinearIsometryEquiv.coe_toLinearEquiv]
+  simp only [subringLinearIsometryEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.restrictScalars_apply, toAddSubgroupLinearEquiv_symm_apply,
+    coe_subringLinearEquiv]
+
+end Comm
 
 variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
 
