@@ -125,6 +125,24 @@ private theorem map_homOfLE_add_zero {F : ℕ ⥤ TopCat.{u}} (m : ℕ) :
   rw [Subsingleton.elim (homOfLE (Nat.le_add_right m 0)) (𝟙 m), F.map_id, TopCat.coe_id, id_eq,
     ContinuousMap.id_apply]
 
+private theorem bijective_homotopyGroup_map_homOfLE_add_zero {F : ℕ ⥤ TopCat.{u}}
+    (N : Type*) (m : ℕ) (x : F.obj m) :
+    Function.Bijective (HomotopyGroup.map (N := N) (x := x)
+      (F.map (homOfLE (Nat.le_add_right m 0))).hom rfl) := by
+  have hx : (F.map (homOfLE (Nat.le_add_right m 0))).hom x = x := by
+    rw [map_homOfLE_add_zero, ContinuousMap.id_apply]
+  have hcomp₁ : (F.map (homOfLE (Nat.le_add_right m 0))).hom.comp
+      (ContinuousMap.id (F.obj m)) = ContinuousMap.id (F.obj m) := by
+    rw [map_homOfLE_add_zero, ContinuousMap.comp_id]
+  have hcomp₂ : (ContinuousMap.id (F.obj m)).comp
+      (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id (F.obj m) := by
+    rw [map_homOfLE_add_zero, ContinuousMap.id_comp]
+  exact Function.bijective_iff_has_inverse.2 ⟨HomotopyGroup.map (ContinuousMap.id (F.obj m)) hx,
+    fun a ↦ HomotopyGroup.map_map_of_comp_eq_id (ContinuousMap.id (F.obj m))
+      (F.map (homOfLE (Nat.le_add_right m 0))).hom rfl hx hcomp₂ a,
+    fun a ↦ HomotopyGroup.map_map_of_comp_eq_id (F.map (homOfLE (Nat.le_add_right m 0))).hom
+      (ContinuousMap.id (F.obj m)) hx rfl hcomp₁ a⟩
+
 private theorem homotopyGroup_map_comp_le {N : Type*} {m k : ℕ} (hmk : m ≤ k) (x : F.obj m) :
     HomotopyGroup.map (N := N) (x := F.map (homOfLE hmk) x)
           (F.map (homOfLE k.le_succ)).hom rfl ∘
@@ -160,18 +178,7 @@ theorem surjective_homotopyGroup_map_ι {N : Type*} (m : ℕ) (x : F.obj m)
         (F.map (homOfLE (Nat.le_add_right m d))).hom rfl) := by
     intro d
     induction d with
-    | zero =>
-      intro a
-      have hx : ContinuousMap.id (F.obj m) (F.map (homOfLE (Nat.le_add_right m 0)) x) = x := by
-        change ContinuousMap.id (F.obj m) ((F.map (homOfLE (Nat.le_add_right m 0))).hom x) = x
-        rw [map_homOfLE_add_zero]
-        rfl
-      have hcomp : (F.map (homOfLE (Nat.le_add_right m 0))).hom.comp
-          (ContinuousMap.id (F.obj m)) = ContinuousMap.id (F.obj m) := by
-        rw [map_homOfLE_add_zero, ContinuousMap.comp_id]
-      refine ⟨HomotopyGroup.map (ContinuousMap.id (F.obj m)) hx a, ?_⟩
-      exact HomotopyGroup.map_map_of_comp_eq_id (F.map (homOfLE (Nat.le_add_right m 0))).hom
-        (ContinuousMap.id (F.obj m)) hx rfl hcomp a
+    | zero => exact (bijective_homotopyGroup_map_homOfLE_add_zero N m x).2
     | succ d ih =>
       have hcomp := (hsurj (m + d) (Nat.le_add_right m d)).comp ih
       rw [homotopyGroup_map_comp_le (F := F) (Nat.le_add_right m d) x] at hcomp
@@ -203,17 +210,7 @@ theorem injective_homotopyGroup_map_ι {N : Type*} (m : ℕ) (x : F.obj m)
         (F.map (homOfLE (Nat.le_add_right m d))).hom rfl) := by
     intro d
     induction d with
-    | zero =>
-      intro a b hab
-      have hx : F.map (homOfLE (Nat.le_add_right m 0)) x = x := by
-        change (F.map (homOfLE (Nat.le_add_right m 0))).hom x = x
-        rw [map_homOfLE_add_zero, ContinuousMap.id_apply]
-      have hcomp : (ContinuousMap.id (F.obj m)).comp
-          (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id (F.obj m) := by
-        rw [map_homOfLE_add_zero, ContinuousMap.id_comp]
-      have hab' := congrArg (HomotopyGroup.map (N := N) (ContinuousMap.id (F.obj m)) hx) hab
-      rwa [HomotopyGroup.map_map_of_comp_eq_id _ _ rfl hx hcomp a,
-        HomotopyGroup.map_map_of_comp_eq_id _ _ rfl hx hcomp b] at hab'
+    | zero => exact (bijective_homotopyGroup_map_homOfLE_add_zero N m x).1
     | succ d ih =>
       have hcomp := (hinj (m + d) (Nat.le_add_right m d)).comp ih
       rw [homotopyGroup_map_comp_le (F := F) (Nat.le_add_right m d) x] at hcomp

@@ -168,6 +168,7 @@ instance instT4SpaceTopDiagramObj (n : ℕ) [T4Space (G n)] :
 /-- On successor steps `n ⟶ n + 1`, `topDiagram φ` acts as `φ n`. -/
 theorem topDiagram_map_succ (n : ℕ) (x : G n) :
     (topDiagram φ).map (homOfLE n.le_succ) x = φ n x := by
+  -- Unfold `topDiagram` and `grpDiagram` to rewrite the `Functor.ofSequence` successor step.
   change (Grp.forget CompactlyGenerated.{w, w} ⋙
     CompactlyGenerated.compactlyGeneratedToTop.{w, w}).map
       ((Functor.ofSequence (grpStep φ)).map (homOfLE (Nat.le_add_right n 1))) x = _
@@ -243,25 +244,37 @@ theorem t4Space [∀ n, T4Space (G n)] (hφ : ∀ n, IsClosedEmbedding (φ n)) :
   TopCat.t4Space_of_isColimit (isClosedEmbedding_topDiagram_succ φ hφ) (isColimitTopCocone φ)
 
 /-- The canonical continuous inclusion `G n →ₜ* SequentialColimitGroup φ` from stage `n`. -/
-def of (n : ℕ) : G n →ₜ* SequentialColimitGroup φ where
-  toFun := ((topCocone φ).ι.app n).hom
-  map_one' := ConcreteCategory.congr_hom
-    (IsMonHom.one_hom ((colimit.cocone (grpDiagram φ)).ι.app n).hom.hom) PUnit.unit
-  map_mul' x y := ConcreteCategory.congr_hom
-    (IsMonHom.mul_hom ((colimit.cocone (grpDiagram φ)).ι.app n).hom.hom) (x, y)
-  continuous_toFun := ((topCocone φ).ι.app n).hom.continuous
+def of (n : ℕ) : G n →ₜ* SequentialColimitGroup φ :=
+  let ι : CompactlyGenerated.of.{w, w} (G n) ⟶ (colimit (grpDiagram φ)).X :=
+    ((colimit.cocone (grpDiagram φ)).ι.app n).hom.hom
+  letI : CategoryTheory.IsMonHom ι :=
+    inferInstanceAs (CategoryTheory.IsMonHom ((colimit.cocone (grpDiagram φ)).ι.app n).hom.hom)
+  { __ := CompactlyGenerated.monoidHomOfIsMonHom ι
+    continuous_toFun := ((topCocone φ).ι.app n).hom.continuous.congr fun x ↦
+      (CompactlyGenerated.monoidHomOfIsMonHom_apply ι x).symm }
+
+/-- Evaluating `SequentialColimitGroup.of φ n` agrees with the `topCocone` leg. -/
+private theorem coe_of (n : ℕ) : ⇑(of φ n) = ⇑((topCocone φ).ι.app n) := by
+  ext x
+  unfold of
+  dsimp only
+  exact @CompactlyGenerated.monoidHomOfIsMonHom_apply
+    (CompactlyGenerated.of.{w, w} (G n)) (colimit (grpDiagram φ)).X _ _
+    ((colimit.cocone (grpDiagram φ)).ι.app n).hom.hom
+    (inferInstanceAs (CategoryTheory.IsMonHom ((colimit.cocone (grpDiagram φ)).ι.app n).hom.hom))
+    x
 
 /-- A subset of `SequentialColimitGroup φ` is closed if and only if its preimage under every
 stage inclusion `of φ n` is closed. -/
 theorem isClosed_iff {S : Set (SequentialColimitGroup φ)} :
-    IsClosed S ↔ ∀ n, IsClosed (of φ n ⁻¹' S) :=
-  TopCat.isClosed_iff_of_isColimit _ (isColimitTopCocone φ) S
+    IsClosed S ↔ ∀ n, IsClosed (of φ n ⁻¹' S) := by
+  simp only [coe_of]
+  exact TopCat.isClosed_iff_of_isColimit _ (isColimitTopCocone φ) S
 
 /-- The stage inclusions are compatible with the successor step `φ n`. -/
 @[simp]
 theorem of_succ (n : ℕ) (x : G n) : of φ (n + 1) (φ n x) = of φ n x := by
-  change ((topCocone φ).ι.app (n + 1)).hom (φ n x) = ((topCocone φ).ι.app n).hom x
-  rw [← topDiagram_map_succ φ n x]
+  rw [coe_of, coe_of, ← topDiagram_map_succ φ n x]
   exact ConcreteCategory.congr_hom ((topCocone φ).w (homOfLE n.le_succ)) x
 
 /-- Composing `of φ (n + 1)` with `φ n` gives `of φ n`. -/
@@ -272,20 +285,21 @@ theorem of_comp (n : ℕ) : (of φ (n + 1)).comp (φ n) = of φ n :=
 /-- The stage inclusions are compatible with all composite transition maps `m ≤ n`. -/
 @[simp]
 theorem of_le {m n : ℕ} (h : m ≤ n) (x : G m) : of φ n (transition φ h x) = of φ m x := by
-  change ((topCocone φ).ι.app n).hom (transition φ h x) = ((topCocone φ).ι.app m).hom x
-  rw [← topDiagram_map_homOfLE φ h x]
+  rw [coe_of, coe_of, ← topDiagram_map_homOfLE φ h x]
   exact ConcreteCategory.congr_hom ((topCocone φ).w (homOfLE h)) x
 
 /-- When every transition `φ n` is a closed embedding, every stage inclusion `of φ n` is a closed
 embedding. -/
 theorem isClosedEmbedding_of (hφ : ∀ n, IsClosedEmbedding (φ n)) (n : ℕ) :
-    IsClosedEmbedding (of φ n) :=
-  TopCat.isClosedEmbedding_ι_of_isColimit_of_succ
+    IsClosedEmbedding (of φ n) := by
+  rw [coe_of]
+  exact TopCat.isClosedEmbedding_ι_of_isColimit_of_succ
     (isClosedEmbedding_topDiagram_succ φ hφ) (isColimitTopCocone φ) n
 
 /-- When every transition `φ n` is injective, every stage inclusion `of φ n` is injective. -/
 theorem of_injective (hφ : ∀ n, Function.Injective (φ n)) (n : ℕ) :
     Function.Injective (of φ n) := by
+  rw [coe_of]
   refine TopCat.injective_ι_of_isColimit (fun i j f x y hxy ↦ ?_) (isColimitTopCocone φ) n
   have htrans : ∀ ⦃a b : ℕ⦄ (hab : a ≤ b), Function.Injective (transition φ hab) := by
     intro a b hab
@@ -303,15 +317,17 @@ theorem of_injective (hφ : ∀ n, Function.Injective (φ n)) (n : ℕ) :
   exact htrans (leOfHom f) (hx.symm.trans (hxy.trans hy))
 
 /-- Every element of `SequentialColimitGroup φ` lies in the image of some finite stage `G n`. -/
-theorem exists_of (x : SequentialColimitGroup φ) : ∃ (n : ℕ) (a : G n), of φ n a = x :=
-  Types.jointly_surjective_of_isColimit
+theorem exists_of (x : SequentialColimitGroup φ) : ∃ (n : ℕ) (a : G n), of φ n a = x := by
+  simp only [coe_of]
+  exact Types.jointly_surjective_of_isColimit
     (isColimitOfPreserves (forget TopCat) (isColimitTopCocone φ)) x
 
 /-- Any two elements of `SequentialColimitGroup φ` lie in the image of a common finite stage
 `G n`. -/
 theorem exists_of₂ (x y : SequentialColimitGroup φ) :
-    ∃ (n : ℕ) (a b : G n), of φ n a = x ∧ of φ n b = y :=
-  Types.FilteredColimit.jointly_surjective_of_isColimit₂
+    ∃ (n : ℕ) (a b : G n), of φ n a = x ∧ of φ n b = y := by
+  simp only [coe_of]
+  exact Types.FilteredColimit.jointly_surjective_of_isColimit₂
     (isColimitOfPreserves (forget TopCat) (isColimitTopCocone φ)) x y
 
 /-- Two continuous homomorphisms out of `SequentialColimitGroup φ` agree when they agree on every
@@ -342,6 +358,7 @@ private def liftContinuousCocone {Y : Type w} [TopologicalSpace Y]
   Cocone.mk (TopCat.of Y)
     (NatTrans.ofSequence (G := (Functor.const ℕ).obj (TopCat.of Y))
       (fun n ↦ TopCat.ofHom (f n)) fun n ↦ ConcreteCategory.hom_ext _ _ fun a ↦ by
+        -- Unfold `NatTrans.ofSequence` and `ConcreteCategory` composition on `TopCat.ofHom`.
         change f (n + 1) ((topDiagram φ).map (homOfLE (n.le_add_right 1)) a) = f n a
         rw [show (topDiagram φ).map (homOfLE (n.le_add_right 1)) a = φ n a from
           topDiagram_map_succ φ n a]
@@ -360,6 +377,7 @@ def liftContinuous {Y : Type w} [TopologicalSpace Y]
 theorem liftContinuous_of {Y : Type w} [TopologicalSpace Y]
     (f : ∀ n, C(G n, Y)) (hf : ∀ n a, f (n + 1) (φ n a) = f n a) (n : ℕ) (a : G n) :
     liftContinuous φ f hf (of φ n a) = f n a := by
+  rw [coe_of]
   have hfac := (isColimitTopCocone φ).fac (liftContinuousCocone φ f hf) n
   exact ConcreteCategory.congr_hom hfac a
 
@@ -395,9 +413,8 @@ theorem lift_of {H : Type w} [Group H] [TopologicalSpace H]
 theorem isNConnected_of [∀ n, T1Space (G n)] (hφ : ∀ n, IsClosedEmbedding (φ n))
     (n d : ℕ) (hd : ∀ k, n ≤ k → (φ k).toContinuousMap.IsNConnected d) :
     (of φ n).toContinuousMap.IsNConnected d := by
-  -- Both `(topCocone φ).ι.app n` and `of φ n` share the same underlying continuous map.
   have hι : ((topCocone φ).ι.app n).hom = (of φ n).toContinuousMap :=
-    ContinuousMap.ext fun _ ↦ rfl
+    ContinuousMap.ext fun x ↦ (congrFun (coe_of φ n) x).symm
   rw [← hι]
   refine TopCat.isNConnected_ι_of_forall_succ (isColimitTopCocone φ)
     (fun m ↦ (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ

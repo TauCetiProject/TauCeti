@@ -72,13 +72,11 @@ namespace StableOrthogonalGroup
 
 instance instIsTopologicalGroup : IsTopologicalGroup StableOrthogonalGroup :=
   SequentialColimitGroup.isTopologicalGroup (continuousOrthogonalBlockSucc ℝ)
-    fun n ↦ funext (continuousOrthogonalBlockSucc_apply ℝ n) ▸
-      isClosedEmbedding_orthogonalBlockSucc ℝ n
+    (isClosedEmbedding_continuousOrthogonalBlockSucc ℝ)
 
 instance instT4Space : T4Space StableOrthogonalGroup :=
   SequentialColimitGroup.t4Space (continuousOrthogonalBlockSucc ℝ)
-    fun n ↦ funext (continuousOrthogonalBlockSucc_apply ℝ n) ▸
-      isClosedEmbedding_orthogonalBlockSucc ℝ n
+    (isClosedEmbedding_continuousOrthogonalBlockSucc ℝ)
 
 /-- The determinant on `O`, taking values in `ℤˣ = {±1}` (with the discrete topology). -/
 def det : StableOrthogonalGroup →ₜ* ℤˣ :=
@@ -134,13 +132,11 @@ namespace StableSpecialOrthogonalGroup
 
 instance instIsTopologicalGroup : IsTopologicalGroup StableSpecialOrthogonalGroup :=
   SequentialColimitGroup.isTopologicalGroup (continuousSpecialOrthogonalBlockSucc ℝ)
-    fun n ↦ funext (continuousSpecialOrthogonalBlockSucc_apply ℝ n) ▸
-      isClosedEmbedding_specialOrthogonalBlockSucc ℝ n
+    (isClosedEmbedding_continuousSpecialOrthogonalBlockSucc ℝ)
 
 instance instT4Space : T4Space StableSpecialOrthogonalGroup :=
   SequentialColimitGroup.t4Space (continuousSpecialOrthogonalBlockSucc ℝ)
-    fun n ↦ funext (continuousSpecialOrthogonalBlockSucc_apply ℝ n) ▸
-      isClosedEmbedding_specialOrthogonalBlockSucc ℝ n
+    (isClosedEmbedding_continuousSpecialOrthogonalBlockSucc ℝ)
 
 /-- **The stable special orthogonal group is path-connected.** -/
 instance instPathConnectedSpace : PathConnectedSpace StableSpecialOrthogonalGroup := by
@@ -185,8 +181,7 @@ theorem toStableOrthogonalGroup_injective : Function.Injective toStableOrthogona
     SequentialColimitGroup.exists_of₂ (continuousSpecialOrthogonalBlockSucc ℝ) x y
   simp only [toStableOrthogonalGroup_of] at hxy
   have h1 := SequentialColimitGroup.of_injective (continuousOrthogonalBlockSucc ℝ)
-    (fun k ↦ (funext (continuousOrthogonalBlockSucc_apply ℝ k) ▸
-      isClosedEmbedding_orthogonalBlockSucc ℝ k).injective) n hxy
+    (fun k ↦ (isClosedEmbedding_continuousOrthogonalBlockSucc ℝ k).injective) n hxy
   exact congrArg (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n)
     (Matrix.specialOrthogonalGroup.isClosedEmbedding_toOrthogonalGroup.injective h1)
 

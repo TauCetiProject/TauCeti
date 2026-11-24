@@ -158,6 +158,34 @@ private structure ProdChainInv {F₁ F₂ : ℕ ⥤ TopCat.{w}} (c₁ : Cocone F
   isCompact_L : IsCompact L
   prod_subset : K ×ˢ L ⊆ U
 
+private def ProdChainInv.ofStage {F₁ F₂ : ℕ ⥤ TopCat.{w}} {c₁ : Cocone F₁} {c₂ : Cocone F₂}
+    {x₀ : c₁.pt} {y₀ : c₂.pt} {U : Set (c₁.pt × c₂.pt)} {n : ℕ}
+    [CompactSpace (range (c₁.ι.app n))] [CompactSpace (range (c₂.ι.app n))]
+    {V'' V' : Set (range (c₁.ι.app n))} {W'' W' : Set (range (c₂.ι.app n))}
+    (hV'' : IsOpen V'') (hW'' : IsOpen W'')
+    (hx₀ : x₀ ∈ Subtype.val '' V'') (hy₀ : y₀ ∈ Subtype.val '' W'')
+    (hclV'' : closure V'' ⊆ V') (hclW'' : closure W'' ⊆ W')
+    (hVW' : V' ×ˢ W' ⊆ Prod.map (Subtype.val : range (c₁.ι.app n) → c₁.pt)
+      (Subtype.val : range (c₂.ι.app n) → c₂.pt) ⁻¹' U) :
+    ProdChainInv c₁ c₂ x₀ y₀ U n where
+  V := Subtype.val '' V''
+  K := Subtype.val '' closure V''
+  W := Subtype.val '' W''
+  L := Subtype.val '' closure W''
+  mem_V := hx₀
+  mem_W := hy₀
+  V_subset_K := image_mono subset_closure
+  K_subset_range := Subtype.coe_image_subset _ _
+  W_subset_L := image_mono subset_closure
+  L_subset_range := Subtype.coe_image_subset _ _
+  isOpen_V := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
+  isCompact_K := isClosed_closure.isCompact.image continuous_subtypeVal
+  isOpen_W := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
+  isCompact_L := isClosed_closure.isCompact.image continuous_subtypeVal
+  prod_subset := by
+    rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
+    exact hVW' (mk_mem_prod (hclV'' ha) (hclW'' hb))
+
 private theorem isOpen_iUnion_of_isColimit {F : ℕ ⥤ TopCat.{w}} {c : Cocone F}
     (hc : IsColimit c) (n₀ : ℕ) (V : ℕ → Set c.pt) (hV_mono : Monotone V)
     (hV_open : ∀ k, IsOpen ((Subtype.val : range (c.ι.app (n₀ + k)) → c.pt) ⁻¹' V k)) :
@@ -241,24 +269,8 @@ private theorem exists_prodChainInv_zero
     normal_exists_closure_subset isClosed_singleton hV₀' (singleton_subset_iff.2 hx₀V')
   obtain ⟨W₀, hW₀, hy₀W₀, hclW₀⟩ :=
     normal_exists_closure_subset isClosed_singleton hW₀' (singleton_subset_iff.2 hy₀W')
-  exact ⟨{
-    V := Subtype.val '' V₀
-    K := Subtype.val '' closure V₀
-    W := Subtype.val '' W₀
-    L := Subtype.val '' closure W₀
-    mem_V := ⟨⟨x₀, hx₀⟩, hx₀V₀ rfl, rfl⟩
-    mem_W := ⟨⟨y₀, hy₀⟩, hy₀W₀ rfl, rfl⟩
-    V_subset_K := image_mono subset_closure
-    K_subset_range := Subtype.coe_image_subset _ _
-    W_subset_L := image_mono subset_closure
-    L_subset_range := Subtype.coe_image_subset _ _
-    isOpen_V := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
-    isCompact_K := isClosed_closure.isCompact.image continuous_subtypeVal
-    isOpen_W := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
-    isCompact_L := isClosed_closure.isCompact.image continuous_subtypeVal
-    prod_subset := by
-      rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
-      exact hV₀'W₀' (mk_mem_prod (hclV₀ ha) (hclW₀ hb)) }⟩
+  exact ⟨ProdChainInv.ofStage hV₀ hW₀ ⟨⟨x₀, hx₀⟩, hx₀V₀ rfl, rfl⟩
+    ⟨⟨y₀, hy₀⟩, hy₀W₀ rfl, rfl⟩ hclV₀ hclW₀ hV₀'W₀'⟩
 
 private theorem exists_prodChainInv_succ
     {F₁ F₂ : ℕ ⥤ TopCat.{w}} {c₁ : Cocone F₁} {c₂ : Cocone F₂}
@@ -292,24 +304,8 @@ private theorem exists_prodChainInv_succ
     ⟨⟨x, hAmono (d.K_subset_range hx)⟩, hKV'' hx, rfl⟩
   have hLW_sub : d.L ⊆ Subtype.val '' W'' := fun y hy ↦
     ⟨⟨y, hBmono (d.L_subset_range hy)⟩, hLW'' hy, rfl⟩
-  refine ⟨{
-    V := Subtype.val '' V''
-    K := Subtype.val '' closure V''
-    W := Subtype.val '' W''
-    L := Subtype.val '' closure W''
-    mem_V := hKV_sub (d.V_subset_K d.mem_V)
-    mem_W := hLW_sub (d.W_subset_L d.mem_W)
-    V_subset_K := image_mono subset_closure
-    K_subset_range := Subtype.coe_image_subset _ _
-    W_subset_L := image_mono subset_closure
-    L_subset_range := Subtype.coe_image_subset _ _
-    isOpen_V := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
-    isCompact_K := isClosed_closure.isCompact.image continuous_subtypeVal
-    isOpen_W := by rwa [Set.preimage_image_eq _ Subtype.val_injective]
-    isCompact_L := isClosed_closure.isCompact.image continuous_subtypeVal
-    prod_subset := by
-      rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
-      exact hVW' (mk_mem_prod (hclV'' ha) (hclW'' hb)) },
+  exact ⟨ProdChainInv.ofStage hV'' hW'' (hKV_sub (d.V_subset_K d.mem_V))
+    (hLW_sub (d.W_subset_L d.mem_W)) hclV'' hclW'' hVW',
     d.V_subset_K.trans hKV_sub, d.W_subset_L.trans hLW_sub⟩
 
 /-- The product of two sequential colimits of `u`-small compact Hausdorff spaces along embeddings in

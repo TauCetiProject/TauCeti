@@ -11,8 +11,8 @@ public import Mathlib.CategoryTheory.Limits.Sifted
 # Lemmas about sifted categories
 
 For a sifted (or empty-or-sifted) category `C`, finality of the diagonal functor `C ⥤ C × C`
-yields common upper bounds (cospans) for any pair of objects
-(`CategoryTheory.IsSifted.exists_cospan`).
+yields common target objects for any pair of objects
+(`CategoryTheory.IsSifted.cocone_objs`).
 -/
 
 public section
@@ -21,8 +21,9 @@ namespace CategoryTheory.IsSifted
 
 open Limits
 
-/-- Every pair of objects in a sifted (or empty-or-sifted) category admits a cospan. -/
-theorem exists_cospan {C : Type*} [Category* C] [IsSiftedOrEmpty C] (j₁ j₂ : C) :
+/-- Every pair of objects in a sifted (or empty-or-sifted) category admits a common target
+object. -/
+theorem cocone_objs {C : Type*} [Category* C] [IsSiftedOrEmpty C] (j₁ j₂ : C) :
     ∃ k : C, Nonempty (j₁ ⟶ k) ∧ Nonempty (j₂ ⟶ k) := by
   let S : Functor.Final (Functor.diag C) := inferInstance
   obtain ⟨X⟩ := (S.out (j₁, j₂)).is_nonempty

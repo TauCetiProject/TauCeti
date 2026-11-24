@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.LinearAlgebra.Matrix.Reindex
-public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Unique
@@ -18,9 +17,7 @@ public import TauCeti.LinearAlgebra.Matrix.Unique
 Over any topological star semiring `α`:
 * reindexing rows and columns along an equivalence `e : m ≃ n` induces an isomorphism of
   topological groups `Matrix.unitaryReindexContinuousMulEquiv` between `unitary (Matrix m m α)` and
-  `unitary (Matrix n n α)` (and over any topological commutative ring `k`,
-  `Matrix.specialOrthogonalReindexContinuousMulEquiv` between `Matrix.specialOrthogonalGroup m k`
-  and `Matrix.specialOrthogonalGroup n k`);
+  `unitary (Matrix n n α)`;
 * for a singleton index type `m` (`[Unique m]`), reading off the unique entry via
   `Matrix.uniqueStarRingEquiv` induces an isomorphism of topological groups
   `Matrix.unitaryUniqueContinuousMulEquiv` between `unitary (Matrix m m α)` and `unitary α`.
@@ -29,9 +26,6 @@ Over any topological star semiring `α`:
 
 * `Matrix.unitaryReindexContinuousMulEquiv`: the isomorphism of topological groups
   `unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α)` induced by `e : m ≃ n`.
-* `Matrix.specialOrthogonalReindexContinuousMulEquiv`: the isomorphism of topological groups
-  `Matrix.specialOrthogonalGroup m k ≃ₜ* Matrix.specialOrthogonalGroup n k` induced by
-  `e : m ≃ n`.
 * `Matrix.unitaryUniqueContinuousMulEquiv`: the isomorphism of topological groups
   `unitary (Matrix m m α) ≃ₜ* unitary α` for `[Unique m]`.
 -/
@@ -84,49 +78,6 @@ theorem unitaryReindexContinuousMulEquiv_trans_unitaryReindexContinuousMulEquiv
   ContinuousMulEquiv.ext fun _ ↦ Subtype.ext (by simp)
 
 end Reindex
-
-section SpecialOrthogonalReindex
-
-variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
-  (k : Type*) [CommRing k] [TopologicalSpace k]
-
-attribute [local instance] starRingOfComm
-
-/-- Reindexing rows and columns along an equivalence `e : m ≃ n` induces an isomorphism of
-topological groups between `Matrix.specialOrthogonalGroup m k` and
-`Matrix.specialOrthogonalGroup n k`. -/
-def specialOrthogonalReindexContinuousMulEquiv (e : m ≃ n) :
-    Matrix.specialOrthogonalGroup m k ≃ₜ* Matrix.specialOrthogonalGroup n k :=
-  let u := unitaryReindexContinuousMulEquiv k e
-  { toFun A := ⟨(u ⟨A.val, A.property.1⟩ : Matrix n n k),
-      (u ⟨A.val, A.property.1⟩).property,
-      by simp [u, (Matrix.mem_specialOrthogonalGroup_iff.1 A.property).2]⟩
-    invFun B := ⟨(u.symm ⟨B.val, B.property.1⟩ : Matrix m m k),
-      (u.symm ⟨B.val, B.property.1⟩).property,
-      by simp [u, (Matrix.mem_specialOrthogonalGroup_iff.1 B.property).2]⟩
-    left_inv A := Subtype.ext <| by simp [u]
-    right_inv B := Subtype.ext <| by simp [u]
-    map_mul' A B := Subtype.ext <| by
-      simpa using congrArg Subtype.val (map_mul u ⟨A.val, A.property.1⟩ ⟨B.val, B.property.1⟩)
-    continuous_toFun := continuous_induced_rng.2 <|
-      (continuous_subtypeVal.comp (map_continuous u)).comp
-        (continuous_subtypeVal.subtype_mk fun A : Matrix.specialOrthogonalGroup m k ↦
-          A.property.1)
-    continuous_invFun := continuous_induced_rng.2 <|
-      (continuous_subtypeVal.comp (map_continuous u.symm)).comp
-        (continuous_subtypeVal.subtype_mk fun B : Matrix.specialOrthogonalGroup n k ↦
-          B.property.1) }
-
-variable {k} in
-/-- The underlying matrix of `Matrix.specialOrthogonalReindexContinuousMulEquiv` is
-`Matrix.reindex`. -/
-@[simp]
-theorem coe_specialOrthogonalReindexContinuousMulEquiv_apply (e : m ≃ n)
-    (A : Matrix.specialOrthogonalGroup m k) :
-    (specialOrthogonalReindexContinuousMulEquiv k e A : Matrix n n k) = reindex e e A.val := by
-  simp [specialOrthogonalReindexContinuousMulEquiv]
-
-end SpecialOrthogonalReindex
 
 section Unique
 

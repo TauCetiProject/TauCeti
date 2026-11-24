@@ -15,9 +15,7 @@ public import TauCeti.Topology.Category.CompactlyGenerated.CartesianClosed
 # Monoid and group objects in `CompactlyGenerated` and their sifted colimits
 
 A topological monoid or topological group whose underlying space is `u`-compactly generated is a
-monoid or group object in the Cartesian closed category `CompactlyGenerated.{u, w}`. More generally,
-applying the coreflector `TopCat.toCompactlyGenerated.{u, w}` turns any topological monoid or
-topological group into a monoid or group object in `CompactlyGenerated.{u, w}`.
+monoid or group object in the Cartesian closed category `CompactlyGenerated.{u, w}`.
 
 Because `CompactlyGenerated.{u, w}` is braided and monoidal closed, both `tensorLeft X` and
 `tensorRight X` preserve all colimits, so by `TauCeti.CategoryTheory.Monoidal.SiftedColimits` the
@@ -32,10 +30,6 @@ structure on `X`.
 * `CompactlyGenerated.instMonObjOf`, `CompactlyGenerated.instIsCommMonObjOf`,
   `CompactlyGenerated.instGrpObjOf`, `CompactlyGenerated.instIsMonHomOfHom`: topological monoids
   and groups of `u`-compactly generated spaces as monoid and group objects.
-* `CompactlyGenerated.instMonObjToCompactlyGeneratedOf`,
-  `CompactlyGenerated.instGrpObjToCompactlyGeneratedOf`,
-  `CompactlyGenerated.instIsMonHomAdjHomEquivOfHom`: arbitrary topological monoids and groups
-  coreflected into `CompactlyGenerated.{u, w}`.
 * `CompactlyGenerated.groupOfGrpObj`, `CompactlyGenerated.isTopologicalGroup_of_grpObj`,
   `CompactlyGenerated.monoidHomOfIsMonHom`: extracting a `Group` and `IsTopologicalGroup` from a
   `GrpObj` whose Cartesian square is compactly generated.
@@ -47,7 +41,7 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory MonObj Topology
 
-universe u w v v'
+universe u w
 
 namespace CompactlyGenerated
 
@@ -104,83 +98,6 @@ instance instIsMonHomOfHom {M N : Type w} [Monoid M] [TopologicalSpace M]
   mul_hom := ConcreteCategory.hom_ext _ _ fun p ↦ map_mul φ p.1 p.2
 
 end OfTopologicalGroup
-
-section ToCompactlyGenerated
-
-variable (M : Type w) [Monoid M] [TopologicalSpace M] [ContinuousMul M]
-
-/-- Applying the coreflector `TopCat.toCompactlyGenerated.{u, w}` to any topological monoid yields
-a monoid object in `CompactlyGenerated.{u, w}`. -/
-instance instMonObjToCompactlyGeneratedOf :
-    MonObj (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)) where
-  one := adj.{u, w}.homEquiv (𝟙_ CompactlyGenerated.{u, w}) (TopCat.of M)
-    (TopCat.ofHom ⟨fun _ ↦ (1 : M), continuous_const⟩)
-  mul :=
-    let kM := TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)
-    let f₁ : (kM ⊗ kM).toTop ⟶ TopCat.of M :=
-      (CartesianMonoidalCategory.fst kM kM).hom ≫ adj.{u, w}.counit.app (TopCat.of M)
-    let f₂ : (kM ⊗ kM).toTop ⟶ TopCat.of M :=
-      (CartesianMonoidalCategory.snd kM kM).hom ≫ adj.{u, w}.counit.app (TopCat.of M)
-    let fmul : @ContinuousMap (kM ⊗ kM).toTop M (kM ⊗ kM).toTop.str _ :=
-      ContinuousMap.comp ⟨fun q : M × M ↦ q.1 * q.2, continuous_mul⟩
-        (f₁.hom.prodMk f₂.hom)
-    adj.{u, w}.homEquiv (kM ⊗ kM) (TopCat.of M)
-      (@TopCat.ofHom (kM ⊗ kM).toTop M (kM ⊗ kM).toTop.str _ fmul)
-  one_mul := ConcreteCategory.hom_ext _ _ fun p ↦ _root_.one_mul (p.2 : M)
-  mul_one := ConcreteCategory.hom_ext _ _ fun p ↦ _root_.mul_one (p.1 : M)
-  mul_assoc := ConcreteCategory.hom_ext _ _ fun p ↦
-    _root_.mul_assoc (p.1.1 : M) (p.1.2 : M) (p.2 : M)
-
-variable {M}
-
-@[simp]
-theorem toCompactlyGenerated_of_one_apply (p : ↑(𝟙_ CompactlyGenerated.{u, w})) :
-    (η[TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)] p : M) = (1 : M) := rfl
-
-@[simp]
-theorem toCompactlyGenerated_of_mul_apply
-    (p : ↑(TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M) ⊗
-      TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M))) :
-    (μ[TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)] p : M) =
-      @HMul.hMul M M M _ p.1 p.2 := rfl
-
-/-- Applying the coreflector `TopCat.toCompactlyGenerated.{u, w}` to a commutative topological
-monoid yields a commutative monoid object in `CompactlyGenerated.{u, w}`. -/
-instance instIsCommMonObjToCompactlyGeneratedOf (M : Type w) [CommMonoid M] [TopologicalSpace M]
-    [ContinuousMul M] : IsCommMonObj (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)) where
-  mul_comm := ConcreteCategory.hom_ext _ _ fun p ↦ _root_.mul_comm (p.2 : M) (p.1 : M)
-
-/-- Applying the coreflector `TopCat.toCompactlyGenerated.{u, w}` to any topological group yields a
-group object in `CompactlyGenerated.{u, w}`. -/
-instance instGrpObjToCompactlyGeneratedOf (M : Type w) [Group M] [TopologicalSpace M]
-    [IsTopologicalGroup M] : GrpObj (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)) where
-  inv :=
-    adj.{u, w}.homEquiv (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)) (TopCat.of M)
-      (adj.{u, w}.counit.app (TopCat.of M) ≫
-        TopCat.ofHom ⟨fun x : M ↦ x⁻¹, continuous_inv⟩)
-  left_inv := ConcreteCategory.hom_ext _ _ fun x ↦ _root_.inv_mul_cancel (x : M)
-  right_inv := ConcreteCategory.hom_ext _ _ fun x ↦ _root_.mul_inv_cancel (x : M)
-
-@[simp]
-theorem toCompactlyGenerated_of_inv_apply {M : Type w} [Group M] [TopologicalSpace M]
-    [IsTopologicalGroup M] (x : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)) :
-    (ι[TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of M)] x : M) =
-      (let x' : M := x; x'⁻¹) := rfl
-
-/-- The adjoint transpose to `CompactlyGenerated.{u, w}` of a continuous monoid homomorphism out of
-a `u`-compactly generated topological monoid is a morphism of monoid objects. -/
-instance instIsMonHomAdjHomEquivOfHom {M N : Type w} [Monoid M] [TopologicalSpace M]
-    [UCompactlyGeneratedSpace.{u} M] [ContinuousMul M] [Monoid N] [TopologicalSpace N]
-    [ContinuousMul N] (φ : M →ₜ* N) :
-    IsMonHom (adj.{u, w}.homEquiv (of.{u, w} M) (TopCat.of N) (TopCat.ofHom (φ : C(M, N)))) where
-  one_hom := ConcreteCategory.hom_ext _ _ fun _ ↦ by
-    change φ 1 = 1
-    exact map_one φ
-  mul_hom := ConcreteCategory.hom_ext _ _ fun p ↦ by
-    change φ (p.1 * p.2) = φ p.1 * φ p.2
-    exact map_mul φ p.1 p.2
-
-end ToCompactlyGenerated
 
 section FromGrpObj
 
@@ -251,7 +168,6 @@ theorem isTopologicalGroup_of_grpObj (X : CompactlyGenerated.{u, w}) [GrpObj X]
 
 /-- A morphism of monoid objects between group objects in `CompactlyGenerated.{u, w}` is a monoid
 homomorphism with respect to `groupOfGrpObj`. -/
-@[expose]
 def monoidHomOfIsMonHom {X Y : CompactlyGenerated.{u, w}} [GrpObj X] [GrpObj Y] (f : X ⟶ Y)
     [IsMonHom f] :
     @MonoidHom X Y (groupOfGrpObj X).toMulOne (groupOfGrpObj Y).toMulOne :=
@@ -263,31 +179,9 @@ def monoidHomOfIsMonHom {X Y : CompactlyGenerated.{u, w}} [GrpObj X] [GrpObj Y] 
 
 @[simp]
 theorem monoidHomOfIsMonHom_apply {X Y : CompactlyGenerated.{u, w}} [GrpObj X] [GrpObj Y]
-    (f : X ⟶ Y) [IsMonHom f] (x : X) : monoidHomOfIsMonHom f x = f x := rfl
+    (f : X ⟶ Y) [IsMonHom f] (x : X) : monoidHomOfIsMonHom f x = f x := (rfl)
 
 end FromGrpObj
-
-section SiftedColimits
-
-/-- A cocone in `Grp CompactlyGenerated.{u, w}` over a sifted diagram whose underlying cocone in
-`TopCat.{w}` is colimiting is itself a colimit cocone. -/
-def isColimitGrpOfTopCat {J : Type v} [Category.{v'} J] [IsSifted J]
-    (F : J ⥤ Grp CompactlyGenerated.{u, w}) (c : Cocone F)
-    (hc : IsColimit
-      ((Grp.forget CompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w}).mapCocone c)) :
-    IsColimit c :=
-  Grp.isColimitOfForget F c (isColimitOfReflects compactlyGeneratedToTop.{u, w} hc)
-
-/-- A cocone in `CommGrp CompactlyGenerated.{u, w}` over a sifted diagram whose underlying cocone
-in `TopCat.{w}` is colimiting is itself a colimit cocone. -/
-def isColimitCommGrpOfTopCat {J : Type v} [Category.{v'} J] [IsSifted J]
-    (F : J ⥤ CommGrp CompactlyGenerated.{u, w}) (c : Cocone F)
-    (hc : IsColimit
-      ((CommGrp.forget CompactlyGenerated.{u, w} ⋙ compactlyGeneratedToTop.{u, w}).mapCocone c)) :
-    IsColimit c :=
-  CommGrp.isColimitOfForget F c (isColimitOfReflects compactlyGeneratedToTop.{u, w} hc)
-
-end SiftedColimits
 
 end CompactlyGenerated
 

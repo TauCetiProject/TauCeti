@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.StableOrthogonalGroup
 public import TauCeti.Topology.Grassmannian.StiefelFibration.Stability
-import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
@@ -52,9 +51,7 @@ theorem StableSpecialOrthogonalGroup.isNConnected_of (n : ℕ) :
     (SequentialColimitGroup.of
       (continuousSpecialOrthogonalBlockSucc ℝ) n).toContinuousMap.IsNConnected (n - 1) :=
   SequentialColimitGroup.isNConnected_of (continuousSpecialOrthogonalBlockSucc ℝ)
-    (fun k ↦ funext (continuousSpecialOrthogonalBlockSucc_apply ℝ k) ▸
-      isClosedEmbedding_specialOrthogonalBlockSucc ℝ k)
-    n (n - 1) fun k hnk ↦
+    (isClosedEmbedding_continuousSpecialOrthogonalBlockSucc ℝ) n (n - 1) fun k hnk ↦
     (isNConnected_specialOrthogonalBlockSucc k).mono (Nat.sub_le_sub_right hnk 1)
 
 /-- **Stability connectivity for `O`**: for `n ≥ 1`, the stage inclusion `O(n) → O` is
@@ -63,9 +60,7 @@ theorem StableOrthogonalGroup.isNConnected_of (n : ℕ) (hn : 1 ≤ n) :
     (SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n).toContinuousMap.IsNConnected
       (n - 1) := by
   refine SequentialColimitGroup.isNConnected_of (continuousOrthogonalBlockSucc ℝ)
-    (fun k ↦ funext (continuousOrthogonalBlockSucc_apply ℝ k) ▸
-      isClosedEmbedding_orthogonalBlockSucc ℝ k)
-    n (n - 1) fun k hnk ↦ ?_
+    (isClosedEmbedding_continuousOrthogonalBlockSucc ℝ) n (n - 1) fun k hnk ↦ ?_
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : k ≠ 0)
   exact (isNConnected_orthogonalBlockSucc m).mono (by omega : n - 1 ≤ m)
 
@@ -132,22 +127,14 @@ def StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGroup
     HomotopyGroup N StableSpecialOrthogonalGroup x ≃*
       HomotopyGroup N StableOrthogonalGroup
         (StableSpecialOrthogonalGroup.toStableOrthogonalGroup x) :=
-  let S := Set.range StableSpecialOrthogonalGroup.toStableOrthogonalGroup
-  let e : StableSpecialOrthogonalGroup ≃ₜ S :=
-    StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding.toHomeomorph
-  have hx_eq : ((e x : S) : StableOrthogonalGroup) =
-      StableSpecialOrthogonalGroup.toStableOrthogonalGroup x :=
+  HomotopyGroup.mulEquivOfIsEmbeddingOfPathComponentSubset
+    (f := StableSpecialOrthogonalGroup.toStableOrthogonalGroup.toContinuousMap)
     StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding
-      |>.toHomeomorph_apply_coe x
-  have hS : pathComponent (StableSpecialOrthogonalGroup.toStableOrthogonalGroup x) ⊆ S :=
-    fun y hy ↦ by
+    (fun y hy ↦ by
       rw [mem_pathComponent_iff, StableOrthogonalGroup.joined_iff_det_eq,
         StableSpecialOrthogonalGroup.det_toStableOrthogonalGroup] at hy
-      dsimp only [S]
-      rw [StableSpecialOrthogonalGroup.range_toStableOrthogonalGroup]
-      exact hy.symm
-  (HomotopyGroup.homeomorphMulEquiv e x).trans
-    (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset (hx_eq ▸ hS) hx_eq)
+      simpa [StableSpecialOrthogonalGroup.range_toStableOrthogonalGroup] using hy.symm)
+    rfl
 
 /-- `StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGroup` acts on homotopy
 classes by `HomotopyGroup.map`. -/
@@ -157,21 +144,8 @@ theorem StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGrou
     (a : HomotopyGroup N StableSpecialOrthogonalGroup x) :
     StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGroup x a =
       HomotopyGroup.map
-        StableSpecialOrthogonalGroup.toStableOrthogonalGroup.toContinuousMap rfl a := by
-  simp only [StableSpecialOrthogonalGroup.homotopyGroupMulEquivToStableOrthogonalGroup,
-    MulEquiv.trans_apply, HomotopyGroup.homeomorphMulEquiv_apply,
-    HomotopyGroup.subtypeValMulEquivOfPathComponentSubset_apply, HomotopyGroup.map_comp_apply]
-  let e :=
-    StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding.toHomeomorph
-  have hcomp :
-      (⟨Subtype.val, continuous_subtypeVal⟩ :
-        C(Set.range StableSpecialOrthogonalGroup.toStableOrthogonalGroup,
-          StableOrthogonalGroup)).comp ⟨e, e.continuous⟩ =
-      StableSpecialOrthogonalGroup.toStableOrthogonalGroup.toContinuousMap :=
-    ContinuousMap.ext fun y ↦
-      StableSpecialOrthogonalGroup.isClosedEmbedding_toStableOrthogonalGroup.isEmbedding
-        |>.toHomeomorph_apply_coe y
-  exact HomotopyGroup.map_congr hcomp _ rfl a
+        StableSpecialOrthogonalGroup.toStableOrthogonalGroup.toContinuousMap rfl a :=
+  HomotopyGroup.mulEquivOfIsEmbeddingOfPathComponentSubset_apply _ _ rfl a
 
 end Connectivity
 

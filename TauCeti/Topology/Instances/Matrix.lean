@@ -72,6 +72,11 @@ homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`
 `TauCeti.piMatrixLinearEquiv` as a bijection and yielding continuity of `piMatrixLinearEquiv` and
 its inverse.
 
+The upper-left block inclusion `Matrix.blockSucc` preserves continuity
+(`Continuous.matrix_blockSucc`) and is a topological embedding (`Matrix.isEmbedding_blockSucc`),
+and over a `T₁` topological semiring it is a closed embedding
+(`Matrix.isClosedEmbedding_blockSucc`).
+
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),

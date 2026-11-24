@@ -8,11 +8,11 @@ module
 public import TauCeti.Topology.Algebra.OrthogonalGroup
 public import TauCeti.Topology.Grassmannian.StiefelFibration.Basic
 public import TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast
-import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
+import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 
 /-!
-# The stable range of the special orthogonal groups
+# The stable range of the orthogonal and special orthogonal groups
 
 The block embedding `SO(n + 1) → SO(r + n + 1)`, `B ↦ diag(1_r, B)`, is the inclusion of the fibre
 of the Stiefel fibration `SO(r + n + 1) → V_r(ℝ^(r + n + 1))` over the standard frame
@@ -23,12 +23,25 @@ embedding induces isomorphisms `π_k(SO(n + 1)) → π_k(SO(r + n + 1))` for `k 
 for `k = n`: the homotopy groups of `SO(m)` stabilize, `π_k(SO(m))` being independent of `m` once
 `m ≥ k + 2`.
 
+Reindexing `1 ⊕ Fin n` to `Fin n ⊕ 1` specializes `r = 1` to the upper-left block inclusion
+`SO(n) → SO(n + 1)` (`TauCeti.isNConnected_specialOrthogonalBlockSucc`). Since `SO(m)` embeds onto
+the identity path component of `O(m)`, the inclusion `SO(m) → O(m)` induces bijections on `π_N`
+for every nonempty `N`
+(`Matrix.specialOrthogonalGroup.bijective_homotopyGroup_map_toOrthogonalGroup`),
+and transporting across the `SO`/`O` square together with `π_0` surjectivity via the diagonal
+reflection yields `n`-connectivity of `O(n + 1) → O(n + 2)`
+(`TauCeti.isNConnected_orthogonalBlockSucc`).
+
 ## Main results
 
 * `TauCeti.Matrix.SpecialOrthogonalGroup.isNConnected_fromBlocksOne`: the block embedding
   `SO(m) → SO(r + m)` is `(m - 1)`-connected, so it is bijective on `π_k` for `k < m - 1` and
   surjective for `k = m - 1`
   (`ContinuousMap.IsNConnected.map_injective`, `ContinuousMap.IsNConnected.map_surjective`).
+* `Matrix.specialOrthogonalGroup.bijective_homotopyGroup_map_toOrthogonalGroup`: the inclusion
+  `SO(n) → O(n)` induces bijections on `π_N` for every nonempty `N`.
+* `TauCeti.isNConnected_specialOrthogonalBlockSucc`: `SO(n) → SO(n + 1)` is `(n - 1)`-connected.
+* `TauCeti.isNConnected_orthogonalBlockSucc`: `O(n + 1) → O(n + 2)` is `n`-connected.
 
 ## References
 
@@ -96,27 +109,17 @@ open Topology
 
 /-- In positive dimension, the inclusion `SO(n) → O(n)` induces bijections on homotopy groups
 (since `SO(n)` embeds onto the identity path component of `O(n)`). -/
-theorem bijective_homotopyGroup_toOrthogonalGroup {n : ℕ} (N : Type*) [Nonempty N] :
+theorem bijective_homotopyGroup_map_toOrthogonalGroup {n : ℕ} (N : Type*) [Nonempty N] :
     Function.Bijective (HomotopyGroup.map (N := N)
       ⟨toOrthogonalGroup (n := Fin n) (R := ℝ), continuous_toOrthogonalGroup⟩
-      (map_one toOrthogonalGroup)) := by
-  let S := Set.range (toOrthogonalGroup (n := Fin n) (R := ℝ))
-  let e : specialOrthogonalGroup (Fin n) ℝ ≃ₜ S :=
-    (isClosedEmbedding_toOrthogonalGroup (n := Fin n) (R := ℝ)).isEmbedding.toHomeomorph
-  have hS : pathComponent (1 : orthogonalGroup (Fin n) ℝ) ⊆ S := fun A hA ↦ by
-    have hdet : (A : Matrix (Fin n) (Fin n) ℝ).det = 1 := by
-      simpa using (TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq.1 hA).symm
-    exact ⟨⟨A, A.property, hdet⟩, Subtype.ext (coe_toOrthogonalGroup _)⟩
-  have h1 : ((e 1 : S) : orthogonalGroup (Fin n) ℝ) = 1 := map_one toOrthogonalGroup
-  have hsub := HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset
-    (N := N) (x := e 1) (h1.symm ▸ hS) h1
-  have he := (HomotopyGroup.homeomorphEquiv (N := N) e 1).bijective
-  rw [funext (HomotopyGroup.homeomorphEquiv_apply e 1)] at he
-  have hcomp : (⟨Subtype.val, continuous_subtypeVal⟩ : C(S, _)).comp ⟨e, e.continuous⟩ =
-      ⟨toOrthogonalGroup (n := Fin n) (R := ℝ), continuous_toOrthogonalGroup⟩ :=
-    ContinuousMap.ext fun _ ↦ rfl
-  have hbij := hsub.comp he
-  rwa [HomotopyGroup.map_comp_map_of_comp_eq hcomp h1 rfl (map_one toOrthogonalGroup)] at hbij
+      (map_one toOrthogonalGroup)) :=
+  HomotopyGroup.bijective_map_of_isEmbedding_of_pathComponent_subset
+    (isClosedEmbedding_toOrthogonalGroup (n := Fin n) (R := ℝ)).isEmbedding
+    (fun A hA ↦ by
+      have hdet : (A : Matrix (Fin n) (Fin n) ℝ).det = 1 := by
+        simpa using (TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq.1 hA).symm
+      exact ⟨⟨A, A.property, hdet⟩, Subtype.ext (coe_toOrthogonalGroup _)⟩)
+    (map_one toOrthogonalGroup)
 
 end Matrix.specialOrthogonalGroup
 
@@ -133,84 +136,23 @@ theorem isNConnected_specialOrthogonalBlockSucc (n : ℕ) :
     (_root_.Matrix.specialOrthogonalReindexContinuousMulEquiv ℝ e).toHomeomorph
   let φ : C(_root_.Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ,
       _root_.Matrix.specialOrthogonalGroup (Fin (1 + n)) ℝ) :=
-    φHomeo.toHomotopyEquiv.toFun
+    ⟨φHomeo, φHomeo.continuous⟩
   have hcomp : φ.comp (continuousSpecialOrthogonalBlockSucc ℝ n).toContinuousMap =
       ⟨fromBlocksOne ℝ 1 n, finiteOrthonormalFrame.continuous_fromBlocksOne n⟩ := by
     ext A i j
     have hA : φ ((continuousSpecialOrthogonalBlockSucc ℝ n).toContinuousMap A) =
         _root_.Matrix.specialOrthogonalReindexContinuousMulEquiv ℝ e
           (specialOrthogonalBlockSucc ℝ n A) := by
-      change _root_.Matrix.specialOrthogonalReindexContinuousMulEquiv ℝ e
-        (continuousSpecialOrthogonalBlockSucc ℝ n A) = _
-      rw [continuousSpecialOrthogonalBlockSucc_apply]
+      -- Unfolds `ContinuousMap.coe_mk` and `ContinuousMulEquiv.toHomeomorph` coercion to `⇑`.
+      simp [φ, φHomeo]
+      rfl
     rw [ContinuousMap.comp_apply, hA,
       _root_.Matrix.coe_specialOrthogonalReindexContinuousMulEquiv_apply]
     exact congrFun (congrFun (reindex_coe_specialOrthogonalBlockSucc_eq_fromBlocksOne ℝ n A) i) j
   refine (ContinuousMap.IsWeakHomotopyEquivalence.isNConnected_comp_iff
     φHomeo.toHomotopyEquiv.isWeakHomotopyEquivalence).1 ?_
-  rw [hcomp]
+  rw [show φHomeo.toHomotopyEquiv.toFun = φ from ContinuousMap.ext fun _ ↦ rfl, hcomp]
   exact TauCeti.Matrix.SpecialOrthogonalGroup.isNConnected_fromBlocksOne 1 n
-
-section LeftTranslation
-
-private lemma leftTranslation_homotopyGroup_sq {G H : Type*} [Group G] [Group H]
-    [TopologicalSpace G] [TopologicalSpace H] [ContinuousMul G] [ContinuousMul H]
-    (f : G →ₜ* H) (N : Type*) (x : G) :
-    HomotopyGroup.map (N := N)
-        ⟨Homeomorph.mulLeft (f x), (Homeomorph.mulLeft (f x)).continuous⟩ (mul_one (f x)) ∘
-      HomotopyGroup.map (N := N) f.toContinuousMap (map_one f) =
-    HomotopyGroup.map (N := N) f.toContinuousMap rfl ∘
-      HomotopyGroup.map (N := N)
-        ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x) := by
-  have hcomm :
-      (⟨Homeomorph.mulLeft (f x), (Homeomorph.mulLeft (f x)).continuous⟩ : C(H, H)).comp
-        f.toContinuousMap =
-      f.toContinuousMap.comp
-        ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ :=
-    ContinuousMap.ext fun y ↦ (map_mul f x y).symm
-  exact (HomotopyGroup.map_comp_map _ (mul_one (f x)) f.toContinuousMap (map_one f)).trans
-    (HomotopyGroup.map_comp_map_of_comp_eq hcomm.symm rfl (mul_one x) _).symm
-
-private lemma injective_homotopyGroup_map_of_one {G H : Type*} [Group G] [Group H]
-    [TopologicalSpace G] [TopologicalSpace H] [ContinuousMul G] [ContinuousMul H]
-    (f : G →ₜ* H) (N : Type*)
-    (hinj : Function.Injective (HomotopyGroup.map (N := N) f.toContinuousMap (map_one f)))
-    (x : G) :
-    Function.Injective (HomotopyGroup.map (N := N) f.toContinuousMap (x := x) rfl) := by
-  have hx :=
-    (HomotopyGroup.homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft x) (mul_one x)).bijective
-  have hfx := (HomotopyGroup.homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft (f x))
-    (mul_one (f x))).bijective
-  intro a b hab
-  obtain ⟨a', rfl⟩ := hx.2 a
-  obtain ⟨b', rfl⟩ := hx.2 b
-  have hcomp :
-      (HomotopyGroup.map (N := N) f.toContinuousMap rfl ∘
-        HomotopyGroup.map (N := N)
-          ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x)) a' =
-      (HomotopyGroup.map (N := N) f.toContinuousMap rfl ∘
-        HomotopyGroup.map (N := N)
-          ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x)) b' := hab
-  rw [← leftTranslation_homotopyGroup_sq] at hcomp
-  exact congrArg _ (hinj (hfx.1 hcomp))
-
-private lemma surjective_homotopyGroup_map_of_one {G H : Type*} [Group G] [Group H]
-    [TopologicalSpace G] [TopologicalSpace H] [ContinuousMul G] [ContinuousMul H]
-    (f : G →ₜ* H) (N : Type*)
-    (hsurj : Function.Surjective (HomotopyGroup.map (N := N) f.toContinuousMap (map_one f)))
-    (x : G) :
-    Function.Surjective (HomotopyGroup.map (N := N) f.toContinuousMap (x := x) rfl) := by
-  have hfx := (HomotopyGroup.homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft (f x))
-    (mul_one (f x))).bijective
-  have hcomp : Function.Surjective
-      (HomotopyGroup.map (N := N) f.toContinuousMap rfl ∘
-        HomotopyGroup.map (N := N)
-          ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x)) := by
-    rw [← leftTranslation_homotopyGroup_sq]
-    exact hfx.2.comp hsurj
-  exact hcomp.of_comp
-
-end LeftTranslation
 
 private lemma homotopyGroup_toOrthogonalGroup_blockSucc_sq (n : ℕ) (N : Type*) :
     HomotopyGroup.map (N := N)
@@ -263,13 +205,13 @@ theorem isNConnected_orthogonalBlockSucc (n : ℕ) :
       rw [TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq] at hab ⊢
       simpa [f] using hab
     | succ m =>
-      refine injective_homotopyGroup_map_of_one f (Fin (m + 1)) ?_ x
+      refine HomotopyGroup.injective_map_of_one f (Fin (m + 1)) ?_ x
       have hinjSO := (HomotopyGroup.injective_map_congr rfl rfl
           (map_one (continuousSpecialOrthogonalBlockSucc ℝ (n + 1)))).1
         ((isNConnected_specialOrthogonalBlockSucc (n + 1)).injective (m + 1) (by omega) 1)
-      have bi₁ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_toOrthogonalGroup
+      have bi₁ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_map_toOrthogonalGroup
         (n := n + 1) (Fin (m + 1))
-      have bi₂ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_toOrthogonalGroup
+      have bi₂ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_map_toOrthogonalGroup
         (n := n + 2) (Fin (m + 1))
       intro a b hab
       obtain ⟨a', rfl⟩ := bi₁.2 a
@@ -283,21 +225,13 @@ theorem isNConnected_orthogonalBlockSucc (n : ℕ) :
     | zero =>
       exact HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined f.toContinuousMap rfl hex
     | succ m =>
-      refine surjective_homotopyGroup_map_of_one f (Fin (m + 1)) ?_ x
+      refine HomotopyGroup.surjective_map_of_one f (Fin (m + 1)) ?_ x
       have hsurjSO := (HomotopyGroup.surjective_map_congr rfl rfl
           (map_one (continuousSpecialOrthogonalBlockSucc ℝ (n + 1)))).1
         ((isNConnected_specialOrthogonalBlockSucc (n + 1)).surjective (m + 1) (by omega) 1)
-      have bi₂ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_toOrthogonalGroup
+      have bi₂ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_map_toOrthogonalGroup
         (n := n + 2) (Fin (m + 1))
-      have hcomp : Function.Surjective
-          (HomotopyGroup.map (N := Fin (m + 1)) f.toContinuousMap (map_one f) ∘
-            HomotopyGroup.map (N := Fin (m + 1))
-              ⟨_root_.Matrix.specialOrthogonalGroup.toOrthogonalGroup,
-                _root_.Matrix.specialOrthogonalGroup.continuous_toOrthogonalGroup⟩
-              (map_one
-                _root_.Matrix.specialOrthogonalGroup.toOrthogonalGroup)) := by
-        rw [← homotopyGroup_toOrthogonalGroup_blockSucc_sq n (Fin (m + 1))]
-        exact bi₂.2.comp hsurjSO
-      exact hcomp.of_comp
+      exact (homotopyGroup_toOrthogonalGroup_blockSucc_sq n (Fin (m + 1)) ▸
+        bi₂.2.comp hsurjSO).of_comp
 
 end TauCeti

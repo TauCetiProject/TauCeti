@@ -59,10 +59,10 @@ noncomputable def Mon.isColimitOfForget (F : J ⥤ Mon C) (c : Cocone F)
     Mon.Hom.mk' (hc.desc ((Mon.forget C).mapCocone s))
       (one_f := by
         obtain ⟨j₀⟩ := IsSifted.nonempty (C := J)
-        let desc : c.pt.X ⟶ s.pt.X := hc.desc ((Mon.forget C).mapCocone s)
-        have hfac : (c.ι.app j₀).hom ≫ desc = (s.ι.app j₀).hom :=
+        have hfac : (c.ι.app j₀).hom ≫ hc.desc ((Mon.forget C).mapCocone s) =
+            (s.ι.app j₀).hom :=
           hc.fac ((Mon.forget C).mapCocone s) j₀
-        change η[c.pt.X] ≫ desc = η[s.pt.X]
+        dsimp only [Mon.forget] at hfac ⊢
         rw [← IsMonHom.one_hom (c.ι.app j₀).hom, Category.assoc, hfac, IsMonHom.one_hom])
       (mul_f := by
         apply (hc.tensor hc).hom_ext
@@ -108,6 +108,7 @@ private noncomputable def mulCocone :
         let ιi : (F.obj i).X ⟶ c.pt := c.ι.app i
         let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
         have hw : φ ≫ ιj = ιi := c.w f
+        -- Unfold `(F ⋙ Mon.forget C).map f` to `φ` and `(Functor.const J).map f` to `𝟙 c.pt`.
         change (φ ⊗ₘ φ) ≫ μ[(F.obj j).X] ≫ ιj = (μ[(F.obj i).X] ≫ ιi) ≫ 𝟙 c.pt
         rw [← IsMonHom.mul_hom_assoc φ, hw, Category.comp_id] }
 
@@ -128,7 +129,7 @@ omit [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
 private theorem one_comp_colimitOne (j : J) :
     η[(F.obj j).X] ≫ (c.ι.app j : (F.obj j).X ⟶ c.pt) = colimitOne F c := by
   let j₀ : J := Nonempty.some IsSifted.nonempty
-  obtain ⟨k, ⟨f₁⟩, ⟨f₂⟩⟩ := IsSifted.exists_cospan j j₀
+  obtain ⟨k, ⟨f₁⟩, ⟨f₂⟩⟩ := IsSifted.cocone_objs j j₀
   let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
   let ιk : (F.obj k).X ⟶ c.pt := c.ι.app k
   let ι₀ : (F.obj j₀).X ⟶ c.pt := c.ι.app j₀
@@ -278,7 +279,7 @@ noncomputable def cocone : Cocone F :=
 /-- Forgetting the monoid structure of the lifted cocone recovers the underlying cocone. -/
 noncomputable def forgetCoconeIso : (Mon.forget C).mapCocone (cocone F c hc) ≅ c :=
   Cocone.ext (Iso.refl _) fun j ↦ by
-    change ((cocone F c hc).ι.app j).hom ≫ 𝟙 c.pt = c.ι.app j
+    dsimp [cocone]
     exact Category.comp_id _
 
 /-- The lifted cocone in `Mon C` is colimiting. -/
@@ -334,6 +335,7 @@ private lemma isCommMonObj_colimit :
   let _ := Mon.ColimitConstruction.monObj (F ⋙ CommMon.forget₂Mon C) c hc
   refine ⟨(hc.tensor hc).hom_ext fun j ↦ ?_⟩
   let ιj : (F.obj j).X ⟶ c.pt := c.ι.app j
+  -- Unfold `(c.tensor c).ι.app j` to `ιj ⊗ₘ ιj`.
   change (ιj ⊗ₘ ιj) ≫ (β_ c.pt c.pt).hom ≫ μ[c.pt] = (ιj ⊗ₘ ιj) ≫ μ[c.pt]
   have hnat : (ιj ⊗ₘ ιj) ≫ (β_ c.pt c.pt).hom =
       (β_ (F.obj j).X (F.obj j).X).hom ≫ (ιj ⊗ₘ ιj) :=
@@ -356,7 +358,7 @@ noncomputable def cocone : Cocone F :=
 /-- Forgetting the commutative monoid structure recovers the underlying cocone. -/
 noncomputable def forgetCoconeIso : (CommMon.forget C).mapCocone (cocone F c hc) ≅ c :=
   Cocone.ext (Iso.refl _) fun j ↦ by
-    change ((cocone F c hc).ι.app j).hom.hom ≫ 𝟙 c.pt = c.ι.app j
+    dsimp [cocone, Mon.ColimitConstruction.cocone]
     exact Category.comp_id _
 
 /-- The lifted cocone in `CommMon C` is colimiting. -/
@@ -421,6 +423,7 @@ private noncomputable def invCocone : Cocone (F ⋙ Grp.forget C) :=
         have hinv : φ ≫ ι[(F.obj j).X] = ι[(F.obj i).X] ≫ φ :=
           (GrpObj.inv_hom φ).symm
         have hw : φ ≫ ιj = ιi := c.w f
+        -- Unfold `(F ⋙ Grp.forget C).map f` to `φ` and `(Functor.const J).map f` to `𝟙 c.pt`.
         change φ ≫ ι[(F.obj j).X] ≫ ιj = (ι[(F.obj i).X] ≫ ιi) ≫ 𝟙 c.pt
         rw [← Category.assoc, hinv, Category.assoc, hw, Category.comp_id] }
 
@@ -503,7 +506,7 @@ noncomputable def cocone : Cocone F :=
 /-- Forgetting the group structure of the lifted cocone recovers the underlying cocone. -/
 noncomputable def forgetCoconeIso : (Grp.forget C).mapCocone (cocone F c hc) ≅ c :=
   Cocone.ext (Iso.refl _) fun j ↦ by
-    change ((cocone F c hc).ι.app j).hom.hom ≫ 𝟙 c.pt = c.ι.app j
+    dsimp [cocone, Mon.ColimitConstruction.cocone]
     exact Category.comp_id _
 
 /-- The lifted cocone in `Grp C` is colimiting. -/
@@ -564,7 +567,7 @@ noncomputable def cocone : Cocone F :=
 /-- Forgetting the commutative group structure recovers the underlying cocone. -/
 noncomputable def forgetCoconeIso : (CommGrp.forget C).mapCocone (cocone F c hc) ≅ c :=
   Cocone.ext (Iso.refl _) fun j ↦ by
-    change ((cocone F c hc).ι.app j).hom.hom.hom ≫ 𝟙 c.pt = c.ι.app j
+    dsimp [cocone, Grp.ColimitConstruction.cocone, Mon.ColimitConstruction.cocone]
     exact Category.comp_id _
 
 /-- The lifted cocone in `CommGrp C` is colimiting. -/
