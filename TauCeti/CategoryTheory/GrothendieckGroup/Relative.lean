@@ -366,6 +366,11 @@ theorem splitK0Map_comp_toSplitK0_eq_zero [HasBinaryBiproducts D] [EssentiallySm
     (SplitK0.map T).comp (toSplitK0 T) = 0 :=
   hom_ext fun x ↦ by simp [SplitK0.of_congr x.iso]
 
+@[simp]
+lemma splitK0Map_toSplitK0_eq_zero [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
+    (z : RelativeK0 T) : SplitK0.map T (toSplitK0 T z) = 0 :=
+  DFunLike.congr_fun splitK0Map_comp_toSplitK0_eq_zero z
+
 end Difference
 
 section FullyFaithful
@@ -493,7 +498,7 @@ variable [F.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair F]
 
 /-- The functor of triples carries direct sums of triples to direct sums, through the
 identifications `F (X ⊞ Y) ≅ F X ⊞ F Y`. -/
-noncomputable def tripleMapTripleBiprodIso (x y : T ⊡ T) :
+private noncomputable def tripleMapTripleBiprodIso (x y : T ⊡ T) :
     (tripleMap F G e).obj (tripleBiprod T x y) ≅
       tripleBiprod T' ((tripleMap F G e).obj x) ((tripleMap F G e).obj y) :=
   letI := preservesBinaryBiproducts_of_preservesBiproducts F
@@ -546,6 +551,11 @@ difference map of `T'`, is the difference map of `T` followed by the map induced
 theorem toSplitK0_comp_map :
     (toSplitK0 T').comp (map F G e) = (SplitK0.map F).comp (toSplitK0 T) :=
   hom_ext fun x ↦ by simp
+
+@[simp]
+lemma toSplitK0_map (z : RelativeK0 T) :
+    toSplitK0 T' (map F G e z) = SplitK0.map F (toSplitK0 T z) :=
+  DFunLike.congr_fun (toSplitK0_comp_map F G e) z
 
 /-- The identity square, with the unitors `T ⋙ 𝟭 D ≅ T ≅ 𝟭 C ⋙ T`, induces the identity of
 `K₀(T)`. -/
