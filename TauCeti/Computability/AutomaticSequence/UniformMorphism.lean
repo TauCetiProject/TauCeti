@@ -38,8 +38,8 @@ Thue–Morse sequence, the fixed point of `0 ↦ 01`, `1 ↦ 10`, is the model e
   zeros and arbitrary words are allowed.
 * `TauCeti.isUniformFixedPoint_foldl_reverse_map_digits`, `TauCeti.exists_isUniformFixedPoint`
   and `TauCeti.IsUniformFixedPoint.eq_of_apply_zero_eq`: a fixed point exists with any first
-  letter `γ` such that `φ γ 0 = γ`, for `k ≥ 2` given explicitly by applying `φ` from `γ` along
-  the digits, and for `k ≥ 2` it is determined by its first letter.
+  letter `γ` such that `φ γ 0 = γ`, given explicitly by applying `φ` from `γ` along the digits,
+  and for `k ≥ 2` it is determined by its first letter.
 * `TauCeti.IsUniformFixedPoint.isAutomatic`: a fixed point of a `k`-uniform morphism on a finite
   alphabet is `k`-automatic, for `k ≥ 2`, and hence so are its codings (`TauCeti.IsAutomatic.map`).
 * `TauCeti.IsAutomatic.exists_isUniformFixedPoint`: every `k`-automatic sequence is such a
@@ -86,6 +86,7 @@ theorem isUniformFixedPoint_iff :
 namespace IsUniformFixedPoint
 
 /-- The letter of a fixed point at `k * n + r` is the `r`-th letter of the image of `s n`. -/
+@[grind =>]
 theorem apply_mul_add (hs : IsUniformFixedPoint φ s) (n : ℕ) (r : Fin k) :
     s (k * n + r) = φ (s n) r :=
   hs n r
@@ -111,8 +112,8 @@ theorem foldl_reverse (hs : IsUniformFixedPoint φ s) (m : ℕ) (w : List (Fin k
   induction w with
   | nil => simp
   | cons d w ih =>
-    rw [List.reverse_cons, List.foldl_append, ih, List.foldl_cons, List.foldl_nil,
-      ← hs.apply_mul_add]
+    simp only [List.reverse_cons, List.foldl_append, List.foldl_cons, List.foldl_nil, ih]
+    rw [← hs.apply_mul_add]
     simp only [List.length_cons, List.map_cons, Nat.ofDigits_cons]
     congr 1
     ring
@@ -121,8 +122,8 @@ theorem foldl_reverse (hs : IsUniformFixedPoint φ s) (m : ℕ) (w : List (Fin k
 the morphism along the base-`k` digits of `n`, most significant first. -/
 theorem foldl_reverse_map_digits [NeZero k] (hk : 2 ≤ k) (hs : IsUniformFixedPoint φ s)
     (n : ℕ) : ((Nat.digits k n).map (Fin.ofNat k)).reverse.foldl φ (s 0) = s n := by
-  rw [hs.foldl_reverse, Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits, mul_zero,
-    zero_add]
+  rw [hs.foldl_reverse]
+  simp [Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits]
 
 /-- For `k ≥ 2`, a fixed point of a `k`-uniform morphism is determined by its first letter. -/
 theorem eq_of_apply_zero_eq (hk : 2 ≤ k) (hs : IsUniformFixedPoint φ s)
@@ -133,11 +134,19 @@ theorem eq_of_apply_zero_eq (hk : 2 ≤ k) (hs : IsUniformFixedPoint φ s)
 
 end IsUniformFixedPoint
 
-/-- For `k ≥ 2`, applying `φ` from a letter `γ` with `φ γ 0 = γ` along the base-`k` digits of
-`n`, most significant first, gives the fixed point of `φ` starting with `γ`. -/
-theorem isUniformFixedPoint_foldl_reverse_map_digits [NeZero k] (hk : 2 ≤ k) {γ : Γ}
-    (hγ : φ γ 0 = γ) :
+/-- Applying `φ` from a letter `γ` with `φ γ 0 = γ` along the base-`k` digits of `n`, most
+significant first, gives a fixed point of `φ` starting with `γ`, the only one for `k ≥ 2`. -/
+theorem isUniformFixedPoint_foldl_reverse_map_digits [NeZero k] {γ : Γ} (hγ : φ γ 0 = γ) :
     IsUniformFixedPoint φ fun n ↦ ((Nat.digits k n).map (Fin.ofNat k)).reverse.foldl φ γ := by
+  obtain rfl | hk : k = 1 ∨ 2 ≤ k := by
+    have := NeZero.ne k
+    omega
+  · -- In base one every digit is `0`, which fixes `γ`, so the word is constantly `γ`.
+    have h (w : List (Fin 1)) : w.foldl φ γ = γ :=
+      List.foldl_fixed' (fun r ↦ by rw [Subsingleton.elim r 0, hγ]) w
+    intro n r
+    simp only [h]
+    rw [Subsingleton.elim r 0, hγ]
   intro n r
   by_cases h : (r : ℕ) = 0 ∧ n = 0
   · obtain ⟨hr, rfl⟩ := h
@@ -151,15 +160,8 @@ theorem isUniformFixedPoint_foldl_reverse_map_digits [NeZero k] (hk : 2 ≤ k) {
 /-- Every letter `γ` with `φ γ 0 = γ` is the first letter of a fixed point of the `k`-uniform
 morphism `φ`. -/
 theorem exists_isUniformFixedPoint [NeZero k] {γ : Γ} (hγ : φ γ 0 = γ) :
-    ∃ s, IsUniformFixedPoint φ s ∧ s 0 = γ := by
-  obtain rfl | hk : k = 1 ∨ 2 ≤ k := by
-    have := NeZero.ne k
-    omega
-  · -- In base one the fixed-point equations only ask `φ (s n) 0 = s n`.
-    refine ⟨fun _ ↦ γ, fun n r ↦ ?_, rfl⟩
-    rw [Subsingleton.elim r 0]
-    exact hγ.symm
-  exact ⟨_, isUniformFixedPoint_foldl_reverse_map_digits hk hγ, by simp⟩
+    ∃ s, IsUniformFixedPoint φ s ∧ s 0 = γ :=
+  ⟨_, isUniformFixedPoint_foldl_reverse_map_digits hγ, by simp⟩
 
 /-- For `k ≥ 2`, a fixed point of a `k`-uniform morphism on a finite alphabet is
 `k`-automatic. -/
@@ -167,8 +169,9 @@ theorem IsUniformFixedPoint.isAutomatic [NeZero k] [Finite Γ] (hk : 2 ≤ k)
     (hs : IsUniformFixedPoint φ s) : IsAutomatic k s := by
   let M : DFAO (Fin k) Γ Γ := ⟨φ, s 0, id⟩
   convert M.reverse.isAutomatic with n
-  rw [DFAO.output_eval_reverse, DFAO.eval_eq_evalFrom, DFAO.evalFrom_eq_foldl]
-  exact (hs.foldl_reverse_map_digits hk n).symm
+  rw [DFAO.output_eval_reverse]
+  simpa [M, DFAO.eval_eq_evalFrom, DFAO.evalFrom_eq_foldl] using
+    (hs.foldl_reverse_map_digits hk n).symm
 
 /-- Every `k`-automatic sequence is a letter-to-letter coding of a fixed point of a `k`-uniform
 morphism on a finite alphabet. -/
@@ -199,9 +202,11 @@ theorem IsAutomatic.exists_isUniformFixedPoint [NeZero k] {a : ℕ → Δ} (ha :
     simp [M, this]
   obtain ⟨s, hs, hs0⟩ := TauCeti.exists_isUniformFixedPoint hstart
   refine ⟨Fin m, inferInstance, M.step, s, M.output, hs, fun n ↦ ?_⟩
-  rw [← hs.foldl_reverse_map_digits hk n, hs0, ← DFAO.evalFrom_eq_foldl, ← DFAO.eval_eq_evalFrom,
-    DFAO.output_eval_reindex, DFAO.output_eval_reverse, output_eval_kernelDFAO,
-    List.reverse_reverse, Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits]
+  -- The fixed point is the state that `M` reaches on the digits of `n`, read from the top.
+  have hstate : s n = M.eval ((Nat.digits k n).map (Fin.ofNat k)).reverse := by
+    rw [DFAO.eval_eq_evalFrom, DFAO.evalFrom_eq_foldl, ← hs0, hs.foldl_reverse_map_digits hk]
+  rw [hstate, DFAO.output_eval_reindex, DFAO.output_eval_reverse, output_eval_kernelDFAO]
+  simp [Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits]
 
 /-- **Cobham's theorem on uniform tag sequences.** For `k ≥ 2`, a sequence is `k`-automatic if
 and only if it is a letter-to-letter coding of a fixed point of a `k`-uniform morphism on a
