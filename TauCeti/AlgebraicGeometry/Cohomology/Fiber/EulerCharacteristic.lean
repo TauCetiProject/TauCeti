@@ -114,23 +114,19 @@ private lemma isLocallyConstant_eulerCharBelow_fiber_aux [IsNoetherianRing R]
     obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hi₀
     simp only [Finset.coe_map, Set.mem_image, Finset.mem_coe, Finset.mem_range]
     exact ⟨m, by omega, rfl⟩
-  have hsum (n' : ℕ) : eulerCharBelow κ (pullback (X ↘ Spec (.of R))
-      (Spec.map (CommRingCat.ofHom (algebraMap R κ))))
-      ((Scheme.Modules.pullback (pullback.fst (X ↘ Spec (.of R))
-        (Spec.map (CommRingCat.ofHom (algebraMap R κ))))).obj M) n' =
-        ∑ i ∈ Finset.range n', (-1) ^ i * (finrank κ (L.homology i) : ℤ) := by
-    induction n' with
-    | zero => simp
-    | succ n' ih => rw [eulerCharBelow_succ, ih, Finset.sum_range_succ, hfinrank]
-  rw [hsum, HomologicalComplex.homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset L _
-    hsupport, Finset.sum_map]
+  rw [eulerCharBelow_def,
+    HomologicalComplex.homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset L _ hsupport,
+    Finset.sum_map]
   simp only [Nat.castEmbedding_apply, ComplexShape.eulerCharSignsUpInt_χ,
     Int.coe_negOnePow_natCast]
   -- The terms in degrees `n ≤ m < max n N` vanish by hypothesis.
-  refine Finset.sum_subset (Finset.range_subset_range.mpr (le_max_left _ _)) fun m hm hmn ↦ ?_
-  simp only [Finset.mem_range, k] at hm hmn
-  have := hn p m (by omega) (by omega)
-  rw [hfinrank, finrank_zero_of_subsingleton, Nat.cast_zero, mul_zero]
+  refine (Finset.sum_subset (Finset.range_subset_range.mpr (le_max_left _ _))
+    fun m hm hmn ↦ ?_).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
+  · simp only [Finset.mem_range] at hm hmn
+    have := hn p m (by omega) (by omega)
+    rw [finrank_zero_of_subsingleton, Nat.cast_zero, mul_zero]
+  · rw [← hfinrank]
+    rfl
 
 /-- **Local constancy of the Euler characteristic on the fibres.** Let `R` be a Noetherian ring,
 `X` a scheme over `R` covered by `N` opens with affine nonempty finite intersections, and `M` a
