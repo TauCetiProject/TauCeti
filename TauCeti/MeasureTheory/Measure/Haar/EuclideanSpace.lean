@@ -34,6 +34,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   `r ≥ 0` in `ℝⁿ` (`n > 0`) has real volume at least `(2 * r / √n) ^ n`.
 * `EuclideanSpace.measurePreserving_consEquivL`: splitting off the first coordinate identifies the
   volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
+* `TauCeti.measurePreserving_euclideanPlaneEquivProd`: the coordinates of the Euclidean plane
+  identify its volume with the product of Lebesgue measures on `ℝ × ℝ`.
 -/
 
 public section
@@ -167,5 +169,25 @@ theorem setIntegral_comp_euclideanSpace_proj_preimage {ι : Type*} [Fintype ι] 
     ∫ z in proj (𝕜 := ℝ) i ⁻¹' s, g (z i) = ∫ t in s, g t :=
   (volume_preserving_euclideanSpace_proj i).setIntegral_preimage_emb
     (measurableEmbedding_euclideanSpace_proj i) g s
+
+/-- The coordinates `(y₀, y₁)` of a point of the Euclidean plane, as a measurable equivalence onto
+`ℝ × ℝ`. It preserves volume (`TauCeti.measurePreserving_euclideanPlaneEquivProd`). -/
+noncomputable def euclideanPlaneEquivProd : EuclideanSpace ℝ (Fin 2) ≃ᵐ ℝ × ℝ :=
+  (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
+
+@[simp]
+theorem euclideanPlaneEquivProd_apply (y : EuclideanSpace ℝ (Fin 2)) :
+    euclideanPlaneEquivProd y = (y 0, y 1) :=
+  (rfl)
+
+@[simp]
+theorem euclideanPlaneEquivProd_symm_apply (z : ℝ × ℝ) :
+    euclideanPlaneEquivProd.symm z = WithLp.toLp 2 ![z.1, z.2] :=
+  (rfl)
+
+/-- The coordinates of the Euclidean plane carry its volume to the product of Lebesgue measures. -/
+theorem measurePreserving_euclideanPlaneEquivProd :
+    MeasurePreserving euclideanPlaneEquivProd :=
+  (volume_preserving_finTwoArrow ℝ).comp (volume_preserving_symm_measurableEquiv_toLp (Fin 2))
 
 end TauCeti

@@ -64,6 +64,16 @@ theorem fundamentalGroupHom_apply (γ : MooreLoopSpace X x) :
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)) :=
   (rfl)
 
+/-- Moore loops with the same underlying Moore path have the same value under a family of
+homomorphisms out of the fundamental groups, even when their base points are only propositionally
+equal. -/
+theorem apply_fundamentalGroupHom_congr {G : Type*} [MulOneClass G]
+    (χ : ∀ x : X, FundamentalGroup X x →* G) {x' : X} {α : MooreLoopSpace X x'}
+    {β : MooreLoopSpace X x} (h : α.toMoorePath = β.toMoorePath) :
+    χ x' (fundamentalGroupHom x' α) = χ x (fundamentalGroupHom x β) := by
+  obtain rfl : x' = x := by rw [← α.source_eq, h, β.source_eq]
+  rw [MooreLoopSpace.ext h]
+
 /-- Path components of Moore loops identify with the fundamental group, in the multiplicative
 convention of `fundamentalGroupHom`. -/
 def zerothHomotopyEquivFundamentalGroup (x : X) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Orientability of vector bundles from the fundamental group

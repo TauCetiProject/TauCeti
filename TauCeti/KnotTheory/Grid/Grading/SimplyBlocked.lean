@@ -40,27 +40,20 @@ namespace TauCeti.OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
 
-private noncomputable def liftHat (R : Type*) [CommSemiring R] (i : Fin n) :
-    GridChainHat R n i →ₗ[R] GridChainMinus R n :=
-  Finsupp.mapRange.linearMap (MvPolynomial.rename Subtype.val).toLinearMap
-
-private theorem liftHat_apply (R : Type*) [CommSemiring R] (i : Fin n)
-    (c : GridChainHat R n i) (x : GridState n) :
-    liftHat R i c x = MvPolynomial.rename Subtype.val (c x) := (rfl)
-
-private theorem specialization_liftHat (R : Type*) [CommSemiring R] (i : Fin n)
-    (c : GridChainHat R n i) :
-    simplyBlockedSpecialization R i (liftHat R i c) = c := by
-  apply Finsupp.ext
-  intro x
-  rw [simplyBlockedSpecialization_apply, liftHat_apply, killCompl_rename_app]
-
 /-- The homogeneous piece of the specialization `V_i = 0` in bidegree `g`, over the
 ground semiring. A chain belongs to this piece exactly when including its surviving
 variables in the full polynomial ring gives an unblocked chain of bidegree `g`. -/
 noncomputable def bigradedChainHatPiece (R : Type*) [CommSemiring R] (i : Fin n)
     (g : ℤ × ℤ) : Submodule R (GridChainHat R n i) :=
-  (G.bigradedChainMinusPiece R g).comap (liftHat R i)
+  (G.bigradedChainMinusPiece R g).comap (simplyBlockedLift R i)
+
+/-- A specialized chain is homogeneous exactly when its lift to the unblocked complex is
+homogeneous of the same bidegree. -/
+theorem simplyBlockedLift_mem_bigradedChainMinusPiece_iff {R : Type*} [CommSemiring R]
+    {i : Fin n} {g : ℤ × ℤ} {c : GridChainHat R n i} :
+    simplyBlockedLift R i c ∈ G.bigradedChainMinusPiece R g ↔
+      c ∈ G.bigradedChainHatPiece R i g :=
+  Iff.rfl
 
 /-- A specialized chain is homogeneous exactly when all its surviving monomials have
 the prescribed bidegree. -/
@@ -72,7 +65,7 @@ theorem mem_bigradedChainHatPiece {R : Type*} [CommSemiring R] {i : Fin n}
         G.bidegree x - (2 * (e.degree : ℤ), (e.degree : ℤ)) = g := by
   classical
   simp only [bigradedChainHatPiece, Submodule.mem_comap, mem_bigradedChainMinusPiece,
-    liftHat_apply, support_rename_of_injective Subtype.val_injective, Finset.mem_image,
+    simplyBlockedLift_apply, support_rename_of_injective Subtype.val_injective, Finset.mem_image,
     forall_exists_index, and_imp]
   constructor
   · intro h x e he
@@ -103,7 +96,7 @@ theorem mem_bigradedChainHatPiece_iff_exists {R : Type*} [CommSemiring R]
       ∃ b ∈ G.bigradedChainMinusPiece R g, simplyBlockedSpecialization R i b = c := by
   constructor
   · intro hc
-    exact ⟨liftHat R i c, hc, specialization_liftHat R i c⟩
+    exact ⟨simplyBlockedLift R i c, hc, simplyBlockedSpecialization_simplyBlockedLift R i c⟩
   · rintro ⟨b, hb, rfl⟩
     exact G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i hb
 
@@ -175,19 +168,19 @@ theorem X_smul_mem_bigradedChainHatPiece {R : Type*} [CommSemiring R]
   convert h using 1
   apply Finsupp.ext
   intro x
-  simp only [liftHat_apply, Finsupp.smul_apply, smul_eq_mul, map_mul, rename_X]
+  simp only [simplyBlockedLift_apply, Finsupp.smul_apply, smul_eq_mul, map_mul, rename_X]
 
 /-- The homogeneous pieces span the entire specialized chain module. -/
 theorem iSup_bigradedChainHatPiece_eq_top (R : Type*) [CommSemiring R] (i : Fin n) :
     ⨆ g, G.bigradedChainHatPiece R i g = ⊤ := by
   rw [eq_top_iff]
   rintro c -
-  have hc : liftHat R i c ∈ ⨆ g, G.bigradedChainMinusPiece R g := by
+  have hc : simplyBlockedLift R i c ∈ ⨆ g, G.bigradedChainMinusPiece R g := by
     rw [G.iSup_bigradedChainMinusPiece_eq_top R]
     trivial
-  suffices simplyBlockedSpecialization R i (liftHat R i c) ∈
+  suffices simplyBlockedSpecialization R i (simplyBlockedLift R i c) ∈
       ⨆ g, G.bigradedChainHatPiece R i g by
-    rwa [specialization_liftHat] at this
+    rwa [simplyBlockedSpecialization_simplyBlockedLift] at this
   refine Submodule.iSup_induction _
     (motive := fun b => simplyBlockedSpecialization R i b ∈
       ⨆ g, G.bigradedChainHatPiece R i g) hc
@@ -205,12 +198,12 @@ theorem iSupIndep_bigradedChainHatPiece (R : Type*) [CommSemiring R] (i : Fin n)
   rw [Submodule.disjoint_def]
   intro c hc hc'
   have hle : (⨆ g' ≠ g, G.bigradedChainHatPiece R i g') ≤
-      (⨆ g' ≠ g, G.bigradedChainMinusPiece R g').comap (liftHat R i) :=
+      (⨆ g' ≠ g, G.bigradedChainMinusPiece R g').comap (simplyBlockedLift R i) :=
     iSup₂_le fun g' hg' => Submodule.comap_mono (le_iSup₂_of_le g' hg' le_rfl)
   have hz := (Submodule.disjoint_def.mp (G.iSupIndep_bigradedChainMinusPiece R g))
-    (liftHat R i c) hc (hle hc')
+    (simplyBlockedLift R i c) hc (hle hc')
   have := congrArg (simplyBlockedSpecialization R i) hz
-  rw [specialization_liftHat, map_zero] at this
+  rw [simplyBlockedSpecialization_simplyBlockedLift, map_zero] at this
   exact this
 
 /-- The specialized chain module is the internal direct sum of its homogeneous pieces. -/
