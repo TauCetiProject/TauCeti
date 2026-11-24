@@ -273,16 +273,6 @@ theorem smulCommutator_pow_sectionChartCompression (hχ : tsupport φ ∪ tsuppo
   smulCommutator_pow_comp_comp (smul_intertwining he tV hV tW hW hχ ℓ v g).1
     (smul_intertwining he tV hV tW hW hχ ℓ v g).2 P k
 
-omit he [ChartedSpace E M] [T2Space M] in
-variable (φ ψ) in
-/-- A cutoff with compact support in the chart target, equal to `1` near the supports of `φ` and
-`ψ`. -/
-private theorem exists_eventually_eq_one [FiniteDimensional ℝ E] :
-    ∃ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ), ∀ᶠ y in 𝓝ˢ (tsupport φ ∪ tsupport ψ), χ y = 1 :=
-  (TestFunction.exists_eventually_eq_one
-    (φ.hasCompactSupport.isCompact.union ψ.hasCompactSupport.isCompact)
-    (union_subset φ.tsupport_subset ψ.tsupport_subset)).imp fun _ h ↦ h.1
-
 end Intertwining
 
 /-- **Chart compressions of differential operators between bundles.** Every entry of the chart
@@ -295,7 +285,7 @@ theorem sectionChartCompression_mem_differentialOperators [FiniteDimensional ℝ
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ m) :
     e.sectionChartCompression he tV hV tW hW φ ψ ℓ v P ∈ differentialOperators ℝ
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m := by
-  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one φ ψ
+  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
   exact comp_comp_mem_differentialOperators
     (fun g ↦ ⟨_, smul_intertwining he tV hV tW hW hχ.self_of_nhdsSet ℓ v g⟩) hP
 
@@ -349,7 +339,7 @@ theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
       φ x * ψ x * ℓ (tW.continuousLinearMapAt ℝ (e.symm x)
         (sectionPrincipalSymbol 𝓘(ℝ, E) (x := e.symm x) BoundarylessManifold.isInteriorPoint P
           (η.comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e (e.symm x))) (tV.symmL ℝ (e.symm x) v))) := by
-  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one φ ψ
+  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
   obtain ⟨g, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) η
   -- The `m`-fold commutator of the entry with `g` is the same entry of the compression of the
   -- `m`-fold commutator `Q` of `P` with the pullback of `g`, an operator of order zero.
@@ -366,8 +356,8 @@ theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
     P (e.cutoffPullback he χ g) (e.sectionCutoffPullback he tV hV ψ v 1)
   rw [mvfderiv_cutoffPullback he g hx
       (hχ.filter_mono (nhds_le_nhdsSet (subset_union_left (subset_tsupport _ hφ)))),
-    sectionCutoffPullback_apply_of_mem he tV hV _ _ _ (e.map_target hx), e.right_inv hx,
-    ContMDiffMap.coe_one, Pi.one_apply, mul_one, map_smul, map_smul, ← hQ] at hσ
+    sectionCutoffPullback_apply_of_mem he tV hV _ _ _ (e.map_target hx)] at hσ
+  simp only [e.right_inv hx, ContMDiffMap.coe_one, Pi.one_apply, mul_one, map_smul, ← hQ] at hσ
   have h := congrArg (fun w ↦ φ x * ℓ (tW.continuousLinearMapAt ℝ (e.symm x) w)) hσ
   simp only [map_smul, smul_eq_mul] at h
   linear_combination -h

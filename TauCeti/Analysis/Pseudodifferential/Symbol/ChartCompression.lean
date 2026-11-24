@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Elliptic
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Differential operators on manifolds as pseudodifferential operators in charts
@@ -144,33 +146,6 @@ theorem coefficient_principal_ofDifferentialOperator_chartCompression
   exact congrArg (fun t : ℝ ↦ (Complex.I ^ m * (t : ℂ)) • ContinuousLinearMap.id ℂ V)
     (e.smoothPrincipalSymbol_chartCompressionDifferentialOperators he φ ψ D hx (innerSL ℝ ξ))
 
-/-- A complex `κ × ι` matrix which is a nonzero multiple of the matrix, in real bases, of a real
-linear equivalence defines an invertible operator `ℂ^ι → ℂ^κ`. -/
-private theorem isInvertible_of_apply_eq_sum {ι κ : Type*} [Fintype ι] [Finite κ]
-    {G₁ G₂ : Type*} [AddCommGroup G₁] [Module ℝ G₁] [AddCommGroup G₂]
-    [Module ℝ G₂] (b₁ : Module.Basis ι ℝ G₁) (b₂ : Module.Basis κ ℝ G₂) (T : G₁ ≃ₗ[ℝ] G₂)
-    {c : ℂ} (hc : c ≠ 0) {A : (ι → ℂ) →L[ℂ] (κ → ℂ)}
-    (hA : ∀ u i, A u i = ∑ j, c * (b₂.coord i (T (b₁ j)) : ℂ) * u j) : A.IsInvertible := by
-  classical
-  have := Fintype.ofFinite κ
-  set Am := (LinearMap.toMatrix b₁ b₂ T.toLinearMap).map Complex.ofRealHom
-  set N := (LinearMap.toMatrix b₂ b₁ T.symm.toLinearMap).map Complex.ofRealHom
-  have hA' (u : ι → ℂ) : A u = c • Am.mulVec u := by
-    ext i
-    simp [hA, Am, Matrix.mulVec, dotProduct, Finset.mul_sum, mul_assoc, LinearMap.toMatrix_apply]
-  have hAN : Am * N = 1 := by
-    rw [← Matrix.map_mul, ← LinearMap.toMatrix_comp, LinearEquiv.comp_symm, LinearMap.toMatrix_id,
-      Matrix.map_one _ (map_zero _) (map_one _)]
-  have hNA : N * Am = 1 := by
-    rw [← Matrix.map_mul, ← LinearMap.toMatrix_comp, LinearEquiv.symm_comp, LinearMap.toMatrix_id,
-      Matrix.map_one _ (map_zero _) (map_one _)]
-  refine ContinuousLinearMap.IsInvertible.of_inverse
-    (g := c⁻¹ • LinearMap.toContinuousLinearMap (Matrix.toLin' N)) ?_ ?_
-  · ext1 u
-    simp [hA', Matrix.mulVec_mulVec, hAN, smul_smul, hc]
-  · ext1 u
-    simp [hA', Matrix.mulVec_mulVec, hNA, smul_smul, hc]
-
 /-! ### Differential operators between vector bundles -/
 
 section Section
@@ -273,12 +248,9 @@ theorem isInvertible_coefficient_principal_ofDifferentialOperatorMatrix_sectionC
     (innerSL ℝ ξ).comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e (e.symm x))
     with hζ_def
   have hζ : ζ ≠ 0 := by
-    obtain ⟨L, hL⟩ := isInvertible_mfderiv_extend
-      (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy
-    have h1 : mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) e (e.symm x) (L.symm ξ) = ξ :=
-      -- The extended chart `e.extend 𝓘(ℝ, CoordinateSpace n)` is `e` by definition.
-      (congr($hL (L.symm ξ))).symm.trans (L.apply_symm_apply ξ)
-    have h2 : ζ (L.symm ξ) = innerSL ℝ ξ ξ := congrArg (innerSL ℝ ξ) h1
+    obtain ⟨w, hw⟩ := (isInvertible_mfderiv_chart
+      (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy).surjective ξ
+    have h2 : ζ w = innerSL ℝ ξ ξ := congrArg (innerSL ℝ ξ) hw
     intro h
     rw [h, zero_apply, innerSL_apply_apply, eq_comm,
       inner_self_eq_zero] at h2
@@ -287,11 +259,27 @@ theorem isInvertible_coefficient_principal_ofDifferentialOperatorMatrix_sectionC
   have hσ := hP.sectionPrincipalSymbol_bijective BoundarylessManifold.isInteriorPoint hζ
   set T : F₁ ≃ₗ[ℝ] F₂ := (t₁.linearEquivAt ℝ (e.symm x) (h₁ hy)).symm ≪≫ₗ
     LinearEquiv.ofBijective _ hσ ≪≫ₗ t₂.linearEquivAt ℝ (e.symm x) (h₂ hy)
-  refine isInvertible_of_apply_eq_sum b₁ b₂ T (c := Complex.I ^ m * (φ x * ψ x : ℝ))
+  -- An operator which is a nonzero multiple `c` of the complex image `Am` of the matrix of `T` is
+  -- invertible, since `Am` has the complex image `N` of the matrix of `T.symm` as inverse.
+  set Am := (LinearMap.toMatrix b₁ b₂ T.toLinearMap).map Complex.ofRealHom
+  set N := (LinearMap.toMatrix b₂ b₁ T.symm.toLinearMap).map Complex.ofRealHom
+  have hAN : Am * N = 1 := T.map_toMatrix_mul_map_toMatrix_symm b₁ b₂ Complex.ofRealHom
+  have hNA : N * Am = 1 := T.symm.map_toMatrix_mul_map_toMatrix_symm b₂ b₁ Complex.ofRealHom
+  have key {A : (ι → ℂ) →L[ℂ] (κ → ℂ)} (c : ℂ) (hc : c ≠ 0) (hA : ∀ u, A u = c • Am.mulVec u) :
+      A.IsInvertible := by
+    refine .of_inverse (g := c⁻¹ • LinearMap.toContinuousLinearMap (Matrix.toLin' N)) ?_ ?_
+    · ext1 u
+      simp [hA, Matrix.mulVec_mulVec, hAN, smul_smul, hc]
+    · ext1 u
+      simp [hA, Matrix.mulVec_mulVec, hNA, smul_smul, hc]
+  refine key (Complex.I ^ m * (φ x * ψ x : ℝ))
     (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) (by exact_mod_cast mul_ne_zero hφ hψ))
-    fun u i ↦ ?_
-  rw [coefficient_principal_ofDifferentialOperatorMatrix_sectionChartCompression he φ ψ t₁ h₁ t₂ h₂
-    P _ _ hx hξ, ← hζ_def]
+    fun u ↦ funext fun i ↦ ?_
+  have hsum : ((Complex.I ^ m * (φ x * ψ x : ℝ)) • Am.mulVec u) i =
+      ∑ j, Complex.I ^ m * (φ x * ψ x : ℝ) * (b₂.coord i (T (b₁ j)) : ℂ) * u j := by
+    simp [Am, Matrix.mulVec, dotProduct, Finset.mul_sum, mul_assoc, LinearMap.toMatrix_apply]
+  rw [hsum, coefficient_principal_ofDifferentialOperatorMatrix_sectionChartCompression he φ ψ t₁ h₁
+    t₂ h₂ P _ _ hx hξ, ← hζ_def]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hT : t₂.continuousLinearMapAt ℝ (e.symm x) (sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n)
       BoundarylessManifold.isInteriorPoint P ζ (t₁.symmL ℝ (e.symm x) (b₁ j))) = T (b₁ j) := by

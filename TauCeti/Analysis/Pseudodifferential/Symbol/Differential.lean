@@ -757,7 +757,7 @@ private theorem quantizeSchwartzValue_map_matrixEntryMap {m' : ℝ} (a : Symbol 
         (u.postcompCLM (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) j)) x) := by
   rw [Symbol.coefficient_map_eq_comp_comp _ _ (matrixEntryMap_apply i j),
     Symbol.quantizeSchwartzValue_comp_comp]
-  rfl
+  exact congrFun (ContinuousLinearMap.single_apply ℂ _ i) _
 
 /-- **Matrices of differential operators are pseudodifferential operators.** On Schwartz input
 `u` with values in `ℂ^ι`, the quantization of `ofDifferentialOperatorMatrix D` is the matrix `D`
@@ -775,7 +775,7 @@ theorem map_quantizeSchwartzValue_ofDifferentialOperatorMatrix (ℓ : ℂ →L[�
   simp only [ite_true, map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_quantizeSchwartzValue_ofDifferentialOperator]
-  rfl
+  simp only [SchwartzMap.postcompCLM_apply, ContinuousLinearMap.proj_apply]
 
 end Matrix
 

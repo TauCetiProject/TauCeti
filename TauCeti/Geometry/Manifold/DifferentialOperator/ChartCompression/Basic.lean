@@ -229,7 +229,7 @@ omit he [ChartedSpace E M] [T2Space M] in
 variable (φ ψ) in
 /-- A cutoff with compact support in the chart target, equal to `1` near the supports of `φ` and
 `ψ`. -/
-private theorem exists_eventually_eq_one [FiniteDimensional ℝ E] :
+theorem exists_eventually_eq_one_nhdsSet_tsupport_union [FiniteDimensional ℝ E] :
     ∃ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ), ∀ᶠ y in 𝓝ˢ (tsupport φ ∪ tsupport ψ), χ y = 1 :=
   (TestFunction.exists_eventually_eq_one
     (φ.hasCompactSupport.isCompact.union ψ.hasCompactSupport.isCompact)
@@ -246,7 +246,7 @@ theorem chartCompression_mem_differentialOperators [FiniteDimensional ℝ E]
       C^∞⟮𝓘(ℝ, E), M; ℝ⟯ m) :
     e.chartCompression he φ ψ D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m := by
-  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one φ ψ
+  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
   exact comp_comp_mem_differentialOperators
     (fun g ↦ ⟨_, smul_intertwining he hχ.self_of_nhdsSet g⟩) hD
 
@@ -312,7 +312,7 @@ theorem smoothPrincipalSymbol_chartCompressionDifferentialOperators
         (e.chartCompressionDifferentialOperators he φ ψ m D) η =
       φ x * ψ x * smoothPrincipalSymbol 𝓘(ℝ, E) (x := e.symm x)
         BoundarylessManifold.isInteriorPoint D (η.comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e (e.symm x))) := by
-  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one φ ψ
+  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
   obtain ⟨g, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) η
   -- The `m`-fold commutator of the compression with `g` is the compression of the `m`-fold
   -- commutator `Q` of `D` with the pullback of `g`, an operator of order zero.
