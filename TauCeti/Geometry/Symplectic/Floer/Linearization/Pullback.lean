@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
-import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Calculus.FDeriv.Mul
@@ -208,14 +207,9 @@ theorem floerOperator_perturbationPullback_eq_zero_iff (ω : SymplecticForm V)
         (pow_eq_zero_iff two_ne_zero |>.1 (by nlinarith : b ^ 2 = 0))
     exact hφ₀ (ContinuousLinearMap.coe_injective
       (h0.trans ContinuousLinearMap.toLinearMap_zero.symm))
-  -- `(a + b J)(a - b J) = a² + b²`.
-  have hF : (a ^ 2 + b ^ 2) • F = a • (a • F - b • J (φ w) (u (φ w)) F) +
-      b • J (φ w) (u (φ w)) (a • F - b • J (φ w) (u (φ w)) F) := by
-    simp only [AlmostComplexStructure.apply_sub, AlmostComplexStructure.apply_smul,
-      AlmostComplexStructure.apply_apply]
-    module
+  have hF := (J (φ w) (u (φ w))).smul_add_smul_apply_smul_sub_smul a b F
   rw [h, AlmostComplexStructure.apply_zero, smul_zero, smul_zero, add_zero] at hF
-  exact (smul_eq_zero.1 hF).resolve_left hab
+  exact (smul_eq_zero.1 hF.symm).resolve_left hab
 
 /-- **Holomorphic changes of coordinates multiply the linearized Floer operator by `a - b J`.** Let
 `dφ_w` be complex linear, with `(a, b) = dφ_w (1, 0)`, and let `u` solve the Floer equation at
@@ -389,14 +383,11 @@ theorem det_mul_norm_floerLinearization_sq_le (ω : SymplecticForm V) {M : ℝ}
   set D := ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
     Ks Kt u ξ (φ w)
   set D' := a • D - b • J (φ w) (u (φ w)) D
-  -- `(a + b J)(a - b J) = a² + b²`.
-  have hD : (a ^ 2 + b ^ 2) • D = a • D' + b • J (φ w) (u (φ w)) D' := by
-    simp only [D', AlmostComplexStructure.apply_sub, AlmostComplexStructure.apply_smul,
-      AlmostComplexStructure.apply_apply]
-    module
+  have hD : a • D' + b • J (φ w) (u (φ w)) D' = (a ^ 2 + b ^ 2) • D :=
+    (J (φ w) (u (φ w))).smul_add_smul_apply_smul_sub_smul a b D
   have h : ‖a • D' + b • J (φ w) (u (φ w)) D'‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖D'‖ ^ 2 :=
     ContinuousLinearMap.norm_smul_add_smul_apply_sq_le _ hM a b D'
-  rw [← hD, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow] at h
+  rw [hD, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow] at h
   rcases (by positivity : 0 ≤ a ^ 2 + b ^ 2).eq_or_lt with h₀ | hpos
   · rw [← h₀, zero_mul]
     positivity
