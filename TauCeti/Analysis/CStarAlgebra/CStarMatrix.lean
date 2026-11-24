@@ -447,6 +447,7 @@ theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
   NonUnitalStarAlgHom.norm_apply_le _ a
 
 /-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
+@[simp]
 theorem norm_toOneByOne {ι : Type*} [Unique ι] (a : A) : ‖toOneByOne ι ℂ A a‖ = ‖a‖ :=
   NonUnitalStarAlgHom.norm_map (toOneByOne ι ℂ A).toNonUnitalStarAlgHom
     (toOneByOne ι ℂ A).injective a
@@ -465,6 +466,7 @@ theorem norm_map_reindexₐ_linearMap {κ ι B : Type*} [Fintype κ] [Fintype ι
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- The entrywise image of the `1 × 1` C⋆-matrix `[a]` under a linear map `φ` has norm
 `‖φ a‖`. -/
+@[simp]
 theorem norm_map_toOneByOne_linearMap {ι B : Type*} [Unique ι] [NonUnitalCStarAlgebra B]
     [PartialOrder B] [StarOrderedRing B] (a : A) (φ : A →ₗ[ℂ] B) :
     ‖(toOneByOne ι ℂ A a).map φ‖ = ‖φ a‖ := by
