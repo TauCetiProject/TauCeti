@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.LocallyConstantRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
+import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
 
 /-!
 # Sheaves of relative differential forms
@@ -39,7 +42,9 @@ determinant `det Ω_{X/R}` (the canonical sheaf of `X` over `R`), and `Ωᵖ_{X/
   finite locally free exterior power of `Ω_{X/R}`, of rank `n.choose p` in relative dimension `n`;
 * `isZero_differentialForms`: `Ωᵖ_{X/R} = 0` for `p` above the relative dimension;
 * `isInvertible_differentialForms` and `differentialFormsIsoDet`: the top-degree forms are
-  invertible and are the determinant of `Ω_{X/R}`.
+  invertible and are the determinant of `Ω_{X/R}`;
+* `differentialFormsBaseChangeIso`: relative differential forms commute with base change
+  along any base-ring homomorphism.
 
 ## References
 
@@ -156,6 +161,39 @@ def differentialFormsIsoDet (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (
       (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R n)).app _).symm ≪≫
     eqToIso (by
       rw [FiniteLocallyFreeSheaf.det_obj, FiniteLocallyFreeSheaf.relativeDifferentials_obj])
+
+section BaseChange
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+  {X Y : Scheme.{u}} [X.Over (Spec (.of R))] [Y.Over (Spec (.of S))] {g : Y ⟶ X}
+  (H : IsPullback g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+
+/-- Relative differential forms commute with base change along any base-ring homomorphism.
+The comparison is induced by the base-change isomorphism for relative differentials. -/
+def differentialFormsBaseChangeIso (p : ℕ) :
+    (Scheme.Modules.pullback g).obj (differentialForms R (X ↘ Spec (.of R)) p) ≅
+      differentialForms S (Y ↘ Spec (.of S)) p :=
+  (Scheme.Modules.pullback g).mapIso (eqToIso (differentialForms_def R X p)) ≪≫
+    @asIso _ _ _ _
+      ((Scheme.Modules.pullbackExteriorPowerComparison g p).app (X.relativeDifferentials R))
+      (isIso_pullbackExteriorPowerComparison_app g p (X.relativeDifferentials R)) ≪≫
+    (SheafOfModules.exteriorPower Y.sheaf p).mapIso (relativeDifferentialsBaseChangeIso H) ≪≫
+    eqToIso (differentialForms_def S Y p).symm
+
+/-- The forward map of the differential-forms comparison is the pullback/exterior-power
+comparison followed by the exterior power of the relative-differentials comparison. -/
+lemma differentialFormsBaseChangeIso_hom (p : ℕ) :
+    (differentialFormsBaseChangeIso H p).hom =
+      (Scheme.Modules.pullback g).map (eqToHom (differentialForms_def R X p)) ≫
+        (Scheme.Modules.pullbackExteriorPowerComparison g p).app (X.relativeDifferentials R) ≫
+        (SheafOfModules.exteriorPower Y.sheaf p).map
+          (relativeDifferentialsPullbackHom H.toCommSq) ≫
+        eqToHom (differentialForms_def S Y p).symm := by
+  dsimp only [differentialFormsBaseChangeIso, Iso.trans, Functor.mapIso, eqToIso, asIso]
+  rw [relativeDifferentialsBaseChangeIso_hom]
+
+end BaseChange
 
 end
 
