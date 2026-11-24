@@ -16,7 +16,8 @@ A function `g` on `AddCircle p` gives the function `t ↦ g t` on `𝕜` by comp
 map `𝕜 → AddCircle p`. This file records that this function is `p`-periodic, and continuous when
 `g` is, and that continuous maps on `AddCircle p` agreeing at every element of `𝕜` are equal.
 Conversely, a bijection of `𝕜 × Y` commuting with the translation by `p` in the first coordinate
-descends to a bijection of `AddCircle p × Y`.
+descends to a bijection of `AddCircle p × Y`, and a map of `AddCircle p × Y` with a continuous
+lift to `𝕜 × Y` is continuous.
 
 ## Main results
 
@@ -26,6 +27,8 @@ descends to a bijection of `AddCircle p × Y`.
   their values at elements of `𝕜`.
 * `AddCircle.prodEquivOfLift`: the bijection of `AddCircle p × Y` induced by a bijection of
   `𝕜 × Y` that commutes with the translation by `p`.
+* `AddCircle.continuous_prod_of_lift`: a map `AddCircle p × Y → AddCircle p × Y'` with a
+  continuous lift `𝕜 × Y → 𝕜 × Y'` is continuous.
 -/
 
 public section
@@ -99,5 +102,19 @@ theorem prodEquivOfLift_symm_coe (e : 𝕜 × Y ≃ 𝕜 × Y)
     (prodEquivOfLift e he).symm ((x : AddCircle p), y) =
       (((e.symm (x, y)).1 : AddCircle p), (e.symm (x, y)).2) := by
   simp [prodEquivOfLift]
+
+/-- A map `AddCircle p × Y → AddCircle p × Y'` is continuous when it lifts along the projections
+from `𝕜 × Y` and `𝕜 × Y'` to a continuous map `𝕜 × Y → 𝕜 × Y'`. -/
+theorem continuous_prod_of_lift [TopologicalSpace 𝕜] [SeparatelyContinuousAdd 𝕜] {Y' : Type*}
+    [TopologicalSpace Y] [TopologicalSpace Y'] {ψ : AddCircle p × Y → AddCircle p × Y'}
+    {G : 𝕜 × Y → 𝕜 × Y'} (hG : Continuous G)
+    (hψ : ∀ (x : 𝕜) y, ψ (x, y) = (((G (x, y)).1 : AddCircle p), (G (x, y)).2)) :
+    Continuous ψ := by
+  have hq : IsOpenQuotientMap (Prod.map ((↑) : 𝕜 → AddCircle p) (id : Y → Y)) :=
+    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
+  rw [← hq.continuous_comp_iff]
+  convert (QuotientAddGroup.continuous_mk.prodMap continuous_id).comp hG using 1
+  funext ⟨x, y⟩
+  exact hψ x y
 
 end AddCircle

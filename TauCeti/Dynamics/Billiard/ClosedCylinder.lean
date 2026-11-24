@@ -10,7 +10,6 @@ import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Topology.Instances.AddCircle.Coe
-import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
 # The billiard map on the closed cylinder
@@ -455,12 +454,14 @@ theorem closedBilliardMap_symm_coe (s : ℝ) (v : Icc (-1 : ℝ) 1) :
   rw [← AddCircle.coe_add_period, sub_add_cancel]
 
 /-- The extended billiard map fixes the boundary circle `v = 1` pointwise. -/
+@[simp]
 theorem closedBilliardMap_one (θ : AddCircle χ.period) :
     χ.closedBilliardMap (θ, ⟨1, by norm_num, le_rfl⟩) = (θ, ⟨1, by norm_num, le_rfl⟩) := by
   induction θ using QuotientAddGroup.induction_on with | H s => ?_
   simp
 
 /-- The extended billiard map fixes the boundary circle `v = -1` pointwise. -/
+@[simp]
 theorem closedBilliardMap_neg_one (θ : AddCircle χ.period) :
     χ.closedBilliardMap (θ, ⟨-1, le_rfl, by norm_num⟩) = (θ, ⟨-1, le_rfl, by norm_num⟩) := by
   induction θ using QuotientAddGroup.induction_on with | H s => ?_

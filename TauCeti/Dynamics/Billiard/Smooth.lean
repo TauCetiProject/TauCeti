@@ -15,7 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Topology.Constructions.SumProd
-import TauCeti.Topology.Instances.AddCircle.Lift
+import TauCeti.Topology.Instances.AddCircle.Coe
 
 /-!
 # Smoothness of the billiard map

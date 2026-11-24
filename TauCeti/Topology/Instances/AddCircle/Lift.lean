@@ -22,14 +22,10 @@ A map `φ : AddCircle T → AddCircle T` of degree one is described by a lift `F
 `F (x + T) = F x + T` and `φ x = F x` for every real `x`. This file records the basic properties
 of such maps used to work with diffeomorphisms of the circle through their lifts.
 
-A continuous lift makes `φ` continuous, and so does a continuous lift `ℝ × Y → ℝ × Y'` of a map
-`AddCircle T × Y → AddCircle T × Y'` (`AddCircle.continuous_prod_of_lift`). A continuous
-strictly monotone lift makes `φ` a homeomorphism, `AddCircle.homeomorphOfLift`: such a lift maps
-each fundamental interval `(t, t + T]` onto the fundamental interval `(F t, F t + T]`. Derivatives
-of lifts are treated in `TauCeti.Analysis.Calculus.Deriv.AddCircle`. A bijection of `ℝ × Y`
-commuting with the translation by `T` in the first coordinate descends to a bijection of
-`AddCircle T × Y` without any topology (`AddCircle.prodEquivOfLift`, in
-`TauCeti.Topology.Instances.AddCircle.Coe`).
+A continuous lift makes `φ` continuous, and a continuous strictly monotone lift makes `φ` a
+homeomorphism, `AddCircle.homeomorphOfLift`: such a lift maps each fundamental interval
+`(t, t + T]` onto the fundamental interval `(F t, F t + T]`. Derivatives of lifts are treated in
+`TauCeti.Analysis.Calculus.Deriv.AddCircle`.
 
 Conversely, every continuous circle map has a continuous lift, by the lifting property of the
 universal covering `ℝ → AddCircle T`, and two continuous lifts of the same map differ by a
@@ -111,19 +107,6 @@ theorem continuous_of_lift (hF : Continuous F) (hφ : ∀ x : ℝ, φ x = F x) :
   have hcomp : φ ∘ (↑) = ((↑) : ℝ → AddCircle T) ∘ F := funext hφ
   rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, hcomp]
   exact continuous_quotient_mk'.comp hF
-
-/-- A map `AddCircle T × Y → AddCircle T × Y'` is continuous when it lifts along the projections
-from `ℝ × Y` and `ℝ × Y'` to a continuous map `ℝ × Y → ℝ × Y'`. -/
-theorem continuous_prod_of_lift {Y Y' : Type*} [TopologicalSpace Y] [TopologicalSpace Y']
-    {ψ : AddCircle T × Y → AddCircle T × Y'} {G : ℝ × Y → ℝ × Y'} (hG : Continuous G)
-    (hψ : ∀ (x : ℝ) y, ψ (x, y) = (((G (x, y)).1 : AddCircle T), (G (x, y)).2)) :
-    Continuous ψ := by
-  have hq : IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle T) (id : Y → Y)) :=
-    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-  rw [← hq.continuous_comp_iff]
-  convert (QuotientAddGroup.continuous_mk.prodMap continuous_id).comp hG using 1
-  funext ⟨x, y⟩
-  exact hψ x y
 
 /-- **Lifting circle maps.** Every continuous map `φ` of the circle `AddCircle T` has a continuous
 lift: a continuous `F : ℝ → ℝ` with `φ x = F x` for every real `x`. This is the lifting property
