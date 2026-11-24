@@ -11,7 +11,6 @@ import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.ExceptionalPositivit
 import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.MarkovTrace
 import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.Star
 import TauCeti.Algebra.TypeAHeckeAlgebra.RepeatedRoot
-import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Exceptional-parameter positivity of the infinite type-A Hecke algebra
@@ -119,8 +118,12 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
       let τ : ℂ := (((q : ℂ) + ↑q⁻¹) ^ 2)⁻¹
       have hτ : τ * ((q : ℂ) + ↑q⁻¹) ^ 2 = 1 := inv_mul_cancel₀ (pow_ne_zero 2 hs0)
       have : Fact (IsSelfAdjoint τ) := ⟨(hs_sa.pow 2).inv₀⟩
-      have hτ_notMem : τ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 :=
-        Complex.notMem_Ico_inv_sq_of_sq_le_one hs_sa hs0 hsq
+      have hτ_notMem : τ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 := by
+        rintro ⟨t, ht, hteq⟩
+        have hre := congrArg Complex.re hτ
+        simp only [τ, ← hteq, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+          sub_zero, Complex.one_re] at hre
+        nlinarith [Complex.one_re ▸ (Complex.le_def.mp hsq).1, ht.1, ht.2]
       let η : ℂ := τ * ((q : ℂ) + ↑q⁻¹) * (z + ↑q⁻¹)
       have hz : z = (q : ℂ) * η - ↑q⁻¹ * (1 - η) :=
         BalancedProjectionAlgebra.heckeParam_eq hτ z
