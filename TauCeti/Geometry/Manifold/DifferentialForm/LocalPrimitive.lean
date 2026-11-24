@@ -466,15 +466,19 @@ theorem exists_contMDiff_isPrimitiveOn {r : ℕ∞} (hr : 1 ≤ r)
     (hg.mdifferentiable (by simpa using (zero_lt_one.trans_le hr).ne')).mdifferentiableOn,
     fun y hy ↦ hdψ y (interior_subset hy)⟩
 
+/-- A closed `C^r` `1`-form (`1 ≤ r`) has local primitives: every point lies in an open set
+carrying a primitive of the form. -/
+theorem forall_exists_isPrimitiveOn {r : ℕ∞} (hr : 1 ≤ r) (hφ : IsSmoothForm I r φ)
+    (hclosed : mextDeriv φ = 0) : ∀ x, ∃ g : M → F, ∃ U, x ∈ U ∧ IsPrimitiveOn φ g U :=
+  fun x ↦ (exists_contMDiff_isPrimitiveOn hr hφ hclosed x).imp fun _ h ↦ h.2
+
 namespace PrimitiveSpace
 
 /-- Projecting `PrimitiveSpace φ` to the point is a covering map when `φ` is closed. Over an open
 set `U` carrying a primitive `g`, the sheets are the graphs of the translates `g + c`. -/
 theorem isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (hφ : IsSmoothForm I r φ)
     (hclosed : mextDeriv φ = 0) : IsCoveringMap (proj φ) :=
-  isCoveringMap_proj_of_forall_exists_isPrimitiveOn fun x ↦
-    let ⟨g, _, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
-    ⟨g, U, hxU, hgU⟩
+  isCoveringMap_proj_of_forall_exists_isPrimitiveOn (forall_exists_isPrimitiveOn hr hφ hclosed)
 
 /-- **Lifts run along local primitives.** Near each parameter `t`, a continuous map `Γ` into
 `PrimitiveSpace φ`, for a closed `C^r` form `φ` (`1 ≤ r`), runs along the graph of a translate

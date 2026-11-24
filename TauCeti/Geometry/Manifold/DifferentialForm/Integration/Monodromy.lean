@@ -26,8 +26,8 @@ increments of local primitives along any subdivision of the parameter interval i
 into their domains (`TauCeti.monodromyIntegral_eq_sum`), additive under concatenation, negated under
 reversal, invariant under homotopy relative to the endpoints, and natural under differentiable maps.
 For a continuous form with complete coefficients it is the line integral `TauCeti.pathIntegral`
-along `C¹` curves (`TauCeti.monodromyIntegral_eq_pathIntegral`). On a path-connected manifold a form
-with local primitives has a global primitive exactly when its integrals along loops at a base point
+along `C¹` curves (`TauCeti.monodromyIntegral_eq_pathIntegral`). On a connected manifold a form with
+local primitives has a global primitive exactly when its integrals along loops at a base point
 vanish (`TauCeti.exists_isPrimitiveOn_univ_iff_forall_monodromyIntegral_eq_zero`).
 
 Only a `C¹` manifold over a real model with corners is used: neither finite dimensionality, the
@@ -288,15 +288,17 @@ end PathIntegral
 
 /-! ### Global primitives -/
 
-/-- **Global primitives and loop integrals.** On a path-connected manifold, a `1`-form with local
+/-- **Global primitives and loop integrals.** On a connected manifold, a `1`-form with local
 primitives has a primitive on the whole manifold exactly when its integrals along all loops at a
 base point `x₀` vanish. The integral from `x₀` is then such a primitive. -/
-theorem exists_isPrimitiveOn_univ_iff_forall_monodromyIntegral_eq_zero [PathConnectedSpace M]
+theorem exists_isPrimitiveOn_univ_iff_forall_monodromyIntegral_eq_zero [PreconnectedSpace M]
     (hφ : ∀ z, ∃ g : M → F, ∃ U, z ∈ U ∧ IsPrimitiveOn φ g U) (x₀ : M) :
     (∃ g : M → F, IsPrimitiveOn φ g univ) ↔ ∀ γ : Path x₀ x₀, monodromyIntegral φ γ = 0 := by
   refine ⟨fun ⟨g, hg⟩ γ ↦ by simp [hg.monodromyIntegral_eq_sub hφ fun t ↦ mem_univ (γ t)],
     fun h ↦ ?_⟩
   have := I.locallyPathConnectedSpace_of_chartedSpace M
+  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
+  have : PathConnectedSpace M := .of_locallyPathConnectedSpace
   -- the integral does not depend on the path between two points
   have hindep {y : M} (γ γ' : Path x₀ y) : monodromyIntegral φ γ = monodromyIntegral φ γ' := by
     have := h (γ.trans γ'.symm)
