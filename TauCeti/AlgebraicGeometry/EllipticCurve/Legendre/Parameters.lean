@@ -178,9 +178,9 @@ theorem legendreRootOrder_bijective : Function.Bijective legendreRootOrder := by
 
 /-! ### Legendre parameters of the orders of three roots -/
 
-section Field
+section DivisionRing
 
-variable {K : Type*} [Field K] {e : Fin 3 → K}
+variable {K : Type*} [DivisionRing K] {e : Fin 3 → K}
 
 /-- **The six Legendre parameters of ordered roots.** For the `i`-th order `σ` of the roots `e`,
 the Legendre parameter `(e (σ 2) - e (σ 0)) / (e (σ 1) - e (σ 0))` is the `i`-th entry of the
@@ -191,9 +191,13 @@ theorem sub_div_sub_eq_legendreParameters (h : e 0 ≠ e 1) (i : Fin 6) :
         (e (legendreRootOrder i 1) - e (legendreRootOrder i 0)) =
       legendreParameters ((e 2 - e 0) / (e 1 - e 0)) i := by
   have h₁₀ : e 1 - e 0 ≠ 0 := sub_ne_zero.mpr h.symm
-  fin_cases i <;> simp [one_sub_div h₁₀, div_sub_one h₁₀, div_div_div_cancel_right₀ h₁₀, inv_div]
+  fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, legendreRootOrder_apply,
+      Nat.succ_eq_add_one, Nat.reduceAdd, Matrix.cons_val_zero, Matrix.cons_val,
+      Matrix.cons_val_one, legendreParameters_def, one_sub_div h₁₀, div_sub_one h₁₀,
+      sub_sub_sub_cancel_right, div_div_div_cancel_right₀ h₁₀, inv_div]
   -- the remaining four orders are `a / b = -a / -b`
-  all_goals grind
+  all_goals rw [← neg_div_neg_eq, neg_sub, neg_sub]
 
 /-- For roots with `e 0 ≠ e 1`, the Legendre parameters of the six orders of the roots are exactly
 the entries of the tuple of Legendre parameters at `λ = (e 2 - e 0) / (e 1 - e 0)`. -/
@@ -202,12 +206,6 @@ theorem range_sub_div_sub_eq_range_legendreParameters (h : e 0 ≠ e 1) :
       Set.range (legendreParameters ((e 2 - e 0) / (e 1 - e 0))) := by
   rw [← legendreRootOrder_bijective.surjective.range_comp]
   exact congrArg Set.range (funext (sub_div_sub_eq_legendreParameters h))
-
-end Field
-
-section DivisionRing
-
-variable {K : Type*} [DivisionRing K] {e : Fin 3 → K}
 
 /-- For pairwise distinct roots `e`, the Legendre parameter of every order `σ` of the roots is
 different from `0`. -/
