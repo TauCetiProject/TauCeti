@@ -41,12 +41,15 @@ in `K₀`):
 * `TauCeti.mobiusReflection`: the reflection `ρ`, a `2 × 2` matrix over `R`.
 * `TauCeti.mobiusSections`: the Möbius module `M`, the kernel of `ρ − 1` acting on `R²`.
 * `TauCeti.mobiusSectionsProdEquiv`: the isomorphism `M × M ≃ₗ[R] R²`, `(a, b) ↦ a + J b`.
+* `TauCeti.mobiusProjection`: the symmetric idempotent `p = (1 + ρ) / 2`, pointwise `u uᵀ`.
 * `TauCeti.mobiusSectionCoeff`: the coefficient `t ↦ ⟨u(t), w([t])⟩` of a pair `w` along
   `u(t) = (cos πt, sin πt)`, a continuous antiperiodic function on `ℝ`.
 
 ## Main results
 
 * `TauCeti.mem_mobiusSections_iff`: the pointwise description of `M`.
+* `TauCeti.range_mulVecLin_mobiusProjection`, `TauCeti.range_vecMulLinear_mobiusProjection`:
+  `M` is the image of `p`.
 * `TauCeti.apply_eq_mobiusSectionCoeff_mul`: a section of `M` is `⟨u, w⟩ u`.
 * `TauCeti.isEmpty_mobiusSections_prod_linearEquiv`: `M × Rᴺ` is not isomorphic to `Rᴺ⁺¹`.
 * `TauCeti.mobiusSections_order_two`: both statements together.
@@ -246,6 +249,67 @@ instance : Module.Projective 𝓒 mobiusSections :=
     (LinearMap.fst 𝓒 _ _ ∘ₗ mobiusSectionsProdEquiv.symm.toLinearMap) <|
       LinearMap.ext fun _ ↦ by simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
         LinearMap.inl_apply, LinearEquiv.symm_apply_apply, LinearMap.fst_apply, LinearMap.id_apply]
+
+/-! ### The Möbius module as the image of an idempotent -/
+
+/-- The reflection `ρ` is symmetric. -/
+@[simp]
+theorem transpose_mobiusReflection : mobiusReflectionᵀ = mobiusReflection := by
+  rw [mobiusReflection_def]
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
+
+/-- The idempotent `p = (1 + ρ) / 2` over `C(ℝ / ℤ, ℝ)`. At `[t]` it is the orthogonal projection
+`u(t) u(t)ᵀ` onto the line spanned by `u(t) = (cos πt, sin πt)` (`mobiusProjection_apply_mk`),
+and its image is the Möbius module (`range_mulVecLin_mobiusProjection`). -/
+def mobiusProjection : Matrix (Fin 2) (Fin 2) 𝓒 :=
+  (2⁻¹ : ℝ) • (1 + mobiusReflection)
+
+theorem mobiusProjection_def : mobiusProjection = (2⁻¹ : ℝ) • (1 + mobiusReflection) :=
+  (rfl)
+
+/-- At `[t]`, the matrix `p` is `u(t) u(t)ᵀ` with `u(t) = (cos πt, sin πt)`. -/
+theorem mobiusProjection_apply_mk (i j : Fin 2) (t : ℝ) :
+    mobiusProjection i j t =
+      ![cos (π * t), sin (π * t)] i * ![cos (π * t), sin (π * t)] j := by
+  have h : 2 * π * t = 2 * (π * t) := by ring
+  fin_cases i <;> fin_cases j <;>
+    simp [mobiusProjection_def, mobiusReflection_def, h, ← sq, cos_sq, sin_sq, sin_two_mul] <;>
+    ring
+
+/-- The projection `p` is symmetric. -/
+@[simp]
+theorem transpose_mobiusProjection : mobiusProjectionᵀ = mobiusProjection := by
+  rw [mobiusProjection_def, transpose_smul, transpose_add, transpose_one,
+    transpose_mobiusReflection]
+
+theorem isIdempotentElem_mobiusProjection : IsIdempotentElem mobiusProjection := by
+  rw [IsIdempotentElem, mobiusProjection_def, smul_mul_smul_comm, mul_add, add_mul, add_mul,
+    mobiusReflection_mul_self, one_mul, mul_one, one_mul]
+  module
+
+theorem mobiusProjection_mulVec (w : Fin 2 → 𝓒) :
+    mobiusProjection *ᵥ w = (2⁻¹ : ℝ) • (w + mobiusReflection *ᵥ w) := by
+  rw [mobiusProjection_def, smul_mulVec, add_mulVec, one_mulVec]
+
+/-- The Möbius module is the image `pR²` of the projection `p` acting on columns. -/
+theorem range_mulVecLin_mobiusProjection :
+    LinearMap.range (mulVecLin mobiusProjection) = mobiusSections := by
+  refine le_antisymm ?_ fun w hw ↦ ⟨w, ?_⟩
+  · rintro _ ⟨w, rfl⟩
+    rw [mulVecLin_apply, mobiusProjection_mulVec]
+    exact half_add_mulVec_mem w
+  · rw [mem_mobiusSections_iff_mulVec] at hw
+    rw [mulVecLin_apply, mobiusProjection_mulVec, hw]
+    module
+
+/-- The Möbius module is the image of the symmetric projection `p` acting on rows. -/
+theorem range_vecMulLinear_mobiusProjection :
+    LinearMap.range (vecMulLinear mobiusProjection) = mobiusSections := by
+  rw [← range_mulVecLin_mobiusProjection]
+  congr 1
+  refine LinearMap.ext fun w ↦ ?_
+  rw [vecMulLinear_apply, mulVecLin_apply, ← vecMul_transpose, transpose_mobiusProjection]
 
 /-! ### `M ⊕ Rᴺ ≇ Rᴺ⁺¹` -/
 
