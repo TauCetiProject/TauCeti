@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
 # The side of a bicollared hypersurface is a manifold with boundary
@@ -75,6 +76,7 @@ noncomputable section
 
 open Set Topology
 open scoped Manifold
+open OpenPartialHomeomorph (mem_target_and_mem_source_of_mem_symm_trans_source)
 
 namespace TauCeti
 
@@ -333,14 +335,6 @@ private theorem mem_interiorChart_target (hCo : IsOpen (C \ range f)) (x : C)
   -- The inclusion `C \ range f → C` followed by the coercion to `M` is the coercion.
   exact ⟨by rw [EuclideanHalfSpace.interiorEmbedding_coe_apply_zero]; exact Real.exp_pos _, hv,
     hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph_right_inv _ hm⟩
-
-/-- A point of the source of a chart transition `e.symm ≫ₕ e'` lies in the target of `e`, and
-`e.symm` sends it into the source of `e'`. -/
-private theorem mem_target_and_mem_source_of_mem_symm_trans_source {α β : Type*}
-    [TopologicalSpace α] [TopologicalSpace β] {e e' : OpenPartialHomeomorph α β} {w : β}
-    (hw : w ∈ (e.symm ≫ₕ e').source) : w ∈ e.target ∧ e.symm w ∈ e'.source := by
-  rwa [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source, mem_inter_iff,
-    mem_preimage] at hw
 
 variable {k : WithTop ℕ∞}
 

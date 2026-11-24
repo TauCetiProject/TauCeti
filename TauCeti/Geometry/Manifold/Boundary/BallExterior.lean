@@ -227,25 +227,26 @@ theorem interior_ballExteriorChartedSpace (hφ : IsOpenEmbedding φ) (hr : 0 < r
 open scoped ContDiff in
 omit [T2Space X] in
 /-- If `φ : E → X` is a `C^k` local diffeomorphism, for some `k ≤ ∞`, then so is the bicollar
-`TauCeti.sphereBicollar φ r` of the sphere of radius `r ≠ 0`: it is the polar coordinates
-`TauCeti.sphereProdRealDiffeomorph` followed by a dilation by `r` and `φ`. -/
+`TauCeti.sphereBicollar φ r` of the sphere of radius `r ≠ 0`: it is the exponential polar
+coordinates `TauCeti.polar` followed by a dilation by `r * exp 1` and `φ`. -/
 theorem _root_.TauCeti.isLocalDiffeomorph_sphereBicollar {k : WithTop ℕ∞}
     (hφd : IsLocalDiffeomorph 𝓘(ℝ, E) (𝓡 (n + 1)) k φ) (hk : k ≤ ∞) (hr : r ≠ 0) :
     IsLocalDiffeomorph ((𝓡 n).prod 𝓘(ℝ)) (𝓡 (n + 1)) k (sphereBicollar φ r) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  let L : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E r hr).toContinuousLinearEquiv
-  have h : sphereBicollar φ r = φ ∘ L ∘ Subtype.val ∘ sphereProdRealDiffeomorph (n := n) :=
-    funext fun p ↦ by simp [L, smul_smul, mul_comm]
+  let L : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E (r * Real.exp 1)
+    (mul_ne_zero hr (Real.exp_pos 1).ne')).toContinuousLinearEquiv
+  have h : sphereBicollar φ r = φ ∘ L ∘ polar :=
+    funext fun p ↦ by
+      simp only [sphereBicollar_apply, Function.comp_apply, polar_apply, L,
+        LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.smulOfNeZero_apply, smul_smul]
+      rw [mul_assoc, ← Real.exp_add, add_sub_cancel]
   have hL : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) k L := fun x ↦ by
     simpa using (L.toPartialDiffeomorph (n := k)).isLocalDiffeomorphAt _ _ _ (x := x) (by simp)
   rw [h]
   -- `IsLocalDiffeomorphAt.comp` takes the target model of the outer map as its first explicit
   -- argument, so the local diffeomorphisms are passed by name.
-  exact fun p ↦ IsLocalDiffeomorphAt.comp (hg := hφd _) (hf := IsLocalDiffeomorphAt.comp
-    (hg := hL _)
-    (hf := IsLocalDiffeomorphAt.of_le (IsLocalDiffeomorphAt.comp
-      (hf := (sphereProdRealDiffeomorph (n := n)).isLocalDiffeomorph p)
-      (hg := isLocalDiffeomorph_subtype_val _)) hk))
+  exact fun p ↦ IsLocalDiffeomorphAt.comp (hg := hφd _)
+    (hf := IsLocalDiffeomorphAt.comp (hg := hL _) (hf := (isLocalDiffeomorph_polar.of_le hk) p))
 
 open scoped ContDiff in
 /-- **The exterior of a smoothly embedded ball is a smooth manifold with boundary.** If `X` is a
