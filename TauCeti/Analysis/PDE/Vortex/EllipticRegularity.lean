@@ -252,11 +252,8 @@ private theorem integral_inner_vacuumField_eq
     have hS : ⇑(hc.toSchwartzMap hη) = η := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
     rw [show K vacuumField η = S (hc.toSchwartzMap hη) from funext fun z ↦ by rw [← hK, hS]]
     exact (S _).memLp 2
-  simp_rw [inner_sub_left]
-  rw [integral_sub (hf.integrable_inner hηL) (hzo.integrable_inner hηL), ← hweak]
-  simp_rw [hB x η _ (y _)]
-  rw [integral_add (hy.integrable_inner hL) (hzo.integrable_inner hηL)]
-  ring
+  exact integral_inner_eq_integral_inner_sub_of_inner_eq_add (fun z ↦ hB x η z (y z))
+    (hy.integrable_inner hL) (hf.integrable_inner hηL) (hzo.integrable_inner hηL) hweak
 
 /-- Elliptic regularity at an essentially bounded measurable field, for either operator. -/
 private theorem mem_sobolevFields_one_of_integral_inner_eq

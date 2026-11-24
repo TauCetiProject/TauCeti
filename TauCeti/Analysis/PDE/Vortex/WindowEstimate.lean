@@ -205,20 +205,15 @@ private theorem integral_inner_eq_add_sub_mulVec
       ∫ z, ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, (A i j z - Z i j z) * y z j), η z⟫ := by
   have hηL : MemLp η 2 volume := hη.continuous.memLp_of_hasCompactSupport hηc
   have hpt (z : ℂ) :
-      ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, (A i j z - Z i j z) * y z j), η z⟫ =
-        ⟪f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j), η z⟫ -
-          ⟪WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, Z i j z * y z j), η z⟫ := by
-    rw [← inner_sub_left]
-    congr 1
+      f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, (A i j z - Z i j z) * y z j) =
+        f z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j) -
+          WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, Z i j z * y z j) := by
     ext i
     simp [sub_mul, Finset.sum_sub_distrib, add_sub_assoc]
-  have hint := hweak η hη hηc
-  simp_rw [hP] at hint
   simp_rw [hpt]
-  rw [integral_add (hy.integrable_inner (hP₀ η hη hηc)) (hZy.integrable_inner hηL)] at hint
-  rw [integral_sub ((hf.add hAy).integrable_inner hηL)
-    (hZy.integrable_inner hηL)]
-  linarith
+  exact integral_inner_eq_integral_inner_sub_of_inner_eq_add (fun z ↦ hP η z (y z))
+    (hy.integrable_inner (hP₀ η hη hηc)) ((hf.add hAy).integrable_inner hηL)
+    (hZy.integrable_inner hηL) (hweak η hη hηc)
 
 /-! ### The uniform bootstrap from the vacuum -/
 
