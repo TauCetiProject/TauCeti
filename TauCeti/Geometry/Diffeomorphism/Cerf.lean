@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Smale
-import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Topology.Homotopy.Path
 import TauCeti.Geometry.Diffeomorphism.Sphere.Isotopy
-import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import TauCeti.Topology.PathComponent
+public import TauCeti.Geometry.Diffeomorphism.Sphere.RadialExtension
 
 /-!
 # Cerf's theorem: the path components of `Diff(S³)`
@@ -39,8 +37,10 @@ orientation. Orientation-preservation of diffeomorphisms is not used here.
 
 Cerf's theorem follows from the Smale conjecture `Diff(S³) ≃ O(4)` (Hatcher), since a homotopy
 equivalence is surjective on path components (`TauCeti.SmaleConjecture.cerfTheorem`). It is not
-proved here. Cerf's corollary `Γ₄ = 0`, that every diffeomorphism of `S³` extends over the
-four-ball, is not stated here either.
+proved here. Its consequence `Γ₄ = 0` (Cerf, Corollaire 1) is: under `TauCeti.CerfTheorem`, every
+diffeomorphism of `S³` is the boundary restriction of a diffeomorphism of the closed four-ball
+(`TauCeti.CerfTheorem.exists_diffeomorph_closedBall`), the radial extension of an orthogonal map
+along the isotopy (`TauCeti.exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph`).
 
 ## Main definitions
 
@@ -51,18 +51,20 @@ four-ball, is not stated here either.
 * `TauCeti.SmaleConjecture.cerfTheorem`: the Smale conjecture implies Cerf's theorem.
 * `TauCeti.cerfTheorem_iff_natCard_zerothHomotopy_eq_two`: Cerf's theorem holds exactly when
   `Diff(S³)` has two path components.
+* `TauCeti.CerfTheorem.exists_diffeomorph_closedBall`: Cerf's theorem implies `Γ₄ = 0`, every
+  diffeomorphism of `S³` extends to a diffeomorphism of `D⁴`.
 
 ## References
 
 * J. Cerf, *Sur les difféomorphismes de la sphère de dimension trois (Γ₄ = 0)*, Lecture Notes in
-  Mathematics 53, Springer (1968), Théorème 1.
+  Mathematics 53, Springer (1968), Théorème 1 and Corollaire 1.
 * A. Hatcher, *A proof of the Smale conjecture, `Diff(S³) ≃ O(4)`*, Ann. of Math. 117 (1983),
   553–607.
 -/
 
 public section
 
-open Metric
+open Metric Module
 open scoped Manifold ContDiff TauCeti.DiffeomorphWeakWhitney
 
 namespace TauCeti
@@ -86,40 +88,28 @@ theorem SmaleConjecture.cerfTheorem (h : SmaleConjecture) : CerfTheorem := by
   obtain ⟨g, -, ⟨H⟩⟩ := smaleConjecture_iff_exists_homotopyInverse.1 h
   exact fun f ↦ ⟨g f, ⟨(H.evalAt f).cast (by simp) rfl⟩⟩
 
-/-- The class in `π₀ Diff(S³)` of the diffeomorphism induced by an orthogonal transformation is
-that of the identity or that of the reflection `TauCeti.orthogonalDiagonalReflection`. -/
-private lemma joined_orthogonalToDiffSphere_one_or_reflection
-    (A : Matrix.orthogonalGroup (Fin 4) ℝ) :
-    Joined 1 (orthogonalToDiffSphere 3 ∞ A) ∨
-      Joined (orthogonalToDiffSphere 3 ∞ (orthogonalDiagonalReflection ℝ 0))
-        (orthogonalToDiffSphere 3 ∞ A) := by
-  rw [← map_one (orthogonalToDiffSphere 3 ∞), joined_orthogonalToDiffSphere_iff,
-    joined_orthogonalToDiffSphere_iff, det_orthogonalDiagonalReflection]
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;> simp [hA]
-
 /-- **Cerf's theorem as a count of path components.** Cerf's theorem holds exactly when the
 diffeomorphism group of `S³` has two path components. -/
 theorem cerfTheorem_iff_natCard_zerothHomotopy_eq_two :
     CerfTheorem ↔
-      Nat.card (ZerothHomotopy (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)) = 2 := by
-  set ρ := orthogonalToDiffSphere 3 ∞ (orthogonalDiagonalReflection ℝ 0)
-  have hρ : ZerothHomotopy.mk ρ ≠ ZerothHomotopy.mk 1 := fun h ↦
-    not_joined_one_orthogonalToDiffSphere_of_det_eq_neg_one
-      (det_orthogonalDiagonalReflection ℝ 0) (ZerothHomotopy.mk_eq_mk_iff.1 h).symm
-  rw [Nat.card_eq_two_iff' (ZerothHomotopy.mk 1)]
-  constructor
-  · -- Every class is that of the identity or of the reflection.
-    refine fun h ↦ ⟨ZerothHomotopy.mk ρ, hρ, fun c hc ↦ ?_⟩
-    induction c with | mk f => ?_
-    obtain ⟨A, hA⟩ := h f
-    rcases joined_orthogonalToDiffSphere_one_or_reflection A with h1 | h1
-    · exact (hc (ZerothHomotopy.mk_eq_mk_iff.2 (h1.trans hA).symm)).elim
-    · exact (ZerothHomotopy.mk_eq_mk_iff.2 (h1.trans hA)).symm
-  · -- Conversely, a class other than that of the identity is that of the reflection.
-    rintro ⟨c, -, hc⟩ f
-    by_cases hf : ZerothHomotopy.mk f = ZerothHomotopy.mk 1
-    · exact ⟨1, by rw [map_one]; exact (ZerothHomotopy.mk_eq_mk_iff.1 hf).symm⟩
-    · refine ⟨orthogonalDiagonalReflection ℝ 0, ZerothHomotopy.mk_eq_mk_iff.1 ?_⟩
-      exact (hc _ hρ).trans (hc _ hf).symm
+      Nat.card (ZerothHomotopy (Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞)) = 2 :=
+  forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_eq_two
+
+/-- **Cerf's theorem implies `Γ₄ = 0`** (Cerf, Corollaire 1). If every diffeomorphism of `S³` is
+isotopic to an orthogonal one, then every smooth diffeomorphism of `S³` is the restriction to the
+boundary sphere of a smooth diffeomorphism of the closed four-ball `D⁴`: compose the orthogonal map
+with the isotopy run along the radius. In Cerf's notation this is `Γ₄ = 0`, where `Γ₄` is the
+group of orientation-preserving diffeomorphisms of `S³` modulo those which extend over `D⁴`. -/
+theorem CerfTheorem.exists_diffeomorph_closedBall (h : CerfTheorem)
+    (f : Diff (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∞) :
+    ∃ G : closedBall (0 : EuclideanSpace ℝ (Fin 4)) 1 ≃ₘ^∞⟮𝓡∂ 4, 𝓡∂ 4⟯
+        closedBall (0 : EuclideanSpace ℝ (Fin 4)) 1,
+      ∀ u : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1,
+        (G ⟨u, sphere_subset_closedBall u.property⟩ : EuclideanSpace ℝ (Fin 4)) = f u := by
+  obtain ⟨A, hA⟩ := h f
+  -- The extension theorem reads the sphere through the dimension instance of a general space.
+  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin 4)) = 3 + 1) := ⟨finrank_euclideanSpace_fin⟩
+  rw [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply] at hA
+  exact exists_diffeomorph_closedBall_of_joined_unitSphereDiffeomorph (by norm_num) le_rfl _ hA
 
 end TauCeti
