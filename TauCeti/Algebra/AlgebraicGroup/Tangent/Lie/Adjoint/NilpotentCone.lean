@@ -99,8 +99,9 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
   is stable under scaling and under the adjoint action.
 * `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on the full quotient ring
   of the nilpotent cone.
-* `TauCeti.polynomialCoact_eval_ι`: evaluation of linear polynomial coactions against
-  algebra-valued points agrees with the adjoint action on vectors.
+* `TauCeti.polynomialCoact_eval_ι`: evaluating the group leg of a linear polynomial coaction at
+  `g⁻¹` and the polynomial leg at the coordinates `x` of `z` gives the linear polynomial evaluated
+  on `Ad(g) z`.
 * `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
   `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
   `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
@@ -203,7 +204,9 @@ variable {A : Type u} [CommRing A] [Algebra k A]
 
 attribute [local instance] Comodule.dual
 
-/-- Evaluating a coacted linear polynomial gives evaluation on the adjoint-transformed vector. -/
+/-- Evaluating the group leg of a coacted linear polynomial at `g⁻¹` and its polynomial leg at
+the coordinates `x` of `z` gives the linear polynomial evaluated on `Ad(g) z`.
+The hypothesis `hx` identifies `x` with evaluation at `z` after base change to `A`. -/
 theorem polynomialCoact_eval_ι
     (g : WithConv (H →ₐ[k] A)) (x : Module.Dual k 𝔤 →ₗ[k] A) (z : A ⊗[k] 𝔤)
     (hx : ∀ φ, x φ = Module.Dual.baseChangeEvaluation (1 ⊗ₜ[k] φ) z)
