@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.LocalField.Monogenic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.TotallyRamified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Tamely ramified extensions of local fields
