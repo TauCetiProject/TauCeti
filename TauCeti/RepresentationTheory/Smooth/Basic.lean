@@ -57,6 +57,9 @@ case.
 * `Representation.IsSmooth.comp`, `Representation.isSmooth_ofQuotient_iff`: smoothness passes
   to the restriction along a continuous homomorphism (in particular to subgroups), and descends
   iff it holds on `G ⧸ S` for a trivially acting normal subgroup `S`.
+* `Representation.instIsSmoothProd`, `Representation.instIsSmoothPi`,
+  `Representation.instIsSmoothDirectSum`: binary products, finite products and direct sums of
+  smooth representations are smooth.
 * `Representation.isSmooth_ofMulAction_iff`: over a nontrivial semiring, the permutation
   representation on `A[X]` is smooth exactly when every point of `X` has an open stabilizer, as
   for `X = G ⧸ U` with `U` open (`Representation.isSmooth_ofMulAction_quotient`).
@@ -65,9 +68,8 @@ case.
 * `Representation.not_isSmooth_pi_ofMulAction_quotient`: over a nontrivial semiring, an infinite
   product of coset permutation modules `∏ i, A[G ⧸ H i]` fails to be smooth when `⨅ i, H i` is
   not open.
-* `Representation.continuous_iff_isSmooth` and
-  `Representation.continuous_iff_isOpen_stabilizer_of_discrete`: when `G` is a topological group
-  and `V` carries the discrete topology, joint continuity on `G × V` is equivalent to smoothness.
+* `Representation.continuous_iff_isSmooth`: when `G` is a topological group and `V` carries the
+  discrete topology, joint continuity on `G × V` is equivalent to smoothness.
 
 ## References
 
@@ -175,6 +177,17 @@ instance instIsSmoothPi {ι : Type*} [Finite ι] {M : ι → Type*}
     rw [stabilizer_pi, Subgroup.coe_iInf]
     exact isOpen_iInter_of_finite fun i ↦ IsSmooth.isOpen_stabilizer (x i)
 
+/-- The direct sum of a family of smooth representations is smooth: the stabilizer of a vector is
+the intersection of the stabilizers of its finitely many nonzero components. -/
+instance instIsSmoothDirectSum {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoid (V i)]
+    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) [∀ i, IsSmooth (ρ i)] :
+    IsSmooth (directSum ρ) where
+  isOpen_stabilizer x := by
+    classical
+    rw [stabilizer_directSum_eq_iInf_support]
+    simp only [Subgroup.coe_iInf]
+    exact x.support.finite_toSet.isOpen_biInter fun i _ ↦ IsSmooth.isOpen_stabilizer (x i)
+
 /-- Every representation of a discrete group is smooth. -/
 instance [DiscreteTopology G] : IsSmooth ρ :=
   ⟨fun _ ↦ isOpen_discrete _⟩
@@ -188,10 +201,10 @@ instance [Subsingleton V] : IsSmooth ρ :=
   ⟨fun v ↦ by rw [stabilizer_eq_top_of_subsingleton ρ v]; exact isOpen_univ⟩
 
 /-- When `V` carries the discrete topology and `G` is a topological group, a representation `ρ` is
-jointly continuous on `G × V` if and only if the stabilizer of every vector is open in `G`. -/
-theorem continuous_iff_isOpen_stabilizer_of_discrete [IsTopologicalGroup G]
+jointly continuous on `G × V` if and only if it is smooth. -/
+theorem continuous_iff_isSmooth [IsTopologicalGroup G]
     [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
-    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ∀ v : V, IsOpen (ρ.stabilizer v : Set G) := by
+    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth := by
   let : MulAction G V := MulAction.compHom V (ρ : G →* Module.End A V)
   have hsmul (g : G) (v : V) : g • v = ρ g v := by
     rw [MulAction.compHom_smul_def, Module.End.smul_def]
@@ -202,14 +215,7 @@ theorem continuous_iff_isOpen_stabilizer_of_discrete [IsTopologicalGroup G]
     ⟨fun h => ⟨h.congr fun p => (hsmul p.1 p.2).symm⟩,
       fun h => h.continuous_smul.congr fun p => hsmul p.1 p.2⟩
   exact hcont.trans <| continuousSMul_iff_stabilizer_isOpen.trans <|
-    forall_congr' fun v => by rw [hstab]
-
-/-- When `V` carries the discrete topology and `G` is a topological group, a representation `ρ` is
-jointly continuous on `G × V` if and only if it is smooth. -/
-theorem continuous_iff_isSmooth [IsTopologicalGroup G]
-    [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
-    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth :=
-  ρ.continuous_iff_isOpen_stabilizer_of_discrete.trans (isSmooth_iff ρ).symm
+    (forall_congr' fun v => by rw [hstab]).trans (isSmooth_iff ρ).symm
 
 end IsSmooth
 

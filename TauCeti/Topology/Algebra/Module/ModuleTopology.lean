@@ -54,14 +54,15 @@ module topology (`IsModuleTopology.instMatrix`).
 
 A family `f : X → (M →ₗ[R] N)` of linear maps out of a finite module `M` with its module topology,
 into a topological module `N`, is jointly continuous on `X × M` exactly when each orbit map
-`x ↦ f x m` is continuous, and it suffices to check this on a finite generating family
-(`IsModuleTopology.continuous_linearMap_apply_iff`,
+`x ↦ f x m` is continuous, and it suffices to check this on a finite generating family or one
+equipped with dual coordinates (`IsModuleTopology.continuous_linearMap_apply_iff`,
 `IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top`,
+`IsModuleTopology.continuous_linearMap_apply_of_sum_dual_smul_eq`,
 `IsModuleTopology.continuous_linearMap_apply_iff_of_projective`). When `N` is finite projective
 with its module topology, continuity into `N` is continuity against all linear functionals
-(`IsModuleTopology.continuous_iff_forall_dual`), so joint continuity is continuity of every matrix
-coefficient `x ↦ φ (f x m)` (`IsModuleTopology.continuous_linearMap_apply_iff_forall_dual`,
-`IsModuleTopology.continuous_linearMap_apply_iff_forall_dual_of_projective`). When `M` and `N` have
+(`IsModuleTopology.continuous_iff_forall_dual`), so joint continuity on finite projective modules is
+continuity of every matrix coefficient `x ↦ φ (f x m)`
+(`IsModuleTopology.continuous_linearMap_apply_iff_forall_dual_of_projective`). When `M` and `N` have
 finite bases and their module topologies, this is continuity of the basis coordinates or matrices of
 the `f x` (`TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_repr`,
 `TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix`). Joint continuity
@@ -173,9 +174,12 @@ theorem continuous_iff_forall_dual (R : Type*) {M X : Type*} [Semiring R] [Topol
   exact (continuous_finsetSum Finset.univ fun j _ => (h (φ j)).smul continuous_const).congr
     fun x => hb (f x)
 
-/-- Joint continuity of `f : X → M →ₗ[R] N` from orbit continuity on a finite spanning family `v`
-equipped with continuous dual coordinates `φ` satisfying `∑ j, φ j m • v j = m`. -/
-private theorem continuous_linearMap_apply_of_sum_dual_smul_eq {R M N X ι : Type*} [Semiring R]
+/-- **Joint continuity from a dual-coordinate decomposition.** Over a topological semiring `R`, for
+a module `M` carrying its `R`-module topology and a topological `R`-module `N`, if `v : ι → M` and
+`φ : ι → Module.Dual R M` satisfy `∑ j, φ j m • v j = m` for every `m : M` (with `ι` finite), then a
+family `f : X → M →ₗ[R] N` is jointly continuous on `X × M` as soon as each orbit map
+`x ↦ f x (v j)` is continuous. -/
+theorem continuous_linearMap_apply_of_sum_dual_smul_eq {R M N X ι : Type*} [Semiring R]
     [TopologicalSpace R] [IsTopologicalSemiring R] [AddCommMonoid M] [Module R M]
     [TopologicalSpace M] [IsModuleTopology R M] [AddCommMonoid N] [Module R N]
     [TopologicalSpace N] [ContinuousAdd N] [ContinuousSMul R N] [TopologicalSpace X] [Fintype ι]
@@ -216,22 +220,6 @@ theorem continuous_linearMap_apply_iff_forall_dual_of_projective {R M N X : Type
       ∀ (φ : Module.Dual R N) (m : M), Continuous fun x => φ (f x m) := by
   have := IsModuleTopology.toContinuousAdd R N
   exact (continuous_linearMap_apply_iff_of_projective f).trans
-    ((forall_congr' fun _ => continuous_iff_forall_dual R).trans forall_comm)
-
-/-- **Joint continuity from matrix coefficients out of a finite module.** Over a topological ring
-`R`, for a finite module `M` and a finite projective module `N` carrying their `R`-module
-topologies, a family `f : X → M →ₗ[R] N` is jointly continuous on `X × M` if and only if every
-matrix coefficient `x ↦ φ (f x m)` (`φ : Module.Dual R N`, `m : M`) is continuous. -/
-theorem continuous_linearMap_apply_iff_forall_dual {R M N X : Type*} [Ring R]
-    [TopologicalSpace R] [IsTopologicalSemiring R]
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
-    [Module.Finite R M]
-    [AddCommMonoid N] [Module R N] [TopologicalSpace N] [IsModuleTopology R N]
-    [Module.Finite R N] [Module.Projective R N] [TopologicalSpace X] (f : X → M →ₗ[R] N) :
-    (Continuous fun p : X × M => f p.1 p.2) ↔
-      ∀ (φ : Module.Dual R N) (m : M), Continuous fun x => φ (f x m) := by
-  have := IsModuleTopology.toContinuousAdd R N
-  exact (continuous_linearMap_apply_iff f).trans
     ((forall_congr' fun _ => continuous_iff_forall_dual R).trans forall_comm)
 
 end ProjectiveJointContinuity
@@ -464,22 +452,10 @@ that is, when every matrix entry is. The bases may be empty. -/
 theorem continuous_linearMap_apply_iff_continuous_toMatrix (b : _root_.Module.Basis ι R M)
     (c : _root_.Module.Basis κ R N) (f : X → M →ₗ[R] N) :
     (Continuous fun p : X × M => f p.1 p.2) ↔
-      Continuous fun x => LinearMap.toMatrix b c (f x) := by
-  constructor
-  · intro h
-    refine continuous_matrix fun i j => ?_
-    have hj : Continuous (fun x => f x (b j)) := h.comp (continuous_id.prodMk continuous_const)
-    have := IsModuleTopology.toContinuousAdd R N
-    simpa only [Function.comp_def, LinearMap.toMatrix_apply, Module.Basis.coord_apply] using
-      (IsModuleTopology.continuous_of_linearMap (c.coord i)).comp hj
-  · intro h
-    apply (equivFunHomeomorph c).comp_continuous_iff.mp
-    -- In basis coordinates, joint evaluation is matrix-vector multiplication.
-    have hv : Continuous (fun p : X × M => equivFunHomeomorph b p.2) :=
-      (equivFunHomeomorph b).continuous.comp continuous_snd
-    refine ((h.comp continuous_fst).matrix_mulVec hv).congr fun p => ?_
-    simpa only [Function.comp_apply, equivFunHomeomorph_apply, Module.Basis.equivFun_apply] using
-      (f p.1).toMatrix_mulVec_repr b c p.2
+      Continuous fun x => LinearMap.toMatrix b c (f x) :=
+  (continuous_linearMap_apply_iff_continuous_repr b c f).trans
+    ⟨fun h => continuous_matrix fun i j => by simpa only [LinearMap.toMatrix_apply] using h i j,
+      fun h i j => by simpa only [LinearMap.toMatrix_apply] using h.matrix_elem i j⟩
 
 end toMatrix
 

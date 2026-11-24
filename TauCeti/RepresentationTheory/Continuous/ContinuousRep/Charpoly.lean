@@ -25,7 +25,7 @@ trivial representation (`TauCeti.ContinuousRep.charpoly_trivial_apply`), equal t
 the character line `ofCharacter χ` (`TauCeti.ContinuousRep.charpoly_ofCharacter_apply`), equal to
 `(ρ g⁻¹).charpoly` on the contragredient `ρ.dual` (`TauCeti.ContinuousRep.charpoly_dual_apply`),
 and compatible with scalar extension (`TauCeti.ContinuousRep.charpoly_baseChange_apply`, together
-with `TauCeti.ContinuousRep.det_baseChange_apply` for determinants).
+with `TauCeti.ContinuousRep.linearMap_det_baseChange_apply` for determinants).
 
 On the topological side, when `A` is a topological commutative ring and `M` carries its `A`-module
 topology, every coefficient `g ↦ (ρ g).charpoly.coeff k` is continuous
@@ -44,8 +44,8 @@ Hausdorff ring) on a dense subset of `Γ` have equal characteristic polynomials 
   cyclic and conjugation invariance of `(ρ g).charpoly`.
 * `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: `(ofCharacter χ g).charpoly = X - C (χ g)`.
 * `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
-  `TauCeti.ContinuousRep.det_baseChange_apply`: the characteristic polynomial and determinant of `g`
-  on `ρ.baseChange B` are the images of those of `ρ g`.
+  `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: the characteristic polynomial and
+  determinant of `g` on `ρ.baseChange B` are the images of those of `ρ g`.
 * `TauCeti.ContinuousRep.charpoly_dual_apply`: `(ρ.dual g).charpoly = (ρ g⁻¹).charpoly`.
 * `TauCeti.ContinuousRep.continuous_charpoly_coeff`: each coefficient `g ↦ (ρ g).charpoly.coeff k`
   is continuous when `M` carries its module topology over a topological commutative ring `A`.
@@ -128,7 +128,7 @@ theorem charpoly_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
 
 /-- **The determinant of a base change.** The element `g` acts on `ρ.baseChange B` with
 determinant the image in `B` of that of `ρ g`. -/
-theorem det_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
+theorem linearMap_det_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
     LinearMap.det (ρ.baseChange B g) = algebraMap A B (LinearMap.det (ρ g)) := by
   rw [baseChange_apply, LinearMap.det_baseChange]
 

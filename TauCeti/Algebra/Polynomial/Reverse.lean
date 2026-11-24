@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
@@ -69,6 +70,9 @@ the subleading term is read off from the Taylor expansion of `p` at `-a`.
 
 Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
 of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
+
+Over a field, reversal and reflection at a bound on the degree preserve splitting
+(`Polynomial.Splits.reverse`, `Polynomial.Splits.reflect`).
 -/
 
 public section
@@ -494,5 +498,25 @@ theorem reverse_C_mul_prod_X_sub_C {K ι : Type*} [Field K] (s : Finset ι) (r :
   rw [Finset.prod_congr rfl hlin]
   simp only [Finset.prod_mul_distrib, ← map_prod]
   rw [← mul_assoc, ← C_mul]
+
+/-- Over a field, the reverse of a split polynomial splits: each linear factor `X + C a` reverses
+to `1 + C a * X`, of degree at most one. -/
+theorem Splits.reverse {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) : p.reverse.Splits := by
+  obtain ⟨m, hm⟩ := splits_iff_exists_multiset'.mp hp
+  rw [hm, reverse_mul_of_domain, reverse_C,
+    reverse_multiset_prod_of_monic (by simp [monic_X_add_C]), Multiset.map_map]
+  refine (Splits.C _).mul (.multisetProd fun q hq ↦ ?_)
+  obtain ⟨a, -, rfl⟩ := Multiset.mem_map.mp hq
+  exact .of_natDegree_le_one ((reverse_natDegree_le _).trans (natDegree_X_add_C a).le)
+
+/-- Over a field, the reflection of a split polynomial at a bound on its degree splits: it is
+the reverse times a power of `X`. -/
+theorem Splits.reflect {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).Splits := by
+  have h := reflect_mul p 1 le_rfl (natDegree_one.trans_le (Nat.zero_le (N - p.natDegree)))
+  -- `reverse p` is by definition `reflect p.natDegree p`.
+  rw [mul_one, Nat.add_sub_cancel' hN, reflect_one, ← Polynomial.reverse] at h
+  rw [h]
+  exact hp.reverse.mul (.X_pow _)
 
 end Polynomial

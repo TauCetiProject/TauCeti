@@ -31,15 +31,15 @@ On a discrete carrier `M`, every continuous representation of a group `G` has op
 and hence a smooth underlying representation (`TauCeti.ContinuousRep.isOpen_stabilizer_of_discrete`,
 `TauCeti.ContinuousRep.isSmooth_toRepresentation_of_discrete`). When `G` is a topological group,
 smoothness conversely promotes an algebraic representation on a discrete module to a `ContinuousRep`
-(`TauCeti.ContinuousRep.ofIsSmooth`, `TauCeti.ContinuousRep.ofIsOpenStabilizer`).
+(`TauCeti.ContinuousRep.ofIsSmooth`).
 
 ## Main definitions
 
 * `TauCeti.ContinuousRep.ofOrbitOfSpanEqTop`, `TauCeti.ContinuousRep.ofOrbit`,
   `TauCeti.ContinuousRep.ofMatrixCoeff`, `TauCeti.ContinuousRep.ofToMatrix`: constructors for
   `ContinuousRep` on modules carrying their module topology.
-* `TauCeti.ContinuousRep.ofIsSmooth` and `TauCeti.ContinuousRep.ofIsOpenStabilizer`: constructors
-  for `ContinuousRep` of a topological group on a discrete carrier.
+* `TauCeti.ContinuousRep.ofIsSmooth`: constructor for `ContinuousRep` of a topological group on a
+  discrete carrier.
 
 ## Main results
 
@@ -238,26 +238,6 @@ theorem coe_ofIsSmooth [IsTopologicalGroup G] (ρ : Representation A G M) [ρ.Is
 @[simp]
 theorem toRepresentation_ofIsSmooth [IsTopologicalGroup G] (ρ : Representation A G M) [ρ.IsSmooth] :
     (ofIsSmooth ρ).toRepresentation = ρ :=
-  (rfl)
-
-/-- Constructs a `ContinuousRep` of a topological group on a discrete module from openness of every
-point stabilizer. -/
-def ofIsOpenStabilizer [IsTopologicalGroup G] (ρ : Representation A G M)
-    (hstab : ∀ x : M, IsOpen (ρ.stabilizer x : Set G)) :
-    ContinuousRep G A M :=
-  haveI : ρ.IsSmooth := ⟨hstab⟩
-  ofIsSmooth ρ
-
-@[simp]
-theorem coe_ofIsOpenStabilizer [IsTopologicalGroup G] (ρ : Representation A G M)
-    (hstab : ∀ x : M, IsOpen (ρ.stabilizer x : Set G)) :
-    ⇑(ofIsOpenStabilizer ρ hstab) = ρ :=
-  (rfl)
-
-@[simp]
-theorem toRepresentation_ofIsOpenStabilizer [IsTopologicalGroup G] (ρ : Representation A G M)
-    (hstab : ∀ x : M, IsOpen (ρ.stabilizer x : Set G)) :
-    (ofIsOpenStabilizer ρ hstab).toRepresentation = ρ :=
   (rfl)
 
 end Discrete

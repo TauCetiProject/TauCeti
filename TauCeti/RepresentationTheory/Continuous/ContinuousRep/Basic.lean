@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
@@ -208,9 +209,9 @@ theorem toRepresentation_trivial :
 theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
   (rfl)
 
-/-- Every operator of the trivial representation is `LinearMap.id`. -/
+/-- Every element of `Γ` acts as the identity operator in the trivial representation. -/
 theorem trivial_apply_eq_id (g : Γ) : trivial Γ A M g = LinearMap.id :=
-  (rfl)
+  Representation.isTrivial_def (Representation.trivial A Γ M) g
 
 /-- **Finite image.** A continuous representation on a finite carrier takes only finitely many
 values. -/
@@ -672,13 +673,6 @@ theorem baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
     ρ.baseChange B g = (ρ g).baseChange B :=
   Representation.baseChange_apply ρ.toRepresentation g
 
-/-- Scalar extension of the trivial representation is the trivial representation on `B ⊗[A] M`. -/
-@[simp]
-theorem baseChange_trivial :
-    (trivial Γ A M).baseChange B = trivial Γ B (B ⊗[A] M) :=
-  DFunLike.ext _ _ fun g => by
-    rw [baseChange_apply, trivial_apply_eq_id, LinearMap.baseChange_id, trivial_apply_eq_id]
-
 section Iso
 
 variable {N : Type*} [AddCommMonoid N] [Module A N] [TopologicalSpace N] [IsModuleTopology A N]
@@ -821,15 +815,14 @@ base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the 
 in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
 def baseChangeOfCharacterIso (χ : Γ →ₜ* Aˣ) :
     Iso ((ofCharacter χ).baseChange B)
-      (ofCharacter (ContinuousMonoidHom.comp
-        ⟨Units.map (algebraMap A B : A →* B), Continuous.units_map _ (continuous_algebraMap A B)⟩
-        χ)) :=
+      (ofCharacter ((ContinuousMonoidHom.unitsMap
+        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ)) :=
   .ofEquiv (.mk (TensorProduct.AlgebraTensorModule.rid A B B) fun g => by
     -- The extended character takes the value `algebraMap A B (χ g)` at `g`.
-    have hχ : (ContinuousMonoidHom.comp
-        ⟨Units.map (algebraMap A B : A →* B), Continuous.units_map _ (continuous_algebraMap A B)⟩
-        χ g : B) = algebraMap A B (χ g) :=
-      Units.coe_map _ _
+    have hχ : ((ContinuousMonoidHom.unitsMap
+        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ g : B) =
+        algebraMap A B (χ g) :=
+      ContinuousMonoidHom.coe_unitsMap_apply _ _
     ext
     simpa [Algebra.smul_def] using hχ.symm)
 

@@ -134,7 +134,7 @@ theorem isIntertwining (f : Hom ρ σ) (g : Γ) (x : M) : f (ρ g x) = σ g (f x
   f.toIntertwiningMap.isIntertwining _ _ g x
 
 /-- Equivariance of a morphism at the level of underlying continuous linear maps. -/
-theorem toContinuousLinearMap_comp_apply (f : Hom ρ σ) (g : Γ) :
+theorem toContinuousLinearMap_comp_eq_comp (f : Hom ρ σ) (g : Γ) :
     f.toContinuousLinearMap.comp ⟨ρ g, ρ.continuous_apply g⟩ =
       (⟨σ g, σ.continuous_apply g⟩ : N →L[A] N).comp f.toContinuousLinearMap := by
   ext x

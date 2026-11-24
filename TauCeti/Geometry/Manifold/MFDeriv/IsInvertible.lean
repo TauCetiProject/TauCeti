@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -39,6 +40,9 @@ If the source is modelled on a finite-dimensional space over a complete field an
 carries a tangent basis `b` onto a basis `b'`, then it is the continuous linear equivalence mapping
 `b` to `b'` (`exists_coe_eq_mfderiv_of_basis`), so it is invertible
 (`isInvertible_mfderiv_of_basis`).
+
+On a manifold without boundary, the inverse of an extended chart has invertible manifold
+derivative at every point of the chart target (`isInvertible_mfderiv_extChartAt_symm`).
 -/
 
 public section
@@ -142,5 +146,15 @@ theorem isInvertible_mfderiv_of_basis [CompleteSpace 𝕜] [FiniteDimensional �
     (mfderiv I I' f x).IsInvertible :=
   let ⟨e, he, _⟩ := exists_coe_eq_mfderiv_of_basis b b' hbb'
   ⟨e, he⟩
+
+/-- On a manifold without boundary, the inverse of an extended chart has invertible manifold
+derivative at every point of the chart target. This is the boundaryless form of Mathlib's
+`isInvertible_mfderivWithin_extChartAt_symm`; in particular the inverse chart is differentiable
+there (`mdifferentiableAt_of_isInvertible_mfderiv`). -/
+theorem isInvertible_mfderiv_extChartAt_symm [I.Boundaryless] [IsManifold I 1 M] {x : M} {y : E}
+    (hy : y ∈ (extChartAt I x).target) :
+    (mfderiv 𝓘(𝕜, E) I (extChartAt I x).symm y).IsInvertible := by
+  simpa only [I.range_eq_univ, mfderivWithin_univ] using
+    isInvertible_mfderivWithin_extChartAt_symm hy
 
 end TauCeti
