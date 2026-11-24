@@ -27,8 +27,8 @@ The two moves are deliberately asymmetric: the first, which changes `b` by a mul
 only allows coefficients in `I`. The normalization `[0/1] = 1` follows from multiplicativity.
 Mennicke symbols are the rank-two shadow of the relative elementary subgroups: Bass, Milnor and
 Serre show that for `n ≥ 3`, sending `(a, b) ∈ W(A, I)` to the class in `SLₙ(A, I) / Eₙ(A, I)` of
-a determinant-one matrix congruent to the identity modulo `I` whose upper left `2 × 2` block has
-first row `(a, b)` is a Mennicke symbol, and compute this group over rings of `S`-integers
+the block sum `[[a, b], [c, d]] ⊕ 1ₙ₋₂`, for any `[[a, b], [c, d]] ∈ SL₂(A, I)` with first row
+`(a, b)`, is a well-defined Mennicke symbol, and compute this group over rings of `S`-integers
 through the universal Mennicke symbol, which this file constructs.
 
 The **universal Mennicke group** `C_I = Ideal.MennickeGroup I` is the group presented by the
@@ -383,7 +383,15 @@ variable {I : Ideal A} {J : Ideal B} {K : Ideal D} {C : Type*} [Group C]
 def of (p : MennickePair I) : MennickeGroup I :=
   PresentedGroup.of p
 
-private theorem mk_of (p : MennickePair I) :
+/-- The generator `[b/a]` is the generator `PresentedGroup.of p` of the underlying presented
+group. -/
+theorem of_def (p : MennickePair I) : of p = PresentedGroup.of p :=
+  (rfl)
+
+/-- The image in the universal Mennicke group of the free generator attached to a pair is the
+generator `[b/a]`. -/
+@[simp]
+theorem mk_of (p : MennickePair I) :
     PresentedGroup.mk (mennickeRels I) (FreeGroup.of p) = of p :=
   (rfl)
 
