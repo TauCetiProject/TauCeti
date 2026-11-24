@@ -90,6 +90,14 @@ def differentialFormsOneIso :
     differentialForms R (X ↘ Spec (.of R)) 1 ≅ X.relativeDifferentials R :=
   (SheafOfModules.exteriorPowerOneIso X.sheaf).app _
 
+/-- The identification `Ω¹_{X/R} ≅ Ω_{X/R}` is the degree-one identification of the exterior power
+with the module itself, read through `differentialForms_def`. -/
+lemma differentialFormsOneIso_hom :
+    (differentialFormsOneIso R X).hom = eqToHom (differentialForms_def R X 1) ≫
+      (SheafOfModules.exteriorPowerOneIso X.sheaf).hom.app (X.relativeDifferentials R) :=
+  -- `differentialForms_def` holds by definition, so its `eqToHom` is the identity.
+  (Category.id_comp _).symm
+
 /-- The sheaf `Ωᵖ_{X/R}` of differential `p`-forms of a scheme smooth over `Spec R`, as a finite
 locally free sheaf. -/
 def FiniteLocallyFreeSheaf.differentialForms [Smooth (X ↘ Spec (.of R))] (p : ℕ) :
