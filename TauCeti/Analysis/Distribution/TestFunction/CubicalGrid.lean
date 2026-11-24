@@ -243,6 +243,12 @@ noncomputable def coordForm (I : Fin k ↪ Fin n) :
     EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ :=
   (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.continuousDet.compContinuousLinearMap (coordProj I)
 
+/-- The coordinate form `dx^I` evaluates to the determinant of the coordinates indexed by `I`. -/
+theorem coordForm_apply (I : Fin k ↪ Fin n) (v : Fin k → EuclideanSpace ℝ (Fin n)) :
+    coordForm I v = (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.det (coordProj I ∘ v) := by
+  rw [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    Module.Basis.continuousDet_apply]
+
 /-- The coordinate form `dx^I` is one on `e_{I 0}, …, e_{I (k-1)}`. -/
 @[simp]
 theorem coordForm_apply_single (I : Fin k ↪ Fin n) :
@@ -252,8 +258,7 @@ theorem coordForm_apply_single (I : Fin k ↪ Fin n) :
     funext j
     ext i
     simp [I.injective.eq_iff, eq_comm]
-  rw [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply, h,
-    Module.Basis.continuousDet_apply, Module.Basis.det_self]
+  rw [coordForm_apply, h, Module.Basis.det_self]
 
 /-- Projecting onto a coordinate plane turns a `k`-form into the multiple of `dx^I` by its
 coefficient on `e_{I 0}, …, e_{I (k-1)}`. -/
