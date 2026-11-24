@@ -441,8 +441,7 @@ private theorem exists_slice_cubic_coord {E : Type*} [NormedAddCommGroup E] [Nor
   have he_deriv_ne : deriv e t₀ ≠ 0 := by
     have hinv := e.isInvertible_fderiv ht₀_src (he_an t₀ ht₀_src).differentiableAt
       (he_t₀ ▸ (he_symm_an 0 h0_tgt).differentiableAt)
-    rw [← fderiv_apply_one_eq_deriv]
-    exact fun h => one_ne_zero (hinv.injective (h.trans (map_zero _).symm))
+    rwa [← toSpanSingleton_deriv, ContinuousLinearMap.isInvertible_toSpanSingleton_iff] at hinv
   refine ⟨e, ht₀_src, he_t₀, he_an t₀ ht₀_src, he_symm_an 0 h0_tgt, he_deriv_ne, ?_⟩
   filter_upwards [e.open_target.mem_nhds h0_tgt] with s hs
   have h := he_pow (e.symm s) (e.map_target hs)
