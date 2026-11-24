@@ -9,6 +9,7 @@ public import TauCeti.Dynamics.Flow.LevelCrossing
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Logic.Relation
 
 /-!
 # Level slices of transverse trajectories of an adapted pseudo-gradient
@@ -42,6 +43,16 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.mem_Ioo_of_apply_flow_ne`: the points of a trajectory from `a`
   to a critical point `b`, possibly equal to `a`, whose value is not `f a` have values strictly
   between `f b` and `f a`.
+* `TauCeti.IsAdaptedPseudoGradient.FlowsTo`: a trajectory runs from one point to another.
+* `TauCeti.IsAdaptedPseudoGradient.apply_lt_apply_of_reflTransGen` and
+  `TauCeti.IsAdaptedPseudoGradient.eq_of_reflTransGen_of_reflTransGen`: `f` strictly decreases
+  along chains of trajectories, which therefore form a partial order.
+* `TauCeti.IsAdaptedPseudoGradient.eq_or_mfderiv_eq_zero_of_reflTransGen` and
+  `TauCeti.IsAdaptedPseudoGradient.finite_setOf_reflTransGen`: the points reached from `p` by
+  chains of trajectories are `p` and finitely many critical points.
+* `IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen` (in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`): the Morse index strictly decreases along chains of
+  trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet`: a
   trajectory from `a` to `b` crosses each value strictly between `f b` and `f a` exactly once.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
@@ -174,6 +185,75 @@ theorem mem_Ioo_of_apply_flow_ne (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.s
     exact (hne rfl).elim
   · exact hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab
       (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
+
+/-- **A trajectory runs from `a` to `b`**: the unstable manifold `W^u(a)` meets the stable manifold
+`W^s(b)`. Its reflexive and transitive closure `Relation.ReflTransGen hX.FlowsTo` relates `a` to `b`
+when `b = a` or a finite chain of trajectories, broken at critical points, runs from `a` to `b`. -/
+def FlowsTo (a b : M) : Prop :=
+  (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty
+
+omit hX in
+/-- A trajectory runs from `a` to `b` exactly when `W^u(a) ∩ W^s(b)` is nonempty. -/
+theorem flowsTo_iff {hX : IsAdaptedPseudoGradient f X} {a b : M} :
+    hX.FlowsTo a b ↔ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty :=
+  Iff.rfl
+
+omit hX in
+/-- **Points below `p` are critical.** A point reached from `p` by a chain of trajectories is `p`
+itself or a critical point of `f`, the forward limit of the last trajectory. -/
+theorem eq_or_mfderiv_eq_zero_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q) :
+    q = p ∨ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 := by
+  rcases hpq.cases_tail with rfl | ⟨b, -, hbq⟩
+  · exact Or.inl rfl
+  · obtain ⟨y, -, hy⟩ := flowsTo_iff.1 hbq
+    exact Or.inr (hX.mfderiv_eq_zero_of_mem_stableSet hy)
+
+omit hX in
+/-- **Finitely many points lie below `p`.** For a Morse function on a compact manifold, the points
+reached from `p` by chains of trajectories form a finite set: besides `p` they are critical points
+of `f`. -/
+theorem finite_setOf_reflTransGen {hX : IsAdaptedPseudoGradient f X} (hf : IsMorse 𝓘(ℝ, E) f)
+    (p : M) :
+    {q | Relation.ReflTransGen hX.FlowsTo p q}.Finite := by
+  refine (hf.finite_criticalPoints.insert p).subset fun q hq ↦ ?_
+  rcases eq_or_mfderiv_eq_zero_of_reflTransGen hq with rfl | hq
+  · exact mem_insert _ _
+  · exact mem_insert_of_mem _ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
+
+omit hX in
+/-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
+runs from `p` to a different point `q`, then `f q < f p`. -/
+theorem apply_lt_apply_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
+    f q < f p :=
+  -- A trajectory from `b` to `c ≠ b` lies strictly between their critical values.
+  hpq.lt_of_forall_ne (fun _ _ hbc hbc' ↦
+    let ⟨_, hy⟩ := flowsTo_iff.1 hbc
+    have hy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbc' hy
+    hy.1.trans hy.2) hqp
+
+omit hX in
+/-- **Chains of trajectories form a partial order.** If chains of trajectories run from `p` to `q`
+and from `q` to `p`, then `p = q`. -/
+theorem eq_of_reflTransGen_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q)
+    (hqp : Relation.ReflTransGen hX.FlowsTo q p) :
+    p = q := by
+  by_contra hne
+  exact (apply_lt_apply_of_reflTransGen hpq (Ne.symm hne)).asymm
+    (apply_lt_apply_of_reflTransGen hqp hne)
+
+omit hX in
+/-- **The Morse index strictly decreases along chains of trajectories.** Under the Morse–Smale
+condition, if a chain of trajectories runs from `p` to a different point `q`, then
+`ind q < ind p`. -/
+theorem IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
+    manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p :=
+  hpq.lt_of_forall_ne (fun _ _ hbc hbc' ↦ h.manifoldMorseIndex_lt hf hbc'
+    (flowsTo_iff.1 hbc)) hqp
 
 /-- **A trajectory crosses each intermediate level exactly once.** Along a trajectory from a
 critical point `a` to a different critical point `b`, the function `f` strictly decreases from
@@ -394,8 +474,8 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
       Submodule.span ℝ
           (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
-  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hf hy htr
-  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
+  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hX hf hy htr
+  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr] at hs
   -- The level `{f = c}` is a regular level set near `y`, since `df_y (X y) < 0`.
   have hlevel : {x | f x = c} = f ⁻¹' {c} := by
     ext
@@ -434,7 +514,7 @@ theorem exists_unstableSet_inter_stableSet_level_chart (hf : IsMorse 𝓘(ℝ, E
           (mvfderiv 𝓘(ℝ, E) f y).ker : Submodule ℝ E) : Set E)
         (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) := by
   obtain ⟨⟨q, hyq, hq, hs⟩, -⟩ := hX.level_slice hf hab hy htr hyc
-  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
+  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr] at hs
   exact ⟨q, hyq, hq, hs⟩
 
 /-- **The tangent space of a transverse level slice.** If the unstable manifold of a critical point
@@ -452,7 +532,7 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
   rw [(hX.level_slice hf hab hy htr hyc).2,
-    hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
+    hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr]
 
 /-- **The level slice has dimension the index difference minus one.** If the unstable manifold of a
 critical point `a` and the stable manifold of a different critical point `b` meet transversally at
@@ -482,7 +562,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
       (hX.surjective_fderiv_comp_chartAt_symm hab hy), finrank_top,
     Module.finrank_self] at hker
   have hW :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy htr
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX hf hy htr
   omega
 
 /-- **Index-difference-one level slices are discrete.** If the Morse indices of critical points `a`

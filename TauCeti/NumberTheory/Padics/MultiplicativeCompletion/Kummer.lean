@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AddCommGroup
+public import TauCeti.Data.Nat.Cast.IsUnit
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Basic
 

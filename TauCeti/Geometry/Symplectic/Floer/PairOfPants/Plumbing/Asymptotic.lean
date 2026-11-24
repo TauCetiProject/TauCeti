@@ -40,15 +40,17 @@ only through the domain.
 The curvature is integrable over `Σ_L`
 (`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`): it is integrable
 over each `Σ_R`
-(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`), and the integral of
-its absolute value over the plane is at most `∑ r, Ba r + ∑ r, Bb r` for bounds `|Ha r| ≤ Ba r`,
-`|Hb r| ≤ Bb r`
-(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le`).
+(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`) and vanishes outside
+`Σ_R` for `R ≥ 2` (`SmoothTwoForm`'s
+`hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`).
 So the three integrals over `Σ_R` converge to those over `Σ_L`, and by dominated convergence the
 Hamiltonian terms along the outer circles converge to those along their limits.
 
-With the same curvature bound, the energy differs from the area plus the Hamiltonian terms at the
-asymptotic loops by at most `∑ r, Ba r + ∑ r, Bb r`, uniformly in the neck length `L > 4`
+The integral of the absolute value of the curvature over the plane is at most
+`∑ r, Ba r + ∑ r, Bb r` for bounds `|Ha r| ≤ Ba r`, `|Hb r| ≤ Bb r`
+(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le`). So the
+energy differs from the area plus the Hamiltonian terms at the asymptotic loops by at most
+`∑ r, Ba r + ∑ r, Bb r`, uniformly in the neck length `L > 4`
 (`IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`), and for a solution
 of the Floer equation with tame almost complex structures this topological part is at least
 `-(∑ r, Ba r + ∑ r, Bb r)`
@@ -94,14 +96,12 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- **The curvature is integrable over the plumbed four-punctured sphere, for a manifold
 target.** Along a map continuous on the four-punctured sphere `Σ_L`, the curvature of the plumbed
-perturbation of bounded period-one `C¹` Hamiltonians, `|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, is
-integrable over `Σ_L`. -/
+perturbation of period-one `C¹` Hamiltonians is integrable over `Σ_L`. -/
 theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
-    (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {u : ℝ × ℝ → M}
+    (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M}
     (hu : ContinuousOn u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
@@ -111,27 +111,11 @@ theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoFor
         z (u z))
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-  -- The truncations at the heights `L/2 + n` already exhaust the four-punctured sphere.
-  have hT : ⋃ n : ℕ, Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L (L / 2 + n) =
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    rw [← iUnion_preimage_plumbedTruncation hq (by linarith : 0 < L)]
-    exact Monotone.iUnion_comp_tendsto_atTop
-      (s := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)
-      (fun _ _ h ↦ preimage_mono (plumbedTruncation_mono q L h))
-      (tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop)
-  refine ⟨?_, ?_⟩
-  · rw [← hT]
-    exact aestronglyMeasurable_iUnion_iff.2 fun n ↦
-      (ω.integrableOn_hamiltonianCurvature_plumbedTruncation hq hHa hHb hHas hHbs hab hL
-        (by linarith [n.cast_nonneg (α := ℝ)]) hu).aestronglyMeasurable
-  · exact (setLIntegral_le_lintegral _ _).trans_lt
-      ((ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
-        hBa hBb u).trans_lt (ENNReal.add_lt_top.2
-          ⟨ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top,
-            ENNReal.sum_lt_top.2 fun _ _ ↦ ENNReal.ofReal_lt_top⟩))
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
+  (ω.integrableOn_hamiltonianCurvature_plumbedTruncation hq hHa hHb hHas hHbs hab hL le_rfl
+    hu).of_forall_sdiff_eq_zero (isOpen_plumbedSphere q L).measurableSet fun _ hz ↦
+      ω.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation hq hHa hHb
+        hHas hHbs hab hL (by linarith) hz.1 hz.2 _
 
 variable [FiniteDimensional ℝ E]
 
@@ -201,7 +185,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
   have hTmono : Monotone T := fun _ _ h ↦ preimage_mono (plumbedTruncation_mono q L h)
   have hTP := iUnion_preimage_plumbedTruncation hq hL0
   have hRP := ω.integrableOn_hamiltonianCurvature_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
-    hBa hBb hu.continuousOn
+    hu.continuousOn
   -- The Hamiltonian terms along the outer circles converge, by dominated convergence, since for
   -- `R > 0` the circles lie in `Σ_R`, where `u` is continuous.
   have hmem {R : ℝ} {w : ℂ} (hw : w ∈ q.plumbedTruncation L R) :

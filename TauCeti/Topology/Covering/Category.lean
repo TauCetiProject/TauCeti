@@ -11,7 +11,7 @@ public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.CategoryTheory.Comma.Over.Basic
 public import TauCeti.Topology.Category.TopCat.Over
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The category of covering spaces over a fixed base

@@ -25,7 +25,8 @@ Only the derivative of `f` at `x` along the direction `y - x` enters, so the ine
 for a line derivative first and the Fréchet version is deduced from it.
 
 For `m = 0` this is the familiar statement that a differentiable convex function lies above its
-tangent hyperplanes. The parameter `m` may be negative, in which case the paraboloid opens
+tangent hyperplanes; it holds on an arbitrary convex set, with no interior or openness assumption
+on the base point. The parameter `m` may be negative, in which case the paraboloid opens
 downwards. In an inner product space, with `f'` given by the gradient, this is the inequality that
 makes the gradient of a strongly convex potential a subgradient of its potential energy on the
 Wasserstein space.
@@ -46,6 +47,7 @@ original function is needed only in a neighbourhood, not continuity of its secon
   convexity, for a line derivative.
 * `StrongConvexOn.add_add_le_of_hasFDerivWithinAt`: the first-order condition for strong convexity,
   for a Fréchet derivative.
+* `ConvexOn.add_le_of_hasFDerivWithinAt`: a convex function lies above its tangent hyperplanes.
 -/
 
 public section
@@ -104,6 +106,13 @@ theorem StrongConvexOn.add_add_le_of_hasFDerivWithinAt (hf : StrongConvexOn s m 
     (hy : y ∈ s) (hd : HasFDerivWithinAt f f' s x) :
     f x + f' (y - x) + m / 2 * ‖y - x‖ ^ 2 ≤ f y :=
   hf.add_add_le_of_hasLineDerivWithinAt hx hy (hd.hasLineDerivWithinAt _)
+
+/-- **Tangent support for convex functions.** If `f` is convex on `s` and has derivative `f'`
+within `s` at a point `x ∈ s`, then `f` lies above its tangent hyperplane at `x` on `s`:
+`f x + f' (y - x) ≤ f y` for every `y ∈ s`. -/
+theorem ConvexOn.add_le_of_hasFDerivWithinAt (hf : ConvexOn ℝ s f) (hx : x ∈ s) (hy : y ∈ s)
+    (hd : HasFDerivWithinAt f f' s x) : f x + f' (y - x) ≤ f y := by
+  simpa using (strongConvexOn_zero.2 hf).add_add_le_of_hasFDerivWithinAt hx hy hd
 
 /-- Uniform concavity depends only on the values of the function on its domain. -/
 theorem UniformConcaveOn.congr {f g : E → ℝ} {ψ : ℝ → ℝ} {s : Set E}

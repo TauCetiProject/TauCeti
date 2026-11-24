@@ -116,8 +116,8 @@ theorem map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure (hη : 0 <
   refine Measure.map_withDensity_eq_withDensity
     (jac := cube.indicator fun z ↦ ENNReal.ofReal
       (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2)))
-    continuous_correlationCoordinatesOfPartialCorrelation.measurable
-    ((Measurable.ennreal_ofReal (by fun_prop)).indicator hcube) (by fun_prop) ?_
+    continuous_correlationCoordinatesOfPartialCorrelation.measurable.aemeasurable
+    ((Measurable.ennreal_ofReal (by fun_prop)).indicator hcube).aemeasurable (by fun_prop) ?_
     (Filter.Eventually.of_forall fun z ↦ ?_)
   · rw [withDensity_indicator hcube]
     exact map_withDensity_correlationCoordinatesOfPartialCorrelation

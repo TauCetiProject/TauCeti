@@ -53,9 +53,11 @@ within a homotopy class.
 This is the two-dimensional analogue of the line integral `TauCeti.pathIntegral`: it integrates
 along an arbitrary map of the plane, without the integrability conditions of the integral of a top
 form over the rectangle manifold. Like the line integral, it is additive over adjacent rectangles
-(`TauCeti.rectangleIntegral_add_adjacent`) and invariant under `C¹` reparametrization
+(`TauCeti.rectangleIntegral_add_adjacent`), invariant under `C¹` reparametrization
 (`TauCeti.rectangleIntegral_comp_prodMap`, in the first coordinate, and
-`TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` function), and the two are
+`TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` function) and under translation
+of the plane together with the rectangle (`TauCeti.rectangleIntegral_comp_add_right`), and the two
+are
 related by Stokes' formula: the integral of an exact form `dα` over a map of a rectangle is the
 signed sum of the line integrals of `α` along the images of the four edges
 (`TauCeti.rectangleIntegral_mextDeriv`).
@@ -294,6 +296,47 @@ theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × �
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
 
+/-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
+`u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
+theorem mpullback_comp_prodMap_apply (φ : RoughForm I M F 2) {u : ℝ × ℝ → M} {σ τ : ℝ → ℝ}
+    {σ' τ' s t : ℝ} (hσ : HasDerivAt σ σ' s) (hτ : HasDerivAt τ τ' t)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (σ s, τ t)) :
+    mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ Prod.map σ τ) φ (s, t) ![(1, 0), (0, 1)] =
+      (σ' * τ') • mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (σ s, τ t) ![(1, 0), (0, 1)] := by
+  -- The derivative of `Prod.map σ τ` scales the coordinate vectors by `σ'` and `τ'`.
+  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
+    (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) σ').prodMap
+      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) τ')
+  have hL : HasFDerivAt (Prod.map σ τ) A (s, t) := hσ.hasFDerivAt.prodMap (s, t) hτ.hasFDerivAt
+  have hv : (A ∘ ![(1, 0), (0, 1)]) = fun i ↦ ![σ', τ'] i • ![((1 : ℝ), (0 : ℝ)), (0, 1)] i := by
+    funext i
+    fin_cases i <;> simp [A]
+  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
+  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
+  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
+  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
+    (congrArg _ hv)).trans ((ψ (σ s, τ t)).map_smul_univ _ _)).trans ?_
+  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+  rfl
+
+/-- **Translation invariance.** For a differentiable map `u` of the plane, the integral over the
+translate `z ↦ u (z + c)` on the rectangle with corners `a` and `b` is the integral over `u` on the
+translated rectangle with corners `a + c` and `b + c`. -/
+theorem rectangleIntegral_comp_add_right (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) (c a b : ℝ × ℝ) :
+    rectangleIntegral φ (fun z ↦ u (z + c)) a b = rectangleIntegral φ u (a + c) (b + c) := by
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ u (z + c)) φ z ![(1, 0), (0, 1)] =
+      mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (z + c) ![(1, 0), (0, 1)] :=
+    congrArg (fun A ↦ A ![(1, 0), (0, 1)]) (mpullback_comp_add_right (hu (z + c)) φ)
+  simp only [rectangleIntegral_def, h, Prod.fst_add, Prod.snd_add]
+  rw [← intervalIntegral.integral_comp_add_right _ c.1]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  rw [← intervalIntegral.integral_comp_add_right _ c.2]
+  -- The points `(s, t) + c` and `(s + c.1, t + c.2)` agree by the definition of addition on
+  -- products; the tangent spaces at them are both `ℝ × ℝ`, but they are indexed by the point, so
+  -- the two integrands cannot be identified by rewriting.
+  rfl
+
 section Continuous
 
 variable [IsManifold I 1 M]
@@ -333,23 +376,8 @@ theorem rectangleIntegral_comp_prodMap {φ : RoughForm I M F 2} (hφ : IsSmoothF
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [Function.comp_apply, ← intervalIntegral.integral_smul]
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  -- The derivative of `Prod.map σ id` sends the coordinate vectors to `(σ' s, 0)` and `(0, 1)`.
-  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
-    (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (σ' s)).prodMap (ContinuousLinearMap.id ℝ ℝ)
-  have hL : HasFDerivAt (Prod.map σ id) A (s, t) :=
-    (hσ s hs).hasFDerivAt.prodMap (s, t) (hasFDerivAt_id t)
-  have hv : (A ∘ ![(1, 0), (0, 1)]) =
-      Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 0 (σ' s • ((1 : ℝ), (0 : ℝ))) := by
-    funext i
-    fin_cases i <;> simp [A]
-  rw [mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero)]
-  -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
-  let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
-  refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
-    (congrArg _ hv)).trans ((ψ (σ s, t)).map_update_smul _ _ _ _)).trans ?_
-  congr 2
-  funext i
-  fin_cases i <;> rfl
+  simpa using mpullback_comp_prodMap_apply φ (hσ s hs) (hasDerivAt_id t)
+    ((hu _).mdifferentiableAt one_ne_zero)
 
 /-- **Reparametrization by a `C¹` function in the first coordinate.** For a continuous form, a
 `C¹` map `u` and a `C¹` function `σ`, the integral over `(s, t) ↦ u (σ s, t)` is the integral over
