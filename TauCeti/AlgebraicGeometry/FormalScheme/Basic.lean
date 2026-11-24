@@ -91,6 +91,13 @@ noncomputable def stalkRingEquivOfIsOpenImmersion {X Y : FormalScheme} (f : X ‚ü
   have := LocallyRingedSpace.IsOpenImmersion.stalk_iso (forgetToLocallyRingedSpace.map f) x
   (asIso ((forgetToLocallyRingedSpace.map f).stalkMap x)).commRingCatIsoToRingEquiv
 
+/-- The stalk ring equivalence of an open immersion is the stalk map of `f`. -/
+@[simp]
+theorem stalkRingEquivOfIsOpenImmersion_apply {X Y : FormalScheme} (f : X ‚ü∂ Y)
+    [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] (x : X)
+    (a : Y.presheaf.stalk (f.hom.base x)) :
+    stalkRingEquivOfIsOpenImmersion f x a = (f.hom.stalkMap x).hom a := (rfl)
+
 /-- The formal spectrum with its affine formal atlas.
 The carrier is exposed so the opens and points of `Spf A` apply directly to `ofSpf A`. -/
 @[expose] noncomputable def ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]

@@ -59,8 +59,7 @@ which are not open, although those primes are not points of `Spf A`.
 * W. Zhang, *Weil representation and arithmetic fundamental lemma*, Ann. of Math. 193 (2021),
   Appendix B.1.
 * [Stacks Project, Lemma 10.110.6 (Tag 0AFS)](https://stacks.math.columbia.edu/tag/0AFS), for
-  testing regularity at maximal ideals, and
-  [Lemma 10.106.3 (Tag 00NP)](https://stacks.math.columbia.edu/tag/00NP).
+  testing regularity at maximal ideals.
 -/
 
 public section
