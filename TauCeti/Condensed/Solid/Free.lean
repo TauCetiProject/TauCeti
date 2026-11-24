@@ -166,6 +166,10 @@ private noncomputable def sectionsDiagramIso :
   -- `CondensedMod.LocallyConstant.functor R` by `LocallyConstant.mapₗ`.
   NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
 
+private theorem sectionsDiagramIso_hom_app (j : StructuredArrow S FintypeCat.toProfinite) :
+    (sectionsDiagramIso R S T).hom.app j = 𝟙 ((sectionsDiagram R S T).obj j) :=
+  rfl
+
 /-- The legs of the cone with apex `Hom(C(S, ℤ), C(T, R))` over `sectionsDiagram`. -/
 private noncomputable def homConeπ (j : StructuredArrow S FintypeCat.toProfinite) :
     (LocallyConstant S ℤ →+ LocallyConstant T R) →ₗ[R]
@@ -249,6 +253,9 @@ private theorem pairing_π_eq_of_hom (s : Cone (sectionsDiagram R S T))
       (s.π.app j m :
         LocallyConstant T (ULift.{u + 1} (FintypeCat.toProfinite.obj j.right) →₀ R)).map
         (Finsupp.mapDomain (ULift.map (FintypeCat.toProfinite.map k.right).hom.hom)) :=
+    -- Composition in `ModuleCat` is composition of the underlying linear maps, and
+    -- `(sectionsDiagram R S T).map k` is `LocallyConstant.mapₗ` of `Finsupp.lmapDomain`, both
+    -- by definition.
     (congrArg (fun f ↦ f.hom m) (s.w k)).symm
   rw [h]
   exact DFunLike.congr_fun (locallyConstantFinsuppEquiv_map _ _) φ
@@ -361,6 +368,23 @@ private noncomputable def isLimitSectionsCone :
     (isLimitOfPreserves _ ((IsLimit.postcomposeHomEquiv _ _).symm
       (profiniteSolidIsPointwiseRightKanExtension R S)))
 
+/-- The leg at `j` of the limit cone in `isLimitSectionsCone` is `profiniteSolidToFin R S j`
+on sections over `T`. -/
+private theorem sectionsCone_π_app (j : StructuredArrow S FintypeCat.toProfinite) :
+    ((Cone.postcompose (sectionsDiagramIso R S T).hom).obj
+      ((sheafToPresheaf _ _ ⋙ (evaluation _ _).obj (op T)).mapCone
+        ((Cone.postcompose (Functor.isoWhiskerLeft (StructuredArrow.proj S FintypeCat.toProfinite)
+          (finFreeIso R)).hom).obj
+            ((Functor.RightExtension.mk _ (profiniteSolidCounit R)).coneAt S)))).π.app j =
+      (profiniteSolidToFin R S j).hom.app (op T) := by
+  simp only [Cone.postcompose_obj_π, NatTrans.comp_app, Functor.mapCone_π_app,
+    Functor.RightExtension.coneAt_π_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.comp_map, ObjectProperty.FullSubcategory.comp_hom, evaluation_obj_map,
+    Category.assoc, sectionsDiagramIso_hom_app, profiniteSolidToFin]
+  -- `simp` cannot cancel the identity: its object `(sectionsDiagram R S T).obj j` is the
+  -- sections of `(finLocallyConstant R).obj j.right` over `T` only by definition.
+  exact Category.comp_id _
+
 /-- The sections of `R[S]^solid` over `T` are `Hom(C(S, ℤ), C(T, R))`. -/
 private noncomputable def profiniteSolidSectionsIso :
     ((profiniteSolid R).obj S).obj.obj (op T) ≅
@@ -374,9 +398,13 @@ private theorem profiniteSolidSectionsIso_hom_apply_comap
       locallyConstantFinsuppEquiv R (FintypeCat.toProfinite.obj j.right) T
         ((profiniteSolidToFin R S j).hom.app (op T) x :
           LocallyConstant T (ULift.{u + 1} (FintypeCat.toProfinite.obj j.right) →₀ R)) φ := by
-  have h := congrArg (fun f ↦ f.hom x)
-    (IsLimit.conePointUniqueUpToIso_hom_comp (isLimitSectionsCone R S T) (isLimitHomCone R S T) j)
-  have h' := congrArg (fun v ↦ locallyConstantFinsuppEquiv R _ T v φ) h
+  have h := IsLimit.conePointUniqueUpToIso_hom_comp (isLimitSectionsCone R S T)
+    (isLimitHomCone R S T) j
+  rw [homCone_π_app, sectionsCone_π_app] at h
+  -- `profiniteSolidSectionsIso` is this `conePointUniqueUpToIso` by definition, and composition
+  -- in `ModuleCat` is composition of the underlying linear maps by definition.
+  have h' := congrArg (fun v ↦ locallyConstantFinsuppEquiv R _ T v φ)
+    (congrArg (fun f ↦ f.hom x) h)
   exact (DFunLike.congr_fun (locallyConstantFinsuppEquiv_homConeπ R S T j _) φ).symm.trans h'
 
 private theorem profiniteSolidSectionsIso_naturality {T T' : CompHaus.{u}} (g : T' ⟶ T)
