@@ -10,6 +10,7 @@ import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import TauCeti.Algebra.Field.Subfield.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.FieldRange
 import TauCeti.FieldTheory.RatFunc.Map
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.LinearAlgebra.Basis.Semilinear
@@ -390,11 +391,6 @@ private lemma algebraMap_tower_comm (e : E) :
     algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e) := by
   rw [← IsScalarTower.algebraMap_apply E E' F', ← IsScalarTower.algebraMap_apply E F F']
 
-private lemma algebraMap_equivFieldRange_symm
-    (c : (IsScalarTower.toAlgHom k E F).fieldRange) :
-    algebraMap E F ((IsScalarTower.toAlgHom k E F).equivFieldRange.symm c) = c :=
-  congrArg Subtype.val ((IsScalarTower.toAlgHom k E F).equivFieldRange.apply_symm_apply c)
-
 omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
 /-- Ring isomorphism identifying `E'` with `K(image of E)` inside `F'`. -/
 private noncomputable def towerAdjoinRingEquiv
@@ -429,7 +425,8 @@ theorem minpoly_map_of_constantCompositum_eq_top_of_linearDisjoint
   have hliC' := H.linearIndependent_adjoin_algebraMap_comp f.fieldRange
     (hliE.map_of_injective_injective f.equivFieldRange.symm (AddMonoidHom.id F)
       (by simp) (by simp) fun c y ↦ by
-        simp [Algebra.smul_def, f, algebraMap_equivFieldRange_symm])
+        simp [Algebra.smul_def, show algebraMap E F (f.equivFieldRange.symm c) = c from
+          f.apply_equivFieldRange_symm c])
   have hliE' : LinearIndependent E' (fun i : Fin pb.dim ↦ algebraMap F F' x ^ (i : ℕ)) := by
     convert hliC'.map_of_injective_injective (towerAdjoinRingEquiv (k := k) (F := F) hE)
       (AddMonoidHom.id F') (by simp) (by simp)
@@ -468,7 +465,7 @@ theorem finrank_eq_of_constantCompositum_eq_top_of_linearDisjoint
         (by simpa using Module.rank_lt_aleph0 C' F')
     have hfinC : Module.Finite C F := Module.rank_lt_aleph0_iff.mp (by simpa using hlt)
     exact Module.Finite.of_equiv_equiv f.equivFieldRange.symm.toRingEquiv (RingEquiv.refl F) <|
-      RingHom.ext fun c ↦ by simp [f, algebraMap_equivFieldRange_symm]
+      RingHom.ext fun c ↦ f.apply_equivFieldRange_symm c
 
 /-- **Linearly disjoint constant extension preserves separability of algebraic relative
 extensions.** Let `F' = F · K` with `K` linearly disjoint from `F` over `k`, and `E' = E · K`

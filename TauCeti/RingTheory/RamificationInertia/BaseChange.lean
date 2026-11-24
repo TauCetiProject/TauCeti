@@ -71,6 +71,9 @@ theorem ramificationIdx_eq_one_of_isPushout_of_isSeparable (q : Ideal B) [q.IsPr
   have : Ring.KrullDimLE 0 (Localization.AtPrime Q.asIdeal) :=
     Ring.KrullDimLE.of_isLocalization Q.asIdeal hQmin (Localization.AtPrime Q.asIdeal)
   have hFieldQ : IsField (Localization.AtPrime Q.asIdeal) := Ring.KrullDimLE.isField_of_isReduced
+  -- `q` carries its own `[q.IsPrime]` while `Q.asIdeal.comap ...` carries `Ideal.IsPrime.comap`,
+  -- so `hQunder ▸ ...` fails on the `IsPrime` instance mismatch inside `Localization.AtPrime`;
+  -- generalizing `q'` with `[q'.IsPrime]` lets `rintro q' _ rfl` unify both.
   have key : ∀ (q' : Ideal B) [q'.IsPrime],
       Q.asIdeal.comap Algebra.TensorProduct.includeRight = q' →
       IsField (Localization.AtPrime q' ⧸ p.map (algebraMap A (Localization.AtPrime q'))) := by

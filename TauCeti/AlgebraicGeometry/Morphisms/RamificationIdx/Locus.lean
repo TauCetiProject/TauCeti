@@ -27,16 +27,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-/-- `f.residueFieldMap x` acts on residues via `f.stalkMap x`. -/
-private theorem residueFieldMap_residue {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
-    (a : Y.presheaf.stalk (f x)) :
-    ((f.residueFieldMap x).hom (IsLocalRing.residue _ a) :
-        IsLocalRing.ResidueField (X.presheaf.stalk x)) =
-      IsLocalRing.residue _ ((f.stalkMap x).hom a) :=
-  -- `Hom.residueFieldMap f x` is defined as
-  -- `CommRingCat.ofHom (IsLocalRing.ResidueField.map (f.stalkMap x).hom)`.
-  (rfl)
-
 /-- **Pointwise criterion for the ramification locus.** For `f` locally of finite type,
 `x ∉ f.ramificationLocus` iff `f.ramificationIdxAt x = 1` and `κ(x) / κ(f x)` is separable. -/
 theorem notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable
@@ -54,8 +44,12 @@ theorem notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable
       (inferInstance : Algebra (ResidueField R) (ResidueField S)) := by
     apply Algebra.algebra_ext
     intro r
-    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
-    rw [RingHom.algebraMap_toAlgebra, residueFieldMap_residue]
+    obtain ⟨a, rfl⟩ := Y.residue_surjective (f x) r
+    have h := congr($(Scheme.residue_residueFieldMap f x) a)
+    rw [CommRingCat.comp_apply, CommRingCat.comp_apply] at h
+    rw [RingHom.algebraMap_toAlgebra]
+    refine h.trans ?_
+    -- `Y.residue (f x)` / `X.residue x` are definitionally `IsLocalRing.residue`, and
     -- `Algebra.algebra_ext` leaves `Y.residueField (f x)` / `X.residueField x` on the RHS,
     -- which only match `ResidueField R` / `ResidueField S` at default transparency so `rw` fails.
     change IsLocalRing.residue S ((f.stalkMap x).hom a) =
