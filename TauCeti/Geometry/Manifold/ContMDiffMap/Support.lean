@@ -20,6 +20,8 @@ and contains the multiplication operators.
 * `TauCeti.tsupport_mulLeft_apply_subset`, `TauCeti.tsupport_smul_apply_subset`,
   `TauCeti.tsupport_sum_apply_subset`: multiplication operators, scalar multiples and finite sums
   do not enlarge supports.
+* `ContMDiffMap.tsupport_mul_subset_left`: a product of `C^n` functions is supported in the
+  support of its left factor.
 -/
 
 public section
@@ -39,6 +41,13 @@ theorem tsupport_mulLeft_apply_subset {A : Type*} [NormedRing A] [NormedAlgebra 
     tsupport (LinearMap.mulLeft 𝕜 c f) ⊆ tsupport f := by
   rw [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul]
   exact tsupport_mul_subset_right
+
+/-- A product of `C^n` functions is supported in the support of its left factor. -/
+theorem _root_.ContMDiffMap.tsupport_mul_subset_left {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] [ContMDiffRing 𝓘(𝕜, A) n A] {f g : C^n⟮I, M; 𝓘(𝕜, A), A⟯} :
+    tsupport (f * g : C^n⟮I, M; 𝓘(𝕜, A), A⟯) ⊆ tsupport f := by
+  rw [ContMDiffMap.coe_mul]
+  exact _root_.tsupport_mul_subset_left
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 

@@ -43,6 +43,11 @@ the trace of the second free coordinate equals the norm of the first. -/
 def unitarySubgroup : Subgroup (HeisenbergGroup R) :=
   (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear
 
+/-- The unitary root subgroup is the preimage of the signed reversal isometry group. -/
+theorem unitarySubgroup_eq_comap :
+    unitarySubgroup σ =
+      (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear := (rfl)
+
 variable {σ}
 
 /-- Membership in the unitary root subgroup is preservation of the signed reversal form. -/
@@ -65,21 +70,28 @@ theorem y_eq (a : unitarySubgroup σ) :
       congrFun (congrFun h 1) 2
   linear_combination -hy
 
+/-- The square of the endomorphism fixes the first coordinate of every unitary root element. -/
+@[simp]
+theorem map_map_x (a : unitarySubgroup σ) :
+    σ (σ (a : HeisenbergGroup R).x) = (a : HeisenbergGroup R).x := by
+  have h := mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
+  have hx : (a : HeisenbergGroup R).x - σ (a : HeisenbergGroup R).y = 0 := by
+    simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, sub_eq_add_neg] using
+      congrFun (congrFun h 2) 1
+  simpa only [y_eq a] using (sub_eq_zero.mp hx).symm
+
 /-- The trace of the last coordinate of a unitary root element is the norm of its first. -/
 theorem z_add_map_z (a : unitarySubgroup σ) :
     (a : HeisenbergGroup R).z + σ (a : HeisenbergGroup R).z =
       (a : HeisenbergGroup R).x * σ (a : HeisenbergGroup R).x := by
   have h := mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
-  have hx : (a : HeisenbergGroup R).x - σ (a : HeisenbergGroup R).y = 0 := by
-    simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, sub_eq_add_neg] using
-      congrFun (congrFun h 2) 1
   have hz : (a : HeisenbergGroup R).z -
       σ (a : HeisenbergGroup R).y * (a : HeisenbergGroup R).y +
       σ (a : HeisenbergGroup R).z = 0 := by
     simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, sub_eq_add_neg] using
       congrFun (congrFun h 2) 2
-  rw [y_eq a] at hx hz
-  linear_combination hz - σ (a : HeisenbergGroup R).x * hx
+  rw [y_eq a, map_map_x a] at hz
+  linear_combination hz
 
 end unitarySubgroup
 
