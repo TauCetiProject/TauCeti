@@ -48,8 +48,8 @@ The proof passes to global sections and applies subalgebra formal gluing
 * Formal gluing produces an `A`-subalgebra `B ≤ Γ(Y', ⊤)` with `A' ⊗[A] B ≃ₐ[A'] Γ(Y', ⊤)` and an
   `A`-algebra map `B →ₐ[A] Γ(V, ⊤)` compatible with `Γ(Y', ⊤) → Γ(V', ⊤)`.
 * Faithfully flat descent gives finiteness of `B` over `A`, so `Y = Spec B` is finite over `Spec A`,
-  and fpqc descent of isomorphisms along `U' ⟶ U` shows that the induced comparison `V ⟶ Y ×_X U`
-  is an isomorphism over `U`.
+  and fpqc descent of isomorphisms along `U' ⟶ U` shows that the induced comparison
+  `V ⟶ Y ×_{Spec A} U` is an isomorphism over `U`.
 
 ## Main declarations
 

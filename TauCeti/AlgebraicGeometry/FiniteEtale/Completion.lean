@@ -16,22 +16,23 @@ import TauCeti.CategoryTheory.Comma.Over
 import TauCeti.RingTheory.Etale.FiniteDescent
 
 /-!
-# Extending finite étale covers after a flat local base change
+# Extending finite étale covers after a flat base change
 
-Let `A → A'` be a flat local homomorphism of local rings, with `A` Noetherian, such that the closed
-point is the only point of `Spec A'` over the closed point of `Spec A`, for instance the completion
-of `A` at its maximal ideal. Then the punctured spectrum `U'` of `A'` is the preimage of the
-punctured spectrum `U` of `A` (`TauCeti.IsLocalRing.preimage_puncturedSpectrum`).
+Let `A → A'` be a flat homomorphism of local rings such that the closed point is the only point of
+`Spec A'` over the closed point of `Spec A`, for instance the completion of a Noetherian local ring
+`A` at its maximal ideal. Then `A → A'` is local and the punctured spectrum `U'` of `A'` is the
+preimage of the punctured spectrum `U` of `A` (`TauCeti.IsLocalRing.preimage_puncturedSpectrum`).
 
 This file establishes two criteria under which extension of a finite étale cover `V` of `U` across
 the closed point of `Spec A` is equivalent to extension of its base change over `U'` across the
 closed point of `Spec A'`:
 
-1. When `A'` is Noetherian and `A` has depth at least two
+1. When `A` and `A'` are Noetherian and `A` has depth at least two
    (`TauCeti.IsLocalRing.extends_iff_extends_pullback_of_flat`), the criterion
    `TauCeti.IsLocalRing.extends_iff_sections_finiteEtale` (Stacks 0BLK) reduces extension on both
-   sides to global sections being finite étale, and flat base change identifies global sections of
-   the pullback with `A' ⊗[A] Γ(V, 𝒪_V)`.
+   sides to global sections being finite étale, and flat base change
+   (`TauCeti.IsLocalRing.isPushout_appTop_pullback_puncturedSpectrum_of_flat`) identifies global
+   sections of the pullback with `A' ⊗[A] Γ(V, 𝒪_V)`.
 2. When `𝔪_A` is finitely generated and `A → A'` induces a bijection `A ⧸ 𝔪_A → A' ⧸ 𝔪_A A'`,
    without any depth hypothesis on `A` or Noetherian hypothesis on `A` or `A'`
    (`TauCeti.IsLocalRing.extends_iff_extends_pullback_of_bijective_quotientMap`), formal gluing of
@@ -40,24 +41,25 @@ closed point of `Spec A'`:
    given finite étale extension over `Spec A'`, and étaleness descends along the fpqc morphism
    `Spec A' ⟶ Spec A`.
 
-Specialising the second criterion to the `𝔪_A`-adic completion `Â` gives Stacks, Lemma 58.20.4
-(0BLL) in full generality (`TauCeti.IsLocalRing.extends_iff_completion_extends`), and implies that
-purity descends from `Â` to `A` (`TauCeti.IsLocalRing.purityHolds_of_purityHolds_completion`).
+Specialising the second criterion to the `𝔪_A`-adic completion `Â` of a Noetherian local ring `A`
+gives Stacks, Lemma 58.20.4 (0BLL) in full generality
+(`TauCeti.IsLocalRing.extends_iff_completion_extends`), and implies that purity descends from `Â`
+to `A` (`TauCeti.IsLocalRing.purityHolds_of_purityHolds_completion`).
 
 ## Main results
 
-* `TauCeti.IsLocalRing.isPushout_appTop_pullback_of_flat`: the global sections of the base change
-  of a finite étale cover `V` of `U` to `U'` are `A' ⊗[A] Γ(V, 𝒪_V)`.
-* `TauCeti.IsLocalRing.extends_iff_extends_pullback_of_flat`: for `A'` Noetherian and `A` of depth
-  at least two, a finite étale cover of `U` extends to `Spec A` if and only if its base change to
-  `U'` extends to `Spec A'`.
+* `TauCeti.IsLocalRing.extends_iff_extends_pullback_of_flat`: for `A` and `A'` Noetherian and `A`
+  of depth at least two, a finite étale cover of `U` extends to `Spec A` if and only if its base
+  change to `U'` extends to `Spec A'`.
 * `TauCeti.IsLocalRing.extends_iff_extends_pullback_of_bijective_quotientMap`: for any flat `A → A'`
   with `𝔪_A` finitely generated inducing `A ⧸ 𝔪_A ≅ A' ⧸ 𝔪_A A'`, a finite étale cover of `U`
-  extends to `Spec A` if and only if its base change to `U'` extends to `Spec A'`.
-* `TauCeti.IsLocalRing.extends_iff_completion_extends`: the case of the `𝔪_A`-adic completion of
-  `A`, which is Stacks, Lemma 58.20.4 (0BLL).
-* `TauCeti.IsLocalRing.purityHolds_of_purityHolds_completion`: if purity holds for the `𝔪_A`-adic
-  completion of `A`, then purity holds for `A`.
+  extends to `Spec A` if and only if its base change to `U'` extends to `Spec A'`, so purity
+  descends from `A'` to `A`
+  (`TauCeti.IsLocalRing.purityHolds_of_purityHolds_of_bijective_quotientMap`).
+* `TauCeti.IsLocalRing.extends_iff_completion_extends`: for a Noetherian local ring `A`, the case
+  of its `𝔪_A`-adic completion, which is Stacks, Lemma 58.20.4 (0BLL).
+* `TauCeti.IsLocalRing.purityHolds_of_purityHolds_completion`: for a Noetherian local ring `A`, if
+  purity holds for the `𝔪_A`-adic completion of `A`, then purity holds for `A`.
 
 ## References
 
@@ -80,25 +82,6 @@ namespace TauCeti.IsLocalRing
 variable {A A' : Type u} [CommRing A] [IsLocalRing A]
   [CommRing A'] [IsLocalRing A'] [Algebra A A'] [Module.Flat A A']
 
-/-- **Flat base change for the sections of a finite étale cover of the punctured spectrum.** Let
-`A → A'` be a flat homomorphism of local rings, with `A` Noetherian, such that the closed point is
-the only point of `Spec A'` over the closed point of `Spec A`. For a finite étale cover `V` of the
-punctured spectrum of `A`, with base change `V'` to the punctured spectrum of `A'`, the square of
-global sections exhibits `Γ(V', 𝒪)` as `A' ⊗[A] Γ(V, 𝒪)`. -/
-theorem isPushout_appTop_pullback_of_flat [IsNoetherianRing A]
-    (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
-    IsPushout ((Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop)
-      (CommRingCat.ofHom (algebraMap A A'))
-      (pullback.fst V.obj.hom ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-        (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge)).appTop
-      ((Scheme.ΓSpecIso (.of A')).inv ≫ (pullback.snd V.obj.hom
-        ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE (puncturedSpectrum A)
-          (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge) ≫
-        (puncturedSpectrum A').ι).appTop) :=
-  isPushout_appTop_pullback_puncturedSpectrum_of_flat (maximalIdeal A).fg_of_isNoetherianRing h
-    V.obj
-
 /-- Let `A → A'` be a flat homomorphism of Noetherian local rings such that the closed point is
 the only point of `Spec A'` over the closed point of `Spec A`. If `A` has depth at least two, a
 finite étale cover of the punctured spectrum of `A` extends across the closed point if and only if
@@ -118,10 +101,11 @@ theorem extends_iff_extends_pullback_of_flat [IsNoetherianRing A] [IsNoetherianR
     exact hdepth.trans le_self_add
   rw [extends_iff_sections_finiteEtale A hdepth, extends_iff_sections_finiteEtale A' hdepth']
   -- The criterion uses the algebra structures given by the ring maps of
-  -- `isPushout_appTop_pullback_of_flat`, and `RingHom.Finite` and `RingHom.Etale` unfold to
-  -- `Module.Finite` and `Algebra.Etale` for those structures.
+  -- `isPushout_appTop_pullback_puncturedSpectrum_of_flat`, and `RingHom.Finite` and
+  -- `RingHom.Etale` unfold to `Module.Finite` and `Algebra.Etale` for those structures.
   exact CommRingCat.finite_and_etale_iff_of_isPushout_of_faithfullyFlat
-    (isPushout_appTop_pullback_of_flat h V)
+    (isPushout_appTop_pullback_puncturedSpectrum_of_flat (maximalIdeal A).fg_of_isNoetherianRing h
+      V.obj)
     (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
 
 /-- Let `A → A'` be a flat homomorphism of local rings, with `𝔪_A` finitely generated, that induces

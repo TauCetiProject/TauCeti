@@ -206,10 +206,10 @@ theorem exists_ringEquiv_pi_matrix_end_mulOpposite_blockMultiplicity :
   -- Split the regular module into its isotypic components, and each component into copies of a
   -- simple left ideal contained in it.
   choose d pos S hle simple e using fun c : isotypicComponents R R ↦
-    (IsIsotypic.isotypicComponents c.2).submodule_linearEquiv_fun
+    (IsIsotypic.isotypicComponents c.property).submodule_linearEquiv_fun
   have hcomp : ∀ c : isotypicComponents R R,
       (c : Submodule R R) = isotypicComponent R R (S c) := fun c ↦
-    have := simple c; eq_isotypicComponent_of_le c.2 (hle c)
+    have := simple c; eq_isotypicComponent_of_le c.property (hle c)
   have hmult : ∀ c : isotypicComponents R R, d c = blockMultiplicity R (S c) := fun c ↦
     have := simple c
     (blockMultiplicity_eq_of_linearEquiv_fun

@@ -42,3 +42,25 @@ theorem lift_eq_iff_exists_unit (f g : A →+* B) {t : A} (ht : t ∈ 𝒜 1)
     exact (lift_eq_of_forall_mem f g c hc ht hg hf).symm
 
 end HomogeneousLocalization.Away
+
+namespace HomogeneousLocalization
+
+variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
+  (𝒜 : ℕ → σ) [GradedRing 𝒜] {d : ℕ} {f g a : A}
+
+/-- On the overlap of two homogeneous charts of the same positive degree, fractions
+transform by multiplication by the ratio of the two denominators. -/
+theorem awayMap_mk_one_eq_mul (hf : f ∈ 𝒜 d) (hg : g ∈ 𝒜 d) (ha : a ∈ 𝒜 (1 • d)) :
+    awayMap 𝒜 hf (mul_comm f g) (Away.mk 𝒜 hg 1 a ha) =
+      awayMap 𝒜 hg (rfl : f * g = f * g) (Away.mk 𝒜 hf 1 a ha) *
+        awayMap 𝒜 hf (mul_comm f g)
+          (Away.mk 𝒜 hg 1 f (by simpa using hf)) := by
+  apply val_injective
+  rw [val_mul]
+  simp only [awayMap_mk, Away.val_mk, Localization.mk_mul]
+  rw [Localization.mk_eq_mk_iff, Localization.r_iff_exists]
+  refine ⟨1, ?_⟩
+  simp only [Submonoid.coe_one, Submonoid.coe_mul, pow_one, one_mul]
+  ring
+
+end HomogeneousLocalization

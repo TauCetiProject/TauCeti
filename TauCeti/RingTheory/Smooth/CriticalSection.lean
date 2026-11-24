@@ -119,7 +119,7 @@ theorem exists_etale_sub_algebraMap_mem_span_range_sq {A W : Type u} [CommRing A
     TauCeti.Algebra.FormallyUnramified.exists_mul_tmul_sub_mem_map_includeRight A I
   obtain ⟨ψ₀, hψ₀⟩ := Ideal.ResidueField.exists_algHom_tensorProduct_eq_lmul' A I P hIP
   have hψ₀t : IsUnit (ψ₀ t) := by
-    rw [hψ₀, ht₁, map_one]
+    rw [hψ₀, ht₁, Algebra.FormallyUnramified.lmul_elem, map_one]
     exact isUnit_one
   -- Invert `t` and take the point `P'` of `W' = T[1/t]` given by `ψ₀`.
   let W' := Localization.Away t

@@ -191,6 +191,21 @@ theorem nuclearENorm_id_eq_top (hE : ¬ FiniteDimensional 𝕜 E) :
 
 end Identity
 
+section RankOne
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- The nuclear gauge of the rank-one operator `z ↦ ⟪y, z⟫ x` is `‖x‖ ‖y‖`. -/
+@[simp]
+theorem nuclearENorm_rankOne (x : E) (y : F) :
+    (InnerProductSpace.rankOne 𝕜 x y).nuclearENorm = ‖x‖ₑ * ‖y‖ₑ := by
+  rw [InnerProductSpace.rankOne_def, nuclearENorm_smulRight, mul_comm, ← ofReal_norm (innerSL 𝕜 y),
+    innerSL_apply_norm, ofReal_norm]
+
+end RankOne
+
 section Hilbert
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]

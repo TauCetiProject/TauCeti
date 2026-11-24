@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Monoidal.TensorMk
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.Kronecker
+public import TauCeti.Algebra.Homology.ModuleCat.Tensor
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
@@ -379,7 +380,7 @@ private def slantHomologyLeft (p q n : ℕ) (h : p + q = n) (z : K.cycles p) :
     (ModuleCat.ofHom (slantCycles k D p q n h z) ≫ (L.linearYonedaObj k P).homologyπ q)
     (by
       ext ψ
-      exact homologyπ_slantCycles_toCycles_right D p q n h z _ ψ)).1
+      exact homologyπ_slantCycles_toCycles_right D p q n h z _ ψ)).val
 
 private lemma slantHomologyLeft_homologyπ (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
     (φ : (T.linearYonedaObj k P).cycles n) :
@@ -388,7 +389,8 @@ private lemma slantHomologyLeft_homologyπ (p q n : ℕ) (h : p + q = n) (z : K.
   unfold slantHomologyLeft
   exact ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((T.linearYonedaObj k P).homologyIsCokernel _ n rfl)
-    (ModuleCat.ofHom (slantCycles k D p q n h z) ≫ (L.linearYonedaObj k P).homologyπ q) _).2 φ
+    (ModuleCat.ofHom (slantCycles k D p q n h z) ≫ (L.linearYonedaObj k P).homologyπ q) _).property
+        φ
 
 variable (k) in
 /-- Slanting by a cycle on cohomology, as a linear function of the cycle. -/
@@ -422,7 +424,7 @@ def slant (p q n : ℕ) (h : p + q = n) :
     K.homology p →ₗ[k] (T.linearYonedaObj k P).homology n →ₗ[k]
       (L.linearYonedaObj k P).homology q :=
   (CokernelCofork.IsColimit.desc' (K.homologyIsCokernel _ p rfl)
-    (slantCyclesHomology k D p q n h) (toCycles_comp_slantCyclesHomology D p q n h)).1.hom
+    (slantCyclesHomology k D p q n h) (toCycles_comp_slantCyclesHomology D p q n h)).val.hom
 
 /-- **The slant product on classes**: the slant product of the classes of a cycle and a cocycle
 is the class of their slant product. -/
@@ -433,7 +435,7 @@ lemma slant_homologyπ (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
       (L.linearYonedaObj k P).homologyπ q (slantCycles k D p q n h z φ) := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     (K.homologyIsCokernel _ p rfl) (slantCyclesHomology k D (P := P) p q n h)
-    (toCycles_comp_slantCyclesHomology D p q n h)).2 z
+    (toCycles_comp_slantCyclesHomology D p q n h)).property z
   rw [slant, ← slantHomologyLeft_homologyπ]
   exact LinearMap.congr_fun hfac _
 

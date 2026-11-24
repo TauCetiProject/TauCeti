@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
-public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -17,22 +17,28 @@ import TauCeti.RingTheory.TensorProduct.IsBaseChange
 For maps `f : M → P` and `g : N → P`, the module of compatible pairs is
 `ker (f.coprod (-g))`, a submodule of `M × N`. If localization makes `g` an
 isomorphism, projection from this module to `M` becomes an isomorphism after the
-same localization (`LinearMap.isLocalizedModule_fst_ker_coprod`,
-`LinearMap.bijective_localizedModuleMap_fst_ker_coprod`). When `N` and `P` are `S`-modules over an
-`R`-algebra `S` and `f.liftBaseChange S` also becomes surjective after localization, the comparison
-map `S ⊗[R] ker (f.coprod (-g)) → N` induced by the second projection becomes surjective after
-localization (`LinearMap.surjective_localizedModuleMap_liftBaseChange_snd_ker_coprod`). Thus
-compatible pairs recover the prescribed module on any localization where the overlap comparison is
-an isomorphism.
+same localization. Thus compatible pairs recover the prescribed module on any
+principal open where the second map is an isomorphism.
 
 This is the principal-open comparison in the construction of a module by formal
 gluing: `N` is the module on the formal neighbourhood, `M` is the module of sections
 on the complementary open, and `P` is the module on their overlap. The comparison
 requires neither finite generation nor any assumption on a completion map.
 
+When `N` and `P` are `S`-modules over `R → S` and `g : N →ₗ[S] P` becomes bijective at
+`Algebra.algebraMapSubmonoid S T`, `LinearMap.bijective_localizedMap_fst_ker_coprod` packages the
+resulting bijectivity of `LocalizedModule.map T` on the first projection, and
+`LinearMap.surjective_localizedMap_liftBaseChange_snd_ker_coprod` deduces surjectivity of the
+scalar-extension comparison `S ⊗[R] K →ₗ[S] N` at `Algebra.algebraMapSubmonoid S T` whenever
+`f.liftBaseChange S` is surjective there.
+
 The proof uses Mathlib's `LinearMap.toKerLocalized_isLocalizedModule` (localization
 commutes with kernels) and `IsLocalizedModule.prodMap` (localization commutes with
 binary products).
+
+In formal gluing, `N` and `P` are modules over an `R`-algebra `S` and `g` is `S`-linear;
+`LinearMap.isLocalizedModule_fst_ker_coprod_restrictScalars` states the comparison when `g`
+becomes bijective after inverting the image of `r : R` in `S`.
 
 ## References
 
@@ -101,97 +107,95 @@ theorem isLocalizedModule_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[R] P)
   rw [← hcomp]
   exact (IsLocalizedModule.comp_iff_of_bijective_left S π hπ).mpr hker
 
-section Algebra
-
-open scoped TensorProduct
+section BaseChange
 
 variable {S : Type*} [CommSemiring S] [Algebra R S]
   [Module S N] [IsScalarTower R S N] [Module S P] [IsScalarTower R S P]
 
-/-- If `g : N →ₗ[S] P` becomes bijective after localizing at the image of `T : Submonoid R` in
-`S`, then the first projection from the `R`-module of compatible pairs `ker (f.coprod (-g))` to
-`M` becomes bijective after localizing at `T`. -/
-theorem bijective_localizedModuleMap_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P)
-    (T : Submonoid R) (hg : Bijective (LocalizedModule.map (T.map (algebraMap R S)) g)) :
+/-- Elements `(m, n)` in `ker (f.coprod (-g.restrictScalars R))` satisfy `f m = g n`. -/
+theorem apply_fst_ker_coprod_eq (f : M →ₗ[R] P) (g : N →ₗ[S] P)
+    (k : (f.coprod (-g.restrictScalars R)).ker) :
+    f (((LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker) k) =
+      g (((LinearMap.snd R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker) k) := by
+  simpa only [mem_ker, coprod_apply, LinearMap.neg_apply, coe_restrictScalars, add_neg_eq_zero,
+    domRestrict_apply, fst_apply, snd_apply] using k.property
+
+/-- If `g : N →ₗ[S] P` becomes bijective after localizing at `Algebra.algebraMapSubmonoid S T`,
+then the first projection from compatible pairs `ker (f.coprod (-g)) → M` becomes bijective after
+localizing at `T`. -/
+theorem bijective_localizedMap_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P) (T : Submonoid R)
+    (hg : Bijective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T) g)) :
     Bijective (LocalizedModule.map T
       ((LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker)) := by
-  -- `Algebra.algebraMapSubmonoid S T` is `T.map (algebraMap R S)` by definition.
-  let T' : Submonoid S := Algebra.algebraMapSubmonoid S T
-  let m := LocalizedModule.mkLinearMap T M
-  let n := (LocalizedModule.mkLinearMap T' N).restrictScalars R
-  let p := (LocalizedModule.mkLinearMap T' P).restrictScalars R
-  have : IsLocalizedModule T n := IsLocalizedModule.restrictScalars T _
-  have : IsLocalizedModule T p := IsLocalizedModule.restrictScalars T _
-  have hmap_eq :
-      IsLocalizedModule.map T n p (g.restrictScalars R) =
-        (LocalizedModule.map T' g).restrictScalars R := by
-    apply IsLocalizedModule.linearMap_ext T n p
-    refine LinearMap.ext fun x ↦ ?_
-    exact (IsLocalizedModule.map_apply T n p (g.restrictScalars R) x).trans
-      (LocalizedModule.map_mk T' g x 1).symm
-  have hg_map : Bijective (IsLocalizedModule.map T n p (g.restrictScalars R)) := by
-    rw [hmap_eq]
-    exact hg
-  let fstK := (fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker
-  let g₁ := m ∘ₗ fst R M N ∘ₗ (ker (f.coprod (-g.restrictScalars R))).subtype
-  have : IsLocalizedModule T g₁ :=
-    isLocalizedModule_fst_ker_coprod f (g.restrictScalars R) T m n p hg_map
-  have hid : IsLocalizedModule.map T g₁ m fstK = LinearMap.id := by
-    apply IsLocalizedModule.linearMap_ext T g₁ m
-    refine LinearMap.ext fun x ↦ ?_
-    exact IsLocalizedModule.map_apply T g₁ m fstK x
-  exact (IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective g₁ m).mp
-    (hid ▸ Function.bijective_id)
+  let b := (LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker
+  have hgR : Bijective (LocalizedModule.map T (g.restrictScalars R)) :=
+    (LocalizedModule.map_algebraMapSubmonoid_bijective_iff g).mp hg
+  have hb_loc : IsLocalizedModule T (LocalizedModule.mkLinearMap T M ∘ₗ b) :=
+    isLocalizedModule_fst_ker_coprod f (g.restrictScalars R) T
+      (LocalizedModule.mkLinearMap T M)
+      (LocalizedModule.mkLinearMap T N)
+      (LocalizedModule.mkLinearMap T P)
+      ((IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective
+        (LocalizedModule.mkLinearMap T N) (LocalizedModule.mkLinearMap T P)).mpr hgR)
+  have hid : IsLocalizedModule.map T (LocalizedModule.mkLinearMap T M ∘ₗ b)
+      (LocalizedModule.mkLinearMap T M) b = LinearMap.id := by
+    apply IsLocalizedModule.linearMap_ext T
+      (LocalizedModule.mkLinearMap T M ∘ₗ b) (LocalizedModule.mkLinearMap T M)
+    rw [IsLocalizedModule.map_comp]
+    rfl
+  refine (IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective
+    (LocalizedModule.mkLinearMap T M ∘ₗ b) (LocalizedModule.mkLinearMap T M)).mp ?_
+  rw [hid]
+  exact bijective_id
 
-/-- If `g : N →ₗ[S] P` becomes bijective after inverting `algebraMap R S r`, then the first
-projection from the `R`-module of compatible pairs `ker (f.coprod (-g))` to `M` becomes bijective
-after inverting `r`. -/
-theorem bijective_localizedModuleMap_powers_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P)
-    (r : R) (hg : Bijective (LocalizedModule.map (.powers (algebraMap R S r)) g)) :
-    Bijective (LocalizedModule.map (.powers r)
-      ((LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker)) :=
-  bijective_localizedModuleMap_fst_ker_coprod f g (.powers r) (by rwa [Submonoid.map_powers])
-
-/-- If `f.liftBaseChange S : S ⊗[R] M →ₗ[S] P` becomes surjective and `g : N →ₗ[S] P` becomes
-bijective after localizing at `T.map (algebraMap R S)`, then the map
-`S ⊗[R] ker (f.coprod (-g)) →ₗ[S] N` induced by the second projection also becomes surjective
-after localizing at `T.map (algebraMap R S)`. -/
-theorem surjective_localizedModuleMap_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P)
-    (g : N →ₗ[S] P) (T : Submonoid R)
-    (hf : Surjective (LocalizedModule.map (T.map (algebraMap R S)) (f.liftBaseChange S)))
-    (hg : Bijective (LocalizedModule.map (T.map (algebraMap R S)) g)) :
-    Surjective (LocalizedModule.map (T.map (algebraMap R S))
-      (((LinearMap.snd R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker).liftBaseChange
-        S)) := by
+/-- If `f.liftBaseChange S` becomes surjective and `g` becomes bijective at
+`Algebra.algebraMapSubmonoid S T`, then the scalar-extension comparison `S ⊗[R] K →ₗ[S] N` from
+compatible pairs becomes surjective at `Algebra.algebraMapSubmonoid S T`. -/
+theorem surjective_localizedMap_liftBaseChange_snd_ker_coprod
+    (f : M →ₗ[R] P) (g : N →ₗ[S] P) (T : Submonoid R)
+    (hf : Surjective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T) (f.liftBaseChange S)))
+    (hg : Bijective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T) g)) :
+    Surjective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T)
+      (((LinearMap.snd R M N).domRestrict
+        (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S)) := by
+  let U := Algebra.algebraMapSubmonoid S T
   let K := (f.coprod (-g.restrictScalars R)).ker
-  let fstK : K →ₗ[R] M := (LinearMap.fst R M N).domRestrict K
-  let sndK : K →ₗ[R] N := (LinearMap.snd R M N).domRestrict K
-  have hcomm : f.comp fstK = (g.restrictScalars R).comp sndK :=
-    LinearMap.ext fun k ↦ add_neg_eq_zero.mp k.2
-  have hcomm_bc : (f.liftBaseChange S).comp (fstK.baseChange S) = g.comp (sndK.liftBaseChange S) :=
-    LinearMap.liftBaseChange_comp_baseChange S hcomm
-  have hfst : Bijective (LocalizedModule.map T fstK) :=
-    bijective_localizedModuleMap_fst_ker_coprod f g T hg
-  have hsurj_comp : Surjective (LocalizedModule.map (T.map (algebraMap R S))
-      ((f.liftBaseChange S).comp (fstK.baseChange S))) := by
-    rw [LocalizedModule.map_comp]
-    exact hf.comp (fstK.surjective_localizedModuleMap_map_baseChange hfst.2)
-  rw [hcomm_bc, LocalizedModule.map_comp, LinearMap.coe_comp] at hsurj_comp
-  exact hsurj_comp.of_comp_left hg.1
+  let b := (LinearMap.fst R M N).domRestrict K
+  let c := (LinearMap.snd R M N).domRestrict K
+  have hb_bij : Bijective (LocalizedModule.map U (b.baseChange S)) :=
+    LocalizedModule.map_baseChange_bijective b (bijective_localizedMap_fst_ker_coprod f g T hg)
+  have hsq : LocalizedModule.map U g ∘ₗ LocalizedModule.map U (c.liftBaseChange S) =
+      LocalizedModule.map U (f.liftBaseChange S) ∘ₗ LocalizedModule.map U (b.baseChange S) := by
+    rw [← LocalizedModule.map_comp, ← LocalizedModule.map_comp,
+      (LinearMap.liftBaseChange_comp_baseChange S
+        (LinearMap.ext (apply_fst_ker_coprod_eq f g))).symm]
+  have hsurj : Surjective (⇑(LocalizedModule.map U g) ∘
+      ⇑(LocalizedModule.map U (c.liftBaseChange S))) := by
+    rw [← LinearMap.coe_comp, hsq]
+    exact hf.comp hb_bij.2
+  exact (Surjective.of_comp_iff' hg _).mp hsurj
 
-/-- If `f.liftBaseChange S` becomes surjective and `g` becomes bijective after inverting
-`algebraMap R S r`, then the map `S ⊗[R] ker (f.coprod (-g)) →ₗ[S] N` induced by the second
-projection becomes surjective after inverting `algebraMap R S r`. -/
-theorem surjective_localizedModuleMap_powers_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P)
-    (g : N →ₗ[S] P) (r : R)
-    (hf : Surjective (LocalizedModule.map (.powers (algebraMap R S r)) (f.liftBaseChange S)))
+/-- **Localization of compatible pairs, for a map of modules over an algebra.** If `g : N → P`
+is `S`-linear and becomes bijective after inverting the image of `r : R` in `S`, then the map
+from pairs `(x, y)` satisfying `f x = g y` to the localization of `M` at `r` is a localization
+map. -/
+theorem isLocalizedModule_fst_ker_coprod_restrictScalars (f : M →ₗ[R] P) (g : N →ₗ[S] P) (r : R)
     (hg : Bijective (LocalizedModule.map (.powers (algebraMap R S r)) g)) :
-    Surjective (LocalizedModule.map (.powers (algebraMap R S r))
-      (((LinearMap.snd R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker).liftBaseChange
-        S)) := by
-  rw [← Submonoid.map_powers] at hf hg ⊢
-  exact surjective_localizedModuleMap_liftBaseChange_snd_ker_coprod f g (.powers r) hf hg
+    IsLocalizedModule (.powers r) (LocalizedModule.mkLinearMap (.powers r) M ∘ₗ
+      fst R M N ∘ₗ (ker (f.coprod (-g.restrictScalars R))).subtype) := by
+  let n := (LocalizedModule.mkLinearMap (.powers (algebraMap R S r)) N).restrictScalars R
+  let p := (LocalizedModule.mkLinearMap (.powers (algebraMap R S r)) P).restrictScalars R
+  have : IsLocalizedModule (.powers r) n := IsLocalizedModule.restrictScalars_powers r _
+  have : IsLocalizedModule (.powers r) p := IsLocalizedModule.restrictScalars_powers r _
+  refine isLocalizedModule_fst_ker_coprod f (g.restrictScalars R) _ _ n p ?_
+  have heq : IsLocalizedModule.map (.powers r) n p (g.restrictScalars R) =
+      (LocalizedModule.map (.powers (algebraMap R S r)) g).restrictScalars R := by
+    apply IsLocalizedModule.linearMap_ext (.powers r) n p
+    ext x
+    simp [n, p, IsLocalizedModule.map_comp]
+  rw [heq]
+  exact hg
 
-end Algebra
+end BaseChange
 
 end LinearMap
