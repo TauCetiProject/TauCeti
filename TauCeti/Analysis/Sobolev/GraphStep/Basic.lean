@@ -580,9 +580,11 @@ theorem postcompBaseL_comp [IsLocallyFiniteMeasure (mu.restrict Omega)]
       postcompBaseL base (T₁.comp T₂) := by
   ext1 u
   refine ext_prev_weakFDeriv (by simp) ?_
+  have hcomp : (ContinuousLinearMap.compL ℝ E G K T₁).comp
+      (ContinuousLinearMap.compL ℝ E F G T₂) =
+      ContinuousLinearMap.compL ℝ E F K (T₁.comp T₂) := by ext; simp
   rw [ContinuousLinearMap.comp_apply, weakFDeriv_postcompBaseL, weakFDeriv_postcompBaseL,
-    weakFDeriv_postcompBaseL, ContinuousLinearMap.compLp_compLp]
-  congr 1
+    weakFDeriv_postcompBaseL, ContinuousLinearMap.compLp_compLp, hcomp]
 
 /-- Evaluating the weak derivative of `postcompBaseL base T u` in a direction `v : E` agrees with
 applying `T` to the weak derivative of `u` evaluated in direction `v`. -/
@@ -593,9 +595,10 @@ theorem compLp_apply_weakFDeriv_postcompBaseL [IsLocallyFiniteMeasure (mu.restri
         (weakFDeriv (ContinuousLinearMap.id ℝ (Lp G p (mu.restrict Omega)))
           (postcompBaseL base T u)) =
       T.compLp ((ContinuousLinearMap.apply ℝ F v).compLp (weakFDeriv base u)) := by
+  have happ : (ContinuousLinearMap.apply ℝ G v).comp (ContinuousLinearMap.compL ℝ E F G T) =
+      T.comp (ContinuousLinearMap.apply ℝ F v) := by ext; simp
   rw [weakFDeriv_postcompBaseL, ContinuousLinearMap.compLp_compLp,
-    ContinuousLinearMap.compLp_compLp]
-  congr 1
+    ContinuousLinearMap.compLp_compLp, happ]
 
 end Postcomp
 

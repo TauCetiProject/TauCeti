@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import Mathlib.Analysis.Real.Cardinality
 import TauCeti.Analysis.InnerProductSpace.Spectrum
-import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -175,12 +174,6 @@ theorem exists_isInvertible_loopOperator_sub_smul_const_I_id
     ∃ δ : ℝ, (loopOperator T
       (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F))).IsInvertible := by
   have := FiniteDimensional.completeSpace ℂ F
-  have : TopologicalSpace.SeparableSpace F :=
-    TopologicalSpace.SecondCountableTopology.to_separableSpace
-  have : TopologicalSpace.SeparableSpace (lp (fun _ : ℤ ↦ F) 2) := lp.separableSpace (by norm_num)
-  have : TopologicalSpace.SeparableSpace (CircleSobolev 0 F) :=
-    (toℓ2ₗᵢ (s := 0) (E := F)).symm.surjective.denseRange.separableSpace
-      (toℓ2ₗᵢ (s := 0) (E := F)).symm.continuous
   have hcount := ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul
     (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ) (A := I • loopOperator T S)
     (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)

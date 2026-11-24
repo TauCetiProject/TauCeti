@@ -16,21 +16,20 @@ import TauCeti.MeasureTheory.Group.Measure
 
 For a bounded linear map `ι : D →L[ℝ] H` into a Banach space `H` and an additive Haar measure `μ`
 on `ℝ`, time reflection `s ↦ u(-s)` acts as an involutive linear isometry equivalence
-`TauCeti.WeakDerivStep.reflectEvolutionEquiv ι` on the whole-line Sobolev graph
+`TauCeti.WeakDerivStep.reflectₗᵢ ι` on the whole-line Sobolev graph
 `WeakDerivStep μ ⊤ p (ι.compLpL p (μ.restrict ((⊤ : Opens ℝ) : Set ℝ)))`, negating and
 reflecting the weak derivative.
 
 ## Main declarations
 
-* `TauCeti.WeakDerivStep.reflectEvolutionEquiv`: time reflection `s ↦ u(-s)` as an involutive
-  linear isometry equivalence on
-  `WeakDerivStep μ ⊤ p (ι.compLpL p (μ.restrict ((⊤ : Opens ℝ) : Set ℝ)))`.
-* `TauCeti.WeakDerivStep.prev_reflectEvolutionEquiv`,
-  `TauCeti.WeakDerivStep.weakFDeriv_reflectEvolutionEquiv`: action on the base and weak-derivative
+* `TauCeti.WeakDerivStep.reflectₗᵢ`: time reflection `s ↦ u(-s)` as an involutive linear isometry
+  equivalence on `WeakDerivStep μ ⊤ p (ι.compLpL p (μ.restrict ((⊤ : Opens ℝ) : Set ℝ)))`.
+* `TauCeti.WeakDerivStep.prev_reflectₗᵢ`,
+  `TauCeti.WeakDerivStep.weakFDeriv_reflectₗᵢ`: action on the base and weak-derivative
   components.
-* `TauCeti.WeakDerivStep.reflectEvolutionEquiv_reflectEvolutionEquiv`,
-  `TauCeti.WeakDerivStep.reflectEvolutionEquiv_symm`,
-  `TauCeti.WeakDerivStep.reflectEvolutionEquiv_trans_self`: involution and inverse identities.
+* `TauCeti.WeakDerivStep.reflectₗᵢ_reflectₗᵢ`,
+  `TauCeti.WeakDerivStep.reflectₗᵢ_symm`,
+  `TauCeti.WeakDerivStep.reflectₗᵢ_trans_self`: involution and inverse identities.
 -/
 
 public section
@@ -71,9 +70,9 @@ private theorem hasWeakFDerivOn_reflect (ι : D →L[ℝ] H)
     ext
     simp
 
-/-- Time reflection `s ↦ u(-s)` as an involutive linear isometry of the evolution Sobolev space
-on `ℝ`. -/
-def reflectEvolutionEquiv (ι : D →L[ℝ] H) :
+/-- Time reflection `s ↦ u(-s)` as an involutive linear isometry equivalence on the whole-line
+weak-derivative graph `WeakDerivStep mu ⊤ p (ι.compLpL p μtop)`. -/
+def reflectₗᵢ (ι : D →L[ℝ] H) :
     WeakDerivStep mu ⊤ p (ι.compLpL p μtop) ≃ₗᵢ[ℝ] WeakDerivStep mu ⊤ p (ι.compLpL p μtop) where
   toFun u :=
     mk (ι.compLpL p μtop) (negLpₗᵢ ℝ (prev (ι.compLpL p μtop) u))
@@ -101,38 +100,39 @@ def reflectEvolutionEquiv (ι : D →L[ℝ] H) :
     exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
 
 /-- Time reflection acts on the `Lᵖ(ℝ; D)` path by `TauCeti.negLpₗᵢ`. -/
-theorem prev_reflectEvolutionEquiv (ι : D →L[ℝ] H)
+theorem prev_reflectₗᵢ (ι : D →L[ℝ] H)
     (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    prev (ι.compLpL p μtop) (reflectEvolutionEquiv ι u) =
+    prev (ι.compLpL p μtop) (reflectₗᵢ ι u) =
       negLpₗᵢ ℝ (prev (ι.compLpL p μtop) u) :=
   prev_mk (ι.compLpL p μtop) _ _ _
 
 /-- Time reflection negates and reflects the weak derivative via `TauCeti.negLpₗᵢ`. -/
-theorem weakFDeriv_reflectEvolutionEquiv (ι : D →L[ℝ] H)
+theorem weakFDeriv_reflectₗᵢ (ι : D →L[ℝ] H)
     (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    weakFDeriv (ι.compLpL p μtop) (reflectEvolutionEquiv ι u) =
+    weakFDeriv (ι.compLpL p μtop) (reflectₗᵢ ι u) =
       -negLpₗᵢ ℝ (weakFDeriv (ι.compLpL p μtop) u) :=
   weakFDeriv_mk (ι.compLpL p μtop) _ _ _
 
 /-- Time reflection is involutive. -/
-theorem reflectEvolutionEquiv_reflectEvolutionEquiv (ι : D →L[ℝ] H)
+theorem reflectₗᵢ_reflectₗᵢ (ι : D →L[ℝ] H)
     (u : WeakDerivStep mu ⊤ p (ι.compLpL p μtop)) :
-    reflectEvolutionEquiv ι (reflectEvolutionEquiv ι u) = u :=
-  ext (by simp only [prev_reflectEvolutionEquiv, negLpₗᵢ_negLpₗᵢ])
+    reflectₗᵢ ι (reflectₗᵢ ι u) = u :=
+  ext (by simp only [prev_reflectₗᵢ, negLpₗᵢ_negLpₗᵢ])
 
 /-- Time reflection is its own inverse. -/
 @[simp]
-theorem reflectEvolutionEquiv_symm (ι : D →L[ℝ] H) :
-    (reflectEvolutionEquiv (mu := mu) (p := p) ι).symm =
-      reflectEvolutionEquiv (mu := mu) (p := p) ι :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
+theorem reflectₗᵢ_symm (ι : D →L[ℝ] H) :
+    (reflectₗᵢ (mu := mu) (p := p) ι).symm =
+      reflectₗᵢ (mu := mu) (p := p) ι :=
+  LinearIsometryEquiv.ext fun u ↦
+    (LinearIsometryEquiv.symm_apply_eq _).2 (reflectₗᵢ_reflectₗᵢ ι u).symm
 
 /-- Composing time reflection with itself is the identity equivalence. -/
 @[simp]
-theorem reflectEvolutionEquiv_trans_self (ι : D →L[ℝ] H) :
-    (reflectEvolutionEquiv (mu := mu) (p := p) ι).trans
-      (reflectEvolutionEquiv (mu := mu) (p := p) ι) = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext (reflectEvolutionEquiv_reflectEvolutionEquiv ι)
+theorem reflectₗᵢ_trans_self (ι : D →L[ℝ] H) :
+    (reflectₗᵢ (mu := mu) (p := p) ι).trans
+      (reflectₗᵢ (mu := mu) (p := p) ι) = LinearIsometryEquiv.refl ℝ _ :=
+  LinearIsometryEquiv.ext (reflectₗᵢ_reflectₗᵢ ι)
 
 end Reflect
 

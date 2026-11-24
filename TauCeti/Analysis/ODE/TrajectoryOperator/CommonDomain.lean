@@ -43,7 +43,7 @@ the autonomous operator is derived from that of the family. Taking `D = H¹(AddC
 
 After proving `1`-Lipschitz dependence on `A`, weak-ODE characterizations, mode intertwining,
 intertwining with `trajectoryOperator` under `postcompBaseL`, classical derivative agreement, and
-time reflection `reflectEvolutionEquiv` (`s ↦ u(-s)` conjugating `∂s - A` to `-(∂s + A)`) over
+time reflection `reflectₗᵢ` (`s ↦ u(-s)` conjugating `∂s - A` to `-(∂s + A)`) over
 Banach spaces, the second half develops the whole-line `L²(ℝ)` theory (`Ω = ⊤`, `p = 2`) for
 Hilbert `H`, `[CompleteSpace D]` (inferred from `A.IsInvertible` when `A` is invertible), and
 `ι`-symmetric `A` (`⟪A x, ι y⟫ = ⟪ι x, A y⟫`): orthogonality, the integration by parts
@@ -384,18 +384,18 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
 local notation "μtop" => (mu.restrict ((⊤ : Opens ℝ) : Set ℝ))
 
 /-- Time reflection conjugates `∂s ∘ ι - A` to `-(∂s ∘ ι + A)` on `ℝ`:
-`∂s ∘ ι - A = -(negLpₗᵢ ∘ (∂s ∘ ι + A) ∘ reflectEvolutionEquiv)`. -/
+`∂s ∘ ι - A = -(negLpₗᵢ ∘ (∂s ∘ ι + A) ∘ reflectₗᵢ)`. -/
 theorem domainTrajectoryOperator_neg_eq (ι A : D →L[ℝ] H) :
     domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι (-A) =
       -((negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop) : Lp H p μtop →L[ℝ] _).comp
         ((domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι A).comp
-          (reflectEvolutionEquiv (mu := mu) (p := p) ι :
+          (reflectₗᵢ (mu := mu) (p := p) ι :
             WeakDerivStep mu ⊤ p (ι.compLpL p μtop) →L[ℝ] _))) := by
   ext1 u
   rw [neg_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
   simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     domainTrajectoryOperator_apply, ContinuousLinearMap.compLpL_apply,
-    weakFDeriv_reflectEvolutionEquiv, prev_reflectEvolutionEquiv,
+    weakFDeriv_reflectₗᵢ, prev_reflectₗᵢ,
     ContinuousLinearMap.neg_compLp, map_add, compLp_negLpₗᵢ, map_neg, negLpₗᵢ_negLpₗᵢ]
   abel
 
@@ -420,22 +420,16 @@ theorem isInvertible_domainTrajectoryOperator_neg_iff (ι A : D →L[ℝ] H) :
 /-- Time reflection conjugates `(∂s ∘ ι - A)⁻¹` to `-(∂s ∘ ι + A)⁻¹` on `ℝ`. -/
 theorem inverse_domainTrajectoryOperator_neg (ι A : D →L[ℝ] H) :
     (domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι (-A)).inverse =
-      -((reflectEvolutionEquiv (mu := mu) (p := p) ι :
+      -((reflectₗᵢ (mu := mu) (p := p) ι :
           WeakDerivStep mu ⊤ p (ι.compLpL p μtop) →L[ℝ] _).comp
         ((domainTrajectoryOperator (mu := mu) (Omega := ⊤) (p := p) ι A).inverse.comp
           (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop) : Lp H p μtop →L[ℝ] _))) := by
-  have heL : (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop)).toContinuousLinearEquiv.symm =
-      (negLpₗᵢ ℝ (E := H) (p := p) (μ := μtop)).toContinuousLinearEquiv :=
-    ContinuousLinearEquiv.ext <| funext fun x ↦
-      (ContinuousLinearEquiv.symm_apply_eq _).2 (negLpₗᵢ_negLpₗᵢ x).symm
-  have heR : (reflectEvolutionEquiv (mu := mu) (p := p) ι).toContinuousLinearEquiv.symm =
-      (reflectEvolutionEquiv (mu := mu) (p := p) ι).toContinuousLinearEquiv :=
-    ContinuousLinearEquiv.ext <| funext fun x ↦
-      (ContinuousLinearEquiv.symm_apply_eq _).2
-        (reflectEvolutionEquiv_reflectEvolutionEquiv ι x).symm
   rw [domainTrajectoryOperator_neg_eq,
     ContinuousLinearMap.inverse_neg, ContinuousLinearMap.inverse_equiv_comp,
-    ContinuousLinearMap.inverse_comp_equiv, heL, heR, ContinuousLinearMap.comp_assoc]
+    ContinuousLinearMap.inverse_comp_equiv,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, reflectₗᵢ_symm,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, negLpₗᵢ_symm,
+    ContinuousLinearMap.comp_assoc]
 
 /-- `(∂s ∘ ι - A)⁻¹` and `(∂s ∘ ι + A)⁻¹` have the same operator norm on `ℝ`. -/
 @[simp]

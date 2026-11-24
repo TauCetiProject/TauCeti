@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.RankOne
 
@@ -24,9 +25,6 @@ orthogonal decomposition in `L²(μ; E)` without separability of `E`, countabili
 
 ## Main declarations
 
-* `MeasureTheory.Lp.inner_compLp_toSpanSingleton`,
-  `MeasureTheory.Lp.inner_compLp_toSpanSingleton_left`: inner products and adjointness of rank-one
-  functions `x ↦ f x • v` in `L²`.
 * `Orthonormal.summable_norm_sq_compLp_innerSL`, `Orthonormal.tsum_norm_sq_compLp_innerSL_le`:
   Bessel's inequality in `L²(μ; E)`.
 * `Orthonormal.pairwise_inner_compLp_toSpanSingleton_eq_zero`,
@@ -45,40 +43,6 @@ noncomputable section
 
 open MeasureTheory ContinuousLinearMap
 open scoped ENNReal InnerProductSpace
-
-section RankOne
-
-namespace MeasureTheory.Lp
-
-variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- The `L²` inner product of two rank-one functions `x ↦ f x • v` and `x ↦ g x • w` factors as
-`⟪f, g⟫ * ⟪v, w⟫`. -/
-@[simp]
-theorem inner_compLp_toSpanSingleton (v w : E) (f g : Lp 𝕜 2 μ) :
-    ⟪(toSpanSingleton 𝕜 v).compLp f, (toSpanSingleton 𝕜 w).compLp g⟫_𝕜 =
-      ⟪f, g⟫_𝕜 * ⟪v, w⟫_𝕜 := by
-  rw [L2.inner_def, L2.inner_def, ← integral_mul_const]
-  refine integral_congr_ae ?_
-  filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp f,
-    (toSpanSingleton 𝕜 w).coeFn_compLp g] with x hfx hgx
-  rw [hfx, hgx, toSpanSingleton_apply, toSpanSingleton_apply, inner_smul_left, inner_smul_right,
-    RCLike.inner_apply', mul_assoc]
-
-/-- Adjointness of rank-one embedding and scalar projection on `L²`: pairing `x ↦ g x • v` with `f`
-equals pairing `g` with `x ↦ ⟪v, f x⟫`. -/
-theorem inner_compLp_toSpanSingleton_left (v : E) (g : Lp 𝕜 2 μ) (f : Lp E 2 μ) :
-    ⟪(toSpanSingleton 𝕜 v).compLp g, f⟫_𝕜 = ⟪g, (innerSL 𝕜 v).compLp f⟫_𝕜 := by
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp g,
-    (innerSL 𝕜 v).coeFn_compLp f] with x hgx hfx
-  rw [hgx, hfx, toSpanSingleton_apply, innerSL_apply_apply, inner_smul_left, RCLike.inner_apply']
-
-end MeasureTheory.Lp
-
-end RankOne
 
 namespace Orthonormal
 
