@@ -64,15 +64,11 @@ theorem bijective_pairingDual_of_projective [Module.Finite R M] [Module.Projecti
   -- `M` is a retract `p ∘ₗ s = id` of `F = Fin k → R`, and so is the pairing of `M` of that of
   -- `F` by naturality.
   obtain ⟨k, p, s, -, -, hps⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  have hsp : ∀ x : ⋀[R]^n (Dual R M), map n s.dualMap (map n p.dualMap x) = x := fun x ↦ by
-    rw [← LinearMap.comp_apply, ← map_comp, LinearMap.dualMap_comp_dualMap, hps,
-      LinearMap.dualMap_id, map_id, LinearMap.id_apply]
-  have hps' : ∀ φ : Dual R (⋀[R]^n M), (map n s).dualMap ((map n p).dualMap φ) = φ := fun φ ↦ by
-    rw [← LinearMap.comp_apply, LinearMap.dualMap_comp_dualMap, ← map_comp, hps, map_id,
-      LinearMap.dualMap_id, LinearMap.id_apply]
-  exact Function.bijective_of_retract (bijective_pairingDual R (Fin k → R) n)
+  refine Function.bijective_of_retract (a := map n p.dualMap) (b := (map n p).dualMap)
+    (c := map n s.dualMap) (d := (map n s).dualMap) (bijective_pairingDual R (Fin k → R) n)
     (LinearMap.congr_fun (pairingDual_comp_map_dualMap n p))
-    (LinearMap.congr_fun (pairingDual_comp_map_dualMap n s)) hsp hps'
+    (LinearMap.congr_fun (pairingDual_comp_map_dualMap n s)) (fun x ↦ ?_) (fun φ ↦ ?_) <;>
+  simp [← LinearMap.comp_apply, ← map_comp, LinearMap.dualMap_comp_dualMap, hps]
 
 variable (R M) in
 /-- **The exterior power of the dual of a finite projective module is the dual of its exterior

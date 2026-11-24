@@ -31,8 +31,6 @@ variable {R : Type u} [CommRing R]
 @[expose]
 def exteriorPower (M : (finiteProjectiveModules R).FullSubcategory) (n : ℕ) :
     (finiteProjectiveModules R).FullSubcategory :=
-  have := (finiteProjectiveModules_iff.mp M.property).1
-  have := (finiteProjectiveModules_iff.mp M.property).2
   ⟨M.obj.exteriorPower n, finiteProjectiveModules_iff.mpr
     ⟨inferInstanceAs (Module.Finite R (⋀[R]^n M.obj)),
       inferInstanceAs (Module.Projective R (⋀[R]^n M.obj))⟩⟩

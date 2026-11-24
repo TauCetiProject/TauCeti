@@ -73,8 +73,6 @@ def exteriorPowerFiniteProjectiveEquivDualIso
         ((finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.dual R M)) ≅
       (finiteProjectiveEquiv R).functor.obj
         (FiniteProjectiveModules.dual R (FiniteProjectiveModules.exteriorPower M n)) :=
-  have := (finiteProjectiveModules_iff.mp M.property).1
-  have := (finiteProjectiveModules_iff.mp M.property).2
   ObjectProperty.isoMk _ (eqToIso (exteriorPower_obj_obj (X := Spec R) n
       ((finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.dual R M))) ≪≫
     (tildeExteriorPowerIso n (ModuleCat.of R (Module.Dual R M.obj))).symm ≪≫
@@ -110,8 +108,6 @@ theorem exteriorPowerFiniteProjectiveEquivDualIso_hom_hom
           ((finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.dual R M))) ≫
         (tildeExteriorPowerIso n (ModuleCat.of R (Module.Dual R M.obj))).inv ≫
         (tilde.functor R).map (ModuleCat.ofHom (exteriorPower.pairingDual R M.obj n)) := by
-  have := (finiteProjectiveModules_iff.mp M.property).1
-  have := (finiteProjectiveModules_iff.mp M.property).2
   have h : ModuleCat.ofHom (exteriorPower.pairingDual R M.obj n) =
       (exteriorPower.pairingDualEquiv R M.obj n).toModuleIso.hom :=
     ModuleCat.hom_ext (LinearMap.ext fun x ↦
