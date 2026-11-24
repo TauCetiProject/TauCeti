@@ -39,7 +39,8 @@ The main results:
 * `Matrix.GeneralLinearGroup.exists_val_eq_scalar_of_forall_ballMap_eq_self`: an invertible
   matrix whose map is the identity on the open ball is scalar.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.ballHomeomorph`: the action of `U(1, q)` on the open
-  ball, as a homomorphism to its group of homeomorphisms, and
+  ball, as a homomorphism to its group of homeomorphisms (likewise `closedBallHomeomorph` and
+  `sphereHomeomorph` on the closed ball and on the boundary sphere), and
   `TauCeti.Matrix.indefiniteUnitaryGroup.ker_ballHomeomorph`: its kernel is the centre of
   `U(1, q)`, the unit scalars, so the action of `PU(1, q)` is faithful.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.ballMap_zero_eq_zero_iff`: the stabilizer of the origin
@@ -106,11 +107,20 @@ theorem sumElim_one_ballMap (hw : ballMapDenom g w ≠ 0) :
     simp [← ballMapDenom_def, inv_mul_cancel₀ hw]
   · simp [div_eq_inv_mul]
 
+/-- Where the denominator of `h` does not vanish, `g (1, ballMap h w)` is the multiple
+`(ballMapDenom h w)⁻¹ • (g * h) (1, w)` of `(g * h) (1, w)`. -/
+theorem mulVec_sumElim_one_ballMap (hw : ballMapDenom h w ≠ 0) :
+    (g : Matrix (Fin 1 ⊕ q) (Fin 1 ⊕ q) 𝕜) *ᵥ Sum.elim 1 (ballMap h w).ofLp =
+      (ballMapDenom h w)⁻¹ •
+        (((g * h : GL (Fin 1 ⊕ q) 𝕜) : Matrix (Fin 1 ⊕ q) (Fin 1 ⊕ q) 𝕜) *ᵥ
+          Sum.elim 1 w.ofLp) := by
+  rw [sumElim_one_ballMap hw, mulVec_smul, mulVec_mulVec, Units.val_mul]
+
 /-- The denominators of fractional linear maps form a cocycle. -/
 theorem ballMapDenom_mul (hw : ballMapDenom h w ≠ 0) :
     ballMapDenom (g * h) w = ballMapDenom g (ballMap h w) * ballMapDenom h w := by
-  rw [ballMapDenom_def g, sumElim_one_ballMap hw, mulVec_smul, Pi.smul_apply, smul_eq_mul,
-    mulVec_mulVec, ← Units.val_mul, ← ballMapDenom_def]
+  rw [ballMapDenom_def g, mulVec_sumElim_one_ballMap hw, Pi.smul_apply, smul_eq_mul,
+    ← ballMapDenom_def]
   field_simp
 
 /-- **The fractional linear maps compose**: `ballMap (g * h) w = ballMap g (ballMap h w)` wherever
@@ -118,8 +128,8 @@ the denominator of `h` at `w` does not vanish. -/
 theorem ballMap_mul (hw : ballMapDenom h w ≠ 0) :
     ballMap (g * h) w = ballMap g (ballMap h w) := by
   ext i
-  rw [ballMap_apply, ballMap_apply, ballMapDenom_mul hw, sumElim_one_ballMap hw, mulVec_smul,
-    Pi.smul_apply, smul_eq_mul, mulVec_mulVec, Units.val_mul]
+  rw [ballMap_apply, ballMap_apply, ballMapDenom_mul hw, mulVec_sumElim_one_ballMap hw,
+    Pi.smul_apply, smul_eq_mul]
   ring
 
 /-- The identity matrix has denominator `1`. -/
@@ -132,6 +142,16 @@ theorem ballMapDenom_one (w : EuclideanSpace 𝕜 q) : ballMapDenom 1 w = 1 := b
 theorem ballMap_one (w : EuclideanSpace 𝕜 q) : ballMap 1 w = w := by
   ext i
   simp
+
+/-- `ballMap g⁻¹` is a left inverse of `ballMap g` wherever the denominator of `g` does not
+vanish. -/
+theorem ballMap_inv_ballMap (hw : ballMapDenom g w ≠ 0) : ballMap g⁻¹ (ballMap g w) = w := by
+  rw [← ballMap_mul hw, inv_mul_cancel, ballMap_one]
+
+/-- `ballMap g⁻¹` is a right inverse of `ballMap g` wherever the denominator of `g⁻¹` does not
+vanish. -/
+theorem ballMap_ballMap_inv (hw : ballMapDenom g⁻¹ w ≠ 0) : ballMap g (ballMap g⁻¹ w) = w := by
+  rw [← ballMap_mul hw, mul_inv_cancel, ballMap_one]
 
 /-- The scalar matrix `c • 1` has constant denominator `c`. -/
 @[simp]
@@ -167,15 +187,21 @@ private theorem continuous_sumElim_one_ofLp :
     rcases j with j | j
     exacts [continuous_const, PiLp.continuous_apply 2 _ j]
 
+/-- The lifted map `w ↦ g (1, w)` is continuous. -/
+private theorem continuous_mulVec_sumElim_one (g : GL (Fin 1 ⊕ q) 𝕜) :
+    Continuous fun w : EuclideanSpace 𝕜 q =>
+      (g : Matrix (Fin 1 ⊕ q) (Fin 1 ⊕ q) 𝕜) *ᵥ Sum.elim 1 w.ofLp :=
+  continuous_const.matrix_mulVec continuous_sumElim_one_ofLp
+
 /-- The denominator `w ↦ a + bᵀ w` is continuous. -/
 theorem continuous_ballMapDenom (g : GL (Fin 1 ⊕ q) 𝕜) : Continuous (ballMapDenom g) :=
-  (continuous_apply _).comp (continuous_const.matrix_mulVec continuous_sumElim_one_ofLp)
+  (continuous_apply _).comp (continuous_mulVec_sumElim_one g)
 
 /-- The fractional linear map is continuous where its denominator does not vanish. -/
 theorem continuousAt_ballMap (hw : ballMapDenom g w ≠ 0) : ContinuousAt (ballMap g) w := by
   refine (PiLp.continuous_toLp 2 _).continuousAt.comp (continuousAt_pi.2 fun i => ?_)
-  exact (((continuous_apply _).comp (continuous_const.matrix_mulVec
-    continuous_sumElim_one_ofLp)).continuousAt).div (continuous_ballMapDenom g).continuousAt hw
+  exact ((continuous_apply _).comp (continuous_mulVec_sumElim_one g)).continuousAt.div
+    (continuous_ballMapDenom g).continuousAt hw
 
 section indefiniteUnitaryGroup
 
@@ -272,14 +298,14 @@ theorem ballMap_mul_of_mem (hh : h ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜) (h
   ballMap_mul (ballMapDenom_ne_zero hh hw)
 
 /-- On the closed ball, `ballMap g⁻¹` is a left inverse of `ballMap g` for `g ∈ U(1, q)`. -/
-theorem ballMap_inv_ballMap (hg : g ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜) (hw : ‖w‖ ≤ 1) :
-    ballMap g⁻¹ (ballMap g w) = w := by
-  rw [← ballMap_mul_of_mem hg hw, inv_mul_cancel, ballMap_one]
+theorem ballMap_inv_ballMap_of_mem (hg : g ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜) (hw : ‖w‖ ≤ 1) :
+    ballMap g⁻¹ (ballMap g w) = w :=
+  ballMap_inv_ballMap (ballMapDenom_ne_zero hg hw)
 
 /-- On the closed ball, `ballMap g⁻¹` is a right inverse of `ballMap g` for `g ∈ U(1, q)`. -/
-theorem ballMap_ballMap_inv (hg : g ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜) (hw : ‖w‖ ≤ 1) :
-    ballMap g (ballMap g⁻¹ w) = w := by
-  rw [← ballMap_mul_of_mem (inv_mem hg) hw, mul_inv_cancel, ballMap_one]
+theorem ballMap_ballMap_inv_of_mem (hg : g ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜) (hw : ‖w‖ ≤ 1) :
+    ballMap g (ballMap g⁻¹ w) = w :=
+  ballMap_ballMap_inv (ballMapDenom_ne_zero (inv_mem hg) hw)
 
 /-- An element of `U(1, q)` acts continuously on the closed unit ball. -/
 theorem continuousOn_ballMap_closedBall (hg : g ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜) :
@@ -363,34 +389,96 @@ open Metric Matrix.GeneralLinearGroup
 
 variable {𝕜 : Type*} [RCLike 𝕜] {q : Type*} [Fintype q] [DecidableEq q]
 
+/-- The action of `U(1, q)` on a subset `S` of the closed unit ball that every element of
+`U(1, q)` maps into itself, as a homomorphism to the group of homeomorphisms of `S`. -/
+private noncomputable def homeomorphOfMapsTo (S : Set (EuclideanSpace 𝕜 q))
+    (hS : S ⊆ closedBall 0 1)
+    (hmaps : ∀ g ∈ indefiniteUnitaryGroup (Fin 1) q 𝕜, Set.MapsTo (ballMap g) S S) :
+    indefiniteUnitaryGroup (Fin 1) q 𝕜 →* (S ≃ₜ S) where
+  toFun g :=
+    { toFun w := ⟨ballMap g w, hmaps g g.property w.property⟩
+      invFun w := ⟨ballMap (g : GL (Fin 1 ⊕ q) 𝕜)⁻¹ w, hmaps _ (inv_mem g.property) w.property⟩
+      left_inv w := Subtype.ext <|
+        ballMap_inv_ballMap_of_mem g.property (mem_closedBall_zero_iff.mp (hS w.property))
+      right_inv w := Subtype.ext <|
+        ballMap_ballMap_inv_of_mem g.property (mem_closedBall_zero_iff.mp (hS w.property))
+      continuous_toFun := ((continuousOn_ballMap_closedBall g.property).mono hS
+        |>.mapsToRestrict (hmaps g g.property))
+      continuous_invFun := ((continuousOn_ballMap_closedBall (inv_mem g.property)).mono hS
+        |>.mapsToRestrict (hmaps _ (inv_mem g.property))) }
+  map_one' := Homeomorph.ext fun _ => Subtype.ext <| ballMap_one _
+  map_mul' _ h := Homeomorph.ext fun w => Subtype.ext <|
+    ballMap_mul_of_mem h.property (mem_closedBall_zero_iff.mp (hS w.property))
+
 variable (𝕜 q) in
 /-- **The action of `U(1, q)` on the unit ball**: the homomorphism sending `g` to the
 homeomorphism `w ↦ ballMap g w` of the open unit ball of `EuclideanSpace 𝕜 q`. Its kernel is the
 centre (`ker_ballHomeomorph`), so it descends to a faithful action of `PU(1, q)`. -/
 noncomputable def ballHomeomorph :
     indefiniteUnitaryGroup (Fin 1) q 𝕜 →*
-      (ball (0 : EuclideanSpace 𝕜 q) 1 ≃ₜ ball (0 : EuclideanSpace 𝕜 q) 1) where
-  toFun g :=
-    { toFun w := ⟨ballMap g w, mapsTo_ballMap_ball g.property w.property⟩
-      invFun w := ⟨ballMap (g : GL (Fin 1 ⊕ q) 𝕜)⁻¹ w,
-        mapsTo_ballMap_ball (inv_mem g.property) w.property⟩
-      left_inv w := Subtype.ext <|
-        ballMap_inv_ballMap g.property (mem_ball_zero_iff.mp w.property).le
-      right_inv w := Subtype.ext <|
-        ballMap_ballMap_inv g.property (mem_ball_zero_iff.mp w.property).le
-      continuous_toFun := ((continuousOn_ballMap_closedBall g.property).mono ball_subset_closedBall
-        |>.mapsToRestrict (mapsTo_ballMap_ball g.property))
-      continuous_invFun := ((continuousOn_ballMap_closedBall (inv_mem g.property)).mono
-        ball_subset_closedBall |>.mapsToRestrict (mapsTo_ballMap_ball (inv_mem g.property))) }
-  map_one' := Homeomorph.ext fun _ => Subtype.ext <| ballMap_one _
-  map_mul' _ h := Homeomorph.ext fun w => Subtype.ext <|
-    ballMap_mul_of_mem h.property (mem_ball_zero_iff.mp w.property).le
+      (ball (0 : EuclideanSpace 𝕜 q) 1 ≃ₜ ball (0 : EuclideanSpace 𝕜 q) 1) :=
+  homeomorphOfMapsTo _ ball_subset_closedBall fun _ => mapsTo_ballMap_ball
+
+variable (𝕜 q) in
+/-- The action of `U(1, q)` on the closed unit ball: the homomorphism sending `g` to the
+homeomorphism `w ↦ ballMap g w` of the closed unit ball of `EuclideanSpace 𝕜 q`. -/
+noncomputable def closedBallHomeomorph :
+    indefiniteUnitaryGroup (Fin 1) q 𝕜 →*
+      (closedBall (0 : EuclideanSpace 𝕜 q) 1 ≃ₜ closedBall (0 : EuclideanSpace 𝕜 q) 1) :=
+  homeomorphOfMapsTo _ subset_rfl fun _ => mapsTo_ballMap_closedBall
+
+variable (𝕜 q) in
+/-- The action of `U(1, q)` on the boundary of the unit ball: the homomorphism sending `g` to the
+homeomorphism `w ↦ ballMap g w` of the unit sphere of `EuclideanSpace 𝕜 q`. -/
+noncomputable def sphereHomeomorph :
+    indefiniteUnitaryGroup (Fin 1) q 𝕜 →*
+      (sphere (0 : EuclideanSpace 𝕜 q) 1 ≃ₜ sphere (0 : EuclideanSpace 𝕜 q) 1) :=
+  homeomorphOfMapsTo _ sphere_subset_closedBall fun _ => mapsTo_ballMap_sphere
 
 /-- The homeomorphism `ballHomeomorph 𝕜 q g` of the ball is `ballMap g`. -/
 @[simp]
 theorem coe_ballHomeomorph_apply (g : indefiniteUnitaryGroup (Fin 1) q 𝕜)
     (w : ball (0 : EuclideanSpace 𝕜 q) 1) :
     (ballHomeomorph 𝕜 q g w : EuclideanSpace 𝕜 q) = ballMap g w :=
+  (rfl)
+
+/-- The inverse of the homeomorphism `ballHomeomorph 𝕜 q g` of the ball is `ballMap g⁻¹`. -/
+@[simp]
+theorem coe_ballHomeomorph_symm_apply (g : indefiniteUnitaryGroup (Fin 1) q 𝕜)
+    (w : ball (0 : EuclideanSpace 𝕜 q) 1) :
+    ((ballHomeomorph 𝕜 q g).symm w : EuclideanSpace 𝕜 q) = ballMap (g : GL (Fin 1 ⊕ q) 𝕜)⁻¹ w :=
+  (rfl)
+
+/-- The homeomorphism `closedBallHomeomorph 𝕜 q g` of the closed ball is `ballMap g`. -/
+@[simp]
+theorem coe_closedBallHomeomorph_apply (g : indefiniteUnitaryGroup (Fin 1) q 𝕜)
+    (w : closedBall (0 : EuclideanSpace 𝕜 q) 1) :
+    (closedBallHomeomorph 𝕜 q g w : EuclideanSpace 𝕜 q) = ballMap g w :=
+  (rfl)
+
+/-- The inverse of the homeomorphism `closedBallHomeomorph 𝕜 q g` of the closed ball is
+`ballMap g⁻¹`. -/
+@[simp]
+theorem coe_closedBallHomeomorph_symm_apply (g : indefiniteUnitaryGroup (Fin 1) q 𝕜)
+    (w : closedBall (0 : EuclideanSpace 𝕜 q) 1) :
+    ((closedBallHomeomorph 𝕜 q g).symm w : EuclideanSpace 𝕜 q) =
+      ballMap (g : GL (Fin 1 ⊕ q) 𝕜)⁻¹ w :=
+  (rfl)
+
+/-- The homeomorphism `sphereHomeomorph 𝕜 q g` of the unit sphere is `ballMap g`. -/
+@[simp]
+theorem coe_sphereHomeomorph_apply (g : indefiniteUnitaryGroup (Fin 1) q 𝕜)
+    (w : sphere (0 : EuclideanSpace 𝕜 q) 1) :
+    (sphereHomeomorph 𝕜 q g w : EuclideanSpace 𝕜 q) = ballMap g w :=
+  (rfl)
+
+/-- The inverse of the homeomorphism `sphereHomeomorph 𝕜 q g` of the unit sphere is
+`ballMap g⁻¹`. -/
+@[simp]
+theorem coe_sphereHomeomorph_symm_apply (g : indefiniteUnitaryGroup (Fin 1) q 𝕜)
+    (w : sphere (0 : EuclideanSpace 𝕜 q) 1) :
+    ((sphereHomeomorph 𝕜 q g).symm w : EuclideanSpace 𝕜 q) =
+      ballMap (g : GL (Fin 1 ⊕ q) 𝕜)⁻¹ w :=
   (rfl)
 
 /-- **The kernel of the action on the ball is the centre**: an element of `U(1, q)` acts
@@ -414,7 +502,7 @@ theorem ker_ballHomeomorph :
         indefiniteUnitaryGroup (Fin 1) q 𝕜) : GL (Fin 1 ⊕ q) 𝕜) =
         GeneralLinearGroup.scalar (Fin 1 ⊕ q) (Unitary.toUnits u) := Units.ext (by simp)
     rw [coe_ballHomeomorph_apply, hu, ballMap_scalar]
-    rfl
+    exact congrArg Subtype.val (Homeomorph.one_apply w).symm
 
 /-- **Two elements of `U(1, q)` act in the same way on the ball exactly when they differ by a unit
 scalar.** -/
@@ -496,8 +584,7 @@ private theorem exists_mulVec_sumElim_one_zero_eq_smul {w : EuclideanSpace 𝕜 
     have hs1' : (s : 𝕜) - 1 ≠ 0 := by
       rw [← RCLike.ofReal_one, ← RCLike.ofReal_sub, RCLike.ofReal_ne_zero]
       exact sub_ne_zero.mpr hs1
-    rw [unitaryGroupOf.val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec,
-      ← dotProduct_mulVec, hvv, hve, op_smul_eq_smul]
+    rw [unitaryGroupOf.reflection_mulVec, hvv, hve]
     funext r
     rcases r with r | r
     · rw [Fin.fin_one_eq_zero r]
