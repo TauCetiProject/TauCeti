@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
+import TauCeti.Topology.Irreducible
 
 /-!
 # Noetherianity under finite-type morphisms and fibres
@@ -24,7 +25,8 @@ hypothesis on `f`: over affine opens `Spec B ⟶ Spec R` it is `Spec (κ(p) ⊗[
 `κ(p) ⊗[R] B` is a quotient of a localization of `B`.
 
 The underlying space of a locally Noetherian scheme is locally connected, since it is covered by
-the Noetherian spaces of its affine opens. In particular its connected components are open.
+the Noetherian spaces of its affine opens. In particular its connected components are open. For
+the same reason every irreducible component of a locally Noetherian scheme has nonempty interior.
 -/
 
 public section
@@ -71,6 +73,17 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   · exact W.isOpen.isOpenMap_subtypeVal _ isOpen_connectedComponent
   · exact ⟨_, mem_connectedComponent, rfl⟩
   · exact isConnected_connectedComponent.image _ continuous_subtypeVal.continuousOn
+
+/-- Every irreducible component of a locally Noetherian scheme has nonempty interior: it meets an
+affine open, which is a Noetherian space and so has finitely many irreducible components. -/
+theorem nonempty_interior_of_mem_irreducibleComponents {X : Scheme.{u}} [IsLocallyNoetherian X]
+    {C : Set X} (hC : C ∈ irreducibleComponents X) : (interior C).Nonempty := by
+  obtain ⟨x, hx⟩ := hC.1.nonempty
+  obtain ⟨W, hW, hxW, -⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := ⊤) trivial
+  have : IsNoetherianRing Γ(X, W) := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
+  have : TopologicalSpace.NoetherianSpace (W : Set X) := noetherianSpace_of_isAffineOpen W hW
+  exact W.isOpen.nonempty_interior_of_mem_irreducibleComponents
+    TopologicalSpace.NoetherianSpace.finite_irreducibleComponents hC ⟨x, hx, hxW⟩
 
 end TauCeti.AlgebraicGeometry
 

@@ -314,7 +314,7 @@ private def cellRadialPath (n : ℕ) (j : cell C n) (γ : MoorePathBetween B b (
   MoorePathPullback.radialPaths
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨γ.toMoorePath, γ.source, γ.target.trans (by simp [cellDiskMap])⟩
+    (γ.cast rfl (by simp [cellDiskMap]))
 
 variable (C) in
 /-- **Radial paths to the points of the `n`-cells.** Given a Moore path `γ j` from `b` to the
@@ -355,8 +355,8 @@ theorem cellRadialPaths_apply_length_add {n : ℕ}
   have h := MoorePathPullback.radialPaths_apply_length_add
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨(γ j).toMoorePath, (γ j).source, (γ j).target.trans (by simp [cellDiskMap])⟩ v t
-  simp only [MoorePathBetween.toMoorePath_mk] at h
+    ((γ j).cast rfl (by simp [cellDiskMap])) v t
+  simp only [MoorePathBetween.toMoorePath_cast] at h
   exact h.trans (by simp [cellDiskMap, AffineMap.lineMap_apply_module])
 
 variable (b C) in

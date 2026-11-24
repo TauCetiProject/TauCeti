@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 import TauCeti.Data.Fintype.BigOperators
-import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import TauCeti.Algebra.Field.Fin.Tuple
+public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.Data.Fin.Tuple.Basic
 
 /-!

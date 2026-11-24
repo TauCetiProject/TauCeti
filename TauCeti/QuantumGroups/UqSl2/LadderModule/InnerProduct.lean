@@ -316,7 +316,7 @@ private theorem quantumInteger_mul_zpow_mul_innerWeight_succ
   have hne : quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) ≠ 0 :=
     mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (zpow_ne_zero _ hq.ne_zero)
   have hc (r : ℤ) : ((quantumInteger q r : ℝ) : ℂ) = quantumInteger (q : ℂ) r :=
-    Complex.ofRealHom.map_quantumInteger q r
+    map_quantumInteger Complex.ofRealHom q r
   rw [innerWeight_succ]
   push_cast [hc]
   rw [mul_div_assoc', mul_div_assoc', mul_div_cancel_left₀ _ hne, mul_comm]
@@ -348,7 +348,7 @@ theorem eq_smul_invariantForm (hq : IsGenericQuantumParameter (q : ℂ))
   have hstar (z : ℝ) : star (z : ℂ) = z := Complex.conj_ofReal z
   have hqI (r : ℤ) : star (quantumInteger (q : ℂ) r) = quantumInteger (q : ℂ) r := by
     have hc : ((quantumInteger q r : ℝ) : ℂ) = quantumInteger (q : ℂ) r :=
-      Complex.ofRealHom.map_quantumInteger q r
+      map_quantumInteger Complex.ofRealHom q r
     rw [← hc]
     exact hstar _
   -- Invariance under `K` makes `B` diagonal in the ladder basis.
