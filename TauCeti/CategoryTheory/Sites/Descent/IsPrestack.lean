@@ -117,6 +117,19 @@ lemma map_presheafHomObjHomEquiv_symm {M N : F.obj (.mk (op S))}
   rw [Equiv.apply_symm_apply] at this
   exact this.symm
 
+/-- The identification of morphisms of `F` over `S` with sections of `F.presheafHom` over the
+terminal object sends identities to identities. -/
+lemma presheafHomObjHomEquiv_id (M : F.obj (.mk (op S))) :
+    F.presheafHomObjHomEquiv (𝟙 M) = 𝟙 _ :=
+  (Iso.homCongr_apply _ _ _).trans (by simp)
+
+/-- The identification of morphisms of `F` over `S` with sections of `F.presheafHom` over the
+terminal object is compatible with composition. -/
+lemma presheafHomObjHomEquiv_comp {M N P : F.obj (.mk (op S))} (φ : M ⟶ N) (ψ : N ⟶ P) :
+    F.presheafHomObjHomEquiv (φ ≫ ψ) =
+      F.presheafHomObjHomEquiv φ ≫ F.presheafHomObjHomEquiv ψ :=
+  Iso.homCongr_comp _ _ _ φ ψ
+
 variable {F}
 
 /-- The pullback of a composite of local morphisms is the composite of their pullbacks. -/
