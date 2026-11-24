@@ -164,22 +164,12 @@ private theorem evalSection_eq_cochainSectionsEquiv {k : ℕ} (φ : A.Cochain k)
   rw [cochainSectionsEquiv_apply]
   exact congrArg φ.evalSection (funext fun i ↦ by simp)
 
-omit [FiniteDimensional ℝ F] in
-@[simp] private theorem lie_sectionsEquiv_symm (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
-    ⁅A.sectionsEquiv.symm a, f⁆ = A.anchorDeriv a f := by
-  rw [Sections.lie_def, LinearEquiv.apply_symm_apply]
-
 private theorem cochainSectionsEquiv_removeNth {k : ℕ} (φ : A.Cochain k)
     (s : Fin (k + 1) → Cₛ^∞⟮I; F, V⟯) (i : Fin (k + 1)) :
     A.cochainSectionsEquiv k φ (i.removeNth (A.sectionsEquiv.symm ∘ s)) =
       φ.evalSection (i.removeNth s) := by
   rw [A.evalSection_eq_cochainSectionsEquiv]
   exact congrArg _ (Fin.removeNth_comp A.sectionsEquiv.symm i s)
-
-private theorem cochain_ext_evalSection {k : ℕ} {φ₁ φ₂ : A.Cochain k}
-    (h : ∀ s : Fin k → Cₛ^∞⟮I; F, V⟯, φ₁.evalSection s = φ₂.evalSection s) : φ₁ = φ₂ :=
-  (A.cochainSectionsEquiv k).injective <| AlternatingMap.ext fun s ↦ by
-    simpa only [cochainSectionsEquiv_apply] using h (A.sectionsEquiv ∘ s)
 
 @[simp] theorem cochainSectionsEquiv_curryLeft {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯)
     (φ : A.Cochain (k + 1)) :
@@ -400,7 +390,7 @@ theorem lieDeriv_lieDeriv_sub {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : A.Co
 `L_a (φ ∧ ψ) = L_a φ ∧ ψ + φ ∧ L_a ψ`. -/
 theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.lieDeriv a (φ.wedge ψ) = (A.lieDeriv a φ).wedge ψ + φ.wedge (A.lieDeriv a ψ) := by
-  refine A.cochain_ext_evalSection fun s ↦ ?_
+  refine ContMDiffSection.ext_evalSection fun s ↦ ?_
   simp only [A.evalSection_lieDeriv, ContMDiffSection.evalSection_add,
     ContMDiffSection.evalSection_wedge, A.anchorDeriv_const_smul_right]
   conv_lhs =>

@@ -427,6 +427,19 @@ end Rinehart
 
 end Sections
 
+section Rinehart
+
+variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]
+
+/-- Differentiating a smooth function along `A.sectionsEquiv.symm a` agrees with
+`A.anchorDeriv a`. -/
+@[simp]
+theorem lie_sectionsEquiv_symm (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
+    ⁅A.sectionsEquiv.symm a, f⁆ = A.anchorDeriv a f := by
+  rw [Sections.lie_def, LinearEquiv.apply_symm_apply]
+
+end Rinehart
+
 end LieAlgebroid
 
 end TauCeti

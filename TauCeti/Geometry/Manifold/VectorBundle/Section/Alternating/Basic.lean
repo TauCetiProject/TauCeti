@@ -25,7 +25,7 @@ For a `C^n` vector bundle `V → M` with model fibre `F` and a normed space `G`,
 `fun x ↦ V x [⋀^ι]→L[𝕜] G` are `C^n` families of fibrewise continuous alternating maps. This file
 develops:
 * Empty-index identification (`alternatingIsEmptyLinearEquiv`, `alternatingIsEmptyEquiv`).
-* Pointwise evaluation on `C^n` sections (`evalSection`, `evalAlternatingMap`,
+* Pointwise evaluation on `C^n` sections (`evalSection`, `ext_evalSection`, `evalAlternatingMap`,
   `evalAlternatingLinearMap`).
 * Fibrewise interior product (`ContMDiffSection.curryLeft`) and its separation property
   (`ext_curryLeft`).
@@ -383,6 +383,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- Two `C^n` alternating bundle sections are equal as soon as their evaluations on all tuples of
+global `C^n` sections agree. -/
+theorem ext_evalSection {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {ι : Type*} [Fintype ι]
+    {φ₁ φ₂ : Cₛ^n⟮I; F [⋀^ι]→L[ℝ] G, fun x ↦ V x [⋀^ι]→L[ℝ] G⟯}
+    (h : ∀ s : ι → Cₛ^n⟮I; F, V⟯, φ₁.evalSection s = φ₂.evalSection s) : φ₁ = φ₂ := by
+  ext x v
+  obtain ⟨s, hs⟩ := exists_fun_apply_eq (I := I) (F := F) (V := V) n x v
+  simpa only [← hs, evalSection_apply] using congrArg (· x) (h s)
 
 /-- Two `C^n` alternating bundle sections of positive degree are equal as soon as all their
 interior products with global `C^n` sections agree. -/
