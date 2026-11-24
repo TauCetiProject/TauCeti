@@ -72,33 +72,8 @@ example [DecidableEq ι] (j : ι) (c : ℝ≥0) (hc : c ≠ 0)
     convergentHaarProduct B S hBcompact (Function.update μ j (c • μ j)) hconv' =
       c • convergentHaarProduct B S hBcompact μ hconv := by
   intro _
-  -- Enlarge the exceptional set to contain `j`; the tails outside it then agree.
-  let T₀ := insert j S
-  have hBcompact₀ (i : ι) (hi : i ∉ T₀) : IsCompact (B i : Set (G i)) :=
-    hBcompact i fun h ↦ hi (Finset.mem_insert_of_mem h)
-  have hconv₀ := summable_notMem_of_subset (Finset.subset_insert j S)
-    (fun i ↦ |(μ i (B i)).toReal - 1|) hconv
-  have hconv₀' := summable_notMem_of_subset (Finset.subset_insert j S)
-    (fun i ↦ |(Function.update μ j (c • μ j) i (B i)).toReal - 1|) hconv'
-  rw [convergentHaarProduct_eq_of_subset B (Finset.subset_insert j S) hBcompact hBcompact₀ μ
-      hconv hconv₀,
-    convergentHaarProduct_eq_of_subset B (Finset.subset_insert j S) hBcompact hBcompact₀ _
-      hconv' hconv₀']
-  have : (c • convergentHaarProduct B T₀ hBcompact₀ μ hconv₀).IsHaarMeasure :=
-    IsHaarMeasure.nnreal_smul _ hc
-  refine (convergentHaarProduct_unique B T₀ hBcompact₀ _ hconv₀' fun T hT C _ hCB ↦ ?_).symm
-  have hjT : j ∈ T := hT (Finset.mem_insert_self j S)
-  have htail : (∏' i : {i // i ∉ T}, (μ i.val (B i.val)).toReal) =
-      ∏' i : {i // i ∉ T}, (Function.update μ j (c • μ j) i.val (B i.val)).toReal :=
-    tprod_congr fun i ↦ by
-      rw [Function.update_of_ne fun h ↦ i.property (by rw [h]; exact hjT)]
-  have hprod : ∏ i ∈ T, Function.update μ j (c • μ j) i (C i) = c * ∏ i ∈ T, μ i (C i) := by
-    rw [← Finset.mul_prod_erase T _ hjT, ← Finset.mul_prod_erase T _ hjT, Function.update_self,
-      coe_nnreal_smul_apply, mul_assoc]
-    congr 2
-    exact Finset.prod_congr rfl fun i hi ↦ by rw [Function.update_of_ne (Finset.ne_of_mem_erase hi)]
-  rw [coe_nnreal_smul_apply, convergentHaarProduct_box B T₀ hBcompact₀ μ hconv₀ hT hCB, htail,
-    hprod, mul_assoc]
+  exact convergentHaarProduct_eq_smul_of_eq_smul B S hBcompact μ _ hconv hconv'
+    (Function.update_self ..) fun _ hi ↦ Function.update_of_ne hi ..
 
 end General
 
