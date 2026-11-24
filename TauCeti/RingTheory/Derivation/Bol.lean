@@ -64,13 +64,12 @@ theorem iterate_apply_pow_add_mul_pow_add_one {N L M : A} (hN : D (D N) = 0)
     (hL : D (D L) = 0) (hLM : L * M = 1) (j r : ℕ) :
     D^[r] (N ^ (j + r) * M ^ (j + 1)) =
       (j + r).descFactorial r • ((D N * L - N * D L) ^ r * N ^ j * M ^ (j + r + 1)) := by
+  have hM : D M = -(M ^ 2 * D L) := by
+    simpa [smul_eq_mul] using
+      (D.restrictScalars ℤ).leibniz_of_mul_eq_one ((mul_comm M L).trans hLM)
   induction r generalizing j with
   | zero => simp
   | succ r ih =>
-    have hM : D M = -(M ^ 2 * D L) := by
-      have h := congrArg D hLM
-      rw [leibniz, map_one_eq_zero, smul_eq_mul, smul_eq_mul] at h
-      linear_combination M * h - D M * hLM
     have hcN : D ((j + r + 1 : ℕ) * D N) = 0 := by simp [leibniz, hN]
     have hcL : D ((j + 1 : ℕ) * D L) = 0 := by simp [leibniz, hL]
     -- One derivative splits the product into the two shapes covered by the induction hypothesis.
@@ -179,10 +178,10 @@ theorem iterate_derivative_pow_mul_aeval (a b c d : K) (n : ℕ) (f : K[X]) :
     -- `f (N L⁻¹) = f (0)` is a constant and `D^(n + 1)` kills `L ^ n`.
     have hf : d⁄dX (Polynomial.aeval (0 : K⟦X⟧) f) = 0 := by
       rw [← Polynomial.coeff_zero_eq_aeval_zero', Derivation.map_algebraMap]
-    rw [h, mul_zero, zero_pow (by omega), mul_zero, zero_mul, mul_comm ((C c * X + C 0) ^ n),
+    rw [h, mul_zero, mul_comm ((C c * X + C 0) ^ n),
       Derivation.iterate_apply_mul_of_apply_eq_zero _ hf,
-      Derivation.iterate_apply_pow _ (derivative_derivative_C_mul_X_add_C c 0),
-      Nat.descFactorial_eq_zero_iff_lt.2 (by omega), zero_smul, mul_zero]
+      Derivation.iterate_apply_pow _ (derivative_derivative_C_mul_X_add_C c 0)]
+    simp
   · have hLM : (C c * X + C d) * (C c * X + C d)⁻¹ = 1 := PowerSeries.mul_inv_cancel _ (by simpa)
     rw [(d⁄dX).iterate_apply_pow_mul_aeval (derivative_derivative_C_mul_X_add_C a b)
       (derivative_derivative_C_mul_X_add_C c d) hLM, derivative_mul_sub_mul_derivative]
