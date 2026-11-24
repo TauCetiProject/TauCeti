@@ -128,91 +128,67 @@ theorem asSemimoduleIndex_span_injective_iff (a : J.L) :
   · intro hinj x y hxy
     exact hinj ((h x).symm.trans (hxy.trans (h y)))
 
--- At each walking-multispan constructor, `SemimoduleCat.of` has the same carrier as
--- the algebra object. Splitting the index exposes that equality of carriers.
-private def componentLinearEquiv (j : WalkingMultispan J) :
-    I.multispan.obj j ≃ₗ[R] I.asSemimoduleIndex.multispan.obj j :=
-  match j with
-  | .left _ => LinearEquiv.refl R _
-  | .right _ => LinearEquiv.refl R _
-
-private def ambientSectionsLinearEquiv :
-    (∀ j, I.multispan.obj j) ≃ₗ[R] (∀ j, I.asSemimoduleIndex.multispan.obj j) :=
-  LinearEquiv.piCongrRight I.componentLinearEquiv
-
-private def toLinearSection (s : AlgCat.sectionsSubalgebra I.multispan) :
-    SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan :=
-  ⟨I.ambientSectionsLinearEquiv s.val, by
-    apply I.asSemimoduleIndex.mem_sectionsSubmodule_multispan.mpr
-    have hs := I.mem_sectionsSubalgebra_multispan.mp s.property
-    exact ⟨fun a => (I.asSemimoduleIndex_fst_apply a _).trans (hs.1 a),
-      fun a => (I.asSemimoduleIndex_snd_apply a _).trans (hs.2 a)⟩⟩
-
-private theorem toLinearSection_apply (s : AlgCat.sectionsSubalgebra I.multispan)
-    (j : WalkingMultispan J) :
-    (I.toLinearSection s).val j = I.componentLinearEquiv j (s.val j) := by
-  exact LinearEquiv.piCongrRight_apply I.componentLinearEquiv s.val j
-
-private def toAlgebraSection (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) :
-    AlgCat.sectionsSubalgebra I.multispan :=
-  ⟨I.ambientSectionsLinearEquiv.symm s.val, by
-    apply I.mem_sectionsSubalgebra_multispan.mpr
-    have hs := I.asSemimoduleIndex.mem_sectionsSubmodule_multispan.mp s.property
-    exact ⟨fun a => (I.asSemimoduleIndex_fst_apply a _).symm.trans (hs.1 a),
-      fun a => (I.asSemimoduleIndex_snd_apply a _).symm.trans (hs.2 a)⟩⟩
-
-private theorem toAlgebraSection_apply
-    (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (j : WalkingMultispan J) :
-    (I.toAlgebraSection s).val j = (I.componentLinearEquiv j).symm (s.val j) := by
-  simp only [toAlgebraSection, ambientSectionsLinearEquiv, LinearEquiv.piCongrRight_symm,
-    LinearEquiv.piCongrRight_apply]
+/-- Forgetting the algebra multispan gives the multispan of the underlying semimodule index. -/
+def asSemimoduleIndexIso :
+    (I.multispan ⋙ forget₂ (AlgCat R) (ModuleCat R) ⋙ ModuleCat.equivalenceSemimoduleCat.functor) ≅
+      I.asSemimoduleIndex.multispan :=
+  -- At each incidence, the forgotten algebra map is the underlying linear map.
+  WalkingMultispan.functorExt (fun _ => Iso.refl _) (fun _ => Iso.refl _)
+    (fun a => by
+      simp only [Iso.refl_hom, Functor.comp_map, multispan_map_fst]
+      rfl)
+    (fun a => by
+      simp only [Iso.refl_hom, Functor.comp_map, multispan_map_snd]
+      rfl)
 
 /-- The algebra sections and the sections of the underlying semimodule diagram
 are linearly equivalent via their unchanged components. -/
 def multispanSectionsLinearEquiv : AlgCat.sectionsSubalgebra I.multispan ≃ₗ[R]
-    SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan where
-  toFun := I.toLinearSection
-  invFun := I.toAlgebraSection
-  left_inv s := by
-    apply Subtype.ext
-    exact I.ambientSectionsLinearEquiv.symm_apply_apply s.val
-  right_inv s := by
-    apply Subtype.ext
-    exact I.ambientSectionsLinearEquiv.apply_symm_apply s.val
-  map_add' x y := by
-    apply Subtype.ext
-    exact I.ambientSectionsLinearEquiv.map_add x.val y.val
-  map_smul' r x := by
-    apply Subtype.ext
-    exact I.ambientSectionsLinearEquiv.map_smul r x.val
+    SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan :=
+  (AlgCat.sectionsLinearEquiv I.multispan).trans
+    (SemimoduleCat.sectionsLinearEquivOfIso I.asSemimoduleIndexIso)
+
+/-- The multispan comparison factors through the general forgetting equivalence. -/
+theorem multispanSectionsLinearEquiv_eq :
+    I.multispanSectionsLinearEquiv =
+      (AlgCat.sectionsLinearEquiv I.multispan).trans
+        (SemimoduleCat.sectionsLinearEquivOfIso I.asSemimoduleIndexIso) := (rfl)
 
 /-- The comparison of sections preserves a face component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_apply_left
     (s : AlgCat.sectionsSubalgebra I.multispan) (a : J.L) :
-    (I.multispanSectionsLinearEquiv s).val (.left a) = s.val (.left a) :=
-  I.toLinearSection_apply s (.left a)
+    (I.multispanSectionsLinearEquiv s).val (.left a) = s.val (.left a) := by
+  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_apply,
+    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply]
+  rfl
 
 /-- The comparison of sections preserves a chamber component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_apply_right
     (s : AlgCat.sectionsSubalgebra I.multispan) (b : J.R) :
-    (I.multispanSectionsLinearEquiv s).val (.right b) = s.val (.right b) :=
-  I.toLinearSection_apply s (.right b)
+    (I.multispanSectionsLinearEquiv s).val (.right b) = s.val (.right b) := by
+  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_apply,
+    SemimoduleCat.sectionsLinearEquivOfIso_apply, AlgCat.sectionsLinearEquiv_apply]
+  rfl
 
 /-- The inverse comparison of sections preserves a face component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_symm_apply_left
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (a : J.L) :
-    (I.multispanSectionsLinearEquiv.symm s).val (.left a) = s.val (.left a) :=
-  I.toAlgebraSection_apply s (.left a)
+    (I.multispanSectionsLinearEquiv.symm s).val (.left a) = s.val (.left a) := by
+  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply]
+  rfl
 
 /-- The inverse comparison of sections preserves a chamber component. -/
 @[simp]
 theorem multispanSectionsLinearEquiv_symm_apply_right
     (s : SemimoduleCat.sectionsSubmodule I.asSemimoduleIndex.multispan) (b : J.R) :
-    (I.multispanSectionsLinearEquiv.symm s).val (.right b) = s.val (.right b) :=
-  I.toAlgebraSection_apply s (.right b)
+    (I.multispanSectionsLinearEquiv.symm s).val (.right b) = s.val (.right b) := by
+  rw [multispanSectionsLinearEquiv_eq, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
+    AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply]
+  rfl
 
 /-- A chamber family is compatible over the algebras exactly when it is compatible over
 their underlying semimodules. -/
@@ -330,6 +306,30 @@ theorem matchingFamilyAlgEquiv_symm_apply_right
   -- The right object of the walking multispan uses the given chamber carrier.
   exact h
 
+/-- Chamber algebra maps compatible with every face span lift to algebra sections. -/
+noncomputable def algebraSectionsLift {E : Type*} [Semiring E] [Algebra R E]
+    (α : ∀ b, E →ₐ[R] I.right b)
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (hα : ∀ x a, (α (J.fst a) x, α (J.snd a) x) ∈
+      ((I.fst a).hom.prod (I.snd a).hom).range) :
+    E →ₐ[R] AlgCat.sectionsSubalgebra I.multispan :=
+  (I.matchingFamilyAlgEquiv hinj).symm.toAlgHom.comp
+    ((AlgHom.pi α).codRestrict I.compatibleAlgebraFamilies
+      fun x => I.mem_compatibleAlgebraFamilies.mpr (hα x))
+
+/-- The bundled lift evaluates to the prescribed algebra map at each chamber. -/
+@[simp]
+theorem algebraSectionsLift_apply_right {E : Type*} [Semiring E] [Algebra R E]
+    (α : ∀ b, E →ₐ[R] I.right b)
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (hα : ∀ x a, (α (J.fst a) x, α (J.snd a) x) ∈
+      ((I.fst a).hom.prod (I.snd a).hom).range) (x : E) (b : J.R) :
+    (I.algebraSectionsLift α hinj hα x).val (.right b) = α b x := by
+  simp only [algebraSectionsLift, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    matchingFamilyAlgEquiv_symm_apply_right, AlgHom.coe_codRestrict, AlgHom.pi_apply]
+  -- The right entry of the multispan has the specified chamber carrier.
+  rfl
+
 /-- Jointly injective incident pairs let chamber algebra maps glue uniquely to an algebra map
 to the sections precisely when each incident pair is in the range of its span. -/
 theorem existsUnique_algebraSections_lift_iff {E : Type*} [Semiring E] [Algebra R E]
@@ -344,21 +344,13 @@ theorem existsUnique_algebraSections_lift_iff {E : Type*} [Semiring E] [Algebra 
     simpa only [restrictAlgebraSections_apply, hℓ] using
       I.mem_compatibleAlgebraFamilies.mp (I.restrictAlgebraSections (ℓ x)).property a
   · intro hα
-    let assembled := (AlgHom.pi α).codRestrict I.compatibleAlgebraFamilies
-      (fun x => I.mem_compatibleAlgebraFamilies.mpr (hα x))
-    have assembled_apply (x : E) (b : J.R) : (assembled x).val b = α b x := by
-      rw [AlgHom.coe_codRestrict, AlgHom.pi_apply]
-    refine ⟨(I.matchingFamilyAlgEquiv hinj).symm.toAlgHom.comp assembled, ?_, ?_⟩
-    · intro x b
-      exact (I.matchingFamilyAlgEquiv_symm_apply_right hinj (assembled x) b).trans
-        (assembled_apply x b)
-    · intro ℓ hℓ
-      ext x : 1
-      apply I.restrictAlgebraSections_injective hinj
-      apply Subtype.ext
-      funext b
-      simp only [restrictAlgebraSections_apply, hℓ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-        matchingFamilyAlgEquiv_symm_apply_right, assembled_apply]
+    refine ⟨I.algebraSectionsLift α hinj hα, I.algebraSectionsLift_apply_right α hinj hα, ?_⟩
+    intro ℓ hℓ
+    ext x : 1
+    apply I.restrictAlgebraSections_injective hinj
+    apply Subtype.ext
+    funext b
+    simp only [restrictAlgebraSections_apply, hℓ, algebraSectionsLift_apply_right]
 
 /-- The first incident map sends a reconstructed face to its prescribed chamber value. -/
 @[simp]

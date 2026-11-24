@@ -114,6 +114,24 @@ theorem sectionsMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   ext x j
   rfl
 
+/-- A natural isomorphism of semimodule diagrams gives a linear equivalence on sections. -/
+def sectionsLinearEquivOfIso (e : F ≅ G) : sectionsSubmodule F ≃ₗ[R] sectionsSubmodule G :=
+  LinearEquiv.ofLinearMap (sectionsMap e.hom) (sectionsMap e.inv)
+    (by rw [← sectionsMap_comp, Iso.inv_hom_id, sectionsMap_id])
+    (by rw [← sectionsMap_comp, Iso.hom_inv_id, sectionsMap_id])
+
+/-- Section transport along a diagram isomorphism applies its component at each object. -/
+@[simp]
+theorem sectionsLinearEquivOfIso_apply (e : F ≅ G) (s : sectionsSubmodule F) (j : J) :
+    (sectionsLinearEquivOfIso e s).val j = (e.hom.app j).hom (s.val j) :=
+  sectionsMap_apply e.hom s j
+
+/-- Inverse section transport applies the inverse component at each object. -/
+@[simp]
+theorem sectionsLinearEquivOfIso_symm_apply (e : F ≅ G) (s : sectionsSubmodule G) (j : J) :
+    ((sectionsLinearEquivOfIso e).symm s).val j = (e.inv.app j).hom (s.val j) :=
+  sectionsMap_apply e.inv s j
+
 /-- Restriction along an index functor commutes with changing coefficients. -/
 theorem sectionsPrecomp_naturality {K : Type*} [Category* K]
     (p : K ⥤ J) (α : F ⟶ G) :

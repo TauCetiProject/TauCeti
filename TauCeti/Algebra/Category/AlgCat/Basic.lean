@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.Category.AlgCat.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Basic
 
 /-!
 # Forgetting algebra structure
@@ -22,10 +23,12 @@ namespace AlgCat
 universe u t
 
 /-- The forgetful composite to semimodules acts by the original algebra homomorphism. -/
-@[simp]
 theorem forgetToSemimodule_map_apply {R : Type u} [CommRing R] {A B : AlgCat.{t} R}
     (f : A ⟶ B) (x : A) :
-    (ModuleCat.equivalenceSemimoduleCat.functor.map
-      (ModuleCat.ofHom f.hom.toLinearMap)).hom x = f.hom x := (rfl)
+    (((forget₂ (AlgCat R) (ModuleCat R) ⋙ ModuleCat.equivalenceSemimoduleCat.functor).map f).hom
+      x) = f.hom x := by
+  rw [Functor.comp_map, AlgCat.forget₂_module_map, ModuleCat.equivalenceSemimoduleCat_map_hom,
+    ModuleCat.hom_ofHom]
+  exact AlgHom.toLinearMap_apply f.hom x
 
 end AlgCat
