@@ -43,6 +43,8 @@ chain rule for the gradient of a real profile composed with a real function.
 ## Main declarations
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
+* `TauCeti.gradient_eq_of_iteratedFDeriv_one`: equal first iterated derivatives give equal
+  gradients, including at different points.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_add_const` and `TauCeti.gradient_const_add`: adding a constant does not change
   the gradient.
@@ -115,6 +117,15 @@ derivatives, with no differentiability assumptions. -/
 theorem norm_gradient_sub_gradient_eq_norm_fderiv_sub (f g : F → 𝕜) (x : F) :
     ‖∇ f x - ∇ g x‖ = ‖fderiv 𝕜 f x - fderiv 𝕜 g x‖ := by
   simp only [gradient, ← map_sub, LinearIsometryEquiv.norm_map]
+
+/-- Equal first iterated derivatives give equal gradients, with no differentiability assumptions. -/
+theorem gradient_eq_of_iteratedFDeriv_one {y : F}
+    (h : iteratedFDeriv 𝕜 1 f x = iteratedFDeriv 𝕜 1 g y) : ∇ f x = ∇ g y := by
+  apply (toDual 𝕜 F).injective
+  rw [toDual_gradient, toDual_gradient]
+  ext e
+  simpa only [iteratedFDeriv_one_apply] using
+    congrArg (fun A : F [×1]→L[𝕜] 𝕜 ↦ A (fun _ ↦ e)) h
 
 /-- The gradient is additive wherever both summands are differentiable. -/
 theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
