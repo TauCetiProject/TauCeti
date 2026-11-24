@@ -864,14 +864,9 @@ private theorem exists_logGap_sSup_eq_zero {n : ℕ} (hn : 1 ≤ n) :
     have hDy := (logGap_le_logGap (hy0 y) hys.le b).trans_lt hDb
     exact ⟨b, hC b hb ((logGap_le_logGap hs₀ y.property.1 b).trans hDy.le),
       ((re_tricomi_neg_iff (hy0 y) hb).2 hDy).le⟩
-  have hKdir : Directed (· ⊇ ·) K := by
-    intro i j
-    refine ⟨if (i : ℝ) ≤ j then j else i, ?_, ?_⟩ <;>
-    · intro b ⟨hb, hfb⟩
-      refine ⟨hb, (re_tricomi_nonpos_iff (hy0 _) (hIcc hb)).2 ?_⟩
-      refine (logGap_le_logGap (hy0 _) ?_ b).trans
-        ((re_tricomi_nonpos_iff (hy0 _) (hIcc hb)).1 hfb)
-      split_ifs with h <;> first | exact h | exact le_rfl | linarith
+  have hKdir : Directed (· ⊇ ·) K := directed_of_isDirected_le fun i j hij b ⟨hb, hfb⟩ =>
+    ⟨hb, (re_tricomi_nonpos_iff (hy0 i) (hIcc hb)).2 <| (logGap_le_logGap (hy0 i) hij b).trans
+      ((re_tricomi_nonpos_iff (hy0 j) (hIcc hb)).1 hfb)⟩
   have : Nonempty (Ico s₀ xs) := ⟨⟨s₀, le_rfl, hs₀xs⟩⟩
   obtain ⟨a₀, ha₀⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed K hKdir
     hKne (fun y => isCompact_Icc.inter_right

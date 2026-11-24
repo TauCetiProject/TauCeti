@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
+import TauCeti.Data.Nat.Cast.Basic
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -186,7 +187,7 @@ theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) 
 every regular real point. -/
 theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n : ℕ) :
     deriv digamma (x + n) = deriv digamma x - ∑ k ∈ Finset.range n, ((x + k) ^ 2)⁻¹ := by
-  have hxn : ∀ m : ℕ, x + n ≠ -(m : ℝ) := fun m h => hx (m + n) (by push_cast; linarith)
+  have hxn := TauCeti.add_natCast_ne_neg_natCast hx n
   have hk : ∀ k ∈ Finset.range n, x + k ≠ 0 := fun k _ h => hx k (by linarith)
   have h := ((differentiableAt_digamma hx).hasDerivAt.add (HasDerivAt.fun_sum
     (u := Finset.range n) fun (k : ℕ) hk' =>
