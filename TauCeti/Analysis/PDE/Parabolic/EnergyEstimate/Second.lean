@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Galerkin
 public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.Gronwall.Integrable
 import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!

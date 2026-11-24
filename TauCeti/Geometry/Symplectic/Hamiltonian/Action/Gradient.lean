@@ -37,10 +37,16 @@ so `A_t (γ' - X_{H_t}(γ))` is the weak `L²` gradient of the action at `γ` fo
 `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction_of_tames`).
 
 When `J_t` is compatible with `σ`, `A_t = J_t`
-(`TauCeti.SymplecticForm.Compatible.gradientOperator_eq`) and `g_t = σ(·, J_t ·)`, so the
-gradient is the familiar `J_t (γ' - X_{H_t}(γ))`, for which the Floer equation
-`∂_s u + J_t (∂_t u - X_{H_t}(u)) = 0` is the negative gradient flow. For a merely tame `J_t` the
-gradient operator differs from `J_t` exactly where compatibility fails
+(`TauCeti.SymplecticForm.Compatible.gradientOperator_eq`) and `g_t = σ(·, J_t ·)`, so the first
+variation formula becomes the pairing of `J_t (∂_t w - X_{H_t}(w))` with `∂_s w` for the metric
+`σ(·, J_t ·)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible`). This
+pairing formula is what is proved; its interpretation is not formalized here. For a smooth
+`1`-periodic family `J_t` of compatible almost complex structures on `M`, it identifies the
+familiar `J_t (γ' - X_{H_t}(γ))` as the `L²` gradient of the action at a smooth loop `γ` for the
+metric `∫₀¹ σ(·, J_t ·) dt`, and the Floer equation `∂_s u + J_t (∂_t u - X_{H_t}(u)) = 0` as its
+negative gradient flow.
+For a merely tame `J_t` the gradient operator differs from `J_t` exactly where compatibility fails
 (`TauCeti.SymplecticForm.Tames.gradientOperator_eq_iff`), and tame structures need not be
 compatible (`TauCeti.SymplecticForm.exists_tames_not_compatible`). The Floer equation for such a
 `J_t` then need not be the gradient flow of the action for `g_t`, although its solutions still
@@ -54,6 +60,9 @@ decrease the action.
   `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction_of_tames`:
   the first variation formula as the `L²` pairing of `∂_s w` with the gradient
   `A_t (∂_t w - X_{H_t}(w))`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible`: for
+  compatible `J_t`, the pairing of `J_t (∂_t w - X_{H_t}(w))` with `∂_s w` for the metric
+  `σ(·, J_t ·)`.
 
 ## References
 
@@ -111,6 +120,32 @@ theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_tames
   (h.hasDerivAt_contractibleLoopAction hw hH hwc hper hcap).congr_deriv <|
     intervalIntegral.integral_congr fun t _ ↦
       h.apply_eq_symmetrizedBilinForm_gradientOperator (hJ t) _ _
+
+/-- **The gradient of the contractible action for compatible almost complex structures.** Under
+the hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_tames`, if every
+`J_t` is compatible with `σ`, the action of the loops `w (s, ·)` has derivative
+`∫₀¹ g_{J_t}(J_t (∂_t w - X_{H_t}(w)), ∂_s w) dt` at `s₀` for the metric `g_{J_t} = σ(·, J_t ·)`,
+with all terms taken at `(s₀, t)`. This is a weak-gradient pairing formula along the single loop
+`w (s₀, ·)`: reading `J_t (γ' - X_{H_t}(γ))` as the `L²` gradient of the action needs in addition
+a smooth `1`-periodic family `J_t` defined on `M`, which is not assumed here. -/
+theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_contractibleLoopAction_of_compatible
+    (h : σ.IsNondegenerate) (hw : IsWeaklyExact σ.val)
+    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
+    (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) {s₀ : ℝ}
+    (hcap : ∃ u, IsCap I u fun t ↦ w (s₀, t))
+    {J : (t : ℝ) → AlmostComplexStructure (TangentSpace I (w (s₀, t)))}
+    (hJ : ∀ t, (h.symplecticFormAt (w (s₀, t))).Compatible (J t)) :
+    HasDerivAt (fun s ↦ contractibleLoopAction σ.val H fun t ↦ w (s, t))
+      (∫ t in 0..1, (h.symplecticFormAt (w (s₀, t))).associatedBilinForm (J t)
+        (J t (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) -
+          σ.hamiltonianVectorField (H t) (w (s₀, t))))
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0))) s₀ := by
+  refine (h.hasDerivAt_contractibleLoopAction_of_tames hw hH hwc hper hcap
+    fun t ↦ (hJ t).tames).congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
+  rw [(hJ t).gradientOperator_eq, (hJ t).symmetrizedBilinForm_apply,
+    SymplecticForm.associatedBilinForm_apply, (hJ t).associatedBilinForm_apply_swap]
+  ring
 
 /-- **The weak gradient of the action relative to a reference loop for tame almost complex
 structures.** Let `σ` be a nondegenerate two-form vanishing on tori, `H` a jointly `C¹`

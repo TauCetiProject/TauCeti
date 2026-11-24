@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Homology.Single
 
 The partial differential of `mapBifunctor A[j] K F c` or `mapBifunctor K A[j] F c` that would
 differentiate the single complex `A[j]` vanishes, for any zero-preserving bifunctor `F` and any
-total complex shape `c`.
+total complex shape `c`. The totalization of two single complexes is zero outside the degree of
+the pair of their degrees.
 
 ## Main results
 
@@ -21,6 +22,8 @@ total complex shape `c`.
   `mapBifunctor A[j] K F c` vanishes.
 * `HomologicalComplex.mapBifunctor_single_d₂`: the second partial differential of
   `mapBifunctor K A[j] F c` vanishes.
+* `HomologicalComplex.isZero_mapBifunctor_single_single_X`: the totalization of two single
+  complexes `A₁[j₁]` and `A₂[j₂]` vanishes outside the degree of `(j₁, j₂)`.
 -/
 
 public section
@@ -66,5 +69,29 @@ lemma mapBifunctor_single_d₂ [HasZeroObject C₂] [DecidableEq I₂] (j : I₂
         smul_zero]
     · rw [mapBifunctor.d₂_eq_zero' _ _ _ _ _ h₁ _ h₂]
   · rw [mapBifunctor.d₂_eq_zero _ _ _ _ _ _ _ h₁]
+
+/-- The totalization `mapBifunctor A₁[j₁] A₂[j₂] F c` of two single complexes vanishes in every
+degree other than `ComplexShape.π c₁ c₂ c (j₁, j₂)`, since each of its summands in such a degree
+has a zero factor. For the tensor product of complexes, `F` is `MonoidalCategory.curriedTensor`. -/
+lemma isZero_mapBifunctor_single_single_X [HasZeroObject C₁] [HasZeroObject C₂]
+    [DecidableEq I₁] [DecidableEq I₂] (j₁ : I₁) (j₂ : I₂) (A₁ : C₁) (A₂ : C₂)
+    [HasMapBifunctor ((single C₁ c₁ j₁).obj A₁) ((single C₂ c₂ j₂).obj A₂) F c]
+    {n : J} (hn : ComplexShape.π c₁ c₂ c (j₁, j₂) ≠ n) :
+    IsZero ((mapBifunctor ((single C₁ c₁ j₁).obj A₁) ((single C₂ c₂ j₂).obj A₂) F c).X n) := by
+  rw [IsZero.iff_id_eq_zero]
+  refine mapBifunctor.hom_ext (fun p q h ↦ ?_)
+  by_cases hp : p = j₁
+  · subst hp
+    have hq : q ≠ j₂ := by
+      rintro rfl
+      exact hn h
+    exact ((F.obj _).map_isZero (isZero_single_obj_X _ _ _ _ hq)).eq_of_src _ _
+  · -- `D` need not have a zero object, so the zero functor `F.obj 0` is evaluated by hand.
+    have h₁ : IsZero (F.obj (((single C₁ c₁ j₁).obj A₁).X p)) :=
+      F.map_isZero (isZero_single_obj_X _ _ _ _ hp)
+    have h₂ : IsZero ((F.obj (((single C₁ c₁ j₁).obj A₁).X p)).obj
+        (((single C₂ c₂ j₂).obj A₂).X q)) := by
+      rw [IsZero.iff_id_eq_zero, ← NatTrans.id_app, h₁.eq_of_src (𝟙 _) 0, NatTrans.app_zero]
+    exact h₂.eq_of_src _ _
 
 end HomologicalComplex

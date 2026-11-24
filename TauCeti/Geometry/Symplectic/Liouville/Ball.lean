@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.NormedSpace
 public import TauCeti.Geometry.Symplectic.Liouville.LinearAtInfinity
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
