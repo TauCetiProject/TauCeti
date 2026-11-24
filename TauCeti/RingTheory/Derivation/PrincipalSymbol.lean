@@ -9,7 +9,8 @@ public import TauCeti.RingTheory.Derivation.DifferentialOperator
 public import Mathlib.LinearAlgebra.Multilinear.Curry
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.RingTheory.Ideal.Cotangent
-import Mathlib.Data.Nat.Choose.Cast
+import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Multilinear.Polarization
 
 /-!
 # The principal symbol of a differential operator by iterated commutators
@@ -40,8 +41,8 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.pointCommutatorSymbol`, `TauCeti.pointPrincipalSymbol`: for an operator on `A`, a
   `𝕜`-point `φ : A →ₐ[𝕜] 𝕜` whose kernel contains `J`, and `e : J / J² ≃ V` over the commutative
   ring `𝕜`, the `𝕜`-multilinear form on `V` sending `(e [a₁], …, e [aₘ])` to
-  `φ([⋯[D, a₁], …, aₘ] 1)`, obtained by applying `φ` to the cotangent symbol, and, when `𝕜` is a
-  field, the homogeneous function `v ↦ (1 / m!) σ(v, …, v)`, meant for characteristic zero. For the
+  `φ([⋯[D, a₁], …, aₘ] 1)`, obtained by applying `φ` to the cotangent symbol, and, when `m!` is
+  invertible in `𝕜`, the homogeneous function `v ↦ (1 / m!) σ(v, …, v)`. For the
   smooth functions on a manifold and evaluation at a point, these are the commutator and principal
   symbols at that point.
 
@@ -70,6 +71,8 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.pointPrincipalSymbol_smul_right`, `TauCeti.pointPrincipalSymbol_eq_apply_one`,
   `TauCeti.pointPrincipalSymbol_comp`: the homogeneity of the point principal symbol, its value
   `φ (D 1)` in order zero, and its multiplicativity under composition.
+* `TauCeti.pointCommutatorSymbol_eq_zero_iff_forall_pointPrincipalSymbol_eq_zero`: by polarization,
+  the point commutator symbol vanishes if and only if the point principal symbol does.
 * `Polynomial.commutatorSymbol_derivative_comp_derivative`: for `∂²` on `R[X]` the commutator
   symbol at `(X, X)` is multiplication by `2`.
 
@@ -665,54 +668,57 @@ end Point
 
 section PointPrincipal
 
-variable {𝕜 A V : Type*} [Field 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCommGroup V] [Module 𝕜 V]
+variable {𝕜 A V : Type*} [CommRing 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCommGroup V] [Module 𝕜 V]
   {J : Ideal A} (φ : A →ₐ[𝕜] 𝕜) (hJ : J ≤ RingHom.ker φ) (e : J.Cotangent ≃ₗ[𝕜] V)
 
 /-- The principal symbol of a differential operator `D` of order at most `m` on `A` at a
 `𝕜`-point `φ` whose kernel contains `J`, read through `e : J / J² ≃ V`: the homogeneous function
 `v ↦ (1 / m!) σ(v, …, v)` of degree `m` on `V`, where `σ` is the point commutator symbol
 `TauCeti.pointCommutatorSymbol φ hJ e D`. At the class of `a ∈ J` it is
-`(1 / m!) φ([⋯[D, a], …, a] 1)` with `m` copies of `a`. The normalization is meant for
-characteristic zero (`TauCeti.pointPrincipalSymbol_comp`): in characteristic `p` the factor
-`(m!)⁻¹` is `0` for `m ≥ p`, and the point commutator symbol is the invariant to use instead. -/
-noncomputable def pointPrincipalSymbol {m : ℕ} (D : differentialOperators 𝕜 A A A m) (v : V) : 𝕜 :=
-  (m.factorial : 𝕜)⁻¹ * pointCommutatorSymbol φ hJ e D fun _ ↦ v
+`(1 / m!) φ([⋯[D, a], …, a] 1)` with `m` copies of `a`. The normalization requires `m!` to be
+invertible in `𝕜`, which holds for every `m` in characteristic zero; when it is not, the point
+commutator symbol is the invariant to use instead. -/
+noncomputable def pointPrincipalSymbol {m : ℕ} [Invertible (m.factorial : 𝕜)]
+    (D : differentialOperators 𝕜 A A A m) (v : V) : 𝕜 :=
+  ⅟(m.factorial : 𝕜) * pointCommutatorSymbol φ hJ e D fun _ ↦ v
 
-theorem pointPrincipalSymbol_def {m : ℕ} (D : differentialOperators 𝕜 A A A m) (v : V) :
+variable {m : ℕ} [Invertible (m.factorial : 𝕜)]
+
+theorem pointPrincipalSymbol_def (D : differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ hJ e D v =
-      (m.factorial : 𝕜)⁻¹ * pointCommutatorSymbol φ hJ e D fun _ ↦ v :=
+      ⅟(m.factorial : 𝕜) * pointCommutatorSymbol φ hJ e D fun _ ↦ v :=
   (rfl)
 
 @[simp]
-theorem pointPrincipalSymbol_zero {m : ℕ} (v : V) :
+theorem pointPrincipalSymbol_zero (v : V) :
     pointPrincipalSymbol φ hJ e (0 : differentialOperators 𝕜 A A A m) v = 0 := by
   simp [pointPrincipalSymbol_def]
 
 @[simp]
-theorem pointPrincipalSymbol_add {m : ℕ} (D₁ D₂ : differentialOperators 𝕜 A A A m) (v : V) :
+theorem pointPrincipalSymbol_add (D₁ D₂ : differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ hJ e (D₁ + D₂) v =
       pointPrincipalSymbol φ hJ e D₁ v + pointPrincipalSymbol φ hJ e D₂ v := by
   simp [pointPrincipalSymbol_def, mul_add]
 
 @[simp]
-theorem pointPrincipalSymbol_smul {m : ℕ} (c : 𝕜) (D : differentialOperators 𝕜 A A A m) (v : V) :
+theorem pointPrincipalSymbol_smul (c : 𝕜) (D : differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ hJ e (c • D) v = c * pointPrincipalSymbol φ hJ e D v := by
   simp only [pointPrincipalSymbol_def, map_smul, smul_apply, smul_eq_mul]
   ring
 
 @[simp]
-theorem pointPrincipalSymbol_neg {m : ℕ} (D : differentialOperators 𝕜 A A A m) (v : V) :
+theorem pointPrincipalSymbol_neg (D : differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ hJ e (-D) v = -pointPrincipalSymbol φ hJ e D v := by
   rw [← neg_one_smul 𝕜 D, pointPrincipalSymbol_smul, neg_one_mul]
 
 @[simp]
-theorem pointPrincipalSymbol_sub {m : ℕ} (D₁ D₂ : differentialOperators 𝕜 A A A m) (v : V) :
+theorem pointPrincipalSymbol_sub (D₁ D₂ : differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ hJ e (D₁ - D₂) v =
       pointPrincipalSymbol φ hJ e D₁ v - pointPrincipalSymbol φ hJ e D₂ v := by
   rw [sub_eq_add_neg D₁ D₂, pointPrincipalSymbol_add, pointPrincipalSymbol_neg, ← sub_eq_add_neg]
 
 /-- The point principal symbol of an operator of order at most `m` is homogeneous of degree `m`. -/
-theorem pointPrincipalSymbol_smul_right {m : ℕ} (D : differentialOperators 𝕜 A A A m) (c : 𝕜)
+theorem pointPrincipalSymbol_smul_right (D : differentialOperators 𝕜 A A A m) (c : 𝕜)
     (v : V) : pointPrincipalSymbol φ hJ e D (c • v) = c ^ m * pointPrincipalSymbol φ hJ e D v := by
   have h := (pointCommutatorSymbol φ hJ e D).map_smul_univ (fun _ ↦ c) fun _ ↦ v
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
@@ -722,36 +728,62 @@ theorem pointPrincipalSymbol_smul_right {m : ℕ} (D : differentialOperators �
 
 /-- An operator `D` of order zero is multiplication by `D 1`, and its point principal symbol is the
 constant `φ (D 1)`. -/
-theorem pointPrincipalSymbol_eq_apply_one (D : differentialOperators 𝕜 A A A 0) (v : V) :
+theorem pointPrincipalSymbol_eq_apply_one [Invertible ((0 : ℕ).factorial : 𝕜)]
+    (D : differentialOperators 𝕜 A A A 0) (v : V) :
     pointPrincipalSymbol φ hJ e D v = φ ((D : A →ₗ[𝕜] A) 1) := by
-  rw [pointPrincipalSymbol_def, Nat.factorial_zero, Nat.cast_one, inv_one, one_mul,
+  rw [pointPrincipalSymbol_def, invOf_eq_right_inv (b := 1) (by simp), one_mul,
     Subsingleton.elim (fun _ ↦ v) fun i ↦ e (J.toCotangent (Fin.elim0 i)),
     pointCommutatorSymbol_toCotangent, commutatorSymbol_zero_apply]
 
 variable {φ hJ}
 
+omit [Invertible (m.factorial : 𝕜)] in
 /-- The point principal symbol of an operator of order at most `m + 1` vanishes if the operator
 has order at most `m`. -/
 theorem pointPrincipalSymbol_eq_zero_of_mem_differentialOperators
-    {m : ℕ} (D : differentialOperators 𝕜 A A A (m + 1))
+    [Invertible ((m + 1).factorial : 𝕜)] (D : differentialOperators 𝕜 A A A (m + 1))
     (hD : (D : A →ₗ[𝕜] A) ∈ differentialOperators 𝕜 A A A m) (v : V) :
     pointPrincipalSymbol φ hJ e D v = 0 := by
   simp [pointPrincipalSymbol_def,
     pointCommutatorSymbol_eq_zero_of_mem_differentialOperators e D hD]
 
+/-- When `𝕜` has no additive torsion, the point commutator symbol of `D` vanishes if and only if
+its point principal symbol vanishes everywhere: the commutator symbol is symmetric, so by
+polarization it is determined by its values on the diagonal. -/
+theorem pointCommutatorSymbol_eq_zero_iff_forall_pointPrincipalSymbol_eq_zero [HasUniqueDiv 𝕜]
+    (D : differentialOperators 𝕜 A A A m) :
+    pointCommutatorSymbol φ hJ e D = 0 ↔ ∀ v, pointPrincipalSymbol φ hJ e D v = 0 := by
+  refine ⟨fun h v ↦ by simp [pointPrincipalSymbol_def, h], fun h ↦ ?_⟩
+  refine MultilinearMap.eq_zero_of_apply_const_eq_zero (pointCommutatorSymbol_comp_perm e D)
+    fun v ↦ ?_
+  simpa [pointPrincipalSymbol_def, mul_invOf_cancel_left] using
+    congrArg ((m.factorial : 𝕜) * ·) (h v)
+
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the point principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
 product of the point principal symbols. -/
-theorem pointPrincipalSymbol_comp [CharZero 𝕜] {m k : ℕ}
+theorem pointPrincipalSymbol_comp {k : ℕ} [Invertible (k.factorial : 𝕜)]
+    [Invertible ((m + k).factorial : 𝕜)]
     (P : differentialOperators 𝕜 A A A m) (Q : differentialOperators 𝕜 A A A k) (v : V) :
     pointPrincipalSymbol φ hJ e
         ⟨(P : A →ₗ[𝕜] A) ∘ₗ (Q : A →ₗ[𝕜] A),
           comp_mem_differentialOperators P.property Q.property⟩ v =
       pointPrincipalSymbol φ hJ e P v * pointPrincipalSymbol φ hJ e Q v := by
-  -- `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
-  have hfac (n : ℕ) : (n.factorial : 𝕜) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
-  simp only [pointPrincipalSymbol_def, pointCommutatorSymbol_comp_const, Nat.cast_add_choose]
-  field_simp [hfac]
+  -- `(m + k)! = (m + k).choose m * m! * k!`, so `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
+  have h : ((m + k).choose m * m.factorial * k.factorial : 𝕜) = (m + k).factorial := by
+    rw [Nat.choose_symm_add]
+    exact_mod_cast congrArg (Nat.cast : ℕ → 𝕜) <| Nat.add_choose_mul_factorial_mul_factorial m k
+  have hc :
+      ⅟((m + k).factorial : 𝕜) * (m + k).choose m = ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) := by
+    linear_combination (-(⅟((m + k).factorial : 𝕜) * (m + k).choose m)) *
+        mul_invOf_self (m.factorial : 𝕜) +
+      (-(⅟((m + k).factorial : 𝕜) * (m + k).choose m * m.factorial * ⅟(m.factorial : 𝕜))) *
+        mul_invOf_self (k.factorial : 𝕜) +
+      ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) * ⅟((m + k).factorial : 𝕜) * h +
+      ⅟(m.factorial : 𝕜) * ⅟(k.factorial : 𝕜) * mul_invOf_self ((m + k).factorial : 𝕜)
+  simp only [pointPrincipalSymbol_def, pointCommutatorSymbol_comp_const]
+  linear_combination
+    ((pointCommutatorSymbol φ hJ e P fun _ ↦ v) * pointCommutatorSymbol φ hJ e Q fun _ ↦ v) * hc
 
 end PointPrincipal
 

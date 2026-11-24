@@ -8,8 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Complex
 public import TauCeti.Geometry.Manifold.VectorField.ComplexDerivation
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
+import Mathlib.Algebra.CharP.Invertible
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
-import TauCeti.LinearAlgebra.Multilinear.Polarization
 
 /-!
 # Principal symbols of differential operators on complex-valued smooth functions
@@ -249,8 +250,9 @@ theorem complexSmoothPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
       C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D ξ =
-      (m.factorial : ℂ)⁻¹ * complexSmoothCommutatorSymbol I hx D fun _ ↦ ξ :=
-  pointPrincipalSymbol_def _ _ _ D ξ
+      (m.factorial : ℂ)⁻¹ * complexSmoothCommutatorSymbol I hx D fun _ ↦ ξ := by
+  rw [← invOf_eq_inv]
+  exact pointPrincipalSymbol_def _ _ _ D ξ
 
 /-- The principal symbol at the differential of `f` is `1 / m!` times the value at `x` of the
 `m`-fold commutator `[⋯[D, f], …, f] 1`. -/
@@ -350,15 +352,9 @@ theorem forall_complexSmoothPrincipalSymbol_eq_zero_iff [BoundarylessManifold I 
       (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
         differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
           C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
-  refine ⟨fun h ↦ (forall_complexSmoothCommutatorSymbol_eq_zero_iff D).1 fun x ↦ ?_,
+  refine ⟨fun h ↦ (forall_complexSmoothCommutatorSymbol_eq_zero_iff D).1 fun x ↦
+      (pointCommutatorSymbol_eq_zero_iff_forall_pointPrincipalSymbol_eq_zero _ D).2 (h x),
     fun hD x ↦ complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD⟩
-  -- The commutator symbol is symmetric and vanishes on the diagonal, so it vanishes by
-  -- polarization.
-  refine MultilinearMap.eq_zero_of_apply_const_eq_zero
-    (complexSmoothCommutatorSymbol_comp_perm BoundarylessManifold.isInteriorPoint D) fun ξ ↦ ?_
-  have hξ := h x ξ
-  rw [complexSmoothPrincipalSymbol_def, mul_eq_zero, inv_eq_zero] at hξ
-  exact hξ.resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` on complex smooth
 functions of orders at most `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order
