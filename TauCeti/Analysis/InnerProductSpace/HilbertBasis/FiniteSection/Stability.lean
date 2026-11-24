@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Corner
 public import TauCeti.Analysis.InnerProductSpace.StableSequence
 public import TauCeti.Analysis.Normed.Lp.StableSequence

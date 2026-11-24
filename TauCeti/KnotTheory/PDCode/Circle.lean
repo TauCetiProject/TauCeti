@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Oriented.Component
+public import TauCeti.KnotTheory.PDCode.Planar
 
 /-!
 # Adjoining a crossing-free circle to a PD-code
@@ -13,12 +15,15 @@ public import TauCeti.KnotTheory.PDCode.Kauffman
 A `PDCode` records components that never visit a crossing by their count.  This file makes the
 corresponding diagram operation explicit: `PDCode.adjoinCircle` adds one disjoint circle without
 changing any crossing data.  The oriented and framed versions also record the orientation and
-relative framing of the new component.
+relative framing of the new component, and `OrientedPDCode.adjoinCircleCrossingComponentEquiv`
+identifies the crossing-bearing components before and after adjoining a circle.
 
 The component and state-circle formulas make the operation usable in local move calculations.
 For a nonempty diagram, adjoining a circle multiplies the Kauffman bracket by the loop value
 `jonesDelta`; the nonemptiness hypothesis is necessary because the empty code is normalised to
-have bracket one rather than a negative power of the loop value.
+have bracket one rather than a negative power of the loop value. Crossing-free circles are not
+part of the underlying graph, so adjoining one leaves the graph, its faces and planarity
+unchanged (`TauCeti.PDCode.isPlanar_adjoinCircle_iff`).
 
 `ClaspInsertion` applies to clasps whose arcs meet crossings and does not treat a clasp through a
 crossing-free circle; this file supplies the separate operation of adjoining a disjoint
@@ -136,6 +141,35 @@ value. The empty code is excluded because its bracket is normalized to one. -/
   · funext i
     simp [PDCode.mirror_overPair]
 
+/-- Adjoining a crossing-free circle preserves the crossing rotation. -/
+@[simp] theorem crossingRotation_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.crossingRotation = D.crossingRotation := by
+  simp [crossingRotation_def]
+
+/-- Adjoining a crossing-free circle preserves the face traversal. -/
+@[simp] theorem facePerm_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.facePerm = D.facePerm := by
+  simp [facePerm_def]
+
+/-- Adjoining a crossing-free circle adds no faces to the underlying graph. -/
+@[simp] theorem faceCount_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.faceCount = D.faceCount := by
+  simp [faceCount_def]
+
+/-- Adjoining a crossing-free circle leaves the underlying graph unchanged: crossing-free
+circles are not part of it. -/
+@[simp] theorem toPermutationTriple_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.toPermutationTriple = D.toPermutationTriple := by
+  apply PermutationTriple.ext_of_two
+  · simp
+  · simp
+
+/-- Adjoining a crossing-free circle preserves planarity: the underlying graph, which carries no
+crossing-free circles, is unchanged. -/
+@[simp] theorem isPlanar_adjoinCircle_iff (D : PDCode n) :
+    D.adjoinCircle.IsPlanar ↔ D.IsPlanar := by
+  rw [isPlanar_def, isPlanar_def, toPermutationTriple_adjoinCircle]
+
 end PDCode
 
 /-! ### Oriented codes -/
@@ -225,6 +259,72 @@ same loop value as the unoriented bracket, since the writhe is unchanged. -/
   simp only [OrientedPDCode.normalizedKauffmanBracket_def, writhe_adjoinCircle,
     toPDCode_adjoinCircle, PDCode.kauffmanBracket_adjoinCircle D.toPDCode h a]
   ring
+
+/-- Adjoining a crossing-free circle preserves outgoing half-edges while keeping every half-edge
+label fixed. -/
+abbrev adjoinCircleOutgoingEquiv (D : OrientedPDCode n) (o : Bool) :
+    {h : Fin (4 * n) // D.orientation h = true} ≃
+      {h : Fin (4 * n) // (D.adjoinCircle o).orientation h = true} :=
+  Equiv.subtypeEquivRight fun _ ↦ by simp
+
+/-- Adjoining a crossing-free circle conjugates outgoing component traversal along the identity on
+half-edge labels. -/
+@[simp] theorem componentPermOutgoing_adjoinCircle (D : OrientedPDCode n) (o : Bool) :
+    (D.adjoinCircle o).componentPermOutgoing =
+      (D.adjoinCircleOutgoingEquiv o).permCongr D.componentPermOutgoing := by
+  ext h
+  simp
+
+noncomputable section
+
+/-- Adjoining a crossing-free circle preserves the crossing-bearing components, keeping every
+half-edge representative fixed. -/
+def adjoinCircleCrossingComponentEquiv (D : OrientedPDCode n) (o : Bool) :
+    D.CrossingComponent ≃ (D.adjoinCircle o).CrossingComponent :=
+  (D.adjoinCircleOutgoingEquiv o).sameCycleQuotientCongr (D.componentPermOutgoing_adjoinCircle o)
+
+/-- Adjoining a crossing-free circle sends each outgoing traversal class to the same
+representative class. -/
+@[simp] theorem adjoinCircleCrossingComponentEquiv_mk (D : OrientedPDCode n) (o : Bool)
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    D.adjoinCircleCrossingComponentEquiv o ⟦h⟧ = ⟦D.adjoinCircleOutgoingEquiv o h⟧ :=
+  Equiv.sameCycleQuotientCongr_mk _ _ h
+
+/-- Inverse crossing-component transport across `adjoinCircle` sends each outgoing traversal class
+back to the same representative class. -/
+@[simp] theorem adjoinCircleCrossingComponentEquiv_symm_mk (D : OrientedPDCode n) (o : Bool)
+    (h : {h : Fin (4 * n) // (D.adjoinCircle o).orientation h = true}) :
+    (D.adjoinCircleCrossingComponentEquiv o).symm ⟦h⟧ =
+      ⟦(D.adjoinCircleOutgoingEquiv o).symm h⟧ := by
+  apply (D.adjoinCircleCrossingComponentEquiv o).injective
+  simp
+
+/-- Adjoining a crossing-free circle preserves the crossing-bearing component of every half-edge,
+incoming or outgoing. -/
+@[simp] theorem adjoinCircleCrossingComponentEquiv_halfEdge (D : OrientedPDCode n) (o : Bool)
+    (x : Fin (4 * n)) :
+    D.adjoinCircleCrossingComponentEquiv o (D.crossingComponentOfHalfEdge x) =
+      (D.adjoinCircle o).crossingComponentOfHalfEdge x :=
+  D.apply_crossingComponentOfHalfEdge (D.adjoinCircleCrossingComponentEquiv o)
+    (D.adjoinCircle o).crossingComponentOfHalfEdge
+    (fun x ↦ (D.adjoinCircle o).crossingComponentOfHalfEdge_edgePair x)
+    (fun h ↦ by
+      rw [adjoinCircleCrossingComponentEquiv_mk,
+        crossingComponentOfHalfEdge_of_outgoing _ h.val (by simpa using h.property)]
+      congr 1)
+    x
+
+/-- Inverse crossing-component transport across `adjoinCircle` preserves the crossing-bearing
+component of every half-edge. -/
+@[simp] theorem adjoinCircleCrossingComponentEquiv_symm_halfEdge (D : OrientedPDCode n) (o : Bool)
+    (x : Fin (4 * n)) :
+    (D.adjoinCircleCrossingComponentEquiv o).symm
+        ((D.adjoinCircle o).crossingComponentOfHalfEdge x) =
+      D.crossingComponentOfHalfEdge x := by
+  apply (D.adjoinCircleCrossingComponentEquiv o).injective
+  simp
+
+end
 
 end OrientedPDCode
 

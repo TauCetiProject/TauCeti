@@ -14,15 +14,17 @@ import Mathlib.Data.Int.Interval
 import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.Rat.Floor
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Univariate Hasse jets: ordinary jets and nonvanishing on finite sets
 
 The `k`-th ordinary derivative is `k!` times the `k`-th Hasse derivative
-(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so whenever `k!` is a unit an ordinary jet
-vanishes exactly when the corresponding Hasse jet does. In a ring of prime characteristic `p` this
-holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and fails at `k = p`, where
-`D^p` kills every polynomial while `D^[p] X^p = 1`.
+(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so evaluating `D^k f` multiplies `D^[k] f (a)`
+by `k!` (`Polynomial.eval_iterate_derivative_eq_factorial_mul`) and whenever `k!` is a unit an
+ordinary jet vanishes exactly when the corresponding Hasse jet does. In a ring of prime
+characteristic `p` this holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and
+fails at `k = p`, where `D^p` kills every polynomial while `D^[p] X^p = 1`.
 
 Over an integral domain, the root multiplicity of a nonzero polynomial `P` at `a` is the order of
 its first nonvanishing Hasse derivative at `a`
@@ -39,11 +41,18 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
 
 ## Main results
 
+* `Polynomial.eval_iterate_derivative_eq_factorial_mul`: `(derivative^[k] f).eval a` is `k!` times
+  `(hasseDeriv k f).eval a`.
 * `Polynomial.iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero`,
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero`: if `k!` is a unit, the
   ordinary derivative (or jet at a point) of order `k` vanishes if and only if the Hasse one does;
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt` specialises this
   to `k < p` in characteristic `p`.
+* `Polynomial.eval_eq_sum_range_iterate_derivative_eval`: Taylor's formula
+  `p(x) = ∑_{k < N} p⁽ᵏ⁾(r) / k! (x - r) ^ k` over a field of characteristic zero.
+* `Polynomial.mul_card_le_natDegree_of_forall_eval_hasseDeriv_eq_zero`: over an integral domain,
+  if `P ≠ 0` and the Hasse derivatives of `P` of order less than `n` vanish at every point of a
+  finite set `S`, then `n * #S ≤ P.natDegree`.
 * `Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`: over an integral domain, if `P ≠ 0`
   and `P.natDegree < #S * (k + 1)`, some Hasse derivative of `P` of order `≤ k` is nonzero on `S`.
 * `Polynomial.exists_int_eval_hasseDeriv_ne_zero`: over a domain of characteristic zero, if `P ≠ 0`,
@@ -70,6 +79,11 @@ open Nat
 
 variable {R : Type*} [Semiring R] {k : ℕ}
 
+/-- Evaluating `derivative^[k] f` at `a` gives `k!` times `(hasseDeriv k f).eval a`. -/
+theorem eval_iterate_derivative_eq_factorial_mul (k : ℕ) (f : R[X]) (a : R) :
+    (derivative^[k] f).eval a = (k ! : R) * (hasseDeriv k f).eval a := by
+  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul]
+
 /-- If `k!` is a unit, the `k`-th ordinary derivative of `f` vanishes exactly when the `k`-th
 Hasse derivative does. -/
 theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)) (f : R[X]) :
@@ -81,8 +95,7 @@ theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)
 `D^[k] f (a)` does. -/
 theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero (hk : IsUnit (k ! : R))
     (f : R[X]) (a : R) : (derivative^[k] f).eval a = 0 ↔ (hasseDeriv k f).eval a = 0 := by
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul,
-    hk.mul_right_eq_zero]
+  rw [eval_iterate_derivative_eq_factorial_mul, hk.mul_right_eq_zero]
 
 /-- In characteristic `p`, for `k < p` the ordinary jet `D^k f (a)` vanishes exactly when the Hasse
 jet `D^[k] f (a)` does. -/
@@ -94,18 +107,38 @@ theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt {R : T
 
 end Factorial
 
+/-- **Taylor's formula for polynomials.** Over a field of characteristic zero, a polynomial of
+degree less than `N` is `p(x) = ∑_{k < N} p⁽ᵏ⁾(r) / k! (x - r) ^ k` for all `r` and `x`. -/
+theorem eval_eq_sum_range_iterate_derivative_eval {K : Type*} [Field K] [CharZero K] {p : K[X]}
+    {N : ℕ} (hN : p.natDegree < N) (r x : K) :
+    p.eval x =
+      ∑ k ∈ Finset.range N, (derivative^[k] p).eval r / k.factorial * (x - r) ^ k := by
+  have h := taylor_eval r p (x - r)
+  rw [sub_add_cancel] at h
+  rw [← h, eval_eq_sum_range' (by rwa [natDegree_taylor]) (x - r)]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hkf : (k.factorial : K) ≠ 0 := by exact_mod_cast k.factorial_ne_zero
+  rw [taylor_coeff, eval_iterate_derivative_eq_factorial_mul k p r]
+  field_simp
+
+/-- **The root-count inequality for Hasse derivatives.** Over an integral domain, if `P ≠ 0` and
+the Hasse derivatives of `P` of order less than `n` vanish at every point of a finite set `S`,
+then `n * #S ≤ P.natDegree`. -/
+theorem mul_card_le_natDegree_of_forall_eval_hasseDeriv_eq_zero {R : Type*} [CommRing R]
+    [IsDomain R] {P : R[X]} (hP : P ≠ 0) {S : Finset R} {n : ℕ}
+    (h : ∀ a ∈ S, ∀ i < n, (hasseDeriv i P).eval a = 0) : n * #S ≤ P.natDegree :=
+  mul_card_le_natDegree_of_le_rootMultiplicity fun a ha ↦
+    (le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hP).2 (h a ha)
+
 /-- Over an integral domain, if `P ≠ 0` has degree strictly less than `#S * (k + 1)`, then some
 Hasse derivative of `P` of order at most `k` does not vanish at some point of `S`. -/
 theorem exists_eval_hasseDeriv_ne_zero_of_natDegree_lt {R : Type*} [CommRing R] [IsDomain R]
     {P : R[X]} (hP : P ≠ 0) {S : Finset R} {k : ℕ} (hdeg : P.natDegree < #S * (k + 1)) :
     ∃ a ∈ S, ∃ i ≤ k, (hasseDeriv i P).eval a ≠ 0 := by
   by_contra! h
-  have hle : #S * (k + 1) ≤ ∑ a ∈ S, P.rootMultiplicity a := by
-    rw [← smul_eq_mul, ← Finset.sum_const]
-    exact Finset.sum_le_sum fun a ha ↦
-      (le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero hP).2 fun i hi ↦
-        h a ha i (Nat.lt_succ_iff.1 hi)
-  exact (hle.trans (sum_rootMultiplicity_le_natDegree P S)).not_gt hdeg
+  have hle := mul_card_le_natDegree_of_forall_eval_hasseDeriv_eq_zero (n := k + 1) hP
+    fun a ha i hi ↦ h a ha i (Nat.lt_succ_iff.1 hi)
+  exact (mul_comm (k + 1) #S ▸ hle).not_gt hdeg
 
 /-- **Univariate Hasse-jet nonvanishing on a bounded integer interval** (the one-variable case of
 Evertse, Lemma 25). Over a domain of characteristic zero, any nonzero polynomial `P` of degree at
@@ -177,7 +210,6 @@ example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
     simp only [hasseDeriv_zero, LinearMap.id_apply, eval_sub, eval_pow, eval_X]
     generalize (z : ZMod 2) = x
     fin_cases x <;> decide
-
 
 /-- `p = 3`, `k = 2`, `f = X²`, `a = 0`: `D² f = 2` and `D^[2] f = 1`, both nonzero. -/
 example : (derivative^[2] (X ^ 2 : (ZMod 3)[X])).eval 0 = 2 ∧

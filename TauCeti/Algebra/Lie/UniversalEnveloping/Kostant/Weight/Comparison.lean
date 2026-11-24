@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
 public import TauCeti.Algebra.Lie.Basis.Cartan
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
@@ -52,14 +52,15 @@ theorem jointWeightSpace_eq_weightSpace (χ : Dual ℚ H) (μ : ι → ℤ)
   -- The restricted H-action is the ambient L-action, and `b.h' j` is `b.h j` bundled in H.
   rfl
 
-variable [LieRing.IsNilpotent H] (N : Submodule ℤ V) [N.IsLattice ℚ]
+variable [LieRing.IsNilpotent H] (N : Submodule ℤ V) [N.IsFullLattice ℚ]
   (hN : ∀ u ∈ b.kostantForm, ∀ x ∈ N, representation ℚ L V u x ∈ N)
   (hV : ∀ x ∈ N, x ∈ ⨆ μ : ι → ℤ, jointWeightSpace b.h (representation ℚ L V) μ)
 
 include hN hV in
 /-- A full admissible lattice makes generalized Cartan weight spaces honest weight spaces. -/
-theorem genWeightSpace_eq_weightSpace_of_isLattice (χ : H → ℚ) :
+theorem genWeightSpace_eq_weightSpace_of_isFullLattice (χ : H → ℚ) :
     genWeightSpace V χ = weightSpace V χ := by
+  have := Submodule.IsLattice.finite ℚ N
   have hN' : ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm b.rootGenerator b.h,
       ∀ x ∈ N.toAddSubgroup, representation ℚ L V u x ∈ N.toAddSubgroup := by
     intro u hu x hx
@@ -69,15 +70,15 @@ theorem genWeightSpace_eq_weightSpace_of_isLattice (χ : H → ℚ) :
   let w := fun a : (Σ μ : ι → ℤ, Module.Free.ChooseBasisIndex ℤ
       (weightSublattice b.h (representation ℚ L V) N.toAddSubgroup μ)) =>
     b.cartanBasis.constr ℚ (fun j => (a.1 j : ℚ))
-  have hB : ∀ a x, ⁅x, B.extendOfIsLattice ℚ a⁆ = w a x • B.extendOfIsLattice ℚ a := by
+  have hB : ∀ a x, ⁅x, B.extendOfIsFullLattice ℚ a⁆ = w a x • B.extendOfIsFullLattice ℚ a := by
     intro a
     apply (mem_weightSpace _ _).mp
-    rw [Module.Basis.extendOfIsLattice_apply, ← LieSubmodule.mem_toSubmodule,
+    rw [Module.Basis.extendOfIsFullLattice_apply, ← LieSubmodule.mem_toSubmodule,
       ← b.jointWeightSpace_eq_weightSpace (w a) a.1
         (fun j => by simp [w, ← cartanBasis_apply]), mem_jointWeightSpace_iff]
     exact isCartanWeightVector_kostantWeightBasis b.rootGenerator b.h
       (representation ℚ L V) N.toAddSubgroup hN' (fun x => hV x x.property) a
-  exact (B.extendOfIsLattice ℚ).genWeightSpace_eq_weightSpace_of_weight_basis hB χ
+  exact (B.extendOfIsFullLattice ℚ).genWeightSpace_eq_weightSpace_of_weight_basis hB χ
 
 include hN hV in
 /-- The integral weight slice of a full admissible lattice spans the rational generalized
@@ -87,9 +88,9 @@ theorem span_weightSublattice_eq_genWeightSpace (χ : Dual ℚ H) (μ : ι → �
     Submodule.span ℚ ((fun x : N.toAddSubgroup => (x : V)) ''
         (weightSublattice b.h (representation ℚ L V) N.toAddSubgroup μ : Set N.toAddSubgroup)) =
       (genWeightSpace V (χ : H → ℚ)).toSubmodule := by
-  rw [b.genWeightSpace_eq_weightSpace_of_isLattice N hN hV]
+  rw [b.genWeightSpace_eq_weightSpace_of_isFullLattice N hN hV]
   exact (span_weightSublattice_eq_jointWeightSpace b.h (representation ℚ L V) N
-    Submodule.IsLattice.span_eq_top μ).trans (b.jointWeightSpace_eq_weightSpace χ μ hχ)
+    Submodule.IsFullLattice.span_eq_top μ).trans (b.jointWeightSpace_eq_weightSpace χ μ hχ)
 
 include hN hV in
 /-- An integral weight occurs in a full admissible lattice exactly when the associated rational
