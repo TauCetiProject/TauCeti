@@ -22,13 +22,13 @@ a fixed closed disc of radius `r`. Every compact window of the divisor space `Sy
 of zeros included, lies in such a disc. With `ρ(z) = √(1 + |z|²)`:
 
 * every kernel element `y` satisfies `‖exp(c ρ) y‖₂ ≤ K ‖y‖₂` for `c < 1 / 2`
-  (`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`,
+  (`exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`,
   and for the weak `L²` kernel
-  `exists_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le`);
+  `exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le`);
 * the kernel projection and the complementary projection satisfy
   `‖exp(c ρ) Π f‖₂ ≤ K ‖exp(c ρ) f‖₂` and `‖exp(c ρ) (f - Π f)‖₂ ≤ K ‖exp(c ρ) f‖₂` for
-  `|c| < 1 / 2` (`exists_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`,
-  `exists_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le`).
+  `|c| < 1 / 2` (`exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`,
+  `exists_forall_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le`).
 
 Together with the uniform estimate for the weak right inverse `Q` orthogonal to the kernel
 (`TauCeti.Vortex.exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le`), these are the
@@ -49,7 +49,7 @@ in the distance to the zeros with a constant depending only on `m`
 coefficient exceeds every `a < 1 / 4` outside a common disc
 (`TauCeti.Vortex.exists_forall_lt_vortexMass_of_forall_mem_norm_le`), and `L_x` satisfies the
 exterior estimate at every mass below `1 / 2` on a common exterior
-(`TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le`).
+(`exists_forall_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le`).
 
 **The projection.** For `u = Π f`, `‖u‖₂² = ⟪u, f⟫ = ⟪exp(-c ρ) u, exp(c ρ) f⟫`, so the decay of
 the kernel at the rate `-c` bounds `‖u‖₂` by `‖exp(c ρ) f‖₂`, and its decay at the rate `c` then
@@ -72,14 +72,14 @@ vortices with the degree-`m` end framing whose zeros lie in the closed disc of r
 
 * `exists_forall_lt_vortexMass_of_forall_mem_norm_le`: `vortexMass x > a` outside a common disc,
   for every `a < 1 / 4`.
-* `exists_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le`: the exterior
-  estimate for `L_x` on a common exterior.
-* `exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`,
-  `exists_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le`: uniform
-  exponential decay of the kernel and of the weak kernel.
-* `exists_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`,
-  `exists_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le`: the uniform weighted
-  estimates for the kernel projection and the complementary projection.
+* `exists_forall_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le`: the
+  exterior estimate for `L_x` on a common exterior.
+* `exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`,
+  `exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le`:
+  uniform exponential decay of the kernel and of the weak kernel.
+* `exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le`,
+  `exists_forall_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le`: the uniform
+  weighted estimates for the kernel projection and the complementary projection.
 
 ## References
 
@@ -154,7 +154,7 @@ degree `m`, radius `r` and rate `|c| < 1 / 2` there is a radius `R > 0` such tha
 vortex `x` with the degree-`m` end framing whose zeros lie in the closed disc of radius `r`
 satisfies `c² ∫ |y|² ≤ ∫ |L_x y|²` for every compactly supported `C²` variation `y` vanishing on
 the closed disc of radius `R`. -/
-theorem exists_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le (m : ℕ)
+theorem exists_forall_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le (m : ℕ)
     (r : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ R > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ z, equation x z = 0) →
@@ -182,8 +182,8 @@ satisfies
 
 The constant depends only on `m`, `r` and `c`, not on the vortex or on the position of its zeros
 in the disc, collisions included. -/
-theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le (m : ℕ)
-    (r : ℝ) {c : ℝ} (hc : c < 1 / 2) :
+theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le
+    (m : ℕ) (r : ℝ) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
@@ -194,8 +194,8 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_nor
   have hd2 : max c 0 < 1 / 2 := max_lt hc (by norm_num)
   have hc₁ : 0 < (max c 0 + 1 / 2) / 2 := by linarith [le_max_right c 0]
   obtain ⟨R, -, hR⟩ :=
-    exists_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le (μ := volume) m r
-      (c := (max c 0 + 1 / 2) / 2) (by rw [abs_of_pos hc₁]; linarith)
+    exists_forall_exterior_integral_norm_sq_gaugeFixedOperator_ge_of_forall_mem_norm_le
+      (μ := volume) m r (c := (max c 0 + 1 / 2) / 2) (by rw [abs_of_pos hc₁]; linarith)
   obtain ⟨K, hK⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel
     (c := c) (c₁ := (max c 0 + 1 / 2) / 2) (by linarith [le_max_left c 0]) hc₁ (R := R)
   exact ⟨K, fun x D hx hsol hframe hD hDr ↦
@@ -211,8 +211,8 @@ order. Then every element `u` of the weak `L²` kernel of `L_x` satisfies
 
 The constant depends only on `m`, `r` and `c`; the bounds on the derivatives of `x` only identify
 the weak kernel with the smooth one. -/
-theorem exists_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le (m : ℕ)
-    (r : ℝ) {c : ℝ} (hc : c < 1 / 2) :
+theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le
+    (m : ℕ) (r : ℝ) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
       (∀ z, equation x z = 0) →
@@ -221,7 +221,7 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem
       ∀ u ∈ weakGaugeFixedKernel x,
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • u z) 2 ≤ K * eLpNorm u 2 := by
   obtain ⟨K, hK⟩ :=
-    exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le m r hc
+    exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le m r hc
   refine ⟨K, fun x D hx hbound hsol hframe hD hDr u hu ↦ ?_⟩
   obtain ⟨y, -, -, hy, huy⟩ :=
     exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel hx hbound hu
@@ -242,8 +242,8 @@ derivatives of every order, and let `Π` be the `L²`-orthogonal projection onto
 `‖exp(c ρ) Π f‖₂ ≤ K ‖exp(c ρ) f‖₂`.
 
 The constant depends only on `m`, `r` and `c`. -/
-theorem exists_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le (m : ℕ) (r : ℝ)
-    {c : ℝ} (hc : |c| < 1 / 2) :
+theorem exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le
+    (m : ℕ) (r : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
       (∀ z, equation x z = 0) →
@@ -255,11 +255,11 @@ theorem exists_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le (m :
             (weakGaugeFixedKernel x).starProjection f z) 2 volume ≤
           K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
   obtain ⟨K₁, hK₁⟩ :=
-    exists_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le m r (c := c)
-      ((le_abs_self c).trans_lt hc)
+    exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le m r
+      (c := c) ((le_abs_self c).trans_lt hc)
   obtain ⟨K₂, hK₂⟩ :=
-    exists_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le m r (c := -c)
-      ((neg_le_abs c).trans_lt hc)
+    exists_forall_eLpNorm_exp_mul_smul_le_of_mem_weakGaugeFixedKernel_of_forall_mem_norm_le m r
+      (c := -c) ((neg_le_abs c).trans_lt hc)
   refine ⟨K₁ * K₂, fun x D hx hbound hsol hframe hD hDr f hf ↦ ?_⟩
   set u := (weakGaugeFixedKernel x).starProjection f
   have hu : u ∈ weakGaugeFixedKernel x := (weakGaugeFixedKernel x).starProjection_apply_mem f
@@ -268,37 +268,33 @@ theorem exists_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le (m :
   have hu₂ := hK₂ x D hx hbound hsol hframe hD hDr u hu
   have hu₂' : MemLp (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • u z) 2 volume :=
     memLp_iff.2 (hu₂.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top u)))
-  have hnorm₂ : ‖hu₂'.toLp _‖ ≤ K₂ * ‖u‖ := by
-    rw [Lp.norm_toLp, Lp.norm_def, ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top u)) hu₂
+  have hnorm₂ :
+      (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • u z) 2 volume).toReal ≤ K₂ * ‖u‖ :=
+    (ENNReal.toReal_mono (by finiteness) hu₂).trans_eq (by simp [ENNReal.toReal_mul, Lp.norm_def])
   -- `‖u‖₂² = ⟪u, f⟫ = ⟪exp(-c ρ) u, exp(c ρ) f⟫ ≤ K₂ ‖u‖₂ ‖exp(c ρ) f‖₂`.
   have hself : ⟪u, u⟫ = ⟪u, f⟫ := by
     have h := (weakGaugeFixedKernel x).starProjection_inner_eq_zero f u hu
     rw [inner_sub_left] at h
     rw [real_inner_comm f u]
     exact (sub_eq_zero.1 h).symm
-  have hinner : ⟪u, f⟫ = ⟪hu₂'.toLp _, hf.toLp _⟫ := by
-    simp only [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hu₂'.coeFn_toLp, hf.coeFn_toLp] with z huz hfz
-    simp only [huz, hfz, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← Real.exp_add,
-      ← add_mul, add_neg_cancel, zero_mul, Real.exp_zero, one_mul]
-  have hsq : ‖u‖ ^ 2 ≤ K₂ * ‖u‖ * N := by
-    rw [← real_inner_self_eq_norm_sq, hself, hinner]
-    refine (real_inner_le_norm _ _).trans ?_
-    rw [Lp.norm_toLp _ hf]
-    exact mul_le_mul_of_nonneg_right hnorm₂ ENNReal.toReal_nonneg
-  have hu_le : ‖u‖ ≤ K₂ * N := by
-    have hN : 0 ≤ (K₂ : ℝ) * N := by positivity
-    by_contra h
-    nlinarith [lt_of_not_ge h, hN.trans_lt (lt_of_not_ge h)]
+  have hsq : ‖u‖ * ‖u‖ ≤ ‖u‖ * (K₂ * N) := by
+    rw [← real_inner_self_eq_norm_mul_norm, hself]
+    refine (le_abs_self _).trans ((abs_inner_le_of_memLp_exp_mul_smul hu₂' hf).trans ?_)
+    exact (mul_le_mul_of_nonneg_right hnorm₂ ENNReal.toReal_nonneg).trans_eq (by ring)
+  have hu_le : eLpNorm u 2 volume ≤
+      K₂ * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
+    refine (ENNReal.toReal_le_toReal (Lp.eLpNorm_ne_top u)
+      (ENNReal.mul_ne_top ENNReal.coe_ne_top hf.eLpNorm_ne_top)).1 ?_
+    rw [← Lp.norm_def, ENNReal.toReal_mul, ENNReal.coe_toReal]
+    rcases (norm_nonneg u).eq_or_lt with h | h
+    · rw [← h]
+      positivity
+    · exact le_of_mul_le_mul_left hsq h
   -- Then `‖exp(c ρ) u‖₂ ≤ K₁ ‖u‖₂ ≤ K₁ K₂ ‖exp(c ρ) f‖₂`.
-  refine (hK₁ x D hx hbound hsol hframe hD hDr u hu).trans ?_
-  rw [← Lp.eNorm_def, ← ofReal_norm, ← ENNReal.ofReal_toReal hf.eLpNorm_ne_top,
-    ENNReal.coe_mul, mul_assoc]
-  gcongr
-  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K₂.coe_nonneg]
-  exact ENNReal.ofReal_le_ofReal hu_le
+  calc _ ≤ K₁ * eLpNorm u 2 volume := hK₁ x D hx hbound hsol hframe hD hDr u hu
+    _ ≤ K₁ * (K₂ * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume) := by
+      gcongr
+    _ = _ := by rw [ENNReal.coe_mul, mul_assoc]
 
 /-- **The weighted estimate for the complementary projection, uniformly over a window of
 divisors.** For every degree `m`, radius `r` and rate `|c| < 1 / 2` there is a constant `K` with the
@@ -310,8 +306,8 @@ kernel of `L_x`. Then every field `f` with `exp(c ρ) f` square integrable satis
 `‖exp(c ρ) (f - Π f)‖₂ ≤ K ‖exp(c ρ) f‖₂`.
 
 The constant depends only on `m`, `r` and `c`. -/
-theorem exists_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le (m : ℕ) (r : ℝ)
-    {c : ℝ} (hc : |c| < 1 / 2) :
+theorem exists_forall_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le
+    (m : ℕ) (r : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
       (∀ z, equation x z = 0) →
@@ -322,7 +318,8 @@ theorem exists_eLpNorm_exp_mul_smul_sub_starProjection_le_of_forall_mem_norm_le 
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
             (f - (weakGaugeFixedKernel x).starProjection f) z) 2 volume ≤
           K * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
-  obtain ⟨K, hK⟩ := exists_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le m r hc
+  obtain ⟨K, hK⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_starProjection_le_of_forall_mem_norm_le m r hc
   refine ⟨1 + K, fun x D hx hbound hsol hframe hD hDr f hf ↦ ?_⟩
   set g := (weakGaugeFixedKernel x).starProjection f
   -- `exp(c ρ) (f - Π f) = exp(c ρ) f - exp(c ρ) Π f` almost everywhere.

@@ -256,8 +256,7 @@ closed disc of radius `R`. Then every `C²` square-integrable solution `y` of `L
 
 Since `K` does not depend on `x`, the estimate is uniform over every family of fields sharing an
 exterior estimate; for instance over the plane vortices of degree `m` whose zeros lie in a fixed
-disc
-(`TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`). -/
+disc (`exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel_of_forall_mem_norm_le`). -/
 theorem exists_forall_eLpNorm_exp_mul_smul_le_of_mem_gaugeFixedKernel {c c₁ R : ℝ}
     (hc : c < c₁) (hc₁ : 0 < c₁) :
     ∃ K : ℝ≥0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), Continuous x →

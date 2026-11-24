@@ -34,9 +34,9 @@ and the elliptic identification of the weak kernel with the smooth one. As a wea
 (`exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp`).
 
 **The projection.** For an orthonormal basis `(eᵢ)` of the kernel, `Π f = ∑ᵢ ⟪eᵢ, f⟫ eᵢ`. Writing
-`⟪eᵢ, f⟫ = ∫ ⟪exp(-c ρ) eᵢ, exp(c ρ) f⟫` and using the decay of `eᵢ` at the rate `-c`, the
-coefficients are bounded by the weighted `L²` norm of `f`, and the decay of `eᵢ` at the rate `c`
-with all its derivatives gives
+`⟪eᵢ, f⟫ = ∫ ⟪exp(-c ρ) eᵢ, exp(c ρ) f⟫` (`abs_inner_le_of_memLp_exp_mul_smul`) and using the
+decay of `eᵢ` at the rate `-c`, the coefficients are bounded by the weighted `L²` norm of `f`, and
+the decay of `eᵢ` at the rate `c` with all its derivatives gives
 
 `‖exp(c ρ) Π f‖_(H^s) ≤ K ‖exp(c ρ) f‖_(L²)`
 
@@ -136,18 +136,15 @@ theorem exp_mul_smul_mem_sobolevFields_of_mem_weakGaugeFixedKernel (hx : ContDif
 
 /-! ### The kernel projection -/
 
-/-- The `L²` pairing of a kernel element `e` with a field `f` is bounded by the weighted `L²` norms
-`‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`. -/
-private theorem abs_inner_le_of_mem_weakGaugeFixedKernel (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    {c : ℝ} (hc : -c < 1 / 2) {e : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
-    (he : e ∈ weakGaugeFixedKernel x) {f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+/-- **Moving an exponential weight across the `L²` pairing.** Let `ρ(z) = √(1 + |z|²)` and let
+`e`, `f` be `L²` fields such that `exp(-c ρ) e` and `exp(c ρ) f` are square integrable. Then the
+`L²` pairing satisfies `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`. -/
+theorem abs_inner_le_of_memLp_exp_mul_smul {c : ℝ}
+    {e f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (he' : MemLp (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e z) 2 volume)
     (hf : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume) :
     |⟪e, f⟫| ≤ (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e z) 2 volume).toReal *
       (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume).toReal := by
-  have he' := memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim hc he
   -- Moving the weight across the pairing: `⟪e, f⟫ = ⟪exp(-c ρ) e, exp(c ρ) f⟫` in `L²`.
   have hinner : ⟪e, f⟫ = ⟪he'.toLp _, hf.toLp _⟫ := by
     rw [L2.inner_def, L2.inner_def]
@@ -214,8 +211,9 @@ theorem exists_norm_exp_mul_smul_starProjection_le_mul_eLpNorm {s : ℝ} (hs : 0
     rw [Finset.sum_mul]
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
     rw [norm_smul, Complex.norm_real, Real.norm_eq_abs]
-    have h := abs_inner_le_of_mem_weakGaugeFixedKernel hx hbound hsol hlim
-      (lt_of_le_of_lt (neg_le_abs c) hc) (he i) hf
+    have h := abs_inner_le_of_memLp_exp_mul_smul
+      (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim
+        (lt_of_le_of_lt (neg_le_abs c) hc) (he i)) hf
     calc |⟪e i, f⟫| * ‖v i‖ ≤ C i * N * ‖v i‖ := by gcongr
       _ = C i * ‖v i‖ * N := by ring
 
