@@ -276,14 +276,9 @@ theorem definingHopfIdeal_toIdeal_le_ker_weightTorusCoordinateMap :
         (diagonalTorusWeight.{u} l)).hom.toAlgHom.toRingHom := by
   rw [definingHopfIdeal, HopfIdeal.sup_toIdeal, sup_le_iff]
   constructor
-  · rw [← AntidiagonalSpecialOrthogonal.coordinateMap_comp_diagonalTorusCoordinateMap,
-      AntidiagonalSpecialOrthogonal.coordinateMap_def]
-    intro x hx
-    rw [RingHom.mem_ker]
-    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom,
-      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp, Function.comp_apply]
-    rw [CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk,
-      Ideal.Quotient.eq_zero_iff_mem.mpr hx, map_zero]
+  · exact CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp (by
+      rw [← AntidiagonalSpecialOrthogonal.coordinateMap_def]
+      exact AntidiagonalSpecialOrthogonal.coordinateMap_comp_diagonalTorusCoordinateMap R l)
   · refine GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker R l _ fun i j hji => ?_
     have h := congrFun (congrFun (GeneralLinear.map_genericMatrix_weightTorusCoordinateMap
       (R := R) (diagonalTorusWeight.{u} l)) i) j

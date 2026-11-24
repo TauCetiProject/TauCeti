@@ -13,7 +13,8 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 
 Let `J_l` be the antidiagonal matrix and `SO_l^J = {g ∈ SL_l : g J_l gᵀ = J_l}`
 (`TauCeti.AntidiagonalSpecialOrthogonal`). Write `i' = l - 1 - i` (`Fin.rev i`) for the mirror
-image of an index. For indices `i ≠ j`, neither of which is the middle index of odd `l`, put
+image of an index. For indices `i ≠ j` with `j ≠ i'`, neither of which is the middle index of
+odd `l`, put
 
 ```text
 N_ij = E_ij - E_{j' i'},    x_ij(a) = 1 + a N_ij.
